@@ -80,7 +80,7 @@ Fstdc_fstouv(self, args)
 	PyObject *self;	/* Not used */
 	PyObject *args;
 {
-	int iun=0; 
+	int iun=0;
 	char *filename="None";
 	char *options="RND";
 
@@ -107,7 +107,7 @@ Fstdc_fstvoi(self, args)
 	PyObject *args;
 {
 	char *options="NEWSTYLE";
-	int iun, ier; 
+	int iun, ier;
 
 	if (!PyArg_ParseTuple(args, "is",&iun,&options))
 		return NULL;
@@ -125,7 +125,7 @@ Fstdc_fstfrm(self, args)
 	PyObject *self;	/* Not used */
 	PyObject *args;
 {
-	int iun=0; 
+	int iun=0;
 
 	if (!PyArg_ParseTuple(args, "i",&iun))
 		return NULL;
@@ -265,7 +265,7 @@ Fstdc_fsteff(self, args)
 	if (!PyArg_ParseTuple(args, "i",&handle))
 		return NULL;
 
-	status=c_fsteff(handle); 
+	status=c_fsteff(handle);
 
 	return Py_BuildValue("i",status);
 }
@@ -303,9 +303,9 @@ Fstdc_fstecr(self, args)
             case NPY_INT:
               datyp=4;
               dtl=4;
-              break; 
+              break;
 
-	    case NPY_LONG: 
+	    case NPY_LONG:
               if (sizeof(long)!=4) printf("PyFstecr: warning sizeof(long)=%d\n",sizeof(long));
               datyp=4;
               dtl=4;
@@ -314,7 +314,7 @@ Fstdc_fstecr(self, args)
             case NPY_SHORT:
               datyp=4;
               dtl=2;
-              break; 
+              break;
 
 	    case NPY_FLOAT:
               datyp=134;
@@ -461,7 +461,7 @@ Fstdc_fst_edit_dir(self, args)
                 &handle,&date,&deet,&npas,&ni,&nj,&nk,&ip1,&ip2,&ip3,&typvar,&nomvar,&etiket,&grtyp,&ig1,&ig2,&ig3,&ig4,&datyp))
 		return NULL;
 
-	status=c_fst_edit_dir(handle,date,deet,npas,ni,nj,nk,ip1,ip2,ip3,typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4,datyp); 
+	status=c_fst_edit_dir(handle,date,deet,npas,ni,nj,nk,ip1,ip2,ip3,typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4,datyp);
 
 	return Py_BuildValue("i",status);
 }
@@ -583,7 +583,7 @@ Fstdc_datematch(self, args)
 }
 
 static char Fstdc_level_to_ip1__doc__[] =
-"Interface to convip"
+"Interface to convip: encode level value to ip1, return list of tuple (ip1new,ip1old)"
 ;
 
 static PyObject *
@@ -597,7 +597,7 @@ Fstdc_level_to_ip1(self, args)
 	float level,level2;
 	double dlevel;
 	int ilevel;
-	PyObject *level_list, *ip1_list=Py_None, *item, *ipnew_obj, *ipold_obj;
+	PyObject *new_old, *level_list, *ip1_list=Py_None, *item, *ipnew_obj, *ipold_obj;
 	int convip();
 
 	if (!PyArg_ParseTuple(args, "Oi",&level_list,&kind)) {
@@ -613,18 +613,56 @@ Fstdc_level_to_ip1(self, args)
 	  level = (float) PyFloat_AsDouble(item);
 	  mode = 2;
 	  status=f77name(convip)(&ipnew,&level,&fkind,&mode,&strg,&flag,30);
-	  ipnew_obj = PyInt_FromLong(ipnew);
-	  PyList_Append(ip1_list,ipnew_obj);
+	  //ipnew_obj = PyInt_FromLong(ipnew);
+	  //PyList_Append(ip1_list,ipnew_obj);
 	  mode = 3;
 	  status=f77name(convip)(&ipold,&level,&fkind,&mode,&strg,&flag,30);
-	  printf("Debug Fstdc_level_to_ip1 kind=%d ipold=%d ipnew=%d \n",kind,ipold,ipnew);
-	  if (ipold != ipnew) {
-	    ipold_obj = PyInt_FromLong(ipold);
-	    PyList_Append(ip1_list,ipold_obj);
-	  }
+	  //printf("Debug Fstdc_level_to_ip1 kind=%d ipold=%d ipnew=%d \n",kind,ipold,ipnew);
+	  //if (ipold != ipnew) {
+	    //ipold_obj = PyInt_FromLong(ipold);
+	    //PyList_Append(ip1_list,ipold_obj);
+	  //}
+            new_old = Py_BuildValue("(i,i)",ipnew,ipold);
+            PyList_Append(ip1_list,new_old);
 	}
 	/*	return Py_BuildValue("O",ip1_list); */
 	return (ip1_list);
+}
+
+static char Fstdc_ip1_to_level__doc__[] =
+"Interface to convip: decode ip1 to level type,value, return list of tuple (level,kind)"
+;
+
+static PyObject *
+Fstdc_ip1_to_level(self, args)
+	PyObject *self;	/* Not used */
+	PyObject *args;
+{
+        int i,kind, nelm, status;
+	wordint ipnew, ipold, mode=-1, flag=0, fkind, flevel;
+	char strg[30];
+	float level,level2;
+	double dlevel;
+	int ilevel;
+	PyObject *level_kind, *level_list, *ip1_list=Py_None, *item, *lvl_obj, *ip1;
+	int convip();
+
+	if (!PyArg_ParseTuple(args, "O",&ip1_list)) {
+	   Py_INCREF(Py_None);
+           return Py_None;
+	}
+	nelm = PyList_Size(ip1_list);
+	level_list = PyList_New(0);
+	Py_INCREF(ip1_list);
+	for (i=0; i < nelm; i++) {
+	  item = PyList_GetItem(ip1_list,i);
+	  ip1  = (wordint) PyFloat_AsDouble(item);
+	  status=f77name(convip)(&ip1,&flevel,&fkind,&mode,&strg,&flag,30);
+          level_kind = Py_BuildValue("(f,i)",flevel,fkind);
+	  PyList_Append(level_list,level_kind);
+	}
+	/*	return Py_BuildValue("O",ip1_list); */
+	return (level_list);
 }
 
 static char Fstdc_mapdscrpt__doc__[] =
@@ -653,7 +691,7 @@ Fstdc_mapdscrpt(self, args)
 	printf("Fstdc_mapdscrpt polat=%f polong=%f rot=%f, lat1=%f lon1=%f lat2=%f, lon2=%f\n",polat,polong,rot,lat1,lon1,lat2,lon2);
 #endif
         return Py_BuildValue("{s:f,s:f,s:f,s:f,s:f,s:f,s:f}","polat",polat,"polong",polong,\
-                             "rot",rot,"lat1",lat1,"lon1",lon1,"lat2",lat2,"lon2",lon2); 
+                             "rot",rot,"lat1",lat1,"lon1",lon1,"lat2",lat2,"lon2",lon2);
 /*        return Py_BuildValue("f",rot); */
 }
 
@@ -712,7 +750,7 @@ Fstdc_ezinterp(self, args)
                                         ndimensions,dimensions,
                                         NULL, NULL, FTN_Style_Array,
                                         NULL);
-        if (vecteur) 
+        if (vecteur)
           newarray2 = PyArray_NewFromDescr(&PyArray_Type,
                                           PyArray_DescrFromType(type_num),
                                           ndimensions,dimensions,
@@ -738,14 +776,14 @@ Fstdc_ezinterp(self, args)
         ier = c_ezdefset(gdid_dst,gdid_src);
         if (vecteur) {
           ier = c_ezuvint(newarray->data,newarray2->data,arrayin->data,arrayin2->data);
-          return Py_BuildValue("OO",newarray,newarray2); 
+          return Py_BuildValue("OO",newarray,newarray2);
         }
         else {
           ier = c_ezsint(newarray->data,arrayin->data);
 #if defined(DEBUG)
           imprime_ca("newarray",newarray->data,10);
 #endif
-          return Py_BuildValue("O",newarray); 
+          return Py_BuildValue("O",newarray);
        }
 
 }
@@ -777,6 +815,33 @@ Fstdc_cxgaig(self, args)
 	return Py_BuildValue("(iiii)",ig1,ig2,ig3,ig4);
 }
 
+static char Fstdc_cigaxg__doc__[] =
+"Interface to cigaxg"
+;
+
+static PyObject *
+Fstdc_cigaxg(self, args)
+	PyObject *self;	/* Not used */
+	PyObject *args;
+{
+	int ig1,ig2,ig3,ig4;
+        float xg1,xg2,xg3,xg4;
+        char *grtyp;
+        int status;
+
+	if (!PyArg_ParseTuple(args, "siiii",&grtyp,&ig1,&ig2,&ig3,&ig4)) {
+	   Py_INCREF(Py_None);
+           return Py_None;
+	}
+
+	status=f77name(cigaxg)(grtyp,&xg1,&xg2,&xg3,&xg4,&ig1,&ig2,&ig3,&ig4);
+#if defined(DEBUG)
+	printf("Fstdc_cigaxg ig1=%d,ig2=%d,ig3=%d ig4=%d\n",ig1,ig2,ig3,ig4);
+	printf("Fstdc_cigaxg grtyp=%s xg1=%f,xg2=%f,xg3=%f xg4=%f\n",grtyp,xg1,xg2,xg3,xg4);
+#endif
+	return Py_BuildValue("(ffff)",xg1,xg2,xg3,xg4);
+}
+
 /* List of methods defined in the module */
 
 static struct PyMethodDef Fstdc_methods[] = {
@@ -795,17 +860,19 @@ static struct PyMethodDef Fstdc_methods[] = {
  {"incdatr",	(PyCFunction)Fstdc_incdatr,	METH_VARARGS,	Fstdc_incdatr__doc__},
  {"datematch",	(PyCFunction)Fstdc_datematch,	METH_VARARGS,	Fstdc_datematch__doc__},
  {"level_to_ip1",(PyCFunction)Fstdc_level_to_ip1,METH_VARARGS,	Fstdc_level_to_ip1__doc__},
+ {"ip1_to_level",(PyCFunction)Fstdc_ip1_to_level,METH_VARARGS,	Fstdc_ip1_to_level__doc__},
  {"mapdscrpt",	(PyCFunction)Fstdc_mapdscrpt,	METH_VARARGS,	Fstdc_mapdscrpt__doc__},
  {"ezinterp",	(PyCFunction)Fstdc_ezinterp,	METH_VARARGS,	Fstdc_ezinterp__doc__},
  {"cxgaig",	(PyCFunction)Fstdc_cxgaig,	METH_VARARGS,	Fstdc_cxgaig__doc__},
- 
+ {"cigaxg",	(PyCFunction)Fstdc_cigaxg,	METH_VARARGS,	Fstdc_cigaxg__doc__},
+
 	{NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
 };
 
 
 /* Initialization function for the module (*must* be called initFstdc) */
 
-static char Fstdc_module_documentation[] = 
+static char Fstdc_module_documentation[] =
 ""
 ;
 
@@ -829,7 +896,7 @@ initFstdc()
 	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* XXXX Add constants here */
-	
+
 	/* Check for errors */
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module Fstdc");

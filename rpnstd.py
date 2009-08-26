@@ -1,11 +1,23 @@
-## Automatically adapted for numpy.oldnumeric Jan 10, 2008 by 
+## Automatically adapted for numpy.oldnumeric Jan 10, 2008 by
 
 """ module Fstd contains the classes used to access RPN Standard Files (rev 2000)
-    class FstKeys   : search tags (nom, type, etiket, date, ip1, ip2, ip3)
-    class FstDesc   : auxiliary tags (grtyp, ig1, ig2, ig3, ig4,  dateo, deet, npas, datyp, nbits)
-    class FstParms  : combined set of tags (search and auxiliary)
-    class FstFile   : a standard file
-    clsss FstHandle : pointer to a standard file record
+
+    class FstFile    : a standard file
+    class FstRecord  : (numpy.ndarray, FstParms)
+    class FstParms   : combined set of tags (search and auxiliary) (FstKeys, FstDesc)
+    class FstKeys    : search tags (nom, type, etiket, date, ip1, ip2, ip3)
+    class FstDesc    : auxiliary tags (grtyp, ig1, ig2, ig3, ig4,  dateo, deet, npas, datyp, nbits)
+    class FstDate    : RPN STD Date representation; FstDate(DATESTAMP) or FstDate(YYYYMMDD,HHMMSShh)
+    class FstDate    : RPN STD Date Range: FstDateRange(DateStart,DateEnd,Delta)
+    class FstMapDesc :
+    class Grid       :
+
+    class FstExclude :
+    class FstSelect  :
+
+    @author: Mario Lepine <mario.lepine@ec.gc.ca>
+    @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+    @date: 2009-08
 """
 import types
 ## import numpy.oldnumeric as Numeric
@@ -36,7 +48,7 @@ X__Criteres={'nom':['    '],'type':['  '],'etiket':['            '],
 
 Sgrid__Desc={'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,
              'deet':0,'npas':0,'datyp':0,'nbits':0,'dateo':-1}
-             
+
 Tgrid__Desc={'grtyp':'X','ig1':-1,'ig2':-1,'ig3':-1,'ig4':-1,'xyref':(None,None,None,None,None),'griddim':(None,None),
              'xaxis':None,'yaxis':None}
 
@@ -54,9 +66,11 @@ X__DateFin=-1
 X__Delta=0.0
 
 def Predef_Grids():
-#
-# Predefined Grid configurations
-#
+  """Intentiate Predefined Grid configurations as global Objects
+
+  global Grille_Amer_Nord, Grille_Europe, Grille_Inde, Grille_Hem_Sud, Grille_Canada, Grille_Maritimes
+  global Grille_Quebec, Grille_Prairies, Grille_Colombie, Grille_USA, Grille_Global, Grille_GemLam10
+  """
   global Grille_Amer_Nord, Grille_Europe, Grille_Inde, Grille_Hem_Sud, Grille_Canada, Grille_Maritimes
   global Grille_Quebec, Grille_Prairies, Grille_Colombie, Grille_USA, Grille_Global, Grille_GemLam10
   Grille_Amer_Nord=Grid(grtyp='N',ninj=(401,401),ig14=cxgaig('N',200.5,200.5,40000.0,21.0))  # PS 40km
@@ -73,17 +87,23 @@ def Predef_Grids():
   Grille_GemLam10=Grid(grtyp='N',ninj=(1201,776),ig14=cxgaig('N',536.0,746.0,10000.0,21.0))  # PS 10km
 
 
-def printdaterange():
-    global X__DateDebut,X__DateFin,X__Delta
-    print 'Debug printdaterange debut fin delta=',X__DateDebut,X__DateFin,X__Delta
+#def printdaterange():
+    #"""Print date range defined in the module
+    #"""
+    #global X__DateDebut,X__DateFin,X__Delta
+    #print 'Debug printdaterange debut fin delta=',X__DateDebut,X__DateFin,X__Delta
 
-def resetdaterange():
-    global X__DateDebut,X__DateFin,X__Delta
-    X__DateDebut=-1
-    X__DateFin=-1
-    X__Delta=0.0
+#def resetdaterange():
+    #"""Reset date range defined in the module to anydate
+    #"""
+    #global X__DateDebut,X__DateFin,X__Delta
+    #X__DateDebut=-1
+    #X__DateFin=-1
+    #X__Delta=0.0
 
 def dump_keys_and_values(self):
+    """Return a string with comma separated key=value of all parameters
+    """
     result=''
     keynames = self.__dict__.keys()
     keynames.sort()
@@ -91,16 +111,124 @@ def dump_keys_and_values(self):
         result=result+name+'='+repr(self.__dict__[name])+' , '
     return result[:-3]  # eliminate last blank comma blank sequence
 
+
+LEVEL_KIND_MSL=0 #metres above sea level
+LEVEL_KIND_SIG=1 #Sigma
+LEVEL_KIND_PMB=2 #Pressure [mb]
+LEVEL_KIND_ANY=3 #arbitrary code
+LEVEL_KIND_MGL=4 #metres above ground level
+LEVEL_KIND_HYB=5 #hybrid coordinates [hy]
+LEVEL_KIND_TH=6 #theta [th]
+
 def levels_to_ip1(levels,kind):
+    """Encode level value into ip1 for the specified kind
+
+    ip1_list = levels_to_ip1(level_list,kind)
+    @param level_list list of level values [units depending on kind]
+    @param kind   type of levels [units] to be encoded
+        kind = 0: levels are in height [m] (metres) with respect to sea level
+        kind = 1: levels are in sigma [sg] (0.0 -> 1.0)
+        kind = 2: levels are in pressure [mb] (millibars)
+        kind = 3: levels are in arbitrary code
+        kind = 4: levels are in height [M] (metres) with respect to ground level
+        kind = 5: levels are in hybrid coordinates [hy]
+        kind = 6: levels are in theta [th]
+    @return list of encoded level values (ip1)
+    """
     return(Fstdc.level_to_ip1(levels,kind))
 
-def cxgaig(grtyp,xg1,xg2,xg3,xg4):
-    if (grtyp == None or xg1 == None or xg2 == None or xg3 == None or xg4 == None):
-      print 'cxgaig error: missing argument, calling is cxgaig(grtyp,xg1,xg2,xg3,xg4)'
-    return(Fstdc.cxgaig(grtyp,xg1,xg2,xg3,xg4))
-    
+
+def cxgaig(grtyp,xg1,xg2=None,xg3=None,xg4=None):
+    """Encode grid definition values into ig1-4 for the specified grid type
+
+    (ip1,ip2,ip3,ip4) = cxgaig(grtyp,xg1,xg2,xg3,xg4):
+    (ip1,ip2,ip3,ip4) = cxgaig(grtyp,(xg1,xg2,xg3,xg4)):
+
+    Example of use (and doctest tests):
+
+    >>> cxgaig('N',200.5, 200.5, 40000.0, 21.0)
+    (2005, 2005, 2100, 400)
+    >>> cxgaig('N',200.5, 220.5, 40000.0, 260.0)
+    (400, 1000, 29830, 57333)
+    >>> cxgaig('S',200.5, 200.5, 40000.0, 21.0)
+    (2005, 2005, 2100, 400)
+    >>> cxgaig('L',-89.5, 180.0, 0.5, 0.5)
+    (50, 50, 50, 18000)
+    >>> ig1234 = (-89.5, 180.0, 0.5, 0.5)
+    >>> cxgaig('L',ig1234)
+    (50, 50, 50, 18000)
+
+    Example of bad use (and doctest tests):
+
+    >>> cxgaig('L',-89.5, 180  , 0.5, 0.5)
+    Traceback (most recent call last):
+    ...
+    TypeError: cxgaig error: ig1,ig2,ig3,ig4 should be of type real:(-89.5, 180, 0.5, 0.5)
+    >>> cxgaig('I',-89.5, 180.0, 0.5, 0.5)
+    Traceback (most recent call last):
+    ...
+    ValueError: cxgaig error: grtyp ['I'] must be one of ('A', 'B', 'E', 'G', 'L', 'N', 'S')
+    """
+    validgrtyp = ('A','B','E','G','L','N','S')
+    if xg2 == xg3 == xg4 == None and type(xg1) in (type([]),type(())) and len(xg1) == 4:
+        (xg1,xg2,xg3,xg4) = xg1
+    if None in (grtyp,xg1,xg2,xg3,xg4):
+        raise TypeError,'cxgaig error: missing argument, calling is cxgaig(grtyp,xg1,xg2,xg3,xg4)'
+    elif not grtyp in validgrtyp:
+        raise ValueError,'cxgaig error: grtyp ['+grtyp.__repr__()+'] must be one of '+validgrtyp.__repr__()
+    elif not (type(xg1) == type(xg2) == type(xg3) == type(xg4) == type(0.)):
+        raise TypeError,'cxgaig error: ig1,ig2,ig3,ig4 should be of type real:'+(xg1,xg2,xg3,xg4).__repr__()
+    else:
+       return(Fstdc.cxgaig(grtyp,xg1,xg2,xg3,xg4))
+
+
+def cigaxg(grtyp,ig1,ig2=None,ig3=None,ig4=None):
+    """Decode grid definition values into xg1-4 for the specified grid type
+
+    (xp1,xp2,xp3,xp4) = cigaxg(grtyp,ig1,ig2,ig3,ig4):
+    (xp1,xp2,xp3,xp4) = cigaxg(grtyp,(ig1,ig2,ig3,ig4)):
+
+    Example of use (and doctest tests):
+
+    >>> cigaxg('N',2005,  2005,  2100,   400)
+    (200.5, 200.5, 40000.0, 21.0)
+    >>> cigaxg('N',400,  1000, 29830, 57333)
+    (200.50123596191406, 220.49647521972656, 40000.0, 260.0)
+    >>> cigaxg('S',2005,  2005,  2100,   400)
+    (200.5, 200.5, 40000.0, 21.0)
+    >>> cigaxg('L',50,    50,    50, 18000)
+    (-89.5, 180.0, 0.5, 0.5)
+    >>> ig1234 = (50,    50,    50, 18000)
+    >>> cigaxg('L',ig1234)
+    (-89.5, 180.0, 0.5, 0.5)
+
+    Example of bad use (and doctest tests):
+
+    >>> cigaxg('L',50,    50,    50, 18000.)
+    Traceback (most recent call last):
+    ...
+    TypeError: cxgaig error: ig1,ig2,ig3,ig4 should be of type int:(50, 50, 50, 18000.0)
+    >>> cigaxg('I',50,    50,    50, 18000)
+    Traceback (most recent call last):
+    ...
+    ValueError: cxgaig error: grtyp ['I'] must be one of ('A', 'B', 'E', 'G', 'L', 'N', 'S')
+    """
+    validgrtyp = ('A','B','E','G','L','N','S')
+    if ig2 == ig3 == ig4 == None and type(ig1) in (type([]),type(())) and len(ig1) == 4:
+        (ig1,ig2,ig3,ig4) = ig1
+    if None in (grtyp,ig1,ig2,ig3,ig4):
+        raise TypeError,'cigaxg error: missing argument, calling is cigaxg(grtyp,ig1,ig2,ig3,ig4)'
+    elif not grtyp in validgrtyp:
+        raise ValueError,'cigaxg error: grtyp ['+grtyp.__repr__()+'] must be one of '+validgrtyp.__repr__()
+    elif not (type(ig1) == type(ig2) == type(ig3) == type(ig4) == type(0)):
+        raise TypeError,'cigaxg error: ig1,ig2,ig3,ig4 should be of type int:'+(ig1,ig2,ig3,ig4).__repr__()
+    else:
+        return(Fstdc.cigaxg(grtyp,ig1,ig2,ig3,ig4))
+
+
 class FstFile:
     """Python Class implementation of the RPN standard file interface
+
        newfile=FstFile(name='...',mode='...')  open file (fstouv)
            name is a character string containing the file name
            mode is a string containing RND SEQ R/O
@@ -110,6 +238,11 @@ class FstFile:
            FstRecord=FstFile[FstHandle]     get data associated with handle
            FstFile[FstParm]=array           append/rewrite data and tags to file
            del newfile                      close the file
+
+        @param name name of the file
+        @param mode Type of file (optional)
+
+        @exception IOError if unable to open file
     """
     def __init__(self,name='total_nonsense',mode='RND+STD') :
         self.filename=name
@@ -123,9 +256,11 @@ class FstFile:
           print 'R.P.N. Standard File (2000) ',name,' is open with options:',mode,' UNIT=',self.iun
 
     def voir(self,options='NEWSTYLE'):
+        """Print the file content listing"""
         Fstdc.fstvoi(self.iun,options)
 
     def __del__(self):
+        """Close File"""
         if (self.iun != None):
           Fstdc.fstfrm(self.iun)
           print 'file ',self.iun,' is closed, filename=',self.filename
@@ -135,7 +270,10 @@ class FstFile:
         del self.options
         del self.iun
 
-    def __getitem__(self,key):              # get record from file
+    def __getitem__(self,key):
+        """Get record meta (FstParms) and data (numpy array) from file
+        (meta,data) = myfstfile[mykey]
+        """
         params = self.info(key)         # 1 - get handle
         if params == None:              # oops !! not found
             return (None,None)
@@ -143,11 +281,13 @@ class FstFile:
         array=Fstdc.fstluk(target)   # 2 - get data
         return (params,array)               # return keys and data arrray
 
-    def edit_dir_entry(self,key):       # edit (zap) directory entry referenced by handle
+    def edit_dir_entry(self,key):
+      """Edit (zap) directory entry referenced by handle"""
       return(Fstdc.fst_edit_dir(key.handle,key.date,key.deet,key.npas,-1,-1,-1,key.ip1,key.ip2,key.ip3,
                                 key.type,key.nom,key.etiket,key.grtyp,key.ig1,key.ig2,key.ig3,key.ig4,key.datyp))
-      
-    def info(self,key):                     # get handle associated with key
+
+    def info(self,key):
+        """Get handle associated with key"""
         if isinstance(key,FstParm):         # fstinf, return FstHandle instance
             if key.nxt == 1:               # get NEXT one thatmatches
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
@@ -171,7 +311,8 @@ class FstFile:
             return None
         return result # return handle
 
-    def __setitem__(self,index,value):      # [re]write data and tags
+    def __setitem__(self,index,value):
+        """[re]write data and tags"""
         if (value == None):
             if (isinstance(index,FstParm)): # set of keys
                 target = index.handle
@@ -204,6 +345,7 @@ class FstFile:
            print 'FstFile write: value must be an array and index must be FstParms'
            raise TypeError
 
+
 class Grid:
     "Base method to attach a grid description to a fstd field"
     def __init__(self,keysndata=(None,None),(xkeys,xaxis)=(None,None),(ykeys,yaxis)=(None,None),ninj=(None,None),grtyp=None,ig14=(None,None,None,None),vector=None):
@@ -235,7 +377,7 @@ class Grid:
         else:
           if lescles.grtyp == 'Z' or lescles.grtyp == 'Y':       # get xaxis and yaxis
             (xcles,xdata) = lescles.getaxis('X')
-            (ycles,ydata) = lescles.getaxis('X')
+            (ycles,ydata) = lescles.getaxis('Y')
           else:                                    # only keysndata, grid defined by grtyp,ig1,ig2,ig3,ig4 from keys
             lescles.xyref=(lescles.grtyp,lescles.ig1,lescles.ig2,lescles.ig3,lescles.ig4)
             if ninj != (None,None):
@@ -263,7 +405,7 @@ class Grid:
       self.field = ledata
 #      print 'Grid termine'
 #      print ' '
-    
+
     def __getitem__(self,tgrid):              # interpolate to target grid
       if isinstance(tgrid,Grid):
         tgrtyp=tgrid.keys.grtyp
@@ -305,7 +447,8 @@ class Grid:
 #      if newgrid.keys2 != None:
 #        print 'Debug newgrid.keys2',newgrid.keys2.nom,newgrid.keys.xyref
       return(newgrid)
-      
+
+
 class FstParm:
     "Base methods for all RPN standard file descriptor classes"
     def __init__(self,model,reference,extra):
@@ -401,15 +544,20 @@ class FstParms(FstKeys,FstDesc):
                 raise TypeError
         for name in args.keys(): # and update with specified attributes
             setattr(self,name,args[name])
-    
-    def getaxis(self,axis):
-       if (self.grtyp != 'Z' and self.grtyp != 'Y'):
-         print 'getaxis error: can not get axis from grtyp=',self.grtyp
+
+    def getaxis(self,axis=None):
+       if not (self.grtyp in ('Z','Y','#')):
+         raise ValueError,'getaxis error: can not get axis from grtyp=',self.grtyp
          return(None,None)
        if (self.xaxis == None and self.yaxis == None):
-         (xaxiskeys,xaxisdata) = self.fileref[FstKeys(nom='>>',ip1=self.ig1,ip2=self.ig2,ip3=self.ig3)]
-         (yaxiskeys,yaxisdata) = self.fileref[FstKeys(nom='^^',ip1=self.ig1,ip2=self.ig2,ip3=self.ig3)]
-         if (xaxiskeys == None or yaxiskeys == None):  
+         searchkeys = FstKeys(ip1=self.ig1,ip2=self.ig2)
+         if self.grtyp != '#':
+            searchkeys.update_by_dict({'ip3':self.ig3})
+         searchkeys.update_by_dict({'nom':'>>'})
+         (xaxiskeys,xaxisdata) = self.fileref[searchkeys]
+         searchkeys.update_by_dict({'nom':'^^'})
+         (yaxiskeys,yaxisdata) = self.fileref[searchkeys]
+         if (xaxiskeys == None or yaxiskeys == None):
            print 'getaxis error: axis grid descriptors (>>,^^) not found'
            return (None,None)
          self.xaxis=xaxisdata
@@ -423,9 +571,12 @@ class FstParms(FstKeys,FstDesc):
        axiskeys.griddim=self.griddim
        if axis == 'X':
          axisdata=self.xaxis
-       else: 
+       elif axis == 'Y':
          axisdata=self.yaxis.ravel()
+       else:
+         axisdata=(self.xaxis,self.yaxis.ravel())
        return(axiskeys,axisdata)
+
 
 class FstCriterias:
     "Base methods for RPN standard file selection criteria input filter classes"
@@ -520,8 +671,10 @@ class FstExclude(FstCriterias):
     def __init__(self,**args):
         FstCriterias.__init__(self,X__Criteres,1,args)
 
+
 class FstRecord(numpy.ndarray,FstParms):
-    "Standard file record, with data (ndarray class) and full set of descriptors"
+    """Standard file record, with data (ndarray class) and full set of descriptors
+    """
     def __init__(self,data=None,ref=None):
         if (type(data) == type(numpy.array(0))) or (type(data) == type([])):  # list or array
             numpy.ndarray.__init__(self,data)
@@ -541,9 +694,20 @@ class FstRecord(numpy.ndarray,FstParms):
             else:
                 print 'FstRecord: cannot initialize parameters from arg #3'
                 raise TypeError
-        
+
+
 class FstDate:
-    "Visual date with word1=YYYYMMDD word2=HHMMSShh"
+    """RPN STD Date representation
+
+    FstDate(DATESTAMP) or FstDate(YYYYMMDD,HHMMSShh)
+    @param DATESTAMP CMC date stamp or FstDate object
+    @param YYYYMMDD  Int with Visual representation of YYYYMMDD
+    @param HHMMSShh  Int with Visual representation of HHMMSShh
+
+    @exception TypeError if parameters are wrong type
+    """
+    stamp = 0
+
     def __init__(self,word1,word2=-1):
         if isinstance(word1,FstDate):
             self.stamp = word1.stamp
@@ -554,30 +718,74 @@ class FstDate:
                 dummy=0
                 (self.stamp,dummy1,dummy2) = Fstdc.newdate(dummy,word1,word2,3)
         else:
-            print 'FstDate: cannot initialize date time stamp from arguments'
-            raise TypeError
+            raise TypeError, 'FstDate: arguments should be of type int'
 
     def __sub__(self,other):
+        "Time difference between 2 dates"
         return(Fstdc.difdatr(self.stamp,other.stamp))
 
     def incr(self,temps):
+        """Increase Date by the specified number of hours
+
+        @param temps Number of hours for the FstDate to be increased
+        @return self
+
+        @exception TypeError if temps is not of int or real type
+        """
         if ((type(temps) == type(1)) or (type(temps) == type(1.0))):
             nhours = 0.0
             nhours = temps
-            idate=Fstdc.incdatr(self.stamp,nhours)
+            self.stamp=Fstdc.incdatr(self.stamp,nhours)
             print 'Debug idate=',idate,type(idate)
-            return(FstDate(idate,-1))
+            return(self)
         else:
-            print 'incr: wrong argument type'
-            raise TypeError
+            raise TypeError,'FstDate.incr: argument should be int or real'
 
-    def range(self,debut=-1,fin=-1,delta=0.0):
-        global X__DateDebut,X__DateFin,X__Delta
-        X__DateDebut=debut
-        X__DateFin=fin
-        X__Delta=delta
-        print 'Debug setdaterange',X__DateDebut,X__DateFin,X__Delta
-        self.stamp=-2          # stamp = -2 indicates a range for the date
+
+class FstDateRange:
+    """RPN STD Date Range representation
+
+    FstDateRange(DateStart,DateEnd,Delta)
+    @param DateStart FstDate start of the range
+    @param DateEnd   FstDate end of the range
+    @param Delta     Increment of the range iterator, hours, real
+
+    @exception TypeError if parameters are wrong type
+    """
+    #TODO: make this an iterator
+    dateDebut=-1
+    dateFin=-1
+    delta=0.0
+    now=-1
+
+    def __init__(self,debut=-1,fin=-1,delta=0.0):
+        if isinstance(debut,FstDate) and isinstance(fin,FstDate) and ((type(delta) == type(1)) or (type(delta) == type(1.0))):
+            self.dateDebut=debut
+            self.now=debut
+            self.dateFin=fin
+            self.delta=delta
+        else:
+            raise TypeError,'FstDateRange: arguments type error FstDateRange(FstDate,FstDate,Real)'
+
+    def lenght(self):
+        """Provide the duration of the date range
+        @return Number of hours
+        """
+        return abs(self.dateFin-self.dateDebut)
+
+    def next(self):
+        """Return the next date/time in the range (step of delta hours)
+        @return next FstDate, None if next date is beyond range
+        """
+        self.now.incr(self.delta)
+        if (self.dateFin-self.now)*self.delta < 0.:
+            return None
+        return FstDate(self.now)
+
+    def reset(self):
+        """Reset the FstDateRange iterator to the range start date"""
+        self.now=self.dateDebut
+
 
 class FstMapDesc:
     "Map Descriptors with lat1,lon1, lat2,lon2, rot"
@@ -596,3 +804,7 @@ class FstMapDesc:
 FirstRecord=FstKeys()
 NextMatch=None
 Predef_Grids()
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

@@ -3,20 +3,34 @@ import os, distutils, string
 
 # architecture='Linux_pgi611'
 architecture = os.getenv('EC_ARCH')
-print 'Debug architecture=',architecture
 runtime_libs=['-Wl,-rpath,/usr/local/env/armnlib/lib/'+architecture]
-print 'Debug runtime_libs=',runtime_libs
 SharedLd=distutils.sysconfig.get_config_vars('LDSHARED')
 SharedLd=string.split(SharedLd[0])
+
+print 'Debug architecture=',architecture
+print 'Debug runtime_libs=',runtime_libs
 print 'Shared Objects loaded with',SharedLd
 
 Fstd_module = Extension('Fstdc',
-                    include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture],
-                    libraries = ['PyFTN_helpers','rmn_shared_beta10'],
-                    extra_link_args=runtime_libs,
-                    library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
-                    sources = ['Fstdc.c'])
+            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture],
+            libraries = ['PyFTN_helpers','rmn_shared_beta10'],
+            extra_link_args=runtime_libs,
+            library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
+            sources = ['Fstdc.c'])
 
-setup (name = 'truc',
-      version = '1.0',
-      ext_modules = [Fstd_module])
+setup(name = 'rpnstd',
+    version = '1.0.1',
+    description = 'Python Interface to some ARMNLIB RPN STD files function',
+    author = 'Mario Lepine',
+    author_email = 'mario.lepine@ec.gc.ca',
+    maintainer = 'Stephane Chamberland',
+    maintainer_email = 'stephane.chamberland@ec.gc.ca',
+    url = 'http://arxt20/~armnsch/arxt20/wiki/howto/pyhton-rpn',
+    long_description = '''
+Python Interface to some ARMNLIB RPN STD files function
+Base Interfaces are defined in the Fstdc sub-package.
+More python-esk clasess are defined in the rpnstd sub-package
+''',
+    py_modules=['rpnstd'],
+    ext_modules = [Fstd_module])
+
