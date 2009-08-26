@@ -133,9 +133,50 @@ def levels_to_ip1(levels,kind):
         kind = 4: levels are in height [M] (metres) with respect to ground level
         kind = 5: levels are in hybrid coordinates [hy]
         kind = 6: levels are in theta [th]
-    @return list of encoded level values (ip1)
+    @return list of encoded level values-tuple ((ip1new,ip1old),...)
     """
-    return(Fstdc.level_to_ip1(levels,kind))
+    if not type(levels) in (type(()),type([])):
+        raise ValueError,'levels_to_ip1: levels should be a list or a tuple; '+levels.__repr__()
+    if type(kind) <> type(0):
+        raise TypeError,'levels_to_ip1: kind should be an int in range [0,6]; '+kind.__repr__()
+    elif not kind in (0,1,2,3,4,5,6):
+        raise ValueError,'levels_to_ip1: kind should be an int in range [0,6]; '+kind.__repr__()
+    if type(levels) == type(()):
+        ip1_list = Fstdc.level_to_ip1(list(levels),kind)
+    else:
+        ip1_list = Fstdc.level_to_ip1(levels,kind)
+    if not ip1_list:
+        raise TypeError,'levels_to_ip1: wrong args; levels_to_ip1(levels,kind)'
+    return(ip1_list)
+
+
+def ip1_to_levels(ip1list):
+    """Decode ip1 value into (level,kind)
+
+    levels_list = ip1_to_levels(ip1list)
+    @param ip1list list of ip1 values to decode
+    @return list of decoded level values-tuple ((level_list,kind),...)
+        kind = 0: levels are in height [m] (metres) with respect to sea level
+        kind = 1: levels are in sigma [sg] (0.0 -> 1.0)
+        kind = 2: levels are in pressure [mb] (millibars)
+        kind = 3: levels are in arbitrary code
+        kind = 4: levels are in height [M] (metres) with respect to ground level
+        kind = 5: levels are in hybrid coordinates [hy]
+        kind = 6: levels are in theta [th]
+
+        >>> ip1_to_levels([0,1,1000,1199,1200,1201,9999,12000,12001,12002,13000])
+        [(0.0, 2), (1.0, 2), (1000.0, 2), (1.0, 3), (0.0, 3), (4.9999998736893758e-05, 2), (0.79989999532699585, 1), (1.0, 1), (0.0, 0), (5.0, 0), (4995.0, 0)]
+    """
+    if not type(ip1list) in (type(()),type([])):
+        raise ValueError,'ip1_to_levels: levels should be a list or a tuple'
+
+    if type(ip1list) == type(()):
+        levels = Fstdc.ip1_to_level(list(ip1list))
+    else:
+        levels = Fstdc.ip1_to_level(ip1list)
+    if not levels:
+        raise TypeError,'ip1_to_levels: wrong args; ip1_to_levels(ip1list)'
+    return(levels)
 
 
 def cxgaig(grtyp,xg1,xg2=None,xg3=None,xg4=None):
