@@ -133,6 +133,8 @@ def levels_to_ip1(levels,kind):
             kind = 5: levels are in hybrid coordinates [hy]
             kind = 6: levels are in theta [th]
     @return list of encoded level values-tuple ((ip1new,ip1old),...)
+    @exception TypeError if level_list is not a tuple or list
+    @exception ValueError if kind is not an int in range of allowed kind
 
     Example of use (and doctest tests):
 
@@ -154,7 +156,7 @@ def levels_to_ip1(levels,kind):
     else:
         ip1_list = Fstdc.level_to_ip1(levels,kind)
     if not ip1_list:
-        raise TypeError,'levels_to_ip1: wrong args; levels_to_ip1(levels,kind)'
+        raise TypeError,'levels_to_ip1: wrong args type; levels_to_ip1(levels,kind)'
     return(ip1_list)
 
 
@@ -163,7 +165,7 @@ def ip1_to_levels(ip1list):
 
     levels_list = ip1_to_levels(ip1list)
     @param ip1list list of ip1 values to decode
-    @return list of decoded level values-tuple ((level_list,kind),...)
+    @return list of decoded level values-tuple ((level,kind),...)
         kind = 0: levels are in height [m] (metres) with respect to sea level
         kind = 1: levels are in sigma [sg] (0.0 -> 1.0)
         kind = 2: levels are in pressure [mb] (millibars)
@@ -171,6 +173,7 @@ def ip1_to_levels(ip1list):
         kind = 4: levels are in height [M] (metres) with respect to ground level
         kind = 5: levels are in hybrid coordinates [hy]
         kind = 6: levels are in theta [th]
+    @exception TypeError if ip1list is not a tuple or list
 
     Example of use (and doctest tests):
 
@@ -184,22 +187,31 @@ def ip1_to_levels(ip1list):
     [(1024.0, 2), (1024.0, 2), (850.0, 2), (850.0, 2), (650.0, 2), (650.0, 2), (500.0, 2), (500.0, 2), (10.0, 2), (10.0, 2), (2.0, 2), (2.0, 2), (0.30000001192092896, 2), (0.30000001192092896, 2)]
     """
     if not type(ip1list) in (type(()),type([])):
-        raise ValueError,'ip1_to_levels: levels should be a list or a tuple'
+        raise TypeError,'ip1_to_levels: levels should be a list or a tuple'
 
     if type(ip1list) == type(()):
         levels = Fstdc.ip1_to_level(list(ip1list))
     else:
         levels = Fstdc.ip1_to_level(ip1list)
     if not levels:
-        raise TypeError,'ip1_to_levels: wrong args; ip1_to_levels(ip1list)'
+        raise TypeError,'ip1_to_levels: wrong args type; ip1_to_levels(ip1list)'
     return(levels)
 
 
 def cxgaig(grtyp,xg1,xg2=None,xg3=None,xg4=None):
     """Encode grid definition values into ig1-4 for the specified grid type
 
-    (ip1,ip2,ip3,ip4) = cxgaig(grtyp,xg1,xg2,xg3,xg4):
-    (ip1,ip2,ip3,ip4) = cxgaig(grtyp,(xg1,xg2,xg3,xg4)):
+    (ig1,ig2,ig3,ig4) = cxgaig(grtyp,xg1,xg2,xg3,xg4):
+    (ig1,ig2,ig3,ig4) = cxgaig(grtyp,(xg1,xg2,xg3,xg4)):
+
+    @param grtyp
+    @param xg1 xg1 value (float) or tuple of the form (xg1,xg2,xg3,xg4)
+    @param xg2 xg2 value (float)
+    @param xg3 xg3 value (float)
+    @param xg4 xg4 value (float)
+    @return Tuple of encoded grid desc values (ig1,ig2,ig3,ig4)
+    @exception TypeError if args are of wrong type
+    @exception ValueError if grtyp is not in ('A','B','E','G','L','N','S')
 
     Example of use (and doctest tests):
 
@@ -242,8 +254,17 @@ def cxgaig(grtyp,xg1,xg2=None,xg3=None,xg4=None):
 def cigaxg(grtyp,ig1,ig2=None,ig3=None,ig4=None):
     """Decode grid definition values into xg1-4 for the specified grid type
 
-    (xp1,xp2,xp3,xp4) = cigaxg(grtyp,ig1,ig2,ig3,ig4):
-    (xp1,xp2,xp3,xp4) = cigaxg(grtyp,(ig1,ig2,ig3,ig4)):
+    (xg1,xg2,xg3,xg4) = cigaxg(grtyp,ig1,ig2,ig3,ig4):
+    (xg1,xg2,xg3,xg4) = cigaxg(grtyp,(ig1,ig2,ig3,ig4)):
+
+    @param grtyp
+    @param ig1 ig1 value (int) or tuple of the form (ig1,ig2,ig3,ig4)
+    @param ig2 ig2 value (int)
+    @param ig3 ig3 value (int)
+    @param ig4 ig4 value (int)
+    @return Tuple of decoded grid desc values (xg1,xg2,xg3,xg4)
+    @exception TypeError if args are of wrong type
+    @exception ValueError if grtyp is not in ('A','B','E','G','L','N','S')
 
     Example of use (and doctest tests):
 
@@ -285,23 +306,34 @@ def cigaxg(grtyp,ig1,ig2=None,ig3=None,ig4=None):
 
 class FstFile:
     """Python Class implementation of the RPN standard file interface
+    instanciating this class actually opens the file
+    deleting the instance close the file
 
-       newfile=FstFile(name='...',mode='...')  open file (fstouv)
-           name is a character string containing the file name
-           mode is a string containing RND SEQ R/O
-       ex: newfile=FstFile('myfile','RND+R/O')
-           FstHandle=FstFile[FstParm]       get matching record
-           FstHandle=FstFile[0]             get next matching record (fstsui)
-           FstRecord=FstFile[FstHandle]     get data associated with handle
-           FstFile[FstParm]=array           append/rewrite data and tags to file
-           del newfile                      close the file
+    myFstFile = FstFile(name,mode)
+    @param name file name (string)
+    @param mode Type of file (string,optional), 'RND', 'SEQ', 'SEQ+R/O' or 'RND+R/O'
 
-        @param name name of the file
-        @param mode Type of file (optional)
+    @exception TypeError if name is not
+    @exception IOError if unable to open file
 
-        @exception IOError if unable to open file
+    Examples of use:
+
+    myFstFile = FstFile(name,mode)       #opens the file
+    params = myFstFile.info(seachParams) #get matching record params
+    params = myFstFile.info(FirstRecord) #get params of first rec on file
+    params = myFstFile.info(NextMatch)   #get next matching record params
+    myFstRec = myFstFile[seachParams]    #get matching record data and params
+    myFstRec = myFstFile[FirstRecord]    #get data and params of first rec on file
+    myFstRec = myFstFile[NextMatch]      #get next matching record data and params
+    myFstFile[params]   = mydataarray    #append/rewrite data and tags to file
+    myFstFile[myFstRec] = myFstRec.d     #append/rewrite data and tags to file
+    myFstFile[myFstRec] = None           #erase record
+    myFstFile[params.handle] = None      #erase record
+    del myFstFile                        #close the file
     """
-    def __init__(self,name='total_nonsense',mode='RND+STD') :
+    def __init__(self,name=None,mode='RND+STD') :
+        if (not name) or type(name) <> type(''):
+            raise TypeError,'FstFile, need to provide a name for the file'
         self.filename=name
         self.lastread=None
         self.lastwrite=None
@@ -328,36 +360,57 @@ class FstFile:
         del self.iun
 
     def __getitem__(self,key):
-        """Get record meta (FstParms) and data (numpy array) from file
-        (meta,data) = myfstfile[mykey]
+        """Get the record, meta and data (FstRec), corresponding to the seach keys from file
+
+        myrec = myfstfile[mykey]
+        @param mykey search keys for FstFile.info()
+        @return instance of FstRec with data and meta of the record; None if rec not found
         """
         params = self.info(key)         # 1 - get handle
         if params == None:              # oops !! not found
-            return (None,None)
+            return None
         target = params.handle
         array=Fstdc.fstluk(target)   # 2 - get data
-        return (params,array)               # return keys and data arrray
+        return FstRec(array,params)
 
     def edit_dir_entry(self,key):
-      """Edit (zap) directory entry referenced by handle"""
+      """Edit (zap) directory entry referenced by handle
+
+      myfstdfile.edit_dir_entry(myNewFstParams)
+
+      myNewFstParams.handle must be a valid rec/file handle as retrieved by myfstdfile.info()
+      """
       return(Fstdc.fst_edit_dir(key.handle,key.date,key.deet,key.npas,-1,-1,-1,key.ip1,key.ip2,key.ip3,
                                 key.type,key.nom,key.etiket,key.grtyp,key.ig1,key.ig2,key.ig3,key.ig4,key.datyp))
 
     def info(self,key):
-        """Get handle associated with key"""
-        if isinstance(key,FstParm):         # fstinf, return FstHandle instance
+        """Seach file for next record corresponding to search keys
+        Successive calls will go further in the file.
+        Search index can be reset to begining of file with myfstfile.info(FirstRecord)
+        If key.handle >=0, return key w/o search and w/o checking the file
+
+        myfstparms = myfstfile.info(FirstRecord)
+        myfstparms = myfstfile.info(mykeys)
+        myfstparms = myfstfile.info(NextMatch)
+        @param mykeys search keys, can be an instance FstParm or derived classes (FstKeys, FstDesc, FstParms, FstRec)
+        @return a FstParms instance of the record with proper handle, return None if not found
+        @exception TypeError if
+
+        The myfstfile.lastread parameter is set with values of all latest found rec params
+        """
+        if isinstance(key,FstParm):
             if key.nxt == 1:               # get NEXT one thatmatches
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,key.date,key.handle)
             else:                           # get FIRST one that matches
                 if key.handle >= 0 :       # handle exists, return it
-                    return key
+                    return key #TODO: may want to check if key.handle is valid
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,key.date,-2)
         elif key==NextMatch:                # fstsui, return FstHandle instance
             self.lastread=Fstdc.fstinf(self.iun,' ',' ',' ',0,0,0,0,-1)
         else:
-            raise TypeError   # invalid "index"
+            raise TypeError,'FstFile.info(), search keys arg is not of a valid type'
         result=FstParms()
         if self.lastread != None:
 #            self.lastread.__dict__['fileref']=self
@@ -369,7 +422,18 @@ class FstFile:
         return result # return handle
 
     def __setitem__(self,index,value):
-        """[re]write data and tags"""
+        """[re]write data and tags of rec in RPN STD file
+
+        myfstfile.info[myfstparms] = mydataarray
+        myfstfile.info[myfstrec]   = myfstrec.d
+        myfstfile.info[myfstrec]   = None #erase the record corresponding to myfstrec.handle
+        myfstfile.info[myfstrec.handle] = None #erase the record corresponding to handle
+
+        @param myfstparms  values of rec parameters, must be a FstParms instance (or derived class)
+        @param mydataarray data to be written, must be numpy.ndarray instance
+        @exception TypeError if args are of wrong type
+        @exception TypeError if params.handle is not valid when erasing (value=None)
+        """
         if (value == None):
             if (isinstance(index,FstParm)): # set of keys
                 target = index.handle
@@ -379,9 +443,7 @@ class FstFile:
                 raise TypeError, 'FstFile: index must provide a valid handle to erase a record'
             print 'erasing record with handle=',target,' from file'
             self.lastwrite=Fstdc.fsteff(target)
-            # call to fsteff goes here
         elif (isinstance(index,FstParms)) and (type(value) == type(numpy.array([]))):
-            # call to fstecr goes here with rewrite flag (index=true/false)
             self.lastwrite=0
 #            print 'writing data',value.shape,' to file, keys=',index
 #            print 'dict = ',index.__dict__
@@ -398,7 +460,7 @@ class FstFile:
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
                          index.ig4,index.deet,index.npas,index.nbits)
         else:
-           raise TypeError,'FstFile write: value must be an array and index must be FstParms'
+           raise TypeError,'FstFile write: value must be an array and index must be FstParms or FstRec'
 
 
 class Grid:
@@ -505,7 +567,9 @@ class Grid:
 
 
 class FstParm:
-    "Base methods for all RPN standard file descriptor classes"
+    """Base methods for all RPN standard file descriptor classes
+    TODO: give examples of instanciation
+    """
     def __init__(self,model,reference,extra):
         for name in reference.keys():            # copy initial values from reference
             self.__dict__[name]=reference[name]  # bypass setatttr method for new attributes
@@ -518,8 +582,15 @@ class FstParm:
             setattr(self,name,extra[name])
 
     def update(self,with):
-        "Replace Fst attributes of an instance with Fst attributes from another"
-        if isinstance(with,FstParm) and isinstance(self,FstParm):  # check if class=FstParm
+        """Replace Fst attributes of an instance with Fst attributes from another
+        values not in list of allowed parm keys are ignored
+        also update to wildcard (-1 or '') values
+
+        myfstparm.update(otherfstparm) #update myfstparm values with otherfstparm
+        @param otherfstparm list of params=value to be updated, instance of FstParm or derived class
+        @exception TypeError if otherfstparm is of wrong class
+        """
+        if isinstance(with,FstParm):  # check if class=FstParm
             for name in with.__dict__.keys():
                 if (name in self.__dict__.keys()) and (name in X__FullDesc.keys()):
                     self.__dict__[name]=with.__dict__[name]
@@ -527,8 +598,15 @@ class FstParm:
             raise TypeError,'FstParm.update: can only operate on FstParm class instances'
 
     def update_cond(self,with):
-        "Conditional Replace Fst attributes if not wildcard values"
-        if isinstance(with,FstParm) and isinstance(self,FstParm):  # check if class=FstParm
+        """Conditional Replace Fst attributes if not wildcard values
+        values not in list of allowed parm keys are ignored
+        value that are wildcard (-1 or '') are ignored
+
+        myfstparm.update_cond(otherfstparm) #update myfstparm values with otherfstparm
+        @param otherfstparm list of params=value to be updated, instance of FstParm or derived class
+        @exception TypeError if otherfstparm is of wrong class
+        """
+        if isinstance(with,FstParm):  # check if class=FstParm
             for name in with.__dict__.keys():
                 if (name in self.__dict__.keys()) and (name in X__FullDesc.keys()):
                     if (with.__dict__[name] != W__FullDesc[name]):
@@ -537,9 +615,20 @@ class FstParm:
             raise TypeError,'FstParm.update_cond: can only operate on FstParm class instances'
 
     def update_by_dict(self,with):
-        for name in with.keys():
-            if name in self.__dict__.keys():
-                setattr(self,name,with[name])
+        """Replace Fst attributes of an instance with dict of {key:value,}
+        keys not in list of allowed parm keys are ignored
+        also update to wildcard (-1 or '') values
+
+        myfstparm.update_by_dict(paramsdict) #update myfstparm values with paramsdict
+        @param paramsdict dict of {key:value,}
+        @exception TypeError if paramsdict is of wrong type
+        """
+        if type(with) == type({}):
+            for name in with.keys():
+                if name in self.__dict__.keys():
+                    setattr(self,name,with[name])
+        else:
+            raise TypeError,'FstParm.update_by_dict: arg should by a dict'
 
     def update_by_dict_from(self,frm,with):
         for name in with.keys():
@@ -547,6 +636,11 @@ class FstParm:
                 setattr(self,name,frm.__dict__[name])
 
     def __setattr__(self,name,value):   # this method cannot create new attributes
+        """Set FstParm attribute value, will only accept a set of allowed attribute (rpnstd params list)
+        myfstparm.ip1 = 0
+        @exception TypeError if value is of the wrong type for said attribute
+        @exception ValueError if not a valid/allowed attribute
+        """
         if name in self.__dict__.keys():                   # is attribute name valid ?
             if type(value) == type(self.__dict__[name]):   # right type (string or int))
                 if type(value) == type(''):
@@ -556,7 +650,6 @@ class FstParm:
                     self.__dict__[name]=value              # integer
             else:
                 if self.__dict__[name] == None:
-#                   print 'Debug***** None name=',name
                    self.__dict__[name]=value
                 else:
                     raise TypeError,'FstParm: Wrong type for attribute '+name+'='+value.__repr__()
@@ -569,11 +662,18 @@ class FstParm:
     def __getitem__(self,name):
         return self.__dict__[name]
 
-    def findnext(self,flag=1):                  # set/reset next match flag
-        self.nxt = flag
+    def findnext(self,flag=True):
+        """set/reset next match flag
+        myfstparm.findnext(True)  #set findnext flag to true
+        myfstparm.findnext(False) #set findnext flag to false
+        """
+        self.nxt = 0
+        if flag:
+            self.nxt = 1
         return self
 
-    def wildcard(self):                  # reset keys to undefined
+    def wildcard(self):
+        """Reset keys to undefined/wildcard"""
         self.update_by_dict(W__FullDesc)
 
     def __str__(self):
@@ -584,17 +684,29 @@ class FstParm:
 
 
 class FstKeys(FstParm):
-    "Primary descriptors, used to search for a record"
+    """RPN standard file Primary descriptors class, used to search for a record.
+    Descriptors are:
+    {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
+    TODO: give examples of instanciation
+    """
     def __init__(self,model=None,**args):
         FstParm.__init__(self,model,X__PrimaryDesc,args)
 
 class FstDesc(FstParm):
-    "Auxiliary descriptors, used when writing a record or getting descriptors from a record"
+    """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
+    Descriptors are:
+    {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
+    TODO: give examples of instanciation
+    """
     def __init__(self,model=None,**args):
         FstParm.__init__(self,model,X__AuxiliaryDesc,args)
 
 class FstParms(FstKeys,FstDesc):
-    "Full set of descriptors, Primary + Auxiliary, needed to write a record, can be used for search"
+    """RPN standard file Full set (Primary + Auxiliary) of descriptors class, needed to write a record, can be used for search.
+    Descriptors are:
+    {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None,'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
+    TODO: give examples of instanciation
+    """
     def __init__(self,model=None,**args):
         FstKeys.__init__(self)   # initialize Key part
         FstDesc.__init__(self)   # initialize Auxiliary part
