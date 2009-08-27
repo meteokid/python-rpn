@@ -2,9 +2,9 @@
 
 """ module Fstd contains the classes used to access RPN Standard Files (rev 2000)
 
-    class FstFile    : a standard file
-    class FstRecord  : (numpy.ndarray, FstParms)
-    class FstParms   : combined set of tags (search and auxiliary) (FstKeys, FstDesc)
+    class FstFile    : a RPN standard file
+    class FstRec     : a RPN standard file rec data (numpy.ndarray)) & meta (FstParms)
+    class FstParms   : combined set of tags (search and auxiliary), RPN standard file rec meta (FstKeys, FstDesc)
     class FstKeys    : search tags (nom, type, etiket, date, ip1, ip2, ip3)
     class FstDesc    : auxiliary tags (grtyp, ig1, ig2, ig3, ig4,  dateo, deet, npas, datyp, nbits)
     class FstDate    : RPN STD Date representation; FstDate(DATESTAMP) or FstDate(YYYYMMDD,HHMMSShh)
@@ -20,8 +20,6 @@
     @date: 2009-08
 """
 import types
-## import numpy.oldnumeric as Numeric
-## import numpy.oldnumeric.user_array as UserArray
 import numpy
 import Fstdc
 
@@ -378,8 +376,7 @@ class FstFile:
             elif type(index) == type(0):  # handle
                 target = index
             else:
-                print 'FstFile: index must provide a valid handle to erase a record'
-                raise TypeError
+                raise TypeError, 'FstFile: index must provide a valid handle to erase a record'
             print 'erasing record with handle=',target,' from file'
             self.lastwrite=Fstdc.fsteff(target)
             # call to fsteff goes here
@@ -401,8 +398,7 @@ class FstFile:
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
                          index.ig4,index.deet,index.npas,index.nbits)
         else:
-           print 'FstFile write: value must be an array and index must be FstParms'
-           raise TypeError
+           raise TypeError,'FstFile write: value must be an array and index must be FstParms'
 
 
 class Grid:
@@ -517,8 +513,7 @@ class FstParm:
             if isinstance(model,FstParm):        # update with model attributes
                self.update(model)
             else:
-                print 'FstParm.__init__: model must be an FstParm class instances'
-                raise TypeError
+                raise TypeError,'FstParm.__init__: model must be an FstParm class instances'
         for name in extra.keys():                # add extras using own setattr method
             setattr(self,name,extra[name])
 
@@ -529,8 +524,7 @@ class FstParm:
                 if (name in self.__dict__.keys()) and (name in X__FullDesc.keys()):
                     self.__dict__[name]=with.__dict__[name]
         else:
-            print 'FstParm.update: can only operate on FstParm class instances'
-            raise TypeError
+            raise TypeError,'FstParm.update: can only operate on FstParm class instances'
 
     def update_cond(self,with):
         "Conditional Replace Fst attributes if not wildcard values"
@@ -540,8 +534,7 @@ class FstParm:
                     if (with.__dict__[name] != W__FullDesc[name]):
                         self.__dict__[name]=with.__dict__[name]
         else:
-            print 'FstParm.update_cond: can only operate on FstParm class instances'
-            raise TypeError
+            raise TypeError,'FstParm.update_cond: can only operate on FstParm class instances'
 
     def update_by_dict(self,with):
         for name in with.keys():
@@ -566,9 +559,9 @@ class FstParm:
 #                   print 'Debug***** None name=',name
                    self.__dict__[name]=value
                 else:
-                    print value,'has the wrong type for attribute',name
+                    raise TypeError,'FstParm: Wrong type for attribute '+name+'='+value.__repr__()
         else:
-            print 'attribute',name,'does not exist for class',self.__class__
+            raise ValueError,'FstParm: attribute'+name+'does not exist for class'+self.__class__.__repr__()
 
     def findnext(self,flag=1):                  # set/reset next match flag
         self.nxt = flag
@@ -579,6 +572,10 @@ class FstParm:
 
     def __str__(self):
         return dump_keys_and_values(self)
+
+    def __repr__(self):
+        return self.__dict__.__repr__()
+
 
 class FstKeys(FstParm):
     "Primary descriptors, used to search for a record"
@@ -599,8 +596,7 @@ class FstParms(FstKeys,FstDesc):
             if isinstance(model,FstParm):
                 self.update(model)
             else:
-                print 'FstParms: cannot initialize from arg #1'
-                raise TypeError
+                raise TypeError,'FstParms: cannot initialize from arg #1'
         for name in args.keys(): # and update with specified attributes
             setattr(self,name,args[name])
 
@@ -653,8 +649,7 @@ class FstCriterias:
                 if (name in self.__dict__.keys()) and (name in X__Criteres.keys()):
                     self.__dict__[name]=with.__dict__[name]
         else:
-            print 'FstParm.update: can only operate on FstCriterias class instances'
-            raise TypeError
+            raise TypeError,'FstParm.update: can only operate on FstCriterias class instances'
 
     def update_cond(self,with):
         "Conditional Replace Fst attributes if not wildcard values"
@@ -664,8 +659,7 @@ class FstCriterias:
                     if (with.__dict__[name] != X__Criteres[name]):
                         self.__dict__[name]=with.__dict__[name]
         else:
-            print 'FstCriterias.update_cond: can only operate on FstCriterias class instances'
-            raise TypeError
+            raise TypeError,'FstCriterias.update_cond: can only operate on FstCriterias class instances'
 
     def update_by_dict(self,with):
         for name in with.keys():
@@ -694,8 +688,7 @@ class FstCriterias:
                             match = match & (with.__dict__[name] in self.__dict__[name])
             return match
         else:
-            print 'FstCriterias.isamatch: can only operate on FstParm, FstCriterias class instances'
-            raise TypeError
+            raise TypeError,'FstCriterias.isamatch: can only operate on FstParm, FstCriterias class instances'
 
     def __setattr__(self,name,values):   # this method cannot create new attributes
         if name in self.__dict__.keys():                   # is attribute name valid ?
@@ -715,7 +708,7 @@ class FstCriterias:
                 else:
                     self.__dict__[name].append(values)              # integer
         else:
-            print 'attribute',name,'does not exist for class',self.__class__
+            raise ValueError,'attribute'+name+'does not exist for class '+self.__class__.__repr__()
 
     def __str__(self):
         return dump_keys_and_values(self)
@@ -731,29 +724,59 @@ class FstExclude(FstCriterias):
         FstCriterias.__init__(self,X__Criteres,1,args)
 
 
-class FstRecord(numpy.ndarray,FstParms):
-    """Standard file record, with data (ndarray class) and full set of descriptors
-    """
-    def __init__(self,data=None,ref=None):
-        if (type(data) == type(numpy.array(0))) or (type(data) == type([])):  # list or array
-            numpy.ndarray.__init__(self,data)
-        elif isinstance(data,UserArray.UserArray):   # UserArray (or subclass)
-            numpy.ndarray.__init__(self,data.array)
-        elif data == None:                           # None means initialize with null array
-            numpy.ndarray.__init__(self,[])
-        else:
-            print 'FstRecord: cannot initialize data from arg #2'
-            raise TypeError
-        FstParms.__init__(self)  # initialize descriptor part
-        if ref != None:          # update with ref tags if supplied
-            if isinstance(ref,FstParm):
-                self.update(ref)
-            elif type(ref) == type({}):
-                self.update_by_dict(ref)
-            else:
-                print 'FstRecord: cannot initialize parameters from arg #3'
-                raise TypeError
+class FstRec(FstParms):
+    """Standard file record, with data (ndarray class) and full set of descriptors (FstParms class)
 
+    Example of use (and doctest tests):
+
+    >>> r = FstRec()
+    >>> r.d
+    array([], dtype=float64)
+    >>> r = FstRec([1,2,3,4])
+    >>> r.d
+    array([1, 2, 3, 4])
+    >>> a = numpy.array([1,2,3,4],order='FORTRAN',dtype='float32')
+    >>> r = FstRec(a)
+    >>> r.d
+    array([ 1.,  2.,  3.,  4.], dtype=float32)
+    >>> a[1] = 5
+    >>> r.d #r.d is a reference to a, thus changing a changes a
+    array([ 1.,  5.,  3.,  4.], dtype=float32)
+    >>> r = FstRec(a.copy())
+    >>> r.d
+    array([ 1.,  5.,  3.,  4.], dtype=float32)
+    >>> a[1] = 9
+    >>> r.d #r.d is a copy of a, thus changing a does not change a
+    array([ 1.,  5.,  3.,  4.], dtype=float32)
+    >>> r.grtyp
+    'X'
+    """
+    def __init__(self,data=None,params=None):
+        if data == None:
+            self.d = numpy.array([])
+        elif type(data) == numpy.ndarray:
+            self.d = data
+        elif type(data) == type([]):
+            self.d = numpy.array(data)
+        else:
+            raise TypeError,'FstRec: cannot initialize data from arg #1'
+        FstParms.__init__(self)
+        if params:
+            if isinstance(params,FstParm):
+                self.update(params)
+            elif type(params) == type({}):
+                self.update_by_dict(params)
+            else:
+                raise TypeError,'FstRec: cannot initialize parameters from arg #2'
+
+    def __setattr__(self,name,value):   # this method cannot create new attributes
+        if name == 'd':
+            if type(value) == numpy.ndarray:
+                self.__dict__[name]=value
+            else:
+                raise TypeError,'FstRec: data should be an instance of numpy.ndarray'
+        else:
+            FstParms.__setattr__(self,name,value)
 
 class FstDate:
     """RPN STD Date representation
@@ -857,8 +880,7 @@ class FstMapDesc:
           self.geodesc=Fstdc.mapdscrpt(xs1,ys1,xs2,ys2,ni,nj,key.grtyp,key.ig1,key.ig2,key.ig3,key.ig4)
 #       (self.lat1,self.lon1,self.lat2,self.lon2,self.rot)=Fstdc.mapdscrpt(xs1,ys1,xs2,ys2,key.grtyp,key.ig1,key.ig2,key.ig3,key.ig4)
         else:
-            print 'FstMapdesc: invalid key'
-            raise TypeError
+            raise TypeError,'FstMapdesc: invalid key'
 
 FirstRecord=FstKeys()
 NextMatch=None
