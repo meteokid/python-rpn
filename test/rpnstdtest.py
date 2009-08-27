@@ -65,5 +65,57 @@ class CigaxgKnownValues(unittest.TestCase):
             igout = rpnstd.cxgaig(proj,xgout[0],xgout[1],xgout[2],xgout[3])
             self.assertEqual(igout,ig,name+igout.__repr__()+xgout.__repr__())
 
+
+class Level_to_ip1KnownValues(unittest.TestCase):
+
+    #lvlnew,lvlold,ipnew,ipold,kind
+    #we need to specify 2 levels since the old style ip1 give is an approx of level in some cases
+    knownValues = (
+    (0.,    0.,    15728640, 12001,0),
+    (13.5,  15.,   8523608,  12004,0),
+    (1500., 1500., 6441456,  12301,0),
+    (5525., 5525., 6843956,  13106,0),
+    (12750.,12750.,5370380,  14551,0),
+    (0.,    0.,    32505856, 2000, 1),
+    (0.1,   0.1,   27362976, 3000,1),
+    (0.02,  0.02,  28511552, 2200,1),
+    (0.000003,0.,  32805856, 2000,1),
+    (1024.,1024.,  39948288, 1024,2),
+    (850., 850.,   41744464, 850, 2),
+    (650., 650.,   41544464, 650, 2),
+    (500., 500.,   41394464, 500, 2),
+    (10.,  10.,    42043040, 10,  2),
+    (2.,   2.,     43191616, 1840,2),
+    (0.3,  0.3,    44340192, 1660,2)
+    )
+
+    def testLevels_to_ip1KnownValues(self):
+        """levels_to_ip1 should give known result with known input"""
+        for lvlnew,lvlold,ipnew,ipold,kind in self.knownValues:
+            (ipnew2,ipold2) = rpnstd.levels_to_ip1([lvlnew],kind)[0]
+            self.assertEqual(ipnew2,ipnew)
+            (ipnew2,ipold2) = rpnstd.levels_to_ip1([lvlold],kind)[0]
+            self.assertEqual(ipold2,ipold)
+
+    def testip1_to_levelsKnownValues(self):
+        """ip1_to_levels should give known result with known input"""
+        for lvlnew,lvlold,ipnew,ipold,kind in self.knownValues:
+            (lvl2,kind2) = rpnstd.ip1_to_levels([ipnew])[0]
+            self.assertEqual(kind2,kind)
+            self.assertAlmostEqual(lvlnew,lvl2,6)
+            (lvl2,kind2) = rpnstd.ip1_to_levels([ipold])[0]
+            self.assertEqual(kind2,kind)
+            self.assertAlmostEqual(lvlold,lvl2,6)
+
+    def testSanity(self):
+        """levels_to_ip1(ip1_to_levels(n))==n for all n"""
+        for lvlnew,lvlold,ipnew,ipold,kind in self.knownValues:
+            (lvl2,kind2) = rpnstd.ip1_to_levels([ipnew])[0]
+            (ipnew2,ipold2) = rpnstd.levels_to_ip1([lvl2],kind2)[0]
+            self.assertEqual(ipnew2,ipnew)
+            (lvl2,kind2) = rpnstd.ip1_to_levels([ipold])[0]
+            (ipnew2,ipold2) = rpnstd.levels_to_ip1([lvl2],kind2)[0]
+            self.assertEqual(ipold2,ipold)
+
 if __name__ == "__main__":
     unittest.main()

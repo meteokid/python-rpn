@@ -129,17 +129,27 @@ def levels_to_ip1(levels,kind):
         kind = 0: levels are in height [m] (metres) with respect to sea level
         kind = 1: levels are in sigma [sg] (0.0 -> 1.0)
         kind = 2: levels are in pressure [mb] (millibars)
-        kind = 3: levels are in arbitrary code
-        kind = 4: levels are in height [M] (metres) with respect to ground level
-        kind = 5: levels are in hybrid coordinates [hy]
-        kind = 6: levels are in theta [th]
+        Looks like the following are not suppored yet in the fortran func convip
+            kind = 3: levels are in arbitrary code
+            kind = 4: levels are in height [M] (metres) with respect to ground level
+            kind = 5: levels are in hybrid coordinates [hy]
+            kind = 6: levels are in theta [th]
     @return list of encoded level values-tuple ((ip1new,ip1old),...)
+
+    Example of use (and doctest tests):
+
+    >>> levels_to_ip1([0.,13.5,1500.,5525.,12750.],0)
+    [(15728640, 12001), (8523608, 12004), (6441456, 12301), (6843956, 13106), (5370380, 14551)]
+    >>> levels_to_ip1([0.,0.1,.02,0.00678,0.000003],1)
+    [(32505856, 2000), (27362976, 3000), (28511552, 2200), (30038128, 2068), (32805856, 2000)]
+    >>> levels_to_ip1([1024.,850.,650.,500.,10.,2.,0.3],2)
+    [(39948288, 1024), (41744464, 850), (41544464, 650), (41394464, 500), (42043040, 10), (43191616, 1840), (44340192, 1660)]
     """
     if not type(levels) in (type(()),type([])):
         raise ValueError,'levels_to_ip1: levels should be a list or a tuple; '+levels.__repr__()
     if type(kind) <> type(0):
         raise TypeError,'levels_to_ip1: kind should be an int in range [0,6]; '+kind.__repr__()
-    elif not kind in (0,1,2,3,4,5,6):
+    elif not kind in (0,1,2): #(0,1,2,3,4,5,6):
         raise ValueError,'levels_to_ip1: kind should be an int in range [0,6]; '+kind.__repr__()
     if type(levels) == type(()):
         ip1_list = Fstdc.level_to_ip1(list(levels),kind)
@@ -164,8 +174,16 @@ def ip1_to_levels(ip1list):
         kind = 5: levels are in hybrid coordinates [hy]
         kind = 6: levels are in theta [th]
 
-        >>> ip1_to_levels([0,1,1000,1199,1200,1201,9999,12000,12001,12002,13000])
-        [(0.0, 2), (1.0, 2), (1000.0, 2), (1.0, 3), (0.0, 3), (4.9999998736893758e-05, 2), (0.79989999532699585, 1), (1.0, 1), (0.0, 0), (5.0, 0), (4995.0, 0)]
+    Example of use (and doctest tests):
+
+    >>> ip1_to_levels([0,1,1000,1199,1200,1201,9999,12000,12001,12002,13000])
+    [(0.0, 2), (1.0, 2), (1000.0, 2), (1.0, 3), (0.0, 3), (4.9999998736893758e-05, 2), (0.79989999532699585, 1), (1.0, 1), (0.0, 0), (5.0, 0), (4995.0, 0)]
+    >>> ip1_to_levels([15728640, 12001,8523608, 12004,6441456, 12301,6843956, 13106,5370380, 14551])
+    [(0.0, 0), (0.0, 0), (13.5, 0), (15.0, 0), (1500.0, 0), (1500.0, 0), (5525.0, 0), (5525.0, 0), (12750.0, 0), (12750.0, 0)]
+    >>> ip1_to_levels([32505856, 2000,27362976, 3000,28511552, 2200,30038128, 2068,32805856, 2000])
+    [(0.0, 1), (0.0, 1), (0.10000000149011612, 1), (0.099999994039535522, 1), (0.019999999552965164, 1), (0.019999999552965164, 1), (0.0067799999378621578, 1), (0.0067999996244907379, 1), (3.0000001061125658e-06, 1), (0.0, 1)]
+    >>> ip1_to_levels([39948288, 1024,41744464, 850,41544464, 650,41394464, 500,42043040, 10,43191616, 1840,44340192, 1660])
+    [(1024.0, 2), (1024.0, 2), (850.0, 2), (850.0, 2), (650.0, 2), (650.0, 2), (500.0, 2), (500.0, 2), (10.0, 2), (10.0, 2), (2.0, 2), (2.0, 2), (0.30000001192092896, 2), (0.30000001192092896, 2)]
     """
     if not type(ip1list) in (type(()),type([])):
         raise ValueError,'ip1_to_levels: levels should be a list or a tuple'

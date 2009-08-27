@@ -599,25 +599,25 @@ Fstdc_level_to_ip1(self, args)
 	PyObject *level_list, *ip1_list=Py_None, *item, *ipnew_obj, *ipnewold_obj;
 	int convip();
 
-        printf("Debug Fstdc_level_to_ip1 [Begin]\n");
+        //printf("Debug Fstdc_level_to_ip1 [Begin]\n");
 	if (!PyArg_ParseTuple(args, "Oi",&level_list,&kind)) {
 	   Py_INCREF(Py_None);
            return Py_None;
 	}
 	fkind = (wordint) kind;
 	nelm = PyList_Size(level_list);
-        printf("Debug Fstdc_level_to_ip1 kind=%d nelm=%d\n",kind,nelm);
+        //printf("Debug Fstdc_level_to_ip1 kind=%d nelm=%d\n",kind,nelm);
 	ip1_list = PyList_New(0);
 	Py_INCREF(ip1_list);
 	for (i=0; i < nelm; i++) {
 	  item = PyList_GetItem(level_list,i);
 	  level = (float) PyFloat_AsDouble(item);
-          printf("Debug Fstdc_level_to_ip1 level=%f\n",level);
+          //printf("Debug Fstdc_level_to_ip1 level=%f\n",level);
 	  fmode = 2;
 	  status=f77name(convip)(&fipnew,&level,&fkind,&fmode,&strg,&flag,30);
 	  fmode = 3;
 	  status=f77name(convip)(&fipold,&level,&fkind,&fmode,&strg,&flag,30);
-            printf("Debug Fstdc_level_to_ip1 level=%f kind=%d ipold=%d ipnew=%d \n",level,kind,ipold,ipnew);
+            //printf("Debug Fstdc_level_to_ip1 level=%f kind=%d ipold=%d ipnew=%d \n",level,kind,ipold,ipnew);
             ipnew = (long) fipnew;
             ipold = (long) fipold;
             ipnewold_obj = Py_BuildValue("(l,l)",ipnew,ipold);
