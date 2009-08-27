@@ -563,6 +563,12 @@ class FstParm:
         else:
             raise ValueError,'FstParm: attribute'+name+'does not exist for class'+self.__class__.__repr__()
 
+    def __setitem__(self,name,value):
+        self.__setattr__(name,value)
+
+    def __getitem__(self,name):
+        return self.__dict__[name]
+
     def findnext(self,flag=1):                  # set/reset next match flag
         self.nxt = flag
         return self
@@ -777,6 +783,7 @@ class FstRec(FstParms):
                 raise TypeError,'FstRec: data should be an instance of numpy.ndarray'
         else:
             FstParms.__setattr__(self,name,value)
+
 
 class FstDate:
     """RPN STD Date representation
