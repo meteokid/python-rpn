@@ -518,8 +518,110 @@ class FstFile:
         """
         self.write(data,meta,rewrite=True)
 
+
+class FstGrid:
+    """RPNSTD-type grid description
+
+    myFstGrid = FstGrid(grtyp='N',ig14=(1,2,3,4),ninj=(200,150))
+    myFstGrid = FstGrid(grtyp='Z',xyaxis=(myFstRecX,myFstRecY))
+    myFstGrid = FstGrid(grtyp='#',ninj=(200,150),ij0=(1,1),xyaxis=(myFstRecX,myFstRecY))
+    myFstGrid = FstGrid(myFstRec)
+    myFstGrid = FstGrid(keys=myFstRec)
+    myFstGrid = FstGrid(myFstRec,xyaxis=(myFstRecX,myFstRecY))
+
+    @param keys
+    @param xyaxis
+    @param ninj
+    @param grtyp
+    @param ij0
+    @param ig14
+    @exception ValueError
+    @exception TypeError
+    """
+    validgrtyp = ('A','B','E','G','L','N','S','Z','Y','#') #'X'
+    xyaxis = (None,None)
+
+    def __init__(self,keys=None,xyaxis=(None,None),ninj=(None,None),grtyp=None,ij0=None,ig14=(None,None,None,None)):
+        #mode 1: grtype,ig14,ninj        ['A','B','E','G','L','N','S']
+        #mode 2: grtype,xyaxis           [Z,Y]
+        #mode 3: grtype,ninj,ij0,xyaxis  [#]
+        #mode 4: keys
+        #mode 5: keys,xyaxis
+        if grtyp != None:
+            if keys != None:
+                raise ValueError,'FstGrid: cannot specify both grtyp and keys'
+            self.keys = FstParms()
+            if grtyp in self.validgrtyp:
+                if grtyp in ('Z','Y','#'):
+                    if not (type(xyaxis) in (type([]),type(())) and len(xyaxis)==2
+                        and isinstance(xyaxis[0],FstRec)
+                        and isinstance(xyaxis[1],FstRec)):
+                        raise TypeError,'FstGrid: xyaxis must be (FstRec,FstRec)'
+                    self.keys =FstParms(ni=xyaxis[0].d.shape[0],nj=xyaxis[1].d.shape[1],grtyp=grtyp,ig1=xyaxis.ip1,ig2=xyaxis.ip2,ig3=xyaxis.ip3,ig4=0,xyref=(xyaxis.grtyp,xyaxis.ig1,xyaxis.ig2,xyaxis.ig3,xyaxis.ig4),griddim=ninj)
+                    self.xyaxis = xyaxis
+                    if grtyp == '#':
+                        if not( type(ninj) in (type([]),type(())) and len(ninj)==2
+                            and (type(ninj[0]) == type(ninj[1]) == type(0))
+                            and type(ij0) in (type([]),type(())) and len(ij0)==2
+                            and (type(ij0[0]) == type(ij0[1]) == type(0))):
+                            raise TypeError,'FstGrid: ninj and ij0 must be (int,int)'
+                        #TODO: check that these 4 are inbound of xyaxis dims
+                        self.keys.ni = ninj[0]
+                        self.keys.nj = ninj[1]
+                        self.griddim = ninj    #TODO: check this
+                        self.keys.ig3 = ij0[0]
+                        self.keys.ig4 = ij0[1]
+                else:
+                    if type(ig14) in (type([]),type(())) and len(ig14)==4 \
+                        and (type(ig14[0]) == type(ig14[1]) == type(ig14[2]) == type(ig14[3]) == type(0)) \
+                        and type(ninj) in (type([]),type(())) and len(ninj)==2 \
+                        and (type(ninj[0]) == type(ninj[1]) == type(0)):
+                        xyref = list(ig14)
+                        xyref.insert(0,grtyp)
+                        self.keys =FstParms(ni=ninj[0],nj=ninj[1],grtyp=grtyp,ig1=ig14[0],ig2=ig14[1],ig3=ig14[2],ig4=ig14[3],xyref=tuple(xyref),griddim=ninj)
+                    else:
+                        raise TypeError,'FstGrid: ig14 must be (int,int,int,int) and ninj must be (int,int)'
+            else:
+                raise ValueError,'FstGrid: gridtype must be one of '+self.validgrtyp.__repr__()
+        elif isinstance(keys,FstParms):
+            if keys.grtyp in ('Z','Y','#'):
+                xyaxis = keys.getaxis()
+                if keys.grtyp == '#':
+                    self.__init__(grtyp=keys.grtyp,nij=(keys.ni,keys.nj),ij0=(keys.ig3,keys.ig4),xyaxis=xyaxis)
+                else:
+                    self.__init__(grtyp=keys.grtyp,xyaxis=xyaxis)
+            else:
+                self.__init__(grtyp=keys.grtyp,nij=(keys.ni,keys.nj),ig14=(keys.ig1,keys.ig2,keys.ig3,keys.ig4))
+        else:
+            raise TypeError,'FstGrid: wrong args in init; unrecognized grid desc'
+
+    def interpol(self,fromData,fromGrid):
+        """Interpolate some gridded data to grid
+
+        destData = myDestGrid.interpol(fromData,fromGrid)
+        """
+        return self.interpolVect(self,fromData,None,fromGrid)[0]
+
+    def interpolVect(self,fromDataX,fromDataY,fromGrid):
+        """Interpolate some gridded vectorial data to grid
+
+        (destDataX,destDataY) = myDestGrid.interpol(fromDataX,fromDataY,fromGrid)
+        """
+        #TODO: validate args (type, and if dims match)
+        srcflag = fromGrid.keys.xyaxis[0] != None
+        dstflag = self.keys.xyaxis[0] != None
+        vecteur = isinstance(fromDataY,numpy.ndarray)
+        sk = fromGrid.keys
+        dk = self.keys
+        return Fstdc.ezinterp(fromDataX,fromDataY,
+            sk.griddim,sk.grtyp,sk.xyref,sk.xyaxis[0],sk.xyaxis[1],srcflag,
+            dk.griddim,dk.grtyp,dk.xyref,dk.xyaxis[0],dk.xyaxis[1],dstflag,vecteur)
+
+
 class Grid:
-    "Base method to attach a grid description to a fstd field"
+    """[old] Base method to attach a grid description to a fstd field
+    This class is depracated, preferably use the FstGrid class instead
+    """
     def __init__(self,keysndata=(None,None),(xkeys,xaxis)=(None,None),(ykeys,yaxis)=(None,None),ninj=(None,None),grtyp=None,ig14=(None,None,None,None),vector=None):
       if grtyp != None:           # grid is defined by grtyp,ig1,ig2,ig3,ig4
         ig1,ig2,ig3,ig4 = ig14
@@ -570,15 +672,11 @@ class Grid:
         else:
           self.keys2= None
           self.field2=None
-#      print 'Grid DEBUG lescles.nom date dateo=',lescles.nom,lescles.date,lescles.dateo
-#      print 'Grid DEBUG lescles.xyref=',lescles.xyref
-#      print 'Grid DEBUG lescles.griddim=',lescles.griddim
       self.keys = lescles
       self.field = ledata
-#      print 'Grid termine'
-#      print ' '
 
-    def __getitem__(self,tgrid):              # interpolate to target grid
+    def __getitem__(self,tgrid):
+      """Interpolate to target grid"""
       if isinstance(tgrid,Grid):
         tgrtyp=tgrid.keys.grtyp
         txyref=tgrid.keys.xyref
@@ -758,9 +856,39 @@ class FstDesc(FstParm):
 
 class FstParms(FstKeys,FstDesc):
     """RPN standard file Full set (Primary + Auxiliary) of descriptors class, needed to write a record, can be used for search.
+
     Descriptors are:
     {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None,'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
-    TODO: give examples of instanciation
+
+    Examples of use (also doctests):
+
+    >>> myFstParms = FstParms()                  #New FstParms with default/wildcard descriptors
+    >>> d = myFstParms.__dict__.items()
+    >>> d.sort()
+    >>> d
+    [('date', -1), ('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('griddim', (None, None)), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  '), ('xaxis', None), ('xyref', (None, None, None, None, None)), ('yaxis', None)]
+    >>> myFstParms = FstParms(nom='GZ',ip2=1)  #New FstParms with all descriptors to wildcard but nom,ip2
+    >>> d = myFstParms.__dict__.items()
+    >>> d.sort()
+    >>> d
+    [('date', -1), ('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('griddim', (None, None)), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', 0), ('nom', 'GZ  '), ('npas', 0), ('nxt', 0), ('type', '  '), ('xaxis', None), ('xyref', (None, None, None, None, None)), ('yaxis', None)]
+    >>> myFstParms.ip1
+    -1
+    >>> myFstParms2 = myFstParms #shallow copy (reference)
+    >>> myFstParms2.ip1 = 9 #this will also update myFstParms.ip1
+    >>> myFstParms.ip1
+    9
+    >>> myFstParms2 = FstParms(myFstParms)   #make a deep-copy
+    >>> myFstParms.ip3
+    -1
+    >>> myFstParms2.ip3 = 9 #this will not update myFstParms.ip3
+    >>> myFstParms.ip3
+    -1
+    >>> myFstParms2 = FstParms(myFstParms,nom='GZ',ip2=8)   #make a deep-copy and update nom,ip2 values
+    >>> myFstParms.ip2
+    1
+    >>> myFstParms2.ip2
+    8
     """
     def __init__(self,model=None,**args):
         FstKeys.__init__(self)   # initialize Key part
@@ -774,36 +902,39 @@ class FstParms(FstKeys,FstDesc):
             setattr(self,name,args[name])
 
     def getaxis(self,axis=None):
-       if not (self.grtyp in ('Z','Y','#')):
-         raise ValueError,'getaxis error: can not get axis from grtyp=',self.grtyp
-         return(None,None)
-       if (self.xaxis == None and self.yaxis == None):
-         searchkeys = FstKeys(ip1=self.ig1,ip2=self.ig2)
-         if self.grtyp != '#':
-            searchkeys.update_by_dict({'ip3':self.ig3})
-         searchkeys.update_by_dict({'nom':'>>'})
-         (xaxiskeys,xaxisdata) = self.fileref[searchkeys]
-         searchkeys.update_by_dict({'nom':'^^'})
-         (yaxiskeys,yaxisdata) = self.fileref[searchkeys]
-         if (xaxiskeys == None or yaxiskeys == None):
-           print 'getaxis error: axis grid descriptors (>>,^^) not found'
-           return (None,None)
-         self.xaxis=xaxisdata
-         self.yaxis=yaxisdata
-         self.xyref = (xaxiskeys.grtyp,xaxiskeys.ig1,xaxiskeys.ig2,xaxiskeys.ig3,xaxiskeys.ig4)
-         ni=xaxisdata.shape[0]
-         nj=yaxisdata.shape[1]
-         self.griddim=(ni,nj)
-       axiskeys=FstParms()
-       axiskeys.xyref=self.xyref
-       axiskeys.griddim=self.griddim
-       if axis == 'X':
-         axisdata=self.xaxis
-       elif axis == 'Y':
-         axisdata=self.yaxis.ravel()
-       else:
-         axisdata=(self.xaxis,self.yaxis.ravel())
-       return(axiskeys,axisdata)
+        """Return the grid axis rec of grtyp ('Z','Y','#')
+
+        (myFstRecX,myFstRecY) = myFstParms.getaxis()
+        myFstRecX = myFstParms.getaxis('X')
+        myFstRecY = myFstParms.getaxis('Y')
+        """
+        if not (self.grtyp in ('Z','Y','#')):
+            raise ValueError,'getaxis error: can not get axis from grtyp=',self.grtyp
+        if (self.xaxis == None and self.yaxis == None):
+            searchkeys = FstKeys(ip1=self.ig1,ip2=self.ig2)
+            if self.grtyp != '#':
+                searchkeys.update_by_dict({'ip3':self.ig3})
+            searchkeys.nom = '>>'
+            xaxisrec = self.fileref[searchkeys]
+            searchkeys.nom = '^^'
+            yaxisrec = self.fileref[searchkeys]
+            if (xaxiskeys == None or yaxiskeys == None):
+                raise ValueError,'getaxis error: axis grid descriptors (>>,^^) not found'
+            self.xaxis = xaxisrec
+            self.yaxis = yaxisrec
+            self.xyref = (xaxisrec.grtyp,xaxisrec.ig1,xaxisrec.ig2,xaxisrec.ig3,xaxisrec.ig4)
+            ni=xaxisrec.d.shape[0]
+            nj=yaxisrec.d.shape[1]
+            self.griddim=(ni,nj)
+        axisrec = FstParms()
+        axisrec.xyref = self.xyref
+        axisrec.griddim = self.griddim
+        if axis == 'X':
+            return xaxisrec
+        elif axis == 'Y':
+            return yaxisrec
+            #axisdata=self.yaxis.ravel()
+        return (xaxisrec,yaxisrec)
 
 
 class FstCriterias:
@@ -948,8 +1079,34 @@ class FstRec(FstParms):
                 self.__dict__[name]=value
             else:
                 raise TypeError,'FstRec: data should be an instance of numpy.ndarray'
+        elif name == 'grid':
+            if isinstance(value,FstGrid):
+                self.__dict__[name]=value
+            else:
+                raise TypeError,'FstRec: grid should be an instance of FstGrid'
         else:
             FstParms.__setattr__(self,name,value)
+
+    def interpol(self,togrid):
+        """Interpolate FstRec to another grid (horizontally)
+
+        myFstRec.interpol(togrid)
+        @param togrid grid where to interpolate
+        @exception ValueError if myFstRec does not contain a valid grid desc
+        @exception TypeError if togrid is not an instance of FstGrid
+        """
+        if isinstance(value,FstGrid):
+            if not (self.grid or isinstance(self.grid,FstGrid)):
+                self.grid = FstGrid(self)
+            if self.grid:
+                self.d = togrid.interpol(self.d,self.grid)
+                self.grid = togrid #or make a copy instead of taking a reference
+                for item in ('ni','ni','grtype','ig1','ig2','ig3','ig4','griddim','xyref'):
+                    self[item] = togrid[item] #TODO: check this
+            else:
+                raise ValueError,'FstRec.interpol(togrid): unable to determine actual grid of FstRec'
+        else:
+            raise TypeError,'FstRec.interpol(togrid): togrid should be an instance of FstGrid'
 
 
 class FstDate:
