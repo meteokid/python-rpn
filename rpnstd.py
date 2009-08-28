@@ -325,8 +325,13 @@ class FstFile:
     myFstRec = myFstFile[seachParams]    #get matching record data and params
     myFstRec = myFstFile[FirstRecord]    #get data and params of first rec on file
     myFstRec = myFstFile[NextMatch]      #get next matching record data and params
-    myFstFile[params]   = mydataarray    #append/rewrite data and tags to file
-    myFstFile[myFstRec] = myFstRec.d     #append/rewrite data and tags to file
+    myFstFile[params]   = mydataarray    #append data and tags to file
+    myFstFile[myFstRec] = myFstRec.d     #append data and tags to file
+    myFstFile.write(myFstRec)            #append data and tags to file
+    myFstFile.write(myFstRec,rewrite=True) #rewrite data and tags to file
+    myFstFile.rewrite(myFstRec)            #rewrite data and tags to file
+    myFstFile.append(myFstRec)             #append data and tags to file
+
     myFstFile[myFstRec] = None           #erase record
     myFstFile[params.handle] = None      #erase record
     del myFstFile                        #close the file
@@ -434,7 +439,7 @@ class FstFile:
         @exception TypeError if args are of wrong type
         @exception TypeError if params.handle is not valid when erasing (value=None)
         """
-        if (value == None):
+        if value == None:
             if (isinstance(index,FstParm)): # set of keys
                 target = index.handle
             elif type(index) == type(0):  # handle
@@ -443,7 +448,7 @@ class FstFile:
                 raise TypeError, 'FstFile: index must provide a valid handle to erase a record'
             print 'erasing record with handle=',target,' from file'
             self.lastwrite=Fstdc.fsteff(target)
-        elif (isinstance(index,FstParms)) and (type(value) == type(numpy.array([]))):
+        elif isinstance(index,FstParms) and type(value) == numpy.ndarray:
             self.lastwrite=0
 #            print 'writing data',value.shape,' to file, keys=',index
 #            print 'dict = ',index.__dict__
@@ -462,6 +467,56 @@ class FstFile:
         else:
            raise TypeError,'FstFile write: value must be an array and index must be FstParms or FstRec'
 
+    def write(self,data,meta=None,rewrite=False):
+        """Write a FstRec to the file
+
+        myFstRec.write(myFstRec)
+        myFstRec.write(myArray,myFstParms)
+        myFstRec.write(myFstRec,rewrite=false)
+        myFstRec.write(myArray,myFstParms,rewrite=true)
+
+        @param myFstRec an instance of FstRec with data and meta/params to be written
+        @param myArray an instance of numpy.ndarray
+        @param myFstParms an instance of FstParms with meta/params to be written
+        @exception TypeError if args are of wrong type
+        """
+        if meta == None and isinstance(data,FstRec):
+            if rewrite and data.handle >=0:
+                Fstdc.fsteff(data.handle)
+            self.__setitem__(data,data.d)
+        elif isinstance(meta,FstParms) and type(data) == numpy.ndarray:
+            if rewrite and meta.handle >=0:
+                Fstdc.fsteff(meta.handle)
+            self.__setitem__(meta,data)
+        else:
+            raise TypeError,'FstFile write: value must be an array and index must be FstParms or FstRec'
+
+    def append(self,data,meta=None):
+        """Append a FstRec to the file, shortcut for write(...,rewrite=False)
+
+        myFstRec.append(myFstRec)
+        myFstRec.append(myArray,myFstParms)
+
+        @param myFstRec an instance of FstRec with data and meta/params to be written
+        @param myArray an instance of numpy.ndarray
+        @param myFstParms an instance of FstParms with meta/params to be written
+        @exception TypeError if args are of wrong type
+        """
+        self.write(data,meta,rewrite=False)
+
+    def rewrite(self,data,meta=None):
+        """Write a FstRec to the file, rewrite if record handle is found and exists
+        shortcut for write(...,rewrite=True)
+
+        myFstRec.rewrite(myFstRec)
+        myFstRec.rewrite(myArray,myFstParms)
+
+        @param myFstRec an instance of FstRec with data and meta/params to be written
+        @param myArray an instance of numpy.ndarray
+        @param myFstParms an instance of FstParms with meta/params to be written
+        @exception TypeError if args are of wrong type
+        """
+        self.write(data,meta,rewrite=True)
 
 class Grid:
     "Base method to attach a grid description to a fstd field"
