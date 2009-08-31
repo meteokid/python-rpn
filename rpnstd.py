@@ -1,27 +1,37 @@
 ## Automatically adapted for numpy.oldnumeric Jan 10, 2008 by
 
-""" module Fstd contains the classes used to access RPN Standard Files (rev 2000)
+#TODO: should be able to search all rec tags and get the list of recs (handle or FstMeta)
+#TODO: consistant naming in doc for; rec, data , meta, grid...
+#TODO: class FstFields (a collection of related rec: levels,#...)
+#TODO: expand FstGrid to accept multi-grids and work better with #-grids
+#TODO: convert to/from NetCDF
+
+"""Module Fstd contains the classes used to access RPN Standard Files (rev 2000)
 
     class FstFile    : a RPN standard file
-    class FstRec     : a RPN standard file rec data (numpy.ndarray)) & meta (FstParms)
-    class FstParms   : combined set of tags (search and auxiliary), RPN standard file rec meta (FstKeys, FstDesc)
-    class FstKeys    : search tags (nom, type, etiket, date, ip1, ip2, ip3)
-    class FstDesc    : auxiliary tags (grtyp, ig1, ig2, ig3, ig4,  dateo, deet, npas, datyp, nbits)
+    class FstRec     : a RPN standard file rec data (numpy.ndarray)) & meta (FstMeta)
+    class FstGrid    : a RPN standard file grid Description, parameters (FstParm) and axis data/meta (FstRec)
+    class FstMeta    : RPN standard file rec metadata
     class FstDate    : RPN STD Date representation; FstDate(DATESTAMP) or FstDate(YYYYMMDD,HHMMSShh)
-    class FstDate    : RPN STD Date Range: FstDateRange(DateStart,DateEnd,Delta)
-    class FstMapDesc :
-    class Grid       :
+    class FstDateRange: Range of FstData - DateStart,DateEnd,Delta
 
+    class FstMapDesc :
     class FstExclude :
     class FstSelect  :
+    class FstKeys    : search tags (nom, type, etiket, date, ip1, ip2, ip3)
+    class FstDesc    : auxiliary tags (grtyp, ig1, ig2, ig3, ig4,  dateo, deet, npas, datyp, nbits)
 
     @author: Mario Lepine <mario.lepine@ec.gc.ca>
     @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
     @date: 2009-08
 """
 import types
+import datetime
+import pytz
 import numpy
 import Fstdc
+
+__RPNSTD_VERSION__ = '200909-dev'
 
 # primary set of descriptors has two extra items, used to read/scan file
 # handle carries the last handle associated with the keys ,
@@ -31,8 +41,7 @@ X__PrimaryDesc={'nom':'    ','type':'  ','etiket':'            ',
 
 # descriptive part of the keys, returned by read/scan, needed for write
 X__AuxiliaryDesc={'grtyp':'X','dateo':0,'deet':0,'npas':0,
-               'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,
-               'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
+               'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0}
 
 # wild carded descriptive part of the keys (non initialized)
 W__AuxiliaryDesc={'grtyp':' ','dateo':-1,'deet':-1,'npas':-1,
@@ -43,13 +52,6 @@ X__Criteres={'nom':['    '],'type':['  '],'etiket':['            '],
         'grtyp':[' '],'dateo':[-1],'deet':[-1],'npas':[-1],
         'ig1':[-1],'ig2':[-1],'ig3':[-1],'ig4':[-1],
         'ni':[-1],'nj':[-1],'nk':[-1],'datyp':[-1],'nbits':[-1]}
-
-Sgrid__Desc={'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,
-             'deet':0,'npas':0,'datyp':0,'nbits':0,'dateo':-1}
-
-Tgrid__Desc={'grtyp':'X','ig1':-1,'ig2':-1,'ig3':-1,'ig4':-1,'xyref':(None,None,None,None,None),'griddim':(None,None),
-             'xaxis':None,'yaxis':None}
-
 
 X__FullDesc={}
 X__FullDesc.update(X__PrimaryDesc)
@@ -71,33 +73,19 @@ def Predef_Grids():
   """
   global Grille_Amer_Nord, Grille_Europe, Grille_Inde, Grille_Hem_Sud, Grille_Canada, Grille_Maritimes
   global Grille_Quebec, Grille_Prairies, Grille_Colombie, Grille_USA, Grille_Global, Grille_GemLam10
-  Grille_Amer_Nord=Grid(grtyp='N',ninj=(401,401),ig14=cxgaig('N',200.5,200.5,40000.0,21.0))  # PS 40km
-  Grille_Europe=Grid(grtyp='N',ninj=(401,401),ig14=cxgaig('N',200.5,220.5,40000.0,-100.0))   # PS 40km
-  Grille_Inde=Grid(grtyp='N',ninj=(401,401),ig14=cxgaig('N',200.5,300.5,40000.0,-170.0))     # PS 40km
-  Grille_Hem_Sud=Grid(grtyp='S',ninj=(401,401),ig14=cxgaig('S',200.5,200.5,40000.0,21.0))    # PS 40km
-  Grille_Canada=Grid(grtyp='N',ninj=(351,261),ig14=cxgaig('N',121.5,281.5,20000.0,21.0))     # PS 20km
-  Grille_Maritimes=Grid(grtyp='N',ninj=(175,121),ig14=cxgaig('N',51.5,296.5,20000.0,-20.0))  # PS 20km
-  Grille_Quebec=Grid(grtyp='N',ninj=(199,155),ig14=cxgaig('N',51.5,279.5,20000.0,0.0))       # PS 20km
-  Grille_Prairies=Grid(grtyp='N',ninj=(175,121),ig14=cxgaig('N',86.5,245.5,20000.0,20.0))    # PS 20km
-  Grille_Colombie=Grid(grtyp='N',ninj=(175,121),ig14=cxgaig('N',103.5,245.5,20000.0,30.0))   # PS 20km
-  Grille_USA=Grid(grtyp='N',ninj=(351,261),ig14=cxgaig('N',121.0,387.5,20000.0,21.0))        # PS 20km
-  Grille_Global=Grid(grtyp='L',ninj=(721,359),ig14=cxgaig('L',-89.5,180.0,0.5,0.5))          # LatLon 0.5 Deg
-  Grille_GemLam10=Grid(grtyp='N',ninj=(1201,776),ig14=cxgaig('N',536.0,746.0,10000.0,21.0))  # PS 10km
+  Grille_Amer_Nord=FstGrid(grtyp='N',ninj=(401,401),ig14=cxgaig('N',200.5,200.5,40000.0,21.0))  # PS 40km
+  Grille_Europe=FstGrid(grtyp='N',ninj=(401,401),ig14=cxgaig('N',200.5,220.5,40000.0,-100.0))   # PS 40km
+  Grille_Inde=FstGrid(grtyp='N',ninj=(401,401),ig14=cxgaig('N',200.5,300.5,40000.0,-170.0))     # PS 40km
+  Grille_Hem_Sud=FstGrid(grtyp='S',ninj=(401,401),ig14=cxgaig('S',200.5,200.5,40000.0,21.0))    # PS 40km
+  Grille_Canada=FstGrid(grtyp='N',ninj=(351,261),ig14=cxgaig('N',121.5,281.5,20000.0,21.0))     # PS 20km
+  Grille_Maritimes=FstGrid(grtyp='N',ninj=(175,121),ig14=cxgaig('N',51.5,296.5,20000.0,-20.0))  # PS 20km
+  Grille_Quebec=FstGrid(grtyp='N',ninj=(199,155),ig14=cxgaig('N',51.5,279.5,20000.0,0.0))       # PS 20km
+  Grille_Prairies=FstGrid(grtyp='N',ninj=(175,121),ig14=cxgaig('N',86.5,245.5,20000.0,20.0))    # PS 20km
+  Grille_Colombie=FstGrid(grtyp='N',ninj=(175,121),ig14=cxgaig('N',103.5,245.5,20000.0,30.0))   # PS 20km
+  Grille_USA=FstGrid(grtyp='N',ninj=(351,261),ig14=cxgaig('N',121.0,387.5,20000.0,21.0))        # PS 20km
+  Grille_Global=FstGrid(grtyp='L',ninj=(721,359),ig14=cxgaig('L',-89.5,180.0,0.5,0.5))          # LatLon 0.5 Deg
+  Grille_GemLam10=FstGrid(grtyp='N',ninj=(1201,776),ig14=cxgaig('N',536.0,746.0,10000.0,21.0))  # PS 10km
 
-
-#def printdaterange():
-    #"""Print date range defined in the module
-    #"""
-    #global X__DateDebut,X__DateFin,X__Delta
-    #print 'Debug printdaterange debut fin delta=',X__DateDebut,X__DateFin,X__Delta
-
-#def resetdaterange():
-    #"""Reset date range defined in the module to anydate
-    #"""
-    #global X__DateDebut,X__DateFin,X__Delta
-    #X__DateDebut=-1
-    #X__DateFin=-1
-    #X__Delta=0.0
 
 def dump_keys_and_values(self):
     """Return a string with comma separated key=value of all parameters
@@ -285,11 +273,11 @@ def cigaxg(grtyp,ig1,ig2=None,ig3=None,ig4=None):
     >>> cigaxg('L',50,    50,    50, 18000.)
     Traceback (most recent call last):
     ...
-    TypeError: cxgaig error: ig1,ig2,ig3,ig4 should be of type int:(50, 50, 50, 18000.0)
+    TypeError: cigaxg error: ig1,ig2,ig3,ig4 should be of type int:(50, 50, 50, 18000.0)
     >>> cigaxg('I',50,    50,    50, 18000)
     Traceback (most recent call last):
     ...
-    ValueError: cxgaig error: grtyp ['I'] must be one of ('A', 'B', 'E', 'G', 'L', 'N', 'S')
+    ValueError: cigaxg error: grtyp ['I'] must be one of ('A', 'B', 'E', 'G', 'L', 'N', 'S')
     """
     validgrtyp = ('A','B','E','G','L','N','S')
     if ig2 == ig3 == ig4 == None and type(ig1) in (type([]),type(())) and len(ig1) == 4:
@@ -376,6 +364,8 @@ class FstFile:
             return None
         target = params.handle
         array=Fstdc.fstluk(target)   # 2 - get data
+        #TODO: make ni,nj,nk consistent?
+        #TODO: update self.grid?
         return FstRec(array,params)
 
     def edit_dir_entry(self,key):
@@ -397,8 +387,8 @@ class FstFile:
         myfstparms = myfstfile.info(FirstRecord)
         myfstparms = myfstfile.info(mykeys)
         myfstparms = myfstfile.info(NextMatch)
-        @param mykeys search keys, can be an instance FstParm or derived classes (FstKeys, FstDesc, FstParms, FstRec)
-        @return a FstParms instance of the record with proper handle, return None if not found
+        @param mykeys search keys, can be an instance FstParm or derived classes (FstKeys, FstDesc, FstMeta, FstRec)
+        @return a FstMeta instance of the record with proper handle, return None if not found
         @exception TypeError if
 
         The myfstfile.lastread parameter is set with values of all latest found rec params
@@ -407,16 +397,16 @@ class FstFile:
             if key.nxt == 1:               # get NEXT one thatmatches
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,key.date,key.handle)
-            else:                           # get FIRST one that matches
+            else:                          # get FIRST one that matches
                 if key.handle >= 0 :       # handle exists, return it
                     return key #TODO: may want to check if key.handle is valid
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,key.date,-2)
-        elif key==NextMatch:                # fstsui, return FstHandle instance
+        elif key==NextMatch:               # fstsui, return FstHandle instance
             self.lastread=Fstdc.fstinf(self.iun,' ',' ',' ',0,0,0,0,-1)
         else:
             raise TypeError,'FstFile.info(), search keys arg is not of a valid type'
-        result=FstParms()
+        result=FstMeta()
         if self.lastread != None:
 #            self.lastread.__dict__['fileref']=self
             result.update_by_dict(self.lastread)
@@ -434,7 +424,7 @@ class FstFile:
         myfstfile.info[myfstrec]   = None #erase the record corresponding to myfstrec.handle
         myfstfile.info[myfstrec.handle] = None #erase the record corresponding to handle
 
-        @param myfstparms  values of rec parameters, must be a FstParms instance (or derived class)
+        @param myfstparms  values of rec parameters, must be a FstMeta instance (or derived class)
         @param mydataarray data to be written, must be numpy.ndarray instance
         @exception TypeError if args are of wrong type
         @exception TypeError if params.handle is not valid when erasing (value=None)
@@ -448,7 +438,7 @@ class FstFile:
                 raise TypeError, 'FstFile: index must provide a valid handle to erase a record'
             print 'erasing record with handle=',target,' from file'
             self.lastwrite=Fstdc.fsteff(target)
-        elif isinstance(index,FstParms) and type(value) == numpy.ndarray:
+        elif isinstance(index,FstMeta) and type(value) == numpy.ndarray:
             self.lastwrite=0
 #            print 'writing data',value.shape,' to file, keys=',index
 #            print 'dict = ',index.__dict__
@@ -465,41 +455,41 @@ class FstFile:
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
                          index.ig4,index.deet,index.npas,index.nbits)
         else:
-           raise TypeError,'FstFile write: value must be an array and index must be FstParms or FstRec'
+           raise TypeError,'FstFile write: value must be an array and index must be FstMeta or FstRec'
 
     def write(self,data,meta=None,rewrite=False):
         """Write a FstRec to the file
 
         myFstRec.write(myFstRec)
-        myFstRec.write(myArray,myFstParms)
+        myFstRec.write(myArray,myFstMeta)
         myFstRec.write(myFstRec,rewrite=false)
-        myFstRec.write(myArray,myFstParms,rewrite=true)
+        myFstRec.write(myArray,myFstMeta,rewrite=true)
 
         @param myFstRec an instance of FstRec with data and meta/params to be written
         @param myArray an instance of numpy.ndarray
-        @param myFstParms an instance of FstParms with meta/params to be written
+        @param myFstMeta an instance of FstMeta with meta/params to be written
         @exception TypeError if args are of wrong type
         """
         if meta == None and isinstance(data,FstRec):
             if rewrite and data.handle >=0:
                 Fstdc.fsteff(data.handle)
             self.__setitem__(data,data.d)
-        elif isinstance(meta,FstParms) and type(data) == numpy.ndarray:
+        elif isinstance(meta,FstMeta) and type(data) == numpy.ndarray:
             if rewrite and meta.handle >=0:
                 Fstdc.fsteff(meta.handle)
             self.__setitem__(meta,data)
         else:
-            raise TypeError,'FstFile write: value must be an array and index must be FstParms or FstRec'
+            raise TypeError,'FstFile write: value must be an array and index must be FstMeta or FstRec'
 
     def append(self,data,meta=None):
         """Append a FstRec to the file, shortcut for write(...,rewrite=False)
 
         myFstRec.append(myFstRec)
-        myFstRec.append(myArray,myFstParms)
+        myFstRec.append(myArray,myFstMeta)
 
         @param myFstRec an instance of FstRec with data and meta/params to be written
         @param myArray an instance of numpy.ndarray
-        @param myFstParms an instance of FstParms with meta/params to be written
+        @param myFstMeta an instance of FstMeta with meta/params to be written
         @exception TypeError if args are of wrong type
         """
         self.write(data,meta,rewrite=False)
@@ -509,220 +499,21 @@ class FstFile:
         shortcut for write(...,rewrite=True)
 
         myFstRec.rewrite(myFstRec)
-        myFstRec.rewrite(myArray,myFstParms)
+        myFstRec.rewrite(myArray,myFstMeta)
 
         @param myFstRec an instance of FstRec with data and meta/params to be written
         @param myArray an instance of numpy.ndarray
-        @param myFstParms an instance of FstParms with meta/params to be written
+        @param myFstMeta an instance of FstMeta with meta/params to be written
         @exception TypeError if args are of wrong type
         """
         self.write(data,meta,rewrite=True)
 
 
-class FstGrid:
-    """RPNSTD-type grid description
-
-    myFstGrid = FstGrid(grtyp='N',ig14=(1,2,3,4),ninj=(200,150))
-    myFstGrid = FstGrid(grtyp='Z',xyaxis=(myFstRecX,myFstRecY))
-    myFstGrid = FstGrid(grtyp='#',ninj=(200,150),ij0=(1,1),xyaxis=(myFstRecX,myFstRecY))
-    myFstGrid = FstGrid(myFstRec)
-    myFstGrid = FstGrid(keys=myFstRec)
-    myFstGrid = FstGrid(myFstRec,xyaxis=(myFstRecX,myFstRecY))
-
-    @param keys
-    @param xyaxis
-    @param ninj
-    @param grtyp
-    @param ij0
-    @param ig14
-    @exception ValueError
-    @exception TypeError
-    """
-    validgrtyp = ('A','B','E','G','L','N','S','Z','Y','#') #'X'
-    xyaxis = (None,None)
-
-    def __init__(self,keys=None,xyaxis=(None,None),ninj=(None,None),grtyp=None,ij0=None,ig14=(None,None,None,None)):
-        #mode 1: grtype,ig14,ninj        ['A','B','E','G','L','N','S']
-        #mode 2: grtype,xyaxis           [Z,Y]
-        #mode 3: grtype,ninj,ij0,xyaxis  [#]
-        #mode 4: keys
-        #mode 5: keys,xyaxis
-        if grtyp != None:
-            if keys != None:
-                raise ValueError,'FstGrid: cannot specify both grtyp and keys'
-            self.keys = FstParms()
-            if grtyp in self.validgrtyp:
-                if grtyp in ('Z','Y','#'):
-                    if not (type(xyaxis) in (type([]),type(())) and len(xyaxis)==2
-                        and isinstance(xyaxis[0],FstRec)
-                        and isinstance(xyaxis[1],FstRec)):
-                        raise TypeError,'FstGrid: xyaxis must be (FstRec,FstRec)'
-                    self.keys =FstParms(ni=xyaxis[0].d.shape[0],nj=xyaxis[1].d.shape[1],grtyp=grtyp,ig1=xyaxis.ip1,ig2=xyaxis.ip2,ig3=xyaxis.ip3,ig4=0,xyref=(xyaxis.grtyp,xyaxis.ig1,xyaxis.ig2,xyaxis.ig3,xyaxis.ig4),griddim=ninj)
-                    self.xyaxis = xyaxis
-                    if grtyp == '#':
-                        if not( type(ninj) in (type([]),type(())) and len(ninj)==2
-                            and (type(ninj[0]) == type(ninj[1]) == type(0))
-                            and type(ij0) in (type([]),type(())) and len(ij0)==2
-                            and (type(ij0[0]) == type(ij0[1]) == type(0))):
-                            raise TypeError,'FstGrid: ninj and ij0 must be (int,int)'
-                        #TODO: check that these 4 are inbound of xyaxis dims
-                        self.keys.ni = ninj[0]
-                        self.keys.nj = ninj[1]
-                        self.griddim = ninj    #TODO: check this
-                        self.keys.ig3 = ij0[0]
-                        self.keys.ig4 = ij0[1]
-                else:
-                    if type(ig14) in (type([]),type(())) and len(ig14)==4 \
-                        and (type(ig14[0]) == type(ig14[1]) == type(ig14[2]) == type(ig14[3]) == type(0)) \
-                        and type(ninj) in (type([]),type(())) and len(ninj)==2 \
-                        and (type(ninj[0]) == type(ninj[1]) == type(0)):
-                        xyref = list(ig14)
-                        xyref.insert(0,grtyp)
-                        self.keys =FstParms(ni=ninj[0],nj=ninj[1],grtyp=grtyp,ig1=ig14[0],ig2=ig14[1],ig3=ig14[2],ig4=ig14[3],xyref=tuple(xyref),griddim=ninj)
-                    else:
-                        raise TypeError,'FstGrid: ig14 must be (int,int,int,int) and ninj must be (int,int)'
-            else:
-                raise ValueError,'FstGrid: gridtype must be one of '+self.validgrtyp.__repr__()
-        elif isinstance(keys,FstParms):
-            if keys.grtyp in ('Z','Y','#'):
-                xyaxis = keys.getaxis()
-                if keys.grtyp == '#':
-                    self.__init__(grtyp=keys.grtyp,nij=(keys.ni,keys.nj),ij0=(keys.ig3,keys.ig4),xyaxis=xyaxis)
-                else:
-                    self.__init__(grtyp=keys.grtyp,xyaxis=xyaxis)
-            else:
-                self.__init__(grtyp=keys.grtyp,nij=(keys.ni,keys.nj),ig14=(keys.ig1,keys.ig2,keys.ig3,keys.ig4))
-        else:
-            raise TypeError,'FstGrid: wrong args in init; unrecognized grid desc'
-
-    def interpol(self,fromData,fromGrid):
-        """Interpolate some gridded data to grid
-
-        destData = myDestGrid.interpol(fromData,fromGrid)
-        """
-        return self.interpolVect(self,fromData,None,fromGrid)[0]
-
-    def interpolVect(self,fromDataX,fromDataY,fromGrid):
-        """Interpolate some gridded vectorial data to grid
-
-        (destDataX,destDataY) = myDestGrid.interpol(fromDataX,fromDataY,fromGrid)
-        """
-        #TODO: validate args (type, and if dims match)
-        srcflag = fromGrid.keys.xyaxis[0] != None
-        dstflag = self.keys.xyaxis[0] != None
-        vecteur = isinstance(fromDataY,numpy.ndarray)
-        sk = fromGrid.keys
-        dk = self.keys
-        return Fstdc.ezinterp(fromDataX,fromDataY,
-            sk.griddim,sk.grtyp,sk.xyref,sk.xyaxis[0],sk.xyaxis[1],srcflag,
-            dk.griddim,dk.grtyp,dk.xyref,dk.xyaxis[0],dk.xyaxis[1],dstflag,vecteur)
-
-
-class Grid:
-    """[old] Base method to attach a grid description to a fstd field
-    This class is depracated, preferably use the FstGrid class instead
-    """
-    def __init__(self,keysndata=(None,None),(xkeys,xaxis)=(None,None),(ykeys,yaxis)=(None,None),ninj=(None,None),grtyp=None,ig14=(None,None,None,None),vector=None):
-      if grtyp != None:           # grid is defined by grtyp,ig1,ig2,ig3,ig4
-        ig1,ig2,ig3,ig4 = ig14
-        if (ig1==None or ig2==None or ig3==None or ig4==None):
-           raise TypeError,'Grid: ig14 tuple (ig1,ig2,ig3,ig4) must be specified'
-        lescles=FstParms()
-        lescles.xyref=(grtyp,ig1,ig2,ig3,ig4)
-        lescles.grtyp=grtyp
-        lescles.ig1=ig1
-        lescles.ig2=ig2
-        lescles.ig3=ig3
-        lescles.ig4=ig4
-        lescles.griddim=ninj
-        ledata=None
-      else:
-        if keysndata != (None,None) and isinstance(keysndata,tuple):
-          (lescles,ledata)=keysndata
-          if ((not isinstance(lescles,FstParms)) or (not isinstance(ledata,numpy.ndarray))):
-            raise TypeError,'Grid: argument keysndata is not a tuple of type (Fstkeys,data)'
-        else:
-          raise TypeError,'Grid: argument keysndata is not a tuple of type (Fstkeys,data)'
-        if ( (xkeys,xaxis)!=(None,None) and (ykeys,yaxis)!=(None,None) ):       # xaxis any yaxis provided
-          lescles.xyref=(xkeys.grtyp,xkeys.ig1,xkeys.ig2,xkeys.ig3,xkeys.ig4)
-          lescles.xaxis=xaxis
-          lescles.yaxis=yaxis.ravel()
-          lescles.griddim=(xaxis.shape[0],yaxis.shape[1])
-        else:
-          if lescles.grtyp == 'Z' or lescles.grtyp == 'Y':       # get xaxis and yaxis
-            (xcles,xdata) = lescles.getaxis('X')
-            (ycles,ydata) = lescles.getaxis('Y')
-          else:                                    # only keysndata, grid defined by grtyp,ig1,ig2,ig3,ig4 from keys
-            lescles.xyref=(lescles.grtyp,lescles.ig1,lescles.ig2,lescles.ig3,lescles.ig4)
-            if ninj != (None,None):
-              lescles.griddim=ninj
-            else:
-              if ledata == None:
-                raise TypeError,'Grid: argument ninj must be specified when data field is missing'
-              else:
-                lescles.griddim=(ledata.shape[0],ledata.shape[1])
-        if vector != None:
-          if (lescles.nom=='UU  '):
-            (clesvv,champvv) = lescles.fileref[FstKeys(nom='VV',type=lescles.type,date=lescles.date,etiket=lescles.etiket,ip1=lescles.ip1,ip2=lescles.ip2,ip3=lescles.ip3)]
-            if clesvv == None:
-              print 'Grid error: VV record not found'
-              return
-            self.keys2 = clesvv
-            self.field2 = champvv
-        else:
-          self.keys2= None
-          self.field2=None
-      self.keys = lescles
-      self.field = ledata
-
-    def __getitem__(self,tgrid):
-      """Interpolate to target grid"""
-      if isinstance(tgrid,Grid):
-        tgrtyp=tgrid.keys.grtyp
-        txyref=tgrid.keys.xyref
-        tgriddim=tgrid.keys.griddim
-        txaxis=tgrid.keys.xaxis
-        tyaxis=tgrid.keys.yaxis
-      else:
-        raise TypeError,'Grid: argument is not a Grid instance'
-      xyref=self.keys.xyref
-      ks=self.keys
-      print 'Debug Grid interpolation for ',self.keys.nom,' from grid',xyref,' griddim=',ks.griddim,' to grid',txyref,' griddim=',tgriddim
-      srcflag=ks.xaxis != None
-      dstflag=txaxis != None
-      vecteur=self.keys2 != None
-#      print 'Degug Grid __getitem__ srcflag=',srcflag,' dstflag=',dstflag
-      newkeys=FstParms()
-      newkeys.update_by_dict_from(self.keys,Sgrid__Desc)
-      newkeys.update_by_dict_from(tgrid.keys,Tgrid__Desc)
-#      print 'Debug Grid __getitem__ newkeys=',newkeys.nom,newkeys.xyref
-      if (tgrid.field == None):
-#        print 'Debug Grid __getitem__ creating dummy array'
-        dummyarray=numpy.zeros( (2,2) )
-        newgrid=Grid((newkeys,dummyarray))
-      else:
-        newgrid=Grid((newkeys,tgrid.field))
-      if vecteur:
-        print 'Degug Grid __getitem__ interpolation vectorielle'
-        (newarray,newarray2)=Fstdc.ezinterp(self.field,self.field2,ks.griddim,ks.grtyp,xyref,ks.xaxis,ks.yaxis,srcflag,tgriddim,tgrtyp,txyref,txaxis,tyaxis,dstflag,vecteur)
-        newgrid.field=newarray
-        newgrid.field2=newarray2
-        newgrid.keys2=self.keys2
-        newgrid.keys2.update_by_dict_from(tgrid.keys,Tgrid__Desc)
-      else:
-        newarray=Fstdc.ezinterp(self.field,None,ks.griddim,ks.grtyp,xyref,ks.xaxis,ks.yaxis,srcflag,tgriddim,tgrtyp,txyref,txaxis,tyaxis,dstflag,vecteur)
-        newgrid.field=newarray
-#      print 'newarray info=',newarray.shape,newarray.flags
-#      print 'Debug newgrid.keys=',newgrid.keys.nom,newgrid.keys.xyref
-#      if newgrid.keys2 != None:
-#        print 'Debug newgrid.keys2',newgrid.keys2.nom,newgrid.keys.xyref
-      return(newgrid)
-
-
 class FstParm:
     """Base methods for all RPN standard file descriptor classes
-    TODO: give examples of instanciation
     """
+    __AllowedKeysVals = {}
+
     def __init__(self,model,reference,extra):
         for name in reference.keys():            # copy initial values from reference
             self.__dict__[name]=reference[name]  # bypass setatttr method for new attributes
@@ -745,7 +536,7 @@ class FstParm:
         """
         if isinstance(with,FstParm):  # check if class=FstParm
             for name in with.__dict__.keys():
-                if (name in self.__dict__.keys()) and (name in X__FullDesc.keys()):
+                if (name in self.__dict__.keys()) and (name in self.__AllowedKeysVals.keys()):
                     self.__dict__[name]=with.__dict__[name]
         else:
             raise TypeError,'FstParm.update: can only operate on FstParm class instances'
@@ -761,7 +552,7 @@ class FstParm:
         """
         if isinstance(with,FstParm):  # check if class=FstParm
             for name in with.__dict__.keys():
-                if (name in self.__dict__.keys()) and (name in X__FullDesc.keys()):
+                if (name in self.__dict__.keys()) and (name in self.__AllowedKeysVals.keys()):
                     if (with.__dict__[name] != W__FullDesc[name]):
                         self.__dict__[name]=with.__dict__[name]
         else:
@@ -842,8 +633,10 @@ class FstKeys(FstParm):
     {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
     TODO: give examples of instanciation
     """
+    __AllowedKeysVals = {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
+
     def __init__(self,model=None,**args):
-        FstParm.__init__(self,model,X__PrimaryDesc,args)
+        FstParm.__init__(self,model,self.__AllowedKeysVals,args)
 
 class FstDesc(FstParm):
     """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
@@ -851,62 +644,96 @@ class FstDesc(FstParm):
     {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
     TODO: give examples of instanciation
     """
-    def __init__(self,model=None,**args):
-        FstParm.__init__(self,model,X__AuxiliaryDesc,args)
+    __AllowedKeysVals = {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0}
 
-class FstParms(FstKeys,FstDesc):
+    def __init__(self,model=None,**args):
+        FstParm.__init__(self,model,self.__AllowedKeysVals,args)
+
+
+class FstMeta(FstParm):
     """RPN standard file Full set (Primary + Auxiliary) of descriptors class, needed to write a record, can be used for search.
 
     Descriptors are:
-    {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None,'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
+        'nom':'    ',
+        'type':'  ',
+        'etiket':'            ',
+        'ip1':-1,'ip2':-1,'ip3':-1,
+        'ni':-1,'nj':-1,'nk':-1,
+        'dateo':0,
+        'deet':0,
+        'npas':0,
+        'grtyp':'X',
+        'ig1':0,'ig2':0,'ig3':0,'ig4':0,
+        'datyp':0,
+        'nbits':0,
+        'handle':-2,
+        'nxt':0,
+        'fileref':None
 
     Examples of use (also doctests):
 
-    >>> myFstParms = FstParms()                  #New FstParms with default/wildcard descriptors
-    >>> d = myFstParms.__dict__.items()
+    >>> myFstMeta = FstMeta() #New FstMeta with default/wildcard descriptors
+    >>> d = myFstMeta.__dict__.items()
     >>> d.sort()
     >>> d
-    [('date', -1), ('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('griddim', (None, None)), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  '), ('xaxis', None), ('xyref', (None, None, None, None, None)), ('yaxis', None)]
-    >>> myFstParms = FstParms(nom='GZ',ip2=1)  #New FstParms with all descriptors to wildcard but nom,ip2
-    >>> d = myFstParms.__dict__.items()
+    [('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+     >>> myFstMeta = FstMeta(nom='GZ',ip2=1)  #New FstMeta with all descriptors to wildcard but nom,ip2
+    >>> d = myFstMeta.__dict__.items()
     >>> d.sort()
     >>> d
-    [('date', -1), ('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('griddim', (None, None)), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', 0), ('nom', 'GZ  '), ('npas', 0), ('nxt', 0), ('type', '  '), ('xaxis', None), ('xyref', (None, None, None, None, None)), ('yaxis', None)]
-    >>> myFstParms.ip1
+    [('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', 'GZ  '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    >>> myFstMeta.ip1
     -1
-    >>> myFstParms2 = myFstParms #shallow copy (reference)
-    >>> myFstParms2.ip1 = 9 #this will also update myFstParms.ip1
-    >>> myFstParms.ip1
+    >>> myFstMeta2 = myFstMeta #shallow copy (reference)
+    >>> myFstMeta2.ip1 = 9 #this will also update myFstMeta.ip1
+    >>> myFstMeta.ip1
     9
-    >>> myFstParms2 = FstParms(myFstParms)   #make a deep-copy
-    >>> myFstParms.ip3
+    >>> myFstMeta2 = FstMeta(myFstMeta)   #make a deep-copy
+    >>> myFstMeta.ip3
     -1
-    >>> myFstParms2.ip3 = 9 #this will not update myFstParms.ip3
-    >>> myFstParms.ip3
+    >>> myFstMeta2.ip3 = 9 #this will not update myFstMeta.ip3
+    >>> myFstMeta.ip3
     -1
-    >>> myFstParms2 = FstParms(myFstParms,nom='GZ',ip2=8)   #make a deep-copy and update nom,ip2 values
-    >>> myFstParms.ip2
+    >>> myFstMeta2 = FstMeta(myFstMeta,nom='GZ',ip2=8)   #make a deep-copy and update nom,ip2 values
+    >>> myFstMeta.ip2
     1
-    >>> myFstParms2.ip2
+    >>> myFstMeta2.ip2
     8
     """
+    __AllowedKeysVals = {
+        'nom':'    ',
+        'type':'  ',
+        'etiket':'            ',
+        'ip1':-1,'ip2':-1,'ip3':-1,
+        'ni':-1,'nj':-1,'nk':-1,
+        'dateo':0,
+        'deet':0,
+        'npas':0,
+        'grtyp':'X',
+        'ig1':0,'ig2':0,'ig3':0,'ig4':0,
+        'datyp':0,
+        'nbits':0,
+        'handle':-2,
+        'nxt':0,
+        'fileref':None
+    }
+
     def __init__(self,model=None,**args):
-        FstKeys.__init__(self)   # initialize Key part
-        FstDesc.__init__(self)   # initialize Auxiliary part
+        FstParm.__init__(self,model,self.__AllowedKeysVals,args)
         if model != None:
             if isinstance(model,FstParm):
                 self.update(model)
             else:
-                raise TypeError,'FstParms: cannot initialize from arg #1'
+                raise TypeError,'FstMeta: cannot initialize from arg #1'
         for name in args.keys(): # and update with specified attributes
             setattr(self,name,args[name])
 
     def getaxis(self,axis=None):
         """Return the grid axis rec of grtyp ('Z','Y','#')
 
-        (myFstRecX,myFstRecY) = myFstParms.getaxis()
-        myFstRecX = myFstParms.getaxis('X')
-        myFstRecY = myFstParms.getaxis('Y')
+        (myFstRecX,myFstRecY) = myFstMeta.getaxis()
+        myFstRecX = myFstMeta.getaxis('X')
+        myFstRecY = myFstMeta.getaxis('Y')
         """
         if not (self.grtyp in ('Z','Y','#')):
             raise ValueError,'getaxis error: can not get axis from grtyp=',self.grtyp
@@ -926,7 +753,7 @@ class FstParms(FstKeys,FstDesc):
             ni=xaxisrec.d.shape[0]
             nj=yaxisrec.d.shape[1]
             self.griddim=(ni,nj)
-        axisrec = FstParms()
+        axisrec = FstMeta()
         axisrec.xyref = self.xyref
         axisrec.griddim = self.griddim
         if axis == 'X':
@@ -1028,8 +855,120 @@ class FstExclude(FstCriterias):
         FstCriterias.__init__(self,X__Criteres,1,args)
 
 
-class FstRec(FstParms):
-    """Standard file record, with data (ndarray class) and full set of descriptors (FstParms class)
+
+class FstGrid(FstParm):
+    """RPNSTD-type grid description
+
+    >>> FstGrid(grtyp='N',ig14=(1,2,3,4),ninj=(200,150))
+    {'shape': (200, 150), 'grtyp': 'N', 'xyaxis': (None, None), 'ig14': (1, 2, 3, 4)}
+
+    myFstGrid = FstGrid(grtyp='Z',xyaxis=(myFstRecX,myFstRecY))
+    myFstGrid = FstGrid(grtyp='#',ninj=(200,150),ij0=(1,1),xyaxis=(myFstRecX,myFstRecY))
+    myFstGrid = FstGrid(myFstRec)
+    myFstGrid = FstGrid(keys=myFstRec)
+    myFstGrid = FstGrid(myFstRec,xyaxis=(myFstRecX,myFstRecY))
+
+    @param keys
+    @param xyaxis
+    @param ninj
+    @param grtyp
+    @param ij0
+    @param ig14
+    @exception ValueError
+    @exception TypeError
+    """
+    validgrtyp = ('A','B','E','G','L','N','S','Z','Y','#') #'X'
+    xyaxis = (None,None)
+    __AllowedKeysVals = {
+        'grtyp':'X',
+        'ig14':(0,0,0,0),
+        'shape':(0,0),
+        'xyaxis':(None,None)
+    }
+
+    def __init__(self,keys=None,xyaxis=(None,None),ninj=(None,None),grtyp=None,ij0=None,ig14=(None,None,None,None)):
+        FstParm.__init__(self,None,self.__AllowedKeysVals,{})
+        #mode 1: grtype,ig14,ninj        ['A','B','E','G','L','N','S']
+        #mode 2: grtype,xyaxis           [Z,Y]
+        #mode 3: grtype,ninj,ij0,xyaxis  [#]
+        #mode 4: keys
+        #mode 5: keys,xyaxis
+        if grtyp != None:
+            if keys != None:
+                raise ValueError,'FstGrid: cannot specify both grtyp and keys'
+            if grtyp in self.validgrtyp:
+                self.grtyp = grtyp
+                if grtyp in ('Z','Y','#'):
+                    if not (type(xyaxis) in (type([]),type(())) and len(xyaxis)==2
+                        and isinstance(xyaxis[0],FstRec)
+                        and isinstance(xyaxis[1],FstRec)):
+                        raise TypeError,'FstGrid: xyaxis must be (FstRec,FstRec)'
+                    self.shape = (xyaxis[0].d.shape[0],xyaxis[1].d.shape[1])
+                    self.ig14= (xyaxis[0].ip1,xyaxis[0].ip2,xyaxis[0].ip3,0)
+                    self.xyaxis = xyaxis
+                    if grtyp == '#':
+                        if not( type(ninj) in (type([]),type(())) and len(ninj)==2
+                            and (type(ninj[0]) == type(ninj[1]) == type(0))
+                            and type(ij0) in (type([]),type(())) and len(ij0)==2
+                            and (type(ij0[0]) == type(ij0[1]) == type(0))):
+                            raise TypeError,'FstGrid: ninj and ij0 must be (int,int)'
+                        #TODO: check that these are inbound of xyaxis dims
+                        self.shape = ninj
+                        self.ig14= (xyaxis[0].ip1,xyaxis[0].ip2,ij0[0],ij0[1])
+                else:
+                    if type(ig14) in (type([]),type(())) and len(ig14)==4 \
+                        and (type(ig14[0]) == type(ig14[1]) == type(ig14[2]) == type(ig14[3]) == type(0)) \
+                        and type(ninj) in (type([]),type(())) and len(ninj)==2 \
+                        and (type(ninj[0]) == type(ninj[1]) == type(0)):
+                        self.ig14 = ig14
+                        self.shape = ninj
+                    else:
+                        raise TypeError,'FstGrid: ig14 must be (int,int,int,int) and ninj must be (int,int)'
+            else:
+                raise ValueError,'FstGrid: gridtype must be one of '+self.validgrtyp.__repr__()
+        elif isinstance(keys,FstMeta):
+            if keys.grtyp in ('Z','Y','#'):
+                xyaxis = keys.getaxis()
+                if keys.grtyp == '#':
+                    self.__init__(grtyp=keys.grtyp,nij=(keys.ni,keys.nj),ij0=(keys.ig3,keys.ig4),xyaxis=xyaxis)
+                else:
+                    self.__init__(grtyp=keys.grtyp,xyaxis=xyaxis)
+            else:
+                self.__init__(grtyp=keys.grtyp,nij=(keys.ni,keys.nj),ig14=(keys.ig1,keys.ig2,keys.ig3,keys.ig4))
+        elif isinstance(keys,FstGrid):
+            self.update(keys)
+        else:
+            raise TypeError,'FstGrid: wrong args in init; unrecognized grid desc'
+
+    def interpol(self,fromData,fromGrid):
+        """Interpolate some gridded data to grid
+
+        destData = myDestGrid.interpol(fromData,fromGrid)
+        """
+        return self.interpolVect(self,fromData,None,fromGrid)[0]
+
+    def interpolVect(self,fromDataX,fromDataY,fromGrid):
+        """Interpolate some gridded vectorial data to grid
+
+        (destDataX,destDataY) = myDestGrid.interpol(fromDataX,fromDataY,fromGrid)
+        """
+        #TODO: validate args (type, and if dims match)
+        srcflag = fromGrid.xyaxis[0] != None
+        dstflag = self.xyaxis[0] != None
+        vecteur = isinstance(fromDataY,numpy.ndarray)
+        sk = fromGrid
+        dk = self
+        s_xyref = sk.ig14
+        d_xyref = dk.ig14
+        s_xyref.insert(0,sk.grtyp)
+        d_xyref.insert(0,dk.grtyp)
+        return Fstdc.ezinterp(fromDataX,fromDataY,
+            sk.shape,sk.grtyp,s_xyref,sk.xyaxis[0],sk.xyaxis[1],srcflag,
+            dk.shape,dk.grtyp,d_xyref,dk.xyaxis[0],dk.xyaxis[1],dstflag,vecteur)
+
+
+class FstRec(FstMeta):
+    """Standard file record, with data (ndarray class) and full set of descriptors (FstMeta class)
 
     Example of use (and doctest tests):
 
@@ -1054,6 +993,19 @@ class FstRec(FstParms):
     array([ 1.,  5.,  3.,  4.], dtype=float32)
     >>> r.grtyp
     'X'
+    >>> r = FstRec([1,2,3,4])
+    >>> r2 = FstRec(r)
+    >>> d = r2.__dict__.items()
+    >>> d.sort()
+    >>> d
+    [('d', array([1, 2, 3, 4])), ('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    >>> r.d[1] = 9 #r2 is a copy of r, thus this does not change r2.d
+    >>> r2.d
+    array([1, 2, 3, 4])
+
+    @param data data part of the rec, can be a python list, numpy.ndarray or another FstRec
+    @param params meta part of the record (FstMeta), if data is an FstRec it should not be provided
+    @exceptions TypeError if arguments are not of valid type
     """
     def __init__(self,data=None,params=None):
         if data == None:
@@ -1062,9 +1014,14 @@ class FstRec(FstParms):
             self.d = data
         elif type(data) == type([]):
             self.d = numpy.array(data)
+        elif isinstance(data,FstRec):
+            if params:
+                raise TypeError,'FstRec: cannot initialize with both an FstRec and params'
+            self.d = data.d.copy()
+            params = data
         else:
             raise TypeError,'FstRec: cannot initialize data from arg #1'
-        FstParms.__init__(self)
+        FstMeta.__init__(self)
         if params:
             if isinstance(params,FstParm):
                 self.update(params)
@@ -1085,7 +1042,7 @@ class FstRec(FstParms):
             else:
                 raise TypeError,'FstRec: grid should be an instance of FstGrid'
         else:
-            FstParms.__setattr__(self,name,value)
+            FstMeta.__setattr__(self,name,value)
 
     def interpol(self,togrid):
         """Interpolate FstRec to another grid (horizontally)
@@ -1101,8 +1058,9 @@ class FstRec(FstParms):
             if self.grid:
                 self.d = togrid.interpol(self.d,self.grid)
                 self.grid = togrid #or make a copy instead of taking a reference
-                for item in ('ni','ni','grtype','ig1','ig2','ig3','ig4','griddim','xyref'):
-                    self[item] = togrid[item] #TODO: check this
+                self.grtyp = togrid.grtyp
+                (self.ig1,self.ig2,self.ig3,self.ig3) = togrid.ig14
+                #(self.ni,self.nj) = togrid.shape
             else:
                 raise ValueError,'FstRec.interpol(togrid): unable to determine actual grid of FstRec'
         else:
@@ -1112,16 +1070,31 @@ class FstRec(FstParms):
 class FstDate:
     """RPN STD Date representation
 
-    FstDate(DATESTAMP) or FstDate(YYYYMMDD,HHMMSShh)
+    myFstDate = FstDate(DATESTAMP)
+    myFstDate = FstDate(YYYYMMDD,HHMMSShh)
+    myFstDate = FstDate(myDateTime)
     @param DATESTAMP CMC date stamp or FstDate object
     @param YYYYMMDD  Int with Visual representation of YYYYMMDD
     @param HHMMSShh  Int with Visual representation of HHMMSShh
-
+    @param myDateTime Instance of Python DateTime class
     @exception TypeError if parameters are wrong type
+
+    >>> d1 = FstDate(20030423,11453500)
+    >>> d1
+    FstDate(20030423,11453500)
+    >>> d2 = FstDate(d1)
+    >>> d2.incr(48)
+    FstDate(20030425,11453500)
+    >>> d1-d2
+    -48.0
     """
     stamp = 0
 
     def __init__(self,word1,word2=-1):
+        if isinstance(word1,datetime.datetime):
+            (yyyy,mo,dd,hh,mn,ss,dummy,dummy2) = word1.utctimetuple()
+            word1 = yyyy*1000+mo*100
+            word2 = hh*100000+mn*1000+ss*100
         if isinstance(word1,FstDate):
             self.stamp = word1.stamp
         elif type(word1) == type(0):    # integer type
@@ -1149,10 +1122,37 @@ class FstDate:
             nhours = 0.0
             nhours = temps
             self.stamp=Fstdc.incdatr(self.stamp,nhours)
-            print 'Debug idate=',idate,type(idate)
             return(self)
         else:
             raise TypeError,'FstDate.incr: argument should be int or real'
+
+    def toDateTime(self):
+        """Return the DateTime obj representing the FstDate
+
+        >>> myFstDate = FstDate(20030423,11453600)
+        >>> myDateTime = myFstDate.toDateTime()
+        >>> myDateTime
+        datetime.datetime(2003, 4, 23, 11, 45, 35, tzinfo=<UTC>)
+
+        #TODO: oups 1 sec diff!!!
+        """
+        word1 = word2 = 0
+        (dummy,word1,word2) = Fstdc.newdate(self.stamp,word1,word2,-3)
+        d = "%8.8d.%8.8d" % (word1, word2)
+        yyyy = int(d[0:4])
+        mo = int(d[4:6])
+        dd = int(d[6:8])
+        hh = int(d[9:11])
+        mn = int(d[11:13])
+        ss = int(d[13:15])
+        cs = int(d[15:17])
+        utc = pytz.timezone("UTC")
+        return datetime.datetime(yyyy,mo,dd,hh,mn,ss,cs*100,tzinfo=utc)
+
+    def __repr__(self):
+        word1 = word2 = 0
+        (dummy,word1,word2) = Fstdc.newdate(self.stamp,word1,word2,-3)
+        return "FstDate(%8.8d,%8.8d)" % (word1, word2)
 
 
 class FstDateRange:
@@ -1164,6 +1164,24 @@ class FstDateRange:
     @param Delta     Increment of the range iterator, hours, real
 
     @exception TypeError if parameters are wrong type
+
+    >>> d1 = FstDate(20030423,11453500)
+    >>> d2 = FstDate(d1)
+    >>> d2.incr(48)
+    FstDate(20030425,11453500)
+    >>> dr = FstDateRange(d1,d2,6)
+    >>> dr
+    FstDateRage(from:(20030423,11453500), to:(20030425,11453500), delta:6) at (20030423,11453500)
+    >>> dr.lenght()
+    48.0
+    >>> dr.next()
+    FstDate(20030423,17453500)
+    >>> dr = FstDateRange(d1,d2,36)
+    >>> dr
+    FstDateRage(from:(20030423,17453500), to:(20030425,11453500), delta:36) at (20030423,17453500)
+    >>> dr.next()
+    FstDate(20030425,05453500)
+    >>> dr.next() #returns None because it is past the end of DateRange
     """
     #TODO: make this an iterator
     dateDebut=-1
@@ -1186,6 +1204,12 @@ class FstDateRange:
         """
         return abs(self.dateFin-self.dateDebut)
 
+    def remains():
+        """Provide the number of hours left in the date range
+        @return Number of hours left in the range
+        """
+        return abs(self.dateFin-self.now)
+
     def next(self):
         """Return the next date/time in the range (step of delta hours)
         @return next FstDate, None if next date is beyond range
@@ -1198,6 +1222,12 @@ class FstDateRange:
     def reset(self):
         """Reset the FstDateRange iterator to the range start date"""
         self.now=self.dateDebut
+
+    def __repr__(self):
+        d1 = repr(self.dateDebut)
+        d2 = repr(self.dateFin)
+        d0 = repr(self.now)
+        return "FstDateRage(from:%s, to:%s, delta:%d) at %s" % (d1[7:27],d2[7:27],self.delta,d0[7:27])
 
 
 class FstMapDesc:
