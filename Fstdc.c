@@ -154,7 +154,7 @@ Fstdc_fstsui(PyObject *self, PyObject *args) {
                handle,"ni",ni,"nj",nj,"nk",nk,"dateo",dateo,"ip1",ip1,"ip2",ip2,"ip3",ip3,
 	       "deet",deet,"npas",npas,"datyp",datyp,"nbits",nbits,
 	       "type",TYPVAR,"nom",NOMVAR,"etiket",ETIKET,"grtyp",GRTYP,
-	       "ig1",ig1,"ig1",ig2,"ig3",ig3,"ig4",ig4);
+	       "ig1",ig1,"ig1",ig2,"ig3",ig3,"ig4",ig4,"datev",extra1);
 }
 
 static char Fstdc_fstinf__doc__[] =

@@ -696,12 +696,12 @@ class FstMeta(FstParm):
     >>> d = myFstMeta.__dict__.items()
     >>> d.sort()
     >>> d
-    [('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
-     >>> myFstMeta = FstMeta(nom='GZ',ip2=1)  #New FstMeta with all descriptors to wildcard but nom,ip2
+    [('dateo', 0), ('datev', -1), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    >>> myFstMeta = FstMeta(nom='GZ',ip2=1)  #New FstMeta with all descriptors to wildcard but nom,ip2
     >>> d = myFstMeta.__dict__.items()
     >>> d.sort()
     >>> d
-    [('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', 'GZ  '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    [('dateo', 0), ('datev', -1), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', 'GZ  '), ('npas', 0), ('nxt', 0), ('type', '  ')]
     >>> myFstMeta.ip1
     -1
     >>> myFstMeta2 = myFstMeta #shallow copy (reference)
@@ -1019,7 +1019,7 @@ class FstRec(FstMeta):
     >>> d = r2.__dict__.items()
     >>> d.sort()
     >>> d
-    [('d', array([1, 2, 3, 4])), ('dateo', 0), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    [('d', array([1, 2, 3, 4])), ('dateo', 0), ('datev', -1), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
     >>> r.d[1] = 9 #r2 is a copy of r, thus this does not change r2.d
     >>> r2.d
     array([1, 2, 3, 4])
