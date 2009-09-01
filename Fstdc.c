@@ -361,6 +361,9 @@ dateo=%d,grtyp=:%s:,ig1=%d,ig2=%d,ig3=%d,ig4=%d,deet=%d,npas=%d,nbits=%d\n",
         iun,nomvar,typvar,etiket,ip1,ip2,ip3,dateo,grtyp,ig1,ig2,ig3,ig4,deet,npas,nbits);
 /* printf("%x %x %x\n",array->data[0],array->data[4],array->data[8]); */
 #endif
+        ni = (ni>0) ? ni : 1;
+        nj = (nj>0) ? nj : 1;
+        nk = (nk>0) ? nk : 1;
 	c_fstecr(array->data,array->data,-nbits,iun,dateo,deet,npas,ni,nj,nk,ip1,ip2,ip3,
 	         typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4,datyp+c_fst_data_length(dtl),rewrit);
 /*	         typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4,datyp,rewrit); */

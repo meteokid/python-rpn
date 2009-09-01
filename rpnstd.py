@@ -394,7 +394,7 @@ class FstFile:
         @exception TypeError if
 
         Accepted seach keys: nom,type,
-                              etiket,ip1,ip2,ip3,date,handle
+                              etiket,ip1,ip2,ip3,datev,handle
         TODO: extend accepted seach keys to all FstMeta keys
 
         The myfstfile.lastread parameter is set with values of all latest found rec params
@@ -532,8 +532,6 @@ class FstFile:
 class FstParm:
     """Base methods for all RPN standard file descriptor classes
     """
-    __AllowedKeysVals = {}
-
     def __init__(self,model,reference,extra):
         for name in reference.keys():            # copy initial values from reference
             self.__dict__[name]=reference[name]  # bypass setatttr method for new attributes
@@ -545,6 +543,10 @@ class FstParm:
         for name in extra.keys():                # add extras using own setattr method
             setattr(self,name,extra[name])
 
+    def allowedKeysVals(self):
+        """function must be defined in subclass, return dict of allowed keys/vals"""
+        return {}
+
     def update(self,with):
         """Replace Fst attributes of an instance with Fst attributes from another
         values not in list of allowed parm keys are ignored
@@ -554,10 +556,13 @@ class FstParm:
         @param otherfstparm list of params=value to be updated, instance of FstParm or derived class
         @exception TypeError if otherfstparm is of wrong class
         """
+        allowedKeysVals = self.allowedKeysVals()
         if isinstance(with,FstParm):  # check if class=FstParm
             for name in with.__dict__.keys():
-                if (name in self.__dict__.keys()) and (name in self.__AllowedKeysVals.keys()):
+                if (name in self.__dict__.keys()) and (name in allowedKeysVals.keys()):
                     self.__dict__[name]=with.__dict__[name]
+                else:
+                    print "cannot set:"+name+repr(allowedKeysVals.keys())
         else:
             raise TypeError,'FstParm.update: can only operate on FstParm class instances'
 
@@ -570,9 +575,10 @@ class FstParm:
         @param otherfstparm list of params=value to be updated, instance of FstParm or derived class
         @exception TypeError if otherfstparm is of wrong class
         """
+        allowedKeysVals = self.allowedKeysVals()
         if isinstance(with,FstParm):  # check if class=FstParm
             for name in with.__dict__.keys():
-                if (name in self.__dict__.keys()) and (name in self.__AllowedKeysVals.keys()):
+                if (name in self.__dict__.keys()) and (name in allowedKeysVals.keys()):
                     if (with.__dict__[name] != W__FullDesc[name]):
                         self.__dict__[name]=with.__dict__[name]
         else:
@@ -653,10 +659,11 @@ class FstKeys(FstParm):
     {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
     TODO: give examples of instanciation
     """
-    __AllowedKeysVals = {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
-
     def __init__(self,model=None,**args):
-        FstParm.__init__(self,model,self.__AllowedKeysVals,args)
+        FstParm.__init__(self,model,self.allowedKeysVals(),args)
+
+    def allowedKeysVals(self):
+        return {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
 
 class FstDesc(FstParm):
     """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
@@ -664,11 +671,11 @@ class FstDesc(FstParm):
     {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
     TODO: give examples of instanciation
     """
-    __AllowedKeysVals = {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0}
-
     def __init__(self,model=None,**args):
-        FstParm.__init__(self,model,self.__AllowedKeysVals,args)
+        FstParm.__init__(self,model,self.allowedKeysVals(),args)
 
+    def allowedKeysVals(self):
+        return {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0}
 
 class FstMeta(FstParm):
     """RPN standard file Full set (Primary + Auxiliary) of descriptors class, needed to write a record, can be used for search.
@@ -688,7 +695,8 @@ class FstMeta(FstParm):
         'nbits':0,
         'handle':-2,
         'nxt':0,
-        'fileref':None
+        'fileref':None,
+        'datev':-1
 
     Examples of use (also doctests):
 
@@ -720,27 +728,8 @@ class FstMeta(FstParm):
     >>> myFstMeta2.ip2
     8
     """
-    __AllowedKeysVals = {
-        'nom':'    ',
-        'type':'  ',
-        'etiket':'            ',
-        'ip1':-1,'ip2':-1,'ip3':-1,
-        'ni':-1,'nj':-1,'nk':-1,
-        'dateo':0,
-        'deet':0,
-        'npas':0,
-        'grtyp':'X',
-        'ig1':0,'ig2':0,'ig3':0,'ig4':0,
-        'datyp':0,
-        'nbits':0,
-        'handle':-2,
-        'nxt':0,
-        'fileref':None,
-        'datev':-1
-    }
-
     def __init__(self,model=None,**args):
-        FstParm.__init__(self,model,self.__AllowedKeysVals,args)
+        FstParm.__init__(self,model,self.allowedKeysVals(),args)
         if model != None:
             if isinstance(model,FstParm):
                 self.update(model)
@@ -748,6 +737,26 @@ class FstMeta(FstParm):
                 raise TypeError,'FstMeta: cannot initialize from arg #1'
         for name in args.keys(): # and update with specified attributes
             setattr(self,name,args[name])
+
+    def allowedKeysVals(self):
+        return {
+            'nom':'    ',
+            'type':'  ',
+            'etiket':'            ',
+            'ip1':-1,'ip2':-1,'ip3':-1,
+            'ni':-1,'nj':-1,'nk':-1,
+            'dateo':0,
+            'deet':0,
+            'npas':0,
+            'grtyp':'X',
+            'ig1':0,'ig2':0,'ig3':0,'ig4':0,
+            'datyp':0,
+            'nbits':0,
+            'handle':-2,
+            'nxt':0,
+            'fileref':None,
+            'datev':-1
+        }
 
     def getaxis(self,axis=None):
         """Return the grid axis rec of grtyp ('Z','Y','#')
@@ -900,15 +909,17 @@ class FstGrid(FstParm):
     """
     validgrtyp = ('A','B','E','G','L','N','S','Z','Y','#') #'X'
     xyaxis = (None,None)
-    __AllowedKeysVals = {
-        'grtyp':'X',
-        'ig14':(0,0,0,0),
-        'shape':(0,0),
-        'xyaxis':(None,None)
-    }
+
+    def allowedKeysVals(self):
+        return {
+            'grtyp':'X',
+            'ig14':(0,0,0,0),
+            'shape':(0,0),
+            'xyaxis':(None,None)
+        }
 
     def __init__(self,keys=None,xyaxis=(None,None),ninj=(None,None),grtyp=None,ij0=None,ig14=(None,None,None,None)):
-        FstParm.__init__(self,None,self.__AllowedKeysVals,{})
+        FstParm.__init__(self,None,self.allowedKeysVals(),{})
         #mode 1: grtype,ig14,ninj        ['A','B','E','G','L','N','S']
         #mode 2: grtype,xyaxis           [Z,Y]
         #mode 3: grtype,ninj,ij0,xyaxis  [#]
@@ -1044,7 +1055,7 @@ class FstRec(FstMeta):
             raise TypeError,'FstRec: cannot initialize data from arg #1'
         FstMeta.__init__(self)
         if params:
-            if isinstance(params,FstParm):
+            if isinstance(params,FstMeta):
                 self.update(params)
             elif type(params) == type({}):
                 self.update_by_dict(params)
@@ -1277,7 +1288,7 @@ class FstMapDesc:
         else:
             raise TypeError,'FstMapdesc: invalid key'
 
-FirstRecord=FstKeys()
+FirstRecord=FstMeta()
 NextMatch=None
 Predef_Grids()
 
