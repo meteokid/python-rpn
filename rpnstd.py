@@ -378,7 +378,7 @@ class FstFile:
       return(Fstdc.fst_edit_dir(key.handle,key.date,key.deet,key.npas,-1,-1,-1,key.ip1,key.ip2,key.ip3,
                                 key.type,key.nom,key.etiket,key.grtyp,key.ig1,key.ig2,key.ig3,key.ig4,key.datyp))
 
-    def info(self,key):
+    def info(self,key,list=False):
         """Seach file for next record corresponding to search keys
         Successive calls will go further in the file.
         Search index can be reset to begining of file with myfstfile.info(FirstRecord)
@@ -387,21 +387,41 @@ class FstFile:
         myfstparms = myfstfile.info(FirstRecord)
         myfstparms = myfstfile.info(mykeys)
         myfstparms = myfstfile.info(NextMatch)
+        myfstparms = myfstfile.info(mykeys,list=True)
         @param mykeys search keys, can be an instance FstParm or derived classes (FstKeys, FstDesc, FstMeta, FstRec)
+        @param list if true, return a list of all rec FstMeta matching the search keys (handle is then ignored)
         @return a FstMeta instance of the record with proper handle, return None if not found
         @exception TypeError if
 
+        Accepted seach keys: nom,type,
+                              etiket,ip1,ip2,ip3,date,handle
+        TODO: extend accepted seach keys to all FstMeta keys
+
         The myfstfile.lastread parameter is set with values of all latest found rec params
         """
-        if isinstance(key,FstParm):
-            if key.nxt == 1:               # get NEXT one thatmatches
+        if isinstance(key,FstMeta):
+            if list:
+                mylist = Fstdc.fstinl(self.iun,key.nom,key.type,
+                              key.etiket,key.ip1,key.ip2,key.ip3,
+                              key.datev)
+                mylist2 = []
+                for item in mylist:
+                    result=FstMeta()
+                    result.update_by_dict(item)
+                    result.fileref=self
+                    mylist2.append(result)
+                self.lastread=mylist[-1]
+                return mylist2
+            elif key.nxt == 1:               # get NEXT one thatmatches
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
-                              key.etiket,key.ip1,key.ip2,key.ip3,key.date,key.handle)
+                              key.etiket,key.ip1,key.ip2,key.ip3,
+                              key.datev,key.handle)
             else:                          # get FIRST one that matches
                 if key.handle >= 0 :       # handle exists, return it
                     return key #TODO: may want to check if key.handle is valid
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
-                              key.etiket,key.ip1,key.ip2,key.ip3,key.date,-2)
+                              key.etiket,key.ip1,key.ip2,key.ip3,
+                              key.datev,-2)
         elif key==NextMatch:               # fstsui, return FstHandle instance
             self.lastread=Fstdc.fstinf(self.iun,' ',' ',' ',0,0,0,0,-1)
         else:
@@ -715,7 +735,8 @@ class FstMeta(FstParm):
         'nbits':0,
         'handle':-2,
         'nxt':0,
-        'fileref':None
+        'fileref':None,
+        'datev':-1
     }
 
     def __init__(self,model=None,**args):
@@ -1073,11 +1094,14 @@ class FstDate:
     myFstDate = FstDate(DATESTAMP)
     myFstDate = FstDate(YYYYMMDD,HHMMSShh)
     myFstDate = FstDate(myDateTime)
+    myFstDate = FstDate(myFstMeta)
     @param DATESTAMP CMC date stamp or FstDate object
     @param YYYYMMDD  Int with Visual representation of YYYYMMDD
     @param HHMMSShh  Int with Visual representation of HHMMSShh
     @param myDateTime Instance of Python DateTime class
+    @param myFstMeta Instance FstMeta with dateo,deet,npas properly set
     @exception TypeError if parameters are wrong type
+    @exception ValueError if myFstMeta
 
     >>> d1 = FstDate(20030423,11453500)
     >>> d1
@@ -1087,6 +1111,10 @@ class FstDate:
     FstDate(20030425,11453500)
     >>> d1-d2
     -48.0
+    >>> a = FstMeta(dateo=d1.stamp,deet=1800,npas=3)
+    >>> d3 = FstDate(a)
+    >>> d3
+    FstDate(20030423,13153500)
     """
     stamp = 0
 
@@ -1097,6 +1125,12 @@ class FstDate:
             word2 = hh*100000+mn*1000+ss*100
         if isinstance(word1,FstDate):
             self.stamp = word1.stamp
+        elif isinstance(word1,FstMeta):
+            if word1.deet<0 or word1.npas<0 or word1.dateo<=0 :
+                raise ValueError, 'FstDate: Cannot compute date from FstMeta'
+            nhours = (1.*word1.deet*word1.npas)/3600.
+            self.stamp=Fstdc.incdatr(word1.dateo,nhours)
+
         elif type(word1) == type(0):    # integer type
             if (word2 == -1):
                 self.stamp = word1

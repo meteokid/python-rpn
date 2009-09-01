@@ -3,6 +3,9 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
+static char version[] = "0.19";
+static char lastmodified[] = "2009-09";
+
 int c_fst_data_length(int length_type);
 
 static void imprime_ca(char *varname, float *array, int nb);
@@ -18,8 +21,7 @@ static int lentab[32]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /* initialize the table giving the length of the array element types */
-static init_lentab()
-{
+static init_lentab() {
 	lentab[NPY_CHAR]=sizeof(char);
 	lentab[NPY_UBYTE]=sizeof(unsigned char);
 	lentab[NPY_BYTE]=sizeof(signed char);
@@ -46,25 +48,21 @@ static init_lentab()
 }
 /* ----------------------------------------------------- */
 #if defined (mips) || defined (__mips)
-void __dshiftr4()
-{
+void __dshiftr4() {
 printf("__dshiftr4 called\n");
 exit(1);
 }
-void __mask4()
-{
+void __mask4() {
 printf("__mask4 called\n");
 exit(1);
 }
-void __dshiftl4()
-{
+void __dshiftl4() {
 printf("__dshiftl4 called\n");
 exit(1);
 }
 #endif
 
-void imprime_ca(char *varname, float *tabl, int nb)
-{
+void imprime_ca(char *varname, float *tabl, int nb) {
   int i;
 
   for (i=0; i < nb; i++)
@@ -72,14 +70,10 @@ void imprime_ca(char *varname, float *tabl, int nb)
 }
 
 static char Fstdc_fstouv__doc__[] =
-"Interface to fstouv and fnom to open a RPN 2000 Standard File"
-;
+"Interface to fstouv and fnom to open a RPN 2000 Standard File\niunit = Fstdc_fstouv(iunit,filename,options)\n@param iunit unit number of the file handle, 0 for a new one (int)\n@param filename (string)\n@param option type of file and R/W options(string)\n@return File unit number (int), None on error";
 
 static PyObject *
-Fstdc_fstouv(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fstouv(PyObject *self, PyObject *args) {
 	int iun=0;
 	char *filename="None";
 	char *options="RND";
@@ -99,13 +93,10 @@ Fstdc_fstouv(self, args)
 }
 
 static char Fstdc_fstvoi__doc__[] =
-"Interface to fstvoi and fnom and fstouv view a RPN Standard File"
-;
+"Print a list view a RPN Standard File rec (Interface to fstvoi)\nFstdc_fstvoi(iunit,option)\n@param iunit file unit number handle returned by Fstdc_fstouv (int)\n@param option 'OLDSTYLE' or 'NEWSTYLE' (sting)\n@return None";
+
 static PyObject *
-Fstdc_fstvoi(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fstvoi(PyObject *self, PyObject *args) {
 	char *options="NEWSTYLE";
 	int iun, ier;
 
@@ -117,14 +108,10 @@ Fstdc_fstvoi(self, args)
 }
 
 static char Fstdc_fstfrm__doc__[] =
-"Interface to fclos to close a RPN 2000 Standard File"
-;
+"Interface to fclos to close a RPN 2000 Standard File\nFstdc_fstfrm(iunit)\n@param iunit file unit number handle returned by Fstdc_fstouv (int)\n@return None";
 
 static PyObject *
-Fstdc_fstfrm(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fstfrm(PyObject *self, PyObject *args) {
 	int iun=0;
 
 	if (!PyArg_ParseTuple(args, "i",&iun))
@@ -137,14 +124,10 @@ Fstdc_fstfrm(self, args)
 }
 
 static char Fstdc_fstsui__doc__[] =
-"Interface to fstsui, returns record handle + record keys in a dictionary"
-;
+"Interface to fstsui,\nrecParamDict = Fstdc_fstsui(iunit)\n@param iunit file unit number handle returned by Fstdc_fstouv (int)\n@returns python dict with record handle + record params keys/values";
 
 static PyObject *
-Fstdc_fstsui(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fstsui(PyObject *self, PyObject *args) {
 	int iun, ni=0, nj=0, nk=0, ip1=0, ip2=0, ip3=0;
 	char TYPVAR[3]={' ',' ','\0'};
 	char NOMVAR[5]={' ',' ',' ',' ','\0'};
@@ -175,14 +158,10 @@ Fstdc_fstsui(self, args)
 }
 
 static char Fstdc_fstinf__doc__[] =
-"Interface to fstinf, dsfsui, fstinfx, returns a record handle and record keys in a dictionary"
-;
+"Find a record matching provided criterias (Interface to fstinf, dsfsui, fstinfx)\nrecParamDict = Fstdc_fstinf(iunit,nomvar,typvar,etiket,ip1,ip2,ip3,datev,inhandle)\nparam iunit file unit number handle returned by Fstdc_fstouv (int)\n@param nomvar seclect according to var name, blank==wildcard (string)\n@param typvar seclect according to var type, blank==wildcard (string)\n@param etiket seclect according to etiket, blank==wildcard (string)\n@param ip1 seclect according to ip1, -1==wildcard  (int)\n@param ip2 seclect according to ip2, -1==wildcard (int)\n@param ip3  seclect according to ip3, -1==wildcard (int)\n@param datev seclect according to date of validity, -1==wildcard (int)\n@param inhandle selcation criterion; inhandle=-2:search with criterion from start of file; inhandle=-1==fstsui, use previously provided criterion to find the next matching one; inhandle>=0 search with criterion from provided rec-handle (int)\n@returns python dict with record handle + record params keys/values";
 
 static PyObject *
-Fstdc_fstinf(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fstinf(PyObject *self, PyObject *args) {
 	int iun, inhandle=-2, ni=0, nj=0, nk=0, datev=0, ip1=0, ip2=0, ip3=0;
 	char *typvar, *nomvar, *etiket;
 	char TYPVAR[3]={' ',' ','\0'};
@@ -231,18 +210,59 @@ printf("c_fstprm return=%d\n",junk);
                "handle",handle,"ni",ni,"nj",nj,"nk",nk,"dateo",dateo,"ip1",ip1,"ip2",ip2,"ip3",ip3,
 	       "deet",deet,"npas",npas,"datyp",datyp,"nbits",nbits,
 	       "type",TYPVAR,"nom",NOMVAR,"etiket",ETIKET,"grtyp",GRTYP,
-	       "ig1",ig1,"ig2",ig2,"ig3",ig3,"ig4",ig4,"date",extra1);
+	       "ig1",ig1,"ig2",ig2,"ig3",ig3,"ig4",ig4,"datev",extra1);
 }
 
-static char Fstdc_fnom__doc__[] =
-"Interface to fnom (unused)"
-;
+
+static char Fstdc_fstinl__doc__[] =
+"Find all records matching provided criterias (Interface to fstinl)\nWarning: list is limited to the first 10000 records in a file.\nrecList = Fstdc_fstinl(iunit,nomvar,typvar,etiket,ip1,ip2,ip3,datev)\nparam iunit file unit number handle returned by Fstdc_fstouv (int)\n@param nomvar seclect according to var name, blank==wildcard (string)\n@param typvar seclect according to var type, blank==wildcard (string)\n@param etiket seclect according to etiket, blank==wildcard (string)\n@param ip1 seclect according to ip1, -1==wildcard  (int)\n@param ip2 seclect according to ip2, -1==wildcard (int)\n@param ip3  seclect according to ip3, -1==wildcard (int)\n@param datev seclect according to date of validity, -1==wildcard (int)\n@returns python dict with handles+params of all matching records";
 
 static PyObject *
-Fstdc_fnom(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fstinl(PyObject *self, PyObject *args) {
+    int i,iun, ier, ni=0, nj=0, nk=0, datev=0, ip1=0, ip2=0, ip3=0;
+    char *typvar, *nomvar, *etiket;
+    char TYPVAR[3]={' ',' ','\0'};
+    char NOMVAR[5]={' ',' ',' ',' ','\0'};
+    char ETIKET[13]={' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+    char GRTYP[2]={' ','\0'};
+    int handle, junk;
+    int dateo=0, deet=0, npas=0, nbits=0, datyp=0, ig1=0, ig2=0, ig3=0, ig4=0;
+    int swa=0, lng=0, dltf=0, ubc=0, extra1=0, extra2=0, extra3=0;
+    PyObject *handle_list,*ihandle_obj;
+    int nliste=0,nmax=10000,liste[10000];
+
+    if (!PyArg_ParseTuple(args, "isssiiii",&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&datev))
+            return NULL;
+
+    handle_list = PyList_New(0);
+    Py_INCREF(handle_list);
+
+    ier = c_fstinl(iun, &ni, &nj, &nk,datev,etiket,ip1,ip2,ip3,typvar,nomvar,liste,&nliste,nmax);
+    if (nliste==0) {Py_INCREF(Py_None); return Py_None;}
+    for (i=0; i < nliste; i++) {
+        junk =  c_fstprm(liste[i],&dateo,&deet,&npas,&ni,&nj,&nk,&nbits,&datyp,&ip1,&ip2,&ip3,
+            TYPVAR,NOMVAR,ETIKET,GRTYP,&ig1,&ig2,&ig3,&ig4,
+            &swa,&lng,&dltf,&ubc,&extra1,&extra2,&extra3);
+        if(junk < 0) {Py_INCREF(Py_None); return Py_None;}
+
+        //ihandle_obj = Py_BuildValue("i",liste[i]);
+        ihandle_obj = Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:s,s:s,s:s,s:s,s:i,s:i,s:i,s:i,s:i}",
+            "handle",liste[i],"ni",ni,"nj",nj,"nk",nk,"dateo",dateo,"ip1",ip1,"ip2",ip2,"ip3",ip3,
+            "deet",deet,"npas",npas,"datyp",datyp,"nbits",nbits,
+            "type",TYPVAR,"nom",NOMVAR,"etiket",ETIKET,"grtyp",GRTYP,
+            "ig1",ig1,"ig2",ig2,"ig3",ig3,"ig4",ig4,"datev",extra1);
+        Py_INCREF(ihandle_obj);
+        PyList_Append(handle_list,ihandle_obj);
+    }
+    return handle_list;
+}
+
+
+static char Fstdc_fnom__doc__[] =
+"Interface to fnom (unused)";
+
+static PyObject *
+Fstdc_fnom(PyObject *self, PyObject *args) {
 
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
@@ -251,14 +271,10 @@ Fstdc_fnom(self, args)
 }
 
 static char Fstdc_fsteff__doc__[] =
-"Interface to fsteff"
-;
+"Erase a record (Interface to fsteff)\nistatus = Fstdc_fsteff(ihandle)\n@param ihandle handle of the record to erase (int)\n@return status (int)";
 
 static PyObject *
-Fstdc_fsteff(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fsteff(PyObject *self, PyObject *args) {
 	int handle=0;
 	int status=0;
 
@@ -270,14 +286,10 @@ Fstdc_fsteff(self, args)
 	return Py_BuildValue("i",status);
 }
 static char Fstdc_fstecr__doc__[] =
-"Interface to fstecr"
-;
+"Wrtie record to file (Interface to fstecr), always happend\nFstdc_fstecr(array,iunit,nomvar,typvar,etiket,ip1,ip2,ip3,dateo,grtyp,ig1,ig2,ig3,ig4,deet,npas,nbits)\n@param array data to be written to file (numpy.ndarray)\n@param iunit file unit number handle returned by Fstdc_fstouv (int)\n@param ... \n@return None";
 
 static PyObject *
-Fstdc_fstecr(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fstecr(PyObject *self, PyObject *args) {
 	int iun, ip1=0, ip2=0, ip3=0;
 	char *typvar, *nomvar, *etiket, *grtyp;
 	int dateo=0, deet=0, npas=0, nbits=0, ig1=0, ig2=0, ig3=0, ig4=0;
@@ -359,14 +371,10 @@ dateo=%d,grtyp=:%s:,ig1=%d,ig2=%d,ig3=%d,ig4=%d,deet=%d,npas=%d,nbits=%d\n",
 }
 
 static char Fstdc_fstluk__doc__[] =
-"Interface to fstluk, returns record keys in a dictionary + Numeric.array object"
-;
+"Read record on file (Interface to fstluk)\nmyRecDataDict = Fstdc_fstluk(ihandle)\n@param ihandle record handle (int) \n@return python dict with record params keys/values and data (numpy.ndarray)";
 
 static PyObject *
-Fstdc_fstluk(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fstluk(PyObject *self, PyObject *args) {
 	PyArrayObject *newarray;
 	int dimensions[3]={1,1,1}, strides[3]={0,0,0}, ndimensions=3;
 	int type_num=NPY_FLOAT;
@@ -442,14 +450,10 @@ printf("handle = %d \n",handle);
 }
 
 static char Fstdc_fst_edit_dir__doc__[] =
-"Interface to fst_edit_dir"
-;
+"Rewrite the parameters of an rec on file, data part is unchanged (Interface to fst_edit_dir)\nstatus = Fstdc_fst_edit_dir(ihandle,date,deet,npas,ni,nj,nk,ip1,ip2,ip3,typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4,datyp)\n@param ihandle record handle (int)\n@param ... \n@return status (int)";
 
 static PyObject *
-Fstdc_fst_edit_dir(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_fst_edit_dir(PyObject *self, PyObject *args) {
 	int handle=0;
 	int status=0;
 	int ip1=-1, ip2=-1, ip3=-1;
@@ -467,14 +471,10 @@ Fstdc_fst_edit_dir(self, args)
 }
 
 static char Fstdc_newdate__doc__[] =
-"Interface to newdate"
-;
+"Convert data to/from printable format and CMC stamp (Interface to newdate)\n(fdat1,fdat2,fdat3) = Fstdc_newdate(date1,date2,date3,mode)\n@param ...see newdate doc... \n@return tuple with converted date values ...see newdate doc...";
 
 static PyObject *
-Fstdc_newdate(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_newdate(PyObject *self, PyObject *args) {
 	int date1=0,date2=0,date3=0,mode=0;
 	int status=0;
 	wordint fdat1,fdat2,fdat3,fmode;
@@ -492,15 +492,12 @@ Fstdc_newdate(self, args)
 #endif
 	return Py_BuildValue("(iii)",fdat1,fdat2,fdat3);
 }
+
 static char Fstdc_difdatr__doc__[] =
-"Interface to difdatr"
-;
+"Compute differenc between 2 CMC datatime stamps (Interface to difdatr)\nnhours = Fstdc_difdatr(date1,date2)\n@param date1 CMC datatime stamp (int)\n@param date2 CMC datatime stamp (int)\n@return number of hours = date2-date1 (float)";
 
 static PyObject *
-Fstdc_difdatr(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_difdatr(PyObject *self, PyObject *args) {
         int date1=0,date2=0;
 	int status=0;
 	double nhours;
@@ -519,14 +516,11 @@ Fstdc_difdatr(self, args)
 }
 
 static char Fstdc_incdatr__doc__[] =
-"Interface to incdatr"
+"Increase CMC datetime stamp by a N hours (Interface to incdatr)\ndate2 = Fstdc_incdatr(date1,nhours)\n@param date1 original CMC datetime stamp(int)\n@param nhours number of hours to increase the date (float)\n@return Increase CMC datetime stamp (int)"
 ;
 
 static PyObject *
-Fstdc_incdatr(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_incdatr(PyObject *self, PyObject *args) {
         int date1=0,date2=0;
 	int status=0;
 	double nhours;
@@ -546,14 +540,10 @@ Fstdc_incdatr(self, args)
 }
 
 static char Fstdc_datematch__doc__[] =
-"Determine if date stamp match search crieterias"
-;
+"Determine if date stamp match search crieterias\ndoesmatch = Fstdc_datematch(indate,dateRangeStart,dateRangeEnd,delta)\n@param indate Date to be check against, CMC datetime stamp (int)\n@param dateRangeStart, CMC datetime stamp (int) \n@param dateRangeEnd, CMC datetime stamp (int)\n@param delta (float)\n@return 1:if date match; 0 otherwise";
 
 static PyObject *
-Fstdc_datematch(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_datematch(PyObject *self, PyObject *args) {
         int datelu, debut, fin;
 	float delta;
         double nhours,modulo,ddelta=delta;
@@ -563,7 +553,7 @@ Fstdc_datematch(self, args)
 	   Py_INCREF(Py_None);
            return Py_None;
 	}
-	printf("Debug datelu=%d debut=%d fin=%d delta=%f\n",datelu,debut,fin,delta);
+	//printf("Debug datelu=%d debut=%d fin=%d delta=%f\n",datelu,debut,fin,delta);
 	if ((fin != -1) && (datelu > fin)) return Py_BuildValue("i",0);
 	if (debut != -1) {
 	  if (datelu < debut) return Py_BuildValue("i",0);
@@ -573,9 +563,9 @@ Fstdc_datematch(self, args)
 	  if (fin == -1) return Py_BuildValue("i",1);          /* debut et fin = -1 */
 	  f77name(difdatr)(&fin,&datelu,&nhours);
 	}
-	printf("Debug nhours=%f\n",nhours);
+	//printf("Debug nhours=%f\n",nhours);
 	modulo = fmod(nhours,ddelta);
-	printf("Debug modulo=%f\n",modulo);
+	//printf("Debug modulo=%f\n",modulo);
 	if ((modulo < toler) || ((delta - modulo) < toler))
 	  return Py_BuildValue("i",1);
 	else
@@ -583,14 +573,10 @@ Fstdc_datematch(self, args)
 }
 
 static char Fstdc_level_to_ip1__doc__[] =
-"Interface to convip: encode level value to ip1\n @param level_list list of level values (list of float)\n @param kind type of level (int)\n @return [(ip1new,ip1old),...] (list of tuple of int)"
-;
+"Encode level value to ip1 (Interface to convip)\nmyip1List = Fstdc_level_to_ip1(level_list,kind) \n @param level_list list of level values (list of float)\n @param kind type of level (int)\n @return [(ip1new,ip1old),...] (list of tuple of int)";
 
 static PyObject *
-Fstdc_level_to_ip1(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
         int i,kind, nelm, status;
 	float level;
         long ipnew, ipold;
@@ -628,14 +614,10 @@ Fstdc_level_to_ip1(self, args)
 }
 
 static char Fstdc_ip1_to_level__doc__[] =
-"Interface to convip: decode ip1 to level type,value, return list of tuple (level,kind)"
-;
+"Decode ip1 to level type,value (Interface to convip)\nmyLevelList = Fstdc_ip1_to_level(ip1_list)\n@parma tuple/list of ip1 values to decode\n@return list of tuple (level,kind)";
 
 static PyObject *
-Fstdc_ip1_to_level(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
         int i,kind, nelm, status;
 	float level;
 	wordint fip1, fmode, flag=0, fkind;
@@ -664,14 +646,10 @@ Fstdc_ip1_to_level(self, args)
 }
 
 static char Fstdc_mapdscrpt__doc__[] =
-"Interface to get map descriptors for use with PyNGL"
-;
+"Interface to get map descriptors for use with PyNGL\nmyMapDescDict = Fstdc_mapdscrpt(x1,y1,x2,y2,ni,nj,cgrtyp,ig1,ig2,ig3,ig4)\n@param ...TODO... \n@return python dict with keys/values";
 
 static PyObject *
-Fstdc_mapdscrpt(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
 	int ig1, ig2, ig3, ig4, one=1, ni, nj, proj;
         char *cgrtyp;
         float x1,y1, x2,y2, polat,polong, rot, lat1,lon1, lat2,lon2;
@@ -696,14 +674,10 @@ Fstdc_mapdscrpt(self, args)
 
 
 static char Fstdc_ezinterp__doc__[] =
-"Interface to interpolate from one grid to another"
-;
+"Interpolate from one grid to another\nnewArray = Fstdc_ezinterp(arrayin,arrayin2,niS,njS,grtypS,grrefS,ig1S,ig2S,ig3S,ig4S,xsS,ysS,srcaxis,niD,njD,grtypD,grrefD,ig1D,ig2D,ig3D,ig4D,xsD,ysD,dstaxis,vecteur)\n@param ...TODO...\n@return interpolated data (numpy.ndarray)";
 
 static PyObject *
-Fstdc_ezinterp(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_ezinterp(PyObject *self, PyObject *args) {
 	int ig1S, ig2S, ig3S, ig4S, niS, njS, gdid_src;
 	int ig1D, ig2D, ig3D, ig4D, niD, njD, gdid_dst;
 /*        int ni_ps=199, nj_ps=155, ig1p=200, ig2p=0, ig3p=23640, ig4p=37403, gdps; */
@@ -787,14 +761,10 @@ Fstdc_ezinterp(self, args)
 }
 
 static char Fstdc_cxgaig__doc__[] =
-"Interface to cxgaig"
-;
+"Encode grid descriptors (Interface to cxgaig)\n(ig1,ig2,ig3,ig4) = Fstdc_cxgaig(grtyp,xg1,xg2,xg3,xg4) \n@param ...TODO...\n@return (ig1,ig2,ig3,ig4)";
 
 static PyObject *
-Fstdc_cxgaig(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_cxgaig(PyObject *self, PyObject *args) {
 	int ig1,ig2,ig3,ig4;
         float xg1,xg2,xg3,xg4;
         char *grtyp;
@@ -814,14 +784,11 @@ Fstdc_cxgaig(self, args)
 }
 
 static char Fstdc_cigaxg__doc__[] =
-"Interface to cigaxg"
+"Decode grid descriptors (Interface to cigaxg)\n(xg1,xg2,xg3,xg4) = Fstdc_cigaxg(grtyp,ig1,ig2,ig3,ig4)\n@param ...TODO...\n@return (xg1,xg2,xg3,xg4)"
 ;
 
 static PyObject *
-Fstdc_cigaxg(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
-{
+Fstdc_cigaxg(PyObject *self, PyObject *args) {
 	int ig1,ig2,ig3,ig4;
         float xg1,xg2,xg3,xg4;
         char *grtyp;
@@ -848,6 +815,7 @@ static struct PyMethodDef Fstdc_methods[] = {
  {"fstfrm",	(PyCFunction)Fstdc_fstfrm,	METH_VARARGS,	Fstdc_fstfrm__doc__},
  {"fstsui",	(PyCFunction)Fstdc_fstsui,	METH_VARARGS,	Fstdc_fstsui__doc__},
  {"fstinf",	(PyCFunction)Fstdc_fstinf,	METH_VARARGS,	Fstdc_fstinf__doc__},
+ {"fstinl",	(PyCFunction)Fstdc_fstinl,	METH_VARARGS,	Fstdc_fstinl__doc__},
  {"fnom",	(PyCFunction)Fstdc_fnom,	METH_VARARGS,	Fstdc_fnom__doc__},
  {"fstecr",	(PyCFunction)Fstdc_fstecr,	METH_VARARGS,	Fstdc_fstecr__doc__},
  {"fsteff",	(PyCFunction)Fstdc_fsteff,	METH_VARARGS,	Fstdc_fsteff__doc__},
@@ -871,13 +839,9 @@ static struct PyMethodDef Fstdc_methods[] = {
 /* Initialization function for the module (*must* be called initFstdc) */
 
 static char Fstdc_module_documentation[] =
-""
-;
+"";
 
-
-void
-initFstdc()
-{
+void initFstdc() {
 	PyObject *m, *d;
 
 	/* Create the module and add the functions */
@@ -898,7 +862,7 @@ initFstdc()
 	/* Check for errors */
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module Fstdc");
-	printf("RPN (2000) Standard File module V-0.18 initialized\n");
+	printf("RPN (2000) Standard File module V-%s (%s) initialized\n",version,lastmodified);
 	init_lentab();
 }
 
