@@ -979,31 +979,102 @@ class FstGrid(FstParm):
         else:
             raise TypeError,'FstGrid: wrong args in init; unrecognized grid desc'
 
-    def interpol(self,fromData,fromGrid):
-        """Interpolate some gridded data to grid
+    def interpol(self,fromData,fromGrid=None):
+        """Interpolate (scalar) some gridded data to grid
 
         destData = myDestGrid.interpol(fromData,fromGrid)
-        """
-        return self.interpolVect(self,fromData,None,fromGrid)[0]
+        destRec  = myDestGrid.interpol(fromRec)
 
-    def interpolVect(self,fromDataX,fromDataY,fromGrid):
-        """Interpolate some gridded vectorial data to grid
+        Short for of calling:
+        destData = myDestGrid.interpolVect(fromData,None,fromGrid)
+        destRec  = myDestGrid.interpolVect(fromRec)
 
-        (destDataX,destDataY) = myDestGrid.interpol(fromDataX,fromDataY,fromGrid)
+        See FstGrid.interpolVect() methode for documentation
         """
-        #TODO: validate args (type, and if dims match)
-        srcflag = fromGrid.xyaxis[0] != None
-        dstflag = self.xyaxis[0] != None
-        vecteur = isinstance(fromDataY,numpy.ndarray)
-        sk = fromGrid
-        dk = self
-        s_xyref = sk.ig14
-        d_xyref = dk.ig14
-        s_xyref.insert(0,sk.grtyp)
-        d_xyref.insert(0,dk.grtyp)
-        return Fstdc.ezinterp(fromDataX,fromDataY,
-            sk.shape,sk.grtyp,s_xyref,sk.xyaxis[0],sk.xyaxis[1],srcflag,
-            dk.shape,dk.grtyp,d_xyref,dk.xyaxis[0],dk.xyaxis[1],dstflag,vecteur)
+        return self.interpolVect(self,fromData,None,fromGrid)
+
+    def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
+        """Interpolate some gridded scalar/vectorial data to grid
+
+        (destDataX,destDataY) = myDestGrid.interpolVect(fromDataX,fromDataY,fromGrid)
+        (destRecX,destRecY)   = myDestGrid.interpolVect(fromRecX,fromRecY)
+        destDataX = myDestGrid.interpolVect(fromDataX,None,fromGrid)
+        destRecX  = myDestGrid.interpolVect(fromRecX)
+
+        @param fromDataX x-data to be interpolated (numpy.ndarray)
+        @param fromDataY y-data to be interpolated (numpy.ndarray)
+        @param fromGrid grid on which fromData is (FstGrid)
+        @param fromRecX x-data+meta to be interpolated (FstRec)
+        @param fromRecY y-data+meta to be interpolated (FstRec)
+        @return destData interpolated data (numpy.ndarray)
+        @return destRec interpolated data and update metadata (FstRec)
+        @exception TypeError if args ar not of the right type
+        @exception ValueError if problems with src grids
+        """
+        recx = None
+        recy = None
+        rectype = True
+        if (type(fromDataX) == numpy.ndarray
+            and isinstance(fromGrid,FstGrid)):
+            rectype = False
+            recx = FstRec()
+            recx.d = fromDataX
+            try:
+                recx.setGrid(fromGrid)
+            except:
+                raise ValueError, 'FstGrid.interpolVect: fromGrid incompatible with fromDataX'
+            if (type(fromDataY) == numpy.ndarray):
+                recy = FstRec()
+                recy.d = fromDataY
+                try:
+                    recy.setGrid(fromGrid)
+                except:
+                    raise ValueError, 'FstGrid.interpolVect: fromGrid incompatible with fromDataY'
+            elif fromDataY:
+                raise TypeError, 'FstGrid.interpolVect: fromDataY should be of same type as fromDataX'
+        elif isinstance(fromDataX,FstRec):
+            if fromGrid:
+                raise TypeError, 'FstGrid.interpolVect: cannot provide both an FstRec for fromDataX and fromGrid'
+            recx = fromDataX
+            recx.setGrid()
+            if isinstance(fromDataY,FstRec):
+                recy = fromDataY
+                recy.setGrid()
+                if recx.grid != recy.grid:
+                    raise ValueError, 'FstGrid.interpolVect: data X and Y should be on the same grid'
+            elif fromDataY:
+                raise TypeError, 'FstGrid.interpolVect: fromDataY should be of same type as fromDataX'
+        else:
+            raise TypeError, 'FstGrid.interpolVect: data should be of numpy.ndarray or FstRec type'
+        sg = recx.grid
+        dg = self
+        sflag = (sg.xyaxis[0] != None)
+        dflag = (dg.xyaxis[0] != None)
+        vecteur = (recy != None)
+        s_xyref = sg.ig14
+        d_xyref = dg.ig14
+        s_xyref.insert(0,sg.grtyp)
+        d_xyref.insert(0,dg.grtyp)
+        recyd = None
+        if vecteur:
+            recyd = recy.d
+        dataxy = Fstdc.ezinterp(recx.d,recyd,
+            sg.shape,sg.grtyp,s_xyref,sg.xyaxis[0],sg.xyaxis[1],sflag,
+            dg.shape,dg.grtyp,d_xyref,dg.xyaxis[0],dg.xyaxis[1],dflag,vecteur)
+        if rectype:
+            recx.d = dataxy[0]
+            recx.setGrid(self)
+            if vecteur:
+                recy.d = dataxy[1]
+                recy.setGrid(self)
+                return (recx,recy)
+            else:
+                return recx
+        else:
+            if vecteur:
+                return (dataxy[0].d,dataxy[1].d)
+            else:
+                return dataxy[0].d
 
 
 class FstRec(FstMeta):
@@ -1099,18 +1170,59 @@ class FstRec(FstMeta):
         @exception TypeError if togrid is not an instance of FstGrid
         """
         if isinstance(value,FstGrid):
-            if not (self.grid or isinstance(self.grid,FstGrid)):
-                self.grid = FstGrid(self)
+            if not isinstance(self.grid,FstGrid):
+                self.setGrid()
             if self.grid:
                 self.d = togrid.interpol(self.d,self.grid)
-                self.grid = togrid #or make a copy instead of taking a reference
-                self.grtyp = togrid.grtyp
-                (self.ig1,self.ig2,self.ig3,self.ig3) = togrid.ig14
-                #(self.ni,self.nj) = togrid.shape
+                self.setGrid(togrid)
             else:
                 raise ValueError,'FstRec.interpol(togrid): unable to determine actual grid of FstRec'
         else:
             raise TypeError,'FstRec.interpol(togrid): togrid should be an instance of FstGrid'
+
+    def setGrid(self,newGrid=None):
+        """Associate a grid to the FstRec (or try to get grid from rec metadata)
+
+        myFstRec.setGrid()
+        myFstRec.setGrid(newGrid)
+
+        @param newGrid grid to associate to the record (FstGrid)
+        @exception ValueError if newGrid does not have same shape as rec data or if it's impossible to determine grid params
+        @exception TypeError if newGrid is not an FstGrid
+
+        >>> r = FstRec([1,2,3,4],FstMeta())
+        >>> g = FstGrid(grtyp='N',ig14=(1,2,3,4),ninj=(4,1))
+        >>> (g.grtyp,g.shape,g.ig14)
+        ('N', (4, 1), (1, 2, 3, 4))
+        >>> r.setGrid(g)
+        >>> (r.grtyp,(r.ni,r.nj),(r.ig1,r.ig2,r.ig3,r.ig4))
+        ('N', (4, 1), (1, 2, 3, 4))
+        >>> (r.grid.grtyp,r.grid.shape,r.grid.ig14)
+        ('N', (4, 1), (1, 2, 3, 4))
+        """
+        if newGrid:
+            if isinstance(newGrid,FstGrid):
+                ni = max(self.d.shape[0],1)
+                nj = 1
+                if len(self.d.shape)>1:
+                    nj = max(self.d.shape[1],1)
+                if (ni,nj) != newGrid.shape:
+                    raise ValueError,'FstRec.setGrid(newGrid): rec data and newGrid do not have the same shape'
+                else :
+                    self.grid = newGrid
+                    self.grtyp = newGrid.grtyp
+                    (self.ig1,self.ig2,self.ig3,self.ig4) = newGrid.ig14
+                    (self.ni,self.nj) = newGrid.shape
+            else:
+                raise TypeError,'FstRec.setGrid(newGrid): newGrid should be an instance of FstGrid'
+        else:
+            self.grid = FstGrid(self)
+            if self.grid:
+                self.grtyp = self.grtyp
+                (self.ig1,self.ig2,self.ig3,self.ig4) = self.ig14
+                (self.ni,self.nj) = self.shape
+            else:
+                raise ValueError,'FstRec.setGrid(): unable to determine actual grid of FstRec'
 
 
 class FstDate:

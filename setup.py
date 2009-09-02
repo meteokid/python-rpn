@@ -19,7 +19,7 @@ Fstd_module = Extension('Fstdc',
             sources = ['Fstdc.c'])
 
 setup(name = 'rpnstd',
-    version = '1.0.1',
+    version = '1.2-dev',
     description = 'Python Interface to some ARMNLIB RPN STD files function',
     author = 'Mario Lepine',
     author_email = 'mario.lepine@ec.gc.ca',
