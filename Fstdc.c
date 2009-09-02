@@ -1,9 +1,15 @@
+/*
+Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)
+@author: Mario Lepine <mario.lepine@ec.gc.ca>
+@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+@date: 2009-09
+*/
 /* #define DEBUG On */
 #include <rpnmacros.h>
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
-static char version[] = "0.19";
+static char version[] = "0.20-dev";
 static char lastmodified[] = "2009-09";
 
 int c_fst_data_length(int length_type);
@@ -842,7 +848,7 @@ static struct PyMethodDef Fstdc_methods[] = {
 /* Initialization function for the module (*must* be called initFstdc) */
 
 static char Fstdc_module_documentation[] =
-"";
+"Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)\n@author: Mario Lepine <mario.lepine@ec.gc.ca>\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
 
 void initFstdc() {
 	PyObject *m, *d;

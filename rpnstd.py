@@ -1,5 +1,3 @@
-## Automatically adapted for numpy.oldnumeric Jan 10, 2008 by
-
 #TODO: should be able to search all rec tags and get the list of recs (handle or FstMeta)
 #TODO: consistant naming in doc for; rec, data , meta, grid...
 #TODO: class FstFields (a collection of related rec: levels,#...)
@@ -23,7 +21,7 @@
 
     @author: Mario Lepine <mario.lepine@ec.gc.ca>
     @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
-    @date: 2009-08
+    @date: 2009-09
 """
 import types
 import datetime
@@ -31,7 +29,8 @@ import pytz
 import numpy
 import Fstdc
 
-__RPNSTD_VERSION__ = '200909-dev'
+__RPNSTD_VERSION__ = '1.2-dev'
+__RPNSTD_LASTUPDATE__ = '2009-09'
 
 # primary set of descriptors has two extra items, used to read/scan file
 # handle carries the last handle associated with the keys ,
@@ -323,6 +322,11 @@ class FstFile:
     myFstFile[myFstRec] = None           #erase record
     myFstFile[params.handle] = None      #erase record
     del myFstFile                        #close the file
+
+    >>> myFile = FstFile('testfile.fst')
+    R.P.N. Standard File (2000)  testfile.fst  is open with options: RND+STD  UNIT= 999
+    >>> del myFile
+    file  999  is closed, filename= testfile.fst
     """
     def __init__(self,name=None,mode='RND+STD') :
         if (not name) or type(name) <> type(''):
@@ -561,8 +565,8 @@ class FstParm:
             for name in with.__dict__.keys():
                 if (name in self.__dict__.keys()) and (name in allowedKeysVals.keys()):
                     self.__dict__[name]=with.__dict__[name]
-                else:
-                    print "cannot set:"+name+repr(allowedKeysVals.keys())
+                #else:
+                #    print "cannot set:"+name+repr(allowedKeysVals.keys())
         else:
             raise TypeError,'FstParm.update: can only operate on FstParm class instances'
 
@@ -663,7 +667,8 @@ class FstKeys(FstParm):
         FstParm.__init__(self,model,self.allowedKeysVals(),args)
 
     def allowedKeysVals(self):
-        return {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
+        """Return a dict of allowed Keys/Vals"""
+        return {'nom':'    ','type':'  ','etiket':'            ','datev':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
 
 class FstDesc(FstParm):
     """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
@@ -675,9 +680,10 @@ class FstDesc(FstParm):
         FstParm.__init__(self,model,self.allowedKeysVals(),args)
 
     def allowedKeysVals(self):
-        return {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0}
+        """Return a dict of allowed Keys/Vals"""
+        return {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'ni':-1,'nj':-1,'nk':-1}
 
-class FstMeta(FstParm):
+class FstMeta(FstKeys,FstDesc):
     """RPN standard file Full set (Primary + Auxiliary) of descriptors class, needed to write a record, can be used for search.
 
     Descriptors are:
@@ -739,24 +745,10 @@ class FstMeta(FstParm):
             setattr(self,name,args[name])
 
     def allowedKeysVals(self):
-        return {
-            'nom':'    ',
-            'type':'  ',
-            'etiket':'            ',
-            'ip1':-1,'ip2':-1,'ip3':-1,
-            'ni':-1,'nj':-1,'nk':-1,
-            'dateo':0,
-            'deet':0,
-            'npas':0,
-            'grtyp':'X',
-            'ig1':0,'ig2':0,'ig3':0,'ig4':0,
-            'datyp':0,
-            'nbits':0,
-            'handle':-2,
-            'nxt':0,
-            'fileref':None,
-            'datev':-1
-        }
+        """Return a dict of allowed Keys/Vals"""
+        a = FstKeys.allowedKeysVals(self)
+        a.update(FstDesc.allowedKeysVals(self))
+        return a
 
     def getaxis(self,axis=None):
         """Return the grid axis rec of grtyp ('Z','Y','#')
@@ -885,12 +877,8 @@ class FstExclude(FstCriterias):
         FstCriterias.__init__(self,X__Criteres,1,args)
 
 
-
 class FstGrid(FstParm):
     """RPNSTD-type grid description
-
-    >>> FstGrid(grtyp='N',ig14=(1,2,3,4),ninj=(200,150))
-    {'shape': (200, 150), 'grtyp': 'N', 'xyaxis': (None, None), 'ig14': (1, 2, 3, 4)}
 
     myFstGrid = FstGrid(grtyp='Z',xyaxis=(myFstRecX,myFstRecY))
     myFstGrid = FstGrid(grtyp='#',ninj=(200,150),ij0=(1,1),xyaxis=(myFstRecX,myFstRecY))
@@ -906,6 +894,25 @@ class FstGrid(FstParm):
     @param ig14
     @exception ValueError
     @exception TypeError
+
+    >>> g = FstGrid(grtyp='N',ig14=(1,2,3,4),ninj=(200,150))
+    >>> g
+    {'shape': (200, 150), 'grtyp': 'N', 'xyaxis': (None, None), 'ig14': (1, 2, 3, 4)}
+    >>> g2 = FstGrid(g)
+    >>> g2
+    {'shape': (200, 150), 'grtyp': 'N', 'xyaxis': (None, None), 'ig14': (1, 2, 3, 4)}
+    >>> d = FstMeta(grtyp='N',ig1=1,ig2=2,ig3=3,ig4=4,ni=200,nj=150)
+    >>> g3 = FstGrid(d)
+    >>> g3
+    {'shape': (200, 150), 'grtyp': 'N', 'xyaxis': (None, None), 'ig14': (1, 2, 3, 4)}
+
+    Icosahedral Grid prototype:
+    grtyp = I
+    ig1 = griddiv
+    ig2 = grid tile (1-10) 2d, 0=NP,SP,allpoints (1D vect)
+    ig3,ig4
+
+    #(I) would work much the same way as #(L) ?
     """
     validgrtyp = ('A','B','E','G','L','N','S','Z','Y','#') #'X'
     xyaxis = (None,None)
@@ -962,11 +969,11 @@ class FstGrid(FstParm):
             if keys.grtyp in ('Z','Y','#'):
                 xyaxis = keys.getaxis()
                 if keys.grtyp == '#':
-                    self.__init__(grtyp=keys.grtyp,nij=(keys.ni,keys.nj),ij0=(keys.ig3,keys.ig4),xyaxis=xyaxis)
+                    self.__init__(grtyp=keys.grtyp,ninj=(keys.ni,keys.nj),ij0=(keys.ig3,keys.ig4),xyaxis=xyaxis)
                 else:
                     self.__init__(grtyp=keys.grtyp,xyaxis=xyaxis)
             else:
-                self.__init__(grtyp=keys.grtyp,nij=(keys.ni,keys.nj),ig14=(keys.ig1,keys.ig2,keys.ig3,keys.ig4))
+                self.__init__(grtyp=keys.grtyp,ninj=(keys.ni,keys.nj),ig14=(keys.ig1,keys.ig2,keys.ig3,keys.ig4))
         elif isinstance(keys,FstGrid):
             self.update(keys)
         else:
@@ -1030,7 +1037,7 @@ class FstRec(FstMeta):
     >>> d = r2.__dict__.items()
     >>> d.sort()
     >>> d
-    [('d', array([1, 2, 3, 4])), ('dateo', 0), ('datev', -1), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    [('d', array([1, 2, 3, 4])), ('dateo', 0), ('datev', -1), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grid', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
     >>> r.d[1] = 9 #r2 is a copy of r, thus this does not change r2.d
     >>> r2.d
     array([1, 2, 3, 4])
@@ -1039,7 +1046,15 @@ class FstRec(FstMeta):
     @param params meta part of the record (FstMeta), if data is an FstRec it should not be provided
     @exceptions TypeError if arguments are not of valid type
     """
+    def allowedKeysVals(self):
+        """Return a dict of allowed Keys/Vals"""
+        a = FstMeta.allowedKeysVals(self)
+        a['d'] = None
+        a['grid'] = None
+        return a
+
     def __init__(self,data=None,params=None):
+        FstMeta.__init__(self)
         if data == None:
             self.d = numpy.array([])
         elif type(data) == numpy.ndarray:
@@ -1050,10 +1065,9 @@ class FstRec(FstMeta):
             if params:
                 raise TypeError,'FstRec: cannot initialize with both an FstRec and params'
             self.d = data.d.copy()
-            params = data
+            params = FstMeta(data)
         else:
             raise TypeError,'FstRec: cannot initialize data from arg #1'
-        FstMeta.__init__(self)
         if params:
             if isinstance(params,FstMeta):
                 self.update(params)
@@ -1118,6 +1132,8 @@ class FstDate:
     >>> d1
     FstDate(20030423,11453500)
     >>> d2 = FstDate(d1)
+    >>> d2
+    FstDate(20030423,11453500)
     >>> d2.incr(48)
     FstDate(20030425,11453500)
     >>> d1-d2
@@ -1126,14 +1142,23 @@ class FstDate:
     >>> d3 = FstDate(a)
     >>> d3
     FstDate(20030423,13153500)
+    >>> utc = pytz.timezone("UTC")
+    >>> d4 = datetime.datetime(2003,04,23,11,45,35,0,tzinfo=utc)
+    >>> d5 = FstDate(d4)
+    >>> d5
+    FstDate(20030423,11453500)
+    >>> d6 = d5.toDateTime()
+    >>> d6 == d4
+    True
     """
     stamp = 0
 
     def __init__(self,word1,word2=-1):
         if isinstance(word1,datetime.datetime):
-            (yyyy,mo,dd,hh,mn,ss,dummy,dummy2) = word1.utctimetuple()
-            word1 = yyyy*1000+mo*100
-            word2 = hh*100000+mn*1000+ss*100
+            (yyyy,mo,dd,hh,mn,ss,dummy,dummy2,dummy3) = word1.utctimetuple()
+            cs = int(word1.microsecond/10000)
+            word1 = yyyy*10000+mo*100+dd
+            word2 = hh*1000000+mn*10000+ss*100+cs
         if isinstance(word1,FstDate):
             self.stamp = word1.stamp
         elif isinstance(word1,FstMeta):
@@ -1192,7 +1217,7 @@ class FstDate:
         ss = int(d[13:15])
         cs = int(d[15:17])
         utc = pytz.timezone("UTC")
-        return datetime.datetime(yyyy,mo,dd,hh,mn,ss,cs*100,tzinfo=utc)
+        return datetime.datetime(yyyy,mo,dd,hh,mn,ss,cs*10000,tzinfo=utc)
 
     def __repr__(self):
         word1 = word2 = 0
