@@ -1,0 +1,712 @@
+!--------------------------------------------------------------------------
+! This is free software, you can use/redistribute/modify it under the terms of
+! the EC-RPN License v2 or any later version found (if not provided) at:
+! - http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
+! - service.rpn@ec.gc.ca
+! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
+!--------------------------------------------------------------------------
+!/**
+module jim_grid_mod
+!!$   use gmmmeta_mod
+   use vect_mod
+!!$   use ico_comm_xch_halo_mod2
+   implicit none
+   #include "../utils/rmnlib_basics.hf"
+   #include "jim_const.hf"
+   private
+   !@objective Compute grid on the Icosahedron grid
+   !@public_functions
+   public :: jim_grid_init,jim_grid_post_init,jim_tile_size,jim_approx_dx,jim_grid_finalize
+   public :: grid_nodes_iter !REM: public for testing only
+   !@public_params
+   integer, parameter,public :: N_ICO_TILES = 10
+   integer, parameter,public :: N_ICO_NODES = 12
+   integer, parameter,public :: N_ICO_FACES = 20
+   real,    parameter,public :: EARTH_RADIUS = JIM_EARTH_RADIUS_4
+   real(RDOUBLE), parameter,public :: EARTH_RADIUS_8 = JIM_EARTH_RADIUS_8
+   !@public_vars
+   integer,save,public :: m_nij  = 0
+   integer,save,public :: m_imin = 1
+   integer,save,public :: m_jmin = 1
+   integer,save,public :: m_imax = 1
+   integer,save,public :: m_jmax = 1
+   logical,save,public :: m_has_npole = .false.
+   logical,save,public :: m_has_spole = .false.
+   logical,save,public :: m_share_npole = .false.
+   logical,save,public :: m_share_spole = .false.
+   logical,save,public :: m_has_penta = .false.
+   logical,save,public :: m_is_side   = .false.
+   type(vect_3d_8), pointer,save,public :: m_nodes_8(:,:)
+!**/
+
+!!$   #include <gmm.hf>
+!!$   #include <WhiteBoard.hf>
+
+   integer, parameter :: NIJ0 = 2
+   integer, parameter :: N_TILES =  N_ICO_TILES
+
+   integer,parameter :: NODES_NB_0(NIJ0,NIJ0,N_TILES) = reshape( (/ &
+         2,  7,   1,  3, &
+         7, 12,   3,  8, &
+         3,  8,   1,  4, &
+         8, 12,   4,  9, &
+         4,  9,   1,  5, &
+         9, 12,   5, 10, &
+         5, 10,   1,  6, &
+        10, 12,   6, 11, &
+         6, 11,   1,  2, &
+        11, 12,   2,  7  &
+        /) , (/NIJ0,NIJ0,N_TILES/))
+
+!!$   real(8), parameter :: pi_8 = dacos(-1.D0)
+
+   logical,save :: m_init_L = .false. ,m_init2_L = .false.
+   integer,save :: m_ndiv = 1
+
+contains
+
+
+   !/**
+   function jim_grid_init(F_ni,F_nj,F_halox,F_haloy,F_periodx,F_periody,F_ndiv) result(F_istat)
+      implicit none
+      !@objective
+      !@arguments
+      integer, intent(out) :: F_ni,F_nj       !Ico Tile Grid dims
+      integer, intent(out) :: F_halox,F_haloy ! Ico Tile Halo Dims
+      logical, intent(out) :: F_periodx,F_periody ! Ico Grid Periodicity
+      integer, intent(in)  :: F_ndiv
+      !@return
+      integer :: F_istat
+      !@author Stephane Chamberland, July 2008
+      !@description
+      !
+   !**/
+      integer :: istat,G_ni,G_nj,G_halox,G_haloy
+      !---------------------------------------------------------------------
+      !print *,'[begin] jim_grid_init'
+      !call flush()
+      F_istat = RMN_OK
+      if (m_init_L) return
+      m_init_L = .true.
+!!$      istat = wb_get('Grd_ico_ndiv',m_ndiv) !from grid param namelist
+      m_ndiv = F_ndiv
+      F_ni = jim_tile_size(m_ndiv) - 1 !G_ni
+      F_nj = F_ni                      !G_nj
+      F_halox = 2
+      F_haloy = 2
+      F_periodx = .false.
+      F_periody = .false.
+
+      m_nij = F_ni !This value will be over-ridden in post_init by l_ni
+
+      !print *,'JIM grid approx dx,area:',jim_approx_dx(),jim_approx_area()
+
+      !TODO: check that F_ni == F_nj
+      !TODO: check that npx == npy
+      !print *,'[end] jim_grid_init'
+      !call flush()
+      !---------------------------------------------------------------------
+      return
+   end function jim_grid_init
+
+
+   !/**
+   function jim_grid_post_init(F_imin,F_imax,F_jmin,F_jmax,F_ni,F_nj,F_npx,F_npy,F_igrid,F_col,F_row) result(F_istat)
+      implicit none
+      !@objective
+      !@arguments
+      integer, intent(in) :: F_imin,F_imax,F_jmin,F_jmax !- IcoTile dims
+      integer, intent(in) :: F_ni,F_nj                   !- Computational Dims
+      integer, intent(in) :: F_npx,F_npy
+      integer, intent(in) :: F_igrid
+      integer, intent(in) :: F_col,F_row
+      !@return
+      integer :: F_istat
+      !@author Stephane Chamberland, July 2008
+      !@description
+      !
+   !**/
+      integer :: istat,i,j,itmp
+      real    :: rtmp
+      real, pointer, dimension(:,:) :: lat,lon
+!!$      type(gmm_metadata) :: gmmmeta
+!!$      type(gmm_layout)   :: layout(4)
+      !---------------------------------------------------------------------
+      F_istat = RMN_ERR
+      if (.not.m_init_L) return
+
+      F_istat = RMN_OK
+      if (m_init2_L) return
+      m_init2_L = .true.
+
+      !print *,'[begin] jim_grid_post_init'
+      !call flush()
+
+      if (F_ni /= F_nj) then
+         F_istat = RMN_ERR
+         print *,'ERROR: ni != nj :',F_ni,F_nj
+         call flush()
+      endif
+      if (F_npx /= F_npy) then
+         F_istat = RMN_ERR
+         print *,'ERROR: npx != npy :',F_npx,F_npy
+         call flush()
+      endif
+      if (F_imin > -1 .or. F_imax < F_ni+2 .or. F_jmin > -1 .or. F_jmax < F_nj+2) then
+         F_istat = RMN_ERR
+         print *,'ERROR: wrong halo size, min/max:',F_imin,F_imax,':',-1,F_ni+2
+         print *,'ERROR: wrong halo size, min/max:',F_jmin,F_jmax,':',-1,F_nj+2
+         call flush()
+      endif
+      !TODO: remove this test when grid_nodes_iter implements node calculation for npex!=2^n
+      rtmp = log(real(F_npx))/log(2.)
+      itmp = nint(rtmp)
+      if (abs(rtmp-real(itmp))>1.e-5) then
+         F_istat = RMN_ERR
+         print *,'ERROR: npx != 2^n :',F_npx,' [Not yet implemented]'
+         call flush()
+      endif
+
+      m_share_npole = (F_col==0       .and. F_row==F_npy-1 .and. mod(F_igrid,2)==0)
+      m_share_spole = (F_col==F_npx-1 .and. F_row==0       .and. mod(F_igrid,2)/=0)
+      m_has_npole = (F_col==0       .and. F_row==F_npy-1 .and. F_igrid==0)
+      m_has_spole = (F_col==F_npx-1 .and. F_row==0       .and. F_igrid==1)
+      m_has_penta = (F_col==0       .and. F_row==0)
+
+      m_is_side   = (F_col==0 .or. F_row==0 .or. F_col==F_npy .or. F_row==F_npy)
+      m_imin = F_imin
+      m_jmin = F_jmin
+      m_imax = F_imax
+      m_jmax = F_jmax
+
+      m_nij = F_ni !set m_nij as l_ni as returned by rpn_comm_topo()
+
+      !- Compute basic nodes position
+      allocate(m_nodes_8(F_imin:F_imax,F_jmin:F_jmax),STAT=istat)
+      F_istat = RMN_COMBINE_STATUS(F_istat,istat)
+
+      IF_OK: if (RMN_IS_OK(F_istat)) then
+
+         call grid_nodes_iter(m_nodes_8,F_igrid,F_npx,F_col,F_row)
+
+!!$         F_istat = RMN_COMBINE_STATUS(F_istat,ico_comm_xch_halo2(m_nij,1,m_nodes_8))
+         !- Put a non harmful value in m_nodes(0,0), this value should not be used but computations are made with it (then discarded) for simplicity
+         if (m_has_penta) then
+            m_nodes_8(0,0) = m_nodes_8(1,1)
+         endif
+
+!!$         !TODO: move this to mec_grid_mod::grid_init  since this the same for every dyn
+!!$         !- Compute derived quantities.. not sure it must be done here
+!!$         layout = GMM_NULL_LAYOUTS
+!!$         layout(1) = gmm_layout(F_imin,F_imax,2,2,F_ni)
+!!$         layout(2) = gmm_layout(F_jmin,F_jmax,2,2,F_nj)
+!!$         F_istat = RMN_COMBINE_STATUS(F_istat,gmmmeta_encode(gmmmeta,layout,GMM_NO_FLAGS))
+!!$         nullify(lat)
+!!$         nullify(lon)
+!!$         F_istat = RMN_COMBINE_STATUS(F_istat,gmm_create('lat',lat,gmmmeta))
+!!$         F_istat = RMN_COMBINE_STATUS(F_istat,gmm_create('lon',lon,gmmmeta))
+!!$         F_istat = RMN_COMBINE_STATUS(F_istat,jim_lat_lon(lat,lon))
+!!$
+!!$         F_istat = RMN_COMBINE_STATUS(F_istat,ico_comm_xch_halo2(m_nij,2,lat,lon))
+
+      endif IF_OK
+
+      !print *,'[end] jim_grid_post_init'
+      call flush()
+      !---------------------------------------------------------------------
+      return
+   end function jim_grid_post_init
+
+   !/**
+   subroutine jim_grid_finalize()
+      implicit none
+      !@objective
+      !@author Stephane Chamberland
+      !@description
+   !**/
+      integer ::istat
+      !---------------------------------------------------------------------
+      m_init_L  = .false.
+      m_init2_L = .false.
+      deallocate(m_nodes_8,STAT=istat)
+      !---------------------------------------------------------------------
+      return
+   end subroutine jim_grid_finalize
+
+   !/**
+   function jim_tile_size(F_ndiv) result(nij)
+      implicit none
+      !@objective
+      !@arguments
+      integer, intent(in),optional :: F_ndiv     !Number of division
+      !@return
+      integer :: nij                  !grid size
+      !@author Stephane Chamberland
+      !@revisions
+      !  2008-06, Stephane Chamberland: Original Code
+      !@description
+   !**/
+      integer :: ndiv2
+      !---------------------------------------------------------------------
+      ndiv2 = m_ndiv
+      if (present(F_ndiv)) ndiv2 = F_ndiv
+      nij = 2**ndiv2*(NIJ0-1)+1
+      !---------------------------------------------------------------------
+      return
+   end function jim_tile_size
+
+
+   !/**
+   function jim_approx_dx(F_ndiv) result(dx_8)
+      implicit none
+      integer, intent(in),optional :: F_ndiv     !Number of division
+      !@return
+      real(RDOUBLE) :: dx_8           !Approx grid resolution [m]
+      !@author Stephane Chamberland, 2008-06
+      !@revisions
+      !@description
+   !**/
+      real(RDOUBLE) :: pi_8
+      integer :: ndiv2
+      !---------------------------------------------------------------------
+      ndiv2 = m_ndiv
+      if (present(F_ndiv)) ndiv2 = F_ndiv
+      pi_8 = dacos(-1.D0)
+      dx_8 = EARTH_RADIUS_8 * dsqrt(4.D0*pi_8/dble(nb_vertices(ndiv2)))
+      !---------------------------------------------------------------------
+      return
+   end function jim_approx_dx
+
+   !/**
+   function jim_approx_area(F_ndiv) result(aa_8)
+      implicit none
+      integer, intent(in),optional :: F_ndiv     !Number of division
+      !@return
+      real(RDOUBLE) :: aa_8           !Approx grid node area [m]
+      !@author Stephane Chamberland, 2008-10
+      !@revisions
+      !@description
+   !**/
+      real(RDOUBLE) :: pi_8
+      integer :: ndiv2
+      !---------------------------------------------------------------------
+      ndiv2 = m_ndiv
+      if (present(F_ndiv)) ndiv2 = F_ndiv
+      pi_8 = dacos(-1.D0)
+      aa_8 = 4.D0*pi_8 *(EARTH_RADIUS_8**2.D0)/dble(nb_vertices(ndiv2))
+      !---------------------------------------------------------------------
+      return
+   end function jim_approx_area
+
+
+   !/**
+   function jim_lat_lon(lat,lon) result(F_istat)
+      implicit none
+      !@objective
+      !@arguments
+      real, pointer, dimension(:,:) :: lat,lon !OUT
+      !@return
+      integer :: F_istat
+      !@author Stephane Chamberland, 2008-08
+      !@revisions
+      !  2008-08, Stephane Chamberland: Original code
+      !@description
+   !**/
+      integer :: i,j
+      type(vect_3d_8) :: node_sph
+      !---------------------------------------------------------------------
+      F_istat = RMN_ERR
+      if (.not.m_init2_L) return
+      F_istat = RMN_OK
+
+      do j=1,m_nij
+         do i=1,m_nij
+            node_sph = vect_car2sphd(m_nodes_8(i,j))
+            lon(i,j) = real(node_sph%v(V_LMB))
+            lat(i,j) = real(node_sph%v(V_PHI))
+         enddo
+      enddo
+
+      !- poles
+      if (m_has_npole) then
+         lon(1,m_nij+1) = 0.
+         lat(1,m_nij+1) = 90.
+      endif
+      if (m_has_spole) then
+         lon(m_nij+1,1) = 0.
+         lat(m_nij+1,1) = -90.
+      endif
+      !---------------------------------------------------------------------
+      return
+   end function jim_lat_lon
+
+
+
+   !==== Private functions =================================================
+
+   !/**
+   subroutine ico_initial_grid(F_nodes0_8)
+      implicit none
+      !@objective
+      !@arguments
+      type(vect_3d_8), intent(out) :: F_nodes0_8(N_ICO_NODES) !Nodes positions
+      !@author J. Pudykiewicz - October 2001
+      !@revisions
+      !  2001-10, J. Pudykiewicz: original code
+      !  2008-06, Stephane Chamberland: convert from MATLAB to F90
+      !  2008-11, Stephane Chamberland: double precision output
+      !@description
+      !  Evaluation of nodes for the
+      !  icosahedron used for triangulation of the unit sphere
+      !
+      !  Unfolded icosahedron points numbering
+      !    1 1 1 1 1
+      !   2 3 4 5 6 2
+      !    7 8 9 A B 7
+      !   C C C C C C
+      !
+      !  Unfolded icosahedron points numbering... put on a square grid
+      !
+      !                           1 2 | 2 7
+      !                           6 B | B C
+      !                           ---
+      !                     1 6 | 6 B
+      !                     5 A | A C
+      !                     ---
+      !               1 5 | 5 A
+      !               4 9 | 9 C
+      !               ---
+      !         1 4 | 4 9
+      !         3 8 | 8 C
+      !         ---
+      !   1 3 | 3 8
+      !   2 7 | 7 C
+      !
+      !  ico-Tile numbering for the above
+      !
+      !                  8 | 9
+      !                  -
+      !              6 | 7
+      !              -
+      !          4 | 5
+      !          -
+      !      2 | 3
+      !      -
+      !  0 | 1
+      !
+   !**/
+      integer :: i,n,i0,in,i2
+      real(RDOUBLE) :: theta0_8, lambda_8(N_ICO_NODES), theta_8(N_ICO_NODES), tmp_8
+      real(RDOUBLE) :: pi_8
+      !---------------------------------------------------------------------
+!!$      print *,'[begin] ico_initial_grid'
+!!$      call flush()
+      pi_8     = dacos(-1.D0)
+      theta0_8 = 2.D0 * dacos( 1.D0/( 2.D0*dcos(3.D0*pi_8/10.D0) ) ) - pi_8/2.D0
+
+      tmp_8 = 2.D0*pi_8/5.D0
+
+      !- 1st Point: North pole
+      i = 1
+      lambda_8(i) = 0.D0
+      theta_8(i)  = 0.5D0*pi_8
+
+      !- Northern hemisphere points
+      do n=1,5
+         i  = i + 1
+         lambda_8(i) = (dble(n-1)-0.5D0)*tmp_8
+         theta_8(i)  = -theta0_8
+      enddo
+
+      !- Southern hemisphere points
+      do n=1,5
+         i  = i + 1
+         lambda_8(i) = dble(n-1)*tmp_8
+         theta_8(i)  = theta0_8
+     enddo
+
+      !- Last Point: South pole
+      lambda_8(N_ICO_NODES) = 0.D0
+      theta_8(N_ICO_NODES)  = -0.5D0*pi_8
+
+      !- Cartesian coor
+      do i=1,N_ICO_NODES
+         F_nodes0_8(i)%v(3) = dsin(theta_8(i))
+         F_nodes0_8(i)%v(2) = dcos(theta_8(i))*dsin(lambda_8(i))
+         F_nodes0_8(i)%v(1) = dcos(theta_8(i))*dcos(lambda_8(i))
+      enddo
+!!$      print *,'[end] ico_initial_grid'
+!!$      call flush()
+      !---------------------------------------------------------------------
+      return
+   end subroutine ico_initial_grid
+
+
+   !/**
+   function nb_vertices(F_ndiv) result(nvertices)
+      implicit none
+      !@objective
+      !@arguments
+      integer, intent(in),optional :: F_ndiv    !Number of division
+      !@return
+      integer(IDOUBLE) :: nvertices    !Number of vertices
+      !@author Stephane Chamberland
+      !@revisions
+      !  2008-06, Stephane Chamberland: Original Code
+      !@description
+   !**/
+      integer(IDOUBLE), parameter :: TWO_8         = 2_IDOUBLE
+      integer(IDOUBLE), parameter :: N_ICO_FACES_8 = 20_IDOUBLE
+      integer(IDOUBLE) :: nfaces_8, ndiv_8
+      !---------------------------------------------------------------------
+      ndiv_8 = m_ndiv
+      if (present(F_ndiv)) ndiv_8 = F_ndiv
+      nfaces_8  = N_ICO_FACES
+      nvertices = (TWO_8**(TWO_8*ndiv_8)*nfaces_8)/TWO_8+TWO_8
+      !---------------------------------------------------------------------
+      return
+   end function nb_vertices
+
+
+   !/**
+   subroutine grid_nodes_iter(F_nodes_8,F_ico_tile,F_npexy,F_col,F_row)
+      implicit none
+      !@objective
+      !@arguments
+      type(vect_3d_8), pointer  :: F_nodes_8(:,:) !Nodes positions [out]
+      integer,       intent(in) :: F_ico_tile   !Ico Tile Number [0-9]
+      integer,       intent(in) :: F_npexy      !Number of PE along x/y per ico-tile
+      integer,       intent(in) :: F_col,F_row  !x/y PE Position of in the ico-tile [0,npexy-1]
+      !@author J. Pudykiewicz - December 2007
+      !@revisions
+      !  2007-12, J. Pudykiewicz: original code
+      !  2008-06, Stephane Chamberland: convert from MATLAB to F90
+      !  2008-07, Stephane Chamberland: MPI-ify [2 steps: global then local]
+      !  2008-11, Stephane Chamberland: nodes now on unit sphere
+      !  2008-11, Stephane Chamberland: double precision
+      !@description
+    !**/
+      type(vect_3d_8) :: nodes0_8(N_ICO_NODES)
+      type(vect_3d_8),pointer :: nodes_8(:,:)
+!!$      type(vect_3d) :: node2(2)
+      integer :: i,j,i2,j2,nij,ndiv1,istat
+      real    :: rndiv1
+      !---------------------------------------------------------------------
+!!$      print *,'[begin] grid_nodes_iter'
+!!$      call flush()
+      !---- First divisions pass up to ndiv1 = ln(npexy)/ln(2), from Icoshedron
+      if (F_npexy>1) then
+         rndiv1 = log(float(F_npexy))/log(2.)
+         ndiv1  = ceiling(rndiv1)
+      else
+         ndiv1 = 0
+      endif
+!!$      print *,'ndiv',rndiv1,ndiv1,m_ndiv,m_ndiv - ndiv1
+      !TODO: error if ndiv1 /= floor(rndiv1)
+      !TODO: if (ndiv1 > ndiv) error
+
+      !- TODO: ERROR if F_ico_tile >= N_TILES or <0
+      call ico_initial_grid(nodes0_8)
+      nij = jim_tile_size(ndiv1)
+      allocate(nodes_8(nij,nij),STAT=istat)
+!!$      call handle_error(istat,'grid_nodes_iter: mem alloc failed')
+      do j=1,NIJ0
+         do i=1,NIJ0
+            nodes_8(i,j) = vect_normalize(nodes0_8(NODES_NB_0(i,j,F_ico_tile+1)))
+         enddo
+      enddo
+
+      if (ndiv1>0) then
+!!$         print 'A,I6,A,2I6','grid_div_iter 1st pass:',ndiv1,':',size(nodes_8)
+!!$         call flush()
+         call grid_div_iter(nodes_8,ndiv1)
+      endif
+
+      !---- Second division pass up to ndiv, from 1st pass
+      !- TODO: ERROR if (lbound(F_nodes_8,1) > 1)
+      !- TODO: ERROR if (lbound(F_nodes_8,2) > 1)
+      !- TODO: ERROR if (ubound(F_nodes_8,1) < jim_tile_size(m_ndiv - ndiv1))
+      !- TODO: ERROR if (ubound(F_nodes_8,2) < jim_tile_size(m_ndiv - ndiv1))
+
+      j2 = F_row
+      do j=1,2
+         j2 = j2 + 1
+         i2 = F_col
+         do i=1,2
+            i2 = i2 + 1
+            F_nodes_8(i,j) = nodes_8(i2,j2)
+         enddo
+      enddo
+
+      deallocate(nodes_8,STAT=istat)
+
+      if (m_ndiv - ndiv1>0) then
+!!$         print 'A,I6,A,2I6','grid_div_iter 2nd pass:',m_ndiv - ndiv1,':',size(F_nodes_8)
+!!$         call flush()
+         call grid_div_iter(F_nodes_8,m_ndiv - ndiv1)
+      endif
+!!$      print *,'[end] grid_nodes_iter'
+!!$      call flush()
+      !---------------------------------------------------------------------
+      return
+   end subroutine grid_nodes_iter
+
+
+   !/**
+   subroutine grid_div_iter(F_nodes_8,F_ndiv)
+      implicit none
+      !@objective
+      !@arguments
+      type(vect_3d_8), pointer    :: F_nodes_8(:,:) !Nodes positions [inout]
+      integer,           intent(in) :: F_ndiv       !Number of division
+      !@author J. Pudykiewicz - December 2007
+      !@revisions
+      !  2007-12, J. Pudykiewicz: original code
+      !  2008-06, Stephane Chamberland: convert from MATLAB to F90
+      !  2008-11, Stephane Chamberland: nodes now on unit sphere
+      !  2008-11, Stephane Chamberland: double precision
+      !@description
+      !  Evaluate cartesian coordinates of the nodal points of
+      !  the geodesic grid obtained after ndiv partions of icosahedron
+      !
+      !  The Original icosahedron on the sphere is split in 5x2 tiles,
+      !  these tiles can be "deformed" as 5x2 square 2x2 grids
+      !
+      !  Grid/Tile rep. after doubling size + spreading original [o] points
+      !  The grid being more like a lozange than a square one, see right panel
+      !  o u o        o u o
+      !  v x v         v x v
+      !  o u o          o u o
+      !
+      ! F_nodes(1:2,1:2) are expected to contains grid corners value
+      ! F_nodes dims are expected to be at least (1:n,1:n) where n=2**F_ndiv+1
+  !**/
+      integer :: i,j,i2,j2,nij,idiv
+      !---------------------------------------------------------------------
+!!$      print *,'[begin] grid_div_iter'
+!!$      call flush()
+!!$      print *,'F_nodes_8 2:',F_nodes_8(1:2,2)
+!!$      call flush()
+!!$      print *,'F_nodes_8 1:',F_nodes_8(1:2,1)
+!!$      call flush()
+      !- TODO: ERROR if (lbound(F_nodes_8,1) > 1)
+      !- TODO: ERROR if (lbound(F_nodes_8,2) > 1)
+      !- TODO: ERROR if (ubound(F_nodes_8,1) < jim_tile_size(F_ndiv))
+      !- TODO: ERROR if (ubound(F_nodes_8,2) < jim_tile_size(F_ndiv))
+
+      nij = NIJ0
+      DIVLOOP: do idiv=1,F_ndiv
+         !- Place an extra point between each point [spread o-points]
+         do j=nij,1,-1
+            j2 = j*2-1
+            do i=nij,1,-1
+               i2 = i*2-1
+               F_nodes_8(i2,j2) = F_nodes_8(i,j)
+            enddo
+         enddo
+         nij = 2*nij - 1
+
+         !- New mid point, left/right average [u-points]
+         do j=1,nij,2
+            do i=2,nij,2
+               F_nodes_8(i,j) =  vect_normalize( &
+                    0.5D0*(F_nodes_8(i-1,j) + F_nodes_8(i+1,j)) &
+                    )
+            enddo
+         enddo
+
+         !- New mid point, top/bottom average [v-points]
+         do j=2,nij,2
+            do i=1,nij,2
+               F_nodes_8(i,j) = vect_normalize( &
+                    0.5D0*(F_nodes_8(i,j-1) + F_nodes_8(i,j+1)) &
+                    )
+            enddo
+         enddo
+
+         !- New mid point, bottom-left/top-right average [x-points]
+         do j=2,nij,2
+            do i=2,nij,2
+               F_nodes_8(i,j) = vect_normalize( &
+                    0.5D0*(F_nodes_8(i-1,j-1) + F_nodes_8(i+1,j+1)) &
+                    )
+            enddo
+         enddo
+
+      enddo DIVLOOP
+
+!!$      print *,'[end] grid_div_iter'
+!!$      call flush()
+     !---------------------------------------------------------------------
+      return
+   end subroutine grid_div_iter
+
+
+end module jim_grid_mod
+
+
+!/**
+function jim_grid_dims(F_ndiv) result(F_nij)
+   use jim_grid_mod,only:jim_tile_size
+   implicit none
+   !@objective
+   !@arguments
+   integer :: F_ndiv
+   !@return
+   integer :: F_nij
+   !@author Stephane Chamberland, Sept 2009
+   !@description
+   !
+!**/
+   !---------------------------------------------------------------------
+    !print *,'jim_grid_dims: ndiv=',F_ndiv
+    !call flush(6)
+   F_nij = jim_tile_size(F_ndiv)
+    !print *,'jim_grid_dims: nij=',F_nij
+    !call flush(6)
+   !---------------------------------------------------------------------
+   return
+end function jim_grid_dims
+
+
+!/**
+function jim_grid_lalo(F_lat,F_lon,F_ni,F_nj,F_igrid,F_ndiv) result(F_istat)
+   use jim_grid_mod,only:jim_tile_size,jim_grid_init,jim_grid_post_init,jim_lat_lon,jim_grid_finalize
+   implicit none
+   !@objective
+   !@arguments
+   integer :: F_ni,F_nj,F_igrid,F_ndiv
+   real, target, dimension(F_ni,F_nj) :: F_lat,F_lon
+   !@return
+   integer :: F_istat
+   !@author Stephane Chamberland, Sept 2009
+   !@description
+   !
+!**/
+   real, pointer, dimension(:,:) :: lat,lon !OUT
+   integer :: nij,ni,nj,halox,haloy
+   logical :: periodx,periody
+   !---------------------------------------------------------------------
+    !print *,'jim_grid_lalo:',F_ni,F_nj,F_igrid,F_ndiv
+    !call flush(6)
+   lat => F_lat
+   lon => F_lon
+   nij = jim_tile_size(F_ndiv)
+   !TODO: check that lat,lon size is compatible
+   !nij = lat,lon size, return init ni=nj=nij-1
+   F_istat = jim_grid_init(ni,nj,halox,haloy,periodx,periody,F_ndiv)
+    !print *,'jim_grid_init:',ni,nj,halox,haloy
+    !call flush(6)
+   F_istat = jim_grid_post_init(1-halox,ni+halox,1-haloy,nj+haloy,ni,nj,1,1,F_igrid,0,0)
+    !print *,'after jim_grid_init'
+    !call flush(6)
+   F_istat = jim_lat_lon(lat,lon)
+    !print *,'after jim_lat_lon'
+    !call flush(6)
+   call jim_grid_finalize()
+    !print *,'jim_grid_lalo [end]'
+    !call flush(6)
+   !---------------------------------------------------------------------
+   return
+end function jim_grid_lalo
