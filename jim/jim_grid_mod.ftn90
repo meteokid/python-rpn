@@ -710,3 +710,5 @@ function jim_grid_lalo(F_lat,F_lon,F_ni,F_nj,F_igrid,F_ndiv) result(F_istat)
    !---------------------------------------------------------------------
    return
 end function jim_grid_lalo
+
+!// kate: space-indent on; indent-mode cstyle; indent-width 3; mixedindent off;

@@ -18,7 +18,8 @@ static void imprime_ca(char *varname, float *array, int nb);
 
 /* # include "numpy/oldnumeric.h" */
 
-#define FTN_Style_Array 1
+#define FTN_Style_Array NPY_FARRAY
+//#define FTN_Style_Array 1
 static PyObject *ErrorObject;
 
 static int datyps[32]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,

@@ -91,7 +91,7 @@ jimc_grid(PyObject *self, PyObject *args) {
             f_ndiv  = (wordint)ndiv;
             f_igrid = (wordint)igrid;
 
-            printf("jimc_grid: ndiv=%d, igrid=%d\n",ndiv,igrid);
+//             printf("jimc_grid: ndiv=%d, igrid=%d\n",ndiv,igrid);
 
             f_nij   = f77name(jim_grid_dims)(&f_ndiv);
             nij     = (int)f_nij;
@@ -106,7 +106,7 @@ jimc_grid(PyObject *self, PyObject *args) {
             else if(nij>1) ndims=2;
             else ndims=1;
 
-            printf("jimc_grid: nij=%d, ndims=%d\n",nij,ndims);
+//             printf("jimc_grid: nij=%d, ndims=%d\n",nij,ndims);
 
             lat = PyArray_NewFromDescr(&PyArray_Type,
                                         PyArray_DescrFromType(type_num),
@@ -119,7 +119,7 @@ jimc_grid(PyObject *self, PyObject *args) {
                                         NULL, NULL, FTN_Style_Array,
                                         NULL);
 
-            printf("jimc_grid: to jim_grid_lalo\n");
+//             printf("jimc_grid: to jim_grid_lalo\n");
 
             istat = f77name(jim_grid_lalo)(lat->data,lon->data,&f_nij,&f_nij,&f_igrid,&f_ndiv);
 
