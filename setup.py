@@ -18,13 +18,33 @@ Fstd_module = Extension('Fstdc',
             library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
             sources = ['Fstdc.c'])
 
-Jim_module = Extension('jimc',
+jimc_module = Extension('jimc',
             include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture],
             libraries = ['PyFTN_helpers','rmn_shared_beta10'],
             extra_objects = ['jim/jim_grid_mod.o','utils/vect_mod.o'],
             extra_link_args=runtime_libs,
             library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
             sources = ['jimc.c'])
+
+scripc_module = Extension('scripc',
+            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture],
+            libraries = ['PyFTN_helpers','rmn_shared_beta10'],
+            extra_objects = [
+                'scrip/kinds_mod.o',
+                'scrip/constants.o',
+                'scrip/grids.o',
+                'scrip/remap_vars.o',
+                'scrip/remap_distwgt.o',
+                'scrip/remap_conserv.o',
+                'scrip/remap_bilinear.o',
+                'scrip/remap_bicubic.o',
+                'scrip/timers.o',
+                'scrip/remap_write.o',
+                'scrip/scrip.o'],
+            extra_link_args=runtime_libs,
+            library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
+            sources = ['scripc.c'])
+
 
 setup(name = 'rpnstd',
     version = '1.2-dev',
@@ -40,5 +60,5 @@ Base Interfaces are defined in the Fstdc sub-package.
 More python-esk clasess are defined in the rpnstd sub-package
 ''',
     py_modules=['rpnstd'],
-    ext_modules = [Fstd_module,Jim_module])
+    ext_modules = [Fstd_module,jimc_module,scripc_module])
 

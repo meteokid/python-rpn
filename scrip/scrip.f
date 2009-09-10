@@ -1,18 +1,18 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!     This routine is the driver for computing the addresses and weights 
+!     This routine is the driver for computing the addresses and weights
 !     for interpolating between two grids on a sphere.
 !
 !-----------------------------------------------------------------------
 !
 !     CVS:$Id: scrip.f,v 1.6 2001/08/21 21:06:44 pwjones Exp $
 !
-!     Copyright (c) 1997, 1998 the Regents of the University of 
+!     Copyright (c) 1997, 1998 the Regents of the University of
 !       California.
 !
-!     This software and ancillary information (herein called software) 
-!     called SCRIP is made available under the terms described here.  
-!     The software has been approved for release with associated 
+!     This software and ancillary information (herein called software)
+!     called SCRIP is made available under the terms described here.
+!     The software has been approved for release with associated
 !     LA-CC Number 98-45.
 !
 !     Unless otherwise indicated, this software has been authored
@@ -27,19 +27,27 @@
 !     any liability or responsibility for the use of this software.
 !
 !     If software is modified to produce derivative works, such modified
-!     software should be clearly marked, so as not to confuse it with 
+!     software should be clearly marked, so as not to confuse it with
 !     the version available from Los Alamos National Laboratory.
 !
 !***********************************************************************
 
-      program scrip
+      subroutine scrip_addr_wts(
+     $     F_grid1_add_map1, F_grid2_add_map1, F_wts_map1, 
+     $     F_num_wts,F_num_links,
+     $     F_num_srch_bins, F_map_method, 
+     $     F_normalize_opt, F_restrict_type,
+     $     F_grid1_size,F_grid1_dims,F_grid1_corners,
+     $     F_grid1_center_lat,F_grid1_center_lon,
+     $     F_grid1_corner_lat,F_grid1_corner_lon,
+     $     F_grid2_size,F_grid2_dims,F_grid2_corners,
+     $     F_grid2_center_lat,F_grid2_center_lon,
+     $     F_grid2_corner_lat,F_grid2_corner_lon)
 
 !-----------------------------------------------------------------------
 
       use kinds_mod                  ! module defining data types
       use constants                  ! module for common constants
-      use iounits                    ! I/O unit manager
-      use timers                     ! CPU timers
       use grids                      ! module with grid information
       use remap_vars                 ! common remapping variables
       use remap_conservative         ! routines for conservative remap
@@ -50,32 +58,63 @@
 
       implicit none
 
+      !- Output Args
+      integer (kind=int_kind) :: F_num_wts, F_num_links
+      integer (kind=int_kind), dimension(:), pointer ::
+     &      F_grid1_add_map1, ! grid1 address for each link in mapping 1
+     &      F_grid2_add_map1  ! grid2 address for each link in mapping 1
+
+      real (kind=dbl_kind), dimension(:,:), pointer ::
+     &      F_wts_map1        ! map weights for each link (num_wts,max_links)
+
+
+      !- Input Args
+      integer (kind=int_kind) :: F_num_srch_bins
+
+      character (char_len) ::
+     &           F_map_method,   ! choice for mapping method
+     &           F_normalize_opt,! option for normalizing weights
+     &           F_restrict_type ! type of bins to use
+
+      integer (kind=int_kind), dimension(2) ::
+     &             F_grid1_dims, F_grid2_dims  ! size of each grid dimension
+      integer (kind=int_kind) ::
+     &             F_grid1_size,F_grid2_size,
+     &             F_grid1_corners, F_grid2_corners ! number of corners
+                                                    ! for each grid cell
+      integer (kind=int_kind) :: F_luse_grid_centers
+
+      real (kind=dbl_kind), dimension(F_grid1_size), target ::
+     &             F_grid1_center_lat,  ! lat/lon coordinates for
+     &             F_grid1_center_lon   ! each grid center in radians
+
+      real (kind=dbl_kind), dimension(F_grid2_size), target ::
+     &             F_grid2_center_lat,
+     &             F_grid2_center_lon
+
+      real (kind=dbl_kind), 
+     &     dimension(F_grid1_corners,F_grid1_size), target  ::
+     &             F_grid1_corner_lat,  ! lat/lon coordinates for
+     &             F_grid1_corner_lon   ! each grid corner in radians
+
+      real (kind=dbl_kind), 
+     &     dimension(F_grid2_corners,F_grid2_size), target  ::
+     &             F_grid2_corner_lat,
+     &             F_grid2_corner_lon
+
 !-----------------------------------------------------------------------
 !
 !     input namelist variables
 !
 !-----------------------------------------------------------------------
 
-      character (char_len) :: 
-     &           grid1_file,   ! filename of grid file containing grid1
-     &           grid2_file,   ! filename of grid file containing grid2
-     &           interp_file1, ! filename for output remap data (map1)
-     &           interp_file2, ! filename for output remap data (map2)
-     &           map1_name,    ! name for mapping from grid1 to grid2
-     &           map2_name,    ! name for mapping from grid2 to grid1
+      character (char_len) ::
      &           map_method,   ! choice for mapping method
      &           normalize_opt,! option for normalizing weights
      &           output_opt    ! option for output conventions
 
       integer (kind=int_kind) ::
      &           nmap          ! number of mappings to compute (1 or 2)
-
-      namelist /remap_inputs/ grid1_file, grid2_file, 
-     &                        interp_file1, interp_file2,
-     &                        map1_name, map2_name, num_maps,
-     &                        luse_grid1_area, luse_grid2_area,
-     &                        map_method, normalize_opt, output_opt,
-     &                        restrict_type, num_srch_bins
 
 !-----------------------------------------------------------------------
 !
@@ -88,40 +127,26 @@
 
 !-----------------------------------------------------------------------
 !
-!     initialize timers
-!
-!-----------------------------------------------------------------------
-
-      call timers_init
-      do n=1,max_timers
-        call timer_clear(n)
-      end do
-
-!-----------------------------------------------------------------------
-!
 !     read input namelist
 !
 !-----------------------------------------------------------------------
 
-      grid1_file    = 'unknown'
-      grid2_file    = 'unknown'
-      interp_file1  = 'unknown'
-      interp_file2  = 'unknown'
-      map1_name     = 'unknown'
-      map2_name     = 'unknown'
       luse_grid1_area = .false.
       luse_grid2_area = .false.
-      num_maps      = 2
+      num_maps      = 1 !2
       map_type      = 1
+      map_method    = 'distwgt'
       normalize_opt = 'fracarea'
       output_opt    = 'scrip'
       restrict_type = 'latitude'
       num_srch_bins = 900
 
-      call get_unit(iunit)
-      open(iunit, file='scrip_in', status='old', form='formatted')
-      read(iunit, nml=remap_inputs)
-      call release_unit(iunit)
+c$$$      if (F_num_maps>0)          num_maps      = F_num_maps
+      if (F_num_srch_bins>0)     num_srch_bins = F_num_srch_bins
+      if (F_map_method   .ne.'') map_method    = F_map_method
+      if (F_normalize_opt.ne.'') normalize_opt = F_normalize_opt
+c$$$      if (F_output_opt   .ne.'') output_opt    = F_output_opt
+      if (F_restrict_type.ne.'') restrict_type = F_restrict_type
 
       select case(map_method)
       case ('conservative')
@@ -133,22 +158,18 @@
       case ('bicubic')
         map_type = map_type_bicubic
         luse_grid_centers = .true.
-      case ('distwgt')
+      case default !'distwgt'
         map_type = map_type_distwgt
         luse_grid_centers = .true.
-      case default
-        stop 'unknown mapping method'
       end select
 
       select case(normalize_opt(1:4))
       case ('none')
         norm_opt = norm_opt_none
-      case ('frac')
-        norm_opt = norm_opt_frcarea
       case ('dest')
         norm_opt = norm_opt_dstarea
-      case default
-        stop 'unknown normalization option'
+      case default !'frac'
+        norm_opt = norm_opt_frcarea
       end select
 
 !-----------------------------------------------------------------------
@@ -157,10 +178,14 @@
 !
 !-----------------------------------------------------------------------
 
-      call grid_init(grid1_file, grid2_file)
-
-      write(stdout, *) ' Computing remappings between: ',grid1_name
-      write(stdout, *) '                          and  ',grid2_name
+c$$$      call grid_init(grid1_file, grid2_file)
+      call scrip_grid_init(
+     $     F_grid1_dims,F_grid1_corners,
+     $     F_grid1_center_lat,F_grid1_center_lon,
+     $     F_grid1_corner_lat,F_grid1_corner_lon,
+     $     F_grid2_dims,F_grid2_corners,
+     $     F_grid2_center_lat,F_grid2_center_lon,
+     $     F_grid2_corner_lat,F_grid2_corner_lon)
 
 !-----------------------------------------------------------------------
 !
@@ -168,7 +193,7 @@
 !
 !-----------------------------------------------------------------------
 
-      call init_remap_vars
+      call init_remap_vars()
 
 !-----------------------------------------------------------------------
 !
@@ -179,15 +204,13 @@
 
       select case(map_type)
       case(map_type_conserv)
-        call remap_conserv
+        call remap_conserv()
       case(map_type_bilinear)
-        call remap_bilin
-      case(map_type_distwgt)
-        call remap_distwgt
+        call remap_bilin()
       case(map_type_bicubic)
-        call remap_bicub
-      case default
-        stop 'Invalid Map Type'
+        call remap_bicub()
+      case default !map_type_distwgt
+        call remap_distwgt()
       end select
 
 !-----------------------------------------------------------------------
@@ -204,11 +227,32 @@
         call resize_remap_vars(2, num_links_map2-max_links_map2)
       endif
 
-      call write_remap(map1_name, map2_name, 
-     &                 interp_file1, interp_file2, output_opt)
+c$$$      call write_remap(map1_name, map2_name,
+c$$$     &                 interp_file1, interp_file2, output_opt)
+
+      call sort_add(grid2_add_map1, grid1_add_map1, wts_map1)
+      !num_links = SIZE(grid2_add_map1)  !grid2_add_map1(num_links_map1)
+      !num_wts   = SIZE(wts_map1, DIM=1) !wts_map1(num_wts, max_links_map1)
+
+      F_grid1_add_map1 => grid1_add_map1
+      F_grid2_add_map1 => grid2_add_map1
+      F_wts_map1       => wts_map1
+      F_num_links = SIZE(grid2_add_map1)
+      F_num_wts   = SIZE(wts_map1, DIM=1)
+
+c$$$      if (num_maps > 1) then
+c$$$        call sort_add(grid1_add_map2, grid2_add_map2, wts_map2)
+c$$$        !num_links = SIZE(grid1_add_map2)
+c$$$        !num_wts   = SIZE(wts_map2, DIM=1)
+c$$$      endif
+
+      call scrip_grid_finalize()
+c$$$      call scrip_remap_vars_finalize(num_maps)
+
+      !TODO: may have to deallocate all working arrays
 
 !-----------------------------------------------------------------------
-
-      end program scrip
+      return
+      end subroutine scrip_addr_wts
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

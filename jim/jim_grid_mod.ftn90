@@ -652,19 +652,17 @@ function jim_grid_dims(F_ndiv) result(F_nij)
    implicit none
    !@objective
    !@arguments
-   integer :: F_ndiv
+   integer :: F_ndiv               !intent(in)
    !@return
    integer :: F_nij
    !@author Stephane Chamberland, Sept 2009
    !@description
    !
 !**/
+   integer :: ndiv
    !---------------------------------------------------------------------
-    !print *,'jim_grid_dims: ndiv=',F_ndiv
-    !call flush(6)
-   F_nij = jim_tile_size(F_ndiv)
-    !print *,'jim_grid_dims: nij=',F_nij
-    !call flush(6)
+   ndiv  = min(max(1,F_ndiv),15)
+   F_nij = jim_tile_size(ndiv)
    !---------------------------------------------------------------------
    return
 end function jim_grid_dims
@@ -676,8 +674,8 @@ function jim_grid_lalo(F_lat,F_lon,F_ni,F_nj,F_igrid,F_ndiv) result(F_istat)
    implicit none
    !@objective
    !@arguments
-   integer :: F_ni,F_nj,F_igrid,F_ndiv
-   real, target, dimension(F_ni,F_nj) :: F_lat,F_lon
+   integer :: F_ni,F_nj,F_igrid,F_ndiv               !intent(in)
+   real, target, dimension(F_ni,F_nj) :: F_lat,F_lon !intent(out)
    !@return
    integer :: F_istat
    !@author Stephane Chamberland, Sept 2009
@@ -685,28 +683,23 @@ function jim_grid_lalo(F_lat,F_lon,F_ni,F_nj,F_igrid,F_ndiv) result(F_istat)
    !
 !**/
    real, pointer, dimension(:,:) :: lat,lon !OUT
-   integer :: nij,ni,nj,halox,haloy
+   integer :: nij,ni,nj,halox,haloy,ndiv,igrid
    logical :: periodx,periody
    !---------------------------------------------------------------------
     !print *,'jim_grid_lalo:',F_ni,F_nj,F_igrid,F_ndiv
     !call flush(6)
    lat => F_lat
    lon => F_lon
-   nij = jim_tile_size(F_ndiv)
+   ndiv  = min(max(1,F_ndiv),15)
+   igrid = min(max(0,F_igrid),9)
+
+   nij = jim_tile_size(ndiv)
    !TODO: check that lat,lon size is compatible
    !nij = lat,lon size, return init ni=nj=nij-1
-   F_istat = jim_grid_init(ni,nj,halox,haloy,periodx,periody,F_ndiv)
-    !print *,'jim_grid_init:',ni,nj,halox,haloy
-    !call flush(6)
-   F_istat = jim_grid_post_init(1-halox,ni+halox,1-haloy,nj+haloy,ni,nj,1,1,F_igrid,0,0)
-    !print *,'after jim_grid_init'
-    !call flush(6)
+   F_istat = jim_grid_init(ni,nj,halox,haloy,periodx,periody,ndiv)
+   F_istat = jim_grid_post_init(1-halox,ni+halox,1-haloy,nj+haloy,ni,nj,1,1,igrid,0,0)
    F_istat = jim_lat_lon(lat,lon)
-    !print *,'after jim_lat_lon'
-    !call flush(6)
    call jim_grid_finalize()
-    !print *,'jim_grid_lalo [end]'
-    !call flush(6)
    !---------------------------------------------------------------------
    return
 end function jim_grid_lalo

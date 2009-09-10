@@ -6,7 +6,7 @@ include Makefile_$(ARCH)
 BASEDIR=$(PWD)
 
 MYDYN = jim
-COMPONENTS = utils $(MYDYN)
+COMPONENTS = utils $(MYDYN) scrip
 FTNALLSRC = utils/*.ftn90 $(MYDYN)/*.ftn90 utils/*.hf $(MYDYN)/*.hf
 FTNALLOBJ = utils/*.o $(MYDYN)/*.o
 
@@ -19,12 +19,12 @@ INSTALLDIR= $(HOME)/ovbin/python/lib.linux-i686-2.4-dev
 
 default: all
 
-slib: all
-	r.build \
-	  -obj $(FTNALLOBJ) \
-	  -shared \
-	  -librmn $(RMNLIBSHARED) \
-	  -o jim.so
+# slib: all
+# 	r.build \
+# 	  -obj $(FTNALLOBJ) \
+# 	  -shared \
+# 	  -librmn $(RMNLIBSHARED) \
+# 	  -o jim.so
 
 all:
 	for i in $(COMPONENTS); \

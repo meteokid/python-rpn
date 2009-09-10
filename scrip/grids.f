@@ -9,12 +9,12 @@
 !
 !     CVS:$Id: grids.f,v 1.6 2001/08/21 21:06:41 pwjones Exp $
 !
-!     Copyright (c) 1997, 1998 the Regents of the University of 
+!     Copyright (c) 1997, 1998 the Regents of the University of
 !       California.
 !
-!     This software and ancillary information (herein called software) 
-!     called SCRIP is made available under the terms described here.  
-!     The software has been approved for release with associated 
+!     This software and ancillary information (herein called software)
+!     called SCRIP is made available under the terms described here.
+!     The software has been approved for release with associated
 !     LA-CC Number 98-45.
 !
 !     Unless otherwise indicated, this software has been authored
@@ -29,7 +29,7 @@
 !     any liability or responsibility for the use of this software.
 !
 !     If software is modified to produce derivative works, such modified
-!     software should be clearly marked, so as not to confuse it with 
+!     software should be clearly marked, so as not to confuse it with
 !     the version available from Los Alamos National Laboratory.
 !
 !***********************************************************************
@@ -40,8 +40,8 @@
 
       use kinds_mod    ! defines data types
       use constants    ! common constants
-      use iounits      ! I/O unit manager
-      use netcdf_mod   ! netCDF stuff
+c$$$      use iounits      ! I/O unit manager
+c$$$      use netcdf_mod   ! netCDF stuff
 
       implicit none
 
@@ -60,10 +60,10 @@
       integer (kind=int_kind), dimension(:), allocatable, save ::
      &             grid1_dims, grid2_dims  ! size of each grid dimension
 
-      character(char_len), save :: 
+      character(char_len), save ::
      &             grid1_name, grid2_name  ! name for each grid
 
-      character (char_len), save :: 
+      character (char_len), save ::
      &             grid1_units, ! units for grid coords (degs/radians)
      &             grid2_units  ! units for grid coords
 
@@ -76,14 +76,14 @@
 !
 !-----------------------------------------------------------------------
 
-      logical (kind=log_kind), dimension(:), allocatable, save ::
+      logical (kind=log_kind), dimension(:), pointer, save ::
      &             grid1_mask,        ! flag which cells participate
      &             grid2_mask         ! flag which cells participate
 
-      real (kind=dbl_kind), dimension(:), allocatable, save ::
+      real (kind=dbl_kind), dimension(:), pointer, save ::
      &             grid1_center_lat,  ! lat/lon coordinates for
      &             grid1_center_lon,  ! each grid center in radians
-     &             grid2_center_lat, 
+     &             grid2_center_lat,
      &             grid2_center_lon,
      &             grid1_area,        ! tot area of each grid1 cell
      &             grid2_area,        ! tot area of each grid2 cell
@@ -92,10 +92,10 @@
      &             grid1_frac,        ! fractional area of grid cells
      &             grid2_frac         ! participating in remapping
 
-      real (kind=dbl_kind), dimension(:,:), allocatable, save ::
+      real (kind=dbl_kind), dimension(:,:), pointer, save ::
      &             grid1_corner_lat,  ! lat/lon coordinates for
      &             grid1_corner_lon,  ! each grid corner in radians
-     &             grid2_corner_lat, 
+     &             grid2_corner_lat,
      &             grid2_corner_lon
 
       logical (kind=log_kind), save ::
@@ -133,7 +133,8 @@
 
 !***********************************************************************
 
-      subroutine grid_init(grid1_file, grid2_file)
+c$$$      subroutine grid_init(grid1_file, grid2_file)
+      subroutine grid_init()
 
 !-----------------------------------------------------------------------
 !
@@ -148,8 +149,8 @@
 !
 !-----------------------------------------------------------------------
 
-      character(char_len), intent(in) :: 
-     &             grid1_file, grid2_file  ! grid data files
+c$$$      character(char_len), intent(in) ::
+c$$$     &             grid1_file, grid2_file  ! grid data files
 
 !-----------------------------------------------------------------------
 !
@@ -157,7 +158,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) :: 
+      integer (kind=int_kind) ::
      &  n      ! loop counter
      &, nele   ! element loop counter
      &, iunit  ! unit number for opening files
@@ -166,35 +167,35 @@
      &, n_add, e_add, ne_add
      &, nx, ny
 
-      integer (kind=int_kind) :: 
-     &         ncstat,           ! netCDF status variable
-     &         nc_grid1_id,       ! netCDF grid file id
-     &         nc_grid2_id,       ! netCDF grid file id
-     &         nc_grid1size_id,   ! netCDF grid size dim id
-     &         nc_grid2size_id,   ! netCDF grid size dim id
-     &         nc_grid1corn_id,   ! netCDF grid corner dim id
-     &         nc_grid2corn_id,   ! netCDF grid corner dim id
-     &         nc_grid1rank_id,   ! netCDF grid rank dim id
-     &         nc_grid2rank_id,   ! netCDF grid rank dim id
-     &         nc_grid1area_id,   ! netCDF grid rank dim id
-     &         nc_grid2area_id,   ! netCDF grid rank dim id
-     &         nc_grid1dims_id,   ! netCDF grid dimension size id
-     &         nc_grid2dims_id,   ! netCDF grid dimension size id
-     &         nc_grd1imask_id,   ! netCDF grid imask var id
-     &         nc_grd2imask_id,   ! netCDF grid imask var id
-     &         nc_grd1crnrlat_id, ! netCDF grid corner lat var id
-     &         nc_grd2crnrlat_id, ! netCDF grid corner lat var id
-     &         nc_grd1crnrlon_id, ! netCDF grid corner lon var id
-     &         nc_grd2crnrlon_id, ! netCDF grid corner lon var id
-     &         nc_grd1cntrlat_id, ! netCDF grid center lat var id
-     &         nc_grd2cntrlat_id, ! netCDF grid center lat var id
-     &         nc_grd1cntrlon_id, ! netCDF grid center lon var id
-     &         nc_grd2cntrlon_id  ! netCDF grid center lon var id
+c$$$      integer (kind=int_kind) ::
+c$$$     &         ncstat,           ! netCDF status variable
+c$$$     &         nc_grid1_id,       ! netCDF grid file id
+c$$$     &         nc_grid2_id,       ! netCDF grid file id
+c$$$     &         nc_grid1size_id,   ! netCDF grid size dim id
+c$$$     &         nc_grid2size_id,   ! netCDF grid size dim id
+c$$$     &         nc_grid1corn_id,   ! netCDF grid corner dim id
+c$$$     &         nc_grid2corn_id,   ! netCDF grid corner dim id
+c$$$     &         nc_grid1rank_id,   ! netCDF grid rank dim id
+c$$$     &         nc_grid2rank_id,   ! netCDF grid rank dim id
+c$$$     &         nc_grid1area_id,   ! netCDF grid rank dim id
+c$$$     &         nc_grid2area_id,   ! netCDF grid rank dim id
+c$$$     &         nc_grid1dims_id,   ! netCDF grid dimension size id
+c$$$     &         nc_grid2dims_id,   ! netCDF grid dimension size id
+c$$$     &         nc_grd1imask_id,   ! netCDF grid imask var id
+c$$$     &         nc_grd2imask_id,   ! netCDF grid imask var id
+c$$$     &         nc_grd1crnrlat_id, ! netCDF grid corner lat var id
+c$$$     &         nc_grd2crnrlat_id, ! netCDF grid corner lat var id
+c$$$     &         nc_grd1crnrlon_id, ! netCDF grid corner lon var id
+c$$$     &         nc_grd2crnrlon_id, ! netCDF grid corner lon var id
+c$$$     &         nc_grd1cntrlat_id, ! netCDF grid center lat var id
+c$$$     &         nc_grd2cntrlat_id, ! netCDF grid center lat var id
+c$$$     &         nc_grd1cntrlon_id, ! netCDF grid center lon var id
+c$$$     &         nc_grd2cntrlon_id  ! netCDF grid center lon var id
 
-      integer (kind=int_kind), dimension(:), allocatable :: 
-     &                            imask ! integer mask read from file
+c$$$      integer (kind=int_kind), dimension(:), allocatable ::
+c$$$     &                            imask ! integer mask read from file
 
-      real (kind=dbl_kind) :: 
+      real (kind=dbl_kind) ::
      &  dlat,dlon           ! lat/lon intervals for search bins
 
       real (kind=dbl_kind), dimension(4) ::
@@ -206,52 +207,38 @@
 !
 !-----------------------------------------------------------------------
 
-      ncstat = nf_open(grid1_file, NF_NOWRITE, nc_grid1_id)
-      call netcdf_error_handler(ncstat)
+c$$$      TODO: grid1_size,grid2_size,grid1_rank,grid2_rank,grid1_corners,grid2_corners,grid1_name,grid2_name
 
-      ncstat = nf_open(grid2_file, NF_NOWRITE, nc_grid2_id)
-      call netcdf_error_handler(ncstat)
+c$$$      ncstat = nf_open(grid1_file, NF_NOWRITE, nc_grid1_id)
+c$$$
+c$$$      ncstat = nf_open(grid2_file, NF_NOWRITE, nc_grid2_id)
+c$$$
+c$$$      ncstat = nf_inq_dimid(nc_grid1_id, 'grid_size', nc_grid1size_id)
+c$$$      ncstat = nf_inq_dimlen(nc_grid1_id, nc_grid1size_id, grid1_size)
+c$$$
+c$$$      ncstat = nf_inq_dimid(nc_grid2_id, 'grid_size', nc_grid2size_id)
+c$$$      ncstat = nf_inq_dimlen(nc_grid2_id, nc_grid2size_id, grid2_size)
+c$$$
+c$$$      ncstat = nf_inq_dimid(nc_grid1_id, 'grid_rank', nc_grid1rank_id)
+c$$$      ncstat = nf_inq_dimlen(nc_grid1_id, nc_grid1rank_id, grid1_rank)
+c$$$
+c$$$      ncstat = nf_inq_dimid(nc_grid2_id, 'grid_rank', nc_grid2rank_id)
+c$$$      ncstat = nf_inq_dimlen(nc_grid2_id, nc_grid2rank_id, grid2_rank)
+c$$$
+c$$$      ncstat = nf_inq_dimid(nc_grid1_id,'grid_corners',nc_grid1corn_id)
+c$$$      ncstat = nf_inq_dimlen(nc_grid1_id,nc_grid1corn_id,grid1_corners)
+c$$$
+c$$$      ncstat = nf_inq_dimid(nc_grid2_id,'grid_corners',nc_grid2corn_id)
+c$$$      ncstat = nf_inq_dimlen(nc_grid2_id,nc_grid2corn_id,grid2_corners)
 
-      ncstat = nf_inq_dimid(nc_grid1_id, 'grid_size', nc_grid1size_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_dimlen(nc_grid1_id, nc_grid1size_id, grid1_size)
-      call netcdf_error_handler(ncstat)
+c$$$      allocate( grid1_dims(grid1_rank),
+c$$$     &          grid2_dims(grid2_rank))
 
-      ncstat = nf_inq_dimid(nc_grid2_id, 'grid_size', nc_grid2size_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_dimlen(nc_grid2_id, nc_grid2size_id, grid2_size)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_inq_dimid(nc_grid1_id, 'grid_rank', nc_grid1rank_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_dimlen(nc_grid1_id, nc_grid1rank_id, grid1_rank)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_inq_dimid(nc_grid2_id, 'grid_rank', nc_grid2rank_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_dimlen(nc_grid2_id, nc_grid2rank_id, grid2_rank)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_inq_dimid(nc_grid1_id,'grid_corners',nc_grid1corn_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_dimlen(nc_grid1_id,nc_grid1corn_id,grid1_corners)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_inq_dimid(nc_grid2_id,'grid_corners',nc_grid2corn_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_dimlen(nc_grid2_id,nc_grid2corn_id,grid2_corners)
-      call netcdf_error_handler(ncstat)
-
-      allocate( grid1_dims(grid1_rank),
-     &          grid2_dims(grid2_rank))
-
-      ncstat = nf_get_att_text(nc_grid1_id, nf_global, 'title',
-     &                         grid1_name)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_get_att_text(nc_grid2_id, nf_global, 'title',
-     &                         grid2_name)
-      call netcdf_error_handler(ncstat)
+c$$$      ncstat = nf_get_att_text(nc_grid1_id, nf_global, 'title',
+c$$$     &                         grid1_name)
+c$$$
+c$$$      ncstat = nf_get_att_text(nc_grid2_id, nf_global, 'title',
+c$$$     &                         grid2_name)
 
 !-----------------------------------------------------------------------
 !
@@ -259,72 +246,70 @@
 !
 !-----------------------------------------------------------------------
 
-      allocate( grid1_mask      (grid1_size),
-     &          grid2_mask      (grid2_size),
-     &          grid1_center_lat(grid1_size), 
-     &          grid1_center_lon(grid1_size),
-     &          grid2_center_lat(grid2_size), 
-     &          grid2_center_lon(grid2_size),
+c$$$      allocate( grid1_mask      (grid1_size),
+c$$$     &          grid2_mask      (grid2_size),
+c$$$     &          grid1_center_lat(grid1_size),
+c$$$     &          grid1_center_lon(grid1_size),
+c$$$     &          grid2_center_lat(grid2_size),
+c$$$     &          grid2_center_lon(grid2_size),
+c$$$     &          grid1_area      (grid1_size),
+c$$$     &          grid2_area      (grid2_size),
+c$$$     &          grid1_frac      (grid1_size),
+c$$$     &          grid2_frac      (grid2_size),
+c$$$     &          grid1_corner_lat(grid1_corners, grid1_size),
+c$$$     &          grid1_corner_lon(grid1_corners, grid1_size),
+c$$$     &          grid2_corner_lat(grid2_corners, grid2_size),
+c$$$     &          grid2_corner_lon(grid2_corners, grid2_size),
+c$$$     &          grid1_bound_box (4            , grid1_size),
+c$$$     &          grid2_bound_box (4            , grid2_size))
+
+      allocate(
      &          grid1_area      (grid1_size),
      &          grid2_area      (grid2_size),
      &          grid1_frac      (grid1_size),
      &          grid2_frac      (grid2_size),
-     &          grid1_corner_lat(grid1_corners, grid1_size),
-     &          grid1_corner_lon(grid1_corners, grid1_size),
-     &          grid2_corner_lat(grid2_corners, grid2_size),
-     &          grid2_corner_lon(grid2_corners, grid2_size),
      &          grid1_bound_box (4            , grid1_size),
      &          grid2_bound_box (4            , grid2_size))
 
-      allocate(imask(grid1_size))
+c$$$      allocate(imask(grid1_size))
 
-      ncstat = nf_inq_varid(nc_grid1_id, 'grid_dims', nc_grid1dims_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid1_id, 'grid_imask', nc_grd1imask_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid1_id, 'grid_center_lat', 
-     &                                   nc_grd1cntrlat_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid1_id, 'grid_center_lon', 
-     &                                   nc_grd1cntrlon_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid1_id, 'grid_corner_lat', 
-     &                                   nc_grd1crnrlat_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid1_id, 'grid_corner_lon', 
-     &                                   nc_grd1crnrlon_id)
-      call netcdf_error_handler(ncstat)
+c$$$      TODO: grid1_dims,imask,grid1_center_lat,grid1_center_lon,grid1_corner_lat,grid1_corner_lon
 
-      ncstat = nf_get_var_int(nc_grid1_id, nc_grid1dims_id, grid1_dims)
-      call netcdf_error_handler(ncstat)
+c$$$      ncstat = nf_inq_varid(nc_grid1_id, 'grid_dims', nc_grid1dims_id)
+c$$$      ncstat = nf_inq_varid(nc_grid1_id, 'grid_imask', nc_grd1imask_id)
+c$$$      ncstat = nf_inq_varid(nc_grid1_id, 'grid_center_lat',
+c$$$     &                                   nc_grd1cntrlat_id)
+c$$$      ncstat = nf_inq_varid(nc_grid1_id, 'grid_center_lon',
+c$$$     &                                   nc_grd1cntrlon_id)
+c$$$      ncstat = nf_inq_varid(nc_grid1_id, 'grid_corner_lat',
+c$$$     &                                   nc_grd1crnrlat_id)
+c$$$      ncstat = nf_inq_varid(nc_grid1_id, 'grid_corner_lon',
+c$$$     &                                   nc_grd1crnrlon_id)
+c$$$
+c$$$      ncstat = nf_get_var_int(nc_grid1_id, nc_grid1dims_id, grid1_dims)
+c$$$
+c$$$      ncstat = nf_get_var_int(nc_grid1_id, nc_grd1imask_id, imask)
+c$$$
+c$$$      ncstat = nf_get_var_double(nc_grid1_id, nc_grd1cntrlat_id,
+c$$$     &                                       grid1_center_lat)
+c$$$
+c$$$      ncstat = nf_get_var_double(nc_grid1_id, nc_grd1cntrlon_id,
+c$$$     &                                       grid1_center_lon)
+c$$$
+c$$$      ncstat = nf_get_var_double(nc_grid1_id, nc_grd1crnrlat_id,
+c$$$     &                                       grid1_corner_lat)
+c$$$
+c$$$      ncstat = nf_get_var_double(nc_grid1_id, nc_grd1crnrlon_id,
+c$$$     &                                       grid1_corner_lon)
 
-      ncstat = nf_get_var_int(nc_grid1_id, nc_grd1imask_id, imask)
-      call netcdf_error_handler(ncstat)
+c$$$      if (luse_grid1_area) then
+c$$$        allocate (grid1_area_in(grid1_size))
+c$$$      TODO: grid1_area_in
 
-      ncstat = nf_get_var_double(nc_grid1_id, nc_grd1cntrlat_id, 
-     &                                       grid1_center_lat)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_get_var_double(nc_grid1_id, nc_grd1cntrlon_id, 
-     &                                       grid1_center_lon)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_get_var_double(nc_grid1_id, nc_grd1crnrlat_id, 
-     &                                       grid1_corner_lat)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_get_var_double(nc_grid1_id, nc_grd1crnrlon_id, 
-     &                                       grid1_corner_lon)
-      call netcdf_error_handler(ncstat)
-
-      if (luse_grid1_area) then
-        allocate (grid1_area_in(grid1_size))
-        ncstat = nf_inq_varid(nc_grid1_id, 'grid_area', nc_grid1area_id)
-        call netcdf_error_handler(ncstat)
-        ncstat = nf_get_var_double(nc_grid1_id, nc_grid1area_id, 
-     &                                          grid1_area_in)
-        call netcdf_error_handler(ncstat)
-      endif
+c$$$        ncstat = nf_inq_varid(nc_grid1_id, 'grid_area', nc_grid1area_id)
+c$$$        ncstat = nf_get_var_double(nc_grid1_id, nc_grid1area_id,
+c$$$     &                                          grid1_area_in)
+c$$$      endif
 
       grid1_area = zero
       grid1_frac = zero
@@ -335,59 +320,61 @@
 !
 !-----------------------------------------------------------------------
 
-      where (imask == 1)
-        grid1_mask = .true.
-      elsewhere
-        grid1_mask = .false.
-      endwhere
-      deallocate(imask)
+c$$$      !TODO: replace this
+c$$$      where (imask == 1)
+c$$$        grid1_mask = .true.
+c$$$      elsewhere
+c$$$        grid1_mask = .false.
+c$$$      endwhere
+c$$$      deallocate(imask)
 
-      grid1_units = ' '
-      ncstat = nf_get_att_text(nc_grid1_id, nc_grd1cntrlat_id, 'units',
-     &                         grid1_units)
-      call netcdf_error_handler(ncstat)
+c$$$      grid1_units = ' '
+c$$$      TODO: grid1_units (for centers)
 
-      select case (grid1_units(1:7))
-      case ('degrees')
+c$$$      ncstat = nf_get_att_text(nc_grid1_id, nc_grd1cntrlat_id, 'units',
+c$$$     &                         grid1_units)
 
-        grid1_center_lat = grid1_center_lat*deg2rad
-        grid1_center_lon = grid1_center_lon*deg2rad
+c$$$      select case (grid1_units(1:7))
+c$$$      case ('degrees')
+c$$$
+c$$$        grid1_center_lat = grid1_center_lat*deg2rad
+c$$$        grid1_center_lon = grid1_center_lon*deg2rad
+c$$$
+c$$$      case ('radians')
+c$$$
+c$$$        !*** no conversion necessary
+c$$$
+c$$$      case default
+c$$$
+c$$$        print *,'unknown units supplied for grid1 center lat/lon: '
+c$$$        print *,'proceeding assuming radians'
+c$$$
+c$$$      end select
 
-      case ('radians')
+c$$$      grid1_units = ' '
+c$$$      TODO: grid1_units (for corners)
 
-        !*** no conversion necessary
+c$$$      ncstat = nf_get_att_text(nc_grid1_id, nc_grd1crnrlat_id, 'units',
+c$$$     &                         grid1_units)
 
-      case default
+c$$$      select case (grid1_units(1:7))
+c$$$      case ('degrees')
+c$$$
+c$$$        grid1_corner_lat = grid1_corner_lat*deg2rad
+c$$$        grid1_corner_lon = grid1_corner_lon*deg2rad
+c$$$
+c$$$      case ('radians')
+c$$$
+c$$$        !*** no conversion necessary
+c$$$
+c$$$      case default
+c$$$
+c$$$        print *,'unknown units supplied for grid1 corner lat/lon: '
+c$$$        print *,'proceeding assuming radians'
+c$$$
+c$$$      end select
 
-        print *,'unknown units supplied for grid1 center lat/lon: '
-        print *,'proceeding assuming radians'
-
-      end select
-
-      grid1_units = ' '
-      ncstat = nf_get_att_text(nc_grid1_id, nc_grd1crnrlat_id, 'units',
-     &                         grid1_units)
-      call netcdf_error_handler(ncstat)
-
-      select case (grid1_units(1:7))
-      case ('degrees')
-
-        grid1_corner_lat = grid1_corner_lat*deg2rad
-        grid1_corner_lon = grid1_corner_lon*deg2rad
-
-      case ('radians')
-
-        !*** no conversion necessary
-
-      case default
-
-        print *,'unknown units supplied for grid1 corner lat/lon: '
-        print *,'proceeding assuming radians'
-
-      end select
-
-      ncstat = nf_close(nc_grid1_id)
-      call netcdf_error_handler(ncstat)
+c$$$      ncstat = nf_close(nc_grid1_id)
 
 !-----------------------------------------------------------------------
 !
@@ -395,55 +382,45 @@
 !
 !-----------------------------------------------------------------------
 
-      allocate(imask(grid2_size))
+c$$$      allocate(imask(grid2_size))
 
-      ncstat = nf_inq_varid(nc_grid2_id, 'grid_dims', nc_grid2dims_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid2_id, 'grid_imask', nc_grd2imask_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid2_id, 'grid_center_lat', 
-     &                                   nc_grd2cntrlat_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid2_id, 'grid_center_lon', 
-     &                                   nc_grd2cntrlon_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid2_id, 'grid_corner_lat', 
-     &                                   nc_grd2crnrlat_id)
-      call netcdf_error_handler(ncstat)
-      ncstat = nf_inq_varid(nc_grid2_id, 'grid_corner_lon', 
-     &                                   nc_grd2crnrlon_id)
-      call netcdf_error_handler(ncstat)
+c$$$      TODO: grid2_dims,imask,grid2_center_lat,grid2_center_lon,grid2_corner_lat,grid2_corner_lon (!!!imask is read again - used above - need 2 diff names!!!)
 
-      ncstat = nf_get_var_int(nc_grid2_id, nc_grid2dims_id, grid2_dims)
-      call netcdf_error_handler(ncstat)
+c$$$      ncstat = nf_inq_varid(nc_grid2_id, 'grid_dims', nc_grid2dims_id)
+c$$$      ncstat = nf_inq_varid(nc_grid2_id, 'grid_imask', nc_grd2imask_id)
+c$$$      ncstat = nf_inq_varid(nc_grid2_id, 'grid_center_lat',
+c$$$     &                                   nc_grd2cntrlat_id)
+c$$$      ncstat = nf_inq_varid(nc_grid2_id, 'grid_center_lon',
+c$$$     &                                   nc_grd2cntrlon_id)
+c$$$      ncstat = nf_inq_varid(nc_grid2_id, 'grid_corner_lat',
+c$$$     &                                   nc_grd2crnrlat_id)
+c$$$      ncstat = nf_inq_varid(nc_grid2_id, 'grid_corner_lon',
+c$$$     &                                   nc_grd2crnrlon_id)
+c$$$
+c$$$      ncstat = nf_get_var_int(nc_grid2_id, nc_grid2dims_id, grid2_dims)
+c$$$
+c$$$      ncstat = nf_get_var_int(nc_grid2_id, nc_grd2imask_id, imask)
+c$$$
+c$$$      ncstat = nf_get_var_double(nc_grid2_id, nc_grd2cntrlat_id,
+c$$$     &                                       grid2_center_lat)
+c$$$
+c$$$      ncstat = nf_get_var_double(nc_grid2_id, nc_grd2cntrlon_id,
+c$$$     &                                       grid2_center_lon)
+c$$$
+c$$$      ncstat = nf_get_var_double(nc_grid2_id, nc_grd2crnrlat_id,
+c$$$     &                                       grid2_corner_lat)
+c$$$
+c$$$      ncstat = nf_get_var_double(nc_grid2_id, nc_grd2crnrlon_id,
+c$$$     &                                       grid2_corner_lon)
 
-      ncstat = nf_get_var_int(nc_grid2_id, nc_grd2imask_id, imask)
-      call netcdf_error_handler(ncstat)
+c$$$      if (luse_grid2_area) then
+c$$$        allocate (grid2_area_in(grid2_size))
+c$$$      TODO: grid2_area_in
 
-      ncstat = nf_get_var_double(nc_grid2_id, nc_grd2cntrlat_id, 
-     &                                       grid2_center_lat)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_get_var_double(nc_grid2_id, nc_grd2cntrlon_id, 
-     &                                       grid2_center_lon)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_get_var_double(nc_grid2_id, nc_grd2crnrlat_id, 
-     &                                       grid2_corner_lat)
-      call netcdf_error_handler(ncstat)
-
-      ncstat = nf_get_var_double(nc_grid2_id, nc_grd2crnrlon_id, 
-     &                                       grid2_corner_lon)
-      call netcdf_error_handler(ncstat)
-
-      if (luse_grid2_area) then
-        allocate (grid2_area_in(grid2_size))
-        ncstat = nf_inq_varid(nc_grid2_id, 'grid_area', nc_grid2area_id)
-        call netcdf_error_handler(ncstat)
-        ncstat = nf_get_var_double(nc_grid2_id, nc_grid2area_id, 
-     &                                          grid2_area_in)
-        call netcdf_error_handler(ncstat)
-      endif
+c$$$        ncstat = nf_inq_varid(nc_grid2_id, 'grid_area', nc_grid2area_id)
+c$$$        ncstat = nf_get_var_double(nc_grid2_id, nc_grid2area_id,
+c$$$     &                                          grid2_area_in)
+c$$$      endif
 
       grid2_area = zero
       grid2_frac = zero
@@ -454,59 +431,60 @@
 !
 !-----------------------------------------------------------------------
 
-      where (imask == 1)
-        grid2_mask = .true.
-      elsewhere
-        grid2_mask = .false.
-      endwhere
-      deallocate(imask)
+c$$$      where (imask == 1)
+c$$$        grid2_mask = .true.
+c$$$      elsewhere
+c$$$        grid2_mask = .false.
+c$$$      endwhere
+c$$$      deallocate(imask)
 
-      grid2_units = ' '
-      ncstat = nf_get_att_text(nc_grid2_id, nc_grd2cntrlat_id, 'units',
-     &                         grid2_units)
-      call netcdf_error_handler(ncstat)
+c$$$      grid2_units = ' '
+c$$$      TODO: grid2_units (for centers)
 
-      select case (grid2_units(1:7))
-      case ('degrees')
+c$$$      ncstat = nf_get_att_text(nc_grid2_id, nc_grd2cntrlat_id, 'units',
+c$$$     &                         grid2_units)
 
-        grid2_center_lat = grid2_center_lat*deg2rad
-        grid2_center_lon = grid2_center_lon*deg2rad
+c$$$      select case (grid2_units(1:7))
+c$$$      case ('degrees')
+c$$$
+c$$$        grid2_center_lat = grid2_center_lat*deg2rad
+c$$$        grid2_center_lon = grid2_center_lon*deg2rad
+c$$$
+c$$$      case ('radians')
+c$$$
+c$$$        !*** no conversion necessary
+c$$$
+c$$$      case default
+c$$$
+c$$$        print *,'unknown units supplied for grid2 center lat/lon: '
+c$$$        print *,'proceeding assuming radians'
+c$$$
+c$$$      end select
 
-      case ('radians')
+c$$$      grid2_units = ' '
+c$$$      TODO: grid2_units (for corners)
 
-        !*** no conversion necessary
+c$$$      ncstat = nf_get_att_text(nc_grid2_id, nc_grd2crnrlat_id, 'units',
+c$$$     &                         grid2_units)
 
-      case default
+c$$$      select case (grid2_units(1:7))
+c$$$      case ('degrees')
+c$$$
+c$$$        grid2_corner_lat = grid2_corner_lat*deg2rad
+c$$$        grid2_corner_lon = grid2_corner_lon*deg2rad
+c$$$
+c$$$      case ('radians')
+c$$$
+c$$$        !*** no conversion necessary
+c$$$
+c$$$      case default
+c$$$
+c$$$        print *,'no units supplied for grid2 corner lat/lon: '
+c$$$        print *,'proceeding assuming radians'
+c$$$
+c$$$      end select
 
-        print *,'unknown units supplied for grid2 center lat/lon: '
-        print *,'proceeding assuming radians'
-
-      end select
-
-      grid2_units = ' '
-      ncstat = nf_get_att_text(nc_grid2_id, nc_grd2crnrlat_id, 'units',
-     &                         grid2_units)
-      call netcdf_error_handler(ncstat)
-
-      select case (grid2_units(1:7))
-      case ('degrees')
-
-        grid2_corner_lat = grid2_corner_lat*deg2rad
-        grid2_corner_lon = grid2_corner_lon*deg2rad
-
-      case ('radians')
-
-        !*** no conversion necessary
-
-      case default
-
-        print *,'no units supplied for grid2 corner lat/lon: '
-        print *,'proceeding assuming radians'
-
-      end select
-
-      ncstat = nf_close(nc_grid2_id)
-      call netcdf_error_handler(ncstat)
+c$$$      ncstat = nf_close(nc_grid2_id)
 
 
 !-----------------------------------------------------------------------
@@ -535,7 +513,7 @@
 !-----------------------------------------------------------------------
 !
 !     make sure input latitude range is within the machine values
-!     for +/- pi/2 
+!     for +/- pi/2
 !
 !-----------------------------------------------------------------------
 
@@ -585,7 +563,7 @@
             ip1 = 1
             !*** but if it is not, correct
             e_add = (j - 1)*nx + ip1
-            if (abs(grid1_center_lat(e_add) - 
+            if (abs(grid1_center_lat(e_add) -
      &              grid1_center_lat(n   )) > pih) then
               ip1 = i
             endif
@@ -598,7 +576,7 @@
             jp1 = 1
             !*** but if it is not, correct
             n_add = (jp1 - 1)*nx + i
-            if (abs(grid1_center_lat(n_add) - 
+            if (abs(grid1_center_lat(n_add) -
      &              grid1_center_lat(n   )) > pih) then
               jp1 = j
             endif
@@ -643,7 +621,7 @@
             ip1 = 1
             !*** but if it is not, correct
             e_add = (j - 1)*nx + ip1
-            if (abs(grid2_center_lat(e_add) - 
+            if (abs(grid2_center_lat(e_add) -
      &              grid2_center_lat(n   )) > pih) then
               ip1 = i
             endif
@@ -656,7 +634,7 @@
             jp1 = 1
             !*** but if it is not, correct
             n_add = (jp1 - 1)*nx + i
-            if (abs(grid2_center_lat(n_add) - 
+            if (abs(grid2_center_lat(n_add) -
      &              grid2_center_lat(n   )) > pih) then
               jp1 = j
             endif
@@ -714,7 +692,7 @@
 
 !-----------------------------------------------------------------------
 !
-!     set up and assign address ranges to search bins in order to 
+!     set up and assign address ranges to search bins in order to
 !     further restrict later searches
 !
 !-----------------------------------------------------------------------
@@ -722,7 +700,7 @@
       select case (restrict_type)
 
       case ('latitude')
-        write(stdout,*) 'Using latitude bins to restrict search.'
+c$$$        write(stdout,*) 'Using latitude bins to restrict search.'
 
         allocate(bin_addr1(2,num_srch_bins))
         allocate(bin_addr2(2,num_srch_bins))
@@ -762,8 +740,9 @@
           end do
         end do
 
-      case ('latlon')
-        write(stdout,*) 'Using lat/lon boxes to restrict search.'
+      case default
+c$$$      case ('latlon')
+c$$$        write(stdout,*) 'Using lat/lon boxes to restrict search.'
 
         dlat = pi /num_srch_bins
         dlon = pi2/num_srch_bins
@@ -815,8 +794,8 @@
           end do
         end do
 
-      case default
-        stop 'unknown search restriction method'
+c$$$      case default
+c$$$        stop 'unknown search restriction method'
       end select
 
 !-----------------------------------------------------------------------
@@ -829,3 +808,122 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+!/**
+      subroutine scrip_grid_init(
+     $     F_grid1_size,F_grid1_dims,F_grid1_corners,
+     $     F_grid1_center_lat,F_grid1_center_lon,
+     $     F_grid1_corner_lat,F_grid1_corner_lon,
+     $     F_grid2_size,F_grid2_dims,F_grid2_corners,
+     $     F_grid2_center_lat,F_grid2_center_lon,
+     $     F_grid2_corner_lat,F_grid2_corner_lon)
+      use kinds_mod    ! defines data types
+      use grids
+      implicit none
+
+      integer (kind=int_kind), dimension(2) ::
+     &             F_grid1_dims, F_grid2_dims  ! size of each grid dimension
+
+      integer (kind=int_kind) ::
+     &             F_grid1_size,F_grid2_size,
+     &             F_grid1_corners, F_grid2_corners ! number of corners
+                                                    ! for each grid cell
+c$$$      logical (kind=log_kind), dimension(:), target ::
+c$$$     &             F_grid1_mask,        ! flag which cells participate
+c$$$     &             F_grid2_mask         ! flag which cells participate
+
+      real (kind=dbl_kind), dimension(F_grid1_size), target ::
+     &             F_grid1_center_lat,  ! lat/lon coordinates for
+     &             F_grid1_center_lon   ! each grid center in radians
+
+      real (kind=dbl_kind), dimension(F_grid2_size), target ::
+     &             F_grid2_center_lat,
+     &             F_grid2_center_lon
+
+c$$$      real (kind=dbl_kind), dimension(:), target ::
+c$$$     &             F_grid1_area_in,     ! area of grid1 cell from file
+c$$$     &             F_grid2_area_in      ! area of grid2 cell from file
+
+      real (kind=dbl_kind), 
+     &     dimension(F_grid1_corners,F_grid1_size), target  ::
+     &             F_grid1_corner_lat,  ! lat/lon coordinates for
+     &             F_grid1_corner_lon   ! each grid corner in radians
+
+      real (kind=dbl_kind), 
+     &     dimension(F_grid2_corners,F_grid2_size), target  ::
+     &             F_grid2_corner_lat,
+     &             F_grid2_corner_lon
+
+!**/
+      !--------------------------------------------------
+      !These are init before in scrip.f
+c$$$      restrict_type     = 'latlon' ! type of bins to use: latitude,latlon
+c$$$      num_srch_bins     = 900      ! num of bins for restricted srch
+c$$$      luse_grid_centers = (F_luse_grid_centers>0)
+
+      grid1_rank = 1
+      if (F_grid1_dims(2) > 0) grid1_rank = 2
+      allocate(grid1_dims(grid1_rank))
+      grid1_dims(1)    = F_grid1_dims(1)
+      if (grid1_rank>1) grid1_dims(2)    = F_grid1_dims(2)
+      grid1_corners = F_grid1_corners
+      luse_grid1_area = .false.
+c$$$      if (present(F_grid1_area_in)) then
+c$$$         luse_grid1_area = .true.
+c$$$         grid1_area_in => F_grid1_area_in
+c$$$      endif
+c$$$      if (present(F_grid1_mask)) then
+c$$$         grid1_mask => F_grid1_mask
+c$$$      else
+         allocate(grid1_mask(grid1_size))
+         grid1_mask = .true.
+c$$$      endif
+      grid1_center_lat => F_grid1_center_lat
+      grid1_center_lon => F_grid1_center_lon
+      grid1_corner_lat => F_grid1_corner_lat
+      grid1_corner_lon => F_grid1_corner_lon
+
+
+      grid2_rank = 1
+      if (F_grid2_dims(2) > 0) grid2_rank = 2
+      allocate(grid2_dims(grid2_rank))
+      grid2_dims(1)    = F_grid2_dims(1)
+      if (grid2_rank>1) grid2_dims(2)    = F_grid2_dims(2)
+      grid2_corners = F_grid2_corners
+      luse_grid1_area = .false.
+c$$$      if (present(F_grid2_area_in)) then
+c$$$         luse_grid2_area = .true.
+c$$$         grid2_area_in => F_grid2_area_in
+c$$$      endif
+c$$$      if (present(F_grid2_mask)) then
+c$$$         grid2_mask => F_grid2_mask
+c$$$      else
+         allocate(grid2_mask(grid2_size))
+         grid2_mask = .true.
+c$$$      endif
+      grid2_center_lat => F_grid2_center_lat
+      grid2_center_lon => F_grid2_center_lon
+      grid2_corner_lat => F_grid2_corner_lat
+      grid2_corner_lon => F_grid2_corner_lon
+
+      call grid_init()
+      !--------------------------------------------------
+      return
+      end subroutine scrip_grid_init
+
+!/**
+      subroutine scrip_grid_finalize()
+      use kinds_mod    ! defines data types
+      use grids
+      implicit none
+!**/
+      !--------------------------------------------------
+      deallocate(
+     $     grid1_dims,grid1_mask,
+     $     grid1_area,grid1_frac,grid1_bound_box,
+     $     grid2_dims,grid2_mask,
+     $     grid2_area,grid2_frac,grid2_bound_box,
+     $     bin_addr1,bin_addr2,bin_lats,bin_lons
+     $     )
+      !--------------------------------------------------
+      return
+      end subroutine scrip_grid_finalize
