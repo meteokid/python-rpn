@@ -185,6 +185,7 @@ scripc_interp_o1(PyObject *self, PyObject *args) {
     int type_num=NPY_FLOAT;
 
     int nbpts,istat=-1;
+    wordint fnwts,fnlinks;
 
     if (!PyArg_ParseTuple(args, "ooooi",data,addr1,addr2,wts,&nbpts)) {
         Py_INCREF(Py_None);
@@ -199,7 +200,11 @@ scripc_interp_o1(PyObject *self, PyObject *args) {
                                 NULL, NULL, FTN_Style_Array,
                                 NULL);
 
-    //TODO: istat = scrip_interpol_o1(data2->data,data->data,addr->data,wts->data,...dims...)
+    fnwts   = (wordint) wts->dimensions[0];
+    fnlinks = (wordint) addr1->dimensions[0];
+    istat = scrip_remap_o1(data2->data,data->data,
+                            wts->data,addr2->data,addr1->data,
+                            &fnwts,&fnlinks);
 
     if(istat>=0) return Py_BuildValue("o",data2);
 

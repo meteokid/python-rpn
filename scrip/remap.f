@@ -163,3 +163,34 @@
       end module remap_mod
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+      !performs the remapping based on weights computed elsewhere
+      integer function scrip_remap_o1(dst_array, src_array,
+     &                       map_wts, dst_add, src_add, 
+     &                       nwts,nlinks)
+      use remap_mod
+      implicit none
+
+      integer (kind=int_kind), dimension(:)::
+     &     dst_add,     ! destination address for each link
+     &     src_add      ! source      address for each link
+
+      real (kind=dbl_kind), dimension(nwts,nlinks)::
+     &     map_wts      ! remapping weights for each link
+
+      real (kind=dbl_kind), dimension(:)::
+     &     src_array    ! array with source field to be remapped
+
+      real (kind=dbl_kind), dimension(:) ::
+     &     dst_array    ! array for remapped field on destination grid
+      !---------------------------------------------------------------
+      scrip_remap_o1 = 1
+      call remap(dst_array, map_wts, dst_add, src_add, 
+     &           src_array)
+      !---------------------------------------------------------------
+      return
+      end function scrip_remap_o1
+
+!***********************************************************************
