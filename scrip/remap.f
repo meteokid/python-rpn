@@ -170,6 +170,7 @@
       integer function scrip_remap_o1(dst_array, src_array,
      &                       map_wts, dst_add, src_add, 
      &                       nwts,nlinks)
+      use kinds_mod    ! defines common data types
       use remap_mod
       implicit none
 

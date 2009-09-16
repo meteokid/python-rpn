@@ -1,0 +1,44 @@
+!--------------------------------------------------------------------------
+! This is free software, you can use/redistribute/modify it under the terms of
+! the EC-RPN License v2 or any later version found (if not provided) at:
+! - http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
+! - service.rpn@ec.gc.ca
+! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
+!--------------------------------------------------------------------------
+!/**
+program jim_grid_test
+   implicit none
+!**/
+   integer :: ndiv,nijh,nij,halo,istat,i,j,ig,ij0,ijn
+   real, dimension(:,:,:), allocatable :: lat,lon
+   integer, external :: jim_grid_dims,jim_grid_lalo
+   !---------------------------------------------------------------------
+   ndiv  = 1
+
+   nijh  = jim_grid_dims(ndiv,1)
+   nij   = jim_grid_dims(ndiv,0)
+   halo  = (nijh - nij)/2
+
+   allocate(lat(nijh,nijh,10),STAT=istat)
+   allocate(lon(nijh,nijh,10),STAT=istat)
+
+   istat = jim_grid_lalo(lat,lon,nij,halo,ndiv)
+
+   ij0 = 1+halo
+   ijn = ij0+nij-1
+
+   print *,'ij0,n',nij,nijh,halo,':',ij0,ijn+1
+   print *,1,lat(ij0,ijn+1,1),lon(ij0,ijn+1,1),'NP'
+   print *,2,lat(ijn+1,ij0,2),lon(ijn+1,ij0,2),'SP'
+   do ig=1,10
+      print *,ig,lat(ij0,ij0,ig),lon(ij0,ij0,ig)
+   enddo
+!!$   do j = 1,nijh
+!!$      do i = 1,nijh
+!!$         print '(I3,I4,I4,2F,A,)',1,i,j,lat(i,j,1)
+!!$         print '(I3,I4,I4,2F,A,)',2,i,j,lat(i,j,2)
+!!$      enddo
+!!$   enddo
+   !---------------------------------------------------------------------
+end program jim_grid_test

@@ -65,7 +65,7 @@ exit(1);
 #endif
 
 static char jimc_grid__doc__[] =
-"Get (lat,lon) of Icosahedral grid points\n(lat,lon) = jimc_grid(ndiv,igrid)\n@param ndiv number of grid divisons (int) \n@param igrid grid number [0-9](int)\n@return python tuple with 2 numpy.ndarray for (lat,lon)";
+"Get (lat,lon) of Icosahedral grid points\n(lat,lon) = jimc_grid(ndiv,igrid)\n@param ndiv number of grid divisons (int)\n@return python tuple with 2 numpy.ndarray for (lat,lon)";
 
 static PyObject *
 jimc_grid(PyObject *self, PyObject *args) {
@@ -82,29 +82,24 @@ jimc_grid(PyObject *self, PyObject *args) {
 // 	int dateo=0, deet=0, npas=0, nbits=0, datyp=0, ig1=0, ig2=0, ig3=0, ig4=0;
 // 	int swa=0, lng=0, dltf=0, ubc=0, extra1=0, extra2=0, extra3=0;
 
-        int ndiv,igrid,nij,nk=1,istat=-1;
-        wordint f_ndiv,f_igrid,f_nij;
+        int ndiv,nijh,nk=1,istat=-1;
+        wordint f_ndiv,f_nij,f_nijh,f_halo;
 
-	if (!PyArg_ParseTuple(args, "ii",&ndiv,&igrid))
+	if (!PyArg_ParseTuple(args, "i",&ndiv))
 		return NULL;
-	if(ndiv >= 0 && igrid >= 0) {
+	if(ndiv >= 0) {
             f_ndiv  = (wordint)ndiv;
-            f_igrid = (wordint)igrid;
 
 //             printf("jimc_grid: ndiv=%d, igrid=%d\n",ndiv,igrid);
 
-            f_nij   = f77name(jim_grid_dims)(&f_ndiv);
-            nij     = (int)f_nij;
+            f_halo  = 2;
+            f_nijh  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
+            nijh    = (int)f_nijh;
 
-            dims[0] = (nij>1) ? nij : 1;
+            dims[0] = (nijh>1) ? nijh : 1;
             dims[1] = dims[0];
-            dims[2] = 1;
-/*            strides[0]=4;
-            strides[1]=strides[0]*dims[0];
-            strides[2]=strides[1]*dims[1];*/
-            if(nk>1) ndims=3;
-            else if(nij>1) ndims=2;
-            else ndims=1;
+            dims[2] = 10;
+            ndims = 3;
 
 //             printf("jimc_grid: nij=%d, ndims=%d\n",nij,ndims);
 
@@ -121,8 +116,12 @@ jimc_grid(PyObject *self, PyObject *args) {
 
 //             printf("jimc_grid: to jim_grid_lalo\n");
 
-            istat = f77name(jim_grid_lalo)(lat->data,lon->data,&f_nij,&f_nij,&f_igrid,&f_ndiv);
+            f_halo = 0;
+            f_nij  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
+            f_halo = (f_nijh - f_nij)/2;
 
+            istat = f77name(jim_grid_lalo)(lat->data,lon->data,
+                            &f_nij,&f_halo,&f_ndiv);
             if (istat < 0) {
                 Py_DECREF(lat);
                 Py_DECREF(lon);
