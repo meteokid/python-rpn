@@ -10,11 +10,11 @@
 program jim_grid_test
    implicit none
 !**/
-   integer :: ndiv,nijh,nij,halo,istat,i,j,ig,ij0,ijn
+   integer :: ndiv,nijh,nij,halo,istat,i,j,ig,ij0,ijn,i2,j2,ig2
    real, dimension(:,:,:), allocatable :: lat,lon
-   integer, external :: jim_grid_dims,jim_grid_lalo
+   integer, external :: jim_grid_dims,jim_grid_lalo,jim_xch_halo_nompi_2d_r4
    !---------------------------------------------------------------------
-   ndiv  = 1
+   ndiv  = 2
 
    nijh  = jim_grid_dims(ndiv,1)
    nij   = jim_grid_dims(ndiv,0)
@@ -34,11 +34,92 @@ program jim_grid_test
    do ig=1,10
       print *,ig,lat(ij0,ij0,ig),lon(ij0,ij0,ig)
    enddo
-!!$   do j = 1,nijh
-!!$      do i = 1,nijh
-!!$         print '(I3,I4,I4,2F,A,)',1,i,j,lat(i,j,1)
-!!$         print '(I3,I4,I4,2F,A,)',2,i,j,lat(i,j,2)
-!!$      enddo
-!!$   enddo
+
+   print *,''
+   print *,'grid 1 - N Hemi'
+   do j = ijn+1,ij0,-1
+      if (j==ijn+1) then
+         print '(I3,A,F6.1)',j,':',lat(ij0,j,1)
+      else
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,1),i=ij0,ijn)
+      endif
+   enddo
+   print *,'grid 2 - S Hemi'
+   do j = ijn,ij0,-1
+      if (j==ij0) then
+         print '(I3,A,5F6.1)',j,':',(lat(i,j,2),i=ij0,ijn+1)
+      else
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,2),i=ij0,ijn)
+      endif
+   enddo
+
+
+   print *,'halo,nij=',halo,nij
+
+   do ig=0,9
+      ig2 = ig+1
+      do j=1,nij
+         j2 = j+halo
+         do i=1,nij
+            i2 = i+halo
+            lat(i2,j2,ig2) = float(ig*100+j*10+i)
+         enddo
+      enddo
+   enddo
+
+   print *,'Before halo xch'
+   print *,'grid 1 - N Hemi'
+   do j = ijn+1,ij0,-1
+      if (j==ijn+1) then
+         print '(I3,A,F6.1)',j,':',lat(ij0,j,1)
+      else
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,1),i=ij0,ijn)
+      endif
+   enddo
+   print *,'grid 2 - S Hemi'
+   do j = ijn,ij0,-1
+      if (j==ij0) then
+         print '(I3,A,5F6.1)',j,':',(lat(i,j,2),i=ij0,ijn+1)
+      else
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,2),i=ij0,ijn)
+      endif
+   enddo
+
+
+   istat = jim_xch_halo_nompi_2d_r4(nijh,lat)
+
+   print *,'After Halo sch'
+   print *,'grid 1 - N Hemi'
+   do j = ijn+1,ij0,-1
+      if (j==ijn+1) then
+         print '(I3,A,F6.1)',j,':',lat(ij0,j,1)
+      else
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,1),i=ij0,ijn)
+      endif
+   enddo
+   print *,'grid 2 - S Hemi'
+   do j = ijn,ij0,-1
+      if (j==ij0) then
+         print '(I3,A,5F6.1)',j,':',(lat(i,j,2),i=ij0,ijn+1)
+      else
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,2),i=ij0,ijn)
+      endif
+   enddo
+
+
+   ij0 = 1+halo-1
+   ijn = ij0+nij+1
+
+   print *,''
+   do ig=0,3
+      if (mod(ig,2)==0) then
+         print *,'grid ',ig,' - N Hemi'
+      else
+         print *,'grid ',ig,' - S Hemi'
+      endif
+      do j = ijn+1,ij0,-1
+         print '(I3,A,6F6.1)',j,':',(lat(i,j,ig+1),i=ij0,ijn)
+      enddo
+   enddo
    !---------------------------------------------------------------------
 end program jim_grid_test

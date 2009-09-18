@@ -83,7 +83,7 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
     wordint fnwts,fnlinks,fnbin,fg1_size,fg2_size,fg1_ncorn,fg2_ncorn;
     wordint fg1_dims[3]={0,0,0},fg2_dims[3]={0,0,0};
 
-    if (!PyArg_ParseTuple(args, "ooooooooisss",
+    if (!PyArg_ParseTuple(args, "OOOOOOOOisss",
             g1_center_lat,g1_center_lon,
             g1_corner_lat,g1_corner_lon,
             g2_center_lat,g2_center_lon,
@@ -150,7 +150,7 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
                                     strides, fwts, FTN_Style_Array,
                                     NULL);
 
-        return Py_BuildValue("(o,o,o)",addr1,addr2,wts);
+        return Py_BuildValue("(O,O,O)",addr1,addr2,wts);
     }
 
     Py_INCREF(Py_None);
@@ -165,7 +165,7 @@ static PyObject *
 scripc_addr_wts_free(PyObject *self, PyObject *args) {
     PyArrayObject *addr1,*addr2,*wts;
 
-    if (!PyArg_ParseTuple(args, "ooo",addr1,addr2,wts)) {
+    if (!PyArg_ParseTuple(args, "OOO",addr1,addr2,wts)) {
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -187,7 +187,7 @@ scripc_interp_o1(PyObject *self, PyObject *args) {
     int nbpts,istat=-1;
     wordint fnwts,fnlinks;
 
-    if (!PyArg_ParseTuple(args, "ooooi",data,addr1,addr2,wts,&nbpts)) {
+    if (!PyArg_ParseTuple(args, "OOOOi",data,addr1,addr2,wts,&nbpts)) {
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -206,7 +206,7 @@ scripc_interp_o1(PyObject *self, PyObject *args) {
                             wts->data,addr2->data,addr1->data,
                             &fnwts,&fnlinks);
 
-    if(istat>=0) return Py_BuildValue("o",data2);
+    if(istat>=0) return Py_BuildValue("O",data2);
 
     Py_INCREF(Py_None);
     return Py_None;

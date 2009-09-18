@@ -21,7 +21,10 @@ Fstd_module = Extension('Fstdc',
 jimc_module = Extension('jimc',
             include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture],
             libraries = ['PyFTN_helpers','rmn_shared_beta10'],
-            extra_objects = ['jim/jim_grid_mod.o','utils/vect_mod.o'],
+            extra_objects = [
+                'jim/jim_grid_mod.o',
+                'jim/jim_xch_halo_nompi.o',
+                'utils/vect_mod.o'],
             extra_link_args=runtime_libs,
             library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
             sources = ['jimc.c'])
