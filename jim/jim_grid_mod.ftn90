@@ -107,7 +107,7 @@ module jim_grid_mod
 !!$   real(8), parameter :: pi_8 = dacos(-1.D0)
 
    logical,save :: m_init_L = .false. ,m_init2_L = .false.
-   integer,save :: m_ndiv = 1
+   integer,save,public :: m_ndiv = -1
 
    interface jim_grid_post_init
       module procedure jim_grid_post_init_mpi
@@ -354,9 +354,10 @@ contains
    !**/
       integer ::istat
       !---------------------------------------------------------------------
+      m_ndiv = -1
       m_init_L  = .false.
       m_init2_L = .false.
-      deallocate(m_nodes_8,STAT=istat)
+      if (allocated(m_nodes_8)) deallocate(m_nodes_8,STAT=istat)
       !---------------------------------------------------------------------
       return
    end subroutine jim_grid_finalize
@@ -858,7 +859,7 @@ end function jim_grid_dims
 
 !/**
 function jim_grid_lalo(F_lat,F_lon,F_nij,F_haloxy,F_ndiv) result(F_istat)
-   use jim_grid_mod,only:jim_tile_size,jim_grid_init,jim_grid_post_init,jim_lat_lon_nompi,jim_grid_finalize
+   use jim_grid_mod,only:jim_tile_size,jim_grid_init,jim_grid_post_init,jim_lat_lon_nompi,jim_grid_finalize,m_ndiv
    implicit none
    !@objective
    !@arguments
@@ -871,26 +872,100 @@ function jim_grid_lalo(F_lat,F_lon,F_nij,F_haloxy,F_ndiv) result(F_istat)
    !
 !**/
    real, pointer, dimension(:,:,:) :: lat,lon !OUT
-   integer :: nij,ni,nj,halox,haloy,ndiv
+   integer :: nij,nijh,ni,nj,halox,haloy,ndiv,istat
    logical :: periodx,periody
+   integer,external :: jim_xch_halo_nompi_2d_r4
    !---------------------------------------------------------------------
-    !print *,'jim_grid_lalo:',F_ni,F_nj,F_igrid,F_ndiv
-    !call flush(6)
+   ndiv  = min(max(0,F_ndiv),15)
+   if (ndiv .ne. m_ndiv) then
+      call jim_grid_finalize()
+      !TODO: check that lat,lon size  and halo is compatible
+      !nij = jim_tile_size(ndiv)
+      !nij = lat,lon size, return init ni=nj=nij-1
+      F_istat = jim_grid_init(ni,nj,halox,haloy,periodx,periody,ndiv)
+      F_istat = jim_grid_post_init(1-halox,ni+halox,1-haloy,nj+haloy,ni,nj)
+   endif
    F_lat = 0.
    F_lon = 0.
    lat => F_lat
    lon => F_lon
-   ndiv  = min(max(0,F_ndiv),15)
-
-   nij = jim_tile_size(ndiv)
-   !TODO: check that lat,lon size  and halo is compatible
-   !nij = lat,lon size, return init ni=nj=nij-1
-   F_istat = jim_grid_init(ni,nj,halox,haloy,periodx,periody,ndiv)
-   F_istat = jim_grid_post_init(1-halox,ni+halox,1-haloy,nj+haloy,ni,nj)
    F_istat = jim_lat_lon_nompi(lat,lon)
-   call jim_grid_finalize()
+   nijh = ni+2*halox
+   istat = jim_xch_halo_nompi_2d_r4(nijh,lat)
+   istat = jim_xch_halo_nompi_2d_r4(nijh,lon)
+!!$   call jim_grid_finalize()
    !---------------------------------------------------------------------
    return
 end function jim_grid_lalo
+
+
+!/**
+function jim_grid_corners_lalo(F_c_lat,F_c_lon,F_nij,F_haloxy,F_ndiv) result(F_istat)
+   use vect_mod
+   use jim_grid_mod,only:JIM_DIJ,m_nodes_8,m_ndiv,jim_grid_init,jim_grid_post_init,jim_grid_finalize,m_nij,m_ncol,m_nrow
+   implicit none
+   !@objective
+   !@arguments
+   integer :: F_nij,F_haloxy,F_ndiv              !intent(in)
+   real, target, dimension(6,1-F_haloxy:F_nij+F_haloxy,1-F_haloxy:F_nij+F_haloxy,0:JIM_NGRIDS-1) :: F_c_lat,F_c_lon !intent(out)
+   !@return
+   integer :: F_istat
+   !@author Stephane Chamberland, Sept 2009
+   !@description
+   !
+!**/
+   integer, parameter :: ICOL=0,IROW=0
+   integer :: nij,nijh,ni,nj,halox,haloy,ndiv,istat
+   logical :: periodx,periody
+   integer :: i,j,ig,ic,pt_type,ie2,je2,ie3,je3
+   type(vect_3d_8) :: node0_8,node2_8,node3_8,mid_node,node_sph
+   !---------------------------------------------------------------------
+   F_istat = 0
+   ndiv  = min(max(0,F_ndiv),15)
+   if (ndiv .ne. m_ndiv) then
+      call jim_grid_finalize()
+      !TODO: check that lat,lon size  and halo is compatible
+      !nij = jim_tile_size(ndiv)
+      !nij = lat,lon size, return init ni=nj=nij-1
+      F_istat = jim_grid_init(ni,nj,halox,haloy,periodx,periody,ndiv)
+      F_istat = jim_grid_post_init(1-halox,ni+halox,1-haloy,nj+haloy,ni,nj)
+   endif
+   F_c_lat = 0.
+   F_c_lon = 0.
+   do ig=0,JIM_NGRIDS-1
+      do j=1,F_nij
+         do i=1,F_nij
+            pt_type = JIM_HEXA
+            if (JIM_IS_PENTA(i,j,ICOL,IROW)) then
+               pt_type = JIM_PENTA
+            else if (JIM_IS_NPOLE(i,j,ig,ICOL,IROW)) then
+               pt_type = JIM_NPOLE
+            else if (JIM_IS_SPOLE(i,j,ig,ICOL,IROW)) then
+               pt_type = JIM_SPOLE
+            endif
+            node0_8 = m_nodes_8(i,j,ig)
+            do ic=1,6
+               if (ic == 6 .and. pt_type.ne.JIM_HEXA) then
+                  F_c_lat(ic,i,j,ig) = F_c_lat(1,i,j,ig)
+                  F_c_lon(ic,i,j,ig) = F_c_lat(1,i,j,ig)
+               else
+                  ie2 = JIM_NEXT_IJ(i,ic,JIM_EDGE_CENTER,pt_type,JIM_I)
+                  je2 = JIM_NEXT_IJ(i,ic,JIM_EDGE_CENTER,pt_type,JIM_I)
+                  ie3 = JIM_NEXT_IJ(i,ic,JIM_EDGE_RIGHT,pt_type,JIM_I)
+                  je3 = JIM_NEXT_IJ(i,ic,JIM_EDGE_RIGHT,pt_type,JIM_I)
+                  node2_8 = m_nodes_8(ie2,je2,ig)
+                  node3_8 = m_nodes_8(ie3,je3,ig)
+                  mid_node = vect_normalize((node0_8+node2_8+node3_8)/3.D0)
+                  node_sph = vect_car2sphd(mid_node)
+                  F_c_lat(ic,i,j,ig) = real(node_sph%v(V_PHI))
+                  F_c_lon(ic,i,j,ig) = real(node_sph%v(V_LMB))
+               endif
+            enddo
+         enddo
+      enddo
+   enddo
+   !---------------------------------------------------------------------
+   return
+end function jim_grid_corners_lalo
 
 !// kate: space-indent on; indent-mode cstyle; indent-width 3; mixedindent off;

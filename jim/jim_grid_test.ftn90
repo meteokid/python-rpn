@@ -12,7 +12,8 @@ program jim_grid_test
 !**/
    integer :: ndiv,nijh,nij,halo,istat,i,j,ig,ij0,ijn,i2,j2,ig2
    real, dimension(:,:,:), allocatable :: lat,lon
-   integer, external :: jim_grid_dims,jim_grid_lalo,jim_xch_halo_nompi_2d_r4
+   real, dimension(:,:,:,:), allocatable :: latc,lonc
+   integer, external :: jim_grid_dims,jim_grid_lalo,jim_xch_halo_nompi_2d_r4,jim_grid_corners_lalo
    !---------------------------------------------------------------------
    ndiv  = 2
 
@@ -23,37 +24,15 @@ program jim_grid_test
    allocate(lat(nijh,nijh,10),STAT=istat)
    allocate(lon(nijh,nijh,10),STAT=istat)
 
-   istat = jim_grid_lalo(lat,lon,nij,halo,ndiv)
+
+   print *,''
+   print *,'---- halo xch ----'
 
    ij0 = 1+halo
    ijn = ij0+nij-1
 
-   print *,'ij0,n',nij,nijh,halo,':',ij0,ijn+1
-   print *,1,lat(ij0,ijn+1,1),lon(ij0,ijn+1,1),'NP'
-   print *,2,lat(ijn+1,ij0,2),lon(ijn+1,ij0,2),'SP'
-   do ig=1,10
-      print *,ig,lat(ij0,ij0,ig),lon(ij0,ij0,ig)
-   enddo
-
    print *,''
-   print *,'grid 1 - N Hemi'
-   do j = ijn+1,ij0,-1
-      if (j==ijn+1) then
-         print '(I3,A,F6.1)',j,':',lat(ij0,j,1)
-      else
-         print '(I3,A,4F6.1)',j,':',(lat(i,j,1),i=ij0,ijn)
-      endif
-   enddo
-   print *,'grid 2 - S Hemi'
-   do j = ijn,ij0,-1
-      if (j==ij0) then
-         print '(I3,A,5F6.1)',j,':',(lat(i,j,2),i=ij0,ijn+1)
-      else
-         print '(I3,A,4F6.1)',j,':',(lat(i,j,2),i=ij0,ijn)
-      endif
-   enddo
-
-
+   print *,'ij0,n',nij,nijh,halo,':',ij0,ijn+1
    print *,'halo,nij=',halo,nij
 
    do ig=0,9
@@ -67,6 +46,7 @@ program jim_grid_test
       enddo
    enddo
 
+   print *,''
    print *,'Before halo xch'
    print *,'grid 1 - N Hemi'
    do j = ijn+1,ij0,-1
@@ -88,6 +68,7 @@ program jim_grid_test
 
    istat = jim_xch_halo_nompi_2d_r4(nijh,lat)
 
+   print *,''
    print *,'After Halo sch'
    print *,'grid 1 - N Hemi'
    do j = ijn+1,ij0,-1
@@ -121,5 +102,69 @@ program jim_grid_test
          print '(I3,A,6F6.1)',j,':',(lat(i,j,ig+1),i=ij0,ijn)
       enddo
    enddo
+
+
+   istat = jim_grid_lalo(lat,lon,nij,halo,ndiv)
+   print *,''
+   print *,'---- grid center la lo ----'
+
+   ij0 = 1+halo
+   ijn = ij0+nij-1
+
+   print *,''
+   print *,1,lat(ij0,ijn+1,1),lon(ij0,ijn+1,1),'NP'
+   print *,2,lat(ijn+1,ij0,2),lon(ijn+1,ij0,2),'SP'
+   do ig=1,10
+      print *,ig,lat(ij0,ij0,ig),lon(ij0,ij0,ig)
+   enddo
+
+   ij0 = 1+halo-1
+   ijn = ij0+nij+1
+
+   print *,''
+   do ig=0,3
+      if (mod(ig,2)==0) then
+         print *,'grid ',ig,' - N Hemi'
+      else
+         print *,'grid ',ig,' - S Hemi'
+      endif
+      do j = ijn+1,ij0,-1
+         print '(I3,A,6F6.1)',j,':',(lat(i,j,ig+1),i=ij0,ijn)
+      enddo
+   enddo
+
+   print *,''
+   print *,'---- grid corners la lo ----'
+   allocate(latc(6,nijh,nijh,10),STAT=istat)
+   allocate(lonc(6,nijh,nijh,10),STAT=istat)
+
+   istat = jim_grid_corners_lalo(latc,lonc,nij,halo,ndiv)
+
+   ij0 = 1+halo-1
+   ijn = ij0+nij+1
+
+   print *,''
+   do ig=0,3
+      if (mod(ig,2)==0) then
+         print *,'grid ',ig,' Corner 1 - N Hemi'
+      else
+         print *,'grid ',ig,' Corner 1 - S Hemi'
+      endif
+      do j = ijn+1,ij0,-1
+         print '(I3,A,6F6.1)',j,':',(latc(1,i,j,ig+1),i=ij0,ijn)
+      enddo
+   enddo
+
+   i=ij0+2
+   j=ij0+2
+   print *,''
+   print *,'node corners for i,j=',i-ij0,j-ij0
+!!$   print '(2F6.1)',lat(i-1,j+1,1),lat(i,j+1,1)
+   print '(6X,2F6.1)',              latc(3,i,j,1),latc(4,i,j,1)
+   print '(3F6.1)',   latc(2,i,j,1),   lat(i,j,1),latc(5,i,j,1)
+   print '(2F6.1)',   latc(1,i,j,1),latc(6,i,j,1)
+!!$   print '(6X,F6.1)',                lat(i,j-1,1)
+    
+
    !---------------------------------------------------------------------
 end program jim_grid_test

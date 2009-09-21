@@ -130,7 +130,7 @@ jimc_grid_la_lo(PyObject *self, PyObject *args) {
         wordint f_ndiv,f_nij,f_nijh,f_halo;
 
 	if (!PyArg_ParseTuple(args, "i",&ndiv)) {
-            fprintf(stderr,"ERROR: jimc_grid(ndiv) - wrong arg type\n");
+            fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - wrong arg type\n");
             Py_INCREF(Py_None);
             return Py_None;
         }
@@ -164,19 +164,78 @@ jimc_grid_la_lo(PyObject *self, PyObject *args) {
             istat = f77name(jim_grid_lalo)(lat->data,lon->data,
                             &f_nij,&f_halo,&f_ndiv);
             if (istat < 0) {
-                fprintf(stderr,"ERROR: jimc_grid(ndiv) - problem computing grid lat/lon\n");
+                fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - problem computing grid lat/lon\n");
 
                 Py_DECREF(lat);
                 Py_DECREF(lon);
             } else {
-                //istat = f77name(jim_xch_halo_nompi_2d_r4)(&f_nij,lat->data);
-                //istat = f77name(jim_xch_halo_nompi_2d_r4)(&f_nij,lon->data);
                 return Py_BuildValue("(O,O)",lat,lon);
             }
         } else {
-            fprintf(stderr,"ERROR: jimc_grid(ndiv) - ndiv must be >= 0\n");
+            fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - ndiv must be >= 0\n");
         }
+        Py_INCREF(Py_None);
+        return Py_None;
+}
 
+
+static char jimc_grid_corners_la_lo__doc__[] =
+"Get (lat,lon) of Icosahedral grid points corners\n(lat,lon) = jimc_grid_corners_la_lo(ndiv)\n@param ndiv number of grid divisons (int)\n@return python tuple with 2 numpy.ndarray for (lat,lon)";
+
+static PyObject *
+jimc_grid_corners_la_lo(PyObject *self, PyObject *args) {
+	PyArrayObject *lat,*lon;
+	int dims[3]={1,1,1}, strides[3]={0,0,0}, ndims=3;
+	int type_num=NPY_FLOAT;
+
+        int ndiv,nijh,nk=1,istat=-1;
+        wordint f_ndiv,f_nij,f_nijh,f_halo;
+
+	if (!PyArg_ParseTuple(args, "i",&ndiv)) {
+            fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv) - wrong arg type\n");
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+	if(ndiv >= 0) {
+            f_ndiv  = (wordint)ndiv;
+
+            f_halo  = 2;
+            f_nijh  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
+            nijh    = (int)f_nijh;
+
+            dims[0] = 6;
+            dims[1] = (nijh>1) ? nijh : 1;
+            dims[2] = dims[1];
+            dims[3] = 10;
+            ndims = 4;
+
+            lat = PyArray_NewFromDescr(&PyArray_Type,
+                                        PyArray_DescrFromType(type_num),
+                                        ndims,dims,
+                                        NULL, NULL, FTN_Style_Array,
+                                        NULL);
+            lon = PyArray_NewFromDescr(&PyArray_Type,
+                                        PyArray_DescrFromType(type_num),
+                                        ndims,dims,
+                                        NULL, NULL, FTN_Style_Array,
+                                        NULL);
+
+            f_halo = 0;
+            f_nij  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
+            f_halo = (f_nijh - f_nij)/2;
+
+            istat = f77name(jim_grid_corners_lalo)(lat->data,lon->data,
+                            &f_nij,&f_halo,&f_ndiv);
+            if (istat < 0) {
+                fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv) - problem computing grid corners lat/lon\n");
+                Py_DECREF(lat);
+                Py_DECREF(lon);
+            } else {
+                return Py_BuildValue("(O,O)",lat,lon);
+            }
+        } else {
+            fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv) - ndiv must be >= 0\n");
+        }
         Py_INCREF(Py_None);
         return Py_None;
 }
@@ -241,6 +300,7 @@ jimc_xch_halo(PyObject *self, PyObject *args) {
 static struct PyMethodDef jimc_methods[] = {
     {"jimc_new_array",	(PyCFunction)jimc_new_array,	METH_VARARGS, jimc_new_array__doc__},
     {"jimc_grid_la_lo",	(PyCFunction)jimc_grid_la_lo,	METH_VARARGS, jimc_grid_la_lo__doc__},
+    {"jimc_grid_corners_la_lo",	(PyCFunction)jimc_grid_corners_la_lo,	METH_VARARGS, jimc_grid_corners_la_lo__doc__},
     {"jimc_xch_halo",	(PyCFunction)jimc_xch_halo,	METH_VARARGS, jimc_xch_halo__doc__},
 
     {NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
