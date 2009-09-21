@@ -17,6 +17,8 @@ LIBS     = $(OTHERS)
 
 INSTALLDIR= $(HOME)/ovbin/python/lib.linux-i686-2.4-dev
 
+DOCTESTPYMODULES = rpnstd.py
+
 default: all
 
 # slib: all
@@ -51,3 +53,11 @@ tags: clean
 		ctags --language=fortran --defines --append $$myfile ; \
 	done
 
+alltests:
+	for i in $(COMPONENTS); \
+	do echo -e "\n==== Make Test: " $$i "====\n"; cd $$i ; $(MAKE) test ; cd .. ;\
+	done
+	for i in $(DOCTESTPYMODULES); \
+	do echo -e "\n==== PY-DocTest: " $$i "====\n"; python $$i ;\
+	done
+	cd test ; $(MAKE) test ; cd ..

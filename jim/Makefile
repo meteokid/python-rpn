@@ -16,9 +16,9 @@ all: $(PIMOBJ)
 # ALL dependencies ...
 #
 
-jim_grid_mod.o: jim_grid_mod.ftn90 jim_const.hf $(BASEDIR)/utils/rmnlib_basics.hf $(BASEDIR)/utils/vect_mod.o
+jim_grid_mod.o: jim_grid_mod.ftn90 jim_grid_mod.hf jim_const.hf $(BASEDIR)/utils/rmnlib_basics.hf $(BASEDIR)/utils/vect_mod.o
 
-jim_grid_test.o: jim_grid_test.ftn90
+jim_grid_test.o: jim_grid_test.ftn90 jim_grid_mod.o jim_grid_mod.hf $(BASEDIR)/utils/vect_mod.o
 
 jim_xch_halo_nompi.o: jim_xch_halo_nompi.ftn90 jim_grid_mod.o jim_grid_mod.hf
 

@@ -175,6 +175,7 @@ contains
       integer :: istat,i,j,itmp,igrid
       real    :: rtmp
       type(vect_3d_8), pointer :: l_nodes_8(:,:)
+      integer, external :: jim_xch_halo_nompi_vect3d_8
       !---------------------------------------------------------------------
       F_istat = RMN_ERR
       if (.not.m_init_L) return
@@ -235,6 +236,8 @@ contains
       endif IF_OK
 
       deallocate(l_nodes_8,STAT=istat)
+
+      istat = jim_xch_halo_nompi_vect3d_8(m_imax-m_imin+1,m_nodes_8)
 
       !print *,'[end] jim_grid_post_init'
       call flush()
@@ -907,7 +910,7 @@ function jim_grid_corners_lalo(F_c_lat,F_c_lon,F_nij,F_haloxy,F_ndiv) result(F_i
    !@objective
    !@arguments
    integer :: F_nij,F_haloxy,F_ndiv              !intent(in)
-   real, target, dimension(6,1-F_haloxy:F_nij+F_haloxy,1-F_haloxy:F_nij+F_haloxy,0:JIM_NGRIDS-1) :: F_c_lat,F_c_lon !intent(out)
+   real, target, dimension(1-F_haloxy:F_nij+F_haloxy,1-F_haloxy:F_nij+F_haloxy,JIM_NEDGES_MAX,0:JIM_NGRIDS-1) :: F_c_lat,F_c_lon !intent(out)
    !@return
    integer :: F_istat
    !@author Stephane Chamberland, Sept 2009
@@ -919,6 +922,7 @@ function jim_grid_corners_lalo(F_c_lat,F_c_lon,F_nij,F_haloxy,F_ndiv) result(F_i
    logical :: periodx,periody
    integer :: i,j,ig,ic,pt_type,ie2,je2,ie3,je3
    type(vect_3d_8) :: node0_8,node2_8,node3_8,mid_node,node_sph
+   integer,external :: jim_xch_halo_nompi_3d_r4
    !---------------------------------------------------------------------
    F_istat = 0
    ndiv  = min(max(0,F_ndiv),15)
@@ -936,34 +940,60 @@ function jim_grid_corners_lalo(F_c_lat,F_c_lon,F_nij,F_haloxy,F_ndiv) result(F_i
       do j=1,F_nij
          do i=1,F_nij
             pt_type = JIM_HEXA
-            if (JIM_IS_PENTA(i,j,ICOL,IROW)) then
-               pt_type = JIM_PENTA
-            else if (JIM_IS_NPOLE(i,j,ig,ICOL,IROW)) then
-               pt_type = JIM_NPOLE
-            else if (JIM_IS_SPOLE(i,j,ig,ICOL,IROW)) then
-               pt_type = JIM_SPOLE
-            endif
+            if (JIM_IS_PENTA(i,j,ICOL,IROW)) pt_type = JIM_PENTA
             node0_8 = m_nodes_8(i,j,ig)
-            do ic=1,6
+            do ic=1,JIM_NEDGES_MAX
                if (ic == 6 .and. pt_type.ne.JIM_HEXA) then
-                  F_c_lat(ic,i,j,ig) = F_c_lat(1,i,j,ig)
-                  F_c_lon(ic,i,j,ig) = F_c_lat(1,i,j,ig)
+                  F_c_lat(i,j,ic,ig) = F_c_lat(i,j,1,ig)
+                  F_c_lon(i,j,ic,ig) = F_c_lon(i,j,1,ig)
                else
                   ie2 = JIM_NEXT_IJ(i,ic,JIM_EDGE_CENTER,pt_type,JIM_I)
-                  je2 = JIM_NEXT_IJ(i,ic,JIM_EDGE_CENTER,pt_type,JIM_I)
+                  je2 = JIM_NEXT_IJ(j,ic,JIM_EDGE_CENTER,pt_type,JIM_J)
                   ie3 = JIM_NEXT_IJ(i,ic,JIM_EDGE_RIGHT,pt_type,JIM_I)
-                  je3 = JIM_NEXT_IJ(i,ic,JIM_EDGE_RIGHT,pt_type,JIM_I)
+                  je3 = JIM_NEXT_IJ(j,ic,JIM_EDGE_RIGHT,pt_type,JIM_J)
                   node2_8 = m_nodes_8(ie2,je2,ig)
                   node3_8 = m_nodes_8(ie3,je3,ig)
                   mid_node = vect_normalize((node0_8+node2_8+node3_8)/3.D0)
                   node_sph = vect_car2sphd(mid_node)
-                  F_c_lat(ic,i,j,ig) = real(node_sph%v(V_PHI))
-                  F_c_lon(ic,i,j,ig) = real(node_sph%v(V_LMB))
+                  F_c_lat(i,j,ic,ig) = real(node_sph%v(V_PHI))
+                  F_c_lon(i,j,ic,ig) = real(node_sph%v(V_LMB))
                endif
             enddo
          enddo
       enddo
    enddo
+   do ig=JIM_NHEMI,JIM_SHEMI
+      if (ig == 0) then
+         pt_type = JIM_NPOLE
+         i = JIM_NPOLE_I
+         j = JIM_NPOLE_J
+      else
+         pt_type = JIM_SPOLE
+         i = JIM_SPOLE_I
+         j = JIM_SPOLE_J
+      endif
+      node0_8 = m_nodes_8(i,j,ig)
+      do ic=1,JIM_NEDGES_MAX
+         if (ic == 6) then
+            F_c_lat(i,j,ic,ig) = F_c_lat(i,j,ic,ig)
+            F_c_lon(i,j,ic,ig) = F_c_lon(i,j,ic,ig)
+         else
+            ie2 = JIM_NEXT_IJ(i,ic,JIM_EDGE_CENTER,pt_type,JIM_I)
+            je2 = JIM_NEXT_IJ(j,ic,JIM_EDGE_CENTER,pt_type,JIM_J)
+            ie3 = JIM_NEXT_IJ(i,ic,JIM_EDGE_RIGHT,pt_type,JIM_I)
+            je3 = JIM_NEXT_IJ(j,ic,JIM_EDGE_RIGHT,pt_type,JIM_J)
+            node2_8 = m_nodes_8(ie2,je2,ig)
+            node3_8 = m_nodes_8(ie3,je3,ig)
+            mid_node = vect_normalize((node0_8+node2_8+node3_8)/3.D0)
+            node_sph = vect_car2sphd(mid_node)
+            F_c_lat(i,j,ic,ig) = real(node_sph%v(V_PHI))
+            F_c_lon(i,j,ic,ig) = real(node_sph%v(V_LMB))
+         endif
+      enddo
+   enddo
+   nijh = F_nij+2*F_haloxy
+   istat = jim_xch_halo_nompi_3d_r4(nijh,JIM_NEDGES_MAX,F_c_lat)
+   istat = jim_xch_halo_nompi_3d_r4(nijh,JIM_NEDGES_MAX,F_c_lon)
    !---------------------------------------------------------------------
    return
 end function jim_grid_corners_lalo

@@ -7,13 +7,19 @@
 ! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
 !--------------------------------------------------------------------------
 !/**
+#include "jim_grid_mod.hf"
+
 program jim_grid_test
+   use jim_grid_mod, only: m_nodes_8
+   use vect_mod
    implicit none
 !**/
-   integer :: ndiv,nijh,nij,halo,istat,i,j,ig,ij0,ijn,i2,j2,ig2
+   integer, parameter :: NGRIDS = JIM_NGRIDS
+   integer :: ndiv,nijh,nij,halo,istat,i,j,ig,iv,ij0,ijn,i2,j2,ig2,minxy,maxxy,m_nij
    real, dimension(:,:,:), allocatable :: lat,lon
    real, dimension(:,:,:,:), allocatable :: latc,lonc
-   integer, external :: jim_grid_dims,jim_grid_lalo,jim_xch_halo_nompi_2d_r4,jim_grid_corners_lalo
+   type(vect_3d_8), allocatable :: v3d8(:,:,:)
+   integer, external :: jim_grid_dims,jim_grid_lalo,jim_xch_halo_nompi_2d_r4,jim_grid_corners_lalo,jim_xch_halo_nompi_vect3d_8
    !---------------------------------------------------------------------
    ndiv  = 2
 
@@ -21,47 +27,50 @@ program jim_grid_test
    nij   = jim_grid_dims(ndiv,0)
    halo  = (nijh - nij)/2
 
-   allocate(lat(nijh,nijh,10),STAT=istat)
-   allocate(lon(nijh,nijh,10),STAT=istat)
+   minxy = 1-halo
+   maxxy = nij+halo
+   m_nij = nij
+
+   allocate(lat(minxy:maxxy,minxy:maxxy,0:NGRIDS-1),STAT=istat)
+   allocate(lon(minxy:maxxy,minxy:maxxy,0:NGRIDS-1),STAT=istat)
 
 
    print *,''
    print *,'---- halo xch ----'
-
-   ij0 = 1+halo
-   ijn = ij0+nij-1
-
    print *,''
-   print *,'ij0,n',nij,nijh,halo,':',ij0,ijn+1
    print *,'halo,nij=',halo,nij
 
-   do ig=0,9
-      ig2 = ig+1
+   lat(JIM_NPOLE_I,JIM_NPOLE_J,JIM_NHEMI) =  999.
+   lat(JIM_SPOLE_I,JIM_SPOLE_J,JIM_SHEMI) = -999.
+   do ig=0,NGRIDS-1
       do j=1,nij
-         j2 = j+halo
          do i=1,nij
-            i2 = i+halo
-            lat(i2,j2,ig2) = float(ig*100+j*10+i)
+            lat(i,j,ig) = float(ig*100+j*10+i)
          enddo
       enddo
    enddo
 
+   ij0 = 1
+   ijn = nij
+
    print *,''
    print *,'Before halo xch'
    print *,'grid 1 - N Hemi'
+   ig = JIM_NHEMI
    do j = ijn+1,ij0,-1
       if (j==ijn+1) then
-         print '(I3,A,F6.1)',j,':',lat(ij0,j,1)
+         print '(I3,A,F6.1)',j,':',lat(ij0,j,ig)
       else
-         print '(I3,A,4F6.1)',j,':',(lat(i,j,1),i=ij0,ijn)
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,ig),i=ij0,ijn)
       endif
    enddo
    print *,'grid 2 - S Hemi'
+   ig = JIM_SHEMI
    do j = ijn,ij0,-1
       if (j==ij0) then
-         print '(I3,A,5F6.1)',j,':',(lat(i,j,2),i=ij0,ijn+1)
+         print '(I3,A,5F6.1)',j,':',(lat(i,j,ig),i=ij0,ijn+1)
       else
-         print '(I3,A,4F6.1)',j,':',(lat(i,j,2),i=ij0,ijn)
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,ig),i=ij0,ijn)
       endif
    enddo
 
@@ -71,100 +80,238 @@ program jim_grid_test
    print *,''
    print *,'After Halo sch'
    print *,'grid 1 - N Hemi'
+   ig = JIM_NHEMI
    do j = ijn+1,ij0,-1
       if (j==ijn+1) then
-         print '(I3,A,F6.1)',j,':',lat(ij0,j,1)
+         print '(I3,A,F6.1)',j,':',lat(ij0,j,ig)
       else
-         print '(I3,A,4F6.1)',j,':',(lat(i,j,1),i=ij0,ijn)
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,ig),i=ij0,ijn)
       endif
    enddo
    print *,'grid 2 - S Hemi'
+   ig = JIM_SHEMI
    do j = ijn,ij0,-1
       if (j==ij0) then
-         print '(I3,A,5F6.1)',j,':',(lat(i,j,2),i=ij0,ijn+1)
+         print '(I3,A,5F6.1)',j,':',(lat(i,j,ig),i=ij0,ijn+1)
       else
-         print '(I3,A,4F6.1)',j,':',(lat(i,j,2),i=ij0,ijn)
+         print '(I3,A,4F6.1)',j,':',(lat(i,j,ig),i=ij0,ijn)
       endif
    enddo
 
 
-   ij0 = 1+halo-1
-   ijn = ij0+nij+1
+   ij0 = 0
+   ijn = nij+1
 
    print *,''
    do ig=0,3
-      if (mod(ig,2)==0) then
+      if (JIM_IS_NGRID(ig)) then
          print *,'grid ',ig,' - N Hemi'
       else
          print *,'grid ',ig,' - S Hemi'
       endif
       do j = ijn+1,ij0,-1
-         print '(I3,A,6F6.1)',j,':',(lat(i,j,ig+1),i=ij0,ijn)
+         print '(I3,A,7F6.1)',j,':',(lat(i,j,ig),i=ij0,ijn+1)
       enddo
    enddo
 
+
+
+   print *,''
+   print *,'---- halo xch vect ----'
+   print *,''
+   print *,'halo,nij=',halo,nij
+
+   allocate(v3d8(minxy:maxxy,minxy:maxxy,0:NGRIDS-1),STAT=istat)
+
+   v3d8(JIM_NPOLE_I,JIM_NPOLE_J,JIM_NHEMI) =  999.D0
+   v3d8(JIM_SPOLE_I,JIM_SPOLE_J,JIM_SHEMI) = -999.D0
+   do ig=0,NGRIDS-1
+      do j=1,nij
+         do i=1,nij
+            v3d8(i,j,ig) = dble(ig*100+j*10+i)
+         enddo
+      enddo
+   enddo
+
+   ij0 = 1
+   ijn = nij
+
+   print *,''
+   print *,'Before halo xch'
+   print *,'grid 1 - N Hemi'
+   ig = JIM_NHEMI
+   do j = ijn+1,ij0,-1
+      if (j==ijn+1) then
+         print '(I3,A,3F6.1)',j,':',v3d8(ij0,j,ig)
+      else
+         print '(I3,A,4F6.1)',j,':',(v3d8(i,j,ig)%v(1),i=ij0,ijn)
+      endif
+   enddo
+   print *,'grid 2 - S Hemi'
+   ig = JIM_SHEMI
+   do j = ijn,ij0,-1
+      if (j==ij0) then
+         print '(I3,A,5F6.1)',j,':',(v3d8(i,j,ig)%v(1),i=ij0,ijn+1)
+      else
+         print '(I3,A,4F6.1)',j,':',(v3d8(i,j,ig)%v(1),i=ij0,ijn)
+      endif
+   enddo
+
+   istat = jim_xch_halo_nompi_vect3d_8(nijh,v3d8)
+
+   print *,''
+   print *,'After Halo sch'
+   print *,'grid 1 - N Hemi'
+   ig = JIM_NHEMI
+   do j = ijn+1,ij0,-1
+      if (j==ijn+1) then
+         print '(I3,A,3F6.1)',j,':',v3d8(ij0,j,ig)
+      else
+         print '(I3,A,4F6.1)',j,':',(v3d8(i,j,ig)%v(1),i=ij0,ijn)
+      endif
+   enddo
+   print *,'grid 2 - S Hemi'
+   ig = JIM_SHEMI
+   do j = ijn,ij0,-1
+      if (j==ij0) then
+         print '(I3,A,5F6.1)',j,':',(v3d8(i,j,ig)%v(1),i=ij0,ijn+1)
+      else
+         print '(I3,A,4F6.1)',j,':',(v3d8(i,j,ig)%v(1),i=ij0,ijn)
+      endif
+   enddo
+
+
+   ij0 = 0
+   ijn = nij+1
+
+   print *,''
+   do ig=0,3
+      do iv=1,3
+         if (JIM_IS_NGRID(ig)) then
+            print *,'grid ',ig,' - N Hemi - axe=',iv
+         else
+            print *,'grid ',ig,' - S Hemi - axe=',iv
+         endif
+         do j = ijn+1,ij0,-1
+            print '(I3,A,7F6.1)',j,':',(v3d8(i,j,ig)%v(iv),i=ij0,ijn+1)
+         enddo
+      enddo
+   enddo
 
    istat = jim_grid_lalo(lat,lon,nij,halo,ndiv)
    print *,''
    print *,'---- grid center la lo ----'
 
-   ij0 = 1+halo
-   ijn = ij0+nij-1
+   ij0 = 1
+   ijn = nij
 
    print *,''
-   print *,1,lat(ij0,ijn+1,1),lon(ij0,ijn+1,1),'NP'
-   print *,2,lat(ijn+1,ij0,2),lon(ijn+1,ij0,2),'SP'
-   do ig=1,10
+   print *,JIM_NHEMI,lat(JIM_NPOLE_I,JIM_NPOLE_J,JIM_NHEMI),lon(JIM_NPOLE_I,JIM_NPOLE_J,JIM_NHEMI),'NP'
+   print *,JIM_SHEMI,lat(JIM_SPOLE_I,JIM_SPOLE_J,JIM_SHEMI),lon(JIM_SPOLE_I,JIM_SPOLE_J,JIM_SHEMI),'SP'
+   do ig=0,NGRIDS-1
       print *,ig,lat(ij0,ij0,ig),lon(ij0,ij0,ig)
    enddo
 
-   ij0 = 1+halo-1
-   ijn = ij0+nij+1
+   ij0 = 0
+   ijn = nij+1
 
    print *,''
    do ig=0,3
-      if (mod(ig,2)==0) then
+      if (JIM_IS_NGRID(ig)) then
          print *,'grid ',ig,' - N Hemi'
       else
          print *,'grid ',ig,' - S Hemi'
       endif
       do j = ijn+1,ij0,-1
-         print '(I3,A,6F6.1)',j,':',(lat(i,j,ig+1),i=ij0,ijn)
+         print '(I3,A,6F6.1)',j,':',(lat(i,j,ig),i=ij0,ijn)
       enddo
    enddo
 
    print *,''
    print *,'---- grid corners la lo ----'
-   allocate(latc(6,nijh,nijh,10),STAT=istat)
-   allocate(lonc(6,nijh,nijh,10),STAT=istat)
+   allocate(latc(minxy:maxxy,minxy:maxxy,6,0:NGRIDS-1),STAT=istat)
+   allocate(lonc(minxy:maxxy,minxy:maxxy,6,0:NGRIDS-1),STAT=istat)
 
    istat = jim_grid_corners_lalo(latc,lonc,nij,halo,ndiv)
 
-   ij0 = 1+halo-1
-   ijn = ij0+nij+1
+   ij0 = 0
+   ijn = nij+1
 
    print *,''
    do ig=0,3
-      if (mod(ig,2)==0) then
+      if (JIM_IS_NGRID(ig)) then
          print *,'grid ',ig,' Corner 1 - N Hemi'
       else
          print *,'grid ',ig,' Corner 1 - S Hemi'
       endif
       do j = ijn+1,ij0,-1
-         print '(I3,A,6F6.1)',j,':',(latc(1,i,j,ig+1),i=ij0,ijn)
+         print '(I3,A,6F6.1)',j,':',(latc(i,j,1,ig),i=ij0,ijn)
       enddo
    enddo
 
-   i=ij0+2
-   j=ij0+2
+   ij0 = 0
+   ijn = nij+1
+
+   i=(ij0+ijn)/2
+   j=i
+   ig=3
    print *,''
-   print *,'node corners for i,j=',i-ij0,j-ij0
-!!$   print '(2F6.1)',lat(i-1,j+1,1),lat(i,j+1,1)
-   print '(6X,2F6.1)',              latc(3,i,j,1),latc(4,i,j,1)
-   print '(3F6.1)',   latc(2,i,j,1),   lat(i,j,1),latc(5,i,j,1)
-   print '(2F6.1)',   latc(1,i,j,1),latc(6,i,j,1)
-!!$   print '(6X,F6.1)',                lat(i,j-1,1)
+   print *,'node corners for i,j,g=',i-ij0,j-ij0,ig
+   print '(6X,2F6.1)',              latc(i,j,3,ig),latc(i,j,4,ig)
+   print '(3F6.1)',   latc(i,j,2,ig),  lat(i,j,ig),latc(i,j,5,ig)
+   print '(2F6.1)',   latc(i,j,1,ig),latc(i,j,6,ig)
     
+   i=JIM_PENTA_I
+   j=JIM_PENTA_J
+   ig=JIM_NHEMI
+   print *,''
+   print *,'node corners for N PENTA'
+   print '(6X,2F6.1)',              latc(i,j,3,ig),latc(i,j,4,ig)
+   print '(3F6.1)',   latc(i,j,2,ig),   lat(i,j,ig),latc(i,j,5,ig)
+   print '(2F6.1)',   latc(i,j,1,ig),latc(i,j,6,ig)
+
+   i=JIM_PENTA_I
+   j=JIM_PENTA_J
+   ig=JIM_SHEMI
+   print *,''
+   print *,'node corners for S PENTA'
+   print '(6X,2F6.1)',              latc(i,j,3,ig),latc(i,j,4,ig)
+   print '(3F6.1)',   latc(i,j,2,ig),   lat(i,j,ig),latc(i,j,5,ig)
+   print '(2F6.1)',   latc(i,j,1,ig),latc(i,j,6,ig)
+
+   i=JIM_NPOLE_I
+   j=JIM_NPOLE_J
+   ig=JIM_NHEMI
+   print *,''
+   print *,'node corners for NP'
+   print '(6X,2F6.1)',              latc(i,j,3,ig),latc(i,j,4,ig)
+   print '(3F6.1)',   latc(i,j,2,ig),   lat(i,j,ig),latc(i,j,5,ig)
+   print '(2F6.1)',   latc(i,j,1,ig),latc(i,j,6,ig)
+
+   i=JIM_SPOLE_I
+   j=JIM_SPOLE_J
+   ig=JIM_SHEMI
+   print *,''
+   print *,'node corners for SP'
+   print '(6X,2F6.1)',              latc(i,j,3,ig),latc(i,j,4,ig)
+   print '(3F6.1)',   latc(i,j,2,ig),  lat(i,j,ig),latc(i,j,5,ig)
+   print '(2F6.1)',   latc(i,j,1,ig),latc(i,j,6,ig)
+
+
+   print *,''
+   print *,'m_nodes'
+   do ig=0,3
+      do iv=1,3
+         if (JIM_IS_NGRID(ig)) then
+            print *,'grid ',ig,' - N Hemi - axe=',iv
+         else
+            print *,'grid ',ig,' - S Hemi - axe=',iv
+         endif
+         do j = ijn+1,ij0,-1
+            print '(I3,A,7F6.2)',j,':',(m_nodes_8(i,j,ig)%v(iv),i=ij0,ijn+1)
+         enddo
+      enddo
+   enddo
 
    !---------------------------------------------------------------------
 end program jim_grid_test

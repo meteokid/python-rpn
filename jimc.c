@@ -24,7 +24,7 @@ static int lentab[32]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /* initialize the table giving the length of the array element types */
-static init_lentab() {
+static void init_lentab() {
 	lentab[NPY_CHAR]=sizeof(char);
 	lentab[NPY_UBYTE]=sizeof(unsigned char);
 	lentab[NPY_BYTE]=sizeof(signed char);
@@ -65,6 +65,60 @@ exit(1);
 }
 #endif
 
+void get_jim_dims(int ndiv, int *nijh, int *nij, int *halo) {
+    wordint f_ndiv,f_nij,f_nijh,f_halo;
+
+    f_ndiv = (wordint)ndiv;
+    f_halo = 2;
+    f_nijh = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
+    f_halo = 0;
+    f_nij  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
+
+    nijh[0] = (int)f_nijh;
+    nij[0]  = (int)f_nij;
+    halo[0] = (nijh[0] - nij[0])/2;
+    //printf("get_jim_dims(ndiv=%d) = (%d,%d,%d)\n",ndiv,nijh[0],nij[0],halo[0]);
+    return;
+}
+
+
+int new_jim_array(PyArrayObject **p_newarray, int ndiv, int nk){
+	PyArrayObject *newarray;
+	int dims[4]={1,1,1,1}, ndims=4;
+	int type_num=NPY_FLOAT;
+        int nijh,nij,halo;
+
+	if(ndiv >= 0 && nk > 0) {
+            get_jim_dims(ndiv,&nijh,&nij,&halo);
+
+            dims[0] = (nijh>1) ? nijh : 1;
+            dims[1] = dims[0];
+            dims[2] = nk;
+            dims[3] = 10;
+            ndims = 4;
+
+            //printf("new_jim_array(ndiv=%d,nk=%d): dims[%d] = (%d,%d,%d,%d)\n",ndiv,nk,ndims,dims[0],dims[1],dims[2],dims[3]);
+
+            newarray = PyArray_NewFromDescr(&PyArray_Type,
+                                        PyArray_DescrFromType(type_num),
+                                        ndims,dims,
+                                        NULL, NULL, FTN_Style_Array,
+                                        NULL);
+            //printf("new_jim_array(ndiv=%d,nk=%d): dims[%d] = (%d,%d,%d,%d)\n",ndiv,nk,newarray->nd,newarray->dimensions[0],newarray->dimensions[1],newarray->dimensions[2],newarray->dimensions[3]);
+            if (newarray->nd == 4) {
+                Py_INCREF(newarray);
+                p_newarray[0] = newarray;
+                return 0;
+            } else {
+                Py_DECREF(newarray);
+                fprintf(stderr,"ERROR: new_jim_array(ndiv,nk) - Problem allocating memory\n");
+            }
+        } else {
+            fprintf(stderr,"ERROR: jimc_new_array(ndiv,nk) - must provide ndiv>=0 and nk>0\n");
+        }
+        return -1;
+}
+
 
 static char jimc_new_array__doc__[] =
 "Create a new numpy.ndarray with right dims for JIM grid of ndiv and nk\nnewJIMarray = jimc_new_array(ndiv,nk)\n@param ndiv number of grid divisons (int)\n@param nk number of vertical levels (int)\n@return newJIMarray (numpy.ndarray)";
@@ -72,46 +126,20 @@ static char jimc_new_array__doc__[] =
 static PyObject *
 jimc_new_array(PyObject *self, PyObject *args) {
 	PyArrayObject *newarray;
-	int dims[3]={1,1,1}, strides[3]={0,0,0}, ndims=3;
-	int type_num=NPY_FLOAT;
-
-        int ndiv,nijh,nk=1;
-        wordint f_ndiv,f_nij,f_nijh,f_halo;
+        int ndiv,nk=1,istat;
 
 	if (!PyArg_ParseTuple(args, "ii",&ndiv,&nk)) {
             fprintf(stderr,"ERROR: jimc_new_array(ndiv,nk) - wrong arg type\n");
             Py_INCREF(Py_None);
             return Py_None;
         }
-	if(ndiv >= 0 && nk > 0) {
-            f_ndiv  = (wordint)ndiv;
-
-            f_halo  = 2;
-            f_nijh  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
-            nijh    = (int)f_nijh;
-
-            dims[0] = (nijh>1) ? nijh : 1;
-            dims[1] = dims[0];
-            if (nk==1) {
-                dims[2] = 10;
-                ndims = 3;
-            } else {
-                dims[2] = nk;
-                dims[3] = 10;
-                ndims = 4;
-            }
-
-            newarray = PyArray_NewFromDescr(&PyArray_Type,
-                                        PyArray_DescrFromType(type_num),
-                                        ndims,dims,
-                                        NULL, NULL, FTN_Style_Array,
-                                        NULL);
-            Py_INCREF(newarray);
-            return newarray;
+        istat = new_jim_array(&newarray,ndiv,nk);
+        //printf("jimc_new_array(ndiv=%d,nk=%d): dims[%d] = (%d,%d,%d,%d)\n",ndiv,nk,newarray->nd,newarray->dimensions[0],newarray->dimensions[1],newarray->dimensions[2],newarray->dimensions[3]);
+        if (istat<0) {
+            fprintf(stderr,"ERROR: jimc_new_array(ndiv,nk) - problem allocating mem\n");
         } else {
-            fprintf(stderr,"ERROR: jimc_new_array(ndiv,nk) - must provide ndiv>=0 and nk>0\n");
+            return Py_BuildValue("O",newarray);
         }
-
         Py_INCREF(Py_None);
         return Py_None;
 }
@@ -123,11 +151,8 @@ static char jimc_grid_la_lo__doc__[] =
 static PyObject *
 jimc_grid_la_lo(PyObject *self, PyObject *args) {
 	PyArrayObject *lat,*lon;
-	int dims[3]={1,1,1}, strides[3]={0,0,0}, ndims=3;
-	int type_num=NPY_FLOAT;
-
-        int ndiv,nijh,nk=1,istat=-1;
-        wordint f_ndiv,f_nij,f_nijh,f_halo;
+        int ndiv,nijh,nij,halo,nk=1,istat=-1;
+        wordint f_ndiv,f_nij,f_halo;
 
 	if (!PyArg_ParseTuple(args, "i",&ndiv)) {
             fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - wrong arg type\n");
@@ -135,37 +160,23 @@ jimc_grid_la_lo(PyObject *self, PyObject *args) {
             return Py_None;
         }
 	if(ndiv >= 0) {
-            f_ndiv  = (wordint)ndiv;
+            istat  = new_jim_array(&lat,ndiv,nk);
+            istat += new_jim_array(&lon,ndiv,nk);
+            if (istat<0) {
+                fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - Problem allocating memory\n");
+                Py_INCREF(Py_None);
+                return Py_None;
+            }
 
-            f_halo  = 2;
-            f_nijh  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
-            nijh    = (int)f_nijh;
+            get_jim_dims(ndiv,&nijh,&nij,&halo);
 
-            dims[0] = (nijh>1) ? nijh : 1;
-            dims[1] = dims[0];
-            dims[2] = 10;
-            ndims = 3;
-
-            lat = PyArray_NewFromDescr(&PyArray_Type,
-                                        PyArray_DescrFromType(type_num),
-                                        ndims,dims,
-                                        NULL, NULL, FTN_Style_Array,
-                                        NULL);
-            lon = PyArray_NewFromDescr(&PyArray_Type,
-                                        PyArray_DescrFromType(type_num),
-                                        ndims,dims,
-                                        NULL, NULL, FTN_Style_Array,
-                                        NULL);
-
-            f_halo = 0;
-            f_nij  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
-            f_halo = (f_nijh - f_nij)/2;
-
+            f_ndiv = (wordint)ndiv;
+            f_halo = (wordint)halo;
+            f_nij  = (wordint)nij;
             istat = f77name(jim_grid_lalo)(lat->data,lon->data,
                             &f_nij,&f_halo,&f_ndiv);
             if (istat < 0) {
                 fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - problem computing grid lat/lon\n");
-
                 Py_DECREF(lat);
                 Py_DECREF(lon);
             } else {
@@ -185,11 +196,8 @@ static char jimc_grid_corners_la_lo__doc__[] =
 static PyObject *
 jimc_grid_corners_la_lo(PyObject *self, PyObject *args) {
 	PyArrayObject *lat,*lon;
-	int dims[3]={1,1,1}, strides[3]={0,0,0}, ndims=3;
-	int type_num=NPY_FLOAT;
-
-        int ndiv,nijh,nk=1,istat=-1;
-        wordint f_ndiv,f_nij,f_nijh,f_halo;
+        int ndiv,nijh,nij,halo,nk=6,istat=-1;
+        wordint f_ndiv,f_nij,f_halo;
 
 	if (!PyArg_ParseTuple(args, "i",&ndiv)) {
             fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv) - wrong arg type\n");
@@ -197,33 +205,19 @@ jimc_grid_corners_la_lo(PyObject *self, PyObject *args) {
             return Py_None;
         }
 	if(ndiv >= 0) {
-            f_ndiv  = (wordint)ndiv;
+            istat  = new_jim_array(&lat,ndiv,nk);
+            istat += new_jim_array(&lon,ndiv,nk);
+            if (istat<0) {
+                fprintf(stderr,"ERROR: jimc_grid_corners_la_lo(ndiv) - Problem allocating memory\n");
+                Py_INCREF(Py_None);
+                return Py_None;
+            }
 
-            f_halo  = 2;
-            f_nijh  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
-            nijh    = (int)f_nijh;
+            get_jim_dims(ndiv,&nijh,&nij,&halo);
 
-            dims[0] = 6;
-            dims[1] = (nijh>1) ? nijh : 1;
-            dims[2] = dims[1];
-            dims[3] = 10;
-            ndims = 4;
-
-            lat = PyArray_NewFromDescr(&PyArray_Type,
-                                        PyArray_DescrFromType(type_num),
-                                        ndims,dims,
-                                        NULL, NULL, FTN_Style_Array,
-                                        NULL);
-            lon = PyArray_NewFromDescr(&PyArray_Type,
-                                        PyArray_DescrFromType(type_num),
-                                        ndims,dims,
-                                        NULL, NULL, FTN_Style_Array,
-                                        NULL);
-
-            f_halo = 0;
-            f_nij  = f77name(jim_grid_dims)(&f_ndiv,&f_halo);
-            f_halo = (f_nijh - f_nij)/2;
-
+            f_ndiv = (wordint)ndiv;
+            f_halo = (wordint)halo;
+            f_nij  = (wordint)nij;
             istat = f77name(jim_grid_corners_lalo)(lat->data,lon->data,
                             &f_nij,&f_halo,&f_ndiv);
             if (istat < 0) {
@@ -274,7 +268,6 @@ jimc_xch_halo(PyObject *self, PyObject *args) {
                 return Py_None;
             }
 
-
             f_nij = (wordint) nij;
             f_nk  = (wordint) nk;
             if (nk == 1) {
@@ -294,6 +287,65 @@ jimc_xch_halo(PyObject *self, PyObject *args) {
         return Py_None;
 }
 
+/*
+static char jimc_flatten__doc__[] =
+"Flatten data organized as a stack of 10 icosahedral grids with halo into a 1D array [2D for corners special case]]\nistat = jimc_flatten(field)\n@param field (numpy.ndarray)\n@return istat status of the operation";
+
+static PyObject *
+jimc_flatten(PyObject *self, PyObject *args) {
+	PyArrayObject *field;
+
+        int nij,nk,ngrids,istat,ncorners;
+        wordint f_nij,f_nk;
+
+	if (!PyArg_ParseTuple(args, "O",&field)) {
+            fprintf(stderr,"ERROR: jimc_flatten(field) - Problem parsing input arg\n");
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+
+        //TODO: accept double and int types
+        if ((PyArray_ISCONTIGUOUS(field) || (field->flags & NPY_FARRAY))
+            && field->descr->type_num == NPY_FLOAT) {
+
+            ncorners = 1;
+            nij = field->dimensions[0];
+            if (nij == 6) {
+                ncorners = 1;
+                nij = field->dimensions[0];
+            }
+            nk  = 1;
+            ngrids = field->dimensions[2];
+            if (field->nd > 3) {
+                nk  = field->dimensions[2];
+                ngrids = field->dimensions[3];
+            }
+            if (field->dimensions[1]!=nij || ngrids!=10) {
+                fprintf(stderr,"ERROR: jimc_xch_halo(field) - Wrong Array dims: nd=%d, nijk=%d, %d,%d, ngrids=%d\n",field->nd,nij,field->dimensions[1],nk,ngrids);
+                Py_INCREF(Py_None);
+                return Py_None;
+            }
+
+
+            f_nij = (wordint) nij;
+            f_nk  = (wordint) nk;
+            if (nk == 1) {
+                //printf("jimc_xch_halo_2d - Array dims: nd=%d, nijk=%d, %d,%d, ngrids=%d, strides=%d\n",field->nd,nij,field->dimensions[1],nk,ngrids,field->strides[0]);
+                istat = f77name(jim_xch_halo_nompi_2d_r4)(&f_nij,field->data);
+            } else {
+                //printf("jimc_xch_halo_3d - Array dims: nd=%d, nijk=%d, %d,%d, ngrids=%d\n",field->nd,nij,field->dimensions[1],nk,ngrids);
+                istat = f77name(jim_xch_halo_nompi_3d_r4)(&f_nij,&f_nk,field->data);
+            }
+
+            return Py_BuildValue("i",istat);
+        } else {
+            fprintf(stderr,"ERROR: jimc_flatten(field) - Wrong Array type\n");
+        }
+
+        Py_INCREF(Py_None);
+        return Py_None;
+}
+*/
 
 /* List of methods defined in the module */
 

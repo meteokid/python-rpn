@@ -31,15 +31,19 @@ module vect_mod
 
    !- Types
    type,public :: vect_3d
+      sequence
       real :: v(3)
    end type vect_3d
    type,public :: vect_2d
+      sequence
       real :: v(2)
    end type vect_2d
    type,public :: vect_3d_8
+      sequence
       real(RDOUBLE) :: v(3)
    end type vect_3d_8
    type,public :: vect_2d_8
+      sequence
       real(RDOUBLE) :: v(2)
    end type vect_2d_8
 
