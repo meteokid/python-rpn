@@ -2,6 +2,7 @@
 
 import rpnstd
 from jimc import *
+from jim import *
 import numpy
 import unittest
 
@@ -271,6 +272,37 @@ class jimcXchHaloTest(unittest.TestCase):
             #    print j,':',numpy.array2string(f[:,j,igrid])
             #print igrid,"\n",numpy.array_repr(f[...,igrid].transpose())
             self.assertFalse(numpy.any(f[...,igrid]!=a[...,igrid]))
+
+
+    def testjim_flatten(self):
+        """jim_unflatten(jim_flatten(field)) should retunr field (except halo values)"""
+        ndiv = 2
+        halo = 2
+        (la,lo) = jimc_grid_la_lo(ndiv)
+        ij0 = halo
+        ijn = la.shape[0] - halo
+        nij = ijn-ij0
+        NPI = ij0
+        NPJ = ijn
+        SPI = ijn
+        SPJ = ij0
+        la_flat = jim_flatten(la)
+        la2     = jim_unflatten(la_flat)
+        self.assertEqual(la_flat.shape,(nij*nij*10+2,1))
+        self.assertEqual(la.shape,la2.shape)
+        self.assertFalse(numpy.any(la2[NPI,NPJ,:,0]!=la[NPI,NPJ,:,0]))
+        self.assertFalse(numpy.any(la2[SPI,SPJ,:,1]!=la[SPI,SPJ,:,1]))
+        for igrid in range(0,10):
+            self.assertFalse(numpy.any(la2[ij0:ijn,ij0:ijn,:,igrid]!=la[ij0:ijn,ij0:ijn,:,igrid]))
+        la_flat = jim_flatten(la,True)
+        la2     = jim_unflatten(la_flat)
+        self.assertEqual(la_flat.shape,(1,nij*nij*10+2))
+        self.assertEqual(la.shape,la2.shape)
+        self.assertFalse(numpy.any(la2[NPI,NPJ,:,0]!=la[NPI,NPJ,:,0]))
+        self.assertFalse(numpy.any(la2[SPI,SPJ,:,1]!=la[SPI,SPJ,:,1]))
+        for igrid in range(0,10):
+            self.assertFalse(numpy.any(la2[ij0:ijn,ij0:ijn,:,igrid]!=la[ij0:ijn,ij0:ijn,:,igrid]))
+
 
 if __name__ == "__main__":
     unittest.main()

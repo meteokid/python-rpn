@@ -287,66 +287,6 @@ jimc_xch_halo(PyObject *self, PyObject *args) {
         return Py_None;
 }
 
-/*
-static char jimc_flatten__doc__[] =
-"Flatten data organized as a stack of 10 icosahedral grids with halo into a 1D array [2D for corners special case]]\nistat = jimc_flatten(field)\n@param field (numpy.ndarray)\n@return istat status of the operation";
-
-static PyObject *
-jimc_flatten(PyObject *self, PyObject *args) {
-	PyArrayObject *field;
-
-        int nij,nk,ngrids,istat,ncorners;
-        wordint f_nij,f_nk;
-
-	if (!PyArg_ParseTuple(args, "O",&field)) {
-            fprintf(stderr,"ERROR: jimc_flatten(field) - Problem parsing input arg\n");
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-
-        //TODO: accept double and int types
-        if ((PyArray_ISCONTIGUOUS(field) || (field->flags & NPY_FARRAY))
-            && field->descr->type_num == NPY_FLOAT) {
-
-            ncorners = 1;
-            nij = field->dimensions[0];
-            if (nij == 6) {
-                ncorners = 1;
-                nij = field->dimensions[0];
-            }
-            nk  = 1;
-            ngrids = field->dimensions[2];
-            if (field->nd > 3) {
-                nk  = field->dimensions[2];
-                ngrids = field->dimensions[3];
-            }
-            if (field->dimensions[1]!=nij || ngrids!=10) {
-                fprintf(stderr,"ERROR: jimc_xch_halo(field) - Wrong Array dims: nd=%d, nijk=%d, %d,%d, ngrids=%d\n",field->nd,nij,field->dimensions[1],nk,ngrids);
-                Py_INCREF(Py_None);
-                return Py_None;
-            }
-
-
-            f_nij = (wordint) nij;
-            f_nk  = (wordint) nk;
-            if (nk == 1) {
-                //printf("jimc_xch_halo_2d - Array dims: nd=%d, nijk=%d, %d,%d, ngrids=%d, strides=%d\n",field->nd,nij,field->dimensions[1],nk,ngrids,field->strides[0]);
-                istat = f77name(jim_xch_halo_nompi_2d_r4)(&f_nij,field->data);
-            } else {
-                //printf("jimc_xch_halo_3d - Array dims: nd=%d, nijk=%d, %d,%d, ngrids=%d\n",field->nd,nij,field->dimensions[1],nk,ngrids);
-                istat = f77name(jim_xch_halo_nompi_3d_r4)(&f_nij,&f_nk,field->data);
-            }
-
-            return Py_BuildValue("i",istat);
-        } else {
-            fprintf(stderr,"ERROR: jimc_flatten(field) - Wrong Array type\n");
-        }
-
-        Py_INCREF(Py_None);
-        return Py_None;
-}
-*/
-
 /* List of methods defined in the module */
 
 static struct PyMethodDef jimc_methods[] = {

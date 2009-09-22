@@ -38,10 +38,11 @@ install:
 	cp build/lib.linux-i686-2.4/* $(INSTALLDIR)
 
 clean:
+	rm -f testfile.fst;\
 	rm -rf build; \
 	for i in $(COMPONENTS); \
 	do \
-	cd $$i ; $(MAKE) clean0 ; cd .. ;\
+	cd $$i ; $(MAKE) clean0 ; make clean; cd .. ;\
 	done
 	/bin/rm -f mec_$(MYDYN)_$(EC_ARCH).Abs
 

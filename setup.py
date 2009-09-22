@@ -62,6 +62,6 @@ Python Interface to some ARMNLIB RPN STD files function
 Base Interfaces are defined in the Fstdc sub-package.
 More python-esk clasess are defined in the rpnstd sub-package
 ''',
-    py_modules=['rpnstd'],
+    py_modules=['rpnstd','jim'],
     ext_modules = [Fstd_module,jimc_module,scripc_module])
 

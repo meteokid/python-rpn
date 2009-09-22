@@ -27,5 +27,8 @@ test: jim_grid_test.o jim_grid_mod.o jim_xch_halo_nompi.o
 	/bin/rm -f bidon.o
 	./jim_grid_test_$(EC_ARCH).Abs
 
+clean:
+	rm -f jim_grid_test_Linux_pgi611.Abs
+
 OTHERS   =  $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
 LIBS     = $(OTHERS)
