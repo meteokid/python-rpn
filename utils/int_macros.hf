@@ -1,0 +1,127 @@
+#ifndef INT_MACROS
+#define INT_MACROS 1
+!==== int_macros.hf [bgn]===========================================
+!===================================================================
+! Copyright: MSC-RPN COMM Group Licence/Disclaimer version 2
+! http://www.cmc.ec.gc.ca/rpn/modcom/licence.html
+!-------------------------------------------------------------------
+! Modifications: [Date,Who,What]
+! 2004-05, Stephane Chamberland
+!    recode of mod_interpolfn.f90 as C Macros [faster than calls]
+! 2004-09, Stephane Chamberland
+!    Enclose in an #ifndef
+!    Add ~~ (newline+6spaces) to prevent 'line too long' error
+!    Fix bug in INT_L2DA2B
+!-------------------------------------------------------------------
+! Dependencies:
+! [Pending]
+!-------------------------------------------------------------------
+! Description
+! Macros for Interpolation
+!-------------------------------------------------------------------
+! PRIVATE FN: None
+! PUBLIC FN: (see below)
+!===================================================================
+
+  !!!  INTEGER :: INT_NI,INT_NI !- Array dimensions
+  !!!  INTEGER :: INT_I,INT_J   !- Integer position value
+  !!!  REAL :: INT_X,INT_X0,INT_X1,INT_Y !- Real position value
+  !!!  REAL :: INT_V0,INT_V1    !- Real values
+  !!!  REAL :: INT_A1           !- 1D Array
+  !!!  REAL :: INT_A2           !- 2D Array
+  !!!  REAL :: 
+  !!!  REAL :: 
+  !!!  REAL :: 
+  !!!  REAL :: 
+  
+  !---- Get Index --------------------------------------------------
+  ! INT_I0(INT_X,INT_NI)
+  ! INT_I0B(INT_X,INT_IMIN,INT_IMAX)
+#define INT_I0B(INT_X,INT_IMIN,INT_IMAX) \
+     MAX(INT_IMIN,MIN(FLOOR(INT_X),INT_IMAX-1))
+
+#define INT_I0(INT_X,INT_NI) \
+     INT_I0B(INT_X,1,INT_NI)
+     
+  !---- Linear Interpolation ---------------------------------------
+  !---- 1D Lin.Int. From values, V(X) from V0=V(X0) , V1=V(X1)
+  ! INT_L1D0(INT_V0,INT_V1,INT_X0,INT_X1,INT_X)
+#define INT_L1D0(INT_V0,INT_V1,INT_X0,INT_X1,INT_X) \
+     (INT_V0  \
+      + REAL( (DBLE(INT_X)-DBLE(INT_X0))   & ~~\
+	       *(DBLE(INT_V1)-DBLE(INT_V0)) & ~~\
+	      /(DBLE(INT_X1)-DBLE(INT_X0)) \
+            ) \
+      )
+
+  !---- 1D Lin.Int. From 1D Array, V(X) from V(X0),V(X1) with X0<=X<=X1
+  ! INT_L1DA1(INT_A1,INT_NI,INT_X)   
+  ! INT_L1DA1B(INT_A1,INT_IMIN,INT_IMAX,INT_X)
+#define INT_L1DA1B(INT_A1,INT_IMIN,INT_IMAX,INT_X)  \
+     (INT_A1(INT_I0B(INT_X,INT_IMIN,INT_IMAX))  & ~~\
+      + REAL( (DBLE(INT_X)-DBLE(INT_I0B(INT_X,INT_IMIN,INT_IMAX)))  & ~~\
+	      *( DBLE(INT_A1(INT_I0B(INT_X,INT_IMIN,INT_IMAX)+1))   & ~~\
+		-DBLE(INT_A1(INT_I0B(INT_X,INT_IMIN,INT_IMAX))) \
+	       ) \
+            )\
+     )
+
+#define INT_L1DA1(INT_A1,INT_NI,INT_X)         \
+     INT_L1DA1B(INT_A1,1,INT_NI,INT_X)
+
+
+  !---- Same as INT_L1DA1 but from 2D Array, Int. Along X
+  ! INT_L1DA2X(INT_A2,INT_NI,INT_X,INT_J)
+  ! INT_L1DA2XB(INT_A2,INT_IMIN,INT_IMAX,INT_X,INT_J)
+#define INT_L1DA2XB(INT_A2,INT_IMIN,INT_IMAX,INT_X,INT_J)         \
+     (INT_A2(INT_I0B(INT_X,INT_IMIN,INT_IMAX),INT_J)                    & ~~\
+      + REAL( (DBLE(INT_X)-DBLE(INT_I0B(INT_X,INT_IMIN,INT_IMAX)))      & ~~\
+	      *( DBLE(INT_A2(INT_I0B(INT_X,INT_IMIN,INT_IMAX)+1,INT_J)) & ~~\
+		-DBLE(INT_A2(INT_I0B(INT_X,INT_IMIN,INT_IMAX),INT_J))   \
+	       ) \
+            )\
+     )
+
+#define INT_L1DA2X(INT_A2,INT_NI,INT_X,INT_J)         \
+     INT_L1DA2XB(INT_A2,1,INT_NI,INT_X,INT_J) 
+     
+  !---- Same as INT_L1DA1 but from 2D array, Int. Along Y
+  ! INT_L1DA2Y(INT_A2,INT_NJ,INT_I,INT_Y) 
+  ! 
+#define INT_L1DA2YB(INT_A2,INT_JMIN,INT_JMAX,INT_I,INT_Y)         \
+     (INT_A2(INT_I,INT_I0B(INT_Y,INT_JMIN,INT_JMAX))                  & ~~\
+      + REAL( (DBLE(INT_Y)-DBLE(INT_I0B(INT_Y,INT_JMIN,INT_JMAX)))    & ~~\
+	      *( DBLE(INT_A2(INT_I,INT_I0B(INT_Y,INT_JMIN,INT_JMAX))) & ~~\
+		-DBLE(INT_A2(INT_I,INT_I0B(INT_Y,INT_JMIN,INT_JMAX))) \
+	       ) \
+            )\
+     )
+
+#define INT_L1DA2Y(INT_A2,INT_NJ,INT_I,INT_Y)         \
+     INT_L1DA2YB(INT_A2,1,INT_NJ,INT_I,INT_Y)
+     
+  ! [Pending] INT_L1DB(INT_V,INT_P,INT_NI,INT_PX)
+
+  !---- Linear interpolation 2D ------------------------------------
+  !---- 2D Lin.Int. From 2D Array at INT_X,INT_Y
+  ! INT_L2DA2(INT_A2,INT_NI,INT_NJ,INT_X,INT_Y)
+#define INT_L2DA2B(INT_A2,INT_IMIN,INT_JMIN,INT_IMAX,INT_JMAX,INT_X,INT_Y) \
+    INT_L1D0(INT_L1DA2XB(INT_A2,INT_IMIN,INT_IMAX,INT_X,INT_I0B(INT_Y,INT_JMIN,INT_JMAX)),   & ~~\
+             INT_L1DA2XB(INT_A2,INT_IMIN,INT_IMAX,INT_X,INT_I0B(INT_Y,INT_JMIN,INT_JMAX)+1), & ~~\
+             FLOAT(INT_I0B(INT_Y,INT_JMIN,INT_JMAX)),   & ~~\
+             FLOAT(INT_I0B(INT_Y,INT_JMIN,INT_JMAX))+1.,\
+             INT_Y)
+
+#define INT_L2DA2(INT_A2,INT_NI,INT_NJ,INT_X,INT_Y) \
+    INT_L2DA2B(INT_A2,1,1,INT_NI,INT_NJ,INT_X,INT_Y)
+
+  ! [Pending] INT_L2DC(INT_V,INT_P,INT_NI,INT_PX)
+
+  !---- Find x: real position of a value in a monoticaly ordered vector
+  ! INT_FINDX(INT_V0,INT_A,INT_NI,INT_IMIN,INT_IMAX)
+#define INT_FINDX(INT_V0,INT_A,INT_IMIN,INT_IMAX) \
+     INT_L1D0(FLOAT(INT_IMIN),FLOAT(INT_IMAX), & ~~\
+		    INT_A(INT_IMIN),INT_A(INT_IMAX),INT_V0)
+
+!==== int_macros.hf [end]===========================================
+#endif 

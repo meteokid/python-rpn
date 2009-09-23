@@ -12,5 +12,5 @@ all: $(UTILSOBJ)
 # ALL dependencies ...
 #
 vect_mod.o: vect_mod.ftn90 rmnlib_basics.hf
-get_corners_xy.o: get_corners_xy.ftn90
+get_corners_xy.o: get_corners_xy.ftn90 int_macros.hf
 

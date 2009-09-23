@@ -7,9 +7,53 @@
 ! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
 !-------------------------------------------------------------------------- 
 !/**
+#include "int_macros.hf"
 
 !/**
 function get_corners_xy(xc,yc,x,y,ni,nj) result(F_istat)
+   implicit none
+   !@objective Halo Xchange for the Icosahedral-based grid
+   !@arguments
+   integer :: ni,nj !intent(in)
+   real,dimension(ni,nj)   :: x,y   !intent(in)
+   real,dimension(4,ni,nj) :: xc,yc !intent(out)
+   !@return
+   integer :: F_istat 
+   !@author  Stephane Chamberland, 2009-09
+   !@revisions
+   !**/
+   integer, parameter :: SW=1,NW=2,NE=3,SE=4,DIM_I=1,DIM_J=2
+   integer, parameter :: DIJ(2,4) = reshape( (/ &
+        -1,-1, & !SW
+        -1, 1, & !NW
+         1, 1, & !NE
+         1,-1  & !SE
+       /) , (/2,4/))
+
+   integer :: i,j,di,dj,side
+   real(8) :: mx_8,my_8,di_8,xd_8,yd_8
+   !---------------------------------------------------------------------
+   F_istat = 0
+   !- SW corners
+   do side=1,4
+      di = DIJ(DIM_I,side)
+      dj = DIJ(DIM_J,side)
+      do j=1,nj
+         yd_8 = dble(j) + 0.5D0*dble(dj)
+         do i=1,ni
+            xd_8 = dble(i) + 0.5D0*dble(di)
+            xc(side,i,j) = INT_L2DA2(x,ni,nj,xd_8,yd_8)
+            yc(side,i,j) = INT_L2DA2(y,ni,nj,xd_8,yd_8)
+         enddo
+      enddo
+   enddo
+   !---------------------------------------------------------------------
+   return
+end function get_corners_xy
+
+
+!/**
+function get_sidescenter_xy(xc,yc,x,y,ni,nj) result(F_istat)
    implicit none
    !@objective Halo Xchange for the Icosahedral-based grid
    !@arguments
@@ -62,4 +106,4 @@ function get_corners_xy(xc,yc,x,y,ni,nj) result(F_istat)
    enddo
    !---------------------------------------------------------------------
    return
-end function get_corners_xy
+end function get_sidescenter_xy
