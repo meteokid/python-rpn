@@ -302,7 +302,6 @@ Fstdc_fstecr(PyObject *self, PyObject *args) {
 	int dateo=0, deet=0, npas=0, nbits=0, ig1=0, ig2=0, ig3=0, ig4=0;
 	int ni=0,nj=0,nk=0,datyp=0,rewrit=0;
         int dtl=4;                 /* default data type length of 4 bytes */
-	int strides[3]={0,0,0},strides2[3]={0,0,0};
 	PyArrayObject *array;
 
 	if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiii",
@@ -314,9 +313,9 @@ Fstdc_fstecr(PyObject *self, PyObject *args) {
         printf("NPY_F_CONTIGUOUS=%d   NPY_FARRAY=%d  NPY_C_CONTIGUOUS=%d\n",NPY_F_CONTIGUOUS,NPY_FARRAY,NPY_C_CONTIGUOUS);
 #endif
 	if( PyArray_ISCONTIGUOUS(array) || (array->flags & NPY_FARRAY)) {
-	  ni=array->dimensions[0]; strides[0]=array->strides[0];
-	  if(array->nd > 1){ nj=array->dimensions[1];strides[1]=array->strides[1];}
-	  if(array->nd > 2){ nk=array->dimensions[2];strides[2]=array->strides[2];}
+	  ni=array->dimensions[0];
+	  if(array->nd > 1){ nj=array->dimensions[1];}
+	  if(array->nd > 2){ nk=array->dimensions[2];}
           switch (array->descr->type_num) {
 
             case NPY_INT:
@@ -362,7 +361,6 @@ Fstdc_fstecr(PyObject *self, PyObject *args) {
 #if defined(DEBUG)
 printf("datyp=%d dtl=%d\n",datyp,dtl);
 printf("writing array, nd=%d,ni=%d,nj=%d,nk=%d,datyp=%d,element length=%d,fstdtyp=%d\n",array->nd,ni,nj,nk,datyp,lentab[array->descr->type_num],datyps[array->descr->type_num]);
-printf("writing array with strides=%d,%d,%d\n",strides[0],strides[1],strides[2]);
 printf("writing iun=%d,nomvar=:%s:,typvar=:%s:,etiket=:%s:,ip1=%d,ip2=%d,ip3=%d,\
 dateo=%d,grtyp=:%s:,ig1=%d,ig2=%d,ig3=%d,ig4=%d,deet=%d,npas=%d,nbits=%d\n",
         iun,nomvar,typvar,etiket,ip1,ip2,ip3,dateo,grtyp,ig1,ig2,ig3,ig4,deet,npas,nbits);
@@ -386,7 +384,7 @@ static char Fstdc_fstluk__doc__[] =
 static PyObject *
 Fstdc_fstluk(PyObject *self, PyObject *args) {
 	PyArrayObject *newarray;
-	int dimensions[3]={1,1,1}, strides[3]={0,0,0}, ndimensions=3;
+	int dimensions[3]={1,1,1}, ndimensions=3;
 	int type_num=NPY_FLOAT;
 
 	int iun, ni=0, nj=0, nk=0, ip1=0, ip2=0, ip3=0, temp;
@@ -424,7 +422,6 @@ printf("handle = %d \n",handle);
 	dimensions[0] = (ni>1) ? ni : 1  ;
 	dimensions[1] = (nj>1) ? nj : 1 ;
 	dimensions[2] = (nk>1) ? nk : 1 ;
-	strides[0]=4 ; strides[1]=strides[0]*dimensions[0] ; strides[2]=strides[1]*dimensions[1];
 	if(nk>1) ndimensions=3;
 	else if(nj>1) ndimensions=2;
 	else ndimensions=1;
@@ -437,15 +434,12 @@ printf("handle = %d \n",handle);
 #if defined(DEBUG)
 	if(nk>1){
 	  printf("Creating newarray with dimensions %d %d %d\n", (ni>1) ? ni : 1 ,(nj>1) ? nj : 1, nk );
-	  printf("Strides= %d %d %d \n",newarray->strides[0],newarray->strides[1],newarray->strides[2]);
           }
         else if(nj>1){
 	  printf("Creating newarray with dimensions %d %d\n", (ni>1) ? ni : 1,(nj>1) ? nj : 1);
-	  printf("Strides= %d %d \n",newarray->strides[0],newarray->strides[1]);
           }
         else {
 	  printf("Creating newarray with dimension %d\n",(ni>1) ? ni : 1);
-	  printf("Strides= %d \n",newarray->strides[0]);
           }
 #endif
 	junk = c_fstluk(newarray->data,handle,&ni,&nj,&nk);
@@ -693,7 +687,7 @@ Fstdc_ezinterp(PyObject *self, PyObject *args) {
 /*        int ni_ps=199, nj_ps=155, ig1p=200, ig2p=0, ig3p=23640, ig4p=37403, gdps; */
         int srcaxis,dstaxis,vecteur,ier;
         char *grtypS,*grtypD,*grrefS,*grrefD;
-	int dimensions[3]={1,1,1}, strides[3]={0,0,0}, ndimensions=3;
+	int dimensions[3]={1,1,1}, ndimensions=3;
 	int type_num=NPY_FLOAT;
 	PyArrayObject *arrayin,*arrayin2,*newarray,*newarray2,*xsS,*ysS,*xsD,*ysD;
 
@@ -720,7 +714,6 @@ Fstdc_ezinterp(PyObject *self, PyObject *args) {
 	dimensions[0] = (niD>1) ? niD : 1  ;
 	dimensions[1] = (njD>1) ? njD : 1 ;
 	dimensions[2] = 1 ;
-	strides[0]=4 ; strides[1]=strides[0]*dimensions[0] ; strides[2]=strides[1]*dimensions[1];
 	if(njD>1) ndimensions=2;
 	else ndimensions=1;
 #if defined(DEBUG)
@@ -817,6 +810,112 @@ Fstdc_cigaxg(PyObject *self, PyObject *args) {
 	return Py_BuildValue("(ffff)",xg1,xg2,xg3,xg4);
 }
 
+
+static char Fstdc_ezgetlalo__doc__[] =
+"Get Lat-Lon of grid points centers and corners\n(lat,lon,clat,clon) = Fstdc_ezgetlalo((niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),xsS,ysS,srcaxis,corners)\n@param ...TODO...\n@return tuple of (numpy.ndarray) with center lat/lon (lat,lon) and optionally corners lat/lon (clat,clon)";
+
+static PyObject *
+Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
+    int ig1S, ig2S, ig3S, ig4S, niS, njS, gdid_src;
+    int srcaxis,corners,ier,n,nbcorners=4;
+    char *grtypS,*grrefS;
+    int dimensions[3]={1,1,1}, ndimensions=3;
+    int type_num=NPY_FLOAT;
+    PyArrayObject *lat,*lon,*clat,*clon,*xsS,*ysS,*x,*y,*xc,*yc;
+
+    if (!PyArg_ParseTuple(args, "(ii)s(siiii)OOii",&niS,&njS,&grtypS,&grrefS,&ig1S,&ig2S,&ig3S,&ig4S,&xsS,&ysS,&srcaxis,&corners)) {
+        fprintf(stderr,"ERROR: Fstdc_ezgetlalo(niS,njS,grtypS,grrefS,ig1S,ig2S,ig3S,ig4S,xsS,ysS,srcaxis,corners) - wrong arg type\n");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    //Define output array dims
+    niS = (niS>1) ? niS : 1 ;
+    njS = (njS>1) ? njS : 1 ;
+    dimensions[0] = niS;
+    dimensions[1] = njS;
+    dimensions[2] = 1 ;
+    if(njS>1) ndimensions=2;
+    else ndimensions=1;
+
+    //Define/Init Grid in EZSCINT
+    if (srcaxis)
+        gdid_src = c_ezgdef_fmem(niS,njS,grtypS,grrefS,ig1S,ig2S,ig3S,ig4S,xsS->data,ysS->data);
+    else
+        gdid_src = c_ezqkdef(niS,njS,grtypS,ig1S,ig2S,ig3S,ig4S,0);
+
+
+    //Compute centers Lat-Lon values
+    lat = PyArray_NewFromDescr(&PyArray_Type,
+                                PyArray_DescrFromType(type_num),
+                                ndimensions,dimensions,
+                                NULL, NULL, FTN_Style_Array,
+                                NULL);
+    lon = PyArray_NewFromDescr(&PyArray_Type,
+                                PyArray_DescrFromType(type_num),
+                                ndimensions,dimensions,
+                                NULL, NULL, FTN_Style_Array,
+                                NULL);
+
+    ier = c_gdll(gdid_src, lat->data, lon->data);
+
+    //Compute corners Lat-Lon values
+    if (corners) {
+        x = PyArray_NewFromDescr(&PyArray_Type,
+                                    PyArray_DescrFromType(type_num),
+                                    ndimensions,dimensions,
+                                    NULL, NULL, FTN_Style_Array,
+                                    NULL);
+        y = PyArray_NewFromDescr(&PyArray_Type,
+                                    PyArray_DescrFromType(type_num),
+                                    ndimensions,dimensions,
+                                    NULL, NULL, FTN_Style_Array,
+                                    NULL);
+
+        dimensions[0] = nbcorners;
+        dimensions[1] = niS;
+        dimensions[2] = njS;
+        if(njS>1) ndimensions=3;
+        else ndimensions=2;
+        clat = PyArray_NewFromDescr(&PyArray_Type,
+                                    PyArray_DescrFromType(type_num),
+                                    ndimensions,dimensions,
+                                    NULL, NULL, FTN_Style_Array,
+                                    NULL);
+        clon = PyArray_NewFromDescr(&PyArray_Type,
+                                    PyArray_DescrFromType(type_num),
+                                    ndimensions,dimensions,
+                                    NULL, NULL, FTN_Style_Array,
+                                    NULL);
+        xc = PyArray_NewFromDescr(&PyArray_Type,
+                                    PyArray_DescrFromType(type_num),
+                                    ndimensions,dimensions,
+                                    NULL, NULL, FTN_Style_Array,
+                                    NULL);
+        yc = PyArray_NewFromDescr(&PyArray_Type,
+                                    PyArray_DescrFromType(type_num),
+                                    ndimensions,dimensions,
+                                    NULL, NULL, FTN_Style_Array,
+                                    NULL);
+
+        n = niS*njS;
+        ier = c_gdxyfll(gdid_src,x->data,y->data,lat->data,lon->data,n);
+        ier = f77name(get_corners_xy)(xc->data,yc->data,x->data,y->data,&niS,&njS);
+        n = niS*njS*nbcorners;
+        ier = c_gdllfxy(gdid_src,clat->data,clon->data,xc->data,yc->data,n);
+
+        Py_DECREF(x);
+        Py_DECREF(y);
+        Py_DECREF(xc);
+        Py_DECREF(yc);
+
+        return Py_BuildValue("OOOO",lat,lon,clat,clon);
+    } else {
+        return Py_BuildValue("OO",lat,lon);
+    }
+
+}
+
 /* List of methods defined in the module */
 
 static struct PyMethodDef Fstdc_methods[] = {
@@ -841,8 +940,9 @@ static struct PyMethodDef Fstdc_methods[] = {
  {"ezinterp",	(PyCFunction)Fstdc_ezinterp,	METH_VARARGS,	Fstdc_ezinterp__doc__},
  {"cxgaig",	(PyCFunction)Fstdc_cxgaig,	METH_VARARGS,	Fstdc_cxgaig__doc__},
  {"cigaxg",	(PyCFunction)Fstdc_cigaxg,	METH_VARARGS,	Fstdc_cigaxg__doc__},
+ {"ezgetlalo",	(PyCFunction)Fstdc_ezgetlalo,	METH_VARARGS,	Fstdc_ezgetlalo__doc__},
 
-	{NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
+    {NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
 };
 
 

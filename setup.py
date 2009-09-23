@@ -14,6 +14,7 @@ print 'Shared Objects loaded with',SharedLd
 Fstd_module = Extension('Fstdc',
             include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture],
             libraries = ['PyFTN_helpers','rmn_shared_beta10'],
+            extra_objects = ['utils/get_corners_xy.o'],
             extra_link_args=runtime_libs,
             library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
             sources = ['Fstdc.c'])

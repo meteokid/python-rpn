@@ -1,7 +1,9 @@
 """Unit test for rpnstd.py and Fstd.py"""
 
 import rpnstd
+import Fstdc
 import unittest
+import numpy
 
 #class KnownValues(unittest.TestCase):
     #"""Check good behaviour of all class.fn on good input values"""
@@ -116,6 +118,68 @@ class Level_to_ip1KnownValues(unittest.TestCase):
             (lvl2,kind2) = rpnstd.ip1_to_levels([ipold])[0]
             (ipnew2,ipold2) = rpnstd.levels_to_ip1([lvl2],kind2)[0]
             self.assertEqual(ipold2,ipold)
+
+
+class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
+
+    def test_Fstdc_ezgetlalo_KnownValues(self):
+        """Fstdc_ezgetlalo should give known result with known input"""
+        la = numpy.array(
+            [[-89.5, -89. , -88.5],
+            [-89.5, -89. , -88.5],
+            [-89.5, -89. , -88.5]]
+            ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        lo = numpy.array(
+            [[ 180. ,  180. ,  180. ],
+            [ 180.5,  180.5,  180.5],
+            [ 181. ,  181. ,  181. ]]
+            ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        cla = numpy.array(
+            [[[-89.75, -89.25, -88.75],
+            [-89.75, -89.25, -88.75],
+            [-89.75, -89.25, -88.75]],
+            [[-89.5 , -89.  , -88.5 ],
+            [-89.5 , -89.  , -88.5 ],
+            [-89.5 , -89.  , -88.5 ]],
+            [[-89.25, -88.75, -88.25],
+            [-89.25, -88.75, -88.25],
+            [-89.25, -88.75, -88.25]],
+            [[-89.5 , -89.  , -88.5 ],
+            [-89.5 , -89.  , -88.5 ],
+            [-89.5 , -89.  , -88.5 ]]]
+            ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        clo = numpy.array(
+            [[[ 180.  ,  180.  ,  180.  ],
+            [ 180.5 ,  180.5 ,  180.5 ],
+            [ 181.  ,  181.  ,  181.  ]],
+            [[ 179.75,  179.75,  179.75],
+            [ 180.25,  180.25,  180.25],
+            [ 180.75,  180.75,  180.75]],
+            [[ 180.  ,  180.  ,  180.  ],
+            [ 180.5 ,  180.5 ,  180.5 ],
+            [ 181.  ,  181.  ,  181.  ]],
+            [[ 180.25,  180.25,  180.25],
+            [ 180.75,  180.75,  180.75],
+            [ 181.25,  181.25,  181.25]]]            ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ni = 3
+        nj = 3
+        grtyp='L'
+        grref='L'
+        (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
+        (la2,lo2,cla2,clo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),None,None,0,1)
+        self.assertFalse(numpy.any(la!=la2))
+        self.assertFalse(numpy.any(lo!=lo2))
+        for ic in range(0,4):
+            if numpy.any(cla[ic,...]!=cla2[ic,...]):
+                print ic,'cla'
+                print cla[ic,...]
+                print cla2[ic,...]
+            self.assertFalse(numpy.any(cla[ic,...]!=cla2[ic,...]))
+            if numpy.any(clo[ic,...]!=clo2[ic,...]):
+                print ic,'clo'
+                print clo[ic,...]
+                print clo2[ic,...]
+            self.assertFalse(numpy.any(clo[ic,...]!=clo2[ic,...]))
 
 if __name__ == "__main__":
     unittest.main()

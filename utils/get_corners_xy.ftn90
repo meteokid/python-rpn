@@ -1,0 +1,65 @@
+!--------------------------------------------------------------------------
+! This is free software, you can use/redistribute/modify it under the terms of
+! the EC-RPN License v2 or any later version found (if not provided) at:
+! - http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
+! - service.rpn@ec.gc.ca
+! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
+!-------------------------------------------------------------------------- 
+!/**
+
+!/**
+function get_corners_xy(xc,yc,x,y,ni,nj) result(F_istat)
+   implicit none
+   !@objective Halo Xchange for the Icosahedral-based grid
+   !@arguments
+   integer :: ni,nj !intent(in)
+   real,dimension(ni,nj)   :: x,y   !intent(in)
+   real,dimension(4,ni,nj) :: xc,yc !intent(out)
+   !@return
+   integer :: F_istat 
+   !@author  Stephane Chamberland, 2009-09
+   !@revisions
+   !**/
+   integer :: i,j
+   !---------------------------------------------------------------------
+   F_istat = 0
+   do j=1,nj
+      do i=1,ni
+         !- S
+         if (j==1) then
+            xc(1,i,j) = x(i,j) - real(0.5d0*(dble(x(i,j+1))-dble(x(i,j))))
+            yc(1,i,j) = y(i,j) - real(0.5d0*(dble(y(i,j+1))-dble(y(i,j))))
+         else
+            xc(1,i,j) = real(0.5d0*(dble(x(i,j-1))+dble(x(i,j))))
+            yc(1,i,j) = real(0.5d0*(dble(y(i,j-1))+dble(y(i,j))))
+         endif
+         !- W
+         if (i==1) then
+            xc(2,i,j) = x(i,j) - real(0.5d0*(dble(x(i+1,j))-dble(x(i,j))))
+            yc(2,i,j) = y(i,j) - real(0.5d0*(dble(y(i+1,j))-dble(y(i,j))))
+         else
+            xc(2,i,j) = real(0.5d0*(dble(x(i-1,j))+dble(x(i,j))))
+            yc(2,i,j) = real(0.5d0*(dble(y(i-1,j))+dble(y(i,j))))
+         endif
+         !- N
+         if (j==nj) then
+            xc(3,i,j) = x(i,j) + real(0.5d0*(dble(x(i,j))-dble(x(i,j-1))))
+            yc(3,i,j) = y(i,j) + real(0.5d0*(dble(y(i,j))-dble(y(i,j-1))))
+         else
+            xc(3,i,j) = real(0.5d0*(dble(x(i,j+1))+dble(x(i,j))))
+            yc(3,i,j) = real(0.5d0*(dble(y(i,j+1))+dble(y(i,j))))
+         endif
+         !- E
+         if (i==ni) then
+            xc(4,i,j) = x(i,j) + real(0.5d0*(dble(x(i,j))-dble(x(i-1,j))))
+            yc(4,i,j) = y(i,j) + real(0.5d0*(dble(y(i,j))-dble(y(i-1,j))))
+         else
+            xc(4,i,j) = real(0.5d0*(dble(x(i+1,j))+dble(x(i,j))))
+            yc(4,i,j) = real(0.5d0*(dble(y(i+1,j))+dble(y(i,j))))
+         endif
+      enddo
+   enddo
+   !---------------------------------------------------------------------
+   return
+end function get_corners_xy

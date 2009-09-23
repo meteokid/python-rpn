@@ -225,7 +225,7 @@ def cxgaig(grtyp,xg1,xg2=None,xg3=None,xg4=None):
     ...
     ValueError: cxgaig error: grtyp ['I'] must be one of ('A', 'B', 'E', 'G', 'L', 'N', 'S')
     """
-    validgrtyp = ('A','B','E','G','L','N','S')
+    validgrtyp = ('A','B','E','G','L','N','S') #I
     if xg2 == xg3 == xg4 == None and type(xg1) in (type([]),type(())) and len(xg1) == 4:
         (xg1,xg2,xg3,xg4) = xg1
     if None in (grtyp,xg1,xg2,xg3,xg4):
@@ -278,7 +278,7 @@ def cigaxg(grtyp,ig1,ig2=None,ig3=None,ig4=None):
     ...
     ValueError: cigaxg error: grtyp ['I'] must be one of ('A', 'B', 'E', 'G', 'L', 'N', 'S')
     """
-    validgrtyp = ('A','B','E','G','L','N','S')
+    validgrtyp = ('A','B','E','G','L','N','S') #I
     if ig2 == ig3 == ig4 == None and type(ig1) in (type([]),type(())) and len(ig1) == 4:
         (ig1,ig2,ig3,ig4) = ig1
     if None in (grtyp,ig1,ig2,ig3,ig4):
@@ -914,7 +914,6 @@ class FstGrid(FstParm):
 
     #(I) would work much the same way as #(L) ?
     """
-    validgrtyp = ('A','B','E','G','L','N','S','Z','Y','#') #'X'
     xyaxis = (None,None)
 
     def allowedKeysVals(self):
@@ -924,6 +923,9 @@ class FstGrid(FstParm):
             'shape':(0,0),
             'xyaxis':(None,None)
         }
+
+    def getValidgrtyp(self):
+        return ('A','B','E','G','L','N','S','Z','Y','#') #'X'
 
     def __init__(self,keys=None,xyaxis=(None,None),ninj=(None,None),grtyp=None,ij0=None,ig14=(None,None,None,None)):
         FstParm.__init__(self,None,self.allowedKeysVals(),{})
@@ -935,7 +937,7 @@ class FstGrid(FstParm):
         if grtyp != None:
             if keys != None:
                 raise ValueError,'FstGrid: cannot specify both grtyp and keys'
-            if grtyp in self.validgrtyp:
+            if grtyp in self.getValidgrtyp():
                 self.grtyp = grtyp
                 if grtyp in ('Z','Y','#'):
                     if not (type(xyaxis) in (type([]),type(())) and len(xyaxis)==2
@@ -964,7 +966,7 @@ class FstGrid(FstParm):
                     else:
                         raise TypeError,'FstGrid: ig14 must be (int,int,int,int) and ninj must be (int,int)'
             else:
-                raise ValueError,'FstGrid: gridtype must be one of '+self.validgrtyp.__repr__()
+                raise ValueError,'FstGrid: gridtype must be one of '+repr(self.getValidgrtyp())
         elif isinstance(keys,FstMeta):
             if keys.grtyp in ('Z','Y','#'):
                 xyaxis = keys.getaxis()

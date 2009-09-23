@@ -149,11 +149,11 @@ class jimcXchHaloTest(unittest.TestCase):
                 print 'la',la[2:6,2:6,igrid]!=la0[...,igrid]
                 print numpy.array_repr(la[2:6,2:6,igrid],precision=1)
                 print numpy.array_repr(la0[...,igrid],precision=1)
+            self.assertFalse(numpy.any(la[2:6,2:6,igrid]!=la0[...,igrid]))
             if numpy.any(lo[2:6,2:6,igrid]!=lo0[...,igrid]):
                 print 'lo',lo[2:6,2:6,igrid]!=lo0[...,igrid]
                 print numpy.array_repr(lo[2:6,2:6,igrid],precision=1)
                 print numpy.array_repr(lo0[...,igrid],precision=1)
-            self.assertFalse(numpy.any(la[2:6,2:6,igrid]!=la0[...,igrid]))
             self.assertFalse(numpy.any(lo[2:6,2:6,igrid]!=lo0[...,igrid]))
 
 
