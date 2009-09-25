@@ -1,4 +1,4 @@
-"""Module jimc contains the classes used to work with icosahedral grid (Janusz Icosahedral Model)
+"""Module jim contains the classes used to work with icosahedral grid (Janusz Icosahedral Model)
 
     @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
     @date: 2009-09
@@ -20,7 +20,7 @@ def jim_flatten_shape(field,nkfirst=False):
     @param if nkfirst: jim_flat_field.shape == (nk,...),
            else: jim_flat_field.shape == (...,nk)
     @return shape (tuple of int)
-    """
+   """
     #TODO: check that shape is what is expected
     HALO = 2
     IJ0  = HALO
@@ -144,21 +144,75 @@ def jim_unflatten(field):
                 #f3 = f2[IJ0:IJn+1,IJ0:IJn+1,k,g].reshape(-1)
                 #f3[...] = field[ijg0:ijgn,k]
                 f2[IJ0:IJn+1,IJ0:IJn+1,k,g] = field[ijg0:ijgn,k].reshape(nij,nij)
-
     return f2
+
+
+class JIMgrid(rpnstd.FstGrid):
+    """RPNSTD-type grid description for JIM grid-type
+
+    Multi-grid (10) icosahedral type
+    The sum of the 10 grids is a global domain
+    dx=dy and ni=nj are defined by ndiv=nb_grid_division (factor 2 from Icosahedron)
+    The 2 poles sits in the halo, in grid 0 (North pole) and 9 (South) respectively
+
+    Each of these grid can be divided into npx=npy "MPI-tiles"
+
+    We define:
+    ndiv: number of factor 2 grid division from the basic Icosahedron
+    igrid: ico-grid number [1-10]
+    itile: MPI tile (can be equivalent to igrid or a sub set of it)
+    nij  : size of igrid along x or y (ni=nj)
+    nhalo: size of the halo on each side (halox=haloy)
+    nijh : nij + 2*nhalo
+    i0,j0: position of itile SW corner in igrid [note that SW corner pt is not pt(1,1) of grid if there is a halo]
+    npxy : MPI grid division along x and y (npx=npy)
+
+    3 cases:
+    1) Global grid (all igrid)
+        TT grtyp=I, ig1=ndiv, ig2=0, ig3=nhalo
+            ni=nijh*nijh*10+2, nj=1, nk=nk (or split nk)
+    2) One igrid
+        TT grtyp=I, ig1=ndiv, ig2=igrid [1-10], ig3=nhalo,
+            ni=nj=nijh, nk=nk (or split nk)
+    2B) One tile (MPI-tile #-grid)
+        TT grtyp=#, ig1/2=grd_id, ig3=i0,ig4=j0
+            ni=nj=nijh (of itile, not igrid), nk=nk (or split nk)
+            nij and nhaloij can be computed (if we know npxy, from grd_id)
+        >> grtyp=I, ig1=ndiv, ig2=igrid [1-10], ig3=nhalo, ig4=npxy
+            ip1/2=grd_id,
+            ni=nj=nk=1 if to recompute grid pts centers lon
+            (otherwise ni=nijh [of igrid, not itile],nj=nijh)
+        ^^ same has ">>" for grid pts centers lat
+
+    myJIMgrid = JIMgrid(grtyp='#',ndiv=6,nhaloij=2,npxy=4,grd_id=(7,9))
+    myJIMgrid = JIMgrid(myFstRec)
+    myJIMgrid = JIMgrid(keys=myFstRec)
+    """
+
+    def getValidgrtyp(self):
+        g = list(rpnstd.FstGrid.getValidgrtyp(self))
+        g.append('I')
+        return tuple(g)
+
+    def allowedKeysVals(self):
+        kv = rpnstd.FstGrid.allowedKeysVals(self)
+        #kv[''] =
+        return kv
+
+    def __init__(self,keys=None,grtyp=None,ndiv=None,nhaloij=None,npxy=None,grd_id=(None,None)):
+        if grtyp=='I':
+            self.grtyp = grtyp
+            #TODO: check validity of args
+            self.ig14 = (ndiv,0,0,0)
+            nij = jimc.jimc_dims(ndiv,nhaloij)[1]
+            self.shape= (nij*nij*10+2,1)
+        elif keys != None:
+            try:
+                rpnstd.FstGrid.__init__(self,keys=keys)
+            except ValueError:
+                pass
 
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-    #(la,lo) = jimc.jimc_grid_la_lo(1)
-    #la2 = jim_flatten(la,True)
-    #print la2.shape
-    #print la2.flatten()
-    #la3 = jim_unflatten(la2)
-    #print la3.shape
-    #print la.shape
-    #for g in range(10):
-        ##print la3[:,:,0,g].transpose()
-        #print la3[2:4,2:4,0,g] == la[2:4,2:4,0,g]
-        #print la3[2:5,2:5,0,g].transpose()

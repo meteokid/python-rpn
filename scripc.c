@@ -110,7 +110,7 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
 
 
     fnbin = (wordint) nbin;
-    istat = scrip_addr_wts(faddr1,faddr2,fwts,&fnwts,&fnlinks,
+    istat = f77name(scrip_addr_wts)(faddr1,faddr2,fwts,&fnwts,&fnlinks,
                 &fnbin,methode,typ_norm,typ_restric,
                 &fg1_size,fg1_dims,&fg1_ncorn,
                 g1_center_lat->data,g1_center_lon->data,
@@ -202,7 +202,7 @@ scripc_interp_o1(PyObject *self, PyObject *args) {
 
     fnwts   = (wordint) wts->dimensions[0];
     fnlinks = (wordint) addr1->dimensions[0];
-    istat = scrip_remap_o1(data2->data,data->data,
+    istat = f77name(scrip_remap_o1)(data2->data,data->data,
                             wts->data,addr2->data,addr1->data,
                             &fnwts,&fnlinks);
 

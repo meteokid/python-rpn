@@ -173,7 +173,7 @@
       use kinds_mod    ! defines common data types
       use remap_mod
       implicit none
-
+      integer :: nwts,nlinks
       integer (kind=int_kind), dimension(:)::
      &     dst_add,     ! destination address for each link
      &     src_add      ! source      address for each link

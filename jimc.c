@@ -120,6 +120,31 @@ int new_jim_array(PyArrayObject **p_newarray, int ndiv, int nk){
 }
 
 
+static char jimc_dims__doc__[] =
+"Create a new numpy.ndarray with right dims for JIM grid of ndiv and nk\n(nijh, nij, halo) = jimc_dims(ndiv,halo)\n@param ndiv number of grid divisons (int)\n@param halo add halo points to nij in each dirs (-1 for default jim halo) (int)\n@return (nijh,nij,halo) where nijh = nij + 2*halo (int,int,int)";
+
+static PyObject *
+jimc_dims(PyObject *self, PyObject *args) {
+    int ndiv,nhalo;
+    int nijh,nij,halo;
+
+    if (!PyArg_ParseTuple(args, "ii",&ndiv,&nhalo)) {
+        fprintf(stderr,"ERROR: jimc_dims(ndiv,nhalo) - wrong arg type\n");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    get_jim_dims(ndiv, &nijh, &nij, &halo);
+    if (nhalo>0) {
+        nijh = nij+2*nhalo;
+        halo = nhalo;
+    } else if (nhalo==0) {
+        nijh = nij;
+        halo = 0;
+    }
+    return Py_BuildValue("iii",nijh,nij,halo);
+}
+
+
 static char jimc_new_array__doc__[] =
 "Create a new numpy.ndarray with right dims for JIM grid of ndiv and nk\nnewJIMarray = jimc_new_array(ndiv,nk)\n@param ndiv number of grid divisons (int)\n@param nk number of vertical levels (int)\n@return newJIMarray (numpy.ndarray)";
 
@@ -290,6 +315,7 @@ jimc_xch_halo(PyObject *self, PyObject *args) {
 /* List of methods defined in the module */
 
 static struct PyMethodDef jimc_methods[] = {
+    {"jimc_dims",	(PyCFunction)jimc_dims,	METH_VARARGS, jimc_dims__doc__},
     {"jimc_new_array",	(PyCFunction)jimc_new_array,	METH_VARARGS, jimc_new_array__doc__},
     {"jimc_grid_la_lo",	(PyCFunction)jimc_grid_la_lo,	METH_VARARGS, jimc_grid_la_lo__doc__},
     {"jimc_grid_corners_la_lo",	(PyCFunction)jimc_grid_corners_la_lo,	METH_VARARGS, jimc_grid_corners_la_lo__doc__},

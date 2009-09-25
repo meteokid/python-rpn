@@ -17,7 +17,8 @@ SCRIPOBJ= \
 	remap_bicubic.o \
 	timers.o \
 	remap_write.o \
-	scrip.o
+	scrip.o \
+	remap.o
 
 default: all
 all: $(SCRIPOBJ)

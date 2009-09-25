@@ -44,7 +44,8 @@ scripc_module = Extension('scripc',
                 'scrip/remap_bicubic.o',
                 'scrip/timers.o',
                 'scrip/remap_write.o',
-                'scrip/scrip.o'],
+                'scrip/scrip.o',
+                'scrip/remap.o'],
             extra_link_args=runtime_libs,
             library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
             sources = ['scripc.c'])
@@ -63,6 +64,6 @@ Python Interface to some ARMNLIB RPN STD files function
 Base Interfaces are defined in the Fstdc sub-package.
 More python-esk clasess are defined in the rpnstd sub-package
 ''',
-    py_modules=['rpnstd','jim'],
+    py_modules=['rpnstd','jim','scrip'],
     ext_modules = [Fstd_module,jimc_module,scripc_module])
 
