@@ -1,15 +1,13 @@
 """Module jim contains the classes used to work with icosahedral grid (Janusz Icosahedral Model)
 
     @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
-    @date: 2009-09
 """
-import math
-import numpy
-import rpnstd
+import rpn_version
+from rpn_helpers import *
 import jimc
 
-__JIM_VERSION__ = '0.1-dev'
-__JIM_LASTUPDATE__ = '2009-09'
+import math
+import numpy
 
 def jim_flatten_shape(field,nkfirst=False):
     """Return the shape of Flattened data as packed by jim_flatten(field,keepnk)
@@ -20,7 +18,7 @@ def jim_flatten_shape(field,nkfirst=False):
     @param if nkfirst: jim_flat_field.shape == (nk,...),
            else: jim_flat_field.shape == (...,nk)
     @return shape (tuple of int)
-   """
+    """
     #TODO: check that shape is what is expected
     HALO = 2
     IJ0  = HALO
@@ -147,8 +145,15 @@ def jim_unflatten(field):
     return f2
 
 
-class JIMgrid(rpnstd.FstGrid):
-    """RPNSTD-type grid description for JIM grid-type
+class RPNGridI(RPNGridHelper):
+    """RPNGrid Helper class for JIM-type grid (Icosahedron based)
+
+    ip1-4: ndiv, itile, nhalo, npxy
+    ndiv : number of division (factor 2) from base icosahedron
+    itile = 0 global grid (ni=2+10*nijh^2,nj=1)
+    itile = 1-10 ico-tile (ni=nj=nijh, min nhalo=1 to have poles)
+    nhalo: number of points in the halo
+    npxy : subdivision of each itile (ignored for itile==0)
 
     Multi-grid (10) icosahedral type
     The sum of the 10 grids is a global domain
@@ -185,32 +190,18 @@ class JIMgrid(rpnstd.FstGrid):
         ^^ same has ">>" for grid pts centers lat
 
     myJIMgrid = JIMgrid(grtyp='#',ndiv=6,nhaloij=2,npxy=4,grd_id=(7,9))
-    myJIMgrid = JIMgrid(myFstRec)
-    myJIMgrid = JIMgrid(keys=myFstRec)
+    myJIMgrid = JIMgrid(myRPNRec)
+    myJIMgrid = JIMgrid(keys=myRPNRec)
+
     """
+    def parseArgs(self,keys,args):
+        return {} #TODO: accept real values (xg14)
 
-    def getValidgrtyp(self):
-        g = list(rpnstd.FstGrid.getValidgrtyp(self))
-        g.append('I')
-        return tuple(g)
-
-    def allowedKeysVals(self):
-        kv = rpnstd.FstGrid.allowedKeysVals(self)
-        #kv[''] =
-        return kv
-
-    def __init__(self,keys=None,grtyp=None,ndiv=None,nhaloij=None,npxy=None,grd_id=(None,None)):
-        if grtyp=='I':
-            self.grtyp = grtyp
-            #TODO: check validity of args
-            self.ig14 = (ndiv,0,0,0)
-            nij = jimc.jimc_dims(ndiv,nhaloij)[1]
-            self.shape= (nij*nij*10+2,1)
-        elif keys != None:
-            try:
-                rpnstd.FstGrid.__init__(self,keys=keys)
-            except ValueError:
-                pass
+    #@static
+    def argsCheck(self,d):
+        #TODO: may want to check more things (shape rel to ndiv...)
+        if not (d['grtyp'] != 'I'):
+            raise ValueError, 'RPNGridBase: invalid grtyp value'
 
 
 if __name__ == "__main__":

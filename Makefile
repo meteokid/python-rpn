@@ -19,6 +19,17 @@ INSTALLDIR= $(HOME)/ovbin/python/lib.linux-i686-2.4-dev
 
 DOCTESTPYMODULES = rpnstd.py
 
+PYVERSIONFILE = rpn_version.py
+CVERSIONFILE = rpn_version.h
+VERSION   = 1.2-dev
+LASTUPDATE= 2009-09
+
+versionfile:
+	echo "__VERSION__ = '$(VERSION)'" > $(PYVERSIONFILE)
+	echo "__LASTUPDATE__ = '$(LASTUPDATE)'" >> $(PYVERSIONFILE)
+	echo "#define VERSION \"$(VERSION)\"" > $(CVERSIONFILE)
+	echo "#define LASTUPDATE \"$(LASTUPDATE)\"" >> $(CVERSIONFILE)
+
 default: all
 
 # slib: all
@@ -28,13 +39,13 @@ default: all
 # 	  -librmn $(RMNLIBSHARED) \
 # 	  -o jim.so
 
-all:
+all: versionfile
 	for i in $(COMPONENTS); \
 	do cd $$i ; $(MAKE) all ; cd .. ;\
 	done ;\
 	python setup.py build
 
-install:
+install: all
 	cp build/lib.linux-i686-2.4/* $(INSTALLDIR)
 
 clean:
@@ -54,7 +65,7 @@ tags: clean
 		ctags --language=fortran --defines --append $$myfile ; \
 	done
 
-alltests:
+alltests: all
 	for i in $(COMPONENTS); \
 	do echo -e "\n==== Make Test: " $$i "====\n"; cd $$i ; $(MAKE) test ; cd .. ;\
 	done

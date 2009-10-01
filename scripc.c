@@ -7,9 +7,10 @@ Module scripc contains the classes used to use the SCRIP interpolation package
 #include <rpnmacros.h>
 #include <Python.h>
 #include <numpy/arrayobject.h>
+#include "rpn_version.h"
 
-static char version[] = "0.1-dev";
-static char lastmodified[] = "2009-09";
+static char version[] = VERSION;
+static char lastmodified[] = LASTUPDATE;
 
 int c_fst_data_length(int length_type);
 

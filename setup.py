@@ -1,5 +1,6 @@
 from numpy.distutils.core import setup, Extension
 import os, distutils, string
+import rpn_version
 
 # architecture='Linux_pgi611'
 architecture = os.getenv('EC_ARCH')
@@ -52,7 +53,7 @@ scripc_module = Extension('scripc',
 
 
 setup(name = 'rpnstd',
-    version = '1.2-dev',
+    version = rpn_version.__VERSION__,
     description = 'Python Interface to some ARMNLIB RPN STD files function',
     author = 'Mario Lepine',
     author_email = 'mario.lepine@ec.gc.ca',
@@ -64,6 +65,6 @@ Python Interface to some ARMNLIB RPN STD files function
 Base Interfaces are defined in the Fstdc sub-package.
 More python-esk clasess are defined in the rpnstd sub-package
 ''',
-    py_modules=['rpnstd','jim','scrip'],
+    py_modules=['rpn_version','rpn_helpers','rpnstd','jim','scrip'],
     ext_modules = [Fstd_module,jimc_module,scripc_module])
 

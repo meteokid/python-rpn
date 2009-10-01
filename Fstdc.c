@@ -8,9 +8,10 @@ Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)
 #include <rpnmacros.h>
 #include <Python.h>
 #include <numpy/arrayobject.h>
+#include "rpn_version.h"
 
-static char version[] = "0.20-dev";
-static char lastmodified[] = "2009-09";
+static char version[] = VERSION;
+static char lastmodified[] = LASTUPDATE;
 
 int c_fst_data_length(int length_type);
 
