@@ -167,7 +167,10 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         grtyp='L'
         grref='L'
         (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
-        (la2,lo2,cla2,clo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),None,None,0,1)
+        hasAxes = 0
+        doCorners = 1
+        (i0,j0) = (0,0)
+        (la2,lo2,cla2,clo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(None,None),hasAxes,(i0,j0),doCorners)
         self.assertFalse(numpy.any(la!=la2))
         self.assertFalse(numpy.any(lo!=lo2))
         for ic in range(0,4):

@@ -593,11 +593,11 @@ class RPNGrid(RPNParm):
         (sg,dg) = (recx.grid,self)
         (sgxa,sgya,dgxa,gdya) = (None,None,None,None)
         try:
-            (sgxa,sgya) = (sg.xyaxis[0],sg.xyaxis[1])
+            (sgxa,sgya) = (sg.xyaxis[0].d,sg.xyaxis[1].d)
         except:
             pass
         try:
-            (dgxa,dgya) = (dg.xyaxis[0],dg.xyaxis[1])
+            (dgxa,dgya) = (dg.xyaxis[0].d,dg.xyaxis[1].d)
         except:
             pass
         (sflag,dflag) = (sgxa != None,dgxa != None)
@@ -609,14 +609,14 @@ class RPNGrid(RPNParm):
             (s_xyref,d_xyref) = (sg.ig14,dg.ig14)
             s_xyref.insert(0,sg.grtyp)
             d_xyref.insert(0,dg.grtyp)
+
         recyd = None
         if isVect:
             recyd = recy.d
         #TODO: what if not an ezscint supported grtyp
-        #TODO: looks like i0,j0 of # grids is not passed to ezint
         dataxy = Fstdc.ezinterp(recx.d,recyd,
-                    sg.shape,sg.grtyp,s_xyref,sgxa,sgya,sflag,
-                    dg.shape,dg.grtyp,d_xyref,dgxa,dgya,dflag,isVect)
+                    sg.shape,sg.grtyp,s_xyref,sgxa,sgya,sflag,sg.ig14[2:],
+                    dg.shape,dg.grtyp,d_xyref,dgxa,dgya,dflag,dg.ig14[2:],isVect)
         if isRec:
             recx.d = dataxy[0]
             recx.setGrid(self)
