@@ -585,49 +585,45 @@ class RPNGrid(RPNParm):
         isVect = (recy!=None)
         return (recx,recy,isVect,isRec)
 
+    def getEzInterpArgs(self,isSrc):
+        #TODO: may want to check helper, helper.getEzInterpArgs
+        return self.helper.getEzInterpArgs(self.__dict__,isSrc)
 
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
         """
         (recx,recy,isVect,isRec) = self.interpolVectValidateArgs(self,fromDataX,fromDataY,fromGrid)
-        (sg,dg) = (recx.grid,self)
-        (sgxa,sgya,dgxa,gdya) = (None,None,None,None)
-        try:
-            (sgxa,sgya) = (sg.xyaxis[0].d,sg.xyaxis[1].d)
-        except:
-            pass
-        try:
-            (dgxa,dgya) = (dg.xyaxis[0].d,dg.xyaxis[1].d)
-        except:
-            pass
-        (sflag,dflag) = (sgxa != None,dgxa != None)
-        try:
-            (s_xyref,d_xyref) = (sg.g_ref.ig14,dg.g_ref.ig14)
-            s_xyref.insert(0,sg.g_ref.grtyp)
-            d_xyref.insert(0,dg.g_ref.grtyp)
-        except:
-            (s_xyref,d_xyref) = (sg.ig14,dg.ig14)
-            s_xyref.insert(0,sg.grtyp)
-            d_xyref.insert(0,dg.grtyp)
-
         recyd = None
         if isVect:
             recyd = recy.d
-        #TODO: what if not an ezscint supported grtyp
-        dataxy = Fstdc.ezinterp(recx.d,recyd,
-                    sg.shape,sg.grtyp,s_xyref,sgxa,sgya,sflag,sg.ig14[2:],
-                    dg.shape,dg.grtyp,d_xyref,dgxa,dgya,dflag,dg.ig14[2:],isVect)
+        (sg,dg) = (recx.grid,self)
+        sg_a = sg.getEzInterpArgs(isSrc=True)
+        dg_a = dg.getEzInterpArgs(isSrc=False)
+        if sg_args and dg_args:
+            a = RPNGridHelper.baseEzInterpArgs
+            a.update(sg_a)
+            sg_a = a
+            a = RPNGridHelper.baseEzInterpArgs
+            a.update(dg_a)
+            dg_a = a
+            dataxy = Fstdc.ezinterp(recx.d,recyd,
+                    sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],
+                    dg_a['shape'],dg_a['grtyp'],dg_a['g_ig14'],dg_a['xy_ref'],dg_a['hasRef'],dg_a['ij0'],
+                    isVect)
+        else:
+            #TODO: try with scrip if not
+            raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
         if isRec:
             recx.d = dataxy[0]
             recx.setGrid(self)
-            if vecteur:
+            if isVect:
                 recy.d = dataxy[1]
                 recy.setGrid(self)
                 return (recx,recy)
             else:
                 return recx
         else:
-            if vecteur:
+            if isVect:
                 return (dataxy[0].d,dataxy[1].d)
             else:
                 return dataxy[0].d
@@ -643,6 +639,14 @@ class RPNGridBase(RPNGridHelper):
     def argsCheck(self,d):
         if not (d['grtyp'] in RPNGrid.base_grtyp):
             raise ValueError, 'RPNGridBase: invalid grtyp value'
+
+    def getEzInterpArgs(keyVals,isSrc):
+        a = RPNGridHelper.baseEzInterpArgs
+        a['shape']  = keyVals['shape']
+        a['grtyp']  = keyVals['grtyp']
+        a['g_ig14'] = list(keyVals['ig14'])
+        a['g_ig14'].insert(0,keyVals['grtyp'])
+        return a
 
 
 class RPNGridRef(RPNGridHelper):
@@ -677,6 +681,19 @@ class RPNGridRef(RPNGridHelper):
             and isinstance(xyaxis[0],RPNRec)
             and isinstance(xyaxis[1],RPNRec) ):
             raise ValueError, 'RPNGridRef: invalid value'
+
+    def getEzInterpArgs(keyVals,isSrc):
+        if keyVals['grtyp'] == 'Y' and isSrc:
+            return None
+        a = keyVals['g_ref'].getEzInterpArgs(isSrc)
+        if a is None:
+            return None
+        a['grtyp']  = keyVals['grtyp']
+        a['xy_ref'] = (keyVals['xyaxis'][0].d,keyVals['xyaxis'][1].d)
+        a['hasRef'] = 1
+        if keyVals['grtyp'] == '#':
+            a['ij0'] = keyVals['ig14'][2:]
+        return a
 
 
 class RPNRec(RPNMeta):

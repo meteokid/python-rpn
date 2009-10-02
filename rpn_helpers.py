@@ -329,12 +329,23 @@ class RPNGridHelper:
     provides stubs of attr and methodes
     """
     addAllowedKeysVals = {}
+    baseEzInterpArgs = {
+        'shape' : (0,0),
+        'grtyp' : ' ',
+        'g_ig14': (' ',0,0,0,0),
+        'xy_ref': (None,None),
+        'hasRef': 0,
+        'ij0'   : (1,1)
+    }
 
     def parseArgs(self,keys,args):
         return {}
 
     def argsCheck(d):
         pass
+
+    def getEzInterpArgs(self,keyVals,isSrc):
+        return None
 
 
 if __name__ == "__main__":

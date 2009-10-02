@@ -203,6 +203,9 @@ class RPNGridI(RPNGridHelper):
         if not (d['grtyp'] != 'I'):
             raise ValueError, 'RPNGridBase: invalid grtyp value'
 
+    def getEzInterpArgs(keyVals,isSrc):
+        #TODO: at some point implement as Y-grid if isSrc==False
+        return None
 
 if __name__ == "__main__":
     import doctest
