@@ -47,6 +47,9 @@ class ScripGrid:
             else:
                 raise TypeError, "scripGrid(name,lalo): wrong type for lalo, should be (center_lat, center_lon, corners_lat, corners_lon) of type (numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray)"
 
+    def __repr__(self):
+        pass #TODO
+
 
 class Scrip:
     """SCRIP inerpolation package base class
@@ -59,54 +62,57 @@ class Scrip:
     @exception TypeError
     @exception ValueError
     """
-    grids   = None
-    weights = None
+    fname = None
+    grids = None
+    aaw   = None
     #TODO: nbins,methode,typ_norm,typ_restric
 
-    def __init__(self,inGrid,outGrid,weights=None):
+    def __init__(self,inGrid,outGrid,aaw=None):
         #TODO: add intepolation method options
         if isinstance(inGrid,scripGrid) and isinstance(outGrid,scripGrid):
             grids = (inGrid,outGrid)
         else:
-            raise TypeError, "scripInterp(inGrid,outGrid,weights): wrong type for inGrid,outGrid; should be of type scripGrid"
-        if weights:
-            if (type(weights)==type(()) and
-                len(weights)==3 and
-                type(weights[0])==numpy.ndarray and
-                type(weights[1])==numpy.ndarray and
-                type(weights[2])==numpy.ndarray):
-                if weights[0].shape == weights[1].shape ==  weights[2].shape:
-                    self.weights = weights
+            raise TypeError, "scripInterp(inGrid,outGrid,aaw): wrong type for inGrid,outGrid; should be of type scripGrid"
+        self.fname = 'scrip_aaw'+grids[0].name+grids[1].name+'.npz'
+        if aaw:
+            if (type(aaw)==type(()) and
+                len(aaw)==3 and
+                type(aaw[0])==numpy.ndarray and
+                type(aaw[1])==numpy.ndarray and
+                type(aaw[2])==numpy.ndarray):
+                if aaw[0].shape == aaw[1].shape ==  aaw[2].shape:
+                    self.aaw = aaw
                     #TODO: if grids have lalo, check dims mismatch (not sure we can do that w/o check toAddr and fromAddr)
                 else:
-                    raise TypeError, "scripInterp(inGrid,outGrid,weights): dimensions mismatch for weights"
+                    raise TypeError, "scripInterp(inGrid,outGrid,aaw): dimensions mismatch for aaw"
             else:
-                raise TypeError, "scripInterp(inGrid,outGrid,weights): wrong type for weights; should be (fromAddr,toAddr,weights) of type (numpy.ndarray, numpy.ndarray)"
+                raise TypeError, "scripInterp(inGrid,outGrid,aaw): wrong type for aaw; should be (fromAddr,toAddr,aaw) of type (numpy.ndarray, numpy.ndarray)"
         else:
-            if file.exists('scripadrwts'+grids[0].name+grids[1].name):
-                pass
-                #TODO: try to read weights from file numpy.fromfile()
+            if file.exists(self.fname):
+                aaw = numpy.load(self.fname)
+                self.aaw = (aaw['a1'],aaw['a2'],aaw['w'])
                 #TODO: check file validity
             elif girds[0].lalo and grids[1].lalo:
-                #TODO: convert latlon to radiants with proper range
-                weights = scripc_addr_wts(
+                self.aaw = scripc_addr_wts(
                     grids[0].lalo[0],grids[0].lalo[1],
                     grids[0].lalo[2],grids[0].lalo[3],
                     grids[1].lalo[0],grids[1].lalo[1],
                     grids[1].lalo[2],grids[1].lalo[3],
                     nbins,methode,typ_norm,typ_restric)
+                #TODO: raise error if problem computing addrwts
+                if not (aaw is None):
+                    numpy.savez(self.fname, a1=aaw[0],a2=aaw[1],w=aaw[2])
             else:
-                raise ValueError, "scripInterp(inGrid,outGrid,weights): missing values, unable to compute weights since centers and corners lat/lon are not provided"
-        #TODO: save weights on disk numpy.ndarray.tofile()
+                raise ValueError, "scripInterp(inGrid,outGrid,aaw): missing values, unable to compute aaw since centers and corners lat/lon are not provided"
 
     def interp(field):
         """Perform interpolation"""
         #TODO: may want to check that field is on grids[0] (dims)
-        return scripc_interp_o1(field,self.weights[0],self.weights[1],self.weights[2],grids[1].size)
+        return scripc_interp_o1(field,self.aaw[0],self.aaw[1],self.aaw[2],grids[1].size)
 
     def inverse(self):
         """Reverse direction of intepolation if possible
-        Either weights are already persent on disk
+        Either addr/weights are already persent on disk
         Or center and corners lat lon were provided
         """
         #TODO: add interp options
@@ -114,7 +120,7 @@ class Scrip:
 
     def __del__():
         """ """
-        scripc_addr_wts_free(self.weights[0],self.weights[1],self.weights[2])
+        scripc_addr_wts_free(self.aaw[0],self.aaw[1],self.aaw[2])
 
     def __repr__(self):
         pass #TODO
