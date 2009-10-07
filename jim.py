@@ -30,7 +30,7 @@ def jim_flatten_shape(field=None,nkfirst=False,nhalo=2,ndiv=None,iGrid=0):
     """
     #TODO: check that shape is what is expected
     nGrids = 10
-    if field and type(field==numpy.ndarray) and len(field.shape)>=4:
+    if (not (field is None)) and type(field==numpy.ndarray) and len(field.shape)>=4:
         nGrids = field.shape[3]
         nijh = field.shape[0]
         nk   = field.shape[2]

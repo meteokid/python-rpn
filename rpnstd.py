@@ -463,7 +463,7 @@ class RPNGrid(RPNParm):
 
     def parseArgs(self,keys,args=None):
         """Return a dict with parsed args for the specified grid type"""
-         if args is None:
+        if args is None:
             args = {}
         if type(args) != type({}):
             raise TypeError,'RPNGrid: args should be of type dict'
