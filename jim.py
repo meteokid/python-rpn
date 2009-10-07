@@ -17,7 +17,7 @@ def jim_flatten_shape(field=None,nkfirst=False,nhalo=2,ndiv=None,iGrid=0):
     shape = jim_flatten_shape(jim_3d_field,nkfirst,nhalo)
     shape = jim_flatten_shape(ndiv=6)
     shape = jim_flatten_shape(ndiv=6,iGrid=1)
-    shape = jim_flatten_shape(ndiv=6,nkfirst=nkfirst,nhalo=nhalo)
+    shape = jim_flatten_shape(ndiv=6,nkfirst=nkfirst)
 
     @param jim_3d_field (numpy.ndarray(nij,nij,nk,ngrids))
     @param if nkfirst: jim_flat_field.shape == (nk,...),
@@ -27,9 +27,34 @@ def jim_flatten_shape(field=None,nkfirst=False,nhalo=2,ndiv=None,iGrid=0):
     @param ndiv  if jim_3d_field is not provided, compute dims for JIM grid division ndiv (int)
     @param iGrid  if jim_3d_field is not provided, compute dims for JIM iGrid tile (default=0 ; global) (int)
     @return shape (tuple of int)
+
+    >>> jim_flatten_shape(ndiv=6)
+    (40962, 1)
+    >>> jim_flatten_shape(ndiv=11)
+    (41943042, 1)
+    >>> jim_flatten_shape(ndiv=6,iGrid=2)
+    (4096, 1)
+    >>> jim_flatten_shape(ndiv=6,nhalo=0)
+    (40962, 1)
+    >>> jim_flatten_shape(ndiv=6,nkfirst=True)
+    (1, 40962)
+    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
+    >>> jim_flatten_shape(f)
+    (10242, 1)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(1,nijh,nijh,10))
+    >>> jim_flatten_shape(f,nkfirst=True)
+    (1, 10242)
+    >>> (nijh,nij,halo) = jimc.jimc_dims(5,4)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
+    >>> f.shape #nhalo=4
+    (40, 40, 1, 10)
+    >>> jim_flatten_shape(f,nhalo=4)
+    (10242, 1)
     """
     #TODO: check that shape is what is expected
     nGrids = 10
+    nk = 1
     if (not (field is None)) and type(field==numpy.ndarray) and len(field.shape)>=4:
         nGrids = field.shape[3]
         nijh = field.shape[0]
@@ -42,7 +67,7 @@ def jim_flatten_shape(field=None,nkfirst=False,nhalo=2,ndiv=None,iGrid=0):
         nij  = (ijn-ij0+1)
     elif ndiv >= 0 and iGrid>=0 and iGrid <=20:
         if iGrid>0:
-            ngrids = 1
+            nGrids = 1
         (nijh,nij,halo) = jimc.jimc_dims(ndiv,nhalo)
     else:
         raise ValueError, "jim_flatten_shape: wrong args"
@@ -70,6 +95,41 @@ def jim_flatten(field,nkfirst=False,nhalo=2):
     @return jim_flat_field (numpy.ndarray(nijg,nk)) or (numpy.ndarray(nk,nijg))
 
     Return a new numpy.ndarray (not a reference to the original one)
+
+    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
+    >>> f.shape
+    (36, 36, 1, 10)
+    >>> f2 = jim_flatten(f)
+    >>> f2.shape
+    (10242, 1)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(1,nijh,nijh,10))
+    >>> f.shape #nkfirst=True
+    (1, 36, 36, 10)
+    >>> f2 = jim_flatten(f,nkfirst=True)
+    >>> f2.shape #nkfirst=True specified
+    (1, 10242)
+    >>> (nijh,nij,halo) = jimc.jimc_dims(5,4)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
+    >>> f.shape #nhalo=4
+    (40, 40, 1, 10)
+    >>> f2 = jim_flatten(f,nhalo=4)
+    >>> f2.shape #nhalo=4
+    (10242, 1)
+    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,4,10))
+    >>> f.shape #nk=4
+    (36, 36, 4, 10)
+    >>> f2 = jim_flatten(f)
+    >>> f2.shape #nk=4
+    (10242, 4)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(4,nijh,nijh,10))
+    >>> f.shape #nk=4,nkfirst=True
+    (4, 36, 36, 10)
+    >>> f2 = jim_flatten(f,nkfirst=True)
+    >>> f2.shape #nk=4,nkfirst=True specified
+    (4, 10242)
+
     """
     #TODO: check that shape is what is expected
     nGrids = field.shape[3]
@@ -92,7 +152,7 @@ def jim_flatten(field,nkfirst=False,nhalo=2):
     SP_J = ij0
     sizexy  = nij*nij
     sizexyP = nij*nij+npoles
-    f2 = numpy.resize(numpy.array([field[0,0,0,0]],order='FORTRAN'),jim_flatten_shape(field,nkfirst))
+    f2 = numpy.resize(numpy.array([field[0,0,0,0]],order='FORTRAN'),jim_flatten_shape(field,nkfirst=nkfirst,nhalo=nhalo))
     np_val = None
     sp_val = None
     if nkfirst:
@@ -137,6 +197,69 @@ def jim_unflatten(field,nkfirst=None,nhalo=2,nGrids=10):
     @return jim_3d_field (numpy.ndarray)
 
     Return a new numpy.ndarray (not a reference to the original one)
+
+    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
+    >>> f2 = jim_flatten(f)
+    >>> f3 = jim_unflatten(f2)
+    >>> f.shape
+    (36, 36, 1, 10)
+    >>> f3.shape
+    (36, 36, 1, 10)
+    >>> f3.shape == f.shape
+    True
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(1,nijh,nijh,10))
+    >>> f2 = jim_flatten(f,nkfirst=True)
+    >>> f3 = jim_unflatten(f2)
+    >>> f.shape #nkfirst
+    (1, 36, 36, 10)
+    >>> f3.shape #nkfirst
+    (1, 36, 36, 10)
+    >>> f3.shape == f.shape #nkfirst
+    True
+    >>> f3 = jim_unflatten(f2,nkfirst=True)
+    >>> f.shape #nkfirst specified
+    (1, 36, 36, 10)
+    >>> f3.shape == f.shape #nkfirst specified
+    True
+    >>> (nijh,nij,halo) = jimc.jimc_dims(5,4)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
+    >>> f2 = jim_flatten(f,nhalo=4)
+    >>> f3 = jim_unflatten(f2,nhalo=4)
+    >>> f.shape #nhalo=4
+    (40, 40, 1, 10)
+    >>> f3.shape #nhalo=4
+    (40, 40, 1, 10)
+    >>> f3.shape == f.shape #nhalo=4
+    True
+
+    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,4,10))
+    >>> f2 = jim_flatten(f)
+    >>> f3 = jim_unflatten(f2)
+    >>> f.shape #nk=4
+    (36, 36, 4, 10)
+    >>> f3.shape #nk=4
+    (36, 36, 4, 10)
+    >>> f3.shape == f.shape #nk=4
+    True
+    >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(4,nijh,nijh,10))
+    >>> f2 = jim_flatten(f, nkfirst=True)
+    >>> f3 = jim_unflatten(f2)
+    >>> f.shape #nk=4, nkFirst=True
+    (4, 36, 36, 10)
+    >>> f3.shape #nk=4, nkFirst=True
+    (4, 36, 36, 10)
+    >>> f3.shape == f.shape #nk=4, nkFirst=True
+    True
+    >>> f3 = jim_unflatten(f2, nkfirst=True)
+    >>> f.shape #nk=4, nkFirst=True specified
+    (4, 36, 36, 10)
+    >>> f3.shape #nk=4, nkFirst=True specified
+    (4, 36, 36, 10)
+    >>> f3.shape == f.shape #nk=4, nkFirst=True specified
+    True
+
     """
     #try to guess if nkfirst
     nijglist = (12,42,162,642,2562,10242,40962,163842,655362,2621442,10485762,41943042)
