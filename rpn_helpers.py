@@ -339,15 +339,33 @@ class RPNGridHelper:
     }
 
     def parseArgs(self,keys,args):
+        """Return a dict with parsed args for the specified grid type"""
         return {}
 
     def argsCheck(d):
+        """Check Grid params, raise an error if not ok"""
         pass
 
     def getEzInterpArgs(self,keyVals,isSrc):
+        """Return the list of needed args for Fstdc.ezinterp from the provided params"""
         return None
 
+    def toScripGridName(self,keyVals):
+        """Return a hopefully unique grid name for the provided params"""
+        a = list(sg_a['g_ig14'])
+        a.extend(sg_a['shape'])
+        name = "grd%s-%i-%i-%i-%i-%i-%i" % a
+        return name
+
+    def toScripGridPreComp(self,keyVals,name=None):
+        """Return a Scrip grid instance for the specified grid type (Precomputed addr&weights)"""
+        shape = (4,keyVals['shape'][0],keyVals['shape'][1])
+        if name is None:
+            name = self.toScripGridName(keyVals)
+        return scrip.ScripGrid(name,shape=shape)
+
     def toScripGrid(self,keyVals,name=None):
+        """Return a Scrip grid instance for the specified grid type"""
         return None
 
 

@@ -10,29 +10,42 @@ import scrip
 import math
 import numpy
 
-def jim_flatten_shape(field,nkfirst=False,nhalo=2):
+def jim_flatten_shape(field=None,nkfirst=False,nhalo=2,ndiv=None,iGrid=0):
     """Return the shape of Flattened data as packed by jim_flatten(field,keepnk)
 
     shape = jim_flatten_shape(jim_3d_field)
     shape = jim_flatten_shape(jim_3d_field,nkfirst,nhalo)
+    shape = jim_flatten_shape(ndiv=6)
+    shape = jim_flatten_shape(ndiv=6,iGrid=1)
+    shape = jim_flatten_shape(ndiv=6,nkfirst=nkfirst,nhalo=nhalo)
 
     @param jim_3d_field (numpy.ndarray(nij,nij,nk,ngrids))
     @param if nkfirst: jim_flat_field.shape == (nk,...),
            else: jim_flat_field.shape == (...,nk)
            (default=False)
     @param nhalo field's halo size (default=2) (int)
+    @param ndiv  if jim_3d_field is not provided, compute dims for JIM grid division ndiv (int)
+    @param iGrid  if jim_3d_field is not provided, compute dims for JIM iGrid tile (default=0 ; global) (int)
     @return shape (tuple of int)
     """
     #TODO: check that shape is what is expected
-    nGrids = field.shape[3]
-    nijh = field.shape[0]
-    nk   = field.shape[2]
-    if nkfirst:
-        nijh = field.shape[1]
-        nk   = field.shape[0]
-    ij0  = nhalo
-    ijn  = nijh - nhalo - 1
-    nij  = (ijn-ij0+1)
+    nGrids = 10
+    if field and type(field==numpy.ndarray) and len(field.shape)>=4:
+        nGrids = field.shape[3]
+        nijh = field.shape[0]
+        nk   = field.shape[2]
+        if nkfirst:
+            nijh = field.shape[1]
+            nk   = field.shape[0]
+        ij0  = nhalo
+        ijn  = nijh - nhalo - 1
+        nij  = (ijn-ij0+1)
+    elif ndiv >= 0 and iGrid>=0 and iGrid <=20:
+        if iGrid>0:
+            ngrids = 1
+        (nijh,nij,halo) = jimc.jimc_dims(ndiv,nhalo)
+    else:
+        raise ValueError, "jim_flatten_shape: wrong args"
     sizexy  = nij*nij
     npoles = 2
     if nGrids==1:
@@ -208,7 +221,7 @@ def jim_grid_corners_la_lo(ndiv,igrid=0):
 class RPNGridI(RPNGridHelper):
     """RPNGrid Helper class for JIM-type grid (Icosahedron based)
 
-    ip1-4: ndiv, itile, nhalo, npxy
+    ip1-4: ndiv, iGrid, nhalo, npxy
     ndiv : number of division (factor 2) from base icosahedron
     itile = 0 global grid (ni=2+10*nijh^2,nj=1)
     itile = 1-10 ico-tile (ni=nj=nijh, min nhalo=1 to have poles)
@@ -255,15 +268,19 @@ class RPNGridI(RPNGridHelper):
 
     """
     def parseArgs(self,keys,args):
+        """Return a dict with parsed args for the specified grid type"""
+        #TODO recompute shape from ndiv,igrid,nhalo...
         return {}
 
     #@static
     def argsCheck(self,d):
+        """Check Grid params, raise an error if not ok"""
         #TODO: may want to check more things (shape rel to ndiv...)
         if not (d['grtyp'] != 'I'):
             raise ValueError, 'RPNGridBase: invalid grtyp value'
 
     def getRealValues(self,d):
+        """Return dict of grid params converter to real values"""
         kv = {
             'ndiv'  : d['ig14'][0],
             'igrid' : d['ig14'][1],
@@ -273,13 +290,23 @@ class RPNGridI(RPNGridHelper):
         return kv
 
     def getEzInterpArgs(keyVals,isSrc):
+        """Return the list of needed args for Fstdc.ezinterp from the provided params"""
         #TODO: at some point implement as Y-grid if isSrc==False
         return None
 
+    def toScripGridPreComp(self,keyVals,name=None):
+        """Return a Scrip grid instance for RPNGGridI (Precomputed addr&weights)"""
+        shape0 = jim_flatten_shape(ndiv=keyVals['ig14'][0],nhalo=keyVals['ig14'][2],iGrid=keyVals['ig14'][1])
+        shape = (6,shape0[0],1)
+        if name is None:
+            name = self.toScripGridName(keyVals)
+        return scrip.ScripGrid(name,shape=shape)
+
     def toScripGrid(self,keyVals,name=None):
+        """Return a Scrip grid instance for RPNGGridI"""
         kv = self.getRealValues(keyVals)
         if name is None:
-            name = "grdI-%i-%i-%i-%i" % keyVals['ig14']
+            name = self.toScripGridName(keyVals)
         (la,lo,cla,clo) = jim_grid_corners_la_lo(kv['ndiv'],kv['igrid'])
         la  = jim_flatten(la,nkfirst=False)
         lo  = jim_flatten(lo,nkfirst=False)
