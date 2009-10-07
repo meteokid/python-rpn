@@ -232,7 +232,7 @@ program jim_grid_test
    allocate(latc(minxy:maxxy,minxy:maxxy,6,0:NGRIDS-1),STAT=istat)
    allocate(lonc(minxy:maxxy,minxy:maxxy,6,0:NGRIDS-1),STAT=istat)
 
-   istat = jim_grid_corners_lalo(latc,lonc,nij,halo,ndiv)
+   istat = jim_grid_corners_lalo(lat,lon,latc,lonc,nij,halo,ndiv,0)
 
    ij0 = 0
    ijn = nij+1

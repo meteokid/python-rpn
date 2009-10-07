@@ -347,6 +347,9 @@ class RPNGridHelper:
     def getEzInterpArgs(self,keyVals,isSrc):
         return None
 
+    def toScripGrid(self,keyVals,name=None):
+        return None
+
 
 if __name__ == "__main__":
     import doctest

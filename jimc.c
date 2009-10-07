@@ -83,7 +83,7 @@ void get_jim_dims(int ndiv, int *nijh, int *nij, int *halo) {
 }
 
 
-int new_jim_array(PyArrayObject **p_newarray, int ndiv, int nk){
+int new_jim_array(PyArrayObject **p_newarray, int ndiv, int nk, int onlyOneGrid){
 	PyArrayObject *newarray;
 	int dims[4]={1,1,1,1}, ndims=4;
 	int type_num=NPY_FLOAT;
@@ -95,7 +95,7 @@ int new_jim_array(PyArrayObject **p_newarray, int ndiv, int nk){
             dims[0] = (nijh>1) ? nijh : 1;
             dims[1] = dims[0];
             dims[2] = nk;
-            dims[3] = 10;
+            dims[3] = (onlyOneGrid==0) ? 10 : 1;
             ndims = 4;
 
             //printf("new_jim_array(ndiv=%d,nk=%d): dims[%d] = (%d,%d,%d,%d)\n",ndiv,nk,ndims,dims[0],dims[1],dims[2],dims[3]);
@@ -147,22 +147,22 @@ jimc_dims(PyObject *self, PyObject *args) {
 
 
 static char jimc_new_array__doc__[] =
-"Create a new numpy.ndarray with right dims for JIM grid of ndiv and nk\nnewJIMarray = jimc_new_array(ndiv,nk)\n@param ndiv number of grid divisons (int)\n@param nk number of vertical levels (int)\n@return newJIMarray (numpy.ndarray)";
+"Create a new numpy.ndarray with right dims for JIM grid of ndiv and nk\nnewJIMarray = jimc_new_array(ndiv,nk,igrid)\n@param ndiv number of grid divisons (int)\n@param igrid Icosahedral Grid tile number [all grids tiles if iGrid=0] (int)\n@param nk number of vertical levels (int)\n@return newJIMarray (numpy.ndarray)";
 
 static PyObject *
 jimc_new_array(PyObject *self, PyObject *args) {
 	PyArrayObject *newarray;
-        int ndiv,nk=1,istat;
+        int ndiv,nk=1,istat,igrid;
 
-	if (!PyArg_ParseTuple(args, "ii",&ndiv,&nk)) {
-            fprintf(stderr,"ERROR: jimc_new_array(ndiv,nk) - wrong arg type\n");
+	if (!PyArg_ParseTuple(args, "iii",&ndiv,&nk,&igrid)) {
+            fprintf(stderr,"ERROR: jimc_new_array(ndiv,nk,igrid) - wrong arg type\n");
             Py_INCREF(Py_None);
             return Py_None;
         }
-        istat = new_jim_array(&newarray,ndiv,nk);
+        istat = new_jim_array(&newarray,ndiv,nk,igrid);
         //printf("jimc_new_array(ndiv=%d,nk=%d): dims[%d] = (%d,%d,%d,%d)\n",ndiv,nk,newarray->nd,newarray->dimensions[0],newarray->dimensions[1],newarray->dimensions[2],newarray->dimensions[3]);
         if (istat<0) {
-            fprintf(stderr,"ERROR: jimc_new_array(ndiv,nk) - problem allocating mem\n");
+            fprintf(stderr,"ERROR: jimc_new_array(ndiv,nk,igrid) - problem allocating mem\n");
         } else {
             return Py_BuildValue("O",newarray);
         }
@@ -176,88 +176,92 @@ static char jimc_grid_la_lo__doc__[] =
 
 static PyObject *
 jimc_grid_la_lo(PyObject *self, PyObject *args) {
-	PyArrayObject *lat,*lon;
-        int ndiv,nijh,nij,halo,nk=1,istat=-1;
-        wordint f_ndiv,f_nij,f_halo;
+    PyArrayObject *lat,*lon;
+    int ndiv,nijh,nij,halo,nk=1,istat=-1;
+    wordint f_ndiv,f_nij,f_halo;
 
-	if (!PyArg_ParseTuple(args, "i",&ndiv)) {
-            fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - wrong arg type\n");
+    if (!PyArg_ParseTuple(args, "i",&ndiv)) {
+        fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - wrong arg type\n");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    if(ndiv >= 0) {
+        istat  = new_jim_array(&lat,ndiv,nk,0);
+        istat += new_jim_array(&lon,ndiv,nk,0);
+        if (istat<0) {
+            fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - Problem allocating memory\n");
             Py_INCREF(Py_None);
             return Py_None;
         }
-	if(ndiv >= 0) {
-            istat  = new_jim_array(&lat,ndiv,nk);
-            istat += new_jim_array(&lon,ndiv,nk);
-            if (istat<0) {
-                fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - Problem allocating memory\n");
-                Py_INCREF(Py_None);
-                return Py_None;
-            }
 
-            get_jim_dims(ndiv,&nijh,&nij,&halo);
+        get_jim_dims(ndiv,&nijh,&nij,&halo);
 
-            f_ndiv = (wordint)ndiv;
-            f_halo = (wordint)halo;
-            f_nij  = (wordint)nij;
-            istat = f77name(jim_grid_lalo)(lat->data,lon->data,
-                            &f_nij,&f_halo,&f_ndiv);
-            if (istat < 0) {
-                fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - problem computing grid lat/lon\n");
-                Py_DECREF(lat);
-                Py_DECREF(lon);
-            } else {
-                return Py_BuildValue("(O,O)",lat,lon);
-            }
+        f_ndiv = (wordint)ndiv;
+        f_halo = (wordint)halo;
+        f_nij  = (wordint)nij;
+        istat = f77name(jim_grid_lalo)(lat->data,lon->data,
+                        &f_nij,&f_halo,&f_ndiv);
+        if (istat < 0) {
+            fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - problem computing grid lat/lon\n");
+            Py_DECREF(lat);
+            Py_DECREF(lon);
         } else {
-            fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - ndiv must be >= 0\n");
+            return Py_BuildValue("(O,O)",lat,lon);
         }
-        Py_INCREF(Py_None);
-        return Py_None;
+    } else {
+        fprintf(stderr,"ERROR: jimc_grid_la_lo(ndiv) - ndiv must be >= 0\n");
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 
 static char jimc_grid_corners_la_lo__doc__[] =
-"Get (lat,lon) of Icosahedral grid points corners\n(lat,lon) = jimc_grid_corners_la_lo(ndiv)\n@param ndiv number of grid divisons (int)\n@return python tuple with 2 numpy.ndarray for (lat,lon)";
+"Get (lat,lon) of Icosahedral grid points centers and corners\n(lat,lon,clat,clon) = jimc_grid_corners_la_lo(ndiv,igrid)\n@param ndiv number of grid divisons (int)\n@param igrid Icosahedral Grid tile number [all grids tiles if iGrid=0] (int)\n@return python tuple with 4 numpy.ndarray for (lat,lon,clat,clon)";
 
 static PyObject *
 jimc_grid_corners_la_lo(PyObject *self, PyObject *args) {
-	PyArrayObject *lat,*lon;
-        int ndiv,nijh,nij,halo,nk=6,istat=-1;
-        wordint f_ndiv,f_nij,f_halo;
+    PyArrayObject *lat,*lon,*clat,*clon;
+    int ndiv,nijh,nij,halo,nk=6,istat=-1,igrid;
+    wordint f_ndiv,f_nij,f_halo;
 
-	if (!PyArg_ParseTuple(args, "i",&ndiv)) {
-            fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv) - wrong arg type\n");
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-	if(ndiv >= 0) {
-            istat  = new_jim_array(&lat,ndiv,nk);
-            istat += new_jim_array(&lon,ndiv,nk);
-            if (istat<0) {
-                fprintf(stderr,"ERROR: jimc_grid_corners_la_lo(ndiv) - Problem allocating memory\n");
-                Py_INCREF(Py_None);
-                return Py_None;
-            }
-
-            get_jim_dims(ndiv,&nijh,&nij,&halo);
-
-            f_ndiv = (wordint)ndiv;
-            f_halo = (wordint)halo;
-            f_nij  = (wordint)nij;
-            istat = f77name(jim_grid_corners_lalo)(lat->data,lon->data,
-                            &f_nij,&f_halo,&f_ndiv);
-            if (istat < 0) {
-                fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv) - problem computing grid corners lat/lon\n");
-                Py_DECREF(lat);
-                Py_DECREF(lon);
-            } else {
-                return Py_BuildValue("(O,O)",lat,lon);
-            }
-        } else {
-            fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv) - ndiv must be >= 0\n");
-        }
+    if (!PyArg_ParseTuple(args, "ii",&ndiv,&igrid)) {
+        fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv,igrid) - wrong arg type\n");
         Py_INCREF(Py_None);
         return Py_None;
+    }
+    if (ndiv < 0 || igrid < 0) {
+        fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv,igrid) - ndiv must be >= 0 and igrid in range [0,10]\n");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    istat  = new_jim_array(&lat,ndiv,1,igrid);
+    istat += new_jim_array(&lon,ndiv,1,igrid);
+    istat += new_jim_array(&clat,ndiv,nk,igrid);
+    istat += new_jim_array(&clon,ndiv,nk,igrid);
+    if (istat<0) {
+        fprintf(stderr,"ERROR: jimc_grid_corners_la_lo(ndiv,igrid) - Problem allocating memory\n");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    get_jim_dims(ndiv,&nijh,&nij,&halo);
+    f_ndiv = (wordint)ndiv;
+    f_halo = (wordint)halo;
+    f_nij  = (wordint)nij;
+    istat = f77name(jim_grid_corners_lalo)(
+                    lat->data,lon->data,clat->data,clon->data,
+                    &f_nij,&f_halo,&f_ndiv,&igrid);
+    if (istat < 0) {
+        fprintf(stderr,"ERROR: jimc_grid_corner_la_lo(ndiv,igrid) - problem computing grid corners lat/lon\n");
+        Py_DECREF(lat);
+        Py_DECREF(lon);
+        Py_DECREF(clat);
+        Py_DECREF(clon);
+    }
+
+    return Py_BuildValue("(O,O,O,O)",lat,lon,clat,clon);
+
 }
 
 

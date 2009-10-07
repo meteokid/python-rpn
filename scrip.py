@@ -1,16 +1,24 @@
 """Module scrip contains the classes used to work with the SCRIP package
 
     @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
-    @date: 2009-09
 """
-import numpy
+import rpn_version
 from scripc import *
-
-__SCRIP_VERSION__ = '0.1-dev'
-__SCRIP_LASTUPDATE__ = '2009-09'
+import numpy
 
 class ScripGrid:
     """Defines a grid suitable for SCRIP
+
+    myScripGrid = ScripGrid('myName',(lat,lon,c_lat,c_lon))
+    myScripGrid = ScripGrid('myName',shape=(nc,ni,nj))
+    @param myName
+    @param lat grid points center lat (numpy.ndarray(ni,nj)) (rad)
+    @param lon grid points center lon (numpy.ndarray(ni,nj)) (rad)
+    @param c_lat grid points corners lat (numpy.ndarray(nc,ni,nj)) (rad)
+    @param c_lon grid points corners lon (numpy.ndarray(nc,ni,nj)) (rad)
+    @param (nc,ni,nj) number of grid corners, grid dims
+    @exception TypeError on wrong args type
+    @exception TypeError on dimension mismatch
     """
     name  = 'scripGridNoName'
     lalo  = None
@@ -30,7 +38,7 @@ class ScripGrid:
                 and type(lalo[3])==numpy.ndarray):
                 if (lalo[0].shape==lalo[1].shape and
                     lalo[2].shape==lalo[3].shape and
-                    lalo[0].shape==lalo[0].shape[1:]):
+                    lalo[0].shape==lalo[2].shape[1:]):
                     self.lalo = lalo
                     self.shape = self.lalo[3].shape
                     self.size  = self.lalo[3].size
@@ -41,7 +49,15 @@ class ScripGrid:
 
 
 class Scrip:
-    """
+    """SCRIP inerpolation package base class
+
+    a = Scrip(inGrid,outGrid,addrWeights)
+    a = Scrip(inGrid,outGrid)
+    @param inGrid  source grid definition (ScripGrid)
+    @param outGrid dest grid definition (ScripGrid)
+    @param addrWeights Precomputed remapping params tuple of 3 numpy.ndarray as: (fromAddr,toAddr,weights), if not provided will be either read from disk or computed if not found
+    @exception TypeError
+    @exception ValueError
     """
     grids   = None
     weights = None

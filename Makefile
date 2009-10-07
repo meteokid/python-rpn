@@ -17,7 +17,7 @@ LIBS     = $(OTHERS)
 
 INSTALLDIR= $(HOME)/ovbin/python/lib.linux-i686-2.4-dev
 
-DOCTESTPYMODULES = rpnstd.py
+DOCTESTPYMODULES = jim.py rpn_helpers.py rpnstd.py scrip.py
 
 PYVERSIONFILE = rpn_version.py
 CVERSIONFILE = rpn_version.h

@@ -679,28 +679,28 @@ Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
 
 
 static char Fstdc_ezinterp__doc__[] =
-"Interpolate from one grid to another\nnewArray = Fstdc_ezinterp(arrayin,arrayin2,(niS,njS),(grtypS,grrefS,ig1S,ig2S,ig3S,ig4S),xsS,ysS,srcaxis,(i0S,j0S),(niD,njD),grtypD,(grrefD,ig1D,ig2D,ig3D,ig4D),xsD,ysD,dstaxis,(i0D,j0D),vecteur)\n@param ...TODO...\n@return interpolated data (numpy.ndarray)";
+"Interpolate from one grid to another\nnewArray = Fstdc_ezinterp(arrayin,arrayin2,(niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),hasSrcAxis,(i0S,j0S),(niD,njD),grtypD,(grrefD,ig1D,ig2D,ig3D,ig4D),(xsD,ysD),hasDstAxis,(i0D,j0D),isVect)\n@param ...TODO...\n@return interpolated data (numpy.ndarray)";
 
 static PyObject *
 Fstdc_ezinterp(PyObject *self, PyObject *args) {
 	int ig1S, ig2S, ig3S, ig4S, niS, njS, i0S,j0S, gdid_src;
 	int ig1D, ig2D, ig3D, ig4D, niD, njD, i0D,j0D, gdid_dst;
 /*        int ni_ps=199, nj_ps=155, ig1p=200, ig2p=0, ig3p=23640, ig4p=37403, gdps; */
-        int srcaxis,dstaxis,vecteur,ier;
+        int hasSrcAxis,hasDstAxis,isVect,ier;
         char *grtypS,*grtypD,*grrefS,*grrefD;
         char *grtypZ = 'Z';
 	int dimensions[3]={1,1,1}, ndimensions=3;
 	int type_num=NPY_FLOAT;
 	PyArrayObject *arrayin,*arrayin2,*newarray,*newarray2,*xsS,*ysS,*xsD,*ysD;
 
-	if (!PyArg_ParseTuple(args, "OO(ii)s(siiii)OOi(ii)(ii)s(siiii)OOi(ii)i",
+	if (!PyArg_ParseTuple(args, "OO(ii)s(siiii)(OO)i(ii)(ii)s(siiii)(OO)i(ii)i",
             &arrayin,&arrayin2,
-            &niS,&njS,&grtypS,&grrefS,&ig1S,&ig2S,&ig3S,&ig4S,&xsS,&ysS,&srcaxis,&i0S,&j0S,
-            &niD,&njD,&grtypD,&grrefD,&ig1D,&ig2D,&ig3D,&ig4D,&xsD,&ysD,&dstaxis,&i0D,&j0D,
-            &vecteur)) {
-          printf("\n\n *********\n Fstdc_ezinterp error parsing arguments\n *********\n\n");
-	  Py_INCREF(Py_None);
-	  return Py_None;
+            &niS,&njS,&grtypS,&grrefS,&ig1S,&ig2S,&ig3S,&ig4S,&xsS,&ysS,&hasSrcAxis,&i0S,&j0S,
+            &niD,&njD,&grtypD,&grrefD,&ig1D,&ig2D,&ig3D,&ig4D,&xsD,&ysD,&hasDstAxis,&i0D,&j0D,
+            &isVect)) {
+            fprintf(stderr,"ERROR: Fstdc_ezinterp() - wrong arg type\n");
+            Py_INCREF(Py_None);
+            return Py_None;
         }
 
 #if defined(DEBUG)
@@ -731,13 +731,13 @@ Fstdc_ezinterp(PyObject *self, PyObject *args) {
                                         ndimensions,dimensions,
                                         NULL, NULL, FTN_Style_Array,
                                         NULL);
-        if (vecteur)
+        if (isVect)
           newarray2 = PyArray_NewFromDescr(&PyArray_Type,
                                           PyArray_DescrFromType(type_num),
                                           ndimensions,dimensions,
                                           NULL, NULL, FTN_Style_Array,
                                           NULL);
-        if (srcaxis) {
+        if (hasSrcAxis) {
             if (grtypS[0]=='#') {
                 gdid_src = c_ezgdef_fmem(niS,njS,grtypZ,grrefS,ig1S,ig2S,ig3S,ig4S,&xsS->data[i0S-1],&ysS->data[j0S-1]);
             } else {
@@ -750,8 +750,8 @@ Fstdc_ezinterp(PyObject *self, PyObject *args) {
 	printf("Debug Fstdc_ezinterp gdid_src=%d \n",gdid_src);
 #endif
 
-        if (dstaxis) {
-            if (grtypS[0]=='#') {
+        if (hasDstAxis) {
+            if (grtypD[0]=='#') {
                 gdid_dst = c_ezgdef_fmem(niD,njD,grtypZ,grrefD,ig1D,ig2D,ig3D,ig4D,&xsD->data[i0D-1],&ysD->data[j0D-1]);
             } else {
                 gdid_dst = c_ezgdef_fmem(niD,njD,grtypD,grrefD,ig1D,ig2D,ig3D,ig4D,xsD->data,ysD->data);
@@ -761,11 +761,11 @@ Fstdc_ezinterp(PyObject *self, PyObject *args) {
         }
 #if defined(DEBUG)
 	printf("Debug Fstdc_ezinterp gdid_dst=%d \n",gdid_dst);
-	printf("Debug Fstdc_ezinterp vecteur=%d \n",vecteur);
+	printf("Debug Fstdc_ezinterp isVect=%d \n",isVect);
 #endif
 
         ier = c_ezdefset(gdid_dst,gdid_src);
-        if (vecteur) {
+        if (isVect) {
           ier = c_ezuvint(newarray->data,newarray2->data,arrayin->data,arrayin2->data);
           return Py_BuildValue("OO",newarray,newarray2);
         }
@@ -828,12 +828,12 @@ Fstdc_cigaxg(PyObject *self, PyObject *args) {
 
 
 static char Fstdc_ezgetlalo__doc__[] =
-"Get Lat-Lon of grid points centers and corners\n(lat,lon,clat,clon) = Fstdc_ezgetlalo((niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),srcaxis,(i0S,j0S),corners)\n@param ...TODO...\n@return tuple of (numpy.ndarray) with center lat/lon (lat,lon) and optionally corners lat/lon (clat,clon)";
+"Get Lat-Lon of grid points centers and corners\n(lat,lon,clat,clon) = Fstdc_ezgetlalo((niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),hasSrcAxis,(i0S,j0S),doCorners)\n@param ...TODO...\n@return tuple of (numpy.ndarray) with center lat/lon (lat,lon) and optionally corners lat/lon (clat,clon)";
 
 static PyObject *
 Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     int ig1S, ig2S, ig3S, ig4S, niS, njS, i0S,j0S, gdid_src;
-    int srcaxis,corners,ier,n,nbcorners=4;
+    int hasSrcAxis,doCorners,ier,n,nbcorners=4;
     char *grtypS,*grrefS;
     char *grtypZ = 'Z';
     int dimensions[3]={1,1,1}, ndimensions=3;
@@ -842,8 +842,8 @@ Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
 
     if (!PyArg_ParseTuple(args, "(ii)s(siiii)(OO)i(ii)i",
             &niS,&njS,&grtypS,&grrefS,&ig1S,&ig2S,&ig3S,&ig4S,
-            &xsS,&ysS,&srcaxis,&i0S,&j0S,&corners)) {
-        fprintf(stderr,"ERROR: Fstdc_ezgetlalo(niS,njS,grtypS,grrefS,ig1S,ig2S,ig3S,ig4S,xsS,ysS,srcaxis,corners) - wrong arg type\n");
+            &xsS,&ysS,&hasSrcAxis,&i0S,&j0S,&doCorners)) {
+        fprintf(stderr,"ERROR: Fstdc_ezgetlalo() - wrong arg type\n");
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -858,7 +858,7 @@ Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     else ndimensions=1;
 
     //Define/Init Grid in EZSCINT
-    if (srcaxis) {
+    if (hasSrcAxis) {
         if (grtypS[0]=='#') {
             gdid_src = c_ezgdef_fmem(niS,njS,grtypZ,grrefS,ig1S,ig2S,ig3S,ig4S,&xsS->data[i0S-1],&ysS->data[j0S-1]);
         } else {
@@ -883,7 +883,7 @@ Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     ier = c_gdll(gdid_src, lat->data, lon->data);
 
     //Compute corners Lat-Lon values
-    if (corners) {
+    if (doCorners) {
         x = PyArray_NewFromDescr(&PyArray_Type,
                                     PyArray_DescrFromType(type_num),
                                     ndimensions,dimensions,

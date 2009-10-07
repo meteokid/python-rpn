@@ -10,9 +10,10 @@ class jimcXchHaloTest(unittest.TestCase):
 
     def testjimc_new_array(self):
         """jimc_new_array should give known result with known input"""
+        igrid= 0
         ndiv = 2
         nk   = 1
-        f    = jimc_new_array(ndiv,nk)
+        f    = jimc_new_array(ndiv,nk,igrid)
         halo = 2
         nij  = 4
         nijh = nij+2*halo
@@ -31,8 +32,11 @@ class jimcXchHaloTest(unittest.TestCase):
         self.assertEqual(f.dtype,numpy.dtype('float32'))
         self.assertEqual(f.shape,(nijh,nijh,nk,ngrids))
         nk   = 5
-        f    = jimc_new_array(ndiv,nk)
+        f    = jimc_new_array(ndiv,nk,igrid)
         self.assertEqual(f.shape,(nijh,nijh,nk,ngrids))
+        igrid= 2
+        f    = jimc_new_array(ndiv,nk,igrid)
+        self.assertEqual(f.shape,(nijh,nijh,nk,1))
 
 
     def testjimc_grid(self):
@@ -240,7 +244,7 @@ class jimcXchHaloTest(unittest.TestCase):
             ,dtype=numpy.dtype('float32'),order='FORTRAN')
         ndiv = 1
         nk   = 1
-        f    = jimc_new_array(ndiv,nk)
+        f    = jimc_new_array(ndiv,nk,0)
         halo = 2
         nij    = f.shape[0] - 2*halo
         ijlist = range(halo,halo+nij)
@@ -294,10 +298,13 @@ class jimcXchHaloTest(unittest.TestCase):
         self.assertFalse(numpy.any(la2[SPI,SPJ,:,1]!=la[SPI,SPJ,:,1]))
         for igrid in range(0,10):
             self.assertFalse(numpy.any(la2[ij0:ijn,ij0:ijn,:,igrid]!=la[ij0:ijn,ij0:ijn,:,igrid]))
-        la_flat = jim_flatten(la,True)
-        la2     = jim_unflatten(la_flat)
+        la = numpy.rollaxis(la,2,0)
+        la_flat = jim_flatten(la,nkfirst=True)
+        la2     = jim_unflatten(la_flat,nkfirst=True)
         self.assertEqual(la_flat.shape,(1,nij*nij*10+2))
         self.assertEqual(la.shape,la2.shape)
+        la  = numpy.rollaxis(la,0,3)
+        la2 = numpy.rollaxis(la2,0,3)
         self.assertFalse(numpy.any(la2[NPI,NPJ,:,0]!=la[NPI,NPJ,:,0]))
         self.assertFalse(numpy.any(la2[SPI,SPJ,:,1]!=la[SPI,SPJ,:,1]))
         for igrid in range(0,10):
@@ -306,3 +313,4 @@ class jimcXchHaloTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
