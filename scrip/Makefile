@@ -23,6 +23,8 @@ SCRIPOBJ= \
 default: all
 all: $(SCRIPOBJ)
 
+test:
+
 #
 # ALL dependencies ...
 #

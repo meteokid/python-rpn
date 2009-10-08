@@ -441,6 +441,31 @@ class RPNGridI(RPNGridHelper):
         clo *= (numpy.pi/180.)
         return scrip.ScripGrid(name,(la,lo,cla,clo))
 
+    def reshapeDataForScrip(self,keyVals,data):
+        """Return reformated data suitable for SCRIP"""
+        if type(data) == numpy.ndarray:
+            if len(data.shape) == 4:
+                kv = self.getRealValues(keyVals)
+                return jim_flatten(data,nhalo=kv['nhalo'])
+            else:
+                return data
+        else:
+            raise TypeError, 'RPNGridI.reshapeDataForScrip: data must by a numpy.ndarray'
+
+    def reshapeDataFromScrip(self,keyVals,data):
+        """Inverse operation of reshapeDataForScrip (use helper)"""
+        if type(data) == numpy.ndarray:
+            if len(keyVals['shape']) == 4 and len(data.shape) == 2:
+                kv = self.getRealValues(keyVals)
+                return jim_unflatten(data,nhalo=kv['nhalo'])
+            else:
+                return data
+        else:
+            raise TypeError, 'RPNGridI.reshapeDataForScrip: data must by a numpy.ndarray'
+
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

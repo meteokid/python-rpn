@@ -368,7 +368,18 @@ class RPNGridHelper:
         """Return a Scrip grid instance for the specified grid type"""
         return None
 
+    def reshapeDataForScrip(self,keyVals,data):
+        """Return reformated data suitable for SCRIP"""
+        return data
+
+    def reshapeDataFromScrip(self,keyVals,data):
+        """Inverse operation of reshapeDataForScrip (use helper)"""
+        return data
+
+
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

@@ -599,6 +599,14 @@ class RPNGrid(RPNParm):
             self.__dict__['scripGrid'] = self.helper.toScripGrid(self.__dict__,name)
         return self.scripGrid
 
+    def reshapeDataForScrip(self,data):
+        """Return reformated data suitable for SCRIP (use helper)"""
+        return self.helper.reshapeDataForScrip(self.__dict__,data)
+
+    def reshapeDataFromScrip(self,data):
+        """Inverse operation of reshapeDataForScrip (use helper)"""
+        return self.helper.reshapeDataFromScrip(self.__dict__,data)
+
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
         """
@@ -634,13 +642,13 @@ class RPNGrid(RPNParm):
                 #Try while computing lat/lon and addr&weights
                 sg_a = sg.toScripGrid()
                 dg_a = dg.toScripGrid()
-                if sg_args and dg_args:
-                    scripObj = scrip.Scrip(sg_a,dg_a)
-                    #TODO: if I-grid need to flatify data (maybe)
-                    dataxy = (scrip.scripObj.interp(recx.d),None)
-                    #TODO: if I-grid need to unflatify data (maybe)
-                else:
-                    raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
+            if sg_args and dg_args:
+                scripObj = scrip.Scrip(sg_a,dg_a)
+                datax  = sg.reshapeDataForScrip(recx.d)
+                datax2 = scrip.scripObj.interp(datax)
+                dataxy = (dg.reshapeDataFromScrip(datax2),None)
+            else:
+                raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
         if isRec:
             recx.d = dataxy[0]
             recx.setGrid(self)
@@ -1116,3 +1124,5 @@ NextMatch=None
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

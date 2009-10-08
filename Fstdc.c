@@ -82,9 +82,15 @@ static char Fstdc_fstouv__doc__[] =
 
 static PyObject *
 Fstdc_fstouv(PyObject *self, PyObject *args) {
-	int iun=0;
+	int iun=0,istat;
 	char *filename="None";
 	char *options="RND";
+   char *msglvl="MSGLVL";
+   char *tolrnc="TOLRNC";
+
+   istat = c_fstopi(msglvl,8,0); //8 - print fatal error messages and up;10 - print system (internal) error messages only
+   istat = c_fstopi(tolrnc,6,0); //6 - tolerate warning level and lower;8 - tolerate error level and lower
+
 
 	if (!PyArg_ParseTuple(args, "iss",&iun,&filename,&options))
 		return NULL;
@@ -995,7 +1001,7 @@ void initFstdc() {
 	/* Check for errors */
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module Fstdc");
-	printf("RPN (2000) Standard File module V-%s (%s) initialized\n",version,lastmodified);
+	//printf("RPN (2000) Standard File module V-%s (%s) initialized\n",version,lastmodified);
 	init_lentab();
 }
 

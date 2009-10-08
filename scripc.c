@@ -251,7 +251,7 @@ void initscripc() {
     /* Check for errors */
     if (PyErr_Occurred())
             Py_FatalError("can't initialize module SCRIPc");
-    printf("SCRIPc module V-%s (%s) initialized\n",version,lastmodified);
+    //printf("SCRIPc module V-%s (%s) initialized\n",version,lastmodified);
     init_lentab();
 }
 

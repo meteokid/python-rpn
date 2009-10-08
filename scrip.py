@@ -5,6 +5,7 @@
 import rpn_version
 from scripc import *
 import numpy
+import pickle
 
 class ScripGrid:
     """Defines a grid suitable for SCRIP
@@ -89,8 +90,11 @@ class Scrip:
                 raise TypeError, "scripInterp(inGrid,outGrid,aaw): wrong type for aaw; should be (fromAddr,toAddr,aaw) of type (numpy.ndarray, numpy.ndarray)"
         else:
             if file.exists(self.fname):
-                aaw = numpy.load(self.fname)
-                self.aaw = (aaw['a1'],aaw['a2'],aaw['w'])
+                try:
+                    aaw = numpy.load(self.fname)
+                    self.aaw = (aaw['a1'],aaw['a2'],aaw['w'])
+                except:
+                    self.aaw = pickle.load(self.fname)
                 #TODO: check file validity
             elif girds[0].lalo and grids[1].lalo:
                 self.aaw = scripc_addr_wts(
@@ -101,7 +105,11 @@ class Scrip:
                     nbins,methode,typ_norm,typ_restric)
                 #TODO: raise error if problem computing addrwts
                 if not (aaw is None):
-                    numpy.savez(self.fname, a1=aaw[0],a2=aaw[1],w=aaw[2])
+                    #TODO: numpy.savez exists only for newer python version, plan a fallback (try: except:)
+                    try:
+                        numpy.savez(self.fname, a1=aaw[0],a2=aaw[1],w=aaw[2])
+                    except:
+                        pickle.dump(aaw, self.fname)
             else:
                 raise ValueError, "scripInterp(inGrid,outGrid,aaw): missing values, unable to compute aaw since centers and corners lat/lon are not provided"
 
@@ -129,3 +137,5 @@ class Scrip:
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

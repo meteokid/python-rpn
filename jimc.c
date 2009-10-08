@@ -356,7 +356,7 @@ void initjimc() {
 	/* Check for errors */
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module jimc");
-	printf("JIM module V-%s (%s) initialized\n",version,lastmodified);
+	//printf("JIM module V-%s (%s) initialized\n",version,lastmodified);
 	init_lentab();
 }
 
