@@ -24,10 +24,12 @@ from rpn_helpers import *
 from jim import *
 import scrip
 
+#import sys
 import types
 import datetime
 import pytz
 import numpy
+#from cStringIO import StringIO
 import Fstdc
 
 class RPNFile:
@@ -62,10 +64,6 @@ class RPNFile:
     myRPNFile[params.handle] = None      #erase record
     del myRPNFile                        #close the file
 
-    >>> myFile = RPNFile('testfile.fst')
-    R.P.N. Standard File (2000)  testfile.fst  is open with options: RND+STD  UNIT= 999
-    >>> del myFile
-    file  999  is closed, filename= testfile.fst
     """
     def __init__(self,name=None,mode='RND+STD') :
         if (not name) or type(name) <> type(''):
@@ -74,21 +72,29 @@ class RPNFile:
         self.lastread=None
         self.lastwrite=None
         self.options=mode
+        #TODO: catch stdout/stderr - not catching c stderr/stdout!
+        #stderrout = (sys.stderr,sys.stdout)
+        #sys.stdout = sys.stderr = StringIO()
         self.iun = Fstdc.fstouv(0,self.filename,self.options)
+        #(sys.stderr,sys.stdout) = stderrout
         if (self.iun == None):
           raise IOError,(-1,'failed to open standard file',self.filename)
-        else:
-          print 'R.P.N. Standard File (2000) ',name,' is open with options:',mode,' UNIT=',self.iun
+        #else:
+          #print 'R.P.N. Standard File (2000) ',name,' is open with options:',mode,' UNIT=',self.iun
 
     def voir(self,options='NEWSTYLE'):
         """Print the file content listing"""
         Fstdc.fstvoi(self.iun,options)
 
-    def __del__(self):
-        """Close File"""
+    def close(self):
         if (self.iun != None):
           Fstdc.fstfrm(self.iun)
-          print 'file ',self.iun,' is closed, filename=',self.filename
+          #print 'file ',self.iun,' is closed, filename=',self.filename
+          self.iun = None
+
+    def __del__(self):
+        """Close File"""
+        self.close()
         del self.filename
         del self.lastread
         del self.lastwrite
@@ -179,6 +185,34 @@ class RPNFile:
             return None
         return result # return handle
 
+    def erase(self,index):
+        """Erase data and tags of rec in RPN STD file
+
+        myRPNfile.erase(myRPNparms)
+        myRPNfile.erase(myRPNrec)
+        myRPNfile.erase(myRPNrec.handle)
+
+        @param myRPNparms       values of rec parameters, must be a RPNMeta instance (or derived class)
+        @param myRPNrec.handle  file handle of the rec to erase (int)
+        @exception TypeError if myRPNrec.handle is not of accepted type
+        @exception ValueError if invalid record handle is provided (or not found from myRPNparms)
+        """
+        if (isinstance(index,RPNDesc)): # set of keys
+            meta = index
+            if index.handle < 0:
+                meta = self.info(index)
+            target = meta.handle
+        elif type(index) == type(0):  # handle
+            target = index
+        else:
+            raise TypeError, 'RPNFile: index must provide a valid handle to erase a record'
+        if meta.handle >= 0:
+            #print 'erasing record with handle=',target,' from file'
+            self.lastwrite=Fstdc.fsteff(target)
+        else:
+            raise ValueError, 'RPNFile: invalid record handle'
+
+
     def __setitem__(self,index,value):
         """[re]write data and tags of rec in RPN STD file
 
@@ -191,28 +225,22 @@ class RPNFile:
         @param mydataarray data to be written, must be numpy.ndarray instance
         @exception TypeError if args are of wrong type
         @exception TypeError if params.handle is not valid when erasing (value=None)
+        @exception ValueError if not able to find a rec corresponding to metaparams when erasing (value=None)
         """
         if value == None:
-            if (isinstance(index,RPNParm)): # set of keys
-                target = index.handle
-            elif type(index) == type(0):  # handle
-                target = index
-            else:
-                raise TypeError, 'RPNFile: index must provide a valid handle to erase a record'
-            print 'erasing record with handle=',target,' from file'
-            self.lastwrite=Fstdc.fsteff(target)
+            self.erase(index)
         elif isinstance(index,RPNMeta) and type(value) == numpy.ndarray:
             self.lastwrite=0
-#            print 'writing data',value.shape,' to file, keys=',index
-#            print 'dict = ',index.__dict__
+            #print 'writing data',value.shape,' to file, keys=',index
+            #print 'dict = ',index.__dict__
             if (value.flags.farray):
-              print 'fstecr Fortran style array'
+              #print 'fstecr Fortran style array'
               Fstdc.fstecr(value,
                          self.iun,index.nom,index.type,index.etiket,index.ip1,index.ip2,
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
                          index.ig4,index.deet,index.npas,index.nbits)
             else:
-              print 'fstecr C style array'
+              #print 'fstecr C style array'
               Fstdc.fstecr(numpy.reshape(numpy.transpose(value),value.shape),
                          self.iun,index.nom,index.type,index.etiket,index.ip1,index.ip2,
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
@@ -233,16 +261,19 @@ class RPNFile:
         @param myRPNMeta an instance of RPNMeta with meta/params to be written
         @exception TypeError if args are of wrong type
         """
+        meta2=meta
+        data2=data
         if meta == None and isinstance(data,RPNRec):
-            if rewrite and data.handle >=0:
-                Fstdc.fsteff(data.handle)
-            self.__setitem__(data,data.d)
-        elif isinstance(meta,RPNMeta) and type(data) == numpy.ndarray:
-            if rewrite and meta.handle >=0:
-                Fstdc.fsteff(meta.handle)
-            self.__setitem__(meta,data)
-        else:
+            meta2 = data
+            data2 = data.d
+        elif not(isinstance(meta,RPNMeta) and type(data) == numpy.ndarray):
             raise TypeError,'RPNFile write: value must be an array and index must be RPNMeta or RPNRec'
+        if rewrite:
+            try:
+                self.erase(meta2)
+            except:
+                pass
+        self.__setitem__(meta2,data2)
 
     def append(self,data,meta=None):
         """Append a RPNRec to the file, shortcut for write(...,rewrite=False)
@@ -283,7 +314,15 @@ class RPNKeys(RPNParm):
 
     def allowedKeysVals(self):
         """Return a dict of allowed Keys/Vals"""
+        return self.searchKeysVals()
+
+    def searchKeysVals(self):
+        """Return a dict of search Keys/Vals"""
         return {'nom':'    ','type':'  ','etiket':'            ','datev':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
+
+    def defaultKeysVals(self):
+        """Return a dict of sensible default Keys/Vals"""
+        return {'nom':'    ','type':'  ','etiket':'            ','datev':0,'ip1':0,'ip2':0,'ip3':0,'handle':-2,'nxt':0,'fileref':None}
 
 class RPNDesc(RPNParm):
     """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
@@ -295,11 +334,29 @@ class RPNDesc(RPNParm):
         RPNParm.__init__(self,model,self.allowedKeysVals(),args)
 
     def allowedKeysVals(self):
-        """Return a dict of allowed Keys/Vals"""
-        return {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'ni':-1,'nj':-1,'nk':-1}
+       """Return a dict of allowed Keys/Vals"""
+       return  self.searchKeysVals()
+
+    def searchKeysVals(self):
+        """Return a dict of search Keys/Vals"""
+        return {'grtyp':' ','dateo':-1,'deet':-1,'npas':-1,'ig1':-1,'ig2':-1,'ig3':-1,'ig4':-1,'datyp':-1,'nbits':-1,'ni':-1,'nj':-1,'nk':-1}
+
+    def defaultKeysVals(self):
+        """Return a dict of sensible default Keys/Vals"""
+        return {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':4,'nbits':16,'ni':1,'nj':1,'nk':1}
+
 
 class RPNMeta(RPNKeys,RPNDesc):
     """RPN standard file Full set (Primary + Auxiliary) of descriptors class, needed to write a record, can be used for search.
+
+    myRPNMeta = RPNMeta()
+    myRPNMeta = RPNMeta(anRPNMeta)
+    myRPNMeta = RPNMeta(anRPNMeta,nom='TT')
+    myRPNMeta = RPNMeta(nom='TT')
+
+    @param anRPNMeta another instance of RPNMeta to copy data from
+    @param nom [other descriptors can be used, see below] comma separated metadata key=value pairs
+    @exception TypeError if anRPNMeta is not an instance of RPNMeta
 
     Descriptors are:
         'nom':'    ',
@@ -325,12 +382,12 @@ class RPNMeta(RPNKeys,RPNDesc):
     >>> d = myRPNMeta.__dict__.items()
     >>> d.sort()
     >>> d
-    [('dateo', 0), ('datev', -1), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    [('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', -1), ('nxt', 0), ('type', '  ')]
     >>> myRPNMeta = RPNMeta(nom='GZ',ip2=1)  #New RPNMeta with all descriptors to wildcard but nom,ip2
     >>> d = myRPNMeta.__dict__.items()
     >>> d.sort()
     >>> d
-    [('dateo', 0), ('datev', -1), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', 'GZ  '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    [('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', 'GZ  '), ('npas', -1), ('nxt', 0), ('type', '  ')]
     >>> myRPNMeta.ip1
     -1
     >>> myRPNMeta2 = myRPNMeta #shallow copy (reference)
@@ -343,11 +400,12 @@ class RPNMeta(RPNKeys,RPNDesc):
     >>> myRPNMeta2.ip3 = 9 #this will not update myRPNMeta.ip3
     >>> myRPNMeta.ip3
     -1
+    >>> myRPNMeta.nom = 'TT'
     >>> myRPNMeta2 = RPNMeta(myRPNMeta,nom='GZ',ip2=8)   #make a deep-copy and update nom,ip2 values
-    >>> myRPNMeta.ip2
-    1
-    >>> myRPNMeta2.ip2
-    8
+    >>> (myRPNMeta.nom,myRPNMeta.ip1,myRPNMeta.ip2)
+    ('TT  ', 9, 1)
+    >>> (myRPNMeta2.nom,myRPNMeta2.ip1,myRPNMeta2.ip2)
+    ('GZ  ', 9, 8)
     """
     def __init__(self,model=None,**args):
         RPNParm.__init__(self,model,self.allowedKeysVals(),args)
@@ -365,40 +423,53 @@ class RPNMeta(RPNKeys,RPNDesc):
         a.update(RPNDesc.allowedKeysVals(self))
         return a
 
+    def searchKeysVals(self):
+        """Return a dict of search Keys/Vals"""
+        a = RPNKeys.searchKeysVals(self)
+        a.update(RPNDesc.searchKeysVals(self))
+        return a
+
+    def defaultKeysVals(self):
+        """Return a dict of sensible default Keys/Vals"""
+        a = RPNKeys.defaultKeysVals(self)
+        a.update(RPNDesc.defaultKeysVals(self))
+        return a
+
     def getaxis(self,axis=None):
         """Return the grid axis rec of grtyp ('Z','Y','#')
 
         (myRPNRecX,myRPNRecY) = myRPNMeta.getaxis()
         myRPNRecX = myRPNMeta.getaxis('X')
-        myRPNRecY = myRPNMeta.getaxis('Y')
+        myRPNRecY = myRPNMeta.getaxis(axis='Y')
+
+        @param axis which axis to return (X, Y or None), default=None returns both axis
+        @exception TypeError if RPNMeta.grtyp is not in ('Z','Y','#')
+        @exception TypeError if RPNMeta.fileref is not an RPNFile
+        @exception ValueError if grid descriptors records (>>,^^) are not found in RPNMeta.fileref
         """
         if not (self.grtyp in ('Z','Y','#')):
-            raise ValueError,'getaxis error: can not get axis from grtyp=',self.grtyp
-        if (self.xaxis == None and self.yaxis == None):
-            searchkeys = RPNKeys(ip1=self.ig1,ip2=self.ig2)
-            if self.grtyp != '#':
-                searchkeys.update_by_dict({'ip3':self.ig3})
-            searchkeys.nom = '>>'
-            xaxisrec = self.fileref[searchkeys]
-            searchkeys.nom = '^^'
-            yaxisrec = self.fileref[searchkeys]
-            if (xaxiskeys == None or yaxiskeys == None):
-                raise ValueError,'getaxis error: axis grid descriptors (>>,^^) not found'
-            self.xaxis = xaxisrec
-            self.yaxis = yaxisrec
-            self.xyref = (xaxisrec.grtyp,xaxisrec.ig1,xaxisrec.ig2,xaxisrec.ig3,xaxisrec.ig4)
-            ni=xaxisrec.d.shape[0]
-            nj=yaxisrec.d.shape[1]
-            self.griddim=(ni,nj)
-        axisrec = RPNMeta()
-        axisrec.xyref = self.xyref
-        axisrec.griddim = self.griddim
-        if axis == 'X':
-            return xaxisrec
-        elif axis == 'Y':
-            return yaxisrec
-            #axisdata=self.yaxis.ravel()
+            raise ValueError,'getaxis error: can not get axis from grtyp='+self.grtyp
+        if not isinstance(self.fileref,RPNFile):
+            raise TypeError,'RPNMeta.getaxis: ERROR - cannot get axis, no fileRef'
+        searchkeys = RPNKeys(ip1=self.ig1,ip2=self.ig2)
+        if self.grtyp != '#':
+            searchkeys.update_by_dict({'ip3':self.ig3})
+        searchkeys.nom = '>>'
+        xaxisrec = self.fileref[searchkeys]
+        searchkeys.nom = '^^'
+        yaxisrec = self.fileref[searchkeys]
+        if (xaxiskeys == None or yaxiskeys == None):
+            raise ValueError,'RPNMeta.getaxis: ERROR - axis grid descriptors (>>,^^) not found'
+        if type(axis) == type(' '):
+            if axis.upper() == 'X':
+                return xaxisrec
+            elif axis.upper() == 'Y':
+                return yaxisrec
+                #axisdata=self.yaxis.ravel()
         return (xaxisrec,yaxisrec)
+
+    def __repr__(self):
+        return 'RPNMeta'+repr(self.__dict__)
 
 
 class RPNGrid(RPNParm):
@@ -475,7 +546,7 @@ class RPNGrid(RPNParm):
                 allowedKeysVals['grtyp'] = keys.grtyp
                 allowedKeysVals['ig14']  = (keys.ig1,keys.ig2,keys.ig3,keys.ig4)
                 allowedKeysVals['shape'] = (keys.ni,keys.nj)
-                if 'grid' in keys.__dict__.keys():
+                if 'grid' in keys.__dict__.keys() and isinstance(keys.grid,RPNGrid):
                     allowedKeysVals.update(keys.grid.__dict__)
             elif isinstance(keys,RPNGrid):
                 allowedKeysVals.update(keys.__dict__)
@@ -505,6 +576,8 @@ class RPNGrid(RPNParm):
         kVals = self.parseArgs(keys,args)
         #User Grid helper class
         grtyp = kVals['grtyp']
+        if type(grtyp) == type(' '):
+            grtyp = grtyp.upper()
         allowedKeysVals = self.allowedKeysVals()
         if grtyp and grtyp!=allowedKeysVals['grtyp']:
             self.grtyp = grtyp
@@ -664,6 +737,9 @@ class RPNGrid(RPNParm):
             else:
                 return dataxy[0].d
 
+    def __repr__(self):
+        return 'RPNGrid'+repr(self.__dict__)
+
 
 class RPNGridBase(RPNGridHelper):
     """RPNGrid Helper class for RPNSTD-type grid description for basic projections
@@ -808,19 +884,19 @@ class RPNRec(RPNMeta):
     >>> r.d #r.d is a copy of a, thus changing a does not change a
     array([ 1.,  5.,  3.,  4.], dtype=float32)
     >>> r.grtyp
-    'X'
+    ' '
     >>> r = RPNRec([1,2,3,4])
     >>> r2 = RPNRec(r)
     >>> d = r2.__dict__.items()
     >>> d.sort()
     >>> d
-    [('d', array([1, 2, 3, 4])), ('dateo', 0), ('datev', -1), ('datyp', 0), ('deet', 0), ('etiket', '            '), ('fileref', None), ('grid', None), ('grtyp', 'X'), ('handle', -2), ('ig1', 0), ('ig2', 0), ('ig3', 0), ('ig4', 0), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', 0), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', 0), ('nxt', 0), ('type', '  ')]
+    [('d', array([1, 2, 3, 4])), ('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grid', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', -1), ('nxt', 0), ('type', '  ')]
     >>> r.d[1] = 9 #r2 is a copy of r, thus this does not change r2.d
     >>> r2.d
     array([1, 2, 3, 4])
 
     @param data data part of the rec, can be a python list, numpy.ndarray or another RPNRec
-    @param params meta part of the record (RPNMeta), if data is an RPNRec it should not be provided
+    @param meta meta part of the record (RPNMeta), if data is an RPNRec it should not be provided
     @exceptions TypeError if arguments are not of valid type
     """
     def allowedKeysVals(self):
@@ -830,7 +906,7 @@ class RPNRec(RPNMeta):
         a['grid'] = None
         return a
 
-    def __init__(self,data=None,params=None):
+    def __init__(self,data=None,meta=None):
         RPNMeta.__init__(self)
         if data == None:
             self.d = numpy.array([])
@@ -839,17 +915,17 @@ class RPNRec(RPNMeta):
         elif type(data) == type([]):
             self.d = numpy.array(data)
         elif isinstance(data,RPNRec):
-            if params:
-                raise TypeError,'RPNRec: cannot initialize with both an RPNRec and params'
+            if meta:
+                raise TypeError,'RPNRec: cannot initialize with both an RPNRec and meta'
             self.d = data.d.copy()
-            params = RPNMeta(data)
+            meta = RPNMeta(data)
         else:
             raise TypeError,'RPNRec: cannot initialize data from arg #1'
-        if params:
-            if isinstance(params,RPNMeta):
-                self.update(params)
-            elif type(params) == type({}):
-                self.update_by_dict(params)
+        if meta:
+            if isinstance(meta,RPNMeta):
+                self.update(meta)
+            elif type(meta) == type({}):
+                self.update_by_dict(meta)
             else:
                 raise TypeError,'RPNRec: cannot initialize parameters from arg #2'
 
@@ -929,6 +1005,15 @@ class RPNRec(RPNMeta):
                 (self.ni,self.nj) = self.grid.shape
             else:
                 raise ValueError,'RPNRec.setGrid(): unable to determine actual grid of RPNRec'
+
+    def __repr__(self):
+        kv = {}
+        kv.update(self.__dict__)
+        rd = repr(self.__dict__['d'])
+        rg = repr(self.__dict__['grid'])
+        del kv['d']
+        del kv['grid']
+        return 'RPNRec{meta='+RPNMeta.__repr__(self)+', grid='+rg+', d='+rd+'}'
 
 
 class RPNDate:
@@ -1120,6 +1205,7 @@ class RPNDateRange:
 
 FirstRecord=RPNMeta()
 NextMatch=None
+
 
 if __name__ == "__main__":
     import doctest

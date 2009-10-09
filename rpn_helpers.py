@@ -286,12 +286,15 @@ class RPNParm:
             if type(value) == type(self.__dict__[name]):   # right type (string or int))
                 if type(value) == type(''):
                     reflen=len(self.__dict__[name])        # string, remember length
-                    self.__dict__[name]=(value+reflen*' ')[:reflen]
+                    self.__dict__[name]=(value.upper()+reflen*' ')[:reflen]
                 else:
                     self.__dict__[name]=value              # integer
             else:
                 if self.__dict__[name] == None:
-                   self.__dict__[name]=value
+                    if type(value) == type(''):
+                        self.__dict__[name]=value.upper()
+                    else:
+                        self.__dict__[name]=value
                 else:
                     raise TypeError,'RPNParm: Wrong type for attribute '+name+'='+repr(value)
         else:

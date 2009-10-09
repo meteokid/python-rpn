@@ -187,5 +187,156 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         #print numpy.array_repr(cla2)
         #print numpy.array_repr(clo2)
 
+
+class RPNMetaTests(unittest.TestCase):
+
+    def test_RPNMeta_Error(self):
+        """RPNMeta should raise exception on known error cases"""
+        self.assertRaises(TypeError, rpnstd.RPNMeta, 'not a valid argument')
+        a = rpnstd.RPNMeta()
+        #self.assertRaises(ValueError, a.getaxis())
+        try:
+            axis = a.getaxis()
+        except ValueError:
+            self.assertFalse(False)
+        else:
+            self.assertFalse(True)
+        a.grtyp = 'Z'
+        #self.assertRaises(TypeError, a.getaxis())
+        try:
+            axis = a.getaxis()
+        except TypeError:
+            self.assertFalse(False)
+        else:
+            self.assertFalse(True)
+
+    def test_RPNMeta_KnownValues(self):
+        """RPNMeta should give known result with known input"""
+        pass #TODO: this is well tested in doctest
+
+
+class RPNGridTests(unittest.TestCase):
+
+    def test_RPNGrid_Error(self):
+        """RPNGrid should raise exception on known error cases"""
+        pass #TODO
+
+    def test_RPNGrid_KnownValues(self):
+        """RPNGrid should give known result with known input"""
+        pass #TODO
+
+
+class RPNFileTests(unittest.TestCase):
+
+    lad = numpy.array(
+        [[-89.5, -89. , -88.5],
+        [-89.5, -89. , -88.5],
+        [-89.5, -89. , -88.5]]
+        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+    lod = numpy.array(
+        [[ 180. ,  180. ,  180. ],
+        [ 180.5,  180.5,  180.5],
+        [ 181. ,  181. ,  181. ]]
+        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+    grtyp='L'
+    xg14 = (-89.5,180.0,0.5,0.5)
+    fname = '__rpnstd__testfile__.fst'
+    la = None
+    lo = None
+
+    def test_RPNFile_Error(self):
+        """RPNFile should raise exception on known error cases"""
+        self.assertRaises(IOError, rpnstd.RPNFile, '__do__not__exist__.fst','RND+R/O')
+
+
+    def erase_testfile(self):
+        import os
+        try:
+            os.unlink(self.fname)
+        except:
+            pass
+
+    def create_basefile(self):
+        """create a basic test file for RPNFile tests"""
+        #print "============ Create Base File ==============="
+        self.erase_testfile()
+        f = rpnstd.RPNFile(self.fname)
+        (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(self.grtyp,self.xg14)
+        r0 = rpnstd.RPNMeta()
+        r0.update(r0.defaultKeysVals())
+        r0m = rpnstd.RPNMeta(r0,nom='LA',type='C',ni=self.lad.shape[0],nj=self.lad.shape[1],nk=1,grtyp=self.grtyp,ig1=ig1,ig2=ig2,ig3=ig3,ig4=ig4)
+        self.la = rpnstd.RPNRec(data=self.lad,meta=r0m)
+        r0m.nom = 'LO'
+        self.lo = rpnstd.RPNRec(data=self.lod,meta=r0m)
+        f.write(self.la)
+        f.write(self.lo)
+        f.close()
+        return (self.la,self.lo)
+
+
+    def test_RPNFileRead_KnownValues(self):
+        """RPNFile should give known result with known input"""
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        #print "============ Read Test ==============="
+        f2 = rpnstd.RPNFile(self.fname)
+        la2 = f2[rpnstd.FirstRecord]
+        lo2 = f2[rpnstd.NextMatch]
+        r2none = f2[rpnstd.NextMatch]
+        f2.close()
+        self.assertEqual(la2.nom,la.nom)
+        self.assertEqual(lo2.nom,lo.nom)
+        self.assertEqual(r2none,None)
+        if numpy.any(la2.d!=la.d):
+                print 'la2:',la2.d
+                print 'la :',la.d
+        self.assertFalse(numpy.any(la2.d!=la.d))
+        if numpy.any(lo2.d!=lo.d):
+                print 'lo2:',lo2.d
+                print 'lo :',lo.d
+        self.assertFalse(numpy.any(lo2.d!=lo.d))
+
+        self.erase_testfile()
+        #TODO: test other params and data
+
+    def test_RPNFileErase_KnownValues(self):
+        """RPNFile.erase should give known result with known input"""
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        #print "============ Erase ==============="
+        f3 = rpnstd.RPNFile(self.fname)
+        f3[la] = None #Erase la (1st rec) - 1st rec is now lo, no 2nd rec
+        f3.close()
+        #print "============ Check Erase ==============="
+        f2 = rpnstd.RPNFile(self.fname)
+        lo2 = f2[rpnstd.FirstRecord]
+        r2none = f2[rpnstd.NextMatch]
+        f2.close()
+        self.assertEqual(lo2.nom,lo.nom)
+        self.assertEqual(r2none,None)
+        self.erase_testfile()
+
+    def test_RPNFileRewrite_KnownValues(self):
+        """RPNFile.rewrite should give known result with known input"""
+        (la,lo) = self.create_basefile()
+        #print "============ ReWrite/Append ==============="
+        f3 = rpnstd.RPNFile(self.fname)
+        f3.rewrite(lo) #overwrite 2nd rec (lo)... no changes
+        f3.append(la)  #append a 3rd rec (la), file now has 3 rec: la, lo, la
+        f3.close()
+        #print "============ Check ReWrite/Append ==============="
+        f2 = rpnstd.RPNFile(self.fname)
+        la2 = f2[rpnstd.FirstRecord]
+        lo2 = f2[rpnstd.NextMatch]
+        la2b= f2[rpnstd.NextMatch]
+        r2none = f2[rpnstd.NextMatch]
+        f2.close()
+        self.assertEqual(la2.nom,la.nom)
+        self.assertEqual(lo2.nom,lo.nom)
+        self.assertEqual(la2b.nom,la.nom)
+        self.assertEqual(r2none,None)
+        self.erase_testfile()
+
+
 if __name__ == "__main__":
     unittest.main()
+
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

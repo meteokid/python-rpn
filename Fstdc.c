@@ -57,16 +57,16 @@ static init_lentab() {
 /* ----------------------------------------------------- */
 #if defined (mips) || defined (__mips)
 void __dshiftr4() {
-printf("__dshiftr4 called\n");
-exit(1);
+    fprintf(stderr,"ERROR: __dshiftr4 called\n");
+    exit(1);
 }
 void __mask4() {
-printf("__mask4 called\n");
-exit(1);
+    fprintf(stderr,"ERROR: __mask4 called\n");
+    exit(1);
 }
 void __dshiftl4() {
-printf("__dshiftl4 called\n");
-exit(1);
+    fprintf(stderr,"ERROR: __dshiftl4 called\n");
+    exit(1);
 }
 #endif
 
@@ -85,12 +85,8 @@ Fstdc_fstouv(PyObject *self, PyObject *args) {
 	int iun=0,istat;
 	char *filename="None";
 	char *options="RND";
-   char *msglvl="MSGLVL";
-   char *tolrnc="TOLRNC";
-
-   istat = c_fstopi(msglvl,8,0); //8 - print fatal error messages and up;10 - print system (internal) error messages only
-   istat = c_fstopi(tolrnc,6,0); //6 - tolerate warning level and lower;8 - tolerate error level and lower
-
+   //FILE *stdout0;
+   //FILE *stderr0;
 
 	if (!PyArg_ParseTuple(args, "iss",&iun,&filename,&options))
 		return NULL;
@@ -98,12 +94,31 @@ Fstdc_fstouv(PyObject *self, PyObject *args) {
 	  Py_INCREF(Py_None);
 	  return Py_None;
 	}
-	if( c_fstouv(iun,filename,options) < 0 ){  /* fstouv failed */
+
+    //*stdout0 = *stdout;
+    //stderr0 = stderr;
+    //close(1);
+    //stdout = freopen("stdout.txt", "a", stdout);
+    //close(2);
+    //freopen("/dev/null", 'a', stderr);
+    //stdout = fopen("/dev/null", 'a');
+    //stderr = stdout;
+
+    istat = c_fstouv(iun,filename,options);
+
+    //fclose(stdout);
+    //fclose(stderr);
+    //*stdout = *stdout0;
+    //stderr = stderr0;
+
+   if(istat  < 0 ){  /* fstouv failed */
 	  Py_INCREF(Py_None);
 	  return Py_None;
 	}
-	printf("Opened file %s, unit=%d, with options %s\n",filename,iun,options);
-	return Py_BuildValue("i",iun);   /* return unit number if O.K.  */
+#if defined(DEBUG)
+   printf("Opened file %s, unit=%d, with options %s\n",filename,iun,options);
+#endif
+   return Py_BuildValue("i",iun);   /* return unit number if O.K.  */
 }
 
 static char Fstdc_fstvoi__doc__[] =
@@ -130,8 +145,10 @@ Fstdc_fstfrm(PyObject *self, PyObject *args) {
 
 	if (!PyArg_ParseTuple(args, "i",&iun))
 		return NULL;
-	printf("Closed file %d\n",iun);
-	c_fstfrm(iun);
+#if defined(DEBUG)
+   printf("Closed file %d\n",iun);
+#endif
+   c_fstfrm(iun);
 	c_fclos(iun);
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -331,7 +348,7 @@ Fstdc_fstecr(PyObject *self, PyObject *args) {
               break;
 
 	    case NPY_LONG:
-              if (sizeof(long)!=4) printf("PyFstecr: warning sizeof(long)=%d\n",sizeof(long));
+              if (sizeof(long)!=4) fprintf(stderr,"PyFstecr: WARNING - sizeof(long)=%d\n",sizeof(long));
               datyp=4;
               dtl=4;
               break;
@@ -352,17 +369,16 @@ Fstdc_fstecr(PyObject *self, PyObject *args) {
               break;
 
 	    default:
-	      printf("PyFstecr: unsupported data type :%c\n",array->descr->type);
-	      Py_INCREF(Py_None);
-	      return Py_None;
-              break;
-
+            fprintf(stderr,"PyFstecr: ERROR - unsupported data type :%c\n",array->descr->type);
+            Py_INCREF(Py_None);
+            return Py_None;
+            break;
 	  }
 	}
 	else {
-	   printf("array is not CONTIGUOUS in memory\n");
-	  Py_INCREF(Py_None);
-	  return Py_None;
+        fprintf(stderr,"PyFstecr: ERROR - array is not CONTIGUOUS in memory\n");
+        Py_INCREF(Py_None);
+        return Py_None;
 	}
 
 #if defined(DEBUG)
@@ -417,11 +433,11 @@ printf("handle = %d \n",handle);
 	  Py_INCREF(Py_None);
 	  return Py_None;
 	}
-	if (datyp == 0 || datyp == 2 || datyp == 4) type_num=NPY_INT;
-	else if (datyp == 1 || datyp == 5 || datyp == 134) type_num=NPY_FLOAT;
+   if (datyp == 0 || datyp == 2 || datyp == 4 || datyp == 130) type_num=NPY_INT;
+	else if (datyp == 1 || datyp == 5 || datyp == 6 || datyp == 134) type_num=NPY_FLOAT;
 	else if (datyp == 3 ) type_num=NPY_CHAR;
 	else {
-	  printf("PyFstluk: unrecognized data type : %d\n",datyp);
+	  fprintf(stderr,"PyFstluk: ERROR - unrecognized data type : %d\n",datyp);
 	  Py_INCREF(Py_None);
 	  return Py_None;
 	}
@@ -669,8 +685,10 @@ Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
 	  Py_INCREF(Py_None);
 	  return Py_None;
         }
+#if defined(DEBUG)
         printf("Debug apres parse tuple cgrtyp[0]=%c\n",cgrtyp[0]);
         printf("Debug appel Mapdesc_PyNGL\n");
+#endif
         f77name(mapdesc_pyngl)(cgrtyp,&one,&ig1,&ig2,&ig3,&ig4,&x1,&y1,&x2,&y2,&ni,&nj,\
                                &proj,&polat,&polong,&rot,&lat1,&lon1,&lat2,&lon2,1);
 #if defined(DEBUG)
@@ -982,6 +1000,9 @@ static char Fstdc_module_documentation[] =
 
 void initFstdc() {
 	PyObject *m, *d;
+   int istat;
+   char *msglvl="MSGLVL";
+   char *tolrnc="TOLRNC";
 
 	/* Create the module and add the functions */
 	m = Py_InitModule4("Fstdc", Fstdc_methods,
@@ -1003,5 +1024,9 @@ void initFstdc() {
 		Py_FatalError("can't initialize module Fstdc");
 	//printf("RPN (2000) Standard File module V-%s (%s) initialized\n",version,lastmodified);
 	init_lentab();
+
+   istat = c_fstopi(msglvl,8,0); //8 - print fatal error messages and up;10 - print system (internal) error messages only
+   istat = c_fstopi(tolrnc,6,0); //6 - tolerate warning level and lower;8 - tolerate error level and lower
 }
 
+// kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
