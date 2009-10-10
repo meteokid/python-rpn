@@ -406,6 +406,8 @@ class RPNMeta(RPNKeys,RPNDesc):
     ('TT  ', 9, 1)
     >>> (myRPNMeta2.nom,myRPNMeta2.ip1,myRPNMeta2.ip2)
     ('GZ  ', 9, 8)
+
+    TODO: test update() and update_cond()
     """
     def __init__(self,model=None,**args):
         RPNParm.__init__(self,model,self.allowedKeysVals(),args)
@@ -613,7 +615,7 @@ class RPNGrid(RPNParm):
 
         See RPNGrid.interpolVect() methode for documentation
         """
-        return self.grid.interpolVect(self,fromData,None,fromGrid)
+        return self.interpolVect(fromData,None,fromGrid)
 
     #@static
     def interpolVectValidateArgs(self,fromDataX,fromDataY=None,fromGrid=None):
@@ -683,24 +685,27 @@ class RPNGrid(RPNParm):
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
         """
-        (recx,recy,isVect,isRec) = self.interpolVectValidateArgs(self,fromDataX,fromDataY,fromGrid)
+        (recx,recy,isVect,isRec) = self.interpolVectValidateArgs(fromDataX,fromDataY,fromGrid)
         recyd = None
         if isVect:
             recyd = recy.d
         (sg,dg) = (recx.grid,self)
+        dataxy = (None,None)
         sg_a = sg.getEzInterpArgs(isSrc=True)
         dg_a = dg.getEzInterpArgs(isSrc=False)
-        if sg_args and dg_args:
-            a = RPNGridHelper.baseEzInterpArgs
+        if sg_a and dg_a:
+            a = RPNGridHelper.baseEzInterpArgs.copy()
             a.update(sg_a)
             sg_a = a
-            a = RPNGridHelper.baseEzInterpArgs
+            a = RPNGridHelper.baseEzInterpArgs.copy()
             a.update(dg_a)
             dg_a = a
             dataxy = Fstdc.ezinterp(recx.d,recyd,
                     sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],
                     dg_a['shape'],dg_a['grtyp'],dg_a['g_ig14'],dg_a['xy_ref'],dg_a['hasRef'],dg_a['ij0'],
                     isVect)
+            if isVect==0:
+                dataxy = (dataxy,None)
         else:
             #if verbose: print "using SCRIP"
             if isVect!=1:
@@ -715,7 +720,7 @@ class RPNGrid(RPNParm):
                 #Try while computing lat/lon and addr&weights
                 sg_a = sg.toScripGrid()
                 dg_a = dg.toScripGrid()
-            if sg_args and dg_args:
+            if sg_a and dg_a:
                 scripObj = scrip.Scrip(sg_a,dg_a)
                 datax  = sg.reshapeDataForScrip(recx.d)
                 datax2 = scrip.scripObj.interp(datax)
@@ -733,9 +738,9 @@ class RPNGrid(RPNParm):
                 return recx
         else:
             if isVect:
-                return (dataxy[0].d,dataxy[1].d)
+                return (dataxy[0],dataxy[1])
             else:
-                return dataxy[0].d
+                return dataxy[0]
 
     def __repr__(self):
         return 'RPNGrid'+repr(self.__dict__)
@@ -754,9 +759,9 @@ class RPNGridBase(RPNGridHelper):
         if not (d['grtyp'] in RPNGrid.base_grtyp):
             raise ValueError, 'RPNGridBase: invalid grtyp value'
 
-    def getEzInterpArgs(keyVals,isSrc):
+    def getEzInterpArgs(self,keyVals,isSrc):
         """Return the list of needed args for Fstdc.ezinterp from the provided params"""
-        a = RPNGridHelper.baseEzInterpArgs
+        a = RPNGridHelper.baseEzInterpArgs.copy()
         a['shape']  = keyVals['shape']
         a['grtyp']  = keyVals['grtyp']
         a['g_ig14'] = list(keyVals['ig14'])
@@ -812,7 +817,7 @@ class RPNGridRef(RPNGridHelper):
             and isinstance(xyaxis[1],RPNRec) ):
             raise ValueError, 'RPNGridRef: invalid value'
 
-    def getEzInterpArgs(keyVals,isSrc):
+    def getEzInterpArgs(self,keyVals,isSrc):
         """Return the list of needed args for Fstdc.ezinterp from the provided params"""
         if keyVals['grtyp'] == 'Y' and isSrc:
             return None
@@ -877,14 +882,14 @@ class RPNRec(RPNMeta):
     >>> a[1] = 5
     >>> r.d #r.d is a reference to a, thus changing a changes a
     array([ 1.,  5.,  3.,  4.], dtype=float32)
-    >>> r = RPNRec(a.copy())
+    >>> r = RPNRec(a.copy(),RPNMeta(grtyp='X'))
     >>> r.d
     array([ 1.,  5.,  3.,  4.], dtype=float32)
     >>> a[1] = 9
     >>> r.d #r.d is a copy of a, thus changing a does not change a
     array([ 1.,  5.,  3.,  4.], dtype=float32)
     >>> r.grtyp
-    ' '
+    'X'
     >>> r = RPNRec([1,2,3,4])
     >>> r2 = RPNRec(r)
     >>> d = r2.__dict__.items()
@@ -1206,9 +1211,60 @@ class RPNDateRange:
 FirstRecord=RPNMeta()
 NextMatch=None
 
+class RPNGridTests:
+
+    def gridL(self,dlalo=0.5,nij=10):
+        """provide grid and rec values for other tests"""
+        grtyp='L'
+        grref=grtyp
+        la0 = 0.-dlalo*(nij/2.)
+        lo0 = 180.-dlalo*(nij/2.)
+        ig14 = (ig1,ig2,ig3,ig4) =  cxgaig(grtyp,la0,lo0,dlalo,dlalo)
+        axes = (None,None)
+        hasAxes = 0
+        ij0 = (0,0)
+        doCorners = 0
+        (la,lo) = Fstdc.ezgetlalo((nij,nij),grtyp,(grref,ig1,ig2,ig3,ig4),axes,hasAxes,ij0,doCorners)
+        grid = RPNGrid(grtyp=grtyp,ig14=ig14,shape=(nij,nij))
+        return (grid,la)
+
+    def test_RPNGridInterp_KnownValues(self):
+        """RPNGridInterp should give known result with known input"""
+        (g1,la1) = self.gridL(0.5,6)
+        (g2,la2) = self.gridL(0.25,8)
+        axes = (None,None)
+        ij0  = (1,1)
+        g1ig14 = list(g1.ig14)
+        g1ig14.insert(0,g1.grtyp)
+        g2ig14 = list(g2.ig14)
+        g2ig14.insert(0,g2.grtyp)
+        la2b = Fstdc.ezinterp(la1,None,
+            g1.shape,g1.grtyp,g1ig14,axes,0,ij0,
+            g2.shape,g2.grtyp,g2ig14,axes,0,ij0,
+            0)
+        if numpy.any(numpy.abs(la2-la2b)>1.e-7):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2b:',la2b
+                print la2-la2b
+        la2c = g2.interpol(la1,g1)
+        #if numpy.any(la2c!=la2b):
+                #print 'la2c:',la2c
+                #print 'la2b:',la2b
+        #self.assertFalse(numpy.any(la2c!=la2b))
+        if numpy.any(numpy.abs(la2-la2c)>1.e-7):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2c :',la2c
+                print la2-la2c
+
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+    #t = RPNGridTests()
+    #t.test_RPNGridInterp_KnownValues()
 
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

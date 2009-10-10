@@ -212,10 +212,40 @@ class RPNMetaTests(unittest.TestCase):
 
     def test_RPNMeta_KnownValues(self):
         """RPNMeta should give known result with known input"""
-        pass #TODO: this is well tested in doctest
+        pass #this is well tested in doctest
+
+    def test_RPNMetaGetAxes_KnownValues(self):
+        """RPNMeta.getaxes should give known result with known input"""
+        pass #TODO:
+
+
+class RPNRecTests(unittest.TestCase):
+
+    def test_RPNRec_Error(self):
+        """RPNRec should raise exception on known error cases"""
+        pass #TODO
+
+    def test_RPNRec_KnownValues(self):
+        """RPNRec should give known result with known input"""
+        pass #TODO
 
 
 class RPNGridTests(unittest.TestCase):
+
+    def gridL(self,dlalo=0.5,nij=10):
+        """provide grid and rec values for other tests"""
+        grtyp='L'
+        grref=grtyp
+        la0 = 0.-dlalo*(nij/2.)
+        lo0 = 180.-dlalo*(nij/2.)
+        ig14 = (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,la0,lo0,dlalo,dlalo)
+        axes = (None,None)
+        hasAxes = 0
+        ij0 = (0,0)
+        doCorners = 0
+        (la,lo) = Fstdc.ezgetlalo((nij,nij),grtyp,(grref,ig1,ig2,ig3,ig4),axes,hasAxes,ij0,doCorners)
+        grid = rpnstd.RPNGrid(grtyp=grtyp,ig14=ig14,shape=(nij,nij))
+        return (grid,la)
 
     def test_RPNGrid_Error(self):
         """RPNGrid should raise exception on known error cases"""
@@ -225,6 +255,39 @@ class RPNGridTests(unittest.TestCase):
         """RPNGrid should give known result with known input"""
         pass #TODO
 
+    def test_RPNGridInterp_KnownValues(self):
+        """RPNGridInterp should give known result with known input"""
+        (g1,la1) = self.gridL(0.5,6)
+        (g2,la2) = self.gridL(0.25,8)
+        axes = (None,None)
+        ij0  = (1,1)
+        g1ig14 = list(g1.ig14)
+        g1ig14.insert(0,g1.grtyp)
+        g2ig14 = list(g2.ig14)
+        g2ig14.insert(0,g2.grtyp)
+        la2b = Fstdc.ezinterp(la1,None,
+            g1.shape,g1.grtyp,g1ig14,axes,0,ij0,
+            g2.shape,g2.grtyp,g2ig14,axes,0,ij0,
+            0)
+        if numpy.any(numpy.abs(la2-la2b)>1.e-7):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2b:',la2b
+        self.assertFalse(numpy.any(numpy.abs(la2-la2b)>1.e-7))
+        la2c = g2.interpol(la1,g1)
+        #if numpy.any(la2c!=la2b):
+                #print 'la2c:',la2c
+                #print 'la2b:',la2b
+        #self.assertFalse(numpy.any(la2c!=la2b))
+        if numpy.any(numpy.abs(la2-la2c)>1.e-7):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2c :',la2c
+        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>1.e-7))
+
+#TODO: test vect interpol, other proj, z/# grids, scrip interp
 
 class RPNFileTests(unittest.TestCase):
 

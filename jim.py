@@ -412,7 +412,7 @@ class RPNGridI(RPNGridHelper):
         }
         return kv
 
-    def getEzInterpArgs(keyVals,isSrc):
+    def getEzInterpArgs(self,keyVals,isSrc):
         """Return the list of needed args for Fstdc.ezinterp from the provided params"""
         #TODO: at some point implement as Y-grid if isSrc==False
         return None

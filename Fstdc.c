@@ -738,7 +738,7 @@ Fstdc_ezinterp(PyObject *self, PyObject *args) {
 	imprime_ca("xs",xs->data,10);
 	imprime_ca("ys",ys->data,10);
 */
-	imprime_ca("arrayin",arrayin->data,10);
+//	imprime_ca("arrayin",arrayin->data,10);
 #endif
 
 	dimensions[0] = (niD>1) ? niD : 1  ;
