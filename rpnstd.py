@@ -534,30 +534,55 @@ class RPNGrid(RPNParm):
             pass
         return a
 
+    def getGrtyp(self,keys,args=None):
+        """Return grid type from class init args"""
+        grtyp = ''
+        if args is None:
+            args = {}
+        if type(args) != type({}):
+            raise TypeError,'RPNGrid: args should be of type dict'
+        if keys:
+            if 'grtyp' in args.keys():
+                raise ValueError, 'RPNGrid: cannot provide both keys and grtyp: '+repr(args)
+            elif isinstance(keys,RPNMeta) or isinstance(keys,RPNGrid):
+                grtyp = keys.grtyp
+            elif type(keys) == type({}):
+                if 'grtyp' in keys.keys():
+                    grtyp = keys['grtyp']
+                else:
+                    raise ValueError,'RPNGrid: not able to find grtyp'
+            else:
+                raise TypeError, 'RPNGrid: wrong type for keys'
+        else:
+            if 'grtyp' in args.keys():
+                grtyp = args['grtyp']
+            else:
+                raise ValueError,'RPNGrid: not able to find grtyp'
+        return grtyp
+
     def parseArgs(self,keys,args=None):
         """Return a dict with parsed args for the specified grid type"""
         if args is None:
             args = {}
         if type(args) != type({}):
             raise TypeError,'RPNGrid: args should be of type dict'
-        allowedKeysVals = self.allowedKeysVals()
+        kv = self.allowedKeysVals()
         if keys:
             if 'grtyp' in args.keys():
                 raise ValueError, 'RPNGrid: cannot provide both keys and grtyp: '+repr(args)
             elif isinstance(keys,RPNMeta):
-                allowedKeysVals['grtyp'] = keys.grtyp
-                allowedKeysVals['ig14']  = (keys.ig1,keys.ig2,keys.ig3,keys.ig4)
-                allowedKeysVals['shape'] = (keys.ni,keys.nj)
-                if 'grid' in keys.__dict__.keys() and isinstance(keys.grid,RPNGrid):
-                    allowedKeysVals.update(keys.grid.__dict__)
+                kv['grtyp'] = keys.grtyp
+                kv['ig14']  = (keys.ig1,keys.ig2,keys.ig3,keys.ig4)
+                kv['shape'] = (keys.ni,keys.nj)
+                if 'grid' in keys.__dict__.keys() and isinstance(keys.grid,RPNRec):
+                    kv.update(keys.grid.__dict__)
             elif isinstance(keys,RPNGrid):
-                allowedKeysVals.update(keys.__dict__)
-        allowedKeysVals.update(args)
+                kv.update(keys.__dict__)
+        kv.update(args)
         if self.helper:
-            kv = self.helper.parseArgs(keys,args)
-            allowedKeysVals.update(kv)
-        self.argsCheck(allowedKeysVals)
-        return allowedKeysVals
+            kv.update(self.helper.parseArgs(keys,args))
+        self.argsCheck(kv)
+        return kv
 
     def argsCheck(self,d):
         """Check Grid params, raise an error if not ok"""
@@ -571,37 +596,26 @@ class RPNGrid(RPNParm):
             and (type(ig14[0]) == type(ig14[1]) == type(ig14[2]) == type(ig14[3]) == type(0)) ):
             raise ValueError, 'RPNGrid: invalid arg value'
         if self.helper:
-            self.helper.argsCheck(self.__dict__)
+            self.helper.argsCheck(d)
 
     def __init__(self,keys=None,**args):
-        RPNParm.__init__(self,None,self.allowedKeysVals(),{})
-        kVals = self.parseArgs(keys,args)
-        #User Grid helper class
-        grtyp = kVals['grtyp']
+        grtyp = self.getGrtyp(keys,args)
         if type(grtyp) == type(' '):
             grtyp = grtyp.upper()
-        allowedKeysVals = self.allowedKeysVals()
-        if grtyp and grtyp!=allowedKeysVals['grtyp']:
-            self.grtyp = grtyp
-            className = "RPNGrid%s" % grtyp.capitalize()
-            #TODO: split gridref et grid base in 1 class per type to accept real params instead of ip14
-            if grtyp in self.base_grtyp:
-                className = "RPNGridBase"
-            elif grtyp in self.ref_grtyp:
-                className = "RPNGridRef"
-            try:
-                myClass = globals()[className]
-                self.__dict__['helper'] = myClass()
-            except:
-                raise ValueError,'RPNGrid: unrecognize grtyp '+repr(grtyp)
-            if self.helper:
-                #ParseArges again with the RPNGrid helper
-                kVals.update(self.parseArgs(keys,args))
-            #except:
-            #raise ValueError,'RPNGrid: unrecognize grtyp '+repr(grtyp)
-        else:
-            raise ValueError,'RPNGrid: must specify a grtyp'
-        self.update(kVals)
+        className = "RPNGrid%s" % grtyp
+        if grtyp in self.base_grtyp:
+            className = "RPNGridBase"
+        elif grtyp in self.ref_grtyp:
+            className = "RPNGridRef"
+        try:
+            myClass = globals()[className]
+            self.__dict__['helper'] = myClass()
+        except:
+            pass
+        if not self.helper:
+            raise ValueError,'RPNGrid: unrecognize grtyp '+repr(grtyp)
+        RPNParm.__init__(self,None,self.allowedKeysVals(),{})
+        self.update(self.parseArgs(keys,args))
 
     def interpol(self,fromData,fromGrid=None):
         """Interpolate (scalar) some gridded data to grid
@@ -757,7 +771,7 @@ class RPNGridBase(RPNGridHelper):
     def argsCheck(self,d):
         """Check Grid params, raise an error if not ok"""
         if not (d['grtyp'] in RPNGrid.base_grtyp):
-            raise ValueError, 'RPNGridBase: invalid grtyp value'
+            raise ValueError, 'RPNGridBase: invalid grtyp value:'+repr(d['grtyp'])
 
     def getEzInterpArgs(self,keyVals,isSrc):
         """Return the list of needed args for Fstdc.ezinterp from the provided params"""
@@ -784,7 +798,7 @@ class RPNGridBase(RPNGridHelper):
 
 class RPNGridRef(RPNGridHelper):
     """RPNGrid Helper class for RPNSTD-type grid description for grid reference
-    Preferably use the generic RPNGrid class to inderectly get an instance
+    Preferably use the generic RPNGrid class to indirectly get an instance
     """
     addAllowedKeysVals = {
         'xyaxis':(None,None),
@@ -806,6 +820,10 @@ class RPNGridRef(RPNGridHelper):
         if keys and isinstance(keys,RPNMeta):
             kv['xyaxis'] = keys.getAxis()
             kv['g_ref']  = RPNGrid(kv['xyaxis'][0])
+        for k in self.addAllowedKeysVals:
+            if k in args.keys():
+                kv[k] = args[k]
+        return kv
 
     def argsCheck(self,d):
         """Check Grid params, raise an error if not ok"""
@@ -1211,60 +1229,8 @@ class RPNDateRange:
 FirstRecord=RPNMeta()
 NextMatch=None
 
-class RPNGridTests:
-
-    def gridL(self,dlalo=0.5,nij=10):
-        """provide grid and rec values for other tests"""
-        grtyp='L'
-        grref=grtyp
-        la0 = 0.-dlalo*(nij/2.)
-        lo0 = 180.-dlalo*(nij/2.)
-        ig14 = (ig1,ig2,ig3,ig4) =  cxgaig(grtyp,la0,lo0,dlalo,dlalo)
-        axes = (None,None)
-        hasAxes = 0
-        ij0 = (0,0)
-        doCorners = 0
-        (la,lo) = Fstdc.ezgetlalo((nij,nij),grtyp,(grref,ig1,ig2,ig3,ig4),axes,hasAxes,ij0,doCorners)
-        grid = RPNGrid(grtyp=grtyp,ig14=ig14,shape=(nij,nij))
-        return (grid,la)
-
-    def test_RPNGridInterp_KnownValues(self):
-        """RPNGridInterp should give known result with known input"""
-        (g1,la1) = self.gridL(0.5,6)
-        (g2,la2) = self.gridL(0.25,8)
-        axes = (None,None)
-        ij0  = (1,1)
-        g1ig14 = list(g1.ig14)
-        g1ig14.insert(0,g1.grtyp)
-        g2ig14 = list(g2.ig14)
-        g2ig14.insert(0,g2.grtyp)
-        la2b = Fstdc.ezinterp(la1,None,
-            g1.shape,g1.grtyp,g1ig14,axes,0,ij0,
-            g2.shape,g2.grtyp,g2ig14,axes,0,ij0,
-            0)
-        if numpy.any(numpy.abs(la2-la2b)>1.e-7):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2b:',la2b
-                print la2-la2b
-        la2c = g2.interpol(la1,g1)
-        #if numpy.any(la2c!=la2b):
-                #print 'la2c:',la2c
-                #print 'la2b:',la2b
-        #self.assertFalse(numpy.any(la2c!=la2b))
-        if numpy.any(numpy.abs(la2-la2c)>1.e-7):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2c :',la2c
-                print la2-la2c
-
-
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-    #t = RPNGridTests()
-    #t.test_RPNGridInterp_KnownValues()
 
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

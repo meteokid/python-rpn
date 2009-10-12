@@ -728,16 +728,24 @@ Fstdc_ezinterp(PyObject *self, PyObject *args) {
         }
 
 #if defined(DEBUG)
-        printf("Debug Fstdc_ezinterp grtypS[0]=%c grrefS[0]=%c\n",grtypS[0],grrefS[0]);
-	printf("Debug Fstdc_ezinterp ig1S=%d ig2S=%d ig3S=%d ig4S=%d\n",ig1S,ig2S,ig3S,ig4S);
-	printf("Debug Fstdc_ezinterp niS=%d njS=%d\n",niS,njS);
-        printf("Debug Fstdc_ezinterp grtypD[0]=%c grrefD[0]=%c\n",grtypD[0],grrefD[0]);
-	printf("Debug Fstdc_ezinterp ig1D=%d ig2D=%d ig3D=%d ig4D=%d\n",ig1D,ig2D,ig3D,ig4D);
-	printf("Debug Fstdc_ezinterp niD=%d njD=%d\n",niD,njD);
-/*
-	imprime_ca("xs",xs->data,10);
-	imprime_ca("ys",ys->data,10);
-*/
+    printf("Debug Fstdc_ezinterp grtypS[0]=%c grrefS[0]=%c\n",grtypS[0],grrefS[0]);
+    printf("Debug Fstdc_ezinterp ig1S=%d ig2S=%d ig3S=%d ig4S=%d\n",ig1S,ig2S,ig3S,ig4S);
+    printf("Debug Fstdc_ezinterp niS=%d njS=%d axis=%d\n",niS,njS,hasSrcAxis);
+    if (hasSrcAxis) {
+        printf("Debug Fstdc_ezinterp xaxisS[0],[ni]=%f, %f\n",(float)xsS->data[0],(float)xsS->data[niS-1]);
+        printf("Debug Fstdc_ezinterp yaxisS[0],[nj]=%f, %f\n",(float)ysS->data[0],(float)ysS->data[njS-1]);
+        imprime_ca("xs",xsS->data,niS);
+        imprime_ca("ys",ysS->data,njS);
+    }
+    printf("Debug Fstdc_ezinterp grtypD[0]=%c grrefD[0]=%c\n",grtypD[0],grrefD[0]);
+    printf("Debug Fstdc_ezinterp ig1D=%d ig2D=%d ig3D=%d ig4D=%d\n",ig1D,ig2D,ig3D,ig4D);
+    printf("Debug Fstdc_ezinterp niD=%d njD=%d axis=%d\n",niD,njD,hasDstAxis);
+    if (hasDstAxis) {
+        printf("Debug Fstdc_ezinterp xaxisD[0],[ni]=%f, %f\n",(float)xsD->data[0],(float)xsD->data[niD-1]);
+        printf("Debug Fstdc_ezinterp yaxisD[0],[nj]=%f, %f\n",(float)ysD->data[0],(float)ysD->data[njD-1]);
+        imprime_ca("xs",xsD->data,niD);
+        imprime_ca("ys",ysD->data,njD);
+    }
 //	imprime_ca("arrayin",arrayin->data,10);
 #endif
 
@@ -880,6 +888,19 @@ Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     dimensions[2] = 1 ;
     if(njS>1) ndimensions=2;
     else ndimensions=1;
+
+#if defined(DEBUG)
+    printf("Debug Fstdc_ezinterp grtypS[0]=%c grrefS[0]=%c\n",grtypS[0],grrefS[0]);
+    printf("Debug Fstdc_ezinterp ig1S=%d ig2S=%d ig3S=%d ig4S=%d\n",ig1S,ig2S,ig3S,ig4S);
+    printf("Debug Fstdc_ezinterp niS=%d njS=%d axis=%d\n",niS,njS,hasSrcAxis);
+    if (hasSrcAxis) {
+        printf("Debug Fstdc_ezinterp (%d,%d) xaxisS[0],[ni]=%f,xsS-> %f\n",xsS->dimensions[0],xsS->dimensions[1],(float)xsS->data[0],(float)xsS->data[niS-1]);
+        printf("Debug Fstdc_ezinterp (%d,%d) yaxisS[0],[nj]=%f, %f\n",ysS->dimensions[0],ysS->dimensions[1],(float)ysS->data[0],(float)ysS->data[njS-1]);
+        imprime_ca("xs",xsS->data,niS);
+        imprime_ca("ys",ysS->data,njS);
+    }
+
+#endif
 
     //Define/Init Grid in EZSCINT
     if (hasSrcAxis) {

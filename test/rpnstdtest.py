@@ -122,48 +122,49 @@ class Level_to_ip1KnownValues(unittest.TestCase):
 
 class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
 
+    la = numpy.array(
+        [[-89.5, -89. , -88.5],
+        [-89.5, -89. , -88.5],
+        [-89.5, -89. , -88.5]]
+        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+    lo = numpy.array(
+        [[ 180. ,  180. ,  180. ],
+        [ 180.5,  180.5,  180.5],
+        [ 181. ,  181. ,  181. ]]
+        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+    cla = numpy.array(
+        [[[-89.75, -89.25, -88.75],
+        [-89.75, -89.25, -88.75],
+        [-89.75, -89.25, -88.75]],
+        [[-89.25, -88.75, -88.25],
+        [-89.25, -88.75, -88.25],
+        [-89.25, -88.75, -88.25]],
+        [[-89.25, -88.75, -88.25],
+        [-89.25, -88.75, -88.25],
+        [-89.25, -88.75, -88.25]],
+        [[-89.75, -89.25, -88.75],
+        [-89.75, -89.25, -88.75],
+        [-89.75, -89.25, -88.75]]]
+        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+    clo = numpy.array(
+        [[[ 179.75,  179.75,  179.75],
+        [ 180.25,  180.25,  180.25],
+        [ 180.75,  180.75,  180.75]],
+        [[ 179.75,  179.75,  179.75],
+        [ 180.25,  180.25,  180.25],
+        [ 180.75,  180.75,  180.75]],
+        [[ 180.25,  180.25,  180.25],
+        [ 180.75,  180.75,  180.75],
+        [ 181.25,  181.25,  181.25]],
+        [[ 180.25,  180.25,  180.25],
+        [ 180.75,  180.75,  180.75],
+        [ 181.25,  181.25,  181.25]]]
+        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+
+
     def test_Fstdc_ezgetlalo_KnownValues(self):
         """Fstdc_ezgetlalo should give known result with known input"""
-        la = numpy.array(
-            [[-89.5, -89. , -88.5],
-            [-89.5, -89. , -88.5],
-            [-89.5, -89. , -88.5]]
-            ,dtype=numpy.dtype('float32'),order='FORTRAN')
-        lo = numpy.array(
-            [[ 180. ,  180. ,  180. ],
-            [ 180.5,  180.5,  180.5],
-            [ 181. ,  181. ,  181. ]]
-            ,dtype=numpy.dtype('float32'),order='FORTRAN')
-        cla = numpy.array(
-            [[[-89.75, -89.25, -88.75],
-            [-89.75, -89.25, -88.75],
-            [-89.75, -89.25, -88.75]],
-            [[-89.25, -88.75, -88.25],
-            [-89.25, -88.75, -88.25],
-            [-89.25, -88.75, -88.25]],
-            [[-89.25, -88.75, -88.25],
-            [-89.25, -88.75, -88.25],
-            [-89.25, -88.75, -88.25]],
-            [[-89.75, -89.25, -88.75],
-            [-89.75, -89.25, -88.75],
-            [-89.75, -89.25, -88.75]]]
-            ,dtype=numpy.dtype('float32'),order='FORTRAN')
-        clo = numpy.array(
-            [[[ 179.75,  179.75,  179.75],
-            [ 180.25,  180.25,  180.25],
-            [ 180.75,  180.75,  180.75]],
-            [[ 179.75,  179.75,  179.75],
-            [ 180.25,  180.25,  180.25],
-            [ 180.75,  180.75,  180.75]],
-            [[ 180.25,  180.25,  180.25],
-            [ 180.75,  180.75,  180.75],
-            [ 181.25,  181.25,  181.25]],
-            [[ 180.25,  180.25,  180.25],
-            [ 180.75,  180.75,  180.75],
-            [ 181.25,  181.25,  181.25]]]
-            ,dtype=numpy.dtype('float32'),order='FORTRAN')
-        ni = 3
-        nj = 3
+        (ni,nj) = self.la.shape
         grtyp='L'
         grref='L'
         (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
@@ -171,21 +172,51 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         doCorners = 1
         (i0,j0) = (0,0)
         (la2,lo2,cla2,clo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(None,None),hasAxes,(i0,j0),doCorners)
-        self.assertFalse(numpy.any(la!=la2))
-        self.assertFalse(numpy.any(lo!=lo2))
+        if numpy.any(self.la!=la2):
+            print self.la
+            print la2
+        if numpy.any(self.lo!=lo2):
+            print self.lo
+            print lo2
+        self.assertFalse(numpy.any(self.la!=la2))
+        self.assertFalse(numpy.any(self.lo!=lo2))
         for ic in range(0,4):
-            if numpy.any(cla[ic,...]!=cla2[ic,...]):
+            if numpy.any(self.cla[ic,...]!=cla2[ic,...]):
                 print ic,'cla'
-                print cla[ic,...]
+                print self.cla[ic,...]
                 print cla2[ic,...]
-            self.assertFalse(numpy.any(cla[ic,...]!=cla2[ic,...]))
-            if numpy.any(clo[ic,...]!=clo2[ic,...]):
+            self.assertFalse(numpy.any(self.cla[ic,...]!=cla2[ic,...]))
+            if numpy.any(self.clo[ic,...]!=clo2[ic,...]):
                 print ic,'clo'
-                print clo[ic,...]
+                print self.clo[ic,...]
                 print clo2[ic,...]
-            self.assertFalse(numpy.any(clo[ic,...]!=clo2[ic,...]))
+            self.assertFalse(numpy.any(self.clo[ic,...]!=clo2[ic,...]))
         #print numpy.array_repr(cla2)
         #print numpy.array_repr(clo2)
+
+    def test_Fstdc_ezgetlalo_Z_KnownValues(self):
+        """Fstdc_ezgetlalo with Z grid should give known result with known input"""
+        (ni,nj) = self.la.shape
+        grtyp='Z'
+        grref='L'
+        (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grref,0.,0.,1.,1.)
+        xaxis = self.lo[:,0].copy('FORTRAN')
+        yaxis = self.la[0,:].copy('FORTRAN')
+        hasAxes = 1
+        doCorners = 0
+        (i0,j0) = (0,0)
+        (la2,lo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xaxis,yaxis),hasAxes,(i0,j0),doCorners)
+        if numpy.any(self.la!=la2):
+            print self.la
+            print la2
+        if numpy.any(self.lo!=lo2):
+            print self.lo
+            print lo2
+        self.assertFalse(numpy.any(self.la!=la2))
+        self.assertFalse(numpy.any(self.lo!=lo2))
+
+    def test_Fstdc_ezgetlalo_Dieze_KnownValues(self):
+        pass #TODO:
 
 
 class RPNMetaTests(unittest.TestCase):
@@ -232,6 +263,8 @@ class RPNRecTests(unittest.TestCase):
 
 class RPNGridTests(unittest.TestCase):
 
+    epsilon = 1.e-5
+
     def gridL(self,dlalo=0.5,nij=10):
         """provide grid and rec values for other tests"""
         grtyp='L'
@@ -245,7 +278,24 @@ class RPNGridTests(unittest.TestCase):
         doCorners = 0
         (la,lo) = Fstdc.ezgetlalo((nij,nij),grtyp,(grref,ig1,ig2,ig3,ig4),axes,hasAxes,ij0,doCorners)
         grid = rpnstd.RPNGrid(grtyp=grtyp,ig14=ig14,shape=(nij,nij))
-        return (grid,la)
+        return (grid,la,lo)
+
+    def gridZL(self,dlalo=0.5,nij=10):
+        """provide grid and rec values for other tests"""
+        (g1,la1,lo1) = self.gridL(dlalo,nij)
+        x_axis_d = lo1[:,0].copy('FORTRAN')
+        y_axis_d = la1[0,:].copy('FORTRAN')
+        grtyp='L'
+        la0 = 0.
+        lo0 = 180.
+        ig14 = (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,0.,0.,1.,1.)
+        ip134 = (1,2,3,4)
+        g1.ig14 = ig14
+        x_axis = rpnstd.RPNRec(x_axis_d,rpnstd.RPNMeta())
+        y_axis = rpnstd.RPNRec(y_axis_d,rpnstd.RPNMeta())
+        grid = rpnstd.RPNGrid(grtyp='Z',ig14=ip134,shape=(nij,nij),g_ref=g1,xyaxis=(x_axis,y_axis))
+        return (grid,la1,lo1)
+
 
     def test_RPNGrid_Error(self):
         """RPNGrid should raise exception on known error cases"""
@@ -255,10 +305,10 @@ class RPNGridTests(unittest.TestCase):
         """RPNGrid should give known result with known input"""
         pass #TODO
 
-    def test_RPNGridInterp_KnownValues(self):
-        """RPNGridInterp should give known result with known input"""
-        (g1,la1) = self.gridL(0.5,6)
-        (g2,la2) = self.gridL(0.25,8)
+    def test_Fstdc_exinterp_KnownValues(self):
+        """Fstdc_exinterp should give known result with known input"""
+        (g1,la1,lo1) = self.gridL(0.5,6)
+        (g2,la2,lo2) = self.gridL(0.25,8)
         axes = (None,None)
         ij0  = (1,1)
         g1ig14 = list(g1.ig14)
@@ -269,25 +319,56 @@ class RPNGridTests(unittest.TestCase):
             g1.shape,g1.grtyp,g1ig14,axes,0,ij0,
             g2.shape,g2.grtyp,g2ig14,axes,0,ij0,
             0)
-        if numpy.any(numpy.abs(la2-la2b)>1.e-7):
+        if numpy.any(numpy.abs(la2-la2b)>self.epsilon):
                 print 'g1:'+repr(g1)
                 print 'g2:'+repr(g2)
                 print 'la2:',la2
                 print 'la2b:',la2b
-        self.assertFalse(numpy.any(numpy.abs(la2-la2b)>1.e-7))
+        self.assertFalse(numpy.any(numpy.abs(la2-la2b)>self.epsilon))
+
+    def test_RPNGridInterp_KnownValues(self):
+        """RPNGridInterp should give known result with known input"""
+        (g1,la1,lo1) = self.gridL(0.5,6)
+        (g2,la2,lo2) = self.gridL(0.25,8)
         la2c = g2.interpol(la1,g1)
-        #if numpy.any(la2c!=la2b):
-                #print 'la2c:',la2c
-                #print 'la2b:',la2b
-        #self.assertFalse(numpy.any(la2c!=la2b))
-        if numpy.any(numpy.abs(la2-la2c)>1.e-7):
+        if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
                 print 'g1:'+repr(g1)
                 print 'g2:'+repr(g2)
                 print 'la2:',la2
                 print 'la2c :',la2c
-        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>1.e-7))
+        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
-#TODO: test vect interpol, other proj, z/# grids, scrip interp
+    def test_RPNGridInterp_Z_KnownValues(self):
+        """RPNGridInterp with Z grid should give known result with known input"""
+        (g1,la1,lo1) = self.gridL(0.5,6)
+        (g2,la2,lo2) = self.gridZL(0.25,8)
+        la2c = g2.interpol(la1,g1)
+        if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2c :',la2c
+        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+        (g1,la1,lo1) = self.gridZL(0.5,6)
+        (g2,la2,lo2) = self.gridL(0.25,8)
+        la2c = g2.interpol(la1,g1)
+        if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2c :',la2c
+        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+        (g1,la1,lo1) = self.gridZL(0.5,6)
+        (g2,la2,lo2) = self.gridZL(0.25,8)
+        la2c = g2.interpol(la1,g1)
+        if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2c :',la2c
+        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+
+#TODO: test vect interpol, other proj, # grids, scrip interp
 
 class RPNFileTests(unittest.TestCase):
 
