@@ -200,8 +200,8 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         grtyp='Z'
         grref='L'
         (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grref,0.,0.,1.,1.)
-        xaxis = self.lo[:,0].copy('FORTRAN')
-        yaxis = self.la[0,:].copy('FORTRAN')
+        xaxis = self.lo[:,0].reshape((self.lo.shape[0],1)).copy('FORTRAN')
+        yaxis = self.la[0,:].reshape((1,self.la.shape[1])).copy('FORTRAN')
         hasAxes = 1
         doCorners = 0
         (i0,j0) = (0,0)
@@ -216,7 +216,25 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         self.assertFalse(numpy.any(self.lo!=lo2))
 
     def test_Fstdc_ezgetlalo_Dieze_KnownValues(self):
-        pass #TODO:
+        """Fstdc_ezgetlalo with #-grid should give known result with known input"""
+        (ni,nj) = self.la.shape
+        grtyp='#'
+        grref='L'
+        (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grref,0.,0.,1.,1.)
+        xaxis = self.lo[:,0].reshape((self.lo.shape[0],1)).copy('FORTRAN')
+        yaxis = self.la[0,:].reshape((1,self.la.shape[1])).copy('FORTRAN')
+        hasAxes = 1
+        doCorners = 0
+        (i0,j0) = (2,2)
+        (la2,lo2) = Fstdc.ezgetlalo((ni-1,nj-1),grtyp,(grref,ig1,ig2,ig3,ig4),(xaxis,yaxis),hasAxes,(i0,j0),doCorners)
+        if numpy.any(self.la[1:,1:]!=la2):
+            print self.la[1:,1:]
+            print la2
+        if numpy.any(self.lo[1:,1:]!=lo2):
+            print self.lo[1:,1:]
+            print lo2
+        self.assertFalse(numpy.any(self.la[1:,1:]!=la2))
+        self.assertFalse(numpy.any(self.lo[1:,1:]!=lo2))
 
 
 class RPNMetaTests(unittest.TestCase):
@@ -274,7 +292,7 @@ class RPNGridTests(unittest.TestCase):
         ig14 = (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,la0,lo0,dlalo,dlalo)
         axes = (None,None)
         hasAxes = 0
-        ij0 = (0,0)
+        ij0 = (1,1)
         doCorners = 0
         (la,lo) = Fstdc.ezgetlalo((nij,nij),grtyp,(grref,ig1,ig2,ig3,ig4),axes,hasAxes,ij0,doCorners)
         grid = rpnstd.RPNGrid(grtyp=grtyp,ig14=ig14,shape=(nij,nij))
@@ -283,19 +301,35 @@ class RPNGridTests(unittest.TestCase):
     def gridZL(self,dlalo=0.5,nij=10):
         """provide grid and rec values for other tests"""
         (g1,la1,lo1) = self.gridL(dlalo,nij)
-        x_axis_d = lo1[:,0].copy('FORTRAN')
-        y_axis_d = la1[0,:].copy('FORTRAN')
+        x_axis_d = lo1[:,0].reshape((lo1.shape[0],1)).copy('FORTRAN')
+        y_axis_d = la1[0,:].reshape((1,la1.shape[1])).copy('FORTRAN')
         grtyp='L'
         la0 = 0.
         lo0 = 180.
         ig14 = (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,0.,0.,1.,1.)
-        ip134 = (1,2,3,4)
+        ip134 = (1,2,1,1)
         g1.ig14 = ig14
         x_axis = rpnstd.RPNRec(x_axis_d,rpnstd.RPNMeta())
         y_axis = rpnstd.RPNRec(y_axis_d,rpnstd.RPNMeta())
         grid = rpnstd.RPNGrid(grtyp='Z',ig14=ip134,shape=(nij,nij),g_ref=g1,xyaxis=(x_axis,y_axis))
         return (grid,la1,lo1)
 
+    def gridDiezeL(self,dlalo=0.5,nij=10):
+        """provide grid and rec values for other tests"""
+        (g1,la1,lo1) = self.gridL(dlalo,nij)
+        x_axis_d = lo1[:,0].reshape((lo1.shape[0],1)).copy('FORTRAN')
+        y_axis_d = la1[0,:].reshape((1,la1.shape[1])).copy('FORTRAN')
+        grtyp='L'
+        la0 = 0.
+        lo0 = 180.
+        ig14 = (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,0.,0.,1.,1.)
+        ij0 = (2,2)
+        ip134 = (1,2,ij0[0],ij0[1])
+        g1.ig14 = ig14
+        x_axis = rpnstd.RPNRec(x_axis_d,rpnstd.RPNMeta())
+        y_axis = rpnstd.RPNRec(y_axis_d,rpnstd.RPNMeta())
+        grid = rpnstd.RPNGrid(grtyp='#',ig14=ip134,shape=(nij-1,nij-1),g_ref=g1,xyaxis=(x_axis,y_axis))
+        return (grid,la1,lo1)
 
     def test_RPNGrid_Error(self):
         """RPNGrid should raise exception on known error cases"""
@@ -360,6 +394,36 @@ class RPNGridTests(unittest.TestCase):
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
         (g1,la1,lo1) = self.gridZL(0.5,6)
         (g2,la2,lo2) = self.gridZL(0.25,8)
+        la2c = g2.interpol(la1,g1)
+        if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2c :',la2c
+        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+
+    def test_RPNGridInterp_Dieze_KnownValues(self):
+        """RPNGridInterp with #-grid should give known result with known input"""
+        (g1,la1,lo1) = self.gridL(0.5,6)
+        (g2,la2,lo2) = self.gridDiezeL(0.25,8)
+        la2c = g2.interpol(la1,g1)
+        if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2c :',la2c
+        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+        (g1,la1,lo1) = self.gridDiezeL(0.5,6)
+        (g2,la2,lo2) = self.gridL(0.25,8)
+        la2c = g2.interpol(la1,g1)
+        if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
+                print 'g1:'+repr(g1)
+                print 'g2:'+repr(g2)
+                print 'la2:',la2
+                print 'la2c :',la2c
+        self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+        (g1,la1,lo1) = self.gridDiezeL(0.5,6)
+        (g2,la2,lo2) = self.gridDiezeL(0.25,8)
         la2c = g2.interpol(la1,g1)
         if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
                 print 'g1:'+repr(g1)

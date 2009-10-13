@@ -24,7 +24,7 @@ static int lentab[32]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /* initialize the table giving the length of the array element types */
-static init_lentab() {
+static void init_lentab() {
     lentab[NPY_CHAR]=sizeof(char);
     lentab[NPY_UBYTE]=sizeof(unsigned char);
     lentab[NPY_BYTE]=sizeof(signed char);
@@ -85,10 +85,10 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
     wordint fg1_dims[3]={0,0,0},fg2_dims[3]={0,0,0};
 
     if (!PyArg_ParseTuple(args, "OOOOOOOOisss",
-            g1_center_lat,g1_center_lon,
-            g1_corner_lat,g1_corner_lon,
-            g2_center_lat,g2_center_lon,
-            g2_corner_lat,g2_corner_lon,
+            &g1_center_lat,&g1_center_lon,
+            &g1_corner_lat,&g1_corner_lon,
+            &g2_center_lat,&g2_center_lon,
+            &g2_corner_lat,&g2_corner_lon,
             &nbin,&methode,&typ_norm,&typ_restric)) {
         Py_INCREF(Py_None);
         return Py_None;
@@ -111,7 +111,7 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
 
 
     fnbin = (wordint) nbin;
-    istat = f77name(scrip_addr_wts)(faddr1,faddr2,fwts,&fnwts,&fnlinks,
+    istat = f77name(scrip_addr_wts)(&faddr1,&faddr2,&fwts,&fnwts,&fnlinks,
                 &fnbin,methode,typ_norm,typ_restric,
                 &fg1_size,fg1_dims,&fg1_ncorn,
                 g1_center_lat->data,g1_center_lon->data,
@@ -166,7 +166,7 @@ static PyObject *
 scripc_addr_wts_free(PyObject *self, PyObject *args) {
     PyArrayObject *addr1,*addr2,*wts;
 
-    if (!PyArg_ParseTuple(args, "OOO",addr1,addr2,wts)) {
+    if (!PyArg_ParseTuple(args, "OOO",&addr1,&addr2,&wts)) {
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -188,7 +188,7 @@ scripc_interp_o1(PyObject *self, PyObject *args) {
     int nbpts,istat=-1;
     wordint fnwts,fnlinks;
 
-    if (!PyArg_ParseTuple(args, "OOOOi",data,addr1,addr2,wts,&nbpts)) {
+    if (!PyArg_ParseTuple(args, "OOOOi",&data,&addr1,&addr2,&wts,&nbpts)) {
         Py_INCREF(Py_None);
         return Py_None;
     }
