@@ -64,7 +64,7 @@
 !-----------------------------------------------------------------------
 
       if (istat /= NF_NOERR) then
-        print *,'Error in netCDF: ',nf_strerror(istat)
+        !print *,'Error in netCDF: ',nf_strerror(istat)
         stop
       endif
 

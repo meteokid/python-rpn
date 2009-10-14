@@ -137,8 +137,8 @@
      &                         map_name)
       call netcdf_error_handler(ncstat)
 
-      print *,'Reading remapping:',trim(map_name)
-      print *,'From file:',trim(interp_file)
+      !print *,'Reading remapping:',trim(map_name)
+      !print *,'From file:',trim(interp_file)
 
       !***
       !*** normalization option
@@ -156,7 +156,7 @@
       case ('destarea')
         norm_opt = norm_opt_dstarea
       case default
-        print *,'normalize_opt = ',normalize_opt
+        !print *,'normalize_opt = ',normalize_opt
         stop 'Invalid normalization option'
       end select
 
@@ -178,7 +178,7 @@
       case('Bicubic remapping')
         map_type = map_type_bicubic
       case default
-        print *,'map_type = ',map_method
+        !print *,'map_type = ',map_method
         stop 'Invalid Map Type'
       end select
 
@@ -202,7 +202,7 @@
       case ('NCAR-CSM')
         call read_remap_csm
       case default
-        print *,'convention = ',convention
+        !print *,'convention = ',convention
         stop 'unknown output file convention'
       end select
 
@@ -257,10 +257,10 @@
      &                          grid2_name)
       call netcdf_error_handler(ncstat)
 
-      print *,' '
-      print *,'Remapping between:',trim(grid1_name)
-      print *,'and ',trim(grid2_name)
-      print *,' '
+      !print *,' '
+      !print *,'Remapping between:',trim(grid1_name)
+      !print *,'and ',trim(grid2_name)
+      !print *,' '
 
 !-----------------------------------------------------------------------
 !
@@ -467,8 +467,8 @@
       case ('radians')
         !*** no conversion necessary
       case default
-        print *,'unknown units supplied for grid1 center lat/lon: '
-        print *,'proceeding assuming radians'
+        !print *,'unknown units supplied for grid1 center lat/lon: '
+        !print *,'proceeding assuming radians'
       end select
 
       ncstat = nf_get_var_double(nc_file_id, nc_srcgrdcrnrlat_id, 
@@ -491,8 +491,8 @@
       case ('radians')
         !*** no conversion necessary
       case default
-        print *,'unknown units supplied for grid1 corner lat/lon: '
-        print *,'proceeding assuming radians'
+        !print *,'unknown units supplied for grid1 corner lat/lon: '
+        !print *,'proceeding assuming radians'
       end select
 
       ncstat = nf_get_var_double(nc_file_id, nc_srcgrdarea_id, 
@@ -531,8 +531,8 @@
       case ('radians')
         !*** no conversion necessary
       case default
-        print *,'unknown units supplied for grid2 center lat/lon: '
-        print *,'proceeding assuming radians'
+        !print *,'unknown units supplied for grid2 center lat/lon: '
+        !print *,'proceeding assuming radians'
       end select
 
       ncstat = nf_get_var_double(nc_file_id, nc_dstgrdcrnrlat_id, 
@@ -555,8 +555,8 @@
       case ('radians')
         !*** no conversion necessary
       case default
-        print *,'unknown units supplied for grid2 corner lat/lon: '
-        print *,'proceeding assuming radians'
+        !print *,'unknown units supplied for grid2 corner lat/lon: '
+        !print *,'proceeding assuming radians'
       end select
 
       ncstat = nf_get_var_double(nc_file_id, nc_dstgrdarea_id, 
@@ -667,10 +667,10 @@
      &                          grid2_name)
       call netcdf_error_handler(ncstat)
 
-      print *,' '
-      print *,'Remapping between:',trim(grid1_name)
-      print *,'and ',trim(grid2_name)
-      print *,' '
+      !print *,' '
+      !print *,'Remapping between:',trim(grid1_name)
+      !print *,'and ',trim(grid2_name)
+      !print *,' '
 
 !-----------------------------------------------------------------------
 !
@@ -870,8 +870,8 @@
       case ('radians')
         !*** no conversion necessary
       case default
-        print *,'unknown units supplied for grid1 center lat/lon: '
-        print *,'proceeding assuming radians'
+        !print *,'unknown units supplied for grid1 center lat/lon: '
+        !print *,'proceeding assuming radians'
       end select
 
       ncstat = nf_get_var_double(nc_file_id, nc_srcgrdcrnrlat_id, 
@@ -893,8 +893,8 @@
       case ('radians')
         !*** no conversion necessary
       case default
-        print *,'unknown units supplied for grid1 corner lat/lon: '
-        print *,'proceeding assuming radians'
+        !print *,'unknown units supplied for grid1 corner lat/lon: '
+        !print *,'proceeding assuming radians'
       end select
 
       ncstat = nf_get_var_double(nc_file_id, nc_srcgrdarea_id, 
@@ -932,8 +932,8 @@
       case ('radians')
         !*** no conversion necessary
       case default
-        print *,'unknown units supplied for grid2 center lat/lon: '
-        print *,'proceeding assuming radians'
+        !print *,'unknown units supplied for grid2 center lat/lon: '
+        !print *,'proceeding assuming radians'
       end select
 
       ncstat = nf_get_var_double(nc_file_id, nc_dstgrdcrnrlat_id, 
@@ -956,8 +956,8 @@
       case ('radians')
         !*** no conversion necessary
       case default
-        print *,'unknown units supplied for grid2 corner lat/lon: '
-        print *,'proceeding assuming radians'
+        !print *,'unknown units supplied for grid2 corner lat/lon: '
+        !print *,'proceeding assuming radians'
       end select
 
       ncstat = nf_get_var_double(nc_file_id, nc_dstgrdarea_id, 

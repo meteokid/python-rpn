@@ -193,12 +193,13 @@
       !---
 
       if (status(timer) .eq. 'stopped') then
-        write(*,"(' CPU time for timer',i3,':',1p,e16.8)")  
-     &       timer,cputime(timer)
+!        write(*,"(' CPU time for timer',i3,':',1p,e16.8)")  
+!     &       timer,cputime(timer)
+        continue
       else
         call timer_stop(timer)
-        write(*,"(' CPU time for timer',i3,':',1p,e16.8)")  
-     &       timer,cputime(timer)
+!        write(*,"(' CPU time for timer',i3,':',1p,e16.8)")  
+!     &       timer,cputime(timer)
         call timer_start(timer)
       endif
 
@@ -329,7 +330,7 @@
         clock_rate = 1.0_real_kind/real(cycles)
       else
         clock_rate = 0.0_real_kind
-        print *, '--- No system clock available ---'
+        !print *, '--- No system clock available ---'
       endif
 
 !-----------------------------------------------------------------------

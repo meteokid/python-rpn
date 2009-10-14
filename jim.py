@@ -336,8 +336,8 @@ def jim_grid_corners_la_lo(ndiv,igrid=0):
     s.insert(2,1)
     la = la.reshape(s)
     lo = lo.reshape(s)
-    cla = numpy.rollaxis(cla,2,0)
-    clo = numpy.rollaxis(clo,2,0)
+    cla = numpy.rollaxis(cla,2,0).copy('FORTRAN')
+    clo = numpy.rollaxis(clo,2,0).copy('FORTRAN')
     return (la,lo,cla,clo)
 
 

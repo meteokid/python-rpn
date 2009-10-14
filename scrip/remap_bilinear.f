@@ -213,11 +213,11 @@
             call store_link_bilin(dst_add, src_add, wgts, nmap)
 
           else
-            print *,'Point coords: ',plat,plon
-            print *,'Dest grid lats: ',src_lats
-            print *,'Dest grid lons: ',src_lons
-            print *,'Dest grid addresses: ',src_add
-            print *,'Current i,j : ',iguess, jguess
+            !print *,'Point coords: ',plat,plon
+            !print *,'Dest grid lats: ',src_lats
+            !print *,'Dest grid lons: ',src_lons
+            !print *,'Dest grid addresses: ',src_add
+            !print *,'Current i,j : ',iguess, jguess
             stop 'Iteration for i,j exceed max iteration count'
           endif
 
@@ -373,11 +373,11 @@
             call store_link_bilin(dst_add, src_add, wgts, nmap)
 
           else
-            print *,'Point coords: ',plat,plon
-            print *,'Dest grid lats: ',src_lats
-            print *,'Dest grid lons: ',src_lons
-            print *,'Dest grid addresses: ',src_add
-            print *,'Current i,j : ',iguess, jguess
+            !print *,'Point coords: ',plat,plon
+            !print *,'Dest grid lats: ',src_lats
+            !print *,'Dest grid lons: ',src_lons
+            !print *,'Dest grid addresses: ',src_add
+            !print *,'Current i,j : ',iguess, jguess
             stop 'Iteration for i,j exceed max iteration count'
           endif
 
@@ -654,8 +654,8 @@
       !*** routine from computing bilinear weights
       !***
 
-      !print *,'Could not find location for ',plat,plon
-      !print *,'Using nearest-neighbor average for this point'
+      !!print *,'Could not find location for ',plat,plon
+      !!print *,'Using nearest-neighbor average for this point'
 
       coslat_dst = cos(plat)
       sinlat_dst = sin(plat)

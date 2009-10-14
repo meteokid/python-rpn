@@ -254,7 +254,7 @@
         allocate (add1_tmp(mxlinks), add2_tmp(mxlinks), 
      &            wts_tmp(num_wts,mxlinks),stat=ierr)
         if (ierr .ne. 0) then
-          print *,'error allocating temps in resize: ',ierr
+          !print *,'error allocating temps in resize: ',ierr
           stop
         endif
 
@@ -273,7 +273,7 @@
      &            grid2_add_map2(max_links_map2),
      &            wts_map2(num_wts,max_links_map2),stat=ierr)
         if (ierr .ne. 0) then
-          print *,'error allocating new arrays in resize: ',ierr
+          !print *,'error allocating new arrays in resize: ',ierr
           stop
         endif
 

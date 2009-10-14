@@ -150,7 +150,7 @@
 
       allocate(srch_mask(grid2_size))
 
-      print *,'grid1 sweep '
+      !print *,'grid1 sweep '
       do grid1_add = 1,grid1_size
 
         !***
@@ -376,7 +376,7 @@
 
       allocate(srch_mask(grid1_size))
 
-      print *,'grid2 sweep '
+      !print *,'grid2 sweep '
       do grid2_add = 1,grid2_size
 
         !***
@@ -804,7 +804,7 @@
 
       end do
 
-      print *, 'Total number of links = ',num_links_map1
+      !print *, 'Total number of links = ',num_links_map1
 
       where (grid1_area /= zero) grid1_frac = grid1_frac/grid1_area
       where (grid2_area /= zero) grid2_frac = grid2_frac/grid2_area
@@ -819,25 +819,25 @@
       grid2_centroid_lon = zero
 
       do n=1,grid1_size
-        if (grid1_area(n) < -.01) then
-          print *,'Grid 1 area error: ',n,grid1_area(n)
-        endif
-        if (grid1_centroid_lat(n) < -pih-.01 .or.
-     &      grid1_centroid_lat(n) >  pih+.01) then
-          print *,'Grid 1 centroid lat error: ',n,grid1_centroid_lat(n)
-        endif
+        !if (grid1_area(n) < -.01) then
+        !  print *,'Grid 1 area error: ',n,grid1_area(n)
+        !endif
+!        if (grid1_centroid_lat(n) < -pih-.01 .or.
+!     &      grid1_centroid_lat(n) >  pih+.01) then
+          !print *,'Grid 1 centroid lat error: ',n,grid1_centroid_lat(n)
+!        endif
         grid1_centroid_lat(n) = zero
         grid1_centroid_lon(n) = zero
       end do
 
       do n=1,grid2_size
-        if (grid2_area(n) < -.01) then
-          print *,'Grid 2 area error: ',n,grid2_area(n)
-        endif
-        if (grid2_centroid_lat(n) < -pih-.01 .or.
-     &      grid2_centroid_lat(n) >  pih+.01) then
-          print *,'Grid 2 centroid lat error: ',n,grid2_centroid_lat(n)
-        endif
+!        if (grid2_area(n) < -.01) then
+!          print *,'Grid 2 area error: ',n,grid2_area(n)
+!        endif
+!        if (grid2_centroid_lat(n) < -pih-.01 .or.
+!     &      grid2_centroid_lat(n) >  pih+.01) then
+!          print *,'Grid 2 centroid lat error: ',n,grid2_centroid_lat(n)
+!        endif
         grid2_centroid_lat(n) = zero
         grid2_centroid_lon(n) = zero
       end do
@@ -846,24 +846,24 @@
         grid1_add = grid1_add_map1(n)
         grid2_add = grid2_add_map1(n)
         
-        if (wts_map1(1,n) < -.01) then
-          print *,'Map 1 weight < 0 ',grid1_add,grid2_add,wts_map1(1,n)
-        endif
-        if (norm_opt /= norm_opt_none .and. wts_map1(1,n) > 1.01) then
-          print *,'Map 1 weight > 1 ',grid1_add,grid2_add,wts_map1(1,n)
-        endif
+!        if (wts_map1(1,n) < -.01) then
+!          print *,'Map 1 weight < 0 ',grid1_add,grid2_add,wts_map1(1,n)
+!        endif
+!        if (norm_opt /= norm_opt_none .and. wts_map1(1,n) > 1.01) then
+!          print *,'Map 1 weight > 1 ',grid1_add,grid2_add,wts_map1(1,n)
+!        endif
         grid2_centroid_lat(grid2_add) = 
      &  grid2_centroid_lat(grid2_add) + wts_map1(1,n)
 
         if (num_maps > 1) then
-          if (wts_map2(1,n) < -.01) then
-            print *,'Map 2 weight < 0 ',grid1_add,grid2_add,
-     &                                  wts_map2(1,n)
-          endif
-          if (norm_opt /= norm_opt_none .and. wts_map2(1,n) > 1.01) then
-            print *,'Map 2 weight < 0 ',grid1_add,grid2_add,
-     &                                  wts_map2(1,n)
-          endif
+!          if (wts_map2(1,n) < -.01) then
+!            print *,'Map 2 weight < 0 ',grid1_add,grid2_add,
+!     &                                  wts_map2(1,n)
+!          endif
+!          if (norm_opt /= norm_opt_none .and. wts_map2(1,n) > 1.01) then
+!            print *,'Map 2 weight < 0 ',grid1_add,grid2_add,
+!     &                                  wts_map2(1,n)
+!          endif
           grid1_centroid_lat(grid1_add) = 
      &    grid1_centroid_lat(grid1_add) + wts_map2(1,n)
         endif
@@ -882,10 +882,10 @@
             norm_factor = grid2_area(grid2_add)
           endif
         end select
-        if (abs(grid2_centroid_lat(grid2_add)-norm_factor) > .01) then
-          print *,'Error: sum of wts for map1 ',grid2_add,
-     &            grid2_centroid_lat(grid2_add),norm_factor
-        endif
+!        if (abs(grid2_centroid_lat(grid2_add)-norm_factor) > .01) then
+!          print *,'Error: sum of wts for map1 ',grid2_add,
+!     &            grid2_centroid_lat(grid2_add),norm_factor
+!        endif
       end do
 
       if (num_maps > 1) then
@@ -902,10 +902,10 @@
               norm_factor = grid1_area(grid1_add)
             endif
           end select
-          if (abs(grid1_centroid_lat(grid1_add)-norm_factor) > .01) then
-            print *,'Error: sum of wts for map2 ',grid1_add,
-     &              grid1_centroid_lat(grid1_add),norm_factor
-          endif
+!          if (abs(grid1_centroid_lat(grid1_add)-norm_factor) > .01) then
+!            print *,'Error: sum of wts for map2 ',grid1_add,
+!     &              grid1_centroid_lat(grid1_add),norm_factor
+!          endif
         end do
       endif
 !-----------------------------------------------------------------------

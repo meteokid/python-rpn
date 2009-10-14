@@ -65,8 +65,20 @@ exit(1);
 }
 #endif
 
+int isScripArrayValid(PyArrayObject *array){
+    int istat = 0;
+    if (!((PyArray_ISCONTIGUOUS(array) || (array->flags & NPY_FARRAY)) && array->nd > 0 && array->dimensions[0] > 0)) {
+        fprintf(stderr,"ERROR: Scrip - array is not CONTIGUOUS in memory\n");
+        istat = -1;
+    } else if (array->descr->type_num != NPY_FLOAT) {
+        fprintf(stderr,"ERROR: Scrip - unsupported data type :%c\n",array->descr->type);
+        istat = -1;
+    }
+    return istat;
+}
+
 static char scripc_addr_wts__doc__[] =
-"Get addresses and weights for intepolation\n (fromAddr,toAddr,weights) = scripc_addr_wts(...)\n@param \n@return python tuple with 3 numpy.ndarray for (addr1,addr2,wts)";
+"Get addresses and weights for intepolation\n (fromAddr,toAddr,weights) = scripc_addr_wts(g1_centers_lat,g1_centers_lon,g1_corners_lat,g1_corners_lon,g2_centers_lat,g2_centers_lon,g2_corners_lat,g2_corners_lon,nbins,method,type_of_norm,type_of_restric)\n@param \n@return python tuple with 3 numpy.ndarray for (addr1,addr2,wts)";
 
 static PyObject *
 scripc_addr_wts(PyObject *self, PyObject *args) {
@@ -94,6 +106,16 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
         return Py_None;
     }
 
+    if (isScripArrayValid(g1_center_lat)<0 || isScripArrayValid(g1_center_lon)<0 ||
+         isScripArrayValid(g1_corner_lat)<0 || isScripArrayValid(g1_corner_lon)<0 ||
+         isScripArrayValid(g2_center_lat)<0 || isScripArrayValid(g2_center_lon)<0 ||
+         isScripArrayValid(g2_corner_lat)<0 || isScripArrayValid(g2_corner_lon)<0
+         ) {
+        fprintf(stderr,"ERROR: scripc - invalid input data\n");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
     fg1_ncorn   = (wordint) g1_corner_lat->dimensions[0];
     fg1_dims[0] = (wordint) g1_center_lat->dimensions[0];
     fg1_size    = fg1_dims[0];
@@ -105,10 +127,12 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
     fg2_dims[0] = (wordint) g2_center_lat->dimensions[0];
     fg2_size    = fg2_dims[0];
     if (g2_center_lat->dimensions[1]>0) {
-        fg2_dims[1]  = (wordint) g1_center_lat->dimensions[1];
+        fg2_dims[1]  = (wordint) g2_center_lat->dimensions[1];
         fg2_size    *= fg2_dims[1];
     }
 
+   fprintf(stderr,"1: nc=%d, nbpt=%d, shape=(%d,%d)\n",fg1_ncorn,fg1_size,fg1_dims[0],fg1_dims[1]);
+   fprintf(stderr,"2: nc=%d, nbpt=%d, shape=(%d,%d)\n",fg2_ncorn,fg2_size,fg2_dims[0],fg2_dims[1]);
 
     fnbin = (wordint) nbin;
     istat = f77name(scrip_addr_wts)(&faddr1,&faddr2,&fwts,&fnwts,&fnlinks,
@@ -120,6 +144,7 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
                 g2_center_lat->data,g2_center_lon->data,
                 g2_corner_lat->data,g2_corner_lon->data);
 
+   fprintf(stderr,"After script\n");
     if(istat >= 0) {
         ndims   = 1;
         dims[0] = (int) fnlinks;
@@ -255,3 +280,4 @@ void initscripc() {
     init_lentab();
 }
 
+// kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
