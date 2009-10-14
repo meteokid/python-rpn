@@ -846,6 +846,7 @@ class RPNGridRef(RPNGridHelper):
         a['xy_ref'] = (keyVals['xyaxis'][0].d,keyVals['xyaxis'][1].d)
         a['hasRef'] = 1
         a['ij0'] = (1,1)
+        a['shape'] = keyVals['shape']
         if keyVals['grtyp'] == '#':
             a['ij0'] = keyVals['ig14'][2:]
         return a

@@ -169,6 +169,25 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         grref='L'
         (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
         hasAxes = 0
+        doCorners = 0
+        (i0,j0) = (0,0)
+        (la2,lo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(None,None),hasAxes,(i0,j0),doCorners)
+        if numpy.any(self.la!=la2):
+            print self.la
+            print la2
+        if numpy.any(self.lo!=lo2):
+            print self.lo
+            print lo2
+        self.assertFalse(numpy.any(self.la!=la2))
+        self.assertFalse(numpy.any(self.lo!=lo2))
+
+    def test_Fstdc_ezgetlalo_KnownValues2(self):
+        """Fstdc_ezgetlalo corners should give known result with known input"""
+        (ni,nj) = self.la.shape
+        grtyp='L'
+        grref='L'
+        (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
+        hasAxes = 0
         doCorners = 1
         (i0,j0) = (0,0)
         (la2,lo2,cla2,clo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(None,None),hasAxes,(i0,j0),doCorners)
@@ -191,8 +210,6 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
                 print self.clo[ic,...]
                 print clo2[ic,...]
             self.assertFalse(numpy.any(self.clo[ic,...]!=clo2[ic,...]))
-        #print numpy.array_repr(cla2)
-        #print numpy.array_repr(clo2)
 
     def test_Fstdc_ezgetlalo_Z_KnownValues(self):
         """Fstdc_ezgetlalo with Z grid should give known result with known input"""
@@ -329,7 +346,9 @@ class RPNGridTests(unittest.TestCase):
         x_axis = rpnstd.RPNRec(x_axis_d,rpnstd.RPNMeta())
         y_axis = rpnstd.RPNRec(y_axis_d,rpnstd.RPNMeta())
         grid = rpnstd.RPNGrid(grtyp='#',ig14=ip134,shape=(nij-1,nij-1),g_ref=g1,xyaxis=(x_axis,y_axis))
-        return (grid,la1,lo1)
+        la2 = la1[ij0[0]-1:,ij0[1]-1:].copy('FORTRAN')
+        lo2 = lo1[ij0[0]-1:,ij0[1]-1:].copy('FORTRAN')
+        return (grid,la2,lo2)
 
     def test_RPNGrid_Error(self):
         """RPNGrid should raise exception on known error cases"""
@@ -373,7 +392,7 @@ class RPNGridTests(unittest.TestCase):
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
     def test_RPNGridInterp_Z_KnownValues(self):
-        """RPNGridInterp with Z grid should give known result with known input"""
+        """RPNGridInterp to Z grid should give known result with known input"""
         (g1,la1,lo1) = self.gridL(0.5,6)
         (g2,la2,lo2) = self.gridZL(0.25,8)
         la2c = g2.interpol(la1,g1)
@@ -383,6 +402,9 @@ class RPNGridTests(unittest.TestCase):
                 print 'la2:',la2
                 print 'la2c :',la2c
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+
+    def test_RPNGridInterp_Z_KnownValues2(self):
+        """RPNGridInterp from Z grid should give known result with known input"""
         (g1,la1,lo1) = self.gridZL(0.5,6)
         (g2,la2,lo2) = self.gridL(0.25,8)
         la2c = g2.interpol(la1,g1)
@@ -392,6 +414,9 @@ class RPNGridTests(unittest.TestCase):
                 print 'la2:',la2
                 print 'la2c :',la2c
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+
+    def test_RPNGridInterp_Z_KnownValues3(self):
+        """RPNGridInterp between Z grid should give known result with known input"""
         (g1,la1,lo1) = self.gridZL(0.5,6)
         (g2,la2,lo2) = self.gridZL(0.25,8)
         la2c = g2.interpol(la1,g1)
@@ -403,7 +428,7 @@ class RPNGridTests(unittest.TestCase):
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
     def test_RPNGridInterp_Dieze_KnownValues(self):
-        """RPNGridInterp with #-grid should give known result with known input"""
+        """RPNGridInterp to #-grid should give known result with known input"""
         (g1,la1,lo1) = self.gridL(0.5,6)
         (g2,la2,lo2) = self.gridDiezeL(0.25,8)
         la2c = g2.interpol(la1,g1)
@@ -413,6 +438,9 @@ class RPNGridTests(unittest.TestCase):
                 print 'la2:',la2
                 print 'la2c :',la2c
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+
+    def test_RPNGridInterp_Dieze_KnownValues2(self):
+        """RPNGridInterp from #-grid should give known result with known input"""
         (g1,la1,lo1) = self.gridDiezeL(0.5,6)
         (g2,la2,lo2) = self.gridL(0.25,8)
         la2c = g2.interpol(la1,g1)
@@ -422,6 +450,9 @@ class RPNGridTests(unittest.TestCase):
                 print 'la2:',la2
                 print 'la2c :',la2c
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
+
+    def test_RPNGridInterp_Dieze_KnownValues3(self):
+        """RPNGridInterp between #-grid should give known result with known input"""
         (g1,la1,lo1) = self.gridDiezeL(0.5,6)
         (g2,la2,lo2) = self.gridDiezeL(0.25,8)
         la2c = g2.interpol(la1,g1)

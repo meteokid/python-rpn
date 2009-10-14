@@ -186,11 +186,16 @@ int isGridValid(int ni,int nj,char *grtyp,char *grref,int ig1,int ig2,int ig3,in
     if (ni>0 && nj>0) {
         switch (grtyp[0]) {
             case '#':
-                if ((PyObject *)xs==Py_None || (PyObject *)ys==Py_None || isPyArrayValid(xs)<0 || isPyArrayValid(ys)<0) istat = -1;
-                else {
+                if ((PyObject *)xs==Py_None || (PyObject *)ys==Py_None || isPyArrayValid(xs)<0 || isPyArrayValid(ys)<0) {
+                    fprintf(stderr,"ERROR: Fstdc - #-grtyp need valid axis\n");
+                    istat = -1;
+                } else {
                     getPyArrayDims(xdims,xs);
                     getPyArrayDims(ydims,ys);
-                    if (i0<1 || j0<1 || (i0+ni-1)>(xdims[0]) || (j0+nj-1)>(ydims[1]) || xdims[1]>1 || ydims[0]>1) istat = -1;
+                    if (i0<1 || j0<1 || (i0+ni-1)>(xdims[0]) || (j0+nj-1)>(ydims[1]) || xdims[1]>1 || ydims[0]>1) {
+                        fprintf(stderr,"ERROR: Fstdc - #-grtyp need valid consistant dims: (i0,j0) = (%d,%d); (xdims0,xdims1) = (%d,%d); (ydims0,ydims1) = (%d,%d); (ni,nj) = (%d,%d)\n",i0,j0,xdims[0],xdims[1],ydims[0],ydims[1],ni,nj);
+                        istat = -1;
+                    }
                 }
                 if (istat>=0) istat = isGridTypeValid(grref);
                 break;
@@ -204,11 +209,16 @@ int isGridValid(int ni,int nj,char *grtyp,char *grref,int ig1,int ig2,int ig3,in
                 if (istat>=0) istat = isGridTypeValid(grref);
                 break;
             case 'Z':
-                if ((PyObject *)xs==Py_None || (PyObject *)ys==Py_None || isPyArrayValid(xs)<0 || isPyArrayValid(ys)<0) istat = -1;
-                else {
+                if ((PyObject *)xs==Py_None || (PyObject *)ys==Py_None || isPyArrayValid(xs)<0 || isPyArrayValid(ys)<0)  {
+                    fprintf(stderr,"ERROR: Fstdc - Z-grtyp need valid axis\n");
+                    istat = -1;
+                } else {
                     getPyArrayDims(xdims,xs);
                     getPyArrayDims(ydims,ys);
-                    if (xdims[0]!=ni || ydims[1]!=nj || xdims[1]>1 || ydims[0]>1) istat = -1;
+                    if (xdims[0]!=ni || ydims[1]!=nj || xdims[1]>1 || ydims[0]>1)  {
+                        fprintf(stderr,"ERROR: Fstdc - Z-grtyp need valid consistant dims: (xdims0,xdims1) = (%d,%d); (ydims0,ydims1) = (%d,%d); (ni,nj) = (%d,%d)\n",xdims[0],xdims[1],ydims[0],ydims[1],ni,nj);
+                        istat = -1;
+                    }
                     if (istat>=0) istat = isGridTypeValid(grref);
                 }
                 break;
