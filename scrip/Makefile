@@ -18,18 +18,20 @@ SCRIPOBJ= \
 	timers.o \
 	remap_write.o \
 	scrip.o \
-	remap.o
+	remap.o \
+	scrip_interface.o
 
 default: all
 all: $(SCRIPOBJ)
 
-test:
+test:  $(SCRIPOBJ) scrip_interp_test.o
+	r.build -obj scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o -arch $(EC_ARCH) -libpath $(LIBPATH) -librmn $(RMNLIB) -libappl "$(LIBS)" $(MPI) -o scrip_interp_test_$(EC_ARCH).Abs;\
+	/bin/rm -f bidon.o
+	./scrip_interp_test_$(EC_ARCH).Abs
 
 #
 # ALL dependencies ...
 #
-
-#jim_grid_mod.o: jim_grid_mod.ftn90 jim_const.hf $(BASEDIR)/utils/rmnlib_basics.hf $(BASEDIR)/utils/vect_mod.o
 
 #OTHERS   =  $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
 #LIBS     = $(OTHERS)
@@ -45,27 +47,33 @@ grids.o: grids.f kinds_mod.o constants.o iounits.o
 remap_vars.o: remap_vars.f kinds_mod.o constants.o grids.o
 
 remap_conserv.o: remap_conserv.f kinds_mod.o constants.o \
-		timers.o remap_vars.o grids.o
+        timers.o remap_vars.o grids.o
 
 remap_distwgt.o: remap_distwgt.f kinds_mod.o constants.o \
-		remap_vars.o grids.o
+        remap_vars.o grids.o
 
 remap_bilinear.o: remap_bilinear.f kinds_mod.o constants.o \
-		remap_vars.o grids.o timers.o
+        remap_vars.o grids.o timers.o
 
 remap_bicubic.o: remap_bicubic.f kinds_mod.o constants.o \
-		remap_vars.o grids.o
+        remap_vars.o grids.o
 
 timers.o: timers.f kinds_mod.o constants.o
 
 remap_write.o: remap_write.f kinds_mod.o constants.o \
-		remap_vars.o grids.o
+        remap_vars.o grids.o
 
 remap.o: remap.f kinds_mod.o constants.o
 
 scrip.o: scrip.f kinds_mod.o constants.o iounits.o timers.o \
-		remap_vars.o grids.o remap_conserv.o remap_distwgt.o \
-		remap_bilinear.o remap_bicubic.o remap_write.o
+        remap_vars.o grids.o remap_conserv.o remap_distwgt.o \
+        remap_bilinear.o remap_bicubic.o remap_write.o
+
+scrip_interp_test.o: scrip_interp_test.ftn90
+
+#scrip_interface.f90: scrip_interface.ftn90
+scrip_interface.o: scrip_interface.ftn90 grids.o remap_vars.o kinds_mod.o
+#scrip_interface.o: scrip_interface.ftn90
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod scrip_interp_test.f90 scrip_interface.f90

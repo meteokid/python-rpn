@@ -48,6 +48,14 @@ class ScripcTests(unittest.TestCase):
         """Fstdc_exinterp should give known result with known input"""
         (la1,lo1,lac1,loc1) = self.gridL(0.5,6)
         (la2,lo2,lac2,loc2) = self.gridL(0.25,8)
+        la1  *= (numpy.pi/180.)
+        lo1  *= (numpy.pi/180.)
+        lac1 *= (numpy.pi/180.)
+        loc1 *= (numpy.pi/180.)
+        la2  *= (numpy.pi/180.)
+        lo2  *= (numpy.pi/180.)
+        lac2 *= (numpy.pi/180.)
+        loc2 *= (numpy.pi/180.)
         nbins = -1 #use default
         method = " " #use default
         type_of_norm = " " #use default
@@ -56,6 +64,8 @@ class ScripcTests(unittest.TestCase):
         print "to script_addr_"
         (fromAddr,toAddr,weights) = scripc.scripc_addr_wts(la1,lo1,lac1,loc1,la2,lo2,lac2,loc2,nbins,method,type_of_norm,type_of_restric)
         print "to scrip_interp"
+        la1  *= (180./numpy.pi)
+        la2  *= (180./numpy.pi)
         la2b = scripc.scripc_interp_o1(la1,fromAddr,toAddr,weights,la.size)
         if numpy.any(numpy.abs(la2-la2b)>self.epsilon):
                 print 'g1:'+repr((g1_grtyp,g1_ig14,g1_shape))

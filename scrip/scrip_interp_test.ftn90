@@ -1,0 +1,193 @@
+!--------------------------------------------------------------------------
+! This is free software, you can use/redistribute/modify it under the terms of
+! the EC-RPN License v2 or any later version found (if not provided) at:
+! - http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
+! - service.rpn@ec.gc.ca
+! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
+!--------------------------------------------------------------------------
+!@author Stephane Chamberland <stephane.chamberland@ec.gc.ca>, 2009-10
+
+!/**
+program scrip_interp_test
+   implicit none
+!**/
+   character(len=99), parameter :: SCRIP_OPT_MAP_METHODE = ' '
+   character(len=99), parameter :: SCRIP_OPT_NORM_METHODE = ' '
+   character(len=99), parameter :: SCRIP_OPT_SEARCH_RESTRIC = ' '
+   integer, parameter :: NB_CORNERS = 4
+   integer, parameter :: NB_SCRIP_BINS = -1
+   integer, parameter :: NB_MAPS = 1
+   integer :: niIn,njIn,niOut,njOut,nbWeights,nbAddr ,iErr,istat,k
+   real    :: dlaloIn,dlaloOut,radPerDeg,degPerRad
+   integer, dimension(2) :: dimsGridIn, dimsGridOut
+   real, dimension(:,:),   allocatable :: gridInCenterLat,gridInCenterLon
+   real, dimension(:,:,:), allocatable :: gridInCornersLat,gridInCornersLon
+   real, dimension(:,:),   allocatable :: gridOutCenterLat,gridOutCenterLon
+   real, dimension(:,:,:), allocatable :: gridOutCornersLat,gridOutCornersLon
+   real, dimension(:,:), pointer :: interpWeights
+   integer, dimension(:), pointer :: PointAddrGridIn,PointAddrGridOut
+   real, dimension(:,:),   allocatable :: gridOutCenterLat2
+   integer, external :: scrip_compute_addr_wts
+   integer :: i
+   !---------------------------------------------------------------------
+   niIn    = 13
+   njIn    = 11
+   dlaloIn = 0.5
+   dimsGridIn(1) = niIn
+   dimsGridIn(2) = njIn
+
+   niOut   = 21
+   njOut   = 19
+   dlaloOut= 0.25
+   dimsGridOut(1) = niOut
+   dimsGridOut(2) = njOut
+
+   radPerDeg = cos(-1.)/180.
+   degPerRad = 180./cos(-1.)
+
+   allocate(gridInCenterLat(niIn,njIn),STAT=istat)
+   allocate(gridInCenterLon(niIn,njIn),STAT=istat)
+   allocate(gridInCornersLat(NB_CORNERS,niIn,njIn),STAT=istat)
+   allocate(gridInCornersLon(NB_CORNERS,niIn,njIn),STAT=istat)
+   allocate(gridOutCenterLat(niOut,njOut),STAT=istat)
+   allocate(gridOutCenterLon(niOut,njOut),STAT=istat)
+   allocate(gridOutCornersLat(NB_CORNERS,niOut,njOut),STAT=istat)
+   allocate(gridOutCornersLon(NB_CORNERS,niOut,njOut),STAT=istat)
+
+   call getLatLon(gridInCenterLat,gridInCenterLon,gridInCornersLat,gridInCornersLon,dlaloIn,niIn,njIn)
+   call getLatLon(gridOutCenterLat,gridOutCenterLon,gridOutCornersLat,gridOutCornersLon,dlaloOut,niOut,njOut)
+
+   gridInCenterLat   = gridInCenterLat * radPerDeg
+   gridInCenterLon   = gridInCenterLon * radPerDeg
+   gridInCornersLat  = gridInCornersLat * radPerDeg
+   gridInCornersLon  = gridInCornersLon * radPerDeg
+   gridOutCenterLat  = gridOutCenterLat * radPerDeg
+   gridOutCenterLon  = gridOutCenterLon * radPerDeg
+   gridOutCornersLat = gridOutCornersLat * radPerDeg
+   gridOutCornersLon = gridOutCornersLon * radPerDeg
+
+   call scrip_init_options(NB_SCRIP_BINS, SCRIP_OPT_MAP_METHODE, &
+        SCRIP_OPT_NORM_METHODE, SCRIP_OPT_SEARCH_RESTRIC,NB_MAPS)
+
+   call scrip_set_grid_latlon_rad(1,niIn*njIn,dimsGridIn,NB_CORNERS,&
+        gridInCenterLat,gridInCenterLon,gridInCornersLat,gridInCornersLon)
+
+   call scrip_set_grid_latlon_rad(2,niOut*njOut,dimsGridOut,NB_CORNERS,&
+        gridOutCenterLat,gridOutCenterLon,gridOutCornersLat,gridOutCornersLon)
+
+   !Using default mask (all=1)
+   !iErr = scrip_set_grid_mask(1,niIn*njIn,gridInMask)
+   !iErr = scrip_set_grid_mask(2,niOut*njOut,gridOutMask)
+
+   iErr = scrip_compute_addr_wts()
+
+   deallocate(gridInCenterLon,STAT=istat)
+   deallocate(gridInCornersLat,STAT=istat)
+   deallocate(gridInCornersLon,STAT=istat)
+   deallocate(gridOutCenterLon,STAT=istat)
+   deallocate(gridOutCornersLat,STAT=istat)
+   deallocate(gridOutCornersLon,STAT=istat)
+
+   call scrip_get_dims(NB_MAPS,nbWeights,nbAddr)
+   print *,'nbWeights,nbAddr:',nbWeights,nbAddr
+   call flush()
+
+   allocate(PointAddrGridIn(nbAddr),STAT=istat)
+   allocate(PointAddrGridOut(nbAddr),STAT=istat)
+   allocate(interpWeights(nbWeights,nbAddr),STAT=istat)
+
+   call scrip_get_addr_wts(NB_MAPS,nbWeights,nbAddr, &
+        PointAddrGridOut,PointAddrGridIn,interpWeights, &
+        iErr)
+
+   print *,'call scrip_finalize'
+   call flush()
+   call scrip_finalize()
+
+   allocate(gridOutCenterLat2(niOut,njOut),STAT=istat)
+
+   do i=1,nbAddr
+      print *,i,interpWeights(1,i),PointAddrGridOut(i),PointAddrGridIn(i)
+      call flush()
+   enddo
+
+   gridInCenterLat  = gridInCenterLat  * degPerRad
+   gridOutCenterLat = gridOutCenterLat * degPerRad
+
+   print *,'call scrip_interpol'
+   call flush()
+   gridOutCenterLat2 = 0.
+   call scrip_interpol(gridOutCenterLat2, gridInCenterLat, &
+        PointAddrGridOut,PointAddrGridIn,interpWeights, &
+        nbWeights,nbAddr)
+!!$subroutine scrip_interpol(dst_array, src_array, &
+!!$     dst_add, src_add, map_wts, &
+!!$     nwts,nlinks)   
+!!$call remap(dst_array, map_wts, dst_add, src_add,src_array)
+
+
+   !TODO: compare
+
+   deallocate(gridInCenterLat,STAT=istat)
+   deallocate(gridOutCenterLat,STAT=istat)
+   deallocate(gridOutCenterLat2,STAT=istat)
+   !---------------------------------------------------------------------
+end program scrip_interp_test
+
+
+!/**
+subroutine getLatLon(centerLat,centerLon,cornersLat,cornersLon,dlalo,ni,nj)
+   implicit none
+   integer , parameter :: NB_CORNERS = 4
+   integer :: ni,nj
+   real :: dlalo
+   real, dimension(ni,nj)   :: centerLat,centerLon
+   real, dimension(NB_CORNERS,ni,nj) :: cornersLat,cornersLon
+!**/
+   integer :: gridId, iErr,istat
+   real, dimension(:,:),   allocatable :: centerXpos,centerYpos
+   real, dimension(:,:,:), allocatable :: cornersXpos,cornersYpos
+   integer, external :: getGridId,gdll,gdxyfll,gdllfxy,get_corners_xy
+   !---------------------------------------------------------------------
+   gridId = getGridId(dlalo,ni,nj)
+   
+   allocate(centerXpos(ni,nj),STAT=istat)
+   allocate(centerYpos(ni,nj),STAT=istat)
+   allocate(cornersXpos(NB_CORNERS,ni,nj),STAT=istat)
+   allocate(cornersYpos(NB_CORNERS,ni,nj),STAT=istat)
+
+   iErr = gdll(gridId,centerLat,centerLon)
+   iErr = gdxyfll(gridId,centerXpos,centerYpos,centerLat,centerLon,ni*nj)
+   iErr = get_corners_xy(cornersXpos,cornersYpos,centerXpos,centerYpos,ni,nj)
+   iErr = gdllfxy(gridId,cornersLat,cornersLon,cornersXpos,cornersYpos,ni*nj*NB_CORNERS)
+
+   deallocate(centerXpos,STAT=istat)
+   deallocate(centerYpos,STAT=istat)
+   deallocate(cornersXpos,STAT=istat)
+   deallocate(cornersYpos,STAT=istat)
+   !---------------------------------------------------------------------
+end subroutine getLatLon
+
+
+!/**
+function getGridId(dlalo,ni,nj) result(gridId)
+   implicit none
+   integer :: ni,nj
+   real :: dlalo
+   integer :: gridId
+!**/
+   character(len=1), parameter :: gridType='L'
+   real, parameter :: CENTER_LAT = 0.
+   real, parameter :: CENTER_LON = 180.
+   integer :: ig1,ig2,ig3,ig4
+   real    :: lat0,lon0
+   integer, external :: ezqkdef
+   !---------------------------------------------------------------------
+   lat0 = CENTER_LAT - dlalo*(real(nj)/2.)
+   lon0 = CENTER_LON - dlalo*(real(ni)/2.)
+   call cxgaig(gridType,ig1,ig2,ig3,ig4,lat0,lon0,dlalo,dlalo)
+   gridId = ezqkdef(ni,nj,gridType,ig1,ig2,ig3,ig4,0)
+   !---------------------------------------------------------------------
+   return
+end function getGridId
