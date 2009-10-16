@@ -29,7 +29,8 @@ program scrip_interp_test
    integer, dimension(:), pointer :: PointAddrGridIn,PointAddrGridOut
    real, dimension(:,:),   allocatable :: gridOutCenterLat2
    integer, external :: scrip_compute_addr_wts
-   integer :: i
+   integer :: i,j
+   real :: epsilon
    !---------------------------------------------------------------------
    niIn    = 13
    njIn    = 11
@@ -90,8 +91,6 @@ program scrip_interp_test
    deallocate(gridOutCornersLon,STAT=istat)
 
    call scrip_get_dims(NB_MAPS,nbWeights,nbAddr)
-   print *,'nbWeights,nbAddr:',nbWeights,nbAddr
-   call flush()
 
    allocate(PointAddrGridIn(nbAddr),STAT=istat)
    allocate(PointAddrGridOut(nbAddr),STAT=istat)
@@ -101,33 +100,26 @@ program scrip_interp_test
         PointAddrGridOut,PointAddrGridIn,interpWeights, &
         iErr)
 
-   print *,'call scrip_finalize'
-   call flush()
    call scrip_finalize()
 
    allocate(gridOutCenterLat2(niOut,njOut),STAT=istat)
 
-   do i=1,nbAddr
-      print *,i,interpWeights(1,i),PointAddrGridOut(i),PointAddrGridIn(i)
-      call flush()
-   enddo
+   gridInCenterLat  = (gridInCenterLat  * degPerRad * 10.) + 5.
+   gridOutCenterLat = (gridOutCenterLat * degPerRad * 10.) + 5.
 
-   gridInCenterLat  = gridInCenterLat  * degPerRad
-   gridOutCenterLat = gridOutCenterLat * degPerRad
-
-   print *,'call scrip_interpol'
-   call flush()
-   gridOutCenterLat2 = 0.
    call scrip_interpol(gridOutCenterLat2, gridInCenterLat, &
-        PointAddrGridOut,PointAddrGridIn,interpWeights, &
-        nbWeights,nbAddr)
-!!$subroutine scrip_interpol(dst_array, src_array, &
-!!$     dst_add, src_add, map_wts, &
-!!$     nwts,nlinks)   
-!!$call remap(dst_array, map_wts, dst_add, src_add,src_array)
+        PointAddrGridIn,PointAddrGridOut,interpWeights, &
+        nbWeights,nbAddr,size(gridOutCenterLat2),size(gridInCenterLat))
 
-
-   !TODO: compare
+   epsilon = 1.e-5
+   do j=1,njOut
+      do i=1,niOut
+         if (abs(gridOutCenterLat(i,j)-gridOutCenterLat2(i,j))>epsilon) then
+            print *,i,j,gridOutCenterLat(i,j),gridOutCenterLat2(i,j), &
+                 gridOutCenterLat(i,j)-gridOutCenterLat2(i,j)
+         endif
+      enddo
+   enddo
 
    deallocate(gridInCenterLat,STAT=istat)
    deallocate(gridOutCenterLat,STAT=istat)

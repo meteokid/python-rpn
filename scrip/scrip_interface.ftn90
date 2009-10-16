@@ -336,11 +336,11 @@ end subroutine scrip_deallocate_work_array
 !/**
 subroutine scrip_interpol(dst_array, src_array, &
      dst_add, src_add, map_wts, &
-     nwts,nlinks)
+     nwts,nlinks,dst_size,src_size)
    use kinds_mod
    use remap_mod
    implicit none
-   integer :: nwts,nlinks
+   integer :: nwts,nlinks,dst_size,src_size
    integer (kind=int_kind), dimension(nlinks):: &
         dst_add,    & ! destination address for each link
         src_add      ! source      address for each link
@@ -348,13 +348,14 @@ subroutine scrip_interpol(dst_array, src_array, &
    real (kind=dbl_kind), dimension(nwts,nlinks):: &
         map_wts      ! remapping weights for each link
 
-   real (kind=dbl_kind), dimension(:):: &
+   real (kind=dbl_kind), dimension(src_size):: &
         src_array    ! array with source field to be remapped
 
-   real (kind=dbl_kind), dimension(:) :: &
+   real (kind=dbl_kind), dimension(dst_size) :: &
         dst_array    ! array for remapped field on destination grid
 !**/
    !---------------------------------------------------------------
+   dst_array = 0.
    call remap(dst_array, map_wts, dst_add, src_add,src_array)
    !---------------------------------------------------------------
    return

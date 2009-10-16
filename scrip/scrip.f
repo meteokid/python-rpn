@@ -73,8 +73,6 @@
 !
 !-----------------------------------------------------------------------
 
-      print *, 'call resize_remap_vars'
-      call flush()
       if (num_links_map1 /= max_links_map1) then
         call resize_remap_vars(1, num_links_map1-max_links_map1)
       endif
@@ -82,16 +80,11 @@
         call resize_remap_vars(2, num_links_map2-max_links_map2)
       endif
 
-      print *, 'call sort_add'
-      call flush()
       call sort_add(grid2_add_map1, grid1_add_map1, wts_map1)
 
       if (num_maps > 1) then
         call sort_add(grid1_add_map2, grid2_add_map2, wts_map2)
       endif
-
-      print *, '[End] Scrip'
-      call flush()
 
 !-----------------------------------------------------------------------
       return
