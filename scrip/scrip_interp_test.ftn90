@@ -29,8 +29,8 @@ program scrip_interp_test
    integer, dimension(:), pointer :: PointAddrGridIn,PointAddrGridOut
    real, dimension(:,:),   allocatable :: gridOutCenterLat2
    integer, external :: scrip_compute_addr_wts
-   integer :: i,j
-   real :: epsilon
+   integer :: i,j,nbErrPoints
+   real :: epsilon,relErr
    !---------------------------------------------------------------------
    niIn    = 13
    njIn    = 11
@@ -111,15 +111,20 @@ program scrip_interp_test
         PointAddrGridIn,PointAddrGridOut,interpWeights, &
         nbWeights,nbAddr,size(gridOutCenterLat2),size(gridInCenterLat))
 
+   nbErrPoints = 0
    epsilon = 1.e-5
+   epsilon = 0.1
    do j=1,njOut
       do i=1,niOut
-         if (abs(gridOutCenterLat(i,j)-gridOutCenterLat2(i,j))>epsilon) then
-            print *,i,j,gridOutCenterLat(i,j),gridOutCenterLat2(i,j), &
-                 gridOutCenterLat(i,j)-gridOutCenterLat2(i,j)
+         relErr = (gridOutCenterLat2(i,j)-gridOutCenterLat(i,j))/gridOutCenterLat2(i,j)
+         if (abs(relErr)>epsilon) then
+            print '(2I4,X,2F6.2,X,F7.4,A)',i,j,gridOutCenterLat(i,j),gridOutCenterLat2(i,j),relErr &
+                 ,'%'
+            nbErrPoints = nbErrPoints + 1
          endif
       enddo
    enddo
+   print *,'Errouneous points:',100.*float(nbErrPoints)/float(niOut*njOut),'%'
 
    deallocate(gridInCenterLat,STAT=istat)
    deallocate(gridOutCenterLat,STAT=istat)
