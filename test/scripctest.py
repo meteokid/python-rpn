@@ -28,7 +28,7 @@ import numpy
 
 class ScripcTests(unittest.TestCase):
 
-    epsilon = 1.e-5
+    epsilon = 0.1
 
     def gridL(self,dlalo=0.5,nij=10):
         """provide grid and rec values for other tests"""
@@ -42,31 +42,29 @@ class ScripcTests(unittest.TestCase):
         ij0 = (1,1)
         doCorners = 1
         (la,lo,lac,loc) = Fstdc.ezgetlalo((nij,nij),grtyp,(grref,ig1,ig2,ig3,ig4),axes,hasAxes,ij0,doCorners)
+        la  *= (numpy.pi/180.)
+        lo  *= (numpy.pi/180.)
+        lac *= (numpy.pi/180.)
+        loc *= (numpy.pi/180.)
         return (la,lo,lac,loc)
 
     def test_Fstdc_exinterp_KnownValues(self):
         """Fstdc_exinterp should give known result with known input"""
         (la1,lo1,lac1,loc1) = self.gridL(0.5,6)
         (la2,lo2,lac2,loc2) = self.gridL(0.25,8)
-        la1  *= (numpy.pi/180.)
-        lo1  *= (numpy.pi/180.)
-        lac1 *= (numpy.pi/180.)
-        loc1 *= (numpy.pi/180.)
-        la2  *= (numpy.pi/180.)
-        lo2  *= (numpy.pi/180.)
-        lac2 *= (numpy.pi/180.)
-        loc2 *= (numpy.pi/180.)
         nbins = -1 #use default
         method = " " #use default
         type_of_norm = " " #use default
         type_of_restric = " " #use default
-        print loc1.shape,loc2.shape
-        print "to script_addr_"
-        (fromAddr,toAddr,weights) = scripc.scripc_addr_wts(la1,lo1,lac1,loc1,la2,lo2,lac2,loc2,nbins,method,type_of_norm,type_of_restric)
-        print "to scrip_interp"
+        nmaps = 1
+        scripc.initOptions(nbins,method,type_of_norm,type_of_restric,nmaps)
+        scripc.setGridLatLonRad(scripc.INPUT_GRID,la1,lo1,lac1,loc1)
+        scripc.setGridLatLonRad(scripc.OUTPUT_GRID,la2,lo2,lac2,loc2)
+        (fromAddr,toAddr,weights) = scripc.getAddrWeights(scripc.INTERP_FORWARD)
         la1  *= (180./numpy.pi)
         la2  *= (180./numpy.pi)
-        la2b = scripc.scripc_interp_o1(la1,fromAddr,toAddr,weights,la.size)
+        la2b = scripc.interp_o1(la1,fromAddr,toAddr,weights,la2.size)
+        la2b = la2b.reshape(la2.shape)
         if numpy.any(numpy.abs(la2-la2b)>self.epsilon):
                 print 'g1:'+repr((g1_grtyp,g1_ig14,g1_shape))
                 print 'g2:'+repr((g2_grtyp,g2_ig14,g2_shape))

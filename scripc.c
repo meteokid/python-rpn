@@ -3,119 +3,94 @@ Module scripc contains the classes used to use the SCRIP interpolation package
 @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 @date: 2009-09
 */
-/* #define DEBUG On */
-#include <rpnmacros.h>
 #include <Python.h>
 #include <numpy/arrayobject.h>
+
+#include <rpnmacros.h>
+
+#include "../utils/py_capi_ftn_utils.h"
 #include "rpn_version.h"
 
-static char version[] = VERSION;
-static char lastmodified[] = LASTUPDATE;
+#define INPUT_GRID_NB 1
+#define OUTPUT_GRID_NB 2
+#define INTERP_FORWARD_NB 1
+#define INTERP_BACKWARD_NB 2
 
-int c_fst_data_length(int length_type);
+static PyObject *ScripcError;
 
-#define FTN_Style_Array NPY_FARRAY
-//#define FTN_Style_Array 1
-static PyObject *ErrorObject;
+static PyObject *scripc_version(PyObject *self, PyObject *args);
+static PyObject *scripc_initOptions(PyObject *self, PyObject *args);
+static PyObject *scripc_setGridLatLonRad(PyObject *self, PyObject *args);
+static PyObject *scripc_setGridMask(PyObject *self, PyObject *args);
+static PyObject *scripc_getAddrWeights(PyObject *self, PyObject *args);
+static PyObject *scripc_finalize(PyObject *self, PyObject *args);
+static PyObject *scripc_interp_o1(PyObject *self, PyObject *args);
 
-static int datyps[32]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-                       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-static int lentab[32]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-/* initialize the table giving the length of the array element types */
-static void init_lentab() {
-    lentab[NPY_CHAR]=sizeof(char);
-    lentab[NPY_UBYTE]=sizeof(unsigned char);
-    lentab[NPY_BYTE]=sizeof(signed char);
-    lentab[NPY_SHORT]=sizeof(short);
-    lentab[NPY_INT]=sizeof(int);
-    lentab[NPY_LONG]=sizeof(long);
-    lentab[NPY_FLOAT]=sizeof(float);
-    lentab[NPY_DOUBLE]=sizeof(double);
-    lentab[NPY_CFLOAT]=2*sizeof(float);
-    lentab[NPY_CDOUBLE]=2*sizeof(double);
-    lentab[NPY_OBJECT]=sizeof(PyObject *);
+static char scripc_version__doc__[] = "(version,lastUpdate) = scripc_version()";
 
-    datyps[NPY_CHAR]=-1;
-    datyps[NPY_UBYTE]=-1;
-    datyps[NPY_BYTE]=-1;
-    datyps[NPY_SHORT]=-1;
-    datyps[NPY_INT]=2;
-    datyps[NPY_LONG]=2;
-    datyps[NPY_FLOAT]=1;
-    datyps[NPY_DOUBLE]=-1;
-    datyps[NPY_CFLOAT]=-1;
-    datyps[NPY_CDOUBLE]=-1;
-    datyps[NPY_OBJECT]=-1;
-}
-/* ----------------------------------------------------- */
-#if defined (mips) || defined (__mips)
-void __dshiftr4() {
-printf("__dshiftr4 called\n");
-exit(1);
-}
-void __mask4() {
-printf("__mask4 called\n");
-exit(1);
-}
-void __dshiftl4() {
-printf("__dshiftl4 called\n");
-exit(1);
-}
-#endif
-
-int isScripArrayValid(PyArrayObject *array){
-    int istat = 0;
-    if (!((PyArray_ISCONTIGUOUS(array) || (array->flags & NPY_FARRAY)) && array->nd > 0 && array->dimensions[0] > 0)) {
-        fprintf(stderr,"ERROR: Scrip - array is not CONTIGUOUS in memory\n");
-        istat = -1;
-    } else if (array->descr->type_num != NPY_FLOAT) {
-        fprintf(stderr,"ERROR: Scrip - unsupported data type :%c\n",array->descr->type);
-        istat = -1;
-    }
-    return istat;
+static PyObject *scripc_version(PyObject *self, PyObject *args) {
+    return Py_BuildValue("(ss)",VERSION,LASTUPDATE);
 }
 
-static char scripc_addr_wts__doc__[] =
-"Get addresses and weights for intepolation\n (fromAddr,toAddr,weights) = scripc_addr_wts(g1_centers_lat,g1_centers_lon,g1_corners_lat,g1_corners_lon,g2_centers_lat,g2_centers_lon,g2_corners_lat,g2_corners_lon,nbins,method,type_of_norm,type_of_restric)\n@param \n@return python tuple with 3 numpy.ndarray for (addr1,addr2,wts)";
 
-static PyObject *
-scripc_addr_wts(PyObject *self, PyObject *args) {
-    PyArrayObject *addr1,*addr2,*wts;
-    PyArrayObject *g1_center_lat,*g1_center_lon,*g1_corner_lat,*g1_corner_lon,
-                  *g2_center_lat,*g2_center_lon,*g2_corner_lat,*g2_corner_lon;
-    int nbin;
+static char scripc_initOptions__doc__[] = " \
+    Init SCRIP with provided options.\n\
+    scripc_initOptions(nbins,map_method,normalize_opt,restrict_type,nb_maps)\n\
+    @param nbins         num of bins for restricted srch (int)\n\
+    @param map_method    choice for mapping method (String)\n\
+    @param normalize_opt option for normalizing weights (String)\n\
+    @param restrict_type type of bins to use (String)\n\
+    @param nb_maps       nb of remappings for this grid pair (int)\
+    ";
+
+static PyObject *scripc_initOptions(PyObject *self, PyObject *args) {
+    int nbin,nb_maps;
+    wordint fnbin,fnb_maps;
     char *methode,*typ_norm,*typ_restric;
-    int dims[3]={1,1,1}, strides[3]={0,0,0}, ndims=3;
-    int type_num=NPY_FLOAT;
 
-    int istat=-1;
-    wordint *faddr1,*faddr2;
-    float   *fwts;
-    wordint fnwts,fnlinks,fnbin,fg1_size,fg2_size,fg1_ncorn,fg2_ncorn;
-    wordint fg1_dims[3]={0,0,0},fg2_dims[3]={0,0,0};
+    if (!PyArg_ParseTuple(args, "isssi",
+         &nbin,&methode,&typ_norm,&typ_restric,&nb_maps)) {
+        return NULL;
+    }
+    fnbin = (wordint)nbin;
+    nb_maps= (nb_maps<1) ? 1 : ((nb_maps>2) ? 2 : nb_maps);
+    fnb_maps = (wordint)nb_maps;
+    f77name(scrip_init_options)(&fnbin,methode,typ_norm,typ_restric,&fnb_maps);
+    return NULL;
+}
 
-    if (!PyArg_ParseTuple(args, "OOOOOOOOisss",
-            &g1_center_lat,&g1_center_lon,
-            &g1_corner_lat,&g1_corner_lon,
-            &g2_center_lat,&g2_center_lon,
-            &g2_corner_lat,&g2_corner_lon,
-            &nbin,&methode,&typ_norm,&typ_restric)) {
-        Py_INCREF(Py_None);
-        return Py_None;
+
+static char scripc_setGridLatLonRad__doc__[] = " \
+    Set grid points center and corners Lat/Lon (in rad) for said grid.\n\
+    scripc_setGridLatLonRad(gridNb,centerLat,centerLon,cornersLat,cornersLon)\n\
+    @param gridNb INPUT_GRID or OUTPUT_GRID (int)\n\
+    @param centerLat (numpy.ndarray : float32(ni,nj)\n\
+    @param centerLon (numpy.ndarray : float32(ni,nj)\n\
+    @param cornersLat (numpy.ndarray : float32(nbCorners,ni,nj)\n\
+    @param cornersLon (numpy.ndarray : float32(nbCorners,ni,nj)\n\
+    ";
+
+static PyObject *scripc_setGridLatLonRad(PyObject *self, PyObject *args) {
+    PyArrayObject *g1_center_lat,*g1_center_lon,*g1_corner_lat,*g1_corner_lon;
+    int gridNb;
+    wordint fg1_ncorn,fg1_size,fgridNb;
+    wordint fg1_dims[3]={0,0,0};
+
+    if (!PyArg_ParseTuple(args, "iOOOO",&gridNb,
+        &g1_center_lat,&g1_center_lon, &g1_corner_lat,&g1_corner_lon)) {
+        return NULL;
+    }
+    if (isPyFtnArrayValid(g1_center_lat,RPN_DT_FLOAT) == PYCAPIFTN_ERR ||
+        isPyFtnArrayValid(g1_center_lon,RPN_DT_FLOAT) == PYCAPIFTN_ERR ||
+        isPyFtnArrayValid(g1_corner_lat,RPN_DT_FLOAT) == PYCAPIFTN_ERR ||
+        isPyFtnArrayValid(g1_corner_lon,RPN_DT_FLOAT) == PYCAPIFTN_ERR) {
+        PyErr_SetString(PyExc_TypeError,"Invalid input Args");
+        return NULL;
     }
 
-    if (isScripArrayValid(g1_center_lat)<0 || isScripArrayValid(g1_center_lon)<0 ||
-         isScripArrayValid(g1_corner_lat)<0 || isScripArrayValid(g1_corner_lon)<0 ||
-         isScripArrayValid(g2_center_lat)<0 || isScripArrayValid(g2_center_lon)<0 ||
-         isScripArrayValid(g2_corner_lat)<0 || isScripArrayValid(g2_corner_lon)<0
-         ) {
-        fprintf(stderr,"ERROR: scripc - invalid input data\n");
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-
+    gridNb = (gridNb<1) ? 1 : ((gridNb>2) ? 2 : gridNb);
+    fgridNb = (wordint)gridNb;
     fg1_ncorn   = (wordint) g1_corner_lat->dimensions[0];
     fg1_dims[0] = (wordint) g1_center_lat->dimensions[0];
     fg1_size    = fg1_dims[0];
@@ -123,161 +98,214 @@ scripc_addr_wts(PyObject *self, PyObject *args) {
         fg1_dims[1]  = (wordint) g1_center_lat->dimensions[1];
         fg1_size    *= fg1_dims[1];
     }
-    fg2_ncorn   = (wordint) g2_corner_lat->dimensions[0];
-    fg2_dims[0] = (wordint) g2_center_lat->dimensions[0];
-    fg2_size    = fg2_dims[0];
-    if (g2_center_lat->dimensions[1]>0) {
-        fg2_dims[1]  = (wordint) g2_center_lat->dimensions[1];
-        fg2_size    *= fg2_dims[1];
-    }
-
-   fprintf(stderr,"1: nc=%d, nbpt=%d, shape=(%d,%d)\n",fg1_ncorn,fg1_size,fg1_dims[0],fg1_dims[1]);
-   fprintf(stderr,"2: nc=%d, nbpt=%d, shape=(%d,%d)\n",fg2_ncorn,fg2_size,fg2_dims[0],fg2_dims[1]);
-
-    fnbin = (wordint) nbin;
-    istat = f77name(scrip_addr_wts)(&faddr1,&faddr2,&fwts,&fnwts,&fnlinks,
-                &fnbin,methode,typ_norm,typ_restric,
-                &fg1_size,fg1_dims,&fg1_ncorn,
-                g1_center_lat->data,g1_center_lon->data,
-                g1_corner_lat->data,g1_corner_lon->data,
-                &fg2_size,fg2_dims,&fg2_ncorn,
-                g2_center_lat->data,g2_center_lon->data,
-                g2_corner_lat->data,g2_corner_lon->data);
-
-   fprintf(stderr,"After script\n");
-    if(istat >= 0) {
-        ndims   = 1;
-        dims[0] = (int) fnlinks;
-        dims[1] = 0;
-        type_num=NPY_INT;
-        strides[0]=sizeof(faddr1[0]); //4;
-        strides[1]=0;
-        strides[2]=0;
-        addr1 = PyArray_NewFromDescr(&PyArray_Type,
-                                    PyArray_DescrFromType(type_num),
-                                    ndims,dims,
-                                    strides, faddr1, FTN_Style_Array,
-                                    NULL);
-        addr2 = PyArray_NewFromDescr(&PyArray_Type,
-                                    PyArray_DescrFromType(type_num),
-                                    ndims,dims,
-                                    strides, faddr2, FTN_Style_Array,
-                                    NULL);
-        ndims   = 2;
-        dims[0] = (int) fnwts;
-        dims[1] = (int) fnlinks;
-        type_num=NPY_FLOAT;
-        strides[0]=sizeof(fwts[0]); //4;
-        strides[1]=strides[0]*dims[0];
-        strides[2]=0; //strides[1]*dims[1];
-        wts = PyArray_NewFromDescr(&PyArray_Type,
-                                    PyArray_DescrFromType(type_num),
-                                    ndims,dims,
-                                    strides, fwts, FTN_Style_Array,
-                                    NULL);
-
-        return Py_BuildValue("(O,O,O)",addr1,addr2,wts);
-    }
-
-    Py_INCREF(Py_None);
-    return Py_None;
+    f77name(scrip_set_grid_latlon_rad)(
+        &fgridNb,&fg1_size,fg1_dims,&fg1_ncorn,
+        g1_center_lat->data,g1_center_lon->data,
+        g1_corner_lat->data,g1_corner_lon->data);
+    return NULL;
 }
 
 
-static char scripc_addr_wts_free__doc__[] =
-"Free Memory allocated for addr1,addr2,wts done in scripc_addr_wts(addr1,addr2,wts)\n@param addr1 (numpy.ndarray)\n@param addr2 (numpy.ndarray)\n@param wts (numpy.ndarray)\nreturn None";
+static char scripc_setGridMask__doc__[] = " \
+    Set grid Mask for said grid.\n\
+    scripc_setGridMask(gridNb,gridMask)\n\
+    @param gridNb INPUT_GRID or OUTPUT_GRID (int)\n\
+    @param gridMask (numpy.ndarray : int(ni,nj)\n\
+    ";
 
-static PyObject *
-scripc_addr_wts_free(PyObject *self, PyObject *args) {
-    PyArrayObject *addr1,*addr2,*wts;
+static PyObject *scripc_setGridMask(PyObject *self, PyObject *args) {
+    PyArrayObject *gridMask;
+    int gridNb;
+    int istat=-1;
+    wordint fg1_size,fgridNb;
+    wordint fg1_dims[3]={0,0,0};
 
-    if (!PyArg_ParseTuple(args, "OOO",&addr1,&addr2,&wts)) {
-        Py_INCREF(Py_None);
-        return Py_None;
+    if (!PyArg_ParseTuple(args, "iO",&gridNb,&gridMask)) {
+        return NULL;
     }
-    //TODO: free mem for *addr1,*addr2,*wts;
-    Py_INCREF(Py_None);
-    return Py_None;
+    if (isPyFtnArrayValid(gridMask,RPN_DT_INT)==PYCAPIFTN_ERR) {
+        PyErr_SetString(PyExc_TypeError,"Invalid input Args");
+        return NULL;
+    }
+
+    gridNb = (gridNb<1) ? 1 : ((gridNb>2) ? 2 : gridNb);
+    fgridNb = (wordint)gridNb;
+    fg1_dims[0] = (wordint) gridMask->dimensions[0];
+    fg1_size    = fg1_dims[0];
+    if (gridMask->dimensions[1]>0) {
+        fg1_dims[1]  = (wordint) gridMask->dimensions[1];
+        fg1_size    *= fg1_dims[1];
+    }
+    istat = f77name(scrip_set_grid_mask)(&fgridNb,&fg1_size,gridMask->data);
+    if (istat<0) {
+        PyErr_SetString(PyExc_TypeError,"Problem setting Mask - probably incompatible dims with previously provided grid lat/lon");
+    }
+    return NULL;
+}
+
+
+static char scripc_getAddrWeights__doc__[] = " \
+    Get addresses and weights for intepolation\n \
+    (fromAddr,toAddr,weights) =  getAddrWeights(mapNb)\n \
+    @param mapNb INTERP_FORWARD or INTERP_BACKWARD(int)\n \
+    @return fromAddr [numpy.ndarray: int(nlinks)]\n\
+    @return toAddr   [numpy.ndarray: int(nlinks)]\n\
+    @return weights  [numpy.ndarray: float32(nWeights,nlinks)]\
+    ";
+
+static PyObject *scripc_getAddrWeights(PyObject *self, PyObject *args) {
+    PyArrayObject *addr1,*addr2,*wts;
+    int mapNb,dims[3]={1,1,1},ndims=3;
+    int type_num=NPY_FLOAT;
+    int istat=-1;
+    wordint fmapNb,fnwts,fnlinks,ferrorCode;
+
+    if (!PyArg_ParseTuple(args, "i",&mapNb)) {
+        return NULL;
+    }
+    mapNb = (mapNb<1) ? 1 : ((mapNb>2) ? 2 : mapNb);
+    fmapNb = (wordint)mapNb;
+
+    istat = f77name(scrip_compute_addr_wts)();
+    f77name(scrip_get_dims)(&fmapNb,&fnwts,&fnlinks);
+    if(istat<0 || fnwts<1 || fnlinks<1) {
+        PyErr_SetString(ScripcError,"Problem computing Addresses and Weights");
+        return NULL;
+    }
+
+    ndims   = 1;
+    dims[0] = (int)fnlinks;
+    dims[1] = 0;
+    type_num=NPY_INT;
+    addr1 = PyArray_NewFromDescr(&PyArray_Type,PyArray_DescrFromType(type_num),
+                                ndims,dims,NULL, NULL, FTN_Style_Array,NULL);
+    addr2 = PyArray_NewFromDescr(&PyArray_Type,PyArray_DescrFromType(type_num),
+                                ndims,dims,NULL, NULL, FTN_Style_Array,NULL);
+    ndims   = 2;
+    dims[0] = (int)fnwts;
+    dims[1] = (int)fnlinks;
+    type_num=NPY_FLOAT;
+    wts = PyArray_NewFromDescr(&PyArray_Type,PyArray_DescrFromType(type_num),
+                                ndims,dims,NULL, NULL, FTN_Style_Array,NULL);
+    if(addr1==NULL || addr1==NULL || wts==NULL) {
+        Py_DECREF(addr1);
+        Py_DECREF(addr1);
+        Py_DECREF(wts);
+        return NULL;
+    }
+
+    f77name(scrip_get_addr_wts)(&fmapNb,&fnwts,&fnlinks, &
+            addr1->data,addr2->data,wts->data, &ferrorCode);
+    if(ferrorCode<0) {
+        PyErr_SetString(ScripcError,"Problem computing Addresses and Weights");
+        return NULL;
+    }
+    return Py_BuildValue("(O,O,O)",addr1,addr2,wts);
+}
+
+
+static char scripc_finalize__doc__[] = "Free scripc allocated memory";
+
+static PyObject *scripc_finalize(PyObject *self, PyObject *args) {
+    f77name(scrip_finalize)();
+    return NULL;
 }
 
 
 static char scripc_interp_o1__doc__[] =
-"Interpolate a field using previsouly computed remapping addresses and weights\ntoData = scripc_interp_o1(fromData,fromGridAddr,toGridAddr,weights,nbpts)\n@param Field to interpolate (numpy.ndarray)\n@param Remapping FromGrid Addresses (numpy.ndarray)\n@param Remapping ToGrid Addresses (numpy.ndarray)\n@param Remapping Weights (numpy.ndarray)\nparam nbpts number of points in toGrid (int)/toData@return Interpolated field (numpy.ndarray)";
+    "Interpolate a field using previsouly computed remapping addresses and weights\n\
+        toData = scripc_interp_o1(fromData,fromGridAddr,toGridAddr,weights,nbpts)\n\
+        @param fromData Field to interpolate (numpy.ndarray)\n\
+        @param Remapping FromGrid Addresses (numpy.ndarray)\n\
+        @param Remapping ToGrid Addresses (numpy.ndarray)\n\
+        @param Remapping Weights (numpy.ndarray)\n\
+        @param nbpts number of points in toGrid (int)\n\
+        @return toData Interpolated field (numpy.ndarray)";
 
-static PyObject *
-scripc_interp_o1(PyObject *self, PyObject *args) {
+static PyObject *scripc_interp_o1(PyObject *self, PyObject *args) {
     PyArrayObject *data,*addr1,*addr2,*wts,*data2;
     int dims[3]={1,1,1}, ndims=1;
     int type_num=NPY_FLOAT;
 
-    int nbpts,istat=-1;
-    wordint fnwts,fnlinks;
+    int nbpts,srcSize;
+    wordint fnwts,fnlinks,fsrcSize,fnbpts;
 
     if (!PyArg_ParseTuple(args, "OOOOi",&data,&addr1,&addr2,&wts,&nbpts)) {
         Py_INCREF(Py_None);
         return Py_None;
     }
+    if (isPyFtnArrayValid(data,RPN_DT_FLOAT)==PYCAPIFTN_ERR ||
+        isPyFtnArrayValid(addr1,RPN_DT_INT)==PYCAPIFTN_ERR ||
+        isPyFtnArrayValid(addr2,RPN_DT_INT)==PYCAPIFTN_ERR ||
+        isPyFtnArrayValid(wts,RPN_DT_FLOAT)==PYCAPIFTN_ERR ||
+        nbpts<1) {
+        PyErr_SetString(PyExc_TypeError,"Invalid input Args");
+        return NULL;
+    }
+    //TODO: check nbpts
+    //TODO: check dims of data compared to addr1,addr2,wts
 
-    //TODO: make sure data,addr,wts are F_CONTIGUOUS
     dims[0] = nbpts;
-    data2 = PyArray_NewFromDescr(&PyArray_Type,
-                                PyArray_DescrFromType(type_num),
-                                ndims,dims,
-                                NULL, NULL, FTN_Style_Array,
-                                NULL);
+    data2 = PyArray_NewFromDescr(&PyArray_Type,PyArray_DescrFromType(type_num),
+                                ndims,dims,NULL, NULL, FTN_Style_Array,NULL);
+    if (data2 == NULL) return NULL;
 
     fnwts   = (wordint) wts->dimensions[0];
     fnlinks = (wordint) addr1->dimensions[0];
-    istat = f77name(scrip_remap_o1)(data2->data,data->data,
-                            wts->data,addr2->data,addr1->data,
-                            &fnwts,&fnlinks);
-
-    if(istat>=0) return Py_BuildValue("O",data2);
-
-    Py_INCREF(Py_None);
-    return Py_None;
+    srcSize = data->dimensions[0];
+    if (data->nd > 1) srcSize *= data->dimensions[1];
+    fnbpts = (wordint)nbpts;
+    fsrcSize  = (wordint)srcSize;
+    f77name(scrip_interpol)(data2->data,data->data,
+                            addr2->data,addr1->data,wts->data,
+                            &fnwts,&fnlinks,fnbpts,fsrcSize);
+    return Py_BuildValue("O",data2);
 }
 
 
 /* List of methods defined in the module */
 
 static struct PyMethodDef scripc_methods[] = {
-    {"scripc_addr_wts",	(PyCFunction)scripc_addr_wts,	METH_VARARGS, scripc_addr_wts__doc__},
-    {"scripc_addr_wts_free",	(PyCFunction)scripc_addr_wts_free,	METH_VARARGS, scripc_addr_wts_free__doc__},
-    {"scripc_interp_o1",	(PyCFunction)scripc_interp_o1,	METH_VARARGS, scripc_interp_o1__doc__},
+    {"version", (PyCFunction)scripc_version, METH_VARARGS, scripc_version__doc__},
+    {"initOptions", (PyCFunction)scripc_initOptions, METH_VARARGS, scripc_initOptions__doc__},
+    {"setGridLatLonRad", (PyCFunction)scripc_setGridLatLonRad, METH_VARARGS, scripc_setGridLatLonRad__doc__},
+    {"setGridMask", (PyCFunction)scripc_setGridMask, METH_VARARGS, scripc_setGridMask__doc__},
+    {"getAddrWeights", (PyCFunction)scripc_getAddrWeights, METH_VARARGS, scripc_getAddrWeights__doc__},
+    {"finalize", (PyCFunction)scripc_finalize, METH_VARARGS, scripc_finalize__doc__},
+    {"interp_o1", (PyCFunction)scripc_interp_o1, METH_VARARGS, scripc_interp_o1__doc__},
 
     {NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
 };
 
 
-/* Initialization function for the module (*must* be called initFstdc) */
+/* Initialization function for the module (*must* be called initName) */
 
-static char scripc_module_documentation[] =
-"Module scripc contains the classes used to use the SCRIP interpolation package\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
+static char scripc_module_documentation[] = "\
+        Module scripc contains the classes needed to use the SCRIP interpolation package\n\
+        @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
 
 void initscripc() {
     PyObject *m, *d;
 
-    /* Create the module and add the functions */
     m = Py_InitModule4("scripc", scripc_methods,
             scripc_module_documentation,
             (PyObject*)NULL,PYTHON_API_VERSION);
 
-    /* Import the array object */
     import_array();
 
-    /* Add some symbolic constants to the module */
+    ScripcError = PyString_FromString("scripc.error");
+    Py_INCREF(ScripcError);
+    PyModule_AddObject(m, "error", ScripcError);
+
     d = PyModule_GetDict(m);
-    ErrorObject = PyString_FromString("scripc.error");
-    PyDict_SetItemString(d, "error", ErrorObject);
+    PyDict_SetItemString(d, "INPUT_GRID", PyInt_FromLong((long)INPUT_GRID_NB));
+    PyDict_SetItemString(d, "OUTPUT_GRID", PyInt_FromLong((long)OUTPUT_GRID_NB));
+    PyDict_SetItemString(d, "INTERP_FORWARD", PyInt_FromLong((long)INTERP_FORWARD_NB));
+    PyDict_SetItemString(d, "INTERP_BACKWARD", PyInt_FromLong((long)INTERP_BACKWARD_NB));
 
-    /* XXXX Add constants here */
-
-    /* Check for errors */
-    if (PyErr_Occurred())
-            Py_FatalError("can't initialize module SCRIPc");
-    //printf("SCRIPc module V-%s (%s) initialized\n",version,lastmodified);
-    init_lentab();
+    if (PyErr_Occurred()) Py_FatalError("Cannot initialize module SCRIPc");
 }
 
+/* -*- Mode: C; tab-width: 4 -*- ; indent-tabs-mode: nil -*- */
+// vim: set expandtab ts=4 sw=4:
 // kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

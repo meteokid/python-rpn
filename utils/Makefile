@@ -4,13 +4,15 @@ include ../Makefile_$(ARCH)
 BASEDIR = $(PWD)/..
 
 UTILSSRC = $(shell ls *.ftn90)
+#UTILSSRCC = $(shell ls *.c)
 UTILSOBJ = $(patsubst %.ftn90, %.o, $(UTILSSRC))
+#UTILSOBJC = $(patsubst %.c, %.o, $(UTILSSRCC))
 
-all: $(UTILSOBJ)
+all: $(UTILSOBJ) $(UTILSOBJC)
 
 #
 # ALL dependencies ...
 #
 vect_mod.o: vect_mod.ftn90 rmnlib_basics.hf
 get_corners_xy.o: get_corners_xy.ftn90 int_macros.hf
-
+#py_capi_ftn_utils.o: py_capi_ftn_utils.c py_capi_ftn_utils.h

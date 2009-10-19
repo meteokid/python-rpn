@@ -32,7 +32,7 @@ jimc_module = Extension('jimc',
             sources = ['jimc.c'])
 
 scripc_module = Extension('scripc',
-            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture],
+            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture,'./utils'],
             libraries = ['PyFTN_helpers','rmn_shared_beta10'],
             extra_objects = [
                 'scrip/kinds_mod.o',
@@ -46,10 +46,11 @@ scripc_module = Extension('scripc',
                 'scrip/timers.o',
                 'scrip/remap_write.o',
                 'scrip/scrip.o',
-                'scrip/remap.o'],
+                'scrip/remap.o',
+                'scrip/scrip_interface.o'],
             extra_link_args=runtime_libs,
             library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
-            sources = ['scripc.c'])
+            sources = ['utils/py_capi_ftn_utils.c','scripc.c'])
 
 
 setup(name = 'rpnstd',
