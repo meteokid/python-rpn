@@ -8,16 +8,14 @@
 !--------------------------------------------------------------------------
 !@author Stephane Chamberland <stephane.chamberland@ec.gc.ca>, 2009-10
 
+#include "scrip.h"
+
 !/**
 program scrip_interp_test
    implicit none
 !**/
-   character(len=99), parameter :: SCRIP_OPT_MAP_METHODE = ' '
-   character(len=99), parameter :: SCRIP_OPT_NORM_METHODE = ' '
-   character(len=99), parameter :: SCRIP_OPT_SEARCH_RESTRIC = ' '
    integer, parameter :: NB_CORNERS = 4
    integer, parameter :: NB_SCRIP_BINS = -1
-   integer, parameter :: NB_MAPS = 1
    integer :: niIn,njIn,niOut,njOut,nbWeights,nbAddr ,iErr,istat,k
    real    :: dlaloIn,dlaloOut,radPerDeg,degPerRad
    integer, dimension(2) :: dimsGridIn, dimsGridOut
@@ -28,7 +26,7 @@ program scrip_interp_test
    real, dimension(:,:), pointer :: interpWeights
    integer, dimension(:), pointer :: PointAddrGridIn,PointAddrGridOut
    real, dimension(:,:),   allocatable :: gridOutCenterLat2
-   integer, external :: scrip_compute_addr_wts
+   integer, external :: scrip_init_options,scrip_set_grid_latlon_rad,scrip_compute_addr_wts
    integer :: i,j,nbErrPoints
    real :: epsilon,relErr
    !---------------------------------------------------------------------
@@ -68,18 +66,18 @@ program scrip_interp_test
    gridOutCornersLat = gridOutCornersLat * radPerDeg
    gridOutCornersLon = gridOutCornersLon * radPerDeg
 
-   call scrip_init_options(NB_SCRIP_BINS, SCRIP_OPT_MAP_METHODE, &
-        SCRIP_OPT_NORM_METHODE, SCRIP_OPT_SEARCH_RESTRIC,NB_MAPS)
+   iErr = scrip_init_options(NB_SCRIP_BINS, SCRIP_DISTWGT, &
+        SCRIP_NORM_FRACAREA, SCRIP_RESTRICT_LALO, SCRIP_REMAP_ONEWAY)
 
-   call scrip_set_grid_latlon_rad(1,niIn*njIn,dimsGridIn,NB_CORNERS,&
-        gridInCenterLat,gridInCenterLon,gridInCornersLat,gridInCornersLon)
+   iErr = scrip_set_grid_latlon_rad(SCRIP_INPUT_GRID, niIn*njIn, dimsGridIn, NB_CORNERS,&
+        gridInCenterLat, gridInCenterLon, gridInCornersLat, gridInCornersLon)
 
-   call scrip_set_grid_latlon_rad(2,niOut*njOut,dimsGridOut,NB_CORNERS,&
-        gridOutCenterLat,gridOutCenterLon,gridOutCornersLat,gridOutCornersLon)
+   iErr = scrip_set_grid_latlon_rad(SCRIP_OUTPUT_GRID, niOut*njOut, dimsGridOut, NB_CORNERS,&
+        gridOutCenterLat, gridOutCenterLon, gridOutCornersLat,gridOutCornersLon)
 
    !Using default mask (all=1)
-   !iErr = scrip_set_grid_mask(1,niIn*njIn,gridInMask)
-   !iErr = scrip_set_grid_mask(2,niOut*njOut,gridOutMask)
+   !iErr = scrip_set_grid_mask(SCRIP_INPUT_GRID,niIn*njIn,gridInMask)
+   !iErr = scrip_set_grid_mask(SCRIP_OUTPUT_GRID,niOut*njOut,gridOutMask)
 
    iErr = scrip_compute_addr_wts()
 
@@ -90,13 +88,17 @@ program scrip_interp_test
    deallocate(gridOutCornersLat,STAT=istat)
    deallocate(gridOutCornersLon,STAT=istat)
 
-   call scrip_get_dims(NB_MAPS,nbWeights,nbAddr)
+   call scrip_get_dims(SCRIP_MAPPING_FORWARD,nbWeights,nbAddr)
+   if (nbWeights<1 .or. nbAddr<1) then
+      print *,'Scrip test error: nbWeights<1 .or. nbAddr<1 :',nbWeights,nbAddr
+      stop
+   endif
 
    allocate(PointAddrGridIn(nbAddr),STAT=istat)
    allocate(PointAddrGridOut(nbAddr),STAT=istat)
    allocate(interpWeights(nbWeights,nbAddr),STAT=istat)
 
-   call scrip_get_addr_wts(NB_MAPS,nbWeights,nbAddr, &
+   call scrip_get_addr_wts(SCRIP_MAPPING_FORWARD,nbWeights,nbAddr, &
         PointAddrGridOut,PointAddrGridIn,interpWeights, &
         iErr)
 

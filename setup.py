@@ -32,7 +32,7 @@ jimc_module = Extension('jimc',
             sources = ['jimc.c'])
 
 scripc_module = Extension('scripc',
-            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture,'./utils'],
+            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture,'./utils','./scrip'],
             libraries = ['PyFTN_helpers','rmn_shared_beta10'],
             extra_objects = [
                 'scrip/kinds_mod.o',

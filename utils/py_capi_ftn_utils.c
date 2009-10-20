@@ -43,7 +43,7 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
 int isPyFtnArrayValid(PyArrayObject *array,int requestedDataType){
     int istat = 0,dataType,dataLen;
     if (!((PyArray_ISCONTIGUOUS(array) || (array->flags & NPY_FARRAY)) && array->nd > 0 && array->dimensions[0] > 0)) {
-        fprintf(stderr,"ERROR: Fstdc - array is not CONTIGUOUS in memory\n");
+        fprintf(stderr,"ERROR: Array is not CONTIGUOUS in memory\n");
         istat = -1;
     } else {
         getPyFtnArrayDataTypeAndLen(&dataType,&dataLen,array);

@@ -11,6 +11,8 @@ Module scripc contains the classes used to use the SCRIP interpolation package
 #include "../utils/py_capi_ftn_utils.h"
 #include "rpn_version.h"
 
+#include "scrip/scrip.h"
+
 #define INPUT_GRID_NB 1
 #define OUTPUT_GRID_NB 2
 #define INTERP_FORWARD_NB 1
@@ -38,26 +40,28 @@ static char scripc_initOptions__doc__[] = " \
     Init SCRIP with provided options.\n\
     scripc_initOptions(nbins,map_method,normalize_opt,restrict_type,nb_maps)\n\
     @param nbins         num of bins for restricted srch (int)\n\
-    @param map_method    choice for mapping method (String)\n\
-    @param normalize_opt option for normalizing weights (String)\n\
-    @param restrict_type type of bins to use (String)\n\
+    @param map_method    choice for mapping method/type (int)\n\
+    @param normalize_opt option for normalizing weights (int)\n\
+    @param restrict_type type of bins to use (int)\n\
     @param nb_maps       nb of remappings for this grid pair (int)\
     ";
 
 static PyObject *scripc_initOptions(PyObject *self, PyObject *args) {
-    int nbin,nb_maps;
-    wordint fnbin,fnb_maps;
-    char *methode,*typ_norm,*typ_restric;
+    int nbin,methode,typ_norm,typ_restric,nb_maps;
+    wordint fnbin,fmethode,ftyp_norm,ftyp_restric,fnb_maps;
 
-    if (!PyArg_ParseTuple(args, "isssi",
+    if (!PyArg_ParseTuple(args, "iiiii",
          &nbin,&methode,&typ_norm,&typ_restric,&nb_maps)) {
         return NULL;
     }
     fnbin = (wordint)nbin;
+    methode = (wordint)methode ;
+    typ_norm = (wordint)typ_norm ;
+    typ_restric = (wordint)typ_restric;
     nb_maps= (nb_maps<1) ? 1 : ((nb_maps>2) ? 2 : nb_maps);
     fnb_maps = (wordint)nb_maps;
-    f77name(scrip_init_options)(&fnbin,methode,typ_norm,typ_restric,&fnb_maps);
-    return NULL;
+    f77name(scrip_init_options)(&fnbin,&fmethode,&ftyp_norm,&ftyp_restric,&fnb_maps);
+    return Py_None;
 }
 
 
@@ -102,7 +106,7 @@ static PyObject *scripc_setGridLatLonRad(PyObject *self, PyObject *args) {
         &fgridNb,&fg1_size,fg1_dims,&fg1_ncorn,
         g1_center_lat->data,g1_center_lon->data,
         g1_corner_lat->data,g1_corner_lon->data);
-    return NULL;
+    return Py_None;
 }
 
 
@@ -140,7 +144,7 @@ static PyObject *scripc_setGridMask(PyObject *self, PyObject *args) {
     if (istat<0) {
         PyErr_SetString(PyExc_TypeError,"Problem setting Mask - probably incompatible dims with previously provided grid lat/lon");
     }
-    return NULL;
+    return Py_None;
 }
 
 
@@ -208,7 +212,7 @@ static char scripc_finalize__doc__[] = "Free scripc allocated memory";
 
 static PyObject *scripc_finalize(PyObject *self, PyObject *args) {
     f77name(scrip_finalize)();
-    return NULL;
+    return Py_None;
 }
 
 
@@ -302,6 +306,15 @@ void initscripc() {
     PyDict_SetItemString(d, "OUTPUT_GRID", PyInt_FromLong((long)OUTPUT_GRID_NB));
     PyDict_SetItemString(d, "INTERP_FORWARD", PyInt_FromLong((long)INTERP_FORWARD_NB));
     PyDict_SetItemString(d, "INTERP_BACKWARD", PyInt_FromLong((long)INTERP_BACKWARD_NB));
+    PyDict_SetItemString(d, "TYPE_CONVERV", PyInt_FromLong((long)SCRIP_CONSERVATIVE));
+    PyDict_SetItemString(d, "TYPE_BILINEAR", PyInt_FromLong((long)SCRIP_BILINEAR));
+    PyDict_SetItemString(d, "TYPE_BICUBIC", PyInt_FromLong((long)SCRIP_BICUBIC));
+    PyDict_SetItemString(d, "TYPE_DISTWGT", PyInt_FromLong((long)SCRIP_DISTWGT));
+    PyDict_SetItemString(d, "NORM_NONE", PyInt_FromLong((long)SCRIP_NORM_NONE));
+    PyDict_SetItemString(d, "NORM_DESTAREA", PyInt_FromLong((long)SCRIP_NORM_DESTAREA));
+    PyDict_SetItemString(d, "NORM_FRACAREA", PyInt_FromLong((long)SCRIP_NORM_FRACAREA));
+    PyDict_SetItemString(d, "RESTRICT_LAT", PyInt_FromLong((long)SCRIP_RESTRICT_LAT));
+    PyDict_SetItemString(d, "RESTRICT_LALO", PyInt_FromLong((long)SCRIP_RESTRICT_LALO));
 
     if (PyErr_Occurred()) Py_FatalError("Cannot initialize module SCRIPc");
 }

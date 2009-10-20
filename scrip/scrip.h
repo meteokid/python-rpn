@@ -1,0 +1,29 @@
+
+#if !defined(__SCRIP__)
+#define __SCRIP__
+
+#define SCRIP_OK 0
+#define SCRIP_ERROR -1
+
+#define SCRIP_CONSERVATIVE 1
+#define SCRIP_BILINEAR 2
+#define SCRIP_BICUBIC 3
+#define SCRIP_DISTWGT 4
+
+#define SCRIP_NORM_NONE 1
+#define SCRIP_NORM_DESTAREA 2
+#define SCRIP_NORM_FRACAREA 3
+
+#define SCRIP_RESTRICT_LAT  1
+#define SCRIP_RESTRICT_LALO 2
+
+#define SCRIP_REMAP_ONEWAY 1
+#define SCRIP_REMAP_BIDIR 2
+
+#define SCRIP_INPUT_GRID 1
+#define SCRIP_OUTPUT_GRID 2
+
+#define SCRIP_MAPPING_FORWARD 1
+#define SCRIP_MAPPING_REVERSE 2
+
+#endif

@@ -24,8 +24,8 @@ SCRIPOBJ= \
 default: all
 all: $(SCRIPOBJ)
 
-test:  $(SCRIPOBJ) scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o $(BASEDIR)/utils/py_capi_ftn_utils.o
-	r.build -obj scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o $(BASEDIR)/utils/py_capi_ftn_utils.o -arch $(EC_ARCH) -libpath $(LIBPATH) -librmn $(RMNLIB) -libappl "$(LIBS)" $(MPI) -o scrip_interp_test_$(EC_ARCH).Abs;\
+test:  $(SCRIPOBJ) scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o 
+	r.build -obj scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o -arch $(EC_ARCH) -libpath $(LIBPATH) -librmn $(RMNLIB) -libappl "$(LIBS)" $(MPI) -o scrip_interp_test_$(EC_ARCH).Abs;\
 	/bin/rm -f bidon.o
 	./scrip_interp_test_$(EC_ARCH).Abs
 
@@ -70,11 +70,9 @@ scrip.o: scrip.f kinds_mod.o constants.o iounits.o timers.o \
         remap_bilinear.o remap_bicubic.o remap_write.o \
 	$(BASEDIR)/utils/py_capi_ftn_utils.h
 
-scrip_interp_test.o: scrip_interp_test.ftn90
+scrip_interp_test.o: scrip_interp_test.ftn90 scrip.h
 
-#scrip_interface.f90: scrip_interface.ftn90
-scrip_interface.o: scrip_interface.ftn90 grids.o remap_vars.o kinds_mod.o
-#scrip_interface.o: scrip_interface.ftn90
+scrip_interface.o: scrip_interface.ftn90 grids.o remap_vars.o kinds_mod.o scrip.h
 
 clean:
 	rm -f *.o *.mod scrip_interp_test.f90 scrip_interface.f90

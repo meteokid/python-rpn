@@ -8,8 +8,8 @@
 !--------------------------------------------------------------------------
 !@author Stephane Chamberland <stephane.chamberland@ec.gc.ca>, 2009-10
 
-#define SCRIP_OK 0
-#define SCRIP_ERROR -1
+#include "scrip.h"
+
 
 module scrip_init_var
    implicit none
@@ -21,9 +21,9 @@ end module scrip_init_var
 
 
 !/**
-subroutine scrip_init_options( &
+function scrip_init_options( &
      F_num_srch_bins, F_map_method, &
-     F_normalize_opt, F_restrict_type,F_nb_maps)
+     F_normalize_opt, F_restrict_type,F_nb_maps) result(errorCode)
    use scrip_init_var
    use kinds_mod
    use grids
@@ -32,13 +32,17 @@ subroutine scrip_init_options( &
 !**/
    integer (kind=int_kind) :: &
         F_num_srch_bins, &  ! num of bins for restricted srch
-        F_nb_maps           ! num of remappings for this grid pair
-   character(len=*):: &
-        F_map_method, &   ! choice for mapping method
-        F_normalize_opt,& ! option for normalizing weights
-        F_restrict_type   ! type of bins to use
-
+        F_nb_maps,       &  ! num of remappings for this grid pair
+        F_map_method,    &  ! choice for mapping method
+        F_normalize_opt, &  ! option for normalizing weights
+        F_restrict_type     ! type of bins to use
+   integer :: errorCode
    !--------------------------------------------------
+   if (isInit) then
+      errorCode = SCRIP_ERROR
+      return
+   endif
+   errorCode = SCRIP_OK
    isInit = .true.
    luse_grid1_area = .false. !TODO: remove this restriction
    luse_grid2_area = .false. !TODO: remove this restriction
@@ -49,41 +53,41 @@ subroutine scrip_init_options( &
 
    if (F_nb_maps>0)           num_maps      = F_nb_maps
    if (F_num_srch_bins>0)     num_srch_bins = F_num_srch_bins
-   if (F_restrict_type.ne.'') restrict_type = F_restrict_type
+   if (F_restrict_type==SCRIP_RESTRICT_LALO) restrict_type = 'latlon'
 
    select case(F_map_method)
-   case ('conservative')
+   case (SCRIP_CONSERVATIVE)
       map_type = map_type_conserv
       luse_grid_centers = .false.
-   case ('bilinear')
+   case (SCRIP_BILINEAR)
       map_type = map_type_bilinear
       luse_grid_centers = .true.
-   case ('bicubic')
+   case (SCRIP_BICUBIC)
       map_type = map_type_bicubic
       luse_grid_centers = .true.
-   case default !'distwgt'
+   case default !SCRIP_DISTWGT
       map_type = map_type_distwgt
       luse_grid_centers = .true.
    end select
 
-   select case(F_normalize_opt(1:4))
-   case ('none')
+   select case(F_normalize_opt)
+   case (SCRIP_NORM_NONE)
       norm_opt = norm_opt_none
-   case ('dest')
+   case (SCRIP_NORM_DESTAREA)
       norm_opt = norm_opt_dstarea
-   case default !'frac'
+   case default !SCRIP_NORM_FRACAREA
       norm_opt = norm_opt_frcarea
    end select
    !--------------------------------------------------
    return
-end subroutine scrip_init_options
+end function scrip_init_options
 
 
 !/**
-subroutine scrip_set_grid_latlon_rad( &
+function scrip_set_grid_latlon_rad( &
      F_grid_nb,F_grid_size,F_grid_dims,F_grid_nb_corners,&
      F_grid_center_lat,F_grid_center_lon, &
-     F_grid_corner_lat,F_grid_corner_lon)
+     F_grid_corner_lat,F_grid_corner_lon) result(errorCode)
    use scrip_init_var
    use kinds_mod
    use grids
@@ -99,10 +103,14 @@ subroutine scrip_set_grid_latlon_rad( &
    real (kind=dbl_kind), dimension(F_grid_nb_corners,F_grid_size), target :: &
         F_grid_corner_lat, & ! lat/lon coordinates for
         F_grid_corner_lon    ! each grid corner in radians
+   integer :: errorCode
    !IMPORTANT: Lat,Lon must be given in Radiants
 !**/
    !--------------------------------------------------
+   errorCode = SCRIP_ERROR
    if (F_grid_nb == 1) then
+      if (hasGrid1LatLon) return
+      errorCode = SCRIP_OK
       hasGrid1LatLon = .true.
       grid1_size = F_grid_size
       grid1_corners = F_grid_nb_corners
@@ -117,6 +125,8 @@ subroutine scrip_set_grid_latlon_rad( &
       allocate(grid1_mask(grid1_size))
       grid1_mask = .true.
    else
+      if (hasGrid2LatLon) return
+      errorCode = SCRIP_OK
       hasGrid2LatLon = .true.
       grid2_size = F_grid_size
       grid2_corners = F_grid_nb_corners
@@ -133,7 +143,7 @@ subroutine scrip_set_grid_latlon_rad( &
    endif
    !--------------------------------------------------
    return
-end subroutine scrip_set_grid_latlon_rad
+end function scrip_set_grid_latlon_rad
 
 
 !/**
@@ -344,7 +354,7 @@ subroutine scrip_interpol(dst_array, src_array, &
    integer (kind=int_kind), dimension(nlinks):: &
         dst_add,    & ! destination address for each link
         src_add      ! source      address for each link
-          
+
    real (kind=dbl_kind), dimension(nwts,nlinks):: &
         map_wts      ! remapping weights for each link
 

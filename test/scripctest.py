@@ -53,11 +53,8 @@ class ScripcTests(unittest.TestCase):
         (la1,lo1,lac1,loc1) = self.gridL(0.5,6)
         (la2,lo2,lac2,loc2) = self.gridL(0.25,8)
         nbins = -1 #use default
-        method = " " #use default
-        type_of_norm = " " #use default
-        type_of_restric = " " #use default
         nmaps = 1
-        scripc.initOptions(nbins,method,type_of_norm,type_of_restric,nmaps)
+        scripc.initOptions(nbins,scripc.TYPE_DISTWGT,scripc.NORM_FRACAREA,scripc.RESTRICT_LALO,nmaps)
         scripc.setGridLatLonRad(scripc.INPUT_GRID,la1,lo1,lac1,loc1)
         scripc.setGridLatLonRad(scripc.OUTPUT_GRID,la2,lo2,lac2,loc2)
         (fromAddr,toAddr,weights) = scripc.getAddrWeights(scripc.INTERP_FORWARD)
