@@ -159,7 +159,6 @@
         dist_tot = zero
         do n=1,num_neighbors
           if (grid1_mask(nbr_add(n))) then
-             !ERROR: if points colocalized, dist=0 thus div by ZERO
             nbr_dist(n) = one/(nbr_dist(n)+epsilon(0.D0))
             dist_tot = dist_tot + nbr_dist(n)
             nbr_mask(n) = .true.

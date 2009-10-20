@@ -18,7 +18,7 @@ program scrip_interp_test
 !**/
    integer, parameter :: NB_CORNERS = 4
    integer, parameter :: NB_SCRIP_BINS = 100
-   integer, parameter :: NB_DELTA = 4
+   integer, parameter :: NB_DELTA = 8
    integer :: niIn,njIn,niOut,njOut,nbWeights,nbAddr ,iErr,istat
    real    :: dlaloIn,dlaloOut,radPerDeg,degPerRad
    integer, dimension(2) :: dimsGridIn, dimsGridOut
@@ -114,7 +114,7 @@ program scrip_interp_test
    print *,'PointAddrGridIn',minval(PointAddrGridIn),maxval(PointAddrGridIn), '<=',niIn*njIn
    print *,'PointAddrGridOut',minval(PointAddrGridOut),maxval(PointAddrGridOut), '<=',niOut*njOut
    print *,'interpWeights',minval(interpWeights),maxval(interpWeights)
-   print *,interpWeights
+!!$   print *,interpWeights
 
    call scrip_finalize()
 
@@ -140,7 +140,7 @@ program scrip_interp_test
       do i=1,niOut
          relErr = (gridOutCenterLat2(i,j)-gridOutCenterLat(i,j))/gridOutCenterLat2(i,j)
          if (abs(relErr)>delta(1)) then
-            print '(2I4,X,2F6.2,X,F7.4,A)',i,j,gridOutCenterLat(i,j),gridOutCenterLat2(i,j),relErr &
+            print '(2I4,X,2F6.2,X,F7.1,A)',i,j,gridOutCenterLat(i,j),gridOutCenterLat2(i,j),100.*relErr &
                  ,'%'
             nbErrPoints(1) = nbErrPoints(1) + 1
          endif
@@ -151,8 +151,9 @@ program scrip_interp_test
    enddo
 
    do k=1,NB_DELTA
-      print '(a,F5.1,a,F6.4,a)','There are ',100.*float(nbErrPoints(k))/float(niOut*njOut),'% of point with RelErr>',delta(k),'%'
+      print '(a,F5.1,a,F10.5,a)','There are ',100.*float(nbErrPoints(k))/float(niOut*njOut),'% of point with RelErr>',100.*delta(k),'%'
    enddo
+   print '(a,F5.1,a,F10.5,a)','There are ',100.*(1.- float(nbErrPoints(NB_DELTA))/float(niOut*njOut)),'% of point with RelErr<',100.*delta(NB_DELTA),'%'
 
    deallocate(gridInCenterLat,STAT=istat)
    deallocate(gridOutCenterLat,STAT=istat)
