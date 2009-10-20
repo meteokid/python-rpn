@@ -159,7 +159,8 @@
         dist_tot = zero
         do n=1,num_neighbors
           if (grid1_mask(nbr_add(n))) then
-            nbr_dist(n) = one/nbr_dist(n)
+             !ERROR: if points colocalized, dist=0 thus div by ZERO
+            nbr_dist(n) = one/(nbr_dist(n)+epsilon(0.D0))
             dist_tot = dist_tot + nbr_dist(n)
             nbr_mask(n) = .true.
           else
@@ -173,7 +174,7 @@
 
         do n=1,num_neighbors
           if (nbr_mask(n)) then
-            wgtstmp(1) = nbr_dist(n)/dist_tot
+            wgtstmp(1) = nbr_dist(n)/(dist_tot+epsilon(0.D0))
             call store_link_nbr(nbr_add(n), dst_add, wgtstmp, nmap)
             grid2_frac(dst_add) = one
           endif
@@ -239,7 +240,7 @@
         dist_tot = zero
         do n=1,num_neighbors
           if (grid2_mask(nbr_add(n))) then
-            nbr_dist(n) = one/nbr_dist(n)
+            nbr_dist(n) = one/(nbr_dist(n)+epsilon(0.D0))
             dist_tot = dist_tot + nbr_dist(n)
             nbr_mask(n) = .true.
           else
@@ -253,7 +254,7 @@
 
         do n=1,num_neighbors
           if (nbr_mask(n)) then
-            wgtstmp(1) = nbr_dist(n)/dist_tot
+            wgtstmp(1) = nbr_dist(n)/(dist_tot+epsilon(0.D0))
             call store_link_nbr(dst_add, nbr_add(n), wgtstmp, nmap)
             grid1_frac(dst_add) = one
           endif
@@ -368,7 +369,7 @@
 
           n = n+1
           if (plat >= bin_lats(1,n) .and. plat <= bin_lats(2,n) .and.
-     &        plon >= bin_lons(1,n) .and. plon <= bin_lons(3,n)) then
+     &        plon >= bin_lons(1,n) .and. plon <= bin_lons(2,n)) then
             min_add = src_bin_add(1,n)
             max_add = src_bin_add(2,n)
 

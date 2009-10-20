@@ -69,13 +69,13 @@
      &,     norm_opt        ! option for normalization (conserv only)
      &,     resize_increment ! default amount to increase array size
 
-      integer(kind=int_kind), dimension(:),allocatable,save ::
+      integer(kind=int_kind), dimension(:),allocatable,target,save ::
      &      grid1_add_map1, ! grid1 address for each link in mapping 1
      &      grid2_add_map1, ! grid2 address for each link in mapping 1
      &      grid1_add_map2, ! grid1 address for each link in mapping 2
      &      grid2_add_map2  ! grid2 address for each link in mapping 2
 
-      real(kind=dbl_kind), dimension(:,:),allocatable,save ::
+      real(kind=dbl_kind), dimension(:,:),allocatable,target,save ::
      &      wts_map1, ! map weights for each link (num_wts,max_links)
      &      wts_map2  ! map weights for each link (num_wts,max_links)
 

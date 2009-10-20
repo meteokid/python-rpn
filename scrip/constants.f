@@ -54,7 +54,7 @@
      &                        quart  = 0.25_dbl_kind,
      &                        bignum = 1.e+20_dbl_kind,
      &                        tiny   = 1.e-14_dbl_kind,
-     &                        pi     = 3.14159265359_dbl_kind,
+     &                        pi     = 3.14159265358979323846_dbl_kind,
      &                        pi2    = two*pi,
      &                        pih    = half*pi
 

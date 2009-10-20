@@ -42,7 +42,6 @@
 
       use kinds_mod    ! defines common data types
       use constants    ! defines common constants
-      use timers       ! module for timing
       use grids        ! module containing grid information
       use remap_vars   ! module containing remap information
 
@@ -157,7 +156,6 @@
         !*** restrict searches first using search bins
         !***
 
-        call timer_start(1)
         min_add = grid2_size
         max_add = 1
         do n=1,num_srch_bins
@@ -203,7 +201,6 @@
             srch_corner_lon(:,n) = grid2_corner_lon(:,grid2_add)
           endif
         end do gather1
-        call timer_stop(1)
 
         !***
         !*** integrate around this cell
@@ -271,18 +268,15 @@
             !*** line on grid 2.
             !***
 
-            call timer_start(2)
             call intersection(grid2_add,intrsct_lat,intrsct_lon,lcoinc,
      &                        beglat, beglon, endlat, endlon, begseg, 
      &                        lbegin, lrevers)
-            call timer_stop(2)
             lbegin = .false.
 
             !***
             !*** compute line integral for this subsegment.
             !***
 
-            call timer_start(3)
             if (grid2_add /= 0) then
               call line_integral(weights, num_wts,
      &                         beglon, intrsct_lon, beglat, intrsct_lat,
@@ -298,7 +292,6 @@
      &                         grid1_center_lat(grid1_add), 
      &                         grid1_center_lon(grid1_add))
             endif
-            call timer_stop(3)
 
             !***
             !*** if integrating in reverse order, change
@@ -325,9 +318,7 @@
 
             if (grid2_add /= 0) then
               if (grid1_mask(grid1_add)) then
-                call timer_start(4)
                 call store_link_cnsrv(grid1_add, grid2_add, weights)
-                call timer_stop(4)
                 grid1_frac(grid1_add) = grid1_frac(grid1_add) + 
      &                                  weights(1)
                 grid2_frac(grid2_add) = grid2_frac(grid2_add) + 
@@ -383,7 +374,6 @@
         !*** restrict searches first using search bins
         !***
 
-        call timer_start(5)
         min_add = grid1_size
         max_add = 1
         do n=1,num_srch_bins
@@ -425,7 +415,6 @@
             srch_corner_lon(:,n) = grid1_corner_lon(:,grid1_add)
           endif
         end do gather2
-        call timer_stop(5)
 
         !***
         !*** integrate around this cell
@@ -488,18 +477,15 @@
             !*** on grid 2.
             !***
 
-            call timer_start(6)
             call intersection(grid1_add,intrsct_lat,intrsct_lon,lcoinc,
      &                        beglat, beglon, endlat, endlon, begseg,
      &                        lbegin, lrevers)
-            call timer_stop(6)
             lbegin = .false.
 
             !***
             !*** compute line integral for this subsegment.
             !***
 
-            call timer_start(7)
             if (grid1_add /= 0) then
               call line_integral(weights, num_wts,
      &                         beglon, intrsct_lon, beglat, intrsct_lat,
@@ -515,7 +501,6 @@
      &                         grid2_center_lat(grid2_add), 
      &                         grid2_center_lon(grid2_add))
             endif
-            call timer_stop(7)
 
             if (lrevers) then
               weights = -weights
@@ -540,9 +525,7 @@
 
             if (.not. lcoinc .and. grid1_add /= 0) then
               if (grid1_mask(grid1_add)) then
-                call timer_start(8)
                 call store_link_cnsrv(grid1_add, grid2_add, weights)
-                call timer_stop(8)
                 grid1_frac(grid1_add) = grid1_frac(grid1_add) + 
      &                                  weights(1)
                 grid2_frac(grid2_add) = grid2_frac(grid2_add) + 
@@ -1048,7 +1031,6 @@
 !
 !-----------------------------------------------------------------------
 
-      call timer_start(12)
       srch_corners = size(srch_corner_lat,DIM=1)
       srch_loop: do
 
@@ -1212,7 +1194,6 @@
         if (s1 >= one) return
 
       end do srch_loop
-      call timer_stop(12)
 
 !-----------------------------------------------------------------------
 !
@@ -1222,7 +1203,6 @@
 !
 !-----------------------------------------------------------------------
 
-      call timer_start(13)
       intrsct_loop: do n=1,srch_corners
         next_n = mod(n,srch_corners) + 1
 
@@ -1346,7 +1326,6 @@
         !***
 
       end do intrsct_loop
-      call timer_stop(13)
 
 !-----------------------------------------------------------------------
 !
@@ -1545,7 +1524,6 @@
 !
 !-----------------------------------------------------------------------
 
-      call timer_start(12)
       srch_corners = size(srch_corner_lat,DIM=1)
       srch_loop: do
 
@@ -1689,7 +1667,6 @@
         endif
 
       end do srch_loop
-      call timer_stop(12)
 
 !-----------------------------------------------------------------------
 !
@@ -1699,7 +1676,6 @@
 !
 !-----------------------------------------------------------------------
 
-      call timer_start(13)
       intrsct_loop: do n=1,srch_corners
         next_n = mod(n,srch_corners) + 1
 
@@ -1828,7 +1804,6 @@
         !***
 
       end do intrsct_loop
-      call timer_stop(13)
 
       deallocate(srch_corner_x, srch_corner_y)
 

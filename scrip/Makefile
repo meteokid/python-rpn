@@ -15,7 +15,6 @@ SCRIPOBJ= \
 	remap_conserv.o \
 	remap_bilinear.o \
 	remap_bicubic.o \
-	timers.o \
 	remap_write.o \
 	scrip.o \
 	remap.o \
@@ -24,10 +23,14 @@ SCRIPOBJ= \
 default: all
 all: $(SCRIPOBJ)
 
-test:  $(SCRIPOBJ) scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o 
-	r.build -obj scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o -arch $(EC_ARCH) -libpath $(LIBPATH) -librmn $(RMNLIB) -libappl "$(LIBS)" $(MPI) -o scrip_interp_test_$(EC_ARCH).Abs;\
-	/bin/rm -f bidon.o
+test: test.Abs
 	./scrip_interp_test_$(EC_ARCH).Abs
+
+test.Abs:  $(SCRIPOBJ) scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o
+	rm -f scrip_interp_test_$(EC_ARCH).Abs;\
+	$(RBUILD) -obj scrip_interp_test.o $(SCRIPOBJ) $(BASEDIR)/utils/get_corners_xy.o -arch $(EC_ARCH) -libpath $(LIBPATH) -librmn $(RMNLIB) -libappl "$(LIBS)" $(MPI) -o scrip_interp_test_$(EC_ARCH).Abs;\
+	/bin/rm -f bidon.o
+
 
 #
 # ALL dependencies ...
@@ -40,32 +43,28 @@ kinds_mod.o: kinds_mod.f
 
 constants.o: constants.f kinds_mod.o
 
-iounits.o: iounits.f kinds_mod.o
-
-grids.o: grids.f kinds_mod.o constants.o iounits.o
+grids.o: grids.f kinds_mod.o constants.o 
 
 remap_vars.o: remap_vars.f kinds_mod.o constants.o grids.o
 
 remap_conserv.o: remap_conserv.f kinds_mod.o constants.o \
-        timers.o remap_vars.o grids.o
+        remap_vars.o grids.o
 
 remap_distwgt.o: remap_distwgt.f kinds_mod.o constants.o \
         remap_vars.o grids.o
 
 remap_bilinear.o: remap_bilinear.f kinds_mod.o constants.o \
-        remap_vars.o grids.o timers.o
+        remap_vars.o grids.o
 
 remap_bicubic.o: remap_bicubic.f kinds_mod.o constants.o \
         remap_vars.o grids.o
-
-timers.o: timers.f kinds_mod.o constants.o
 
 remap_write.o: remap_write.f kinds_mod.o constants.o \
         remap_vars.o grids.o
 
 remap.o: remap.f kinds_mod.o constants.o
 
-scrip.o: scrip.f kinds_mod.o constants.o iounits.o timers.o \
+scrip.o: scrip.f kinds_mod.o constants.o \
         remap_vars.o grids.o remap_conserv.o remap_distwgt.o \
         remap_bilinear.o remap_bicubic.o remap_write.o \
 	$(BASEDIR)/utils/py_capi_ftn_utils.h

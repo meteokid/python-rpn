@@ -17,6 +17,8 @@ module scrip_init_var
    logical :: isInit = .false.
    logical :: hasGrid1LatLon = .false.
    logical :: hasGrid2LatLon = .false.
+   logical :: ownLatLon1Mem = .false.
+   logical :: ownLatLon2Mem = .false.
 end module scrip_init_var
 
 
@@ -44,6 +46,10 @@ function scrip_init_options( &
    endif
    errorCode = SCRIP_OK
    isInit = .true.
+   hasGrid1LatLon = .false.
+   hasGrid2LatLon = .false.
+   ownLatLon1Mem = .false.
+   ownLatLon2Mem = .false.
    luse_grid1_area = .false. !TODO: remove this restriction
    luse_grid2_area = .false. !TODO: remove this restriction
    num_maps      = 1
@@ -97,6 +103,79 @@ function scrip_set_grid_latlon_rad( &
    integer (kind=int_kind) :: &
         F_grid_nb,F_grid_size, &
         F_grid_nb_corners ! number of corners for each grid cell
+   real (kind=real_kind), dimension(F_grid_size), target :: &
+        F_grid_center_lat, & ! lat/lon coordinates for
+        F_grid_center_lon    ! each grid center in radians
+   real (kind=real_kind), dimension(F_grid_nb_corners,F_grid_size), target :: &
+        F_grid_corner_lat, & ! lat/lon coordinates for
+        F_grid_corner_lon    ! each grid corner in radians
+   integer :: errorCode,iStat
+   !IMPORTANT: Lat,Lon must be given in Radiants
+!**/
+   !--------------------------------------------------
+   errorCode = SCRIP_ERROR
+   if (F_grid_nb == SCRIP_INPUT_GRID) then
+      if (hasGrid1LatLon) return
+      errorCode = SCRIP_OK
+      hasGrid1LatLon = .true.
+      ownLatLon1Mem = .true.
+      grid1_size = F_grid_size
+      grid1_corners = F_grid_nb_corners
+      grid1_rank = 2
+      if (F_grid_dims(1)==1 .or. F_grid_dims(1)==grid1_size) grid1_rank = 1
+      allocate(grid1_dims(2))
+      grid1_dims = F_grid_dims
+      allocate(grid1_center_lat(F_grid_size),STAT=istat)
+      allocate(grid1_center_lon(F_grid_size),STAT=istat)
+      allocate(grid1_corner_lat(F_grid_nb_corners,F_grid_size),STAT=istat)
+      allocate(grid1_corner_lon(F_grid_nb_corners,F_grid_size),STAT=istat)
+      grid1_center_lat = dble(F_grid_center_lat)
+      grid1_center_lon = dble(F_grid_center_lon)
+      grid1_corner_lat = dble(F_grid_corner_lat)
+      grid1_corner_lon = dble(F_grid_corner_lon)
+      allocate(grid1_mask(grid1_size))
+      grid1_mask = .true.
+   else !if (F_grid_nb == SCRIP_OUTPUT_GRID)
+      if (hasGrid2LatLon) return
+      errorCode = SCRIP_OK
+      hasGrid2LatLon = .true.
+      ownLatLon2Mem = .true.
+      grid2_size = F_grid_size
+      grid2_corners = F_grid_nb_corners
+      grid2_rank = 2
+      if (F_grid_dims(1)==1 .or. F_grid_dims(1)==grid2_size) grid2_rank = 1
+      allocate(grid2_dims(2))
+      grid2_dims = F_grid_dims
+      allocate(grid2_center_lat(F_grid_size),STAT=istat)
+      allocate(grid2_center_lon(F_grid_size),STAT=istat)
+      allocate(grid2_corner_lat(F_grid_nb_corners,F_grid_size),STAT=istat)
+      allocate(grid2_corner_lon(F_grid_nb_corners,F_grid_size),STAT=istat)
+      grid2_center_lat = dble(F_grid_center_lat)
+      grid2_center_lon = dble(F_grid_center_lon)
+      grid2_corner_lat = dble(F_grid_corner_lat)
+      grid2_corner_lon = dble(F_grid_corner_lon)
+      allocate(grid2_mask(grid2_size))
+      grid2_mask = .true.
+   endif
+   !--------------------------------------------------
+   return
+end function scrip_set_grid_latlon_rad
+
+
+!/**
+function scrip_set_grid_latlon_rad_8( &
+     F_grid_nb,F_grid_size,F_grid_dims,F_grid_nb_corners,&
+     F_grid_center_lat,F_grid_center_lon, &
+     F_grid_corner_lat,F_grid_corner_lon) result(errorCode)
+   use scrip_init_var
+   use kinds_mod
+   use grids
+   implicit none
+   integer (kind=int_kind), dimension(2) :: &
+        F_grid_dims ! size of each grid dimension
+   integer (kind=int_kind) :: &
+        F_grid_nb,F_grid_size, &
+        F_grid_nb_corners ! number of corners for each grid cell
    real (kind=dbl_kind), dimension(F_grid_size), target :: &
         F_grid_center_lat, & ! lat/lon coordinates for
         F_grid_center_lon    ! each grid center in radians
@@ -108,7 +187,7 @@ function scrip_set_grid_latlon_rad( &
 !**/
    !--------------------------------------------------
    errorCode = SCRIP_ERROR
-   if (F_grid_nb == 1) then
+   if (F_grid_nb == SCRIP_INPUT_GRID) then
       if (hasGrid1LatLon) return
       errorCode = SCRIP_OK
       hasGrid1LatLon = .true.
@@ -116,15 +195,15 @@ function scrip_set_grid_latlon_rad( &
       grid1_corners = F_grid_nb_corners
       grid1_rank = 2
       if (F_grid_dims(1)==1 .or. F_grid_dims(1)==grid1_size) grid1_rank = 1
-      allocate(grid1_dims(grid1_rank))
-      grid1_dims = F_grid_dims(1:grid1_rank)
+      allocate(grid1_dims(2))
+      grid1_dims = F_grid_dims
       grid1_center_lat => F_grid_center_lat
       grid1_center_lon => F_grid_center_lon
       grid1_corner_lat => F_grid_corner_lat
       grid1_corner_lon => F_grid_corner_lon
       allocate(grid1_mask(grid1_size))
       grid1_mask = .true.
-   else
+   else !if (F_grid_nb == SCRIP_OUTPUT_GRID)
       if (hasGrid2LatLon) return
       errorCode = SCRIP_OK
       hasGrid2LatLon = .true.
@@ -132,8 +211,8 @@ function scrip_set_grid_latlon_rad( &
       grid2_corners = F_grid_nb_corners
       grid2_rank = 2
       if (F_grid_dims(1)==1 .or. F_grid_dims(1)==grid2_size) grid2_rank = 1
-      allocate(grid2_dims(grid2_rank))
-      grid2_dims = F_grid_dims(1:grid2_rank)
+      allocate(grid2_dims(2))
+      grid2_dims = F_grid_dims
       grid2_center_lat => F_grid_center_lat
       grid2_center_lon => F_grid_center_lon
       grid2_corner_lat => F_grid_corner_lat
@@ -143,7 +222,7 @@ function scrip_set_grid_latlon_rad( &
    endif
    !--------------------------------------------------
    return
-end function scrip_set_grid_latlon_rad
+end function scrip_set_grid_latlon_rad_8
 
 
 !/**
@@ -158,7 +237,7 @@ function scrip_set_grid_mask(F_grid_nb,F_grid_size,F_grid_mask) result(errorCode
 !**/
    !--------------------------------------------------
    errorCode = SCRIP_ERROR
-   if (F_grid_nb==1 .and. hasGrid1LatLon .and. F_grid_size==grid1_size) then
+   if (F_grid_nb==SCRIP_INPUT_GRID .and. hasGrid1LatLon .and. F_grid_size==grid1_size) then
          errorCode = SCRIP_OK
          where (F_grid_mask == 1)
             grid1_mask = .true.
@@ -195,6 +274,7 @@ function scrip_compute_addr_wts() result(errorCode)
    return
 end function scrip_compute_addr_wts
 
+
 !/**
 subroutine scrip_get_dims(F_map_nb,F_num_wts,F_num_links)
    use kinds_mod
@@ -208,10 +288,10 @@ subroutine scrip_get_dims(F_map_nb,F_num_wts,F_num_links)
    F_num_wts = 0
    F_num_links = 0
    if (scrip_is_addr_wts_avail(F_map_nb) == SCRIP_OK) then
-      if (F_map_nb == 1) then
+      if (F_map_nb == SCRIP_MAPPING_FORWARD) then
          F_num_links = SIZE(grid2_add_map1)
          F_num_wts   = SIZE(wts_map1, DIM=1)
-      else
+      else !if (F_map_nb == SCRIP_MAPPING_REVERSE)
          F_num_links = SIZE(grid2_add_map2)
          F_num_wts   = SIZE(wts_map2, DIM=1)
       endif
@@ -231,14 +311,16 @@ function scrip_is_addr_wts_avail(F_map_nb) result(errorCode)
 !**/
    !--------------------------------------------------
    errorCode = SCRIP_ERROR
-   if (F_map_nb == 1) then
+   if (F_map_nb == SCRIP_MAPPING_FORWARD) then
       if (allocated(grid1_add_map1) .and. &
            allocated(grid2_add_map1) .and. &
-           allocated(wts_map1)) errorCode = SCRIP_OK
-   else
+           allocated(wts_map1)) &
+           errorCode = SCRIP_OK
+   else !if (F_map_nb == SCRIP_MAPPING_REVERSE)
       if (allocated(grid1_add_map2) .and. &
            allocated(grid2_add_map2) .and. &
-           allocated(wts_map2)) errorCode = SCRIP_OK
+           allocated(wts_map2)) &
+           errorCode = SCRIP_OK
    endif
    !--------------------------------------------------
    return
@@ -246,7 +328,7 @@ end function scrip_is_addr_wts_avail
 
 
 !/**
-subroutine scrip_get_addr_wts(F_map_nb,F_num_wts, F_num_links, &
+subroutine scrip_get_addr_wts_8(F_map_nb,F_num_wts, F_num_links, &
      F_grid1_add_map, F_grid2_add_map, F_wts_map, &
      errorCode)
    use kinds_mod
@@ -260,37 +342,36 @@ subroutine scrip_get_addr_wts(F_map_nb,F_num_wts, F_num_links, &
         F_wts_map          ! out, map weights for each link(num_wts,max_links)
    integer (kind=int_kind) :: errorCode ! out
 !**/
-   integer :: i,n
+   integer :: n,nw
    integer, external :: scrip_is_addr_wts_avail
    !--------------------------------------------------
    !TODO: get_addr_wts for map2
    errorCode = SCRIP_ERROR
-   if (scrip_is_addr_wts_avail(F_map_nb) == SCRIP_OK) then
-      if (F_map_nb == 1) then
-         n = min(F_num_links,SIZE(grid1_add_map1),SIZE(grid2_add_map1))
-         if (n == F_num_links) then
-            errorCode = SCRIP_OK
-            F_grid1_add_map = grid1_add_map1(1:n)
-            F_grid2_add_map = grid2_add_map1(1:n)
-            do i=1,min(F_num_wts,SIZE(wts_map1, DIM=1))
-               F_wts_map(i,1:n) = wts_map1(i,1:n)
-            enddo
-         endif
-      else
-         n = min(F_num_links,SIZE(grid1_add_map2),SIZE(grid2_add_map2))
-         if (n == F_num_links) then
-            errorCode = SCRIP_OK
-            F_grid1_add_map(1:n) = grid1_add_map2(1:n)
-            F_grid2_add_map(1:n) = grid2_add_map2(1:n)
-            do i=1,min(F_num_wts,SIZE(wts_map2, DIM=1))
-               F_wts_map(i,1:n) = wts_map2(i,1:n)
-            enddo
-         endif
+   if (scrip_is_addr_wts_avail(F_map_nb) == SCRIP_ERROR) then
+      return
+   endif
+   if (F_map_nb == SCRIP_MAPPING_FORWARD) then
+      n  = min(F_num_links,SIZE(grid1_add_map1),SIZE(grid2_add_map1))
+      nw = min(F_num_wts,SIZE(wts_map1, DIM=1))
+      if (n == F_num_links .and. nw == F_num_wts) then
+         errorCode = SCRIP_OK
+         F_grid1_add_map(1:n) = grid1_add_map1(1:n)
+         F_grid2_add_map(1:n) = grid2_add_map1(1:n)
+         F_wts_map(1:nw,1:n) = wts_map1(1:nw,1:n)
+      endif
+   else !if (F_map_nb == SCRIP_MAPPING_REVERSE)
+      n = min(F_num_links,SIZE(grid1_add_map2),SIZE(grid2_add_map2))
+      nw = min(F_num_wts,SIZE(wts_map2, DIM=1))
+      if (n == F_num_links .and. nw == F_num_wts) then
+         errorCode = SCRIP_OK
+         F_grid1_add_map(1:n) = grid1_add_map2(1:n)
+         F_grid2_add_map(1:n) = grid2_add_map2(1:n)
+         F_wts_map(1:nw,1:n) = wts_map2(1:nw,1:n)
       endif
    endif
    !--------------------------------------------------
    return
-end subroutine scrip_get_addr_wts
+end subroutine scrip_get_addr_wts_8
 
 
 !/**
@@ -301,9 +382,6 @@ subroutine scrip_finalize()
    implicit none
 !**/
    !--------------------------------------------------
-   isInit = .false.
-   hasGrid1LatLon = .false.
-   hasGrid2LatLon = .false.
    if (allocated(grid1_add_map1)) deallocate(grid1_add_map1)
    if (allocated(grid2_add_map1)) deallocate(grid2_add_map1)
    if (allocated(wts_map1)) deallocate(wts_map1)
@@ -311,6 +389,23 @@ subroutine scrip_finalize()
    if (allocated(grid2_add_map2)) deallocate(grid2_add_map2)
    if (allocated(wts_map2)) deallocate(wts_map2)
    call scrip_deallocate_work_array()
+   if (ownLatLon1Mem) then
+      if (associated(grid1_center_lat)) deallocate(grid1_center_lat)
+      if (associated(grid1_center_lon)) deallocate(grid1_center_lon)
+      if (associated(grid1_corner_lat)) deallocate(grid1_corner_lat)
+      if (associated(grid1_corner_lon)) deallocate(grid1_corner_lon)
+   endif
+   if (ownLatLon2Mem) then
+      if (associated(grid2_center_lat)) deallocate(grid2_center_lat)
+      if (associated(grid2_center_lon)) deallocate(grid2_center_lon)
+      if (associated(grid2_corner_lat)) deallocate(grid2_corner_lat)
+      if (associated(grid2_corner_lon)) deallocate(grid2_corner_lon)
+   endif
+   isInit = .false.
+   hasGrid1LatLon = .false.
+   hasGrid2LatLon = .false.
+   ownLatLon1Mem = .false.
+   ownLatLon2Mem = .false.
    !--------------------------------------------------
    return
 end subroutine scrip_finalize
@@ -344,7 +439,40 @@ end subroutine scrip_deallocate_work_array
 
 
 !/**
-subroutine scrip_interpol(dst_array, src_array, &
+subroutine scrip_interpol_o1(dst_array, src_array, &
+     dst_add, src_add, map_wts, &
+     nwts,nlinks,dst_size,src_size)
+   use kinds_mod
+   use remap_mod
+   implicit none
+   integer :: nwts,nlinks,dst_size,src_size
+   integer (kind=int_kind), dimension(nlinks):: &
+        dst_add,    & ! destination address for each link
+        src_add      ! source      address for each link
+
+   real (kind=dbl_kind), dimension(nwts,nlinks):: &
+        map_wts      ! remapping weights for each link
+
+   real (kind=real_kind), dimension(src_size):: &
+        src_array    ! array with source field to be remapped
+
+   real (kind=real_kind), dimension(dst_size) :: &
+        dst_array    ! array for remapped field on destination grid
+!**/
+   integer :: n
+   !---------------------------------------------------------------
+   dst_array = 0.
+   do n=1,nlinks
+      dst_array(dst_add(n)) = real(dble(dst_array(dst_add(n))) + &
+           dble(src_array(src_add(n)))*map_wts(1,n))
+   enddo
+   !---------------------------------------------------------------
+   return
+end subroutine scrip_interpol_o1
+
+
+!/**
+subroutine scrip_interpol_o1_8(dst_array, src_array, &
      dst_add, src_add, map_wts, &
      nwts,nlinks,dst_size,src_size)
    use kinds_mod
@@ -364,9 +492,62 @@ subroutine scrip_interpol(dst_array, src_array, &
    real (kind=dbl_kind), dimension(dst_size) :: &
         dst_array    ! array for remapped field on destination grid
 !**/
+   integer :: n
    !---------------------------------------------------------------
-   dst_array = 0.
-   call remap(dst_array, map_wts, dst_add, src_add,src_array)
+   dst_array = 0.D0
+   do n=1,nlinks
+      dst_array(dst_add(n)) = dst_array(dst_add(n)) + &
+           src_array(src_add(n))*map_wts(1,n)
+   enddo
    !---------------------------------------------------------------
    return
-end subroutine scrip_interpol
+end subroutine scrip_interpol_o1_8
+
+
+
+!!$!/**
+!!$module scrip_interface
+!!$   use kinds_mod
+!!$   use remap_vars
+!!$   use scrip_init_var
+!!$   implicit None
+!!$   private
+!!$   public :: scrip_get_addr_wts
+!!$!**/
+!!$
+!!$contains
+!!$
+!!$   !/**
+!!$   function scrip_get_addr_wts(F_map_nb,F_grid1_add_map, F_grid2_add_map, F_wts_map) result(errorCode)
+!!$      implicit none
+!!$      integer :: F_map_nb,errorCode
+!!$      integer(kind=int_kind), pointer, dimension(:) :: &
+!!$           F_grid1_add_map, & ! out, grid1 address for each link in mapping 1
+!!$           F_grid2_add_map    ! out, grid2 address for each link in mapping 1
+!!$      real(kind=dbl_kind), pointer, dimension(:, :) :: &
+!!$           F_wts_map          ! out, map weights for each link(num_wts,max_links)
+!!$      integer, external :: scrip_is_addr_wts_avail
+!!$   !**/
+!!$      !--------------------------------------------------
+!!$      errorCode = SCRIP_ERROR
+!!$      if (isInit .and. hasGrid1LatLon .and. hasGrid2LatLon) then
+!!$         call scrip_addr_wts()
+!!$         if (scrip_is_addr_wts_avail(F_map_nb) ==  SCRIP_OK) then
+!!$            if (F_map_nb == 1) then
+!!$               F_grid1_add_map => grid1_add_map1
+!!$               F_grid2_add_map => grid2_add_map1
+!!$               F_wts_map => wts_map1
+!!$            else
+!!$               F_grid1_add_map => grid1_add_map2
+!!$               F_grid2_add_map => grid2_add_map2
+!!$               F_wts_map => wts_map2
+!!$            endif
+!!$            errorCode = SCRIP_OK
+!!$         endif
+!!$         call scrip_deallocate_work_array()
+!!$      endif
+!!$      !--------------------------------------------------
+!!$      return
+!!$   end function scrip_get_addr_wts
+!!$
+!!$end module scrip_interface

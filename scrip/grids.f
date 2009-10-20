@@ -74,7 +74,7 @@
 !
 !-----------------------------------------------------------------------
 
-      logical (kind=log_kind), dimension(:), pointer, save ::
+      logical (kind=log_kind), dimension(:), allocatable, save ::
      &             grid1_mask,        ! flag which cells participate
      &             grid2_mask         ! flag which cells participate
 
@@ -82,7 +82,8 @@
      &             grid1_center_lat,  ! lat/lon coordinates for
      &             grid1_center_lon,  ! each grid center in radians
      &             grid2_center_lat,
-     &             grid2_center_lon,
+     &             grid2_center_lon
+      real (kind=dbl_kind), dimension(:), allocatable, save ::
      &             grid1_area,        ! tot area of each grid1 cell
      &             grid2_area,        ! tot area of each grid2 cell
      &             grid1_area_in,     ! area of grid1 cell from file

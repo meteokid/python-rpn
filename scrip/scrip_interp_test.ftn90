@@ -10,25 +10,28 @@
 
 #include "scrip.h"
 
+#define RDOUBLE 8
 !/**
 program scrip_interp_test
+   use kinds_mod
    implicit none
 !**/
    integer, parameter :: NB_CORNERS = 4
-   integer, parameter :: NB_SCRIP_BINS = -1
-   integer :: niIn,njIn,niOut,njOut,nbWeights,nbAddr ,iErr,istat,k
+   integer, parameter :: NB_SCRIP_BINS = 100
+   integer, parameter :: NB_DELTA = 4
+   integer :: niIn,njIn,niOut,njOut,nbWeights,nbAddr ,iErr,istat
    real    :: dlaloIn,dlaloOut,radPerDeg,degPerRad
    integer, dimension(2) :: dimsGridIn, dimsGridOut
    real, dimension(:,:),   allocatable :: gridInCenterLat,gridInCenterLon
    real, dimension(:,:,:), allocatable :: gridInCornersLat,gridInCornersLon
    real, dimension(:,:),   allocatable :: gridOutCenterLat,gridOutCenterLon
    real, dimension(:,:,:), allocatable :: gridOutCornersLat,gridOutCornersLon
-   real, dimension(:,:), pointer :: interpWeights
+   real(dbl_kind), dimension(:,:), pointer :: interpWeights
    integer, dimension(:), pointer :: PointAddrGridIn,PointAddrGridOut
    real, dimension(:,:),   allocatable :: gridOutCenterLat2
    integer, external :: scrip_init_options,scrip_set_grid_latlon_rad,scrip_compute_addr_wts
-   integer :: i,j,nbErrPoints
-   real :: epsilon,relErr
+   integer :: i,j,k,nbErrPoints(NB_DELTA)
+   real :: delta(NB_DELTA),relErr
    !---------------------------------------------------------------------
    niIn    = 13
    njIn    = 11
@@ -36,8 +39,10 @@ program scrip_interp_test
    dimsGridIn(1) = niIn
    dimsGridIn(2) = njIn
 
-   niOut   = 21
-   njOut   = 19
+   niOut   = niIn + 3
+   njOut   = njIn + 1
+!!$   niOut   = 19
+!!$   njOut   = 21
    dlaloOut= 0.25
    dimsGridOut(1) = niOut
    dimsGridOut(2) = njOut
@@ -67,7 +72,7 @@ program scrip_interp_test
    gridOutCornersLon = gridOutCornersLon * radPerDeg
 
    iErr = scrip_init_options(NB_SCRIP_BINS, SCRIP_DISTWGT, &
-        SCRIP_NORM_FRACAREA, SCRIP_RESTRICT_LALO, SCRIP_REMAP_ONEWAY)
+        SCRIP_NORM_FRACAREA, SCRIP_RESTRICT_LAT, SCRIP_REMAP_ONEWAY)
 
    iErr = scrip_set_grid_latlon_rad(SCRIP_INPUT_GRID, niIn*njIn, dimsGridIn, NB_CORNERS,&
         gridInCenterLat, gridInCenterLon, gridInCornersLat, gridInCornersLon)
@@ -98,9 +103,18 @@ program scrip_interp_test
    allocate(PointAddrGridOut(nbAddr),STAT=istat)
    allocate(interpWeights(nbWeights,nbAddr),STAT=istat)
 
-   call scrip_get_addr_wts(SCRIP_MAPPING_FORWARD,nbWeights,nbAddr, &
-        PointAddrGridOut,PointAddrGridIn,interpWeights, &
+   call scrip_get_addr_wts_8(SCRIP_MAPPING_FORWARD,nbWeights,nbAddr, &
+        PointAddrGridIn,PointAddrGridOut,interpWeights, &
         iErr)
+   if (iErr == SCRIP_ERROR) then
+      print *,'Scrip test error in scrip_get_addr_wts'
+      stop
+   endif
+   
+   print *,'PointAddrGridIn',minval(PointAddrGridIn),maxval(PointAddrGridIn), '<=',niIn*njIn
+   print *,'PointAddrGridOut',minval(PointAddrGridOut),maxval(PointAddrGridOut), '<=',niOut*njOut
+   print *,'interpWeights',minval(interpWeights),maxval(interpWeights)
+   print *,interpWeights
 
    call scrip_finalize()
 
@@ -109,24 +123,36 @@ program scrip_interp_test
    gridInCenterLat  = (gridInCenterLat  * degPerRad * 10.) + 5.
    gridOutCenterLat = (gridOutCenterLat * degPerRad * 10.) + 5.
 
-   call scrip_interpol(gridOutCenterLat2, gridInCenterLat, &
-        PointAddrGridIn,PointAddrGridOut,interpWeights, &
+   call scrip_interpol_o1(gridOutCenterLat2, gridInCenterLat, &
+        PointAddrGridOut,PointAddrGridIn,interpWeights, &
         nbWeights,nbAddr,size(gridOutCenterLat2),size(gridInCenterLat))
 
+   print *,'gridOutCenterLat2',minval(gridOutCenterLat2),maxval(gridOutCenterLat2)
+
+   !delta = 1.e-5
    nbErrPoints = 0
-   epsilon = 1.e-5
-   epsilon = 0.1
+   delta(1) = 1.
+   do k =2,NB_DELTA
+      delta(k) = delta(k-1)/10.
+   enddo
+
    do j=1,njOut
       do i=1,niOut
          relErr = (gridOutCenterLat2(i,j)-gridOutCenterLat(i,j))/gridOutCenterLat2(i,j)
-         if (abs(relErr)>epsilon) then
+         if (abs(relErr)>delta(1)) then
             print '(2I4,X,2F6.2,X,F7.4,A)',i,j,gridOutCenterLat(i,j),gridOutCenterLat2(i,j),relErr &
                  ,'%'
-            nbErrPoints = nbErrPoints + 1
+            nbErrPoints(1) = nbErrPoints(1) + 1
          endif
+         do k=2,NB_DELTA
+            if (abs(relErr)>delta(k)) nbErrPoints(k) = nbErrPoints(k) + 1
+         enddo
       enddo
    enddo
-   print *,'Errouneous points:',100.*float(nbErrPoints)/float(niOut*njOut),'%'
+
+   do k=1,NB_DELTA
+      print '(a,F5.1,a,F6.4,a)','There are ',100.*float(nbErrPoints(k))/float(niOut*njOut),'% of point with RelErr>',delta(k),'%'
+   enddo
 
    deallocate(gridInCenterLat,STAT=istat)
    deallocate(gridOutCenterLat,STAT=istat)
@@ -157,9 +183,22 @@ subroutine getLatLon(centerLat,centerLon,cornersLat,cornersLon,dlalo,ni,nj)
    allocate(cornersYpos(NB_CORNERS,ni,nj),STAT=istat)
 
    iErr = gdll(gridId,centerLat,centerLon)
+   if (iErr<0) print *,'Error: gdll'
    iErr = gdxyfll(gridId,centerXpos,centerYpos,centerLat,centerLon,ni*nj)
+   if (iErr<0) print *,'Error: gdxyfll'
    iErr = get_corners_xy(cornersXpos,cornersYpos,centerXpos,centerYpos,ni,nj)
+   if (iErr<0) print *,'Error: get_corners_xy'
    iErr = gdllfxy(gridId,cornersLat,cornersLon,cornersXpos,cornersYpos,ni*nj*NB_CORNERS)
+   if (iErr<0) print *,'Error: gdllfxy'
+
+!!$   print *,'centerLat',minval(centerLat),maxval(centerLat)
+!!$   print *,'centerLon',minval(centerLon),maxval(centerLon)
+!!$   print *,'centerXpos',minval(centerXpos),maxval(centerXpos)
+!!$   print *,'centerYpos',minval(centerYpos),maxval(centerYpos)
+!!$   print *,'cornersXpos',minval(cornersXpos),maxval(cornersXpos)
+!!$   print *,'cornersYpos',minval(cornersYpos),maxval(cornersYpos)
+!!$   print *,'cornersLat',minval(cornersLat),maxval(cornersLat)
+!!$   print *,'cornersLon',minval(cornersLon),maxval(cornersLon)
 
    deallocate(centerXpos,STAT=istat)
    deallocate(centerYpos,STAT=istat)
@@ -176,7 +215,7 @@ function getGridId(dlalo,ni,nj) result(gridId)
    real :: dlalo
    integer :: gridId
 !**/
-   character(len=1), parameter :: gridType='L'
+   character(len=2), parameter :: gridType='L '
    real, parameter :: CENTER_LAT = 0.
    real, parameter :: CENTER_LON = 180.
    integer :: ig1,ig2,ig3,ig4
@@ -187,6 +226,7 @@ function getGridId(dlalo,ni,nj) result(gridId)
    lon0 = CENTER_LON - dlalo*(real(ni)/2.)
    call cxgaig(gridType,ig1,ig2,ig3,ig4,lat0,lon0,dlalo,dlalo)
    gridId = ezqkdef(ni,nj,gridType,ig1,ig2,ig3,ig4,0)
+   if (gridId<0) print *,'Error: ezqkdef'
    !---------------------------------------------------------------------
    return
 end function getGridId

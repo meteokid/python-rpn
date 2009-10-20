@@ -47,10 +47,6 @@
       use remap_write                ! routines for remap outputrogram main
       implicit none
 
-      integer (kind=int_kind) :: n     ! dummy counter
-      integer :: k
-
- 
 !-----------------------------------------------------------------------
 
       call grid_init()
