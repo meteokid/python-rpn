@@ -43,7 +43,7 @@ kinds_mod.o: kinds_mod.f
 
 constants.o: constants.f kinds_mod.o
 
-grids.o: grids.f kinds_mod.o constants.o 
+grids.o: grids.f kinds_mod.o constants.o
 
 remap_vars.o: remap_vars.f kinds_mod.o constants.o grids.o
 

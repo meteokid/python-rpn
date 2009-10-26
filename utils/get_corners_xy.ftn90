@@ -9,41 +9,45 @@
 !/**
 #include "int_macros.hf"
 
+#define RDOUBLE 8
+#define STAT_OK 0
+
 !/**
 function get_corners_xy(xc,yc,x,y,ni,nj) result(F_istat)
    implicit none
-   !@objective Halo Xchange for the Icosahedral-based grid
+   !@objective Compute corners xy pos
    !@arguments
+   integer , parameter :: NB_CORNERS = 4
    integer :: ni,nj !intent(in)
    real,dimension(ni,nj)   :: x,y   !intent(in)
-   real,dimension(4,ni,nj) :: xc,yc !intent(out)
+   real,dimension(NB_CORNERS,ni,nj) :: xc,yc !intent(out)
    !@return
    integer :: F_istat 
    !@author  Stephane Chamberland, 2009-09
    !@revisions
    !**/
    integer, parameter :: SW=1,NW=2,NE=3,SE=4,DIM_I=1,DIM_J=2
-   integer, parameter :: DIJ(2,4) = reshape( (/ &
+   integer, parameter :: DIJ(2,NB_CORNERS) = reshape( (/ &
         -1,-1, & !SW
         -1, 1, & !NW
          1, 1, & !NE
          1,-1  & !SE
-       /) , (/2,4/))
+       /) , (/2,NB_CORNERS/))
 
-   integer :: i,j,di,dj,side
-   real(8) :: mx_8,my_8,di_8,xd_8,yd_8
+   integer :: i,j,corner
+   real    :: rdi,rdj,riCorner,rjCorner
    !---------------------------------------------------------------------
-   F_istat = 0
+   F_istat = STAT_OK
    !- SW corners
-   do side=1,4
-      di = DIJ(DIM_I,side)
-      dj = DIJ(DIM_J,side)
+   do corner=1,NB_CORNERS
+      rdi = 0.5*real(DIJ(DIM_I,corner))
+      rdj = 0.5*real(DIJ(DIM_J,corner))
       do j=1,nj
-         yd_8 = dble(j) + 0.5D0*dble(dj)
+         rjCorner = real(j) + rdj
          do i=1,ni
-            xd_8 = dble(i) + 0.5D0*dble(di)
-            xc(side,i,j) = INT_L2DA2(x,ni,nj,xd_8,yd_8)
-            yc(side,i,j) = INT_L2DA2(y,ni,nj,xd_8,yd_8)
+            riCorner = real(i) + rdi
+            xc(corner,i,j) = INT_L2DA2(x,ni,nj,riCorner,rjCorner)
+            yc(corner,i,j) = INT_L2DA2(y,ni,nj,riCorner,rjCorner)
          enddo
       enddo
    enddo
@@ -55,7 +59,7 @@ end function get_corners_xy
 !/**
 function get_sidescenter_xy(xc,yc,x,y,ni,nj) result(F_istat)
    implicit none
-   !@objective Halo Xchange for the Icosahedral-based grid
+   !@objective 
    !@arguments
    integer :: ni,nj !intent(in)
    real,dimension(ni,nj)   :: x,y   !intent(in)
@@ -67,7 +71,7 @@ function get_sidescenter_xy(xc,yc,x,y,ni,nj) result(F_istat)
    !**/
    integer :: i,j
    !---------------------------------------------------------------------
-   F_istat = 0
+   F_istat = STAT_OK
    do j=1,nj
       do i=1,ni
          !- S

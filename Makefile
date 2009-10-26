@@ -5,10 +5,7 @@ include Makefile_$(ARCH)
 
 BASEDIR=$(PWD)
 
-MYDYN = jim
-COMPONENTS = utils $(MYDYN) scrip
-FTNALLSRC = utils/*.ftn90 $(MYDYN)/*.ftn90 utils/*.hf $(MYDYN)/*.hf
-FTNALLOBJ = utils/*.o $(MYDYN)/*.o
+COMPONENTS = utils scrip jim test
 
 COMM     =
 OTHERS   =  $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
@@ -57,12 +54,28 @@ clean:
 	done
 	/bin/rm -f mec_$(MYDYN)_$(EC_ARCH).Abs
 
-tags: clean
+ctags: clean
 	rm -f tags TAGS
-	list='$(FTNALLSRC)'; \
-	for myfile in $$list; do \
+	for mydir in . $(COMPONENTS); do \
+	echo $$mydir ;\
+	list2="$$mydir/*.f $$mydir/*.ftn* $$mydir/*.hf"; \
+	for myfile in $$list2; do \
+		echo $$myfile ;\
 		etags --language=fortran --defines --append $$myfile ; \
 		ctags --language=fortran --defines --append $$myfile ; \
+	done ; \
+	list3="$$mydir/*.c $$mydir/*.h"; \
+	for myfile in $$list3; do \
+		echo $$myfile ;\
+		etags --language=c --defines --append $$myfile ; \
+		ctags --language=c --defines --append $$myfile ; \
+	done ; \
+	list4="$$mydir/*.py"; \
+	for myfile in $$list4; do \
+		echo $$myfile ;\
+		etags --language=python --defines --append $$myfile ; \
+		ctags --language=python --defines --append $$myfile ; \
+	done ; \
 	done
 
 alltests: all

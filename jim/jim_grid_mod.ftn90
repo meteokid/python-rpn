@@ -360,7 +360,7 @@ contains
       m_ndiv = -1
       m_init_L  = .false.
       m_init2_L = .false.
-      if (allocated(m_nodes_8)) deallocate(m_nodes_8,STAT=istat)
+      if (associated(m_nodes_8)) deallocate(m_nodes_8,STAT=istat)
       !---------------------------------------------------------------------
       return
    end subroutine jim_grid_finalize

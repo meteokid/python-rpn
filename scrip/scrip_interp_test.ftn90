@@ -33,16 +33,16 @@ program scrip_interp_test
    integer :: i,j,k,nbErrPoints(NB_DELTA)
    real :: delta(NB_DELTA),relErr
    !---------------------------------------------------------------------
-   niIn    = 13
-   njIn    = 11
+   niIn    = 19
+   njIn    = 17
    dlaloIn = 0.5
    dimsGridIn(1) = niIn
    dimsGridIn(2) = njIn
 
    niOut   = niIn + 3
    njOut   = njIn + 1
-!!$   niOut   = 19
-!!$   njOut   = 21
+   niOut   = 25
+   njOut   = 21
    dlaloOut= 0.25
    dimsGridOut(1) = niOut
    dimsGridOut(2) = njOut
@@ -110,7 +110,7 @@ program scrip_interp_test
       print *,'Scrip test error in scrip_get_addr_wts'
       stop
    endif
-   
+
    print *,'PointAddrGridIn',minval(PointAddrGridIn),maxval(PointAddrGridIn), '<=',niIn*njIn
    print *,'PointAddrGridOut',minval(PointAddrGridOut),maxval(PointAddrGridOut), '<=',niOut*njOut
    print *,'interpWeights',minval(interpWeights),maxval(interpWeights)
@@ -177,7 +177,7 @@ subroutine getLatLon(centerLat,centerLon,cornersLat,cornersLon,dlalo,ni,nj)
    integer, external :: getGridId,gdll,gdxyfll,gdllfxy,get_corners_xy
    !---------------------------------------------------------------------
    gridId = getGridId(dlalo,ni,nj)
-   
+
    allocate(centerXpos(ni,nj),STAT=istat)
    allocate(centerYpos(ni,nj),STAT=istat)
    allocate(cornersXpos(NB_CORNERS,ni,nj),STAT=istat)

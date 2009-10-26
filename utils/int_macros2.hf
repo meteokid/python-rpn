@@ -1,0 +1,123 @@
+#ifndef INT_MACROS2
+#define INT_MACROS2 1
+!==== int_macros2.hf [bgn] =========================================
+! Copyright: MSC-RPN COMM Group Licence/Disclaimer version 2
+! http://www.cmc.ec.gc.ca/rpn/modcom/licence.html
+! @author Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+! @created 2004
+! @lastmodified 2009
+!-------------------------------------------------------------------
+!  naming conventions:
+!  integer :: _NI,_NI    !- Array dimensions
+!  integer :: _IMIN,_IMAX !- Array index min and max
+!  integer :: _I,_J      !- Integer position value
+!  real    :: _X,_Y      !- Real position value
+!  real    :: _V         !- Real values
+!  real    :: _A1D       !- 1D Array
+!  real    :: _A2D       !- 2D Array
+!
+!  var suffix 
+!  - 0 or 1    : value at point before or after target dest (e.g X0,X1)
+!  - no suffix : value at target point (e.g. V = fn(X))
+!  macro suffix
+!  - _48 : input in real(4) output in real(8)
+!  - _8  : input in real(8) output in real(8)
+!  - no suffix: input and output are real(4)
+!===================================================================
+
+#define INT_I0(_X,_IMIN,_IMAX) \
+     max((_IMIN),min(floor(_X),(_IMAX)-1))
+
+#define INT_SLOPE_8(_V0,_V1,_X0,_X1) \
+     (((_V1)-(_V0)) / ((_X1)-(_X0)))
+#define INT_SLOPE_48(_V0,_V1,_X0,_X1) \
+     INT_SLOPE_8(dble(_V0),dble(_V1),dble(_X0),dble(_X1))
+
+#define INT_LIN_ofVAL_atX_8(_V0,_V1,_X0,_X1,_X)
+     ((_V0) + ((_X)-(X0))*INT_SLOPE_8(_V0,_V1,_X0,_X1,_X))
+#define INT_LIN_ofVAL_atX_48(_V0,_V1,_X0,_X1,_X)
+     INT_LIN_ofVAL_atX_8(dble(_V0),dble(_V1),dble(_X0),dble(_X1),dble(_X))
+
+!- Linear Interpolation of a 1D Array at pos X
+!TODO: may want to optimize
+#define INT_LIN_ofA1D_atX_8(_A1D,_IMIN,_IMAX,_X) \
+     INT_LIN_ofVAL_atX_8(\
+       _A1D(INT_I0(_X,_IMIN,IMAX)),\
+       _A1D(INT_I0(_X,_IMIN,IMAX)+1),\
+       dble(INT_I0(_X,_IMIN,IMAX)),\
+       dble(INT_I0(_X,_IMIN,IMAX)+1),\
+       _X)
+#define INT_LIN_ofA1D_atX_48(_A1D,_IMIN,_IMAX,_X) \
+     INT_LIN_ofVAL_atX_8(\
+       dble(_A1D(INT_I0(_X,_IMIN,IMAX))),\
+       dble(_A1D(INT_I0(_X,_IMIN,IMAX)+1)),\
+       dble(INT_I0(_X,_IMIN,IMAX)),\
+       dble(INT_I0(_X,_IMIN,IMAX)+1),\
+       dble(_X))
+
+!- Linear Interpolation of a 2D Array along X at pos X,J
+#define INT_LINX_ofA2D_atXJ_8(_A2D,_IMIN,_IMAX,_X,_J) \
+     INT_LIN_ofVAL_atX_8(\
+       _A2D(INT_I0(_X,_IMIN,IMAX),_J),\
+       _A2D(INT_I0(_X,_IMIN,IMAX)+1,_J),\
+       dble(INT_I0(_X,_IMIN,IMAX)),\
+       dble(INT_I0(_X,_IMIN,IMAX)+1),\
+       _X)
+#define INT_LINX_ofA2D_atXJ_48(_A2D,_IMIN,_IMAX,_X,_J) \
+     INT_LIN_ofVAL_atX_8(\
+       dble(_A1D(INT_I0(_X,_IMIN,IMAX),_J)),\
+       dble(_A1D(INT_I0(_X,_IMIN,IMAX)+1,_J)),\
+       dble(INT_I0(_X,_IMIN,IMAX)),\
+       dble(INT_I0(_X,_IMIN,IMAX)+1),\
+       dble(_X))
+
+!- Linear Interpolation of a 2D Array along Y at pos I,Y
+#define INT_LINY_ofA2D_atIY_8(_A2D,_JMIN,_JMAX,_I,_Y) \
+     INT_LIN_ofVAL_atX_8(\
+       _A2D(_I,INT_I0(_Y,_JMIN,JMAX)),\
+       _A2D(_I,INT_I0(_Y,_JMIN,JMAX)+1),\
+       dble(INT_I0(_Y,_JMIN,JMAX)),\
+       dble(INT_I0(_Y,_JMIN,JMAX)+1),\
+       _Y)
+#define INT_LINY_ofA2D_atIY_48(_A2D,_JMIN,_JMAX,_I,_Y) \
+     INT_LIN_ofVAL_atX_8(\
+       dble(_A2D(_I,INT_I0(_Y,_JMIN,JMAX))),\
+       dble(_A2D(_I,INT_I0(_Y,_JMIN,JMAX)+1)),\
+       dble(INT_I0(_Y,_JMIN,JMAX)),\
+       dble(INT_I0(_Y,_JMIN,JMAX)+1),\
+       dble(_Y))
+
+!- Bilinear Interpolation of a 2D Array (A2D) at pos X,Y
+#define INT_BILIN_ofA2D_atXY_8(_A2D,_IMIN,_IMAX,_JMIN,_JMAX,_X,_Y) \
+     INT_LIN_ofVAL_atX_8(\
+       INT_LINX_ofA2D_atXJ_8(_A2D,_IMIN,_IMAX,_X,INT_I0(_Y,_JMIN,_JMAX)),\
+       INT_LINX_ofA2D_atXJ_8(_A2D,_IMIN,_IMAX,_X,INT_I0(_Y,_JMIN,_JMAX)+1),\
+       dble(INT_I0(_Y,_JMIN,_JMAX)),\
+       dble(INT_I0(_Y,_JIMA,_JMAX)+1),\
+       _Y)
+#define INT_BILIN_ofA2D_atXY_48(_A2D,_IMIN,_IMAX,_JMIN,_JMAX,_X,_Y) \
+     INT_LIN_ofVAL_atX_8(\
+       INT_LINX_ofA2D_atXJ_48(_A2D,_IMIN,_IMAX,_X,INT_I0(_Y,_JMIN,_JMAX)),\
+       INT_LINX_ofA2D_atXJ_48(_A2D,_IMIN,_IMAX,_X,INT_I0(_Y,_JMIN,_JMAX)+1),\
+       dble(INT_I0(_Y,_JMIN,_JMAX)),\
+       dble(INT_I0(_Y,_JIMA,_JMAX)+1),\
+       dble(_Y))
+
+!- First order approx of pos (X) of a value (V) in a monoticaly ordered vector/1D-Array (A1D)
+#define INT_FINDX_inA1D_forV_O1_8(_V0,_A1D,_IMIN,_IMAX) \
+     INT_LIN_ofVAL_atX_8(\
+       real(_IMIN),\
+       real(_IMAX),\
+       _A1D(_IMIN),\
+       _A1D(_IMAX),\
+       _V0)
+#define INT_FINDX_inA1D_forV_O1_48(_V0,_A1D,_IMIN,_IMAX) \
+     INT_LIN_ofVAL_atX_8(\
+       dble(_IMIN),\
+       dble(_IMAX),\
+       dble(_A1D(_IMIN)),\
+       dble(_A1D(_IMAX)),\
+       dble(_V0))
+
+!==== int_macros2.hf [end]===========================================
+#endif 
