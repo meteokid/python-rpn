@@ -6,8 +6,7 @@
 ! - service.rpn@ec.gc.ca
 ! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
 !-------------------------------------------------------------------------- 
-!/**
-#include "int_macros.hf"
+#include "int_macros2.hf"
 
 #define RDOUBLE 8
 #define STAT_OK 0
@@ -46,8 +45,8 @@ function get_corners_xy(xc,yc,x,y,ni,nj) result(F_istat)
          rjCorner = real(j) + rdj
          do i=1,ni
             riCorner = real(i) + rdi
-            xc(corner,i,j) = INT_L2DA2(x,ni,nj,riCorner,rjCorner)
-            yc(corner,i,j) = INT_L2DA2(y,ni,nj,riCorner,rjCorner)
+            xc(corner,i,j) = real(INT_BILIN_ofA2D_atXY_48(x,1,ni,1,nj,riCorner,rjCorner))
+            yc(corner,i,j) = real(INT_BILIN_ofA2D_atXY_48(y,1,ni,1,nj,riCorner,rjCorner))
          enddo
       enddo
    enddo

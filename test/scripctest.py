@@ -26,8 +26,7 @@ import numpy
         #self.assertNotAlmostEqual(first, second[, places[, msg]])
         #self.assertRaises(exception, callable, ...)
 
-#class ScripcTests(unittest.TestCase):
-class ScripcTests:
+class ScripcTests(unittest.TestCase):
 
     epsilon = 0.1
 
@@ -52,26 +51,18 @@ class ScripcTests:
     def test_Fstdc_exinterp_KnownValues(self):
         """Fstdc_exinterp should give known result with known input"""
         (la1,lo1,lac1,loc1) = self.gridL(0.5,19,17)
-        (la2,lo2,lac2,loc2) = self.gridL(0.25,25,21)
+        (la2,lo2,lac2,loc2) = self.gridL(0.3,22,18)
         nbins = -1 #use default
         scripc.initOptions(nbins,scripc.TYPE_DISTWGT,scripc.NORM_FRACAREA,scripc.RESTRICT_LALO,scripc.REMAP_ONEWAY)
         scripc.setGridLatLonRad(scripc.INPUT_GRID,la1,lo1,lac1,loc1)
         scripc.setGridLatLonRad(scripc.OUTPUT_GRID,la2,lo2,lac2,loc2)
         (fromAddr,toAddr,weights) = scripc.getAddrWeights(scripc.MAPPING_FORWARD)
-        for item in (la1,fromAddr,toAddr,weights):
-            print '--'
-            #print item.shape,,item.dtype
-            print item.flags
-        la1  *= (180./numpy.pi)
-        la2  *= (180./numpy.pi)
+        la1 *= (180./numpy.pi)
+        la2 *= (180./numpy.pi)
         la2b = scripc.interp_o1(la1,fromAddr,toAddr,weights,la2.size)
-        print '--',la2b.shape
-        print la2b.flags
         la2b = la2b.reshape(la2.shape, order='Fortran')
-        print '--',la2b.shape
-        print la2b.flags
         if numpy.any(numpy.abs(100.*(la2-la2b)/la2)>self.epsilon):
-                print 'la:',100.*(la2-la2b)/la2
+                print 'la rel err [%]:',100.*(la2-la2b)/la2
         self.assertFalse(numpy.any(numpy.abs(100.*(la2-la2b)/la2)>self.epsilon))
 
 if __name__ == "__main__":

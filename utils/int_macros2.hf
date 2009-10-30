@@ -33,58 +33,58 @@
 #define INT_SLOPE_48(_V0,_V1,_X0,_X1) \
      INT_SLOPE_8(dble(_V0),dble(_V1),dble(_X0),dble(_X1))
 
-#define INT_LIN_ofVAL_atX_8(_V0,_V1,_X0,_X1,_X)
-     ((_V0) + ((_X)-(X0))*INT_SLOPE_8(_V0,_V1,_X0,_X1,_X))
-#define INT_LIN_ofVAL_atX_48(_V0,_V1,_X0,_X1,_X)
+#define INT_LIN_ofVAL_atX_8(_V0,_V1,_X0,_X1,_X) \
+     ((_V0) + ((_X)-(_X0))*INT_SLOPE_8(_V0,_V1,_X0,_X1,_X))
+#define INT_LIN_ofVAL_atX_48(_V0,_V1,_X0,_X1,_X) \
      INT_LIN_ofVAL_atX_8(dble(_V0),dble(_V1),dble(_X0),dble(_X1),dble(_X))
 
 !- Linear Interpolation of a 1D Array at pos X
 !TODO: may want to optimize
 #define INT_LIN_ofA1D_atX_8(_A1D,_IMIN,_IMAX,_X) \
      INT_LIN_ofVAL_atX_8(\
-       _A1D(INT_I0(_X,_IMIN,IMAX)),\
-       _A1D(INT_I0(_X,_IMIN,IMAX)+1),\
-       dble(INT_I0(_X,_IMIN,IMAX)),\
-       dble(INT_I0(_X,_IMIN,IMAX)+1),\
+       _A1D(INT_I0(_X,_IMIN,_IMAX)),\
+       _A1D(INT_I0(_X,_IMIN,_IMAX)+1),\
+       dble(INT_I0(_X,_IMIN,_IMAX)),\
+       dble(INT_I0(_X,_IMIN,_IMAX)+1),\
        _X)
 #define INT_LIN_ofA1D_atX_48(_A1D,_IMIN,_IMAX,_X) \
      INT_LIN_ofVAL_atX_8(\
-       dble(_A1D(INT_I0(_X,_IMIN,IMAX))),\
-       dble(_A1D(INT_I0(_X,_IMIN,IMAX)+1)),\
-       dble(INT_I0(_X,_IMIN,IMAX)),\
-       dble(INT_I0(_X,_IMIN,IMAX)+1),\
+       dble(_A1D(INT_I0(_X,_IMIN,_IMAX))),\
+       dble(_A1D(INT_I0(_X,_IMIN,_IMAX)+1)),\
+       dble(INT_I0(_X,_IMIN,_IMAX)),\
+       dble(INT_I0(_X,_IMIN,_IMAX)+1),\
        dble(_X))
 
 !- Linear Interpolation of a 2D Array along X at pos X,J
 #define INT_LINX_ofA2D_atXJ_8(_A2D,_IMIN,_IMAX,_X,_J) \
      INT_LIN_ofVAL_atX_8(\
-       _A2D(INT_I0(_X,_IMIN,IMAX),_J),\
-       _A2D(INT_I0(_X,_IMIN,IMAX)+1,_J),\
-       dble(INT_I0(_X,_IMIN,IMAX)),\
-       dble(INT_I0(_X,_IMIN,IMAX)+1),\
+       _A2D(INT_I0(_X,_IMIN,_IMAX),_J),\
+       _A2D(INT_I0(_X,_IMIN,_IMAX)+1,_J),\
+       dble(INT_I0(_X,_IMIN,_IMAX)),\
+       dble(INT_I0(_X,_IMIN,_IMAX)+1),\
        _X)
 #define INT_LINX_ofA2D_atXJ_48(_A2D,_IMIN,_IMAX,_X,_J) \
      INT_LIN_ofVAL_atX_8(\
-       dble(_A1D(INT_I0(_X,_IMIN,IMAX),_J)),\
-       dble(_A1D(INT_I0(_X,_IMIN,IMAX)+1,_J)),\
-       dble(INT_I0(_X,_IMIN,IMAX)),\
-       dble(INT_I0(_X,_IMIN,IMAX)+1),\
+       dble(_A2D(INT_I0(_X,_IMIN,_IMAX),_J)),\
+       dble(_A2D(INT_I0(_X,_IMIN,_IMAX)+1,_J)),\
+       dble(INT_I0(_X,_IMIN,_IMAX)),\
+       dble(INT_I0(_X,_IMIN,_IMAX)+1),\
        dble(_X))
 
 !- Linear Interpolation of a 2D Array along Y at pos I,Y
 #define INT_LINY_ofA2D_atIY_8(_A2D,_JMIN,_JMAX,_I,_Y) \
      INT_LIN_ofVAL_atX_8(\
-       _A2D(_I,INT_I0(_Y,_JMIN,JMAX)),\
-       _A2D(_I,INT_I0(_Y,_JMIN,JMAX)+1),\
-       dble(INT_I0(_Y,_JMIN,JMAX)),\
-       dble(INT_I0(_Y,_JMIN,JMAX)+1),\
+       _A2D(_I,INT_I0(_Y,_JMIN,_JMAX)),\
+       _A2D(_I,INT_I0(_Y,_JMIN,_JMAX)+1),\
+       dble(INT_I0(_Y,_JMIN,_JMAX)),\
+       dble(INT_I0(_Y,_JMIN,_JMAX)+1),\
        _Y)
 #define INT_LINY_ofA2D_atIY_48(_A2D,_JMIN,_JMAX,_I,_Y) \
      INT_LIN_ofVAL_atX_8(\
-       dble(_A2D(_I,INT_I0(_Y,_JMIN,JMAX))),\
-       dble(_A2D(_I,INT_I0(_Y,_JMIN,JMAX)+1)),\
-       dble(INT_I0(_Y,_JMIN,JMAX)),\
-       dble(INT_I0(_Y,_JMIN,JMAX)+1),\
+       dble(_A2D(_I,INT_I0(_Y,_JMIN,_JMAX))),\
+       dble(_A2D(_I,INT_I0(_Y,_JMIN,_JMAX)+1)),\
+       dble(INT_I0(_Y,_JMIN,_JMAX)),\
+       dble(INT_I0(_Y,_JMIN,_JMAX)+1),\
        dble(_Y))
 
 !- Bilinear Interpolation of a 2D Array (A2D) at pos X,Y
@@ -93,14 +93,14 @@
        INT_LINX_ofA2D_atXJ_8(_A2D,_IMIN,_IMAX,_X,INT_I0(_Y,_JMIN,_JMAX)),\
        INT_LINX_ofA2D_atXJ_8(_A2D,_IMIN,_IMAX,_X,INT_I0(_Y,_JMIN,_JMAX)+1),\
        dble(INT_I0(_Y,_JMIN,_JMAX)),\
-       dble(INT_I0(_Y,_JIMA,_JMAX)+1),\
+       dble(INT_I0(_Y,_JMIN,_JMAX)+1),\
        _Y)
 #define INT_BILIN_ofA2D_atXY_48(_A2D,_IMIN,_IMAX,_JMIN,_JMAX,_X,_Y) \
      INT_LIN_ofVAL_atX_8(\
        INT_LINX_ofA2D_atXJ_48(_A2D,_IMIN,_IMAX,_X,INT_I0(_Y,_JMIN,_JMAX)),\
        INT_LINX_ofA2D_atXJ_48(_A2D,_IMIN,_IMAX,_X,INT_I0(_Y,_JMIN,_JMAX)+1),\
        dble(INT_I0(_Y,_JMIN,_JMAX)),\
-       dble(INT_I0(_Y,_JIMA,_JMAX)+1),\
+       dble(INT_I0(_Y,_JMIN,_JMAX)+1),\
        dble(_Y))
 
 !- First order approx of pos (X) of a value (V) in a monoticaly ordered vector/1D-Array (A1D)
