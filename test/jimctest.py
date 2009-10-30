@@ -1,8 +1,8 @@
 """Unit test for rpnstd.py and Fstd.py"""
 
 import rpnstd
-from jimc import *
-from jim import *
+import jimc
+from jim import jim_flatten,jim_unflatten
 import numpy
 import unittest
 
@@ -13,7 +13,7 @@ class jimcXchHaloTest(unittest.TestCase):
         igrid= 0
         ndiv = 2
         nk   = 1
-        f    = jimc_new_array(ndiv,nk,igrid)
+        f    = jimc.new_array(ndiv,nk,igrid)
         halo = 2
         nij  = 4
         nijh = nij+2*halo
@@ -32,10 +32,10 @@ class jimcXchHaloTest(unittest.TestCase):
         self.assertEqual(f.dtype,numpy.dtype('float32'))
         self.assertEqual(f.shape,(nijh,nijh,nk,ngrids))
         nk   = 5
-        f    = jimc_new_array(ndiv,nk,igrid)
+        f    = jimc.new_array(ndiv,nk,igrid)
         self.assertEqual(f.shape,(nijh,nijh,nk,ngrids))
         igrid= 2
-        f    = jimc_new_array(ndiv,nk,igrid)
+        f    = jimc.new_array(ndiv,nk,igrid)
         self.assertEqual(f.shape,(nijh,nijh,nk,1))
 
 
@@ -142,7 +142,7 @@ class jimcXchHaloTest(unittest.TestCase):
             -53.53300476,  -17.53300285]]]
             ,dtype=numpy.dtype('float32'),order='FORTRAN')
         ndiv    = 2
-        (la,lo) = jimc_grid_la_lo(ndiv)
+        (la,lo) = jimc.grid_la_lo(ndiv)
         la = numpy.reshape(la,(8,8,10),order='F')
         lo = numpy.reshape(lo,(8,8,10),order='F')
         self.assertEqual(la[2,6,0], 90.)
@@ -244,7 +244,7 @@ class jimcXchHaloTest(unittest.TestCase):
             ,dtype=numpy.dtype('float32'),order='FORTRAN')
         ndiv = 1
         nk   = 1
-        f    = jimc_new_array(ndiv,nk,0)
+        f    = jimc.new_array(ndiv,nk,0)
         halo = 2
         nij    = f.shape[0] - 2*halo
         ijlist = range(halo,halo+nij)
@@ -261,7 +261,7 @@ class jimcXchHaloTest(unittest.TestCase):
         #print f
         #f0 = f.copy()
         f = numpy.reshape(f,(f.shape[0],f.shape[1],1,10),order='F')
-        istat = jimc_xch_halo(f)
+        istat = jimc.xch_halo(f)
         f = numpy.reshape(f,(f.shape[0],f.shape[1],10),order='F')
         #print numpy.array_repr(f[1:7,1:7,0],precision=1)
         #print numpy.array_repr(f)
@@ -282,7 +282,7 @@ class jimcXchHaloTest(unittest.TestCase):
         """jim_unflatten(jim_flatten(field)) should retunr field (except halo values)"""
         ndiv = 2
         halo = 2
-        (la,lo) = jimc_grid_la_lo(ndiv)
+        (la,lo) = jimc.grid_la_lo(ndiv)
         ij0 = halo
         ijn = la.shape[0] - halo
         nij = ijn-ij0
