@@ -47,7 +47,8 @@ install: all
 
 clean:
 	rm -f testfile.fst;\
-	rm -rf build; \
+	rm -rf build/*; \
+	rm -rf run/*; \
 	for i in $(COMPONENTS); \
 	do \
 	cd $$i ; $(MAKE) clean0 ; make clean; cd .. ;\

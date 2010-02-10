@@ -1,6 +1,5 @@
-"""Unit test for rpnstd.py and Fstd.py"""
+"""Unit test for jimc.py"""
 
-import rpnstd
 import jimc
 from jim import jim_flatten,jim_unflatten
 import numpy

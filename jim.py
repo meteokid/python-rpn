@@ -5,7 +5,7 @@
 import rpn_version
 from rpn_helpers import *
 import jimc
-import scrip
+#import scrip #TODO: take scrip dependency out in a submodule
 
 import math
 import numpy
@@ -38,14 +38,14 @@ def jim_flatten_shape(field=None,nkfirst=False,nhalo=2,ndiv=None,iGrid=0):
     (40962, 1)
     >>> jim_flatten_shape(ndiv=6,nkfirst=True)
     (1, 40962)
-    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> (nijh,nij,halo) = jimc.grid_dims(5,2)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
     >>> jim_flatten_shape(f)
     (10242, 1)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(1,nijh,nijh,10))
     >>> jim_flatten_shape(f,nkfirst=True)
     (1, 10242)
-    >>> (nijh,nij,halo) = jimc.jimc_dims(5,4)
+    >>> (nijh,nij,halo) = jimc.grid_dims(5,4)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
     >>> f.shape #nhalo=4
     (40, 40, 1, 10)
@@ -68,7 +68,7 @@ def jim_flatten_shape(field=None,nkfirst=False,nhalo=2,ndiv=None,iGrid=0):
     elif ndiv >= 0 and iGrid>=0 and iGrid <=20:
         if iGrid>0:
             nGrids = 1
-        (nijh,nij,halo) = jimc.jimc_dims(ndiv,nhalo)
+        (nijh,nij,halo) = jimc.grid_dims(ndiv,nhalo)
     else:
         raise ValueError, "jim_flatten_shape: wrong args"
     sizexy  = nij*nij
@@ -96,7 +96,7 @@ def jim_flatten(field,nkfirst=False,nhalo=2):
 
     Return a new numpy.ndarray (not a reference to the original one)
 
-    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> (nijh,nij,halo) = jimc.grid_dims(5,2)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
     >>> f.shape
     (36, 36, 1, 10)
@@ -109,14 +109,14 @@ def jim_flatten(field,nkfirst=False,nhalo=2):
     >>> f2 = jim_flatten(f,nkfirst=True)
     >>> f2.shape #nkfirst=True specified
     (1, 10242)
-    >>> (nijh,nij,halo) = jimc.jimc_dims(5,4)
+    >>> (nijh,nij,halo) = jimc.grid_dims(5,4)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
     >>> f.shape #nhalo=4
     (40, 40, 1, 10)
     >>> f2 = jim_flatten(f,nhalo=4)
     >>> f2.shape #nhalo=4
     (10242, 1)
-    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> (nijh,nij,halo) = jimc.grid_dims(5,2)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,4,10))
     >>> f.shape #nk=4
     (36, 36, 4, 10)
@@ -198,7 +198,7 @@ def jim_unflatten(field,nkfirst=None,nhalo=2,nGrids=10):
 
     Return a new numpy.ndarray (not a reference to the original one)
 
-    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> (nijh,nij,halo) = jimc.grid_dims(5,2)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
     >>> f2 = jim_flatten(f)
     >>> f3 = jim_unflatten(f2)
@@ -222,7 +222,7 @@ def jim_unflatten(field,nkfirst=None,nhalo=2,nGrids=10):
     (1, 36, 36, 10)
     >>> f3.shape == f.shape #nkfirst specified
     True
-    >>> (nijh,nij,halo) = jimc.jimc_dims(5,4)
+    >>> (nijh,nij,halo) = jimc.grid_dims(5,4)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,1,10))
     >>> f2 = jim_flatten(f,nhalo=4)
     >>> f3 = jim_unflatten(f2,nhalo=4)
@@ -233,7 +233,7 @@ def jim_unflatten(field,nkfirst=None,nhalo=2,nGrids=10):
     >>> f3.shape == f.shape #nhalo=4
     True
 
-    >>> (nijh,nij,halo) = jimc.jimc_dims(5,2)
+    >>> (nijh,nij,halo) = jimc.grid_dims(5,2)
     >>> f = numpy.resize(numpy.array([0.],order='FORTRAN'),(nijh,nijh,4,10))
     >>> f2 = jim_flatten(f)
     >>> f3 = jim_unflatten(f2)
@@ -331,7 +331,7 @@ def jim_grid_corners_la_lo(ndiv,igrid=0):
     @return la,lo   Grid point centers lat,lon (numpy.ndarray(nijh,nijh))
     @return cla,clo Grid point corners lat,lon (numpy.ndarray(nc,nijh,nijh))
     """
-    (la,lo,cla,clo) = jimc_grid_corners_la_lo(ndiv,igrid)
+    (la,lo,cla,clo) = jimc.grid_corners_la_lo(ndiv,igrid)
     s = list(la.shape)
     s.insert(2,1)
     la = la.reshape(s)
@@ -417,29 +417,29 @@ class RPNGridI(RPNGridHelper):
         #TODO: at some point implement as Y-grid if isSrc==False
         return None
 
-    def toScripGridPreComp(self,keyVals,name=None):
-        """Return a Scrip grid instance for RPNGGridI (Precomputed addr&weights)"""
-        shape0 = jim_flatten_shape(ndiv=keyVals['ig14'][0],nhalo=keyVals['ig14'][2],iGrid=keyVals['ig14'][1])
-        shape = (6,shape0[0],1)
-        if name is None:
-            name = self.toScripGridName(keyVals)
-        return scrip.ScripGrid(name,shape=shape)
+    #def toScripGridPreComp(self,keyVals,name=None):
+        #"""Return a Scrip grid instance for RPNGGridI (Precomputed addr&weights)"""
+        #shape0 = jim_flatten_shape(ndiv=keyVals['ig14'][0],nhalo=keyVals['ig14'][2],iGrid=keyVals['ig14'][1])
+        #shape = (6,shape0[0],1)
+        #if name is None:
+            #name = self.toScripGridName(keyVals)
+        #return scrip.ScripGrid(name,shape=shape)
 
-    def toScripGrid(self,keyVals,name=None):
-        """Return a Scrip grid instance for RPNGGridI"""
-        kv = self.getRealValues(keyVals)
-        if name is None:
-            name = self.toScripGridName(keyVals)
-        (la,lo,cla,clo) = jim_grid_corners_la_lo(kv['ndiv'],kv['igrid'])
-        la  = jim_flatten(la,nkfirst=False)
-        lo  = jim_flatten(lo,nkfirst=False)
-        cla = jim_flatten(cla,nkfirst=True)
-        clo = jim_flatten(clo,nkfirst=True)
-        la  *= (numpy.pi/180.)
-        lo  *= (numpy.pi/180.)
-        cla *= (numpy.pi/180.)
-        clo *= (numpy.pi/180.)
-        return scrip.ScripGrid(name,(la,lo,cla,clo))
+    #def toScripGrid(self,keyVals,name=None):
+        #"""Return a Scrip grid instance for RPNGGridI"""
+        #kv = self.getRealValues(keyVals)
+        #if name is None:
+            #name = self.toScripGridName(keyVals)
+        #(la,lo,cla,clo) = jim_grid_corners_la_lo(kv['ndiv'],kv['igrid'])
+        #la  = jim_flatten(la,nkfirst=False)
+        #lo  = jim_flatten(lo,nkfirst=False)
+        #cla = jim_flatten(cla,nkfirst=True)
+        #clo = jim_flatten(clo,nkfirst=True)
+        #la  *= (numpy.pi/180.)
+        #lo  *= (numpy.pi/180.)
+        #cla *= (numpy.pi/180.)
+        #clo *= (numpy.pi/180.)
+        #return scrip.ScripGrid(name,(la,lo,cla,clo))
 
     def reshapeDataForScrip(self,keyVals,data):
         """Return reformated data suitable for SCRIP"""
@@ -468,4 +468,6 @@ if __name__ == "__main__":
     import doctest
     doctest.testmod()
 
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

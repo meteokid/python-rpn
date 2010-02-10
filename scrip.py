@@ -2,7 +2,6 @@
 
     @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
-import rpn_version
 from scripc import *
 import numpy
 import pickle
@@ -97,15 +96,17 @@ class Scrip:
                     self.aaw = pickle.load(self.fname)
                 #TODO: check file validity
             elif girds[0].lalo and grids[1].lalo:
-                self.aaw = scripc_addr_wts(
+                initOptions(nbins,methode,typ_norm,typ_restric,REMAP_ONEWAY)
+                setGridLatLonRad(INPUT_GRID,
                     grids[0].lalo[0],grids[0].lalo[1],
-                    grids[0].lalo[2],grids[0].lalo[3],
+                    grids[0].lalo[2],grids[0].lalo[3])
+                setGridLatLonRad(OUTPUT_GRID,
                     grids[1].lalo[0],grids[1].lalo[1],
-                    grids[1].lalo[2],grids[1].lalo[3],
-                    nbins,methode,typ_norm,typ_restric)
+                    grids[1].lalo[2],grids[1].lalo[3])
+                self.aaw = getAddrWeights(MAPPING_FORWARD)
+                finalize()
                 #TODO: raise error if problem computing addrwts
                 if not (aaw is None):
-                    #TODO: numpy.savez exists only for newer python version, plan a fallback (try: except:)
                     try:
                         numpy.savez(self.fname, a1=aaw[0],a2=aaw[1],w=aaw[2])
                     except:
@@ -116,7 +117,7 @@ class Scrip:
     def interp(field):
         """Perform interpolation"""
         #TODO: may want to check that field is on grids[0] (dims)
-        return scripc_interp_o1(field,self.aaw[0],self.aaw[1],self.aaw[2],grids[1].size)
+        return interp_o1(field,self.aaw[0],self.aaw[1],self.aaw[2],grids[1].size)
 
     def inverse(self):
         """Reverse direction of intepolation if possible
@@ -128,7 +129,7 @@ class Scrip:
 
     def __del__():
         """ """
-        scripc_addr_wts_free(self.aaw[0],self.aaw[1],self.aaw[2])
+        finalize()
 
     def __repr__(self):
         pass #TODO
@@ -138,4 +139,6 @@ if __name__ == "__main__":
     import doctest
     doctest.testmod()
 
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

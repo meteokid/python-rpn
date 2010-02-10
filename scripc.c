@@ -67,7 +67,7 @@ static PyObject *scripc_initOptions(PyObject *self, PyObject *args) {
 
 static char scripc_setGridLatLonRad__doc__[] =
     "Set grid points center and corners Lat/Lon (in rad) for said grid.\n\
-    scripc_setGridLatLonRad(gridNb,centerLat,centerLon,cornersLat,cornersLon)\n\
+    scripc.setGridLatLonRad(gridNb,centerLat,centerLon,cornersLat,cornersLon)\n\
     @param gridNb INPUT_GRID or OUTPUT_GRID (int)\n\
     @param centerLat (numpy.ndarray : float32(ni,nj)\n\
     @param centerLon (numpy.ndarray : float32(ni,nj)\n\
@@ -117,7 +117,7 @@ static PyObject *scripc_setGridLatLonRad(PyObject *self, PyObject *args) {
 
 static char scripc_setGridMask__doc__[] =
     "Set grid Mask for said grid.\n\
-    scripc_setGridMask(gridNb,gridMask)\n\
+    scripc.setGridMask(gridNb,gridMask)\n\
     @param gridNb INPUT_GRID or OUTPUT_GRID (int)\n\
     @param gridMask (numpy.ndarray : int(ni,nj)\n\
     @exception TypeError";
@@ -156,7 +156,7 @@ static PyObject *scripc_setGridMask(PyObject *self, PyObject *args) {
 static char scripc_getAddrWeights__doc__[] =
     "Get addresses and weights for intepolation\n\
     (fromAddr,toAddr,weights) =  getAddrWeights(mapNb)\n\
-    @param mapNb INTERP_FORWARD or INTERP_BACKWARD(int)\n\
+    @param mapNb MAPPING_FORWARD or MAPPING_BACKWARD(int)\n\
     @return fromAddr [numpy.ndarray: int(nlinks)]\n\
     @return toAddr   [numpy.ndarray: int(nlinks)]\n\
     @return weights  [numpy.ndarray: float32(nWeights,nlinks)]\n\
@@ -219,7 +219,7 @@ static PyObject *scripc_finalize(PyObject *self, PyObject *args) {
 
 static char scripc_interp_o1__doc__[] =
     "Interpolate a field using previsouly computed remapping addresses and weights\n\
-    toData = scripc_interp_o1(fromData,fromGridAddr,toGridAddr,weights,nbpts)\n\
+    toData = scripc.interp_o1(fromData,fromGridAddr,toGridAddr,weights,nbpts)\n\
     @param fromData Field to interpolate (numpy.ndarray)\n\
     @param Remapping FromGrid Addresses (numpy.ndarray)\n\
     @param Remapping ToGrid Addresses (numpy.ndarray)\n\
