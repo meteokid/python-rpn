@@ -23,6 +23,7 @@
 * v3_20 - Tanguay M.      - Improve alarm when points outside advection grid
 * v3_20 - Dugas B.        - correct calculation for LAM when Glb_pil gt 7
 * v3_21 - Lee V.          - bug correction, yth should not be modified.
+* v3_31 - Desgagne M.     - new scope for operator + adw_cliptraj (LAM)
 *
 *language
 *     fortran 77
@@ -117,10 +118,10 @@
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west) i0=4       + (Glb_pil_w - 7)
-          if (l_east) in=l_niu-2 - (Glb_pil_e - 7)
-          if (l_south) j0=4      + (Glb_pil_s - 7)
-          if (l_north) jn=l_njv-2- (Glb_pil_n - 7)
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
       endif
 c     if (Acid_test_L)
 c    %    call glbstat (xth,'Xth',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
@@ -140,7 +141,7 @@ c     endif
 
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
+          call adw_cliptraj ( xth, wrk_yth, i0, in, j0, jn, 'IN1POS' )
 *
       else
 *
@@ -240,7 +241,7 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
 *
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
+          call adw_cliptraj ( xth, wrk_yth, i0, in, j0, jn, 'IN2POS' )
 *
       else
 *

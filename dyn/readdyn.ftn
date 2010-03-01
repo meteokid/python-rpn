@@ -34,6 +34,7 @@
 * v3_20 - Gravel S.        - allow for initialization with ECMWF analyses
 * v3_21 - Dugas B.         - replace TD by ES in pressure mode
 * v3_30 - McTaggart-Cowan R. - update implementation of variable orography
+* v3_31 - Bilodeau B.      - do not interpolate winds in offline mode
 *
 *object
 *	
@@ -395,9 +396,11 @@
       call tr_init ( work,Acqi_datasp,bmf_time1,bmf_time2,Acqi_nktmp,
      $               pps,pia,pibb,ps_temp,Acqi_vterplv,l_ni,l_nj,NESD )
 *
+      if (.not.Schm_offline_L) then
       if (Acql_horzint) 
      $     call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju,
      $            Acqi_niv, Acqi_njv, g_nk, geomg_y_8(1), geomg_yv_8(1))
+      endif
 
 *     Convert wind from KNOTS TO M/S
       if ((.not.schm_offline_L).or.(Acqi_vterplv.gt.1)) then

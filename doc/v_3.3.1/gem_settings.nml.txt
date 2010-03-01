@@ -1,0 +1,587 @@
+_____________________________________________________________________________
+*                                                                             |
+*     FILE gem_settings.nml           (last update: Aug.20,2007- v3.3.0)VL    |
+*_____________________________________________________________________________|
+
+*_____________________________________________________________________________
+*                                                                             |
+*     PTOPO    namelist                                                       |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|------|
+* Ptopo_bind_L       |  TRUE to bind OpenMP PEs, FALSE for no binding  |false |
+* Ptopo_nblocx       |  Number of blocks for output along X            | npex |
+* Ptopo_nblocy       |  Number of blocks for output along Y            | npey |
+* Ptopo_npex         |  Number of PE's used along X axis               |  1   |
+* Ptopo_npey         |  Number of PE's used along Y axis               |  1   |
+* Ptopo_npeOpenMp    |  Number of PE's for OpenMp                      |  1   |
+* Ptopo_smtglb       |  Number of threads for global run (0 =npeOpenMp)|  0   |
+* Ptopo_smtphy       |  Number of threads around Physics (0 =npeOpenMp)|  0   |
+*-----------------------------------------------------------------------------
+
+*_____________________________________________________________________________
+*                                                                             |
+*     GRILLE namelist                                                         |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|----- |
+* Grd_dx             | mesh length (resolution) in x-direction(degrees)|  0.  |
+*                    | for the LU grid or the uniform portion of GV grid      |
+* Grd_dxmax          | maximum grid point spacing along x (degrees)    | 360. |
+*                    | for the GV grid only                            |      |
+* Grd_dy             | mesh length (resolution) in y-direction(degrees)|  0.  |
+*                    | for the LU grid or the uniform portion of GV grid      |
+* Grd_dymax          | maximum grid point spacing along y (degrees)    | 180. |
+*                    | for the GV grid only                            |      |
+*--------------------|-------------------------------------------------|      |
+* Grd_gauss_L        | .TRUE. to set for a Gaussian grid               |false |
+*--------------------|-------------------------------------------------|      |
+The following 4 parameters apply only for LAM grids                    |      |
+* Grd_iref           | I reference point (within  Grd_ni)              | 1    |
+* Grd_jref           | J reference point (within  Grd_nj)              | 1    |
+* Grd_latr           | latitude on rotated grid of reference point     | 0.   |
+*                    |                              (Grd_iref,Grd_jref)|      |
+* Grd_lonr           | longitude on rotated grid of reference point    | 0.   |
+*                    |                              (Grd_iref,Grd_jref)|      |
+*                    | ie: reference point on centre of grid 401x301   |      |
+*                  Grd_iref=201,Grd_jref=151,Grd_latr=0.,Grd_lonr=180. |      |
+*                    | ie: reference point on centre of grid 400x300   |      |
+*                    |     where Grd_dx  =.14,Grd_dy = .44,            |      |
+*                    | Grd_iref=201,     Grd_jref=151,                 |      |
+*                    | Grd_lonr=180.07, Grd_latr=0.22,                 |      |
+*--------------------|-------------------------------------------------|      |
+* Grd_ni             | Total number of points along X                  |  0   |
+* Grd_nila           | number of points in x of the uniform or higher  |  0   |
+*                    | "core" resolution domain (GV grid)              |      |
+* Grd_nj             | Total number of points along Y                  |  0   |
+* Grd_njla           | number of points in y of the uniform or higher  |  0   |
+*                    | "core" resolution domain (GV grid)              |      |
+* Grd_typ_S          | Computational grid type: first letter is G or L | "GU" |
+*                    | for Global or Lam, second letter is U or V      |      |
+*                    | for Uniform or Variable mesh                    |      |
+*--------------------|-------------------------------------------------|      |
+* The following four parameters define the rotation of the grid:       |      |
+* Grd_xlon1          | geographic longitude of the center of the       |  0.0 |
+*                    | computational domain when roule= .true.         |      |
+* Grd_xlat1          | geographic latitude of the center of the        |  0.0 |
+*                    | computational domain when roule= .true.         |      |
+* Grd_xlon2          | geographic longitude of a point on the equator  |  0.0 |
+*                    | of the computational domain when roule= .true.  |      |
+* Grd_xlat2          | geographic latitude of a point on the equator of|  0.0 |
+*                    | the computational domain when roule= .true.     |      |
+*-----------------------------------------------------------------------------
+*_____________________________________________________________________________
+*                                                                             |
+*     GRDC   namelist                                                         |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|------|
+* Grdc_bcs_hollow_L  | TRUE for BCS hollow 3DF files,                  |.true.|
+*                    | FALSE for full 3DF format files                 |      |
+* Grdc_dx            | mesh length (resolution) in x and y-direction   |  0.  |
+*                    | in degrees for the cascade LAM grid             |      |
+* Grdc_hblen         | number of points for the blending zone (Hblen_x)|      |
+* Grdc_iref          | I reference point (within  Grdc_ni)             | 1    |
+* Grdc_jref          | J reference point (within  Grdc_nj)             | 1    |
+* Grdc_latr          | latitude on rotated grid of reference point     | 0.   |
+*                    |                            (Grdc_iref,Grdc_jref)|      |
+* Grdc_lonr          | longitude on rotated grid of reference point    | 0.   |
+*                    |                            (Grdc_iref,Grdc_jref)|      |
+*                    | ie: reference point on centre of grid 401x301   |      |
+*              Grdc_iref=201,Grdc_jref=151,Grdc_latr=0.,Grdc_lonr=180. |      |
+*                    | ie: reference point on centre of grid 400x300   |      |
+*                    |     where Grdc_dx  =.14,                        |      |
+*                    | Grd_iref=201,     Grd_jref=151,                 |      |
+*                    | Grd_lonr=180.07, Grd_latr=0.22,                 |      |
+* Grdc_nbits         | Number of bits for the packing factor           |      |
+* Grdc_nfe           | Nesting interval specified with digits ending   |'1H'  |
+*                    | with one character for the units:               |      |
+*                    | S-seconds,D-days,M-minutes,H-hours              |      |
+* Grdc_ni            | Total number of points along X                  |  0   |
+* Grdc_nj            | Total number of points along Y                  |  0   |
+* Grdc_pil           | Number of points for the pilot region (Glb_pil) |  0   |
+* Grdc_runstrt_S     | Starting date for LAM run (yyyymmdd.hhmmss)     | ' '  |
+* Grdc_trnm_S        | list of tracers to be written from piloting run |      |
+*-----------------------------------------------------------------------------
+
+*_____________________________________________________________________________
+*                                                                             |
+*     GEMENT namelist                                                         |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|------|
+* Anal_cond          | ice phase considered in analysis humidity field |false |
+* Anal_perturb       | True to bit flip (bmf_perturb) on analyse data  |false |
+* E_schm_adcub       | .true. cubic interpolation from phi to UV grid  |true  |
+*                    | .false. linear interpolation                    |      |
+* E_geol_glanl_L     |  true -> Analysed Ice is used.                  |true  |
+*                    |  false-> Climat Ice is used.                    |      |
+* E_geol_glreg_L     |  true -> Analysed Ice field will be used        |false |
+*                    |          within a lat-lon box defined by        |      |
+*                    |  E_geol_gln, E_geol_gls, E_geol_gle, E_geol_glw |      |
+*                    |          Climatological Ice field will be       |      |
+*                    |          use outside the box.                   |      |
+*                    |  false-> Analysed Ice field will be used        |      |
+*                    |          over the entire domain.                |      |
+* E_geol_gls         |  Latitude delimiting the southern extent of     | 30.  |
+*                    |  the Ice field lat-lon box (see E_geol_glreg_L) |      |
+* E_geol_gle         |  Longitude delimiting the eastern extent of     | 320. |
+*                    |  the Ice field lat-lon box (see E_geol_glreg_L) |      |
+* E_geol_gln         |  Latitude delimiting the northern extent of     | 80.  |
+*                    |  the Ice field lat-lon box (see E_geol_glreg_L) |      |
+* E_geol_glw         |  Longitude delimiting the western extent of     | 220. |
+*                    |  the Ice field lat-lon box (see E_geol_glreg_L) |      |
+* E_geol_hsanl_L     |  true -> Analysed HS  is used.                  |true  |
+*                    |  false-> Climat HS  is used.                    |      |
+* E_geol_hscon_L     |  true->  HS field is mask independant           |false |
+*                    |  false-> HS field is mask dependant             |      |
+* E_geol_hse         |  Longitude delimiting the eastern extent of     | 320. |
+*                    |  the Ice field lat-lon box (see E_geol_hsreg_L) |      |
+* E_geol_hsea        |  threshold height above which any sea water grid|3000  |
+*                    |  point will be transformed into a land point    |      |
+* E_geol_hsn         |  Latitude delimiting the northern extent of     | 80.  |
+*                    |  the Ice field lat-lon box (see E_geol_hsreg_L) |      |
+* E_geol_hsreg_L     |  same as  E_geol_glreg but for HS instead of GL |true  |
+* E_geol_hss         |  Latitude delimiting the southern extent of     | 30.  |
+*                    |  the Ice field lat-lon box (see E_geol_hsreg_L) |      |
+* E_geol_hsw         |  Longitude delimiting the western extent of     | 220. |
+*                    |  the Ice field lat-lon box (see E_geol_hsreg_L) |      |
+* E_geol_modex_L     | .true. - to search the analysis only            |false |
+* E_geol_poin        |  maximum grid points distance when looking      |  3   |
+*                    |  for neighbours values.                         |      |
+* E_geol_z0cst       |  > 0 means this value is used as the Z0 constant| -1.  |
+* E_schm_stlag       | .true. cubic lagrange interpolation for U,V     |true  |
+*                    |        interpolation coefficients               |      |
+*                    | .false. not available, error will occur         |      |
+* E_tr3d_list_S      |  list of tracers to be read from analyse        |      |
+* Mod_runstrt_S      |  Analysis date for LAM run (yyyymmdd.hhmmss)    | ' '  |
+* Offline_ip1a       |  ip1 value for piloting fields used in Offline  |  0   |
+* Offline_int_accu_S |  Type of interp for accumulators in Offline mode|LINEAR|
+* Pil_3df_L          |  .true. to have 3DF or BCS files, not BMF files |true  |
+* Pil_bcs_hollow_L   |  .true. to have BCS files (hollow 3DF files)    |true  |
+* Pil_bmf_L          |  .true. to have BMF files                       |false |
+* Pil_hblen          |  Number of points for blending (Hblen)          |  10  |
+* Pil_jobstrt_S      |  Starting date for pilot fi(yyyymmdd.hhmmss)    | ' '  |
+* Pil_jobend_S       |  Ending   date for pilot fi(yyyymmdd.hhmmss)    | ' '  |
+* Pil_nesdt          |  Number of seconds between 2 consecutive        |  0   |
+*                    |  boundary condition(BC) time frames             |      |
+* Pil_pil            |  Number of points for piloting (Glb_pil)        |  7   |
+* Pil_sfc2d_L        |  .true. to create GEOPHY.BIN file               |false |
+*                    |  .false. no GEOPHY.BIN created                  |      |
+* Schm_offline_L     |  .true. for GEM offline mode (MEC)              |false |
+* Topo_dgfmx_L       | .true.  -apply digital filter to topography     |false |
+* Topo_dgfms_L       | .true. - consider map scale in digital filtering|true  |
+*                    | .false.- ignore map scale in digital filtering  |      |
+* Topo_filmx_L       | .true.  -filtering 2 delta X topography         |true  |
+*                    | .false. -no filters to topography               |      |
+* Topo_init_L        | .false. ==> NULL(NO) topography                 |true  |
+*-----------------------------------------------------------------------------
+
+*_____________________________________________________________________________
+*                                                                             |
+*     GEM_CFGS namelist                                                       |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|------|
+* Acid_test_L        | .true. for Acid Test comparison from Pilot to LAM false|
+* Adw_ckbd_L         | .true. => to check if upstream points from north|false |
+*                    |           and south PE's are inside adv. grid   |      |
+*                    | .true. => to not call the adw_ckbd subroutine   |      |
+* Adw_exdg_L         | .true. => to print points of upstream positions |false |
+*                    |           outside of advection source grid      |      |
+*                    | .false.=> to not print                          |      |
+* Adw_halox          | halo for advection grid on X for global run     | 3    |
+* Adw_halox          | halo for advection grid on X for lam    run     |  7   |
+* Adw_haloy          | halo for advection grid on Y for global run     | 2    |
+* Adw_haloy          | halo for advection grid on Y for lam    run     |  7   |
+* Adw_interp_type_S  | 'lag3d','cubic'                                 |lag3d |
+* Adw_mono_L         | .true. for monotonic advection on tracers       |true  |
+* Adw_nkbz_L         | .true. => not-a-knot bc for z-spline            |true  |
+*                    | .false.=> natural bc for z-spline               |      |
+* Adw_nosetint_L     | .true. to bypass adw_setint for TRILIN (intern) |false |
+* Adw_trunc_traj_L   | .true. to truncate trajectories for LAM         |false |
+* Clim_climat_L      | .true. for Climate mode                         |false |
+* Clim_inincr_L      | .true. to set the surface increments in Climat  |false |
+* Cori_cornl_L       | .true. => to use Coriolis (3) formulation       |true  |
+*                    | .false.=> to use Coriolis (2) formulation       |      |
+* Cstv_dt_8          | timestep used by the model                      | 900. |
+* Cstv_phidf_8       | horizontal diffusion coeff. for phi, T, etc.    |20000.|
+* Cstv_pisrf_8       | basic state pressure at the surface             |1000.0|
+* Cstv_pitop_8       | basic state pressure at the top                 |-1.0  |
+* Cstv_tstr_8        | t*  (basic state temperature)                   | 200.0|
+* Cstv_uvdf_8        | horizontal diffusion coeff. for horiz. winds    |20000.|
+* Eigv_parity_L      | FOR GLOBAL only, (sol_parite_2 instead of mxma) |      |
+*                    | .true. to apply the parallel direct solution    |false |
+*                    | of high-order diffusion equation with mxma8     |      |
+*                    | using reflexion symmetry of C-grid(global)      |      |
+* G_halox            | number of points for the halo on X              |  4   |
+* G_haloy            | number of points for the halo on Y              |  4   |
+* Glb_pil_e          | number of points to use for east  pilot region  |      |
+* Glb_pil_n          | number of points to use for north pilot region  |      |
+* Glb_pil_s          | number of points to use for south pilot region  |      |
+* Glb_pil_w          | number of points to use for west  pilot region  |      |
+* Grd_rcoef          | Controls the continuous transition from sigma   | 1.6  |
+*                    | to pressure surfaces range: 1. <= rcoef <= 2.   |      |
+*	             | rcoef=1.0 means NO transition                   |      |
+* Hblen_x            | Number of points along X to blend between       | 10   |
+*                    | nesting and computed values for dynamic  fields |      |
+* Hblen_y            | Number of points along Y to blend between       | 10   |
+*                    | nesting and computed values for dynamic  fields |      |
+*--------------------|-------------------------------------------------|------|
+* Horizontal sponge    if activated, will be applied to the following  |      |
+* variables  :  * Winds, Temperature, Pressure, Total Divergence, GZ...|      |
+* It is not available for LAM                                          |      |
+*--------------------|-------------------------------------------------|------|
+* Hspng_mf           | Multiplicative factor(s) of horizontal          | 800  |
+*                    | diffusion coefficient                           |      |
+* Hspng_nj           | Number of rows from numerical poles on which    |  0   |
+*                    | to apply an increasing FACT horizontal diffusion|      |
+* Hspng_rwnd_L       | Logical control to diffuse real wind instead of |false |
+*                    | wind images within the horizontal sponge scheme |      |
+* Hspng_uvwdt_L      | Logical control to limit application of         |true  |
+*                    | horizontal sponge on momentum variables only    |      |
+*--------------------|-------------------------------------------------|------|
+* HYB                | array of model levels in HYBRID                 |-1.0  |
+*--------------------|-------------------------------------------------|------|
+* Horizontal diffusion if activated, will be applied to the following  |      |
+* variables  :  * Winds, Temperature, Pressure, Total Divergence, GZ...|      |
+*--------------------|-------------------------------------------------|------|
+* Hzd_1d_L           | true if 1D diff. (otherw. 2D) for filtering     |      |
+* Hzd_difva_L        | Logical control for latitudinal modulation of   |false |
+*                    | the horizontal diffusion coefficient            |      |
+* Hzd_hdif0_0_L      | true if hdif0    authorized (mode NL)           |      |
+* Hzd_hdif0_1_L      | true if hdif0    authorized (mode AD)           |      |
+* Hzd_hzdmain_0_L    | true if hzd_main authorized (mode NL)           |      |
+* Hzd_hzdmain_1_L    | true if hzd_main authorized (mode AD)           |      |
+* Hzd_lnr            | 2 delta-x removal ratio when using HO           | 0.2  |
+* Hzd_pwr            | Hor. diffusion order when using HO del-n        |  6   |
+*                    |  available: 2, 4, 6, 8                          |      |
+* Hzd_t0_0_L         | true if winds T0 filt. in WNDTH  (mode NL)      |      |
+* Hzd_t0_1_L         | true if winds T0 filt. in WNDTH  (mode AD)      |      |
+* Hzd_t1_0_L         | true if winds T1 filt. in WDPERS (mode NL)      |      |
+* Hzd_t1_1_L         | true if winds T1 filt. in WDPERS (mode AD)      |      |
+* Hzd_type_S         | "HO" High Order horizontal diffusion            | "HO" |
+*                    | "FACT" for factorized horizontal diffusion      |      |
+*                    | "NIL" for no horizontal diffusion               |      |
+*                    | "EXPLICIT" for a 9-point filter diffusion (LAM  |      |
+*                    |      mode only)                                 |      |
+*                    |                                      n          |      |
+*                    |    equivalent to diffusion -(-nu_DEL2)          |      |
+*                    | nu_DEL2_N = .25*(1.0-exp(Hzd_lnr))**(2/Hzd_pwr) |      |
+*                    | n = Hzd_pwr/2.0                                 |      |
+*                    |                                                 |      |
+* Hzd_uvwdt_L        | Logical control to limit application of hor.    | true |
+*                    | diffusion on momentum variables only (HO/FACT)  |      |
+* Init_balgm_L       | true -> initialization is performed             |false |
+* Init_dfwin_L       | true -> windowing is applied                    |true  |
+* Init_dfnp          | number of points for digital filter             |  5   |
+*                    | (equals the number of timesteps +1)             |      |
+* Init_dfpl_8        | period limit of digital filter (secs.)          |21600.|
+* Init_dftr_L        | true -> passive tracers digitally filtered      |false |
+*                    | false-> passive tracers set to result obtained  |      |
+*                    |         at mid-period during initialization     |      |
+*                    |         period (no filtering)                   |      |
+* Lam_0ptend_L       | true for Zero physics tendency in blending area |true  |
+* Lam_ctebcs_L       | true-> to force constant (fixed) boundary condit|false |
+* Lam_hint_S         | Type of horizontal interpolation                |      |
+* Lam_nesdt          | Nesting Time Interval in seconds                | -1   |
+* Lam_runstrt_S      | Starting date for LAM run (yyyymmdd.hhmmss)     |' '   |
+* Lam_toptt_L        | true -> The plane of the top temperature layer  |false |
+*                    | is completely overwritten from the 2D pilot data|      |
+* Lctl_debug_L       | .true. to print more information to std output  |false |
+* Lctl_r8stat_L      | .true. to print glbstats with double precistion |false |
+* Lctl_reset         | timestep to start the actual integration        |-1    |
+*                    | This allows a "warmup" integration period       |      | 
+* Level_ip12000_L    | TRUE to use fst2000 IP1 encoding                |false |
+* Mem_mx3db          |  Factor to multiply space needed to allocate    | 50   |
+*                    |  central memory for VMM Manager                 |      |
+* Offc_a0_8          | off-centering parameter for the current timestep| 1.0  |
+* Offc_a1_8          | off-centering parameter for the current timestep|-1.0  |
+* Offc_b0_8          | off-centering parameter for the current timestep| 0.6  |
+* Offc_b1_8          | off-centering parameter for the current timestep| 0.4  |
+* Out3_cliph_L       | .true. to clip humidity variables on output     |false |
+* Out3_closestep     | period (in timesteps) to accumulate records in  |  -1  |
+*                    | one output file. -1 to have one timestep/file   |  -1  |
+* Out3_compress_L    | .true. for compressed FST output                |true  |
+* The following are 7  switches used in the context of vertical        |      |
+* interpolation toward pressure levels:                                |      |
+* Out3_cubdd_L       | .true. for cubic interpolation for DD           |true  |
+* Out3_cubds_L       | .true. for cubic interpolation for DS           |true  |
+* Out3_cubqq_L       | .true. for cubic interpolation for QQ and QR    |true  |
+* Out3_cubqs_L       | .true. for cubic interpolation for QS and Q3    |true  |
+* Out3_cubuv_L       | .true. for cubic interpolation for UU,VV and UV |true  |
+* Out3_cubww_L       | .true. for cubic interpolation for WW           |true  |
+* Out3_cubzt_L       | .true. for cubic interpolation for GZ,VT and HU |true  |
+* Out3_debug_L       | .true. to have verbose during output calls      |false |
+* Out3_etik_S        | 'etiket' used in output fields.                 | ' '  |
+* Out3_flipit_L      | .true. to flip output from ni*nj*nk to ni*nk*nj |false |
+* Out3_ip3           | default value for IP3 is 0                      |  0   |
+*                    | -1 for IP3 to contain step number, >0,given IP3 |      |
+* Out3_linbot        | number of layers close to the bottom of the     |  0   |
+*                    | model within which a linear interpolation of GZ |      |
+* Out3_nbitg         | Packing factor used for all variables except for| 16   |
+*                    | those defined in Out_xnbits_s                   |      |
+* Out3_ndigits       | minimum of digits used to represent output units|  3   |
+* Out3_unit_S        | 'H' or '' for output in hours, 'P' for in steps,| ''   |
+*                    | 'S'(seconds),'M'(minutes),'D'(days)             |      |
+* Out3_vt2gz_L       | .true. to compute hydrostatic GZ from P0 and VT |false |
+* Out3_zund          | list of levels for underground extrapolation    |  0   |
+*                    | and VT is done even if flcubic is .true.        |      |
+* Pres_ptop          | top required for non-rigid model top            |-1.0  |
+* Rstri_glbcol_L     | .true. to write one global binary restart file  |?     |
+* Pres_vtap_L        | TRUE to calc GZ from Temp based on VTAP         |false |
+* Schm_adcub_L       | .true. => cubic interpolation                   |true  |
+*                    | .false.=> linear interpolation                  |      |
+* Schm_difqp_L       | .false.=> no diffusion on q'                    |true  |
+*                    | .true. => indirect diffusion on q' & direct     |      |
+*                    |           diffusion on (dp/dpi-1) & (1+d)q'     |      |
+* Schm_hdlast_L      | .true. => physics before horizontal diffusion   |false |
+* Schm_itcn          | number of iterations for Crank-Nicholson        |  2   |
+* Schm_itnlh         | number of iterations to solve non-linear        |  2   |
+*                    | Helmholtz problem                               |      |
+* Schm_itraj         | number of iterations to compute trjectories     |  2   |
+* Schm_hydro_L       | true -> hydrostatic run                         |false |
+*                    | false-> non-hydrostatic run                     |      |
+* Schm_modcn         | frequency of Crank-Nicholson procedure          |  1   |
+* Schm_moist_L       | true -> model has moisture                      |true  |
+* Schm_nonhy_8       | 0 to 1:  from hydrostatic to non-hydrostatic    |1.0   |
+* Schm_pcsty_L       | compute physics tend. for tpt1,tplt1,tdt1,psdt1 |true  |
+* Schm_pheat_L       | compute physics tendencies for fit1 and fipt1   |true  |
+* Schm_psadj_L       | true -> ps adjust is activated (at every time   |false |
+*                    |         step, the integral of ps over the domain|      |
+*                    |         is restored to the value of the previous|      |
+*                    |         time step; afterward, q and s are re-   |      |
+*                    |         computed;this can be done in            |      |
+*                    |                           hydrostatic mode only)|      |
+* Schm_sfix_L        | .true. to copy l_nk-1 values to l_nk in TT,.... |sylvie|
+* Schm_wload_L       | Apply water loading in the calculations         |false |
+* Schm_xwvt3         | type of extrapolation for wind calculation      |  0   |
+*                    | at time t-dt/2 (th):                            |      |
+*                    |    =0  => two time levels (t1, t2)              |      |
+*                    |    =1  => two time levels (t1, t2) for u,v      |      |
+*                    |         three time levels for vertical wind     |      |
+*                    |    =2  => three time levels (t1, t2, t3)        |      |
+* Sol_eps            | Epsilon value for the iterative solver          |1.d-09|
+* Sol_fft_L          | .true. to use FFT solver if possible            | true |
+*                    | .false. to use MXMA solver (slower,less precise)|      |
+* Sol_im             | size of Krylov subspace in iterative solver     |15    |
+*                    | - should not exceed 100
+* Sol_maxits         | maximum number of iterations allowed for the    |200   |
+*                    | iterative solver                                |      |
+* Sol_precond_S      | name of preconditioner for iterative solver     |      |
+*                    | 'JACOBI','MULTICOL','DIAGO'                     |JACOBI|
+* Sol_type_S         | type of solver:'ITERATIF','DIRECT'              |DIRECT|
+* Step_bkup          |  Number of timesteps to save a restart file for | 9999 |
+*                    |  backup if "restart" is not true.               |      |
+* Step_cleanup       |  Number of timesteps to activate Xfer.sh        |  0   |
+*                    |  0: Xfer is active only after clone             |      |
+* Step_gstat         |  Number of timesteps for a global stat (glbstat)| 9999 |
+* Step_rsti          |  Number of timesteps to save a restart file     | 9999 |
+* Step_total         |  Total number of timesteps for model run        |  1   |
+*--------------------|-------------------------------------------------|------|
+* Vertical sponge if activated, will be applied to the following variables  : |
+* Winds, Temperature, Pressure, Total Divergence, GZ...                |      |
+*--------------------|-------------------------------------------------|------|
+* Vspng_mf           | (non-LAM)  the multiplicative factor(s) of the  | -1   |
+*                    | the the factorized del-2 horizontal diffusion   |      |
+* Vspng_njpole       | (non-LAM) Number of points along j on which to  |  3   |
+*                    | apply modulation to 0. of the diff. coefficient |      |
+* Vspng_nk           | # of levels from the top of the model (thickness|      |
+*                    | of the vertical sponge layer)                   |  0   |
+* Vspng_nutop        | (LAM only) the diffusion coefficient for the    | -1   |
+*                    | 9 point explicit horizontal filter  (0.0 to 2.0)|      |
+*                    | Note: the higher the value, the smoother        |      |
+* Vspng_rwnd_L       | Logical control to diffuse real wind instead of |false |
+*                    | wind images within the vertical sponge scheme   |      |
+* Vspng_uvwdt_L      | .true. Logical control to force vertical sponge | true |
+*                    | to be applied ONLY on momentum and temperature  |      |
+*                    | for Vspng_nk levels and only the very top level |      |
+*                    | for the other variables                         |      |
+*                    | .false. To apply vertical sponge on all         |      |
+*                    |   variables for Vspng_nk levels                 |      |
+* Vspng_zmean_L      | .true. will subtract the zonal mean of U        |false |
+*                    | component before diffusion and then added back  |      |
+* Vtopo_ndt          | Number of timesteps for topography to evolve    |  0   |
+* Vtopo_start        | Timestep to start topography which varies in time -1   |
+* Vrtd_L             | apply background vert. diffusion  on U,V        |false |
+* Vrtd_coef          | vertical diffusion coefficient                  | 1.0  |
+* Vrtd_theta_L       | if .T. and Vrtd_L=.T., also diffuse theta       |false |
+* Xst_statij         | stations chosen in gridpoints i,j for time-serie|-9999.|
+* Xst_statll         | stations chosen in lat,lon for time-series      |-9999.|
+* Zblen_L            | .true. to apply vertical sponge to momentum, and| false|
+*                    | divergence field                                |      |
+* Zblen_spngthick    | thickness (in meters) of vertical sponge        |7.e+03|
+* Zblen_spngtt_L     | if .T. and Zblen_L=.T., apply sponge also to    | false|
+*                    | temperature field                               |      |
+*-----------------------------------------------------------------------------
+*--------------------|-------------------------------------------------|      |
+*   The following variables defines the central window and the blending|      |
+* region where different condensation schemes will be used             |      |
+* P_fcpkuo_xblnd     | for FCPKUO option only                          |  1   |
+*                    | number of columns where both schemes are        |      |
+*                    | requested (blending region)                     |      |
+* P_fcpkuo_xofset    | for FCPKUO option only                          |Grd_  |
+*                    | number of columns from the edges of the grid    |  left|
+*                    | where only KUOSYM is requested (left, right)    |      |
+* P_fcpkuo_yblnd     | for FCPKUO option only                          |  1   |
+*                    | number of rows where both schemes are requested |      |
+*                    | (blending region)                               |      |
+* P_fcpkuo_yofset,   | for FCPKUO option only                          |Grd_  |
+*                    | number of rows from the edges of the grid where |  belo|
+*                    | only KUOSYM is requested (bottom,top)           |      |
+*--------------------|-------------------------------------------------|------|
+* The following variables are to help compute latitudinal modulation of|      |
+*  vertical diffusion coefficient on momentum by fitting a cubic btwn  |      |
+*  values P_pbl_valml_8 and P_pbl_valeq_8 at latitudes P_pbl_mllat_8   |      |
+*                                                  and P_pbl_eqlat_8   |      |
+* P_lmvd_valml_8      | background value of multiplication factor of    |  1.0 |
+*                    | P_pbl_spng out of equator                       |      |
+* P_lmvd_mllat_8      | latitude at which the multiplication factor     | 30.0 |
+*                    | becomes P_pbl_valml_8 out of equator            |      |
+* P_lmvd_valeq_8      | equatorial value of multiplication factor of    |  1.0 |
+*                    | P_pbl_spng                                      |      |
+* P_lmvd_eqlat_8      | equatorial latitude at which the multiplication |  5.0 |
+*                    | factor becomes P_pbl_valeq_8                    |      |
+*--------------------|-------------------------------------------------|------|
+* P_pset_second_L    | .TRUE. implies that a second call to the        |false |
+*                    |        physics package will be done             |      |
+*--------------------|-------------------------------------------------|      |
+* The following parameters are ignored when P_pset_second_L is .FALSE. |      |
+* ************* but they MUST be  otherwise specified *****************|      |
+*          otherwise, only the first physics will be called            |      |
+* P_pset_xblnd       | number of columns where both physics are        |  1   |
+*                    | requested + 1 (this is the blending region)     |      |
+* P_pset_xofset      | number of columns from the edges of the grid    |  0   |
+*                    | where only the second physics set is requested. |      |
+*                    | This is applied both on the left and right sides|      |
+*                    | when P_pset_xofsetr is undefined                |      |
+* P_pset_xofsetr     | columns for the right side of the grid where    | -1   |
+*                    | only the second physics is requested. Defaults  |      |
+*                    | to P_pset_xofset                                |      |
+* P_pset_yblnd       | number of rows where both physics are requested |  1   |
+*                    | + 1 (this is the blending region)               |      |
+* P_pset_yofset      | number of rows from the edges of the grid where |  0   |
+*                    | only the second physics set is requested. Again,|      |
+*                    | this is appled both on the bottom and top sides |      |
+*                    | when P_pset_yofsett is undefined                |      |
+* P_pset_yofsett     | # of columns for the top side of the grid where | -1   |
+*                    | only the second physics is requested. Defaults  |      |
+*                    | to P_pset_yofset                                |      |
+*--------------------|-------------------------------------------------|      |
+* P_serg_serstp      | times series package stops at this timestep     | 99999|
+* P_serg_srsus_L     | .true. for time-series requested                |false |
+* P_serg_srwri       | number of timesteps between time-series writeout|  1   |
+*--------------------|-------------------------------------------------|      |
+* P_zong_nbin        | number of geographical latitude bands           | G_nj |
+* P_zong_znli        | zonal diagnostic interval in timesteps          |  0   |
+* P_zong_znmod       | extraction mode:                                |  1   |
+*                    | 1 => save variables                             |      |
+*                    | 2 => save the square of the variables           |      |
+*                    | 3 => save both                                  |      |
+* P_zong_znsus_L     | .true. for zonal diagnostics requested          |false |
+*_____________________________________________________________________________
+
+*_____________________________________________________________________________
+*                                                                             |
+*  Physics_cfgs    namelist ====> Please refer to file phy_namelist           |
+*_____________________________________________________________________________|
+
+*_____________________________________________________________________________|
+*                                                                             |
+*     Var4d    namelist                                                       |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|------|
+* V4dg_4dvar_L       | .true. 4D-Var with JO in GEM and JB in 3D-Var   |false |
+* V4dg_anincr_L      | .true. if TLM test with analysis increments     |false |
+* V4dg_chum_S        | humidity variable ('HU' or 'LQ')                |'LQ'  |
+* V4dg_conf          | Configuration of the job                        |  0   |
+*                    |    0     : Standard GEM job                     |      |
+*                    | 100-199  : 4D-Var job with GEM                  |      |
+*                    | 400-499  : Test of the adjoint model            |      |
+*                    | 500-599  : Test of the tangent linear model     |      |
+*                    | 500      : Ratio TLM test as in Thepaut and     |      |
+*                    |            Courtier(1991)                       |      |
+*                    | 510      : Run NLM, NLM perturbed and TLM       |      |
+* V4dg_identity_L    | .true. to set integration as identity           |false |
+* V4dg_incore_L      | .true. if WA files are replaced by incore arrays|true  |
+* V4dg_inv           | Time 0 NOT in cost J if set to 1                |  1   |
+* V4dg_pruv_L        | .true. to do proviles on U-V grids for winds    |true  |
+* V4dg_sensib_L      | .true. for Sensitivity analysis                 |false |
+* V4dg_sgvc_L        | .true. for evaluation of singular vectors       |false |
+* V4dg_sgvc_dt0      | time btwn analysis and targeting time(in hours) |  0   |
+* V4dg_stepob        | Observations available at each stepob        Step_total|
+* V4dg_twin_L        | .true. for Twin experiment                      |false |
+* V4dj_mask_L        | .true. to read mask in observation file         |false |
+* V4dm_itmax         | Maximum number of iterations                    | 2    |
+* V4dm_simax         | Maximum number of simulations                   | 2    |
+* V4dr_redotr_L      | if we redo the TRAJ calculations                |      |
+* V4dz_degree        | degree of interpolation for profiles            | 1    |
+* V4dzga_degree      | degree of interpolation for gauss to gem grid   | 1    |
+* V4dzge_degree      | degree of interpolation for gem to gauss grid   | 1    |
+*-----------------------------------------------------------------------------
+
+*_____________________________________________________________________________
+*                                                                             |
+*     Theo_cfgs namelist                                                      |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|------|
+* Theo_case_s        | name of theoretical case                        |'xxx' |
+*                    | ie: 'BUBBLE',''BUBBLE_G','2_BUBBLES'            |      |
+* Theo_nivdist_S     | type of distribution on vertical levels         |'UNI' |
+* Out3_etik_S        | 'etiket' used in output fields.                 |'THEOC|
+* Lam_runstrt_S      | Starting date for LAM run (yyyymmdd.hhmmss)     |      |
+*                    | default="19980101.000000"                       |      |
+* Lctl_debug_L       | .true. to print more information to std output  |false |
+*-----------------------------------------------------------------------------
+
+*_____________________________________________________________________________
+*                                                                             |
+*     Bubble_cfgs  namelist                                                   |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|------|
+* BB_dpth            | temperature perturbation of bubble              | case |
+* BB_radius          | Radius of the bubble in degrees of longitude    |  d   |
+*                    |                (.0001 deg ~ 10m)                |  e   |
+* BB_xcntr           | fraction of the domain in x of the centre of the|  p   |
+*                    | bubble (0.5 ->middle of domain)                 |  e   |
+* BB_zcntr           | value of pressure in hPa of the centre of the   |  n   |
+*                    | (1000hPa = 0m, 900hPa = 100m)                   |  d   |
+* BB_xcntr2          | if Theocase=2_BUBBLES: as for BB_xcntr, but for |  a   |
+*                    |                             second bubble       |  n   |
+* BB_zcntr2          | if Theocase=2_BUBBLES: as for BB_ycntr, but for |  t   |
+*                    |                             second bubble       |      |
+* BB_isoth           | potential temperature of isentropic basic state |303.16|
+* G_nk               | Number of vertical levels to be created         |      |
+* (There are other variables but pre-defined in the namelists above)          |
+* See the comdeck "theonml.cdk" for the keys active in this scheme            |
+*-----------------------------------------------------------------------------
+
+*_____________________________________________________________________________
+*                                                                             |
+*     Mtn_cfgs     namelist                                                   |
+*_____________________________________________________________________________|
+*                    |                                                 |      |
+* NAME               | DESCRIPTION                                     |DEFVAL|
+*--------------------|-------------------------------------------------|------|
+* mtn_tzero          | temperature perturbation of bubble              |      |
+* mtn_hwx            | wavelength of large-scale component of mountain |      |
+* mtn_hwx1           | wavelength of small-scale component of mountain |      |
+* mtn_hght           | mountain height                                 |      |
+* mtn_nstar          | Brunt-Vaisala frequency                         |      |
+* mtn_tzero          | isothermal reference state                      |      |
+* mtn_flo            | upstream velocity in x direction                |      |
+* (There are other variables but pre-defined in the namelists above)          |
+* See the comdeck "theonml.cdk" for the keys active in this scheme            |
+* Default values depend on the theoretical case chosen                        |
+*-----------------------------------------------------------------------------

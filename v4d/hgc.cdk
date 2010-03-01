@@ -2,6 +2,8 @@
 *
 ***comdeck hgc.cdk
 *
+*revisions
+* v3_12 - Dugas B.             - add dstf_gis,dstu_gis,dstv_gis "skip" grids
 *______________________________________________________________________
 *                                                                      |
 *  VARIABLES FOR HORIZONTAL DESCRIPTORS OF OUTPUT GRIDS (set_hgc)      |
@@ -24,12 +26,14 @@
 *
 #endif
       integer Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
-     $        dstf_gid, dstu_gid, dstv_gid
-      character*1 Hgc_gxtyp_s
+     $        dstf_gid, dstu_gid, dstv_gid,
+     $        dstf_gis, dstu_gis, dstv_gis
+      character*4 Hgc_gxtyp_s
 *
       MARK_COMMON_BEG (Hgc)
       common /Hgc/ Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
-     $             dstf_gid, dstu_gid, dstv_gid
+     $             dstf_gid, dstu_gid, dstv_gid,
+     $             dstf_gis, dstu_gis, dstv_gis
       MARK_COMMON_END (Hgc)
       MARK_COMMON_BEG (Hgc_s)
       common /Hgc_s/ Hgc_gxtyp_s

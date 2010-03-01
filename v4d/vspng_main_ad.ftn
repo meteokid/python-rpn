@@ -16,6 +16,7 @@
 *                           - change name 
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_31 - Tanguay M.        - add rwnd_L 
 *
 *object
 *     see id section
@@ -108,6 +109,10 @@
          mut1_ = 0
          multx_= 0
       endif
+*
+*     Note: iw2rwnd_ad = iw2rwnd 
+*     --------------------------
+      if (Vspng_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 *
 *     -----------------------------------------------------
 *     WHEN .not.Schm_hydro_L
@@ -272,6 +277,10 @@
      %                       pipt1m, qpt1m, topo  ,
      %                       LDIST_DIM, G_nk )
       endif
+*
+*     Note: iw2rwnd_ad = iw2rwnd 
+*     --------------------------
+      if (Vspng_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
 *
       pnerr = vmmuld(-1,0)
 *    

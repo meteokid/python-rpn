@@ -1,0 +1,39 @@
+#if defined (DOC)
+*
+***comdeck e_topo.cdk
+*
+*   Contains the parameters controlling the pre-treatment of topographic
+*   fields. The parameters are initialized in "SET_TOPO_2".
+*
+*______________________________________________________________________
+*                                                                      |
+*  PRE TREATMENT of TOPOGRAPHIC fields                                 |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Topo_filmx_L       | switch-> true  -filtering 2 delta X topography  |
+*                    |          false -no filters to topography        |
+*                    |                                                 |
+* Topo_dgfmx_L       | switch-> true  -filtering using digital. filt   |
+*                    |          false -no digital filter to topography |
+*                    |                                                 |
+* Topo_dgfms_L       | switch-> true  -digital filt. consider map scale|
+*                    |          false -digital filt. ignore map scale  |
+*                    |                                                 |
+*                    |                                                 |
+* Topo_init_L        | switch-> false -NULL topography                 |
+*----------------------------------------------------------------------|
+*
+#endif
+      logical Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L
+      real, dimension(:), pointer ::  topo ,topou ,topov,
+     $                                topof,topouf,topovf,
+     $          a_pr_m,i_pr_m,a_ir_m,i_ir_m,a_so_m,i_so_m
+*
+      common / topo_l / Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,
+     $                  Topo_dgfms_L
+      common / topo_r / topo,topou,topov,topof,topouf,topovf,
+     $         a_pr_m,i_pr_m,a_ir_m,i_ir_m,a_so_m,i_so_m
+*
+

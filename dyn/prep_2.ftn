@@ -41,6 +41,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Gravel S.         - modify for theoretical cases
 * v3_30 - Desgagne M.       - Revision OpenMP
+* v3_31 - Desgagne M.       - Scope of operator for LAM configs
 *
 *object
 *
@@ -87,10 +88,10 @@
       j0 = 1
       jn = l_nj
       if (G_lam) then
-         if (l_west)  i0= 1+pil_w -2
-         if (l_east)  in= l_ni-pil_e +2
-         if (l_south) j0= 1+pil_s -2
-         if (l_north) jn= l_nj-pil_n +2
+         if (l_west)  i0= pil_w
+         if (l_east)  in= l_niu - pil_e + 2
+         if (l_south) j0= pil_s
+         if (l_north) jn= l_njv - pil_n + 2
       endif
 c     if (Acid_test_L)then
 c     if (Lun_debug_L) write (Lun_out,1000)

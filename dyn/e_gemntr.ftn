@@ -18,6 +18,8 @@
 #include "pilot.cdk"
 #include "version.cdk"
 #include "itf_phy_buses.cdk"
+#include "path.cdk"
+#include <clib_interface.cdk>
 *
 *MODULES
       integer  exdb, exfin
@@ -31,13 +33,17 @@
       entry gemclimntr
 *     ================
 *
-      call  open_status_file2 ('status_ent.dot')
+      call base_dir_env
+
+      call  open_status_file2 (trim(Path_output_S)//'/status_ent.dot')
       call write_status_file2 ('_status=ABORT' )
       err = exdb(Version_ent_S//Version_dstp_S,Version_S,'NON')
 *
-      call e_gemnml (err)
+      if (clib_isdir(Path_input_S).lt.0) stop
+
+      call e_gemnml
 *
-      if ((err.eq.0).or.(.not.(Pil_sfc2d_L .or. Pil_3df_L))  ) goto 800
+      if (.not.Pil_sfc2d_L .and. .not.Pil_3df_L) goto 800
 *
       call e_grid
 *

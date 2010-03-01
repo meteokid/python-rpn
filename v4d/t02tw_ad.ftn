@@ -1,0 +1,153 @@
+***s/r t02tw_ad - ADJ of t02tw_tl  
+*
+#include "model_macros_f.h"
+*
+      subroutine t02tw_ad
+*
+      implicit none
+*
+*author M.Tanguay 
+*
+*revision
+* v3_31 - Tanguay M.    - initial MPI version
+*
+*object
+*     see id section
+*	
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vt0.cdk"
+#include "vtw.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnerr, pnlkey1(100),pnlod
+      integer i, j, k
+*
+*     ---------------------------------------------------------------
+*
+      pnlkey1( 1)= VMM_KEY(utw  )
+      pnlkey1( 2)= VMM_KEY(vtw  )
+      pnlkey1( 3)= VMM_KEY(wtw  )
+      pnlkey1( 4)= VMM_KEY(tdtw )
+      pnlkey1( 5)= VMM_KEY(ttw  )
+      pnlkey1( 6)= VMM_KEY(fitw )
+      pnlkey1( 7)= VMM_KEY(qtw  )
+      pnlkey1( 8)= VMM_KEY(tptw )
+      pnlkey1( 9)= VMM_KEY(fiptw)
+      pnlkey1(10)= VMM_KEY(qptw )
+      pnlkey1(11)= VMM_KEY(piptw)
+      pnlkey1(12)= VMM_KEY(tpltw)
+      pnlkey1(13)= VMM_KEY(psdtw)
+      pnlkey1(14)= VMM_KEY(stw  )
+      pnlod = 14
+*
+      if (.not. Schm_hydro_L) then
+          pnlkey1(pnlod+1)= VMM_KEY(mutw)
+          pnlod = pnlod+1
+      endif
+*
+      pnlkey1(pnlod+ 1)= VMM_KEY(ut0  )
+      pnlkey1(pnlod+ 2)= VMM_KEY(vt0  )
+      pnlkey1(pnlod+ 3)= VMM_KEY(wt0  )
+      pnlkey1(pnlod+ 4)= VMM_KEY(tdt0 )
+      pnlkey1(pnlod+ 5)= VMM_KEY(tt0  )
+      pnlkey1(pnlod+ 6)= VMM_KEY(fit0 )
+      pnlkey1(pnlod+ 7)= VMM_KEY(qt0  )
+      pnlkey1(pnlod+ 8)= VMM_KEY(tpt0 )
+      pnlkey1(pnlod+ 9)= VMM_KEY(fipt0)
+      pnlkey1(pnlod+10)= VMM_KEY(qpt0 )
+      pnlkey1(pnlod+11)= VMM_KEY(pipt0)
+      pnlkey1(pnlod+12)= VMM_KEY(tplt0)
+      pnlkey1(pnlod+13)= VMM_KEY(psdt0)
+      pnlkey1(pnlod+14)= VMM_KEY(st0  )
+      pnlod = pnlod+14
+*
+      if (.not. Schm_hydro_L) then
+          pnlkey1(pnlod+1)= VMM_KEY(mut0)
+          pnlod = pnlod+1
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(utw  )
+      pnerr = VMM_GET_VAR(vtw  )
+      pnerr = VMM_GET_VAR(wtw  )
+      pnerr = VMM_GET_VAR(tdtw )
+      pnerr = VMM_GET_VAR(ttw  )
+      pnerr = VMM_GET_VAR(fitw )
+      pnerr = VMM_GET_VAR(qtw  )
+      pnerr = VMM_GET_VAR(tptw )
+      pnerr = VMM_GET_VAR(fiptw)
+      pnerr = VMM_GET_VAR(qptw )
+      pnerr = VMM_GET_VAR(piptw)
+      pnerr = VMM_GET_VAR(tpltw)
+      pnerr = VMM_GET_VAR(psdtw)
+      pnerr = VMM_GET_VAR(stw  )
+*
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(mutw)
+      endif
+*
+      pnerr = VMM_GET_VAR(ut0  )
+      pnerr = VMM_GET_VAR(vt0  )
+      pnerr = VMM_GET_VAR(wt0  )
+      pnerr = VMM_GET_VAR(tdt0 )
+      pnerr = VMM_GET_VAR(tt0  )
+      pnerr = VMM_GET_VAR(fit0 )
+      pnerr = VMM_GET_VAR(qt0  )
+      pnerr = VMM_GET_VAR(tpt0 )
+      pnerr = VMM_GET_VAR(fipt0)
+      pnerr = VMM_GET_VAR(qpt0 )
+      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(tplt0)
+      pnerr = VMM_GET_VAR(psdt0)
+      pnerr = VMM_GET_VAR(st0  )
+*
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(mut0)
+      endif
+*
+      ut0  = utw   + ut0 
+      vt0  = vtw   + vt0 
+      wt0  = wtw   + wt0 
+      tdt0 = tdtw  + tdt0 
+      tt0  = ttw   + tt0 
+      fit0 = fitw  + fit0 
+      qt0  = qtw   + qt0 
+      tpt0 = tptw  + tpt0 
+      fipt0= fiptw + fipt0 
+      qpt0 = qptw  + qpt0 
+      pipt0= piptw + pipt0 
+      tplt0= tpltw + tplt0 
+      psdt0= psdtw + psdt0 
+      st0  = stw   + st0 
+*
+      if (.not. Schm_hydro_L) mut0 = mutw + mut0
+*
+      utw  = 0.  
+      vtw  = 0. 
+      wtw  = 0. 
+      tdtw = 0. 
+      ttw  = 0. 
+      fitw = 0. 
+      qtw  = 0. 
+      tptw = 0. 
+      fiptw= 0.
+      qptw = 0.
+      piptw= 0.
+      tpltw= 0.
+      psdtw= 0.
+      stw  = 0.
+*
+      if (.not. Schm_hydro_L) mutw = 0. 
+*
+      pnerr = vmmuld(-1,0)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

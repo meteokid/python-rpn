@@ -15,6 +15,7 @@
 *revision
 * v3_20 - Lee V.            - initial MPI version (from blocqc0 v3_12)
 * v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
+* v3_31 - Lee V.            - modification of Out_etik_S in out_sgrid only
 *
 *object
 *     the output of the QC at timestep 0
@@ -59,9 +60,9 @@
       real, dimension(:,:,:), allocatable :: w5
       real, dimension(:), allocatable :: prprlvl
       real deg2rad,qccoef,qct1
-      pointer (patr, qct1(LDIST_SHAPE,*))
+      pointer (paqc, qct1(LDIST_SHAPE,*))
       real wlnph(LDIST_SHAPE,G_nk)
-      real px(LDIST_SHAPE,G_nk)
+      real px(LDIST_SHAPE,G_nk),qc(LDIST_SHAPE,G_nk)
       logical periodx_L
 
 **
@@ -121,6 +122,8 @@
       if (Out3_ip3.eq.-1) ip3 = Lctl_step
       if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
       
+      qc = 0.
+      paqc = loc(qc)
       key1 = VMM_KEY (trt1)
       do k=1,Tr3d_ntr
          trkey1(k) = key1 + k
@@ -128,7 +131,7 @@
       pnerr = vmmlod(trkey1,Tr3d_ntr)
       do n=1, Tr3d_ntr
          if (Tr3d_name_S(n).eq.'QC') then
-             pnerr = vmmget(trkey1(n),patr,qct1)
+             pnerr = vmmget(trkey1(n),paqc,qct1)
          endif
       enddo
 
@@ -145,7 +148,7 @@
      $                   periodx_L,
      $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
      $                   Grid_stride(outd_grid(kk)),
-     $                   Grid_etikext_s(outd_grid(kk)),
+     $                   Grid_etikext_s(outd_grid(kk)),' ',
      $                   Geomn_longs,Geomn_latgs)
 
           levset = Outd_lev(kk)
@@ -155,7 +158,7 @@
 
           call out_slev(Level_typ(levset),Level(1,levset),
      $                    ind_o,nk_o,G_nk,Level_kind_ip1,'d')
-          call out_sfile(Out3_closestep,Lctl_step,' ',ip3,ext_S)
+          call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
  
           if (Level_typ(levset).eq.'M') then
               if ( Out3_cliph_L ) then

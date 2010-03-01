@@ -1,0 +1,126 @@
+***s/r v4d_set_bc_0 - Transfert T1 content in independent control BC at time 0 
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_set_bc_0 
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_31 - Tanguay M.        - initial MPI version 
+* v3_31 - Tanguay M.        - Control BC
+*
+*object
+*     see id section
+*
+*     (NO_HYDRO is not considered yet) 
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "vt1.cdk"
+#include "v4d_bc.cdk"
+#include "step.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+*
+*     __________________________________________________________________
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnlod,pnlkey1(20),err
+*
+      integer i,j,k
+*
+      integer key1(Tr3d_ntr),key1_
+      real tr
+      pointer (patr, tr(LDIST_SHAPE,*))
+*
+#include "v4d_key_bc.cdk"
+*     __________________________________________________________________
+*
+      if (.not. Schm_hydro_L) call gem_stop ('STOP in V4D_SET_BC_0',-1) 
+*
+      do ntime=0,Step_total
+*
+      if (ntime.eq.0) then
+*     --------------------
+*
+#include "v4d_lod_bc.cdk"
+#include "v4d_get_bc.cdk"
+*
+      if (Lun_out.gt.0) then 
+      write(Lun_out,*) '-------------------------------'
+      write(Lun_out,*) 'INSIDE SET_BC_0 NTIME = ',ntime 
+      write(Lun_out,*) '-------------------------------'
+      endif
+*
+      pnlkey1(1) = VMM_KEY( ut1)
+      pnlkey1(2) = VMM_KEY( vt1)
+      pnlkey1(3) = VMM_KEY(tpt1)
+      pnlkey1(4) = VMM_KEY( st1)
+      pnlod = 4 
+*
+      err = vmmlod(pnlkey1,pnlod)
+*
+      err = VMM_GET_VAR( ut1)
+      err = VMM_GET_VAR( vt1)
+      err = VMM_GET_VAR(tpt1)
+      err = VMM_GET_VAR( st1)
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         f_bc_u (i,j,k) =  ut1(i,j,k) 
+         f_bc_v (i,j,k) =  vt1(i,j,k) 
+         f_bc_tp(i,j,k) = tpt1(i,j,k) 
+      end do
+      end do
+      end do
+*
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         f_bc_s(i,j) =  st1(i,j)
+      end do
+      end do
+*
+      err = vmmuld(pnlkey1,pnlod)
+*
+      key1_ = VMM_KEY (trt1)
+      do n_tr=1,Tr3d_ntr
+         key1(n_tr) = key1_ + n_tr
+      end do
+      err = vmmlod(key1,Tr3d_ntr)
+*
+      do n_tr=1,Tr3d_ntr
+*
+      err    = vmmget(key1     (n_tr),patr,tr)
+      bc_err = vmmget(key_bc_tr(n_tr),pabc_tr,f_bc_tr)
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         f_bc_tr(i,j,k) = tr(i,j,k) 
+      end do
+      end do
+      end do
+*
+      enddo
+*
+      err = vmmuld(key1,     Tr3d_ntr)
+*
+#include "v4d_unlod_bc.cdk"
+*
+      endif
+*
+      enddo
+*
+*     __________________________________________________________________
+      return
+      end

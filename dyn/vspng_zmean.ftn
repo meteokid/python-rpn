@@ -26,8 +26,7 @@
 *
       integer i,j,k
       integer i0,in,j0,jn,k0,kn,njk,err
-      real sum(l_nj,Nk)
-      real*8 fijk
+      real*8 sum(l_nj,Nk),gsum(l_nj,Nk)
 *
 *--------------------------------------------------------------------
 *
@@ -41,24 +40,23 @@
 *
       if(lmean) then
 *
-!$omp parallel private(fijk)
+!$omp parallel
 !$omp do
          do k=k0,kn
             do j=j0,jn
-               fijk = 0.
+               sum(j,k) = 0.
                do i=i0,in
-                  fijk = dble(F_field(i,j,k))+fijk
+                  sum(j,k) = dble(F_field(i,j,k))+sum(j,k)
                end do
-               sum(j,k) = real(fijk)
             end do
          end do
 !$omp enddo
 !$omp end parallel
 *
-         call rpn_comm_ALLREDUCE ( sum, tsum, l_nj*Nk,
-     $        "MPI_REAL","MPI_SUM","EW",err )
+         call rpn_comm_ALLREDUCE ( sum, gsum, l_nj*Nk,
+     $                "MPI_DOUBLE_PRECISION","MPI_SUM","EW",err )
 *
-         tsum=tsum/real(G_ni)
+         tsum=gsum/dble(G_ni)
 *
 !$omp parallel
 !$omp do

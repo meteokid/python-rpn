@@ -38,6 +38,7 @@
 * v3_11 - M.Tanguay         - correct relationship between stepob and timestep
 *                           - Add option for profiles done on U-V grids for winds 
 * v3_30 - Fillion/Tanguay   - Adapt diagnostics for LAM 
+* v3_31 - Tanguay M.        - Add OPENMP directives 
 *
 *object
 *     -----------------------------------------------------------------------
@@ -59,12 +60,13 @@
 #include "ptopo.cdk"
 #include "tr3d.cdk"
 #include "path.cdk"
+#include <clib_interface.cdk>
 #include <prof_f.h>
 *
 *     Local variables
 *     ---------------
-      integer  vmmlod, vmmget, vmmuld, prof_wrrec, longueur
-      external vmmlod, vmmget, vmmuld, prof_wrrec, longueur
+      integer  vmmlod, vmmget, vmmuld, prof_wrrec
+      external vmmlod, vmmget, vmmuld, prof_wrrec
 *
       integer nvar, kstatus, pnlkey1(9), err, pnerr, istat, i, j,
      %        k, n, i1, i2, j1, j2, nbin, npr, inn
@@ -104,7 +106,7 @@
         write(cljx_S,'(i2.2)') Ptopo_mycol 
         write(cljy_S,'(i2.2)') Ptopo_myrow 
 *
-        Pr_type2file_S = Path_xchg_S(1:longueur( Path_xchg_S) )//'/dwyf_'
+        Pr_type2file_S = trim(Path_xchg_S)//'/dwyf_'
      %                   //cljx_S//'_'//cljy_S//'.prof'
 *
         write(Lun_out,*) 'Opening dwyf MODEL-PROFILE output file'
@@ -184,6 +186,7 @@
 *
 *     Transfer fields
 *     ---------------
+!$omp parallel do
       do k=1,l_nk
          do j=1,l_nj
            do i=1,l_niu
@@ -200,12 +203,15 @@
            end do
          end do
       end do
+!$omp end parallel do
 *
+!$omp parallel do
       do j=1,l_nj
             do i=1,l_ni
                wij5(i,j) = st1(i,j)
             end do
       end do
+!$omp end parallel do
 *
       if(plpr_L) then
          inn= 0
@@ -273,6 +279,7 @@
 *
       else
 *
+!$omp parallel do
       do k=1,l_nk
          do j=l_miny,l_maxy
            do i=l_minx,l_maxx
@@ -280,11 +287,13 @@
             end do
          end do
       end do
+!$omp end parallel do
 *
       call v4d_uvint0 (profx,prbid,Pr_l_mv(V3D_UTRU,nbin)%pxu,Pr_l_mv(V3D_UTRU,nbin)%py,npr,
      %                 wijk1,wbid,V4dz_axu,V4dz_ay,V4dz_cxu,V4dz_cy,V4dz_wxu_8,V4dz_coxu_8,V4dz_sixu_8,V4dz_siy_8,
      %                 i1,i2,j1,j2,l_nk,'U',V4dz_degree,'UV')
 *
+!$omp parallel do
       do k=1,l_nk
          do j=l_miny,l_maxy
            do i=l_minx,l_maxx
@@ -292,6 +301,7 @@
             end do
          end do
       end do
+!$omp end parallel do
 *
       call v4d_uvint0 (prbid,profy,Pr_l_mv(V3D_UTRU,nbin)%px,Pr_l_mv(V3D_UTRU,nbin)%pyv,npr,
      %                 wbid,wijk2,V4dz_ax,V4dz_ayv,V4dz_cx,V4dz_cyv,V4dz_wx_8,V4dz_cox_8,V4dz_six_8,V4dz_siyv_8,
@@ -303,11 +313,13 @@
 *
 *       Store UU profiles 
 *       -----------------
+!$omp parallel do
         do j = 1, npr
            do k = 1, l_nk
               gomu_8(k,j) = dble(profx(k,j))
            enddo
         enddo
+!$omp end parallel do
 *
       endif
 *
@@ -319,11 +331,13 @@
 *
 *       Store VV profiles 
 *       -----------------
+!$omp parallel do
         do j = 1, npr
           do k = 1, l_nk
              gomv_8(k,j) = dble(profy(k,j))
           enddo
         enddo
+!$omp end parallel do
 *
       endif
 *
@@ -352,11 +366,13 @@
 *
 *       Store Temp. profiles 
 *       --------------------
+!$omp parallel do
         do j = 1, npr
           do k = 1, l_nk
              gomt_8(k,j) = dble(profx(k,j))
           enddo
         enddo
+!$omp end parallel do
 *
       endif
 *
@@ -383,11 +399,13 @@
 *
 *       Store Humidity profiles 
 *       -----------------------
+!$omp parallel do
         do j = 1, npr
           do k = 1, l_nk
              gomq_8(k,j) = dble(profx(k,j))
           enddo
         enddo
+!$omp end parallel do
 *
       endif
 *
@@ -414,9 +432,11 @@
 *
 *       Store Psurf. profiles 
 *       ---------------------
+!$omp parallel do
         do j=1,npr
            gomps_8(1,j) = dble(prof2d(1,j))
         enddo
+!$omp end parallel do
 *
       endif
 *

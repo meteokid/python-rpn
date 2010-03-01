@@ -14,6 +14,7 @@
 *
 *revision
 * v3_30 - Qaddouri A.       - initial version
+* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
@@ -57,7 +58,7 @@
       iout  = 0
       icode = 0
 *
-      if ((iln.eq.Schm_itnlh).and.(Orh_icn.eq.Schm_itcn)) iout=lun_out
+      if ((iln.eq.Schm_itnlh).and.(Orh_icn.eq.Schm_itcn.or..not.Orh_crank_L)) iout=lun_out
 *
 *-----------------------------------------------------------------------
 *     F G M R E S   L O O P

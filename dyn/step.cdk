@@ -22,10 +22,10 @@
 *
 *
 #endif
-      integer Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup
+      logical Step_cliptraj_L
+      integer Step_total, Step_rsti, Step_bkup, Step_spinphy
+      integer Step_gstat, Step_cleanup, Step_maxcfl
 *
-      MARK_COMMON_BEG (Stepi)
-      common / Stepi / Step_total, Step_rsti, Step_bkup, Step_gstat,
-     %                 Step_cleanup
-      MARK_COMMON_END (Stepi)
+      common / Stepi / Step_total, Step_rsti, Step_bkup, Step_spinphy
+      common / Stepi / Step_gstat, Step_cleanup, Step_maxcfl, Step_cliptraj_L
 *

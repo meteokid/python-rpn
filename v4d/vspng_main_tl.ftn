@@ -17,6 +17,7 @@
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
+* v3_31 - Tanguay M.        - add rwnd_L 
 *
 *object
 *     see id section
@@ -152,6 +153,9 @@
          multxm_= 0
       endif
 *
+      if (Vspng_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
+      if (Vspng_rwnd_L) call iw2rwnd ( ut1m,vt1m,LDIST_DIM, G_nk, 1 )
+*
       if (G_lam) then
          if (Lun_debug_L) write (Lun_out,1001) Vspng_nk
          call vspng_drv_lam_tl ( ut1  , vt1  , psdt1 , tpt1 , fipt1 , tdt1 ,
@@ -273,6 +277,9 @@
 *
       endif
 !$omp end parallel
+*
+      if (Vspng_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
+      if (Vspng_rwnd_L) call iw2rwnd ( ut1m,vt1m,LDIST_DIM, G_nk, 2 )
 *
       pnerr = vmmuld(-1,0)
 *    

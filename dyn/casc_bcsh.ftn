@@ -29,6 +29,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "lctl.cdk"
 #include "ind.cdk"
 #include "acid.cdk"
+#include "path.cdk"
 *
       integer  vmmlod,vmmget,vmmuld,longueur
       external vmmlod,vmmget,vmmuld,longueur
@@ -73,7 +74,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       if (data2treat) then
 *
          write (md,'(i2.2)') wowp
-         fn = '../casc/bcs'//md//'_'//datev
+         fn = trim(Path_input_S)//'/INDATA/casc/bcs'//md//'_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                        iostat=err,form='UNFORMATTED')
 c        print *,'opening ',fn(1:longueur(fn)),'err=',err

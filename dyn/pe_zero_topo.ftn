@@ -16,6 +16,8 @@
 *implicits
 #include "ptopo.cdk"
 #include "version.cdk"
+#include "path.cdk"
+#include <clib_interface.cdk>
 *
       integer  exdb,ptopo_nml
       external exdb,ptopo_nml
@@ -24,13 +26,14 @@
 *
 *-------------------------------------------------------------------
 *
-      call  open_status_file2 ('status_mod.dot')
+      call base_dir_env
+      call  open_status_file2 (trim(Path_output_S)//'/status_mod.dot')
       call write_status_file2 ('_status=ABORT' )
       err = exdb(Version_mod_S//Version_dstp_S,Version_S, 'NON')
 *
 * Read namelist ptopo from file model_settings
 *
-      if (ptopo_nml ('process/model_settings') .eq. 1 ) then
+      if (ptopo_nml (trim(Path_input_S)//'/model_settings') .eq. 1 ) then
          F_npx = Ptopo_npex
          F_npy = Ptopo_npey
          err = ptopo_nml ('print')

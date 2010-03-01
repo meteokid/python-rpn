@@ -13,6 +13,7 @@
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
 * v3_11 - Tanguay M.        - correction for px or py negative
+* v3_31 - Tanguay M.        - Add OPENMP directives 
 *
 *object
 *  see id section
@@ -41,8 +42,12 @@
       real*8, parameter :: ZERO_8 = 0.0
       real*8, parameter :: ONE_8  = 1.0
 *
-      do n=npts,1,-1
+!$omp parallel private(i,j,n,x1_8,x2_8,y1_8,y2_8,
+!$omp$         x_8,y_8,dx_8,dy_8)
+*
+!$omp do
       do k=nk,1,-1
+      do n=npts,1,-1
 *
 *        FIXED
 *        -----
@@ -75,6 +80,9 @@
 *
       enddo
       enddo
+!$omp enddo
+*
+!$omp end parallel
 *
       return
       end

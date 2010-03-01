@@ -2,18 +2,18 @@
 #include "model_macros_f.h"
 !
 !**s/r wind_rot2ll - transform (rotate) U/V from grid winds to E-W/N-S
-      SUBROUTINE  wind_rot2ll(uull,vvll,uurot,vvrot,lon,lat,nbpts)
+
+      SUBROUTINE  wind_rot2ll(uu,vv,lon,lat,nbpts)
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN) :: nbpts
-      REAL,DIMENSION(nbpts), INTENT(OUT) :: uull,vvll
-      REAL,DIMENSION(nbpts), INTENT(IN)  :: uurot,vvrot,lon,lat
+      REAL,DIMENSION(nbpts) :: uu,vv,lon,lat
 !author
 !     Stephane Chamberland - rpn - Feb 2006
 !
 !revision
 * v3_30 - Chamberland           - Initial version
-* v3_?? - Chamberland           - Multiple fix (wrong lat,lon used)
+* v3_31 - Chamberland&Desgagne  - Multiple fix
 !
 !arguments
 !  Name        I/O                 Description
@@ -33,38 +33,17 @@
       INTEGER :: ii,jj
       REAL,DIMENSION(3,3) :: rr,ri
       REAL,DIMENSION(3,nbpts) :: xyz,uvcart
-      REAL,DIMENSION(nbpts) :: lon_rot, lat_rot,lond,latd
-
-      REAL :: uvmod,uvllmod,uvdeg,uvlldeg
-
-      real*8 CLXXX_8, rad2deg_8, my_pi_8
-      parameter( CLXXX_8 = 180.0 )
-      parameter( my_pi_8 = 0.3141592653590E+01 )
+      REAL,DIMENSION(nbpts) :: lon_rot, lat_rot, uull, vvll
+!
 !----------------------------------------------------------------
 !
-      rad2deg_8 = CLXXX_8/my_pi_8
-      DO ii=1,nbpts
-         lond(ii)=real(DBLE(lon(ii))*rad2deg_8)
-         latd(ii)=real(DBLE(lat(ii))*rad2deg_8)
-      END DO
-      CALL ez_gfxyfll(lond,latd,lon_rot,lat_rot,nbpts, Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2)
-!       DO ii=1,3
-!       DO jj=1,3
-!          rr(ii,jj) = real(Grd_rot_8(ii,jj))
-!       END DO
-!       END DO
+      CALL ez_gfxyfll(lon,lat,lon_rot,lat_rot,nbpts, Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2)
       CALL ez_crot(rr, ri, Grd_xlon1,Grd_xlat1,Grd_xlon2,Grd_xlat2)
-      CALL ez_uvacart(xyz,uurot,vvrot,lon_rot,lat_rot,nbpts,1)
+      CALL ez_uvacart(xyz,uu,vv,lon_rot,lat_rot,nbpts,1)
       CALL mxm(ri, 3, xyz, 3, uvcart, nbpts)
-      CALL ez_cartauv(uull, vvll, uvcart, lond, latd, nbpts, 1)
-!       PRINT *,'   lat    lon :  uvmod  uvdeg:uvllmod uvlldeg: moddiff degdiff'
-!       DO ii=1,nbpts
-!         uvmod   = sqrt(uurot(ii)**2+vvrot(ii)**2)
-!         uvllmod = sqrt(uull(ii)**2+vvll(ii)**2)
-!         uvdeg   = real(rad2deg_8)*atan2(vvrot(ii),uurot(ii))
-!         uvlldeg = real(rad2deg_8)*atan2(vvll(ii),uull(ii))
-!         print '(X,2F7.1,":",2F7.1,":",2F7.1,":",2F7.1)',lond(ii),latd(ii),uvmod,uvdeg,uvllmod,uvlldeg,uvmod-uvllmod,uvdeg-uvlldeg
-!       enddo
+      CALL ez_cartauv(uull, vvll, uvcart, lon, lat, nbpts, 1)
+      uu = uull
+      vv = vvll
 !
 !----------------------------------------------------------------
       RETURN

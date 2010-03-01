@@ -16,6 +16,7 @@
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
 * v3_21 - Tanguay M.        - Revision Openmp
+* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 *language
 *     fortran 77
@@ -149,7 +150,7 @@
 *     ---------------------------------------------------------------
 *     Store in ORTR for ADW_MAIN_3_INT_AD when Orh_icn .eq. Schm_itcn
 *     ---------------------------------------------------------------
-      if ( Orh_icn .eq. Schm_itcn ) then
+      if ( Orh_icn .eq. Schm_itcn. or. .not.Orh_crank_L ) then
 *
       aaa_8 = ( Offc_a1_8 / Offc_b0_8 )/ Cstv_dt_8 
 *

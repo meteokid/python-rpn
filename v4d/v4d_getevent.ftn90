@@ -19,6 +19,7 @@ subroutine v4d_getevent(kulout,kevent,kstatus,mype)
   !
 #include "impnone.cdk"
 #include "path.cdk"
+#include <clib_interface.cdk>
 #include <prof_f.h>
   !
   !Arguments
@@ -26,14 +27,13 @@ subroutine v4d_getevent(kulout,kevent,kstatus,mype)
   integer, intent(in)::  kulout, mype
   integer, intent(inout):: kevent, kstatus
   !
-  integer ihdlin, istat, prof_rdrec, longueur
-  external longueur
+  integer ihdlin, istat, prof_rdrec
   !
   character*256 pathev_S
   !
   !Open evnt PROF file
   !-------------------
-  pathev_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/evnt.prof'
+  pathev_S = trim(Path_xchg_S)//'/evnt.prof'
   !
   ! All Proc sleep on waiting on a prof event file.
   ! prof_open implementation forces the max threads available for each

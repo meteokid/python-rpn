@@ -11,6 +11,7 @@
 *
 *revision
 * v3_30 - Desgagne, Winger & Dugas - initial version
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
 *
 *object
 *	
@@ -24,7 +25,7 @@
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 #include "glb_ld.cdk"
 #include "pres.cdk"
 #include "lam.cdk"
@@ -205,45 +206,6 @@ C           Write variables for later check
             write (Lun_rstrt) Chm_busper_glb
             deallocate ( Chm_busper_glb )
 *
-            err = fclos(Lun_rstrt)
-*
-         endif
-*
-      endif
-*
-C     Save global values of Cpl_rla_msk and Cpl_rga_cpl2phy
-*     
-      if (C_coupling_L) then
-*
-         dim_cpl = ni*nj*ig_max_inout_dim
-         if (Ptopo_myproc.eq.0)
-     &   allocate ( Cpl_rla_msk     (ni*nj),
-     &              Cpl_rga_cpl2phy (dim_cpl) )
-*
-C        Collect rla_msk from all processors
-*
-         call glbcolc (Cpl_rla_msk,ni,nj,
-     &                     rla_msk,1,l_ni,1,l_nj,1)
-*
-C        Collect rga_cpl2phy from all processors
-*
-         call glbcolc (Cpl_rga_cpl2phy, ni,nj,
-     &                     rga_cpl2phy,
-     &                 1,l_ni,1,l_nj,ig_max_inout_dim )
-*
-         if (Ptopo_myproc.eq.0) then
-*
-            Lun_rstrt = 0
-            err = fnom (Lun_rstrt,'../restart_glbcpl.bin','SEQ/UNF',0)
-            write (Lun_rstrt) Lctl_step
-*
-C           Write variables for later check
-            write (Lun_rstrt) ig_max_inout_dim, ni, nj
-*
-            write (Lun_rstrt) Cpl_rla_msk
-            write (Lun_rstrt) Cpl_rga_cpl2phy
-
-            deallocate ( Cpl_rla_msk,Cpl_rga_cpl2phy )
             err = fclos(Lun_rstrt)
 *
          endif

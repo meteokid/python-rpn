@@ -30,6 +30,7 @@
 * v3_21 - Lee V.            - Output Optimization
 * v3_30 - Bilodeau/Tanguay  - Cancel knots conversion when AD 
 * v3_30 - Tanguay M.        - Remove lastdt .ne. Lctl_step 
+* v3_31 - Tanguay M.        - Remove lastdt .ne. Lctl_step when 4D-Var 
 *
 *object
 *     output the wind images or wind components or wind module.
@@ -126,7 +127,8 @@
 *
 *     Transfer u,v in t3,t4 if not specific 4D-Var case   
 *     -------------------------------------------------
-      if (lastdt .ne. Lctl_step) then
+      if ((lastdt .ne. Lctl_step).or.V4dg_conf .ne. 0) then
+*
       fla = V4dg_ad_L.and.V4dg_imguv_L
       if (V4dg_ad_L.and..not.V4dg_imguv_L) call gem_stop('STOP IN OUT_UV: ADJOINT not certified',-1)
       flb = ( (V4dg_di_L.or.V4dg_tl_L) .and. .not.V4dg_imguv_L ) 

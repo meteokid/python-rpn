@@ -29,6 +29,7 @@
 *                           - Introduce Hzd_hdif0_L
 * v3_30 - Tanguay M.        - Adapt TL/AD to Clim_clima_L  
 * v3_30 - Tanguay M.        - Adapt TL/AD to out_dyn  
+* v3_31 - Tanguay M.        - Add TMG timings  
 *
 *object
 *     see id section
@@ -76,7 +77,9 @@
 *
 *C    4D-Var: Control Cost function at INITIAL time
 *     ---------------------------------------------
+      call tmg_start0 (55, 'PRO_TL' )
       call v4d_ctrlcst ()
+      call tmg_stop0 (55)
       if(V4dg_sgvc_L) call v4d_calcenergy
 *
  500  Lctl_step = Lctl_step + 1
@@ -104,11 +107,15 @@
 *
 *        Dynamics timestep
 *        -----------------
+         call tmg_start0 (60, 'DYN_TL' )
          call dynstep_tl( )
+         call tmg_stop0 (60)
 *
 *        Physics timestep & Horizontal diffusion & Vertical sponge
 *        ---------------------------------------------------------
+         call tmg_start0 (61, 'PHY_TL' )
          call hdif_phy_tl
+         call tmg_stop0 (61)
 *
       endif
 *
@@ -124,7 +131,9 @@
 *
 *C    4D-Var: Control Cost function at .NOT.INITIAL time
 *     --------------------------------------------------
+      call tmg_start0 (55, 'PRO_TL' )
       call v4d_ctrlcst ()
+      call tmg_stop0 (55)
 *
       if(V4dg_sgvc_L) call v4d_calcenergy
 *

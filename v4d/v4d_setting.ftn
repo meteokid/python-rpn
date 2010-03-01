@@ -36,6 +36,7 @@
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
 * v3_20 - Zadra A.          - Introduce V4dg_sgvc_dt0  
 * v3_30 - Tanguay M.        - Validation for LAM version 
+* v3_31 - Tanguay M.        - Control BC
 *
 *object
 *     1) Allocate WA files and VMM space
@@ -58,13 +59,14 @@
 #include "dcst.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
+#include <clib_interface.cdk>
 #include "init.cdk"
 #include "v4dr.cdk"
 *
 *modules
-      external hpalloc,longueur
+      external hpalloc
 *
-      integer pnerr,timobmax,i,j,i1,i2,j1,j2,lun_4dvar,longueur,
+      integer pnerr,timobmax,i,j,i1,i2,j1,j2,lun_4dvar,
      %        ierr,fnom,ilun_out,status,offi,offj,indx,itotal
 *
       real*8 rad2deg_8
@@ -93,6 +95,8 @@
             call v4d_setobfr ()
 *
          endif
+*
+         if (G_lam) call v4d_set_bc( )
 *
 *C    ---------------------------------------------------------
 *C    Allocate memory if WA files are replaced by incore arrays 
@@ -156,6 +160,12 @@
 *            numtr.eq.13
 *            -----------
              V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+*
+*            numtr.eq.14
+*            -----------
+             V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 1)*l_ni*l_nj*Schm_itcn 
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + itotal*(  1          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
 *
              endif
 *
@@ -295,7 +305,7 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
          else
          write(cprocno_S,fmt='(i2)') Ptopo_myproc
          endif
-         cfilename_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))//
+         cfilename_S = trim(Path_basedir_S)//
      $                 '/output/Output_From_Proc_No.'//trim(cprocno_S)
          ierr = fnom(lun_4dvar,trim(cfilename_S),'SEQ+APPEND',0)
 *
@@ -304,7 +314,7 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *
 *        Define path to the "exchange" directory with 3D-Var 
 *        ---------------------------------------------------
-         Path_xchg_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/xchgdir'
+         Path_xchg_S = trim(Path_basedir_S)//'/output/xchgdir'
 *
 *        Flag to do 3hr TRAJ run to get to the starting date of the assimilation
 *        -----------------------------------------------------------------------

@@ -28,6 +28,7 @@
 *                          - Add option for staggering already done by 3D-Var
 * v3_20 - Buehner & Zadra  - add option for using HU as humidity variable  
 * v3_30 - Fillion/Tanguay  - Extend the scaling to all the grid in LAM mode 
+* v3_31 - Tanguay M.       - Add OPENMP directives 
 *
 *object
 *
@@ -63,6 +64,7 @@ C
 *     Humidity: Delta(log q) = Delta q / q(ref)
 *
          if (V4dg_chum_s.eq.'LQ') then
+!$omp parallel do
          do k=1,Nk
             do j= 1, l_nj 
                do i= 1, l_ni 
@@ -74,6 +76,7 @@ C
                end do
             end do
          end do
+!$omp end parallel do
          endif
 C     
 C     Winds
@@ -81,6 +84,7 @@ C     -----
 C     
          if (.not.V4dg_pruv_L) then
 *
+!$omp parallel do
          do k=1,Nk
             do j= 1, l_nj 
                pri2c_8 = (1.0/Geomg_cy_8(j))*Dcst_rayt_8
@@ -90,11 +94,13 @@ C
                end do
             end do
          end do
+!$omp end parallel do
 
          call itf_phy_uvgridscal_ad ( C_ut1, C_vt1, LDIST_DIM, Nk, .true. )
 *
          else
 *
+!$omp parallel do
          do k=1,Nk
             do j= 1, l_njv
                pri2c_8 = (1.0/Geomg_cyv_8(j))*Dcst_rayt_8
@@ -103,7 +109,9 @@ C
                end do
             end do
          end do
+!$omp end parallel do
 *
+!$omp parallel do
          do k=1,Nk
             do j= 1, l_nj
                pri2c_8 = (1.0/Geomg_cy_8(j))*Dcst_rayt_8
@@ -112,12 +120,14 @@ C
                end do
             end do
          end do
+!$omp end parallel do
 *
          endif
 C     
 C     Temperature
 C     -----------
 C     
+!$omp parallel do
          do k=1,Nk
             do j= 1, l_nj 
                do i= 1, l_ni 
@@ -132,11 +142,13 @@ C
                end do
             end do
          end do
+!$omp end parallel do
 
 C     
 C     Surface pressure
 C     ----------------
 C     
+!$omp parallel do
          do j= 1, l_nj 
             do i= 1, l_ni 
 
@@ -144,6 +156,7 @@ C
 
             end do
          end do
+!$omp end parallel do
 *     
       else
 *     
@@ -158,6 +171,7 @@ C     -----
 *
 *      Zero adjoint variables
 *      ----------------------
+!$omp parallel do
        do k=1,Nk
        do j=l_miny,l_maxy
        do i=l_minx,l_maxx
@@ -166,8 +180,10 @@ C     -----
        enddo
        enddo
        enddo
+!$omp end parallel do
 *
        if(V4dg_vstag_L) then
+!$omp parallel do
          do k=1,Nk
            do j= 1, l_njv
            pri2c_8 = (1.0/Geomg_cyv_8(j))*Dcst_rayt_8
@@ -176,9 +192,11 @@ C     -----
              end do
            end do
          end do
+!$omp end parallel do
        endif
 *
        if(V4dg_ustag_L) then
+!$omp parallel do
          do k=1,Nk
            do j= 1, l_nj
            pri2c_8 = (1.0/Geomg_cy_8(j))*Dcst_rayt_8
@@ -187,6 +205,7 @@ C     -----
              end do
            end do
          end do
+!$omp end parallel do
        endif
 *
        if(.not.V4dg_ustag_L.and..not.V4dg_vstag_L) then
@@ -200,6 +219,7 @@ C     -----
        endif
 *
        if(.not.V4dg_vstag_L) then
+!$omp parallel do
          do k=1,Nk
            do j= 1, l_nj
            pri2c_8 = (1.0/Geomg_cy_8(j))*Dcst_rayt_8
@@ -208,9 +228,11 @@ C     -----
              end do
            end do
          end do
+!$omp end parallel do
        endif
 *
        if(.not.V4dg_ustag_L) then
+!$omp parallel do
          do k=1,Nk
             do j= 1, l_nj
             pri2c_8 = (1.0/Geomg_cy_8(j))*Dcst_rayt_8
@@ -219,8 +241,10 @@ C     -----
                end do
             end do
          end do
+!$omp end parallel do
        endif
 *
+!$omp parallel do
        do k=1,Nk
        do j=l_miny,l_maxy
        do i=l_minx,l_maxx
@@ -229,10 +253,12 @@ C     -----
        enddo
        enddo
        enddo
+!$omp end parallel do
 C     
 C     Temperature
 C     -----------
 C     
+!$omp parallel do
          do k=1,Nk
             do j= 1, l_nj 
                do i= 1, l_ni 
@@ -245,11 +271,13 @@ C
                end do
             end do
          end do
+!$omp end parallel do
 
 C     
 C     Surface pressure
 C     ----------------
 C     
+!$omp parallel do
          do j= 1, l_nj 
             do i= 1, l_ni 
 
@@ -257,10 +285,12 @@ C
 
             end do
          end do
+!$omp end parallel do
 C
 C     Humidity: Delta q = q(ref) * Delta( log q)
 C
          if (V4dg_chum_s.eq.'LQ') then
+!$omp parallel do
          do k=1,Nk
             do j= 1, l_nj 
                do i= 1, l_ni 
@@ -268,6 +298,7 @@ C
                end do
             end do
          end do
+!$omp end parallel do
          endif
 *
       endif

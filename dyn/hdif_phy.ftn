@@ -12,6 +12,8 @@
 * v3_03 - Tanguay M.        - initial MPI version
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_30 - Desgagne/Lee      - new physics interface + extra nesting 
+* v3_31 - Desgagne M.       - remove hspng_main 
+* v3_31 - Tanguay M.        - Control BC 
 *
 *object
 *     see id section
@@ -47,8 +49,6 @@
             call vspng_main () 
             call tmg_stop0(11)
 *
-            if (.not.G_lam) call hspng_main ()
-*
          else
 *
 *           Store TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
@@ -63,8 +63,6 @@
             call vspng_main () 
             call tmg_stop0(11)
 *
-            if (.not.G_lam) call hspng_main ()
-*
             call tmg_start0( 9, 'PHY      ' )
             if ( Schm_phyms_L ) call itf_phy_main    (Lctl_step)
             call tmg_stop0(9)
@@ -75,7 +73,11 @@
 * Update Lateral BCs with data that has seen physics
           call nest_update
 * Impose Lateral BCs within Pil regions
-          call nest_bcs
+          if (V4dg_conf.eq.0) then
+             call nest_bcs
+          else
+             call v4d_nest_bcs
+          endif
       endif
 *
       return

@@ -15,6 +15,7 @@
 * v2_31 - Tanguay M.        - Move v4d_setscalp after set_dync 
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 * v3_11 - Tanguay M.        - Add V4dg_anincr_L as in v4d_testtlm    
+* v3_31 - Tanguay M.        - Control BC
 *
 *object
 *     see id section
@@ -43,6 +44,7 @@
 #include "step.cdk"
 #include "vt1.cdk"
 #include "ind.cdk"
+#include "v4dg_bc.cdk"
 *
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
@@ -230,7 +232,7 @@
 *
 *        Zero pilot region of perturbation fields when G_lam
 *        ---------------------------------------------------
-         if(G_lam) call v4d_zeropilot(V4dc_ncv,V4dc_xcv)
+         if(G_lam.and.V4dg_bc_variant.eq.0) call v4d_zeropilot(V4dc_ncv,V4dc_xcv)
 *
 *        Set status of the integration (TLM integration)
 *        -----------------------------------------------

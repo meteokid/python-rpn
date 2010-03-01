@@ -17,6 +17,7 @@
 *                             re-introduce tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Lee V.            - remove TR2D
+* v3_31 - McTaggart-Cowan R.- correction for Vtopo mode in digflt
 *	
 *arguments
 *	none
@@ -25,6 +26,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
+#include "p_geof.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
@@ -36,7 +38,7 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer err, key(26), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
+      integer err, key(28), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
      $        keya(Tr3d_ntr), nvar
       real tr1,tra
       pointer (patr1, tr1(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
@@ -74,8 +76,10 @@
       key(24) = VMM_KEY(st1  )
       key(25) = VMM_KEY(gpta )
       key(26) = VMM_KEY(gptx )
+      key(27) = VMM_KEY(topoa)
+      key(28) = VMM_KEY(topo )
 *
-      err = vmmlod(key,26)
+      err = vmmlod(key,size(key))
       err = VMM_GET_VAR(uta  )
       err = VMM_GET_VAR(ut1  )
       err = VMM_GET_VAR(vta  )
@@ -102,6 +106,8 @@
       err = VMM_GET_VAR(st1  )
       err = VMM_GET_VAR(gpta )
       err = VMM_GET_VAR(gptx )
+      err = VMM_GET_VAR(topoa)
+      err = VMM_GET_VAR(topo )
 *
       do k=1,l_nk
       do j= 1, l_nj
@@ -125,6 +131,7 @@
       do j= 1, l_nj 
       do i= 1, l_ni
          st1  (i,j) = sta  (i,j)
+	 topo (i,j) = topoa(i,j)
       enddo
       enddo
 *

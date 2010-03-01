@@ -25,6 +25,8 @@
 *                           - Lagrange 3D
 * v3_21 - Tanguay M.        - Call adw_main_3_intlag_ad based on Adw_lag3d_L
 * v3_30 - Tanguay M.        - Adapt TL/AD to Adw_interp_type_S
+* v3_31 - Tanguay M.        - Introduce time extrapolation
+* v3_31 - Tanguay M.        - new scope for operator + adw_cliptraj (LAM)
 *
 *language
 *     fortran 77
@@ -90,6 +92,8 @@ cvl#include "tr2d.cdk"
       real fin,finm
       pointer (pafin,fin(LDIST_SHAPE,*)),(pafinm,finm(LDIST_SHAPE,*))
 *
+      real F_um_ref(l_ni*l_nj*l_nk),F_vm_ref(l_ni*l_nj*l_nk)
+*
 *     ---------------------------------------------------
 *     Allocate extra space TRAJ (x y z upstream position)
 *     ---------------------------------------------------
@@ -152,15 +156,24 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop('adw_main_3_int_ad',-1)
       call hpalloc(Adwm_wrkbm_  ,nijk,      err,1)
       call hpalloc(Adwm_wrkcm_  ,nijk,      err,1)
 *
+*     TRAJECTORY
+*     ----------
       i0=1
       in=l_ni
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
+*
+          do i = 1,l_ni*l_nj*l_nk
+             F_um_ref(i) = F_um(i) 
+             F_vm_ref(i) = F_vm(i) 
+          enddo
+*
+          call adw_cliptraj (  F_um, F_vm, i0, in, j0, jn, 'IN3_TR')
       endif
 *
 !$omp parallel private(n,kk)
@@ -310,8 +323,8 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop('adw_main_3_int_ad',-1)
          pnlkey3(pnlod) = VMM_KEY(ruw2)
          pnlkey4(pnlod) = 0 
          pnlkeys(pnlod) = 3
-
-      if ( Orh_icn .eq. Schm_itcn ) then
+*
+      if ( Orh_icn .eq. Schm_itcn. or. .not.Orh_crank_L ) then
 *
            aaa_8 = ( Offc_a1_8 / Offc_b0_8 )/ Cstv_dt_8
 *
@@ -507,6 +520,8 @@ C            in0(i,j,k,kk) = ZERO_8
       end do
 !$omp end parallel do
       endif
+*
+      if (G_lam) call adw_cliptraj_ad (  F_u, F_v, F_um_ref, F_vm_ref, i0, in, j0, jn, 'IN3_AD') 
 *
 ***********************************************************************
 * Deallocate

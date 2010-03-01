@@ -1,0 +1,27 @@
+      integer MAX_SUBR,MAX_PROC 
+      parameter (MAX_SUBR=400) 
+      parameter (MAX_PROC= 30) 
+*
+      logical tmg2_on_L
+*
+      MARK_COMMON_BEG (time0_l)
+      common/time0_l/ tmg2_on_L
+      MARK_COMMON_END (time0_l)
+*
+      integer sum_m0(MAX_SUBR,MAX_PROC),m0x(MAX_SUBR,MAX_PROC)
+*
+      MARK_COMMON_BEG (time0_i)
+      common/time0_i/ sum_m0,m0x
+      MARK_COMMON_END (time0_i)
+*
+      real*8 sum_r0(MAX_SUBR,MAX_PROC),r0 (MAX_SUBR,MAX_PROC) 
+*
+      MARK_COMMON_BEG (time0_r)
+      common/time0_r/ sum_r0,r0
+      MARK_COMMON_END (time0_r)
+*
+      character*9 nam_subr_S(MAX_SUBR) 
+*
+      MARK_COMMON_BEG (time0_c)
+      common/time0_c/ nam_subr_S 
+      MARK_COMMON_END (time0_c)

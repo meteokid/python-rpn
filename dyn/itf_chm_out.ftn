@@ -16,6 +16,8 @@
 *revision
 * v3_30 - Kallaur A.       - initial version
 * v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+* v3_31 - Lee V.           - kind is set to 2 (press) for 2D fields, not -1
+* v3_31 - Lee V.           - modification of Out_etik_S in out_sgrid only
 *
 *OBJECT
 *    Gather the index of physics variables to write on disk 
@@ -116,14 +118,14 @@
      $                   periodx_L,
      $                   ig1,Grid_ig2(outc_grid(kk)),
      $                   Grid_stride(outc_grid(kk)),
-     $                   Grid_etikext_s(outc_grid(kk)),
+     $                   Grid_etikext_s(outc_grid(kk)),etikadd_S,
      $                   Geomn_longs, Geomn_latgs          )
          levset= Outc_lev(kk)
          nk_o =  Level_max(levset)
          allocate (ind_o(nk_o+1))
          call out_slev(Level_typ(levset),Level(1,levset),
      $                 ind_o,nk_o,G_nk,Level_kind_ip1,'k')
-         call out_sfile(Out3_closestep,stepno,etikadd_S,ip3,ext_S)
+         call out_sfile(Out3_closestep,stepno,ip3,ext_S)
          if (Level_typ(levset).eq.'M') then
          do ii=1, Outc_var_max(kk)
             do j=1,chm_Obus_top
@@ -164,7 +166,7 @@
 *                      2d field
                           call ecris_fst2(bus_o(1,chm_obus_offset(j)),
      $                             1,l_ni,1,l_nj,0.0,chm_obus_var_s(j),
-     $                             chm_Obus_mul(j),chm_Obus_add(j), -1,1,1,1, 
+     $                             chm_Obus_mul(j),chm_Obus_add(j), 2,1,1,1, 
      $                             Outc_nbit(ii,kk) )
                        endif
                     endif

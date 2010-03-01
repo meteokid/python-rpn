@@ -12,6 +12,8 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v3_31 - Desgagne M.       - restart with physics BUSPER + clipping 
+*                             of SL trajectories
 *
 *object
 *  Default configuration and reading namelists gem_cfgs and grdc
@@ -42,7 +44,10 @@
       Step_rsti  = 9999999
       Step_bkup  = 9999999
       Step_gstat = 9999999
+      Step_spinphy=9999999
       Step_cleanup = 0
+      Step_maxcfl  = 1
+      Step_cliptraj_L = .false.
 *
       Rstri_glbcol_L = .false.
 *
@@ -107,14 +112,8 @@
       Adw_mono_L = .true.
       Adw_interp_type_S = 'lag3d'
       Adw_nosetint_L   = .false.
-      Adw_trunc_traj_L = .false.
       Adw_halox  = 3
       Adw_haloy  = 2
-      if (G_lam) then
-          Adw_halox  = 7
-          Adw_haloy  = 7
- 	  if (Lun_out.ge.0) write (Lun_out, 9000)
-      endif
 *
       Clim_climat_L  = .false.
       Clim_inincr_L  = .false.
@@ -167,10 +166,10 @@
       Hzd_pwr    = 6
       Hzd_lnr    = 0.2
       Hzd_uvwdt_L= .true.
+      Hzd_rwnd_L = .false.
       Hspng_nj = 0
       Hspng_mf = 800.
       Hspng_uvwdt_L  = .true.
-      Hspng_rwnd_L   = .false.
       Vspng_nk = 0
       do i = 1, Vspng_maxn
          Vspng_mf(i) = -1.
@@ -334,8 +333,6 @@
       endif
 *
  8000 format (/,'========= ABORT IN S/R gem_nml.f ============='/)
- 9000 format (/,' LAM MODE: default values for ADW_HALOX,ADW_HALOY=7,7'/,
-     $          '           unless otherwise specified in gem_cfgs'/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
  9500 format (/,' INVALID back-trajectory interpolator'/

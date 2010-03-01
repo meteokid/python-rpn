@@ -1,0 +1,19 @@
+      key_bc_u_  = VMM_KEY (bc_u)
+      key_bc_v_  = VMM_KEY (bc_v)
+      key_bc_tp_ = VMM_KEY (bc_tp)
+      key_bc_s_  = VMM_KEY (bc_s)
+      key_bc_tr_ = VMM_KEY (bc_tr)
+*
+      key_bc_u  = key_bc_u_  + ntime + 1 
+      key_bc_v  = key_bc_v_  + ntime + 1 
+      key_bc_tp = key_bc_tp_ + ntime + 1 
+      key_bc_s  = key_bc_s_  + ntime + 1 
+      do n_tr=1,Tr3d_ntr
+         key_bc_tr(n_tr) = key_bc_tr_ + ntime * Tr3d_ntr + n_tr
+      end do
+*
+      bc_err = vmmlod(key_bc_u ,1)
+      bc_err = vmmlod(key_bc_v ,1)
+      bc_err = vmmlod(key_bc_tp,1)
+      bc_err = vmmlod(key_bc_s ,1)
+      bc_err = vmmlod(key_bc_tr,Tr3d_ntr)

@@ -49,6 +49,7 @@
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 * v3_30 - Tanguay M.        - Use invhsyv 
+* v3_31 - Tanguay M.        - new scope for operator + adw_cliptraj (LAM)
 *
 *object
 *     see id section
@@ -107,10 +108,10 @@
       j0 = 1
       jn = l_nj
       if (G_lam) then
-         if (l_west)  i0= 1+pil_w -2
-         if (l_east)  in= l_ni-pil_e +2
-         if (l_south) j0= 1+pil_s -2
-         if (l_north) jn= l_nj-pil_n +2
+         if (l_west)  i0= pil_w
+         if (l_east)  in= l_niu - pil_e + 2
+         if (l_south) j0= pil_s
+         if (l_north) jn= l_njv - pil_n + 2
       endif
 *
 !$omp parallel private(x_8,y_8,z_8,cx_8,cy_8,cz_8,

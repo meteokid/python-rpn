@@ -19,6 +19,7 @@
 *                           - do filtering at t=0 in v4d_predat
 * v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
 * v3_30 - Tanguay M.        - Change parameters of initw2 
+* v3_31 - Tanguay M.        - Change positioning of hzd_hoffld for u,v 
 *
 *object
 *     Preprocessing of Control   variables only if ipart=2
@@ -238,10 +239,10 @@
 *     ---------------------------------------
       if(ipart.eq.3) then 
 *
+      if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img 
+*
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
-*
-      if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img 
 *
 *     Compute total divergence and vertical velocity
 *     ----------------------------------------------

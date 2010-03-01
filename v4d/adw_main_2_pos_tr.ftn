@@ -17,6 +17,7 @@
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_20 - Tanguay M.        - Optimized SETINT/TRILIN
 *                           - TRAJ of Change test a lower and upper boundaries
+* v3_31 - Tanguay M.        - new scope for operator + adw_cliptraj (LAM)
 *
 *language
 *     fortran 77
@@ -108,16 +109,18 @@
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
       endif
 ************************************************************************
       do it=1,F_it
 ************************************************************************
                      doh_L = .false.
       if (it .eq. 1) doh_L = .true.
+*
+      if (G_lam) call adw_cliptraj ( xthm, ythm, i0, in, j0, jn, '' ) 
 *
       if( .not. Adw_nosetint_L ) then
 *
@@ -145,6 +148,8 @@
       call adw_trajsp ( xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
      %                  i0,in,j0,jn)
 ************************************************************************
+*
+      if (G_lam) call adw_cliptraj ( xthm, ythm, i0, in, j0, jn, '' )
 *
       if( .not. Adw_nosetint_L ) then
 *

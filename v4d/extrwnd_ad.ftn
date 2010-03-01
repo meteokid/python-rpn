@@ -1,0 +1,120 @@
+***s/r extrwnd_ad - ADJ of extrwnd_tl 
+*
+#include "model_macros_f.h"
+*
+      subroutine extrwnd_ad
+*
+      implicit none
+*
+*author M.Tanguay 
+*
+*revision
+* v3_31 - Tanguay M.    - initial MPI version
+*
+*object
+*     see id section
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "vtw.cdk"
+#include "schm.cdk"
+#include "hzd.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnerr, pnlkey1(100), pnlod
+      integer i, j, k
+      real pt1,pt2
+*
+      real*8, parameter :: ZERO_8 = 0.0
+*
+      if (Schm_xwvt3.ne.0) call gem_stop ('EXTRWND_AD not done since no T3',-1)
+*
+*     ------------------------
+*     NOTE: TW = T2 work space 
+*     ------------------------
+*
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1) = VMM_KEY(uth)
+      pnlkey1(2) = VMM_KEY(ut1)
+      pnlkey1(3) = VMM_KEY(utw)
+      pnlkey1(4) = VMM_KEY(vth)
+      pnlkey1(5) = VMM_KEY(vt1)
+      pnlkey1(6) = VMM_KEY(vtw)
+      pnlkey1(7) = VMM_KEY(psdth)
+      pnlkey1(8) = VMM_KEY(psdt1)
+      pnlkey1(9) = VMM_KEY(psdtw)
+      pnlod = 9
+
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(uth)
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(utw)
+      pnerr = VMM_GET_VAR(vth)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(vtw)
+      pnerr = VMM_GET_VAR(psdth)
+      pnerr = VMM_GET_VAR(psdt1)
+      pnerr = VMM_GET_VAR(psdtw)
+*
+*     -------------------------------------------------
+*     WIND EXTRAPOLATION using 2 time levels: t1 and t2
+*     -------------------------------------------------
+      if ( Schm_xwvt3 .eq. 0 ) then
+*
+      pt1 =  1.5
+      pt2 = -0.5
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         psdt1(i,j,k) = pt1*psdth(i,j,k) + psdt1(i,j,k)
+         psdtw(i,j,k) = pt2*psdth(i,j,k) + psdtw(i,j,k) 
+         psdth(i,j,k) = ZERO_8 
+      enddo
+      enddo
+      enddo
+*
+      do k=1,l_nk
+      do j=1,l_njv
+      do i=1,l_ni
+         vt1(i,j,k) = pt1*vth(i,j,k) + vt1(i,j,k)
+         vtw(i,j,k) = pt2*vth(i,j,k) + vtw(i,j,k)
+         vth(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_niu
+         ut1(i,j,k) = pt1*uth(i,j,k) + ut1(i,j,k)
+         utw(i,j,k) = pt2*uth(i,j,k) + utw(i,j,k)
+         uth(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      else
+*
+*     NOT DONE
+*
+      endif
+*
+*     Filtering
+*     ---------
+      if (Hzd_t1_1_L) call hzd_hoffld_ad (psdt1, LDIST_DIM, G_nk, 3)
+      if (Hzd_t1_1_L) call hzd_hoffld_ad (vt1,   LDIST_DIM, G_nk, 2)
+      if (Hzd_t1_1_L) call hzd_hoffld_ad (ut1,   LDIST_DIM, G_nk, 1)
+*
+      pnerr = vmmuld(-1,0)
+*
+      return
+      end

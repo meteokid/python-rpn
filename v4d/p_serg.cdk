@@ -1,0 +1,52 @@
+#if defined (DOC)
+*
+*revision
+* v2_20 - Pellerin P.            - adaptation to physics 3.6.6
+* v3_22 - K. Winger              - 'P_serg_ver' added
+*
+***comdeck p_serg.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH TIME SERIES                               |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* CNSRSFM            | Maximum number of surface variables             |
+* CNSRPFM            | Maximum number of profile variables             |
+* CNSRGEO            | Maximum number of geophysical variables         |
+* P_serg_srsrf_s     | table of names of surface variables requested   |
+* P_serg_srprf_s     | table of names of profile variables requested   |
+* P_serg_srsrf       | number of surface variables requested           |
+* P_serg_srprf       | number of profile variables requested           |
+* P_serg_srwri       | number of timesteps between time-series writeout|
+* P_serg_serstp      | time-series stop at 'P_serg_serstp' timestep    |
+* P_serg_sroff_L     | .true. for suspending time-series               |
+*                    | .false. for continuing time-series              |
+* P_serg_srsus_L     | .true. to     have time-series                  |
+*                    | .false.to not have time-series                  |
+* P_serg_ver         | time-series version                             |
+*----------------------------------------------------------------------
+*
+*
+#endif
+      integer CNSRSFM, CNSRPFM, CNSRGEO
+      parameter ( CNSRSFM = 256 , CNSRPFM = 256 ,CNSRGEO = 25)
+*
+      integer P_serg_srsrf, P_serg_srprf, P_serg_srwri, P_serg_serstp
+      integer P_serg_ver
+      character*8 P_serg_srsrf_s(cnsrsfm), P_serg_srprf_s(cnsrpfm)
+      logical P_serg_sroff_L, P_serg_srsus_L
+*
+      MARK_COMMON_BEG (pserg_i)
+      common / pserg_i / P_serg_srsrf, P_serg_srprf, P_serg_srwri, 
+     $                    P_serg_serstp, P_serg_ver
+      MARK_COMMON_END (pserg_i)
+      MARK_COMMON_BEG (pserg_c)
+      common / pserg_c / P_serg_srsrf_s, P_serg_srprf_s
+      MARK_COMMON_END (pserg_c)
+      MARK_COMMON_BEG (pserg_l)
+      common / pserg_l / P_serg_sroff_L, P_serg_srsus_L
+      MARK_COMMON_END (pserg_l)
+*

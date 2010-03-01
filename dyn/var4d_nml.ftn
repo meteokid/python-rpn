@@ -15,6 +15,7 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v3_31 - Tanguay M.        - Control BC
 *
 *object
 *  Default configuration and reading namelist var4d
@@ -28,6 +29,7 @@
 #include "v4dj.cdk"
 #include "v4dm.cdk"
 #include "v4dr.cdk"
+#include "v4dg_bc.cdk"
 #include "v4d_nml.cdk"
 *
       integer  fnom
@@ -76,6 +78,8 @@
 *
       V4dm_itmax    = 2 
       V4dm_simax    = 2 
+*
+      V4dg_bc_variant = 0 
 *
       if (F_namelistf_S .ne. '') then
 *

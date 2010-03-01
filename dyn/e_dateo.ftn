@@ -8,6 +8,7 @@
 #include "modconst.cdk"
 #include "pilot.cdk"
 #include "filename.cdk"
+#include "path.cdk"
 *
       logical  get_date
       external get_date
@@ -20,12 +21,13 @@
          if ( (Mod_runstrt_S.eq.'@#$%') .and. 
      $        (Pil_sfc2d_L .or. Pil_3df_L) ) then
             if ( .not. get_date (Mod_runstrt_S,
-     $                 'process/pilot/'//trim(pilot_f(1))) ) stop
+     $      trim(pilot_dir )//'/'//trim(pilot_f(1))) ) stop
          endif
 *
       else
 *
-         if (.not.get_date (Mod_runstrt_S,'process/analysis')) stop
+         if (.not.
+     $   get_date (Mod_runstrt_S,trim(Path_input_S)//'/ANALYSIS')) stop
          Pil_jobstrt_S = Mod_runstrt_S
          Pil_jobend_S  = Mod_runstrt_S
 *

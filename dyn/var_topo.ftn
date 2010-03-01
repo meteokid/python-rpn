@@ -12,6 +12,7 @@
 *
 *revision
 * v3_11 - Gravel S.         - initial version
+* v3_31 - McTaggart-Cowan R.- correction for Vtopo mode in digflt
 *
 *object
 * (see above)
@@ -39,7 +40,7 @@
 *     __________________________________________________________________
 *
 * Check to see if this step has already been completed
-      if (doneStep >= Lctl_step) return
+      if (doneStep == Lctl_step) return
 
       pnlkey1( 1) = VMM_KEY(topo)
       pnlkey1( 2) = VMM_KEY(dtopo)

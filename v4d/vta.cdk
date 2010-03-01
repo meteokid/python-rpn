@@ -34,6 +34,8 @@
 * huta               | specific humidity                               |
 * qcta               | mixing ratio of cloud water/ice                 |
 * trta               | passive tracer(s)                               |
+*--------------------|-------------------------------------------------|
+* topoa              | orography (needed for variable topography)      |
 *----------------------------------------------------------------------
 *
 #endif
@@ -63,6 +65,7 @@
       DCL_VMMVAR( vta, multa, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vta,  huta, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vta,  qcta, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vta, topoa, real, (LDIST_SHAPE)      )
       DCL_VMMVAR( vta,  trta, real, (LDIST_SHAPE,l_nk,*) )
       MARK_COMMON_END(vta)
 

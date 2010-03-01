@@ -101,6 +101,8 @@
          multx_= 0
       endif
 *
+      if (Vspng_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
+*
       if (G_lam) then
          if (Lun_debug_L) write (Lun_out,1001) Vspng_nk
          call vspng_drv_lam ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
@@ -205,12 +207,17 @@
       endif
 *
 !$omp end parallel
-      pnerr = vmmuld(-1,0)
+*
+      if (.not.G_lam) call hspng_main ()
+*
+      if (Vspng_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 *    
  1000 format(/,3X,
      $ 'DEL-2 SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV)')
  1001 format(/,3X,
      $ '9PT FILT SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV_LAM)')
+*
+*     _________________________________________________________________
 *
       return
       end

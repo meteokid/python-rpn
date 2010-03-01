@@ -1,0 +1,676 @@
+***s/r e_intwind_mta - Wind components horizontal interpolation (options MTA)
+*
+#include "model_macros_f.h"
+*
+      subroutine e_intwind_mta 
+      implicit none
+*
+*author       M ROCH     - july 95 - from intvent
+*
+*revision
+* v2_30 - Sandrine Edouard  - adapt for vertical hybrid coordinate
+* v2_30 - L. Corbeil        - replaced ecriseq by BMF stuff, 
+* v2_30                       removed vertical interpolation
+* v2_31 - M. Desgagne       - removed toppu,toppv from calling 
+* v2_31                       sequence and corrected date/time recording
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
+* v3_30 - Lee/Desgagne      - new LAM IO , read from analysis files to
+*                             produce BCS or 3DF files
+* v3_31 - Bilodeau B.       - Debug offline mode
+* v3_31 - Tanguay M.        - Derive image winds from true winds when no interpolation
+* v3_31 - Tanguay M.        - Look first to image winds when interpolation 
+* v3_31 - Tanguay M.        - Allow same grid in analysis and in model (BCS mode) 
+*
+*object
+*        see above ID
+*
+*ARGUMENTS
+*
+*IMPLICITS
+#include "e_option.cdk"
+#include "e_fu.cdk"
+#include "e_anal.cdk"
+#include "e_grids.cdk"
+#include "e_cdate.cdk"
+#include "e_topo.cdk"
+#include "dcst.cdk"
+#include "grd.cdk"
+#include "bmf.cdk"
+#include "e_schm.cdk"
+#include "pilot.cdk"
+#include "e_grdc.cdk"
+#include "hgc.cdk"
+#include "e_mta.cdk"
+*
+      integer  ezqkdef,ezdefset,ezsetopt,ezuvint,ezsint,
+     $         fstinf,fstlir,fstprm,e_rdhint3
+      external ezqkdef,ezdefset,ezsetopt,ezuvint,ezsint,
+     $         fstinf,fstlir,fstprm,e_rdhint3
+*
+      integer i, j, k, src_gid, key1, key2, nic, njc, ni1, nj1, 
+     $        nk1,nkc,err,iu,ju,iv,jv,nu,nv
+      integer nisu,nisv,njsu,njsv
+      integer nis,njs,niw,njw,iw,ie,jw,is,js,jn
+      integer ip2, ip3
+      integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
+     $        dty, swa, lng, dlf, ubc, ex1, ex2, ex3
+      character*1 typ,grd
+      character*4 var,var_uu,var_vv
+      character*12 lab
+      logical flag_ut1
+      real, dimension (:), allocatable :: uu,vw,vv,uw
+      real ttu(niu*nju),huu(niu*nju),ttv(niv*njv),huv(niv*njv),
+     $     uvw(niu*nju),p0u(niu*nju),p0v(niv*njv),c1
+      real, dimension (:), allocatable :: w1,w2
+      real, dimension (:,:,:), allocatable :: uun,vvn
+      real*8 Cstv_pisrf_8
+      parameter (Cstv_pisrf_8=100000.0)
+      integer key1_old
+      real deg2rad
+      integer g1_u, g2_u, g3_u, g4_u
+      integer g1_v, g2_v, g3_v, g4_v
+      logical read_image_L
+      integer keyu,keyv,src_gid_u,src_gid_v,ind
+      integer nic_u,njc_u,nic_v,njc_v
+      character*1 typ_u,typ_v,grd_u,grd_v
+      real*8 pdsc1_8
+*
+* ---------------------------------------------------------------------
+*
+      if (e_schm_offline_l) then
+         call e_intwind_offline( )
+         return
+      endif
+*
+      write (6,*) 'CALL E_INTWIND_MTA'
+*
+      if (.not.Pil_bmf_L) then
+         nisu = E_Grdc_ni
+         njsu = E_Grdc_nj
+         nisv = E_Grdc_ni
+         njsv = E_Grdc_nj
+         allocate (uun(nisu,njsu,lv),vvn(nisv,njsv,lv))
+      else
+         nisu = niu
+         njsu = nju
+         nisv = niv
+         njsv = njv
+      endif
+*
+      allocate (uu( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
+      allocate (vw( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
+      allocate (vv( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
+      allocate (uw( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
+*
+      nu = nisu*njsu
+      nv = nisv*njsv
+*
+      deg2rad  = acos(-1.0)/180.
+*
+      if (.NOT.(anal_hav(1).eq.0).and.e_same_size_L) 
+     %          call gem_stop('Allow same grid in analysis and in model (BCS mode) KO',-1) 
+*
+      if (anal_hav(1).eq.0) then
+         print *,'-----------------------------------------------------------------------'
+         print *,'NO interpolation required for winds'
+         print *,'-----------------------------------------------------------------------'
+         if (     Pil_bmf_L) print *,'Build IMAGE winds on staggered grids in knots (BMF)'
+         if (.not.Pil_bmf_L) print *,'Build IMAGE winds on staggered grids in m/s   (BCS)'
+         print *,'-----------------------------------------------------------------------'
+*
+* ---------------------------------------------------------------------
+*        NO INTERPOLATION REQUIRED
+*        ANALYSIS and MODEL HAVE SAME GRID,SAME LEVELS,
+*                                SAME TOPOGRAPHY, TOP PRESSURE
+*---------------------------------------------------------------------
+*        
+            flag_ut1 = .false.
+            var_uu = 'UU  '
+            var_vv = 'VV  '
+            iu = nifi
+            ju = njfi
+            iv = iu
+            jv = ju
+            key1 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
+     $                                      ip2a,ip3a,' ',var_uu)
+            key2 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
+     $                                      ip2a,ip3a,' ',var_vv)
+            if ((key1.lt.0).or.(key2.lt.0)) then
+               flag_ut1 = .true.
+               var_uu = 'UT1 '
+               var_vv = 'VT1 '
+               iu = nisu
+               ju = njsu
+               iv = nisv
+               jv = njsv
+               key1 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
+     $                                         ip2a,ip3a,' ',var_uu)
+               key2 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
+     $                                         ip2a,ip3a,' ',var_vv)
+            endif
+*
+            if ((key1.lt.0).or.(key2.lt.0)) then
+               write (6,*) 'UU  and/or VV NOT AVAILABLE'
+               call e_arret( 'e_intwind' )
+            endif
+            err = fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY,
+     $              P1, P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA,
+     $              LNG, DLF, UBC, EX1, EX2, EX3)
+*
+            allocate (w1(nifi*njfi),w2(nifi*njfi))
+*
+            do 100 k=1,lv
+c              key1 = fstlir (uu, e_fu_anal, i, j, nkc, datev, labanl, 
+c    $                                  na(k), ip2a,ip3a, tva, var_uu)
+               key1 = fstlir (w1, e_fu_anal, i, j, nkc,datev,  ' ',
+     $                                  na(k), ip2a,ip3a, tva, var_uu)
+*
+               if (key1.lt.0 .or. i.ne.iu  .or. j.ne.ju) then
+                  write(6,*)'ERROR: UU NOT AVAILABLE,'
+                  call e_arret( 'e_intwind' )
+               endif
+*
+c              key1 = fstlir (vw, e_fu_anal, i, j, nkc, datev, labanl, 
+c    $                                  na(k), ip2a,ip3a, tva, var_vv)
+               key1 = fstlir (w2, e_fu_anal, i, j, nkc, datev, ' ',
+     $                                  na(k), ip2a,ip3a, tva, var_vv)
+*
+               if (key1.lt.0 .or. i.ne.iv  .or. j.ne.jv) then
+                  write(6,*)'ERROR: VV NOT AVAILABLE,'
+                  call e_arret( 'e_intwind' )
+               endif
+*
+               if (.not. flag_ut1) then
+*
+                  if (LAM) then
+*
+*                 When LAM we don't use e_arak since it uses global properties to interpolate
+*                 ---------------------------------------------------------------------------  
+                  err = ezdefset ( dstu_gid, dstf_gid )
+                  err = ezuvint  ( uu,vw,w1,w2 )
+                  err = ezdefset ( dstv_gid, dstf_gid )
+                  err = ezuvint  ( uw,vv,w1,w2 )
+*
+                  call hpalloc(payg_8,   njsu*2, err,1)
+                  call hpalloc(paygv_8,  njsv*2, err,1)
+*
+                  do j = 1,njsu
+                     yg_8(j)  = yfi(j) * deg2rad
+                  end do
+                  do j = 1,njsv
+                     ygv_8(j) = yv(j) * deg2rad
+                  end do
+*
+                  call vte_uv2img(uu,vv,nisu,njsu,nisv,njsv,1,yg_8,ygv_8)
+*
+                  call hpdeallc(payg_8,  err)
+                  call hpdeallc(paygv_8, err)
+*
+                  if (.not.Pil_bmf_L) then
+                  do i=1,nisu*njsu
+                     uu(i) = uu(i) * dcst_knams_8
+                  end do
+                  do i=1,nisv*njsv
+                     vv(i) = vv(i) * dcst_knams_8
+                  end do
+                  end if
+*
+                  else
+*
+                  call e_arak (w1, vv, w2, uvw, nisu, njfi, njsu, njsv, 1)
+*
+                  if (.not.Pil_bmf_L) then
+                  do i=1,nisu*njsu
+                     uu(i) = w1(i) * dcst_knams_8
+                  end do
+                  do i=1,nisv*njsv
+                     vv(i) = vv(i) * dcst_knams_8
+                  end do
+                  else
+                  do i=1,nisu*njsu
+                     uu(i) = w1(i)
+                  end do
+                  end if
+*
+                  end if
+*
+               elseif (Pil_bmf_L) then
+*
+                  do i=1,nisu*njsu
+                     uu(i) = w1(i) / dcst_knams_8
+                  end do
+                  do i=1,nisv*njsv
+                     vv(i) = w2(i) / dcst_knams_8
+                  end do
+*
+               end if
+*
+               if (Pil_bmf_L) then
+                   call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
+                   call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+               else
+                   call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
+                   call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
+               endif
+ 100        continue
+*
+            deallocate(w1,w2)
+*
+            if (.not.Pil_bmf_L) then
+*
+            if (Pil_bcs_hollow_L) then
+                call e_write_bcs (uun,nisu,njsu,
+     $               e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $               e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $               lv, 'UU  ',unf_casc)
+                call e_write_bcs (vvn,nisv,njsv,
+     $               e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $               e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $               lv, 'VV  ',unf_casc)
+            else
+                call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
+                call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
+            endif
+*
+            deallocate (uun,vvn,uu,vv,vw,uw)
+            return
+*
+            endif
+*
+*---------------------------------------------------------------------
+*
+*     INTERPOLATION REQUIRED
+*
+*---------------------------------------------------------------------
+*
+      else
+      print *,'-------------------------------------------------------------------------'
+      print *,'Interpolation required for winds'
+      print *,'-------------------------------------------------------------------------'
+      if (     Pil_bmf_L) print *,'Build   TRUE winds on staggered grids in knots (BMF) '
+      if (.not.Pil_bmf_L) print *,'Build  IMAGE winds on staggered grids in m/s   (BCS) '
+      print *,'-------------------------------------------------------------------------'
+*
+      ip2 = ip2a
+      ip3 = ip3a
+      if (glecmanl) ip2 = -1
+      if (glecmanl) ip3 = int(rna(1))
+*
+         var_uu = 'UT1 '
+         var_vv = 'VT1 '
+         keyu=fstinf(e_fu_anal,nic_u,njc_u,nkc,datev,' ',na(1),ip2,ip3,
+     $                                                     ' ',var_uu)
+         if(keyu.lt.0.or..not.Pil_bmf_L.or.(Pil_bmf_L.and..NOT.E_force_read_image_L)) then
+         read_image_L = .false.
+         var_uu = 'UU  '
+         var_vv = 'VV  '
+         key1=fstinf(e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,
+     $                                                     ' ',var_uu)
+         else
+         read_image_L = .true.
+         keyv=fstinf(e_fu_anal,nic_v,njc_v,nkc,datev,' ',na(1),ip2,ip3,
+     $                                                     ' ',var_vv)
+         endif
+*
+*        ---------------------------
+         if (.not.read_image_L) then
+*        ---------------------------
+         err= fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1,
+     $                P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA,
+     $                LNG, DLF, UBC, EX1, EX2, EX3)
+         src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, e_fu_anal)
+         err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+         allocate (w1(nic*njc),w2(nic*njc))
+*        ----
+         else
+*        ----
+         err= fstprm (keyu, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1,
+     $                P2, P3, TYP_u, VAR, LAB, GRD_u, G1_u, G2_u, G3_u, G4_u, SWA,
+     $                LNG, DLF, UBC, EX1, EX2, EX3)
+         err= fstprm (keyv, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1,
+     $                P2, P3, TYP_v, VAR, LAB, GRD_v, G1_v, G2_v, G3_v, G4_v, SWA,
+     $                LNG, DLF, UBC, EX1, EX2, EX3)
+*
+         src_gid_u = ezqkdef (nic_u, njc_u, GRD_u, g1_u, g2_u, g3_u, g4_u, e_fu_anal)
+         src_gid_v = ezqkdef (nic_v, njc_v, GRD_v, g1_v, g2_v, g3_v, g4_v, e_fu_anal)
+*
+         err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+*
+         allocate (w1(nic_u*njc_u),w2(nic_v*njc_v))
+*        -----
+         endif
+*        -----
+*
+         do k=1,lv
+*
+            ip2 = ip2a
+            ip3 = ip3a
+            if (glecmanl) ip2 = -1
+            if (glecmanl) ip3 = int(rna(k))
+*
+*        ---------------------------
+         if (.not.read_image_L) then
+*        ---------------------------
+            key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ', 
+     $                               na(k), ip2, ip3, ' ', 'UU')
+            key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ', 
+     $                               na(k), ip2, ip3, ' ', 'VV')
+            if (key1.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) then
+               write(6,*)'ERROR: UU NOT AVAILABLE,'
+               goto 55
+            endif
+            if (key1.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) then
+               write(6,*)'ERROR: VV NOT AVAILABLE,'
+               goto 55
+            endif
+*
+*         Horizontal Interpolation on U grid and V grids
+*
+            err = ezdefset ( dstu_gid, src_gid )
+            err = ezuvint  ( uu,vw,w1,w2 )
+            err = ezdefset ( dstv_gid, src_gid )
+            err = ezuvint  ( uw,vv,w1,w2 )
+*         ----
+          else
+*         ----
+            key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ',
+     $                               na(k), ip2, ip3, ' ', var_uu)
+            key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ',
+     $                               na(k), ip2, ip3, ' ', var_vv)
+            if (key1.lt.0 .or. iu.ne.nic_u  .or. ju.ne.njc_u ) then
+               write(6,*)'ERROR: UT1 NOT AVAILABLE,'
+               goto 55
+            endif
+            if (key2.lt.0 .or. iv.ne.nic_v  .or. jv.ne.njc_v ) then
+               write(6,*)'ERROR: VT1 NOT AVAILABLE,'
+               goto 55
+            endif
+*
+*         Horizontal Interpolation on U grid and V grids
+*
+            err = ezdefset ( dstu_gid, src_gid_u )
+            err = ezsint   ( uu,w1 )
+            err = ezdefset ( dstv_gid, src_gid_v )
+            err = ezsint   ( vv,w2 )
+*
+*           Get prepared for READDYN who is expecting UU/VV (KNOTS)
+*           -------------------------------------------------------
+            call hpalloc(payg_8,   njsu*2, err,1)
+            call hpalloc(paygv_8,  njsv*2, err,1)
+*
+            do j = 1,njsu
+               yg_8(j)  = yfi(j) * deg2rad
+            end do
+            do j = 1,njsv
+               ygv_8(j) = yv(j) * deg2rad
+            end do
+*
+            do j=1,njsu
+               pdsc1_8 = (cos(yg_8(j))) / Dcst_rayt_8
+               do i=1,nisu
+                  ind = (j-1)*nisu + i
+                  uu(ind) = uu(ind) / pdsc1_8
+               enddo
+            enddo
+*
+            do j=1,njsv
+               pdsc1_8 = (cos(ygv_8(j))) / Dcst_rayt_8
+               do i=1,nisv
+                  ind = (j-1)*nisv + i
+                  vv(ind) = vv(ind) / pdsc1_8
+               enddo
+            enddo
+*
+            do i=1,nisu*njsu
+               uu(i) = uu(i) / dcst_knams_8
+            end do
+            do i=1,nisv*njsv
+               vv(i) = vv(i) / dcst_knams_8
+            end do
+*         -----
+          endif
+*         -----
+*
+            if (Pil_bmf_L) then
+                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
+                call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+            else
+                  call vte_uv2img(uu,vv,nisu,njsu,nisv,njsv,1,
+     $                            yg_8(E_grdc_gjd),ygv_8(E_grdc_gjd) )
+                  do i=1,nisu*njsu
+                     uu(i) = uu(i) * dcst_knams_8
+                  end do
+                  do i=1,nisv*njsv
+                     vv(i) = vv(i) * dcst_knams_8
+                  end do
+                call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
+                call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
+            endif
+*
+         end do
+*
+* Non BMF output
+         if (.not.Pil_bmf_L) then
+         if (Pil_bcs_hollow_L) then
+             call e_write_bcs (uun,nisu,njsu,
+     $        e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $        e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $        lv, 'UU  ',unf_casc)
+             call e_write_bcs (vvn,nisv,njsv,
+     $        e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $        e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $        lv, 'VV  ',unf_casc)
+         else
+             call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
+             call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
+         endif
+         deallocate (uun,vvn,uu,vv,vw,uw,w1,w2)
+         return
+         endif
+*
+        if (glecmanl) then
+*
+*       also treat 2m winds (to be used as surface values)
+*       store as US and VS
+*
+            key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ', 
+     $                               -1, -1, -1, ' ', 'US')
+            key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ', 
+     $                               -1, -1, -1, ' ', 'VS')
+            if (key1.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) then
+               write(6,*)'ERROR: US NOT AVAILABLE,'
+               goto 55
+            endif
+            if (key1.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) then
+               write(6,*)'ERROR: VS NOT AVAILABLE,'
+               goto 55
+            endif
+*
+*         Horizontal Interpolation on U grid and V grids
+*
+            err = ezdefset ( dstu_gid, src_gid )
+            err = ezuvint  ( uu,vw,w1,w2 )
+            err = ezdefset ( dstv_gid, src_gid )
+            err = ezuvint  ( uw,vv,w1,w2 )
+*
+            call e_bmfsplitxy2 (uu,nisu,njsu,'US  ',1,1,pniu,0,0,0)
+            call e_bmfsplitxy2 (vv,nisv,njsv,'VS  ',1,1,pni ,0,0,0)
+*
+         endif
+         deallocate (w1,w2)
+*
+*---------------------------------------------------------------------
+      endif
+*---------------------------------------------------------------------
+*
+      if ( gletaanl .or. glsiganl .or. glhybanl ) then
+         write(6,*)'PREPARATION FOR SIGMA/ETA/HYB to HYBRID'
+         c1 = 10. * Dcst_grav_8
+         if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,'GZ  ',na(lv),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,'GZ  ',na(lv),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (p0u,dstu_gid,nisu,njsu,'P0  ',   0 ,ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (p0v,dstv_gid,nisv,njsv,'P0  ',   0 ,ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         do i=1,nu
+            ttu(i) = ttu(i) * c1
+            p0u(i) = p0u(i) * 100.
+         enddo
+         do i=1,nv
+            ttv(i) = ttv(i) * c1
+            p0v(i) = p0v(i) * 100.
+         enddo
+*
+         call e_bmfsplitxy2 (ttu,nisu,njsu,'GZU ',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (ttv,nisv,njsv,'GZV ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (p0u,nisu,njsu,'APSU',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (p0v,nisv,njsv,'APSV',1,1,pni ,0,0,0)
+*
+         var=vt//'  '
+         c1 = Dcst_tcdk_8
+         do k=1,lv
+            if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,var,na(k),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,var,na(k),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            do i=1,nu
+               ttu(i) = ttu(i) + c1
+            enddo
+            do i=1,nv
+               ttv(i) = ttv(i) + c1
+            enddo
+            if (vt.eq.'TT') then
+               if (e_rdhint3 (huu,dstu_gid,nisu,njsu,'HU  ',na(k),ip2a,
+     $            ip3a,' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
+     $             goto 55
+               if (e_rdhint3 (huv,dstv_gid,nisv,njsv,'HU  ',na(k),ip2a,
+     $            ip3a,' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
+     $             goto 55
+               call mfotvt (ttu,ttu,huu,nisu*njsu,1,nisu*njsu)
+               call mfotvt (ttv,ttv,huv,nisv*njsv,1,nisv*njv)
+            endif
+            call e_bmfsplitxy2 (ttu,nisu,njsu,'VTU ',k,lv,pniu,0,0,0)
+            call e_bmfsplitxy2 (ttv,nisv,njsv,'VTV ',k,lv,pni ,0,0,0)
+         end do
+*
+      elseif ( glecmanl ) then
+
+         write(6,*)'PREPARATION FOR ECMWF to HYBRID'
+         c1 = 10. * Dcst_grav_8
+         if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,'GZ  ',-1,-1,-1,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,'GZ  ',-1,-1,-1,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+*
+*        for ECMWF analyses, the log of pressure (pa) is stored in 2P
+*
+         if (e_rdhint3 (p0u,dstu_gid,nisu,njsu,'2P  ',   0 ,-1,-1,
+     $         ' ',' ',.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (p0v,dstv_gid,nisv,njsv,'2P  ',   0 ,-1,-1,
+     $         ' ',' ',.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         do i=1,nu
+            ttu(i) = ttu(i) * c1
+            p0u(i) = exp(p0u(i))
+         enddo
+         do i=1,nv
+            ttv(i) = ttv(i) * c1
+            p0v(i) = exp(p0v(i))
+         enddo
+*
+         call e_bmfsplitxy2 (ttu,nisu,njsu,'GZU ',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (ttv,nisv,njsv,'GZV ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (p0u,nisu,njsu,'APSU',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (p0v,nisv,njsv,'APSV',1,1,pni ,0,0,0)
+*
+         c1 = Dcst_tcdk_8
+         do k=1,lv
+            ip3 = int(rna(k))
+            if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,'TT  ',na(k),-1,ip3,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,'TT  ',na(k),-1,ip3,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            do i=1,nu
+               ttu(i) = ttu(i) + c1
+            enddo
+            do i=1,nv
+               ttv(i) = ttv(i) + c1
+            enddo
+            if (e_rdhint3 (huu,dstu_gid,nisu,njsu,'HU  ',na(k),-1,
+     $          ip3,' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
+     $          goto 55
+            if (e_rdhint3 (huv,dstv_gid,nisv,njsv,'HU  ',na(k),-1,
+     $          ip3,' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
+     $          goto 55
+            call mfotvt (ttu,ttu,huu,nisu*njsu,1,nisu*njsu)
+            call mfotvt (ttv,ttv,huv,nisv*njsv,1,nisv*njv)
+            call e_bmfsplitxy2 (ttu,nisu,njsu,'VTU ',k,lv,pniu,0,0,0)
+            call e_bmfsplitxy2 (ttv,nisv,njsv,'VTV ',k,lv,pni ,0,0,0)
+         end do
+*
+*     add treatment at the surface, read temperature and dew point,
+*     transform to virtual temperature and humidity, write VT as STU 
+*     and STV
+         if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,'TS  ',-1,-1,-1,
+     $      ' ',' ',.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,'TS  ',-1,-1,-1,
+     $      ' ',' ',.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (huu,dstu_gid,nisu,njsu,'TD  ',-1,-1,
+     $       -1,' ',' ',.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
+     $       goto 55
+         if (e_rdhint3 (huv,dstv_gid,nisv,njsv,'TD  ',-1,-1,
+     $       -1,' ',' ',.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
+     $       goto 55
+         do i=1,nu
+            huu(i) = ttu(i) - huu(i)
+            ttu(i) = ttu(i) + c1
+         enddo
+         do i=1,nv
+            huv(i) = ttv(i) - huv(i)
+            ttv(i) = ttv(i) + c1
+         enddo
+         call mesahu(huu, huu, ttu, 1, p0u, 3, .true., .false., nu, 1, nu)
+         call mesahu(huv, huv, ttv, 1, p0v, 3, .true., .false., nv, 1, nv)
+         call mfotvt(ttu, ttu, huu, nu, 1, nu)
+         call mfotvt(ttv, ttv, huv, nv, 1, nv)
+         call e_bmfsplitxy2 (ttu,nisu,njsu,'STU ',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (ttv,nisv,njsv,'STV ',1,1,pni ,0,0,0)
+*
+      else
+*
+         write(6,*)'PREPARATION FOR PRESSURE to HYBRID'
+         c1 = 10.
+         do k=1,lv
+            if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,'GZ  ',na(k),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,'GZ  ',na(k),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            do i=1,nu
+               ttu(i) = ttu(i) * c1
+            enddo
+            do i=1,nv
+               ttv(i) = ttv(i) * c1
+            enddo
+            call e_bmfsplitxy2 (ttu,nisu,njsu,'GZU ',k,lv,pniu,0,0,0)
+            call e_bmfsplitxy2 (ttv,nisv,njsv,'GZV ',k,lv,pni ,0,0,0)
+         enddo
+*
+      endif
+*
+      goto 99
+ 55   call e_arret( 'e_intwind' )
+*
+*
+ 99   continue
+      call bmf_splitwrall ('AHAV',2,1,1,Bmf_time1,Bmf_time2,
+     $                                       0,0,40,0,anal_hav)
+      call bmf_splitend
+      return
+
+ 120  format ('|',1x,a8,'|',1x,a2,'  |',2(i7,' |'),i3,'  |',1x,a3,
+     $        ' |',1x,a7,'  |',1x,a16,'|')
+ 199  format ('|',2x,'   NO INTERPOLATION REQUIRED        ',1x,16x,1x,'|')
+* ---------------------------------------------------------------------
+      end

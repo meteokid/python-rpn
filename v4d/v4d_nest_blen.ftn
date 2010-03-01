@@ -1,0 +1,105 @@
+***s/r v4d_nest_blen - Based on nest_blen but only for independent variables
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_nest_blen ()
+*
+      implicit none
+*
+*author 
+*     M. Tanguay
+*
+*revision
+* v3_31 - Tanguay M.      - initial version
+* v3_31 - Tanguay M.      - Control BC
+*
+*object
+*     see id section
+*
+*     NOTE: We treat ONLY NEST_U,V,TP,S,TR
+*           All other variables are considered as dependent
+*           and will be taken care of in V4D_SET_VMM_DEP
+*
+*           CAUTION: NO_HYDRO is not considered yet
+*           ---------------------------------------
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "hblen.cdk"
+#include "lun.cdk"
+#include "vtopo.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer err,key(26),i,j,k,nvar
+      integer key1(Tr3d_ntr),key1_,key2(Tr3d_ntr),key2_, n
+      real tr,tr1
+      pointer (patr, tr(LDIST_SHAPE,*)),(patr1,tr1(LDIST_SHAPE,*))
+*----------------------------------------------------------------------
+*
+      if (.not. Schm_hydro_L) call gem_stop ('STOP in V4D_NEST_BLEN',-1)
+      if (Vtopo_L)            call gem_stop ('STOP in V4D_NEST_BLEN',-1)
+*
+      if ( (north+south+west+east.lt.1) .or.
+     $    ((Hblen_x.le.0).and.(Hblen_y.le.0)) ) return
+*
+      key(1)=VMM_KEY(nest_u)
+      key(2)=VMM_KEY(nest_v)
+      key(3)=VMM_KEY(nest_s)
+      key(4)=VMM_KEY(nest_tp)
+      key(5)=VMM_KEY(ut1)
+      key(6)=VMM_KEY(vt1)
+      key(7)=VMM_KEY(st1)
+      key(8)=VMM_KEY(tpt1)
+*
+      nvar= 8 
+*
+      err = vmmlod(key,nvar)
+*
+      err = VMM_GET_VAR(nest_u)
+      err = VMM_GET_VAR(nest_v)
+      err = VMM_GET_VAR(nest_s)
+      err = VMM_GET_VAR(nest_tp)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(tpt1)
+*
+*     Set up blending zones
+*     --------------------- 
+      call nesajr (ut1  ,nest_u  ,LDIST_DIM,G_nk ,1,0,Hblen_x,Hblen_y)
+      call nesajr (vt1  ,nest_v  ,LDIST_DIM,G_nk ,0,1,Hblen_x,Hblen_y)
+      call nesajr (tpt1 ,nest_tp ,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (st1  ,nest_s  ,LDIST_DIM,   1 ,0,0,Hblen_x,Hblen_y)
+*
+      err = vmmuld(key,nvar)
+*
+      key2_ = VMM_KEY (nest_tr)
+      key1_ = VMM_KEY (trt1)
+      do n=1,Tr3d_ntr
+         key2(n) = key2_ + n
+         key1(n) = key1_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key2,Tr3d_ntr)
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key2(n),patr,tr)
+            err = vmmget(key1(n),patr1,tr1)
+            call nesajr (tr1, tr, LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
+         enddo
+         err = vmmuld(key1,Tr3d_ntr)
+         err = vmmuld(key2,Tr3d_ntr)
+      endif
+*
+*----------------------------------------------------------------------
+      return
+      end

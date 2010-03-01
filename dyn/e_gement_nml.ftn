@@ -81,6 +81,9 @@
 *
       E_tr3d_list_S = ''
 *
+      E_intwind_mta_L      = .FALSE.
+      E_force_read_image_L = .FALSE.
+*
       unf=0
       if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
          rewind(unf)

@@ -9,10 +9,11 @@
 *     Michel Desgagne - January 2001
 *
 *revision
-* v2_21 - Desgagne M.       - initial version
-* v3_00 - Desgagne & Lee    - Lam configuration
-* v3_21 - Lee V.            - collect errors while searching geophy fields
-* v3_30 - Desgagne M.       - new physics interface
+* v2_21 - Desgagne M.      - initial version
+* v3_00 - Desgagne & Lee   - Lam configuration
+* v3_21 - Lee V.           - collect errors while searching geophy fields
+* v3_30 - Desgagne M.      - new physics interface
+* v3_31 - Bilodeau & Lee   - Correction for offline mode
 *
 *implicites
 #include "e_fu.cdk"
@@ -92,7 +93,7 @@
       e_intgeo = .true.
       do ivar = 1, p_bgeo_top
          if (geoerr(ivar).lt.0) then
-            if (.not.e_Schm_offline_L) e_intgeo = .false.
+            e_intgeo = .false.
             write (6,1005) geonm(ivar,2)
          endif
       end do

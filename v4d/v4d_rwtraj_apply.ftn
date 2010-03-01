@@ -18,6 +18,7 @@
 * v3_00 - Laroche S.        - initial version (from v4d_rwtraj)
 * v3_11 - Tanguay M.        - ADJ of digital filter
 * v3_30 - Tanguay M.        - Validation for LAM Nonhyd 
+* v3_31 - Tanguay M.        - No vmmuld (otherwise may affect itf_phy_apply)  
 *
 *object
 *     see id section
@@ -166,7 +167,7 @@
 *
       endif 
 *
-      pnerr = vmmuld(-1,0)
+C     pnerr = vmmuld(-1,0)
 *
       return
       end

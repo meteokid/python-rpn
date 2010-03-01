@@ -26,6 +26,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Lee V.            - Output optimization
 * v3_30 - Lee V.            - Bug correction for LAM
+* v3_31 - Tanguay M.        - Remove lastdt .ne. Lctl_step when 4D-Var
 *
 *object
 *     output all the fields related to horizontal vorticity
@@ -49,6 +50,7 @@
 #include "geomg.cdk"
 #include "level.cdk"
 #include "lctl.cdk"
+#include "v4dg.cdk"
 *
 *
 **
@@ -124,7 +126,7 @@
           allocate (  t8(minx:maxx,miny:maxy,F_nk) )
       endif
 
-      if (lastdt .ne. Lctl_step) then
+      if ((lastdt .ne. Lctl_step).or.V4dg_conf .ne. 0) then
 
           call rpn_comm_xch_halo (F_ut1,LDIST_DIM,l_niu,l_nj,G_nk,
      $         G_halox,G_haloy,G_periodx,G_periody,l_ni,0)

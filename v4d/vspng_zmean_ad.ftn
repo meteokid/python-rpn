@@ -15,6 +15,7 @@
 *     
 *revision
 *v3_30 - Tanguay M.      - initial MPI version 
+*v3_31 - Tanguay M.      - up to date with respect to vspng_zmean   
 *     
 *object
 *     see id section
@@ -24,8 +25,7 @@
 *
       integer i,j,k
       integer i0,in,j0,jn,k0,kn,njk,err
-      real sum (l_nj,Nk)
-      real*8 fijk
+      real*8 sum(l_nj,Nk),gsum(l_nj,Nk)
 *
 *--------------------------------------------------------------------
 *
@@ -40,7 +40,7 @@
 *     Zero adjoint variables
 *     ----------------------
       sum  = 0.
-      fijk = 0.
+      gsum = 0.
 *
       if(lmean) then
 *
@@ -58,21 +58,20 @@
 !$omp enddo
 !$omp end parallel
 *
-         tsum=tsum/real(G_ni)
+         gsum = tsum/dble(G_ni)+gsum
+         tsum = 0.
 *
-         call rpn_comm_ALLREDUCE ( tsum, sum, l_nj*Nk,
-     $        "MPI_REAL","MPI_SUM","EW",err )
+         call rpn_comm_ALLREDUCE ( gsum, sum, l_nj*Nk,
+     $                "MPI_DOUBLE_PRECISION","MPI_SUM","EW",err )
 *
-!$omp parallel private(fijk)
+!$omp parallel 
 !$omp do
          do k=kn,k0,-1
             do j=jn,j0,-1
-               fijk     = dble(sum(j,k)) + fijk
-               sum(j,k) = 0.
                do i=in,i0,-1
-                  F_field(i,j,k) = real(fijk) + F_field(i,j,k)
+                  F_field(i,j,k) = real(sum(j,k)) + F_field(i,j,k)
                end do
-               fijk     = 0. 
+               sum(j,k) = 0.
             end do
          end do
 !$omp enddo

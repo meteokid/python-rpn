@@ -10,6 +10,7 @@
 *
 *revision
 * v3_30 - Lee V.          - initial version
+* v3_31 - Chardon L.      - Allow offline mode to blend over whole domain
 *
 *object
 *
@@ -35,8 +36,10 @@
       pointer (patr, tr(LDIST_SHAPE,*)),(patr1,tr1(LDIST_SHAPE,*))
 *----------------------------------------------------------------------
 *
-      if ( (north+south+west+east.lt.1) .or.
-     $    ((Hblen_x.le.0).and.(Hblen_y.le.0)) ) return
+      if (.not.Hblen_wfct_S .eq. "CONST") then
+        if ( (north+south+west+east.lt.1) .or.
+     $      ((Hblen_x.le.0).and.(Hblen_y.le.0)) ) return
+      endif
 *
       if (Lun_debug_L) write(Lun_out,1001)
       key(1 )=VMM_KEY(nest_u)

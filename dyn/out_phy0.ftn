@@ -33,25 +33,21 @@
 **
 *     ---------------------------------------------------------------
 *
-      if (Lun_out.gt.0) write(Lun_out,1000)
       call iniobus(obussiz)
       allocate(obusval(l_ni*l_nj,obussiz))
       Mem_pslic = 0
 *
 !$omp parallel
 !$omp do
-            do j=1,Ptopo_npeOpenMP
-               call out_fillobus ( j , obusval )
-            enddo
+      do j=1,Ptopo_npeOpenMP
+         call out_fillobus ( j , obusval )
+      enddo
 !$omp enddo
 !$omp end parallel
       stepno=0
       call out_phy(obusval,l_ni,l_nj,stepno)
       deallocate (obusval)
 *
-*
- 1000 format(/'PERFORM A PHYSICS OUTPUT at 0: CMC/RPN PHYSICS (S/R OUT_PHY0)'
-     $       /55('='))
 *     ---------------------------------------------------------------
 *
       return

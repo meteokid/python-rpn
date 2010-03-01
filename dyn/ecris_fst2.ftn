@@ -14,6 +14,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *revision
 * v3_30 - Desgagne/Lee - Out_datyp is defined for data compression by default
 * v3_30 - Girard C.    - inverse output levels for option in Out_Flipit
+* v3_31 - Lee V.       - force oldip1style for output on pressure levels
 *
 **
 #include "out.cdk"
@@ -24,7 +25,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       character*1 gridtyp
       character*8 dumc
       integer i,j,k,n,ier,pnip1,pnip3,cnt,nis,njs,nrd,
-     $        ii,jj,im,jm,g3,g4,oi,oj,datyp
+     $        ii,jj,im,jm,g3,g4,oi,oj,datyp,modeip1
       logical reduc_L
       real*8 sum_8
       real wkf1(lminx:lmaxx,lminy:lmaxy,nkfa)
@@ -39,6 +40,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *     Writing field 'nomvar' to a FST file
 *
       if ((Out_nisl.le.0).or.(Out_njsl.le.0)) return
+      modeip1=1
+      if (kind.eq.2) modeip1=3
 *
 *     Filter if requested and if on PRESSURE levels
 c     if (filt.gt.0) then
@@ -127,7 +130,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
          allocate ( wk2(Out_nisg,Out_njsl) )
          do k=1,nk_o
             n = ind_o(k)
-            if (kind.ge.0) call convip(pnip1,rf(n),kind,+1,dumc,.false.)
+            call convip(pnip1,rf(n),kind,modeip1,dumc,.false.)
             do j=1,Out_njsl
             do i=1,Out_nisl
                wk2(i,j)=tr2(i,j,k)
@@ -145,7 +148,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
 *
          do k=1,nk_o
             n = ind_o(k)
-            if (kind.ge.0) call convip(pnip1,rf(n),kind,+1,dumc,.false.)
+            call convip(pnip1,rf(n),kind,modeip1,dumc,.false.)
             ier = fstecr (tr2(1,1,k),tr1,-nbit,Out_unf,Out_dateo,int(Out_deet),
      $                    Out_npas,Out_nisl,Out_njsl,1,pnip1,Out_ip2,pnip3,
      $                    Out_typvar_S,nomvar,Out_etik_S,gridtyp,

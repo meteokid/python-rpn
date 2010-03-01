@@ -95,25 +95,18 @@
        DCL_DYNVAR(Hz1d,deltas_8, real*8, (*))
 *
        character*12 Hzd_type_S
-       logical Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L,
+       logical Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L,Hzd_rwnd_L,
      %         Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L,
      %         Hzd_1d_L,Hzd_hdif0_0_L,Hzd_hdif0_1_L,
      %         Hzd_hzdmain_0_L,Hzd_hzdmain_1_L
        integer Hzd_pwr
        real Hzd_lnR,Hzd_cdiff
-       MARK_COMMON_BEG(hzdi)
+*
        common /hzdi/ Hzd_pwr
-       MARK_COMMON_END(hzdi)
-       MARK_COMMON_BEG(hzdr)
        common /hzdr/ Hzd_lnR,Hzd_cdiff
-       MARK_COMMON_END(hzdr)
-       MARK_COMMON_BEG(hzdc)
        common /hzdc/ Hzd_type_S
-       MARK_COMMON_END(hzdc)
-       MARK_COMMON_BEG(hzdl)
        common /hzdl/ Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L,
      %               Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L,
      %               Hzd_1d_L,Hzd_hdif0_0_L,Hzd_hdif0_1_L,
-     %               Hzd_hzdmain_0_L,Hzd_hzdmain_1_L
-       MARK_COMMON_END(hzdl)
+     %               Hzd_hzdmain_0_L,Hzd_hzdmain_1_L,Hzd_rwnd_L
 *

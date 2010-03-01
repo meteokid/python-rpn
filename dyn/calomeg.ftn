@@ -18,10 +18,11 @@
 *                  adapted from sort5 v0_15, A. Patoine
 *
 *revision
-* v2_00 - Lee V.            - initial MPI version (from calomeg v1_03)
-* v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
-* v3_20 - Gravel S.         - replaced geomg_pibb with geomg_dpba
-* v3_21 - Lee V.            - Output Optimization
+* v2_00 - Lee V.         - initial MPI version (from calomeg v1_03)
+* v2_30 - Edouard S.     - adapt for vertical hybrid coordinate
+* v3_20 - Gravel S.      - replaced geomg_pibb with geomg_dpba
+* v3_21 - Lee V.         - Output Optimization
+* v3_31 - Bilodeau & Lee - Correction for offline mode
 *
 *object
 *	compute vertical velocity in pressure coordinates
@@ -57,6 +58,7 @@
 *implicits
 #include "glb_ld.cdk"
 #include "geomg.cdk"
+#include "schm.cdk"
 *
 **
       integer i,j,k
@@ -65,7 +67,7 @@
 *
 !$omp do
       do k=1,l_nk
-         if (k.eq.1) then
+         if ((k.eq.1).or.Schm_offline_L) then
          do j= F_j0, F_jn
          do i= F_i0, F_in
             F_omeg (i,j,k) = 0.

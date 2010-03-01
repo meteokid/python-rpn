@@ -1,0 +1,2 @@
+      logical E_intwind_mta_L, E_same_size_L, E_force_read_image_L
+      common / E_mta / E_intwind_mta_L, E_same_size_L, E_force_read_image_L 

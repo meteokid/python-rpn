@@ -2,14 +2,14 @@
 *                           parameters NX,F_nxla,F_xbeg,F_xend,F_dxla
 *
       integer function stretch_axis2
-     $     ( F_x_8, F_dxla, F_xbeg, F_xend, F_margin, NX, F_nxla, F_amp,
-     $       F_stagger_L, F_print_L, F_dxmax, F_nimax, F_gauss_L)
+     $    ( F_x_8, F_dxla, F_xbeg, F_xend, F_margin, NX, F_nxla, F_amp,
+     $      F_stagger_L, F_print_L, F_dxmax, F_nimax, F_gauss_L, F_pi_8)
 *
       implicit none
 *
       integer F_margin, NX, F_nxla, F_nimax
       real    F_amp, F_dxla, F_xbeg, F_xend, F_dxmax
-      real*8  F_x_8(NX)
+      real*8  F_x_8(NX), F_pi_8
       logical F_stagger_L, F_print_L, F_gauss_L
 
 *author  Vivian Lee - July 1999
@@ -20,6 +20,7 @@
 * v2_30 - A. Methot         - introduction of a new stretch grid design
 * v2_30 -                     with upper limits on grid point spacing   
 * v3_11 - M. Tanguay        - Introduce Grd_gauss_L 
+* v3_31 - M. Tanguay        - Gaussian grid with 64 bits accurary
 *
 *object
 *        see above id
@@ -50,7 +51,7 @@
 * 
 *
 *notes
-*      The function qqqroot3 is included in this deck (written by J.Cote)
+*    The function qqqroot3 is included in this deck (written by J.Cote)
 *
 *modules
       real*8 qqqroot3
@@ -62,26 +63,27 @@
       real*8 amp_8, F_dxla_8
       real*8 hxmax
 *
-      real*8  deg2rad_8
-      real*8, parameter :: CLXXX_8 = 180.0
-      real*8, parameter :: ONE_8   = 1.0
+      real*8 G_ygauss_8(NX+1), rad2deg_8
 *
-      real groots(NX)
-      real ay(NX)
-      real*8 G_ygauss_8(NX+1)
-      integer status,j
+      real*8 rmu(1:NX),  rwt(1:NX),  rwocs(1:NX),
+     %     r1mu2(1:NX),rsqm2(1:NX), rcolat(1:NX),
+     %     r1qm2(1:NX),r1mui(1:NX),  rlati(1:NX)
+      integer njlath,jlat,nj,j
+*
+*  ------------------------------------------------------------------
 *
       F_dxla_8 = F_dxla
       hxmax    = F_dxmax
 *
       if (F_print_L) then
-      print *,'*'
-      print *,'*** stretch_axis(begin) *******'
-      print *,'*'
-      print *,'NX = ',NX,' F_nxla = ',F_nxla,' F_dxla = ',F_dxla,' F_stagger_L = ',
-     % F_stagger_L
-      print *,'F_xbeg = ',F_xbeg,' F_xend = ',F_xend
+         print *,'*'
+         print *,'*** stretch_axis(begin) *******'
+         print *,'*'
+         print *,'NX = ',NX,' F_nxla = ',F_nxla,' F_dxla = ',
+     $            F_dxla,' F_stagger_L = ', F_stagger_L
+         print *,'F_xbeg = ',F_xbeg,' F_xend = ',F_xend
       endif
+
       xdist_8    = F_xend - F_xbeg
       guess = - 1.0
       eps   = 1.0e-15
@@ -95,12 +97,27 @@
             call gem_stop('STRETCH_AXIS2 NOT VALID',-1)
         endif
 *
-        deg2rad_8 = acos( -ONE_8 )/CLXXX_8
+        njlath = NX/2
+        nj     = NX
+        call gauss8(njlath,rmu(1),rwt(1),rsqm2(1),rcolat(1),rwocs(1),
+     %              r1qm2(1),r1mui(1),r1mu2(1))
 *
-        call ez_glat (ay,groots,NX,0)
+*       Do the northern hemisphere
+*       --------------------------
+        do jlat = 1,njlath
+           rlati(jlat) = asin(rmu(jlat))
+        enddo
+*
+*       Completion for the southern hemisphere
+*       --------------------------------------
+        do jlat = njlath +1, nj 
+           rlati(jlat) = - rlati (2*njlath +1 - jlat)
+        enddo
+*
+        rad2deg_8 = 180. / F_pi_8
 *
         do j=1,NX
-           G_ygauss_8(j) = ay(j) 
+           G_ygauss_8(j) = rlati(NX-j+1) * rad2deg_8  
         enddo
            G_ygauss_8(NX+1) = G_ygauss_8(1) + 180.0 
 *
@@ -391,7 +408,7 @@ C                        resolution area to the right or top end of grid
   200 continue
       it = - nit
 *
-*----------------------------------------------------------------------
+*  ------------------------------------------------------------------
 *
       return
       end

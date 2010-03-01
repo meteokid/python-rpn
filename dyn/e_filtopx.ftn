@@ -14,6 +14,8 @@
 *     andre methot - sept 95
 *
 *revision
+* v3_31 - Lee V    - return filtered topography equivalent to original
+*                    if no filtering is required
 *
 *object
 *         This subroutine filters the topographic field using xy filter
@@ -63,6 +65,7 @@
 *----------------------------------------------------------------------
 *
       if (.not.(Topo_dgfmx_L.or.Topo_filmx_L)) then
+         F_topof = F_topo
          write(6,9900)
          return
       endif

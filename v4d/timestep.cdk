@@ -1,0 +1,40 @@
+#if defined (DOC)
+*
+***comdeck Timestep.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES FOR DEFINITION OF THE FREQUENCY OF OUTPUTS (set_step)     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* MAXSTEP            | maximum number of output timesteps per set      |
+* Timestep_sets      | The total number of sets of defined output      |
+*                    |                                      timesteps  |
+* Timestep_id        | Timestep_id(i) are the ID of each defined set   |
+* Timestep           | A table containing the defined output timesteps |
+*                    | for each individual set.                        |
+* Timestep_max       | Timestep_max(i) contains the number of timesteps|
+*                    | defined in each set                             |
+* Timestep_init_L    | if Timestep_init_L(i) is TRUE,this set of output|
+*                    | timesteps only apply to initialization period   |
+*----------------------------------------------------------------------
+*
+*
+#endif
+
+      integer MAXSTEP
+      parameter (MAXSTEP = 50000)
+      integer Timestep(MAXSTEP,MAXSET)
+      integer Timestep_max(MAXSET),Timestep_id(MAXSET)
+      integer Timestep_sets
+      logical Timestep_init_L(MAXSET)
+
+      MARK_COMMON_BEG (Timestep_i)
+      COMMON /Timestep_i/ Timestep,Timestep_max,Timestep_id,Timestep_sets
+      MARK_COMMON_END (Timestep_i)
+
+      MARK_COMMON_BEG (Timestep_l)
+      COMMON /Timestep_l/ Timestep_init_L
+      MARK_COMMON_END (Timestep_l)

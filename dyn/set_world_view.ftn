@@ -26,6 +26,7 @@
 * v3_21 - Desgagne M.       - using RMNLIB to access constants
 * v3_30 - Desgagne M.       - Cleaner approach to model startup
 * v3_30 - Desgagne & Winger - Initialize variable for VMM files
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
 *
 *object
 *
@@ -40,20 +41,25 @@
 #include "path.cdk"
 #include "vmmlist.cdk"
 #include "itf_phy_config.cdk"
+#include "itf_cpl.cdk"
+#include <clib_interface.cdk>
 *
       logical  set_dcst_8
-      integer  gem_nml,var4d_nml,v4d_config,gemdm_config,grid_nml
+      integer  gem_nml,var4d_nml,v4d_config,gemdm_config,grid_nml,
+     $         itf_cpl_nml
       external pe_zero_topo, set_dcst_8, gem_nml, var4d_nml,
-     $         v4d_config, gemdm_config, grid_nml
+     $         v4d_config, gemdm_config, grid_nml, itf_cpl_nml
 **
-      integer ierr,cte_ok,f1,f2,f3
+      integer ierr,cte_ok,f1,f2,f3,f4
 *
 *-------------------------------------------------------------------
 *
 * Initializing MPI and processor topology (pe_zero_topo on PE #0 only)
 *
       call rpn_comm_init ( pe_zero_topo, Ptopo_myproc, Ptopo_numproc, 
-     $                               Ptopo_npex  , Ptopo_npey )
+     $                                   Ptopo_npex  , Ptopo_npey   )
+      call base_dir_env
+      call gem_stop ('TASK_INPUT',clib_isdir(Path_input_S))
 *
 * Broadcasts processor topology and continue initialization steps
 *
@@ -71,16 +77,16 @@
 *
 * Initializes physical constants
 *
-*
 * Read namelist gem_cfgs and var4d from file Path_nml_S
 *
-         f1 = grid_nml  (Path_nml_S)
+         f1 = grid_nml    (Path_nml_S)
          G_lam = Grd_typ_S(1:1).eq.'L'
-         f2 = gem_nml   (Path_nml_S)
-         f3 = var4d_nml (Path_nml_S)
-         call gem_stop  ('SET_WORLD_VIEW_SET',min(f1,f2,f3))
-      endif
+         f2 = gem_nml     (Path_nml_S)
+         f3 = itf_cpl_nml (Path_nml_S)
+         f4 = var4d_nml   (Path_nml_S)
+         call gem_stop  ('SET_WORLD_VIEW_SET',min(f1,f2,f3,f4))
 *
+      endif
 *
 * Establish final configuration
 *
@@ -88,9 +94,10 @@
       f2 = v4d_config   ( )
       call gem_stop ('SET_WORLD_VIEW',min(f1,f2))
 *
-      ierr = grid_nml  ('print')
-      ierr = gem_nml   ('print')
-      ierr = var4d_nml ('print')
+      ierr = grid_nml    ('print')
+      ierr = gem_nml     ('print')
+      ierr = itf_cpl_nml ('print') 
+      ierr = var4d_nml   ('print')
 *
       call gemtim2 (Lun_out,.false.,0,ierr)
 *

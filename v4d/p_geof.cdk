@@ -14,6 +14,8 @@
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
 * topo               | Phi at the surface (xfis) with halos on it      |
+* topu               | U   at the surface (xfis) with halos on it      |
+* topv               | V   at the surface (xfis) with halos on it      |
 * dtopo              | difference between analysis and model topo      |
 *----------------------------------------------------------------------
 *
@@ -27,6 +29,8 @@
 *
       MARK_COMMON_BEG(geof)
       DCL_VMMVAR(geof,topo ,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,topu ,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,topv ,real,(LDIST_SHAPE))
       DCL_VMMVAR(geof,dtopo,real,(LDIST_SHAPE))
       MARK_COMMON_END(geof)
 

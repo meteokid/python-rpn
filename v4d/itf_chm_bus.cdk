@@ -1,0 +1,69 @@
+#if defined (DOC)
+*
+*revisions
+* v1-01 - A. Kallaur   - Templated according to "p_bus.cdk", written by:
+*                        V. Lee, P. Pellerin and B. Bilodeau
+* v1-02 - A. Kallaur   - renamed to Ichm_bus.cdk, in accordance with new 
+*                        interface naming convention. Variables NOT
+*                        changed.
+*
+***comdeck Ichm_bus.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH THE SIZES OF CHEMISTRY BUSES (chm_config) |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* CHMMAXBUS          | maximum number of elements allowed in a bus     |
+* chm_bdyn_top       | number of variables in the dynamic      bus     |
+* chm_bdyn_siz       | memory size (words) of the dynamic      bus     |
+* chm_bper_top       | number of variables in the permanent    bus     |
+* chm_bper_siz       | memory size (words) of the permanent    bus     |
+* chm_bvol_top       | number of variables in the volatile     bus     |
+* chm_bvol_siz       | memory size (words) of the volatile     bus     |
+* chm_bent_top       | number of variables in the entry        bus     |
+* chm_bent_siz       | memory size (words) of the entry        bus     |
+* chm_bchm_top       | total nmbr of different variables from chemistry|
+*----------------------------------------------------------------------
+*       
+*
+#endif
+      integer CHMMAXBUS
+      parameter (CHMMAXBUS = 1000)
+      integer  chm_bdyn_top,chm_bper_top  ,chm_bvol_top   ,chm_bent_top,
+     $         chm_bdyn_siz,chm_bper_siz  ,chm_bvol_siz   ,chm_bent_siz,
+     $         chm_bchm_top,chm_nmp,chm_ni,chm_nj,chm_offi,chm_offj    ,
+     $         chm_bdyn_out,chm_bper_out  ,chm_bvol_out   ,chm_bent_out
+*
+      integer  chm_bent_idx(chmmaxbus),chm_bper_idx(chmmaxbus),
+     $         chm_bdyn_idx(chmmaxbus),chm_bvol_idx(chmmaxbus)
+*
+      integer  chmentpar(chmmaxbus,7) ,chmdynpar(chmmaxbus,7),
+     $         chmperpar(chmmaxbus,7) ,chmvolpar(chmmaxbus,7)
+*
+      common / chm_bus / 
+     $         chm_bdyn_top,chm_bper_top  ,chm_bvol_top,chm_bent_top,
+     $         chm_bdyn_siz,chm_bper_siz  ,chm_bvol_siz,chm_bent_siz,
+     $         chm_bdyn_out,chm_bper_out  ,chm_bvol_out,chm_bent_out,
+     $         chmentpar   ,chmdynpar     ,chmperpar   ,chmvolpar   ,
+     $         chm_bent_idx,chm_bper_idx  ,chm_bdyn_idx,chm_bvol_idx,
+     $         chm_ni      ,chm_nj        ,chm_offi    ,chm_offj    ,
+     $         chm_bchm_top,chm_nmp   
+*
+      character*1         chm_outbus_s(chmmaxbus)
+      character*16        chmentnm(chmmaxbus),chmdynnm(chmmaxbus),
+     $                    chmpernm(chmmaxbus),chmvolnm(chmmaxbus)
+      character*8         chmenton(chmmaxbus),chmdynon(chmmaxbus),
+     $                    chmperon(chmmaxbus),chmvolon(chmmaxbus)
+      character*60        chmentdc(chmmaxbus),chmdyndc(chmmaxbus),
+     $                    chmperdc(chmmaxbus),chmvoldc(chmmaxbus)
+      common /chmbusdync/ chmentnm, chmdynnm, chmpernm, chmvolnm, 
+     $                    chmentdc, chmdyndc, chmperdc, chmvoldc,
+     $                    chmenton, chmdynon, chmperon, chmvolon,
+     $                    chm_outbus_s
+
+      real, dimension(:), pointer :: Chm_busper3D
+      common/ Chm_busper /   Chm_busper3D
+

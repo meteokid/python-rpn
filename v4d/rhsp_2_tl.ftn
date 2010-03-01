@@ -60,6 +60,7 @@
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 * v3_30 - Tanguay M.        - Use invhsyv
+* v3_31 - Tanguay M.        - new scope for operator + adw_cliptraj (LAM)
 *
 *object
 *     see id section 
@@ -770,10 +771,10 @@
       j0 = 1
       jn = l_nj
       if (G_lam) then
-         if (l_west) i0 = 4
-         if (l_east) in = l_niu-2
-         if (l_south) j0 = 3
-         if (l_north) jn = l_njv-1
+         if (l_west)  i0 = 4
+         if (l_east)  in = l_niu - 2
+         if (l_south) j0 = 4
+         if (l_north) jn = l_njv - 2
       endif
 *      
 !$omp do
@@ -808,10 +809,10 @@
       if (l_north) jn = l_njv-1
 
       if (G_lam) then
-          if (l_west) i0 = 3
-          if (l_east) in = l_niu-1
-          if (l_south) j0 = 4
-          if (l_north) jn = l_njv-2
+         if (l_west)  i0 = 4
+         if (l_east)  in = l_niu - 2
+         if (l_south) j0 = 4
+         if (l_north) jn = l_njv - 2
       endif
 *
 !$omp do

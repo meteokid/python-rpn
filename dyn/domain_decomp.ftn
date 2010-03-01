@@ -10,6 +10,7 @@
 *
 *revision
 * v3_30 - Desgagne M.       - Initial version
+* v3_31 - Chardon L.        - Remove offline topo restriction
 *
 *object
 *
@@ -20,6 +21,7 @@
 #include "ptopo.cdk"
 #include "hblen.cdk"
 #include "lam.cdk"
+#include "schm.cdk"
 *
       logical  check_parti
 **
@@ -78,21 +80,6 @@
      $        call gem_stop
      $        ('LAM grid too small -- ABORT in set_world_view --',-1)
 *
-         if (Hblen_wfct_S .eq. "CONST") then
-            maxblenx=mindimx-(max(Glb_pil_w,Glb_pil_e))+2
-            maxbleny=mindimy-(max(Glb_pil_s,Glb_pil_n))+2
-            Hblen_x=maxblenx
-            Hblen_y=maxbleny
-            print *,'*****************************************'
-            print *,'Constant Function applied for Pilot Zones'
-            print *,'Values maxblenx, maxbleny=',maxblenx, maxbleny
-            print *,'*****************************************'
-*
-            if ((Ptopo_npex.gt.2).or.(Ptopo_npey.gt.2))
-     $        call gem_stop
-     $        ('IN OFF-LINE MODE:MAXIMUM PE ALONG X,Y IS 2--',-1)
-         endif
-*
       endif
 *
       call rpn_comm_topo ( G_ni,l_minx,l_maxx,l_ni,G_lnimax,
@@ -110,6 +97,10 @@
       l_niu= l_ni
       if (l_north) l_njv= l_nj - 1
       if ((l_east).and.(G_lam)) l_niu = l_ni - 1
+      if (schm_offline_L) then
+         l_niu = l_ni
+         l_njv = l_nj
+      endif
 *
 *     Check grid dimensions for LAM
       if (G_lam.and.Hblen_wfct_S .ne."CONST") then

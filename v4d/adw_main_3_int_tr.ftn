@@ -18,6 +18,8 @@
 * v3_11 - Gravel S.         - introduce key Adw_mono_L
 * v3_20 - Tanguay M.        - Lagrange 3D
 * v3_30 - Tanguay M.        - Adapt TL/AD to Adw_interp_type_S
+* v3_31 - Tanguay M.        - Introduce time extrapolation
+* v3_31 - Tanguay M.        - new scope for operator + adw_cliptraj (LAM)
 *
 *language
 *     fortran 77
@@ -102,10 +104,11 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop('adw_main_3_int_tr',-1)
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
+          call adw_cliptraj (  F_um, F_vm, i0, in, j0, jn, 'INTERP')
       endif
 *
       if( .not. Adw_interp_type_S(1:5).eq.'LAG3D' ) then
@@ -182,7 +185,7 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop('adw_main_3_int_tr',-1)
      %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
       endif
 *
-      if ( Orh_icn .eq. Schm_itcn ) then
+      if ( Orh_icn .eq. Schm_itcn. or. .not.Orh_crank_L ) then
 *
 * tr3d advection
 *

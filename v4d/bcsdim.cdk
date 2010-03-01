@@ -1,0 +1,13 @@
+      integer minxs,maxxs,minys,maxys,minxn,maxxn,minyn,maxyn,
+     $        minxw,maxxw,minyw,maxyw,minxe,maxxe,minye,maxye,
+     $        dimxs,dimys,dimxn,dimyn,dimxw,dimyw,dimxe,dimye,
+     $        bcs_is,bcs_in,bcs_iw,bcs_ie,bcs_sz,bcs_ofi,bcs_ofj,
+     $        bcs_nia,bcs_nja,bcs_nka,bcs_ntra
+*
+      common /bcspnt1/ minxs,maxxs,minys,maxys,minxn,maxxn,minyn,maxyn,
+     $                 minxw,maxxw,minyw,maxyw,minxe,maxxe,minye,maxye,
+     $                 dimxs,dimys,dimxn,dimyn,dimxw,dimyw,dimxe,dimye,
+     $                 bcs_is,bcs_in,bcs_iw,bcs_ie,bcs_sz,
+     $                 bcs_ofi,bcs_ofj,
+     $                 bcs_nia,bcs_nja,bcs_nka,bcs_ntra
+*

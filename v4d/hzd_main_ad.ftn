@@ -23,6 +23,7 @@
 *                           - Remove topo 
 * v3_20 - Tanguay M.        - Introduce Hzd_hzdmain_n_L 
 * v3_30 - Tanguay M.        - activate Hzd_type_S='EXPLICIT' 
+* v3_31 - Tanguay M.        - add rwnd_L 
 *
 *object
 *     see id section
@@ -114,6 +115,10 @@
          err = VMM_GET_VAR(mut1)
          err = VMM_GET_VAR(multx)
       endif
+*
+*     NOTE: iw2rwnd_ad = iw2rwnd
+*     --------------------------
+      if (Hzd_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 *
 *     -----------------------------------------------------
 *     WHEN .not.Schm_hydro_L
@@ -329,6 +334,10 @@
      %                   LDIST_DIM, G_nk)
 *
       endif
+*
+*     NOTE: iw2rwnd_ad = iw2rwnd
+*     --------------------------
+      if (Hzd_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
 *
       err = vmmuld(-1,0)
 *

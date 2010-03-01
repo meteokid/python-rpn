@@ -15,6 +15,7 @@
 #include "e_grids.cdk"
 #include "hgc.cdk"
 #include "e_cdate.cdk"
+#include "path.cdk"
 **
       integer  e_rdhint3,fnom,fstouv,fstfrm,fclos
       external e_rdhint3,fnom,fstouv,fstfrm,fclos
@@ -35,7 +36,7 @@
       endif
 *
       e_fu_geophy = 0
-      if (fnom  (e_fu_geophy,'process/geophy' ,'RND+OLD',0).lt.0) stop
+      if (fnom  (e_fu_geophy,trim(Path_input_S)//'/GEOPHY' ,'RND+OLD',0).lt.0) stop
       if (fstouv(e_fu_geophy,'RND').lt.0) stop
 *
       datev = -1

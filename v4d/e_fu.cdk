@@ -1,0 +1,2 @@
+      integer e_fu_anal, e_fu_climat, e_fu_geophy
+      common /e_fu/ e_fu_anal, e_fu_climat, e_fu_geophy

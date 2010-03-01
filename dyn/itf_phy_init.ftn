@@ -14,6 +14,8 @@
 * v3_30 - Tanguay M.         - adapt TL/AD to itf
 * v3_30 - Bilodeau B.        - add call to phy_opt for offline mode
 * v3_30 - Dugas B.           - correction to P_out_moyhr, add Out3_satues_L
+* v3_31 - Bilodeau and Desgagne - extend grid for offline mode
+* v3_31 - Desgagne M.        - new coupling interface to OASIS
 *
 *object
 *	See above ID.
@@ -33,11 +35,12 @@
 #include "pres.cdk"
 #include "clim.cdk"
 #include "p_serg.cdk"
+#include "glb_pil.cdk"
 *
 #include "itf_phy_buses.cdk"
 #include "itf_phy_busind.cdk"
 #include "itf_phy_config.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 *
 **
       integer  phy_init,phy_debu,fnom
@@ -67,8 +70,6 @@
 *
       call newdate (Out3_date,idate,bidon,-4)
       dt_4 = Cstv_dt_8 
-*
-      call itf_cpl_init_cplfld (G_ni, G_nj)
 *
 * Start physics initialization with mandatory parameters
       call phy_opti('DATE'    , idate         ,  14,'SET',prout,err(1))
@@ -128,6 +129,7 @@
 *
       p_nmp = 0
       if (G_lam) p_nmp = 3
+      if (Schm_offline_L) p_nmp = Glb_pil_e
       p_ni   = l_ni - pil_e - pil_w + p_nmp*west  + p_nmp*east
       p_nj   = l_nj - pil_s - pil_n + p_nmp*south + p_nmp*north
       p_offi = 1 + pil_w - p_nmp*west  - 1
@@ -142,23 +144,17 @@
 * Fetch a few physics configuration parameters needed for dynamics
 *
       err = 0
-      call phy_optl('ICEMELT'   ,P_pbl_iceme_L  , 1, 'GET',prout,err(1))
-      call phy_optl('CHAUF'     ,P_pbl_ocean_L  , 1, 'GET',prout,err(2))
-      call phy_optc('SCHMSOL'   ,P_pbl_schsl_S  , 1, 'GET',prout,err(3))
-      call phy_optl('SNOALB_ANL',P_pbl_snoalb_L , 1, 'GET',prout,err(4))
-      call phy_optc('STCOND'    ,P_cond_stcon_S , 1, 'GET',prout,err(5))
-      call phy_optl('SATUCO'    ,P_cond_satu_L  , 1, 'GET',prout,err(6))
-      call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(7))
+      call phy_optl('ICEMELT'   ,P_pbl_iceme_L , 1, 'GET',prout,err (1))
+      call phy_optl('CHAUF'     ,P_pbl_ocean_L , 1, 'GET',prout,err (2))
+      call phy_optc('SCHMSOL'   ,P_pbl_schsl_S , 1, 'GET',prout,err (3))
+      call phy_optl('SNOALB_ANL',P_pbl_snoalb_L, 1, 'GET',prout,err (4))
+      call phy_optc('STCOND'    ,P_cond_stcon_S, 1, 'GET',prout,err (5))
+      call phy_optl('SATUCO'    ,P_cond_satu_L , 1, 'GET',prout,err (6))
+      call phy_opti('MOYHR'     ,P_out_moyhr   , 1, 'GET',prout,err (7))
+      call phy_opti('LIN_PBL'   ,P4d_pbl       , 1, 'GET',prout,err(13))
+*
 *     Re-define P_out_moyhr in units of hours, rather than in timesteps
       P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
-      if (C_coupling_L) then
-          call phy_opti('INDX_SOIL'   ,ig_indx_soil    ,1,'GET',prout,err(8))
-          call phy_opti('INDX_GLACIER',ig_indx_glacier ,1,'GET',prout,err(9))
-          call phy_opti('INDX_WATER'  ,ig_indx_water   ,1,'GET',prout,err(10))
-          call phy_opti('INDX_ICE'    ,ig_indx_ice     ,1,'GET',prout,err(11))
-          call phy_opti('INDX_AGREGE' ,ig_indx_agrege  ,1,'GET',prout,err(12))
-      endif
-      call phy_opti('LIN_PBL'   , P4d_pbl        ,1,'GET',prout,err(13))
 *
 *     Consistency check for output saturation calculations
       if (Out3_satues_L .and. .not.P_cond_satu_L) then
@@ -219,7 +215,7 @@
          call phy_getbus (volnm,volon,voldc,volpar,p_bvol_siz,maxbus,
      $                                                     'V',prout)
          call itf_phy_inikey
-         if (V4dg_conf.gt.0) call inikey_tr
+         if (V4dg_conf.gt.0) call v4d_inikey_tr
       else
          if (Lun_out.gt.0) write (Lun_out,9000) 
      $        max(p_bent_top,p_bdyn_top,p_bper_top,p_bvol_top)

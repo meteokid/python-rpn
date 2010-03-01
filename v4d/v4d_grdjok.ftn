@@ -22,6 +22,7 @@
 * v3_11 - M. Tanguay        - correct relationship between stepob and timestep
 *                           - Add option for profiles done on U-V grids for winds 
 * v3_30 - Fillion/Tanguay   - Adapt diagnostics for LAM
+* v3_31 - Tanguay M.        - Add OPENMP directives 
 *
 *object
 *     -----------------------------------------------------------------------
@@ -45,13 +46,14 @@
 #include "ptopo.cdk"
 #include "tr3d.cdk"
 #include "path.cdk"
+#include <clib_interface.cdk>
 #include <prof_f.h>
 #include "step.cdk"
 *
 *     Local variables
 *     ---------------
-      integer  vmmlod, vmmget, vmmuld, prof_rdrec, prof_bitptrn, longueur
-      external vmmlod, vmmget, vmmuld, prof_rdrec, prof_bitptrn, longueur
+      integer  vmmlod, vmmget, vmmuld, prof_rdrec, prof_bitptrn
+      external vmmlod, vmmget, vmmuld, prof_rdrec, prof_bitptrn
 *
       integer pnerr, ier, ip, pnlkey1(12), i, j, k, irec, inmvar8, nobproc,
      %        kkk, ibid1, ibid2, ind, nsim3d, nbin, npr, i1, i2, j1, j2,
@@ -103,6 +105,7 @@
 *
 *     Zero adjoint variables
 *     ----------------------
+!$omp parallel do
       do k = 1,l_nk
         do j=l_miny,l_maxy
           do i=l_minx,l_maxx
@@ -113,8 +116,11 @@
           enddo
         enddo
       enddo
+!$omp end parallel do
 *
       if(V4dg_pruv_L) then
+*
+!$omp parallel do
       do k=1,l_nk
          do j=l_miny,l_maxy
            do i=l_minx,l_maxx
@@ -122,13 +128,17 @@
             end do
          end do
       end do
+!$omp end parallel do
+*
       endif
 *
+!$omp parallel do
       do j=l_miny,l_maxy
         do i=l_minx,l_maxx
           wij5(i,j) = ZERO_8
         end do
       end do
+!$omp end parallel do
 *
 *     -----------------------------------------------------------------------------
 *     Read dwya PROF file containing time-variables adjoint profiles ONLY ONCE 
@@ -159,7 +169,7 @@
          write(cljx_S,'(i2.2)') Ptopo_mycol
          write(cljy_S,'(i2.2)') Ptopo_myrow
 *
-         Pr_type3file_S = Path_xchg_S(1:longueur( Path_xchg_S) )//'/dwya_'
+         Pr_type3file_S = trim(Path_xchg_S)//'/dwya_'
      %                    //cljx_S//'_'//cljy_S//'.prof'
 *
          write(Lun_out,*) 'Opening adjoint dwya MODEL-PROFILE input file'
@@ -267,9 +277,11 @@
                    if ( Pr_varindx(kkk).eq.V2D_PSUR ) then
                          Pr_mlprof(1,mdltag(ip),kkk)% ptr = fprof2d_8(ip)
                    else  
+!$omp parallel do
                       do k = 1, l_nk
                          Pr_mlprof(k,mdltag(ip),kkk)% ptr = fprof_8(k,ip)
                       enddo
+!$omp end parallel do
                    endif
 *
 *                  Accumulate number of adjoint profiles at the given bin 
@@ -402,9 +414,11 @@
 *
         allocate ( profx (1,npr), STAT=ier )
 *
+!$omp parallel do
         do j=1,npr
           profx(1,j) = Pr_l_mv(V2D_PSUR,nbin) % fprof(1,j)
         enddo
+!$omp end parallel do
 
       endif
 
@@ -429,11 +443,13 @@
 *
         allocate ( profx (l_nk,npr), STAT=ier )
 *
+!$omp parallel do
         do k = 1,l_nk
           do j=1,npr
             profx(k,j)= Pr_l_mv(V3D_SPHU,nbin) % fprof(k,j)
           enddo
         enddo
+!$omp end parallel do
 *
       endif 
 *
@@ -458,11 +474,13 @@
 *
         allocate ( profx (l_nk,npr), STAT=ier )
 *
+!$omp parallel do
         do k = 1,l_nk
           do j=1,npr
             profx(k,j)= Pr_l_mv(V3D_TEMP,nbin) % fprof(k,j)
           enddo
         enddo
+!$omp end parallel do
 *
       endif
 *
@@ -489,19 +507,25 @@
         allocate ( profy (l_nk,npr), STAT=ier )
         if(V4dg_pruv_L) allocate ( prbid (l_nk,npr), STAT=ier )
 *
+!$omp parallel do
         do k=1,l_nk
           do j=1,npr
             profx(k,j)= Pr_l_mv(V3D_UTRU,nbin) % fprof(k,j)
             profy(k,j)= Pr_l_mv(V3D_VTRU,nbin) % fprof(k,j)
           enddo
         enddo
+!$omp end parallel do
 *
         if(V4dg_pruv_L)  then
+*
+!$omp parallel do
         do k=1,l_nk
           do j=1,npr
             prbid(k,j)= ZERO_8
           enddo
         enddo
+!$omp end parallel do
+*
         endif
 *
       endif
@@ -521,6 +545,7 @@
      %                    wbid,wijk2,V4dz_ax,V4dz_ayv,V4dz_cx,V4dz_cyv,V4dz_wx_8,V4dz_cox_8,V4dz_six_8,V4dz_siyv_8,
      %                    i1,i2,j1,j2,l_nk,'V',V4dz_degree,'UV')
 *
+!$omp parallel do
       do k=1,l_nk
          do j=l_miny,l_maxy
            do i=l_minx,l_maxx
@@ -528,19 +553,25 @@
             end do
          end do
       end do
+!$omp end parallel do
 *
       if(npr.ne.0) then
+*
+!$omp parallel do
         do k=1,l_nk
           do j=1,npr
             prbid(k,j)= ZERO_8
           enddo
         enddo
+!$omp end parallel do
+*
       endif
 *
       call v4d_uvint0_ad (profx,prbid,Pr_l_mv(V3D_UTRU,nbin)%pxu,Pr_l_mv(V3D_UTRU,nbin)%py,npr,
      %                    wijk1,wbid,V4dz_axu,V4dz_ay,V4dz_cxu,V4dz_cy,V4dz_wxu_8,V4dz_coxu_8,V4dz_sixu_8,V4dz_siy_8,
      %                    i1,i2,j1,j2,l_nk,'U',V4dz_degree,'UV')
 *
+!$omp parallel do
       do k=1,l_nk
          do j=l_miny,l_maxy
            do i=l_minx,l_maxx
@@ -548,6 +579,7 @@
             end do
          end do
       end do
+!$omp end parallel do
 *
       endif
 *
@@ -591,13 +623,16 @@
 *     ADJOINT of
 *     Transfer fields
 *     ---------------
+!$omp parallel do
       do j=1,l_nj
             do i=1,l_ni
            st1(i,j) = wij5(i,j) + st1(i,j)
           wij5(i,j) = ZERO_8
         enddo
       enddo
+!$omp end parallel do
 *
+!$omp parallel do
       do k=1,l_nk
         do j=1,l_njv
           do i=1,l_ni
@@ -618,6 +653,7 @@
           end do
         end do
       enddo
+!$omp end parallel do
 *
       pnerr = vmmuld(-1,0)
 *

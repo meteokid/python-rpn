@@ -20,6 +20,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
 * v3_21 - Desgagne M.       - introduce new timing routines
+* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 *object
 *    
@@ -67,7 +68,7 @@
 *
 *        Store TRAJ predictive variables
 *        -------------------------------
-         if ( Orh_crank_L .and. Orh_icn.eq.1 ) call v4d_rwtraj (3) 
+         if ( (Orh_crank_L .and. Orh_icn.eq.1) .or. .not.Orh_crank_L ) call v4d_rwtraj (3) 
 *
       endif
 *

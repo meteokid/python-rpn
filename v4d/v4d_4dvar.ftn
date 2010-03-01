@@ -30,6 +30,7 @@
 *                            - Correction about V4dg_imguv_L when ADJ  
 * v3_20   A. Zadra           - Introduce V4dg_sgvc_dt0  
 * v3_30 - Tanguay M.         - adapt TL/AD to out_dyn 
+* v3_31 - Tanguay M.         - Control BC
 *
 *object
 *     Initialize the TLM/Adjoint and set-up an externally controlled Event Loop
@@ -52,16 +53,19 @@
 #include <prof_f.h>
 #include "cstv.cdk"
 #include "path.cdk"
+#include <clib_interface.cdk>
 #include "init.cdk"
 #include "rstr.cdk"
+#include "v4dg_bc.cdk"
 *
-      external longueur
       integer ierr, nevent, nstatus, keepsteptotal,iseg_steptotal,isv_step
-      integer fnom,fclos,longueur
+      integer fnom,fclos
       logical keep_identity_L,done_nlm_L
       character(len=8)  csimno_S
       data done_nlm_L/.false./
       save done_nlm_L
+*
+      integer location
 *
 *     ______________________________________________________
 *
@@ -70,6 +74,11 @@
          call gem_stop('v4d_4dvar',-1) 
       endif
 *     ______________________________________________________
+*
+        call tmg_start0(29,'EVALL    ')
+*
+        call tmg_start0(28,'EVNL0    ')
+        location = 0 
 *
 *     /---------------------------------\
 *     <        Main Event Loop          >
@@ -80,10 +89,23 @@
 *
       Call v4d_getevent(Lun_out,nevent,nstatus,Ptopo_myproc)
 *
+      if (location.eq.0) then
+        call tmg_stop0(28)
+      endif
+*
+      if (location.eq.1) then
+        call tmg_stop0(27)
+      endif
+*
+      if (location.eq.2) then
+        call tmg_stop0(26)
+      endif
+*
 *     -------------------------------------
 *     NLM trajectory done only once (START) 
 *     -------------------------------------
       if (.not.done_nlm_L) then
+        call tmg_start0(25,'EVNLM    ')
 *
 *     1. Creation of reference trajectory
 *     
@@ -104,7 +126,7 @@
         V4dg_iunenrgy=0
         write(csimno_S,fmt='(i4)') Pr_nsim4d
         csimno_S=adjustl(csimno_S)
-        ierr = FNOM(V4dg_iunenrgy,Path_dfwmil_S(1:longueur(Path_dfwmil_S))//
+        ierr = FNOM(V4dg_iunenrgy,trim(Path_basedir_S)//
      +              '/output/tlmenergy.dat'//trim(csimno_S),'SEQ+FTN+FMT',0)      
         write(Lun_out,*) "OPENED ENERGY FILE ",V4dg_iunenrgy,
      +                   trim(csimno_S)
@@ -173,7 +195,9 @@
 *
 *       Run NLM model
 *       -------------
+        call tmg_start0(70,'NLM      ')
         call gem_ctrl
+        call tmg_stop0(70)
 *
         write(Lun_out,*) '>>> V4D_4DVAR::  End of 3 hr nonlinear integration over 0-3'
 *
@@ -257,7 +281,9 @@
 *     
 *       Run NLM model
 *       -------------
+        call tmg_start0(70,'NLM      ' )
         call gem_ctrl
+        call tmg_stop0(70)
 *
       enddo
 *
@@ -278,6 +304,8 @@
       write(Lun_out,*) '>>> V4D_4DVAR::  End of nonlinear integration over assimilation period'
 *
       done_nlm_L = .true.
+*
+        call tmg_stop0(25)
 *
 *     -----------------------------------
 *     NLM trajectory done only once (END) 
@@ -306,6 +334,7 @@
 *   ===> EVN_TLMO:   Integration of TLM model
 *        ------------------------------------
          if(nevent.eq.EVN_TLMO) then 
+        call tmg_start0(24,'EVTLM    ')
 *
             Pr_nsim4d = Pr_nsim4d + 1   
 *
@@ -350,7 +379,12 @@
 *
 *           Read increments from 3D-Var and prepare them for GEM
 *           ----------------------------------------------------
+        call tmg_start0(23,'GET      ')
             call v4d_getdx(nstatus)
+        call tmg_stop0(23)
+*
+            if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_0
+            if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_t_from_bc_0
 *
 *     B.   Run the tangent linear model
 *     
@@ -373,7 +407,9 @@
 *     
 *           Run TLM model
 *           -------------
+            call tmg_start0(71,'TLM      ' )
             call gem_ctrl_tl()
+            call tmg_stop0(71)
 *
 *     C.   Output to 3D-Var: model profiles interpolated at obs. locations
 *
@@ -406,11 +442,17 @@
      %                          nstatus
                nstatus = -99
             endif
+*
+        call tmg_stop0(24)
+*
+        call tmg_start0(27,'EVTL0    ')
+        location = 1
 *     
 *        --------------------------------------------------
 *   ===> EVN_ADJM:   Backward integration of Adjoint Model
 *        --------------------------------------------------
          else if (nevent.eq.EVN_ADJM) then
+        call tmg_start0(22,'EVADM    ')
 *     
             write(Lun_out,*) '>>> V4D_4DVAR::  Backward Integration of Adjoint - Nevent = '
      %                       ,nevent,' EVN_ADJM = ',EVN_ADJM,' NSIM4D = ',Pr_nsim4d
@@ -462,7 +504,9 @@
 *
 *           Run ADJ model
 *           -------------
+            call tmg_start0(72,'ADJ      ' )
             call gem_ctrl_ad()
+            call tmg_stop0(72)
 *
 *           Read trajectory for conversion at initial time
 *           ----------------------------------------------
@@ -476,11 +520,16 @@
 *
             if (V4dg_output_L) call out_dyn_ad()
 *
+            if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_t_from_bc_0_ad
+            if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_0_ad
+*
 *     C.   Output: (Delta X)^* = grad J_o
 *
 *           Prepare and Write adjoint increments to be read by 3D-Var   
 *           ---------------------------------------------------------
+        call tmg_start0(21,'PUT      ')
             call v4d_putdx(nstatus)
+        call tmg_stop0(21)
 *
             if(nstatus.eq.0)  then
                write(Lun_out,*) '>>> V4D_4DVAR::  End of ADJ integration  NSIM4D = ',Pr_nsim4d
@@ -496,6 +545,10 @@
      %                          nstatus
                nstatus = -99
             end if
+        call tmg_stop0(22)
+*
+        call tmg_start0(26,'EVAD0    ')
+        location = 2 
 *     
 *        ----------------------------------------------------------
 *   ===> EVN_NLMO:   Forward Integration of Direct Nonlinear Model
@@ -875,6 +928,7 @@ C               endif
 *   ===> EVN_TLME:   Integration of TLM model without Profiles and with V4dg_output_L=.T. Then STOP 
 *        ------------------------------------------------------------------------------------------
          else if (nevent.eq.EVN_TLME) then 
+        call tmg_start0(20,'EVTLE    ')
 *
             Pr_nsim4d = Pr_nsim4d + 1   
 *
@@ -921,6 +975,9 @@ C               endif
 *           ----------------------------------------------------
             call v4d_getdx(nstatus)
 *
+            if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_0
+            if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_t_from_bc_0
+*
 *     B.   Run the tangent linear model
 *     
             if(nstatus.eq.0) then 
@@ -955,6 +1012,8 @@ C               endif
      %                          nstatus
                nstatus = -99
             endif
+*
+        call tmg_stop0(20)
 *     
 *        ------------------------------------------------
 *   ===> EVN_ESIM: Nothing more to do. You can go home!!
@@ -1002,6 +1061,7 @@ C               endif
       if(Ptopo_myproc.eq.0.and.V4dg_sgvc_L) ierr =  FCLOS(V4dg_iunenrgy)
 *
       write(Lun_out,*) '>>> V4D_4DVAR::  End of Job' 
+        call tmg_stop0(29)
 *
       return
 *

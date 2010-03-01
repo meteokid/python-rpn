@@ -16,6 +16,7 @@
 * v2_21 - J. P. Toviessi - rename some model output variables
 * v2_30 - Edouard S.     - remove pi' at the top
 * v2_31 - Desgagne M.    - re-introduce 3D tracers*
+* v3_31 - McTaggart-Cowan R.- correction for Vtopo mode in digflt
 *object
 *	This subroutine initializes the commons containing the
 *	keys used by the Virtual Memory Manager to identify the
@@ -71,6 +72,7 @@
       VMM_NAM(multa) = 'MULA'
       VMM_NAM(huta ) = 'HUTA'
       VMM_NAM(qcta ) = 'QCTA'
+      VMM_NAM(topoa) = 'TOPA'
       VMM_NAM(trta ) = 'TRTA'
 *
 *	Set the attributes of the variables
@@ -94,6 +96,7 @@
       VMM_CREATE(sta  , LARRAY2D, 1, attri_S)
       VMM_CREATE(gpta , LARRAY3D, 1, attri_S)
       VMM_CREATE(huta , LARRAY3D, 1, attri_S)
+      VMM_CREATE(topoa, LARRAY2D, 1, attri_S)
       VMM_CREATE(qcta , LARRAY3D, 1, attri_S)
 *
       if (.not. Schm_hydro_L) then

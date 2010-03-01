@@ -175,8 +175,6 @@
 *
       endif
 *
-      pnerr = vmmuld(-1,0)
-*    
  1000 format(/,3X,
      $ 'DEL-2 SPONGE LAYER ON THE POLES FOR ',I3,' ROWS: (S/R HSPNG_MAIN)')
 *

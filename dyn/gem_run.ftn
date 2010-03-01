@@ -34,6 +34,8 @@
 * v3_20 - Tanguay M.        - Introduce Hzd_hdif0_L
 * v3_20 - Dugas B.          - Replace GEMTIM by GEMTIM2(may re-define Step_rsti)
 * v3_30 - Desgagne M.       - Restructure code, added output for cascade mode
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
+* v3_31 - Desgagne M.       - restart with physics BUSPER
 *
 *object
 *	Performs the integration of the model
@@ -111,10 +113,11 @@
       step0 = Lctl_step+1
       stepf = last_step
 *
+      call itf_cpl_fillatm
+*
       do istep = step0, stepf
 *
          Lctl_step = istep
-         if ( bkup_L ) call wrrstrt
 *
 *C    Incrementing timestep
 *
@@ -172,6 +175,8 @@
          call out_dyn (.true.,-1)
          call blocstat
 *
+         call itf_cpl_fillatm
+*
          if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 *
 *     * Must we stop the current sequence? If yes, must we write
@@ -179,7 +184,10 @@
 *
          if (Lctl_step.ne.last_step) call trans_clean
 *
-         bkup_L = mod( Lctl_step ,Step_bkup ).eq.0
+         bkup_L = (mod( Lctl_step ,Step_bkup ).eq.0) . and.
+     $            (Lctl_step.lt.stepf)
+         if ( bkup_L ) call wrrstrt
+         if ( Lctl_step.eq.Step_spinphy ) call wrrstrt_phy (.true.)
 *
       end do
 *

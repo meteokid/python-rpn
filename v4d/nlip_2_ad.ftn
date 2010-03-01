@@ -47,6 +47,7 @@
 * v3_00 - Tanguay M.        - adapt to restructured nlip_2 
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_31 - Tanguay M.        - Modify OPENMP 
 *
 *object 
 *     see id section
@@ -189,7 +190,6 @@
 *
       real*8, dimension(i01:in1,j01:jn1) :: invm_8
       real*8, dimension(i02:in2,j02:jn2) :: yexp2m_8,xlog2m_8,inv2m_8
-      real*8, dimension(i02:in2,j02:jn2,l_nk) :: invkm_8
 *
 *     ______________________________________________________
 *
@@ -275,20 +275,41 @@
 * ADJ of
 * Combination of governing equations * 
 **************************************
+      do k=l_nk,1,-1
 *
-!$omp parallel private(invm_8,xlog2m_8,inv2m_8,
-!$omp$                 wk2,w1m,w2m,w1,w2,w3,t1_8,t2_8,t3_8,t4_8,
-!$omp$                 i,j,k)
+         if (k.eq.1) then
 *
-!$omp do
-      do j= j0, jn
+         t1_8 = QUARTER_8*Geomg_hz_8(k)
+         t3_8 = HALF_8*Geomg_z_8(k)
+         t4_8 = HALF_8*Geomg_z_8(k+1)
 *
-         k = nk
+*        ADJ
+*        ---
+*
+         do j= j0, jn
+         do i= i0, in
+*
+          F_rhell(i,j,k  ) = p1_8 * ( F_rheln(i,j,k)  ) + F_rhell(i,j,k  )
+          F_wijk1(i,j,k  ) = p1_8 * (
+     %                     - t1_8 *  (F_rheln(i,j,k)) ) + F_wijk1(i,j,k  )
+          F_wijk1(i,j,k+1) = p1_8 * (
+     %                     - t1_8 *  (F_rheln(i,j,k)) ) + F_wijk1(i,j,k+1)
+          F_wijk2(i,j,k  ) = p1_8 * (
+     %                       t3_8 *   F_rheln(i,j,k)  ) + F_wijk2(i,j,k  )
+          F_wijk2(i,j,k+1) = p1_8 * (
+     %                       t4_8 *   F_rheln(i,j,k)  ) + F_wijk2(i,j,k+1)
+          F_rheln(i,j,k  ) = ZERO_8
+*
+         end do
+         end do
+*
+         elseif (k.eq.l_nk) then
 *
          t1_8 = QUARTER_8*Geomg_hz_8(k-1)
          t3_8 = HALF_8*Geomg_z_8(k-1)
          t4_8 = HALF_8*Geomg_z_8(k)
 *
+         do j= j0, jn
          do i= i0, in
 *
           F_rhell(i,j,k  ) = p1_8 * ( F_rheln(i,j,k)  ) + F_rhell(i,j,k  )
@@ -303,8 +324,9 @@
           F_rheln(i,j,k  ) = ZERO_8
 *
          end do
+         end do
 *
-         do k=l_nk-1,2,-1
+         else
 *
          t1_8 = QUARTER_8*Geomg_hz_8(k-1)
          t2_8 = QUARTER_8*Geomg_hz_8(k)
@@ -313,6 +335,7 @@
 *
 *        ADJ 
 *        ---
+         do j= j0, jn
          do i= i0, in
 *
           F_rhell(i,j,k  ) = p1_8 * ( F_rheln(i,j,k)  ) + F_rhell(i,j,k  )
@@ -331,40 +354,19 @@
           F_rheln(i,j,k  ) = ZERO_8 
 *
          end do
-*
          end do
 *
-         k=1
-         t1_8 = QUARTER_8*Geomg_hz_8(k)
-         t3_8 = HALF_8*Geomg_z_8(k)
-         t4_8 = HALF_8*Geomg_z_8(k+1)
-*
-*        ADJ
-*        ---
-*
-         do i= i0, in
-*
-          F_rhell(i,j,k  ) = p1_8 * ( F_rheln(i,j,k)  ) + F_rhell(i,j,k  )
-          F_wijk1(i,j,k  ) = p1_8 * (
-     %                     - t1_8 *  (F_rheln(i,j,k)) ) + F_wijk1(i,j,k  )
-          F_wijk1(i,j,k+1) = p1_8 * (
-     %                     - t1_8 *  (F_rheln(i,j,k)) ) + F_wijk1(i,j,k+1)
-          F_wijk2(i,j,k  ) = p1_8 * (
-     %                       t3_8 *   F_rheln(i,j,k)  ) + F_wijk2(i,j,k  )
-          F_wijk2(i,j,k+1) = p1_8 * (
-     %                       t4_8 *   F_rheln(i,j,k)  ) + F_wijk2(i,j,k+1)
-          F_rheln(i,j,k  ) = ZERO_8
-*
-         end do
+         end if
 *
       end do
-!$omp enddo
+*
+!$omp parallel do private(invm_8,xlog2m_8,
+!$omp$                 inv2m_8,wk2,w1m,w2m,w1,w2,w3,
+!$omp$                 t1_8,t2_8,t3_8,t4_8)
 *
 *     ADJ of
 *     Compute the nonlinear deviation of horizontal divergence
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*
-!$omp do
       do k=1,l_nk
 *
          if (.not. Schm_hydro_L) then
@@ -444,18 +446,14 @@ C                    t1_8  = ZERO_8
          endif
 *
       end do
-!$omp enddo
+!$omp end parallel do
 *
-!$omp do
       do j = j0, jn
          do i = i0, in
             yexp2m_8(i,j) = F_st0m(i,j)
          end do
          call vexp ( yexp2m_8(i0,j), yexp2m_8(i0,j), (in-i0+1) )
       end do
-!$omp enddo
-*
-!$omp single 
 *
 *     ADJ 
 *     ---
@@ -465,9 +463,6 @@ C                    t1_8  = ZERO_8
       call rpn_comm_adj_halo( F_nu, LDIST_DIM,l_niu,l_nj,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
-!$omp end single 
-*
-!$omp do
       do k= 1,l_nk
 *
 *        Zero F_nv halo
@@ -479,28 +474,21 @@ C                    t1_8  = ZERO_8
          call v4d_zerohalo ( F_nu(l_minx,l_miny,k),l_niu,l_nj, LDIST_DIM, 1)
 *
       enddo
-!$omp enddo
 *
 *     ADJ of
 *     compute Ncn
 *     ~~~~~~~~~~~
 *
-!$omp do 
       do k =  1, l_nk
 *
       do j = j0, jn
          do i = i0, in
             xlog2m_8(i,j) = 1. + Geomg_dpba(k) * (yexp2m_8(i,j) - 1.0)
          end do
-         call vrec( invkm_8(i0,j,k), xlog2m_8(i0,j), (in-i0+1))
+         call vrec( inv2m_8(i0,j), xlog2m_8(i0,j), (in-i0+1))
       end do
 *
-      enddo
-!$omp enddo 
-*
-!$omp do 
       do j = j0, jn
-      do k =  1, l_nk
       do i = i0, in
 *
          w1           = q1 * (  F_ncn(i,j,k) ) 
@@ -508,13 +496,13 @@ C                    t1_8  = ZERO_8
          F_ncn(i,j,k) = ZERO_8
 *
          F_st0(i,j) = Geomg_dpib(k) * w2 + 
-     %              ( Geomg_dpba(k) * (yexp2m_8(i,j)*w1 ) ) * invkm_8(i,j,k)
+     %              ( Geomg_dpba(k) * (yexp2m_8(i,j)*w1 ) ) * inv2m_8(i,j)
      %                + F_st0(i,j)
 *
       enddo
       enddo
+*
       enddo
-!$omp enddo 
 *
 ************************************************************
 * ADJ of
@@ -526,7 +514,6 @@ C                    t1_8  = ZERO_8
 *
       if (G_lam) then
          if (l_north) then
-!$omp do
             do k=1,l_nk
             do i=1+pil_w,l_ni-pil_e
 *
@@ -534,10 +521,8 @@ C                    t1_8  = ZERO_8
 *
             end do
             enddo
-!$omp enddo
          endif
          if (l_south) then
-!$omp do
             do k=1,l_nk
             do i=1+pil_w,l_ni-pil_e
 *
@@ -545,10 +530,8 @@ C                    t1_8  = ZERO_8
 *
             end do
             enddo
-!$omp enddo
          endif
          if (l_east) then
-!$omp do
             do k=1,l_nk
             do j=1+pil_s,l_nj-pil_n
 *
@@ -556,10 +539,8 @@ C                    t1_8  = ZERO_8
 *
             end do
             enddo
-!$omp enddo
          endif
          if (l_west) then
-!$omp do
              do k=1,l_nk
              do j=1+pil_s,l_nj-pil_n
 *
@@ -567,7 +548,6 @@ C                    t1_8  = ZERO_8
 *
              end do
              enddo
-!$omp enddo
          endif
       endif
 *
@@ -576,7 +556,9 @@ C                    t1_8  = ZERO_8
       in=in1
       jn=jn1
 *
-!$omp do
+!$omp parallel do private(invm_8,xlog2m_8,
+!$omp$                 inv2m_8,wk2,w1m,w2m,w1,w2,w3,
+!$omp$                 t1_8,t2_8,t3_8,t4_8)
       do 101 k=l_nk,1,-1
 *
 *     Zero adjoint variables
@@ -935,10 +917,8 @@ C                    w1 = ZERO_8
       end do
 *
 101   continue
-!$omp enddo
+!$omp end parallel do
 *
-!$omp single
-* 
 *     ADJ 
 *     ---
       if (Cori_cornl_L) then
@@ -964,11 +944,8 @@ C                    w1 = ZERO_8
       call rpn_comm_adj_halo( F_tpt0 , LDIST_DIM,l_ni,l_nj,G_nk,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
-!$omp end single 
-*
       if (Cori_cornl_L) then
 *
-!$omp do
       do k= 1,l_nk
 *
 *        Zero F_ut0,F_vt0 halo 
@@ -977,13 +954,11 @@ C                    w1 = ZERO_8
          call v4d_zerohalo ( F_vt0(l_minx,l_miny,k),l_ni ,l_njv,LDIST_DIM, 1)
 *
       enddo
-!$omp enddo
 *
       endif
 *
       if (.not. Schm_hydro_L) then
 *
-!$omp do
       do k= 1,l_nk
 *
 *        Zero F_wijk2,F_mut0
@@ -992,11 +967,9 @@ C                    w1 = ZERO_8
          call v4d_zerohalo ( F_mut0 (l_minx,l_miny,k),l_ni, l_nj,LDIST_DIM, 1)
 *
       enddo
-!$omp enddo
 *
       endif
 *
-!$omp do
       do k= 1,l_nk
 *
 *        Zero F_wijk1,F_qt0,F_tpt0 halo 
@@ -1006,7 +979,6 @@ C                    w1 = ZERO_8
          call v4d_zerohalo ( F_tpt0 (l_minx,l_miny,k),l_ni, l_nj,LDIST_DIM, 1)
 *
       enddo
-!$omp enddo
 *
 *     ADJ of
 *     Prepare the nonlinear perturbation q" of log hydro pressure 
@@ -1023,7 +995,9 @@ C                    w1 = ZERO_8
           if (l_north)jn=l_nj-pil_n +1
       endif
 *
-!$omp do
+!$omp parallel do private(invm_8,xlog2m_8,
+!$omp$                 inv2m_8,wk2,w1m,w2m,w1,w2,w3,
+!$omp$                 t1_8,t2_8,t3_8,t4_8)
       do k=1,l_nk
 *
          if (.not. Schm_hydro_L) then
@@ -1063,14 +1037,13 @@ C        F_wijk1(i,j,k)   = ZERO_8
          enddo
 *
       enddo
-!$omp enddo
+!$omp end parallel do 
 *
-!$omp do
-      do j= j0, jn
-         do k=1,l_nk
+      do k=1,l_nk
 *
          t1_8 = ONE_8/Geomg_z_8(k)
 *
+         do j= j0, jn
          do i= i0, in
 *
 *        ADJ
@@ -1083,11 +1056,8 @@ C    %                    + F_pipt0(i,j,k)
 *
          enddo
          enddo
+*
       enddo
-!$omp enddo
-*
-!$omp end parallel 
-*
 *     __________________________________________________________________
 *
       return

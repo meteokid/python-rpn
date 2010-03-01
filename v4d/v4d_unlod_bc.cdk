@@ -1,0 +1,5 @@
+         bc_err = vmmuld(key_bc_u,  1)
+         bc_err = vmmuld(key_bc_v,  1)
+         bc_err = vmmuld(key_bc_tp, 1)
+         bc_err = vmmuld(key_bc_s,  1)
+         bc_err = vmmuld(key_bc_tr,Tr3d_ntr)

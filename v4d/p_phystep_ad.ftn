@@ -16,6 +16,7 @@
 * v3_11 - Laroche S.       - AIXport+Opti+OpenMP for TLM-ADJ
 * v3_30 - Tanguay M.       - adapt TL/AD to itf/new tendencies
 *                          - Validation for LAM version
+* v3_31 - Tanguay M.       - Introduce Ptopo_smtphy  
 *
 *object
 *       Computes the physical processes and apply the resulting
@@ -43,6 +44,8 @@
 *modules
       integer  open_db_file,rewind_db_file,close_db_file
       external open_db_file,rewind_db_file,close_db_file
+      integer  omp_get_max_threads
+      external omp_get_max_threads
 **
       integer dim,err,i,j,k,obussiz
       real, dimension(:,:), allocatable :: obusval
@@ -117,10 +120,10 @@
          err = rewind_db_file (Lun_waphy)
       endif
 *
-*
+      call pe_rebind(1)
 !$omp parallel
 !$omp do
-      do j=1,Ptopo_npeOpenMP
+      do j=1,omp_get_max_threads()
       call p_physlb_ad ( j, F_stepno,obusval,
      $                   up, vp, wp, tp, qp,  trp,
      $                   um, vm,     tm,      trm,
@@ -130,6 +133,7 @@
       enddo
 !$omp enddo
 !$omp end parallel
+      call pe_rebind(-1)
 *
 *
 *C       2.	load all fields required by the physic in memory

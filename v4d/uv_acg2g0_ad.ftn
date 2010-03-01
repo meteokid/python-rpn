@@ -25,6 +25,7 @@
 * v3_20 - Tanguay M.    - replace grido by gridi in exchange halo
 * v3_21 - Tanguay M.    - Revision Openmp 
 * v3_30 - Tanguay M.    - Revision Openmp LAM 
+* v3_31 - Tanguay M.    - replace G_nk and l_nk by Nk
 *
 *object
 *     see id section
@@ -291,12 +292,12 @@
          nje = l_nj
          if (F_gridi.eq.1) nie = l_niu
          if (F_gridi.eq.2) nje = l_njv
-         call rpn_comm_adj_halo( F_src,LDIST_DIM,nie,nje,G_nk,
+         call rpn_comm_adj_halo( F_src,LDIST_DIM,nie,nje,Nk,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
 *        Zero F_src halo
 *        ---------------
-         call v4d_zerohalo ( F_src,nie,nje,LDIST_DIM, l_nk)
+         call v4d_zerohalo ( F_src,nie,nje,LDIST_DIM, Nk)
 *
       endif
 *

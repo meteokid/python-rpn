@@ -23,7 +23,7 @@
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
 * v3_20 - Zadra A.          - Introduce V4dg_sgvc_dt0
 * v3_20 - Buehner & Zadra   - Introduce V4dg_chum_s
-
+* v3_30 - Tanguay M.        - Validation for LAM version 
 *
 *______________________________________________________________________
 *                                                                      |
@@ -115,6 +115,7 @@
 * V4dg_obsize        | size of obincore (V4dg_iunob WA file)           |
 * V4dg_cvsize        | size of cvincore (V4dg_iuncv WA file)           |
 * V4dg_nlsize        | size of nlincore (V4dg_iunnl WA file)           |
+* V4dg_nssize        | size of nsincore (V4dg_iunns WA file)           |
 * V4dg_numseg        | number of TLM/ADJ segments for SV job           |
 * V4dg_iunenrgy      | unit number for file with energy output         |
 * V4dg_steplast      | final time step of integration                  |
@@ -137,9 +138,11 @@
      %        V4dg_iunfr,  V4dg_addfr , V4dg_rwfr,
      %        V4dg_iuncv,  V4dg_addcv , V4dg_rwcv,
      %        V4dg_iunnl,  V4dg_addnl , V4dg_rwnl,
-     %        V4dg_addtab_tl(13,0:100,2), V4dg_addtab_ad(13,0:100,2),
+     %        V4dg_iunns,  V4dg_addns , V4dg_rwns,
+     %        V4dg_addtab_tl(14,0:100,2), V4dg_addtab_ad(14,0:100,2),
+     %        V4dg_addnes_tl   (0:100,2), V4dg_addnes_ad   (0:100,2),
      %        V4dg_trsize,V4dg_phsize,V4dg_frsize,V4dg_obsize,V4dg_cvsize,
-     %        V4dg_nlsize,
+     %        V4dg_nlsize,V4dg_nssize,
      %        V4dg_numseg,V4dg_iunenrgy,V4dg_steplast,V4dg_rwnest,
      %        V4dg_sgvc_dt0
 *
@@ -154,9 +157,11 @@
      %        V4dg_iunfr,  V4dg_addfr , V4dg_rwfr,
      %        V4dg_iuncv,  V4dg_addcv , V4dg_rwcv,
      %        V4dg_iunnl,  V4dg_addnl , V4dg_rwnl,
+     %        V4dg_iunns,  V4dg_addns , V4dg_rwns,
      %        V4dg_addtab_tl, V4dg_addtab_ad,
+     %        V4dg_addnes_tl, V4dg_addnes_ad,
      %        V4dg_trsize,V4dg_phsize,V4dg_frsize,V4dg_obsize,V4dg_cvsize,
-     %        V4dg_nlsize,
+     %        V4dg_nlsize,V4dg_nssize,
      %        V4dg_numseg,V4dg_iunenrgy,V4dg_steplast,V4dg_rwnest,
      %        V4dg_sgvc_dt0
       MARK_COMMON_END (V4d_gen_i)
@@ -196,4 +201,5 @@
       DCL_DYNVAR (V4dg,obincore, real,(*))
       DCL_DYNVAR (V4dg,cvincore, real,(*))
       DCL_DYNVAR (V4dg,nlincore, real,(*))
+      DCL_DYNVAR (V4dg,nsincore, real,(*))
 *

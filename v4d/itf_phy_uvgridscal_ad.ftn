@@ -17,6 +17,7 @@
 * v3_00 - Laroche S.       - initial MPI version
 * v3_21 - Tanguay M.       - Revision Openmp 
 * v3_30 - Tanguay M.       - adapt TL/AD to itf
+* v3_31 - Tanguay M.       - replace G_nk and l_nk by Nk
 *
 *object
 *	ADJ of Cubic interpolation of the dynamics fields from their own grid
@@ -40,7 +41,7 @@
 **
       integer i,j,k,i0,j0,in,jn
       integer nsu,ndu,nsv,ndv
-      real wk1(LDIST_SHAPE,l_nk)
+      real wk1(LDIST_SHAPE,Nk)
       real*8, parameter :: ZERO_8 = 0.0
 *
 *     ---------------------------------------------------------------
@@ -63,7 +64,7 @@ C
 
 !$omp parallel
 !$omp do
-      do k=1,l_nk
+      do k=1,Nk
          do j=l_miny,l_maxy
          do i=l_minx,l_maxx
             wk1(i,j,k) = ZERO_8
@@ -79,7 +80,7 @@ C
 !$omp end do
 !$omp end parallel
 
-      call uv_acg2g_ad(wk1,F_pvt,nsv,ndv,LDIST_DIM,l_nk,i0,in,j0,jn)
+      call uv_acg2g_ad(wk1,F_pvt,nsv,ndv,LDIST_DIM,Nk,i0,in,j0,jn)
 
 C
 C     x component
@@ -89,7 +90,7 @@ C
 
 !$omp parallel
 !$omp do
-      do k=1,l_nk
+      do k=1,Nk
          do j=l_miny,l_maxy
          do i=l_minx,l_maxx
             wk1(i,j,k) = ZERO_8
@@ -105,7 +106,7 @@ C
 !$omp end do
 !$omp end parallel
 
-      call uv_acg2g_ad(wk1,F_put,nsu,ndu,LDIST_DIM,l_nk,i0,in,j0,jn)
+      call uv_acg2g_ad(wk1,F_put,nsu,ndu,LDIST_DIM,Nk,i0,in,j0,jn)
 *
 *     ---------------------------------------------------------------
 *

@@ -24,6 +24,8 @@
 * v3_21 - Dugas B.          - Add F_busdyn(p_phis) = topo
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - Lee V.            - removed clipping from tracers
+* v3_31 - Bilodeau B.       - offline mode: TT (and not VT) from entry
+*                                           no interpolation of winds
 *
 *object
 *
@@ -281,6 +283,7 @@
 *C    interpolate wind images at time t1 and t2
 *     -----------------------------------------
 *
+      if (.not.schm_offline_L) then
       call itf_phy_uvgridscal (p_uplus ,p_vplus ,LDIST_DIM,l_nk,.true.)
       call itf_phy_uvgridscal (p_umoins,p_vmoins,LDIST_DIM,l_nk,.true.)
 *
@@ -297,6 +300,7 @@
       enddo
       enddo
       enddo
+      endif
 *
 *C    Compute temperature from virtual temperature
 *     --------------------------------------------
@@ -334,6 +338,7 @@
 *
       else
 *
+         if (.not.schm_offline_L) then
          call mfottv ( p_tplus ,F_tp,
      $            F_trp(l_minx,l_miny,1,1),
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),Nk,
@@ -342,7 +347,20 @@
      $            F_trm(l_minx,l_miny,1,1),
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),Nk,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
-
+*
+         else
+*
+*           Copy TPLUS and TMOINS directly (no virtual temperature)
+            do k=1,Nk
+               do j=1,l_nj
+                  do i=1,l_ni
+                     p_tplus (i,j,k) = F_tp (i,j,k)
+                     p_tmoins(i,j,k) = F_vtm(i,j,k)
+                  end do
+               end do
+            end do
+         endif
+*
       endif
 *
 *      The following hardcoding of fcpf, fcpw and eponmod will be

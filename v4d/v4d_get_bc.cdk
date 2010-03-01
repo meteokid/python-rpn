@@ -1,0 +1,4 @@
+      bc_err = vmmget(key_bc_u ,pabc_u, f_bc_u )
+      bc_err = vmmget(key_bc_v ,pabc_v, f_bc_v )
+      bc_err = vmmget(key_bc_tp,pabc_tp,f_bc_tp)
+      bc_err = vmmget(key_bc_s ,pabc_s, f_bc_s )

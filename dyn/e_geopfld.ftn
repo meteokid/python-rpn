@@ -26,6 +26,7 @@
 #include "pilot.cdk"
 #include "modconst.cdk"
 #include "filename.cdk"
+#include "path.cdk"
 **
       logical  e_intgeo
       integer  fnom,fstouv,fstfrm,fclos,e_pilotf
@@ -41,9 +42,9 @@
 *
       e_fu_climat = 0
       e_fu_geophy = 0
-      if (fnom  (e_fu_climat,'process/climato','RND+OLD',0).lt.0) stop
+      if (fnom  (e_fu_climat,trim(Path_input_S)//'/CLIMATO','RND+OLD',0).lt.0) stop
       if (fstouv(e_fu_climat,'RND').lt.0) stop
-      if (fnom  (e_fu_geophy,'process/geophy' ,'RND+OLD',0).lt.0) stop
+      if (fnom  (e_fu_geophy,trim(Path_input_S)//'/GEOPHY','RND+OLD',0).lt.0) stop
       if (fstouv(e_fu_geophy,'RND').lt.0) stop
 *
       if (LAM) then
@@ -53,7 +54,7 @@
          if (err.lt.0) err = e_pilotf (datestp,'UT1',' ',' ',-1,-1,-1)
       else
          e_fu_anal = 0
-         if (fnom (e_fu_anal ,'process/analysis','RND+OLD',0).lt.0) stop
+         if (fnom (e_fu_anal ,trim(Path_input_S)//'/ANALYSIS','RND+OLD',0).lt.0) stop
          if (fstouv(e_fu_anal ,'RND').lt.0) stop
       endif
 *
@@ -93,19 +94,22 @@
       err = fclos  (e_fu_geophy)
 *
       if (.not. status) then
-          write(6,1002)
+         write(6,1002)
+         stop
       endif
-*
-      return
- 55   call e_arret( 'e_geopfld' )
 *
  1001 format (/' Analysis    file is unit: ',i4/
      $         ' Climatology file is unit: ',i4/
      $         ' Geophysical file is unit: ',i4)
- 1002 format('*************************************************',/
-     %       '* WARNING!!!! File GEOPHY.bin NOT produced      *',/
-     %       '* GEMDM can run with no PHYSICS only            *',/
-     %       '*************************************************')
+ 1002 format(/60('*'),/
+     %'* WARNING-WARNING-WARNING!!!! Missing geophysical fields. ',/
+     %'*             File GEOPHY.bin NOT produced'                ,/
+     %'* consider these 2 options:'                               ,/
+     %'*   1) run geophy_2000.Abs on your analysis and '          ,/
+     %'*      re-run Um_runent.sh'                                ,/
+     %'*   2) re-run Um_runent.sh with Pil_sfc2d_L=.false. and'   ,/
+     %'*      run the model without physics parameterication'     ,/
+     % 60('*')/)
 *
 *----------------------------------------------------------------------
 *

@@ -15,6 +15,7 @@
 * v2_21 - Desgagne M.          - rpn_comm stooge for MPI
 * v3_10 - Lee V.               - RPN_bcastc for bcast on MPI_CHARACTER
 * v3_30 - Valcke, S.           - Read land-sea or coupling mask for coupling
+* v3_31 - Desgagne M.          - new coupling interface to OASIS
 *
 *object
 **      Reads the entire content of bus "geobus" from file "geophy.bin"
@@ -30,7 +31,8 @@
 #include "e_fu.cdk"
 #include "ptopo.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
+#include "path.cdk"
 *
 *modules
 *
@@ -52,6 +54,7 @@
 * NEW    '5A' ,'TM' ,'9A' ,'9A' ,'2B' ,'2B','LE' ,     ,'1B'
 *
 **
+      character*512 fn
       integer i, ierr, err, err_read, nfields, osgeo, offg, il_siz, gid
       real, dimension(:), allocatable :: busgeo
       data osgeo/33/
@@ -63,11 +66,12 @@
 *
       if (Ptopo_myproc.eq.0) then
 *
-          open (osgeo,file='../geophy.bin',access='SEQUENTIAL',
+          fn  = trim(Path_input_S)//'/INDATA/geophy.bin'
+          open (osgeo,file=fn,access='SEQUENTIAL',
      $          status='OLD',iostat=err_read,form='UNFORMATTED')
 *
           if (err_read.ne.0) then
-             if (G_lam) then
+             if ((G_lam).and.(.not.C_coupling_L)) then
                 write (Lun_out,8080) 'geophy.bin'
                 e_fu_anal = -1 ; e_fu_climat = -1
                 E_geol_glreg_L = .false.
@@ -93,26 +97,6 @@
              allocate    (busgeo       (p_bgeo_siz))
              read(osgeo) (busgeo(i),i=1,p_bgeo_siz)
              close (osgeo)
-          endif
-*
-          if (C_coupling_L) then
-*         Allocate and save mask in global variable for xfer to Oasis
-              il_siz = G_ni*G_nj
-              allocate (rga_msk(il_siz))
-              lg_mcpl = .false.
-              do i=1,p_bgeo_top
-                 if (trim(geonm(i,1)) .eq. 'MCPL') then
-*                if explicit coupling mask exists in data file, use it
-*                (valid points must be = 1, non valid point = 0)
-                    offg= geopar(i,1)
-                    rga_msk(1:il_siz) = busgeo(offg:il_siz+offg-1)
-                    lg_mcpl = .true.
-                 else if 
-     $              (trim(geonm(i,1)).eq.'MGEN' .and. .not.lg_mcpl) then
-                    offg= geopar(i,1)
-                    rga_msk(1:il_siz) = busgeo(offg:il_siz+offg-1)
-                 endif
-              end do
           endif
 *
       endif
@@ -143,8 +127,6 @@
 *     allocation of the local geophysical bus (geofld)
 *
       allocate (geofld(p_bgeo_siz))
-*
-      if (C_coupling_L) allocate (rla_msk(l_ni*l_nj))
 *
 *     Distributing global geophysical bus (geobus)
 *      

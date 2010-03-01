@@ -19,6 +19,7 @@
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 * v3_11 - Tanguay M.        - ADJ of digital filter 
 * v3_30 - Tanguay M.        - Validation for LAM version 
+* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 *object
 *     Open WA file for TRAJECTORY (all timesteps)
@@ -35,6 +36,7 @@
 #include "vthm.cdk"
 #include "vt1m.cdk"
 #include "vt2m.cdk"
+#include "vtwm.cdk"
 #include "vtxm.cdk"
 #include "vtam.cdk"
 #include "rhscm.cdk"
@@ -44,6 +46,7 @@
 #include "nestm.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
+#include "step.cdk"
 *
 *modules
       external fnom, vmmcre
@@ -53,9 +56,9 @@
 *
       character*80 attrib_S,attrit_S,attri_S
 *
-*C    -------------------------------------------
-*C    Open WA file for TRAJECTORY (all timesteps)
-*C    --------------------------------------------
+*     -------------------------------------------
+*     Open WA file for TRAJECTORY (all timesteps)
+*     --------------------------------------------
 *
       if (Lun_out.gt.0) write(Lun_out,1000)
 *
@@ -68,9 +71,9 @@
 *        ------------
          call waopen(V4dg_iuntr)
 *
-*C    -----------------------------------
-*C    Open WA file for PHYSICS PARAMETERS
-*C    -----------------------------------
+*     -----------------------------------
+*     Open WA file for PHYSICS PARAMETERS
+*     -----------------------------------
 *
       if (Lun_out.gt.0) write(Lun_out,1001)
 *
@@ -83,9 +86,9 @@
 *        ------------
          call waopen(V4dg_iunph)
 *
-*C    ---------------------------
-*C    Open WA file for Conversion
-*C    ---------------------------
+*     ---------------------------
+*     Open WA file for Conversion
+*     ---------------------------
 *
       if (Lun_out.gt.0) write(Lun_out,1002)
 *
@@ -102,9 +105,9 @@
 *        ------------
          call waopen(V4dg_iuncv)
 *
-*C    ------------------------------------------
-*C    Open WA file for NL Perturbation Evolution
-*C    ------------------------------------------
+*     ------------------------------------------
+*     Open WA file for NL Perturbation Evolution
+*     ------------------------------------------
 *
       if (Lun_out.gt.0) write(Lun_out,1003)
 *
@@ -121,9 +124,9 @@
 *        ------------
          call waopen(V4dg_iunnl)
 *
-*C    ------------------------
-*C    Open WA file for nesting 
-*C    ------------------------
+*     ------------------------
+*     Open WA file for nesting 
+*     ------------------------
 *
       if (G_lam) then
 *
@@ -144,9 +147,9 @@
 *
       endif
 *
-*C    ----------------------------------------------------------
-*C    Allocate VMM space for TRAJECTORY comdecks (one time step)
-*C    ----------------------------------------------------------
+*     ----------------------------------------------------------
+*     Allocate VMM space for TRAJECTORY comdecks (one time step)
+*     ----------------------------------------------------------
 *
          if (Lun_out.gt.0) write(Lun_out,2000)
 *
@@ -160,6 +163,7 @@
          COMMON_INIT(vthm,-100)
          COMMON_INIT(vt1m,-100)
          COMMON_INIT(vt2m,-100)
+         COMMON_INIT(vtwm,-100)
          COMMON_INIT(vtxm,-100)
 *
 *        Set the attributes of the variables
@@ -167,8 +171,9 @@
          attrib_S = 'SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
          attrit_S = 'SAVE=Y,CL=3,W=5,INIT=R,MUSTEXIST'
 *
-*        Initialize comdeck for TRAJ variables at time t0
-*        ------------------------------------------------
+*        --------------------------------
+*        Create TRAJ variables at time t0
+*        --------------------------------
          VMM_NAM(ut0m   )= 'UT0M'
          VMM_NAM(vt0m   )= 'VT0M'
          VMM_NAM(wt0m   )= 'WT0M'
@@ -209,8 +214,9 @@
          VMM_CREATE(trt0m, LARRAY3D, Tr3d_ntr, attrit_S)
          endif
 *
-*        Initialize comdeck for TRAJ variables at time t0-dt/2 (th) 
-*        ----------------------------------------------------------
+*        ------------------------------------------
+*        Create TRAJ variables at time t0-dt/2 (th) 
+*        ------------------------------------------
          VMM_NAM(uthm   )= 'UTHM'
          VMM_NAM(vthm   )= 'VTHM'
          VMM_NAM(psdthm )= 'PSDHM'
@@ -231,8 +237,9 @@
          VMM_CREATE(ycthm , l_ni*l_nj*l_nk, 1, attrib_S)
          VMM_CREATE(zcthm , l_ni*l_nj*l_nk, 1, attrib_S)
 *
-*        Initialize comdeck for TRAJ variables at time t1
-*        ------------------------------------------------
+*        ----------------------------------------
+*        Create TRAJ variables at time t0-dt (t1)
+*        ----------------------------------------
          VMM_NAM(ut1m   )= 'UT1M'
          VMM_NAM(vt1m   )= 'VT1M'
          VMM_NAM(wt1m   )= 'WT1M'
@@ -282,7 +289,7 @@
          VMM_CREATE(zct1m , l_ni*l_nj*l_nk, 1, attrib_S)
 *
 *        --------------------------------------------------------------
-*C       Initialize comdeck for TRAJ variables at time t2 (No creation)
+*        Initialize comdeck for TRAJ variables at time t2 (No creation)
 *        --------------------------------------------------------------
          VMM_NAM(ut2m   )= 'UT2M'
          VMM_NAM(vt2m   )= 'VT2M'
@@ -301,9 +308,54 @@
          VMM_NAM(st2m   )= 'ST2M'
          VMM_NAM(trt2m  )= 'TRT2M'
 *
-*        ---------------------------------------------------------------
-*C       Initialize comdeck for TRAJ variables with no specific time tag  
-*        ---------------------------------------------------------------
+         if (Schm_modcn.eq.Step_total) then
+*
+*        ---------------------------------------------------
+*        Create TRAJ variables at time tw (tw=t2 work space) 
+*        ---------------------------------------------------
+         VMM_NAM(utwm   )= 'UTWM'
+         VMM_NAM(vtwm   )= 'VTWM'
+         VMM_NAM(wtwm   )= 'WTWM'
+         VMM_NAM(tdtwm  )= 'TDTWM'
+         VMM_NAM(ttwm   )= 'TTWM'
+         VMM_NAM(fitwm  )= 'FITWM'
+         VMM_NAM(qtwm   )= 'QTWM'
+         VMM_NAM(tptwm  )= 'TPTWM'
+         VMM_NAM(fiptwm )= 'FIPWM'
+         VMM_NAM(qptwm  )= 'QPTWM'
+         VMM_NAM(piptwm )= 'PIPWM'
+         VMM_NAM(tpltwm )= 'TPLWM'
+         VMM_NAM(mutwm  )= 'MUTWM'
+         VMM_NAM(psdtwm )= 'PSDWM'
+         VMM_NAM(stwm   )= 'STWM'
+         VMM_NAM(trtwm  )= 'TRTWM'
+*
+         VMM_CREATE(utwm  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(vtwm  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(wtwm  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(tdtwm , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(ttwm  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(fitwm , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(qtwm  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(tptwm , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(fiptwm, LARRAY3D, 1, attrib_S)
+         VMM_CREATE(qptwm , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(piptwm, LARRAY3D, 1, attrib_S)
+         VMM_CREATE(tpltwm, LARRAY3D, 1, attrib_S)
+         VMM_CREATE(psdtwm, LARRAY3D, 1, attrib_S)
+         VMM_CREATE(stwm  , LARRAY2D, 1, attrib_S)
+         if (.not. Schm_hydro_L) then
+            VMM_CREATE(  mutwm, LARRAY3D, 1, attrib_S )
+         endif
+         if ( Tr3d_ntr .gt. 0 ) then
+            VMM_CREATE(trtwm, LARRAY3D, Tr3d_ntr, attrit_S)
+         endif
+*
+         endif
+*
+*        -----------------------------------------------
+*        Create TRAJ variables with no specific time tag  
+*        -----------------------------------------------
          VMM_NAM(gptxm  )= 'GPTXM'
          VMM_NAM(gxtxm  )= 'GXTXM'
          VMM_NAM(multxm )= 'MULXM'
@@ -314,9 +366,9 @@
          VMM_CREATE(multxm, LARRAY3D, 1, attrib_S)
          endif
 *
-*        ----------------------------------------
-*        Initialize TRAJ right hand sides comdeck
-*        ----------------------------------------
+*        ------------------------------------
+*        Create TRAJ right hand sides comdeck
+*        ------------------------------------
 *
 *        Names and keys commons initialization
 *        -------------------------------------
@@ -368,9 +420,9 @@
          VMM_CREATE(rvw1m ,LARRAY3D, 1, attrib_S)
          VMM_CREATE(rvw2m ,LARRAY3D, 1, attrib_S)
 *
-*        -----------------------------------------------------
-*        Initialize TRAJ comdeck for Crank-Nicholson procedure
-*        -----------------------------------------------------
+*        -------------------------------------------------
+*        Create TRAJ comdeck for Crank-Nicholson procedure
+*        -------------------------------------------------
 *
 *        Names and keys commons initialization
 *        -------------------------------------
@@ -410,9 +462,9 @@
             VMM_CREATE(ortrm, LARRAY3D, Tr3d_ntr, attrit_S)
          endif
 *
-*C    ---------------------------------------------------------------------------
-*C    Allocate VMM space for NESTING variable TRAJECTORY comdecks (one time step)
-*C    ---------------------------------------------------------------------------
+*        -------------------------------------------------------------------------
+*        Create VMM space for NESTING variable TRAJECTORY comdecks (one time step)
+*        -------------------------------------------------------------------------
 *
          if (G_lam) then
 *
@@ -464,14 +516,13 @@
 *
          endif
 *
-*C    --------------------------------------------
-*C    Allocate VMM space for Initialization arrays 
-*C    --------------------------------------------
+*     ------------------------------------------
+*     Create VMM space for Initialization arrays 
+*     ------------------------------------------
       if ( Init_balgm_L ) then
 *
       COMMON_INIT(vtam,-100)
 *
-*     -------------------------------
 *     Create digital filter variables
 *     -------------------------------
 *
@@ -530,8 +581,6 @@
       endif
 *
       endif
-*
-*     ---------------------------------------------------------------
 *
  1000 format(
      +//,'Open WA file for TRAJ (S/R V4D_SET_TRAJ)',

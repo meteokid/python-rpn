@@ -1,0 +1,10 @@
+      integer nmax_vmmlist
+      parameter (nmax_vmmlist =1000)
+      
+      integer vmm2rstrt,vmm_token_2rstrt(nmax_vmmlist,7)
+      logical vmm_read_done_L
+      character*8 vmm_name_2rstrt(nmax_vmmlist)
+      common /vmmlist_s/ vmm_name_2rstrt
+      common /vmmlist_i/ vmm2rstrt,vmm_token_2rstrt,vmm_read_done_L
+*
+

@@ -1,0 +1,13 @@
+      integer MAXTR
+      parameter ( MAXTR = 250 )
+*
+      character*4  E_tr3d_name_S, E_trname_S
+      character*50 E_tr3d_list_S
+      integer E_tr3d_ntr
+      real E_tr3d_sval
+
+      common /E_tr_c/ E_tr3d_list_S(MAXTR)
+      common /E_tr_c/ E_tr3d_name_S(MAXTR), E_trname_S(MAXTR)
+
+      common /E_tr_i/ E_tr3d_ntr
+      common /E_tr_r/ E_tr3d_sval(MAXTR)

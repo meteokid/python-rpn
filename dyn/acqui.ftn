@@ -18,6 +18,9 @@
 * v3_21 - Dugas B.             - replace TD by ES in pressure mode
 * v3_30 - Tanguay M.           - Modify Check topo when no interpolation 
 * v3_30 - McTaggart-Cowan R.   - update implementation of variable orography
+* v3_31 - Gravel S.            - only blend topo for LAM if VERTINT is true
+* v3_31 - McTaggart-Cowan R.   - do not set Vtopo to false if not the same topo
+* v3_31 - Bilodeau B.          - correct offline bug
 *
 *object
 *	
@@ -40,11 +43,12 @@
 #include "vtopo.cdk"
 #include "schm.cdk"
 #include "lctl.cdk"
+#include "path.cdk"
 *modules
       integer  bmf_gobe,bmf_get
       external bmf_gobe,bmf_get
 *
-      character*32 pe_file
+      character*504 pe_file
       integer nk_anal
       integer hh,mm,ss, nerr, err, length, i,j,k, errprdf,prdfsum
       integer, parameter :: maxerr = 400
@@ -66,8 +70,9 @@
       mm=bmf_time2/10000-hh*100
       ss=bmf_time2/100-hh*10000-mm*100
 *     
-      call bmf_splitname ( pe_file,Ptopo_mycol,Ptopo_myrow,'../','BM',
-     $                                            bmf_time1,hh,mm,ss )
+      call bmf_splitname ( pe_file,Ptopo_mycol,
+     $                     Ptopo_myrow,trim(Path_input_S)//'/INDATA',
+     $                                      'BM',bmf_time1,hh,mm,ss )
 *
       do i=1,maxerr
          error(i) = -1
@@ -165,16 +170,18 @@
       error(nerr) = bmf_get('VV  ',bmf_time1,bmf_time2,-1,v_temp,-1,
      $                               1,Acqi_niv,1,Acqi_njv,1,Acqi_nktmp)
 *
-      if (.not.Schm_offline_L) then
-      if (.not.Acql_horzint .or. Acql_prsanl) then
+      if (Schm_offline_L) then
+         gz_temp = 0.
+      else
+         if (.not.Acql_horzint .or. Acql_prsanl) then
          nerr = nerr + 1
          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
      $                 gz_temp,-1.,1,l_ni,1,l_nj,1,Acqi_nktmp)
-      else
+         else
          nerr = nerr + 1
          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
      $                 gz_temp(1,1,nk_anal),-1.,1,l_ni,1,l_nj,1,1)
-      endif
+         endif
       endif
 *
 * Set first level heights to current for "growing" mode
@@ -280,8 +287,6 @@ C        do i=1,l_ni
      $              ' ...BUT THE TOPOGRAPHY IS NOT EQUIVALENT...'
                   endif
             endif
-         else
-            Vtopo_L = .false.
          endif
       endif
 *
@@ -391,7 +396,7 @@ C        do i=1,l_ni
 *
       if (error(1).ne.0) call gem_stop ('acqui',-1)
 *
-      if ((G_lam).and.(.not.Acql_prsanl).and.(.not.Schm_offline_L)) then
+      if ((Acql_vertint).and.(G_lam).and.(.not.Acql_prsanl).and.(.not.Schm_offline_L)) then
 *
       do j=1,pil_s
       do i=1,l_ni

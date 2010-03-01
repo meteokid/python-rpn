@@ -9,6 +9,7 @@
 * v3_30 - Desgagne M.      - initial version
 *
 #include "filename.cdk"
+#include "path.cdk"
 *
       integer  fnom,longueur,wkoffit
       external fnom,longueur,wkoffit
@@ -21,8 +22,8 @@
       cnt   = 0
 *
       unf = 0
-      if (fnom  (unf ,'process/liste_inputfiles_for_LAM','SEQ',0).lt.0)
-     $    stop
+      if (fnom  (unf ,trim(Path_input_S)//'/liste_inputfiles_for_LAM',
+     $                                            'SEQ',0).lt.0) stop
 *
  77   cnt=cnt+1
       read (unf, '(a)', end = 9120) pilot_f(cnt)
@@ -30,7 +31,7 @@
  9120 npilf = cnt - 1
       close(unf)
 *
-      pilot_dir = "process/pilot"
+      pilot_dir = trim(Path_input_S)//'/INREP'
       do cnt = 1, npilf
          err = -1
          fn = pilot_dir(1:longueur(pilot_dir))//'/'//

@@ -1,0 +1,62 @@
+#if defined (DOC)
+*
+***comdeck vtw.cdk
+*
+*author M.Tanguay
+*
+* revision
+* v3_31 - Tanguay M.    - initial MPI version
+*
+*______________________________________________________________________
+*                                                                      |
+*  VMM variables at TIME tw (t2 work space)                            |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* utw                | x component of velocity                         |
+* vtw                | y component of velocity                         |
+* wtw                | z component of velocity                         |
+* ttw                | T (temperature)                                 |
+* tdtw               | total divergence (dpi* dot / dpi* + D )         |
+* fitw               | phi (geopotential)                              |
+* qtw                | q = ln p                                        |
+*--------------------|-------------------------------------------------|
+* tptw               | T'       \                                      |
+* fiptw              | phi'      \  perturbations                      |
+* qptw               | q'        /                                     |
+* piptw              | pi'      /                                      |
+*--------------------|-------------------------------------------------|
+* tpltw              | T'  linear                                      |
+*--------------------|-------------------------------------------------|
+* mutw               | nonhydro index mu=dp/dpi-1 [= 0 if hydro]       |
+* psdtw              | pi* dot (vert. vel. in pi* coord.)              |
+* stw                | ln (pi_s/z_s)                                   |
+*--------------------|-------------------------------------------------|
+* trtw               | passive tracer(s)                               |
+*--------------------|-------------------------------------------------|
+*
+#endif
+*
+      MARK_COMMON_BEG(vtw)
+      DCL_VMMVAR( vtw,   utw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,   vtw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,   wtw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,   ttw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,  tdtw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,  fitw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,   qtw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,  tptw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw, fiptw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,  qptw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw, piptw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw, tpltw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,  mutw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw, psdtw, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtw,   stw, real, (LDIST_SHAPE)      )
+      DCL_VMMVAR( vtw,  trtw, real, (LDIST_SHAPE,l_nk,*) )
+      MARK_COMMON_END(vtw)
+
+      character*8 vtw_n_first(1)
+      equivalence (vtw_n_first,VMM_NAM(utw))
+

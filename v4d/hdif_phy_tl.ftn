@@ -12,6 +12,8 @@
 * v3_03 - Tanguay M.        - initial MPI version
 * v3_20 - Tanguay M.        - Remove V4dg_oktrtl_L
 * v3_30 - Tanguay M.        - adapt to bcs
+* v3_31 - Tanguay M.        - add rwnd_L 
+* v3_31 - Tanguay M.        - Control BC  
 *
 *object
 *     see id section
@@ -24,6 +26,9 @@
 #include "lctl.cdk"
 #include "v4dg.cdk"
 #include "ifd.cdk"
+#include "hspng.cdk"
+*
+         if (Hspng_nj.ge.1) call gem_stop ('HSNPG TL-AD not up to date',-1)
 *
 *        Physics timestep & Horizontal diffusion & Vertical sponge
 *        ---------------------------------------------------------
@@ -38,7 +43,6 @@
 *
             call   hzd_main_tl ()
             call vspng_main_tl ()
-            if (.not.G_lam) call hspng_main_tl ()
 *
          else
 *
@@ -48,7 +52,6 @@
 *
             call   hzd_main_tl ()
             call vspng_main_tl ()
-            if (.not.G_lam) call hspng_main_tl ()
 *
             if ( Schm_phyms_L ) call p_main_tl (Lctl_step)
 *
@@ -58,7 +61,7 @@
 * Update Lateral BCs with data that has seen physics
           call nest_update
 * Impose Lateral BCs within Pil regions
-          call nest_bcs
+          call v4d_nest_bcs
       endif
 *
       return

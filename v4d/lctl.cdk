@@ -13,14 +13,18 @@
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
 * Lctl_step          | current time step of the integration            |
+* Lctl_reset         | time step to reset to time step 0               |
 *----------------------------------------------------------------------
 *
 *
 #endif
       logical Lctl_r8stat_L, Lctl_debug_L
-      integer Lctl_step
+      integer Lctl_step, Lctl_reset
 *
       common / Lctl / Lctl_step
       MARK_COMMON_BEG(lctl_l)
       common / Lctl_l / Lctl_r8stat_L, Lctl_debug_L
       MARK_COMMON_END(lctl_l)
+      MARK_COMMON_BEG(lctl_i)
+      common / Lctl_i / Lctl_reset
+      MARK_COMMON_END(lctl_i)

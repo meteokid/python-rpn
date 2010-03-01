@@ -16,10 +16,12 @@
 #include "path.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
+#include <clib_interface.cdk>
 *
       integer  rpn_comm_bloc,ouvrstrt,wkoffit
       external rpn_comm_bloc,ouvrstrt,wkoffit
-*
+* 
+      character*3 mycol_S,myrow_S
       character*12 dumc1_S
       character*500 fn
       integer err,n1,n2,n3,n4,n5,n6,n7,bufnml(10000),unf
@@ -48,10 +50,9 @@
       COMMON_BROADCAST (Ptopo_b)
       COMMON_BROADCAST (Ptopo_l)
 *
-* Initializes Path_dfwmil_S and Path_nml_S
+* Initializes Path_nml_S
 *
-      call getenvc ('rep_from_which_model_is_launched',Path_dfwmil_S)
-      Path_nml_S = trim(Path_dfwmil_S)//'/process/model_settings'
+      Path_nml_S = trim(Path_input_S)//'/model_settings'
 *
 * Initializes PEs block partitions for the PEs (grouping PEs)
 *
@@ -79,7 +80,11 @@
 * 
 * Changing directory to local Ptopo_mycol_Ptopo_myrow 
 *
-      call set_run_dir_xy (Ptopo_mycol, Ptopo_myrow)
+      write(mycol_S,10) Ptopo_mycol
+      write(myrow_S,10) Ptopo_myrow
+10    format(i3.3)
+      err= clib_mkdir(mycol_S//'-'//myrow_S)
+      err= clib_chdir(mycol_S//'-'//myrow_S)
 *
 * Writing local namelist file Path_nml_S (blind write)
 *
@@ -93,7 +98,7 @@
 *
       unf=0
       Schm_theoc_L = .false.
-      fn=trim(Path_dfwmil_S)//'/process/theoc'
+      fn=trim(Path_input_S)//'/theoc'
       if (wkoffit(fn).gt.-3) then
          if (Ptopo_myproc.eq.0) write (Lun_out,*)
      $                          'Assume Theoretical case'

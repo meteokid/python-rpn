@@ -15,6 +15,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Lee V.            - CFL, trajectory stats for LAM
 * v3_21 - Lee V.            - Remove Tr2d
+* v3_31 - Desgagne M.       - new scope for operator + adw_cliptraj (LAM)
 *
 *object
 *     see above
@@ -37,7 +38,7 @@
       external vmmlod,vmmget,vmmuld
 
       integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf
-      integer err, key(max(Tr3d_ntr,5)), key0, trunc(4)
+      integer err, key(max(Tr3d_ntr,5)), key0
       real tr,buf(l_ni,G_nk),cfl
       pointer (patr, tr(LDIST_SHAPE,*))
 *     ---------------------------------------------------------------
@@ -115,13 +116,6 @@
      $                          Adw_cfl_i(3,3),cfl
             Adw_cfl_8 (:  ) = 0.0d0
             Adw_cfl_i (:,:) = 0
-         endif
-         if (Adw_trunc_traj_L) then
-            call rpn_comm_Allreduce (Adw_trunc,trunc,4,
-     $                            "MPI_INTEGER","MPI_SUM","grid",err)
-            if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0)
-     $         write(6,1003)Lctl_step,  " Trj Cut :",trunc(1)+trunc(2)+
-     $           trunc(3)+trunc(4),trunc(1),trunc(2),trunc(3),trunc(4)
          endif
       endif
 *

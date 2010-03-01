@@ -178,7 +178,7 @@
             xnjm    = 0
             xnzm    = 0
 *
-            clima_S = trim( Path_dfwmil_S ) // '/process/imclima'
+            clima_S = trim(Path_input_S)//'/imclima'
 *
             xnerr = wkoffit( clima_S )
 *
@@ -220,7 +220,7 @@
             xnerr  =  0
             acli_L = .false.
 *
-            anclima_S = trim( Path_dfwmil_S ) // '/process/imanclima'
+            anclima_S = trim(Path_input_S)//'/imanclima'
 *
             xnerr = wkoffit( anclima_S )
 *

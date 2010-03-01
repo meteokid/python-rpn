@@ -23,6 +23,7 @@
 * v3_22 - Belanger/Lee      - Introduce vtap 
 * v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
 * v3_30 - Lee V.            - remove call to rpn_comm_xch
+* v3_31 - Bilodeau B.       - Offline mode
 *
 *object
 *	Performs preprocessing of the data: part1. We compute:
@@ -122,6 +123,7 @@
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
 *
+      if (.not.Schm_offline_L) then
       call uv2tdpsd ( Ind_td,Ind_psd,Ind_u,Ind_v,Ind_s,LDIST_DIM,l_nk )
 *
 c     if (Acid_test_L) then 
@@ -141,6 +143,7 @@ c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
          call initw2 ( Ind_w, Ind_mul, Ind_mu, Ind_u, Ind_v, Ind_psd, 
      $                 Ind_fi, Ind_t, Ind_s, LDIST_DIM )
          endif
+      endif
       endif
 *
 *     ------

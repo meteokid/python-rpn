@@ -14,6 +14,7 @@
 * v3_01 - Desgagne M.               - initial version (after MC2 v_4.9.3)
 * v3_03 - Tanguay M.                - Adjoint Lam configuration
 * v3_20 - Pellerin P. and Y. Delage - Special interpolations for MEC 
+* v3_31 - Bilodeau B.               - Debug offline mode
 *
 *implicits
 #include "glb_ld.cdk"
@@ -132,6 +133,7 @@
       call prsdate (yy,mo,dd,hh,mm,ss,dum,datev)
       call pdfjdate2 (tx,yy,mo,dd,hh,mm,ss)
 *
+
       if (datev.gt.Lam_current_S) then
          dtf = (tx-tf_nest) * sid / Cstv_dt_8
          dayfrac = dble(Lam_nesdt)*rsid
@@ -141,6 +143,7 @@
          call pdfjdate2 (tf_nest,yy,mo,dd,hh,mm,ss)
          if (Lctl_step.gt.1) then
 *
+            if (.not.Schm_offline_L) then
 *           Copy contents from BCS_UF to BCS_U
 *
             do i=1,bcs_sz
@@ -168,6 +171,7 @@
                   bcs_tr(id+i-1) = bcs_trf(id+i-1)
                enddo
             enddo
+            endif
 *
 *           Copy contents from NEST_UF to NEST_U
 *
@@ -238,10 +242,13 @@
 *
       endif
 *
+
 *     Temporal linear interpolation
 *
       a = (tf_nest-tx)/ (tf_nest - tx + (dtf*Cstv_dt_8 * rsid) )
       b = one - a
+*
+      if (.not.Schm_offline_L) then
       do i=1,bcs_sz
          bcs_u(i) = a*bcs_u(i) + b*bcs_uf(i)
          bcs_v(i) = a*bcs_v(i) + b*bcs_vf(i)
@@ -267,6 +274,7 @@
             bcs_tr(id+i-1) = a*bcs_tr(id+i-1) + b*bcs_trf(id+i-1)
          enddo
       enddo
+      endif
 *
       do k= 1, G_nk
       do j= 1, l_nj 
@@ -307,6 +315,7 @@
          key1(n) = key1_ + n
          key2(n) = key2_ + n
       end do
+
 
       if (Tr3d_ntr.gt.0) then
          if ( .not.Schm_offline_L) then

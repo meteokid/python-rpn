@@ -1,0 +1,87 @@
+#if defined (DOC)
+*
+***comdeck out3.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  OUTPUT GLOBAL CONTROL VARIABLES                                     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Out3_xnbits_s      | list of variables that will require a compaction|
+*                    | that is different from Out3_nbitg               |
+* Out3_filt_s        | list of variables what will require filtering;  |
+*                    | for each variable, there is a corresponding     |
+*                    | number of filter passes (Out3_filtpass) and the |
+*                    | filter coefficient (Out3_filtcoef)              |
+* Out3_date          | date time stamp of the run                      |
+* Out3_etik_S        | label to use for model run                      |
+* Out3_unit_S        | output name in units of steps or hours (P or H) |
+*                    | or days,minutes,seconds,(D,M,S)                 |
+* Out3_ndigits       | minimum number used to count the units in       |
+*                    | output name (type is specified in Out3_unit_S   |
+* Out3_cliph_L       | .true. to clip humidity variables on output     |
+* Out3_compress_L    | .true. to have compressed FST files on output   |
+* The following are "cub??"   switches used in the context of vertical |
+* interpolation toward pressure levels:                                |
+* Out3_cubzt_L       | .true. for cubic interpolation for GZ,VT and HU |
+* Out3_cubuv_L       | .true. for cubic interpolation for UU,VV and UV |
+* Out3_cubds_L       | .true. for cubic interpolation for DS           |
+* Out3_cubqs_L       | .true. for cubic interpolation for QS and Q3    |
+* Out3_cubdd_L       | .true. for cubic interpolation for DD           |
+* Out3_cubqq_L       | .true. for cubic interpolation for QQ and QR    |
+* Out3_cubww_L       | .true. for cubic interpolation for WW           |
+* Out3_vt2gz_L       | .true. to compute hydrostatic GZ from P0 and VT |
+* Out3_debug_L       | .true. to echo standard out from FST functions  |
+* Out3_ip3           | integer value for IP3 in the FST records        |
+*                    |  default: 0, >0 : given value, -1:uses timestep |
+* Out3_flipit_L      | .true. to flip field from ni*nj*nk to ni*nk*nj  |
+* Out3_satues_L      | .true. for humidity variables to consider       |
+*                    |        water/ice phase for saturation           |
+*                    | .false. for water phase only for saturation     |
+* Out3_nbitg         | number of bits to keep for all outputs except   |
+*                    | those specified in Out3_xnbits_s                |
+* Out3_linbot        | number of layers close to the bottom of the     |
+*                    | model within which a linear interpolation of GZ |
+*                    | and VT is done even if cubic interpolation is   |
+*                    | .true. (it has no effect if cubic interpolation |
+*                    |                                  is .false.)    |
+* Out3_nundr         | number of levels for underground extrapolation  |
+* Out3_zund          | list of levels for underground extrapolation    |
+* Out3_filtpass      | number of filtering passes (see Out3_filt_s)    |
+* Out3_filtcoef      | filter coefficient (see Out3_filt_s)            |
+* Out3_closetep      | requested number of steps to close output file  |
+* ---------------------------------------------------------------------
+#endif
+#include "dimout.cdk"
+      character*16 Out3_xnbits_S(MAXELEM),Out3_filt_S(MAXELEM)
+      character*12 Out3_etik_S
+      character*4  Out3_unit_S
+      logical Out3_cliph_L, Out3_cubzt_L, Out3_cubuv_L, 
+     $        Out3_cubds_L, Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L, 
+     $        Out3_cubww_L, Out3_vt2gz_L, Out3_flipit_L,Out3_debug_L,
+     $        Out3_compress_L,Out3_satues_L
+      integer Out3_nbitg, Out3_linbot, Out3_nundr, Out3_zund(MAXELEM),
+     $        Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits,
+     $        Out3_closestep,Out3_filtpass_max, Out3_xnbits_max,Out3_ip3,Out3_date
+      real    Out3_filtcoef(MAXELEM)
+*
+      common / outcc/ Out3_xnbits_S, Out3_filt_S, Out3_etik_S
+      common / outi/ Out3_xnbits,Out3_xnbits_max,Out3_filtpass,Out3_filtpass_max,Out3_date
+      common / outr/ Out3_filtcoef
+      MARK_COMMON_BEG(Out3_l)
+      common / Out3_l / Out3_cliph_L,Out3_cubzt_L,Out3_cubuv_L, 
+     $                 Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L,Out3_cubqq_L, 
+     $                 Out3_cubww_L, Out3_vt2gz_L, Out3_flipit_L,Out3_debug_L,
+     $                 Out3_compress_L, Out3_satues_L
+      MARK_COMMON_END(Out3_l)
+*
+      MARK_COMMON_BEG(Out3_c)
+      common / Out3_c / Out3_unit_S
+      MARK_COMMON_END(Out3_c)
+      MARK_COMMON_BEG(Out3_i)
+      common / Out3_i / Out3_nbitg,Out3_linbot,Out3_nundr,Out3_zund,
+     $                  Out3_ndigits, Out3_closestep,Out3_ip3
+      MARK_COMMON_END(Out3_i)
+*

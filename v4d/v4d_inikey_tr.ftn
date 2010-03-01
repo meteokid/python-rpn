@@ -1,0 +1,15 @@
+***s/r v4d_inikey_tr
+*
+      subroutine v4d_inikey_tr ()
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_31 - Tanguay M.        - initial version
+*
+      call inikey_tr ()
+
+      return
+      end

@@ -13,6 +13,7 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v3_31 - Desgagne M.       - restart with physics BUSPER
 *      
 *object
 *
@@ -29,13 +30,12 @@
 #include "dimout.cdk"
 #include "xst.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 #include "rstr.cdk"
 #include "init.cdk"
 #include "out2.cdk"
 #include "v4dg.cdk"
 #include "lam.cdk"
-*
 *
       logical boot_L
       integer ier,dostep(MAXSET),dostep_max
@@ -85,9 +85,5 @@
 *     
       if (Xst_nstat.gt.0) call sergout( F_stepno.eq.1 )
 *
-*     Coupling with other surface modules or models via Oasis
-*
-      if (C_coupling_L) call itf_cpl_cplg_surf()
-*   
       return
       end

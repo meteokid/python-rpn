@@ -1,0 +1,32 @@
+#if defined (DOC)
+*
+***comdeck v4d_bc.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH bcING for current timestep              |
+*  For bc_uf,bc_vf - used for future timesteps                     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Bc_u               | x component of velocity                         |
+* Bc_v               | y component of velocity                         |
+*--------------------|-------------------------------------------------|
+* Bc_tp              | T'       \                                      |
+*--------------------|-------------------------------------------------|
+* Bc_s               | ln (dpi/dpi*)                                   |
+* Bc_tr              | tracer 3d variables                             |
+*----------------------------------------------------------------------|
+*
+*
+#endif
+      MARK_COMMON_BEG (bc)
+      DCL_VMMVAR( bc, bc_u   , real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( bc, bc_v   , real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( bc, bc_tp  , real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( bc, bc_s   , real, (LDIST_SHAPE,*     ) )
+      DCL_VMMVAR( bc, bc_tr  , real, (LDIST_SHAPE,l_nk,*) )
+      MARK_COMMON_END (bc)
+      character*8 bc_n_first(1)
+      equivalence (bc_n_first,VMM_NAM(bc_u))

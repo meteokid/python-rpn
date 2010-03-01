@@ -18,6 +18,7 @@
 #include "itf_phy_buses.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
+#include "path.cdk"
 *
 *MODULES
 *
@@ -67,7 +68,7 @@
       end do
 *
       osgeo = 53
-      open(osgeo,file='process/geophy.bin',access='SEQUENTIAL',
+      open(osgeo,file=trim(Path_output_S)//'/geophy.bin',access='SEQUENTIAL',
      $                                      form='UNFORMATTED')
 *
       write(osgeo) p_bgeo_top, p_bgeo_siz

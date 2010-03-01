@@ -55,8 +55,8 @@
 *
       MARK_COMMON_BEG (V4d_jcst_r)
       common / V4d_jcst_r / V4dj_uvwt,V4dj_tpwt,V4dj_spwt,V4dj_trwt,V4dj_fipwt, 
-     %                      V4dj_invarea,V4dj_pj,
-     %                      V4dj_thickx_,V4dj_thickxu_,V4dj_thicky_,
+     %                      V4dj_invarea,V4dj_pj
+      common / V4d_jcst_p / V4dj_thickx_,V4dj_thickxu_,V4dj_thicky_,
      %                      V4dj_thickyv_,V4dj_thickz_
       MARK_COMMON_END (V4d_jcst_r)
 *

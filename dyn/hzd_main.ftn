@@ -114,6 +114,7 @@
 *  1. Implicit horizontal diffusion *
 *************************************
 
+      if (Hzd_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
 
       if (Hzd_fact_L) then
          call hzd_fact ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
@@ -247,7 +248,7 @@
 *
       endif
 *
-      err = vmmuld(-1,0)
+      if (Hzd_rwnd_L) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 *    
  1001 format(/,3X,'NO HORIZONTAL DIFFUSION REQUIRED')
 

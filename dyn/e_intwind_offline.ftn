@@ -1,0 +1,198 @@
+***s/r e_intwind_offline - Wind components horizontal interpolation
+*
+#include "model_macros_f.h"
+*
+      subroutine e_intwind_offline
+      implicit none
+*
+*author    B. Bilodeau      - spring 2008
+*
+*revision
+* v3_31 - Bilodeau B.       - initial version
+*
+*object
+*        see above ID
+*
+*ARGUMENTS
+*
+*IMPLICITS
+#include "e_option.cdk"
+#include "e_fu.cdk"
+#include "e_anal.cdk"
+#include "e_grids.cdk"
+#include "e_cdate.cdk"
+#include "e_topo.cdk"
+#include "dcst.cdk"
+#include "grd.cdk"
+#include "bmf.cdk"
+#include "e_schm.cdk"
+#include "pilot.cdk"
+#include "e_grdc.cdk"
+#include "hgc.cdk"
+*
+      integer  ezqkdef,ezdefset,ezsetopt,ezuvint,
+     $         fstinf,fstlir,fstprm,e_rdhint3
+      external ezqkdef,ezdefset,ezsetopt,ezuvint,
+     $         fstinf,fstlir,fstprm,e_rdhint3
+*
+      integer i, j, k, src_gid, key1, key2, nic, njc, ni1, nj1, 
+     $        nk1,nkc,err,iu,ju,iv,jv,nu,nv
+      integer nisu,nisv,njsu,njsv
+      integer nis,njs,niw,njw,iw,ie,jw,is,js,jn
+      integer ip2, ip3
+      integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
+     $        dty, swa, lng, dlf, ubc, ex1, ex2, ex3
+      character*1 typ,grd
+      character*4 var,var_uu,var_vv
+      character*12 lab
+      logical flag_ut1
+      logical must_interpo_L,samegrid
+      external samegrid
+      real, dimension (:), allocatable :: uu,vv
+      real, dimension (:), allocatable :: w1,w2
+      real c1
+      real, dimension (:,:), allocatable :: uuf,vvf
+*
+      real xlon,ylat
+      pointer (paxlon, xlon(*)), (paylat, ylat(*))
+
+*
+      logical must_interpo_s
+      integer un_s,nic_s,njc_s,g1_s,g2_s,g3_s,kind,id_s
+      data un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s /-1,-1,-1,-1,-1,-1,-1/
+      save un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s,must_interpo_s
+*
+* ---------------------------------------------------------------------
+*
+      nisu = niu
+      njsu = nju
+      nisv = niv
+      njsv = njv
+*
+      allocate (uu(nisu*njsu),vv(nisv*njsv))
+*     uuf and vvf are on phi grid
+      allocate (uuf(nifi,njfi),vvf(nifi,njfi))
+*
+      nu = nisu*njsu
+      nv = nisv*njsv
+*
+      anal_hav(1) = 1
+*
+      ip2 = ip2a
+      ip3 = ip3a
+*
+      key1=fstinf(e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,
+     $                                                  ' ','UU')
+      err= fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1,
+     $             P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA,
+     $             LNG, DLF, UBC, EX1, EX2, EX3)
+      src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, e_fu_anal)
+*
+*     Should we interpolate the winds?
+*
+      must_interpo_L = .false.
+      if ((nic.ne.nifi).or.(njc.ne.njfi)) then
+          must_interpo_L = .true.
+      else
+         if (     (un_s.eq.e_fu_anal).and.(nic_s.eq.nic).and.(njc_s.eq.njc)
+     $       .and.(g1_s.eq.g1 ).and.(g2_s .eq.g2 ).and.(g3_s .eq.g3 )
+     $       .and.(id_s.eq.src_gid)
+     $      ) then
+            must_interpo_L = must_interpo_s
+         else
+            paxlon = loc(xfi(1))
+            paylat = loc(yfi(1))
+            must_interpo_L =
+     $           .not. samegrid (e_fu_anal, nic,njc, g1,g2,g3, Hgc_ig1ro,
+     $                 Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
+            un_s = e_fu_anal
+            nic_s= nic
+            njc_s= njc
+            g1_s = g1
+            g2_s = g2
+            g3_s = g3
+            id_s = src_gid
+            must_interpo_s = must_interpo_L
+         endif
+      endif
+*
+      do k=1,lv
+*
+         allocate (w1(nic*njc),w2(nic*njc))
+*
+         ip2 = ip2a
+         ip3 = ip3a
+         key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ',
+     $                            na(k), ip2, ip3, ' ', 'UU')
+         key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ',
+     $                            na(k), ip2, ip3, ' ', 'VV')
+         if (key1.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) then
+            write(6,*)'ERROR: UU NOT AVAILABLE,'
+            goto 55
+         endif
+         if (key1.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) then
+            write(6,*)'ERROR: VV NOT AVAILABLE,'
+            goto 55
+         endif
+*
+*
+*        Horizontal Interpolation on PHI grid, if necessary
+*
+         if (must_interpo_L) then
+            err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+            err = ezdefset ( dstf_gid, src_gid )
+            err = ezuvint  ( uuf,vvf,w1,w2 )
+            write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
+            write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
+         else
+*
+            write(6,'(A25,A30,A3,A12,3I5)') 
+     $          "(S/R e_intwind_offline) ",
+     $          "NO horizontal interpolation on ","UU"," for ip123= ",na(k),ip2,ip3
+            write(6,'(A25,A30,A3,A12,3I5)') 
+     $          "(S/R e_intwind_offline) ",
+     $          "NO horizontal interpolation on ","VV"," for ip123= ",na(k),ip2,ip3
+*
+            do j=1,njfi
+               do i=1,nifi
+                  uuf(i,j) = w1((j-1)*nifi+i)
+                  vvf(i,j) = w2((j-1)*nifi+i)
+               end do
+            end do
+         endif     
+*
+*        copy uuf (phi grid) into uu
+         do j=1,njsu
+            do i=1,nisu
+               uu((j-1)*nisu+i) = uuf(i,j)
+            end do
+         end do
+*        copy vvf (phi grid) into vv
+         do j=1,njsv
+            do i=1,nisv
+               vv((j-1)*nisv+i) = vvf(i,j)
+            end do
+         end do
+*
+         call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
+         call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+*
+         deallocate(uu,vv,uuf,vvf,w1,w2)
+*
+      end do
+*
+*
+      goto 99
+ 55   call e_arret( 'e_intwind' )
+*
+*
+ 99   continue
+      call bmf_splitwrall ('AHAV',2,1,1,Bmf_time1,Bmf_time2,
+     $                                       0,0,40,0,anal_hav)
+      call bmf_splitend
+      return
+*
+ 120  format ('|',1x,a8,'|',1x,a2,'  |',2(i7,' |'),i3,'  |',1x,a3,
+     $        ' |',1x,a7,'  |',1x,a16,'|')
+* ---------------------------------------------------------------------
+      end

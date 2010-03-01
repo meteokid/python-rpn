@@ -23,6 +23,7 @@
 * v3_11 - Tanguay M.        - Introduce V4dg_oktrcv_L 
 * v3_20 - Tanguay M.        - Remove V4dg_oktrtl_L 
 * v3_30 - Tanguay M.        - set Mem_phyncore_L 
+* v3_31 - Tanguay M.        - Control BC
 *
 *object
 *     see id section
@@ -37,6 +38,8 @@
 #include "v4dj.cdk"
 #include "v4dm.cdk"
 #include "mem.cdk"
+#include "v4dg_bc.cdk"
+#include "step.cdk"
 *
 *----------------------------------------------------------------
 *
@@ -84,6 +87,25 @@
 *        NOTE: .T.= u,v image winds (used in dynout/blocstat)  
 *        ----------------------------------------------------
          V4dg_imguv_L = .true.
+*
+*        Set default time
+*        ----------------
+         if (V4dg_bc_variant.eq.1) then
+*
+             V4dg_bc_t1 = 0
+*
+         elseif(V4dg_bc_variant.eq.2) then
+*
+             V4dg_bc_t1 = 0
+             V4dg_bc_t2 = Step_total
+*
+         elseif(V4dg_bc_variant.eq.3) then
+*
+             V4dg_bc_t1 = 0
+             V4dg_bc_t2 = Step_total/2
+             V4dg_bc_t3 = Step_total
+*
+         endif
 *
          if (Lun_out.gt.0) write(Lun_out,4000) V4dg_tlm_L,V4dg_oktr_L,V4dg_oktrcv_L, 
      %                                         V4dg_grd_L,V4dg_range,V4dg_start,V4dg_imguv_L 

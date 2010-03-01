@@ -78,17 +78,21 @@
       call hpalloc (Geomn_lonrx_, l_ni *l_nj , err, 1)
 *
       if (G_lam) then
-         ierx= stretch_axis2( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left,
-     $     Grd_ni, Grd_nila, r1, .false., Lun_debug_L, Grd_dxmax, nimax, Grd_gauss_L)
-         iery= stretch_axis2( ygi_8, Grd_dy, Grd_y0, Grd_yl, Grd_belo,
-     $     Grd_nj, Grd_njla, s1, .false., Lun_debug_L, Grd_dymax, njmax, Grd_gauss_L)
+         ierx= stretch_axis2 ( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left,
+     $           Grd_ni, Grd_nila, r1, .false., Lun_debug_L, Grd_dxmax, 
+     $           nimax, Grd_gauss_L, Dcst_pi_8 )
+         iery= stretch_axis2 ( ygi_8, Grd_dy, Grd_y0, Grd_yl, Grd_belo,
+     $           Grd_nj, Grd_njla, s1, .false., Lun_debug_L, Grd_dymax, 
+     $           njmax, Grd_gauss_L, Dcst_pi_8 )
       else
          nila = Grd_nila
          if (Grd_ni.eq.Grd_nila)  nila = Grd_nila+1
-         ierx= stretch_axis2( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left,
-     $     Grd_ni+1, nila  , r1, .false., Lun_debug_L, Grd_dxmax, nimax, Grd_gauss_L)
-         iery= stretch_axis2( ygi_8, Grd_dy, Grd_y0, Grd_yl, Grd_belo,
-     $     Grd_nj, Grd_njla, s1, .true. , Lun_debug_L, Grd_dymax, njmax, Grd_gauss_L)
+         ierx= stretch_axis2 ( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left,
+     $             Grd_ni+1, nila, r1, .false., Lun_debug_L, Grd_dxmax, 
+     $             nimax, Grd_gauss_L, Dcst_pi_8 )
+         iery= stretch_axis2 ( ygi_8, Grd_dy, Grd_y0, Grd_yl, Grd_belo,
+     $             Grd_nj, Grd_njla, s1, .true., Lun_debug_L, Grd_dymax,
+     $             njmax, Grd_gauss_L, Dcst_pi_8 )
       endif
 *
       if (Lun_out.gt.0) then

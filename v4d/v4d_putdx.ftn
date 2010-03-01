@@ -54,6 +54,7 @@
 #include "tr3d.cdk"
 #include "lctl.cdk"
 #include "path.cdk"
+#include <clib_interface.cdk>
 #include <prof_f.h>
 *
 *     Local variables
@@ -68,8 +69,8 @@
 *
       character*256 pathdwga_S,pathdwgf_S
 *
-      integer  vmmlod,vmmget,vmmuld,prof_wrrec,longueur
-      external vmmlod,vmmget,vmmuld,prof_wrrec,longueur
+      integer  vmmlod,vmmget,vmmuld,prof_wrrec
+      external vmmlod,vmmget,vmmuld,prof_wrrec
 *
       integer key1(Tr3d_ntr), key1_, key1m(Tr3d_ntr), key1m_, n, err
       real hut1, hut1m
@@ -215,7 +216,7 @@
 *        ----------------------
           write(Lun_out,*) 'Opening file dwgf PROF file'
 *
-          pathdwgf_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/dwgf1.prof'
+          pathdwgf_S = trim(Path_xchg_S)//'/dwgf1.prof'
           ihdlout = prof_open(pathdwgf_S,'WRITE',Pr_mode_S)
 *
           if(ihdlout.le.0) then
@@ -230,7 +231,7 @@
 *        ----------------------
           write(Lun_out,*) 'Opening file dwga PROF file'
 *
-          pathdwga_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/dwga.prof'
+          pathdwga_S = trim(Path_xchg_S)//'/dwga.prof'
           ihdlout = prof_open(pathdwga_S,'WRITE',Pr_mode_S)
 *
           if(ihdlout.le.0) then

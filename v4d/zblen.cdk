@@ -1,0 +1,30 @@
+#if defined (DOC)
+*
+***comdeck zblen.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH VERTICAL SPONGE (tested with theoretical  |
+*                                             cases)                   |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Zblen_L            | .T. apply vertical sponge to momentum, and      |
+*                    | divergence field                                |
+* Zblen_spngtt_L     | if .T. and Zblen_L=.T., apply sponge also to    |
+*                    | temperature field                               |
+* Zblen_hmin         | height (in meters) of lower boundary for sponge |
+* Zblen_spngthick    | thickness (in meters) of vertical sponge        |
+*----------------------------------------------------------------------
+*
+#endif
+
+      real Zblen_hmin,Zblen_spngthick
+      logical Zblen_L, Zblen_spngtt_L
+      MARK_COMMON_BEG (Zblen_r)
+      common /Zblen_r/ Zblen_hmin,Zblen_spngthick
+      MARK_COMMON_END (Zblen_r)      
+      MARK_COMMON_BEG (Zblen_l)
+      common /Zblen_l/ Zblen_L, Zblen_spngtt_L
+      MARK_COMMON_END (Zblen_l)      

@@ -16,6 +16,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Lee V.            - Remove TR2d
 * v3_30 - Desgagne M.       - Removed phy memcore option
+* v3_31 - McTaggart-Cowan R.- correction for Vtopo mode in digflt
 *
 *object
 *	
@@ -29,6 +30,7 @@
 #include "lun.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
+#include "p_geof.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
@@ -40,7 +42,7 @@
       external vmmlod,vmmget,vmmuld
 *
       integer err, key(26), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
-     $        keya(Tr3d_ntr)
+     $        keya(Tr3d_ntr),key_topo(2)
       real tr1,tra
       pointer (patr1, tr1(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
       real    busper(max(1,p_bper_siz)), buf(l_ni,G_nk), dfcoef 
@@ -241,6 +243,24 @@
       Rstri_half_L = .false.
       if (Lctl_step.ge.(Init_dfnp-1)/2) Rstri_half_L = .true.
 *
+
+************************************************************************
+* Orographic field at half span is saved to be used after initaliazation
+************************************************************************
+
+      if ( Lctl_step .eq. (Init_dfnp-1)/2) then
+         key_topo(1) = VMM_KEY(topo)
+         key_topo(2) = VMM_KEY(topoa)
+         err = vmmlod(key_topo,size(key_topo))
+         err = VMM_GET_VAR(topo)
+         err = VMM_GET_VAR(topoa)
+         do j=1,l_nj
+           do i=1,l_ni
+             topoa(i,j) = topo(i,j)
+           enddo
+         enddo
+      endif
+
       return
       end
 

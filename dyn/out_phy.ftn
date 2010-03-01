@@ -16,7 +16,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 * v3_20 - Lee V.            -  initial GEMDM version
 * v3_21 - Lee V.            -  bugfix for LAM output
 * v3_30 - McTaggart-Cowan R.-  allow for user-defined domain tag extensions
-*
+* v3_31 - Lee V.            -  modification of Out_etik_S in out_sgrid only
+* v3_31 - Lee and Bilodeau  -  in offline mode, extend physics output
+*                              grid to whole domain
+* v3_31 - Lee V.            -  kind is set to 2 (press) for 2D fields, not -1
 *
 *OBJECT
 *    Gather the index of physics variables to write on disk 
@@ -51,6 +54,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "outp.cdk"
 #include "ptopo.cdk"
 #include "v4dg.cdk"
+#include "schm.cdk"
 *
 **
       character*4 ext_S
@@ -111,19 +115,24 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                   grille_y0.ne.Grid_y0(outp_grid(kk)).or.
      $                   grille_y1.ne.Grid_y1(outp_grid(kk)) ) )
      $                   ig1=Grid_ig1(outp_grid(kk))+100
-
+            if (Schm_offline_L) then
+               grille_x0 = max(1   ,Grid_x0(outp_grid(kk)))
+               grille_x1 = min(G_ni,Grid_x1(outp_grid(kk)))
+               grille_y0 = max(1   ,Grid_y0(outp_grid(kk)))
+               grille_y1 = min(G_nj,Grid_y1(outp_grid(kk)))
+            endif
             call out_sgrid(grille_x0,grille_x1,grille_y0,grille_y1,
      $                   periodx_L,
      $                   ig1,Grid_ig2(outp_grid(kk)),
      $                   Grid_stride(outp_grid(kk)),
-     $                   Grid_etikext_s(outp_grid(kk)),
+     $                   Grid_etikext_s(outp_grid(kk)),etikadd_S,
      $                   Geomn_longs, Geomn_latgs          )
          levset= Outp_lev(kk)
          nk_o =  Level_max(levset)
          allocate (ind_o(nk_o+1))
          call out_slev(Level_typ(levset),Level(1,levset),
      $                 ind_o,nk_o,G_nk,Level_kind_ip1,'p')
-         call out_sfile(Out3_closestep,stepno,etikadd_S,ip3,ext_S)
+         call out_sfile(Out3_closestep,stepno,ip3,ext_S)
          if (Level_typ(levset).eq.'M') then
          do ii=1, Outp_var_max(kk)
             do j=1,Obus_top
@@ -164,7 +173,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *                      2d field
                           call ecris_fst2(bus_o(1,obus_offset(j)),
      $                             1,l_ni,1,l_nj,0.0,obus_var_s(j),
-     $                             Obus_mul(j),Obus_add(j), -1,1,1,1, 
+     $                             Obus_mul(j),Obus_add(j), 2,1,1,1, 
      $                             Outp_nbit(ii,kk) )
                        endif
                     endif

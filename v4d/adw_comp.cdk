@@ -1,0 +1,29 @@
+#if defined (DOC)
+*
+*
+*revision
+* v3_21 - McTaggart-Cowan R.		- initial version
+*
+***comdeck adw_comp.cdk
+*
+*_______________________________________________________________
+*								|
+*   FLAGS TO HANDLE RE-COMPUTATION OF POSITIONAL COEFFICIENTS   |
+*_______________________________________________________________
+*		|						|
+* NAME		|						|
+*---------------|-----------------------------------------------|
+* adw_comp_cub_L| .true. -> recompute positional coefficients   |
+*		|	    for cubic interpolation		|
+*		| .false.-> use saved positional coefficients	|
+* adw_comp_lin_L| .true. -> recompute positional coefficients   |
+*		|	    for linear interpolation		|
+*---------------------------------------------------------------
+*
+#endif
+
+	logical adw_comp_cub_L, adw_comp_lin_L
+
+	MARK_COMMON_BEG (adw_comp)
+	common / adw_comp / adw_comp_cub_L, adw_comp_lin_L
+	MARK_COMMON_END (adw_comp)

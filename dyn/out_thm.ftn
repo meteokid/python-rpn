@@ -52,6 +52,9 @@
 * v3_22 - Lee V.            - reduced args in calling sequence for calzz
 * v3_30 - Bilodeau/Tanguay  - Output pair (TT,HU) for the adjoint 
 * v3_30 - Plante A.         - Correction for THETA (TH) output
+* v3_31 - Bilodeau B.       - Output real temperature in offline mode
+* v3_31 - Lee V.            - kind is set to 2 (press) for 2D fields, not -1
+* v3_31 - Tanguay M.        - Remove lastdt .ne. Lctl_step when 4D-Var
 *
 *object
 *     See above id.
@@ -246,7 +249,7 @@
           allocate ( gz(F_ninj,F_nk) )
       endif
 
-      If (lastdt .ne. Lctl_step) then
+      If ((lastdt .ne. Lctl_step).or.V4dgconf_L) then
 
       do k=1,l_nk
       do i=1,F_ninj
@@ -361,20 +364,20 @@
 *_________________________________________________________________
 *
       if (pnme.ne.0)
-     $    call ecris_fst2(gz,l_minx,l_maxx,l_miny,l_maxy,0.0,
-     $        'ME  ',prmult_pnme,0.0,-1,1, F_nk, 1, nbit(pnme) )
+     $    call ecris_fst2(gz(1,F_nk),l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $        'ME  ',prmult_pnme,0.0,2,1, 1, 1, nbit(pnme) )
       if (pnmx.ne.0)
-     $    call ecris_fst2(gz,l_minx,l_maxx,l_miny,l_maxy,0.0,
-     $        'MX  ',1.0,0.0,-1,1, F_nk, 1, nbit(pnmx) )
+     $    call ecris_fst2(gz(1,F_nk),l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $        'MX  ',1.0        ,0.0,2,1, 1, 1, nbit(pnmx) )
       if (pnpt.ne.0)
-     $    call ecris_fst2(F_ptop,l_minx,l_maxx,l_miny,l_maxy,0.0,
-     $        'PT  ',.01,0.0,-1,1, 1, 1, nbit(pnpt) )
+     $    call ecris_fst2(F_ptop    ,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $        'PT  ',.01,0.0,2,1, 1, 1, nbit(pnpt) )
       if (pnla.ne.0)
      $    call ecris_fst2(Geomn_latrx,1,l_ni,1,l_nj,0.0,
-     $        'LA  ',1.0,0.0,-1,1, 1, 1, nbit(pnla) )
+     $        'LA  ',1.0,0.0,2,1, 1, 1, nbit(pnla) )
       if (pnlo.ne.0)
      $    call ecris_fst2(Geomn_lonrx,1,l_ni,1,l_nj,0.0,
-     $        'LO  ',1.0,0.0,-1,1, 1, 1, nbit(pnlo) )
+     $        'LO  ',1.0,0.0,2,1, 1, 1, nbit(pnlo) )
 
 
 *     Calculate PN
@@ -386,7 +389,7 @@
      $      call filter(w1,filt(pnpn),coef(pnpn),'G', .false.,
      $                  l_minx,l_maxx,l_miny,l_maxy, 1)
           call ecris_fst2(w1,l_minx,l_maxx,l_miny,l_maxy,0.0,
-     $        'PN  ',.01,0.0,-1,1, 1, 1, nbit(pnpn) )
+     $        'PN  ',.01,0.0,2,1, 1, 1, nbit(pnpn) )
       endif
 
 *     Calculate P0
@@ -412,7 +415,7 @@
      $       call filter(w1,filt(pnp0),coef(pnp0),'G', .false.,
      $                  l_minx,l_maxx,l_miny,l_maxy, 1)
           call ecris_fst2(w1,l_minx,l_maxx,l_miny,l_maxy,0.0,
-     $        'P0  ',.01,0.0,-1,1, 1, 1, nbit(pnp0) )
+     $        'P0  ',.01,0.0,2,1, 1, 1, nbit(pnp0) )
 
       endif
 
@@ -493,7 +496,12 @@
 
            if (.not.V4dgconf_L .or. (V4dgconf_L .and. V4dg_di_L)) then
 
-               call mfottv (tt,vt,F_hut1, F_ninj,F_nk,F_ninj)
+               if (.not.Schm_offline_L) then
+                  call mfottv (tt,vt,F_hut1, F_ninj,F_nk,F_ninj)
+               else
+*                 In offline mode, vt is the real temperature
+                  tt = vt
+               endif
 
            elseif (V4dgconf_L.and.V4dg_tl_L) then
 

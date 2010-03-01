@@ -14,6 +14,7 @@
 * v3_12 - Winger K.         - add TD and HR as possible humidity variables
 * v3_20 - Pellerin P.       - MEC option (off-line mode)
 * v3_30 - Lee V.            - new LAM I/O  (BCS and 3DF pilot files)
+* v3_31 - Lee V.            - check for invalid HY field
 *
 #include "e_anal.cdk"
 #include "e_fu.cdk"
@@ -27,6 +28,8 @@
 #include "pilot.cdk"
 #include "hgc.cdk"
 #include "e_grdc.cdk"
+#include "offline.cdk"
+#include "path.cdk"
 *
       integer   fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv,
      $          read_decode_hyb, newdate, e_pilotf, 
@@ -39,7 +42,7 @@
      $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
       integer  ip1x,ip2x,ip3x
       character*1   typ, grd, blk_S
-      character*4   var
+      character*4   var, search_S(10)
       character*12  lab
       character*15  datec,pdate
       real      x1,lev,difsig,dx,dy
@@ -72,7 +75,7 @@
          nvar=5
       else
          e_fu_anal = 0
-         if (fnom (e_fu_anal ,'process/analysis','RND+OLD',0).lt.0) stop
+         if (fnom (e_fu_anal ,trim(Path_input_S)//'/ANALYSIS','RND+OLD',0).lt.0) stop
          if (fstouv(e_fu_anal ,'RND').lt.0) stop
       endif
       ip1mode = +1
@@ -108,17 +111,15 @@
 *
 *                      Check temperature variable and find
 *                      out if it is given by 'TT' or 'VT'
-      vt = 'VT'
-      key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vt)
+
+      search_S(1) = 'VT'
+      search_S(2) = 'TT'
+      call check_FST_fld (vt,key,search_S,2,e_fu_anal,datev)
 *
       if ( key .lt. 0 ) then
-         vt = 'TT'
-         key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vt)
-         if ( key .lt. 0 ) then
             write(6,*) 'No temperature variables are found in analysis'
             write(6,*) 'Either TT or VT must be in the analysis file.'
             call e_arret('e_specanal')
-         endif
       endif
 *
 *     Get the information on the temperature field from the analysis
@@ -158,8 +159,8 @@
          anal_hav(2) = 1
       endif
       if (kind .eq. 1) then      
-         key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',-1,
-     $                                          ptopa,prefa,rcoefa)
+         key = fstinf ( e_fu_anal, ni1,nj1,nk1,datev,' ',-1,-1,-1, 
+     $                                                    ' ', 'HY' )
          if (key .lt. 0) then
             key = fstinf ( e_fu_anal, ni1,nj1,nk1,datev,' ',-1,-1,-1, 
      $                                                    ' ', 'PT' )
@@ -187,6 +188,9 @@
                anal_hav(2) = 3
             endif
          else
+            key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',-1,
+     $                                          ptopa,prefa,rcoefa)
+            if (key.lt.0) stop
             print*,' ===> Analysis on HYBRID vertical coordinates.'
             anal_hyb = .true.
             anal_hav(2) = 1
@@ -212,12 +216,13 @@
      $                           ip2a, ip3a, tva, var, list, nka, lvmax)
          endif
       else
-         ip1a=11950
+         ip1a=Offline_ip1a
          key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, ip1a,
      $                     ip2a, ip3a, tva, var, list, nka, lvmax)
          write (6,130)
          write (6,101) ip1a
          write (6,201) var
+         write (6,130)
       endif
 *
       LV = nka
@@ -254,7 +259,7 @@
       if ( .not. (anal_hyb.or.anal_eta) ) Pil_bmf_L = .true.
 *
       if (Pil_bmf_L) then
-         call bmf_splitstart (Ptopo_npex,Ptopo_npey,'./process/','BM',
+         call bmf_splitstart (Ptopo_npex,Ptopo_npey,trim(Path_output_S)//'/','BM',
      $                                Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
          call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
          call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
@@ -546,4 +551,39 @@ c                 call cartall(lons,lats,carot,dimgx*dimgy)
 * ---------------------------------------------------------------------
 *
       return
+      end
+
+      subroutine check_FST_fld (vh,key,search_S,n,unf,datev)
+      implicit none
+      integer key,n,unf,datev
+      character*(*) vh,search_S(n)
+*
+      integer maxl
+      parameter (maxl=5000)
+      integer i, liste(maxl), ni1, nj1, nk1, nka, dkey
+
+      integer fstinl
+
+      key = -1
+      do i=1,n
+         vh   = search_S(i)
+         dkey = fstinl ( unf, ni1, nj1, nk1, datev, ' ', -1, -1, -1, 
+     $                                    ' ', vh, liste, nka, maxl)
+         if (nka.gt.1) then
+            key = liste(nka/2)
+            goto 555
+         endif
+      end do
+
+      do i=1,n
+         vh   = search_S(i)
+         dkey = fstinl ( unf, ni1, nj1, nk1, datev, ' ', -1, -1, -1, 
+     $                                    ' ', vh, liste, nka, maxl)
+         if (nka.gt.0) then
+            key = liste(1)
+            goto 555
+         endif
+      end do
+*
+ 555  return
       end

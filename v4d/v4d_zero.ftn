@@ -18,6 +18,8 @@
 * v3_21 - Lee V.            - removed Tr2d
 * v3_30 - Tanguay M.        - Validation for LAM version 
 *                           - adapt to bcs
+* v3_31 - Tanguay M.        - Control BC
+* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 *object
 *    see id section
@@ -30,6 +32,7 @@
 #include "glb_ld.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
+#include "vtw.cdk"
 #include "vth.cdk"
 #include "vtx.cdk"
 #include "vta.cdk"
@@ -42,6 +45,9 @@ cvl#include "tr2d.cdk"
 #include "init.cdk"
 #include "bcsdim.cdk"
 #include "bcsmem.cdk"
+#include "v4dg_bc.cdk"
+#include "v4d_bc.cdk"
+#include "step.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -53,6 +59,9 @@ cvl#include "tr2d.cdk"
       real tr,tr0,trf,tra
       pointer (patr,  tr (LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*)),
      $        (patrf, trf(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
+*
+*
+#include "v4d_key_bc.cdk"
 *
 cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
 *
@@ -273,6 +282,92 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
             end do
          end do
          err = vmmuld(key1,Tr3d_ntr)
+      endif
+*
+      if (Schm_modcn.eq.Step_total) then
+*
+*     -----------------------------------
+*     Zero comdeck vtw (tw=t2 work space)
+*     -----------------------------------
+      pnlkey1( 1)= VMM_KEY(utw  )
+      pnlkey1( 2)= VMM_KEY(vtw  )
+      pnlkey1( 3)= VMM_KEY(wtw  )
+      pnlkey1( 4)= VMM_KEY(tdtw )
+      pnlkey1( 5)= VMM_KEY(ttw  )
+      pnlkey1( 6)= VMM_KEY(fitw )
+      pnlkey1( 7)= VMM_KEY(qtw  )
+      pnlkey1( 8)= VMM_KEY(tptw )
+      pnlkey1( 9)= VMM_KEY(fiptw)
+      pnlkey1(10)= VMM_KEY(qptw )
+      pnlkey1(11)= VMM_KEY(piptw)
+      pnlkey1(12)= VMM_KEY(tpltw)
+      pnlkey1(13)= VMM_KEY(psdtw)
+      pnlkey1(14)= VMM_KEY(stw  )
+      pnlod = 14
+*
+      if (.not. Schm_hydro_L) then
+          pnlkey1(pnlod+1)= VMM_KEY(mutw)
+          pnlod = pnlod+1
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(utw  )
+      pnerr = VMM_GET_VAR(vtw  )
+      pnerr = VMM_GET_VAR(wtw  )
+      pnerr = VMM_GET_VAR(tdtw )
+      pnerr = VMM_GET_VAR(ttw  )
+      pnerr = VMM_GET_VAR(fitw )
+      pnerr = VMM_GET_VAR(qtw  )
+      pnerr = VMM_GET_VAR(tptw )
+      pnerr = VMM_GET_VAR(fiptw)
+      pnerr = VMM_GET_VAR(qptw )
+      pnerr = VMM_GET_VAR(piptw)
+      pnerr = VMM_GET_VAR(tpltw)
+      pnerr = VMM_GET_VAR(psdtw)
+      pnerr = VMM_GET_VAR(stw  )
+*
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(mutw)
+      endif
+*
+      utw  = 0. 
+      vtw  = 0. 
+      wtw  = 0. 
+      tdtw = 0. 
+      ttw  = 0. 
+      fitw = 0. 
+      qtw  = 0. 
+      tptw = 0. 
+      fiptw= 0.
+      qptw = 0. 
+      piptw= 0.
+      tpltw= 0.
+      psdtw= 0.
+      stw  = 0. 
+*
+      if (.not. Schm_hydro_L) mutw = 0. 
+*
+      pnerr = vmmuld( -1, 0 )
+*
+      key1_ = VMM_KEY (trtw)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr,tr)
+            do k=1,l_nk
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               tr(i,j,k) = 0.
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+      endif
+*
       endif
 *
 *     ---------------------------
@@ -614,6 +709,56 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
             end do
          end do
       endif
+*
+      endif
+*
+      if(G_lam) then
+*
+*     Control BC
+*     ----------
+*
+*     ---------------------
+      do ntime=0,Step_total
+*     ---------------------
+*
+#include "v4d_lod_bc.cdk"
+#include "v4d_get_bc.cdk"
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         f_bc_u  (i,j,k) = 0.
+         f_bc_v  (i,j,k) = 0.
+         f_bc_tp (i,j,k) = 0.
+      end do
+      end do
+      end do
+*
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         f_bc_s  (i,j) = 0.
+      end do
+      end do
+*
+      do n_tr=1,Tr3d_ntr
+*
+      bc_err = vmmget(key_bc_tr(n_tr),pabc_tr,f_bc_tr)
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         f_bc_tr(i,j,k) = 0.
+      end do
+      end do
+      end do
+*
+      end do
+*
+#include "v4d_unlod_bc.cdk"
+*
+*     ------
+      end do
+*     ------
 *
       endif
 *

@@ -22,6 +22,7 @@
 * v2_32                       actual "set" number forced to be in sequence
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_30 - McTaggart-Cowan R.- parse optional tag extension from string
+* v3_31 - Lee V.            - correction for if no tag extension provided
 *
 *object
 *	initialization of the common block GRID. This function is
@@ -108,11 +109,11 @@
       Grid_etikext_S(j) = ''
       if(index(F_argv_S(2),'model') .ne. 0) then
           grdtyp_S='model'
-          if (index(F_argv_S(3),'"').gt.0) 
+          if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0) 
      %        Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'core') .ne. 0) then
           grdtyp_S='core'
-          if (index(F_argv_S(3),'"').gt.0) 
+          if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0) 
      %        Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'reduc') .ne. 0) then
           grdtyp_S='reduc'

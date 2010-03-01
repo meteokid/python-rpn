@@ -47,6 +47,7 @@
 #include "lun.cdk"
 #include "modconst.cdk"
 #include "itf_phy_buses.cdk"
+#include "path.cdk"
 *
       integer  vmmlod,vmmget,vmmuld,nav_3df,newdate,readgeo
       external vmmlod,vmmget,vmmuld,nav_3df,newdate,readgeo
@@ -160,8 +161,8 @@
       if (G_lam) then
          prefgeo = '!@#$%^&*'
          ungeo   = 91
-         open(ungeo,FILE='../geophy_fileprefix_for_LAM',
-     $                          status='OLD',iostat=err)
+         open(ungeo,FILE=trim(Path_input_S)//'/geophy_fileprefix_for_LAM',
+     $                                           status='OLD',iostat=err)
          if (err.eq.0) then
             read (ungeo, '(a)', end = 9120) prefgeo
  9120       close(ungeo)
@@ -172,7 +173,7 @@
       errop = -1
       if (G_lam) then
          unf = 76
-         fn  = '../casc/3df_filemap.txt'
+         fn  = trim(Path_input_S)//'/INDATA/casc/3df_filemap.txt'
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                        iostat=errop,form='FORMATTED')
       endif

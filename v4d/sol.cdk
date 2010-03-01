@@ -19,6 +19,19 @@
 *
 *
 #endif
-      DCL_DYNVAR(Sol,ai_8,real*8,(*))
-      DCL_DYNVAR(Sol,bi_8,real*8,(*))
-      DCL_DYNVAR(Sol,ci_8,real*8,(*))
+      character*26 sol_type_S,sol_precond_S
+      common / sol_c / sol_type_S,sol_precond_S
+*
+      logical sol_fft_L
+      integer sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s,
+     $        sol_niloc,sol_njloc,sol_nloc,sol_maxits,
+     $        sol_im,sol_i0,sol_in,sol_j0,sol_jn
+      common / sol_i / sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s,
+     $                 sol_niloc,sol_njloc,sol_nloc,sol_maxits,
+     $                 sol_im,sol_i0,sol_in,sol_j0,sol_jn,sol_fft_L
+*
+      real*8 sol_eps
+      common / sol_r8/ sol_eps
+*
+      real*8, dimension(:), pointer :: Sol_ai_8,Sol_bi_8,Sol_ci_8
+      common / sol_p / Sol_ai_8,Sol_bi_8,Sol_ci_8

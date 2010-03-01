@@ -24,6 +24,7 @@
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
 * v3_21 - Tanguay M.        - Revision Openmp
 * v3_30 - Tanguay M.        - add parameter iln in sol_main
+* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 *object
 *     see id section
@@ -78,7 +79,7 @@
 *
 *     Recover TRAJ predictive variables 
 *     ---------------------------------
-      if (Orh_crank_L.and.Orh_icn.eq.Schm_itcn) call v4d_rwtraj (3) 
+      if ( (Orh_crank_L .and. Orh_icn.eq.Schm_itcn) .or. .not.Orh_crank_L ) call v4d_rwtraj (3)
 *
       call rhs_tr
 *
@@ -343,10 +344,10 @@
 !$omp end parallel 
 *
          pnerr = vmmuld(-1,0)
-
+*
 *        Recover TRAJ ORTR before ADW_MAIN_AD
 *        ------------------------------------
-         if (Orh_icn.eq.Schm_itcn) then
+         if ( Orh_icn .eq. Schm_itcn. or. .not.Orh_crank_L ) then
 *
          key0m_ = VMM_KEY (trt0m)
          keyorm_= VMM_KEY (ortrm)

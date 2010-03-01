@@ -17,6 +17,7 @@
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 * v3_21 - Tanguay M.        - Revision Openmp
+* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 *object
 *     see id section
@@ -131,7 +132,7 @@
 *     Perform the computation in the LAST 
 *     cycle of Crank-Nicholson procedure only
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if ( Orh_icn .eq. Schm_itcn ) then
+      if ( Orh_icn .eq. Schm_itcn .or. .not.Orh_crank_L ) then
 *
          call rhsp_2  (    rum,   rvm,   rcnm,   rthm,      rwm,     rvvm,
      %                    orum,  orvm,  orcnm,  orthm,     orwm,    orvvm,

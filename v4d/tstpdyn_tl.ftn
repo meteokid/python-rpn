@@ -23,6 +23,7 @@
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
 *                           - Remove V4dg_oktrtl_L
 * v3_30 - Tanguay M.        - add parameter iln in sol_main 
+* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 *object
 *     see id section
@@ -58,7 +59,7 @@
 *
 *     Recover TRAJ predictive variables
 *     ---------------------------------
-      if (Orh_crank_L.and.Orh_icn.eq.1) call v4d_rwtraj (3) 
+      if ( (Orh_crank_L .and. Orh_icn.eq.1) .or. .not.Orh_crank_L ) call v4d_rwtraj (3)
 *
       call rhs_tl ()
 *

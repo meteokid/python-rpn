@@ -18,12 +18,11 @@
       integer nzone,indzone(nzone)
       real pxzone(nzone),pyzone(nzone)
 *
-      character*1 grtypi
-*
 *author Tanguay M. 
 *
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
+* v3_31 - Tanguay M.        - Add OPENMP directives 
 *
 *object
 *  see id section
@@ -71,6 +70,7 @@
       j1x = jmax-2
       j2x = jmax+1
 *
+!$omp parallel do 
       do k=1,nk
 *
 *       Store segments of 3 last circles near north pole
@@ -92,6 +92,7 @@
         enddo
 *
       enddo
+!$omp end parallel do 
 *
 *     case CUBIC
 *     ----------

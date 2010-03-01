@@ -45,10 +45,11 @@
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "path.cdk"
+#include <clib_interface.cdk>
 #include <prof_f.h>
 *
-      integer  ezqkdef,longueur,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
-      external ezqkdef,longueur,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
+      integer  ezqkdef,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
+      external ezqkdef,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
 *
       logical ropr_L,rdvar_L
 *
@@ -100,9 +101,9 @@
 *
 *     Open init PROF file (TYPE1) containing lat-lon observations positions 
 *     ---------------------------------------------------------------------
-      pathob_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/init.prof'
+      pathob_S = trim(Path_xchg_S)//'/init.prof'
 *
-      write(Lun_out,*) 'Opening file: ',pathob_S(1:longueur(pathob_S))
+      write(Lun_out,*) 'Opening file: ',trim(pathob_S)
 *
       ihdlin0 = prof_open(pathob_S,'READ','FILE' )
 *

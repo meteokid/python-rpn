@@ -1,0 +1,20 @@
+*
+* Explicit interface for acqui (f90 trick) for sharing unallocated
+* pointers between two subroutines. See for example the Chapman F90
+* book, section 11.7 (page 616-)
+*
+*     arguments list
+     $  (lna,rna,sdd,psu_temp,psv_temp,apsu_temp,apsv_temp,topu_temp,
+     $  topv_temp, u_temp,v_temp,hu_temp,tt_temp,gz_temp, ttu_temp, 
+     $   ttv_temp, gzu_temp, gzv_temp, ps, topo_temp)
+      implicit none
+* needed for sharing ps and topo_temp
+#include "glb_ld.cdk"
+*
+      real, pointer, dimension(:  ) :: lna,rna,sdd
+      real, pointer, dimension(:,:) :: psu_temp,psv_temp,
+     $               apsu_temp,apsv_temp,topu_temp,topv_temp
+      real, pointer, dimension(:,:,:) :: u_temp,v_temp,hu_temp,tt_temp,
+     $               gz_temp,ttu_temp,ttv_temp,gzu_temp,gzv_temp
+      real, dimension(l_ni,l_nj) :: ps, topo_temp
+*

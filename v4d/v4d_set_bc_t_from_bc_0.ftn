@@ -1,0 +1,446 @@
+***s/r v4d_set_bc_t_from_bc_0 - Set independent control BC(T) = Interpolation(BC(0),BC(1),BC(2)) 
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_set_bc_t_from_bc_0 
+*
+      implicit none
+*
+*author M.Tanguay
+*
+*revision
+* v3_31 - Tanguay M.        - initial version
+* v3_31 - Tanguay M.        - Control BC
+*
+*object
+*     see id section
+*
+* ----------------------------------------------------------
+* VARIANT=1 PERSISTENCE: BC(T)=BC(0)
+* VARIANT=2 TENDENCY   : BC(T)=BC(0)+T*(BC(1)-BC(0))
+* VARIANT=3 TAYLOR     : BC(T)=BC(0)+T*(BC(1)-BC(0))+0.5*T**2*(BC(2)-2*BC(1)+BC(0))
+* ----------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "vt1.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "v4d_bc.cdk"
+#include "step.cdk"
+#include "v4dg_bc.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer i,j,k
+*
+      real bc_wu  (LDIST_SHAPE,l_nk,0:2),bc_wv (LDIST_SHAPE,l_nk,0:2)
+      real bc_wtp (LDIST_SHAPE,l_nk,0:2),bc_ws (LDIST_SHAPE,0:2)
+      real bc_wtr (LDIST_SHAPE,l_nk,Tr3d_ntr,0:2)
+*
+      real p1,p2,p3
+      integer loc
+*
+#include "v4d_key_bc.cdk"
+*
+      if (.not.(V4dg_bc_variant.eq.1.or.
+     %          V4dg_bc_variant.eq.2.or.
+     %          V4dg_bc_variant.eq.3)) return
+*
+*     ---------------------------------
+*     VARIANT=1 PERSISTENCE BC(T)=BC(0) 
+*     ---------------------------------
+      if (V4dg_bc_variant.eq.1) then
+*     ---------------------------------
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS PERSISTENCE'
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS PERSISTENCE TIME1=',V4dg_bc_t1
+*
+*     ----------
+*     Keep BC(0)
+*     ----------
+      do ntime=0,Step_total
+*
+      if (ntime.eq.V4dg_bc_t1) then
+*
+#include "v4d_lod_bc.cdk"
+#include "v4d_get_bc.cdk"
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_niu
+            bc_wu (i,j,k,0)= f_bc_u (i,j,k)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_njv
+         do i=1,l_ni
+            bc_wv (i,j,k,0)= f_bc_v (i,j,k)
+         end do
+         end do
+         end do
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_wtp(i,j,k,0)= f_bc_tp(i,j,k)
+         end do
+         end do
+         end do
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_ws(i,j,0) = f_bc_s(i,j)
+         end do
+         end do
+*
+         do n_tr=1,Tr3d_ntr
+*
+         bc_err = vmmget(key_bc_tr(n_tr),pabc_tr,f_bc_tr)
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_wtr(i,j,k,n_tr,0) = f_bc_tr(i,j,k)
+         end do
+         end do
+         end do
+*
+         end do
+*
+#include "v4d_unlod_bc.cdk"
+*
+      endif
+*
+      end do
+*
+*     ---------------
+*     Set BC(T)=BC(0)
+*     ---------------
+      do ntime=0,Step_total
+*
+#include "v4d_lod_bc.cdk"
+#include "v4d_get_bc.cdk"
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_niu
+            f_bc_u (i,j,k) = bc_wu (i,j,k,0)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_njv
+         do i=1,l_ni
+            f_bc_v (i,j,k) = bc_wv (i,j,k,0)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_tp(i,j,k) = bc_wtp(i,j,k,0)
+         end do
+         end do
+         end do
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_s(i,j) = bc_ws(i,j,0)
+         end do
+         end do
+*
+         do n_tr=1,Tr3d_ntr
+*
+         bc_err = vmmget(key_bc_tr(n_tr),pabc_tr,f_bc_tr)
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_tr(i,j,k) = bc_wtr(i,j,k,n_tr,0)
+         end do
+         end do
+         end do
+*
+         end do
+*
+#include "v4d_unlod_bc.cdk"
+*
+      end do
+*
+*     --------------------------------------------------
+      elseif (V4dg_bc_variant.eq.2) then
+*     --------------------------------------------------
+*     VARIANT=2 TENDENCY   : BC(T)=BC(0)+T*(BC(1)-BC(0)) 
+*     --------------------------------------------------
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS TENDENCY'
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS TENDENCY TIME1=',V4dg_bc_t1
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS TENDENCY TIME2=',V4dg_bc_t2
+*
+      do ntime=0,Step_total
+*
+#include "v4d_lod_bc.cdk"
+#include "v4d_get_bc.cdk"
+*
+*     --------------------
+*     Keep BC(0) and BC(1)
+*     --------------------
+      if (ntime.eq.V4dg_bc_t1.or.ntime.eq.V4dg_bc_t2) then
+*
+         if (ntime.eq.V4dg_bc_t1) loc = 0
+         if (ntime.eq.V4dg_bc_t2) loc = 1 
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_niu
+            bc_wu (i,j,k,loc)= f_bc_u (i,j,k)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_njv
+         do i=1,l_ni
+            bc_wv (i,j,k,loc)= f_bc_v (i,j,k)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_wtp(i,j,k,loc)= f_bc_tp(i,j,k)
+         end do
+         end do
+         end do
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_ws(i,j,loc) = f_bc_s(i,j)
+         end do
+         end do
+*
+         do n_tr=1,Tr3d_ntr
+*
+         bc_err = vmmget(key_bc_tr(n_tr),pabc_tr,f_bc_tr)
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_wtr(i,j,k,n_tr,loc) = f_bc_tr(i,j,k)
+         end do
+         end do
+         end do
+*
+         end do
+*
+      endif
+*
+#include "v4d_unlod_bc.cdk"
+*
+      end do
+*
+*     ---------------------------
+*     BC(T)=BC(0)+T*(BC(1)-BC(0)) 
+*     ---------------------------
+      do ntime=0,Step_total
+*
+#include "v4d_lod_bc.cdk"
+#include "v4d_get_bc.cdk"
+*
+         p1 = float(ntime-V4dg_bc_t2)/float(V4dg_bc_t1-V4dg_bc_t2) 
+         p2 = float(ntime-V4dg_bc_t1)/float(V4dg_bc_t2-V4dg_bc_t1) 
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_niu
+            f_bc_u (i,j,k) = p1*bc_wu (i,j,k,0) + p2*bc_wu (i,j,k,1) 
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_njv
+         do i=1,l_ni
+            f_bc_v (i,j,k) = p1*bc_wv (i,j,k,0) + p2*bc_wv (i,j,k,1)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_tp(i,j,k) = p1*bc_wtp(i,j,k,0) + p2*bc_wtp(i,j,k,1)
+         end do
+         end do
+         end do
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_s(i,j) = p1*bc_ws(i,j,0) + p2*bc_ws(i,j,1)
+         end do
+         end do
+*
+         do n_tr=1,Tr3d_ntr
+*
+         bc_err = vmmget(key_bc_tr(n_tr),pabc_tr,f_bc_tr)
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_tr(i,j,k) = p1*bc_wtr(i,j,k,n_tr,0) + p2*bc_wtr(i,j,k,n_tr,1)
+         end do
+         end do
+         end do
+*
+         end do
+*
+#include "v4d_unlod_bc.cdk"
+*
+      end do
+*
+*     --------------------------------------------------
+      elseif (V4dg_bc_variant.eq.3) then
+*     --------------------------------------------------
+*     VARIANT=3 TAYLOR     : BC(T)=BC(0)+T*(BC(1)-BC(0))+0.5*T**2*(BC(2)-2*BC(1)+BC(0))
+*     --------------------------------------------------
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS TAYLOR'
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS TAYLOR TIME1=',V4dg_bc_t1
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS TAYLOR TIME2=',V4dg_bc_t2
+      if (Lun_out.gt.0) write(Lun_out,*) 'SET BC AS TAYLOR TIME3=',V4dg_bc_t3
+*
+      do ntime=0,Step_total
+*
+#include "v4d_lod_bc.cdk"
+#include "v4d_get_bc.cdk"
+*
+*     --------------------------
+*     Keep BC(0),BC(1) and BC(2)
+*     --------------------------
+      if (ntime.eq.V4dg_bc_t1.or.ntime.eq.V4dg_bc_t2.or.ntime.eq.V4dg_bc_t3) then
+*
+         if (ntime.eq.V4dg_bc_t1) loc = 0
+         if (ntime.eq.V4dg_bc_t2) loc = 1
+         if (ntime.eq.V4dg_bc_t3) loc = 2 
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_niu
+            bc_wu (i,j,k,loc)= f_bc_u (i,j,k)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_njv
+         do i=1,l_ni
+            bc_wv (i,j,k,loc)= f_bc_v (i,j,k)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_wtp(i,j,k,loc)= f_bc_tp(i,j,k)
+         end do
+         end do
+         end do
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_ws(i,j,loc) = f_bc_s(i,j)
+         end do
+         end do
+*
+         do n_tr=1,Tr3d_ntr
+*
+         bc_err = vmmget(key_bc_tr(n_tr),pabc_tr,f_bc_tr)
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            bc_wtr(i,j,k,n_tr,loc) = f_bc_tr(i,j,k)
+         end do
+         end do
+         end do
+*
+         end do
+*
+      end if
+*
+#include "v4d_unlod_bc.cdk"
+*
+      end do
+*
+*     ----------------------------------------------------------------------
+*     BC(T)=BC(0)+T*(BC(1)-BC(0))+0.5*T**2*(BC(2)-2*BC(1)+BC(0)) 
+*     ----------------------------------------------------------------------
+      do ntime=0,Step_total
+*
+#include "v4d_lod_bc.cdk"
+#include "v4d_get_bc.cdk"
+*
+         p1 = float((ntime-V4dg_bc_t2)*(ntime-V4dg_bc_t3))/(float(V4dg_bc_t1-V4dg_bc_t2)*float(V4dg_bc_t1-V4dg_bc_t3)) 
+         p2 = float((ntime-V4dg_bc_t1)*(ntime-V4dg_bc_t3))/(float(V4dg_bc_t2-V4dg_bc_t1)*float(V4dg_bc_t2-V4dg_bc_t3)) 
+         p3 = float((ntime-V4dg_bc_t1)*(ntime-V4dg_bc_t2))/(float(V4dg_bc_t3-V4dg_bc_t1)*float(V4dg_bc_t3-V4dg_bc_t2)) 
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_niu
+            f_bc_u (i,j,k) = p1*bc_wu (i,j,k,0) + p2*bc_wu (i,j,k,1) + p3*bc_wu (i,j,k,2)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_njv
+         do i=1,l_ni
+            f_bc_v (i,j,k) = p1*bc_wv (i,j,k,0) + p2*bc_wv (i,j,k,1) + p3*bc_wv (i,j,k,2)
+         end do
+         end do
+         end do
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_tp(i,j,k) = p1*bc_wtp(i,j,k,0) + p2*bc_wtp(i,j,k,1) + p3*bc_wtp(i,j,k,2)
+         end do
+         end do
+         end do
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_s(i,j) = p1*bc_ws(i,j,0) + p2*bc_ws(i,j,1) + p3*bc_ws(i,j,2)
+         end do
+         end do
+*
+         do n_tr=1,Tr3d_ntr
+*
+         bc_err = vmmget(key_bc_tr(n_tr),pabc_tr,f_bc_tr)
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            f_bc_tr(i,j,k) = p1*bc_wtr(i,j,k,n_tr,0) + p2*bc_wtr(i,j,k,n_tr,1) + p3*bc_wtr(i,j,k,n_tr,2)
+         end do
+         end do
+         end do
+*
+         end do
+*
+#include "v4d_unlod_bc.cdk"
+*
+      end do
+*
+*     -----
+      endif 
+*     -----
+*
+      return
+      end

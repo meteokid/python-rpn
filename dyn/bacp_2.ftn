@@ -187,7 +187,7 @@
       end do
 !$omp enddo 
 *
-      xlog_8 = 0.
+      xlog_8 = 1.
       xrec_8 = 1.
 !$omp do
       do 100 k=1,l_nk 

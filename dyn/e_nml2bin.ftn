@@ -33,6 +33,7 @@
 #include "e_tr.cdk"
 #include "offline.cdk"
 #include "modconst.cdk"
+#include "path.cdk"
 *
 **
       integer  fnom
@@ -42,8 +43,8 @@
 *     ---------------------------------------------------------------
 *
       labfl=0
-      if (fnom(labfl,'process/labfl.bin','SEQ/UNF',0).lt.0)
-     $    stop 'In e_nm2bin: Trying to open file process/labfl.bin'
+      if (fnom(labfl,trim(Path_output_S)//'/labfl.bin','SEQ/UNF',0).lt.0)
+     $    stop 'In e_nm2bin: Trying to open file labfl.bin'
 *
       write(labfl) Mod_runstrt_S
 *

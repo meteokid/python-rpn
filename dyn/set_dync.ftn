@@ -16,6 +16,7 @@
 * v3_00 - Desgagne & Lee     - Lam configuration
 * v3_21 - Desgagne M.        - Optimization
 * v3_30 - Desgagne M.        - Add calls to: set_opr and adw_set
+* v3_31 - Chardon L.         - Avoid set_opr and adw_set in offline mode 
 *
 *object
 *
@@ -115,8 +116,10 @@
      $                       log( Geomg_z_8(k)/Cstv_pisrf_8 )
       end do
       Cstvr_fistr_8(G_nk) = ZERO_8
-      call set_opr()
-      call adw_set()
+      if (.not.Schm_offline_L) then
+         call set_opr()
+         call adw_set()
+      endif
 *
 *     ---------------------------------------------------------------
 *

@@ -9,7 +9,10 @@
 *     M. Desgagne    - Summer 2006
 *
 *revision
-* v3_30 - Desgagne M.       - initial version
+* v3_30 - Desgagne M.     - initial version
+* v3_31 - Bilodeau & Lee  - Correction for offline mode
+* v3_31 - Desgagne M.     - Re-defining Glb_pil* and Adw_halo* in terms
+*                           of new control Step_maxcfl
 *
 *object
 *
@@ -50,10 +53,18 @@
       Hzd_pwr    = Hzd_pwr / 2
       Hzd_pwr    = min(max(2,Hzd_pwr*2),8)
 *
-      Glb_pil_n = max(7,Glb_pil_n)
-      Glb_pil_s = max(7,Glb_pil_s)
-      Glb_pil_w = max(7,Glb_pil_w)
-      Glb_pil_e = max(7,Glb_pil_e)
+      if (G_lam) then
+         Step_maxcfl = max(1,Step_maxcfl)
+         Glb_pil_n = Step_maxcfl + 5
+         Glb_pil_s = Glb_pil_n
+         Glb_pil_w = Glb_pil_n
+         Glb_pil_e = Glb_pil_n
+         Adw_halox = Step_maxcfl + 1
+         Adw_haloy = Adw_halox
+      else
+         Adw_halox = max(3,Adw_halox)
+         Adw_haloy = max(2,Adw_haloy)
+      endif
 *
       deg_2_rad = Dcst_pi_8/180.
 *
@@ -94,13 +105,6 @@
 *     Checking vertical layering
 *
       wronghyb = .false.
-      if (schm_offline_l) then
-         pnk=4
-         hyb(1)=0.
-         hyb(2)=0.05
-         hyb(3)=(Offline_ip1a-2000)*0.0001
-         hyb(4)=1.0
-      else
          pnk = 0
          do k = 1, maxhlev
             if (hyb(k) .lt. 0.) exit
@@ -122,7 +126,6 @@
             endif
             return
          endif
-      endif
 *
       call hpalloc (Geomg_hyb_ , pnk, err,1)
       call hpalloc (Geomg_hybm_, pnk, err,1) 
@@ -176,7 +179,7 @@
 
       if (Mem_mx3db.lt.0) Mem_mx3db = Mem_minmem
 *
-      Lun_sortie_s = trim(Path_dfwmil_S)//'/process/output_settings'
+      Lun_sortie_s = trim(Path_input_S)//'/output_settings'
 *
 *     Options used for the Off-line mode (MEC)
 *

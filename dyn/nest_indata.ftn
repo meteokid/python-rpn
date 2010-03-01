@@ -13,6 +13,7 @@
 * v3_01 - Desgagne M.     - initial version
 * v3_03 - Tanguay M.      - Adjoint Lam configuration
 * v3_30 - Lee V.          - Hollow cubes and acid test for LAM
+* v3_31 - Bilodeau B.     - Debug offline mode
 *
 *object
 *	
@@ -172,6 +173,12 @@
       else
          call readdyn()
 *
+*        In specific 4D-Var runs, Convert wind images to true winds
+*        (due to the action of v4d_uv2img in v4d_predat)
+*        ----------------------------------------------------------
+         if ( V4dg_conf.ne.0.and..not.(V4dg_4dvar_L.or.V4dg_sgvc_L) )
+     $        call v4d_img2uv ()
+*
 *        Regular forward gem
 *        -------------------
          if(V4dg_conf.eq.0) then
@@ -192,6 +199,8 @@
 *
          endif
 
+         if (.not.Schm_offline_L) then
+*
 *        Stuff values from nest_uf to bcs_uf
 
          if (l_south.or.l_north.or.l_east.or.l_west) then
@@ -252,6 +261,8 @@
          err = vmmuld(keyp,Tr3d_ntr)
          endif
 
+      endif
+*
       endif
 
       err=vmmuld(key1,nvar)

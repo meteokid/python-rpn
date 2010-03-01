@@ -15,9 +15,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *IMPLICIT
 #include "e_fu.cdk"
 #include "filename.cdk"
+#include "path.cdk"
 *
-      integer  longueur,fnom,fstouv,fstinf,fstfrm,fclos
-      external longueur,fnom,fstouv,fstinf,fstfrm,fclos
+      integer  fnom,fstouv,fstinf,fstfrm,fclos
+      external fnom,fstouv,fstinf,fstfrm,fclos
       character*16 date
       character*512 fn
       logical done
@@ -31,7 +32,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       e_fu_anal = 0
 *
  55   do i = max(1,ipilf), npilf
-         fn= "process/pilot/"//pilot_f(i)(1:longueur(pilot_f(i)))
+         fn= trim(pilot_dir )//'/'//trim(pilot_f(i))
          ier = fnom   (e_fu_anal,fn,'RND+OLD+R/O',0)
          ier = fstouv (e_fu_anal,'RND')
          e_pilotf = fstinf ( e_fu_anal,ni1,nj1,nk1,datev,etk,
@@ -52,11 +53,11 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
  879  call datf2p (date,datev)
       if (e_pilotf.ge.0) then
          print*, "(E_PILOTF): FOUND ",nomvar,' valid at ',date, ' in ',
-     $        pilot_f(i)(1:longueur(pilot_f(i)))
+     $        trim(pilot_f(i))
       else
          e_fu_anal = -1
          print*, "(E_PILOTF): COUD NOT FIND: ",nomvar,' valid at ',date,
-     $        ' in process/pilot/'
+     $        ' in pilot directory'
       endif
       print*
 *

@@ -11,6 +11,8 @@
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
 * v3_30 - Tanguay M.        - adapt to bcs
+* v3_31 - Tanguay M.        - add rwnd_L 
+* v3_31 - Tanguay M.        - Control BC 
 *
 *object
 *     see id section
@@ -27,8 +29,8 @@
 #include "eigv.cdk"
 #include "fft.cdk"
 #include "vspng.cdk"
-#include "hspng.cdk"
 #include "ifd.cdk"
+#include "hspng.cdk"
 *
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
@@ -36,17 +38,16 @@
       integer pnerr,pnlkey1(2),i,j,k
 *
       real w1pipt1m(LDIST_SHAPE,l_nk),w2pipt1m(LDIST_SHAPE,l_nk),
-     %     w3pipt1m(LDIST_SHAPE,l_nk),
      %     z1pipt1m(LDIST_SHAPE,l_nk),z2pipt1m(LDIST_SHAPE,l_nk),
-     %     z3pipt1m(LDIST_SHAPE,l_nk),
-     %     z1qpt1m (LDIST_SHAPE,l_nk),z2qpt1m (LDIST_SHAPE,l_nk),
-     %     z3qpt1m (LDIST_SHAPE,l_nk)
+     %     z1qpt1m (LDIST_SHAPE,l_nk),z2qpt1m (LDIST_SHAPE,l_nk)
 *     ________________________________________________________________
+*
+      if (Hspng_nj.ge.1) call gem_stop ('HSNPG TL-AD not up to date',-1)
 *
       if (G_lam .and. ifd_ftype.ne.'BMF') then
 * ADJ of
 * Impose Lateral BCs within Pil regions
-          call nest_bcs_ad
+          call v4d_nest_bcs_ad
 * ADJ of
 * Update Lateral BCs with data that has seen physics
           call nest_update_ad
@@ -103,7 +104,7 @@
 *
 *           Recover TRAJ needed in all diffusions
 *           -------------------------------------
-            if (Hzd_fact_L.or.Hzd_ho_L.or.Vspng_nk.gt.0.or.Hspng_nj.ge.1) then
+            if (Hzd_fact_L.or.Hzd_ho_L.or.Vspng_nk.gt.0) then
 *
 *               Recover TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
 *               ------------------------------------------------------
@@ -213,105 +214,7 @@
 *
                 endif
 *
-*               HSNPG Diffusion of TRAJ PIPT1,QPT1M
-*               -----------------------------------
-                if (Hspng_nj.ge.1.and..not.G_lam) then
-*
-*                   Preserve TRAJ PIPT1,QPT1M before HSPNG diffusion if .not.Schm_hydro_L
-*                   ---------------------------------------------------------------------
-                    if(.not.Schm_hydro_L) then
-*
-                    pnlkey1(1) = VMM_KEY(pipt1m)
-                    pnlkey1(2) = VMM_KEY(qpt1m )
-                    pnerr = vmmlod(pnlkey1,2)
-*
-                    pnerr = VMM_GET_VAR(pipt1m)
-                    pnerr = VMM_GET_VAR(qpt1m )
-*
-                    do k=1,l_nk
-                    do j=1,l_nj
-                    do i=1,l_ni
-                       z3pipt1m(i,j,k) = pipt1m(i,j,k)
-                       z3qpt1m (i,j,k) = qpt1m (i,j,k)
-                    enddo
-                    enddo
-                    enddo
-*
-                    pnerr = vmmuld(-1,0)
-*
-                    endif
-*
-                    if (.not.G_lam) call hspng_main_tr ()
-*
-*                   Preserve HSPNG diffusion of TRAJ PIPT1 if Schm_hydro_L
-*                   ------------------------------------------------------
-                    if(Schm_hydro_L) then
-*
-                    pnlkey1(1) = VMM_KEY(pipt1m)
-                    pnerr = vmmlod(pnlkey1,1)
-                    pnerr = VMM_GET_VAR(pipt1m)
-*
-                    do k=1,l_nk
-                    do j=1,l_nj
-                    do i=1,l_ni
-                       w3pipt1m(i,j,k) = pipt1m(i,j,k)
-                    enddo
-                    enddo
-                    enddo
-*
-                    pnerr = vmmuld(-1,0)
-*
-                    endif
-*
-                endif
-*
             endif
-*
-*           Recover TRAJ needed in hspng_main_ad
-*           ------------------------------------
-            if (Hspng_nj.ge.1.and..not.G_lam) then
-*
-                pnlkey1(1) = VMM_KEY(pipt1m)
-                if(.not.Schm_hydro_L) then
-                    pnlkey1(2) = VMM_KEY(qpt1m )
-                    pnerr = vmmlod(pnlkey1,2)
-                else
-                    pnerr = vmmlod(pnlkey1,1)
-                endif
-                pnerr = VMM_GET_VAR(pipt1m)
-                if(.not.Schm_hydro_L) pnerr = VMM_GET_VAR(qpt1m )
-*
-*               Recall TRAJ PIPT1,QPT1M before HSPNG diffusion if .not.Schm_hydro_L
-*               -------------------------------------------------------------------
-                if(.not.Schm_hydro_L) then
-                do k=1,l_nk
-                do j=1,l_nj
-                do i=1,l_ni
-                   pipt1m(i,j,k) = z3pipt1m(i,j,k)
-                   qpt1m (i,j,k) = z3qpt1m (i,j,k)
-                enddo
-                enddo
-                enddo
-*
-*               Recall HSPNG diffusion of TRAJ PIPT1 if Schm_hydro_L
-*               ----------------------------------------------------
-                else
-                do k=1,l_nk
-                do j=1,l_nj
-                do i=1,l_ni
-                   pipt1m(i,j,k) = w3pipt1m(i,j,k)
-                enddo
-                enddo
-                enddo
-                endif
-*
-                pnerr = vmmuld(-1,0)
-*
-            endif
-*
-*           Adjoint of hspng_main_tl
-*           ------------------------
-            if (.not.G_lam) call hspng_main_ad 
 *
 *           Recover TRAJ needed in vspng_main_ad
 *           ------------------------------------

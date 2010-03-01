@@ -4,7 +4,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "model_macros_f.h"
 *
       subroutine e_sfile_bcs (datev,is,nis,js,jn,njs,
-     $                          iw,ie,niw,jw,njw,msg,nvar)
+     $                        iw,ie,niw,jw,njw,msg,nvar)
       implicit none
 *
       character* (*) msg,datev
@@ -19,31 +19,28 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "e_anal.cdk"
 #include "e_grids.cdk"
 #include "e_tr.cdk"
+#include "path.cdk"
 *
-      integer nvar, ntr, mode
-      integer  longueur
-      external longueur
+      integer ntr, mode
       character*2  md
       character*512 filen
 *
 *------------------------------------------------------------------
 *
-          unf_casc = 202
-          mode=2
-          ntr=1+E_tr3d_ntr ! for HU
+      unf_casc = 202
+      mode=2
+      ntr=1+E_tr3d_ntr ! for HU
 *
-          write (md,'(i2.2)') mode
-          print *,'e_sfile_bcs: datev=',datev
-          print *,'is,nis,js,jn,njs,iw,ie,niw,jw,njw=',is,nis,js,jn,njs,iw,ie,niw,jw,njw
-          filen= 'bcs'//md//'_'//datev
-          filen= './process/casc/'//filen(1:longueur(filen))
-      print *,'e_sfile_bcs: opening ',filen(1:longueur(filen))
-          open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
+      write (md,'(i2.2)') mode
+      filen= 'bcs'//md//'_'//datev
+      filen= trim(Path_output_S)//'/casc/'//trim(filen)
+
+      open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
      $                                          position='APPEND')
-          call wrgeo_bcs (xg_8(is),nis+1,yg_8(js),yg_8(jn),njs+1,
+      call wrgeo_bcs (xg_8(is),nis+1,yg_8(js),yg_8(jn),njs+1,
      $                xg_8(iw),xg_8(ie),niw+1,yg_8(jw),njw+1,
      $                z_8,pia,pibb,lv,unf_casc)
-          write (unf_casc) msg,nvar,ntr,mode
+      write (unf_casc) msg,nvar,ntr,mode
 *
 *------------------------------------------------------------------
       return

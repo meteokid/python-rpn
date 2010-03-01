@@ -34,18 +34,34 @@
 *
 *implicit
 #include "glb_ld.cdk"
+#include "hblen.cdk"
+      integer i,j,k
 *
 **
 *----------------------------------------------------------------------
       if ((F_ndavx.eq.0).and.(F_ndavy.eq.0)) return
-      if (north+south+east+west.eq.4)
-     $  call nes4s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
-      if (north+south+east+west.eq.3)
-     $  call nes3s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
-      if (north+south+east+west.eq.2)
-     $  call nes2s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
-      if (north+south+east+west.eq.1)
-     $  call nes1s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+      if (Hblen_wfct_S .eq. "CONST") then
+!$omp parallel shared (F_fn,F_fd)
+!$omp do
+        do k= 1, G_nk
+        do j= 1, l_nj
+        do i= 1, l_ni 
+          F_fn(i,j,k) = F_fd(i,j,k)
+        enddo
+        enddo
+        enddo
+!$omp enddo
+!$omp end parallel
+      else
+        if (north+south+east+west.eq.4)
+     $    call nes4s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+        if (north+south+east+west.eq.3)
+     $    call nes3s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+        if (north+south+east+west.eq.2)
+     $    call nes2s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+        if (north+south+east+west.eq.1)
+     $    call nes1s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+      endif
 *----------------------------------------------------------------------
       return
       end

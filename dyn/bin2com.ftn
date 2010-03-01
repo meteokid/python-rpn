@@ -50,7 +50,7 @@
       bin2com = -1
 *
       unf = 0
-      fn  = trim(Path_dfwmil_S) // '/process/labfl.bin'
+      fn  = trim(Path_input_S)//'/INDATA/labfl.bin'
       ierr = wkoffit(fn)
 *
       if (ierr.ge.-1) then

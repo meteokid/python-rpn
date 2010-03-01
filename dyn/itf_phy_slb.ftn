@@ -50,6 +50,8 @@
 *                             huphytd,qcphytd,qrphytd,qgphytd,qiphytd
 *                             Eliminations of processus specific physics
 *                             tendencies.
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
+* v3_31 - Desgagne M.       - restart with physics BUSPER
 *
 *object
 *     See above id.
@@ -94,7 +96,7 @@
 #include "itf_phy_busind.cdk"
 #include "itf_chm_busind.cdk"
 #include "v4dg.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 *
 *modules
 *
@@ -108,8 +110,7 @@
       integer busaddr,offbo,offbb,mult,cnt
       real dt,con
 *
-      real busdyn(max(1,p_bdyn_siz)), busdyn_copy(max(1,p_bdyn_siz)),
-     $     busvol(max(1,p_bvol_siz)),
+      real busdyn(max(1,p_bdyn_siz)), busvol(max(1,p_bvol_siz)),
      $     busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
       pointer (pabusper,busper(*))
 *
@@ -124,8 +125,8 @@
 *     ---------------------------------------------------------------
 *
       if ((Lun_out.gt.0).and.(F_cpu.eq.1)) then
-         write(Lun_out,1000)
-         if (Schm_chems_L) write(Lun_out,1005)
+         write(Lun_out,1000) 'PHYSICS STEP: CMC/RPN PHYSICS',F_step
+         if (Schm_chems_L) write(Lun_out,1000) 'CHEMISTRY STEP',F_step
       endif
 *
       dumpbus_L = .false.
@@ -183,12 +184,10 @@
 *
 *     Fill buses with fields produced by coupling
 *
-      if (C_coupling_L .and. lg_get) 
-     $    call itf_cpl_fillbus ( busdyn, busper, busvol, j)
+      if (C_coupling_L) call itf_cpl_fillbus ( busdyn,busper,busvol,j)
 *
 *     Run physics on row jdo
 *      
-*
 *     If active chemical scheme, fill chemical buses with jdo row.
 *
       if (Schm_chems_L) then
@@ -198,8 +197,6 @@
       endif
 *
 *     Run physics on row jdo
-*
-      busdyn_copy = busdyn
 *
       if ( .NOT. P_pset_second_L ) then
          call phy_exe
@@ -238,8 +235,6 @@
      *                     F_cobusval  ,J)
 !$omp end critical
       endif
-*
-      busdyn = busdyn_copy
 *
       if (dumpbus_L) call dumpbus2( busdyn,busper,busvol, jdo )
 *
@@ -376,10 +371,7 @@
 *
  650  continue
 *
- 1000 format(/'PERFORM A PHYSICS STEP: CMC/RPN PHYSICS (S/R itf_phy_SLB)'
-     $       /55('='))
- 1005 format(/'AS WELL PERFORM CHEMISTRY STEP (S/R itf_phy_SL)'
-     $       /70('='))
+ 1000 format(/'PERFORM A ',a,' (step= ',i6,')'/52('='))
 *
 *     ---------------------------------------------------------------
 *

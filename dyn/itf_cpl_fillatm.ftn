@@ -1,0 +1,127 @@
+***s/r itf_cpl_fillatm
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_cpl_fillatm
+      implicit none
+*
+*authors    Michel Desgagne - Spring 2008
+* 
+*revision
+* v3_31 - Desgagne M.       - initial MPI version
+**
+*implicits
+#include "glb_ld.cdk"
+#include "itf_cpl.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "cstv.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+#include "modconst.cdk"
+#include "vt1.cdk"
+#include "out3.cdk"
+#include "rstr.cdk"
+#include "schm.cdk"
+*
+**
+      integer  vmmlod,vmmget
+      external vmmlod,vmmget
+*
+      character*4 nomvar
+      character*16 datev,datem
+      logical flag,first
+      integer key(3),err,i,j,send,recv
+      real u(LDIST_SHAPE),v(LDIST_SHAPE),uug(l_ni,l_nj),vvg(l_ni,l_nj),
+     $                                    tt(l_ni,l_nj), es(l_ni,l_nj)
+      real*8  dayfrac,one,sid,rsid
+      parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
+      data first/.true./
+      save first
+*     ________________________________________________________________
+*
+      if (.not.C_coupling_L) return
+      if (first) then
+         first = .false.
+         if (Rstri_rstn_L.and.oce_hotstart) return
+      endif
+*
+      key( 1) = VMM_KEY(ut1)
+      key( 2) = VMM_KEY(vt1)
+      key( 3) = VMM_KEY(tt1)
+*
+      err = vmmlod(key,3)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+*
+      if (.not.Schm_offline_L) then
+         u(:,:) = ut1 (:,:,G_nk)
+         v(:,:) = vt1 (:,:,G_nk)
+         call itf_phy_uvgridscal (u,v,LDIST_DIM, 1, .true.)
+         do j= 1, l_nj
+         do i= 1, l_ni 
+            uug(i,j) = u(i,j)* Dcst_rayt_8 / cos(geomg_y_8(j))
+            vvg(i,j) = v(i,j)* Dcst_rayt_8 / cos(geomg_y_8(j))
+         end do
+         end do
+      else
+         uug(:,:) = ut1 (:,:,G_nk)
+         vvg(:,:) = vt1 (:,:,G_nk)
+      endif
+*
+      call wind_rot2ll (uug,vvg,Geomn_lonrx,Geomn_latrx,l_ni*l_nj)
+*
+      call diag_ttes (tt,es,l_ni,l_nj,G_nk)
+*
+      atm_local_busou(:,:,1) = tt
+      atm_local_busou(:,:,2) = uug
+      atm_local_busou(:,:,3) = vvg
+      atm_local_busou(:,:,4) = es
+*
+      call glbcolc (atm_busou, G_ni, G_nj, atm_Local_busou,
+     $                          1, l_ni, 1, l_nj, ip_fldou)
+*
+      if (Ptopo_myproc.eq.0) then
+*
+      dayfrac = dble(Lctl_step)*Cstv_dt_8*rsid
+      call incdatsd  (datev,Mod_runstrt_S,dayfrac)
+      dayfrac = dble(Lctl_step-1)*Cstv_dt_8*rsid
+      call incdatsd  (datem,Mod_runstrt_S,dayfrac)
+      if ( (Lctl_step.eq.0) .and. (oce_hotstart) ) datem = datev
+*
+      call itf_cpl_exchg (datev, datem, G_ni, G_nj, send, recv)
+      if (recv == 3001) atm_busin = 0.
+*
+      flag = (mod(Lctl_step,1).eq.0)
+      if (flag) then
+         do i=1,ip_fldou
+            nomvar = cg_writ(i)(5:7)
+            if (nomvar.eq.'UDA') nomvar='UU'
+            if (nomvar.eq.'VDA') nomvar='VV'
+            call r_rawfstw  (atm_busou(1,(i-1)*G_nj+1),G_ni,G_nj,nomvar,
+     $         Lctl_step,int(Cstv_dt_8),Out3_date,'..//gem_cpl_out.fst')
+         end do
+         do i=1,ip_fldin
+            nomvar = cg_read(i)(5:7)
+            if (nomvar.eq.'UDA') nomvar='UU'
+            if (nomvar.eq.'VDA') nomvar='VV'
+            call r_rawfstw  (atm_busin(1,(i-1)*G_nj+1),G_ni,G_nj,nomvar,
+     $         Lctl_step,int(Cstv_dt_8),Out3_date,'..//gem_cpl_in.fst' )
+         end do
+      endif
+*
+      if (cpl_name.eq.'MECatmg15_240x290GSL <==> GOMoceg05_150x236GSL')
+     $    atm_busin(1:94,1:G_nj)= 0. ; atm_busin(176:G_ni,1:G_nj)= 0.
+
+      endif
+*
+      call glbdist (atm_busin, G_ni, G_nj, atm_local_busin,
+     $                    1, l_ni, 1, l_nj, ip_fldin, 0, 0)
+*
+*     ________________________________________________________________
+*
+      return
+      end
+

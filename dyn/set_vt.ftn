@@ -18,6 +18,7 @@
 * v2_31 - Desgagne M.    - remove HU and QC and call to set_trin and
 *                          re-introduce 3D tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_31 - Tanguay M.     - Introduce time extrapolation 
 *
 *object
 *	See above id.
@@ -33,8 +34,10 @@
 #include "vth.cdk"
 #include "vt1.cdk"
 #include "vt2.cdk"
+#include "vtw.cdk"
 #include "vtx.cdk"
 #include "tr3d.cdk"
+#include "step.cdk"
 *
 *modules
       integer vmmcre
@@ -73,6 +76,7 @@
       COMMON_INIT(vth,-100)
       COMMON_INIT(vt1,-100)
       COMMON_INIT(vt2,-100)
+      COMMON_INIT(vtw,-100)
       COMMON_INIT(vtx,-100)
       attri_S  = 'SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
       attri2_S = 'SAVE=Y,CL=1,W=5,INIT=0,MUSTEXIST'
@@ -217,6 +221,52 @@
       VMM_NAM(psdt2 )= 'PSD2'
       VMM_NAM(st2   )= 'ST2'
       VMM_NAM(trt2  )= 'TRT2'
+*
+      if (Schm_modcn.eq.Step_total) then
+*
+*C       5B.   Create variables at time t0-2dt (tw=t2 work space)
+*              --------------------------------------------------
+*       Assign the names of the variables
+*
+      VMM_NAM(utw   )= 'UTW'
+      VMM_NAM(vtw   )= 'VTW'
+      VMM_NAM(wtw   )= 'WTW'
+      VMM_NAM(tdtw  )= 'TDRW'
+      VMM_NAM(ttw   )= 'TTW'
+      VMM_NAM(fitw  )= 'FITW'
+      VMM_NAM(qtw   )= 'QTW'
+      VMM_NAM(tptw  )= 'TPTW'
+      VMM_NAM(fiptw )= 'FIPW'
+      VMM_NAM(qptw  )= 'QPTW'
+      VMM_NAM(piptw )= 'PIPW'
+      VMM_NAM(tpltw )= 'TPLW'
+      VMM_NAM(mutw  )= 'MUTW'
+      VMM_NAM(psdtw )= 'PSDW'
+      VMM_NAM(stw   )= 'STW'
+      VMM_NAM(trtw  )= 'TRTW'
+*
+      VMM_CREATE(utw  , LARRAY3D, 1, attri2_S)
+      VMM_CREATE(vtw  , LARRAY3D, 1, attri2_S)
+      VMM_CREATE(wtw  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tdtw , LARRAY3D, 1, attri_S)
+      VMM_CREATE(ttw  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fitw , LARRAY3D, 1, attri_S)
+      VMM_CREATE(qtw  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tptw , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fiptw, LARRAY3D, 1, attri_S)
+      VMM_CREATE(qptw , LARRAY3D, 1, attri2_S)
+      VMM_CREATE(piptw, LARRAY3D, 1, attri_S)
+      VMM_CREATE(tpltw, LARRAY3D, 1, attri_S)
+      VMM_CREATE(psdtw, LARRAY3D, 1, attri_S)
+      VMM_CREATE(stw  , LARRAY2D, 1, attri_S)
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE(  mutw, LARRAY3D, 1, attri_S )
+      endif
+      if ( Tr3d_ntr .gt. 0 ) then
+         VMM_CREATE(trtw, LARRAY3D, Tr3d_ntr, attrit_S)
+      endif
+*
+      endif
 *
 *C       6.    Create variables with no specific time tag
 *              ------------------------------------------

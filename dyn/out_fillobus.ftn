@@ -51,8 +51,6 @@
 **
 *     ---------------------------------------------------------------
 *
-      if ((Lun_out.gt.0).and.(F_cpu.eq.1)) write(Lun_out,1000)
-*
       jdo = 0
 *
  100  continue
@@ -121,10 +119,6 @@
       goto 100
 *
  650  continue     
-*
- 1000 format(/'FILL OBUS at 0: CMC/RPN PHYSTEP 0 OMITTED (S/R out_fillobus)'
-     $       /55('='))
- 1001 format(/'Error in out_fillobus: MEMORY FOR PHYSICS MUST BE IN CORE')
 *
 *     ---------------------------------------------------------------
 *

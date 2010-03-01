@@ -1,0 +1,26 @@
+#if defined (DOC)
+*
+***comdeck offline.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*      VARIABLES ASSOCIATED WITH OFFLINE MODE                          |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+*  Offline_int_accu_S| Type of interpolation used for accumulators     |
+* Offline_ip1a       | ip1 value for piloting fields used in Offline   |
+*----------------------------------------------------------------------
+*
+#endif
+
+ 
+      character*8 Offline_int_accu_S
+      integer Offline_ip1a
+      MARK_COMMON_BEG (offline_c)
+      common /offline_c/ Offline_int_accu_S
+      MARK_COMMON_END (offline_c)
+      MARK_COMMON_BEG (offline_i)
+      common /offline_i/ Offline_ip1a
+      MARK_COMMON_END (offline_i)

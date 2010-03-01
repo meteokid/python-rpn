@@ -39,6 +39,7 @@
 #include "itf_phy_busind.cdk"
 #include "itf_phy_config.cdk"
 #include "vtopo.cdk"
+#include "path.cdk"
 *
       integer  vmmlod,vmmget,vmmuld,longueur,sid3df
       external vmmlod,vmmget,vmmuld,longueur,sid3df
@@ -196,7 +197,8 @@
             dyn_done = .false.
             phy_done = .false.
 *
-            fn ='../casc/3df'//md//'_'//datev//'_'//ifd_fnext(n)
+            fn = trim(Path_input_S)//'/INDATA/casc/3df'//md//
+     $                          '_'//datev//'_'//ifd_fnext(n)
             open (unf,file=fn(1:longueur(fn)),access='SEQUENTIAL',
      $                form='UNFORMATTED',status='OLD',iostat=errop)
            

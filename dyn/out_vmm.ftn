@@ -19,6 +19,8 @@
 *revision
 * v3_20 - Lee V.            - initial MPI version
 * v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
+* v3_31 - Lee V.            - modification of Out_etik_S in out_sgrid only
+* v3_31 - Lee V.           - kind is set to 2 (press) for 2D fields, not -1
 *
 *object
 *     output all the VMM fields
@@ -259,11 +261,11 @@
                  call filter(w4,sorfilt(ii),sorcoef(ii),'G', .false.,
      $                  l_minx,l_maxx,l_miny,l_maxy, 1)
                  call ecris_fst2(w4,l_minx,l_maxx,l_miny,l_maxy,0.0,
-     $             sorname_S(ii)(1:4),1.0,0.0, -1, 1, 1, 1, 
+     $             sorname_S(ii)(1:4),1.0,0.0, 2, 1, 1, 1, 
      $             sorbit(ii) )
              else
                  call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,0.0,
-     $             sorname_S(ii)(1:4),1.0,0.0, -1, 1, 1, 1, 
+     $             sorname_S(ii)(1:4),1.0,0.0, 2, 1, 1, 1, 
      $             sorbit(ii) )
              endif
          endif
@@ -357,7 +359,7 @@
      $        Grid_y0(outd_grid(F_set)),Grid_y1(outd_grid(F_set)),
      $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+1,
      $        Grid_stride(outd_grid(F_set)),
-     $        Grid_etikext_s(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)), F_etikadd_S,
      $        Geomn_longu,Geomn_latgs )
          do ii=1,windidx
             pnerr = vmmget(windkey(ii),patr,tr)
@@ -369,7 +371,7 @@
             endif
          enddo
          if (uvgrid_L) 
-     $       call out_sfile(Out3_closestep,Lctl_step,F_etikadd_S,F_ip3,F_ext_S)
+     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
 *        Output on V  grid
          uvgrid_L = .false.
          call out_sgrid(
@@ -377,7 +379,7 @@
      $        Grid_y0(outd_grid(F_set)),min(Grid_y1(outd_grid(F_set)),G_njv),
      $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+2,
      $        Grid_stride(outd_grid(F_set)),
-     $        Grid_etikext_s(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),F_etikadd_S,
      $        Geomn_longs,Geomn_latgv)
          do ii=1,windidx
             pnerr = vmmget(windkey(ii),patr,tr)
@@ -389,7 +391,7 @@
             endif
          enddo
          if (uvgrid_L) 
-     $       call out_sfile(Out3_closestep,Lctl_step,F_etikadd_S,F_ip3,F_ext_S)
+     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
 
       else
 *_______________________________________________________________________
@@ -403,7 +405,7 @@
      $        Grid_y0(outd_grid(F_set)),Grid_y1(outd_grid(F_set)),
      $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+1,
      $        Grid_stride(outd_grid(F_set)),
-     $        Grid_etikext_s(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),F_etikadd_S,
      $        Geomn_longu,Geomn_latgs )
          do ii=1,windidx
             pnerr = vmmget(windkey(ii),patr,tr)
@@ -423,7 +425,7 @@
             endif
          enddo
          if (uvgrid_L) 
-     $       call out_sfile(Out3_closestep,Lctl_step,F_etikadd_S,F_ip3,F_ext_S)
+     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
 *        Output on V  grid
          uvgrid_L = .false.
          call out_sgrid(
@@ -431,7 +433,7 @@
      $        Grid_y0(outd_grid(F_set)),min(Grid_y1(outd_grid(F_set)),G_njv),
      $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+2,
      $        Grid_stride(outd_grid(F_set)),
-     $        Grid_etikext_s(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),F_etikadd_S,
      $        Geomn_longs,Geomn_latgv)
          do ii=1,windidx
             pnerr = vmmget(windkey(ii),patr,tr)
@@ -451,7 +453,7 @@
             endif
          enddo
          if (uvgrid_L) 
-     $       call out_sfile(Out3_closestep,Lctl_step,F_etikadd_S,F_ip3,F_ext_S)
+     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
       endif
       pnerr = vmmuln(windkey,windidx)
 

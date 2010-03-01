@@ -31,6 +31,7 @@
 * v3_20 - Pellerin P.       - To allow the off-line mode
 * v3_30 - Desgagne M.       - new itf_phy interface
 * v3_30 - Bilodeau-Desgagne - debug offline mode
+* v3_31 - Bilodeau & Lee    - Correction for offline mode
 *
 *object
 *	Fill the slice workspace variable for the physics.
@@ -114,8 +115,8 @@
                do i= 1, p_ni
                   indx = i-1
                   ii = i + p_offi
-                  F_busper(phyt_ind(1,n)+indx) = F_trp(ii,F_jdo,1,n)
-                  F_busper(phyt_ind(2,n)+indx) = F_trp(ii,F_jdo,1,n)
+                  F_busdyn(phyt_ind(1,n)+indx) = F_trp(ii,F_jdo,1,n)
+                  F_busdyn(phyt_ind(2,n)+indx) = F_trp(ii,F_jdo,1,n)
                end do
             else if (phyt_name_S(n).eq.'FB'.or.phyt_name_S(n).eq.'N4') then
                do i= 1, p_ni

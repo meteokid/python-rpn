@@ -20,6 +20,7 @@
 * v3_21 - Valcke, S.        - add oasis coupling termination
 * v3_22 - Dugas, B.         - add gemclimdm entry point
 * v3_30 - Desgagne M.       - new physics, coupling interface
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
 *
 *object
 *	
@@ -49,7 +50,7 @@
 *
 *C             Initialize geometry of the model
 *              --------------------------------
-      call set_geom()
+      call set_geom ()
 *
 *C             Initialize the physics parameterization package
 *              ----------------------------------
@@ -68,6 +69,10 @@
 *C             Read restart if present
 *              --------------------------------
       call rdrstrt( )
+*
+*C             Initialize coupling
+*              -------------------
+      call itf_cpl_init ()
 *
 *C             Setup commons level 1: VMM tables
 *              ---------------------------------
@@ -92,10 +97,6 @@
          call v4d_options
 *
       endif
-*
-*C    Finalize coupling (nothing is done if no coupling)
-*     -----------------
-      call itf_cpl_stop_coupling()
 *
       call set_term()
 *

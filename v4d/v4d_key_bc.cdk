@@ -1,0 +1,23 @@
+      integer n_tr,ntime,bc_err
+      integer key_bc_u_,
+     $        key_bc_v_,
+     $        key_bc_tp_,
+     $        key_bc_s_,
+     $        key_bc_tr_
+      integer key_bc_u,
+     $        key_bc_v,
+     $        key_bc_tp,
+     $        key_bc_s,
+     $        key_bc_tr(Tr3d_ntr)
+*
+      real f_bc_u,
+     $     f_bc_v, 
+     $     f_bc_tp, 
+     $     f_bc_s, 
+     $     f_bc_tr 
+      pointer (pabc_u,  f_bc_u (LDIST_SHAPE,l_nk))
+      pointer (pabc_v,  f_bc_v (LDIST_SHAPE,l_nk))
+      pointer (pabc_tp, f_bc_tp(LDIST_SHAPE,l_nk))
+      pointer (pabc_s,  f_bc_s (LDIST_SHAPE))
+      pointer (pabc_tr, f_bc_tr(LDIST_SHAPE,l_nk))
+

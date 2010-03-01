@@ -12,6 +12,8 @@
 *     M. Desgagne    - Summer 2006
 *
 *revision
+* v3_30 - Desgagne M. - initial version 
+* v3_31 - Tanguay  M. - Control BC
 *
 *object
 *
@@ -26,6 +28,7 @@
 #include "v4dj.cdk"
 #include "v4dm.cdk"
 #include "v4dr.cdk"
+#include "v4dg_bc.cdk"
 #include "v4d_nml.cdk"
 *
       integer fnom
@@ -58,7 +61,7 @@
       endif
       if ((V4dg_conf/100.eq.1.and.V4dg_sensib_L).or.
      $   ((V4dg_conf/100.eq.4.or.V4dg_conf/100.eq.5).and.V4dg_anincr_L)) then
-        V4dg_lun_obs_s=trim(Path_dfwmil_S)//'/v4d_obsfile_std'
+        V4dg_lun_obs_s=trim(Path_input_S)//'/v4d_obsfile_std'
         V4dg_lun_obs = 0
         err = fnom (V4dg_lun_obs,V4dg_lun_obs_s,'RND+OLD', 0)
       endif

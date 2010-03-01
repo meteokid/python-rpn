@@ -17,6 +17,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Lee V.            - Initialize Lam truncated trajectory counters
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+* v3_31 - Desgagne M.       - remove Adw_trunc 
 *
 *object
 *     see id section
@@ -79,10 +80,6 @@
 *
 ************************************************************************
       v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L .and. .not.V4dr_redotr_L 
-*
-      do i=1, 4
-         Adw_trunc(i) = 0
-      enddo
 *
       call adw_main_1_wnd ( u, v, w, Adw_nit, Adw_njt, l_nk)
 * 

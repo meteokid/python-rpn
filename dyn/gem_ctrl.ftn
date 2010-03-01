@@ -20,6 +20,7 @@
 * v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
 * v3_21 - valcke, S.        - add oasis coupling initialization
 * v3_30 - Desgagne M.       - moved calls set_adw,set_opr to set_dync
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
 *
 *object
 *     Beginning of the integration. This subroutine
@@ -38,7 +39,6 @@
 #include "v4dg.cdk"
 #include "vtopo.cdk"
 *
-      integer pnerr
       logical rstrt_L
       data rstrt_L /.false./
 *
@@ -71,10 +71,6 @@
            call set_dync()
 *
         endif
-*
-*C       Initialize coupling (nothing is done if no coupling)
-*         -------------------
-        call itf_cpl_set_coupling()
 *
       endif
 *

@@ -24,6 +24,8 @@
 * v3_21 - Valcke, S.        - Bugfix: no call to itf_phy_apply in offline mode
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
+* v3_31 - Lee V.            - modification of Out_etik_S in out_sgrid only
 *   
 *object
 *	Computes the physical processes and apply the resulting
@@ -48,7 +50,7 @@
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
 #include "itf_phy_vmm.cdk" 
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 #include "grdc.cdk"
 #include "geomn.cdk"
 #include "out3.cdk"
@@ -57,8 +59,6 @@
 #include "lctl.cdk"
 *
 *modules
-      integer  open_db_file,rewind_db_file,close_db_file
-      external open_db_file,rewind_db_file,close_db_file
       integer  omp_get_max_threads
       external omp_get_max_threads
 **
@@ -123,10 +123,6 @@
 *
       Mem_pslic = 0
 *
-!SC TODO: must parameterize the numbers 6*4 to CPL_NBFLDS*CPL_NBTYPE
-      if (C_coupling_L .and. lg_getfirst) 
-     $    call phycom ('CPL_FLD' ,iga_cplfld ,6*4,'set')
-*
       tdu=0. ; tdv=0.
 *
       call pe_rebind(1)
@@ -160,7 +156,7 @@
             cobussiz=p_bper_siz/(p_ni)
             allocate (cobusval(l_ni*l_nj,cobussiz))
             call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,
-     $                   .false.,-1,-1,1,'',Geomn_longs,Geomn_latgs)
+     $                   .false.,-1,-1,1,'','',Geomn_longs,Geomn_latgs)
 
             call datf2p (pdate,Out3_date)
             dayfrac = dble(F_stepno) * Cstv_dt_8 / sec_in_day

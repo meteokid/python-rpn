@@ -11,6 +11,7 @@
 *
 *revision
 * v3_30 - Desgagne M.        - initial version
+* v3_31 - Lee V.             - setup only for LAM
 *
 *object
 *
@@ -30,6 +31,7 @@
 *
 *----------------------------------------------------------------------
 *
+      if (.not.G_lam) return
       dimxs = 0
       dimys = 0
       dimxn = 0

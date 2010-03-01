@@ -26,6 +26,9 @@
 * v3_20 - Dugas B.            - correct calculation for LAM when Glb_pil gt 7
 * v3_30 - McTaggart-Cowan R.  - add adw_comp_cub_L 
 * v3_30 - Tanguay M.          - Validation for LAM version 
+* v3_31 - Desgagne M.         - new scope for operator + adw_cliptraj (LAM)
+* v3_31 - Tanguay M.          - Introduce time extrapolation
+* v3_31 - Tanguay M.          - Cancel 'Increase Halo' when G_lam
 *
 *language
 *     fortran 77
@@ -105,29 +108,14 @@
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west)  i0=4       + (Glb_pil_w - 7)
-          if (l_east)  in=l_niu-2 - (Glb_pil_e - 7)
-          if (l_south) j0=4       + (Glb_pil_s - 7)
-          if (l_north) jn=l_njv-2 - (Glb_pil_n - 7)
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
           if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
      $         (mod(Lctl_step,Step_gstat).eq.0) )
      $         call adw_cfl_lam ( F_u, F_v, F_w, i0, in, j0, jn )
-          call adw_ckbd_lam( F_u, F_v, F_w, i0, in, j0, jn )
-*
-         if ( V4dg_conf.ne.0.0 ) then
-*
-            outside = 0
-            if ( Adw_trunc(1) + Adw_trunc(2) +
-     $           Adw_trunc(3) + Adw_trunc(4) .gt. 0 ) outside = 1
-*
-            sum_outside = 0
-            call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
-     $                                             "MPI_SUM","grid",ier)
-*
-            if(sum_outside.ne.0) call gem_stop
-     $           ('ADW_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
-*
-         endif
+          call adw_cliptraj (  F_u, F_v, i0, in, j0, jn, 'INTERP')
 *
       endif
 *
@@ -267,7 +255,7 @@
      %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
       endif
 *
-      if ( Orh_icn .eq. Schm_itcn ) then
+      if ( Orh_icn .eq. Schm_itcn. or. .not.Orh_crank_L ) then
 *
 * tr3d advection
 *

@@ -1,0 +1,117 @@
+***s/r extrwnd - Extrapolation of the winds required for
+*		 the evaluation of the trajectories
+*
+#include "model_macros_f.h"
+*
+      subroutine extrwnd
+*
+      implicit none
+*
+*author michel roch - rpn - nov 1993
+*
+*revision
+* v0_12 - sylvie gravel - shallow-water model
+* v0_14 - andre methot  - addition of time level t3
+* v0_16 - alain patoine - Arakawa c-grid version
+* v3_31 - Tanguay M.    - Introduce time extrapolation
+*
+*object
+*     see id section
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "vtw.cdk"
+#include "schm.cdk"
+#include "hzd.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnerr, pnlkey1(100), pnlod
+      integer i, j, k
+      real pt1,pt2
+*
+      if (Schm_xwvt3.ne.0) call gem_stop ('EXTRWND not done since no T3',-1)   
+*
+*     ------------------------
+*     NOTE: TW = T2 work space
+*     ------------------------
+*
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1) = VMM_KEY(uth)
+      pnlkey1(2) = VMM_KEY(ut1)
+      pnlkey1(3) = VMM_KEY(utw)
+      pnlkey1(4) = VMM_KEY(vth)
+      pnlkey1(5) = VMM_KEY(vt1)
+      pnlkey1(6) = VMM_KEY(vtw)
+      pnlkey1(7) = VMM_KEY(psdth)
+      pnlkey1(8) = VMM_KEY(psdt1)
+      pnlkey1(9) = VMM_KEY(psdtw)
+      pnlod = 9
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(uth)
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(utw)
+      pnerr = VMM_GET_VAR(vth)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(vtw)
+      pnerr = VMM_GET_VAR(psdth)
+      pnerr = VMM_GET_VAR(psdt1)
+      pnerr = VMM_GET_VAR(psdtw)
+*
+*     Filtering
+*     ---------
+      if (Hzd_t1_1_L) call hzd_hoffld (ut1,   LDIST_DIM, G_nk, 1)
+      if (Hzd_t1_1_L) call hzd_hoffld (vt1,   LDIST_DIM, G_nk, 2)
+      if (Hzd_t1_1_L) call hzd_hoffld (psdt1, LDIST_DIM, G_nk, 3)
+*
+*     -------------------------------------------------
+*     WIND EXTRAPOLATION using 2 time levels: t1 and t2
+*     -------------------------------------------------
+      if ( Schm_xwvt3 .eq. 0 ) then
+*
+      pt1 =  1.5
+      pt2 = -0.5
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_niu
+         uth(i,j,k) = pt1*ut1(i,j,k) + pt2*utw(i,j,k)
+      enddo
+      enddo
+      enddo
+*
+      do k=1,l_nk
+      do j=1,l_njv
+      do i=1,l_ni
+         vth(i,j,k) = pt1*vt1(i,j,k) + pt2*vtw(i,j,k)
+      enddo
+      enddo
+      enddo
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         psdth(i,j,k)= pt1*psdt1(i,j,k)+ pt2*psdtw(i,j,k)
+      enddo
+      enddo
+      enddo
+*
+      else
+* 
+*     NOT DONE
+*
+      endif
+*     ---------------------------------------------------------------
+*
+      pnerr = vmmuld(-1,0)
+*
+      return
+      end

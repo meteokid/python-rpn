@@ -1,0 +1,6 @@
+*
+      integer V4dg_bc_variant,V4dg_bc_t1,V4dg_bc_t2,V4dg_bc_t3
+      MARK_COMMON_BEG (v4dg_bc)
+      common / v4dg_bc /V4dg_bc_variant,V4dg_bc_t1,V4dg_bc_t2,V4dg_bc_t3
+      MARK_COMMON_END (v4dg_bc)
+*

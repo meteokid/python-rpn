@@ -27,6 +27,7 @@
 * v3_20 - Tanguay M.        - Adjoint Surfix 
 *                           - Introduce Hzd_hdif0_L
 * v3_30 - Tanguay M.        - Adapt TL/AD to Clim_clima_L
+* v3_31 - Tanguay M.        - Add TMG timings
 *
 *object
 *     see id section
@@ -85,7 +86,9 @@
 
 *C    Evaluate gradient forcing at required time
 *     ------------------------------------------
+      call tmg_start0 (56, 'PRO_AD' )
       call v4d_ctrlgrd ()
+      call tmg_stop0 (56)
 *
       if (Schm_sfix_L) call surfix_ad ( )
 *
@@ -107,12 +110,16 @@
 *        Adjoint of
 *        Physics timestep & Horizontal diffusion & Vertical sponge
 *        ---------------------------------------------------------
+         call tmg_start0 (63, 'PHY_AD' )
          call hdif_phy_ad
+         call tmg_stop0 (63)
 *
 *        Adjoint of
 *        Dynamics timestep
 *        -----------------
+         call tmg_start0 (62, 'DYN_AD' )
          call dynstep_ad( )
+         call tmg_stop0 (62)
 *
 *        Adjoint of
 *        Horizontal diffusion & Vertical sponge (Initial timestep)
@@ -135,7 +142,9 @@
 *
 *C    Evaluate gradient forcing at INITIAL time (before adjoint of preprocessing) 
 *     ---------------------------------------------------------------------------
+      call tmg_start0 (56, 'PRO_AD' )
       call v4d_ctrlgrd ()
+      call tmg_stop0 (56)
 *
 *C    Perform output if required
 *     --------------------------

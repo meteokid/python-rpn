@@ -17,12 +17,11 @@
       integer nzone,indzone(nzone)
       real pxzone(nzone),pyzone(nzone)
 *
-      character*1 grtypi
-*
 *author Tanguay M. 
 *
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
+* v3_31 - Tanguay M.        - Add OPENMP directives 
 *
 *object
 *  see id section
@@ -75,6 +74,7 @@
 *
 *     ZERO adjoint variables
 *     ----------------------
+!$omp parallel do
       do k=1,nk
 *
         do i=1,nzone
@@ -90,6 +90,7 @@
         enddo
 *
       enddo
+!$omp end parallel do
 *
 *     Adjoint of
 *     Replace corrected zuo,zvo near south pole
@@ -166,6 +167,7 @@
 *
       endif
 *
+!$omp parallel do
       do k=nk,1,-1
 *
 *       Adjoint of
@@ -191,6 +193,7 @@
         enddo
 *
       enddo
+!$omp end parallel do
 *
       deallocate( lineu, STAT=status )
       deallocate( linev, STAT=status )

@@ -55,6 +55,7 @@
 #include "ptopo.cdk"
 #include "tr3d.cdk"
 #include "path.cdk"
+#include <clib_interface.cdk>
 #include <prof_f.h>
 *
 *     Local variables
@@ -70,8 +71,8 @@
 *
       character*256 pathdwgf_S,pathdwga_S
 *     
-      integer  vmmlod,vmmget,vmmuld,fnom,prof_rdrec,longueur
-      external vmmlod,vmmget,vmmuld,fnom,prof_rdrec,longueur
+      integer  vmmlod,vmmget,vmmuld,fnom,prof_rdrec
+      external vmmlod,vmmget,vmmuld,fnom,prof_rdrec
 *
       integer key1(Tr3d_ntr), key1_, key1m(Tr3d_ntr), key1m_, n 
       real hut1, hut1m
@@ -133,7 +134,7 @@
 *        -------------------
          write(Lun_out,*) 'Opening file dwgf PROF file'
 *
-         pathdwgf_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/dwgf.prof'
+         pathdwgf_S = trim(Path_xchg_S)//'/dwgf.prof'
          ihdlin = prof_open(pathdwgf_S,'READ',Pr_mode_S,Pr_dsnooze_8)
 *
          if(ihdlin.le.0) then
@@ -151,7 +152,7 @@
 *        -------------------
          write(Lun_out,*) 'Opening file dwga PROF file'
 *
-         pathdwga_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/dwga1.prof'
+         pathdwga_S = trim(Path_xchg_S)//'/dwga1.prof'
          ihdlin = prof_open(pathdwga_S,'READ',Pr_mode_S,Pr_dsnooze_8)
 *
          if(ihdlin.le.0) then

@@ -26,6 +26,7 @@
 *                           - ADJ of digital filter
 * v3_20   M Tanguay         - Replace v4d_dynout by out_dyn_ad 
 * v3_30 - Tanguay M.        - adapt TL/AD to out_dyn 
+* v3_31 - Tanguay M.        - Control BC
 *
 *object
 *     Simulator 4D (in minimization language).
@@ -59,6 +60,7 @@
 #include "step.cdk"
 #include "schm.cdk"
 #include "init.cdk"
+#include "v4dg_bc.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -181,6 +183,9 @@
 *        ------------------------------------
          if( Init_balgm_L ) Rstri_idon_L = .false.
 *
+         if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_0
+         if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_t_from_bc_0
+*
 *        Read trajectory for conversion if requested
 *        -------------------------------------------
          call v4d_rwconv0
@@ -277,6 +282,9 @@
 *        ----------------------
          V4dg_part = 3
          call indata_ad()
+*
+         if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_t_from_bc_0_ad
+         if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_0_ad
 *
 *        Read trajectory for conversion at initial time
 *        ----------------------------------------------
