@@ -61,12 +61,10 @@
       integer i1,j1,k1,nn
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1
-      real,    dimension(l_ni*l_nj*l_nk) :: xctg,yctg,zctg
       real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
       real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1,wrk_yth
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1m
-      real,    dimension(l_ni*l_nj*l_nk) :: xctgm,yctgm,zctgm
       real,    dimension(l_ni*l_nj*l_nk) :: capx1m,capy1m,capz1m
       real,    dimension(l_ni*l_nj*l_nk) :: wrkx1m,wrky1m,wrkz1m,wrkc1m,wrk_ythm
 *
@@ -129,19 +127,19 @@
       pnerr = VMM_GET_VAR(yct1m)
       pnerr = VMM_GET_VAR(zct1m)
 
-************************************************************************
-      do it=1,F_it
-************************************************************************
       i0=1
       in=l_ni
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west) i0=3
-          if (l_east) in=l_niu-1
-          if (l_south) j0=3
-          if (l_north) jn=l_njv-1
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
       endif
+************************************************************************
+      do it=1,F_it
+************************************************************************
                      doh_L = .false.
       if (it .eq. 1) doh_L = .true.
 *
@@ -167,32 +165,12 @@
      %                    wrkx1m,F_um,    n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
       call adw_trilin_tl (wrky1, F_v, 1.0,n1, capx1, capy1, capz1, 
      %                    wrky1m,F_vm,    n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
-      endif
 *
 ************************************************************************
       call adw_trajsp_tl ( xth,  yth,  xcth,  ycth,  zcth,  wrkx1,  wrky1, 
      %                     xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
      %                     i0,in,j0,jn)
 ************************************************************************
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-1
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-1
-      endif
       do n = 1,nijk
 *
 *     TRAJECTORY
@@ -211,16 +189,6 @@
      %                     dummy,capz1m,dummy, xthm,  wrk_ythm,zthm,
      %                     .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
 *
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
-      endif
       call adw_trilin_tl (wrkx1, F_w, -dth,n1, capx1, capy1, capz1, 
      %                    wrkx1m,F_wm,     n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
 *

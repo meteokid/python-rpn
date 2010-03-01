@@ -14,6 +14,8 @@
 *revision
 * v3_00 - N. Ek          - initial MPI version
 * v3_00 - M. Tanguay     - adapt to Simon's exchange 
+* v3_01 - M. Tanguay     - correction for empty processors 
+*                        - introduce GAUSS=GEM option
 *
 *object
 *	
@@ -39,8 +41,8 @@
 #include <prof_f.h>
 *
 *modules
-      integer  longueur,newdate,ezgdef,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
-      external longueur,newdate,ezgdef,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
+      integer  ezqkdef,longueur,newdate,ezgdef,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
+      external ezqkdef,longueur,newdate,ezgdef,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
 *
       logical ropr_L,rdvar_L
 *
@@ -75,10 +77,6 @@
 *
       type (lalo8prof), dimension(nrecmax):: g_pf  ! NB the type !!!
 *
-      real*8 rad2deg_8
-*
-      real*8, parameter ::   ONE_8 =   1.0
-      real*8, parameter :: CLXXX_8 = 180.0
 *     ____________________________________________________________
 *
 *     Nullify pointers for prof_gvar
@@ -86,8 +84,6 @@
       do nrec = 1,nrecmax
          nullify( g_pf(nrec) % lat, g_pf(nrec) % lon, g_pf(nrec) % obstag) 
       end do
-*
-      rad2deg_8 = CLXXX_8/Dcst_pi_8
 *
 *     Switch for debugging output
 *     ---------------------------
@@ -141,7 +137,7 @@
 *
         if(ihdlin0.lt.0) then
            write(Lun_out,*) ' ERROR WHILE OPENING lalo PROF file'
-           call gefstop('v4d_readlalo')
+           call gem_stop('v4d_readlalo',-1)
         endif
 *
 *     Define input grid to locate pxg-pyg global grid positioning  
@@ -150,9 +146,17 @@
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 *
+      if(.not.V4dg_ga_eq_ge_L) then
+*
       gdin = ezgdef( G_ni,G_nj,'Z',Hgc_gxtyp_s,
      %               Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
      %               Geomn_longs, Geomn_latgs)
+*
+      else
+*
+      gdin = ezqkdef (G_ni,G_nj,'G',0,0,0,0,0)
+*
+      endif
 *
 *     -------------------------------------------------------------------------
 *     Loop over all the records and check if date is in the assimilation period
@@ -172,7 +176,7 @@
 *
       if(ier.ne.0) then
          write(Lun_out,*) 'Error: cannot read RECORD'
-         call gefstop('v4d_readlalo')
+         call gem_stop('v4d_readlalo',-1)
       endif
 *
       firstrec_L = .true.
@@ -183,7 +187,7 @@
 *
       if(pnerr.ne.0) then
          write(Lun_out,*) 'Error: cannot read PRM_STOB'
-         call gefstop('v4d_readlalo')
+         call gem_stop('v4d_readlalo',-1)
       endif
 *
       write(Lun_out,*) 'Stepob (minutes) from 3D-Var =',stepob 
@@ -197,13 +201,13 @@
 *
       if(Pr_maxstepob.lt.Pr_timobmax-1) then
          write(Lun_out,*) 'Error: Pr_maxstepob is not big enough' 
-         call gefstop('v4d_readlalo')
+         call gem_stop('v4d_readlalo',-1)
       endif
 *
 *     Initialize counter for maximal number of profiles in the local processor
 *     as function of observation time
 *     ------------------------------------------------------------------------
-      allocate( Pr_nob (Pr_timobmax), STAT=pnerr)
+      allocate( Pr_nob (0:Pr_timobmax-1), STAT=pnerr)
       do n = 0,Pr_timobmax-1
          Pr_nob(n) = 0
       enddo
@@ -252,7 +256,7 @@
 *
             if(pnerr.ne.0) then
                write(Lun_out,*) 'Error: cannot read PRM_DTST'
-               call gefstop('v4d_readlalo')
+               call gem_stop('v4d_readlalo',-1)
             endif
 *
             ier = newdate(pdtst, k,  kkk, -3)
@@ -266,7 +270,7 @@
 *           ----------------------------------------------
             if(.not.(hrdiff_8.ge.0.0.and.hrdiff_8.le.hrperiod_8)) then 
                write(Lun_out,*) 'DATE_TIME STAMP OF RECORD NOT IN THE ASSIMILATION PERIOD' 
-               call gefstop('v4d_readlalo')
+               call gem_stop('v4d_readlalo',-1)
             endif
 *
 *           The record is at the appropriate observation time
@@ -277,7 +281,7 @@
 *
               if(nrec.gt.nrecmax) then
                  write(Lun_out,*) 'Error: NRECMAX IS NOT BE ENOUGH'
-                 call gefstop('v4d_readlalo')
+                 call gem_stop('v4d_readlalo',-1)
               endif
 *
               Pr_doobs(ntime*V4dg_stepob) = 1
@@ -552,12 +556,12 @@
       call rpn_comm_ALLREDUCE (Pr_nobproc,testmaxprof,1,"MPI_INTEGER","MPI_SUM","grid",pnerr)
       if(Pr_maxprof.ne.testmaxprof) then
          write(Lun_out,*) 'Observations are lost or done twice: Sum over processors = ',testmaxprof 
-         call gefstop('v4d_readlalo')
+         call gem_stop('v4d_readlalo',-1)
       endif
 *
       allocate ( Pr_mlprof (l_nk,Pr_nobproc,Pr_nvars), STAT=pnerr )
 *
-      do ntime = 0, Pr_timobmax
+      do ntime = 0, Pr_timobmax-1
 *
       if(Pr_nob(ntime).ne.0) then
 *
@@ -589,7 +593,7 @@
 *
 *     Keep observation time associated to each model tag  
 *     --------------------------------------------------
-      do ntime = 0, Pr_timobmax
+      do ntime = 0, Pr_timobmax-1
 *
       if(Pr_nob(ntime).ne.0) then
 *

@@ -24,6 +24,8 @@
 * v2_30                     - change call to p0vt2gz_hyb
 * v2_32 - Lee V.            - reduce dynamic allocation size, add HU,ME output
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Lee V.            - Added output of ThetaW
+* v3_01 - Morneau J.        - remove conversion to Celcius for TL or AD output
 *
 *object
 *     See above id.
@@ -54,7 +56,9 @@
 #include "slab.cdk"
 #include "dslab.cdk"
 #include "tr3d.cdk"
+#include "grd.cdk"
 #include "grid.cdk"
+#include "v4dg.cdk"
 *
 *modules
       integer  vmmlod, vmmuld, vmmget, vmmuln, vmmulk
@@ -64,13 +68,14 @@
 *
 **
       integer cnmvar, cn3dvar, cnnkey, cn2dvar
-      parameter (cnmvar=14, cn3dvar=8, cn2dvar=4, cnnkey=5)
+      parameter (cnmvar=14, cn3dvar=9, cn2dvar=4, cnnkey=5)
       integer i,j,k,kl,jj,kk,jjj,kkk,ii,iii,i0,in,j0,jn
       integer pnlkey (cnnkey),key(Tr3d_ntr),key0
       integer pnerr,pnkey,levset,pnindex,pni2d,pni3d
       integer pni2dx(cn2dvar), pni3dx(cn3dvar)
       real prmult(cn3dvar), pradd(cn3dvar), prmult_pnme,prprlvl,hu
       character*8 ptmvar(cnmvar), pt3dvar(cn3dvar),pt2dvar(cn2dvar)
+      character*5 blank_S
       logical pl3dvar(cn3dvar)
       pointer (patr, hu(LDIST_SHAPE,*))
       real wk1(G_ni,G_nj),wk2(G_ni,G_nj)
@@ -103,24 +108,32 @@
      $     'FIT1', 'QT1',  'FIP1', 'QPT1', 'PIP1', 'TT1',  'TPL1' /
 *     list of derived 3-D variables that may be produced by blocthm
 *     NOTE: This routine also outputs ME, PN, P0 and PT
-      data pt3dvar /'GZ','VT','TT','ES','TD','HR','PX','HU'/
+      data pt3dvar /'GZ','VT','TT','ES','TD','HR','PX','HU','TW'/
       data pt2dvar /'ME','PN','PT','P0'/
-      integer pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu
+      integer pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu,pntw
       integer pnme,pnpn,pnpt,pnp0
 *     index of each symbol in the list
-      data pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu
-     $     /  1,   2,   3,   4,   5,   6,   7,   8/
+      data pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu,pntw
+     $     /  1,   2,   3,   4,   5,   6,   7,   8,   9/
       data pnme,pnpn,pnpt,pnp0
      $     /  1,   2,   3,   4/
 *     initialize conversion of units
       data prmult  / cn3dvar*1.0/
       data pradd   / cn3dvar*0.0/
 *
+      real*8, parameter :: ZERO_8 = 0.0
+*
       prmult_pnme  = 1.0 / Dcst_grav_8
       prmult(pngz) = 0.1 / Dcst_grav_8
-      pradd(pnvt)  = -Dcst_tcdk_8
-      pradd(pntt)  = -Dcst_tcdk_8
-      pradd(pntd)  = -Dcst_tcdk_8
+      if (V4dg_conf .ne. 0 .and. (v4dg_tl_L .or. v4dg_ad_L)) then
+        pradd(pnvt)  = ZERO_8
+        pradd(pntt)  = ZERO_8
+        pradd(pntd)  = ZERO_8
+      else
+        pradd(pnvt)  = -Dcst_tcdk_8
+        pradd(pntt)  = -Dcst_tcdk_8
+        pradd(pntd)  = -Dcst_tcdk_8
+      endif
       prmult(pnpx)  = 0.01
 *_______________________________________________________________________
 *
@@ -384,7 +397,7 @@
 *            if ME requested for output...
                   if (Outd_var(ii,kk).eq.pni2dx(pnme)) then
                      call insrtslab_d(t4,w2,LDIST_DIM,G_nk,G_nk,
-     $                  kk,prmult_pnme,0.0,pni2dx(pnme),0.0,mtout_e,
+     $                  kk,prmult_pnme,0.0,pni2dx(pnme),0,mtout_e,
      $                  var_e_S,typvar_e_S,ip1_e,bit_e,mtval_e,
      $                  LDIST_SIZ,mxout_e,Grid_sets)
                   endif
@@ -397,12 +410,12 @@
                      enddo
                      enddo
                      call insrtslab_d(w1,w2,LDIST_DIM,1,1,
-     $                  kk,.01,0.0,pni2dx(pnp0),0.0,mtout_e,
+     $                  kk,.01,0.0,pni2dx(pnp0),0,mtout_e,
      $                  var_e_S,typvar_e_S,ip1_e,bit_e,mtval_e,
      $                  LDIST_SIZ,mxout_e,Grid_sets)
                   endif
-*            if PT requested for output...
-                  if (Outd_var(ii,kk).eq.pni2dx(pnpt)) then
+*            if PT requested for output and not hybrid coordinate...
+                  if (Outd_var(ii,kk).eq.pni2dx(pnpt).and.Grd_rcoef.eq.1.0) then
 *       Calculate PT
                      do j= j0, jn 
                      do i= i0, in 
@@ -410,7 +423,7 @@
                      enddo
                      enddo
                      call insrtslab_d(w1,w2,LDIST_DIM,1,1,
-     $                  kk,0.01,0.0,pni2dx(pnpt),0.0,mtout_e,
+     $                  kk,0.01,0.0,pni2dx(pnpt),0,mtout_e,
      $                  var_e_S, typvar_e_S,ip1_e,bit_e,mtval_e,
      $                  LDIST_SIZ,mxout_e,Grid_sets)
                   endif
@@ -420,7 +433,7 @@
                      call pnm2(w1,tt1,t4,Out2_wlnph,Out2_wlao,
      $                    t2,t1,Out_nundr,LDIST_DIM,G_nk)
                      call insrtslab_d(w1,w2,LDIST_DIM,1,1,
-     $                  kk,.01,0.0,pni2dx(pnpn),0.0,mtout_e,
+     $                  kk,.01,0.0,pni2dx(pnpn),0,mtout_e,
      $                  var_e_S, typvar_e_S,ip1_e,bit_e,mtval_e,
      $                  LDIST_SIZ,mxout_e,Grid_sets)
                   endif
@@ -494,7 +507,7 @@
      $                    typvar_e_S,ip1_e,bit_e,mtval_e,
      $                    LDIST_SIZ,mxout_e,Grid_sets)
                      endif
-                     if (pl3dvar(pnes).or.pl3dvar(pnpx).or.
+                     if (pl3dvar(pnes).or.pl3dvar(pnpx).or.pl3dvar(pntw).or.
      $                    pl3dvar(pntd).or.pl3dvar(pnhr)) then
 *     Calculate PX (in w3)
                         do j= j0, jn 
@@ -507,6 +520,19 @@
                      if (pl3dvar(pnpx)) then
                           call insrtslab_d(w3,w4,LDIST_DIM,1,1,
      $                    kk,prmult(pnpx),pradd(pnpx),pni3dx(pnpx),
+     $                    Level_ip1(jjj,levset),mtout_e, var_e_S,
+     $                    typvar_e_S,ip1_e,bit_e,mtval_e,
+     $                    LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
+                     if (pl3dvar(pntw)) then
+*     Calculate THETAW TW (in w2) (w3=PX)
+                        do j= j0, jn 
+                        call mthtaw2 (w2(1,j),hu(1,j,k),tt1(1,j,k),
+     $                          w3(1,j),w3(1,j),3, .false., .false.,
+     $                          .true.,Dcst_trpl_8,l_maxx-l_minx+1,1,l_ni)
+                        enddo
+                        call insrtslab_d(w2,w4,LDIST_DIM,1,1,
+     $                    kk,prmult(pntw),pradd(pntw),pni3dx(pntw),
      $                    Level_ip1(jjj,levset),mtout_e, var_e_S,
      $                    typvar_e_S,ip1_e,bit_e,mtval_e,
      $                    LDIST_SIZ,mxout_e,Grid_sets)
@@ -666,7 +692,7 @@
      $                   LDIST_SIZ,mxout_e,Grid_sets)
                     endif
 *       Calculate PX for ES,TD,HR
-                    if ( pl3dvar(pnes).or.
+                    if ( pl3dvar(pnes).or.pl3dvar(pntw).or.
      $                   pl3dvar(pntd).or.pl3dvar(pnhr)) then
                        do j= j0, jn 
                        do i= i0, in 
@@ -674,6 +700,19 @@
                        enddo
                        enddo
                     endif
+                    if (pl3dvar(pntw)) then
+*     Calculate THETAW TW (in w5) (w3=PX)
+                        do j= j0, jn 
+                        call mthtaw2 (w5(1,j),w4(1,j),w2(1,j),
+     $                          w3(1,j),w3(1,j),3, .false., .false.,
+     $                          .true.,Dcst_trpl_8,l_maxx-l_minx+1,1,l_ni)
+                        enddo
+                        call insrtslab_d(w5,w6,LDIST_DIM,1,1,
+     $                    kk,prmult(pntw),pradd(pntw),pni3dx(pntw),
+     $                    Level_ip1(jjj,levset),mtout_e, var_e_S,
+     $                    typvar_e_S,ip1_e,bit_e,mtval_e,
+     $                    LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
                     if (pl3dvar(pnes).or.pl3dvar(pntd)) then
                        do j= j0, jn 
 *       Calculate ES (w4=HU,w2=VT,w3=PX)

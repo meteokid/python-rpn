@@ -44,9 +44,8 @@
 *notes
 *
 *implicits
-#include "e_locdim.cdk"
 #include "e_topo.cdk"
-#include "e_files.cdk"
+#include "e_grids.cdk"
 #include "e_dgf.cdk" 
 *
 *modules
@@ -63,7 +62,7 @@
       factor   = 2.0
       meshlenR = 3.0
 *
-      write(stdout,1001)
+      write(6,1001)
 *
 *     x dimension is fni+1 instead of fni because of output
 *     requirements in case of debugging.
@@ -88,13 +87,14 @@
 *
 *C       3.   compute coefficients
 *             --------------------
+
       do j=1,fnj        
          if ( Topo_dgfms_L ) fact=map_fact(j)    
+         hy = F_HY(j)
+         if ( .not.LAM .and. j .eq. fnj ) hy = F_HY(fnj-1) 
          do i=1,fni
             
             hx = F_HX(i)*fact
-            hy = F_HY(j)
-            if ( j .eq. fnj ) hy = F_HY(fnj-1) 
 *
 *        check for higher resolution along x axis
 *
@@ -104,6 +104,10 @@
                l = hx
                ptx(i,j) = nint( 2.*crit_len/l )
                ptx(i,j) = min0( cndgfmx-1, ptx(i,j) )
+               if (LAM) then
+                   ptx(i,j) = min0(  fni-i, ptx(i,j))
+                   ptx(i,j) = min0(    i-1, ptx(i,j))
+               endif
                call e_coefdgf( ptx(i,j), l, crit_len, cobuf)
                do n=1, ptx(i,j)+1
                   coeff(i,j,n)=cobuf(n)
@@ -167,23 +171,4 @@
 *
       return
       end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

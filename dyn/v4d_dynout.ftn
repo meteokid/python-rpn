@@ -15,6 +15,7 @@
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d  
 * v3_00 - Tanguay M.        - move true winds adjoint to blocuv 
 *                           - No preconditioning if V4dg_4dvar_L (done in 3D-Var)
+* v3_01 - Tanguay M.        - add V4dg_sgvc_L
 *
 *object
 *     see id section
@@ -98,7 +99,7 @@
       end do
       end do
 *
-      if(.not.V4dg_4dvar_L) then
+      if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) then
 *
 *     SIMULATE V4D_CAIN_AD (PART1)
 *     ----------------------------
@@ -181,7 +182,7 @@
             end do
             end do
 *
-            if(.not.V4dg_4dvar_L) then
+            if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) then
 *
 *           SIMULATE V4D_CAIN_AD (PART2)
 *           ----------------------------
@@ -206,7 +207,7 @@
       endif
 *     ______________________________________________________
 *
-      if(m.ne.V4dc_ncv.and..not.V4dg_4dvar_L) call gefstop('v4d_dynout')
+      if(m.ne.V4dc_ncv.and..not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call gem_stop('v4d_dynout',-1)
 *     ______________________________________________________
 *
 *     Perform output if required

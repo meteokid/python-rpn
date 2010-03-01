@@ -2,152 +2,157 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine e_intwind ( xu, yu, xv, yv, nu, nv )
-#include "impnone.cdk"
-*
-      integer nv, nu
-      real xu(*), yu(*), xv(*), yv(*) 
+      subroutine e_intwind 
+      implicit none
 *
 *author       M ROCH     - july 95 - from intvent
 *
 *revision
-* v2_30 - Sandrine Edouard       - adapt for vertical hybrid coordinate
-* v2_30 - L. Corbeil             - replaced ecriseq by BMF stuff, 
-* v2_30                            removed vertical interpolation
-* v2_31 - M. Desgagne            - removed toppu,toppv from calling sequence
-* v2_31                            and corrected date/time recording
+* v2_30 - Sandrine Edouard  - adapt for vertical hybrid coordinate
+* v2_30 - L. Corbeil        - replaced ecriseq by BMF stuff, 
+* v2_30                       removed vertical interpolation
+* v2_31 - M. Desgagne       - removed toppu,toppv from calling 
+* v2_31                       sequence and corrected date/time recording
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 *
 *object
 *        see above ID
 *
 *ARGUMENTS
-*______________________________________________________________________
-*                    |                                                 |
-* NAME               | DESCRIPTION                                     |
-*--------------------|-------------------------------------------------|
-*  All are inputs                                                      |
-*--------------------|-------------------------------------------------|
-*  Xu                | coordinates along x for U grid                  |
-*  Yu                | coordinates along y for U grid                  |
-*  Xv                | coordinates along x for V grid                  |
-*  Yv                | coordinates along y for V grid                  |
-*----------------------------------------------------------------------
 *
 *IMPLICITS
-#include "e_locdim.cdk"
-#include "e_maxprms.cdk"
 #include "e_option.cdk"
-#include "e_files.cdk"
+#include "e_fu.cdk"
 #include "e_anal.cdk"
 #include "e_grids.cdk"
-#include "e_zgrids.cdk"
-#include "e_times.cdk"
+#include "e_cdate.cdk"
 #include "e_topo.cdk"
-#include "did.cdk"
 #include "dcst.cdk"
 #include "grd.cdk"
 #include "bmf.cdk"
 #include "hgc.cdk"
 *
-      integer  ezqkdef,ezgdef_fmem,ezdefset,ezsetopt,ezuvint,
-     $         ezsetopt,fstinf,fstlir,fstprm,e_rdhint2
-      external ezqkdef,ezgdef_fmem,ezdefset,ezsetopt,ezuvint,
-     $         ezsetopt,fstinf,fstlir,fstprm,e_rdhint2
+      integer  ezqkdef,ezdefset,ezsetopt,ezuvint,
+     $         fstinf,fstlir,fstprm,e_rdhint3
+      external ezqkdef,ezdefset,ezsetopt,ezuvint,
+     $         fstinf,fstlir,fstprm,e_rdhint3
 *
-      integer i, j, k, l, m,src_gid,dst_gid,
-     $        key1, key2, nic, njc, ni1, nj1,nk1,nkc,err
+      integer i, j, k, src_gid, key1, key2, nic, njc, ni1, nj1, 
+     $        nk1,nkc,err,iu,ju,iv,jv,nu,nv
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
      $        dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       character*1 typ,grd
-      character*4 vtt,vhh,var
+      character*4 var,var_uu,var_vv
       character*12 lab
-      real topu(nu), topv(nv), gzsu(nu,lv), gzsv(nv,lv), anlpsu(nu),
-     $     anlpsv(nv), uu(nu), vw(nu), vv(nv), uw(nv), uvw(nu), 
-     $     huu_temp(nu,lv), huv_temp(nv,lv),ttu_temp(nu,lv),
-     $     ttv_temp(nv,lv), c1
+      logical flag_ut1
+      real uu(niu*nju),vw(niu*nju),vv(niv*njv),uw(niv*njv),
+     $     ttu(niu*nju),huu(niu*nju),ttv(niv*njv),huv(niv*njv),
+     $     uvw(niu*nju), c1
       real, dimension (:), allocatable :: w1,w2
 *
 * ---------------------------------------------------------------------
 *
-      if (.not.glhorint) then
+      nu = niu*nju
+      nv = niv*njv
+*
+      if (anal_hav(1).eq.0) then
+*
 * ---------------------------------------------------------------------
 *        NO INTERPOLATION REQUIRED
 *        ANALYSIS and MODEL HAVE SAME GRID,SAME LEVELS,
 *                                SAME TOPOGRAPHY, TOP PRESSURE
 *---------------------------------------------------------------------
-         
+*        
          if (LAM) then
-             write(stdout,*)'CHECKING FOR UT1 and VT1 winds'
-             write(stdout,*)'niu=',niu,' nju=',nju,' niv=',niv,' njv=',njv
-             write(stdout,*)'nifi=',nifi,' njfi=',njfi
-             m = fstinf(anal,i,j,k,IDAY,' ', na(1),ip2a,ip3a,tva,'UT1')
-             if ( m.lt.0 .or. j.ne.nju .or. i.ne.niu ) then
-                  write(stdout,*)'UT1  NOT AVAILABLE'
-                  write(stdout,*)'ERROR: LAM GRID must use UT1, VT1 winds'
-                  call e_arret( 'e_intwind' )
-             endif
-             m = fstinf(anal,i,j,k,iday,' ', na(1),ip2a,ip3a,tva,'VT1')
-             if ( m.lt.0 .or. i.ne.niv .or. j.ne.njv ) then
-                  write(stdout,*)'VT1  NOT AVAILABLE'
-                  write(stdout,*)'ERROR: LAM GRID must use UT1, VT1 winds'
-                  call e_arret( 'e_intwind' )
-             endif
-
-            write(stdout,*)'READING  UT1 and VT1 winds (on U and V grid)'
-            DO 200 L=1,LV
-
-               m = fstlir(uu,anal,i,j,k,iday,' ',na(L),ip2a,
-     %                                               ip3a,tva,'UT1')
-               if (m.lt.0 .or. i.ne.niu .or. j.ne.nju) then
-                   write(stdout,*)'e_intwind: UT1  NOT AVAILABLE'
-                   call e_arret( 'e_intwind' )
+*
+            do k=1,lv               
+               key1 = fstlir(uu,e_fu_anal,iu,ju,nkc,datev,' ',na(k),
+     $                                         ip2a,ip3a,tva,'UT1')
+               if (key1.lt.0 .or. iu.ne.niu .or. ju.ne.nju) then
+                   write(6,*)'e_intwind: UT1  NOT AVAILABLE'
+                   goto 55
                endif
-
-               m = fstlir(vv,anal,i,j,k,iday,' ',na(L),ip2a,
-     %                                               ip3a,tva,'VT1')
-               if (m.lt.0 .or. i.ne.niv .or. j.ne.njv) then
-                     write(stdout,*)'e_intwind: VT1  NOT AVAILABLE'
-                     call e_arret( 'e_intwind' )
+               key1 = fstlir(vv,e_fu_anal,iv,jv,nkc,datev,' ',na(k),
+     $                                         ip2a,ip3a,tva,'VT1')
+               if (key1.lt.0 .or. iv.ne.niv .or. jv.ne.njv) then
+                  write(6,*)'e_intwind: VT1  NOT AVAILABLE'
+                  goto 55
                endif
-               call e_bmfsplitxy2 (uu,niu,nju,'UU  ',L,lv,pniu,0,0,0)
-               call e_bmfsplitxy2 (vv,niv,njv,'VV  ',L,lv,pni ,0,0,0)
-200         CONTINUE
-
+               do i=1,niu*nju
+                  uu(i) = uu(i) / dcst_knams_8
+               end do
+               do i=1,niv*njv
+                  vv(i) = vv(i) / dcst_knams_8
+               end do
+               call e_bmfsplitxy2 (uu,niu,nju,'UU  ',k,lv,pniu,0,0,0)
+               call e_bmfsplitxy2 (vv,niv,njv,'VV  ',k,lv,pni ,0,0,0)
+            end do
+*
          else
 *
-           key1 = fstinf(anal,nic,njc,nkc,iday,' ',na(1),ip2a,ip3a,' ',
-     $                                                            'UU')
-           key2 = fstinf(anal,nic,njc,nkc,iday,' ',na(1),ip2a,ip3a,' ',
-     $                                                            'VV')
-           if (    (key1.lt.0).or.(key2.lt.0)
-     $          .or.nic.ne.nifi.or.njc.ne.njfi) then
-              write (6,*) 'UU  and/or VV NOT AVAILABLE'
-              call e_arret( 'e_intwind' )
-           endif
-           err = fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, 
+            flag_ut1 = .false.
+            var_uu = 'UU  '
+            var_vv = 'VV  '
+            iu = nifi
+            ju = njfi
+            iv = iu
+            jv = ju
+            key1 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
+     $                                      ip2a,ip3a,' ',var_uu)
+            key2 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
+     $                                      ip2a,ip3a,' ',var_vv)
+            if ((key1.lt.0).or.(key2.lt.0)) then
+               flag_ut1 = .true.
+               var_uu = 'UT1 '
+               var_vv = 'VT1 '
+               iu = niu
+               ju = nju
+               iv = niv
+               jv = njv
+               key1 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
+     $                                         ip2a,ip3a,' ',var_uu)
+               key2 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
+     $                                         ip2a,ip3a,' ',var_vv)
+            endif
+*
+            if ((key1.lt.0).or.(key2.lt.0)) then
+               write (6,*) 'UU  and/or VV NOT AVAILABLE'
+               call e_arret( 'e_intwind' )
+            endif
+            err = fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY,
      $              P1, P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA,
      $              LNG, DLF, UBC, EX1, EX2, EX3)
-           do 100 L=1,LV
-              m = fstlir (uu, anal, i, j, k, iday, labanl, na(L), ip2a,
-     %                                                 ip3a, tva, 'UU')
-              if (m.lt.0 .or. i.ne.nifi  .or. j.ne.njfi) then
-                 write(stdout,*)'ERROR: UU NOT AVAILABLE,'
-                 call e_arret( 'e_intwind' )
-              endif
- 
-              m = fstlir(vw, anal, i, j, k, iday, labanl, na(L), ip2a,
-     %                                                ip3a, tva, 'VV')
-              if (m.lt.0 .or. i.ne.nifi  .or. j.ne.njfi) then
-                 write(stdout,*)'ERROR: VV NOT AVAILABLE,'
-                 call e_arret( 'e_intwind' )
-              endif
 *
-              call e_arak (uu, vv, vw, uvw, niu, njfi, nju, njv, 1)
-              call e_bmfsplitxy2 (uu,niu,nju,'UU  ',L,lv,pniu,0,0,0)
-              call e_bmfsplitxy2 (vv,niv,njv,'VV  ',L,lv,pni ,0,0,0)
- 100       continue
-        endif
+            do k=1,lv
+               key1 = fstlir (uu, e_fu_anal, i, j, nkc, datev, labanl, 
+     $                                  na(k), ip2a,ip3a, tva, var_uu)
+               if (key1.lt.0 .or. i.ne.iu  .or. j.ne.ju) then
+                  write(6,*)'ERROR: UU NOT AVAILABLE,'
+                  call e_arret( 'e_intwind' )
+               endif
+               key1 = fstlir (vw, e_fu_anal, i, j, nkc, datev, labanl, 
+     $                                  na(k), ip2a,ip3a, tva, var_vv)
+               if (key1.lt.0 .or. i.ne.iv  .or. j.ne.jv) then
+                  write(6,*)'ERROR: VV NOT AVAILABLE,'
+                  call e_arret( 'e_intwind' )
+               endif
+*
+               if (.not. flag_ut1) then
+                  call e_arak (uu, vv, vw, uvw, niu, njfi, nju, njv, 1)
+               else
+                  do i=1,niu*nju
+                     uu(i) = uu(i) / dcst_knams_8
+                  end do
+                  do i=1,niv*njv
+                     vv(i) = vw(i) / dcst_knams_8
+                  end do
+               endif
+               call e_bmfsplitxy2 (uu,niu,nju,'UU  ',k,lv,pniu,0,0,0)
+               call e_bmfsplitxy2 (vv,niv,njv,'VV  ',k,lv,pni ,0,0,0)
+            end do
+*
+         endif
 *
 *---------------------------------------------------------------------
 *
@@ -157,153 +162,123 @@
 *
       else
 *
-         key1=fstinf(anal,nic,njc,nkc,iday,' ',na(1),ip2a,ip3a,' ','UU')
-         key2=fstinf(anal,nic,njc,nkc,iday,' ',na(1),ip2a,ip3a,' ','VV')
-         if ((key1.lt.0).or.(key2.lt.0)) then
-            write (6,*) 'UU  and/or VV NOT AVAILABLE'
-            call e_arret( 'e_intwind' )
-         endif
+         key1=fstinf(e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2a,ip3a,
+     $                                                     ' ','UU')
          err= fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1,
      $                P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA,
      $                LNG, DLF, UBC, EX1, EX2, EX3)
-
+         src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, e_fu_anal)
+         err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
          allocate (w1(nic*njc),w2(nic*njc))
-         do 300 L=1,lv
-
-            m = fstlir (w1, anal, i, j, k, iday, ' ', na(L), ip2a,
-     %                                            ip3a, ' ', 'UU')
-            if (m.lt.0 .or. i.ne.nic  .or. j.ne.njc ) then
-               write(stdout,*)'ERROR: UU NOT AVAILABLE,'
-               call e_arret( 'e_intwind' )
+         do k=1,lv
+*
+            key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ', 
+     $                               na(k), ip2a, ip3a, ' ', 'UU')
+            key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ', 
+     $                               na(k), ip2a, ip3a, ' ', 'VV')
+            if (key1.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) then
+               write(6,*)'ERROR: UU NOT AVAILABLE,'
+               goto 55
             endif
-            m = fstlir (w2, anal, i, j, k, iday, ' ', na(L), ip2a,
-     %                                            ip3a, ' ', 'VV')
-            if (m.lt.0 .or. i.ne.nic  .or. j.ne.njc ) then
-               write(stdout,*)'ERROR: VV NOT AVAILABLE,'
-               call e_arret( 'e_intwind' )
+            if (key1.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) then
+               write(6,*)'ERROR: VV NOT AVAILABLE,'
+               goto 55
             endif
 *
 *         Horizontal Interpolation on U grid and V grids
 *
-            src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, anal)
-            dst_gid = ezgdef_fmem (niu , nju , 'Z', 'E', Hgc_ig1ro,
-     $                 Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xu, yu)
-            err = ezdefset ( dst_gid, src_gid )
-            err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
-            err = ezuvint (uu,vw,w1,w2)
+            err = ezdefset ( dstu_gid, src_gid )
+            err = ezuvint  ( uu,vw,w1,w2 )
+            err = ezdefset ( dstv_gid, src_gid )
+            err = ezuvint  ( uw,vv,w1,w2 )
 *
-            dst_gid = ezgdef_fmem (niv , njv , 'Z', 'E', Hgc_ig1ro,
-     $                 Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xv, yv)
-            err = ezdefset ( dst_gid, src_gid )
-            err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
-            err = ezuvint (uw,vv,w1,w2)
+            call e_bmfsplitxy2 (uu,niu,nju,'UU  ',k,lv,pniu,0,0,0)
+            call e_bmfsplitxy2 (vv,niv,njv,'VV  ',k,lv,pni ,0,0,0)
 *
-            call e_bmfsplitxy2 (uu,niu,nju,'UU  ',L,lv,pniu,0,0,0)
-            call e_bmfsplitxy2 (vv,niv,njv,'VV  ',L,lv,pni ,0,0,0)
-*
- 300     continue
+         end do
          deallocate (w1,w2)
 *
 *---------------------------------------------------------------------
       endif
 *---------------------------------------------------------------------
 *
-      if ( Topo_init_L ) then
-         err = e_rdhint2(topu,yu,xu,niu,nju,'ME',1,-1,-1,' ','C',
-     $                       .true.,.true.,'CUBIC',geophy,stdout)
-         err = e_rdhint2(topv,yv,xv,niv,njv,'ME',2,-1,-1,' ','C',
-     $                       .true.,.true.,'CUBIC',geophy,stdout)
+      if ( gletaanl .or. glsiganl .or. glhybanl ) then
+         write(6,*)'PREPARATION FOR SIGMA/ETA/HYB to HYBRID'
+         c1 = 10. * Dcst_grav_8
+         if (e_rdhint3 (ttu,dstu_gid,niu,nju,'GZ  ',na(lv),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (ttv,dstv_gid,niv,njv,'GZ  ',na(lv),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (huu,dstu_gid,niu,nju,'P0  ',   0 ,ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         if (e_rdhint3 (huv,dstv_gid,niv,njv,'P0  ',   0 ,ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
          do i=1,nu
-            topu(i) = max(0.0, topu(i))
+            ttu(i) = ttu(i) * c1
+            huu(i) = huu(i) * 100.
          enddo
          do i=1,nv
-            topv(i) = max(0.0, topv(i))
+            ttv(i) = ttv(i) * c1
+            huv(i) = huv(i) * 100.
          enddo
-         call e_filtopx (topu,niu,nju,'U')
-         call e_filtopx (topv,niv,njv,'V')
-         if (.not.lam)then
-            call statfld(topu  ,'TOPU',0,"",1,niu,1,nju,1,1,1,1,
-     $                                              niu-1,nju,1)
-            call statfld(topv  ,'TOPV',0,"",1,niv,1,njv,1,1,1,1,
-     $                                              niv-1,njv,1)
-         else
-            call statfld(topu,'TOPU',0,"",1,niu,1,nju,1,1,1,1,niu,nju,1)
-            call statfld(topv,'TOPV',0,"",1,niv,1,njv,1,1,1,1,niv,njv,1)
-         endif
+*
+         call e_bmfsplitxy2 (ttu,niu,nju,'GZU ',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (ttv,niv,njv,'GZV ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (huu,niu,nju,'APSU',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (huv,niv,njv,'APSV',1,1,pni ,0,0,0)
+*
+         var=vt//'  '
+         c1 = Dcst_tcdk_8
+         do k=1,lv
+            if (e_rdhint3 (ttu,dstu_gid,niu,nju,var,na(k),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            if (e_rdhint3 (ttv,dstv_gid,niv,njv,var,na(k),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            do i=1,nu
+               ttu(i) = ttu(i) + c1
+            enddo
+            do i=1,nv
+               ttv(i) = ttv(i) + c1
+            enddo
+            if (vt.eq.'TT') then
+               if (e_rdhint3 (huu,dstu_gid,niu,nju,'HU  ',na(k),ip2a,
+     $            ip3a,' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
+     $             goto 55
+               if (e_rdhint3 (huv,dstv_gid,niv,njv,'HU  ',na(k),ip2a,
+     $            ip3a,' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
+     $             goto 55
+               call mfotvt (ttu,ttu,huu,niu*nju,1,niu*nju)
+               call mfotvt (ttv,ttv,huv,niv*njv,1,niv*njv)
+            endif
+            call e_bmfsplitxy2 (ttu,niu,nju,'VTU ',k,lv,pniu,0,0,0)
+            call e_bmfsplitxy2 (ttv,niv,njv,'VTV ',k,lv,pni ,0,0,0)
+         end do
+*
       else
-         do i=1,nu
-            topu(i) = 0.0
+*
+         write(6,*)'PREPARATION FOR PRESSURE to HYBRID'
+         c1 = 10.
+         do k=1,lv
+            if (e_rdhint3 (ttu,dstu_gid,niu,nju,'GZ  ',na(k),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            if (e_rdhint3 (ttv,dstv_gid,niv,njv,'GZ  ',na(k),ip2a,ip3a,
+     $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+            do i=1,nu
+               ttu(i) = ttu(i) * c1
+            enddo
+            do i=1,nv
+               ttv(i) = ttv(i) * c1
+            enddo
+            call e_bmfsplitxy2 (ttu,niu,nju,'GZU ',k,lv,pniu,0,0,0)
+            call e_bmfsplitxy2 (ttv,niv,njv,'GZV ',k,lv,pni ,0,0,0)
          enddo
-         do i=1,nv
-            topv(i) = 0.0
-         enddo
+*
       endif
 *
-      call e_bmfsplitxy2 (topu,niu,nju,'TOPU',1,1,pniu,0,0,0)
-      call e_bmfsplitxy2 (topv,niv,njv,'TOPV',1,1,pni ,0,0,0)
-*      
-      if ( gletaanl .or. glsiganl .or. glhybanl ) then
-         write(stdout,*)'PREPARATION FOR SIGMA/ETA/HYB to HYBRID'
-         c1 = 10. * Dcst_grav_8
-         call e_lianalx4 (gzsu(1,lv), yu, xu, niu, nju, 'GZ  ',
-     $                        0.0, c1, 12000, 1,.false.,.true.)
-         call e_lianalx4 (gzsv(1,lv), yv, xv, niv, njv, 'GZ  ',
-     $                        0.0, c1, 12000, 1,.false.,.true.)
-         call e_bmfsplitxy2 (gzsu(1,lv),niu,nju,'GZU ',1,1,pniu,0,0,0)
-         call e_bmfsplitxy2 (gzsv(1,lv),niv,njv,'GZV ',1,1,pni ,0,0,0)
-         call statfld(gzsu(1,lv),'GZSU',0,"",1,niu,1,nju,1,1,1,1,
-     $                                               niu-1,nju,1)
-         call statfld(gzsv(1,lv),'GZSV',0,"",1,niv,1,njv,1,1,1,1,
-     $                                               niv-1,njv,1)
-         call e_lianalx4 (anlpsu, yu,xu,niu, nju, 'P0  ', 0.0, 100.,
-     $                                          0, 1,.false.,.true.)
-         call e_lianalx4 (anlpsv, yv,xv,niv, njv, 'P0  ', 0.0, 100.,
-     $                                          0, 1,.false.,.true.)
-         call e_bmfsplitxy2 (anlpsu,niu,nju,'APSU',1,1,pniu,0,0,0)
-         call e_bmfsplitxy2 (anlpsv,niv,njv,'APSV',1,1,pni ,0,0,0)
-         call statfld(anlpsu,'APSU',0,"",1,niu,1,nju,1,1,1,1,niu-1,
-     $                                                       nju,1)
-         call statfld(anlpsv,'APSV',0,"",1,niv,1,njv,1,1,1,1,niv-1,
-     $                                                       njv,1)
-         vtt=vt//'  '
-         c1 = Dcst_tcdk_8
-         call e_lianalx4 (ttu_temp,yu, xu, niu, nju, vtt, c1, 1. ,
-     $                                    na,lv, .false., .true. )
-         call e_lianalx4 (ttv_temp,yv, xv, niv, njv, vtt, c1, 1. ,
-     $                                    na,lv, .false., .true. )
-         if (vt.eq.'TT') then
-            vhh='HU  '
-            call e_lianalx4 (huu_temp,yu, xu, niu, nju, vhh, 0., 1.,
-     $                                      na,lv, .false., .true. )
-            call e_lianalx4 (huv_temp,yv, xv, niv, njv, vhh, 0., 1.,
-     $                                      na,lv, .false., .true. )
-            call mfotvt (ttu_temp,ttu_temp,huu_temp,niu*nju,lv,niu*nju)
-            call mfotvt (ttv_temp,ttv_temp,huv_temp,niv*njv,lv,niv*njv)
-         endif
-         do k=1,lv
-            call e_bmfsplitxy2 (ttu_temp(1,k),niu,nju,'VTU ',k,lv,
-     $                                                 pniu,0,0,0)
-            call e_bmfsplitxy2 (ttv_temp(1,k),niv,njv,'VTV ',k,lv,
-     $                                                  pni,0,0,0)
-         enddo
-      else
-         write(stdout,*)'PREPARATION FOR PRESSURE to HYBRID'
-         c1 = 10.
-         call e_lianalx4 (gzsu, yu, xu, niu, nju, 'GZ  ',
-     $                    0.0, c1, na, lv,.false.,.true.)
-         call e_lianalx4 (gzsv, yv, xv, niv, njv, 'GZ  ',
-     $                    0.0, c1, na, lv,.false.,.true.)
-         do k=1,lv
-           call e_bmfsplitxy2 (gzsu(1,k),niu,nju,'GZU ',k,lv,pniu,0,0,0)
-           call e_bmfsplitxy2 (gzsv(1,k),niv,njv,'GZV ',k,lv,pni ,0,0,0)
-         enddo
-         call statfld (gzsu,'GZU ',0,"",1,niu,1,nju,lv,1,1,1,niu-1,
-     $                                                      nju,lv)
-         call statfld (gzsv,'GZV ',0,"",1,niv,1,njv,lv,1,1,1,niv-1,
-     $                                                      njv,lv)
-      endif
+      goto 99
+ 55   call e_arret( 'e_intwind' )
 *
 * ---------------------------------------------------------------------
 *
-      return
+ 99   return
       end

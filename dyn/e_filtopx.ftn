@@ -54,31 +54,30 @@
 *implicits
 *
 #include "e_dim.cdk"
-#include "e_files.cdk"
-#include "e_locdim.cdk"
+#include "e_grids.cdk"
 #include "e_geomg.cdk"
 #include "e_topo.cdk"
 *
-      integer i, j
+      integer i, j, nio
       real w1(gnis,gnjs)
 *
 *----------------------------------------------------------------------
 *
-cvl For LAM: uncomment return
-cvl   return
       if (.not.(Topo_dgfmx_L.or.Topo_filmx_L)) then
-         write(stdout,9900)
+         write(6,9900)
          return
       endif
 *
-      write(stdout,1001)
+      write(6,1001)ftgrd
 *
 *     1- Transfering unfiltered topog of size fnio x fnjo into
 *        work field of size                   gnis x gnjs
 *        -----------------------------------------------------
 *
+      nio = fnio
+      if (.not.LAM) nio =fnio-1
       do j=1,fnjo
-      do i=1,fnio-1
+      do i=1,nio
          w1(i,j)=frtopo(i,j)
       enddo
       enddo
@@ -87,9 +86,9 @@ cvl   return
 *        -----------------------------------------------------
 *
       if ( Topo_dgfmx_L ) then
-         write(stdout, 9400 )
+         write(6, 9400 )
          do j=1,fnjo
-         do i=1,fnio-1
+         do i=1,nio
             w1(i,j)=max( 0.0, w1(i,j) )
          enddo
          enddo
@@ -100,7 +99,7 @@ cvl   return
          else if ( ftgrd .eq. 'V' ) then
             call e_setdgf (w1,gnis,gnjs, pni, pnjv,xdhx ,xdhyv(1),xdcyv)
          else
-            write(stdout,9325) ftgrd
+            write(6,9325) ftgrd
             call e_arret('e_filtopx')
          endif
       endif
@@ -109,9 +108,9 @@ cvl   return
 *        -----------------------------------------------------
 *
       if ( Topo_filmx_L ) then
-         write(stdout,9500 )
+         write(6,9500 )
          do j=1,fnjo
-         do i=1,fnio-1
+         do i=1,nio
             w1(i,j)=max( 0.0, w1(i,j) )
          enddo
          enddo
@@ -120,12 +119,12 @@ cvl   return
      %                      pni, pnj, 1, gnis, gnjs, 1)   
          else if ( ftgrd .eq. 'U' ) then
             call e_ntrxyfil( w1, w1, 0.5, xdhxu, xdhy,
-     %                      pni, pnj, 1, gnis, gnjs, 1)
+     %                      pniu, pnj, 1, gnis, gnjs, 1)
          else if ( ftgrd .eq. 'V' ) then
             call e_ntrxyfil( w1, w1, 0.5, xdhx, xdhyv,
      %                      pni, pnjv,1, gnis, gnjs, 1)
          else
-            write (stdout, 1000)
+            write (6, 1000)
             call e_arret('E_NTRXYFIL')
          endif
       endif
@@ -133,17 +132,21 @@ cvl   return
 *     5- Update of the topography with the filtered field
 *        ------------------------------------------------
       do j=1, fnjo
-         do i=1, fnio-1
-            frtopo(i,j) = w1(i,j)
-         enddo
-         frtopo(fnio,j) = frtopo(1,j)
+      do i=1, nio
+         frtopo(i,j) = w1(i,j)
       enddo
+      enddo
+      if (.not.LAM) then
+         do j=1, fnjo
+            frtopo(fnio,j) = frtopo(1,j)
+         enddo
+      endif
 *     
  1000 format(
      +//,' UNKNOWN GRID ID... INCORRECT CALL TO E_NTRXYFIL ',
      + /,' ===============================================',
      +//)
- 1001 format(/'TOPOGRAPHY FILTERING (S/R e_filtopx)'/
+ 1001 format(/'TOPOGRAPHY FILTERING (S/R e_filtopx) on GRID',A1/
      %        '====================================')
  9300 format(
      +'---> Diffusion will be applied with basic coefficient:', e12.4)

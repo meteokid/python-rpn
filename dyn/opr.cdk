@@ -2,6 +2,9 @@
 *
 ***comdeck opr.cdk
 *
+*revision
+* v3_01 - Toviessi J. P.     - parity optimisation
+*
 *______________________________________________________________________
 *                                                                      |
 *  PROJECTION OPERATORS FOR THE SOLVER (initialized in set_opr)        |
@@ -19,6 +22,8 @@
 * Opr_xeval_8        | horizontal eigenvalues                          |
 * Opr_zevec_8        | vertical   eigenvectors                         |
 * Opr_zeval_8        | vertical   eigenvalues                          |
+* Opr_evvec_8        | even eigenvectors                               | 
+* Opr_odvec_8        | odd  eigenvectors                               |  
 *----------------------------------------------------------------------
 *
 *
@@ -34,3 +39,5 @@
       DCL_DYNVAR(Opr, xeval_8 ,    real*8, (*))
       DCL_DYNVAR(Opr, zevec_8 ,    real*8, (*))
       DCL_DYNVAR(Opr, zeval_8 ,    real*8, (*))
+      DCL_DYNVAR(Opr, evvec_8 ,    real*8, (*))
+      DCL_DYNVAR(Opr, odvec_8 ,    real*8, (*))  

@@ -24,7 +24,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_40 - Lee/Qaddouri      - for LAM version
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Desgagne & Lee    - Lam configuration
 *
 *object
 *     See above id.
@@ -100,18 +100,23 @@
      $                  F_opsyp2_8(2*NX3+1+Lam_pil_s)
          enddo
       enddo
-      do k = F_nx1+1, MAXX1
+      do j=1+Lam_pil_s, NX3-Lam_pil_n
          do i = MINX2+l_pil_w, MAXX2-l_pil_e
-            do j=1+Lam_pil_s, NX3-Lam_pil_s
+            do k = F_nx1+1, MAXX1
                F_b_8(k,i,j)= one
                F_c_8(k,i,j)= zero
                F_a_8(k,i,j)= zero
             enddo
          enddo
       enddo
-      do k = 1, F_nx1
-         do i = F_nx2+1-l_pil_e, MAXX2-l_pil_e
-            do j = 1+Lam_pil_s, NX3-Lam_pil_n
+      do j = 1+Lam_pil_s, NX3-Lam_pil_n
+         do k = 1, F_nx1
+            do i = F_nx2+1-l_pil_e, MAXX2-l_pil_e
+               F_b_8(k,i,j)= one
+               F_c_8(k,i,j)= zero
+               F_a_8(k,i,j)= zero
+            enddo
+            do i = MINX2,MINX2+l_pil_w-1
                F_b_8(k,i,j)= one
                F_c_8(k,i,j)= zero
                F_a_8(k,i,j)= zero
@@ -131,7 +136,7 @@
      %              ai_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s),
      %              bi_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s),
      %              ci_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s) )
-         do k=1,F_nx1
+         do k=MINX1,MAXX1
           do i=MINX2+l_pil_w, MAXX2-l_pil_e
            do j=1+Lam_pil_s, NX3-Lam_pil_n
              a_8(k,i-l_pil_w,j-Lam_pil_s)=F_a_8(k,i,j)
@@ -140,6 +145,7 @@
            enddo
           enddo
          enddo
+
          call set_trig21 (ai_8, bi_8, ci_8, di_8, 
      %         a_8,  b_8,  c_8, dim, 1, NX3-Lam_pil_s-Lam_pil_n, dim, .false.)
          do k=1,F_nx1

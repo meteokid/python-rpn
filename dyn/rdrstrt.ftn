@@ -35,9 +35,10 @@
 #include "glb_ld.cdk"
 #include "tr2d.cdk"
 #include "pres.cdk"
+#include "pilot.cdk"
 *
 **
-      integer adr,ier,dim
+      integer adr,ier,dim,current_nest
       integer vmmckmx,fclos,ouvrstrt
       external vmmckmx,fclos,ouvrstrt
 *
@@ -70,6 +71,10 @@
          call waread (Lun_rstrt, pres_surf ,adr, 1)
          adr = adr + 1
          call waread (Lun_rstrt, pres_top  ,adr, 1)
+         adr = adr + 1
+         call waread (Lun_rstrt, current_nest  ,adr, 1)
+         call datf2p (Pil_current_S,current_nest)
+*
          if ((Tr2d_incore_L).and.(Tr2d_ntr.gt.0)) then
             dim = Tr2d_ntr*LDIST_SIZ*l_nk
             call hpalloc (Tr2d_stk3d_, dim, ier,1)

@@ -110,16 +110,10 @@
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       gamma_8 = ONE_8 
 *
-      i0 = 1
-      in = l_ni
-      j0 = 1
-      jn = l_nj
-      if (G_lam) then
-          if (l_west) i0=1+pil_w
-          if (l_east) in=l_ni-pil_e
-          if (l_north)j0=1+pil_s
-          if (l_south)jn=l_nj-pil_n
-      endif
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
 *
 ********************************************
 *  2. Calculate s, pi'lin, pi', q and phi' *

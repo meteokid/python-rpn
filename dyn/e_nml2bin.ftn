@@ -27,23 +27,22 @@
 *	none
 *
 *implicits
-#include "e_maxprms.cdk"
 #include "e_grids.cdk"
 #include "e_tr.cdk"
-#include "e_files.cdk"
 * comdecks used also in GEMPP
 #include "dimout.cdk"
 #include "out1.cdk"
-#include "did.cdk"
 #include "hgc.cdk"
 #include "grd.cdk"
+#include "pilot.cdk"
+#include "hblen.cdk"
 #include "p_pbl.cdk"
 #include "ptopo.cdk"
 *
 **
       integer  fnom
       external fnom
-      integer k
+      integer k,labfl
 *
 *     ---------------------------------------------------------------
 *
@@ -60,11 +59,13 @@
      $             (E_trvs_name_S(k),k=1,E_trvs_ntr),
      $             (E_trvs_sval  (k),k=1,E_trvs_ntr)
 *
-      write(labfl) Did_es,Did_vt,Did_horint,Did_vrtc
-      write(labfl) P_pbl_schsl_s, P_pbl_snoalb_L
+      write(labfl) P_pbl_schsl_s, P_pbl_snoalb_L,
+     $             Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
+     $             Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try
 *
-      write(labfl) Out1_date, Out1_etik_s, Out1_anlv, 
-     $   Hgc_gxtyp_s, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
+      write(labfl) Out1_etik_s, Out1_date,
+     $         Pil_runstrt_S, Pil_nesdt, Pil_ctebcs_L,
+     $         Hgc_gxtyp_s, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
 *
       close (labfl)
 *

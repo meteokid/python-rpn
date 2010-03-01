@@ -1,0 +1,106 @@
+***s/r predat - Performs preprocessing of the data: part1
+*
+#include <model_macros_f.h>
+*
+      subroutine predat
+*
+#include "impnone.cdk"
+*
+*author 
+*     Michel Roch - rpn - oct 1993 
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from predat1 v1_03)
+* v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
+* v2_31 - Desgagne M.       - remove treatment of HUT1 and QCT1
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*	Performs preprocessing of the data: part1. We compute:
+*                                             dp
+* s, pi', q, phi, T staggered, T', phi', pi', ---, (1+d)q', P and T'
+*      t                                      dpi                  lin
+*
+*     The model is initialized from an "hydrostatic state".
+*     For that reason, the computations found in that routine are
+*     performed considering that:
+*             dp
+*     q' = 0, --- = 1 and p = pi.
+*             dpi
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "schm.cdk"
+#include "ind.cdk"
+#include "lctl.cdk"
+*
+      integer i, j, k
+      real pr1, pr2, w1(LDIST_SHAPE),
+     $     t1(LDIST_SHAPE,G_nk),t2(LDIST_SHAPE,G_nk),
+     $     t3(LDIST_SHAPE,G_nk),t4(LDIST_SHAPE,G_nk)
+**
+*     __________________________________________________________________
+*
+      do j= 1, l_nj
+      do i= 1, l_ni 
+           Ind_s(i,j)      = alog( exp(Ind_q(i,j,G_nk)) / Cstv_pisrf_8 )
+         Ind_pip(i,j,   1) = 0.
+         Ind_pip(i,j,G_nk) = exp(Ind_q(i,j,G_nk)) - geomg_z_8(G_nk)
+      end do
+      end do
+*
+      do k= 2, G_nk-1
+      do j= 1, l_nj
+      do i= 1, l_ni
+           Ind_q(i,j,k)= alog(geomg_pia(k)+geomg_pib(k)*exp(Ind_s(i,j)))
+         Ind_pip(i,j,k)= exp(Ind_q(i,j,k)) - geomg_z_8(k)
+      end do
+      end do
+      end do
+*
+      do k= 1, G_nk
+         pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * geomg_pib(k) / geomg_z_8(k)
+         pr2 = Cstv_tstr_8*(geomg_pib(k)/geomg_z_8(k) - geomg_dpib(k))
+         do j= 1, l_nj 
+         do i= 1, l_ni 
+            Ind_fip(i,j,k) =  Ind_fi(i,j,k) - Cstvr_fistr_8(k) 
+     $                                      - Ind_topo(i,j)
+             Ind_tp(i,j,k) =  Ind_t(i,j,k) - Cstv_tstr_8
+             Ind_gp(i,j,k) = Ind_fip(i,j,k) + pr1 * Ind_s(i,j)
+            Ind_tpl(i,j,k) = (Cstv_tstr_8+Ind_tp(i,j,k))*
+     $           (1.0+geomg_dpib(k)*(exp(Ind_s(i,j))-1.))*
+     $           geomg_z_8(k)/(geomg_z_8(k)+Ind_pip(i,j,k))-Cstv_tstr_8
+            Ind_tpl(i,j,k) = Ind_tpl(i,j,k) + pr2 * Ind_s(i,j)
+         end do
+         end do
+      end do
+*
+      call rpn_comm_xch_halo( Ind_u, LDIST_DIM, l_niu, l_nj , l_nk,
+     $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo( Ind_v, LDIST_DIM, l_ni , l_njv, l_nk,
+     $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+      call uv2tdpsd ( Ind_td,Ind_psd,Ind_u,Ind_v,Ind_s,LDIST_DIM,l_nk )
+*
+      if ( .not. Schm_hydro_L ) then
+         do k= 1, G_nk
+         do j= 1, l_nj
+         do i= 1, l_ni
+            Ind_mul(i,j,k) = 0.
+            Ind_mu (i,j,k) = 0.
+         end do
+         end do
+         end do
+         call initw2 ( Ind_w, Ind_u, Ind_v, Ind_psd, Ind_fi, Ind_t, 
+     $                       Ind_s,t1,t2,t3,t4,w1, LDIST_DIM, l_nk ) 
+      endif
+*
+*     __________________________________________________________________
+      return
+      end

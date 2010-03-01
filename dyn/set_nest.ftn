@@ -71,6 +71,20 @@
       VMM_NAM(nest_sf   ) = 'NEST_SF'
       VMM_NAM(nest_muf  ) = 'NEST_MUF'
       VMM_NAM(nest_trf  ) = 'NEST_TRF'
+      VMM_NAM(nest_ux   ) = 'NEST_UX'
+      VMM_NAM(nest_vx   ) = 'NEST_VX'
+      VMM_NAM(nest_tx   ) = 'NEST_TX'
+      VMM_NAM(nest_tpx  ) = 'NEST_TPX'
+      VMM_NAM(nest_psdx ) = 'NEST_PSDX'
+      VMM_NAM(nest_pipx ) = 'NEST_PIPX'
+      VMM_NAM(nest_fipx ) = 'NEST_FIPX'
+      VMM_NAM(nest_wx   ) = 'NEST_WX'
+      VMM_NAM(nest_tdx  ) = 'NEST_TDX'
+      VMM_NAM(nest_fix  ) = 'NEST_FIX'
+      VMM_NAM(nest_qx   ) = 'NEST_QX'
+      VMM_NAM(nest_sx   ) = 'NEST_SX'
+      VMM_NAM(nest_mux  ) = 'NEST_MUX'
+      VMM_NAM(nest_trx  ) = 'NEST_TRX'
 *
 *  Set the attributes of the variables
 *
@@ -100,19 +114,32 @@
       VMM_CREATE(nest_fif  , LARRAY3D, 1, ptath)
       VMM_CREATE(nest_qf   , LARRAY3D, 1, ptath)
       VMM_CREATE(nest_sf   , LARRAY2D, 1, ptath)
+      VMM_CREATE(nest_ux   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_vx   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_tx   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_tpx  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_psdx , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_pipx , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_fipx , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_wx   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_tdx  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_fix  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_qx   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_sx   , LARRAY2D, 1, ptath)
       if (.not. Schm_hydro_L) then
          VMM_CREATE(nest_mu  , LARRAY3D, 1, ptath)
          VMM_CREATE(nest_muf  , LARRAY3D, 1, ptath)
+         VMM_CREATE(nest_mux  , LARRAY3D, 1, ptath)
       endif
       if ( Tr3d_ntr .gt. 0 ) then
          VMM_CREATE(nest_tr  , LARRAY3D, Tr3d_ntr, ptath)
          VMM_CREATE(nest_trf  , LARRAY3D, Tr3d_ntr, ptath)
+         VMM_CREATE(nest_trx  , LARRAY3D, Tr3d_ntr, ptath)
       endif
 *
  1000 format(
-     +/ /,'INITIALIZATION OF NESTING VARIABLE COMDECKS (S/R SET_NEST)',
-     + /,'=========================================================',
-     +/ /)
+     +/,'INITIALIZATION OF NESTING VARIABLE COMDECKS (S/R SET_NEST)',
+     +/,'=========================================================')
 *
 *     ---------------------------------------------------------------
 *

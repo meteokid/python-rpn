@@ -22,6 +22,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_01 - Tanguay M.        - correction minmax_m = +-1 
 *
 *language
 *     fortran 77
@@ -107,17 +108,19 @@
 *     The following min statement is expanded as two IF blocks:
 *     minmax_m = max(-1.,min(1.,F_zcto_m(n))) 
 *
-      minmax   = F_zcto(n) 
       minmax_m = F_zcto_m(n) 
-      if (F_zcto_m(n).gt.1.) then
+      minmax   = F_zcto(n) 
+      if (F_zcto_m(n).ge.1.) then
               minmax_m = 1.
               minmax   = 0.
-      elseif (F_zcto_m(n).lt.-1.) then
+              F_yto(n) = 0.
+      elseif (F_zcto_m(n).le.-1.) then
               minmax_m =-1.
               minmax   = 0.
+              F_yto(n) = 0.
+      else
+              F_yto(n) = minmax/sqrt( 1.0-minmax_m**2 )
       endif
-*
-      F_yto(n) = minmax/sqrt( 1.0-minmax_m**2 )
 *
       enddo
       enddo

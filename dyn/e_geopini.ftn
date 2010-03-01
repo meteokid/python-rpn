@@ -31,7 +31,7 @@
 *IMPLICITES
 *
 #include "e_geol.cdk"
-#include "e_files.cdk"
+#include "e_fu.cdk"
 #include "glb_ld.cdk"
 #include "p_bus.cdk"
 #include "p_geobus.cdk"
@@ -99,8 +99,10 @@
      $'VN=vegfen ; VS=row*26; EN=vf; INTERP=NEAREST ; SEQ=G' )
 *
       if ( E_geol_glreg_L ) then
-         k1 = fstinf (anal  ,ni1,nj1,nk1,-1,'ANLREG',-1,-1,-1,' ','LG')
-         k2 = fstinf (climat,ni1,nj1,nk1,-1,' '     ,-1,-1,-1,' ','LG')
+         k1 = fstinf (e_fu_anal  ,ni1,nj1,nk1,-1,'ANLREG',-1,-1,-1,
+     $                                                   ' ','LG')
+         k2 = fstinf (e_fu_climat,ni1,nj1,nk1,-1,' '     ,-1,-1,-1,
+     $                                                   ' ','LG')
          if ((k1.lt.0).or.(k2.lt.0)) then
             if (Lun_out.gt.0) then
             if (k1.lt.0) write (Lun_out,151)
@@ -130,8 +132,8 @@
       if (P_pbl_schsl_s.eq.'FCREST') then
 *
       if (.not. E_geol_hscon_L) then
-         k1 = fstinf (anal,ni1,nj1,nk1,-1,' '     ,-1,-1,-1,' ','HS')
-         k2 = fstinf (anal,ni1,nj1,nk1,-1,' '     ,-1,-1,-1,' ','MH')
+         k1 = fstinf (e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
+         k2 = fstinf (e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','MH')
          if ((k1.lt.0).or.(k2.lt.0)) then
             if (Lun_out.gt.0) then
             if (k1.lt.0) write (Lun_out,161)
@@ -142,8 +144,8 @@
          endif
       endif
       if ( E_geol_hsreg_L ) then
-         k1 = fstinf (anal  ,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
-         k2 = fstinf (climat,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
+         k1 = fstinf (e_fu_anal  ,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
+         k2 = fstinf (e_fu_climat,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
          if ((k1.lt.0).or.(k2.lt.0)) then
             if (Lun_out.gt.0) then
             if ((k1.lt.0)) write (Lun_out,161)

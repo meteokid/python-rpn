@@ -31,6 +31,7 @@
 * v2_31 - Lee V.            - to generate any sliced slab output
 * v2_32 - Lee V.            - correction of output (bug in filling temp arrays)
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v2_01 - Lee V.            - correct MAX SLAB bug by opening output file here
 *
 *object
 *	This subroutine generates slab descriptors
@@ -71,6 +72,8 @@
 #include "dimout.cdk"
 #include "lun.cdk"
 #include "lctl.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
 #include "geomn.cdk"
 #include "grid.cdk"
 #include "slab.cdk"
@@ -97,6 +100,7 @@
 * 
 *     Cannot allocate character variables dynamically: 
       character*4 blank_S
+      character*12 exten_S
       integer i,j,k,ii,jj,kk,jjj,mult
 *
 *------------------------------------------------------------------ 
@@ -226,6 +230,14 @@
       endif
 
       if (mtout.gt.0) then
+          if (Pslab_fhand.eq.-1) then
+*         Open physics slab file
+              exten_s= ""
+              if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
+     $                           ((Lctl_step.gt.(Init_dfnp-1)/2)) )
+     $                             exten_s = '_dgf'
+              call inislabfhand(Lun_outgem_s, Pslab_fhand,'pm',exten_S)
+           endif
          pnerr = slabdsc(Pslab_fhand,Pslab_slab,Grid_gxtyp_S(j),
      %    Grid_ixg1(j),Grid_ixg2(j),Grid_ixg3(j),Grid_ixg4(j),
      %    Grid_niout(j),Grid_njout(j),Grid_nxgrid(j),Grid_nygrid(j),

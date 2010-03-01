@@ -27,6 +27,9 @@
 *
 #endif
       logical Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L
+      real topo,topou,topov
+      pointer (patopo, topo(*)),(patopou, topou(*)),(patopov, topov(*))
 *
-      common / cpetopl / Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,
+      common / topo_l / Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,
      $                   Topo_dgfms_L
+      common / topo_p / patopo,patopou,patopov

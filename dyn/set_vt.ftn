@@ -98,8 +98,8 @@
       VMM_NAM(st0   )= 'ST0'
       VMM_NAM(trt0  )= 'TRT0'
 *
-      VMM_CREATE(ut0  , LARRAY3D, 1, attri_S)
-      VMM_CREATE(vt0  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(ut0  , LARRAY3D, 1, attri2_S)
+      VMM_CREATE(vt0  , LARRAY3D, 1, attri2_S)
       VMM_CREATE(wt0  , LARRAY3D, 1, attri_S)
       VMM_CREATE(tdt0 , LARRAY3D, 1, attri_S)
       VMM_CREATE(tt0  , LARRAY3D, 1, attri_S)
@@ -170,8 +170,8 @@
       VMM_NAM(yct1  )= 'YCT1'
       VMM_NAM(zct1  )= 'ZCT1'
 *
-      VMM_CREATE(ut1  , LARRAY3D, 1, attri_S)
-      VMM_CREATE(vt1  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(ut1  , LARRAY3D, 1, attri2_S)
+      VMM_CREATE(vt1  , LARRAY3D, 1, attri2_S)
       VMM_CREATE(wt1  , LARRAY3D, 1, attri_S)
       VMM_CREATE(tdt1 , LARRAY3D, 1, attri_S)
       VMM_CREATE(tt1  , LARRAY3D, 1, attri_S)

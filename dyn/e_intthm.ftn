@@ -2,11 +2,8 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine e_intthm ( lat, lon, nix, njx )
+      subroutine e_intthm 
       implicit none
-*
-      integer nix, njx
-      real    lat(*), lon(*)
 *
 *AUTHOR  M. ROCH - july 95 - from intscal
 *
@@ -31,20 +28,20 @@
 *----------------------------------------------------------------------
 *
 *IMPLICITES
-#include "e_locdim.cdk"
-#include "e_maxprms.cdk"
-#include "e_times.cdk"
-#include "e_files.cdk"
+#include "e_fu.cdk"
 #include "e_grids.cdk"
 #include "e_anal.cdk"
 #include "e_option.cdk"
-#include "pres.cdk"
 #include "dcst.cdk"
 #include "e_tr.cdk"
+#include "hgc.cdk"
+*
+      integer  e_rdhint3,e_bmfrd
+      external e_rdhint3,e_bmfrd
 *
       character*4 vtt,vhh
-      integer i, k
-      real c1,c2,hu_temp(nix*njx,lv),tt_temp(nix*njx,lv)
+      integer i, k, ng, err
+      real c1, c2, hu(nifi*njfi), tt(nifi*njfi)
 *
 *---------------------------------------------------------------------
 *
@@ -52,80 +49,85 @@
       c2 = 10. * Dcst_grav_8
       vtt=vt//'  '
       vhh=vh//'  '
+      ng = nifi*njfi
 *
-      write(stdout,1001)
+      write(6,1001)
 *
       if ( gletaanl .or. glsiganl .or. glhybanl ) then
-           write(stdout,*)
+         write(6,*)
      $      'ANALYSIS IS IN SIGMA OR ETA OR HYBRID COORDINATES'
-            call e_bmfrd (lat, lon, nix, njx, 'P0  ', 0., 100., -1, 
-     $                                                  1, .true. )
-            if (.not. glhorint) then
-                call e_bmfrd (lat,lon, nix, njx, 'GZ  ', 0., c2, na,
-     $                                                  lv, .true. )
-            else
-                call e_bmfrd (lat,lon, nix, njx, 'GZ  ', 0., c2, 12000, 
-     $                                                     1, .true. )
-            endif
-            vhh='HU  '
-            call e_lianalx4 (hu_temp,lat, lon, nix, njx, vhh, 0., 1.,
-     $                                        na,lv, .true., .true. )
-            do k=1,lv
-            call e_bmfsplitxy2 (hu_temp(1,k),nix,njx,'HU  ',k,lv,pni,
-     $                                                         0,0,0)
+*
+         do k=1,lv
+            if (e_rdhint3 (hu,dstf_gid,nifi,njfi,'HU  ',na(k),ip2a,
+     $          ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) 
+     $          goto 55  
+            anal_hav(1) = e_rdhint3 (tt,dstf_gid,nifi,njfi,vtt,na(k),
+     $             ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (anal_hav(1).lt.0) goto 55 
+            do i=1,ng
+               tt(i) = tt(i) + c1
             enddo
-            if (vt.eq.'VT') then
-                call e_bmfrd ( lat, lon, nix, njx, vtt, c1,1.,
-     $                                         na,lv, .true. )
-            else
-                call e_lianalx4 ( tt_temp,lat, lon, nix, njx, vtt, c1, 
-     $                                    1. ,na,lv, .true., .true. )
-                call mfotvt (tt_temp,tt_temp,hu_temp,nix*njx,lv,nix*njx)
-                do k=1,lv
-                   call e_bmfsplitxy2 (tt_temp(1,k),nix,njx,'VT  ',k,
-     $                                                  lv,pni,0,0,0)
-                enddo
-            endif
-      else
-            write(stdout,*)'ANALYSIS IS IN PRESSURE COORDINATES' 
-            call e_bmfrd ( lat, lon, nix, njx, 'GZ  ', 0., 10.,
-     $                                          na,lv, .true. )
-            if (vh.eq.'HU') then
-                call e_bmfrd ( lat, lon, nix, njx, vhh   , 0., 1. ,
-     $                                              na,lv, .true. )
-            else
-                call e_lianalx4 ( tt_temp,lat, lon, nix, njx, vtt, c1, 
-     $                                   1. , na, lv, .true., .true. )
-                call e_lianalx4 ( hu_temp,lat, lon, nix, njx, vhh, 0., 
-     $                                   1. , na, lv, .true., .true. )
-                do k=1,lv
-                   rna(k)=rna(k)*100.
-                   do i=1,nix*njx
-                      hu_temp(i,k) = max(0., hu_temp(i,k))
-                   enddo
-                enddo
-                call mesahu (hu_temp, hu_temp, tt_temp, rna, 1, 0,
-     $                      vt.eq.'TT' , .false., nix*njx, lv, nix*njx)
-                do k=1,lv
-                   call e_bmfsplitxy2 (hu_temp(1,k),nix,njx,'HU  ',k,
-     $                                                 lv,pni,0,0,0)
-                enddo
-            endif
-         endif
-         do i=1,E_tr3d_ntr
-            print*, E_tr3d_name_S(i),i
-            call e_bmfrd ( lat, lon, nix, njx, E_tr3d_name_S(i), 
-     $                                 0., 1., na, lv, .false. )
-         end do
-         do i=1,E_trvs_ntr
-            print*, E_trvs_name_S(i),i
-            call e_bmfrd ( lat, lon, nix, njx, E_trvs_name_S(i), 
-     $                                 0., 1., na, lv, .false. )
+            if (vt.eq.'TT') call mfotvt (tt,tt,hu,ng,1,ng)
+            call e_bmfsplitxy2 (hu,nifi,njfi,'HU  ',k,lv,pni,0,0,0)
+            call e_bmfsplitxy2 (tt,nifi,njfi,'VT  ',k,lv,pni,0,0,0)
          end do
 *
+         err = e_bmfrd (dstf_gid, nifi, njfi, 'P0  ', 0., 100., -1, 
+     $                                                 1, .true. )
+         if (anal_hav(1).eq.0) then
+            err = e_bmfrd (dstf_gid, nifi, njfi, 'GZ  ', 0., c2,na,
+     $                                                 lv, .true. )
+         else
+            err = e_bmfrd (dstf_gid, nifi, njfi, 'GZ  ', 0., c2,12000, 
+     $                                                     1, .true. )
+         endif
+*     
+      else
+*
+         write(6,*)'ANALYSIS IS IN PRESSURE COORDINATES' 
+         anal_hav(1) = e_bmfrd ( dstf_gid, nifi, njfi, 'GZ  ', 0., 10.,
+     $                                                  na,lv, .true. )
+         if (vh.eq.'HU') then
+            err = e_bmfrd ( dstf_gid, nifi, njfi, vhh   , 0., 1. ,
+     $                                             na,lv, .true. )
+         else
+            do k=1,lv
+               if (e_rdhint3 (hu,dstf_gid,nifi,njfi,vhh,na(k),ip2a,
+     $            ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $              goto 55               
+               if (e_rdhint3 (tt,dstf_gid,nifi,njfi,vtt,na(k),ip2a,
+     $            ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $              goto 55
+               do i=1,ng
+                  tt(i) = tt(i) + c1
+               enddo
+               rna(k)=rna(k)*100.
+               do i=1,nifi*njfi
+                  hu(i) = max(0., hu(i))
+               enddo
+               call mesahu (hu, hu, tt, rna(k), 1, 0,
+     $                      vt.eq.'TT' , .false., ng, 1, ng)
+               call e_bmfsplitxy2 (hu,nifi,njfi,'HU  ',k,lv,pni,0,0,0)
+            end do
+         endif
+*
+      endif
+*
+      do i=1,E_tr3d_ntr
+         print*, E_tr3d_name_S(i),i
+         err = e_bmfrd ( dstf_gid, nifi, njfi, E_tr3d_name_S(i), 
+     $                                 0., 1., na, lv, .false. )
+      end do
+      do i=1,E_trvs_ntr
+         print*, E_trvs_name_S(i),i
+         err = e_bmfrd ( dstf_gid, nifi, njfi, E_trvs_name_S(i), 
+     $                                 0., 1., na, lv, .false. )
+      end do
+*     
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
 *
+      return
+ 55   call e_arret( 'e_intthm' )
 *------------------------------------------------------------------
 *
-      return
       end

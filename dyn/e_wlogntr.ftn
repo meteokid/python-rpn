@@ -36,7 +36,6 @@
 * -----------------------------------------------------------------------
 *
 *implicits
-#include "e_maxprms.cdk"
 #include "e_option.cdk"
 * comdecks used also in GEMPP
 #include <model_macros_f.h>

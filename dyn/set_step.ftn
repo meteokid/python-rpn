@@ -158,7 +158,12 @@
       if (Lun_out.gt.0) then
       write(Lun_out,*) ' Timestep_set(',j,') : Timestep_id=',Timestep_id(j)
       write(Lun_out,*) ' Timestep_init_L=',Timestep_init_L(j)
-      write(Lun_out,*) ' Timestep=',(Timestep(i,j),i=1,Timestep_max(j))
+         if (Timestep_max(j).gt.30) then
+             write(Lun_out,*) ' Timestep=',
+     $                (Timestep(i,j),i=1,30),',... up to ,',Timestep(Timestep_max(j),j)
+         else
+             write(Lun_out,*) ' Timestep=',(Timestep(i,j),i=1,Timestep_max(j))
+         endif
       endif
       return
       end

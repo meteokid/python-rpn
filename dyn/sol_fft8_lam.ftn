@@ -152,7 +152,7 @@ c     do ki= 1, (Maxz-Minz+1) *L_nij
 c        fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
 c     enddo
        do i=1+l_pil_w,L_nij-l_pil_e
-       do k=1,(Maxz-Minz+1)
+       do k=1,Nkl
           fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j)
        enddo
        enddo
@@ -167,7 +167,7 @@ c     enddo
       do j =2+Lam_pil_s, Gnj-Lam_pil_n
             jr =  j - 1
        do i=1+l_pil_w,L_nij-l_pil_e
-       do k=1,(Maxz-Minz+1)
+       do k=1,Nkl
           fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j) - ai(k,i,j)
      $                                          * fdg2(k,i,jr)
        enddo
@@ -183,7 +183,7 @@ c        enddo
          do j = Gnj-1-Lam_pil_n, 1+Lam_pil_s, -1
             jr =  j + 1
             do i=1+l_pil_w,L_nij-l_pil_e
-            do k=1,(Maxz-Minz+1)
+            do k=1,Nkl
               fdg2(k,i,j) = fdg2(k,i,j) - ci(k,i,j) * fdg2(k,i,jr)
             enddo
             enddo

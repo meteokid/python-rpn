@@ -3,518 +3,158 @@
 #include <model_macros_f.h>
 *
       subroutine readdyn
-*
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Michel Roch - rpn - jan 1994
 *
 *revision
-* v2_00 - Desgagne M.       - initial MPI version (from readdyn v1_03)
-* V2_20 - Desgagne M.       - longitudes, latitudes and topography now
-* v2_20                       read from gem_osdyn
-* v2_21 - Desgagne M.       - new calling sequence to glbdist and
-* v2_21                       rpn_comm stooge for MPI
-* v2_21 - Lee V.            - modifications for LAM version
-* v2_30 - Corbeil L.        - Added BMF stuff instead of rdfld, added 
-* v2_30                       vertical interpolation
-* v2_31 - Edouard/Lee       - proper treatment of hybrid coordinate 
-* v2_31 - Desgagne          - clean up and introduce tracers
-* v2_31 - Lee V.            - enable case for no interpolation
-* v2_32 - Lee V.            - hybrid coordinate derives from "HY" record
-* v2_32                     - if same grid and levels but the topography is
-* v2_32                       different, vertical interpolation will be done
-* v2_32                     - input winds are always UU,VV
-* v3_00 - Lee V.            - re-arranged sequence to match new LAM entry
+* v2_00 - Desgagne M.      - initial MPI version (from readdyn v1_03)
+* V2_20 - Desgagne M.      - longitudes, latitudes and topography now
+* v2_20                      read from gem_osdyn
+* v2_21 - Desgagne M.      - new calling sequence to glbdist and
+* v2_21                      rpn_comm stooge for MPI
+* v2_21 - Lee V.           - modifications for LAM version
+* v2_30 - Corbeil L.       - Added BMF stuff instead of rdfld, added 
+* v2_30                      vertical interpolation
+* v2_31 - Edouard/Lee      - proper treatment of hybrid coordinate 
+* v2_31 - Desgagne         - clean up and introduce tracers
+* v2_31 - Lee V.           - enable case for no interpolation
+* v2_32 - Lee V.           - hybrid coordinate derives from "HY" record
+* v2_32                    - if same grid and levels but the topography is
+* v2_32                      different, vertical interpolation will be done
+* v2_32                    - input winds are always UU,VV
+* v3_00 - Lee V.           - re-arranged sequence to match new LAM entry
+* v3_01 - Corbeil L.       - introduce interface acqui
 *
 *object
 *	
 *arguments
 *	none
 *
-*constants
+*interfaces
+      INTERFACE
+         subroutine acqui
+#include "acq_int.cdk"
+         end subroutine acqui
+      END INTERFACE
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
-#include "vt1.cdk"
-#include "p_geof.cdk"
+#include "bmf.cdk"
 #include "ptopo.cdk"
 #include "cstv.cdk" 
 #include "geomg.cdk"
-#include "geomn.cdk"
 #include "grd.cdk"
 #include "pres.cdk" 
+#include "lctl.cdk"
 #include "schm.cdk"
-#include "did.cdk"
 #include "out1.cdk"
+#include "ind.cdk"
+#include "acq.cdk"
 *
 *modules
-      integer  vmmlod,vmmget,vmmuld,fnom,longueur,bmf_gobe,bmf_get,
-     $         prog_filename
-      external vmmlod,vmmget,vmmuld,fnom,longueur,bmf_gobe,bmf_get,
-     $         prog_filename
+      integer  bmf_gobe,bmf_get
+      external bmf_gobe,bmf_get
 *
-      character*32 pe_file,dumc
-      character*4, allocatable, dimension(:) :: bmf_nom
-      integer nvar,i,j,k,l,nerr,err,length,bmf_time1,bmf_time2,nbpts
-      integer, parameter :: maxerr = 400
-      integer key1(8),nrec,error(maxerr),vterp_lv
-      integer niu,nju,niv,njv,nk_temp,hh,mm,ss
-      integer, allocatable, dimension(:) :: bmf_ni,bmf_nj,bmf_nk,
-     $         bmf_scrap,bmf_dtyp,bmf_vtime1,bmf_vtime2
-      real, allocatable, dimension(:  ) :: lna,rna,sdd,pia,pibb,hyba
-      real, allocatable, dimension(:,:) :: psu_temp,psv_temp,
+      integer nvar,i,j,k,err
+      real, pointer, dimension(:  ) :: lna,rna,sdd
+      real, pointer, dimension(:,:) :: psu_temp,psv_temp,
      $        apsu_temp,apsv_temp,topu_temp,topv_temp
-      real, allocatable, dimension(:,:,:) ::  u_temp,v_temp,u_temp2,
-     $        v_temp2,hu_temp,tt_temp,gz_temp,zcol,tcol,xlnp, 
-     $        vlna,dz,dt,work,
-     $        ttu_temp,ttv_temp,gzu_temp,gzv_temp,
-     $        tcolu,tcolv,zcolu,zcolv
-      real, dimension(l_ni,l_nj) :: pps, guess,
-     $                              ps, vlapse,topo_temp
-      real dummy, conv, prefa, ptopa, rcoefa,
+      real, pointer, dimension(:,:,:) ::  u_temp,v_temp,
+     $        hu_temp,tt_temp,gz_temp, 
+     $        ttu_temp,ttv_temp,gzu_temp,gzv_temp
+      real, allocatable, dimension(:  ) :: pia, pibb, hyba,vlapse
+      real, allocatable, dimension(:,:) ::zcol,tcol,vlna
+      real, allocatable, dimension(:,:,:) ::  u_temp2,v_temp2,
+     $     xlnp, dz, dt, work
+      real, dimension(l_ni,l_nj) :: pps, ps , topo_temp
+      real dummy, conv,
      $     psmin, psmax, psmin_glob, psmax_glob
-      logical GLETAANL, GLSIGANL, GLHYBANL, GLPRSANL,vheqes, vteqtt, swph,
-     $        VERTINT,HORZINT
-      integer errprdf,prdfsum,i0,in,j0,jn
-      real      difsig,prdfsgz,prdf
-      parameter (difsig = 1.e-5)
+      integer errprdf,prdfsum
+      logical NESD
 **
 *     ---------------------------------------------------------------
 *
-      if (G_lam) then
-          i0=lam_i0
-          in=lam_in
-          j0=lam_j0
-          jn=lam_jn
-      else
-          i0 = glb_i0
-          in=  glb_in
-          j0 = glb_j0
-          jn = glb_jn
-      endif
-      i0=i0-5
-      in=in+5
-      j0=j0-5
-      jn=jn+5
-      conv = alog(100.)
-      if (Ptopo_myproc.eq.0) write(lun_out,9000)
+      if (Ptopo_myproc.eq.0) write(lun_out,9000) bmf_time1,bmf_time2
 *
-      key1( 1)=VMM_KEY( xla)
-      key1( 2)=VMM_KEY( xlo)
-      key1( 3)=VMM_KEY(topo)
-      nvar=3
+* Lecture des donnees
 *
-      key1( 4)=VMM_KEY(fit1)
-      key1( 5)=VMM_KEY( ut1)
-      key1( 6)=VMM_KEY( vt1)
-      key1( 7)=VMM_KEY( tt1)
-      key1( 8)=VMM_KEY( qt1)
-      nvar=8
-*
-      err = vmmlod(key1,nvar)
-      err = VMM_GET_VAR( xla)
-      err = VMM_GET_VAR( xlo)
-      err = VMM_GET_VAR(topo)
-      err = VMM_GET_VAR(fit1)
-      err = VMM_GET_VAR( ut1)
-      err = VMM_GET_VAR( vt1)
-      err = VMM_GET_VAR( tt1)
-      err = VMM_GET_VAR( qt1)
-*
-      call bmf_init
-      bmf_time1 = Out1_dato(1)
-      bmf_time2 = Out1_dato(2)
-*
-      hh=bmf_time2/1000000
-      mm=bmf_time2/10000-hh*100
-      ss=bmf_time2/100-hh*10000-mm*100
-*     
-      call bmf_splitname ( pe_file,Ptopo_myrow,Ptopo_mycol,'../','BM',
-     $                                             bmf_time1,hh,mm,ss )
-*
-      do i=1,maxerr
-         error(i) = -1
-      end do
-      nerr=0
-*
-*     Read the file associated to our pe
-*
-      length=bmf_gobe(pe_file)
-*
-*     Dress a catalog to allow proper dimensionning of some variables
-*
-      allocate (bmf_nom(length),bmf_ni(length),bmf_nj(length),
-     $          bmf_nk(length), bmf_vtime1(length),bmf_vtime2(length),
-     $          bmf_scrap(length),bmf_dtyp(length))
-      call bmf_catalog(bmf_nom,bmf_ni,bmf_scrap,bmf_scrap,bmf_nj,
-     $     bmf_scrap,bmf_scrap,bmf_nk,bmf_scrap,bmf_scrap,bmf_vtime1,
-     $     bmf_vtime2,bmf_scrap,bmf_scrap,bmf_dtyp,bmf_scrap,bmf_scrap)
-*
-*     Initialization of some switches and dimensions
-*
-      nbpts   = l_ni*l_nj
-      vterp_lv=-1
-      HORZINT = Did_horint
-      VERTINT = HORZINT
-      if (Ptopo_myproc.eq.0) 
-     $            write(lun_out,*)'HORIZONTAL INTERPOLATION =', HORZINT
+      nullify(lna,rna,sdd ,psu_temp,psv_temp,
+     $        apsu_temp,apsv_temp,topu_temp,topv_temp, u_temp,v_temp,
+     $        hu_temp,tt_temp,gz_temp, 
+     $        ttu_temp,ttv_temp,gzu_temp,gzv_temp)
 
-      vteqtt    = .not.Did_vt
-      vheqes    = Did_es
-      swph      = Did_swph
-      GLSIGANL  = Did_vrtc .eq. 'SIG'
-      GLETAANL  = Did_vrtc .eq. 'ETA'
-      GLHYBANL  = Did_vrtc .eq. 'HYB'
-      GLPRSANL  = Did_vrtc .eq. 'PRS'
+      call acqui ( lna, rna, sdd, psu_temp, psv_temp, apsu_temp,
+     $             apsv_temp, topu_temp,topv_temp, u_temp,v_temp,
+     $             hu_temp,tt_temp, gz_temp, ttu_temp, ttv_temp, 
+     $             gzu_temp, gzv_temp,ps, topo_temp )
 *
-      do i=1,length
-         if(bmf_nom(i).eq.'RNA ') then
-            vterp_lv=bmf_ni(i)
-            allocate(lna(vterp_lv),rna(vterp_lv),sdd(vterp_lv))
-            cycle
-         else if(bmf_nom(i).eq.'UU  ') then
-            niu=bmf_ni(i)
-            nju=bmf_nj(i)
-            cycle
-         else if(bmf_nom(i).eq.'VV  ') then
-            niv=bmf_ni(i)
-            njv=bmf_nj(i)
-            cycle
-         endif
-      enddo
-*
-*     no more needed stuff is deallocated
-      deallocate (bmf_ni,bmf_nj,bmf_nk,bmf_scrap,bmf_dtyp,bmf_vtime1,
-     $                                            bmf_vtime2,bmf_nom)
-*
-      error(1) = bmf_get ('RNA ',bmf_time1,bmf_time2,-1,rna,-1.,1,
-     $                                           vterp_lv,1,1,1,1)
-      error(2) = bmf_get ('LA  ',bmf_time1,bmf_time2,-1,xla,-1.,1,l_ni,
-     $                                                      1,l_nj,1,1)
-      error(3) = bmf_get ('LO  ',bmf_time1,bmf_time2,-1,xlo,-1.,1,l_ni,
-     $                                                      1,l_nj,1,1)
-      error(4) = bmf_get ('ME  ',bmf_time1,bmf_time2,-1,topo,-1.,
-     $                                             LDIST_DIM,1,1)
-      do j=1,l_nj
-      do i=1,l_ni
-         topo(i,j) = dble(topo(i,j)) * Dcst_grav_8
-         topo_temp(i,j)= topo(i,j)
-      end do
-      end do
-      nerr = nerr + 4
-*
-*
-      nk_temp=max(vterp_lv,G_nk)
-      allocate(u_temp(niu,nju,nk_temp),v_temp(niv,njv,nk_temp))
-      allocate(hu_temp(l_ni,l_nj,nk_temp),tt_temp(l_ni,l_nj,nk_temp))
-      allocate(gz_temp(l_ni,l_nj,nk_temp))
-
-      nerr = nerr + 1
-      error(nerr) = bmf_get('UU  ',bmf_time1,bmf_time2,-1,u_temp,-1,
-     $                                         1,niu,1,nju,1,nk_temp)
-  
-      nerr = nerr + 1
-      error(nerr) = bmf_get('VV  ',bmf_time1,bmf_time2,-1,v_temp,-1,
-     $                                         1,niv,1,njv,1,nk_temp)
-      nerr = nerr + 1
-      error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1.,
-     $                                         1,l_ni,1,l_nj,1,nk_temp)
-*
-      if (.not.HORZINT .or. GLPRSANL) then
-          nerr = nerr + 1
-          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
-     $                          gz_temp,-1.,1,l_ni,1,l_nj,1,nk_temp)
-      else
-          nerr = nerr + 1
-          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
-     $                gz_temp(1,1,vterp_lv),-1.,1,l_ni,1,l_nj,1,1)
+      if (Ptopo_myproc.eq.0) then
+         write(lun_out,*)
+     $      ' Acql_horzint=',Acql_horzint,' Acql_vertint=',Acql_vertint,
+     $      ' Acql_etaanl=',Acql_etaanl
+         write(lun_out,*)
+     $      ' Acql_siganl =',Acql_siganl ,' Acql_hybanl =',Acql_hybanl,
+     $      ' Acql_prsanl=',Acql_prsanl
       endif
 *
-      if (.not.GLPRSANL) then
-         if (GLSIGANL) ptopa = 0.
-         nerr = nerr + 1
-         error(nerr) = bmf_get('P0  ',bmf_time1,bmf_time2,-1,ps,
-     $                                       -1.,1,l_ni,1,l_nj,1,1)
-         nerr = nerr + 1
-         error(nerr) = bmf_get('VT  ',bmf_time1,bmf_time2,-1,tt_temp,-1.,
-     $                                         1,l_ni,1,l_nj,1,nk_temp)
-      else
-*        Convert millibar to pascal unit - Pressure Analysis
-         do l=1,vterp_lv
-            lna(l) = alog(rna(l))
-            rna(l) = rna(l)*100.
-         enddo         
-         do l=1,vterp_lv-1
-            sdd(l) = 1./(lna(l+1)-lna(l))
-         enddo
-      endif
-*             
-      if (GLHYBANL.or. GLETAANL) then
-          nerr = nerr + 1
-          error(nerr) = bmf_get('PTOP',bmf_time1,bmf_time2,-1,
-     $                                   ptopa,-1.,1,1,1,1,1,1)
-          nerr = nerr + 1
-          error(nerr) = bmf_get('PREF',bmf_time1,bmf_time2,-1,
-     $                                   prefa,-1.,1,1,1,1,1,1)
-          nerr = nerr + 1
-          error(nerr) = bmf_get('RCOF',bmf_time1,bmf_time2,-1,
-     $                                   rcoefa,-1.,1,1,1,1,1,1)
-          if (Ptopo_myproc.eq.0) 
-     $            write(lun_out,*)'Analysis Levels are in HYBRID/ETA levels'
-      else
-          VERTINT = .true.
-          if (Ptopo_myproc.eq.0) 
-     $      write(lun_out,*)'Analysis Levels are not in HYBRID or ETA levels'
-      endif
-*
-*     To determine further if vertical interpolation is needed
-*
-
-      if (.not. VERTINT .and. G_nk.ne.vterp_lv) then
-           VERTINT=.true.
-           if (Ptopo_myproc.eq.0) 
-     $      write(lun_out,*)'G_nk Model levels != vterp_lv Analysis levels'
-      endif
-*
-      if(.not. VERTINT) then
-          if (abs(rcoefa-Grd_rcoef) .gt. difsig) VERTINT=.true.
-          if (Ptopo_myproc.eq.0 .and. VERTINT) 
-     $      write(lun_out,*)'rcoefa=',rcoefa,' Grd_rcoef=',Grd_rcoef
-
-          if (abs(prefa-Pres_pref) .gt. difsig) VERTINT=.true.
-          if (Ptopo_myproc.eq.0 .and. VERTINT)
-     $      write(lun_out,*)'pref=',prefa,' Pres_pref=',Pres_pref
-
-          if (abs(ptopa - Pres_ptop) .gt.difsig) VERTINT=.true.
-          if (Ptopo_myproc.eq.0 .and. VERTINT)
-     $      write(lun_out,*)'ptopa=',ptopa,' Pres_ptop=',Pres_ptop
-
-          do i=1,vterp_lv
-             if (abs(rna(i)-Geomg_hyb(i)) .gt. difsig) VERTINT=.true.
-          end do
-          if (Ptopo_myproc.eq.0 .and. VERTINT)
-     $      write(lun_out,*)'Model levels are not the same as Analysis levels'
-      endif
-*
-*     Check if analysis and model have the same topography
-*
-      if(.not. VERTINT) then
-          prdfsgz = 25.
-          errprdf = 0
-          do j=1,l_nj
-          do i=1,l_ni
-             prdf= abs( gz_temp(i,j,vterp_lv) - topo(i,j))
-             if ( prdf .gt. prdfsgz ) errprdf = 1
-          enddo
-          enddo
-          call rpn_comm_allreduce (errprdf,prdfsum,1,"MPI_INTEGER",
-     $                                   "MPI_SUM","grid",err)
-*     
-          if ( prdfsum.ne.0 ) then
-             VERTINT = .true.
-             if (Ptopo_myproc.eq.0) then
-                write(lun_out,*) ' ******* WARNING ********'
-                write(lun_out,*) 'ANALYSIS AND MODEL HAVE THE SAME GRID & LEVELS'
-                write(lun_out,*)' ...BUT THE TOPOGRAPHY IS NOT EQUIVALENT...'
-             endif
-          endif
-      endif
-*
-*     Obtain other fields to calculate PSU_TEMP,PSV_TEMP for wind interpolation
-      if ( VERTINT ) then
-         if (Ptopo_myproc.eq.0)
-     $     write(lun_out,*)'Vertical Interpolation required'
-         allocate( topu_temp(niu,nju), topv_temp(niv,njv) )
-         nerr = nerr + 1
-         error(nerr) = bmf_get('TOPU',bmf_time1,bmf_time2,-1,
-     $                           topu_temp,-1.,1,niu,1,nju,1,1)
-         nerr = nerr + 1
-         error(nerr) = bmf_get('TOPV',bmf_time1,bmf_time2,-1,
-     $                           topv_temp,-1.,1,niv,1,njv,1,1)
-      call glbstat (topu_temp  ,'TOPu',1,niu,1,nju,1,i0,in,j0,jn,1,1)
-      call glbstat (topv_temp  ,'TOPv',1,niv,1,njv,1,i0,in,j0,jn,1,1)
-         do j=1,nju
-         do i=1,niu
-            topu_temp(i,j)  = dble(topu_temp(i,j))*Dcst_grav_8
-         enddo
-         enddo
-         do j=1,njv
-         do i=1,niv
-            topv_temp(i,j)  = dble(topv_temp(i,j))*Dcst_grav_8
-         enddo
-         enddo
-*
-         allocate( gzu_temp(niu,nju,nk_temp),gzv_temp(niv,njv,nk_temp) )
-         if (GLPRSANL) then
-            nerr = nerr + 1
-            error(nerr) = bmf_get('GZU ',bmf_time1,bmf_time2,-1,
-     $                    gzu_temp,-1.,1,niu,1,nju,1,nk_temp)
-            nerr = nerr + 1
-            error(nerr) = bmf_get('GZV ',bmf_time1,bmf_time2,-1,
-     $                    gzv_temp,-1.,1,niv,1,njv,1,nk_temp)
-         else
-            nerr = nerr + 1
-            error(nerr) = bmf_get('GZU ',bmf_time1,bmf_time2,-1,
-     $                    gzu_temp(1,1,vterp_lv),-1.,1,niu,1,nju,1,nk_temp)
-            nerr = nerr + 1
-            error(nerr) = bmf_get('GZV ',bmf_time1,bmf_time2,-1,
-     $                    gzv_temp(1,1,vterp_lv),-1.,1,niv,1,njv,1,nk_temp)
-
-*        Also need these variables for hybrid/eta/sigma analyses
-            allocate(  ttu_temp(niu,nju,nk_temp),ttv_temp(niv,njv,nk_temp),
-     $                 apsu_temp(niu,nju),       apsv_temp(niv,njv) )
-             nerr = nerr + 1
-             error(nerr) = bmf_get('VTU ',bmf_time1,bmf_time2,-1,
-     $                          ttu_temp,-1.,1,niu,1,nju,1,nk_temp)
-             nerr = nerr + 1
-             error(nerr) = bmf_get('VTV ',bmf_time1,bmf_time2,-1,
-     $                          ttv_temp,-1.,1,niv,1,njv,1,nk_temp)
-             nerr = nerr + 1
-             error(nerr) = bmf_get('APSU',bmf_time1,bmf_time2,-1,
-     $                          apsu_temp,-1.,1,niu,1,nju,1,1)
-             nerr = nerr + 1
-             error(nerr) = bmf_get('APSV',bmf_time1,bmf_time2,-1,
-     $                          apsv_temp, -1.,1,niv,1,njv,1,1)
-         endif
-      endif
-*
-*     Check for error in BMF_GETS above...
-      err = 0
-      do i=1,nerr
-         err = err + error(i)
-      end do
-*     
-      call rpn_comm_allreduce (err,error(1),1,"MPI_INTEGER",
-     $                                   "MPI_SUM","grid",err)
-*
-      if (error(1).ne.0) call gem_stop('readdyn',-1)
-*
-*     Calculate PSU_TEMP,PSV_TEMP for wind interpolation
-
-      if ( VERTINT ) then
-         allocate ( psu_temp(niu,nju),  psv_temp(niv,njv))
-
-         if (GLPRSANL) then
-             allocate( tcolu(niu,nju,nk_temp), tcolv(niv,njv,nk_temp),
-     $                 zcolu(niu,nju,nk_temp), zcolv(niv,njv,nk_temp) )
-*
-             print *,'gz2p0 for u'
-      call glbstat (gzu_temp  ,'GZU ',1,niu,1,nju,vterp_lv,i0,in,j0,jn,1,vterp_lv)
-             call gz2p0(psu_temp,gzu_temp,topu_temp,zcolu,tcolu,
-     $                                        sdd,lna,niu*nju,vterp_lv)
-             print *,'gz2p0 for v'
-      call glbstat (gzv_temp  ,'GZV ',1,niv,1,njv,vterp_lv,i0,in,j0,jn,1,vterp_lv)
-             call gz2p0(psv_temp,gzv_temp,topv_temp,zcolv,tcolv,
-     $                                        sdd,lna,niv*njv,vterp_lv)
-             deallocate(zcolu,zcolv,tcolu,tcolv)
-         else
-             allocate( pia(vterp_lv),pibb(vterp_lv),hyba(vterp_lv) )
-             if (GLSIGANL) then
-                 do k=1,vterp_lv
-                    pia(k) = rna(k)
-                    pibb(k)= 0.
-                    hyba(k)=0.
-                 enddo
-             else 
-                 do k=1,vterp_lv
-                    hyba(k) = rna(k) + (1.-rna(k))*ptopa/prefa
-                 enddo
-                 call genab(pia,pibb,hyba,ptopa,rcoefa,vterp_lv)
-             endif
-*
-      call glbstat (apsu_temp  ,'APSU',1,niu,1,nju,1,i0,in,j0,jn,1,1)
-      call glbstat (gzu_temp  ,'GZSU',1,niu,1,nju,vterp_lv,i0,in,j0,jn,vterp_lv,vterp_lv)
-      call glbstat (ttu_temp  ,'TTU ',1,niu,1,nju,vterp_lv,i0,in,j0,jn,1,vterp_lv)
-             call p0vt2gz_hyb (gzu_temp,pia,pibb,apsu_temp,ttu_temp,
-     $                         niu*nju, vterp_lv,.false.,GLSIGANL)
-      call glbstat (gzu_temp  ,'GZU ',1,niu,1,nju,vterp_lv,i0,in,j0,jn,1,vterp_lv)
-             call getp0 ( psu_temp, topu_temp,pia,pibb, apsu_temp, gzu_temp,
-     $                    ttu_temp, niu*nju, vterp_lv,GLSIGANL)
-      call glbstat (psu_temp  ,'PSU',1,niu,1,nju,1,i0,in,j0,jn,1,1)
-      call glbstat (apsv_temp  ,'APSV',1,niv,1,njv,1,i0,in,j0,jn,1,1)
-      call glbstat (gzv_temp  ,'GZSV',1,niv,1,njv,vterp_lv,i0,in,j0,jn,vterp_lv,vterp_lv)
-      call glbstat (ttv_temp  ,'TTV ',1,niv,1,njv,vterp_lv,i0,in,j0,jn,1,vterp_lv)
-             call p0vt2gz_hyb (gzv_temp,pia,pibb,apsv_temp,ttv_temp,
-     $                      niv*njv, vterp_lv,.false.,GLSIGANL)
-      call glbstat (gzv_temp  ,'GZV ',1,niv,1,njv,vterp_lv,i0,in,j0,jn,1,vterp_lv)
-             call getp0 ( psv_temp, topv_temp,pia,pibb, apsv_temp, gzv_temp,
-     $                    ttv_temp, niv*njv, vterp_lv,GLSIGANL)
-      call glbstat (psv_temp  ,'PSV',1,niv,1,njv,1,i0,in,j0,jn,1,1)
-             deallocate(ttu_temp,ttv_temp)
-         endif
-      
-         if (.not.GLPRSANL) then
-         do j=1,nju
-         do i=1,niu
-            psu_temp(i,j)  = alog(psu_temp(i,j))
-            psu_temp(i,j)  = exp(psu_temp(i,j))
-         enddo
-         enddo
-         do j=1,njv
-         do i=1,niv
-            psv_temp(i,j)  = alog(psv_temp(i,j))
-            psv_temp(i,j)  = exp(psv_temp(i,j))
-         enddo
-         enddo
-         endif
-      call glbstat (psu_temp  ,'PSU',1,niu,1,nju,1,i0,in,j0,jn,1,1)
-      call glbstat (psv_temp  ,'PSV',1,niv,1,njv,1,i0,in,j0,jn,1,1)
-         deallocate( topu_temp,topv_temp,gzu_temp,gzv_temp)
-      endif  
-*
-      if(.not. VERTINT) then
+      allocate(work(l_ni,l_nj,Acqi_nktmp))
+      if(.not. Acql_vertint) then
 *---------------------------------------------------------------------
 *     INTERPOLATION IS NOT REQUIRED
 *---------------------------------------------------------------------
-         if(ptopo_myproc.eq.0) then
-            write(lun_out,*) 'No Vertical Interpolation required'
-         endif
-         do j=1,l_nj
-         do i=1,l_ni
-            ps(i,j)   = alog (  ps(i,j))
-         enddo
-         enddo
          do k=1,g_nk
          do j=1,l_nj
          do i=1,l_ni
-            tt1(i,j,k)=tt_temp(i,j,k) 
-            fit1(i,j,k)=gz_temp(i,j,k)
+            Ind_t (i,j,k) = tt_temp(i,j,k) 
+            Ind_fi(i,j,k) = gz_temp(i,j,k)
+            work  (i,j,k) = hu_temp(i,j,k)
          end do
          end do
          end do
-         call tr_init (hu_temp,.false.,.false.,.not. VERTINT,
-     $                 bmf_time1,bmf_time2,
-     $                 nk_temp,dummy,dummy,dummy,ps,
-     $                 vterp_lv,l_ni,l_nj)
-      else if(GLSIGANL.or.GLETAANL.or.GLHYBANL) then
+*
+      else if(Acql_siganl.or.Acql_etaanl.or.Acql_hybanl) then
 *---------------------------------------------------------------------
 *     INTERPOLATION REQUIRED
 *     ANALYSIS IS ON EITHER SIGMA or ETA OR HYBRID COORDINATES
 *---------------------------------------------------------------------
-         allocate ( work(l_ni,l_nj,nk_temp) )
-
-         if (ptopo_myproc.eq.0) then
-             write(lun_out,*)
-     $       'ANALYSIS IS IN SIGMA OR ETA OR HYBRID COORDINATES'
-             write(lun_out,*)
-     $       'GLETAANL=',GLETAANL,' GLSIGANL=',glsiganl,' GLHYBANL=',GLHYBANL
-         endif
 *
+         allocate ( pia(Acqi_vterplv),pibb(Acqi_vterplv),
+     $              hyba(Acqi_vterplv) )
+         if (Acql_siganl) then
+            do k=1,Acqi_vterplv
+               pia(k) = rna(k)
+               pibb(k)= 0.
+               hyba(k)= 0.
+            enddo
+         else 
+            if (rna(1).eq.0.0) then
+                do k=1,Acqi_vterplv
+                   hyba(k) = rna(k) + (1.-rna(k))*Acqr_ptopa/Acqr_prefa
+                enddo
+            else
+                do k=1,Acqi_vterplv
+                   hyba(k) = rna(k)
+                enddo
+            endif
+            call genab ( pia, pibb, hyba, Acqr_ptopa, Acqr_rcoefa,
+     $                                               Acqi_vterplv )
+         endif
+*     
 *        Compute hydrostatic GZ on analysis levels
 *
-         call p0vt2gz_hyb (gz_temp,pia,pibb,ps,tt_temp, 
-     $                     l_ni*l_nj, vterp_lv,.false.,GLSIGANL)
+         call p0vt2gz_hyb ( gz_temp,pia,pibb,ps,tt_temp, Acqi_nbpts, 
+     $                             Acqi_vterplv,.false.,Acql_siganl )
 *
 *        Finally, compute pressure on model surface (PS)
-         call getp0 ( pps, topo_temp,pia,pibb, ps, gz_temp,
-     $                    tt_temp, nbpts, vterp_lv,GLSIGANL)
+         call getp0 ( pps, topo_temp,pia,pibb, ps, gz_temp, tt_temp, 
+     $                         Acqi_nbpts, Acqi_vterplv,Acql_siganl )
 *        Interpolate VT
-         call vte_hyb2hyb( work, Geomg_pia, Geomg_pibb, pps,G_nk,tt_temp,
-     $                     pia,pibb, ps, vterp_lv, nbpts, 'VT',GLSIGANL)
+         call vte_hyb2hyb (work, Geomg_pia, Geomg_pibb,pps,G_nk,tt_temp,
+     $         pia,pibb, ps, Acqi_vterplv, Acqi_nbpts, 'VT',Acql_siganl)
 *
 *        Compute hydrostatic GZ on model's levels
          do j=1,l_nj
@@ -523,119 +163,126 @@
          enddo
          enddo
 *
-         call p0vt2gz_hyb (gz_temp,Geomg_pia,Geomg_pibb,pps,
-     $                     work, l_ni*l_nj, g_nk,.false.,.false.)
+         call p0vt2gz_hyb ( gz_temp,Geomg_pia,Geomg_pibb,pps,
+     $                      work, Acqi_nbpts, g_nk,.false.,.false. )
 *
          do k=1,g_nk
          do j=1,l_nj
          do i=1,l_ni
-            fit1(i,j,k) = gz_temp(i,j,k)
-            tt1(i,j,k)  = work(i,j,k) 
+            Ind_fi(i,j,k) = gz_temp(i,j,k)
+            Ind_t(i,j,k)  = work(i,j,k) 
          end do
          end do         
          end do   
 *
-*        Interpolate HU
-         call vte_hyb2hyb( work, Geomg_pia, Geomg_pibb, pps,G_nk,hu_temp,
-     $                     pia,pibb, ps, vterp_lv, nbpts, 'HU',GLSIGANL)
-      call glbstat (work  ,'HU  ',1,l_ni,1,l_nj,G_nk,i0,in,j0,jn,1,G_nk)
-*
-         if ( .not. Schm_moist_L ) then
-               do k= 1, G_nk
-               do j= 1, l_nj 
-               do i= 1, l_ni 
-                  work(i,j,k)  = 0.0
-               end do
-               end do
-               end do
+         if ( Schm_moist_L ) then
+            call vte_hyb2hyb ( work, Geomg_pia, Geomg_pibb,pps,G_nk,
+     $                         hu_temp,pia,pibb, ps, Acqi_vterplv, 
+     $                         Acqi_nbpts, 'HU',Acql_siganl )
+         else
+            do k= 1, G_nk
+            do j= 1, l_nj 
+            do i= 1, l_ni 
+               work(i,j,k)  = 0.0
+            end do
+            end do
+            end do
          endif
-*
-         call tr_init (work,GLSIGANL,.true.,.not. VERTINT,
-     $                 bmf_time1,bmf_time2,
-     $                 nk_temp,pps,pia,pibb,ps,
-     $                 vterp_lv,l_ni,l_nj)
-*
-         deallocate (work)
 *
          do j=1,l_nj
          do i=1,l_ni
-            ps(i,j)   = alog(pps(i,j))
+            ps(i,j) = pps(i,j)
          enddo
          enddo
 *
-         allocate  (u_temp2(niu,nju,nk_temp), v_temp2(niv,njv,nk_temp))
-         call vte_hyb2hyb(u_temp2, Geomg_pia, Geomg_pibb, psu_temp,
-     $                     G_nk,u_temp, pia,pibb, apsu_temp, vterp_lv, 
-     $                     niu*nju, 'UU',GLSIGANL)
-         call vte_hyb2hyb(v_temp2, Geomg_pia, Geomg_pibb, psv_temp,
-     $                     G_nk,v_temp, pia,pibb, apsv_temp, vterp_lv, 
-     $                     niv*njv, 'VV',GLSIGANL)
+         call p0vt2gz_hyb ( gzu_temp,pia,pibb,apsu_temp,ttu_temp,
+     $             Acqi_niu*Acqi_nju, Acqi_vterplv,.false.,Acql_siganl )
+         call getp0 ( psu_temp, topu_temp,pia,pibb, apsu_temp, 
+     $                gzu_temp,ttu_temp, Acqi_niu*Acqi_nju, 
+     $                Acqi_vterplv,Acql_siganl)
+         call p0vt2gz_hyb ( gzv_temp,pia,pibb,apsv_temp,ttv_temp,
+     $             Acqi_niv*Acqi_njv, Acqi_vterplv,.false.,Acql_siganl )
+         call getp0 ( psv_temp, topv_temp,pia,pibb, apsv_temp, 
+     $                gzv_temp,ttv_temp, Acqi_niv*Acqi_njv, 
+     $                Acqi_vterplv,Acql_siganl)
 *
-         do l=1,g_nk
-            do j=1,nju
-            do i=1,niu
-               u_temp(i,j,l) = u_temp2(i,j,l)
+         allocate ( u_temp2(Acqi_niu,Acqi_nju,Acqi_nktmp), 
+     $              v_temp2(Acqi_niv,Acqi_njv,Acqi_nktmp) )
+*
+         call vte_hyb2hyb ( u_temp2, Geomg_pia, Geomg_pibb, psu_temp,
+     $                  G_nk,u_temp, pia,pibb, apsu_temp, Acqi_vterplv, 
+     $                  Acqi_niu*Acqi_nju, 'UU',Acql_siganl )
+         call vte_hyb2hyb ( v_temp2, Geomg_pia, Geomg_pibb, psv_temp,
+     $                  G_nk,v_temp, pia,pibb, apsv_temp, Acqi_vterplv, 
+     $                  Acqi_niv*Acqi_njv, 'VV',Acql_siganl )
+*
+         do k=1,g_nk
+            do j=1,Acqi_nju
+            do i=1,Acqi_niu
+               u_temp(i,j,k) = u_temp2(i,j,k)
             enddo
             enddo
-            do j=1,njv
-            do i=1,niv
-               v_temp(i,j,l) = v_temp2(i,j,l)
+            do j=1,Acqi_njv
+            do i=1,Acqi_niv
+               v_temp(i,j,k) = v_temp2(i,j,k)
             enddo
             enddo
          enddo
 *
-         deallocate(psu_temp,psv_temp,u_temp2,v_temp2,apsu_temp,apsv_temp,
-     $                          pia,pibb,hyba)
+         deallocate ( u_temp2,v_temp2,apsu_temp,ttu_temp,ttv_temp,
+     $                                             apsv_temp,hyba )
 *
       else
+*
 *---------------------------------------------------------------------
 *     INTERPOLATION REQUIRED
 *     ANALYSIS IS ON PRESSURE COORDINATES
 *---------------------------------------------------------------------
 *
-         allocate( zcol(l_ni,l_nj,nk_temp),
-     $          tcol(l_ni,l_nj,nk_temp),xlnp(l_ni,l_nj,nk_temp),
-     $          vlna(l_ni,l_nj,nk_temp),dz(l_ni,l_nj,nk_temp),
-     $          dt(l_ni,l_nj,nk_temp))
-         if(ptopo_myproc.eq.0)
-     $         write(lun_out,*) 'ANALYSIS IS IN PRESSURE COORDINATES'
+         allocate ( pia(Acqi_vterplv),
+     $    zcol(Acqi_nim*Acqi_njm,Acqi_nktmp),vlapse(Acqi_nim*Acqi_njm),
+     $    tcol(Acqi_nim*Acqi_njm,Acqi_nktmp),xlnp(l_ni,l_nj,Acqi_nktmp),
+     $    vlna(Acqi_nim*Acqi_njm,Acqi_nktmp),  dz(l_ni,l_nj,Acqi_nktmp),
+     $                                         dt(l_ni,l_nj,Acqi_nktmp))
+         do k=1,Acqi_vterplv
+            pia(k) = lna(k)
+         enddo
 *
 *        Compute PS,GZ,VT,ZCOL
 *
-         call gz2p0(ps,gz_temp,topo_temp,zcol,tcol,sdd,lna,nbpts,vterp_lv)
+         call gz2p0 ( ps, gz_temp, topo_temp, zcol,tcol, sdd, lna, 
+     $                                   Acqi_nbpts, Acqi_vterplv )
 *
 *        Compute geopotential (GZ) and temperature (TT)
 *
+         do i=1,Acqi_nbpts
+            vlapse(i)= (tcol(i,Acqi_vterplv)-tcol(i,Acqi_vterplv-1))
+     $                    *sdd(Acqi_vterplv-1)
+         enddo
+*
+         conv = alog(100.)
+         do k=1,g_nk
          do j=1,l_nj
          do i=1,l_ni
-            vlapse(i,j)= (tcol(i,j,vterp_lv)-tcol(i,j,vterp_lv-1))
-     $                    *sdd(vterp_lv-1)
+            xlnp(i,j,k) =  alog( Geomg_pia(k)
+     %                   + Geomg_pibb(k) * exp( ps(i,j) )) - conv
          enddo
          enddo
-         do l=1,g_nk
-            do j=1,l_nj
-            do i=1,l_ni
-              xlnp(i,j,l) = alog( Geomg_pia(l)
-     %                + Geomg_pibb(l) * exp( ps(i,j) )) - conv
-            enddo
-            enddo
          enddo
-         do l=1,vterp_lv
-            do j=1,l_nj
-            do i=1,l_ni
-               vlna(i,j,l)=lna(l)                
-            enddo
-            enddo
+         do k=1,Acqi_vterplv
+         do i=1,Acqi_nbpts
+            vlna(i,k)=lna(k)                
+         enddo
          enddo
 *
-         call vterp2 (dz, dt, xlnp, zcol, tcol, vlna, nbpts, nbpts,
-     $                                        vterp_lv, g_nk, vlapse)
+         call vterp2 ( dz, dt, xlnp, zcol, tcol, vlna, Acqi_nbpts, 
+     $                     Acqi_nbpts, Acqi_vterplv, g_nk, vlapse )
 *
-         do l=1,g_nk
+         do k=1,g_nk
             do j=1,l_nj
             do i=1,l_ni
-               tt1(i,j,l) = -dt(i,j,l)/Dcst_rgasd_8
-               fit1(i,j,l) =  dz(i,j,l)
+               Ind_t (i,j,k) = -dt(i,j,k)/Dcst_rgasd_8
+               Ind_fi(i,j,k) =  dz(i,j,k)
             enddo
             enddo
          enddo
@@ -645,114 +292,118 @@
 *
          do j=1,l_nj
          do i=1,l_ni
-            fit1(i,j,g_nk) = topo(i,j)
+            Ind_fi(i,j,g_nk) = Ind_topo(i,j)
          enddo
          enddo
 *
-*        Compute specific humidity (HU) for Baroclinic Model
+         call gz2p0 ( psu_temp,gzu_temp,topu_temp,zcol,tcol,
+     $                          sdd,lna,Acqi_niu*Acqi_nju,Acqi_vterplv )
+         call gz2p0 ( psv_temp,gzv_temp,topv_temp,zcol,tcol,
+     $                          sdd,lna,Acqi_niv*Acqi_njv,Acqi_vterplv )
+         call vte_vrtical ( u_temp, psu_temp, Acqi_niu*Acqi_nju, g_nk, 
+     $                                       lna, Acqi_vterplv, .true. )
+         call vte_vrtical ( v_temp, psv_temp, Acqi_niv*Acqi_njv, g_nk, 
+     $                                       lna, Acqi_vterplv, .true. )
 *
-         call vte_vrtical ( hu_temp, ps, nbpts, g_nk, lna, vterp_lv,
-     $                                                        .false. )
-         call vte_vrtical ( u_temp, psu_temp, niu*nju, g_nk, lna, 
-     $                                            vterp_lv, .true. )
-         call vte_vrtical ( v_temp, psv_temp, niv*njv, g_nk, lna, 
-     $                                            vterp_lv, .true. )
-         if ( .not. Schm_moist_L ) then
+         if ( Schm_moist_L ) then
+            call vte_vrtical ( hu_temp, ps, Acqi_nbpts, g_nk, lna, 
+     $                                        Acqi_vterplv,.false. )
             do k= 1, G_nk
-               do j= 1, l_nj 
-               do i= 1, l_ni 
-                  hu_temp(i,j,k)  = 0.0
-               end do
-               end do
+            do j= 1, l_nj 
+            do i= 1, l_ni 
+               work(i,j,k) = hu_temp(i,j,k)
+            end do
+            end do
+            end do
+         else
+            do k= 1, G_nk
+            do j= 1, l_nj 
+            do i= 1, l_ni 
+               work(i,j,k)  = 0.0
+            end do
+            end do
             end do
          endif
-         call tr_init (hu_temp,.false.,.false.,.not. VERTINT,
-     $                    bmf_time1,bmf_time2,
-     $                    nk_temp,ps,dummy,dummy,dummy,
-     $                    vterp_lv,l_ni,l_nj)
-         deallocate(psu_temp,psv_temp,zcol,tcol,xlnp,vlna,dz,dt)
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            ps(i,j) = exp(ps(i,j))
+         enddo
+         enddo
+*
+         deallocate (zcol,tcol,xlnp,vlna,dz,dt,vlapse)
+*
       endif
 *
-*---------------------------------------------------------------------
-*     DEALLOCATE VARIABLES, FILL the VMM VARIABLES
-*---------------------------------------------------------------------
-      deallocate (gz_temp,tt_temp,hu_temp,lna,rna,sdd)
-
-      if ( HORZINT )
-     $     call vte_uv2img (u_temp, v_temp, niu, nju, niv, njv, 
-     $                        g_nk, geomg_y_8(1), geomg_yv_8(1))
+      NESD = .false.
+      if (Lctl_step.gt.0) NESD = .true.
+      call tr_init ( work,Acqi_datasp,bmf_time1,bmf_time2,Acqi_nktmp,
+     $               pps,pia,pibb,ps,Acqi_vterplv,l_ni,l_nj,NESD )
+*
+      if (Acql_horzint) 
+     $     call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju,
+     $            Acqi_niv, Acqi_njv, g_nk, geomg_y_8(1), geomg_yv_8(1))
 
 *     Convert wind from KNOTS TO M/S
-      do l=1,g_nk
-         do j=1,nju
-         do i=1,niu
-            ut1(i,j,l) = u_temp(i,j,l)*dcst_knams_8
+      do k=1,g_nk
+         do j=1,Acqi_nju
+         do i=1,Acqi_niu
+            Ind_u(i,j,k) = u_temp(i,j,k)*dcst_knams_8
          enddo
          enddo
-         do j=1,njv
-         do i=1,niv
-            vt1(i,j,l) = v_temp(i,j,l)*dcst_knams_8
+         do j=1,Acqi_njv
+         do i=1,Acqi_niv
+            Ind_v(i,j,k) = v_temp(i,j,k)*dcst_knams_8
          enddo
          enddo
       enddo
 *
-      deallocate(u_temp,v_temp)
+      deallocate ( u_temp,v_temp,gz_temp,tt_temp,hu_temp,work,lna,rna,
+     $             sdd )
+      if (Acql_vertint) then
+         deallocate (psu_temp,psv_temp,pia)
+         if (.not.Acql_prsanl) deallocate ( pibb )
+      endif
 *
-      psmin = exp(ps(1,1))
-      psmax = exp(ps(1,1))
+      psmin = ps(1,1)
+      psmax = ps(1,1)
       do j=1,l_nj
       do i=1,l_ni
-         psmin = min( psmin, exp(ps(i,j)) )
-         psmax = max( psmax, exp(ps(i,j)) )
-         qt1(i,j,g_nk) = ps(i,j)
-         qt1(i,j,1   ) = alog(Pres_ptop*100.)
+         psmin = min( psmin, ps(i,j) )
+         psmax = max( psmax, ps(i,j) )
+         Ind_q(i,j,g_nk) = alog(ps(i,j))
+         Ind_q(i,j,1   ) = alog(Pres_ptop*100.)
       enddo
       enddo
 *      
       call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN",
-     $                                                       "grid",err)
+     $                                                     "grid",err)
       call rpn_comm_allreduce(psmax,psmax_glob,1,"MPI_REAL","MPI_MAX",
-     $                                                       "grid",err)
+     $                                                     "grid",err)
       psmin=psmin_glob
       psmax=psmax_glob
-      if (Ptopo_myproc.eq.0) then
-          write(49)psmin
-          write(49)psmax
-      endif
-*
-  900 continue
-*
-      if(Ptopo_myproc.eq.0) then
+*     
+      if ( Ptopo_myproc.eq.0 .and. .not.NESD ) then
            write(lun_out,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX,
      $                     ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
       endif
-
+*
       Pres_surf = dble(0.5*(psmin+psmax))
       Pres_top  = dble(Pres_ptop*100.)
-
-      if (Ptopo_myproc.eq.0) write(Lun_out,9900)
 *     
+      nullify ( lna,rna,sdd,psu_temp,psv_temp,apsu_temp,apsv_temp,
+     $          topu_temp,topv_temp, u_temp,v_temp,hu_temp,tt_temp,
+     $          gz_temp, ttu_temp,ttv_temp,gzu_temp,gzv_temp)
+*
       call bmf_clear
 *
-      call rpn_comm_xch_halo( topo, LDIST_DIM,l_ni,l_nj,1,
-     $        G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
-      call glbstat (fit1,'FIT1',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (ut1,'UT1',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (vt1,'VT1',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (tt1,'TT1',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-*
-      err = vmmuld(-1,0)
-*
- 9000 format(
-     +/,'BEGIN READING DYNAMICS DATA FILES     (S/R READDYN)',
-     +/,'===================================================')
- 9900 format(
-     +/,'END READING DYNAMICS DATA FILES     (S/R READDYN)',
-     +/,'===================================================')
+ 9000 format(/,' TREATING INPUT DATA VALID AT: ',i8.6,'.'i8.8,
+     +       /,' ===============================================')
 *
 *     ---------------------------------------------------------------
 *
       return
       end
-

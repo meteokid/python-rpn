@@ -123,7 +123,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "p_geof.cdk"
@@ -140,7 +139,6 @@
       external vmmlod, vmmget, vmmuld
 *    
       integer  pnerr, pnlod, pnlkey1(14), i, j 
-      integer  i0,in,j0,jn
       real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk)
       real wk1(LDIST_SIZ*l_nk)
 **
@@ -198,18 +196,6 @@
          vt0_ = 0
       endif
 *
-      if (G_lam) then
-          i0=lam_i0
-          in=lam_in
-          j0=lam_j0
-          jn=lam_jn
-      else
-          i0 = glb_i0
-          in=  glb_in
-          j0 = glb_j0
-          jn = glb_jn
-      endif
-*
 *PDIR RESERVE=Ptopo_npeOpenMP
 *
       call nlip_2 ( nl_nu, nl_nv,  wk1, nl_nth, nl_n3, nl_n3p, 
@@ -217,32 +203,8 @@
      $              st0, qt0, fipt0, topo, ut0, vt0, mut0, multx, 
      $              wijk1, wijk2, LDIST_DIM,l_nk )
 *
-
-
 *PDIR RELEASE
 *
-      if (.not. Schm_hydro_L) then
-      call glbstat (fipt0,'fipt0',LDIST_DIM,G_nk,i0,in+1,j0,jn+1,1,G_nk)
-      call glbstat (topo,'xfis',LDIST_DIM,1,i0,in+1,j0,jn+1,1,1)
-      call glbstat (mut0,'mut0',LDIST_DIM,G_nk,i0,in+1,j0,jn+1,1,G_nk)
-      endif
-      if (Cori_cornl_L) then
-      if(Lctl_debug_L) then
-      call glbstat (ut0,'ut0',LDIST_DIM,G_nk,i0-3,in+4,j0-2,jn+1,1,G_nk)
-      call glbstat (vt0,'vt0',LDIST_DIM,G_nk,i0-3,in+4,j0-2,jn+1,1,G_nk)
-      endif
-      endif
-      if(Lctl_debug_L) then
-      call glbstat (st0,'st0',LDIST_DIM,1,i0,in+1,j0,jn+1,1,1)
-      call glbstat (qt0,'qt0',LDIST_DIM,G_nk,i0,in+1,j0,jn+1,1,G_nk)
-      call glbstat (tpt0,'tpt0',LDIST_DIM,G_nk,i0,in+1,j0,jn+1,1,G_nk)
-      call glbstat (pipt0,'pipt0',LDIST_DIM,G_nk,i0,in+1,j0,jn+1,1,G_nk)
-      call glbstat (nl_nu,'NU',LDIST_DIM,G_nk,i0-1,in,j0,jn,1,G_nk)
-      call glbstat (nl_nv,'NV',LDIST_DIM,G_nk,i0,in,j0-1,jn,1,G_nk)
-      call glbstat (wk1,'N1',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (nl_nth,'Nth',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (rheln,'Rheln',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      endif
       pnerr = vmmuld(-1,0)
 *
  1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')

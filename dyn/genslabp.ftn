@@ -24,6 +24,8 @@
 * v2_31 - V. Lee            - changed Pslab_useit to Phy_useit
 * v2_32 - V. Lee            - corrected minor bug for 'LO'(long)setup for busmul
 * v3_00 - V. Lee            - physics output area is different for LAM
+* v3_01 - V. Lee            - corrected MAX SLAB bug by moving inislabfhand to
+* v3_01                       busslab routine
 *
 *object
 *	This subroutine generates slab descriptors
@@ -41,8 +43,6 @@
 #include "cstv.cdk"
 #include "p_bus.cdk"
 #include "dcst.cdk"
-#include "init.cdk"
-#include "rstr.cdk"
 #include "slab.cdk"
 #include "grid.cdk"
 #include "pslab.cdk"
@@ -69,6 +69,7 @@
       dostep_max = doout(dostep,2)
 *
       Pslab_slab = 0
+      Pslab_fhand = -1
       if (dostep_max.gt.0) then
         if (Lun_out.gt.0) write(Lun_out,5000) Lctl_step
       else
@@ -102,11 +103,13 @@
             pnibv = pnibv + 1
          endif
       enddo
-      do i = 1, P_bent_top
-         if (Phy_useit(i+P_bper_top+P_bdyn_top+P_bvol_top).eq.1) then
-            pnibe = pnibe + 1
-         endif
-      enddo
+      if (Lctl_step.eq.0) then
+          do i = 1, P_bent_top
+             if (Phy_useit(i+P_bper_top+P_bdyn_top+P_bvol_top).eq.1) then
+                 pnibe = pnibe + 1
+             endif
+          enddo
+      endif
 
       if (pnibp+pnibd+pnibv+pnibe.eq.0) return
 
@@ -196,13 +199,6 @@
 *
       if (.not. output_in_PE_L) return
 *
-*  Open physics slab file
-      exten_s= ""
-      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
-     $     ((Lctl_step.gt.(Init_dfnp-1)/2)) )
-     $     exten_s = '_dgf'
-      call inislabfhand(Lun_outgem_s, Pslab_fhand,'pm',exten_S)
-
 *
 *  Obtain the different slabs needed, based on the type of
 *  grids used in the output. A slab type can only have one
@@ -245,7 +241,7 @@
 
       endif
 *
-      if (pnibe.gt.0 .and. Lctl_step.eq.0) then
+      if (pnibe.gt.0) then
 
 *         Process the Entry Bus
           i_idx= P_bper_top+P_bdyn_top+P_bvol_top

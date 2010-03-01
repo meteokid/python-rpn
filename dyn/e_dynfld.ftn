@@ -1,0 +1,75 @@
+***s/r e_dynfld
+*
+#include <model_macros_f.h>
+      subroutine e_dynfld 
+      implicit none
+*
+*AUTHOR  M. Desgagne    April 2002
+*
+*IMPLICIT
+#include "e_fu.cdk"
+#include "e_grids.cdk"
+#include "ptopo.cdk"
+#include "e_anal.cdk"
+#include "e_cdate.cdk"
+#include "bmf.cdk"
+#include "e_topo.cdk"
+#include "pilot.cdk"
+#include "out1.cdk"
+*
+**
+      integer  fstfrm,newdate
+      external fstfrm,newdate
+*
+      character*16 date1,date2
+      integer err,yy,dd,dum
+      real*8 dayfrac,sec_in_day
+      parameter (sec_in_day=86400.0d0)
+      integer i,j
+*
+*---------------------------------------------------------------------
+*
+      if (.not.LAM) then
+         Pil_datacvrg = 0
+         Pil_nesdt    = 1000
+      endif
+*
+      date1   = Pil_runstrt_S
+      dayfrac = dble(Pil_datacvrg) / sec_in_day
+      call incdatsd (Pil_runend_S,Pil_runstrt_S,dayfrac)
+*
+      do while ( date1 .le. Pil_runend_S )
+*
+         write (6,105) date1
+         call datp2f ( datev , date1 )
+         err   = newdate (datev,bmf_time1,bmf_time2,-3)
+         call prsdate (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,date1)
+         call bmf_splitstart (Ptopo_npex,Ptopo_npey,'./process/','BM',
+     $                                Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
+         call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
+*     
+         call e_specanal
+*     
+         call e_intthm 
+*     
+         call e_intwind 
+*     
+         call bmf_splitwrall ('AHAV',2,1,1,Bmf_time1,Bmf_time2, 
+     $                                       0,0,40,0,anal_hav)
+         call bmf_splitend
+         err = fstfrm ( e_fu_anal )
+*
+         if (Pil_ctebcs_L) goto 999
+         dayfrac = dble(Pil_nesdt) / sec_in_day
+         call incdatsd (date2,date1,dayfrac)
+         date1 = date2
+*
+      end do
+*     
+ 105  format (/80('#'),/,1X,'PROCESSING DATASET VALID: ',a16/80('#')/)
+*
+*---------------------------------------------------------------------
+ 999  return
+      end

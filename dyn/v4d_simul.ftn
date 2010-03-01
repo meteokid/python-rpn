@@ -17,6 +17,8 @@
 * v2_21 - Desgagne M.       - rpn_comm stooge for MPI
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d
 * v3_00 - Laroche S.        - adapt for simplified physics
+* v3_01 - Morneau J.        - run NLM trajectory when V4dg_sensib_L
+*                             and v4dg_status=5
 *
 *object
 *     Simulator 4D (in minimization language).
@@ -97,7 +99,7 @@
 *     Run DIRECT integration
 *     ----------------------
 *
-      if( .not.V4dg_tlm_L ) then
+      if( .not.V4dg_tlm_L .or. (V4dg_sensib_L.and.V4dg_status.eq.5)) then
 *        ---------------
 *        NLM integration
 *        ---------------
@@ -150,7 +152,7 @@
          V4dg_rwtr = 0
 *
 *        Set starting ADDRESSES on OBS. and FORC. WA files
-*        NOTE: TRAJ WA file address is recovered elsewhere  
+*        NOTE: TRAJ WA file address is in V4dg_addtab_tl 
 *        -------------------------------------------------
          V4dg_addfr = 1
          V4dg_addob = 1
@@ -222,11 +224,15 @@
 *        -------------------------------
          V4dg_rwtr = 0
 *
-*        Set starting ADDRESSES on OBS. and FORC. WA files
-*        NOTE: TRAJ WA file address is recovered elsewhere  
-*        -------------------------------------------------
-         V4dg_addfr = V4dg_addfr - l_ni*l_nj*l_nk 
-         V4dg_addob = V4dg_addob - l_ni*l_nj*l_nk 
+*        ----
+*        NOTE
+*        -----------------------------------------
+*        OBS. WA file address is in V4dg_addob
+*        FORC.WA file address is in V4dg_addfr   
+*        TRAJ WA file address is in V4dg_addtab_ad 
+*        -----------------------------------------
+         V4dg_addfr = V4dg_addfr - l_ni*l_nj
+         V4dg_addob = V4dg_addob - l_ni*l_nj 
          V4dg_addph = V4dg_addph - l_ni*l_nj*l_nk
 *
 *        Run ADJ model

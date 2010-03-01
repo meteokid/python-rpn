@@ -20,6 +20,7 @@
 *
 *revision
 * v3_00 - Laroche S.        - initial version (from v4d_rwtraj)
+* v3_01 - Laroche S.        - check if hucond.ne.1
 *
 *object
 *     see id section
@@ -35,6 +36,7 @@
 #include "cstv.cdk"
 #include "init.cdk"
 #include "schm.cdk"
+#include "busind.cdk"
 *
 *modules
       integer numtr,istep,i,j,k,n,iadd,iaddold
@@ -51,6 +53,10 @@
       if(.not. Schm_cptop_L) call gefstop('v4d_rwtraj_phystep')
       if(Init_balgm_L      ) call gefstop('v4d_rwtraj_phystep')
       if(Lctl_step .gt.100 ) call gefstop('v4d_rwtraj_phystep')
+      if(hucond.ne.1) then
+       write(Lun_out,*) 'hucond should be equal to 1'
+       call gefstop('v4d_rwtraj_phystep')
+      endif
 *     ______________________________________________________
 *
 *

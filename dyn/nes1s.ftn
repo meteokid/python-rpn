@@ -34,7 +34,7 @@
 **
       integer i,j,k,nit,njt,il,ih,jl,jh
       real*8 zero,one,pt5,lx,ly,p,pis2
-      parameter (zero=1.d0, one=1.d0, pt5=0.5d0)
+      parameter (zero=0.d0, one=1.d0, pt5=0.5d0)
 *----------------------------------------------------------------------
 *100
 *     * ndavx et ndavy: nombre de points de grille dans la bande de 
@@ -71,7 +71,7 @@
 *south
          do j=1+pil_s,jl-1
          do i=1,l_ni
-            p       = (cos(pis2*(j-1)/ly))**2
+            p       = (cos(pis2*(j-pil_s-1)/ly))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
@@ -84,7 +84,7 @@
 *west
          do i=1+pil_w,il-1
          do j=1,l_nj
-            p       = (cos(pis2*(i-1)/lx))**2
+            p       = (cos(pis2*(i-pil_w-1)/lx))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do

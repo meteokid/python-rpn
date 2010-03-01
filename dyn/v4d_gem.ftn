@@ -12,7 +12,8 @@
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - Move v4d_setscalp after set_dync
-* v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L 
+* v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L
+* v3_01 - Morneau J.        - add V4dg_sensib_L
 *
 *object
 *     see id section
@@ -30,6 +31,8 @@
 #include "ptopo.cdk"
 #include "rstr.cdk"
 #include "step.cdk"
+#include "tr3d.cdk"
+#include "v4dj.cdk"
 *
 *modules
       integer fnom
@@ -45,9 +48,6 @@
       integer izs(1),iz(5)
       real rzs(1)
       real*8 dzs_8(1)
-*     ______________________________________________________
-*
-      if ( V4dg_sensib_L ) call gefstop('v4d_gemjob')
 *     ______________________________________________________
 *
 *     --------------------------------------
@@ -132,10 +132,55 @@
 *     ------------------------
 *     Set SENSITIVITY ANALYSIS
 *     ------------------------
-      else
-*     ************
-*     NOT DONE YET
-*     ************
+      else if ( V4dg_sensib_L ) then
+*       ----------------------------------------------------
+*       If requested :
+*       Read Observation location (mask) in observation file
+*       ----------------------------------------------------
+        if (V4dj_mask_L) call v4d_rdmask
+*
+*       ----------------------------------------------------
+*       Build trajectory for TLM in cost function
+*       AND
+*       Convert observations from random file to WA file
+*       ----------------------------------------------------
+*
+*       Initialize REFERENCE initial control var. in V4dc_ycv
+*       from model var.
+*       -----------------------------------------------------
+        call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*        Run REFERENCE integration to build TRAJECTORY
+*        ---------------------------------------------------------
+            if( Lun_out.gt.0 ) then
+                write(Lun_out,
+     %          fmt='(//''-------------------------------------------'')')
+                write(Lun_out,
+     %          fmt='(  ''REFERENCE INTEGRATION TO BUILD TRAJECTORY  '')')
+                write(Lun_out,
+     %          fmt='(  ''-------------------------------------------'')')
+            endif
+*
+*           Set status of the integration (REFERENCE integration)
+*           -----------------------------------------------------
+            V4dg_status = 5
+*
+*           Set over-riding switch for dynout and blocstat
+*           ----------------------------------------------
+            V4dg_out = 1
+*
+*           Call 4D-Var simulator without gradient
+*           --------------------------------------
+            indic = 99 
+            call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
+*
+*        Initialize CURRENT (first iterate) initial state  
+*        ------------------------------------------------
+*
+            do n = 1,V4dc_ncv
+              V4dc_xcv(n) = 0.0
+            enddo
+*
       endif
 *
 *     ----------------------------------------------------------------------
@@ -145,7 +190,7 @@
 *        ---------------
 *        Initializations
 *        ---------------
-*
+* 
 *        COLD START
 *        ----------
          if(V4dm_hot.eq.0) then
@@ -190,7 +235,7 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 1 
+         V4dg_out = 1
 *
 *        ----------------------
 *        Don't do gradient test 

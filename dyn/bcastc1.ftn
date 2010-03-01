@@ -23,6 +23,8 @@
 * v2_31 - Lee V.            - allocate Geomg_hyb,change Geomg_eta to Geomg_hybm
 * v2_32 - Lee V.            - removed broadcast for P_pbl,P_gwd variables
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
+* v3_01 - Lee V.            - broadcast common hspng for horizontal sponge
 *
 *object
 *
@@ -50,10 +52,13 @@
 #include "cstv.cdk"
 #include "out.cdk"
 #include "pres.cdk"
-#include "did.cdk"
 #include "ptopo.cdk"
+#include "pilot.cdk"
+#include "hblen.cdk"
 #include "hzd.cdk"
+#include "eigv.cdk"
 #include "vspng.cdk"
+#include "hspng.cdk"
 #include "cori.cdk"
 #include "tr2d.cdk"
 #include "tr3d.cdk"
@@ -75,8 +80,10 @@
       COMMON_BROADCAST(pres)
       COMMON_BROADCAST(Xst_i)
       COMMON_BROADCAST(Xst_r)
-      COMMON_BROADCAST(Did_l)
-      COMMON_BROADCAST(Did_c)
+      COMMON_BROADCAST(Pils)
+      COMMON_BROADCAST(Pill)
+      COMMON_BROADCAST(Pili)
+      COMMON_BROADCAST(Hblen_i)
       COMMON_BROADCAST(Hgc)
       COMMON_BROADCAST(Hgc_s)
       COMMON_BROADCAST(Out1)
@@ -104,6 +111,7 @@
       COMMON_BROADCAST(Hzdi)
       COMMON_BROADCAST(Hzdr)
       COMMON_BROADCAST(Hzdc)
+      COMMON_BROADCAST(Eigvl)
       COMMON_BROADCAST(Tr2d_c)
       COMMON_BROADCAST(Tr2d_l)
       COMMON_BROADCAST(Tr2d_i)
@@ -114,6 +122,9 @@
       COMMON_BROADCAST(vspngl)
       COMMON_BROADCAST(vspngi)
       COMMON_BROADCAST(vspngr)
+      COMMON_BROADCAST(hspngl)
+      COMMON_BROADCAST(hspngi)
+      COMMON_BROADCAST(hspngr)
       COMMON_BROADCAST(Out_l)
       COMMON_BROADCAST(Out_c)
       COMMON_BROADCAST(Out_i)

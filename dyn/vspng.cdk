@@ -1,12 +1,12 @@
 *revision
 * v2_21 - Desgagne M.        - add control for sponge on momentum only
 *
-      logical Vspng_uvwdt_L
+      logical Vspng_uvwdt_L,Vspng_rwnd_L
       integer Vspng_nk, Vspng_maxn
       parameter (Vspng_maxn = 1000)
       real Vspng_mf
       MARK_COMMON_BEG(vspngl)
-      common /vspngl/ Vspng_uvwdt_L
+      common /vspngl/ Vspng_uvwdt_L,Vspng_rwnd_L
       MARK_COMMON_END(vspngl)
       MARK_COMMON_BEG(vspngi)
       common /vspngi/ Vspng_nk

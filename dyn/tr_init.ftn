@@ -2,14 +2,13 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine tr_init ( hu,sigma_L,sigoeta_L,no_interp_L,bmf_time1,
-     $                     bmf_time2,nk, pps,rna_pia,pibb,ps,
-     $                     vterp_lv,ni,nj )
+      subroutine tr_init ( hu,data_spec,bmf_time1,bmf_time2,nk,pps, 
+     $                         rna_pia,pibb,ps,vterp_lv,ni,nj,nesd )
       implicit none
 *
-      logical sigoeta_L,sigma_L, no_interp_L
-      integer nk,bmf_time1,bmf_time2,vterp_lv,ni,nj
-      real hu(ni,nj,*),pps(*),rna_pia(*),ps(*), pibb(*)
+      logical nesd
+      integer data_spec(*),nk,bmf_time1,bmf_time2,vterp_lv,ni,nj
+      real hu(ni,nj,*),pps(*),rna_pia(*),ps(*),pibb(*)
 *
 *author
 *     Michel Desgagne  -  Sept 2001
@@ -26,18 +25,25 @@
 #include "glb_ld.cdk"
 #include "tr2d.cdk"
 #include "tr3d.cdk"
+#include "nest.cdk"
 #include "vt1.cdk"
 *
-      integer write_db_file,rewind_db_file,vmmlod,vmmget,vmmuld
+      integer  write_db_file,rewind_db_file,vmmlod,vmmget,vmmuld
       external write_db_file,rewind_db_file,vmmlod,vmmget,vmmuld
-      integer i,j,k,l,m,n,ndone,ntpf,cnt,err,key0,key(Tr3d_ntr),unf,ntr2do
+*
+      integer i,j,k,l,m,n,ndone,ntpf,cnt,err,key0,key(Tr3d_ntr),
+     $        unf,ntr2do
       real w1(l_ni,l_nj,nk),w2(l_ni,l_nj,nk),buf(l_ni,G_nk),tr
       pointer (patr, tr(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
 *
 *     ---------------------------------------------------------------
 *
-      key0 = VMM_KEY (trt1)
+      if (nesd) then
+         key0 = VMM_KEY (nest_trf)
+      else
+         key0 = VMM_KEY (trt1)
+      endif
       do k=1,Tr3d_ntr
          key(k) = key0 + k
       end do
@@ -54,9 +60,9 @@
                end do
                end do
             else
-               call tr_vint (tr,Tr3d_name_S(k),Tr3d_sval(k),sigma_L,
-     $              sigoeta_L,no_interp_L,bmf_time1,bmf_time2,nk,pps,
-     $              rna_pia,pibb,ps,vterp_lv,LDIST_DIM)
+               call tr_vint (tr,Tr3d_name_S(k),Tr3d_sval(k),data_spec,
+     $                       bmf_time1,bmf_time2,nk,pps,
+     $                       rna_pia,pibb,ps,vterp_lv,LDIST_DIM)
             endif
          end do
          err = vmmuld(key,Tr3d_ntr)
@@ -65,9 +71,9 @@
       if (Tr2d_incore_L) then
          do l=1,Tr2d_ntr
             patr = loc(Tr2d_stk3d((l-1)*LDIST_SIZ*l_nk+1))
-            call tr_vint (tr,Tr2d_name_S(l),Tr2d_sval(l),sigma_L,
-     $           sigoeta_L,no_interp_L,bmf_time1,bmf_time2,nk,pps,
-     $           rna_pia,pibb,ps,vterp_lv,LDIST_DIM)
+            call tr_vint (tr,Tr2d_name_S(l),Tr2d_sval(l),data_spec,
+     $                    bmf_time1,bmf_time2,nk,pps,
+     $                    rna_pia,pibb,ps,vterp_lv,LDIST_DIM)
          end do
       else
          allocate (tr2(LDIST_SHAPE,G_nk,Tr2d_ntpf))
@@ -77,9 +83,8 @@
             do m=1,ntr2do
                l = (n-1)*Tr2d_ntpf + m
                call tr_vint (tr2(l_minx,l_miny,1,m),Tr2d_name_S(l),
-     $              Tr2d_sval(l),sigma_L,sigoeta_L,no_interp_L,bmf_time1,
-     $              bmf_time2,nk,pps,rna_pia,pibb,ps,
-     $              vterp_lv,LDIST_DIM)
+     $              Tr2d_sval(l),data_spec,bmf_time1,bmf_time2,nk,pps,
+     $              rna_pia,pibb,ps,vterp_lv,LDIST_DIM)
             end do
             cnt = l_ni*G_nk
             unf = Tr2d_unf((n-1)*Tr2d_ntpf+1)

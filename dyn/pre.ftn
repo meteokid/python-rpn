@@ -137,7 +137,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "lun.cdk"
 #include "geomg.cdk"
 #include "rhsc.cdk"
@@ -152,13 +151,12 @@
       external vmmlod, vmmget, vmmuld
 *
       integer pnerr, pnlod, pnlkey1(19), i, j
-      integer i0,in,j0,jn
       real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk)
 **
 *     __________________________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
-
+*
       pnlkey1(1)  = VMM_KEY(ru)
       pnlkey1(2)  = VMM_KEY(rv)
       pnlkey1(3)  = VMM_KEY(ruw1)
@@ -212,52 +210,17 @@
          r3p_ = 0
       endif
 *
-      if (G_lam) then
-          i0=lam_i0
-          in=lam_in
-          j0=lam_j0
-          jn=lam_jn
-      else
-          i0 = glb_i0
-          in=  glb_in
-          j0 = glb_j0
-          jn = glb_jn
-      endif
-
 *PDIR RESERVE=Ptopo_npeOpenMP
-
-      if (Lun_debug_L) write (Lun_out, *) 'before prep'
-      if (Lctl_debug_L) then
-      call glbstat (xct1,'xct1',1,l_ni,1,l_nj,l_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      call glbstat (yct1,'yct1',1,l_ni,1,l_nj,l_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      call glbstat (zct1,'zct1',1,l_ni,1,l_nj,l_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      call glbstat (ruw1,'Ruw1',LDIST_DIM,G_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      call glbstat (rvw1,'Rvw1',LDIST_DIM,G_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      call glbstat (ruw2,'Ruw2',LDIST_DIM,G_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      call glbstat (rvw2,'Rvw2',LDIST_DIM,G_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      endif
       call prep_2 ( ru,rv, ruw1,ruw2,rvw1,rvw2,xct1,yct1,zct1,topo, 
      %              rd,rcn,r1,rth, rw,rvv,r3,r3p, rhell,
      %              wijk1,wijk2,LDIST_DIM,l_ni,l_nj,l_nk )
-
 *PDIR RELEASE
-      if (.not. Schm_hydro_L) then
-      call glbstat (r3p,'R3p',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      endif
-      if (Lun_debug_L) write (Lun_out, *) 'after prep'
-      if (Lctl_debug_L) then
-      call glbstat (ruw2,'Ruw2',LDIST_DIM,G_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      call glbstat (rvw2,'Rvw2',LDIST_DIM,G_nk,i0-2,in+2,j0-2,jn+2,1,G_nk)
-      call glbstat (ru,'Ru',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (rv,'Rv',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (rd,'Rd',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (rhell,'Rhell',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      endif
-
+*
       pnerr = vmmuld(-1,0)
-
+*
 1000  format(3X,'PRE-COMPUTATION FOR THE HELMHOLTZ PROBLEM: (S/R PRE)')
-
+*     __________________________________________________________________
+*
       return
       end
 

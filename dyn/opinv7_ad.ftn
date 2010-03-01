@@ -1,0 +1,135 @@
+***s/r opinv7_ad - ADJ of opinv7 
+*
+      subroutine opinv7_ad ( F_r,    F_ideb,F_jdeb,  F_ifin, F_jfin,F_nk,
+     %                       F_axis, F_a_8,  F_b_8,  F_c_8,
+     %                       F_ai_8, F_bi_8, F_ci_8, F_di_8,
+     %                       F_prep_L,  F_case, NIS,   NJS,  NKS, SKIP )
+*
+#include "impnone.cdk"
+*
+      integer F_ideb, F_jdeb,F_ifin,F_jfin,F_nk, NIS, NJS, NKS, SKIP
+      real    F_r(SKIP,NIS,NJS,NKS)
+      real*8  F_a_8(*), F_b_8(*), F_c_8(*)
+      real*8  F_ai_8(*), F_bi_8(*), F_ci_8(*), F_di_8(*)
+      logical F_prep_L
+      character*1 F_case, F_axis
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_01 - Tanguay M.        - initial MPI version (from opinv6_ad v2_10)
+*
+*object
+*     see id section 
+*     Based on opinvad (v1_02 - s polavarapu)
+*
+*ADJ of
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_r          O    - result in an array
+* F_ideb       I    - starting index on I
+* F_ifin       I    - ending   index on I
+* F_jdeb       I    - starting index on J
+* F_jfin       I    - ending   index on J
+* F_nk         I    - number of levels in z-direction
+* F_axis       I    - along the z-axis only
+* F_a_8        I    - lower  diagonal of inverse operator
+* F_b_8        I    - middle diagonal of inverse operator
+* F_c_8        I    - upper  diagonal of inverse operator
+* F_ai_8       I/O  - auxiliary vector for inverse
+* F_bi_8       I/O  - auxiliary vector for inverse
+* F_ci_8       I/O  - auxiliary vector for inverse
+* F_di_8       I/O  - auxiliary vector for inverse
+* F_prep_L     I    - .true. to prepare F_ai_8, ..., F_di_8
+* F_case       I    - 'N'eumann, 'D'irichlet or 'P'eriodic boundary condition
+* NIS          I    - field dimension in x-direction
+* NJS          I    - field dimension in y-direction
+* NKS          I    - field dimension in z-direction
+* SKIP         I    - distance between elements of F_r
+*
+      logical plbnd_L, plper_L, plalonz_L
+      integer i, j, k, pnm
+*
+      real*8 ZERO_8, ONE_8 
+      parameter( ZERO_8 = 0.0 )
+      parameter(  ONE_8 = 1.0 )
+*
+*******************************************************************************
+*                                                                             *
+*   ONLY for solving along z direction                                        *
+*                                                                             *
+*******************************************************************************
+*                                                                             *
+      plalonz_L = F_axis.eq.'Z'
+      if ( .not.plalonz_L ) then
+           print *,'ERROR: OPINV7_AD is only correct for Z axis'
+           call stopmpi(-1)
+      endif
+      pnm = F_nk
+*
+      if ( F_case.eq.'D' ) then
+         plbnd_L = .true.
+         plper_L = .false.
+      elseif ( F_case.eq.'N' ) then
+         plbnd_L = .false.
+         plper_L = .false.
+      elseif ( F_case.eq.'P' ) then
+         plbnd_L = .false.
+         plper_L = .true.
+      endif
+*
+      if(.not.F_prep_L.and.plalonz_L.and. F_case.eq.'D') goto 999
+           print *,'ERROR: OPINV7_AD not tested for those options'
+           call stopmpi(-1)
+*
+  999 continue
+*
+      if ( plper_L ) pnm = pnm - 1
+*
+         if ( plper_L ) then
+            do k=pnm,1,-1
+               do j=1,NJS
+                  do i=1,NIS
+                     F_r(1,i,j,F_nk) = F_r(1,i,j,F_nk) + F_di_8(k) * F_r(1,i,j,k)
+                  enddo
+               enddo
+            enddo
+            do j=1,NJS
+               do i=1,NIS
+               F_r(1,i,j, pnm) = F_r(1,i,j,pnm) + F_ai_8(1)   *F_r(1,i,j,F_nk)
+               F_r(1,i,j,   1) = F_r(1,i,j,  1) + F_ci_8(F_nk)*F_r(1,i,j,F_nk)
+               F_r(1,i,j,F_nk) =                  F_bi_8(F_nk)*F_r(1,i,j,F_nk)
+               enddo
+            enddo
+         endif
+*
+         call msoltri6_ad
+     %               ( F_r(1,1,1,1), F_r(1,1,1,1), F_bi_8, F_ci_8, F_ai_8,
+     %                 NIS*NJS*SKIP, SKIP, pnm, NIS*NJS)
+*
+         if ( plbnd_L ) then
+            do j=1,NJS
+               do i=1,NIS
+                  F_r(1,i,j,   1) = ZERO_8 
+                  F_r(1,i,j,F_nk) = ZERO_8 
+               enddo
+            enddo
+         endif
+*
+         do k=1,F_nk
+            do i=1,F_ideb-1
+               do j=1,NJS
+                  F_r(1,i,j,k) = ZERO_8 
+               enddo
+            enddo
+            do i=F_ifin+1,NIS
+               do j=1,NJS
+                  F_r(1,i,j,k) = ZERO_8
+               enddo
+            enddo
+         enddo
+*
+      return
+      end

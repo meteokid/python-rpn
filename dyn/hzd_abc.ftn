@@ -25,7 +25,7 @@
 * v2_10 - J.P. Toviessi     - reset V grid operator 
 * v2_10                       latitudinal modulation of hor. diffusion
 * v2_11 - Desgagne M.       - remove vertical modulation
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Desgagne & Lee    - replace geomd.cdk by grd.cdk
 *
 *object
 *       

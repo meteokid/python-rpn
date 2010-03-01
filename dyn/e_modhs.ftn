@@ -34,21 +34,15 @@
 #include "dcst.cdk"
 #include "p_bus.cdk"
 #include "p_geobus.cdk"
-      USE_STKMEMW
 **
       integer i, j, im, offk
       real prmax, prpoa, prcon, prlat, prlon
-      real wk1, wk2, wk3, wk4
-      pointer (pawk1, wk1(*)), (pawk2, wk2(*)),
-     $        (pawk3, wk3(*)), (pawk4, wk4(*))
+      real wk1(nifi*njfi), wk2(nifi*njfi), 
+     $     wk3(nifi*njfi), wk4(nifi*njfi)
 *
 *     ------------------------------------------------------------
 *
       write(6, 600)
-      call stkmemw (nifi*njfi    , pawk1)
-      call stkmemw (nifi*njfi    , pawk2)
-      call stkmemw (nifi*(njfi+2), pawk3)
-      call stkmemw (nifi*(njfi+2), pawk4)
 *
       prmax=0.01
 *
@@ -137,11 +131,6 @@
             endif
          end do
       endif
-*
-      call unstakw (pawk1)
-      call unstakw (pawk2)
-      call unstakw (pawk3)
-      call unstakw (pawk4)
 *
  600  format(/,' MODIFICATION OF SOIL MOISTURE  FIELD (S/R E_MODHS)')
 *     ------------------------------------------------------------

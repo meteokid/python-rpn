@@ -17,6 +17,7 @@
 * v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
 * v3_00 - Ek N./Tanguay M.  - introduce v4d_ctrlgrd 
 * v3_00 - Laroche S.        - include simplified physics
+* v3_01 - Tanguay M.        - introduce identity option
 *
 *object
 *     see id section
@@ -45,17 +46,20 @@
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      logical bkup_L
+      logical bkup_L,identity_4dvar_L
       integer last_step,pnerr,pnlkey1(1),i,j,k
 *
       real wpipt1m (LDIST_SHAPE,l_nk)
 *     ______________________________________________________
 *
-      if( F_dgtflt_L     ) call gefstop('gem_run_ad')
-      if( F_rstrt_L      ) call gefstop('gem_run_ad')
-      if( P_clim_clima_L ) call gefstop('gem_run_ad')
-      if( Schm_chems_L   ) call gefstop('gem_run_ad')
+      if( F_dgtflt_L     ) call gem_stop('gem_run_ad',-1)
+      if( F_rstrt_L      ) call gem_stop('gem_run_ad',-1)
+      if( P_clim_clima_L ) call gem_stop('gem_run_ad',-1)
+      if( Schm_chems_L   ) call gem_stop('gem_run_ad',-1)
+      if( Schm_hdlast_L  ) call gem_stop('gem_run_ad',-1)
 *     ______________________________________________________
+*
+      identity_4dvar_L = V4dg_conf.ne.0.and.V4dg_identity_L
 *
       last_step = Step_total
 
@@ -82,8 +86,9 @@
 *     Adjoint of
 *     Physics timestep
 *     ----------------
-      if ( Schm_phyms_L ) call p_main_ad (Lctl_step)
+      if ( Schm_phyms_L.and..not.identity_4dvar_L ) call p_main_ad (Lctl_step)
 *
+      if ( .not.identity_4dvar_L ) then
 *
 *     Adjoint of
 *     Horizontal diffusion & Vertical sponge
@@ -170,15 +175,17 @@
 *        ----------------------
          call hzd_main_ad 
 *
+      endif
+*
 *     Adjoint of
 *     Dynamics timestep
 *     -----------------
-      call dynstep_ad( )
+      if (.not.identity_4dvar_L) call dynstep_ad( )
 *
 *     Adjoint of
 *     Horizontal diffusion & Vertical sponge (Initial timestep)
 *     ---------------------------------------------------------
-      if (Lctl_step.eq.1) then
+      if (Lctl_step.eq.1.and..not.identity_4dvar_L) then
 *
 *        Recover TRAJ needed in vspng_main_ad
 *        ------------------------------------ 

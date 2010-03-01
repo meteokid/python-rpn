@@ -147,10 +147,9 @@
       endif
 *______________________________________________________________________
 *
- 1000 format(/ /,'INITIALIZATION OF NAMES AND KEYS LISTS FOR ',
-     $           'DYNAMIC OUTPUT CONTROL (S/R SET_LIST)',
-     % /,'======================================================',
-     %/ /)
+ 1000 format(/,'INITIALIZATION OF NAMES AND KEYS LISTS FOR ',
+     $         'DYNAMIC OUTPUT CONTROL (S/R SET_LIST)',
+     % /,'======================================================')
  2000 format('THERE ARE ',i5,' VARIABLES IN COMDECK VT0')
  2100 format('THERE ARE ',i5,' VARIABLES IN COMDECK VTH')
  2200 format('THERE ARE ',i5,' VARIABLES IN COMDECK VT1')

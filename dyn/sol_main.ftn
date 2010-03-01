@@ -22,7 +22,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "opr.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
@@ -59,9 +58,6 @@
       pnerr = VMM_GET_VAR(rheln)
       pnerr = VMM_GET_VAR(gptx)
 *
-c      if (Lun_out.gt.0) print *,'RHELN in solver before sol_hcr'
-c      call glbstat (rheln,'RHS',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-*
 * Transfering rheln (real*4 with halo) into rhs (real*8 without halo)
 *PDIR RESERVE=Ptopo_npeOpenMP
       call sol_trsf (rhs,rheln,ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy,
@@ -77,31 +73,12 @@ c      call glbstat (rheln,'RHS',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
      $                                              LDIST_DIM,l_nk,-1)
 *PDIR RELEASE
 *
-      if (Lun_debug_L.and.Lun_out.gt.0) print *,'GPTX in solver after sol_hcr'
-c      call glbstat(gptx,'SOL',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-
-
-cvl  To have bit pattern for solver, uncomment the writlam/readlam lines
-      if (.not.G_lam) then
-cvl     if (Lun_out.gt.0) write(Lun_out,*)'writing out solver solution'
-cvl     call writlam(gptx,LDIST_DIM,G_nk,glb_i0,glb_in,glb_j0,glb_jn,1,G_nk,50)
-      if(Lctl_debug_L) then
-      call glbstat(gptx,'SOL',LDIST_DIM,G_nk,glb_i0,glb_in,glb_j0,glb_jn,1,G_nk)
-      endif
-      else
-cvl     if (Lun_out.gt.0) write(Lun_out,*)'reading in solver solution'
-cvl   call readlam(gptx,LDIST_DIM,G_nk,lam_i0,lam_in,lam_j0,lam_jn,1,G_nk,50)
-      if(Lctl_debug_L) then
-      call glbstat(gptx,'SOL',LDIST_DIM,G_nk,lam_i0,lam_in,lam_j0,lam_jn,1,G_nk)
-      endif
-      endif
-*
       pnerr = vmmuld( -1, 0 )
-*
-**********************************************************************
 *
  1000 format(
      +5X,'SOLVING LINEAR HELMHOLTZ PROBLEM: (S/R SOL_MAIN)')
+*
+*     ---------------------------------------------------------------
 *
       return
       end

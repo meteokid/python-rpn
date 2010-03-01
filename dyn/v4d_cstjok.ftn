@@ -9,13 +9,31 @@
       use v4dz
       use v4d_interint0
 *
+*     ----------------------------------------------------------------
+      interface
+      subroutine v4d_putfld (cdvar,kstatus,gomvar_8,kdim,kobs,indexvar)
+*
+#include <model_macros_f.h>
+*
+      use v4d_prof
+*
 #include "impnone.cdk"
+*
+      character*2,INTENT(IN)   :: cdvar
+      integer,    INTENT(INOUT):: kstatus
+      integer,    INTENT(IN)   :: kdim,kobs,indexvar
+      real*8, pointer, dimension(:,:) :: gomvar_8 
+*
+      end subroutine v4d_putfld
+      end interface
+*     ----------------------------------------------------------------
 *
 *author N. Ek
 *
 *revision
 * v3_00 - N.Ek              - initial MPI version
 * v3_00   M.Tanguay         - adapt to Simon's exchange
+* v3_xx - M.Tanguay         - correction for empty processors 
 *
 *object
 *     -----------------------------------------------------------------------
@@ -46,7 +64,7 @@
       external vmmlod, vmmget, vmmuld, prof_wrrec, longueur
 *
       integer nvar, kstatus, pnlkey1(9), err, pnerr, istat, i, j,
-     %        k, n, i1, i2, j1, j2, indx, indy, ntime, npr
+     %        k, n, i1, i2, j1, j2, ntime, npr
 *
       integer key1(Tr3d_ntr), key1_, key1m(Tr3d_ntr), key1m_
       real hut1, hut1m
@@ -67,6 +85,10 @@
 *     ______________________________________________________
 *
       write(Lun_out,1000) Lctl_step
+*
+*     Nullify pointers
+*     ----------------
+      nullify (gomu_8,gomv_8,gomt_8,gomq_8,gomps_8) 
 *
 *     Flags for diagnostics
 *     ---------------------
@@ -95,12 +117,6 @@
         Pr_wopen_L=.true.
 *
       endif
-*
-*     Prepare number of processors in X and Y to be send to 3D-Var
-*     ------------------------------------------------------------
-      indx = Ptopo_npex-1
-      indy = Ptopo_npey-1
-      call mvbits(indx,0,16,indy,16)
 *
 *     Recall the dimensions of the fields presented to the interpolation
 *     ------------------------------------------------------------------
@@ -235,12 +251,7 @@
       write(Lun_out,*) 'Evaluate profiles UV at OBSTIME = ',ntime,
      %                 'Number of profiles = ',npr 
 *
-      if(npr.ne.0) then
-*
-        allocate ( profx(l_nk,npr), profy(l_nk,npr) ) 
-        allocate (gomu_8(l_nk,npr),gomv_8(l_nk,npr) )
-*
-      endif
+      if(npr.ne.0) allocate(gomu_8(l_nk,npr),gomv_8(l_nk,npr),profx(l_nk,npr),profy(l_nk,npr)) 
 *
 *     Interpolation to observation locations using EZSCINT
 *     ----------------------------------------------------
@@ -258,9 +269,13 @@
            enddo
         enddo
 *
-        call v4d_putfld ('UU',kstatus,gomu_8,l_nk,npr,V3D_UTRU)
+      endif
 *
-        deallocate (profx,gomu_8)
+      call v4d_putfld ('UU',kstatus,gomu_8,l_nk,npr,V3D_UTRU)
+*
+      if(npr.ne.0) deallocate(profx,gomu_8) 
+*
+      if(npr.ne.0) then
 *
 *       Store VV profiles 
 *       -----------------
@@ -270,11 +285,11 @@
           enddo
         enddo
 *
-        call v4d_putfld ('VV',kstatus,gomv_8,l_nk,npr,V3D_VTRU)
+      endif
 *
-        deallocate (profy,gomv_8)
+      call v4d_putfld ('VV',kstatus,gomv_8,l_nk,npr,V3D_VTRU)
 *
-      endif ! if (npr.ne.0)
+      if(npr.ne.0) deallocate(profy,gomv_8)
 *
 *     -----------------------------
 *     Contribution from temperature  
@@ -283,7 +298,7 @@
       write(Lun_out,*) 'Evaluate profiles TT at OBSTIME = ',ntime,
      %                 'Number of profiles = ',npr 
 *
-      if(npr.ne.0) allocate (profx(l_nk,npr), gomt_8(l_nk,npr))
+      if(npr.ne.0) allocate(gomt_8(l_nk,npr),profx(l_nk,npr))
 *
 *     Interpolation to observation locations using EZSCINT
 *     ----------------------------------------------------
@@ -301,11 +316,11 @@
           enddo
         enddo
 *
-        call v4d_putfld ('TT',kstatus,gomt_8,l_nk,npr,V3D_TEMP)
+      endif
 *
-        deallocate (profx,gomt_8)
+      call v4d_putfld ('TT',kstatus,gomt_8,l_nk,npr,V3D_TEMP)
 *
-      endif ! if (npr.ne.0)
+      if(npr.ne.0) deallocate(profx,gomt_8)
 *
 *     --------------------------
 *     Contribution from humidity  
@@ -314,7 +329,7 @@
       write(Lun_out,*) 'Evaluate profiles HU at OBSTIME = ',ntime,
      %                 'Number of profiles = ',npr 
 *
-      if(npr.ne.0) allocate (profx(l_nk,npr), gomq_8(l_nk,npr))
+      if(npr.ne.0) allocate(gomq_8(l_nk,npr),profx(l_nk,npr))
 *
 *     Interpolation to observation locations using EZSCINT
 *     ----------------------------------------------------
@@ -332,11 +347,11 @@
           enddo
         enddo
 *
-        call v4d_putfld ('HU',kstatus,gomq_8,l_nk,npr,V3D_SPHU)
+      endif
 *
-        deallocate (profx,gomq_8)
+      call v4d_putfld ('HU',kstatus,gomq_8,l_nk,npr,V3D_SPHU)
 *
-      endif ! if (npr.ne.0)
+      if(npr.ne.0) deallocate(profx,gomq_8)
 *
 *     ----------------------------------
 *     Contribution from surface pressure  
@@ -345,7 +360,7 @@
       write(Lun_out,*) 'Evaluate profiles PS at OBSTIME = ',ntime,
      %                 'Number of profiles = ',npr 
 *
-      if(npr.ne.0) allocate (prof2d(1,npr), gomps_8(1,npr))
+      if(npr.ne.0) allocate (gomps_8(1,npr),prof2d(1,npr))
 *
 *     Interpolation to observation locations using EZSCINT
 *     ----------------------------------------------------
@@ -361,11 +376,11 @@
            gomps_8(1,j) = dble(prof2d(1,j))
         enddo
 *
-        call v4d_putfld ('SP',kstatus,gomps_8,1,npr,V2D_PSUR)
+      endif
 *
-        deallocate (prof2d,gomps_8)
+      call v4d_putfld ('SP',kstatus,gomps_8,1,npr,V2D_PSUR)
 *
-      endif ! if (npr.ne.0)
+      if(npr.ne.0) deallocate(prof2d,gomps_8)
 *
       pnerr = vmmuld(-1,0)
 *
@@ -378,55 +393,4 @@
  1001 format(/,'V4D_CSTJOK_TL:    Ending for TIMESTEP = ',I8,
      +       /,'=====================================')
 *
-      contains
-      subroutine v4d_putfld (cdvar,kstatus,gomvar_8,kdim,kobs,indexvar)
-*
-#include "impnone.cdk"
-*
-      character*2,INTENT(IN):: cdvar
-      integer, INTENT(INOUT) :: kstatus
-      integer, INTENT(IN):: kdim,kobs,indexvar
-      real*8,  INTENT(IN):: gomvar_8(kdim,kobs)
-*
-*author
-*     P. Gauthier
-*
-*revision
-* v3_00 - P. Gauthier        - initial MPI version
-* v3_00   M. Tanguay         - adapt to Simon's exchange
-*
-*object
-*
-*arguments
-* Name         I/O                 Description
-*----------------------------------------------------------------
-* cdvar        I                   Type of profiles 
-* kstatus      O                   Status of the job
-* gomvar_8     I                   Model profiles     
-* kdim         I                   Vertical dimension of px_8 
-* kobs         I                   Number of observed profiles 
-* indexvar     I                   Index of variable 
-*----------------------------------------------------------------
-*
-      integer icma
-*
-*     Store simulation no. in each PROF record
-*     ----------------------------------------
-      istat = prof_pvar (Pr_ihdlout, Pr_nsim4d, PRM_EVNT)
-*
-*     Store number of processors in X and Y in each PROF record
-*     ---------------------------------------------------------
-      istat = prof_pvar (Pr_ihdlout, indy, PRM_PEXY )
-*
-*     Store profiles of the variable 
-*     ------------------------------
-      icma = 0
-      icma = ibset ( icma, indexvar )
-      istat = prof_pvar (Pr_ihdlout, icma, PRM_MVAR )
-      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,ntime) % obstag, V2D_OTAG )
-      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,ntime) % mdltag, V2D_MTAG )
-      istat = prof_pvar (Pr_ihdlout, gomvar_8, indexvar )
-      istat = prof_wrrec(Pr_ihdlout)
-*
-      end subroutine v4d_putfld
-      end subroutine v4d_cstjok
+      end 

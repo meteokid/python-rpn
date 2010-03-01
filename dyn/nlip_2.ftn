@@ -36,7 +36,8 @@
 * v2_21 - Lee V.            - modifications for LAM version
 * v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
 *                             remove F_pptt0 and introduce Ncn
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Qaddouri & Lee    - For LAM, set Nu, Nv values on the boundaries
+* v3_00                       of the LAM grid to zeros.
 *
 *object
 *
@@ -329,8 +330,10 @@ c Don't change
 
       endif
 
-100   continue
+ 100   continue
 
+* For LAM, set  Nu,Nv values on the boundaries of the LAM grid
+*
       if (G_lam) then
          if (l_west) then
              do k=1,l_nk

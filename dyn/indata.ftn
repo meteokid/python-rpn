@@ -28,13 +28,88 @@
 #include "schm.cdk"
 #include "glb_ld.cdk"
 #include "v4dg.cdk"
+#include "bmf.cdk"
+#include "out1.cdk"
+#include "ind.cdk"
+#include "p_geof.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
 *
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer key1(17),nvar,err
 **
 *     ---------------------------------------------------------------
+*
+      key1( 1) = VMM_KEY( fit1)
+      key1( 2) = VMM_KEY(  ut1)
+      key1( 3) = VMM_KEY(  vt1)
+      key1( 4) = VMM_KEY(  tt1)
+      key1( 5) = VMM_KEY(  qt1)
+      key1 (6) = VMM_KEY(fipt1)
+      key1 (7) = VMM_KEY(  st1)
+      key1 (8) = VMM_KEY(pipt1)
+      key1 (9) = VMM_KEY( tpt1)
+      key1(10) = VMM_KEY(tplt1)
+      key1(11) = VMM_KEY( gptx)
+      key1(12) = VMM_KEY(psdt1)
+      key1(13) = VMM_KEY( tdt1)
+      key1(14) = VMM_KEY( topo)
+      nvar = 14
+*
+      if (.not. Schm_hydro_L) then
+         key1(15) = VMM_KEY(wt1)
+         key1(16) = VMM_KEY(mut1)
+         key1(17) = VMM_KEY(multx)
+         nvar = 17
+      endif
+      err = vmmlod(key1,nvar)
+*
+      err = VMM_GET_VAR( fit1)
+      err = VMM_GET_VAR(  ut1)
+      err = VMM_GET_VAR(  vt1)
+      err = VMM_GET_VAR(  tt1)
+      err = VMM_GET_VAR(  qt1)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(  st1)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR( tpt1)
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR( gptx)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR( tdt1)
+      err = VMM_GET_VAR( topo)
+*
+      Ind_fi_  = fit1_
+      Ind_u_   = ut1_
+      Ind_v_   = vt1_
+      Ind_t_   = tt1_
+      Ind_q_   = qt1_
+      Ind_fip_ = fipt1_
+      Ind_s_   = st1_
+      Ind_pip_ = pipt1_
+      Ind_tp_  = tpt1_
+      Ind_tpl_ = tplt1_
+      Ind_gp_  = gptx_
+      Ind_psd_ = psdt1_
+      Ind_td_  = tdt1_
+      Ind_topo_= topo_
+*
+      if (.not. Schm_hydro_L) then
+         err = VMM_GET_VAR(  wt1)
+         err = VMM_GET_VAR( mut1)
+         err = VMM_GET_VAR(multx)
+         Ind_w_   = wt1_
+         Ind_mu_  = mut1_
+         Ind_mul_ = multx_
+      endif
 *
 *C       1.    Read input data
 *              ---------------
 *
+      bmf_time1 = Out1_dato(1)
+      bmf_time2 = Out1_dato(2)
       if ( Schm_phyms_L ) call readgeo()
       call readdyn()
 *
@@ -50,8 +125,7 @@
 *
       if(V4dg_conf.eq.0) then
 *
-         call predat1 ()
-         call predat2()
+         call predat ()
          if (G_lam) call nest_init
 *
       else
@@ -62,6 +136,8 @@
          call v4d_procdyn( )
 *
       endif
+*
+      err = vmmuld(-1,0)
 *
 *     ---------------------------------------------------------------
 *

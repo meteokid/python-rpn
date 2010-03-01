@@ -44,9 +44,13 @@
 **
 #include <model_macros_f.h>
 #include "dcst.cdk"
+#include "e_grids.cdk"
+#include "e_geomg.cdk"
 *
       real pr2hx(fni), pr2hy(fnj), prmean1, prmean2, prcom1
       integer i, j, k
+*
+* ---------------------------------------------------------------------
 *
       prcom1 = 1. - frco
 *
@@ -57,71 +61,109 @@
          pr2hx(i) = frhx(i) + frhx(i-1)
       enddo
       pr2hx(1)= frhx(1) + frhx(fni)
+      if (LAM) pr2hx(1)= pr2hx(2)
 *     
       do j=2,fnj-1
          pr2hy(j) = frhy(j) + frhy(j-1)
       enddo
+      if (LAM) then
+         pr2hy(1)= pr2hy(2)
+         pr2hy(fnj)= pr2hy(fnj-1)
+      endif
 *
 *   INTERPOLATION ALONG X
 *
-*************************
       do k=1,fnk
       do j=1,fnj
-*
          do i=2,fni-1
-*
             frwrk(i,j,k) =
      %        frco * ( frin(i-1,j,k)*frhx(i) + frin(i+1,j,k)*frhx(i-1) )
      %        / pr2hx(i) + prcom1 * frin (i,j,k)
+         enddo     
+      enddo
+      enddo
 *
+      if (LAM) then
+         do k=1,fnk
+         do j=1,fnj
+            frwrk(1,j,k) =
+     %        frco * ( frin(1,j,k)*frhx(2) + frin(2,j,k)*frhx(1) )
+     %             / pr2hx(1) + prcom1 * frin (1,j,k)    
+            frwrk(fni,j,k) =
+     %        frco * (frin(fni-1,j,k)*frhx(fni)+frin(fni,j,k)
+     $             * frhx(fni-1)) / pr2hx(fni) + prcom1 * frin (fni,j,k)
          enddo
-         frwrk(1,j,k) =
+        enddo
+      else
+         do k=1,fnk
+         do j=1,fnj
+            frwrk(1,j,k) =
      %        frco * ( frin(fni,j,k)*frhx(1) + frin(2,j,k)*frhx(fni) )
      %        / pr2hx(1) + prcom1 * frin (1,j,k)    
-         frwrk(fni,j,k) =
+            frwrk(fni,j,k) =
      %        frco * (frin(fni-1,j,k)*frhx(fni)+frin(1,j,k)*frhx(fni-1))
      %        / pr2hx(fni) + prcom1 * frin (fni,j,k)
-*     
-      enddo
-      enddo
+         enddo
+         enddo
+      endif
 *
 *   INTERPOLATION ALONG Y
 *
-**************************
-      do 230 k=1,fnk
-
-        do j=2,fnj-1
-        do i=1,fni
-           frout (i,j,k) =
+      do k=1,fnk
+      do j=2,fnj-1
+      do i=1,fni
+         frout (i,j,k) =
      %          frco * (frwrk(i,j-1,k)*frhy(j)+frwrk(i,j+1,k)*frhy(j-1))
      %          / pr2hy(j) + prcom1 * frwrk(i,j,k)
-        enddo
-        enddo
+      enddo
+      enddo
+      enddo
 *
-        prmean1 = frwrk(1,1,k)     * pr2hx(1)
-        prmean2 = frwrk(1,fnj,k)   * pr2hx(1)
+      if (.not. LAM) then
 *
-        do i=2,fni
-           prmean1 = prmean1 + frwrk(i, 1 ,k) * pr2hx(i)
-           prmean2 = prmean2 + frwrk(i,fnj,k) * pr2hx(i)
-        enddo
+         do k=1,fnk
+*
+            prmean1 = frwrk(1,1,k)     * pr2hx(1)
+            prmean2 = frwrk(1,fnj,k)   * pr2hx(1)
+*     
+            do i=2,fni
+               prmean1 = prmean1 + frwrk(i, 1 ,k) * pr2hx(i)
+               prmean2 = prmean2 + frwrk(i,fnj,k) * pr2hx(i)
+            enddo
 *
 *       Normalisation is done over 4 * pi instead of 2 * pi
 *       because sommation was done with double grid point intervals
 *
-        prmean1 = prmean1/( 4.0 * Dcst_pi_8 )
-        prmean2 = prmean2/( 4.0 * Dcst_pi_8 )
+            prmean1 = prmean1/( 4.0 * Dcst_pi_8 )
+            prmean2 = prmean2/( 4.0 * Dcst_pi_8 )
+*     
+            do i=1,fni
+               frout(i,1  ,k) = frco * ( prmean1 + frwrk(i,2,k) )
+     %                          / 2.0 + prcom1 * frwrk(i,1,k)
+*     
+               frout(i,fnj,k) = frco * ( prmean2 + frwrk(i,fnj-1,k) )
+     %                          / 2.0 + prcom1 * frwrk(i,fnj,k)
+*     
+            enddo
 *
-        do i=1,fni
-           frout(i,1  ,k) = frco * ( prmean1 + frwrk(i,2,k) )
-     %                      / 2.0 + prcom1 * frwrk(i,1,k)
-*     
-           frout(i,fnj,k) = frco * ( prmean2 + frwrk(i,fnj-1,k) )
-     %                      / 2.0 + prcom1 * frwrk(i,fnj,k)
-*     
-        enddo
-
- 230  continue
+         end do
+* 
+      else
+*
+         do k=1,fnk
+         do i=1,fni
+            frout (i,1,k) =
+     %           frco * (frwrk(i,1,k)*frhy(2)+frwrk(i,2,k)*frhy(1))
+     %           / pr2hy(1) + prcom1 * frwrk(i,1,k)
+            frout (i,fnj,k) =
+     %           frco * (frwrk(i,fnj-1,k)*frhy(fnj)+frwrk(i,fnj,k)
+     $           *frhy(fnj-1))/ pr2hy(fnj) + prcom1 * frwrk(i,fnj,k)
+         enddo
+         enddo
+*
+      endif
+*
+* ---------------------------------------------------------------------
 *
       return
       end

@@ -25,7 +25,7 @@
 #endif
 
       integer MAXSTEP
-      parameter (MAXSTEP = 1000)
+      parameter (MAXSTEP = 50000)
       integer Timestep(MAXSTEP,MAXSET)
       integer Timestep_max(MAXSET),Timestep_id(MAXSET)
       integer Timestep_sets

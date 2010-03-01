@@ -2,22 +2,26 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine e_gemnml
+      subroutine e_gemnml 
       implicit none
 *
+      integer ni, nila
       integer l_ni,l_nj
       parameter (l_ni=1,l_nj=1)
 *implicits
 #include "e_topo.cdk"
 #include "e_schm.cdk"
 #include "e_geol.cdk"
+#include "e_grids.cdk"
 #include "e_tr.cdk"
+*
 #include "dcst.cdk"
 #include "out1.cdk"
 #include "grd.cdk"
-#include "e_grids.cdk"
 #include "p_pbl.cdk"
 #include "ptopo.cdk"
+#include "pilot.cdk"
+#include "hblen.cdk"
 #include "e_nml.cdk"
 *
       logical set_dcst8
@@ -57,6 +61,20 @@
       Grd_xlat1 = 0.
       Grd_xlon2 = 0.
       Grd_xlat2 = 0.
+*
+      Pil_runstrt_S =' '
+      Pil_ctebcs_L  = .false.
+      Pil_nesdt     = 0
+      Pil_datacvrg  = 0
+*
+      Hblen_momentx = 10
+      Hblen_tx      = 10
+      Hblen_massx   = 10
+      Hblen_trx     = 10
+      Hblen_momenty = -1
+      Hblen_ty      = -1
+      Hblen_massy   = -1
+      Hblen_try     = -1
 *
       Topo_filmx_L= .true.
       Topo_init_L = .true.
@@ -102,10 +120,8 @@
 *
       rewind(unf)
       read  (unf,nml=grid,   END=910)
-      write (6  ,nml=grid)
       rewind(unf)
       read  (unf,nml=gement, END=920)
-      write (6  ,nml=gement_p)
       call fclos (unf)
 *
       call low2up (P_pbl_schsl_S,dumc)
@@ -113,6 +129,21 @@
       call low2up (Grd_typ_S,dumc)
       Grd_typ_S = dumc
       LAM = Grd_typ_S(1:1).eq.'L'
+*
+      Hblen_momentx = max(Hblen_momentx, 0)
+      Hblen_tx      = max(Hblen_tx     , 0)
+      Hblen_massx   = max(Hblen_massx  , 0)
+      Hblen_trx     = max(Hblen_trx    , 0)
+      if (Hblen_momenty.lt.0) Hblen_momenty = Hblen_momentx
+      if (Hblen_ty     .lt.0) Hblen_ty      = Hblen_tx
+      if (Hblen_massy  .lt.0) Hblen_massy   = Hblen_massx
+      if (Hblen_try    .lt.0) Hblen_try     = Hblen_trx
+*
+      if ((LAM).and.((Pil_runstrt_S.eq." ").or.(Pil_nesdt.le.0)
+     $           .or.(Pil_datacvrg.le.0))) then
+         write(6,1000) 
+         call e_arret ('GEMNML')
+      endif
 *
       if (Grd_ni*Grd_nj.eq.0) then
          write(6,*) 'VERIFY Grd_NI & Grd_NJ IN NAMELIST grid'
@@ -137,16 +168,22 @@
          if (Grd_dx*Grd_dy.eq.0) then
             write(6,*) 'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
             call e_arret ('GEMNML')
-            
          endif
-            Grd_nila = Grd_ni
-            Grd_njla = Grd_nj
-            Grd_x0 = Grd_lonr - (Grd_iref-1) * Grd_dx
-            Grd_y0 = Grd_latr - (Grd_jref-1) * Grd_dy
-            Grd_xl = Grd_x0   + (Grd_ni  -1) * Grd_dx
-            Grd_yl = Grd_y0   + (Grd_nj  -1) * Grd_dy
+         Grd_nila = Grd_ni
+         Grd_njla = Grd_nj
+         Grd_x0   = Grd_lonr - (Grd_iref-1) * Grd_dx
+         Grd_y0   = Grd_latr - (Grd_jref-1) * Grd_dy
+         Grd_xl   = Grd_x0   + (Grd_ni  -1) * Grd_dx
+         Grd_yl   = Grd_y0   + (Grd_nj  -1) * Grd_dy
+         if (Grd_x0.lt.0.) Grd_x0=Grd_x0+360.
+         if (Grd_xl.lt.0.) Grd_xl=Grd_xl+360.
+         if ( (Grd_x0.lt.  0.).or.(Grd_y0.lt.-90.).or.
+     $        (Grd_xl.gt.360.).or.(Grd_yl.gt. 90.) ) then
+            write (6,1001) Grd_x0,Grd_y0,Grd_xl,Grd_yl
+            stop
          endif
-*
+      endif
+*     
       if (nint( 360./Grd_dxmax ) .gt. Grd_ni+1 .or.
      +    nint( 180./Grd_dymax ) .gt. Grd_nj+1 ) then
          write(6,*) ' INCONSISTENT Grd_NI, Grd_NJ, ',
@@ -154,10 +191,45 @@
          call e_arret ('GEMNML')
       endif
 *
+      write (6  ,nml=grid)
+      write (6  ,nml=gement_p)
+*
       Ptopo_numproc = 1
       unf = 44
       if (.not. set_dcst8 (Dcst_cpd_8,liste,cnbre,unf,6))
      $     call e_arret ('SET_DCST8')
+*
+      call e_trinit
+*
+      ni   = Grd_ni
+      nila = Grd_nila
+*
+      if (lam) then
+          niu = ni-1
+      else
+          ni=ni+1
+          if ( ni .eq. nila+1) nila=nila+1
+          niu=ni
+      endif
+*
+      nifi = ni
+      niv  = ni
+      njfi = Grd_nj
+      nju  = Grd_nj
+      njv  = Grd_nj-1
+      npfi = nifi*njfi
+      npu  = niu *nju
+      npv  = niv *njv
+*     
+      if (LAM) then
+         pni   = nifi
+         pniu  = niu
+      else
+         pni   = nifi-1
+         pniu  = pni
+      endif
+      pnj   = njfi
+      pnjv  = njv
 *
       goto 999
  910  write(6,801)
@@ -165,8 +237,12 @@
  920  write(6,802)
  998  call e_arret ('GEMNML')
 *
- 801  format(//,'ERROR in NAMELIST GRID: STOP IN GEMNTR',//)
- 802  format(//,'ERROR in NAMELIST GEMENT: STOP IN GEMNTR',//)
+ 801  format(/,' ERROR in NAMELIST GRID: STOP IN GEMNTR',/)
+ 802  format(/,' ERROR in NAMELIST GEMENT: STOP IN GEMNTR',/)
+ 1000 format(/,' Pil_runstrt_S, Pil_nesdt and Pil_datacvrg must'/
+     $         ' all be defined in LAM configuration',/)
+ 1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/,
+     $         ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
 *
 *--------------------------------------------------------------------
 *

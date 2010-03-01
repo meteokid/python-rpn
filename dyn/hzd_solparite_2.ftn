@@ -1,0 +1,331 @@
+***s/r hzd_solmxma - parallel direct solution of high-order diffusion 
+*        equation with mxma8 using reflexion symmetry of C-grid (global)
+#include <model_macros_f.h>
+*
+       subroutine hzd_solparite_2 (
+     $           F_sol, F_Rhs_8, F_evxevec_8 ,F_oddxevec_8,
+     %           F_a_8, F_c_8 ,F_deltai_8,
+     %           minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr,
+     %           minx,maxx,miny,maxy,gnk,gni,nil,njl,nkl,
+     %           F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey,NSTOR,nev)
+*
+#include "impnone.cdk"
+*
+      integer minx1, maxx1, minx2, maxx2, nx1, nx2, nx3  ,
+     $        minx , maxx , miny , maxy , gnk, gni, F_pwr,
+     $        njl  , nkl  , nil  , F_npex, F_npey,NSTOR,nev
+      real*8 F_opsxp0_8(*), F_opsyp0_8(*),
+     $            F_a_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
+     $            F_c_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
+     $       F_deltai_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
+     $       F_Rhs_8(minx:maxx,miny:maxy,gnk)
+      real*8   F_evxevec_8(NSTOR*NSTOR),F_oddxevec_8(NSTOR*NSTOR)
+
+      real F_cdiff, F_sol(minx:maxx,miny:maxy,gnk)
+*
+*author
+*     Abdessamad Qaddouri
+*
+*revision
+* v3_01 - Qaddouri A.        - initial version
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_sol        I/O      r.h.s. and result of horizontal diffusion
+*  F_Rhs_8         I        work vector
+*
+*----------------------------------------------------------------
+*
+      real*8   fdg1_8( miny:maxy ,minx1:maxx1,gni+F_npex),
+     $         fdg2_8(minx1:maxx1,minx2:maxx2,nx3+F_npey),
+     $         dn3_8(minx1:maxx1,minx2:maxx2,F_pwr,nx3 ),
+     $         sol_8(minx1:maxx1,minx2:maxx2,F_pwr,nx3 ),
+     $         fwft_8( miny:maxy ,minx1:maxx1,gni )
+      real*8   fdg12_8( miny:maxy ,minx1:maxx1,Gni)
+
+      real*8   ZERO_8
+      parameter( ZERO_8 = 0.0 )
+      integer o1,o2,i,j,k,nevi,gnii
+
+
+**
+*     __________________________________________________________________
+*
+*PDIR SERIAL
+      do k = 1, gnk
+      do j = 1, njl  
+      do i = 1,nil
+         F_Rhs_8(i,j,k)=  ((-1)**F_pwr)*dble(F_cdiff)*dble(F_sol(i,j,k))
+      enddo
+      enddo
+      enddo
+*
+* Resolution
+*
+      call rpn_comm_transpose ( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                          Minx1, Maxx1, gnk, fdg1_8, 1,2 )
+*
+      do k = 1, nkl
+      do j = 1, njl
+      do i = 1, Gni
+         fdg1_8(j,k,i) = F_opsxp0_8(gni+i)*fdg1_8(j,k,i)
+      enddo
+      enddo
+      enddo
+*
+      do j = miny , 0
+      do k = minx1, maxx1 
+      do i = 1, gni
+         fdg1_8(j,k,i)= ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      do j = njl+1, maxy
+      do k = minx1, maxx1
+      do i = 1, gni
+         fdg1_8(j,k,i)= ZERO_8
+         fdg12_8(j,k,i)= ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      do j = miny , maxy
+      do k = minx1, maxx1
+      do i = 1, gni
+         fwft_8(j,k,i)=ZERO_8
+      enddo
+      enddo
+      enddo
+*
+
+*PDIR ENDSERIAL
+*  even  part of rhs
+
+          do k=1,Nkl
+            do j=1,njl
+              fdg12_8(j,k,1)=fdg1_8(j,k,1)
+            enddo
+          enddo
+
+          do k=1,Nkl
+            do j=1,njl
+              do i= 2,(Gni+1)/2
+                fdg12_8(j,k,i)=fdg1_8(j,k,i)+fdg1_8(j,k,Gni+2-i)
+              enddo
+            enddo
+          enddo
+
+         if(Gni.eq.(2*(Gni/2)) ) then
+          do k=1,Nkl
+            do j=1,njl
+               fdg12_8(j,k,nev)=fdg1_8(j,k,nev)
+            enddo
+          enddo
+         endif
+
+*  odd part of rhs
+          do k=1,Nkl
+            do j=1,njl
+             do i=1,Gni-nev
+              fdg12_8(j,k,i+nev)=fdg1_8(j,k,i+1)-fdg1_8(j,k,Gni+1-i)
+             enddo
+            enddo
+          enddo
+
+
+c*PDIR PARDO FOR=Ptopo_npeOpenMP
+*     projection ( wfft = x transposed * g )
+*
+
+      call mxma8( F_evxevec_8,          NSTOR    , 1,
+     %            fdg12_8(1,1,1),   (Maxy-Miny+1) * (maxx1-minx1+1), 1,
+     %            fwft_8(1,1,1), (Maxy-Miny+1) * (maxx1-minx1+1), 1,
+     %                     nev, nev, (Maxy-Miny+1) * Nkl )
+
+      call mxma8( F_oddxevec_8,          NSTOR, 1,
+     %            fdg12_8(1,1,nev+1),   (Maxy-Miny+1) * (maxx1-minx1+1), 1,
+     %            fwft_8(1,1,nev+1),(Maxy-Miny+1) * (maxx1-minx1+1), 1,
+     %                     Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+*
+      call rpn_comm_transpose(fwft_8,Miny,Maxy,nx3,(Maxx1-Minx1+1),
+     %                                minx2, maxx2,gni,fdg2_8,2,2)
+*
+* cote droit
+*
+      do k = minx1, maxx1
+      do i = minx2, maxx2
+         do o1 = 1, F_pwr
+        do j  = 1, nx3
+            sol_8(k,i,o1,j)= ZERO_8
+            dn3_8(k,i,o1,j)= ZERO_8
+         enddo
+         enddo
+      enddo
+      enddo
+*
+      do k = 1, nx1
+      do i = 1, nx2
+      do j = 1, nx3
+         dn3_8(k,i,1,j)= F_opsyp0_8(nx3+j)*fdg2_8(k,i,j)
+      enddo
+      enddo
+      enddo
+*
+* resolution du systeme blok-tridiagonal
+*
+* aller
+      do k = 1, nx1
+      do o1= 1, F_pwr
+      do i = 1, nx2
+         sol_8(k,i,o1,1)=dn3_8(k,i,o1,1)
+      enddo
+      enddo
+      enddo
+*
+      do j = 2, nx3
+         do o1= 1, F_pwr
+         do o2= 1, F_pwr
+         do k = 1, nx1
+            do i = minx2, maxx2
+               sol_8(k,i,o1,j)= sol_8(k,i,o1,j)
+     $                          + F_a_8(o1,o2,i,j)*sol_8(k,i,o2,j-1)
+            enddo
+         enddo
+         enddo
+         enddo
+         do k = 1, nx1
+         do o1= 1, F_pwr
+         do i = 1, nx2
+            sol_8(k,i,o1,j)=dn3_8(k,i,o1,j)-sol_8(k,i,o1,j)
+         enddo
+         enddo
+         enddo
+      enddo
+*
+* scale le cote droit pour retour
+*
+      do j= 1, nx3
+         do o1= 1,F_pwr
+         do k= minx1,maxx1
+         do i= minx2,maxx2
+            dn3_8(k,i,o1,j)= 0.0
+         enddo
+         enddo
+         enddo
+         do o1= 1, F_pwr
+         do o2= 1, F_pwr
+         do k = minx1, maxx1
+         do i = minx2, maxx2
+            dn3_8(k,i,o1,j)= dn3_8(k,i,o1,j)
+     $                       + F_deltai_8(o1,o2,i,j)*sol_8(k,i,o2,j)
+         enddo
+         enddo
+         enddo
+         enddo
+      enddo
+*
+* retour
+*
+      do k = 1, nx1
+      do o1= 1, F_pwr
+         do i = 1, nx2
+            do j = 1, nx3
+               sol_8(k,i,o1,j)= 0.0
+            enddo
+            sol_8(k,i,o1,nx3)= dn3_8(k,i,o1,nx3)
+         enddo
+      enddo
+      enddo
+*
+      do j = nx3-1, 1, -1
+         do o1= 1, F_pwr
+         do o2= 1, F_pwr
+         do k = minx1, maxx1
+         do i = minx2, maxx2
+            sol_8(k,i,o1,j)= sol_8(k,i,o1,j)
+     $                       + F_c_8(o1,o2,i,j)*sol_8(k,i,o2,j+1)
+         enddo
+         enddo
+         enddo
+         enddo
+         do k = 1, nx1
+         do o1= 1, F_pwr
+         do i = 1, nx2
+            sol_8(k,i,o1,j)= dn3_8(k,i,o1,j) - sol_8(k,i,o1,j)
+         enddo
+         enddo
+         enddo
+      enddo
+*
+      do k = 1, nx1
+      do i = 1, nx2
+      do j = 1, nx3
+         fdg2_8(k,i,j)=sol_8(k,i,F_pwr,j)
+      enddo
+      enddo
+      enddo
+*
+       call rpn_comm_transpose(fwft_8,Miny,Maxy,nx3,(Maxx1-Minx1+1),
+     %                                  minx2, maxx2,gni,fdg2_8,-2,2)
+*
+*     inverse projection ( r = x * w )
+*
+      call mxma8( F_evxevec_8,                1, NSTOR,
+     %            fwft_8(1,1,1), (Maxy-Miny+1) * (maxx1-minx1+1),   1,
+     %            fdg12_8(1,1,1),   (Maxy-Miny+1) * (maxx1-minx1+1),   1,
+     %                         nev, nev, (Maxy-Miny+1) * Nkl )
+
+      call mxma8( F_oddxevec_8,                 1,NSTOR,
+     %            fwft_8(1,1,nev+1),(Maxy-Miny+1) * (maxx1-minx1+1),   1,
+     %            fdg12_8(1,1,nev+1), (Maxy-Miny+1) * (maxx1-minx1+1),   1,
+     %                        Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+
+*
+* combine even and odd parts
+
+*VDIR NODEP
+      do k= 1,Nkl
+        do j= 1,njl
+          fdg1_8(j,k,1) = fdg12_8(j,k,1)
+        enddo
+      enddo
+
+      do k= 1,Nkl
+        do j= 1,njl
+*VDIR NODEP
+          do i= 2,(Gni+1)/2
+           gnii=Gni+2-i
+           nevi=nev-1+i
+           fdg1_8(j,k,i)       = fdg12_8(j,k,i)+fdg12_8(j,k,nevi)
+           fdg1_8(j,k,gnii)    = fdg12_8(j,k,i)-fdg12_8(j,k,nevi)
+          enddo
+        enddo
+      enddo
+
+      if( Gni.eq.(2*(Gni/2)) ) then
+      do k= 1,Nkl
+        do j= 1,njl
+           fdg1_8(j,k,nev)=fdg12_8(j,k,nev)
+        enddo
+      enddo
+      endif
+
+      call rpn_comm_transpose(F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                               Minx1, Maxx1, gnk, fdg1_8, -1,2 )
+*
+      do k= 1, gnk
+      do j= 1, njl
+      do i= 1, nil
+         F_sol(i,j,k)= sngl(F_Rhs_8(i,j,k))
+      enddo
+      enddo
+      enddo 
+*
+*     __________________________________________________________________
+*
+      return
+      end

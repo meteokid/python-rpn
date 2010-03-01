@@ -43,7 +43,7 @@
       external open_db_file,close_db_file,rewind_db_file,
      $         read_db_file,write_db_file
 *
-      integer err, key(20), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
+      integer err, key(26), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
      $        keya(Tr3d_ntr), unf, unfa, ntr2do, cnt, j2do, m
       real tr1,tra
       pointer (patr1, tr1(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
@@ -53,7 +53,7 @@
 *     __________________________________________________________________
 *
       dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Lctl_step ) )
-
+*
       key(1)  = VMM_KEY(uta  )
       key(2)  = VMM_KEY(ut1  )
       key(3)  = VMM_KEY(vta  )
@@ -64,7 +64,23 @@
       key(8)  = VMM_KEY(fit1 )
       key(9)  = VMM_KEY(fipta)
       key(10) = VMM_KEY(fipt1)
-      err = vmmlod(key,10)
+      key(11) = VMM_KEY(tta  )
+      key(12) = VMM_KEY(tt1  )
+      key(13) = VMM_KEY(qta  )
+      key(14) = VMM_KEY(qt1  )
+      key(15) = VMM_KEY(tpta )
+      key(16) = VMM_KEY(tpt1 )
+      key(17) = VMM_KEY(pipta)
+      key(18) = VMM_KEY(pipt1)
+      key(19) = VMM_KEY(tplta)
+      key(20) = VMM_KEY(tplt1)
+      key(21) = VMM_KEY(psdta)
+      key(22) = VMM_KEY(psdt1)
+      key(23) = VMM_KEY(sta  )
+      key(24) = VMM_KEY(st1  )
+      key(25) = VMM_KEY(gpta )
+      key(26) = VMM_KEY(gptx )
+      err = vmmlod(key,26)
       err = VMM_GET_VAR(uta  )
       err = VMM_GET_VAR(ut1  )
       err = VMM_GET_VAR(vta  )
@@ -75,38 +91,6 @@
       err = VMM_GET_VAR(fit1 )
       err = VMM_GET_VAR(fipta)
       err = VMM_GET_VAR(fipt1)
-*
-      do k=1,l_nk
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e 
-           uta(i,j,k) =   uta(i,j,k) + dfcoef *   ut1(i,j,k)
-           vta(i,j,k) =   vta(i,j,k) + dfcoef *   vt1(i,j,k)
-          tdta(i,j,k) =  tdta(i,j,k) + dfcoef *  tdt1(i,j,k)
-          fita(i,j,k) =  fita(i,j,k) + dfcoef *  fit1(i,j,k)
-         fipta(i,j,k) = fipta(i,j,k) + dfcoef * fipt1(i,j,k)
-      end do
-      end do
-      end do
-*
-      err = vmmuld(-1,0)
-*
-      key(1)  = VMM_KEY(tta  )
-      key(2)  = VMM_KEY(tt1  )
-      key(3)  = VMM_KEY(qta  )
-      key(4)  = VMM_KEY(qt1  )
-      key(5)  = VMM_KEY(tpta )
-      key(6)  = VMM_KEY(tpt1 )
-      key(7)  = VMM_KEY(pipta)
-      key(8)  = VMM_KEY(pipt1)
-      key(9)  = VMM_KEY(tplta)
-      key(10) = VMM_KEY(tplt1)
-      key(11) = VMM_KEY(psdta)
-      key(12) = VMM_KEY(psdt1)
-      key(13) = VMM_KEY(sta  )
-      key(14) = VMM_KEY(st1  )
-      key(15) = VMM_KEY(gpta )
-      key(16) = VMM_KEY(gptx )
-      err = vmmlod(key,16)
       err = VMM_GET_VAR(tta  )
       err = VMM_GET_VAR(tt1  )
       err = VMM_GET_VAR(qta  )
@@ -125,8 +109,13 @@
       err = VMM_GET_VAR(gptx )
 *
       do k=1,l_nk
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e 
+      do j= 1, l_nj 
+      do i= 1, l_ni 
+           uta(i,j,k) =   uta(i,j,k) + dfcoef *   ut1(i,j,k)
+           vta(i,j,k) =   vta(i,j,k) + dfcoef *   vt1(i,j,k)
+          tdta(i,j,k) =  tdta(i,j,k) + dfcoef *  tdt1(i,j,k)
+          fita(i,j,k) =  fita(i,j,k) + dfcoef *  fit1(i,j,k)
+         fipta(i,j,k) = fipta(i,j,k) + dfcoef * fipt1(i,j,k)
            tta(i,j,k) =   tta(i,j,k) + dfcoef *   tt1(i,j,k)
            qta(i,j,k) =   qta(i,j,k) + dfcoef *   qt1(i,j,k)
           tpta(i,j,k) =  tpta(i,j,k) + dfcoef *  tpt1(i,j,k)
@@ -138,8 +127,8 @@
       end do
       end do
 *
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e 
+      do j= 1, l_nj
+      do i= 1, l_ni
          sta(i,j)   = sta(i,j)   + dfcoef * st1(i,j)
       end do
       end do
@@ -171,8 +160,8 @@
          err = VMM_GET_VAR(mut1 )
 *
          do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n 
-         do i= 1+pil_w, l_ni-pil_e 
+         do j= 1, l_nj
+         do i= 1, l_ni
               wta(i,j,k) =   wta(i,j,k) + dfcoef *   wt1(i,j,k)
              qpta(i,j,k) =  qpta(i,j,k) + dfcoef *  qpt1(i,j,k)
             multa(i,j,k) = multa(i,j,k) + dfcoef * multx(i,j,k)

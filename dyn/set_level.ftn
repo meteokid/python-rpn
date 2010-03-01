@@ -12,14 +12,15 @@
 *author Vivian Lee - RPN - April 1999
 *
 *revision
-* v2_00 - Lee V.            - initial MPI version
-* v2_10 - Lee V.            - corrected so that all eta levels are
-* v2_10                       outputted when a "-1" is indicated
-* v2_21 - Dugas B.          - use convip
-* v2_30 - Lee V.            - reduced dimension of Level_typ to 1
-* v2_31 - Lee V.            - output on Geomg_hyb coordinates
-* v2_32 - Lee V.            - levset is now an ID defined by the user, not the 
-* v2_32                       actual "set" number forced to be in sequence
+* v2_00 - Lee V.         - initial MPI version
+* v2_10 - Lee V.         - corrected so that all eta levels are
+* v2_10                    outputted when a "-1" is indicated
+* v2_21 - Dugas B.       - use convip
+* v2_30 - Lee V.         - reduced dimension of Level_typ to 1
+* v2_31 - Lee V.         - output on Geomg_hyb coordinates
+* v2_32 - Lee V.         - levset is now an ID defined by user, not the 
+* v2_32                    actual "set" number forced to be in sequence
+* v3_01 - Lee V.         - new ip1 encoding (kind=5 -- unnormalized)
 *
 *
 *object
@@ -74,7 +75,7 @@
 **
       logical press_L,eta_L
       character*5 stuff_S,blank_S
-      integer i,j,k,ii,idx,levset,num,convmod
+      integer i,j,k,ii,idx,levset,num,kindip1,modeip1
 *
 *     ---------------------------------------------------------------
 *
@@ -104,7 +105,7 @@
 
       press_L = .false.
       eta_L   = .false.
-      convmod = -1
+      kindip1 = -1
 
       do 100 ii=2,F_argc
 
@@ -115,15 +116,17 @@
 
          else if (F_argv_S(ii).eq.'eta') then
 
-            convmod = 1
+            kindip1 = 1
+            modeip1 = +1
+            if (Level_kind_ip1.eq.5) modeip1 = +2
             eta_L = .true.
 
          else if (F_argv_S(ii).eq.'pres') then
 
-            convmod = 2
+            kindip1 = 2
             press_L = .true.
 
-         else if (convmod.ge.1) then
+         else if (kindip1.ge.1) then
 
             i = i+1
             read( F_argv_S(ii), * ) Level(i,j)
@@ -138,20 +141,20 @@
                   do idx=1,G_nk
                      i = i+1
                      call convip( Level_ip1(i,j), geomg_hyb(idx),
-     $                            convmod,+1,blank_S,.false.)
+     $                            Level_kind_ip1,modeip1,blank_S,.false.)
                      Level(i,j) = float( idx )
                   end do
 
             else 
 
-               if (convmod.eq.1) then
+               if (kindip1.eq.1) then
 
                   Level_typ(j)='E'
 
                   if (Level(i,j) .le. G_nk) then
                      idx = nint(Level(i,j))
                      call convip( Level_ip1(i,j), geomg_hyb(idx),
-     $                            convmod,+1,blank_S,.false.)
+     $                            Level_kind_ip1,modeip1,blank_S,.false.)
                   else
                      if (Lun_out.gt.0) write(Lun_out,*)
      $                   'SET_LEVEL WARNING: Level index out of range'
@@ -160,12 +163,12 @@
                      return
 
                   endif
-               else if (convmod.eq.2) then
+               else if (kindip1.eq.2) then
 
                   Level_typ(j)='P'
 
                   call convip( Level_ip1(i,j), Level(i,j),
-     $                         convmod,+1,blank_S,.false.)
+     $                         kindip1,+1,blank_S,.false.)
 
                else
 

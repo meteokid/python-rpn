@@ -1,0 +1,70 @@
+***s/r e_infiles
+*
+      subroutine e_infiles ()
+      implicit none
+*
+#include "filename.cdk"
+*
+      integer  fnom,longueur,wkoffit
+      external fnom,longueur,wkoffit
+      integer cnt,i,err,unf
+      character*500 fn
+*
+*----------------------------------------------------------------------
+*
+      npilf = 0
+      cnt   = 0
+*
+      unf = 0
+      if (fnom  (unf ,'process/liste_inputfiles_for_LAM','SEQ',0).lt.0)
+     $    stop
+*
+ 77   cnt=cnt+1
+      read (unf, '(a)', end = 9120) pilot_f(cnt)
+      goto 77
+ 9120 npilf = cnt - 1
+      close(unf)
+*
+      pilot_dir = "process/pilot"
+      do cnt = 1, npilf
+         err = -1
+         fn = pilot_dir(1:longueur(pilot_dir))//'/'//
+     $        pilot_f(cnt)(1:longueur(pilot_f(cnt)))
+         err = wkoffit(fn)
+         if ((err.ne.1).and.(err.ne.33)) then
+            write(6,905) pilot_f(cnt)(1:longueur(pilot_f(cnt))),
+     $                   pilot_dir(1:longueur(pilot_dir))
+            pilot_f (cnt) = '@#$%^&'
+         endif
+      end do
+*
+      i=0
+      do cnt = 1, npilf
+         if (pilot_f(cnt).ne.'@#$%^&') then
+            i = i+1
+            pilot_f(i) = pilot_f(cnt)
+         endif
+      end do
+      npilf = i
+*
+      if (npilf.lt.1) then
+         write (6,1000) pilot_dir(1:longueur(pilot_dir))
+         stop
+      endif
+*
+      ipilf  =  1
+*
+      write (6,900) pilot_dir(1:longueur(pilot_dir))
+      do cnt=1,npilf
+         write(6,901) pilot_f(cnt)(1:longueur(pilot_f(cnt)))
+      end do
+*
+ 900  format (/' Available files in directory: ',a)
+ 901  format (4x,a)
+ 905  format (' FILE ',a,' FROM DIRECTORY ',a,
+     $        ' UNAVAILABLE OR NOT RPN-STD FORMAT - WILL BE IGNORED')
+ 1000 format (/' NO RPN-STD AVAILABLE IN ',a/' ---- ABORT ----'/)
+*
+*---------------------------------------------------------------------
+      return
+      end

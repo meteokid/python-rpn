@@ -8,6 +8,8 @@
 * v3_00 - Tanguay M.        - V4dg_twin_L and V4dg_4dvar_L/Conversion WA file 
 * v3_00 - Morneau J.        - add obs file for sensitivity analysis
 * v3_00 - Laroche S.        - contribution from physics
+* v3_01 - Tanguay M.        - add V4dg_sgvc_L 
+*                           - add identity and GAUSS=GEM options
 *
 *______________________________________________________________________
 *                                                                      |
@@ -68,6 +70,7 @@
 * V4dg_sensib_L      | .T. = Sensitivity analysis                      |
 * V4dg_twin_L        | .T. = Twin experiment                           |
 * V4dg_4dvar_L       | .T. = 4D-Var with JO in GEM and JB in 3D-Var    |
+* V4dg_sgvc_L        | .T. = Evaluation of singular vectors            |
 * V4dg_oktr_L        | .T. = Allow NLM to write TRAJ at each timestep  | 
 * V4dg_oktrtl_L      | .T. = Allow TLM to read  TRAJ at each timestep  | 
 *                    | .F. = Use rebuild TRAJ except at initial time   |
@@ -80,6 +83,8 @@
 * V4dg_tl_L          | .T. =      V4dg_ds.and..not.V4dg_nl= TLM int.   |
 * V4dg_ad_L          | .T. = .not.V4dg_ds.and..not.V4dg_nl= ADJ int.   |
 * V4dg_start         | Starting factor in TESTGRD                      |
+* V4dg_identity_L    | .T. = Set integration as identity               |
+* V4dg_ga_eq_ge_L    | .T. = Set GAUSS grid equal to GEM grid          |
 * V4dg_incore_L      | .T. if WA files are replaced by incore arrays   |
 * V4dg_trsize        | size of trincore (V4dg_iuntr WA file)           |
 * V4dg_phsize        | size of phincore (V4dg_iunph WA file)           |
@@ -116,16 +121,16 @@
      %                     V4dg_trsize,V4dg_phsize,V4dg_frsize,V4dg_obsize,V4dg_cvsize
       MARK_COMMON_END (V4d_gen_i)
 *
-      logical V4dg_sensib_L,V4dg_twin_L,V4dg_4dvar_L
+      logical V4dg_sensib_L,V4dg_twin_L,V4dg_4dvar_L,V4dg_sgvc_L
       logical V4dg_oktr_L,V4dg_oktrtl_L,V4dg_tlm_L,V4dg_grd_L
       logical V4dg_ds_L,V4dg_nl_L,V4dg_di_L,V4dg_tl_L,V4dg_ad_L
-      logical V4dg_incore_L
+      logical V4dg_incore_L,V4dg_identity_L,V4dg_ga_eq_ge_L
 *
       MARK_COMMON_BEG (V4d_gen_l)
-      common / V4d_gen_l / V4dg_sensib_L,V4dg_twin_L,V4dg_4dvar_L,
+      common / V4d_gen_l / V4dg_sensib_L,V4dg_twin_L,V4dg_4dvar_L,V4dg_sgvc_L,
      %                     V4dg_oktr_L,V4dg_oktrtl_L,V4dg_tlm_L,V4dg_grd_L,
      %                     V4dg_ds_L,V4dg_nl_L,V4dg_di_L,V4dg_tl_L,V4dg_ad_L,
-     %                     V4dg_incore_L
+     %                     V4dg_incore_L,V4dg_identity_L,V4dg_ga_eq_ge_L
       MARK_COMMON_END (V4d_gen_l)
 *
       real V4dg_start

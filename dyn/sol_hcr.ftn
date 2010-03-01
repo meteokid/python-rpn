@@ -20,7 +20,8 @@
 *
 *revision
 * v2_00 - Desgagne/Lee       - initial MPI version
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Desgagne & Lee     - Lam configuration
+* v3_01 - Qaddouri A.        - add call sol_parite_2
 *
 *object
 *
@@ -35,6 +36,7 @@
 #include "ldnh.cdk"
 #include "sol.cdk"
 #include "opr.cdk"
+#include "eigv.cdk"
 #include "ptopo.cdk"
 #include "fft.cdk"
 #include "cstv.cdk"
@@ -43,7 +45,9 @@
 #include "lctl.cdk"
 #include "lun.cdk"
 *
-      integer i, j, k, k0, offi, offj, Gni, Gnj
+      integer i, j, k, k0, offi, offj, Gni, Gnj,NSTOR,nev
+      real*8 tsolver, tsolverflop, tsolver1, tsolverflop1,
+     $       abpt((maxy-miny+1)*(trp_12smax-trp_12smin+1)*G_ni)
       real*8 con(G_nk)
       real*8, dimension(:),allocatable :: wk_evec_8
 *
@@ -96,7 +100,6 @@
       enddo
       
       if (Fft_fast_L) then
-          if (Lun_debug_L.and.Lun_out.gt.0) print *,'sol_fft'
          if (G_lam) then
             
              call sol_fft8_lam ( F_w2_8, F_w1_8, Fft_pri_8,
@@ -116,14 +119,30 @@
      $            F_dg2_8,F_dwfft_8)
          endif
       else
-         if (Lun_debug_L.and.Lun_out.gt.0) print *,'sol_mxma'
-         call sol_mxma8_2 ( F_w2_8, F_w1_8, wk_evec_8, 
+         if(.not. Eigv_parity_L) then
+*
+            call sol_mxma8_2 ( F_w2_8, F_w1_8, wk_evec_8, 
      $                      Minx, Maxx, Miny, Maxy,ldnh_nj,
      $            trp_12smin, trp_12smax, Schm_nith, trp_12sn , 
      $            G_ni, G_nj, trp_22min , trp_22max, trp_22n  ,
      $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
      $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
      $            F_dg1_8,F_dg2_8,F_dwfft_8)
+         else
+*
+            nev= (G_ni+2)/2
+            NSTOR = nev + ( 1 - mod(nev,2) )
+*
+            call sol_parite_2 ( F_w2_8, F_w1_8, Opr_evvec_8, Opr_odvec_8,
+     $                       Minx, Maxx, Miny, Maxy, l_nj,
+     $            trp_12smin, trp_12smax, Schm_nith, trp_12sn ,
+     $            G_ni, G_nj, trp_22min , trp_22max, trp_22n  ,
+     $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
+     $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
+     $            F_dg1_8,F_dg2_8,F_dwfft_8,Abpt,NSTOR,nev)
+*
+         endif
+
       endif
 *
 *     inverse projection 

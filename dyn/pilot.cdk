@@ -1,4 +1,14 @@
-      integer MAXPIL,MAXPILOT
-      parameter (MAXPILOT=20)
-      character*15  pilot_S(MAXPILOT)
-      common /pilot/ MAXPIL,pilot_S
+      character*16 Pil_runstrt_S,Pil_runend_S,Pil_current_S
+      logical Pil_ctebcs_L
+      integer Pil_nesdt,Pil_datacvrg 
+*
+      MARK_COMMON_BEG (pils)
+      common /pils/ Pil_runstrt_S, Pil_runend_S,Pil_current_S
+      MARK_COMMON_END (pils)      
+      MARK_COMMON_BEG (pill)
+      common /pill/ Pil_ctebcs_L
+      MARK_COMMON_END (pill)      
+      MARK_COMMON_BEG (pili)
+      common /pili/ Pil_nesdt,Pil_datacvrg 
+      MARK_COMMON_END (pili)  
+*

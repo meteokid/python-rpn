@@ -1,0 +1,5 @@
+      character*512 pilot_dir, pilot_f(500)
+      integer npilf,ipilf
+*
+      common /fname_c/ pilot_dir, pilot_f
+      common /fname_i/ npilf,ipilf

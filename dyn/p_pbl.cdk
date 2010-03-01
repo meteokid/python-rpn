@@ -57,7 +57,7 @@
 * P_pbl_valeq_8      | equatorial value of multiplication factor of    |
 *                    | P_pbl_spng                                      |
 * P_pbl_eqlat_8      | equatorial latitude at which the multiplication |
-*                    | factor becomes P_pbl_valml_8                    |
+*                    | factor becomes P_pbl_valeq_8                    |
 * P_pbl_snoalb_L     | .true.  when SNOALEN analysis is used           |
 *                    | .false. when SNOALEN is derived in physics      |
 *----------------------------------------------------------------------

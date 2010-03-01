@@ -23,10 +23,10 @@
 * v2_31                       file output.cfg before call to srequet
 * v2_31                     - Common blocks of p_busp,p_busv... eliminated
 * v2_31                     - Allocate vectors for chemistry tracer output
-* v2_32 - Lee V.            - force PT field to dynamic slabs, output files
-* v2_32                       set to TIMESTEP units if frequency of output
-* v2_32                       more than unit requested
+* v2_32 - Lee V.            - output files set to TIMESTEP units if frequency 
+* v2_32                       of output more than unit requested
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 *
 *object
 *     See above id
@@ -50,7 +50,6 @@
 #include "pslab.cdk"
 #include "dslab.cdk"
 #include "geomg.cdk"
-#include "grd.cdk"
 #include "chem.cdk"
 #include "out.cdk"
 #include "cstv.cdk"
@@ -62,7 +61,7 @@
       character*8 unit_S
       character*256 fn
       logical iela
-      integer pnerror,i,idx,k,j,levset,err,convmod,nrec
+      integer pnerror,i,idx,k,j,levset,err,convmod,nrec,modeip1
       real seconds,min_seconds
 *
       if (Lun_out.gt.0) write(Lun_out,5200)
@@ -110,17 +109,15 @@
           endif
       endif
 
-      if (Grd_rcoef.gt.1.0) then
-         Setsor_useit(getvndx('PT')) = 0
-      endif
-      convmod=1
+      modeip1 = +1
+      if (Level_kind_ip1.eq.5) modeip1 = +2
       do i=1,G_nk-2
          call convip( Level_stag_ip1(i),(Geomg_hyb(i+1)+Geomg_hyb(i))/2.,
-     %                convmod,+1,blank_S,.false.)
+     %                Level_kind_ip1,modeip1,blank_S,.false.)
       enddo
       do i=G_nk-1,G_nk
          call convip( Level_stag_ip1(i),Geomg_hyb(i),
-     %                convmod,+1,blank_S,.false.)
+     %                Level_kind_ip1,modeip1,blank_S,.false.)
       enddo
 
       COMMON_BROADCAST(Timestep_i)
@@ -244,7 +241,6 @@
  5000 format(
      $     ' TOTAL NUMBER OF WARNINGS ENCOUNTERED IN',
      $     ' DIRECTIVE SETS: ', I5)
- 5200 format(
-     %//,'INITIALIZATION OF OUTPUT PRODUCTS (S/R SET_SOR)',
-     % /,'===============================================')
+ 5200 format(/,'INITIALIZATION OF OUTPUT PRODUCTS (S/R SET_SOR)',
+     %       /,'===============================================')
       end

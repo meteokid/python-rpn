@@ -1,0 +1,184 @@
+*** s/r e_rdhint3 read and perform horizontal interpolation
+*
+#include <model_macros_f.h>
+*
+      integer function e_rdhint3 (  
+     $            f, dgid, ni, nj, nomvar_S, ip1, ip2, ip3, etik_S,
+     $            typvar_S, anyip_L, fhint_L, interp_S, un1, stdo )
+*
+#include "impnone.cdk"
+*
+      character* (*) nomvar_S,interp_S,etik_S,typvar_S
+      logical anyip_L,fhint_L
+      integer dgid, ni, nj, ip1, ip2, ip3, un1, stdo
+      real  f(*)
+*
+*author
+*     Michel Desgagne - January 2001
+*
+*revision
+* v2_21 - Desgagne M.       - initial version
+* v3_00 - Lee V.            - must interpolate if not fhint_L
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
+*
+*implicites
+#include "e_grids.cdk"
+#include "e_cdate.cdk"
+#include "hgc.cdk"
+*
+* NOTES: will return e_rdhint3= -1 if nomvar_S is not found or if
+*                                 a problem occurs
+*                    e_rdhint3=  0 if nomvar_S is found with specified 
+*                                 ip123 and no horizontal interpolation 
+*                                 is required
+*                    e_rdhint3=  1 if nomvar_S is found and horizontal 
+*                                 interpolation is performed
+*                    e_rdhint3=  2 if nomvar_S is found with no specific 
+*                                 ip123 and no horizontal interpolation 
+*                                 is required
+**                  
+      integer fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint
+      logical e_sgrid
+      external fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint,
+     $         e_sgrid
+*
+      character*1  typ, grd
+      character*2  var
+      character*8  lab
+      logical tr_ip_L,must_interpo_L
+      integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
+     $        dty, swa, lng, dlf, ubc, ex1, ex2, ex3
+      integer i,key,nic,njc,nkc,err,src_gid,iunit
+      real xlon,ylat,conv_ip1
+      pointer (paxlon, xlon(*)), (paylat, ylat(*))
+      real,   dimension(:), allocatable  :: w1
+      logical must_interpo_s
+      integer un_s,nic_s,njc_s,g1_s,g2_s,g3_s,kind
+      data un_s,nic_s,njc_s,g1_s,g2_s,g3_s /-1,-1,-1,-1,-1,-1/
+      save un_s,nic_s,njc_s,g1_s,g2_s,g3_s,must_interpo_s
+*
+*--------------------------------------------------------------------
+*
+      e_rdhint3 = -1      
+      key = fstinf (un1,nic,njc,nkc,datev,etik_S,ip1,ip2,ip3,typvar_S,
+     $                                                       nomvar_S)
+      tr_ip_L = key.ge.0
+*
+      if ( (.not.tr_ip_L) .and. (anyip_L) ) then
+         call e_rdhint_out(stdo, "Warning field not found: ",nomvar_S,ip1,ip2,ip3)
+         write(stdo,*) "Will try to locate it with with no specific ip123"
+         key = fstinf (un1,nic,njc,nkc,datev,etik_S,-1,-1,-1,typvar_S,
+     $                                                       nomvar_S)
+      endif
+      if (key .lt. 0) then
+         call e_rdhint_out(stdo, "Missing field: ",nomvar_S,ip1,ip2,ip3)
+         return
+      endif
+*
+      allocate (w1(nic*njc*nkc))
+      err = fstluk( w1, key, nic,njc,nkc)
+      err = fstprm (key, DTE, DET, IPAS, nic, njc, nkc, BIT, DTY, P1, 
+     $              P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA, 
+     $              LNG, DLF, UBC, EX1, EX2, EX3)
+*
+      if ( grd .ne. 'A' .and. grd .ne. 'B' .and.
+     %     grd .ne. 'G' .and. grd .ne. 'Z' ) then
+         call e_rdhint_out(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,ip2,ip3)
+         goto 999
+      endif
+*
+      must_interpo_L = .false.
+      iunit = 0
+      if ((fhint_L).or.(grd.ne.'Z')) then
+         must_interpo_L = .true.
+         if (grd.eq.'Z') iunit=un1
+      else
+         if ((nic.ne.ni).or.(njc.ne.nj)) then
+            must_interpo_L = .true.
+         else
+            if (     (un_s.eq.un1).and.(nic_s.eq.nic).and.(njc_s.eq.njc)
+     $          .and.(g1_s.eq.g1 ).and.(g2_s .eq.g2 ).and.(g3_s .eq.g3 )
+     $         ) then
+               must_interpo_L = must_interpo_s
+            else
+               if (dgid.eq.dstf_gid) then
+                  paxlon = loc(xfi(1))
+                  paylat = loc(yfi(1))
+               else if (dgid.eq.dstu_gid) then
+                  paxlon = loc(xu(1))
+                  paylat = loc(yfi(1))
+               else
+                  paxlon = loc(xfi(1))
+                  paylat = loc(yv(1))
+               endif
+               must_interpo_L = 
+     $              .not. e_sgrid (un1, nic,njc, g1,g2,g3, Hgc_ig1ro,
+     $                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
+               un_s = un1
+               nic_s= nic
+               njc_s= njc
+               g1_s = g1
+               g2_s = g2
+               g3_s = g3
+               must_interpo_s = must_interpo_L
+            endif
+         endif
+         iunit = un1
+      endif
+*
+      if ( must_interpo_L ) then
+*
+         call e_rdhint_out(stdo, "Horizontal interpolation: ",nomvar_S,ip1,ip2,ip3)
+         src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, iunit)
+         err = ezdefset ( dgid, src_gid )
+         err = ezsetopt ('INTERP_DEGREE', interp_S)
+         err = ezsint(f, w1)
+         e_rdhint3 = 1
+*
+      else
+*
+         e_rdhint3 = 0
+         call e_rdhint_out(stdo, "NO horizontal interpolation on ",nomvar_S,ip1,ip2,ip3)
+*
+         do i=1,ni*nj
+            f(i) = w1(i)
+         enddo
+*
+      endif
+*
+      do i=1,ni*nj
+         if ( abs( f(i) ) .lt. 1.0E-30 ) f(i) = 0.
+      end do
+*
+ 999  deallocate(w1)
+*
+*
+*---------------------------------------------------------------------
+*
+      return
+      end
+      subroutine e_rdhint_out(stdo,string_S,nomvar_S,ip1,ip2,ip3)
+      implicit none
+      character* (*) nomvar_S,string_S
+      character*12 dumc_S
+      character*256 pformat_S
+      integer  ip1, ip2, ip3, kind,stdo
+      real     conv_ip1
+      integer  longueur
+      external longueur
+
+      if (ip1.eq.-1) then
+          pformat_S = "(/,'(S/R e_rdhint3) "//string_S(1:longueur(string_S))//
+     %            "',A2,' for ip123=',3i5)"
+          write(stdo,fmt=pformat_S) nomvar_S,ip1,ip2,ip3
+      else
+          call convip ( ip1 , conv_ip1, kind, -1, dumc_S, .false. )
+          pformat_S = "(/,'(S/R e_rdhint3) "//string_S(1:longueur(string_S))//
+     %            "',A2,' for ip123=',F12.5,2i5)"
+          write(stdo,fmt=pformat_S) nomvar_S,conv_ip1,ip2,ip3
+      endif
+
+      return
+      end
+

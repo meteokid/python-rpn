@@ -21,6 +21,8 @@
 * v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
 * v3_00 - Tanguay M.        - cancel parameter in v4d_ctrlcst 
 * v3_00 - Laroche S.        - adapt for simplified physics
+* v3_01 - Tanguay M.        - introduce identity option
+* v3_01 - Lee V.            - introduce horizontal sponge
 *
 *object
 *	Performs the integration of the model
@@ -43,6 +45,7 @@
 *----------------------------------------------------------------
 *
 *implicits
+#include "glb_ld.cdk"
 #include "init.cdk"
 #include "lun.cdk"
 #include "step.cdk"
@@ -52,12 +55,17 @@
 #include "v4dg.cdk"
 #include "p_clim.cdk"
 *
-      logical bkup_L,carryon_L
+      logical bkup_L,carryon_L,identity_4dvar_L
       integer last_step
 **
 *     ---------------------------------------------------------------
-      if(  Schm_chems_L.and.V4dg_conf.ne.0 ) call gem_stop('gem_run',-1)
+      if ( V4dg_conf.ne.0 ) then
+         if ( Schm_chems_L ) call gem_stop('gem_run',-1)
+         if ( Schm_hdlast_L) call gem_stop('gem_run',-1)
+      endif
 *     ---------------------------------------------------------------
+*
+      identity_4dvar_L = V4dg_conf.ne.0 .and. V4dg_identity_L 
 *
       call blocstat ()
 *
@@ -107,61 +115,65 @@
 *
 *C    Horizontal diffusion & Vertical sponge (Initial timestep)
 *     ---------------------------------------------------------
-      if (Lctl_step.eq.1.and.V4dg_conf.ne.0) then
-*
-*        Store TRAJ PIPT1 before diffusion
-*        ---------------------------------
-         if ( V4dg_oktr_L ) then
-            V4dg_numtr = 2
-            Lctl_step  = 0
-            call v4d_rwtraj 
-            Lctl_step  = 1 
-         endif
+      if ( .not.identity_4dvar_L ) then
 
-         call   hzd_main () 
-cvl      if (Lun_out.gt.0) write(Lun_out,*) 'NO VSPNG'
-cvl         Comment out for G_LAM acid test
-            call vspng_main () 
+         if (Lctl_step.eq.1.and.V4dg_conf.ne.0) then
 *
-      endif
+*           Store TRAJ PIPT1 before diffusion
+*           ---------------------------------
+            if ( V4dg_oktr_L ) then
+               V4dg_numtr = 2
+               Lctl_step  = 0
+               call v4d_rwtraj 
+               Lctl_step  = 1 
+            endif
 *
-*     Dynamics timestep
-*     -----------------
-      call dynstep
+            call   hzd_main () 
+            if (.not.G_lam) call vspng_main () 
+            if (.not.G_lam) call hspng_main () 
 *
-*C    Physics timestep & Horizontal diffusion & Vertical sponge
-*     ---------------------------------------------------------
-      if (Schm_hdlast_L) then
-         if ( Schm_phyms_L ) call p_main    (Lctl_step)
-         if ( Schm_chems_L ) call chem_step (Lctl_step)
-*
-*        Store TRAJ PIPT1 before diffusion
-*        ---------------------------------
-         if(V4dg_conf.ne.0.and.V4dg_oktr_L) then
-            V4dg_numtr = 2
-            call v4d_rwtraj ()
          endif
 *
-         call   hzd_main ()
-cvl      if (Lun_out.gt.0) write(Lun_out,*) 'NO VSPNG'
-cvl         Comment out for G_LAM acid test
-            call vspng_main ()
+*        Dynamics timestep
+*        -----------------
+         call dynstep
 *
-      else
+*C       Physics timestep & Horizontal diffusion & Vertical sponge
+*        ---------------------------------------------------------
+         if ( Schm_hdlast_L ) then
 *
-*        Store TRAJ PIPT1 before diffusion
-*        ---------------------------------
-         if(V4dg_conf.ne.0.and.V4dg_oktr_L) then
-            V4dg_numtr = 2
-            call v4d_rwtraj ()
+            if ( Schm_phyms_L ) call p_main    (Lctl_step)
+            if ( Schm_chems_L ) call chem_step (Lctl_step)
+*
+*           Store TRAJ PIPT1 before diffusion
+*           ---------------------------------
+            if(V4dg_conf.ne.0.and.V4dg_oktr_L) then
+               V4dg_numtr = 2
+               call v4d_rwtraj ()
+            endif
+*
+            call   hzd_main ()
+            if (.not.G_lam) call vspng_main () 
+            if (.not.G_lam) call hspng_main () 
+*
+         else
+*
+*           Store TRAJ PIPT1 before diffusion
+*           ---------------------------------
+            if(V4dg_conf.ne.0.and.V4dg_oktr_L) then
+               V4dg_numtr = 2
+               call v4d_rwtraj ()
+            endif
+*     
+            call   hzd_main ()
+            if (.not.G_lam) call vspng_main () 
+            if (.not.G_lam) call hspng_main () 
+*
+            if ( Schm_phyms_L ) call p_main    (Lctl_step)
+            if ( Schm_chems_L ) call chem_step (Lctl_step)
+*
          endif
 *
-         call   hzd_main ()
-cvl      if (Lun_out.gt.0) write(Lun_out,*) 'NO VSPNG'
-cvl         Comment out for G_LAM acid test
-            call vspng_main ()
-         if ( Schm_phyms_L ) call p_main    (Lctl_step)
-         if ( Schm_chems_L ) call chem_step (Lctl_step)
       endif
 *
 *     4D-Var: Control Cost function at .NOT.INITIAL time

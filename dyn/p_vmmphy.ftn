@@ -171,8 +171,7 @@
       err = VMM_GET_VAR(st1)
       err = VMM_GET_VAR(psdt1)
       err = VMM_GET_VAR(tdt1)
-      call calomeg (F_wp, psdt1, tdt1, st1, LDIST_DIM, l_nk,
-     $              1+pil_w, l_ni-pil_e,1+pil_s, l_nj-pil_n)
+      call calomeg (F_wp,psdt1,tdt1,st1,LDIST_DIM,l_nk,1,l_ni,1,l_nj)
       err = vmmuln(key,3)
 *
 *C    dzmin determines the micro-physical timestep for sedimentation

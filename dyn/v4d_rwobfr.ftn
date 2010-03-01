@@ -15,6 +15,8 @@
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - change parameters of v4d_rwfld 
+* v3_01 - Morneau J.        - add V4dg_rwob.eq.2 to write
+*                             observations from OBSERVATION VMM variable
 *
 *object
 *     see id section
@@ -55,6 +57,7 @@
       if(F_icode.eq.1) then
 *
          if(V4dg_rwob.eq.0) then
+         if (lun_out > 0) write(lun_out,9000)
 *        ----------------------------
 *        Read OBSERVATIONS at time T1 
 *        ----------------------------
@@ -82,22 +85,22 @@
             call v4d_rwfld (vt1r, work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunob,V4dg_addob,plpr_L,'VT1R', V4dg_ad_L,0,-1)
 *
-            call v4d_rwfld (st1r, work,l_ni,l_nj,LDIST_DIM,1,
-     %                   V4dg_iunob,V4dg_addob,plpr_L,'ST1R', V4dg_ad_L,0,-1)
-*
             call v4d_rwfld (tpt1r,work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunob,V4dg_addob,plpr_L,'TPT1R',V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (st1r, work,l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iunob,V4dg_addob,plpr_L,'ST1R', V4dg_ad_L,0,-1)
 *
 *        ADJ run
 *        -------
          elseif(V4dg_ad_L) then
 *
-            call v4d_rwfld (tpt1r,work,l_ni,l_nj,LDIST_DIM,l_nk,
-     %                   V4dg_iunob,V4dg_addob,plpr_L,'TPT1R',V4dg_ad_L,
-     %                   l_ni*l_nj     ,-1)
-*
             call v4d_rwfld (st1r, work,l_ni,l_nj,LDIST_DIM,1,
      %                   V4dg_iunob,V4dg_addob,plpr_L,'ST1R ',V4dg_ad_L,
+     %                   l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (tpt1r,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunob,V4dg_addob,plpr_L,'TPT1R',V4dg_ad_L,
      %                   l_ni*l_nj*l_nk,-1)
 *
             call v4d_rwfld (vt1r, work,l_ni,l_nj,LDIST_DIM,l_nk,
@@ -106,11 +109,12 @@
 *
             call v4d_rwfld (ut1r, work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunob,V4dg_addob,plpr_L,'UT1R ',V4dg_ad_L,
-     %                   l_ni*l_nj*l_nk,-1)
+     %                   l_ni*l_nj     ,-1)
 *
          endif
 *
          elseif(V4dg_rwob.eq.1) then
+         if (lun_out > 0) write(lun_out,9010)
 *        -----------------------------
 *        Write OBSERVATIONS at time T1 
 *        -----------------------------
@@ -134,11 +138,42 @@
             call v4d_rwfld (vt1, work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunob,V4dg_addob,plpr_L,'VT1 ',V4dg_ad_L,0,1)
 *
+            call v4d_rwfld (tpt1,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunob,V4dg_addob,plpr_L,'TPT1',V4dg_ad_L,0,1)
+*
             call v4d_rwfld (st1, work,l_ni,l_nj,LDIST_DIM,1,
      %                   V4dg_iunob,V4dg_addob,plpr_L,'ST1 ',V4dg_ad_L,0,1)
 *
-            call v4d_rwfld (tpt1,work,l_ni,l_nj,LDIST_DIM,l_nk,
-     %                   V4dg_iunob,V4dg_addob,plpr_L,'TPT1',V4dg_ad_L,0,1)
+         elseif(V4dg_rwob.eq.2) then
+         if (lun_out > 0) write(lun_out,9010)
+*        -----------------------------
+*        Write OBSERVATIONS at time T1 
+*        -----------------------------
+*
+         pnlkey1(1) = VMM_KEY(ut1r )
+         pnlkey1(2) = VMM_KEY(vt1r )
+         pnlkey1(3) = VMM_KEY(tpt1r)
+         pnlkey1(4) = VMM_KEY(st1r )
+*
+*        - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,4)
+*        - - - - - - - - - - - - -
+         pnerr = VMM_GET_VAR(ut1r )
+         pnerr = VMM_GET_VAR(vt1r )
+         pnerr = VMM_GET_VAR(tpt1r)
+         pnerr = VMM_GET_VAR(st1r )
+*
+         call v4d_rwfld (ut1r, work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunob,V4dg_addob,plpr_L,'UT1R',V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (vt1r, work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunob,V4dg_addob,plpr_L,'VT1R',V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (tpt1r,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunob,V4dg_addob,plpr_L,'TPT1R',V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (st1r, work,l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iunob,V4dg_addob,plpr_L,'ST1R ',V4dg_ad_L,0,1)
 *
          endif
 *
@@ -150,6 +185,7 @@
       if(F_icode.eq.2) then 
 *
          if(V4dg_rwfr.eq.0) then
+         if (lun_out > 0) write(lun_out,9050)
 *        -----------------------------------------
 *        Read fields needed in FORCINGS at time T1 
 *        -----------------------------------------
@@ -177,20 +213,20 @@
             call v4d_rwfld (vt1c,work, l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunfr,V4dg_addfr,plpr_L,'VT1C ',V4dg_ad_L,0,-1)
 *
-            call v4d_rwfld (st1c,work, l_ni,l_nj,LDIST_DIM,1,
-     %                   V4dg_iunfr,V4dg_addfr,plpr_L,'ST1C ',V4dg_ad_L,0,-1)
-*
             call v4d_rwfld (tpt1c,work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunfr,V4dg_addfr,plpr_L,'TPT1C',V4dg_ad_L,0,-1)
 *
-         elseif(V4dg_ad_L) then
+            call v4d_rwfld (st1c,work, l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iunfr,V4dg_addfr,plpr_L,'ST1C ',V4dg_ad_L,0,-1)
 *
-            call v4d_rwfld (tpt1c,work,l_ni,l_nj,LDIST_DIM,l_nk,
-     %                   V4dg_iunfr,V4dg_addfr,plpr_L,'TPT1C',V4dg_ad_L,
-     %                   l_ni*l_nj     ,-1)
+         elseif(V4dg_ad_L) then
 *
             call v4d_rwfld (st1c, work,l_ni,l_nj,LDIST_DIM,1,
      %                   V4dg_iunfr,V4dg_addfr,plpr_L,'ST1C ',V4dg_ad_L,
+     %                   l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (tpt1c,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunfr,V4dg_addfr,plpr_L,'TPT1C',V4dg_ad_L,
      %                   l_ni*l_nj*l_nk,-1)
 *
             call v4d_rwfld (vt1c, work,l_ni,l_nj,LDIST_DIM,l_nk,
@@ -199,11 +235,12 @@
 *
             call v4d_rwfld (ut1c, work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunfr,V4dg_addfr,plpr_L,'UT1C ',V4dg_ad_L,
-     %                   l_ni*l_nj*l_nk,-1)
+     %                   l_ni*l_nj     ,-1)
 *
          endif
 *
          elseif(V4dg_rwfr.eq.1) then
+         if (lun_out > 0) write(lun_out,9060)
 *        ------------------------------------------
 *        Write fields needed in FORCINGS at time T1 
 *        ------------------------------------------
@@ -227,17 +264,34 @@
             call v4d_rwfld (vt1, work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunfr,V4dg_addfr,plpr_L,'VT1 ',V4dg_ad_L,0,1)
 *
-            call v4d_rwfld (st1, work,l_ni,l_nj,LDIST_DIM,1,
-     %                   V4dg_iunfr,V4dg_addfr,plpr_L,'ST1 ',V4dg_ad_L,0,1)
-*
             call v4d_rwfld (tpt1,work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iunfr,V4dg_addfr,plpr_L,'TPT1',V4dg_ad_L,0,1)
+*
+            call v4d_rwfld (st1, work,l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iunfr,V4dg_addfr,plpr_L,'ST1 ',V4dg_ad_L,0,1)
 *
          endif
 *
       endif
 *
       pnerr = vmmuld(-1,0)
+      if (lun_out > 0) write(Lun_out,9900)
+*
+ 9000 format(
+     +/,'BEGIN READ OBSERVATION WA FILES         (V4D_RWOBFR)',
+     +/,'===================================================')
+ 9010 format(
+     +/,'BEGIN WRITE OBSERVATION WA FILES        (V4D_RWOBFR)',
+     +/,'===================================================')
+ 9050 format(
+     +/,'BEGIN READ FORCINGS WA FILES           (V4D_RWOBFR)',
+     +/,'===================================================')
+ 9060 format(
+     +/,'BEGIN WRITE FORCINGS WA FILES          (V4D_RWOBFR)',
+     +/,'===================================================')
+ 9900 format(
+     +/,'END R/W OBS/FORCING WA FILES            (V4D_RWOBFR)',
+     +/,'===================================================')
 *
       return
       end

@@ -37,6 +37,8 @@
 #include "grd.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
+#include "hblen.cdk"
+#include "pilot.cdk"
 *
 *modules
       logical  set_dcst8,check_parti
@@ -44,7 +46,8 @@
       external set_world_view1,set_dcst8,check_parti,
      %         slabopt,longueur,hybref_to_ig
 **
-      integer   cnbre,nrec,ipcode,ipmode,pncpu,ierr
+      integer cnbre,ipcode,ipmode,pncpu,ierr,mindimx,mindimy,
+     $        maxblenx,maxbleny 
       parameter(cnbre=31)
       character*256 prejob_S
       character*10 liste_S(cnbre)
@@ -72,19 +75,10 @@
       lun_wapta= 66
       Lun_rstrt= -1
       Lun_debug_L=.false.
-*     Lun_pids = 62 <--- reserved, please do not use this unit elsewhere
 *
       call rpn_comm_init (set_world_view1, Ptopo_myproc, Ptopo_numproc, 
      $                                     Ptopo_npex  , Ptopo_npey)
       call rpn_comm_mype (Ptopo_myproc, Ptopo_myrow, Ptopo_mycol)
-*
-cvl   open (44,file='seqfbin/posi_xy', form='formatted')
-cvl   if ( Ptopo_myproc.eq.0 ) then
-cvl   open (48, file='seqfbin/interpo_bin.l',form='unformatted')
-cvl   open (49, file='seqfbin/ps_bin.l',form='unformatted')
-cvl   open (50, file='seqfbin/sol_bin.l',form='unformatted')
-cvl   open (60, file='seqfbin/future_bin.l',form='unformatted')
-cvl   endif
 *
       call bcastc1 ()
 *
@@ -124,59 +118,62 @@ c      call system (prejob_S)
 *
 *     Establishing data topology
 *
-      l_west   = (0            .eq. Ptopo_myrow)
-      l_east   = (Ptopo_npex-1 .eq. Ptopo_myrow)
-      l_south  = (0            .eq. Ptopo_mycol)
-      l_north  = (Ptopo_npey-1 .eq. Ptopo_mycol)
-      north = 0
-      south = 0
-      east  = 0
-      west  = 0
-      if (G_lam) then
+      l_west  = (0            .eq. Ptopo_myrow)
+      l_east  = (Ptopo_npex-1 .eq. Ptopo_myrow)
+      l_south = (0            .eq. Ptopo_mycol)
+      l_north = (Ptopo_npey-1 .eq. Ptopo_mycol)
+      north   = 0
+      south   = 0
+      east    = 0
+      west    = 0
       if (l_north) north = 1
       if (l_south) south = 1
       if (l_east ) east  = 1
       if (l_west ) west  = 1
-      endif
-*
+      pil_w     = 0
+      pil_n     = 0
+      pil_e     = 0
+      pil_s     = 0
+      Lam_pil_w = 0
+      Lam_pil_n = 0
+      Lam_pil_e = 0
+      Lam_pil_s = 0
+      G_periodx = .true.
+      G_periody = .false.
+      Pil_current_S = '20000101.000000'
+*     
       if (G_lam) then
-         pil_w     = 0
-         pil_n     = 0
-         pil_e     = 0
-         pil_s     = 0
+         if (l_west ) pil_w = Glb_pil_w
+         if (l_north) pil_n = Glb_pil_n
+         if (l_east ) pil_e = Glb_pil_e
+         if (l_south) pil_s = Glb_pil_s
          G_periodx = .false.
-         G_periody = .false.
-         if (l_west)  pil_w     = Glb_pil_w
-         if (l_north) pil_n     = Glb_pil_n
-         if (l_east)  pil_e     = Glb_pil_e
-         if (l_south) pil_s     = Glb_pil_s
          Lam_pil_w = Glb_pil_w
          Lam_pil_n = Glb_pil_n
          Lam_pil_e = Glb_pil_e
          Lam_pil_s = Glb_pil_s
-      else
-         G_periodx = .true.
-         G_periody = .false.
-         pil_w     = 0
-         pil_n     = 0
-         pil_e     = 0
-         pil_s     = 0
-         Lam_pil_w = 0
-         Lam_pil_n = 0
-         Lam_pil_e = 0
-         Lam_pil_s = 0
+         mindimx = G_ni/2 - (1-mod(G_ni,2))
+         mindimy = G_nj/2 - (1-mod(G_nj,2))
+         maxblenx= max ( Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx )
+         maxbleny= max ( Hblen_momenty,Hblen_ty,Hblen_massy,Hblen_try )
+         if ( (max(Glb_pil_w,Glb_pil_e)+maxblenx).gt.mindimx .or.
+     $        (max(Glb_pil_s,Glb_pil_n)+maxbleny).gt.mindimy ) 
+     $        call gem_stop
+     $        ('LAM grid too small -- ABORT in set_world_view --',-1)
       endif
 *
-      call rpn_comm_topo (G_ni,l_minx,l_maxx,l_ni,G_lnimax,
-     $                    G_halox,l_i0,.true.,.true.) 
-      call rpn_comm_topo (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,
-     $                    G_haloy,l_j0,.false.,.true.)
+      call rpn_comm_topo ( G_ni,l_minx,l_maxx,l_ni,G_lnimax,
+     $                            G_halox,l_i0,.true.,.true.) 
+      call rpn_comm_topo ( G_nj,l_miny,l_maxy,l_nj,G_lnjmax,
+     $                           G_haloy,l_j0,.false.,.true.)
       if (.not.check_parti (l_i0,G_ni,Ptopo_npex)) then
-         if (Lun_out.gt.0) write(Lun_out,1001) Ptopo_myproc,l_i0,Ptopo_npex
+         if (Lun_out.gt.0) write(Lun_out,1001) 
+     $        Ptopo_myproc,l_i0,Ptopo_npex
          call gem_stop('set_world_view',-1)
       endif
       if (.not.check_parti (l_j0,G_nj,Ptopo_npey)) then
-         if (Lun_out.gt.0) write(Lun_out,1002) Ptopo_myproc,l_j0,Ptopo_npey
+         if (Lun_out.gt.0) write(Lun_out,1002) 
+     $        Ptopo_myproc,l_j0,Ptopo_npey
          call gem_stop('set_world_view',-1)
       endif
 *
@@ -188,14 +185,14 @@ c      call system (prejob_S)
 *
 *     Check grid dimensions for LAM
       if (G_lam) then
-          ierr=0
-          if (l_niu.le.pil_w .or.
-     %        l_niu.le.pil_e .or.
-     %        l_njv.le.pil_n .or.
-     %        l_njv.le.pil_s) ierr=-1
-          call gem_stop
+         mindimx  = max ( pil_w,pil_e ) + maxblenx
+         mindimy  = max ( pil_s,pil_n ) + maxbleny
+         ierr=0
+         if (l_niu.le.mindimx .or. l_njv.le.mindimy) ierr=-1
+         call gem_stop
      $         ('LAM grid too small for chosen processor topology',ierr)
       endif
+*
       call glbpos  
 *
       call set_run_dir_xy (Ptopo_myrow, Ptopo_mycol)

@@ -1,0 +1,232 @@
+***s/r e_specanal - extraction of analysis levels
+*
+#include <model_macros_f.h>
+*
+      subroutine e_specanal
+      implicit none
+*
+*author 
+*    Michel Desgagne - RPN - May 2002 - new entry program  v3_00
+*
+*revision
+* v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
+*
+#include "e_anal.cdk"
+#include "e_fu.cdk"
+#include "e_option.cdk"
+#include "e_grids.cdk"
+#include "bmf.cdk"
+#include "out1.cdk"
+#include "ptopo.cdk"
+#include "e_cdate.cdk"
+*
+      integer   fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv,
+     $          read_decode_hyb, newdate, e_pilotf
+      external  fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv,
+     $          read_decode_hyb, newdate, e_pilotf
+*
+      integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
+     $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
+      character*1   typ, grd, blk_S
+      character*4   var
+      character*12  lab
+      real      difsig,x1,x2
+      real, allocatable, dimension(:) :: topp
+      real*8    pdip2
+      parameter (difsig = 1.e-5)
+      integer list(2000), i, j, k, nib, l, m, ier
+*
+      real*8  one,sid,rsid,dayfrac
+      parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
+      real lev
+      integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum
+* ---------------------------------------------------------------------
+*
+      write (6, 1001)
+*
+      if (LAM) then
+         ier = e_pilotf (datev,'UU',' ',' ',-1,-1,-1)
+         if (ier.lt.0) ier = e_pilotf (datev,'UT1',' ',' ',-1,-1,-1)
+      else
+         e_fu_anal = 0
+         if (fnom (e_fu_anal ,'process/analysis','RND+OLD',0).lt.0) stop
+         if (fstouv(e_fu_anal ,'RND').lt.0) stop
+      endif
+      ip1mode = +1
+*
+*                     Check moisture variable and find out
+*                     if it is given by 'ES' or 'HU'
+      vh = 'HU'
+      key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vh)
+*
+      if ( key .lt. 0 ) then
+         vh = 'ES'
+         key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vh)
+         if ( key .lt. 0 ) then
+            write(6,*) 'No moisture variables are found in analysis'
+            write(6,*) 'Either HU or ES must be in the analysis file.'
+            call e_arret('e_specanal')
+         endif
+      endif
+*                      Check temperature variable and find
+*                      out if it is given by 'TT' or 'VT'
+      vt = 'VT'
+      key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vt)
+*
+      if ( key .lt. 0 ) then
+         vt = 'TT'
+         key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vt)
+         if ( key .lt. 0 ) then
+            write(6,*) 'No temperature variables are found in analysis'
+            write(6,*) 'Either TT or VT must be in the analysis file.'
+            call e_arret('e_specanal')
+         endif
+      endif
+*
+*     Get the information on the temperature field from the analysis
+*     ig1a,ig2a,ig3a,ig4a are the grid descriptors for the TT/VT field
+*
+      err = fstprm ( key, dte, det, ipas, nia, nja, k, bit, dty, 
+     $     ip1a,ip2a,ip3a, tva, var, labanl, grda, ig1a,ig2a,ig3a,ig4a,
+     $     swa,lng, dlf, ubc, ex1, ex2, ex3 )
+*
+      call convip (ip1a, lev, kind,-1, blk_S, .false.)
+*
+      anal_sigma = .false.
+      anal_eta   = .false. 
+      anal_hyb   = .false.
+      anal_pres  = .false.
+*
+      if (kind .eq. 2) then
+         print*,' ===> Analysis on PRESSURE vertical coordinates.'
+         anal_pres = .true.
+         anal_hav(2) = 4
+      endif
+      if (kind .eq. 5) then
+         ip1mode=2
+         key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',datev,
+     $                                          ptopa,prefa,rcoefa)
+         if (key .lt. 0) then
+            stop
+         endif
+         print*,' ===> Analysis on HYBRID vertical coordinates.'
+         anal_hyb  = .true.
+         anal_hav(2) = 1
+      endif
+      if (kind .eq. 1) then      
+         key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',datev,
+     $                                          ptopa,prefa,rcoefa)
+         if (key .lt. 0) then
+            key = fstinf ( e_fu_anal, ni1,nj1,nk1,datev,' ',-1,-1,-1, 
+     $                                                    ' ', 'PT' )
+            if (key .ge. 0) then
+               anal_eta = .true.
+               anal_hav(2) = 2
+               rcoefa   = 1.0
+               prefa    = 800.0
+               allocate(topp(ni1*nj1))
+               err = fstluk(topp, key, ni1,nj1,nk1)
+               ptopa = topp(1)
+               do i = 2, ni1*nj1
+                  if (abs(topp(i)-ptopa).gt.difsig) then
+                     write(6,900)
+     $                    'ERROR: PT in ETA analysis is not uniform',
+     $                    'ERROR: TOPP(',i,')=',topp(i),' ptopa=',ptopa
+                     call e_arret('e_specanal')
+                  endif
+               end do
+               deallocate (topp)
+               print*,' ===> Analysis on ETA vertical coordinates.'
+            else
+               print*,' ===> Analysis on SIGMA vertical coordinates.'
+               anal_sigma = .true.
+               anal_hav(2) = 3
+            endif
+         else
+            print*,' ===> Analysis on HYBRID vertical coordinates.'
+            anal_hyb = .true.
+            anal_hav(2) = 1
+         endif
+      endif
+*
+      if (( anal_sigma .or. anal_eta .or. anal_hyb ) .and. 
+     $     ( VH .eq. 'ES' )) then
+         write(6,*) 'ERROR: Moisture variable(VH) must be HU '
+         write(6,*) 'when analysis is on sigma/eta/hybrid.'
+         call e_arret('e_specanal')
+      endif
+*
+      key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, 
+     $                     ip2a, ip3a, tva, var, list, nka, lvmax)
+*
+      lv = nka
+      do k = 1, nka
+         ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty,
+     x              ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3,
+     x                           g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
+
+         if (nia.ne.ni1 .or. nja.ne.nj1) then
+            write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH'
+            call e_arret( 'e_specanal')
+         elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or.
+     x         ig3a .ne.g3  .or. ig4a .ne.g4) then
+            write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH'
+            call e_arret( 'e_specanal')
+         endif
+         call convip (ip1a, lev, kind, -1, blk_S, .false.)
+         if ( (((anal_sigma).or.(anal_eta)).and. (kind.ne.1)) .or.
+     $        (( anal_pres                ).and. (kind.ne.2)) .or.
+     $        (( anal_hyb                 ).and.((kind.ne.1)
+     $                                      .and.(kind.ne.5)))) then
+            write(6,*)':  LEVEL ',ip1a,' LEVEL INCONSISTENCY'
+            call e_arret( 'e_specanal')
+         else
+            rna(k) = lev
+            if (anal_pres) lna(k) = alog(rna(k))
+         endif
+      enddo
+*
+      if ( (anal_pres).and.(lv.lt.16) ) then
+         write(6,*)': NEED 16 OR MORE PRESSURE LEVELS. ',
+     x                     lv, ' levels found'
+         call e_arret('e_specanal')
+      endif
+*
+*     Sort levels in ascending order
+      call e_sortr (rna, lv)
+*
+      print*, ' ANALYSIS LEVELS FOUND ARE:'
+      do k=1,lv
+         call convip (na (k), rna(k), kind, ip1mode, blk_S, .false.)
+         write(6,801) rna(k),k
+      end do 
+*
+      glhybanl = anal_hyb
+      gletaanl = anal_eta
+      glsiganl = anal_sigma
+*
+      write(6,*) 'nia     =',nia,'  nja =',nja
+      write(6,*) 'glhybanl=', glhybanl
+      write(6,*) 'gletaanl=', gletaanl
+      write(6,*) 'glsiganl=', glsiganl
+*
+      call bmf_splitwrall ('RNA ',LV,1,1,Bmf_time1,Bmf_time2, 
+     $                                    0,0,bmf_dtyp,0,RNA)
+      if (anal_hyb.or.anal_eta) then
+         call bmf_splitwrall ('PTOP',1,1,1,Bmf_time1,Bmf_time2
+     $                                  ,0,0,bmf_dtyp,0,ptopa)
+         call bmf_splitwrall ('PREF',1,1,1,Bmf_time1,Bmf_time2
+     $                                  ,0,0,bmf_dtyp,0,prefa)
+         call bmf_splitwrall ('RCOF',1,1,1,Bmf_time1,Bmf_time2
+     $                                 ,0,0,bmf_dtyp,0,rcoefa)
+      endif
+*
+ 801  format (' LEVEL anal = ',d15.8,2X,' k = ',i4)
+ 900  format (a/a,i5,a,e14.7,a,e14.7,a/'   >>>>> ABORT <<<<<')
+ 1001 format(/,'EXTRACTION OF ANALYSIS LEVELS (S/R E_SPECANAL)',/40('-'))
+ 1002 format(' DATE = ', 6i5 , 7a4 , i10 )
+*
+* ---------------------------------------------------------------------
+*
+      return
+      end

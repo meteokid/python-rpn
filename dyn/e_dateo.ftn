@@ -1,0 +1,78 @@
+***s/r e_dateo - 
+*
+#include <model_macros_f.h>
+*
+      subroutine e_dateo
+      implicit none
+*
+#include "e_grids.cdk"
+#include "bmf.cdk"
+#include "out1.cdk"
+#include "e_cdate.cdk"
+#include "e_fu.cdk"
+#include "pilot.cdk"
+*
+      integer  fnom, fstouv, fstinf, fstprm, e_pilotf
+      external fnom, fstouv, fstinf, fstprm, e_pilotf
+      character*1   typ, grd, blk_S
+      character*4   var
+      character*12  lab
+      character*16  datev_S
+      integer key,ni1,nj1,nk1,err,yy,dum,
+     $        dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
+     $        dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err
+      real*8  one,sid,rsid,dayfrac
+      parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
+* ---------------------------------------------------------------------
+*
+      if (LAM) then
+*
+         call e_infiles
+         e_fu_anal = -1
+         call datp2f ( idate(14) , Pil_runstrt_S )
+         err   = e_pilotf (idate(14),'UU',' ',' ',-1,-1,-1)
+         if (err.lt.0) 
+     $        err   = e_pilotf (idate(14),'UT1',' ',' ',-1,-1,-1)
+         if (err.lt.0) call e_arret('e_anallev')
+*
+      else
+*
+         e_fu_anal = 0
+         if (fnom  (e_fu_anal,'process/analysis','RND+OLD',0).lt.0) stop
+         if (fstouv(e_fu_anal ,'RND').lt.0) stop
+*
+         key = fstinf (e_fu_anal, ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','UU')
+*
+         if ( key .lt. 0 ) then
+            key = fstinf (e_fu_anal, ni1,nj1,nk1,-1,' ',-1,-1,-1,
+     $                                                 ' ','UT1')
+            if ( key .lt. 0 ) then
+               write(6,*) 'No U-component of the wind in analysis'
+               call e_arret('e_anallev')
+            endif
+         endif
+*
+         err = fstprm ( key, dte, det, ipas, ni1, nj1, nk1, bit, dty, 
+     $                  p1,p2,p3, typ, var, lab, grd, g1,g2,g3,g4,
+     $                  swa,lng, dlf, ubc, ex1, ex2, ex3 )
+*
+         call datf2p ( Pil_runstrt_S, dte )
+         dayfrac = dble(det*ipas)*rsid
+         call incdatsd ( datev_S, Pil_runstrt_S, dayfrac )
+         Pil_runstrt_S = datev_S
+         call datp2f ( idate(14) , Pil_runstrt_S )
+*
+      endif
+*
+      bmf_dtyp = 41
+      call datmgp2 (idate)
+      Out1_date = idate(14)
+      call prsdate (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,Pil_runstrt_S)
+*
+      write(6,1002) idate
+*      
+ 1002 format(' DATE = ', 6i5 , 7a4 , i10 )
+* ---------------------------------------------------------------------
+*
+      return
+      end

@@ -171,7 +171,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "p_geof.cdk"
@@ -186,7 +185,6 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer i0,in,j0,jn
       integer pnerr, pnlod, pnlkey1(26)
       real wijk0(LDIST_SHAPE,l_nk), wijk1(LDIST_SHAPE,l_nk)
 **
@@ -263,19 +261,7 @@
          r3_   = 0
          r3p_  = 0
       endif
-
-      if (G_lam) then
-          i0=lam_i0
-          in=lam_in
-          j0=lam_j0
-          jn=lam_jn
-      else
-          i0 = glb_i0
-          in=  glb_in
-          j0 = glb_j0
-          jn = glb_jn
-      endif
-
+*
 *PDIR RESERVE=Ptopo_npeOpenMP
 
       call  bacp_2 (   Itr, Itnlh,   st0, pipt0,   qt0, 
@@ -287,25 +273,12 @@
      $                 nl_ncn,wijk0,wijk1,LDIST_DIM, l_nk )
 
 *PDIR RELEASE
-      if (.not. Schm_hydro_L) then
-      call glbstat (mut0 ,'MUT0',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (qpt0 ,'QPT0',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      endif
-      if(Lctl_debug_L) then
-      call glbstat (tpt0 ,'TPT0',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (st0  ,'ST0',LDIST_DIM,1,i0,in,j0,jn,1,1)
-      call glbstat (pipt0,'PIPT0',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (ut0,'ut0',LDIST_DIM,G_nk,i0,in-1,j0,jn,1,G_nk)
-      call glbstat (vt0,'vt0',LDIST_DIM,G_nk,i0,in,j0,jn-1,1,G_nk)
-      call glbstat (ru,'Ru',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (rv,'Rv',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      endif
-
-
+*
       pnerr = vmmuld(-1,0)
 
 1000  format (5X,'BACK SUBSTITUTION: (S/R BAC)')
-
+*     __________________________________________________________________
+*
       return
       end
 

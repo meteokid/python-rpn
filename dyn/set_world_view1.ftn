@@ -28,6 +28,11 @@
 *                             Hzd_type_S to "HO"
 * v2_32 - Desgagne M.       - option for FST2000 encoding of ip1
 * v3_00 - Tanguay M.        - V4dg_4dvar_L,V4dg_sensib_L,V4dg_twin_L in namelist
+* v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
+* v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
+* v3_01 - Morneau J.        - V4dj_mask_L,V4dm_itmax,V4dm_simax in namelist
+* v3_01 - Tanguay M.        - add V4dg_sgvc_L
+* v3_01 - Lee V.            - add Horizontal sponge parameter controls:Hspng_*
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -56,7 +61,9 @@
 #include "cstv.cdk"
 #include "lctl.cdk"
 #include "hzd.cdk"
+#include "eigv.cdk"
 #include "vspng.cdk"
+#include "hspng.cdk"
 #include "xst.cdk"
 #include "cori.cdk"
 #include "geomg.cdk"
@@ -64,14 +71,14 @@
 #include "v4dg.cdk"
 #include "c_cplg.cdk"
 #include "version.cdk"
-#include "pilot.cdk"
 #include "setsor.cdk"
-#include "did.cdk"
 #include "grid.cdk"
 #include "out1.cdk"
 #include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "pres.cdk"
+#include "v4dj.cdk"
+#include "v4dm.cdk"
 *
 *modules
       integer fnom,longueur,exdb
@@ -159,27 +166,33 @@
       Cstv_pisrf_8 = 1000.0
       Cstv_tstr_8  =  200.0
 *
-      Did_swph = .false.
-      Lctl_debug_L = .false.
+      Lctl_r8stat_L   = .false.
+      Lctl_debug_L    = .false.
       Level_ip12000_L = .false.
 *
       Grd_rcoef = 1.0
-      Pres_ptop = 10.
+      Pres_ptop = -1.
       Pres_pref = 800.0
       do k = 1, maxhlev
          hyb(k) = -1.
       end do
 *
+      Eigv_parity_L = .false.
       Hzd_type_S = "HO"
       Hzd_difva_L= .false.
       Hzd_pwr    = 6
       Hzd_lnr    = 0.2
-      Hzd_uvwdt_L= .false.
+      Hzd_uvwdt_L= .true.
+      Hspng_nj = 0
+      Hspng_mf = 800.
+      Hspng_uvwdt_L  = .true.
+      Hspng_rwnd_L   = .false.
       Vspng_nk = 0
       do i = 1, Vspng_maxn
          Vspng_mf(i) = -1.
       end do
-      Vspng_uvwdt_L  = .false.
+      Vspng_uvwdt_L  = .true.
+      Vspng_rwnd_L   = .false.
 *
       Tr2d_ntr = 0
       Tr3d_ntr = 0
@@ -205,9 +218,6 @@
          Out_filtcoef(i) = 0.0
          Out_filtpass(i) = 0
       enddo
-      do i = 1,MAXPILOT
-         pilot_S(i) = ' '
-      enddo
       Out_unit_S    = ''
       Out_ndigits   = -1
       Out_nbitg     = 16
@@ -228,10 +238,16 @@
       V4dg_sensib_L = .false.
       V4dg_twin_L   = .false.
       V4dg_4dvar_L  = .false.
+      V4dg_sgvc_L   = .false.
+      V4dj_mask_L   = .false.     
 *
       V4dg_stepob   = Step_total
       V4dg_inv      = 1
       V4dg_incore_L = .true.
+      V4dg_identity_L = .false.
+*
+      V4dm_itmax    = 2 
+      V4dm_simax    = 2 
 *
 *    Coupling section
 *    ----------------
@@ -254,6 +270,13 @@
       read (Lun_in, nml=var4d, end = 6666)
  6666 call fclos (lun_in)
 *
+      if ((V4dg_conf/100.ne.1) .and.
+     $    (V4dg_sensib_L.or.V4dg_twin_L.or.V4dg_4dvar_L.or.V4dg_sgvc_L))
+     $     then
+         write(Lun_out,9300)
+         goto 1111
+      endif
+*
       call low2up  (Hzd_type_S,dumc_S)
       Hzd_type_S = dumc_S
       Hzd_lnr    = min(max(0.,Hzd_lnr),0.9999999)
@@ -262,8 +285,15 @@
 *
       call low2up  (Out_unit_S,Out_unit_S)
       if (V4dg_conf.ne.0) then
-          call v4d_init()
-          Out_ndigits = 6
+         call v4d_init()
+         Out_ndigits = 6
+         Hspng_nj = 0
+      endif
+      if (V4dg_conf/100.eq.1.and.V4dg_sensib_L) then 
+        V4dg_lun_obs_s=Path_dfwmil_S(1:longueur(Path_dfwmil_S))
+     $                                //'/v4d_obsfile_std'
+        V4dg_lun_obs = 0
+        err = fnom (V4dg_lun_obs,V4dg_lun_obs_s,'RND+OLD', 0)
       endif
 *      
       if (C_coupling_L)  call c_init()
@@ -278,12 +308,6 @@
          Out_nundr = Out_nundr + 1
       enddo
  80   continue
-      MAXPIL=0
-      do i=1,MAXPILOT
-         if (pilot_S(i).eq.' ') goto 90
-             MAXPIL = MAXPIL + 1
-      enddo
- 90   continue
 *
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
 *      
@@ -300,12 +324,14 @@
 *
 *     Checking vertical layering
 *
+      wronghyb = .false.
       pnk = 0
       do k = 1, maxhlev
          if (hyb(k) .lt. 0.) go to 60
          pnk = k
       enddo
- 60   if ((hyb(1).ne.0.).or.(hyb(pnk).ne.1.)) wronghyb = .true.
+ 60   if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
+     $       (hyb(pnk).ne.1.) ) wronghyb = .true.
       do k=2, pnk
          if (hyb(k).le.hyb(k-1)) wronghyb = .true.
       end do
@@ -314,7 +340,7 @@
          do k=1, pnk
             write (Lun_out,*) hyb(k),k
          end do
-         call gem_stop ( 'set_world_view1', -1 )
+         goto 1111
       endif
       call hpalloc (Geomg_hyb_ , pnk, err,1)
       call hpalloc (Geomg_hybm_, pnk, err,1) 
@@ -323,12 +349,22 @@
       if (Level_ip12000_L) 
      $     call convip ( ipcode, pcode, ipmode, 0, ' ', .false. )
 *
-      do k=1,pnk
-         call convip ( i , hyb(k)      , 1   ,  1, dumc_S, .false. )
-         call convip ( i , Geomg_hyb(k), kind, -1, dumc_S, .false. )
-         Geomg_hybm(k) = Geomg_hyb(k)
+      if (Pres_ptop .lt. 0.) then
+          do k=1,pnk
+             call convip ( i , hyb(k)      , 5   ,  2, dumc_S, .false. )
+             call convip ( i , Geomg_hyb(k), kind, -1, dumc_S, .false. )
+             Geomg_hybm(k) = Geomg_hyb(k)
+          end do
+          Pres_ptop = Geomg_hybm(1)*Pres_pref
+      else
+          do k=1,pnk
+             call convip ( i , hyb(k)      , 1   ,  1, dumc_S, .false. )
+             call convip ( i , Geomg_hyb(k), kind, -1, dumc_S, .false. )
+             Geomg_hybm(k) = Geomg_hyb(k)
      $                   + (1.-Geomg_hyb(k))*Pres_ptop/Pres_pref
-      end do
+          end do
+      endif
+      Level_kind_ip1 = kind
 *
       Ptopo_npeMacro = max (1,Ptopo_npeMacro )
       Ptopo_npeOpenMP= max (1,Ptopo_npeOpenMP)
@@ -339,7 +375,7 @@
       call hpalloc (Geomg_pibb_, pnk ,err,1)
 *
       call genab ( Geomg_pia, Geomg_pibb, Geomg_hybm, Pres_ptop,
-     $             Grd_rcoef, pnk)
+     $             Grd_rcoef, pnk )
 *
       call fclos (lun_lab)
 *
@@ -359,20 +395,33 @@
       G_njv = G_nj - 1
       if (G_lam) then
          G_niu = G_ni - 1
+         if (Eigv_parity_L) then
+            Eigv_parity_L = .false.
+            write (Lun_out, 7005)
+         endif
+         if (.not.Schm_hydro_L) then
+            Schm_hydro_L = .true.
+            write (Lun_out, 7006)
+         endif
          if (Hzd_type_S.eq.'FACT') then
             write (Lun_out, 7000) Hzd_type_S
             write (Lun_out, 8000)
-            stop
+            goto 1111
          endif
          if (Vspng_nk.ne.0) then
             write (Lun_out, 7010)
             write (Lun_out, 8000)
-            stop
+            goto 1111
+         endif
+         if (Hspng_nj.ne.0) then
+            write (Lun_out, 7015)
+            write (Lun_out, 8000)
+            goto 1111
          endif
          if (Schm_psadj_L) then
             write (Lun_out, 7020)
             write (Lun_out, 8000)
-            stop
+            goto 1111
          endif
       endif
 *
@@ -387,7 +436,10 @@
       write (Lun_out, 8000)
 *
  7000 format (/' WRONG OPTION FOR HZD_TYP WHEN LAM: ',a/)
+ 7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
+ 7006 format (/' NON-HYDROSTATIC MODE NOT AVAILABLE IF LAM'/)
  7010 format (/' VERTICAL SPONGE (Vspng_nk) NOT AVAILABLE IF LAM'/)
+ 7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ============='/)
  9150 format (/,' NAMELIST gem_cfgs INVALID IN FILE: model_settings'/)
@@ -397,6 +449,7 @@
      $         '      OTHER LEVELS MUST BE MONOTONICALLY INCREASING'/
      $         '      FROM HYB(1) ---- ABORT ----'//
      $         '      Current choice:')
+ 9300 format (/,' sensib_L twin_L 4dvar_L sgvc_L when V4dg_conf/100=1 only'/)  
 *
 *-------------------------------------------------------------------
 *

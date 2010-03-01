@@ -15,6 +15,9 @@
 * v2_21 - Tanguay M.        - set V4dg_oktrtl_L = .T. as default 
 * v2_31 - Tanguay M.        - WA files incore
 * v3_00 - Tanguay M.        - V4dg_4dvar_L,V4dg_sensib_L,V4dg_twin_L in namelist
+* v3_01 - Morneau J.        - V4dj_mask_L in namelist and remove grdtst when
+*                             V4dg_sensib_L = .T.
+* v3_01 - Tanguay M.        - introduce identity option
 *
 *object
 *     see id section
@@ -48,6 +51,11 @@
 *           ------------------------------------
             if (V4dg_twin_L) V4dg_tlm_L = .false.
 *
+*           Sensitivity experiment valid only
+*           if TLM used in cost function
+*           ------------------------------------
+            if (V4dg_sensib_L) V4dg_tlm_L = .true.
+*
 *        Allow NLM to WRITE TRAJECTORY on WA file at each timestep
 *        ---------------------------------------------------------
          V4dg_oktr_L = .true.
@@ -60,16 +68,26 @@
 *        Ask for a Gradient test
 *        -----------------------
          V4dg_grd_L = .true.
+         if (V4dg_sensib_L)  V4dg_grd_L = .false.
 *
 *        Parameters for Gradient test
 *        ----------------------------
          V4dg_range = 5 
-         V4dg_start = 1. 
+         V4dg_start = 0.1 
+*
+*        Parameter set to TRUE if integration = Identity
+*        -----------------------------------------------
+         V4dg_identity_L = .false.
+*
+*        Parameter set to TRUE if GAUSSIAN grid = GEM grid
+*        -------------------------------------------------
+         V4dg_ga_eq_ge_L = .false.
 *
          if (Lun_out.gt.0) write(Lun_out,4000) V4dg_conf,V4dg_sensib_L,
      %                        V4dg_stepob,V4dg_inv,V4dg_tlm_L,
      %                        V4dg_oktr_L,V4dg_oktrtl_L,
-     %                        V4dg_grd_L,V4dg_range,V4dg_start,V4dg_incore_L
+     %                        V4dg_grd_L,V4dg_range,V4dg_start,V4dg_incore_L,
+     %                        V4dg_identity_L,V4dg_ga_eq_ge_L
 *
 *     -----------------------------------
 *     Variables for COST FUNCTION section 
@@ -90,8 +108,9 @@
          V4dj_locob = 100
 *
 *        Read mask on stdfile if .T.
+*        Default is V4dj_mask_L = .F. in set_world_view1
+*        Then       V4dj_mask_L is read in namelist var4d
 *        ---------------------------
-         V4dj_mask_L  = .false. 
 *
          if (Lun_out.gt.0) write(Lun_out,4001) V4dj_jb,V4dj_kdcst, 
      %                        V4dj_locob,V4dj_mask_L
@@ -103,11 +122,6 @@
 *     ----------------------------------
 *
       if (V4dg_conf/100.eq.1) then
-*
-*        Default value for max. number of iteration
-*        ------------------------------------------
-         V4dm_itmax = 2 
-         V4dm_simax = 2 
 *
 *        Minimization (M1QN3) parameters
 *        -------------------------------
@@ -127,17 +141,19 @@
 4000  format(
      %//,'INITIALIZATION (S/R V4D_INIT GENERAL)',
      % /,'=====================================',
-     % /,'  CONF     = ',I6
-     % /,'  SENSIB_L = ',L2,
-     % /,'  STEPOB   = ',I6,
-     % /,'  INV      = ',I6,
-     % /,'  TLM_L    = ',L2,
-     % /,'  OKTR_L   = ',L2,
-     % /,'  OKTRTL_L = ',L2,
-     % /,'  TESTGRD  = ',L2,
-     % /,'  RANGE    = ',I6,
-     % /,'  XRSTART  = ',E13.7,
-     % /,'  INCORE_L = ',L2
+     % /,'  CONF       = ',I6
+     % /,'  SENSIB_L   = ',L2,
+     % /,'  STEPOB     = ',I6,
+     % /,'  INV        = ',I6,
+     % /,'  TLM_L      = ',L2,
+     % /,'  OKTR_L     = ',L2,
+     % /,'  OKTRTL_L   = ',L2,
+     % /,'  TESTGRD    = ',L2,
+     % /,'  RANGE      = ',I6,
+     % /,'  XRSTART    = ',E13.7,
+     % /,'  INCORE_L   = ',L2,
+     % /,'  IDENTITY_L = ',L2
+     % /,'  GA_EQ_GE_L = ',L2
      % /)
 *
 4001  format(

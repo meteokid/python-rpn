@@ -30,6 +30,7 @@
 #include "lctl.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
+#include "pilot.cdk"
 *
       integer itraj
       logical first_L, secon_L
@@ -73,7 +74,7 @@
 *C       Compute 3D winds at time t0-dt/2 (th)
 *        ------------------------------------------------------------
 *
-      if (G_lam) call nest_intt( )
+      if ( G_lam .and. .not.Pil_ctebcs_L ) call nest_intt( )
 *
       if ( Orh_crank_L ) then
 *
@@ -123,7 +124,6 @@
       call t12t2( )
       call t02t1( )
       call t22t0( )
-cvl   if (.not.G_lam) call nest_out ()
 *
 *     ===================
 *     END OF ONE TIMESTEP

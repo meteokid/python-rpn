@@ -9,7 +9,6 @@
 #include "impnone.cdk"
 * 
       character*(*) F_nv_S , F_from_S
-      logical dp
       integer minx,maxx,miny,maxy,lnk,
      $        F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,unf
       real F_field(minx:maxx,miny:maxy,lnk)
@@ -42,6 +41,8 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
 #
       integer i,j,k,imin,jmin,kmin,imax,jmax,kmax
       real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8
@@ -89,18 +90,22 @@
 *       
 * ** On imprime
 *
-      dp = .false.
-      if (dp) then
+      if (Lctl_r8stat_L) then
          if (G_lam) then
-         write(6,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
-     $                 imax,jmax,kmax,maxd,F_from_S 
+         write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+     $                     imax,jmax,kmax,maxd,F_from_S 
          else
-         write(6,99) F_no,F_nv_S,moy,var,imin-5,jmin-4,kmin,mind,
-     $                 imax-5,jmax-4,kmax,maxd,F_from_S 
+         write(Lun_out,99) F_no,F_nv_S,moy,var,imin-5,jmin-4,kmin,mind,
+     $                     imax-5,jmax-4,kmax,maxd,F_from_S 
          endif
       else
-         write(6,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
-     $                 imax,jmax,kmax,maxd,F_from_S 
+         if (G_lam) then
+         write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+     $                     imax,jmax,kmax,maxd,F_from_S 
+         else
+         write(Lun_out,98) F_no,F_nv_S,moy,var,imin-5,jmin-4,kmin,mind,
+     $                     imax-5,jmax-4,kmax,maxd,F_from_S 
+         endif
       endif
 *
  98   format (i4,a4,' Mean:',e14.7,' Var:',e14.7,

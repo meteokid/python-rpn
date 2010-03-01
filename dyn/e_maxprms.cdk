@@ -1,2 +1,0 @@
-      INTEGER        NKMAX, LVMAX
-      PARAMETER     (NKMAX = 201,  LVMAX   = 201)

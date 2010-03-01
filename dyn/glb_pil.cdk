@@ -1,18 +1,5 @@
-
       integer glb_pil_n, glb_pil_s,glb_pil_w,glb_pil_e
-      integer glb_i0,glb_in,glb_j0,glb_jn
-      integer lam_i0,lam_in,lam_j0,lam_jn
-      parameter(glb_pil_n = 7)
-      parameter(glb_pil_s = 7)
-      parameter(glb_pil_w = 7)
-      parameter(glb_pil_e = 7)
+      parameter (glb_pil_n=7, glb_pil_s=7, glb_pil_w=7, glb_pil_e=7)
+*
       integer lam_pil_n,lam_pil_s,lam_pil_w,lam_pil_e
       common /lam_pil/lam_pil_n,lam_pil_s,lam_pil_w,lam_pil_e
-      parameter(lam_i0 =  8)
-      parameter(lam_in = 22)
-      parameter(lam_j0 =  8)
-      parameter(lam_jn = 21)
-      parameter(glb_i0 = 13)
-      parameter(glb_in = 27)
-      parameter(glb_j0 = 12)
-      parameter(glb_jn = 25)

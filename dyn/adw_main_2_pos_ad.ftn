@@ -63,12 +63,10 @@
       integer i, j, k, n, ij, ijk, nij, nijk, nijkag, it
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1
-      real,    dimension(l_ni*l_nj*l_nk) :: xctg,yctg,zctg
       real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
       real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1,wrk_yth
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1m
-      real,    dimension(l_ni*l_nj*l_nk) :: xctgm,yctgm,zctgm
       real,    dimension(l_ni*l_nj*l_nk) :: capx1m,capy1m,capz1m
       real,    dimension(l_ni*l_nj*l_nk) :: wrkx1m,wrky1m,wrkz1m,wrkc1m,wrk_ythm
 *
@@ -145,9 +143,6 @@
 *     ----------------------
       do n = 1,l_ni*l_nj*l_nk
          n1(n)      = ZERO_8
-         xctg(n)    = ZERO_8
-         yctg(n)    = ZERO_8
-         zctg(n)    = ZERO_8
          capx1(n)   = ZERO_8
          capy1(n)   = ZERO_8
          capz1(n)   = ZERO_8
@@ -253,19 +248,19 @@
 *     TRAJECTORY (START)
 *     ------------------
 *
-************************************************************************
-      do it=1,F_it
-************************************************************************
       i0=1
       in=l_ni
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west) i0=3
-          if (l_east) in=l_niu-1
-          if (l_south) j0=3
-          if (l_north) jn=l_njv-1
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
       endif
+************************************************************************
+      do it=1,F_it
+************************************************************************
                      doh_L = .false.
       if (it .eq. 1) doh_L = .true.
 *
@@ -348,31 +343,11 @@
          ythm_5 (ind(it)+ijk-1)  = ythm(ijk)
       enddo
 *
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
-      endif
 *
 ************************************************************************
       call adw_trajsp ( xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
      %                  i0,in,j0,jn)
 ************************************************************************
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-1
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-1
-      endif
       do n = 1,nijk
       wrk_ythm(n) = ythm(n)
       enddo
@@ -400,16 +375,6 @@
          capz1m_7(ind(it)+ijk-1) = capz1m(ijk)
       enddo
 *
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
-      endif
 *
 *     -----------------------
 *     NOTE:Wthm never changed
@@ -475,16 +440,6 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( F_wm(n), Geomg_z_8(1) ))
 *     TRAJECTORY (END)
 *     ----------------
 *
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
-      endif
 *
 *     ADJOINT CALCULATIONS
 *     --------------------
@@ -594,16 +549,6 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( F_wm(n), Geomg_z_8(1) ))
      %                                  capy1m_7(ind(it)),capz1m_7(ind(it)),nijk,
      %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it))
 *
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-1
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-1
-      endif
 *
 *     ---------------------------------------
 *     Reset xthm wrk_ythm zthm for ADJOINT #6
@@ -622,16 +567,6 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( F_wm(n), Geomg_z_8(1) ))
 *
       enddo
 *
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
-      endif
 *
 *     ----------------------------------------------------
 *     Reset xcthm ycthm zcthm wrkx1m wrky1m for ADJOINT #4
@@ -649,16 +584,6 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( F_wm(n), Geomg_z_8(1) ))
      %                     dth,i0,in,j0,jn)
 ************************************************************************
 *
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=3
-          if (l_east) in=l_niu-1
-          if (l_south) j0=3
-          if (l_north) jn=l_njv-1
-      endif
 *
 *     ------------------------------------------------
 *     Reset n1m capx1m capy1m capz1m for ADJOINT #3

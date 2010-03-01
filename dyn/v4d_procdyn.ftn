@@ -41,7 +41,7 @@
 *
          call v4d_uv2img 
 *
-         if(.not.G_lam) call predat2() 
+         if(.not.G_lam) call v4d_predat2() 
 *
       endif
 *

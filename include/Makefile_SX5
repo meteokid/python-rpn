@@ -1,4 +1,3 @@
-stack  = 3000000
-LFLAGS = -Wl-Z -Wl$(stack) -Wl-ZL -Wl$(stack) -Wl-T -Wl3
 DEFINE = -DSTKNOVAL=stknoval -DSX5PHY=sx5phy
 ABI    = _multi
+

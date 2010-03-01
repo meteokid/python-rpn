@@ -1,5 +1,6 @@
 ***s/r e_setintuv - computes (u,v) interpolation coefficients
 *
+#include <model_macros_f.h>
       subroutine e_setintuv
 #include "impnone.cdk"
 *
@@ -28,11 +29,9 @@
 *
 *implicits
 #include "e_schm.cdk"
-#include "e_files.cdk"
-#include "e_locdim.cdk"
+#include "e_grids.cdk"
 #include "e_geomg.cdk"
 #include "e_intuv.cdk"
-#include <model_macros_f.h>
 #include "dcst.cdk"
 *
 **
@@ -48,19 +47,19 @@
       pointer (p_pdhx,pdhx), (p_pdhxu,pdhxu), (p_pdhy,pdhy)
 *     ---------------------------------------------------------------
 *
-      write(stdout, 1001 )
+      write(6, 1001 )
       call hpalloc(p_pdhx ,(pni+1)*2, pnerr,1)
       call hpalloc(p_pdhxu,(pni+1)*2, pnerr,1)
       call hpalloc(p_pdhy ,(pnj+1)*2, pnerr,1)
 *
       if ( .not. e_Schm_stlag ) then
-         write(stdout, 1300)
+         write(6, 1300)
          call e_arret( 'e_setintuv' )
       endif
 *
 *
       if ( e_Schm_adcub .and.(.not. e_Schm_stlag)) then
-         write(stdout, 1200)
+         write(6, 1200)
          call e_arret( 'e_setintuv' )
       endif
 *

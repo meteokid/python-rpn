@@ -47,39 +47,43 @@
 * NEW    '5A' ,'TM' ,'9A' ,'9A' ,'2B' ,'2B','LE' ,     ,'1B'
 *
 **
-      integer i, ierr, nfields, osgeo
+      integer i, ierr, err, nfields, osgeo
       data osgeo/33/
 *
 *     ---------------------------------------------------------------
 *
+      err = 0
       if (Ptopo_myproc.eq.0) then
+*
           write(Lun_out,9000)
 *
 *         open file
           open (osgeo,file='../geophy.bin',access='SEQUENTIAL',
-     $             status='OLD',iostat=ierr,form='UNFORMATTED')
+     $             status='OLD',iostat=err,form='UNFORMATTED')
 *
-          if (ierr.ne.0) then
-              write (Lun_out,8090) 'geophy.bin'
-              call gefstop('READGEO')
-          endif
+          if (err.ne.0) then
+             write (Lun_out,8090) 'geophy.bin'
+             err = -1
+          else
 *
 *         read dimensions of geobus for memory allocation
-          read (osgeo) p_bgeo_top, p_bgeo_siz
-          call hpalloc  (pageobus,p_bgeo_siz,ierr,1)
+             read (osgeo) p_bgeo_top, p_bgeo_siz
+             call hpalloc  (pageobus,p_bgeo_siz,ierr,1)
 *
 *         read geobus
-          read(osgeo) (geonm (i,1),i=1,p_bgeo_top),
-     $                (geonm (i,2),i=1,p_bgeo_top)
-          read(osgeo) (geopar(i,1),i=1,p_bgeo_top),
-     $                (geopar(i,2),i=1,p_bgeo_top), 
-     $                (geopar(i,3),i=1,p_bgeo_top) 
-          read(osgeo) (geobus(i),i=1,p_bgeo_siz)
+             read(osgeo) (geonm (i,1),i=1,p_bgeo_top),
+     $                   (geonm (i,2),i=1,p_bgeo_top)
+             read(osgeo) (geopar(i,1),i=1,p_bgeo_top),
+     $                   (geopar(i,2),i=1,p_bgeo_top), 
+     $                   (geopar(i,3),i=1,p_bgeo_top) 
+             read(osgeo) (geobus(i),i=1,p_bgeo_siz)
 *
-          write(Lun_out,9900)
-          close (osgeo)
+             close (osgeo)
+*
+          endif
 *
       endif
+      call gem_stop ('READGEO',err)
 *
       call RPN_COMM_bcast(p_bgeo_top,   1,"MPI_INTEGER"  ,0,"grid",ierr)
       call RPN_COMM_bcast(geonm,maxgeo*48,"MPI_CHARACTER",0,"grid",ierr)
@@ -107,10 +111,8 @@
       if (Ptopo_myproc.eq.0) call hpdeallc (pageobus ,ierr,1)
 *
  8090 format (/' FILE ',a,' MUST BE AVAILABLE'/)
- 9000 format( /,'BEGIN READING GEOBUS DATA FILE     (S/R READGEO)',
-     %        /,'=================================================')
- 9900 format( /,'END READING GEOBUS DATA FILE     (S/R READGEO)',
-     %        /,'=================================================')
+ 9000 format( /,'READING GEOBUS DATA FILE     (S/R READGEO)',
+     %        /,'===========================================')
 *
 *     ---------------------------------------------------------------
 *

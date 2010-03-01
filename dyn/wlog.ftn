@@ -14,6 +14,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version (from wlog v1_03)
 * v2_21 - Lee V.            - removed Slab_dato, using Out1_dato
+* v3_01 - Desgagne M.       - only Ptopo_myproc.eq.0 will write
 *
 *object
 *     see above id
@@ -39,77 +40,69 @@
 #include "dimout.cdk"
 #include "cstv.cdk"
 #include "out1.cdk"
+#include "ptopo.cdk"
 *
 *modules
       integer  cmcwlog
       external cmcwlog
 *
-      integer pnerr, pnip2, m, pncy, i
       character ptip2_S*3, ptmesg_S*80, ptcy_S*8, ptwcy_S*10, ptzcy_S*10
-*
+      integer err, ip2, m, cy, i
 **
 *     ---------------------------------------------------------------
 *
-*C       1.     initialisation of character string
-*               ----------------------------------
-      do 100 m=1,80
-        ptmesg_S(m:m) = ' '
- 100   continue
-*C       2.     computation of the number of hours completed so far
-*		---------------------------------------------------
+      if (Ptopo_myproc.ne.0) return
 *
-      pnip2 = nint(float(Lctl_step)*Cstv_dt_8/3600.)
-      write(ptip2_S,'(I3.3)') pnip2
+      do m=1,80
+         ptmesg_S(m:m) = ' '
+      end do
 *
- 200  continue
-*C       3.     writing message
-*               ----------------
+      ip2 = nint(real(Lctl_step)*Cstv_dt_8/3600.)
+      write(ptip2_S,'(I3.3)') ip2
 *
       if ( F_code_S .eq. 'IOUT' ) then
-        ptmesg_S = ' '//ptip2_S//' hours completed during initialization'
-        pnerr = cmcwlog('OU',pnip2,Out1_etik_s,ptmesg_S)
+         ptmesg_S=' '//ptip2_S//' hours completed during initialization'
+         err = cmcwlog('OU',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'FOUT' ) then
-        ptmesg_S = ' '//ptip2_S//' hours completed during forecast'
-        pnerr = cmcwlog('OU',pnip2,Out1_etik_s,ptmesg_S)
+         ptmesg_S = ' '//ptip2_S//' hours completed during forecast'
+         err = cmcwlog('OU',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'IEND' ) then
-        ptmesg_S = ' END OF INITIALIZATION at '//ptip2_S//' hours'
-        pnerr = cmcwlog('EN',pnip2,Out1_etik_s,ptmesg_S)
+         ptmesg_S = ' END OF INITIALIZATION at '//ptip2_S//' hours'
+         err = cmcwlog('EN',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'FEND' ) then
-        ptmesg_S = ' END OF INTEGRATION at '//ptip2_S//' hours'
-        pnerr = cmcwlog('EN',pnip2,Out1_etik_s,ptmesg_S)
+         ptmesg_S = ' END OF INTEGRATION at '//ptip2_S//' hours'
+         err = cmcwlog('EN',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'BKUP' ) then
-        ptmesg_S = ' BACKUP FOR RESTART at '//ptip2_S//' hours'
-        pnerr = cmcwlog('BU',pnip2,Out1_etik_s,ptmesg_S)
+         ptmesg_S = ' BACKUP FOR RESTART at '//ptip2_S//' hours'
+         err = cmcwlog('BU',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'STOP' ) then
-        ptmesg_S = ' PREMATURED STOP: END OF INTEGRATION'
-        pnerr = cmcwlog('AB',pnip2,Out1_etik_s,ptmesg_S)
+         ptmesg_S = ' PREMATURED STOP: END OF INTEGRATION'
+         err = cmcwlog('AB',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'CSTR' ) then
-        write(ptzcy_S,'(i8.8)') Out1_dato(1)
-        write(ptwcy_S,'(''01'')')
-        ptwcy_S(3:4)=ptzcy_S(1:2)
-        read(ptwcy_S,'(i4.4)') pncy
-        write(ptwcy_S,'(i8.8)') Out1_dato(2)
-        ptcy_S(1:6)=ptzcy_S(3:8)
-        ptcy_S(7:8)=ptwcy_S(1:2)
-        ptmesg_S = ' MODEL START: MESSAGE FOR ANALYSIS CYCLE'
-        pnerr = cmcwlog('MO',pncy,ptcy_S,ptmesg_S)
+         write(ptzcy_S,'(i8.8)') Out1_dato(1)
+         write(ptwcy_S,'(''01'')')
+         ptwcy_S(3:4)=ptzcy_S(1:2)
+         read(ptwcy_S,'(i4.4)') cy
+         write(ptwcy_S,'(i8.8)') Out1_dato(2)
+         ptcy_S(1:6)=ptzcy_S(3:8)
+         ptcy_S(7:8)=ptwcy_S(1:2)
+         ptmesg_S = ' MODEL START: MESSAGE FOR ANALYSIS CYCLE'
+         err = cmcwlog('MO',cy,ptcy_S,ptmesg_S)
       else if ( F_code_S .eq. 'CEND' ) then
-        write(ptzcy_S,'(i8.8)') Out1_dato(1)
-        write(ptwcy_S,'(''02'')')
-        ptwcy_S(3:4)=ptzcy_S(1:2)
-        read(ptwcy_S,'(i4.4)') pncy
-        write(ptwcy_S,'(i8.8)') Out1_dato(2)
-        ptcy_S(1:6)=ptzcy_S(3:8)
-        ptcy_S(7:8)=ptwcy_S(1:2)
-        ptmesg_S = ' MODEL END: MESSAGE FOR ANALYSIS CYCLE'
-        pnerr = cmcwlog('MO',pncy,ptcy_S,ptmesg_S)
+         write(ptzcy_S,'(i8.8)') Out1_dato(1)
+         write(ptwcy_S,'(''02'')')
+         ptwcy_S(3:4)=ptzcy_S(1:2)
+         read(ptwcy_S,'(i4.4)') cy
+         write(ptwcy_S,'(i8.8)') Out1_dato(2)
+         ptcy_S(1:6)=ptzcy_S(3:8)
+         ptcy_S(7:8)=ptwcy_S(1:2)
+         ptmesg_S = ' MODEL END: MESSAGE FOR ANALYSIS CYCLE'
+         err = cmcwlog('MO',cy,ptcy_S,ptmesg_S)
       else
-        ptmesg_S = ' wrong usage of subroutine wlog'
-        pnerr = cmcwlog('BB',pnip2,Out1_etik_s,ptmesg_S)
+         ptmesg_S = ' wrong usage of subroutine wlog'
+         err = cmcwlog('BB',ip2,Out1_etik_s,ptmesg_S)
       endif
-*
- 300  continue
-*
+*     
 *     ---------------------------------------------------------------
 *
       return

@@ -1,10 +1,12 @@
-***s/r v4d_getdx - Read increments from 3D-Var and prepare them for GEM 
+***s/r v4d_getdx - Read increments (or adjoint increments)
+*                  from 3D-Var and prepare them for GEM 
 *
 #include <model_macros_f.h>
 *
       subroutine v4d_getdx(kstatus)
 *
       use v4d_prof, only: Pr_mode_S, Pr_llfrm_L, Pr_dsnooze_8
+      use v4dz,     only: V4dzgauss_ni,V4dzgauss_nj
 *
 #include "impnone.cdk"
 *
@@ -16,14 +18,22 @@
 *revision
 * v3_00 - P. Gauthier        - initial MPI version
 * v3_00 - M. Tanguay         - add v4d_gauss2gem_ad/Simon's exchange
+* v3_01 - Tanguay/Buehner    - introduce gem2gauss for singular vectors
 *
 *object
-*     -----------------------------------------------------------
+*     -------------------------
+*     If V4dg_di_L or V4dg_tl_L
+*     -------------------------
 *     1) Proc0: Read increments from 3D-Var
 *     2) Proc0: Transfert from Gaussian grid to GEM scalar grid
-*     3) All processors: Conversion from 3D-Var units to 
-*        GEM units and Staggering
-*     -----------------------------------------------------------
+*     3) All processors: Conversion from 3D-Var units to GEM units and Staggering 
+*
+*     ------------
+*     If V4dg_ad_L
+*     ------------
+*     1) Proc0: Read adjoint increments from 3D-Var
+*     2) Proc0: Adjoint of [Transfert from GEM scalar grid to Gaussian grid]  
+*     3) All processors: Adjoint of [Conversion from GEM units and Staggering to 3D-Var units] 
 *
 *arguments
 * Name         I/O                 Description
@@ -44,15 +54,15 @@
 *
 *     Local variables
 *     ---------------
-      integer idim(2),istat,ihdlin,icount,nvar,jlon,jlat,jlev,
-     %        ierr,pnlkey1(9),err,pnerr,nigauss,njgauss,status
+      integer idim(2),istat,ihdlin,icount,nvar,jlon,jlat,jlev,i,j,k,
+     %        ierr,pnlkey1(9),err,pnerr,nigauss,njgauss,status,ininj
 *
       real*8,pointer    :: dlbuff_8(:,:),dlbuff2d_8(:)
       real,  allocatable:: zbuff(:,:,:),zbuff2d(:,:)
       real,  allocatable::  gut1(:,:,:),gvt1(:,:,:),gtpt1(:,:,:),
      %                     ghut1(:,:,:),gst1(:,:)
 *
-      character*256 pathdwgf_S
+      character*256 pathdwgf_S,pathdwga_S
 *     
       integer  vmmlod,vmmget,vmmuld,fnom,prof_rdrec,longueur
       external vmmlod,vmmget,vmmuld,fnom,prof_rdrec,longueur
@@ -63,13 +73,13 @@
 *
       logical plpr_L
 *
-      integer i,j,k
 *     ______________________________________________________
 *
-      if ( Tr3d_ntr.gt.1 ) call gefstop('v4d_getdx')
+      if ( Tr3d_ntr.gt.1 ) call gem_stop('v4d_getdx',-1)
+      if ( V4dg_di_L     ) call gem_stop('v4d_getdx',-1)
 *     ______________________________________________________
 *
-      write(Lun_out,1000)
+      write(Lun_out,2000)
 *
 *     Nullify pointers for prof_gvar
 *     ------------------------------
@@ -78,14 +88,6 @@
 *     Flag for diagnostics
 *     --------------------
       plpr_L=.false.
-*
-      if(Ptopo_myproc.eq.0) then
-         if(.not.allocated(gut1 )) allocate(gut1 (G_ni,G_nj,G_nk), STAT=status)
-         if(.not.allocated(gvt1 )) allocate(gvt1 (G_ni,G_nj,G_nk), STAT=status)
-         if(.not.allocated(gtpt1)) allocate(gtpt1(G_ni,G_nj,G_nk), STAT=status)
-         if(.not.allocated(ghut1)) allocate(ghut1(G_ni,G_nj,G_nk), STAT=status)
-         if(.not.allocated(gst1 )) allocate(gst1 (G_ni,G_nj)     , STAT=status)
-      endif
 *
 *     Get fields in memory
 *     --------------------
@@ -117,139 +119,234 @@
 *     
       kstatus = 0
 *
+      if(Ptopo_myproc.eq.0) then
+*
+      if(V4dg_di_L.or.V4dg_tl_L) then
 *     ---------------------------
 *     Read increments from 3D-Var
 *     ---------------------------
-      if(Ptopo_myproc.eq.0) then
 *
-*     1. Open dwgf PROF file
+*     1A.Open dwgf PROF file
 *        -------------------
          write(Lun_out,*) 'Opening file dwgf PROF file'
 *
          pathdwgf_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/dwgf.prof'
          ihdlin = prof_open(pathdwgf_S,'READ',Pr_mode_S,Pr_dsnooze_8)
 *
-*     2. Read Data record (3D-fields)
-*        ----------------------------
          if(ihdlin.le.0) then
-            write(Lun_out,*) 'Problem with dwgf PROF file'
+            write(Lun_out,*) 'Problem opening dwgf PROF file'
             kstatus = -99
-         else
-            write(Lun_out,*) 'Accessing first record with 3D fields...'
-            istat = prof_rdrec(ihdlin)
-            if (istat.ne.0) kstatus = -99 
-         end if
+            goto 1001
+         endif
 *
-         if(kstatus.ne.0) goto 1001
-*     
-*     3. Get first dynamical field (UU)
-*        ------------------------------
-         call v4d_getfld('UU', kstatus)
+      elseif(V4dg_ad_L) then
+*     -----------------------------------
+*     Read adjoint increments from 3D-Var
+*     -----------------------------------
+*
+*     1B.Open dwga PROF file
+*        -------------------
+         write(Lun_out,*) 'Opening file dwga PROF file'
+*
+         pathdwga_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/dwga1.prof'
+         ihdlin = prof_open(pathdwga_S,'READ',Pr_mode_S,Pr_dsnooze_8)
+*
+         if(ihdlin.le.0) then
+            write(Lun_out,*) 'Problem opening dwga PROF file'
+            kstatus = -99
+            goto 1001
+         end if
 *
       end if
 *
- 1001 call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
-*     
+*     2. Get dimensions NI NJ of Gaussian grid 
+*        -------------------------------------
+         write(Lun_out,*) 'Accessing first record with 3D fields...'
+*
+         istat = prof_rdrec(ihdlin)
+*
+         if(istat.ne.0) then
+            write(Lun_out,*) 'Problem accessing first record with 3D fields'
+            kstatus = -99 
+            goto 1001
+         endif
+*
+         write(Lun_out,*) 'Reading dimensions NI NJ of Gaussian grid...'
+*
+         istat = prof_gvar(ihdlin,ininj,PRM_NINJ)
+*
+         if(istat.ne.0) then
+            write(Lun_out,*) 'Problem reading dimensions NI NJ of Gaussian grid'
+            kstatus = -99
+            goto 1001
+         endif
+*
+         call mvbits(ininj,16,16,V4dzgauss_ni,0)
+         call mvbits(ininj, 0,16,V4dzgauss_nj,0)
+*
+         if((V4dzgauss_ni.ne.G_ni.or.
+     %       V4dzgauss_nj.ne.G_nj).and.V4dg_ga_eq_ge_L) then
+             write(Lun_out,*) 'GAUSS=GEM not allowed when dimensions not equal'
+             kstatus = -99
+             goto 1001
+         endif
+*
+      end if
+*
+ 1001 call rpn_comm_bcast(kstatus,     1,"MPI_INTEGER",0,"GRID",ierr)
+*
       if(kstatus.ne.0) return 
 *
-      if(Ptopo_myproc.eq.0) gut1(:,:,:) = zbuff(:,:,:) 
-*     
-*     4. Get all the other 3D dynamical fields
-*        -------------------------------------
+      call rpn_comm_bcast(V4dzgauss_ni,1,"MPI_INTEGER",0,"GRID",ierr)
+      call rpn_comm_bcast(V4dzgauss_nj,1,"MPI_INTEGER",0,"GRID",ierr)
 *
-*        V component of winds
-*        --------------------
-         if(Ptopo_myproc.eq.0) call v4d_getfld('VV',kstatus)
-*     
-         call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
-*     
-         if(kstatus.ne.0) return
+*     Store dimensions of 3D-Var Gaussian grid 
+*     ----------------------------------------
+      nigauss = V4dzgauss_ni 
+      njgauss = V4dzgauss_nj 
 *
-         if(Ptopo_myproc.eq.0) gvt1(:,:,:) = zbuff(:,:,:) 
-*     
-*        Temperature
-*        -----------
-         if(Ptopo_myproc.eq.0) call v4d_getfld('TT',kstatus) 
-*     
-         call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
-*     
-         if(kstatus.ne.0) return
+      if(Ptopo_myproc.eq.0) then
+         if(.not.allocated(gut1 )) allocate(gut1 (nigauss,njgauss,G_nk), STAT=status)
+         if(.not.allocated(gvt1 )) allocate(gvt1 (nigauss,njgauss,G_nk), STAT=status)
+         if(.not.allocated(gtpt1)) allocate(gtpt1(nigauss,njgauss,G_nk), STAT=status)
+         if(.not.allocated(ghut1)) allocate(ghut1(nigauss,njgauss,G_nk), STAT=status)
+         if(.not.allocated(gst1 )) allocate(gst1 (nigauss,njgauss)     , STAT=status)
+      endif
 *
-         if(Ptopo_myproc.eq.0) gtpt1(:,:,:) = zbuff(:,:,:)
-*     
-*        Specific humidity
-*        -----------------
-         if(Ptopo_myproc.eq.0) call v4d_getfld('HU',kstatus) 
-*     
-         call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
-*     
-         if(kstatus.ne.0) return
+      if(Ptopo_myproc.eq.0) then
 *
-         if(Ptopo_myproc.eq.0) ghut1(:,:,:) = zbuff(:,:,:) 
-*
-*     5. Get all 2D dynamical fields
+*     3. Get all 3D dynamical fields
 *        ---------------------------
-*     
-*        Surface pressure
-*        ----------------
-         if(Ptopo_myproc.eq.0) then
 *
-            if(associated(dlbuff_8)) deallocate(dlbuff_8)
-            if(allocated ( zbuff  )) deallocate( zbuff  )
-*
-            write(Lun_out,*) 'Accessing second record with 2D fields...'
-            istat = prof_rdrec(ihdlin)
-            if (istat.ne.0) kstatus = -99 
+*           U component of winds
+*           --------------------
+            call v4d_getfld('UU',kstatus)
 *
             if(kstatus.ne.0) goto 1002
 *
-            call v4d_getfld('PS',kstatus)
+            gut1(:,:,:) = zbuff(:,:,:) 
 *
-         end if
+*           V component of winds
+*           --------------------
+            call v4d_getfld('VV',kstatus)
+*
+            if(kstatus.ne.0) goto 1002
 *     
- 1002    call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+            gvt1(:,:,:) = zbuff(:,:,:) 
 *     
-         if(kstatus.ne.0) return
+*           Temperature
+*           -----------
+            call v4d_getfld('TT',kstatus) 
 *
-         if(Ptopo_myproc.eq.0) gst1(:,:) = zbuff2d(:,:) 
+            if(kstatus.ne.0) goto 1002
+*     
+            gtpt1(:,:,:) = zbuff(:,:,:)
+*     
+*           Specific humidity
+*           -----------------
+            call v4d_getfld('HU',kstatus) 
 *
-*     6. Close dwgf PROF file
-*        --------------------
-         if(Ptopo_myproc.eq.0) then
+            if(kstatus.ne.0) goto 1002
+*     
+            ghut1(:,:,:) = zbuff(:,:,:) 
+*
+*     4. Get all 2D dynamical fields
+*        ---------------------------
+*     
+*           Read second record with 2D fields
+*           --------------------------------- 
+            write(Lun_out,*) 'Accessing second record with 2D fields...'
+*
+            istat = prof_rdrec(ihdlin)
+*
+            if(istat.ne.0) then
+               write(Lun_out,*) 'Problem accessing second record with 2D fields'
+               kstatus = -99 
+               goto 1002
+            endif
+*
+*           Surface pressure
+*           ----------------
+            call v4d_getfld('PS',kstatus) 
+*
+            if(kstatus.ne.0) goto 1002
+*     
+            gst1(:,:) = zbuff2d(:,:) 
+*
+            if(associated(dlbuff_8 )) deallocate(dlbuff_8  )
+            if(allocated ( zbuff   )) deallocate( zbuff    )
 *
             if(associated(dlbuff2d_8))deallocate(dlbuff2d_8)
             if(allocated ( zbuff2d  ))deallocate( zbuff2d  )
 *
-            write(Lun_out,*) 'Closing file dwgf PROF file'
-            istat = prof_close(ihdlin,Pr_llfrm_L)
-            if (istat.ne.0) kstatus = -99 
+      endif
 *
-         end if
+ 1002 call rpn_comm_bcast(kstatus,     1,"MPI_INTEGER",0,"GRID",ierr)
 *
-         call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+      if(kstatus.ne.0) return
 *
-         if(kstatus.ne.0) return 
+      if(Ptopo_myproc.eq.0) then
 *
+      if(V4dg_di_L.or.V4dg_tl_L) then
+*
+*     5A.Close dwgf PROF file
+*        --------------------
+         write(Lun_out,*) 'Closing file dwgf PROF file'
+*
+         istat = prof_close(ihdlin,Pr_llfrm_L)
+*
+         if(istat.ne.0) then
+            write(Lun_out,*) 'Problem closing file dwgf PROF file'
+            kstatus = -99
+            goto 1003
+         endif
+*
+      elseif(V4dg_ad_L) then
+*
+*     5B.Close dwga PROF file
+*        --------------------
+         write(Lun_out,*) 'Closing file dwga PROF file'
+*
+         istat = prof_close(ihdlin,Pr_llfrm_L)
+*
+         if(istat.ne.0) then
+            write(Lun_out,*) 'Problem closing file dwga PROF file'
+            kstatus = -99
+            goto 1003
+         endif
+*
+      end if
+*
+      end if
+*
+ 1003 call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+*
+      if(kstatus.ne.0) return 
+*
+      if(V4dg_di_L.or.V4dg_tl_L) then
 *     -----------------------------------------------
 *     Transfert from Gaussian grid to GEM scalar grid
 *     -----------------------------------------------
-*
-*     ---------------------------------------------------------------------------
-*     CAUTION: We assume Gaussian grid has the same resolution as GEM scalar grid 
-*     ---------------------------------------------------------------------------
-      nigauss = G_ni
-      njgauss = G_nj
       call v4d_gauss2gem( ut1, vt1, tpt1, hut1, st1, LDIST_DIM,
-     %                    gut1,gvt1,gtpt1,ghut1,gst1,nigauss,njgauss,G_nk)
+     %                   gut1,gvt1,gtpt1,ghut1,gst1,nigauss,njgauss,G_nk)
+*
+      elseif(V4dg_ad_L) then
+*     ------------------------------------------------------------
+*     Adjoint of [Transfert from GEM scalar grid to Gaussian grid] 
+*     ------------------------------------------------------------
+      call v4d_gem2gauss_ad( ut1, vt1, tpt1, hut1, st1, LDIST_DIM,
+     %                      gut1,gvt1,gtpt1,ghut1,gst1,nigauss,njgauss,G_nk)
+*
+      endif
 *
       if(plpr_L) then
-         if(Ptopo_myproc.eq.0) write(Lun_out,*) 'AFTER GAUSS2GEM'
-         call glbstat(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         write(Lun_out,*) 'AFTER GAUSS2GEM or AFTER GEM2GAUSS_AD'
+         call glbstat(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,  1,G_nk)
          call glbstat(vt1 ,'VV',LDIST_DIM,G_nk,1,G_ni,1,G_nj-1,1,G_nk)
-         call glbstat(tpt1,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         call glbstat(st1 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,1,   1)
-         call glbstat(hut1,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         if(Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
+         call glbstat(tpt1,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,  1,G_nk)
+         call glbstat(st1 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,  1,   1)
+         call glbstat(hut1,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,  1,G_nk)
+         write(Lun_out,*) '-----------------------'
       endif
 *
       if(Ptopo_myproc.eq.0) then
@@ -260,14 +357,13 @@
          if(allocated (gst1      )) deallocate(gst1    )
       endif
 *
-*     --------------------------------------------------------
-*     Conversion from 3D-Var units to GEM units and Staggering 
-*     --------------------------------------------------------
-      if(V4dg_tl_L) then
+*     Load TRAJECTORY fields needed in VARCONV or VARCONV_AD
+*     ------------------------------------------------------
+      if(V4dg_tl_L.or.V4dg_ad_L) then
 *
          pnlkey1(1)= VMM_KEY(tpt1m)
          pnlkey1(2)= VMM_KEY( st1m)
-         nvar= 2 
+         nvar= 2
          err = vmmlod(pnlkey1,nvar)
 *
          err = VMM_GET_VAR( tpt1m)
@@ -286,7 +382,12 @@
             end do
          endif
 *
-      end if
+      endif
+*
+      if(V4dg_di_L.or.V4dg_tl_L) then
+*     --------------------------------------------------------
+*     Conversion from 3D-Var units to GEM units and Staggering
+*     --------------------------------------------------------
 *
 *     Direct (nonlinear)
 *     ------------------ 
@@ -300,23 +401,32 @@
      $                       tpt1m,hut1m,st1m,LDIST_DIM,l_nk,.TRUE.)
       end if
 *
+      elseif(V4dg_ad_L) then
+*     ---------------------------------------------------------------------
+*     Adjoint of [Conversion from GEM units and Staggering to 3D-Var units] 
+*     ---------------------------------------------------------------------
+*
+         call v4d_varconv_ad(ut1,vt1,tpt1,hut1,st1,
+     $                       tpt1m,hut1m,st1m,LDIST_DIM,l_nk,.FALSE.)
+      end if
+*
       if(plpr_L) then
-         if(Ptopo_myproc.eq.0) write(Lun_out,*) 'AFTER VARCONV'
-         call glbstat(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         write(Lun_out,*) 'AFTER VARCONV or VARCONV_AD'
+         call glbstat(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,  1,G_nk)
          call glbstat(vt1 ,'VV',LDIST_DIM,G_nk,1,G_ni,1,G_nj-1,1,G_nk)
-         call glbstat(tpt1,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         call glbstat(st1 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,1,   1)
-         call glbstat(hut1,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         if(Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
+         call glbstat(tpt1,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,  1,G_nk)
+         call glbstat(st1 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,  1,   1)
+         call glbstat(hut1,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,  1,G_nk)
+         write(Lun_out,*) '-----------------------'
       endif
 *
       pnerr = vmmuld(-1,0)
 *
-      if(Lun_out.gt.0) write(Lun_out,1003) kstatus
+      write(Lun_out,2001) kstatus
 *
- 1000 format(/,'V4D_GETDX: Read Model state sent by 3D-Var',
+ 2000 format(/,'V4D_GETDX: Read Model state sent by 3D-Var',
      +       /,'==========================================')
- 1003 format(/,'V4D_GETDX: Model state received from 3D-Var --- Status = ',I8,
+ 2001 format(/,'V4D_GETDX: Model state received from 3D-Var --- Status = ',I8,
      +       /,'======================================================')
 *
       return
@@ -336,6 +446,7 @@
 *
 *revision
 * v3_00 - P. Gauthier        - initial MPI version
+* v3_01 - M. Tanguay         - introduce gem2gauss for singular vectors
 *
 *object
 *
@@ -369,25 +480,25 @@
       select case(cdvar)
       case('UU','VV','TT','HU')
          idim = ubound(dlbuff_8)
-         write(Lun_out,*)' - Dimension of ',cdvar,' field... ',idim
+         write(Lun_out,*)' - Dimension of ',cdvar,' field 3D ',idim
          if(istat.ne.0) then
-            write(Lun_out,*)'Problem in getting ',cdvar,' field...'
+            write(Lun_out,*)'Problem in getting ',cdvar,' field 3D'
             kstatus = -99
          else
-            if(idim(1).ne.G_ni*G_nj.or.idim(2).ne.G_nk) then
+            if(idim(1).ne.nigauss*njgauss.or.idim(2).ne.G_nk) then
                kstatus = -99
             else
 *     
 *              Transfer real*8 to real
 *              -----------------------
-               if(.not.allocated(zbuff))allocate(zbuff(G_ni,G_nj,G_nk))
+               if(.not.allocated(zbuff))allocate(zbuff(nigauss,njgauss,G_nk))
                zbuff(:,:,:) = 0.
                do jlev = 1, G_nk
                   icount = 0
-                  do jlat = 1,G_nj
-                     do jlon = 1,G_ni
+                  do jlat = 1,njgauss
+                     do jlon = 1,nigauss
                         icount = icount+1
-                        zbuff(jlon,G_nj -jlat+1,jlev) = dlbuff_8(icount,jlev) 
+                        zbuff(jlon,njgauss -jlat+1,jlev) = dlbuff_8(icount,jlev) 
                      end do
                   end do
                end do
@@ -397,23 +508,28 @@
 *     Change accuracy and reverse latitude if 2D field   
 *     ------------------------------------------------
       case('PS')
+         idim(1) = size ( dlbuff2d_8, 1 ) 
+         write(Lun_out,*)' - Dimension of ',cdvar,' field 2D ',idim(1)
          if (istat.ne.0) then
-            write(Lun_out,*)'Problem in getting ',cdvar
+            write(Lun_out,*)'Problem in getting ',cdvar,' field 2D'
             kstatus = -99
          else
-            write(Lun_out,*)' - Dimension of ',cdvar,' field... ',ubound(dlbuff2d_8)
+            if(idim(1).ne.nigauss*njgauss) then
+               kstatus = -99
+            else
 *
 *              Transfer real*8 to real
 *              -----------------------
-               if(.not.allocated(zbuff2d)) allocate(zbuff2d(G_ni,G_nj))
+               if(.not.allocated(zbuff2d)) allocate(zbuff2d(nigauss,njgauss))
                zbuff2d(:,:) = 0.
                icount = 0
-                  do jlat = 1,G_nj
-                     do jlon = 1,G_ni
+                  do jlat = 1,njgauss
+                     do jlon = 1,nigauss
                         icount = icount+1
-                        zbuff2d(jlon,G_nj -jlat+1) = dlbuff2d_8(icount) 
+                        zbuff2d(jlon,njgauss -jlat+1) = dlbuff2d_8(icount) 
                      end do
                   end do
+            end if
          end if
       end select
 *

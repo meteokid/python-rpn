@@ -15,6 +15,7 @@
 * v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
 * v3_00 - Gauthier P.       - introduce subr. v4d_4dvar 
 * v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L 
+* v3_01 - Tanguay M.        - add V4dg_sgvc_L 
 *
 *object
 *	
@@ -81,13 +82,13 @@
 *
               call v4d_gem   ! Sensitivity analysis or Twin experiment 
 *
-           elseif(V4dg_4dvar_L) then
+           elseif(V4dg_4dvar_L.or.V4dg_sgvc_L) then
 *
-              call v4d_4dvar ! 4D-Var + exchange with 3D-Var
+              call v4d_4dvar ! 4D-Var + exchange with 3D-Var OR Singular vectors 
 *
            else 
 *
-              if(Lun_out.gt.0)  write(Lun_out,*)'One of SENSIB_L, TWIN_L or 4DVAR_L should be TRUE'
+              if(Lun_out.gt.0)  write(Lun_out,*)'One of SENSIB_L,TWIN_L,4DVAR_L or SGVC_L should be TRUE'
               call gem_stop('GEMDM',-1)
 *
            endif

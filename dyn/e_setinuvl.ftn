@@ -1,6 +1,8 @@
 ***s/r e_setinuvl - setup coefficients for cubic lagrange interpolation of 
 *                 wind-like quantities from one grid to another
 *
+#include <model_macros_f.h>
+*
       subroutine e_setinuvl
 #include "impnone.cdk"
 *
@@ -24,10 +26,8 @@
 *       none
 *
 *implicits
-#include <model_macros_f.h>
 #include "dcst.cdk"
-#include "e_files.cdk"
-#include "e_locdim.cdk"
+#include "e_grids.cdk"
 #include "e_geomg.cdk"
 #include "e_inuvl.cdk"
 *
@@ -48,7 +48,7 @@
 *
 *     ---------------------------------------------------------------
 *
-      write(stdout, 1001 )
+      write(6, 1001 )
 *
 *     prepares interpolation weights for x -> xu
 *

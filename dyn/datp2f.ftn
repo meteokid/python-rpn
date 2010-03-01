@@ -1,0 +1,34 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***s/r datp2f
+      subroutine datp2f (fstdate,mc2date)
+#include "impnone.cdk"
+*
+      integer fstdate
+      character* (*) mc2date
+**    
+      integer yy,mo,dd,hh,mm,ss,dat2,dat3,newdate,err
+      character*4 cyy
+      character*2 cmo,cdd,chh,cmm,css
+*-------------------------------------------------------------------
+      cyy=mc2date(1:4)
+      cmo=mc2date(5:6)
+      cdd=mc2date(7:8)
+      chh=mc2date(10:11)
+      cmm=mc2date(12:13)
+      css=mc2date(14:15)
+*
+      read(cyy,'(I4)') yy
+      read(cmo,'(I2)') mo
+      read(cdd,'(I2)') dd
+      read(chh,'(I2)') hh
+      read(cmm,'(I2)') mm
+      read(css,'(I2)') ss
+*    
+      dat2= yy*10000 + mo*100 + dd
+      dat3= hh*1000000 + mm*10000 + ss*100
+      err = newdate(fstdate,dat2,dat3,3)
+*-------------------------------------------------------------------
+      return
+      end
+
+

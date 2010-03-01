@@ -1,0 +1,150 @@
+***s/r opinv7 - inverse of quasi-tridiagonal general operator
+*               in Z direction only (GLB/LAM version)
+*
+      subroutine opinv7 ( F_r,    F_ideb,F_jdeb,  F_ifin, F_jfin,F_nk,
+     %                    F_axis, F_a_8,  F_b_8,  F_c_8,
+     %                    F_ai_8, F_bi_8, F_ci_8, F_di_8,
+     %                    F_prep_L,  F_case, NIS, NJS,  NKS, SKIP )
+*
+#include "impnone.cdk"
+*
+      integer F_ideb, F_jdeb,F_ifin,F_jfin,F_nk, NIS, NJS, NKS, SKIP
+      real    F_r(SKIP,NIS,NJS,NKS)
+      real*8  F_a_8(*), F_b_8(*), F_c_8(*) 
+      real*8  F_ai_8(*), F_bi_8(*), F_ci_8(*), F_di_8(*)
+      logical F_prep_L
+      character*1 F_case, F_axis
+*
+*author
+*   alain patoine - after opinvss (remove possibility of having
+*                   distinct input and output)
+*
+*revision
+* v3_01 - Lee V.            - initial MPI version (from opinv6 v2_00)
+*
+*object
+*       see above ID
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_r          O    - result in an array
+* F_ideb       I    - starting index on I
+* F_ifin       I    - ending   index on I
+* F_jdeb       I    - starting index on J
+* F_jfin       I    - ending   index on J
+* F_nk         I    - number of levels in z-direction
+* F_axis       I    - along the z-axis only
+* F_a_8        I    - lower  diagonal of inverse operator
+* F_b_8        I    - middle diagonal of inverse operator
+* F_c_8        I    - upper  diagonal of inverse operator
+* F_ai_8       I/O  - auxiliary vector for inverse
+* F_bi_8       I/O  - auxiliary vector for inverse
+* F_ci_8       I/O  - auxiliary vector for inverse
+* F_di_8       I/O  - auxiliary vector for inverse
+* F_prep_L     I    - .true. to prepare F_ai_8, ..., F_di_8
+* F_case       I    - 'N'eumann, 'D'irichlet or 'P'eriodic boundary condition
+* NIS          I    - field dimension in x-direction
+* NJS          I    - field dimension in y-direction
+* NKS          I    - field dimension in z-direction
+* SKIP         I    - distance between elements of F_r
+*
+**
+*
+      logical plbnd, plper, plalonz
+      integer i, j, k, pnm
+*
+      real*8 zero, one
+      parameter( zero = 0.0 )
+      parameter( one  = 1.0 )
+*
+*
+*******************************************************************************
+*                                                                             *
+*   ONLY for solving along z direction                                        *
+*                                                                             *
+*******************************************************************************
+*                                                                             *
+      plalonz = F_axis.eq.'Z'
+      if ( .not.plalonz ) then
+           print *,'ERROR: OPINV7 is only correct for Z axis'
+           call stopmpi(-1)
+      endif
+      pnm = F_nk
+      if ( F_case.eq.'D' ) then
+         plbnd = .true.
+         plper = .false.
+      elseif ( F_case.eq.'N' ) then
+         plbnd = .false.
+         plper = .false.
+      elseif ( F_case.eq.'P' ) then
+         plbnd = .false.
+         plper = .true.
+      endif
+*
+*
+      if ( F_prep_L ) then
+         do i=1,pnm
+            F_ai_8(i) = F_a_8(i)
+            F_bi_8(i) = F_b_8(i)
+            F_ci_8(i) = F_c_8(i)
+         enddo
+         if ( plbnd ) then
+            F_bi_8(1)   = one
+            F_ci_8(1)   = zero
+            F_ai_8(pnm) = zero
+            F_bi_8(pnm) = one
+         endif
+         call set_trig21
+     %        ( F_ai_8, F_bi_8, F_ci_8, F_di_8, F_ai_8, F_bi_8, F_ci_8,
+     %          1,1, pnm, 1, plper )
+      endif
+*
+      if ( plper ) pnm = pnm - 1
+*
+*
+         do k=1,F_nk
+            do i=F_ifin+1,NIS
+               do j=1,NJS
+                  F_r(1,i,j,k) = zero
+               enddo
+            enddo
+            do i=1,F_ideb-1
+               do j=1,NJS
+                  F_r(1,i,j,k) = zero
+               enddo
+            enddo
+         enddo
+*
+         if ( plbnd ) then
+            do j=1,NJS
+               do i=1,NIS
+                  F_r(1,i,j,1)   = zero
+                  F_r(1,i,j,F_nk) = zero
+               enddo
+            enddo
+         endif
+*
+         call msoltri6 
+     %               ( F_r(1,1,1,1), F_r(1,1,1,1), F_bi_8, F_ci_8, F_ai_8,
+     %                 NIS*NJS*SKIP, SKIP, pnm, NIS*NJS)
+*
+         if ( plper ) then
+            do j=1,NJS
+               do i=1,NIS
+                  F_r(1,i,j,F_nk) =   F_bi_8(F_nk) * F_r(1,i,j,F_nk)
+     %                             + F_ci_8(F_nk) * F_r(1,i,j,1)
+     %                             + F_ai_8(1)   * F_r(1,i,j,pnm)
+               enddo
+            enddo
+            do k=1,pnm
+               do j=1,NJS
+                  do i=1,NIS
+                     F_r(1,i,j,k) =   F_r(1,i,j,k)
+     %                              + F_di_8(k) * F_r(1,i,j,F_nk)
+                  enddo
+               enddo
+            enddo
+         endif
+      return
+      end

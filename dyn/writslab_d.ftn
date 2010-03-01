@@ -47,7 +47,6 @@
 #include "lun.cdk"
 #include "dimout.cdk"
 #include "grid.cdk"
-#include "geomn.cdk"
 #include "slab.cdk"
 *
       integer i,j,k,ierr,np,gridset

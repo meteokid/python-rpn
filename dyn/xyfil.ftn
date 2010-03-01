@@ -65,9 +65,9 @@
       i0 = 1 + pil_w
       if ((l_west).and.(G_lam)) i0 = i0+1
       in = l_niu - pil_e
-      j0 = 1 + pil_n
+      j0 = 1 + pil_s
       if (l_south) j0 = j0+1
-      jn = l_njv - pil_s
+      jn = l_njv - pil_n
 *
       do k=1,Nk
          do j= 1+pil_s, l_nj-pil_n 

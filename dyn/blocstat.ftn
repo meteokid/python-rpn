@@ -22,7 +22,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "step.cdk"
 #include "vt1.cdk"
 #include "lctl.cdk"
@@ -81,22 +80,6 @@
 *    Comment the above glbstats and uncomment the following lines for
 *    GLBSTAT for LAM versus GLB acid test
 *
-cvl   if (G_lam) then
-cvl       i0=lam_i0
-cvl       in=lam_in
-cvl       j0=lam_j0
-cvl       jn=lam_jn
-cvl   else
-cvl       i0 = glb_i0
-cvl       in=  glb_in
-cvl       j0 = glb_j0
-cvl       jn = glb_jn
-cvl   endif
-cvl   call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-cvl   call glbstat (vt1  ,'VV',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-cvl   call glbstat (tt1  ,'TT',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-cvl   call glbstat (fit1 ,'GZ',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-cvl   call glbstat (psdt1,'WW',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
 *
       err = vmmuld(key,5)
 *

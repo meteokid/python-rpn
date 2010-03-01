@@ -1,15 +1,16 @@
 ***s/r glb_bound - Updates lateral boundaries and performs
-*                  horizontal blending
+*                  horizontal blending (LAM configuration)
 *
 #include <model_macros_f.h>
 *
       subroutine glb_bound ()
       implicit none
 *author 
-*     Desgagne & Lee      - spring 2002
+*     Desgagne & Lee      - spring 2002 (after MC2 v_4.9.3)
 *
 *revision
-* v3_00 - Desgagne & lee       - initial version
+* v3_00 - Desgagne & lee     - initial version
+* v3_01 - Desgagne           - add Robert & Yakimiw horizontal blending
 *
 *object
 *
@@ -23,90 +24,79 @@
 #include "tr3d.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
+#include "hblen.cdk"
 *
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
+*
+      integer err,key(26),i,j,k,nvar
+      integer key0(Tr3d_ntr),key0_,key1(Tr3d_ntr),key1_, n
       real tr,tr0
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0,tr0(LDIST_SHAPE,*))
-      integer pnerr, pnlkey1(26),i,j,k,nvar
-      integer hblen_momentx,hblen_momenty,hblen_tx,hblen_ty,
-     $        hblen_massx,hblen_massy,hblen_trx,hblen_try
-      integer key0(Tr3d_ntr),key0_,key1(Tr3d_ntr),key1_, n
 *----------------------------------------------------------------------
-*
-      Hblen_momentx = 2
-      Hblen_momenty = 2
-      Hblen_tx = 2
-      Hblen_ty = 2
-      Hblen_massx = 2
-      Hblen_massy = 2
-      Hblen_trx = 2
-      Hblen_try = 2
 *
       if (north+south+west+east.lt.1) return
 *
-      if (Lun_out.gt.0) write (Lun_out,1000)
-*      
-      pnlkey1(1 )=VMM_KEY(nest_u)
-      pnlkey1(2 )=VMM_KEY(nest_v)
-      pnlkey1(3 )=VMM_KEY(nest_t)
-      pnlkey1(4 )=VMM_KEY(nest_psd)
-      pnlkey1(5 )=VMM_KEY(nest_pip)
-      pnlkey1(6 )=VMM_KEY(nest_fip)
-      pnlkey1(7 )=VMM_KEY(nest_td)
-      pnlkey1(8 )=VMM_KEY(nest_fi)
-      pnlkey1(9 )=VMM_KEY(nest_q)
-      pnlkey1(10)=VMM_KEY(nest_s)
-      pnlkey1(11)=VMM_KEY(nest_tp)
-      pnlkey1(12)=VMM_KEY(ut0)
-      pnlkey1(13)=VMM_KEY(vt0)
-      pnlkey1(14)=VMM_KEY(tt0)
-      pnlkey1(15)=VMM_KEY(psdt0)
-      pnlkey1(16)=VMM_KEY(pipt0)
-      pnlkey1(17)=VMM_KEY(fipt0)
-      pnlkey1(18)=VMM_KEY(tdt0)
-      pnlkey1(19)=VMM_KEY(fit0)
-      pnlkey1(20)=VMM_KEY(qt0)
-      pnlkey1(21)=VMM_KEY(st0)
-      pnlkey1(22)=VMM_KEY(tpt0)
+      key(1 )=VMM_KEY(nest_u)
+      key(2 )=VMM_KEY(nest_v)
+      key(3 )=VMM_KEY(nest_t)
+      key(4 )=VMM_KEY(nest_psd)
+      key(5 )=VMM_KEY(nest_pip)
+      key(6 )=VMM_KEY(nest_fip)
+      key(7 )=VMM_KEY(nest_td)
+      key(8 )=VMM_KEY(nest_fi)
+      key(9 )=VMM_KEY(nest_q)
+      key(10)=VMM_KEY(nest_s)
+      key(11)=VMM_KEY(nest_tp)
+      key(12)=VMM_KEY(ut0)
+      key(13)=VMM_KEY(vt0)
+      key(14)=VMM_KEY(tt0)
+      key(15)=VMM_KEY(psdt0)
+      key(16)=VMM_KEY(pipt0)
+      key(17)=VMM_KEY(fipt0)
+      key(18)=VMM_KEY(tdt0)
+      key(19)=VMM_KEY(fit0)
+      key(20)=VMM_KEY(qt0)
+      key(21)=VMM_KEY(st0)
+      key(22)=VMM_KEY(tpt0)
       nvar = 22
 *
       if (.not.Schm_hydro_L) then
-         pnlkey1(23)=VMM_KEY(nest_w)
-         pnlkey1(24)=VMM_KEY(nest_mu)
-         pnlkey1(25)=VMM_KEY(wt0)
-         pnlkey1(26)=VMM_KEY(mut0)
+         key(23)=VMM_KEY(nest_w)
+         key(24)=VMM_KEY(nest_mu)
+         key(25)=VMM_KEY(wt0)
+         key(26)=VMM_KEY(mut0)
          nvar = 26
       endif
 *
-      pnerr = vmmlod(pnlkey1,nvar)
-      pnerr = VMM_GET_VAR(nest_u)
-      pnerr = VMM_GET_VAR(nest_v)
-      pnerr = VMM_GET_VAR(nest_t)
-      pnerr = VMM_GET_VAR(nest_psd)
-      pnerr = VMM_GET_VAR(nest_pip)
-      pnerr = VMM_GET_VAR(nest_fip)
-      pnerr = VMM_GET_VAR(nest_td)
-      pnerr = VMM_GET_VAR(nest_fi)
-      pnerr = VMM_GET_VAR(nest_q)
-      pnerr = VMM_GET_VAR(nest_s)
-      pnerr = VMM_GET_VAR(nest_tp)
-      pnerr = VMM_GET_VAR(ut0)
-      pnerr = VMM_GET_VAR(vt0)
-      pnerr = VMM_GET_VAR(tt0)
-      pnerr = VMM_GET_VAR(psdt0)
-      pnerr = VMM_GET_VAR(pipt0)
-      pnerr = VMM_GET_VAR(fipt0)
-      pnerr = VMM_GET_VAR(tdt0)
-      pnerr = VMM_GET_VAR(fit0)
-      pnerr = VMM_GET_VAR(qt0)
-      pnerr = VMM_GET_VAR(st0)
-      pnerr = VMM_GET_VAR(tpt0)
+      err = vmmlod(key,nvar)
+      err = VMM_GET_VAR(nest_u)
+      err = VMM_GET_VAR(nest_v)
+      err = VMM_GET_VAR(nest_t)
+      err = VMM_GET_VAR(nest_psd)
+      err = VMM_GET_VAR(nest_pip)
+      err = VMM_GET_VAR(nest_fip)
+      err = VMM_GET_VAR(nest_td)
+      err = VMM_GET_VAR(nest_fi)
+      err = VMM_GET_VAR(nest_q)
+      err = VMM_GET_VAR(nest_s)
+      err = VMM_GET_VAR(nest_tp)
+      err = VMM_GET_VAR(ut0)
+      err = VMM_GET_VAR(vt0)
+      err = VMM_GET_VAR(tt0)
+      err = VMM_GET_VAR(psdt0)
+      err = VMM_GET_VAR(pipt0)
+      err = VMM_GET_VAR(fipt0)
+      err = VMM_GET_VAR(tdt0)
+      err = VMM_GET_VAR(fit0)
+      err = VMM_GET_VAR(qt0)
+      err = VMM_GET_VAR(st0)
+      err = VMM_GET_VAR(tpt0)
       if (.not.Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(nest_w)
-         pnerr = VMM_GET_VAR(nest_mu)
-         pnerr = VMM_GET_VAR(wt0)
-         pnerr = VMM_GET_VAR(mut0)
+         err = VMM_GET_VAR(nest_w)
+         err = VMM_GET_VAR(nest_mu)
+         err = VMM_GET_VAR(wt0)
+         err = VMM_GET_VAR(mut0)
       endif
 *
       if (l_north) then
@@ -285,13 +275,14 @@
      $                        Hblen_momentx,Hblen_momenty)
          endif
       endif
+*
       if ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) then
          call nesajr (tt0 ,nest_t ,LDIST_DIM,G_nk  ,0,0,
      $                               Hblen_tx,Hblen_ty)
          call nesajr (tpt0,nest_tp,LDIST_DIM,G_nk  ,0,0,
      $                               Hblen_tx,Hblen_ty)
       endif
-      
+*      
       if ((Hblen_massx.gt.0).or.(Hblen_massy.gt.0)) then
          call nesajr (fit0 ,nest_fi ,LDIST_DIM,G_nk  ,0,0,
      $                           Hblen_massx,Hblen_massy)
@@ -305,7 +296,7 @@
      $                           Hblen_massx,Hblen_massy)
       endif
 *
-      pnerr = vmmuld(pnlkey1,nvar)
+      err = vmmuld(key,nvar)
 *
       key1_ = VMM_KEY (nest_tr)
       key0_ = VMM_KEY (trt0)
@@ -314,11 +305,11 @@
          key0(n) = key0_ + n
       end do
       if (Tr3d_ntr.gt.0) then
-         pnerr = vmmlod(key1,Tr3d_ntr)
-         pnerr = vmmlod(key0,Tr3d_ntr)
+         err = vmmlod(key1,Tr3d_ntr)
+         err = vmmlod(key0,Tr3d_ntr)
          do n=1,Tr3d_ntr
-            pnerr = vmmget(key1(n),patr,tr)
-            pnerr = vmmget(key0(n),patr0,tr0)
+            err = vmmget(key1(n),patr,tr)
+            err = vmmget(key0(n),patr0,tr0)
             if (l_north) then
                 do k=1,G_nk
                    do j=l_nj-pil_n+1,l_nj
@@ -360,11 +351,9 @@
             call nesajr (tr0 ,tr ,LDIST_DIM,G_nk  ,0,0,
      $                            Hblen_trx,Hblen_try)
          endif
-         pnerr = vmmuld(key1,Tr3d_ntr)
-         pnerr = vmmuld(key0,Tr3d_ntr)
+         err = vmmuld(key1,Tr3d_ntr)
+         err = vmmuld(key0,Tr3d_ntr)
       endif
-*
- 1000 format(/' UPDATING LATERAL BOUNDARIES + HOR BLENDING'/)
 *
 *----------------------------------------------------------------------
       return

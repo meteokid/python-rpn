@@ -1,8 +1,8 @@
-***s/r predat2 - Performs preprocessing of the data: part2
+***s/r v4d_predat2 - Performs preprocessing of the data: part2
 *
 #include <model_macros_f.h>
 *
-      subroutine predat2
+      subroutine v4d_predat2
 *
 #include "impnone.cdk"
 *
@@ -22,7 +22,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "dcst.cdk"
 #include "init.cdk"
 #include "lun.cdk"
@@ -35,7 +34,7 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer pnerr, pnlkey1(8), pnlod, i0,in,j0,jn
+      integer pnerr, pnlkey1(8), pnlod
       real w1(LDIST_SHAPE),w2(LDIST_SHAPE),
      $     t1(LDIST_SHAPE,G_nk),t2(LDIST_SHAPE,G_nk),
      $     t3(LDIST_SHAPE,G_nk),t4(LDIST_SHAPE,G_nk)
@@ -88,24 +87,6 @@
      $     call initw2 (wt1, ut1, vt1, psdt1, fit1, tt1, st1,
      $                            t1,t2,t3,t4,w1, LDIST_DIM, l_nk ) 
 *
-      if (G_lam) then
-          i0=lam_i0
-          in=lam_in
-          j0=lam_j0
-          jn=lam_jn
-      else
-          i0 = glb_i0
-          in=  glb_in
-          j0 = glb_j0
-          jn = glb_jn
-      endif
-      if (Lctl_debug_L) then
-      call glbstat (tdt1,'Td',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (psdt1,'Psd',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (st1,'St1',LDIST_DIM,1,i0-7,in+7,j0-7,jn+7,1,1)
-      if (.not. Schm_hydro_L)
-     %call glbstat (wt1,'Wt1',LDIST_DIM,G_nk,i0-7,in+7,j0-7,jn+7,1,G_nk)
-      endif
       pnerr = vmmuld(-1,0)
 *
 1000  format(/,'PREPROCESSING DATA: PART 2 (S/R PREDAT2)',

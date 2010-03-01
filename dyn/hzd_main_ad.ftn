@@ -16,6 +16,7 @@
 * v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 *                           - change name 
+* v3_01 - Tanguay M.        - ADJ of Eigv_parity_L not done yet
 *
 *object
 *     see id section
@@ -34,6 +35,7 @@
 #include "geomg.cdk"
 #include "fft.cdk"
 #include "hzd.cdk"
+#include "eigv.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "p_geof.cdk"
@@ -56,6 +58,7 @@
       endif
 *     ______________________________________________________
 *
+      if(      Eigv_parity_L ) call gefstop('hzd_main_ad')
       if( .not. Schm_hydro_L ) call gefstop('hzd_main_ad')
       if(       Schm_psadj_L ) call gefstop('hzd_main_ad')
       if( .not. Schm_cptop_L ) call gefstop('hzd_main_ad')

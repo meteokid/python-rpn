@@ -15,7 +15,9 @@
      $     E_geol_hss    , E_geol_hsn    , E_geol_hse    , E_geol_hsw  ,
      $     E_geol_hsea   , E_geol_poin   , E_geol_modex_L,
      $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L,
-     $     Ptopo_npex, Ptopo_npey, E_tr3d_list_S, E_trvs_list_S
+     $     Ptopo_npex, Ptopo_npey, E_tr3d_list_S, E_trvs_list_S,
+     $     Pil_runstrt_S, Pil_nesdt,Pil_datacvrg, Pil_ctebcs_L,
+     $     Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx
 *
       namelist /gement_p/
      $     Out1_etik_s,
@@ -27,5 +29,7 @@
      $     E_geol_hss    , E_geol_hsn    , E_geol_hse    , E_geol_hsw  ,
      $     E_geol_hsea   , E_geol_poin   , E_geol_modex_L,
      $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L,
-     $     Ptopo_npex, Ptopo_npey
+     $     Ptopo_npex, Ptopo_npey,
+     $     Pil_runstrt_S, Pil_nesdt,Pil_datacvrg, Pil_ctebcs_L,
+     $     Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx
 *

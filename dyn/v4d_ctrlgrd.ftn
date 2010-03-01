@@ -12,6 +12,7 @@
 *
 *revision
 * v3_00 - N.Ek / M.Tanguay  - initial MPI version
+* v3_01 - M.Tanguay         - add V4dg_sgvc_L 
 *
 *object
 *  see id section
@@ -26,7 +27,7 @@
 *
       logical time0_L, time_L
 *
-      if(V4dg_conf/100.ne.1) return
+      if(V4dg_conf/100.ne.1.or.V4dg_sgvc_L) return
 *
 *     ----------------------------------------
 *     Sensitivity analysis or Twin experiments

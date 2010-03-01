@@ -1,5 +1,6 @@
 ***s/r e_arak - convert components to wind images and interpolate to U and V grids
 *
+#include <model_macros_f.h>
       subroutine e_arak ( fru, frv, frvw, fruvw, fni, fnjfi, fnju, fnjv,
      %                  fnk)
 #include "impnone.cdk"
@@ -39,12 +40,10 @@
 * fnk	- number of levels to process
 *
 *implicits
-#include <model_macros_f.h>
-#include "e_locdim.cdk"
+#include "e_grids.cdk"
 #include "e_schm.cdk"
 #include "dcst.cdk"
 #include "e_geomg.cdk"
-#include "e_files.cdk"
 #include "e_intuv.cdk"
 #include "e_inuvl.cdk"
 *
@@ -54,7 +53,7 @@
       real*8  pdsc1
 *     ----------------------------------------------------------------
 *
-      write(stdout,1001)
+      write(6,1001)
 *
 *
 *C      1-      allocate operators for interpolation

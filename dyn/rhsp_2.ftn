@@ -37,7 +37,8 @@
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate 
 *                             (Change to Rcn)
 * v2_31 - Desgagne M.       - remove treatment of hut1 and qct1
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Qaddouri & Lee    - For LAM, Change Ru, Rv values on the boundaries 
+* v3_00                       of the LAM grid with values from Nesting data
 *
 *object
 *     see rhs

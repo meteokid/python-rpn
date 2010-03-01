@@ -34,13 +34,14 @@
 #include "glb_ld.cdk"
 #include "tr2d.cdk"
 #include "pres.cdk"
+#include "pilot.cdk"
 
 *
 *modules
       integer vmmckmx,fnom,fclos,close_db_file
       external vmmckmx,fnom,fclos,close_db_file
 *
-      integer i,ier,adr,dim,n
+      integer i,ier,adr,dim,n,current_nest
 *
 *     ---------------------------------------------------------------
 *
@@ -73,6 +74,9 @@
       call wawrit (Lun_rstrt, pres_surf ,adr, 1)
       adr = adr + 1
       call wawrit (Lun_rstrt, pres_top  ,adr, 1)
+      call datp2f (current_nest,Pil_current_S )
+      adr = adr + 1
+      call wawrit (Lun_rstrt, current_nest  ,adr, 1)
 *
       if ((Tr2d_incore_L).and.(Tr2d_ntr.gt.0)) then
          adr = adr + 1

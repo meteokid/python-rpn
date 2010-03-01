@@ -20,6 +20,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_01 - Tanguay M.        - correction minmax_m = +-1
 *
 *language
 *     fortran 77
@@ -104,29 +105,25 @@
 *     minmax_m = max(-1.,min(1.,przcto_m))
 *
       minmax_m = przcto_m
-      if (przcto_m.gt.1.) then
-              minmax_m = 1.
-      elseif (przcto_m.lt.-1.) then
-              minmax_m =-1.
-      endif
 *
 *     END REBUILD TRAJECTORY
 *     ----------------------
 *
 *     ADJ
 *     ---
-*
-C     minmax   = F_yto(n)/sqrt( 1.0-minmax_m**2 ) + minmax
-      minmax   = F_yto(n)/sqrt( 1.0-minmax_m**2 )
-      F_yto(n) = ZERO_8
-*
-      if (przcto_m.gt.1.) then
-              minmax = 0.
-      elseif (przcto_m.lt.-1.) then
-              minmax = 0.
+      if (przcto_m.ge.1.) then
+              F_yto(n) = 0.
+              minmax   = 0.
+      elseif (przcto_m.le.-1.) then
+              F_yto(n) = 0.
+              minmax   = 0.
+      else
+C             minmax   = F_yto(n)/sqrt( 1.0-minmax_m**2 ) + minmax
+              minmax   = F_yto(n)/sqrt( 1.0-minmax_m**2 )
+              F_yto(n) = ZERO_8
       endif
       F_zcto(n) = minmax + F_zcto(n)
-C     minmax      = ZERO_8
+C     minmax    = ZERO_8
 *
       F_ycto(n) = (  F_xto(n)*prxcto_m  )
      %              /(prxcto_m*prxcto_m + prycto_m*prycto_m)

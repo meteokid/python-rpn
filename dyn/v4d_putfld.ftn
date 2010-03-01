@@ -1,0 +1,80 @@
+***s/r v4d_putfld - Put model profiles on Pr_ihdlout  
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_putfld (cdvar,kstatus,gomvar_8,kdim,kobs,indexvar)
+*
+      use v4d_prof
+*
+#include "impnone.cdk"
+*
+      character*2,INTENT(IN)   :: cdvar
+      integer,    INTENT(INOUT):: kstatus
+      integer,    INTENT(IN)   :: kdim,kobs,indexvar
+      real*8, pointer, dimension(:,:) :: gomvar_8
+*
+*author
+*     P. Gauthier
+*
+*revision
+* v3_00 - P. Gauthier        - initial MPI version
+* v3_00   M. Tanguay         - adapt to Simon's exchange
+* v3_xx - M. Tanguay         - correction for empty processors 
+*
+*object
+*
+*arguments
+* Name         I/O                 Description
+*----------------------------------------------------------------
+* cdvar        I                   Type of profiles 
+* kstatus      IO                  Status of the job
+* gomvar_8     I                   Model profiles     
+* kdim         I                   Vertical dimension  
+* kobs         I                   Number of observed profiles 
+* indexvar     I                   Index of variable 
+*----------------------------------------------------------------
+*
+#include <prof_f.h>
+#include "lctl.cdk"
+#include "v4dg.cdk"
+#include "ptopo.cdk"
+*
+      integer  prof_wrrec
+      external prof_wrrec
+      integer icma, indx, indy, ntime, istat
+*
+*     Prepare number of processors in X and Y to be send to 3D-Var
+*     ------------------------------------------------------------
+      indx = Ptopo_npex-1
+      indy = Ptopo_npey-1
+      call mvbits(indx,0,16,indy,16)
+*
+*     Define observation time as timestep scaled by V4dg_stepob
+*     ---------------------------------------------------------
+      ntime = Lctl_step/V4dg_stepob
+*
+*     Store simulation no. in each PROF record
+*     ----------------------------------------
+      istat = prof_pvar (Pr_ihdlout,  Pr_nsim4d, PRM_EVNT)
+*
+*     Store number of processors in X and Y in each PROF record
+*     ---------------------------------------------------------
+      istat = prof_pvar (Pr_ihdlout, indy, PRM_PEXY ) + istat
+*
+*     Store profiles of the variable 
+*     ------------------------------
+      icma = 0
+      icma = ibset ( icma, indexvar )
+      istat = prof_pvar (Pr_ihdlout, icma, PRM_MVAR ) + istat
+*
+      if(kobs.ne.0) then
+      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,ntime) % obstag, V2D_OTAG ) + istat
+      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,ntime) % mdltag, V2D_MTAG ) + istat
+      istat = prof_pvar (Pr_ihdlout, gomvar_8, indexvar ) + istat
+      endif
+*
+      istat = prof_wrrec(Pr_ihdlout) + istat
+*
+      kstatus = kstatus + istat
+*
+      end 

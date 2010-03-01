@@ -13,6 +13,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - v4d_uv2img_ad done in varconv_ad if V4dg_4dvar_L 
 * v3_00 - Laroche S.        - adapt for simplified physics
+* v3_01 - Tanguay M.        - add V4dg_sgvc_L 
 *
 *object
 *     see id section
@@ -40,7 +41,7 @@
 *     ---
          if(.not.G_lam) call predat2_ad()
 *
-         if(.not.V4dg_4dvar_L) call v4d_uv2img_ad 
+         if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_ad 
 *
 *     ADJ
 *     ---

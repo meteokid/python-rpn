@@ -2,10 +2,8 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine e_pretopo (xfi,yfi,xu,yv)
-#include "impnone.cdk"
-*
-      real xfi(*),yfi(*),xu(*),yv(*)
+      subroutine e_pretopo 
+      implicit none
 *
 *author - Andre Methot  - sept 95 - v0_16
 *
@@ -13,7 +11,7 @@
 * v2_11 - V. Lee          - corrected bug so that setup of topography
 * v2_11                     is always done (e_setgeom) if Topo_init_L=T
 * v2_30 - L. Corbeil      - Writing of xdy and xdyv to bmf files
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Desgagne & Lee  - Lam configuration
 *
 *object
 *       See above ID.
@@ -21,9 +19,7 @@
 *arguments
 *
 *implicites
-#include "e_files.cdk"
 #include "e_topo.cdk"
-#include "e_locdim.cdk"
 #include "e_dim.cdk"
 #include "e_grids.cdk"
 #include "e_geomg.cdk"
@@ -37,7 +33,7 @@
 *
 *---------------------------------------------------------------------
 *
-      write(stdout,1001)
+      write(6,1001)
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 *
 *     Allocate dynamically some of the variables in e_geomg.cdk
@@ -76,7 +72,7 @@ C     Compute xdx,xdxu,xu,yv,xdy,xdyv
 *
       if ( Topo_init_L ) then
 *
-         write(stdout,1002)
+         write(6,1002)
 *
          gnis  = pni + 1
          gnjs  = pnj + 2
@@ -124,6 +120,7 @@ C     Compute xdx,xdxu,xu,yv,xdy,xdyv
             xdhyv(j)  = xdyv(j+1) - xdyv(j)
          enddo
          if (lam) then
+            xdhy(pnj) = xdhy(pnj-1)
             xdhyv(0)  = xdhyv(1)
             xdhyv(pnjv) = xdhyv(pnjv-1)
          else
@@ -141,10 +138,10 @@ C     Compute xdx,xdxu,xu,yv,xdy,xdyv
 *     
       endif
 *
- 1001 format( //,'SETUP FOR DEFINING  TOPOGRAPHY (S/R E_PRETOPO)',
-     +          /,'=============================================',//)
- 1002 format( //,'SETUP FOR FILTERING TOPOGRAPHY (S/R E_PRETOPO)',
-     +          /,'=============================================',//)
+ 1001 format( /,'SETUP FOR DEFINING  TOPOGRAPHY (S/R E_PRETOPO)',
+     +          /,'=============================================')
+ 1002 format( /,'SETUP FOR FILTERING TOPOGRAPHY (S/R E_PRETOPO)',
+     +          /,'=============================================')
 *
 *---------------------------------------------------------------------
 *

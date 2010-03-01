@@ -16,6 +16,7 @@
 * v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 *                           - change name 
+* v3_01 - Tanguay M.        - TLM of Eigv_parity_L not done yet 
 *
 *object
 *     see id section
@@ -31,6 +32,7 @@
 #include "geomg.cdk"
 #include "fft.cdk"
 #include "hzd.cdk"
+#include "eigv.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "p_geof.cdk"
@@ -48,12 +50,14 @@
       real wtt1m(LDIST_SHAPE,l_nk), wfit1m(LDIST_SHAPE,l_nk)
 *     _________________________________________________________________
 *
+*
       if ((.not.Hzd_fact_L).and.(.not.Hzd_ho_L)) then
          if (Lun_out.gt.0) write(Lun_out,1001)
          return
       endif
 *     ______________________________________________________
 *
+      if(      Eigv_parity_L ) call gefstop('hzd_main_tl') 
       if( .not. Schm_hydro_L ) call gefstop('hzd_main_tl')
       if(       Schm_psadj_L ) call gefstop('hzd_main_tl')
       if( .not. Schm_cptop_L ) call gefstop('hzd_main_tl')

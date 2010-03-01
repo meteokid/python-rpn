@@ -1,4 +1,4 @@
-***s/r p_apply - apply consistency with related dynamical variables
+***s/r p_apply - apply tendencies to dynamical variables
 *
 #include <model_macros_f.h>
 *
@@ -38,6 +38,7 @@
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
+#include "hblen.cdk"
 #include "dcst.cdk"
 #include "schm.cdk"
 #include "geomg.cdk"
@@ -53,7 +54,7 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer i, j, k, n, i0, in, j0, jn, err, key1(6),
+      integer i, j, k, n, err, key1(6),
      $     keyp(h2o_ntr), keym(h2o_ntr), keyp_, keym_
       real wk3(LDIST_SHAPE,Nk), wk4(LDIST_SHAPE,Nk),
      $     wk5(LDIST_SHAPE,Nk), wk6(LDIST_SHAPE,Nk), trp, trm
@@ -61,9 +62,9 @@
 *
 *notes
 *	Consistency is applied according to diagnostic relationships
-*	used at initial time in predat1 and predat2. If changes are
-*	made to the relations used in these two modules, they should
-*	be made accordingly here. (xrp**t1 are used as workfields)
+*	used at initial time in predat. If changes are
+*	made to the relations used in that routine, they should
+*	be made accordingly here.
 **
 *     __________________________________________________________________
 *
@@ -121,6 +122,11 @@
       err = VMM_GET_VAR(st1)
 
       do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         wk5(i,j,k)  = 0.
+      end do
+      end do
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
          F_qp(i,j,k) = exp(st1(i,j) - F_qp(i,j,k))*F_tdt(i,j,k)
@@ -135,11 +141,16 @@
 *     Note:   d/dt ( T' ) = d/dt ( T )  i.e. not computed
 
       do k=1,l_nk
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e 
-         F_tp(i,j,k) = geomg_z_8(k)*F_qp(i,j,k)
-      end do
-      end do
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            F_tp(i,j,k) = geomg_z_8(k)*F_qp(i,j,k)
+         end do
+         end do
+         do j=1,l_nj
+         do i=1,l_ni
+            wk5(i,j,k)  = 0.
+         end do
+         end do
       end do
 
 *  5. Compute total divergence and vertical motion associated tendencies
@@ -156,6 +167,12 @@
 *
 *C       2.     apply tendencies to primary variables
 *               -------------------------------------
+      if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) ) then
+         call nesajr (F_tdt, wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+         call nesajr (F_tdu, wk5, LDIST_DIM,G_nk,1,0,Hblen_tx,Hblen_ty)
+         call nesajr (F_tdv, wk5, LDIST_DIM,G_nk,0,1,Hblen_tx,Hblen_ty)
+      endif
+*
       key1(1)  = VMM_KEY(ut1)
       key1(2)  = VMM_KEY(vt1)
       key1(3)  = VMM_KEY(tt1)
@@ -192,6 +209,10 @@
          err = vmmlod(keyp,h2o_ntr)  
          do n=1,h2o_ntr
             err = vmmget(keyp(n),patrp,trp)
+            if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) ) then
+               call nesajr (F_trm(minx,miny,1,n), wk5, LDIST_DIM,G_nk,
+     $                                          0,0,Hblen_tx,Hblen_ty)
+            endif
             do k=1,l_nk
             do j= 1+pil_s, l_nj-pil_n 
             do i= 1+pil_w, l_ni-pil_e
@@ -218,6 +239,13 @@
       err = VMM_GET_VAR(tpt1 )
       err = VMM_GET_VAR(tdt1 )
       err = VMM_GET_VAR(psdt1)
+*
+      if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) ) then
+         call nesajr (wk3 , wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+         call nesajr (wk6 , wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+         call nesajr (F_tp, wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+         call nesajr (F_qp, wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+      endif
 *
       do k=1,l_nk
       do j= 1+pil_s, l_nj-pil_n 

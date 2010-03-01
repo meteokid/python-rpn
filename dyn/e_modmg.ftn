@@ -16,7 +16,6 @@
 #include "dcst.cdk"
 #include "p_bus.cdk"
 #include "p_geobus.cdk"
-      USE_STKMEMW
 **
 *
       logical pltrouv
@@ -24,8 +23,7 @@
       parameter(pnboit=23)
       integer i,j,k,offj
       real prlat(pnboit,2), prlon(pnboit,2), prseuil, prmg, prcon
-      real w1,w2,wml
-      pointer (paw1, w1(*)), (paw2, w2(*)), (pawml, wml(*))
+      real w1(nifi*njfi),w2(nifi*njfi),wml(nifi*njfi)
 *
 *       The height are geopotential heights.
 *       pnboit - # of lat-long boxes required to identify lakes.
@@ -78,10 +76,6 @@
       write(6,600)
 *
 *     allocate space in memory for input field
-*
-      call stkmemw (nifi*(njfi),paw1 )
-      call stkmemw (nifi*(njfi),paw2 )
-      call stkmemw (nifi*(njfi),pawml)
 *
 *     ------- set threshold height for sea-water-----
 *
@@ -147,10 +141,6 @@
          enddo
       enddo
 * 
-      call unstakw (paw1 )
-      call unstakw (paw2 )
-      call unstakw (pawml)
-*
  600  format(/,' MODIFICATION OF LAND/SEA MASK  FIELD (S/R E_MODMG)')
 *
 *     ------------------------------------------------------------

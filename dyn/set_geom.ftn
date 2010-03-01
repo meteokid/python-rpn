@@ -16,7 +16,8 @@
 * v2_30 - A. Methot          - introduction of a new stretch grid design
 * v2_30                        with upper limits on grid point spacing
 * v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Desgagne & Lee     - Lam configuration
+* v3_01 - Desgagne M.        - Introduce Geomn_latr[x,u,v]
 *
 *object
 *	
@@ -33,6 +34,8 @@
 #include "geomn.cdk"
 #include "grd.cdk"
 #include "geomg.cdk"
+#include "p_geof.cdk"
+#include "hgc.cdk"
 #include "xst.cdk"
 #include "ptopo.cdk"
 *
@@ -40,9 +43,9 @@
       integer stretch_axis2
       external stretch_axis2
 *
-      integer offi,offj,indx,err
+      integer offi,offj,indx,err,dgid,ezgdef_fmem,gdll
       integer i,j,k,nila,ierx,iery,nimax,njmax
-      real s1,r1
+      real s1,r1,xfi(l_ni),yfi(l_nj),lat(l_ni,l_nj),lon(l_ni,l_nj)
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
@@ -62,12 +65,15 @@
       rad2deg_8 = CLXXX_8/Dcst_pi_8
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 *
-      call hpalloc (paxg_8      , 6*G_ni, err, 1)
-      call hpalloc (payg_8      , 6*G_nj, err, 1)
-      call hpalloc (Geomn_longs_, G_ni+1, err, 1)
-      call hpalloc (Geomn_longu_, G_ni+1, err, 1)
-      call hpalloc (Geomn_latgs_, G_nj  , err, 1)
-      call hpalloc (Geomn_latgv_, G_nj  , err, 1)
+      call hpalloc (paxg_8       , 6*G_ni   , err, 1)
+      call hpalloc (payg_8       , 6*G_nj   , err, 1)
+      call hpalloc (Geomn_longs_ , G_ni+1   , err, 1)
+      call hpalloc (Geomn_longu_ , G_ni+1   , err, 1)
+      call hpalloc (Geomn_latgs_ , G_nj     , err, 1)
+      call hpalloc (Geomn_latgv_ , G_nj     , err, 1)
+      call hpalloc (Geomn_latrx _, l_ni *l_nj , err, 1)
+      call hpalloc (Geomn_latru _, l_niu*l_nj , err, 1)
+      call hpalloc (Geomn_latrv _, l_ni *l_njv, err, 1)
 *
       if (G_lam) then
          ierx= stretch_axis2( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left,
@@ -102,31 +108,6 @@
      $       write (Lun_out,*)'ERROR in generating YGI_8 values!'
           call gem_stop('set_geom',-1)
       endif
-*
-*   FOR THE ACID TEST
-cvl   if (G_lam) then
-cvl      do i=1,glb_i0-Lam_pil_w-1
-cvl         read (44,444) xgi_8(1)
-cvl      end do
-cvl      do i=1,G_ni
-cvl         read (44,444) xgi_8(i)
-cvl      end do
-cvl      do i=1,36-glb_in-Lam_pil_e+glb_j0-Lam_pil_s
-cvl         read (44,444) ygi_8(1)
-cvl      end do
-cvl      do j=1,G_nj
-cvl         read (44,444) ygi_8(j)
-cvl      end do
-cvl   else
-cvl      do i=1,G_ni
-cvl         read (44,444) xxgi_8
-cvl      end do
-cvl      read (44,444) ygi_8(1)
-cvl      do j=1,G_nj
-cvl         read (44,444) ygi_8(j)
-cvl      end do
-cvl   endif
- 444  format (d20.8)
 *
       Grd_uniform_L   = (G_ni.eq.Grd_nila).and.(G_nj.eq.Grd_njla)
 *
@@ -243,6 +224,18 @@ cvl   endif
       do j=1-G_haloy,l_nj+G_haloy
          geomg_ys_8(j) = geomg_yv_8(j)
       end do
+*
+      do i=1,l_ni
+         indx = offi + i
+         xfi(i) = xgi_8(indx)
+      end do
+      do i=1,l_nj
+         indx = offj + i
+         yfi(i) = ygi_8(indx)
+      end do
+      dgid = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro,
+     $          Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
+      err = gdll (dgid,Geomn_latrx,lon)
 *
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)',
      %       /,'===============================================')

@@ -1,4 +1,4 @@
-***s/r nest_init
+***s/r nest_init -- Initializes nesting data for LAM configuration
 *
 #include <model_macros_f.h>
 *

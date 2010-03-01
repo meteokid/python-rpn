@@ -17,6 +17,7 @@
 *revision
 * v3_00 - N. Ek             - initial MPI version
 * v3_00   M. Tanguay        - adapt to Simon's exchange
+* v3_xx - M. Tanguay        - correction for empty processors 
 *
 *object
 *     -----------------------------------------------------------------------
@@ -131,11 +132,14 @@
 *        Initialize counter for maximal number of adjoint profiles in the local processor
 *        as function of observation time
 *        --------------------------------------------------------------------------------
-         allocate( done (Pr_nobproc ), STAT=pnerr)
-         allocate(  nob (Pr_timobmax), STAT=pnerr)
-         do i = 1,Pr_nobproc
-            done(i) = 0
-         enddo
+         if(Pr_nobproc.ne.0) then 
+            allocate(done(Pr_nobproc),STAT=pnerr)
+            do i = 1,Pr_nobproc
+               done(i) = 0
+            enddo
+         endif
+*
+         allocate(nob(0:Pr_timobmax-1),STAT=pnerr)
          do n = 0,Pr_timobmax-1
             nob(n) = 0
          enddo
@@ -213,6 +217,10 @@
            write(Lun_out,*) 'Total number of adjoint profiles in this record = ',npr
 *
            nobproc = nobproc + npr
+           if(nobproc.gt.Pr_nobproc) then
+              write(Lun_out,*) 'Error: NOBPROC GT PR_NOBPROC'
+              call gefstop('v4d_grdjok')
+           endif
 *
 *          Find out which fields are in current record
 *          -------------------------------------------
@@ -280,7 +288,7 @@
             write(Lun_out,*) 'For OBSTIME =',n,' Local number of adjoint profiles = ',nob(n)
             if(nob(n).ne.Pr_nob(n)) then 
                write(Lun_out,*) 'For OBSTIME =',n,' PR_NOB and NOB are different ',Pr_nob(n),nob(n)
-              call gefstop('v4d_grdjok')
+               call gefstop('v4d_grdjok')
             endif
          enddo
          write(Lun_out,*) 'Local number of adjoint profiles for all times = ',nobproc
@@ -289,8 +297,8 @@
             call gefstop('v4d_grdjok')
          endif
 *
-         deallocate( done, STAT=ier )
-         deallocate(  nob, STAT=ier )
+         if(Pr_nobproc.ne.0) deallocate( done, STAT=ier )
+         deallocate( nob, STAT=ier )
 *
          write(Lun_out,*) ' '
 *

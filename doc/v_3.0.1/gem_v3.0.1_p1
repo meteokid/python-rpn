@@ -1,0 +1,66 @@
+
+        ############# GEMDM Model -- Version 3.0.1 ###############
+                           October 1st 2002
+
+Release of patch "p1". This patch contains:
+
+IMPORTANT NOTE: This patch is meant to be loaded with patch "r1"
+		of the physics 3.72. See release e-mail from the 
+		physics librarian. It should therefore be activated
+ 		by adding the following line to your file .exper_cour:
+
+	MyPatches='GEMDM/3.0.1/p1 PHY/3.72/r1' . patch_exp.dot
+
+1) New option Schm_wload_L (default=.false.) to include water loading.
+
+2) Uniformization of real types in the calling sequence of some intrinsic functions.
+   ex:   F_lat(i) = asin(max(-1.,min(1.,F_xyz_8(3,i)))) * rad_8]         has become
+	 F_lat(i) = asin(max(-1.d0,min(1.d0,F_xyz_8(3,i)))) * rad_8
+
+3) Debugging of Non-Hydrostatic code. The NH mode is now fully functional.
+
+4) Corrections/improvements for LAM configurations:
+	- bug-fix in nesting of tracers
+	- new adw_ckbd_lam.ftn subroutine for SL advection
+	- new vertical sponge vspng_lam.ftn (controlled with namelist variable
+	  Vspng_nu instead of Vspng_mf)
+	- new control variable Schm_maxcfl_lam (default=2) to control
+	  maximum COURANT number allowed for a particular choice of timestep
+	- correction to subroutine p_inincr.ftn (climate mode)
+	
+5) Modulation to 0. of the diffusion coefficient near the numerical poles within
+   the vertical sponge for non-LAM configurations.
+
+6) Optimization/Vectorization of subroutine p0vt2gz_hyb.ftn
+
+7) Addition of some protection in set_transpose.ftn for the case when no
+   vertical sponge is required.
+
+8) Synchronization with V4D subroutines.
+
+9) Bug_fixes:
+	- correction to the treatment of topography in the entry program
+	- correction to new horizontal sponge subroutine hspng_abc.ftn
+	- correction to the parity solver subroutines
+	- re-activate ZZ output for CHRONOS
+	- correction to subroutine hzd_main.ftn for potential bug at restart
+
+Notes:
+
+1) A more automatic way of computing the memory requirement for VMM has
+   been added to define a default value for namelist variable Mem_mx3db.
+   This default value is chosen in such a way as to ensure that the model
+   will remain incore at all times. Unless a user really knows how to control
+   that variable, we suggest to REMOVE it from file gem_settings.cfg to
+   avoid very very slow runs on the account of VMM I/O.
+
+2) Transfer scripts have been modified. Data transfer is now 10-15 times
+   faster and should make a significant difference in the batch queue on pollux.
+   To activate those scripts we suggest you take a copy of what is in
+   /users/dor/armn/mid/modeles/GEMDM/v_3.0.1/scripts into your own
+   ~/modeles/GEMDM/v_3.0.1/scripts directory.
+
+3) As you will notice, loading the 2 patches p1 and r1 implies a force load
+   of a large number of .o which slows down the loading process. This is a
+   bit unfortunate but it should not last very long as version 3.0.2 is normally
+   due in November 2002.

@@ -28,6 +28,8 @@
 *                             T', T'lin & hence T on Vspng_nk levels + 
 *                             sponge on top level only on all other variables
 * v3_00 - Tanguay M.        - correction as in vspng_drv 
+* v3_01 - Laroche/Tanguay   - correction nj as in vspng_drv 
+* v3_01 - Tanguay M.        - adapt to Vspng_rwnd_L 
 *
 *object
 *     see id section
@@ -53,14 +55,15 @@
 #include "opr.cdk"
 *
       integer i, j, jj, k, nkspng
-      real*8 HALF_8,TWO_8,c_8
+      real*8 HALF_8,TWO_8,c_8,c1
       parameter( HALF_8  = 0.5 )
       parameter(  TWO_8  = 2.0 )
 *
       real*8, dimension (trp_12emax*G_ni*Vspng_nk) :: aix_8,bix_8,cix_8,dix_8
       real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
-      real*8 cy_8(l_nj), xp0_8(G_ni), yp0_8(G_nj)
-*     ______________________________________________________
+      real*8 cy_8(l_nj+1), xp0_8(G_ni), yp0_8(G_nj)
+**
+*     __________________________________________________________________
 *
       if(.not. Schm_hydro_L) call gefstop('vspng_drv_tl')
 *     ______________________________________________________
@@ -76,10 +79,27 @@
 *     ~~~~~~~~
       if ( Cstv_uvdf_8 .gt. 0.0 ) then
 *
+         if (Vspng_rwnd_L) then
+            do k=1,G_nk
+               do j=1,l_nj
+                  c1 = Dcst_rayt_8 / geomg_cy_8(j)
+                  do i=1,l_ni
+                     f_u(i,j,k) = f_u(i,j,k) * c1
+                  end do
+               end do
+               do j=1,l_njv
+                  c1 = Dcst_rayt_8 / geomg_cy_8(j)
+                  do i=1,l_ni
+                     f_v(i,j,k) = f_v(i,j,k) * c1
+                  end do
+               end do
+            end do
+         endif
+*
 *        TLM of
 *        Horizontal Momentum
-*        ~~~~~~~~~~~~~~~~~~~
-         do j = 1, l_nj
+*        ~~~~~~~~~~~~~~~~~~~       
+         do j = 1, l_nj+1
             cy_8(j) = G_yg_8(l_j0+j-1)
          end do
          c_8 = Cstv_uvdf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
@@ -91,7 +111,7 @@
      $                 aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                 LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
-         do j = 1, l_nj
+         do j = 1, l_nj+1
             jj = l_j0+j-1
             cy_8(j) = cos((G_yg_8(jj+1)+G_yg_8(jj)) * HALF_8) **TWO_8
          end do
@@ -103,12 +123,29 @@
      $                 aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                 LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_njv)
 *
+         if (Vspng_rwnd_L) then
+            do k=1,G_nk
+               do j=1,l_nj
+                  c1 = geomg_cy_8(j) / Dcst_rayt_8
+                  do i=1,l_ni
+                     f_u(i,j,k) = f_u(i,j,k) * c1
+                  end do
+               end do
+               do j=1,l_nj
+                  c1 = geomg_cy_8(j) / Dcst_rayt_8
+                  do i=1,l_ni
+                     f_v(i,j,k) = f_v(i,j,k) * c1
+                  end do
+               end do
+            end do
+         endif
+*
       endif     
 *
       if ( Cstv_phidf_8 .gt. 0.0) then
 *
          c_8 = Cstv_phidf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
-         do j = 1, l_nj
+         do j = 1, l_nj+1
             cy_8(j) = G_yg_8(l_j0+j-1)
          end do
          call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,

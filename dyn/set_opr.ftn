@@ -12,8 +12,8 @@
 *revision
 * v2_00 - Desgagne/Lee      - initial MPI version (from setopr v1_03)
 * v2_11 - Desgagne M.       - vertical sponge layer
-* v2_40 - Lee/Qaddouri      - for LAM version
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Lee/Qaddouri      - Lam configuration
+* v3_01 - Qaddouri A.       - add eigenmodes with definite parity
 *
 *object
 *	This subroutine initializes the commons containing the
@@ -31,6 +31,7 @@
 #include "geomg.cdk"
 #include "schm.cdk"
 #include "opr.cdk"
+#include "eigv.cdk"
 #include "sol.cdk"
 #include "cstv.cdk"
 #include "trp.cdk"
@@ -42,7 +43,7 @@
       parameter( ONE_8  = 1.0 )
       parameter( HALF_8 = 0.5 )
 *
-      integer i, j, k, k0, l, dim, err,Gni,Gnj
+      integer i, j, k, k0, l, dim, err,Gni,Gnj,NSTOR
       real*8  sc_8, gdx_8
       real*8, dimension(:)  ,allocatable :: wk_8, wk2_8
 *
@@ -112,9 +113,6 @@ C     Fft_fast_L = .false.
       do i = 1+Lam_pil_w, G_ni-Lam_pil_e
          Opr_opsxp0_8(G_ni+i) = (G_xg_8(i+1)-G_xg_8(i-1))*HALF_8
       end do
-c     do i=1,G_ni*3
-c        print *,'opsxp0_8(',i,')=',Opr_opsxp0_8(i)
-c     enddo
 
       do i = 1+Lam_pil_w, G_ni-Lam_pil_e
          wk_8(i-Lam_pil_w) = G_xg_8(i+1) - G_xg_8(i)
@@ -127,9 +125,6 @@ c     enddo
          Opr_opsxp2_8(G_ni*2+i+Lam_pil_w)=wk2_8(Gni*2+i)
       enddo
       deallocate ( wk2_8 )
-c     do i=1,G_ni*3
-c        print *,'xp2_8(',i,')=',Opr_opsxp2_8(i)
-c     enddo
 *
 *
 *        1.2 Compute the North-South operators
@@ -139,9 +134,6 @@ c     enddo
      $        sin((G_yg_8(j+1)+G_yg_8(j  ))* HALF_8)- 
      $        sin((G_yg_8(j  )+G_yg_8(j-1))* HALF_8)
       end do
-c     do i=1, G_nj*3
-c        print *,'opsyp0_8(',i,')=',Opr_opsyp0_8(i)
-c     enddo
 *
       do j = 1+Lam_pil_s, G_nj-1-Lam_pil_n
          wk_8(j-Lam_pil_s) = (sin (G_yg_8(j+1))-sin(G_yg_8(j))) / 
@@ -155,15 +147,9 @@ c     enddo
          Opr_opsyp2_8(G_nj*2+j+Lam_pil_s)=wk2_8(Gnj*2+j)
       enddo
       deallocate ( wk2_8 )
-c     do i=1, G_nj*3
-c        print *,'opsyp2_8(',i,')=',Opr_opsyp2_8(i)
-c     enddo
 *
       deallocate ( wk_8 )
       call set_ops8 (Opr_opszp0_8,geomg_hz_8,ONE_8,.false.,G_nk,G_nk,2)
-c     do i=1, G_nk
-c        print *,'zp0_8(',i,')=',Opr_opszp0_8(i)
-c     enddo
 *
 *C    Compute eigenvalues and eigenvector for the generalized
 *     eigenvalue problem in East-West direction
@@ -171,16 +157,20 @@ c     enddo
 *
       if ( .not. Fft_fast_L ) then
 *        Compute eigenvalues when no FFT are used:
+
+         if( .not. Eigv_parity_L) then
 *
-         call set_poic  ( Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8,
-     $                        Opr_opsxp2_8, Gni, G_ni )
-c        print *,'after set_poic: gni',Gni,'G_ni=',G_ni
-c     do i=1,G_ni
-c        print *,'xeval_8(',i,')=',Opr_xeval_8(i)
-c     enddo
-c     do i=1,G_ni*G_ni
-c        print *,'xevec_8(',i,')=',Opr_xevec_8(i)
-c     enddo
+            call set_poic  ( Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8,
+     $                                       Opr_opsxp2_8, Gni, G_ni )
+         else
+*         Eigenmodes with definite parity
+            NSTOR = (G_ni+2)/2 + ( 1 - mod((G_ni+2)/2,2) )
+            dim = NSTOR*NSTOR*2
+            call hpalloc(Opr_evvec_8_ ,dim, err,1)
+            call hpalloc(Opr_odvec_8_ ,dim, err,1)
+            call  set_poic_par ( Opr_xeval_8, Opr_evvec_8, Opr_odvec_8,
+     $                                         G_xg_8(1), G_ni, NSTOR )
+         endif
 *
       else
 
@@ -209,22 +199,12 @@ c     enddo
                 Opr_xeval_8(2*i)   =  Opr_xeval_8(2*i+1)
              end do
          endif
-c        do i=1,G_ni
-c           print *,'xeval_8(',i,')=',Opr_xeval_8(i)
-c        enddo
 *
       endif
 *
-c     print *,'calling set_oprz'
 
       call set_oprz ()
 
-c     do i=1,G_nk
-c        print *,'zeval_8(',i,')=',Opr_zeval_8(i)
-c     enddo
-c     do i=1,G_nk*G_nk
-c        print *,'zevec_8(',i,')=',Opr_zevec_8(i)
-c     enddo
 
 *   
 *C    Initialize common block for diffusion

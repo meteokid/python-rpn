@@ -17,6 +17,7 @@
 * v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
 * v3_00 - Ek N./Tanguay M.  - introduce v4d_ctrlcst
 * v3_00 - Laroche S.        - include simplified physics
+* v3_01 - Tanguay M.        - introduce identity option
 *
 *object
 *     see id section
@@ -38,15 +39,18 @@
 #include "v4dg.cdk"
 #include "p_clim.cdk"
 *
-      logical bkup_L,carryon_L
+      logical bkup_L,carryon_L,identity_4dvar_L
       integer last_step
 *     ______________________________________________________
 *
-      if( F_dgtflt_L     ) call gefstop('gem_run_tl')
-      if( F_rstrt_L      ) call gefstop('gem_run_tl')
-      if( P_clim_clima_L ) call gefstop('gem_run_tl')
-      if( Schm_chems_L   ) call gefstop('gem_run_tl')
+      if( F_dgtflt_L     ) call gem_stop('gem_run_tl',-1)
+      if( F_rstrt_L      ) call gem_stop('gem_run_tl',-1)
+      if( P_clim_clima_L ) call gem_stop('gem_run_tl',-1)
+      if( Schm_chems_L   ) call gem_stop('gem_run_tl',-1)
+      if( Schm_hdlast_L  ) call gem_stop('gem_run_tl',-1)
 *     ______________________________________________________
+*
+      identity_4dvar_L = V4dg_conf.ne.0.and.V4dg_identity_L
 *
       call blocstat ()
 *
@@ -83,7 +87,7 @@
 *
 *     Horizontal diffusion & Vertical sponge (Initial timestep)
 *     ---------------------------------------------------------
-      if (Lctl_step.eq.1) then
+      if (Lctl_step.eq.1.and..not.identity_4dvar_L) then
 *
 *        Recover TRAJ PIPT1 before diffusion
 *        -----------------------------------
@@ -100,11 +104,11 @@
 *
 *     Dynamics timestep
 *     -----------------
-      call dynstep_tl( )
+      if (.not.identity_4dvar_L) call dynstep_tl( )
 *
 *C    Physics timestep & Horizontal diffusion & Vertical sponge
 *     ---------------------------------------------------------
-      if (Schm_hdlast_L) then
+      if (Schm_hdlast_L.and..not.identity_4dvar_L) then
          if ( Schm_phyms_L ) call p_main_tl (Lctl_step)
 *
 *        Recover TRAJ PIPT1 before diffusion
@@ -116,7 +120,7 @@
             call   hzd_main_tl ()
             call vspng_main_tl ()
 *
-      else
+      elseif(.not.Schm_hdlast_L.and..not.identity_4dvar_L) then
 *
 *        Recover TRAJ PIPT1 before diffusion
 *         -----------------------------------

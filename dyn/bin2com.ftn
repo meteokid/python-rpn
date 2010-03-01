@@ -25,11 +25,12 @@
 *arguments - none
 *
 #include "glb_ld.cdk"
-#include "did.cdk"
 #include "hgc.cdk"
 #include "grd.cdk"
 #include "out1.cdk"
 #include "schm.cdk"
+#include "pilot.cdk"
+#include "hblen.cdk"
 #include "p_pbl.cdk"
 #include "ptopo.cdk"
 #include "tr2d.cdk"
@@ -53,13 +54,16 @@
      $              (Tr2d_username_S(k),k=1,Tr2d_userntr),
      $              (Tr2d_usersval  (k),k=1,Tr2d_userntr)
 *
-      read(lun_lab)  Did_es,Did_vt,Did_horint,Did_vrtc
-      read(lun_lab)  P_pbl_schsl_s, P_pbl_snoalb_L
+      read(lun_lab)  P_pbl_schsl_s, P_pbl_snoalb_L,
+     $             Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
+     $             Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try
 *
-      read(lun_lab)  Out1_date, Out1_etik_s, Out1_anlv, 
-     $     Hgc_gxtyp_s, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
+      read(lun_lab) Out1_etik_s, Out1_date,
+     $        Pil_runstrt_S, Pil_nesdt, Pil_ctebcs_L,
+     $        Hgc_gxtyp_s, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
 *
       P_geol_tourn_L = (abs((abs(Grd_rot_8(3,3))-ONE_8)).gt.1.0e-10)
+*
 *     ---------------------------------------------------------------
 *
       return

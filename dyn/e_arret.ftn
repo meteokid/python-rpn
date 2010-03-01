@@ -20,25 +20,25 @@
 * FTNAME   name of routine that is aborting program
 *
 *implicits
-#include "e_files.cdk"
+#include "e_fu.cdk"
 
 *
 *modules
-      INTEGER  exfin, fstfrm, fstvoi
-      EXTERNAL exfin, fstfrm, fstvoi
+      INTEGER  exfin, fstfrm
+      EXTERNAL exfin, fstfrm
 
       integer i
 
-      write(stdout,*)' *****************************************'
-      write(stdout,*)' *****************************************'
-      write(stdout,*)' **    ABORT       ABORT       ABORT    **'
-      write(stdout,*)' **           ',FTNAME,     '           **'
-      write(stdout,*)' *****************************************'
-      write(stdout,*)' *****************************************'
+      write(6,*)' *****************************************'
+      write(6,*)' *****************************************'
+      write(6,*)' **    ABORT       ABORT       ABORT    **'
+      write(6,*)' **           ',FTNAME,     '           **'
+      write(6,*)' *****************************************'
+      write(6,*)' *****************************************'
       call e_wlogntr('STOP','XX')
 
-      I = fstfrm( ANAL )
-      I = fstfrm( CLIMAT )
+      i = fstfrm( e_fu_anal )
+      i = fstfrm( e_fu_climat )
 
       call abort
       I = EXFIN('GEMNTR', 'ERREUR', 'NON')

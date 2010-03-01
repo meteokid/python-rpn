@@ -4,6 +4,7 @@
 * v2_10 - Qaddouri A.        - adding high order diffusion operator
 * v2_11 - Desgagne M.        - remove vertical modulation
 * v2_21 - Desgagne M.        - add control for diffu. on momentum only
+* v3_01 - Toviessi J. P.     - parity optimisation
 *
 ***comdeck hzd.cdk
 *
@@ -20,8 +21,10 @@
 * Hzd_yp2_8          | north-south projection operators                |
 * Hzd_opsxp0_8       |                                                 |
 * Hzd_opsyp0_8       |                                                 |
-* Hzd_xevec_8        |                                                 |
+* Hzd_xevec_8        | horizontal eigenvectors                         |
 * Hzd_xeval_8        |                                                 |
+* Hzd_evvec_8        | even eigenvectors                               |
+* Hzd_odvec_8        | odd  eigenvectors                               |
 * Hzd_au_8           |                                                 |
 * Hzd_cu_8           |                                                 |
 * Hzd_deltau_8       |                                                 |
@@ -62,6 +65,8 @@
        DCL_DYNVAR(Hzd,     as_8, real*8, (*))
        DCL_DYNVAR(Hzd,     cs_8, real*8, (*))
        DCL_DYNVAR(Hzd, deltas_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  evvec_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  odvec_8, real*8, (*))
 *
        character*12 Hzd_type_S
        logical Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L

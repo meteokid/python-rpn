@@ -2,15 +2,14 @@
 *
 #include <model_macros_f.h>
 *
-      integer function e_moclim2 (  f, lat, lon, ni, nj, nomvar, 
-     $            ip1, ip2, ip3, etik, typvar, anyip, interp, un1, stdo)
+      integer function e_moclim2 (  f, ni, nj, nomvar, ip1, ip3, 
+     $     month, day, etik, typvar, dest_g, interp, un1, stdo)
 *
 #include "impnone.cdk"
 *
       character* (*) nomvar,interp,etik,typvar
-      logical anyip
-      integer ni, nj, ip1, ip2, ip3, un1, stdo
-      real  f(*), lat(*), lon(*)
+      integer ni, nj, ip1, ip3, month, day, dest_g, un1, stdo
+      real  f(*)
 *
 *author   andre methot - cmc - april 94
 *
@@ -20,31 +19,27 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 *
 *object
-*       Return a weighted averaged climatological field.
+*       Return a weighted time averaged climatological field.
 *       The average is weighted by the day of the month.
 *
 *implicites
-#include "e_times.cdk"
-#include "e_files.cdk"
 *
-      integer moa, jj, i, err, e_rdhint2
-      real    poa, poam
-      real,        dimension(:),allocatable :: w1
+      integer  e_rdhint3
+      external e_rdhint3
+      integer moa, jj, i, err
+      real poa, poam, w1(ni*nj) 
 *
-* NOTE: As this routine is meant for climatology input,
-*       arguments ip1, ip2, anyip and un1 from the calling
-*       routine are ignored.
 *---------------------------------------------------------------------
 *
 *     Computing the closest neighbouring month and weight
 *
-      if ( idate(3) .gt. 15 ) then
-         jj = 32 - idate(3)
+      if ( day .gt. 15 ) then
+         jj = 32 - day
          if ( jj .gt. 15 ) jj = 15
          moa = month + 1
          if ( month .eq. 12 ) moa = 1
       else
-         jj = idate(3)
+         jj = day
          moa = month - 1
          if ( month .eq. 1 ) moa = 12
       endif
@@ -53,13 +48,11 @@
       write (stdo,1000) month,moa
 *
       e_moclim2 = -1
-      if (e_rdhint2(f,lat,lon,ni,nj,nomvar,ip1,month,-1,etik,
-     $              typvar,.false.,.true.,interp,climat,stdo ).lt.0) return
+      if (e_rdhint3(f, dest_g,ni,nj,nomvar,ip1,month,-1,etik,
+     $          typvar,.false.,.false.,interp,un1,stdo ).lt.0) return
 *
-      allocate( w1(ni*nj) )
-      e_moclim2 = e_rdhint2( w1,lat,lon,ni,nj,nomvar,ip1,moa,-1,etik,
-     $                      typvar,.false.,.true.,interp,climat,stdo )
-      if (e_moclim2.lt.0) stop
+      if (e_rdhint3(w1,dest_g,ni,nj,nomvar,ip1,moa   ,-1,etik,
+     $          typvar,.false.,.false.,interp,un1,stdo ).lt.0) return
 *
 *     Compute weighted average
 *
@@ -67,7 +60,7 @@
       do i=1,ni*nj
          f(i) = poa*f(i) + poam*w1(i)
       enddo
-      deallocate (w1)
+      e_moclim2 = 0
 *
  1000 format ('CLIMATOLOGY: AVERAGING BETWEEN MONTHS ',2i3)
 *---------------------------------------------------------------------

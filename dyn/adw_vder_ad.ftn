@@ -16,6 +16,8 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_01 - Lee V.            - calls to opinv7,optriss7 instead of
+* v3_01                       opinv6,optriss6 to correct bug
 *
 *language
 *     fortran 77
@@ -46,7 +48,7 @@
 #include "schm.cdk"
 ************************************************************************
 *
-      integer i, j, k, i_deb, j_deb, i_fin, j_fin, i_num, j_num
+      integer i, j, k, i_deb, j_deb, i_fin, j_fin
 *
       real prd, pr1, pr2, pr1p, pr2p
 *
@@ -72,8 +74,6 @@
       if ( l_north )              j_fin = Adw_haloy + Adw_njc + 2
       if ( l_north .and.G_lam)    j_fin = Adw_haloy + Adw_njc - 2
 *
-      j_num = j_fin - j_deb +1
-      i_num = i_fin - i_deb +1
 *     ----------------
 *     TRAJECTORY (END)
 *     ----------------
@@ -112,7 +112,7 @@
          enddo
       endif
 *
-      call opinv6_ad  ( F_inzz(i_deb,j_deb,1), i_num, j_num, l_nk, 'Z', prd, prd,
+      call opinv7_ad  ( F_inzz, i_deb, j_deb,i_fin, j_fin,l_nk, 'Z', prd, prd,
      $                  prd, Adw_qzi_8, Adw_qzi_8(G_nk+1),
      $                  Adw_qzi_8(2*G_nk+1), Adw_qzi_8(3*G_nk+1), .false.,
      $                  'D', Adw_nit, Adw_njt, l_nk, 1 )
@@ -129,7 +129,7 @@
       enddo
       enddo
 *
-      call optriss6_ad( F_inzz(i_deb,j_deb,1), F_in(i_deb,j_deb,1), i_num,j_num,l_nk,
+      call optriss7_ad( F_inzz, F_in, i_deb, j_deb, i_fin, j_fin, l_nk,
      $                  'Z', Adw_qzz_8, Adw_qzz_8(G_nk+1),
      $                  Adw_qzz_8(2*G_nk+1), .false.,
      $                  Adw_nit, Adw_njt, l_nk, 1 )

@@ -13,6 +13,7 @@
 * v2_00 - Desgagne/Lee      - initial MPI version (from setgeof v1_03)
 * v2_20 - Lee V.            - eliminated geophysical VMM variables
 * v2_21 - J. P. Toviessi    - rename some model output variables
+* v3_01 - Desgagne M.       - remove XLA and XLO
 *
 *object
 *	This subroutine initializes the commons containing the
@@ -48,14 +49,10 @@
 *	Assign and create the geophysical variables
 *
       VMM_NAM(topo )= 'TOPO'
-      VMM_NAM(xla  )= 'XLA'
-      VMM_NAM(xlo  )= 'XLO'
 *
       attr_S='SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
 *
       VMM_CREATE(topo  , LARRAY2D     , 1, attr_S)
-      VMM_CREATE(xla   , LARRAY2D     , 1, attr_S)
-      VMM_CREATE(xlo   , LARRAY2D     , 1, attr_S)
 *
  1000 format(
      +/,'INITIALIZATION OF GEOPHYSICAL FIELD COMDECKS (S/R SET_GEOF)',

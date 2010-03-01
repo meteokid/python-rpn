@@ -25,6 +25,8 @@
 *                    | the output records.                             |
 * Level_stag_ip1     | IP1 value corresponding to the staggered values |
 *                    | for the output records.                         |
+* Level_ip12000_L    | TRUE to use fst2000 IP1 encoding                |
+* Level_kind_ip1     | value of KIND to be used in CONVIP function     |
 *----------------------------------------------------------------------
 *
 *
@@ -34,7 +36,7 @@
       PARAMETER (MAXLEV = 201)
       real Level(MAXLEV,MAXSET)
       integer Level_id(MAXSET),Level_ip1(MAXLEV,MAXSET),Level_sets,
-     $        Level_stag_ip1(MAXLEV),Level_max(MAXSET)
+     $        Level_stag_ip1(MAXLEV),Level_max(MAXSET),Level_kind_ip1
       logical Level_ip12000_L
       character*1 Level_typ(MAXSET)
 
@@ -44,7 +46,7 @@
 
       MARK_COMMON_BEG (Level_i)
       COMMON /Level_i/ Level_id,Level_ip1,Level_stag_ip1,Level_max,
-     $                 Level_sets
+     $                 Level_sets,Level_kind_ip1
       MARK_COMMON_END (Level_i)
 
       MARK_COMMON_BEG (Level_l)

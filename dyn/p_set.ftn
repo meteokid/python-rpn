@@ -56,8 +56,6 @@
 *
       if (lun_out.gt.0) write(Lun_out,9001)
 *
-      if (lun_out.gt.0) write(Lun_out,9002)
-
       if (.not.inctphy2(set_dcst,lun_cte,lun_out)) then
          if (Lun_out.gt.0) write (Lun_out,9003)
          stop
@@ -283,8 +281,6 @@
  9001 format(
      +/,'INITIALIZING PHYSICS CONFIGURATION FOR MODEL (S/R P_SET)',
      +/,'========================================================') 
-*
- 9002 format(/,' Initializing physical constants',/)
 *
  9003 format(
      $/,'PROBLEM INITIALIZATING PHYSICAL CONSTANTS in (S/R inctphy2)',

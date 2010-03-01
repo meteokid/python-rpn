@@ -117,7 +117,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
 #include "orh.cdk"
@@ -133,7 +132,6 @@
       external vmmlod, vmmget, vmmuld
 *
       integer  pnerr, pnlod, pnlkey1(30), i,j,k
-      integer i0,in,j0,jn
 **
 *     __________________________________________________________________
 *
@@ -221,37 +219,20 @@
          nest_u_ = 0
          nest_v_ = 0
       endif
-      if (G_lam) then
-          i0=lam_i0
-          in=lam_in
-          j0=lam_j0
-          jn=lam_jn
-      else
-          i0 = glb_i0
-          in=  glb_in
-          j0 = glb_j0
-          jn = glb_jn
-      endif
 *
 *     Perform the computation in the first 
 *     cycle of Crank-Nicholson procedure only
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if ( Orh_icn .eq. 1 ) then
-
+*
 *PDIR RESERVE=Ptopo_npeOpenMP
-
-      if(Lctl_debug_L) then
-      call glbstat (ut1,'ut1',LDIST_DIM,G_nk,i0-7,in+6,j0-7,jn+7,1,G_nk)
-      call glbstat (vt1,'vt1',LDIST_DIM,G_nk,i0-7,in+7,j0-7,jn+6,1,G_nk)
-      call glbstat (st1,'st1',LDIST_DIM,1,i0-7,in+7,j0-7,jn+7,1,1)
-      endif
+*
          call rhsp_2  (    ru,    rv,   rcn,   rth,    rw,   rvv,
      %                    oru,   orv,  orcn,  orth,   orw,  orvv,
      %                   ruw1,  rvw1,   ut1,   vt1,   tt1,   qt1,
      %                   fit1,   st1,  tdt1, psdt1,nest_u,nest_v,
      %                    wt1,  topo, fipt1,  mut1, LDIST_DIM,l_nk  )
-
-
+*
 *PDIR RELEASE
          
       else
@@ -277,24 +258,11 @@
             end do
             end do
          endif
-
+*
       endif
-      if(Lctl_debug_L) then
-      call glbstat (ru,'Ru',LDIST_DIM,G_nk,i0-5,in+4,j0-2,jn+4,1,G_nk)
-      call glbstat (rv,'Rv',LDIST_DIM,G_nk,i0-2,in+4,j0-5,jn+4,1,G_nk)
-      call glbstat (ruw1,'Ruw1',LDIST_DIM,G_nk,i0-2,in+2,j0-3,jn+3,1,G_nk)
-      call glbstat (rvw1,'Rvw1',LDIST_DIM,G_nk,i0-3,in+3,j0-2,jn+2,1,G_nk)
-      call glbstat (rth,'Rth',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (rcn,'Rcn',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      endif
-
-      if (.not. Schm_hydro_L) then
-      call glbstat (topo,'Fis',LDIST_DIM,1,i0,in,j0,jn,1,1)
-      call glbstat (Fipt1,'Fipt1',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      endif
-
+*
       pnerr = vmmuld(-1,0)
-
+*
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS)')
 *
 *     __________________________________________________________________

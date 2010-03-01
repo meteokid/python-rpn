@@ -15,6 +15,7 @@
 * v2_21 - Desgagne M.       - new call to horwavg
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Toviessi J. P.    - add call hzd_ho_parite
 *
 *object
 *	
@@ -23,13 +24,13 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "cstv.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
 #include "geomg.cdk"
 #include "fft.cdk"
 #include "hzd.cdk"
+#include "eigv.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
@@ -41,8 +42,7 @@
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      integer pnerr, pnlod, pnlkey1(20), i, j, k
-      integer i0,in,j0,jn
+      integer err, nlod, key1(20), i, j, k
       real*8  ONE_8, bbb_8, eta_8
       parameter( ONE_8 = 1. )
 **
@@ -53,57 +53,57 @@
          return
       endif
 *
-      pnlkey1(1)  = VMM_KEY(ut1)
-      pnlkey1(2)  = VMM_KEY(vt1)
-      pnlkey1(3)  = VMM_KEY(psdt1)
-      pnlkey1(4)  = VMM_KEY(tpt1)
-      pnlkey1(5)  = VMM_KEY(fipt1)
-      pnlkey1(6)  = VMM_KEY(tdt1)
-      pnlkey1(7)  = VMM_KEY(tt1)
-      pnlkey1(8)  = VMM_KEY(fit1)
-      pnlkey1(9)  = VMM_KEY(topo)
-      pnlkey1(10) = VMM_KEY(tplt1)
-      pnlkey1(11) = VMM_KEY(qt1)
-      pnlkey1(12) = VMM_KEY(pipt0)
-      pnlkey1(13) = VMM_KEY(pipt1)
-      pnlkey1(14) = VMM_KEY(st1)
-      pnlod = 14
+      key1(1)  = VMM_KEY(ut1)
+      key1(2)  = VMM_KEY(vt1)
+      key1(3)  = VMM_KEY(psdt1)
+      key1(4)  = VMM_KEY(tpt1)
+      key1(5)  = VMM_KEY(fipt1)
+      key1(6)  = VMM_KEY(tdt1)
+      key1(7)  = VMM_KEY(tt1)
+      key1(8)  = VMM_KEY(fit1)
+      key1(9)  = VMM_KEY(topo)
+      key1(10) = VMM_KEY(tplt1)
+      key1(11) = VMM_KEY(qt1)
+      key1(12) = VMM_KEY(pipt0)
+      key1(13) = VMM_KEY(pipt1)
+      key1(14) = VMM_KEY(st1)
+      nlod = 14
       if (.not. Schm_hydro_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(wt1)
-         pnlod = pnlod+1
+         key1(nlod+1) = VMM_KEY(wt1)
+         nlod = nlod+1
          if (Schm_difqp_L) then
-             pnlkey1(pnlod+1) = VMM_KEY(qpt1)
-             pnlkey1(pnlod+2) = VMM_KEY(mut1)
-             pnlkey1(pnlod+3) = VMM_KEY(multx)
-             pnlod = pnlod+3
+             key1(nlod+1) = VMM_KEY(qpt1)
+             key1(nlod+2) = VMM_KEY(mut1)
+             key1(nlod+3) = VMM_KEY(multx)
+             nlod = nlod+3
          endif
       endif
       if (G_lam) then
-         pnlkey1(pnlod+1) = VMM_KEY(nest_psd)
-         pnlod = pnlod+1
+         key1(nlod+1) = VMM_KEY(nest_psd)
+         nlod = nlod+1
       endif
 *     - - - - - - - - - - - - - - -
-      pnerr = vmmlod(pnlkey1,pnlod)
+      err = vmmlod(key1,nlod)
 *     - - - - - - - - - - - - - - -
-      pnerr = VMM_GET_VAR(ut1)
-      pnerr = VMM_GET_VAR(vt1)
-      pnerr = VMM_GET_VAR(psdt1)
-      pnerr = VMM_GET_VAR(tpt1)
-      pnerr = VMM_GET_VAR(fipt1)
-      pnerr = VMM_GET_VAR(tdt1)
-      pnerr = VMM_GET_VAR(tt1)
-      pnerr = VMM_GET_VAR(fit1)
-      pnerr = VMM_GET_VAR(topo)
-      pnerr = VMM_GET_VAR(tplt1)
-      pnerr = VMM_GET_VAR(qt1)
-      pnerr = VMM_GET_VAR(pipt0)
-      pnerr = VMM_GET_VAR(pipt1)
-      pnerr = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(tpt1)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(tdt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(topo)
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR(qt1)
+      err = VMM_GET_VAR(pipt0)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(st1)
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(wt1)
-         pnerr = VMM_GET_VAR(qpt1)
-         pnerr = VMM_GET_VAR(mut1)
-         pnerr = VMM_GET_VAR(multx)
+         err = VMM_GET_VAR(wt1)
+         err = VMM_GET_VAR(qpt1)
+         err = VMM_GET_VAR(mut1)
+         err = VMM_GET_VAR(multx)
       else
          wt1_  = 0
          qpt1_ = 0
@@ -111,7 +111,7 @@
          multx_= 0
       endif
       if (G_lam) then
-         pnerr = VMM_GET_VAR(nest_psd)
+         err = VMM_GET_VAR(nest_psd)
          if (l_west) then
             do k=1,l_nk
                do j=1+pil_s,l_nj-pil_n
@@ -160,20 +160,8 @@ c*PDIR RESERVE=Macr_cpud
      %                   LDIST_DIM, G_nk)
       endif
 *
-      if (G_lam) then
-          i0 = lam_i0
-          j0 = lam_j0
-          in = lam_in
-          jn = lam_jn
-      else
-          i0 = glb_i0
-          j0 = glb_j0
-          in = glb_in
-          jn = glb_jn
-      endif
-
       if (Hzd_ho_L) then
-         if(Fft_fast_L) then
+         if (Fft_fast_L) then
 *           use FFT in diffusion-solver
             if (G_lam) then
                 call hzd_hof_lam ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
@@ -188,10 +176,17 @@ c*PDIR RESERVE=Macr_cpud
             endif
          else
 *           use MXMA in diffusion-solver
-            call hzd_ho ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+            if ( .not. Eigv_parity_L) then
+                call hzd_ho ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
      %                    tt1 , fit1, tplt1,  pipt1, wt1 ,
      %                    qpt1, mut1, multx,  topo ,
      %                    LDIST_DIM, G_nk)
+            else
+                call hzd_ho_parite( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                    tt1 , fit1, tplt1,  pipt1, wt1 ,
+     %                    qpt1, mut1, multx,  topo ,
+     %                    LDIST_DIM, G_nk)
+            endif
          endif
       endif
 
@@ -270,30 +265,8 @@ c*PDIR RELEASE
       endif 
 *
       endif
-
-      if(Lctl_debug_L) then 
-      call glbstat (ut1,'UU',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (vt1,'VV',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (psdt1,'PS',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (tpt1,'TP',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (fipt1,'FIP',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (tdt1,'TD',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (tt1,'TT',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (fit1,'GZ',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (tplt1,'TPL',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (qt1,'Q',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      call glbstat (pipt1,'PIP',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-      endif
-      if ( .not. Schm_hydro_L ) then
-           call glbstat (wt1,'W',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-           if ( Schm_difqp_L ) then
-                call glbstat (qpt1,'QP',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-                call glbstat (mut1,'MU',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-                call glbstat (multx,'MUL',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
-           endif
-      endif
 *
-      pnerr = vmmuld(-1,0)
+      err = vmmuld(-1,0)
 *    
  1001 format(/,3X,'NO HORIZONTAL DIFFUSION REQUIRED')
 *

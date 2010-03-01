@@ -15,7 +15,9 @@
 * v2_10 - Qaddouri&Desgagne - higher order diffusion operator
 * v2_11 - Desgagne M.       - remove vertical modulation
 * v2_31 - Qaddouri A.       - remove stkmemw and correction to yp2
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Qaddouri & Lee    - Lam configuration
+* v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
+* v3_01 - Lee V.            - add setup for horizontal sponge
 *
 *object
 *     see id section
@@ -28,6 +30,7 @@
 #include "glb_pil.cdk"
 #include "geomg.cdk"
 #include "hzd.cdk"
+#include "eigv.cdk"
 #include "dcst.cdk"
 #include "fft.cdk"
 #include "trp.cdk"
@@ -35,9 +38,10 @@
 #include "cstv.cdk"
 #include "lun.cdk"
 #include "vspng.cdk"
+#include "hspng.cdk"
 #include "ptopo.cdk"
 *      
-      integer i,j,k,istat,dim,dpwr,Gni
+      integer i,j,k,istat,dim,dpwr,Gni,NSTOR
       real*8, dimension(:)  ,allocatable :: wk1_8,wk2_8
       real*8 ZERO_8, ONE_8, HALF_8
       real*8 c_8, gdx_8
@@ -61,7 +65,7 @@
       if (Hzd_ho_L .and. Lun_out.gt.0) write(Lun_out,1002)
       if (Lun_debug_L)print *,'HZD_SET: Hzd_type_S=',Hzd_type_S,' Hzd_ho_L=',Hzd_ho_L
 * 
-      if ((Hzd_fact_L.or.Hzd_ho_L).or.(Vspng_nk.gt.0)) then
+      if ((Hzd_fact_L.or.Hzd_ho_L).or.(Vspng_nk.gt.0).or.(Hspng_nj.gt.0)) then
 *
          call hpalloc(VAR_PTR(Hzd_xp0_8)      ,3*G_ni*2,istat,1)
          call hpalloc(VAR_PTR(Hzd_xp2_8)      ,3*G_ni*2,istat,1)
@@ -86,6 +90,7 @@
             wk1_8(i-Lam_pil_w) = (G_xg_8(i+2)-G_xg_8(i)) * HALF_8
          end do
          call set_ops8 (wk2_8,wk1_8,ONE_8,G_periodx,Gni,Gni,1)
+*
          do i=1,Gni
             Hzd_xp2_8(i+Lam_pil_w)=wk2_8(i)
             Hzd_xp2_8(G_ni+i+Lam_pil_w)=wk2_8(Gni+i)
@@ -122,9 +127,10 @@
          Hzd_yp2_8(j) =Hzd_yp2_8(2*G_nj+j-1)
          Hzd_yp2_8(G_nj+j) = - (Hzd_yp2_8(j) + Hzd_yp2_8(2*G_nj+j))
 *
-         if (Hzd_fact_L) then
+         if (Hzd_fact_L.or.Hspng_nj.gt.0) then
 *
-            if (Lun_out.gt.0) write(Lun_out,1001)
+            if (Lun_out.gt.0.and.Hzd_fact_L) write(Lun_out,1001)
+            if (Lun_out.gt.0.and.Hspng_nj.gt.0) write(Lun_out,1004)
 *
             call hpalloc(VAR_PTR(Hzd_opsxp0_8)   ,  G_ni*2,istat,1)
             call hpalloc(VAR_PTR(Hzd_opsyp0_8)   ,  G_nj*2,istat,1)
@@ -144,26 +150,6 @@
             end do
 *
          endif
-c     do i=1,G_ni*3
-c        print *,'hzd_xp0_8(',i,')=',Hzd_xp0_8(i)
-c     enddo
-c     do i=1, G_nj*3
-c        print *,'hzd_yp0_8(',i,')=',Hzd_yp0_8(i)
-c     enddo
-c     do i=1,G_ni*3
-c        print *,'hzd_xp2_8(',i,')=',Hzd_xp2_8(i)
-c     enddo
-c     do i=1, G_nj*3
-c        print *,'hzd_yp2_8(',i,')=',Hzd_yp2_8(i)
-c     enddo
-c     if (Hzd_fact_L) then
-c     do i=1,G_ni*3
-c        print *,'hzd_opsxp0_8(',i,')=',Hzd_opsxp0_8(i)
-c     enddo
-c     do i=1, G_nj*3
-c        print *,'hzd_opsyp0_8(',i,')=',Hzd_opsyp0_8(i)
-c     enddo
-c     endif
 *
 *     Compute eigenvalues and eigenvector for high-order diffusion.
 *              Eigenvalue problem in East-West direction
@@ -173,9 +159,20 @@ c     endif
             if (Lun_out.gt.0) write(Lun_out,1002)
             call hpalloc( Hzd_xeval_8_, G_ni*2, istat, 1 )
             if ( .not. Fft_fast_L ) then
-               call hpalloc( Hzd_xevec_8_, G_ni*G_ni*2, istat, 1 )
-               call set_poic  ( Hzd_xeval_8, Hzd_xevec_8 , Hzd_xp0_8,
-     $                                        Hzd_xp2_8, Gni, G_ni )
+
+              if( .not. Eigv_parity_L) then
+                 call hpalloc( Hzd_xevec_8_, G_ni*G_ni*2, istat, 1 )
+                 call set_poic  ( Hzd_xeval_8, Hzd_xevec_8 , Hzd_xp0_8,
+     $                                            Hzd_xp2_8, Gni, G_ni )
+              else
+*                Eigenmodes with definite parity
+                 NSTOR = (G_ni+2)/2 + ( 1 - mod((G_ni+2)/2,2) )
+                 dim = NSTOR*NSTOR*2
+                 call hpalloc( Hzd_evvec_8_, dim, istat, 1 )
+                 call hpalloc( Hzd_odvec_8_, dim, istat, 1 )
+                 call set_poic_par_U (Hzd_xeval_8, Hzd_evvec_8 ,
+     $                              Hzd_odvec_8, G_xg_8(1), G_ni, NSTOR)
+              endif
             else
                c_8 = Dcst_pi_8 / dble( Gni )
                if (G_lam) then
@@ -200,14 +197,6 @@ c     endif
                    end do
                endif
             endif
-c           do i=1,G_ni
-c              print *,'hzd_xeval_8(',i,')=',Hzd_xeval_8(i)
-c           enddo
-c           if (.not.Fft_fast_L) then
-c                do i=1,G_ni*G_ni
-c                   print *,'hzd_xevec_8(',i,')=',Hzd_xevec_8(i)
-c                enddo
-c           endif
 *
 *     initialize operator nord_south for U, V and scalar grids
 *                              for high-order diffusion-solver
@@ -274,16 +263,6 @@ c           endif
      $                       Opr_opsyp0_8,Opr_opsyp2_8,wk1_8,
      $                       Opr_xeval_8, Hzd_cdiff)
 *
-c           print *,'trp_22max,trp_22min=',trp_22max,trp_22min
-c           do i=1,((trp_22max-trp_22min+1)*G_nj)
-c              print *,'Hzd_as_8(',i,')=',Hzd_as_8(i)
-c           enddo
-c           do i=1,((trp_22max-trp_22min+1)*G_nj)
-c              print *,'Hzd_cs_8(',i,')=',Hzd_cs_8(i)
-c           enddo
-c           do i=1,((trp_22max-trp_22min+1)*G_nj)
-c              print *,'Hzd_deltas_8(',i,')=',Hzd_deltas_8(i)
-c           enddo
             deallocate (wk1_8,wk2_8)
          endif
       else
@@ -295,6 +274,8 @@ c           enddo
  1002 format(/,'INITIALIZATING HIGH ORDER HORIZONTAL DIFFUSION ',
      $         '(S/R HZD_SET)',/,60('='))
  1003 format(/,'NO HORIZONTAL DIFFUSION REQUIRED',/,32('='))
+ 1004 format(/,'INITIALIZATING FACTORIZED HORIZONTAL SPONGE', 
+     $         '(S/R HZD_SET)',/,60('='))
  1010 format (3X,'Diffusion Coefficient = ',e22.14,' m**',i1,'/sec' )
 *
 *     ---------------------------------------------------------------

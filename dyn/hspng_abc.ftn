@@ -1,0 +1,149 @@
+***s/r hspng_abc -- Prepares matrices aix,bix,cix,dix,aiy,biy,ciy
+*
+#include <model_macros_f.h>
+*
+      subroutine hspng_abc (F_aix_8, F_bix_8, F_cix_8, F_dix_8 ,
+     $                    F_aiy_8, F_biy_8, F_ciy_8, F_coef_8,
+     $                    F_cy2_8, F_xp0_8, F_xp2_8, F_yp0_8 ,
+     $                    F_yp2_8, Gni, Gnj, F_gnjv, lnjv)
+*
+#include "impnone.cdk"
+*
+      integer Gni,Gnj,F_gnjv, lnjv
+      real*8 F_aix_8(*), F_bix_8(*), F_cix_8(*), F_dix_8(*), 
+     $       F_aiy_8(*), F_biy_8(*), F_ciy_8(*), F_coef_8,
+     $       F_cy2_8(*) , F_xp0_8(Gni,3), F_xp2_8(Gni,3), 
+     $       F_yp0_8(Gnj,3), F_yp2_8(Gnj,3)
+*
+*author    
+*     J.P. Toviessi (hzd_abc)
+*
+*revision
+* v3_01 - Lee V    - for diffusion only on Hspng_nj points on the poles
+*
+*object
+*       
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_aix_8
+*----------------------------------------------------------------
+* 
+*implicit
+#include "glb_ld.cdk"
+#include "hspng.cdk"
+#include "ldnh.cdk"
+#include "grd.cdk"
+#include "trp.cdk"
+*     
+      integer i, j, k, kk, ii, jj
+      real*8 ax_8(Ldnh_maxy,G_ni), bx_8(Ldnh_maxy,G_ni), cx_8(Ldnh_maxy,G_ni),
+     $       ay_8(Trp_22max,G_nj), by_8(Trp_22max,G_nj), cy_8(Trp_22max,G_nj),
+     $       difvx_8(G_ni,l_nj), difvy_8(Trp_22n,G_nj), diy_8
+      real*8 ZERO_8,ONE_8,HALF_8,pis2
+      parameter ( ZERO_8 = 0.0 , ONE_8 = 1.0 , HALF_8 = 0.5 )
+**
+*     ---------------------------------------------------------------
+*
+*     Calcul le long de X
+*
+      do j = 1, l_nj
+      do i = 1, G_ni
+         difvx_8 (i,j) = 0.0
+      end do
+      end do
+
+c     pis2 = acos(zero)
+*
+      if (l_south) then
+          do j = 1, Hspng_nj
+          do i = 1, G_ni
+             difvx_8 (i,j) =  Hspng_mf*(Hspng_nj-j+1)/Hspng_nj
+c            difvx_8 (i,j) =  Hspng_mf*(cos(pis2*(j-1)/Hspng_nj))**2
+          end do
+          end do
+      endif
+      if (l_north) then
+          do j = lnjv-Hspng_nj+1, lnjv
+          do i = 1, G_ni
+             difvx_8 (i,j) = Hspng_mf*(j-lnjv+Hspng_nj)/Hspng_nj
+c            difvx_8 (i,j) = Hspng_mf*(cos(pis2*(lnjv-j)/Hspng_nj))**2 
+          end do
+          end do
+      end if
+*
+      do j = 1, lnjv
+         do i = 1, G_ni
+            ax_8(j,i) = F_xp0_8(i,1) -  difvx_8(i,j)*
+     $                  F_xp2_8(i,1)*F_coef_8/F_cy2_8(j)
+            bx_8(j,i) = F_xp0_8(i,2) -  difvx_8(i,j)*
+     $                  F_xp2_8(i,2)*F_coef_8/F_cy2_8(j)
+            cx_8(j,i) = F_xp0_8(i,3) -  difvx_8(i,j)*
+     $                  F_xp2_8(i,3)*F_coef_8/F_cy2_8(j)
+            enddo
+      enddo
+*
+      do j = lnjv+1, Ldnh_maxy
+      do i = 1, G_ni
+         bx_8(j,i)=  ONE_8
+         cx_8(j,i)= ZERO_8
+         ax_8(j,i)= ZERO_8
+      enddo
+      enddo
+*
+      call set_trig21 (F_aix_8,F_bix_8,F_cix_8,F_dix_8, ax_8,bx_8,cx_8, 
+     $                 Ldnh_maxy, 1, G_ni, Ldnh_maxy, .true.)
+*
+*     Calcul le long de Y
+*
+      do i = 1, Trp_22n
+      do j = 3, G_nj
+         difvy_8 (i,j) = 0.0
+      end do
+      end do
+
+      if (l_south) then
+          do j = 1, Hspng_nj
+          do i = 1, Trp_22n
+             difvy_8 (i,j) = Hspng_mf*(Hspng_nj-j+1)/Hspng_nj
+c            difvy_8 (i,j) = Hspng_mf*(cos(pis2*(j-1)/Hspng_nj))**2
+          enddo
+          enddo
+      endif
+      if (l_north) then
+          do j = F_gnjv-Hspng_nj+1,F_gnjv
+          do i = 1, Trp_22n
+             difvy_8 (i,j) = Hspng_mf*(j-F_gnjv+Hspng_nj)/Hspng_nj
+c            difvy_8 (i,j) = Hspng_mf*(cos(pis2*(F_gnjv-j)/Hspng_nj))**2
+          enddo
+          enddo
+      endif
+*
+      do i= 1, Trp_22n
+         do j= 1, F_gnjv
+            ay_8(i,j) = F_yp0_8(j,1) - difvy_8(i,j)*
+     %                  F_yp2_8(j,1) * F_coef_8 
+            by_8(i,j) = F_yp0_8(j,2) - difvy_8(i,j)*
+     %                  F_yp2_8(j,2) * F_coef_8 
+            cy_8(i,j) = F_yp0_8(j,3) - difvy_8(i,j)*
+     %                  F_yp2_8(j,3) * F_coef_8 
+         enddo
+         ay_8(i,1) = ZERO_8
+      enddo
+*
+      do i = Trp_22n+1, Trp_22max
+      do j = 1, F_gnjv
+         by_8(i,j)=  ONE_8
+         cy_8(i,j)= ZERO_8
+         ay_8(i,j)= ZERO_8
+      enddo
+      enddo
+*
+      call set_trig21 (F_aiy_8,F_biy_8,F_ciy_8,diy_8, ay_8,by_8,cy_8, 
+     $                 Trp_22max, 1, F_gnjv, Trp_22max, .false.)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

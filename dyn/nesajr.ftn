@@ -10,7 +10,7 @@
       real F_fn(DIST_SHAPE,Nk), F_fd(DIST_SHAPE,Nk)
 *
 *author 
-*     Desgagne       - spring 2002
+*     Desgagne       - spring 2002 (after MC2 v_4.9.3)
 *
 *revision
 * v3_00 - Desgagne             - initial version
@@ -39,13 +39,13 @@
 *----------------------------------------------------------------------
       if ((F_ndavx.eq.0).and.(F_ndavy.eq.0)) return
       if (north+south+east+west.eq.4)
-     $  call nes4s (F_fn,F_fd,LDIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+     $  call nes4s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
       if (north+south+east+west.eq.3)
-     $  call nes3s (F_fn,F_fd,LDIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+     $  call nes3s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
       if (north+south+east+west.eq.2)
-     $  call nes2s (F_fn,F_fd,LDIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+     $  call nes2s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
       if (north+south+east+west.eq.1)
-     $  call nes1s (F_fn,F_fd,LDIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
+     $  call nes1s (F_fn,F_fd,DIST_DIM,Nk,F_is,F_js,F_ndavx,F_ndavy)
 *----------------------------------------------------------------------
       return
       end

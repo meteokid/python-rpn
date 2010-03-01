@@ -22,6 +22,8 @@
 * v3_00 - Tanguay M.        - adapt to Simon's exchange
 *                           - incore option for WA file Conversion 
 * v3_00 - Laroche S.        - additions for simplified physics
+* v3_01 - Tanguay M.        - add V4dg_sgvc_L
+*                           - introduce GAUSS=GEM option
 *
 *object
 *     1) Allocate WA files and VMM space
@@ -49,10 +51,18 @@
       external hpalloc,longueur
 *
       integer pnerr,ier,timobmax,i,j,i1,i2,j1,j2,ni,lun_4dvar,longueur,
-     %        ierr,fnom,ilun_out,status
+     %        ierr,fnom,ilun_out,status,offi,offj,indx,err
 *
-      real*8 rad2deg_8
+      real,   allocatable, dimension(:)   :: groots
+*
+      real*8 G_xgauss_8, G_ygauss_8
+      pointer (paxgauss_8, G_xgauss_8(1-G_ni:2*G_ni)),
+     $        (paygauss_8, G_ygauss_8(1-G_nj:2*G_nj))
+*
+      real*8 rad2deg_8,deg2rad_8
       real*8, parameter :: CLXXX_8 = 180.0
+      real*8, parameter :: ONE_8   = 1.0 
+      real*8, parameter :: TWO_8   = 2.0 
 *
       character(len=256) cfilename_S
       character(len=3)  cprocno_S
@@ -157,7 +167,7 @@
 *
              call hpalloc (V4dg_obincore_, V4dg_obsize, pnerr, 1)
 *
-          if(V4dg_4dvar_L) then
+          if(V4dg_4dvar_L.or.V4dg_sgvc_L) then
 *
 *         Maximal timobmax since V4dg_stepob is still unknown
 *         ---------------------------------------------------
@@ -207,7 +217,7 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *C    ----------------------------------------------
 *C    call v4d_setscalp ()
 *
-      if(V4dg_4dvar_L) then
+      if(V4dg_4dvar_L.or.V4dg_sgvc_L) then
 *
 *        Redirect output to allow printings for each proc
 *        ------------------------------------------------
@@ -219,6 +229,17 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *
          ilun_out = Lun_out
          Lun_out  = lun_4dvar
+*
+*        Define path to the "exchange" directory with 3D-Var 
+*        ---------------------------------------------------
+         Path_xchg_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/xchgdir'
+*
+*        Flag to do 3hr TRAJ run to get to the starting date of the assimilation
+*        -----------------------------------------------------------------------
+         Pr_traj0to9_L = .true.
+         write(Lun_out,*) 'Flag to do 3hr TRAJ run TRAJ0TO9_L = ',Pr_traj0to9_L
+*
+         if(V4dg_4dvar_L) then
 *
 *        Initialize the obs variable indices
 *        -----------------------------------
@@ -241,15 +262,6 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *        Flag to allow adjoint model-profile file to be opened 
 *        -----------------------------------------------------
          Pr_ropen_L = .false.     
-*
-*        Define path to the "exchange" directory with 3D-Var 
-*        ---------------------------------------------------
-         Path_xchg_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/xchgdir'
-*
-*        Flag to do 3hr TRAJ run to get to the starting date of the assimilation
-*        -----------------------------------------------------------------------
-         Pr_traj0to9_L = .true.
-         write(Lun_out,*) 'Flag to do 3hr TRAJ run TRAJ0TO9_L = ',Pr_traj0to9_L
 *
 *        Input obs lists if not already done.
 *        -----------------------------------
@@ -292,12 +304,82 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
          allocate ( V4dz_ay(j2-j1+1), STAT=status )
 *
          rad2deg_8 = CLXXX_8/Dcst_pi_8
+*
+*        Prescribe global GEM scalar Z grid axes 
+*        ---------------------------------------
+         if(.not.V4dg_ga_eq_ge_L) then
+*
          do i=i1,i2
             V4dz_ax(i-i1+1) = Geomg_x_8(i) * rad2deg_8
          enddo
          do j=j1,j2
             V4dz_ay(j-j1+1) = Geomg_y_8(j) * rad2deg_8
          enddo
+*
+*        Prescribe Gaussian grid axes 
+*        ----------------------------
+         else
+*
+         deg2rad_8 = acos( -ONE_8 )/CLXXX_8
+*
+*        Evaluate latitudes of Gaussian grid 
+*        -----------------------------------
+         allocate ( groots(G_nj), STAT=status )
+*
+         call ez_glat (V4dz_ay,groots,G_nj,0)
+*
+         deallocate( groots, STAT=status )
+*
+         call hpalloc (paxgauss_8      , 6*G_ni, err, 1)
+         call hpalloc (paygauss_8      , 6*G_nj, err, 1)
+*
+*        Evaluate Extended Global Gaussian grid in radians 
+*        -------------------------------------------------
+         do i=1,G_ni
+            G_xgauss_8(i) = float(i-1) * (360./float(G_ni)) * deg2rad_8  
+         end do
+         do j=1,G_nj
+            G_ygauss_8(j) = V4dz_ay(j) * deg2rad_8 
+         enddo
+*
+         do i=-G_ni+1,0
+            G_xgauss_8(i) = G_xgauss_8(i+G_ni) - TWO_8*Dcst_pi_8
+         end do
+         do i=G_ni+1,2*G_ni
+            G_xgauss_8(i) = G_xgauss_8(i-G_ni) + TWO_8*Dcst_pi_8
+         end do
+*
+         G_ygauss_8( 0    ) = -(G_ygauss_8(1) + Dcst_pi_8)
+         G_ygauss_8(-1    ) = -TWO_8*Dcst_pi_8 -
+     $                        (G_ygauss_8(0)+G_ygauss_8(1)+G_ygauss_8(2))
+         G_ygauss_8(G_nj+1) =  Dcst_pi_8 - G_ygauss_8(G_nj)
+         G_ygauss_8(G_nj+2) =  TWO_8*Dcst_pi_8 -
+     $                        (G_ygauss_8(G_nj+1)+G_ygauss_8(G_nj)+G_ygauss_8(G_nj-1))
+         do j=-2,-G_nj+1,-1
+            G_ygauss_8(j) = 1.01*G_ygauss_8(j+1)
+         end do
+         do j=G_nj+3,2*G_nj
+            G_ygauss_8(j) = 1.01*G_ygauss_8(j-1)
+         end do
+*
+*        Evaluate Local grid as subset of Global grid 
+*        --------------------------------------------
+         offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+         offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+*
+         do i=1-G_halox,l_ni+G_halox
+            indx = offi + i
+            V4dz_ax(i) = G_xgauss_8(indx) * rad2deg_8
+         end do
+         do j=1-G_haloy,l_nj+G_haloy
+            indx = offj + j
+            V4dz_ay(j) = G_ygauss_8(indx) * rad2deg_8 
+         end do
+*
+         call hpdeallc (paxgauss_8, err )
+         call hpdeallc (paygauss_8, err )
+*
+         endif
 *
 *        Evaluate AX,AY differences in CX,CY for cubic interpolation
 *        -----------------------------------------------------------
@@ -308,6 +390,8 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *
             call v4d_nwtncof (V4dz_cx,V4dz_cy,V4dz_ax,V4dz_ay,i1,i2,j1,j2,
      %                        ni,V4dz_grtypi)
+*
+         endif
 *
          endif
 *

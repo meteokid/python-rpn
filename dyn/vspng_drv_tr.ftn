@@ -19,6 +19,7 @@
 *                             T', T'lin & hence T on Vspng_nk levels +
 *                             sponge on top level only on all other variables
 * v3_00 - Tanguay M.        - correction as in vspng_drv 
+* v3_01 - Laroche/Tanguay   - correction nj as in vspng_drv
 *
 *object
 *     see id section
@@ -47,13 +48,14 @@
 *
       real*8, dimension (trp_12emax*G_ni*Vspng_nk) :: aix_8,bix_8,cix_8,dix_8
       real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
-      real*8 cy_8(l_nj), xp0_8(G_ni), yp0_8(G_nj)
+      real*8 cy_8(l_nj+1), xp0_8(G_ni), yp0_8(G_nj)
+**
 *     __________________________________________________________________
 *
       if ( Cstv_phidf_8 .gt. 0.0) then
 *
          c_8 = Cstv_phidf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
-         do j = 1, l_nj
+         do j = 1, l_nj+1
             cy_8(j) = G_yg_8(l_j0+j-1)
          end do
 *
