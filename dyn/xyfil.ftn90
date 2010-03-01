@@ -1,0 +1,145 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r xyfil - Filtering of a field (x-y filter)
+!
+#include "model_macros_f.h"
+!
+      subroutine xyfil ( F_d, F_s, F_w1, F_co, F_whx_8, F_why_8,  &
+                         F_pole_L, DIST_DIM,Nk)
+!
+      implicit none
+!
+      integer DIST_DIM, Nk
+      logical F_pole_L
+      real F_d(DIST_SHAPE,Nk), F_s(DIST_SHAPE,Nk), F_w1(DIST_SHAPE,Nk), &
+           F_co
+      real*8 F_whx_8(Minx:Maxx), F_why_8(Miny:Maxy)
+!
+!author
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_31 - Desgagne M.       - remove stkmemw
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_d           O              output field 
+! F_s           I              input  field 
+! F_w1          -              work   field 
+! F_co          I              filtering coeficient 
+!                              ( 0.0 <= F_co <= 0.5)
+! F_whx_8       I              grid point spacings on x-axis
+! F_why_8       I              grid point spacings on y-axis
+! F_pole_L      I              field includes poles if .true.
+!----------------------------------------------------------------
+!
+!implicit
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+!
+      real w2hx(XDIST_SHAPE), w2hy(YDIST_SHAPE)
+!
+      real prmean1, prmean2, prcom1
+      integer i, j, k, i0, in, j0, jn
+!*
+      prcom1 = 1. - F_co
+!
+!
+!C    Calculation of grid points double intervals
+!     ----------------------------------------------
+!
+!
+      do i= 1+pil_w, l_ni-pil_e 
+         w2hx(i) = F_whx_8(i) + F_whx_8(i-1)
+      end do
+!
+      do j= 1+pil_s, l_nj-pil_n 
+         w2hy(j) = F_why_8(j) + F_why_8(j-1)
+      end do
+!
+      call rpn_comm_xch_halo (F_s,LDIST_DIM,l_ni,l_nj,Nk, &
+              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+!
+!   INTERPOLATION ALONG X
+!
+!************************
+      i0 = 1 + pil_w
+      if ((l_west).and.(G_lam)) i0 = i0+1
+      in = l_niu - pil_e
+      j0 = 1 + pil_s
+      if (l_south) j0 = j0+1
+      jn = l_njv - pil_n
+!
+      do k=1,Nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i=i0,in
+            F_w1(i,j,k)= F_co * (F_s(i-1,j,k)*F_whx_8(i)+ &
+                                 F_s(i+1,j,k)*F_whx_8(i-1)) &
+                              / w2hx(i) + prcom1 * F_s (i,j,k)
+         end do
+         end do
+      end do
+      if (G_lam) then
+      if (l_west) then
+         do k=1,Nk
+         do j= 1+pil_s, l_nj-pil_n 
+            F_w1(i0-1,j,k) = F_s(i0-1,j,k)
+         end do
+         end do
+      endif
+      if (l_east) then
+         do k=1,Nk
+         do j= 1+pil_s, l_nj-pil_n 
+            F_w1(in+1,j,k) = F_s(in+1,j,k)
+         end do
+         end do
+      endif
+      endif
+!
+      call rpn_comm_xch_halo (F_w1,LDIST_DIM,l_ni,l_nj,Nk, &
+              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+!
+!   INTERPOLATION ALONG Y
+!
+!*************************
+      do k=1,Nk
+        do j=j0,jn
+        do i= 1+pil_w, l_ni-pil_e 
+           F_d(i,j,k)= F_co * (F_w1(i,j-1,k)*F_why_8(j)+ &
+                               F_w1(i,j+1,k)*F_why_8(j-1)) &
+                            / w2hy(j) + prcom1 * F_w1(i,j,k)
+        end do
+        end do
+      end do
+!
+      if (l_south) then
+         do k=1,Nk
+         do i= 1+pil_w, l_ni-pil_e 
+            F_d(i,j0-1,k) = F_w1(i,j0-1,k)
+         end do
+         end do
+      endif
+      if (l_north) then
+         do k=1,Nk
+         do i= 1+pil_w, l_ni-pil_e 
+            F_d(i,jn+1,k) = F_w1(i,jn+1,k)
+         end do
+         end do
+      endif
+!
+      return
+      end

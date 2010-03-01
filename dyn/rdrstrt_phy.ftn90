@@ -1,0 +1,116 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!s/r rdrstrt_phy - Read the restart file restart_BUSPER_$date
+!
+#include "model_macros_f.h"
+!
+      subroutine rdrstrt_phy ()
+!
+      implicit none
+!
+!author
+!     M. Desgagne - Mars 2008
+!
+!revision
+! v3_31 - Desgagne M.       - initial version
+!
+!implicits
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "itf_phy_buses.cdk"
+#include "grd.cdk"
+#include "cstv.cdk"
+#include "lam.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
+#include "modconst.cdk"
+!
+!
+!modules
+      integer  fnom,fclos,wkoffit
+      external fnom,fclos,wkoffit
+!
+      character*512 fn
+      character*16 datev,datev_infile
+      integer dim,unf,ier,ibuf(4),adr
+      real   rbuf(6)
+      real*8 dayfrac, sec_in_day
+      parameter (sec_in_day=86400.0d0)
+!
+!     ---------------------------------------------------------------
+!
+      unf = 0
+      dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
+      call incdatsd (datev,Mod_runstrt_S,dayfrac)
+
+      fn  = 'BUSPER4spinphy_'//trim(datev)
+      ier = wkoffit(fn) 
+      if (ier.lt.-1) then
+        fn='restart_BUSPER'
+        ier = wkoffit(fn)
+      endif
+!
+      if (ier.ge.-1) then
+         ier = fnom( unf,fn,'RND+OLD',0 )
+      else
+         return
+      endif
+
+      if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step,trim(fn)
+
+      call waopen (unf)
+
+      call waread (unf,ibuf          ,1,4)
+      call waread (unf,rbuf          ,5,6)
+
+      call datf2p (datev_infile,ibuf(1))
+      dim = ibuf(2)
+
+      if ( (datev_infile .ne.  datev          )   .or.  &
+           (dim          .ne.  p_bper_siz*p_nj)   .or. &
+           (ibuf(3)      .ne.  Grd_ni         )   .or. &
+           (ibuf(4)      .ne.  Grd_nj         )   .or. &
+           (rbuf(1)      .ne.  Grd_dx         )   .or. &
+           (rbuf(2)      .ne.  Grd_dy         )   .or. &
+           (rbuf(3)      .ne.  Grd_xlon1      )   .or. &
+           (rbuf(4)      .ne.  Grd_xlat1      )   .or. &
+           (rbuf(5)      .ne.  Grd_xlon2      )   .or. &
+           (rbuf(6)      .ne.  Grd_xlat2      )  ) then
+         goto 999
+      endif
+!
+      call waread (unf,Phy_busper3D,11,dim)
+      adr = 11 + dim
+      call waread (unf,Rstri_half_L,adr,1)
+      adr = adr + 1
+      if ( Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L) then
+         if ( .not. associated ( Phy_busper3D_digf ) )  &
+                    allocate   ( Phy_busper3D_digf (dim))
+         call waread (unf,Phy_busper3D_digf,adr,dim)
+      endif
+!
+      Lam_busper_init_L = .true.
+!
+ 999  call waclos(unf)
+      ier = fclos(unf)  
+!
+ 2000 format(/,'READING A PHYSICS RESTART FILE AT TIMESTEP #',I8,x,a, &
+             /,'============================================')
+!
+!     ---------------------------------------------------------------
+!      
+      return
+      end

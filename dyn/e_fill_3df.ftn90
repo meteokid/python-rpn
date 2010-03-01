@@ -1,0 +1,48 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r e_fill_3df - to fill a K plane of a 3d variable with a 2d variable
+!                   as well as doing a conversion on the field.
+!
+      subroutine e_fill_3df ( fa,tr1,nis,njs,nks,k,con,add)
+      implicit none
+!
+      integer nis,njs,nks,k
+      real tr1(nis,njs,nks),con,add
+      real fa(nis,njs)
+!
+!author V.Lee 2006
+!
+!revision
+! v3_30 - Lee.V - initial version
+!
+!*
+!
+      integer i,j,n
+!
+!----------------------------------------------------------------------
+!
+!     fill 2D field from fa to 3D field tr1 binary
+!
+      do j=1,njs
+      do i=1,nis
+         tr1(i,j,k)=(fa(i,j)+add)*con
+      enddo
+      enddo
+!
+!----------------------------------------------------------------------
+      return
+      end
+!

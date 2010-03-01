@@ -14,24 +14,24 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !
-c      DCL_DYNVAR(Ind,    u, real, (LDIST_SHAPE,l_nk+1))
-c      DCL_DYNVAR(Ind,    v, real, (LDIST_SHAPE,l_nk+1))
+!      DCL_DYNVAR(Ind,    u, real, (LDIST_SHAPE,l_nk+1))
+!      DCL_DYNVAR(Ind,    v, real, (LDIST_SHAPE,l_nk+1))
 !      DCL_DYNVAR(Ind,    t, real, (LDIST_SHAPE,l_nk+2))
 !      DCL_DYNVAR(Ind,   zd, real, (LDIST_SHAPE,l_nk+1))
 !      DCL_DYNVAR(Ind,    s, real, (LDIST_SHAPE))
 !
 !      DCL_DYNVAR(Ind,    w, real, (LDIST_SHAPE,l_nk+1))
-c      DCL_DYNVAR(Ind,    q, real, (LDIST_SHAPE,0:l_nk+1))
+!      DCL_DYNVAR(Ind,    q, real, (LDIST_SHAPE,0:l_nk+1))
 !
 !      DCL_DYNVAR(Ind,  fip, real, (LDIST_SHAPE,0:l_nk+1))
 !
-c      DCL_DYNVAR(Ind, topo, real, (LDIST_SHAPE))
-c      DCL_DYNVAR(Ind,dtopo, real, (LDIST_SHAPE))
+!      DCL_DYNVAR(Ind, topo, real, (LDIST_SHAPE))
+!      DCL_DYNVAR(Ind,dtopo, real, (LDIST_SHAPE))
 !
-c      real, pointer, dimension(:,:,:) :: Ind_fip
-c      real, pointer, dimension(:,:,:) :: Ind_w
-c      real, pointer, dimension(:,:,:) :: Ind_t
-c      real, pointer, dimension(:,:,:) :: Ind_zd
-c      real, pointer, dimension(:,:)   :: Ind_s
-c      common /Ind_new/ Ind_fip, Ind_w, Ind_t, Ind_zd, Ind_s
+!      real, pointer, dimension(:,:,:) :: Ind_fip
+!      real, pointer, dimension(:,:,:) :: Ind_w
+!      real, pointer, dimension(:,:,:) :: Ind_t
+!      real, pointer, dimension(:,:,:) :: Ind_zd
+!      real, pointer, dimension(:,:)   :: Ind_s
+!      common /Ind_new/ Ind_fip, Ind_w, Ind_t, Ind_zd, Ind_s
 

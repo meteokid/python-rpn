@@ -108,7 +108,6 @@
 ! Adw_zbacd_8  |  |                                                    |
 ! Adw_zcabd_8  |  |                                                    |
 ! Adw_zdabc_8  | /                                                     |
-! Adw_Fn_I     | Localisation indices for Optimized SETINT/TRILIN      |
 !______________________________________________________________________
 !                                                                      |
 !  VARIABLES ASSOCIATED WITH CFL COMPUTATION FOR LAM (ADW_CFL_LAM)     |
@@ -139,8 +138,6 @@
 !
 #endif
 #include "adw_nml.cdk"
-
-      logical Adw_hor_L,Adw_ver_L
 !
       integer            Adw_nic, Adw_nit, Adw_njc, Adw_njt
       integer            Adw_int_i_off, Adw_int_j_off
@@ -151,11 +148,7 @@
       real*8             Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8
       real*8             Adw_x00_8,  Adw_y00_8,  Adw_cfl_8(3)
 !
-      MARK_COMMON_BEG (adw_l)
-      common / adw_l  /  Adw_hor_L, Adw_ver_L
-      MARK_COMMON_END (adw_l)
-!
-      type (vertical_i)  Adw_lcz
+      type (super_vertical_i)  Adw_lcz
 
       common / adw_ib /  Adw_nic, Adw_nit, Adw_njc, Adw_njt
       common / adw_ib /  Adw_int_i_off, Adw_int_j_off
@@ -163,12 +156,10 @@
       common / adw_ib /  Adw_fro_n, Adw_fro_s, Adw_fro_a
       common / adw_ib /  Adw_trunc, Adw_cfl_i, Adw_lcz
 !
-      type (vertical_8)  Adw_bsz_8
-      type (vertical_8)  Adw_dlz_8
-      type (vertical_8)  Adw_diz_8
-      type (vertical_8)  Adw_dbz_8
-      type (vertical_8)  Adw_qzz_8
-      type (vertical_8)  Adw_qzi_8
+      type (super_vertical_8)  Adw_bsz_8
+      type (vertical_8)        Adw_dlz_8
+      type (vertical_8)        Adw_qzz_8
+      type (vertical_8)        Adw_qzi_8
 
       type (vertical_8)  Adw_zbc_8
       type (vertical_8)  Adw_zabcd_8
@@ -176,10 +167,12 @@
       type (vertical_8)  Adw_zcabd_8
       type (vertical_8)  Adw_zdabc_8
 !
+      real*8, dimension(:),pointer :: Adw_diz_8,Adw_dbz_8
+!
       common / adw_r8 /  Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8
       common / adw_r8 /  Adw_x00_8,  Adw_y00_8,  Adw_cfl_8
       common / adw_r8 /  Adw_bsz_8,  Adw_dlz_8,  Adw_diz_8
-      common / adw_r8 /  Adw_dbz_8,  Adw_qzz_8,  Adw_qzi_8
+      common / adw_r8 /  Adw_qzz_8,  Adw_qzi_8, Adw_dbz_8
       common / adw_r8 /  Adw_zbc_8,  Adw_zabcd_8,Adw_zbacd_8
       common / adw_r8 /  Adw_zcabd_8,Adw_zdabc_8
 !
@@ -198,8 +191,6 @@
       DCL_DYNVAR(Adw, sy2d_8,    real*8 , (*))
       DCL_DYNVAR(Adw,    lcx,    integer, (*))
       DCL_DYNVAR(Adw,    lcy,    integer, (*))
-!
-      DCL_DYNVAR(Adw,  fn_I ,    integer, (*))
 !
       DCL_DYNVAR(Adw,  bsx_8,    real*8 , (*))
       DCL_DYNVAR(Adw,  dlx_8,    real*8 , (*))

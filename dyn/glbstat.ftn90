@@ -1,0 +1,81 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r glbstat2 - 
+!
+#include "model_macros_f.h"
+!
+      subroutine glbstat2 (F_field, F_var_S, F_from_S,  &
+                           Minx,Maxx,Miny,Maxy,Mink,Maxk, &
+                           F_i0,F_in,F_j0,F_jn,F_k0,F_kn)
+      implicit none
+!
+      character * (*) F_var_S,F_from_S
+      integer Minx,Maxx,Miny,Maxy,Mink,Maxk
+      integer F_i0,F_in,F_j0,F_jn,F_k0,F_kn
+      real F_field(*)
+!
+!author
+!     M. Desgagne
+!
+!revision
+! v3_30 - Lee V. - glbstat with an extra argument to comment the statfld
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_field       I         Field to be operated on
+! F_var_S       I         User provided string to define F_field
+! F_from_S      I         User provided string to comment the statfld
+! F_i0,F_j0     I         Global lower-left indexes of the sub-domain
+!                            on which to perform statistics
+! F_in,F_jn     I         Global upper-right indexes of the sub-domain
+!                            on which to perform statistics
+! F_k0,F_kn     I         Range of levels on which to perform statistics
+!----------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "lctl.cdk"
+!
+      integer nk
+      real, dimension(:,:), allocatable :: wk1
+!
+!----------------------------------------------------------------------
+!
+
+      if (Lctl_r8stat_L) then
+
+         nk = Maxk-Mink+1
+         allocate     (wk1(G_ni*G_nj,Mink:Maxk))
+         call glbcolc (wk1,G_ni,G_nj,F_field,Minx,Maxx,Miny,Maxy,nk)
+!
+         if (Ptopo_myproc.eq.0)  &
+         call statfld2 (wk1 ,F_var_S, Lctl_step, F_from_S, &
+                        1,G_ni, 1,G_nj, Mink,Maxk, &
+                        F_i0,F_j0,F_k0, F_in,F_jn,F_kn)
+
+      else
+
+         call statf_dm2 (F_field,F_var_S,Lctl_step,F_from_S, &
+                              Minx,Maxx,Miny,Maxy,Mink,Maxk, &
+                              F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+      endif
+!
+!----------------------------------------------------------------------
+!
+      return
+      end

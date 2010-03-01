@@ -1,0 +1,94 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** s/r e_bmfrd 
+!
+      integer function e_bmfrd ( dgid, nix, njx, nv, ad, mp, ip1, gnk,  &
+                                                 anyip_L,arret_L,inter )
+      implicit none
+!
+      character* (*) nv, inter
+      logical arret_L,anyip_L
+      integer dgid, nix, njx, gnk, ip1(*)
+      real    ad, mp
+!
+!revisions
+! v3_20 -  Spacek L. - corrected passing character argument declaration
+! v3_30 -  Dugas B.  - e_liaccu is now declared as an external function
+!
+!arguments
+!______________________________________________________________________
+!                                                                      |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! dgid               | description of destination grid used for EZ     |
+! NIX                | number of points on I                           |
+! NJX                | number of points on J                           |
+! NV                 | name of the field to read                       |
+! AD                 | constant to add to field                        |
+! MP                 | constant to multiply to field                   |
+! IP1                | value(s) of encoded IP1 to read                 |
+! GNK                | number of IP1 values in IP1 array               |
+! anyip_L            | .true. to obtain any IP1 of field NV if         |
+!                    | specified IP1 is not found                      |
+! arret_L            | .true. to abort if record is not found at all   |
+!----------------------------------------------------------------------
+!
+!implicits
+#include "model_macros_f.h"
+#include "e_grids.cdk"
+#include "e_fu.cdk"
+#include "e_anal.cdk"
+#include "e_topo.cdk"
+#include "e_schm.cdk"
+!
+!modules
+      external e_rdhint3,e_liaccu
+      integer  e_rdhint3,e_liaccu
+!
+      integer err,i,k
+      real w1 (nix*njx), w2 (nix*njx), dtinv
+!
+!     ---------------------------------------------------------------
+!
+      e_bmfrd = -1
+!
+      do k=1,gnk
+!
+         e_bmfrd = e_rdhint3 (w1,dgid,nix,njx,nv,ip1(k),ip2a,ip3a,' ', &
+                               tva,anyip_L,.false.,inter,e_fu_anal,6)
+         if (e_bmfrd.lt.0) goto 500
+!     
+!        SCALING
+!
+         if(ad.ne.0.0 .or. mp.ne.1.0) then
+            do i=1,nix*njx
+               w1(i) = mp * (w1(i)+ad)
+            enddo
+         endif
+!     
+         call e_bmfsplitxy2 (w1,nix,njx,nv,k,gnk,pni,0,0,0)
+!
+      end do
+!
+      goto 900
+!
+ 500  write(6,*) ' Variable = ',NV, ' NOT AVAILABLE'
+      if (arret_L) call e_arret( 'e_bmfrd' )
+!
+!     ---------------------------------------------------------------
+!
+ 900  return
+      end

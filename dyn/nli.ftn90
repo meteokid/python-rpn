@@ -1,0 +1,131 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r nli - compute nonlinear portion of governing & derived equations
+!
+#include "model_macros_f.h"
+!
+      subroutine nli()
+!
+      implicit none
+!
+!authors
+!      Alain Patoine & Gabriel Lemay
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version (from rhs v1_03)
+! v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
+!                             add Ncn
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+! v4_05 - Girard C.         - Open top
+! v4_05 - Lepine M.         - VMM replacement with GMM
+!
+!object
+!******************************************************************************
+!
+!arguments
+!       none
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "p_geof.cdk"
+#include "rhsc.cdk"
+#include "nl.cdk"
+#include "cori.cdk"
+#include "vt0.cdk" 
+#include "vtx.cdk" 
+#include "ptopo.cdk"
+#include "lctl.cdk"
+#include "acid.cdk"
+!
+!modules
+!    
+!*
+!     __________________________________________________________________
+!
+!
+      if (Lun_debug_L)  write(Lun_out,1000)
+!
+      gmmstat = gmm_get(gmmk_rhsp_s,rhsp,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(rhsp)'
+      gmmstat = gmm_get(gmmk_rhsc_s,rhsc,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(rhsc)'
+      gmmstat = gmm_get(gmmk_tt0_s,tt0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(tt0)'
+      gmmstat = gmm_get(gmmk_st0_s,st0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(st0)'
+      gmmstat = gmm_get(gmmk_bspqtx_s,bspqtx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(bspqtx)'
+      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(fiptx)'
+      gmmstat = gmm_get(gmmk_zdt0_s,zdt0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(zdt0)'      
+      if (.not. Schm_hydro_L) then
+         gmmstat = gmm_get(gmmk_mutx_s,mutx,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(mutx)'
+      endif
+
+!     - - - - - - - - - - - - - - -
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(topo)'
+      if (.not. Schm_hydro_L) then
+         gmmstat = gmm_get(gmmk_qt0_s,qt0,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(qt0)'
+      else
+         nullify(qt0)
+      endif
+      if (Cori_cornl_L) then
+         gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(ut0)'
+         gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(vt0)'
+      else
+         nullify(ut0,vt0)
+      endif
+!
+      if (Acid_test_L) &
+           call acid_stat_nli(qt0,st0,bspqtx,nl_u,nl_v,nl_t,nl_c,nl_f,1)
+!
+      call diag_var( bspqtx, mutx, st0, qt0, 1,l_ni,1,l_nj,l_nk)
+!
+      call diag_fip( fiptx, st0, tt0, topo, 1,l_ni,1,l_nj,l_nk)
+!
+
+      if (Acid_test_L) &
+         call glbstat (bspqtx,'BSPQ',LDIST_DIM,G_nk+2,8+acid_i0,G_ni-8-acid_in, &
+                                               8+acid_j0,G_nj-8-acid_jn,1,G_nk+2)
+
+      call nlip_2 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , nl_b, &
+                    ut0  , vt0  , tt0  , st0  , qt0  , zdt0 , fiptx, &
+                    rhsp , rhsc ,bspqtx, mutx , &
+                    LDIST_DIM, l_nk )
+!
+!
+      if (Acid_test_L) &
+           call acid_stat_nli(qt0,st0,bspqtx,nl_u,nl_v,nl_t,nl_c,nl_f,2)
+!
+!
+ 1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')
+!
+!     __________________________________________________________________
+!
+      return
+      end
+

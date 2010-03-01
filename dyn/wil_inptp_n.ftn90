@@ -1,0 +1,259 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r wil_inptp_n
+!
+      SUBROUTINE WIL_INPTP_N(FNAME,TIME,MAXH,LDIAG,ZETASC,DIVSC,PHISC, &
+                             MM,NN,KK,MY_CASE,MY_ANGLE)
+!
+      implicit none
+!
+      CHARACTER*80 FNAME
+      REAL TIME
+      INTEGER MAXH,LDIAG(0:MAXH,2)
+!
+      COMPLEX ZETASC(*),DIVSC(*),PHISC(*)
+      INTEGER MM,NN,KK
+!
+      INTEGER MY_CASE
+      REAL MY_ANGLE
+!
+!author Jacob et al. 1992 
+!
+!revision
+! v4_04 - Jacob et al.     - initial version INPTP_N 
+! v4_04 - Tanguay M.       - Williamson's cases
+!
+!object
+!     THIS IS THE INPUT ROUTINE FOR PROGNOSTIC FIELDS 
+!
+!implicits
+#include "wil_lun.cdk"
+!------------------------------------------------------------------
+      INTEGER FNOM
+      EXTERNAL FNOM
+!
+      INTEGER CDFID,IRET,CASE,N,I,STEP
+      INTEGER CASEID, ROTID, TIMEID, MMID,NNID, KKID, &
+              ZETAID, DIVID, PHIID
+      REAL CTIME,ANGLE
+!
+      logical done_L
+      data done_L /.false./
+      save done_L
+!
+      INTEGER CDFID
+      data CDFID /0/
+      save CDFID 
+!------------------------------------------------------------------
+!
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,*)  
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,*) 'IN SUBROUTINE WIL_INPTP_N'
+!
+!     OPEN EXISTING NETCDF FILE
+!     -------------------------
+      if(.not.done_L) then
+!CC      CDFID = 0
+         IRET = fnom( CDFID, '/users/dor/armn/mta/william_1993/run_test7/myREF0007' , 'FTN+SEQ' , 0)
+         done_L= .true.
+      endif
+!
+      IF (IRET .NE. 0) THEN
+          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,330) FNAME
+  330         FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+              ' CANNOT OPEN NETCDF FILE: ',A80,/, &
+              ' CHECK FOR CORRECT FILE (NAMELIST PARAMETER FNIN) !')
+          call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 1')
+      ENDIF
+!
+      READ(CDFID,*) CASEID 
+!     -------------------- 
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,*) 'CASEID=',CASEID
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,340) 
+  340        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND TESTCASE VARIABLE IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 2')
+      ENDIF
+!
+      READ(CDFID,*) ROTID 
+!     -------------------
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,*) 'ROTID =',ROTID
+      ANGLE = ROTID
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,350) 
+  350        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND ROTATION ANGLE VARIABLE IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 3')
+      ENDIF
+!
+      READ(CDFID,*) TIMEID 
+!     --------------------
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,*) 'TIMEID=',TIMEID
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,360) 
+  360        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND TIMESTEP VARIABLE IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 4')
+      ENDIF
+!
+      READ(CDFID,*) MMID  
+!     ------------------
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,*) 'MMID  =',MMID 
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,370) 
+  370        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND M-TRUNCATION VARIABLE IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 5')
+      ENDIF
+!
+      READ(CDFID,*) NNID  
+!     ------------------ 
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,*) 'NNID  =',NNID 
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,380) 
+  380        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND N-TRUNCATION VARIABLE IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 6')
+      ENDIF
+!
+      READ(CDFID,*) KKID
+!     ------------------
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,*) 'KKID  =',KKID
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,390) 
+  390        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND K-TRUNCATION VARIABLE IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 7')
+      ENDIF
+!
+      ZETAID = 1
+!     ----------
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,400) 
+  400        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND VORTICITY ARRAY IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 8')
+      ENDIF
+!
+      DIVID  = 2 
+!     ----------
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,410) 
+  410        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND DIVERGENCE ARRAY IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 9')
+      ENDIF
+!
+      PHIID  = 3 
+!     ----------
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,420) 
+  420        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT FIND GEOPOTENTIAL ARRAY IN NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 10')
+      ENDIF
+!
+      CASE=CASEID
+!
+!     TEST FOR CORRECT TESTCASE
+!     -------------------------
+      IF (CASE .NE. MY_CASE) THEN
+         if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,480) CASE,MY_CASE
+  480        FORMAT(/,' STSWM: WARNING IN ROUTINE WIL_INPTP_N:',/, &
+             ' TEST CASE OF REFERENCE SOLUTION INCONSISTENT',/, &
+             ' WITH EXPECTED CASE FOR ANALYTIC SOLUTION',/, &
+             ' CHECK FOR CORRECT FILE (NAMELIST PARAMETER FNIN)  !',/, &
+             ' FILE CASE = ',I2,' EXPECTED CASE = ',I2)
+      ENDIF
+!
+      MM=MMID
+      NN=NNID
+      KK=KKID
+!
+!     TEST FOR ARRAY OVERFLOW
+!     -----------------------
+      IF ((MM .LT. MAXH) .OR. (NN .LT. MAXH)) THEN
+         if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,520) MAXH
+  520        FORMAT(/,' STSWM: WARNING IN ROUTINE WIL_INPTP_N:',/, &
+             ' SPECTRAL COEFFICIENTS IN REFERENCE SOLUTION',/, &
+             ' ARE UNDEFINED (ASSUMING = 0.0) ',/, &
+             ' ADJUST PARAMETER MAXH IN FILE ''PARAMS.i'':',/, &
+             ' MAXH = ',I4)
+      ELSEIF ((MAXH .LT. MM) .OR. (MAXH .LT. NN)) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,530) MAXH
+  530        FORMAT(/,' STSWM: WARNING IN ROUTINE WIL_INPTP_N:',/, &
+             ' SPECTRAL COEFFICIENTS FROM REFERENCE SOLUTION',/, &
+             ' HAVE BEEN TRUNCATED (PARAMETER MAXH) TO T-',I4)
+      ENDIF
+!
+!     TEST FOR CORRECT ANGLE
+!     ----------------------
+      IF (ANGLE .NE. MY_ANGLE) THEN
+         if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,510) ANGLE,MY_ANGLE
+  510        FORMAT(/,' STSWM: WARNING IN ROUTINE WIL_INPTP_N:',/, &
+             ' ROT. ANGLE OF REFERENCE SOLUTION INCONSISTENT',/, &
+             ' WITH EXPECTED ANGLE FOR ANALYTIC SOLUTION',/, &
+             ' CHECK FOR CORRECT FILE (NAMELIST PARAMETER FNIN)  !',/, &
+             ' FILE ANGLE = ',F5.3,' EXPECTED ANGLE = ',F5.3)
+      ENDIF
+!
+!     FIGURE OUT INDEX OF DESIRED TIME
+!     --------------------------------
+      CTIME=TIMEID
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,500) CTIME
+  500     FORMAT(/,' INFORMATIONAL NOTE FROM ROUTINE WIL_INPTP_N:',/, &
+          ' READING REFERENCE SOLUTION AT TIME = ',0PF6.2)
+!
+!     DETERMINE LDIAG(0:NN,1:2), DIAGONAL LENGTHS AND CUMULATIVE
+!     DISPLACEMENTS 
+!     ----------------------------------------------------------
+      LDIAG(0,1) = MAXH+1
+      LDIAG(0,2) = 0
+!
+      DO 10 N=1,MAXH
+         LDIAG(N,1) = MAXH+1-N
+         LDIAG(N,2) = LDIAG(N-1,1) + LDIAG(N-1,2)
+   10 CONTINUE
+!                                                                               
+!     READ VORTICITY
+!     --------------
+      CALL WIL_INFLD_X(CDFID,ZETAID,STEP,MAXH,LDIAG,MM,NN,KK,ZETASC)                             
+!                                                                               
+!     READ DIVERGENCE
+!     ---------------
+      CALL WIL_INFLD_X(CDFID,DIVID,STEP,MAXH,LDIAG,MM,NN,KK,DIVSC)                             
+!                                                                               
+!     READ GEOPOTENTIAL
+!     -----------------
+      CALL WIL_INFLD_X(CDFID,PHIID,STEP,MAXH,LDIAG,MM,NN,KK,PHISC)                             
+!
+!     CLOSE FILE
+!     ----------
+      IF (IRET .NE. 0) THEN
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,540)
+  540        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/, &
+             ' CANNOT CLOSE NETCDF FILE')
+         call handle_error(-1,'wil_inptp_n','STOP IN WIL_INPTP_N 17')
+      ENDIF
+!
+!     SET TRUNCATION PARAMETERS
+!     -------------------------
+      MM = MAXH
+      NN = MAXH
+      KK = MAXH
+!
+      RETURN                                                                    
+      END                                                                       

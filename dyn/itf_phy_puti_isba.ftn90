@@ -30,7 +30,6 @@ Integer Function itf_phy_puti_isba(vd,opt)
       Integer, External :: fnom, fstouv, fstinf, fstprm, fstfrm, fclos, fstopc
       Integer, External :: fstluk, fstinl, wkoffit, ezgdef_fmem, ezdefset
       Integer, External :: ezsetopt, ip1_all, bmf_get, ezsint
-      Integer, External :: vmmlod, vmmuld, vmmget, vmmuln
       Logical, External :: samegrid
       character , parameter :: esc = char( 27 )
 !
@@ -182,7 +181,7 @@ flag=Final_check(flag)
       If(vd%phyvar=='MF') Then
         ier = bmf_get ('ME  ',bmf_time1,bmf_time2,-1,localf,-1.,&
                                               1,l_ni,1,l_nj,1,1)
-        If(ier/=0)call gem_stop('put_info 1',-1)
+        call handle_error_l(ier==0,'itf_phy_puti_isba','put_info 1')
         Call bmf_clear
       Endif
       ier=phy_simple_transforms(vd%phyvar,opt%z0cst,localf)
@@ -196,7 +195,7 @@ End Do Main1
    vd=>temp
 !
 if(Ptopo_myproc==0)Write(*,"(a/72('='))")'PROCESSING ANCIENT GEOBUS'
-If(ier/=0) call gem_stop('put_info 2',-1)
+call handle_error_l(ier==0,'itf_phy_puti_isba','put_info 2')
 main2 : Do
    Do j=1,p_nj
      ij=vd%findx+(j-1)*p_bent_siz
@@ -210,7 +209,7 @@ main2 : Do
 End Do main2
 !
 If(flag.and.Ptopo_myproc==0)write(*,*)'All variables found!'
-If(.not.flag)Call gem_stop('Missing variables, see the listing',-1)
+call handle_error_l(flag,'itf_phy_puti_isba','Missing variables, see the listing')
 vd=>temp
 !
 Deallocate(globalf,xfi,yfi)

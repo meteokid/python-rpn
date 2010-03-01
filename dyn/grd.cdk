@@ -2,7 +2,8 @@
       character*2 Grd_proj_S
       logical Grd_roule, Grd_uniform_L, Grd_gauss_L
       integer Grd_ni, Grd_nj, Grd_nila, Grd_njla, Grd_left, Grd_belo
-      integer Grd_iref, Grd_jref
+      integer Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
+      integer Grd_iref, Grd_jref, Grd_maxcfl
       real Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
       real Grd_latr, Grd_lonr, Grd_x0, Grd_xl, Grd_y0, Grd_yl
       real Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2, Grd_rot
@@ -17,7 +18,8 @@
       MARK_COMMON_END (Grd_l)
       MARK_COMMON_BEG (Grd_i)
       common / Grd_i / Grd_ni  , Grd_nj  , Grd_nila, Grd_njla
-      common / Grd_i / Grd_left, Grd_belo, Grd_iref, Grd_jref
+      common / Grd_i / Grd_left, Grd_belo, Grd_iref, Grd_jref, Grd_maxcfl
+      common / Grd_i / Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
       MARK_COMMON_END (Grd_i)
       MARK_COMMON_BEG (Grd_r)
       common / Grd_r / Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
@@ -30,7 +32,7 @@
       common / Grd_r8 / Grd_rot_8(3,3)
       MARK_COMMON_END (Grd_r8)
 !
-      namelist /grid/ Grd_typ_S, Grd_ni, Grd_nj
+      namelist /grid/ Grd_typ_S, Grd_ni, Grd_nj, Grd_maxcfl
       namelist /grid/ Grd_nila, Grd_njla, Grd_iref, Grd_jref
       namelist /grid/ Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
       namelist /grid/ Grd_latr, Grd_lonr

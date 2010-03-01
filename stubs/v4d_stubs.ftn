@@ -1,9 +1,6 @@
       subroutine v4d_rwtraj
       return
       end
-      subroutine v4d_blocstat
-      return
-      end
       subroutine v4d_setting
       return
       end

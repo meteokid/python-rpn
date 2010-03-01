@@ -1,0 +1,206 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r e_int_iy2yv - cubic or linear interpolation from y to yv
+!
+      subroutine e_int_iy2yv( frr, frf, frs, fnk, fnis, fnjs, fnks, &
+                        flcub, flscal )
+      implicit none
+!
+      logical  flcub, flscal
+      integer  fnk
+      integer  fnis, fnjs, fnks
+      real     frr(fnis,fnjs,fnks), frf(fnis,fnjs,fnks), &
+               frs(fnis,fnjs)
+!
+!author jean cote - rpn - sept 95
+!
+!revision
+! v0_18 - cote/methot            - 
+! v0_16	- michel roch            - document flcub
+! v0_16	- jean cote              - introduce flscal
+! v0_18 - cote/methot            - introduce efficient cubic lagrange 
+! v0_18                            interpolation
+! v1_00 - jean cote              - real and real*8 versions simultanously 
+! v1_00                            with CPP
+! v1_00                          - in-line the cald2y and int_iy2yv* calls
+! v1_96 - V. Lee                 - eliminated cdgeomn.cdk, replaced cdschm.cdk
+! v1_96                            with schm.cdk
+! v1_97 - V. Lee                 - prefixed comdecks used in GEFNTR with "e_"
+! v1_97 - V. Lee                 - only the real version is implemented
+!
+!language
+!       fortran 77
+!
+!object
+!	see above id
+!
+!arguments
+!______________________________________________________________________
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! - output -         |                                                 |
+! frr                | field interpolated to yv grid                   |
+! - input  -         |                                                 |
+! frf                | field on y grid                                 |
+! frs                | work field                                      |
+! fnk                | number of levels to process                     |
+! fnis               | dimension along x                               |
+! fnjs               | dimension along y                               |
+! fnks               | dimension along z                               |
+! flcub              | if true, cubic interpolation                    |
+! flscal             | if true, input is not a wind-like quantity      |
+!----------------------------------------------------------------------
+!
+!implicits
+#include "e_schm.cdk"
+#include "e_grids.cdk"
+#include "e_intuv.cdk"
+#include "e_inuvl.cdk"
+!
+!notes
+!                  ----------------------------------------
+!       IMPORTANT: To be used for wind-like quantities ONLY
+!                  ----------------------------------------
+!
+!       Works in place - frr and frf can occupy the same space
+!
+!*
+!     ----------------------------------------------------------------
+!
+      integer i, j, k
+      real*8  prd
+      real*8  one
+      parameter( one  = 1.0 )
+!
+      do 100 k = 1, fnk
+      if ( .not. flcub ) then
+!-----------------------------------------------------------------*
+! Linear interpolation                                            *
+!-----------------------------------------------------------------*
+         do j = 1, pnj - 1
+            do i = 1, pni
+               frr(i,j,k) = ( one - xdc0yyv(j) ) * frf(i,j,k) + &
+                                    xdc0yyv(j)   * frf(i,j+1,k)
+            enddo
+         enddo
+      elseif ( .not. e_Schm_stlag .or. flscal ) then
+!-----------------------------------------------------------------*
+! Cubic spline interpolation or non-wind interpolation            *
+!-----------------------------------------------------------------*
+         call optriss6 &
+                     ( frs, frf(1,1,k), pni, pnj, 1, 'Y', &
+                       xdq2y(1,1), xdq2y(1,2), xdq2y(1,3), &
+                       .false., fnis, fnjs, 1, 1 )
+         if ( e_Schm_stlag ) then
+            do j = 1, pnj
+               do i = 1, pni
+                  frs(i,j) = xdqiy(j,1) * frs(i,j)
+               enddo
+            enddo
+         else
+            call opinv6 &
+                      ( frs, pni, pnj, 1, 'Y', prd, prd, prd, &
+                        xdqiy(1,1), xdqiy(1,2), xdqiy(1,3), xdqiy(1,4), &
+                        .false., 'N', fnis, fnjs, 1, 1 )
+         endif
+ 
+         if ( .not. flscal ) then
+            do j = 1, pnj - 1
+               do i = 1, pni
+                  frr(i,j,k) = ( one - xdc0yyv(j) ) * frf(i,j,k)   + &
+                                       xdc0yyv(j)   * frf(i,j+1,k) + &
+                                       xdc1yyv(j)   * frs(i,j)     + &
+                                       xdc2yyv(j)   * frs(i,j+1)
+               enddo
+            enddo
+         else
+            j = 1
+               do i = 1, pni
+                  frr(i,j,k) = ( one - xdc0yyv(j) ) * frf(i,j,k)   + &
+                                       xdc0yyv(j)   * frf(i,j+1,k)
+               enddo
+            do j = 2, pnj - 2
+               do i = 1, pni
+                  frr(i,j,k) = ( one - xdc0yyv(j) ) * frf(i,j,k)   + &
+                                       xdc0yyv(j)   * frf(i,j+1,k) + &
+                                       xdc1yyv(j)   * frs(i,j)     + &
+                                       xdc2yyv(j)   * frs(i,j+1)
+               enddo
+            enddo
+            j = pnj - 1
+            do i = 1, pni
+               frr(i,j,k) = ( one - xdc0yyv(j) ) * frf(i,j,k)   + &
+                                    xdc0yyv(j)   * frf(i,j+1,k)
+            enddo
+         endif
+      elseif ( loc(frr) .eq. loc(frf) ) then
+!-----------------------------------------------------------------*
+! Efficient Lagrange cubic interpolation ( in place )             *
+!-----------------------------------------------------------------*
+         do i = 1, fnis * fnjs
+            frs(i,1) = frf(i,1,k)
+         enddo
+            j = 1
+            do i = 1, pni
+               frr(i,j,k) =  &
+                              xdwyyv3(j,2) * frs(i,j  ) &
+                            + xdwyyv3(j,3) * frs(i,j+1) &
+                            + xdwyyv3(j,4) * frs(i,j+2)
+         enddo
+         do j = 2, pnj - 2
+            do i = 1, pni
+               frr(i,j,k) =   xdwyyv3(j,1) * frs(i,j-1) &
+                            + xdwyyv3(j,2) * frs(i,j  ) &
+                            + xdwyyv3(j,3) * frs(i,j+1) &
+                            + xdwyyv3(j,4) * frs(i,j+2)
+            enddo
+         enddo
+         j = pnj - 1
+            do i = 1, pni
+               frr(i,j,k) =   xdwyyv3(j,1) * frs(i,j-1) &
+                            + xdwyyv3(j,2) * frs(i,j  ) &
+                            + xdwyyv3(j,3) * frs(i,j+1)
+            enddo
+      else
+!-----------------------------------------------------------------*
+! Efficient Lagrange cubic interpolation ( not in place )         *
+!-----------------------------------------------------------------*
+         j = 1
+            do i = 1, pni
+               frr(i,j,k) =  &
+                              xdwyyv3(j,2) * frf(i,j  ,k) &
+                            + xdwyyv3(j,3) * frf(i,j+1,k) &
+                            + xdwyyv3(j,4) * frf(i,j+2,k)
+            enddo
+         do j = 2, pnj - 2
+            do i = 1, pni
+               frr(i,j,k) =   xdwyyv3(j,1) * frf(i,j-1,k) &
+                            + xdwyyv3(j,2) * frf(i,j  ,k) &
+                            + xdwyyv3(j,3) * frf(i,j+1,k) &
+                            + xdwyyv3(j,4) * frf(i,j+2,k)
+            enddo
+         enddo
+         j = pnj - 1
+            do i = 1, pni
+               frr(i,j,k) =   xdwyyv3(j,1) * frf(i,j-1,k) &
+                            + xdwyyv3(j,2) * frf(i,j  ,k) &
+                            + xdwyyv3(j,3) * frf(i,j+1,k)
+            enddo
+      endif
+  100 continue
+      return
+      end

@@ -1,0 +1,96 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r set_dia - calculates the number of surface and profile variables
+!                requested for zonal diagnostics and time-series
+!
+#include "model_macros_f.h"
+!
+      subroutine set_dia
+!
+      implicit none
+!
+!author
+!     M. Desgagne - V. Lee ( after version v1_03 of setserg )
+!
+!revision
+! v2_00 - Desgagne/Lee    - initial MPI version
+! v2_31 - Dugas B.        - permit rotated and/or multi-PE zonal diagnostics
+! v3_11 - A. Plante       - Activate code for LAM time-series
+! v3_30 - K. Winger       - Activate code for LAM zonaux-files
+!
+!object
+!	
+!arguments
+!	none
+!
+!implicits
+#include "lun.cdk"
+#include "p_serg.cdk"
+#include "p_zong.cdk"
+#include "glb_ld.cdk"
+!
+!
+      integer i
+!*
+!     ---------------------------------------------------------------
+!
+      if (lun_out.gt.0) write (lun_out,1000)
+!
+      P_serg_srsrf=CNSRSFM
+      do i=1,CNSRSFM
+         if (P_serg_srsrf_s(i) .eq. ' ' ) then
+            P_serg_srsrf=i-1
+            goto 215
+         endif
+      end do
+!
+ 215  P_serg_srprf=CNSRPFM
+      do i=1,CNSRPFM
+         if (P_serg_srprf_s(i) .eq. ' ' ) then
+            P_serg_srprf=i-1
+            goto 225
+         endif
+      end do
+!
+ 225  continue
+
+         
+      P_zong_znoff_L=.false.
+      P_zong_znsrf=CNZNSFM
+      do i=1,CNZNSFM
+         if (P_zong_znsrf_s(i) .eq. ' ' ) then
+            P_zong_znsrf=i-1
+            goto 235
+         endif
+      end do
+!
+ 235  P_zong_znprf=CNZNPFM
+      do i=1,CNZNPFM
+         if (P_zong_znprf_s(i) .eq. ' ' ) then
+            P_zong_znprf=i-1
+            goto 300
+         endif
+      end do
+!
+ 300  continue
+!
+ 1000 format( &
+      /,'CALCULATE THE NUMBER OF DIAGNOSTIC/SERIES VARIABLES (S/R SET_DIA)', &
+       /,'================================================================')
+!
+      return
+      end
+

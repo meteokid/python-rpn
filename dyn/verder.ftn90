@@ -1,0 +1,106 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r  verder - compute vertical derivative of input field 
+!                 with respect to field F_wlnph
+!
+#include "model_macros_f.h"
+!
+      subroutine verder (F_der, F_infield, F_wlnph, F_con1, F_con2, &
+                                   DIST_DIM, F_Nk,F_i0,F_in,F_j0,F_jn)
+!
+      implicit none
+!
+      integer DIST_DIM, F_Nk,F_i0,F_in,F_j0,F_jn
+      real    F_con1, F_con2
+      real    F_der(DIST_SHAPE,F_Nk),F_infield (DIST_SHAPE,F_Nk), &
+              F_wlnph(DIST_SHAPE,F_Nk)
+!
+!author
+!     alain patoine - after ddsig (efr)
+!
+!revision
+! v2_00 - Lee V.            - initial MPI version (from verder v1_03)
+! v3_21 - Lee V.            - Output Optimization
+!
+!object
+!     See above id
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_der        O    - derivative of the put field with respect to log of
+!                     hydrostatic pressure
+! F_infield    I    - input field on the eta levels of the model
+! F_wlnph      I    - log of hydrostatic pressure
+! F_con1       I    - used for boundary conditions
+! F_con2       I    - used for boundary conditions
+! F_i0         I    - starting point of calculation on W-E axis
+! F_in         I    - ending point of calculation on W-E axis
+! F_j0         I    - starting point of calculation on N-S axis
+! F_jn         I    - ending point of calculation on N-S axis
+!
+!implicits
+#include "glb_ld.cdk"
+!
+!*
+      integer i, j, k
+!
+
+!$omp parallel
+!$omp do
+      do j=F_j0,F_jn
+      do k=2,F_nk
+      do i=F_i0,F_in
+         F_der(i,j,k) =   ( F_infield (i,j,k) - F_infield (i,j,k-1) ) &
+                        / ( F_wlnph(i,j,k) - F_wlnph(i,j,k-1) )
+      end do
+      end do
+      end do
+!$omp enddo
+!
+      do j=F_j0,F_jn
+      do i=F_i0,F_in
+         F_der(i,j,1) =  F_der(i,j,2)
+      end do
+      end do
+
+!
+!$omp do
+      do j=F_j0,F_jn
+      do k=2,F_nk-1
+      do i=F_i0,F_in
+         F_der(i,j,k)=((F_wlnph(i,j,k+1)-F_wlnph(i,j,k))   * F_der(i,j,k) &
+                      +(F_wlnph(i,j,k)  -F_wlnph(i,j,k-1)) * F_der(i,j,k+1)) &
+                      /(F_wlnph(i,j,k+1)-F_wlnph(i,j,k-1))
+      end do
+      end do
+      end do
+!$omp enddo
+!
+!$omp do
+      do j=F_j0,F_jn
+      do i=F_i0,F_in
+        F_der(i,j,1)    =   F_con1 * F_der(i,j,1) &
+                          + (1.0 - F_con1) * F_der(i,j,2)
+        F_der(i,j,F_nk) =   F_con2 * F_der(i,j,F_nk) &
+                          + (1.0 - F_con2) * F_der(i,j,F_nk-1)
+      end do
+      end do
+!$omp enddo
+!$omp end parallel
+!
+      return
+      end

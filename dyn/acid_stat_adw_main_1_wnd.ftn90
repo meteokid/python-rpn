@@ -1,0 +1,59 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r acid_stat_adw_main_1_wnd - gblstat for acid test for s/r adw_main_1_wnd
+
+#include "model_macros_f.h"
+!
+      subroutine acid_stat_adw_main_1_wnd (F_uth,F_flag)
+      implicit none
+      real    F_uth(LDIST_SHAPE,G_nk)
+      integer F_flag
+      character(len=80) :: flag_S
+!
+!author
+!     Andre Plante
+!     
+!revision
+!
+!language
+!     fortran 77
+!
+!object
+!     glbstat for LAM acid test
+!     Note : the acid test is conducted with one CPU.
+!
+!implicits
+#include "glb_ld.cdk"
+#include "acid.cdk"
+!     
+      if(F_flag.eq.1)then
+         call glbstat (F_uth,'Uth',LDIST_DIM,G_nk, &
+              1+acid_i0,G_ni-acid_in-1, &
+              1+acid_j0,G_nj-acid_jn, &
+              1,G_nk)
+      elseif(F_flag.eq.2)then         
+         call glbstat (F_uth,'Uth',LDIST_DIM,G_nk, &
+              3+acid_i0,G_ni-acid_in-2, &
+              1+acid_j0,G_nj-acid_jn, &
+              1,G_nk)
+      else
+         write(flag_S,'(I)') F_flag
+         call handle_error(-1,'acid_stat_adw_main_1_wnd','error with flag='//flag_S)
+      endif
+
+      return
+      
+      end

@@ -1,0 +1,233 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_slb - Computes the physical tendencies
+!
+#include "model_macros_f.h"
+!
+      subroutine  itf_phy_slb ( F_cpu,  F_step, F_pslic, F_obusval, F_cobusval)
+      implicit none
+!
+      integer F_cpu, F_step, F_pslic
+      real F_obusval (*), F_cobusval(*)
+!
+!author 
+!     Michel Roch - rpn - june 1993
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_20 - Pellerin P.       - adapt to physics 3.66 with entry bus
+! v2_21 - Dugas B.          - activate climate mode
+! v2_21 - J. P. Toviessi    - (#) slab output
+! v2_31 - Dugas B.          - re-activate zonal diagnostics
+! v2_32 - Desgagne M.       - connection to physics 3.72
+! v3_00 - Laroche S.        - adaptation for v4d
+! v3_02 - Dugas B.          - account for a possible second call to the physics
+!                             and add optional call to dump full physics buses
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+! v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
+! v3_12 - Leduc A-M.        - Add arguments gzm and topo
+! v3_20 - Lee V             - replace slab Output with FST file output
+! v3_20 - Pellerin P.       - Add busvol in itf_phy_fillbus
+! v3_20 - Desgagne/Pellerin S.- Replaced Mem_pslic with jdo in test for last slice.
+! v3_20 - Lee/Kallaur       - Add coding and data structures to support chemistry.
+! v3_21 - Valcke, S.        - Modified CALL to c_getbus and c_fillbus
+! v3_30 - Spacek, L.        - New total tendecies uphytd,vphytd,tphytd,
+!                             huphytd,qcphytd,qrphytd,qgphytd,qiphytd
+!                             Eliminations of processus specific physics
+!                             tendencies.
+! v4_03 - Spacek L.         - Staggered version
+! v4_05 - Desgagne M.       - Add coupling components
+!
+!object
+!     See above id.
+!	
+!arguments
+!  Name       I/O                 Description
+!----------------------------------------------------------------
+! F_cpu        I    - cpu number
+! F_step       I    - current time step number
+! F_obusval    O    - physics output bus
+! F_cobusval   O    - chemistry output bus
+!----------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "schm.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_chm_bus.cdk"
+#include "obus.cdk"
+#include "clim.cdk"
+#include "itf_chm_obus.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_cpl.cdk"
+!
+      integer accum,nnc
+      parameter (accum = 0 )
+      character*2 accum_s
+      data    accum_s / ' ' /
+!
+      logical dumpbus_L
+      integer jdo, i, j, k, ii, offbo,offbb,mult,o1,o2
+      real dt
+!
+      real busdyn(max(1,p_bdyn_siz)), busvol(max(1,p_bvol_siz)), &
+           busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
+      pointer (pabusper,busper(*))
+!
+!     Declarations for chemistry buses.
+!
+      real chmbusdyn(max(1,chm_bdyn_siz))
+      real chmbusvol(max(1,chm_bvol_siz))
+      real chmbusent(max(1,chm_bent_siz))
+      real chmbusper, chmbusper2(max(1,chm_bper_siz))
+      pointer (pachmbusper,chmbusper(*))
+!*
+!     ---------------------------------------------------------------
+!
+      dumpbus_L = .false.
+      if (P_pbd_dumpbus.gt.0) then
+          dumpbus_L = (mod( F_step,P_pbd_dumpbus ).eq.0)
+!$omp critical (lock_dumpini2)
+          call dumpini2( p_bdyn_siz,p_bper_siz,p_bvol_siz, &
+                         Ptopo_numproc,p_ni,p_nj, G_ni,G_nj )
+!$omp end critical (lock_dumpini2)
+      endif
+!
+      busdyn = 0.0
+!
+      dt  = Cstv_dt_8
+      jdo = 0
+!
+!     Initialize chemical buses
+!
+      if ((Schm_chems_L).and.(F_step.eq.0)) chmbusent = 0.0
+!
+ 100  continue
+!
+
+!$omp critical      
+      F_pslic = F_pslic + 1
+      jdo  = F_pslic
+      if ( F_pslic .le. p_nj ) then
+!
+         pabusper    = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
+         if (Schm_chems_L) pachmbusper =  &
+                       loc(chm_busper3D((jdo-1)*chm_bper_siz+1))
+!
+         call zongopr( +3, jdo )
+!
+      endif
+!$omp end critical
+
+!
+!C    Stop if last slice has been completed
+!
+      if ( jdo .gt. p_nj ) goto 650
+!
+!     Fill physics buses with jdo row in subroutine itf_phy_fillbus
+!
+      busvol = 0.0
+      j = jdo + p_offj
+!
+      call itf_phy_fillbus ( busdyn, busent, j, F_step, p_nk )
+!
+!     Fill buses with fields produced by coupling
+!
+      if (C_coupling_L) call itf_cpl_fillbus ( busdyn,busper,busvol,j)
+!
+!     Run physics on row jdo
+!
+      call phy_exe (busent ,busdyn ,busper ,busvol , &
+                    p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz, &
+                    dt, jdo, F_step, F_cpu, p_ni, p_nk)
+!
+      call itf_phy_extract ( busvol, j, p_nk )
+!
+      if (dumpbus_L) call dumpbus2( busdyn,busper,busvol, jdo )
+!
+!C  Prepare surface variables for the coupling
+!
+      if (C_coupling_L) call itf_cpl_getbus (busdyn, busper, busvol, j)
+!
+!     Perform physic slices output
+!
+!$omp critical
+
+      do ii=1,Obus_top
+         offbo = (obus_offset(ii)-1)*l_ni*l_nj
+         offbb = obus_addr(ii)
+         if (obus_bus_S(ii).eq.'P'.and.obus_var_S(ii).eq.'LO') then
+            do mult=1,obus_mult(ii)
+               do k=1,obus_shp (ii)
+               do i=1,p_ni
+                  o1 = offbo + (k*mult-1)*l_ni*l_nj  &
+                             +      (j-1)*l_ni + i + p_offi
+                  o2 = offbb + (k*mult-1)*p_ni*l_nj + i - 1
+
+                  F_obusval(o1) = busper(o2)
+                  if (F_obusval(o1) .gt. Dcst_pi_8) &
+                  F_obusval(o1) = F_obusval(o1) - 2.0*Dcst_pi_8
+               enddo
+               enddo
+            enddo
+         else if (obus_bus_S(ii).eq.'P') then
+            do mult=1,obus_mult(ii)
+               do k=1,obus_shp(ii)
+               do i=1,p_ni
+                  F_obusval(offbo + (k*mult-1)*l_ni*l_nj &
+                                  +      (j-1)*l_ni + i + p_offi)= &
+                     busper(offbb + (k*mult-1)*p_ni + i - 1)
+               enddo
+               enddo
+            enddo
+         else if (obus_bus_S(ii).eq.'V') then
+            do mult=1,obus_mult(ii)
+               do k=1,obus_shp(ii)
+               do i=1,p_ni
+                  F_obusval(offbo + (k*mult-1)*l_ni*l_nj  &
+                                  +      (j-1)*l_ni + i + p_offi)= &
+                     busvol(offbb + (k*mult-1)*p_ni + i - 1)
+               enddo
+               enddo
+            enddo
+         endif
+      enddo
+!     
+!     In climate mode, zero out the physic accumulators after
+!     saving them, i.e. when output is greater than zero.
+!
+      if ( Clim_climat_L .and. Obus_top.gt.0) then
+         if (P_out_moyhr.eq.0) then
+            call phy_zeracc( busper,accum_s,accum )
+         else if (mod( F_step*(Cstv_dt_8/3600.),P_out_moyhr*1d0 ).eq.0) then
+            call phy_zeracc( busper,accum_s,accum )
+         endif
+      endif
+      call zongopr( -3, jdo )
+!
+!$omp end critical
+!
+      goto 100
+!
+ 650  continue
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

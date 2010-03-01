@@ -1,0 +1,122 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!* s/r e_intgeo  Read geophysic fields and interpolate on model grid.
+!
+#include "model_macros_f.h"
+!
+      logical function e_intgeo ()
+      implicit none
+!
+!author
+!     Michel Desgagne - January 2001
+!
+!revision
+! v2_21 - Desgagne M.       - initial version
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_21 - Lee V.            - collect errors while searching geophy fields
+! v3_30 - Desgagne M.       - new physics interface
+!
+!implicites
+#include "e_fu.cdk"
+#include "e_grids.cdk"
+#include "itf_phy_buses.cdk"
+#include "e_cdate.cdk"
+#include "hgc.cdk"
+#include "e_schm.cdk"
+!
+!*
+      integer e_rdhint3,e_moclim2
+      external e_rdhint3,e_moclim2
+!
+      character*4 nv
+      character*8 etk,typ,interp,seq,dum
+      logical anyip
+      integer ivar, im, i, longueur, unf, indx, ip1, ip2, iniv
+      integer, dimension (:), allocatable :: geoerr
+!
+!----------------------------------------------------------------------
+!
+      allocate (geoerr(p_bgeo_top))
+      geoerr = -1
+!
+!     Loop on variables in geobus 
+!
+      write (6,1000)
+      do ivar = 1, p_bgeo_top
+         iniv = 1
+         nv    = geonm(ivar,2)
+         if (nv.ne.'00') then
+            etk   = geonm(ivar,3)
+            typ   = geonm(ivar,4)
+            interp= geonm(ivar,5)
+            seq   = geonm(ivar,6)
+            write(6,1001) nv,etk,typ,interp,seq
+ 670        if ((seq(1:1).ne."V").and.(seq(1:4).ne." ")) then
+               unf = e_fu_anal
+               if (seq(1:1).eq."C") unf = e_fu_climat
+               if (seq(1:1).eq."G") unf = e_fu_geophy
+               ip2 = -1
+               anyip = .false.
+               if (seq(1:1).eq."C") then
+                  ip2 = month
+                  if (nv.eq.'AL') anyip = .true.
+               endif
+               do im=1,geopar(ivar,3)
+                  ip1 = -1
+                  if (geopar(ivar,3).gt.1)  &
+                       call convip ( ip1, real(im), 3, 1, dum, .false. )
+                  indx = geopar(ivar,1) + (im-1)*nifi*njfi
+                  geoerr(ivar) = e_rdhint3(geobus(indx),dstf_gid,nifi,njfi, &
+                       nv,ip1,ip2,-1,etk,typ,anyip,.false.,interp,unf,6)
+                  if (geoerr(ivar).lt.0) then
+                     seq = seq(2:longueur(seq))
+                     iniv = im 
+                     goto 670
+                  endif
+               end do
+            elseif (seq(1:1).eq."V") then
+               do im=iniv,geopar(ivar,3)
+                  ip1 = -1
+                  if (geopar(ivar,3).gt.1)  &
+                       call convip ( ip1, real(im), 3, 1, dum, .false. )
+                  indx = geopar(ivar,1) + (im-1)*nifi*njfi
+                  geoerr(ivar) =  e_moclim2 (geobus(indx),nifi,njfi,nv, &
+                                 ip1,-1,month, day,' ',' ',dstf_gid, &
+                                               interp,e_fu_climat,6)
+               end do
+            endif
+         else
+            geoerr(ivar) = 0
+         endif
+      end do
+!
+      print*
+      e_intgeo = .true.
+      do ivar = 1, p_bgeo_top
+         if (geoerr(ivar).lt.0) then
+            e_intgeo = .false.
+            write (6,1005) geonm(ivar,2)
+         endif
+      end do
+!
+ 1000 format (/' PROCESSING EVERY ELEMENT IN GEOBUS:')
+ 1001 format (/'====>',' Processing ',a4,4a8,' <====')
+ 1005 format (' GEOPHYSICAL FIELD: ',a,' NOT AVAILABLE !!!')
+!
+!----------------------------------------------------------------------
+!
+      return
+      end

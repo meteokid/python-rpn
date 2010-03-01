@@ -1,0 +1,125 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r hzd_bfct - Factorize a block-tridiagonal matrix in block LU
+!
+#include "model_macros_f.h"
+!
+      subroutine hzd_bfct (F_a_8,F_b_8,F_c_8,F_deltainv_8,F_pwr,minx2, &
+                                                      maxx2,nx3, nx2)
+      implicit none
+!
+      integer F_pwr,minx2,maxx2,nx3,nx2
+      real*8    F_a_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3), &
+                F_c_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3), &
+                F_b_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3), &
+         F_deltainv_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3)
+!
+!author
+!     Abdessamad Qaddouri
+!
+!revision
+! v2_10 - Qaddouri A.       - initial version
+! v2_31 - Desgagne M.       - remove stkmemw
+! v3_00 - Desgagne & Lee    - Lam configuration
+!
+!object
+!     elements of matrices are of dimension (F_pwr X F_pwr)
+!
+!arguments
+!  Name        I/O        Description
+!----------------------------------------------------------------
+!  F_a_8           I/0      lower (block) part of matrix and LU 
+!  F_c_8           I/0      upper (block) part of matrix and LU 
+!  F_b_8           I      diagonal(block) part of matrix   
+!  F_deltainv_8    0      diagonal(block) part of LU     
+!----------------------------------------------------------------
+!
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+!*
+      integer i,j,o1,o2,l_pil_w,l_pil_e
+      real*8 wrk_8  (1:F_pwr,1:F_pwr)
+      real*8 delta_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3)
+!
+!     __________________________________________________________________
+!
+!  The I vector lies on the Y processor so, l_pil_w and l_pil_e will
+!  represent the pilot region along I
+!
+      l_pil_w=0
+      l_pil_e=0
+      if (l_south) l_pil_w= Lam_pil_w
+      if (l_north) l_pil_e= Lam_pil_e
+!
+! factorization
+!
+      j = 1+Lam_pil_s
+      do i = 1+l_pil_w, nx2-l_pil_e
+         do o1 = 1,F_pwr
+         do o2 = 1,F_pwr
+              delta_8(o1,o2,i,j)=F_b_8(o1,o2,i,j)
+            enddo
+         enddo
+         call inverse(F_deltainv_8(1,1,i,j),delta_8(1,1,i,j),F_pwr,1)
+      enddo
+!
+      do j = 2+Lam_pil_s ,nx3-Lam_pil_n
+          do i = 1+l_pil_w, nx2-l_pil_e
+             call mxma8( F_deltainv_8(1,1,i,j-1), 1,F_pwr, &
+                                F_C_8(1,1,i,j-1), 1,F_pwr, &
+                         wrk_8, 1,F_pwr,F_pwr,F_pwr,F_pwr)
+             call mxma8( F_a_8(1,1,i,j), 1,F_pwr, &
+                         wrk_8         , 1,F_pwr, &
+                         delta_8(1,1,i,j), 1,F_pwr,F_pwr,F_pwr,F_pwr)
+             do o1= 1,F_pwr
+             do o2=1,F_pwr
+                delta_8(o1,o2,i,j)=F_b_8(o1,o2,i,j)-delta_8(o1,o2,i,j)
+             enddo
+             enddo
+             call inverse (F_deltainv_8(1,1,i,j),delta_8(1,1,i,j), &
+                                                         F_pwr,1)
+          enddo
+      enddo
+!
+! scaling
+!
+      do j = 1+Lam_pil_s, nx3-1-Lam_pil_n
+      do i = 1+l_pil_w, nx2-l_pil_e
+         call mxma8(        F_a_8(1,1,i,j+1), 1,F_pwr, &
+                     F_deltainv_8(1,1,i,j  ), 1,F_pwr, &
+                     wrk_8,1,F_pwr,F_pwr,F_pwr,F_pwr)
+         do o1 = 1, F_pwr
+         do o2 = 1, F_pwr
+            F_a_8(o1,o2,i,j+1)=wrk_8(o1,o2)
+         enddo
+         enddo
+         call mxma8 ( F_deltainv_8(1,1,i,j), 1,F_pwr, &
+                             F_c_8(1,1,i,j), 1,F_pwr, &
+                      wrk_8,1,F_pwr,F_pwr,F_pwr,F_pwr)
+         do o1 = 1, F_pwr
+         do o2 = 1, F_pwr
+            F_c_8(o1,o2,i,j)=wrk_8(o1,o2)
+         enddo
+         enddo
+      enddo
+      enddo
+!     __________________________________________________________________
+!
+      return
+      end
+
+
+        

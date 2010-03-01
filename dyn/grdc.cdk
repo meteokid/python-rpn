@@ -7,7 +7,7 @@
       logical Grdc_bcs_hollow_L,Grdc_initphy_L
       integer Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id
       integer Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_gjdi
-      integer Grd_ig1c,Grd_ig2c,Grd_ig3c,Grd_ig4c
+      integer Grd_ig1c,Grd_ig2c,Grd_ig3c,Grd_ig4c,Grdc_extension
       integer Grdc_Hblen,Grdc_pil,Grdc_end,Grdc_maxcfl
       integer Grdc_hbwe,Grdc_hbsn,Grdc_start,Grdc_nbits,Grdc_ntr
       real Grdc_latr,Grdc_lonr,Grdc_dx
@@ -24,7 +24,7 @@
       MARK_COMMON_BEG (Grdc_i)
       common / Grdc_i / Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id
       common / Grdc_i / Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt
-      common / Grdc_i / Grdc_gjdi
+      common / Grdc_i / Grdc_gjdi,Grdc_extension
       common / Grdc_i / Grd_ig1c,Grd_ig2c,Grd_ig3c,Grd_ig4c
       common / Grdc_i / Grdc_Hblen,Grdc_pil,Grdc_end,Grdc_maxcfl
       common / Grdc_i / Grdc_hbwe,Grdc_hbsn,Grdc_start,Grdc_nbits

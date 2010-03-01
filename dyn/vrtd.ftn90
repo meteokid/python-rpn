@@ -1,0 +1,224 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r vrtd - vertical diffusion on u and v and theta
+!
+#include "model_macros_f.h"
+!
+      subroutine vrtd 
+!
+      implicit none
+!
+!author  S. Gravel (from difver6)
+!
+!revision
+! v3_20  - S. Gravel - initial MPI version
+! v4_05 - Lepine M.  - VMM replacement with GMM
+!
+!object
+!	Apply a background vertical diffusion on the horizontal momentum
+!       components u and v, and optionally theta,  using an implicit 
+!       time scheme
+!	
+!        F(t+dt)=F(t) + dt*(1/rho)*d(rho*Km*dF/dz)/dz
+!	
+!         in sigma coordinates (s) this is equivalent to:
+!                             ~
+!        F(t+dt)=F(t) + dt*d( Km * dF/ds )/ds
+!
+!    
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "schm.cdk"
+#include "intuv.cdk"
+#include "vrtd.cdk"
+#include "ver.cdk"
+
+      integer err
+      integer i,j,k,ij,lnij
+      real g_ovr_rd, dt, sig_e, p_0 
+
+      real sig(LDIST_SHAPE,l_nk), k_tilde(LDIST_SHAPE,l_nk)
+      real pres(LDIST_SHAPE,l_nk)
+      real p_var(LDIST_SIZ,l_nk), p_coef(LDIST_SIZ,l_nk)
+      real p_sig(LDIST_SIZ,l_nk)
+      real aa(LDIST_SIZ,l_nk),bb(LDIST_SIZ,l_nk),cc(LDIST_SIZ,l_nk), &
+           dd(LDIST_SIZ,l_nk)
+
+      call handle_error(-1,'vrtd','vrtd : A revoir pour staggering')
+
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vrtd ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vrtd ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vrtd ERROR at gmm_get(vt1)'
+
+!      do k= 1,l_nk
+!      do j= 1, l_nj
+!      do i= 1, l_ni
+!  To be reviewed
+!        pres(i,j,k) = Ver_z_8%d(k)+Ver_b_8%d(k)*st1(i,j)
+!      end do
+!      end do
+!      end do
+!
+!     calculate sigma levels on scalar grid from local pressure
+!     ---------------------------------------------------------
+!
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+        sig(i,j,k) = exp(pres(i,j,k)-pres(i,j,l_nk))
+        pres(i,j,k) = exp(pres(i,j,k))
+      end do
+      end do
+      end do
+
+!
+!     calculate diffusion coefficient on scalar grid
+!     ----------------------------------------------
+!
+      g_ovr_rd = Dcst_grav_8/Dcst_rgasd_8
+      dt = Cstv_dt_8
+!
+!
+      do k= 1, l_nk-1
+      do j= 1, l_nj
+      do i= 1, l_ni
+        sig_e = 0.5*(sig(i,j,k+1)+sig(i,j,k))
+        k_tilde(i,j,k) = Vrtd_coef*( g_ovr_rd* sig_e &
+               /(0.5*(tt1(i,j,k+1)+tt1(i,j,k))) )**2
+      end do
+      end do
+      end do
+
+!     Exchange halos for interpolation
+
+      call rpn_comm_xch_halo( sig , LDIST_DIM,l_ni,l_nj,l_nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( k_tilde , LDIST_DIM,l_ni,l_nj,l_nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!
+! For diffusion of u, interpolate linearly sigma and diffusion coefficient
+! to u grid; store in a linear vector 
+! unwind u in a linear vector
+
+      lnij = l_niu*l_nj
+      do k= 1, l_nk-1
+      do j= 1, l_nj
+      do i= 1, l_niu
+         ij = (j-1)*l_niu + i
+         p_sig(ij,k) =  ( 1. - intuv_c0xxu_8(i) )* sig(i  ,j,k) &
+                             + intuv_c0xxu_8(i)  * sig(i+1,j,k) 
+         p_coef(ij,k) = ( 1. - intuv_c0xxu_8(i) )* k_tilde(i  ,j,k) &
+                             + intuv_c0xxu_8(i)  * k_tilde(i+1,j,k) 
+         p_var(ij,k) = ut1(i,j,k)
+      enddo
+      enddo
+      enddo
+!
+! diffusion tendency on u
+!
+      call difuvt(p_var,p_var,p_coef, p_sig, &
+                  dt,aa,bb,cc,dd, &
+                  lnij,LDIST_SIZ,l_nk-1)
+!
+! add tendencies
+!
+      do k= 1, l_nk-1
+      do j= 1,l_nj
+      do i= 1,l_niu
+         ij = (j-1)*l_niu + i
+         ut1(i,j,k) = ut1(i,j,k) + dt * p_var(ij,k)
+      end do
+      end do
+      end do
+!
+! For diffusion of v, interpolate linearly sigma and diffusion coefficient
+! to v grid store in a linear vector 
+! unwind v in a linear vector
+
+      lnij = l_ni*l_njv
+      do k= 1, l_nk-1
+      do j= 1, l_njv
+      do i= 1, l_ni
+         ij = (j-1)*l_ni + i
+         p_sig(ij,k) =  ( 1. - intuv_c0yyv_8(j) )*sig(i,j  ,k) &
+                             + intuv_c0yyv_8(j)  *sig(i,j+1,k)
+         p_coef(ij,k) =  ( 1. - intuv_c0yyv_8(j) )*k_tilde(i,j  ,k) &
+                              + intuv_c0yyv_8(j)  *k_tilde(i,j+1,k)
+         p_var(ij,k) = vt1(i,j,k)
+      enddo
+      enddo
+      enddo
+!
+! diffusion tendency on v
+!
+      call difuvt(p_var,p_var,p_coef,p_sig, &
+                  dt,aa,bb,cc,dd, &
+                  lnij,LDIST_SIZ,l_nk-1)
+!
+!  Optional diffusion on theta
+
+      if (Vrtd_theta_L) then
+!
+! For diffusion of theta, estimate theta, store in linear vector
+! unwind in a linear vector sigma, and the diffusion coefficient
+
+      p_0 = 1.e-5
+      lnij = l_ni*l_nj
+      do k= 1, l_nk-1
+      do j= 1, l_nj
+      do i= 1, l_ni
+         ij = (j-1)*l_ni + i
+         p_sig(ij,k)  = sig(i,j,k)
+         p_coef(ij,k) = k_tilde(i,j,k)
+         p_var(ij,k)  = tt1(i,j,k) * (p_0/pres(i,j,k))**Dcst_cappa_8
+      enddo
+      enddo
+      enddo
+!
+! diffusion tendency on theta
+!
+      call difuvt(p_var,p_var,p_coef,p_sig, &
+                  dt,aa,bb,cc,dd, &
+                  lnij,LDIST_SIZ,l_nk-1)
+!
+! Transform potential temperature tendencies into temperature tendencies
+! and add
+!
+      do k= 1,l_nk-1
+      do j= 1,l_nj
+      do i= 1,l_ni
+         ij = (j-1)*l_ni + i
+         tt1(i,j,k) = tt1(i,j,k)  &
+                    + dt * p_var(ij,k)*(pres(i,j,k)/p_0)**Dcst_cappa_8
+      end do
+      end do
+      end do
+
+      endif     ! end of diffusion on theta
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

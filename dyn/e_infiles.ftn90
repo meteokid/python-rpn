@@ -1,0 +1,85 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r e_infiles - to determine list of inputfiles for LAM
+!
+      subroutine e_infiles ()
+      implicit none
+!
+!author   Michel Desgagne (MC2) 2006
+!
+!revision
+! v3_30 - Desgagne M.      - initial version
+! v4_03 - Lee/Desgagne - ISST
+!
+#include "filename.cdk"
+#include "path.cdk"
+!
+      integer  fnom,longueur,wkoffit
+      external fnom,longueur,wkoffit
+      integer cnt,i,err,unf
+      character*500 fn
+!
+!----------------------------------------------------------------------
+!
+      npilf = 0
+      cnt   = 0
+!
+      unf = 0
+      if (fnom  (unf ,trim(Path_work_S)//'/liste_inputfiles_for_LAM', &
+                                                  'SEQ',0).lt.0) stop
+!
+ 77   cnt=cnt+1
+      read (unf, '(a)', end = 9120) pilot_f(cnt)
+      goto 77
+ 9120 npilf = cnt - 1
+      close(unf)
+!
+      pilot_dir = trim(Path_input_S)//'/INREP'
+      do cnt = 1, npilf
+         err = -1
+         fn = pilot_dir(1:longueur(pilot_dir))//'/'// &
+              pilot_f(cnt)(1:longueur(pilot_f(cnt)))
+         err = wkoffit(fn)
+         if ((err.ne.1).and.(err.ne.33)) then
+            write(6,905) pilot_f(cnt)(1:longueur(pilot_f(cnt))), &
+                         pilot_dir(1:longueur(pilot_dir))
+            pilot_f (cnt) = '@#$%^&'
+         endif
+      end do
+!
+      i=0
+      do cnt = 1, npilf
+         if (pilot_f(cnt).ne.'@#$%^&') then
+            i = i+1
+            pilot_f(i) = pilot_f(cnt)
+         endif
+      end do
+      npilf = i
+!
+      ipilf  =  1
+!
+      write (6,900) pilot_dir(1:longueur(pilot_dir))
+      do cnt=1,npilf
+         write(6,901) pilot_f(cnt)(1:longueur(pilot_f(cnt)))
+      end do
+!
+ 900  format (/' Available files in directory: ',a)
+ 901  format (4x,a)
+ 905  format (' FILE ',a,' FROM DIRECTORY ',a, &
+              ' UNAVAILABLE OR NOT RPN-STD FORMAT - WILL BE IGNORED')
+!---------------------------------------------------------------------
+      return
+      end

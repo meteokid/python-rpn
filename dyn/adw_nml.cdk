@@ -21,10 +21,9 @@
 ! Adw_nkbz_L   | switch: .true. : no knot boundary condition for       |
 !              |                  vertical interpolation               |
 ! Adw_nosetint_L switch: .true. : no setint for TRILIN (done inside)   |
-! Adw_cliptraj_L switch: .true. :                           
+! adw_maxcfl   |                                                       !
 ! Adw_halox    | advection specific halo in x                          |
 ! Adw_haloy    | advection specific halo in y                          |
-! adw_maxcfl   | 
 !______________________________________________________________________|
 !
 #endif
@@ -35,10 +34,9 @@
       logical Adw_nkbz_L
       logical Adw_nosetint_L
       logical Adw_trunc_traj_L
-      logical Adw_cliptraj_L
+      integer Adw_maxcfl
       integer Adw_halox
       integer Adw_haloy
-      integer Adw_maxcfl
 
       namelist /adw_cfgs/ Adw_ckbd_L
       namelist /adw_cfgs/ Adw_exdg_L
@@ -46,8 +44,6 @@
       namelist /adw_cfgs/ Adw_nkbz_L
       namelist /adw_cfgs/ Adw_nosetint_L
       namelist /adw_cfgs/ Adw_trunc_traj_L
-      namelist /adw_cfgs/ Adw_cliptraj_L
-      namelist /adw_cfgs/ Adw_maxcfl
       namelist /adw_cfgs/ Adw_halox
       namelist /adw_cfgs/ Adw_haloy
 
@@ -57,7 +53,6 @@
       common /adw_nml_l/  Adw_nkbz_L
       common /adw_nml_l/  Adw_nosetint_L
       common /adw_nml_l/  Adw_trunc_traj_L
-      common /adw_nml_l/  Adw_cliptraj_L
 
       common /adw_nml_i/  Adw_halox
       common /adw_nml_i/  Adw_haloy

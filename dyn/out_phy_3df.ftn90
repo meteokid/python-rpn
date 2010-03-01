@@ -1,0 +1,137 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+!**s/r out_phy_3df - output physics fields in 3df format
+#include "model_macros_f.h"
+!
+      subroutine out_phy_3df ( bus_o,F_ni,F_nj,datev, &
+                               gid,gif,gjd,gjf )
+
+      implicit none
+!
+      character* (*) datev
+      integer F_ni,F_nj,gid,gif,gjd,gjf
+      real bus_o(F_ni,F_nj,*)
+!
+!AUTHOR     Vivian Lee                     Oct. 2005 (GEM)
+!
+!
+!OBJECT
+!    Gather the index of physics variables to write on disk 
+!    for the current timestep.
+!
+!ARGUMENTS
+!    NAMES     I/O  TYPE  A/S        DESCRIPTION
+!
+!   fni         I    I    S    folded dimension along X
+!   fnj         I    I    S    folded dimension along Y
+!
+!IMPLICIT
+#include "glb_ld.cdk"
+#include "out.cdk"
+#include "itf_phy_buses.cdk"
+#include "lun.cdk"
+#include "itf_phy_config.cdk"
+!
+!*
+      integer i,j,k,nis,njs,ind_o(100),nvp_casc
+      integer idx,unf,mult,shp,mode,bignks
+      integer nks(20),upoidx(20),uponks(20)
+      character*4 upolistc(20)
+!----------------------------------------------------------------------
+!
+      if ((out_nisl.le.0).or.(out_njsl.le.0)) return
+!
+      if (Lun_debug_L) write(Lun_out,1000)
+!
+      nis = out_ifg - out_idg + 1
+      njs = out_jfg - out_jdg + 1
+!
+!########## PHYSICS SNAPSHOT #####################################
+!
+!
+      upolistc(1) =  "SD  " ! SNODP
+      upolistc(2) =  "TM  " ! TWATER
+      upolistc(3) =  "GL  " ! GLSEA
+      upolistc(4) =  "AL  " ! ALVIS
+      upolistc(5) =  "I9  " ! TGLACIER
+      upolistc(6) =  "I7  " ! TMICE
+      upolistc(7) =  "I0  " ! TSOIL
+      upolistc(8) =  "I1  " ! WSOIL
+      upolistc(9) =  "I8  " ! ICEDP
+      nvp_casc    = 9
+      if (P_pbl_icelac_L) then
+         upolistc(10) =  "ICEL" ! ICELINE
+         nvp_casc    = 10 
+      endif
+!
+      if (P_pbl_schsl_s.eq.'ISBA') then
+         upolistc(nvp_casc+1) =  "DN" ! SNODEN
+         upolistc(nvp_casc+2) =  "I2" ! ISOIL
+         upolistc(nvp_casc+3) =  "I3" ! WVEG
+         upolistc(nvp_casc+4) =  "I4" ! WSNOW
+         if (P_pbl_snoalb_L) then
+             upolistc(nvp_casc+5) =  "I6" ! SNOAL
+         else
+             upolistc(nvp_casc+5) =  "XA" ! SNOAL
+         endif
+         nvp_casc = nvp_casc + 5
+      endif
+!
+      bignks=1
+      do idx = 1, P_bper_top
+         mult = perpar(idx,6)
+         shp  = perpar(idx,5)/p_ni
+         do j = 1, nvp_casc
+            if (peron(idx)(1:4).eq. upolistc(j)) then
+               uponks(j)=bignks
+               nks(j)=shp*mult
+            endif
+         enddo
+         bignks=bignks+shp*mult
+      enddo
+!
+!  Adjusting fields for the geophysical file
+!
+      upolistc(3)= "LG  " !GL->LG
+      if (P_pbl_schsl_s.ne.'ISBA') upolistc(8)= "HS  " !I1->HS
+      nks(1)     =  1     !SD(1)
+      uponks(1)  =  uponks(1)+4  !devient donc a 5 niv dans PERBUS
+      nks(4)     =  1     !AL(4)
+      uponks(4)  =  uponks(4)+4  !devient donc a 5 niv dans PERBUS
+!
+      if (Out_blocme.eq.0) then
+         mode=2
+         call out_sfile_3df (datev,unf,'PHYSICSS',gid, gif, gjd, gjf, &
+                                                     nvp_casc,0,mode)
+         write (unf) (upolistc(idx)(1:4),nks(idx),idx=1,nvp_casc)
+      endif
+      do idx = 1, nvp_casc
+         do k   = 1, nks(idx)
+            ind_o(k) = k
+         end do
+         call write_3df ( bus_o(1,1,uponks(idx)),1,F_ni,1,F_nj,nis,njs, &
+          nks(idx),upolistc(idx)(1:4),gid, gif, gjd, gjf,1.0,ind_o,unf )
+      enddo
+!
+      if (Out_blocme.eq.0) close (unf)
+!
+!----------------------------------------------------------------------
+ 1000 format(3X,'OUTPUT SOME PHYSICS FIELDS FROM PERBUS: (S/R OUT_PHY_3DF)')
+      return
+      end
+
+

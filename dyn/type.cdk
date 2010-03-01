@@ -11,9 +11,19 @@
          real*8, dimension(:),pointer :: t,m
       end type vertical_8
 !
+      type :: super_vertical_8
+         sequence
+         real*8, dimension(:),pointer :: t,m,s
+      end type super_vertical_8
+!
       type :: vertical_i
          sequence
          integer, dimension(:),pointer :: t,m
       end type vertical_i
+!
+      type :: super_vertical_i
+         sequence
+         integer, dimension(:),pointer :: t,m,s
+      end type super_vertical_i
 !
 #endif

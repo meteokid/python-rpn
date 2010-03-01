@@ -1,4 +1,0 @@
-      subroutine statfld
-	stop 'statfld'
-      return
-      end 

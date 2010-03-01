@@ -1,0 +1,118 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_chm_fillobus - Perform Chemistry slice for output 
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_chm_fillobus(F_chmbusent,F_chmbusper,F_chmbusdyn,F_chmbusvol, &
+                               F_bent_siz, F_bdyn_siz, F_bper_siz, F_bvol_siz, &
+                               F_cobusval,slice_num)
+!
+      implicit none
+!
+      integer slice_num
+      integer F_bent_siz, F_bdyn_siz, F_bper_siz, F_bvol_siz
+      real    F_chmbusent(F_bent_siz) , F_chmbusdyn(F_bdyn_siz)
+      real    F_chmbusper(F_bper_siz) , F_chmbusvol(F_bvol_siz)
+      real    F_cobusval(*)
+!
+!author 
+!     A. Kallaur - arqi - june 2005
+!
+!revision
+! v3_30 - Kallaur A.       - initial version
+!
+!arguments
+!  Name       I/O       Description
+!---------------------------------------------------------------------
+! slice_num    I        Vertical slab(row) Identifier 
+! F_bent_siz   I        Total number of elements in entry     bus
+! F_bdyn_siz   I        Total number of elements in dynamics  bus
+! F_bper_siz   I        Total number of elements in permanent bus
+! F_bvol_siz   I        Total number of elements in volatile  bus
+! F_chmbusent  I        2D temporary holdin area for Entry     bus vars  
+! F_chmbusdyn  I        2D temporary holdin area for Dynamics  bus vars  
+! F_chmbusper  I        2D temporary holdin area for Permanent bus vars  
+! F_chmbusvol  I        2D temporary holdin area for Volatile  bus vars 
+! F_cobusval   O        3D output storage bus.        
+!
+!implicits
+#include "glb_ld.cdk"
+#include "itf_chm_bus.cdk"
+#include "itf_chm_obus.cdk"
+! 
+!    Local variables
+!
+      integer i,j,k,ii
+      integer offbo,offbb,mult
+!*
+!     ---------------------------------------------------------------
+!
+      j = slice_num
+
+!     Perform chemistry slices output
+
+      do ii=1,chm_Obus_top
+             offbo= (chm_obus_offset(ii)-1)*l_ni*l_nj
+             offbb= chm_obus_addr(ii)
+         if (chm_obus_bus_S(ii).eq.'P') then
+             do mult=1,chm_obus_mult(ii)
+                do k=1,chm_obus_shp(ii)
+                do i=1,chm_ni
+                   F_cobusval(offbo+(k*mult-1)*l_ni*l_nj + &
+                                             (j-1)*l_ni + i+ chm_offi)= &
+                   F_chmbusper(offbb+(k*mult-1)*chm_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (chm_obus_bus_S(ii).eq.'D') then
+             do mult=1,chm_obus_mult(ii)
+                do k=1,chm_obus_shp(ii)
+                do i=1,chm_ni
+                   F_cobusval(offbo+(k*mult-1)*l_ni*l_nj + &
+                                             (j-1)*l_ni + i+ chm_offi)= &
+                   F_chmbusdyn(offbb+(k*mult-1)*chm_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (chm_obus_bus_S(ii).eq.'V') then
+             do mult=1,chm_obus_mult(ii)
+                do k=1,chm_obus_shp(ii)
+                do i=1,chm_ni
+                   F_cobusval(offbo+(k*mult-1)*l_ni*l_nj + &
+                                             (j-1)*l_ni + i+ chm_offi)= &
+                   F_chmbusvol(offbb+(k*mult-1)*chm_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (chm_obus_bus_S(ii).eq.'E') then
+             do mult=1,chm_obus_mult(ii)
+                do k=1,chm_obus_shp(ii)
+                do i=1,chm_ni
+                   F_cobusval(offbo+(k*mult-1)*l_ni*l_nj + &
+                                             (j-1)*l_ni + i+ chm_offi)= &
+                   F_chmbusent(offbb+(k*mult-1)*chm_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         endif
+      enddo
+!*
+!     ---------------------------------------------------------------
+!
+      return
+      end
+

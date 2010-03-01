@@ -1,0 +1,257 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** s/r uvs2psd2 - Computes model coordinate vertical velocity "psd"
+!                  diagnostically.
+!
+#include "model_macros_f.h"
+!
+      subroutine uvs2psd2 (F_psd, F_uu, F_vv, F_tt, F_s, DIST_DIM, Nk)
+      implicit none
+!
+      integer DIST_DIM, Nk
+      real    F_psd(DIST_SHAPE,Nk+1), F_s (DIST_SHAPE), &
+              F_uu (DIST_SHAPE,Nk)  , F_vv(DIST_SHAPE,Nk), &
+              F_tt (DIST_SHAPE,Nk+1)
+!
+!authors
+!      Plante A. juin 2006 based on Methot et Patoine - sept 1995 - cmc
+!
+!revision
+! v4_00 - Plante A.         - initial MPI version 
+! v4_06 - McTaggart-Cowan R.- scale by lapse rate to reduce noise in stratosphere
+! v4_10 - Tanguay M.        - SETTLS option 
+!
+!arguments
+!______________________________________________________________________
+!        |                                             |           |   |
+! NAME   |             DESCRIPTION                     | DIMENSION |I/O|
+!--------|---------------------------------------------|-----------|---|
+! F_psd  | vertical velocity ( pi*-dot )               | 3D (Nk+1) | o |
+!--------|---------------------------------------------|-----------|---|
+! F_uu   | x component of velocity                     | 3D (Nk)   | i |
+! F_vv   | y component of velocity                     | 3D (Nk)   | i |
+! F_tt   | temperature                                 | 3D (Nk+1) | i |
+! F_s    | s log of surface pressure over constant     | 2D (1)    | i |
+!________|_____________________________________________|___________|___|
+!
+!implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "inuvl.cdk"
+#include "ver.cdk"
+#include "dcst.cdk"
+#include "zdot.cdk"
+!
+!modules
+!
+      integer i, j, k, kmax, i0, in, j0, jn
+      real term_pres_a,term_pres_d,term_div_a,term_div_d
+      real div(DIST_SHAPE,Nk),adv(DIST_SHAPE,Nk),div_i(DIST_SHAPE,Nk+1),adv_i(DIST_SHAPE,Nk+1)
+      real wlnpi_t(DIST_SHAPE,Nk+1),lapse(DIST_SHAPE,Nk+1),wk1(DIST_SHAPE,Nk+1)
+      real dpdn_m(DIST_SHAPE,Nk),dpdn_t(DIST_SHAPE,Nk+1)
+      real grad(DIST_SHAPE,Nk,2),grad_m(DIST_SHAPE,Nk,2)
+!     ________________________________________________________________
+!
+! Halo exchange needed because scope below goes one point in halo
+!
+      call rpn_comm_xch_halo( F_s, LDIST_DIM, l_ni, l_nj , 1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_uu, LDIST_DIM, l_niu,l_nj, Nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_vv, LDIST_DIM, l_ni,l_njv, Nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+!
+!     Initializations
+
+      do k = 1, Nk+1
+         kmax=min(k,NK)
+         do j = 1, l_njv+1
+         do i = 1, l_niu+1
+            wlnpi_t(i,j,k   ) = Ver_z_8%t(k) + Ver_b_8%t(k)                 * F_s(i,j)
+             dpdn_t(i,j,k   ) = exp(wlnpi_t(i,j,k)) * (1. + Ver_dbdz_8%t(k) * F_s(i,j))
+             dpdn_m(i,j,kmax) = exp(Ver_z_8%m(kmax) + Ver_b_8%m   (kmax)    * F_s(i,j)) &
+                                              * (1. + Ver_dbdz_8%m(kmax)    * F_s(i,j))
+                wk1(i,j,k   ) = Ver_b_8%t(k)*exp(wlnpi_t(i,j,k))/ &
+                                          exp(Ver_z_8%m(Nk+1)               + F_s(i,j))
+         end do
+         end do
+      end do
+
+!     compute coordinate convergence
+      div=0.
+      do k=1,Nk
+         call caldiv_2 ( div(l_minx,l_miny,k),F_uu(l_minx,l_miny,k), &
+                        F_vv(l_minx,l_miny,k), LDIST_DIM, 1 )
+      enddo
+      do k=1,Nk
+         do j=1,l_nj
+         do i=1,l_ni
+            div(i,j,k) = dpdn_m(i,j,k) * div(i,j,k)
+         enddo
+         enddo
+      enddo
+!
+!     compute advection of coordinate thickness
+!
+      do k=1,Nk
+         do j=1,l_nj
+         do i=1,l_niu
+            grad(i,j,k,1) = F_uu(i,j,k)*(dpdn_m(i+1,j,k) - dpdn_m(i,j,k)) / &
+                            (geomg_cy2_8(j) * geomg_hxu_8(i))
+         enddo
+         enddo
+         do j=1,l_njv
+         do i=1,l_ni
+            grad(i,j,k,2) = F_vv(i,j,k)*(dpdn_m(i,j+1,k) - dpdn_m(i,j,k)) / &
+                             geomg_hsyv_8(j)
+         enddo
+         enddo
+         if (G_lam) grad(l_ni,1:l_nj,k,1) = grad(l_niu,1:l_nj,k,1)
+                    grad(1:l_ni,l_nj,k,2) = grad(1:l_ni,l_njv,k,2)
+      end do
+
+      call rpn_comm_xch_halo (grad, LDIST_DIM, l_ni,l_nj, Nk*2, &
+                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+
+      i0 = 1
+      if (G_lam .and. l_west) i0 = 3
+      do k = 1, Nk
+         do j =  1, l_nj
+         do i = i0, l_niu
+            grad_m(i,j,k,1) =  inuvl_wxux3_8(i,1) * grad(i-2,j,k,1) &
+                             + inuvl_wxux3_8(i,2) * grad(i-1,j,k,1) &
+                             + inuvl_wxux3_8(i,3) * grad(i  ,j,k,1) &
+                             + inuvl_wxux3_8(i,4) * grad(i+1,j,k,1)
+         end do
+         end do
+      end do
+      if (G_lam) then
+         if (l_west) then
+            do k = 1, Nk
+            do j = 1, l_nj
+               grad_m(2,j,k,1) =  inuvl_wxux3_8(2,2) * grad(1,j,k,1) &
+                                + inuvl_wxux3_8(2,3) * grad(2,j,k,1) &
+                                + inuvl_wxux3_8(2,4) * grad(3,j,k,1)
+               grad_m(1,j,k,1) =  inuvl_wxux3_8(1,3) * grad(1,j,k,1) &
+                                + inuvl_wxux3_8(1,4) * grad(2,j,k,1)
+            end do
+            end do
+         endif
+         if (l_east) then
+            do k = 1, Nk
+            do j = 1, l_nj
+               grad_m(l_ni,j,k,1) =  inuvl_wxux3_8(l_ni,1) * grad(l_ni-2,j,k,1) &
+                                   + inuvl_wxux3_8(l_ni,2) * grad(l_ni-1,j,k,1)
+            end do
+            end do
+         endif
+      endif
+         
+      j0 = 1
+      if (l_south) j0 = 3
+      do k = 1, Nk
+         do j = j0, l_njv
+         do i =  1, l_ni
+            grad_m(i,j,k,2) =  inuvl_wyvy3_8(j,1) * grad(i,j-2,k,2) &
+                             + inuvl_wyvy3_8(j,2) * grad(i,j-1,k,2) &
+                             + inuvl_wyvy3_8(j,3) * grad(i,j  ,k,2) &
+                             + inuvl_wyvy3_8(j,4) * grad(i,j+1,k,2)         
+         end do
+         end do
+      end do
+      if (l_south) then
+         do k = 1, Nk
+         do i = 1, l_ni
+            grad_m(i,2,k,2) = inuvl_wyvy3_8(2,2) * grad(i,1,k,2) &
+                            + inuvl_wyvy3_8(2,3) * grad(i,2,k,2) &
+                            + inuvl_wyvy3_8(2,4) * grad(i,3,k,2)
+            grad_m(i,1,k,2) = inuvl_wyvy3_8(1,3) * grad(i,1,k,2) &
+                            + inuvl_wyvy3_8(1,4) * grad(i,2,k,2)
+         end do
+         end do
+      endif
+      if (l_north) then
+         do k = 1, Nk
+         do i = 1, l_ni
+            grad_m(i,l_nj,k,2) = inuvl_wyvy3_8(l_nj,1) * grad(i,l_nj-2,k,2) &
+                               + inuvl_wyvy3_8(l_nj,2) * grad(i,l_nj-1,k,2)
+         end do
+         end do
+      endif
+
+      do k=1,Nk
+         do j=1,l_nj
+         do i=1,l_ni
+            adv(i,j,k) = grad_m(i,j,k,1) + grad_m(i,j,k,2)
+         enddo
+         enddo
+      enddo
+!
+!     local grid setup
+      i0=1
+      in=l_niu      
+      j0=1
+      jn=l_nj
+      if (G_lam)then
+         if(l_west)  i0 = 2
+         if(l_south) j0 = 2
+         if(l_north) jn = l_njv
+      endif
+
+      if (Zdot_divHLM_L) then
+!     Compute lapse rate
+         call verder (lapse,F_tt,wlnpi_t,2.0,2.0,LDIST_DIM, &
+                                          Nk+1,i0,in,j0,jn)
+!
+!     Scale divergence by the lapse rate
+         do k=1,Nk
+            do j=j0,jn
+            do i=i0,in
+               div(i,j,k) = div(i,j,k) * (tanh(2.*lapse(i,j,k)/Dcst_pi_8)+1.)/2.
+            enddo
+            enddo
+         enddo 
+      endif
+!
+!     Integrate divergence and advection over the column
+      call intm2t_up (div_i,div,1.0,Ver_dz_8%m,LDIST_DIM,Nk,i0,in,j0,jn)
+      call intm2t_up (adv_i,adv,1.0,Ver_dz_8%m,LDIST_DIM,Nk,i0,in,j0,jn)
+!
+!     Diagnose vertical coordinate displacements
+!
+      do k=1,Nk+1
+         if (G_lam) F_psd(1:l_ni,1:l_nj,k) = 0.
+         if(k.eq.1 .or. k.eq.Nk+1)then
+            F_psd(i0:in,j0:jn,k) = 0.
+         else
+            do j=j0,jn
+            do i=i0,in
+               term_pres_a =   wk1(i,j,k) * adv_i(i,j,1)
+               term_pres_d =   wk1(i,j,k) * div_i(i,j,1)
+               term_div_a  = adv_i(i,j,1) - adv_i(i,j,k)
+               term_div_d  = div_i(i,j,1) - div_i(i,j,k)
+               F_psd(i,j,k)= ( -(term_pres_a + term_pres_d) +  &
+                                (term_div_a  + term_div_d ) ) / dpdn_t(i,j,k)
+            end do
+            end do
+         endif
+      end do
+!
+!     ________________________________________________________________
+!
+      return
+      end
+

@@ -15,16 +15,11 @@
 !  tt1               | T: temperature                                  |
 ! zdt1               | Zdot: generalized vertical velocity             |
 !  st1               | s: log of surface pressure minus a constant     |
-!fipt1               | fip: perturbation geopotential                  |
 !--------------------|-------------------------------------------------|
 !  qt1               | q: log of non-hydrostatic perturbation pressure |
 !--------------------|-------------------------------------------------|
 ! trt1               | passive tracer(s)                               |
 !----------------------------------------------------------------------|
-!  zz1               | 3-d upstream position of fip used to comp. dz/dt|
-! zzh1               | Horizontal upstream position of fip             |
-! piup               | Upstream hydrostatic pressure at t-dt for omega |
-!--------------------|-------------------------------------------------|
 ! xct1               | upstream x position in cartesian coordinate     |
 ! yct1               | upstream y position in cartesian coordinate     |
 ! zct1               | upstream z position in cartesian coordinate     |
@@ -38,22 +33,18 @@
       real, pointer, dimension (:,:,:) :: tt1  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
       real, pointer, dimension (:,:,:) :: zdt1 => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:)   :: st1  => null()    ! effective dimensions are (LDIST_SHAPE         )
-      real, pointer, dimension (:,:,:) :: zz1  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: zzh1 => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: piup => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:,:) :: wup  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk  )
       real, pointer, dimension (:,:,:) :: zdup => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:)     :: xct1 => null()    ! effective dimensions are (l_ni * l_nj * l_nk)
       real, pointer, dimension (:)     :: yct1 => null()    ! effective dimensions are (l_ni * l_nj * l_nk)
       real, pointer, dimension (:)     :: zct1 => null()    ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:,:,:) :: fipt1=> null()    ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
       real, pointer, dimension (:,:,:) :: qt1  => null()    ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
 
-      character(len=8) :: gmmk_zz1_s, gmmk_zzh1_s, gmmk_piup_s, gmmk_wup_s, gmmk_zdup_s
-      character(len=8) :: gmmk_xct1_s, gmmk_yct1_s, gmmk_zct1_s, gmmk_fipt1_s, gmmk_wt1_s
+      character(len=8) :: gmmk_wup_s, gmmk_zdup_s
+      character(len=8) :: gmmk_xct1_s, gmmk_yct1_s, gmmk_zct1_s, gmmk_wt1_s
       character(len=8) :: gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s, gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
-      common /vt1_n_gmm/ gmmk_zz1_s, gmmk_zzh1_s, gmmk_piup_s, gmmk_wup_s, gmmk_zdup_s, gmmk_xct1_s
-      common /vt1_n_gmm/ gmmk_yct1_s, gmmk_zct1_s, gmmk_fipt1_s, gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s
+      common /vt1_n_gmm/ gmmk_wup_s, gmmk_zdup_s, gmmk_xct1_s
+      common /vt1_n_gmm/ gmmk_yct1_s, gmmk_zct1_s, gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s
       common /vt1_n_gmm/ gmmk_st1_s, gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
 
       

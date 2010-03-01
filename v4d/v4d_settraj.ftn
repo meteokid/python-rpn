@@ -1,3 +1,0 @@
-      subroutine v4d_settraj
-      call gem_stop ('ARRET v4d_settraj',-1)
-      end

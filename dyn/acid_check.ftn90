@@ -1,0 +1,65 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r acid_check - test acid test config
+
+#include "model_macros_f.h"
+!
+      subroutine acid_check()
+!
+      implicit none
+!
+!author
+!     Andre Plante
+!     
+!revision
+!
+!language
+!     fortran 77
+!
+!object
+!     glbstat for LAM acid test
+!     Note : the acid test is conducted with one CPU.
+!
+!implicits
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+!     
+
+      if(Ptopo_numproc.ne.1)then
+         print*,'Acid test must be run with only one CPU'
+         call handle_error(-1,'acid_check','acid_check')
+      endif
+
+      if(Glb_pil_n.ne.7)then
+         print*,'Acid test must be run with Glb_pil_n=7, Glb_pil_n is set to ',Glb_pil_n
+         call handle_error(-2,'acid_check','acid_check')
+      endif
+      if(Glb_pil_s.ne.7)then
+         print*,'Acid test must be run with Glb_pil_s=7, Glb_pil_s is set to ',Glb_pil_s
+         call handle_error(-3,'acid_check','acid_check')
+      endif
+      if(Glb_pil_e.ne.7)then
+         print*,'Acid test must be run with Glb_pil_e=7, Glb_pil_e is set to ',Glb_pil_e
+         call handle_error(-4,'acid_check','acid_check')
+      endif
+      if(Glb_pil_w.ne.7)then
+         print*,'Acid test must be run with Glb_pil_w=7, Glb_pil_w is set to ',Glb_pil_w
+         call handle_error(-5,'acid_check','acid_check')
+      endif
+
+      return
+      
+      end

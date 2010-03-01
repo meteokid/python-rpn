@@ -1,0 +1,87 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+      subroutine out_padbuf (f,minx,maxx,miny,maxy,lnk)
+      implicit none
+!
+#include "out.cdk"
+!
+!author
+!     M. Desgagne - rpn - July  2004 (from MC2)
+!
+!revision
+! v3_20 - Lee V.            - initial GEMDM version
+
+!object
+!     To fill non-initialized values in halo area.
+
+!arguments
+! F   field to be treated
+!
+      integer minx,maxx,miny,maxy,lnk
+      character*1 grid
+      real f(minx:maxx,miny:maxy,lnk)
+!
+      integer i,j,k,iff,id,jd,jf
+!----------------------------------------------------------------------
+       id   = 1
+       jd   = 1
+       iff  = Out_myprocni
+       jf   = Out_myprocnj
+!
+      do k=1,lnk
+      do j=jf+1,maxy
+      do i=id,iff
+         f(i,j,k) = f(i,jf,k)
+      end do
+      end do
+      end do
+!
+      do k=1,lnk
+      do j=jd-1,miny,-1
+      do i=id,iff
+         f(i,j,k) = f(i,jd,k)
+      end do
+      end do
+      end do
+!
+      do k=1,lnk
+      do i=iff+1,maxx
+      do j=miny,maxy
+         f(i,j,k) = f(iff,j,k)
+      end do
+      end do
+      end do
+!
+      do k=1,lnk
+!     do i=id-1,miny,-1
+      do i=id-1,minx,-1
+      do j=miny,maxy
+         f(i,j,k) = f(id,j,k)
+      end do
+      end do
+      end do
+!
+!     do k=1,lnk
+!     do j=miny,maxy
+!     do i=minx,maxx
+!        print*,'f(',i,',',j,',',k,')=',f(i,j,k)
+!     end do
+!     end do
+!     end do
+!----------------------------------------------------------------------
+      return
+      end

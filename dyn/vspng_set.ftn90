@@ -1,0 +1,133 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r vspng_set - Vertical sponge using a vertical modulation of 
+!                  the factorized del-2 horizontal diffusion for non-LAM
+!                  and 9 point filter for LAM.
+!
+#include "model_macros_f.h"
+!
+      subroutine vspng_set
+!
+      implicit none
+!
+!
+!author    
+!     Michel Desgagne  -  November 2000
+!
+!revision
+! v2_11 - Desgagne M.       - initial version
+! v3_02 - Lee V.            - add setup for LAM vertical sponge
+! v3_22 - Spacek L.         - add Vspng_zmean_L
+! v3_30 - Spacek L./m.Roch  - add zmean for Grd_gauss_L 
+! v3_32 - Lee V.            - stop run if LAM Vspng_nutop is undefined
+!
+!object
+!       
+!arguments
+!     none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "lun.cdk"
+#include "vspng.cdk"
+#include "grd.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+!      
+      integer k
+      real*8 pis2_8,wh_8,delp_8,TWO_8
+      parameter (TWO_8 = 2.0)
+      logical ok_L
+!*
+!     ---------------------------------------------------------------
+!     
+      Vspng_nk = max(0,min(G_nk,Vspng_nk))
+!
+      if (Vspng_nk.le.0) return
+
+      if (G_lam) then
+         if (Vspng_nutop.lt.0.) then
+             if (Lun_out.gt.0) write (Lun_out,2008)Vspng_nutop,Vspng_nk
+             call handle_error(-1,'vspng_set','vspng_set')
+         endif
+!
+         Vspng_niter = int(4.*Vspng_nutop+0.99)
+         if (Lun_out.gt.0) write (Lun_out,2003)  &
+              Vspng_nutop,Vspng_nk,Vspng_niter
+         wh_8  = Vspng_nutop/max(1.,float(Vspng_niter))
+         pis2_8= Dcst_pi_8/TWO_8
+         
+!ap         call handle_error(-1,'vspng_set','vspng_set 1 : review code for hgt')
+
+!ap         Le code est probablement OK mais n a pas ete teste.
+
+         delp_8= exp(Ver_z_8%m(Vspng_nk+1))-exp(Ver_z_8%m(1))
+         do k=1,Vspng_nk
+            Vspng_nu(k) =  &
+                 wh_8*( sin(pis2_8*(exp(Ver_z_8%m(Vspng_nk+1))-exp(Ver_z_8%m(k))) &
+                 /(delp_8)))**TWO_8
+            if (Lun_out.gt.0) write (Lun_out,2005) Vspng_nu(k),k
+         end do
+!
+      else
+!     
+         if (Vspng_coef.le.0.0) Vspng_nk=0
+         if (Vspng_mf(1).lt.0.) Vspng_nk=0
+         if (Vspng_nk.le.0) return
+!
+         if (Vspng_mf(2).gt.1.) then
+            if (Lun_out.gt.0) write (Lun_out,2000)
+         else
+            if (Lun_out.gt.0) write (Lun_out,2002) Vspng_mf(1),Vspng_nk
+            pis2_8= Dcst_pi_8/2.d0
+
+            delp_8= exp(Ver_z_8%m(Vspng_nk))-exp(Ver_z_8%m(1))
+            do k=2,Vspng_nk
+               wh_8= ( sin(pis2_8*(exp(Ver_z_8%m(Vspng_nk))-exp(Ver_z_8%m(k))) &
+                    /(delp_8)))**2
+               Vspng_mf(k) = 1.+(Vspng_mf(1)-1.)*wh_8
+            end do
+         endif               
+         
+         do k=1, Vspng_nk
+            Vspng_mf(k) = max(1.,Vspng_mf(k))
+            if (Lun_out.gt.0) write (Lun_out,2005) Vspng_mf(k),k
+         end do
+!
+         if(Vspng_zmean_L.and.(.not.Grd_gauss_L))then
+            if(G_lam.or.Grd_roule.or..not.Grd_uniform_L)then
+                if (Lun_out.gt.0) write (Lun_out,2006)
+                call handle_error(-1,'vspng_set','vspng_set')
+            endif
+         endif
+         if (Lun_out.gt.0) write (Lun_out,2007)Vspng_zmean_L
+!
+      endif
+!
+ 2000 format('USER DEFINED SPONGE LAYER PROFILE')
+ 2002 format('SPONGE LAYER PROFILE BASED ON: Vspng_mf(1)= ',f8.4, &
+             '  AND Vspng_nk= ',i4)
+ 2003 format('SPONGE LAYER PROFILE BASED ON: Vspng_nutop= ',f8.4, &
+             '  AND Vspng_nk= ',i4, ' AND iterations= ',i4)
+ 2005 format(f10.5,i5)
+ 2006 format('Vspng_zmean_L works ONLY with GAUSS or Global Uniform unrotated grid')
+ 2007 format('SPONGE LAYER Vspng_zmean_L =',l2)
+ 2008 format(/,'Vspng_nutop=',f8.4,/,'FOR LAM, Must set Vspng_nutop > 0.0 if Vspng_nk=',i4)
+!
+!     ---------------------------------------------------------------
+ 999  return
+      end

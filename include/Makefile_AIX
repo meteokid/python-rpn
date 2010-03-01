@@ -2,14 +2,10 @@ OPTIL  = 2
 OMP    = -openmp
 MPI    = -mpi
 
-#RMN    = rmnbeta_011
-#version_COMM = 301
-#UTIL         = massvp4 lapack blas rtools bindcpu_002
-
-RMN          = rmn_010
-version_COMM = 222
-UTIL         = massvp4 lapack blas rtools priv bindcpu_002
-CODEBETA     = gmm bmf_get bmf_get2 fstd98 calc_crc
+CODEBETA     = 
+RMN          = rmnbeta_011
+version_COMM = 301
+UTIL         = massvp4 lapack blas rtools bindcpu_002
 
 LLAPI  = llapi
 IBM_LD = hpm_r

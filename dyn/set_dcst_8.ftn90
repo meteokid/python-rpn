@@ -1,0 +1,86 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+!**function set_dcst_8 - initializes geophysical constants
+!
+      logical function set_dcst_8 ( val, liste, nbre, unout, numproc )
+      implicit none
+!
+      integer nbre,unout,numproc
+      character * (*) liste(nbre)
+      real*8 val(nbre)
+!
+!author
+!     M. Desgagne July 2005
+!
+      integer i, ier, ierrmpi, flag(nbre)
+      real*8 rdval
+      external RPN_COMM_bcst_x
+!
+!     ---------------------------------------------------------------
+!
+      if (unout.gt.0) write (unout,1000)
+!
+      flag = 0
+!
+      i=1
+      if (unout.gt.0) then
+         ier = 1
+         call constnt (rdval,ier,liste(i),100)
+         if (ier.eq.1) then
+         rdval = 0.4d0
+         ier = 1
+         call constnt (rdval,ier,'KARMAN',103)
+         write(unout,100)
+         write(unout,102) 'THE VALUE OF THE CONSTANT KARMAN HAS BEEN'
+         write(unout,102) '                          ------         '
+         write(unout,103) 'CHANGED TO ', rdval,'   IN S/R set_dcst_8'
+         write(unout,100)
+         endif
+      endif
+!
+      if (numproc.gt.1)  &
+         call constnt_x (rdval,ier,liste(i),4,RPN_COMM_bcst_x, &
+                                                8,0,0,ierrmpi)
+!
+      do i=1,nbre
+         call constnt (val(i),flag(i),liste(i),100)
+      end do
+!
+      set_dcst_8  = .true.
+!
+      do i=1,nbre
+         if (flag(i).eq.1) then
+            if (unout.gt.0) write (unout,1005) liste(i),val(i)
+         else            
+            if (unout.gt.0) write (unout,1006) liste(i)
+            set_dcst_8  = .false.
+         endif
+      end do
+!
+  100 format (1x,52('*'))
+  102 format (1x,'*',4x,A,5x,'*')
+  103 format (1x,'*',4x,A,F4.2,A,11x,'*')
+ 1000 format ( &
+            /,'INITIALIZATION OF PHYSICAL CONSTANTS: (S/R SET_DCST_8)', &
+            /,'======================================================')
+ 1005 format (1x,"THE VALUE OF",1x,a10,2x,"=",1x,e21.12)
+ 1006 format (" WARNING ==> THE CONSTANT ",a10," DOES NOT EXIST.")
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

@@ -1,0 +1,183 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r dynstep -  Control of the dynamical timestep of the model
+!
+#include "model_macros_f.h"
+!
+      subroutine dynstep
+!
+      implicit none
+!
+!author 
+!     Michel Roch - rpn - nov 1993
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_10 - Tanguay M.        - introduce diffusion at T1 when 4D-Var 
+! v2_11 - Desgagne M.       - vertical sponge layer
+! v2_21 - Tanguay M.        - ADJ of vertical sponge layer
+! v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_03 - Tanguay M.        - Adjoint Lam configuration
+! v3_11 - Gravel S.         - provide for variable topography
+! v3_20 - Pellerin P.       - schm_offline_l: allow to run 
+! v3_30 - Lee V.            - new Lam I/O with acid test
+!                             without the dynamical kernel
+! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+!
+!object
+!
+!arguments
+!       none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "orh.cdk"
+#include "init.cdk"
+#include "lctl.cdk"
+#include "rstr.cdk"
+#include "schm.cdk"
+#include "lam.cdk"
+#include "step.cdk"
+#include "type.cdk"
+#include "adw.cdk"
+#include "acid.cdk"
+#include "vtopo.cdk"
+!
+      integer itraj
+      logical first_L, secon_L
+!
+      logical done_intt_L
+      data done_intt_L /.false./
+      save done_intt_L
+!*
+!     ---------------------------------------------------------------
+      if (Lun_debug_L) write(Lun_out,1000)
+!
+!     first_L is TRUE  for the first timestep
+!           or the first timestep after digital filter initialisation
+!
+      first_L = (Lctl_step.eq.1).or.(Rstri_idon_L .and.  &
+                 Lctl_step.eq.(Init_dfnp+1)/2)
+!
+!     secon_L is TRUE  for the second timestep
+!            or the second timestep after digital filter initialisation
+!
+      secon_L = (Lctl_step.eq.2).or.(Rstri_idon_L .and.  &
+                 Lctl_step.eq.(Init_dfnp+1)/2 + 1)
+!
+!     Orh_crank_L is TRUE for a time step using C-N procedure
+!
+      Orh_crank_L= first_L .or. ( secon_L .and. ( Schm_xwvt3 .gt. 0 ))  &
+                           .or. ( mod(Lctl_step-1,Schm_modcn) .eq. 0 )
+!
+      itraj = Schm_itraj
+!
+      if ( first_L) then
+         if (.not.Acid_skippospers_L) then
+            call pospers( )
+         endif
+         itraj = max( 5, Schm_itraj )
+      endif
+!
+!        ------------------------------------------------------------
+!C       Compute 3D winds at time t0-dt/2 (th)
+!        ------------------------------------------------------------
+!
+! Perform time interpolation of Lateral BCs for LAM configurations
+!
+      if ( G_lam .and. .not.Lam_ctebcs_L ) call nest_intt (done_intt_L) 
+!     
+      if ( Orh_crank_L ) then
+!     
+!        DUMMY TIME STEPS AND WIND INTERPOLATION
+!     
+!        first guess for winds and positions at th
+!     
+         call wdpers( )
+!     
+         if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
+         do Orh_icn = 1,Schm_itcn-1
+!     
+!           Perform dummy timestep
+!     
+            call tstpdyn( itraj)
+!     
+!           Compute the average of the t1 and t0 winds
+!     
+            call wndth( )
+!     
+            itraj = Schm_itraj
+!     
+         end do
+         if (Lun_debug_L) write(Lun_out,1006)
+!     
+         Orh_icn=Schm_itcn
+!     
+      else
+!     
+         Orh_icn = 1
+!     
+      endif
+!     
+!     ------------------------------------------------------------
+!     Perform the timestep
+!     ------------------------------------------------------------
+!     
+      call tstpdyn ( Schm_itraj )
+!     
+!     ------------------------------------------------------------
+!     C	  When the timestep is completed, rename all the
+!     C        variables at time level t1 -> t0 and rename all the
+!     C        variables at time level t0 -> t1 for the next timestep
+!     ------------------------------------------------------------
+!     
+      call t02t1( )
+!
+!     --------------------------------------------------------------
+!     Impose BCs within Pil regions and blend within blending region
+!     --------------------------------------------------------------
+!
+      if (G_lam.and. .not. Schm_theoc_L) then
+         call nest_bcs
+         call nest_gwa
+      endif
+!
+!     ------------------------------------------------------------
+!     Boundary conditions for theoretical case
+!     ------------------------------------------------------------
+!
+      if ( Schm_theoc_L ) call nest_theoc
+!
+!     ===================
+!     END OF ONE TIMESTEP
+!     ===================
+!
+      if ( Lctl_step-Vtopo_start .eq. Vtopo_ndt) Vtopo_L = .false.
+      if ( G_lam.and.(Lctl_step.eq.Step_total) ) done_intt_L = .true.
+!
+ 1000 format( &
+      /,'CONTROL OF DYNAMICAL STEP: (S/R DYNSTEP)', &
+      /,'========================================'/)
+ 1005 format( &
+      /3X,'##### Crank-Nicholson iterations: ===> PERFORMING',I3, &
+          ' timestep(s) #####'/)
+ 1006 format( &
+      /3X,'##### Crank-Nicholson iterations: ===> DONE... #####'/)
+!
+      return
+      end

@@ -1,0 +1,85 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** s/r e_moclim2 reading and horizontal interpolation
+!
+#include "model_macros_f.h"
+!
+      integer function e_moclim2 (  f, ni, nj, nomvar, ip1, ip3,  &
+           month, day, etik, typvar, dest_g, interp, un1, stdo)
+!
+      implicit none
+!
+      character* (*) nomvar,interp,etik,typvar
+      integer ni, nj, ip1, ip3, month, day, dest_g, un1, stdo
+      real  f(*)
+!
+!author   andre methot - cmc - april 94
+!
+!revision
+!
+! v2_21 - Desgagne M.       - major re-organization + use of e_rdhint
+! v3_00 - Desgagne & Lee    - Lam configuration
+!
+!object
+!       Return a weighted time averaged climatological field.
+!       The average is weighted by the day of the month.
+!
+!implicites
+!
+      integer  e_rdhint3
+      external e_rdhint3
+      integer moa, jj, i, err
+      real poa, poam, w1(ni*nj) 
+!
+!---------------------------------------------------------------------
+!
+!     Computing the closest neighbouring month and weight
+!
+      if ( day .gt. 15 ) then
+         jj = 32 - day
+         if ( jj .gt. 15 ) jj = 15
+         moa = month + 1
+         if ( month .eq. 12 ) moa = 1
+      else
+         jj = day
+         moa = month - 1
+         if ( month .eq. 1 ) moa = 12
+      endif
+      poa = ( jj + 13 ) / 28.
+!
+      write (stdo,1000) month,moa
+!
+      e_moclim2 = -1
+      if (e_rdhint3(f, dest_g,ni,nj,nomvar,ip1,month,-1,etik, &
+                typvar,.false.,.false.,interp,un1,stdo ).lt.0) return
+!
+      if (e_rdhint3(w1,dest_g,ni,nj,nomvar,ip1,moa   ,-1,etik, &
+                typvar,.false.,.false.,interp,un1,stdo ).lt.0) return
+!
+!     Compute weighted average
+!
+      poam = 1. - poa
+      do i=1,ni*nj
+         f(i) = poa*f(i) + poam*w1(i)
+      enddo
+      e_moclim2 = 0
+!
+ 1000 format ('CLIMATOLOGY: AVERAGING BETWEEN MONTHS ',2i3)
+!---------------------------------------------------------------------
+!
+      return
+      end
+

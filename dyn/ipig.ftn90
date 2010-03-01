@@ -1,0 +1,85 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/p ipig - initialize unique grid descriptors(ig1,ig2,ig3)
+!
+      subroutine ipig( F_ig1, F_ig2, F_ig3,  &
+                       F_dxla, F_dyla, F_nila, F_njla, F_ni, F_nj, &
+                       F_rot_8, F_tourn_L)
+!
+      implicit none
+!
+       integer F_ig1, F_ig2, F_ig3
+       real    F_dxla, F_dyla
+       real*8  F_rot_8(3,3)
+       integer F_nila, F_njla, F_ni, F_nj
+       logical F_tourn_L
+
+!author A. Methot  - cmc  - dec 1995 - v0_17
+!
+!revision
+! v2_00 - Lee V.            - initial MPI version (from ipig v1_03)
+! v2_21 - J. P. Toviessi    - new grid descriptors algorithm to free
+! v2_21                       third grid descriptor.
+! v2_30 - Dugas B.          - use real*8 rotation matrix
+!
+!object
+!       Initialize the basic grid descriptors.
+!       These grid descriptors are constructed from the 
+!       grid specifications.
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_ig1        O    - first grid descriptor
+! F_ig2        O    - second grid descriptor
+! F_ig3        O    - third grid descriptor
+! F_dxla       I    - distance in x between grid points in the uniform
+!                                             resolution part of the grid
+! F_dyla       I    - distance in y between grid points in the uniform
+!                                             resolution part of the grid
+! F_nila       I    - number of points on x for the uniform part of the grid
+! F_njla       I    - number of points on y for the uniform part of the grid
+! F_ni         I    - total number of points along x for the whole grid
+! F_nj         I    - total number of points along y for the whole grid
+! F_rot_8(3,3) I    - rotation matrix
+! F_tourn_L    I    - .true. if grid is rotated
+!
+!     
+      real prcoeur, prtotal
+
+!notes
+!     F_ig1 is the heart resolution in tenth of kilometers
+!     F_ig2 stands from 0 to 1000 if the grid is vaiable
+!                  from 1000 to ..., if the grid is uniform
+
+      F_ig1 = nint( ( F_dxla + F_dyla) * 0.5 * 1112. )
+      if ( F_ig1 .ge. 2000 ) then
+           F_ig1 = 2000 + nint( ( F_dxla + F_dyla) * 0.5 )
+      endif
+
+      if ( F_tourn_L ) then
+         F_ig2 = nint( 100.* &
+                        ( F_rot_8(1,1)+F_rot_8(1,2)+F_rot_8(1,3)+ &
+                          F_rot_8(2,1)+F_rot_8(2,2)+F_rot_8(2,3)+ &
+                          F_rot_8(3,1)+F_rot_8(3,2)+F_rot_8(3,3) ) )
+         F_ig2=iabs(F_ig2)
+      else
+         F_ig2=0
+      endif
+      if ((F_ni.eq.F_nila).and.(F_nj.eq.F_njla)) F_ig2 = F_ig2 + 1000
+
+      return
+      end

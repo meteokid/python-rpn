@@ -1,0 +1,77 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_extract - Fill the slice workspace variable for the physics
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_extract (F_busvol, F_jdo, nk)
+      implicit none
+!
+      integer F_jdo, nk
+      real F_busvol(*) 
+!
+!author 
+!     Michel Roch - rpn - april 1994
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_10 - Desgagne M.       - bug correction on rotation of wind 
+! v2_20 - Pellerin P.       - copy contents of geobus into entry bus
+! v2_31 - Desgagne M.       - clean up and introduce h2o tracers
+! v3_00 - Laroche S.        - add sigma levels in the arguments
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_02 - Plante A.         - Further clean up and introduction of
+!                             water loading via virtual temperature.
+! v3_12 - Leduc A-M         - Add arguments gzm and topo
+! v3_20 - Pellerin P.       - To allow the off-line mode
+! v3_30 - Desgagne M.       - new itf_phy interface
+! v3_30 - Bilodeau-Desgagne - debug offline mode
+! v4    - Chamberland-Spacek-Plante - staggered version
+! v4_04 - Plante A.         - Remove offline mode
+!
+!object
+!	Fill the slice workspace variable for the physics.
+!
+#include "glb_ld.cdk"
+#include "itf_phy_buses.cdk"
+!
+!notes
+!
+      integer i, j, k, n, ii, indx, soit,lght,indx_n,cnt
+!*
+!     ---------------------------------------------------------------
+!
+      cnt = 0
+      j   = F_jdo 
+
+      do n=1,p_bvol_top
+         if (volnm(n)(1:5) .eq. 'PHYTD') then
+            cnt = cnt + 1
+            call getindx (volnm(n),  'V', indx_n, lght, soit)
+            do k= 1, Nk
+            do i= 1, p_ni
+               indx = (k-1)*p_ni+i-1
+               ii   = i + p_offi
+               phy_tend(ii, j, k, cnt) = F_busvol(indx_n + indx)
+            end do
+            end do
+         endif
+       end do
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

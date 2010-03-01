@@ -1,0 +1,282 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r gemdm_config - Establish final model configuration
+!
+#include "model_macros_f.h"
+!
+      integer function gemdm_config ( )
+      implicit none
+!
+!author
+!     M. Desgagne    - Summer 2006
+!
+!revision
+! v3_30 - Desgagne M.       - initial version
+! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+! v4_03 - Lee/Desgagne      - ISST, add Grdc_maxcfl, Step_maxcfl, elim Grdc_pil
+! v4_04 - Plante A.         - Remove offline mode
+! v4_05 - Desgagne M.       - Throw warning and return for digital filter in LAM
+! v4_05 - McTaggart-Cowan R.- Set Lun_sortie_s and Schm_opentop_L
+! v4_10 - Tanguay M.        - Adjust digital filter when LAM
+! 
+!
+!object
+!
+#include "dcst.cdk"
+#include "v4dg.cdk"
+#include "nml.cdk"
+#include "ver.cdk"
+#include "out.cdk"
+#include "modconst.cdk"
+!
+!modules
+      integer  bin2com,newdate
+      external bin2com,newdate
+!
+      character nfe
+      integer   nfe_nsec, len, time1, time2, istat
+!
+      character*16 dumc_S
+      character*256 fln_S
+      logical wronghyb
+      integer i, k, nrec, err, ipcode, ipkind
+      real pcode,deg_2_rad
+!
+      real*8 dayfrac,sec_in_day
+      parameter ( sec_in_day=86400.0d0 )
+!
+!-------------------------------------------------------------------
+!
+      gemdm_config = -1
+!
+      Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
+!
+      if (Init_balgm_L) then
+         if (Lctl_reset.lt.Init_dfnp) Lctl_reset = -1
+      endif
+!        
+!     Use newcode style:
+      call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
+!
+      Level_mode_ip1 = 1
+      Level_kind_ip1 = 5
+      Level_version  = 2
+!
+      call low2up  (Hzd_type_S,dumc_S)
+      Hzd_type_S = dumc_S
+      Hzd_lnr    = min(max(0.,Hzd_lnr),0.9999999)
+      Hzd_pwr    = Hzd_pwr / 2
+      Hzd_pwr    = min(max(2,Hzd_pwr*2),8)
+!
+      if (G_lam) then
+         Glb_pil_n = Grd_extension
+         Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
+         Lam_blend_H = max(0,Lam_blend_H)
+         Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
+         if (Schm_theoc_L) Lam_blend_Hy = 0
+      endif
+      Lam_gbpil_T = max(0,Lam_gbpil_T)
+      Lam_blend_T = max(0,Lam_blend_T)
+!
+      deg_2_rad = Dcst_pi_8/180.
+!
+      P_lmvd_mllat_8 = ( abs(P_lmvd_mllat_8) * deg_2_rad )
+      P_lmvd_eqlat_8 = ( abs(P_lmvd_eqlat_8) * deg_2_rad )
+!
+      call low2up  (Out3_unit_S,dumc_S)
+      Out3_unit_S=dumc_S
+!
+      Out_datyp   = 134
+      Out_rewrit_L= .false.
+      if (Clim_climat_L) Out_rewrit_L=.true.
+
+      if(Out3_nbitg .lt. 0) then
+         if (lun_out.gt.0) write (Lun_out, 9154)
+         Out3_nbitg=16
+      endif
+      Out3_nundr = 0
+      do i = 1, MAXELEM
+         if(Out3_zund(i) .eq. 0 ) goto 80
+         Out3_nundr = Out3_nundr + 1
+      enddo
+ 80   continue
+!
+      if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
+!      
+!     if not theoretical case, read data from file labfl.bin 
+!
+      if ( Schm_theoc_L ) then
+           Mod_runstrt_S=Lam_runstrt_S
+      else
+          if ( bin2com ().lt.0) return
+      endif
+!
+!     Counting # of vertical levels specified by user
+      G_nk = 0
+      do k = 1, maxhlev
+         if (hyb(k) .lt. 0.) exit
+         G_nk = k
+      enddo
+!
+      call set_zeta ( hyb )
+!
+      if (V4dg_conf.ne.0.and.Sol_type_S.eq.'ITERATIF') then
+          if (Lun_out.gt.0)  write (Lun_out, 9300) 
+          return
+      endif
+!
+!     Options used for the Off-line mode (MEC)
+!
+      if (Mod_runstrt_S.eq."@#$%") Mod_runstrt_S = Lam_runstrt_S
+      if (Lam_runstrt_S.eq."@#$%") Lam_runstrt_S = Mod_runstrt_S
+!
+      if (Mod_runstrt_S.eq."@#$%") then
+         if (lun_out.gt.0) then
+            write (Lun_out, 6005)
+            write (Lun_out, 8000)
+         endif
+         return
+      endif
+!
+      if (G_lam .and. .not.Lam_ctebcs_L .and. (Lam_nesdt.le.0) ) then
+         if (lun_out.gt.0) then
+            write (Lun_out, 6006)
+            write (Lun_out, 8000)
+         endif
+         return
+      endif
+!       
+      call datp2f ( Out3_date, Mod_runstrt_S )
+      err = newdate ( Out3_date, time1, time2, -3 )
+      if (lun_out.gt.0) write (Lun_out,6007) Mod_runstrt_S,time1,time2
+!
+      Grdc_ndt   = -1
+      Grdc_start = -1
+      len=len_trim( Grdc_nfe )
+      Acid_npas=0
+      if (len.gt.0) then
+         call low2up (Grdc_nfe(len:len),nfe)
+         nfe_nsec = 3600
+         if (nfe.eq.'D') nfe_nsec = 86400
+         if (nfe.eq.'M') nfe_nsec = 60
+         if (nfe.eq.'S') nfe_nsec = 1
+         if ((nfe.eq.'D').or.(nfe.eq.'H').or. &
+             (nfe.eq.'M').or.(nfe.eq.'S')) len= len-1
+         read ( Grdc_nfe(1:len), * ) Grdc_ndt
+         Grdc_ndt = max( 1, Grdc_ndt * nfe_nsec / nint(Cstv_dt_8) )
+
+         Grdc_start = 0
+         if (Grdc_runstrt_S.ne."@#$%") then 
+            call difdatsd (dayfrac,Mod_runstrt_S,Grdc_runstrt_S)
+            Grdc_start = nint (dayfrac*sec_in_day/Cstv_dt_8)
+         endif
+         Grdc_end   = Step_total
+         if (Grdc_runend_S.ne."@#$%") then 
+            call difdatsd (dayfrac,Mod_runstrt_S,Grdc_runend_S)
+            Grdc_end   = nint (dayfrac*sec_in_day/Cstv_dt_8)
+         endif
+         Grdc_start = min(max(0,Grdc_start),Step_total)
+         Grdc_end   = min(max(0,Grdc_end  ),Step_total)
+         Grdc_maxcfl = max(1,Grdc_maxcfl)
+         Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+         Grdc_ni     = Grdc_ni   + 2*Grdc_pil
+         Grdc_nj     = Grdc_nj   + 2*Grdc_pil
+         Grdc_iref   = Grdc_iref +   Grdc_pil
+         Grdc_jref   = Grdc_jref +   Grdc_pil
+         if (Acid_pilot_L) acid_npas = Grdc_start
+      endif
+      if ( Acid_test_L) then
+           if (Acid_pilot_L) then
+           fln_S  = trim(Path_output_S) // '/casc/solver.bin'
+           write (Lun_out,*)'Opening file: ',trim(fln_S)
+           open (50, file=fln_S,form='unformatted')
+           fln_S  = trim(Path_output_S) // '/casc/posixy.bin'
+           write (Lun_out,*)'Opening file: ',trim(fln_S)
+           open (44, file=fln_S,form='unformatted')
+           else
+           fln_S  = trim(Path_input_S) // '/INIT_3D/solver.bin'
+           write (Lun_out,*)'Opening file: ',trim(fln_S)
+           open (50, file=fln_S,form='unformatted')
+           fln_S  = trim(Path_input_S) // '/INIT_3D/posixy.bin'
+           write (Lun_out,*)'Opening file: ',trim(fln_S)
+           open (44, file=fln_S,form='unformatted')
+           endif
+      endif
+!
+      call low2up  (Lam_hint_S ,dumc_S)
+      Lam_hint_S= dumc_S
+      call low2up  (sol_type_S ,dumc_S)
+      sol_type_S= dumc_S
+      call low2up  (sol_precond_S ,dumc_S)
+      sol_precond_S= dumc_S
+!
+      G_ni  = Grd_ni
+      G_nj  = Grd_nj
+!
+      G_niu = G_ni
+      G_njv = G_nj - 1
+      if (G_lam) then
+         G_niu = G_ni - 1
+         if (Eigv_parity_L) then
+            Eigv_parity_L = .false.
+            if (lun_out.gt.0) write (Lun_out, 7005)
+         endif
+         if (Hspng_nj.ne.0) then
+            if (lun_out.gt.0) then
+               write (Lun_out, 7015)
+               write (Lun_out, 8000)
+            endif
+            return
+         endif
+         if (Schm_psadj_L) then
+            if (lun_out.gt.0) then
+               write (Lun_out, 7020)
+               write (Lun_out, 8000)
+            endif
+            return
+         endif
+      endif
+
+!     Check for open top (piloting or blending)
+      Schm_opentop_L  = .false.
+      if (Lam_blend_T > 0 .or. Lam_gbpil_T > 0) Schm_opentop_L = .true.
+!
+      gemdm_config = 1
+!
+ 6005 format (/' Starting time Mod_runstrt_S not specified'/)
+ 6006 format (/' In LAM configuration: Lam_nesdt must be specified'/)
+ 6007 format (/X,63('#'),/,2X,'STARTING DATE for RUN is: ',a16,'= ', &
+              i8.8,'.',i8.8,/X,63('#')/)
+ 7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
+ 7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
+ 7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
+ 8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
+ 9100 format (/'ABORT: you must supply levels in namelist variable hyb'/)
+ 9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
+ 9250 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/ &
+               '      LEVELS MUST BE MONOTONICALLY INCREASING'/ &
+               '      FROM HYB(1) ---- ABORT ----'// &
+               '      Current choice:')
+ 9300 format (/,'ABORT: ADJOINT not done for Sol_type_S = ITERATIF',/)
+ 9400 format (/,'ABORT: Cstv_ptop_8 must be > 0',/)
+ 9550 format (/,'ABORT: hyb must be < 1.0 and > ',es10.4,/)
+ 9560 format (/'ABORT: Top piloting must have topology 2x* or *x2'/)
+
+!
+!-------------------------------------------------------------------
+!
+      return
+      end

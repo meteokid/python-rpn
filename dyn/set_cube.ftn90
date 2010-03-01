@@ -1,0 +1,120 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/p set_descriptors - inidialize the CUBES namelist
+!
+#include "model_macros_f.h"
+!
+      subroutine set_cube ()
+      implicit none
+  !
+  !author
+  !     Ron McTaggart-Cowan - Aug 2009
+  !
+  !revision
+  !
+  !object
+  !     use GRID and LEVEL common blocks to define a set of ig1/ig2 values
+  !     using a cyclic redundancy check that uniquely define each 3D cube 
+  !     that can be output by the model.
+  !
+  !arguments
+  !
+  !implicits
+#include "glb_ld.cdk"
+#include "dimout.cdk"
+#include "grd.cdk"
+#include "hgc.cdk"
+#include "cube.cdk"
+#include "geomn.cdk"
+#include "cstv.cdk"
+
+      ! Internal variables
+      integer :: i,j,k,cnt,crc,dgid,err
+      integer, parameter :: ELEM=8
+      integer, dimension(1) :: max_pos
+      integer, dimension(LEVEL_NTYP) :: vert_count
+      real :: lev,max_val
+      real, dimension(MAXSET*MAXLEV,LEVEL_NTYP) :: vert
+      real, dimension(G_ni*2 + G_nj*2 + G_nk + ELEM) :: identity_vec
+      real, dimension(G_ni,2) :: latlon_we
+      real, dimension(G_nj,2) :: latlon_sn
+
+      ! External functions
+      integer, external :: f_calc_crc,ezgdef_fmem,gdll
+      
+      ! Get the full list of pressure and model levels requested for output
+      vert_count = 1; vert = 0.
+      do k=1,Level_sets
+         do j=1,LEVEL_NTYP
+            if (Level_typ_indx(k) == j) then
+               vert(vert_count(j):vert_count(j)+Level_max(k),j) = Level(1:Level_max(k),k)
+               vert_count(j) = vert_count(j)+Level_max(k)
+            endif
+         enddo     
+      enddo
+      vert_count = vert_count-1
+      
+      ! Eliminate duplicate values while sorting lists (descending order)
+      do j=1,LEVEL_NTYP
+         lev = -1.
+         Cube_vcount(j) = 1
+         do k=1,vert_count(j)
+            max_val = maxval(vert(1:vert_count(j),j))
+            max_pos = maxloc(vert(1:vert_count(j),j))
+            if (lev /= max_val) then
+               Cube_v(Cube_vcount(j),j) = vert(max_pos(1),j)
+               lev = vert(max_pos(1),j)
+               Cube_vcount(j) = Cube_vcount(j)+1
+               vert(max_pos(1),j) = -1.
+            endif
+            vert(max_pos(1),j) = -1.
+         enddo
+      enddo
+      Cube_vcount = Cube_vcount-1      
+
+      dgid = ezgdef_fmem (G_ni, 1  , 'Z', 'E', Hgc_ig1ro, &
+             Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, Geomn_longs,Geomn_latgs(G_nj/2))
+      err  = gdll (dgid,latlon_we,latlon_we(1,2))
+      dgid = ezgdef_fmem (1   , G_nj, 'Z', 'E', Hgc_ig1ro, &
+             Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, Geomn_longs(G_ni/2),Geomn_latgs)
+      err  = gdll (dgid,latlon_sn,latlon_sn(1,2))
+
+      ! Set unique values of ig1 and ig2 for the descriptors
+      Cube_ig1 = -1; Cube_ig2 = -1
+      do j=1,Grid_sets
+         do k=1,LEVEL_NTYP
+            cnt = 1
+            do i=Grid_y0(j),Grid_y1(j),Grid_stride(j)
+               identity_vec(cnt) = latlon_sn(i,1) ; cnt=cnt+1
+               identity_vec(cnt) = latlon_sn(i,2) ; cnt=cnt+1
+            enddo
+            do i=Grid_x0(j),Grid_x1(j),Grid_stride(j)
+               identity_vec(cnt) = latlon_we(i,1) ; cnt=cnt+1
+               identity_vec(cnt) = latlon_we(i,2) ; cnt=cnt+1
+            enddo
+            do i=1,Cube_vcount(k)
+               identity_vec(cnt) = Cube_v(i,k); cnt=cnt+1
+            enddo  
+            identity_vec(cnt:cnt+ELEM-1) = (/Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2, &
+                 Grd_rcoef(1),Grd_rcoef(2),Cstv_ptop_8,Cstv_pref_8/); cnt=cnt+ELEM-1
+            crc = f_calc_crc(identity_vec(1:cnt),cnt,0,1)
+            Cube_ig1(j,k) = ibits(crc,0,16)
+            Cube_ig2(j,k) = ibits(crc,16,16)
+         enddo
+      enddo
+
+      return
+      end subroutine set_cube

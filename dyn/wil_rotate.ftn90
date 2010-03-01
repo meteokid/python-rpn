@@ -1,0 +1,91 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r wil_rotate 
+!
+#include "model_macros_f.h"
+!
+      SUBROUTINE WIL_ROTATE(RLON,RLAT,ALPHA,ROTLON,ROTLAT)
+!
+      implicit none
+!
+      REAL RLON, RLAT, ALPHA, ROTLON, ROTLAT
+!
+!author Jacob et al. 1992 
+!
+!revision
+! v4_04 - Jacob et al.     - initial version ROTATE 
+! v4_04 - Tanguay M.       - Williamson's cases
+!
+!object
+!     THIS SUBROUTINE COMPUTES THE ROTATED COORDINATES
+!     ROTLON,ROTLAT FOR A ROTATION BY ANGLE ALPHA
+!
+!implicits
+#include "wil_dcst.cdk"
+!
+      REAL TEST
+!
+      IF (ALPHA .EQ. 0.0) THEN
+!
+!        NO ROTATION
+!        -----------
+         ROTLON = RLON
+         ROTLAT = RLAT
+!
+      ELSE
+!
+!        ROTATION BY ANGLE ALPHA
+!        -----------------------
+!
+!        ROTATED LATITUDE
+!        ----------------
+         TEST = SIN(RLAT)*COS(ALPHA)-COS(RLAT)*COS(RLON)*SIN(ALPHA)
+         IF (TEST .GT. 1.0) THEN
+            ROTLAT = Wil_Dcst_pi_8/2.0
+         ELSEIF (TEST .LT. -1.0) THEN
+            ROTLAT = -Wil_Dcst_pi_8/2.0
+         ELSE
+            ROTLAT = ASIN(TEST)
+         ENDIF
+!
+!        ROTATED LONGITUDE
+!        -----------------
+         TEST = COS(ROTLAT)
+         IF (TEST .EQ. 0.0) THEN
+            ROTLON = 0.0
+         ELSE
+            TEST = SIN(RLON)*COS(RLAT)/TEST
+            IF (TEST .GT. 1.0) THEN
+               ROTLON = Wil_Dcst_pi_8/2.0
+            ELSEIF (TEST .LT. -1.0) THEN
+               ROTLON = -Wil_Dcst_pi_8/2.0
+            ELSE
+               ROTLON = ASIN(TEST)
+            ENDIF
+         ENDIF
+!
+!        ADJUST FOR CORRECT BRANCH OF INVERSE SINE
+!        -----------------------------------------
+         TEST = COS(ALPHA)*COS(RLON)*COS(RLAT) &
+                + SIN(ALPHA)*SIN(RLAT)
+         IF (TEST .LT. 0.0) THEN
+            ROTLON = Wil_Dcst_pi_8 - ROTLON
+         ENDIF
+!
+      ENDIF
+!
+      RETURN
+      END

@@ -1,0 +1,92 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+!** e_sfile_3df - to open a new 3DF file 
+!
+#include "model_macros_f.h"
+!
+      subroutine e_sfile_3df (datev,msg,gid, gif, gjd, gjf, &
+                                                   rootfn)
+      implicit none
+!
+      character* (*) datev, msg,rootfn
+      integer  gid, gif, gjd, gjf
+
+!author  M. Desgagne 2001 (MC2 out_sfile_3df)
+!
+!revision
+! v3_30 - Lee. V - modified to open a 3DF file for data extracted
+!                  from analysis input
+! v4_03 - Lee/Desgagne - ISST
+! v4_05 - Plante A.    - removed nvar from interface
+!                        and put nvar into common block e_anal
+!
+#include "e_anal.cdk"
+#include "e_grids.cdk"
+#include "grdc.cdk"
+#include "e_tr.cdk"
+#include "path.cdk"
+!
+      character*2   md
+      character*15  startindx
+      character*512 filen
+      integer idg,jdg,mode,ntr,i,ii,nis,njs
+      real*8 pt5
+      real*8, dimension(:), allocatable :: xxu,yyv
+      parameter ( pt5    = 0.5d0 )
+!
+!------------------------------------------------------------------
+!
+!     Set the unit for cascade output
+      unf_casc = 201
+      idg=1
+      jdg=1
+      mode=2
+      nis = gif-gid+1
+      njs = gjf-gjd+1
+      ntr=1+E_tr3d_ntr ! for HU
+      allocate (xxu(nis),yyv(njs))
+!
+      write (md,'(i2.2)') mode
+      write (startindx,'((i7.7),a1,(i7.7))') idg,'-',jdg
+      filen= '3df'//md//'_'//trim(datev)//'_'//startindx
+      filen= trim(rootfn)//trim(filen)
+      open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED', &
+                                                position='APPEND')
+!
+      do i=1,nis-1
+         ii    = gid+i
+         xxu(i) = pt5 * ( xg_8(ii-1) + xg_8(ii) )
+      enddo
+      xxu(nis) = xg_8(gif) + pt5 * ( xg_8(gif) - xg_8(gif-1) )
+!
+      do i=1,njs-1
+         ii    = gjd+i
+         yyv(i) = pt5 * ( yg_8(ii-1) + yg_8(ii) )
+      enddo
+      yyv(njs) = yg_8(gjf) + pt5 * ( yg_8(gjf) - yg_8(gjf-1) )
+!
+      call wrgeo_3df (xg_8(gid),gif-gid+1,yg_8(gjd),gjf-gjd+1, &
+                      xxu,          yyv, &
+                      za_8,zb_8,zat_8,zbt_8, &
+                      lv,lv_t,Anal_hav(2),unf_casc)
+!
+      write (unf_casc) msg,mode,nvar,ntr
+      deallocate (xxu,yyv)
+!
+!------------------------------------------------------------------
+      return
+      end

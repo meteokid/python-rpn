@@ -19,42 +19,38 @@
 ! xcth               | upstream x position in cartesian coordinate     |
 ! ycth               | upstream y position in cartesian coordinate     |
 ! zcth               | upstream z position in cartesian coordinate     |
+! ***h_thermo        | same as above but for thermo levels             |
 !----------------------------------------------------------------------
 !
 #endif
 !
-      real, pointer, dimension (:,:,:) :: uth  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: vth  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: zdth => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:    ) :: xth  => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: yth  => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: zth  => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: xcth => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: ycth => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: zcth => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-
-      real, pointer, dimension (:,:,:) :: uthh => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: vthh => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: zdthh=> null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:    ) :: xthh => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: ythh => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: zthh => null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: xcthh=> null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: ycthh=> null() ! effective dimensions are (l_ni * l_nj * l_nk)
-      real, pointer, dimension (:    ) :: zcthh=> null() ! effective dimensions are (l_ni * l_nj * l_nk)
-
+      real, pointer, dimension (:,:,:) :: uth         => null() ! effective dimensions are (LDIST_SHAPE,   l_nk  )
+      real, pointer, dimension (:,:,:) :: vth         => null() ! effective dimensions are (LDIST_SHAPE,   l_nk  )
+      real, pointer, dimension (:,:,:) :: zdth        => null() ! effective dimensions are (LDIST_SHAPE,   l_nk+1)
+      real, pointer, dimension (:    ) :: xth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: yth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: zth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: xcth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: ycth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: zcth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+!
+      real, pointer, dimension (:    ) :: xth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: yth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: zth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: xcth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: ycth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: zcth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+!
       character(len=8) :: gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
       character(len=8) :: gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
       character(len=8) :: gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
-
-      character(len=8) :: gmmk_uthh_s , gmmk_vthh_s , gmmk_zdthh_s
-      character(len=8) :: gmmk_xthh_s , gmmk_ythh_s , gmmk_zthh_s
-      character(len=8) :: gmmk_xcthh_s, gmmk_ycthh_s, gmmk_zcthh_s
-
+!
+      character(len=8) :: gmmk_xth_thermo_s , gmmk_yth_thermo_s , gmmk_zth_thermo_s
+      character(len=8) :: gmmk_xcth_thermo_s, gmmk_ycth_thermo_s, gmmk_zcth_thermo_s
+!
       common /vth_n_gmm / gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
       common /vth_n_gmm / gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
       common /vth_n_gmm / gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
-
-      common /vthh_n_gmm/ gmmk_uthh_s , gmmk_vthh_s , gmmk_zdthh_s
-      common /vthh_n_gmm/ gmmk_xthh_s , gmmk_ythh_s , gmmk_zthh_s
-      common /vthh_n_gmm/ gmmk_xcthh_s, gmmk_ycthh_s, gmmk_zcthh_s
+!
+      common /vth_n_gmm/ gmmk_xth_thermo_s , gmmk_yth_thermo_s , gmmk_zth_thermo_s
+      common /vth_n_gmm/ gmmk_xcth_thermo_s, gmmk_ycth_thermo_s, gmmk_zcth_thermo_s

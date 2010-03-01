@@ -1,0 +1,91 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r ptopo_nml - Read namelist ptopo
+!
+#include "model_macros_f.h"
+!
+      integer function ptopo_nml (F_namelistf_S)
+      implicit none
+!
+      character* (*) F_namelistf_S
+!
+!author
+!     Michel Desgagne - Summer 2006
+!
+!revision
+! v3_30 - Desgagne M.       - initial version
+! v3_31 - Lee V.            - binding is restricted to when SMT is equal
+!                             or twice Ptopo_npeOpenMP
+!
+!object
+!  Default configuration and reading namelist ptopo
+!
+!implicits
+#include "ptopo.cdk"
+!
+      integer  fnom
+      external fnom
+!
+      integer nrec,unf
+!
+!-------------------------------------------------------------------
+!
+      ptopo_nml = -1
+!
+      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+         ptopo_nml = 0
+         write (6  ,nml=ptopo)
+         return
+      endif
+!
+! Defaults values for ptopo namelist variables
+!
+      Ptopo_npex   =  1
+      Ptopo_npey   =  1
+      Ptopo_nblocx = -1
+      Ptopo_nblocy = -1
+      Ptopo_smtphy = 0
+      Ptopo_smtdyn = 0
+      Ptopo_bind_L = .false.
+!
+      unf=0
+      if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
+         rewind(unf)
+         read (unf, nml=ptopo, end=7110, err=9110)
+ 7110    if (Ptopo_nblocx.le.0 .or. Ptopo_nblocy.le.0) then
+            Ptopo_nblocx = Ptopo_npex
+            Ptopo_nblocy = Ptopo_npey
+         endif
+         call fclos (unf)
+         ptopo_nml = 1
+         goto 7777
+      else
+         goto 9220
+      endif
+!
+ 9110 write (6, 8150) trim( F_namelistf_S )
+      call fclos (unf)
+      goto 7777
+!
+ 9220 write (6, 8155) trim( F_namelistf_S )
+!
+ 8150 format (/,' NAMELIST ptopo    INVALID IN FILE: ',a)
+ 8155 format (/,' FILE: ',a,' NOT AVAILABLE')
+!
+!-------------------------------------------------------------------
+!
+ 7777 return
+      end

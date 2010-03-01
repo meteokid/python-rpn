@@ -1,0 +1,90 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r cllaij - to convert points in lat/lon to points on the model grid
+!
+#include "model_macros_f.h"
+!
+      subroutine cllaij (F_x,F_y,F_nstat,ni,nj)
+!
+      implicit none
+      integer ni,nj,F_nstat
+      real F_x(ni,nj),F_y(ni,nj)
+!
+!author  
+!     M. Roch  -  Mars 90 - (from STLL2IJ in RFE)
+!
+!revision
+! v2_00 - Lee V.            - initial MPI version (from cllaij v1_03)
+! v2_30 - Dugas B.          - use real*8 cartesian coordinates
+! v4_05 - McTaggart-Cowan R.- use Xst_stn structure to store point information
+!
+!object
+!     To convert points in lat/lon in array Xst_statll to grid points
+!     in array Xst_statij
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_x          I    - latitudes of the grid points on the model grid
+! F_y          I    - longitudes of the grid points on the model grid
+! F_nstat      I    - number of stations defined in Xst_statll
+!
+!*
+!implicits
+#include "xst.cdk"
+!
+      integer numi,numj,i,j,k
+      real lat,lon,difmin,c
+      real*8 xyz1(3),xyz2(3)
+!
+!     __________________________________________________________________
+!
+      do 100 k=1,F_nstat
+!
+         if (Xst_stn(k)%i .ne. STN_MISSING .or. &
+             Xst_stn(k)%j .ne. STN_MISSING) cycle
+!
+         lat = Xst_stn(k)%lat
+         lon = amod(Xst_stn(k)%lon+360.0,360.0)
+         call llacar (xyz1,lon,lat,1,1)
+         difmin= 9999999.
+         numi = 1
+         numj = 1
+!         
+         do j=1,nj
+         do i=1,ni
+            call llacar (xyz2,F_x(i,j),F_y(i,j),1,1)
+            xyz2(1) = xyz1(1)-xyz2(1)
+            xyz2(2) = xyz1(2)-xyz2(2)
+            xyz2(3) = xyz1(3)-xyz2(3)
+            c = sqrt( xyz2(1)**2 + xyz2(2)**2 + xyz2(3)**2 ) 
+            if ( c .lt. difmin ) then
+               difmin= c
+               numi = i
+               numj = j
+            endif
+         enddo
+         enddo
+!         
+         Xst_stn(k)%i = numi
+         Xst_stn(k)%j = numj
+!         
+ 100  continue
+!     
+!     __________________________________________________________________
+!
+      return
+      end 

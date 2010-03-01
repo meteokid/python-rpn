@@ -1,0 +1,55 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+      subroutine prsdate(yy,mo,dd,hh,mm,ss,sign,date)
+      implicit none
+      integer yy,mo,dd,hh,mm,ss,sign
+      character*16 date
+      character*16 tmpdate
+      character*4 cyy
+      character*2 cmo,cdd,chh,cmm,css
+
+      if (date(1:1).eq.'-') then
+         sign = -1
+         tmpdate=date(2:16)
+      else
+         if (date(1:1).eq.' ') then
+            sign = 1
+            tmpdate=date(2:16)
+         else
+            sign = 1
+            tmpdate=date(1:15)
+         endif
+      endif
+
+      cyy=tmpdate(1:4)
+      cmo=tmpdate(5:6)
+      cdd=tmpdate(7:8)
+      chh=tmpdate(10:11)
+      cmm=tmpdate(12:13)
+      css=tmpdate(14:15)
+
+      read(cyy,'(I4)') yy
+      read(cmo,'(I2)') mo
+      read(cdd,'(I2)') dd
+      read(chh,'(I2)') hh
+      read(cmm,'(I2)') mm
+      read(css,'(I2)') ss
+      
+      return
+      end
+
+

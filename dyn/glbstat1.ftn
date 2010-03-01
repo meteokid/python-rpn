@@ -1,4 +1,0 @@
-      subroutine glbstat1
-	stop 'glbstat1'
-      return
-      end

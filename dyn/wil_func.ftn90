@@ -1,0 +1,53 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r wil_func2
+!
+#include "model_macros_f.h"
+!
+      REAL FUNCTION WIL_FUNC2(THETA) 
+!
+      implicit none
+!
+      REAL THETA
+!
+!author Jacob et al. 1992 
+!
+!revision
+! v4_04 - Jacob et al.     - initial version FUNC2 
+! v4_04 - Tanguay M.       - Williamson's cases
+!
+!object
+!     SPECIFIES RIGHT HAND SIDE OF NON-LINEAR BALANCE EQUATION FOR              
+!     PURPOSES OF NUMERICAL INTEGRATION; REQUIRES REAL FUNCTION BUBFNC          
+!     MAKE SURE THAT CONSTANTS ARE CONSISTANT WITH THOSE IN INPUT!!             
+!     USED FOR TEST CASE 4 IN ROUTINE INIT
+!
+!implicits
+#include "wil_dcst.cdk"
+!------------------------------------------------------------------
+      REAL SU
+!
+!     ZONAL FLOW FUNCTION
+!     -------------------
+      EXTERNAL WIL_BUBFNC
+      REAL WIL_BUBFNC
+!------------------------------------------------------------------
+!
+      SU         = WIL_BUBFNC(THETA)
+      WIL_FUNC2  = (2.0*Wil_Dcst_omega_8*Wil_Dcst_rayt_8*SIN(THETA) + TAN(THETA)*SU)*SU                      
+!
+      RETURN                                                                    
+      END                                                                       

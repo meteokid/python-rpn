@@ -1,0 +1,124 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**function samelevel - 
+!
+#include "model_macros_f.h"
+!
+      logical function samelevel ( analtopo,ni,nj,za_8,zb_8,lvm,zat_8,zbt_8,lvt, &
+                                   F_topo,Mminx,Mmaxx,Mminy,Mmaxy)
+      implicit none
+!
+      integer ni,nj,lvm,lvt,Mminx,Mmaxx,Mminy,Mmaxy
+      real analtopo(ni,nj),F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
+      real*8 za_8(lvm),zb_8(lvm),zat_8(lvt),zbt_8(lvt)
+!
+!author
+!
+!revision
+! v3_30 - Desgagne          - Initial version
+!
+!object
+!     Compare analysis levels to model levels
+!
+!arguments
+!
+!implicites
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "vtopo.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+!
+!modules
+!*
+      integer i,j,err,errprdf,prdfsum
+      real difsig,prdfsgz,prdf
+      parameter (difsig = 1.e-5)
+!
+! ---------------------------------------------------------------------
+!
+      samelevel = .true.
+      if (G_nk.ne.lvm-1) then
+          if (Lun_debug_L) &
+              write(Lun_out,*)  &
+              'Number of analysis levels(incl diag)=',lvm
+          if (Lun_out.gt.0) then
+             write(lun_out,*) ' ******* WARNING ********'
+             write(Lun_out,*) 'SAME GRID BUT NOT SAME NUMBER OF LEVELS'
+          endif
+          samelevel = .false.
+          return
+      endif
+      do i=1,lvm-1
+         if (abs(za_8(i)-Ver_a_8%m(i)).gt. difsig .or. &
+             abs(zb_8(i)-Ver_b_8%m(i)).gt. difsig) then
+                if (Lun_debug_L) then 
+                 write(Lun_out,*) &
+                 'level=',i,'za_8,Ver_a_8%m=',za_8(i),Ver_a_8%m(i)
+                 write(Lun_out,*) &
+                 'level=',i,'zb_8,Ver_b_8%m=',zb_8(i),Ver_b_8%m(i)
+                endif
+                if (Lun_out.gt.0) then
+                    write(lun_out,*) ' ******* WARNING ********'
+                    write(Lun_out,*) 'SAME GRID BUT NOT SAME LEVELS'
+                endif
+                samelevel = .false.
+                return
+         endif
+      enddo
+      do i=1,lvt-1
+         if (abs(zat_8(i)-Ver_a_8%t(i)).gt. difsig .or. &
+             abs(zbt_8(i)-Ver_b_8%t(i)).gt. difsig) then
+             if (Lun_debug_L) then 
+                 write(Lun_out,*) &
+                 'level=',i,'zat_8,Ver_a_8%t=',zat_8(i),Ver_a_8%t(i)
+                 write(Lun_out,*) &
+                 'level=',i,'zbt_8,Ver_b_8%t=',zbt_8(i),Ver_b_8%t(i)
+             endif
+             if (Lun_out.gt.0) then
+                write(lun_out,*) ' ******* WARNING ********'
+                write(Lun_out,*) 'SAME GRID BUT NOT SAME LEVELS'
+             endif
+             samelevel = .false.
+             return
+         endif
+      enddo
+!     Check if analysis and model have the same topography
+      prdfsgz = 25.
+      errprdf = 0
+      do j= 1+pil_s, l_nj-pil_n
+      do i= 1+pil_w, l_ni-pil_e
+         prdf= abs( analtopo(i,j) - F_topo(i,j))
+         if ( prdf .gt. prdfsgz ) errprdf = 1
+      enddo
+      enddo
+      call rpn_comm_allreduce (errprdf,prdfsum,1,"MPI_INTEGER", &
+                                            "MPI_SUM","grid",err)
+
+      if ( prdfsum.ne.0 .and. .not. Vtopo_L) then
+           if (Lun_out.gt.0) then
+               write(lun_out,*) ' ******* WARNING ********'
+               write(lun_out,*) &
+                  'ANALYSIS AND MODEL HAVE THE SAME GRID & LEVELS'
+               write(lun_out,*) &
+              ' ...BUT THE TOPOGRAPHY IS NOT EQUIVALENT...'
+           endif
+           samelevel = .false.
+      endif
+
+      return
+      end
+

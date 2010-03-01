@@ -1,7 +1,7 @@
 
       logical C_coupling_L,C_wascoupled_L,C_continue_L,atm_hotstart,oce_hotstart
-      common /cplg_L/ C_coupling_L,C_wascoupled_L,C_continue_L,
-     $                atm_hotstart,oce_hotstart
+      common /cplg_L/ C_coupling_L,C_wascoupled_L,C_continue_L, &
+                      atm_hotstart,oce_hotstart
 
       character*48 CPL_NAME
       logical cpl_exchg_L

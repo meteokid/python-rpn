@@ -1,0 +1,66 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+#include "model_macros_f.h"
+!
+      subroutine tmg_terminate0 ( npe, msg )
+      implicit none
+!
+      character* (*) msg
+      integer npe
+!
+#include "time0.cdk"
+!
+!author
+!     Desgagne/Valin     May 2005
+!
+!revision
+! v3_21 - Desgagne/Valin - initial version
+!
+!
+      integer i,j,ier
+!
+      integer all_sum_m0(MAX_SUBR,MAX_PROC)
+      real*8  all_sum_r0(MAX_SUBR,MAX_PROC)
+!
+      real value_m0,value_r0
+!
+      call tmg_terminate ( npe, msg )
+      if (.not.tmg2_on_L) return
+!
+      all_sum_m0(:,:) = 0  
+      all_sum_m0 = sum_m0
+      all_sum_r0(:,:) = 0.0  
+      all_sum_r0 = sum_r0
+!
+      print *,' ' 
+      print *,'_______________________________________________________________________' 
+      print *,'_______________________TIMINGS_________________________________________' 
+!
+      do i = 1,MAX_SUBR
+         value_m0 = all_sum_m0(i,1)*0.01 
+         value_r0 = all_sum_r0(i,1) 
+!        if(nam_subr_S(i).ne.'NO NAME  ') write(6,100) nam_subr_S(i),value_m0,value_r0
+         if(nam_subr_S(i).ne.'NO NAME  ') write(6,100) nam_subr_S(i),value_r0
+      enddo
+!
+      print *,'_______________________________________________________________________' 
+      print *,' ' 
+!
+! 100 format (A9,'  ',g10.4,'  ',g10.4)
+  100 format (A9,'  ',g10.4)
+!
+      return
+      end

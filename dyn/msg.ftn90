@@ -16,7 +16,7 @@ module mod_msg
 !**/
    logical,save :: isInit = .false.
    logical,save :: canWrite = .true.
-   integer,save :: msgLevelMin = MSG_WARNING
+   integer,save :: msgLevelMin = MSG_INFO
    integer,save :: msgUnit(MSG_NBLEVELS)
    character(len=MSG_MAXLEN),save :: msgFormat(MSG_NBLEVELS) 
 end module mod_msg
@@ -65,6 +65,20 @@ end subroutine msg_set_p0only
 
 
 !/**
+subroutine msg_set_can_write(F_canWrite_L)
+   use mod_msg, only: isInit,canWrite
+   implicit none
+   logical :: F_canWrite_L
+   !**/
+   !---------------------------------------------------------------------
+   if (.not.isInit) call msg_init()
+   canWrite = F_canWrite_L
+   !---------------------------------------------------------------------
+   return
+end subroutine msg_set_can_write
+
+
+!/**
 subroutine msg_set_minMessageLevel(F_msgLevel)
    use mod_msg, only: isInit,msgLevelMin
    implicit none
@@ -104,6 +118,27 @@ subroutine msg_set_redirect2fileUnit(F_out_or_err,F_fileUnit)
    !---------------------------------------------------------------------
    return
 end subroutine msg_set_redirect2fileUnit
+
+
+!/**
+subroutine msg_toall(F_msgLevel,F_Message)
+   use mod_msg, only: isInit,canWrite,msgUnit,msgFormat,msgLevelMin
+   implicit none
+   !@arguments
+   integer :: F_msgLevel
+   character(len=*) :: F_Message
+   !@author  Stephane Chamberland, 2009-11
+   !**/
+   integer :: msgLevel
+   logical :: canWrite_bk
+   !---------------------------------------------------------------------
+   canWrite_bk = canWrite
+   canWrite = .true.
+   call msg(F_msgLevel,F_Message)
+   canWrite = canWrite_bk
+   !---------------------------------------------------------------------
+   return
+end subroutine msg_toall
 
 
 !/**

@@ -1,0 +1,291 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r  sol_mxma8_2 - parallel direct solution of horizontal Helmholtz
+!       problem. With  mxma8 and using Opr_opsxp2_8 eigenvector's parity
+!                     
+!
+#include "model_macros_f.h"
+      subroutine  sol_parite_2 ( Sol, Rhs, evxevec,oddxevec, &
+                                Minx, Maxx, Miny, Maxy, njl, &
+                                Minz, Maxz, Nk, Nkl,  &
+                                Gni, Gnj, Minij, Maxij, L_nij, &
+                                minx1, maxx1, minx2, maxx2,nx3, &
+                                F_npex1, F_npey1, ai, bi, ci, &
+                                fdg1,fdg2,fdwfft,fdg12,NSTOR,nev)
+!
+      implicit none
+#include "ptopo.cdk"
+!
+!author    Abdessamad Qaddouri
+!
+!revision
+! v3_01 - Qaddouri A.          - initial version
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+!
+!arguments
+!   o      - Sol      - result
+!   i      - Rhs      - r.h.s. of elliptic equation
+!   i      - ev-Xevec - Even eigenvectors
+!   i      - odd-Xevec- Odd eigenvectors
+!   i      - Gni      - number of points in x-direction
+!   i      - Gnj      - number of points in y-direction
+!
+      integer  F_npex1 , F_npey1
+      integer  minx1, maxx1, minx2, maxx2,nx3
+      integer  jk
+
+      Real*8   ai(minx1:maxx1,minx2:maxx2,nx3), &
+               bi(minx1:maxx1,minx2:maxx2,nx3), &
+               ci(minx1:maxx1,minx2:maxx2,nx3)
+
+
+
+      integer  Minx, Maxx, Miny, Maxy, njl, &
+               Minz, Maxz, Nk  , Nkl , &
+               Gni , Gnj , Minij, Maxij, L_nij,NSTOR,nev
+      real*8   Rhs(Minx:Maxx,Miny:Maxy,Nk), Sol(Minx:Maxx,Miny:Maxy,Nk)
+      real*8   evxevec(NSTOR*NSTOR),oddxevec(NSTOR*NSTOR)
+
+      real*8   fdwfft(Miny:Maxy,Minz:Maxz,Gni)
+      real*8   fdg1(Miny:Maxy,Minz:Maxz,Gni+F_npex1)
+      real*8   fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
+      real*8   fdg12(Miny:Maxy,Minz:Maxz,Gni)
+!
+      integer  j, jr, err, ki,dim
+      real*8   zero, one
+      parameter( zero = 0.0 )
+      parameter( one  = 1.0 )
+
+!
+      integer i,  k, nevi,gnii,ki0,kin,kkii,kilon,kitotal
+!
+!
+!     call tmg_start(88,'sol_parite total')
+ 
+      call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1), &
+                                         Minz, Maxz, Nk, fdg1, 1,2 )
+
+!$omp parallel private(ki0,kin,kkii,jr,nevi,gnii) &
+!$omp   shared(kitotal,kilon,ai,bi,ci,nev,nstor)
+!$omp do
+      do i= 1,Gni
+          do k= Minz,Maxz
+            do j= njl+1,Maxy
+                  fdg1(j,k,i)=zero
+                  fdg12(j,k,i)=zero
+            enddo
+          enddo
+
+
+         do k= Nkl+1,Maxz
+            do j= Miny,Maxy
+                  fdwfft(j,k,i)=zero
+            enddo
+         enddo
+      enddo
+!$omp enddo
+!  even  part of rhs
+
+!$omp do
+      do k=1,Nkl
+            do j=1,njl
+              fdg12(j,k,1)=fdg1(j,k,1)
+            enddo
+      enddo
+!$omp enddo
+           
+!$omp do
+      do i= 2,(Gni+1)/2
+         do k=1,Nkl
+            do j=1,njl
+                fdg12(j,k,i)=fdg1(j,k,i)+fdg1(j,k,Gni+2-i)
+            enddo
+         enddo
+      enddo
+!$omp enddo
+
+      if(Gni.eq.(2*(Gni/2)) ) then
+!$omp do
+         do k=1,Nkl
+            do j=1,njl
+               fdg12(j,k,nev)=fdg1(j,k,nev)
+            enddo
+         enddo
+!$omp enddo
+      endif
+
+!  odd part of rhs             
+!$omp do
+      do i=1,Gni-nev
+            do k=1,Nkl
+              do j=1,njl
+              fdg12(j,k,i+nev)=fdg1(j,k,i+1)-fdg1(j,k,Gni+1-i)
+              enddo
+            enddo
+      enddo
+!$omp enddo
+
+
+!     projection ( wfft = x transposed * g )
+
+
+!     call mxma8( evxevec,          NSTOR    , 1,
+!    %            fdg12(1,1,1),   (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+!    %            fdwfft(1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+!    %                     nev, nev, (Maxy-Miny+1) * Nkl )
+!$omp do
+      do k=1,Nkl
+         call dgemm('N','N', (Maxy-Miny+1), nev, nev, &
+                  1._8, fdg12(1,k,1), &
+                  (Maxy-Miny+1)* (Maxz-Minz+1),evxevec,  NSTOR, &
+                  0._8, fdwfft(1,k,1), &
+                  (Maxy-Miny+1)* (Maxz-Minz+1))
+      enddo
+!$omp enddo
+!$omp do
+      do k=1,Nkl
+         call dgemm('N','N', (Maxy-Miny+1), Gni-nev, Gni-nev, &
+                  1._8, fdg12(1,k,nev+1), &
+                  (Maxy-Miny+1)* (Maxz-Minz+1),oddxevec,  NSTOR, &
+                  0._8, fdwfft(1,k,nev+1), &
+                  (Maxy-Miny+1)* (Maxz-Minz+1))
+      enddo
+!$omp enddo
+
+!     call mxma8( oddxevec,          NSTOR, 1,
+!    %            fdg12(1,1,nev+1),   (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+!    %            fdwfft(1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1), 1,
+!    %                     Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+
+!
+
+!$omp single
+      call rpn_comm_transpose &
+           ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1), &
+                               Minij, Maxij, Gni, fdg2, 2, 2 )
+!$omp end single
+!
+      kitotal = (Maxz-Minz+1)*L_nij
+      kilon = (kitotal + Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
+
+!$omp do
+      do kkii = 1,Ptopo_npeOpenMP
+         j =1
+         ki0 = 1 + kilon*(kkii-1)
+         kin = min(kitotal, kilon*kkii)
+         do ki= ki0, kin
+            fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
+         enddo
+
+         do j =2, Gnj
+            jr =  j - 1
+            do ki= ki0, kin
+               fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j) - ai(ki,1,j) &
+                                                * fdg2(ki,1,jr)
+            enddo
+         enddo
+
+         do j = Gnj-1, 1, -1
+            jr =  j + 1
+            do ki= ki0, kin
+              fdg2(ki,1,j) = fdg2(ki,1,j) - ci(ki,1,j) * fdg2(ki,1,jr)
+            enddo
+         enddo
+      enddo
+!$omp enddo
+!
+!
+!$omp single
+      call rpn_comm_transpose &
+           ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1), &
+                              Minij, Maxij, Gni, fdg2,- 2, 2 )
+!$omp end single
+
+!     inverse projection ( r = x * w )
+
+
+
+!     call mxma8( evxevec,                1, NSTOR,
+!    %            fdwfft(1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1),   1,
+!    %            fdg12(1,1,1),   (Maxy-Miny+1) * (Maxz-Minz+1),   1,
+!    %                         nev, nev, (Maxy-Miny+1) * Nkl )
+
+!     call mxma8( oddxevec,                 1,NSTOR,
+!    %            fdwfft(1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1),   1,
+!    %            fdg12(1,1,nev+1), (Maxy-Miny+1) * (Maxz-Minz+1),   1,
+!    %                        Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+!$omp do
+      do k=1,Nkl
+         call dgemm('N','T', (Maxy-Miny+1), nev, nev, &
+                  1._8, fdwfft(1,k,1), &
+                  (Maxy-Miny+1) * (Maxz-Minz+1),evxevec, NSTOR, &
+                  0._8, fdg12(1,k,1), &
+                  (Maxy-Miny+1) * (Maxz-Minz+1))
+      enddo
+!$omp end do
+!$omp do
+      do k=1,Nkl
+         call dgemm('N','T', (Maxy-Miny+1),Gni-nev,Gni-nev, &
+                  1._8, fdwfft(1,k,nev+1), &
+                  (Maxy-Miny+1) * (Maxz-Minz+1),oddxevec, NSTOR, &
+                  0._8, fdg12(1,k,nev+1), &
+                  (Maxy-Miny+1) * (Maxz-Minz+1))
+      enddo
+!$omp end do
+
+!
+! combine even and odd parts
+
+!$omp do
+      do k= 1,Nkl
+        do j= 1,njl
+          fdg1(j,k,1) = fdg12(j,k,1)  
+        enddo
+      enddo
+!$omp end do
+
+!$omp do
+        do i= 2,(Gni+1)/2 
+           gnii=Gni+2-i
+           nevi=nev-1+i
+          do k= 1,Nkl
+          do j= 1,njl
+           fdg1(j,k,i)       = fdg12(j,k,i)+fdg12(j,k,nevi)
+           fdg1(j,k,gnii)    = fdg12(j,k,i)-fdg12(j,k,nevi)
+          enddo
+          enddo
+        enddo
+!$omp end do
+
+        if( Gni.eq.(2*(Gni/2)) ) then
+!$omp do
+          do k= 1,Nkl
+          do j= 1,njl
+           fdg1(j,k,nev)=fdg12(j,k,nev)
+          enddo
+          enddo
+!$omp end do
+        endif
+!$omp end parallel
+
+!
+      call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1), &
+                                   Minz, Maxz, Nk, fdg1, -1, 2)
+ 
+!     call tmg_stop(88)
+
+      return
+      end

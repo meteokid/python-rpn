@@ -3,5 +3,5 @@
       character*16 stat_liste(500),stat_varname
       common /stat_c/ stat_liste
       common /stat_i/ stat_nombre
-*
+!
 

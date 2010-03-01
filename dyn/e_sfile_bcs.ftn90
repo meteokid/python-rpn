@@ -1,0 +1,70 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+!** e_sfile_bcs - to open a new BCS file
+!
+#include "model_macros_f.h"
+!
+      subroutine e_sfile_bcs (datev,is,nis,js,jn,njs, &
+                                iw,ie,niw,jw,njw,msg,rootfn)
+      implicit none
+!
+      character* (*) msg,datev,rootfn
+      integer stepno, is,nis,js,jn,njs,iw,ie,niw,jw,njw
+!
+!author  M. Desgagne 2001 (MC2 out_sfile_bcs)
+!
+!revision
+! v3_30 - Lee. V - modified to open a BCS file for data extracted
+!                  from analysis input
+! v4_03 - Lee/Desgagne - ISST
+! v4_05 - Plante A.    - remove nvar from interface
+!                        and put nvar into common block e_anal
+!
+#include "e_anal.cdk"
+#include "e_grids.cdk"
+#include "e_tr.cdk"
+#include "path.cdk"
+!
+      integer  ntr, mode
+      integer  longueur
+      external longueur
+      character*2  md
+      character*512 filen
+!
+!------------------------------------------------------------------
+!
+          unf_casc = 202
+          mode=2
+          ntr=1+E_tr3d_ntr ! for HU
+!
+          write (md,'(i2.2)') mode
+          print *,'e_sfile_bcs: datev=',datev
+          print *,'is,nis,js,jn,njs,iw,ie,niw,jw,njw=',is,nis,js,jn,njs,iw,ie,niw,jw,njw
+          filen= 'bcs'//md//'_'//datev
+      filen= trim(rootfn)//trim(filen)
+      print *,'e_sfile_bcs: opening ',filen(1:longueur(filen))
+          open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED', &
+                                                position='APPEND')
+          call wrgeo_bcs (xg_8(is),nis+1,yg_8(js),yg_8(jn),njs+1, &
+                      xg_8(iw),xg_8(ie),niw+1,yg_8(jw),njw+1, &
+             za_8,zb_8,zat_8,zbt_8,lv,lv_t,Anal_hav(2),unf_casc)
+          write (unf_casc) msg,mode,nvar,ntr
+!
+!------------------------------------------------------------------
+      return
+      end
+!

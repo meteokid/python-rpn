@@ -1,0 +1,125 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**   s/r set_dync - initialize the dynamics model configuration
+!
+#include "model_macros_f.h"
+!
+      subroutine set_dync
+      implicit none
+!
+!author
+!     M. Desgagne - V. Lee ( after version v1_03 of setdync )
+!
+!revision
+! v2_00 - Desgagne/Lee       - initial MPI version
+! v2_10 - Lee V.             - correction to call to pstune
+! v2_20 - Desgagne M.        - fnom on Wafiles now in p_set
+! v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
+! v3_00 - Desgagne & Lee     - Lam configuration
+! v3_30 - Desgagne M.        - Add calls to: set_opr and adw_set
+! v4_00 - Plante & Girard    - Log-hydro-pressure coord on Charney-Phillips grid
+! v4_05 - Girard C.          - Open top
+!
+!object
+!
+!arguments
+!	none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "lam.cdk"
+#include "cstv.cdk"
+#include "grd.cdk"
+#include "schm.cdk"
+#include "pres.cdk"
+#include "dcst.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "offc.cdk"
+#include "ptopo.cdk"
+!
+!modules
+!
+      integer k,err,istat,k0
+      real*8 one, aaa, xxx, yyy
+      parameter( one = 1.d0 )
+!
+!     ---------------------------------------------------------------
+
+      if (lun_out.gt.0) then
+          write(Lun_out,*)'SETTING up OPR,ADW,...(S/R SET_DYNC)'
+          write(Lun_out,*)'===================================='
+      endif
+!     
+      Cstv_tau_8   = Cstv_dt_8 * Offc_b0_8
+      Cstv_tauT_8  = Cstv_dt_8 * Offc_b0T_8
+      Cstv_tauw_8  = Cstv_dt_8 * Offc_b0w_8
+!
+      if(Schm_autobar_L) then
+         Schm_hydro_L    =  .true.
+      endif
+!
+      if(Schm_hydro_L)then
+         Ver_epsilon_8=0.d0
+      else
+         Ver_epsilon_8=Cstv_RTstr_8/ &
+              (Dcst_grav_8*Dcst_grav_8*Cstv_tauw_8*Cstv_tauT_8)
+      endif
+      Ver_gamma_8=Dcst_cappa_8/(Dcst_cappa_8+Ver_epsilon_8)
+      Ver_gokt2RT_8= Ver_gamma_8/ &
+              (Dcst_cappa_8*Cstv_tau_8*Cstv_tauT_8*Cstv_RTstr_8)
+!
+      Cstv_hco0_8 = Dcst_rayt_8 * Dcst_rayt_8 * Ver_gokt2RT_8
+!
+      if(Schm_autobar_L) then
+         Cstv_hco1_8 = Dcst_cappa_8/(Cstv_Zsrf_8-Cstv_Ztop_8)
+         Ver_alfat_8 = 1.d0
+         Ver_alfas_8 = 1.d0
+         Ver_cst_8   = 0.d0
+         Ver_css_8   = 0.d0
+         Ver_cstp_8  = 0.d0
+         Ver_cssp_8  = 0.d0
+      else
+!
+         Cstv_hco1_8 = 0.d0
+         aaa = (one-Dcst_cappa_8)*Ver_epsilon_8
+         k0=1+Lam_gbpil_T
+!
+         xxx =   Ver_dz_8%m(k0)*Ver_wm_8%m(k0)* &
+                     (Ver_idz_8%t(k0)+aaa*Ver_wm_8%t(k0))
+         yyy =   one/(Ver_idz_8%t(k0)+Ver_epsilon_8*Ver_wm_8%t(k0))
+         Ver_alfat_8 = (Ver_idz_8%t(k0) &
+                     - Ver_epsilon_8*Ver_wp_8%t(k0)) * yyy
+         Ver_cst_8   =           one / Ver_gokt2RT_8 * yyy
+         Ver_cstp_8  =     ( Ver_idz_8%t(k0) - xxx ) * yyy
+!
+         xxx = Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk)* &
+                   (Ver_idz_8%t(G_nk+1)-aaa*Ver_wp_8%t(G_nk+1))
+         yyy = one/(Ver_idz_8%t(G_nk+1)+Dcst_cappa_8*Ver_wp_8%t(G_nk+1))
+         Ver_alfas_8 = (Ver_idz_8%t(G_nk+1) &
+                     - Dcst_cappa_8*Ver_wm_8%t(G_nk+1)) * yyy
+         Ver_css_8   =              one / Ver_gokt2RT_8 * yyy
+         Ver_cssp_8  =        (Ver_idz_8%t(G_nk+1)+xxx) * yyy
+      endif
+!
+      call set_opr()
+      call adw_set()
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

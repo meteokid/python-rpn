@@ -4,7 +4,7 @@
 #include "hgc.cdk"
 #include "grd.cdk"
 #include "lam.cdk"
-#include "hblen.cdk"
+#include "nest.cdk"
 #include "tr3d.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
@@ -36,7 +36,7 @@
       namelist /bubble_cfgs/ Grd_ni, Grd_nj, G_nk, Grd_nila, Grd_njla
       namelist /bubble_cfgs/ Grd_dx, Grd_dy, G_halox, G_haloy
       namelist /bubble_cfgs/ Tr3d_userntr, Lam_ctebcs_L,Lam_nesdt
-      namelist /bubble_cfgs/ Hblen_x,Hblen_y
+      namelist /bubble_cfgs/ Lam_blend_Hx, Lam_blend_Hy
       namelist /bubble_cfgs/ Step_total, Step_rsti, Step_gstat
       namelist /bubble_cfgs/ Hyb, Grd_rcoef, Pres_ptop
       namelist /bubble_cfgs/ Init_balgm_L, Init_dfwin_L, Init_dfnp
@@ -64,7 +64,7 @@
       namelist /mtn_cfgs/ Grd_ni, Grd_nj, G_nk, Grd_nila, Grd_njla
       namelist /mtn_cfgs/ Grd_dx, Grd_dy, G_halox, G_haloy
       namelist /mtn_cfgs/ Tr3d_userntr, Lam_ctebcs_L
-      namelist /mtn_cfgs/ Hblen_x,Hblen_y
+      namelist /mtn_cfgs/ Lam_blend_Hx, Lam_blend_Hy
       namelist /mtn_cfgs/ Step_total, Step_rsti, Step_gstat
       namelist /mtn_cfgs/ Hyb, Grd_rcoef, Pres_ptop
       namelist /mtn_cfgs/ Init_balgm_L, Init_dfwin_L, Init_dfnp
@@ -75,7 +75,7 @@
       namelist /mtn_cfgs/ Schm_xwvt3
       namelist /mtn_cfgs/ Schm_itnlh, Schm_itraj, Schm_hdlast_L
       namelist /mtn_cfgs/ Schm_adcub_L, Schm_psadj_L
-      namelist /mtn_cfgs/ Schm_moist_L, Schm_zdotlag_L
+      namelist /mtn_cfgs/ Schm_moist_L
       namelist /mtn_cfgs/ Schm_zdotMid_L
       namelist /mtn_cfgs/ Adw_nkbz_L, Adw_exdg_L, Adw_mono_L
       namelist /mtn_cfgs/ Adw_ckbd_L, Adw_halox

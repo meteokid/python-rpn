@@ -1,0 +1,87 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r sol_trsf - to copy elements from single to double precision array if
+!                 F_code .gt. 0 or else, vice-versa if F_code .le. 0
+!
+#include "model_macros_f.h"
+!
+      subroutine sol_trsf (F_f1_8,F_f2,Xb,Xe,Yb,Ye,DIST_DIM,Nk,F_code)
+!
+      implicit none
+!
+      integer Xb,Xe,Yb,Ye,DIST_DIM,Nk,F_code
+      real*8  F_f1_8(Xb:Xe,Yb:Ye,Nk)
+      real    F_f2(DIST_SHAPE,Nk)
+!
+!author
+!     M. Desgagne
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+!
+!object
+!     see above id
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_f1_8       I/O   - array to hold double precision values
+! F_f2         I/O   - array to hold single precision values
+! Xb           I     - starting point on I array
+! Xe           I     - ending   point on I array
+! Yb           I     - starting point on J array
+! Ye           I     - ending   point on J array
+! F_code       I     - > 0 then copy from single to double precision array
+!                    - <=0 then copy from double to single precision array
+!
+!implicits
+#include "glb_ld.cdk"
+!
+      integer i,j,k
+!
+!     ---------------------------------------------------------------
+!
+      if (F_code.gt.0) then
+!$omp parallel
+!$omp do
+      do k=1,Nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            F_f1_8(i,j,k) = dble(F_f2(i,j,k))
+         enddo
+         enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+      else
+!$omp parallel
+!$omp do
+      do k=1,Nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            F_f2(i,j,k) = sngl(F_f1_8(i,j,k))
+         enddo
+         enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+      endif
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

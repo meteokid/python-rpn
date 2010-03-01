@@ -1,0 +1,163 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r adj_ss2topo- Obtain new surface pressure by comparing topo,VT
+!                   using the given calculated 3d pressure field
+!                   from get_press3d
+!
+      subroutine adj_ss2topo(F_ssq0,F_newtopo, F_pres,F_oldtopo, &
+                              F_svt,n,nk)
+      implicit none
+!
+      integer n,  nk
+      real F_ssq0(n), F_newtopo(n),  &
+           F_pres(n,nk), F_oldtopo(n), F_svt(n,nk)
+!
+!author
+!
+!revision
+! v4_02 - Desgagne M. /Lee V- initial version (from getp0 v3.3.0)
+!
+!object
+!       computes hydrostatic surface pressure over model topography,
+!
+!  Assuming hydrostatic equilibrium and linear temperature lapse
+!  rate in a layer, one can obtain analiticaly the following equation
+!  by vertical integration:
+!
+!             /    / T   /   \ \                   1/
+!             | ln |  b / T  | |                   / R  L
+!             |    \   /   t / |        / T   /   \   d
+! p  = p  exp | -------------- |  =  p  |  b / T  |          (1)
+!  b    t     |      R  L      |      t \   /   t /
+!             |       d        |
+!             \                /
+!
+!
+!  where the subscript t and b stand respectively for top and bottom of
+!  the considered layer and L is the temperature lapse rate in the
+!  layer defined as follow:
+!
+!              T  - T
+!               t    b
+!        L  =  -------                                       (2)
+!              gz - gz
+!                t    b
+!
+!  The use of equation (1) and (2) is not convenient when the lapse
+!  rate is very small (nearly isothermal conditions) since the exponent
+!  in (1) becomes infinite.
+!
+!  In this case, the hypsometric equation is used:
+!
+!              / gz  -  gz  \
+!              |   t      b  |
+!  p  = p  exp | ----------- |                                (3)
+!   b    t     |   R  T      |
+!              \    d       /
+!
+!       where T is the mean temperature in the layer.
+!  Since equation (3) is used when T - T  --->  0   ,
+!                                   t   b
+!  the mean temperature is then taken from T  .
+!                                           t
+!
+!  The algorithm is first looking for the closest analysis layer that
+!  is found just above the destination terrain.  From that point, this
+!  level is considered as the top of the layer.
+!
+!  At this point , the idea is to compute p  using equation (1) and (2)
+!  except when L --> 0.                    b
+!
+!  When L --> 0,  equation (3) is used where T= T   .
+!                                                t
+!  Now if the found closest source layer is the lowest analysis level,
+!  (this is where the destination model terrain is under the analysis
+!  terrain) then there is no known bottom layers in (1) to (3).
+!  In this case T and  L  are obtained assuming Schuman-Newel lapse
+!  rate under analysis ground.
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_newtopo     I         destination surface geopotential
+! F_oldtopo     I         source surface geopotential
+! F_pres        O         destination (3d pressure field)
+! F_ssqn        I         source      (surface pressure)
+! F_svt         I         source virtual temperature
+! n             I         number of points in the surface pressure
+! NK            I         number of levels to look through
+!----------------------------------------------------------------------
+!
+!implicits
+#include "model_macros_f.h"
+#include "dcst.cdk"
+!*
+      integer i,k
+      real gz_temp(n,nk)
+      real difgz, lapse, ttop, tbot, cons
+!     real*8 difgz, lapse, ttop, tbot, cons - creates diffs
+!
+!     ---------------------------------------------------------------
+!
+      do i=1,n
+         gz_temp(i,nk) = F_oldtopo(i)
+      enddo
+      call vt2gz ( gz_temp, F_pres, F_svt, n, nk )
+!
+      do i=1,n
+!
+        difgz = gz_temp(i,nk) - F_newtopo(i)
+!
+        if ( difgz .gt. 0. ) then
+!
+!          surface of target grid is below the surface of source grid
+!          we assume SCHUMAN-NEWELL Lapse rate under ground to obtain
+!          an estimates of the temperature at the target grid surface
+!
+           lapse = Dcst_stlo_8
+           k     = nk
+!
+        else
+!
+!          surface of target grid is above the surface of source grid
+!          Then we are looking for the level in the source grid that
+!          is just above the surface of the target grid...
+!
+           do k=nk, 2, -1
+              difgz = gz_temp(i,k) - F_newtopo(i)
+              if ( difgz .gt. 0. ) goto 20
+           enddo
+ 20        lapse = - ( F_svt(i,k)-F_svt(i,k+1) ) / &
+                     ( gz_temp(i,k)-gz_temp(i,k+1) )
+!
+        endif
+!
+        ttop = F_svt(i,k)
+        tbot = ttop + lapse * difgz
+!
+        if ( abs(lapse) .lt. 1E-10 ) then
+           F_ssq0(i) = F_pres(i,k) * exp ( difgz/(Dcst_rgasd_8*ttop) ) 
+        else          
+           cons = 1. / ( Dcst_rgasd_8 * lapse )
+           F_ssq0(i) = F_pres(i,k) * ( tbot/ttop ) ** cons
+        endif
+!
+       enddo
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

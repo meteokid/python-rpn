@@ -1,0 +1,162 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r bcs_did - to define the pieces of the BCS target grid where the top
+!                and bottom margins of the BCS would be described in xpn,ypn
+!                and then the two side margins are described as xpw,ypw
+!
+#include "model_macros_f.h"
+!
+      subroutine bcs_did ( dimgx, dimgy )
+      implicit none
+!
+      integer dimgx, dimgy
+!
+!author
+!        Michel Desgagne - 2001 (from MC2 didbcs)
+!revision
+! v3_30 - Lee V.       - initial version for GEMDM
+!
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "bcsdim.cdk"
+#include "bcsgrds.cdk"
+#include "ptopo.cdk"
+!
+      integer i,j,nit,njt,ofi,ofj,cnt,err
+      real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1)
+!
+!-----------------------------------------------------------------------
+!
+      do i=1,dimgx
+         xpxext(i) = G_xg_8(i)
+      end do
+      xpxext(0) = xpxext(1) - (xpxext(2)-xpxext(1))
+      xpxext(dimgx+1) = xpxext(dimgx) + (xpxext(dimgx)-xpxext(dimgx-1))
+!
+      do i=1,dimgy
+         ypxext(i) = G_yg_8(i)
+      end do
+      ypxext(0) = ypxext(1) - (ypxext(2)-ypxext(1))
+      ypxext(dimgy+1) = ypxext(dimgy) + (ypxext(dimgy)-ypxext(dimgy-1))
+!
+      ofi = l_i0 - 1
+      ofj = l_j0 - 1
+!
+! Defining target grid IDs for horizontal interpolation of BCs
+!
+! South grid
+!
+      if (dimxs*dimys.gt.0) then
+!
+         call hpalloc (paxps , (dimxs+1)*2, err, 1)
+         call hpalloc (payps , (dimys+1)*2, err, 1)
+         call hpalloc (paxpus, (dimxs+1)*2, err, 1)
+         call hpalloc (paypvs, (dimys+1)*2, err, 1)
+!
+         cnt = 0
+         do i = minxs,maxxs+1
+            cnt = cnt + 1
+            xps (cnt) = G_xg_8(ofi+i)
+            xpus(cnt) = 0.5d0 * (xpxext(ofi+i+1) + xpxext(ofi+i))
+         end do
+!
+         cnt = 0
+         do j = minys,maxys+1
+            cnt = cnt + 1
+            yps (cnt) = G_yg_8(ofj+j)
+            ypvs(cnt) = 0.5d0 * (ypxext(ofj+j+1) + ypxext(ofj+j))
+         end do 
+!
+      endif
+!
+! North grid
+!
+      if (dimxn*dimyn.gt.0) then
+!
+         call hpalloc (paxpn , (dimxn+1)*2, err, 1)
+         call hpalloc (paypn , (dimyn+1)*2, err, 1)
+         call hpalloc (paxpun, (dimxn+1)*2, err, 1)
+         call hpalloc (paypvn, (dimyn+1)*2, err, 1)
+!
+         cnt = 0
+         do i = minxn,maxxn+1
+            cnt = cnt + 1
+            xpn (cnt) = G_xg_8(ofi+i)
+            xpun(cnt) = 0.5d0 * (xpxext(ofi+i+1) + xpxext(ofi+i))
+         end do
+!
+         cnt = 0
+         do j = minyn,maxyn+1
+            cnt = cnt + 1
+            ypn (cnt) = G_yg_8(ofj+j)
+            ypvn(cnt) = 0.5d0 * (ypxext(ofj+j+1) + ypxext(ofj+j))
+         end do 
+!
+      endif
+!
+! West grid
+!
+      if (dimxw*dimyw.gt.0) then
+!
+         call hpalloc (paxpw , (dimxw+1)*2, err, 1)
+         call hpalloc (paypw , (dimyw+1)*2, err, 1)
+         call hpalloc (paxpuw, (dimxw+1)*2, err, 1)
+         call hpalloc (paypvw, (dimyw+1)*2, err, 1)
+!
+         cnt = 0
+         do i = minxw,maxxw+1
+            cnt = cnt + 1
+            xpw (cnt) = G_xg_8(ofi+i)
+            xpuw(cnt) = 0.5d0 * (xpxext(ofi+i+1) + xpxext(ofi+i))
+         end do
+!
+         cnt = 0
+         do j = minyw,maxyw+1
+            cnt = cnt + 1
+            ypw (cnt) = G_yg_8(ofj+j)
+            ypvw(cnt) = 0.5d0 * (ypxext(ofj+j+1) + ypxext(ofj+j))
+         end do 
+!
+      endif
+!
+! East grid
+!
+      if (dimxe*dimye.gt.0) then
+!
+         call hpalloc (paxpe , (dimxe+1)*2, err, 1)
+         call hpalloc (paype , (dimye+1)*2, err, 1)
+         call hpalloc (paxpue, (dimxe+1)*2, err, 1)
+         call hpalloc (paypve, (dimye+1)*2, err, 1)
+!
+         cnt = 0
+         do i = minxe,maxxe+1
+            cnt = cnt + 1
+            xpe (cnt) = G_xg_8(ofi+i)
+            xpue(cnt) = 0.5d0 * (xpxext(ofi+i+1) + xpxext(ofi+i))
+         end do
+!
+         cnt = 0
+         do j = minye,maxye+1
+            cnt = cnt + 1
+            ype (cnt) = G_yg_8(ofj+j)
+            ypve(cnt) = 0.5d0 * (ypxext(ofj+j+1) + ypxext(ofj+j))
+         end do 
+!
+      endif
+!
+!-----------------------------------------------------------------------
+      return
+      end

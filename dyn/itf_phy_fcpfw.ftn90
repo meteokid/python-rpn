@@ -1,0 +1,71 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_fcpfw  - allocate and prepare flags et weights 
+!                       for FCPKUO or KFCKUO options
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_fcpfw (F_lunout)
+!
+      implicit none
+!
+      integer F_lunout
+!author
+!     Andre Methot - cmc - may 1998
+!
+!revision
+! v2_00 - Patoine A.        - initial MPI version (from fckwf v1_03)
+! v3_30 - Desgagne M.       - new itf_phy interface
+!
+!object
+!       Prepare flags et weights for FCPKUO/KFCKUO options.
+!       Those options allow the use of FCP (or KFC) scheme in a
+!       central window and KUO outside of this central window,
+!       with an optionnal blending region where both FCP (or KFC)
+!       and KUO scheme are in use.  
+!       The weights are "1." and flags are "2" where only FCP (or KFC)
+!       scheme is requested.
+!       The weights are "0." and flags are "0" where only KUOSYM
+!       scheme is requested.
+!       The weights correspond to a weighting factor to FCP (or KFC)
+!       scheme's contribution with respect to KUO's contribution.
+!       The flag "-2" indicates a blending region where both schemes
+!       are requested.  
+!       The weights vary linearly in the blending region.
+!
+!arguments
+!       None
+!
+!implicits
+#include "glb_ld.cdk"
+#include "itf_phy_config.cdk"
+!
+!*
+      real prfcpf, prfcpw
+      integer i, j, i_glob, j_glob, pnerr
+!
+!     ---------------------------------------------------------------
+!
+!
+      if (F_lunout.gt.0) write(F_lunout,1000)
+!
+      return
+!
+ 1000 format(/'OBSOLETE OPTIONS FCPKUO AND KFCKUO',  &
+             /'NO CALCULATION HAS BEEN DONE (S/R itf_phy_fcpfw)', &
+             /'====================================================')
+!
+      end

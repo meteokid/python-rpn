@@ -1,0 +1,184 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r e_ntrxyfil - Filtering of a field (x-y filter)
+!
+      subroutine e_ntrxyfil ( frout, frin, frco, frhx, frhy,  &
+                              fni, fnj, fnk, fnis, fnjs, fnks )
+!
+!implicits
+      implicit none
+!
+      integer fnis, fnjs, fnks, fni, fnj, fnk
+      real frout(fnis,fnjs,fnks), frin(fnis,fnjs,fnks), &
+           frwrk(fnis,fnjs,fnks), frco
+      real*8 frhx(fnis), frhy(fnjs)
+!
+!author  andre methot - cmc - sept 1995 - v1 Arakawa "C"
+!
+!revision
+! v1_94 - joseph-pierre toviessi - changed name to ntrxyfil from xyfil(v1_03)
+! v1_96 - V. Lee                 - replaced "cddcst.cdk" with "dcst.cdk"
+!
+!object
+!     see above ID
+!
+!arguments
+!______________________________________________________________________
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! frout              | output field                                    |
+! frin               | input field                                     |
+! frwrk              | work field                                      |
+! frhx               | distance between grid points in x direction     |
+! frhy               | distance between grid points in y direction     |
+! frco               | filtering coeficient ( 0.0 <= frco <= 0.5)      |
+! flpole             | switch: true ==> field includes poles           |
+!                    |                                                 |
+! fni                | working dimension in x-direction                |
+! fnj                | working dimension in y-direction                |
+! fnk                | working dimension in z-direction                |
+! fnis               | field dimension in x-direction                  |
+! fnjs               | field dimension in y-direction                  |
+! fnks               | field dimension in z-direction                  |
+! ---------------------------------------------------------------------
+!
+!*
+#include "model_macros_f.h"
+#include "dcst.cdk"
+#include "e_grids.cdk"
+#include "e_geomg.cdk"
+!
+      real pr2hx(fni), pr2hy(fnj), prmean1, prmean2, prcom1
+      integer i, j, k
+!
+! ---------------------------------------------------------------------
+!
+      prcom1 = 1. - frco
+!
+!C    Compute grid points double intervals
+!     ----------------------------------------------
+!
+      do i=2,fni
+         pr2hx(i) = frhx(i) + frhx(i-1)
+      enddo
+      pr2hx(1)= frhx(1) + frhx(fni)
+      if (LAM) pr2hx(1)= pr2hx(2)
+!     
+      do j=2,fnj-1
+         pr2hy(j) = frhy(j) + frhy(j-1)
+      enddo
+      if (LAM) then
+         pr2hy(1)= pr2hy(2)
+         pr2hy(fnj)= pr2hy(fnj-1)
+      endif
+!
+!   INTERPOLATION ALONG X
+!
+      do k=1,fnk
+      do j=1,fnj
+         do i=2,fni-1
+            frwrk(i,j,k) = &
+              frco * ( frin(i-1,j,k)*frhx(i) + frin(i+1,j,k)*frhx(i-1) ) &
+              / pr2hx(i) + prcom1 * frin (i,j,k)
+         enddo     
+      enddo
+      enddo
+!
+      if (LAM) then
+         do k=1,fnk
+         do j=1,fnj
+            frwrk(1,j,k) = &
+              frco * ( frin(1,j,k)*frhx(2) + frin(2,j,k)*frhx(1) ) &
+                   / pr2hx(1) + prcom1 * frin (1,j,k)    
+            frwrk(fni,j,k) = &
+              frco * (frin(fni-1,j,k)*frhx(fni)+frin(fni,j,k) &
+                   * frhx(fni-1)) / pr2hx(fni) + prcom1 * frin (fni,j,k)
+         enddo
+        enddo
+      else
+         do k=1,fnk
+         do j=1,fnj
+            frwrk(1,j,k) = &
+              frco * ( frin(fni,j,k)*frhx(1) + frin(2,j,k)*frhx(fni) ) &
+              / pr2hx(1) + prcom1 * frin (1,j,k)    
+            frwrk(fni,j,k) = &
+              frco * (frin(fni-1,j,k)*frhx(fni)+frin(1,j,k)*frhx(fni-1)) &
+              / pr2hx(fni) + prcom1 * frin (fni,j,k)
+         enddo
+         enddo
+      endif
+!
+!   INTERPOLATION ALONG Y
+!
+      do k=1,fnk
+      do j=2,fnj-1
+      do i=1,fni
+         frout (i,j,k) = &
+                frco * (frwrk(i,j-1,k)*frhy(j)+frwrk(i,j+1,k)*frhy(j-1)) &
+                / pr2hy(j) + prcom1 * frwrk(i,j,k)
+      enddo
+      enddo
+      enddo
+!
+      if (.not. LAM) then
+!
+         do k=1,fnk
+!
+            prmean1 = frwrk(1,1,k)     * pr2hx(1)
+            prmean2 = frwrk(1,fnj,k)   * pr2hx(1)
+!     
+            do i=2,fni
+               prmean1 = prmean1 + frwrk(i, 1 ,k) * pr2hx(i)
+               prmean2 = prmean2 + frwrk(i,fnj,k) * pr2hx(i)
+            enddo
+!
+!       Normalisation is done over 4 * pi instead of 2 * pi
+!       because sommation was done with double grid point intervals
+!
+            prmean1 = prmean1/( 4.0 * Dcst_pi_8 )
+            prmean2 = prmean2/( 4.0 * Dcst_pi_8 )
+!     
+            do i=1,fni
+               frout(i,1  ,k) = frco * ( prmean1 + frwrk(i,2,k) ) &
+                                / 2.0 + prcom1 * frwrk(i,1,k)
+!     
+               frout(i,fnj,k) = frco * ( prmean2 + frwrk(i,fnj-1,k) ) &
+                                / 2.0 + prcom1 * frwrk(i,fnj,k)
+!     
+            enddo
+!
+         end do
+! 
+      else
+!
+         do k=1,fnk
+         do i=1,fni
+            frout (i,1,k) = &
+                 frco * (frwrk(i,1,k)*frhy(2)+frwrk(i,2,k)*frhy(1)) &
+                 / pr2hy(1) + prcom1 * frwrk(i,1,k)
+            frout (i,fnj,k) = &
+                 frco * (frwrk(i,fnj-1,k)*frhy(fnj)+frwrk(i,fnj,k) &
+                 *frhy(fnj-1))/ pr2hy(fnj) + prcom1 * frwrk(i,fnj,k)
+         enddo
+         enddo
+!
+      endif
+!
+! ---------------------------------------------------------------------
+!
+      return
+      end

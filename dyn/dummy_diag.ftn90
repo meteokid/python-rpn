@@ -1,0 +1,56 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r surfix - Copy last level dynamical field in diag level. 
+!
+#include "model_macros_f.h"
+!
+      subroutine dummy_diag
+!
+      implicit none
+!
+!
+!author
+!         C. Girard & A. Plante, Nov. 2008
+!
+!revision
+! v4_05 - Lepine M.         - VMM replacement with GMM
+!
+!object
+!	
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+!
+      real, pointer, dimension(:,:,:) :: hu
+!
+!     ---------------------------------------------------------------
+!
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      gmmstat = gmm_get('TR/HU:P' ,hu ,meta3d)
+!
+      ut1(1:l_niu,1:l_nj ,l_nk+1) = ut1(1:l_niu,1:l_nj ,l_nk  )
+      vt1(1:l_ni ,1:l_njv,l_nk+1) = vt1(1:l_ni ,1:l_njv,l_nk  )
+      tt1(1:l_ni ,1:l_nj ,l_nk+2) = tt1(1:l_ni ,1:l_nj ,l_nk+1)
+      hu (1:l_ni ,1:l_nj ,l_nk+2) = hu (1:l_ni ,1:l_nj ,l_nk+1)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

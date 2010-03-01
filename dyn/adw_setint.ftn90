@@ -1,0 +1,363 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r adw_setint - sets localization and interpolation parameters
+!
+#include "model_macros_f.h"
+!
+      subroutine adw_setint ( F_n, &
+                              F_capx, F_xgg, F_xdd, &
+                              F_capy, F_ygg, F_ydd, &
+                              F_capz, F_cz, &
+                              F_x,    F_y,   F_z, &
+                              F_h_L,  F_z_L, F_lin_L,  &
+                              F_num, i0,in,j0,jn,kn)
+!
+      implicit none
+!
+      integer F_num, F_n(F_num),i0,in,j0,jn,kn
+!
+      real    F_capx(F_num), F_xgg(F_num), F_xdd(F_num)
+      real    F_capy(F_num), F_ygg(F_num), F_ydd(F_num)
+      real    F_capz(F_num), F_cz (F_num)
+      real    F_x   (F_num), F_y  (F_num), F_z  (F_num)
+!
+      logical F_h_L, F_z_L, F_lin_L
+!
+!author
+!     alain patoine
+!
+!revision
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_03 - Lee V. (from IBM) - added min,max on index calcs
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+! v3_20 - Tanguay M.        - Correction for haloy.gt.2
+! v$_10 - Plante A.         - Use super winds for thermo
+!
+!object
+!     see id section
+!
+!
+!arguments
+!______________________________________________________________________
+!              |                                                 |     |
+! NAME         | DESCRIPTION                                     | I/O |
+!--------------|-------------------------------------------------|-----|
+!              |                                                 |     |
+! F_n          | positions in the 3D volume of interpolation     |  o  |
+!              | boxes                                           |     |
+!              |                                                 |     |
+! F_capx       | \                                               |  o  |
+! F_xgg        |   precomputed displacements and interpolation   |  o  |
+! F_xdd        | / terms along the x-direction                   |  o  |
+!              |                                                 |     |
+! F_capy       | \                                               |  o  |
+! F_ygg        |   precomputed displacements and interpolation   |  o  |
+! F_ydd        | / terms along the y-direction                   |  o  |
+!              |                                                 |     |
+! F_capz       | \ precomputed displacements and interpolation   |  o  |
+! F_cz         | / terms along the z-direction                   |  o  |
+!              |                                                 |     |
+! F_x          | x coordinate of upstream position               |  i  |
+! F_y          | y coordinate of upstream position               |  i  |
+! F_z          | z coordinate of upstream position               |  i  |
+!              |                                                 |     |
+! F_h_L        | switch: .true. :compute horizontal parameters   |  i  |
+! F_z_L        | switch: .true. :compute vertical parameters     |  i  |
+! F_lin_L      | switch: .true. :compute interpolation parameters|  i  |
+!              |                 only for linear interpolation   |     |
+!              |                                                 |     |
+! F_num        | number of points to treat                       |  i  |
+!______________|_________________________________________________|_____|
+!
+!Notes on computations of positions in the 3D volume of interpolation 
+!                   boxes for adw_trilin or adw_tricub
+!
+!  The same algorithm applies to finding the positions in the interpolation
+!  box for each X,Y,Z upstream position.
+!  For example, say a given F_x(i), we try to find "ii" on advection
+!  axis X (Adw_xg_8) where F_x(i) is closest to the gridpoint Adw_xg_8(ii) 
+!  and Adw_xg_8(ii) must be less than or equal to F_x(i).
+!  The 3-D positions (ii,jj,kk) are stored in F_n, a folded 3-D array.
+! 
+!implicits
+#include "glb_ld.cdk"
+!      integer G_ni, G_nj
+!      integer l_ni, l_nj
+#include "adw.cdk"
+!$$$      #include "type.cdk"
+!$$$      integer            Adw_nit, Adw_njt
+!$$$      real*8             Adw_ovdx_8
+!$$$      type (vertical_i)  Adw_lcz
+!$$$      type (vertical_8)  Adw_bsz_8
+!$$$      type (vertical_8)  Adw_diz_8
+!$$$      type (vertical_8)  Adw_dbz_8
+!$$$      DCL_DYNVAR(Adw,    lcx,    integer, (*))
+!$$$      DCL_DYNVAR(Adw,    lcy,    integer, (*))
+!$$$      real*8             Adw_x00_8
+!$$$      !... lots more... TODO: finish inventory or keep adw.cdk
+#include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8  
+!***********************************************************************
+      integer n, ii, jj, kk, ij, nijag, nij,i, j, k
+      real*8  prd, prdt, p_z00_8
+!
+      p_z00_8 = Ver_z_8%t(1)
+!
+      nij   = l_ni * l_nj
+      nijag = Adw_nit * Adw_njt
+!***********************************************************************
+!$omp parallel private(n,prd,ii,prdt,jj,kk,ij)
+      if ( F_h_L .and. F_z_L ) then
+!***********************************************************************
+         if ( F_lin_L ) then
+!$omp do
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            prd = dble(F_x(n))
+            ii = ( prd - Adw_x00_8 ) * Adw_ovdx_8
+            ii = Adw_lcx( ii+1 ) + 1
+!
+            ii = max(2,ii)
+            ii = min(ii,G_ni+2*Adw_halox-2)
+!
+            prdt = prd - Adw_bsx_8(ii)
+            if ( prdt .lt. 0.0 ) then
+               ii = max(2,ii - 1)
+               prdt = prd - Adw_bsx_8(ii)
+            endif
+            F_capx(n) = prdt * Adw_dix_8(ii)
+
+            prd = dble(F_y(n))
+            jj = ( prd - Adw_y00_8 ) * Adw_ovdy_8
+            jj = Adw_lcy( jj+1 ) + 1
+!
+            jj = max(Adw_haloy,jj)
+            jj = min(jj,G_nj+Adw_haloy)
+!
+            prdt = prd - Adw_bsy_8(jj)
+            if ( prdt .lt. 0.0 ) then
+               jj = max(Adw_haloy,jj - 1)
+               prdt = prd - Adw_bsy_8(jj)
+            endif
+            F_capy(n) = prdt * Adw_diy_8(jj)
+
+            prd = dble(F_z(n))
+            kk = ( prd - p_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz%s( kk+1 )
+            prd = prd - Adw_bsz_8%s(kk)
+            if ( prd .lt. 0.0 ) kk = kk - 1
+            F_capz(n) = prd * Adw_diz_8(kk)
+            if ( prd .lt. 0.0 ) F_capz(n) = 1.0 + F_capz(n)
+            ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
+            F_n(n) = kk*nijag + ij
+            enddo
+            enddo
+            enddo
+!$omp enddo
+         else
+!$omp do
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            prd = dble(F_x(n))
+            ii = ( prd - Adw_x00_8 ) * Adw_ovdx_8
+            ii = Adw_lcx( ii+1 ) + 1
+!
+            ii = max(2,ii)
+            ii = min(ii,G_ni+2*Adw_halox-2)
+!
+            prdt = prd - Adw_bsx_8(ii)
+            if ( prdt .lt. 0.0 ) then
+               ii = max(2,ii - 1)
+               prdt = prd - Adw_bsx_8(ii)
+            endif
+            F_capx(n) = prdt * Adw_dix_8(ii)
+
+            prd = dble(F_y(n))
+            jj = ( prd - Adw_y00_8 ) * Adw_ovdy_8
+            jj = Adw_lcy( jj+1 ) + 1
+!
+            jj = max(Adw_haloy,jj)
+            jj = min(jj,G_nj+Adw_haloy)
+!
+            prdt = prd - Adw_bsy_8(jj)
+            if ( prdt .lt. 0.0 ) then
+               jj = max(Adw_haloy,jj - 1)
+               prdt = prd - Adw_bsy_8(jj)
+            endif
+            F_capy(n) = prdt * Adw_diy_8(jj)
+
+            prd = dble(F_z(n))
+            kk = ( prd - p_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz%s( kk+1 )
+            prd = prd - Adw_bsz_8%s(kk)
+            if ( prd .lt. 0.0 ) kk = kk - 1
+            F_capz(n) = prd * Adw_diz_8(kk)
+            if ( prd .lt. 0.0 ) F_capz(n) = 1.0 + F_capz(n)
+            F_xgg(n) = Adw_dlx_8(ii-1) * Adw_dix_8(ii)
+            F_xdd(n) = Adw_dlx_8(ii+1) * Adw_dix_8(ii)
+            F_ygg(n) = Adw_dly_8(jj-1) * Adw_diy_8(jj)
+            F_ydd(n) = Adw_dly_8(jj+1) * Adw_diy_8(jj)
+            F_cz (n) = (F_capz(n)-1.0)*F_capz(n)*Adw_dbz_8(kk)
+            ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
+            F_n(n) = kk*nijag + ij
+            enddo
+            enddo
+            enddo
+!$omp enddo
+         endif
+!***********************************************************************
+      elseif (F_h_L) then
+!***********************************************************************
+         if ( F_lin_L ) then
+!$omp do
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            kk = ( F_n(n) - (mod ( F_n(n), nijag ))) / nijag
+            prd = dble(F_x(n))
+            ii = ( prd - Adw_x00_8 ) * Adw_ovdx_8
+            ii = Adw_lcx( ii+1 ) + 1
+!
+            ii = max(2,ii)
+            ii = min(ii,G_ni+2*Adw_halox-2)
+!
+            prdt = prd - Adw_bsx_8(ii)
+            if ( prdt .lt. 0.0 ) then
+               ii = max(2,ii - 1)
+               prdt = prd - Adw_bsx_8(ii)
+            endif
+            F_capx(n) = prdt * Adw_dix_8(ii)
+
+            prd = dble(F_y(n))
+            jj = ( prd - Adw_y00_8 ) * Adw_ovdy_8
+            jj = Adw_lcy( jj+1 ) + 1
+!
+            jj = max(Adw_haloy,jj)
+            jj = min(jj,G_nj+Adw_haloy)
+!
+            prdt = prd - Adw_bsy_8(jj)
+            if ( prdt .lt. 0.0 ) then
+               jj = max(Adw_haloy,jj - 1)
+               prdt = prd - Adw_bsy_8(jj)
+            endif
+            F_capy(n) = prdt * Adw_diy_8(jj)
+            ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
+            F_n(n) = kk*nijag + ij
+            enddo
+            enddo
+            enddo
+!$omp enddo
+         else
+!$omp do
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            kk = ( F_n(n) - (mod ( F_n(n), nijag ))) / nijag
+            prd = dble(F_x(n))
+            ii = ( prd - Adw_x00_8 ) * Adw_ovdx_8
+            ii = Adw_lcx( ii+1 ) + 1
+!
+            ii = max(2,ii)
+            ii = min(ii,G_ni+2*Adw_halox-2)
+!
+            prdt = prd - Adw_bsx_8(ii)
+            if ( prdt .lt. 0.0 ) then
+               ii = max(2,ii - 1)
+               prdt = prd - Adw_bsx_8(ii)
+            endif
+            F_capx(n) = prdt * Adw_dix_8(ii)
+
+            prd = dble(F_y(n))
+            jj = ( prd - Adw_y00_8 ) * Adw_ovdy_8
+            jj = Adw_lcy( jj+1 ) + 1
+!
+            jj = max(Adw_haloy,jj)
+            jj = min(jj,G_nj+Adw_haloy)
+!
+            prdt = prd - Adw_bsy_8(jj)
+            if ( prdt .lt. 0.0 ) then
+               jj = max(Adw_haloy,jj - 1)
+               prdt = prd - Adw_bsy_8(jj)
+            endif
+            F_capy(n) = prdt * Adw_diy_8(jj)
+            F_xgg(n) = Adw_dlx_8(ii-1) * Adw_dix_8(ii)
+            F_xdd(n) = Adw_dlx_8(ii+1) * Adw_dix_8(ii)
+            F_ygg(n) = Adw_dly_8(jj-1) * Adw_diy_8(jj)
+            F_ydd(n) = Adw_dly_8(jj+1) * Adw_diy_8(jj)
+            ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
+            F_n(n) = kk*nijag + ij
+            enddo
+            enddo
+            enddo
+!$omp enddo
+         endif
+!***********************************************************************
+      elseif (F_z_L) then
+!***********************************************************************
+         if ( F_lin_L ) then
+!$omp do
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            ij = mod ( F_n(n), nijag )
+            prd = dble(F_z(n))
+            kk = ( prd - p_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz%s( kk+1 )
+            prd = prd - Adw_bsz_8%s(kk)
+            if ( prd .lt. 0.0 ) kk = kk - 1
+            F_capz(n) = prd * Adw_diz_8(kk)
+            if ( prd .lt. 0.0 ) F_capz(n) = 1.0 + F_capz(n)
+            F_n(n) = kk*nijag + ij
+            enddo
+            enddo
+            enddo
+!$omp enddo
+         else
+!$omp do
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            ij = mod ( F_n(n), nijag )
+            prd = dble(F_z(n))
+            kk = ( prd - p_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz%s( kk+1 )
+            prd = prd - Adw_bsz_8%s(kk)
+            if ( prd .lt. 0.0 ) kk = kk - 1
+            F_capz(n) = prd * Adw_diz_8(kk)
+            if ( prd .lt. 0.0 ) F_capz(n) = 1.0 + F_capz(n)
+            F_cz(n) = (F_capz(n)-1.0)*F_capz(n)*Adw_dbz_8(kk)
+            F_n(n) = kk*nijag + ij
+            enddo
+            enddo
+            enddo
+!$omp enddo
+         endif
+!***********************************************************************
+      endif
+!$omp end parallel
+!***********************************************************************
+!     call tmg_stop (31)
+      return
+      end

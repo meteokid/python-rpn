@@ -1,0 +1,165 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r iniobus - sets up the physics output bus
+!
+#include "model_macros_f.h"
+!
+      subroutine iniobus (siz)
+!
+!implicits
+!
+      implicit none
+!
+!author 
+!     Desgagne/Lee
+!
+!revision
+! v3_30 - Desgagne M. - new physics interface
+!
+!object
+!	See above
+!
+!arguments
+!       None
+!
+!implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "dimout.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "dcst.cdk"
+#include "itf_phy_buses.cdk"
+#include "obus.cdk"
+#include "outp.cdk"
+!
+!modules
+      integer  doout
+      external doout
+!*
+      integer dostep(MAXSET),dostep_max,siz
+      integer i,j,k,m,cnt,bigk,idx
+      character*4 udolist_S(maxbus)
+      integer udolist_max
+!
+!------------------------------------------------------------------
+!
+!  Determine if any output requested at this timestep
+!
+      siz = 1
+      dostep_max = doout(dostep,2)
+      Obus_top=0
+!
+      if (dostep_max.le.0) then
+        if (Lun_out.gt.0) write(Lun_out,5001) Lctl_step
+        return
+      endif
+!
+!     Build short list of possible outputs on this timestep only
+      cnt = 0
+      do k=1, Outp_sets
+         Outp_dostep_L(k) = .false.
+         do m=1, dostep_max
+            if ( Outp_step(k).eq. dostep(m) ) then
+                 Outp_dostep_L(k) = .true.
+               do j=1,Outp_var_max(k)
+                  cnt = cnt+1
+                  udolist_S(cnt) =  Outp_var_S(j,k)
+                  do i=1,cnt-1
+                     if (udolist_S(cnt).eq.udolist_S(i)) exit
+                  enddo
+                  if (i.le.cnt-1) cnt=cnt-1
+               enddo
+            endif
+         enddo
+      enddo
+
+!   Determine the number of variables to be outputted from each bus 
+!   bigk counts the number of ni rows in the output bus.
+!
+      k=0
+      bigk = 1
+      do i = 1, P_bper_out
+         idx=p_bper_idx(i)
+         do j=1,cnt
+            if (udolist_S(j).eq.peron(idx)(1:4)) then
+                k=k+1
+                obus_var_S(k)=peron(idx)(1:4)
+                obus_bus_S(k)='P'
+                obus_offset(k)=bigk
+                obus_idx(k)=idx
+                obus_addr(k)=perpar(idx,1)
+                obus_stag(k)=perpar(idx,4)
+                obus_mult(k)=perpar(idx,6)
+                obus_mul(k)=1.0
+                obus_add(k)=0.0
+                if (perpar(idx,5).gt.p_ni) then
+                    obus_shp(k)= G_nk+2
+                else
+                    obus_shp(k)= 1
+                endif
+                if (peron(idx)(1:4).eq.'LA') obus_mul(k)=180./Dcst_pi_8
+                if (peron(idx)(1:4).eq.'SD') obus_mul(k)=100.
+!               Should use flag from Dynamics to determine obus_add(long)
+                if (peron(idx)(1:4).eq.'LO') then
+                    obus_mul(k)=180./Dcst_pi_8
+                endif
+                bigk = bigk + obus_shp(k)*obus_mult(k)
+            endif
+         enddo
+      enddo
+
+      do i = 1, P_bvol_out
+         idx=p_bvol_idx(i)
+         do j=1,cnt
+            if (udolist_S(j).eq.volon(idx)(1:4)) then
+                k=k+1
+                obus_var_S(k)=volon(idx)(1:4)
+                obus_bus_S(k)='V'
+                obus_offset(k)=bigk
+                obus_idx(k)=idx
+                obus_addr(k)=volpar(idx,1)
+                obus_stag(k)=volpar(idx,4)
+                obus_mult(k)=volpar(idx,6)
+                obus_mul(k)=1.0
+                obus_add(k)=0.0
+                if (volpar(idx,5).gt.p_ni) then
+                    obus_shp(k)= G_nk+2
+                else
+                    obus_shp(k)= 1
+                endif
+                bigk = bigk + obus_shp(k)*obus_mult(k)
+            endif
+         enddo
+      enddo
+
+      Obus_top=k
+      siz = bigk
+      if (Obus_top.eq.0) then
+          do k=1, Outp_sets
+             Outp_dostep_L(k) = .false.
+          enddo
+          if (Lun_out.gt.0) write(Lun_out,5001) Lctl_step
+      else
+          if (Lun_out.gt.0) write(Lun_out,5000) Lctl_step
+      endif
+!
+ 5000 format(/,' iniobus - PHYSICS OUTPUT WILL BE WRITTEN FOR STEP (', &
+                I8,')')
+ 5001 format(/,' iniobus - NO PHYSICS OUTPUT FOR STEP (',I8,')')
+!
+      return
+      end

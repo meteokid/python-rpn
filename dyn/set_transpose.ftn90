@@ -1,0 +1,183 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r set_transpose - Establish layout for the 2 level-transpose used
+!                      in the solver and the horizontal diffusion
+!
+#include "model_macros_f.h"
+!
+      subroutine set_transpose ()
+!
+      implicit none
+!
+!author
+!     M. Desgagne - rpn - 1999
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_10 - Desgagne M.       - add partitioning checks
+! v2_11 - Desgagne M.       - vertical sponge layer (vsl)
+! v2_21 - Corbeil  L.       - ldnh_maxx and ldnh_maxy for vsl
+!
+!object 
+!
+!arguments
+!     None
+!
+!implicits
+#include "glb_ld.cdk"
+#include "ldnh.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "trp.cdk"
+#include "vspng.cdk"
+#include "ptopo.cdk"
+! 
+!modules
+      logical check_parti
+      integer rpn_comm_topo
+      external rpn_comm_topo,check_parti
+!
+      integer istat, minx, maxx, n, npartiel, n0, dim
+!
+!     ---------------------------------------------------------------
+!
+! Establishing local dimensions and computing arena (data topology) for:
+!          G_ni distributed on Ptopo_npex PEs and 
+!          G_nj distributed on Ptopo_npey PEs both without halo
+!
+      istat = rpn_comm_topo( G_ni, ldnh_minx, ldnh_maxx, ldnh_ni,  &
+                               npartiel, 0, n0, .true. , .true. )
+      istat = rpn_comm_topo( G_nj, ldnh_miny, ldnh_maxy, ldnh_nj,  &
+                               npartiel, 0, n0, .false., .true. )
+!
+! Transpose 1===>2:G_nk distributed on Ptopo_npex PEs (no halo)
+!                  G_nj distributed on Ptopo_npey PEs (original layout)
+!                  G_ni NOT distributed
+!         initial layout  : (l_minx:l_maxx,    l_miny:l_maxy    ,G_nk)
+!         transpose layout: (l_miny:l_maxy,trp_12dmin:trp_12dmax,G_ni)
+!
+      istat = rpn_comm_topo ( G_nk, minx, maxx, n, npartiel , &
+                                     0, n0, .true. , .true. )
+      if (.not.check_parti (n0,G_nk,Ptopo_npex)) then
+         if (Lun_out.gt.0) write(Lun_out,1001)  &
+         ' Transpose 1===>2 for HZD:', &
+         ' G_nk distributed on Ptopo_npex PEs (no halo)'
+         stop
+      endif
+      trp_12dmin = minx ! most likely = 1 since no halo
+      trp_12dmax = maxx
+      trp_12dn   = n
+      trp_12dn0  = n0
+!
+! Transpose 1===>2:G_nk+1 distributed on Ptopo_npex PEs (no halo)
+!                  G_nj distributed on Ptopo_npey PEs (original layout)
+!                  G_ni NOT distributed
+!         initial layout  : (l_minx:l_maxx,     l_miny:l_maxy     ,G_nk+1)
+!         transpose layout: (l_miny:l_maxy,trp_p12dmin:trp_p12dmax,G_ni  )
+!
+      istat = rpn_comm_topo ( G_nk+1, minx, maxx, n, npartiel , &
+                                     0, n0, .true. , .true. )
+      if (.not.check_parti (n0,G_nk+1,Ptopo_npex)) then
+                if (Lun_out.gt.0) write(Lun_out,1001) &
+         ' Transpose 1===>2 for HZD:', &
+         ' G_nk+1 distributed on Ptopo_npex PEs (no halo)'
+        stop
+       endif
+      trp_p12dmin = minx ! most likely = 1 since no halo
+      trp_p12dmax = maxx
+      trp_p12dn   = n
+      trp_p12dn0  = n0
+!    The elliptic solver distributes only Schm_nith vertical levels
+!
+      istat = rpn_comm_topo ( Schm_nith, minx, maxx, n, npartiel , &
+                                         0, n0, .true. , .true. )
+      if (.not.check_parti (n0,Schm_nith,Ptopo_npex)) then
+         if (Lun_out.gt.0) write(Lun_out,1001)  &
+         ' Transpose 1===>2 for SOL:', &
+         ' Schm_nith distributed on Ptopo_npex PEs (no halo)'
+         stop
+      endif
+      trp_12smin = minx ! most likely = 1 since no halo
+      trp_12smax = maxx
+      trp_12sn   = n
+      trp_12sn0  = n0
+!
+!    Vertical sponge near model lid:
+!                  Vspng_n_spng top layers NOT distributed
+!                  ldnh_maxy distributed on Ptopo_npex PEs
+!                  G_ni NOT distributed
+!
+      if (Vspng_nk.gt.0) then
+      istat = rpn_comm_topo ( ldnh_maxy, minx, maxx, n, npartiel , &
+                                         0, n0, .true. , .true. )
+      if (.not.check_parti (n0,ldnh_maxy,Ptopo_npex)) then
+         if (Lun_out.gt.0) write(Lun_out,1001)  &
+         ' Transpose 1===>2 for VSPNG:', &
+         ' ldnh_nj MAX distributed on Ptopo_npex PEs (no halo)'
+         stop
+      endif
+      trp_12emin = 1
+      trp_12emax = maxx
+      trp_12en   = n
+      trp_12en0  = n0
+      endif
+!
+! Transpose 2===>2:G_nk distributed on Ptopo_npex PEs (no halo)
+!                  G_nj NOT distributed
+!                  G_ni distributed on Ptopo_npey PEs (no Halo)
+!  initial layout  : (    l_miny:l_maxy    ,trp_12dmin:trp_12dmax,G_ni)
+!  transpose layout: (trp_12dmin:trp_12dmax,trp_22min:trp_22max,G_nj)
+!
+      istat = rpn_comm_topo ( G_ni, minx, maxx, n, npartiel , &
+                                     0, n0, .false. , .true. )
+      if (.not.check_parti (n0,G_ni,Ptopo_npey)) then
+         if (Lun_out.gt.0) write(Lun_out,1001)  &
+         ' Transpose 2===>2 for HZD&SOL:', &
+         ' G_ni distributed on Ptopo_npey PEs (no halo)'
+         stop
+      endif
+      trp_22min = minx ! most likely = 1 since no halo
+      trp_22max = maxx
+      trp_22n   = n
+      trp_22n0  = n0
+!
+!    Vertical sponge near model lid:
+!                  Vspng_n_spng top layers NOT distributed
+!                  ldnh_maxx distributed on Ptopo_npey PEs
+!                  G_nj NOT distributed
+!
+      if (Vspng_nk.gt.0) then
+      istat = rpn_comm_topo ( ldnh_maxx, minx, maxx, n, npartiel , &
+                                     0, n0, .false. , .true. )
+      if (.not.check_parti (n0,ldnh_maxx,Ptopo_npey)) then
+         if (Lun_out.gt.0) write(Lun_out,1001)  &
+         ' Transpose 2===>2 for VSPNG:', &
+         ' ldnh_ni MAX distributed on Ptopo_npey PEs (no halo)'
+         stop
+      endif
+      trp_22emin = 1
+      trp_22emax = maxx
+      trp_22en   = n
+      trp_22en0  = n0
+      endif
+!
+ 1001 format (a/a/' ----- ABORT in set_transpose -----'/)
+!     ---------------------------------------------------------------
+!
+      return
+      end
+
+

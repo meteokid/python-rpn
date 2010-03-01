@@ -1,0 +1,167 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r p0vt2gz_hyb - Compute hydrostatic GZ from P0 and VT
+!
+#include "model_macros_f.h"
+!
+      subroutine p0vt2gz_hyb (F_gz, F_pia, F_pib, F_ps, F_vt,  &
+                                   n, Nk, F_pib_L, F_sig_L)
+      implicit none
+!
+      logical F_pib_L,F_sig_L
+      integer n, Nk
+      real F_gz(n,Nk), F_vt(n,Nk), F_ps(n), F_pia(Nk), F_pib(Nk)
+!
+!author
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version (from p0vt2gz v1_03)
+! v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
+! v3_00 - Lee v.            - treats 2D plane as 1-D vector no halos
+! v3_02 - Lemay G.          - Vectorisation
+! v3_21 - Lee V.            - Output Optimization
+!
+
+!object
+!       see id section
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_gz         O    - geopotential height
+! F_pia        I    - actually RNA if F_sig_L=T
+!                   - pia          if F_sig_L=F
+! F_pib        I    - unused       if F_sig_L=T
+!                   - pib          if F_sig_L=F and F_pib_L=T
+!                   - pibb         if F_sig_L=F and F_pib_L=F
+! F_ps         I    - ln(pi_s/z_s) if F_pib_L=T
+!                   - pi_S         if F_pib_L=F or F_sig_L=T
+! F_vt         I    - virtual temperature
+! F_pib_L      I    - TRUE or FALSE
+! F_sig_L      I    - TRUE or FALSE
+!
+!implicits
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+!
+!*
+      integer i,k,ik
+      real*8 invdet
+      real con,q1,q2,q3,x0,xm,xp,aa,bb,cc,dd,zak,zbk,zck
+      real pr(n,Nk), vma(n,Nk), vmb(n,Nk), vmc(n,Nk), ex,expps(n)
+!
+!     ---------------------------------------------------------------
+!
+      con = -Dcst_rgasd_8
+!
+      if (F_pib_L) then
+          do i=1,n
+             expps(i)=exp( F_ps(i) )
+          enddo
+      endif
+
+      if (F_sig_L) then
+          do k=1,Nk
+          do i=1,n
+          pr(i,k) =  F_pia(k)  *  F_ps(i)
+          enddo
+          enddo
+      else
+          if (F_pib_L) then
+              do k=1,Nk
+              do i=1,n
+               pr(i,k) = F_pia(k) + F_pib(k)*expps(i)
+              enddo
+              enddo
+          else
+              do k=1,Nk
+              do i=1,n
+               pr(i,k) = F_pia(k) + F_pib(k)*F_ps(i)
+              enddo
+              enddo
+          endif
+      endif
+!
+!$omp parallel private(q1,q2,q3,x0,xm,xp,aa,bb, &
+!$omp                  cc,dd,invdet,zak,zbk,zck,ex,i) &
+!$omp          shared (vma, vmb, vmc, con,pr)
+!$omp do
+      do k=1,Nk            
+      do i=1,n
+         x0=pr(i,k)
+         if (k.eq.1) then
+            xm=pr(i,1)
+            xp=pr(i,2)
+            aa=pr(i,3)-x0
+            bb=pr(i,2)-x0
+         elseif (k.eq.nk) then
+            xm=pr(i,Nk-1)
+            xp=pr(i,Nk)
+            aa=pr(i,Nk-1)-x0
+            bb=pr(i,Nk-2)-x0
+         else
+            xm=pr(i,k-1)
+            xp=pr(i,k+1)
+            aa=xm-x0
+            bb=xp-x0
+         endif
+
+         q1=alog(xp/xm)
+         q2=xp-xm
+         q3=(xp*xp - xm*xm)*0.5
+
+         q3=q3-x0*(2.0*q2-x0*q1)
+         q2=q2-x0*q1
+         cc=aa*aa
+         dd=bb*bb
+         invdet=aa*dd-bb*cc
+         invdet = 0.5/invdet
+         vma(i,k)=(dd*q2-bb*q3)*invdet
+         vmc(i,k)=(aa*q3-cc*q2)*invdet
+         vmb(i,k)=q1*0.5-vma(i,k)-vmc(i,k)
+      end do
+      end do
+!$omp enddo
+!
+!$omp do
+      do i=1,n
+         zak = -2.0*con*vma(i,nk)
+         zbk = -2.0*con*vmb(i,nk)
+         zck = -2.0*con*vmc(i,nk)
+         F_gz(i,nk-1) = zak * F_vt(i,nk-1) + zbk * F_vt(i,nk) + &
+                        zck * F_vt(i,nk-2) + F_gz(i,nk)
+      end do
+!$omp enddo
+!$omp end parallel
+!
+      do k = 1, nk-2
+         ik  = nk-1-k
+         do i=1,n
+            zak = -2.0*con*vma(i,ik+1)
+            zbk = -2.0*con*vmb(i,ik+1)
+            zck = -2.0*con*vmc(i,ik+1)
+            F_gz(i,ik) = zak * F_vt(i,ik  ) + zbk * F_vt(i,ik+1) + &
+                         zck * F_vt(i,ik+2) + F_gz(i,ik+2)
+!
+         end do
+      end do
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

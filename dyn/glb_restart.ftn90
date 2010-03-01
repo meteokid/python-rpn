@@ -1,0 +1,17 @@
+      subroutine glb_restart (mode)
+      implicit none
+!
+      character* (*) mode
+!
+      integer  wkoffit
+      external wkoffit
+!
+      if (mode.eq.'W') then
+	stop 'glb_restart WRITE MODE'
+      else
+        if (wkoffit('../restart_glbdyn.bin').eq.10)  &
+        stop 'glb_restart READ MODE'
+      endif
+!
+      return
+      end

@@ -1,4 +1,0 @@
-      subroutine statf_dm
-	stop 'statf_dm'
-      return
-      end 

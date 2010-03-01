@@ -1,0 +1,95 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+!**s/r out_slev
+!
+      subroutine out_slev (F_levtyp_S,F_level,F_indo,F_nko,F_nko_t,F_nk,F_kind,F_st_S)
+
+      implicit none
+!
+      character*1 F_st_S, F_levtyp_S
+      integer F_nk,F_kind,F_indo(*),F_nko, F_nko_t
+      real F_level(*)
+!
+!AUTHOR   Michel Desgagne     July 2004 (MC2)
+!
+!REVISION
+! v3_20 - Lee V.            - Adapted for GEMDM
+!
+!ARGUMENTS
+!    NAMES       I/O  TYPE  DESCRIPTION
+!
+#include "out.cdk"
+!
+      integer k
+      logical ajoutek_L
+!*
+!----------------------------------------------------------------------
+!
+      Out_prefix_S(1:1) = F_st_S
+      Out_levtyp_S = F_levtyp_S
+      F_nko_t = F_nko
+!
+!     initialize output level array to 0
+      if ((F_levtyp_S.eq.'P').or.(F_levtyp_S.eq.'H')) then
+         do k=1,F_nko
+            F_indo(k) = k
+         end do
+      else if (F_st_S.eq.'d') then
+!     output in model levels for dynamic variables
+         ajoutek_L = .false.
+         do k=1,F_nko
+            F_indo(k) = int(F_level(k))
+            if (F_indo(k).eq.F_nk) ajoutek_L=.true.
+         end do
+!     depending on the vertical definition, certain variables can have gnk+1
+         if (ajoutek_L) then
+             F_indo(F_nko+1) = F_nk+1
+             F_indo(F_nko+2) = F_nk+2
+             F_nko   = F_nko+1 
+             F_nko_t = F_nko+1
+         endif
+      else if (F_st_S.eq.'p') then
+!     output in model levels for physics variables
+         ajoutek_L = .false.
+         do k=1,F_nko
+            F_indo(k) = int(F_level(k))
+            if (F_indo(k).eq.F_nk) ajoutek_L=.true.
+         end do
+!     depending on the vertical definition, certain variables can have gnk+1
+         if (ajoutek_L) then
+             F_indo(F_nko+1) = F_nk+1
+             F_indo(F_nko+2) = F_nk+2
+             F_nko_t = F_nko+2
+         endif
+      endif
+      if (F_levtyp_S.eq.'P') then
+         Out_kind=2
+         Out_prefix_S(2:2) = 'p'
+      endif         
+      if (F_levtyp_S.eq.'H') then
+         Out_kind=0
+         Out_prefix_S(2:2) = 'h'
+      endif         
+      if (F_levtyp_S.eq.'M') then
+         Out_kind=F_kind
+         Out_prefix_S(2:2) = 'm'
+      endif
+!
+!----------------------------------------------------------------------
+      return
+      end
+

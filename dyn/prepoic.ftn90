@@ -1,0 +1,80 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r prepoic - prepare projection matrix, solve eigenvalue problem
+!
+      subroutine prepoic( F_eval_8, F_evec_8, F_wk1_8, F_wk2_8,  &
+                  F_xnor_8, F_ordr_8, F_case, F_i0, F_ni, NIS )
+!
+      implicit none
+!
+      character*1 F_case
+      integer F_ni, F_i0, NIS
+      real*8 F_eval_8(*), F_evec_8(NIS,*), F_wk1_8(NIS,*)
+      real*8 F_wk2_8(*), F_xnor_8, F_ordr_8
+!
+!author jean cote - sept 1995, from prepois
+!
+!revision
+! v2_00 - Desgagne/Lee      - initial MPI version (from prepoic v1_03)
+! v3_00 - Desgagne & Lee    - Lam configuration
+!
+!object
+!     Prepare projection matrix in East-West direction for Poisson problem
+!     Solve eigenvalue problem A X = lambda B X
+!                        where A = d2/dx2 and B = projector
+
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_eval_8     O    - eigenvalues
+! F_evec_8     I/O  - input: A  (A = d2/dx2)
+!                     output:eigenvectors of generalized problem AX = lambda BX
+! F_wk1_8      I/O  - input: B  (projector)
+!                   - output: work field
+! F_wk2_8      I/O  - work field
+! F_xnor_8     I    - normalized value of constant mode in E-W direction
+! F_ordr_8     I    - < 0 if eigenvalues in decreasing order
+! F_case       I    - 'P'eriodic, 'D'irichlet ou 'N'eumann
+! F_i0         O    - index of constant mode
+! F_ni         I    - number of points in x-direction
+!
+!*
+      integer i, j,pnn
+!
+      pnn=F_ni
+!     NOTE: geneigl may change pnn
+ 
+      call geneigl ( F_eval_8, F_evec_8, F_wk1_8, F_wk2_8, F_ordr_8, 1, pnn, &
+                     NIS, 3*pnn-1 )
+ 
+      if ( F_ordr_8 .gt. 0.0 ) then
+         F_i0 = F_ni
+      else
+         F_i0 = 1
+      endif
+
+      if ( F_xnor_8 .gt. 0.0 ) then
+
+         F_eval_8(F_i0) = 0.0d0
+         do i = 1, F_ni
+            F_evec_8(i,F_i0) = F_xnor_8
+         enddo
+
+      endif
+
+      return
+      end

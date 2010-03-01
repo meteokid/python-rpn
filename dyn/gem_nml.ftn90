@@ -1,0 +1,312 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r gem_nml
+!
+#include "model_macros_f.h"
+!
+      integer function gem_nml (F_namelistf_S)
+      implicit none
+!
+      character* (*) F_namelistf_S
+!
+!author
+!     M. Desgagne    - Summer  2006
+!
+!revision
+! v3_30 - Desgagne M.       - initial version
+! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+! v4_03 - Tanguay M.        - Williamson's cases
+! v4_05 - Desgagne M.       - Add Lam_blendoro_L and Lam_cascsfc_L
+! v4_05 - McTaggart-Cowan R.- Remove time series settings
+! v4_05 - Girard C.         - Open top option
+! v4_05 - Plante A.         - Vertical blending option
+!
+!object
+!  Default configuration and reading namelists gem_cfgs and grdc
+!
+#include "nml.cdk"
+!
+      integer  fnom
+      external fnom
+!
+      character*64 dumc_S
+      integer i,k,nrec,err,unf
+!
+!-------------------------------------------------------------------
+!
+      gem_nml = -1
+!
+      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+         gem_nml = 0
+         if (Lun_out.ge.0) write (Lun_out,nml=gem_cfgs_p)
+         if (Lun_out.ge.0 .and. &
+             Grdc_ni.gt.0) write (lun_out,nml=grdc_p)
+         return
+      endif
+!
+      Step_total = -1
+      Step_rsti  = 9999999
+      Step_bkup  = 9999999
+      Step_gstat = 9999999
+      Step_cleanup = 0
+!
+      Rstri_glbcol_L = .false.
+!
+      G_halox = 4
+      G_haloy = G_halox
+!
+      Lam_blend_H_func_S = 'COS2'
+      Lam_blend_H = 10
+      Lam_blend_T =  0
+!
+      Init_balgm_L = .false.
+      Init_dfwin_L = .true.
+      Init_dfnp    = 5
+      Init_dfpl_8  = 21600.0
+      Init_dftr_L  = .false.
+!
+      Offc_b0_8  =  0.6
+      Offc_b0T_8 =  0.6
+      Offc_b0w_8 =  0.6
+!
+      Schm_hydro_L    = .false.
+      Schm_moist_L    = .true.
+      Schm_hdlast_L   = .false.
+      Schm_itcn     = 2
+      Schm_modcn    = 1
+      Schm_xwvt3    = 0
+      Schm_itnlh    = 2
+      Schm_itraj    = 2
+      Schm_adcub_L    = .true.
+      Schm_psadj_L    = .false.
+      Schm_wload_L    = .false.
+      Schm_pcsty_L    = .true.
+      Schm_pheat_L    = .true.
+      Schm_zdotMid_L  = .false.
+      Schm_autobar_L  = .false.
+!
+      Schm_phyms_L    = .false.
+      Schm_chems_L    = .false.
+!
+      Lam_hint_S    = 'CUB_LAG'
+      Lam_runstrt_S = '@#$%'
+      Lam_nesdt     = -1
+      Lam_ctebcs_L  = .false.
+      Lam_toptt_L   = .false.
+      Lam_0ptend_L  = .true.
+      Lam_blendoro_L= .true.
+      Lam_cascsfc_L = .true.
+      Lam_busper_init_L  = .false.
+      Lam_current_S = '20000101.000000'
+!
+      Zblen_L   = .false.
+!
+      Lam_gbpil_T = -1
+!
+      Clim_climat_L  = .false.
+      Clim_inincr_L  = .false.
+!
+      Cori_cornl_L = .true.
+!
+      Cstv_dt_8    = 900
+      Cstv_ptop_8  = -1.d0
+      Cstv_tstr_8  =  240.0
+!
+      Lctl_r8stat_L   = .false.
+      Lctl_debug_L    = .false.
+      Lctl_reset      = -1
+!
+      Acid_test_L        = .false.
+      Acid_skippospers_L = .false.
+      Acid_readsol_L     = .false.
+      Acid_readposi_L    = .false.
+      Acid_pilot_L       = .false.
+      Acid_i0         = 0
+      Acid_in         = 0
+      Acid_j0         = 0
+      Acid_jn         = 0
+      Acid_npas       = 0
+!
+      Level_ip12000_L = .false.
+!
+      Grd_rcoef(1) = 1.0
+      Grd_rcoef(2) = 1.0
+!
+      Grd_proj_S = 'E'
+      do k = 1, maxhlev
+         hyb(k) = -1.
+         hgt(k) = -1.
+      end do
+!
+      sol_fft_L     = .true.
+      sol_type_S    = 'DIRECT'
+      sol_precond_S = 'JACOBI'
+      sol_eps       = 1.d-09 
+      sol_im        = 15
+      sol_maxits    = 200
+!
+      Eigv_parity_L = .false.
+      Hzd_type_S = "HO_IMP"
+      Hzd_difva_L= .false.
+      Hzd_pwr    = 6
+      Hzd_lnr    = 0.2
+      Hspng_nj = 0
+      Hspng_coef=20000.
+      Hspng_mf  =800.
+      Vspng_nk = 0
+      Vspng_coef    =20000.
+      do i = 1, Vspng_maxn
+         Vspng_mf(i) = -1.
+         Vspng_nu(i) = -1.
+      end do
+      Vspng_nutop = -1.
+      Vspng_njpole   = 3
+      Vspng_zmean_L  = .false.
+!
+      Hzd_t1_0_L = .false.
+      Hzd_t1_1_L = .false.
+      Hzd_t0_0_L = .false.
+      Hzd_t0_1_L = .false.
+      Hzd_1d_L   = .false.
+      Hzd_hzdmain_0_L = .true.
+      Hzd_hzdmain_1_L = .true.
+!
+      Vrtd_L         = .false.
+      Vrtd_theta_L   = .false.
+      Vrtd_coef      = 1.
+!
+      Vtopo_start = -1
+      Vtopo_ndt = 0
+!
+      Tr3d_ntr = 0
+!
+      p_lmvd_valml_8  = 1.0
+      p_lmvd_mllat_8  = 30.0
+      p_lmvd_valeq_8  = 1.0
+      p_lmvd_eqlat_8  = 5.0
+      P_pbd_dumpbus  = 0
+!
+      P_zong_znli = 0
+      P_zong_nbin = min( Grd_nj,Grd_ni )
+      P_zong_znmod = 1
+      P_zong_znoff_L = .false.
+      P_zong_znsus_L = .false.
+      P_zong_znsrf_s = ' '
+      P_zong_znprf_s = ' '
+!
+      do i = 1,MAXELEM
+         Out3_zund(i)     = 0
+      enddo
+      Out3_etik_S    = 'GEMDM'
+      Out3_unit_S    = ' '
+      Out3_closestep = -1
+      Out3_ndigits   = -1
+      Out3_ip3       = 0
+      Out3_nbitg     = 16
+      Out3_linbot    = 0
+      Out3_cliph_L   = .false.
+      Out3_satues_L  = .false.
+      Out3_cubzt_L   = .true.
+      Out3_cubuv_L   = .true.
+      Out3_cubds_L   = .true.
+      Out3_cubqs_L   = .true.
+      Out3_cubdd_L   = .true.
+      Out3_cubqq_L   = .true.
+      Out3_cubww_L   = .true.
+      Out3_debug_L   = .false.
+      Out3_flipit_L  = .false.
+!
+!     Williamson's cases section
+!     --------------------------
+      Williamson_case     = 0 
+      Williamson_alpha    = 0.0
+!
+      Grdc_proj_S = 'L'
+      Grdc_xlat1  = Grd_xlat1
+      Grdc_xlon1  = Grd_xlon1
+      Grdc_xlat2  = Grd_xlat2
+      Grdc_xlon2  = Grd_xlon2 
+      Grdc_ni     = 0
+      Grdc_nj     = 0
+      Grdc_Hblen  = 10
+      Grdc_maxcfl = 1
+      Grdc_nfe    = ''
+      Grdc_initphy_L = .false.
+      Grdc_runstrt_S = Lam_runstrt_S
+      Grdc_runend_S  = Lam_runstrt_S
+      Grdc_bcs_hollow_L = .true.
+      Grdc_nbits = 32
+      do k=1,max_trnm
+         Grdc_trnm_S(k) = '@#$%'
+      end do
+!
+      stat_liste = ''
+!
+      if (F_namelistf_S .ne. '') then
+!
+         unf = 0
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) goto 9110
+         rewind(unf)
+         read (unf, nml=gem_cfgs, end = 9120, err=9120)
+         rewind(unf)
+!
+         rewind(unf)
+         read  (unf, nml=williamson, end = 1001, err = 9125)
+ 1001    continue
+         rewind(unf)
+!
+         read (unf, nml=grdc,     end = 1000, err=9130)
+ 1000    call fclos (unf)
+!
+      endif
+!
+      gem_nml = 1
+      goto 9999
+!
+ 9110 if (Lun_out.gt.0) then 
+         write (Lun_out, 9050) trim( F_namelistf_S )
+         write (Lun_out, 8000)
+      endif
+      goto 9999
+!
+ 9120 call fclos (unf)
+      if (Lun_out.ge.0) then  
+         write (Lun_out, 9150) 'gem_cfgs',trim( F_namelistf_S ) 
+         write (Lun_out, 8000)
+      endif
+      goto 9999
+!
+ 9125 if (Lun_out.gt.0) then
+          write (Lun_out, 9525)
+          write (Lun_out, 8000)
+      endif
+      goto 9999
+!
+ 9130 call fclos (unf)
+      if (Lun_out.ge.0) then  
+         write (Lun_out, 9150) 'grdc',trim( F_namelistf_S ) 
+         write (Lun_out, 8000)
+      endif
+!
+ 8000 format (/,'========= ABORT IN S/R gem_nml.f ============='/)
+ 9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
+ 9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
+ 9525 format (/,' NAMELIST williamson INVALID IN FILE: model_settings '/)
+!
+!-------------------------------------------------------------------
+!
+ 9999 return
+      end

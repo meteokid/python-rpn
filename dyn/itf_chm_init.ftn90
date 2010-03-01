@@ -1,0 +1,150 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_chm_init - initialize RPN physics
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_chm_init ( )
+!
+      implicit none
+!
+!author 
+!     A. Kallaur - arqi - june 2005
+!
+!revision
+! v3_30 - Kallaur A.       - initial version
+!
+!object
+!	See above ID.
+!	
+!arguments
+!	none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "itf_chm_bus.cdk"
+#include "itf_chm_busind.cdk"
+#include "ptopo.cdk"
+#include "itf_phy_buses.cdk"
+#include "out3.cdk"
+!
+!*
+      integer       err,status
+      character*120 fn
+      logical       prout
+!
+!     External funcitons    
+! 
+      integer       chm_read_nml
+      external      chm_read_nml,set_dcst,getindx
+!
+!     ---------------------------------------------------------------
+!
+!     First off, attempt to read from &chem_cfgs namelist in gem_settings.
+!     If "ABORT" was returned, then halt the execution
+!     If "NIL" is returned, all further chemical entry points in the model will be ignored
+!
+      fn = 'model_settings'
+      if (Lun_out>0) write(Lun_out,1001)
+      err = chm_read_nml(fn,Schm_chems_L,Lun_out)
+      if (err< 0) call handle_error(-1,'itf_chm_init','gem_run itf_chm_init')
+      if (.not. Schm_chems_L) return
+      
+      prout    = lun_out.gt.0
+      if (lun_out.gt.0) write(Lun_out,1000)
+!
+!C      Initialise chemistry configuration
+!       -------------------------------------------
+!
+      chmt_ntr = 0
+      chm_nmp  = 0
+      if (G_lam) chm_nmp = 3
+      chm_ni   = p_ni
+      chm_nj   = p_nj
+      chm_offi = p_offi
+      chm_offj = p_offj
+!
+!     Initialise the chemistry buses. As well, Transfer essential parameters 
+!     (grid topo and MPI tile topo) to the chemical coding side. 
+!     ALSO:    
+!        Get the Date/time stamp (14 work integer array) from GEM (step 0).
+!        This was previously done through call to subroutine 
+!        chm_getdattim -> now defunct.
+!
+!     NOTE2: Pass callback function set_dcst to chemistry to be able
+!            to read common constants file + ones needed specifically
+!            for the chemicl scheme.
+!
+      call chm_debu ( l_ni        ,l_nj        ,l_nk        ,Out3_date   , &
+                      Ptopo_myrow ,Ptopo_mycol ,Ptopo_npex  ,Ptopo_npey  , &
+                      chm_ni      ,chm_nj      ,chm_offi    ,chm_offj    , &
+                      G_ni        ,G_nj        ,G_nk, &
+                      l_i0        ,l_j0, &
+                      north       ,east        ,west        ,south, &
+                      chm_bent_top,chm_bdyn_top,chm_bper_top,chm_bvol_top, &
+                      Lun_out     ,set_dcst  )
+!
+      if ( (chm_bent_top.le.chmmaxbus).and.(chm_bdyn_top.le.chmmaxbus) .and. &
+           (chm_bper_top.le.chmmaxbus).and.(chm_bvol_top.le.chmmaxbus)) then
+         call chm_getbus (chmentnm,chmenton,chmentdc,chmentpar,chm_bent_siz,chmmaxbus, &
+                                                        'E',prout)
+         call chm_getbus (chmdynnm,chmdynon,chmdyndc,chmdynpar,chm_bdyn_siz,chmmaxbus, &
+                                                        'D',prout)
+         call chm_getbus (chmpernm,chmperon,chmperdc,chmperpar,chm_bper_siz,chmmaxbus, &
+                                                        'P',prout)
+         call chm_getbus (chmvolnm,chmvolon,chmvoldc,chmvolpar,chm_bvol_siz,chmmaxbus, &
+                                                        'V',prout)
+         call itf_chm_inikey
+      else
+         if (lun_out>0) write (lun_out,9000) &
+              max(chm_bent_top,chm_bdyn_top,chm_bper_top,chm_bvol_top)
+            call handle_error(-1,'itf_chm_init','ITF_CHM_INIT')
+      endif
+
+      chm_bchm_top  = chm_bper_top+chm_bdyn_top+chm_bvol_top+chm_bent_top
+
+      if (lun_out>0) then
+         write(lun_out,*) 'chm_bper_top=',chm_bper_top
+         write(lun_out,*) 'chm_bdyn_top=',chm_bdyn_top
+         write(lun_out,*) 'chm_bvol_top=',chm_bvol_top
+         write(lun_out,*) 'chm_bent_top=',chm_bent_top
+         write(lun_out,*) 'In itf_chm_init:'
+         write(lun_out,*) 'chm_bper_siz,chm_nj = ',chm_bper_siz,chm_nj 
+      endif
+      
+      if (.not.associated(Chm_busper3D))  &
+              allocate (Chm_busper3D(chm_bper_siz*chm_nj),stat=status)
+         if (status < 0) then
+            if (Lun_out>0) then 
+	       write(Lun_out) 'Problem with the allocation of chm_busper3D'
+               write(Lun_out) 'chm_bper_siz,chm_nj :',chm_bper_siz,chm_nj
+	    endif
+            call handle_error(-1,'itf_chm_init','ITF_CHM_INIT')
+      endif
+      
+ 1000 format(/,'CHEMISTRY CONFIGURATION (S/R ITF_CHM_INIT)', &
+             /,'================================================')
+ 1001 format(/,'INITIALIZATION OF RPN/ARQI CHEMISTRY PACKAGE (S/R CHM_INIT)', &
+             /,'=====================================================')
+ 9000 format(/'==> STOP IN ITF_CHM_INIT: MAXBUS TOO SMALL IN ITF_CHM_BUS.CDK'/ &
+              '==> REQUIRED: ',i10/)
+!
+!     ---------------------------------------------------------------
+!     
+      return
+      end

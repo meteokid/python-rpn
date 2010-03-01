@@ -1,0 +1,122 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r get_bmfvar - read the dynamics fields from entrance programs
+!
+#include "model_macros_f.h"
+!
+! subroutine get_bmfvar, explicit interface for pointer as dummy args.
+      subroutine get_bmfvar()
+      implicit none
+!
+!author 
+!     Luc Corbeil, mai 2002
+!
+!revision
+! v3_01 - Corbeil L.           - initial version
+! v3_10 - Lee V.               - unique bmfscraps...
+! v3_11 - Gravel S.            - provide for variable topography
+! v3_12 - Dugas B. & Winger K. - read TD in pressure-mode rather than HU
+! v3_21 - Dugas B.             - replace TD by ES in pressure mode
+! v3_30 - Tanguay M.           - Modify Check topo when no interpolation 
+! v3_30 - McTaggart-Cowan R.   - update implementation of variable orography
+! v4_03 - Lee V.            - ISST
+!
+!object
+!	
+!arguments
+!	none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "bmf.cdk"
+#include "glb_pil.cdk"
+#include "ptopo.cdk"
+#include "acq.cdk"
+#include "path.cdk"
+!modules
+      integer  bmf_gobe
+      external bmf_gobe
+!
+      character*1024 pe_file
+      integer hh,mm,ss, length, i,j,k
+      integer, allocatable, dimension(:) :: bmfni,bmfnj,bmfnk, &
+               bmfdatyp,bmfvtime1,bmfvtime2, &
+               bmfscrap,bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5, &
+                        bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9
+      character*4, allocatable, dimension(:) :: bmfnom
+!*
+!     ---------------------------------------------------------------
+!
+      call bmf_init
+!
+      hh=bmf_time2/1000000
+      mm=bmf_time2/10000-hh*100
+      ss=bmf_time2/100-hh*10000-mm*100
+!
+      call bmf_splitname ( pe_file,Ptopo_mycol, Ptopo_myrow, &
+                           trim(Path_ind_S), 'BM',bmf_time1,hh,mm,ss )
+
+!     write(*,*) trim(pe_file)
+!
+!     Read the BMF file associated to Ptopo_myproc
+!
+      length=bmf_gobe(pe_file)
+!
+!     Build a catalog to allow proper dimensionning of some variables
+!
+      allocate (bmfnom(length),bmfni(length),bmfnj(length), &
+                bmfnk(length), bmfvtime1(length),bmfvtime2(length), &
+                bmfdatyp(length),bmfscrap(length), &
+                bmfscrap1(length),bmfscrap2(length),bmfscrap3(length), &
+                bmfscrap4(length),bmfscrap5(length),bmfscrap6(length), &
+                bmfscrap7(length),bmfscrap8(length),bmfscrap9(length))
+
+      call bmf_catalog ( bmfnom,bmfni,bmfscrap,bmfscrap1,bmfnj, &
+           bmfscrap2,bmfscrap3,bmfnk,bmfscrap4,bmfscrap5,bmfvtime1, &
+           bmfvtime2,bmfscrap6,bmfscrap7,bmfdatyp,bmfscrap8,bmfscrap9 )
+!
+      Acqi_nbpts   = l_ni*l_nj
+      Acqi_vterplv = -1
+!
+      do i=1,length
+         if(bmfnom(i).eq.'ZA  ') then
+            Acqi_vterplv(1)=bmfni(i)
+            cycle
+         else if(bmfnom(i).eq.'ZAT ') then
+            Acqi_vterplv(2)=bmfni(i)
+            cycle
+         else if(bmfnom(i).eq.'UU  ') then
+            Acqi_niu=bmfni(i)
+            Acqi_nju=bmfnj(i)
+            cycle
+         else if(bmfnom(i).eq.'VV  ') then
+            Acqi_niv=bmfni(i)
+            Acqi_njv=bmfnj(i)
+            cycle
+         endif
+      enddo
+      Acqi_nktmp  = max (Acqi_vterplv(1)+1,Acqi_vterplv(2),G_nk+2 )
+!
+      deallocate (bmfni,bmfnj,bmfnk,bmfdatyp,bmfvtime1, &
+                 bmfvtime2,bmfnom,bmfscrap, &
+               bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5, &
+               bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

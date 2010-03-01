@@ -1,0 +1,138 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r zongoff  - suspend or resume zonal diagnostic extractions
+!
+#include "model_macros_f.h"
+!
+      subroutine zongoff()
+!
+      implicit none
+!
+!author - andre methot - aug 94 - v0_14
+!
+!revision
+! v0_14 - andre methot  - initial version
+! v0_15 - andre methot  - modify logics to force a save to disk
+! v0_15 -               - at mid span if digital filter init.
+! v2_31 - Bernard Dugas - Adapt to GEMDM
+!
+!language
+!	fortran 90
+!
+!object(zongoff)
+!         This subroutine suspend or resume zonal diagnostic extractions
+!	
+!arguments
+!         NIL
+!
+!Notes
+!     This subroutine was designed to suspend extractions during the
+!     second half of digital filter initialization if glznsus is true.
+!
+!     This routine suspend the package at mid span of digital filter
+!     initialization in any case... providing a save to disk. However,
+!     if P_zong_znsus_L is false... the package is immediately reactivated.
+!
+!implicits
+#include "p_zong.cdk"
+#include "init.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "rstr.cdk"
+!
+!modules
+!
+      external mzonopr, fclos
+!
+      integer midsp
+!                     midsp is the timestep of the mid span
+!                     in the case of digital filter initialization
+!*
+!     ---------------------------------------------------------------
+!
+!            if zonal diagnostics were requested
+!            --------------------------------------
+!            AND
+!            if initialisation is requested
+!            -------------------------------
+!
+       if ( (P_zong_znli .gt. 0) .and. Init_balgm_L ) then
+!
+          if ( (.not. Rstri_idon_L) .and. (.not. P_zong_znoff_L) ) then
+!
+!         -------------------------------------------------------
+!         CRITERIA TO SUSPEND:
+!         if initialisation is not done ...and package is not off
+!         -------------------------------------------------------
+!
+             midsp=(Init_dfnp-1)/2
+!
+             if ( Lctl_step .eq. midsp+1 ) then
+!
+                call mzonopr(-1, Lun_zonl)
+                call fclos( Lun_zonl )
+!
+                if ( .not. P_zong_znsus_L ) then
+                     if (Lun_out.gt.0) write(Lun_out,1002)
+                     call mzonopr(1, Lun_zonl)
+                else
+                     if (Lun_out.gt.0) write(Lun_out,1000)
+                     P_zong_znoff_L=.true.
+                endif
+!
+             else if ( (Lctl_step.gt.midsp+1) .and. P_zong_znsus_L ) then
+!
+                if (Lun_out.gt.0) write(Lun_out,1000)
+                call mzonopr(-1, Lun_zonl)
+                P_zong_znoff_L=.true.
+             endif
+!
+          endif
+!
+          if ( Rstri_idon_L .and. P_zong_znoff_L ) then
+!
+!         -------------------------------------------------------
+!         CRITERIA TO RESUME:
+!         if initialisation is done ...and package is still off
+!         -------------------------------------------------------
+!
+             if (Lun_out.gt.0) write(Lun_out,1001)
+             call mzonopr(1, Lun_zonl)
+             P_zong_znoff_L=.false.
+!
+          endif
+!
+      endif
+!
+!
+ 1000 format( &
+      //,'REQUEST TO SUSPEND ZONAL DIAGNOSTICS EXTRACTION(S/R ZONGOFF)', &
+       /,'============================================================', &
+       //)
+!
+ 1001 format( &
+      //,'REQUEST TO RESUME ZONAL DIAGNOSTICS EXTRACTION(S/R ZONGOFF)', &
+       /,'============================================================', &
+       //)
+!
+ 1002 format( &
+      //,'SAVING BUFFERS OF ZONAL DIAGNOSTICS AT MID SPAN(S/R ZONGOFF)', &
+       /,'============================================================', &
+       //)
+!
+      return
+      end
+

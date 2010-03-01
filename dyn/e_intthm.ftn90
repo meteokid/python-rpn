@@ -1,0 +1,492 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r e_intthm  - Interpolate GZ,VT,HU on model grid.
+!
+#include "model_macros_f.h"
+!
+      subroutine e_intthm
+!
+      implicit none
+!
+!AUTHOR  M. ROCH - july 95 - from intscal
+!
+!revision
+! v2_31 - M. Desgagne
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_02 - Lee V.            - added one more argument to e_bmfrd
+! v3_02 -                   - correction to search for GZ at 1.0 eta/sg
+! v3_12 - Winger K.         - Use Anal_cond_L_L
+! v3_12 - Winger & Dugas    - Output TD for pressure level moisture
+! v3_20 - Pellerin Pierre   - To run off-line (surface)
+! v3_21 - Dugas B.          - replace TD by ES in pressure mode
+! v3_22 - Lee V.            - removed Trvs tracers
+! v3_30 - Lee/Desgagne      - new LAM IO, read from analysis files to
+!                             produce BCS or 3DF files
+! v4_00 - A. Plante         - Adapt for staggering
+!                             NOTE : un-staggered input data only
+! v4_03 - Lee V.            - ISST adaptation, read p0 here
+! v4_03 - Lee V.            - Adapt to using new pressure functions
+! v4_05 - Lee V.            - Always write P0 in Pascals
+! v4_05 - Plante A.         - Read zdt1,wt1,qt1 if present
+!
+!object
+!    Computes  the ln of surface and top pressure given the topo 
+!    (topography calculated on the model grid, phi,U or V), then
+!    project the geopotential, virtual temperature,
+!    specific humidity onto that grid
+!
+!arguments
+!______________________________________________________________________
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Input only         |                                                 |
+! lat                | vector of latitudes                             |
+! lon                | vector of longitudes                            |
+!----------------------------------------------------------------------
+!
+!IMPLICITES
+#include "e_fu.cdk"
+#include "e_grids.cdk"
+#include "e_anal.cdk"
+#include "e_cdate.cdk"
+#include "dcst.cdk"
+#include "pilot.cdk"
+#include "e_tr.cdk"
+#include "e_schm.cdk"
+#include "e_grdc.cdk"
+#include "hgc.cdk"
+#include "schm.cdk"
+!
+      integer  e_rdhint3,e_bmfrd,fstprm,fstinl,fstinf
+      external e_rdhint3,e_bmfrd,fstprm,fstinl,fstinf
+!
+      character*1 typ,grd,blk_S
+      character*4 vtt,vhh,var
+      character*8 desc
+      character*6 inter
+      logical anyip_L,arret_L
+      integer i, j,k, ng, ip3,nis,njs,l,m,n,list(2000)
+      integer is,js,jn,iw,ie,jw,njw,niw,nisc,njsc
+      real pr1,pr2, dummy
+      real c1, c2, mul
+      real      x1,lev,difsig,dx,dy
+      real, parameter :: pref=100000.
+      integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
+               dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
+      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2,hr,zdwq
+      real, dimension (:,:), allocatable :: ttn,hun,gzn,zdn,wn,qn
+      integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum
+      logical zd_L,w_L,q_L
+!
+!---------------------------------------------------------------------
+!
+      write(6,1001)
+      w_L=.false.     
+      q_L=.false.
+      zd_L=.false.
+      c1 = Dcst_tcdk_8
+      c2 = 10. * Dcst_grav_8
+      vtt=vt//'  '
+      vhh=vh//'  '
+!
+      if (Pil_bmf_L) then
+          nis=nifi
+          njs=njfi
+      else
+          nis=e_Grdc_ni
+          njs=e_Grdc_nj
+      endif
+      ng = nis*njs
+!
+      allocate(tt(ng),td(ng),es(ng),hr(ng),hu(ng),p0(ng),wk2(ng),zdwq(ng))
+!
+!     For searching the P0 record
+!
+      if (anal_hav(2).eq.6) then
+!         Read, interpolate  write pressure SurFace
+          if (e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1, &
+               ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+               call e_arret('e_intthm')
+          p0 = log(wk2*100./pref)
+      else if (anal_hav(2).gt.0.and.anal_hav(2).le.5) then
+!        Read, interpolate, scale and write out P0.
+          if (e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1, &
+               ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+               call e_arret('e_intthm')
+               p0 (:) = wk2(:)*100.
+      endif
+!
+!     Write out P0 record
+      if (Pil_bmf_L) then
+          call e_bmfsplitxy2 (p0 ,nifi,njfi,'P0  ',1,1,pni ,0,0,0)
+      else
+         if (Pil_bcs_hollow_L) then
+            call e_write_bcs (p0 ,nis,njs, &
+                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                  1 , 'S   ',unf_casc)
+         else
+            call e_write_3df ( p0 ,nis,njs,1 ,'S   ',unf_casc)
+         endif
+       endif
+!
+!     For searching the GZ(at surface),HU,TT,VT records, 
+!     correct IP1 targets must be found
+      anyip_L = .false.
+      arret_L = .true.
+      if (.not.Pil_bmf_L)  allocate(ttn(ng,lv_t),hun(ng,lv_t), &
+           gzn(ng,lv_t),zdn(ng,lv_t-1),wn(ng,lv_t-1),qn(ng,lv+1))
+      
+      if ( Anal_eta_L .or. Anal_sigma_L .or. Anal_hyb_L ) then
+         write(6,*) &
+            'ANALYSIS IS IN SIGMA OR ETA OR HYBRID COORDINATES'
+!
+         do k=1,lv_t
+            if (e_rdhint3 (hu,dstf_gid,nis,njs,'HU  ',na_t(k),ip2a, &
+                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)  &
+                goto 55
+!
+            anal_hav(1) = e_rdhint3 (tt,dstf_gid,nis,njs,vtt,na_t(k), &
+                   ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (anal_hav(1).lt.0) goto 55 
+!
+            tt(:) = tt(:) + c1
+!            
+            if (vt.eq.'TT') call mfotvt (tt,tt,hu,ng,1,ng)
+            if (Pil_bmf_L) then
+                call e_bmfsplitxy2 (hu,nis,njs,'HU  ',k,lv_t,pni,0,0,0)
+                call e_bmfsplitxy2 (tt,nis,njs,'VT  ',k,lv_t,pni,0,0,0)
+            else
+                call e_fill_3df ( tt,ttn,nis,njs,lv_t,k,1.0,0.0) 
+                call e_fill_3df ( hu,hun,nis,njs,lv_t,k,1.0,0.0) 
+            endif
+         end do
+!
+         key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','ZDT1')
+         if(key.ge.0)then
+            zd_L=.true.
+            do k=1,lv_t-1
+               if (e_rdhint3 (zdwq,dstf_gid,nis,njs,'ZDT1',na_t(k),ip2a, &
+                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0)  &
+                    goto 55
+               if (Pil_bmf_L) then
+                  call e_bmfsplitxy2 (zdwq,nis,njs,'ZD  ',k,lv_t-1,pni,0,0,0)
+               else
+                  call e_fill_3df (zdwq,zdn,nis,njs,lv_t-1,k,1.0,0.0) 
+               endif            
+            enddo
+         endif
+!
+         key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','WT1')
+         if(key.ge.0)then
+            w_L=.true.
+            do k=1,lv_t-1
+               if (e_rdhint3 (zdwq,dstf_gid,nis,njs,'WT1 ',na_t(k),ip2a, &
+                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0)  &
+                    goto 55
+               if (Pil_bmf_L) then
+                  call e_bmfsplitxy2 (zdwq,nis,njs,'W   ',k,lv_t-1,pni,0,0,0)
+               else
+                  call e_fill_3df (zdwq,wn,nis,njs,lv_t-1,k,1.0,0.0) 
+               endif            
+            enddo
+         endif
+!
+         if (.not.Schm_hydro_L) then
+            key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','QT1')
+            if(key.ge.0)then
+               q_L=.true.
+               do k=1,lv
+                  if (e_rdhint3 (zdwq,dstf_gid,nis,njs,'QT1 ',na(k),ip2a, &
+                       ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0)  &
+                       goto 55
+                  if (Pil_bmf_L) then
+!                    Level zero not written in bmf
+                     call e_bmfsplitxy2 (zdwq,nis,njs,'Q   ',k,lv,pni,0,0,0)                
+                  else                    
+                     call e_fill_3df (zdwq,qn,nis,njs,lv+1,k+1,1.0,0.0)
+!                    in 3df files q(:,0) must be present. But level k=0 is never
+!                    available in output file. Since q=0 at k=0, we put 0.0 :
+                     if(k.eq.1)call e_fill_3df (zdwq,qn,nis,njs,lv+1,k,0.0,0.0)
+                  endif
+               enddo
+            endif
+         endif
+!
+         if (.not.Pil_bmf_L) then
+!           Read and interpolate surface GZ.
+            err = e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na_t(lv_t), &
+                 ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (err.lt.0) goto 55
+!           Scale
+            wk2(:)=wk2(:)*c2
+!           Surface GZ is written below.
+         else if (anal_hav(1).eq.0) then
+!           No interpolation : read, scale and write surface GZ.
+            err = e_bmfrd (dstf_gid,nis,njs,'GZ  ',0.,c2,na_t(lv_t), &
+                 1,.false.,.true.,'CUBIC')
+         else
+!           Read, interpolate, scale and write surface GZ.
+            err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ',   0., c2,na_t(lv_t), &
+                 1, anyip_L,arret_L,'CUBIC')               
+         endif               
+!
+         if (.not.Pil_bmf_L) then
+
+             if (Pil_bcs_hollow_L) then
+!
+                call e_write_bcs (ttn,nis,njs, &
+                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                  lv_t, 'TT  ',unf_casc)
+                call e_write_bcs (wk2,nis,njs, &
+                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                  1 , 'GZ  ',unf_casc)
+                call e_write_bcs (hun,nis,njs, &
+                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                  lv_t, 'HU  ',unf_casc)
+                if(zd_L) &
+                     call e_write_bcs (zdn,nis,njs, &
+                     e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                     e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                     lv_t-1, 'ZD  ',unf_casc)
+                if(w_L) &
+                     call e_write_bcs ( wn,nis,njs, &
+                     e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                     e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                     lv_t-1, 'W   ',unf_casc)
+                if ((.not.Schm_hydro_L).and.q_L) then
+                   call e_write_bcs ( qn,nis,njs, &
+                        e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                        e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                        lv+1, 'Q   ',unf_casc)
+                endif
+!
+             else
+!
+                call e_write_3df (  ttn,nis,njs,lv_t  ,'TT  ',unf_casc)
+                call e_write_3df (  wk2,nis,njs,1     ,'GZ  ',unf_casc)
+                call e_write_3df (  hun,nis,njs,lv_t  ,'HU  ',unf_casc)
+                if(zd_L) &
+                     call e_write_3df (zdn,nis,njs,lv_t-1,'ZD  ',unf_casc)
+                if(w_L) &
+                     call e_write_3df (wn,nis,njs,lv_t-1,'W   ',unf_casc)
+                if ((.not.Schm_hydro_L).and.q_L) then
+                   call e_write_3df (qn,nis,njs,lv+1  ,'Q   ',unf_casc)
+                endif
+!
+             endif
+         endif
+!     
+      elseif ( Anal_ecmwf_L ) then
+         write(6,*) 'ANALYSIS IS ECMWF COORDINATES'
+         print*,'e_intthm : never tested for ECMWF ANAL'
+         stop
+!
+         anal_hav(1)=1
+!
+         do k=1,lv_t
+
+            ip3 = int(rna_t(k))
+            if (e_rdhint3 (hu,dstf_gid,nis,njs,'HU  ',na_t(k),-1, &
+                ip3,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+                goto 55
+            if (e_rdhint3 (tt,dstf_gid,nis,njs,vtt,na_t(k),-1, &
+                ip3,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+                goto 55
+            do i=1,ng
+               tt(i) = tt(i) + c1
+            enddo
+            if (vt.eq.'TT') call mfotvt (tt,tt,hu,ng,1,ng)
+            call e_bmfsplitxy2 (hu,nis,njs,'HU  ',k,lv_t,pni,0,0,0)
+            call e_bmfsplitxy2 (tt,nis,njs,'VT  ',k,lv_t,pni,0,0,0)
+         end do
+!
+!        For ECMWF analyses, the log of pressure (in pa) is stored in
+!        the variable 2P
+!
+         if (e_rdhint3 (p0,dstf_gid,nis,njs,'2P  ',-1, &
+             -1,-1,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+             goto 55
+         do i=1,ng
+            p0(i) = exp(p0(i))
+         enddo
+         call e_bmfsplitxy2 (p0,nis,njs,'P0  ',1,1,pni,0,0,0)
+         err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ', 0., c2, -1, &
+              1, .true.,arret_L,'CUBIC')
+!
+!        read temperature and dew point temperature at the surface,
+!        transform into virtual
+!        temperature and specific humidity, store in TS, and HE
+!
+         if (e_rdhint3 (tt,dstf_gid,nis,njs,'TS  ',-1, &
+             -1,-1,' ',' ',.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+             goto 55
+         if (e_rdhint3 (hu,dstf_gid,nis,njs,'TD  ',-1, &
+             -1,-1,' ',' ',.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+             goto 55
+         do i=1,ng
+            hu(i) = tt(i) - hu(i)  ! dew point depression
+            tt(i) = tt(i) + c1
+         enddo
+         call mesahu(hu, hu, tt, 1, p0, 3, .true., Anal_cond_L, ng, 1, ng)
+         call mfotvt(tt, tt, hu, ng, 1, ng)
+         call e_bmfsplitxy2 (hu,nis,njs,'HE  ',1,1,pni,0,0,0)
+         call e_bmfsplitxy2 (tt,nis,njs,'TE  ',1,1,pni,0,0,0)
+!
+      else
+!
+         write(6,*)'ANALYSIS IS IN PRESSURE COORDINATES' 
+         anal_hav(1)=1
+         do 100 k=1,lv_t
+!              Read and interpolate surface GZ.
+!              Surface GZ is written below.
+               if (e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na_t(k),ip2a, &
+                    ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+                    goto 55
+!              Scale
+               wk2(:)=wk2(:)*10.0
+               if (e_rdhint3 (tt,dstf_gid,nis,njs,vtt,na_t(k),ip2a, &
+                   ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+                    goto 55
+               if (vh.eq.'HU') then
+                  if (e_rdhint3 (hu,dstf_gid,nis,njs,vhh,na_t(k),ip2a, &
+                  ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+                    goto 55
+               elseif (vh.eq.'HR') then
+                  if (e_rdhint3 (hr,dstf_gid,nis,njs,vhh,na_t(k),ip2a, &
+                  ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+                    goto 55
+               elseif (vh.eq.'ES') then
+                  if (e_rdhint3 (es,dstf_gid,nis,njs,vhh,na_t(k),ip2a, &
+                  ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+                    goto 55
+               elseif (vh.eq.'TD') then
+                  if (e_rdhint3 (td,dstf_gid,nis,njs,vhh,na_t(k),ip2a, &
+                  ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) &
+                    goto 55
+               endif
+!
+               do i=1,ng
+                  tt(i) = tt(i) + c1
+               enddo
+!
+!              RNA_T is in millibars!
+               if (vh.eq.'HR') then
+                  call mhrahu( hu, hr, tt, rna_t(k)*100., dummy, 0, &
+                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+               elseif (vh.eq.'ES') then
+                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0, &
+                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+               elseif (vh.eq.'TD') then
+                  do i=1,ng
+                     es(i) = max( tt(i)-td(i),0.0 )
+                  enddo
+                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0, &
+                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+               endif
+!
+               if (Pil_bmf_L) then
+                   call e_bmfsplitxy2 (wk2,nis,njs,'GZ  ',k,lv_t,pni,0,0,0)
+                   call e_bmfsplitxy2 (hu,nis,njs,'HU  ',k,lv_t,pni,0,0,0)
+                   if (vt.eq.'TT') call mfotvt (tt,tt,hu,ng,1,ng)
+                   call e_bmfsplitxy2 (tt,nis,njs,'VT  ',k,lv_t,pni,0,0,0)
+               else
+                   call e_fill_3df (wk2,gzn,nis,njs,lv_t,k,1.0,0.0)
+                   call e_fill_3df ( tt,ttn,nis,njs,lv_t,k,1.0,0.0) 
+                   call e_fill_3df ( hu,hun,nis,njs,lv_t,k,1.0,0.0) 
+               endif
+  100    continue
+         if (.not.Pil_bmf_L) then
+             if (Pil_bcs_hollow_L) then
+                call e_write_bcs (ttn,nis,njs, &
+                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                  lv_t, 'TT  ',unf_casc)
+                call e_write_bcs (gzn,nis,njs, &
+                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                  lv_t, 'GZ  ',unf_casc)
+                call e_write_bcs (hun,nis,njs, &
+                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                  lv_t, 'HU  ',unf_casc)
+             else
+                call e_write_3df ( ttn,nis,njs,lv_t  ,'TT  ',unf_casc)
+                call e_write_3df ( gzn,nis,njs,lv_t  ,'GZ  ',unf_casc)
+                call e_write_3df ( hun,nis,njs,lv_t  ,'HU  ',unf_casc)
+             endif
+         endif
+!
+      endif
+!
+!     For tracer variables, search does not have to be successful
+!     They can be assigned a constant value.
+      anyip_L = .true.
+      arret_L = .false.
+      do i=1,E_tr3d_ntr
+         E_trname_S(i)=E_tr3d_name_S(i)
+         if ( E_tr3d_name_S(i)(3:4).eq.'T1'.or. &
+              E_tr3d_name_S(i)(3:4).eq.'T0'    ) &
+              E_trname_S(i) = E_Tr3d_name_S(i)(1:2)//'  '
+      enddo
+!
+      do i=1,E_tr3d_ntr
+         do k=1,lv_t
+            if (e_rdhint3 (wk2,dstf_gid,nis,njs, E_tr3d_name_S(i), &
+                           na_t(k),ip2a,ip3a,' ',tva, .true.,.false., &
+                           'CUBIC',e_fu_anal,6).lt.0) wk2(:)=E_tr3d_sval(i)
+             if (Pil_bmf_L) then
+                 call e_bmfsplitxy2 (wk2,nis,njs,E_trname_S(i),k,lv_t,pni,0,0,0)
+             else
+                 call e_fill_3df ( wk2,hun,nis,njs,lv_t,k,1.0,0.0)
+             endif
+         enddo
+         if (.not.Pil_bmf_L) then
+            if (Pil_bcs_hollow_L) then
+                call e_write_bcs (hun,nis,njs, &
+                          e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
+                          e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
+                          lv_t, E_trname_S(i),unf_casc)
+            else
+                call e_write_3df ( hun,nis,njs,lv_t,E_trname_S(i),unf_casc)
+            endif
+         endif 
+      end do
+!
+      deallocate(tt,td,es,hu,wk2,p0,zdwq)
+      if (.not.Pil_bmf_L) deallocate(ttn,hun,gzn,zdn,wn,qn)
+!     
+ 1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
+!
+ 101  format ('|',2x,'   ATMOSPHERIC FIELDS.    VALID FOR:',1x,a16,1x,'|')
+ 102  format ('|',2x,'   Off-line Mode: Only One Level Used:',1x,I5,10x,'|')
+ 110  format ('|',2x,'Names',2x,'|',' STD ', &
+              '|  Start | Length | Mul | SEQ | H.INTRP  |')
+ 130  format ('|',9('-'),'+',5('-'),'+',8('-'),'+',8('-'),'+',5('-'), &
+              '+',5('-'),'+',10('-'),'|')
+ 201  format ('|',2x,'   Search First Infos on Variable:',1x,A3,16x,'|')
+
+ 801  format (' LEVEL anal = ',d15.8,2X,' k = ',i4,' IP1= ',I8) 
+!
+      return
+ 55   call e_arret( 'e_intthm' )
+!------------------------------------------------------------------
+!
+      end

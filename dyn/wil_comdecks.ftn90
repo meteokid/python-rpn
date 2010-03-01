@@ -1,0 +1,60 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r wil_comdecks - Set Williamson's comdecks that have a link to GEM's comdecks 
+!
+#include "model_macros_f.h"
+!
+      subroutine wil_comdecks (G_ni,G_nj,Lun_out,Dcst_grav_8,Dcst_rayt_8,Dcst_pi_8,Dcst_omega_8)
+!
+      implicit none
+!
+      integer G_ni,G_nj,Lun_out
+!
+      real*8 Dcst_grav_8,Dcst_rayt_8,Dcst_pi_8,Dcst_omega_8
+!
+!author M.Tanguay
+!
+!revision
+! v4_04 - Tanguay M.       - initial version 
+! v4_04 - Tanguay M.       - Williamson's cases   
+!
+!object
+!     see id section
+!
+#include "wil_glb_ld.cdk"
+#include "wil_lun.cdk"
+#include "wil_dcst.cdk"
+!
+!     ---------------------------------------------------------------
+!
+      G_MM = G_nj
+      G_NN = G_nj
+      G_KK = G_nj
+!
+      G_nlon = G_ni 
+      G_nlat = G_nj 
+!
+      Wil_Lun_out = Lun_out
+!
+      Wil_Dcst_grav_8  = Dcst_grav_8
+      Wil_Dcst_rayt_8  = Dcst_rayt_8
+      Wil_Dcst_pi_8    = Dcst_pi_8
+      Wil_Dcst_omega_8 = Dcst_omega_8
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

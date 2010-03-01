@@ -32,7 +32,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine out_vref_model(F_ref,minx,maxx,miny,maxy,ig1,ig2)
-    use Grid_Descriptors, only: grid_descriptor,gd_new,gd_write,gd_print,GD_OK,gd_get
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_write,vgd_print,VGD_OK,vgd_get
     ! Write the vertical coordinate descriptor (model levels)
 
     implicit none
@@ -62,7 +62,7 @@ contains
 
     ! Internal variables
     integer :: err,my_ig1,my_ig2
-    type(grid_descriptor) :: gd
+    type(vgrid_descriptor) :: vgd
 
     ! Set default values
     my_ig1 = Out_ig1
@@ -71,8 +71,9 @@ contains
     if (present(ig2)) my_ig2 = ig2
 
     ! Write coordinate descriptor
+
     if (writeDescriptor()) then
-       err = gd_new(gd,                 &
+       err = vgd_new(vgd,               &
             kind     = Level_kind_ip1,  &
             version  = Level_version,   &
             nk       = G_nk,            &
@@ -89,22 +90,21 @@ contains
             ip1_m    = Ver_ip1%m,       &
             ip1_t    = Ver_ip1%t)
 
-       if (err /= GD_OK) call gem_stop('out_vref : problem with gd_new',-1)
-       if (report(Out_ig1,Out_ig2)) err = gd_print(gd,Lun_out)
-       err = gd_write(gd,unit=Out_unf,format='fst')
-       if (err /= GD_OK) call gem_stop('out_vref : problem with gd_write',-1)
+       if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
+       err = vgd_write(vgd,unit=Out_unf,format='fst')
+
     endif
 
     ! Write out the reference field
-    call ecris_fst2(F_ref,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-         'P0',0.01,0.0,-1,1,1,1,32)
+    call ecris_fst2 ( F_ref,l_minx,l_maxx,l_miny,l_maxy,0.0, &
+                                  'P0',0.01,0.0,-1,1,1,1,32 )
 
     return
   end subroutine out_vref_model
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine out_vref_pres(F_rf,ig1,ig2)
-    use Grid_Descriptors, only: grid_descriptor,gd_new,gd_write,gd_print,GD_OK
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_write,vgd_print,VGD_OK
     ! Write the vertical coordinate descriptor (pressure levels)
 
     implicit none
@@ -131,7 +131,7 @@ contains
     integer :: k,err,my_ig1,my_ig2
     integer, dimension(size(F_rf)) :: ip1s
     real*8, dimension(size(F_rf)) :: zero
-    type(grid_descriptor) :: gd
+    type(vgrid_descriptor) :: vgd
     logical, save :: reported=.false.
 
     ! Set default values
@@ -149,7 +149,7 @@ contains
     ! Write coordinate descriptor
     if (writeDescriptor()) then
 
-       err = gd_new(gd,                 &
+       err = vgd_new(vgd,               &
             kind     = 2,               &
             version  = 1,               &
             nk       = size(F_rf),      &
@@ -158,10 +158,9 @@ contains
             a_m_8    = dble(F_rf*100.), &
             b_m_8    = zero,            &
             ip1_m    = ip1s)
-       if (err /= GD_OK) call gem_stop('out_vref : problem with gd_new',-1)
-       if (report(Out_ig1,Out_ig2)) err = gd_print(gd,Lun_out)
-       err = gd_write(gd,unit=Out_unf,format='fst')
-       if (err /= GD_OK) call gem_stop('out_vref : problem with gd_write',-1)
+
+       if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
+       err = vgd_write(vgd,unit=Out_unf,format='fst')
 
     endif
     
@@ -188,7 +187,7 @@ contains
     integer, dimension(MAXGRID1*LEVEL_NTYP,2), save :: reported
     logical :: found
     report = .false.
-    if (Lun_out <= 0) return
+    if (.not.Lun_debug_L) return
     i = 1; found = .false.
     do while (.not.found .and. i<=report_count)
        if (ig1 == reported(i,1) .and. ig2 == reported(i,2)) found = .true.

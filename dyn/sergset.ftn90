@@ -1,0 +1,159 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r sergset - initialization of the physics variables for the
+!                time series extraction and memory allocation.
+!
+#include "model_macros_f.h"
+!
+      subroutine sergset
+!
+      implicit none
+!
+!author 
+!     Andre Methot - cmc - mai 1994 - v0_14
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_11 - Lee V.            - add logic for memory allocation
+! v2_31 - Desgagne M.       - bugfixe to call to sersetm
+! v3_11 - A. Plante         - Adjust code for LAM time-series
+! v3_30 - K. Winger         - Add time series version 'TSVER'
+!                             and output intervals 'TSMOYHR','SRWRI'
+!
+!object
+!               This routine initializes the physics variables
+!      related to time series extraction: variable names to
+!      extract (profil:3D, surface:2D), grid point indicies where
+!      to extract from, number or vertical levels...
+!
+!      It also performs memory allocation for buffers based
+!      on: the number of 2D and 3D variables, the number of
+!      vertical level and the number of grid point where to
+!      extract from.
+!	
+!arguments
+!	none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "p_serg.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "rstr.cdk"
+#include "xst.cdk"
+#include "xstb.cdk"
+#include "ptopo.cdk"
+#include "itf_phy_buses.cdk"
+#include "clim.cdk"
+#include "itf_phy_config.cdk"
+#include "cstv.cdk"
+!
+      integer serdim
+      external serdim
+      integer pnerr, pnmxsrf, i, j
+!
+!     ---------------------------------------------------------------
+!
+      if (lun_out.gt.0) write (Lun_out,1000)
+!
+      pnmxsrf = max( CNSRGEO , P_serg_srsrf )
+!
+!     extracted variables at each station is written to disk
+!     once every "P_serg_srwri" time step.
+!     serallc does memory allocation for buffer containing one
+!     timestep information to be written on the disk.
+!
+      xst_nstatl = 0
+      do i = 1, Xst_nstat
+         if (  (Xst_stn(i)%i.ge.Ptopo_gindx(1,Ptopo_myproc+1)).and. &
+               (Xst_stn(i)%i.le.Ptopo_gindx(2,Ptopo_myproc+1)).and. &
+               (Xst_stn(i)%j.ge.Ptopo_gindx(3,Ptopo_myproc+1)).and. &
+               (Xst_stn(i)%j.le.Ptopo_gindx(4,Ptopo_myproc+1)) ) then
+            xst_nstatl = xst_nstatl + 1
+            Xst_stn(xst_nstatl)%lclsta = i
+            Xst_stn(xst_nstatl)%stcori = Xst_stn(i)%i -  &
+                                     Ptopo_gindx(1,Ptopo_myproc+1) + 1 &
+                                     - pil_w + p_nmp*west
+            Xst_stn(xst_nstatl)%stcorj = Xst_stn(i)%j -  &
+                                     Ptopo_gindx(3,Ptopo_myproc+1) + 1 &
+                                     - pil_s + p_nmp*south
+         endif
+      end do
+!
+      Xst_dimsers = max(1,serdim (Xst_nstat,pnmxsrf,1))
+      Xst_dimserp = max(1,serdim (Xst_nstat,P_serg_srprf,p_nk))
+      call hpalloc(Xstb_sers_  ,Xst_dimsers,pnerr,1) 
+      call hpalloc(Xstb_serp_  ,Xst_dimserp,pnerr,1) 
+      call hpalloc(Xstb_sersx_ ,Xst_dimsers,pnerr,1) 
+      call hpalloc(Xstb_serpx_ ,Xst_dimserp,pnerr,1)       
+      call serallc2 (Xstb_sers,Xstb_serp,p_ni,p_nj,p_nk)
+!
+!     initializes number of vertical levels
+!
+      call serset  ('ISTAT',Xst_stn(:)%i,Xst_nstat ,pnerr)
+      do j= 1, p_nj 
+         call sersetm('KA', j, p_nk)
+      end do
+!
+!     add surface pressure if profiles are requested
+!
+      if (P_serg_srprf > 0) then
+         P_serg_srsrf = P_serg_srsrf+1
+         P_serg_srsrf_s(P_serg_srsrf) = 'P0'
+      endif
+!
+!     initialize station identities
+!
+      call serset  ('ISTAT'  ,Xst_stn(:)%stcori,xst_nstatl,pnerr)
+      call serset  ('JSTAT'  ,Xst_stn(:)%stcorj,xst_nstatl,pnerr)
+      call serset  ('STATION',Xst_stn(:)%lclsta,xst_nstatl,pnerr)
+      call sersetc ('NAME'   ,Xst_stn(:)%name,xst_nstat,pnerr)
+      call serset  ('ISTAT_G',Xst_stn(:)%i,Xst_nstat,pnerr)
+      call serset  ('JSTAT_G',Xst_stn(:)%j,Xst_nstat,pnerr)
+!
+!     initializes name of SURFACE type variables (2D variables)
+!
+      call sersetc('SURFACE', P_serg_srsrf_s, P_serg_srsrf, pnerr)
+!
+!     initializes name of PROFILE type variables (3D variables)
+!
+      call sersetc('PROFILS', P_serg_srprf_s, P_serg_srprf, pnerr)
+!
+!     initializes the frequency of extraction
+!
+      call serset('SERINT', P_serg_srwri, 1, pnerr)
+!
+!     initializes output unit number
+!
+      call serset('NOUTSER', Lun_tsrs, 1, pnerr)
+!
+!     initializes model and time series output time step
+!     and time series version
+!
+      call serset('TSMOYHR', P_out_moyhr, 1, pnerr)
+      call serset('SRWRI', int(P_serg_srwri*Cstv_dt_8), 1, pnerr)
+!
+!     initializes buffers to zero
+!
+      call serdbu ()
+!
+ 1000 format(/,'INIT OF EXTRACTORS FOR TIME SERIES (S/R SERGSET)', &
+             /,'================================================')
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

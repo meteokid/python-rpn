@@ -1,0 +1,152 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/p doout - Check if current timestep requires output
+!
+#include "model_macros_f.h"
+!
+      integer function doout(F_dostep,F_set)
+!
+      implicit none
+!
+!author 
+!     J. Caveen - rpn - december 1994
+!
+!revision
+! v2_00 - Lee V.            - initial MPI version (from doout v1_03)
+! v2_30 - Lee V.            - corrected output logic to have physics output
+! v2_30                       during (Init_dfnp-1)/2
+! v2_31 - Lee V.            - added another set of output, chem (=3)
+! v3_11 - Tanguay M.        - ADJ of digital filter 
+! v3_30 - Lee V.            - Chem output is moved into Chemistry pkg
+!
+!object
+!     This function returns the indices of each timestep set
+!     that requires output for the current time step (Lctl_step)
+!     in the array "F_dostep" and the number of indices found
+!     in "doout". Thus if doout equals to "0" no output is required.
+!     "F_set" indicates for either dynamics (=1) or physics (=2)
+!     or chemistry (=3) output
+!     If F_set to any other value it will not affect the outcome of the
+!     run but it will do less checking within "dynout" and "genslab". 
+!     (more efficient)
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! doout        O    - number of indices found for F_dostep.
+! F_dostep     I    - array containing indices corresponding to the
+!                     timestep sets that requires output at this time step.
+! F_set        I    - 1 for dynamics, 2 for physics, 3 for chemistry
+!
+!implicits
+#include "lctl.cdk"
+#include "rstr.cdk"
+#include "init.cdk"
+#include "dimout.cdk"
+#include "outd.cdk"
+#include "outp.cdk"
+#include "outc.cdk"
+#include "timestep.cdk"
+#include "v4dg.cdk"
+!*
+      integer i,j,k,kk,F_set
+      integer F_dostep(MAXSET)
+      logical ok2output,keep
+
+      doout = 0
+
+!     Accumulate all the indices valid for outputting in F_dostep
+      do 200 j=1,Timestep_sets
+         ok2output = .false.
+
+         if (Timestep_init_L(j)) then
+            if (Init_balgm_L .and. (.not. Rstri_idon_L) .and. &
+                (Lctl_step .le. (Init_dfnp-1))) then
+              ok2output = .true.
+            endif
+         else
+            if (.not.Init_balgm_L) then
+                ok2output = .true.
+            else if ((F_set.eq.1) .and.  &
+                        (V4dg_conf.eq.0.or.(V4dg_di_L.or.V4dg_tl_L)) .and. &
+                        (Rstri_idon_L.or.Lctl_step.lt.(Init_dfnp-1)/2)) then
+                ok2output = .true.
+            else if ((F_set.eq.1) .and. (V4dg_conf.ne.0.and.V4dg_ad_L) .and. &
+                        (.not.Rstri_idon_L.or.Lctl_step.gt.Init_dfnp-1)) then
+                ok2output = .true.
+            else if ((F_set.eq.2 .or. F_set.eq.3).and. &
+                        (Rstri_idon_L.or.Lctl_step.le.(Init_dfnp-1)/2)) then
+                ok2output = .true.
+            endif
+         endif
+
+
+         if (ok2output) then
+          do 100 i=1,Timestep_max(j)
+            if (Lctl_step .eq. Timestep(i,j)) then
+            doout = doout + 1
+            F_dostep(doout) = j
+            endif
+ 100      continue
+         endif
+ 200  continue
+
+!     Reduce the number of indices in F_dostep depending whether it
+!     if for dynamics output or physics or chemistry output.
+      k = 0
+      if (F_set.eq.1) then
+!    (if dynamics output)
+          do i=1,doout
+             keep = .false.
+             do j=1,Outd_sets
+                if (Outd_step(j).eq.F_dostep(i)) keep = .true.
+             enddo
+             if (keep) then
+                 k = k+1
+                 F_dostep(k) = F_dostep(i)
+             endif
+          enddo
+      else if (F_set.eq.2) then
+!     (F_set.eq.2 physics output)
+          do i=1,doout
+             keep = .false.
+             do j=1,Outp_sets
+                if (Outp_step(j).eq.F_dostep(i)) keep = .true.
+             enddo
+             if (keep) then
+                 k = k+1
+                 F_dostep(k) = F_dostep(i)
+             endif
+          enddo
+      else if (F_set.eq.3) then
+!     (F_set.eq.3 chemistry output)
+          do i=1,doout
+             keep = .false.
+             do j=1,Outc_sets
+                if (Outc_step(j).eq.F_dostep(i)) keep = .true.
+             enddo
+             if (keep) then
+                 k = k+1
+                 F_dostep(k) = F_dostep(i)
+             endif
+          enddo
+      else
+!     (if the "F_set" was incorrectly specified, it will return 0
+          k=0
+      endif
+      doout=k
+      return
+      end

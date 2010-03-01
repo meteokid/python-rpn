@@ -1,0 +1,82 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r gemntr - gemdm entry program
+!
+#include "model_macros_f.h"
+!
+      subroutine gemntr
+      implicit none
+!
+!author   
+!
+!revision
+! v2_21 - M. Desgagne       - reshaped version
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_11 - M. Desgagne       - change to exdb and exfin
+! v3_21 - Lee V.            - Warning if geophy.bin not written
+! v3_30 - Desgagne/Lee      - modifications for new LAM I/O piloting
+! v4_03 - M. Desgagne       - ISST
+! v4_05 - M. Desgagne       - Add timing information (gemtim3)
+!
+!implicits
+#include "pilot.cdk"
+#include "version.cdk"
+#include "itf_phy_buses.cdk"
+#include "path.cdk"
+#include "lun.cdk"
+!
+!MODULES
+      integer  exdb, exfin
+      external exdb, exfin
+!
+      integer  err
+!
+! ---------------------------------------------------------------------
+!
+!     ================
+      entry gemclimntr
+!     ================
+!
+      call gemtim3 (6)
+!
+      call e_initntr
+
+      call e_gemnml
+!
+      if (.not.Pil_sfc2d_L .and. .not.Pil_3df_L) goto 800
+!
+      call e_grid
+!
+      call e_dateo
+!
+      call e_gettopo
+!
+      call gemtim3 (6)
+!
+      if (Pil_sfc2d_L) call e_geopfld
+!
+      if (Pil_3df_L  ) call e_dynfld
+!
+      if (Pil_sfc2d_L .or. Pil_3df_L) call e_nml2bin 
+!
+ 800  err = exfin (Version_ent_S//Version_dstp_S, Version_S, 'OK')
+      call write_status_file2 ('_status=ED' )
+      call close_status_file2 ()
+!
+! ---------------------------------------------------------------------
+!
+      stop
+      end

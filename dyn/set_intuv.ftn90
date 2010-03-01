@@ -1,0 +1,244 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r set_intuv - computes (u,v) cubic lagrange interpolation coefficients
+!
+#include "model_macros_f.h"
+!
+      subroutine set_intuv
+!
+      implicit none
+!
+!author
+!       jean cote/andre methot - rpn/cmc - sept 96
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version (from setinuvl v1_03)
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_30 - Dugas B.          - Corriger l'allocation avec hpalloc
+!
+!object
+!	See above id.
+!	
+!arguments
+!	none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "intuv.cdk"
+#include "inuvl.cdk"
+#include "dcst.cdk"
+#include "ptopo.cdk"
+!
+!*
+      real*8 zero, half, one, two, three
+      parameter( zero  = 0.0 )
+      parameter( half  = 0.5 )
+      parameter( one   = 1.0 )
+      parameter( two   = 2.0 )
+      parameter( three = 3.0 )
+!
+      integer  i, j, indx, offi, offj, err
+!
+!   * Statement functions
+      real*8 c00,c11,c22,c0,hh,hm,hp,del
+      real*8 lag2, lag3, x, x1, x2, x3, x4
+      c00(del,hh)=del/hh
+      c11(c0,hh,hm,hp)=-(1.-c0)*c0*((hh*hh)/(hm+hh+hp))*((1.-c0)*hh+hp)
+      c22(c0,hh,hm,hp)=-(1.-c0)*c0*((hh*hh)/(hm+hh+hp))*(c0*hh+hm)
+      lag2( x, x1, x2, x3 ) = &
+       ( ( x  - x2 ) * ( x  - x3 ) )/ &
+       ( ( x1 - x2 ) * ( x1 - x3 ) )
+      lag3( x, x1, x2, x3, x4 ) = &
+       ( ( x  - x2 ) * ( x  - x3 ) * ( x  - x4 ) )/ &
+       ( ( x1 - x2 ) * ( x1 - x3 ) * ( x1 - x4 ) )
+!
+!     ---------------------------------------------------------------
+!
+      if (Lun_out.gt.0) write ( Lun_out, 1000 )
+!
+      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+!
+      COMMON_INIT(intuv,0)
+!
+      call hpalloc(intuv_c0xxu_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c1xxu_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c2xxu_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c0xux_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c1xux_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c2xux_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c0yyv_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c1yyv_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c2yyv_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c0yvy_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c1yvy_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c2yvy_8_  ,LARRAY1DY,err,8)
+      call hpalloc(inuvl_wxxu3_8_  ,LARRAY1DX*4,err,8)
+      call hpalloc(inuvl_wxux3_8_  ,LARRAY1DX*4,err,8)
+      call hpalloc(inuvl_wyyv3_8_  ,LARRAY1DY*4,err,8)
+      call hpalloc(inuvl_wyvy3_8_  ,LARRAY1DY*4,err,8)
+!
+      do i = 1-G_halox,l_ni+G_halox
+         indx = offi + i
+!
+         del  = geomg_xu_8(i)-geomg_x_8(i)
+         hh   = geomg_hx_8(i)
+         hm   = G_xg_8(indx  )-G_xg_8(indx-1)
+         hp   = G_xg_8(indx+2)-G_xg_8(indx+1)
+         intuv_c0xxu_8(i) = c00(del,hh)
+         intuv_c1xxu_8(i) = c11(intuv_c0xxu_8(i),hh,hm,hp)
+         intuv_c2xxu_8(i) = c22(intuv_c0xxu_8(i),hh,hm,hp)
+!
+         del  = G_xg_8(indx+1)-geomg_xu_8(i)
+         hh   = geomg_hxu_8(i)
+         hm   = (G_xg_8(indx+1)-G_xg_8(indx-1)) * HALF
+         hp   = (G_xg_8(indx+3)-G_xg_8(indx+1)) * HALF
+         intuv_c0xux_8(i) = c00(del,hh)
+         intuv_c1xux_8(i) = c11(intuv_c0xux_8(i),hh,hm,hp)
+         intuv_c2xux_8(i) = c22(intuv_c0xux_8(i),hh,hm,hp)
+!
+      end do
+!
+      do j = 1-G_haloy,l_nj+G_haloy
+         indx = offj + j
+!
+         del  = geomg_yv_8(j)-geomg_y_8(j)
+         hh   = geomg_hy_8(j)
+         hm   = G_yg_8(indx  )-G_yg_8(indx-1)
+         hp   = G_yg_8(indx+2)-G_yg_8(indx+1)
+         intuv_c0yyv_8(j) = c00(del,hh)
+         intuv_c1yyv_8(j) = c11(intuv_c0yyv_8(j),hh,hm,hp)
+         intuv_c2yyv_8(j) = c22(intuv_c0yyv_8(j),hh,hm,hp)
+!
+         del  = G_yg_8(indx+1)-geomg_yv_8(j)
+         hh   = geomg_hyv_8(j)
+         hm   = (G_yg_8(indx+1)-G_yg_8(indx-1)) * HALF
+         hp   = (G_yg_8(indx+3)-G_yg_8(indx+1)) * HALF
+         intuv_c0yvy_8(j) = c00(del,hh)
+         intuv_c1yvy_8(j) = c11(intuv_c0yvy_8(j),hh,hm,hp)
+         intuv_c2yvy_8(j) = c22(intuv_c0yvy_8(j),hh,hm,hp)
+!
+      end do
+!
+      if (l_south) then
+         intuv_c1yvy_8(0) = zero
+         intuv_c2yvy_8(0) = intuv_c0yvy_8(0)*(intuv_c0yvy_8(0)-one)  &
+                            * geomg_hyv_8(0) ** 2
+      endif
+      if (l_north) then
+         j = l_njv
+         intuv_c1yvy_8(j) = intuv_c0yvy_8(j) * (intuv_c0yvy_8(j) - one)  &
+                            * geomg_hyv_8(j) ** 2
+         intuv_c2yvy_8(j) = zero
+      endif
+!
+      do i=1-G_halox,l_ni+G_halox
+         indx = offi + i
+!
+         hh = (G_xg_8(indx+1)+ G_xg_8(indx)) * HALF
+         x1 = G_xg_8(indx-1)
+         x2 = G_xg_8(indx)
+         x3 = G_xg_8(indx+1)
+         x4 = G_xg_8(indx+2)
+         inuvl_wxxu3_8(i,1) = lag3( hh, x1, x2, x3, x4 )
+         inuvl_wxxu3_8(i,2) = lag3( hh, x2, x1, x3, x4 )
+         inuvl_wxxu3_8(i,3) = lag3( hh, x3, x1, x2, x4 )
+         inuvl_wxxu3_8(i,4) = lag3( hh, x4, x1, x2, x3 )
+!
+         hh = G_xg_8(indx)
+         x1 = (G_xg_8(indx-1)+ G_xg_8(indx-2)) * HALF
+         x2 = (G_xg_8(indx  )+ G_xg_8(indx-1)) * HALF
+         x3 = (G_xg_8(indx+1)+ G_xg_8(indx  )) * HALF
+         x4 = (G_xg_8(indx+2)+ G_xg_8(indx+1)) * HALF
+         inuvl_wxux3_8(i,1) = lag3( hh, x1, x2, x3, x4 )
+         inuvl_wxux3_8(i,2) = lag3( hh, x2, x1, x3, x4 )
+         inuvl_wxux3_8(i,3) = lag3( hh, x3, x1, x2, x4 )
+         inuvl_wxux3_8(i,4) = lag3( hh, x4, x1, x2, x3 )
+!
+      end do
+!
+      do j = 1-G_haloy,l_nj+G_haloy
+         indx = offj + j
+!
+         hh = (G_yg_8(indx+1)+ G_yg_8(indx)) * HALF
+         x1 = G_yg_8(indx-1)
+         x2 = G_yg_8(indx)
+         x3 = G_yg_8(indx+1)
+         x4 = G_yg_8(indx+2)
+         inuvl_wyyv3_8(j,1) = lag3( hh, x1, x2, x3, x4 )
+         inuvl_wyyv3_8(j,2) = lag3( hh, x2, x1, x3, x4 )
+         inuvl_wyyv3_8(j,3) = lag3( hh, x3, x1, x2, x4 )
+         inuvl_wyyv3_8(j,4) = lag3( hh, x4, x1, x2, x3 )
+!
+         hh = G_yg_8(indx)
+         x1 = (G_yg_8(indx-1)+ G_yg_8(indx-2)) * HALF
+         x2 = (G_yg_8(indx  )+ G_yg_8(indx-1)) * HALF
+         x3 = (G_yg_8(indx+1)+ G_yg_8(indx  )) * HALF
+         x4 = (G_yg_8(indx+2)+ G_yg_8(indx+1)) * HALF
+         inuvl_wyvy3_8(j,1) = lag3( hh, x1, x2, x3, x4 )
+         inuvl_wyvy3_8(j,2) = lag3( hh, x2, x1, x3, x4 )
+         inuvl_wyvy3_8(j,3) = lag3( hh, x3, x1, x2, x4 )
+         inuvl_wyvy3_8(j,4) = lag3( hh, x4, x1, x2, x3 )
+!
+      end do
+      if (l_north) then
+         x2 = geomg_yv_8(l_nj-2)
+         x3 = geomg_yv_8(l_nj-1)
+         x4 = Dcst_pi_8/two
+         inuvl_wyvy3_8(l_nj,1) = lag2(geomg_y_8(l_nj), x2, x3, x4 )
+         inuvl_wyvy3_8(l_nj,2) = lag2(geomg_y_8(l_nj), x3, x2, x4 )
+         inuvl_wyvy3_8(l_nj,3) = lag2(geomg_y_8(l_nj), x4, x2, x3 )
+         indx = offj + l_njv
+         hh = (G_yg_8(indx+1)+ G_yg_8(indx)) * HALF
+         x1 = G_yg_8(indx-1)
+         x2 = G_yg_8(indx)
+         x3 = G_yg_8(indx+1)
+         x4 = Dcst_pi_8/two
+         inuvl_wyyv3_8(l_njv,1) = lag3( hh, x1, x2, x3, x4 )
+         inuvl_wyyv3_8(l_njv,2) = lag3( hh, x2, x1, x3, x4 )
+         inuvl_wyyv3_8(l_njv,3) = lag3( hh, x3, x1, x2, x4 )
+         inuvl_wyyv3_8(l_njv,4) = lag3( hh, x4, x1, x2, x3 )
+      endif
+      if (l_south) then
+         indx = offj + 2
+         x2 = (G_yg_8(indx-1)+ G_yg_8(indx-2)) * HALF
+         x3 = (G_yg_8(indx  )+ G_yg_8(indx-1)) * HALF
+         x4 = (G_yg_8(indx+1)+ G_yg_8(indx  )) * HALF
+         inuvl_wyvy3_8(1,2) = lag2(geomg_y_8(1), x2, x3, x4 )
+         inuvl_wyvy3_8(1,3) = lag2(geomg_y_8(1), x3, x2, x4 )
+         inuvl_wyvy3_8(1,4) = lag2(geomg_y_8(1), x4, x2, x3 )
+         indx = offj + 1
+         hh = (G_yg_8(indx+1)+ G_yg_8(indx)) * HALF
+         x1 = -Dcst_pi_8/two
+         x2 = G_yg_8(indx)
+         x3 = G_yg_8(indx+1)
+         x4 = G_yg_8(indx+2)
+         inuvl_wyyv3_8(1,1) = lag3( hh, x1, x2, x3, x4 )
+         inuvl_wyyv3_8(1,2) = lag3( hh, x2, x1, x3, x4 )
+         inuvl_wyyv3_8(1,3) = lag3( hh, x3, x1, x2, x4 )
+         inuvl_wyyv3_8(1,4) = lag3( hh, x4, x1, x2, x3 )
+      endif
+!
+ 1000 format( &
+       /,'COMPUTE (U,V) INTERPOLATION COEFFICIENTS (S/R SET_INTUV)', &
+       /,'========================================================')
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

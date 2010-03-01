@@ -1,0 +1,92 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r sid3df
+!
+#include "model_macros_f.h"
+!
+      integer function sid3df (xpaq,ypaq,xpau,ypav,unf,done, &
+                               nia,nja,nka_m,nka_t,presstype)
+      implicit none
+!author
+!     Michel Desgagne - rpn - MC2 2001
+!
+!revision
+! v4_03 - Lee V.            - Adapt to using new pressure functions
+!
+      logical done
+      integer unf,nia,nja,nka_m,nka_t,presstype
+      real*8 xpaq(nia), ypaq(nja), xpau(nia), ypav(nja)
+!
+#include "ifd.cdk"
+#include "bcsgrds.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+!
+      character*4 nomvar
+      integer i,j,k,ni1,nj1,nk1,err
+      real*8, dimension (:), allocatable :: xp1,yp1,xu1,yv1
+!-----------------------------------------------------------------------
+!
+      sid3df  = -1
+!
+      if (.not.done) then
+!
+         read (unf,end=33,err=33)  &
+               nomvar,ni1,nj1,nka_m,nka_t,presstype
+!
+         allocate (xp1(ni1),yp1(nj1),xu1(ni1),yv1(nj1))
+         read (unf,end=33,err=33) xp1,yp1,xu1,yv1
+
+         do i=1,nia
+            xpaq(i) = xp1(ifd_niad+i-1)
+            xpau(i) = xu1(ifd_niad+i-1)
+         end do
+         do j=1,nja
+            ypaq(j) = yp1(ifd_njad+j-1)
+            ypav(j) = yv1(ifd_njad+j-1)
+         end do
+         deallocate (xp1,yp1,xu1,yv1)
+!
+         if (associated(ana_am_8)) deallocate(ana_am_8)
+         if (associated(ana_bm_8)) deallocate(ana_bm_8)
+         if (associated(ana_at_8)) deallocate(ana_at_8)
+         if (associated(ana_bt_8)) deallocate(ana_bt_8)
+!
+         allocate(ana_am_8(nka_m), ana_bm_8(nka_m), &
+                  ana_at_8(nka_t), ana_bt_8(nka_t) )
+!
+         read (unf,end=33,err=33)  &
+               ana_am_8,ana_bm_8,ana_at_8,ana_bt_8
+         if (Lun_debug_L) then
+             write(Lun_out,*)'sid3df:'
+             write(Lun_out,*)'ana_am_8=',ana_am_8
+             write(Lun_out,*)'ana_bm_8=',ana_bm_8
+             write(Lun_out,*)'ana_at_8=',ana_at_8
+             write(Lun_out,*)'ana_bt_8=',ana_bt_8
+         endif
+!
+      else
+         read (unf,end=33,err=33)  &
+               nomvar,ni1,nj1,nka_m,nka_t,presstype
+         read (unf,end=33,err=33)
+         read (unf,end=33,err=33)
+      endif
+!
+      sid3df = 0
+!
+!-----------------------------------------------------------------------
+ 33   return
+      end

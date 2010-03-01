@@ -1,0 +1,78 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r wil_ordleg_w 
+!
+      SUBROUTINE WIL_ORDLEG_W(COA, IR, SX)
+!
+      implicit none
+!
+      REAL COA
+      INTEGER IR
+!
+      REAL SX
+!
+!author Jacob et al. 1992 
+!
+!revision
+! v4_04 - Jacob et al.     - initial version WIL_ORDLEG_W 
+! v4_04 - Tanguay M.       - Williamson's cases
+!
+!object
+!     THIS ROUTINE IS USED TO CALCULATE ORDINARY LEGENDRE POLYNOMIALS
+!
+!------------------------------------------------------------------
+      REAL SQR2,DELTA,THETA,C1,FN,FN2,FN2SQ,ANG,S1,C4,A,B,FK
+      INTEGER IRPP,IRPPM,N,N1,KK,K
+!------------------------------------------------------------------
+!
+      SQR2  = SQRT(2.)                                                          
+      IRPP  = IR + 1                                                            
+      IRPPM = IRPP - 1                                                          
+      DELTA = ACOS(COA)                                                         
+!
+      THETA = DELTA                                                             
+      C1    = SQR2                                                              
+!
+      DO 20 N = 1, IRPPM                                                        
+         FN    = REAL(N)                                                       
+         FN2   = 2.*FN                                                          
+         FN2SQ = FN2*FN2                                                        
+         C1    = C1* SQRT(1.0-1.0/FN2SQ)                                        
+   20 CONTINUE                                                                  
+!
+      N   = IRPPM                                                               
+      ANG = FN*THETA                                                            
+      S1  = 0.0                                                                 
+      C4  = 1.0                                                                 
+      A   = -1.0                                                                
+      B   = 0.0                                                                 
+      N1  = N+1                                                                 
+!
+      DO 30 KK = 1, N1, 2                                                       
+         K = KK-1                                                               
+         IF (K .EQ. N) C4 = 0.5*C4   
+         S1  = S1+C4* COS(ANG)                                                  
+         A   = A+2.0                                                            
+         B   = B+1.0                                                            
+         FK  = REAL(K)                                                         
+         ANG = THETA*(FN-FK-2.0)                                                
+         C4  = (A*(FN-B+1.0)/(B*(FN2-A)))*C4                                    
+   30 CONTINUE                                                                  
+!
+      SX = S1*C1                                                                
+!
+      RETURN                                                                    
+      END                                                                       

@@ -1,7 +1,0 @@
-      subroutine glb_restart (mode)
-      implicit none
-*
-      character* (*) mode
-	stop 'glb_restart '
-      return
-      end

@@ -1,0 +1,105 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r e_dynfld - to write out dynamic fields
+!
+#include "model_macros_f.h"
+      subroutine e_dynfld 
+      implicit none
+!
+!AUTHOR  M. Desgagne    April 2002
+!
+!revision 
+! v3_21 - Desgagne M. - dayfrac calc displaced
+! v3_30 - Desgagne/Lee - new LAM I/O interface
+! v3_31 - Lee V.      - bugfix: eliminate save_bmf key
+! v4_03 - Lee/Desgagne - ISST
+! v4_05 - Desgagne M. - implement tailjob launcher
+! v4_05 - Lee V. - bugfix: save Pil_bcs_hollow_L after e_specanal/ac_posi
+!
+!IMPLICIT
+#include "e_fu.cdk"
+#include "e_cdate.cdk"
+#include "e_topo.cdk"
+#include "bmf.cdk"
+#include "pilot.cdk"
+#include "filename.cdk"
+#include "modconst.cdk"
+!
+!object
+!  Dynamic fields will be written from dates Pil_jobstrt to Pil_jobend
+!  Full 3DF file is written for initialization at date in Mod_runstrt
+!  Pil_bmf_L= TRUE forces BMF files to be written
+!  Pil_bcs_hollow_L =TRUE means hollow pilot file cubes will be written
+!*
+      integer  fstfrm,newdate,fclos
+      external fstfrm,newdate,fclos
+!
+      character*16 date1,date2
+      logical save_Pil_bcs_hollow_L
+      integer err,yy,dd,dum,cnt
+      real*8 dayfrac,sec_in_day
+      parameter (sec_in_day=86400.0d0)
+!
+!---------------------------------------------------------------------
+!
+!
+      bmf_dtyp = 41
+      date1    = Pil_jobstrt_S
+      dayfrac  = dble(Pil_nesdt) / sec_in_day
+!
+      topo  = topof
+!
+      cnt   = 0
+      ipilf = 1
+      do while ( date1 .le. Pil_jobend_S )
+!
+         call datp2f   ( datev, date1 )
+         err = newdate ( datev, bmf_time1, bmf_time2, -3 )
+         write (6,105) date1,bmf_time1,bmf_time2
+         call prsdate  (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,date1)
+         call e_specanal
+         save_Pil_bcs_hollow_L = Pil_bcs_hollow_L
+!
+         if (date1.eq.Mod_runstrt_S) Pil_bcs_hollow_L = .false.
+         call e_open_files (date1.eq.Mod_runstrt_S)
+!
+         call e_intthm
+!
+         call e_intwind 
+!     
+         err = fstfrm ( e_fu_anal )
+         err = fclos  ( e_fu_anal )
+!
+         call incdatsd (date2,date1,dayfrac)
+         date1 = date2
+         Pil_bcs_hollow_L = save_Pil_bcs_hollow_L 
+!
+         cnt = cnt + 1
+         if (cnt .eq. Pil_lancemodel) &
+            call system ( &
+           'tailjob=../../RUNENT_upload/input/tailjob_E ; &
+            if [ -s \${tailjob} ] ; then echo LAUNCHING ${tailjob} ; &
+            soumet_lajob ${tailjob} ; /bin/rm -f ${tailjob} ; fi')
+
+         call gemtim3 (6)
+!
+      end do
+!     
+ 105  format (/80('#'),/,1X,'PROCESSING DATASET VALID: ',a16,'=',i8.8,'.',i8.8/80('#')/)
+!
+!---------------------------------------------------------------------
+      return
+      end

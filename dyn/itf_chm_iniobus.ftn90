@@ -1,0 +1,211 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_chm_iniobus - outlines the chemical output bus
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_chm_iniobus (siz)
+!
+!implicits
+!
+      implicit none
+!
+!author 
+!     A. Kallaur - arqi - june 2005
+!
+!revision
+! v3_30 - Kallaur A.       - initial version
+!
+!object
+!	See above
+!
+!arguments
+!       None
+!
+!implicits
+#include "schm.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "dimout.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "dcst.cdk"
+#include "itf_chm_bus.cdk"
+#include "itf_chm_obus.cdk"
+#include "outc.cdk"
+!
+!modules
+      integer  doout
+      external doout
+!
+      integer dostep(MAXSET),dostep_max,siz
+      integer i,j,k,m,cnt,bigk,idx
+      character*4 udolist_S(chmmaxbus)
+      integer udolist_max
+!
+!------------------------------------------------------------------
+!
+!  Determine if any output requested at this timestep
+!
+      siz = 1
+      dostep_max = doout(dostep,3)
+      chm_Obus_top=0
+!
+      if (dostep_max.le.0) then
+        if (Lun_out.gt.0) write(Lun_out,5001) Lctl_step
+        return
+      endif
+!
+!     Build short list of possible outputs on this timestep only
+      if (Lun_out.gt.0) write(Lun_out,5000) Lctl_step
+      cnt = 0
+      do k=1, Outc_sets
+         Outc_dostep_L(k) = .false.
+         do m=1,dostep_max
+            if ( Outc_step(k).eq. dostep(m) ) then
+                 Outc_dostep_L(k) = .true.
+               do j=1,Outc_var_max(k)
+                  cnt = cnt+1
+                  udolist_S(cnt) =  Outc_var_S(j,k)
+                  do i=1,cnt-1
+                     if (udolist_S(cnt).eq.udolist_S(i)) exit
+                  enddo
+                  if (i.le.cnt-1) cnt=cnt-1
+               enddo
+            endif
+         enddo
+      enddo
+
+!   Determine the number of variables to be outputted from each bus 
+!   bigk counts the number of ni rows in the output bus.
+!
+!
+      k=0
+      bigk = 1
+      do i = 1, chm_bper_out
+         idx=chm_bper_idx(i)
+         do j=1,cnt
+            if (udolist_S(j).eq.chmperon(idx)(1:4)) then
+                k=k+1
+                chm_obus_var_S (k) = chmperon(idx)(1:4)
+                chm_obus_bus_S (k) = 'P'
+                chm_obus_offset(k) = bigk
+                chm_obus_idx   (k) = idx
+                chm_obus_addr  (k) = chmperpar(idx,1)
+                chm_obus_stag  (k) = chmperpar(idx,4)
+                chm_obus_mult  (k) = chmperpar(idx,6)
+                chm_obus_mul   (k) = 1.0
+                chm_obus_add   (k) = 0.0
+                if (chmperpar(idx,5).gt.chm_ni) then
+                    chm_obus_shp(k)= l_nk
+                else
+                    chm_obus_shp(k)= 1
+                endif
+                bigk = bigk + chm_obus_shp(k)*chm_obus_mult(k)
+            endif
+         enddo
+      enddo
+      do i=1,chm_bdyn_out
+         idx=chm_bdyn_idx(i)
+         do j=1,cnt
+            if (udolist_S(j).eq.chmdynon(idx)(1:4)) then
+                k=k+1
+                chm_obus_var_S(k) = chmdynon(idx)(1:4)
+                chm_obus_bus_S(k) = 'D'
+                chm_obus_offset(k)= bigk
+                chm_obus_idx(k)   = idx
+                chm_obus_addr(k)  = chmdynpar(idx,1)
+                chm_obus_stag(k)  = chmdynpar(idx,4)
+                chm_obus_mult(k)  = chmdynpar(idx,6)
+                chm_obus_mul(k)   = 1.0
+                chm_obus_add(k)   = 0.0
+                if (chmdynpar(idx,5).gt.chm_ni) then
+                    chm_obus_shp(k)= l_nk
+                else
+                    chm_obus_shp(k)= 1
+                endif
+                bigk = bigk + chm_obus_shp(k)*chm_obus_mult(k)
+            endif
+         enddo
+      enddo
+      do i = 1, chm_bvol_out
+         idx=chm_bvol_idx(i)
+         do j=1,cnt
+            if (udolist_S(j).eq.chmvolon(idx)(1:4)) then
+                k=k+1
+                chm_obus_var_S(k) = chmvolon(idx)(1:4)
+                chm_obus_bus_S(k) = 'V'
+                chm_obus_offset(k)= bigk
+                chm_obus_idx(k)   = idx
+                chm_obus_addr(k)  = chmvolpar(idx,1)
+                chm_obus_stag(k)  = chmvolpar(idx,4)
+                chm_obus_mult(k)  = chmvolpar(idx,6)
+                chm_obus_mul(k)   = 1.0
+                chm_obus_add(k)   = 0.0
+                if (chmvolpar(idx,5).gt.chm_ni) then
+                    chm_obus_shp(k)= l_nk
+                else
+                    chm_obus_shp(k)= 1
+                endif
+                bigk = bigk + chm_obus_shp(k)*chm_obus_mult(k)
+            endif
+         enddo
+      enddo
+      if (Lctl_step.eq.0) then
+      do i = 1, chm_bent_out
+         idx=chm_bent_idx(i)
+         do j=1,cnt
+            if (udolist_S(j).eq.chmenton(idx)(1:4)) then
+                k=k+1
+                chm_obus_var_S(k) = chmenton(idx)(1:4)
+                chm_obus_bus_S(k) = 'E'
+                chm_obus_offset(k)= bigk
+                chm_obus_idx(k)   = idx
+                chm_obus_addr(k)  = chmentpar(idx,1)
+                chm_obus_stag(k)  = chmentpar(idx,4)
+                chm_obus_mult(k)  = chmentpar(idx,6)
+                chm_obus_mul(k)   = 1.0
+                chm_obus_add(k)   = 0.0
+                if (chmentpar(idx,5).gt.chm_ni) then
+                    chm_obus_shp(k)= l_nk
+                else
+                    chm_obus_shp(k)= 1
+                endif
+                bigk = bigk + chm_obus_shp(k)*chm_obus_mult(k)
+            endif
+         enddo
+      enddo
+      endif
+      chm_Obus_top=k
+      siz = bigk
+      if (Lun_out.gt.0) then
+          if (chm_Obus_top.eq.0) then
+              write(Lun_out,5001) Lctl_step
+              do k=1, Outc_sets
+                 Outc_dostep_L(k) = .false.
+              enddo
+          else
+              write(Lun_out,5000) Lctl_step
+          endif
+      endif
+!
+ 5000 format(/,' itf_chm_iniobus - CHEMISTRY OUTPUT WILL BE WRITTEN FOR STEP (', &
+                I8,')')
+ 5001 format(/,' itf_chm_iniobus - NO CHEMISTRY OUTPUT FOR STEP (',I8,')')
+!
+!     ---------------------------------------------------------------
+!      return
+      end

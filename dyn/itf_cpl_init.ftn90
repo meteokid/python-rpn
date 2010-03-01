@@ -1,0 +1,183 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** s/r itf_cpl_init
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_cpl_init
+      implicit none
+!
+!authors    Michel Desgagne - Spring 2008
+! 
+!revision
+! v3_31 - Desgagne M.       - initial MPI version
+!*
+!implicits
+#include "glb_ld.cdk"
+#include "hgc.cdk"
+#include "geomn.cdk"
+#include "modconst.cdk"
+#include "step.cdk"
+#include "cstv.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+#include "itf_cpl.cdk"
+#include "rstr.cdk"
+#include "path.cdk"
+!
+!*
+      integer  mgi_init,mgi_open,mgi_write,mgi_read
+      external mgi_init,mgi_open,mgi_write,mgi_read
+!
+      character*20 othermodelname(2),mymodelname
+      character*1024 fn
+      logical cpl_status_l
+      integer datstp,i,j,ier,iers,nsend,nrecv,err_cpl_init,err
+      integer oc_dt,errcode,status,tag,cnt
+      parameter (nsend = 10, nrecv = 3)
+      character*512 s_send(nsend)
+      logical       l_send(nsend)
+      integer       i_send(nsend)
+      real          r_send(nsend)
+      real, dimension (:,:), allocatable :: longitudes,latitudes
+!
+!     ---------------------------------------------------------------
+!
+      n_fldou = 0
+      n_fldin = 0
+      C_wascoupled_L = C_coupling_L
+      if (.not.C_coupling_L) return
+!
+      cpl_ni = cpl_in-cpl_i0+1
+      cpl_nj = cpl_jn-cpl_j0+1
+      allocate (longitudes(cpl_ni,cpl_nj ),latitudes (cpl_ni,cpl_nj))
+      cnt=0
+      do i=cpl_i0,cpl_in
+         cnt = cnt + 1
+         longitudes(cnt,1) = Geomn_longs(i)
+      end do
+      cnt=0
+      do j=cpl_j0,cpl_jn
+         cnt = cnt + 1
+         latitudes (1,cnt) = Geomn_latgs(j)
+      end do
+
+      s_send(1) = CPL_NAME(1:20)
+      s_send(2) = Mod_runstrt_S
+
+      l_send(1) = Rstri_rstn_L
+ 
+      i_send(1) = Step_total
+      i_send(2) = Lctl_step
+      i_send(3) = min (Step_total, Lctl_step + Step_rsti)
+      i_send(4) = cpl_debut
+      i_send(5) = cpl_freq
+      i_send(6) = cpl_fin
+
+      r_send(1) = Cstv_dt_8
+      
+      fn = trim(Path_input_S)//'/coupleur_settings.nml'
+
+      call cpl_init ( CPL_NAME, trim(fn), Ptopo_myproc.eq.0, &
+                      s_send,l_send,i_send,r_send,nsend, &
+                      W_chan, 'gem2ocean', &
+                      R_chan, 'ocean2gem', &
+                  nv_writ, nv_read, n_fldou, n_fldin, maxnvar, &
+                  cpl_ni,cpl_nj,'Z','E', &
+                  Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, &
+                  longitudes,latitudes,errcode )
+!
+      if (errcode .lt. 0) then
+         if (Ptopo_myproc.eq.0) write (6,9900) 'UNABLE TO INITIALIZE COUPLER'
+         if (.not. C_continue_L) call handle_error(-1,'itf_cpl_init','ITF_CPL_INIT')
+         C_coupling_L = .false.
+         if (Ptopo_myproc.eq.0) write (6,9901)
+         return
+      endif
+!
+      errcode = 0
+!
+      if (Ptopo_myproc.eq.0) then
+
+         oc_dt        = nint(r_send(1))
+         oce_hotstart =      l_send(1)
+         othermodelname(1) = s_send(1)
+         othermodelname(2) = CPL_NAME(27:48)
+         if (othermodelname(1).ne.othermodelname(2)) then
+            write (6,9920)
+            errcode = -1
+            goto 995
+         endif
+
+         if ( s_send(3) .eq. "MPI" ) then
+            tag = 1
+            call RPN_COMM_send ( C_coupling_L, 1, 'MPI_LOGICAL',  &
+                                       R_chan, tag,'WORLD',err )
+            tag = 2
+            call RPN_COMM_recv ( cpl_status_L, 1, 'MPI_LOGICAL',  &
+                                       R_chan, tag,'WORLD',status,err)
+         endif
+
+         if ( s_send(3) .eq. "GOSSIP" ) then
+            err         = mgi_read (R_chan, cpl_debut, 1, "I" )
+            C_coupling_L= mgi_read (R_chan, cpl_status_L, 1, "I" ).eq.1
+            C_coupling_L= mgi_write(W_chan, C_coupling_L, 1, "I" ).eq.0
+         endif        
+
+         write (6,8800) CPL_NAME(1:20), C_coupling_L, Rstri_rstn_L, &
+                     trim(othermodelname(1)), cpl_status_L, oce_hotstart
+!
+         if (.not.(cpl_status_L.and.C_coupling_L)) then
+            C_coupling_L=.false.
+         endif
+!
+         if (.not.C_coupling_L) then
+            write (6,9900) 'UNABLE TO COMPLETE COUPLER INITIALIZATION'
+            if (.not. C_continue_L) then
+               errcode = -1
+               goto 995
+            endif
+            write (6,9901)
+            goto 995
+         endif
+!
+         allocate ( atm_busou(cpl_ni,cpl_nj,n_fldou,2) ); atm_busou = 0.
+         if ( .not. associated ( atm_busin ) ) &
+         allocate ( atm_busin(cpl_ni,cpl_nj,n_fldin  ) ); atm_busin = 0.
+!
+      endif
+!
+ 995  call handle_error(errcode,'itf_cpl_init','ITF_CPL_INIT')
+      call RPN_COMM_bcast (C_coupling_L, 1, "MPI_LOGICAL", 0,"grid",ier)
+!
+      if (C_coupling_L) then
+         call RPN_COMM_bcast (n_fldou, 2, "MPI_INTEGER", 0,"grid",ier)
+         allocate ( atm_local_busou(l_ni,l_nj,n_fldou) ,  &
+                    atm_local_busin(l_ni,l_nj,n_fldin) ) 
+         atm_local_busou = 0. ; atm_local_busin = 0.
+      endif
+!
+ 8800 format (/'##### COUPLING STATUS==> myMODEL= ',a,', COUPLING= ',L2,', HOTSTART= ',L2,/ &
+               22x,'otherMODEL= ',a,', COUPLING= ',L2,', HOTSTART= ',L2)
+ 9900 format (/,1x,a)
+ 9901 format (' - WILL CONTINUE WITHOUT'/)
+ 9920 format (' WRONG NAME FOR OTHER MODEL: see nml variable CPL_NAME'/)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end subroutine itf_cpl_init
+

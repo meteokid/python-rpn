@@ -1,0 +1,102 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_uvgridscal - Interpolation of wind fields to the physic s grid.
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_uvgridscal (F_put,F_pvt,DIST_DIM,nkphy,vers)
+!
+      implicit none
+!
+      integer,intent(IN) :: DIST_DIM,nkphy
+      real, dimension(DIST_SHAPE,nkphy),intent(INOUT) :: F_put, F_pvt 
+      logical,intent(IN) :: vers
+!
+!author
+!     Stephane Laroche        Janvier 2001
+!
+!revision
+! v2_31 - Laroche S.       - initial MPI version
+! v3_00 - Desgagne & Lee   - Lam configuration
+! v3_21 - Desgagne M.      - Revision Openmp
+! v3_30 - Desgagne M.      - new interface itf_phy (p_uvgridscal)
+! v3_30 - Tanguay M.       - Revision Openmp LAM 
+!
+!object
+!	Cubic interpolation of the dynamics fields from their own grid
+!	to the grid where the physics tendencies are computed
+!	
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_put       
+! F_pvt
+! vers          I          .true.  wind grid ---> scalar grid    
+!                          .false. wind grid <--- scalar grid 
+!----------------------------------------------------------------
+!    
+!implicits
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "intuv.cdk"
+#include "inuvl.cdk"
+!
+!*
+      integer i,j,k,i0u,j0u,inu,jnu,i0v,j0v,inv,jnv
+      integer nsu,ndu,nsv,ndv
+      real, dimension(LDIST_SHAPE,nkphy) :: wk_u, wk_v
+!
+!     ---------------------------------------------------------------
+!
+      if(vers) then
+       nsu = 1
+       ndu = 0
+       nsv = 2
+       ndv = 0
+      else
+       nsu = 0
+       ndu = 1
+       nsv = 0
+       ndv = 2
+      endif
+!
+!     x component
+!
+      call uv_acg2g (wk_u,F_put,nsu,ndu,LDIST_DIM,nkphy,i0u,inu,j0u,jnu)
+!
+!     y component
+!
+      call uv_acg2g (wk_v,F_pvt,nsv,ndv,LDIST_DIM,nkphy,i0v,inv,j0v,jnv)
+!
+!$omp parallel do
+      do k=1,nkphy
+         do j= j0u, jnu
+         do i= i0u, inu
+            F_put(i,j,k) = wk_u(i,j,k)
+         end do
+         end do
+         do j= j0v, jnv
+         do i= i0v, inv
+            F_pvt(i,j,k) = wk_v(i,j,k)
+         end do
+         end do
+      end do
+!$omp end parallel do 
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

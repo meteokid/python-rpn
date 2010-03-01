@@ -1,0 +1,218 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_init - Initializes physics parameterization package
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_init
+!
+      implicit none
+!
+!author
+!     Michel Desgagne    -   Summer 2006
+!
+!revision
+! v3_30 - Desgagne M.        - Initial version
+! v3_30 - Tanguay M.         - adapt TL/AD to itf
+! v3_30 - Bilodeau B.        - add call to phy_opt for offline mode
+! v3_30 - Dugas B.           - correction to P_out_moyhr, add Out3_satues_L
+! v4_05 - Plante A.          - add iceline option (ICELAC)
+!
+!object
+!	See above ID.
+!	
+!arguments
+!	none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "out3.cdk"
+#include "xst.cdk"
+#include "cstv.cdk"
+#include "v4dg.cdk"
+#include "p4d_simp.cdk"
+#include "pres.cdk"
+#include "clim.cdk"
+#include "p_serg.cdk"
+!
+#include "itf_cpl.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_phy.cdk"
+!
+!*
+      logical  set_dcst
+      integer  fnom
+      external set_dcst,itf_phy_rdfile,fnom
+!
+      logical prout
+      integer DIM_ERR,nrec
+      parameter (DIM_ERR = 14) 
+      integer err(DIM_ERR),idate(14),bidon,i
+      real dt_4
+!
+!     ---------------------------------------------------------------
+!
+!   General rules:
+!    1) .ftn.cdk with prefix itf_phy_ in their name belong to GEMDM 
+!    2) Those with prefix phy_ belong to the physics package
+!    3) The init part of the package consists of 4 entry points:
+!            phy_init, phy_opt, phy_debu and phy_getbus
+!
+      p_nj       = 0
+      p_bper_siz = 0
+      prout  = Lun_out.gt.0
+!
+      if (Lun_out.gt.0) write(Lun_out,1000)
+!
+      call newdate (Out3_date,idate,bidon,-4)
+      dt_4 = Cstv_dt_8 
+!
+      err=0
+! Start physics initialization with mandatory parameters
+      call phy_opti ('DATE'    , idate ,  14, 'SET', prout, err(1))
+      call phy_optr ('DELT'    , dt_4  ,   1, 'SET', prout, err(2))
+
+! Continue physics initialization with optional parameters
+      call phy_optl('CLIMAT'     , Clim_climat_L ,1,'SET',prout,err(3))
+      call phy_optl('COUPLING'   , C_coupling_L  ,1,'SET',prout,err(4))
+      call phy_opti('LIN_V4D'    , V4dg_conf     ,1,'SET',prout,err(5))
+!
+! Initialize physics configuration with default values and read 
+! user configuration in namelist from file 'model_settings'
+!
+      err(6) = phy_init ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
+!
+      err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7))
+      call handle_error(err,'itf_phy_init','itf_phy_init')
+!
+      if ( Schm_theoc_L .and. Schm_phyms_L ) then
+         if (Lun_out.gt.0) write(Lun_out,9500)
+         Schm_phyms_L=.false.
+      endif
+      if (P_serg_srsus_L) then
+         if (Lun_out.gt.0) then
+            err = fnom (lun_tsrs, '../time_series.bin', &
+                                  'SEQ+FTN+UNF', nrec)
+ 600        read(lun_tsrs,end=700)
+            goto 600
+ 700        backspace(lun_tsrs)
+         endif
+         call set_xst ()
+      else
+         Xst_nstat = 0
+      endif
+!
+      if (.not.Schm_phyms_L) return
+!
+! The current physics interface operate on an arbitrary number of
+! columns p_ni containing p_nk levels. Here p_ni is defined as a
+! whole row of points 'j' and there will be p_nj rows to compute.
+!
+      p_nk  = G_nk + 2
+      p_nmp = 0
+      if (G_lam) p_nmp = 3
+!      if (G_lam) p_nmp = 1
+      p_ni   = l_ni - pil_e - pil_w + p_nmp*west  + p_nmp*east
+      p_nj   = l_nj - pil_s - pil_n + p_nmp*south + p_nmp*north
+      p_offi = 1 + pil_w - p_nmp*west  - 1
+      p_offj = 1 + pil_s - p_nmp*south - 1
+!
+! Complete physics initialization (bus descriptions become available)
+!
+      err = phy_debu ( p_ni, p_nk, p_bent_top ,p_bdyn_top, p_bper_top,  &
+                       p_bvol_top, prout, itf_phy_rdfile )
+      call handle_error(err,'itf_phy_init','itf_phy_init (debu)')
+!
+! Fetch a few physics configuration parameters needed for dynamics
+!
+      err = 0
+      call phy_optl('ICEMELT'   ,P_pbl_iceme_L  , 1, 'GET',prout,err(1))
+      call phy_optl('CHAUF'     ,P_pbl_ocean_L  , 1, 'GET',prout,err(2))
+      call phy_optc('SCHMSOL'   ,P_pbl_schsl_S  , 1, 'GET',prout,err(3))
+      call phy_optl('SNOALB_ANL',P_pbl_snoalb_L , 1, 'GET',prout,err(4))
+      call phy_optc('STCOND'    ,P_cond_stcon_S , 1, 'GET',prout,err(5))
+      call phy_optl('SATUCO'    ,P_cond_satu_L  , 1, 'GET',prout,err(6))
+      call phy_optl('ICELAC'    ,P_pbl_icelac_L , 1, 'GET',prout,err(7))
+      call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(8))
+!     Re-define P_out_moyhr in units of hours, rather than in timesteps
+      P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
+      call phy_opti('LIN_PBL'   , P4d_pbl        ,1, 'GET',prout,err(9))
+!
+!     Consistency check for output saturation calculations
+      if (Out3_satues_L .and. .not.P_cond_satu_L) then
+          Out3_satues_L = .false.
+          if (Lun_out.gt.0) write(Lun_out,9600)
+      endif
+!
+      do i=1,DIM_ERR
+         err(1) = err(1) + err(i)
+      end do
+      call handle_error(err,'itf_phy_init','itf_phy_init (get)')
+!
+!C      Initialize zonal, grid points and dynamic diagnostics
+!       -----------------------------------------------------
+      call set_dia()
+! 
+! Obtain buses description from the physics package
+!
+      if ( (p_bent_top.le.maxbus).and.(p_bdyn_top.le.maxbus).and. &
+           (p_bper_top.le.maxbus).and.(p_bvol_top.le.maxbus)) then
+         call phy_getbus (entnm,enton,entdc,entpar,p_bent_siz,maxbus, &
+                                                           'E',prout)
+         call phy_getbus (dynnm,dynon,dyndc,dynpar,p_bdyn_siz,maxbus, &
+                                                           'D',prout)
+         call phy_getbus (pernm,peron,perdc,perpar,p_bper_siz,maxbus, &
+                                                           'P',prout)
+         call phy_getbus (volnm,volon,voldc,volpar,p_bvol_siz,maxbus, &
+                                                           'V',prout)
+      else
+         if (Lun_out.gt.0) write (Lun_out,9000)  &
+              max(p_bent_top,p_bdyn_top,p_bper_top,p_bvol_top)
+         call handle_error(-1,'itf_phy_init','itf_phy_init')
+      endif
+!
+      P_bphy_top  = p_bper_top+p_bdyn_top+p_bvol_top+p_bent_top
+!
+      if (Lun_out.gt.0) then
+         write(Lun_out,*) 'p_bper_top=',p_bper_top
+         write(Lun_out,*) 'p_bdyn_top=',p_bdyn_top
+         write(Lun_out,*) 'p_bvol_top=',p_bvol_top
+         write(Lun_out,*) 'p_bent_top=',p_bent_top
+      endif
+!
+! Allocate heap memory for history carrying physics quantities in BUSPER
+!
+      if ( .not. associated ( Phy_busper3D ) ) then
+         allocate ( Phy_busper3D (p_bper_siz*p_nj) )
+         Phy_busper3D = 0.
+      endif
+!
+ 1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &
+             /,'====================================================')
+ 1001 format(/,'NO PHYSICS PACKAGE INITIALIZATION (S/R itf_phy_init)', &
+             /,'====================================================')
+ 9000 format (/'==> STOP IN P_INIT: MAXBUS TOO SMALL IN BUSESD.CDK'/ &
+               '==> REQUIRED: ',i10/)
+ 9500 format(/,' PHYSICS NOT SUPPORTED FOR NOW IN THEORETICAL CASE')
+ 9600 format(/ 'Out3_satues_L reset to .false. as SATUCO eq false')
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

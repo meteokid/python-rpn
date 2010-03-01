@@ -1,0 +1,498 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r wil_case_init - Routine to initialize Williamson's cases 
+!                      (BASED ON INIT-Jacob et al. 1992)  
+!
+#include "model_macros_f.h"
+!
+      SUBROUTINE WIL_CASE_INIT (UIC12,VIC12,PIC12,DIC12,EIC12,MOUNT)
+!
+      implicit none
+!
+!author Jacob et al. 1992 
+!
+!revision
+! v4_04 - Jacob et al.     - initial version INIT
+! v4_04 - Tanguay M.       - Williamson's cases
+!
+#include "wil_glb_ld.cdk"
+!
+      real UIC12(G_nlon+2,G_nlat),VIC12(G_nlon+2,G_nlat),PIC12(G_nlon+2,G_nlat), &
+           DIC12(G_nlon+2,G_nlat),EIC12(G_nlon+2,G_nlat),MOUNT(G_nlon+2,G_nlat)
+!
+!object
+!
+!     THIS ROUTINE INITIALIZES VARIABLES FOR THE VARIOUS TEST CASES.
+!     FOR STEADY-STATE FLOWS, THE INFORMATION IS STORED IN COMMON
+!     BLOCK /CONST2/, ARRAYS UIC12,VIC12,PIC12,DIC12 AND EIC12.
+!
+!     THE CASE IS DETERMINED BY THE VARIABLE ICOND:
+!
+!     CASE 1: ADVECTION EQUATION FOR SOLID BODY FLOW
+!     CASE 2: SOLID BODY ROTATION STEADY STATE FLOW
+!     CASE 3: JETSTREAM STEADY STATE FLOW
+!     CASE 4: FORCED LOW IN JETSTREAM
+!     CASE 5: ZONAL FLOW OVER ISOLATED MOUNTAIN
+!     CASE 6: ROSSBY-HAURWITZ WAVE
+!     CASE 7: REAL DATA (500MB) TEST CASE
+!
+!------------------------------------------------------------------
+!     CONTAINS ALL INFORMATION REQUIRED TO MAKE
+!     USE OF INITIAL CONDITIONS PROVIDED AS TEST CASES IN SUBROUTINE
+!     INIT.
+!     THESE INITIAL CONDITIONS ARE THEN USED BY ANLYTC TO GET
+!     ANALYTIC SOLUTIONS.
+!------------------------------------------------------------------
+!     UIC12,VIC12: initial u,v wind
+!     PIC12:       initial height
+!     DIC12,EIC12: initial divergence,vorticity
+!     MOUNT:       surface height (mountains) for CASE 5
+!     TOPOSC:      Spectral coefficients of mountains
+!------------------------------------------------------------------
+!                                                                            
+!implicits
+#include "wil_dcst.cdk"
+#include "wil_lun.cdk"
+#include "wil_williamson.cdk"
+#include "wil_init1.cdk"
+#include "wil_init2.cdk"
+!
+      INTEGER I,J
+!
+      REAL SINA,COSA,RLON,RLAT,ETAAMP,PHIAMP,UBAR, &
+           SINT,COST,SINL,COSL,PHITMP,ROTLON,ROTLAT,RELERR, &
+           MOUNTA,RADIUS,DIST 
+!
+!     ARRAYS FOR COMPUTING INITIAL DIVERGENCE,VORTICITY
+!     -------------------------------------------------
+      COMPLEX DIVSC(G_NALP), ZETASC(G_NALP)
+!
+!     NAG INTEGRATION ROUTINE ARGUMENTS
+!     ---------------------------------
+      INTEGER NLIMIT, IFAIL, NPTS
+!
+!     ------------------ 
+!     External Functions
+!     ------------------ 
+!
+!        Actual function arguments for balance equations
+!        -----------------------------------------------
+         EXTERNAL WIL_BUBFNC,WIL_FU,WIL_FUNC2,WIL_US,WIL_GLON,WIL_GLAT
+         REAL WIL_BUBFNC,WIL_FU,WIL_FUNC2,WIL_US,WIL_GLON,WIL_GLAT
+!
+!        QUADRATURE ROUTINE
+!        ------------------
+         EXTERNAL WIL_D01AHE
+         REAL WIL_D01AHE
+!
+!     DETERMINE WHICH INITIAL CONDITION TO USE                                  
+!     ----------------------------------------
+!
+      IF (Williamson_case .EQ. 1) THEN
+!
+!     -------------------
+!     INITIAL CONDITION 1
+!     -------------------
+!     ANALYTIC SPECIFICATION FOR ADVECTION OF COSINE BELL
+!     SOLUTION AS SPECIFIED BY WILLIAMSON AND RASCH, 1989, MON.WEA.REV.
+!  
+      if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,1001) Williamson_alpha 
+ 1001     FORMAT(/,' TEST CASE #1: ADVECTION OF COSINE BELL', &
+          /,' ROTATED BY AN ANGLE ALPHA = ',F5.3)
+!
+!        INITIAL LOCATION AND AMPLITUDE
+!        ------------------------------
+         RLON0 = -90.0*(Wil_Dcst_pi_8/180.0)
+         RLAT0 = + 0.0*(Wil_Dcst_pi_8/180.0)
+         PHI0  = 1000.0
+!
+!        CHOOSE VELOCITY FOR ONE ROTATION IN 12 DAYS
+!        -------------------------------------------
+         SU0  = 2.0*Wil_Dcst_pi_8*Wil_Dcst_rayt_8/(3600.0*24*12)
+         SINA = SIN(Williamson_alpha)
+         COSA = COS(Williamson_alpha)
+         ETAAMP = 2.0*(SU0/Wil_Dcst_rayt_8 + Wil_Dcst_omega_8)
+!
+         DO J=1,G_nlat
+             RLAT = WIL_GLAT(J) 
+!
+            DO I=1,G_nlon
+               RLON = WIL_GLON(I) 
+!
+!              SET UP STEADY FLOW FIELD
+!              ------------------------
+               IF (Williamson_alpha .NE. 0.0) THEN
+                   UIC12(I,J) = SU0*(COS(RLAT)*COSA+COS(RLON)*SIN(RLAT)*SINA)
+                   VIC12(I,J) = -SU0*SIN(RLON)*SINA
+               ELSE
+                   UIC12(I,J) = SU0*COS(RLAT)
+                   VIC12(I,J) = 0.0
+               ENDIF
+!
+               DIC12(I,J) = 0.0
+               EIC12(I,J) = ETAAMP*(-COS(RLON)*COS(RLAT)*SINA+SIN(RLAT)*COSA)
+            ENDDO
+         ENDDO
+!
+      ELSEIF (Williamson_case .EQ. 2) THEN
+!
+!     -------------------
+!     INITIAL CONDITION 2
+!     -------------------
+!     ANALYTIC SPECIFICATION OF U, V, PHI, DIV, ZETA FIELD ON GAUSSIAN          
+!     GRID. STEADY STATE SOLUTION (WILLIAMSON AND BROWNING, 1973 JAM)           
+!                                                                               
+      if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,1002) Williamson_alpha 
+ 1002     FORMAT(/,' TEST CASE #2: STEADY STATE NONLINEAR GEOSTROPHIC FLOW', &
+          /,' ROTATED BY AN ANGLE ALPHA = ',F5.3)
+!
+!        INITIAL LOCATION AND AMPLITUDE
+!        ------------------------------
+         RLON0 = -90.0*(Wil_Dcst_pi_8/180.0)
+         RLAT0 = + 0.0*(Wil_Dcst_pi_8/180.0)
+         PHI0 = 2.94E4
+!
+         UBAR = (2.0*Wil_Dcst_pi_8*Wil_Dcst_rayt_8)/(12.0*24.0*3600.0)
+!
+         SINA = SIN(Williamson_alpha)
+         COSA = COS(Williamson_alpha)
+         ETAAMP = 2.0*(UBAR/Wil_Dcst_rayt_8 + Wil_Dcst_omega_8)
+         PHIAMP = Wil_Dcst_rayt_8*Wil_Dcst_omega_8*UBAR + (UBAR**2)/2.0
+!
+         DO J=1,G_nlat  
+            RLAT = WIL_GLAT(J) 
+            SINT = SIN(RLAT)
+            COST = COS(RLAT)
+!
+            DO I=1,G_nlon                                                         
+               RLON = WIL_GLON(I) 
+               SINL = SIN(RLON)
+               COSL = COS(RLON)
+!
+               UIC12(I,J) = UBAR*(COST*COSA + COSL*SINT*SINA)
+               VIC12(I,J) = - UBAR*SINL*SINA
+               PIC12(I,J) = (PHI0-PHIAMP*(- COSL*COST*SINA +  &
+                            SINT*COSA)**2)/Wil_Dcst_grav_8
+               DIC12(I,J) = 0.0
+               EIC12(I,J) = ETAAMP*(- COSL*COST*SINA + SINT*COSA)
+            ENDDO
+         ENDDO
+!                                                                               
+      ELSE IF (Williamson_case .EQ. 3) THEN
+!
+!     -------------------        
+!     INITIAL CONDITION 3
+!     -------------------        
+!     INITIAL U SPECIFIED AS BUMP (INFINITELY DIFFERENTABLE) FUNCTION           
+!     V=0; SOLVE FOR PHI BY INTEGRATING 1 DIMENSIONAL BALANCE EQUATION          
+!     SEE PAPER BY BROWNING ET. AL., (MONTHLY WEATHER REVIEW, 1989)
+!                                                                               
+      if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,1003) Williamson_alpha 
+ 1003     FORMAT(/,' TEST CASE #3: STEADY STATE NONLINEAR GEOSTROPHIC FLOW', &
+          /,' WITH COMPACT SUPPORT', &
+          /,' ROTATED BY AN ANGLE ALPHA = ',F5.3)
+!
+         PHI0   = 2.94E4
+         NLIMIT = -1                                                               
+         IFAIL  =  0                                                               
+!
+         DO J=1,G_nlat                                                           
+!
+            RLAT = WIL_GLAT(J) 
+!
+            DO I = 1, G_nlon
+!
+               RLON = WIL_GLON(I) 
+!
+!              COMPUTE COORDINATES IN ROTATED SYSTEM
+!              -------------------------------------
+               CALL WIL_ROTATE(RLON,RLAT,Williamson_alpha,ROTLON,ROTLAT)
+!                                                                               
+!              CALL NUMERICAL INTEGRATION PROCEDURE FROM NAG FOR PHI                  
+!              WHAT FOLLOWS IS A QUICK DESCRIPTION OF THE ARGUMENT LIST SO THE        
+!              USER CAN REPLACE THIS ROUTINE WITH ANOTHER ONE IF NECESSARY            
+!                                                                               
+!              FUNCTION D01AHE (A, B, EPSR, NPTS, RELERR, F, NLIMIT, IFAIL)           
+!              A      - SPECIFIES THE LOWER LIMIT OF INTEGRATION                   
+!              B      - SPECIFIES THE UPPER LIMIT OF INTEGRATION                   
+!              EPSR   - SPECIFIES THE RELATIVE ACCURACY REQUIRED                   
+!              NPTS   - NUMBER OF POINTS AT WHICH TO EVALUATE THE INTEGRAL         
+!              RELERR - CONTAINS ROUGH ESTIMATE OF RELATIVE ERROR ON EXIT          
+!              F      - REAL FUNCTION, SUPPLIED BY THE USER                        
+!              NLIMIT - SPECIFIES A LIMIT TO NUMBER OF FUNCTION EVALUATIONS        
+!                          NLIMIT.LE.0 => LIMIT OF 10,000                          
+!              IFAIL  - MUST BE PREASSIGNED WHEN ROUTINE IS CALLED                 
+!                          CONTAINS 0 ON OUTPUT IF NO ERROR OCCURRED               
+!                                                                               
+               PHITMP = WIL_D01AHE(sngl(-0.5*Wil_Dcst_pi_8), ROTLAT, 100.0*EPS, NPTS,  &
+                         RELERR, WIL_FU, NLIMIT, IFAIL)                                
+               IF (IFAIL .NE. 0) THEN  
+                  if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,140) IFAIL 
+  140                 FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE INIT:',/, &
+                      ' FAILURE IN NAG INTEGRATION ROUTINE D01AHE',/, &
+                      ' IFAIL = ',I4)
+                  call handle_error(-1,'wil_case_init','STOP IN WIL_CASE_INIT 3')
+               ENDIF 
+!                                                                               
+!              ROTATE FIELD VARIABLES
+!              ----------------------
+               IF (Williamson_alpha .NE. 0.0) THEN
+                  UIC12(I,J) = WIL_US(ROTLAT)*(COS(Williamson_alpha)*SIN(ROTLON) &
+                               *SIN(RLON)+COS(RLON)*COS(ROTLON))
+                  VIC12(I,J) = WIL_US(ROTLAT)*(COS(Williamson_alpha)*COS(RLON) &
+                               * SIN(ROTLON)*SIN(RLAT)  &
+                               - COS(ROTLON)*SIN(RLON)*SIN(RLAT)  &
+                               - SIN(Williamson_alpha)*SIN(ROTLON)*COS(RLAT))
+                  PIC12(I,J) = (PHI0-PHITMP)/Wil_Dcst_grav_8
+               ELSE
+!
+!              NO ROTATION -> ORIGINAL FIELD
+!              -----------------------------
+                  UIC12(I,J) = WIL_US(RLAT)
+                  VIC12(I,J) = 0.0
+                  PIC12(I,J) = (PHI0-PHITMP)/Wil_Dcst_grav_8
+               ENDIF
+!
+            ENDDO
+!
+         ENDDO
+!                                                                               
+!        GET SPECTRAL COEFFICIENTS FOR ZETA AND DIV (STEADY STATE)                  
+!        ---------------------------------------------------------
+         CALL WIL_ZD(UIC12,VIC12,DIVSC,ZETASC,G_nlon,G_nlat,G_NN,G_MM,G_NLATB2,G_NALP,G_NFC)
+!                                                                               
+!        INVERSE TRANSFORM ZETA,DIV FOR INITIAL CONDITION INFORMATION (DESTROYS ZETASC, DIVSC !) 
+!        ---------------------------------------------------------------------------------------
+         CALL WIL_SHTRNS (1,1,+1,EIC12,ZETASC)        
+         CALL WIL_SHTRNS (1,1,+1,DIC12,DIVSC)
+!
+      ELSE IF (Williamson_case .EQ. 4) THEN
+!                                                                               
+!     ------------------- 
+!     INITIAL CONDITION 4
+!     ------------------- 
+!     STEADY STATE NONLINEAR ZONAL GEOSTROPHIC FLOW WITH COMPACT
+!     SUPPORT, SEE BROWNING ET AL, MONTHLY WEATHER REVIEW, 1989
+!
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,200) 
+  200     FORMAT(/,' TEST CASE #4: FORCED NONLINEAR SYSTEM WITH', &
+          ' ADVECTING LOW')
+!
+!        FORCED NONLINEAR SOLUTION                                                 
+!        -------------------------
+!                                                                               
+!        DETERMINE INITIAL CONDITION ON TIME DEPENDENT VARIABLES FOR FIRST         
+!        TWO TIME STEPS (NO TIME TRUNCATION ERROR TO START LEAPFROG PROC.)         
+!                                                                               
+!        CONSTANTS FOR ANALYTIC STREAM FUNCTION (FORCED CASE)                      
+!
+!        BASIC ZONAL FLOW AMPLITUDE
+!        --------------------------
+         SU0    = 20.0                                                             
+         PHI0   = 1.0E5
+!
+!        AMPLITUDE OF LOW (TO REMOVE LOW, SET TO ZERO)
+!        ---------------------------------------------
+         ALFA   = -0.03*(PHI0/(2.0*Wil_Dcst_omega_8*SIN(Wil_Dcst_pi_8/4.0))) 
+!CC      ALFA   = 0.0
+!
+!        INITIAL POSITION OF LOW (GREENWICH)
+!        -----------------------------------
+!CC      RLON0  =   0.0*(Wil_Dcst_pi_8/180.0) 
+         RLON0  =+180.0*(Wil_Dcst_pi_8/180.0) 
+         RLAT0  = +45.0*(Wil_Dcst_pi_8/180.0)                                                 
+!
+!        AREAL EXTENT OF LOW
+!        ------------------- 
+         SIGMA  = (2.0*Wil_Dcst_rayt_8/1.0E6)**2                                                 
+         NPWR   =  14                                                              
+!                                                                               
+!        BALANCED PHI (PHICON), UCON, VCON IS USED IN ANLYTC FOR 
+!        GEOPOTENTIAL THAT BALANCES STEADY ZONAL FLOW
+!        -------------------------------------------------------
+         NLIMIT = -1                                                               
+         IFAIL  = 0   
+         DO 210 J=1,G_nlat                                                           
+!
+            RLAT = WIL_GLAT(J) 
+!
+!           LONGITUDE = RLON = GLON(I)
+!           LATITUDE  = RLAT = GLAT(J)
+!
+!           SOLVE NON-LINEAR BALANCE EQUATION FOR PHI
+!           -----------------------------------------
+            PHICON(J) = WIL_D01AHE(sngl(-0.5*Wil_Dcst_pi_8), RLAT, 100*EPS,            &
+                                   NPTS, RELERR, WIL_FUNC2, NLIMIT, IFAIL)                        
+!
+            IF (IFAIL .NE. 0) THEN 
+               if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,135) IFAIL
+  135              FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE INIT:',/, &
+                   ' FAILURE IN NAG INTEGRATION ROUTINE D01AHE',/, &
+                   ' IFAIL = ',I4)
+               call handle_error(-1,'wil_case_init','STOP IN WIL_CASE_INIT 4')
+            ENDIF                                                                  
+!
+            PHICON(J) = (PHI0 - PHICON(J))/Wil_Dcst_grav_8
+            UCON(J) = WIL_BUBFNC(RLAT)
+            VCON(J) = 0.0
+!
+  210    CONTINUE                                                                  
+!                                                                               
+      ELSE IF (Williamson_case .EQ. 5) THEN
+!
+!     -------------------
+!     INITIAL CONDITION 5
+!     -------------------
+!     ZONAL FLOW OVER AN ISOLATED MOUNTAIN AS USED BY TAKACS.
+!     ANALYTIC SPECIFICATION OF U, V, PHI, DIV, ZETA FIELD ON GAUSSIAN
+!     GRID. STEADY STATE SOLUTION (WILLIAMSON AND BROWNING, 1973 JAM)
+!
+      if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,1005) 
+ 1005     FORMAT(/,' TEST CASE #5: ZONAL FLOW OVER AN ISOLATED MOUNTAIN')
+!
+!        SET MOUNTAIN SURFACE
+!        --------------------
+         FTOPO_L= .TRUE.
+         MOUNTA = 2000.0
+         RADIUS = Wil_Dcst_pi_8/9.0
+!
+         DO J = 1, G_nlat
+            RLAT = WIL_GLAT(J) 
+            DO I = 1, G_nlon
+               RLON = WIL_GLON(I) 
+!CC            DIST = SQRT((RLON -  1.5*Wil_Dcst_pi_8)**2 + (RLAT - Wil_Dcst_pi_8/6.0)**2)
+               DIST = SQRT((RLON -  0.5*Wil_Dcst_pi_8)**2 + (RLAT - Wil_Dcst_pi_8/6.0)**2)
+               IF (DIST .LT. RADIUS) THEN
+                   MOUNT(I,J) = MOUNTA*(1.0 - DIST/RADIUS)
+               ELSE
+                   MOUNT(I,J) = 0.0
+               ENDIF
+!
+!              TEMPORARY COPY FOR SPECTRAL TRANSFORM
+!              -------------------------------------
+               PIC12(I,J)=MOUNT(I,J)  
+            ENDDO
+         ENDDO
+!
+!        COMPUTE SPECTRAL COEFFICIENTS
+!        -----------------------------
+         CALL WIL_SHTRNS(1,1,-1,PIC12,TOPOSC)
+!
+!        INITIAL CONDITIONS
+!        ------------------
+         PHI0 = 5960.0
+         UBAR = 20.0
+!
+         SINA = 0.0
+         COSA = 1.0
+         ETAAMP = 2.0*(UBAR/Wil_Dcst_rayt_8 + Wil_Dcst_omega_8)
+         PHIAMP = Wil_Dcst_rayt_8*Wil_Dcst_omega_8*UBAR + (UBAR**2)/2.0
+!
+         DO J=1,G_nlat
+            RLAT = WIL_GLAT(J) 
+            SINT = SIN(RLAT)
+            COST = COS(RLAT)
+            DO I=1,G_nlon
+               RLON = WIL_GLON(I) 
+               SINL = SIN(RLON)
+               COSL = COS(RLON)
+!
+!              LONGITUDE = RLON = GLON(I)
+!              LATITUDE  = RLAT = GLAT(J)
+!
+               UIC12(I,J) = UBAR*COST
+               VIC12(I,J) = 0.0
+!
+!              FREE SURFACE HEIGHT (INCLUDE MOUNTAINS)
+!              ---------------------------------------
+               PIC12(I,J) = PHI0-PHIAMP*SINT**2/Wil_Dcst_grav_8
+               DIC12(I,J) = 0.0
+               EIC12(I,J) = ETAAMP*SINT
+            ENDDO
+         ENDDO
+!
+      ELSE IF (Williamson_case .EQ. 6) THEN
+!
+!     -------------------
+!     INITIAL CONDITION 6
+!     -------------------
+!     ROSSBY-HAURWITZ WAVE AS USED BY PHILIPS IN
+!     MONTHLY WEATHER REVIEW, 1959
+!
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,1006) R_Case
+ 1006     FORMAT(/,' TEST CASE #6: ROSSBY-HAURWITZ WAVE, WAVENUMBER ',I2)
+!
+         R_Case = 4
+         K_Case = 7.848E-6
+         OMG = 7.848E-6
+         PHI0 = 8000.0
+!
+!        COMPUTE LATITUDE-DEPENDENT FACTORS FOR GEOPOTENTIAL
+!        ---------------------------------------------------
+!        PHIA(NLAT),PHIB(NLAT) AND PHIC(NLAT)
+!
+         DO J=1,G_nlat
+            RLAT = WIL_GLAT(J) 
+!
+!           LONGITUDE = RLON = GLON(I)
+!           LATITUDE  = RLAT = GLAT(J)
+!
+            COST = COS(RLAT)
+            PHIA(J) = 0.5*OMG*(2.0*Wil_Dcst_omega_8+OMG)*COST*COST + &
+                      0.25*K_Case*K_Case*COST**(2*R_Case) * &
+                      ((R_Case+1)*COST*COST+(2*R_Case*R_Case-R_Case-2) -  &
+                      2.0*R_Case*R_Case/(COST*COST))
+            PHIB(J) = (2.0*(Wil_Dcst_omega_8+OMG)*K_Case)/((R_Case+1)*(R_Case+2))* &
+                      COST**R_Case*((R_Case*R_Case+2*R_Case+2)-(R_Case+1)**2*COST*COST)
+            PHIC(J) = 0.25*K_Case*K_Case*COST**(2*R_Case)* &
+                      ((R_Case+1)*COST*COST-(R_Case+2))
+         ENDDO
+!
+      ELSE IF (Williamson_case .EQ. 7) THEN
+!
+!     -------------------
+!     INITIAL CONDITION 7
+!     -------------------
+!     REAL DATA TEST CASE
+!
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,1007) 
+ 1007     FORMAT(/,' TEST CASE #7: 500 MB GEOPOTENTIAL FROM ECMWF ', &
+          'ANALYSIS')
+!
+      ELSE IF (Williamson_case .EQ. 8) THEN
+!
+!     -------------------
+!     INITIAL CONDITION 8 
+!     -------------------
+!     TEST OF GALEWSKY 
+!
+      if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,1008)
+ 1008     FORMAT(/,' TEST CASE #8: TEST OF GALEWSKY ')
+!
+      ELSE
+!
+      if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,1009) Williamson_case 
+ 1009     FORMAT(/,' STSWM: FATAL ERROR IN SUBROUTINE INIT:',/,                &
+          ' MISSING SPECIFICATION OF ',                 &
+          'INITIAL CONDITION CASE = ',I3)
+!
+         call handle_error(-1,'wil_case_init','STOP IN WIL_CASE_INIT: CASE not valid ')
+!
+      ENDIF                                                                     
+!
+      RETURN
+!
+      END                                                                       

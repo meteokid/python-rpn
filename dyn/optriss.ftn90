@@ -1,0 +1,205 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r optriss7 - solution of a quasi-tridiagonal problem on Z axis only
+!
+      subroutine optriss7 ( F_r,    F_rhs, F_ideb, F_jdeb,F_ifin, F_jfin,F_nk, &
+                            F_axis, F_a_8, F_b_8,  F_c_8, F_period_L, &
+                            NIS,   NJS,  NKS, SKIP )
+      implicit none
+!
+      integer F_ideb,F_jdeb,F_ifin,F_jfin, F_nk, NIS, NJS, NKS, SKIP
+      real  F_r(SKIP,NIS,NJS,NKS), F_rhs(SKIP,NIS,NJS,NKS)
+      real*8  F_a_8(*), F_b_8(*), F_c_8(*)
+      character*1 F_axis
+      logical     F_period_L
+!
+!author
+!   jean cote - march 1993 - after optris
+!
+!revision
+! v3_01 - Lee V/ Spacek L   - initial MPI version (from optriss6 v2_00)
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+!
+!object
+!         see above ID
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_r          O    - result
+! F_rhs        I    - right-hand-side
+! F_ideb       I    - starting index on I (x-direction)
+! F_jdeb       I    - starting index on J (y-direction)
+! F_ifin       I    - ending   index on I (x-direction)
+! F_jfin       I    - ending   index on J (y-direction)
+! F_nk         I    - number of levels in z-direction
+! F_axis       I    - along the z-axis
+! F_a_8        I    - lower  diagonal of operator
+! F_b_8        I    - middle diagonal of operator
+! F_c_8        I    - upper  diagonal of operator
+! F_period_L   I    - .true. if periodic in x direction
+! NIS          I    - field dimension in x-direction
+! NJS          I    - field dimension in y-direction
+! NKS          I    - field dimension in z-direction
+! SKIP         I    - distance between elements of F_rhs (and F_r)
+!
+!notes      - F_r and F_rhs can share same memory space
+!
+!
+!*
+!
+      integer i, j, k
+      real*8 zero
+      parameter( zero = 0.0 )
+!
+!
+!******************************************************************************
+!                                                                             *
+!   ONLY for solving along z direction                                        *
+!                                                                             *
+!******************************************************************************
+      if ( F_axis .eq. 'Z' ) then
+!
+!$omp parallel do
+         do k=1,F_nk
+            do j=1,NJS
+               do i=F_ifin+1,NIS
+                  F_rhs(1,i,j,k) = zero
+               enddo
+            enddo
+            do j=1,NJS
+               do i=1,F_ideb-1
+                  F_rhs(1,i,j,k) = zero
+               enddo
+            enddo
+            do j=F_jfin+1,NJS
+               do i=1,NIS
+                  F_rhs(1,i,j,k) = zero
+               enddo
+            enddo
+            do j=1,F_jdeb-1
+               do i=1,NIS
+                  F_rhs(1,i,j,k) = zero
+               enddo
+            enddo
+         enddo
+!$omp end parallel do
+
+!
+         call ftridi7 ( F_r, F_rhs, F_a_8, F_b_8, F_c_8, &
+                      NIS*NJS*SKIP, SKIP, F_nk, NIS*NJS, .false. )
+! 
+      else
+         call handle_error(-1,'optriss7','OPTRISS7 is only correct for Z axis')
+      endif 
+!
+      return
+      end 
+
+
+!**s/r optriss6 - solution of a quasi-tridiagonal problem
+!
+      subroutine optriss6 ( F_r,    F_rhs, F_ni,  F_nj, F_nk, &
+                            F_axis, F_a_8,   F_b_8,  F_c_8, F_period_L, &
+                            NIS,   NJS,  NKS, SKIP )
+!
+      implicit none
+!
+      integer F_ni, F_nj, F_nk, NIS, NJS, NKS, SKIP
+      real  F_r(SKIP,NIS,NJS,NKS), F_rhs(SKIP,NIS,NJS,NKS)
+      real*8  F_a_8(*), F_b_8(*), F_c_8(*)
+      character*1 F_axis
+      logical     F_period_L
+!
+!author
+!   jean cote - march 1993 - after optris
+!
+!revision
+! v2_00 - Lee V.            - initial MPI version (from optriss v1_03)
+!
+!object
+!         see above ID
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_r          O    - result
+! F_rhs        I    - right-hand-side
+! F_ni         I    - number of points in x-direction
+! F_nj         I    - number of points in y-direction
+! F_nk         I    - number of levels in z-direction
+! F_axis       I    - along the x-, y- or z-axis
+! F_a_8        I    - lower  diagonal of operator
+! F_b_8        I    - middle diagonal of operator
+! F_c_8        I    - upper  diagonal of operator
+! F_period_L   I    - .true. if periodic in x direction
+! NIS          I    - field dimension in x-direction
+! NJS          I    - field dimension in y-direction
+! NKS          I    - field dimension in z-direction
+! SKIP         I    - distance between elements of F_rhs (and F_r)
+!
+!notes      - F_r and F_rhs can share same memory space
+!
+!
+!*
+!
+      integer i, j, k, pnj
+      real*8 zero
+      parameter( zero = 0.0 )
+!
+!
+      if ( F_axis .eq. 'X' ) then
+!
+         if ( F_nk .gt. 1 ) then
+            do k=1,F_nk
+               do j=F_nj+1,NJS
+                  do i=1,F_ni
+                     F_rhs(1,i,j,k) = zero
+                  enddo
+               enddo
+            enddo
+            pnj = NJS
+         else
+            pnj = F_nj
+         endif
+!
+         call ftridi6 ( F_r, F_rhs, F_a_8, F_b_8, F_c_8, &
+                      SKIP, NIS*SKIP, F_ni, pnj*F_nk, F_period_L )
+!
+      else if ( F_axis .eq. 'Y' ) then
+!
+         do k=1,F_nk
+            call ftridi6 ( F_r(1,1,1,k), F_rhs(1,1,1,k), F_a_8, F_b_8, F_c_8, &
+                         NIS*SKIP, SKIP, F_nj, F_ni, .false. )
+         enddo
+!
+      else if ( F_axis .eq. 'Z' ) then
+!
+         do i=F_ni+1,NIS
+            do k=1,F_nk
+               do j=1,F_nj
+                  F_rhs(1,i,j,k) = zero
+               enddo
+            enddo
+         enddo
+!
+         call ftridi6 ( F_r, F_rhs, F_a_8, F_b_8, F_c_8, &
+                      NIS*NJS*SKIP, SKIP, F_nk, NIS*F_nj, .false. )
+! 
+      endif 
+!
+      return
+      end 

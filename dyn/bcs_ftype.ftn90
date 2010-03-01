@@ -1,0 +1,120 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+!**s/r bcs_ftype - to determine whether pilot file is BMF,BCS or 3DF
+!
+      integer function bcs_ftype ( ft,ftperm,datev,nav,unf )
+      implicit none
+!
+      character* (*) ft
+      character*15 datev
+      logical nav
+      integer ftperm(3), unf
+!author
+!        Michel Desgagne - 2001 (from MC2 bcs_ftype)
+!revision
+! v3_30 - Desgagne M.  - initial version for GEMDM
+! v4_03 - Lee/Desgagne - ISST
+!
+!ARGUMENTS
+!    NAMES     I/O  TYPE  A/S        DESCRIPTION
+!     ft       I/O   C    S       Input file type
+!
+!IMPLICIT
+#include "bcsdim.cdk"
+#include "ifd.cdk"
+#include "path.cdk"
+!
+      integer  nav_3df
+      external nav_3df
+      character*3 ft_pref
+      character*256 fn
+      logical mustnav
+      integer k,n,err,err1,err2
+!*
+!-----------------------------------------------------------------------
+!
+ 10   ft_pref = 'NON'
+      if (ftperm(1).eq.0) then
+         fn = trim(Path_ind_S)//'/bcs01_'//datev
+         open (unf,file=fn,access='SEQUENTIAL',status='OLD', &
+                             iostat=err1,form='UNFORMATTED')
+         close (unf)
+         fn = trim(Path_ind_S)//'/bcs02_'//datev
+         open (unf,file=fn,access='SEQUENTIAL',status='OLD', &
+                             iostat=err2,form='UNFORMATTED')
+         close (unf)  
+      else
+         err = -1
+      endif
+!
+      if (( err1.eq.0 ).or.( err2.eq.0 )) then
+         ft_pref = 'BCS'
+      else
+         if (ftperm(2).eq.0) then
+           fn  = trim(Path_ind_S)//'/3df_filemap.txt'
+            open (unf,file=fn,access='SEQUENTIAL',status='OLD', &
+                                   iostat=err,form='FORMATTED')
+         else
+            err = -1
+         endif
+         if ( err.eq.0 ) then
+            ft_pref = '3DF'
+         else
+            ft_pref = 'BMF'
+         endif
+      endif
+!
+      bcs_ftype = -2
+      if (ft_pref.eq.'NON') goto 889
+!
+      mustnav = .false.
+      if (ft.ne.ft_pref) mustnav = .true.
+      ft = ft_pref
+!
+      mustnav = mustnav .or. nav
+      if (ft.eq.'BMF') mustnav = .false.
+      nav = mustnav
+!
+      if (mustnav) then
+         if (ft.eq.'3DF') then
+            bcs_ftype = nav_3df (unf,1.2,1.0d0)
+            if (bcs_ftype.lt.0) goto 779
+            bcs_nia = ifd_niaf - ifd_niad + 1
+            bcs_nja = ifd_njaf - ifd_njad + 1
+         endif
+         if (ft.eq.'BCS') then
+            bcs_ftype = 0
+         endif
+      else
+         bcs_ftype = 0
+      endif
+!
+ 779  if (ft.eq.'BCS') ftperm(1) = -1
+      if (ft.eq.'3DF') ftperm(2) = -1
+      if (ft.eq.'BMF') ftperm(3) = -1
+!
+      if (bcs_ftype.lt.0) goto 10
+!
+      if (ft.eq.'BMF') close (unf)
+!
+ 889  if (bcs_ftype.eq.-2) ftperm = -1
+      call handle_error(bcs_ftype,'bcs_ftype','bcs_ftype ')
+!
+!-----------------------------------------------------------------------
+      return
+      end
+

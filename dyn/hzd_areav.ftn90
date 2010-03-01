@@ -1,0 +1,114 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**S/R hzd_areav - AREAL AVERAGE on a given area
+!
+!
+      subroutine hzd_areav(F_wk1,F_xp0_8,F_yp0_8,Minx,Maxx,Miny,Maxy,Gni,Gnj,Nk)
+!
+      implicit none
+!
+!
+      integer  Minx,Maxx,Miny,Maxy
+      integer  Gni,Gnj,Nk
+      real     F_wk1(Minx:Maxx,Miny:Maxy,Nk)
+      real*8   F_xp0_8(Gni*3),F_yp0_8(Gnj*3)
+!
+!author
+!      Abdessamad Qaddouri - May 2000
+!
+!arguments
+! 
+!implicits
+!
+      real*8 zero
+      parameter( zero = 0.0 )
+
+      integer i, j, k
+      real*8 avg(Nk),area1,area2,area
+      real*8 ssq,var(Nk)
+      real*8, dimension(:,:,:), allocatable :: xdphi,wkphi
+!*
+!     __________________________________________________________________
+!
+      allocate( xdphi(Gni,Gnj,Nk), wkphi(Gni,Gnj,Nk) )
+
+      area1=0.0
+
+      do i=1,Gni
+         area1 = area1+F_xp0_8(Gni+i)
+      enddo
+      area2=0.0
+      do j=1,Gnj-1
+         area2 = area2+F_yp0_8(Gnj+j)
+      enddo
+      area = area1*area2
+      print*,'hzd_areav: area=', area,'Gni=',Gni,'Gnj=',Gnj-1,'Nk=',Nk
+
+      do k = 1,Nk
+        do j=1,Gnj-1
+         do i=1,Gni
+            xdphi(i,j,k)= F_wk1(i,j,k)
+!           print *,'xdphi(',i,',',j,',',k,')=',xdphi(i,j,k)
+            wkphi(i,j,k)= F_xp0_8(Gni+i)*xdphi(i,j,k)*F_yp0_8(Gnj+j)
+         enddo
+        enddo
+      enddo
+        
+      do k=1,Nk
+         avg(k) = 0.0
+        do j=1,Gnj-1
+         do i=1,Gni
+            avg(k)= avg(k)+wkphi(i,j,k)
+         enddo
+        enddo
+        avg(k)=avg(k)/area
+      enddo
+!
+      do k = 1,Nk
+        do j=1,Gnj-1
+         do i=1,Gni
+            wkphi(i,j,k)= F_xp0_8(Gni+i)*xdphi(i,j,k)* &
+                                xdphi(i,j,k)*F_yp0_8(Gnj+j)
+        enddo
+       enddo
+      enddo
+
+       do k=1,Nk
+          ssq = 0.0
+          do j=1,Gnj-1
+             do i=1,Gni
+                ssq= ssq+wkphi(i,j,k)
+             enddo
+          enddo
+          ssq=ssq/area
+          var(k)=sqrt((ssq-avg(k)*avg(k)))
+       enddo
+
+!      print *,'XPO,YP0 operators, GNI,GNJ=',Gni,Gnj
+!      do i=1,Gni*3
+!      print *,'F_xp0_8(',i,')=',F_xp0_8(i)
+!      enddo
+!      do j=1,Gnj*3
+!      print *,'F_yp0_8(',j,')=',F_yp0_8(j)
+!      enddo
+       do k=1,nk
+          print *,'k=',k,'avg=',avg(k),'var=',var(k)
+       enddo
+
+       deallocate(xdphi,wkphi)
+!     __________________________________________________________________
+      return
+      end

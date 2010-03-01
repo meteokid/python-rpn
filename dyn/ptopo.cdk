@@ -61,19 +61,18 @@
       
       DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
 !
-      MARK_COMMON_BEG(Ptopo_b)
-      common  / Ptopo_b / Ptopo_myproc   , Ptopo_myrow , Ptopo_mycol
-      common  / Ptopo_b / Ptopo_numproc  , Ptopo_npex  , Ptopo_npey
-      common  / Ptopo_b / Ptopo_npeOpenMP, Ptopo_npeOpenMP_resv
+      common  / Ptopo_b / Ptopo_npex     , Ptopo_npey 
       common  / Ptopo_b / Ptopo_nblocx   , Ptopo_nblocy
-      common  / Ptopo_b / Ptopo_mybloc   , Ptopo_myblocx,Ptopo_myblocy
-      common  / Ptopo_b / Ptopo_blocme
-      common  / Ptopo_b / Ptopo_numpe_perb,Ptopo_smtphy, Ptopo_smtdyn
-      MARK_COMMON_END(Ptopo_b)
+      common  / Ptopo_b / Ptopo_npeOpenMP, Ptopo_npeOpenMP_resv
+      common  / Ptopo_b / Ptopo_smtphy   , Ptopo_smtdyn
 !
-      MARK_COMMON_BEG(Ptopo_l)
+      common  / Ptopo_b / Ptopo_myproc   , Ptopo_myrow  , Ptopo_mycol
+      common  / Ptopo_b / Ptopo_numproc 
+      common  / Ptopo_b / Ptopo_mybloc   , Ptopo_myblocx, Ptopo_myblocy
+      common  / Ptopo_b / Ptopo_blocme   , Ptopo_numpe_perb
+!
       common  / Ptopo_l / Ptopo_bind_L
-      MARK_COMMON_END(Ptopo_l)
+!
       namelist /ptopo/ Ptopo_npex, Ptopo_npey
       namelist /ptopo/ Ptopo_nblocx, Ptopo_nblocy
       namelist /ptopo/ Ptopo_smtphy, Ptopo_smtdyn, Ptopo_bind_L

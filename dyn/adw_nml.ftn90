@@ -16,14 +16,13 @@
 #include <model_macros_f.h>
 
 !/**
-function adw_nml(F_nmlFileName_S,F_lam_L) result(F_stat)
+function adw_nml(F_nmlFileName_S) result(F_stat)
    implicit none
 #include "msg.h"
 #include "adw_nml.cdk"
    !@objective Advection default configuration and reading namelists adw_cfgs
    !@arguments
    character(len=*) :: F_nmlFileName_S
-   logical F_lam_L
    !@returns
    integer :: F_stat
    !@author Stephane Chamberland, Nov 2009
@@ -39,10 +38,8 @@ function adw_nml(F_nmlFileName_S,F_lam_L) result(F_stat)
    Adw_mono_L = .true.
    Adw_nosetint_L   = .false.
    Adw_trunc_traj_L = .false.
-   Adw_cliptraj_L   = .false.
    Adw_halox  = -1
    Adw_haloy  = -1
-   Adw_maxcfl =  1
 
    F_stat = -1
    fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')
@@ -54,23 +51,13 @@ function adw_nml(F_nmlFileName_S,F_lam_L) result(F_stat)
          call msg(MSG_ERROR,'adw_nml - Probleme reading nml adw_cfgs in file: '//trim(F_nmlFileName_S))
       endif
    endif
-
-   if (F_lam_L) then
-      Adw_maxcfl = max(1,Adw_maxcfl)
-      Adw_halox = Adw_maxcfl + 1
-      Adw_haloy = Adw_halox
-   else
-      Adw_halox = max(3,Adw_halox)
-      Adw_haloy = max(2,Adw_haloy)
-   endif
-
    !---------------------------------------------------------------------
    return
 end function adw_nml
 
 
 !/**
-subroutine adw_nml_print (msgUnit)
+subroutine adw_nml_print()
    implicit none
 #include "msg.h"
 #include "adw_nml.cdk"
@@ -78,7 +65,7 @@ subroutine adw_nml_print (msgUnit)
    integer :: msgUnit
    integer, external :: msg_getUnit !TODO: get full interface from <msg.hf>
    !---------------------------------------------------------------------
-!   msgUnit = msg_getUnit(MSG_INFO)
+   msgUnit = msg_getUnit(MSG_INFO)
    if (msgUnit>=0) write(msgUnit,nml=adw_cfgs)
    !---------------------------------------------------------------------
    return
@@ -86,22 +73,24 @@ end subroutine adw_nml_print
 
 
 !/**
-function adw_config() result(F_stat)
+function adw_config(F_lam_L,F_maxcfl) result(F_stat)
    implicit none
    !@objective Establish final Advection configuration
+   !@arguments
+   logical :: F_lam_L
+   integer :: F_maxcfl
    !@returns
    integer :: F_stat
    !@author Stephane Chamberland, Nov 2009
    !@revisions
    !  YYYY-MM, MY_AUTHOR: original code
-#include "glb_ld.cdk" !TODO: remove this dependency
 #include "adw_nml.cdk"
 !**/
    !---------------------------------------------------------------------
    F_stat = 0
-   if (G_lam) then
-      adw_maxcfl = max(1,adw_maxcfl)
-      Adw_halox = adw_maxcfl + 1
+   if (F_lam_L) then
+      Adw_maxcfl= F_maxcfl
+      Adw_halox = Adw_maxcfl + 1
       Adw_haloy = Adw_halox
    else
       Adw_halox = max(3,Adw_halox)

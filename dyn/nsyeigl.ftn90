@@ -1,0 +1,126 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!*s/r nsyeigl - prepares projection matrix for the vertical modes
+!               NK-th mode = computational mode
+!              symmetric an nonsymmetric cases
+!              nonsymmetric case is for staggered (LN(Z)) model
+!
+      #include "model_macros_f.h"
+      
+      subroutine nsyeigl( F_eval_8, F_Levec_8,F_Revec_8,F_b_8, F_work_8, &
+                                        NN, NMAX, NWORK )
+
+      implicit none
+!author  Abdessamad Qaddouri - 2007
+!
+!revision
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_eval_8     O    - eigenvalues
+! F_Revec_8    O    - Right eigenvector matrix
+! F_levec_8    O    - left eigenvector matrix
+!
+!------------------------------------------------------------------
+      integer  NN, NMAX, NWORK
+      real*8 F_eval_8(NMAX), F_Levec_8(NMAX,NN),F_b_8(NMAX,NN)
+      real*8 F_work_8(NWORK), F_ordr_8,alfr(NMAX),alfi(NMAX),beta(NMAX)
+      real*8 F_Revec_8(NMAX,NN),BVL(NMAX,NN),dotvl(NN),ddot 
+      integer  i,j,k,INFO
+      real*8 VL(NMAX,NN),b(NMAX,NN)
+!
+        INFO=-1 
+        b=F_b_8
+
+       call dggev('V','V',NN, F_Levec_8, NMAX, b, NMAX, &
+                 alfr, alfi,beta,VL, NMAX, F_Revec_8, NMAX, &
+               F_work_8, NWORK, INFO )
+            F_Levec_8=VL
+            
+!       print*,'info=',info           
+       if ( info.ne.0 ) then
+         print*,'ERROR IN dggev INFO =',info
+         STOP
+         endif
+!
+!       (ALPHAR(j) + ALPHAI(j)*i)/BETA(j) is the jeme eigenvalue
+       do j=1,NMAX
+         F_eval_8(j)=ALfR(j)/beta(j)
+       enddo
+
+
+! normalize F_Revec_8
+       do j=1,NN
+        do i=1,NMAX
+          BVL(i,j)=0.0 
+        do k=1,NN
+          BVL(i,j)=BVL(i,j)+F_b_8(i,k)*F_Revec_8(k,j)
+        enddo
+       enddo  
+        enddo
+        do j=1,NN
+        dotvl(j)=ddot(NMAX,F_Revec_8(NMAX*(j-1)+1,1) &
+        ,                      1,BVL(NMAX*(j-1)+1,1),1)
+        enddo
+                             
+        do j=1,NN
+          do i=1,NMAX
+            F_Revec_8(i,j)=F_Revec_8(i,j)/sqrt(dotvl(j))
+          enddo
+        enddo
+! 
+! normalize F_Levec_8
+      do j=1,NN
+      do i=1,NMAX
+        BVL(i,j)=0.0
+      do k=1,NN
+        BVL(i,j)=BVL(i,j)+F_b_8(i,k)*F_Levec_8(k,j)
+      enddo
+      enddo
+      enddo
+       do j=1,NN
+          dotvl(j)=ddot(NMAX,F_Levec_8(NMAX*(j-1)+1,1) &
+        ,                      1,BVL(NMAX*(j-1)+1,1),1)
+       enddo
+      do j=1,NN
+       do i=1,NMAX
+          F_Levec_8(i,j)=F_Levec_8(i,j)/sqrt(dotvl(j))
+       enddo
+      enddo
+! normalize for non symmetric case
+      do j=1,NN
+        do i=1,NMAX
+          BVL(i,j)=0.0
+          do k=1,NN
+           BVL(i,j)=BVL(i,j)+F_b_8(i,k)*F_Revec_8(k,j)
+          enddo
+        enddo
+      enddo
+      do j=1,NN
+        dotvl(j)=ddot(NMAX,F_Levec_8(NMAX*(j-1)+1,1) &
+        ,                      1,BVL(NMAX*(j-1)+1,1),1)
+       enddo
+      do j=1,NN
+       do i=1,NMAX
+          F_Levec_8(i,j)=F_Levec_8(i,j)/dotvl(j)
+       enddo
+      enddo
+!      
+!                         
+       return 
+       end
+

@@ -1,3 +1,0 @@
-      subroutine v4d_uv2img_tr
-      call gem_stop('ARRET v4d_uv2img_tr: NO USED ANYMORE',-1) 
-      end

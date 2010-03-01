@@ -1,0 +1,216 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r blocstat  - Performs 2D-3D statistics on model fields
+!
+#include "model_macros_f.h"
+!
+      subroutine blocstat
+      implicit none
+!
+!author
+!     M. Desgagne  	- fall 2009
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_10 - Desgagne M.       - 4D-var statistics control
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_02 - Lee V.            - CFL, trajectory stats for LAM
+! v3_21 - Lee V.            - Remove Tr2d
+! v4_05 - Lepine M.         - VMM replacement with GMM
+! v4_11 - Tanguay M.        - Use blocstat when (TL/AD) 
+!
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "step.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+#include "acid.cdk"
+#include "ptopo.cdk"
+#include "adw.cdk"
+#include "schm.cdk"
+#include "stat.cdk"
+!
+      logical done
+      type(gmm_metadata) :: tmp_meta
+      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx
+      real cfl
+      real, pointer, dimension(:,:  ) :: wk2d
+      real, pointer, dimension(:,:,:) :: wk3d
+      data done/.false./
+      save done
+!
+!     ---------------------------------------------------------------
+!
+      if (.not.done) call set_statliste
+!
+      if (Step_gstat.gt.0)                then
+      if (mod(Lctl_step,Step_gstat).eq.0) then
+
+         if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
+         i0 = 1+acid_i0
+         in = G_ni-acid_in
+         j0 = 1+acid_j0
+         jn = G_nj-acid_jn
+
+         do n=1,stat_nombre
+            gmmstat = gmm_getmeta(stat_liste(n),tmp_meta)
+            if (gmmstat.eq.0) then
+               indx = index(stat_liste(n),"TR/")*3 + 1
+               stat_varname = stat_liste(n)(indx:)
+               inn= 0
+               jnn= 0
+               if ( stat_liste(n)(1:2)=='UT' .and. G_lam ) inn=1
+               if ( stat_liste(n)(1:2)=='VT'             ) jnn=1
+               nullify (wk2d,wk3d)
+               if (tmp_meta%l(3)%high.eq.tmp_meta%l(3)%low) then
+                  gmmstat = gmm_get(stat_liste(n), wk2d, meta3d)
+                  call glbstat2 (wk2d,stat_varname,'', &
+                                 tmp_meta%l(1)%low,tmp_meta%l(1)%high, &
+                                 tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
+                                 1,1, &
+                                 i0,in-inn,j0,jn-jnn, 1,1)
+               else
+                  gmmstat = gmm_get(stat_liste(n), wk3d, meta3d)
+                  call glbstat2 (wk3d,stat_varname,'', &
+                                tmp_meta%l(1)%low,tmp_meta%l(1)%high, &
+                                tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
+                                tmp_meta%l(3)%low,tmp_meta%l(3)%high, &
+                                i0,in-inn,j0,jn-jnn, &
+                                tmp_meta%l(3)%low,tmp_meta%l(3)%high)
+               endif
+            endif
+         end do
+
+!         if ((Ptopo_numproc.eq.1).and.(Schm_theoc_L)) then
+!            call lipschitz(u, v, zd, LDIST_DIM, G_Nk, i0,in,j0,jn)
+!         endif
+!
+!     Print max courrant numbers if LAM configuration
+         if (G_lam) then
+         if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0) then
+            cfl = Adw_cfl_8(1)
+            write (6,1010) 'x,y',Adw_cfl_i(1,1),Adw_cfl_i(2,1), &
+                                 Adw_cfl_i(3,1),cfl
+            cfl = Adw_cfl_8(2)
+            write (6,1010) 'z'  ,Adw_cfl_i(1,2),Adw_cfl_i(2,2), &
+                                 Adw_cfl_i(3,2),cfl
+            cfl = Adw_cfl_8(3)
+            write (6,1010) '3D' ,Adw_cfl_i(1,3),Adw_cfl_i(2,3), &
+                                 Adw_cfl_i(3,3),cfl
+            Adw_cfl_8 (:  ) = 0.0d0
+            Adw_cfl_i (:,:) = 0
+         endif
+         if (Adw_trunc_traj_L) then
+            call rpn_comm_Allreduce (Adw_trunc,trunc,4, &
+                                  "MPI_INTEGER","MPI_SUM","grid",err)
+            if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0) &
+               write(6,1003)Lctl_step,  " Trj Cut :",trunc(1)+trunc(2)+ &
+                 trunc(3)+trunc(4),trunc(1),trunc(2),trunc(3),trunc(4)
+         endif
+         endif
+!
+         if (Ptopo_myproc.eq.0) write(6,1001)
+
+      endif
+      endif
+      done = .true.
+!
+ 1010 format (' MAX COURANT NUMBER:  ', &
+                a3,': [(',i3,',',i3,',',i3,') ',f12.7,']')
+ 1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
+ 1001 format (  19('#'),' BLOC STAT ...done')
+ 1003 format (i4,a10, i4,10X,' N:[',i4,'] S:[',i4,'] E :[',i4,'] W:[',i4,']')
+!     ---------------------------------------------------------------
+!
+      return
+      end
+
+!**s/r set_statliste
+!
+      subroutine set_statliste
+      implicit none
+!
+!author
+!     M. Desgagne  	- fall 2009
+!
+!revision
+! v4_10 - Desgagne M.       - initial version
+!
+#include "stat.cdk"
+#include "tr3d.cdk"
+
+      character*32 tmp_liste (1000), dumc_S
+      integer k,n,cnt
+!     ---------------------------------------------------------------
+!
+      if (stat_liste(1) == '') then
+         stat_liste(1) = 'ALL_DYN_T1'
+         stat_liste(2) = 'TR/HU:P'
+      endif
+
+      cnt = 0
+      do k=1,stat_maxn
+         if (stat_liste(k) == '') exit
+         call low2up  (stat_liste(k),dumc_S)
+         stat_liste(k) = dumc_S
+         
+         if ((stat_liste(k) == 'ALL_DYN_T1') .or. (stat_liste(k) == 'ALL')) then
+            cnt = cnt + 1
+            tmp_liste(cnt  ) = 'UT1'
+            tmp_liste(cnt+1) = 'VT1'
+            tmp_liste(cnt+2) = 'WT1'
+            tmp_liste(cnt+3) = 'TT1'
+            tmp_liste(cnt+4) = 'FIPTX'
+            tmp_liste(cnt+5) = 'ST1'
+            cnt = cnt + 5
+            if (stat_liste(k) .ne. 'ALL') cycle
+         endif
+         if (stat_liste(k) == 'ALL_DYN_T0') then
+            cnt = cnt + 1
+            tmp_liste(cnt  ) = 'UT0'
+            tmp_liste(cnt+1) = 'VT0'
+            tmp_liste(cnt+2) = 'WT0'
+            tmp_liste(cnt+3) = 'TT0'
+            tmp_liste(cnt+4) = 'ST0'
+            cnt = cnt + 4
+            cycle
+         endif
+         if ((stat_liste(k) == 'ALL_TR_T1') .or. (stat_liste(k) == 'ALL')) then
+            do n=1,tr3d_ntr
+               cnt = cnt + 1
+               tmp_liste(cnt) = 'TR/'//trim(Tr3d_name_S(n))//':P'
+            end do
+            cycle
+         endif
+         if (stat_liste(k) == 'ALL_TR_T0') then
+            do n=1,tr3d_ntr
+               cnt = cnt + 1
+               tmp_liste(cnt) = 'TR/'//trim(Tr3d_name_S(n))//':M'
+            end do
+            cycle
+         endif
+         cnt = cnt + 1
+         tmp_liste(cnt) = stat_liste(k)
+      end do
+
+      stat_liste (1:cnt) = tmp_liste (1:cnt)
+      stat_nombre        = cnt
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

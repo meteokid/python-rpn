@@ -1,0 +1,397 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r ftridi7 - quasi-tridiagonal operator in one direction
+!
+      subroutine ftridi7 (F_r, F_rhs, F_a_8, F_b_8, F_c_8, &
+                           F_deltai,F_deltaj, NI, NJ, F_period_L) 
+      implicit none
+!
+      logical F_period_L
+      integer F_deltai, F_deltaj, NI, NJ
+      real    F_r(*), F_rhs(*)
+      real*8  F_a_8(NI), F_b_8(NI), F_c_8(NI)
+!
+!author
+!   jean cote - october 1996 - generalization and optimization for SX4
+!                              of fortran version of ctridi
+!
+!revision
+! v2_00 - Lee/Patoine       - initial MPI version (from ftridi v1_03)
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+!
+!object
+!         see above id
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_r          O    - result in an array
+! F_rhs        I    - right hand side
+! F_a_8        I    - lower  diagonal of operator
+! F_b_8        I    - middle diagonal of operator
+! F_c_8        I    - upper  diagonal of operator
+! F_deltai     I    - distance between successive elements in the
+!                     direction of work
+! F_deltaj     I    - distance between successive elements in the
+!                     transverse direction
+! NI           I    - dimension along the direction of work
+! NJ           I    - dimension of the transverse direction
+! F_period_L   I    - .true. if periodic in work direction
+!
+!notes
+!     F_a_8,F_b_8,F_c_8 tridiagonal matrix acting on the i index,
+!     F_a_8(1) and F_c_8(NI) contains the information for periodicity,
+!     work done for NJ F_rhs vectors,
+!     index of (i,j) element = 1+(i-1)*F_deltai+(j-1)*F_deltaj,
+!     F_r and F_rhs can share the same space in memory.
+!*
+!
+      integer i, j, j0, j1, j2, j3, j4, h1, h2, h3, h4, i1, i2, i3, n
+      real    s1, s2, s3, s4, s5, s6, s7, s8, s41, s51, s61, s71, s81
+      real    v(256), w(256)
+!
+!     call tmg_start(98,'ftridi')
+!$omp parallel private(v,w , i, j, j0, j1, j2, j3, j4, h1, h2, h3, h4,&
+!$omp i1, i2, i3, n, s1, s2, s3, s4, s5, s6, s7, s8, s41, s51, s61,&
+!$omp s71, s81)
+!$omp do
+      do 300 j0=0,NJ-1,256
+         n = min( 256, NJ - j0 )
+         h1 = 1 - F_deltaj + j0 * F_deltaj
+         h2 = h1 + F_deltai
+         j1 = h1
+         j2 = h2
+         if ( F_period_L ) then
+            j3 = h1 + ( NI - 1 ) * F_deltai
+!VDIR NODEP
+!*VDIR VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               j3    = j3 + F_deltaj
+               v(j)  = F_rhs(j1)
+               F_r(j1) = (F_b_8(1)*v(j)+F_c_8(1)*F_rhs(j2)) + F_a_8(1)*F_rhs(j3)
+               w(j)  = v(j)
+            enddo
+         else
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               v(j)  = F_rhs(j1)
+               F_r(j1) = F_b_8(1) * v(j) + F_c_8(1) * F_rhs(j2)
+            enddo
+         endif
+         h1 = h1 + F_deltai
+         h2 = h1 + F_deltai
+         h3 = h2 + F_deltai
+         h4 = h3 + F_deltai
+         i1 = 2
+         i2 = i1 + 1 
+         i3 = i2 + 1 
+         do 200 i=2,NI-3,3
+            j1 = h1
+            j2 = h2
+            j3 = h3
+            j4 = h4
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do 100 j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               j3    = j3 + F_deltaj
+               j4    = j4 + F_deltaj
+               s1    = F_rhs(j1)
+               s2    = F_rhs(j2)
+               s3    = F_rhs(j3)
+               F_r(j1) = F_a_8(i1) * v(j) + F_b_8(i1) * s1 + F_c_8(i1) * s2
+               F_r(j2) = F_a_8(i2) * s1   + F_b_8(i2) * s2 + F_c_8(i2) * s3
+               F_r(j3) = F_a_8(i3) * s2 + F_b_8(i3) * s3 + F_c_8(i3) * F_rhs(j4)
+               v(j)  = s3
+  100       continue
+            h1 = h1 + 3 * F_deltai
+            h2 = h1 +     F_deltai
+            h3 = h2 +     F_deltai
+            h4 = h3 +     F_deltai
+            i1 = i1 + 3 
+            i2 = i1 + 1 
+            i3 = i2 + 1 
+  200    continue
+         j1 = h1
+         j2 = h2
+         j3 = h3
+         if ( mod( NI, 3 ) .eq. 1 .and. F_period_L ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               j3    = j3 + F_deltaj
+               s41   = F_rhs(j1)
+               s51   = F_rhs(j2)
+               s61   = F_rhs(j3)
+               F_r(j1) =   F_a_8(i1) * v(j) + F_b_8(i1) * s41 + F_c_8(i1) * s51
+               F_r(j2) =   F_a_8(i2) * s41  + F_b_8(i2) * s51 + F_c_8(i2) * s61
+               F_r(j3) = ( F_a_8(NI)*s51 + F_b_8(NI)*s61 ) + F_c_8(NI)*w(j)
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 0 .and. F_period_L ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               s71   = F_rhs(j1)
+               s81   = F_rhs(j2)
+               F_r(j1) =   F_a_8(i1) * v(j) + F_b_8(i1) * s71 + F_c_8(i1) * s81
+               F_r(j2) = ( F_a_8(NI)*s71  + F_b_8(NI)*s81 ) + F_c_8(NI)*w(j)
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 2 .and. F_period_L ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               F_r(j1) = (F_a_8(NI)*v(j) + F_b_8(NI)*F_rhs(j1)) + F_c_8(NI)*w(j)
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 1 ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               j3    = j3 + F_deltaj
+               s4    = F_rhs(j1)
+               s5    = F_rhs(j2)
+               s6    = F_rhs(j3)
+               F_r(j1) = F_a_8(i1) * v(j) + F_b_8(i1) * s4 + F_c_8(i1) * s5
+               F_r(j2) = F_a_8(i2) * s4   + F_b_8(i2) * s5 + F_c_8(i2) * s6
+               F_r(j3) = F_a_8(NI) * s5   + F_b_8(NI) * s6
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 0 ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               s7    = F_rhs(j1)
+               s8    = F_rhs(j2)
+               F_r(j1) = F_a_8(i1) * v(j) + F_b_8(i1) * s7 + F_c_8(i1) * s8
+               F_r(j2) = F_a_8(NI) * s7   + F_b_8(NI) * s8
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 2 ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               F_r(j1) = F_a_8(NI) * v(j)   + F_b_8(NI) * F_rhs(j1)
+            enddo
+         endif
+  300 continue
+!$omp enddo
+!$omp end parallel
+!     call tmg_stop(98)
+      return
+      end
+
+
+
+!**s/r ftridi6 - quasi-tridiagonal operator in one direction
+!
+      subroutine ftridi6 (F_r, F_rhs, F_a_8, F_b_8, F_c_8, &
+                           F_deltai,F_deltaj, NI, NJ, F_period_L) 
+!
+      implicit none
+!
+      logical F_period_L
+      integer F_deltai, F_deltaj, NI, NJ
+      real    F_r(*), F_rhs(*)
+      real*8  F_a_8(NI), F_b_8(NI), F_c_8(NI)
+!
+!author
+!   jean cote - october 1996 - generalization and optimization for SX4
+!                              of fortran version of ctridi
+!
+!revision
+! v2_00 - Lee/Patoine       - initial MPI version (from ftridi v1_03)
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+!
+!object
+!         see above id
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_r          O    - result in an array
+! F_rhs        I    - right hand side
+! F_a_8        I    - lower  diagonal of operator
+! F_b_8        I    - middle diagonal of operator
+! F_c_8        I    - upper  diagonal of operator
+! F_deltai     I    - distance between successive elements in the
+!                     direction of work
+! F_deltaj     I    - distance between successive elements in the
+!                     transverse direction
+! NI           I    - dimension along the direction of work
+! NJ           I    - dimension of the transverse direction
+! F_period_L   I    - .true. if periodic in work direction
+!
+!notes
+!     F_a_8,F_b_8,F_c_8 tridiagonal matrix acting on the i index,
+!     F_a_8(1) and F_c_8(NI) contains the information for periodicity,
+!     work done for NJ F_rhs vectors,
+!     index of (i,j) element = 1+(i-1)*F_deltai+(j-1)*F_deltaj,
+!     F_r and F_rhs can share the same space in memory.
+!*
+!
+      integer i, j, j0, j1, j2, j3, j4, h1, h2, h3, h4, i1, i2, i3, n
+      real    s1, s2, s3, s4, s5, s6, s7, s8, s41, s51, s61, s71, s81
+      real    v(256), w(256)
+!
+!      call tmg_start(98,'ftridi')
+      do 300 j0=0,NJ-1,256
+         n = min( 256, NJ - j0 )
+         h1 = 1 - F_deltaj + j0 * F_deltaj
+         h2 = h1 + F_deltai
+         j1 = h1
+         j2 = h2
+         if ( F_period_L ) then
+            j3 = h1 + ( NI - 1 ) * F_deltai
+!VDIR NODEP
+!*VDIR VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               j3    = j3 + F_deltaj
+               v(j)  = F_rhs(j1)
+               F_r(j1) = (F_b_8(1)*v(j)+F_c_8(1)*F_rhs(j2)) + F_a_8(1)*F_rhs(j3)
+               w(j)  = v(j)
+            enddo
+         else
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               v(j)  = F_rhs(j1)
+               F_r(j1) = F_b_8(1) * v(j) + F_c_8(1) * F_rhs(j2)
+            enddo
+         endif
+         h1 = h1 + F_deltai
+         h2 = h1 + F_deltai
+         h3 = h2 + F_deltai
+         h4 = h3 + F_deltai
+         i1 = 2
+         i2 = i1 + 1 
+         i3 = i2 + 1 
+         do 200 i=2,NI-3,3
+            j1 = h1
+            j2 = h2
+            j3 = h3
+            j4 = h4
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do 100 j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               j3    = j3 + F_deltaj
+               j4    = j4 + F_deltaj
+               s1    = F_rhs(j1)
+               s2    = F_rhs(j2)
+               s3    = F_rhs(j3)
+               F_r(j1) = F_a_8(i1) * v(j) + F_b_8(i1) * s1 + F_c_8(i1) * s2
+               F_r(j2) = F_a_8(i2) * s1   + F_b_8(i2) * s2 + F_c_8(i2) * s3
+               F_r(j3) = F_a_8(i3) * s2 + F_b_8(i3) * s3 + F_c_8(i3) * F_rhs(j4)
+               v(j)  = s3
+  100       continue
+            h1 = h1 + 3 * F_deltai
+            h2 = h1 +     F_deltai
+            h3 = h2 +     F_deltai
+            h4 = h3 +     F_deltai
+            i1 = i1 + 3 
+            i2 = i1 + 1 
+            i3 = i2 + 1 
+  200    continue
+         j1 = h1
+         j2 = h2
+         j3 = h3
+         if ( mod( NI, 3 ) .eq. 1 .and. F_period_L ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               j3    = j3 + F_deltaj
+               s41   = F_rhs(j1)
+               s51   = F_rhs(j2)
+               s61   = F_rhs(j3)
+               F_r(j1) =   F_a_8(i1) * v(j) + F_b_8(i1) * s41 + F_c_8(i1) * s51
+               F_r(j2) =   F_a_8(i2) * s41  + F_b_8(i2) * s51 + F_c_8(i2) * s61
+               F_r(j3) = ( F_a_8(NI)*s51 + F_b_8(NI)*s61 ) + F_c_8(NI)*w(j)
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 0 .and. F_period_L ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               s71   = F_rhs(j1)
+               s81   = F_rhs(j2)
+               F_r(j1) =   F_a_8(i1) * v(j) + F_b_8(i1) * s71 + F_c_8(i1) * s81
+               F_r(j2) = ( F_a_8(NI)*s71  + F_b_8(NI)*s81 ) + F_c_8(NI)*w(j)
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 2 .and. F_period_L ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               F_r(j1) = (F_a_8(NI)*v(j) + F_b_8(NI)*F_rhs(j1)) + F_c_8(NI)*w(j)
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 1 ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               j3    = j3 + F_deltaj
+               s4    = F_rhs(j1)
+               s5    = F_rhs(j2)
+               s6    = F_rhs(j3)
+               F_r(j1) = F_a_8(i1) * v(j) + F_b_8(i1) * s4 + F_c_8(i1) * s5
+               F_r(j2) = F_a_8(i2) * s4   + F_b_8(i2) * s5 + F_c_8(i2) * s6
+               F_r(j3) = F_a_8(NI) * s5   + F_b_8(NI) * s6
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 0 ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               j2    = j2 + F_deltaj
+               s7    = F_rhs(j1)
+               s8    = F_rhs(j2)
+               F_r(j1) = F_a_8(i1) * v(j) + F_b_8(i1) * s7 + F_c_8(i1) * s8
+               F_r(j2) = F_a_8(NI) * s7   + F_b_8(NI) * s8
+            enddo
+         elseif ( mod( NI, 3 ) .eq. 2 ) then
+!VDIR NODEP
+!, VREG(v(noload,nostore),w(noload,nostore))
+            do j=1,n
+               j1    = j1 + F_deltaj
+               F_r(j1) = F_a_8(NI) * v(j)   + F_b_8(NI) * F_rhs(j1)
+            enddo
+         endif
+  300 continue
+!      call tmg_stop(98)
+      return
+      end

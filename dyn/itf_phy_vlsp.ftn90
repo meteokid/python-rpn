@@ -1,0 +1,104 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_vlsp - allocate and compute latitudinal modulation of 
+!                     vertical diffusion coefficient on momentum
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_vlsp
+      implicit none
+!
+!Author
+!     michel roch - rpn - nov 97
+!
+!revision
+! v2_00 - Patoine A.       - initial MPI version 
+! v3_00 - Desgagne & Lee   - Lam configuration
+! v3_30 - Desgagne M.      - new itf_phy interface
+!
+!object
+!     see id section
+!	
+!arguments
+!     none
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "grd.cdk"
+#include "itf_phy_config.cdk"
+#include "lun.cdk"
+#include "geomn.cdk"
+#include "schm.cdk"
+!
+      real*8 one, CLXXX_8, deg2rad_8
+      parameter( one  = 1.0d0 , CLXXX_8 = 180.0d0 )
+!
+      integer i, j
+      real*8 pdb, pdtmp, pda,  pdc
+      real, pointer, dimension(:,:) :: pw_eponmod => null()
+!
+!     ---------------------------------------------------------------
+!
+      if ( .not. Schm_phyms_L ) return
+      if (G_lam)                return
+
+      gmmstat = gmm_create ('PW_EPONMOD',pw_eponmod,meta2d)
+      gmmstat = gmm_get    ('PW_EPONMOD',pw_eponmod,meta2d)
+
+      deg2rad_8 = acos( -ONE ) / CLXXX_8
+
+      if (Lun_out.gt.0) write(Lun_out,1000)
+!
+      pw_eponmod = P_lmvd_valml_8
+
+      do j=1,l_nj
+      do i=1,l_ni
+         if (abs(Geomn_latrx(i,j)*deg2rad_8) .le. P_lmvd_eqlat_8 )  &
+             pw_eponmod (i,j) = P_lmvd_valeq_8
+      end do
+      end do
+
+      pdb = P_lmvd_mllat_8 - P_lmvd_eqlat_8
+      do j=1,l_nj
+      do i=1,l_ni
+         pdtmp = Geomn_latrx(i,j)*deg2rad_8
+         if ((pdtmp .gt. -P_lmvd_mllat_8 ).and.(pdtmp .lt. -P_lmvd_eqlat_8)) then
+           pda = (pdtmp+P_lmvd_mllat_8)/pdb
+           pdc = (3.-2.*pda)*pda*pda
+           pw_eponmod(i,j) = P_lmvd_valeq_8 * pdc + ( 1. - pdc)  &
+                                            * P_lmvd_valml_8
+         endif
+         if ((pdtmp .gt. P_lmvd_eqlat_8  ).and.(pdtmp .lt.  P_lmvd_mllat_8)) then
+           pda = (pdtmp-P_lmvd_eqlat_8)/pdb
+           pdc = (3.-2.*pda)*pda*pda
+           pw_eponmod(i,j) = P_lmvd_valml_8 * pdc + (1. - pdc)  &
+                                            * P_lmvd_valeq_8
+         endif
+      enddo
+      enddo
+!
+      return
+!
+ 1000 format( &
+        /,'COMPUTE LATITUDINAL MODULATION OF VERTICAL',  &
+        /,'DIFFUSION COEFFICIENT ON MOMENTUM    (S/R itf_phy_vlsp)', &
+        /,'=======================================================')
+!
+!     ---------------------------------------------------------------
+!
+      end

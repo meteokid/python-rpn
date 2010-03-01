@@ -1,0 +1,97 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_cpl_nml - Read namelist coupling
+!
+#include "model_macros_f.h"
+!
+      integer function itf_cpl_nml (F_namelistf_S)
+      implicit none
+!
+      character* (*) F_namelistf_S
+!
+!authors    Michel Desgagne - Spring 2008
+! 
+!revision
+! v3_31 - Desgagne M.       - initial MPI version
+!
+!object
+!  Default configuration and reading namelist coupling
+!
+!implicits
+#include "grd.cdk"
+#include "lun.cdk"
+#include "step.cdk"
+#include "itf_cpl.cdk"
+!
+      namelist /coupling/ CPL_NAME ,cpl_debut, cpl_fin, C_continue_L, &
+                          cpl_i0,cpl_in,cpl_j0,cpl_jn
+!
+      integer  fnom,wkoffit
+      external fnom,wkoffit
+!
+      integer nrec,unf,err
+!
+!-------------------------------------------------------------------
+!
+      itf_cpl_nml = -1
+!
+      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+         itf_cpl_nml = 0
+         if (Lun_out.gt.0) write (6  ,nml=coupling)
+         return
+      endif
+!
+! Defaults values for ptopo namelist variables
+!
+      CPL_NAME = 'NIL'
+      cpl_debut= 0
+      cpl_fin  = Step_total
+      C_continue_L = .false.
+      cpl_i0=1
+      cpl_in=Grd_ni
+      cpl_j0=1
+      cpl_jn=Grd_nj
+!
+      unf = 0
+      err = wkoffit(F_namelistf_S)
+      if (err.ge.-1) then
+      if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
+         rewind(unf)
+         read (unf, nml=coupling, end=7110, err=9110)
+ 7110    call fclos (unf)
+      endif
+      endif
+!
+      cpl_i0=min(max(     1,cpl_i0),Grd_ni)
+      cpl_in=min(max(cpl_i0,cpl_in),Grd_ni)
+      cpl_j0=min(max(     1,cpl_j0),Grd_nj)
+      cpl_jn=min(max(cpl_j0,cpl_jn),Grd_nj)
+
+      itf_cpl_nml = 1
+      goto 7777
+!
+ 9110 write (6, 8150) trim( F_namelistf_S )
+      call fclos (unf)
+      goto 7777
+!
+ 8150 format (/,' NAMELIST coupling    INVALID IN FILE: ',a)
+!
+!-------------------------------------------------------------------
+!
+ 7777 C_coupling_L = (CPL_NAME.ne.'NIL')
+!
+      return
+      end

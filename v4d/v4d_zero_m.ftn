@@ -1,3 +1,0 @@
-      subroutine v4d_zero_m
-      call gem_stop ('ARRET v4d_zero_m: NOT USED ANYMORE',-1)
-      end

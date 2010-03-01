@@ -1,0 +1,120 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r domain_decomp
+!
+#include "model_macros_f.h"
+!
+      subroutine domain_decomp
+      implicit none
+!
+!author
+!     Michel Desgagne     Summer 2006
+!
+!revision
+! v3_30 - Desgagne M.       - Initial version
+!
+!object
+!
+!implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "grd.cdk"
+#include "lun.cdk"
+#include "ptopo.cdk"
+#include "lam.cdk"
+!
+      logical  check_parti
+!*
+      integer ierr
+!
+!-------------------------------------------------------------------
+!
+      if (Lun_out.gt.0) then
+         write(Lun_out,*) 'BLOC TOPO: Ptopo_nblocx=', &
+                      Ptopo_nblocx, 'Ptopo_nblocy=',Ptopo_nblocy
+         call write_status_file2 ('communications_established=YES' )
+      endif
+!
+!     Establishing data topology
+!
+      l_west  = (0            .eq. Ptopo_mycol)
+      l_east  = (Ptopo_npex-1 .eq. Ptopo_mycol)
+      l_south = (0            .eq. Ptopo_myrow)
+      l_north = (Ptopo_npey-1 .eq. Ptopo_myrow)
+      north   = 0
+      south   = 0
+      east    = 0
+      west    = 0
+      if (l_north) north = 1
+      if (l_south) south = 1
+      if (l_east ) east  = 1
+      if (l_west ) west  = 1
+      pil_w     = 0
+      pil_n     = 0
+      pil_e     = 0
+      pil_s     = 0
+      Lam_pil_w = 0
+      Lam_pil_n = 0
+      Lam_pil_e = 0
+      Lam_pil_s = 0
+      G_periodx = .true.
+      G_periody = .false.
+!     
+      if (G_lam) then
+         if (l_west ) pil_w = Glb_pil_w
+         if (l_north) pil_n = Glb_pil_n
+         if (l_east ) pil_e = Glb_pil_e
+         if (l_south) pil_s = Glb_pil_s
+         G_periodx = .false.
+         Lam_pil_w = Glb_pil_w
+         Lam_pil_n = Glb_pil_n
+         Lam_pil_e = Glb_pil_e
+         Lam_pil_s = Glb_pil_s
+      endif
+!
+      call rpn_comm_topo ( G_ni,l_minx,l_maxx,l_ni,G_lnimax, &
+                                  G_halox,l_i0,.true.,.true.) 
+      call rpn_comm_topo ( G_nj,l_miny,l_maxy,l_nj,G_lnjmax, &
+                                 G_haloy,l_j0,.false.,.true.)
+!
+      ierr=0
+      if ( (.not.check_parti (l_i0,G_ni,Ptopo_npex)) .or. &
+           (.not.check_parti (l_j0,G_nj,Ptopo_npey)) ) ierr=-1
+      if ( l_ni.lt.(Grd_extension+1) ) then
+         if (Lun_out.gt.0) write (Lun_out,1001) 'X','l_ni',Grd_extension+1
+         ierr=-1
+      endif
+      if ( l_nj.lt.(Grd_extension+1) ) then
+         if (Lun_out.gt.0) write (Lun_out,1001) 'Y','l_nj',Grd_extension+1
+         ierr=-1
+      endif
+      call handle_error(ierr,'domain_decomp','check_parti')
+!
+      l_nk = G_nk
+      l_njv= l_nj
+      l_niu= l_ni
+      if (l_north) l_njv= l_nj - 1
+      if ((l_east).and.(G_lam)) l_niu = l_ni - 1
+!
+      call glbpos  
+!
+ 1001 format (/' PARTITIONNING in ',a, ' is illegal: ',a,' lesser than ',i4/)
+!
+!-------------------------------------------------------------------
+!
+      return
+      end
+

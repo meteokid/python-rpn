@@ -1,0 +1,99 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r set_vta - Initialization of the commons for digital filter
+!		 variables. Virtual Memory manager initialisation.
+!
+#define SPY_VMM_CREATE spy_vmm_create
+#include "model_macros_f.h"
+!
+      subroutine set_vta
+!
+      implicit none
+!
+!author
+!     alain patoine - march 1994
+!
+!revision
+! v2_00 - Desgagne/Lee   - initial MPI version (from setvta v1_03)
+! v2_21 - J. P. Toviessi - rename some model output variables
+! v2_30 - Edouard S.     - remove pi' at the top
+! v2_31 - Desgagne M.    - re-introduce 3D tracers*
+! v4_05 - Lepine M.         - VMM replacement with GMM
+!
+!object
+!	This subroutine initializes the commons containing the
+!	keys used by the Virtual Memory Manager to identify the
+!	digital filter variables
+!	
+!arguments
+!	none
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vta.cdk"
+!
+!*
+!
+!     ---------------------------------------------------------------
+!
+      if (Lun_out.gt.0) write(Lun_out,1000)
+!
+!C       1.    Create digital filter variables
+!              -------------------------------
+!
+      nullify(uta,vta,wta,tta,qta,zdta,sta)
+
+      gmmk_uta_s  = 'DIGF_UU'
+      gmmk_vta_s  = 'DIGF_VV'
+      gmmk_wta_s  = 'DIGF_WW'
+      gmmk_tta_s  = 'DIGF_TT'
+      gmmk_qta_s  = 'DIGF_Q '
+      gmmk_zdta_s = 'DIGF_ZD'
+      gmmk_sta_s  = 'DIGF_S '
+
+      gmmstat = gmm_create(gmmk_uta_s,uta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(uta)'
+
+      gmmstat = gmm_create(gmmk_vta_s,vta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(vta)'
+
+      gmmstat = gmm_create(gmmk_wta_s,wta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(wta)'
+
+      gmmstat = gmm_create(gmmk_tta_s,tta,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(tta)'
+
+      gmmstat = gmm_create(gmmk_qta_s,qta,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(qta)'
+
+      gmmstat = gmm_create(gmmk_zdta_s,zdta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(zdta)'
+
+      gmmstat = gmm_create(gmmk_sta_s,sta,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(sta)'
+!
+ 1000 format( &
+      /,'INITIALIZATION OF DIGITAL FILTER COMDECKS (S/R SET_VTA)', &
+      /,'=======================================================')
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

@@ -1,0 +1,158 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_step - Apply the physical processes: CMC/RPN package
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_step (F_stepno)
+      USE phy_input_iface
+      implicit none
+!
+      integer, INTENT(IN) :: F_stepno
+!
+!author 
+!     Michel roch - rpn - april 1994
+!
+!revision
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_21 - Desgagne/Methot/Bilodeau - dzmin calculation
+! v2_31 - Desgagne          - clean up and introduce h2o tracers
+! v2_32 - Lee V.            - call genslabp here, add "HY" record to slabs
+! v3_00 - Laroche S.        - adapted for simplified physics
+! v3_02 - Tanguay M.        - Add V4dg_oktr_L for v4d_rwtraj_kmkt 
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+! v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
+! v3_12 - Leduc A-M         - Add variables gzm and topo
+! v3_20 - Lee & Kallaur     - Add coding to support chemistry modules. (may/june 2005)
+! v3_21 - Valcke, S.        - Bugfix: no call to itf_phy_apply in offline mode
+! v3_30 - Tanguay M.        - adapt TL/AD to pvptr
+! v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+! v4_03 - Spacek L.         - Staggered version
+! v4    - Chamberland-Spacek - Staggered version
+! v4_04 - Plante A.         - Remove offline mode
+! v4_05 - Desgagne M.       - Update AIX binding rules
+!   
+!object
+!	Computes the physical processes and apply the resulting
+!	tendencies to the dynamic variables of the model:
+!	CMC/RPN package
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_stepno      O           step number
+!----------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "ptopo.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_phy_config.cdk"
+#include "grdc.cdk"
+#include "out3.cdk"
+#include "cstv.cdk"
+!
+      integer  omp_get_max_threads
+      external omp_get_max_threads
+!*
+      integer j, dim, obussiz, cobussiz, err, pslic
+      character*15 datev,pdate
+      real*8 dayfrac, sec_in_day
+      parameter (sec_in_day=86400.0d0)
+      real, dimension(:,:), allocatable :: obusval,cobusval
+      save pslic
+!
+!     ---------------------------------------------------------------
+!
+      call iniobus(obussiz)
+      allocate(obusval(l_ni*l_nj,obussiz))
+      dim  = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*p_nk
+
+      call itf_phy_prep
+!
+!C    load all geo and clima fields required by the physic in memory
+!               ------------------------------------------------
+      call phy_acquire_data (itf_phy_geti,Phy_busper3D,p_ni,p_nj,p_nk, &
+                   p_offi,p_offj,p_bper_siz,F_stepno,Lun_out.gt.0,err)
+      call handle_error(err,'itf_phy_step','itf_phy_step')
+!
+!C       4.	compute physics tendencies
+!		--------------------------
+!	initialize the number of slices previously done
+!
+      pslic = 0
+!
+      call pe_rebind (Ptopo_smtphy,(Ptopo_myproc.eq.0).and. &
+                                   (F_stepno    .eq.0)  )
+
+      if (Lun_out.gt.0) write(Lun_out,1000) F_stepno
+!
+!$omp parallel
+!$omp do
+      do j=1,omp_get_max_threads()
+         call itf_phy_slb ( j , F_stepno, pslic, obusval, cobusval)
+      enddo
+!$omp enddo
+!$omp end parallel
+!
+      call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and. &
+                                   (F_stepno    .eq.0) )
+!
+      call out_phy (obusval,l_ni,l_nj,F_stepno)
+!
+      deallocate (obusval)
+!
+      if ( (Grdc_ndt.gt.0) .and. (F_stepno.eq.Grdc_start) ) then
+!     Only done once in the integration
+         call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf, &
+                                         0,0,.false.,1,'','')
+         cobussiz=p_bper_siz/(p_ni)
+         allocate (cobusval(l_ni*l_nj,cobussiz))
+         call out_phycasc ( j, F_stepno, cobusval )
+
+         call datf2p (pdate,Out3_date)
+         dayfrac = dble(F_stepno) * Cstv_dt_8 / sec_in_day
+         call incdatsd (datev,pdate,dayfrac)
+
+         if (Grdc_initphy_L) then ! Dump whole permanent bus
+            call out_perbus_3df(cobusval,l_ni,l_nj,datev, &
+                     Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf)
+         else ! Dump only minimum physics fields out for cascade grid
+            call out_phy_3df(cobusval,l_ni,l_nj,datev, &
+                  Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf)
+         endif
+         deallocate (cobusval)
+      endif
+!
+      if (P_pbd_dumpbus.gt.0) then
+         if (mod( F_stepno,P_pbd_dumpbus ).eq.0) &
+         call dumpwrit2( Lun_out, F_stepno, Ptopo_myproc )
+      endif
+!
+!C   6.	Apply physics tendencies to the appropriate dynamic fields
+!C      and insure consistency with other dynamic variables
+!       ----------------------------------------------------------
+!
+      call itf_phy_apply ( F_stepno.gt.0 )
+!
+ 1000 format(/'PERFORM A PHYSICS STEP: stepno= ',i6, &
+              ' (S/R itf_phy_step)'/57('='))
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

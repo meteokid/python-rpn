@@ -1,3 +1,0 @@
-      subroutine itf_phy_step_ad 
-      call gem_stop ('TO UPDATE itf_phy_step_ad',-1)
-      end

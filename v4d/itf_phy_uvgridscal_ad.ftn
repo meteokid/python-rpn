@@ -1,3 +1,0 @@
-      subroutine itf_phy_uvgridscal_ad 
-      call gem_stop ('TO UPDATE itf_phy_uvgridscal_ad',-1)
-      end

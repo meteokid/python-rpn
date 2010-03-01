@@ -1,0 +1,172 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r zongopr  - controls zonal diagnostics package
+!
+#include "model_macros_f.h"
+!
+      subroutine zongopr(F_opr, F_val)
+!
+      implicit none
+!
+        integer F_opr, F_val
+!
+!author - andre methot - aug 94 - v0_14
+!
+!revision
+! v0_14 - andre methot  - initial version
+! v0_16 - Andre Methot  - Arakawa "C" grid model
+! v1_02 - Andre Methot  - remove calls mzonopr level 4
+! v1_02 - Pellerin/Methot - add call mzonopr level 5 for multi-tasking
+! v2_31 - Bernard Dugas - Adapt to GEMDM
+! v3_30 - Bernard Dugas - add calls to mzonopr level 9 and correct
+!                         level 7 and 8 calls for Lam-mode.
+!
+!language
+!	fortran 90
+!
+!object(zongopr)
+!              This subroutine is an interface between the
+! model and the zonal diagnostics package. It controls zonal
+! diagnostics initialisation, suspension, extraction,
+! writting to disk, etc...
+!
+!	
+!arguments
+! ______________________________________________________________________
+!         |                                             |          |   |
+!  NAME   |             DESCRIPTION                     |DIMENSIONS|IN |
+!         |                                             |          |OUT|
+! --------|---------------------------------------------|----------|---|
+! F_opr   | indicates what is the current set of        |          |   |
+!         |           operations to perform.            | scalar   |i  |
+!         |                                             |          |   |
+!         | F_opr = 1: Begining of integration or       |          |   |
+!         |            Begining of a clone job          |          |   |
+!         | F_opr = 2: Begining of a timestep           |          |   |
+!         | F_opr =-2: End of a timestep                |          |   |
+!         | F_opr = 3: Begining of a physic slice       |          |   |
+!         | F_opr =-3: End of a physic slice            |          |   |
+!         |                                             |          |   |
+! F_val   | slice number                                | scalar   |i  |
+!         |             ( used only if F_opr = 3 or -3 )|          |   |
+! --------|---------------------------------------------|----------|---|
+!
+!Notes
+!
+!implicits
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+!
+!
+!modules
+!
+      integer  dummy,  pi0,pj0
+      external zongini,zongoff, mzonopr
+      integer          max_threads
+      integer  omp_get_max_threads
+      external omp_get_max_threads
+!*
+!     ---------------------------------------------------------------
+!
+      if ( F_opr .eq. 1 ) then
+!
+!     ------------------------------------------------------
+!C    1- Begining of integration or Begining of a clone job
+!     ------------------------------------------------------
+!
+!        1.1 Initialization of diagnostic package and
+!            initialization of extractors if required
+!            ----------------------------------------
+!
+         call zongini()
+!
+         if (Lun_out.lt.0) call mzonopr(9,dummy)
+!
+         call pe_rebind (Ptopo_smtphy,.false.)
+         max_threads = omp_get_max_threads()
+         call pe_rebind (Ptopo_smtdyn,.false.)
+!
+         call mzonopr( 5, max_threads )
+!
+         pi0 = l_i0
+         pj0 = l_j0
+!
+         if (G_lam .and. .not.l_west ) pi0 = pi0-Glb_pil_w+3
+         if (G_lam .and. .not.l_south) pj0 = pj0-Glb_pil_s+3
+!
+         call mzonopr( 7, pi0 )
+         call mzonopr( 8, pj0 )
+!
+         call mzonopr(1, Lun_zonl)
+!
+!
+      else if ( F_opr .eq. 2 ) then
+!
+!     ------------------------------------------------------
+!C    2a- Begining of a timestep
+!     ------------------------------------------------------
+!
+!        2a.1 Resume/Suspend of extractions if required
+!            ------------------------------------------
+!
+         call zongoff()
+!
+!        2a.2 Perform timestep increment diagnostics
+!            --------------------------------------
+!
+         call mzonopr(2, Lctl_step)
+!
+!
+      else if ( F_opr .eq. -2 ) then
+!
+!     -------------------------------------------------------
+!C    2b- End of a timestep
+!     -------------------------------------------------------
+!
+!        2b.1 Perform end of timestep signal for zonal diagnostics
+!            ----------------------------------------------------
+!
+         call mzonopr(-2, Lctl_step)
+!
+      else if ( F_opr .eq. 3 ) then
+!
+!     -------------------------------------------------------
+!C    3a- Begining of a physic slice
+!     --------------------------------
+!     -------------------------------------------------------
+!
+         call mzonopr(3, F_val)
+!
+      else if ( F_opr .eq. -3 ) then
+!
+!     -------------------------------------------------------
+!C    3b- End of a physic slice
+!     --------------------------------
+!     -------------------------------------------------------
+!
+         call mzonopr(-3, F_val)
+!
+      endif
+!---------------------------------------------------------------
+!---------------------------------------------------------------
+!
+!
+      return
+      end
+

@@ -47,7 +47,7 @@
 
       COMMON /Outc_l/ Outc_dostep_L
       MARK_COMMON_BEG (Outc)
-      COMMON /Outc/ Outc_lev,Outc_grid,Outc_step,
+      COMMON /Outc/ Outc_lev,Outc_grid,Outc_step
       COMMON /Outc/ Outc_var_max, Outc_sets,Outc_nbit,Outc_filtpass
       MARK_COMMON_END (Outc)
       MARK_COMMON_BEG (Outc_c)

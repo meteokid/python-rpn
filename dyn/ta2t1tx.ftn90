@@ -1,0 +1,153 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r ta2t1tx -  Fetch variables ta into t1 and tx
+!
+#include "model_macros_f.h"
+!
+      subroutine ta2t1tx
+      implicit none
+!
+!author
+!     Alain Patoine - april 94
+!
+!revision
+!
+!object
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_30 - Edouard  S.       - remove pi' at the top
+! v2_31 - Desgagne M.       - remove treatment of HU and QC and 
+!                             re-introduce tracers
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_21 - Lee V.            - remove TR2D
+! v4_05 - Lepine M.         - VMM replacement with GMM
+!	
+!arguments
+!	none
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vta.cdk"
+#include "vt1.cdk"
+#include "tr3d.cdk"
+#include "itf_phy_buses.cdk"
+!
+      integer i,j,k,n
+      real, pointer, dimension(:,:,:) :: tr,tra
+!*
+!     ---------------------------------------------------------------
+!
+!C       1.    Fetch variables ta into t1 and tx
+!              ---------------------------------
+!
+      gmmstat = gmm_get(gmmk_uta_s,uta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(uta)'
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vta_s,vta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(vta)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_wta_s,wta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(wta)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(wt1)'
+      gmmstat = gmm_get(gmmk_tta_s,tta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(tta)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_zdta_s,zdta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(zdta)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_sta_s,sta,tmp_meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(sta)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(st1)'
+!
+      do k=1,l_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         ut1  (i,j,k) = uta  (i,j,k)
+         vt1  (i,j,k) = vta  (i,j,k)
+      enddo
+      enddo
+      enddo
+!
+      do k=1,l_nk+1
+      do j= 1, l_nj
+      do i= 1, l_ni
+         wt1 (i,j,k) = wta (i,j,k)
+         tt1 (i,j,k) = tta (i,j,k)
+         zdt1(i,j,k) = zdta(i,j,k)
+      enddo
+      enddo
+      enddo
+!
+      do j= 1, l_nj 
+      do i= 1, l_ni
+         st1  (i,j) = sta  (i,j)
+      enddo
+      enddo
+!
+!*******************************************************************
+!     Non-hydrostatic model fields
+!*******************************************************************
+!
+      if ( .not. Schm_hydro_L ) then
+!
+         gmmstat = gmm_get(gmmk_qta_s,qta,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(qta)'
+         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
+!
+         do k=0,l_nk+1
+         do j= 1, l_nj 
+         do i= 1, l_ni 
+            qt1(i,j,k) = qta(i,j,k)
+         enddo
+         enddo
+         enddo
+!
+      endif
+!
+      do n=1,Tr3d_ntr
+         gmmstat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, meta3d_nk2)
+         gmmstat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , meta3d_nk2)
+         do k=1,G_nk+1
+         do j=1,l_nj
+         do i=1,l_ni
+            tr(i,j,k) = tra(i,j,k)
+         end do
+         end do
+         end do
+      end do
+
+!******************************************************************
+!     Physics fields
+!******************************************************************
+!
+      if ( Schm_phyms_L ) then
+         Phy_busper3D = Phy_busper3D_digf
+         deallocate (Phy_busper3D_digf)
+      endif
+!
+!     ---------------------------------------------------------------
+      return
+      end

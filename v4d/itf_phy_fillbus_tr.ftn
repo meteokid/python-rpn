@@ -1,3 +1,0 @@
-      subroutine itf_phy_fillbus_tr 
-      call gem_stop ('TO UPDATE itf_phy_fillbus_tr',-1)
-      end
