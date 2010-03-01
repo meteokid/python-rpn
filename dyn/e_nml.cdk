@@ -1,6 +1,6 @@
 *
       namelist /ptopo/
-     $     Ptopo_npex, Ptopo_npey
+     $     Ptopo_npex, Ptopo_npey, Ptopo_nblocx, Ptopo_nblocy
 *
       namelist /grid/ Grd_typ_S, Grd_roule, Grd_ni, Grd_nj, 
      $     Grd_nila, Grd_njla, Grd_iref, Grd_jref,

@@ -39,15 +39,22 @@
       parameter (MAXBUS = 1000)
       integer p_bdyn_top,p_bper_top,p_bvol_top,p_bent_top,p_bgeo_top,
      $        p_bdyn_siz,p_bper_siz,p_bvol_siz,p_bent_siz,p_bgeo_siz,
-     $        p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj
+     $        p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj,
+     $        p_bdyn_out,p_bper_out,p_bvol_out,p_bent_out,
+     $        p_bent_idx(maxbus),p_bper_idx(maxbus),
+     $        p_bdyn_idx(maxbus),p_bvol_idx(maxbus)
       integer entpar(maxbus,7),dynpar(maxbus,7),
      $        perpar(maxbus,7),volpar(maxbus,7)
       common / p_bus / 
      $        p_bdyn_top,p_bper_top,p_bvol_top,p_bent_top,p_bgeo_top,
      $        p_bdyn_siz,p_bper_siz,p_bvol_siz,p_bent_siz,p_bgeo_siz,
      $        p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj,
-     $        entpar,dynpar,perpar,volpar
+     $        p_bdyn_out,p_bper_out,p_bvol_out,p_bent_out,
+     $        entpar,dynpar,perpar,volpar,
+     $        p_bent_idx,p_bper_idx,
+     $        p_bdyn_idx,p_bvol_idx
 *
+      character*1  p_outbus_s(maxbus)
       character*16  entnm(maxbus),dynnm(maxbus),
      $              pernm(maxbus),volnm(maxbus)
       character*8   enton(maxbus),dynon(maxbus),
@@ -56,12 +63,10 @@
      $              perdc(maxbus),voldc(maxbus)
       common /busdync/ entnm, dynnm, pernm, volnm, 
      $                 entdc, dyndc, perdc, voldc,
-     $                 enton, dynon, peron, volon
+     $                 enton, dynon, peron, volon,p_outbus_s
 *
       DCL_DYNVAR (Phy, busper3D     , real,(*))
       DCL_DYNVAR (Phy, busper3D_digf, real,(*))
-      DCL_DYNVAR (Phy, useit, integer ,(*))
-      DCL_DYNVAR (Phy, xnbits,integer ,(*))
 *
       integer MAXGEO
       parameter (MAXGEO=1000)

@@ -1,6 +1,6 @@
 #include "hybdim.cdk"
       namelist /ptopo/
-     $     Ptopo_npex, Ptopo_npey
+     $     Ptopo_npex, Ptopo_npey, Ptopo_nblocx, Ptopo_nblocy
 *
       namelist /theo_cfgs/
      $     Theo_case_S, Theo_nivdist_S, 

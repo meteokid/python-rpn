@@ -2,7 +2,7 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine set_world_view1 (F_npx, F_npy)
+      subroutine set_world_view1 (F_npx, F_npy )
 *
 *implicits
       use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree 
@@ -60,7 +60,7 @@
 *----------------------------------------------------------------
 *
 #include "dimout.cdk"
-#include "out.cdk"
+#include "out3.cdk"
 #include "level.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -137,6 +137,8 @@
 *
       Ptopo_npex = 1
       Ptopo_npey = 1
+      Ptopo_nblocx = 1
+      Ptopo_nblocy = 1
       G_halox = 4
       G_haloy = G_halox
 *
@@ -198,6 +200,7 @@
       Level_ip12000_L = .false.
 *
       Grd_rcoef = 1.0
+      Grd_proj_S = 'E'
       Pres_ptop = -1.
       Pres_pref = 800.0
       do k = 1, maxhlev
@@ -244,26 +247,27 @@
       enddo
 *
       do i = 1,MAXELEM
-         Out_xnbits_s(i) = ' '
-         Out_xnbits(i)   = 0
-         Out_zund(i)     = 0
-         Out_filt_s(i)   = ' '
-         Out_filtcoef(i) = 0.0
-         Out_filtpass(i) = 0
+         Out3_xnbits_s(i) = ' '
+         Out3_xnbits(i)   = 0
+         Out3_zund(i)     = 0
+         Out3_filt_s(i)   = ' '
+         Out3_filtcoef(i) = 0.0
+         Out3_filtpass(i) = 0
       enddo
-      Out_unit_S    = ''
-      Out_ndigits   = -1
-      Out_nbitg     = 16
-      Out_linbot    = 0
-      Out_cliph_L   = .false.
-      Out_vt2gz_L   = .false.
-      Out_cubzt_L   = .true.
-      Out_cubuv_L   = .true.
-      Out_cubds_L   = .true.
-      Out_cubqs_L   = .true.
-      Out_cubdd_L   = .true.
-      Out_cubqq_L   = .true.
-      Out_cubww_L   = .true.
+      Out3_unit_S    = ''
+      Out3_closestep = -1
+      Out3_ndigits   = -1
+      Out3_nbitg     = 16
+      Out3_linbot    = 0
+      Out3_cliph_L   = .false.
+      Out3_vt2gz_L   = .false.
+      Out3_cubzt_L   = .true.
+      Out3_cubuv_L   = .true.
+      Out3_cubds_L   = .true.
+      Out3_cubqs_L   = .true.
+      Out3_cubdd_L   = .true.
+      Out3_cubqq_L   = .true.
+      Out3_cubww_L   = .true.
 *
 *     4D-Var section
 *     --------------
@@ -337,6 +341,8 @@
             call hpdeallc (Geomg_hyb_ , err,1)
          endif
       else
+         read (Lun_in, nml=ptopo,    end = 9110, err=9110)
+         rewind ( Lun_in )
          read (Lun_in, nml=gem_cfgs, end = 9120, err=9120)
          rewind ( Lun_in )
          read (Lun_in, nml=coupling, end = 5555, err=9130)
@@ -372,10 +378,10 @@
       Glb_pil_w = max(7,Glb_pil_w)
       Glb_pil_e = max(7,Glb_pil_e)
 *
-      call low2up  (Out_unit_S,Out_unit_S)
+      call low2up  (Out3_unit_S,Out3_unit_S)
       if (V4dg_conf.ne.0) then
          call v4d_init()
-         Out_ndigits = 6
+         Out3_ndigits = 6
          Schm_wload_L  = .false.
       endif
       if ((V4dg_conf/100.eq.1.and.V4dg_sensib_L).or.
@@ -388,16 +394,29 @@
 *      
       if (C_coupling_L)  call c_init()
 *
-      if(Out_nbitg .lt. 0) then
+      if(Out3_nbitg .lt. 0) then
          write (Lun_out, 9154)
-         Out_nbitg=16
+         Out3_nbitg=16
       endif
-      Out_nundr = 0
+      Out3_nundr = 0
       do i = 1, MAXELEM
-         if(Out_zund(i) .eq. 0 ) goto 80
-         Out_nundr = Out_nundr + 1
+         if(Out3_zund(i) .eq. 0 ) goto 80
+         Out3_nundr = Out3_nundr + 1
       enddo
  80   continue
+      Out3_filtpass_max = 0
+      do i = 1,MAXELEM
+         if(Out3_filt_S(i) .eq. ' ') goto 90
+         Out3_filtpass_max = Out3_filtpass_max + 1
+      enddo
+ 90   continue
+
+      Out3_xnbits_max = 0
+      do i = 1,MAXELEM
+         if(Out3_xnbits_S(i) .eq. ' ') goto 95
+         Out3_xnbits_max = Out3_xnbits_max + 1
+      enddo
+ 95   continue
 *
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
 *      
@@ -416,11 +435,11 @@
       wronghyb = .false.
       pnk = 0
       do k = 1, maxhlev
-         if (hyb(k) .lt. 0.) go to 60
+         if (hyb(k) .lt. 0.) go to 110
          pnk = k
       enddo
       write(Lun_out,*) (hyb(k),k=1,pnk)
- 60   if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
+ 110  if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
      $       (hyb(pnk).ne.1.) ) wronghyb = .true.
       do k=2, pnk
          if (hyb(k).le.hyb(k-1)) wronghyb = .true.
@@ -525,6 +544,9 @@
       Path_swv1_L = .true.
       return
 *
+ 9110 write (Lun_out, 8150)
+      write (Lun_out, 8000)
+      return
  9120 write (Lun_out, 9150)
       write (Lun_out, 8000)
       return
@@ -540,10 +562,11 @@
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ============='/)
+ 8150 format (/,' NAMELIST ptopo    INVALID IN FILE: model_settings'/)
  9150 format (/,' NAMELIST gem_cfgs INVALID IN FILE: model_settings'/)
  9250 format (/,' NAMELIST coupling INVALID IN FILE: model_settings '/)
  9350 format (/,' NAMELIST var4d    INVALID IN FILE: model_settings '/)
- 9154 format (/,' Out_nbitg IS NEGATIVE, VALUE will be set to 16'/)
+ 9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
      $         '      HYB(1) MUST BE 0.0 AND HYB(NK) MUST BE 1.0'/
      $         '      OTHER LEVELS MUST BE MONOTONICALLY INCREASING'/

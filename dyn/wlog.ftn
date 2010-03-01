@@ -41,7 +41,7 @@
 #include "dimout.cdk"
 #include "cstv.cdk"
 #include "out1.cdk"
-#include "out.cdk"
+#include "out3.cdk"
 #include "ptopo.cdk"
 *
 *modules
@@ -68,31 +68,31 @@
       unit_S = 'hours'
 
 *     For just the prog in days
-      if (Out_unit_S.eq.'D')then
+      if (Out3_unit_S.eq.'D')then
       ip2 = nint(dble(Lctl_step)*Cstv_dt_8/3600./24.)
       unit_S = 'days'
       endif
 *     For just the prog in minutes
-      if (Out_unit_S.eq.'M')then
+      if (Out3_unit_S.eq.'M')then
       ip2 = nint((dble(Lctl_step)*Cstv_dt_8) / 60.)
       unit_S = 'minutes'
       endif
 *     For just the prog in seconds
-      if (Out_unit_S.eq.'S')then
+      if (Out3_unit_S.eq.'S')then
       ip2 = nint(dble(Lctl_step)*Cstv_dt_8)
       unit_S = 'seconds'
       endif
 *     For just the prog in steps
-      if (Out_unit_S.eq.'P')then
+      if (Out3_unit_S.eq.'P')then
       ip2 = Lctl_step
       unit_S = 'timesteps'
       endif
-      ndigits = Out_ndigits
+      ndigits = Out3_ndigits
       if (ndigits.eq.-1) ndigits=3
       write(format_S,999)ndigits,ndigits
  999  format('(I',I1,'.',I1,')')
       write(ptip2_S,format_S) ip2
-      call up2low(Out_unit_S,dumc_S)
+      call up2low(Out3_unit_S,dumc_S)
       string_s=ptip2_s(1:longueur(ptip2_s))//dumc_S//' '//unit_s(1:longueur(unit_s))
 *
 

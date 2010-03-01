@@ -22,6 +22,7 @@
 * v2_11 - Desgagne M.       - initial version 
 * v3_03 - Desgagne M.       - adjust horizontal scope (in,jn)
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_13 - Lee V.            - correction to insure index in,jn >=0
 *
 *object
 *       
@@ -67,13 +68,22 @@ C     call tmg_start(86,'vspng_abc')
       endif
 *
 *     Calcul le long de X
-*
+*     calculate the ending point JN of where to fill the data
+*     as the tile is ldnh_maxy size (l_maxy size)
+c     jn = trp_12en
+c88   j2 = Ptopo_gindx(3,Ptopo_myproc+1) + Trp_12en0 + jn - 2
+c     if (j2.gt.Gnj) then
+c        jn = jn - 1
+c        goto 88
+c     endif
       jn = trp_12en
- 88   j2 = Ptopo_gindx(3,Ptopo_myproc+1) + Trp_12en0 + jn - 2
-      if (j2.gt.Gnj) then
-         jn = jn - 1
-         goto 88
-      endif
+      j2 = Ptopo_gindx(3,Ptopo_myproc+1) + Trp_12en0 + jn - 2
+      if (j2.gt.Gnj) jn = jn - (j2-Gnj)
+
+*     Insure that any filling on the end of the tile is within the tile
+*     in case JN is negative
+      jn = max(0,jn)
+
 !$omp parallel private(jj,j2)
 !$omp do
       do i = 1, G_ni
@@ -109,12 +119,22 @@ C     call tmg_start(86,'vspng_abc')
 *
 *     Calcul le long de Y
 *
+*     calculate the ending point IN of where to fill the data
+*     as the tile is ldnh_maxx size (l_maxx size)
+c     in = trp_22en
+c99   j2 = Ptopo_gindx(1,Ptopo_myproc+1) + trp_22en0 + in - 2
+c     if (j2.gt.G_ni) then
+c        in = in - 1
+c        goto 99
+c     endif
       in = trp_22en
- 99   j2 = Ptopo_gindx(1,Ptopo_myproc+1) + trp_22en0 + in - 2
-      if (j2.gt.G_ni) then
-         in = in - 1
-         goto 99
-      endif
+      j2 = Ptopo_gindx(1,Ptopo_myproc+1) + trp_22en0 + in - 2
+      if (j2.gt.G_ni) in = in - (j2-G_ni)
+
+*     Insure that any filling on the end of the tile is within the tile
+*     in case IN is negative
+      in = max(0,in)
+
 !$omp parallel
 !$omp do
       do j= 1, F_gnjv

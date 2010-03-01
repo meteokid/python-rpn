@@ -72,10 +72,10 @@
 *
       if (F_apply_L) then
 *
-      call filter ( F_tcond, wk3, wk4, P_cond_filtend, 
-     $              P_cond_filco, 'G', .false., LDIST_DIM, l_nk)
-      call filter ( F_trm(l_minx,l_miny,1,hucond), wk3, wk4, 
-     $         P_cond_filtend,P_cond_filco,'G',.false.,LDIST_DIM, l_nk)
+      call filter ( F_tcond, P_cond_filtend, P_cond_filco,
+     $              'G', .false., LDIST_DIM, l_nk)
+      call filter ( F_trm(l_minx,l_miny,1,hucond),P_cond_filtend, P_cond_filco,
+     $              'G',.false.,LDIST_DIM, l_nk)
 *
 *  4. Interpolation of the wind associated tendencies
 *

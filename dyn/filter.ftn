@@ -2,14 +2,13 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine filter (F_fd, F_w1, F_w2, F_lx, F_coef, F_d_S, 
+      subroutine filter (F_fd, F_lx, F_coef, F_d_S, 
      $                   F_flag_L,DIST_DIM,Nk)
 *
 #include "impnone.cdk"
 *
       integer DIST_DIM,F_lx,Nk
-      real F_fd(DIST_SHAPE,Nk), F_w1(DIST_SHAPE,Nk), 
-     $     F_w2(DIST_SHAPE,Nk), F_coef
+      real F_fd(DIST_SHAPE,Nk),  F_coef
       character*1 F_d_S
       logical F_flag_L
 *
@@ -18,6 +17,7 @@
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
+* v3_12 - Lee V.            - removed work fields from calling parameters
 *
 *object
 *
@@ -34,9 +34,6 @@
 * --------|---------------------------------------------|----------|---|
 *         |                                             |          |   |
 * F_fd | field to be filtered                        | fnis,fnjs|io |
-*         |                                             | fnks     |   |
-*         |                                             |          |   |
-* F_w1  | work field                                  | fnis,fnjs| - |
 *         |                                             | fnks     |   |
 *         |                                             |          |   |
 * F_lx  | number of pass into 2 delta x filter        | scalar   | i |
@@ -60,6 +57,8 @@
 #include "geomg.cdk"
 *
       integer i,j,k,n
+      real w1(l_minx:l_maxx,l_miny:l_maxy,nk)
+      real w2(l_minx:l_maxx,l_miny:l_maxy,nk)
       real*8 whx,why
       pointer (pawhx, whx(l_minx:l_maxx)), (pawhy, why(l_miny:l_maxy)) 
 **
@@ -82,20 +81,20 @@
          do k=1,Nk
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
-            F_w2(i,j,k) = F_fd(i,j,k)
+            w2(i,j,k) = F_fd(i,j,k)
          end do
          end do
          end do
-         call xyfil (F_fd,F_w2,F_w1,F_coef,whx,why,.false.,LDIST_DIM,Nk)
+         call xyfil (F_fd,w2,w1,F_coef,whx,why,.false.,LDIST_DIM,Nk)
          if ( F_flag_L ) then 
          do k=1,Nk
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
-            F_w2(i,j,k) = F_fd(i,j,k)
+            w2(i,j,k) = F_fd(i,j,k)
          end do
          end do
          end do
-         call xyfil(F_fd,F_w2,F_w1,-F_coef,whx,why,.false.,LDIST_DIM,Nk)
+         call xyfil(F_fd,w2,w1,-F_coef,whx,why,.false.,LDIST_DIM,Nk)
          endif
          end do
       else   ! THE RANGE OF VALIDITY OF THE COEFFICIENT IS NOT RESPECTED

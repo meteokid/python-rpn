@@ -144,7 +144,7 @@
          V4dg_part = 3
          call indata()
 *
-         call dynout2()
+         call out_dyn()
 *
 *        Run NLM model
 *        -------------
@@ -188,7 +188,7 @@
          V4dg_part = 3
          call indata_tl()
 *
-         call dynout2()
+         call out_dyn()
 *
 *        Run TLM model
 *        -------------

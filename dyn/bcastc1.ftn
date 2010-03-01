@@ -57,7 +57,7 @@
 #include "adw.cdk"
 #include "lctl.cdk"
 #include "cstv.cdk"
-#include "out.cdk"
+#include "out3.cdk"
 #include "pres.cdk"
 #include "ptopo.cdk"
 #include "pilot.cdk"
@@ -134,9 +134,9 @@
       COMMON_BROADCAST(hspngl)
       COMMON_BROADCAST(hspngi)
       COMMON_BROADCAST(hspngr)
-      COMMON_BROADCAST(Out_l)
-      COMMON_BROADCAST(Out_c)
-      COMMON_BROADCAST(Out_i)
+      COMMON_BROADCAST(Out3_l)
+      COMMON_BROADCAST(Out3_c)
+      COMMON_BROADCAST(Out3_i)
       COMMON_BROADCAST(Level_l)
       COMMON_BROADCAST(C_nml)
       COMMON_BROADCAST(C_pipe)
@@ -155,6 +155,8 @@
       COMMON_BROADCAST(vtopo_i)
       COMMON_BROADCAST(Glb_pil_i)
 *
+      call RPN_COMM_bcast(Ptopo_nblocx, 1,"MPI_INTEGER",0,"grid",err )
+      call RPN_COMM_bcast(Ptopo_nblocy, 1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(V4dz_degree,  1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(V4dzge_degree,1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(V4dzga_degree,1,"MPI_INTEGER",0,"grid",err )

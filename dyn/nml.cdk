@@ -1,5 +1,8 @@
 #include "hybdim.cdk"
 *
+      namelist /ptopo/
+     $     Ptopo_npex, Ptopo_npey, Ptopo_nblocx, Ptopo_nblocy
+*
       namelist /gem_cfgs/
      $     Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup,
      $     hyb, Grd_rcoef, Pres_ptop, Level_ip12000_L,
@@ -20,10 +23,10 @@
      $     Vspng_nk,Vspng_mf,Vspng_nutop,Vspng_uvwdt_L,Vspng_rwnd_L,
      $     Hspng_nj,Hspng_mf,Hspng_uvwdt_L,Hspng_rwnd_L,
      $     Xst_statij, Xst_statll, Lctl_debug_L, Lctl_r8stat_L,
-     $     Out_xnbits_s,Out_xnbits,Out_nbitg,Out_filt_s,Out_filtcoef, 
-     $     Out_filtpass, Out_linbot, Out_zund, Out_unit_S, Out_ndigits,
-     $     Out_cliph_L,Out_vt2gz_L,Out_cubzt_L,Out_cubuv_L,Out_cubds_L,
-     $     Out_cubqs_L, Out_cubdd_L, Out_cubqq_L, Out_cubww_L, 
+     $     Out3_xnbits_s,Out3_xnbits,Out3_nbitg,Out3_filt_s,Out3_filtcoef, 
+     $     Out3_filtpass, Out3_linbot, Out3_zund, Out3_unit_S, Out3_ndigits,
+     $     Out3_cliph_L,Out3_vt2gz_L,Out3_cubzt_L,Out3_cubuv_L,Out3_cubds_L,
+     $     Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L, Out3_cubww_L, 
      $     Tr2d_incore_L, Tr2d_ntpf, Vtopo_start, Vtopo_ndt
       namelist /gem_cfgs_p/
      $     Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup,
@@ -44,9 +47,9 @@
      $     Eigv_parity_L,Vspng_njpole,Vspng_rwnd_L,
      $     Vspng_nk,Lctl_debug_L,Lctl_r8stat_L,Vspng_uvwdt_L,
      $     Hspng_nj,Hspng_mf,Hspng_rwnd_L,Hspng_uvwdt_L,
-     $     Out_nbitg, Out_linbot, Out_unit_S, Out_ndigits, Out_cliph_L,
-     $     Out_vt2gz_L, Out_cubzt_L, Out_cubuv_L, Out_cubds_L, 
-     $     Out_cubqs_L, Out_cubdd_L, Out_cubqq_L, Out_cubww_L, 
+     $     Out3_nbitg, Out3_linbot, Out3_unit_S, Out3_ndigits, Out3_cliph_L,
+     $     Out3_vt2gz_L, Out3_cubzt_L, Out3_cubuv_L, Out3_cubds_L, 
+     $     Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L, Out3_cubww_L, 
      $     Tr2d_incore_L, Tr2d_ntpf, Vtopo_start, Vtopo_ndt
       namelist /var4d/ V4dg_conf, V4dg_stepob, V4dg_inv, V4dg_incore_L,
      $                 V4dg_4dvar_L, V4dg_sensib_L, V4dg_twin_L, 

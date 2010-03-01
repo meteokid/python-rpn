@@ -29,7 +29,6 @@
 #include "rstr.cdk"
 #include "schm.cdk"
 #include "tr2d.cdk"
-#include "pslab.cdk"
 *
 **
       integer i,dim,err
@@ -38,25 +37,13 @@
 *
       if (Lun_out.gt.0) write(Lun_out,2000)
 *
-      Pslab_mxout=0
-*
 *C             Initialize the RPN physics package
 *              ----------------------------------
       call p_init   ( )
 *
 *C             Initialize the chemistry package
 *              --------------------------------
-      call chem_init( )
-*
-*C             Initialize sliced slab output 
-*              --------------------------------
-      if (Pslab_mxout.gt.0) then
-      call hpalloc(Pslab_xnio_   ,(LDIST_SIZ*MAXGRID),err,1)
-      call hpalloc(Pslab_grid_   ,           PSLAB_SLAB_MAX, err,1)
-      call hpalloc(Pslab_mtas_   ,Pslab_mxout*PSLAB_SLAB_MAX,err,1)
-      call hpalloc(Pslab_mtmul_  ,Pslab_mxout*PSLAB_SLAB_MAX,err,1)
-      call hpalloc(Pslab_mtadd_  ,Pslab_mxout*PSLAB_SLAB_MAX,err,1)
-      endif
+CC    call chem_init( )
 *
 *C             Initialize tracers Part 1:
 *              --------------------------

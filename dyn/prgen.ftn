@@ -3,13 +3,13 @@
 #include <model_macros_f.h>
 *
       subroutine prgen (F_out  , F_in   , F_deriv , F_wlnph,
-     %                  F_pres, F_cubic_L, DIST_DIM, Nk)
+     %                  F_pres, Nkout, F_cubic_L, DIST_DIM, Nk)
 *
 #include "impnone.cdk"
 *
-      integer DIST_DIM,Nk
+      integer DIST_DIM,Nk,Nkout
       logical F_cubic_L
-      real    F_pres, F_out(DIST_SHAPE), F_in(DIST_SHAPE,Nk),
+      real    F_pres(Nkout), F_out(DIST_SHAPE,Nkout), F_in(DIST_SHAPE,Nk),
      $        F_deriv(DIST_SHAPE,Nk), F_wlnph(DIST_SHAPE,Nk)
 *
 *author
@@ -39,12 +39,13 @@
 #include "glb_ld.cdk"
 *
 **
-      integer i, j, k, pnk, pnkm, pnindex(l_ni,l_nj)
+      integer i, j, k, kk,pnk, pnkm, pnindex(l_ni,l_nj)
       real    prlprso, prd, pre, prr, prfm0, prfm1, prfm2, prfm3, prfl2
 *
 *     ---------------------------------------------------------------
 *
-      prlprso = log(F_pres)
+      do 500 kk=1, Nkout
+      prlprso = log(F_pres(kk))
 *
       do j= 1, l_nj
       do i= 1, l_ni
@@ -74,7 +75,7 @@
 *
             prd = prlprso - F_wlnph(i,j,1)
 *
-            F_out(i,j) = F_in(i,j,1) + prd * F_deriv(i,j,1)
+            F_out(i,j,kk) = F_in(i,j,1) + prd * F_deriv(i,j,1)
 *
 *********************************************************************
 *                                                                   *
@@ -88,7 +89,7 @@
 *********************************************************************
          else if (pnindex(i,j) .eq. l_nk ) then
 *
-            F_out(i,j)= F_in(i,j,l_nk)
+            F_out(i,j,kk)= F_in(i,j,l_nk)
 *********************************************************************
 *                                                                   *
 * Else, interpolate between appropriate levels.                     *
@@ -118,11 +119,11 @@
 *     
                prfl2 = prfm2 + 2.0 * pre * prfm3
 *     
-               F_out(i,j)= prfm0 + pre * prfm1 - prr * prfl2
+               F_out(i,j,kk)= prfm0 + pre * prfm1 - prr * prfl2
 *     
             else
 *     
-               F_out(i,j)= prfm0 + pre * prfm1
+               F_out(i,j,kk)= prfm0 + pre * prfm1
 *
             endif
 *
@@ -133,5 +134,7 @@
 *
 *     ---------------------------------------------------------------
 *
- 300  return
+ 500  enddo
+
+      return
       end

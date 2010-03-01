@@ -11,10 +11,14 @@
 *--------------------|-------------------------------------------------|
 * Outd_sets          | The total number of sets of output variables    |
 *                    | requested from the dynamics                     |
-* Outd_var           | A table containing "Outd_sets" sets of output   |
-*                    | variables requested from the dynamics (the      |
-*                    | values are indices which point to the variable  |
-*                    | names stored in table Setsor_name_s)            |
+* Outd_var_S         | A table containing "Outd_sets" sets of output   |
+*                    | variables requested from the dynamics           |
+* Outd_nbit          | A table containing "Outd_sets" sets of compact  |
+*                    | bit corresponding to Outd_var_S                 |
+* Outd_filtpass      | A table containing "Outd_sets" sets of filter   |
+*                    | pass corresponding to Outd_var_S                |
+* Outd_filtcoef      | A table containing "Outd_sets" sets of filter   |
+*                    | coef corresponding to Outd_var_S                |
 * Outd_var_max       | Outd_var_max(j) is the total number of requested|
 *                    | output variables in each set Outd_var(*,j)      |
 * Outd_lev           | Outd_lev(j) contains the index that indicates   |
@@ -25,23 +29,35 @@
 *                    | the Step set to use for Outd_var(*,j)           |
 * Outd_typvar_S      | Outd_typvar_S(i) is the assigned datatype for   |
 *                    | the fields defined in Outd_var(*,j)             |
+* Outd_vmm_L         | To indicate if any VMM model variables are req  |
 *----------------------------------------------------------------------
 *
 *
 #endif
 *
-      integer Outd_var(MAXELEM,MAXSET)
+      character*4 Outd_var_S(MAXELEM,MAXSET)
+      integer Outd_nbit(MAXELEM,MAXSET)
+      integer Outd_filtpass(MAXELEM,MAXSET)
+      real    Outd_filtcoef(MAXELEM,MAXSET)
       integer Outd_lev(MAXSET)
       integer Outd_grid(MAXSET)
       integer Outd_step(MAXSET)
       integer Outd_var_max(MAXSET)
       integer Outd_sets
+      logical Outd_vmm_L
       character*1 Outd_typvar_S(MAXSET)
 
       MARK_COMMON_BEG (Outd)
-      COMMON /Outd/ Outd_var,Outd_lev,Outd_grid,Outd_step,
-     $              Outd_var_max, Outd_sets
+      COMMON /Outd/ Outd_lev,Outd_grid,Outd_step,
+     $              Outd_var_max, Outd_sets, Outd_nbit,Outd_filtpass
       MARK_COMMON_END (Outd)
       MARK_COMMON_BEG (Outd_c)
-      COMMON /Outd_c/ Outd_typvar_S
+      COMMON /Outd_c/ Outd_var_S,Outd_typvar_S
       MARK_COMMON_END (Outd_c)
+      MARK_COMMON_BEG (Outd_r)
+      COMMON /Outd_r/ Outd_filtcoef
+      MARK_COMMON_END (Outd_r)
+      MARK_COMMON_BEG (Outd_l)
+      COMMON /Outd_l/ Outd_vmm_L
+      MARK_COMMON_END (Outd_l)
+

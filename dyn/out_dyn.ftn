@@ -1,0 +1,354 @@
+***s/r out_dyn - perform dynamic output
+*
+#include <model_macros_f.h>
+*
+      subroutine out_dyn ()
+*
+*implicits
+      use v4d_prof, only: Pr_nsim4d
+*
+      implicit none
+*
+*
+*author 
+*     V. Lee    - rpn - July  2004 (from dynout2 v3_12)
+*
+*revision
+* v3_20 - Lee V.            - initial MPI version (from dynout2 v3_11)
+*
+*object
+*     Subroutine to control the production of
+*     the output of the dynamic variables
+*
+*arguments
+*  NONE
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "dimout.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "schm.cdk"
+#include "pres.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "out3.cdk"
+#include "level.cdk"
+#include "outd.cdk"
+#include "ptopo.cdk"
+#include "tr3d.cdk"
+#include "grd.cdk"
+#include "grid.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+#include "vt1m.cdk"
+#include "cstv.cdk"
+*
+**
+      integer doout, longueur,
+     $        vmmlod, vmmuld, vmmget, vmmuln
+      external doout, longueur,
+     $         vmmlod, vmmuld, vmmget, vmmuln
+*
+      integer err,nrec,dostep(MAXSET), dostep_max, step, key0, key1,
+     $        pnlkey(15),i,j,k,trkey0(Tr3d_ntr),trkey1(Tr3d_ntr),keytotal
+      character*4 ext_S
+      integer i0,in,j0,jn,ii,jj,kk,levset,n,ip3,pnerr,nk_o
+      integer,   dimension(:), allocatable :: ind_o
+      real deg2rad
+      real ptop(LDIST_SHAPE), wlao(LDIST_SHAPE)
+      real qh(LDIST_SHAPE,G_nk),
+     $     wlnph(LDIST_SHAPE,G_nk),
+     $     vtm(LDIST_SHAPE,G_nk)
+      integer keym(Tr3d_ntr),key0m
+      logical periodx_L,v4dgconf_L
+      real hut1,qct1,hum1,qjt1
+      pointer (patrm, hum1(LDIST_SHAPE,*))
+      pointer (patr, hut1(LDIST_SHAPE,*)),(patr2, qjt1(LDIST_SHAPE,*)),
+     $        (patr1, qct1(LDIST_SHAPE,*))
+
+**
+*
+*     check if output is required and initialize control tables
+*     ---------------------------------------------------------------
+*
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+      v4dgconf_L = V4dg_conf .ne. 0
+      dostep_max = doout(dostep,1)
+      deg2rad    = acos( -1.0)/180.
+*
+      if (dostep_max .gt. 0) then
+
+         if (Lun_out.gt.0) write(Lun_out,7001) Lctl_step
+      else
+*
+         if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
+         return
+*     
+      endif
+*
+*     PREPARATION for OUT_THM
+*    ---------------------------
+*
+      key0 = VMM_KEY(pipt1)
+      err = vmmlod (key0,1)
+      err = VMM_GET_VAR(pipt1)
+*
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         wlnph (i,j,k) = log ( geomg_z_8(k) + pipt1(i,j,k) )
+      enddo
+      enddo
+      enddo
+      do j=1,l_nj
+      do i=1,l_ni
+         ptop (i,j) = geomg_z_8(1) + pipt1(i,j,1)
+         wlao (i,j) = Geomn_latrx(i,j) * deg2rad
+      end do
+      end do
+*
+      err = vmmuld(key0,1)
+      pnlkey(1) = VMM_KEY(fit1)
+      pnlkey(2) = VMM_KEY(tt1)
+      pnlkey(3) = VMM_KEY(st1)
+      pnlkey(4) = VMM_KEY(ut1)
+      pnlkey(5) = VMM_KEY(vt1)
+      pnlkey(6) = VMM_KEY(psdt1)
+      pnlkey(7) = VMM_KEY(tdt1)
+      pnlkey(8) = VMM_KEY(zz1)
+      keytotal  = 8
+*
+      if(.not.v4dgconf_L.or.(v4dgconf_L.and.V4dg_di_L)) then
+*
+      err = vmmlod (pnlkey,8)
+      else
+*
+      pnlkey(9) = VMM_KEY(tpt1)
+      pnlkey(10) = VMM_KEY(tpt1m)
+      pnlkey(11) = VMM_KEY(st1m)
+*
+      keytotal  =11 
+      pnerr = vmmlod(pnlkey,11)
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(tpt1m)
+      pnerr = VMM_GET_VAR(st1m)
+*
+      endif
+
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(tdt1)
+      err = VMM_GET_VAR(zz1)
+
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         qh (i,j,k) = 0.0
+      enddo
+      enddo
+      enddo
+
+      key0 = VMM_KEY (trt0)
+      key1 = VMM_KEY (trt1)
+      do k=1,Tr3d_ntr
+         trkey0(k) = key0 + k
+         trkey1(k) = key1 + k
+      end do
+      pnerr = vmmlod(trkey0,Tr3d_ntr)
+      pnerr = vmmlod(trkey1,Tr3d_ntr)
+      do n=1,Tr3d_ntr
+         if (Tr3d_name_S(n).eq.'HU') then
+            pnerr = vmmget(trkey1(n),patr,hut1)
+         endif
+         if (Schm_phyms_L) then
+             if (Tr3d_name_S(n).eq.'QC') then
+                 pnerr = vmmget(trkey1(n),patr1,qct1)
+             endif
+             if(Schm_wload_L)then
+               if (Tr3d_name_S(n).eq.'QC'.or.
+     $             Tr3d_name_S(n).eq.'QR'.or.
+     $             Tr3d_name_S(n).eq.'QI'.or.
+     $             Tr3d_name_S(n).eq.'QG'    ) then
+                   pnerr = vmmget(trkey1(n),patr2,qjt1)
+                   do k=1,l_nk
+                   do j=j0,jn
+                   do i=i0,in
+                      qh (i,j,k) = qh (i,j,k) + max(0.0,qjt1(i,j,k))
+                   enddo
+                   enddo
+                   enddo
+               endif  
+             endif
+         endif
+      enddo
+*
+      if(v4dgconf_L.and.(V4dg_tl_L.or.V4dg_ad_L)) then
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            vtm (i,j,k) = tpt1m(i,j,k) + Cstv_tstr_8
+         enddo
+         enddo
+         enddo
+         key0m = VMM_KEY (trt1m)
+         do k=1,Tr3d_ntr
+            keym(k) = key0m + k
+         end do
+         pnerr = vmmlod(keym,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            if (Tr3d_name_S(n).eq.'HU') then
+                pnerr = vmmget(keym(n),patrm,hum1)
+            endif
+         enddo
+      endif
+      
+*
+*     setup of ip3
+*
+      ip3 = 0
+      if (Schm_theoc_L) ip3 = Lctl_step
+      if (v4dgconf_L) then
+          if (.not.V4dg_4dvar_L) then
+              ip3 = V4dg_status
+              if (V4dg_conf/100.eq.1.and.V4dg_ad_L)
+     %        ip3 = 20 + V4dg_status
+          else
+              ip3 = V4dg_status
+              if(V4dg_tl_L) ip3 = 1000 + Pr_nsim4d
+              if(V4dg_ad_L) ip3 = 2000 + Pr_nsim4d
+          endif
+      endif
+      
+*
+*     setup of filename extension if needed
+      ext_S=""
+      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
+     $     ((Lctl_step.ge.(Init_dfnp-1)/2)) )
+     $     ext_S = '_dgf'
+
+*     output loop on the number of "sortie" sets
+
+      do 100 jj=1,dostep_max
+
+         do 50 kk=1, Outd_sets
+
+            if ( Outd_step(kk).eq.dostep(jj) ) then
+*           (if the timestep set of this sortie set is to output now)
+            periodx_L=.false.
+            if (.not.G_lam .and. (Grid_x1(Outd_grid(kk))
+     $           -Grid_x0(Outd_grid(kk))+1).eq. G_ni ) periodx_L=.true.
+               call out_sgrid(Grid_x0(outd_grid(kk)),Grid_x1(outd_grid(kk)),
+     $                   Grid_y0(outd_grid(kk)),Grid_y1(outd_grid(kk)),
+     $                   periodx_L,
+     $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
+     $                   Grid_stride(outd_grid(kk)),Geomn_longs,Geomn_latgs)
+               levset = Outd_lev(kk)
+               nk_o   = Level_max(levset)
+               allocate (ind_o(nk_o+1))
+               call out_slev(Level_typ(levset),Level(1,levset),
+     $                       ind_o,nk_o,G_nk,Level_kind_ip1,'d')
+               call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
+ 
+*
+*     output of 3-D tracers
+*
+               call out_tracer (wlnph,trkey0,trkey1,
+     $                      l_minx,l_maxx,l_miny,l_maxy,G_nk,
+     $                      Level_typ(levset),Level(1,levset),ind_o,nk_o,kk)
+*
+*     output of temperature, humidity and mass fields,omega
+*
+               call out_thm(fit1,tt1,st1,qct1,qh,hut1,tpt1,psdt1,tdt1,zz1,
+     $                      vtm,hum1,st1m,
+     $                      wlnph,ptop,wlao,
+     $                      (l_maxx-l_minx+1)*(l_maxy-l_miny+1),G_nk,
+     $                      Level_typ(levset),Level(1,levset),ind_o,nk_o,kk)
+*
+*     output of winds
+*
+               call out_uv (ut1,vt1,wlnph,l_minx,l_maxx,l_miny,l_maxy,G_nk,
+     $                      Level_typ(levset),Level(1,levset),ind_o,nk_o,kk)
+*
+*     output of divergence and vorticity
+*
+               call out_dq (ut1,vt1,wlnph,wlao,l_minx,l_maxx,l_miny,l_maxy,G_nk,
+     $                      Level_typ(levset),Level(1,levset),ind_o,nk_o,kk)
+*
+*
+               deallocate (ind_o)
+            endif
+      call out_cfile
+  50  continue
+
+ 100  continue
+      pnerr = vmmuln(pnlkey,keytotal)
+      pnerr = vmmuln(trkey0,Tr3d_ntr)
+      pnerr = vmmuln(trkey1,Tr3d_ntr)
+      if(v4dgconf_L.and.(V4dg_tl_L.or.V4dg_ad_L)) pnerr = vmmuln(keym,Tr3d_ntr)
+
+
+      if (.not.Outd_vmm_L) return
+
+*     Output VMM model variables
+
+      do 200 jj=1,dostep_max
+
+         do 150 kk=1, Outd_sets
+
+            if ( Outd_step(kk).eq.dostep(jj) ) then
+*           (if the timestep set of this sortie set is to output now)
+                 periodx_L=.false.
+                 if (.not.G_lam .and. 
+     $               (Grid_x1(Outd_grid(kk))-Grid_x0(Outd_grid(kk))+1).eq. 
+     $                G_ni ) periodx_L=.true.
+                 call out_sgrid(Grid_x0(outd_grid(kk)),Grid_x1(outd_grid(kk)),
+     $                   Grid_y0(outd_grid(kk)),Grid_y1(outd_grid(kk)),
+     $                   periodx_L,
+     $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
+     $                   Grid_stride(outd_grid(kk)),Geomn_longs,Geomn_latgs)
+                 levset = Outd_lev(kk)
+                 nk_o   = Level_max(levset)
+                 allocate (ind_o(nk_o+1))
+                 call out_slev(Level_typ(levset),Level(1,levset),
+     $                       ind_o,nk_o,G_nk,Level_kind_ip1,'d')
+                 call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
+
+                 call out_vmm (wlnph,ip3,ext_S,l_minx,l_maxx,l_miny,l_maxy,
+     $               G_nk, Level_typ(levset),Level(1,levset),ind_o,nk_o,kk)
+                 deallocate (ind_o)
+            endif
+            call out_cfile
+ 150     continue
+ 200  continue
+ 
+*
+*     Delay closure of files, de-allocation, wlog write out if...
+      if ( .not. (Lctl_step .eq. 0 .and. Schm_phyms_L).or.v4dgconf_L) then
+*
+*
+         if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
+             call wlog('IOUT')
+         else
+             call wlog('FOUT')
+         endif
+      endif
+*
+ 7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,')')
+ 7002 format(/,' OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (',I8,')')
+*
+      return
+      end
+

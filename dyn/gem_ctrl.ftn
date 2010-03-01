@@ -63,7 +63,7 @@
 *
          call indata()
 *
-         call dynout2 ()
+         call out_dyn ()
 *
          call wlog('CSTR')
 *

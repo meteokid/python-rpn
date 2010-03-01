@@ -36,7 +36,6 @@
 #include "dimout.cdk"
 #include "mem.cdk"
 #include "p_bus.cdk"
-#include "pslab.cdk"
 #include "busind.cdk"
 #include "schm.cdk"
 *
@@ -84,10 +83,6 @@
 *
       call p_config( )
 *
-      Pslab_mxout = nint(float(p_bper_siz)/float(p_ni))
-      Pslab_mxout = max(Pslab_mxout,nint(float(p_bdyn_siz)/float(p_ni)))
-      Pslab_mxout = max(Pslab_mxout,nint(float(p_bvol_siz)/float(p_ni)))
-      Pslab_mxout = max(Pslab_mxout,nint(float(p_bent_siz)/float(p_ni)))
       P_bphy_top  = p_bper_top+p_bdyn_top+p_bvol_top+p_bent_top
 *
       if (lun_out.gt.0) then
@@ -95,12 +90,7 @@
          write(lun_out,*) 'p_bdyn_top=',p_bdyn_top
          write(lun_out,*) 'p_bvol_top=',p_bvol_top
          write(lun_out,*) 'p_bent_top=',p_bent_top
-         write(Lun_out,*) 'Pslab_mxout=',Pslab_mxout
-         write(Lun_out,*) 'P_bphy_top=',P_bphy_top
       endif
-*
-      call hpalloc(Phy_useit_    ,P_bphy_top,         err,1) 
-      call hpalloc(Phy_xnbits_   ,P_bphy_top,         err,1) 
 *
       if (Mem_phyncore_L) then
          call hpalloc (Phy_busper3D_,p_bper_siz*p_nj,err,1)

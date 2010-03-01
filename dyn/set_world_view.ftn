@@ -36,23 +36,30 @@
 #include "dcst.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
-#include "slab.cdk"
+#include "grid.cdk"
+#include "hgc.cdk"
 #include "pres.cdk"
 #include "grd.cdk"
 #include "dimout.cdk"
+#include "slab.cdk"
+#include "cstv.cdk"
 #include "level.cdk"
 #include "hblen.cdk"
 #include "pilot.cdk"
 *
 *modules
       logical  check_parti
-      integer  slabopt, longueur, hybref_to_ig, set_dcst8, gnthread
+      integer  slabopt, longueur, hybref_to_ig, set_dcst8, gnthread,
+     %         RPN_COMM_bloc
       external set_world_view1,set_dcst8,check_parti,
-     %         slabopt,longueur,hybref_to_ig,gnthread
+     %         slabopt,longueur,hybref_to_ig,gnthread,
+     %         RPN_COMM_bloc
 **
       integer ipcode,ipmode,ierr,mindimx,mindimy,
+     $        n1,n2,n3,n4,n5,n6,n7,mybloc,
      $        maxblenx,maxbleny,cte_ok
       character*256 prejob_S
+      character*12 dumc1_S
       real pcode,x1,x2
 *
       integer pni, pnj, pniu, pnjv, pnk, lam
@@ -83,9 +90,17 @@ c     These variables are for OpenMp compilation
 	 write(6,*) 'OpenMP will use ',Ptopo_npeOpenMP
      $                    ,' thread(s)'
       endif
-      call rpn_comm_mype (Ptopo_myproc, Ptopo_myrow, Ptopo_mycol)
 *
       call bcastc1 ()
+      Ptopo_numpe_perb = Ptopo_npex/Ptopo_nblocx * Ptopo_npey/Ptopo_nblocy
+
+      call rpn_comm_mype (Ptopo_myproc, Ptopo_myrow, Ptopo_mycol)
+
+      ierr = RPN_COMM_bloc ( Ptopo_nblocx, Ptopo_nblocy )
+
+      call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc,
+     $                      n1,n2,n3,n4,n5,n6,n7,mybloc,
+     $                      Ptopo_myblocx,Ptopo_myblocy,Ptopo_blocme,dumc1_S )
       call tmg_init ( Ptopo_myproc, 'GEMDM' )
       call tmg_start ( 1, 'GEMDM' ) 
 *

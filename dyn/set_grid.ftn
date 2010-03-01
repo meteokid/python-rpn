@@ -74,13 +74,12 @@
 #include "glb_pil.cdk"
 #include "lun.cdk"
 #include "p_geol.cdk"
-#include "hgc.cdk"
 #include "grd.cdk"
 #include "dimout.cdk"
 #include "grid.cdk"
 *
 **
-      integer i, j, k, gridset,gridinc(4)
+      integer i, j, k, gridset,gridout(5),niout,njout
       character*8 grdtyp_S
 *
 *-------------------------------------------------------------------
@@ -92,7 +91,7 @@
       set_grid = 0
       read(F_argv_S(1),*) gridset
       Grid_sets = Grid_sets + 1
-      if (Grid_sets.gt.MAXGRID) then
+      if (Grid_sets.gt.MAXGRID1) then
           if (Lun_out.gt.0)
      $    write(Lun_out,*)'SET_GRID WARNING: Too many grid definitions'
           Grid_sets = Grid_sets - 1
@@ -106,78 +105,73 @@
           grdtyp_S='model'
       else if (index(F_argv_S(2),'core') .ne. 0) then
           grdtyp_S='core'
-      else 
+      else if (index(F_argv_S(2),'reduc') .ne. 0) then
+               gridout(1)=0
+               gridout(2)=0
+               gridout(3)=0
+               gridout(4)=0
+               gridout(5)=1
+               read(F_argv_S(3),*)gridout(1)
+               read(F_argv_S(4),*)gridout(2)
+               read(F_argv_S(5),*)gridout(3)
+               read(F_argv_S(6),*)gridout(4)
+               if (F_argc.eq.7) read(F_argv_S(7),*)gridout(5)
+      else
           if (Lun_out.gt.0)
      $    write(Lun_out,*)'SET_GRID WARNING: Grid Type Undefined'
           Grid_sets = Grid_sets - 1
           set_grid = 1
           return
       endif
-      if (F_argc.eq.6) then
-          read(F_argv_S(3),*)gridinc(1)
-          read(F_argv_S(4),*)gridinc(2)
-          read(F_argv_S(5),*)gridinc(3)
-          read(F_argv_S(6),*)gridinc(4)
-      else
-          gridinc(1)=0
-          gridinc(2)=0
-          gridinc(3)=0
-          gridinc(4)=0
-      endif
-*
-      Grid_typ_s(j) = '#'
-      Grid_gxtyp_s(j) = Hgc_gxtyp_s
 
 *    Get values for ip1,ip2,ip3 for the positional records which
 *        is also the ig1,ig2,ig3 for the scalar grid
 *    Note the result of Grid_ig3 is invalid because it is determined
 *        by dieseig34
-         call ipig(Grid_ig1(j), Grid_phi_ig2(j), Grid_ig3(j),
+         call ipig(Grid_ig1(j), Grid_ig2(j), Grid_ig3(j),
      %        Grd_dx, Grd_dy, Grd_nila, Grd_njla, G_ni, G_nj,
      %        Grd_rot_8, P_geol_tourn_L)
          Grid_ig1(j) = Grid_ig1(j) + j-1
          if (G_lam) Grid_ig1(j)=Grid_ig1(j)+10
 
 *    Calculate the origin and outer coordinates of the output grid
+*    and set to the maximum/minimum possible
+*
+      Grid_stride(j)=1
 
       if (grdtyp_S.eq.'model') then
 
-         Grid_x0(j)=1 + gridinc(1)
-         Grid_x1(j)=G_ni + gridinc(2)
-         Grid_y0(j)=1 + gridinc(3)
-         Grid_y1(j)=G_nj + gridinc(4)
-         
+         Grid_x0(j)=1
+         Grid_x1(j)=G_ni
+         Grid_y0(j)=1
+         Grid_y1(j)=G_nj
+
       else if (grdtyp_S.eq.'core') then
 *     
-         Grid_x0(j)=Grd_left+ 1 + gridinc(1) + Lam_pil_w
-         Grid_x1(j)=Grd_left + Grd_nila + gridinc(2) - Lam_pil_e
-         Grid_y0(j)=Grd_belo + 1 + gridinc(3) + Lam_pil_s
-         Grid_y1(j)=Grd_belo + Grd_njla + gridinc(4) - Lam_pil_n
+         Grid_x0(j)=Grd_left+ 1 + Lam_pil_w
+         Grid_x1(j)=Grd_left + Grd_nila  - Lam_pil_e
+         Grid_y0(j)=Grd_belo + 1         + Lam_pil_s
+         Grid_y1(j)=Grd_belo + Grd_njla  - Lam_pil_n
+
+      else if (grdtyp_S.eq.'reduc') then
+
+         Grid_x0(j)=min( G_ni,      max(1,gridout(1)) )
+         Grid_x1(j)=max( Grid_x0(j), min(G_ni,gridout(2)) )
+         Grid_y0(j)=min( G_nj, max(1,gridout(3)) )
+         Grid_y1(j)=max( Grid_y0(j), min(G_nj,gridout(4)) )
+         Grid_stride(j)=min( max(gridout(5),1),
+     $       min(Grid_x1(j)-Grid_x0(j)+1,Grid_y1(j)-Grid_y0(j)+1)/2-1 )
       endif
       
-*     verify that coordinates fall within the limits of the full grid
-*     or set to the maximum/minimum possible
-      Grid_x0(j)= max(Grid_x0(j),1)
-      Grid_x1(j)=min(Grid_x1(j),G_ni)
-      if (.not.G_lam .and. Grid_x1(j).eq.G_ni) Grid_x1(j)=G_ni+1
-      Grid_y0(j)= max(Grid_y0(j),1)
-      Grid_y1(j)=min(Grid_y1(j),G_nj)
-
-*     Calculate the NIxNJ of the output grid
-      Grid_niout(j)=Grid_x1(j) - Grid_x0(j) + 1
-      Grid_njout(j)=Grid_y1(j) - Grid_y0(j) + 1
-      if (Grid_niout(j).lt.1.or.Grid_njout(j).lt.1) then
+      niout=Grid_x1(j) - Grid_x0(j) + 1
+      njout=Grid_y1(j) - Grid_y0(j) + 1
+      if (niout.lt.1.or.njout.lt.1) then
           Grid_sets = Grid_sets - 1
           if (Lun_out.gt.0)
      $       write (Lun_out,*)'ERROR in description of output grid!'
           return
       endif
 *
-*    Fill in the positional records for scalar grid
-      Grid_ixg1(j) = Hgc_ig1ro
-      Grid_ixg2(j) = Hgc_ig2ro
-      Grid_ixg3(j) = Hgc_ig3ro
-      Grid_ixg4(j) = Hgc_ig4ro
       if (Lun_out.gt.0) then
       write(Lun_out,*) ' Grid_set(',j,') : Grid_id=',Grid_id(j)
       endif

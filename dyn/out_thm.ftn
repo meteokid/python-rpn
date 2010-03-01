@@ -1,0 +1,727 @@
+***s/r out_thm - output  temperature, humidity and mass fields
+*
+#include <model_macros_f.h>
+*
+      subroutine out_thm(F_fit1,F_tt1,F_st1,F_qct1,F_qh,F_hut1,F_tpt1,
+     %                   F_psdt1,F_tdt1,F_zz1,
+     %                   F_vtm,F_hum1, F_st1m,F_wlnph,F_ptop,F_wlao,F_ninj,
+     %                   F_nk, F_levtyp_S,F_rf,F_indo,F_nko,F_set)
+*
+      implicit none
+*
+      character*1 F_levtyp_S
+      integer F_nk,F_ninj,F_nko,F_indo(*),F_set
+
+      real F_fit1(F_ninj,F_nk), F_tt1(F_ninj,F_nk),
+     %     F_qct1(F_ninj,F_nk), F_qh (F_ninj,F_nk),
+     %     F_hut1(F_ninj,F_nk), F_tpt1(F_ninj,F_nk),
+     %     F_psdt1(F_ninj,F_nk), F_tdt1(F_ninj,F_nk),F_zz1(F_ninj,F_nk),
+     %     F_vtm (F_ninj,F_nk), F_hum1(F_ninj,F_nk),
+     %     F_wlnph(F_ninj,F_nk),F_ptop(F_ninj),
+     %     F_st1(F_ninj),F_st1m(F_ninj),
+     %     F_wlao(F_ninj)      ,F_rf(F_nko)
+   
+*
+*author
+*     james caveen/andre methot  - rpn june/nov 1995
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from blocthm v1_03)
+* v2_11 - Desgagne M.       - ptop reproducubility
+* v2_21 - Desgagne M.       - new calling sequence for glbdist + correct
+* v2_21                       calling sequence mfohra
+* v2_21 - J. P. Toviessi    - set dieze (#) slab output and rename
+* v2_21                       truncate model output names to 4 characters
+* v2_30 - Lee V.            - reorganize slab output to be more efficient
+* v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
+* v2_30                     - change call to p0vt2gz_hyb
+* v2_32 - Lee V.            - reduce dynamic allocation size, add HU,ME output
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Lee V.            - Added output of ThetaW
+* v3_01 - Morneau J.        - remove conversion to Celcius for TL or AD output
+* v3_02 - Plante A.         - Water loading
+* v3_02 - Lee V.            - LA and LO output (not physics), add QC output
+* v3_03 - Lee V.            - correct bug for illegal access to all h2o tracers
+* v3_03                       if Schm_phyms_L is false.
+* v3_11   Tanguay M.        - Add TLM and ADJ increments TT and P0
+*                           - Extend TRAJ for conversion for DYNOUT2
+* v3_20   Lee V.            - Output in blocks, standard files
+
+*
+*object
+*     See above id.
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_dostep     I    - array containing indices corresponding to the
+*                     timestep sets that requires output at this time step.
+* F_dostep_max I    - size of F_dostep array
+*
+*implicits
+
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "dimout.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "schm.cdk"
+#include "out.cdk"
+#include "out3.cdk"
+#include "grd.cdk"
+#include "level.cdk"
+#include "outd.cdk"
+#include "ptopo.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+*
+*modules
+*
+**
+      integer i,j,k,kl,ii
+      real wk1(G_ni,G_nj),wk2(G_ni,G_nj)
+      real wk3(G_ni,G_nj+2),wk4(G_ni,G_nj+2)
+      real w1(F_ninj), w2(F_ninj)
+      real w3(F_ninj,F_nk)
+      real px_pres(F_ninj,F_nko)
+      real hu_pres(F_ninj,F_nko)
+      real td_pres(F_ninj,F_nko)
+      real w5(F_ninj,F_nko)
+      real prprlvl(F_nko)
+      real tt_pres(F_ninj,F_nko)
+      real vt_pres(F_ninj,F_nko)
+      real htx(F_ninj,Out3_nundr)
+      real ttx(F_ninj,Out3_nundr)
+      real px(F_ninj,F_nk)
+      real tt(F_ninj,F_nk), t8(F_ninj,F_nk),
+     $     vt(F_ninj,F_nk), gz(F_ninj,F_nk)
+      real gz_temp(F_ninj,F_nk),tt_temp(F_ninj,F_nk)
+      real ps_temp(F_ninj)
+
+* ___________________________________________________________________
+*
+*     1.0     initialization of data
+*_______________________________________________________________________
+*
+      integer pngz,pnvt,pntt,pnes,pntd,
+     $        pnhr,pnpx,pnhu,pntw,pnqc,
+     $        pnpn,pnpt,pnp0,pnla,pnlo,
+     $        pnme,pnmx,pnww,pnwe,pnzz,
+     $        psum
+      integer nbit(0:Outd_var_max(F_set)+1),filt(0:Outd_var_max(F_set)+1)
+      real    coef(0:Outd_var_max(F_set)+1)
+      logical V4dgconf_L
+
+*     initialize conversion of units
+
+      real*8, parameter :: ZERO_8 = 0.0
+      real    prmult_pngz, prmult_pnpx, prmult_pnme, prmult_pnwe
+      real    pradd_pnvt,  pradd_pntt,  pradd_pntd,  pradd_pnwe
+
+      prmult_pngz  = 0.1 / Dcst_grav_8
+      prmult_pnpx  = 0.01
+      prmult_pnme  = 1.0 / Dcst_grav_8
+      prmult_pnwe  = 1.0 / (Geomg_z_8(l_nk) - Geomg_z_8(1))
+
+      pradd_pnwe   = ZERO_8
+
+      V4dgconf_L = V4dg_conf .ne. 0
+
+      if (V4dgconf_L .and. (v4dg_tl_L .or. v4dg_ad_L)) then
+        pradd_pnvt   = ZERO_8
+        pradd_pntt   = ZERO_8
+        pradd_pntd   = ZERO_8
+      else
+        pradd_pnvt   = -Dcst_tcdk_8
+        pradd_pntt   = -Dcst_tcdk_8
+        pradd_pntd   = -Dcst_tcdk_8
+      endif
+
+      pngz=0
+      pnvt=0
+      pntt=0
+      pnes=0
+      pntd=0
+      pnhr=0
+      pnpx=0
+      pnhu=0
+      pntw=0
+      pnqc=0
+      pnpn=0
+      pnpt=0
+      pnp0=0
+      pnla=0
+      pnlo=0
+      pnme=0
+      pnmx=0
+      pnww=0
+      pnwe=0
+      pnzz=0
+
+      do ii=0,Outd_var_max(F_set)
+         coef(ii)=0.0
+         filt(ii)=0
+         nbit(ii)=0
+      enddo
+
+      do ii=1,Outd_var_max(F_set)
+        if (Outd_var_S(ii,F_set).eq.'GZ') pngz=ii
+        if (Outd_var_S(ii,F_set).eq.'VT') pnvt=ii
+        if (Outd_var_S(ii,F_set).eq.'TT') pntt=ii
+        if (Outd_var_S(ii,F_set).eq.'ES') pnes=ii
+        if (Outd_var_S(ii,F_set).eq.'TD') pntd=ii
+        if (Outd_var_S(ii,F_set).eq.'HR') pnhr=ii
+        if (Outd_var_S(ii,F_set).eq.'PX') pnpx=ii
+        if (Outd_var_S(ii,F_set).eq.'HU') pnhu=ii
+        if (Outd_var_S(ii,F_set).eq.'TW') pntw=ii
+        if (Outd_var_S(ii,F_set).eq.'QC') pnqc=ii
+        if (Outd_var_S(ii,F_set).eq.'PN') pnpn=ii
+        if (Outd_var_S(ii,F_set).eq.'PT') pnpt=ii
+        if (Outd_var_S(ii,F_set).eq.'P0') pnp0=ii
+        if (Outd_var_S(ii,F_set).eq.'LA') pnla=ii
+        if (Outd_var_S(ii,F_set).eq.'LO') pnlo=ii
+        if (Outd_var_S(ii,F_set).eq.'ME') pnme=ii
+        if (Outd_var_S(ii,F_set).eq.'MX') pnmx=ii
+        if (Outd_var_S(ii,F_set).eq.'WW') pnww=ii
+        if (Outd_var_S(ii,F_set).eq.'WE') pnwe=ii
+        if (Outd_var_S(ii,F_set).eq.'ZZ') pnzz=ii
+        nbit(ii)=Outd_nbit(ii,F_set)
+        filt(ii)=Outd_filtpass(ii,F_set)
+        coef(ii)=Outd_filtcoef(ii,F_set)
+      enddo
+
+      if (pnpt.ne.0.and.Grd_rcoef.ne.1.0) pnpt=0
+
+      psum=pngz+pnvt+pntt+pnes+pntd+pnhr+pnpx+pnhu+pntw+pnqc+
+     $     pnpn+pnpt+pnp0+pnla+pnlo+pnme+pnmx+pnww+pnwe+pnzz
+
+      if (psum.eq.0)return
+
+      call out_padbuf(F_tt1,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+      call out_padbuf(F_hut1,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+      call out_padbuf(F_qh,l_minx,l_maxx,l_miny,l_maxy,F_nk) 
+      call out_padbuf(F_wlnph,l_minx,l_maxx,l_miny,l_maxy,F_nk) 
+      call out_padbuf(F_st1,l_minx,l_maxx,l_miny,l_maxy,1) 
+      call out_padbuf(F_wlao,l_minx,l_maxx,l_miny,l_maxy,1) 
+
+*_______________________________________________________________________
+*
+
+*     Compute Virtual temperature
+      if (.not.V4dgconf_L .or. (V4dgconf_L.and.V4dg_di_L)) then
+*        With water loading
+         call mfottvh (w3,F_tt1,F_hut1,F_qh,F_ninj,F_nk,F_ninj)
+         do k=1,l_nk
+            do i=1,F_ninj
+               vt (i,k) = F_tt1(i,k) + w3(i,k) * F_qh(i,k)
+            enddo
+         enddo
+      else
+*        Without water loading
+         do k=1,l_nk
+            do i=1,F_ninj
+               vt (i,k) = F_tpt1(i,k)
+            enddo
+         enddo
+      endif
+
+      call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,F_nk) 
+
+*     Compute or store Geopotential Height (GZ)
+      do k=1,l_nk
+      do i=1,F_ninj
+         gz (i,k) = F_fit1(i,k)
+      enddo
+      enddo
+
+      if ( Out3_vt2gz_L ) then
+*          Compute hydrostatic GZ from P0 and VT
+           call p0vt2gz_hyb (gz,geomg_pia,geomg_pib,F_st1,
+     $                          F_tt1,F_ninj,l_nk,.true.,.false.)
+      endif
+
+*_________________________________________________________________
+*
+*     2.0    Output 2D variables 
+*_________________________________________________________________
+*
+      if (pnme.ne.0) then
+          call ecris_fst2(gz,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $        'ME  ',prmult_pnme,0.0,-1,1, F_nk, 1, nbit(pnme) )
+      endif
+      if (pnmx.ne.0)
+     $    call ecris_fst2(gz,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $        'MX  ',1.0,0.0,-1,1, F_nk, 1, nbit(pnmx) )
+      if (pnpt.ne.0)
+     $    call ecris_fst2(F_ptop,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $        'PT  ',.01,0.0,-1,1, 1, 1, nbit(pnpt) )
+      if (pnla.ne.0)
+     $    call ecris_fst2(Geomn_latrx,1,l_ni,1,l_nj,0.0,
+     $        'LA  ',1.0,0.0,-1,1, 1, 1, nbit(pnla) )
+      if (pnlo.ne.0)
+     $    call ecris_fst2(Geomn_lonrx,1,l_ni,1,l_nj,0.0,
+     $        'LO  ',1.0,0.0,-1,1, 1, 1, nbit(pnlo) )
+
+*_______________________________________________________________________
+*
+*     3.0    Precomputations for output over pressure levels or PN
+*
+*        The underground extrapolation can use precalculated
+*        temperatures over fictitious underground geopotential levels.
+*        The number of fictitious levels is "Out3_nundr".
+*        The levels in meters are stored in "Out3_zund(Out3_nundr)".
+*        Both "Out3_nundr" and "Out3_zund" are user's given 
+*        parameters.
+*_______________________________________________________________________
+*
+      if ( Out3_nundr.gt.0 .and. (F_levtyp_S.eq.'P'.or.pnpn.ne.0) ) then
+
+       do 200 kl=1,Out3_nundr
+
+         do 150 i=1,F_ninj
+
+*        Store fictitious height level in htx
+
+         htx(i,kl) = Out3_zund(kl) * Dcst_grav_8
+
+*        Determine if fictitious level is above or below ground
+
+         w1(i) = gz (i,l_nk) - htx(i,kl)
+
+         if ( w1(i) .gt. 0 ) then
+
+*           fictitious level is under ground:
+*           temperature is obtained by linear EXTrapolation
+*           identify under ground grid point
+* 
+            if ( abs( F_wlao(i)*180./Dcst_pi_8 ) .ge. 49. ) then
+
+                w1(i) = F_tt1(i,l_nk) +       .0005 * w1(i)
+            else
+                w1(i) = F_tt1(i,l_nk) + Dcst_stlo_8 * w1(i)
+            endif
+
+            w2(i) = 1.0
+
+         else
+
+*           fictitious level is above ground:
+*           temperature is obtained by linear INTerpolation
+*           identify above ground grid point
+
+            do k=l_nk-1,1,-1
+               w1(i) = gz (i,k) - htx(i,kl)
+               if ( w1(i) .gt. 0. ) goto 10
+            enddo
+ 10         continue
+
+            w2(i)= - ( F_tt1 (i,k) - F_tt1 (i,k+1) ) /
+     %                 ( gz  (i,k) - gz  (i,k+1) )
+
+            w1(i) = F_tt1 (i,k) + w2(i) * w1(i)
+
+            w2(i) = 0.0
+         endif
+
+ 150     continue
+
+         call glbcolc (wk1,G_ni,G_nj,w1,l_minx,l_maxx,l_miny,l_maxy,1)
+         call glbcolc (wk2,G_ni,G_nj,w2,l_minx,l_maxx,l_miny,l_maxy,1)
+
+*        For all under ground grid points at level htx(i,kl)
+*        recompute temperature by HORIZONTAL interpolation
+*
+         if (Ptopo_myproc.eq.0) 
+     $        call liebman_2 (wk1,wk2,wk3,wk4,0.1,G_ni,G_nj)
+
+         call glbdist (wk1,G_ni,G_nj,w1,l_minx,l_maxx,l_miny,l_maxy,
+     $                         1,G_halox,G_haloy)
+
+         do i=1,F_ninj
+            ttx(i,kl) = w1(i)
+         enddo
+
+*        At this point:
+*        temperature field is stored in ttx for future use
+*        fictitious levels  are stored in htx for future use
+
+ 200   continue
+
+      endif
+
+      call out_padbuf(ttx,l_minx,l_maxx,l_miny,l_maxy,Out3_nundr) 
+      call out_padbuf(htx,l_minx,l_maxx,l_miny,l_maxy,Out3_nundr) 
+
+*     Calculate PN
+      if (pnpn.ne.0) then
+          call out_padbuf(gz,l_minx,l_maxx,l_miny,l_maxy,F_nk) 
+          call pnm2(w1,F_tt1,gz,F_wlnph,F_wlao,
+     $              ttx,htx,Out3_nundr,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+          if (filt(pnpn).gt.0)
+     $      call filter(w1,filt(pnpn),coef(pnpn),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, 1)
+          call ecris_fst2(w1,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $        'PN  ',.01,0.0,-1,1, 1, 1, nbit(pnpn) )
+      endif
+
+*     Calculate P0
+      if (pnp0.ne.0) then
+
+         if(.not.V4dgconf_L .or. (V4dgconf_L .and. V4dg_di_L)) then
+             do i= 1, F_ninj
+                w1(i) = exp(F_wlnph(i,l_nk))
+             enddo
+
+          elseif(V4dgconf_L .and. V4dg_tl_L) then
+             do i= 1, F_ninj
+                w1(i) =  Geomg_z_8(F_nk) * exp(F_st1m(i)) * F_st1(i)
+             enddo
+
+          elseif(V4dgconf_L .and. V4dg_ad_L) then
+             do i= 1, F_ninj
+                w1(i) = F_st1(i)/(Geomg_z_8(F_nk) * exp(F_st1m(i)))
+             enddo
+          endif
+
+          if (filt(pnp0).gt.0)
+     $       call filter(w1,filt(pnp0),coef(pnp0),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, 1)
+          call ecris_fst2(w1,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $        'P0  ',.01,0.0,-1,1, 1, 1, nbit(pnp0) )
+
+      endif
+
+      if (F_levtyp_S .eq. 'M') then
+
+*_______________________________________________________________________
+*
+*     4.0   Output 3-D Derived Variables on ETA levels
+*_______________________________________________________________________
+
+         if (pnwe.ne.0)
+     $       call ecris_fst2(F_psdt1,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'WE  ',prmult_pnwe,0.0,Out_kind,F_nk, F_indo, F_nko, nbit(pnwe) )
+         if (pngz.ne.0)
+     $       call ecris_fst2(gz,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'GZ  ',prmult_pngz,0.0,Out_kind,F_nk, F_indo, F_nko, nbit(pngz) )
+         if (pnvt.ne.0)
+     $       call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'VT  ',1.0,pradd_pnvt,Out_kind,F_nk, F_indo, F_nko, nbit(pnvt) )
+         if (pnhu.ne.0)
+     $       call ecris_fst2(F_hut1,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'HU  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnhu) )
+
+         if ( .not.(Lctl_step .eq. 0) .and. Schm_phyms_L
+     $                 .and.  pnqc.ne.0  ) then
+*            QC output for timestep 0 is done after physics have executed
+             call ecris_fst2(F_qct1,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'QC  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnqc) )
+         endif
+
+         if ( pntt.ne.0 .or. pntd.ne.0 .or. pnhr.ne.0 ) then
+
+*        Calculate TT (in tt)
+
+           if (.not.V4dgconf_L .or. (V4dgconf_L .and. V4dg_di_L)) then
+
+               call mfottv (tt,vt,F_hut1, F_ninj,F_nk,F_ninj)
+
+           elseif (V4dgconf_L.and.V4dg_tl_L) then
+
+              call out_padbuf(F_vtm, l_minx,l_maxx,l_miny,l_maxy,F_nk)
+              call out_padbuf(F_hum1,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+              call mfottv_tl (tt,vt,F_hut1,F_vtm,F_hum1,F_ninj,F_nk,F_ninj)
+
+           elseif (V4dgconf_L.and.V4dg_ad_L) then
+
+              do k=  1, F_nk
+              do i=1,F_ninj
+                 tt(i,k) = dble(vt(i,k)) * 
+     $                     (1.d0 + Dcst_delta_8*dble(F_hum1(i,k)))
+              enddo
+              enddo
+           endif
+
+         endif
+
+         if (pntt.ne.0)
+     $       call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'TT  ',1.0,pradd_pntt, Out_kind,F_nk, F_indo, F_nko, nbit(pntt) )
+
+         if (pnes.ne.0.or.pnpx.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0)then
+*        Calculate PX (in px)
+             do k= 1,F_nk
+                do i= 1, F_ninj
+                   px(i,k) = exp(F_wlnph(i,k))
+                enddo
+             enddo
+             call out_padbuf(px,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+         endif
+                     
+         if (pnpx.ne.0)
+     $       call ecris_fst2(px,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'PX  ',prmult_pnpx,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pnpx) )
+
+         if (pntw.ne.0) then
+*        Calculate THETAW TW (t8=TW) (px=PX)
+             call mthtaw2 (t8,F_hut1,vt, px,px,3, .false., .false.,
+     $                     .true.,Dcst_trpl_8,F_ninj,F_nk,F_ninj)
+             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'TW  ',1.0,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pntw) )
+         endif
+
+         if (pnes.ne.0 .or. pntd.ne.0) then
+*        Calculate ES (t8=ES) (px=PX)
+             call mhuaes(t8,F_hut1,vt,px,px,3, .false., .false.,
+     $                      F_ninj,F_nk,F_ninj)
+
+             if (Out3_cliph_L) then
+                do k= 1,F_nk
+                 do i= 1, F_ninj
+                    t8(i,k) = amin1( t8(i,k), 30.)
+                    t8(i,k) = amax1( t8(i,k), 0. )
+                 enddo
+                enddo
+             endif
+
+             if (pnes.ne.0)
+     $       call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'ES  ',1.0,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pnes) )
+
+             if (pntd.ne.0) then
+*            Calculate TD (tt=TT,t8=old ES, t8=TD=TT-ES)
+                 do k= 1,F_nk
+                 do i= 1, F_ninj
+                    t8(i,k) = tt(i,k) - t8(i,k)
+                 enddo
+                 enddo
+                 call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $           'TD  ',1.0,pradd_pntd,Out_kind,F_nk,F_indo,F_nko,nbit(pntd) )
+             endif
+
+         endif
+
+         if (pnhr.ne.0) then
+*        Calculate HR (t8=HR,tt=TT,px=PX)
+             call mfohra(t8,F_hut1,tt,
+     $                   px,px,3,F_ninj,F_nk,F_ninj)
+             if ( Out3_cliph_L ) then
+                do k= 1,F_nk
+                  do i= 1, F_ninj
+                     t8(i,k)=amin1( t8(i,k), 1.0 )
+                     t8(i,k)=amax1( t8(i,k), 0.  )
+                  enddo
+                enddo
+             endif
+             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $           'HR  ',1.0,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pnhr) )
+         endif
+
+         if (pnww.ne.0) then
+             call calomeg(t8, F_psdt1, F_tdt1, F_st1, 
+     $                   l_minx,l_maxx,l_miny,l_maxy, G_nk, 1,l_ni,1,l_nj)
+             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $           'WW  ',1.0,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pnww) )
+
+         endif
+         if (pnzz.ne.0) then
+             call calzz  (t8, F_fit1, F_zz1,
+     $                   l_minx,l_maxx,l_miny,l_maxy, G_nk, 1,l_ni,1,l_nj)
+             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $           'ZZ  ',1.0,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pnzz) )
+
+         endif
+
+      else
+*_______________________________________________________________________
+*
+*     5.0    Output 3-D Derived Variables on PRESSURE levels
+*_______________________________________________________________________
+*
+
+        do i = 1, F_nko
+           prprlvl(i) = F_rf(i) * 100.0
+        enddo
+
+*       Calculate vertical derivative of HUT1 with respect to F_wlnph
+
+        call verder(px, F_hut1, F_wlnph, 2.0,  2.0,l_minx,l_maxx,l_miny,l_maxy,
+     $                                       F_nk, l_minx,l_maxx,l_miny,l_maxy)
+
+*       Calculate HU (hu_pres=HU,px=vert.der)
+        call prgen( hu_pres, F_hut1, px, F_wlnph, prprlvl,F_nko, 
+     $                      Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy, F_nk)
+        if ( Out3_cliph_L ) then
+           do k= 1, F_nko
+              do i= 1, F_ninj
+                 hu_pres(i,k) = amax1( hu_pres(i,k), 0. )
+              enddo
+           enddo
+        endif
+
+*       Calculate GZ,VT (w5=GZ_pres, vt_pres=VT_pres)
+        call prgzvta( w5, vt_pres, prprlvl, F_nko,
+     %                gz, vt, F_wlnph, F_wlao,
+     %                ttx, htx, Out3_nundr,Out3_cubzt_L, 
+     %                Out3_linbot, l_minx,l_maxx,l_miny,l_maxy,F_nk)
+
+        call out_padbuf(vt_pres,l_minx,l_maxx,l_miny,l_maxy,F_nko)
+        call out_padbuf(hu_pres,l_minx,l_maxx,l_miny,l_maxy,F_nko)
+
+        if (pngz.ne.0) then
+            if (filt(pngz).gt.0) 
+     $          call filter(w5,filt(pngz),coef(pngz),'G', .false.,
+     $                           l_minx,l_maxx,l_miny,l_maxy, F_nko)
+            call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $        'GZ  ',prmult_pngz,0.0, Out_kind,F_nko,F_indo,F_nko,nbit(pngz) )
+        endif
+
+        if (pntt.ne.0.or.pntd.ne.0.or.pnhr.ne.0) then
+
+*           Calculate TT (tt_pres=TT,vt_pres=VT,hu_pres=HU)
+            call mfottv(tt_pres,vt_pres,hu_pres, F_ninj,F_nko,F_ninj)
+            call out_padbuf(tt_pres,l_minx,l_maxx,l_miny,l_maxy,F_nko)
+        endif
+
+        if ( pnes.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0) then
+*           Calculate PX for ES,TD,HR
+            do k=1,F_nko
+               do i= 1, F_ninj
+                  px_pres(i,k) = prprlvl(k)
+               enddo
+            enddo
+            call out_padbuf(px_pres,l_minx,l_maxx,l_miny,l_maxy,F_nko)
+        endif
+
+        if (pntw.ne.0) then
+*           Calculate THETAW TW (w5=TW_pres) (px_pres=PX)
+            call mthtaw2 (w5,hu_pres,vt_pres,
+     $                     px_pres,px_pres,3,.false.,.false.,
+     $                     .true.,Dcst_trpl_8,F_ninj,F_nko,F_ninj)
+            if (filt(pntw).gt.0)
+     $          call filter(w5,filt(pntw),coef(pntw),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+            call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $          'TW  ',1.0,0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pntw) )
+        endif
+*
+        if (pnes.ne.0.or.pntd.ne.0) then
+*           Calculate ES (w5=ES_pres,hu_pres=HU,w2=VT,px_pres=PX)
+            call mhuaes (w5, hu_pres, vt_pres,
+     $                    px_pres,px_pres,3,.false.,.false.,
+     $                    F_ninj, F_nko, F_ninj)
+            if ( Out3_cliph_L ) then
+               do k=1,F_nko
+                 do i= 1, F_ninj
+                    w5(i,k) = amin1( w5(i,k), 30.)
+                    w5(i,k) = amax1( w5(i,k), 0. )
+                 enddo
+               enddo
+            endif
+
+            if (pntd.ne.0) then
+*           Calculate TD (tt_pres=TT,w5=ES, TD=TT-ES)
+              do k=1,F_nko
+                 do i= 1, F_ninj
+                    td_pres(i,k) = tt_pres(i,k) - w5(i,k)
+                 enddo
+              enddo
+              call filter(td_pres,filt(pntd),coef(pntd),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+              call ecris_fst2(td_pres,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $          'TD  ',1.0,pradd_pntd, Out_kind,F_nko,F_indo,F_nko,nbit(pntd) )
+            endif
+
+            if (pnes.ne.0) then
+                if (filt(pnes).gt.0)
+     $              call filter(w5,filt(pnes),coef(pnes),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+                call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $             'ES  ',1.0,0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnes) )
+            endif
+        endif
+
+        if (pnhr.ne.0) then
+*           Calculate HR (w5=HR_pres:hu_pres=HU,tt_pres=TT,px_pres=PX)
+            call mfohra (w5,hu_pres,tt_pres,px_pres, 
+     $                    px_pres,3,F_ninj,F_nko,F_ninj)
+            if ( Out3_cliph_L ) then
+               do k=1,F_nko
+                  do i= 1, F_ninj
+                     w5(i,k) = amin1( w5(i,k), 1.0 )
+                     w5(i,k) = amax1( w5(i,k), 0.  )
+                  enddo
+               enddo
+            endif
+            if (filt(pnhr).gt.0)
+     $          call filter(w5,filt(pnhr),coef(pnhr),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+            call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $          'HR  ',1.0,0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnhr) )
+        endif
+
+        if (pnvt.ne.0) then
+            if (filt(pnvt).gt.0)
+     $          call filter(vt_pres,filt(pnvt),coef(pnvt),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+            call ecris_fst2(vt_pres,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $        'VT  ',1.0,pradd_pnvt, Out_kind,F_nko,F_indo, F_nko, nbit(pnvt) )
+        endif
+
+        if (pnhu.ne.0) then
+            if (filt(pnhu).gt.0)
+     $          call filter(hu_pres,filt(pnhu),coef(pnhu),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+            call ecris_fst2(hu_pres,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $        'HU  ',1.0,       0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnhu) )
+        endif
+
+        if (pntt.ne.0) then
+            if (filt(pntt).gt.0)
+     $          call filter(tt_pres,filt(pntt),coef(pntt),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+            call ecris_fst2(tt_pres,l_minx,l_maxx,l_miny,l_maxy,F_rf, 
+     $        'TT  ',1.0,pradd_pntt, Out_kind,F_nko, F_indo, F_nko, nbit(pntt) )
+        endif
+
+        if ( .not.(Lctl_step .eq. 0) .and. Schm_phyms_L
+     $                 .and.  pnqc.ne.0  ) then
+*         QC output for timestep 0 is done after physics have executed
+          call verder(px, F_qct1, F_wlnph, 2.0,2.0,l_minx,l_maxx,l_miny,l_maxy,
+     $                                        F_nk,l_minx,l_maxx,l_miny,l_maxy)
+*         Calculate QC (qc_pres=w5,px=vert.der)
+          call prgen( w5, F_qct1, px, F_wlnph, prprlvl,F_nko, 
+     $                      Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy, F_nk)
+          if ( Out3_cliph_L ) then
+               do k= 1, F_nko
+               do i= 1, F_ninj
+                 w5(i,k) = amax1( w5(i,k), 0. )
+               enddo
+               enddo
+          endif
+          if (filt(pnqc).gt.0)
+     $      call filter(w5,filt(pnqc),coef(pnqc),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+             call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $        'QC  ',1.0,       0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnqc) )
+        endif
+
+        if (pnww.ne.0) then
+            call calomeg(t8, F_psdt1, F_tdt1, F_st1, 
+     $                   l_minx,l_maxx,l_miny,l_maxy, G_nk, 1,l_ni,1,l_nj)
+            call verder (w3,t8,F_wlnph,2.0,2.0,l_minx,l_maxx,l_miny,l_maxy,
+     $                 G_nk, 1,l_ni,1,l_nj)
+            call prgen( w5, t8, w3, F_wlnph, prprlvl,F_nko, 
+     $                      Out3_cubww_L,l_minx,l_maxx,l_miny,l_maxy, F_nk)
+            if (filt(pnww).gt.0)
+     $          call filter(w5,filt(pnww),coef(pnww),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+             call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $           'WW  ',1.0,0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnww) )
+        endif
+
+
+      endif
+
+      return
+      end

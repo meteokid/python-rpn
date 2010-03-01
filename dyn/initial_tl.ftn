@@ -110,7 +110,7 @@
          Lctl_step = (Init_dfnp-1)/2
          if (Lun_out.gt.0) write(Lun_out,1010) Lctl_step
          if (Lun_out.gt.0) write(Lun_out,1020) Lctl_step
-         call dynout2 ()
+         call out_dyn ()
       endif
 *
  1000 format(/,'TLM of DIGITAL FILTER INITIALIZATION: (S/R INITIAL_TL)',

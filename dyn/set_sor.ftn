@@ -40,36 +40,54 @@
 #include "ptopo.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
+#include "pilot.cdk"
 #include "timestep.cdk"
-#include "setsor.cdk"
+#include "step.cdk"
+#include "lctl.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
-#include "outc.cdk"
+#include "out1.cdk"
+#include "hgc.cdk"
 #include "grid.cdk"
 #include "p_bus.cdk"
-#include "pslab.cdk"
-#include "dslab.cdk"
 #include "geomg.cdk"
-#include "chem.cdk"
-#include "out.cdk"
+#include "out3.cdk"
 #include "cstv.cdk"
+#include "rhsc.cdk"
+#include "vt0.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "vt2.cdk"
+#include "vta.cdk"
+#include "vtx.cdk"
+#include "orh.cdk"
+#include "p_geof.cdk"
 *
-      integer sglobo, srequet,fnom,longueur,getvndx
-      external sglobo,srequet,fnom,longueur,getvndx
+      integer srequet,fnom,longueur
+      external srequet,fnom,longueur
 *
       character*5 blank_S
       character*8 unit_S
+      character*4 udolist_S(maxbus)
+      integer     udolist_max,cnt
       character*256 fn
       logical iela
-      integer pnerror,i,idx,k,j,levset,err,convmod,nrec,modeip1
+      integer pnerror,i,idx,k,j,levset
       real seconds,min_seconds
+      integer ixg(4), sorvmm
 *
       if (Lun_out.gt.0) write(Lun_out,5200)
+
+*    Fill in the positional records for scalar grid
+      ixg(1) = Hgc_ig1ro
+      ixg(2) = Hgc_ig2ro
+      ixg(3) = Hgc_ig3ro
+      ixg(4) = Hgc_ig4ro
+
 
       pnerror = 0
 
       if (Ptopo_myproc.eq.0) then
-          pnerror =  sglobo()
           fn = Lun_sortie_S(1:longueur(Lun_sortie_S))
           inquire (FILE=fn,EXIST=iela)
           if (iela) then
@@ -77,48 +95,142 @@
           else
               pnerror = pnerror + 1
           endif
-      endif
 
-      if  (pnerror .gt. 0) then
-         if (Lun_out.gt.0) write(Lun_out,5000) pnerror
-      endif
-
-      if (Out_unit_s .eq. ''.or. Out_unit_s .eq. 'H') then
-          min_seconds = 3600.0
-          unit_S = 'HOURS'
-      endif
-      if (Out_unit_s .eq. 'D') then
-          min_seconds = 3600.0*24.0
-          unit_S = 'DAYS'
-      endif
-      if (Out_unit_s .eq. 'M') then
-          min_seconds = 60.0
-          unit_S = 'MINUTES'
-      endif
-      if (Out_unit_s .ne. 'S'.and. Out_unit_s .ne. 'P') then
-          seconds=min_seconds
-          do j=1,Timestep_sets
-          do i=2,Timestep_max(j)
-             seconds = min ( 1.0d0*(seconds),Cstv_dt_8*1.0d0*(Timestep(i,j)-Timestep(i-1,j)))
-          enddo
-          enddo
-          if (seconds.lt.min_seconds) then
-              Out_unit_s = 'P'
-              Out_ndigits = 6
-              if (Lun_out.gt.0) write(Lun_out,3000)unit_S
+          if  (pnerror .gt. 0) then
+               write(Lun_out,5000) pnerror
           endif
-      endif
 
-      modeip1 = +1
-      if (Level_kind_ip1.eq.5) modeip1 = +2
-      do i=1,G_nk-2
-         call convip( Level_stag_ip1(i),(Geomg_hyb(i+1)+Geomg_hyb(i))/2.,
-     %                Level_kind_ip1,modeip1,blank_S,.false.)
-      enddo
-      do i=G_nk-1,G_nk
-         call convip( Level_stag_ip1(i),Geomg_hyb(i),
-     %                Level_kind_ip1,modeip1,blank_S,.false.)
-      enddo
+          if (Out3_unit_s .eq. ''.or. Out3_unit_s .eq. 'H') then
+              min_seconds = 3600.0
+              unit_S = 'HOURS'
+          endif
+          if (Out3_unit_s .eq. 'D') then
+              min_seconds = 3600.0*24.0
+              unit_S = 'DAYS'
+          endif
+          if (Out3_unit_s .eq. 'M') then
+              min_seconds = 60.0
+              unit_S = 'MINUTES'
+          endif
+          if (Out3_unit_s .ne. 'S'.and. Out3_unit_s .ne. 'P') then
+              seconds=min_seconds
+              do j=1,Timestep_sets
+              do i=2,Timestep_max(j)
+                 seconds = min ( 1.0d0*(seconds),
+     $                Cstv_dt_8*1.0d0*(Timestep(i,j)-Timestep(i-1,j)))
+              enddo
+              enddo
+              if (seconds.lt.min_seconds) then
+                  Out3_unit_s = 'P'
+                  Out3_ndigits = 6
+                  write(Lun_out,3000)unit_S
+              endif
+          endif
+* Transfer filter and xnbit info to requested variables
+          do k=1, Outd_sets
+             do j=1,Outd_var_max(k)
+             do i=1,Out3_filtpass_max
+                if (Outd_var_S(j,k) .eq. Out3_filt_S(i)) then
+                    Outd_filtpass(j,k) = Out3_filtpass(i)
+                    Outd_filtcoef(j,k) = Out3_filtcoef(i)
+                endif
+             enddo
+             do i=1,Out3_xnbits_max
+                if (Outd_var_S(j,k) .eq. Out3_xnbits_S(i)) then
+                    Outd_nbit(j,k) = Out3_xnbits(i)
+                endif
+             enddo
+             enddo
+          enddo
+          do k=1, Outp_sets
+             do j=1,Outp_var_max(k)
+             do i=1,Out3_filtpass_max
+                if (Outp_var_S(j,k) .eq. Out3_filt_S(i)) then
+                    Outp_filtpass(j,k) = Out3_filtpass(i)
+                    Outp_filtcoef(j,k) = Out3_filtcoef(i)
+                endif
+             enddo
+             do i=1,Out3_xnbits_max
+                if (Outp_var_S(j,k) .eq. Out3_xnbits_S(i)) then
+                    Outp_nbit(j,k) = Out3_xnbits(i)
+                endif
+             enddo
+             enddo
+          enddo
+
+*     Check number of VMM variables requested for output
+          sorvmm=0
+          do 100 k=1, Outd_sets
+             do 50 j=1,Outd_var_max(k)
+                if (vt0_first(1).ge.0.and.sorvmm.lt.1) then
+                    do i=1,COMMON_SIZE(vt0)
+                       if (Outd_var_S(j,k) .eq. vt0_n_first(i)) then
+                           sorvmm = sorvmm+1
+                           cycle
+                       endif
+                    enddo
+                endif
+                if (vth_first(1).ge.0.and.sorvmm.lt.1) then
+                    do i=1,COMMON_SIZE(vth)
+                       if (Outd_var_S(j,k) .eq. vth_n_first(i)) then
+                           sorvmm = sorvmm+1
+                           cycle
+                       endif
+                    enddo
+                endif
+                if (vt1_first(1).ge.0.and.sorvmm.lt.1) then
+                    do i=1,COMMON_SIZE(vt1)
+                       if (Outd_var_S(j,k) .eq. vt1_n_first(i)) then
+                           sorvmm = sorvmm+1
+                           cycle
+                       endif
+                    enddo
+                endif
+                if (vtx_first(1).ge.0.and.sorvmm.lt.1) then
+                    do i=1,COMMON_SIZE(vtx)
+                       if (Outd_var_S(j,k) .eq. vtx_n_first(i)) then
+                           sorvmm = sorvmm+1
+                           cycle
+                       endif
+                    enddo
+                endif
+                if (vta_first(1).ge.0.and.sorvmm.lt.1) then
+                    do i=1,COMMON_SIZE(vta)
+                       if (Outd_var_S(j,k) .eq. vta_n_first(i)) then
+                           sorvmm = sorvmm+1
+                           cycle
+                       endif
+                    enddo
+                endif
+                if (rhsc_first(1).ge.0.and.sorvmm.lt.1) then
+                    do i=1,COMMON_SIZE(rhsc)
+                       if (Outd_var_S(j,k) .eq. rhsc_n_first(i)) then
+                           sorvmm = sorvmm+1
+                           cycle
+                       endif
+                    enddo
+                endif
+                if (orh_first(1).ge.0.and.sorvmm.lt.1) then
+                    do i=1,COMMON_SIZE(orh)
+                       if (Outd_var_S(j,k) .eq. orh_n_first(i)) then
+                           sorvmm = sorvmm+1
+                           cycle
+                       endif
+                    enddo
+                endif
+                if (geof_first(1).ge.0.and.sorvmm.lt.1) then
+                    do i=1,COMMON_SIZE(geof)
+                       if (Outd_var_S(j,k) .eq. geof_n_first(i)) then
+                           sorvmm = sorvmm+1
+                           cycle
+                       endif
+                    enddo
+                endif
+ 50          continue
+ 100      continue
+          if (sorvmm.gt.0) Outd_vmm_L = .true.
+          
+      endif
 
       COMMON_BROADCAST(Timestep_i)
       COMMON_BROADCAST(Timestep_l)
@@ -129,114 +241,135 @@
       COMMON_BROADCAST(Level_c)
       COMMON_BROADCAST(Outd)
       COMMON_BROADCAST(Outp)
-      COMMON_BROADCAST(Outc)
       COMMON_BROADCAST(Outd_c)
+      COMMON_BROADCAST(Outd_r)
+      COMMON_BROADCAST(Outd_l)
       COMMON_BROADCAST(Outp_c)
-      COMMON_BROADCAST(Outc_c)
-      COMMON_BROADCAST(Out_c)
-      COMMON_BROADCAST(Out_i)
-      COMMON_BROADCAST(Setsori)
-      COMMON_BROADCAST(Setsorr)
+      COMMON_BROADCAST(Outp_r)
+      COMMON_BROADCAST(Out3_c)
+      COMMON_BROADCAST(Out3_i)
 
-      call RPN_COMM_bcast (Phy_useit,P_bphy_top,"MPI_INTEGER",0,
-     $                     "grid",err)
-      call RPN_COMM_bcast (Phy_xnbits,P_bphy_top,"MPI_INTEGER",0,
-     $                     "grid",err)
-      call RPN_COMM_bcast (Chem_useit,Chem_ntr,"MPI_INTEGER",0,
-     $                     "grid",err)
-      call RPN_COMM_bcast (Chem_xnbits,Chem_ntr,"MPI_INTEGER",0,
-     $                     "grid",err)
-*
-      k = 0
-      Dslab_max_lev_p = 0
-      do j = 1, Outd_sets
-        levset = Outd_lev(j)
-        if (Level_typ(levset).eq.'P') then
-            k = k + Level_max(levset)
-        endif
+      call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy,
+     $     Ptopo_myblocx,Ptopo_myblocy, 0,0,l_ni,l_nj,Ptopo_blocme,
+     $     Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S,
+     $     int(Cstv_dt_8),Out1_date,Out1_etik_S,Out3_ndigits,Pil_runstrt_S,
+     $     min(Step_total, Lctl_step+Step_rsti) )
+
+*     Build short list of possible outputs for physics variables
+      cnt = 0
+      do k=1, Outp_sets
+         do j=1,Outp_var_max(k)
+            cnt = cnt+1
+            udolist_S(cnt) =  Outp_var_S(j,k)
+            do i=1,cnt-1
+               if (udolist_S(cnt).eq.udolist_S(i)) cnt = cnt-1
+            enddo
+         enddo
       enddo
-      Dslab_max_lev_p = k
+      
+*     cnt = total number of variables requested for output
+*     p_bent_out=total number of output variables found in busent
+*     p_bper_out=total number of output variables found in busper
+*     p_bdyn_out=total number of output variables found in busdyn
+*     p_bvol_out=total number of output variables found in busvol
+      print *,'P_bent_top=',P_bent_top
+      print *,'P_bper_top=',P_bper_top
+      print *,'P_bdyn_top=',P_bdyn_top
+      print *,'P_bvol_top=',P_bvol_top
+      k = 0
+      do i = 1, P_bent_top
+         do j=1,cnt
+            if (udolist_S(j).eq.enton(i)(1:4)) then
+                k=k+1
+                p_bent_idx(k)=i
+            endif
+         enddo
+      enddo
+      p_bent_out = k
+      k = 0
+      do i = 1, P_bper_top
+         do j=1,cnt
+            if (udolist_S(j).eq.peron(i)(1:4)) then
+                k=k+1
+                p_bper_idx(k)=i
+            endif
+         enddo
+      enddo
+      p_bper_out = k
+      k = 0
+      do i = 1, P_bdyn_top
+         do j=1,cnt
+            if (udolist_S(j).eq.dynon(i)(1:4)) then
+                k=k+1
+                p_bdyn_idx(k)=i
+            endif
+         enddo
+      enddo
+      p_bdyn_out = k
+      k=0
+      do i = 1, P_bvol_top
+         do j=1,cnt
+            if (udolist_S(j).eq.volon(i)(1:4)) then
+                k=k+1
+                p_bvol_idx(k)=i
+            endif
+         enddo
+      enddo
+      p_bvol_out = k
+      print *,'P_bent_out=',P_bent_out
+      print *,'P_bper_out=',P_bper_out
+      print *,'P_bdyn_out=',P_bdyn_out
+      print *,'P_bvol_out=',P_bvol_out
 *
-      COMMON_BROADCAST(dslabi)
-      COMMON_BROADCAST(pslabi)
-      COMMON_BROADCAST(pslabs)
 *
       if (Lun_out.gt.0) then
 * Print table of dynamic variables demanded for output
 
           write(Lun_out,900)
+          write(Lun_out,1006)
           write(Lun_out,901)
-          do i=1,Setsor_num
-             if (Setsor_useit(i).ge.1) then
-                 write(Lun_out,1005) Setsor_name_s(i),Setsor_xnbits(i)
-             endif
+          do j=1,Outd_sets
+          do i=1,Outd_var_max(j)
+             write(Lun_out,1008) Outd_var_S(i,j),Outd_nbit(i,j),
+     $       Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_typ(Outd_lev(j))
+          enddo
           enddo
           write(Lun_out,1006)
+          write(Lun_out,2001)
 
 * Print table of physics variables demanded for output
 
           write(Lun_out,1000)
+          write(Lun_out,1006)
           write(Lun_out, 901)
-          write(Lun_out,1002)
-          do i=1,P_bper_top
-             idx=i
-             if (Phy_useit(idx).eq.1) then
-                 write(Lun_out,1005) peron(i)(1:4),Phy_xnbits(idx)
-             endif
+          do j=1,Outp_sets
+          do i=1,Outp_var_max(j)
+             write(Lun_out,1008) Outp_var_S(i,j),Outp_nbit(i,j),
+     $       Outp_filtpass(i,j),Outp_filtcoef(i,j),Level_typ(Outp_lev(j))
           enddo
-          write(Lun_out,1003)
-          do i=1,P_bdyn_top
-             idx=i+P_bper_top
-             if (Phy_useit(i+P_bper_top).eq.1) then
-                 write(Lun_out,1005) dynon(i)(1:4),Phy_xnbits(idx)
-             endif
           enddo
-          write(Lun_out,1004)
-          do i=1,P_bvol_top
-             idx=i+P_bper_top+P_bdyn_top
-             if (Phy_useit(idx).eq.1) then
-                 write(Lun_out,1005) volon(i)(1:4),Phy_xnbits(idx)
-             endif
-          enddo
-          write(Lun_out,1007)
-          do i=1,P_bent_top
-             idx=i+P_bper_top+P_bdyn_top+P_bvol_top
-             if (Phy_useit(idx).eq.1) then
-                 write(Lun_out,1005) enton(i)(1:4),Phy_xnbits(idx)
-             endif
-          enddo
+
           write(Lun_out,1006)
 
-* Print table of chemistry variables demanded for output
-
-          write(Lun_out,2000)
-          write(Lun_out, 901)
-          write(Lun_out,1002)
-          do i=1,Chem_ntr
-             if (Chem_useit(i).eq.1) then
-                 write(Lun_out,1005) Chem_name_s(i)(1:4),Chem_xnbits(i)
-             endif
-          enddo
-          write(Lun_out,1006)
       endif
       return
 *
-  900 format(/'+',40('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT |'/
-     +     '+',15('-'),'+',24('-'),'+')
-  901 format('|',1x,'Output Names',2x,'|',2x,'XNBITS(=NBITG if 0)   |')
- 1000 format(/'+',40('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT |'/
-     +     '+',15('-'),'+',24('-'),'+')
- 2000 format(/'+',40('-'),'+'/'| CHEMISTRY TRACERS REQUESTED FOR OUTPUT |'/
-     +     '+',15('-'),'+',24('-'),'+')
+  900 format(/'+',25('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT    |',5x,'|')
+
+  901 format('|',1x,'Output Names',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
+ 1000 format(/'+',25('-'),'+',17('-'),'+',5('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT    |',5x,'|')
+ 2000 format(/'+',25('-'),'+',17('-'),'+',5('-'),'+'/'| CHEMIST VARIABLES REQUESTED FOR OUTPUT    |',5x,'|')
  1002 format('|',1x,'Permanent   ',2x,'|',2x,'                      |')
  1003 format('|',1x,'Dynamic Bus ',2x,'|',2x,'                      |')
  1004 format('|',1x,'Volatile Bus',2x,'|',2x,'                      |')
  1007 format('|',1x,'Entry    Bus',2x,'|',2x,'                      |')
- 1005 format('|',6x,a4,5x,'|',i10,'              |')
- 1006 format('+',15('-'),'+',24('-'),'+')
+ 1005 format('|',6x,a4,5x,'|',i5,'              |')
+ 1008 format('|',6x,a4,5x,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
+ 1006 format('+',15('-'),'+',9('-'),'+',8('-'),'+',8('-'),'+',5('-'))
+ 2001 format('* Note: NO filter is applied to 3D fields on M levels')
  3000 format(
      $    /,'SET_SOR - WARNING: OUTPUT REQUEST IS MORE FREQUENT THAN ',A8
-     $    /,' *** Directive Out_unit_S *** will be set to "P" ',
+     $    /,' *** Directive Out3_unit_S *** will be set to "P" ',
      $    /,' *** Output files will be in TIMESTEPS')
  5000 format(
      $     ' TOTAL NUMBER OF WARNINGS ENCOUNTERED IN',

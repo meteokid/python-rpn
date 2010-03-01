@@ -1,0 +1,57 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***s/r out_slev
+*
+      subroutine out_slev (F_levtyp_S,F_level,F_indo,F_nko,F_nk,F_kind,F_st_S)
+
+      implicit none
+*
+      character*1 F_st_S, F_levtyp_S
+      integer F_nk,F_kind,F_indo(*),F_nko
+      real F_level(*)
+*
+*AUTHOR   Michel Desgagne     July 2004 (MC2)
+*
+*REVISION
+* v3_20 - Lee V.            - Adapted for GEMDM
+*
+*ARGUMENTS
+*    NAMES       I/O  TYPE  DESCRIPTION
+*
+#include "out.cdk"
+*
+      integer k
+**
+*----------------------------------------------------------------------
+*
+      Out_prefix_S(1:1) = F_st_S
+      Out_levtyp_S = F_levtyp_S
+*
+      if ((F_levtyp_S.eq.'P').or.(F_levtyp_S.eq.'H')) then
+         do k=1,F_nko
+            F_indo(k) = k
+         end do
+      else
+*     output in model levels
+         do k=1,F_nko
+            F_indo(k) = int(F_level(k))
+         end do
+*     depending on the vertical definition, certain variables can have gnk+1
+         if (F_nko.eq.F_nk) F_indo(F_nko+1) = F_nk+1
+      endif
+      if (F_levtyp_S.eq.'P') then
+         Out_kind=2
+         Out_prefix_S(2:2) = 'p'
+      endif         
+      if (F_levtyp_S.eq.'H') then
+         Out_kind=0
+         Out_prefix_S(2:2) = 'h'
+      endif         
+      if (F_levtyp_S.eq.'M') then
+         Out_kind=F_kind
+         Out_prefix_S(2:2) = 'm'
+      endif
+*
+*----------------------------------------------------------------------
+      return
+      end
+

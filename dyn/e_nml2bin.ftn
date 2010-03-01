@@ -16,7 +16,7 @@
 * v2_30 - A. Methot         - introduction of a new stretch grid design
 * v2_30                       with upper limits on grid point spacing
 * v2_30 - Corbeil L.        - removed the part for pres_surf and top
-* v2_31 - Desgagne M.       - added did.cdk,ptopo.cdk and tracers
+* v2_31 - Desgagne M.       - added ptopo.cdk and tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L
 *
@@ -55,7 +55,7 @@
      $             Grd_dx  , Grd_dy  , Grd_rot_8 , lam      ,
      $             Grd_x0  , Grd_xl  , Grd_y0    , Grd_yl   , 
      $             Grd_dxmax, Grd_dymax, Grd_typ_S, Grd_gauss_L,
-     $             Ptopo_npex, Ptopo_npey, e_tr3d_ntr, e_trvs_ntr,
+     $             e_tr3d_ntr, e_trvs_ntr, 
      $             (E_tr3d_name_S(k),k=1,E_tr3d_ntr),
      $             (E_tr3d_sval  (k),k=1,E_tr3d_ntr),
      $             (E_trvs_name_S(k),k=1,E_trvs_ntr),

@@ -24,7 +24,8 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_31 - Desgagne          - clean up and introduce h2o tracers
 * v3_00 - Laroche S.        - adaptation for v4d
-* v3_12 _ Leduc A-M.        - Add arguments gzm and topo
+* v3_12 - Leduc A-M.        - Add arguments gzm and topo
+* v3_13 - Lee V.            - Corrected loop i=1,p_nj to i-1,p_ni
 *
 *object
 *
@@ -230,7 +231,7 @@
 *C                                     The sedimentation is made
 *C                                     over a reduced set of levels
         do j= 1, p_nj 
-        do i= 1, p_nj
+        do i= 1, p_ni
          dzmin_= min(1.0d0*(dzmin_),
      $      Dcst_rgasd_8*(1.0d0*(F_tp(i,j,nksurf-1)+F_tp(i,j,nksurf-2)))/2.d0/
      $      Dcst_grav_8 *log(1.0d0*(geomg_hybm(nksurf-1)/geomg_hybm(nksurf-2))))

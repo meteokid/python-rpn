@@ -31,7 +31,7 @@
             call tmg_start ( 9, 'PHY' )
             if ( Schm_phyms_L ) call p_main    (Lctl_step)
             call tmg_stop (9)
-            if ( Schm_chems_L ) call chem_step (Lctl_step)
+CC          if ( Schm_chems_L ) call chem_step (Lctl_step)
 *
 *           Store TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
 *           ----------------------------------------------------
@@ -68,7 +68,7 @@ c	    call tmg_stop(12)
             call tmg_start ( 9, 'PHY' )
             if ( Schm_phyms_L ) call p_main    (Lctl_step)
             call tmg_stop (9)
-            if ( Schm_chems_L ) call chem_step (Lctl_step)
+CC          if ( Schm_chems_L ) call chem_step (Lctl_step)
 *
          endif
 *

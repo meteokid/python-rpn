@@ -64,28 +64,33 @@
 #include "level.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
-#include "outc.cdk"
+#include "out3.cdk"
 *modules
       integer process_f_callback,longueur
       external process_f_callback,longueur
-      integer set_level,set_step,set_grid,set_var
-      external set_level,set_step,set_grid,set_var
+      integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var
+      external set_level,set_step,set_grid,set_filt,set_xnbit,set_var
 
-      integer p1a,p1b,istat
+      integer p1a,p1b,istat,nada
 **
 *
       Grid_sets = 0
+      Level_sets = 0
       Timestep_sets = 0
       Outd_sets = 0
+      Outd_vmm_L = .false.
       Outp_sets = 0
-      Outc_sets = 0
-      Level_sets = 0
+      Out3_filtpass_max = 0
+      Out3_xnbits_max = 0
       p1a =  10
       p1b = -10
+      call rpn_fortran_callback('filtre',set_filt ,' ',p1a,p1b)
+      call rpn_fortran_callback('xnbit',set_xnbit  ,' ',p1a,p1b)
       call rpn_fortran_callback('levels',set_level,' ',p1a,p1b)
       call rpn_fortran_callback('grid'  ,set_grid ,' ',p1a,p1b)
       call rpn_fortran_callback('steps' ,set_step ,' ',p1a,p1b)
       call rpn_fortran_callback('sortie',set_var  ,' ',p1a,p1b)
+      call rpn_fortran_callback('sortie_p',set_var  ,' ',p1a,p1b)
       istat= process_f_callback(Lun_sortie_s(1:longueur(Lun_sortie_s)))
       if (Lun_out.gt.0)
      $     write(Lun_out,*)'SREQUET:Number of warnings =',istat

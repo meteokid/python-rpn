@@ -248,7 +248,7 @@
 *
 *     Perform output if required
 *     --------------------------
-      call dynout2 ( )
+      call out_dyn ( )
 *
 *     Reset original fields 
 *     ---------------------

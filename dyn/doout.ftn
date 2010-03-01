@@ -42,7 +42,6 @@
 #include "dimout.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
-#include "outc.cdk"
 #include "timestep.cdk"
 #include "v4dg.cdk"
 **
@@ -109,18 +108,6 @@
              keep = .false.
              do j=1,Outp_sets
                 if (Outp_step(j).eq.F_dostep(i)) keep = .true.
-             enddo
-             if (keep) then
-                 k = k+1
-                 F_dostep(k) = F_dostep(i)
-             endif
-          enddo
-      else if (F_set.eq.3) then
-*     (F_set.eq.3 chemistry output)
-          do i=1,doout
-             keep = .false.
-             do j=1,Outc_sets
-                if (Outc_step(j).eq.F_dostep(i)) keep = .true.
              enddo
              if (keep) then
                  k = k+1

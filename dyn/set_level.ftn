@@ -150,7 +150,7 @@
 
 *              request for all model eta levels
 
-                  Level_typ(j)='E'
+                  Level_typ(j)='M'
 
                   i = i-1
                   do idx=1,G_nk
@@ -160,23 +160,29 @@
                      Level(i,j) = float( idx )
                   end do
 
+            else if (Level(i,j).eq.0) then
+*
+*              request ground level (equivalent to G_nk)
+
+                 Level_typ(j)='M'
+                 Level(i,j) = G_nk
+                 call convip( Level_ip1(i,j), geomg_hyb(G_nk),
+     $                            Level_kind_ip1,modeip1,blank_S,.false.)
+
             else 
 
                if (kindip1.eq.1) then
 
-                  Level_typ(j)='E'
+                  Level_typ(j)='M'
 
-                  if (Level(i,j) .le. G_nk) then
+                  if (Level(i,j) .le. G_nk .and. Level(i,j) .gt. 0) then
                      idx = nint(Level(i,j))
                      call convip( Level_ip1(i,j), geomg_hyb(idx),
      $                            Level_kind_ip1,modeip1,blank_S,.false.)
                   else
                      if (Lun_out.gt.0) write(Lun_out,*)
      $                   'SET_LEVEL WARNING: Level index out of range'
-                     Level_sets = Level_sets -1
-                     set_level=1
-                     return
-
+                         i = i - 1
                   endif
                else if (kindip1.eq.2) then
 
@@ -205,6 +211,16 @@
 
          if (Lun_out.gt.0)
      $   write(Lun_out,*)'SET_LEVEL WARNING: Requested levels > MAXLEV'
+         Level_sets = Level_sets -1
+         set_level = 1
+         return
+
+      endif
+
+      if (i.eq.0) then
+
+         if (Lun_out.gt.0)
+     $   write(Lun_out,*)'SET_LEVEL WARNING: No levels requested'
          Level_sets = Level_sets -1
          set_level = 1
          return

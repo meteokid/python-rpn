@@ -231,7 +231,7 @@
           call v4d_rwtraj (1)
         endif
 *
-        call dynout2( )
+        call out_dyn( )
 *     
 *       Run NLM model
 *       -------------
@@ -350,7 +350,7 @@
 *           ----------------------------------------------
             V4dg_output_L = .false. 
 *
-            call dynout2( )
+            call out_dyn( )
 *     
 *           Run TLM model
 *           -------------
@@ -586,7 +586,7 @@
               V4dg_part = 3
               call indata_tl()
 *
-              call dynout2( )
+              call out_dyn( )
 *     
 *             Run TLM model
 *             -------------
@@ -841,7 +841,7 @@
 *
 *     B.   Run the non-linear model
 *     
-             if(isv_step.eq.1) call dynout2( )
+             if(isv_step.eq.1) call out_dyn( )
 *
 *             Run NLM model
 *             -------------
@@ -937,7 +937,7 @@
 *           ----------------------------------------------
             V4dg_output_L = .true. 
 *
-            call dynout2( )
+            call out_dyn( )
 *     
 *           Run TLM model
 *           -------------

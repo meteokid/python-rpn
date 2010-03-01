@@ -34,7 +34,7 @@
 #include "ptopo.cdk"
 #include "busind.cdk"
 #include "dimout.cdk"
-#include "pslab.cdk"
+#include "p_bus.cdk"
 #include "v4dg.cdk"
 #include "p4d_simp.cdk"
 *
@@ -42,7 +42,8 @@
       integer  open_db_file,rewind_db_file,close_db_file
       external open_db_file,rewind_db_file,close_db_file
 **
-      integer dim,err,i,j,k
+      integer dim,err,i,j,k,obussiz
+      real, dimension(:,:), allocatable :: obusval
       real, dimension(:), allocatable :: up,vp,wp,tp,qp,trp,
      $                                   um,vm,tm,trm,lnpsm,
      $                                   sig,kmm,ktm,
@@ -51,7 +52,8 @@
 *
 *     ---------------------------------------------------------------
 *
-      call genslabp()
+      call iniobus(obussiz)
+      allocate(obusval(p_ni*p_nj,obussiz))
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       allocate (up(dim),vp(dim),wp(dim),tp(dim),qp(dim),
      $          um(dim),vm(dim),tm(dim),lnpsm(dim),
@@ -94,7 +96,7 @@
 !$omp parallel
 !$omp do
       do j=1,Ptopo_npeOpenMP
-      call p_physlb_tl ( j, F_stepno,
+      call p_physlb_tl ( j, F_stepno,obusval,
      $                   up, vp, wp, tp, qp,  trp,
      $                   um, vm,     tm,      trm,
      $                   upm, vpm,  tpm, qpm, trpm,
@@ -104,6 +106,8 @@
 !$omp enddo
 !$omp end parallel
 *
+      call out_phy(obusval,p_ni,p_nj,F_stepno)
+      deallocate(obusval)
 *
       if (.not.Mem_phyncore_L) err = close_db_file (Lun_waphy)
 *
@@ -120,7 +124,6 @@
      $            upm,vpm,tpm,qpm,trpm,umm,vmm,tmm,trmm)
 *
 *
-      call frmslabfhand(Pslab_fhand,Pslab_slab,.true.)
 *     ---------------------------------------------------------------
 *
       return

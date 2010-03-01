@@ -1,4 +1,5 @@
       character*2 Grd_typ_S
+      character*1 Grd_proj_S
       logical Grd_roule, Grd_uniform_L, Grd_gauss_L
       integer Grd_ni, Grd_nj, Grd_nila, Grd_njla, Grd_left, Grd_belo,
      $        Grd_iref, Grd_jref
@@ -8,7 +9,7 @@
       real*8 Grd_rot_8
 *   
       MARK_COMMON_BEG (Grd_c)
-      common / Grd_c / Grd_typ_S
+      common / Grd_c / Grd_typ_S,Grd_proj_S
       MARK_COMMON_END (Grd_c)
       MARK_COMMON_BEG (Grd_l)
       common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L

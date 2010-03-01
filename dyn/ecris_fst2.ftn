@@ -1,0 +1,159 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***s/r ecris_fst2
+      subroutine ecris_fst2 ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul,
+     $                           add,kind,nkfa,ind_o,nk_o,nbit)
+      implicit none
+*
+      character* (*) nomvar
+      integer lminx,lmaxx,lminy,lmaxy,nkfa,nbit,ind_o(*),nk_o,kind
+      real fa(lminx:lmaxx,lminy:lmaxy,*),rf(*),mul,add
+*
+**
+#include "out.cdk"
+*
+      integer  fstecr
+      external fstecr
+*
+      character*1 gridtyp
+      character*8 dumc
+      integer i,j,k,n,ier,pnip1,pnip3,cnt,nis,njs,nrd,
+     $        ii,jj,im,jm,g3,g4,oi,oj,datyp
+      logical reduc_L
+      real*8 sum_8
+      real wkf1(lminx:lmaxx,lminy:lmaxy,nkfa)
+      real wkf2(lminx:lmaxx,lminy:lmaxy,nkfa)
+      real, dimension (:,:  ), allocatable :: wk1,wk2
+      real, dimension (:,:,:), allocatable :: tr1
+      real tr2
+      pointer (patr2, tr2(Out_nisl,Out_njsl,*))
+*
+*----------------------------------------------------------------------
+*
+*     Writing field 'nomvar' to a FST file
+*
+      if ((Out_nisl.le.0).or.(Out_njsl.le.0)) return
+*
+*     Filter if requested and if on PRESSURE levels
+c     if (filt.gt.0) then
+c         call filter(fa,wkf1,wkf2,filt,coef,'G',.false.,
+c    %                       lminx,lmaxx,lminy,lmaxy, nkfa)
+c     endif
+c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridin,Out_gridj0,out_gridjn    ,1,nkfa)
+*
+      datyp = 1
+
+      if (Out_blocme.eq.0) then
+
+         if (nbit.eq.32) datyp = 5
+*
+         gridtyp = 'Z'
+         if (Out_proj_S.eq.'X') gridtyp = 'X'
+         g3 = 0
+         g4 = 0
+         if (Out_nblocx*Out_nblocy.gt.1) then
+            gridtyp = '#'
+            g3     =  Out_ig3
+            g4     =  Out_ig4
+         endif
+         pnip1 = 0
+         pnip3 = Out_ip3
+         if (pnip3.lt.0) pnip3 = Out_npas
+         reduc_L = Out_reduc .gt. 1
+         nis = Out_ifg - Out_idg + 1
+         njs = Out_jfg - Out_jdg + 1
+         allocate (tr1(nis,njs,nk_o))
+         patr2 = loc(tr1(1,1,1))
+         if (reduc_L) then
+            call hpalloc (patr2,Out_nisl*Out_njsl*nk_o,ier,1)
+            if (Out_nblocx*Out_nblocy.gt.1) then
+               g3 = (out_rgridi0-Out_gridi0)/Out_reduc+1
+               g4 = (out_rgridj0-Out_gridj0)/Out_reduc+1
+            endif
+         endif 
+*
+      endif
+*
+      call blkcol ( tr1,nis,njs,Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn,mul,
+     $              add,fa,lminx,lmaxx,lminy,lmaxy,nkfa,ind_o,nk_o)
+*
+      if (Out_blocme.eq.0) then
+*
+      if (reduc_L) then
+         nrd = Out_reduc-1
+         oi  = out_rgridi0-max(Out_bloci0-Out_hx*Out_blocwest ,Out_gridi0)+1
+         oj  = out_rgridj0-max(Out_blocj0-Out_hy*Out_blocsouth,Out_gridj0)+1
+         do k=1,nk_o
+         do j=1,Out_njsl
+         do i=1,Out_nisl
+            cnt=0
+            sum_8=0.0d0
+            im = (i-1)*Out_reduc + oi
+            jm = (j-1)*Out_reduc + oj
+            do jj=max(1,jm-nrd),min(jm+nrd,njs)
+            do ii=max(1,im-nrd),min(im+nrd,nis)
+               cnt=cnt+1
+               sum_8 = sum_8 + tr1(ii,jj,k)
+            end do
+            end do
+            tr2(i,j,k) = sum_8 / dble(cnt)
+         end do
+         end do
+         end do
+      endif
+*
+      if (Out_flipit_L) then
+*
+         allocate (wk2(Out_nisl,nk_o))
+         do j=1,Out_njsl
+            do k=1,nk_o
+            do i=1,Out_nisl
+               wk2(i,k) = tr2(i,j,k)
+            end do
+            end do
+            ier= fstecr(wk2,wk2,-nbit,Out_unf,Out_dateo,int(Out_deet),Out_npas,
+     $                   Out_nisl,nk_o,1,0,Out_ip2,pnip3,Out_typvar_S,nomvar,
+     $                   Out_etik_S,'X',0,0,0,0,datyp,.false.)
+         end do
+         deallocate (wk2)
+*
+      else if (Out_nisg.eq.Out_nisl+1)then
+         allocate ( wk2(Out_nisg,Out_njsl) )
+         do k=1,nk_o
+            n = ind_o(k)
+            if (kind.ge.0) call convip(pnip1,rf(n),kind,+2,dumc,.false.)
+            do j=1,Out_njsl
+            do i=1,Out_nisl
+               wk2(i,j)=tr2(i,j,k)
+            enddo
+               wk2(Out_nisg,j)=wk2(1,j)
+            enddo
+
+            ier = fstecr (wk2,tr1,-nbit,Out_unf,Out_dateo,int(Out_deet),
+     $                    Out_npas,Out_nisg,Out_njsl,1,pnip1,Out_ip2,pnip3,
+     $                    Out_typvar_S,nomvar,Out_etik_S,gridtyp,
+     $                    Out_ig1,Out_ig2,g3,g4,datyp,.false.)
+         end do
+         deallocate (wk2)
+      else
+*
+         do k=1,nk_o
+            n = ind_o(k)
+            if (kind.ge.0) call convip(pnip1,rf(n),kind,+2,dumc,.false.)
+            ier = fstecr (tr2(1,1,k),tr1,-nbit,Out_unf,Out_dateo,int(Out_deet),
+     $                    Out_npas,Out_nisl,Out_njsl,1,pnip1,Out_ip2,pnip3,
+     $                    Out_typvar_S,nomvar,Out_etik_S,gridtyp,
+     $                    Out_ig1,Out_ig2,g3,g4,datyp,.false.)
+         end do
+*     
+      endif
+*
+      deallocate (tr1)
+      if (reduc_L) call hpdeallc (patr2 , ier, 1)
+*
+      endif
+*
+*--------------------------------------------------------------------
+      return
+      end
+
+

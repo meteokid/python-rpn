@@ -1,0 +1,98 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+      subroutine blkcol (f2rc,nis,njs,g_id,g_if,g_jd,g_jf,con,conadd,
+     $                   f2cc,lminx,lmaxx,lminy,lmaxy,lnk,z_out,nk_out)
+      implicit none
+*
+      integer g_id,g_if,g_jd,g_jf,lminx,lmaxx,lminy,lmaxy,lnk,nk_out,
+     $        nis,njs,z_out(nk_out)
+      real f2rc(nis,njs,nk_out), con, conadd,
+     $     f2cc(lminx:lmaxx,lminy:lmaxy,lnk)
+*
+#include "out.cdk"
+*
+      integer i, j, k, iproc, tag, err, status
+      integer si,sj,loindx,hiindx,loindy,hiindy
+      integer len,l_id,l_if,l_jd,l_jf,procid,offi,offj,proci0,procj0
+      common /gatherit/ len,l_id,l_if,l_jd,l_jf,procid,proci0,procj0
+      real buf ((lmaxx-lminx+1)*(lmaxy-lminy+1)*nk_out)
+      data tag /210/
+*
+*----------------------------------------------------------------------
+*
+      loindx = 1 - Out_hx*Out_mywest
+      loindy = 1 - Out_hy*Out_mysouth
+      hiindx = Out_myprocni + Out_hx*Out_myeast
+      hiindy = Out_myprocnj + Out_hy*Out_mynorth
+      si = Out_myproci0 - 1
+      sj = Out_myprocj0 - 1
+      l_id = max(loindx,(g_id-si))
+      l_if = min(hiindx,(g_if-si))
+      l_jd = max(loindy,(g_jd-sj))
+      l_jf = min(hiindy,(g_jf-sj))
+*       
+      if (Out_blocme.eq.0) then
+*
+* Copy local data (LD) segment
+*
+         do k = 1, nk_out
+         do j = l_jd, l_jf
+         do i = l_id, l_if
+            f2rc(i-l_id+1,j-l_jd+1,k) = con*f2cc(i,j,z_out(k)) + conadd
+         enddo
+         enddo
+         enddo
+*
+* Receive local data (LD) segments from other processors of bloc
+*
+         do iproc = 1, Out_numpe_perb-1
+*
+            call RPN_COMM_recv ( len, 8, 'MPI_INTEGER', iproc,
+     $                                     tag, 'BLOC', status, err )
+            if (len.gt.0) then
+               call RPN_COMM_recv ( buf, len, 'MPI_REAL', iproc,
+     $                                 tag, 'BLOC', status, err )
+               len  = 0
+               offi = max(g_id,Out_bloci0)
+               if (Out_myrow.eq.0) offi = g_id
+               offj = max(g_jd,Out_blocj0)
+               if (Out_mycol.eq.0) offj = g_jd
+               offi = l_id + proci0 - 1 - offi
+               offj = l_jd + procj0 - 1 - offj
+               do k = 1, nk_out
+               do j = 1, l_jf-l_jd+1
+               do i = 1, l_if-l_id+1
+                  len = len + 1
+                  f2rc(offi+i,offj+j,k) = buf(len)
+               enddo
+               enddo
+               enddo 
+            endif
+         enddo 
+*
+      else
+*
+* Send local data (LD) segment to processor 0 of mybloc
+*
+         procid = Out_myproc
+         proci0 = Out_myproci0
+         procj0 = Out_myprocj0
+         len    = 0
+         do k = 1, nk_out
+         do j = l_jd, l_jf
+         do i = l_id, l_if
+            len = len + 1
+            buf(len) = con*f2cc(i,j,z_out(k)) + conadd
+         enddo
+         enddo
+         enddo
+*
+         call RPN_COMM_send ( len, 8, 'MPI_INTEGER', 0, tag,'BLOC',err )
+         if (len.gt.0)
+     $   call RPN_COMM_send ( buf, len, 'MPI_REAL', 0, tag, 'BLOC',err )
+*
+      endif
+*
+*----------------------------------------------------------------------
+      return
+      end
+*

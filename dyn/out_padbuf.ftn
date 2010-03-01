@@ -1,0 +1,71 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+      subroutine out_padbuf (f,minx,maxx,miny,maxy,lnk)
+      implicit none
+*
+#include "out.cdk"
+*
+*author
+*     M. Desgagne - rpn - July  2004 (from MC2)
+*
+*revision
+* v3_20 - Lee V.            - initial GEMDM version
+
+*object
+*     To fill non-initialized values in halo area.
+
+*arguments
+* F   field to be treated
+*
+      integer minx,maxx,miny,maxy,lnk
+      character*1 grid
+      real f(minx:maxx,miny:maxy,lnk)
+*
+      integer i,j,k,iff,id,jd,jf
+*----------------------------------------------------------------------
+       id   = 1            - Out_hx
+       jd   = 1            - Out_hy
+       iff  = Out_myprocni + Out_hx 
+       jf   = Out_myprocnj + Out_hy
+*
+      do k=1,lnk
+      do j=jf+1,maxy
+      do i=id,iff
+         f(i,j,k) = f(i,jf,k)
+      end do
+      end do
+      end do
+*
+      do k=1,lnk
+      do j=jd-1,miny,-1
+      do i=id,iff
+         f(i,j,k) = f(i,jd,k)
+      end do
+      end do
+      end do
+*
+      do k=1,lnk
+      do i=iff+1,maxx
+      do j=miny,maxy
+         f(i,j,k) = f(iff,j,k)
+      end do
+      end do
+      end do
+*
+      do k=1,lnk
+      do i=id-1,miny,-1
+      do j=miny,maxy
+         f(i,j,k) = f(id,j,k)
+      end do
+      end do
+      end do
+*
+c     do k=1,lnk
+c     do j=miny,maxy
+c     do i=minx,maxx
+c        print*,'f(',i,',',j,',',k,')=',f(i,j,k)
+c     end do
+c     end do
+c     end do
+*----------------------------------------------------------------------
+      return
+      end

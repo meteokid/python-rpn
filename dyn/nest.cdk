@@ -76,3 +76,5 @@
       DCL_VMMVAR( nest, nest_sx   , real, (LDIST_SHAPE     ) )
       DCL_VMMVAR( nest, nest_trx  , real, (LDIST_SHAPE,l_nk,*) )
       MARK_COMMON_END (nest)
+      character*8 nest_n_first(1)
+      equivalence (nest_n_first,VMM_NAM(nest_u))

@@ -1,9 +1,9 @@
-***s/r prgzvta - interpolation of geopotential and virtual temperature on a
-*                given pressure level
+***s/r prgzvta - interpolation of geopotential and virtual temperature on
+*                given pressure levels
 *
 #include <model_macros_f.h>
 *
-      subroutine prgzvta(F_gzout, F_vtout,  F_pres,
+      subroutine prgzvta(F_gzout, F_vtout,  F_pres, Nkout,
      %                   F_gzin,  F_vtin,   F_wlnph,  F_la,
      %                   F_vtund, F_gzund,  F_nundr,
      %                   F_cubzt_L, F_linbot,
@@ -13,12 +13,12 @@
 *
       logical F_cubzt_L
       integer F_nundr, F_linbot
-      integer DIST_DIM,Nk
-      real    F_pres
-      real    F_gzout(DIST_SHAPE),     F_vtout(DIST_SHAPE)
+      integer DIST_DIM,Nk,Nkout
+      real    F_pres(Nkout)
+      real    F_gzout(DIST_SHAPE,Nkout),F_vtout(DIST_SHAPE,Nkout)
       real    F_gzin (DIST_SHAPE,Nk), F_vtin (DIST_SHAPE,Nk)
       real    F_wlnph (DIST_SHAPE,Nk), F_la   (DIST_SHAPE)
-      real    F_vtund(DIST_SHAPE,Nk), F_gzund(DIST_SHAPE,Nk)
+      real    F_vtund(DIST_SHAPE,F_nundr), F_gzund(DIST_SHAPE,F_nundr)
 *
 *author
 *     Alain Patoine - from prgzvtl except we introduce linear 
@@ -76,7 +76,7 @@
 *     none
 *
 **
-      integer i, j, k, pnk, pnkm, pnindex(l_ni,l_nj)
+      integer i, j, k, kk, pnk, pnkm, pnindex(l_ni,l_nj)
 *
       real    prlprso
       real    prd, pre, prr
@@ -88,7 +88,9 @@
       real    prlpbot, prvtbot, prfibot
 *
       prsmall = .001
-      prlprso = log(F_pres)
+
+      do 500 kk = 1, Nkout
+      prlprso = log(F_pres(kk))
 *
       do j= 1, l_nj
       do i= 1, l_ni
@@ -119,13 +121,13 @@
 *
          prd = prlprso - F_wlnph(i,j,1)
 *
-         F_vtout(i,j) = F_vtin(i,j,1) + prd
+         F_vtout(i,j,kk) = F_vtin(i,j,1) + prd
      %                                * (F_vtin(i,j,1)-F_vtin(i,j,2))
      %                                / (F_wlnph(i,j,1)-F_wlnph(i,j,2))
 *
-         F_gzout(i,j) = F_gzin(i,j,1) - prd
+         F_gzout(i,j,kk) = F_gzin(i,j,1) - prd
      %                                * Dcst_rgasd_8
-     %                                * (F_vtin(i,j,1) + F_vtout(i,j))
+     %                                * (F_vtin(i,j,1) + F_vtout(i,j,kk))
      %                                * 0.5
 *
 *******************************************************************************
@@ -207,13 +209,11 @@
 *******************************************************************************
       else if ( pnindex(i,j) .eq. l_nk ) then
 *
-         do 20 pnund=1,F_nundr+1
-*
-         if ( pnund .gt. F_nundr )                        go to 30
+         do pnund=1,F_nundr
 *
          if ( F_gzin(i,j,l_nk) .gt. F_gzund(i,j,pnund) ) go to 30
 *
- 20      continue
+         enddo
 *
  30      continue
 *
@@ -232,8 +232,8 @@
 *
          if ( prlpbot .ge. prlprso ) then
 *
-         F_vtout(i,j) = prvttop
-         F_gzout(i,j) = prfitop + Dcst_rgasd_8*prvttop*(prlptop-prlpbot)
+         F_vtout(i,j,kk) = prvttop
+         F_gzout(i,j,kk) = prfitop + Dcst_rgasd_8*prvttop*(prlptop-prlpbot)
          go to 300
 *
          endif
@@ -245,9 +245,9 @@
 *
          if ( prlpbot .ge. prlprso ) then
 *
-            F_vtout(i,j) = prvttop *
+            F_vtout(i,j,kk) = prvttop *
      %                     exp ( Dcst_rgasd_8 * prl * (prlprso-prlptop))
-            F_gzout(i,j) = prfitop + (prvttop-F_vtout(i,j)) / prl
+            F_gzout(i,j,kk) = prfitop + (prvttop-F_vtout(i,j,kk)) / prl
             go to 300
 *
          endif
@@ -270,9 +270,9 @@
 *
       endif
 *
-      F_vtout(i,j) = prvttop *
+      F_vtout(i,j,kk) = prvttop *
      %               exp ( Dcst_rgasd_8 * prl * (prlprso-prlptop))
-      F_gzout(i,j) = prfitop + (prvttop-F_vtout(i,j)) / prl
+      F_gzout(i,j,kk) = prfitop + (prvttop-F_vtout(i,j,kk)) / prl
 *
 *
 *
@@ -320,10 +320,10 @@
 *
             prfl2 = prfm2 + 2.0 * pre * prfm3
 *
-            F_gzout(i,j)= prfm0 + pre * prfm1 - prr * prfl2
+            F_gzout(i,j,kk)= prfm0 + pre * prfm1 - prr * prfl2
 *
-            F_vtout(i,j) = prfm1 + pre * prfl2 - 2.0 * prr * prfm3
-            F_vtout(i,j) = - F_vtout(i,j) / Dcst_rgasd_8
+            F_vtout(i,j,kk) = prfm1 + pre * prfl2 - 2.0 * prr * prfm3
+            F_vtout(i,j,kk) = - F_vtout(i,j,kk) / Dcst_rgasd_8
 *
          else
 *
@@ -331,13 +331,13 @@
 *
             prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) / prd
 *
-            F_gzout(i,j)= prfm0 + pre * prfm1
+            F_gzout(i,j,kk)= prfm0 + pre * prfm1
 *
             prfm0 = 0.5 * ( F_vtin(i,j,pnk) + F_vtin(i,j,pnkm) )
 *
             prfm1 = ( F_vtin(i,j,pnk) - F_vtin(i,j,pnkm) ) / prd
 *
-            F_vtout(i,j)= prfm0 + pre * prfm1
+            F_vtout(i,j,kk)= prfm0 + pre * prfm1
 *
          endif
 *
@@ -345,5 +345,6 @@
 *
  300  continue
 *
+ 500  continue
       return
       end

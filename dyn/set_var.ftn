@@ -71,23 +71,20 @@
 #include "dimout.cdk"
 #include "setsor.cdk"
 #include "p_bus.cdk"
+#include "out3.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
-#include "outc.cdk"
 #include "grid.cdk"
 #include "level.cdk"
 #include "timestep.cdk"
-#include "chem.cdk"
 *
 **
-      integer getvndx, p_getphydx, chem_getdx
-      external getvndx, p_getphydx, chem_getdx
 *
       character*1 typvar_S
       character*5 stuff_S
       character*8 varname_S
       integer levset,stepset,gridset,varmax
-      integer i, j, k, m, pndx, pnpx, pncx, ii, jj, kk, mm
+      integer i, j, k, m, pndx, ii, jj, kk
 *
 *----------------------------------------------------------------
 *
@@ -96,31 +93,7 @@
           write(Lun_out,*) F_argv_S
       endif
       set_var=0
-      j = Outd_sets + 1
-      k = Outp_sets + 1
-      m = Outc_sets + 1
-      if (j.gt.MAXSET) then
-          if (Lun_out.gt.0) write(Lun_out,*)
-     $                      'SET_VAR WARNING: too many OUTD sets'
-          set_var=1
-          return
-      endif
-      if (k.gt.MAXSET) then
-          if (Lun_out.gt.0) write(Lun_out,*)
-     $                      'SET_VAR WARNING: too many OUTP sets'
-          set_var=1
-          return
-      endif
-      if (m.gt.MAXSET) then
-          if (Lun_out.gt.0) write(Lun_out,*)
-     $                      'SET_VAR WARNING: too many OUTC sets'
-          set_var=1
-          return
-      endif
-      jj = 0
-      kk = 0
-      mm = 0
-      
+
       if (index(F_argv_S(1),'[').gt.0) then
           stuff_S=F_argv_S(1)
           read(stuff_S(2:4),*) varmax
@@ -137,7 +110,7 @@
       gridset=-1
       stepset=-1
       typvar_S='P'
-      do 100 i=varmax+2, F_argc
+      do i=varmax+2, F_argc
          if (F_argv_S(i).eq.'levels') then
             read(F_argv_S(i+1),*) levset
          else if (F_argv_S(i).eq.'grid') then
@@ -147,7 +120,7 @@
          else if (F_argv_S(i).eq.'typvar') then
             read(F_argv_S(i+1),*) typvar_S
          endif
- 100  continue
+      enddo
 
       if (gridset.lt.0) then
          if (Lun_out.gt.0) write(Lun_out,*)
@@ -207,102 +180,107 @@
          endif
       endif
 *
-*     Check variables
+*     Store variables in variable sets
 *
-      do 200 ii=1,varmax
-         pndx = 0
-         pnpx = 0
-         varname_S=F_argv_S(ii+1)
-         pndx = getvndx(varname_S)
-         pnpx = p_getphydx(varname_S)
-         pncx = chem_getdx(varname_S)
-         if (pndx .gt. 0) then
-            jj = jj + 1
-            Outd_var(jj,j) = pndx
-            if (Setsor_key(pndx).ge.0) then
-                Setsor_useit(pndx)=Setsor_useit(pndx)+1
-            else
-                if (Lun_out.gt.0)
-     $         write(Lun_out,*)'WARNING SET_VAR: no output for ',
-     $              Setsor_name_s(pndx),'Setsor_key(',pndx,')=',
-     $              Setsor_key(pndx)
-            endif
-         elseif (pnpx .gt.0) then
-            kk = kk + 1
-            Outp_var(kk,k) = pnpx
-            Phy_useit(pnpx)=1
-         elseif (pncx .gt.0) then
-            mm = mm + 1
-            Outc_var(mm,m) = pncx
-            Chem_useit(pncx)=1
-         else
-            if (Lun_out.gt.0) write(Lun_out,1300) varname_S
-         endif
- 200  continue
-
-      if (jj.gt.0) then
-         Outd_sets       = j
-         Outd_var_max(j) = jj
-         Outd_grid(j)    = gridset
-         Outd_lev(j)     = levset
-         Outd_step(j)    = stepset
-         Outd_typvar_S(j)= typvar_S
-         if (Lun_out.gt.0) then
-            write(Lun_out,*) '***DYN***Outd_sets=',Outd_sets
-            write(Lun_out,*) 'Outd_var_max=',Outd_var_max(j)
-            write(Lun_out,*) 'Outd_var=',
-     $                        (Outd_var(jj,j),jj=1,Outd_var_max(j))
-            write(Lun_out,*) 'Outd_grid=',Outd_grid(j)
-            write(Lun_out,*) 'Outd_lev=',Outd_lev(j)
-            write(Lun_out,*) 'Outd_step=',Outd_step(j)
-            write(Lun_out,*) 'Outd_typvar_S=',Outd_typvar_S(j)
-         endif
-      endif
-      if (kk.gt.0) then
-         Outp_sets = k
-         Outp_var_max(k) = kk
-         Outp_grid(k) = gridset
-         Outp_lev(k) = levset
-         Outp_step(k) = stepset
-         Outp_typvar_S(k)= typvar_S
-         if (Lun_out.gt.0) then
-            write(Lun_out,*) '***PHY***Outp_sets=',Outp_sets
-            write(Lun_out,*) 'Outp_var_max=',Outp_var_max(k)
-            write(Lun_out,*) 'Outp_var=',
-     $                        (Outp_var(kk,k),kk=1,Outp_var_max(k))
-            write(Lun_out,*) 'Outp_grid=',Outp_grid(k)
-            write(Lun_out,*) 'Outp_lev=',Outp_lev(k)
-            write(Lun_out,*) 'Outp_step=',Outp_step(k)
-            write(Lun_out,*) 'Outp_typvar_S=',Outp_typvar_S(k)
-         endif
-      endif
-      if (mm.gt.0) then
-         Outc_sets = m
-         Outc_var_max(m) = mm
-         Outc_grid(m) = gridset
-         Outc_lev(m) = levset
-         Outc_step(m) = stepset
-         Outc_typvar_S(m)= typvar_S
-         if (Lun_out.gt.0) then
-            write(Lun_out,*) '***CHEM**Outc_sets=',Outc_sets
-            write(Lun_out,*) 'Outc_var_max=',Outc_var_max(m)
-            write(Lun_out,*) 'Outc_var=',
-     $                        (Outc_var(mm,m),mm=1,Outc_var_max(m))
-            write(Lun_out,*) 'Outc_grid=',Outc_grid(m)
-            write(Lun_out,*) 'Outc_lev=',Outc_lev(m)
-            write(Lun_out,*) 'Outc_step=',Outc_step(m)
-            write(Lun_out,*) 'Outc_typvar_S=',Outc_typvar_S(m)
-         endif
-      endif
-      if ((jj+kk+mm).eq.0) then
-         if (Lun_out.gt.0) write(Lun_out,1400)
-         set_var=1
-         return
+      if (F_argv_S(0).eq.'sortie') then
+          j = Outd_sets + 1
+          if (j.gt.MAXSET) then
+          if (Lun_out.gt.0) write(Lun_out,*)
+     $                      'SET_VAR WARNING: too many OUTD sets'
+          set_var=1
+          return
+          endif
+*
+          jj=0
+          do ii=1,varmax
+             jj = jj + 1
+             Outd_var_S(jj,j) =F_argv_S(ii+1)
+             Outd_nbit(jj,j)  = Out3_nbitg
+          enddo
+          if (jj.gt.0) then
+              Outd_sets       = j
+              Outd_var_max(j) = jj
+              Outd_grid(j)    = gridset
+              Outd_lev(j)     = levset
+              Outd_step(j)    = stepset
+              Outd_typvar_S(j)= typvar_S
+          else
+              if (Lun_out.gt.0) write(Lun_out,1400)
+          endif
+      else if (F_argv_S(0).eq.'sortie_p') then
+          j = Outp_sets + 1
+          if (j.gt.MAXSET) then
+          if (Lun_out.gt.0) write(Lun_out,*)
+     $                      'SET_VAR WARNING: too many OUTP sets'
+          set_var=1
+          return
+          endif
+*
+          jj=0
+          do ii=1,varmax
+             jj = jj + 1
+             Outp_var_S(jj,j)=F_argv_S(ii+1)
+             Outp_nbit(jj,j)  = Out3_nbitg
+          enddo
+          if (jj.gt.0) then
+              Outp_sets       = j
+              Outp_var_max(j) = jj
+              Outp_grid(j)    = gridset
+              Outp_lev(j)     = levset
+              Outp_step(j)    = stepset
+              Outp_typvar_S(j)= typvar_S
+              if (Lun_out.gt.0) then
+                 write(Lun_out,*) '***PHY***Outp_sets=',Outp_sets
+                 write(Lun_out,*) 'Outp_var_max=',Outp_var_max(j)
+                 write(Lun_out,*) 'Outp_var_S=',
+     $                        (Outp_var_S(jj,j),jj=1,Outp_var_max(j))
+                 write(Lun_out,*) 'Outp_grid=',Outp_grid(j)
+                 write(Lun_out,*) 'Outp_lev=',Outp_lev(j)
+                 write(Lun_out,*) 'Outp_step=',Outp_step(j)
+                 write(Lun_out,*) 'Outp_typvar_S=',Outp_typvar_S(j)
+              endif
+          else
+              if (Lun_out.gt.0) write(Lun_out,1400)
+          endif
+c     else if (F_argv_S(0).eq.'sortie_c') then
+c         j = Outc_sets + 1
+c         if (j.gt.MAXSET) then
+c         if (Lun_out.gt.0) write(Lun_out,*)
+c    $                      'SET_VAR WARNING: too many OUTC sets'
+c         set_var=1
+c         return
+c         endif
+c
+c         jj=0
+c         do ii=1,varmax
+c            jj = jj + 1
+c            Outc_var_S(jj,j)=F_argv_S(ii+1)
+c            Outc_nbit(jj,j)  = Out3_nbitg
+c         enddo
+c         if (jj.gt.0) then
+c             Outc_sets       = j
+c             Outc_var_max(j) = jj
+c             Outc_grid(j)    = gridset
+c             Outc_lev(j)     = levset
+c             Outc_step(j)    = stepset
+c             Outc_typvar_S(j)= typvar_S
+c             if (Lun_out.gt.0) then
+c                write(Lun_out,*) '***CHEM**Outc_sets=',Outc_sets
+c                write(Lun_out,*) 'Outc_var_max=',Outc_var_max(j)
+c                write(Lun_out,*) 'Outc_var_S=',
+c    $                        (Outc_var_S(jj,j),jj=1,Outc_var_max(j))
+c                write(Lun_out,*) 'Outc_grid=',Outc_grid(j)
+c                write(Lun_out,*) 'Outc_lev=',Outc_lev(j)
+c                write(Lun_out,*) 'Outc_step=',Outc_step(j)
+c                write(Lun_out,*) 'Outc_typvar_S=',Outc_typvar_S(j)
+c             endif
+c         else
+c             if (Lun_out.gt.0) write(Lun_out,1400)
+c         endif
       endif
 *
 *----------------------------------------------------------------
 *
- 1300    format('SET_VAR - WARNING: VARIABLE REQUESTED IS UNKNOWN ',A8)
  1400    format('SET_VAR - WARNING: NO VARIABLES DEFINED FOR THIS SET')
       return
       end

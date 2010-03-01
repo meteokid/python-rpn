@@ -15,7 +15,7 @@
       real F_lnps(DIST_SHAPE,Nk), F_la (DIST_SHAPE)
 *
       integer F_und
-      real    F_vtund(DIST_SHAPE,Nk),F_fiund(DIST_SHAPE,Nk)
+      real    F_vtund(DIST_SHAPE,F_und),F_fiund(DIST_SHAPE,F_und)
 *
 *author
 *     andre methot - alain patoine - after pnm1

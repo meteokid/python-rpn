@@ -84,7 +84,7 @@
 *
 *    Vertical sponge near model lid:
 *                  Vspng_n_spng top layers NOT distributed
-*                  G_nj distributed on Ptopo_npex*Ptopo_npey PEs
+*                  ldnh_maxy distributed on Ptopo_npex PEs
 *                  G_ni NOT distributed
 *
       if (Vspng_nk.gt.0) then
@@ -93,7 +93,7 @@
       if (.not.check_parti (n0,ldnh_maxy,Ptopo_npex)) then
          if (Lun_out.gt.0) write(Lun_out,1001) 
      $   ' Transpose 1===>2 for VSPNG:',
-     $   ' l_nj distributed on Ptopo_npex PEs (no halo)'
+     $   ' ldnh_nj MAX distributed on Ptopo_npex PEs (no halo)'
          stop
       endif
       trp_12emin = 1
@@ -123,7 +123,7 @@
 *
 *    Vertical sponge near model lid:
 *                  Vspng_n_spng top layers NOT distributed
-*                  G_ni distributed on Ptopo_npex*Ptopo_npey PEs
+*                  ldnh_maxx distributed on Ptopo_npey PEs
 *                  G_nj NOT distributed
 *
       if (Vspng_nk.gt.0) then
@@ -132,7 +132,7 @@
       if (.not.check_parti (n0,ldnh_maxx,Ptopo_npey)) then
          if (Lun_out.gt.0) write(Lun_out,1001) 
      $   ' Transpose 2===>2 for VSPNG:',
-     $   ' l_ni distributed on Ptopo_npey PEs (no halo)'
+     $   ' ldnh_ni MAX distributed on Ptopo_npey PEs (no halo)'
          stop
       endif
       trp_22emin = 1
