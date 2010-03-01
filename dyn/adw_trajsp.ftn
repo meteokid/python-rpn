@@ -5,7 +5,7 @@
       subroutine adw_trajsp ( F_lon, F_lat, F_x, F_y, F_z,
      %                        F_u, F_v, F_dt,i0,in,j0,jn)
 *
-#include "impnone.cdk"
+      implicit none
 *
       real F_lon(*),F_lat(*),F_x(*),F_y(*),F_z(*),F_u(*),F_v(*),F_dt
       integer i0,in,j0,jn
@@ -15,6 +15,7 @@
 *
 *revision
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     see id section
@@ -40,81 +41,105 @@
 #include "adw.cdk"
 #include "dcst.cdk"
 ************************************************************************
-      integer n, ij, nij, nijk,i,j,k
+      integer n, ij, nij,vnij, i,j,k
 *
       real*8  pdsa, pdca, pdcai, pdso, pdco, pdx, pdy, pdz,
      %        pdux, pduy, pduz, pdsinal, pdcosal, r2pi_8, two
-*
+      real*8 xcos(i0:in,j0:jn), ycos(i0:in,j0:jn)
+      real*8 xsin(i0:in,j0:jn), ysin(i0:in,j0:jn)
+      real*8 yrec(i0:in,j0:jn)
+      real*8 xasin(i0:in,j0:jn), yasin(i0:in,j0:jn)
+      real*8 xatan(i0:in,j0:jn), yatan(i0:in,j0:jn), zatan(i0:in,j0:jn)
       parameter (two = 2.0)
 ************************************************************************
       nij  = l_ni*l_nj
-      nijk = l_ni*l_nj*l_nk
+      vnij = (in-i0+1)*(jn-j0+1)
 *
       r2pi_8 = two * Dcst_pi_8
 ************************************************************************
 *
+C     call tmg_start ( 33, 'adw_trajsp' )
+!$omp parallel do private(ysin,ycos,yrec,xasin,xatan,yatan,
+!$omp&  zatan,yasin,xsin,xcos, n,ij,pdx,pdy,pdz,pdsa,pdca,
+!$omp&  pdcai,pdso,pdco,pdux,pduy,pduz,pdsinal,pdcosal)
       do k=1,l_nk
-      do j=j0,jn
-      do i=i0,in
-      n = (k-1)*nij + ((j-1)*l_ni) + i
-      ij = mod( n-1, nij ) + 1
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            xcos(i,j) = F_lat(n)
+            xsin(i,j) = sqrt( F_u(n) ** 2 + F_v(n) ** 2 ) * F_dt
+         end do
+         end do
+         call vsin(ysin, xsin, vnij)
+         call vcos(ycos, xcos, vnij)
+         call vrec(yrec, ycos, vnij)
+
+         do j=j0,jn
+         do i=i0,in
+             n = (k-1)*nij + ((j-1)*l_ni) + i
+            ij = mod( n-1, nij ) + 1
 ************************************************************************
 * cartesian coordinates of grid points                                 *
 ************************************************************************
-      pdx = Adw_cx2d_8(ij)
-      pdy = Adw_sx2d_8(ij)
-      pdz = Adw_sy2d_8(ij)
+           pdx = Adw_cx2d_8(ij)
+           pdy = Adw_sx2d_8(ij)
+           pdz = Adw_sy2d_8(ij)
 ************************************************************************
 * if very small wind set upwind point to grid point                    *
 ************************************************************************
-      if ( abs(F_u(n))+abs(F_v(n)) .lt. 1.e-10 ) go to 99
+           if ( abs(F_u(n))+abs(F_v(n)) .lt. 1.e-10 ) go to 99
 *
-      pdx = pdx * Adw_cy2d_8(ij)
-      pdy = pdy * Adw_cy2d_8(ij)
+           pdx = pdx * Adw_cy2d_8(ij)
+           pdy = pdy * Adw_cy2d_8(ij)
 ************************************************************************
 * sin and cosin of first guess of upwind positions                     *
 ************************************************************************
-      pdsa  = F_z(n)
-      pdca  = cos( F_lat(n) )
-      pdcai = 1.0/pdca
-      pdso  = F_y(n) * pdcai
-      pdco  = F_x(n) * pdcai
+           pdsa  = F_z(n)
+           pdca  = ycos(i,j)
+           pdcai = yrec(i,j)
+           pdso  = F_y(n) * pdcai
+           pdco  = F_x(n) * pdcai
 ************************************************************************
 * wind components in cartesian coordinate at upwind positions          *
 ************************************************************************
-      pdux = ( - F_u(n) * pdso - F_v(n) * pdco * pdsa )
-      pduy = (   F_u(n) * pdco - F_v(n) * pdso * pdsa )
-      pduz =     F_v(n) * pdca
+           pdux = ( - F_u(n) * pdso - F_v(n) * pdco * pdsa )
+           pduy = (   F_u(n) * pdco - F_v(n) * pdso * pdsa )
+           pduz =     F_v(n) * pdca
 *
-      pdsinal = pdx * pdux + pdy * pduy + pdz * pduz
-      pdux = pdux - pdx * pdsinal
-      pduy = pduy - pdy * pdsinal
-      pduz = pduz - pdz * pdsinal
-      pdsinal = sin( sqrt( F_u(n) ** 2 + F_v(n) ** 2 ) * F_dt )
-      pdcosal = sqrt( ( 1.0 + pdsinal ) * ( 1.0 - pdsinal ) )
-      pdsinal = pdsinal /
+           pdsinal = pdx * pdux + pdy * pduy + pdz * pduz
+           pdux = pdux - pdx * pdsinal
+           pduy = pduy - pdy * pdsinal
+           pduz = pduz - pdz * pdsinal
+           pdcosal = sqrt( ( 1.0 + ysin(i,j) ) * ( 1.0 - ysin(i,j) ) )
+           pdsinal = ysin(i,j) /
      %          sqrt( pdux * pdux + pduy * pduy + pduz * pduz )
 *
-      F_x(n) = pdcosal * pdx - pdsinal * pdux
-      F_y(n) = pdcosal * pdy - pdsinal * pduy
-      F_z(n) = pdcosal * pdz - pdsinal * pduz
+           F_x(n) = pdcosal * pdx - pdsinal * pdux
+           F_y(n) = pdcosal * pdy - pdsinal * pduy
+           F_z(n) = pdcosal * pdz - pdsinal * pduz
+   99      F_z(n) = min(1.0D0,max(1.0d0*F_z(n),-1.0D0))
 *
-   99 F_z  (n) = min(1.0D0,max(1.0d0*F_z(n),-1.0D0))
-      F_lat(n) = asin( F_z(n) )
-      F_lon(n) = atan2( F_y(n), F_x(n) )
+           xasin(i,j) = F_z(n)
+           xatan(i,j) = F_x(n)
+           yatan(i,j) = F_y(n)
+*           
+         enddo
+         enddo
 *
-      enddo
-      enddo
-      enddo
+         call vasin  ( yasin, xasin,        vnij )
+         call vatan2 ( zatan, yatan, xatan, vnij )
 *
-      do k=1,l_nk
-      do j=j0,jn
-      do i=i0,in
-      n = (k-1)*nij + ((j-1)*l_ni) + i
-      if ( F_lon(n) .lt. 0.0 ) F_lon(n) = F_lon(n) + r2pi_8
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            F_lat(n) = yasin(i,j)
+            F_lon(n) = zatan(i,j) 
+            if ( F_lon(n) .lt. 0.0 ) F_lon(n) = F_lon(n) + r2pi_8
+         end do   
+         end do   
       enddo
-      enddo
-      enddo
+!$omp end parallel do
 *
+C     call tmg_stop (33)
       return
       end

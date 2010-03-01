@@ -94,14 +94,12 @@
          multx_= 0
       endif
 *
-c*PDIR RESERVE=Macr_cpud
 
       call hspng_drv ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
      %                 tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
      %                 qpt1, mut1, multx, st1 , topo ,
      %                 LDIST_DIM, G_nk)
 
-c*PDIR RELEASE
 *
       if (Cstv_phidf_8.gt.0.) then
 *

@@ -21,6 +21,7 @@
 * v2_32 - Desgagne M.       - option for FST2000 encoding of ip1
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Desgagne M.       - new procedure for call to set_dcst8
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *
@@ -44,26 +45,21 @@
 *
 *modules
       logical  check_parti
-      integer  slabopt, longueur, hybref_to_ig, set_dcst8
+      integer  slabopt, longueur, hybref_to_ig, set_dcst8, gnthread
       external set_world_view1,set_dcst8,check_parti,
-     %         slabopt,longueur,hybref_to_ig
+     %         slabopt,longueur,hybref_to_ig,gnthread
 **
-      integer ipcode,ipmode,pncpu,ierr,mindimx,mindimy,
+      integer ipcode,ipmode,ierr,mindimx,mindimy,
      $        maxblenx,maxbleny,cte_ok
-c      parameter(cnbre=31)
       character*256 prejob_S
-c      character*10 liste_S(cnbre)
-c      data liste_S/ 'CPD'   , 'CPV' , 'RGASD' , 'RGASV', 'TRPL' ,
-c     +              'TCDK'  , 'RAUW', 'EPS1'  , 'EPS2' , 'DELTA',
-c     +              'CAPPA' , 'TGL' , 'CONSOL', 'GRAV' , 'RAYT' ,
-c     +              'STEFAN', 'PI'  , 'OMEGA' , 'KNAMS', 'STLO' ,
-c     +              'KARMAN', 'RIC' , 'CHLC'  , 'CHLF' , 'T1S'  ,
-c     +              'T2S'   , 'AW'  , 'BW'    , 'AI'   , 'BI'   ,
-c     +              'SLP' /
       real pcode,x1,x2
 *
       integer pni, pnj, pniu, pnjv, pnk, lam
+      
       namelist / dyndim / pni, pnj, pniu, pnjv, pnk, lam
+*
+c     integer omp_get_num_threads,omp_get_thread_num
+c     These variables are for OpenMp compilation
 *
 *-------------------------------------------------------------------
 *
@@ -80,9 +76,16 @@ c     +              'SLP' /
 *
       call rpn_comm_init (set_world_view1, Ptopo_myproc, Ptopo_numproc, 
      $                                     Ptopo_npex  , Ptopo_npey)
+      Ptopo_npeOpenMP = gnthread()
+      if (Lun_out.gt.0) then
+	 write(6,*) 'OpenMP will use ',Ptopo_npeOpenMP
+     $                    ,' thread(s)'
+      endif
       call rpn_comm_mype (Ptopo_myproc, Ptopo_myrow, Ptopo_mycol)
 *
       call bcastc1 ()
+      call tmg_init ( Ptopo_myproc, 'GEMDM' )
+      call tmg_start ( 1, 'GEMDM' ) 
 *
 *     fst2000 ip1 encoding 
       if ((Level_ip12000_L).and.(Ptopo_myproc.gt.0))
@@ -201,15 +204,6 @@ c      call system (prejob_S)
 *
       call set_run_dir_xy (Ptopo_myrow, Ptopo_mycol)
 *
-*C    OpenMP cpu initialization
-*     -------------------------
-      pncpu = max( Ptopo_npeOpenMP, Ptopo_npeMacro )
-*
-#if defined (MULTID) || defined (MULTI)
-#if defined (NEC)
-      call pstune('maxcpu', pncpu, 'dbreleas', pncpu)
-#endif
-#endif
 *
 *C    Initialize the schemes control comdeck
 *     --------------------------------------

@@ -16,6 +16,7 @@
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     see rhs

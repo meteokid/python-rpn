@@ -15,6 +15,7 @@
 * v2_21 - Desgagne M.       - new call to horwavg
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
 * v3_02 - Lee V.            - adapt for LAM 
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 * applies horizontal diffusion with vertical modulation of 
@@ -114,33 +115,41 @@
      %                    LDIST_DIM, G_nk )
       endif
 *
-      if (Cstv_phidf_8.gt.0.) then
+!$omp parallel
+       if (Cstv_phidf_8.gt.0.) then
 *
 *     Adjust surface pressure and hence pi' (FOR CLIMATE APPLICATIONS) 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if (Schm_psadj_L) then
 *
+!$omp single
          call horwavg ( bbb_8, pipt0(l_minx,l_miny,G_nk),
      $                         pipt1(l_minx,l_miny,G_nk),LDIST_DIM )
+!$omp end single
 *
 *        Redistribute the average mass loss at the surface, ...
 *
+!$omp do
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
             pipt1(i,j,G_nk) = pipt1(i,j,G_nk) + bbb_8
          end do
          end do
+!$omp enddo
 *
 *        ... correct s immediately and ...
 *
+!$omp do
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
             st1(i,j)= log(ONE_8+dble(pipt1(i,j,G_nk)/geomg_pib(G_nk)))
          end do
          end do
+!$omp enddo
 *
 *        ... refine pi' everywhere else accordingly.
 *
+!$omp do
          do k=1,G_nk-1
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
@@ -148,6 +157,7 @@
             end do
             end do
          end do
+!$omp enddo
 *
       else
 *
@@ -155,11 +165,13 @@
 *  $. Indirect diffusion of s through pi' *
 *******************************************
 *
+!$omp do
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
          st1(i,j)= log(ONE_8+dble(pipt1(i,j,G_nk)/geomg_pib(G_nk)))
       end do
       end do
+!$omp enddo
 *
       endif
 
@@ -168,6 +180,7 @@
 *  $. Indirect diffusion of q through pi' *
 *******************************************
 *
+!$omp do
       do k=1,G_nk
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
@@ -175,8 +188,10 @@
       end do
       end do
       end do
+!$omp enddo
 *
       if ( .not. Schm_hydro_L ) then
+!$omp do
          do k=1,G_nk
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
@@ -184,10 +199,12 @@
          end do
          end do
          end do
+!$omp enddo
       endif 
 *
       endif
 *
+!$omp end parallel
       pnerr = vmmuld(-1,0)
 *    
  1000 format(/,3X,

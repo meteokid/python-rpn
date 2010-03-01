@@ -38,6 +38,7 @@
 * v2_21 - Lee V.            - modification for LAM version
 * v2_31 - Desgagne M.       - remove stkmemw and switch to adw_*
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *
@@ -89,8 +90,8 @@
          if (l_north) jn= l_nj-pil_n +2
       endif
 
-*PDIR PARDO FOR=Ptopo_npeOpenMP
-
+!$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,b3,mumu)
+!$omp do
       do 100 k=1,l_nk
       do 100 j= j0, jn
       do 100 i= i0, in
@@ -153,20 +154,20 @@
          F_rvw2(i,j,k) = rz - F_rvw1(i,j,k)
          
 100   continue 
+!$omp enddo
 
 **********************************************************
 * Final form of the RHS of horizontal momentum equations *
 **********************************************************
 *     Prepare the gradient of topography 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*PDIR SERIAL
+!$omp single
       call rpn_comm_xch_halo( F_fis , LDIST_DIM, l_ni,l_nj,  1 ,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_ruw2, LDIST_DIM, l_ni,l_nj,G_nk,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_rvw2, LDIST_DIM, l_ni, l_nj,G_nk,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-*PDIR ENDSERIAL
 *
 *
       i0 = 1
@@ -188,21 +189,25 @@
          if (l_south) j00 = 2
          if (l_north) jnn = l_njv-1
       endif
+!$omp end single
+!$omp do
       do j = 1, l_nj
       do i = 1, l_ni
          wij1(i,j) = ( F_fis(i+1,j) - F_fis(i,j) ) / geomg_hx_8(i)
       end do
       end do
+!$omp enddo
+!$omp do
       do j = 1, l_njv
       do i = 1, l_ni
          wij2(i,j) = ( F_fis(i,j+1) - F_fis(i,j) ) * 
      $               geomg_cyv2_8(j) / geomg_hsy_8(j)
       end do
       end do
+!$omp enddo
 *
 
-*PDIR PARDO FOR=Ptopo_npeOpenMP
-
+!$omp do
       do k=1,l_nk 
 
 *     Add advective & topographic contributions to Ru & Rv
@@ -247,10 +252,11 @@
          endif
 
       end do
-
+!$omp enddo
 **************************************
 * Combination of governing equations * 
 **************************************
+!$omp single
       gamma = one
       if (.not. Schm_hydro_L) then 
            eps =  Schm_nonhy_8 * Dcst_rgasd_8   * Cstv_tstr_8
@@ -265,14 +271,12 @@
 
 *     Compute the RHS of divergence equation 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*PDIR SERIAL
       call rpn_comm_xch_halo( F_ru, LDIST_DIM,l_niu,l_nj,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 ) 
       call rpn_comm_xch_halo( F_rv, LDIST_DIM,l_ni,l_njv,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-*PDIR ENDSERIAL
-
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp end single
+!$omp do
       do k=1,l_nk
 
          if (G_lam) then
@@ -314,12 +318,12 @@
          endif 
 
       end do
-
+!$omp enddo
 ****************************************
 * The linear RHS of Helmholtz equation *
 ****************************************
 
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp do
       do k=1,l_nk
          
          if ( k .eq. 1 ) then 
@@ -363,6 +367,8 @@
          endif
 
       end do
+!$omp enddo
+!$omp end parallel
 *
 *     __________________________________________________________________
 *

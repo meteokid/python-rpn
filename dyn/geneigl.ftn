@@ -20,7 +20,7 @@
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version (from geneigl v1_03)
-* v3_03 - Lee V.            - SYGV calling sequence for AIX architecture
+* v3_10 - Lee V.            - SYGV calling sequence for AIX architecture
 *
 *object
 *    To solve a generalised symmetric eigenproblem
@@ -51,31 +51,14 @@
 *      A and  B are overwritten
 **
       integer i, j, k, info
-      real*8 sav_8, faz_8, one_8, a_8(NMAX,NN), b_8(NMAX,NN)
+      real*8 sav_8, faz_8, one_8
       data one_8 /1.0d0/
 *
 *--------------------------------------------------------------------
       info = -1
 *
-#if defined (AIX)
-      do j= 1, NN
-      do i= 1, NMAX
-         a_8(j,i) = F_evec_8(i,j)
-         b_8(j,i) = F_b_8(i,j)
-      enddo
-      enddo
-      call SYGV( 1, a_8, NMAX, b_8, NMAX, F_eval_8,
-     $              a_8, NMAX, NN, F_work_8, NWORK)
-      do j= 1, NN
-      do i= 1, NMAX
-         F_evec_8(i,j)=a_8(i,j)
-      enddo
-      enddo
-      info = 0
-#else
       call SYGV( 1, 'V', 'U', NN, F_evec_8, NMAX, F_b_8, NMAX, F_eval_8,
      $                                           F_work_8, NWORK, info )
-#endif
 *
       if ( info.ne.0 ) then
          if (Lun_out.gt.0) write(Lun_out,*)

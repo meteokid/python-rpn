@@ -210,11 +210,9 @@
          r3p_ = 0
       endif
 *
-*PDIR RESERVE=Ptopo_npeOpenMP
       call prep_2 ( ru,rv, ruw1,ruw2,rvw1,rvw2,xct1,yct1,zct1,topo, 
      %              rd,rcn,r1,rth, rw,rvv,r3,r3p, rhell,
      %              wijk1,wijk2,LDIST_DIM,l_ni,l_nj,l_nk )
-*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
 *

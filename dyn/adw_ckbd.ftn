@@ -14,6 +14,7 @@
 *     alain patoine
 *
 *revision
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *language
 *     fortran 77
@@ -45,6 +46,8 @@
 ************************************************************************
       integer n
 ************************************************************************
+!$omp parallel
+!$omp do
       do n = 1,Adw_fro_n
       if ( F_y(n).le.Adw_yy_8(2) ) then
          print *,'*************************************************'
@@ -59,7 +62,9 @@
          call gefstop('adw_ckbd')
       endif
       enddo
+!$omp enddo
 *
+!$omp do
       do n = Adw_fro_n+1,Adw_fro_a
       if ( F_y(n).ge.Adw_yy_8(Adw_njt-1) ) then
          print *,'*************************************************'
@@ -74,6 +79,8 @@
          call gefstop('adw_ckbd')
       endif
       enddo
+!$omp enddo
+!$omp end parallel
 *
       return
       end

@@ -4,7 +4,7 @@
 *
       subroutine adw_main_1_wnd ( F_u, F_v, F_w, F_nit, F_njt, F_nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_nit, F_njt, F_nk
 *
@@ -18,6 +18,7 @@
 *revision
 * v2_31 - Desgagne M.       - removed stkmemw
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *language
 *     fortran 77
@@ -58,6 +59,7 @@
       real*8 ONE,sc
       parameter( ONE = 1.0 )
 ************************************************************************
+C     call tmg_start ( 20, 'adw_main_1_wnd' )
       if (Lun_debug_L) write (Lun_out,1000)
       pnlkey1(1)  = VMM_KEY(uth)
       pnlkey1(2)  = VMM_KEY(vth)
@@ -77,6 +79,8 @@
       call rpn_comm_xch_halo (vth,LDIST_DIM,l_ni,l_njv,G_nk,
      %             G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
+!$omp parallel private(i0,in,j0,jn,sc)
+!$omp do
       do k=1,l_nk
 *
          i0 = 1
@@ -130,6 +134,7 @@
          endif
          endif
       enddo
+!$omp enddo
 ***********************************************************************
 * Image to component
 ***********************************************************************
@@ -141,6 +146,7 @@
              if (l_south) j0 = 3
              if (l_north) jn = l_njv - 1
       endif
+!$omp do
       do k = 1,l_nk
       do j = j0,jn
 *
@@ -153,6 +159,7 @@
       enddo
       enddo
       enddo
+!$omp enddo
       i0=1
       in=l_ni
       j0=1
@@ -161,6 +168,7 @@
              if (l_west) i0 = 3
              if (l_east) in = l_niu - 1
       endif
+!$omp do 
       do k = 1,l_nk
       do j = j0,jn
 *
@@ -173,6 +181,8 @@
       enddo
       enddo
       enddo
+!$omp enddo
+!$omp end parallel
 ***********************************************************************
 * Adjust wind fields to advection grid
 ***********************************************************************
@@ -219,6 +229,7 @@
       endif
 *
       pnerr = vmmuld(-1,0)
+C     call tmg_stop (20)
 *
  1000  format(3X,'PREPARE WINDS: (S/R ADW_MAIN_1_WND)')
       return

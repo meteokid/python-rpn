@@ -25,6 +25,7 @@
 *
 *revision
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     see id section
@@ -78,8 +79,12 @@
       nij   = l_ni*l_nj
       nijag = Adw_nit * Adw_njt
 *
+!$omp parallel private(gg, dd, xx, xm, a1, a2, a3, a4, b1, b2, b3, b4,
+!$omp& c1, c2, c3, c4,d1, d2, d3, d4 ,p1, p2, p3, p4,t1, t2, t3, prmin
+!$omp& , prmax, n, o1, o2, o3, o4)
       if ( F_mono_L ) then
 *
+!$omp do
       do 100 k=1,kn
       do  90 j=j0,jn
       do  80 i=i0,in
@@ -184,6 +189,7 @@
    80 continue
    90 continue
   100 continue
+!$omp enddo
 *
 ***********************************************************************
 ***********************************************************************
@@ -191,6 +197,7 @@
 ***********************************************************************
 ***********************************************************************
 *
+!$omp do
       do 200 k=1,kn
       do 190 j=j0,jn
       do 180 i=i0,in
@@ -287,8 +294,10 @@
   180 continue
   190 continue
   200 continue
+!$omp enddo
 *
       endif
+!$omp end parallel
 *
       return
       end

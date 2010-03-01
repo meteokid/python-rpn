@@ -225,7 +225,6 @@
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if ( Orh_icn .eq. 1 ) then
 *
-*PDIR RESERVE=Ptopo_npeOpenMP
 *
          call rhsp_2  (    ru,    rv,   rcn,   rth,    rw,   rvv,
      %                    oru,   orv,  orcn,  orth,   orw,  orvv,
@@ -233,8 +232,6 @@
      %                   fit1,   st1,  tdt1, psdt1,nest_u,nest_v,
      %                    wt1,  topo, fipt1,  mut1, LDIST_DIM,l_nk  )
 *
-*PDIR RELEASE
-         
       else
 
          do k=1,l_nk

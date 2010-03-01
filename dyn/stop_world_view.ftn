@@ -4,7 +4,7 @@
 *
       subroutine stop_world_view (F_continue_L)
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_continue_L
 *
@@ -20,6 +20,7 @@
 * v2_31 - Dugas B.          - replace F_done_L by F_continue_L and
 * v2_31                       modify the documentation accordingly
 * v2_31 - Desgagne M.       - remove system call to Um_hook.sh (-post)
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *
@@ -44,6 +45,9 @@
       integer err
 *
 *-------------------------------------------------------------------
+*
+      call tmg_stop (1)
+      call tmg_terminate ( Ptopo_myproc, 'GEMDM' )
 *
 #if defined (NEC)
       call flush(5)

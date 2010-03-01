@@ -30,6 +30,7 @@
 * v2_31 - Tanguay M.        - restaure link between F_pip and F_ip at 
 *                             top; remove top_only_L and stkmemw
 * v3_01 - Desgagne & Lee    - introduce Vspng_rwnd_L
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     The diffusion coefficients are (Cstv_uvdf_8*Cstv_dt_8) for the
@@ -83,6 +84,8 @@
 *        Horizontal Momentum
 *        ~~~~~~~~~~~~~~~~~~~       
          if (Vspng_rwnd_L) then
+!$omp parallel private(c1)
+!$omp do
             do k=1,G_nk
                do j=1,l_nj
                   c1 = Dcst_rayt_8 / geomg_cy_8(j)
@@ -97,6 +100,8 @@
                   end do
                end do
             end do
+!$omp enddo
+!$omp end parallel
          endif
          do j = 1, l_nj+1
             cy_8(j) = G_yg_8(l_j0+j-1)
@@ -122,6 +127,8 @@
      $                 aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                 LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_njv)
          if (Vspng_rwnd_L) then
+!$omp parallel private(c1)
+!$omp do
             do k=1,G_nk
                do j=1,l_nj
                   c1 = geomg_cy_8(j) / Dcst_rayt_8
@@ -136,6 +143,8 @@
                   end do
                end do
             end do
+!$omp enddo
+!$omp end parallel
          endif
 *
       endif     
@@ -176,6 +185,7 @@
      $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
+!$omp parallel do
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni 
@@ -183,6 +193,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
 *     Mass related fields
 *     ~~~~~~~~~~~~~~~~~~~
@@ -204,6 +215,8 @@
      $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
+!$omp parallel
+!$omp do
          do k = 2, Vspng_nk
          do j = 1, l_nj
          do i = 1, l_ni
@@ -211,18 +224,22 @@
          end do
          end do
          end do
+!$omp enddo
 *
 * updating phi' at the top 
 *
+!$omp do
          do j = 1, l_nj
          do i = 1, l_ni
             F_ip(i,j,1) = F_it(i,j,1) - Cstvr_fistr_8(1) - F_xfis(i,j)
          end do
          end do
+!$omp enddo
 *
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp do
             do k = 1, Vspng_nk
             do j = 1, l_nj 
             do i = 1, l_ni 
@@ -230,7 +247,9 @@
             end do
             end do
             end do
+!$omp enddo
          endif 
+!$omp end parallel
 *
 *     The hydrostatic pressure: pi'  
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -265,6 +284,7 @@
 *
 *        Indirect diffusion of q' 
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do
          do k=1, Vspng_nk 
          do j=1, l_nj
          do i=1, l_ni
@@ -273,12 +293,14 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
          call vspng_del2 (work,
      $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
      $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
+!$omp parallel do
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -287,6 +309,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
          endif
          endif         

@@ -20,6 +20,7 @@
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Desgagne M.       - split call to rpn_comm_xch_halo for uv
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *******************************************************************************
@@ -115,22 +116,23 @@
       integer i, j, k
       real pr1, prsc
       real uv(DIST_SHAPE,Nk,2),dvi(DIST_SHAPE,Nk),w1(DIST_SHAPE,Nk)
+      real*8 expf(l_niu+1,l_njv+1), expfm1(l_niu+1,l_njv+1),
+     $       inv_geomg_hx_8(l_ni), gratio(l_nj), inv_geomg_cy2_8(l_nj)
 **
 *     ________________________________________________________________
 *
-      do k=1,G_nk
-      do j = 1, l_nj
-      do i = 1, l_ni
-         F_td(i,j,k) = 0.0
-         uv(i,j,k,1) = 0.0
-         uv(i,j,k,2) = 0.0
-      end do
-      end do
-      end do
+      F_td = 0.
+      uv   = 0.
 *
       call rpn_comm_xch_halo( F_ss, LDIST_DIM, l_ni, l_nj , 1,
      %                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
+      do j = 1,l_njv+1
+      do i = 1,l_niu+1
+         expf  (i,j) = exp(F_ss(i,j))
+         expfm1(i,j) = expf(i,j) - 1.0d0
+      end do
+      end do
 *              __              *
 *     compute  \/ . ( V dpi/dpi )
 *
@@ -138,15 +140,15 @@
          do j = 1, l_nj
          do i = 1, l_niu
             uv(i,j,k,1) = F_uu(i,j,k) * (
-     $  (1.-intuv_c0xxu_8(i))*(1.+(geomg_dpib(k)*(exp(F_ss(i  ,j))-1.)))
-     $   +  intuv_c0xxu_8(i) *(1.+(geomg_dpib(k)*(exp(F_ss(i+1,j))-1.))))
+     $      (1.-intuv_c0xxu_8(i))*(1.+(geomg_dpib(k)*expfm1(i,j)))
+     $       +  intuv_c0xxu_8(i) *(1.+(geomg_dpib(k)*expfm1(i+1,j))) )
          end do
          end do
          do j = 1, l_njv
          do i = 1, l_ni
             uv(i,j,k,2) = F_vv(i,j,k) * (
-     $  (1.-intuv_c0yyv_8(j))*(1.+(geomg_dpib(k)*(exp(F_ss(i,j  ))-1.)))
-     $   +  intuv_c0yyv_8(j) *(1.+(geomg_dpib(k)*(exp(F_ss(i,j+1))-1.))))
+     $      (1.-intuv_c0yyv_8(j))*(1.+(geomg_dpib(k)*expfm1(i,j)))
+     $       +  intuv_c0yyv_8(j) *(1.+(geomg_dpib(k)*expfm1(i,j+1))) )
          end do
          end do
       end do
@@ -178,7 +180,7 @@
       do k=1,G_nk
          do j=1,l_nj
          do i=1,l_ni
-            pr1 = 1.0 + geomg_dpib(k) * (exp(F_ss(i,j)) - 1.0)
+            pr1 = 1.0 + geomg_dpib(k) * expfm1(i,j)
             F_psd(i,j,k) = (dvi(i,j,k) + ((geomg_pib(k)/
      %                     geomg_pib(G_nk)) -1) * dvi(i,j,1))/pr1
          end do
@@ -193,18 +195,27 @@
 *
 *     compute  V . \/ (dpi/dpi )
 *
+      do i = 1, l_niu
+         inv_geomg_hx_8(i) = 1.0d0 / geomg_hx_8(i)
+      end do
+*
+      do j = 1, l_njv
+         gratio(j) = geomg_cyv2_8(j) / geomg_hsy_8(j)
+         inv_geomg_cy2_8(j) = 1.0d0 / geomg_cy2_8(j)
+      end do
+      inv_geomg_cy2_8(l_nj) = 1.0d0 / geomg_cy2_8(l_nj)
 *
       do k=1,G_nk
          do j = 1, l_nj
          do i = 1, l_niu
-            uv(i,j,k,1) = ( (F_ss(i+1,j)-F_ss(i,j)) / 
-     $                       geomg_hx_8(i) ) * F_uu(i,j,k)
+            uv(i,j,k,1) = (F_ss(i+1,j)-F_ss(i,j)) * 
+     $                          inv_geomg_hx_8(i) * F_uu(i,j,k)
          end do
          end do
          do j = 1, l_njv
          do i = 1, l_ni
-            uv(i,j,k,2) = ( (F_ss(i,j+1) - F_ss(i,j)) *
-     $                geomg_cyv2_8(j) / geomg_hsy_8(j) ) * F_vv(i,j,k)
+            uv(i,j,k,2) = (F_ss(i,j+1) - F_ss(i,j)) *
+     $                                    gratio(j) * F_vv(i,j,k)
          end do
          end do
       end do
@@ -215,7 +226,7 @@
       do k=1,G_nk
       do j= 1, l_nj
       do i= 1, l_ni
-         w1(i,j,k)= (uv(i,j,k,1)+uv(i,j,k,2))/geomg_cy2_8(j)
+         w1(i,j,k)= (uv(i,j,k,1)+uv(i,j,k,2))*inv_geomg_cy2_8(j)
       end do
       end do
       end do
@@ -227,22 +238,17 @@
          do j= 1, l_nj
          do i= 1, l_ni
             F_td(i,j,k) = 
-     $         geomg_dpib(k)*(prsc*dvi(i,j,1)-exp(F_ss(i,j))*w1(i,j,k))
-     $         - F_psd(i,j,k)*(exp(F_ss(i,j))-1.)*geomg_dpia(k)
-            F_td(i,j,k) = 
-     $         F_td(i,j,k)/(1+geomg_dpib(k)*(exp(F_ss(i,j))-1.))
+     $         geomg_dpib(k)*(prsc*dvi(i,j,1)-expf(i,j)*w1(i,j,k))
+     $         - F_psd(i,j,k)*expfm1(i,j)*geomg_dpia(k)
+            F_td(i,j,k) = F_td(i,j,k)/(1+geomg_dpib(k)*expfm1(i,j))
          enddo
          enddo
       enddo
 *
 *     Upper and lower boundary conditions for vertical velocity 
 *
-      do j= 1, l_nj
-      do i= 1, l_ni
-         F_psd(i,j,1)    = 0.0
-         F_psd(i,j,G_nk) = 0.0
-      end do
-      end do
+      F_psd(:,:,   1) = 0.
+      F_psd(:,:,G_nk) = 0.
 *     ________________________________________________________________
 *
       return

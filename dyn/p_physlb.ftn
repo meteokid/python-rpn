@@ -32,6 +32,7 @@
 * v3_00 - Laroche S.        - adaptation for v4d
 * v3_02 - Dugas B.          - account for a possible second call to the physics
 *                             and add optional call to dump full physics buses
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     See above id.
@@ -104,6 +105,7 @@
 **
 *     ---------------------------------------------------------------
 *
+
       if ((Lun_out.gt.0).and.(F_cpu.eq.1)) write(Lun_out,1000)
 *
       dumpbus_L = .false.
@@ -114,30 +116,17 @@
       endif
 *
       if (.not.Mem_phyncore_L) pabusper=loc(busper2(1))
-      if (F_step.eq.0) then
-          do i=1,p_bent_siz
-             busent(i) = 0.
-          end do
-      endif
+      if (F_step.eq.0) busent = 0.
 *
-      do i=1,p_bdyn_siz
-         busdyn(i) = 0.
-      end do
-      do i=1,p_bvol_siz
-         busvol(i) = 0.
-      end do
+      busdyn = 0.
 *
       dt  = Cstv_dt_8
       jdo = 0
 *
  100  continue
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call pllock(Mult_lkphy)
-#endif
-#endif
-      
+
+!$omp critical      
       Mem_pslic = Mem_pslic + 1
       if ( Mem_pslic .le. p_nj ) then
 *
@@ -155,12 +144,8 @@
          call zongopr( +3, jdo )
 *
       endif
-*
-#if defined (MULTI)
-#if defined (NEC)
-      call plunlock(Mult_lkphy)
-#endif
-#endif
+!$omp end critical
+
 *
 *C    Stop if last slice has been completed
 *
@@ -168,6 +153,7 @@
 *
 *     Fill buses with jdo row
 *
+      busvol = 0.
       j = jdo + p_offj
       call p_fillbus ( busdyn, busper ,busent,
      $         F_up , F_vp , F_wp , F_tp , F_qp, F_trp,
@@ -182,7 +168,7 @@
      $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
      $              dt, jdo, F_step, F_cpu, p_ni, Nk)
       else
-         call p_phyexe
+        call p_phyexe
      $             (busent ,busdyn ,busper ,busvol ,
      $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
      $              dt, jdo, F_step, F_cpu, p_ni, Nk)
@@ -208,6 +194,7 @@
          F_vp (ii,j,k) =   busvol(qdifv+indx)
       end do
       end do
+
       do n=1,phyt_ntr
          if (phyt_ind(3,n).gt.0) then
          do k= 1,Nk
@@ -239,13 +226,10 @@
         end do
       endif
 * 
-#if defined (MULTI)
-#if defined (NEC)
-      call pllock(Mult_lkphy)
-#endif
-#endif
 *
 *     Perform physic slices output
+!$omp critical
+
       do i=1,Pslab_slab
          if (Pslab_bus_s(i).eq.'P') then
             call writslabp(busper, p_bper_siz, jdo, i)
@@ -270,16 +254,13 @@
          err = write_db_file (Lun_waphy,jdo,1)
          err = write_db_file (Lun_waphy,busper,p_bper_siz)
       endif
+!$omp end critical
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call plunlock(Mult_lkphy)
-#endif
-#endif
 *
       goto 100
 *
  650  continue
+     
 *
       if (dumpbus_L) call dumpwrit2( Lun_out, F_step, Ptopo_myproc )
 *

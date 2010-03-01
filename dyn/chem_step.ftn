@@ -57,28 +57,9 @@
          end do
       endif
 *
-#if defined (MULTI)
-#if defined (NEC)
-      do 410 icpu = 2, Ptopo_npeMacro
-*
-        ptparm(icpu) = icpu
-        ptcpu(icpu) = icpu
-        call ptfork ( pnid(icpu), ptparm(icpu),
-     $     chem_slb, ptcpu(icpu)   , F_stepno )
-*
- 410  continue
-#endif
-#endif
 *
       call chem_slb ( 1, F_stepno )
 *
-#if defined (MULTI)
-#if defined (NEC)
-      do 420 icpu = 2,Ptopo_npeMacro
-         call ptjoin ( pnid(icpu) )
- 420  continue
-#endif
-#endif
 *
        call frmslabfhand(Pslab_fhand,Pslab_slab,.true.)
 *     ---------------------------------------------------------------

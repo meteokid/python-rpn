@@ -18,6 +18,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Lee V             - calls to opinv7,optriss7 instead of
 * v3_01                       opinv6,optriss6 to correct bug
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     see id section
@@ -85,6 +86,7 @@
          pr2p = pr2 + 1.0
          pr1  = - pr1
          pr2  = - pr2
+!$omp parallel do
          do j=j_deb,j_fin
          do i=i_deb,i_fin
             F_inzz(i,j,1   ) = pr1p*F_inzz(i,j,2)
@@ -93,6 +95,7 @@
      %                       + pr2 *F_inzz(i,j,l_nk-2)
          enddo
          enddo
+!$omp end parallel do
       endif
 *
       return

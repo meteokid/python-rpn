@@ -262,7 +262,6 @@
          r3p_  = 0
       endif
 *
-*PDIR RESERVE=Ptopo_npeOpenMP
 
       call  bacp_2 (   Itr, Itnlh,   st0, pipt0,   qt0, 
      %                fit0, fipt0,  topo,   tt0,  tpt0, tplt0,
@@ -272,7 +271,6 @@
      %                 nl_nu, nl_nv, nl_nth,  nl_n3, nl_n3p,
      $                 nl_ncn,wijk0,wijk1,LDIST_DIM, l_nk )
 
-*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
 

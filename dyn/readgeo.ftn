@@ -10,9 +10,10 @@
 *     Pierre Pellerin - rpn - Oct 2000 (adapted from READPHY v2_11)
 *
 *revision
-* v2_20 - Pellerin P. & Lee V.     - initial version
-* v2_21 - Deagegne M.              - Re-organising local geofld
-* v2_21 - Desgagne M.              - rpn_comm stooge for MPI
+* v2_20 - Pellerin P. & Lee V. - initial version
+* v2_21 - Deagegne M.          - Re-organising local geofld
+* v2_21 - Desgagne M.          - rpn_comm stooge for MPI
+* v3_10 - Lee V.               - RPN_bcastc for bcast on MPI_CHARACTER
 *
 *object
 **      Reads the entire content of bus "geobus" from file "geophy.bin"
@@ -68,6 +69,7 @@
 *
 *         read dimensions of geobus for memory allocation
              read (osgeo) p_bgeo_top, p_bgeo_siz
+             print *,'p_bgeo_top,p_bgeo_siz=',p_bgeo_top, p_bgeo_siz
              call hpalloc  (pageobus,p_bgeo_siz,ierr,1)
 *
 *         read geobus
@@ -86,7 +88,7 @@
       call gem_stop ('READGEO',err)
 *
       call RPN_COMM_bcast(p_bgeo_top,   1,"MPI_INTEGER"  ,0,"grid",ierr)
-      call RPN_COMM_bcast(geonm,maxgeo*48,"MPI_CHARACTER",0,"grid",ierr)
+      call RPN_COMM_bcastc(geonm,maxgeo*48,"MPI_CHARACTER",0,"grid",ierr)
       call RPN_COMM_bcast(geopar,maxgeo*3,"MPI_INTEGER"  ,0,"grid",ierr)
 *
 *     Re-defining GEOBUS structure in terms of local dimensions

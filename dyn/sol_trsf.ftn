@@ -16,6 +16,7 @@
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     see above id
@@ -41,7 +42,8 @@
 *     ---------------------------------------------------------------
 *
       if (F_code.gt.0) then
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp parallel
+!$omp do
       do k=1,Nk
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
@@ -49,8 +51,11 @@
          enddo
          enddo
       enddo
+!$omp enddo
+!$omp end parallel
       else
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp parallel
+!$omp do
       do k=1,Nk
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
@@ -58,6 +63,8 @@
          enddo
          enddo
       enddo
+!$omp enddo
+!$omp end parallel
       endif
 *
 *     ---------------------------------------------------------------

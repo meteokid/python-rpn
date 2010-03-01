@@ -19,6 +19,7 @@
 * v3_02 - Lee V.              - revert adw_exch_1 for GLB only, 
 * v3_02                         added adw_ckbd_lam,adw_cfl_lam for LAM only
 * v3_03 - Tanguay M.          - stop if adw_exch_1 is activated when 4D-Var
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *language
 *     fortran 77
@@ -74,6 +75,7 @@
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
 *
+C     call tmg_start ( 40, 'adw_main_3_int' )
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -219,6 +221,8 @@
       if (Tr3d_ntr.gt.0) then
          err = vmmlod(key1,Tr3d_ntr)  
          err = vmmlod(key0,Tr3d_ntr)  
+!!$omp parallel
+!!$omp do
          do n=1,Tr3d_ntr
             err = vmmget(key1(n),patr,tr)
             err = vmmget(key0(n),patr0,tr0)
@@ -239,6 +243,8 @@
             end do
             end do
          end do
+!!$omp enddo
+!!$omp end parallel
          err = vmmuld(key1,Tr3d_ntr)
          err = vmmuld(key0,Tr3d_ntr)
       endif
@@ -333,6 +339,7 @@
       endif
 *
       pnerr = vmmuld(-1,0)
+C     call tmg_stop (40)
 *
  1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INT)')
 *

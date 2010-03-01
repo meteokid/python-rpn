@@ -53,7 +53,6 @@
 #include "lun.cdk"
 #include "glb_ld.cdk"
 #include "lctl.cdk"
-#include "ptopo.cdk"
 *
 *
 *modules
@@ -75,7 +74,7 @@
          call zongini()
          call mzonopr(7,l_i0)
          call mzonopr(8,l_j0)
-         call mzonopr(5,max(1,Ptopo_npeMacro))
+         call mzonopr(5,1)
          call mzonopr(1, Lun_zonl)
 *
 *

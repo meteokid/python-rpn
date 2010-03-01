@@ -1,2 +1,9 @@
+OPTIL  = 2
 DEFINE = -DSTKNOVAL=stknoval -DSX5PHY=sx5phy
-ABI    = 
+OMP    =
+MPI    = -mpi
+RMN    = rmn_x
+PRIV   = priv
+COMM   = rpn_comm_106
+stack  = 3000000
+LFLAGS = -Wl-Z -Wl$(stack) -Wl-ZL -Wl$(stack) -Wl-T -Wl3

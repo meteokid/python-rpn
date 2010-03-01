@@ -25,7 +25,8 @@
 *
       character*2 nv
       character*8 etk,typ,interp,seq,dum
-      integer ivar, im, i, longueur, unf, indx, ip1
+      logical anyip
+      integer ivar, im, i, longueur, unf, indx, ip1, ip2
       integer, dimension(:),allocatable :: err
 *
 *----------------------------------------------------------------------
@@ -50,14 +51,19 @@
                unf = e_fu_anal
                if (seq(1:1).eq."C") unf = e_fu_climat
                if (seq(1:1).eq."G") unf = e_fu_geophy
+               ip2 = -1
+               anyip = .false.
+               if (seq(1:1).eq."C") then
+                  ip2 = month
+                  if (nv.eq.'AL') anyip = .true.
+               endif
                do im=1,geopar(ivar,3)
                   ip1 = -1
                   if (geopar(ivar,3).gt.1) 
      $                 call convip ( ip1, real(im), 3, 1, dum, .false. )
                   indx = geopar(ivar,1) + (im-1)*nifi*njfi
                   err(ivar) = e_rdhint3(geobus(indx),dstf_gid,nifi,njfi,
-     $                             nv,ip1,-1,-1,etk,typ,.false.,.false.,
-     $                             interp,unf,6)
+     $                 nv,ip1,ip2,-1,etk,typ,anyip,.false.,interp,unf,6)
                   if (err(ivar).lt.0) then
                      seq = seq(2:longueur(seq))
                      goto 670

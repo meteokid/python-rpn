@@ -21,6 +21,7 @@
 *
 *revision
 * v3_01 - Lee V.            - initial MPI version (from opinv6 v2_00)
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *       see above ID
@@ -65,6 +66,7 @@
 *                                                                             *
 *******************************************************************************
 *                                                                             *
+c     call tmg_start(76,'opinv')
       plalonz = F_axis.eq.'Z'
       if ( .not.plalonz ) then
            print *,'ERROR: OPINV7 is only correct for Z axis'
@@ -115,6 +117,7 @@
                enddo
             enddo
          enddo
+
 *
          if ( plbnd ) then
             do j=1,NJS
@@ -125,11 +128,15 @@
             enddo
          endif
 *
+c        call tmg_start(97,'msoltri')
          call msoltri6 
      %               ( F_r(1,1,1,1), F_r(1,1,1,1), F_bi_8, F_ci_8, F_ai_8,
      %                 NIS*NJS*SKIP, SKIP, pnm, NIS*NJS)
+c        call tmg_stop(97)
 *
          if ( plper ) then
+!$omp parallel
+!$omp do
             do j=1,NJS
                do i=1,NIS
                   F_r(1,i,j,F_nk) =   F_bi_8(F_nk) * F_r(1,i,j,F_nk)
@@ -137,6 +144,8 @@
      %                             + F_ai_8(1)   * F_r(1,i,j,pnm)
                enddo
             enddo
+!$omp enddo
+!$omp do
             do k=1,pnm
                do j=1,NJS
                   do i=1,NIS
@@ -145,6 +154,9 @@
                   enddo
                enddo
             enddo
+!$omp enddo
+!$omp end parallel
          endif
+c        call tmg_stop(76)
       return
       end

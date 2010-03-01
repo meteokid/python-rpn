@@ -32,7 +32,6 @@
 * Ptopo_npex         | number of processors along X                    |
 * Ptopo_npey         | number of processors along Y                    |
 * Ptopo_npeOpenMP    | number of processors for micro-tasking          |
-* Ptopo_npeMacro     | number of processors for macro-tasking          |
 * Ptopo_gindx        | contains global indices that represents:        |
 *                    | (1,*)-the minimum I indices on each local PE    |
 *                    | (2,*)-the maximum I indices on each local PE    |
@@ -47,14 +46,11 @@
       integer 
      $        Ptopo_myproc , Ptopo_myrow, Ptopo_mycol, 
      $        Ptopo_numproc, Ptopo_npex , Ptopo_npey,
-     $        Ptopo_npeOpenMP, Ptopo_npeMacro
+     $        Ptopo_npeOpenMP
       
       DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
       common  / Ptopo /
      $        Ptopo_myproc , Ptopo_myrow, Ptopo_mycol, 
-     $        Ptopo_numproc, Ptopo_npex , Ptopo_npey
+     $        Ptopo_numproc, Ptopo_npex , Ptopo_npey,
+     $        Ptopo_npeOpenMP
 
-      MARK_COMMON_BEG (Ptopoi)
-      common  / Ptopoi / Ptopo_npeOpenMP, Ptopo_npeMacro
-      MARK_COMMON_END (Ptopoi)
-*

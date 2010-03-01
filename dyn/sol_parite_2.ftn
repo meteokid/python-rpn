@@ -18,6 +18,7 @@
 *
 *revision
 * v3_01 - Qaddouri A.          - initial version
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *arguments
 *   o      - Sol      - result
@@ -54,167 +55,222 @@
       parameter( one  = 1.0 )
 
 *
-      integer i,  k, nevi,gnii
+      integer i,  k, nevi,gnii,ki0,kin,kkii,kilon,kitotal
 *
 *
+C     call tmg_start(88,'sol_parite total')
  
-*PDIR SERIAL
       call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                                   Minz, Maxz, Nk, fdg1, 1,2 )
 
-
+!$omp parallel private(ki0,kin,kkii,jr,nevi,gnii)
+!$omp%          shared(kitotal,kilon,ai,bi,ci)
+!$omp do
+      do i= 1,Gni
           do k= Minz,Maxz
             do j= njl+1,Maxy
-               do i= 1,Gni
                   fdg1(j,k,i)=zero
                   fdg12(j,k,i)=zero
-               enddo
             enddo
-         enddo
+          enddo
 
 
          do k= Nkl+1,Maxz
             do j= Miny,Maxy
-               do i= 1,Gni
                   fdwfft(j,k,i)=zero
-               enddo
             enddo
          enddo
-*PDIR ENDSERIAL
+      enddo
+!$omp enddo
 *  even  part of rhs
 
-          do k=1,Nkl
+!$omp do
+      do k=1,Nkl
             do j=1,njl
               fdg12(j,k,1)=fdg1(j,k,1)
             enddo
-          enddo
+      enddo
+!$omp enddo
            
-          do k=1,Nkl
+!$omp do
+      do i= 2,(Gni+1)/2
+         do k=1,Nkl
             do j=1,njl
-              do i= 2,(Gni+1)/2
                 fdg12(j,k,i)=fdg1(j,k,i)+fdg1(j,k,Gni+2-i)
-              enddo
             enddo
-          enddo
+         enddo
+      enddo
+!$omp enddo
 
-         if(Gni.eq.(2*(Gni/2)) ) then
-          do k=1,Nkl
+      if(Gni.eq.(2*(Gni/2)) ) then
+!$omp do
+         do k=1,Nkl
             do j=1,njl
                fdg12(j,k,nev)=fdg1(j,k,nev)
             enddo
-          enddo
-         endif
+         enddo
+!$omp enddo
+      endif
 
 *  odd part of rhs             
-          do k=1,Nkl
-            do j=1,njl
-             do i=1,Gni-nev
+!$omp do
+      do i=1,Gni-nev
+            do k=1,Nkl
+              do j=1,njl
               fdg12(j,k,i+nev)=fdg1(j,k,i+1)-fdg1(j,k,Gni+1-i)
-             enddo
+              enddo
             enddo
-          enddo
+      enddo
+!$omp enddo
 
 
 *     projection ( wfft = x transposed * g )
 
-c*PDIR PARDO FOR=Ptopo_npeOpenMP
 
-      call mxma8( evxevec,          NSTOR    , 1,
-     %            fdg12(1,1,1),   (Maxy-Miny+1) * (Maxz-Minz+1), 1,
-     %            fdwfft(1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1), 1,
-     %                     nev, nev, (Maxy-Miny+1) * Nkl )
+c     call mxma8( evxevec,          NSTOR    , 1,
+c    %            fdg12(1,1,1),   (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+c    %            fdwfft(1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+c    %                     nev, nev, (Maxy-Miny+1) * Nkl )
+!$omp do
+      do k=1,Nkl
+         call dgemm('N','N', (Maxy-Miny+1), nev, nev,
+     .            1._8, fdg12(1,k,1),
+     .            (Maxy-Miny+1)* (Maxz-Minz+1),evxevec,  NSTOR,
+     .            0._8, fdwfft(1,k,1),
+     .            (Maxy-Miny+1)* (Maxz-Minz+1))
+      enddo
+!$omp enddo
+!$omp do
+      do k=1,Nkl
+         call dgemm('N','N', (Maxy-Miny+1), Gni-nev, Gni-nev,
+     .            1._8, fdg12(1,k,nev+1),
+     .            (Maxy-Miny+1)* (Maxz-Minz+1),oddxevec,  NSTOR,
+     .            0._8, fdwfft(1,k,nev+1),
+     .            (Maxy-Miny+1)* (Maxz-Minz+1))
+      enddo
+!$omp enddo
 
-      call mxma8( oddxevec,          NSTOR, 1,
-     %            fdg12(1,1,nev+1),   (Maxy-Miny+1) * (Maxz-Minz+1), 1,
-     %            fdwfft(1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1), 1,
-     %                     Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+c     call mxma8( oddxevec,          NSTOR, 1,
+c    %            fdg12(1,1,nev+1),   (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+c    %            fdwfft(1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1), 1,
+c    %                     Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
 
 *
 
-*PDIR SERIAL
+!$omp single
       call rpn_comm_transpose
      $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
      $                         Minij, Maxij, Gni, fdg2, 2, 2 )
-
+!$omp end single
 *
-       j =1
-       do ki= 1, (Maxz-Minz+1) *L_nij
-          fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
-       enddo
+      kitotal = (Maxz-Minz+1)*L_nij
+      kilon = (kitotal + Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
 
-      do j =2, Gnj
+!$omp do
+      do kkii = 1,Ptopo_npeOpenMP
+         j =1
+         ki0 = 1 + kilon*(kkii-1)
+         kin = min(kitotal, kilon*kkii)
+         do ki= ki0, kin
+            fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
+         enddo
+
+         do j =2, Gnj
             jr =  j - 1
-            do ki= 1, (Maxz-Minz+1)*L_nij
+            do ki= ki0, kin
                fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j) - ai(ki,1,j)
      $                                          * fdg2(ki,1,jr)
             enddo
-      enddo
+         enddo
 
          do j = Gnj-1, 1, -1
             jr =  j + 1
-            do ki= 1, (Maxz-Minz+1)*L_nij
+            do ki= ki0, kin
               fdg2(ki,1,j) = fdg2(ki,1,j) - ci(ki,1,j) * fdg2(ki,1,jr)
             enddo
          enddo
-
+      enddo
+!$omp enddo
 *
+*
+!$omp single
       call rpn_comm_transpose
      $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
      $                        Minij, Maxij, Gni, fdg2,- 2, 2 )
-*PDIR ENDSERIAL
+!$omp end single
 
 *     inverse projection ( r = x * w )
 
-      
 
-c*PDIR PARDO FOR=Ptopo_npeOpenMP
 
-      call mxma8( evxevec,                1, NSTOR,
-     %            fdwfft(1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1),   1,
-     %            fdg12(1,1,1),   (Maxy-Miny+1) * (Maxz-Minz+1),   1,
-     %                         nev, nev, (Maxy-Miny+1) * Nkl )
+c     call mxma8( evxevec,                1, NSTOR,
+c    %            fdwfft(1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1),   1,
+c    %            fdg12(1,1,1),   (Maxy-Miny+1) * (Maxz-Minz+1),   1,
+c    %                         nev, nev, (Maxy-Miny+1) * Nkl )
 
-      call mxma8( oddxevec,                 1,NSTOR,
-     %            fdwfft(1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1),   1,
-     %            fdg12(1,1,nev+1), (Maxy-Miny+1) * (Maxz-Minz+1),   1,
-     %                        Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+c     call mxma8( oddxevec,                 1,NSTOR,
+c    %            fdwfft(1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1),   1,
+c    %            fdg12(1,1,nev+1), (Maxy-Miny+1) * (Maxz-Minz+1),   1,
+c    %                        Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+!$omp do
+      do k=1,Nkl
+         call dgemm('N','T', (Maxy-Miny+1), nev, nev,
+     .            1._8, fdwfft(1,k,1),
+     .            (Maxy-Miny+1) * (Maxz-Minz+1),evxevec, NSTOR,
+     .            0._8, fdg12(1,k,1),
+     .            (Maxy-Miny+1) * (Maxz-Minz+1))
+      enddo
+!$omp end do
+!$omp do
+      do k=1,Nkl
+         call dgemm('N','T', (Maxy-Miny+1),Gni-nev,Gni-nev,
+     .            1._8, fdwfft(1,k,nev+1),
+     .            (Maxy-Miny+1) * (Maxz-Minz+1),oddxevec, NSTOR,
+     .            0._8, fdg12(1,k,nev+1),
+     .            (Maxy-Miny+1) * (Maxz-Minz+1))
+      enddo
+!$omp end do
 
 *
 * combine even and odd parts
 
-*VDIR NODEP
+!$omp do
       do k= 1,Nkl
         do j= 1,njl
           fdg1(j,k,1) = fdg12(j,k,1)  
         enddo
       enddo
+!$omp end do
 
-      do k= 1,Nkl
-        do j= 1,njl
-*VDIR NODEP
-          do i= 2,(Gni+1)/2 
+!$omp do
+        do i= 2,(Gni+1)/2 
            gnii=Gni+2-i
            nevi=nev-1+i
+          do k= 1,Nkl
+          do j= 1,njl
            fdg1(j,k,i)       = fdg12(j,k,i)+fdg12(j,k,nevi)
            fdg1(j,k,gnii)    = fdg12(j,k,i)-fdg12(j,k,nevi)
           enddo
+          enddo
         enddo
-      enddo
+!$omp end do
 
-      if( Gni.eq.(2*(Gni/2)) ) then
-      do k= 1,Nkl
-        do j= 1,njl
+        if( Gni.eq.(2*(Gni/2)) ) then
+!$omp do
+          do k= 1,Nkl
+          do j= 1,njl
            fdg1(j,k,nev)=fdg12(j,k,nev)
-        enddo
-      enddo
-      endif
+          enddo
+          enddo
+!$omp end do
+        endif
+!$omp end parallel
 
 *
-*PDIR SERIAL
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                             Minz, Maxz, Nk, fdg1, -1, 2)
  
-*PDIR ENDSERIAL
+C     call tmg_stop(88)
 
       return
       end

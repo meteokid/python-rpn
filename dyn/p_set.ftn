@@ -29,6 +29,8 @@
 * v3_03 - Desgagne M.        - re-activate P_cond_filco for LAM
 * v3_03 - Bilodeau B.        - add P_pbl_as, P_pbl_beta and P_cond_kkl
 * v3_03 - Dugas B.           - add P_str_strato_L
+* v3_10 - Lee V.             - check read error in some namelists, added stopmpi
+*
 *object
 *       See above id
 *	
@@ -65,7 +67,8 @@
 *
       if (.not.inctphy2(set_dcst,lun_cte,lun_out)) then
          if (Lun_out.gt.0) write (Lun_out,9003)
-         stop
+         err= -1
+         call stopmpi(err)
       endif
 *
       P_pset_second_L= .false.
@@ -199,7 +202,7 @@
      $                    Path_nml_S(1:longueur(Path_nml_S))
          err = fnom (lun_in, Path_nml_S, 'SEQ' , nrec)
          rewind ( Lun_in )
-         read (Lun_in, nml=physics, end = 70)
+         read (Lun_in, nml=physics, end = 70, err = 70)
          write(Lun_out, nml=physics_p)
          status_nml = 0
  70      rewind ( Lun_in )
@@ -215,7 +218,7 @@
 *
       if (status_nml.lt.0) then
          if (lun_out.gt.0)write (lun_out,9004)
-         stop
+         call stopmpi(status_nml)
       endif
 *
       if (P_pset_second_L) then
@@ -250,7 +253,7 @@
          if (lun_out.gt.0) then
             status_nml2 = -1
             rewind ( Lun_in )
-            read (Lun_in, nml=physics2, end = 90)
+            read (Lun_in, nml=physics2, end = 90, err = 90)
             write(Lun_out, nml=physics2)
             status_nml2 = 0
  90         continue
@@ -263,7 +266,7 @@
 *
       if (status_nml2.lt.0) then
          if (lun_out.gt.0) write (lun_out,9005)
-         stop
+         call stopmpi(status_nml2)
       endif
 *
 *     Broadcast the data received from physics namelist
@@ -353,11 +356,6 @@ c         P_cond_filco = 0.
 c         if (lun_out.gt.0) write(lun_out,7100)
 c      endif
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call plasgn (Mult_lkphy)
-#endif
-#endif
       return
  5000 format(
      %/,'INITIALIZATION OF LOGICAL UNITS. OPEN WA FILES (S/R SET_DYNC)',

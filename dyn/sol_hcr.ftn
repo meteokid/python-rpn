@@ -22,6 +22,7 @@
 * v2_00 - Desgagne/Lee       - initial MPI version
 * v3_00 - Desgagne & Lee     - Lam configuration
 * v3_01 - Qaddouri A.        - add call sol_parite_2
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *
@@ -67,7 +68,8 @@
           enddo
       endif
 *
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp parallel private(offi, offj)
+!$omp do
       do 100 k=1,G_nk
          do j=1,Nj
          do i=1,Ni
@@ -85,11 +87,11 @@
          enddo
          enddo
  100  continue
+!$omp enddo
 *
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp do
       do k = 1, Schm_nith
       do j = 1+pil_s, Nj-pil_n
       do i = 1+pil_w, Ni-pil_e
@@ -98,7 +100,8 @@
       enddo
       enddo
       enddo
-      
+!$omp enddo
+!$omp end parallel      
       if (Fft_fast_L) then
          if (G_lam) then
             
@@ -158,7 +161,8 @@
       enddo
       con(G_nk) = -1./Cstv_hco0_8
 *
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp parallel
+!$omp do
       do k0=1,G_nk
       do k=1,G_nk
       do j=1+pil_s,Nj-pil_n
@@ -169,6 +173,8 @@
       enddo
       enddo
       enddo
+!$omp enddo
+!$omp end parallel
 *
       if (.not. Fft_fast_L) deallocate (wk_evec_8)
 *

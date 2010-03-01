@@ -1,10 +1,12 @@
 ***s/r msoltri6 - solution of a tridiagonal problem
 *
+#include <model_macros_f.h>
+*
       subroutine msoltri6 ( F_r, F_rhs,
      %                      F_bi_8, F_ci_8, F_ai_8,
      %                      NIDIST, NJDIST, NI, NJ )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer NIDIST, NJDIST, NI, NJ
       real    F_r(NIDIST,NI), F_rhs(NIDIST,NI)
@@ -15,6 +17,7 @@
 *
 *revision
 * v2_00 - Lee/Patoine       - initial MPI version (from msoltri v1_03)
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *
 *object
@@ -35,29 +38,40 @@
 *
 *notes
 *          - set_trig21 must have been called
-*          - F_r and F_rhs can occupy the same location
 *
 **
 *
-      integer i,l
+#include "ptopo.cdk"
+      integer i,l, kkii, kilon, kin, ki0
 *
-      do i=1,NI
-      do l=1,NJ*NJDIST,NJDIST
-         F_r(l,i) = F_rhs(l,i) * F_bi_8(i)
-      enddo
-      enddo
+      kilon = (NJ + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
+!$omp parallel private(ki0,kin,l)
+!$omp do
+      do kkii = 1, Ptopo_npeOpenMP
+         ki0 = 1 + kilon*(kkii-1)*NJDIST
+         kin = NJDIST*min(NJ,kilon*kkii)
+         do l=ki0 ,kin,NJDIST
+            F_r(l,1) = F_rhs(l,1) * F_bi_8(1)
+         enddo
+
 *
-      do i=2,NI
-      do l=1,NJ*NJDIST,NJDIST
-         F_r(l,i) = F_r(l,i) - F_ai_8(i) * F_r(l,i-1)
-      enddo
-      enddo
+         do i=2,NI
+c      do l=1,NJ*NJDIST,NJDIST
+            do l=ki0 ,kin,NJDIST
+               F_r(l,i) = F_rhs(l,i) * F_bi_8(i) - F_ai_8(i) * F_r(l,i-1)
+            enddo
+         enddo
 *
-      do i=NI-1,1,-1
-      do l=1,NJ*NJDIST,NJDIST
-         F_r(l,i) = F_r(l,i) - F_ci_8(i) * F_r(l,i+1)
+         do i=NI-1,1,-1
+
+cdo l=1,NJ*NJDIST,NJDIST
+            do l=ki0 ,kin,NJDIST
+               F_r(l,i) = F_r(l,i) - F_ci_8(i) * F_r(l,i+1)
+            enddo
+         enddo
       enddo
-      enddo
+!$omp enddo
+!$omp end parallel
 *
       return
       end

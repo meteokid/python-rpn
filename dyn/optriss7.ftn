@@ -17,6 +17,7 @@
 *
 *revision
 * v3_01 - Lee V/ Spacek L   - initial MPI version (from optriss6 v2_00)
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *         see above ID
@@ -58,39 +59,33 @@
 *******************************************************************************
       if ( F_axis .eq. 'Z' ) then
 *
-         do i=F_ifin+1,NIS
-            do k=1,F_nk
-               do j=1,NJS
-                  F_rhs(1,i,j,k) = zero
-               enddo
-            enddo
-         enddo
-         do i=1,F_ideb-1
-            do k=1,F_nk
-               do j=1,NJS
-                  F_rhs(1,i,j,k) = zero
-               enddo
-            enddo
-         enddo
-
+!$omp parallel do
          do k=1,F_nk
+            do j=1,NJS
+               do i=F_ifin+1,NIS
+                  F_rhs(1,i,j,k) = zero
+               enddo
+            enddo
+            do j=1,NJS
+               do i=1,F_ideb-1
+                  F_rhs(1,i,j,k) = zero
+               enddo
+            enddo
             do j=F_jfin+1,NJS
                do i=1,NIS
                   F_rhs(1,i,j,k) = zero
                enddo
             enddo
-         enddo
-
-         do k=1,F_nk
             do j=1,F_jdeb-1
                do i=1,NIS
                   F_rhs(1,i,j,k) = zero
                enddo
             enddo
          enddo
+!$omp end parallel do
 
 *
-         call ftridi6 
+         call ftridi7 
      %              ( F_r, F_rhs, F_a_8, F_b_8, F_c_8,
      %                NIS*NJS*SKIP, SKIP, F_nk, NIS*NJS, .false. )
      % 

@@ -32,6 +32,7 @@
 * v2_11 - M. Roch           - diff. on phi instead of phi' at model lid
 * v2_21 - Desgagne M.       - control for diffusion on momentum only
 * v2_31 - Desgagne M.       - remove stkmemw
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     The diffusion coefficients are (Cstv_uvdf_8*Cstv_dt_8) for the
@@ -139,6 +140,7 @@
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+!$omp do
          do k = 2, Nk
          do j = 1,l_nj
          do i = 1,l_ni
@@ -146,14 +148,17 @@
          end do
          end do
          end do
+!$omp enddo
 *
 * updating phi' at the top
 *
+!$omp do
          do j = 1,l_nj
          do i = 1,l_ni
             F_ip(i,j,1) = F_it(i,j,1) - Cstvr_fistr_8(1) - F_xfis(i,j)
          end do
          end do
+!$omp enddo
 *
 *
 *     The temperature: T', T'lin & hence T 
@@ -170,6 +175,7 @@
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+!$omp do
          do k=1, Nk
          do j=1,l_nj
          do i=1,l_ni 
@@ -177,10 +183,12 @@
          end do
          end do
          end do
+!$omp enddo
 *
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp do
             do k = 1, Nk
             do j = 1,l_nj 
             do i = 1,l_ni 
@@ -188,6 +196,7 @@
             end do
             end do
             end do
+!$omp enddo
          endif 
 *
 *     The hydrostatic pressure: pi'  
@@ -203,6 +212,7 @@
 *****************************
 *
          if ( .not. Schm_hydro_L ) then
+****** HAVE NOT OPTIMIZE THIS PART FOR IBM YET. VL.
 *
 *     Vertical wind (physical) 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -227,6 +237,7 @@
 *
 *        Indirect diffusion of q' 
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp do
          do k=1, Nk  ! 
          do j=1,l_nj ! p = (pi)exp(q') 
          do i=1,l_ni ! ~~~~~~~~~~~~~~~ 
@@ -235,6 +246,7 @@
          end do
          end do
          end do
+!$omp enddo
 *
          call hzd_del2  (work, wk1_8, 
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
@@ -242,6 +254,7 @@
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+!$omp do
          do k=1, Nk  ! 
          do j=1,l_nj ! q' = log(p/pi) 
          do i=1,l_ni ! ~~~~~~~~~~~~~~
@@ -250,6 +263,7 @@
          end do
          end do
          end do
+!$omp enddo
 *
          endif
          endif

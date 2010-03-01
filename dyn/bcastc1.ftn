@@ -80,7 +80,6 @@
       COMMON_BROADCAST(Pgeol_l)
       COMMON_BROADCAST(Meml)
       COMMON_BROADCAST(Memi)
-      COMMON_BROADCAST(Ptopoi)
       COMMON_BROADCAST(Stepi)
       COMMON_BROADCAST(pres)
       COMMON_BROADCAST(Xst_i)

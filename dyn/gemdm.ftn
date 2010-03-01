@@ -4,10 +4,10 @@
 *
       subroutine gemdm
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
-*     m. desgagne( after version v1_03 of gefcn0 )
+*     M. desgagne( after version v1_03 of gefcn0 )
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
@@ -16,6 +16,7 @@
 * v3_00 - Gauthier P.       - introduce subr. v4d_4dvar 
 * v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L 
 * v3_01 - Tanguay M.        - add V4dg_sgvc_L 
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *	

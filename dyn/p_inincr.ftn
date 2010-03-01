@@ -10,26 +10,27 @@
 *     Bernard Dugas - july 97
 *
 *revision
-* v2_21 - Bernard Dugas     - Adaption to GEM DM v2.2 and to physics v3.67:
-*                             1) change all includes and variables to DM specs;
-*                             2) each PE does the interpolations for its own area;
-*                             3) INCRTS is only used for water points (TWATER);
-*                             4) INCRTG is only used for glacier points (TGLACIER(2));
-*                             5) INCRTP is only used for deep soil points when the
-*                                force-restore surface scheme is selected (TSOIL(2));
-*                             6) INCRICD is added for sea ice depht increments (ICEDP);
-*                             7) INCRGL is now used with GLSEAS0, as GLSEA can be
-*                                modified to account for lake ice evolution;
-*                             8) INCRAL is no longer defined, since CALCALB
-*                                is used instead (called by CLIMPHS2).
-* v2_31 - Desgagne M.       - remove stkmemw
-* v2_31 - Bernard Dugas     - adapt to new climatological file descriptors
-* v2_32 - Bernard Dugas     - correct exit condition codes
+* v2_21 - Bernard Dugas  - Adaption to GEM DM v2.2 and to physics v3.67:
+*                      1) change all includes and variables to DM specs;
+*                      2) each PE does the interpolations for its own area;
+*                      3) INCRTS is only used for water points (TWATER);
+*                      4) INCRTG is only used for glacier points (TGLACIER(2));
+*                      5) INCRTP is only used for deep soil points when the
+*                         force-restore surface scheme is selected (TSOIL(2));
+*                      6) INCRICD is added for sea ice depht increments (ICEDP);
+*                      7) INCRGL is now used with GLSEAS0, as GLSEA can be
+*                         modified to account for lake ice evolution;
+*                      8) INCRAL is no longer defined, since CALCALB
+*                         is used instead (called by CLIMPHS2).
+* v2_31 - Desgagne M.   - remove stkmemw
+* v2_31 - Bernard Dugas - adapt to new climatological file descriptors
+* v2_32 - Bernard Dugas - correct exit condition codes
 * v3_00 - Desgagne & Lee    - Lam configuration
-* v3_01 - Bernard Dugas     - add call to INTOZON
-* v3_02 - Lubos Spacek      - remplacer l_ni et l_nj par p_ni et p_nj
-* v3_02 - Bernard Dugas     - remettre le code de controle d'interpolation O3
-*                           - toujours initialiser incrtp (independamment de soli_L)
+* v3_01 - Bernard Dugas - add call to INTOZON
+* v3_02 - Lubos Spacek  - remplacer l_ni et l_nj par p_ni et p_nj
+* v3_02 - Bernard Dugas - remettre le code de controle d'interpolation O3
+*                       - toujours initialiser incrtp (independamment de soli_L)
+* v3_10 - Lee V.        - RPN_bcastc for bcast on MPI_CHARACTER
 *
 *object
 *
@@ -416,13 +417,13 @@ C              call flush( Lun_out )
          call RPN_COMM_bcast(xnig2  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
          call RPN_COMM_bcast(xnig3  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
          call RPN_COMM_bcast(xnig4  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(gtyp_S ,xncfld     ,"MPI_CHARACTER",0,"grid",xnerr)
+         call RPN_COMM_bcastc(gtyp_S,xncfld     ,"MPI_CHARACTER",0,"grid",xnerr)
          call RPN_COMM_bcast(xnzig1 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
          call RPN_COMM_bcast(xnzig2 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
          call RPN_COMM_bcast(xnzig3 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
          call RPN_COMM_bcast(xnzig4 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(gtypz_S,xncfld     ,"MPI_CHARACTER",0,"grid",xnerr)
-         call RPN_COMM_bcast(clim_S ,xncfld*4   ,"MPI_CHARACTER",0,"grid",xnerr)
+         call RPN_COMM_bcastc(gtypz_S,xncfld    ,"MPI_CHARACTER",0,"grid",xnerr)
+         call RPN_COMM_bcastc(clim_S,xncfld*4   ,"MPI_CHARACTER",0,"grid",xnerr)
 *
 **       Determine the type of surface land scheme and
 **       set a logical switch to indicate wether it is

@@ -12,6 +12,7 @@
 *revision
 * v2_20 - Pellerin P.          - Adapted from MC2 
 * v2_21 - Desgagne M.          - To decode etk,typ,interp,seq
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *                                
 *
 *object
@@ -194,30 +195,49 @@
       fadd = 0
       ideb = index(string,cvs//"+") + 4
       if (ideb.gt.4) then
-         dum120 = string(ideb:lst)
-         ifin   = index (dum120,';') - 1
-         if (ifin.lt.0) ifin = 120
-         read (dum120(1:ifin),702,iostat=flag) fadd
+         dum120        = string(ideb:lst)
+         dum120(15:15) = ' '
+         ifin = index (dum120,';')
+         if (ifin.gt.1) dum120(ifin:ifin+7) = '        '
+         read (dum120,702,iostat=flag) fadd
          if (flag.gt.0) fadd = 0
+c         dum120 = string(ideb:lst)
+c         ifin   = index (dum120,';') - 1
+c         if (ifin.lt.0) ifin = 120
+c         read (dum120(1:ifin),702,iostat=flag) fadd
+c         if (flag.gt.0) fadd = 0
       endif
       ideb = index(string,cvs//"-") + 4
       if (ideb.gt.4) then
-         dum120 = string(ideb:lst)
-         ifin   = index (dum120,';') - 1
-         if (ifin.lt.0) ifin = 120
-         read (dum120(1:ifin),702,iostat=flag) fadd
+         dum120        = string(ideb:lst)
+         dum120(15:15) = ' '
+         ifin = index (dum120,';')
+         if (ifin.gt.1) dum120(ifin:ifin+7) = '        '
+         read (dum120,702,iostat=flag) fadd
          if (flag.gt.0) fadd = 0
          fadd = -fadd
+c         dum120 = string(ideb:lst)
+c         ifin   = index (dum120,';') - 1
+c         if (ifin.lt.0) ifin = 120
+c         read (dum120(1:ifin),702,iostat=flag) fadd
+c         if (flag.gt.0) fadd = 0
+c         fadd = -fadd
       endif
 *
       fmul = 1
       ideb = index(string,cvs//"*") + 4
       if (ideb.gt.4) then
-         dum120 = string(ideb:lst)
-         ifin   = index (dum120,';') - 1
-         if (ifin.lt.0) ifin = 120
-         read (dum120(1:ifin),702,iostat=flag) fmul
+         dum120        = string(ideb:lst)
+         dum120(15:15) = ' '
+         ifin = index (dum120,';')
+         if (ifin.gt.1) dum120(ifin:ifin+7) = '        '
+         read (dum120,702,iostat=flag) fmul
          if (flag.gt.0) fmul = 1
+c         dum120 = string(ideb:lst)
+c         ifin   = index (dum120,';') - 1
+c         if (ifin.lt.0) ifin = 120
+c         read (dum120(1:ifin),702,iostat=flag) fmul
+c         if (flag.gt.0) fmul = 1
       endif
 *
       cetk = " "

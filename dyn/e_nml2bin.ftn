@@ -52,7 +52,7 @@
       write(labfl) Grd_ni  , Grd_nj  , Grd_nila  , Grd_njla ,
      $             Grd_dx  , Grd_dy  , Grd_rot_8 , lam      ,
      $             Grd_x0  , Grd_xl  , Grd_y0    , Grd_yl   , 
-     $             Grd_dxmax, Grd_dymax,
+     $             Grd_dxmax, Grd_dymax, Grd_typ_S,
      $             Ptopo_npex, Ptopo_npey, e_tr3d_ntr, e_trvs_ntr,
      $             (E_tr3d_name_S(k),k=1,E_tr3d_ntr),
      $             (E_tr3d_sval  (k),k=1,E_tr3d_ntr),

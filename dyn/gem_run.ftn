@@ -27,6 +27,7 @@
 * v3_02 - Buehner M.        - integration stops at timestep V4dg_steplast 
 * v3_02                       if in V4d mode
 * v3_03 - Tanguay M.        - Call hdif_phy  
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *	Performs the integration of the model
@@ -131,11 +132,13 @@
 *
 *        Dynamics timestep
 *        -----------------
+         call tmg_start ( 2, 'DYN+HD+PHY' )
          call dynstep
 *
 *        Physics timestep & Horizontal diffusion & Vertical sponge
 *        ---------------------------------------------------------
          call hdif_phy
+	 call tmg_stop (2)
 *
       endif
 *

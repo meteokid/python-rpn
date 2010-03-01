@@ -28,6 +28,7 @@
 * v2_21 - Desgagne M.       - control for diffusion on momentum only
 * v2_31 - Desgagne M.       - remove stkmemw
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 * The diffusion includes: second order(Hzd_pwr=1), 
@@ -165,6 +166,8 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
      %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8,Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
 *
+!$omp parallel
+!$omp do
          do k = 2, Nk
          do j = 1+pil_s,l_nj-pil_n
          do i = 1+pil_w,l_ni-pil_e
@@ -172,14 +175,18 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
          end do
          end do
          end do
+!$omp enddo
 *
 * updating phi' at the top
 *
+!$omp do
          do j = 1+pil_s,l_nj-pil_n
          do i = 1+pil_w,l_ni-pil_e
             F_ip(i,j,1) = F_it(i,j,1) - Cstvr_fistr_8(1) - F_xfis(i,j)
          end do
          end do
+!$omp enddo
+!$omp end parallel
 *
 
 *     The temperature: T', T'lin & hence T 
@@ -200,6 +207,8 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
      %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
 *
+!$omp parallel
+!$omp do
          do k=1, Nk
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
@@ -207,10 +216,12 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
          end do
          end do
          end do
+!$omp enddo
 *
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp do
             do k = 1, Nk
             do j = 1+pil_s,l_nj-pil_n
             do i = 1+pil_w,l_ni-pil_e
@@ -218,7 +229,9 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
             end do
             end do
             end do
-         endif 
+!$omp enddo
+         endif
+!$omp end parallel 
 *
 *     The hydrostatic pressure: pi'  
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -266,6 +279,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
 *
 *        Indirect diffusion of q' 
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do
          do k=1, Nk  ! 
          do j=1+pil_s,l_nj-pil_n ! p = (pi)exp(q')
          do i=1+pil_w,l_ni-pil_e ! ~~~~~~~~~~~~~~~
@@ -274,6 +288,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
          end do
          end do
          end do
+!$omp end parallel do
 *
          call hzd_solmxma(wk2, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
@@ -283,6 +298,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
      %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
 *
+!$omp parallel do
          do k=1, Nk  ! 
          do j=1+pil_s,l_nj-pil_n ! q' = log(p/pi)
          do i=1+pil_w,l_ni-pil_e ! ~~~~~~~~~~~~~~
@@ -291,6 +307,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
          end do
          end do
          end do
+!$omp end parallel do
 *
          endif
          endif

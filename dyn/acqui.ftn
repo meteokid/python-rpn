@@ -12,6 +12,7 @@
 *
 *revision
 * v3_01 - Corbeil L.           - initial version
+* v3_10 - Lee V.               - unique bmfscraps...
 *
 *object
 *	
@@ -41,7 +42,8 @@
       integer, dimension(maxerr) ::  error
       integer, allocatable, dimension(:) :: bmfni,bmfnj,bmfnk,
      $         bmfdatyp,bmfvtime1,bmfvtime2,
-     $         bmfscrap
+     $         bmfscrap,bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5,
+     $                  bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9
       character*4, allocatable, dimension(:) :: bmfnom
       real      difsig,prdfsgz,prdf
       parameter (difsig = 1.e-5)
@@ -70,11 +72,14 @@
 *
       allocate (bmfnom(length),bmfni(length),bmfnj(length),
      $          bmfnk(length), bmfvtime1(length),bmfvtime2(length),
-     $          bmfdatyp(length),bmfscrap(length))
+     $          bmfdatyp(length),bmfscrap(length),
+     $          bmfscrap1(length),bmfscrap2(length),bmfscrap3(length),
+     $          bmfscrap4(length),bmfscrap5(length),bmfscrap6(length),
+     $          bmfscrap7(length),bmfscrap8(length),bmfscrap9(length))
 
-      call bmf_catalog ( bmfnom,bmfni,bmfscrap,bmfscrap,bmfnj,
-     $     bmfscrap,bmfscrap,bmfnk,bmfscrap,bmfscrap,bmfvtime1,
-     $     bmfvtime2,bmfscrap,bmfscrap,bmfdatyp,bmfscrap,bmfscrap )
+      call bmf_catalog ( bmfnom,bmfni,bmfscrap,bmfscrap1,bmfnj,
+     $     bmfscrap2,bmfscrap3,bmfnk,bmfscrap4,bmfscrap5,bmfvtime1,
+     $     bmfvtime2,bmfscrap6,bmfscrap7,bmfdatyp,bmfscrap8,bmfscrap9 )
 *
 *     Initialization of some switches and dimensions
 *
@@ -109,7 +114,9 @@
       enddo
 *
       deallocate (bmfni,bmfnj,bmfnk,bmfdatyp,bmfvtime1,
-     $           bmfvtime2,bmfnom,bmfscrap)
+     $           bmfvtime2,bmfnom,bmfscrap,
+     $         bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5,
+     $         bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9)
 *
       error(1) = bmf_get ('RNA ',bmf_time1,bmf_time2,-1,rna,-1.,1,
      $                                           Acqi_vterplv,1,1,1,1)
@@ -297,7 +304,7 @@
       end do
 *     
       call rpn_comm_allreduce (err,error(1),1,"MPI_INTEGER",
-     $                                 "MPI_SUM","grid",err)
+     $                                 "MPI_SUM","grid",nerr)
 *
       if (error(1).ne.0) call gem_stop ('acqui',-1)
 *

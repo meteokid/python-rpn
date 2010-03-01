@@ -85,7 +85,7 @@
 *
       if ( grd .ne. 'A' .and. grd .ne. 'B' .and.
      %     grd .ne. 'G' .and. grd .ne. 'Z' ) then
-         call e_rdhint_out(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,ip2,ip3)
+         call e_rdhint_out(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,p2,ip3)
          goto 999
       endif
 *
@@ -132,7 +132,7 @@
 *
       if ( must_interpo_L ) then
 *
-         call e_rdhint_out(stdo, "Horizontal interpolation: ",nomvar_S,ip1,ip2,ip3)
+         call e_rdhint_out(stdo, "Horizontal interpolation: ",nomvar_S,ip1,p2,ip3)
          src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, iunit)
          err = ezdefset ( dgid, src_gid )
          err = ezsetopt ('INTERP_DEGREE', interp_S)
@@ -142,7 +142,7 @@
       else
 *
          e_rdhint3 = 0
-         call e_rdhint_out(stdo, "NO horizontal interpolation on ",nomvar_S,ip1,ip2,ip3)
+         call e_rdhint_out(stdo, "NO horizontal interpolation on ",nomvar_S,ip1,p2,ip3)
 *
          do i=1,ni*nj
             f(i) = w1(i)

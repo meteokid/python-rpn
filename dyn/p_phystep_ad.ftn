@@ -113,23 +113,6 @@
          err = rewind_db_file (Lun_waphy)
       endif
 *
-#if defined (MULTI)
-#if defined (NEC)
-      do 410 icpu = 2, Ptopo_npeMacro
-*
-        ptparm(icpu) = icpu
-        ptcpu(icpu) = icpu
-        call ptfork ( pnid(icpu), ptparm(icpu),
-     $      p_physlb_ad, ptcpu(icpu), F_stepno ,
-     $                up, vp, wp, tp, qp,  trp,
-     $                um, vm,     tm,      trm,
-     $                upm, vpm,  tpm, qpm, trpm,
-     $                umm, vmm,  tmm,      trmm,
-     $                lnpsm, sig, kmm, ktm, LDIST_DIM, l_nk)
-*
- 410  continue
-#endif
-#endif
 *
       call p_physlb_ad ( 1, F_stepno,
      $                   up, vp, wp, tp, qp,  trp,
@@ -137,14 +120,6 @@
      $                   upm, vpm,  tpm, qpm, trpm,
      $                   umm, vmm,  tmm,      trmm,
      $                   lnpsm, sig, kmm, ktm, LDIST_DIM, l_nk)
-*
-#if defined (MULTI)
-#if defined (NEC)
-      do 420 icpu = 2,Ptopo_npeMacro
-         call ptjoin ( pnid(icpu) )
- 420  continue
-#endif
-#endif
 *
 *
 *C       2.	load all fields required by the physic in memory

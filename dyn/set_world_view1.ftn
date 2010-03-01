@@ -42,6 +42,7 @@
 * v3_02 - Lee V.              Adw_trunc_traj_L for LAM (truncate trajectories)
 * v3_02 - Desgagne M.       - Precalculate Mem_mx3db value
 * v3_02 - Mahfouf J.-F.     - add V4dg_anincr_L
+* v3_10 - Lee V.            - check on read errors in namelists
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -125,8 +126,6 @@
       Mem_mx3db    = -1
       Mem_phyncore_L = .false.
 *
-      Ptopo_npeOpenMP = 1
-      Ptopo_npeMacro  = 1
       Ptopo_npex = 1
       Ptopo_npey = 1
 *
@@ -286,11 +285,11 @@
      $     'Opening file: ',Path_nml_S(1:longueur(Path_nml_S))
       err = fnom (lun_in, Path_nml_S, 'SEQ' , nrec)
       rewind ( Lun_in )
-      read (Lun_in, nml=gem_cfgs, end = 9120)
+      read (Lun_in, nml=gem_cfgs, end = 9120,err = 9130)
       rewind ( Lun_in )
-      read (Lun_in, nml=coupling, end = 5555)
+      read (Lun_in, nml=coupling, end = 5555,err = 9131)
  5555 rewind ( Lun_in )
-      read (Lun_in, nml=var4d, end = 6666)
+      read (Lun_in, nml=var4d, end = 6666,err=9132)
  6666 call fclos (lun_in)
 *
       if ((V4dg_conf/100.ne.1) .and.
@@ -390,8 +389,6 @@
       endif
       Level_kind_ip1 = kind
 *
-      Ptopo_npeMacro = max (1,Ptopo_npeMacro )
-      Ptopo_npeOpenMP= max (1,Ptopo_npeOpenMP)
       F_npx = Ptopo_npex
       F_npy = Ptopo_npey
 *
@@ -460,6 +457,14 @@
       goto 1111
 *
  9120 write (Lun_out, 9150)
+      goto 1110
+ 9130 write (Lun_out, 9151)
+      goto 1110
+ 9131 write (Lun_out, 9152)
+      goto 1110
+ 9132 write (Lun_out, 9153)
+      
+ 1110 continue
       write (Lun_out, 8000)
 *
  7000 format (/' WRONG OPTION FOR HZD_TYP WHEN LAM: ',a/)
@@ -467,7 +472,10 @@
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ============='/)
- 9150 format (/,' NAMELIST gem_cfgs INVALID IN FILE: model_settings'/)
+ 9150 format (/,' NAMELIST gem_cfgs NOT FOUND IN FILE: model_settings'/)
+ 9151 format (/,' READ ERROR in NAMELIST gem_cfgs IN FILE: model_settings'/)
+ 9152 format (/,' READ ERROR in NAMELIST coupling IN FILE: model_settings'/)
+ 9153 format (/,' READ ERROR in NAMELIST var4d    IN FILE: model_settings'/)
  9154 format (/,' Out_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
      $         '      HYB(1) MUST BE 0.0 AND HYB(NK) MUST BE 1.0'/

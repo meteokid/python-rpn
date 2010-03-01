@@ -122,11 +122,6 @@
          busvol(i) = 0.
       end do
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call pllock(Mult_lkphy)
-#endif
-#endif
       
       Mem_pslic = Mem_pslic + 1
       if ( Mem_pslic .le. p_nj ) then
@@ -144,11 +139,6 @@
 *
       endif
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call plunlock(Mult_lkphy)
-#endif
-#endif
 *
 *C    Stop if last slice has been completed
 *
@@ -220,11 +210,6 @@
      $         j, F_step, LDIST_DIM, l_nk )
 *
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call pllock(Mult_lkphy)
-#endif
-#endif
 *
 *     Perform physic slices output
       do i=1,Pslab_slab
@@ -244,11 +229,6 @@
          err = write_db_file (Lun_waphy,busper,p_bper_siz)
       endif
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call plunlock(Mult_lkphy)
-#endif
-#endif
 *
 *     ===================================================================
 *                           RETURN FOR ANOTHER SLICE

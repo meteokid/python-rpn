@@ -9,7 +9,7 @@
      %                        F_x,    F_y,   F_z,
      %                        F_h_L,  F_z_L, F_lin_L, F_num, i0,in,j0,jn,kn)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_num, F_n(F_num),i0,in,j0,jn,kn
 *
@@ -25,6 +25,8 @@
 *
 *revision
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_03 - Lee V. (from IBM) - added min,max on index calcs
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     see id section
@@ -79,12 +81,15 @@
       integer n, ii, jj, kk, ij, nijag, nij,i, j, k
       real*8  prd, prdt
 *
+!     call tmg_start ( 31, 'adw_setint' )
       nij   = l_ni * l_nj
       nijag = Adw_nit * Adw_njt
 ************************************************************************
+!$omp parallel private(n,prd,ii,prdt,jj,kk,ij)
       if ( F_h_L .and. F_z_L ) then
 ************************************************************************
          if ( F_lin_L ) then
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -94,9 +99,10 @@
             ii = Adw_lcx( ii+1 ) + 1
             prdt = prd - Adw_bsx_8(ii)
             if ( prdt .lt. 0.0 ) then
-               ii = ii - 1
+               ii = max(2,ii - 1)
                prdt = prd - Adw_bsx_8(ii)
             endif
+            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capx(n) = prdt * Adw_dix_8(ii)
 
             prd = dble(F_y(n))
@@ -104,9 +110,10 @@
             jj = Adw_lcy( jj+1 ) + 1
             prdt = prd - Adw_bsy_8(jj)
             if ( prdt .lt. 0.0 ) then
-               jj = jj - 1
+               jj = max(2,jj - 1)
                prdt = prd - Adw_bsy_8(jj)
             endif
+            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capy(n) = prdt * Adw_diy_8(jj)
 
             prd = dble(F_z(n))
@@ -121,7 +128,9 @@
             enddo
             enddo
             enddo
+!$omp enddo
          else
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -131,9 +140,10 @@
             ii = Adw_lcx( ii+1 ) + 1
             prdt = prd - Adw_bsx_8(ii)
             if ( prdt .lt. 0.0 ) then
-               ii = ii - 1
+               ii = max(2,ii - 1)
                prdt = prd - Adw_bsx_8(ii)
             endif
+            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capx(n) = prdt * Adw_dix_8(ii)
 
             prd = dble(F_y(n))
@@ -141,9 +151,10 @@
             jj = Adw_lcy( jj+1 ) + 1
             prdt = prd - Adw_bsy_8(jj)
             if ( prdt .lt. 0.0 ) then
-               jj = jj - 1
+               jj = max(2,jj - 1)
                prdt = prd - Adw_bsy_8(jj)
             endif
+            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capy(n) = prdt * Adw_diy_8(jj)
 
             prd = dble(F_z(n))
@@ -163,11 +174,13 @@
             enddo
             enddo
             enddo
+!$omp enddo
          endif
 ************************************************************************
       elseif (F_h_L) then
 ************************************************************************
          if ( F_lin_L ) then
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -178,9 +191,10 @@
             ii = Adw_lcx( ii+1 ) + 1
             prdt = prd - Adw_bsx_8(ii)
             if ( prdt .lt. 0.0 ) then
-               ii = ii - 1
+               ii = max(2,ii - 1)
                prdt = prd - Adw_bsx_8(ii)
             endif
+            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capx(n) = prdt * Adw_dix_8(ii)
 
             prd = dble(F_y(n))
@@ -188,16 +202,19 @@
             jj = Adw_lcy( jj+1 ) + 1
             prdt = prd - Adw_bsy_8(jj)
             if ( prdt .lt. 0.0 ) then
-               jj = jj - 1
+               jj = max(2,jj - 1)
                prdt = prd - Adw_bsy_8(jj)
             endif
+            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capy(n) = prdt * Adw_diy_8(jj)
             ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
             F_n(n) = kk*nijag + ij
             enddo
             enddo
             enddo
+!$omp enddo
          else
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -208,9 +225,10 @@
             ii = Adw_lcx( ii+1 ) + 1
             prdt = prd - Adw_bsx_8(ii)
             if ( prdt .lt. 0.0 ) then
-               ii = ii - 1
+               ii = max(2,ii - 1)
                prdt = prd - Adw_bsx_8(ii)
             endif
+            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capx(n) = prdt * Adw_dix_8(ii)
 
             prd = dble(F_y(n))
@@ -218,9 +236,10 @@
             jj = Adw_lcy( jj+1 ) + 1
             prdt = prd - Adw_bsy_8(jj)
             if ( prdt .lt. 0.0 ) then
-               jj = jj - 1
+               jj = max(2,jj - 1)
                prdt = prd - Adw_bsy_8(jj)
             endif
+            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capy(n) = prdt * Adw_diy_8(jj)
             F_xgg(n) = Adw_dlx_8(ii-1) * Adw_dix_8(ii)
             F_xdd(n) = Adw_dlx_8(ii+1) * Adw_dix_8(ii)
@@ -231,11 +250,13 @@
             enddo
             enddo
             enddo
+!$omp enddo
          endif
 ************************************************************************
       elseif (F_z_L) then
 ************************************************************************
          if ( F_lin_L ) then
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -252,7 +273,9 @@
             enddo
             enddo
             enddo
+!$omp enddo
          else
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -270,9 +293,12 @@
             enddo
             enddo
             enddo
+!$omp enddo
          endif
 ************************************************************************
       endif
+!$omp end parallel
 ************************************************************************
+!     call tmg_stop (31)
       return
       end

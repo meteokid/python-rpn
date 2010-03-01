@@ -25,7 +25,7 @@
      $     Out_filtpass, Out_linbot, Out_zund, Out_unit_S, Out_ndigits,
      $     Out_cliph_L,Out_vt2gz_L,Out_cubzt_L,Out_cubuv_L,Out_cubds_L,
      $     Out_cubqs_L, Out_cubdd_L, Out_cubqq_L, Out_cubww_L, 
-     $     Ptopo_npeOpenMP, Ptopo_npeMacro, Tr2d_incore_L, Tr2d_ntpf
+     $     Tr2d_incore_L, Tr2d_ntpf
       namelist /gem_cfgs_p/
      $     Step_total, Step_rsti, Step_bkup, Step_gstat,
      $     Grd_rcoef, Pres_ptop, Level_ip12000_L,
@@ -47,7 +47,7 @@
      $     Out_nbitg, Out_linbot, Out_unit_S, Out_ndigits, Out_cliph_L,
      $     Out_vt2gz_L, Out_cubzt_L, Out_cubuv_L, Out_cubds_L, 
      $     Out_cubqs_L, Out_cubdd_L, Out_cubqq_L, Out_cubww_L, 
-     $     Ptopo_npeOpenMP, Ptopo_npeMacro, Tr2d_incore_L, Tr2d_ntpf
+     $     Tr2d_incore_L, Tr2d_ntpf
       namelist /var4d/ V4dg_conf, V4dg_stepob, V4dg_inv, V4dg_incore_L,
      $                 V4dg_4dvar_L, V4dg_sensib_L, V4dg_twin_L, 
      $                 V4dg_sgvc_L, V4dj_mask_L, V4dm_itmax, V4dm_simax,

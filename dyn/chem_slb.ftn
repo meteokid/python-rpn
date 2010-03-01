@@ -50,11 +50,6 @@
 *
  100  continue
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call pllock(Mult_lkphy)
-#endif
-#endif
 *    
       Chem_nslice = Chem_nslice + 1
       if ( Chem_nslice .le. l_nj ) then
@@ -67,11 +62,6 @@
          endif
       endif
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call plunlock(Mult_lkphy)
-#endif
-#endif
 *
 *C 	Stop if last j2do has been completed
 *
@@ -101,11 +91,6 @@ c     print*, 'performing chem on j= ',j2do
 *     From this point trslice contains vertical 2D slice "j2do"
 *     of all tracers
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call pllock(Mult_lkphy)
-#endif
-#endif
 *
 *     Perform chemistry slices output
       do i=1,Pslab_slab
@@ -122,11 +107,6 @@ c     print*, 'performing chem on j= ',j2do
          end do
       endif
 *
-#if defined (MULTI)
-#if defined (NEC)
-      call plunlock(Mult_lkphy)
-#endif
-#endif
 *
 *C       6.	Send for another j2do. Stop if completed
 *		-----------------------------------------

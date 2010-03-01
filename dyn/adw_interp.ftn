@@ -5,7 +5,7 @@
       subroutine adw_interp ( F_out, F_in, F_u, F_v,
      %                        F_wind_L, F_mono_L, DIST_DIM, Nk,i0,in,j0,jn )
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_wind_L, F_mono_L
 *
@@ -21,6 +21,7 @@
 *revision
 * v2_31 - Tanguay M.        - correction parameters adw_vder 
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *language
 *     fortran 77
@@ -49,6 +50,7 @@
 *
       real dummy
 *
+C     call tmg_start ( 45, 'adw_interp' )
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
       nijkag = Adw_nit*Adw_njt*l_nk
@@ -103,12 +105,15 @@
 * Compute second derivative for cubic spline in the vertical
 *
 ************************************************************************
+C     call tmg_start ( 46, 'adw_interp_vder' )
       call adw_vder ( F_v, F_u, Adw_nit, Adw_njt, l_nk ) 
+C     call tmg_stop (46)
 ************************************************************************
 *
 * Interpolate
 *
 ************************************************************************
+C     call tmg_start ( 47, 'adw_interp_tricub' )
       call adw_tricub ( Adw_wrkc, F_u, F_v,
      %                  Adw_n1, Adw_capx1, Adw_xgg1,
      %                  Adw_xdd1, Adw_capy1, Adw_ygg1,
@@ -132,6 +137,9 @@
      %   call adw_exch_3 ( Adw_wrkc, dummy, Adw_wrkb, dummy, Adw_c1, 1 )
 *
       endif
+C     call tmg_stop (47)
+!$omp parallel
+!$omp do
       do k = 1, l_nk
       do j = j0,jn
       do i = i0,in
@@ -139,6 +147,9 @@
       enddo
       enddo
       enddo
+!$omp enddo
+!$omp end parallel
+C     call tmg_stop (45)
 *
       return
       end

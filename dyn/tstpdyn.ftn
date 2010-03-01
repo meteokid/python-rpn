@@ -17,6 +17,7 @@
 * v2_30 - Edouard S.        - introduce Ncn 
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *    
@@ -67,7 +68,9 @@
 *
       endif
 *
+      call tmg_start ( 3, 'RHS' )
       call rhs ()
+      call tmg_stop (3)
 *
       if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
 *
@@ -81,9 +84,13 @@
 *
       endif
 *
+      call tmg_start ( 4, 'ADW' )
       call adw_main ( F_fnitraj )
+      call tmg_stop (4)
 *
-      call pre () 
+      call tmg_start ( 5, 'PRE' )
+      call pre ()
+      call tmg_stop (5)
 *
       if ( Orh_icn.eq.1 ) call frstgss( )
 *
@@ -117,11 +124,17 @@
 *
          endif
 *
+         call tmg_start ( 6, 'NLI' )
          call nli ()
+         call tmg_stop (6)
 *
+         call tmg_start ( 7, 'SOL' )
          call sol_main ()
+         call tmg_stop (7)
 *
+         call tmg_start ( 8, 'BAC' )
          call bac ( iln, Schm_itnlh )
+         call tmg_stop (8)
 *
  100  continue
 *

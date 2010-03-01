@@ -17,6 +17,7 @@
 *
 *revision
 * v3_02 - Lee V.  - extracted LAM code originally placed in adw_exch_1
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     For LAM mode only:
@@ -65,7 +66,9 @@
       nij  = l_ni*l_nj
 *
 ************************************************************************
+!$omp parallel
       if (l_north) then
+!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
@@ -87,7 +90,9 @@ c    %           'Adw_dly_8(1)=',Adw_dly_8(1)
          enddo
          enddo
          enddo
+!$omp enddo
       else
+!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
@@ -103,9 +108,11 @@ c    %           Adw_yy_8(Adw_njt-1), 'Adw_dly_8(1)=',Adw_dly_8(1)
          enddo
          enddo
          enddo
+!$omp enddo
       endif
 *
       if (l_south) then
+!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
@@ -125,7 +132,9 @@ c    %           Adw_yy_8(Adw_haloy+2), 'Adw_dly_8(1)=',Adw_dly_8(1)
          enddo
          enddo
          enddo
+!$omp enddo
       else
+!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
@@ -141,9 +150,11 @@ c    %           Adw_yy_8(2), 'Adw_dly_8(1)=',Adw_dly_8(1)
          enddo
          enddo
          enddo
+!$omp enddo
       endif
 *
       if (l_east) then
+!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
@@ -165,7 +176,9 @@ c    %           ' Adw_dlx_8(1)=',Adw_dlx_8(1)
          enddo
          enddo
          enddo
+!$omp enddo
       else
+!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
@@ -181,9 +194,11 @@ c    %           Adw_xx_8(Adw_nit-1), 'Adw_dlx_8(1)=',Adw_dlx_8(1)
          enddo
          enddo
          enddo
+!$omp enddo
       endif
 *
       if (l_west) then
+!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
@@ -203,7 +218,9 @@ c    %           Adw_xx_8(Adw_halox+2), 'Adw_dlx_8(1)=',Adw_dlx_8(1)
          enddo
          enddo
          enddo
+!$omp enddo
       else
+!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
@@ -219,7 +236,9 @@ c    %           'Adw_dlx_8(1)=',Adw_dlx_8(1)
          enddo
          enddo
          enddo
+!$omp enddo
       endif
+!$omp end parallel
 *     
       call gem_stop ( 'adw_ckbd_lam', err )
 *     

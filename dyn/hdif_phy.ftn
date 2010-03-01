@@ -10,6 +10,7 @@
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *object
 *     see id section
@@ -27,16 +28,26 @@
 *
          if ( Schm_hdlast_L ) then
 *
+            call tmg_start ( 9, 'PHY' )
             if ( Schm_phyms_L ) call p_main    (Lctl_step)
+            call tmg_stop (9)
             if ( Schm_chems_L ) call chem_step (Lctl_step)
 *
 *           Store TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
 *           ----------------------------------------------------
             if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) call v4d_rwtraj (2) 
 *
+            call tmg_start (60,'HZD')
             call   hzd_main ()
+            call tmg_stop (60)
+*
+            call tmg_start (61,'VSPNG')
             call vspng_main () 
-            if (.not.G_lam) call hspng_main () 
+            call tmg_stop (61)
+*
+c	    call tmg_start(12,'HSPNG')
+            if (.not.G_lam) call hspng_main ()
+c	    call tmg_stop(12) 
 *
          else
 *
@@ -44,11 +55,19 @@
 *           ----------------------------------------------------
             if(V4dg_conf.ne.0.and.V4dg_oktr_L) call v4d_rwtraj (2) 
 *     
+            call tmg_start (60,'HZD')
             call   hzd_main ()
+            call tmg_stop (60)
+            call tmg_start (61,'VSPNG')
             call vspng_main () 
-            if (.not.G_lam) call hspng_main () 
+            call tmg_stop (61)
+c	    call tmg_start(12,'HSPNG')
+            if (.not.G_lam) call hspng_main ()
+c	    call tmg_stop(12) 
 *
+            call tmg_start ( 9, 'PHY' )
             if ( Schm_phyms_L ) call p_main    (Lctl_step)
+            call tmg_stop (9)
             if ( Schm_chems_L ) call chem_step (Lctl_step)
 *
          endif

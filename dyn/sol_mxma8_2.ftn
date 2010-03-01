@@ -10,7 +10,7 @@
      $                          F_npex1, F_npey1, ai, bi, ci,
      $                          fdg1,fdg2,fdwfft)
 *
-#include "impnone.cdk"
+      implicit none
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -20,8 +20,8 @@
 *
 *revision
 * v2_00 - Qaddouri A.       - initial MPI version
-* v2_40 - Lee/Qaddouri      - for LAM version
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Lee/Qaddouri      - for LAM version
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 *
 *arguments
 *  Name        I/O                 Description
@@ -60,7 +60,6 @@
 *
       integer  F_npex1 , F_npey1
       integer  minx1, maxx1, minx2, maxx2,nx3
-      integer  jk
 
       Real*8   ai(minx1:maxx1,minx2:maxx2,nx3),
      $         bi(minx1:maxx1,minx2:maxx2,nx3),
@@ -78,147 +77,148 @@
       real*8   fdg1(Miny:Maxy,Minz:Maxz,Gni+F_npex1)
       real*8   fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
 *
-      integer  i,j,k, jr, err, ki,l_pil_w,l_pil_e
+      integer  i,j,k, jr,l_pil_w,l_pil_e
+      integer  piece, p0, pn, ptotal, plon
       real*8   zero, one
       parameter( zero = 0.0 )
       parameter( one  = 1.0 )
 
 *
+C     call tmg_start(88,'sol_mxma total')
       l_pil_w=0
       l_pil_e=0
       if (l_south) l_pil_w= Lam_pil_w
       if (l_north) l_pil_e= Lam_pil_e
 *
-*PDIR SERIAL
       call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                                   Minz, Maxz, Nk, fdg1, 1,2 )
 
+!$omp parallel private(p0,pn,piece, jr) shared(ptotal,plon,bi,ai)
+!$omp do
+       do i= 1,Gni
          do k= Minz, nkl
             do j= njl+1-pil_n,Maxy
-               do i= 1,Gni
                   fdg1(j,k,i)=zero
                enddo
             enddo
+         do k= Minz, nkl
             do j= Miny, pil_s
-               do i= 1,Gni
                   fdg1(j,k,i)=zero
                enddo
             enddo
-         enddo
-
          do k= Nkl+1,Maxz
             do j= Miny,Maxy
-               do i= 1,Gni
                   fdwfft(j,k,i)=zero
                enddo
             enddo
-         enddo
          do k= Minz, 0
-            do j= Miny,Maxy
-               do i= 1,Gni
+           do j= Miny,Maxy
                   fdwfft(j,k,i)=zero
                enddo
             enddo
          enddo
-*PDIR ENDSERIAL
+!$omp enddo
 
 
 *     projection ( wfft = x transposed * g )
 
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+c      do k=1,Nkl
+c      call mxma8( xevec,  Gni-Lam_pil_w-Lam_pil_e, 1,
+c     %            fdg1(1+pil_s,k,1+Lam_pil_w),  (Maxy-Miny+1)* (Maxz-Minz+1), 1,
+c     %            fdwfft(1+pil_s,k,1+Lam_pil_w),(Maxy-Miny+1)* (Maxz-Minz+1), 1,
+c     %            Gni-Lam_pil_w-Lam_pil_e, Gni-Lam_pil_w-Lam_pil_e, 
+c     %            (Maxy-Miny+1-pil_s-pil_n))
+c      enddo
+
+!$omp do
       do k=1,Nkl
-      call mxma8( xevec,  Gni-Lam_pil_w-Lam_pil_e, 1,
-     %            fdg1(1+pil_s,k,1+Lam_pil_w),  (Maxy-Miny+1)* (Maxz-Minz+1), 1,
-     %            fdwfft(1+pil_s,k,1+Lam_pil_w),(Maxy-Miny+1)* (Maxz-Minz+1), 1,
-     %            Gni-Lam_pil_w-Lam_pil_e, Gni-Lam_pil_w-Lam_pil_e, 
-     %            (Maxy-Miny+1-pil_s-pil_n))
+         call dgemm('N','N', (Maxy-Miny+1-pil_s-pil_n), 
+     .            Gni-Lam_pil_w-Lam_pil_e, 
+     .            Gni-Lam_pil_w-Lam_pil_e,
+     .            1._8, fdg1(1+pil_s,k,1+Lam_pil_w), 
+     .            (Maxy-Miny+1)* (Maxz-Minz+1),xevec,  Gni-Lam_pil_w-Lam_pil_e,
+     .            0._8, fdwfft(1+pil_s,k,1+Lam_pil_w),
+     .            (Maxy-Miny+1)* (Maxz-Minz+1))
       enddo
-c     do k=1,Nkl
-c     call mxma8( xevec,  Gni, 1,
-c    %            fdg1(1,k,1),  (Maxy-Miny+1)* (Maxz-Minz+1), 1,
-c    %            fdwfft(1,k,1),(Maxy-Miny+1)* (Maxz-Minz+1), 1,
-c    %                 Gni, Gni, (Maxy-Miny+1))
-c     enddo
+!$omp enddo
+!$omp single
 
-c     call mxma8( xevec,              Gni, 1,
-c    %            fdg1,   (Maxy-Miny+1) * (Maxz-Minz+1), 1,
-c    %            fdwfft, (Maxy-Miny+1) * (Maxz-Minz+1), 1,
-c    %                     Gni, Gni, (Maxy-Miny+1) * Nkl )
-*
-
-*PDIR SERIAL
       call rpn_comm_transpose
      $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
      $                         Minij, Maxij, Gni, fdg2, 2, 2 )
-
+!      call tmg_start(84,'sol_mxma 2')
+!$omp end single
 *
-       j =1+Lam_pil_s
-c      do ki= 1, (Maxz-Minz+1) *L_nij
-c         fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
-       do i=1+l_pil_w,L_nij-l_pil_e
-       do k=1,(Maxz-Minz+1)
-          fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j)
-       enddo
-       enddo
+       ptotal = L_nij-l_pil_e-l_pil_w
+       plon = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
+!$omp do
+       do piece=1,Ptopo_npeOpenMP
+          p0 = 1+l_pil_w + plon*(piece-1)
+          pn = min(L_nij-l_pil_e,plon*piece+l_pil_w)
 
-      do j =2+Lam_pil_s, Gnj-Lam_pil_n
-            jr =  j - 1
-       do i=1+l_pil_w,L_nij-l_pil_e
-       do k=1,(Maxz-Minz+1)
-          fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j) - ai(k,i,j)
+          j =1+Lam_pil_s
+c         do i=1+l_pil_w,L_nij-l_pil_e
+          do i=p0,pn
+          do k=1,(Maxz-Minz+1)
+                fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j)
+          enddo
+          enddo
+
+          do j =2+Lam_pil_s, Gnj-Lam_pil_n
+             jr =  j - 1
+c            do i=1+l_pil_w,L_nij-l_pil_e
+             do i=p0,pn
+             do k=1,(Maxz-Minz+1)
+                fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j) - ai(k,i,j)
      $                                          * fdg2(k,i,jr)
-       enddo
-       enddo
-c           do ki= 1, (Maxz-Minz+1)*L_nij
-c              fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j) - ai(ki,1,j)
-c    $                                          * fdg2(ki,1,jr)
-c           enddo
-      enddo
+             enddo
+             enddo
+          enddo
 
          do j = Gnj-1-Lam_pil_n, 1+Lam_pil_s, -1
             jr =  j + 1
-            do i=1+l_pil_w,L_nij-l_pil_e
+c           do i=1+l_pil_w,L_nij-l_pil_e
+            do i=p0,pn
             do k=1,(Maxz-Minz+1)
               fdg2(k,i,j) = fdg2(k,i,j) - ci(k,i,j) * fdg2(k,i,jr)
             enddo
             enddo
-c           do ki= 1, (Maxz-Minz+1)*L_nij
-c             fdg2(ki,1,j) = fdg2(ki,1,j) - ci(ki,1,j) * fdg2(ki,1,jr)
-c           enddo
          enddo
+      enddo
+!$omp enddo
 
-*
+!$omp single
+!      call tmg_stop(84)
       call rpn_comm_transpose
      $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
      $                        Minij, Maxij, Gni, fdg2,- 2, 2 )
-*PDIR ENDSERIAL
+!      call tmg_start(85,'dgemm2')
+!$omp end single
 
 *     inverse projection ( r = x * w )
 
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+c      do k=1,Nkl
+c      call mxma8( xevec,  1, Gni-Lam_pil_w-Lam_pil_e,
+c     %            fdwfft(1+pil_s,k,1+Lam_pil_w), (Maxy-Miny+1)*(Maxz-Minz+1), 1,
+c     %            fdg1(1+pil_s,k,1+Lam_pil_w), (Maxy-Miny+1)*(Maxz-Minz+1), 1,
+c     %            Gni-Lam_pil_w-Lam_pil_e, Gni-Lam_pil_w-Lam_pil_e, 
+c     %            (Maxy-Miny+1-pil_s-pil_n))
+c      enddo
+!$omp do
       do k=1,Nkl
-      call mxma8( xevec,  1, Gni-Lam_pil_w-Lam_pil_e,
-     %            fdwfft(1+pil_s,k,1+Lam_pil_w), (Maxy-Miny+1)*(Maxz-Minz+1), 1,
-     %            fdg1(1+pil_s,k,1+Lam_pil_w), (Maxy-Miny+1)*(Maxz-Minz+1), 1,
-     %            Gni-Lam_pil_w-Lam_pil_e, Gni-Lam_pil_w-Lam_pil_e, 
-     %            (Maxy-Miny+1-pil_s-pil_n))
+         call dgemm('N','T', (Maxy-Miny+1-pil_s-pil_n), 
+     .            Gni-Lam_pil_w-Lam_pil_e, 
+     .            Gni-Lam_pil_w-Lam_pil_e,
+     .            1._8, fdwfft(1+pil_s,k,1+Lam_pil_w),
+     .            (Maxy-Miny+1) * (Maxz-Minz+1),xevec, Gni-Lam_pil_w-Lam_pil_e,
+     .            0._8, fdg1(1+pil_s,k,1+Lam_pil_w),
+     .            (Maxy-Miny+1) * (Maxz-Minz+1))
       enddo
-c     do k=1,Nkl
-c     call mxma8( xevec,                1, Gni,
-c    %            fdwfft(1,k,1),(Maxy-Miny+1) * (Maxz-Minz+1),   1,
-c    %            fdg1(1,k,1),  (Maxy-Miny+1) * (Maxz-Minz+1),   1,
-c    %                         Gni, Gni, (Maxy-Miny+1) )
-c     enddo
-
-c     call mxma8( xevec,                1, Gni,
-c    %            fdwfft, (Maxy-Miny+1) * (Maxz-Minz+1),   1,
-c    %            fdg1,   (Maxy-Miny+1) * (Maxz-Minz+1),   1,
-c    %                         Gni, Gni, (Maxy-Miny+1) * Nkl )
-*
-
-*PDIR SERIAL
+!$omp end do
+!$omp end parallel
+!      call tmg_stop(85)
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                             Minz, Maxz, Nk, fdg1, -1, 2)
-*PDIR ENDSERIAL
+C     call tmg_stop(88)
       return
       end

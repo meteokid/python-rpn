@@ -26,6 +26,7 @@
 * v2_32                    - input winds are always UU,VV
 * v3_00 - Lee V.           - re-arranged sequence to match new LAM entry
 * v3_01 - Corbeil L.       - introduce interface acqui
+* v3_10 - Lee V.           - added deallocate topu_temp,topv_temp,gzu_temp...
 *
 *object
 *	
@@ -361,7 +362,8 @@
       deallocate ( u_temp,v_temp,gz_temp,tt_temp,hu_temp,work,lna,rna,
      $             sdd )
       if (Acql_vertint) then
-         deallocate (psu_temp,psv_temp,pia)
+         deallocate (psu_temp,psv_temp,
+     $               topu_temp,topv_temp,gzu_temp,gzv_temp,pia)
          if (.not.Acql_prsanl) deallocate ( pibb )
       endif
 *
@@ -400,7 +402,7 @@
       call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
- 9000 format(/,' TREATING INPUT DATA VALID AT: ',i8.6,'.'i8.8,
+ 9000 format(/,' TREATING INPUT DATA VALID AT: ',i8.6,'.',i8.8,
      +       /,' ===============================================')
 *
 *     ---------------------------------------------------------------
