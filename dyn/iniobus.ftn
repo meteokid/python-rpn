@@ -93,7 +93,7 @@
                 obus_mul(k)=1.0
                 obus_add(k)=0.0
                 if (perpar(idx,5).gt.p_ni) then
-                    obus_shp(k)= l_nk
+                    obus_shp(k)= G_nk+2
                 else
                     obus_shp(k)= 1
                 endif
@@ -122,7 +122,7 @@
                 obus_mul(k)=1.0
                 obus_add(k)=0.0
                 if (dynpar(idx,5).gt.p_ni) then
-                    obus_shp(k)= l_nk
+                    obus_shp(k)= G_nk+2
                 else
                     obus_shp(k)= 1
                 endif
@@ -145,7 +145,7 @@
                 obus_mul(k)=1.0
                 obus_add(k)=0.0
                 if (volpar(idx,5).gt.p_ni) then
-                    obus_shp(k)= l_nk
+                    obus_shp(k)= G_nk+2
                 else
                     obus_shp(k)= 1
                 endif
@@ -169,7 +169,7 @@
                 obus_mul(k)=1.0
                 obus_add(k)=0.0
                 if (entpar(idx,5).gt.p_ni) then
-                    obus_shp(k)= l_nk
+                    obus_shp(k)= G_nk+2
                 else
                     obus_shp(k)= 1
                 endif

@@ -1,0 +1,49 @@
+#include "model_macros_f.h"
+
+      subroutine my_print_val(F_f,DIST_DIM,Nk)
+
+      integer DIST_DIM, Nk
+      
+      real F_f   (DIST_SHAPE,Nk)
+      
+#include "glb_ld.cdk"
+#include "cori.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "offc.cdk"
+#include "schm.cdk"
+#include "intuv.cdk"
+#include "inuvl.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "lun.cdk"
+
+      print*,'DANS my_print_val, f(88,8,nk)=',F_f(88,8,nk)
+      
+      return
+      end
+
+      subroutine my_print_val_th(F_f,DIST_DIM,Nk)
+
+      integer DIST_DIM, Nk
+      
+      real F_f   (DIST_SHAPE,Nk+1)
+      
+#include "glb_ld.cdk"
+#include "cori.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "offc.cdk"
+#include "schm.cdk"
+#include "intuv.cdk"
+#include "inuvl.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "lun.cdk"
+
+      print*,'DANS my_print_val, f(88,8,nk)=',F_f(88,8,nk)
+
+      return
+      end

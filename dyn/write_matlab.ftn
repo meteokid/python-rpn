@@ -1,0 +1,274 @@
+#include "model_macros_f.h"
+
+      subroutine write_matlab_3d(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k,ind
+
+      real f(l_minx:l_maxx,l_miny:l_maxy,G_nk),fm(G_ni-lam_pil_w-lam_pil_e,G_nk)
+      real wk1(G_ni,G_nj,G_nk)
+
+      call glbcolc (wk1,G_ni,G_nj,f,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+
+      if(Ptopo_myproc.eq.0) then
+
+         do k=1,G_nk
+            do i=1,G_ni-lam_pil_w-lam_pil_e
+               fm(i,k)=wk1(lam_pil_w+i,lam_pil_s+1,k)
+            enddo
+         enddo
+
+         write(lun)fm
+
+      endif
+
+      end
+
+c================================================================
+      subroutine write_matlab_3d_v(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k,ind
+
+      real f(l_minx:l_maxx,l_miny:l_maxy,G_nk+2),fm(G_ni-lam_pil_w-lam_pil_e,G_nk+2)
+      real wk1(G_ni,G_nj,G_nk+2)
+
+      call glbcolc (wk1,G_ni,G_nj,f,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
+
+      if(Ptopo_myproc.eq.0) then
+
+         do k=1,G_nk+2
+            do i=1,G_ni-lam_pil_w-lam_pil_e
+               fm(i,k)=wk1(lam_pil_w+i,lam_pil_s+1,k)
+            enddo
+         enddo
+         
+         write(lun)fm
+
+      endif
+
+      end
+
+c================================================================
+      subroutine write_matlab_3d_8(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k,ind
+
+      real*8 f(l_minx:l_maxx,l_miny:l_maxy,G_nk),fm(l_ni-lam_pil_w-lam_pil_e,G_nk)
+
+      if(Ptopo_numproc.ne.1)then
+         print*,'One CPU ONLY'
+         call gem_stop('write_matlab_3d_8',-1)
+      endif
+
+      do k=1,G_nk
+         do i=1,l_ni-lam_pil_w-lam_pil_e
+            fm(i,k)=f(lam_pil_w+i,lam_pil_s+1,k)
+         enddo
+      enddo
+
+      write(lun)fm
+
+      end
+
+c================================================================
+      subroutine write_matlab_3d_adw(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "type.cdk"
+#include "adw.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k
+
+      real f(l_ni+2*adw_halox,l_nj+2*adw_haloy,G_nk),fm(G_ni-lam_pil_w-lam_pil_e,G_nk)
+      real wk1(G_ni,G_nj,G_nk)
+
+      call glbcolc (wk1,G_ni,G_nj,f,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+
+      if(Ptopo_myproc.eq.0) then
+
+         do k=1,G_nk
+            do i=1,G_ni-lam_pil_w-lam_pil_e
+               fm(i,k)=wk1(lam_pil_w+adw_halox+i,lam_pil_s+adw_haloy+1,k)
+            enddo
+         enddo
+         
+         write(lun)fm
+         
+      endif
+         
+      end
+c================================================================
+      subroutine write_matlab_3d_lam(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "type.cdk"
+#include "adw.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k
+
+      real f(l_ni,l_nj,G_nk),fm(G_ni-lam_pil_w-lam_pil_e,G_nk)
+      real wk1(G_ni,G_nj,G_nk)
+
+      call glbcolc (wk1,G_ni,G_nj,f,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+
+        if(Ptopo_myproc.eq.0) then
+           
+           do k=1,G_nk
+              do i=1,G_ni-lam_pil_w-lam_pil_e
+                 fm(i,k)=wk1(lam_pil_w+i,lam_pil_s+1,k)
+              enddo
+           enddo
+           
+           write(lun)fm
+           
+        endif
+
+      end
+      
+c================================================================
+
+      subroutine write_matlab_2d(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k,ind
+
+      real f(l_minx:l_maxx,l_miny:l_maxy),fm(G_ni-lam_pil_w-lam_pil_e)
+      real wk1(G_ni,G_nj)
+
+      call glbcolc (wk1,G_ni,G_nj,f,l_minx,l_maxx,l_miny,l_maxy,1)
+
+      if(Ptopo_myproc.eq.0) then
+         
+         do i=1,G_ni-lam_pil_w-lam_pil_e
+            fm(i)=wk1(lam_pil_w+i,lam_pil_s+1)
+         enddo
+         
+         write(lun)fm
+         
+      endif
+
+      end
+
+c================================================================
+      subroutine write_matlab_3d_th(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k,ind
+
+      real f(l_minx:l_maxx,l_miny:l_maxy,G_nk+1),fm(G_ni-lam_pil_w-lam_pil_e,G_nk+1)
+      real wk1(G_ni,G_nj,G_nk+1)
+
+      call glbcolc (wk1,G_ni,G_nj,f,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
+      
+      if(Ptopo_myproc.eq.0) then
+
+         do k=1,G_nk+1
+            do i=1,G_ni-lam_pil_w-lam_pil_e
+               fm(i,k)=wk1(lam_pil_w+i,lam_pil_s+1,k)
+            enddo
+         enddo
+         
+         write(lun)fm
+
+      endif
+
+      end
+
+c================================================================
+      subroutine write_matlab_3d_adw_th(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "type.cdk"
+#include "adw.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k
+
+      real f(l_ni+2*adw_halox,l_nj+2*adw_haloy,G_nk+1),fm(G_ni-lam_pil_w-lam_pil_e,G_nk+1)
+      real wk1(G_ni,G_nj,G_nk+1)
+
+      call glbcolc (wk1,G_ni,G_nj,f,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
+
+      if(Ptopo_myproc.eq.0) then
+
+         do k=1,G_nk+1
+            do i=1,G_ni-lam_pil_w-lam_pil_e
+               fm(i,k)=wk1(lam_pil_w+adw_halox+i,lam_pil_s+adw_haloy+1,k)
+            enddo
+         enddo
+         
+         write(lun)fm
+
+      endif
+
+      end
+c================================================================
+      subroutine write_matlab_3d_lam_th(lun,f)
+
+      implicit none
+
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "type.cdk"
+#include "adw.cdk"
+#include "glb_ld.cdk"
+
+      integer lun,i,k
+
+      real f(l_ni,l_nj,G_nk+1),fm(G_ni-lam_pil_w-lam_pil_e,G_nk+1)
+      real wk1(G_ni,G_nj,G_nk+1)
+
+      call glbcolc (wk1,G_ni,G_nj,f,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
+
+      if(Ptopo_myproc.eq.0) then
+         
+         do k=1,G_nk+1
+            do i=1,G_ni-lam_pil_w-lam_pil_e
+               fm(i,k)=wk1(lam_pil_w+i,lam_pil_s+1,k)
+            enddo
+         enddo
+         
+         write(lun)fm
+
+      endif
+
+      end
+c================================================================

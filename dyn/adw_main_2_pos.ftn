@@ -22,7 +22,7 @@
 * v3_20 - Gravel S.       - Change test a lower and upper boundaries
 * v3_20 - Tanguay M.      - Improve alarm when points outside advection grid
 * v3_20 - Dugas B.        - correct calculation for LAM when Glb_pil gt 7
-* v3_21 - Lee V.          - bug correction, yth should not be modified.
+* v3_21 - Lee V.          - bug correction, yth should not be modified
 *
 *language
 *     fortran 77
@@ -38,14 +38,14 @@
 * F_it   | total number of iterations for trajectory             |  i  |
 *        |                                                       |     |
 * F_u,F_v| input:  3 components of wind on advection grid        |  io |
-* F_w    | output: 3 components of upstream positions at t1      |     |
+* F_w    | output: 3 upstream positions valid at t1              |     |
 *________|_______________________________________________________|_____|
 *
 *implicits
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
-#include "geomg.cdk"
+#include "type.cdk"
 #include "adw.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
@@ -53,12 +53,15 @@
 #include "vt1.cdk"
 #include "v4dg.cdk"
 #include "lctl.cdk"
+#include "ver.cdk"
+#include "geomg.cdk"
+c#include "ptopo.cdk"
+c#include "matlab.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 ************************************************************************
-      logical doh
 *
       integer pnerr, pnlkey1(30), pnlod
 *
@@ -78,8 +81,17 @@
       real*8 r2pi_8,two,half,pdp,pdm
       parameter (two = 2.0,half=0.5)
 
-      integer i0,in,j0,jn
+      integer i0,in,j0,jn, longueur
 *
+c      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
+c         open(unit=62,file=
+c     $        matlab_dir_S(1:longueur(matlab_dir_S))
+c     $        //'from_fortran_adw_main_2_pos.bin',
+c     $        status='replace',form='unformatted')
+c         write(62)G_ni-lam_pil_w-lam_pil_e
+c         write(62)G_nk
+c      endif
+
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -88,6 +100,7 @@
       dth    = Cstv_dt_8/2.
       pdp    = 1.d0 + 1.d-6
       pdm    = 1.d0 - 1.d-6
+
 ************************************************************************
 *
       pnlkey1(1) = VMM_KEY(xth)
@@ -125,8 +138,6 @@
 ************************************************************************
       do it=1,F_it
 ************************************************************************
-                     doh = .false.
-      if (it .eq. 1) doh = .true.
 *
       do n = 1,nijk
       wrk_yth(n) = yth(n)
@@ -134,11 +145,11 @@
 
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
+          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn, G_nk )
 *
       else
 *
-          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth )
+          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth,G_nk )
 *
           if ( V4dg_conf.ne.0.0 ) then
 *
@@ -168,25 +179,38 @@
 *
       endif
 *
+
       if( .not. Adw_nosetint_L ) then
 *
       call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
      %                  dummy, capz1, dummy, xth, wrk_yth, zth,
-     %                  doh, .true., .true.,nijk,i0,in,j0,jn,l_nk)
+     %                 .true., .true., .true.,nijk,i0,in,j0,jn,l_nk,'m')
 *
+      
+c      if(matlab_write_L)call write_matlab_3d_adw(62,F_u)
+      
       call adw_trilin (wrkx1,F_u,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
       call adw_trilin (wrky1,F_v,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
 *
+c      if(matlab_write_L)then
+c         call write_matlab_3d_lam(62,wrkx1)
+c         call write_matlab_3d_lam(62,capx1)
+c         call write_matlab_3d_lam(62,capz1)
+c         if(Ptopo_myproc.eq.0)close(62)
+c      endif
+
       else
 *
-      Adw_hor_L = doh 
+      Adw_hor_L = .true.
       Adw_ver_L = .true. 
       call adw_trilin_turbo (wrkx1,F_u,1.0,xth,wrk_yth,zth,capz1,
-     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
       call adw_trilin_turbo (wrky1,F_v,1.0,xth,wrk_yth,zth,capz1,
-     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
 *
       endif
+
+
 *
       if (.not.G_lam) then
 
@@ -197,7 +221,8 @@
 *
               call adw_setint ( n2, capx2, dummy, dummy, capy2, dummy,
      %                     dummy, capz2, dummy, xpos2, ypos2, zpos2,
-     %                    .true., .true., .true., Adw_fro_a,1,Adw_fro_a,1,1,1)
+     %                    .true., .true., .true., Adw_fro_a,1,Adw_fro_a,
+     %                    1,1,1,'m')
 *
               call adw_trilin ( xpos2, F_u, 1.0, n2, capx2, capy2, capz2,
      %                     Adw_fro_a,1,Adw_fro_a,1,1,1)
@@ -223,14 +248,15 @@
       do n = 1,nijk
       wrk_yth(n) = yth(n)
       enddo
+
 *
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
+          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn, G_nk )
 *
       else
 *
-          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth )
+          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth,G_nk )
 *
           allocate(capx2(max(1,Adw_fro_a)),
      %             capy2(max(1,Adw_fro_a)),
@@ -248,19 +274,20 @@
       endif
 *
       if( .not. Adw_nosetint_L ) then
+
 *
       call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
      %                  dummy, capz1, dummy, xth, wrk_yth, zth,
-     %                 .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
+     %                 .true., .true., .true., nijk,i0,in,j0,jn,l_nk,'t')
 *
       call adw_trilin (wrkx1,F_w,-dth,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
 *
       else
 *
       Adw_hor_L = .true. 
-      Adw_ver_L = .false. 
+      Adw_ver_L = .true. 
       call adw_trilin_turbo (wrkx1,F_w,-dth,xth,wrk_yth,zth,capz1,
-     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'t')
 *
       endif
 *
@@ -271,7 +298,8 @@
 *
               call adw_setint ( n2, capx2, dummy, dummy, capy2, dummy,
      %                     dummy, capz2, dummy, xpos2, ypos2, zpos2,
-     %                    .true., .true., .true., Adw_fro_a,1,Adw_fro_a,1,1,1)
+     %                    .true., .true., .true., Adw_fro_a,1,Adw_fro_a,
+     %                    1,1,1,'t')
 *
               call adw_trilin ( xpos2, F_w, -dth, n2, capx2,capy2,capz2,
      %                     Adw_fro_a,1,Adw_fro_a,1,1,1)
@@ -288,6 +316,7 @@
 *
          deallocate(capx2,capy2,capz2,xpos2,ypos2,zpos2,n2)
       endif
+
 ************************************************************************
 !$omp parallel private(n)
 !$omp do
@@ -295,10 +324,10 @@
       do j = j0,jn
       do i = i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
-         zth(n) = Geomg_z_8(k) + two*wrkx1(n)
-         zth(n) = min( pdm*Geomg_z_8(l_nk), 
-     %                max( 1.0d0*zth(n), pdp*Geomg_z_8(1) ) )
-         zth(n) = half*(zth(n) + Geomg_z_8(k))
+         zth(n) = Ver_z_8%m(k) + two*wrkx1(n)
+         zth(n) = min( pdm*Ver_z_8%m(l_nk), 
+     %                max( 1.0d0*zth(n), pdp*Ver_z_8%m(1) ) )
+         zth(n) = half*(zth(n) + Ver_z_8%m(k))
       enddo
       enddo
       enddo
@@ -315,19 +344,20 @@
       do j = j0,jn
       do i = i0,in
          n = ((j-1)*l_ni) + i   !for k=1
-         F_w(n) = Geomg_z_8(1)
+         F_w(n) = Ver_z_8%m(1)
          n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
-         F_w(n) = Geomg_z_8(l_nk)
+         F_w(n) = Ver_z_8%m(l_nk)
       enddo
       enddo
 !$omp enddo
+
 !$omp do
       do k = 2,l_nk-1
          do j = j0,jn
          do i = i0,in
             n=(k-1)*nij+((j-1)*l_ni) + i
-            F_w(n) = zth(n) - Geomg_z_8(k)
-            F_w(n) = Geomg_z_8(k) + 2.0 * F_w(n)
+            F_w(n) = zth(n) - Adw_bsz_8%m(k-1)
+            F_w(n) = Ver_z_8%m(k) + 2.0 * F_w(n)
          enddo
          enddo
       enddo

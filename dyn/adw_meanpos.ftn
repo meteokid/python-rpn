@@ -1,0 +1,147 @@
+***s/r adw_meanpos - vertical average of upstream position of momentum
+*                    level to obtain those of the thermodynamic levels
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_meanpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm,
+     %                        i0,in,j0,jn)
+*
+      implicit none
+*
+      real F_xt(*),F_yt(*),F_zt(*),F_xm(*),F_ym(*),F_zm(*)
+      integer i0,in,j0,jn
+*
+*author
+*     sylvie gravel
+*
+*revision
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_xt         | upwind longitudes for themodynamic level        |  o  |
+* F_yt         | upwind latitudes for themodynamic level         |  o  |
+* F_zt         | upwind height for themodynamic level            |  o  |
+* F_xm         | upwind longitudes for momentum level            |  i  |
+* F_ym         | upwind latitudes for momentum level             |  i  |
+* F_zm         | upwind height for momentum level                |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "type.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+************************************************************************
+      integer n, nt, nm, nij,vnik, vnikm, i,j,k
+*
+      real*8  r2pi_8, two, half, alpha
+      real*8 xcos(i0:in,l_nk), ycos(i0:in,l_nk)
+      real*8 xsin(i0:in,l_nk), ysin(i0:in,l_nk)
+      real*8 yasin(i0:in,l_nk-1), zatan(i0:in,l_nk-1)
+      real*8 cx(i0:in,l_nk), cy(i0:in,l_nk), cz(i0:in,l_nk)
+      parameter (two = 2.0, half=0.5)
+************************************************************************
+      nij  = l_ni*l_nj
+      vnik = (in-i0+1)*l_nk
+      vnikm= (in-i0+1)*(l_nk-1)
+*
+      r2pi_8 = two * Dcst_pi_8
+************************************************************************
+*
+C     call tmg_start ( 33, 'adw_meanpos' )
+!$omp parallel private(i,j,k,ysin,ycos,
+!$omp&  zatan,yasin,xsin,xcos, n,nm, nt, alpha,
+!$omp&  cx, cy, cz )
+!$omp do 
+      do j=j0,jn
+         do k=1,l_nk
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            xcos(i,k) = F_xm(n)
+            ycos(i,k) = F_ym(n)
+         end do
+         end do
+*
+         call vsin(xsin, xcos, vnik)
+         call vsin(ysin, ycos, vnik)
+         call vcos(xcos, xcos, vnik)
+         call vcos(ycos, ycos, vnik)
+
+************************************************************************
+* For 1st and last thermodynamic levels positions in the horizontal are*
+* those of the momentum levels; no displacement allowed in the vertical*
+************************************************************************
+         do i=i0,in
+            n = ((j-1)*l_ni) + i
+            F_xt(n) = F_xm(n)
+            F_yt(n) = F_ym(n)
+            F_zt(n) = Adw_bsz_8%t(0)
+            nm = (l_nk-1)*nij + ((j-1)*l_ni) + i
+            nt = (l_nk  )*nij + ((j-1)*l_ni) + i
+            F_xt(nt) = F_xm(nm)
+            F_yt(nt) = F_ym(nm)
+            F_zt(nt) = Adw_bsz_8%t(l_nk)
+         enddo
+*
+         do k=1,l_nk
+         do i=i0,in
+************************************************************************
+* cartesian coordinates of each momemtum level                         *
+************************************************************************
+             cx(i,k) = xcos(i,k)*ycos(i,k)
+             cy(i,k) = xsin(i,k)*ycos(i,k)
+             cz(i,k) = ysin(i,k)
+          enddo
+          enddo
+************************************************************************
+* mid position between cartesian coordinate of top and bottom momentum *
+* level surrounding the thermodynamic level                            *
+************************************************************************
+         do k=2,l_nk
+         do i=i0,in
+             alpha    = half*( 1.+cx(i,k-1)*cx(i,k)
+     %                           +cy(i,k-1)*cy(i,k)
+     %                           +cz(i,k-1)*cz(i,k) )
+             alpha    = 1./(two*sqrt(alpha))
+             cx(i,k-1) = (cx(i,k-1)+cx(i,k))*alpha
+             cy(i,k-1) = (cy(i,k-1)+cy(i,k))*alpha
+c            cz(i,k-1) = max(-1.d0,min(1.d0,(cz(i,k)+cz(i,k-1))*alpha))
+             cz(i,k-1) = (cz(i,k)+cz(i,k-1))*alpha
+             if (cz(i,k-1).gt.1.d0) then
+                 cz(i,k-1)=1.d0
+             elseif (cz(i,k-1).lt.-1.d0) then
+                 cz(i,k-1)=-1.d0
+             endif
+          enddo
+          enddo
+
+          call vatan2(zatan,cy,cx,vnikm)
+          call vasin (yasin,cz,vnikm)
+
+          do k=1,l_nk-1
+          do i=i0,in
+************************************************************************
+* polar coordinates of upstream position for thermodynamic level       *
+************************************************************************
+             n = k*nij + ((j-1)*l_ni) + i
+             nm= (k-1)*nij + ((j-1)*l_ni) + i
+             F_yt(n) = yasin(i,k)
+             F_xt(n) = zatan(i,k)
+             if ( F_xt(n) .lt. 0.0 ) F_xt(n) = F_xt(n) + r2pi_8
+             F_zt(n) = (F_zm(nm)+F_zm(n))*half
+          end do   
+          end do   
+      enddo
+!$omp enddo
+!$omp end parallel
+*
+C     call tmg_stop (33)
+      return
+      end

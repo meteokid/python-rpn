@@ -13,23 +13,12 @@
 * vta                | y component of velocity                         |
 * wta                | z component of velocity                         |
 * tta                | T (temperature)                                 |
-* tdta               | total divergence (dpi* dot / dpi* + D )         |
-* fita               | phi (geopotential)                              |
-* qta                | q = ln p                                        |
+* qpta               | q; = ln p -ln Z                                 |
 *--------------------|-------------------------------------------------|
-* tpta               | T'       \                                      |
-* fipta              | phi'      \  perturbations                      |
-* qpta               | q'        /                                     |
-* pipta              | pi'      /                                      |
+* qsecta             | q''                                             |
 *--------------------|-------------------------------------------------|
-* tplta              | T'  linear                                      |
-*--------------------|-------------------------------------------------|
-* muta               | nonhydro index mu=dp/dpi-1 [= 0 if hydro]       |
 * psdta              | pi* dot (vert. vel. in pi* coord.)              |
 * sta                | ln (pi_s/z_s)                                   |
-*--------------------|-------------------------------------------------|
-* gpta               | P                                               |
-* multa              | (mu)lin = (1+D)q' -- the linear part of (mu)    |
 *--------------------|-------------------------------------------------|
 * huta               | specific humidity                               |
 * qcta               | mixing ratio of cloud water/ice                 |
@@ -46,21 +35,12 @@
       MARK_COMMON_BEG(vta)
       DCL_VMMVAR( vta,   uta, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vta,   vta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,   wta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,   tta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,  tdta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,  fita, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,   qta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,  tpta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta, fipta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,  qpta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta, pipta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta, tplta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,  muta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta, psdta, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vta,   wta, real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( vta,   tta, real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( vta,  qpta, real, (LDIST_SHAPE,0:l_nk+1) )
+      DCL_VMMVAR( vta,qsecta, real, (LDIST_SHAPE,0:l_nk+1) )
+      DCL_VMMVAR( vta, psdta, real, (LDIST_SHAPE,l_nk+1) )
       DCL_VMMVAR( vta,   sta, real, (LDIST_SHAPE)      )
-      DCL_VMMVAR( vta,  gpta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta, multa, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vta,  huta, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vta,  qcta, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vta,  trta, real, (LDIST_SHAPE,l_nk,*) )

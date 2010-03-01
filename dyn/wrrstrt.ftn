@@ -36,6 +36,7 @@
 #include "glb_ld.cdk"
 #include "pres.cdk"
 #include "pilot.cdk"
+#include "zblen.cdk"
 
 *
 *modules
@@ -75,7 +76,11 @@
       call datp2f (current_nest,Pil_current_S )
       adr = adr + 1
       call wawrit (Lun_rstrt, current_nest  ,adr, 1)
-*
+      if(Schm_theoc_L)then
+         adr = adr + 1
+         call wawrit (Lun_rstrt,Zblen_hmin,adr, 1)
+      endif
+*     
       ier = vmmckmx()
       call waclos(Lun_rstrt)
       ier = fclos(Lun_rstrt)  

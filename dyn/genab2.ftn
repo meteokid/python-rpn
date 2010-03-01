@@ -2,13 +2,13 @@
 *                  hybrid coordinate and the analytical derivative of 
 *                  d(psurf*B)/d(A + psurf*B)
 *
-      subroutine genab2 ( F_pia, F_pib, F_dpba,
-     $                    F_eta, F_ptop, F_coef, F_psurf_8, fnk )
+#include "model_macros_f.h"
+*
+      subroutine genab2 ( F_ptop, F_coef, F_psurf_8, fnk )
       implicit none
 *
       integer fnk    
-      real F_pia(fnk), F_pib(fnk), F_dpba(fnk), F_eta(fnk), 
-     $     F_ptop, F_coef
+      real  F_ptop, F_coef
       real*8  F_psurf_8
 *
 *author 
@@ -24,6 +24,9 @@
 *    analytical derivative of psurf*B with respect to Z
 *
 **
+#include "type.cdk"
+#include "ver.cdk"
+
       integer k
       real pref, psurf, pr1, pr2
 *     __________________________________________________________________
@@ -32,25 +35,29 @@
 *     if F_coef is greater than 1., pref is subject to restriction for
 *     stability reasons.
 *
-      pref = 100.*F_ptop/F_eta(1)   ! convert to pascal
+      pref = 100.*F_ptop/Ver_hybm%t(1)   ! convert to pascal
       psurf= 100.*F_psurf_8         ! convert to pascal
 *
-      pr1 = 1./(1. - F_eta(1))
+      pr1 = 1./(1. - Ver_hybm%t(1))
+      do k = 1, fnk+1
+        ver_pibb%t(k)  = ((Ver_hybm%t(k) - Ver_hybm%t(1))*pr1 ) ** F_coef
+        Ver_pia%t(k)  = pref * ( Ver_hybm%t(k) - ver_pibb%t(k) )
+      enddo
       do k = 1, fnk
-        F_pib(k)  = ((F_eta(k) - F_eta(1))*pr1 ) ** F_coef
-        F_pia(k)  = pref * ( F_eta(k) - F_pib(k) )
+        ver_pibb%m(k)  = ((Ver_hybm%m(k) - Ver_hybm%t(1))*pr1 ) ** F_coef
+        Ver_pia%m(k)  = pref * ( Ver_hybm%m(k) - ver_pibb%m(k) )
       enddo
 *
       if (F_coef .gt. 1.0) then
-        do k = 1,fnk
-          pr2 = F_coef*(F_eta(k) - F_eta(1))**(F_coef-1.)
-          F_dpba(k) = psurf*pr2/ 
-     $                (pref*(1. - F_eta(1))**F_coef +
+        do k = 1,fnk+1
+          pr2 = F_coef*(Ver_hybm%t(k) - Ver_hybm%t(1))**(F_coef-1.)
+          Ver_dpba(k) = psurf*pr2/ 
+     $                (pref*(1. - Ver_hybm%t(1))**F_coef +
      $                         (psurf-pref)*pr2)
         enddo
       else 
-        do k = 1,fnk
-          F_dpba(k) = psurf/(psurf - pref*F_eta(1))
+        do k = 1,fnk+1
+          Ver_dpba(k) = psurf/(psurf - pref*Ver_hybm%t(1))
         enddo
       endif
 *     __________________________________________________________________

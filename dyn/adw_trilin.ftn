@@ -46,6 +46,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "type.cdk"
 #include "adw.cdk"
 ************************************************************************
       integer n, nijag, nij, o1, o2, i, j, k
@@ -56,6 +57,7 @@ C     call tmg_start ( 32, 'adw_trilin' )
       nijag = Adw_nit * Adw_njt
       nij = l_ni*l_nj
 *
+
 !$omp parallel do private(n,o1,o2,prf1,prf2,prf3,prf4)
       do 100 k=1,kn
       do  90 j=j0,jn
@@ -64,9 +66,12 @@ C     call tmg_start ( 32, 'adw_trilin' )
       n = (k-1)*nij + ((j-1)*l_ni) + i
       o1 = F_n(n)
       o2 = F_n(n) + Adw_nit
+
+
 ************************************************************************
 *     x interpolation
 ************************************************************************
+
       prf1 = (1.0 - F_capx(n)) * F_in(o1) + F_capx(n) * F_in(o1+1)
       prf2 = (1.0 - F_capx(n)) * F_in(o2) + F_capx(n) * F_in(o2+1)
 *
@@ -75,14 +80,19 @@ C     call tmg_start ( 32, 'adw_trilin' )
 *
       prf3 = (1.0 - F_capx(n)) * F_in(o1) + F_capx(n) * F_in(o1+1)
       prf4 = (1.0 - F_capx(n)) * F_in(o2) + F_capx(n) * F_in(o2+1)
+
+      
 ************************************************************************
 *     y interpolation
 ************************************************************************
+
       prf1 = (1.0 - F_capy(n)) * prf1 + F_capy(n)  * prf2
       prf2 = (1.0 - F_capy(n)) * prf3 + F_capy(n)  * prf4
+
 ************************************************************************
 *     z interpolation
 ************************************************************************
+
       F_out(n) = ( (1.0 - F_capz(n)) * prf1 + F_capz(n)  * prf2 ) * F_dt
 *
    80 continue

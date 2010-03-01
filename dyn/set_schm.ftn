@@ -28,12 +28,14 @@
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "schm.cdk"
+#include "type.cdk"
+#include "ver.cdk"
 *
 *notes
 *	when cubic interpolation is choosen, cubic splines are always
 *	used in the vertical
 *
-      real*8   ZERO_8, HALF_8, ONE_8, pd1_8, gamma_8
+      real*8   ZERO_8, HALF_8, ONE_8, pd1_8
       parameter( ZERO_8 = 0.0 )
       parameter( HALF_8 = 0.5 )
       parameter( ONE_8  = 1.0 )
@@ -55,7 +57,7 @@
 
 * 1.3 Extract the number of vertical modes treated implicitly
 
-      Schm_nith = G_nk - 1
+      Schm_nith = G_nk
 
 * 1.4 Validate coriolis parameter
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,9 +76,9 @@
 * 2.1 Validate Shallow-water model and reset parameters when necessary
 *     and possible
 *     ----------------------------------------------------------------
-      if(Schm_nith.ge.l_nk .and. l_nk.gt.1) then
+      if(Schm_nith.gt.l_nk .and. l_nk.gt.1) then
          if (lun_out.gt.0) write(lun_out,4000)
-         Schm_nith=l_nk-1
+         Schm_nith=l_nk
       elseif(Schm_nith.eq.0 .and. l_nk.eq.1) then
          if (lun_out.gt.0) write(lun_out,5000)
          call gefstop('set_schm')
@@ -125,18 +127,31 @@
          Schm_phyms_L=.false.
       endif
 *
-      Cstv_tau_8  = Cstv_dt_8 * ( Offc_b0_8/Offc_a0_8 )
-      Cstv_hco0_8 = Dcst_rayt_8 *Dcst_rayt_8/(Dcst_rgasd_8*
-     $              Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Cstv_tstr_8)
+      if(Schm_hydro_L)then
+         Schm_nonhy_8=0.d0
+      else
+         Schm_nonhy_8=1.d0
+      endif
+*     
+      Cstv_tau_8  = Cstv_dt_8 * ( Offc_b0_8/Offc_a0_8 )      
+*
+      Ver_epsilon_8=Schm_nonhy_8*Dcst_rgasd_8*Cstv_tstr_8/
+     $     (Dcst_grav_8*Dcst_grav_8*Cstv_tau_8*Cstv_tau_8)
+      Ver_gamma_8=Dcst_cappa_8/(Dcst_cappa_8+Ver_epsilon_8)
+*
+      if(.not.Schm_cptop_L)then
+         write(Lun_out,*)'Constant pressure top only'
+         call gem_stop('set_dync',-2)
+      endif
+
+      Cstv_hco0_8 = Dcst_rayt_8 *Dcst_rayt_8/(Dcst_cappa_8*Cstv_tau_8*
+     $     Cstv_tau_8*Dcst_rgasd_8*Cstv_tstr_8)
       Cstv_hco1_8 = ZERO_8
       if ( .not. Schm_hydro_L) then
-         gamma_8 =   Schm_nonhy_8 *  Dcst_rgasd_8*Cstv_tstr_8
-     %             /(Dcst_cappa_8 * (Dcst_grav_8 *Cstv_tau_8)**2 )
-         gamma_8 = ONE_8 / (gamma_8 + ONE_8)
-         Cstv_hco0_8 = gamma_8 * Cstv_hco0_8
-         Cstv_hco1_8 = - Schm_nonhy_8 * Dcst_rayt_8*Dcst_rayt_8
-     %                                * (ONE_8 - Dcst_cappa_8)*gamma_8
-     %               /( Dcst_cappa_8*(Dcst_grav_8**2)*(Cstv_tau_8**4) )
+         Cstv_hco0_8 = Ver_gamma_8 * Cstv_hco0_8
+         Cstv_hco1_8 = Dcst_rayt_8*Dcst_rayt_8 * 
+     $        Schm_nonhy_8 * Ver_gamma_8
+     $        /( Dcst_cappa_8*Dcst_grav_8**2*Cstv_tau_8**4 )
       endif
 *
  1000 format(
@@ -161,7 +176,7 @@
  4000 format(
      %'THE NUMBER OF VERTICAL MODES TREATED IMPLICITLY (Schm_nith) ',
      $'MUST BE ',
-     $/,'SMALLER THAN THE NUMBER OF LEVELS: IT IS RESET TO GNK-1 ')
+     $/,'EQUAL OR SMALLER THAN THE NUMBER OF LEVELS: IT IS RESET TO GNK')
  5000 format(
      %'SHALLOW-WATER MODEL: NUMBER OF ITERATIONS FOR HELMHOLTZ PROBLEM',
      %/,'WAS SET TO ZERO BY USER. AT LEAST ONE ITERATION IS NECESSARY',

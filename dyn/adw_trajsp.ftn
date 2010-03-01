@@ -38,6 +38,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "type.cdk"
 #include "adw.cdk"
 #include "dcst.cdk"
 ************************************************************************

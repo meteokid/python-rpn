@@ -1,0 +1,400 @@
+***s/r prgzvta_stg - interpolation of geopotential and virtual temperature on
+*                given pressure levels
+*
+#include "model_macros_f.h"
+*
+      subroutine prgzvta_stg(F_gzout, F_vtout, F_pres, Nkout,
+     %     F_gzin_top,F_gzin,F_gzin_bot,F_vtin_top,F_vtin,F_vtin_bot,
+     $     F_wlnph_top,F_wlnph,F_wlnph_bot,  F_la,
+     %     F_vtund, F_gzund,  F_nundr,
+     %     F_cubzt_L, F_linbot,
+     %     DIST_DIM, Nk)
+*
+#include "impnone.cdk"
+*
+      logical F_cubzt_L
+      integer F_nundr, F_linbot
+      integer DIST_DIM,Nk,Nkout
+      real    F_pres(Nkout)
+      real    F_gzout(DIST_SHAPE,Nkout),F_vtout(DIST_SHAPE,Nkout)
+      real    F_gzin_top(DIST_SHAPE), F_vtin_top(DIST_SHAPE)
+      real    F_gzin(DIST_SHAPE,Nk), F_vtin (DIST_SHAPE,Nk)
+      real    F_gzin_bot(DIST_SHAPE), F_vtin_bot(DIST_SHAPE)
+      real    F_wlnph_top(DIST_SHAPE),F_wlnph_bot(DIST_SHAPE)
+      real    F_wlnph (DIST_SHAPE,Nk), F_la   (DIST_SHAPE)
+      real    F_vtund(DIST_SHAPE,F_nundr), F_gzund(DIST_SHAPE,F_nundr)
+*
+*author
+*     Alain Patoine - from prgzvtl except we introduce linear 
+*                     interpolation in F_linbot number of layers 
+*                     close to the bottom of the model even 
+*                     if F_cubzt_L is .true.
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from prgzvta v1_03)
+* v3_00 - Desgagne & Lee    - Lam configuration
+* stg   - Plante A.         - Adaptation for staggering
+*
+*object
+*     See id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_gzout      O    - geopotential field on the requested pressure level
+* F_vtout      O    - virtual temperature field on the requested 
+*                     pressure level
+* F_pres       I    - requested pressure level
+* F_gzin_top   I    - geopotential field at top
+* F_gzin       I    - geopotential field on the eta levels of the model
+* F_gzin_bot   I    - geopotential field at bottom
+* F_vtin_top   I    - virtual temperature field at top
+* F_vtin       I    - virtual temperature field on the eta levels of the
+*                     model
+* F_vtin_bot   I    - virtual temperature field at bottom
+* F_wlnph_top  I    - log of hydrostatic pressure at top
+* F_wlnph      I    - log of hydrostatic pressure on the eta levels of
+*                     the model
+* F_wlnph_bot  I    - log of hydrostatic pressure at bottom
+* F_la         I    - geographical latitude (radian)
+* F_vtund      I    - virtual temperatures for underground extrapolation
+* F_gzund      I    - geopotential levels for which virtual temperature
+*                     is given for underground extrapolation
+* F_nundr      I    - number of virtual temperature levels for under-
+*                     ground extrapolation
+*                   = 0 if no underground temperature is used; then the
+*                       traditional scheme is used
+* F_cubzt_L    I    - .true.  for cubic interpolation for all layers except
+*                       the F_linbot layers close to the bottom of the model
+*                     .false. for linear interpolation for all layers
+* F_linbot     I    - number of layers close to the bottom of the model
+*                     that will be interpolated linearly
+*notes
+*   All fields in arguments are assumed to be workable on the same grid
+*   (fni x fnj). This grid could be the staggered or the non staggered.
+*
+*   It is important that the data stored in F_vtund and F_gzund be ordered
+*   in the proper manner:
+*   F_vtund(i,j,1) and F_gzund(i,j,1) --> highest level
+*   F_vtund(i,j,2) and F_gzund(i,j,2) --> second highest level
+*   ......................................and so on
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+*
+*modules
+*     none
+*
+**
+      integer i, j, k, kk, pnk, pnkm, pnindex(l_ni)
+*
+      real    prlprso
+      real    prd, pre, prr
+      real    prfm0, prfm1, prfm2, prfm3, prfl2
+      real    prl, prsmall
+*
+      integer pnund,   pn1
+      real    prlptop, prvttop, prfitop
+      real    prlpbot, prvtbot, prfibot
+      real*8  invprd,invprl
+*
+      prsmall = .001
+
+!$omp parallel private(i,k,kk,pnk,pnkm,pnindex,prlprso,
+!$omp$    prd,pre,prr,prfm0,prfm1,prfm2,prfm3,prfl2,prl,
+!$omp$    pnund,pn1,prlptop,prvttop,prfitop,
+!$omp$    prlpbot,prvtbot,prfibot,invprd,invprl)
+!$omp do
+
+      do 600 j= 1, l_nj
+      do 500 kk = 1, Nkout
+      prlprso = log(F_pres(kk))
+*
+      do i= 1, l_ni
+         pnindex(i) = 0
+      enddo
+*
+      do k=1,l_nk
+      do  i= 1, l_ni
+         if ( prlprso .gt. F_wlnph(i,j,k) ) pnindex(i) = k
+      enddo
+      enddo
+*
+      do 300 i= 1, l_ni
+*******************************************************************************
+*                                                                             *
+* If:    output pressure   <   hydrostatic pressure on the                    *
+*                              first level of the model                       *
+*                                                                             *
+* Then:  upward extrapolation from level 2 and top if above top layer         *
+*       or interpolation between top and level 1 if inside top layer          *
+*                                                                             *
+*******************************************************************************
+*
+      if ( pnindex(i) .eq. 0 ) then
+*
+         if ( prlprso .ge. F_wlnph_top(i,j))then
+*           In top layer (linear interpolation
+            prd = prlprso - F_wlnph(i,j,1)
+*     
+            F_vtout(i,j,kk) = F_vtin(i,j,1) + prd
+     %           * ( F_vtin_top(i,j)- F_vtin(i,j,1))
+     %           / (F_wlnph_top(i,j)-F_wlnph(i,j,1))
+*     
+            F_gzout(i,j,kk) = F_gzin(i,j,1) + prd
+     %           * ( F_gzin_top(i,j)- F_gzin(i,j,1))
+     %           / (F_wlnph_top(i,j)-F_wlnph(i,j,1))
+         else
+*           Above model top
+            prd = prlprso - F_wlnph_top(i,j)
+*     
+            F_vtout(i,j,kk) = F_vtin_top(i,j) + prd
+     %           * (F_vtin_top(i,j) -F_vtin(i,j,2))
+     %           / (F_wlnph_top(i,j)-F_wlnph(i,j,2))
+*     
+            F_gzout(i,j,kk) = F_gzin_top(i,j) - prd
+     %           * Dcst_rgasd_8
+     %           * (F_vtin_top(i,j) + F_vtout(i,j,kk))
+     %           * 0.5
+         endif
+*
+*******************************************************************************
+*                                                                             *
+* If:    output pressure   >   hydrostatic pressure on the                    *
+*                              last level of the model                        *
+*                                                                             *
+* Then:  downward extrapolation                                               *
+*                                                                             *
+* The hypsometric equation is used:                                           *
+*                                                                             *
+*                         /    \                                              *
+*                         | p  |                                              *
+*                    _    |  t |                                              *
+*  fi  - fi   = - R  T ln |----|                                          (1) *
+*    t     b       d      | p  |                                              *
+*                         |  b |                                              *
+*                         \    /                                              *
+*                                                                             *
+*  Here the subscript t and b stand respectively for top and bottom of the    *
+*  considered layer.                                                          *
+*                                                dT                           *
+*  We consider a constant temperature lapse rate --- = - L                    *
+*                                            _   dfi                          *
+*  (e.g. L = STLO) and use the definition of T:                               *
+*                                                                             *
+*          /                \                                                 *
+*          |   fi  - fi     |                                                 *
+*  _       |     t     b    |                                                 *
+*  T = - L |----------------| ,                                           (2) *
+*          |    / T   /   \ |                                                 *
+*          | ln |  t / T  | |                                                 *
+*          |    \   /   b / |                                                 *
+*          \                /                                                 *
+*                                                                             *
+*  into expression (1) and get an expression for T :                          *
+*                                                 b                           *
+*               /                     \                                       *
+*               |         / p   /   \ |                                       *
+*  T  = T   exp | R  L ln |  b / p  | |                                   (3) *
+*   b    t      |  d      \   /   t / |                                       *
+*               \                     /                                       *
+*                                                                             *
+*  Then, we use the definition of L, to get an expression for fi :            *
+*                                                               b             *
+*              /         \                                                    *
+*              | T  - T  |                                                    *
+*              \  t    b /                                                    *
+*  fi  = fi  + ----------- .                                              (4) *
+*    b     t        L                                                         *
+*                                                                             *
+* In the case where L -> 0, we have to revert to expression (1) in which      *
+*        _                                                                    *
+* we use T = T .                                                              *
+*             t                                                               *
+*                                                                             *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                                                                             *
+* At points where we want to use underground temperatures for extrapolation,  *
+* we first determine the layer bottom pressure using (3) rearranged:          *
+*                                                                             *
+*             /    / T   /   \ \                                              *
+*             | ln |  b / T  | |                                              *
+*             |    \   /   t / |                                              *
+* p  = p  exp | -------------- |                                              *
+*  b    t     |      R  L      |                                              *
+*             |       d        |                                              *
+*             \                /                                              *
+*                                                                             *
+* In the case where L -> 0, we have to revert to the expression (1) in which  *
+*        _                                                                    *
+* we use T = T .                                                              *
+*             t                                                               *
+*                                                                             *
+* Then, if the layer bottom pressure is larger than the destination pressure, *
+* we proceed with calculation (3) and (4). Otherwise, we update the variables *
+* at top and bottom for next layer calculation and iterate.                   *
+*                                                                             *
+*******************************************************************************
+      else if ( pnindex(i) .eq. l_nk ) then
+*
+         if(prlprso.le.F_wlnph_bot(i,j))then
+*           Inside last layer (linear interpolation)
+            prd = prlprso - F_wlnph_bot(i,j)
+*     
+            F_vtout(i,j,kk) = F_vtin_bot(i,j) + prd
+     %           * ( F_vtin(i,j,l_nk)- F_vtin_bot(i,j))
+     %           / (F_wlnph(i,j,l_nk)-F_wlnph_bot(i,j))
+*     
+            F_gzout(i,j,kk) = F_gzin_bot(i,j) + prd
+     %           * ( F_gzin(i,j,l_nk)- F_gzin_bot(i,j))
+     %           / (F_wlnph(i,j,l_nk)-F_wlnph_bot(i,j))
+            
+         else            
+*           Below bottom
+
+            do pnund=1,F_nundr
+*
+               if ( F_gzin_bot(i,j) .gt. F_gzund(i,j,pnund) ) go to 30
+*     
+            enddo
+*
+ 30         continue
+*
+            prlptop = F_wlnph_bot(i,j)
+            prvttop = F_vtin_bot(i,j)
+            prfitop = F_gzin_bot(i,j)
+*
+            do 40 pn1=pnund,F_nundr
+*     
+               prvtbot = F_vtund (i,j,pn1)
+               prfibot = F_gzund (i,j,pn1)
+*     
+               if ( abs(prvtbot-prvttop) .le. prsmall ) then
+*     
+                  prlpbot = prlptop + (prfitop-prfibot)/(Dcst_rgasd_8*prvttop)
+*     
+                  if ( prlpbot .ge. prlprso ) then
+*     
+                     F_vtout(i,j,kk) = prvttop
+                     F_gzout(i,j,kk) = prfitop + Dcst_rgasd_8*prvttop*(prlptop-prlpbot)
+                     go to 300
+*     
+                  endif
+*     
+               else
+*     
+                  prl     = - ( prvttop - prvtbot ) / ( prfitop - prfibot )
+                  prlpbot = prlptop + (log(prvtbot/prvttop)) / (Dcst_rgasd_8*prl)
+*     
+                  if ( prlpbot .ge. prlprso ) then
+*     
+                     F_vtout(i,j,kk) = prvttop *
+     %                 exp ( Dcst_rgasd_8 * prl * (prlprso-prlptop))
+                     F_gzout(i,j,kk) = prfitop + (prvttop-F_vtout(i,j,kk)) / prl
+                     go to 300
+*     
+                  endif
+*     
+               endif
+*     
+               prlptop = prlpbot
+               prvttop = prvtbot
+               prfitop = prfibot
+*     
+ 40         continue
+*     
+            if ( abs (F_la(i,j)*180./Dcst_pi_8) .ge. 49.0 ) then
+*
+               prl = .0005
+*     
+            else
+*     
+               prl = Dcst_stlo_8
+*     
+            endif
+*     
+            F_vtout(i,j,kk) = prvttop *
+     %           exp ( Dcst_rgasd_8 * prl * (prlprso-prlptop))
+            F_gzout(i,j,kk) = prfitop + (prvttop-F_vtout(i,j,kk)) / prl
+*     
+         endif
+*     
+*******************************************************************************
+*                                                                             *
+* Else, interpolate between appropriate levels                                *
+*                                                                             *
+*******************************************************************************
+      else
+*
+*        **********************************************************************
+*        *                                                                    *
+*        * NOTE ABOUT "F_linbot"                                              *
+*        *             --------                                               *
+*        *                                                                    *
+*        * this parameter is used to force a linear interpolation in a        *
+*        * certain number of layers (equal to F_linbot) close to the bottom   *
+*        * of the model even if F_cubzt_L is .true.                             *
+*        *                                                                    *
+*        * it has no effect if F_cubzt_L is .false.                             *
+*        *                                                                    *
+*        **********************************************************************
+*
+         pnkm = pnindex(i)
+         pnk  = pnindex(i) + 1
+*
+         prd = F_wlnph(i,j,pnk) - F_wlnph(i,j,pnkm)
+         invprd = prd
+         invprd = 1.0/prd
+*
+         pre = prlprso - 0.5 * ( F_wlnph(i,j,pnk) + F_wlnph(i,j,pnkm) )
+*
+         if ( F_cubzt_L .and. ( pnk .lt. l_nk+1-F_linbot ) ) then
+*
+            prr = 0.125 * prd*prd - 0.5 * pre*pre
+*
+            prfm0 = 0.5 * ( F_gzin(i,j,pnk) + F_gzin(i,j,pnkm) )
+*
+            prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) * invprd
+*
+            prfm2 = - Dcst_rgasd_8
+     %              * ( F_vtin(i,j,pnk) - F_vtin(i,j,pnkm) )
+     %              * invprd
+*
+            prfm3 = - Dcst_rgasd_8 * ( F_vtin(i,j,pnk) + F_vtin(i,j,pnkm) )
+            prfm3 = ( prfm3 - prfm1 - prfm1 ) * invprd*invprd
+*
+            prfl2 = prfm2 + 2.0 * pre * prfm3
+*
+            F_gzout(i,j,kk)= prfm0 + pre * prfm1 - prr * prfl2
+*
+            F_vtout(i,j,kk) = prfm1 + pre * prfl2 - 2.0 * prr * prfm3
+            F_vtout(i,j,kk) = - F_vtout(i,j,kk) / Dcst_rgasd_8
+*
+         else
+*
+            prfm0 = 0.5 * ( F_gzin(i,j,pnk) + F_gzin(i,j,pnkm) )
+*
+            prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) * invprd
+*
+            F_gzout(i,j,kk)= prfm0 + pre * prfm1
+*
+            prfm0 = 0.5 * ( F_vtin(i,j,pnk) + F_vtin(i,j,pnkm) )
+*
+            prfm1 = ( F_vtin(i,j,pnk) - F_vtin(i,j,pnkm) ) * invprd
+*
+            F_vtout(i,j,kk)= prfm0 + pre * prfm1
+*
+         endif
+*
+      endif
+*
+ 300  continue
+*
+ 500  continue
+ 600  continue
+!$omp enddo
+!$omp end parallel
+
+      return
+      end

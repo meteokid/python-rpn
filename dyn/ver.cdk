@@ -1,0 +1,96 @@
+#if defined (DOC)
+*
+***comdeck ver.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  Vertical coordinate parameters                                      |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Ver_toctoc_8       | Vertical positioning record !!                  |
+*--------------------|-------------------------------------------------|
+* Ver_z_8%(t,m)      | Coordinate z on thermo/momentum levels          |
+*----------------------------------------------------------------------|
+* Ver_invz_8%(t,m)   | Inv of coord. z on thermo/momentum levels       |
+*----------------------------------------------------------------------|
+* Ver_nz_8%(t,m)     | Normalized z on thermo/momentum levels          |
+*----------------------------------------------------------------------|
+* Ver_hz_8%(t,m)     | Coordinate z spacing thermo/momentum levels     |
+*----------------------------------------------------------------------|
+* Ver_hyb_8%(t,m)    | hybrid level as defined by user                 |
+*----------------------------------------------------------------------|
+* Ver_hybm_8%(t,m)   | hybrid level calculated by model                |
+*----------------------------------------------------------------------|
+* Ver_pia_8%(t,m)    | variable for the hybrid vertical coordinate     |
+*----------------------------------------------------------------------|
+* Ver_pib_8%(t,m)    | variable for the hybrid vertical coordinate     |
+*----------------------------------------------------------------------|
+* Ver_pibb_8%(t,m)   | variable for the hybrid vertical coordinate     |
+*----------------------------------------------------------------------|
+* Ver_dpib_8%(t,m)   | grad(Ver_pib*)                                  |
+*----------------------------------------------------------------------|
+* Ver_dpia_8%(t,m)   | grad(Ver_dpib*)                                 |
+*----------------------------------------------------------------------|
+* Ver_boz_8%(t,m)    | b/Z                                             |
+*----------------------------------------------------------------------|
+* Ver_wth_8          | weight for thermo to momentum interpolation     |
+*----------------------------------------------------------------------|
+* Ver_dpba_8         | analytical grad(Ver_pib)                        |
+*----------------------------------------------------------------------|
+* Ver_fistr_8        | geopotential basic state                        |
+*-----------------------------------------------------------------------
+*
+#endif
+*
+      type (vertical_8) Ver_z_8  
+      type (vertical_8) Ver_invz_8  
+      type (vertical_8) Ver_nz_8 
+      type (vertical_8) Ver_hz_8 
+      type (vertical_8) Ver_hyb_8
+      type (vertical_8) Ver_hybm_8
+      type (vertical_8) Ver_pia_8
+      type (vertical_8) Ver_pia_spcl_8
+      type (vertical_8) Ver_pib_8
+      type (vertical_8) Ver_pibb_8
+      type (vertical_8) Ver_pibb_spcl_8
+      type (vertical_8) Ver_dpia_8
+      type (vertical_8) Ver_dpib_8
+      type (vertical_8) Ver_boz_8
+      type (vertical_8) Ver_fistr_8
+*
+      type (vertical)   Ver_hyb
+      type (vertical)   Ver_hybm
+      type (vertical)   Ver_pia
+      type (vertical)   Ver_pib
+      type (vertical)   Ver_pibb
+      type (vertical)   Ver_dpia
+      type (vertical)   Ver_dpib
+*
+*
+      MARK_COMMON_BEG (ver_v)
+      common /ver_v/ Ver_hyb,Ver_hybm,Ver_pia,Ver_pib,Ver_pibb,
+     $     Ver_dpia,Ver_dpib
+      MARK_COMMON_END (ver_v)
+*
+      MARK_COMMON_BEG (ver_v8)
+      common /ver_v8/ Ver_z_8,Ver_invz_8,Ver_nz_8,Ver_hz_8,Ver_hyb_8,
+     $     Ver_hybm_8,Ver_pia_8,Ver_pib_8,Ver_pibb_8,Ver_dpia_8,
+     $     Ver_dpib_8,Ver_boz_8,Ver_fistr_8,Ver_pia_spcl_8,
+     $     Ver_pibb_spcl_8
+      MARK_COMMON_END (ver_v8)
+*
+      DCL_DYNVAR(Ver, wth_8   , real*8, (2,*))
+*
+      DCL_DYNVAR(Ver, dpba   , real  ,   (*))
+      DCL_DYNVAR(Ver, dpba_8 , real*8,   (*))
+      DCL_DYNVAR(Ver, toctoc_8, real*8,   (3,*))
+*
+      real*8 Ver_alphas_8,Ver_css_8,Ver_cssp_8,Ver_epsilon_8
+      real*8 Ver_alphat_8,Ver_cst_8,Ver_cstp_8,Ver_gamma_8
+      MARK_COMMON_BEG (alphast)      
+      common / alphast / Ver_alphas_8,Ver_alphat_8,Ver_css_8,Ver_cst_8,
+     $     Ver_cssp_8,Ver_cstp_8,Ver_epsilon_8,Ver_gamma_8
+      MARK_COMMON_END (alphast)
+*

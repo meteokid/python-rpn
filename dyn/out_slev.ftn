@@ -46,7 +46,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          Out_kind=0
          Out_prefix_S(2:2) = 'h'
       endif         
-      if (F_levtyp_S.eq.'M') then
+      if (F_levtyp_S.eq.'M'.or.F_levtyp_S.eq.'T') then
          Out_kind=F_kind
          Out_prefix_S(2:2) = 'm'
       endif

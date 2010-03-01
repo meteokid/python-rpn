@@ -13,18 +13,9 @@
 * vt2                | y component of velocity                         |
 * wt2                | z component of velocity                         |
 * tt2                | T (temperature)                                 |
-* tdt2               | total divergence (dpi* dot / dpi* + D )         |
-* fit2               | phi (geopotential)                              |
-* qt2                | q = ln p                                        |
 *--------------------|-------------------------------------------------|
-* tpt2               | T'       \                                      |
-* fipt2              | phi'      \  perturbations                      |
-* qpt2               | q'        /                                     |
-* pipt2              | pi'      /                                      |
+* qsect2             | q''       /                                     |
 *--------------------|-------------------------------------------------|
-* tplt2              | T'  linear                                      |
-*--------------------|-------------------------------------------------|
-* mut2               | nonhydro index mu=dp/dpi-1 [= 0 if hydro]       |
 * psdt2              | pi* dot (vert. vel. in pi* coord.)              |
 * st2                | ln (pi_s/z_s)                                   |
 *--------------------|-------------------------------------------------|
@@ -48,22 +39,14 @@
 *changes to assure the equivalence statement below MARKS it.
 *
       MARK_COMMON_BEG(vt2)
-      DCL_VMMVAR( vt2,   ut2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,   vt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,   wt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,   tt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,  tdt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,  fit2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,   qt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,  tpt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2, fipt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,  qpt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2, pipt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2, tplt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,  mut2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2, psdt2, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt2,   st2, real, (LDIST_SHAPE)      )
-      DCL_VMMVAR( vt2,  trt2, real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( vt2,   ut2, real, (LDIST_SHAPE,l_nk    ) )
+      DCL_VMMVAR( vt2,   vt2, real, (LDIST_SHAPE,l_nk    ) )
+      DCL_VMMVAR( vt2,   wt2, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2,   tt2, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2,qsect2, real, (LDIST_SHAPE,0:l_nk+1) )
+      DCL_VMMVAR( vt2, psdt2, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2,   st2, real, (LDIST_SHAPE)        )
+      DCL_VMMVAR( vt2,  trt2, real, (LDIST_SHAPE,l_nk+1,*) )
       DCL_VMMVAR( vt2,   xt2, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vt2,   yt2, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vt2,   zt2, real, (LDIST_SHAPE,l_nk) )

@@ -61,6 +61,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "type.cdk"
 #include "adw.cdk"
 ************************************************************************
       integer n, nijag,i,j,k,nij

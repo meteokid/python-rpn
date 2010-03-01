@@ -1,21 +1,22 @@
 ***s/r p_vmmphy - load all fields required by the physics
+*                 we assume a hydrostatic atmosphere 
 *
 #include "model_macros_f.h"
 *
-      subroutine p_vmmphy( F_up, F_vp, F_wp, F_tp, F_qp, F_trp,
+      subroutine p_vmmphy( F_up, F_vp, F_wp, F_tp, F_pp, F_trp,
      $                     F_um,F_vm,F_tm,F_gzm,F_topo,  F_trm,
      $                     F_lnpsm, F_sig, DIST_DIM, Nk )
 *
       implicit none
 *
       integer DIST_DIM,Nk
-      real F_up (DIST_SHAPE,Nk), F_vp (DIST_SHAPE,Nk)  ,
-     $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk)  , 
-     $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
-     $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk)  ,
-     $     F_tm (DIST_SHAPE,Nk), F_gzm (DIST_SHAPE,Nk), 
-     $     F_topo(DIST_SHAPE) ,  F_trm(DIST_SHAPE,Nk,*),
-     $     F_lnpsm(DIST_SHAPE),  F_sig(DIST_SHAPE,Nk)  
+      real F_up (DIST_SHAPE,Nk+2), F_vp (DIST_SHAPE,Nk+2)  ,
+     $     F_wp (DIST_SHAPE,Nk+2), F_tp (DIST_SHAPE,Nk+2)  , 
+     $     F_pp (DIST_SHAPE,Nk+2), F_trp(DIST_SHAPE,Nk+2,*),
+     $     F_um (DIST_SHAPE,Nk+2), F_vm (DIST_SHAPE,Nk+2)  ,
+     $     F_tm (DIST_SHAPE,Nk+2), F_gzm(DIST_SHAPE,Nk+2), 
+     $     F_topo(DIST_SHAPE) ,    F_trm(DIST_SHAPE,Nk+2,*),
+     $     F_lnpsm(DIST_SHAPE),    F_sig(DIST_SHAPE,Nk+2)  
 *
 *author
 *     Michel Roch - rpn - april 1994
@@ -27,6 +28,7 @@
 * v3_12 - Leduc A-M.        - Add arguments gzm and topo
 * v3_20 - Lee V.            - Corrected loop i=1,p_nj to i-1,p_ni
 * v3_21 - Desgagne M.       - Revision Openmp
+* v3_?  - Gravel S.         - Vertically staggered model
 *
 *object
 *
@@ -38,65 +40,79 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
+#include "func.cdk"
 #include "schm.cdk"
 #include "p_cond.cdk"
 #include "p_bus.cdk"
 #include "inuvl.cdk"
-#include "vt1.cdk"
 #include "vt0.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
 #include "busind.cdk"
 #include "p_geof.cdk"
-*
+#include "type.cdk"
+#include "ver.cdk"
+* 
 **
       integer  vmmlod,vmmget,vmmuln
       external vmmlod,vmmget,vmmuln
 *
       integer*8 pnt_trp(phyt_ntr),pnt_trm(phyt_ntr)
-      integer err, key(15), i, j, k, n, i0, j0, in, jn, nksurf,
-     $        keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
-      real dt, dzmin, dzmin_, sigsfc, trp, trm
-      real wk1(LDIST_SHAPE),wk2(LDIST_SHAPE),wk3(LDIST_SHAPE),
-     $     wk4(LDIST_SHAPE)
+      integer err, key(15), i, j, k, n, nik, nikp, nksurf,
+     $        keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_, pnlod
+      real dt, dzmin, dzmin_, sigsfc, trp, trm, pm, pp, pt
+      real ytmp(l_ni,l_nj),xtmp(l_ni,nk+2),wtmp(l_ni,nk+1),ztmp(l_ni,l_nj)
+      real r0,s0,aaa,bbb,ccc,ddd,eee,a0,b0,c0,c1
+      real one,half,quarter
       pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
+      parameter( one=1.0, half=0.5, quarter=0.25 )
+      real :: f_a(DIST_SHAPE,2),f_b(DIST_SHAPE,2), f_c(2)
+      real :: p_csh(DIST_SHAPE)
 *
 *     ________________________________________________________________
+*
+*     calculate interpolation factor
+*
 *
       key( 1) = VMM_KEY(ut0)
       key( 2) = VMM_KEY(vt0)
       key( 3) = VMM_KEY(tt0)
-      key( 4) = VMM_KEY(ut1)
-      key( 5) = VMM_KEY(vt1)
-      key( 6) = VMM_KEY(tt1)
-      key( 7) = VMM_KEY(fit1)
-      key( 8) = VMM_KEY(topo)
-      key( 9) = VMM_KEY(qt0)
-      key(10) = VMM_KEY(qt1)
-      key(11) = VMM_KEY(st1)
-      key(12) = VMM_KEY(psdt1)
-      key(13) = VMM_KEY(tdt1)
-      err = vmmlod(key,13)
+      key( 4) = VMM_KEY(st0)
+      key( 5) = VMM_KEY(fiptx)
+      key( 6) = VMM_KEY(ut1)
+      key( 7) = VMM_KEY(vt1)
+      key( 8) = VMM_KEY(tt1)
+      key( 9) = VMM_KEY(topo)
+      key(10) = VMM_KEY(psdt1)
+      key(11) = VMM_KEY(csh)
+      key(12) = VMM_KEY(piup)
+      key(13) = VMM_KEY(st1)
+      pnlod = 13
+      if (.not. Schm_hydro_L ) then
+        key(14) = VMM_KEY(qsect0)
+        key(15) = VMM_KEY(qsect1)
+        pnlod = 15
+      endif
+
+      err = vmmlod(key,pnlod)
       err = VMM_GET_VAR(ut0)
       err = VMM_GET_VAR(vt0)
       err = VMM_GET_VAR(tt0)
+      err = VMM_GET_VAR(st0)
+      err = VMM_GET_VAR(fiptx)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(fit1)
       err = VMM_GET_VAR(topo)
-      err = VMM_GET_VAR(qt0)
-      err = VMM_GET_VAR(qt1)
-      err = VMM_GET_VAR(st1)
       err = VMM_GET_VAR(psdt1)
-      err = VMM_GET_VAR(tdt1)
-      if (.not.Schm_hydro_L) then
-         key(14) = VMM_KEY(qpt0)
-         key(15) = VMM_KEY(qpt1)
-         err = vmmlod(key(14),2)
-         err = VMM_GET_VAR(qpt0)
-         err = VMM_GET_VAR(qpt1)
+      err = VMM_GET_VAR(csh)
+      err = VMM_GET_VAR(piup)
+      err = VMM_GET_VAR(st1)
+      if (.not. Schm_hydro_L ) then
+         err = VMM_GET_VAR(qsect0)
+         err = VMM_GET_VAR(qsect1)
       endif
 *
       keyp_ = VMM_KEY (trt1)
@@ -116,89 +132,212 @@
          end do
       endif  
 *
-****************************************************
-*   Copy variables at time t- and t* in workfields *
-****************************************************
+*****************************************************************
+*   Copy variables at time t- and t* in workfields              *
+*                                                               *
+*     Physics is called for nkphy levels, where nkphy= G_nk+2   *
+*     i.e. refering to subroutine genab2_8, the 2 'special'     *
+*     levels near the top and bottom, the (G_nk-1) levels       *
+*     corresponding to Ver_z_8%t(2) to Ver_z_8%t(G_nk), plus    *
+*     the surface                                               *
+*****************************************************************
 *
-!$omp parallel
+*     compute vertical omega
+*     -----------------------
 *
-!$omp do
-      do k=1,l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni 
-            F_um(i,j,k) =  ut0(i,j,k)
-            F_vm(i,j,k) =  vt0(i,j,k)
-            F_tm(i,j,k) =  tt0(i,j,k)
-            F_gzm(i,j,k)=  fit1(i,j,k)
-            F_up(i,j,k) =  ut1(i,j,k)
-            F_vp(i,j,k) =  vt1(i,j,k)
-            F_tp(i,j,k) =  tt1(i,j,k)
-         end do
-         end do
-         if (Schm_hydro_L) then
-            do j= 1, l_nj
-            do i= 1, l_ni 
-               F_qp(i,j,k) = qt1(i,j,k)
-            end do
-            end do
-         else
-            do j= 1, l_nj
-            do i= 1, l_ni 
-               F_qp(i,j,k) = qt1(i,j,k) - qpt1(i,j,k) 
-            end do
-            end do
-         endif
-      end do
-!$omp enddo
+c      call calomeg (F_wp,psdt1,ut1,vt1,csh,LDIST_DIM,nk,1,l_ni,1,l_nj)
+      call calomeg_adv (F_wp,st1,piup,LDIST_DIM,Nk,.false.)
+*
+      nik  = l_ni*(nk+1)
+      nikp = l_ni*(nk+2)
+!$omp parallel private (r0,s0,xtmp,wtmp,ztmp)
+*
+*     calculate interpolation coefficient for temperature at time
+*     t-dt
 *
 !$omp do
       do j= 1, l_nj
          do i= 1, l_ni
-            F_topo(i,j) = topo(i,j)
+            ytmp(i,j) = st0(i,j)*.5
          end do
-         if (Schm_hydro_L) then
-            do i= 1, l_ni
-               F_lnpsm(i,j) = qt0(i,j,l_nk)
-            end do
-         else
-            do i= 1, l_ni 
-               F_lnpsm(i,j) = qt0(i,j,l_nk) - qpt0(i,j,l_nk) 
-            end do
-         endif
+         call vsexp  ( ytmp(1,j) , ytmp(1,j), l_ni )
+         do i= 1, l_ni
+            p_csh(i,j)=2.*ytmp(i,j)*sinh(st0(i,j)*.5)
+         end do
       end do
 !$omp enddo
+      call p_factor(f_a,f_b,f_c,p_csh,qsect0,LDIST_DIM,G_nk)
 *
-*     compute sigma levels from F_qp
-*     --------------------------------
+*     calculate extrapolation coefficients for momentum variables
+*     for top and bottom special levels (r0,s0)
 *
 !$omp do
-      do k=1,l_nk
       do j=1,l_nj
-      do i=1,l_ni 
-         F_sig(i,j,k) = exp(F_qp(i,j,k)-F_qp(i,j,l_nk))
-      end do
-      end do
+         r0 = (half*(Ver_z_8%t(1)+Ver_z_8%m(1))-Ver_z_8%m(2))
+     %              /(Ver_z_8%m(1)-Ver_z_8%m(2))
+         s0 = (half*(Ver_z_8%t(nk+1)+Ver_z_8%m(nk))-Ver_z_8%m(nk-1))
+     %              /(Ver_z_8%m(nk)-Ver_z_8%m(nk-1))
+
+         do i= 1, l_ni 
+            F_tm(i,j,1) =  (f_b(i,j,1)*tt0(i,j,1) + f_c(1))
+     %                     /f_a(i,j,1)
+            F_um(i,j,1) =  r0*ut0(i,j,1)   +(one-r0)*ut0(i,j,2)
+            F_vm(i,j,1) =  r0*vt0(i,j,1)   +(one-r0)*vt0(i,j,2)
+            F_tm(i,j,nk+1) =  (f_b(i,j,2)*tt0(i,j,nk+1) + f_c(2))
+     %                     /f_a(i,j,2)
+            F_um(i,j,nk+1) =  s0*ut0(i,j,nk)   +(one-s0)*ut0(i,j,nk-1)
+            F_vm(i,j,nk+1) =  s0*vt0(i,j,nk)   +(one-s0)*vt0(i,j,nk-1)
+         end do
       end do
 !$omp enddo
 *
-      call calomeg (F_wp,psdt1,tdt1,st1,LDIST_DIM,l_nk,1,l_ni,1,l_nj)
+*     calculate interpolation coefficient for temperature at time
+*     t
 *
+      call p_factor(f_a,f_b,f_c,csh,qsect1,LDIST_DIM,G_nk)
+*
+!$omp do
+      do j=1,l_nj
+         r0 = (half*(Ver_z_8%t(1)+Ver_z_8%m(1))-Ver_z_8%m(2))
+     %              /(Ver_z_8%m(1)-Ver_z_8%m(2))
+         s0 = (half*(Ver_z_8%t(nk+1)+Ver_z_8%m(nk))-Ver_z_8%m(nk-1))
+     %              /(Ver_z_8%m(nk)-Ver_z_8%m(nk-1))
+
+         do i= 1, l_ni 
+            F_tp(i,j,1) =  (f_b(i,j,1)*tt1(i,j,1) + f_c(1))
+     %                     /f_a(i,j,1)
+            F_up(i,j,1) =  r0*ut1(i,j,1)   +(one-r0)*ut1(i,j,2)
+            F_vp(i,j,1) =  r0*vt1(i,j,1)   +(one-r0)*vt1(i,j,2)
+            F_pp(i,j,nk+2) =  Ver_z_8%t(nk+1)*(one + csh(i,j))
+            F_pp(i,j,1) =  Ver_pia_spcl_8%t(1) +
+     %                     Ver_pibb_spcl_8%t(1)*F_pp(i,j,nk+2)
+            F_tp(i,j,nk+1) =  (f_b(i,j,2)*tt1(i,j,nk+1) + f_c(2))
+     %                     /f_a(i,j,2)
+            F_up(i,j,nk+1) =  s0*ut1(i,j,nk)   +(one-s0)*ut1(i,j,nk-1)
+            F_vp(i,j,nk+1) =  s0*vt1(i,j,nk)   +(one-s0)*vt1(i,j,nk-1)
+            F_pp(i,j,nk+1) =  Ver_pia_spcl_8%t(nk+1) +
+     %               Ver_pibb_spcl_8%t(nk+1)*F_pp(i,j,nk+2)
+         end do
+
+         do k= 2, nk
+         do i= 1, l_ni 
+            F_um(i,j,k) =  half*(ut0(i,j,k)+ut0(i,j,k-1))
+            F_vm(i,j,k) =  half*(vt0(i,j,k)+vt0(i,j,k-1))
+            F_tm(i,j,k) =  tt0(i,j,k)
+            F_up(i,j,k) =  half*(ut1(i,j,k)+ut1(i,j,k-1))
+            F_vp(i,j,k) =  half*(vt1(i,j,k)+vt1(i,j,k-1))
+            F_tp(i,j,k) =  tt1(i,j,k)
+            F_pp(i,j,k) =  
+     %               Ver_pia_spcl_8%t(k) +
+     %               Ver_pibb_spcl_8%t(k)*F_pp(i,j,nk+2)
+         end do
+         end do
+      end do
+!$omp enddo
+*
+*     correct for vertical motion at top and bottom
+*     prepare estimate of gz(t-dt) 
+*     -----------------------------------------------------------------
+!$omp do
+      do j=1,l_nj
+         do i= 1, l_ni
+            F_wp(i,j,1) = quarter*(3.*F_wp(i,j,1) + F_wp(i,j,2))
+            F_wp(i,j,nk+1) = quarter*(F_wp(i,j,nk) + 3.*F_wp(i,j,nk+1))
+            ztmp(i,j)=st0(i,j)
+         enddo
+         call vsexp (ztmp(1,j),ztmp(1,j),l_ni)
+*
+         do i= 1, l_ni
+            xtmp(i,1) = Ver_pia_8%t(1)
+            xtmp(i,nk+2) = Ver_pia_8%t(nk+1) + Ver_pib_8%t(nk+1)*ztmp(i,j)
+            wtmp(i,1) = Ver_pia_spcl_8%t(1) +
+     $                  Ver_pibb_spcl_8%t(1)*Cstv_pisrf_8*ztmp(i,j)
+            F_gzm(i,j,nk+2) =  topo(i,j)
+         enddo
+         do k= 2, nk+1
+         do i= 1, l_ni
+            xtmp(i,k) = Ver_pia_8%m(k-1) + Ver_pib_8%m(k-1)*ztmp(i,j)
+            wtmp(i,k) = Ver_pia_spcl_8%t(k) +
+     $                  Ver_pibb_spcl_8%t(k)*Cstv_pisrf_8*ztmp(i,j)
+            F_gzm(i,j,k) = fiptx(i,j,k-1)+Ver_fistr_8%m(k-1)
+         enddo
+         enddo
+         do i= 1, l_ni
+            F_gzm(i,j,1) = fiptx(i,j,1)+Ver_fistr_8%m(1)
+     $                   + 2.*Dcst_rgasd_8*f_tm(i,j,1)
+     $                   *(xtmp(i,2)-xtmp(i,1))/(xtmp(i,2)+xtmp(i,1))
+         enddo
+*
+         call vslog(xtmp,xtmp,nikp)
+         call vslog(wtmp,wtmp,nik)
+*
+         do k= 1, nk+1
+         do i= 1, l_ni
+            r0 = xtmp(i,k+1)-xtmp(i,k)
+            xtmp(i,k) = xtmp(i,k+1)-wtmp(i,k)
+            wtmp(i,k) = r0
+         enddo
+         enddo
+         call vsrec(wtmp,wtmp,nik)
+*
+         do k= 1, nk+1
+         do i= 1, l_ni
+            r0 = wtmp(i,k)*xtmp(i,k)
+            F_gzm(i,j,k) = r0*F_gzm(i,j,k) + (one-r0)*F_gzm(i,j,k+1)
+         end do
+         end do
+*
+*C       put information in surface level (only pressure is relevant
+*        other values will be ignored by the physics
+*        -----------------------------------------------------------
+         do i= 1, l_ni
+            F_topo(i,j) = topo(i,j)
+            F_lnpsm(i,j)= dlog(ztmp(i,j)*Cstv_pisrf_8 )
+            F_um(i,j,nk+2) = F_um(i,j,nk+1) 
+            F_vm(i,j,nk+2) = F_vm(i,j,nk+1) 
+            F_tm(i,j,nk+2) = tt0(i,j,nk+1) 
+            F_gzm(i,j,nk+2)= topo(i,j) 
+            F_up(i,j,nk+2) = F_up(i,j,nk+1) 
+            F_vp(i,j,nk+2) = F_vp(i,j,nk+1) 
+            F_tp(i,j,nk+2) = tt1(i,j,nk+1) 
+            F_wp(i,j,nk+2) = F_wp(i,j,nk+1) 
+         end do
+*
+*     compute sigma levels from F_pp
+*     --------------------------------
+*
+         do k=1,nk+2
+         do i=1,l_ni 
+            F_sig(i,j,k) = F_pp(i,j,k)/F_pp(i,j,nk+2)
+         end do
+         end do
+*
+      end do
+!$omp enddo
 *C    interpolate wind images at time t1 and t2
 *     -----------------------------------------
 *
-      call p_uvgridscal ( F_up, F_vp, LDIST_DIM, l_nk, .true. )
-      call p_uvgridscal ( F_um, F_vm, LDIST_DIM, l_nk, .true. )
+      call p_uvgridscal ( F_up, F_vp, LDIST_DIM, nk+2, .true. )
+      call p_uvgridscal ( F_um, F_vm, LDIST_DIM, nk+2, .true. )
 *
       do n=1,phyt_ntr
          patrp = pnt_trp(n)
          patrm = pnt_trm(n)
 !$omp do
-         do k=1,l_nk
+         do k=1,nk+1
          do j= 1, l_nj 
          do i= 1, l_ni 
             F_trp(i,j,k,n) =  trp(i,j,k)
             F_trm(i,j,k,n) =  trm(i,j,k)
          end do
+         end do
+         end do
+!$omp enddo
+!$omp do
+         do j= 1, l_nj 
+         do i= 1, l_ni 
+            F_trp(i,j,nk+2,n) =  trp(i,j,nk+1)
+            F_trm(i,j,nk+2,n) =  trm(i,j,nk+1)
          end do
          end do
 !$omp enddo
@@ -224,20 +363,20 @@
 *
       dt = Cstv_dt_8
       sigsfc=1.-(min(dt,P_cond_dzsedi))/10000.
-      do k=G_nk-1,1,-1     
-         if (geomg_hybm(k).lt.sigsfc) go to 100
+      do k=G_nk+1,1,-1     
+         if (Ver_hybm%t(k).lt.sigsfc) go to 100
       end do
- 100  nksurf = min(G_nk-1,k+1)
+ 100  nksurf = min(G_nk+1,k+1)
 *
       dzmin_=1.e+5
-      if ( nksurf .eq. G_nk-1 ) then
+      if ( nksurf .eq. G_nk+1 ) then
 *C                                     The sedimentation is made
 *C                                     over all model levels
         do j= 1, p_nj
         do i= 1, p_ni 
          dzmin_= min(1.0d0*(dzmin_),
-     $         Dcst_rgasd_8*(1.0d0*(F_tp(i,j,G_nk-1)+F_tp(i,j,G_nk-2)))/2.d0/
-     $         Dcst_grav_8 * log(1.0d0*(geomg_hybm(G_nk-1)/geomg_hybm(G_nk-2))))
+     $         Dcst_rgasd_8*(1.0d0*(F_tp(i,j,G_nk+1)+F_tp(i,j,G_nk)))/2.d0/
+     $         Dcst_grav_8 * log(1.0d0*(Ver_hybm%t(G_nk+1)/Ver_hybm%t(G_nk))))
         end do
         end do
 *
@@ -248,10 +387,10 @@
         do i= 1, p_ni
          dzmin_= min(1.0d0*(dzmin_),
      $      Dcst_rgasd_8*(1.0d0*(F_tp(i,j,nksurf-1)+F_tp(i,j,nksurf-2)))/2.d0/
-     $      Dcst_grav_8 *log(1.0d0*(geomg_hybm(nksurf-1)/geomg_hybm(nksurf-2))))
+     $      Dcst_grav_8 *log(1.0d0*(Ver_hybm%t(nksurf-1)/Ver_hybm%t(nksurf-2))))
          dzmin_= min(1.0d0*(dzmin_),
-     $      Dcst_rgasd_8*(1.0d0*(F_tp(i,j,G_nk-1)+F_tp(i,j,nksurf-1)))/2.d0/
-     $      Dcst_grav_8 *log(1.0d0*(geomg_hybm(G_nk-1)/geomg_hybm(nksurf-1))))
+     $      Dcst_rgasd_8*(1.0d0*(F_tp(i,j,G_nk+1)+F_tp(i,j,nksurf-1)))/2.d0/
+     $      Dcst_grav_8 *log(1.0d0*(Ver_hybm%t(G_nk+1)/Ver_hybm%t(nksurf-1))))
         end do
         end do
 *

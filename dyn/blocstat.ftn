@@ -26,11 +26,14 @@
 #include "glb_ld.cdk"
 #include "step.cdk"
 #include "vt1.cdk"
+#include "vtx.cdk"
 #include "lctl.cdk"
 #include "ptopo.cdk"
 #include "v4dg.cdk"
 #include "tr3d.cdk"
+#include "type.cdk"
 #include "adw.cdk"
+#include "schm.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
@@ -38,7 +41,7 @@
 
       integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf
       integer err, key(max(Tr3d_ntr,5)), key0, trunc(4)
-      real tr,buf(l_ni,G_nk),cfl
+      real tr,buf(l_ni,G_nk+1),cfl
       pointer (patr, tr(LDIST_SHAPE,*))
 *     ---------------------------------------------------------------
 *
@@ -51,7 +54,7 @@
       key(1)  = VMM_KEY(ut1)
       key(2)  = VMM_KEY(vt1)
       key(3)  = VMM_KEY(tt1)
-      key(4)  = VMM_KEY(fit1)
+      key(4)  = VMM_KEY(fiptx)
       key(5)  = VMM_KEY(psdt1)
 *
       err = vmmlod(key,5)
@@ -59,7 +62,7 @@
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(fiptx)
       err = VMM_GET_VAR(psdt1)
 *
       if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
@@ -72,11 +75,11 @@
       if (G_lam) then
            inn=1
       endif
-      call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,i0,in-inn,j0,jn,1,G_nk)
-      call glbstat (vt1  ,'VV',LDIST_DIM,G_nk,i0,in,j0,jn-1  ,1,G_nk)
-      call glbstat (psdt1,'WW',LDIST_DIM,G_nk,i0,in,j0,jn    ,1,G_nk)
-      call glbstat (tt1  ,'TT',LDIST_DIM,G_nk,i0,in,j0,jn    ,1,G_nk)
-      call glbstat (fit1 ,'GZ',LDIST_DIM,G_nk,i0,in,j0,jn    ,1,G_nk)
+      call glbstat (ut1  ,'UU',LDIST_DIM,G_nk  ,i0,in-inn,j0,jn  ,1,G_nk  )
+      call glbstat (vt1  ,'VV',LDIST_DIM,G_nk  ,i0,in    ,j0,jn-1,1,G_nk  )
+      call glbstat (psdt1,'WW',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
+      call glbstat (tt1  ,'TT',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
+      call glbstat (fiptx,'GZ',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
 *
 *    Comment the above glbstats and uncomment the following lines for
 *    GLBSTAT for LAM versus GLB acid test
@@ -92,11 +95,14 @@
          err = vmmlod(key,Tr3d_ntr)  
          do k=1,Tr3d_ntr
             err = vmmget(key(k),patr,tr)
-            call glbstat (tr,Tr3d_name_S(k),LDIST_DIM,G_nk,i0,in,j0,jn,
-     $                                                          1,G_nk)
+            call glbstat (tr,Tr3d_name_S(k),LDIST_DIM,G_nk+1,i0,in,j0,jn,
+     $                                                          1,G_nk+1)
          end do
          err = vmmuld(key,Tr3d_ntr)
       endif
+*
+      if(Schm_theoc_L)
+     $   call lipschitz(ut1, vt1, psdt1, LDIST_DIM, G_Nk, i0,in,j0,jn)
 *
 *
       if (Ptopo_myproc.eq.0) write(6,1001)

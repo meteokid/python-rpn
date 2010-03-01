@@ -37,8 +37,9 @@
 #include "out3.cdk"
 #include "out.cdk"
 #include "outd.cdk"
-#include "geomg.cdk"
 #include "tr3d.cdk"
+#include "type.cdk"
+#include "ver.cdk"
 *
 *
 **
@@ -74,7 +75,7 @@
            do idx=1,Tr3d_ntr
               if ( Outd_var_S(ii,F_set)(1:2).eq.Tr3d_name_S(idx) ) then
                    pnerr = vmmget(F_trkey0(idx),patr,tr)
-                   call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+                   call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%d,
      $             Outd_var_S(ii,F_set),1.0,0.0,Out_kind,F_nk, F_indo, F_nko, 
      $             Outd_nbit(ii,F_set) )
               endif
@@ -83,7 +84,7 @@
            do idx=1,Tr3d_ntr
               if ( Outd_var_S(ii,F_set)(1:2).eq.Tr3d_name_S(idx) ) then
                    pnerr = vmmget(F_trkey1(idx),patr,tr)
-                   call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+                   call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%d,
      $             Outd_var_S(ii,F_set),1.0,0.0,Out_kind,F_nk, F_indo, F_nko, 
      $             Outd_nbit(ii,F_set) )
               endif

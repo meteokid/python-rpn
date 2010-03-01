@@ -13,15 +13,6 @@
 * geomg_y_8          | latitude                                        |
 * geomg_xu_8         | longitude                                       |
 * geomg_yv_8         | latitude                                        |
-* geomg_z_8          | pi* level                                       |
-* geomg_hyb          | hybrid level as defined by user                 |
-* geomg_hybm         | hybrid level calculated by model                |
-* geomg_pia          | variable for the hybrid vertical coordinate     |
-* geomg_pib          | variable for the hybrid vertical coordinate     |
-* geomg_pibb         | variable for the hybrid vertical coordinate     |
-* geomg_dpib         | grad(geomg_pib)                                 |
-* geomg_dpia         | grad(geomg_dpib)                                |
-* geomg_dpba         | analytical grad(geomg_pib)                      |
 *--------------------|-------------------------------------------------|
 *                    | 2 variables for diffusion operators             |
 * geomg_wxs_8        | weight for zonal averaging (x direction)        |
@@ -67,18 +58,8 @@
       DCL_DYNVAR(Geomg, hsyv_8,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, wxs_8 ,  real*8, (XDIST_SHAPE))
       DCL_DYNVAR(Geomg, ys_8  ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, z_8   ,  real*8, (*))
-      DCL_DYNVAR(Geomg, hz_8  ,  real*8, (*))
       DCL_DYNVAR(Geomg, invhx_8  ,  real*8, (XDIST_SHAPE))
       DCL_DYNVAR(Geomg, invhsy_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invcy2_8 ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, invhsyv_8,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invz_8   ,  real*8, (*))
-      DCL_DYNVAR(Geomg, hyb   ,  real  , (*))
-      DCL_DYNVAR(Geomg, hybm  ,  real  , (*))
-      DCL_DYNVAR(Geomg, pia   ,  real  , (*))
-      DCL_DYNVAR(Geomg, pib   ,  real  , (*))
-      DCL_DYNVAR(Geomg, pibb   ,  real  , (*))
-      DCL_DYNVAR(Geomg, dpia   ,  real  , (*))
-      DCL_DYNVAR(Geomg, dpib   ,  real  , (*))
-      DCL_DYNVAR(Geomg, dpba   ,  real  , (*))
 *

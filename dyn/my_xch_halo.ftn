@@ -1,0 +1,42 @@
+***s/r my_xch_halo - 
+*
+#include "model_macros_f.h"
+*
+      subroutine my_xch_halo(num)
+      implicit none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "p_geof.cdk"
+ 
+      integer num
+c      integer  vmmlod,vmmget,vmmuld
+c      external vmmlod,vmmget,vmmuld
+c      integer key1(10),nvar,err
+*
+      real toto(LDIST_SHAPE)
+
+c      key1(1)=VMM_KEY(topo)
+c      nvar=1
+c      err=VMM_GET_VAR(topo)
+      
+
+      print*,'MY_xch_halo NUM=',num
+      call flush(6)
+      
+      print*,'AVANT ACTION'
+      call flush(6)
+      
+      call rpn_comm_xch_halo (toto,LDIST_DIM,l_ni,l_nj,1,
+     $     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )      
+
+c      call rpn_comm_xch_halo (topo,LDIST_DIM,l_ni,l_nj,1,
+c     $     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )      
+
+      print*,'APRES ACTION'
+      call flush(6)
+
+c      err = vmmuld(-1,0)
+
+      return
+      end

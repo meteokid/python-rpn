@@ -33,9 +33,11 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          write(6,100)
       endif
 *
-      if (numproc.gt.1) 
-     $   call constnt_x (rdval,ier,liste(i),4,RPN_COMM_bcst_x,
+      if (numproc.gt.1) then
+         
+         call constnt_x (rdval,ier,liste(i),4,RPN_COMM_bcst_x,
      $                                          8,0,0,ierrmpi)
+      endif
 *
       do i=1,nbre
          call constnt (val(i),flag(i),liste(i),100)

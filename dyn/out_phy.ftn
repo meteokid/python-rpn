@@ -37,7 +37,6 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "glb_pil.cdk"
 #include "dcst.cdk"
 #include "dimout.cdk"
-#include "geomg.cdk"
 #include "geomn.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
@@ -51,6 +50,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "outp.cdk"
 #include "ptopo.cdk"
 #include "v4dg.cdk"
+#include "type.cdk"
+#include "ver.cdk"
 *
 **
       character*4 ext_S
@@ -105,13 +106,12 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
             grille_x1 = min( Grid_x1(outp_grid(kk)), G_ni - Lam_pil_e + p_nmp )
             grille_y0 = max( 1+Lam_pil_s - p_nmp,Grid_y0(outp_grid(kk)) )
             grille_y1 = min( Grid_y1(outp_grid(kk)), G_nj - Lam_pil_n + p_nmp )
-            if (G_lam .and. 
+            if (G_lam .and.
      $                 ( grille_x0.ne.Grid_x0(outp_grid(kk)).or.
      $                   grille_x1.ne.Grid_x1(outp_grid(kk)).or.
      $                   grille_y0.ne.Grid_y0(outp_grid(kk)).or.
      $                   grille_y1.ne.Grid_y1(outp_grid(kk)) ) )
      $                   ig1=Grid_ig1(outp_grid(kk))+100
-
             call out_sgrid(grille_x0,grille_x1,grille_y0,grille_y1,
      $                   periodx_L,
      $                   ig1,Grid_ig2(outp_grid(kk)),
@@ -121,7 +121,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          nk_o =  Level_max(levset)
          allocate (ind_o(nk_o+1))
          call out_slev(Level_typ(levset),Level(1,levset),
-     $                 ind_o,nk_o,G_nk,Level_kind_ip1,'p')
+     $                 ind_o,nk_o,G_nk+2,Level_kind_ip1,'p')
          call out_sfile(Out3_closestep,stepno,etikadd_S,ip3,ext_S)
          if (Level_typ(levset).eq.'M') then
          do ii=1, Outp_var_max(kk)
@@ -130,22 +130,29 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
                     if (obus_shp(j).gt.1) then
 *                   3D field
+                       rff(1)= (Ver_hyb%t(1)+Ver_hyb%m(1))/2.
+                       do i=2,G_nk
+                          rff(i)= Ver_hyb%t(i)
+                       enddo
+                       rff(G_nk+1)= (Ver_hyb%t(G_nk+1)+Ver_hyb%m(G_nk))/2.
+                       rff(G_nk+2)= Ver_hyb%t(G_nk+1)
                        if (obus_stag(j).eq.0) then
                            call ecris_fst2(bus_o(1,obus_offset(j)),
-     $                       1,l_ni,1,l_nj,Geomg_hyb,obus_var_s(j),
-     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk,ind_o,nk_o,
+     $                       1,l_ni,1,l_nj,rff,obus_var_s(j),
+     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk+2,ind_o,nk_o,
      $                       Outp_nbit(ii,kk) )
                        else
 *                   3D field staggerred
-                           do i=1,G_nk-2
-                              rff(i)= (Geomg_hyb(i+1)+Geomg_hyb(i))/2.
-                           enddo
-                           do i=G_nk-1,G_nk
-                              rff(i)=Geomg_hyb(i)
-                           enddo
+                        rff(1)=
+     $                     (Ver_hyb%t(1)+Ver_hyb%m(1))/4.+Ver_hyb%t(2)/2.
+                        do i=2,G_nk
+                           rff(i)= (Ver_hyb%t(i+1)+Ver_hyb%d(i))/2.
+                        enddo
+                        rff(G_nk+1)=(Ver_hyb%t(G_nk+1)+Ver_hyb%m(G_nk))/2.
+                        rff(G_nk+2)=Ver_hyb%t(G_nk+1)
                            call ecris_fst2(bus_o(1,obus_offset(j)),
      $                       1,l_ni,1,l_nj,rff,obus_var_s(j),
-     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk,ind_o,nk_o,
+     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk+2,ind_o,nk_o,
      $                       Outp_nbit(ii,kk) )
                        endif
                     else

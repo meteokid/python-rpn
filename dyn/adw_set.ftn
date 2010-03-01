@@ -24,12 +24,13 @@
 *implicits
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "geomg.cdk"
+#include "type.cdk"
 #include "adw.cdk"
 #include "schm.cdk"
+#include "ver.cdk"
 ************************************************************************
-      integer i, j, k, ij, pnerr, trj_i_off, nij, n
-      integer i0, j0, k0, pnx, pny, pnz, ii1, ii2
+      integer i, j, k, ij, pnerr, trj_i_off, nij, n, istat
+      integer i0, j0, k0, pnx, pny, pnzt, pnzm, ii1, ii2
 *
       real*8 ZERO, HALF, ONE, TWO
       parameter( ZERO  = 0.0 )
@@ -39,11 +40,12 @@
 *
       real*8  prhxmn, prhymn, prhzmn, large, dummy, pdfi, pdov6
       real*8 whx(G_ni+2*Adw_halox),why(G_nj+2*Adw_haloy),
-     $       whz(0:G_nk+1),w2(G_nk,6)
+     $       whzt(0:G_nk+2),whzm(0:G_nk+1),w2(G_nk+1,6)
 *
       real *8 triprd,za,zb,zc,zd,ra,rb,rc,rd
       triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
 *
+
       large = 1.0e20
       pdov6 = 1.0d0/6.0d0
 ************************************************************************
@@ -246,6 +248,7 @@
          Adw_cy_8(j) = cos ( Adw_yy_8(Adw_haloy+j) )
          Adw_sy_8(j) = sin ( Adw_yy_8(Adw_haloy+j) )
       enddo
+
 ************************************************************************
 * fill 2D fields for use in adw_trajsp and adw_trajex                  *
 ************************************************************************
@@ -264,7 +267,6 @@
 *
       Adw_x00_8 = Adw_xg_8(1)
       Adw_y00_8 = Adw_yg_8(1)
-      Adw_z00_8 = Geomg_z_8(1)
 *
       prhxmn = large
       prhymn = large
@@ -280,25 +282,33 @@
       prhymn = min( why(j), prhymn )
       enddo
 *
-      whz(0     ) = 1.0
-      whz(G_nk  ) = 1.0
-      whz(G_nk+1) = 1.0
+      whzt(0     ) = 1.0
+      whzt(G_nk+1) = 1.0
+      whzt(G_nk+2) = 1.0
+      do k=1,G_nk
+      whzt(k) = Ver_z_8%t(k+1) - Ver_z_8%t(k)
+      prhzmn = min( whzt(k), prhzmn )
+      enddo
+
+      whzm(0     ) = 1.0
+      whzm(G_nk  ) = 1.0
+      whzm(G_nk+1) = 1.0
       do k=1,G_nk-1
-      whz(k) = Geomg_z_8(k+1) - Geomg_z_8(k)
-      prhzmn = min( whz(k), prhzmn )
+      whzm(k) = Ver_z_8%m(k+1) - Ver_z_8%m(k)
+      prhzmn = min( whzm(k), prhzmn )
       enddo
 *
       Adw_ovdx_8 = 1.0d0/prhxmn
       Adw_ovdy_8 = 1.0d0/prhymn
       Adw_ovdz_8 = 1.0d0/prhzmn
 *
-      pnx = int(1.0+(Adw_xg_8(G_ni+2*Adw_halox)-Adw_x00_8 )*Adw_ovdx_8)
-      pny = int(1.0+(Adw_yg_8(G_nj+2*Adw_haloy)-Adw_y00_8 )*Adw_ovdy_8)
-      pnz = int(1.0+(Geomg_z_8(G_nk)           -Adw_z00_8 )*Adw_ovdz_8)
+      pnx = int(1.0+(Adw_xg_8(G_ni+2*Adw_halox)-Adw_x00_8 )   *Adw_ovdx_8)
+      pny = int(1.0+(Adw_yg_8(G_nj+2*Adw_haloy)-Adw_y00_8 )   *Adw_ovdy_8)
+      pnzt= int(1.0+(Ver_z_8%t(G_nk+1)         -Ver_z_8%t(1) )*Adw_ovdz_8)
+      pnzm= int(1.0+(Ver_z_8%m(G_nk)           -Ver_z_8%m(1) )*Adw_ovdz_8)
 *
       call hpalloc( Adw_lcx_, pnx, pnerr, 0 )
       call hpalloc( Adw_lcy_, pny, pnerr, 0 )
-      call hpalloc( Adw_lcz_, pnz, pnerr, 0 )
 *
       call hpalloc( Adw_bsx_8_, G_ni+2*Adw_halox , pnerr, 8 )
       call hpalloc( Adw_dlx_8_, G_ni+2*Adw_halox , pnerr, 8 )
@@ -308,16 +318,28 @@
       call hpalloc( Adw_dly_8_, G_nj+2*Adw_haloy , pnerr, 8 )
       call hpalloc( Adw_diy_8_, G_nj+2*Adw_haloy , pnerr, 8 )
 *
-      call hpalloc( Adw_bsz_8_, G_nk             , pnerr, 8 )
-      call hpalloc( Adw_dlz_8_, G_nk+2           , pnerr, 8 )
-      call hpalloc( Adw_diz_8_, G_nk+2           , pnerr, 8 )
-      call hpalloc( Adw_dbz_8_, G_nk             , pnerr, 8 )
+!     call hpalloc( Adw_lcz_,   pnz              , pnerr, 0 )
+!     call hpalloc( Adw_bsz_8_, G_nk             , pnerr, 8 )
+!     call hpalloc( Adw_dlz_8_, G_nk+2           , pnerr, 8 )
+!     call hpalloc( Adw_diz_8_, G_nk+2           , pnerr, 8 )
+!     call hpalloc( Adw_dbz_8_, G_nk             , pnerr, 8 )
+
+      allocate(  Adw_lcz%t(pnzt),        Adw_lcz%m(pnzm), 
+     $           Adw_bsz_8%t(0:G_nk),    Adw_bsz_8%m(0:G_nk-1),
+     $           Adw_dlz_8%t(-1:G_nk+1), Adw_dlz_8%m(-1:G_nk),
+     $           Adw_diz_8%t(-1:G_nk+1), Adw_diz_8%m(-1:G_nk),
+     $           Adw_dbz_8%t(0:G_nk),    Adw_dbz_8%m(0:G_nk-1),
+     $           stat=istat)
 *
       call hpalloc( Adw_iln_  , G_ni                 , pnerr, 0 )
       call hpalloc( Adw_lnr_8_, 2*(G_ni+2*Adw_halox) , pnerr, 8 )
 *
-      call hpalloc( Adw_qzz_8_, 3 * G_nk , pnerr, 8 )
-      call hpalloc( Adw_qzi_8_, 4 * G_nk , pnerr, 8 )
+!     call hpalloc( Adw_qzz_8_, 3 * G_nk , pnerr, 8 )
+!     call hpalloc( Adw_qzi_8_, 4 * G_nk , pnerr, 8 )
+
+      allocate(  Adw_qzz_8%t(3*(G_nk+1)), Adw_qzz_8%m(3*G_nk),
+     $           Adw_qzi_8%t(4*(G_nk+1)), Adw_qzi_8%m(4*G_nk),
+     $           stat=istat)
 *
       i0 = 1
       do i=1,pnx
@@ -348,54 +370,112 @@
       enddo
 *
       k0 = 1
-      do k=1,pnz
-      pdfi = Geomg_z_8(1) + (k-1) * prhzmn
-      if ( pdfi .gt. Geomg_z_8(k0+1) ) k0 = min( G_nk-2, k0+1)
-      Adw_lcz(k) = k0
+      do k=1,pnzt
+      pdfi = Ver_z_8%t(1) + (k-1) * prhzmn
+      if ( pdfi .gt. Ver_z_8%t(k0+1) ) k0 = min( G_nk-1, k0+1)
+      Adw_lcz%t(k) = k0
+      enddo
+      do k=0,G_nk+2                    !! warning note the shift in k !!
+      Adw_dlz_8%t(k-1) =       whzt(k)
+      Adw_diz_8%t(k-1) = 1.0d0/whzt(k)
+      enddo
+      do k=1,G_nk+1
+      Adw_bsz_8%t(k-1) = Ver_z_8%t(k)
+      Adw_dbz_8%t(k-1) = ( whzt(k) * whzt(k) ) * pdov6
+      enddo
+
+      k0 = 1
+      do k=1,pnzm
+      pdfi = Ver_z_8%m(1) + (k-1) * prhzmn
+      if ( pdfi .gt. Ver_z_8%m(k0+1) ) k0 = min( G_nk-2, k0+1)
+      Adw_lcz%m(k) = k0
       enddo
       do k=0,G_nk+1                    !! warning note the shift in k !!
-      Adw_dlz_8(k-1) =       whz(k)
-      Adw_diz_8(k-1) = 1.0d0/whz(k)
+      Adw_dlz_8%m(k-1) =       whzm(k)
+      Adw_diz_8%m(k-1) = 1.0d0/whzm(k)
       enddo
       do k=1,G_nk
-      Adw_bsz_8(k-1) = Geomg_z_8(k)
-      Adw_dbz_8(k-1) = ( whz(k) * whz(k) ) * pdov6
+      Adw_bsz_8%m(k-1) = Ver_z_8%m(k)
+      Adw_dbz_8%m(k-1) = ( whzm(k) * whzm(k) ) * pdov6
       enddo
 *
 *     Allocation and Initialization for linear interpolation and Lagrange 3D in z  
 *     ---------------------------------------------------------------------------
-      call hpalloc( Adw_zbc_8_,   G_nk             , pnerr, 8 ) ! (zc-zb)     along z 
+!     call hpalloc( Adw_zbc_8_,   G_nk             , pnerr, 8 ) ! (zc-zb)     along z 
 *
-      call hpalloc( Adw_zabcd_8_, G_nk             , pnerr, 8 ) ! triproducts along z
-      call hpalloc( Adw_zbacd_8_, G_nk             , pnerr, 8 )
-      call hpalloc( Adw_zcabd_8_, G_nk             , pnerr, 8 )
-      call hpalloc( Adw_zdabc_8_, G_nk             , pnerr, 8 )
+!     call hpalloc( Adw_zabcd_8_, G_nk             , pnerr, 8 ) ! triproducts along z
+!     call hpalloc( Adw_zbacd_8_, G_nk             , pnerr, 8 )
+!     call hpalloc( Adw_zcabd_8_, G_nk             , pnerr, 8 )
+!     call hpalloc( Adw_zdabc_8_, G_nk             , pnerr, 8 )
+!
+      allocate(  Adw_zbc_8%t(G_nk+1),   Adw_zbc_8%m(G_nk), 
+     $           Adw_zabcd_8%t(G_nk+1), Adw_zabcd_8%m(G_nk),
+     $           Adw_zbacd_8%t(G_nk+1), Adw_zbacd_8%m(G_nk),
+     $           Adw_zcabd_8%t(G_nk+1), Adw_zcabd_8%m(G_nk),
+     $           Adw_zdabc_8%t(G_nk+1), Adw_zdabc_8%m(G_nk),
+     $           stat=istat)
+     
 *
-      Adw_zabcd_8(1:G_nk) = transfer(-1,1.0)
-      Adw_zbacd_8(1:G_nk) = transfer(-1,1.0)
-      Adw_zcabd_8(1:G_nk) = transfer(-1,1.0)
-      Adw_zdabc_8(1:G_nk) = transfer(-1,1.0)
+      Adw_zabcd_8%m(1:G_nk) = transfer(-1,1.0)
+      Adw_zbacd_8%m(1:G_nk) = transfer(-1,1.0)
+      Adw_zcabd_8%m(1:G_nk) = transfer(-1,1.0)
+      Adw_zdabc_8%m(1:G_nk) = transfer(-1,1.0)
+*
+      Adw_zabcd_8%t(1:G_nk+1) = transfer(-1,1.0)
+      Adw_zbacd_8%t(1:G_nk+1) = transfer(-1,1.0)
+      Adw_zcabd_8%t(1:G_nk+1) = transfer(-1,1.0)
+      Adw_zdabc_8%t(1:G_nk+1) = transfer(-1,1.0)
       do k=2,G_nk-2
-        ra=Geomg_z_8(k-1)
-        rb=Geomg_z_8(k)
-        rc=Geomg_z_8(k+1)
-        rd=Geomg_z_8(k+2)
+        ra=Ver_z_8%m(k-1)
+        rb=Ver_z_8%m(k)
+        rc=Ver_z_8%m(k+1)
+        rd=Ver_z_8%m(k+2)
 *
-        Adw_zabcd_8(k) = 1.0/triprd(ra,rb,rc,rd)
-        Adw_zbacd_8(k) = 1.0/triprd(rb,ra,rc,rd)
-        Adw_zcabd_8(k) = 1.0/triprd(rc,ra,rb,rd)
-        Adw_zdabc_8(k) = 1.0/triprd(rd,ra,rb,rc)
+        Adw_zabcd_8%m(k) = 1.0/triprd(ra,rb,rc,rd)
+        Adw_zbacd_8%m(k) = 1.0/triprd(rb,ra,rc,rd)
+        Adw_zcabd_8%m(k) = 1.0/triprd(rc,ra,rb,rd)
+        Adw_zdabc_8%m(k) = 1.0/triprd(rd,ra,rb,rc)
+*
+        ra=Ver_z_8%t(k-1)
+        rb=Ver_z_8%t(k)
+        rc=Ver_z_8%t(k+1)
+        rd=Ver_z_8%t(k+2)
+*
+        Adw_zabcd_8%t(k) = 1.0/triprd(ra,rb,rc,rd)
+        Adw_zbacd_8%t(k) = 1.0/triprd(rb,ra,rc,rd)
+        Adw_zcabd_8%t(k) = 1.0/triprd(rc,ra,rb,rd)
+        Adw_zdabc_8%t(k) = 1.0/triprd(rd,ra,rb,rc)
       enddo
 *
-      Adw_zbc_8(1:G_nk) = transfer(-1,1.0)
+        k=G_nk-1
+        ra=Ver_z_8%t(k-1)
+        rb=Ver_z_8%t(k)
+        rc=Ver_z_8%t(k+1)
+        rd=Ver_z_8%t(k+2)
+*
+        Adw_zabcd_8%t(k) = 1.0/triprd(ra,rb,rc,rd)
+        Adw_zbacd_8%t(k) = 1.0/triprd(rb,ra,rc,rd)
+        Adw_zcabd_8%t(k) = 1.0/triprd(rc,ra,rb,rd)
+        Adw_zdabc_8%t(k) = 1.0/triprd(rd,ra,rb,rc)
+*
+      Adw_zbc_8%m(1:G_nk) = transfer(-1,1.0)
+      Adw_zbc_8%t(1:G_nk+1) = transfer(-1,1.0)
       do k=1,G_nk-1
-        rb=Geomg_z_8(k)
-        rc=Geomg_z_8(k+1)
-        Adw_zbc_8(k) = 1.0/(rc-rb)
-      enddo
+        rb=Ver_z_8%m(k)
+        rc=Ver_z_8%m(k+1)
+        Adw_zbc_8%m(k) = 1.0/(rc-rb)
 *
-      call set_ops8 ( Adw_qzz_8, whz(1), two, .false., G_nk, G_nk, 1 )
-      call set_ops8 ( w2       , whz(1), two, .false., G_nk, G_nk, 2 )
+        rb=Ver_z_8%t(k)
+        rc=Ver_z_8%t(k+1)
+        Adw_zbc_8%t(k) = 1.0/(rc-rb)
+      enddo
+        k=G_nk
+        rb=Ver_z_8%t(k)
+        rc=Ver_z_8%t(k+1)
+        Adw_zbc_8%t(k) = 1.0/(rc-rb)
+*
+      call set_ops8 ( Adw_qzz_8%m, whzm(1), two, .false., G_nk, G_nk, 1 )
+      call set_ops8 ( w2       , whzm(1), two, .false., G_nk, G_nk+1, 2 )
 *
       w2(1,2) = 1.0
       w2(1,3) = 0.0
@@ -403,21 +483,46 @@
          k = G_nk - 1
          w2(2,1) = 0.0
          if ( G_nk. gt. 3 ) then
-            w2(2,2) = (whz(1)+whz(2  ))*(1.0+whz(1)/(2.0*whz(2  )))/3.0
-            w2(2,3) = (whz(1)+whz(2  ))*(1.0-whz(1)/     whz(2  )) /6.0
-            w2(k,1) = (whz(k)+whz(k-1))*(1.0-whz(k)/     whz(k-1)) /6.0
-            w2(k,2) = (whz(k)+whz(k-1))*(1.0+whz(k)/(2.0*whz(k-1)))/3.0
+            w2(2,2) = (whzm(1)+whzm(2  ))*(1.0+whzm(1)/(2.0*whzm(2  )))/3.0
+            w2(2,3) = (whzm(1)+whzm(2  ))*(1.0-whzm(1)/     whzm(2  )) /6.0
+            w2(k,1) = (whzm(k)+whzm(k-1))*(1.0-whzm(k)/     whzm(k-1)) /6.0
+            w2(k,2) = (whzm(k)+whzm(k-1))*(1.0+whzm(k)/(2.0*whzm(k-1)))/3.0
          else
-            w2(2,2) = ( whz(1)+whz(2) )/2.0
+            w2(2,2) = ( whzm(1)+whzm(2) )/2.0
          endif
          w2(k,3) = 0.0
       endif
       w2(G_nk,1) = 0.0
       w2(G_nk,2) = 1.0
 *
-      call set_trig21 (Adw_qzi_8,Adw_qzi_8(G_nk+1),Adw_qzi_8(2*G_nk+1), 
+      call set_trig21 (Adw_qzi_8%m,Adw_qzi_8%m(G_nk+1),Adw_qzi_8%m(2*G_nk+1), 
      %                 dummy,w2(1,1),w2(1,2),w2(1,3),
      %                 1, 1, G_nk, 1, .false.)
+*
+      call set_ops8 ( Adw_qzz_8%t, whzt(1), two, .false., G_nk+1, G_nk+1, 1 )
+      call set_ops8 ( w2       , whzt(1), two, .false., G_nk+1, G_nk+1, 2 )
+*
+      w2(1,2) = 1.0
+      w2(1,3) = 0.0
+      if ( Adw_nkbz_L ) then
+         k = G_nk
+         w2(2,1) = 0.0
+         if ( G_nk. gt. 3 ) then
+            w2(2,2) = (whzt(1)+whzt(2  ))*(1.0+whzt(1)/(2.0*whzt(2  )))/3.0
+            w2(2,3) = (whzt(1)+whzt(2  ))*(1.0-whzt(1)/     whzt(2  )) /6.0
+            w2(k,1) = (whzt(k)+whzt(k-1))*(1.0-whzt(k)/     whzt(k-1)) /6.0
+            w2(k,2) = (whzt(k)+whzt(k-1))*(1.0+whzt(k)/(2.0*whzt(k-1)))/3.0
+         else
+            w2(2,2) = ( whzt(1)+whzt(2) )/2.0
+         endif
+         w2(k,3) = 0.0
+      endif
+      w2(G_nk+1,1) = 0.0
+      w2(G_nk+1,2) = 1.0
+*
+      call set_trig21 (Adw_qzi_8%t,Adw_qzi_8%t(G_nk+2),Adw_qzi_8%t(2*G_nk+3), 
+     %                 dummy,w2(1,1),w2(1,2),w2(1,3),
+     %                 1, 1, G_nk+1, 1, .false.)
 *
 *     Initialization for localisation indices (used in optimized SETINT/TRILIN) 
 *     ------------------------------------------------------------------------- 

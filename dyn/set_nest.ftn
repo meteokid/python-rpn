@@ -11,8 +11,7 @@
 *
 *revision
 * v3_00 - Desgagne/Lee      - initial version
-* v3_02 - Edouard S.        - correct non-hydrostatic version (F_mut0,F_tpt0,b2)
-* v3_20 - Lee V.            - shorten length of vmmname for pip,fip,psd
+* v3_20 - Lee V.            - shorten length of vmmname for psd
 *object
 *	This subroutine initializes the commons containing the
 *	keys used by the Virtual Memory Manager to identify the
@@ -48,44 +47,26 @@
       VMM_NAM(nest_u   ) = 'NEST_U'
       VMM_NAM(nest_v   ) = 'NEST_V'
       VMM_NAM(nest_t   ) = 'NEST_T'
-      VMM_NAM(nest_tp  ) = 'NEST_TP'
       VMM_NAM(nest_psd ) = 'NEST_PSD'
-      VMM_NAM(nest_pip ) = 'NEST_PIP'
-      VMM_NAM(nest_fip ) = 'NEST_FIP'
       VMM_NAM(nest_w   ) = 'NEST_W'
-      VMM_NAM(nest_td  ) = 'NEST_TD'
-      VMM_NAM(nest_fi  ) = 'NEST_FI'
-      VMM_NAM(nest_q   ) = 'NEST_Q'
       VMM_NAM(nest_s   ) = 'NEST_S'
-      VMM_NAM(nest_mu  ) = 'NEST_MU'
+      VMM_NAM(nest_qsec) = 'NEST_QSEC'
       VMM_NAM(nest_tr  ) = 'NEST_TR'
       VMM_NAM(nest_uf   ) = 'NEST_UF'
       VMM_NAM(nest_vf   ) = 'NEST_VF'
       VMM_NAM(nest_tf   ) = 'NEST_TF'
-      VMM_NAM(nest_tpf  ) = 'NEST_TPF'
       VMM_NAM(nest_psdf ) = 'NST_PSDF'
-      VMM_NAM(nest_pipf ) = 'NST_PIPF'
-      VMM_NAM(nest_fipf ) = 'NST_FIPF'
       VMM_NAM(nest_wf   ) = 'NEST_WF'
-      VMM_NAM(nest_tdf  ) = 'NEST_TDF'
-      VMM_NAM(nest_fif  ) = 'NEST_FIF'
-      VMM_NAM(nest_qf   ) = 'NEST_QF'
       VMM_NAM(nest_sf   ) = 'NEST_SF'
-      VMM_NAM(nest_muf  ) = 'NEST_MUF'
+      VMM_NAM(nest_qsecf) = 'NEST_QSECF'
       VMM_NAM(nest_trf  ) = 'NEST_TRF'
       VMM_NAM(nest_ux   ) = 'NEST_UX'
       VMM_NAM(nest_vx   ) = 'NEST_VX'
       VMM_NAM(nest_tx   ) = 'NEST_TX'
-      VMM_NAM(nest_tpx  ) = 'NEST_TPX'
       VMM_NAM(nest_psdx ) = 'NST_PSDX'
-      VMM_NAM(nest_pipx ) = 'NST_PIPX'
-      VMM_NAM(nest_fipx ) = 'NST_FIPX'
       VMM_NAM(nest_wx   ) = 'NEST_WX'
-      VMM_NAM(nest_tdx  ) = 'NEST_TDX'
-      VMM_NAM(nest_fix  ) = 'NEST_FIX'
-      VMM_NAM(nest_qx   ) = 'NEST_QX'
       VMM_NAM(nest_sx   ) = 'NEST_SX'
-      VMM_NAM(nest_mux  ) = 'NEST_MUX'
+      VMM_NAM(nest_qsecx) = 'NEST_QSECX'
       VMM_NAM(nest_trx  ) = 'NEST_TRX'
 *
 *  Set the attributes of the variables
@@ -94,59 +75,41 @@
 *
       VMM_CREATE(nest_u   , LARRAY3D, 1, ptath)
       VMM_CREATE(nest_v   , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_t   , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_tp  , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_psd , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_pip , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_fip , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_td  , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_fi  , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_q   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_t   , LARRAY2D*(l_nk+1), 1, ptath)
+      VMM_CREATE(nest_psd , LARRAY2D*(l_nk+1), 1, ptath)
       VMM_CREATE(nest_s   , LARRAY2D, 1, ptath)
       if (.not. Pil_ctebcs_L) then
          VMM_CREATE(nest_uf   , LARRAY3D, 1, ptath)
          VMM_CREATE(nest_vf   , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_tf   , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_tpf  , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_psdf , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_pipf , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_fipf , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_tdf  , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_fif  , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_qf   , LARRAY3D, 1, ptath)
+         VMM_CREATE(nest_tf   , LARRAY2D*(l_nk+1), 1, ptath)
+         VMM_CREATE(nest_psdf , LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_sf   , LARRAY2D, 1, ptath)
       endif
       if (.not. Schm_theoc_L) then
          VMM_CREATE(nest_ux   , LARRAY3D, 1, ptath)
          VMM_CREATE(nest_vx   , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_tx   , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_tpx  , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_psdx , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_pipx , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_fipx , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_tdx  , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_fix  , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_qx   , LARRAY3D, 1, ptath)
+         VMM_CREATE(nest_tx   , LARRAY2D*(l_nk+1), 1, ptath)
+         VMM_CREATE(nest_psdx , LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_sx   , LARRAY2D, 1, ptath)
       endif
-	  if (.not. Schm_hydro_L) then
-         VMM_CREATE(nest_w   , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_mu  , LARRAY3D, 1, ptath)
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE(nest_w   , LARRAY2D*(l_nk+1), 1, ptath)
+         VMM_CREATE(nest_qsec, LARRAY2D*(l_nk+2), 1, ptath)
          if (.not. Pil_ctebcs_L) then
-            VMM_CREATE(nest_wf   , LARRAY3D, 1, ptath)
-            VMM_CREATE(nest_muf  , LARRAY3D, 1, ptath)
+            VMM_CREATE(nest_wf   , LARRAY2D*(l_nk+1), 1, ptath)
+            VMM_CREATE(nest_qsecf, LARRAY2D*(l_nk+2), 1, ptath)
          endif
          if (.not. Schm_theoc_L) then
-            VMM_CREATE(nest_wx   , LARRAY3D, 1, ptath)
-            VMM_CREATE(nest_mux  , LARRAY3D, 1, ptath)
+            VMM_CREATE(nest_wx   , LARRAY2D*(l_nk+1), 1, ptath)
+            VMM_CREATE(nest_qsecx, LARRAY2D*(l_nk+2), 1, ptath)
          endif
       endif
       if ( Tr3d_ntr .gt. 0 ) then
-         VMM_CREATE(nest_tr  , LARRAY3D, Tr3d_ntr, ptath)
+         VMM_CREATE(nest_tr  , LARRAY2D*(l_nk+1), Tr3d_ntr, ptath)
          if (.not. Pil_ctebcs_L)
-     %   VMM_CREATE(nest_trf  , LARRAY3D, Tr3d_ntr, ptath)
+     %   VMM_CREATE(nest_trf  , LARRAY2D*(l_nk+1), Tr3d_ntr, ptath)
          if (.not. Schm_theoc_L)
-     %   VMM_CREATE(nest_trx  , LARRAY3D, Tr3d_ntr, ptath)
+     %   VMM_CREATE(nest_trx  , LARRAY2D*(l_nk+1), Tr3d_ntr, ptath)
       endif
 *
  1000 format(

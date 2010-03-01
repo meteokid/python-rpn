@@ -51,43 +51,50 @@
       integer  open_db_file,rewind_db_file,close_db_file
       external open_db_file,rewind_db_file,close_db_file
 **
-      integer dim,err,i,j,k,obussiz
+      integer dim,dim2,err,i,j,k,obussiz,nkphy
       real, dimension(:,:), allocatable :: obusval
-      real, dimension(:), allocatable :: up,vp,wp,tp,qp,trp,
+      real, dimension(:), allocatable :: up,vp,wp,tp,pp,trp,
      $                                   um,vm,tm,gzm,topo,
      $                                   trm,lnpsm,
      $                                   sig,kmm,ktm
 *
 *     ---------------------------------------------------------------
 *
+*     Physics is called for nkphy levels, where nkphy= G_nk+2
+*     i.e. refering to subroutine genab2_8, the 2 'special' 
+*     levels near the top and bottom, the (G_nk-1) levels 
+*     corresponding to Ver_z_8%t(2) to Ver_z_8%t(G_nk), plus
+*     the surface
+*
+      nkphy = G_nk+2
       call iniobus(obussiz)
       allocate(obusval(l_ni*l_nj,obussiz))
-      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
-      allocate (up(dim),vp(dim),wp(dim),tp(dim),qp(dim),
+      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(nkphy)
+      dim2= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      allocate (up(dim),vp(dim),wp(dim),tp(dim),pp(dim),
      $          um(dim),vm(dim),tm(dim),gzm(dim),
-     $          topo(dim),
-     $          lnpsm(dim),sig(dim),kmm(dim),ktm(dim),
+     $          topo(dim2),
+     $          lnpsm(dim2),sig(dim),kmm(dim),ktm(dim),
      $          trp(dim*phyt_ntr),trm(dim*phyt_ntr))
 *
-*C       2.	load all fields required by the physic in memory
+*C       1.	load all fields required by the physic in memory
 *		------------------------------------------------
-*
-      call p_vmmphy ( up, vp, wp, tp, qp, trp,
+      call p_vmmphy ( up, vp, wp, tp, pp, trp,
      $                um, vm, tm, gzm, topo, trm,
-     $                lnpsm, sig, LDIST_DIM,l_nk )
+     $                lnpsm, sig, LDIST_DIM,G_nk )
 *
 *
-*               Store TRAJ for the simplified physics
+*        2.     Store TRAJ for the simplified physics
 *               -------------------------------------
       if ( V4dg_conf.ne.0 .and. F_stepno.gt.0) then 
-                         call v4d_rwtraj_sigma  (sig,LDIST_DIM,l_nk)
-        if( V4dg_oktr_L) call v4d_rwtraj_phystep(up,vp,tp,qp,trp,
+                         call v4d_rwtraj_sigma  (sig,LDIST_DIM,nkphy)
+        if( V4dg_oktr_L) call v4d_rwtraj_phystep(up,vp,tp,pp,trp,
      $                                           um,vm,tm,trm,
-     $                                           LDIST_DIM,l_nk)
+     $                                           LDIST_DIM,nkphy)
       endif
 *
 *
-*C       4.	compute physics tendencies
+*C       3.	compute physics tendencies
 *		--------------------------
 *	initialize the number of slices previously done
 *
@@ -103,9 +110,9 @@
 !$omp do
       do j=1,Ptopo_npeOpenMP
       call p_physlb ( j , F_stepno,obusval,
-     $                up, vp, wp, tp, qp, trp,
+     $                up, vp, wp, tp, pp, trp,
      $                um, vm, tm,gzm,topo, trm,
-     $                lnpsm, sig, kmm, ktm, LDIST_DIM, l_nk)
+     $                lnpsm, sig, kmm, ktm, LDIST_DIM, nkphy)
       enddo
 !$omp enddo
 !$omp end parallel
@@ -119,22 +126,22 @@
 *
       if (.not.Mem_phyncore_L) err = close_db_file (Lun_waphy)
 *
-*C   6.	Apply physics tendencies to the appropriate dynamic fields
+*C   4.	Apply physics tendencies to the appropriate dynamic fields
 *C      and insure consistency with other dynamic variables
 *       ----------------------------------------------------------
 *
       if (.not. schm_offline_L) then
-          call p_apply ( up,vp,um,vm,tm,trm, tp,qp,
-     $        LDIST_DIM,l_nk,F_stepno.gt.0 )
+          call p_apply ( wp,gzm,um,vm,tm,trm, tp,up,vp,trp,
+     $        LDIST_DIM,nkphy,F_stepno.gt.0 )
       endif
 *
 *
-*       Store TRAJ of vertical exchange coefficients from full-physics
+*    5. Store TRAJ of vertical exchange coefficients from full-physics
 *       --------------------------------------------------------------
       if ( V4dg_conf.ne.0 .and. P4d_pbl.eq.2 .and. F_stepno.gt.0 .and.
      $     V4dg_oktr_L ) call v4d_rwtraj_kmkt(kmm,ktm,LDIST_DIM,l_nk) 
 
-      deallocate (up,vp,wp,tp,qp,trp,um,vm,tm,gzm,topo,
+      deallocate (up,vp,wp,tp,pp,trp,um,vm,tm,gzm,topo,
      $            trm,lnpsm,sig,kmm,ktm)
 *
 *     ---------------------------------------------------------------

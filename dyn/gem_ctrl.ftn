@@ -18,7 +18,7 @@
 * v2_31 - Tanguay M.        - initialization done_once and
 *                             remove call to adv_set
 * v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
-* v3_21 - valcke, S.        - add oasis coupling initialization
+* v3_21 - Valcke, S.        - add oasis coupling initialization
 *
 *object
 *     Beginning of the integration. This subroutine
@@ -40,6 +40,7 @@
       logical rstrt_L
       data rstrt_L /.false./
 *
+**
 *     ---------------------------------------------------------------
 *
 *
@@ -55,7 +56,7 @@
 *
       if ( V4dg_conf.eq.0 ) then
 *
-        if ( .not. Rstri_rstn_L ) then
+      if ( .not. Rstri_rstn_L ) then
 *
          call indata()
 *
@@ -63,17 +64,18 @@
 *
          call wlog('CSTR')
 *
-        else
-*
+      else
          call set_dync()
 *
-*C       Initialize model and SL operators
-*        ---------------------------------
-         call set_opr()
-         call adw_set()
+*C    Initialize model and SL operators
+*     --------------------------------------
 *
-*C       Initialize coupling (nothing is done if no coupling)
-*         -------------------
+         call set_opr()
+
+         call adw_set()
+
+*C    Initialize coupling (nothing is done if no coupling)
+*     --------------------------------------
 *
          call c_set_coupling()
 *
@@ -83,6 +85,7 @@
 *
       Rstri_sdon = 0
 *
+
       if ( Init_balgm_L .and. .not.Rstri_idon_L ) call initial (rstrt_L)
 *
       if (.not.rstrt_L) call gem_run (.false., rstrt_L)

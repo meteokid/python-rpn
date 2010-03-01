@@ -148,14 +148,14 @@
 *
          do pnund=1,F_und+1
             if ( pnund .gt. F_und ) go to 30
-            if ( F_fis(i,j,l_nk) .gt. F_fiund(i,j,pnund) ) go to 30
+            if ( F_fis(i,j,nk) .gt. F_fiund(i,j,pnund) ) go to 30
          enddo
 *
  30      continue
 *
-         prlptop = F_lnps(i,j,l_nk)
-         prvttop = F_vts(i,j,l_nk) 
-         prfitop = F_fis(i,j,l_nk)
+         prlptop = F_lnps(i,j,nk)
+         prvttop = F_vts(i,j,nk) 
+         prfitop = F_fis(i,j,nk)
 *
          do 40 pn1=pnund,F_und
 *

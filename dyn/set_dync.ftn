@@ -1,4 +1,4 @@
-***s/r set_dync - initialize the dynamics model configuration
+***   s/r set_dync - initialize the dynamics model configuration
 *
 #include "model_macros_f.h"
 *
@@ -13,8 +13,7 @@
 * v2_10 - Lee V.             - correction to call to pstune
 * v2_20 - Desgagne M.        - fnom on Wafiles now in p_set
 * v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
-* v3_00 - Desgagne & Lee     - Lam configuration
-* v3_21 - Desgagne M.        - Optimization
+* v3_00 - Desgagne & Lee    - Lam configuration
 *
 *object
 *
@@ -22,26 +21,34 @@
 *	none
 *
 *implicits
+#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
-#include "geomg.cdk"
 #include "grd.cdk"
 #include "schm.cdk"
 #include "pres.cdk"
 #include "dcst.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "ptopo.cdk"
+#include "matlab.cdk"
 *
 *modules
 *
-      integer k,err
-      real*8 ZERO_8, ONE_8, HUNDRED_8
+      integer k,err,istat, longueur
+      real*8 ZERO_8, ONE_8, HUNDRED_8,aaa_8
       parameter( ZERO_8    = 0.0 )
       parameter( ONE_8     = 1.0 )
       parameter( HUNDRED_8 = 100.0 )
 *
+      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
+         open(unit=62,file=matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_set_dync.bin',status='replace',form='unformatted')
+         write(62)G_ni-lam_pil_w-lam_pil_e
+         write(62)G_nk
+      endif
+
 *     ---------------------------------------------------------------
-      if (Cstv_pitop_8.ne.-ONE_8) Cstv_pitop_8=HUNDRED_8*Cstv_pitop_8
-      if (Cstv_pisrf_8.ne.-ONE_8) Cstv_pisrf_8=HUNDRED_8*Cstv_pisrf_8
 *     
       if (Schm_cptop_L.or.Cstv_pitop_8.eq.-ONE_8) 
      $        Cstv_pitop_8 = dble(Pres_top)
@@ -52,65 +59,58 @@
          write(Lun_out,*) 'Cstv_pitop_8  = ',Cstv_pitop_8,'  PASCALS'
          write(Lun_out,*) 'Cstv_pisrf_8  = ',Cstv_pisrf_8,'  PASCALS'
       endif
-*
-*        Geomg_z_8 is identical to pi star
-*        ---------------------------------
-*
-      call hpalloc (Geomg_pib_ , G_nk ,err,1)
-*
-      do k=1,G_nk
-         Geomg_pib(k) = Geomg_pibb(k) * Cstv_pisrf_8
-         Geomg_z_8(k) = Geomg_pia(k) + Geomg_pib(k)
-      end do
-      call vrec (geomg_invz_8   , geomg_z_8  , G_nk )
-*
-      if (Grd_rcoef.gt.1.0) then
-          Geomg_dpib(1) = 0.0
-      else
-          Geomg_dpib(1) = Geomg_pib(G_nk)/(Geomg_pib(G_nk) - Geomg_pia(1))
-      endif
-*
-      do k=2,G_nk
-         Geomg_dpib(k) =  (Geomg_pib(k) - Geomg_pib(k-1)) 
-     $                  / (Geomg_z_8(k) - Geomg_z_8(k-1))
-      end do
-
-      if (lun_out.gt.0) then
-         write(Lun_out,*) 'VALUES OF pib '
-         write(Lun_out,*) (Geomg_pib(k),k=1,G_nk)
-      endif
-      do k=2,G_nk
-         Geomg_dpib(k) = 2.0 * Geomg_dpib(k) - Geomg_dpib(k-1)
-      enddo
-*
-      Geomg_dpia(1) = 0.0
-      do k=2,G_nk-1
-         Geomg_dpia(k) =  (Geomg_dpib(k+1) - Geomg_dpib(k-1))
-     $                  / (Geomg_z_8 (k+1) - Geomg_z_8 (k-1))
-      enddo
-      Geomg_dpia(G_nk) =  (Geomg_dpib(G_nk)- Geomg_dpib(G_nk-1))
-     $                  / (Geomg_z_8 (G_nk)- Geomg_z_8 (G_nk-1))
-      if (lun_out.gt.0) then
-         write(Lun_out,*) 'VALUES OF dpib '
-         write(Lun_out,*) (Geomg_dpib(k),k=1,G_nk)
-         write(Lun_out,*) 'VALUES OF dpia '
-         write(Lun_out,*) (Geomg_dpia(k),k=1,G_nk)
-         write(Lun_out,*) 'VALUES OF dpba '
-         write(Lun_out,*) (Geomg_dpba(k),k=1,G_nk)
-      endif
 *     
-*C       Geomg_hz_8 is the pi star grid spacing (z)
-*        ------------------------------------------
+      if(matlab_write_L)write(62)(  Ver_z_8%t(k),k=1,G_nk+1)
+      if(matlab_write_L)write(62)(  Ver_z_8%m(k),k=0,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_pia_8%t(k),k=1,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_pia_8%m(k),k=0,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_pib_8%t(k),k=1,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_pib_8%m(k),k=0,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_boz_8%t(k),k=1,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_boz_8%m(k),k=0,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_wth_8(1,k),k=1,G_nk)
+      if(matlab_write_L)write(62)(Ver_wth_8(2,k),k=1,G_nk)
+      if(matlab_write_L)write(62)(Ver_dpib_8%t(k),k=1,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_dpib_8%m(k),k=1,G_nk)
+      if(matlab_write_L)write(62)(Ver_dpia_8%t(k),k=1,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_dpia_8%m(k),k=1,G_nk)
+      if(matlab_write_L)write(62)(Ver_dpba_8(k),k=1,G_nk+1)
 *
-      call hpalloc(Cstvr_fistr_8_, G_nk*2, err, 1)
-      do k=1,G_nk-1
-         Geomg_hz_8(k) = Geomg_z_8(k+1) -Geomg_z_8(k)
-         Cstvr_fistr_8(k) = - Dcst_rgasd_8 * Cstv_tstr_8 * 
-     $                       log( Geomg_z_8(k)/Cstv_pisrf_8 )
-      end do
-      Cstvr_fistr_8(G_nk) = ZERO_8
+      if(.not.Schm_cptop_L)then
+         write(Lun_out,*)'Constant pressure top only'
+         call gem_stop('set_dync',-2)
+      else
+         Ver_alphat_8 = ( Ver_z_8%t(1) - .5d0*Ver_epsilon_8*Ver_hz_8%t(1) ) /
+     $                  ( Ver_z_8%t(1) + .5d0*Ver_epsilon_8*Ver_hz_8%t(1) )
+         Ver_cst_8 = Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Dcst_rgasd_8*
+     $        Cstv_tstr_8/Ver_gamma_8*Ver_hz_8%t(1)/
+     $        ( Ver_z_8%t(1) + .5d0*Ver_epsilon_8*Ver_hz_8%t(1) )
+         Ver_cstp_8 =(Ver_z_8%t(1)**2 + .25d0*Dcst_cappa_8*Ver_epsilon_8*Ver_hz_8%t(1)**2) /
+     $               (Ver_z_8%t(1)    + .5d00*Ver_epsilon_8*Ver_hz_8%t(1));
+*
+         Ver_alphas_8 = ( Ver_z_8%t(G_nk+1) - .5d0*Dcst_cappa_8*Ver_hz_8%t(G_nk+1) ) /
+     $                  ( Ver_z_8%t(G_nk+1) + .5d0*Dcst_cappa_8*Ver_hz_8%t(G_nk+1) )
+         Ver_css_8 = Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Dcst_rgasd_8*
+     $        Cstv_tstr_8/Ver_gamma_8*Ver_hz_8%t(G_nk+1)/
+     $        ( Ver_z_8%t(G_nk+1) + .5d0*Dcst_cappa_8*Ver_hz_8%t(G_nk+1) )
+         Ver_cssp_8 =(Ver_z_8%t(G_nk+1)**2 + .25d0*Dcst_cappa_8*Ver_epsilon_8*Ver_hz_8%t(G_nk+1)**2) /
+     $               (Ver_z_8%t(G_nk+1)    + .5d00*Dcst_cappa_8*Ver_hz_8%t(G_nk+1));
+      endif
+*
+      if(matlab_write_L)write(62)(Ver_hz_8%t(k),k=1,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_hz_8%m(k),k=1,G_nk)
+      if(matlab_write_L)write(62)(Ver_fistr_8%t(k),k=1,G_nk+1)
+      if(matlab_write_L)write(62)(Ver_fistr_8%m(k),k=1,G_nk)
+      if(matlab_write_L)write(62)Ver_alphat_8
+      if(matlab_write_L)write(62)Ver_alphas_8
+      if(matlab_write_L)write(62)Ver_cst_8
+      if(matlab_write_L)write(62)Ver_cstp_8
+      if(matlab_write_L)write(62)Ver_css_8
+      if(matlab_write_L)write(62)Ver_cssp_8
 *
 *     ---------------------------------------------------------------
 *
+      if(matlab_write_L.and.Ptopo_myproc.eq.0)close(62)
+
       return
       end

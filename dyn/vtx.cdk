@@ -10,8 +10,9 @@
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
 * gptx               | P                                               |
-* gptx               | X                                               |
-* multx              | (mu)lin = (1+D)q' -- the linear part of (mu)    |
+* mutx               | mu                                              |
+* qptx               | q'                                              |
+* fiptx              | phi'                                            |
 *----------------------------------------------------------------------
 *
 #endif
@@ -22,9 +23,10 @@
 *changes to assure the equivalence statement below MARKS it.
 *
       MARK_COMMON_BEG(vtx)
-      DCL_VMMVAR( vtx,  gptx, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vtx,  gxtx, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vtx, multx, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtx,  gptx, real, (LDIST_SHAPE,  l_nk) )
+      DCL_VMMVAR( vtx,  mutx, real, (LDIST_SHAPE,  l_nk+1) )
+      DCL_VMMVAR( vtx,  qptx, real, (LDIST_SHAPE,0:l_nk+1) )
+      DCL_VMMVAR( vtx, fiptx, real, (LDIST_SHAPE,0:l_nk+1) )
       MARK_COMMON_END(vtx)
 
       character*8 vtx_n_first(1)

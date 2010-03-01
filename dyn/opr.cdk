@@ -17,6 +17,7 @@
 * Opr_opsyp0_8       | north-south projection operators                |
 * Opr_opsyp2_8       | north-south projection operators                |
 * Opr_opszp0_8       | vertical    projection operators                |
+* Opr_opszpm_8       | vertical    projection operators                |
 * Opr_opszp2_8       | vertical    projection operators                |
 * Opr_xevec_8        | horizontal eigenvectors                         |
 * Opr_xeval_8        | horizontal eigenvalues                          |
@@ -34,6 +35,7 @@
       DCL_DYNVAR(Opr, opsyp0_8,    real*8, (*))
       DCL_DYNVAR(Opr, opsyp2_8,    real*8, (*))
       DCL_DYNVAR(Opr, opszp0_8,    real*8, (*))
+      DCL_DYNVAR(Opr, opszpm_8,    real*8, (*))
       DCL_DYNVAR(Opr, opszp2_8,    real*8, (*))
       DCL_DYNVAR(Opr, xevec_8 ,    real*8, (*))
       DCL_DYNVAR(Opr, xeval_8 ,    real*8, (*))

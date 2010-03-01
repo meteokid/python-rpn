@@ -49,8 +49,6 @@
       pnlkey1(2)  = VMM_KEY(vt1)
       pnlkey1(3)  = VMM_KEY(tt1)
 ccc MD      pnlkey1(4)  = VMM_KEY(hut1)
-      pnlkey1(5)  = VMM_KEY(fit1)
-      pnlkey1(6)  = VMM_KEY(tdt1)
       pnlkey1(7)  = VMM_KEY(psdt1)
 *
       pnerr = vmmlod(pnlkey1,7)
@@ -59,8 +57,6 @@ ccc MD      pnlkey1(4)  = VMM_KEY(hut1)
       pnerr = VMM_GET_VAR(vt1)
       pnerr = VMM_GET_VAR(tt1)
 ccc MD      pnerr = VMM_GET_VAR(hut1)
-      pnerr = VMM_GET_VAR(fit1)
-      pnerr = VMM_GET_VAR(tdt1)
       pnerr = VMM_GET_VAR(psdt1)
 *
       if (Lun_out.gt.0) then

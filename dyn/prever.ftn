@@ -1,22 +1,21 @@
 **s/r prever - prepares projection matrix for the vertical
-*               exclusively for pseudo-staggered model
-*               NK-th mode = computational mode
+*               exclusively for pseudo-staggered model.
+*               no computational mode
 *
 #include "model_macros_f.h"
 *
-      subroutine prever( F_eval_8, F_evec_8, F_wk1_8, F_wk2_8,
-     &                   F_z_8, F_hz_8, F_nk, KDIM )
+      subroutine prever(F_eval_8,F_evec_8,F_wk1_8,F_wk2_8,F_nk,KDIM)
 #include "impnone.cdk"
 *
       integer F_nk, KDIM
-      real*8 F_eval_8(*), F_evec_8(KDIM,*), F_wk1_8(KDIM,*), F_wk2_8(*),
-     %       F_z_8(KDIM), F_hz_8(KDIM)
+      real*8 F_eval_8(*), F_evec_8(KDIM,*), F_wk1_8(KDIM,*), F_wk2_8(*)
 *
 *author jean cote - 1990
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version (from prever v1_03)
 * v2_30 - Edouard  S.       - replace Schm_elast_L by Schm_cptop_L
+* stg   - Cote,Plante       - staggered version
 *
 *arguments
 *  Name        I/O                 Description
@@ -25,107 +24,51 @@
 * F_evec_8     O    - eigenvector matrix
 * F_wk1_8           - work field
 * F_wk2_8           - work field
-* F_z_8        I    - vertical levels
-* F_hz_8       I    - distance between vertical levels
 * F_nk         I    - number of vertical levels
 *
 *implicits
+#include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "schm.cdk"
 #include "cstv.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "opr.cdk"
 *
       integer i, j
-      real*8 pds, pdt, pdsc, pdordr
+      real*8 pdordr, zero_8, work_8(KDIM,KDIM)
+      parameter(zero_8=.0d0)
 *
-**
-*
-      pdt =  0.25
+      if(F_nk.ne.G_nk)call gem_stop('prever',-1)
+*     
       pdordr = -1.0
 *
-      do 20 j=1,F_nk
-*
-         do i=1,j-2
-            F_evec_8(i,j) = 0.0
-            F_wk1_8(i,j) = 0.0
-         end do
+      do i=1,F_nk
+         do j=1,F_nk
+            work_8(i,j)=zero_8
+            F_evec_8(i,j)=zero_8
+            F_wk1_8(i,j)=zero_8
+         enddo
+      enddo
+*      
+      do j=1,F_nk
 *
          i = j - 1
          if ( i.gt.0 ) then
-            pds = (F_z_8(i+1) + F_z_8(i))/2.
-            pds = pds*pds
-            F_evec_8(i,j) = - pds/F_hz_8(i)
-            F_wk1_8(i,j) = pdt * F_hz_8(i)
+*           A wing
+            F_evec_8(i,j) =  Opr_opszp2_8(j) + Ver_epsilon_8*Dcst_cappa_8*Opr_opszpm_8(j)
          endif
-*
+*     
          i = j
-         if ( i-1.gt.0 .and. i.lt.F_nk ) then
-            pds = (F_z_8(i+1) + F_z_8(i))/2.
-            pdsc= (F_z_8(i) + F_z_8(i-1))/2.
-            pds = pds*pds
-            pdsc= pdsc*pdsc
-            F_evec_8(i,j) = ( pdsc/F_hz_8(i-1) + pds/F_hz_8(i) )
-            F_wk1_8(i,j) = pdt * ( F_hz_8(i-1) + F_hz_8(i) )
-         else if ( i.eq.1 ) then
-            pds = (F_z_8(i+1) + F_z_8(i))/2.
-            pds = pds*pds
-            F_evec_8(i,j) = pds/F_hz_8(i)
-            F_wk1_8(i,j) = pdt * F_hz_8(i)
-         else if ( i.eq.F_nk ) then
-            pds = (F_z_8(i) + F_z_8(i-1))/2.
-            pds = pds*pds
-            F_evec_8(i,j) = pds/F_hz_8(i-1)
-            F_wk1_8(i,j) = pdt * F_hz_8(i-1)
-         endif
-
-   20 continue
-
-*     Apply vertical boundary conditions
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      F_evec_8(F_nk,F_nk) = F_evec_8(F_nk,F_nk) + Dcst_cappa_8*F_z_8(F_nk)
-      if (.not. Schm_cptop_L) then
-         F_evec_8(1,1) = F_evec_8(1,1) - Dcst_cappa_8*F_z_8(1)
-      elseif (.not. Schm_hydro_L) then
-         pdsc = Schm_nonhy_8 * Dcst_rgasd_8*Cstv_tstr_8
-     %                       /(Dcst_grav_8 *Cstv_tau_8 )**2
-         F_evec_8(1,1) = F_evec_8(1,1) + pdsc*F_z_8(1) 
-      endif
-*
-*     since A and B are singular, the singularity is lifted by
-*     transforming the original problem into:
-*
-*     BX = 1/(lambda + s) * (A + sB)X
-*
-      pds = 0.0
-      do i=1,F_nk-1
-         pdsc = (F_z_8(i+1) + F_z_8(i))/2.
-         pds = pds + F_hz_8(i)/pdsc
-      end do
-*
-      pds = ( float(2*F_nk-2)/pds ) ** 2
-*
-      do j=1,F_nk
-      do i=1,j
-         F_evec_8(i,j) = F_evec_8(i,j) + pds * F_wk1_8(i,j)
-      end do
-      end do
-      call geneigl( F_eval_8, F_wk1_8, F_evec_8, F_wk2_8, pdordr,
-     %                          1, F_nk, KDIM, 3*F_nk-1)
-*
-*     recover the eigenvalues lambda(i) from r(i) = 1/(lambda(i) + s)
-*     and normalize the eigenvectors
-*
-      do j=1,F_nk
-         if ( j.eq.F_nk ) then
-            pdt = 1.0
-            F_eval_8(j) = -1.0e38
-         else
-            pdt = 1.0/sqrt( F_eval_8(j) )
-            F_eval_8(j) = (pds - 1.0/F_eval_8(j))
-         endif
-         do i=1,F_nk
-            F_evec_8(i,j) = pdt * F_wk1_8(i,j)
-         end do
-      end do
+*        B: positive definit
+         F_wk1_8(i,j) = Opr_opszp0_8(G_nk+i)
+         work_8(i,j)=F_evec_8(i,j)
+*        A diag
+         F_evec_8(i,j) = Opr_opszp2_8(G_nk+i) + Ver_epsilon_8*Dcst_cappa_8*Opr_opszpm_8(G_nk+i)
+*     
+      enddo
+      
+      call geneigl( F_eval_8, F_evec_8, F_wk1_8, F_wk2_8, pdordr,
+     %     1, F_nk, KDIM, 3*F_nk-1)
 *     
       return
       end

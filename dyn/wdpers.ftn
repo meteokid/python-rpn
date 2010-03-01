@@ -14,7 +14,7 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_20 - Tanguay M.        - 1d higher order diffusion operator 
-* v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat 
+* v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
 *
 *object
 *	
@@ -63,7 +63,7 @@
       call tmg_start0 ( 12, 'HZD1D    ' )
       if (Hzd_t1_0_L) call hzd_hoffld (ut1,   LDIST_DIM, G_nk, 1)
       if (Hzd_t1_0_L) call hzd_hoffld (vt1,   LDIST_DIM, G_nk, 2)
-      if (Hzd_t1_0_L) call hzd_hoffld (psdt1, LDIST_DIM, G_nk, 3)
+      if (Hzd_t1_0_L) call hzd_hoffld (psdt1, LDIST_DIM, G_nk+1, 3)
       call tmg_stop0 (12)
       endif
 *
@@ -76,12 +76,18 @@
          do j= 1, l_nj
          do i= 1, l_ni
             uth(i,j,k)   = ut1(i,j,k)
-            psdth(i,j,k) = psdt1(i,j,k)
          end do
          end do
          do j= 1, l_njv
          do i= 1, l_ni
             vth(i,j,k) = vt1(i,j,k)
+         end do
+         end do
+      end do
+      do k=1,l_nk+1
+         do j= 1, l_nj
+         do i= 1, l_ni
+            psdth(i,j,k) = psdt1(i,j,k)
          end do
          end do
       end do

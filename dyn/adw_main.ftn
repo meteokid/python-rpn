@@ -53,7 +53,7 @@
 *                                                                      |
 *    ( winds in work3 ) ---> adw_main_2_pos ---> ( t1 pos. in wrk3 )   |
 *                                                                      |
-*   ( t1 pos. in wrk3 ) ---> adw_main_3_int                            |
+*    ( t1 pos. in wrk3) ---> adw_main_3_int                            |
 *                                                                      |
 * Note that when we cary t1 positions in wrk3, it is larger than the   |
 * data.                                                                |
@@ -63,6 +63,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
+#include "type.cdk"
 #include "adw.cdk"
 #include "v4dg.cdk"
 #include "v4dr.cdk"
@@ -71,7 +72,8 @@
 *
 ************************************************************************
       integer nijkag,i
-      real , dimension (Adw_nit*Adw_njt*l_nk) :: u,v,w
+      real , dimension (Adw_nit*Adw_njt*G_nk) :: u,v
+      real , dimension (Adw_nit*Adw_njt*(G_nk+1)) :: w
       logical v4dstore_L
 *
 ************************************************************************
@@ -84,7 +86,7 @@
          Adw_trunc(i) = 0
       enddo
 *
-      call adw_main_1_wnd ( u, v, w, Adw_nit, Adw_njt, l_nk)
+      call adw_main_1_wnd ( u, v, w, l_ni, l_nj, G_nk)
 * 
       call adw_main_2_pos ( F_it, u, v, w )
 *

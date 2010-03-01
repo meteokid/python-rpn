@@ -176,6 +176,7 @@
 *C    Perform output if required
 *     --------------------------
       call blocstat ()
+
       call out_dyn ()
 *
       if (Schm_sfix_L.and.V4dg_conf.eq.0) call surfix ( )

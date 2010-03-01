@@ -60,6 +60,9 @@
 *               ---------------------------------
 *
       call set_cn1()
+
+c      call my_xch_halo(1)
+
 *
 *C              Additional settings for 4D-Var 
 *               ------------------------------

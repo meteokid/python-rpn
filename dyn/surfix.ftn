@@ -24,7 +24,7 @@
       integer  vmmlod,vmmget,vmmuln
       external vmmlod,vmmget,vmmuln
 
-      integer err, key(4)
+      integer err, key(3)
 
       integer i,j
 *
@@ -33,17 +33,14 @@
       key( 1) = VMM_KEY(ut1)
       key( 2) = VMM_KEY(vt1)
       key( 3) = VMM_KEY(tt1)
-      key( 4) = VMM_KEY(tpt1)
-      err = vmmlod(key,4)
+      err = vmmlod(key,3)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(tpt1)
 
       do j=1,l_nj
       do i=1,l_ni
         tt1(i,j,l_nk) = tt1(i,j,l_nk-1)
-        tpt1(i,j,l_nk) = tpt1(i,j,l_nk-1)
       enddo
       enddo
       do j=1,l_nj

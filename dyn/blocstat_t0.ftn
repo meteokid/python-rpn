@@ -1,0 +1,140 @@
+***s/r blocstat  - Performs 3D statistics on model fields for LAM vs GLB
+*
+#include "model_macros_f.h"
+*
+      subroutine blocstat_t0
+*
+#include "impnone.cdk"
+*
+*author
+*     M. Desgagne
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Desgagne M.       - 4D-var statistics control
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Lee V.            - CFL, trajectory stats for LAM
+* v3_21 - Lee V.            - Remove Tr2d
+*
+*object
+*     see above
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "step.cdk"
+#include "vt0.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+#include "v4dg.cdk"
+#include "tr3d.cdk"
+#include "type.cdk"
+#include "adw.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
+      external vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
+
+      integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf
+      integer err, key(max(Tr3d_ntr,4)), key0, trunc(4)
+      real tr,buf(l_ni,G_nk+1),cfl
+      pointer (patr, tr(LDIST_SHAPE,*))
+*     ---------------------------------------------------------------
+*
+      if ((V4dg_conf.ne.0).and.(V4dg_output_L)) then
+         call v4d_blocstat ()
+      elseif (V4dg_conf.eq.0) then
+*
+      if (mod(Lctl_step,Step_gstat).eq.0) then
+*
+      key(1)  = VMM_KEY(ut0)
+      key(2)  = VMM_KEY(vt0)
+      key(3)  = VMM_KEY(tt0)
+      key(4)  = VMM_KEY(psdt0)
+*
+      err = vmmlod(key,4)
+*
+      err = VMM_GET_VAR(ut0)
+      err = VMM_GET_VAR(vt0)
+      err = VMM_GET_VAR(tt0)
+      err = VMM_GET_VAR(psdt0)
+*
+      if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
+*
+      i0 = 1
+      in = G_ni
+      j0 = 1
+      jn = G_nj
+      inn= 0
+      if (G_lam) then
+           inn=1
+      endif
+      call glbstat (ut0  ,'UU',LDIST_DIM,G_nk  ,i0,in-inn,j0,jn  ,1,G_nk  )
+      call glbstat (vt0  ,'VV',LDIST_DIM,G_nk  ,i0,in    ,j0,jn-1,1,G_nk  )
+      call glbstat (psdt0,'WW',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
+      call glbstat (tt0  ,'TT',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
+*
+*    Comment the above glbstats and uncomment the following lines for
+*    GLBSTAT for LAM versus GLB acid test
+*
+*
+      err = vmmuld(key,4)
+*
+      key0 = VMM_KEY (trt0)
+      do k=1,Tr3d_ntr
+         key(k) = key0 + k
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key,Tr3d_ntr)  
+         do k=1,Tr3d_ntr
+            err = vmmget(key(k),patr,tr)
+            call glbstat (tr,Tr3d_name_S(k),LDIST_DIM,G_nk+1,i0,in,j0,jn,
+     $                                                          1,G_nk+1)
+         end do
+         err = vmmuld(key,Tr3d_ntr)
+      endif
+*
+*
+      if (Ptopo_myproc.eq.0) write(6,1001)
+*
+*     Print max courrant numbers if LAM mode
+      if (G_lam) then
+         if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0) then
+            cfl = Adw_cfl_8(1)
+            write (6,101) 'x,y',Adw_cfl_i(1,1),Adw_cfl_i(2,1),
+     $                          Adw_cfl_i(3,1),cfl
+            cfl = Adw_cfl_8(2)
+            write (6,101) 'z'  ,Adw_cfl_i(1,2),Adw_cfl_i(2,2),
+     $                          Adw_cfl_i(3,2),cfl
+            cfl = Adw_cfl_8(3)
+            write (6,101) '3D' ,Adw_cfl_i(1,3),Adw_cfl_i(2,3),
+     $                          Adw_cfl_i(3,3),cfl
+            Adw_cfl_8 (:  ) = 0.0d0
+            Adw_cfl_i (:,:) = 0
+         endif
+         if (Adw_trunc_traj_L) then
+            call rpn_comm_Allreduce (Adw_trunc,trunc,4,
+     $                            "MPI_INTEGER","MPI_SUM","grid",err)
+            if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0)
+     $         write(6,1003)Lctl_step,  " Trj Cut :",trunc(1)+trunc(2)+
+     $           trunc(3)+trunc(4),trunc(1),trunc(2),trunc(3),trunc(4)
+         endif
+      endif
+*
+      endif
+*
+      endif
+*
+ 101  format (' MAX COURANT NUMBER:  ',
+     $          a3,': [(',i3,',',i3,',',i3,') ',f12.7,']')
+ 1000 format (/,19('#'),'BLOCSTAT T0',i6,1X,,19('#'))
+ 1001 format (  19('#'),'BLOCSTAT T0...done')
+ 1002 format (i4,a10, i4,10X,' Max:[(',i3,',',i3,',',i3,')]',a6)
+ 1003 format (i4,a10, i4,10X,' N:[',i4,'] S:[',i4,'] E :[',i4,'] W:[',i4,']')
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

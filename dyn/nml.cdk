@@ -5,7 +5,7 @@
 *
       namelist /gem_cfgs/
      $     Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup,
-     $     hyb, Grd_rcoef, Pres_ptop, Pres_vtap_L, Level_ip12000_L,
+     $     hyb, Grd_rcoef, Pres_ptop, Pres_vtap_L, 
      $     Mem_mx3db , Mem_phyncore_L, G_halox, G_haloy,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
      $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,
@@ -13,7 +13,7 @@
      %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,Schm_wload_L,
      %     Schm_itnlh, Schm_itraj,  Schm_alpco_8, Schm_hdlast_L,
      %     Schm_adcub_L, Schm_psadj_L,  Schm_difqp_L, Schm_maxcfl_lam,
-     %     Schm_pcsty_L, Schm_pheat_L, Schm_sfix_L, 
+     %     Schm_pcsty_L, Schm_pheat_L, Schm_sfix_L, Schm_eulmtemp_L,
      $     Adw_nkbz_L, Adw_exdg_L, 
      $     Adw_ckbd_L, Adw_halox, Adw_haloy, Adw_trunc_traj_L,
      $     Adw_mono_L, Adw_lag3d_L,Adw_nosetint_L,
@@ -38,7 +38,7 @@
      $     Zblen_L, Zblen_spngthick, Zblen_spngtt_L
       namelist /gem_cfgs_p/
      $     Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup,
-     $     Grd_rcoef, Pres_ptop, Pres_vtap_L, Level_ip12000_L,
+     $     Grd_rcoef, Pres_ptop, Pres_vtap_L, 
      $     Mem_mx3db , Mem_phyncore_L, G_halox, G_haloy,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
      $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,

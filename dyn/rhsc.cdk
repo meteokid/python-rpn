@@ -14,7 +14,7 @@
 * ru                 | momentum equation along x                       |
 * rv                 | momentum equation along y                       |
 * rw                 | momentum equation along z                       |
-* rvv                | vertical velocity equation                      |
+* rfi                | vertical velocity equation                      |
 * rcn                | continuity equation                             |
 * rth                | thermodynamic equation                          |
 * rhu                | specific humidity equation                      |
@@ -22,8 +22,6 @@
 *--------------------|-------------------------------------------------|
 * rd                 | rhs of horizontal divergence equations          |
 * r1                 | combined divergence and continuity equations    |
-* r3                 | combined vertical motion equations              |
-* r3p                | combined vertical motion equations              |
 *--------------------|-------------------------------------------------|
 * rhell              | linear component of rhs of Helmholtz equation   |
 * rheln              | non-linear component of rhs of Helmholtz eqn    |
@@ -44,17 +42,15 @@
       MARK_COMMON_BEG (rhsc)
       DCL_VMMVAR (rhsc,ru    ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,rv    ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,rw    ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,rvv   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhsc,rw    ,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (rhsc,rvv   ,real,(LDIST_SHAPE,l_nk+1))
       DCL_VMMVAR (rhsc,rcn   ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,rth   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhsc,rth   ,real,(LDIST_SHAPE,l_nk+1))
       DCL_VMMVAR (rhsc,rd    ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,r3    ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,rhell ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,ruw1  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,rvw1  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,r1    ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,r3p   ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,rheln ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,ruw2  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,rvw2  ,real,(LDIST_SHAPE,l_nk))

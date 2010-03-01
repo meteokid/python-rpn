@@ -196,11 +196,11 @@
          NV = NV+1
       enddo
 *
-  100 if (NV.gt.0 .and. NV.lt.G_nk) then
+  100 if (NV.gt.0 .and. NV.lt.G_nk+2) then
          do i=NV,1,-1
             P_rad_nivl(i+1) = P_rad_nivl(i)
          enddo
-      else if (NV.eq.G_nk) then
+      else if (NV.eq.G_nk+2) then
          NV = 0
       end if
 *
@@ -240,7 +240,7 @@
       p_offi = 1 + pil_w - p_nmp*west  - 1
       p_offj = 1 + pil_s - p_nmp*south - 1
 *
-      call phydebu4 ( p_ni, G_nk, p_bent_top ,p_bdyn_top, p_bper_top, 
+      call phydebu4 ( p_ni, G_nk+2, p_bent_top ,p_bdyn_top, p_bper_top, 
      $                p_bvol_top, prout, p_radiaf )
 *
       if ( (p_bent_top.le.maxbus).and.(p_bdyn_top.le.maxbus).and.

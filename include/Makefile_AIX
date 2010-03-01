@@ -2,8 +2,8 @@ OPTIL  = 2
 OMP    = -openmp
 MPI    = -mpi
 RMN    = rmn_007
-COMM   = rpn_comm208 rmn_pre_009
+COMM   = rpn_comm208
 PRIV   = priv
 
-IBM_LD = hpm_r pmapi
+IBM_LD = hpm pmapi
 

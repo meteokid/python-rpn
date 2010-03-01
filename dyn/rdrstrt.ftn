@@ -36,6 +36,7 @@
 #include "glb_ld.cdk"
 #include "pres.cdk"
 #include "pilot.cdk"
+#include "zblen.cdk"
 *
 **
       integer adr,ier,dim,current_nest
@@ -72,6 +73,10 @@
          adr = adr + 1
          call waread (Lun_rstrt, current_nest  ,adr, 1)
          call datf2p (Pil_current_S,current_nest)
+         if(Schm_theoc_L)then
+            adr = adr + 1
+            call waread (Lun_rstrt,Zblen_hmin,adr, 1)
+         endif
 *
          call waclos(Lun_rstrt)
          ier = fclos(Lun_rstrt)  

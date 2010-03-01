@@ -55,6 +55,7 @@
 * Schm_alpco_8       | Relaxation parameter for Coriolis inversion     |
 * Schm_nonhy_8       | 0 to 1:  from hydrostatic to non-hydrostatic    |
 * Schm_offline_L     | run without the dynamical kernel (GEM)          |
+* Schm_eulmtemp_L    | Eulerian treatment of mean temperature          |
 *----------------------------------------------------------------------
 *
 #endif
@@ -62,7 +63,8 @@
       logical Schm_hydro_L, Schm_cptop_L, Schm_moist_L, Schm_nkbz_L , 
      $        Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
      $        Schm_chems_L, Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L,
-     $        Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L
+     $        Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L,
+     $        Schm_eulmtemp_L
 
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, 
      %        Schm_itnlh, Schm_itraj, Schm_nith, Schm_maxcfl_lam
@@ -74,7 +76,8 @@
      $         Schm_hydro_L, Schm_cptop_L, Schm_moist_L, Schm_nkbz_L , 
      $         Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
      $         Schm_chems_L, Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L,
-     $         Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L
+     $         Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L,
+     $         Schm_eulmtemp_L
       MARK_COMMON_END (schm_l)
 *
       MARK_COMMON_BEG (schm_i)

@@ -2,14 +2,16 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine adw_tricub_lag3d ( F_out, F_in, F_x, F_y, F_z,
-     %                              F_num, F_mono_L, i0, in, j0, jn, kn )
+      subroutine adw_tricub_lag3d ( F_out, F_in, F_x, F_y, F_z, F_num,
+     %                              F_mono_L, i0, in, j0, jn, F_nk, F_lev_S )
 *
       implicit none
 *
+      character*1 F_lev_S
+*
       logical F_mono_L
 *
-      integer F_num, i0, in, j0, jn, kn
+      integer F_num, i0, in, j0, jn, F_nk
 *
       real F_in(*)
 *
@@ -46,7 +48,9 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "type.cdk"
 #include "adw.cdk"
+#include "ver.cdk"
 * **********************************************************************
       integer n,nijag,i,j,k,nij,iimax,jjmax,kkmax,ii,jj,kk
       logical zcubic_L
@@ -63,19 +67,46 @@
       real *8 triprd,za,zb,zc,zd,rri,rrj,rrk,ra,rb,rc,rd
       triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
 *
+      integer,dimension(:),pointer :: p_lcz
+      real*8  p_z00_8
+      real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8
+      real*8, dimension(:),pointer :: p_zbacd_8, p_zcabd_8, p_zdabc_8
+*
 *     ----------------------------------------------------
+!
+      if ( F_lev_S .eq. 'm') then
+         p_z00_8 = Ver_z_8%m(1)
+         p_lcz =>Adw_lcz%m
+         p_bsz_8 =>Adw_bsz_8%m
+         p_zabcd_8 =>Adw_zabcd_8%m
+         p_zbacd_8 =>Adw_zbacd_8%m
+         p_zcabd_8 =>Adw_zcabd_8%m
+         p_zdabc_8 =>Adw_zdabc_8%m
+         p_zbc_8 =>Adw_zbc_8%m
+         kkmax = G_nk-1
+      else
+         p_z00_8 = Ver_z_8%t(1)
+         p_lcz =>Adw_lcz%t
+         p_bsz_8 =>Adw_bsz_8%t
+         p_zabcd_8 =>Adw_zabcd_8%t
+         p_zbacd_8 =>Adw_zbacd_8%t
+         p_zcabd_8 =>Adw_zcabd_8%t
+         p_zdabc_8 =>Adw_zdabc_8%t
+         p_zbc_8 =>Adw_zbc_8%t
+         kkmax = G_nk
+      endif
 *
       nij   = l_ni*l_nj
       nijag = Adw_nit * Adw_njt
 *
       iimax = G_ni+2*Adw_halox-2
       jjmax = G_nj+Adw_haloy
-      kkmax = l_nk-1
 *
       if(F_mono_L) then
 *
+*
 !$omp do
-      do 100 k=1,kn
+      do 100 k=1,F_nk
       do  90 j=j0,jn
       do  80 i=i0,in
       n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -93,9 +124,9 @@
       jj = max(Adw_haloy,min(jj,jjmax))
 *
       rrk= F_z(n)
-      kk = ( rrk - Adw_z00_8 ) * Adw_ovdz_8
-      kk = Adw_lcz( kk+1 )
-      if ( rrk .lt. Adw_bsz_8(kk) ) kk = kk - 1
+      kk = ( rrk - p_z00_8 ) * Adw_ovdz_8
+      kk = p_lcz( kk+1 )
+      if ( rrk .lt. p_bsz_8(kk) ) kk = kk - 1
       kk = min(kkmax-1,max(0,kk))
 *
       zcubic_L = (kk.gt.0) .and. (kk.lt.kkmax-1)
@@ -179,19 +210,19 @@
 *     z interpolation
 * *********************************************************************
       if(zcubic_L) then
-      ra = Adw_bsz_8(kk-1)
-      rb = Adw_bsz_8(kk  )
-      rc = Adw_bsz_8(kk+1)
-      rd = Adw_bsz_8(kk+2)
-      p1 = triprd(rrk,rb,rc,rd)*Adw_zabcd_8(kk+1)
-      p2 = triprd(rrk,ra,rc,rd)*Adw_zbacd_8(kk+1)
-      p3 = triprd(rrk,ra,rb,rd)*Adw_zcabd_8(kk+1)
-      p4 = triprd(rrk,ra,rb,rc)*Adw_zdabc_8(kk+1)
+      ra = p_bsz_8(kk-1)
+      rb = p_bsz_8(kk  )
+      rc = p_bsz_8(kk+1)
+      rd = p_bsz_8(kk+2)
+      p1 = triprd(rrk,rb,rc,rd)*p_zabcd_8(kk+1)
+      p2 = triprd(rrk,ra,rc,rd)*p_zbacd_8(kk+1)
+      p3 = triprd(rrk,ra,rb,rd)*p_zcabd_8(kk+1)
+      p4 = triprd(rrk,ra,rb,rc)*p_zdabc_8(kk+1)
 *
       F_out(n) = p1 * a1 + p2 * b1 + p3 * c1 + p4 * d1
 *
       else
-      p3 = (rrk-Adw_bsz_8(kk))*Adw_zbc_8(kk+1)
+      p3 = (rrk-p_bsz_8(kk))*p_zbc_8(kk+1)
       p2 = 1. - p3
 *
       F_out(n) = p2 * b1 + p3 * c1
@@ -208,7 +239,7 @@
 *
 !$omp do
 *
-      do 101 k=1,kn
+      do 101 k=1,F_nk
       do  91 j=j0,jn
       do  81 i=i0,in
       n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -226,9 +257,9 @@
       jj = max(Adw_haloy,min(jj,jjmax))
 *
       rrk= F_z(n)
-      kk = ( rrk - Adw_z00_8 ) * Adw_ovdz_8
-      kk = Adw_lcz( kk+1 )
-      if ( rrk .lt. Adw_bsz_8(kk) ) kk = kk - 1
+      kk = ( rrk - p_z00_8 ) * Adw_ovdz_8
+      kk = p_lcz( kk+1 )
+      if ( rrk .lt. p_bsz_8(kk) ) kk = kk - 1
       kk = min(kkmax-1,max(0,kk))
 *
       zcubic_L = (kk.gt.0) .and. (kk.lt.kkmax-1)
@@ -308,19 +339,19 @@
 *     z interpolation
 * *********************************************************************
       if(zcubic_L) then
-      ra = Adw_bsz_8(kk-1)
-      rb = Adw_bsz_8(kk  )
-      rc = Adw_bsz_8(kk+1)
-      rd = Adw_bsz_8(kk+2)
-      p1 = triprd(rrk,rb,rc,rd)*Adw_zabcd_8(kk+1)
-      p2 = triprd(rrk,ra,rc,rd)*Adw_zbacd_8(kk+1)
-      p3 = triprd(rrk,ra,rb,rd)*Adw_zcabd_8(kk+1)
-      p4 = triprd(rrk,ra,rb,rc)*Adw_zdabc_8(kk+1)
+      ra = p_bsz_8(kk-1)
+      rb = p_bsz_8(kk  )
+      rc = p_bsz_8(kk+1)
+      rd = p_bsz_8(kk+2)
+      p1 = triprd(rrk,rb,rc,rd)*p_zabcd_8(kk+1)
+      p2 = triprd(rrk,ra,rc,rd)*p_zbacd_8(kk+1)
+      p3 = triprd(rrk,ra,rb,rd)*p_zcabd_8(kk+1)
+      p4 = triprd(rrk,ra,rb,rc)*p_zdabc_8(kk+1)
 *
       F_out(n) = p1 * a1 + p2 * b1 + p3 * c1 + p4 * d1
 *
       else
-      p3 = (rrk-Adw_bsz_8(kk))*Adw_zbc_8(kk+1)
+      p3 = (rrk-p_bsz_8(kk))*p_zbc_8(kk+1)
       p2 = 1. - p3
 *
       F_out(n) = p2 * b1 + p3 * c1
