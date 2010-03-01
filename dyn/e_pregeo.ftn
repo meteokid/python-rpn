@@ -110,7 +110,7 @@
          end do
       endif
       if (snodp.gt.0) then
-         do i=1,n
+         do i=1,n*5
             geobus(snodp+i-1) = 0.01 * geobus(snodp+i-1)
          end do
       endif

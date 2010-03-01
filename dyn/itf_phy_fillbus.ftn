@@ -188,6 +188,10 @@
          if (entpar(pid,3).gt.0) then
             do gid=1,p_bgeo_top
                if (entnm(pid).eq.geonm(gid,1)) then
+                  if (entpar(pid,6).gt.geopar(gid,3)) then
+                    print*, 'INCOMPATIBLE ',entnm(pid),entpar(pid,6),geopar(gid,3)
+	            stop
+                  endif
                   do mul=1,entpar(pid,6)
                     offp= entpar(pid,1)+(mul-1)*p_ni
                     offg= geopar(gid,1)+(mul-1)*l_ni*l_nj

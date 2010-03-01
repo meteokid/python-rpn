@@ -70,6 +70,7 @@
       Topo_init_L = .true.
       Topo_dgfmx_L= .false.
       Topo_dgfms_L= .true.
+      Topo_clip_L = .true.
 *
       Anal_cond       = .false.
       anal_perturb    = .false.

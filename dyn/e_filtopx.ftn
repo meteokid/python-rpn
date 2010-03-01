@@ -108,11 +108,7 @@
 *
       if ( Topo_dgfmx_L ) then
          write(6, 9400 )
-         do j=1,fnjo
-         do i=1,nio
-            w1(i,j)=max( 0.0, w1(i,j) )
-         enddo
-         enddo
+         if ( Topo_clip_L ) w1(1:nio,1:fnjo) = max( 0.0, w1(1:nio,1:fnjo) )
          if ( ftgrd .eq. 'G' ) then
             call e_setdgf (w1,gnis,gnjs, pni, pnj, xdhx    ,xdhy ,xdcy )
          else if ( ftgrd .eq. 'U' ) then
@@ -130,11 +126,7 @@
 *
       if ( Topo_filmx_L ) then
          write(6,9500 )
-         do j=1,fnjo
-         do i=1,nio
-            w1(i,j)=max( 0.0, w1(i,j) )
-         enddo
-         enddo
+         if ( Topo_clip_L ) w1(1:nio,1:fnjo) = max( 0.0, w1(1:nio,1:fnjo) )
          if ( ftgrd .eq. 'G' ) then
             call e_ntrxyfil( w1, w1, 0.5, xdhx, xdhy,
      %                      pni, pnj, 1, gnis, gnjs, 1)   

@@ -84,7 +84,7 @@ The following 4 parameters apply only for LAM grids                    |      |
 * Grdc_dx            | mesh length (resolution) in x and y-direction   |  0.  |
 *                    | in degrees for the cascade LAM grid             |      |
 * Grdc_hblen         | number of points for the blending zone (Hblen_x)|      |
-* Grdc_initphy_L     | TRUE to dump out permanent bus for cascade mode |false |
+* Grdc_initphy_L     | TRUE to dump out permanent bus for cascade mode |      |
 * Grdc_iref          | I reference point (within  Grdc_ni)             | 1    |
 * Grdc_jref          | J reference point (within  Grdc_nj)             | 1    |
 * Grdc_latr          | latitude on rotated grid of reference point     | 0.   |
@@ -167,9 +167,9 @@ The following 4 parameters apply only for LAM grids                    |      |
 * Mod_runstrt_S      |  Analysis date for LAM run (yyyymmdd.hhmmss)    | ' '  |
 * Offline_ip1a       |  ip1 value for piloting fields used in Offline  |  0   |
 * Offline_int_accu_S |  Type of interp for accumulators in Offline mode|LINEAR|
-* Pil_3df_L          | .true. to have initial condition and pilot files|true  |
+* Pil_3df_L          |  .true. to have 3DF or BCS files, not BMF files |true  |
 * Pil_bcs_hollow_L   |  .true. to have BCS files (hollow 3DF files)    |true  |
-* Pil_bmf_L          |  .true. to have BMF files,.false.to have 3DF    |false |
+* Pil_bmf_L          |  .true. to have BMF files                       |false |
 * Pil_dx             |  resolution of 3DF/BCS data to feed model in rad|Grd_dx|
 * Pil_hblen          |  Number of points for blending (Hblen)          |  10  |
 * Pil_jobend_S       |  Ending   date for pilot fi(yyyymmdd.hhmmss)    | ' '  |

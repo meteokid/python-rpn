@@ -36,6 +36,7 @@
 * v3_31 - Tanguay M.        - Derive image winds from true winds when no interpolation
 * v3_31 - Tanguay M.        - Look first to image winds when interpolation 
 * v3_31 - Tanguay M.        - Allow same grid in analysis and in model (BCS mode) 
+* v3_33 - Tanguay M.        - Correction iu-jv Image Winds 
 *
 *object
 *        see above ID
@@ -87,7 +88,7 @@
       integer g1_v, g2_v, g3_v, g4_v
       logical read_image_L
       integer keyu,keyv,src_gid_u,src_gid_v,ind
-      integer nic_u,njc_u,nic_v,njc_v
+      integer nic_u,njc_u,nic_v,njc_v,i1,i2,j1,j2
       character*1 typ_u,typ_v,grd_u,grd_v
       real*8 pdsc1_8
 *
@@ -155,10 +156,10 @@
                flag_ut1 = .true.
                var_uu = 'UT1 '
                var_vv = 'VT1 '
-               iu = nisu
+               iu = nisu-1
                ju = njsu
                iv = nisv
-               jv = njsv
+               jv = njsv-1
                key1 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
      $                                         ip2a,ip3a,' ',var_uu)
                key2 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),
@@ -257,6 +258,25 @@ c    $                                  na(k), ip2a,ip3a, tva, var_vv)
                   end do
                   do i=1,nisv*njsv
                      vv(i) = w2(i) / dcst_knams_8
+                  end do
+*
+               else 
+*
+                  uu = 0.
+                  vv = 0.
+                  do j=1,ju
+                  do i=1,iu
+                     i1 =   iu*(j-1) + i
+                     i2 = nisu*(j-1) + i
+                     uu(i2) = w1(i1)
+                  end do
+                  end do
+                  do j=1,jv
+                  do i=1,iv
+                     j1 =   iv*(j-1) + i
+                     j2 = nisv*(j-1) + i
+                     vv(j2) = w2(j1) 
+                  end do
                   end do
 *
                end if

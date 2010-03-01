@@ -115,7 +115,7 @@
       call mgsdict (ni, nj, z0,    
      $'VN=z0en    ; VS=row  ; EN=zp; INTERP=LINEAR; SEQ=G' )
       call mgsdict (ni, nj, snodp, 
-     $'VN=snodpen ; VS=row  ; EN=sd; INTERP=NEAREST ; SEQ=AV')
+     $'VN=snodpen ; VS=row*5; EN=sd; INTERP=NEAREST ; SEQ=AV')
       call mgsdict (ni, nj, i0,     
      $'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
       call mgsdict (ni, nj, vegf,  

@@ -46,7 +46,7 @@
      $     Pil_hblen     , Pil_jobend_S    , Pil_jobstrt_S, 
      $     Pil_maxcfl    , Pil_lancemodel  , Pil_nesdt    , Pil_sfc2d_L,
      $     Schm_offline_L,
-     $     Topo_dgfms_L  ,Topo_dgfmx_L, Topo_filmx_L,Topo_init_L
+     $     Topo_dgfms_L  ,Topo_dgfmx_L, Topo_filmx_L, Topo_init_L, Topo_clip_L
 *
       namelist /gement_p/
      $     Anal_cond, Anal_perturb, E_force_read_image_L ,
@@ -61,5 +61,5 @@
      $     Pil_hblen     , Pil_jobend_S    , Pil_jobstrt_S, 
      $     Pil_maxcfl    , Pil_lancemodel  , Pil_nesdt    , Pil_sfc2d_L,
      $     Schm_offline_L,
-     $     Topo_dgfms_L  ,Topo_dgfmx_L, Topo_filmx_L,Topo_init_L
+     $     Topo_dgfms_L  ,Topo_dgfmx_L, Topo_filmx_L, Topo_init_L, Topo_clip_L
 *

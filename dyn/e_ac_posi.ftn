@@ -30,6 +30,7 @@
 *revision
 * v3_30 - Lee V.       - initial version for GEMDM
 * v3_31 - Tanguay M.   - Allow same grid in analysis and in model (BCS mode)
+* v3_33 - Tanguay M.   - Add epsilon_8 
 *
 #include "e_grids.cdk"
 #include "e_anal.cdk"
@@ -48,6 +49,8 @@
       real*8 orr, deg2rad_8
       parameter( ONE_8   = 1.0 )
       parameter( CLXXX_8 = 180.0 )
+*
+      real*8, parameter :: EPSILON_8 = 1.0e-5 
 *
 *---------------------------------------------------------------------
 *
@@ -88,7 +91,7 @@
       if (e_grdc_gid.ge.e_grdc_gif) e_grdc_gid = 0
 *
       do i=1,dimgy
-         if (ypx(i).le.yfi(1)) e_grdc_gjd=i
+         if (ypx(i)-EPSILON_8.le.yfi(1)) e_grdc_gjd=i
          if (ypx(i).le.yfi(F_width+1)) e_grdc_gjdi=i
          if (ypx(i).le.yfi(njfi)) e_grdc_gjf=i
          if (ypx(i).le.yfi(njfi-F_width)) gjfi=i
