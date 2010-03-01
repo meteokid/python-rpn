@@ -85,6 +85,7 @@
 #include "zblen.cdk"
 #include "v4dr.cdk"
 #include "offline.cdk"
+#include "ens_param.cdk"
 *
       integer err
 *------------------------------------------------------------------
@@ -108,6 +109,10 @@
       COMMON_BROADCAST(Hgc_s)
       COMMON_BROADCAST(Out1)
       COMMON_BROADCAST(Out1c)
+      COMMON_BROADCAST(Ens_c)
+      COMMON_BROADCAST(Ens_l)
+      COMMON_BROADCAST(Ens_i)
+      COMMON_BROADCAST(Ens_r)
       COMMON_BROADCAST(Grd_c)
       COMMON_BROADCAST(Grd_l)
       COMMON_BROADCAST(Grd_i)

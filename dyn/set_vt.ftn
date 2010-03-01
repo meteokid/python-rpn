@@ -31,6 +31,8 @@
 #include "vt0.cdk"
 #include "vth.cdk"
 #include "vt1.cdk"
+#include "ens_vt1.cdk"
+#include "ens_param.cdk"
 #include "vt2.cdk"
 #include "vtx.cdk"
 #include "tr3d.cdk"
@@ -163,12 +165,17 @@
       VMM_NAM(tplt1 )= 'TPL1'
       VMM_NAM(mut1  )= 'MUT1'
       VMM_NAM(psdt1 )= 'PSD1'
+      VMM_NAM(difut1)= 'DUT1'
+      VMM_NAM(difvt1)= 'DVT1'
+      VMM_NAM(ugwdt1)= 'GUT1'
+      VMM_NAM(vgwdt1)= 'GVT1'
       VMM_NAM(st1   )= 'ST1'
       VMM_NAM(trt1  )= 'TRT1'
 *
       VMM_NAM(xct1  )= 'XCT1'
       VMM_NAM(yct1  )= 'YCT1'
       VMM_NAM(zct1  )= 'ZCT1'
+      VMM_NAM(mcsph1)= 'MCS1'
 *
       VMM_CREATE(ut1  , LARRAY3D, 1, attri2_S)
       VMM_CREATE(vt1  , LARRAY3D, 1, attri2_S)
@@ -184,6 +191,10 @@
       VMM_CREATE(pipt1, LARRAY3D, 1, attri_S)
       VMM_CREATE(tplt1, LARRAY3D, 1, attri_S)
       VMM_CREATE(psdt1, LARRAY3D, 1, attri_S)
+      VMM_CREATE(difut1,LARRAY3D, 1, attri2_S)
+      VMM_CREATE(difvt1,LARRAY3D, 1, attri2_S)
+      VMM_CREATE(ugwdt1,LARRAY3D, 1, attri2_S)
+      VMM_CREATE(vgwdt1,LARRAY3D, 1, attri2_S)
       VMM_CREATE(st1  , LARRAY2D, 1, attri_S)
       if (.not. Schm_hydro_L) then
          VMM_CREATE(  mut1, LARRAY3D, 1, attri_S )
@@ -195,6 +206,7 @@
       VMM_CREATE(xct1 , l_ni*l_nj*l_nk, 1, attri_S)
       VMM_CREATE(yct1 , l_ni*l_nj*l_nk, 1, attri_S)
       VMM_CREATE(zct1 , l_ni*l_nj*l_nk, 1, attri_S)
+      VMM_CREATE(mcsph1,l_ni*l_nj*l_nk, 1, attri_S)
 *
 *C       5.    Create variables at time t0-2dt (t2)
 *              ------------------------------------
@@ -231,6 +243,17 @@
          VMM_CREATE(multx, LARRAY3D, 1, attri_S)
       endif
 *
+*
+*C       6.    Create variables with no specific time tag
+*              ------------------------------------------
+*	Assign the names of the variables
+*
+      VMM_NAM(anm)= 'ANM'
+      VMM_NAM(znm)= 'ZNM'
+*
+      VMM_CREATE(anm,2*Ens_gg_dim*Ens_gg_nniv, 1, attri_S)
+      VMM_CREATE(znm,2*Ens_dim2_max*Ens_ncha2, 1, attri_S)
+
  1000 format(
      +/,'INITIALIZATION OF TIME-DEP. VARIABLE COMDECKS (S/R SET_VT)',
      +/,'=========================================================')

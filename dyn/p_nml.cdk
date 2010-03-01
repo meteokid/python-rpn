@@ -18,7 +18,8 @@
 * v3_20 _ Leduc A-M.             - added P_rad_tsflxir_L
 * v3_22 _ Leduc A-M.             - added P_pbl_limsnodp_L
 * v3_22 _ Dugas B.               - added P_cond_kfctriga
-
+* v3_22 _ Pellerin G.            - added P_gwd_taufac
+* v3_22 _ Spacek L.              - added P_gwd_cdblk
 *
 ***comdeck p_nml.cdk
 *
@@ -83,7 +84,7 @@
 
      $     P_cond_kticefrac_L ,
 
-     $     P_gwd_s ,
+     $     P_gwd_s , P_gwd_taufac, P_gwd_cdblk,
 *
      $     P_serg_srsus_L, P_serg_srsrf_s, 
      $     P_serg_srprf_s, P_serg_srwri, P_serg_serstp,
@@ -136,7 +137,7 @@
 
      $     P_cond_kticefrac_L ,
 
-     $     P_gwd_s ,
+     $     P_gwd_s , P_gwd_taufac, P_gwd_cdblk,
 *
      $     P_serg_srsus_L, P_serg_srwri, P_serg_serstp,
 *

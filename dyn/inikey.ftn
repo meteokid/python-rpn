@@ -83,6 +83,8 @@
       call getindx ('INCRTP',    'P',incrtp,   lght, init0)
       call getindx ('UFCP',      'P',ufcp,     lght, init0)
       call getindx ('VFCP',      'P',vfcp,     lght, init0)
+      call getindx ('MRKV',      'P',mrkv,     lght, init0)
+      call getindx ('MRK2',      'P',mrk2,     lght, init0)
       call getindx ('FDSI',      'P',fdsi,     lght, init0)
       call getindx ('TDIAG',     'P',tdiag,     lght, init0)
       call getindx ('UDIAG',     'P',udiag,     lght, init0)

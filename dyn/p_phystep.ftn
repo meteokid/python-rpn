@@ -21,6 +21,7 @@
 * v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
 * v3_12 - Leduc A-M         - Add variables gzm and topo
 * v3_21 - Valcke, S.        - Bugfix: no call to p_apply in offline mode
+* v3_22 - L.Spacek          - extract gravity wave tendencies for ensembles
 *   
 *object
 *	Computes the physical processes and apply the resulting
@@ -56,7 +57,7 @@
       real, dimension(:), allocatable :: up,vp,wp,tp,qp,trp,
      $                                   um,vm,tm,gzm,topo,
      $                                   trm,lnpsm,
-     $                                   sig,kmm,ktm
+     $                                   sig,kmm,ktm,ug,vg
 *
 *     ---------------------------------------------------------------
 *
@@ -65,7 +66,7 @@
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       allocate (up(dim),vp(dim),wp(dim),tp(dim),qp(dim),
      $          um(dim),vm(dim),tm(dim),gzm(dim),
-     $          topo(dim),
+     $          topo(dim),ug(dim),vg(dim),
      $          lnpsm(dim),sig(dim),kmm(dim),ktm(dim),
      $          trp(dim*phyt_ntr),trm(dim*phyt_ntr))
 *
@@ -105,7 +106,8 @@
       call p_physlb ( j , F_stepno,obusval,
      $                up, vp, wp, tp, qp, trp,
      $                um, vm, tm,gzm,topo, trm,
-     $                lnpsm, sig, kmm, ktm, LDIST_DIM, l_nk)
+     $                lnpsm, sig, kmm, ktm,
+     $                ug, vg, LDIST_DIM, l_nk)
       enddo
 !$omp enddo
 !$omp end parallel
@@ -124,7 +126,7 @@
 *       ----------------------------------------------------------
 *
       if (.not. schm_offline_L) then
-          call p_apply ( up,vp,um,vm,tm,trm, tp,qp,
+          call p_apply ( up,vp,um,vm,tm,trm, tp,qp,ug,vg,
      $        LDIST_DIM,l_nk,F_stepno.gt.0 )
       endif
 *
@@ -134,7 +136,7 @@
       if ( V4dg_conf.ne.0 .and. P4d_pbl.eq.2 .and. F_stepno.gt.0 .and.
      $     V4dg_oktr_L ) call v4d_rwtraj_kmkt(kmm,ktm,LDIST_DIM,l_nk) 
 
-      deallocate (up,vp,wp,tp,qp,trp,um,vm,tm,gzm,topo,
+      deallocate (up,vp,wp,tp,qp,trp,um,vm,tm,gzm,topo,ug,vg,
      $            trm,lnpsm,sig,kmm,ktm)
 *
 *     ---------------------------------------------------------------

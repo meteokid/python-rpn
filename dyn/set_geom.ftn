@@ -20,6 +20,8 @@
 * v3_01 - Desgagne M.        - Introduce Geomn_latrx,Geomn_lonrx
 * v3_11 - Tanguay M.         - Introduce Grd_gauss_L 
 * v3_21 - Desgagne M.        - Optimization
+* v3_22 - L.Spacek           - Added dgid_myp to interpolate
+*                              from gauss grid in p_marfield
 *
 *object
 *	
@@ -264,6 +266,8 @@
          if (Geomn_lonrx(i,j).ge.180.0) Geomn_lonrx(i,j)=Geomn_lonrx(i,j)-360.0
       enddo 
       enddo 
+*
+      dgid_myp = dgid
 *
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)',
      %       /,'===============================================')

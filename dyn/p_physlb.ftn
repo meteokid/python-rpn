@@ -5,7 +5,8 @@
       subroutine  p_physlb( F_cpu,   F_step, F_obusval,
      $             F_up, F_vp, F_wp, F_tp, F_qp, F_trp,
      $             F_um, F_vm,  F_tm, F_gzm, F_topo,  F_trm,
-     $             F_lpsm, F_sig, F_kmm, F_ktm, DIST_DIM, Nk )
+     $             F_lpsm, F_sig, F_kmm, F_ktm, F_ugwd, F_vgwd,
+     $             DIST_DIM, Nk )
 *
       implicit none
 *
@@ -18,7 +19,8 @@
      $     F_tm (DIST_SHAPE,Nk), F_gzm (DIST_SHAPE,Nk),
      $     F_topo (DIST_SHAPE) , F_trm(DIST_SHAPE,Nk,*),
      $     F_lpsm (DIST_SHAPE) , F_sig(DIST_SHAPE,Nk),
-     $     F_kmm(DIST_SHAPE,Nk), F_ktm(DIST_SHAPE,Nk)
+     $     F_kmm(DIST_SHAPE,Nk), F_ktm(DIST_SHAPE,Nk),
+     $     F_ugwd(DIST_SHAPE,Nk),F_vgwd(DIST_SHAPE,NK)
 
       real F_obusval(*)
 
@@ -43,6 +45,8 @@
 * v3_20 - Pellerin P.       - Add busvol in p_fillbus
 * v3_20 - Desgagne/Pellerin S.- Replaced Mem_pslic with jdo in test for last slice.
 * v3_21 - Valcke, S.        - Modified CALL to c_getbus and c_fillbus
+* v3_22 - L.Spacek          - tendency perturbation by Markov field
+*                           - extract gravity wave tendencies for ensembles
 *
 *object
 *     See above id.
@@ -74,7 +78,9 @@
 *              O    - total mixing ratio of cloud water/ice tendency
 * F_lpsm       I    - ln of surface pressure at time t-
 * F_wp         I    - vertical motion at time t*
-*----------------------------------------------------------------
+* F_ugwd       O    - x-wind gravity wave dissipation for ensembles
+* F_vgwd       O    - y-wind gravity wave dissipation for ensembles
+*------------------------------------------------------------------
 *
 *implicits
 #include "glb_ld.cdk"
@@ -107,7 +113,7 @@
       data    accum_s / ' ' /
 *
       logical dumpbus_L
-      integer jdo, i, j, k, n, ii, indx, err
+      integer jdo, i, j, k, n, ii, indx, err, im
       integer busaddr,offbo,offbb,mult,cnt
       real dt,con
 *
@@ -200,15 +206,23 @@ CSV      if (C_coupling_L) call c_fillbus ( busdyn, busper, busvol, jdo)
       do i = 1, p_ni
          indx = (k-1)*p_ni+i-1
          ii = i + p_offi
+         im = i - 1
          F_um (ii,j,k) = ( busvol(ugwd +indx)
      $                    +busvol(udifv+indx)
      $                    +busper(ufcp +indx) ) * con
+     %                    *busper(mrk2+im)
          F_vm (ii,j,k) = ( busvol(vgwd +indx)
      $                    +busvol(vdifv+indx)
      $                    +busper(vfcp +indx) ) * con
+     %                    *busper(mrk2+im)
          F_tm (ii,j,k) =   busvol(trad+indx)+busvol(tdifv+indx)
+     %                    *busper(mrk2+im)
          F_up (ii,j,k) =   busvol(tcond+indx)
+     %                    *busper(mrk2 +im)
          F_vp (ii,j,k) =   busvol(qdifv+indx)
+     %                    *busper(mrk2 +im)
+         F_ugwd(ii,j,k)=   busvol(ugwd +indx) * con
+         F_vgwd(ii,j,k)=   busvol(vgwd +indx) * con
       end do
       end do
 *
