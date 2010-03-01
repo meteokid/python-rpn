@@ -22,8 +22,7 @@
      %                        F_capx, F_xgg, F_xdd,
      %                        F_capy, F_ygg, F_ydd,
      %                        F_capz, F_cz, F_num, F_mono_L,i0,in,j0,jn,kn )
-*
-#include "impnone.cdk"
+      implicit none
 *
       logical F_mono_L
 *
@@ -76,8 +75,9 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
+!      integer l_ni, l_nj
 #include "adw.cdk"
+!      integer             Adw_nit,  Adw_njt
 ************************************************************************
       integer n, nijag,i,j,k,nij
 *

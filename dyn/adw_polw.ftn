@@ -17,8 +17,7 @@
 *
       subroutine adw_polw (F_u, F_v, F_cx, F_sx, F_wx, F_sy, F_j,
      %                     F_nic, F_halox, F_njc, F_haloy, F_nk )
-*
-#include "impnone.cdk"
+      implicit none
 *
       integer  F_j, F_nic, F_halox, F_njc, F_haloy, F_nk
 *

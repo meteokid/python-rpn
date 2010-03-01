@@ -24,6 +24,7 @@
 *     Plante A.           - May 2004 
 *
 *revision
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *
@@ -31,11 +32,12 @@
 *       none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
 #include "schm.cdk"
-#include "nest.cdk"
 #include "lun.cdk"
 #include "zblen.cdk"
 #include "dcst.cdk"
@@ -44,10 +46,8 @@
 #include "geomg.cdk"
 #include "ptopo.cdk"
 *
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
 *
-      integer err,key(7),i,j,k,nvar, longueur
+      integer err,i,j,k, longueur
       integer n
 
       real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk+1),ubar
@@ -55,28 +55,21 @@
 
 *----------------------------------------------------------------------
 *
-      key(1)=VMM_KEY(ut1)
-      key(2)=VMM_KEY(vt1)
-      key(3)=VMM_KEY(wt1)
-      key(4)=VMM_KEY(tt1)
-      key(5)=VMM_KEY(st1)
-      nvar = 5
-*
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(wt1)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(st1)'
       if (.not.Schm_hydro_L) then
-         key(6)=VMM_KEY(qt1)
-         nvar = 6
-      endif
-*
-      err = vmmlod(key,nvar)
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-      err = VMM_GET_VAR(wt1)
-      err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(st1)
-      if (.not.Schm_hydro_L) then
-         err = VMM_GET_VAR(qt1)
+         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(qt1)'
       else
-         qt1_= 0
+         nullify(qt1)
       endif
 *
       call set_betav(betav_m,betav_t,st1,LDIST_DIM,l_nk)
@@ -93,7 +86,6 @@
          call apply_tt(tt1,betav_t,st1,LDIST_DIM, l_nk)
       endif
 *
-      err = vmmuld(key,nvar)
 *
 *----------------------------------------------------------------------
       return

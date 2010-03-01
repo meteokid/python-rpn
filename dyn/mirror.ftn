@@ -25,6 +25,7 @@
 *
 *revision
 * v3_11 - Gravel             - initial version
+* v4_05 - Lepine M.          - VMM replacement with GMM
 *
 *object
 *
@@ -32,39 +33,32 @@
 *       none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
 *
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-*
-      integer err,key(7),i,j,k,km,nvar
+      integer err,i,j,k,km
       integer ii, iin, jj, jin
-      integer key1(Tr3d_ntr),key1_,n
-      real tr1
-      pointer (patr1,tr1(LDIST_SHAPE,*))
 *----------------------------------------------------------------------
 *
-      key(1)=VMM_KEY(ut1)
-      key(2)=VMM_KEY(vt1)
-      key(3)=VMM_KEY(tt1)
-      key(4)=VMM_KEY(zdt1)
-      key(5)=VMM_KEY(qt1)
-      key(6)=VMM_KEY(st1)
-      key(7)=VMM_KEY(wt1)
-      nvar = 7
-*
-      err = vmmlod(key,nvar)
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-      err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(zdt1)
-      err = VMM_GET_VAR(qt1)
-      err = VMM_GET_VAR(st1)
-      err = VMM_GET_VAR(wt1)
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'mirror ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'mirror ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'mirror ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'mirror ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'mirror ERROR at gmm_get(qt1)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'mirror ERROR at gmm_get(st1)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'mirror ERROR at gmm_get(wt1)'
 *
       if (l_north) then
          do k=1,G_nk+1
@@ -258,63 +252,54 @@
          endif
       endif
 *
-      err = vmmuld(key,nvar)
-*
-      key1_ = VMM_KEY (trt1)
-      do n=1,Tr3d_ntr
-         key1(n) = key1_ + n
-      end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),patr1,tr1)
-            if (l_north) then
-                do k=1,G_nk+1
-                   do j=1,pil_n
-                   jin = max(pil_s+1,l_nj-pil_n-j+1)
-                   jj  = l_nj-pil_n+j
-                   do i=1,l_ni
-                      tr1  (i,jj,k) = tr1 (i,jin,k)
-                   enddo
-                   enddo
-                enddo
-            endif
-            if (l_east) then
-                do k=1,G_nk+1
-                   do j=1,l_nj
-                   do i=1,pil_e
-                      iin = max(pil_w+1,l_ni-pil_e-i+1)
-                      ii  = l_ni-pil_e+i
-                      tr1  (ii,j,k) = tr1 (iin,j,k)
-                   enddo
-                   enddo
-                enddo
-            endif
-            if (l_south) then
-                do k=1,G_nk+1
-                   do j=1,pil_s
-                   jin = min(l_nj-pil_n,pil_s+j)
-                   jj  = pil_s-j+1
-                   do i=1,l_ni
-                      tr1  (i,jj,k) = tr1 (i,jin,k)
-                   enddo
-                   enddo
-                enddo
-            endif
-            if (l_west) then
-                do k=1,G_nk+1
-                   do j=1,l_nj
-                   do i=1,pil_w
-                      iin = min(l_ni-pil_e,pil_w+i)
-                      ii  = pil_w-i+1
-                      tr1  (ii,j,k) = tr1 (iin,j,k)
-                   enddo
-                   enddo
-                enddo
-            endif
-         enddo
-         err = vmmuld(key1,Tr3d_ntr)
-      endif
+	stop 'mirror'
+c         do n=1,Tr3d_ntr
+c            err = vmmget(key1(n),patr1,tr1)
+c            if (l_north) then
+c                do k=1,G_nk+1
+c                   do j=1,pil_n
+c                   jin = max(pil_s+1,l_nj-pil_n-j+1)
+c                   jj  = l_nj-pil_n+j
+c                   do i=1,l_ni
+c                      tr1  (i,jj,k) = tr1 (i,jin,k)
+c                   enddo
+c                   enddo
+c                enddo
+c            endif
+c            if (l_east) then
+c                do k=1,G_nk+1
+c                   do j=1,l_nj
+c                   do i=1,pil_e
+c                      iin = max(pil_w+1,l_ni-pil_e-i+1)
+c                      ii  = l_ni-pil_e+i
+c                      tr1  (ii,j,k) = tr1 (iin,j,k)
+c                   enddo
+c                   enddo
+c                enddo
+c            endif
+c            if (l_south) then
+c                do k=1,G_nk+1
+c                   do j=1,pil_s
+c                   jin = min(l_nj-pil_n,pil_s+j)
+c                   jj  = pil_s-j+1
+c                   do i=1,l_ni
+c                      tr1  (i,jj,k) = tr1 (i,jin,k)
+c                   enddo
+c                   enddo
+c                enddo
+c            endif
+c            if (l_west) then
+c                do k=1,G_nk+1
+c                   do j=1,l_nj
+c                   do i=1,pil_w
+c                      iin = min(l_ni-pil_e,pil_w+i)
+c                      ii  = pil_w-i+1
+c                      tr1  (ii,j,k) = tr1 (iin,j,k)
+c                  enddo
+c                   enddo
+c                enddo
+c            endif
+c         enddo
 *
 *----------------------------------------------------------------------
       return

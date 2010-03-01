@@ -19,7 +19,7 @@
 *
       subroutine glbpos
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne - V. Lee

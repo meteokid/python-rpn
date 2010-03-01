@@ -17,7 +17,7 @@
 *
       subroutine e_int_iy2yv( frr, frf, frs, fnk, fnis, fnjs, fnks,
      %                  flcub, flscal )
-#include "impnone.cdk"
+      implicit none
 *
       logical  flcub, flscal
       integer  fnk

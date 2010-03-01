@@ -89,7 +89,7 @@ c================================================================
 
       if(Ptopo_numproc.ne.1)then
          print*,'One CPU ONLY'
-         call gem_stop('write_matlab_3d_8',-1)
+         call handle_error0('write_matlab','write_matlab_3d_8',-1)
       endif
 
       do k=1,G_nk

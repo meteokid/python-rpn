@@ -1,6 +1,0 @@
-OPTIL  = 2
-OMP    = -openmp
-MPI    = -mpi
-RMN    = rmn_010
-COMM   = rpn_comm223 rpn_comm222
-PRIV   = priv

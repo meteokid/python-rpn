@@ -19,12 +19,13 @@
 *
       subroutine vrtd 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author  S. Gravel (from difver6)
 *
 *revision
 * v3_20  - S. Gravel - initial MPI version
+* v4_05 - Lepine M.  - VMM replacement with GMM
 *
 *object
 *	Apply a background vertical diffusion on the horizontal momentum
@@ -39,6 +40,8 @@
 *
 *    
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
@@ -49,13 +52,7 @@
 #include "vrtd.cdk"
 #include "ver.cdk"
 
-*
-*modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
-**
-
-      integer err, key(4)
+      integer err
       integer i,j,k,ij,lnij
       real g_ovr_rd, dt, sig_e, p_0 
 
@@ -66,26 +63,23 @@
       real aa(LDIST_SIZ,l_nk),bb(LDIST_SIZ,l_nk),cc(LDIST_SIZ,l_nk),
      $     dd(LDIST_SIZ,l_nk)
 
-      call gem_stop('vrtd : A revoir pour staggering',-1)
+      call handle_error0('vrtd','vrtd : A revoir pour staggering',-1)
 
-      key( 1) = VMM_KEY(st1)
-      key( 2) = VMM_KEY(tt1)
-      key( 3) = VMM_KEY(ut1)
-      key( 4) = VMM_KEY(vt1)
-*
-      err = VMMLOD(key,4)
-      err = VMM_GET_VAR(st1)
-      err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-      do k= 1,l_nk
-      do j= 1, l_nj
-      do i= 1, l_ni
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vrtd ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vrtd ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vrtd ERROR at gmm_get(vt1)'
+
+c      do k= 1,l_nk
+c      do j= 1, l_nj
+c      do i= 1, l_ni
 c  To be reviewed
 c        pres(i,j,k) = Ver_z_8%d(k)+Ver_b_8%d(k)*st1(i,j)
-      end do
-      end do
-      end do
+c      end do
+c      end do
+c      end do
 *
 *     calculate sigma levels on scalar grid from local pressure
 *     ---------------------------------------------------------
@@ -223,8 +217,6 @@ c        pres(i,j,k) = Ver_z_8%d(k)+Ver_b_8%d(k)*st1(i,j)
       end do
 
       endif     ! end of diffusion on theta
-*
-      err=vmmuld(-1,0)
 *
 *     ---------------------------------------------------------------
 *

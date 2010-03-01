@@ -21,7 +21,7 @@
      $     F_wlnph_top,F_wlnph,F_wlnph_bot,
      %     F_pres, Nkout, F_cubic_L, DIST_DIM, Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM,Nk,Nkout
       logical F_cubic_L

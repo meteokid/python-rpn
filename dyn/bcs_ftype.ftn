@@ -52,12 +52,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          fn = trim(Path_ind_S)//'/bcs01_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                       iostat=err1,form='UNFORMATTED')
-c        print *,'opening and closing',fn,'err1=',err1
          close (unf)
          fn = trim(Path_ind_S)//'/bcs02_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                       iostat=err2,form='UNFORMATTED')
-c        print *,'opening and closing',fn,'err2=',err2
          close (unf)  
       else
          err = -1
@@ -114,7 +112,7 @@ c        print *,'opening and closing',fn,'err2=',err2
       if (ft.eq.'BMF') close (unf)
 *
  889  if (bcs_ftype.eq.-2) ftperm = -1
-      call gem_stop ('bcs_ftype ',bcs_ftype)
+      call handle_error0('bcs_ftype','bcs_ftype ',bcs_ftype)
 *
 *-----------------------------------------------------------------------
       return

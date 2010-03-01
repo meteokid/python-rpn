@@ -87,7 +87,7 @@
      $     j0.lt.1-G_haloy   .or.
      $     jn.gt.l_nj+G_haloy
      $     )then
-         call gem_stop('diag_fi : dimension error',-1)
+         call handle_error0('diag_fip','diag_fi : dimension error',-1)
       endif
 
 !$omp parallel private (pr1_8,yyy)

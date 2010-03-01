@@ -16,7 +16,7 @@
 ***s/r vterp1 - Finds the x point in f
 *
       subroutine vterp1 (F_x, F_fx, F_f, F_g, F_y, F_acc, np, nn)
-#include "impnone.cdk"
+      implicit none
 *
       integer nn,np
       real    F_x(np), F_fx(np), F_f(np,nn), F_g(np,nn), F_y(nn), F_acc

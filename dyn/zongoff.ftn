@@ -19,7 +19,7 @@
 *
       subroutine zongoff()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author - andre methot - aug 94 - v0_14
 *

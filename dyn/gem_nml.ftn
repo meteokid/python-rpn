@@ -57,19 +57,13 @@
          return
       endif
 *
-* Defaults values for var4d namelist variables
-*
-      Step_total = 1
+      Step_total = -1
       Step_rsti  = 9999999
       Step_bkup  = 9999999
       Step_gstat = 9999999
       Step_cleanup = 0
-      Step_maxcfl  = 1
-      Step_cliptraj_L = .false.
 *
       Rstri_glbcol_L = .false.
-*
-      Mem_mx3db    = -1
 *
       G_halox = 4
       G_haloy = G_halox
@@ -120,23 +114,13 @@
       Lam_busper_init_L  = .false.
       Lam_current_S = '20000101.000000'
 *
-      Zblen_L        = .false.
-      Zdot_divHLM_L  = .false.
+      Zblen_L   = .false.
 *
       Glb_pil_n = 7
       Glb_pil_s = 7
       Glb_pil_w = 7
       Glb_pil_e = 7
       Glb_pil_t = 0
-      Adw_nkbz_L = .true.
-      Adw_exdg_L = .false.
-      Adw_ckbd_L = .false.
-      Adw_mono_L = .true.
-      Adw_interp_type_S = 'lag3d'
-      Adw_nosetint_L   = .false.
-      Adw_trunc_traj_L = .false.
-      Adw_halox  = 3
-      Adw_haloy  = 2
 *
       Clim_climat_L  = .false.
       Clim_inincr_L  = .false.
@@ -215,21 +199,10 @@
 *
       Tr3d_ntr = 0
 *
-      P_fcpkuo_xofset  = Grd_left
-      P_fcpkuo_xblnd   = 1
-      P_fcpkuo_yofset  = Grd_belo
-      P_fcpkuo_yblnd   = 1
       p_lmvd_valml_8  = 1.0
       p_lmvd_mllat_8  = 30.0
       p_lmvd_valeq_8  = 1.0
       p_lmvd_eqlat_8  = 5.0
-      P_pset_second_L= .false.
-      P_pset_xofset  = 0
-      P_pset_yofset  = 0
-      P_pset_xofsetr =-1
-      P_pset_yofsett =-1
-      P_pset_xblnd   = 1
-      P_pset_yblnd   = 1
       P_pbd_dumpbus  = 0
 *
       P_zong_znli = 0
@@ -261,7 +234,6 @@
       Out3_cubww_L   = .true.
       Out3_debug_L   = .false.
       Out3_flipit_L  = .false.
-      Out3_compress_L= .false.
 *
 *     Williamson's cases section
 *     --------------------------
@@ -287,6 +259,8 @@
          Grdc_trnm_S(k) = '@#$%'
       end do
 *
+      stat_liste = ''
+*
       if (F_namelistf_S .ne. '') then
 *
          unf = 0
@@ -304,23 +278,6 @@
  1000    call fclos (unf)
 *
       endif
-*
-*     Check for valid back-trajectory interpolation scheme
-*
-      call low2up  (Adw_interp_type_S,dumc_S)
-      Adw_interp_type_S = dumc_S
-      select case (trim(Adw_interp_type_S))
-         case ('LAG3D')
-	    continue
-         case ('LAG3D_TRUNC')
-            continue
-         case ('CUBIC')
-	    continue
-         case DEFAULT
- 	    write (Lun_out, 9500) trim(Adw_interp_type_S)
-	    write (Lun_out, 8000)
-	    return
-      end select
 *
       gem_nml = 1
       goto 9999
@@ -353,9 +310,6 @@
  8000 format (/,'========= ABORT IN S/R gem_nml.f ============='/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
- 9500 format (/,' INVALID back-trajectory interpolator'/
-     $         '      (Adw_interp_type = ',a,').  Valid interpolator'/
-     $         '      types are "lagrangian", "truncated", "cubic".')
  9525 format (/,' NAMELIST williamson INVALID IN FILE: model_settings '/)
 *
 *-------------------------------------------------------------------

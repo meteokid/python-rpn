@@ -37,6 +37,7 @@
 * v3_30 - Desgagne M.       - restart for coupling
 * v3_31 - Desgagne M.       - new coupling interface to OASIS
 * v3_31 - Desgagne M.       - restart with physics BUSPER
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *	
@@ -44,6 +45,8 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
@@ -51,6 +54,7 @@
 #include "schm.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
+#include "ifd.cdk"
 #include "glb_ld.cdk"
 #include "lam.cdk"
 #include "itf_chm_bus.cdk"
@@ -60,8 +64,8 @@
 *
 *
 *modules
-      integer vmmckmx,fnom,fclos,close_db_file
-      external vmmckmx,fnom,fclos,close_db_file
+      integer  fnom,fclos,close_db_file
+      external fnom,fclos,close_db_file
 *
       integer i,ier,adr,dim,n,current_nest
 *
@@ -85,7 +89,8 @@ C        Write one wa-file per tile
 *
          call wawrit (Lun_rstrt,Lctl_step      ,1,1)
          call wawrit (Lun_rstrt,Rstri_idon_L   ,2,1)
-         adr = 3
+         call wawrit (Lun_rstrt,ifd_bcsphy_L   ,3,1)
+         adr = 4
 *
          dim = chm_bper_siz*chm_nj
          call wawrit (Lun_rstrt,dim            ,adr,1)
@@ -118,8 +123,9 @@ C        Write one wa-file per tile
             adr = adr + dim
          endif
 *
-C        Write Vmm-files
-         ier = vmmckmx()
+*        Write Gmm-files
+
+         gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
          call waclos(Lun_rstrt)
          ier = fclos(Lun_rstrt)  
 *

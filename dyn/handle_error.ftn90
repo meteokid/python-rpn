@@ -1,0 +1,108 @@
+!-------------------------------------- LICENCE BEGIN ------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------
+#include "utils_call_back.h"
+
+!/**
+module mod_handle_error
+   implicit none
+   !@author  Stephane Chamberland, 2009-11
+!**/
+   logical, public, save :: hasCallBackFn = .false.
+   integer, public, save :: callBackFnNb
+end module mod_handle_error
+
+
+!/**
+subroutine handle_error0(F_FromSubName,F_Message,F_errorCode)
+   implicit none
+   integer :: F_errorCode
+   character(len=*) :: F_FromSubName
+   character(len=*) :: F_Message
+!**/
+   !---------------------------------------------------------------------
+   call handle_error(F_errorCode,F_FromSubName,F_Message)
+   !---------------------------------------------------------------------
+   return
+end subroutine handle_error0
+
+
+!/**
+subroutine handle_error(F_errorCode,F_FromSubName,F_Message)
+   use mod_handle_error, only: hasCallBackFn,callBackFnNb
+   implicit none
+#include "rpn_comm.hf"
+#include "stop_mpi.h"
+#include "msg.h"
+   !@objective 
+   !@arguments
+   integer :: F_errorCode
+   character(len=*) :: F_FromSubName
+   character(len=*) :: F_Message
+   !@author  Michel Desgagne, Ron McTaggart-Cowan
+   !@revisions
+   !  2009-11,  Stephane Chamberland
+!**/
+   character(len=MSG_MAXLEN) :: message
+   integer :: errcode,errcode2,errcode3,err
+!   integer, external :: callback_call_ftn
+   !---------------------------------------------------------------------
+   call rpn_comm_allreduce(F_errorCode,errcode,1,RPN_COMM_INTEGER,"MPI_MIN",RPN_COMM_WORLD,err)
+   if (errcode<STOP_OK) then
+      errcode2 = errcode
+      if (hasCallBackFn) then
+!         errcode2 = callback_call_ftn(callBackFnNb,errcode)
+      endif
+      call rpn_comm_allreduce(errcode2,errcode3,1,RPN_COMM_INTEGER,"MPI_MIN",RPN_COMM_WORLD,err)
+      if (errcode3<STOP_OK) then
+         call stop_mpi(STOP_ERROR,F_FromSubName,F_Message)
+      else
+         write(message,'(3a)') 'Recovered from an error in: ',trim(F_FromSubName)
+         call msg(MSG_WARNING,message)
+       endif
+   endif
+   !---------------------------------------------------------------------
+   return
+end subroutine handle_error
+
+
+!/**
+subroutine handle_error_set_callBackFn(F_callBackFn)
+   use mod_handle_error, only: hasCallBackFn,callBackFnNb
+   implicit none
+   !@objective Set a fn to be called before stop in case of error
+   !@arguments
+   integer,external :: F_callBackFn
+   !@author  Stephane Chamberland, Nov 2009
+   !@description
+   !  the call back function should have the following interface 
+   !  (with a differnt name!):
+   !
+   !  function myCallBack(F_errorCode) result(newErrorCode)
+   !     implicit none
+   !     integer :: F_errorCode
+   !     integer :: newErrorCode
+   !
+   !  It should return the control to the caller 
+   !  so the program can end gracefully
+!**/
+   integer,external :: callback_register_ftn
+   !---------------------------------------------------------------------
+!   callBackFnNb = callback_register_ftn(F_callBackFn)
+   if (callBackFnNb == UTILS_CALL_BACK_OK) &
+        hasCallBackFn = .true.
+   !---------------------------------------------------------------------
+   return
+end subroutine handle_error_set_callBackFn

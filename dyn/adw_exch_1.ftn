@@ -32,8 +32,7 @@
 *
       subroutine adw_exch_1 ( F_x_out, F_y_out, F_z_out, F_c_out,
      %                        F_x_in,  F_y_in,  F_z_in , F_nk)
-*
-#include "impnone.cdk"
+      implicit none
 *
       integer F_c_out ( * ), F_nk
       real    F_x_out ( * ), F_y_out ( * ), F_z_out ( * ),
@@ -79,11 +78,19 @@
 *______________________________________________________________________|
 *
 *implicits
-#include "ptopo.cdk"
 #include "glb_ld.cdk"
+!      integer l_minx, l_maxx, l_miny, l_maxy
+!      integer l_ni, l_nj
+!      logical l_north, l_south
+!      logical G_periody
 #include "geomg.cdk"
-#include "type.cdk"
+!      real*8 geomg_y_8(XDIST_SHAPE)
 #include "adw.cdk"
+!      integer            Adw_for_n, Adw_for_s, Adw_for_a
+!      integer            Adw_fro_n, Adw_fro_s, Adw_fro_a
+!      integer            Adw_njt
+!      logical            Adw_exdg_L
+!      real*8 adw_yy_8(*)
 ************************************************************************
 *
       integer nwrn,nwrs,status
@@ -140,7 +147,7 @@
       Adw_for_a = Adw_for_n + Adw_for_s
       Adw_fro_a = Adw_fro_n + Adw_fro_s
 ************************************************************************
-      if ( Adw_exdg_L ) print *,'EXDG',Ptopo_myproc,
+      if ( Adw_exdg_L ) print *,'EXDG',
      %                           Adw_for_n, Adw_for_s, Adw_for_a,
      %                           Adw_fro_n, Adw_fro_s, Adw_fro_a
 *

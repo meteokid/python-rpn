@@ -18,11 +18,11 @@
 *                   mid-trajectory (m)
 *
 #include "model_macros_f.h"
+#include "constants.h"
 *
       subroutine adw_trajex ( F_xto,  F_yto,  F_xcto, F_ycto,
      %                        F_zcto, F_xctm, F_yctm, F_zctm,i0,in,j0,jn)
-*
-#include "impnone.cdk"
+      implicit none
 *
       real   F_xto (*), F_yto (*), F_xcto(*), F_ycto(*),
      %       F_zcto(*), F_xctm(*), F_yctm(*), F_zctm(*)
@@ -56,9 +56,12 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
+!      integer l_ni, l_nj, l_nk
 #include "adw.cdk"
-#include "dcst.cdk"
+!      DCL_DYNVAR(Adw, cx2d_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw, sx2d_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw, cy2d_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw, sy2d_8,    real*8 , (*))
 ************************************************************************
       integer i,j,k, n, ij, nij, vnij
 *
@@ -71,7 +74,7 @@
       nij  = l_ni*l_nj
       vnij = (in-i0+1)*(jn-j0+1)
 *
-      r2pi_8 = two * Dcst_pi_8
+      r2pi_8 = two * CONST_PI_8
 C     call tmg_start ( 34, 'adw_trajex' )
 ************************************************************************
 !$omp parallel private(xasin,yasin,xatan,yatan,zatan,n,ij,prx,pry,prz,

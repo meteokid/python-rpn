@@ -17,7 +17,6 @@
 *
 #include "model_macros_f.h"
 #if defined (NEC)
-#define ADW_TRITRUNC_LAG3D adw_tritrunc_lag3d_vec
 #define ADW_TRICUB_LAG3D   adw_tricub_lag3d_vec
 #endif
 *
@@ -68,9 +67,13 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
+!      logical G_lam, G_periodx, G_periody
+!      integer G_ni
+!      logical l_north, l_south
+!      integer l_ni, l_nj
+!      integer l_minx, l_maxx, l_miny, l_maxy
 #include "adw.cdk"
-*
+!TODO
 ************************************************************************
       integer i, j, k, nij, nijk, nijkag, n, dest_ni
 *
@@ -135,29 +138,15 @@
 *
 ************************************************************************
 
-      select case (trim(Adw_interp_type_S))
-         case ('LAG3D_TRUNC')
-         call ADW_TRITRUNC_LAG3D ( Adw_wrkc, F_u,
-     %                             Adw_capx1, Adw_capy1, Adw_capz1,
-     %                             nijk, F_mono_L,i0,in,j0,jn,F_nk,F_lev_S)
-         case DEFAULT	
          call ADW_TRICUB_LAG3D   ( Adw_wrkc, F_u,
      %                             Adw_capx1, Adw_capy1, Adw_capz1,
      %                             nijk, F_mono_L,i0,in,j0,jn,F_nk,F_lev_S)
-      end select
 *
       if (.not.G_lam) then
       if ( Adw_fro_a .gt. 0 ) then
-	   select case (trim(Adw_interp_type_S))
-	      case ('LAG3D_TRUNC')
-              call ADW_TRITRUNC_LAG3D ( Adw_wrka, F_u,
-     %                                  Adw_capx2, Adw_capy2, Adw_capz2,
-     %                           Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1,F_lev_S)
-	      case DEFAULT
               call ADW_TRICUB_LAG3D ( Adw_wrka, F_u,
      %                                Adw_capx2, Adw_capy2, Adw_capz2, 
      %                           Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1,F_lev_S)
- 	   end select
       endif
 *
 !$omp single

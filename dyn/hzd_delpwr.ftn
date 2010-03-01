@@ -23,7 +23,7 @@
      $                       minx2,maxx2,nx3,nx2,n20,F_opsyp0_8,
      $                       F_opsyp2_8,F_opsypm_8,F_eival_8,F_cdiff)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer n20,F_pwr,minx2,maxx2,nx3,nx2
       real F_cdiff

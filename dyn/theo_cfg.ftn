@@ -93,8 +93,6 @@
       call fclos (unf)
       if (err.lt.0) goto 9999
 *
-      call low2up  (Adw_interp_type_S,dumc_S)
-      Adw_interp_type_S = dumc_S
       call low2up  (Hzd_type_S,dumc_S)
       Hzd_type_S = dumc_S
 
@@ -114,7 +112,8 @@
          write (Lun_out, 8000)
       endif
 *
- 9999 call gem_stop ('THEO_CFG',status)
+ 9999 continue
+      call handle_error(-1,'theo_cfg','')
 *
 *     ---------------------------------------------------------------
  7050 format (/' THEORETICAL CASE IS: ',a/)

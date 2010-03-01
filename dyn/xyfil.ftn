@@ -20,7 +20,7 @@
       subroutine xyfil ( F_d, F_s, F_w1, F_co, F_whx_8, F_why_8, 
      $                   F_pole_L, DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       logical F_pole_L

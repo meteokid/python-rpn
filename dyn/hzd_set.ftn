@@ -76,7 +76,7 @@
       Hzd_ho_L   = .false.
       mess = 'NIL'
 *
-      if (Hzd_type_S.eq."FACT")call gem_stop(
+      if (Hzd_type_S.eq."FACT")call handle_error0('hzd_set',
      $     'hzd_set : Hzd_type_S="FACT" not suported anymore',-1)
 *
       if(.not.(
@@ -85,7 +85,7 @@
      $          (Hzd_type_S.eq."NIL")
      $        )
      $     )then
-         call gem_stop(
+         call handle_error0('hzd_set',
      $        'hzd_set : Hzd_type_S not valid, choices: HO_IMP,HO_EXP,NIL',-1)
       endif
       if ((Hzd_lnr.gt.0.).and. 

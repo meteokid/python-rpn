@@ -244,7 +244,7 @@
   140                 FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE INIT:',/,
      $                ' FAILURE IN NAG INTEGRATION ROUTINE D01AHE',/,
      $                ' IFAIL = ',I4)
-                  call gem_stop('STOP IN WIL_CASE_INIT 3',-1)
+                  call handle_error0('wil_case_init','STOP IN WIL_CASE_INIT 3',-1)
                ENDIF 
 *                                                                               
 *              ROTATE FIELD VARIABLES
@@ -342,7 +342,7 @@ CCC      RLON0  =   0.0*(Wil_Dcst_pi_8/180.0)
   135              FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE INIT:',/,
      $             ' FAILURE IN NAG INTEGRATION ROUTINE D01AHE',/,
      $             ' IFAIL = ',I4)
-               call gem_stop('STOP IN WIL_CASE_INIT 4',-1)
+               call handle_error0('wil_case_init','STOP IN WIL_CASE_INIT 4',-1)
             ENDIF                                                                  
 *
             PHICON(J) = (PHI0 - PHICON(J))/Wil_Dcst_grav_8
@@ -489,7 +489,7 @@ CCC            DIST = SQRT((RLON -  1.5*Wil_Dcst_pi_8)**2 + (RLAT - Wil_Dcst_pi_
      $    ' MISSING SPECIFICATION OF ',                
      $    'INITIAL CONDITION CASE = ',I3)
 *
-         call gem_stop('STOP IN WIL_CASE_INIT: CASE not valid ',-1)
+         call handle_error0('wil_case_init','STOP IN WIL_CASE_INIT: CASE not valid ',-1)
 *
       ENDIF                                                                     
 *

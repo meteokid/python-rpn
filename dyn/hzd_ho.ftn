@@ -79,7 +79,7 @@
 *     __________________________________________________________________
 *
 
-c      call gem_stop('hzd_ho',-1)
+c      call handle_error0('hzd_ho','hzd_ho',-1)
 
       Gni = G_ni-Lam_pil_w-Lam_pil_e
       dpwr = Hzd_pwr / 2
@@ -135,7 +135,7 @@ c      call gem_stop('hzd_ho',-1)
 *     
       if (.false.)then
 
-         call gem_stop('hzd_ho : do not diffuse t but theta',-1)
+         call handle_error0('hzd_ho','hzd_ho : do not diffuse t but theta',-1)
          
 *        Theta
 *        ~~~~~

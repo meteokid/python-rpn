@@ -29,6 +29,8 @@
 *revision
 * v3_31 - Desgagne M.       - initial version 
 * v4_04 - Plante A.         - copy from v3_31
+* v4_11 - Lee V.            - l_niu for U, l_njv for V
+*
 *implicits
 #include "glb_ld.cdk"
 #include "dcst.cdk"
@@ -46,7 +48,7 @@
       do k=1,G_nk
          do j=1,l_nj
             c1 = Dcst_rayt_8 / geomg_cy_8(j)
-            do i=1,l_ni
+            do i=1,l_niu
                F_u(i,j,k) = F_u(i,j,k) * c1
             end do
          end do
@@ -67,11 +69,11 @@
       do k=1,G_nk
          do j=1,l_nj
             c1 = geomg_cy_8(j) / Dcst_rayt_8
-            do i=1,l_ni
+            do i=1,l_niu
                F_u(i,j,k) = F_u(i,j,k) * c1
             end do
          end do
-         do j=1,l_nj
+         do j=1,l_njv
             c1 = geomg_cy_8(j) / Dcst_rayt_8
             do i=1,l_ni
                F_v(i,j,k) = F_v(i,j,k) * c1

@@ -55,7 +55,7 @@
 *
       if (ntra.le.0) then
           if (Lun_out.gt.0) write(Lun_out,*)'No tracers are available including HU'
-          call gem_stop('read_3df',-1)
+          call handle_error0('read_3df','read_3df',-1)
       endif
       cumerr=0
       ntr=0
@@ -72,7 +72,6 @@
 *     Read tt1,st1, ME
       read_vars: do k=1,nvar+ntra
           read (unf,end=44,err=44) nomvar,ni1,nj1,nk1,nbits
-c          print*, nomvar,ni1,nj1,nk1,nbits
           if (nomvar.eq.'S   ') then
               s_L=.true.
               call filmup (nomvar,ssqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
@@ -124,7 +123,7 @@ c          print*, nomvar,ni1,nj1,nk1,nbits
 *         check for required tracer
           found = .false.
           do n=1,Tr3d_ntr
-             if (nomvar.eq.Tr3d_name_S(n))then
+             if (trim(nomvar).eq.trim(Tr3d_name_S(n)))then
                 ntr=ntr+1
                 call filmup (nomvar,trn(1,1,ntr),
      $               ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
@@ -149,10 +148,10 @@ c          print*, nomvar,ni1,nj1,nk1,nbits
               write(Lun_out,*) 'VV=',vv_L
               write(Lun_out,*) 'GZ=',GZ_L
           endif
-          call gem_stop('read_3df',-1)
+          call handle_error0('read_3df','read_3df',-1)
       endif
       return
- 44   call gem_stop('read_3df',-1)
+ 44   call handle_error0('read_3df','read_3df',-1)
  1000 format(
      +3X,'READING DATA IN (S/R READ_3DF)')
       end

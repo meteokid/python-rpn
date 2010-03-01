@@ -19,7 +19,7 @@ c
 c
       subroutine check_alloc(istat,from_routine,iflag)
 c
-#include "impnone.cdk"
+      implicit none
       integer istat,iflag,longueur
       character*128 from_routine
 c
@@ -48,7 +48,7 @@ c----------------------------------------------------------------
      $        'Allocation problem in '//
      $        from_routine(1:longueur(from_routine))//
      $        ', stat=',istat
-         call gem_stop('Memory allocation problem, see above',-abs(iflag))
+         call handle_error0('check_alloc','Memory allocation problem, see above',-abs(iflag))
       endif
 
       return

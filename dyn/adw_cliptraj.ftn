@@ -18,6 +18,7 @@
 *                    actual maximum allowed COURRANT number (LAM)
 *
 #include "model_macros_f.h"
+#include "msg.h"
 *
       subroutine adw_cliptraj ( F_x_in,  F_y_in, i0, in, j0, jn, F_nk, mesg )
       implicit none
@@ -47,13 +48,19 @@
 *
 *
 *implicits
-#include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "adw.cdk"
 #include "lun.cdk"
-#include "step.cdk"
+!      integer l_ni, l_nj
+!      logical l_north, l_south, l_east, l_west
+!      integer G_niu, G_njv
+!      integer pil_s,pil_e
+#include "adw.cdk"
+!      integer            Adw_halox, Adw_haloy
+!      integer Adw_nit, Adw_njt
+!      real*8 adw_xx_8(*),adw_yy_8(*)
 *
-      integer n, nij, i,j,k, ipos, jpos, cnt, kt, sum_cnt, sum_kt, err 
+      character(len=MSG_MAXLEN) :: msg_S
+      integer n, nij, i,j,k, ipos, jpos, cnt, kt, sum_cnt, sum_kt, err, totaln
       real*8 eps
       real minposx,maxposx,minposy,maxposy,
      $     posxmin,posxmax,posymin,posymax
@@ -75,17 +82,18 @@
 
       cnt=0
       kt =0
-      if (Step_cliptraj_L) then !  Clipping to Step_maxcfl
+
+      if (adw_cliptraj_L) then
          do k=1,F_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             ipos= i+Adw_halox
             jpos= j+Adw_haloy
-            posxmin = Adw_xx_8(ipos-Step_maxcfl) + eps
-            posxmax = Adw_xx_8(ipos+Step_maxcfl) - eps
-            posymin = Adw_yy_8(jpos-Step_maxcfl) + eps
-            posymax = Adw_yy_8(jpos+Step_maxcfl) - eps
+            posxmin = Adw_xx_8(ipos-adw_maxcfl) + eps
+            posxmax = Adw_xx_8(ipos+adw_maxcfl) - eps
+            posymin = Adw_yy_8(jpos-adw_maxcfl) + eps
+            posymax = Adw_yy_8(jpos+adw_maxcfl) - eps
             posxmin = max(posxmin, minposx)
             posxmax = min(posxmax, maxposx)
             posymin = max(posymin, minposy)
@@ -100,6 +108,7 @@
          enddo
          enddo
          enddo
+         totaln = nij
       else                      ! Clipping to processor boundary
          do k=1,F_nk
          do j=j0,jn
@@ -115,6 +124,8 @@
          enddo
          enddo
          enddo
+         n = max(1,adw_maxcfl)
+         totaln = ((l_ni*n*2) + ((l_nj-2*n)*n*2)) * F_nk
       endif
 *
       call rpn_comm_Allreduce(cnt,sum_cnt,2,"MPI_INTEGER",
@@ -122,10 +133,18 @@
 *
       nij = F_nk*(G_niu-2*pil_e+2)*(G_njv-2*pil_s+2)
       if ( (trim(mesg).ne."") .and. (Lun_out.gt.0) .and. (sum_cnt.gt.0))
-     $ write(Lun_out,1001) sum_cnt,real(sum_cnt)/real(nij)*100.,
+     $ write(Lun_out,1001) sum_cnt,real(sum_cnt)/real(totaln)*100.,
      $                     sum_kt/sum_cnt,mesg
 *
  1001 format (' ADW trajtrunc: npts=',i5,', %='f6.2,', avg_k=',i3,2x,a)
+
+c      if (trim(mesg).ne."" .and. sum_cnt>0) then
+c         write(msg_S,'(a,i5,a,f6.2,a,i3,2x,a)') 
+c     $        ' ADW trajtrunc: npts=',sum_cnt,
+c     $        ', %=',real(sum_cnt)/real(nij)*100.,
+c     $        ', avg_k=',sum_kt/sum_cnt, mesg
+c         call msg(MSG_INFO,msg_S)
+c      endif
 *     __________________________________________________________________
 *
       return

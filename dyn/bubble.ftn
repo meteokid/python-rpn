@@ -42,7 +42,7 @@ c     END INTERFACE
 *
 *implicits
 
-      call gem_stop('bubble',-1)
+      call handle_error0('bubble','bubble',-1)
 
       return
       end

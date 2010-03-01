@@ -19,7 +19,7 @@
 *
       subroutine glbdist (F_2bc,bni,bnj,F_2rc,DIST_DIM,nk,hx,hy)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer bni,bnj,DIST_DIM,nk,hx,hy
       real F_2bc(bni,bnj,nk), F_2rc(DIST_SHAPE,nk)

@@ -4,7 +4,7 @@
 !
 !______________________________________________________________________
 !                                                                      |
-!  VMM variables that are digital filtered                             |
+!  GMM variables that are digital filtered                             |
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
@@ -22,23 +22,16 @@
 !--------------------|-------------------------------------------------|
 !
 #endif
-!
-!NOTE: the equivalence statement below MUST mark the
-!FIRST element of the common block or the OUTPUTS will be wrong.
-!If you introduce an element in the beginning of this block, make
-!changes to assure the equivalence statement below MARKS it.
-!
-      MARK_COMMON_BEG(vta)
-      DCL_VMMVAR( vta,   uta, real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( vta,   vta, real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( vta,   tta, real, (LDIST_SHAPE,l_nk+2) )
-      DCL_VMMVAR( vta,  zdta, real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( vta,   sta, real, (LDIST_SHAPE)      )
-      DCL_VMMVAR( vta,   wta, real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( vta,   qta, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vta,  trta, real, (LDIST_SHAPE,l_nk+2,*) )
-      MARK_COMMON_END(vta)
 
-      character*8 vta_n_first(1)
-      equivalence (vta_n_first,VMM_NAM(uta))
+      real, pointer, dimension (:,:,:)   :: uta  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:)   :: vta  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:)   :: tta  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:)   :: qta  => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+      real, pointer, dimension (:,:,:)   :: wta  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:)   :: zdta => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:)     :: sta  => null() ! effective dimensions are (LDIST_SHAPE)
+      real, pointer, dimension (:,:,:,:) :: trta => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2,Trt3d_ntr)
+
+      character(len=8) :: gmmk_vta_s, gmmk_tta_s, gmmk_qta_s, gmmk_zdta_s, gmmk_sta_s, gmmk_wta_s, gmmk_uta_s, gmmk_trta_s
+      common /vta_n_gmm/ gmmk_vta_s, gmmk_tta_s, gmmk_qta_s, gmmk_zdta_s, gmmk_sta_s, gmmk_wta_s, gmmk_uta_s, gmmk_trta_s
 

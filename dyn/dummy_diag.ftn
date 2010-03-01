@@ -19,80 +19,36 @@
 *
       subroutine dummy_diag
 *
-#include "impnone.cdk"
+      implicit none
 *
 *
 *author
 *         C. Girard & A. Plante, Nov. 2008
 *
 *revision
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *	
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
-#include "tr3d.cdk"
 *
-**
-      integer  vmmlod,vmmget,vmmuln,vmmuld
-      external vmmlod,vmmget,vmmuln,vmmuld
-
-      integer err, key(3),key1(Tr3d_ntr),key1_
-      integer i,j,n
-      integer*8 pnt_trt1(Tr3d_ntr)
-      real tr1
-      pointer (patr1, tr1(LDIST_SHAPE,*))
+      real, pointer, dimension(:,:,:) :: hu
 *
 *     ---------------------------------------------------------------
 *
-      key( 1) = VMM_KEY(ut1)
-      key( 2) = VMM_KEY(vt1)
-      key( 3) = VMM_KEY(tt1)
-      err = vmmlod(key,3)
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-      err = VMM_GET_VAR(tt1)
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      gmmstat = gmm_get('TR/HU:P' ,hu ,meta3d)
 *
-      if (Tr3d_ntr.gt.0) then
-         key1_ = VMM_KEY (trt1)
-         do n=1,Tr3d_ntr
-            key1(n) = key1_ + n
-         end do
-         err = vmmlod(key1,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),patr1,tr1)
-            pnt_trt1(n) = patr1
-         end do
-      endif
-*
-      do j=1,l_nj
-      do i=1,l_ni
-        tt1(i,j,l_nk+2) = tt1(i,j,l_nk+1)
-      enddo
-      enddo
-      do j=1,l_nj
-      do i=1,l_niu
-        ut1(i,j,l_nk+1) = ut1(i,j,l_nk)
-      enddo
-      enddo
-      do j=1,l_njv
-      do i=1,l_ni
-        vt1(i,j,l_nk+1) = vt1(i,j,l_nk)
-      enddo
-      enddo
-
-      do n=1,Tr3d_ntr
-         patr1 = pnt_trt1(n)
-         do j=1,l_nj
-         do i=1,l_ni
-            tr1(i,j,l_nk+2) = tr1(i,j,l_nk+1)
-         enddo
-         enddo
-      enddo
-
-      err = vmmuld(key1,Tr3d_ntr)
-      err = vmmuln(key,3)
+      ut1(1:l_niu,1:l_nj ,l_nk+1) = ut1(1:l_niu,1:l_nj ,l_nk  )
+      vt1(1:l_ni ,1:l_njv,l_nk+1) = vt1(1:l_ni ,1:l_njv,l_nk  )
+      tt1(1:l_ni ,1:l_nj ,l_nk+2) = tt1(1:l_ni ,1:l_nj ,l_nk+1)
+      hu (1:l_ni ,1:l_nj ,l_nk+2) = hu (1:l_ni ,1:l_nj ,l_nk+1)
 *
 *     ---------------------------------------------------------------
 *

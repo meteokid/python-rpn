@@ -106,7 +106,7 @@
 *     
       endif
 *
-      call gem_stop('itf_phy_radiaf',status)
+      call handle_error0('itf_phy_radiaf','itf_phy_radiaf',status)
 *
       call RPN_COMM_bcast (F_value,NX,"MPI_REAL",0,"grid",ierr)
 *

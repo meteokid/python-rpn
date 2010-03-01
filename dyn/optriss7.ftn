@@ -18,8 +18,7 @@
       subroutine optriss7 ( F_r,    F_rhs, F_ideb, F_jdeb,F_ifin, F_jfin,F_nk,
      %                      F_axis, F_a_8, F_b_8,  F_c_8, F_period_L,
      %                      NIS,   NJS,  NKS, SKIP )
-*
-#include "impnone.cdk"
+      implicit none
 *
       integer F_ideb,F_jdeb,F_ifin,F_jfin, F_nk, NIS, NJS, NKS, SKIP
       real  F_r(SKIP,NIS,NJS,NKS), F_rhs(SKIP,NIS,NJS,NKS)
@@ -106,8 +105,7 @@
      % 
 * 
       else
-         print *,'ERROR: OPTRISS7 is only correct for Z axis'
-         call stopmpi(-1)
+         call handle_error(-1,'optriss7','OPTRISS7 is only correct for Z axis')
       endif 
 *
       return

@@ -102,12 +102,12 @@
 **** =====> BLOC 4D - debut
 *
       if ( V4dg_conf.ne.0 ) then
-         if ( Schm_chems_L  ) call gem_stop('gem_run Schm_chems_L  ',-1)
-         if ( Vrtd_L        ) call gem_stop('gem_run Vrtd_L        ',-1)
-         if ( F_dgtflt_L    ) call gem_stop('gem_run F_dgtflt_L'    ,-1)
-         if ( F_rstrt_L     ) call gem_stop('gem_run F_rstrt_L     ',-1)
-         if ( Clim_climat_L ) call gem_stop('gem_run Clim_climat_L ',-1)
-         if ( Hspng_nj.ne.0 ) call gem_stop('gem_run Hspng_nj.ne.0 ',-1)
+         if ( Schm_chems_L  ) call handle_error0('gem_run','gem_run Schm_chems_L  ',-1)
+         if ( Vrtd_L        ) call handle_error0('gem_run','gem_run Vrtd_L        ',-1)
+         if ( F_dgtflt_L    ) call handle_error0('gem_run','gem_run F_dgtflt_L'    ,-1)
+         if ( F_rstrt_L     ) call handle_error0('gem_run','gem_run F_rstrt_L     ',-1)
+         if ( Clim_climat_L ) call handle_error0('gem_run','gem_run Clim_climat_L ',-1)
+         if ( Hspng_nj.ne.0 ) call handle_error0('gem_run','gem_run Hspng_nj.ne.0 ',-1)
          fstep = V4dg_steplast
       endif
 *     ---------------------------------------------------------------
@@ -126,8 +126,12 @@ CCC   if ( V4dg_conf.ne.0 ) call v4d_ctrlcst ()
       if ( (F_dgtflt_L) .and.
      $     (last_step.gt.( (Init_dfnp-1)/2))) last_step = fstep
 *
-      if (Lctl_step.eq.0) call out_dyn (.false.,2)
-                          call out_dyn (.true.,-1)
+      if (Lctl_step.eq.0) then
+         call out_dyn (.false.,2)
+         call pw_update (.true.)
+      endif
+*
+      call out_dyn (.true.,-1)
 *
       bkup_L = .false.
 *
@@ -160,6 +164,9 @@ CCC   if ( V4dg_conf.ne.0 ) call v4d_ctrlcst ()
 *        Dynamics timestep
 *        -----------------
          call dynstep
+
+         call pw_update (.false.)
+
          call out_dyn (.false.,1)
 *
          if (Vrtd_L) call vrtd

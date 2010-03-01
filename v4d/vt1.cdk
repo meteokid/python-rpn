@@ -1,0 +1,76 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+#if defined (DOC)
+!
+!**comdeck vt1.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  GMM variables at TIME t1 (t0-dt)                                    |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+!  ut1               | U: x component of velocity                      |
+!  vt1               | V: y component of velocity                      |
+!  wt1               | w: z component of velocity                      |
+!  tt1               | T: temperature                                  |
+! zdt1               | Zdot: generalized vertical velocity             |
+!  st1               | s: log of surface pressure minus a constant     |
+!fipt1               | fip: perturbation geopotential                  |
+!--------------------|-------------------------------------------------|
+!  qt1               | q: log of non-hydrostatic perturbation pressure |
+!--------------------|-------------------------------------------------|
+! trt1               | passive tracer(s)                               |
+!----------------------------------------------------------------------|
+!  zz1               | 3-d upstream position of fip used to comp. dz/dt|
+! zzh1               | Horizontal upstream position of fip             |
+! piup               | Upstream hydrostatic pressure at t-dt for omega |
+!--------------------|-------------------------------------------------|
+! xct1               | upstream x position in cartesian coordinate     |
+! yct1               | upstream y position in cartesian coordinate     |
+! zct1               | upstream z position in cartesian coordinate     |
+!----------------------------------------------------------------------
+!
+#endif
+!
+!NOTE: the equivalence statement below MUST mark the
+!FIRST element of the common block or the OUTPUTS will be wrong.
+!If you introduce an element in the beginning of this block, make
+!changes to assure the equivalence statement below MARKS it.
+!
+      real, pointer, dimension (:,:,:) :: ut1               ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: vt1               ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: wt1               ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: tt1               ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: zdt1              ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:)   :: st1               ! effective dimensions are (LDIST_SHAPE)
+      real, pointer, dimension (:,:,:) :: zz1               ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: zzh1              ! effective dimensions are (LDIST_SHAPE,  l_nk)
+      real, pointer, dimension (:,:,:) :: piup              ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: wup               ! effective dimensions are (LDIST_SHAPE,  l_nk)
+      real, pointer, dimension (:,:,:) :: zdup              ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:)     :: xct1              ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:)     :: yct1              ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:)     :: zct1              ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:,:,:) :: fipt1             ! effective dimensions are (LDIST_SHAPE, 0:l_nk+1)
+      real, pointer, dimension (:,:,:) :: qt1               ! effective dimensions are (LDIST_SHAPE, 0:l_nk+1)
+      common /vt1_gmm/ zz1, zzh1, piup, wup, zdup, xct1, yct1, zct1, fipt1, wt1, tt1, zdt1
+      common /vt1_gmm/ st1, qt1, ut1, vt1
+
+      character(len=8) :: gmmk_zz1_s, gmmk_zzh1_s, gmmk_piup_s, gmmk_wup_s, gmmk_zdup_s
+      character(len=8) :: gmmk_xct1_s, gmmk_yct1_s, gmmk_zct1_s, gmmk_fipt1_s, gmmk_wt1_s
+      character(len=8) :: gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s, gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
+      common /vt1_n_gmm/ gmmk_zz1_s, gmmk_zzh1_s, gmmk_piup_s, gmmk_wup_s, gmmk_zdup_s, gmmk_xct1_s
+      common /vt1_n_gmm/ gmmk_yct1_s, gmmk_zct1_s, gmmk_fipt1_s, gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s
+      common /vt1_n_gmm/ gmmk_st1_s, gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s

@@ -18,7 +18,7 @@
 #include "model_macros_f.h"
       subroutine hzd_hof_lam ( F_u, F_v, F_zd, F_w, F_t, F_s, DIST_DIM, Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *
@@ -133,7 +133,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
      %     Ptopo_npex,Ptopo_npey)
 *     
       if(.false.)then
-         call gem_stop('hzd_hof_lam : do not diffuse t but theta',-1)
+         call handle_error0('hzd_hof_lam','hzd_hof_lam : do not diffuse t but theta',-1)
 *
 *        Theta
 *        ~~~~~

@@ -76,7 +76,7 @@
 
       endif
 *
-      call gem_stop('itf_phy_rdfile',status)
+      call handle_error0('itf_phy_rdfile','itf_phy_rdfile',status)
 *
       select case (mode)
 
@@ -141,7 +141,7 @@
                inbr = fclos   (iun)    
             endif
 
- 9977       call gem_stop ('itf_phy_rdfile',status)
+ 9977       call handle_error0('itf_phy_rdfile','itf_phy_rdfile',status)
             call RPN_COMM_bcast (dim,max_ndim,"MPI_INTEGER",0,"grid",ierr)
             if (Ptopo_myproc.gt.0) allocate (rbuf(dim(2)))
             call RPN_COMM_bcast (rbuf,dim(2),"MPI_REAL",0,"grid",ierr)
@@ -156,7 +156,7 @@
 
       end select
 *
- 9988 call gem_stop ('itf_phy_rdfile',status)
+ 9988 call handle_error0('itf_phy_rdfile','itf_phy_rdfile',status)
 *
       inbr = fstopc ('MSGLVL','INFORM',.false.)
 

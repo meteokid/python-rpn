@@ -18,8 +18,10 @@ c                    Also sets Z and other related vertical parameters.
 c
 #include "model_macros_f.h"
 c
-      subroutine set_zeta ()
+      subroutine set_zeta ( F_hybuser )
       implicit none
+*
+      real F_hybuser(*)
 c
 c authors
 c      A. Plante & C. Girard - CMC - janvier 2008
@@ -74,14 +76,14 @@ c
 #include "dimout.cdk"
 #include "level.cdk"
 c
-
-      integer k,istat
+      integer k,istat,err
+      real hybm(0:G_nk+1), hybt(0:G_nk+2)
       real*8 zero, half, one, two
       parameter(zero=0.d0,half=0.5d0,one=1.d0,two=2.d0)
       character*8 dumc
 c     __________________________________________________________________
 c
-      allocate(
+      allocate(   Ver_hyb%m  (G_nk+1),     Ver_hyb%t(G_nk+2),
      $            Ver_ip1%m(  G_nk+1),     Ver_ip1%t(G_nk+2),
      $            Ver_a_8%m(  G_nk+1),     Ver_a_8%t(G_nk+2),
      $            Ver_b_8%m(  G_nk+1),     Ver_b_8%t(G_nk+2),
@@ -96,7 +98,10 @@ c
       call check_alloc(istat,'set_zeta',1)
 c
       Cstv_RTstr_8= Dcst_rgasd_8*Cstv_Tstr_8
-      if(Cstv_pref_8.ne.100000.d0)call gem_stop('set_zeta : Cstv_pref_8 must equal 100000.d0',-1)         
+      Cstv_pref_8 = 100000.d0
+
+      if(Cstv_pref_8.ne.100000.d0)
+     $call handle_error0 ('set_zeta','set_zeta : Cstv_pref_8 must equal 100000.d0',-1)
 c
       Cstv_Zsrf_8 = log(Cstv_pref_8)
       Cstv_Ztop_8 = log(Cstv_ptop_8)
@@ -122,9 +127,18 @@ c    |   Ver_code=6 is assigned to this formula                 |
 c     ----------------------------------------------------------
 c
       Ver_code=6
-      call genab_8 (Ver_a_8%m,Ver_b_8%m,
-     %              Ver_a_8%t,Ver_b_8%t,
-     %              Ver_hyb%m, Cstv_ptop_8,Cstv_pref_8,Grd_rcoef,G_nk)
+*
+      call vgrid_genab (Ver_a_8%m, Ver_b_8%m, hybm   ,
+     %                  Ver_a_8%t, Ver_b_8%t, hybt   ,
+     %                  F_hybuser, Ver_code , Lun_out,
+     %                  Cstv_ptop_8, Cstv_pref_8, Grd_rcoef, G_nk, err)
+*
+      call gem_stop ('set_zeta',err)
+
+      Ver_hyb%m(1:G_nk+1) = hybm(1:G_nk+1)
+      Ver_hyb%t(1:G_nk+2) = hybt(1:G_nk+2)
+      Ver_hyb_top = hybm(0)
+      if (Schm_autobar_L) Ver_hyb%t(1) = hybt(0)
 c
 c     -------------
 c     Now define Z:
@@ -203,28 +217,11 @@ c
       Ver_wp_8%t(G_nk+1) = 1.d0
       Ver_wm_8%t(G_nk+1) = 0.d0
 c
-c     SETUP for OUTPUT
-c
-      nullify ( Ver_hyb%t )
-      allocate( Ver_hyb%t(G_nk+2), stat=istat)
-      call check_alloc(istat,'set_zeta',2)
-c
-c
-c     Top level
-      Ver_hyb%t(1)=sqrt(Ver_hyb_top*Ver_hyb%m(1))
-      if(Schm_autobar_L) Ver_hyb%t(1)=Ver_hyb_top
-      do k = 2, G_nk
-         Ver_hyb%t(k)=sqrt(Ver_hyb%m(k)*Ver_hyb%m(k-1))
-      enddo
-c     Bot special level
-      Ver_hyb%t(G_nk+1)=sqrt(Ver_hyb%m(G_nk))
-c     Diag level
-      Ver_hyb%t(G_nk+2)=1.0
-      Ver_hyb%m(G_nk+1)=1.0
+c     Encode Ver_ip1 for OUTPUT
 c
       do k=1,G_nk+1
-         call convip(Ver_ip1%m(k),Ver_hyb%m(k),level_kind_ip1,level_mode_ip1,dumc,.false.)         
-         call convip(Ver_ip1%t(k),Ver_hyb%t(k),level_kind_ip1,level_mode_ip1,dumc,.false.)         
+         call convip(Ver_ip1%m(k),Ver_hyb%m(k),level_kind_ip1,level_mode_ip1,dumc,.false.)   
+         call convip(Ver_ip1%t(k),Ver_hyb%t(k),level_kind_ip1,level_mode_ip1,dumc,.false.)  
       enddo
       Ver_ip1%t(G_nk+2)=Ver_ip1%m(G_nk+1)
 c

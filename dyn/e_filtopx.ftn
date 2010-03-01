@@ -19,7 +19,7 @@
 *
       subroutine e_filtopx ( F_topof, F_topo, fnio, fnjo, ftgrd )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer fnio,fnjo
       real F_topof(fnio,fnjo),F_topo(fnio,fnjo)

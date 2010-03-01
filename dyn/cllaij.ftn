@@ -19,7 +19,7 @@
 *
       subroutine cllaij (F_x,F_y,F_nstat,ni,nj)
 *
-#include "impnone.cdk"
+      implicit none
       integer ni,nj,F_nstat
       real F_x(ni,nj),F_y(ni,nj)
 *

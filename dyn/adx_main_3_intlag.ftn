@@ -40,6 +40,7 @@
 * v3_20 - Tanguay M.          - Improve alarm when points outside advection grid
 * v3_20 - Dugas B.            - correct calculation for LAM when Glb_pil gt 7
 * v3_21 - Desgagne M.         - if  Lagrange 3D, call adx_main_3_intlag
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *language
 *     fortran 77
@@ -59,6 +60,8 @@
 *________|_______________________________________________________|_____|
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "ptopo.cdk"
@@ -81,26 +84,15 @@
 #include "ver.cdk"
 *
 *modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
 ************************************************************************
-      integer i0,in,j0,jn
-      integer pnerr, pnlkey1(11),pnlkey2(6),key1(Tr3d_ntr),key0(Tr3d_ntr), 
-     $        key1_, key0_, pnlod, err, dim
 *
       integer outside,sum_outside,ier,longueur
-*
       integer n, nij, nijkt, nijkm, nijkad, cnt, unf
-      integer i,j,k, n1,n2,np 
-      integer*8 pnt_trt1(Tr3d_ntr),pnt_trt0(Tr3d_ntr)
-*      integer m, ntr2do, j2do
-      integer DIST_DIM
+      integer i,j,k, n1,n2,np,i0,j0,in,jn,dim,err
 *
-      real tr,tr0,buf(l_ni,G_nk+1), half
       real work(LDIST_SHAPE,G_nk+1),work2(LDIST_SHAPE,G_nk+1)
-      parameter( half = 0.5 )
-      pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:) :: pos_x, pos_y, pos_z
+      real, pointer    , dimension(:,:,:) :: tr0,tr1
 *
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
@@ -210,32 +202,25 @@
 ***********************************************************************
 * Perform interpolation
 ***********************************************************************
-      pnlkey1(1) = VMM_KEY(ruw1)
-      pnlkey1(2) = VMM_KEY(rvw1)
-      pnlkey1(3) = VMM_KEY(ruw2)
-      pnlkey1(4) = VMM_KEY(rvw2)
-      pnlkey1(5) = VMM_KEY(rhsc)
-      pnlkey1(6) = VMM_KEY(fiptx)
-      pnlkey1(7) = VMM_KEY(zzh1)
-      pnlkey1(8) = VMM_KEY(piup)
-      pnlkey1(9) = VMM_KEY(st1)
-      pnlkey1(10) = VMM_KEY(orhsc)
-      pnlkey1(11) = VMM_KEY(fipt1)
-      pnlod = 11
+      gmmstat = gmm_get(gmmk_ruw1_s,ruw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(ruw1)'
+      gmmstat = gmm_get(gmmk_rvw1_s,rvw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(rvw1)'
+      gmmstat = gmm_get(gmmk_ruw2_s,ruw2,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(ruw2)'
+      gmmstat = gmm_get(gmmk_rvw2_s,rvw2,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(rvw2)'
+      gmmstat = gmm_get(gmmk_rhsc_s,rhsc,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(rhsc)'
+      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(fiptx)'
+      gmmstat = gmm_get(gmmk_zzh1_s,zzh1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(zzh1)'
+      gmmstat = gmm_get(gmmk_fipt1_s,fipt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(fipt1)'
+      gmmstat = gmm_get(gmmk_orhsc_s,orhsc,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(orhsc)'
 *
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr =  VMM_GET_VAR(ruw1)
-      pnerr =  VMM_GET_VAR(rvw1)
-      pnerr =  VMM_GET_VAR(ruw2)
-      pnerr =  VMM_GET_VAR(rvw2)
-      pnerr =  VMM_GET_VAR(rhsc)
-      pnerr =  VMM_GET_VAR(fiptx)
-      pnerr =  VMM_GET_VAR(zzh1)
-      pnerr =  VMM_GET_VAR(piup)
-      pnerr =  VMM_GET_VAR(st1)
-      pnerr =  VMM_GET_VAR(orhsc)
-      pnerr =  VMM_GET_VAR(fipt1)
 *     ----------------------------
 *     Keep positions in CAP fields
 *     ----------------------------
@@ -343,45 +328,19 @@ c     %                 .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
 ***********************************************************************
 * Perform interpolation for equations on thermodynamic levels
 ***********************************************************************
-      pnlkey2(1) = VMM_KEY(rhst)
-      pnlkey2(2) = VMM_KEY(orhst)
-      pnlod = 2
-*
+      gmmstat = gmm_get(gmmk_rhst_s,rhst,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(rhst)'
+      gmmstat = gmm_get(gmmk_orhst_s,orhst,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(orhst)'
       if (.not. Schm_hydro_L) then
-         pnlkey2(3) = VMM_KEY(rhsw)
-         pnlkey2(4) = VMM_KEY(orhsw)
-         pnlkey2(5) = VMM_KEY(rhsf)
-         pnlkey2(6) = VMM_KEY(orhsf)
-         pnlod = 6 
-      endif
-*
-      pnerr = vmmlod(pnlkey2,pnlod)
-*
-      pnerr =  VMM_GET_VAR(rhst)
-      pnerr =  VMM_GET_VAR(orhst)
-*
-      if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(rhsw)
-         pnerr = VMM_GET_VAR(orhsw)
-         pnerr = VMM_GET_VAR(rhsf)
-         pnerr = VMM_GET_VAR(orhsf)
-      endif
-*
-      if (Tr3d_ntr.gt.0) then
-         key1_ = VMM_KEY (trt1)
-         key0_ = VMM_KEY (trt0)
-         do n=1,Tr3d_ntr
-            key1(n) = key1_ + n
-            key0(n) = key0_ + n
-         end do
-         err = vmmlod(key1,Tr3d_ntr)
-         err = vmmlod(key0,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),patr,tr)
-            pnt_trt1(n) = patr
-            err = vmmget(key0(n),patr0,tr0)
-            pnt_trt0(n) = patr0
-         end do
+         gmmstat = gmm_get(gmmk_rhsw_s,rhsw,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(rhsw)'
+         gmmstat = gmm_get(gmmk_rhsf_s,rhsf,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(rhsf)'
+         gmmstat = gmm_get(gmmk_orhsw_s,orhsw,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(orhsw)'
+         gmmstat = gmm_get(gmmk_orhsf_s,orhsf,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_3_intlag ERROR at gmm_get(orhsf)'
       endif
 *
 *     ----------------------------

@@ -38,6 +38,7 @@
 * v3_31 - Lee V.            - bugfix for restart for LAM BCS
 * v3_31 - Desgagne M.       - new coupling interface to OASIS
 * v3_31 - Desgagne M.       - restart with physics BUSPER
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *	
@@ -45,6 +46,8 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
@@ -83,6 +86,8 @@
             call rd1rstrt ()
 *
          else
+            print *,'Debug+ appel a gmmm_checkpoint_all(read)'
+            gmmstat = gmm_checkpoint_all(GMM_READ_CKPT)
 *
 *           Read one wa-file per tile
 *
@@ -91,7 +96,8 @@
             call waopen (Lun_rstrt)
             call waread (Lun_rstrt,Lctl_step   ,1,1)
             call waread (Lun_rstrt,Rstri_idon_L,2,1)
-            adr = 3
+            call waread (Lun_rstrt,ifd_bcsphy_L,3,1)
+            adr = 4
 *
             call waread (Lun_rstrt,dim,adr,1)
             adr = adr + 1
@@ -130,10 +136,6 @@
          endif
 *
          call datf2p (Lam_current_S,current_nest)
-         errft = 0
-         unf = 76
-         nav_L = .false.
-         ier = bcs_ftype (ifd_ftype,errft,Lam_current_S, nav_L, unf)
 *
       endif
 *

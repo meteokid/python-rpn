@@ -1,0 +1,25 @@
+!
+      real*8 xpn,ypn,xpun,ypvn,xpw,ypw,xpuw,ypvw
+      real*8 xps,yps,xpus,ypvs,xpe,ype,xpue,ypve
+      logical ana_zd_L,ana_w_L,ana_q_L
+      pointer (paxpn ,  xpn(*)),(paypn ,  ypn(*)),(paxpun, xpun(*))
+      pointer (paypvn, ypvn(*))
+      pointer (paxps ,  xps(*)),(payps ,  yps(*)),(paxpus, xpus(*))
+      pointer (paypvs, ypvs(*))
+      pointer (paxpw ,  xpw(*)),(paypw ,  ypw(*)),(paxpuw, xpuw(*))
+      pointer (paypvw, ypvw(*))
+      pointer (paxpe ,  xpe(*)),(paype ,  ype(*)),(paxpue, xpue(*))
+      pointer (paypve, ypve(*))
+
+!
+      common /bcshdg_1/ paxpn,paypn,paxpun,paypvn
+      common /bcshdg_1/ paxps,payps,paxpus,paypvs
+      common /bcshdg_1/ paxpe,paype,paxpue,paypve
+      common /bcshdg_1/ paxpw,paypw,paxpuw,paypvw
+!
+      Real*8,dimension(:),pointer :: ana_am_8,ana_bm_8,ana_at_8,ana_bt_8
+      
+      common /bcshdg_2/ ana_am_8,ana_bm_8,ana_at_8,ana_bt_8
+      common /bcshdg_3/ ana_zd_L,ana_w_L,ana_q_L
+!
+  

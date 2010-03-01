@@ -8,14 +8,12 @@
 #include "hblen.cdk"
 #include "lam.cdk"
 #include "lun.cdk"
-#include "mem.cdk"
 #include "step.cdk"
 #include "path.cdk"
 #include "init.cdk"
 #include "offc.cdk"
 #include "schm.cdk"
 #include "type.cdk"
-#include "adw.cdk"
 #include "cstv.cdk"
 #include "lctl.cdk"
 #include "hzd.cdk"
@@ -40,21 +38,14 @@
 #include "p_serg.cdk"
 #include "p_zong.cdk"
 #include "wil_williamson.cdk"
+#include "stat.cdk"
+
+      namelist /gem_cfgs/ stat_liste
 !Acid
       namelist /gem_cfgs/ Acid_pilot_L
       namelist /gem_cfgs/ Acid_readposi_L
       namelist /gem_cfgs/ Acid_readsol_L
       namelist /gem_cfgs/ Acid_test_L
-!Adw
-      namelist /gem_cfgs/ Adw_ckbd_L
-      namelist /gem_cfgs/ Adw_exdg_L
-      namelist /gem_cfgs/ Adw_halox
-      namelist /gem_cfgs/ Adw_haloy
-      namelist /gem_cfgs/ Adw_interp_type_S
-      namelist /gem_cfgs/ Adw_mono_L
-      namelist /gem_cfgs/ Adw_nkbz_L
-      namelist /gem_cfgs/ Adw_nosetint_L
-      namelist /gem_cfgs/ Adw_trunc_traj_L
 !C
       namelist /gem_cfgs/ Clim_climat_L
       namelist /gem_cfgs/ Clim_inincr_L
@@ -109,8 +100,6 @@
       namelist /gem_cfgs/ Lctl_r8stat_L
       namelist /gem_cfgs/ Lctl_reset
       namelist /gem_cfgs/ Level_ip12000_L
-!M
-      namelist /gem_cfgs/ Mem_mx3db
 !Off
       namelist /gem_cfgs/ Offc_b0_8
       namelist /gem_cfgs/ Offc_b0T_8
@@ -118,7 +107,6 @@
 !Out3
       namelist /gem_cfgs/ Out3_cliph_L
       namelist /gem_cfgs/ Out3_closestep
-      namelist /gem_cfgs/ Out3_compress_L
       namelist /gem_cfgs/ Out3_cubdd_L
       namelist /gem_cfgs/ Out3_cubds_L
       namelist /gem_cfgs/ Out3_cubqq_L
@@ -137,22 +125,11 @@
       namelist /gem_cfgs/ Out3_unit_S
       namelist /gem_cfgs/ Out3_zund
 !P
-      namelist /gem_cfgs/ P_fcpkuo_xblnd
-      namelist /gem_cfgs/ P_fcpkuo_xofset
-      namelist /gem_cfgs/ P_fcpkuo_yblnd
-      namelist /gem_cfgs/ P_fcpkuo_yofset
       namelist /gem_cfgs/ P_lmvd_eqlat_8
       namelist /gem_cfgs/ P_lmvd_mllat_8
       namelist /gem_cfgs/ P_lmvd_valeq_8
       namelist /gem_cfgs/ P_lmvd_valml_8
       namelist /gem_cfgs/ P_pbd_dumpbus
-      namelist /gem_cfgs/ P_pset_second_L
-      namelist /gem_cfgs/ P_pset_xblnd
-      namelist /gem_cfgs/ P_pset_xofset
-      namelist /gem_cfgs/ P_pset_xofsetr
-      namelist /gem_cfgs/ P_pset_yblnd
-      namelist /gem_cfgs/ P_pset_yofset
-      namelist /gem_cfgs/ P_pset_yofsett
       namelist /gem_cfgs/ P_zong_nbin
       namelist /gem_cfgs/ P_zong_znli
       namelist /gem_cfgs/ P_zong_znmod
@@ -188,8 +165,6 @@
 !Step
       namelist /gem_cfgs/ Step_bkup
       namelist /gem_cfgs/ Step_cleanup
-      namelist /gem_cfgs/ Step_maxcfl
-      namelist /gem_cfgs/ Step_cliptraj_L
       namelist /gem_cfgs/ Step_gstat
       namelist /gem_cfgs/ Step_rsti
       namelist /gem_cfgs/ Step_total
@@ -220,16 +195,6 @@
       namelist /gem_cfgs_p/ Acid_readposi_L
       namelist /gem_cfgs_p/ Acid_readsol_L
       namelist /gem_cfgs_p/ Acid_test_L
-!Adw
-      namelist /gem_cfgs_p/ Adw_ckbd_L
-      namelist /gem_cfgs_p/ Adw_exdg_L
-      namelist /gem_cfgs_p/ Adw_halox
-      namelist /gem_cfgs_p/ Adw_haloy
-      namelist /gem_cfgs_p/ Adw_interp_type_S
-      namelist /gem_cfgs_p/ Adw_mono_L
-      namelist /gem_cfgs_p/ Adw_nkbz_L
-      namelist /gem_cfgs_p/ Adw_nosetint_L
-      namelist /gem_cfgs_p/ Adw_trunc_traj_L
 !C
       namelist /gem_cfgs_p/ Clim_climat_L
       namelist /gem_cfgs_p/ Clim_inincr_L
@@ -282,8 +247,6 @@
       namelist /gem_cfgs_p/ Lctl_r8stat_L
       namelist /gem_cfgs_p/ Lctl_reset
       namelist /gem_cfgs_p/ Level_ip12000_L
-!M
-      namelist /gem_cfgs_p/ Mem_mx3db
 !Off
       namelist /gem_cfgs_p/ Offc_b0_8
       namelist /gem_cfgs_p/ Offc_b0T_8
@@ -291,7 +254,6 @@
 !Out3
       namelist /gem_cfgs_p/ Out3_cliph_L
       namelist /gem_cfgs_p/ Out3_closestep
-      namelist /gem_cfgs_p/ Out3_compress_L
       namelist /gem_cfgs_p/ Out3_cubdd_L
       namelist /gem_cfgs_p/ Out3_cubds_L
       namelist /gem_cfgs_p/ Out3_cubqq_L
@@ -309,22 +271,11 @@
       namelist /gem_cfgs_p/ Out3_satues_L
       namelist /gem_cfgs_p/ Out3_unit_S
 !P
-      namelist /gem_cfgs_p/ P_fcpkuo_xblnd
-      namelist /gem_cfgs_p/ P_fcpkuo_xofset
-      namelist /gem_cfgs_p/ P_fcpkuo_yblnd
-      namelist /gem_cfgs_p/ P_fcpkuo_yofset
       namelist /gem_cfgs_p/ P_lmvd_eqlat_8
       namelist /gem_cfgs_p/ P_lmvd_mllat_8
       namelist /gem_cfgs_p/ P_lmvd_valeq_8
       namelist /gem_cfgs_p/ P_lmvd_valml_8
       namelist /gem_cfgs_p/ P_pbd_dumpbus
-      namelist /gem_cfgs_p/ P_pset_second_L
-      namelist /gem_cfgs_p/ P_pset_xblnd
-      namelist /gem_cfgs_p/ P_pset_xofset
-      namelist /gem_cfgs_p/ P_pset_xofsetr
-      namelist /gem_cfgs_p/ P_pset_yblnd
-      namelist /gem_cfgs_p/ P_pset_yofset
-      namelist /gem_cfgs_p/ P_pset_yofsett
       namelist /gem_cfgs_p/ P_zong_nbin
       namelist /gem_cfgs_p/ P_zong_znli
       namelist /gem_cfgs_p/ P_zong_znmod
@@ -358,8 +309,6 @@
 !Step
       namelist /gem_cfgs_p/ Step_bkup
       namelist /gem_cfgs_p/ Step_cleanup
-      namelist /gem_cfgs_p/ Step_maxcfl
-      namelist /gem_cfgs_p/ Step_cliptraj_L
       namelist /gem_cfgs_p/ Step_gstat
       namelist /gem_cfgs_p/ Step_rsti
       namelist /gem_cfgs_p/ Step_total

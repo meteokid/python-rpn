@@ -17,7 +17,7 @@
 *             the spherical coordinate system to cartesian space
 *
       subroutine llacar( F_xyz_8,F_lon,F_lat,ni,nj)
-#include "impnone.cdk"
+      implicit none
       integer ni,nj 
       real*8 F_xyz_8(3,ni*nj)
       real F_lon(ni),F_lat(nj) 

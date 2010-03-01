@@ -2,6 +2,8 @@
 !
 !**comdeck nest.cdk
 !
+! v4_10 - Tanguay M.        - Adjust digital filter when LAM
+!
 !______________________________________________________________________
 !                                                                      |
 !  VARIABLES ASSOCIATED WITH NESTING for current timestep              |
@@ -22,33 +24,40 @@
 ! Nest_tr            | tracer 3d variables                             |
 !----------------------------------------------------------------------|
 !
-!
 #endif
-      MARK_COMMON_BEG (nest)
-      DCL_VMMVAR( nest, nest_u   , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_v   , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_t   , real, (LDIST_SHAPE,l_nk+2) )
-      DCL_VMMVAR( nest, nest_zd  , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_s   , real, (LDIST_SHAPE     ) )
-      DCL_VMMVAR( nest, nest_w   , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_q   , real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( nest, nest_tr  , real, (LDIST_SHAPE,l_nk+2,*) )
+      real, pointer, dimension (:,:,:) :: nest_u  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_v  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_t  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: nest_zd => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:  ) :: nest_s  => null() ! effective dimensions are (LDIST_SHAPE         )
+      real, pointer, dimension (:,:,:) :: nest_w  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_q  => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
 
-      DCL_VMMVAR( nest, nest_pr  , real, (LDIST_SHAPE,l_nk,*) )
-      DCL_VMMVAR( nest, nest_irac, real, (LDIST_SHAPE,l_nk,*) )
-      DCL_VMMVAR( nest, nest_soac, real, (LDIST_SHAPE,l_nk,*) )
-      DCL_VMMVAR( nest, nest_rt  , real, (LDIST_SHAPE,l_nk,*) )
-      DCL_VMMVAR( nest, nest_cosz, real, (LDIST_SHAPE,l_nk,*) )
+      real, pointer, dimension (:,:,:) :: nest_uf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_vf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_tf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: nest_zdf=> null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:  ) :: nest_sf => null() ! effective dimensions are (LDIST_SHAPE         )
+      real, pointer, dimension (:,:,:) :: nest_wf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_qf => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
 
-      DCL_VMMVAR( nest, nest_uf   , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_vf   , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_tf   , real, (LDIST_SHAPE,l_nk+2) )
-      DCL_VMMVAR( nest, nest_zdf  , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_sf   , real, (LDIST_SHAPE     ) )
-      DCL_VMMVAR( nest, nest_wf   , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_qf   , real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( nest, nest_trf  , real, (LDIST_SHAPE,l_nk+2,*) )
+      real, pointer, dimension (:,:,:) :: nest_u2 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_v2 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_t2 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: nest_zd2=> null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:  ) :: nest_s2 => null() ! effective dimensions are (LDIST_SHAPE         )
+      real, pointer, dimension (:,:,:) :: nest_w2 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_q2 => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
 
-      MARK_COMMON_END (nest)
-      character*8 nest_n_first(1)
-      equivalence (nest_n_first,VMM_NAM(nest_u))
+      character(len=8) :: gmmk_nest_u_s  , gmmk_nest_v_s , gmmk_nest_t_s
+      character(len=8) :: gmmk_nest_zd_s , gmmk_nest_s_s , gmmk_nest_w_s , gmmk_nest_q_s
+      character(len=8) :: gmmk_nest_uf_s , gmmk_nest_vf_s, gmmk_nest_tf_s
+      character(len=8) :: gmmk_nest_zdf_s, gmmk_nest_sf_s, gmmk_nest_wf_s, gmmk_nest_qf_s
+      character(len=8) :: gmmk_nest_u2_s , gmmk_nest_v2_s, gmmk_nest_t2_s
+      character(len=8) :: gmmk_nest_zd2_s, gmmk_nest_s2_s, gmmk_nest_w2_s, gmmk_nest_q2_s
+      common /nest_n_gmm/ gmmk_nest_u_s  , gmmk_nest_v_s , gmmk_nest_t_s
+      common /nest_n_gmm/ gmmk_nest_zd_s , gmmk_nest_s_s , gmmk_nest_w_s , gmmk_nest_q_s
+      common /nest_n_gmm/ gmmk_nest_uf_s , gmmk_nest_vf_s, gmmk_nest_tf_s
+      common /nest_n_gmm/ gmmk_nest_zdf_s, gmmk_nest_sf_s, gmmk_nest_wf_s, gmmk_nest_qf_s
+      common /nest_n_gmm/ gmmk_nest_u2_s , gmmk_nest_v2_s, gmmk_nest_t2_s
+      common /nest_n_gmm/ gmmk_nest_zd2_s, gmmk_nest_s2_s, gmmk_nest_w2_s, gmmk_nest_q2_s

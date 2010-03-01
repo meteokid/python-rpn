@@ -18,7 +18,6 @@
 #include "model_macros_f.h"
 *
       subroutine itf_chm_vmmprep(P_trp,P_trm,DIST_DIM,Nk)
-*
       implicit none
 *
       integer DIST_DIM,Nk
@@ -41,64 +40,7 @@
 *
 *implicits
 *
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "schm.cdk"
-#include "vt1.cdk"
-#include "vt0.cdk"
-#include "itf_chm_busind.cdk"
-#include "itf_phy_busind.cdk"
-*
-***
-*
-      integer  vmmlod,vmmget,vmmuln
-      external vmmlod,vmmget,vmmuln
-
-      integer err,i,j,k,n
-      integer keyp_,keym_
-      integer keyp(chmt_maxn),keym(chmt_maxn)
-      real trp,trm
-      pointer (patrp, trp(LDIST_SHAPE,Nk,*)),
-     $        (patrm, trm(LDIST_SHAPE,Nk,*))
-*
-*     ---------------------------------------------------------------
-*
-      if (.not. Schm_chems_L) then
-         if (Lun_out.gt.0) write(Lun_out,1000)
-         return
-      endif
-      keyp_ = VMM_KEY (trt1)
-      keym_ = VMM_KEY (trt0)
-      if (chmt_ntr.le.0) then
-         if (Lun_out.gt.0) write(Lun_out,1001)
-         call qqexit(1)
-      endif
-      if ((chmt_ntr+phyt_ntr).ge.chmt_maxn) then
-         if (Lun_out.gt.0) write(Lun_out,1002)
-         call qqexit(1)
-      endif
-      do n=1,chmt_ntr+phyt_ntr
-         keyp(n) = keyp_ + n
-         keym(n) = keym_ + n
-      end do
-      err = vmmlod(keyp,chmt_ntr+phyt_ntr)
-      err = vmmlod(keym,chmt_ntr+phyt_ntr)
-      do n=1,chmt_ntr
-         err = vmmget(keyp(n+phyt_ntr),patrp,trp)
-         P_trp(n) = patrp
-         err = vmmget(keym(n+phyt_ntr),patrm,trm)
-         P_trm(n) = patrm
-      enddo
-*
- 1000 format(/'CHEM SWITCH=F, NO CHEM LOAD FROM VMM -> EXITING itf_chm_vmmprep'
-     $       /60('='))
- 1001 format(/'MUST HAVE AT LEAST 1 CHEM. SPECIE -> ABORT IN itf_chm_vmmprep'
-     $       /60('='))
- 1002 format(/'Asking for more than chmt_maxn -> ABORT IN itf_chm_vmmprep'
-     $       /60('='))
-*
-*     ---------------------------------------------------------------
-*
+	stop 'itf_chm_vmmprep'
       return
       end
 

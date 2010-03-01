@@ -10,18 +10,12 @@
       subroutine v4d_options
       return
       end
-      subroutine v4d_inikey_tr
-      return
-      end
-      subroutine v4d_img2uv
-      return
-      end
       subroutine v4d_predat
       return
       end
-      subroutine v4d_zerohalo
+      subroutine v4d_init
       return
       end
-      subroutine v4d_init
+      subroutine v4d_img2uv
       return
       end

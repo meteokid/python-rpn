@@ -1,0 +1,73 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+#if defined (DOC)
+*
+***comdeck vt2_m.cdk
+*
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*______________________________________________________________________
+*                                                                      |
+*  VMM variables at TIME t2                                            |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+*  ut2               | U: x component of velocity                      |
+*  vt2               | V: y component of velocity                      |
+*  tt2               | T: temperature                                  |
+* zdt2               | Zdot: generalized vertical velocity             |
+*  st2               | s: log of surface pressure minus a constant     |
+*--------------------|-------------------------------------------------|
+*  wt2               | w: z component of velocity                      |
+*  qt2               | q: log of non-hydrostatic perturbation pressure |
+*--------------------|-------------------------------------------------|
+* trt2               | passive tracer(s)                               |
+*--------------------|-------------------------------------------------|
+* trt2               | passive tracer(s)                               |
+*--------------------|-------------------------------------------------|
+*  xt2               | upstream x position                             |
+*  yt2               | upstream y position                             |
+*  zt2               | upstream z position                             |
+* xct2               | upstream x position in cartesian coordinate     |
+* yct2               | upstream y position in cartesian coordinate     |
+* zct2               | upstream z position in cartesian coordinate     |
+*----------------------------------------------------------------------
+*
+#endif
+*
+*NOTE: the equivalence statement below MUST mark the
+*FIRST element of the common block or the OUTPUTS will be wrong.
+*If you introduce an element in the beginning of this block, make
+*changes to assure the equivalence statement below MARKS it.
+*
+      MARK_COMMON_BEG(vt2_m)
+      DCL_VMMVAR( vt2_m,   ut2_m, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2_m,   vt2_m, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2_m,   tt2_m, real, (LDIST_SHAPE,l_nk+2  ) )
+      DCL_VMMVAR( vt2_m,  zdt2_m, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2_m,   st2_m, real, (LDIST_SHAPE)        )
+      DCL_VMMVAR( vt2_m,   wt2_m, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2_m,   qt2_m, real, (LDIST_SHAPE,0:l_nk+1) )
+      DCL_VMMVAR( vt2_m,  trt2_m, real, (LDIST_SHAPE,l_nk+2,*) )
+      DCL_VMMVAR( vt2_m,   xt2_m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2_m,   yt2_m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2_m,   zt2_m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2_m,  xct2_m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2_m,  yct2_m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2_m,  zct2_m, real, (LDIST_SHAPE,l_nk) )
+      MARK_COMMON_END(vt2_m)
+
+      character*8 vt2_m_n_first(1)
+      equivalence (vt2_m_n_first,VMM_NAM(ut2_m))
+

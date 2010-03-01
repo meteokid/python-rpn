@@ -10,6 +10,3 @@
       subroutine chm_load_emissions
       return
       end
-      subroutine chm_exe
-      return
-      end

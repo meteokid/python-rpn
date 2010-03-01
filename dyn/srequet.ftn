@@ -96,7 +96,6 @@
       Level_sets = 0
       Timestep_sets = 0
       Outd_sets = 0
-      Outd_vmm_L = .false.
       Outp_sets = 0
       Outc_sets = 0
       Out3_filtpass_max = 0

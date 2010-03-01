@@ -39,55 +39,32 @@
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "lctl.cdk"
-#include "v4dg.cdk"
 #include "ifd.cdk"
-#include "bcsmem.cdk"
 *
-*        Physics timestep & Horizontal diffusion & Vertical sponge
-*        ---------------------------------------------------------
+*     ---------------------------------------------------------------
 *
-         if ( Schm_hdlast_L ) then
+      if ( Schm_hdlast_L ) then
 *
-            call tmg_start0( 9, 'PHY      ' )
-            if ( Schm_phyms_L ) call itf_phy_main    (Lctl_step)
-            call tmg_stop0(9)
+         call itf_phy_main (Lctl_step)
+         call hzd_main ()
 *
-            call tmg_start0(10,'HZD      ')
-            call hzd_main ()
-            call tmg_stop0(10)
+      else
 *
-            call psadj ()
+         call hzd_main ()
+         call itf_phy_main (Lctl_step)
 *
-            call tmg_start0(11,'VSPNG    ')
-            call vspng_main () 
-            call tmg_stop0(11)
-*
-         else
-*
-            call tmg_start0(10,'HZD      ')
-            call   hzd_main ()
-            call tmg_stop0(10)
-*
-            call psadj ()
-*
-            call tmg_start0(11,'VSPNG    ')
-            call vspng_main () 
-            call tmg_stop0(11)
-*
-            call tmg_start0( 9, 'PHY      ' )
-            if ( Schm_phyms_L ) call itf_phy_main    (Lctl_step)
-            call tmg_stop0(9)
-*
-         endif
-*
-         if ( .not. Schm_phyms_L ) call dummy_diag ()
-*
-      if (G_lam .and. ifd_ftype.ne.'BMF') then
-* Update Lateral BCs with data that has seen physics
-          call nest_update
-* Impose Lateral BCs within Pil regions
-          call nest_bcs
       endif
+*
+      if (G_lam .and. ifd_bcsphy_L) then
+* Update Lateral BCs with data that has seen physics
+         call nest_update
+* Impose Lateral BCs within Pil regions
+         call nest_bcs
+      endif
+*
+      if ( .not. Schm_phyms_L ) call dummy_diag ()
+*
+*     ---------------------------------------------------------------
 *
       return
       end

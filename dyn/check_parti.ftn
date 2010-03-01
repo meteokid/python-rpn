@@ -17,7 +17,7 @@
 *
       logical function check_parti (F_si,F_n,F_npe)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_si,F_n,F_npe
 *

@@ -67,7 +67,7 @@
      $     j0.lt.1-G_haloy   .or.
      $     jn.gt.l_nj+G_haloy
      $     )then
-         call gem_stop('diag_var : dimension error',-1)
+         call handle_error0('diag_var','diag_var : dimension error',-1)
       endif
 *
       nij = (in - i0 + 1)*(jn - j0 + 1)

@@ -58,35 +58,31 @@
 *______________|_________________________________________________|_____|
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "type.cdk"
 #include "adx.cdk"
 #include "lun.cdk"
 #include "inuvl.cdk"
-#include "vthh.cdk"
-*
-*modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
-************************************************************************
-      integer pnerr, pnlkey1(30), pnlod
+#include "vth.cdk"
 *
       integer i, j, k, i0, in, j0, jn, n, dest_ni
       real*8 ONE,sc
       parameter( ONE = 1.0 )
-************************************************************************
-      
+*
+*     ---------------------------------------------------------------
+*
       if (Lun_debug_L) write (Lun_out,1000)
-      pnlkey1(1)  = VMM_KEY(uthh)
-      pnlkey1(2)  = VMM_KEY(vthh)
-      pnlkey1(3)  = VMM_KEY(zdthh)
-*
-      pnerr = vmmlod(pnlkey1,3)
-*
-      pnerr = VMM_GET_VAR(uthh)
-      pnerr = VMM_GET_VAR(vthh)
-      pnerr = VMM_GET_VAR(zdthh)
+
+      gmmstat = gmm_get(gmmk_uthh_s,uthh,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_1_wnd ERROR at gmm_get(uthh)'
+      gmmstat = gmm_get(gmmk_vthh_s,vthh,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_1_wnd ERROR at gmm_get(vthh)'
+      gmmstat = gmm_get(gmmk_zdthh_s,zdthh,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_1_wnd ERROR at gmm_get(zdthh)'
+
 c     if (Acid_test_L)
 c    %call glbstat (uthh,'Uthh',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in-1,
 c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
@@ -252,7 +248,10 @@ c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
 
       endif
 !$omp end parallel
-*
+
  1000  format(3X,'PREPARE HORIZONTAL WINDS: (S/R ADX_MAIN_1_WND)')
+*
+*     ---------------------------------------------------------------
+*
       return
       end

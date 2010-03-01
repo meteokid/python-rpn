@@ -24,8 +24,11 @@
 * 
 *revision
 * v3_31 - Desgagne M.       - initial MPI version
+* v4_06 - Lepine M.         - VMM replacement with GMM
 **
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "itf_cpl.cdk"
 #include "dcst.cdk"
@@ -35,21 +38,15 @@
 #include "lctl.cdk"
 #include "ptopo.cdk"
 #include "modconst.cdk"
-#include "vt1.cdk"
 #include "out3.cdk"
 #include "rstr.cdk"
-#include "schm.cdk"
-*
-**
-      integer  vmmlod,vmmget
-      external vmmlod,vmmget
+#include "pw.cdk"
 *
       character*4 nomvar
       character*16 datev,datem
       logical flag,first
-      integer key(3),err,i,j,send,recv,ii,jj,n
-      real u(LDIST_SHAPE),v(LDIST_SHAPE),uug(l_ni,l_nj),vvg(l_ni,l_nj),
-     $     tt(l_ni,l_nj), es(l_ni,l_nj)
+      integer err,i,j,send,recv,ii,jj,n
+      real uug(l_ni,l_nj), vvg(l_ni,l_nj), tt(l_ni,l_nj), es(l_ni,l_nj)
       real, dimension (:,:,:), allocatable :: glbbus
       real*8  dayfrac,one,sid,rsid
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
@@ -67,22 +64,12 @@
       if (.not. ( (Lctl_step.ge.cpl_debut)   .and. 
      $            (Lctl_step.le.cpl_fin) ) ) return
 *
-      key( 1) = VMM_KEY(ut1)
-      key( 2) = VMM_KEY(vt1)
-*
-      err = vmmlod(key,2)
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-*
-      u(:,:) = ut1 (:,:,G_nk+1)
-      v(:,:) = vt1 (:,:,G_nk+1)
-      call itf_phy_uvgridscal (u,v,LDIST_DIM, 1, .true.)
-      do j= 1, l_nj
-      do i= 1, l_ni 
-         uug(i,j) = u(i,j)* Dcst_rayt_8 / cos(geomg_y_8(j))
-         vvg(i,j) = v(i,j)* Dcst_rayt_8 / cos(geomg_y_8(j))
-      end do
-      end do
+      nullify (pw_uplus,pw_vplus)
+      gmmstat = gmm_get(gmmk_pw_uplus_s ,pw_uplus,meta3d)
+      gmmstat = gmm_get(gmmk_pw_vplus_s ,pw_vplus,meta3d)
+
+      uug(:,:) = pw_uplus(1:l_ni,1:l_nj,G_nk+2)
+      vvg(:,:) = pw_vplus(1:l_ni,1:l_nj,G_nk+2)
 *
       call wind_rot2ll (uug,vvg,Geomn_lonrx,Geomn_latrx,l_ni*l_nj)
 *
@@ -153,8 +140,8 @@
             if (nomvar.eq.'VDA') nomvar='VV'
             call r_rawfstw(atm_busou(1,1,i,1),cpl_ni,cpl_nj,nomvar,
      $         Lctl_step,int(Cstv_dt_8),Out3_date,'..//gem_cpl_out.fst')
-            call statfld (atm_busou(1,1,i,1),nomvar,Lctl_step,
-     $           "",1,cpl_ni,1,cpl_nj,1, 1,1,1,cpl_ni,cpl_nj,1)
+            call statfld2 (atm_busou(1,1,i,1),nomvar,Lctl_step,
+     $         "",1,cpl_ni,1,cpl_nj,1,1, 1,1,1,cpl_ni,cpl_nj,1)
             end do
             do i=1,n_fldin
             nomvar = nv_read(i)(5:7)
@@ -162,14 +149,14 @@
             if (nomvar.eq.'VDA') nomvar='VV'
             call r_rawfstw(atm_busin(1,1,i)  ,cpl_ni,cpl_nj,nomvar,
      $         Lctl_step,int(Cstv_dt_8),Out3_date,'..//gem_cpl_in.fst' )
-            call statfld (atm_busin(1,1,i),nomvar,Lctl_step,
-     $           "",1,cpl_ni,1,cpl_nj,1, 1,1,1,cpl_ni,cpl_nj,1)
+            call statfld2 (atm_busin(1,1,i),nomvar,Lctl_step,
+     $       "",1,cpl_ni,1,cpl_nj,1,1, 1,1,1,cpl_ni,cpl_nj,1)
             end do
          endif
 *
       endif
 *
- 999  call gem_stop('ITF_CPL_FILLATM',err)
+ 999  call handle_error0('itf_cpl_fillatm','ITF_CPL_FILLATM',err)
       call RPN_COMM_bcast (C_coupling_L, 1, "MPI_LOGICAL", 0,"grid",err)
       if (.not.C_coupling_L) return
 
@@ -179,16 +166,8 @@
       atm_local_busin (1:l_ni,1:l_nj,2)=  
      $   max(atm_local_busin (1:l_ni,1:l_nj,2),250.)
 *
-      if (recv.eq.9001) then
-         atm_local_busin (1:l_ni,1:l_nj,1)=0.
-         atm_local_busin (1:l_ni,1:l_nj,2)=273.
-         atm_local_busin (1:l_ni,1:l_nj,3)=273.
-         atm_local_busin (1:l_ni,1:l_nj,4)=0.
-         atm_local_busin (1:l_ni,1:l_nj,5)=0.
-      endif
-
       deallocate (glbbus)
-
+*
  1001 first = .false.
 
  9900 format (/,' PROBLEM WITH COUPLER')

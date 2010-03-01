@@ -86,13 +86,9 @@
             endif
          enddo
       enddo
-c     do k=1,cnt
-c        print *,'iniobus:',k,udolist_S(k)
-c     enddo
 
 *   Determine the number of variables to be outputted from each bus 
 *   bigk counts the number of ni rows in the output bus.
-*
 *
       k=0
       bigk = 1
@@ -125,29 +121,7 @@ c     enddo
             endif
          enddo
       enddo
-      do i = 1, P_bdyn_out
-         idx=p_bdyn_idx(i)
-         do j=1,cnt
-            if (udolist_S(j).eq.dynon(idx)(1:4)) then
-                k=k+1
-                obus_var_S(k)=dynon(idx)(1:4)
-                obus_bus_S(k)='D'
-                obus_offset(k)=bigk
-                obus_idx(k)=idx
-                obus_addr(k)=dynpar(idx,1)
-                obus_stag(k)=dynpar(idx,4)
-                obus_mult(k)=dynpar(idx,6)
-                obus_mul(k)=1.0
-                obus_add(k)=0.0
-                if (dynpar(idx,5).gt.p_ni) then
-                    obus_shp(k)= G_nk+2
-                else
-                    obus_shp(k)= 1
-                endif
-                bigk = bigk + obus_shp(k)*obus_mult(k)
-            endif
-         enddo
-      enddo
+
       do i = 1, P_bvol_out
          idx=p_bvol_idx(i)
          do j=1,cnt
@@ -171,31 +145,7 @@ c     enddo
             endif
          enddo
       enddo
-      if (Lctl_step.eq.0) then
-      do i = 1, P_bent_out
-         idx=p_bent_idx(i)
-         do j=1,cnt
-            if (udolist_S(j).eq.enton(idx)(1:4)) then
-                k=k+1
-                obus_var_S(k)=enton(idx)(1:4)
-                obus_bus_S(k)='E'
-                obus_offset(k)=bigk
-                obus_idx(k)=idx
-                obus_addr(k)=entpar(idx,1)
-                obus_stag(k)=entpar(idx,4)
-                obus_mult(k)=entpar(idx,6)
-                obus_mul(k)=1.0
-                obus_add(k)=0.0
-                if (entpar(idx,5).gt.p_ni) then
-                    obus_shp(k)= G_nk+2
-                else
-                    obus_shp(k)= 1
-                endif
-                bigk = bigk + obus_shp(k)*obus_mult(k)
-            endif
-         enddo
-      enddo
-      endif
+
       Obus_top=k
       siz = bigk
       if (Obus_top.eq.0) then

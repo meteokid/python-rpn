@@ -1,0 +1,53 @@
+#if defined (DOC)
+!
+!**comdeck rhsc.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  GMM VARIABLES ASSOCIATED WITH RHS (right-hand side equation)        |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+!   Contributions of time t1 to rhs of different equations             |
+!--------------------|-------------------------------------------------|
+! rhsu               | momentum equation along x                       |
+! rhsv               | momentum equation along y                       |
+! rhst               | thermodynamic equation                          |
+! rhsc               | continuity equation                             |
+! rhsw               | momentum equation along z                       |
+! rhsf               | vertical velocity equation                      |
+!--------------------|-------------------------------------------------|
+! rhsp               |        Helmholtz equation                       |
+! rhsb               |   boundary condition in opentop                 |
+!--------------------|-------------------------------------------------|
+! ruw1               | Ru interpolated from U_grid to G_grid           |
+! ruw2               | advective contributions for U                   |
+! rvw1               | Rv interpolated from V_grid to G_grid           |
+! rvw2               | advective contributions for V                   |
+!----------------------------------------------------------------------
+!
+#endif
+!
+      real, pointer, dimension (:,:,:) :: rhsu     ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: rhsv     ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: rhst     ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: rhsc     ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: rhsw     ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: rhsf     ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: rhsp     ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:  ) :: rhsb     ! effective dimensions are (LDIST_SHAPE         )
+      real, pointer, dimension (:,:,:) :: ruw1     ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: rvw1     ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: ruw2     ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: rvw2     ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+
+      common /rhsc_gmm/ rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp,rhsb
+      common /rhsc_gmm/ ruw1,rvw1,ruw2,rvw2
+
+      character(len=8) :: gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s
+      character(len=8) :: gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s
+      character(len=8) :: gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
+      common /rhsc_n_gmm/ gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s
+      common /rhsc_n_gmm/ gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s
+      common /rhsc_n_gmm/ gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s

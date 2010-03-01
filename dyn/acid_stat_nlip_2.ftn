@@ -78,7 +78,7 @@
      $        1,G_nk)
       else
          print*,'flag=',F_flag
-         call gem_stop('acid_stat_nlip_2 : error with flag',-1)
+         call handle_error0('acid_stat_nlip_2','acid_stat_nlip_2 : error with flag',-1)
       endif
 
       return

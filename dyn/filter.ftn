@@ -20,7 +20,7 @@
       subroutine filter (F_fd, F_lx, F_coef, F_d_S, 
      $                   F_flag_L,DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM,F_lx,Nk
       real F_fd(DIST_SHAPE,Nk),  F_coef
@@ -112,8 +112,8 @@
          call xyfil(F_fd,w2,w1,-F_coef,whx,why,.false.,LDIST_DIM,Nk)
          endif
          end do
-      else   ! THE RANGE OF VALIDITY OF THE COEFFICIENT IS NOT RESPECTED
-         call gefstop('filter')
+      else
+         call handle_error(-1,'filter','THE RANGE OF VALIDITY OF THE COEFFICIENT IS NOT RESPECTED')
       endif
 *
 *-------------------------------------------------------------

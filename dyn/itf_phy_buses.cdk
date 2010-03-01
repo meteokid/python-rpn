@@ -80,3 +80,6 @@
 !
       real, dimension(:), pointer ::  geobus, geofld
       common /busgeor/ geobus, geofld
+!
+      real, dimension (:,:,:,:), pointer :: phy_buffer, phy_tend
+      common /phybuf/ phy_buffer, phy_tend

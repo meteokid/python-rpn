@@ -20,7 +20,7 @@
       subroutine intm2t_up (F_gg_t, F_ff_m, F_con, F_hz_m_8, DIST_DIM,Nk,
      $                      F_i0,F_in,F_j0,F_jn,F_k0)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk,F_i0,F_in,F_j0,F_jn,F_k0
       real F_gg_t(DIST_SHAPE,Nk+1),F_ff_m(DIST_SHAPE,Nk),F_con

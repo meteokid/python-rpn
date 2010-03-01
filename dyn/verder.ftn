@@ -21,7 +21,7 @@
       subroutine verder (F_der, F_infield, F_wlnph, F_con1, F_con2,
      %                             DIST_DIM, F_Nk,F_i0,F_in,F_j0,F_jn)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, F_Nk,F_i0,F_in,F_j0,F_jn
       real    F_con1, F_con2

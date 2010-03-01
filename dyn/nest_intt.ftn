@@ -31,8 +31,12 @@
 * v3_20 - Pellerin P. and Y. Delage - Special interpolations for MEC 
 * v4    - Girard-Plante-Lee         - Staggered version
 * v4_04 - Plante A.                 - Remove offline
+* v4_05 - Lepine M.                 - VMM replacement with GMM
+* v4_10 - Tanguay M.                - Adjust digital filter when LAM
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "bmf.cdk"
 #include "lam.cdk"
@@ -46,26 +50,40 @@
 #include "bcsmem.cdk"
 #include "bcsdim.cdk"
 #include "lun.cdk"
+#include "init.cdk"
 *
-*modules
-      integer  vmmlod,vmmget,vmmuld,newdate
-      external vmmlod,vmmget,vmmuld,newdate
+      integer  newdate
+      external newdate
+*
       logical done
-      character*16 datev
-      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat,np,ip,id
-      real tr1,trf,a2,b2
-      pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
-      integer err, key1(14+Tr3d_ntr), nvar, nstepno, key1_, 
-     $        key2(Tr3d_ntr),key2_,n
+      character*16 datev,tr_name
+      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat,np,ip,id,err,n
+      integer bidon_rwtr
+      real, pointer, dimension(:,:,:) :: tr1,trf,tr2
       real*8  one,sid,rsid,dayfrac,tx,tf_nest,dtf,a,b,ax,bx
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
       data done /.false./
       save done,tf_nest
 *
-      integer bidon_rwtr
+      logical done_middle_already_L
+      data done_middle_already_L /.FALSE./
+      save done_middle_already_L
 *
+      logical middle_L,left_of_middle_L
 *
 *     ---------------------------------------------------------------
+*
+      middle_L         = Lctl_step .eq. (Init_dfnp-1)/2 + 1
+      left_of_middle_L = Lctl_step .le. (Init_dfnp-1)/2 + 1
+*
+      if (Lun_out.gt.0.and.G_lam.and.Init_balgm_L.and.middle_L) then
+              write(Lun_out,*) '*******************************************************************************'
+          if (.NOT.done_middle_already_L)
+     %        write(Lun_out,*) 'IN NEST_INTT: Treat timestep after middle of digital filter window (#1)'
+          if (     done_middle_already_L)
+     %        write(Lun_out,*) 'IN NEST_INTT: Treat timestep after middle of digital filter window (#2)'
+              write(Lun_out,*) '*******************************************************************************'
+      endif
 *
 *     -------------------------------------------------------
 *     When Regular forward GEM, F_done = .F.
@@ -75,49 +93,49 @@
       if ( V4dg_conf.eq.0.or..not.F_done ) then
 *
       if (Lctl_step.eq.1) Lam_current_S = Lam_runstrt_S
+      if (Lctl_step.eq.1.and.G_lam.and.Init_balgm_L) Lam_previous_S = Lam_current_S
       if (.not.done) then
          call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
          call pdfjdate2 (tf_nest,yy,mo,dd,hh,mm,ss)
       endif
 *
       if (Lun_debug_L) write(Lun_out,1000)
-      key1(1)  = VMM_KEY(nest_u)
-      key1(2)  = VMM_KEY(nest_v)
-      key1(3)  = VMM_KEY(nest_w)
-      key1(4)  = VMM_KEY(nest_t)
-      key1(5)  = VMM_KEY(nest_zd)
-      key1(6)  = VMM_KEY(nest_s)
-      key1(7)  = VMM_KEY(nest_uf)
-      key1(8)  = VMM_KEY(nest_vf)
-      key1(9)  = VMM_KEY(nest_wf)
-      key1(10) = VMM_KEY(nest_tf)
-      key1(11) = VMM_KEY(nest_zdf)
-      key1(12) = VMM_KEY(nest_sf)
-      nvar = 12
+
+      gmmstat = gmm_get(gmmk_nest_u_s ,nest_u ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_u)'
+      gmmstat = gmm_get(gmmk_nest_v_s ,nest_v ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_v)'
+      gmmstat = gmm_get(gmmk_nest_w_s ,nest_w ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_w)'
+      gmmstat = gmm_get(gmmk_nest_t_s ,nest_t ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_t)'
+      gmmstat = gmm_get(gmmk_nest_zd_s,nest_zd,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_zd)'
+      gmmstat = gmm_get(gmmk_nest_s_s ,nest_s ,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_s)'
+      gmmstat = gmm_get(gmmk_nest_uf_s ,nest_uf ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_uf)'
+      gmmstat = gmm_get(gmmk_nest_vf_s ,nest_vf ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_vf)'
+      gmmstat = gmm_get(gmmk_nest_wf_s,nest_wf,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_wf)'
+      gmmstat = gmm_get(gmmk_nest_tf_s,nest_tf,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_tf)'
+      gmmstat = gmm_get(gmmk_nest_zdf_s,nest_zdf,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_zdf)'
+      gmmstat = gmm_get(gmmk_nest_sf_s,nest_sf,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_intt ERROR at gmm_get(nest_sf)'
 *
       if (.not. Schm_hydro_L) then
-         key1(13) = VMM_KEY(nest_q)
-         key1(14) = VMM_KEY(nest_qf)
-         nvar = 14
+         gmmstat = gmm_get(gmmk_nest_q_s,nest_q,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'nest_bcs ERROR at gmm_get(nest_q)'
+         gmmstat = gmm_get(gmmk_nest_qf_s,nest_qf,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'nest_bcs ERROR at gmm_get(nest_qf)'
       endif
 *
-      err = vmmlod(key1,nvar)
-      err = VMM_GET_VAR(nest_u)
-      err = VMM_GET_VAR(nest_v)
-      err = VMM_GET_VAR(nest_w)
-      err = VMM_GET_VAR(nest_t)
-      err = VMM_GET_VAR(nest_zd)
-      err = VMM_GET_VAR(nest_s)
-      err = VMM_GET_VAR(nest_uf)
-      err = VMM_GET_VAR(nest_vf)
-      err = VMM_GET_VAR(nest_wf)
-      err = VMM_GET_VAR(nest_tf)
-      err = VMM_GET_VAR(nest_zdf)
-      err = VMM_GET_VAR(nest_sf)
-      if (.not. Schm_hydro_L) then
-         err = VMM_GET_VAR(nest_q)
-         err = VMM_GET_VAR(nest_qf)
-      endif
+*     Recover Previous date of validity of BCs when LAM with digital filter
+*     ---------------------------------------------------------------------
+      if (G_lam.and.Init_balgm_L.and.middle_L.and.done_middle_already_L) Lam_current_S = Lam_previous_S
 *
       dayfrac = dble(Lctl_step)*Cstv_dt_8*rsid
       call incdatsd (datev,Lam_runstrt_S,dayfrac)
@@ -128,10 +146,19 @@
          dtf = (tx-tf_nest) * sid / Cstv_dt_8
          dayfrac = dble(Lam_nesdt)*rsid
          call incdatsd(datev,Lam_current_S,dayfrac)
+*
+*        Store Previous date of validity of BCs when LAM with digital filter
+*        -------------------------------------------------------------------
+         if (G_lam.and.Init_balgm_L.and.left_of_middle_L) Lam_previous_S = Lam_current_S
+*
          Lam_current_S = datev
          call prsdate (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
          call pdfjdate2 (tf_nest,yy,mo,dd,hh,mm,ss)
          if (Lctl_step.gt.1) then
+*
+*           ------------------------------------------------------------------------------
+            if (.NOT.(G_lam.and.Init_balgm_L.and.middle_L.and.done_middle_already_L)) then
+*           ------------------------------------------------------------------------------
 *
 *           Copy contents from BCS_UF to BCS_U
 *
@@ -184,31 +211,25 @@
                end do
                end do
             end if
-            key1_ = VMM_KEY (nest_tr)
-            key2_ = VMM_KEY (nest_trf)
             do n=1,Tr3d_ntr
-               key1(n) = key1_ + n
-               key2(n) = key2_ + n
-            end do
-            if (Tr3d_ntr.gt.0) then
-               err = vmmlod(key1,Tr3d_ntr)
-               err = vmmlod(key2,Tr3d_ntr)
-               do n=1,Tr3d_ntr
-                  err = vmmget(key1(n),patr1,tr1)
-                  err = vmmget(key2(n),patrf,trf)
-                  do k= 1, G_nk+2
-                  do j= 1, l_nj 
-                  do i= 1, l_ni
-                     tr1 (i,j,k) = trf (i,j,k)
-                  end do
-                  end do
-                  end do
+               tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
+      	       gmmstat = gmm_get(tr_name,trf,meta3d)
+               tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
+      	       gmmstat = gmm_get(tr_name,tr1,meta3d)
+               do k= 1, G_nk+2
+               do j= 1, l_nj 
+               do i= 1, l_ni
+                  tr1 (i,j,k) = trf (i,j,k)
                end do
-               err = vmmuld(key1,Tr3d_ntr)
-               err = vmmuld(key2,Tr3d_ntr)
-            endif
+               end do
+               end do
+            end do
 *
          endif
+*
+*           ------------------------------------------------------------------------------
+            endif
+*           ------------------------------------------------------------------------------
 *
          call datp2f   ( dat, Lam_current_S )
          err = newdate ( dat, bmf_time1,bmf_time2,-3 )
@@ -220,7 +241,152 @@
 *
       endif
 *
+*     ----------------------------------------------------------------------------
+      if (G_lam.and.Init_balgm_L.and.middle_L.and..NOT.done_middle_already_L) then
+*     ----------------------------------------------------------------------------
+*
+*         Copy contents from BCS_U to BCS_U2
+*         ----------------------------------
+          do i=1,bcs_sz
+             bcs_u2(i) = bcs_u(i)
+             bcs_v2(i) = bcs_v(i)
+             bcs_w2(i) = bcs_w(i)
+             bcs_t2(i) = bcs_t(i)
+             bcs_zd2(i)= bcs_zd(i)
+             bcs_s2(i) = bcs_s(i)
+          enddo
+          if (.not. Schm_hydro_L) then
+             do i=1,bcs_sz
+                bcs_q2(i) = bcs_q(i)
+             enddo
+          endif
+          do n=1,Tr3d_ntr
+             id = (n-1)*bcs_sz+1
+             do i=1,bcs_sz
+                bcs_tr2(id+i-1) = bcs_tr(id+i-1)
+             enddo
+          enddo
+*
+*         Copy contents from NEST_U to NEST_U2
+*         ------------------------------------ 
+          do k= 1, G_nk+1
+          do j= 1, l_nj 
+          do i= 1, l_ni
+             nest_u2 (i,j,k) = nest_u (i,j,k)
+             nest_v2 (i,j,k) = nest_v (i,j,k)
+             nest_w2 (i,j,k) = nest_w (i,j,k)
+             nest_t2 (i,j,k) = nest_t (i,j,k)
+             nest_zd2(i,j,k) = nest_zd(i,j,k)
+          end do
+          end do
+          end do
+          do j= 1, l_nj 
+          do i= 1, l_ni
+             nest_s2(i,j) = nest_s(i,j)
+             nest_t2(i,j,G_nk+2) = nest_t(i,j,G_nk+2)
+          end do
+          end do
+          if (.not. Schm_hydro_L) then
+              do k= 0, G_nk+1
+              do j= 1, l_nj 
+              do i= 1, l_ni
+                 nest_q2(i,j,k) = nest_q(i,j,k)
+              end do
+              end do
+              end do
+          end if
+          do n=1,Tr3d_ntr
+             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
+             gmmstat = gmm_get(tr_name,tr1,meta3d)
+             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':S'
+             gmmstat = gmm_get(tr_name,tr2,meta3d)
+             do k= 1, G_nk+2
+             do j= 1, l_nj
+             do i= 1, l_ni
+                tr2 (i,j,k) = tr1(i,j,k)
+             end do
+             end do
+             end do
+          end do
+*
+*     ----------------------------------------------------------------------------
+      elseif (G_lam.and.Init_balgm_L.and.middle_L.and.done_middle_already_L) then
+*     ----------------------------------------------------------------------------
+*
+*         Copy contents from BCS_U2 to BCS_U
+*         ----------------------------------
+          do i=1,bcs_sz
+             bcs_u(i) = bcs_u2(i)
+             bcs_v(i) = bcs_v2(i)
+             bcs_w(i) = bcs_w2(i)
+             bcs_t(i) = bcs_t2(i)
+             bcs_zd(i)= bcs_zd2(i)
+             bcs_s(i) = bcs_s2(i)
+          enddo
+          if (.not. Schm_hydro_L) then
+             do i=1,bcs_sz
+                bcs_q(i) = bcs_q2(i)
+             enddo
+          endif
+          do n=1,Tr3d_ntr
+             id = (n-1)*bcs_sz+1
+             do i=1,bcs_sz
+                bcs_tr(id+i-1) = bcs_tr2(id+i-1)
+             enddo
+          enddo
+*
+*         Copy contents from NEST_U2 to NEST_U
+*         ------------------------------------
+          do k= 1, G_nk+1
+          do j= 1, l_nj 
+          do i= 1, l_ni
+             nest_u (i,j,k) = nest_u2 (i,j,k)
+             nest_v (i,j,k) = nest_v2 (i,j,k)
+             nest_w (i,j,k) = nest_w2 (i,j,k)
+             nest_t (i,j,k) = nest_t2 (i,j,k)
+             nest_zd(i,j,k) = nest_zd2(i,j,k)
+          end do
+          end do
+          end do
+          do j= 1, l_nj 
+          do i= 1, l_ni
+             nest_s(i,j) = nest_s2(i,j)
+             nest_t(i,j,G_nk+2) = nest_t2(i,j,G_nk+2)
+          end do
+          end do
+          if (.not. Schm_hydro_L) then
+              do k= 0, G_nk+1
+              do j= 1, l_nj 
+              do i= 1, l_ni
+                 nest_q(i,j,k) = nest_q2(i,j,k)
+              end do
+              end do
+              end do
+          end if
+          do n=1,Tr3d_ntr
+             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
+             gmmstat = gmm_get(tr_name,tr1,meta3d)
+             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':S'
+             gmmstat = gmm_get(tr_name,tr2,meta3d)
+             do k= 1, G_nk+2
+             do j= 1, l_nj
+             do i= 1, l_ni
+                tr1 (i,j,k) = tr2(i,j,k)
+             end do
+             end do
+             end do
+          end do
+*
+*     ----------------------------------------------------------------------------
+      endif 
+*     ----------------------------------------------------------------------------
+*
 *     Temporal linear interpolation
+*
+*     Store or Recover parameter for linear interpolation when LAM with digital filter
+*     --------------------------------------------------------------------------------
+      if (G_lam.and.Init_balgm_L.and.middle_L.and..NOT.done_middle_already_L) Lam_dtf_8 = dtf
+      if (G_lam.and.Init_balgm_L.and.middle_L.and.     done_middle_already_L) dtf       = Lam_dtf_8
 *
       a = (tf_nest-tx)/ (tf_nest - tx + (dtf*Cstv_dt_8 * rsid) )
       b = one - a
@@ -271,32 +437,20 @@
          end do
          end do
       end if
-      err = vmmuld(key1,nvar)
-      key1_ = VMM_KEY (nest_tr)
-      key2_ = VMM_KEY (nest_trf)
-      do n=1,Tr3d_ntr
-         key1(n) = key1_ + n
-         key2(n) = key2_ + n
-      end do
 
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1,Tr3d_ntr)
-         err = vmmlod(key2,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),patr1,tr1)
-            err = vmmget(key2(n),patrf,trf)
-               do k= 1, G_nk+2
-               do j= 1, l_nj 
-               do i= 1, l_ni
-                  tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
-               end do
-               end do
-            end do
+      do n=1,Tr3d_ntr
+         tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
+      	 gmmstat = gmm_get(tr_name,trf,meta3d)
+         tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
+      	 gmmstat = gmm_get(tr_name,tr1,meta3d)
+         do k= 1, G_nk+2
+         do j= 1, l_nj 
+         do i= 1, l_ni
+            tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
          end do
-*
-         err = vmmuld(key1,Tr3d_ntr)
-         err = vmmuld(key2,Tr3d_ntr)
-      endif
+         end do
+         end do
+      end do
 *
       done = .true.
 *
@@ -325,6 +479,10 @@
          V4dg_rwtr = bidon_rwtr
 *
       endif
+*
+*     Confirm if timestep after middle of digital filter window LAM (#1) is now done when LAM with digital filter
+*     -----------------------------------------------------------------------------------------------------------
+      if (G_lam.and.Init_balgm_L.and.middle_L.and..NOT.done_middle_already_L) done_middle_already_L = .TRUE.
 *
  1000 format(3X,'LINEAR INTERP IN TIME FOR NEST DATA (NEST_INTT)')
 *     ---------------------------------------------------------------

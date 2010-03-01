@@ -19,7 +19,7 @@
 *
       subroutine wndth
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Michel Roch - rpn - oct 1993
@@ -28,6 +28,7 @@
 * v2_00 - Desgagne M.       - initial MPI version 
 * v3_20 - Tanguay M.        - 1d higher order diffusion operator 
 * v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *	
@@ -35,6 +36,8 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "vt0.cdk"
@@ -45,38 +48,30 @@
 #include "schm.cdk"
 #include "ver.cdk"
 *
-*modules
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-*
-      integer pnerr, pnlkey1(9), nlkey
-*
       integer i, j, k
-**
+*
 *     ---------------------------------------------------------------
+*
       if (Lun_debug_L) write (Lun_out,1000)
 *
-      pnlkey1(1) = VMM_KEY(uth)
-      pnlkey1(2) = VMM_KEY(ut1)
-      pnlkey1(3) = VMM_KEY(ut0)
-      pnlkey1(4) = VMM_KEY(vth)
-      pnlkey1(5) = VMM_KEY(vt1)
-      pnlkey1(6) = VMM_KEY(vt0)
-      pnlkey1(7) = VMM_KEY(zdth)
-      pnlkey1(8) = VMM_KEY(zdt1)
-      pnlkey1(9) = VMM_KEY(zdt0)
-      nlkey=9
-*
-      pnerr = vmmlod(pnlkey1,nlkey)
-      pnerr = VMM_GET_VAR(uth)
-      pnerr = VMM_GET_VAR(ut1)
-      pnerr = VMM_GET_VAR(ut0)
-      pnerr = VMM_GET_VAR(vth)
-      pnerr = VMM_GET_VAR(vt1)
-      pnerr = VMM_GET_VAR(vt0)
-      pnerr = VMM_GET_VAR(zdth)
-      pnerr = VMM_GET_VAR(zdt1)
-      pnerr = VMM_GET_VAR(zdt0)
+      gmmstat = gmm_get(gmmk_uth_s, uth ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wdpers ERROR at gmm_get(uth)'
+      gmmstat = gmm_get(gmmk_vth_s, vth ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wdpers ERROR at gmm_get(vth)'
+      gmmstat = gmm_get(gmmk_zdth_s,zdth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wdpers ERROR at gmm_get(zdth)'
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wndth ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wndth ERROR at gmm_get(ut0)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wndth ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wndth ERROR at gmm_get(vt0)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wndth ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_zdt0_s,zdt0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'wndth ERROR at gmm_get(zdt0)'
 *
 *     Filtering
 *     ---------
@@ -119,14 +114,12 @@
 !$omp enddo
       endif
 !$omp end parallel
-*
-      pnerr = vmmuld(-1,0)
+
+ 1000 format(
+     +/ /,'AVERAGE WINDS t0-dt/2 (th): (S/R WNDTH)',
+     + /,'========================================',/ /)
 *
 *     ---------------------------------------------------------------
 *
- 1000 format(
-     +/ /,'AVERAGE WINDS t0-dt/2 (th): (S/R WNDTH)',
-     + /,'========================================',
-     +/ /)
       return
       end

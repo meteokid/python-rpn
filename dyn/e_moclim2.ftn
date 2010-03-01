@@ -20,7 +20,7 @@
       integer function e_moclim2 (  f, ni, nj, nomvar, ip1, ip3, 
      $     month, day, etik, typvar, dest_g, interp, un1, stdo)
 *
-#include "impnone.cdk"
+      implicit none
 *
       character* (*) nomvar,interp,etik,typvar
       integer ni, nj, ip1, ip3, month, day, dest_g, un1, stdo

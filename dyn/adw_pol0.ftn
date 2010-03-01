@@ -18,8 +18,7 @@
 *
       subroutine adw_pol0 ( F_field, F_j, F_nic, F_halox,
      %                      F_njc, F_haloy, F_nk )
-*
-#include "impnone.cdk"
+      implicit none
 *
       integer  F_j, F_nic, F_halox, F_njc, F_haloy, F_nk
 *

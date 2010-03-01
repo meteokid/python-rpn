@@ -57,7 +57,7 @@
      $        1,G_nk+2)
       else
          print*,'flag=',F_flag
-         call gem_stop('acid_stat_nest_bcs : error with flag',-1)
+         call handle_error0('acid_stat_nest_bcs','acid_stat_nest_bcs : error with flag',-1)
       endif
       
       return

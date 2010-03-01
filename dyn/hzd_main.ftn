@@ -40,12 +40,15 @@
 * v4_04 - Girard-Plante     - Diffuse only real winds, zdot and theta.
 *                           - Move psadj code in new s/r psadj
 * v4_05 - Plante A.         - Diffusion of w all the time
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *object
 *	
 *arguments
 *     none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "fft.cdk"
@@ -54,70 +57,93 @@
 #include "vt0.cdk"
 #include "vt1.cdk"
 #include "schm.cdk"
+#include "hspng.cdk"
+#include "vspng.cdk"
 *
 *modules
-      integer  vmmlod,vmmuld,vmmget
-      external vmmlod,vmmuld,vmmget
 *
-      integer err, nlod, key1(5)
-**
+      logical no_hzd,no_vspng
+      integer err
+*
 *     _________________________________________________________________
 *
-      if ((.not.Hzd_ho_L).or.(.not.Hzd_hzdmain_0_L))then
-         if (Lun_debug_L) write(Lun_out,1001)
-         return
-      endif
-*
-      key1(1) = VMM_KEY(ut1)
-      key1(2) = VMM_KEY(vt1)
-      key1(3) = VMM_KEY(zdt1)      
-      key1(4) = VMM_KEY(tt1)
-      key1(5) = VMM_KEY(wt1)
-      nlod = 5
+      no_hzd   = (.not.Hzd_ho_L) .or. (.not.Hzd_hzdmain_0_L)
+      no_vspng = Hspng_nj.lt.1.and.Vspng_nk.lt.1
 
-*     - - - - - - - - - - - - - - -
-      err = vmmlod(key1,nlod)
-*     - - - - - - - - - - - - - - -
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-      err = VMM_GET_VAR(zdt1)
-      err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(wt1)
+      if (no_hzd .and. no_vspng) return
+
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(wt1)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(st1)'
+
+      call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
 *
 *************************************
 *  1. Implicit horizontal diffusion *
 *************************************
 *
-      call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
+      if ( .not. no_hzd ) then
+      call tmg_start0(10,'HZD      ')
 *
       if (Hzd_type_S.eq.'HO_EXP') then
          if (.not.G_lam)
-     $        call gem_stop('ABORT .not.G_lam.and.Hzd_type=HO_EXP',-1)
+     $      call handle_error0('hzd_main','ABORT .not.G_lam.and.Hzd_type=HO_EXP',-1)
+         if (Lun_debug_L) write(Lun_out,1001) 'hzd_exhrdif'
          call hzd_exhrdif ( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)
       else
          if (Fft_fast_L) then
 *           use FFT in diffusion-solver
             if (G_lam) then
+               if (Lun_debug_L) write(Lun_out,1001) 'hzd_hof_lam'
                call hzd_hof_lam  ( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)
             else
+               if (Lun_debug_L) write(Lun_out,1001) 'hzd_hof'
                call hzd_hof      ( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)               
             endif
          else
 *           use MXMA in diffusion-solver
             if ( .not. Eigv_parity_L) then
+               if (Lun_debug_L) write(Lun_out,1001) 'hzd_ho'
                call hzd_ho       ( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)
             else
+               if (Lun_debug_L) write(Lun_out,1001) 'hzd_ho_parite'
                call hzd_ho_parite( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)
             endif
          endif
 *     
       endif
+      call tmg_stop0(10)
+      endif
 *     
+      if ( .not. no_vspng ) then
+         if (Lun_debug_L) write(Lun_out,1002)
+         call tmg_start0 (11,'VSPNG    ')
+         if (G_lam) then
+            call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk )
+         else
+            call vspng_drv (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
+            call hspng_drv (ut1,vt1,zdt1,wt1,LDIST_DIM,G_nk)
+         endif
+         call tmg_stop0  (11)
+      endif
+
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 *
-      err = vmmuld(-1,0)
+      call psadj ()
 *
- 1001 format(/,3X,'NO HORIZONTAL DIFFUSION REQUIRED')
+ 1001 format(/,3X,'HORIZONTAL DIFFUSION REQUIRED: ',a)
+ 1002 format(/,3X,'VERTICAL SPONGE REQUIRED: ')
+*
+*     _________________________________________________________________
 *
       return
       end

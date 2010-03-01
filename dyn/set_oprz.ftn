@@ -20,7 +20,7 @@
 *
       subroutine set_oprz
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne - initial MPI version (from setoprz v1_03)

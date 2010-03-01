@@ -1,0 +1,3 @@
+      subroutine v4d_rwtraj_phy 
+      call gem_stop ('TO UPDATE v4d_rwtraj_phy',-1)
+      end

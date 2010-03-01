@@ -1,0 +1,115 @@
+#if defined (DOC)
+!
+!revision
+! v2_10 - Qaddouri A.        - adding high order diffusion operator
+! v2_11 - Desgagne M.        - remove vertical modulation
+! v2_21 - Desgagne M.        - add control for diffu. on momentum only
+! v3_01 - Toviessi J. P.     - parity optimisation
+! v3_20 - Toviessi J. P.     - variable higher order diffusion operator
+! v3_20 - Tanguay M.         - 1d higher order diffusion operator
+!
+!**comdeck hzd.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  PROJECTION OPERATORS FOR HOR. DIFFUSION  (initialized in hzd_set))  |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Hzd_xp0_8          | east-west   projection operators                |
+! Hzd_yp0_8          | north-south projection operators                |
+! Hzd_xp2_8          | east-west   projection operators                |
+! Hzd_yp2_8          | north-south projection operators V grid         |
+! Hzd_yp2su_8        | north-south projection operators S and U grid   |
+! Hzd_opsxp0_8       |                                                 |
+! Hzd_opsyp0_8       |                                                 |
+! Hzd_xevec_8        | horizontal eigenvectors                         |
+! Hzd_xeval_8        |                                                 |
+! Hzd_evvec_8        | even eigenvectors                               |
+! Hzd_odvec_8        | odd  eigenvectors                               |
+! Hzd_au_8           |                                                 |
+! Hzd_cu_8           |                                                 |
+! Hzd_deltau_8       |                                                 |
+! Hzd_av_8           |                                                 |
+! Hzd_cv_8           |                                                 |
+! Hzd_deltav_8       |                                                 |
+! Hzd_as_8           |                                                 |
+! Hzd_cs_8           |                                                 |
+! Hzd_deltas_8       |                                                 |
+! Hzd_type_S         | Hor. diffusion type: HO, EXPLICIT or NIL        |
+! Hzd_ho_L           | Logical control for Higher Order hor. diffu.    |
+! Hzd_difva_L        | Logical control for latitudinal modulation      |
+!                    |  of the horizontal diffusion coefficient        |
+! Hzd_pwr            | Hor. diffusion order when using HO del-n        |
+!                    |  available: 2, 4, 6, 8                          |
+! Hzd_lnR            | 2 delta-x removal ratio when using HO           |
+!                    |  range (0. - 1.0)                               |
+! Hzd_cdiff          |                                                 |
+! Hzd_t1_n_L         | .T. if winds T1 filt.(_0=NL _1=TL,AD) in WDPERS |
+! Hzd_t0_n_L         | .T. if winds T0 filt.(_0=NL _1=TL,AD) in WNDTH  | 
+! Hzd_1d_L           | .T. if 1D diff. (otherw. 2D) for filtering      |
+! Hzd_hzdmain_n_L    | .T. if hzd_main authorized (_0=NL _1=TL,AD)     |
+!______________________________________________________________________|
+!                                                                      |
+!  PROJECTION OPERATORS FOR 1D HOR. DIFFUSION  (initialized in hzd_set)|
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Hz1d__yp2_8        |                                                 |
+! Hz1d__yp2su_8      |                                                 |
+! Hz1d_deltau_8      |                                                 |
+! Hz1d_deltav_8      |                                                 |
+! Hz1d_deltas_8      |                                                 |
+!----------------------------------------------------------------------
+!
+#endif
+       DCL_DYNVAR(Hzd,    xp0_8, real*8, (*))
+       DCL_DYNVAR(Hzd,    yp0_8, real*8, (*))
+       DCL_DYNVAR(Hzd,    xp2_8, real*8, (*))
+       DCL_DYNVAR(Hzd,    yp2_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  yp2su_8, real*8, (*))
+       DCL_DYNVAR(Hzd, opsxp0_8, real*8, (*))
+       DCL_DYNVAR(Hzd, opsyp0_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  xevec_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  xeval_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     au_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     cu_8, real*8, (*))
+       DCL_DYNVAR(Hzd, deltau_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     av_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     cv_8, real*8, (*))
+       DCL_DYNVAR(Hzd, deltav_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     as_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     cs_8, real*8, (*))
+       DCL_DYNVAR(Hzd, deltas_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  evvec_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  odvec_8, real*8, (*))
+!
+       DCL_DYNVAR(Hz1d,   yp2_8, real*8, (*))
+       DCL_DYNVAR(Hz1d, yp2su_8, real*8, (*))
+       DCL_DYNVAR(Hz1d,deltau_8, real*8, (*))
+       DCL_DYNVAR(Hz1d,deltav_8, real*8, (*))
+       DCL_DYNVAR(Hz1d,deltas_8, real*8, (*))
+!
+       character*12 Hzd_type_S
+       logical Hzd_ho_L,Hzd_difva_L
+       logical Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L
+       logical Hzd_1d_L,Hzd_hzdmain_0_L,Hzd_hzdmain_1_L
+       integer Hzd_pwr
+       real Hzd_lnR,Hzd_cdiff
+       MARK_COMMON_BEG(hzdi)
+       common /hzdi/ Hzd_pwr
+       MARK_COMMON_END(hzdi)
+       MARK_COMMON_BEG(hzdr)
+       common /hzdr/ Hzd_lnR,Hzd_cdiff
+       MARK_COMMON_END(hzdr)
+       MARK_COMMON_BEG(hzdc)
+       common /hzdc/ Hzd_type_S
+       MARK_COMMON_END(hzdc)
+       MARK_COMMON_BEG(hzdl)
+       common /hzdl/ Hzd_ho_L,Hzd_difva_L
+       common /hzdl/ Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L
+       common /hzdl/ Hzd_1d_L,Hzd_hzdmain_0_L,Hzd_hzdmain_1_L
+       MARK_COMMON_END(hzdl)
+!

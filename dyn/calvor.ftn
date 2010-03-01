@@ -72,8 +72,8 @@
       end do
       end do
 *
-      call rpn_comm_xch_halo (F_wrk,LDIST_DIM,l_ni,l_nj,G_nk,
-     $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_wrk,LDIST_DIM,l_ni,l_nj,nk,
+     $          G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
       if (l_south) j0 = 2
       if (G_lam) then
@@ -81,6 +81,7 @@
       endif
 
       do k=1, nk
+
          do j = j0, jn
          do i = i0, in
             F_vor(i,j,k)= ((1.0-intuv_c0yvy_8(j-1)) * F_wrk(i  ,j-1,k)+
@@ -91,6 +92,7 @@
      $                           * (1.0 - intuv_c0xux_8(i-1))
          end do
          end do
+
          if (.not.G_lam) then
             if (l_south) then
             do i = 1, l_ni

@@ -72,7 +72,7 @@ CCC   real, dimension (:), allocatable :: BCS_glb
 *
       if (G_lam) then
          if (Lun_out.gt.0) write(6,1000)
-         call gem_stop("wr1rstrt",-111)
+         call handle_error0('wr1rstrt',"wr1rstrt",-111)
 *
          ni = G_ni - pil_e - pil_w + 6
          nj = G_nj - pil_n - pil_s + 6

@@ -1,0 +1,125 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r gem_run_ad - ADJ of gem_run_tl
+*
+#include "model_macros_f.h"
+*
+      subroutine gem_run_ad (F_dgtflt_L, F_rstrt_L)
+*
+      implicit none
+*
+      logical F_dgtflt_L, F_rstrt_L
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - modification as in gem_run
+* v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
+* v3_00 - Ek N./Tanguay M.  - introduce v4d_ctrlgrd 
+* v3_00 - Laroche S.        - include simplified physics
+* v3_01 - Tanguay M.        - introduce identity option
+* v3_02 - Tanguay M.        - ADJ of Eigv_parity_L and Hspng_main done
+* v3_02 - Tanguay M.        - cosmetics for identity option
+* v3_02 - Buehner M.        - integration stops when timestep V4dg_steplast is reached (not 0)
+* v3_03 - Tanguay M.        - Call hdif_phy
+* v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2 
+*                           - ADJ of digital filter
+* v3_20 - Tanguay M.        - Adjoint Surfix 
+*                           - Introduce Hzd_hdif0_L
+* v3_30 - Tanguay M.        - Adapt TL/AD to Clim_clima_L
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*     see id section
+*
+*arguments
+*----------------------------------------------------------------
+* F_dgtflt_L    I         Digital initiatization mode
+* F_rstrt_L     O         Is a restart required
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+*
+      logical identity_4dvar_L
+      integer last_step,initial_step
+*     ______________________________________________________
+*
+      identity_4dvar_L = V4dg_conf.ne.0.and.V4dg_identity_L
+*
+      initial_step = Lctl_step
+         last_step = V4dg_steplast
+*
+ 500  continue
+*
+      if (Lun_out.gt.0) write(Lun_out,1001) Lctl_step,last_step,initial_step
+*
+*C    Evaluate gradient forcing at required time
+*     ------------------------------------------
+CCC   call v4d_ctrlgrd ()
+*
+*C    Perform output if required
+*     --------------------------
+      if (V4dg_output_L) call v4d_blocstat ()
+      if (V4dg_output_L) call v4d_out_dyn  (.true.,-1)
+*
+*     Adjoint of
+*C    Diffusion, Dynamics and Physics
+*     -------------------------------
+      if ( .not.identity_4dvar_L ) then
+*
+*        Adjoint of
+*        Physics timestep & Horizontal diffusion & Vertical sponge
+*        ---------------------------------------------------------
+         call hdif_phy_ad
+*
+*        Adjoint of
+*        Dynamics timestep
+*        -----------------
+         call dynstep_ad( )
+*
+      endif ! identity_4dvar_L
+*
+      if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+*
+      Lctl_step = Lctl_step - 1
+*
+      if (Lctl_step.gt.last_step)  goto 500
+*
+      if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
+*
+*C    Evaluate gradient forcing at INITIAL time (before adjoint of preprocessing) 
+*     ---------------------------------------------------------------------------
+CCC   call v4d_ctrlgrd ()
+*
+*C    Perform output if required
+*     --------------------------
+      if (V4dg_output_L) call v4d_blocstat () 
+*
+*     ---------------------------------------------------------------
+*
+ 1001 format(/,'GEM_RUN_AD: PERFORMING TIMESTEP #',I8,' BETWEEN ',I8,' AND ',I8,
+     +       /,'=================================================')
+ 3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
+ 4000 format(/,'END OF THE TIME LOOP (S/R GEM_RUN_AD) AT TIMESTEP',I8,
+     +/,'========================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

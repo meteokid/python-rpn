@@ -4,7 +4,7 @@
 !
 !______________________________________________________________________
 !                                                                      |
-!  VMM variables at TIME t1 (t0-dt)                                    |
+!  GMM variables at TIME t1 (t0-dt)                                    |
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
@@ -32,31 +32,28 @@
 !
 #endif
 !
-!NOTE: the equivalence statement below MUST mark the
-!FIRST element of the common block or the OUTPUTS will be wrong.
-!If you introduce an element in the beginning of this block, make
-!changes to assure the equivalence statement below MARKS it.
-!
-      MARK_COMMON_BEG (vt1)
-      DCL_VMMVAR( vt1,   ut1, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,   vt1, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,   wt1, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,   tt1, real, (LDIST_SHAPE,l_nk+2  ) )
-      DCL_VMMVAR( vt1,  zdt1, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,   st1, real, (LDIST_SHAPE)        )
-      DCL_VMMVAR( vt1,   qt1, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vt1,  trt1, real, (LDIST_SHAPE,l_nk+2,*) )
-      DCL_VMMVAR( vt1,   zz1, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,  zzh1, real, (LDIST_SHAPE,l_nk    ) )
-      DCL_VMMVAR( vt1,  piup, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,   wup, real, (LDIST_SHAPE,l_nk    ) )
-      DCL_VMMVAR( vt1,  zdup, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,  xct1, real, (l_ni*l_nj*l_nk) )
-      DCL_VMMVAR( vt1,  yct1, real, (l_ni*l_nj*l_nk) )
-      DCL_VMMVAR( vt1,  zct1, real, (l_ni*l_nj*l_nk) )
-      DCL_VMMVAR( vt1, fipt1, real, (LDIST_SHAPE,0:l_nk+1) )
-      MARK_COMMON_END (vt1)
-     
-      character*8 vt1_n_first(1)
-      equivalence (vt1_n_first,VMM_NAM(ut1))
-     
+      real, pointer, dimension (:,:,:) :: ut1  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: vt1  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: wt1  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: tt1  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: zdt1 => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:)   :: st1  => null()    ! effective dimensions are (LDIST_SHAPE         )
+      real, pointer, dimension (:,:,:) :: zz1  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: zzh1 => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: piup => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: wup  => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: zdup => null()    ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:)     :: xct1 => null()    ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:)     :: yct1 => null()    ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:)     :: zct1 => null()    ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:,:,:) :: fipt1=> null()    ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+      real, pointer, dimension (:,:,:) :: qt1  => null()    ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+
+      character(len=8) :: gmmk_zz1_s, gmmk_zzh1_s, gmmk_piup_s, gmmk_wup_s, gmmk_zdup_s
+      character(len=8) :: gmmk_xct1_s, gmmk_yct1_s, gmmk_zct1_s, gmmk_fipt1_s, gmmk_wt1_s
+      character(len=8) :: gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s, gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
+      common /vt1_n_gmm/ gmmk_zz1_s, gmmk_zzh1_s, gmmk_piup_s, gmmk_wup_s, gmmk_zdup_s, gmmk_xct1_s
+      common /vt1_n_gmm/ gmmk_yct1_s, gmmk_zct1_s, gmmk_fipt1_s, gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s
+      common /vt1_n_gmm/ gmmk_st1_s, gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
+
+      

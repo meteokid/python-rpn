@@ -1,0 +1,56 @@
+!-------------------------------------- LICENCE BEGIN ------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------
+!/**
+subroutine stop_mpi(F_EndType,F_FromSubName,F_Message)
+   implicit none
+#include "rpn_comm.hf"
+#include "stop_mpi.h"
+#include "msg.h"
+   !@objective 
+   !@arguments
+   integer :: F_EndType !STOP_OK, STOP_ERROR
+   character(len=*) :: F_FromSubName
+   character(len=*) :: F_Message
+   !@author  Michel Desgagne - July 2001
+   !@revisions
+   !  2009-11,  Stephane Chamberland
+!**/
+   integer :: err,msgLevel
+   character(len=MSG_MAXLEN) :: message,msg_part_S
+   character(len=1024) :: msg_format = '(8a)'
+   character(len=1024) :: msg_line_S = '==============================================\n'
+   character(len=1024) :: msg_ok_S = '= STOPPING - NORMAL ENDING OF: '
+   character(len=1024) :: msg_err_S = '= ABORTING - PREMATURED STOP IN: '
+   !---------------------------------------------------------------------
+   msgLevel = MSG_CRITICAL
+   msg_part_S = msg_err_S
+   if (min(STOP_OK,F_EndType) == STOP_OK) then
+      msgLevel = MSG_INFO
+      msg_part_S = msg_ok_S
+   endif
+   write(message,msg_format) &
+        trim(F_Message),"\n",&
+        trim(msg_line_S), &
+        trim(msg_part_S), " ",trim(F_FromSubName), "\n", &
+        trim(msg_line_S)
+   call msg(msgLevel,message)
+
+   call rpn_comm_Barrier(RPN_COMM_WORLD, err)
+   call rpn_comm_FINALIZE(err)
+   !---------------------------------------------------------------------
+   stop
+end subroutine stop_mpi
+

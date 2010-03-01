@@ -34,7 +34,7 @@
 *arguments - none
 *
 
-      call gem_stop('bubble_cfg',-1)
+      call handle_error0('bubble_cfg','bubble_cfg',-1)
 
       return
       end

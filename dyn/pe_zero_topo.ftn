@@ -33,11 +33,13 @@
 #include "version.cdk"
 #include "path.cdk"
 #include <clib_interface.cdk>
+#include "gmm.hf"
 *
       integer  exdb,ptopo_nml,gnthread
       external exdb,ptopo_nml,gnthread
 *
       integer err
+      integer gmmstat
 *
 *-------------------------------------------------------------------
 *
@@ -50,7 +52,8 @@
 
       call  open_status_file2 (trim(Path_output_S)//'/status_mod.dot')
       call write_status_file2 ('_status=ABORT' )
-      err = exdb(Version_mod_S//Version_dstp_S,Version_S, 'NON')
+
+      err = exdb('(Modified)'//Version_mod_S//Version_dstp_S,Version_S, 'NON')
 *
 * Read namelist ptopo from file model_settings
 *
@@ -70,6 +73,8 @@
 
       if (Ptopo_smtdyn.lt.1) Ptopo_smtdyn=Ptopo_npeOpenMP
       if (Ptopo_smtphy.lt.1) Ptopo_smtphy=Ptopo_npeOpenMP
+      Ptopo_smtdyn=min(Ptopo_smtdyn,Ptopo_npeOpenMP*2)
+      Ptopo_smtphy=min(Ptopo_smtphy,Ptopo_npeOpenMP*2)
 
       write (6, 8255) Ptopo_npeOpenMP,Ptopo_smtdyn,Ptopo_smtphy
 *

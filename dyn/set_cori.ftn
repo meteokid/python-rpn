@@ -18,7 +18,7 @@
 #include "model_macros_f.h"
 *
       subroutine set_cori
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     michel roch - rpn - aug 95

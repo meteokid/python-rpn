@@ -18,7 +18,7 @@
 *
       subroutine genab(frpia, frpib,  
      +                 freta, frptop, frcoef, fnk)
-#include "impnone.cdk"
+      implicit none
 *
 *author s gravel  - rpn - nov 1998
 *

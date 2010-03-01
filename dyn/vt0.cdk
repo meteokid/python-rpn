@@ -4,7 +4,7 @@
 !
 !______________________________________________________________________
 !                                                                      |
-!  VMM variables at TIME t0                                            |
+!  GMM variables at TIME t0                                            |
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
@@ -23,22 +23,15 @@
 !
 #endif
 !
-!NOTE: the equivalence statement below MUST mark the
-!FIRST element of the common block or the OUTPUTS will be wrong.
-!If you introduce an element in the beginning of this block, make
-!changes to assure the equivalence statement below MARKS it.
-!
-      MARK_COMMON_BEG(vt0)
-      DCL_VMMVAR( vt0,   ut0, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt0,   vt0, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt0,   tt0, real, (LDIST_SHAPE,l_nk+2  ) )
-      DCL_VMMVAR( vt0,  zdt0, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt0,   st0, real, (LDIST_SHAPE)        )
-      DCL_VMMVAR( vt0,   wt0, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt0,   qt0, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vt0,  trt0, real, (LDIST_SHAPE,l_nk+2,*) )
-      MARK_COMMON_END(vt0)
+      real, pointer, dimension (:,:,:) :: ut0  => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: vt0  => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: tt0  => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: wt0  => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: zdt0 => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:)   :: st0  => null()  ! effective dimensions are (LDIST_SHAPE)
+      real, pointer, dimension (:,:,:) :: qt0  => null()  ! effective dimensions are (LDIST_SHAPE, 0:lnk+1)
 
-      character*8  vt0_n_first(1)
-      equivalence (vt0_n_first,VMM_NAM(ut0))
-
+      character(len=8) :: gmmk_wt0_s, gmmk_tt0_s, gmmk_zdt0_s, gmmk_st0_s, gmmk_qt0_s, gmmk_ut0_s
+      character(len=8) :: gmmk_vt0_s
+      common /vt0_n_gmm/ gmmk_wt0_s, gmmk_tt0_s, gmmk_zdt0_s, gmmk_st0_s, gmmk_qt0_s, gmmk_ut0_s
+      common /vt0_n_gmm/ gmmk_vt0_s

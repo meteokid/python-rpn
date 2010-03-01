@@ -25,7 +25,7 @@
      $                       minx1, maxx1, minx2, maxx2,nx3,
      $                       F_npex1, F_npey1, ai, bi, ci,
      $                       fdg2,fdwfft)
-#include "impnone.cdk"
+      implicit none
 #include "ptopo.cdk"
 *
 *

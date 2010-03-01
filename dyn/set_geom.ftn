@@ -123,12 +123,12 @@
       if (ierx.ne.0) then
           if (Lun_out.gt.0)
      $       write (Lun_out,*)'ERROR in generating XGI_8 values!'
-          call gem_stop('set_geom',-1)
+          call handle_error0('set_geom','set_geom',-1)
       endif
       if (iery.ne.0.and.Lun_out.gt.0) then
           if (Lun_out.gt.0)
      $       write (Lun_out,*)'ERROR in generating YGI_8 values!'
-          call gem_stop('set_geom',-1)
+          call handle_error0('set_geom','set_geom',-1)
       endif
 *
 *   FOR THE ACID BIT TEST
@@ -301,11 +301,6 @@
 *		------------------------------------------------------
       call set_intuv()
 *    
-*
-*C       Computes vertical diffusion amplification factor
-*        ------------------------------------------------
-      if (.not.G_lam) call itf_phy_vlsp (Lun_out)
-*
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)',
      %       /'===============================================')
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ',

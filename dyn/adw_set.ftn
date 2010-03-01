@@ -16,10 +16,10 @@
 ***s/r adw_set - sets different advection parameters
 *
 #include "model_macros_f.h"
+#include "constants.h"
 *
       subroutine adw_set
-*
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     alain patoine
@@ -38,11 +38,30 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "dcst.cdk"
-#include "type.cdk"
+!      logical G_lam
+!      integer G_ni, G_nj, G_nk
+!      real*8 G_xg_8, G_yg_8
+!      pointer (paxg_8, G_xg_8(1-G_ni:2*G_ni))
+!      pointer (payg_8, G_yg_8(1-G_nj:2*G_nj))
+!      integer l_ni, l_nj, l_nk, l_i0, l_j0
 #include "adw.cdk"
-#include "schm.cdk"
+c$$$      integer            Adw_halox, Adw_haloy
+c$$$      DCL_DYNVAR(Adw,   xg_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,   yg_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,  xbc_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,  ybc_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,xabcd_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,xbacd_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,xcabd_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,xdabc_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,yabcd_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,ybacd_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,ycabd_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,ydabc_8,    real*8 , (*))
+c$$$      !... lots more... TODO: finish inventory or keep adw.cdk
 #include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8  
 ************************************************************************
       integer i, j, k, ij, pnerr, trj_i_off, nij, n, istat
       integer i0, j0, k0, pnx, pny, pnzt, pnzm, ii1, ii2
@@ -120,9 +139,9 @@
       if (.not.G_lam) then
       do i=1,Adw_halox
       Adw_xg_8(i)                = Adw_xg_8(G_ni+i)
-     %                           - TWO*Dcst_pi_8
+     %                           - TWO*CONST_PI_8
       Adw_xg_8(Adw_halox+G_ni+i) = Adw_xg_8(Adw_halox+i)
-     %                           + TWO*Dcst_pi_8
+     %                           + TWO*CONST_PI_8
       enddo
       else
       prhxmn =  G_xg_8(2)-G_xg_8(1)
@@ -171,10 +190,10 @@
       enddo
 *
       if (.not.G_lam) then
-      Adw_yg_8(Adw_haloy-1)      = -(Dcst_pi_8+Adw_yg_8(Adw_haloy+1) )
-      Adw_yg_8(Adw_haloy)        = - Dcst_pi_8*HALF
-      Adw_yg_8(Adw_haloy+G_nj+1) =   Dcst_pi_8*HALF
-      Adw_yg_8(Adw_haloy+G_nj+2) =  (Dcst_pi_8-Adw_yg_8(Adw_haloy+G_nj))
+      Adw_yg_8(Adw_haloy-1)      = -(CONST_PI_8+Adw_yg_8(Adw_haloy+1) )
+      Adw_yg_8(Adw_haloy)        = - CONST_PI_8*HALF
+      Adw_yg_8(Adw_haloy+G_nj+1) =   CONST_PI_8*HALF
+      Adw_yg_8(Adw_haloy+G_nj+2) =  (CONST_PI_8-Adw_yg_8(Adw_haloy+G_nj))
 *
       do j=3,Adw_haloy
       Adw_yg_8(Adw_haloy+1-j)    = TWO*Adw_yg_8(Adw_haloy+1   -j+1)
@@ -234,7 +253,7 @@
       if (.not.G_lam) then
       do i=1,Adw_nic
          Adw_wx_8(i) =( Adw_xx_8(Adw_halox+i+1)
-     %                 -Adw_xx_8(Adw_halox+i-1))*HALF/(TWO*Dcst_pi_8)
+     %                 -Adw_xx_8(Adw_halox+i-1))*HALF/(TWO*CONST_PI_8)
       enddo
       endif
       do i=1,Adw_nic
@@ -550,10 +569,10 @@
 ************************************************************************
       do 10 i=1,G_ni
          ii1 = i+Adw_halox
-         if ( Adw_xg_8(ii1) .lt. Adw_xg_8(Adw_halox+1) + Dcst_pi_8 ) then
-            Adw_lnr_8(i) = Adw_xg_8(ii1) + Dcst_pi_8
+         if ( Adw_xg_8(ii1) .lt. Adw_xg_8(Adw_halox+1) + CONST_PI_8 ) then
+            Adw_lnr_8(i) = Adw_xg_8(ii1) + CONST_PI_8
          else
-            Adw_lnr_8(i) = Adw_xg_8(ii1) - Dcst_pi_8
+            Adw_lnr_8(i) = Adw_xg_8(ii1) - CONST_PI_8
          endif
          do j=1,G_ni     
             ii2 = j+Adw_halox

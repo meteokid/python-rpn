@@ -50,126 +50,113 @@
 *	none
 *
 *implicits
-#include "glb_ld.cdk"
 #include "bmf.cdk"
-#include "grd.cdk"
 #include "dcst.cdk"
+#include "lun.cdk"
 #include "acq.cdk"
 #include "schm.cdk"
 #include "bcsgrds.cdk"
-*modules
+*
       integer  bmf_get
       external bmf_get
 *
-      character*32 pe_file
-      integer hh,mm,ss, nerr, err, length, i,j,k
+      integer i,err,nerr
       integer, parameter :: maxerr = 400
       integer, dimension(maxerr) ::  error
-      integer, allocatable, dimension(:) :: bmfni,bmfnj,bmfnk,
-     $         bmfdatyp,bmfvtime1,bmfvtime2,
-     $         bmfscrap,bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5,
-     $                  bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9
-      character*4, allocatable, dimension(:) :: bmfnom
-**
+*
 *     ---------------------------------------------------------------
 *
 *     Read the BMF file associated to each Ptopo_myproc
-      do i=1,maxerr
-         error(i) = -1
-      end do
+
+      error = -1
       ana_zd_L=.false.
-      ana_w_L=.false.
-      ana_q_L=.false.
-      nerr=0
+      ana_w_L =.false.
+      ana_q_L =.false.
 *
 *     Initialization of some switches and dimensions
-*Notes for coding from Acqi_datasp (originally derived from ip1_param)
-*                        0=pressure
-*                        1=SIGMA
-*                        2=ETASEF (eta for spectral)
-*                        3=SIGPT  (eta, rcoef=1.0)
-*                        4=HYBLG  (hybrid Laprise/Girard)
-*                        5=ECMWF  (data from ECMWF)
-*                        6=HYBSTAG(staggered hybrid Girard)
 *
       err = bmf_get ('AHAV',bmf_time1,bmf_time2,Acqi_datasp,-1,-1.,
      $                                               1,2,1,1,1,1)
 *
-      Acql_horzint = (Acqi_datasp(1).eq.1)
-      Acql_hybanl  = (Acqi_datasp(2).eq.4)
-      Acql_etaanl  = (Acqi_datasp(2).eq.3)
-      Acql_siganl  = (Acqi_datasp(2).eq.1)
-      Acql_prsanl  = (Acqi_datasp(2).eq.0)
-      Acql_ecmanl  = (Acqi_datasp(2).eq.5)
-      Acql_staganl  = (Acqi_datasp(2).eq.6)
-      Acql_vertint = Acql_horzint
-      if (Acql_ecmanl) lvm  = lvm+1
+      Acql_horzint  = (Acqi_datasp(1).eq.1)
+      Acql_vertint  = Acql_horzint
+
+      Acql_prsanl   = (Acqi_datasp(2).eq.0) ! pressure
+      Acql_siganl   = (Acqi_datasp(2).eq.1) ! SIGMA
+      Acql_etaanl   = (Acqi_datasp(2).eq.3) ! SIGPT   (eta, rcoef=1.0)
+      Acql_hybanl   = (Acqi_datasp(2).eq.4) ! HYBLG   (hybrid Laprise/Girard)
+      Acql_ecmanl   = (Acqi_datasp(2).eq.5) ! ECMWF   (data from ECMWF)
+      Acql_staganl  = (Acqi_datasp(2).eq.6) ! HYBSTAG (staggered hybrid Girard)
+
+      if (Acql_ecmanl) lvm = lvm+1
       if (.not.Acql_staganl) Acql_vertint = .true.
-      if (Acql_staganl) Acql_hybanl=.true.
+      if (Acql_staganl)      Acql_hybanl  = .true.
 *
       error(1) = bmf_get ('ZA  ',bmf_time1,bmf_time2,-1,-1.,za_8 ,1,
-     $                                           lvm,1,1,1,1)
+     $                                                  lvm,1,1,1,1)
       error(2) = bmf_get ('ZB  ',bmf_time1,bmf_time2,-1,-1.,zb_8 ,1,
-     $                                           lvm,1,1,1,1)
+     $                                                  lvm,1,1,1,1)
       error(3) = bmf_get ('ZAT ',bmf_time1,bmf_time2,-1,-1.,zat_8,1,
-     $                                           lvt,1,1,1,1)
+     $                                                  lvt,1,1,1,1)
       error(4) = bmf_get ('ZBT ',bmf_time1,bmf_time2,-1,-1.,zbt_8,1,
-     $                                           lvt,1,1,1,1)
+     $                                                  lvt,1,1,1,1)
       error(5) = bmf_get ('ME  ',bmf_time1,bmf_time2,-1,topo_temp,-1.,
-     $                                               1,lni,1,lnj,1,1)
+     $                                                1,lni,1,lnj,1,1)
 *
-      do j=1,lnj
-      do i=1,lni
-         topo_temp (i,j) = dble(topo_temp(i,j)) * Dcst_grav_8
-      end do
-      end do
-      nerr = nerr + 2
+      error(6) = bmf_get('UU  ',bmf_time1,bmf_time2,-1,u_temp,-1,
+     $                                     1,lniu,1,lnju,1,nktmp)
+      error(7) = bmf_get('VV  ',bmf_time1,bmf_time2,-1,v_temp,-1,
+     $                                     1,lniv,1,lnjv,1,nktmp)
 *
-      nerr = nerr + 1
-      error(nerr) = bmf_get('UU  ',bmf_time1,bmf_time2,-1,u_temp,-1,
-     $                               1,lniu,1,lnju,1,nktmp)
-*  
-      nerr = nerr + 1
-      error(nerr) = bmf_get('VV  ',bmf_time1,bmf_time2,-1,v_temp,-1,
-     $                               1,lniv,1,lnjv,1,nktmp)
-*
+      nerr = 8
       if (Acql_prsanl) then
          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
-     $                 gz_temp,-1.,1,lni,1,lnj,1,nktmp)
+     $                       gz_temp,-1.,1,lni,1,lnj,1,nktmp)
       else
-         nerr = nerr + 1
          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
-     $                 gz_temp(1,1,lvt),-1.,1,lni,1,lnj,1,1)
+     $                  gz_temp(1,1,lvt),-1.,1,lni,1,lnj,1,1)
       endif
 *
       if (Acql_prsanl) then
          nerr = nerr + 1
          error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1.,
-     $                                   1,lni,1,lnj,1,nktmp)
+     $                                               1,lni,1,lnj,1,nktmp)
+         nerr = nerr + 1
          error(nerr) = bmf_get('VT  ',bmf_time1,bmf_time2,-1,tt_temp,-1.,
-     $                                   1,lni,1,lnj,1,nktmp)
+     $                                               1,lni,1,lnj,1,nktmp)
          Acql_vertint = .true.
       else
          if (Acql_siganl) Acqr_ptopa = 0.
          nerr = nerr + 1
          error(nerr) = bmf_get('P0  ',bmf_time1,bmf_time2,-1,ps,
-     $                                       -1.,1,lni,1,lnj,1,1)
+     $                                      -1.,1,lni,1,lnj,1,1)
          nerr = nerr + 1
          error(nerr) = bmf_get('VT  ',bmf_time1,bmf_time2,-1,tt_temp,
-     $                                 -1.,1,lni,1,lnj,1,nktmp)
+     $                                       -1.,1,lni,1,lnj,1,nktmp)
          nerr = nerr + 1
          error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1.,
-     $                                   1,lni,1,lnj,1,nktmp)
-         err         = bmf_get('ZD  ',bmf_time1,bmf_time2,-1,zd_temp,-1.,
-     $                                   1,lni,1,lnj,1,nktmp)
-         if(err.eq.0) ana_zd_L=.true.
-         err         = bmf_get('W   ',bmf_time1,bmf_time2,-1, w_temp,-1.,
-     $                                   1,lni,1,lnj,1,nktmp)
-         if(err.eq.0) ana_w_L=.true.
+     $                                               1,lni,1,lnj,1,nktmp)
+         if (bmf_get('ZD  ',bmf_time1,bmf_time2,-1,zd_temp,-1.,
+     $                                     1,lni,1,lnj,1,nktmp) .eq. 0) then
+            ana_zd_L= .true.
+         else
+            zd_temp = 0.
+         endif
+
+         if (bmf_get('W   ',bmf_time1,bmf_time2,-1, w_temp,-1.,
+     $                                     1,lni,1,lnj,1,nktmp) .eq. 0) then
+            ana_w_L= .true.
+         else
+            w_temp = 0.
+         endif
+
          if(.not.Schm_hydro_L)then
-            err         = bmf_get('Q   ',bmf_time1,bmf_time2,-1, q_temp,-1.,
-     $           1,lni,1,lnj,1,nktmp)
-            if(err.ne.0) ana_q_L=.true.
+            if (bmf_get('Q   ',bmf_time1,bmf_time2,-1, q_temp,-1.,
+     $                                        1,lni,1,lnj,1,nktmp) .eq. 0) then
+               ana_q_L= .true.
+            else
+               q_temp = 0.
+            endif
          endif
       endif
 *
@@ -195,13 +182,17 @@
 *     Check for error in BMF_GETS above...
       err = 0
       do i=1,nerr
-         err = err + error(i)
+         if (error(i).ne.0) then
+            err = -1
+            if (Lun_out.gt.0) write (Lun_out,1001) i
+         endif
       end do
-*     
-      call rpn_comm_allreduce (err,error(1),1,"MPI_INTEGER",
-     $                                 "MPI_SUM","grid",nerr)
 *
-      if (error(1).ne.0) call gem_stop ('read_bmf',-1)
+      call handle_error0('read_bmf','read_bmf',err)
+*
+      topo_temp (:,:) = dble(topo_temp(:,:)) * Dcst_grav_8
+*
+ 1001 format (/'ERROR: #',i4,' in read_bmf')
 *
 *     ---------------------------------------------------------------
 *

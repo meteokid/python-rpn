@@ -17,11 +17,10 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine out_href(F_ig1,F_ig2,F_xpos,F_ypos)
+      subroutine out_href(F_xpos,F_ypos)
 *
       implicit none
 *
-      integer F_ig1,F_ig2
       real F_xpos(*),F_ypos(*)
 *
 *author
@@ -51,8 +50,6 @@
       integer liste (nlis)
       real xpos(Out_nisg), ypos(Out_njsg),xpq(Out_nisg),ypq(Out_njsg)
 *
-      Out_ig1 = F_ig1
-      Out_ig2 = F_ig2
       Out_xpos_ = loc(F_xpos(1))
       Out_ypos_ = loc(F_ypos(1))
       if ((Out_blocme.eq.0).and.(Out_nisl.gt.0).and.(Out_njsl.gt.0)) then

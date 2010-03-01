@@ -18,7 +18,7 @@
       subroutine ftridi6 (F_r, F_rhs, F_a_8, F_b_8, F_c_8,
      %                     F_deltai,F_deltaj, NI, NJ, F_period_L) 
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_period_L
       integer F_deltai, F_deltaj, NI, NJ

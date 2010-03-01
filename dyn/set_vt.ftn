@@ -33,6 +33,7 @@
 * v2_31 - Desgagne M.    - remove HU and QC and call to set_trin and
 *                          re-introduce 3D tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *	See above id.
@@ -41,23 +42,22 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "vt0.cdk"
 #include "vth.cdk"
-#include "vthh.cdk"
 #include "vt1.cdk"
-#include "vt2.cdk"
 #include "vtx.cdk"
 #include "tr3d.cdk"
+#include "pw.cdk"
 *
 *modules
-      integer vmmcre
-      external vmmcre
 *
-      character*80 attri_S,attri2_S,attrit_S
       integer i
+      real, pointer, dimension (:,:,:) :: tr
 *
 *Notes:
 *	The level at time t0 is not created explicitly in the
@@ -85,155 +85,212 @@
 *
       if (Lun_out.gt.0) write(Lun_out,1000)
 *
-      COMMON_INIT(vt0,-100)
-      COMMON_INIT(vth,-100)
-      COMMON_INIT(vthh,-100)
-      COMMON_INIT(vt1,-100)
-      COMMON_INIT(vt2,-100)
-      COMMON_INIT(vtx,-100)
-      attri_S  = 'SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
-      attri2_S = 'SAVE=Y,CL=1,W=5,INIT=0,MUSTEXIST'
-      attrit_S = 'SAVE=Y,CL=3,W=5,INIT=0,MUSTEXIST'
 *
 *C       2.    Initialize comdeck for variables at time t0
 *              -------------------------------------------
 *	Assign the names of the variables
 *
-      VMM_NAM(ut0   )= 'UT0'
-      VMM_NAM(vt0   )= 'VT0'
-      VMM_NAM(wt0   )= 'WT0'
-      VMM_NAM(tt0   )= 'TT0'
-      VMM_NAM(qt0   )= 'QT0'
-      VMM_NAM(zdt0  )= 'ZDT0'
-      VMM_NAM(st0   )= 'ST0'
-      VMM_NAM(trt0  )= 'TRT0'
 *
-      VMM_CREATE(ut0  , LARRAY2D*(l_nk+1), 1, attri2_S)
-      VMM_CREATE(vt0  , LARRAY2D*(l_nk+1), 1, attri2_S)
-      VMM_CREATE(wt0  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(tt0  , LARRAY2D*(l_nk+2), 1, attri_S)
-      VMM_CREATE(qt0  , LARRAY2D*(l_nk+2), 1, attri2_S)
-      VMM_CREATE(zdt0 , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(st0  , LARRAY2D, 1, attri_S)
+      gmmk_wt0_s    = 'WT0'
+      gmmk_tt0_s    = 'TT0'
+      gmmk_zdt0_s   = 'ZDT0'
+      gmmk_st0_s    = 'ST0'
+      gmmk_qt0_s    = 'QT0'
+      gmmk_ut0_s    = 'UT0'
+      gmmk_vt0_s    = 'VT0'
+
+      nullify(ut0,vt0,wt0,tt0,qt0,zdt0,st0)
+      gmmstat = gmm_create(gmmk_ut0_s,ut0,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ut0)'
+      gmmstat = gmm_create(gmmk_vt0_s,vt0,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(vt0)'
+      gmmstat = gmm_create(gmmk_wt0_s,wt0,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(wt0)'
+      gmmstat = gmm_create(gmmk_tt0_s,tt0,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(wt0)'
+      gmmstat = gmm_create(gmmk_qt0_s,qt0,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(qt0)'
+      gmmstat = gmm_create(gmmk_zdt0_s,zdt0,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdt0)'
+      gmmstat = gmm_create(gmmk_st0_s,st0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(st0)'
 *
-      if ( Tr3d_ntr .gt. 0 ) then
-         VMM_CREATE(trt0, LARRAY2D*(l_nk+2), Tr3d_ntr, attrit_S)
-      endif
 *
 *C       3.    Create variables at time t0-dt/2 (th)
 *              -------------------------------------
 *	Assign the name of the variables
 *
-      VMM_NAM(uth   )= 'UTH'
-      VMM_NAM(vth   )= 'VTH'
-      VMM_NAM(zdth  )= 'ZDTH'
-      VMM_NAM(xth   )= 'XTH'
-      VMM_NAM(yth   )= 'YTH'
-      VMM_NAM(zth   )= 'ZTH'
-      VMM_NAM(xcth  )= 'XCTH'
-      VMM_NAM(ycth  )= 'YCTH'
-      VMM_NAM(zcth  )= 'ZCTH'
+      gmmk_uth_s = 'UTH'
+      gmmk_vth_s = 'VTH'
+      gmmk_zdth_s= 'ZDTH'
+      gmmk_xth_s = 'XTH'
+      gmmk_yth_s = 'YTH'
+      gmmk_zth_s = 'ZTH'
+      gmmk_xcth_s= 'XCTH'
+      gmmk_ycth_s= 'YCTH'
+      gmmk_zcth_s= 'ZCTH'
 *
-      VMM_NAM(uthh   )= 'UTHH'
-      VMM_NAM(vthh   )= 'VTHH'
-      VMM_NAM(zdthh  )= 'ZDHH'
-      VMM_NAM(xthh   )= 'XTHH'
-      VMM_NAM(ythh   )= 'YTHH'
-      VMM_NAM(zthh   )= 'ZTHH'
-      VMM_NAM(xcthh  )= 'XCHH'
-      VMM_NAM(ycthh  )= 'YCHH'
-      VMM_NAM(zcthh  )= 'ZCHH'
+      gmmk_uthh_s = 'UTHH'
+      gmmk_vthh_s = 'VTHH'
+      gmmk_zdthh_s= 'ZDTHH'
+      gmmk_xthh_s = 'XTHH'
+      gmmk_ythh_s = 'YTHH'
+      gmmk_zthh_s = 'ZTHH'
+      gmmk_xcthh_s= 'XCTHH'
+      gmmk_ycthh_s= 'YCTHH'
+      gmmk_zcthh_s= 'ZCTHH'
 *
-      VMM_CREATE(uth  ,       LARRAY3D, 1, attri_S)
-      VMM_CREATE(vth  ,       LARRAY3D, 1, attri_S)
-      VMM_CREATE(zdth , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(xth  , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(yth  , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(zth  , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(xcth , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(ycth , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(zcth , l_ni*l_nj*l_nk, 1, attri_S)
-*
-      VMM_CREATE(uthh  ,       LARRAY3D, 1, attri_S)
-      VMM_CREATE(vthh  ,       LARRAY3D, 1, attri_S)
-      VMM_CREATE(zdthh , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(xthh  , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(ythh  , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(zthh  , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(xcthh , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(ycthh , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(zcthh , l_ni*l_nj*l_nk, 1, attri_S)
+      gmmstat = gmm_create(gmmk_uth_s ,uth ,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(uth)'
+      gmmstat = gmm_create(gmmk_vth_s ,vth ,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(vth)'
+      gmmstat = gmm_create(gmmk_zdth_s,zdth,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdth)'
+      gmmstat = gmm_create(gmmk_xth_s ,xth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xth)'
+      gmmstat = gmm_create(gmmk_yth_s ,yth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(yth)'
+      gmmstat = gmm_create(gmmk_zth_s ,zth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zth)'
+      gmmstat = gmm_create(gmmk_xcth_s,xcth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xcth)'
+      gmmstat = gmm_create(gmmk_ycth_s,ycth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ycth)'
+      gmmstat = gmm_create(gmmk_zcth_s,zcth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zcth)'
+
+      gmmstat = gmm_create(gmmk_uthh_s ,uthh ,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(uthh)'
+      gmmstat = gmm_create(gmmk_vthh_s ,vthh ,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(vthh)'
+      gmmstat = gmm_create(gmmk_zdthh_s,zdthh,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdthh)'
+      gmmstat = gmm_create(gmmk_xthh_s ,xthh,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xthh)'
+      gmmstat = gmm_create(gmmk_ythh_s ,ythh,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ythh)'
+      gmmstat = gmm_create(gmmk_zthh_s ,zthh,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zthh)'
+      gmmstat = gmm_create(gmmk_xcthh_s,xcthh,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xcthh)'
+      gmmstat = gmm_create(gmmk_ycthh_s,ycthh,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ycthh)'
+      gmmstat = gmm_create(gmmk_zcthh_s,zcthh,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zcthh)'
 *
 *C       4.    Create variables at time t0-dt (t1)
 *              -----------------------------------
 *	Assign the names of the variables
 *
-      VMM_NAM(ut1   )= 'UT1'
-      VMM_NAM(vt1   )= 'VT1'
-      VMM_NAM(wt1   )= 'WT1'
-      VMM_NAM(tt1   )= 'TT1'
-      VMM_NAM(zz1   )= 'ZZ1'
-      VMM_NAM(zzh1  )= 'ZZH1'
-      VMM_NAM(piup  )= 'PIUP'
-      VMM_NAM(wup   )= 'WUP'
-      VMM_NAM(zdup  )= 'ZDUP'
-      VMM_NAM(qt1   )= 'QT1'
-      VMM_NAM(zdt1  )= 'ZDT1'
-      VMM_NAM(st1   )= 'ST1'
-      VMM_NAM(fipt1 )= 'FIP1'
-      VMM_NAM(trt1  )= 'TRT1'
 *
-      VMM_NAM(xct1  )= 'XCT1'
-      VMM_NAM(yct1  )= 'YCT1'
-      VMM_NAM(zct1  )= 'ZCT1'
+      gmmk_wt1_s   = 'WT1'
+      gmmk_tt1_s   = 'TT1'
+      gmmk_zdt1_s  = 'ZDT1'
+      gmmk_zz1_s   = 'ZZ1'
+      gmmk_zzh1_s  = 'ZZH1'
+      gmmk_piup_s  = 'PIUP'
+      gmmk_wup_s   = 'WUP'
+      gmmk_zdup_s  = 'ZDUP'
+      gmmk_xct1_s  = 'XCT1'
+      gmmk_yct1_s  = 'YCT1'
+      gmmk_zct1_s  = 'ZCT1'
+      gmmk_fipt1_s = 'FIPT1'
+      gmmk_st1_s   = 'ST1'
+      gmmk_qt1_s   = 'QT1'
+      gmmk_ut1_s   = 'UT1'
+      gmmk_vt1_s   = 'VT1'
+      gmmk_mutx_s  = 'MUTX'
+      gmmk_bspqtx_s= 'BSPQ'
+      gmmk_fiptx_s = 'FIPTX'
+
+      nullify(ut1,vt1,wt1,tt1,zz1)
+      gmmstat = gmm_create(gmmk_ut1_s,ut1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ut1)'
+      gmmstat = gmm_create(gmmk_vt1_s,vt1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(vt1)'
+      gmmstat = gmm_create(gmmk_wt1_s,wt1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(wt1)'
+      gmmstat = gmm_create(gmmk_tt1_s,tt1,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(tt1)'
+      gmmstat = gmm_create(gmmk_zz1_s,zz1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zz1)'
+
+      nullify(zzh1,piup,wup,zdup,qt1,zdt1,st1,fipt1)
+      gmmstat = gmm_create(gmmk_zzh1_s,zzh1,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zzh1)'
+      gmmstat = gmm_create(gmmk_piup_s,piup,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(piup)'
+      gmmstat = gmm_create(gmmk_wup_s,wup,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(wup)'
+      gmmstat = gmm_create(gmmk_zdup_s,zdup,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdup)'
+      gmmstat = gmm_create(gmmk_qt1_s,qt1,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(qt1)'
+      gmmstat = gmm_create(gmmk_zdt1_s,zdt1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdt1)'
+      gmmstat = gmm_create(gmmk_st1_s,st1,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(st1)'
+      gmmstat = gmm_create(gmmk_fipt1_s,fipt1,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(fipt1)'
+
 *
-      VMM_CREATE(ut1  , LARRAY2D*(l_nk+1), 1, attri2_S)
-      VMM_CREATE(vt1  , LARRAY2D*(l_nk+1), 1, attri2_S)
-      VMM_CREATE(wt1  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(tt1  , LARRAY2D*(l_nk+2), 1, attri_S)
-      VMM_CREATE(zz1  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(zzh1 , LARRAY2D*(l_nk)  , 1, attri_S)
-      VMM_CREATE(piup , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(wup  , LARRAY2D*(l_nk)  , 1, attri_S)
-      VMM_CREATE(zdup , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(qt1  , LARRAY2D*(l_nk+2), 1, attri2_S)
-      VMM_CREATE(zdt1 , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(st1  , LARRAY2D, 1, attri_S)
-      VMM_CREATE(fipt1, LARRAY2D*(l_nk+2), 1, attri2_S)
-      if ( Tr3d_ntr .gt. 0 ) then
-         VMM_CREATE(trt1, LARRAY2D*(l_nk+2), Tr3d_ntr, attrit_S)
-      endif
-*
-      VMM_CREATE(xct1 , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(yct1 , l_ni*l_nj*l_nk, 1, attri_S)
-      VMM_CREATE(zct1 , l_ni*l_nj*l_nk, 1, attri_S)
-*
-*C       5.    Create variables at time t0-2dt (t2)
-*              ------------------------------------
-*	Assign the names of the variables
-*
-      VMM_NAM(ut2   )= 'UT2'
-      VMM_NAM(vt2   )= 'VT2'
-      VMM_NAM(wt2   )= 'WT2'
-      VMM_NAM(tt2   )= 'TT2'
-      VMM_NAM(qt2   )= 'QT2'
-      VMM_NAM(zdt2  )= 'ZDT2'
-      VMM_NAM(st2   )= 'ST2'
-      VMM_NAM(trt2  )= 'TRT2'
-*
-*C       6.    Create variables with no specific time tag
-*              ------------------------------------------
-*	Assign the names of the variables
-*       Must not be longer than 4 characters if used for output,
-*       otherwise, it is ok.
-*
-      VMM_NAM(mutx  )= 'MUTX'
-      VMM_NAM(bspqtx)= 'BSPQ'
-      VMM_NAM(fiptx )= 'FIPT'
-*
-      VMM_CREATE(mutx , LARRAY2D*(l_nk+1), 1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(bspqtx,LARRAY2D*(l_nk+2), 1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(fiptx, LARRAY2D*(l_nk+2), 1, 'SAVE=Y,CL=1,W=5')
+      nullify(xct1,yct1,zct1,bspqtx,mutx,fiptx)
+      gmmstat = gmm_create(gmmk_xct1_s,xct1,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xct1)'
+      gmmstat = gmm_create(gmmk_yct1_s,yct1,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(yct1)'
+      gmmstat = gmm_create(gmmk_zct1_s,zct1,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zct1)'
+      gmmstat = gmm_create(gmmk_bspqtx_s,bspqtx,meta3d_0nk1,GMM_NULL_FLAGS)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(bspqtx)'
+      gmmstat = gmm_create(gmmk_mutx_s,mutx,meta3d_nk1,GMM_NULL_FLAGS)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(mutx)'
+      gmmstat = gmm_create(gmmk_fiptx_s,fiptx,meta3d_0nk1,GMM_NULL_FLAGS)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(fiptx)'
+
+      do i=1,Tr3d_ntr
+         nullify(tr)
+         gmmstat = gmm_create('TR/'//trim(Tr3d_name_S(i))//':M',tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         nullify(tr)
+         gmmstat = gmm_create('TR/'//trim(Tr3d_name_S(i))//':P',tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         nullify(tr)
+         gmmstat = gmm_create('DIGF_'//trim(Tr3d_name_S(i))    ,tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      end do
+
+      gmmk_pw_uplus_s  = 'PW_UU:P'
+      gmmk_pw_vplus_s  = 'PW_VV:P'
+      gmmk_pw_wplus_s  = 'PW_WW:P'
+      gmmk_pw_tplus_s  = 'PW_TT:P'
+      gmmk_pw_pmplus_s = 'PW_PM:P'
+      gmmk_pw_ptplus_s = 'PW_PT:P'
+      gmmk_pw_gzplus_s = 'PW_GZ:P'
+
+      gmmk_pw_umoins_s = 'PW_UU:M'
+      gmmk_pw_vmoins_s = 'PW_VV:M'
+      gmmk_pw_tmoins_s = 'PW_TT:M'
+      gmmk_pw_pmmoins_s= 'PW_PM:M'
+
+c      gmmk_pw_lat_s    = 'PW_LAT'
+c      gmmk_pw_lon_s    = 'PW_LON'
+c      gmmk_pw_dxdy_s   = 'PW_DXDY'
+c      gmmk_pw_eponmod_s= 'PW_EPONMOD'
+
+      nullify (pw_uplus,pw_vplus,pw_wplus,pw_tplus,pw_pm_plus,pw_pt_plus,pw_gzplus)
+      nullify (pw_umoins,pw_vmoins,pw_tmoins,pw_pm_moins)
+
+      gmmstat = gmm_create(gmmk_pw_uplus_s  ,pw_uplus  ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_vplus_s  ,pw_vplus  ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_wplus_s  ,pw_wplus  ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_tplus_s  ,pw_tplus  ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_pmplus_s ,pw_pm_plus,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_ptplus_s ,pw_pt_plus,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_gzplus_s ,pw_gzplus ,meta3d_nk2,GMM_FLAG_RSTR)
+
+      gmmstat = gmm_create(gmmk_pw_umoins_s ,pw_umoins  ,meta3d_nk2)
+      gmmstat = gmm_create(gmmk_pw_vmoins_s ,pw_vmoins  ,meta3d_nk2)
+      gmmstat = gmm_create(gmmk_pw_tmoins_s ,pw_tmoins  ,meta3d_nk2)
+      gmmstat = gmm_create(gmmk_pw_pmmoins_s,pw_pm_moins,meta3d_nk2)
+
 *
  1000 format(
      +/,'INITIALIZATION OF TIME-DEP. VARIABLE COMDECKS (S/R SET_VT)',

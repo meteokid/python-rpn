@@ -10,19 +10,19 @@ gem4d:
 gem_nompi: gemntr_nompi gemdm_nompi
 
 gemntr_nompi:
-	make gemntr MPI=rpn_comm_stubs COMM=rpn_comm222
+	make gemntr COMM_stubs=rpn_commstubs$(version_COMM) MPI=
 
 gemdm_nompi:
-	make gemdm MPI=rpn_comm_stubs
+	make gemdm COMM_stubs=rpn_commstubs$(version_COMM) MPI=
 
 gemntr:
 	cd $(LCLPO);\
-	$(RBUILD) -obj *.o -bidon -main gemntr -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -libpriv $(PRIV) -codebeta $(CODEBETA) $(MPI);\
+	$(RBUILD) -obj *.o -bidon -main gemntr -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -codebeta $(CODEBETA) $(MPI);\
 	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)* bidon.o
 
 gemdm:
 	cd $(LCLPO);\
-	$(RBUILD) -obj *.o -bidon -main gemdm -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -libpriv $(PRIV) -codebeta $(CODEBETA) $(MPI) ;\
+	$(RBUILD) -obj *.o -bidon -main gemdm -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -codebeta $(CODEBETA) $(MPI) ;\
 	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)* bidon.o
 
 include $(gem)/RCS_DYN/.cibles_sometools

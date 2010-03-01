@@ -27,7 +27,6 @@
 !                    | the Grid set to use for Outd_var(*,j)           |
 ! Outd_step          | Outd_step(i) contains the index that indicates  |
 !                    | the Step set to use for Outd_var(*,j)           |
-! Outd_vmm_L         | To indicate if any VMM model variables are req  |
 !----------------------------------------------------------------------
 !
 !
@@ -42,7 +41,6 @@
       integer Outd_step(MAXSET)
       integer Outd_var_max(MAXSET)
       integer Outd_sets
-      logical Outd_vmm_L
 
       MARK_COMMON_BEG (Outd)
       COMMON /Outd/ Outd_lev,Outd_grid,Outd_step
@@ -54,7 +52,4 @@
       MARK_COMMON_BEG (Outd_r)
       COMMON /Outd_r/ Outd_filtcoef
       MARK_COMMON_END (Outd_r)
-      MARK_COMMON_BEG (Outd_l)
-      COMMON /Outd_l/ Outd_vmm_L
-      MARK_COMMON_END (Outd_l)
 

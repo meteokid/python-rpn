@@ -17,13 +17,13 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r out_sgrid - to setup output grid
 #include  "model_macros_f.h"
 *
-      subroutine out_sgrid ( F_x0,F_x1,F_y0,F_y1,F_periodx_L,
-     $                       F_stride,F_etikext_s,
+      subroutine out_sgrid ( F_x0,F_x1,F_y0,F_y1,F_ig1,F_ig2,
+     $                       F_periodx_L,F_stride,F_etikext_s,
      $                       F_etikadd_S)
 
       implicit none
 *
-      integer F_x0, F_x1,F_y0,F_y1,F_stride,NI,NJ
+      integer F_x0, F_x1,F_y0,F_y1,F_stride,NI,NJ,F_ig1,F_ig2
       logical F_periodx_L
       character*(*) F_etikext_s, F_etikadd_S
 *
@@ -33,6 +33,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 * v3_20 - Lee V.            - Adapted for GEMDM
 * v3_30 - McTaggart-Cowan R.- Append user defined grid tag to namelist value
 * v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
+* v4_06 - Lee V.            - add the grid descriptor ig1,ig2 in arguments
 *
 *
 *ARGUMENTS
@@ -81,8 +82,11 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       endif
       if (F_periodx_L) Out_nisg=Out_nisg+1
 *
+
       if ((out_nisl.gt.0).and.(out_njsl.gt.0)) then
 *
+          Out_ig1 = F_ig1
+          Out_ig2 = F_ig2
           Out_ig3 = out_idg
           Out_ig4 = out_jdg
 *

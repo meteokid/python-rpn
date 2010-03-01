@@ -37,6 +37,7 @@
 * v2_31 - Desgagne M.       - remove stkmemw
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v4_05 - Girard C.         - Open top
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *
@@ -44,6 +45,8 @@
 *        None
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "geomg.cdk"
@@ -57,67 +60,54 @@
 
 *
 *modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(18), i, j
+      integer i, j
 **
 *     __________________________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
 *
-      pnlkey1(1)  = VMM_KEY(rhsu)
-      pnlkey1(2)  = VMM_KEY(rhsv)
-      pnlkey1(3)  = VMM_KEY(ruw1)
-      pnlkey1(4)  = VMM_KEY(ruw2)
-      pnlkey1(5)  = VMM_KEY(rvw1)
-      pnlkey1(6)  = VMM_KEY(rvw2)
-      pnlkey1(7)  = VMM_KEY(xct1)
-      pnlkey1(8)  = VMM_KEY(yct1)
-      pnlkey1(9)  = VMM_KEY(zct1)
-      pnlkey1(10) = VMM_KEY(topo)
-      pnlkey1(11) = VMM_KEY(rhsc)
-      pnlkey1(12) = VMM_KEY(rhst)
-      pnlkey1(13) = VMM_KEY(orhsu)
-      pnlkey1(14) = VMM_KEY(orhsv)
-      pnlkey1(15) = VMM_KEY(rhsf)
-      pnlkey1(16) = VMM_KEY(rhsb)
-      pnlod = 16
+      gmmstat = gmm_get(gmmk_rhsu_s,rhsu,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsu)'
+      gmmstat = gmm_get(gmmk_rhsv_s,rhsv,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsv)'
+      gmmstat = gmm_get(gmmk_rhst_s,rhst,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhst)'
+      gmmstat = gmm_get(gmmk_rhsc_s,rhsc,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsc)'
+      gmmstat = gmm_get(gmmk_rhsf_s,rhsf,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsf)'
+      gmmstat = gmm_get(gmmk_rhsb_s,rhsb,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsb)'
+      gmmstat = gmm_get(gmmk_ruw1_s,ruw1,meta3d)
+      If (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(ruw1)'
+      gmmstat = gmm_get(gmmk_rvw1_s,rvw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(rvw1)'
+      gmmstat = gmm_get(gmmk_ruw2_s,ruw2,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(ruw2)'
+      gmmstat = gmm_get(gmmk_rvw2_s,rvw2,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(rvw2)'
+      gmmstat = gmm_get(gmmk_xct1_s,xct1,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(xct1)'
+      gmmstat = gmm_get(gmmk_yct1_s,yct1,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(yct1)'
+      gmmstat = gmm_get(gmmk_zct1_s,zct1,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(zct1)'
+      gmmstat = gmm_get(gmmk_orhsu_s,orhsu,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(orhsu)'
+      gmmstat = gmm_get(gmmk_orhsv_s,orhsv,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(orhsv)'
       if (.not. Schm_hydro_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(rhsw)
-         pnlod = pnlod+1
+         gmmstat = gmm_get(gmmk_rhsw_s,rhsw,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(rhsw)'
       endif
-      if(Schm_opentop_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(nest_t)
-         pnlod = pnlod+1
+      if (Schm_opentop_L) then
+         gmmstat = gmm_get(gmmk_nest_t_s,nest_t,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(nest_t)'
       endif
-*     - - - - - - - - - - - - - - -
-      pnerr = vmmlod(pnlkey1,pnlod)
-*     - - - - - - - - - - - - - - -
-      pnerr = VMM_GET_VAR(rhsu)
-      pnerr = VMM_GET_VAR(rhsv)
-      pnerr = VMM_GET_VAR(ruw1)
-      pnerr = VMM_GET_VAR(ruw2)
-      pnerr = VMM_GET_VAR(rvw1)
-      pnerr = VMM_GET_VAR(rvw2)
-      pnerr = VMM_GET_VAR(xct1)
-      pnerr = VMM_GET_VAR(yct1)
-      pnerr = VMM_GET_VAR(zct1)
-      pnerr = VMM_GET_VAR(topo)
-      pnerr = VMM_GET_VAR(rhsc)
-      pnerr = VMM_GET_VAR(rhst)
-      pnerr = VMM_GET_VAR(orhsu)
-      pnerr = VMM_GET_VAR(orhsv)
-      pnerr = VMM_GET_VAR(rhsf)
-      pnerr = VMM_GET_VAR(rhsb)
-      rhsw_ = 0
-      if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(rhsw)
-      endif
-      nest_t_=0
-      if(G_lam) then
-         pnerr = VMM_GET_VAR(nest_t)
-      endif
+
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(topo)'
 *
 c     if (Acid_test_L)then
 c     if (Lun_out.gt.0) write(Lun_out,*) 'Before prep_2'
@@ -152,7 +142,6 @@ c     endif
 c     call glbstat (rhsu,'RU',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
 c    %                                     8+acid_j0,G_nj-7-acid_jn,1,G_nk)
 *
-      pnerr = vmmuld(-1,0)
 *
 1000  format(3X,'PRE-COMPUTATION FOR THE HELMHOLTZ PROBLEM: (S/R PRE)')
 *     __________________________________________________________________

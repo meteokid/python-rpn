@@ -164,7 +164,7 @@
 *
       if ((Grdc_proj_S.ne.'@').and.(.not.Rstri_rstn_L))  then
 *
-         call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,.false.,
+         call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,0,0,.false.,
      $                               1,'','')
          outindx = 0
          if (Ptopo_blocme.eq.0) then
@@ -205,7 +205,7 @@
          do k=1,max_trnm
             if (Grdc_trnm_S(k).eq.'@#$%') goto 89
             do i=1,Tr3d_ntr
-               if (Grdc_trnm_S(k).eq.Tr3d_name_S(i)) then
+               if (trim(Grdc_trnm_S(k)).eq.trim(Tr3d_name_S(i))) then
                   cnt=cnt+1
                   Grdc_trnm_S(cnt) = Tr3d_name_S(i)
                endif

@@ -4,7 +4,7 @@
 !
 !______________________________________________________________________
 !                                                                      |
-! VMM variables associated with the Crank-Nicholson procedure          |
+! GMM variables associated with the Crank-Nicholson procedure          |
 ! and used to compute the RHS equation (set_crni)                      |
 !______________________________________________________________________|
 !                    |                                                 |
@@ -23,23 +23,21 @@
 ! Orh_crank_L        | switch: .true. if current time step is C-N      |
 !----------------------------------------------------------------------
 !
-!
 #endif
 !
       logical Orh_crank_L
       integer Orh_icn
-
-      MARK_COMMON_BEG (orh)
-      DCL_VMMVAR (orh,orhsu,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (orh,orhsv,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (orh,orhst,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR (orh,orhsc,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (orh,orhsw,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR (orh,orhsf,real,(LDIST_SHAPE,l_nk+1))
-      MARK_COMMON_END (orh)
-      character*8 orh_n_first(1)
-      equivalence (orh_n_first,VMM_NAM(orhsu))
       common / Orh / Orh_icn, Orh_crank_L
+
+      real, pointer, dimension (:,:,:) :: orhsu => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: orhsv => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: orhst => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: orhsc => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: orhsw => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: orhsf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+
+      character(len=8) :: gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
+      common /orh_n_gmm/ gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
 
 !======================================================================
 

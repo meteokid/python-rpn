@@ -3,11 +3,12 @@ prgemnml: prgemnml.o
 	/bin/rm -f $(LCLPO)/prgemnml.o
 
 gemgrid:
-	$(RBUILD) -bidon -main gemgrid -o $(ATM_MODEL)grid_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gem rpn_comm222" -librmn $(RMN) -codebeta rpn_comm_stubs
+	$(RBUILD) -bidon -main gemgrid -o $(ATM_MODEL)grid_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gem $(COMM)" -librmn $(RMN)
 
 #allbin: gemgrid
 #	make gem V4D="v4d modulopt prof_003" CPL="cpl_105"
-allbin: prgemnml gemgrid
+allbin: prgemnml 
+	make gemgrid COMM_stubs=rpn_commstubs$(version_COMM)
 	make gem 
 
 

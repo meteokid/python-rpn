@@ -102,7 +102,7 @@
 *
       if (errcode .lt. 0) then
          if (Ptopo_myproc.eq.0) write (6,9900) 'UNABLE TO INITIALIZE COUPLER'
-         if (.not. C_continue_L) call gem_stop('ITF_CPL_INIT',-1)
+         if (.not. C_continue_L) call handle_error0('itf_cpl_init','ITF_CPL_INIT',-1)
          C_coupling_L = .false.
          if (Ptopo_myproc.eq.0) write (6,9901)
          return
@@ -160,7 +160,7 @@
 *
       endif
 *
- 995  call gem_stop('ITF_CPL_INIT',errcode)
+ 995  call handle_error0('itf_cpl_init','ITF_CPL_INIT',errcode)
       call RPN_COMM_bcast (C_coupling_L, 1, "MPI_LOGICAL", 0,"grid",ier)
 *
       if (C_coupling_L) then

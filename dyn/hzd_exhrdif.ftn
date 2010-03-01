@@ -83,7 +83,7 @@
       if(diff_theta) then
 
          if(.not.Schm_theoc_L)then
-            call gem_stop('hzd_exhrdif : Code a revoir',-1)
+            call handle_error0('hzd_exhrdif','hzd_exhrdif : Code a revoir',-1)
          endif
 
          call rpn_comm_xch_halo ( F_t  , LDIST_DIM, l_ni,l_nj,G_nk+1,

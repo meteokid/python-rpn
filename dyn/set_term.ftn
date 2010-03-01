@@ -19,7 +19,7 @@
 *
       subroutine set_term
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     michel roch - rpn - june 1993
@@ -43,13 +43,6 @@
 #include "schm.cdk"
 #include "p_serg.cdk"
 *
-*modules
-      integer vmmdiag
-      external vmmdiag
-**
-*
-      integer pnerr
-*
 *     ---------------------------------------------------------------
 *
       if (Lun_out.gt.0) write(Lun_out,1000)
@@ -71,8 +64,6 @@
 *              ------------------------------------
 *
  300  continue
-*
-      if (Lun_out.gt.0) pnerr = vmmdiag( )
 *
  1000 format(
      %/ /,'TERMINATION OF THE RUN... CLOSING ALL FILES S/R SETTERM',

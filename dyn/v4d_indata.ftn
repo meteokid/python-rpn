@@ -28,7 +28,7 @@
 *
       if ( V4dg_conf.ne.0) then
            if ( F_vtopo_L) 
-     %     call gem_stop ('v4d_INDATA: V4dg_conf.ne.0.and.Vtopo_L NOT VALID', -1)
+     %     call handle_error0('v4d_indata','v4d_INDATA: V4dg_conf.ne.0.and.Vtopo_L NOT VALID', -1)
            if (V4dg_part.eq.3.and.V4dg_oktr_L ) call v4d_rwtraj (1) 
 *
       endif
@@ -48,7 +48,7 @@
 *-------------------------------------------------------------------
 *
       if ( V4dg_conf.ne.0 .and. V4dg_part.ne.2 ) then 
-           call predat ()
+           stop 'Must adapt to predat2'
            skipcode=1
       endif
 *

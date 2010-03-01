@@ -19,19 +19,23 @@
       subroutine my_stat()
 
 #include "impnone.cdk"
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "vt1.cdk"
 
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
+!      integer  vmmlod, vmmget, vmmuld
+!      external vmmlod, vmmget, vmmuld
       integer pnerr, pnlkey1(1), pnlod,i0,in,j0,jn
 
-      pnlkey1(1)  = VMM_KEY(wup)
+!      pnlkey1(1)  = VMM_KEY(wup)
 *
-      pnerr = vmmlod(pnlkey1,1)
+!      pnerr = vmmlod(pnlkey1,1)
 *
-      pnerr = VMM_GET_VAR(wup)
+!      pnerr = VMM_GET_VAR(wup)
+      gmmstat = gmm_get(gmmk_wup_s,wup,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'zdot_mid ERROR at gmm_get(wup)'
 
       i0=1
       in=l_ni

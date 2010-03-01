@@ -72,10 +72,8 @@
 *implicits
 #include "dcst.cdk"
 #include "lun.cdk"
-#include "mem.cdk"
 #include "path.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_phy_busind.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
 #include "rstr.cdk"
@@ -104,17 +102,19 @@
       INTEGER      xnilu(xncfld), xnjlu(xncfld)
       CHARACTER*4  clim_S(xncfld)
 *
-      LOGICAL      acli_L,IntSol_L,IntIce_L
-      INTEGER      xndate1,xndate2,xniz,xnjz
+      LOGICAL      acli_L,IntSol_L,IntIce_L,done
+      INTEGER      xndate1,xndate2,xniz,xnjz,lght,soit
       INTEGER      Lun_clim,Lun_acli,Lun_activ,ppjour,aujour
       INTEGER      xnerr,xncle,xnhold,xnpos,xnzpos,xncoupe
       INTEGER      i,xni,xnj,xnk,xnim,xnjm,xnzm,xnmxfld
+      integer dlat,dlon,snodp,incrne,incrhs,wsoil,incricd,icedp,incrgl,glsea0,incrts,twater,incrtg,tglacier,incrtp,tsoil
+      save dlat,dlon,snodp,incrne,incrhs,wsoil,incricd,icedp,incrgl,glsea0,incrts,twater,incrtg,tglacier,incrtp,tsoil
       CHARACTER    typvar_S,hold_S*12
       CHARACTER*256 clima_S,anclima_S
       CHARACTER*8  soli_S,soli2_S
 *
       integer Done_Inincr
-      save    Done_Inincr
+      save    Done_Inincr,done
 *
       real xrwrk3, neige
       pointer (iwork3,xrwrk3(1))
@@ -126,6 +126,7 @@
 *
       DATA         clim_S /'SD','HS','I8','LG','TP','TM'/
       DATA         Done_Inincr / -1 /
+      DATA         done / .false. /
 *
 *
 **       -------------------------------------------------
@@ -169,6 +170,26 @@
       call difdatr( xnday2,xnday1,heur_8 )
       heur_8    = heur_8 * (3600. / Cstv_dt_8 )
 *
+      if (.not.done) then
+         call getindx ('DLAT',      'P',dlat,     lght, soit)
+         call getindx ('DLON',      'P',dlon,     lght, soit)
+         call getindx ('TWATER',    'P',twater,   lght, soit)
+         call getindx ('TGLACIER',  'P',tglacier, lght, soit)
+         call getindx ('TSOIL',     'P',tsoil,    lght, soit)
+         call getindx ('WSOIL',     'P',wsoil,    lght, soit)
+         call getindx ('SNODP',     'P',snodp,    lght, soit)
+         call getindx ('ICEDP',     'P',icedp,    lght, soit)
+         call getindx ('GLSEA0',    'P',glsea0,   lght, soit)
+         call getindx ('INCRNE',    'P',incrne,   lght, soit)
+         call getindx ('INCRHS',    'P',incrhs,   lght, soit)
+         call getindx ('INCRICD',   'P',incricd,  lght, soit)
+         call getindx ('INCRGL',    'P',incrgl,   lght, soit)
+         call getindx ('INCRTS',    'P',incrts,   lght, soit)
+         call getindx ('INCRTG',    'P',incrtg,   lght, soit)
+         call getindx ('INCRTP',    'P',incrtp,   lght, soit)
+         done=.true.
+      endif
+
       if (((Done_Inincr.ne.xnday2)  .and.
      %     (heur_8     .ge. -0.5 )  .and.
      %     (heur_8     .lt. +0.5 )) .or.
@@ -282,7 +303,7 @@
          call RPN_COMM_bcast( xnzm     ,1,"MPI_INTEGER",0,"grid",xnerr )
 *
          if (( xnmxfld  .le. 0 ) .or. ( Lun_clim .eq. 0 ))
-     %      call gem_stop( 'itf_phy_inincr',-1 )
+     %      call handle_error0('itf_phy_inincr', 'itf_phy_inincr',-1 )
 *
 **       Every one allocates the xncfld 2D climatology fields
 *
@@ -329,7 +350,6 @@ C        call flush( Lun_out )
 *
          call low2up( P_pbl_schsl_S,soli_S )
          soli2_S = soli_S
-         if (P_pset_second_L) call low2up( P_pbl2_schsl_S,soli2_S )
             
          if ((soli_S  .eq.'CLASS' .or. soli_S  .eq.'ISBA') .and.
      %       (soli2_S .eq.'CLASS' .or. soli2_S .eq.'ISBA')) then
@@ -342,7 +362,6 @@ C        call flush( Lun_out )
 **       modules) and ice thichness (in sea ice module)
 *
          IntIce_L = P_pbl_iceme_L
-         if (P_pset_second_L) IntIce_L = (IntIce_L .and. P_pbl2_iceme_L)
 *
 C        print *,'Dans itf_phy_inincr: soli_S ',soli_S
 C        call flush( Lun_out )
@@ -463,7 +482,7 @@ C                 call flush( Lun_out )
          endif
 *
  0040    call RPN_COMM_bcast( xncle ,1,"MPI_INTEGER",0,"grid",xnerr )
-         if (xncle.lt.0) call gem_stop( 'itf_phy_inincr',-1 )
+         if (xncle.lt.0) call handle_error0('itf_phy_inincr', 'itf_phy_inincr',-1 )
 *
          call RPN_COMM_bcast (xrtic  ,xncfld*xnzm   ,"MPI_REAL" ,0,"grid",xnerr)
          call RPN_COMM_bcast (xrtac  ,xncfld*xnzm   ,"MPI_REAL" ,0,"grid",xnerr)
@@ -487,8 +506,6 @@ C                 call flush( Lun_out )
 **       -----------------------------------
 *
          do xncoupe=1,p_nj
-*
-            Mem_pslic = xncoupe
 *
             pabusper = loc (Phy_busper3D((xncoupe-1)*p_bper_siz+1))
 *

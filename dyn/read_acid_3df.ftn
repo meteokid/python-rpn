@@ -246,11 +246,11 @@
               write(Lun_out,*) 'ZD=',zd_L
               write(Lun_out,*) 'W=',w_L
           endif
-          call gem_stop('read_3df',-1)
+          call handle_error0('read_acid_3df','read_3df',-1)
       endif
       If (Schm_hydro_L.and.q_L.or.(.not.Schm_hydro_L.and..not.q_L)) then
           if (Lun_out.gt.0) write(Lun_out,*)'Acid test: Schm_hydro_L=',Schm_hydro_L,' qt1 found=',q_L
-          call gem_stop('read_3df',-1)
+          call handle_error0('read_acid_3df','read_3df',-1)
       endif
       if (.not.(xth_L  .and.yth_L  .and. zth_L  .and.
      $          xcth_L .and.ycth_L .and. zcth_L )) then
@@ -273,7 +273,7 @@
       endif
       
  44   return
-c44   call gem_stop('read_acid_3df',-1)
+c44   call handle_error0('read_acid_3df','read_acid_3df',-1)
  1000 format(
      +3X,'READING DATA IN (S/R read_acid_3df)')
       end

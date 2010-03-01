@@ -1,0 +1,64 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r v4d_rwtraj - Read (Write) from (on) TRAJ WA file at each time
+*                   Dispatch to v4d_rwtraj_dyn or v4d_rwtraj_phy  
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_rwtraj (numtr,u,v,w,x,y,a,b,c,d)
+*
+*-------------------------------------------------------------------------
+*  CAUTION: Parameters list is extended ONLY when numtr=5
+*-------------------------------------------------------------------------
+*
+      implicit none
+*
+      integer numtr
+*
+c     real, optional :: u(*),v(*),w(*),x(*),y(*)  KO NAOS
+c     real, optional :: a(*),b(*),c(*),d(*)       KO NAOS
+      real           :: u(*),v(*),w(*),x(*),y(*)
+      real           :: a(*),b(*),c(*),d(*)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v4_04 - Tanguay M.        - initial MPI version
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*
+*
+*arguments
+* Name         I/O     Description
+*-------------------------------------------------------------------------
+* numtr        I       Indicates which portion of TRAJECTORY to Read-Write 
+*-------------------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+*
+*     For Dynamics
+*     ------------
+      if ( 1.le.numtr.and.numtr.le.19) call v4d_rwtraj_dyn (numtr,u,v,w)
+*
+*     For Physics 
+*     -----------
+      if (20.le.numtr.and.numtr.le.39)
+     *        call v4d_rwtraj_phy (numtr,u,v,w,x,y,a,b,c,d)
+*
+      if (numtr.gt.39) call gem_stop('ABORT v4d_rwtraj numtr not done',-1) 
+*
+      return
+      end

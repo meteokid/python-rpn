@@ -63,9 +63,21 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
+!      integer G_ni, G_nj, G_nk
+!      integer l_ni, l_nj
 #include "adw.cdk"
+c$$$      #include "type.cdk"
+c$$$      type (vertical_i)  Adw_lcz
+c$$$      type (vertical_8)  Adw_bsz_8
+c$$$      type (vertical_8)  Adw_zbc_8
+c$$$      type (vertical_8)  Adw_zabcd_8
+c$$$      type (vertical_8)  Adw_zbacd_8
+c$$$      type (vertical_8)  Adw_zcabd_8
+c$$$      type (vertical_8)  Adw_zdabc_8
+c$$$      !... lots more... TODO: finish inventory or keep adw.cdk
 #include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8  
 * **********************************************************************
       integer n,nijag,i,j,k,nij,iimax,jjmax,kkmax,ii,jj,kk
       logical zcubic_L

@@ -17,18 +17,11 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine itf_phy_fillbus 
-     $                      (F_busdyn, F_busper, F_busent, F_busvol,
-     $                       F_pvptr, NPTR, F_trm, F_trp,
-     $                       F_jdo, F_step,DIST_DIM,Nk)
-*
+      subroutine itf_phy_fillbus (F_busdyn, F_busent, F_jdo, F_step, nk)
       implicit none
 *
-      integer F_step,F_jdo, DIST_DIM, Nk, NPTR
-*
-      real F_busdyn(*),F_busper(*),F_busent(*), F_busvol(*)
-      real  F_trp(DIST_SHAPE,Nk,*), F_trm(DIST_SHAPE,Nk,*)
-      integer*8 F_pvptr(NPTR)
+      integer F_step, F_jdo, nk
+      real F_busdyn(*),F_busent(*)
 *
 *author 
 *     Michel Roch - rpn - april 1994
@@ -51,93 +44,39 @@
 *
 *object
 *	Fill the slice workspace variable for the physics.
-*	Change of units if required	
 *
-*arguments
-*  Name        I/O                 Description
-*----------------------------------------------------------------
-* F_busdyn      I       - dynamic bus
-* F_busper      I       - permanent bus
-* F_busent      O       - entry bus
-* F_busvol
-* F_pvptr
-* NPTR
-* F_trm
-* F_trp
-* F_jdo
-* F_step
-* DIST_DIM
-* Nk
-*----------------------------------------------------------------
-*
-*implicits
 #include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "dcst.cdk"
 #include "itf_phy_buses.cdk"
-#include "schm.cdk"
-#include "tr3d.cdk"
-#include "itf_phy_busind.cdk"
-#include "itf_phy_vmm.cdk"
 *
 *notes
 *
-      integer i, k, n, m, ii, indx, offp, offg, pid, gid, mul
-      integer ntr
-      real tr,wk
-      pointer (patr, tr(LDIST_SHAPE,*))
-      pointer (pawk, wk(l_ni,l_nj,*))
+      integer i, k, n, ii, indx, offp, offg, pid, gid, mul
+      integer soit,lght,indx_n
 **
 *     ---------------------------------------------------------------
 *
-*C    3D variables: extract row F_jdo 
-*
-c$$$         print *,'---- fillbus ----',F_jdo,p_ni/2
-      do n= 1,p_phy3d_max
-         patr = F_pvptr(n)
-      do k= 1,Nk
-      do i= 1, p_ni
-         indx = (k-1)*p_ni+i-1
-         ii = i + p_offi
-         F_busdyn(p_phy_addr(n) + indx) = tr(ii,F_jdo,k)
-      end do
-      end do
-c$$$      if (F_jdo.eq.p_nj/2) then
-c$$$         call statfldslb(F_busdyn(p_phy_addr(n)),p_phy_n_first(n),p_ni,nk)
-c$$$      endif
-      end do
-*
-*C    2D variables: extract row F_jdo, one level!! 
-      do n= p_phy3d_max+1,p_phy_max
-         patr = F_pvptr(n)
-      do i= 1, p_ni
-         ii = i + p_offi
-         F_busdyn(p_phy_addr(n) + i-1) = tr(ii,F_jdo,1)
-      end do
-c$$$      if (F_jdo.eq.p_nj/2) then
-c$$$         call statfldslb(F_busdyn(p_phy_addr(n)),p_phy_n_first(n),p_ni,1)
-c$$$      endif
-      end do
-*
-      do n=1,phyt_ntr
-         do k= 1,Nk
-         do i= 1, p_ni
-            indx = (k-1)*p_ni+i-1
-            ii = i + p_offi
-            F_busdyn(phyt_ind(1,n)+indx) = F_trp(ii,F_jdo,k,n)
-         end do
-         end do
-         if (phyt_ind(2,n).gt.0) then
-            do k= 1,Nk
-               do i= 1, p_ni
-                  indx = (k-1)*p_ni+i-1
-                  ii = i + p_offi
-                  F_busdyn(phyt_ind(2,n)+indx) = F_trm(ii,F_jdo,k,n)
-               end do
+      call getindx ('PW_PM:P',  'D', pid, lght, soit)
+
+      do n=1,p_bdyn_top
+         call getindx (dynnm(n),  'D', indx_n, lght, soit)
+         if (dynpar(n,3).eq.1) then
+         if (dynpar(n,7).eq.1) then
+            do i= 1, p_ni
+               ii   = i + p_offi
+               F_busdyn(indx_n + i -1) = phy_buffer(ii,F_jdo,nk,n)
+            end do
+         else
+            do k= 1, Nk
+            do i= 1, p_ni
+               indx = (k-1)*p_ni+i-1
+               ii   = i + p_offi
+               F_busdyn(indx_n + indx) = phy_buffer(ii,F_jdo, k,n)
+            end do
             end do
          endif
+         endif
       end do
-*     
+*
       if (F_step.eq.0) then
 *     
       do 20 pid=1,p_bent_top
@@ -164,9 +103,6 @@ c$$$      endif
  20   continue
 *
       endif
-
-c$$$         print *,'---- [end] fillbus ----'
-
 *
 *     ---------------------------------------------------------------
 *

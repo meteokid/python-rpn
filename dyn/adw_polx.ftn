@@ -21,8 +21,7 @@
 *
       subroutine adw_polx ( F_field, F_xg, F_sud,
      %                      F_nic, F_halox, F_njc, F_haloy, F_nk )
-*
-#include "impnone.cdk"
+      implicit none
 *
       logical F_sud
 *
@@ -65,8 +64,9 @@
 *______________|_________________________________________________|_____|
 *
 *implicits
-#include "type.cdk"
 #include "adw.cdk"
+!      DCL_DYNVAR(Adw,  iln  ,    integer, (*))
+!      DCL_DYNVAR(Adw,  lnr_8,    real*8 , (*))
 *
 *modules
 *     none

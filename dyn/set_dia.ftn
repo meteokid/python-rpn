@@ -20,7 +20,7 @@
 *
       subroutine set_dia
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne - V. Lee ( after version v1_03 of setserg )

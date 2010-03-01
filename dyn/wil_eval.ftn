@@ -138,7 +138,7 @@ CCC   SAVE ANNP1
     2        FORMAT(/,' STSWM: FATAL ERROR IN SUBROUTINE EVAL:',/,
      $       ' PARAMETER MAXH TOO SMALL SPECIFIED FOR BELOUSOV',
      $       ' RECURRENCE; MAXH = ', I10)
-         call gem_stop('STOP IN EVAL',-1)
+         call handle_error0('wil_eval','STOP IN EVAL',-1)
       ELSE
          IF ((MMH .NE. MMOLD) .OR. (NNH .NE. NNOLD) .OR.
      $       (KKH .NE. KKOLD)) THEN

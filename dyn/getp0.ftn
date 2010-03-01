@@ -16,7 +16,7 @@
 ***s/r getp0 - Compute hydrostatic P0
 *
       subroutine getp0 (F_dp0,F_dgz,F_pia,F_pibb,F_sp0,F_sgz,F_svt,n,nk,F_sig_L)
-#include "impnone.cdk"
+      implicit none
 *
        integer n,  nk
        logical F_sig_L

@@ -201,7 +201,7 @@
       enddo
 *
  57   if ((errrot.lt.0).and.(Ptopo_myproc.eq.0)) write (6,1001)
-      call gem_stop('GEODATA',errrot)
+      call handle_error0('geodata','GEODATA',errrot)
 
 *     Check tic tacs to see if they are the same
 *

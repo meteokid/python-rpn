@@ -32,6 +32,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 * v4_03 - Tanguay M.        - Williamson's cases
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *	
@@ -39,13 +40,14 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "opr.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
 #include "vtx.cdk"
-c#include "vt0.cdk"
 #include "rhsc.cdk"
 #include "trp.cdk"
 #include "fft.cdk"
@@ -56,10 +58,8 @@ c#include "vt0.cdk"
 #include "wil_williamson.cdk"
 *
 *modules
-      integer vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
 *
-      integer i,j,k,pnerr,keys(2),dim,longueur
+      integer i,j,k,dim,longueur
       real*8 pdwrd(2)
       real   prwrd(2)
 *      
@@ -76,12 +76,10 @@ c#include "vt0.cdk"
 *
 *     Get needed fields in memory
 *
-      keys(1) = VMM_KEY(rhsp)
-      keys(2) = VMM_KEY(fiptx)
-*
-      pnerr = vmmlod( keys, 2 )
-      pnerr = VMM_GET_VAR(rhsp)
-      pnerr = VMM_GET_VAR(fiptx)
+      gmmstat = gmm_get(gmmk_rhsp_s,rhsp,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'sol_main ERROR at gmm_get(rhsp)'
+      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'sol_main ERROR at gmm_get(fiptx)'
 *
 * Transfering rhsp (real*4 with halo) into rhs (real*8 without halo)
 
@@ -103,7 +101,6 @@ c#include "vt0.cdk"
 *
       if (Acid_test_L)call acid_stat_sol_main(rhsp,fiptx,1)
 *
-      pnerr = vmmuld( -1, 0 )
 *
  1000 format(
      +5X,'SOLVING LINEAR HELMHOLTZ PROBLEM: (S/R SOL_MAIN)')

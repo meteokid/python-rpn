@@ -19,8 +19,7 @@
 #include "model_macros_f.h"
 *
       subroutine adw_vder (F_inzz, F_in, F_nit, F_njt, F_nk, F_lev_S)
-*
-#include "impnone.cdk"
+      implicit none
 *
       character*1 F_lev_S
 *
@@ -57,10 +56,19 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "schm.cdk"
-#include "type.cdk"
+!      logical G_lam
+!      integer G_nk
+!      logical l_north, l_south, l_east, l_west
 #include "adw.cdk"
+!      #include "type.cdk"
+!      logical Adw_nkbz_L
+!      integer            Adw_halox, Adw_haloy
+!      integer            Adw_nic, Adw_nit, Adw_njc, Adw_njt
+!      type (vertical_8)  Adw_qzz_8
+!      type (vertical_8)  Adw_qzi_8
 #include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8  
 ************************************************************************
 *
       integer i, j, i_deb, j_deb, i_fin, j_fin

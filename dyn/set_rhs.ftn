@@ -20,7 +20,6 @@
 #include "model_macros_f.h"
 *
       subroutine set_rhs
-*
       implicit none
 *
 *author
@@ -40,61 +39,80 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "rhsc.cdk"
-*
-*modules
-      integer vmmcre
-      external vmmcre
-**
-      character*80 attri_S
+#include "orh.cdk"
 *
 *     ---------------------------------------------------------------
 *
-      integer i
-*     integer pnerr
+      if (Lun_out.gt.0) write(Lun_out,1000)
 *
-       if (Lun_out.gt.0) write(Lun_out,1000)
-*
-*       names and keys commons initialization
-*
-      COMMON_INIT(rhsc,-100)
-*
-*C       1.    Create right hand sides of the equations
-*              ----------------------------------------
-*
-*	Assign the names of the variables
+* Assign the names of the variables
 * 
-      VMM_NAM(rhsu)= 'RHSU'
-      VMM_NAM(rhsv)= 'RHSV'
-      VMM_NAM(rhst)= 'RHST'
-      VMM_NAM(rhsc)= 'RHSC'
-      VMM_NAM(rhsw)= 'RHSW'
-      VMM_NAM(rhsf)= 'RHSF'
-      VMM_NAM(rhsp)= 'RHSP'
-      VMM_NAM(rhsb)= 'RHSB'
+      gmmk_rhsu_s = 'RHSU'
+      gmmk_rhsv_s = 'RHSV'
+      gmmk_rhst_s = 'RHST'
+      gmmk_rhsc_s = 'RHSC'
+      gmmk_rhsw_s = 'RHSW'
+      gmmk_rhsf_s = 'RHSF'
+      gmmk_rhsp_s = 'RHSP'
+      gmmk_rhsb_s = 'RHSB'
 *
-      VMM_NAM(ruw1)= 'RUW1'
-      VMM_NAM(ruw2)= 'RUW2'
-      VMM_NAM(rvw1)= 'RVW1'
-      VMM_NAM(rvw2)= 'RVW2'
+      gmmk_ruw1_s = 'RUW1'
+      gmmk_ruw2_s = 'RUW2'
+      gmmk_rvw1_s = 'RVW1'
+      gmmk_rvw2_s = 'RVW2'
 *
-*       Set the attributes of the variables
+      gmmk_orhsu_s = 'ORHU'
+      gmmk_orhsv_s = 'ORHV'
+      gmmk_orhst_s = 'ORHT'
+      gmmk_orhsc_s = 'ORHC'
+      gmmk_orhsw_s = 'ORHW'
+      gmmk_orhsf_s = 'ORHF'
 *
-      attri_S='SAVE=Y,CL=5,W=5,INIT=R'
+      nullify (rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp,rhsb)
+      nullify (ruw1,rvw1,ruw2,rvw2)
+      nullify (orhsu,orhsv,orhst,orhsc,orhsw,orhsf)
 *
-      VMM_CREATE(rhsu, LARRAY3D, 1, attri_S)
-      VMM_CREATE(rhsv, LARRAY3D, 1, attri_S) 
-      VMM_CREATE(rhst, LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(rhsc, LARRAY3D, 1, attri_S) 
-      VMM_CREATE(rhsw, LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(rhsf, LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(rhsp, LARRAY3D, 1, attri_S) 
-      VMM_CREATE(rhsb, LARRAY2D, 1, attri_S) 
+      gmmstat = gmm_create(gmmk_rhsu_s,rhsu,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsu)'
+      gmmstat = gmm_create(gmmk_rhsv_s,rhsv,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsv)'
+      gmmstat = gmm_create(gmmk_rhst_s,rhst,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhst)'
+      gmmstat = gmm_create(gmmk_rhsc_s,rhsc,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsc)'
+      gmmstat = gmm_create(gmmk_rhsw_s,rhsw,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsw)'
+      gmmstat = gmm_create(gmmk_rhsf_s,rhsf,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsf)'
+      gmmstat = gmm_create(gmmk_rhsp_s,rhsp,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsp)'
+      gmmstat = gmm_create(gmmk_rhsb_s,rhsb,meta2d   , GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsb)'
 *
-      VMM_CREATE(ruw1, LARRAY3D, 1, attri_S)
-      VMM_CREATE(ruw2, LARRAY3D, 1, attri_S)
-      VMM_CREATE(rvw1, LARRAY3D, 1, attri_S)
-      VMM_CREATE(rvw2, LARRAY3D, 1, attri_S)
+      gmmstat = gmm_create(gmmk_ruw1_s,ruw1,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(ruw1)'
+      gmmstat = gmm_create(gmmk_rvw1_s,rvw1,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rvw1)'
+      gmmstat = gmm_create(gmmk_ruw2_s,ruw2,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(ruw2)'
+      gmmstat = gmm_create(gmmk_rvw2_s,rvw2,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rvw2)'
+*
+      gmmstat = gmm_create(gmmk_orhsu_s,orhsu,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsu)'
+      gmmstat = gmm_create(gmmk_orhsv_s,orhsv,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsv)'
+      gmmstat = gmm_create(gmmk_orhst_s,orhst,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhst)'
+      gmmstat = gmm_create(gmmk_orhsc_s,orhsc,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsc)'
+      gmmstat = gmm_create(gmmk_orhsw_s,orhsw,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsw)'
+      gmmstat = gmm_create(gmmk_orhsf_s,orhsf,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsf)'
 *
  1000 format(
      +/,'INITIALIZATION OF RIGHT-HAND SIDE COMDECK (S/R SET_RHS)',

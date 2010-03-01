@@ -1,0 +1,108 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adw_pols_ad - ADJ of adw_pols 
+*
+      subroutine adw_pols_ad ( F_field, F_wx_8,    F_j,
+     %                         F_nic,   F_halox,
+     %                         F_njc,   F_haloy, F_nk )
+*
+#include "impnone.cdk"
+*
+      integer  F_j, F_nic, F_halox, F_njc, F_haloy, F_nk
+*
+      real F_field (-F_halox+1:F_nic+F_halox,
+     %              -F_haloy+1:F_njc+F_haloy, F_nk)
+*
+      real*8 F_wx_8 (F_nic)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_21 - Tanguay M.        - Revision Openmp
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_field      | field to treat                                  |  io |
+* F_wx_8       | weights (proportional to x grid distances)      |  i  |
+* F_j          | j position to fill                              |  i  |
+*              |                                                 |     |
+* F_nic        | number of points in x direction (advection grid)|  i  |
+* F_njc        | number of points in y direction (advection grid)|  i  |
+*              |                                                 |     |
+* F_halox      | size of halo in x direction (advection grid)    |  i  |
+* F_haloy      | size of halo in y direction (advection grid)    |  i  |
+*              |                                                 |     |
+* F_nk         | number of levels                                |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+*     none
+*
+*modules
+*     none
+************************************************************************
+      integer i,j,k
+*
+      real*8 ZERO_8
+      parameter (ZERO_8=0.0)
+*
+      real*8 ww_8
+*
+*     Zero adjoint variables
+*     ----------------------
+      ww_8 = ZERO_8
+*
+*     TRAJECTORY
+*     ----------
+      if ( F_j .eq. 0 ) then
+                             j = 1
+      else
+                             j = F_njc
+      endif
+*
+*     ADJ
+*     ---
+!$omp do 
+      do k = 1,F_nk
+*
+         do i=F_nic+F_halox,-F_halox+1,-1
+            ww_8             = dble(F_field(i,F_j,k)) + ww_8
+            F_field(i,F_j,k) = ZERO_8
+         enddo
+*
+         do i=F_nic,1,-1
+            F_field(i,j,k) = F_wx_8(i) * ww_8 + F_field(i,j,k)
+         enddo
+*
+         ww_8 = ZERO_8
+*
+      enddo
+!$omp enddo 
+*
+      return
+      end
+

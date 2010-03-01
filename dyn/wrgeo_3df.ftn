@@ -13,21 +13,19 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-      subroutine wrgeo_3df ( xp,ni,yp,nj,am,bm,at,bt,
-     $                         nkm,nkt,presstype,unf )
+      subroutine wrgeo_3df ( xp,ni, yp,nj, xu, yv,
+     $                       am,bm,at,bt,
+     $                       nkm,nkt,presstype,unf )
       implicit none
 *
       integer ni,nj,nkm,nkt,presstype,unf
-      real*8 xp(ni),yp(nj),am(nkm),bm(nkm),at(nkt),bt(nkt)
+      real*8 xp(ni),yp(nj),xu(ni),yv(nj),
+     $       am(nkm),bm(nkm),at(nkt),bt(nkt)
 *
 *------------------------------------------------------------------
       write (unf) '>>^^',ni,nj,nkm,nkt,presstype
-      write (unf) xp,yp
+      write (unf) xp,yp,xu,yv
       write (unf) am,bm,at,bt
-c     write (6,*) 'am=',am
-c     write (6,*) 'bm=',bm
-c     write (6,*) 'at=',at
-c     write (6,*) 'bt=',bt
 *------------------------------------------------------------------
 *
       return

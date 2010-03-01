@@ -38,6 +38,7 @@
       integer i, j, k, idatx, longueur
       real*8 delta_8, zmt_8(maxhlev)
       real*8 c1_8,Exner_8,height_8,pres_8,height_top_8
+      integer, external :: adw_getMaxCFL
 **
 *     ---------------------------------------------------------------
       Cstv_pref_8=100000.d0
@@ -66,8 +67,6 @@
 *      	  
       Grd_rcoef = 1.0
 *
-      Tr3d_userntr=0
-
       Lam_nesdt=0
       Lam_ctebcs_L=.true.
       
@@ -83,8 +82,6 @@
       Zblen_L        = .true.
       Zblen_spngtt_L = .true.
       Out3_flipit_L  = .true.
-
-      Adw_interp_type_S = 'LAG3D'
 
       if ( Theo_case_S.eq.'MTN_SCHAR') then
 
@@ -274,7 +271,7 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Vtopo_ndt   = 60
 
       else
-         call gem_stop('mtn_cfg: not a valid mtn_case',-1)
+         call handle_error(-1,'mtn_cfg','not a valid mtn_case')
       endif
       
       Hgc_gxtyp_s='E'
@@ -284,11 +281,16 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
       rewind (unf)
       read ( unf, nml=mtn_cfgs, end = 9220, err=9000)
       go to 9221
- 9220 write( Lun_out,9230) Theo_case_S
+ 9220 if (Ptopo_myproc.eq.0) write( Lun_out,9230) Theo_case_S
  9221 continue
 
 *   adjust dimensions to include piloted area (pil_n, s, w, e)
 
+      Glb_pil_n = adw_getMaxCFL() + 5
+      Glb_pil_s = Glb_pil_n
+      Glb_pil_w = Glb_pil_n
+      Glb_pil_e = Glb_pil_n
+*
       Grd_ni = Grd_ni + Glb_pil_w + Glb_pil_e
       Grd_nj = Grd_nj + Glb_pil_n + Glb_pil_s
       Grd_nila = Grd_ni
@@ -312,7 +314,7 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Exner_8=1.d0-c1_8+c1_8*exp(-mtn_nstar**2/Dcst_grav_8*height_8)
          pres_8=Exner_8**(1.d0/Dcst_cappa_8)*Cstv_pref_8
          hyb(k)=(pres_8-Cstv_ptop_8)/(Cstv_pref_8-Cstv_ptop_8)
-         if(k.ne.1) write( Lun_out, *) hyb(k),hyb(k)-hyb(k-1)
+         if(k.ne.1.and.Ptopo_myproc.eq.0) write( Lun_out, *) hyb(k),hyb(k)-hyb(k-1)
       enddo
 *
 *     denormalize
@@ -327,7 +329,7 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
       Grd_yl=Grd_y0 + (Grd_nj -1) * Grd_dy
       if ( (Grd_x0.lt.  0.).or.(Grd_y0.lt.-90.).or.
      $     (Grd_xl.gt.360.).or.(Grd_yl.gt. 90.) ) then
-          write (Lun_out,9600) Grd_x0,Grd_y0,Grd_xl,Grd_yl
+          if (Ptopo_myproc.eq.0) write (Lun_out,9600) Grd_x0,Grd_y0,Grd_xl,Grd_yl
           return
        endif
       Grd_dxmax=Grd_xl
@@ -338,10 +340,7 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
       G_halox = min(G_halox,Grd_ni-1)
       G_haloy = G_halox
 	  
-      do i=1,Tr3d_userntr
-       Tr3d_username_S(i)="MTN"
-       Tr3d_usersval(i)= 0.
-      enddo
+      Tr3d_userntr = 0
 *
       mtn_cfg = 1
 *

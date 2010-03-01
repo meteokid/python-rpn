@@ -47,6 +47,7 @@
 * v4_03 - Tanguay M.        - Bugfix for calculation of cy_8 for vert wind
 * v4_04 - Plante A.         - Diffuse zdot like in hzd, w only if non hydro
 * v4_05 - Plante A.         - Diffuse w.
+* v4_10 - Tanguay M.        - Replace tmean by tmean_8 as in GEM333
 *
 *object
 *     The diffusion coefficients are (Vspng_coef*Cstv_dt_8) for the
@@ -77,7 +78,7 @@
       parameter(  TWO_8  = 2.0 )
       parameter(invp0t_8 = .00001d0)
 *
-      real tmean(l_nj,Nk)
+      real*8 tmean_8(l_nj,Nk)
       real*8, dimension (trp_12emax*G_ni*Vspng_nk) :: 
      $                                          aix_8,bix_8,cix_8,dix_8
       real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
@@ -101,7 +102,7 @@
 *     Substract the mean for the zonal component if wanted
 *
       if (Vspng_zmean_L)
-     $     call vspng_zmean (F_u,F_u,tmean,DIST_DIM,Nk,.true.)
+     $     call vspng_zmean (F_u,F_u,tmean_8,DIST_DIM,Nk,.true.)
 *     
       do j = 1, l_nj+1
          cy_8(j) = G_yg_8(l_j0+j-1)
@@ -136,7 +137,7 @@
 *     Add back the mean for the zonal component
 *     
       if (Vspng_zmean_L)
-     $     call vspng_zmean (F_u,F_u,tmean,DIST_DIM,Nk,.false.)
+     $     call vspng_zmean (F_u,F_u,tmean_8,DIST_DIM,Nk,.false.)
 *     
       do j = 1, l_nj+1
          cy_8(j) = G_yg_8(l_j0+j-1)

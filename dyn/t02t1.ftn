@@ -19,7 +19,7 @@
 *
       subroutine t02t1
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Michel Roch - rpn - nov 1993
@@ -29,6 +29,7 @@
 * v2_30 - Edouard  S.       - remove pi' at the top
 * v2_31 - Desgagne M.       - remove treatment of HU and QC and 
 *                             re-introduce tracers
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *     Associate the variables at time t1 to the space on disk and memory
@@ -38,29 +39,42 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
 *
+      character(len=8) , dimension(2), parameter :: ut_list  = (/ 'UT0', 'UT1' /)
+      character(len=8) , dimension(2), parameter :: vt_list  = (/ 'VT0', 'VT1' /)
+      character(len=8) , dimension(2), parameter :: wt_list  = (/ 'WT0', 'WT1' /)
+      character(len=8) , dimension(2), parameter :: tt_list  = (/ 'TT0', 'TT1' /)
+      character(len=8) , dimension(2), parameter :: zdt_list = (/ 'ZDT0', 'ZDT1' /)
+      character(len=8) , dimension(2), parameter :: st_list  = (/ 'ST0', 'ST1' /)
+      character(len=8) , dimension(2), parameter :: qt_list  = (/ 'QT0', 'QT1' /)
+      character(len=8) , dimension(2) :: tr_list
       integer i
 **
 *     ---------------------------------------------------------------
 *      
-      call shuffle(vmmk_ut1   ,vmmk_ut0   ,vmmk_ut1_s)
-      call shuffle(vmmk_vt1   ,vmmk_vt0   ,vmmk_vt1_s)
-      call shuffle(vmmk_wt1   ,vmmk_wt0   ,vmmk_wt1_s)
-      call shuffle(vmmk_tt1   ,vmmk_tt0   ,vmmk_tt1_s)
-      call shuffle(vmmk_zdt1 ,vmmk_zdt0 ,vmmk_zdt1_s)
-      call shuffle(vmmk_st1   ,vmmk_st0   ,vmmk_st1_s)
+      gmmstat = gmm_shuffle( ut_list)
+      gmmstat = gmm_shuffle( vt_list)
+      gmmstat = gmm_shuffle( wt_list)
+      gmmstat = gmm_shuffle( tt_list)
+      gmmstat = gmm_shuffle(zdt_list)
+      gmmstat = gmm_shuffle( st_list)
 *
       if (.not. Schm_hydro_L) then
-         call shuffle(vmmk_qt1,vmmk_qt0,vmmk_qt1_s)
+         gmmstat = gmm_shuffle(qt_list)
       endif
-      if ( Tr3d_ntr .gt. 0 ) then
-         call shuffle(vmmk_trt1  ,vmmk_trt0  ,vmmk_trt1_s)
-      endif
+*
+      do i=1,Tr3d_ntr
+         tr_list(1) = 'TR/'//trim(Tr3d_name_S(i))//':M'
+         tr_list(2) = 'TR/'//trim(Tr3d_name_S(i))//':P'
+         gmmstat = gmm_shuffle(tr_list)
+      end do
 *
       return
       end

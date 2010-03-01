@@ -29,6 +29,8 @@
 * v3_00 - Desgagne/Lee      - initial version
 * v3_20 - Lee V.            - shorten length of vmmname for zd
 * v3_30 - Lee V.            - remove some VMM variables
+* v4_05 - Lepine M.         - VMM replacement with GMM
+* v4_10 - Tanguay M.        - Adjust digital filter when LAM
 *object
 *	This subroutine initializes the commons containing the
 *	keys used by the Virtual Memory Manager to identify the
@@ -38,74 +40,120 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "nest.cdk" 
 #include "tr3d.cdk"
 #include "schm.cdk"
 #include "lam.cdk"
+#include "init.cdk"
 *
-*modules
-      integer vmmcre
-      external vmmcre
-      character*80 ptath
+      character*16 tr_name
       integer i
-*
+      real, pointer, dimension (:,:,:) :: tr
 **
-*
 *     ---------------------------------------------------------------
 *
       if (Lun_out.gt.0) write (Lun_out,1000)
 *
-      COMMON_INIT(nest,-100)
-*
 *	Assign the names of the variables
 *
-      VMM_NAM(nest_u   ) = 'NEST_U'
-      VMM_NAM(nest_v   ) = 'NEST_V'
-      VMM_NAM(nest_t   ) = 'NEST_T'
-      VMM_NAM(nest_zd  ) = 'NEST_ZD'
-      VMM_NAM(nest_w   ) = 'NEST_W'
-      VMM_NAM(nest_s   ) = 'NEST_S'
-      VMM_NAM(nest_q   ) = 'NEST_Q'
-      VMM_NAM(nest_tr  ) = 'NEST_TR'
-      VMM_NAM(nest_uf  ) = 'NEST_UF'
-      VMM_NAM(nest_vf  ) = 'NEST_VF'
-      VMM_NAM(nest_tf  ) = 'NEST_TF'
-      VMM_NAM(nest_zdf ) = 'NEST_ZDF'
-      VMM_NAM(nest_wf  ) = 'NEST_WF'
-      VMM_NAM(nest_sf  ) = 'NEST_SF'
-      VMM_NAM(nest_qf  ) = 'NEST_QF'
-      VMM_NAM(nest_trf ) = 'NEST_TRF'
+      gmmk_nest_u_s  = 'NEST_U'
+      gmmk_nest_v_s  = 'NEST_V'
+      gmmk_nest_t_s  = 'NEST_T'
+      gmmk_nest_zd_s = 'NEST_ZD'
+      gmmk_nest_w_s  = 'NEST_W'
+      gmmk_nest_s_s  = 'NEST_S'
+      gmmk_nest_q_s  = 'NEST_Q'
 *
-*  Set the attributes of the variables
+      gmmk_nest_uf_s = 'NEST_UF'
+      gmmk_nest_vf_s = 'NEST_VF'
+      gmmk_nest_tf_s = 'NEST_TF'
+      gmmk_nest_zdf_s= 'NEST_ZDF'
+      gmmk_nest_wf_s = 'NEST_WF'
+      gmmk_nest_sf_s = 'NEST_SF'
+      gmmk_nest_qf_s = 'NEST_QF'
 *
-      ptath='SAVE=Y,CL=1,W=5,INIT=0,MUSTEXIST'
+      nullify(nest_u ,nest_v ,nest_w ,nest_t ,nest_zd ,nest_s ,nest_q )
+      nullify(nest_uf,nest_vf,nest_wf,nest_tf,nest_zdf,nest_sf,nest_qf)
 *
-      VMM_CREATE(nest_u   , LARRAY2D*(l_nk+1), 1, ptath)
-      VMM_CREATE(nest_v   , LARRAY2D*(l_nk+1), 1, ptath)
-      VMM_CREATE(nest_w, LARRAY2D*(l_nk+1), 1, ptath)
-      VMM_CREATE(nest_t   , LARRAY2D*(l_nk+2), 1, ptath)
-      VMM_CREATE(nest_zd  , LARRAY2D*(l_nk+1), 1, ptath)
-      VMM_CREATE(nest_s   , LARRAY2D, 1, ptath)
+      gmmstat = gmm_create(gmmk_nest_u_s, nest_u, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_u )'
+      gmmstat = gmm_create(gmmk_nest_v_s, nest_v, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_v )'
+      gmmstat = gmm_create(gmmk_nest_w_s, nest_w, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_w )'
+      gmmstat = gmm_create(gmmk_nest_t_s, nest_t, meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_t )'
+      gmmstat = gmm_create(gmmk_nest_zd_s,nest_zd,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_zd)'
+      gmmstat = gmm_create(gmmk_nest_s_s, nest_s, meta2d    ,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_s )'
+*
       if (.not. Lam_ctebcs_L) then
-         VMM_CREATE(nest_uf   , LARRAY2D*(l_nk+1), 1, ptath)
-         VMM_CREATE(nest_vf   , LARRAY2D*(l_nk+1), 1, ptath)
-         VMM_CREATE(nest_wf, LARRAY2D*(l_nk+1), 1, ptath)
-         VMM_CREATE(nest_tf   , LARRAY2D*(l_nk+2), 1, ptath)
-         VMM_CREATE(nest_zdf  , LARRAY2D*(l_nk+1), 1, ptath)
-         VMM_CREATE(nest_sf   , LARRAY2D, 1, ptath)
+         gmmstat = gmm_create(gmmk_nest_uf_s, nest_uf, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_uf )'
+         gmmstat = gmm_create(gmmk_nest_vf_s, nest_vf, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_vf )'
+         gmmstat = gmm_create(gmmk_nest_wf_s, nest_wf, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_wf )'
+         gmmstat = gmm_create(gmmk_nest_tf_s, nest_tf, meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_tf )'
+         gmmstat = gmm_create(gmmk_nest_zdf_s,nest_zdf,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_zdf)'
+         gmmstat = gmm_create(gmmk_nest_sf_s, nest_sf, meta2d    ,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_sf )'
       endif
+*
       if (.not. Schm_hydro_L) then
-         VMM_CREATE(nest_q, LARRAY2D*(l_nk+2), 1, ptath)
+         gmmstat = gmm_create(gmmk_nest_q_s,nest_q,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_q)'
          if (.not. Lam_ctebcs_L) then
-            VMM_CREATE(nest_qf, LARRAY2D*(l_nk+2), 1, ptath)
+            gmmstat = gmm_create(gmmk_nest_qf_s,nest_qf,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+            if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_qf)'
          endif
       endif
-      if ( Tr3d_ntr .gt. 0 ) then
-         VMM_CREATE(nest_tr  , LARRAY2D*(l_nk+2), Tr3d_ntr, ptath)
-         if (.not. Lam_ctebcs_L)
-     %   VMM_CREATE(nest_trf  , LARRAY2D*(l_nk+2), Tr3d_ntr, ptath)
+*
+      do i=1,Tr3d_ntr
+         tr_name = Tr3d_name_S(i)
+         nullify(tr)
+         gmmstat = gmm_create('NEST/'//trim(tr_name)//':C',tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         nullify(tr)
+         gmmstat = gmm_create('NEST/'//trim(tr_name)//':F',tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      end do
+*
+      if (G_lam.and.Init_balgm_L) then
+         gmmk_nest_u2_s = 'NEST_U2'
+         gmmk_nest_v2_s = 'NEST_V2'
+         gmmk_nest_t2_s = 'NEST_T2'
+         gmmk_nest_zd2_s= 'NEST_ZD2'
+         gmmk_nest_w2_s = 'NEST_W2'
+         gmmk_nest_s2_s = 'NEST_S2'
+         gmmk_nest_q2_s = 'NEST_Q2'
+         nullify (nest_u2,nest_v2,nest_w2,nest_t2,nest_zd2,nest_s2,nest_q2)
+         gmmstat = gmm_create(gmmk_nest_u2_s, nest_u2, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_u2 )'
+         gmmstat = gmm_create(gmmk_nest_v2_s, nest_v2, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_v2 )'
+         gmmstat = gmm_create(gmmk_nest_w2_s, nest_w2, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_w2 )'
+         gmmstat = gmm_create(gmmk_nest_t2_s, nest_t2, meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_t2 )'
+         gmmstat = gmm_create(gmmk_nest_zd2_s,nest_zd2,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_zd2)'
+         gmmstat = gmm_create(gmmk_nest_s2_s, nest_s2, meta2d    ,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_s2 )'
+         if (.not. Schm_hydro_L) then 
+            gmmstat = gmm_create(gmmk_nest_q2_s,nest_q2,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+            if (GMM_IS_ERROR(gmmstat)) print *,'set_nest ERROR at gmm_create(nest_q2)'
+         endif
+         do i=1,Tr3d_ntr
+            tr_name = Tr3d_name_S(i)
+            nullify(tr)
+            gmmstat = gmm_create('NEST/'//trim(tr_name)//':S',tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         end do
       endif
 *
  1000 format(

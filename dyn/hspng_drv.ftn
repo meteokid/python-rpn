@@ -19,7 +19,7 @@
 *
       subroutine hspng_drv ( F_u, F_v, F_zd, F_w, DIST_DIM, Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real     F_u(DIST_SHAPE,Nk  ) , F_v(DIST_SHAPE,Nk  ),

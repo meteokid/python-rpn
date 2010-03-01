@@ -16,6 +16,7 @@
 ***s/r adw_trajsp - improves estimates of upwind positions
 *
 #include "model_macros_f.h"
+#include "constants.h"
 *
       subroutine adw_trajsp ( F_lon, F_lat, F_x, F_y, F_z,
      %                        F_u, F_v, F_dt,i0,in,j0,jn)
@@ -53,9 +54,12 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
+!      integer l_ni, l_nj, l_nk
 #include "adw.cdk"
-#include "dcst.cdk"
+!      DCL_DYNVAR(Adw, cx2d_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw, sx2d_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw, cy2d_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw, sy2d_8,    real*8 , (*))
 ************************************************************************
       integer n, ij, nij,vnij, i,j,k
 *
@@ -71,7 +75,7 @@
       nij  = l_ni*l_nj
       vnij = (in-i0+1)*(jn-j0+1)
 *
-      r2pi_8 = two * Dcst_pi_8
+      r2pi_8 = two * CONST_PI_8
 ************************************************************************
 *
 C     call tmg_start ( 33, 'adw_trajsp' )

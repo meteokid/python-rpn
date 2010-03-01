@@ -17,7 +17,7 @@
 *
       subroutine ngfft( F_n )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_n
 *

@@ -28,6 +28,7 @@
 * v3_30 - Desgagne M.        - initial version
 * v3_31 - Lee V.             - setup only for LAM
 * v4_05 - Plante A.          - top nesting
+* v4_10 - Tanguay M.         - Adjust digital filter when LAM
 *
 *object
 *
@@ -42,8 +43,9 @@
 #include "glb_pil.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
+#include "init.cdk"
 *
-      integer err, bcs_sz1,nvar
+      integer err, bcs_sz1,nvar,nvar2
 *
 *----------------------------------------------------------------------
 *
@@ -156,6 +158,39 @@ c     print *,'dimxe=',dimxe,' dimye=',dimye
       endif
 *
       call bcs_did (G_ni,G_nj)
+*
+*     --------------------------------
+      if (G_lam.and.Init_balgm_L) then
+*     --------------------------------
+*
+      nvar2= 6 
+      if (.not. Schm_hydro_L) nvar2= nvar2+1
+      if (Tr3d_ntr.gt.0) nvar2= nvar2+Tr3d_ntr
+*
+      BCS_siz_tot2 = nvar2*bcs_sz1
+*
+      allocate (BCS_values2(BCS_siz_tot2))
+*
+      pbcsu2  = loc (BCS_values2(             1))
+      pbcsv2  = loc (BCS_values2( bcs_sz1   + 1))
+      pbcst2  = loc (BCS_values2( bcs_sz1*2 + 1))
+      pbcszd2 = loc (BCS_values2( bcs_sz1*3 + 1))
+      pbcss2  = loc (BCS_values2( bcs_sz1*4 + 1))
+      pbcsw2  = loc (BCS_values2( bcs_sz1*5 + 1))
+      nvar2=5
+*
+      if (.not. Schm_hydro_L) then
+         pbcsq2 = loc (BCS_values2( bcs_sz1*(nvar2+1) + 1))
+         nvar2=6
+      endif
+*
+      if (Tr3d_ntr.gt.0) then
+         pbcstr2 = loc (BCS_values2( bcs_sz1*(nvar2+1) + 1))
+      endif
+*
+*     -----
+      endif
+*     -----
 *
 *----------------------------------------------------------------------
       return

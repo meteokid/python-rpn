@@ -97,9 +97,23 @@
 * 
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
+!      integer G_ni, G_nj
+!      integer l_ni, l_nj
 #include "adw.cdk"
+c$$$      #include "type.cdk"
+c$$$      integer            Adw_nit, Adw_njt
+c$$$      real*8             Adw_ovdx_8
+c$$$      type (vertical_i)  Adw_lcz
+c$$$      type (vertical_8)  Adw_bsz_8
+c$$$      type (vertical_8)  Adw_diz_8
+c$$$      type (vertical_8)  Adw_dbz_8
+c$$$      DCL_DYNVAR(Adw,    lcx,    integer, (*))
+c$$$      DCL_DYNVAR(Adw,    lcy,    integer, (*))
+c$$$      real*8             Adw_x00_8
+c$$$      !... lots more... TODO: finish inventory or keep adw.cdk
 #include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8  
 ************************************************************************
       integer n, ii, jj, kk, ij, nijag, nij,i, j, k
       real*8  prd, prdt, p_z00_8

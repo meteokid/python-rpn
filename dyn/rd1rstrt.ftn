@@ -76,7 +76,7 @@ CCC   real, dimension (:), allocatable :: BCS_glb
 *
       if (G_lam) then
          if (Lun_out.gt.0) write(6,1000)
-         call gem_stop("rd1rstrt",-111)
+         call handle_error0('rd1rstrt',"rd1rstrt",-111)
       end if
 *
       prows   = 0
@@ -189,7 +189,7 @@ C           name and the right number of levels
       endif
 *
  100  call RPN_COMM_bcast (check_flag,1,"MPI_INTEGER",0,"grid",err)
-      call gem_stop ('RD1RSTRT- ABORT -',check_flag)
+      call handle_error0('rd1rstrt','RD1RSTRT- ABORT -',check_flag)
 *
       if (Schm_phyms_L) then
 *
@@ -316,7 +316,7 @@ C        and the right number of levels
       end if
 *
  200  call RPN_COMM_bcast (check_flag,1,"MPI_INTEGER",0,"grid",err)
-      call gem_stop ('RD1RSTRT- ABORT -',check_flag)
+      call handle_error0('rd1rstrt','RD1RSTRT- ABORT -',check_flag)
 *
       if (Schm_chems_L) then
 *

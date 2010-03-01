@@ -58,10 +58,6 @@
 *               ----------------------------------------------------
       call set_world_view ()
 *
-*C              Allocate a bloc of central memory
-*               ---------------------------------
-      call set_mem ()
-*
 *C             Initialize geometry of the model
 *              --------------------------------
       call set_geom()

@@ -48,7 +48,7 @@
       namelist /bubble_cfgs/ Schm_itnlh, Schm_itraj, Schm_hdlast_L
       namelist /bubble_cfgs/ Schm_adcub_L, Schm_psadj_L
       namelist /bubble_cfgs/ Adw_nkbz_L, Adw_exdg_L, Adw_mono_L
-      namelist /bubble_cfgs/ Adw_interp_type_S, Adw_ckbd_L, Adw_halox
+      namelist /bubble_cfgs/ Adw_ckbd_L, Adw_halox
       namelist /bubble_cfgs/ Adw_haloy, Adw_trunc_traj_L, Adw_nosetint_L
       namelist /bubble_cfgs/ Cstv_dt_8, Cstv_ptop_8, Cstv_tstr_8
       namelist /bubble_cfgs/ Hzd_type_S, Hzd_pwr, Hzd_lnr
@@ -78,7 +78,7 @@
       namelist /mtn_cfgs/ Schm_moist_L, Schm_zdotlag_L
       namelist /mtn_cfgs/ Schm_zdotMid_L
       namelist /mtn_cfgs/ Adw_nkbz_L, Adw_exdg_L, Adw_mono_L
-      namelist /mtn_cfgs/ Adw_interp_type_S, Adw_ckbd_L, Adw_halox
+      namelist /mtn_cfgs/ Adw_ckbd_L, Adw_halox
       namelist /mtn_cfgs/ Adw_haloy, Adw_trunc_traj_L
       namelist /mtn_cfgs/ Adw_nosetint_L,Schm_autobar_L
       namelist /mtn_cfgs/ Cstv_dt_8

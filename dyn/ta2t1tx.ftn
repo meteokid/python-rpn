@@ -32,63 +32,54 @@
 *                             re-introduce tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Lee V.            - remove TR2D
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *	
 *arguments
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
-#include "vtx.cdk"
-#include "nest.cdk"
 #include "tr3d.cdk"
 #include "itf_phy_buses.cdk"
 *
-*modules
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-*
-      integer err, key(28), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
-     $        keya(Tr3d_ntr), nvar
-      real tr1,tra
-      pointer (patr1, tr1(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
-      real    busper(max(1,p_bper_siz)), buf(l_ni,G_nk)
-      real, allocatable, dimension(:,:,:,:) :: tr2,tr3
+      integer i,j,k,n
+      real, pointer, dimension(:,:,:) :: tr,tra
 **
 *     ---------------------------------------------------------------
 *
 *C       1.    Fetch variables ta into t1 and tx
 *              ---------------------------------
 *
-      key(1)  = VMM_KEY(uta  )
-      key(2)  = VMM_KEY(ut1  )
-      key(3)  = VMM_KEY(vta  )
-      key(4)  = VMM_KEY(vt1  )
-      key(5)  = VMM_KEY(wt1  )
-      key(6)  = VMM_KEY(wta  )
-      key(7)  = VMM_KEY(tta  )
-      key(8)  = VMM_KEY(tt1  )
-      key(9)  = VMM_KEY(zdta)
-      key(10) = VMM_KEY(zdt1)
-      key(11) = VMM_KEY(sta  )
-      key(12) = VMM_KEY(st1  )
-*
-      err = vmmlod(key,12)
-      err = VMM_GET_VAR(uta  )
-      err = VMM_GET_VAR(ut1  )
-      err = VMM_GET_VAR(vta  )
-      err = VMM_GET_VAR(vt1  )
-      err = VMM_GET_VAR(wta  )
-      err = VMM_GET_VAR(wt1  )
-      err = VMM_GET_VAR(tta  )
-      err = VMM_GET_VAR(tt1  )
-      err = VMM_GET_VAR(zdta)
-      err = VMM_GET_VAR(zdt1)
-      err = VMM_GET_VAR(sta  )
-      err = VMM_GET_VAR(st1  )
+      gmmstat = gmm_get(gmmk_uta_s,uta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(uta)'
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vta_s,vta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(vta)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_wta_s,wta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(wta)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(wt1)'
+      gmmstat = gmm_get(gmmk_tta_s,tta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(tta)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_zdta_s,zdta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(zdta)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_sta_s,sta,tmp_meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(sta)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(st1)'
 *
       do k=1,l_nk
       do j= 1, l_nj
@@ -115,19 +106,16 @@
       enddo
       enddo
 *
-      err = vmmuld(-1,0)
-*
 ********************************************************************
 *     Non-hydrostatic model fields
 ********************************************************************
 *
       if ( .not. Schm_hydro_L ) then
 *
-         key(1) = VMM_KEY(qta )
-         key(2) = VMM_KEY(qt1 )
-         err = vmmlod(key,2)
-         err = VMM_GET_VAR(qta )
-         err = VMM_GET_VAR(qt1 )
+         gmmstat = gmm_get(gmmk_qta_s,qta,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(qta)'
+         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
 *
          do k=0,l_nk+1
          do j= 1, l_nj 
@@ -137,35 +125,20 @@
          enddo
          enddo
 *
-         err = vmmuld(-1,0)
-*
       endif
 *
-      key1_ = VMM_KEY (trt1)
-      keya_ = VMM_KEY (trta)
       do n=1,Tr3d_ntr
-         key1(n) = key1_ + n
-         keya(n) = keya_ + n
-      end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1,Tr3d_ntr)  
-         err = vmmlod(keya,Tr3d_ntr)  
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),patr1,tr1)
-            err = vmmget(keya(n),patra,tra)
-            do k=1,G_nk+1
-            do j=1,l_nj
-            do i=1,l_ni
-               tr1(i,j,k) = tra(i,j,k)
-            end do
-            end do
-            end do
+         gmmstat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, meta3d_nk2)
+         gmmstat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , meta3d_nk2)
+         do k=1,G_nk+1
+         do j=1,l_nj
+         do i=1,l_ni
+            tr(i,j,k) = tra(i,j,k)
          end do
-         err = vmmuld(key1,Tr3d_ntr)
-         err = vmmuld(keya,Tr3d_ntr)
-      endif
-*   
-*
+         end do
+         end do
+      end do
+
 *******************************************************************
 *     Physics fields
 *******************************************************************
@@ -175,257 +148,6 @@
          deallocate (Phy_busper3D_digf)
       endif
 *
-      if (G_lam ) then
-*
-         if (north+south+west+east.lt.1) return
-*     
-         key(1 )=VMM_KEY(nest_u)
-         key(2 )=VMM_KEY(nest_v)
-         key(3 )=VMM_KEY(nest_w)
-         key(4 )=VMM_KEY(nest_t)
-         key(5 )=VMM_KEY(nest_zd)
-         key(6 )=VMM_KEY(nest_s)
-         key(7 )=VMM_KEY(uta)
-         key(8 )=VMM_KEY(vta)
-         key(9 )=VMM_KEY(wta)
-         key(10)=VMM_KEY(tta)
-         key(11)=VMM_KEY(zdta)
-         key(12)=VMM_KEY(sta)
-         nvar = 12
-*     
-         if (.not.Schm_hydro_L) then
-            key(13)=VMM_KEY(nest_q)
-            key(14)=VMM_KEY(qta)
-            nvar = 14
-         endif
-*     
-         err = vmmlod(key,nvar)
-         err = VMM_GET_VAR(nest_u)
-         err = VMM_GET_VAR(nest_v)
-         err = VMM_GET_VAR(nest_w)
-         err = VMM_GET_VAR(nest_t)
-         err = VMM_GET_VAR(nest_zd)
-         err = VMM_GET_VAR(nest_s)
-         err = VMM_GET_VAR(uta)
-         err = VMM_GET_VAR(vta)
-         err = VMM_GET_VAR(wta)
-         err = VMM_GET_VAR(tta)
-         err = VMM_GET_VAR(zdta)
-         err = VMM_GET_VAR(sta)
-         if (.not.Schm_hydro_L) then
-            err = VMM_GET_VAR(nest_q)
-            err = VMM_GET_VAR(qta)
-         endif
-*
-         if (l_north) then
-            do k=1,G_nk
-               do j=l_nj-pil_n+1,l_nj
-               do i=1,l_niu
-                  nest_u(i,j,k) = uta(i,j,k)
-               end do
-               end do
-               do j=l_nj-pil_n,l_njv
-               do i=1,l_ni
-                  nest_v(i,j,k) = vta(i,j,k)
-               end do
-               end do
-            end do
-            do k=1,G_nk+1
-               do j=l_nj-pil_n+1,l_nj
-               do i=1,l_ni
-                  nest_w  (i,j,k) = wta  (i,j,k)
-                  nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_zd (i,j,k) = zdta (i,j,k)
-               end do
-               end do
-            end do
-            do j=l_nj-pil_n+1,l_nj
-            do i=1,l_ni
-               nest_s(i,j) = sta(i,j)
-            end do
-            end do
-            if (.not. Schm_hydro_L) then
-               do k=0,G_nk+1
-               do j=l_nj-pil_n+1,l_nj
-               do i=1,l_ni
-                  nest_q(i,j,k) = qta(i,j,k)
-               end do
-               end do
-               end do
-            endif
-         endif
-*
-         if (l_east) then
-            do k=1,G_nk
-               do j=1,l_nj
-               do i=l_ni-pil_e,l_niu
-                  nest_u(i,j,k) = uta(i,j,k)
-               end do
-               end do
-               do j=1,l_njv
-               do i=l_ni-pil_e+1,l_ni
-                  nest_v(i,j,k) = vta(i,j,k)
-               end do
-               end do
-            end do
-            do k=1,G_nk+1
-               do j=1,l_nj
-               do i=l_ni-pil_e+1,l_ni
-                  nest_w  (i,j,k) = wta  (i,j,k)
-                  nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_zd (i,j,k) = zdta (i,j,k)
-               end do
-               end do
-            end do
- 
-            do j=1,l_nj
-            do i=l_ni-pil_e+1,l_ni
-               nest_s(i,j) = sta(i,j)
-            end do
-            end do
-            if (.not. Schm_hydro_L) then
-               do k=0,G_nk+1
-               do j=1,l_nj
-               do i=l_ni-pil_e+1,l_ni
-                  nest_q(i,j,k) = qta(i,j,k)
-               end do
-               end do
-               end do
-             endif
-         endif
-*
-         if (l_south) then
-            do k=1,G_nk
-               do j=1,pil_s
-               do i=1,l_ni
-                  nest_v  (i,j,k) = vta  (i,j,k)
-               end do
-               end do
-               do j=1,pil_s
-               do i=1,l_niu
-                  nest_u(i,j,k) = uta(i,j,k)
-               end do
-               end do
-            end do
-            do k=1,G_nk+1
-               do j=1,pil_s
-               do i=1,l_ni
-                  nest_w  (i,j,k) = wta  (i,j,k)
-                  nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_zd (i,j,k) = zdta (i,j,k)
-               end do
-               end do
-            end do
-            do j=1,pil_s
-            do i=1,l_ni
-               nest_s(i,j) = sta(i,j)
-            end do
-            end do
-            if (.not. Schm_hydro_L) then
-               do k=0,G_nk+1
-               do j=1,pil_s
-               do i=1,l_ni
-                  nest_q(i,j,k) = qta(i,j,k)
-               end do
-               end do
-               end do
-           endif
-         endif
-*
-         if (l_west) then
-            do k=1,G_nk
-               do j=1,l_nj
-               do i=1,pil_w
-                  nest_u  (i,j,k) = uta  (i,j,k)
-               end do
-               end do
-               do j=1,l_njv
-               do i=1,pil_w
-                  nest_v(i,j,k) = vta(i,j,k)
-               end do
-               end do
-            end do
-            do k=1,G_nk+1
-               do j=1,l_nj
-               do i=1,pil_w
-                  nest_w  (i,j,k) = wta  (i,j,k)
-                  nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_zd (i,j,k) = zdta (i,j,k)
-               end do
-               end do
-            end do
-            do j=1,l_nj
-            do i=1,pil_w
-               nest_s(i,j) = sta(i,j)
-            end do
-            end do
-            if (.not. Schm_hydro_L) then
-               do k=0,G_nk+1
-               do j=1,l_nj
-               do i=1,pil_w
-                  nest_q(i,j,k) = qta(i,j,k)
-               end do
-               end do
-               end do
-            endif
-         endif
-*
-         err = vmmuld(-1,0)
-*
-         key1_ = VMM_KEY (nest_tr)
-         keya_ = VMM_KEY (trta)
-         do n=1,Tr3d_ntr
-            key1(n) = key1_ + n
-            keya(n) = keya_ + n
-         end do
-         if (Tr3d_ntr.gt.0) then
-            err = vmmlod(key1,Tr3d_ntr)
-            err = vmmlod(keya,Tr3d_ntr)
-            do n=1,Tr3d_ntr
-               err = vmmget(key1(n),patr1,tr1)
-               err = vmmget(keya(n),patra,tra)
-               if (l_north) then
-                  do k=1,G_nk+1
-                  do j=l_nj-pil_n+1,l_nj
-                  do i=1,l_ni
-                     tr1(i,j,k) = tra(i,j,k)
-                  enddo
-                  enddo
-                  enddo
-               endif
-               if (l_east) then
-                  do k=1,G_nk+1
-                  do j=1,l_nj
-                  do i=l_ni-pil_e+1,l_ni
-                     tr1(i,j,k) = tra(i,j,k)
-                  enddo
-                  enddo
-                  enddo
-               endif
-               if (l_south) then
-                  do k=1,G_nk+1
-                  do j=1,pil_s
-                  do i=1,l_ni
-                     tr1(i,j,k) = tra(i,j,k)
-                  enddo
-                  enddo
-                  enddo
-               endif
-               if (l_west) then
-                  do k=1,G_nk+1
-                  do j=1,l_nj
-                  do i=1,pil_w
-                     tr1(i,j,k) = tra(i,j,k)
-                  enddo
-                  enddo
-                  enddo
-               endif
-            enddo
-            err = vmmuld(key1,Tr3d_ntr)
-            err = vmmuld(keya,Tr3d_ntr)
-         endif
-*
-      endif
 *     ---------------------------------------------------------------
       return
       end

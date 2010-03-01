@@ -1,0 +1,156 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+!
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+!
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r rhs_tr - Equivalent to rhs for TRAJECTORY
+*
+#include "model_macros_f.h"
+*
+      subroutine rhs_tr()
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - replace xfis by topo
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d
+* v3_00 - Tanguay M.        - adapt to restructured rhs
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+*
+*object
+***********************************************************************
+* See GEMergo4.doc
+***********************************************************************
+*
+*arguments
+*        None
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+#include "orh_m.cdk"
+#include "p_geof.cdk" 
+#include "rhsc_m.cdk"
+#include "vt1_m.cdk" 
+#include "vtx_m.cdk" 
+#include "nest_m.cdk"
+#include "orh.cdk"
+*
+      integer i,j,k
+*
+*     __________________________________________________________________
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+      gmmstat = gmm_get(gmmk_ruw1_m_s,ruw1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(ruw1_m)'
+      gmmstat = gmm_get(gmmk_rvw1_m_s,rvw1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(rvw1_m)'
+      gmmstat = gmm_get(gmmk_ut1_m_s,ut1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(ut1_m)'
+      gmmstat = gmm_get(gmmk_vt1_m_s,vt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(vt1_m)'
+      gmmstat = gmm_get(gmmk_wt1_m_s,wt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(wt1_m)'
+      gmmstat = gmm_get(gmmk_tt1_m_s,tt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(tt1_m)'
+      gmmstat = gmm_get(gmmk_bspqtx_m_s,bspqtx_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(bspqtx_m)'
+      gmmstat = gmm_get(gmmk_st1_m_s,st1_m,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(st1_m)'
+      gmmstat = gmm_get(gmmk_zdt1_m_s,zdt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(zdt1_m)'
+      gmmstat = gmm_get(gmmk_fiptx_m_s,fiptx_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(fiptx_m)'
+      gmmstat = gmm_get(gmmk_fipt1_m_s,fipt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(fipt1_m)'
+      gmmstat = gmm_get(gmmk_orhsu_m_s,orhsu_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(orhsu_m)'
+      gmmstat = gmm_get(gmmk_orhsv_m_s,orhsv_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(orhsv_m)'
+      gmmstat = gmm_get(gmmk_orhsc_m_s,orhsc_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(orhsc_m)'
+      gmmstat = gmm_get(gmmk_orhst_m_s,orhst_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(orhst_m)'
+      gmmstat = gmm_get(gmmk_orhsf_m_s,orhsf_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(orhsf_m)'
+      if (G_lam) then
+         gmmstat = gmm_get(gmmk_rhsu_m_s,rhsu_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(rhsu_m)'
+         gmmstat = gmm_get(gmmk_rhsv_m_s,rhsv_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(rhsv_m)'
+         gmmstat = gmm_get(gmmk_nest_u_m_s,nest_u_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(nest_u_m)'
+         gmmstat = gmm_get(gmmk_nest_v_m_s,nest_v_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(nest_v_m)'
+      endif
+      if (.not. Schm_hydro_L) then
+         gmmstat = gmm_get(gmmk_mutx_m_s,mutx_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(mutx_m)'
+         gmmstat = gmm_get(gmmk_orhsw_m_s,orhsw_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(orhsw_m)'
+         gmmstat = gmm_get(gmmk_qt1_m_s,qt1_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(qt1_m)'
+      endif
+*
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(topo)'
+*
+*     Perform the computation in the first 
+*     cycle of Crank-Nicholson procedure only
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+      call diag_var (bspqtx_m, mutx_m, st1_m, qt1_m, 
+     %               1,l_ni,1,l_nj,l_nk)
+*
+      call diag_fip (fiptx_m, st1_m, tt1_m, topo, 
+     %               1,l_ni,1,l_nj,l_nk)
+*
+!$omp parallel
+!$omp do
+      do k=0,G_nk+1
+         do j=1,l_nj
+         do i=1,l_ni
+            fipt1_m(i,j,k)=fiptx_m(i,j,k)
+         end do
+         end do
+      end do
+!$omp enddo
+!$omp end parallel
+*
+      if ( Orh_icn .eq. Schm_itcn ) then
+*
+      call rhsp_2  ( orhsu_m,  orhsv_m, orhsc_m, orhst_m, orhsw_m,  orhsf_m,
+     %               ruw1_m,   rvw1_m,  rhsu_m,  rhsv_m,  nest_u_m, nest_v_m,
+     %               ut1_m,    vt1_m,   wt1_m,   tt1_m,   st1_m,    zdt1_m,
+     %               bspqtx_m, fiptx_m, mutx_m,
+     %               LDIST_DIM,l_nk  )
+*
+      endif
+*
+1000  format(3X,'TRAJ of COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS_TR)')
+*
+*     __________________________________________________________________
+*
+      return
+      end

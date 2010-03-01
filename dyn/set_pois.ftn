@@ -22,7 +22,7 @@
 *
       subroutine set_pois ( F_eval_8,F_levec_8,F_evec_8,F_npts,F_dim )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_npts, F_dim
       real*8  F_eval_8(*), F_evec_8(*),F_levec_8(*)

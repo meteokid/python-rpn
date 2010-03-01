@@ -16,6 +16,7 @@
 ***s/r adw_main_1_wnd - process winds in preparation for advection
 *
 #include "model_macros_f.h"
+#include "msg.h"
 *
       subroutine adw_main_1_wnd ( F_u, F_v, F_w, F_nit, F_njt, F_nk )
 *
@@ -58,41 +59,54 @@
 *______________|_________________________________________________|_____|
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+!      type(gmm_metadata) :: meta3d
+!      integer :: gmmstat
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "type.cdk"
+!      logical G_lam, G_periodx, G_periody
+!      integer G_ni
+!      integer G_halox, G_haloy
+!      logical l_north, l_south, l_east, l_west
+!      integer l_ni, l_nj, l_niu, l_njv
+!      integer l_minx, l_maxx, l_miny, l_maxy
 #include "adw.cdk"
-#include "lun.cdk"
+!      integer adw_nic,adw_njc, adw_halox, adw_haloy
+!      real*8 adw_cy_8(),adw_cx_8(),adw_sx_8(),adw_wx_8(),adw_sy_8()
 #include "inuvl.cdk"
+!      real*8 inuvl_wxux3_8(XDIST_SHAPE,4)
+!      real*8 inuvl_wyvy3_8(YDIST_SHAPE,4)
 #include "vth.cdk"
-#include "acid.cdk"
-*
-*modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
-************************************************************************
-      integer pnerr, pnlkey1(30), pnlod
+!      real, pointer, dimension (:,:,:) :: uth,vth,zdth
+!      character(len=8) :: gmmk_uth_s, gmmk_vth_s, gmmk_zdth_s
+c$$$#include "acid.cdk"
+!      logical acid_test_l
 *
       integer i, j, k, i0, in, j0, jn, n, dest_ni
       real*8 ONE,sc
       parameter( ONE = 1.0 )
-************************************************************************
+*
+*     ---------------------------------------------------------------
+*
+      call msg(MSG_DEBUG,'PREPARE WINDS: (S/R ADW_MAIN_1_WND)')
 
-      if (Lun_debug_L) write (Lun_out,1000)
-      pnlkey1(1)  = VMM_KEY(uth)
-      pnlkey1(2)  = VMM_KEY(vth)
-      pnlkey1(3)  = VMM_KEY(zdth)
-*
-      pnerr = vmmlod(pnlkey1,3)
-*
-      pnerr = VMM_GET_VAR(uth)
-      pnerr = VMM_GET_VAR(vth)
-      pnerr = VMM_GET_VAR(zdth)
-      if (Acid_test_L)call acid_stat_adw_main_1_wnd(uth,1)
+      gmmstat = gmm_get(gmmk_uth_s,uth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) 
+     $     print *,'adw_main_1_wnd ERROR at gmm_get(uth)'
+      gmmstat = gmm_get(gmmk_vth_s,vth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) 
+     $     print *,'adw_main_1_wnd ERROR at gmm_get(vth)'
+      gmmstat = gmm_get(gmmk_zdth_s,zdth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) 
+     $     print *,'adw_main_1_wnd ERROR at gmm_get(zdth)'
+
+c$$$      if (Acid_test_L) call acid_stat_adw_main_1_wnd(uth,1)
+
 ***********************************************************************
 * Interpolate advection winds to geopotential grid
 * F_u and F_v are used as work space
 ***********************************************************************
+
       call rpn_comm_xch_halo (uth,LDIST_DIM,l_niu,l_nj, F_nk,
      %             G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo (vth,LDIST_DIM,l_ni,l_njv,F_nk,
@@ -214,7 +228,7 @@
           dest_ni=G_ni
       endif
 *
-      if (Acid_test_L)call acid_stat_adw_main_1_wnd(uth,2)
+c$$$      if (Acid_test_L)call acid_stat_adw_main_1_wnd(uth,2)
 !$omp single
       call rpn_comm_xch_halox ( uth, LDIST_DIM, l_ni, l_nj, F_nk, 
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, 1-Adw_halox, 
@@ -251,6 +265,7 @@
       endif
 !$omp end parallel
 *
- 1000  format(3X,'PREPARE WINDS: (S/R ADW_MAIN_1_WND)')
+*     ---------------------------------------------------------------
+*
       return
       end

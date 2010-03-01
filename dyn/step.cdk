@@ -22,10 +22,9 @@
 !
 !
 #endif
-      logical Step_cliptraj_L
       integer Step_total, Step_rsti, Step_bkup, Step_gstat
-      integer Step_cleanup, Step_maxcfl
+      integer Step_cleanup
 !
       common / Stepi / Step_total, Step_rsti, Step_bkup, Step_gstat
-      common / Stepi / Step_cleanup, Step_maxcfl, Step_cliptraj_L
+      common / Stepi / Step_cleanup
 !

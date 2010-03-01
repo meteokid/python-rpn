@@ -16,7 +16,7 @@
 **s/r cartall - Computes the F_lon,F_lat positions for a rotated system
 *
       subroutine cartall( F_lon,F_lat,F_xyz_8,n)
-#include "impnone.cdk"
+      implicit none
       integer n
       real*8 F_xyz_8(3,*)
       real F_lon(*),F_lat(*)

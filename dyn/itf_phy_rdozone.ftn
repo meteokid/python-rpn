@@ -77,7 +77,7 @@
 
       endif
 *
-      call gem_stop('itf_phy_rdozone',status)
+      call handle_error0('itf_phy_rdozone','itf_phy_rdozone',status)
 *
       if (Ptopo_myproc.gt.0) inbr = fstopc ('MSGLVL','SYSTEM',.false.)
 
@@ -95,7 +95,7 @@
       inbr = fstfrm (iun)
       inbr = fclos  (iun)    
 *
-      call gem_stop('rd_ozone',status)
+      call handle_error0('itf_phy_rdozone','rd_ozone',status)
 *
       inbr = fstopc ('MSGLVL','INFORM',.false.)
 

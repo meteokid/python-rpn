@@ -25,6 +25,7 @@
 *     Andre Plante from hzd_main
 *
 *revision
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *	
@@ -32,16 +33,14 @@
 *     none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
-*
-*modules
-      integer  vmmlod,vmmuld,vmmget
-      external vmmlod,vmmuld,vmmget
 *
       integer err, nlod, key1(2), i, j
       real wk0(LDIST_SHAPE), wk1(LDIST_SHAPE)
@@ -53,15 +52,10 @@
 
       if(.not.Schm_psadj_L)return
 
-      key1(1) =  VMM_KEY(st0)
-      key1(2) =  VMM_KEY(st1)
-      nlod = 2
-
-*     - - - - - - - - - - - - - - -
-      err = vmmlod(key1,nlod)
-*     - - - - - - - - - - - - - - -
-      err = VMM_GET_VAR(st0)
-      err = VMM_GET_VAR(st1)
+      gmmstat = gmm_get(gmmk_st0_s,st0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'psadj ERROR at gmm_get(st0)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'psadj ERROR at gmm_get(st1)'
 *
       if (Lun_debug_L) write(Lun_out,1001)
 *
@@ -100,8 +94,6 @@
 *
 !$omp end parallel
 *     
-      err = vmmuld(-1,0)
-*
  1001 format(/,3X,'ADJUST SURFACE PRESSURE TO FORCE MASS CONSERVATION')
 *
       return

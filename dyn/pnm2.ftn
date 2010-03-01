@@ -21,7 +21,7 @@
      %                   F_vtund, F_fiund, F_und,
      %                   DIST_DIM, Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *

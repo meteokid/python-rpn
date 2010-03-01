@@ -22,7 +22,7 @@
      $                        F_aiy_8,F_biy_8,F_ciy_8,
      $                        DIST_DIM, nke, ntrp12, ntrp22, fnjb)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, nke, ntrp12, ntrp22, fnjb
 *

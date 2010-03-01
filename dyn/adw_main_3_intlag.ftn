@@ -16,11 +16,13 @@
 ***s/r adw_main_3_intlag - Interpolation of rhs
 *
 #include "model_macros_f.h"
+#include "msg.h"
 *
-      subroutine adw_main_3_intlag ( F_u, F_v, F_w )
+      subroutine adw_main_3_intlag2(F_u, F_v, F_w, F_isStatStep)
 *
       implicit none
       real F_u(*), F_v(*), F_w(*)
+      logical F_isStatStep
 *
 *author
 *     alain patoine
@@ -41,6 +43,7 @@
 * v3_20 - Dugas B.            - correct calculation for LAM when Glb_pil gt 7
 * v3_21 - Desgagne M.         - if  Lagrange 3D, call adw_main_3_intlag
 * v4_04 - Tanguay M.          - Staggered version TL/AD
+* v4_05 - Lepine M.           - VMM replacement with GMM
 *
 *language
 *     fortran 77
@@ -60,49 +63,91 @@
 *________|_______________________________________________________|_____|
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+!      type(gmm_metadata) :: meta3d
+!      integer :: gmmstat
 #include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "ptopo.cdk"
-#include "geomg.cdk"
+!      logical G_lam
+!      logical l_north, l_south, l_east, l_west
+!      integer l_ni, l_nj, l_nk, l_niu, l_njv
+!      integer l_minx, l_maxx, l_miny, l_maxy
+!      integer pil_n,pil_s,pil_w,pil_e
 #include "orh.cdk"
-#include "lctl.cdk"
-#include "step.cdk"
-#include "lun.cdk"
+!      logical Orh_crank_L
+!      integer Orh_icn
+!      real, pointer, dimension (:,:,:) :: orhst,orhsc,orhsw,orhsf
+!      character(len=8) :: gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
 #include "schm.cdk"
-#include "offc.cdk"
+!      logical Schm_zdotlag_L,Schm_zdotMid_L,Schm_hydro_L
+!      integer Schm_itcn
 #include "cstv.cdk"
+!      real*8    Cstv_tau_8
 #include "rhsc.cdk"
+!      real, pointer, dimension (:,:,:) :: ruw1,rvw1,ruw2,rvw2
+!      real, pointer, dimension (:,:,:) :: rhst,rhsc,rhsw,rhsf
+!      character(len=8) :: gmmk_rhst_s,gmmk_rhsc_s
+!      character(len=8) :: gmmk_rhsw_s,gmmk_rhsf_s
+!      character(len=8) :: gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
 #include "v4dg.cdk"
-#include "type.cdk"
+!      integer V4dg_conf
 #include "adw.cdk"
+c$$$      logical Adw_mono_L,Adw_ckbd_L
+c$$$      integer            Adw_nit, Adw_njt
+c$$$      integer            Adw_for_n, Adw_for_s, Adw_for_a
+c$$$      integer            Adw_fro_n, Adw_fro_s, Adw_fro_a
+c$$$      integer            Adw_trunc(4)
+c$$$      DCL_DYNVAR(Adw,  capx1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,  capy1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,  capz1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,  capx2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,  capy2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,  capz2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,     n1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,     n2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   xdd1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   ydd1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   xgg1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   ygg1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   xdd2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   ydd2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   xgg2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   ygg2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,    cz1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,    cz2,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,     c1,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   wrka,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   wrkb,    real   , (*))
+c$$$      DCL_DYNVAR(Adw,   wrkc,    real   , (*))
 #include "tr3d.cdk"
+!      integer MAXTR3D
+!      parameter ( MAXTR3D = 250 )
+!      character*4 Tr3d_name_S(MAXTR3D)
+!      integer Tr3d_ntr
 #include "vt1.cdk"
-#include "vt0.cdk"
+!      real, pointer, dimension (:,:,:) :: wt1,zdt1,zz1,wup,zdup,fipt1
+!      character(len=8) :: gmmk_wt1_s,gmmk_zdt1_s,gmmk_zz1_s,gmmk_wup_s,gmmk_zdup_s,gmmk_fipt1_s
 #include "ver.cdk"
-#include "acid.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_idz_8  
+!      type (vertical_8) Ver_wp_8
+!      type (vertical_8) Ver_wm_8
+c$$$#include "acid.cdk"
+!      logical acid_test_l
 *
 *modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
 ************************************************************************
-      integer i0,in,j0,jn
-      integer pnerr, pnlkey1(30), key1(Tr3d_ntr), key0(Tr3d_ntr), 
-     $        key1_, key0_, pnlod, err, dim
 *
-      integer outside,sum_outside,ier,longueur
-*
+      integer ier,longueur
       integer n, nij, nijkt, nijkm, nijkad, cnt, unf
-      integer i,j,k, n1,n2,np 
-      integer*8 pnt_trt1(Tr3d_ntr),pnt_trt0(Tr3d_ntr)
-*      integer m, ntr2do, j2do
-      integer DIST_DIM
+      integer i,j,k, n1,n2,np,i0,j0,in,jn,dim,err
 *
       real*8 aaa
-      real tr,tr0,buf(l_ni,G_nk+1)
-      pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:) :: pos_x, pos_y, pos_z
+      real, pointer    , dimension(:,:,:) :: tr0,tr1
 *
-      if (Lun_debug_L) write (Lun_out,1000)
+      call msg(MSG_DEBUG,
+     $     'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INTLAG)')
       nij    = l_ni   *l_nj
       nijkt  = l_ni   *l_nj   *(l_nk+1)
       nijkm  = l_ni   *l_nj   * l_nk
@@ -156,24 +201,15 @@
 
       if (G_lam) then
 *
-          if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
-     $         (mod(Lctl_step,Step_gstat).eq.0) )
+          if (((.not.Orh_crank_L) .or. Orh_icn.eq.Schm_itcn) .and. F_isStatStep)
      $         call adw_cfl_lam ( pos_x, pos_y, pos_z, 
      $                            i0, in, j0, jn, l_nk,'m' )
           call adw_cliptraj( pos_x, pos_y, i0, in, j0, jn, l_nk, 'INTERP MT')
-          if ( V4dg_conf.ne.0.0 ) then
-*
-            outside = 0
-            if ( Adw_trunc(1) + Adw_trunc(2) +
-     $           Adw_trunc(3) + Adw_trunc(4) .gt. 0 ) outside = 1
-*
-            sum_outside = 0
-            call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
-     $                                             "MPI_SUM","grid",ier)
-*
-            if(sum_outside.ne.0) call gem_stop
-     $           ('ADW_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
-*
+          if (V4dg_conf .ne. 0.) then
+              err = 0
+              if ((Adw_trunc(1) + Adw_trunc(2) +
+     $             Adw_trunc(3) + Adw_trunc(4)) > 0) err = -1
+              call handle_error(err,'adw_main_3_intlag','TLM-ADJ NOT done: INCREASE HALO')
           endif
       endif
 *
@@ -181,18 +217,10 @@
       call adw_exch_1 ( Adw_n1, Adw_xgg1, Adw_xdd1, Adw_c1,
      $                  pos_x, pos_y, pos_z, l_nk )
 *
-          if ( V4dg_conf.ne.0.0 ) then
-*
-               outside = 0
-*
-               if ( Adw_fro_a .gt. 0 ) outside = 1
-*
-               sum_outside = 0
-               call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
-     $                                 "MPI_SUM","grid",ier)
-*
-               if(sum_outside.ne.0) call gem_stop ('ADW_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
-*
+          if (V4dg_conf .ne. 0.) then
+              err = 0
+              if (Adw_fro_a > 0) err = -1
+              call handle_error(err,'adw_main_3_intlag','TLM-ADJ NOT done: INCREASE HALO')
           endif
 *
       dim = max(1,Adw_fro_a)
@@ -222,39 +250,36 @@
 ***********************************************************************
 * Perform interpolation on momentum levels
 ***********************************************************************
-      pnlkey1(1) = VMM_KEY(ruw1)
-      pnlkey1(2) = VMM_KEY(rvw1)
-      pnlkey1(3) = VMM_KEY(ruw2)
-      pnlkey1(4) = VMM_KEY(rvw2)
-      pnlkey1(5) = VMM_KEY(rhsc)
-      pnlkey1(6) = VMM_KEY(orhsc)
-      pnlkey1(7) = VMM_KEY(wup)
-      pnlkey1(8) = VMM_KEY(wt1)
-      pnlkey1(9) = VMM_KEY(zdup)
-      pnlkey1(10)= VMM_KEY(zdt1)
-      pnlkey1(11)= VMM_KEY(zz1)
-      pnlkey1(12)= VMM_KEY(fipt1)
-      pnlod = 12
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr =  VMM_GET_VAR(ruw1)
-      pnerr =  VMM_GET_VAR(rvw1)
-      pnerr =  VMM_GET_VAR(ruw2)
-      pnerr =  VMM_GET_VAR(rvw2)
-      pnerr =  VMM_GET_VAR(rhsc)
-      pnerr =  VMM_GET_VAR(orhsc)
-      pnerr =  VMM_GET_VAR(wup)
-      pnerr =  VMM_GET_VAR(wt1)
-      pnerr =  VMM_GET_VAR(zdup)
-      pnerr =  VMM_GET_VAR(zdt1)
-      pnerr =  VMM_GET_VAR(zz1)
-      pnerr =  VMM_GET_VAR(fipt1)
+      gmmstat = gmm_get(gmmk_ruw1_s,ruw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(ruw1)'
+      gmmstat = gmm_get(gmmk_rvw1_s,rvw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(rvw1)'
+      gmmstat = gmm_get(gmmk_ruw2_s,ruw2,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(ruw2)'
+      gmmstat = gmm_get(gmmk_rvw2_s,rvw2,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(rvw2)'
+      gmmstat = gmm_get(gmmk_rhsc_s,rhsc,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(rhsc)'
+      gmmstat = gmm_get(gmmk_wup_s,wup,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(wup)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(wt1)'
+      gmmstat = gmm_get(gmmk_zdup_s,zdup,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(zdup)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_zz1_s,zz1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(zz1)'
+      gmmstat = gmm_get(gmmk_fipt1_s,fipt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(fipt1)'
+      gmmstat = gmm_get(gmmk_orhsc_s,orhsc,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(orhsc)'
+
 *     ----------------------------
 *     Keep positions in CAP fields
 *     ----------------------------
 *
-      if (Acid_test_L)call acid_stat_adw_main_3_intlag(ruw1,ruw2,rvw2,1)
+c$$$      if (Acid_test_L)call acid_stat_adw_main_3_intlag(ruw1,ruw2,rvw2,1)
 *
 !$omp parallel private(n)
 !$omp do
@@ -279,13 +304,13 @@
       call adw_interp2 (rhsc , orhsc , pos_x, pos_y,
      %                 .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
 *
-      if (Acid_test_L)call acid_stat_adw_main_3_intlag(ruw1,ruw2,rvw2,2)
+c$$$      if (Acid_test_L)call acid_stat_adw_main_3_intlag(ruw1,ruw2,rvw2,2)
 *
       if(Schm_zdotlag_L) then
 !$omp do
          do k=1,l_nk+1
-            do j=j0,jn
-            do i=i0,in
+            do j=1,l_nj
+            do i=1,l_ni
                zz1(i,j,k)=.5d0*(fipt1(i,j,k)+fipt1(i,j,k-1))
             enddo
             enddo
@@ -294,9 +319,9 @@
 *
 *     Note : optimizing on j due to dependency on k
 !$omp do
-         do j=j0,jn
+         do j=1,l_nj
             do k=1,l_nk
-            do i=i0,in
+            do i=1,l_ni
                zz1(i,j,k)=(zz1(i,j,k+1)-zz1(i,j,k))*Ver_idz_8%m(k)
             end do
             end do
@@ -306,8 +331,8 @@
 *        applying the standard averaging
 !$omp do
          do k=1,l_nk
-            do j=j0,jn
-            do i=i0,in
+            do j=1,l_nj
+            do i=1,l_ni
                wup(i,j,k) = Ver_wp_8%m(k) * wt1(i,j,k+1)
      %                     +Ver_wm_8%m(k) * wt1(i,j,k)
             enddo
@@ -325,8 +350,8 @@
 *
 !$omp do
          do k=1,l_nk
-            do j=j0,jn
-            do i=i0,in
+            do j=1,l_nj
+            do i=1,l_ni
                zdup(i,j,k) = Ver_wp_8%m(k)*zdt1(i,j,k+1)
      %                      +Ver_wm_8%m(k)*zdt1(i,j,k)
                enddo
@@ -354,8 +379,6 @@
       call hpdeallc(Adw_wrka_    ,err,1)
       endif
 *
-      pnerr = vmmuld(pnlkey1,pnlod)
-*
 ***********************************************************************
 * Prepare for advection on thermodynamic levels
 ***********************************************************************
@@ -365,8 +388,7 @@
       call adw_meanpos(pos_x, pos_y, pos_z, F_u, F_v, F_w, i0,in,j0,jn)
 
       if (G_lam) then
-          if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
-     $         (mod(Lctl_step,Step_gstat).eq.0) )
+          if (((.not.Orh_crank_L) .or. Orh_icn.eq.Schm_itcn) .and. F_isStatStep)
      $         call adw_cfl_lam ( pos_x, pos_y, pos_z, 
      $                            i0, in, j0, jn, l_nk+1, 't')
           call adw_cliptraj( pos_x, pos_y, i0, in, j0, jn, l_nk+1, 'INTERP TH')
@@ -377,18 +399,10 @@
          call adw_exch_1 ( Adw_n1, Adw_xgg1, Adw_xdd1, Adw_c1,
      $                  pos_x, pos_y, pos_z, l_nk+1 )
 *
-         if ( V4dg_conf.ne.0.0 ) then
-*
-               outside = 0
-*
-            if ( Adw_fro_a .gt. 0 ) outside = 1
-*
-            sum_outside = 0
-            call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
-     $                              "MPI_SUM","grid",ier)
-*
-            if(sum_outside.ne.0) call gem_stop ('ADW_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
-*
+         if (V4dg_conf .ne. 0.) then
+             err = 0
+             if (Adw_fro_a > 0) err = -1
+             call handle_error(err,'adw_main_3_intlag','TLM-ADJ NOT done: INCREASE HALO')
          endif
 *
          dim = max(1,Adw_fro_a)
@@ -408,7 +422,6 @@
      %                     Adw_fro_n, Adw_fro_s, Adw_fro_a,
      %                     Adw_for_n, Adw_for_s, Adw_for_a, 3 )
 *
-
          if ( Adw_fro_a .gt. 0 .and. Adw_ckbd_L ) call adw_ckbd ( Adw_capy2 )
 *
       endif
@@ -416,49 +429,19 @@
 ***********************************************************************
 * Perform interpolation for equations on thermodynamic levels
 ***********************************************************************
-      pnlkey1(1) = VMM_KEY(rhst)
-      pnlkey1(2) = VMM_KEY(rhsf)
-      pnlkey1(3) = VMM_KEY(orhst)
-      pnlkey1(4) = VMM_KEY(orhsf)
-      pnlkey1(5) = VMM_KEY(st1)
-      pnlkey1(6) = VMM_KEY(piup)
-      pnlod = 6
-*
+      gmmstat = gmm_get(gmmk_rhst_s,rhst,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(rhst)'
+      gmmstat = gmm_get(gmmk_rhsf_s,rhsf,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(rhsf)'
+      gmmstat = gmm_get(gmmk_orhst_s,orhst,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(orhst)'
+      gmmstat = gmm_get(gmmk_orhsf_s,orhsf,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(orhsf)'
       if (.not. Schm_hydro_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(rhsw)
-         pnlkey1(pnlod+2) = VMM_KEY(orhsw)
-         pnlod = pnlod+2 
-      endif
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr = VMM_GET_VAR(rhst)
-      pnerr = VMM_GET_VAR(rhsf)
-      pnerr = VMM_GET_VAR(orhst)
-      pnerr = VMM_GET_VAR(orhsf)
-      pnerr = VMM_GET_VAR(st1)
-      pnerr = VMM_GET_VAR(piup)
-*
-      if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(rhsw)
-         pnerr = VMM_GET_VAR(orhsw)
-      endif
-*
-      if (Tr3d_ntr.gt.0) then
-         key1_ = VMM_KEY (trt1)
-         key0_ = VMM_KEY (trt0)
-         do n=1,Tr3d_ntr
-            key1(n) = key1_ + n
-            key0(n) = key0_ + n
-         end do
-         err = vmmlod(key1,Tr3d_ntr)
-         err = vmmlod(key0,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),patr,tr)
-            pnt_trt1(n) = patr
-            err = vmmget(key0(n),patr0,tr0)
-            pnt_trt0(n) = patr0
-         end do
+         gmmstat = gmm_get(gmmk_rhsw_s,rhsw,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(rhsw)'
+         gmmstat = gmm_get(gmmk_orhsw_s,orhsw,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_3_intlag ERROR at gmm_get(orhsw)'
       endif
 *
 *     ----------------------------
@@ -510,22 +493,24 @@ cap      endif
 cap*
 !$omp end parallel
 *
-      if ( (Orh_icn .eq. Schm_itcn) .and. (Tr3d_ntr.gt.0) ) then
+      if ( (Orh_icn .eq. Schm_itcn) ) then
 *
-* tr3d advection
+* tr3d advection,
 *
 *
          aaa = -1.d0 / Cstv_tau_8
 *
-!$omp parallel
          do n=1,Tr3d_ntr
-            patr = pnt_trt1(n)
-            patr0= pnt_trt0(n)
+            nullify (tr0,tr1)
+	    gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':M',tr0,meta3d)
+	    gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr1,meta3d)
+
+!$omp parallel
 !$omp do
             do k=1,l_nk+1
             do j=1,l_nj
             do i=1,l_ni
-               tr0(i,j,k) = - aaa*tr(i,j,k)
+               tr0(i,j,k) = - aaa*tr1(i,j,k)
             end do
             end do
             end do
@@ -541,9 +526,10 @@ cap*
             end do
             end do
 !$omp enddo
+!$omp end parallel
+
          end do
 *
-!$omp end parallel
       endif
 
 ***********************************************************************
@@ -575,13 +561,6 @@ cap*
       endif
 *
       deallocate (pos_x,pos_y,pos_z)
-*
-      pnerr = vmmuld(pnlkey1,pnlod)
-      pnerr = vmmuld(key1,Tr3d_ntr)
-      pnerr = vmmuld(key0,Tr3d_ntr)
-      
-*
- 1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INTLAG)')
 *
       return
       end

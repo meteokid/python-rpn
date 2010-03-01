@@ -18,7 +18,7 @@
 #include "model_macros_f.h"
 *
       subroutine vspng_lam ( F_champ, DIST_DIM, pni, pnj )
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM,pni,pnj
       real F_champ(DIST_SHAPE,*)

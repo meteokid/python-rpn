@@ -13,16 +13,15 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-***s/r blocstat  - Performs 3D statistics on model fields for LAM vs GLB
+***s/r blocstat  - Performs 2D-3D statistics on model fields
 *
 #include "model_macros_f.h"
 *
-      subroutine blocstat 
-*
+      subroutine blocstat
       implicit none
 *
 *author
-*     M. Desgagne
+*     M. Desgagne  	- fall 2009
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
@@ -30,154 +29,92 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Lee V.            - CFL, trajectory stats for LAM
 * v3_21 - Lee V.            - Remove Tr2d
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
-*object
-*     see above
-*
-*arguments
-*       none
-*
-*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "step.cdk"
-#include "vt1.cdk"
-#include "vtx.cdk"
-#include "vth.cdk"
 #include "lctl.cdk"
-#include "ptopo.cdk"
 #include "v4dg.cdk"
-#include "tr3d.cdk"
-#include "type.cdk"
+#include "acid.cdk"
+#include "ptopo.cdk"
 #include "adw.cdk"
 #include "schm.cdk"
-#include "glb_pil.cdk"
-#include "acid.cdk"
+#include "stat.cdk"
 *
-*modules
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-
-      integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf
-      integer err, key(max(Tr3d_ntr,9)), key0, trunc(4), nkeys
-      real tr,buf(l_ni,G_nk+1),cfl
-      pointer (patr, tr(LDIST_SHAPE,*))
+      logical done
+      type(gmm_metadata) :: tmp_meta
+      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx
+      real cfl
+      real, pointer, dimension(:,:  ) :: wk2d
+      real, pointer, dimension(:,:,:) :: wk3d
+      data done/.false./
+      save done
+*
 *     ---------------------------------------------------------------
+*
+      if (.not.done) call set_statliste
 *
       if ((V4dg_conf.ne.0).and.(V4dg_output_L)) then
          call v4d_blocstat ()
-      elseif (V4dg_conf.eq.0) then
-*
+         return
+      endif
+
+      if (Step_gstat.gt.0)                then
       if (mod(Lctl_step,Step_gstat).eq.0) then
-          
-          if (Acid_test_L.and.Acid_pilot_L.and.Lctl_step.lt.Acid_npas) return
-          if (Lctl_step.eq.Acid_npas.and.Acid_test_L) write(6,999)
-*
-      key(1)  = VMM_KEY(ut1)
-      key(2)  = VMM_KEY(vt1)
-      key(3)  = VMM_KEY(wt1)
-      key(4)  = VMM_KEY(tt1)
-      key(5)  = VMM_KEY(fiptx)
-      key(6)  = VMM_KEY(zdt1)
-      key(7)  = VMM_KEY(zdth)
-      key(8)  = VMM_KEY(st1)
-      nkeys=8
-      if(.not.Schm_hydro_L)then
-         nkeys=nkeys+1
-         key(nkeys)  = VMM_KEY(qt1)
-      endif
-*
-      err = vmmlod(key,nkeys)
-*
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-      err = VMM_GET_VAR(wt1)
-      err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(fiptx)
-      err = VMM_GET_VAR(zdt1)
-      err = VMM_GET_VAR(zdth)
-      err = VMM_GET_VAR(st1)
-      if(.not.Schm_hydro_L) err = VMM_GET_VAR(qt1)
-*
-      if (Ptopo_myproc.eq.0) then
-          if (Acid_test_L) then
-              write(6,2000) Lctl_step-Acid_npas
-          else
-              write(6,1000) Lctl_step
-          endif
-      endif
-*
-      i0 = 1+acid_i0
-      in = G_ni-acid_in
-      j0 = 1+acid_j0
-      jn = G_nj-acid_jn
-      inn= 0
-      if (G_lam) then
-           inn=1
-      endif
-      call glbstat (ut1  ,' U',LDIST_DIM,G_nk+1,i0,in-inn,j0,jn  ,1,G_nk+1)
-      call glbstat (vt1  ,' V',LDIST_DIM,G_nk+1,i0,in    ,j0,jn-1,1,G_nk+1)
-      call glbstat (wt1  ,' W',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
-      if(Schm_zdotMid_L) then
-         call glbstat (zdth ,'ZD',LDIST_DIM,G_nk,i0,in ,j0,jn  ,1,G_nk)
-      else
-         call glbstat (zdt1 ,'ZD',LDIST_DIM,G_nk+1,i0,in ,j0,jn  ,1,G_nk+1)
-      endif
-      call glbstat (tt1  ,' T',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
-      if(.not.acid_test_L)
-     $     call glbstat (fiptx,'GZ',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
-      call glbstat (st1,' S',LDIST_DIM,1,i0,in    ,j0,jn  ,1,1)
-      if(.not.Schm_hydro_L)
-     $   call glbstat (qt1  ,' Q',LDIST_DIM,G_nk+2,i0,in ,j0,jn  ,1,G_nk+2)
-*
-*    Comment the above glbstats and uncomment the following lines for
-*    GLBSTAT for LAM versus GLB acid test
-*
-*
-      err = vmmuld(key,5)
-*
-      key0 = VMM_KEY (trt1)
-      do k=1,Tr3d_ntr
-         key(k) = key0 + k
-      end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key,Tr3d_ntr)  
-         do k=1,Tr3d_ntr
-            err = vmmget(key(k),patr,tr)
-            call glbstat (tr,Tr3d_name_S(k),LDIST_DIM,G_nk+2,i0,in,j0,jn,
-     $                                                          1,G_nk+2)
+
+         if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
+         i0 = 1+acid_i0
+         in = G_ni-acid_in
+         j0 = 1+acid_j0
+         jn = G_nj-acid_jn
+
+         do n=1,stat_nombre
+            gmmstat = gmm_getmeta(stat_liste(n),tmp_meta)
+            if (gmmstat.eq.0) then
+               indx = index(stat_liste(n),"TR/")*3 + 1
+               stat_varname = stat_liste(n)(indx:)
+               inn= 0
+               jnn= 0
+               if ( stat_liste(n)(1:2)=='UT' .and. G_lam ) inn=1
+               if ( stat_liste(n)(1:2)=='VT'             ) jnn=1
+               nullify (wk2d,wk3d)
+               if (tmp_meta%l(3)%high.eq.tmp_meta%l(3)%low) then
+                  gmmstat = gmm_get(stat_liste(n), wk2d, meta3d)
+                  call glbstat2 (wk2d,stat_varname,'',
+     $                           tmp_meta%l(1)%low,tmp_meta%l(1)%high,
+     $                           tmp_meta%l(2)%low,tmp_meta%l(2)%high,
+     $                           1,1,
+     $                           i0,in-inn,j0,jn-jnn, 1,1)
+               else
+                  gmmstat = gmm_get(stat_liste(n), wk3d, meta3d)
+                  call glbstat2 (wk3d,stat_varname,'',
+     $                          tmp_meta%l(1)%low,tmp_meta%l(1)%high,
+     $                          tmp_meta%l(2)%low,tmp_meta%l(2)%high,
+     $                          tmp_meta%l(3)%low,tmp_meta%l(3)%high,
+     $                          i0,in-inn,j0,jn-jnn,
+     $                          tmp_meta%l(3)%low,tmp_meta%l(3)%high)
+               endif
+            endif
          end do
-         err = vmmuld(key,Tr3d_ntr)
-      endif
+
+c         if ((Ptopo_numproc.eq.1).and.(Schm_theoc_L)) then
+c            call lipschitz(u, v, zd, LDIST_DIM, G_Nk, i0,in,j0,jn)
+c         endif
 *
-      if(Schm_theoc_L) then
-         if(Schm_zdotMid_L) then
-            call lipschitz(ut1, vt1, zdth, LDIST_DIM, G_Nk, i0,in,j0,jn)
-         else
-            call lipschitz(ut1, vt1, zdt1, LDIST_DIM, G_Nk, i0,in,j0,jn)
-         endif
-      endif
-*
-*
-      if (Ptopo_myproc.eq.0) then
-          if (Acid_test_L) then
-              write(6,2001)
-          else
-              write(6,1001)
-          endif
-      endif
-*
-*     Print max courrant numbers if LAM mode
-      if (G_lam) then
+*     Print max courrant numbers if LAM configuration
+         if (G_lam) then
          if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0) then
             cfl = Adw_cfl_8(1)
-            write (6,101) 'x,y',Adw_cfl_i(1,1),Adw_cfl_i(2,1),
-     $                          Adw_cfl_i(3,1),cfl
+            write (6,1010) 'x,y',Adw_cfl_i(1,1),Adw_cfl_i(2,1),
+     $                           Adw_cfl_i(3,1),cfl
             cfl = Adw_cfl_8(2)
-            write (6,101) 'z'  ,Adw_cfl_i(1,2),Adw_cfl_i(2,2),
-     $                          Adw_cfl_i(3,2),cfl
+            write (6,1010) 'z'  ,Adw_cfl_i(1,2),Adw_cfl_i(2,2),
+     $                           Adw_cfl_i(3,2),cfl
             cfl = Adw_cfl_8(3)
-            write (6,101) '3D' ,Adw_cfl_i(1,3),Adw_cfl_i(2,3),
-     $                          Adw_cfl_i(3,3),cfl
+            write (6,1010) '3D' ,Adw_cfl_i(1,3),Adw_cfl_i(2,3),
+     $                           Adw_cfl_i(3,3),cfl
             Adw_cfl_8 (:  ) = 0.0d0
             Adw_cfl_i (:,:) = 0
          endif
@@ -188,23 +125,96 @@
      $         write(6,1003)Lctl_step,  " Trj Cut :",trunc(1)+trunc(2)+
      $           trunc(3)+trunc(4),trunc(1),trunc(2),trunc(3),trunc(4)
          endif
-      endif
+         endif
 *
+         if (Ptopo_myproc.eq.0) write(6,1001)
+
       endif
-*
       endif
+      done = .true.
 *
- 101  format (' MAX COURANT NUMBER:  ',
+ 1010 format (' MAX COURANT NUMBER:  ',
      $          a3,': [(',i3,',',i3,',',i3,') ',f12.7,']')
-  999 format (' START OF ACID TEST!!!!!!!!!')
  1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')
- 1002 format (i4,a10, i4,10X,' Max:[(',i3,',',i3,',',i3,')]',a6)
  1003 format (i4,a10, i4,10X,' N:[',i4,'] S:[',i4,'] E :[',i4,'] W:[',i4,']')
- 2000 format (/ 19('#'),' ACID BLOC STAT ',i6,1X,19('#'))
- 2001 format (  19('#'),' ACID BLOC STAT ...done')
 *     ---------------------------------------------------------------
 *
       return
       end
 
+***s/r set_statliste
+*
+      subroutine set_statliste
+      implicit none
+*
+*author
+*     M. Desgagne  	- fall 2009
+*
+*revision
+* v4_10 - Desgagne M.       - initial version
+*
+#include "stat.cdk"
+#include "tr3d.cdk"
+
+      character*32 tmp_liste (1000), dumc_S
+      integer k,n,cnt
+*     ---------------------------------------------------------------
+*
+      if (stat_liste(1) == '') then
+         stat_liste(1) = 'ALL_DYN_T1'
+         stat_liste(2) = 'TR/HU:P'
+      endif
+
+      cnt = 0
+      do k=1,stat_maxn
+         if (stat_liste(k) == '') exit
+         call low2up  (stat_liste(k),dumc_S)
+         stat_liste(k) = dumc_S
+         
+         if ((stat_liste(k) == 'ALL_DYN_T1') .or. (stat_liste(k) == 'ALL')) then
+            cnt = cnt + 1
+            tmp_liste(cnt  ) = 'UT1'
+            tmp_liste(cnt+1) = 'VT1'
+            tmp_liste(cnt+2) = 'WT1'
+            tmp_liste(cnt+3) = 'TT1'
+            tmp_liste(cnt+4) = 'FIPTX'
+            tmp_liste(cnt+5) = 'ST1'
+            cnt = cnt + 5
+            if (stat_liste(k) .ne. 'ALL') cycle
+         endif
+         if (stat_liste(k) == 'ALL_DYN_T0') then
+            cnt = cnt + 1
+            tmp_liste(cnt  ) = 'UT0'
+            tmp_liste(cnt+1) = 'VT0'
+            tmp_liste(cnt+2) = 'WT0'
+            tmp_liste(cnt+3) = 'TT0'
+            tmp_liste(cnt+4) = 'ST0'
+            cnt = cnt + 4
+            cycle
+         endif
+         if ((stat_liste(k) == 'ALL_TR_T1') .or. (stat_liste(k) == 'ALL')) then
+            do n=1,tr3d_ntr
+               cnt = cnt + 1
+               tmp_liste(cnt) = 'TR/'//trim(Tr3d_name_S(n))//':P'
+            end do
+            cycle
+         endif
+         if (stat_liste(k) == 'ALL_TR_T0') then
+            do n=1,tr3d_ntr
+               cnt = cnt + 1
+               tmp_liste(cnt) = 'TR/'//trim(Tr3d_name_S(n))//':M'
+            end do
+            cycle
+         endif
+         cnt = cnt + 1
+         tmp_liste(cnt) = stat_liste(k)
+      end do
+
+      stat_liste (1:cnt) = tmp_liste (1:cnt)
+      stat_nombre        = cnt
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

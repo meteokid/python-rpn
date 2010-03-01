@@ -19,7 +19,7 @@
      %                 F_dxla, F_dyla, F_nila, F_njla, F_ni, F_nj,
      %                 F_rot_8, F_tourn_L)
 *
-#include "impnone.cdk"
+      implicit none
 *
        integer F_ig1, F_ig2, F_ig3
        real    F_dxla, F_dyla

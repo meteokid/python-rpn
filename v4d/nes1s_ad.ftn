@@ -1,0 +1,136 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r nes1s_ad -- ADJ of nes1s
+*
+#include "model_macros_f.h"
+*
+      subroutine nes1s_ad (F_fn, F_fd, DIST_DIM, Nk, F_is, F_js, 
+     $                                      F_ndavx, F_ndavy, F_ndavz)
+*
+      implicit none
+*
+      integer DIST_DIM, NK, F_is, F_js, F_ndavx, F_ndavy, F_ndavz
+      real F_fn(DIST_SHAPE,Nk), F_fd(DIST_SHAPE,Nk)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+* v3_30 - Tanguay M.        - correction of starting/ending point for blend 
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - Open top TL/AD
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_fn         O           field to be blended
+*  F_fd         I           blending field
+*  F_is         I           staggering parameter along x
+*  F_js         I           staggering parameter along y
+*  F_ndavx      I           thichness of sponge layer along x
+*  F_ndavy      I           thichness of sponge layer along y
+*----------------------------------------------------------------
+*
+*implicit
+#include "glb_ld.cdk"
+#include "hblen.cdk"
+*
+      integer i,j,k,nit,njt,il,ih,jl,jh
+      real*8 ZERO_8,ONE_8,PT5_8,lx_8,ly_8,p_8,pis2_8
+      parameter (ZERO_8=0.d0, ONE_8=1.d0, PT5_8=0.5d0)
+*
+*----------------------------------------------------------------------
+      if (Hblen_wfct_S .eq. "const") call gem_stop ('NOT DONE NES1S_AD',-1) 
+      if (F_ndavz.NE.0)              call gem_stop ('NOT DONE NES1S_AD',-1) 
+*----------------------------------------------------------------------
+*
+*     * ndavx et ndavy: nombre de points de grille dans la bande de 
+*     *                 pilotage (eponge) excluant les frontieres.
+*
+      nit  = l_ni-F_is-pil_e
+      njt  = l_nj-F_js-pil_n
+*
+      il   = 1   + F_ndavx + pil_w -1
+      ih   = nit - F_ndavx + 1
+      jl   = 1   + F_ndavy + pil_s -1
+      jh   = njt - F_ndavy + 1
+*
+      lx_8   = dble(F_ndavx) - PT5_8
+      ly_8   = dble(F_ndavy) - PT5_8
+
+      pis2_8 = acos(ZERO_8)
+*
+      if (east.eq.1) then
+      do k=1,Nk
+*east
+         do i=ih+1,nit
+         do j=1,l_nj
+            p_8  = (cos(pis2_8*(nit-i)/lx_8))**2
+            F_fd(i,j,k) =        p_8 *F_fn(i,j,k) + F_fd(i,j,k)
+            F_fn(i,j,k) = (ONE_8-p_8)*F_fn(i,j,k)  
+         end do
+         end do
+*
+      end do
+      endif
+*
+      if (west.eq.1) then
+      do k=1,Nk
+*west
+         do i=1+pil_w,il-1
+         do j=1,l_nj
+            p_8  = (cos(pis2_8*(i-pil_w-1)/lx_8))**2
+            F_fd(i,j,k) =        p_8 *F_fn(i,j,k) + F_fd(i,j,k)
+            F_fn(i,j,k) = (ONE_8-p_8)*F_fn(i,j,k)  
+         end do
+         end do
+*
+      end do
+      endif
+*
+      if (south.eq.1) then
+      do k=1,Nk
+*south
+         do j=1+pil_s,jl-1
+         do i=1,l_ni
+            p_8  = (cos(pis2_8*(j-pil_s-1)/ly_8))**2
+            F_fd(i,j,k) =        p_8 *F_fn(i,j,k) + F_fd(i,j,k)
+            F_fn(i,j,k) = (ONE_8-p_8)*F_fn(i,j,k)  
+         end do
+         end do
+*
+      end do
+      endif
+*
+      if (north.eq.1) then
+      do k=1,Nk
+*north
+         do j=jh+1,njt
+         do i=1,l_ni
+            p_8 = (cos(pis2_8*(njt-j)/ly_8))**2
+            F_fd(i,j,k) =        p_8 *F_fn(i,j,k) + F_fd(i,j,k)
+            F_fn(i,j,k) = (ONE_8-p_8)*F_fn(i,j,k)  
+         end do
+         end do
+*
+      end do
+      endif
+*
+*----------------------------------------------------------------------
+      return
+      end

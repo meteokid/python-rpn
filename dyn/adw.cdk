@@ -26,37 +26,9 @@
 !                                                                      |
 ! All of these grids could include halos or not                        |
 !______________________________________________________________________|
-!                                                                      |
-! VARIABLES FOR ADVECTION                                              |
-!______________________________________________________________________|
-!              |                                                       |
-! NAME         | DESCRIPTION                                           |
-!--------------|-------------------------------------------------------|
-! Adw_nkbz_L   | switch: .true. : no knot boundary condition for       |
-!              |                  vertical interpolation               |
-! Adw_exdg_L   | switch: .true. : print diagnostics on the number of   |
-!              |                  upstream positions exchanged among   |
-!              |                  processors                           |
-! Adw_ckbd_L   | switch: .true. : check if upstream points from north  |
-!              |                  and south pe's for which an interpo- |
-!              |                  lation is requested are inside own   |
-!              |                  advection source grid                |
-! Adw_mono_L   | switch: .true. : advection of tracers is monotonic    |
-! Adw_interp_type interpolation scheme for back-trajectories ("cubic"):|
-!	       |  "cubic"         Lagrangian(h)/cubic(v) interpolation |
-!	       |  "lag3d"         tri-Lagrangian 3D interpolation      |
-!	       |  "lag3d_trunc "  truncated Lagrangian 3D interpolation|
-! Adw_nosetint_L switch: .true. : no setint for TRILIN (done inside)   |
-! Adw_hor_L    | switch: .true. : update horizontal positions          |
-!              |                  for Optimized SETINT/TRILIN          |
-! Adw_ver_L    | switch: .true. : update vertical positions            |
-!              |                  for Optimized SETINT/TRILIN          |
 !----------------------------------------------------------------------|
 ! GRIDS SIZE SPECIFICATIONS                                            |
 !----------------------------------------------------------------------|
-! Adw_halox    | advection specific halo in x                          |
-! Adw_haloy    | advection specific halo in y                          |
-!              |                                                       |
 ! Adw_nit      | \ total number of points in x,y direction in          |
 ! Adw_njt      | / advection grid (including halos)                    |
 !              |                                                       |
@@ -166,11 +138,10 @@
 !______________________________________________________________________|
 !
 #endif
+#include "adw_nml.cdk"
+
+      logical Adw_hor_L,Adw_ver_L
 !
-      logical Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L
-      logical Adw_mono_L,Adw_nosetint_L,Adw_hor_L,Adw_ver_L
-!
-      integer            Adw_halox, Adw_haloy
       integer            Adw_nic, Adw_nit, Adw_njc, Adw_njt
       integer            Adw_int_i_off, Adw_int_j_off
       integer            Adw_for_n, Adw_for_s, Adw_for_a
@@ -180,21 +151,9 @@
       real*8             Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8
       real*8             Adw_x00_8,  Adw_y00_8,  Adw_cfl_8(3)
 !
-      character(len=64) :: Adw_interp_type_S
-!
-      MARK_COMMON_BEG (adw_c)
-      common / adw_c  /  Adw_interp_type_S
-      MARK_COMMON_END (adw_c)
-!
       MARK_COMMON_BEG (adw_l)
-      common / adw_l  /  Adw_nkbz_L,Adw_exdg_L,Adw_nosetint_L
-      common / adw_l  /  Adw_ckbd_L,Adw_mono_L,Adw_trunc_traj_L
       common / adw_l  /  Adw_hor_L, Adw_ver_L
       MARK_COMMON_END (adw_l)
-!
-      MARK_COMMON_BEG (adw_ia)
-      common / adw_ia /  Adw_halox, Adw_haloy
-      MARK_COMMON_END (adw_ia)
 !
       type (vertical_i)  Adw_lcz
 

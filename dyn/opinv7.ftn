@@ -20,8 +20,7 @@
      %                    F_axis, F_a_8,  F_b_8,  F_c_8,
      %                    F_ai_8, F_bi_8, F_ci_8, F_di_8,
      %                    F_prep_L,  F_case, NIS, NJS,  NKS, SKIP )
-*
-#include "impnone.cdk"
+      implicit none
 *
       integer F_ideb, F_jdeb,F_ifin,F_jfin,F_nk, NIS, NJS, NKS, SKIP
       real    F_r(SKIP,NIS,NJS,NKS)
@@ -84,8 +83,7 @@
 c     call tmg_start(76,'opinv')
       plalonz = F_axis.eq.'Z'
       if ( .not.plalonz ) then
-           print *,'ERROR: OPINV7 is only correct for Z axis'
-           call stopmpi(-1)
+         call handle_error(-1,'opinv7','OPINV7 is only correct for Z axis')
       endif
       pnm = F_nk
       if ( F_case.eq.'D' ) then

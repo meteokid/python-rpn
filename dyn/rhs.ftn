@@ -31,6 +31,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Desgagne M.       - Revision Openmp
 * v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 ***********************************************************************
@@ -41,6 +42,8 @@
 *        None
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "ptopo.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
@@ -55,85 +58,66 @@
 #include "acid.cdk"
 *
 *modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
 *
-      integer  pnerr, pnlod, pnlkey1(24), i,j,k
+      integer  i,j,k
 **
 *     __________________________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
 
-      pnlkey1( 1) = VMM_KEY(orhsu)
-      pnlkey1( 2) = VMM_KEY(orhsv)
-      pnlkey1( 3) = VMM_KEY(orhsc)
-      pnlkey1( 4) = VMM_KEY(orhst)
-      pnlkey1( 5) = VMM_KEY(orhsf)
-      pnlkey1( 6) = VMM_KEY(ruw1)
-      pnlkey1( 7) = VMM_KEY(rvw1)
-      pnlkey1( 8) = VMM_KEY(ut1)
-      pnlkey1( 9) = VMM_KEY(vt1)
-      pnlkey1(10) = VMM_KEY(wt1)
-      pnlkey1(11) = VMM_KEY(tt1)
-      pnlkey1(12) = VMM_KEY(bspqtx)
-      pnlkey1(13) = VMM_KEY(st1)
-      pnlkey1(14) = VMM_KEY(zdt1)
-      pnlkey1(15) = VMM_KEY(fiptx)
-      pnlkey1(16) = VMM_KEY(fipt1)
-      pnlkey1(17) = VMM_KEY(topo)
-      pnlod = 17
-      if (.not. Schm_hydro_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(orhsw)
-         pnlkey1(pnlod+2) = VMM_KEY(qt1)
-         pnlkey1(pnlod+3) = VMM_KEY(mutx)
-         pnlod = pnlod+3
-      endif
+      gmmstat = gmm_get(gmmk_ruw1_s,ruw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(ruw1)'
+      gmmstat = gmm_get(gmmk_rvw1_s,rvw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(rvw1)'
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(wt1)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_bspqtx_s,bspqtx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(bspqtx)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(st1)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(fiptx)'
+      gmmstat = gmm_get(gmmk_fipt1_s,fipt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(fipt1)'
+      gmmstat = gmm_get(gmmk_orhsu_s,orhsu,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsu)'
+      gmmstat = gmm_get(gmmk_orhsv_s,orhsv,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsv)'
+      gmmstat = gmm_get(gmmk_orhsc_s,orhsc,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsc)'
+      gmmstat = gmm_get(gmmk_orhst_s,orhst,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhst)'
+      gmmstat = gmm_get(gmmk_orhsf_s,orhsf,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsf)'
       if (G_lam) then
-         pnlkey1(pnlod+1) = VMM_KEY(rhsu)
-         pnlkey1(pnlod+2) = VMM_KEY(rhsv)
-         pnlkey1(pnlod+3) = VMM_KEY(nest_u)
-         pnlkey1(pnlod+4) = VMM_KEY(nest_v)
-         pnlod = pnlod+4
+         gmmstat = gmm_get(gmmk_rhsu_s,rhsu,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(rhsu)'
+         gmmstat = gmm_get(gmmk_rhsv_s,rhsv,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(rhsv)'
+         gmmstat = gmm_get(gmmk_nest_u_s,nest_u,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(nest_u)'
+         gmmstat = gmm_get(gmmk_nest_v_s,nest_v,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(nest_v)'
       endif
-*     - - - - - - - - - - - - - 
-      pnerr = vmmlod(pnlkey1,pnlod)
-*     - - - - - - - - - - - - - 
-      pnerr = VMM_GET_VAR(orhsu)
-      pnerr = VMM_GET_VAR(orhsv)
-      pnerr = VMM_GET_VAR(orhsc)
-      pnerr = VMM_GET_VAR(orhst)
-      pnerr = VMM_GET_VAR(orhsf)
-      pnerr = VMM_GET_VAR(ruw1)
-      pnerr = VMM_GET_VAR(rvw1)
-      pnerr = VMM_GET_VAR(ut1)
-      pnerr = VMM_GET_VAR(vt1)
-      pnerr = VMM_GET_VAR(wt1)
-      pnerr = VMM_GET_VAR(tt1)
-      pnerr = VMM_GET_VAR(bspqtx)
-      pnerr = VMM_GET_VAR(st1)
-      pnerr = VMM_GET_VAR(zdt1)
-      pnerr = VMM_GET_VAR(fiptx)
-      pnerr = VMM_GET_VAR(fipt1)
-      pnerr = VMM_GET_VAR(topo)
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(orhsw)
-         pnerr = VMM_GET_VAR(qt1)
-         pnerr = VMM_GET_VAR(mutx)
-      else
-         rhsw_   = 0
-         orhsw_  = 0
-         qt1_ =0
-         mutx_ = 0
+         gmmstat = gmm_get(gmmk_mutx_s,mutx,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(mutx)'
+         gmmstat = gmm_get(gmmk_orhsw_s,orhsw,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsw)'
+         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(qt1)'
       endif
-      if (G_lam) then
-         pnerr = VMM_GET_VAR(rhsu)
-         pnerr = VMM_GET_VAR(rhsv)
-         pnerr = VMM_GET_VAR(nest_u)
-         pnerr = VMM_GET_VAR(nest_v)
-      else
-         nest_u_ = 0
-         nest_v_ = 0
-      endif
+
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(topo)'
 *
 *     Perform the computation in the first 
 *     cycle of Crank-Nicholson procedure only
@@ -169,11 +153,9 @@ C     Pour debug
 c      if (Acid_test_L) then
 c         call glbstat (orhsc,'rhsc',LDIST_DIM,G_nk  ,1,l_ni,1,l_nj,1,G_nk  )
 c         call glbstat (orhst,'rhst',LDIST_DIM,G_nk+1,1,l_ni,1,l_nj,1,G_nk+1)
-c         call gem_stop('rhs',-1)
+c         call handle_error0('rhs','rhs',-1)
 c      endif
 
-      pnerr = vmmuld(-1,0)
-      pnerr = vmmuld(-1,0)
 *
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS)')
 *

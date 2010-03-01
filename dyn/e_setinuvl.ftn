@@ -19,7 +19,7 @@
 #include "model_macros_f.h"
 *
       subroutine e_setinuvl
-#include "impnone.cdk"
+      implicit none
 *
 *author jean cote/andre methot - rpn/cmc - sept 96
 *

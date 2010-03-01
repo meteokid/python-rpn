@@ -30,6 +30,7 @@
 * v4_04 - Plante A.         - Remove offline mode
 * v4_05 - Desgagne M.       - Throw warning and return for digital filter in LAM
 * v4_05 - McTaggart-Cowan R.- Set Lun_sortie_s and Schm_opentop_L
+* v4_10 - Tanguay M.        - Adjust digital filter when LAM
 * 
 *
 *object
@@ -42,8 +43,8 @@
 #include "modconst.cdk"
 *
 *modules
-      integer  bin2com,newdate,longueur
-      external bin2com,newdate,longueur
+      integer  bin2com,newdate,adw_getMaxCFL
+      external bin2com,newdate,adw_getMaxCFL
 *
       character nfe
       integer   nfe_nsec, len, time1, time2, istat
@@ -51,7 +52,7 @@
       character*16 dumc_S
       character*256 fln_S
       logical wronghyb
-      integer i, k, nrec, err, ipcode, ipkind,ntr
+      integer i, k, nrec, err, ipcode, ipkind
       real pcode,deg_2_rad
 *
       real*8 dayfrac,sec_in_day
@@ -65,15 +66,15 @@
 *
       if (Init_balgm_L) then
          if (Lctl_reset.lt.Init_dfnp) Lctl_reset = -1
-         if (G_lam) then
-            if (lun_out.gt.0) then
-               write (Lun_out, 7030)
-               write (Lun_out, 8000)
-            endif
-            return
-         endif
       endif
 *        
+*     Use newcode style:
+      call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
+*
+      Level_mode_ip1 = 1
+      Level_kind_ip1 = 5
+      Level_version  = 2
+*
       call low2up  (Hzd_type_S,dumc_S)
       Hzd_type_S = dumc_S
       Hzd_lnr    = min(max(0.,Hzd_lnr),0.9999999)
@@ -81,16 +82,10 @@
       Hzd_pwr    = min(max(2,Hzd_pwr*2),8)
 *
       if (G_lam) then
-         Step_maxcfl = max(1,Step_maxcfl)
-         Glb_pil_n = Step_maxcfl + 5
+         Glb_pil_n = adw_getMaxCFL() + 5
          Glb_pil_s = Glb_pil_n
          Glb_pil_w = Glb_pil_n
          Glb_pil_e = Glb_pil_n
-         Adw_halox = Step_maxcfl + 1
-         Adw_haloy = Adw_halox
-      else
-         Adw_halox = max(3,Adw_halox)
-         Adw_haloy = max(2,Adw_haloy)
       endif
 *
       deg_2_rad = Dcst_pi_8/180.
@@ -101,9 +96,9 @@
       call low2up  (Out3_unit_S,dumc_S)
       Out3_unit_S=dumc_S
 *
-      Out_datyp=1
-      if (Out3_compress_L) Out_datyp=134
-      Out_rewrit_L=.false.
+c      Out_datyp   = 134
+      Out_datyp   = 1
+      Out_rewrit_L= .false.
       if (Clim_climat_L) Out_rewrit_L=.true.
 
       if(Out3_nbitg .lt. 0) then
@@ -127,94 +122,19 @@
           if ( bin2com ().lt.0) return
       endif
 *
-      Cstv_pref_8=100000.d0
-*     
-      if(hyb(1).ne.-1)then
-         Ver_hyb_top=Cstv_ptop_8/Cstv_pref_8
-      else
-         write(Lun_out,9100)
-         return
-      endif
-*         
-*     Checking vertical layering
-*
-      wronghyb = .false.
-*     Counting vertical levels
+*     Counting # of vertical levels specified by user
       G_nk = 0
       do k = 1, maxhlev
          if (hyb(k) .lt. 0.) exit
          G_nk = k
       enddo
-      if (Lun_out.gt.0) write(Lun_out,*) (hyb(k),k=1,G_nk)         
-*     
-      if (Cstv_ptop_8.le.0.d0)then
-         write(Lun_out,9400)
-         return
-      endif
-*     
-*     Check range
-      if (hyb(G_nk).ge.1..or.hyb(1).le.Ver_hyb_top)then
-         write(Lun_out,9550)Ver_hyb_top
-         return
-      endif
-*     
-*        Check monotonicity
-      do k=2, G_nk
-         if (hyb(k).le.hyb(k-1)) wronghyb = .true.
-      enddo
-      if (wronghyb)then
-         write(Lun_out,9250)
-         write(Lun_out,*)'MOMENTUM LEVELS'
-         do k=1, G_nk
-            write (Lun_out,*) hyb(k),k
-         end do               
-         return            
-      endif
-*     
-*     Ver_hyb%m is allocated a bit larger for output diagnostics
-      allocate(Ver_hyb%m(G_nk+1),Ver_hyb%t(G_nk+2),stat=istat)
-      
-      if(istat.ne.0)then
-         write (Lun_out,*)
-     $        'Allocation problem in gemdm_config, #2, stat=',istat         
-         return
-      endif
-*     
-*     Use newcode style:
-      call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
-      Level_mode_ip1 = 1
 *
-      Level_kind_ip1=5
-      Level_version=2
-      do k=1,G_nk
-         call convip ( i , hyb(k)      , Level_kind_ip1,  1, dumc_S, .false. )
-         call convip ( i , Ver_hyb%m(k), Level_kind_ip1, -1, dumc_S, .false. )
-      end do
-*
-      call set_zeta ()
-*
-      call prgenab()
+      call set_zeta ( hyb )
 *
       if (V4dg_conf.ne.0.and.Sol_type_S.eq.'ITERATIF') then
           if (Lun_out.gt.0)  write (Lun_out, 9300) 
           return
       endif
-*
-      ntr = 4
-      Mem_minmem = 49                 ! dry dynamic with 1 tracer (HU)
-      Mem_minmem = Mem_minmem + 8     ! + physics interface
-      Mem_minmem = Mem_minmem + 4*ntr ! + 4 additional tracers
-      if (V4dg_conf.ne.0) Mem_minmem = Mem_minmem + 71
-      if (Init_balgm_L  ) Mem_minmem = Mem_minmem + 20
-      if (G_lam) then
-                       Mem_minmem = Mem_minmem + 28
-*                --->  Exclude nest_??x vmm variables
-         if (Lam_ctebcs_L) Mem_minmem = Mem_minmem - 14
-*                --->  Exclude nest_??f vmm variables
-      endif
-      Mem_minmem = Mem_minmem * 1.1 ! adding 10% for safeguard
-
-      if (Mem_mx3db.lt.0) Mem_mx3db = Mem_minmem
 *
 *     Options used for the Off-line mode (MEC)
 *
@@ -275,17 +195,17 @@
       if ( Acid_test_L) then
            if (Acid_pilot_L) then
            fln_S  = trim(Path_output_S) // '/casc/solver.bin'
-           write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+           write (Lun_out,*)'Opening file: ',trim(fln_S)
            open (50, file=fln_S,form='unformatted')
            fln_S  = trim(Path_output_S) // '/casc/posixy.bin'
-           write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+           write (Lun_out,*)'Opening file: ',trim(fln_S)
            open (44, file=fln_S,form='unformatted')
            else
            fln_S  = trim(Path_input_S) // '/INIT_3D/solver.bin'
-           write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+           write (Lun_out,*)'Opening file: ',trim(fln_S)
            open (50, file=fln_S,form='unformatted')
            fln_S  = trim(Path_input_S) // '/INIT_3D/posixy.bin'
-           write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+           write (Lun_out,*)'Opening file: ',trim(fln_S)
            open (44, file=fln_S,form='unformatted')
            endif
       endif
@@ -341,9 +261,8 @@
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
- 7030 format (/' Digital filter NOT available in LAM configuration'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
- 9100 format (/'ABORT: you must supply levels in hyb'/)
+ 9100 format (/'ABORT: you must supply levels in namelist variable hyb'/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9250 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
      $         '      LEVELS MUST BE MONOTONICALLY INCREASING'/

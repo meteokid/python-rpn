@@ -52,10 +52,6 @@
 #include "rstr.cdk"
 #include "schm.cdk"
 *
-**
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-*
       integer n, pndfnph, pnerr, pnlkey1(2), pnfirst, pnlast
       real    prn, promegc, prsum, prwin1, prwin2
 *
@@ -63,7 +59,7 @@
 *
       if ( mod(Init_dfnp,2) .ne. 1 ) then
          if (Lun_out.gt.0) write(Lun_out,2010) Init_dfnp
-         call gem_stop ('INITIAL',-1)
+         call handle_error0('initial','INITIAL',-1)
       endif
 *
       if (Lun_out.gt.0) write(Lun_out,2020) Init_dfnp

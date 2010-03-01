@@ -36,6 +36,8 @@
 * v4_04 - Plante A.         - Remove offline mode
 * v4_05 - Plante A.         - Consistency check for zdt1,wt1,qt1
 *                             And put nvar into common block e_anal
+* v4_10 - Tanguay M.        - correction on calcul for xpxu(nia-1),ypxv(nja-1)
+* v4_10 - Lee V.            - Adapt LAM I/O(BCS and 3DF) for reading GAUSS grid
 *
 #include "e_anal.cdk"
 #include "e_fu.cdk"
@@ -400,6 +402,42 @@ c     if (vcode_S.eq."ETASEF") Anal_etasef_L=.true.
       endif
 *
       if (LAM .and. (.not.Pil_bmf_L) .and. .not.done) then
+        if (grda.eq.'G') then
+            dx=360.0/nia
+            dy=180.0/nja
+            print *,'Chosen Pil_dx=',Pil_dx
+            print *,'Gauss DX found:', dx,' DX target:', Grd_dx
+            print *,'Gauss DY found:', dy,' DY target:', Grd_dy
+            if (Pil_dx.gt.0.0) then
+* Create new xpx,ypx parameters in the same resolution as the analysis
+* but on the target grid:
+                if (Pil_dx.le.dx) dx=Pil_dx
+                if (Pil_dx.le.Grd_dx) dx=Grd_dx
+                if (Pil_dx.le.dy) dy=Pil_dx
+                if (Pil_dx.le.Grd_dy) dy=Grd_dy
+            endif
+            nia = (xfi(nifi) - xfi(1))/dx + 13
+            nja = (yfi(njfi) - yfi(1))/dy + 13
+            print *,'Now to create new low res grid'
+* Create new xpx
+            allocate(xpx(nia))
+            xpx(1)= xfi(1)- dx*5.0
+            do i=1,nia-1
+               xpx(i+1)= xpx(i) + dx
+            enddo
+* Create new ypx
+            allocate(ypx(nja))
+            ypx(1)= yfi(1)-dy*5.0
+            do i=1,nja-1
+               ypx(i+1)= ypx(i) + dy
+            enddo
+            print *,'DX to be used:', dx
+            print *,'DY to be used:', dy
+            print *,'xfi(1),xfi(',nifi,')=',xfi(1),xfi(nifi)
+            print *,'xpx(1),xpx(',nia,')=',xpx(1),xpx(nia)
+            print *,'yfi(1),yfi(',njfi,')=',yfi(1),yfi(njfi)
+            print *,'ypx(1),ypx(',nja,')=',ypx(1),ypx(nja)
+        else
           p1=ig1a
           p2=ig2a
           p3=ig3a
@@ -528,13 +566,13 @@ c     if (vcode_S.eq."ETASEF") Anal_etasef_L=.true.
                      endif
                   enddo
           endif
+        endif
 * create U,V target grid
           allocate(xpxu(nia-1))
           do i=1,nia-2
              xpxu(i)= 0.5 * ( xpx(i) + xpx(i+1) )
           enddo
           xpxu(nia-1) = 0.5 * ( xpx(nia-1) + xpx(nia) )
-C         xpxu(nia  ) = xpxu(nia-1) + (xpxu(nia-1)-xpxu(nia-2))
           allocate(ypxv(nja-1))
           do i=1,nja-2
              ypxv(i)= 0.5 * ( ypx(i) + ypx(i+1) )

@@ -31,8 +31,8 @@
 *
 *revision
 * v4_00 - Plante A.         - initial MPI version 
-* v4_XX - Tanguay M.        - SETTLS option 
 * v4_06 - McTaggart-Cowan R.- scale by lapse rate to reduce noise in stratosphere
+* v4_10 - Tanguay M.        - SETTLS option 
 *
 *arguments
 *______________________________________________________________________

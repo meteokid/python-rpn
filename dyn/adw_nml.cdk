@@ -1,0 +1,64 @@
+#include "type.cdk"
+
+#if defined(DOC)
+!
+!**comdeck adw.cdk
+!______________________________________________________________________
+!                                                                      |
+! VARIABLES FOR ADVECTION                                              |
+!______________________________________________________________________|
+!              |                                                       |
+! NAME         | DESCRIPTION                                           |
+!--------------|-------------------------------------------------------|
+! Adw_ckbd_L   | switch: .true. : check if upstream points from north  |
+!              |                  and south pe's for which an interpo- |
+!              |                  lation is requested are inside own   |
+!              |                  advection source grid                |
+! Adw_exdg_L   | switch: .true. : print diagnostics on the number of   |
+!              |                  upstream positions exchanged among   |
+!              |                  processors                           |
+! Adw_mono_L   | switch: .true. : advection of tracers is monotonic    |
+! Adw_nkbz_L   | switch: .true. : no knot boundary condition for       |
+!              |                  vertical interpolation               |
+! Adw_nosetint_L switch: .true. : no setint for TRILIN (done inside)   |
+! Adw_cliptraj_L switch: .true. :                           
+! Adw_halox    | advection specific halo in x                          |
+! Adw_haloy    | advection specific halo in y                          |
+! adw_maxcfl   | 
+!______________________________________________________________________|
+!
+#endif
+
+      logical Adw_ckbd_L
+      logical Adw_exdg_L
+      logical Adw_mono_L
+      logical Adw_nkbz_L
+      logical Adw_nosetint_L
+      logical Adw_trunc_traj_L
+      logical Adw_cliptraj_L
+      integer Adw_halox
+      integer Adw_haloy
+      integer Adw_maxcfl
+
+      namelist /adw_cfgs/ Adw_ckbd_L
+      namelist /adw_cfgs/ Adw_exdg_L
+      namelist /adw_cfgs/ Adw_mono_L
+      namelist /adw_cfgs/ Adw_nkbz_L
+      namelist /adw_cfgs/ Adw_nosetint_L
+      namelist /adw_cfgs/ Adw_trunc_traj_L
+      namelist /adw_cfgs/ Adw_cliptraj_L
+      namelist /adw_cfgs/ Adw_maxcfl
+      namelist /adw_cfgs/ Adw_halox
+      namelist /adw_cfgs/ Adw_haloy
+
+      common /adw_nml_l/  Adw_ckbd_L
+      common /adw_nml_l/  Adw_exdg_L
+      common /adw_nml_l/  Adw_mono_L
+      common /adw_nml_l/  Adw_nkbz_L
+      common /adw_nml_l/  Adw_nosetint_L
+      common /adw_nml_l/  Adw_trunc_traj_L
+      common /adw_nml_l/  Adw_cliptraj_L
+
+      common /adw_nml_i/  Adw_halox
+      common /adw_nml_i/  Adw_haloy
+      common /adw_nml_i/  Adw_maxcfl

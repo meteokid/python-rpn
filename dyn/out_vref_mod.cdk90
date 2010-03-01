@@ -72,7 +72,6 @@ contains
 
     ! Write coordinate descriptor
     if (writeDescriptor()) then
-
        err = gd_new(gd,                 &
             kind     = Level_kind_ip1,  &
             version  = Level_version,   &

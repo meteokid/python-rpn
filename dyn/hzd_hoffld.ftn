@@ -57,7 +57,7 @@
 *     __________________________________________________________________
 *
       if (.not.( Hzd_ho_L .and. Fft_fast_L .and. .not.G_lam)) 
-     %   call gem_stop('HZD_HOFFLD not done for those options',-1)
+     %   call handle_error0('hzd_hoffld','HZD_HOFFLD not done for those options',-1)
 *
 *     __________________________________________________________________
 *

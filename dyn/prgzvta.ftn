@@ -24,7 +24,7 @@
      %                   F_cubzt_L, F_linbot,
      %                   DIST_DIM, F_Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_cubzt_L
       integer F_nundr, F_linbot

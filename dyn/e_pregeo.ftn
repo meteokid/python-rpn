@@ -47,12 +47,16 @@
       integer gdll
       external gdll
       integer i,j,offj,n,err
-      real deg2rad
+      real deg2rad, grav,cpd,cor,diff
 *
 *     ---------------------------------------------------------------
 *
       write(6,9000)
       n=nifi*njfi
+*
+      grav = Dcst_grav_8
+      cpd  = Dcst_cpd_8
+      cor  = grav/cpd
 *
       err = gdll (dstf_gid,geobus(la),geobus(lo))
 *
@@ -70,6 +74,10 @@
             geobus(twater +i -1) = geobus(twater +i -1) + dcst_tcdk_8
          end do
       endif
+      do i=1,n
+         diff = (geobus(fis +i -1) - geobus(mt +i -1)) * cor
+         if (diff .gt. 0.) geobus(twater +i -1) = geobus(twater +i -1) - diff
+      end do
       if (geobus(i0).lt.150.) then
          do i=1,n
             geobus(i0 +i -1) = geobus(i0 +i -1) + dcst_tcdk_8

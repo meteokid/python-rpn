@@ -40,24 +40,24 @@
 
       if(Ptopo_numproc.ne.1)then
          print*,'Acid test must be run with only one CPU'
-         call gem_stop('acid_check',-1)
+         call handle_error0('acid_check','acid_check',-1)
       endif
 
       if(Glb_pil_n.ne.7)then
          print*,'Acid test must be run with Glb_pil_n=7, Glb_pil_n is set to ',Glb_pil_n
-         call gem_stop('acid_check',-2)
+         call handle_error0('acid_check','acid_check',-2)
       endif
       if(Glb_pil_s.ne.7)then
          print*,'Acid test must be run with Glb_pil_s=7, Glb_pil_s is set to ',Glb_pil_s
-         call gem_stop('acid_check',-3)
+         call handle_error0('acid_check','acid_check',-3)
       endif
       if(Glb_pil_e.ne.7)then
          print*,'Acid test must be run with Glb_pil_e=7, Glb_pil_e is set to ',Glb_pil_e
-         call gem_stop('acid_check',-4)
+         call handle_error0('acid_check','acid_check',-4)
       endif
       if(Glb_pil_w.ne.7)then
          print*,'Acid test must be run with Glb_pil_w=7, Glb_pil_w is set to ',Glb_pil_w
-         call gem_stop('acid_check',-5)
+         call handle_error0('acid_check','acid_check',-5)
       endif
 
       return

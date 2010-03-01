@@ -17,6 +17,7 @@
 *                    level to obtain those of the thermodynamic levels
 *
 #include "model_macros_f.h"
+#include "constants.h"
 *
       subroutine adw_meanpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm,
      %                        i0,in,j0,jn)
@@ -50,11 +51,11 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
-#include "adw.cdk"
-#include "dcst.cdk"
-#include "schm.cdk"
+!      integer l_ni,l_nj,l_nk
 #include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8  
+
 ************************************************************************
       integer n, nt, nm, nij,vnik, vnikm, i,j,k
 *
@@ -69,7 +70,7 @@
       vnik = (in-i0+1)*l_nk
       vnikm= (in-i0+1)*(l_nk-1)
 *
-      r2pi_8 = two * Dcst_pi_8
+      r2pi_8 = two * CONST_PI_8
 ************************************************************************
 *
 C     call tmg_start ( 33, 'adw_meanpos' )

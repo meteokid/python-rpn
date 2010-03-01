@@ -1,0 +1,30 @@
+#if defined (DOC)
+!
+!**comdeck nl.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH NLI (non-linear rhs)                      |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Nl_u               | non-linear deviation of U                       |
+! Nl_v               | non-linear deviation of V                       |
+! Nl_t               | non-linear deviation of T -> X                  |
+! Nl_c               | non-linear portion of continuity equation       |
+! Nl_w               | non-linear deviation of vertical motion         |
+! Nl_f               | non-linear deviation of FI -> WFI -> Q          |
+!----------------------------------------------------------------------
+!
+!
+#endif
+      MARK_COMMON_BEG(nl)
+      DCL_DYNVAR(nl,   u ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nl,   v ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nl,   t ,  real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(nl,   c ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nl,   w ,  real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(nl,   f ,  real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(nl,   b ,  real, (LDIST_SHAPE))
+      MARK_COMMON_END(nl)

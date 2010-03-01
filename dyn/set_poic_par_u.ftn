@@ -22,7 +22,7 @@
       subroutine set_poic_par_U ( F_eival_8, F_evvec_8, F_odvec_8, 
      $                                       F_xg_8, F_ni, NSTOR )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_ni, NSTOR
       real*8  F_eival_8(F_ni), F_evvec_8(NSTOR,NSTOR)

@@ -43,10 +43,13 @@
 * v3_30 - Desgagne & Winger - Initialize variable for VMM files
 * v4_04 - Tanguay M.        - Williamson's cases
 * v4_05 - Plante A.         - Open top
+* v4_10 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "lun.cdk"
 #include "cst_lis.cdk"
 #include "dcst.cdk"
@@ -59,8 +62,6 @@
 #include "hblen.cdk"
 #include "itf_phy_config.cdk"
 #include "itf_cpl.cdk"
-#include "adw.cdk"
-#include "adx.cdk"
 #include "acid.cdk"
 #include "wil_williamson.cdk"
 #include "wil_nml.cdk"
@@ -69,12 +70,13 @@
 *
       logical  set_dcst_8
       integer  gem_nml,var4d_nml,v4d_config,gemdm_config,grid_nml,
-     $         itf_cpl_nml,series_nml
+     $         itf_cpl_nml,series_nml,adw_nml,adw_config
       external pe_zero_topo, set_dcst_8, gem_nml, var4d_nml,
      $         v4d_config, gemdm_config, grid_nml, itf_cpl_nml, 
-     $         series_nml
+     $         series_nml,adw_nml,adw_config
 **
-      integer ierr,cte_ok,f1,f2,f3,f4,f5
+      integer ierr,cte_ok,f1,f2,f3,f4,f5,f6
+      character(len=256) :: msg_S
 *
 *-------------------------------------------------------------------
 *
@@ -83,7 +85,7 @@
       call rpn_comm_init ( pe_zero_topo, Ptopo_myproc, Ptopo_numproc, 
      $                               Ptopo_npex  , Ptopo_npey )
       call base_dir_env
-      call gem_stop ('TASK_INPUT',clib_isdir(Path_input_S))
+      call handle_error(clib_isdir(Path_input_S),'set_world_view','task_input')
 *
 * Continue initialization steps
 *
@@ -94,7 +96,7 @@
       cte_ok = 0
       if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre,
      $                        Lun_out,Ptopo_numproc ) ) cte_ok=-1
-      call gem_stop ('set_dcst_8',cte_ok)
+      call handle_error(cte_ok,'set_world_view','set_dcst_8')
 *
       if ( Schm_theoc_L ) then
 *
@@ -107,43 +109,33 @@
 *
 * Read namelist gem_cfgs, var4d, coupling and series from file Path_nml_S
 *
-         f1 = grid_nml  (Path_nml_S)
+         f1 = grid_nml    (Path_nml_S)
          G_lam = Grd_typ_S(1:1).eq.'L'
-         f2 = gem_nml   (Path_nml_S)
+         f2 = gem_nml     (Path_nml_S)
          f3 = itf_cpl_nml (Path_nml_S)
-         f4 = var4d_nml (Path_nml_S)
-         f5 = series_nml (Path_nml_S)
-         call gem_stop  ('SET_WORLD_VIEW_SET',min(f1,f2,f3,f4,f5))
+         f4 = var4d_nml   (Path_nml_S)
+         f5 = series_nml  (Path_nml_S)
+         f6 = adw_nml     (Path_nml_S,G_lam)
+
+         write(msg_S,'(a,6I4)') 'Error Reading nml - ',f1,f2,f3,f4,f5,f6
+         call handle_error(min(f1,f2,f3,f4,f5,f6),'set_world_view',msg_S)
       endif
-*
 *
 * Establish final configuration
 *
       f1 = gemdm_config ( )
       f2 = v4d_config   ( )
-      call gem_stop ('SET_WORLD_VIEW',min(f1,f2))
+      f3 = adw_config   ( )
+      call handle_error(min(f1,f2,f3),'set_world_view','')
 *
       ierr = grid_nml    ('print')
       ierr = gem_nml     ('print')
+      call adw_nml_print (Lun_out)
       ierr = itf_cpl_nml ('print') 
       ierr = var4d_nml   ('print')
       ierr = series_nml  ('print')
       if (Williamson_case.ne.0.and.Lun_out.gt.0) write (Lun_out, nml=williamson) 
 
-      Adx_nkbz_L=Adw_nkbz_L
-      Adx_exdg_L=Adw_exdg_L
-      Adx_ckbd_L=Adw_ckbd_L
-      Adx_mono_L=Adw_mono_L
-      Adx_interp_type_S=Adw_interp_type_S
-      Adx_nosetint_L=Adw_nosetint_L
-      Adx_trunc_traj_L=Adw_trunc_traj_L
-      Adx_halox=Adw_halox
-      Adx_haloy=Adw_haloy
-      if (G_lam) then
-         Adx_halox=Adw_halox
-         Adx_haloy=Adw_haloy
-      endif
-*
       if(Acid_test_L)call acid_check()
 *
       call gemtim2 (Lun_out,.false.,0,ierr)
@@ -156,8 +148,36 @@
 *
       call set_schm
 *
-* Initialize variable for VMM files
-      vmm_read_done_L = .false.
+* Establish meta_data template variables for gmm_create purpose
+*
+      call gmm_build_meta2D(meta1d,
+     %                      1,l_ni*l_nj*l_nk,0,0,l_ni*l_nj*l_nk,
+     %                      0,0,0,0,0,
+     %                      0,GMM_NULL_FLAGS)
+      call gmm_build_meta2D(meta2d,
+     %                      LXDIST_DIM,G_halox,G_halox,l_ni,
+     %                      LYDIST_DIM,G_haloy,G_haloy,l_nj,
+     %                      0,GMM_NULL_FLAGS)
+      call gmm_build_meta3D(meta3d_nk,
+     %                      LXDIST_DIM,G_halox,G_halox,l_ni,
+     %                      LYDIST_DIM,G_haloy,G_haloy,l_nj,
+     %                      1,l_nk,0,0,l_nk,
+     %                      0,GMM_NULL_FLAGS)
+      call gmm_build_meta3D(meta3d_nk1,
+     %                      LXDIST_DIM,G_halox,G_halox,l_ni,
+     %                      LYDIST_DIM,G_haloy,G_haloy,l_nj,
+     %                      1,l_nk+1,0,0,l_nk+1,
+     %                      0,GMM_NULL_FLAGS)
+      call gmm_build_meta3D(meta3d_nk2,
+     %                      LXDIST_DIM,G_halox,G_halox,l_ni,
+     %                      LYDIST_DIM,G_haloy,G_haloy,l_nj,
+     %                      1,l_nk+2,0,0,l_nk+2,
+     %                      0,GMM_NULL_FLAGS)
+      call gmm_build_meta3D(meta3d_0nk1,
+     %                      LXDIST_DIM,G_halox,G_halox,l_ni,
+     %                      LYDIST_DIM,G_haloy,G_haloy,l_nj,
+     %                      0,l_nk+1,0,0,l_nk+2,
+     %                      0,GMM_NULL_FLAGS)
 *
 *-------------------------------------------------------------------
 *

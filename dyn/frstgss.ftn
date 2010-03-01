@@ -28,6 +28,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
 * v3_21 - Tanguay M.        - Revision Openmp
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *    See above id
@@ -36,6 +37,8 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
@@ -43,53 +46,42 @@
 #include "vt0.cdk"
 #include "vt1.cdk"
 *
-*modules
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-*
-      integer pnerr, pnlkey1(14),pnlod,key0,key1
-      real tr0,tr1
-      pointer (patr0, tr0(LDIST_SHAPE,*))
-      pointer (patr1, tr1(LDIST_SHAPE,*))
+      character*16 tr_name
       integer i, j, k, kk
+      real, pointer, dimension(:,:,:) :: tr0,tr1
 **
 *     ---------------------------------------------------------------
 *
       if (Lun_debug_L) write (Lun_out,1000)
 *
-      pnlkey1(1) = VMM_KEY(tt0)
-      pnlkey1(2) = VMM_KEY(st0)
-      pnlkey1(3) = VMM_KEY(zdt0)
-      pnlkey1(4) = VMM_KEY(tt1)
-      pnlkey1(5) = VMM_KEY(st1)
-      pnlkey1(6) = VMM_KEY(zdt1)
-      pnlkey1(7) = VMM_KEY(wt0)
-      pnlkey1(8) = VMM_KEY(wt1)
-*
-      pnlod=8
-      pnerr = vmmlod(pnlkey1,pnlod)
 
 * For humidity
-      key0 = VMM_KEY (trt0) + 1
-      key1 = VMM_KEY (trt1) +1
-      pnerr = vmmlod(key0,1)
-      pnerr = vmmlod(key1,1)
-      pnerr = vmmget(key0,patr0,tr0)
-      pnerr = vmmget(key1,patr1,tr1)
+      tr_name = 'TR/HU:M'
+      gmmstat = gmm_get(tr_name,tr0,meta3d)
+      tr_name = 'TR/HU:P'
+      gmmstat = gmm_get(tr_name,tr1,meta3d)
       do j= 1 , l_nj
       do i= 1 , l_ni
          tr0 (i,j,l_nk+2) = tr1 (i,j,l_nk+2)
       enddo
       enddo
 
-      pnerr = VMM_GET_VAR(tt0)
-      pnerr = VMM_GET_VAR(st0)
-      pnerr = VMM_GET_VAR(zdt0)
-      pnerr = VMM_GET_VAR(tt1)
-      pnerr = VMM_GET_VAR(st1)
-      pnerr = VMM_GET_VAR(zdt1)
-      pnerr = VMM_GET_VAR(wt0)
-      pnerr = VMM_GET_VAR(wt1)
+      gmmstat = gmm_get(gmmk_tt0_s,tt0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(tt0)'
+      gmmstat = gmm_get(gmmk_st0_s,st0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(st0)'
+      gmmstat = gmm_get(gmmk_zdt0_s,zdt0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(zdt0)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(st1)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_wt0_s,wt0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(wt0)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(wt1)'
 
 !$omp parallel
 *
@@ -115,29 +107,16 @@
 !$omp end do
 *
 !$omp end parallel
-
-      pnerr = vmmuld(-1,0)
 *
-      pnlod=0
       if ( Cori_cornl_L ) then
-         pnlkey1(pnlod+1) = VMM_KEY(ut0)
-         pnlkey1(pnlod+2) = VMM_KEY(vt0)
-         pnlkey1(pnlod+3) = VMM_KEY(ut1)
-         pnlkey1(pnlod+4) = VMM_KEY(vt1)
-         pnlod=pnlod+4
-      endif
-      if ( .not. Schm_hydro_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(qt0)
-         pnlkey1(pnlod+2) = VMM_KEY(qt1)
-         pnlod = pnlod+2
-      endif
-      pnerr = vmmlod(pnlkey1,pnlod)
-
-      if ( Cori_cornl_L ) then
-         pnerr = VMM_GET_VAR(ut0)
-         pnerr = VMM_GET_VAR(ut1)
-         pnerr = VMM_GET_VAR(vt0)
-         pnerr = VMM_GET_VAR(vt1)
+         gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(ut0)'
+         gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(ut1)'
+         gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(vt0)'
+         gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(vt1)'
 !$omp parallel do
          do k=1,l_nk+1
          do j= 1 , l_nj
@@ -151,8 +130,10 @@
       endif
 *
       if ( .not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(qt0)
-         pnerr = VMM_GET_VAR(qt1)
+         gmmstat = gmm_get(gmmk_qt0_s,qt0,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(qt0)'
+         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss ERROR at gmm_get(qt1)'
 !$omp parallel do
          do k=0,l_nk+1
          do j= 1 , l_nj
@@ -167,7 +148,6 @@
 c     if (Acid_test_L) tplt0
 c    $call glbstat (tpt0,'tpt0',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
 c    $                                          8+acid_j0,G_nj-8-acid_jn,1,G_nk)
-      pnerr = vmmuld(-1,0)
 
 1000  format(3X,'FIRST GUESS: (S/R FRSTGSS)')
 

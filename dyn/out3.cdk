@@ -22,7 +22,6 @@
 ! Out3_ndigits       | minimum number used to count the units in       |
 !                    | output name (type is specified in Out3_unit_S   |
 ! Out3_cliph_L       | .true. to clip humidity variables on output     |
-! Out3_compress_L    | .true. to have compressed FST files on output   |
 ! The following are "cub??"   switches used in the context of vertical |
 ! interpolation toward pressure levels:                                |
 ! Out3_cubzt_L       | .true. for cubic interpolation for GZ,VT and HU |
@@ -59,8 +58,7 @@
       character*4  Out3_unit_S
       logical Out3_cliph_L, Out3_cubzt_L, Out3_cubuv_L
       logical Out3_cubds_L, Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L
-      logical Out3_cubww_L, Out3_flipit_L,Out3_debug_L
-      logical Out3_compress_L,Out3_satues_L
+      logical Out3_cubww_L, Out3_flipit_L,Out3_debug_L, Out3_satues_L
       integer Out3_nbitg, Out3_linbot, Out3_nundr, Out3_zund(MAXELEM)
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
       integer Out3_closestep,Out3_filtpass_max, Out3_xnbits_max,Out3_ip3
@@ -76,7 +74,7 @@
       common / Out3_l / Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L
       common / Out3_l / Out3_cubqq_L
       common / Out3_l / Out3_cubww_L, Out3_flipit_L,Out3_debug_L
-      common / Out3_l / Out3_compress_L, Out3_satues_L
+      common / Out3_l / Out3_satues_L
       MARK_COMMON_END(Out3_l)
 !
       MARK_COMMON_BEG(Out3_c)

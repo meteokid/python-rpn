@@ -40,12 +40,13 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "e_tr.cdk"
 #include "path.cdk"
 *
-      integer  longueur
-      external longueur
-      integer idg,jdg,mode,ntr,k
-      character*2  md
-      character*15 startindx
+      character*2   md
+      character*15  startindx
       character*512 filen
+      integer idg,jdg,mode,ntr,i,ii,nis,njs
+      real*8 pt5
+      real*8, dimension(:), allocatable :: xxu,yyv
+      parameter ( pt5    = 0.5d0 )
 *
 *------------------------------------------------------------------
 *
@@ -54,7 +55,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       idg=1
       jdg=1
       mode=2
+      nis = gif-gid+1
+      njs = gjf-gjd+1
       ntr=1+E_tr3d_ntr ! for HU
+      allocate (xxu(nis),yyv(njs))
 *
       write (md,'(i2.2)') mode
       write (startindx,'((i7.7),a1,(i7.7))') idg,'-',jdg
@@ -62,17 +66,26 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       filen= trim(rootfn)//trim(filen)
       open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
      $                                          position='APPEND')
-      print *,'e_sfile_3df anal_hav(2)=',anal_hav(2)
-      do k=1,lv
-         print *,'za_8=',za_8(k),zb_8(k)
+*
+      do i=1,nis-1
+         ii    = gid+i
+         xxu(i) = pt5 * ( xg_8(ii-1) + xg_8(ii) )
       enddo
-      do k=1,lv_t
-         print *,'zat_8=',zat_8(k),zbt_8(k)
+      xxu(nis) = xg_8(gif) + pt5 * ( xg_8(gif) - xg_8(gif-1) )
+*
+      do i=1,njs-1
+         ii    = gjd+i
+         yyv(i) = pt5 * ( yg_8(ii-1) + yg_8(ii) )
       enddo
+      yyv(njs) = yg_8(gjf) + pt5 * ( yg_8(gjf) - yg_8(gjf-1) )
+*
       call wrgeo_3df (xg_8(gid),gif-gid+1,yg_8(gjd),gjf-gjd+1,
-     $                za_8,zb_8,zat_8,zbt_8,lv,lv_t,
-     $                Anal_hav(2),unf_casc)
+     $                xxu,          yyv,
+     $                za_8,zb_8,zat_8,zbt_8,
+     $                lv,lv_t,Anal_hav(2),unf_casc)
+*
       write (unf_casc) msg,mode,nvar,ntr
+      deallocate (xxu,yyv)
 *
 *------------------------------------------------------------------
       return

@@ -17,7 +17,7 @@
 *
 #include "model_macros_f.h"
       subroutine e_setintuv
-#include "impnone.cdk"
+      implicit none
 *
 *author jean cote - rpn - sept 95
 *

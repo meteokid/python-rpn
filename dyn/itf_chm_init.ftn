@@ -35,7 +35,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "mem.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "itf_chm_bus.cdk"
@@ -63,7 +62,7 @@
       fn = 'model_settings'
       if (Lun_out>0) write(Lun_out,1001)
       err = chm_read_nml(fn,Schm_chems_L,Lun_out)
-      if (err< 0) call gem_stop('gem_run itf_chm_init',-1)
+      if (err< 0) call handle_error0('itf_chm_init','gem_run itf_chm_init',-1)
       if (.not. Schm_chems_L) return
       
       prout    = lun_out.gt.0
@@ -114,7 +113,7 @@
       else
          if (lun_out>0) write (lun_out,9000)
      $        max(chm_bent_top,chm_bdyn_top,chm_bper_top,chm_bvol_top)
-            call gem_stop('ITF_CHM_INIT',-1)
+            call handle_error0('itf_chm_init','ITF_CHM_INIT',-1)
       endif
 
       chm_bchm_top  = chm_bper_top+chm_bdyn_top+chm_bvol_top+chm_bent_top
@@ -135,7 +134,7 @@
 	       write(Lun_out) 'Problem with the allocation of chm_busper3D'
                write(Lun_out) 'chm_bper_siz,chm_nj :',chm_bper_siz,chm_nj
 	    endif
-            call gem_stop('ITF_CHM_INIT',-1)
+            call handle_error0('itf_chm_init','ITF_CHM_INIT',-1)
       endif
       
  1000 format(/,'CHEMISTRY CONFIGURATION (S/R ITF_CHM_INIT)',

@@ -27,6 +27,7 @@
 *
 *revision
 * v3_11 - Gravel S.         - initial version
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 * (see above)
@@ -35,6 +36,8 @@
 *        None
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "p_geof.cdk" 
 #include "lctl.cdk"
@@ -43,28 +46,22 @@
 #include "vt1.cdk"
 *
 *modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
 *
-      integer  pnerr, pnlod, pnlkey1(3), i,j,k
+      integer i,j
 **
       real*8 lt, pio2, f, atime, two
       parameter (two = 2.0d0)
 *     __________________________________________________________________
 *
-      pnlkey1( 1) = VMM_KEY(topo)
-      pnlkey1( 2) = VMM_KEY(topo1)
-      pnlkey1( 3) = VMM_KEY(dtopo)
-      pnlod = 3
-*     - - - - - - - - - - - - - 
-      pnerr = vmmlod(pnlkey1,pnlod)
-*     - - - - - - - - - - - - - 
-      pnerr = VMM_GET_VAR(topo)
-      pnerr = VMM_GET_VAR(topo1)
-      pnerr = VMM_GET_VAR(dtopo)
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_topo1_s,topo1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(topo1)'
+      gmmstat = gmm_get(gmmk_dtopo_s,dtopo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(dtopo)'
 *
       if(Vtopo_ndt.eq.0)then
-         call gem_stop('var_topo : Vtopo_ndt must be > 0',-1)
+         call handle_error0('var_topo','var_topo : Vtopo_ndt must be > 0',-1)
       endif
       lt = Vtopo_ndt
       pio2 = Dcst_pi_8 / two
@@ -80,7 +77,6 @@
       end do
       end do
 *
-      pnerr = vmmuld(-1,0)
 *
 *     __________________________________________________________________
 *

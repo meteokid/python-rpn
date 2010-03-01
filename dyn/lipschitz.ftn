@@ -20,7 +20,7 @@
       subroutine lipschitz(F_u, F_v, F_w, DIST_DIM, Nk,
      $                                F_i0,F_in,F_j0,F_jn)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       integer F_i0,F_in,F_j0,F_jn

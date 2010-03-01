@@ -22,7 +22,7 @@
      $                    F_cy2_8, F_xp0_8, F_xp2_8, F_yp0_8 ,
      $                    F_yp2_8, Gni, Gnj, PYDIST_DIM,F_gnjv, lnjv)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer Gni,Gnj,PYDIST_DIM,F_gnjv, lnjv
       real*8 F_aix_8(*), F_bix_8(*), F_cix_8(*), F_dix_8(*), 

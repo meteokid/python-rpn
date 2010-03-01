@@ -353,7 +353,7 @@ CCC      CALL WIL_INPTP_N(FNIN,TIME,MAXH,LDIAG,ZETASC,DIVSC,PHISC,
          if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,300) CASE 
   300        FORMAT (/,' STSWM: FATAL ERROR IN WIL_ANLYTC: ',/,
      $       ' NO ANALYTIC SOLUTION PROVIDED FOR TEST CASE ',I2,/)
-         call gem_stop('STOP IN WIL_ANLYTC',-1)
+         call handle_error0('wil_anlytc','STOP IN WIL_ANLYTC',-1)
       ENDIF
 *     -----
 *

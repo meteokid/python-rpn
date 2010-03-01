@@ -1,34 +1,33 @@
 #
 #   Common recipes for models
 #
-include       $(ATM_MODEL_PATH)/Makefile_$(EC_ARCH)
-MODLIBPATH  = $(ATM_MODEL_PATH)/lib/$(EC_ARCH)$(ABI)
-PHY_VERSION = 5.0.4
+include       $(ATM_MODEL_PATH)/include/Makefile_$(BASE_ARCH)
+MODLIBPATH  = $(ATM_MODEL_PATH)
+PHY_VERSION = 5.1.0
 
-RCOMPIL = r.compile $(MPI) $(OMP) -includes ./ $(MODLIBPATH)/mod $(ARMNLIB)/modeles/PHY_shared/ops/v_$(PHY_VERSION)/include
-PATCH   =
-OPTF    =
-#
-#MPI = rpn_comm_stubs
-CODEBETA = bmf_get_620 bmf_get2_620 fstd98_597+ calc_crc_625 mgilib2_623 gossip_sock_622 client_timeout_624
+RCOMPIL = r.compile $(MPI) $(OMP) -includes ./ $(MODLIBPATH)/include $(PHYLIBPATH)/include $(MODLIBPATH)/lib/$(EC_ARCH)/mod $(PHYLIBPATH)/lib/$(EC_ARCH)/mod
+
+COMM     = rpn_comm$(version_COMM) $(COMM_stubs)
 
 V4D         = v4d_stubs
 #V4D         = "v4d modulopt prof_003"
 
-PHYLIBPATH  = $(ARMNLIB)/modeles/PHY/v_$(PHY_VERSION)/lib/$(EC_ARCH)$(ABI)
+PHYLIBPATH  = $(ARMNLIB)/modeles/PHY/v_$(PHY_VERSION)
 #PHY         = phy_stubs
 PHY         = phy
 
 CHM_VERSION = 0.0
-CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)/lib/$(EC_ARCH)$(ABI)
+CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)
 CHM         = chm_stubs
 #CHM         = chm
 
-CPL         = cpl_106
+CPL_VERSION = 106
+CPL = cpl_$(CPL_VERSION)
+CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)
 #CPL         = cpl_stubs
 
-OTHERS   = $(COMM) rtools lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
-LIBPATH  = $(MODLIBPATH) $(PHYLIBPATH) $(CHMLIBPATH) $(CPLLIBPATH)
+OTHERS   = $(COMM) $(UTIL) $(LLAPI) $(IBM_LD)
+LIBPATH  = $(PWD) $(MODLIBPATH)/lib/$(EC_ARCH) $(PHYLIBPATH)/lib/$(EC_ARCH) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH)
 LIBS     = $(ATM_MODEL) $(V4D) $(PHY) $(PATCH) $(CHM) $(CPL) $(OTHERS)
 
 LCLPO   = malib$(EC_ARCH)

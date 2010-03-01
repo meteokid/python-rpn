@@ -118,7 +118,7 @@
       ierr=0
       if ( (.not.check_parti (l_i0,G_ni,Ptopo_npex)) .or.
      $     (.not.check_parti (l_j0,G_nj,Ptopo_npey)) ) ierr=-1
-      call gem_stop('check_parti',ierr)
+      call handle_error0('domain_decomp','check_parti',ierr)
 *
       l_nk = G_nk
       l_njv= l_nj

@@ -19,7 +19,7 @@
 *
       integer function set_level (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 *
-#include "impnone.cdk"
+      implicit none
 *
         integer F_argc,F_v1,F_v2
         character *(*) F_argv_S(0:F_argc),F_cmdtyp_S     

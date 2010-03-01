@@ -14,15 +14,13 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_vlsp - allocate and compute latitudinal modulation of 
-*               vertical diffusion coefficient on momentum
+*                     vertical diffusion coefficient on momentum
 *
 #include "model_macros_f.h"
 *
-      subroutine itf_phy_vlsp (F_lunout)
-*
+      subroutine itf_phy_vlsp
       implicit none
 *
-      integer F_lunout
 *Author
 *     michel roch - rpn - nov 97
 *
@@ -38,124 +36,66 @@
 *     none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "itf_phy_config.cdk"
+#include "lun.cdk"
+#include "geomn.cdk"
+#include "schm.cdk"
 *
-**
+      real*8 one, CLXXX_8, deg2rad_8
+      parameter( one  = 1.0d0 , CLXXX_8 = 180.0d0 )
 *
-      integer pnerr
-*
-      real*8 zero, one, two
-      parameter( zero = 0.0d0 )
-      parameter( one  = 1.0d0 )
-      parameter( two  = 2.0d0 )
-*
-      integer i, j, i_glob, j_glob
-*
-      real*8  pdc0,   pdsa,   pdca, pds0, pdang,
-     %        pdmllm, pdeqlm, pda,  pdb,  pdc,   pdtmp
+      integer i, j
+      real*8 pdb, pdtmp, pda,  pdc
+      real, pointer, dimension(:,:) :: pw_eponmod => null()
 *
 *     ---------------------------------------------------------------
 *
-      if (F_lunout.gt.0) write(F_lunout,1000)
-*
-***********************************************************************
-* allocate memory for 2D amplification factor field
-***********************************************************************
-*	
-      call hpalloc(P_lmvd_vlsp_, l_ni * l_nj, pnerr, 1)
-*
-***********************************************************************
-* set rotation parameters
-***********************************************************************
-*
-      pds0 = Grd_rot_8(3,3)
-*
-      if ( abs( (abs(pds0)-one) ).gt.1.0e-10 ) then
-*
-         pdang = atan2( Grd_rot_8(2,3), Grd_rot_8(1,3) )
-*
-      else
-*
-         pds0  = sign( one, pds0 )
-         pdang = zero
-*
-      endif
-*
-      pdc0 = sqrt( max( zero, one - 1.0d0*pds0 ** 2 ) )
-***********************************************************************
-* use position l_nj of field P_lmvd_vlsp as temporary storage space
-***********************************************************************
-      do i=1,l_ni
-         i_glob=l_i0+i-1
-         P_lmvd_vlsp(i,l_nj) = cos( G_xg_8(i_glob) - pdang )
-      enddo
-***********************************************************************
-* generate amplification factor on phi grid
-***********************************************************************
-      pdmllm = - P_lmvd_mllat_8
-      pdeqlm = - P_lmvd_eqlat_8
-      pdb    = pdeqlm - pdmllm
-*
-      do j=1,l_nj
-*
-         j_glob=l_j0+j-1
-*
-         pdsa = pds0 * sin( G_yg_8(j_glob) )
-         pdca = pdc0 * cos( G_yg_8(j_glob) )
-*
-         do i=1,l_ni
-            pdtmp = asin(max(-1.d0,min(1.d0,pdca*1.0d0*(P_lmvd_vlsp(i,l_nj))+pdsa)))
-            P_lmvd_vlsp(i,j) = P_lmvd_valml_8
-*
-***********************************************************************
-* fit a cubic between values P_lmvd_valml_8 and P_lmvd_valeq_8
-*               at latitudes P_lmvd_mllat_8 and P_lmvd_eqlat_8
-***********************************************************************
-* southern hemisphere + tropics
-***********************************************************************
-*
-            if((pdtmp .gt. pdmllm).and.(pdtmp .lt. pdeqlm))then
-*
-              pda = (pdtmp-pdmllm)/pdb
-              pdc = (3.-2.*pda)*pda*pda
-*
-              P_lmvd_vlsp(i,j) = P_lmvd_valeq_8 * pdc + ( 1. - pdc) 
-     $                                        * P_lmvd_valml_8
-*
-            elseif(pdtmp .ge. pdeqlm) then
-*
-              P_lmvd_vlsp(i,j) = P_lmvd_valeq_8
-*
-            endif
-*
-***********************************************************************
-* northern hemisphere: north of P_lmvd_eqlat_8
-***********************************************************************
-*
-            if ((pdtmp .gt. P_lmvd_eqlat_8) .and.
-     $          (pdtmp .lt. P_lmvd_mllat_8))then
-*
-              pda = (pdtmp-P_lmvd_eqlat_8)/pdb
-              pdc = (3.-2.*pda)*pda*pda
-*
-              P_lmvd_vlsp(i,j) = P_lmvd_valml_8 * pdc + (1. - pdc) 
-     $                                        * P_lmvd_valeq_8
-*
-            elseif(pdtmp .ge. P_lmvd_mllat_8) then
-*
-              P_lmvd_vlsp(i,j) = P_lmvd_valml_8
-*
-            endif
-         enddo
+      if ( .not. Schm_phyms_L ) return
+      if (G_lam)                return
 
+      gmmstat = gmm_create ('PW_EPONMOD',pw_eponmod,meta2d)
+      gmmstat = gmm_get    ('PW_EPONMOD',pw_eponmod,meta2d)
+
+      deg2rad_8 = acos( -ONE ) / CLXXX_8
+
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+      pw_eponmod = P_lmvd_valml_8
+
+      do j=1,l_nj
+      do i=1,l_ni
+         if (abs(Geomn_latrx(i,j)*deg2rad_8) .le. P_lmvd_eqlat_8 ) 
+     $       pw_eponmod (i,j) = P_lmvd_valeq_8
+      end do
+      end do
+
+      pdb = P_lmvd_mllat_8 - P_lmvd_eqlat_8
+      do j=1,l_nj
+      do i=1,l_ni
+         pdtmp = Geomn_latrx(i,j)*deg2rad_8
+         if ((pdtmp .gt. -P_lmvd_mllat_8 ).and.(pdtmp .lt. -P_lmvd_eqlat_8)) then
+           pda = (pdtmp+P_lmvd_mllat_8)/pdb
+           pdc = (3.-2.*pda)*pda*pda
+           pw_eponmod(i,j) = P_lmvd_valeq_8 * pdc + ( 1. - pdc) 
+     $                                      * P_lmvd_valml_8
+         endif
+         if ((pdtmp .gt. P_lmvd_eqlat_8  ).and.(pdtmp .lt.  P_lmvd_mllat_8)) then
+           pda = (pdtmp-P_lmvd_eqlat_8)/pdb
+           pdc = (3.-2.*pda)*pda*pda
+           pw_eponmod(i,j) = P_lmvd_valml_8 * pdc + (1. - pdc) 
+     $                                      * P_lmvd_valeq_8
+         endif
+      enddo
       enddo
 *
       return
 *
  1000 format(
-     $  /,'ALLOCATE AND COMPUTE LATITUDINAL MODULATION OF VERTICAL', 
+     $  /,'COMPUTE LATITUDINAL MODULATION OF VERTICAL', 
      %  /,'DIFFUSION COEFFICIENT ON MOMENTUM    (S/R itf_phy_vlsp)',
      %  /,'=======================================================')
 *

@@ -22,11 +22,16 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 #include "model_macros_f.h"
 *
-      integer function casc_bcs ( datev, unf, wowp, errp )
+      integer function casc_bcs (F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, F_q,
+     $                           Mminx,Mmaxx,Mminy,Mmaxy, datev, unf, wowp, errp)
       implicit none
 *
       character*15 datev
-      integer unf,wowp,errp
+      integer Mminx,Mmaxx,Mminy,Mmaxy,unf,wowp,errp
+      real F_u   (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*  ),
+     $     F_w   (Mminx:Mmaxx,Mminy:Mmaxy,*), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*  ),
+     $     F_zd  (Mminx:Mmaxx,Mminy:Mmaxy,*), F_s(Mminx:Mmaxx,Mminy:Mmaxy    ),
+     $     F_topo(Mminx:Mmaxx,Mminy:Mmaxy  ), F_q(Mminx:Mmaxx,Mminy:Mmaxy,0:*)
 *
 *author
 *     M. Desgagne  April 2006 (MC2 casc_bcs)
@@ -37,6 +42,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 * v4_05 - Plante A.      - top nesting
 *
 *
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "bcsdim.cdk"
 #include "bcsgrds.cdk"
@@ -47,7 +54,6 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "tr3d.cdk"
 #include "lun.cdk"
 #include "lctl.cdk"
-#include "ind.cdk"
 #include "nest.cdk"
 #include "acid.cdk"
 #include "path.cdk"
@@ -61,21 +67,18 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *         ?  5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
 *            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
 
-      integer  vmmlod,vmmget,vmmuld,longueur,sid3df
-      external vmmlod,vmmget,vmmuld,longueur,sid3df
+      integer  sid3df
+      external sid3df
       character*2 md
       character*4 nomvar
       character*8 dynophy
       character*8, dimension (:), pointer :: trname_a
       character*256 fn
       logical done,data2treat
-      real trp
-      pointer (patrp, trp(LDIST_SHAPE,*))
-      real, dimension (:,:,:), pointer :: trn
+      real, dimension (:,:,:), pointer :: trn,trp
       integer i,j,k,ntra,n,err,ngd,nga,errop,ofi,ofj,mode,ioerr,
      $   errdyn,cumerr,cnt,nit,njt,d1,ni1,nj1,nk1,nbits,id,nvar,
      $   nka_m,nka_t,presstype
-      integer key1(17),keyp_,keyp(Tr3d_ntr)
       real*8  , dimension (:  ), pointer :: xpaq,ypaq,xpau,ypav
       real, dimension (:,:), pointer :: 
      $       uun,vvn,zdn,ttn,meqn,ssqn,qqn,wwn
@@ -87,7 +90,6 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       if (Lun_debug_L) write (Lun_out,1000) Lctl_step,wowp
 *
-
       casc_bcs = -1
       nullify(xpaq,ypaq,xpau,ypav,
      $        uun,vvn,zdn,ttn,meqn,ssqn,qqn,wwn,trn,trname_a)
@@ -96,7 +98,6 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       if (data2treat) then
 *
-
       nga  = bcs_nia * bcs_nja
       nka_m=0
       nka_t=0
@@ -112,9 +113,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       if (ifd_needit(n)) then
          errdyn = -1
          fn= trim(Path_ind_S)//'/3df'//md//'_'//datev//'_'//ifd_fnext(n)
-         open (unf,file=fn(1:longueur(fn)),access='SEQUENTIAL',
+         open (unf,file=trim(fn),access='SEQUENTIAL',
      $            form='UNFORMATTED',status='OLD',iostat=errop)
-c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
          if (errop.ne.0) goto 33
 *
 * Use first file to establish 3D grid dimensions and geo-references
@@ -152,7 +152,7 @@ c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
 *        finish filmup for dynamic variables
          err = err + errdyn
          if (err.lt.0) then
-            if (Ptopo_myproc.eq.0) write (6,203) fn(1:longueur(fn))
+            if (Ptopo_myproc.eq.0) write (6,203) trim(fn)
             goto 999
          endif
          done = .true.
@@ -168,9 +168,9 @@ c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
 *
 *
 * topo is inflated!
-      call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
+      call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-       call trnes1(Ind_topo,topo_s,topo_n,topo_w,topo_e,
+       call trnes1(F_topo,topo_s,topo_n,topo_w,topo_e,
      $         LDIST_DIM,
      $         minxs,maxxs+1-(east*1),minys,maxys+1,
      $         minxn,maxxn+1-(east*1),minyn,maxyn+1-(north*1),
@@ -249,46 +249,40 @@ c     print *,Ptopo_myproc,'casc_hvi E:'
 *
       if ( data2treat.and. (wowp.eq.1.or.errp.lt.0) ) then
 *
-c        print *,'CASC_BCS wowp=',wowp, ' copying bcs_uf to Ind_u'
-         call trnes (Ind_u,bcs_uf(bcs_is),bcs_uf(bcs_in),
+c        print *,'CASC_BCS wowp=',wowp, ' copying bcs_uf to F_u'
+         call trnes (F_u,bcs_uf(bcs_is),bcs_uf(bcs_in),
      $       bcs_uf(bcs_iw),bcs_uf(bcs_ie),bcs_uf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+1,1)
-         call trnes (Ind_v,bcs_vf(bcs_is),bcs_vf(bcs_in),
+         call trnes (F_v,bcs_vf(bcs_is),bcs_vf(bcs_in),
      $       bcs_vf(bcs_iw),bcs_vf(bcs_ie),bcs_vf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+1,1)
-         call trnes (Ind_t,bcs_tf(bcs_is),bcs_tf(bcs_in),
+         call trnes (F_t,bcs_tf(bcs_is),bcs_tf(bcs_in),
      $       bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_tf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+2,1)
-         call trnes (Ind_s,bcs_sf(bcs_is),bcs_sf(bcs_in),
+         call trnes (F_s,bcs_sf(bcs_is),bcs_sf(bcs_in),
      $       bcs_sf(bcs_iw),bcs_sf(bcs_ie),bcs_sf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,1,1)
-         call trnes (Ind_zd,bcs_zdf(bcs_is),bcs_zdf(bcs_in),
+         call trnes (F_zd,bcs_zdf(bcs_is),bcs_zdf(bcs_in),
      $       bcs_zdf(bcs_iw),bcs_zdf(bcs_ie),bcs_zdf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+1,1)
-         call trnes (Ind_w,bcs_wf(bcs_is),bcs_wf(bcs_in),
+         call trnes (F_w,bcs_wf(bcs_is),bcs_wf(bcs_in),
      $       bcs_wf(bcs_iw),bcs_wf(bcs_ie),bcs_wf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+1,1)
          if (.not.Schm_hydro_L) then
-            call trnes (Ind_q,bcs_qf(bcs_is),bcs_qf(bcs_in),
+            call trnes (F_q,bcs_qf(bcs_is),bcs_qf(bcs_in),
      $       bcs_qf(bcs_iw),bcs_qf(bcs_ie),bcs_qf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+2,1)
          endif
-         keyp_ = VMM_KEY (nest_trf)
-         do n=1,Tr3d_ntr
-            keyp(n) = keyp_ + n
-         end do
-         err = vmmlod(keyp,Tr3d_ntr)
          do n = 1, Tr3d_ntr
-            err = vmmget(keyp(n),patrp,trp)
+            nullify (trp)
+            gmmstat = gmm_get('NEST/'//trim(Tr3d_name_S(n))//':F',trp,meta3d)
             id = (n-1)*bcs_sz+1
             call trnes(trp,bcs_trf(id),
      $                 bcs_trf(id+bcs_in-1),bcs_trf(id+bcs_iw-1),
      $                 bcs_trf(id+bcs_ie-1),bcs_trf(id+bcs_it-1),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+2,1)
          end do
-         err = vmmuld(keyp,Tr3d_ntr)
       endif
-*
 *
  100  format (' ',60('*'))
  101  format (' (CASC_BCS) JUST READ LBCS DATA FOR DATE: ',a15,x,i3)

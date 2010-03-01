@@ -10,6 +10,7 @@
 ! v2_31 - Tanguay M.        - adapt for tracers in tr3d
 ! v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_XX - Tanguay M.        - VMM replacement with GMM for (TL/AD)
 !
 !object
 !     Equivalent to comdeck vt1 for TRAJECTORY
@@ -40,25 +41,19 @@
 !
 #endif
 !
-!NOTE: the equivalence statement below MUST mark the
-!FIRST element of the common block or the OUTPUTS will be wrong.
-!If you introduce an element in the beginning of this block, make
-!changes to assure the equivalence statement below MARKS it.
-!
-      MARK_COMMON_BEG (vt1_m)
-      DCL_VMMVAR( vt1_m,   ut1_m, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1_m,   vt1_m, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1_m,   wt1_m, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1_m,   tt1_m, real, (LDIST_SHAPE,l_nk+2  ) )
-      DCL_VMMVAR( vt1_m,  zdt1_m, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1_m,   st1_m, real, (LDIST_SHAPE)        )
-      DCL_VMMVAR( vt1_m,   qt1_m, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vt1_m,  trt1_m, real, (LDIST_SHAPE,l_nk+2,*) )
-      DCL_VMMVAR( vt1_m,  xct1_m, real, (l_ni*l_nj*l_nk) )
-      DCL_VMMVAR( vt1_m,  yct1_m, real, (l_ni*l_nj*l_nk) )
-      DCL_VMMVAR( vt1_m,  zct1_m, real, (l_ni*l_nj*l_nk) )
-      DCL_VMMVAR( vt1_m, fipt1_m, real, (LDIST_SHAPE,0:l_nk+1) )
-      MARK_COMMON_END (vt1_m)
+      real, pointer, dimension (:,:,:) :: ut1_m  => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: vt1_m  => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: wt1_m  => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: tt1_m  => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: zdt1_m => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:)   :: st1_m  => null()  ! effective dimensions are (LDIST_SHAPE)
+      real, pointer, dimension (:)     :: xct1_m => null()  ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:)     :: yct1_m => null()  ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:)     :: zct1_m => null()  ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:,:,:) :: fipt1_m=> null()  ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+      real, pointer, dimension (:,:,:) :: qt1_m  => null()  ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
 
-      character*8 vt1_m_n_first(1)
-      equivalence (vt1_m_n_first,VMM_NAM(ut1_m))
+      character(len=8) :: gmmk_xct1_m_s, gmmk_yct1_m_s, gmmk_zct1_m_s, gmmk_fipt1_m_s, gmmk_wt1_m_s
+      character(len=8) :: gmmk_tt1_m_s,  gmmk_zdt1_m_s, gmmk_st1_m_s,  gmmk_qt1_m_s,   gmmk_ut1_m_s, gmmk_vt1_m_s
+      common /vt1_m_n_gmm/ gmmk_xct1_m_s, gmmk_yct1_m_s, gmmk_zct1_m_s, gmmk_fipt1_m_s, gmmk_wt1_m_s 
+      common /vt1_m_n_gmm/ gmmk_tt1_m_s,  gmmk_zdt1_m_s, gmmk_st1_m_s,  gmmk_qt1_m_s,   gmmk_ut1_m_s,  gmmk_vt1_m_s

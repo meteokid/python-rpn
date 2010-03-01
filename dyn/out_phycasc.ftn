@@ -17,14 +17,11 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine  out_phycasc( F_cpu,   F_step, F_obusval)
-*
+      subroutine  out_phycasc ( F_cpu, F_step, F_obusval )
       implicit none
 *
-      integer F_cpu, F_step, nvvv, nvov, DIST_DIM, Nk
-*
+      integer F_cpu, F_step
       real F_obusval(*)
-
 *
 *author 
 *     Vivian Lee  - rpn - Oct  2006
@@ -32,61 +29,18 @@
 *revision
 * v3_30 - Lee V             - Removed Mem_phyncore
 *
-*object
-*     See above id.
-*	
-*arguments
-*  Name       I/O                 Description
-*----------------------------------------------------------------
-* F_cpu        I    - cpu number
-* F_step       I    - current time step number
-* F_up         I    - wind image in x direction at time t*
-*              O    - temperature tendency from convection/condensation
-* F_vp         I    - wind image in y direction at time t*
-*              O    - specific hum tendency from convection/condensation
-* F_tp         I    - virtual temperature at time t*
-* F_hup        I    - specific humidity tendency at time t*
-* F_qcp        I    - mixing ratio of cloud water/ice at time t*
-* F_qp         I    - ln of pressure at time t*
-* F_um         I    - wind image in x direction at time t-
-*              O    - total wind image tendency in x direction
-* F_vm         I    - wind image in y direction at time t-
-*              O    - total wind image tendency in y direction
-* F_tm         I    - virtual temperature at time t-
-*              O    - temperature tendency due to radiation and vertical
-*                     diffusion
-* F_hum        I    - specific humidity at time t-
-*              O    - specific humidity tendency due to radiation and
-*                     vertical diffusion
-* F_qcm        I    - mixing ratio of cloud water/ice at time t-
-*              O    - total mixing ratio of cloud water/ice tendency
-* F_lpsm       I    - ln of surface pressure at time t-
-* F_wp         I    - vertical motion at time t*
-*----------------------------------------------------------------
-*
-*implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "mem.cdk"
 #include "cstv.cdk"
 #include "itf_phy_buses.cdk"
 *
-*modules
-*
-      integer accum
-      parameter (accum = 0 )
-      character*2 accum_s
-      data    accum_s / ' ' /
-*
-      logical dumpbus_L
       integer jdo, i, j, k, n, indx, err,idx
       integer busaddr,offbo,offbb,mult,cnt,shp,bigk
-      real dt,con
+      real dt
 *
       real busper, busper2(max(1,p_bper_siz))
       pointer (pabusper,busper(*))
 *
-**
 *     ---------------------------------------------------------------
 *
       if ((Lun_out.gt.0).and.(F_cpu.eq.1)) write(Lun_out,1000)
@@ -96,47 +50,38 @@
 *
  100  continue
 *
-
-!$omp critical      
-      Mem_pslic = Mem_pslic + 1
-      jdo  = Mem_pslic
-      if ( Mem_pslic .le. p_nj ) then
-*
+      jdo  = jdo + 1
+      if ( jdo .le. p_nj ) then
          pabusper = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
+      else
+         goto 650
       endif
-!$omp end critical
 
-*
-*C    Stop if last slice has been completed
-*
-      if ( jdo .gt. p_nj ) goto 650
       j = jdo + p_offj
 *
 *     Perform physic slices output
 
       bigk = 1
-!$omp critical
+
       do idx=1,p_bper_top
-             offbo=(bigk-1)*l_ni*l_nj
-             offbb=perpar(idx,1)
-             if (perpar(idx,5).gt.p_ni) then
-                 shp=l_nk+2
-             else
-                 shp=1
-             endif
-             do mult=1,perpar(idx,6)
-                do k=1,shp
-                do i=1,p_ni
-                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
-     $                                       (j-1)*l_ni + i+ p_offi)=
-     $             busper(offbb+(k*mult-1)*p_ni + i - 1)
-                enddo
-                enddo
-             enddo
-             bigk = bigk + shp*perpar(idx,6)
+         offbo=(bigk-1)*l_ni*l_nj
+         offbb=perpar(idx,1)
+         if (perpar(idx,5).gt.p_ni) then
+            shp=l_nk+2
+         else
+            shp=1
+         endif
+         do mult=1,perpar(idx,6)
+         do k=1,shp
+         do i=1,p_ni
+            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                   (j-1)*l_ni + i+ p_offi)=
+     $      busper(offbb+(k*mult-1)*p_ni + i - 1)
+         enddo
+         enddo
+         enddo
+         bigk = bigk + shp*perpar(idx,6)
       enddo
-*
-!$omp end critical
 *
       goto 100
 *

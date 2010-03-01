@@ -1,0 +1,43 @@
+#if defined (DOC)
+!
+!**comdeck v4dm.cdk
+!
+!revision
+! v2_10 - Tanguay M.        - initial MPI version
+!
+!______________________________________________________________________
+!                                                                      |
+! VARIABLES ASSOCIATED to 4D-Var: MINIMIZATION section                 |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! V4dm_impres        | Controls outputs in M1QN3                       |
+! V4dm_hot           | Key for cold (0) or hot (=simax) start          |
+! V4dm_mode          | Input-output modes of M1QN3                     |
+! V4dm_itmax         | Max. number of iterations                       |
+! V4dm_simax         | Max. number of simulations                      |
+! V4dm_nsim          | Counter (number of calls to V4D_SIMUL)          |
+! V4dm_dxmin         | Machine precision                               |
+! V4dm_epsg          | Expected decrease in gradient norm              |
+! V4dm_df1           | Expected decrease in cost function (iter 1)     |
+!--------------------|-------------------------------------------------|
+!
+#endif
+!
+!     --------------------
+!     MINIMIZATION section 
+!     --------------------
+      integer V4dm_impres, V4dm_hot, V4dm_mode, V4dm_itmax
+      integer V4dm_simax,  V4dm_nsim
+!
+      MARK_COMMON_BEG (V4d_min_i)
+      common / V4d_min_i / V4dm_impres, V4dm_hot, V4dm_mode, V4dm_itmax 
+      common / V4d_min_i / V4dm_simax , V4dm_nsim
+      MARK_COMMON_END (V4d_min_i)
+!
+      real V4dm_dxmin, V4dm_epsg, V4dm_df1
+!
+      MARK_COMMON_BEG (V4d_min_r)
+      common / V4d_min_r / V4dm_dxmin,V4dm_epsg,V4dm_df1 
+      MARK_COMMON_END (V4d_min_r)

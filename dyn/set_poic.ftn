@@ -21,7 +21,7 @@
       subroutine set_poic ( F_eval_8, F_evec_8, F_xp0_8, F_xp2_8,
      %                                                F_npts, NSTOR )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_npts, NSTOR
       real*8  F_eval_8(NSTOR), F_evec_8(NSTOR,NSTOR)

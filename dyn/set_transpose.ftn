@@ -20,7 +20,7 @@
 *
       subroutine set_transpose ()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne - rpn - 1999

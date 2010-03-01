@@ -19,7 +19,7 @@
 *
       subroutine hzd_bfct (F_a_8,F_b_8,F_c_8,F_deltainv_8,F_pwr,minx2,
      $                                                maxx2,nx3, nx2)
-#include "impnone.cdk"
+      implicit none
 *
       integer F_pwr,minx2,maxx2,nx3,nx2
       real*8    F_a_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),

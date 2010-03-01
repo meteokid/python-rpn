@@ -1,0 +1,110 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r pre_tr - Equivalent to pre for TRAJECTORY   
+*
+#include "model_macros_f.h"
+*
+      subroutine pre_tr
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - reduce standard output as in model 
+* v2_31 - Tanguay M.        - adapt ADJ for new advection code 
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - Open top TL/AD
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "rhsc_m.cdk"
+#include "orh_m.cdk"
+#include "vt1_m.cdk"
+#include "p_geof.cdk"
+#include "schm.cdk"
+#include "lctl.cdk"
+#include "nest_m.cdk"
+*     ______________________________________________________
+*
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+      gmmstat = gmm_get(gmmk_rhsu_m_s,rhsu_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rhsu_m)'
+      gmmstat = gmm_get(gmmk_rhsv_m_s,rhsv_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rhsv_m)'
+      gmmstat = gmm_get(gmmk_rhst_m_s,rhst_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rhst_m)'
+      gmmstat = gmm_get(gmmk_rhsc_m_s,rhsc_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rhsc_m)'
+      gmmstat = gmm_get(gmmk_rhsf_m_s,rhsf_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rhsf_m)'
+      gmmstat = gmm_get(gmmk_rhsb_m_s,rhsb_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rhsb_m)'
+      gmmstat = gmm_get(gmmk_ruw1_m_s,ruw1_m,meta3d)
+      If (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(ruw1_m)'
+      gmmstat = gmm_get(gmmk_rvw1_m_s,rvw1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rvw1_m)'
+      gmmstat = gmm_get(gmmk_ruw2_m_s,ruw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(ruw2_m)'
+      gmmstat = gmm_get(gmmk_rvw2_m_s,rvw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rvw2_m)'
+      gmmstat = gmm_get(gmmk_xct1_m_s,xct1_m,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(xct1_m)'
+      gmmstat = gmm_get(gmmk_yct1_m_s,yct1_m,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(yct1_m)'
+      gmmstat = gmm_get(gmmk_zct1_m_s,zct1_m,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(zct1_m)'
+      gmmstat = gmm_get(gmmk_orhsu_m_s,orhsu_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(orhsu_m)'
+      gmmstat = gmm_get(gmmk_orhsv_m_s,orhsv_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(orhsv_m)'
+*
+      if (.not. Schm_hydro_L) then
+         gmmstat = gmm_get(gmmk_rhsw_m_s,rhsw_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(rhsw_m)'
+      endif
+*
+      if (Schm_opentop_L) then
+         gmmstat = gmm_get(gmmk_nest_t_m_s,nest_t_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(nest_t_m)'
+      endif
+*
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(topo)'
+*
+      call prep_2 ( rhsu_m ,rhsv_m ,ruw1_m  ,ruw2_m ,rvw1_m ,rvw2_m ,
+     %              xct1_m ,yct1_m ,zct1_m  ,topo   ,rhsc_m ,rhst_m ,
+     %              rhsw_m ,rhsf_m ,orhsu_m ,orhsv_m,rhsb_m ,nest_t_m,
+     %              LDIST_DIM, l_ni, l_nj, l_nk )
+*
+1000  format(3X,'TRAJ of PRE-COMPUTATION FOR THE HELMHOLTZ PROBLEM: (S/R PRE_TR)',/)
+
+      return
+      end

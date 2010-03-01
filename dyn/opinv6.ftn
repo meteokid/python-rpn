@@ -21,7 +21,7 @@
      %                    F_ai_8, F_bi_8, F_ci_8, F_di_8,
      %                    F_prep_L,  F_case, NIS,   NJS,  NKS, SKIP )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_ni, F_nj, F_nk, NIS, NJS, NKS, SKIP
       real    F_r(SKIP,NIS,NJS,NKS)

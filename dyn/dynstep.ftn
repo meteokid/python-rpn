@@ -150,9 +150,7 @@
 *     C        variables at time level t0 -> t1 for the next timestep
 *     ------------------------------------------------------------
 *     
-      call t12t2( )
       call t02t1( )
-      call t22t0( )
 *
 *         ------------------------------------------------------------
 *C	  Impose Lateral BCs within Pil regions and blend within Hblen

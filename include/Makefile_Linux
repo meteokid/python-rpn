@@ -1,0 +1,13 @@
+OPTIL  = 2
+OMP    = -openmp
+MPI    = -mpi
+
+#RMN          = rmnbeta_011
+#version_COMM = 301
+#UTIL         = massvp4 lapack blas hpcstools
+
+RMN          = rmn_010
+version_COMM = 222
+UTIL         = massvp4 lapack blas rtools priv bindcpu_002
+CODEBETA     = gmm bmf_get bmf_get2 fstd98 calc_crc
+

@@ -29,15 +29,18 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *revision
 * v3_30 - Lee V. - initial version for GEM LAM 
-* v4_03 - Lee V.            - Adapt to using new pressure functions
+* v4_03 - Lee V. - Adapt to using new pressure functions
+* v4_10 - Lee V. - Put back G_xg_, not Geomg_x in calc
 *
 #include "glb_ld.cdk"
 #include "ver.cdk"
 #include "out.cdk"
 *
+      integer i
       character*2  md
       character*15 startindx
       character*512 filen
+      real*8, dimension (:), allocatable:: xu_8,yv_8
 *
 *------------------------------------------------------------------
 *
@@ -49,11 +52,21 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       filen= '../../output/casc/'//trim(filen)
       open (unf,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
      $                                          position='APPEND')
+*     Warning: Geomg_X is local, G_xg is global
+      allocate(xu_8(Out_nisg),yv_8(Out_njsg))
+      do i=1,Out_nisg
+         xu_8(i) = 0.5 * (G_xg_8(i+gid-1) + G_xg_8(i+gid))
+      enddo
+      do i=1,Out_njsg
+         yv_8(i) = 0.5 * (G_yg_8(i+gjd-1) + G_yg_8(i+gjd))
+      enddo
 *
-      call wrgeo_3df (G_xg_8(gid),out_nisg,G_yg_8(gjd),out_njsg,
-     $                Ver_a_8%m(1),Ver_b_8%m(1),
-     $                Ver_a_8%t,Ver_b_8%t,
-     $                G_nk+1,G_nk+2,Ver_code,unf)
+      call wrgeo_3df (G_xg_8 (gid),out_nisg,G_yg_8(gjd),out_njsg,
+     $                xu_8(1),             yv_8(1),
+     $                Ver_a_8%m(1), Ver_b_8%m(1), Ver_a_8%t, Ver_b_8%t,
+     $                                      G_nk+1,G_nk+2,Ver_code,unf)
+      deallocate(xu_8,yv_8)
+
       write (unf) msg,mode,nvar,ntr
 *
 *------------------------------------------------------------------

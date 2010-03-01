@@ -18,12 +18,13 @@
 *                 adw_main_3_int: Interpolation of rhs
 *
 #include "model_macros_f.h"
+#include "msg.h"
 *
-      subroutine adw_main ( F_it )
-*
-#include "impnone.cdk"
+      subroutine adw_main(F_it, F_isStatStep)
+      implicit none
 *
       integer F_it
+      logical F_isStatStep
 *
 *author
 *     alain patoine
@@ -77,13 +78,14 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "type.cdk"
+!      integer G_nk
+!      integer l_ni,l_nj
 #include "adw.cdk"
+!      integer adw_nit,adw_njt
+!      integer            Adw_trunc(4)
 #include "v4dg.cdk"
-#include "orh.cdk"
-#include "schm.cdk"
+!      integer V4dg_conf
+!      logical V4dg_oktr_L
 *
 ************************************************************************
       integer nijkag,i
@@ -92,8 +94,7 @@
       logical v4dstore_L
 *
 ************************************************************************
-      if (Lun_debug_L) write (Lun_out,1000)
-*
+      call msg(MSG_DEBUG,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN)')
 ************************************************************************
       v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L 
 *
@@ -109,15 +110,12 @@
 *     -----------------------------
       if ( v4dstore_L ) call v4d_rwtraj (5,u,v,w) 
 *
-      call adw_main_3_int ( u, v, w )
+      call adw_main_3_intlag2(u, v, w, F_isStatStep)
 *
 *     Store TRAJ RHS interpolated
 *     ---------------------------
       if ( v4dstore_L ) call v4d_rwtraj (6)
 *
 ***********************************************************************
-*
- 1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN)')
-*
       return
       end

@@ -17,7 +17,7 @@
 *
       subroutine e_bmfsplitxy2 ( F_s, F_ni, F_nj, F_v_S, F_k, F_gnk, 
      $                               F_gni, F_hgrid,F_vgrid,F_scat )
-#include "impnone.cdk"
+      implicit none
 *
       character* (*) F_v_S
       integer F_ni,F_nj,F_k,F_gnk,F_gni,F_hgrid,F_vgrid,F_scat
@@ -51,6 +51,7 @@
 *
 #include "bmf.cdk"
 *
+      external rpn_comm_split
       integer i, j, k, cnt, err
       real wrk (F_gni*F_nj)
 *
@@ -69,6 +70,10 @@
       call bmf_splitwritexy ( F_v_S,F_gni,F_nj,F_gnk,F_k,F_k,
      $                        bmf_time1,bmf_time2,F_hgrid,F_vgrid,
      $                        bmf_dtyp,F_scat,wrk)
+
+c      call bmf_splitwritexy2 ( RPN_COMM_split,F_v_S,F_gni,F_nj,F_gnk,F_k,F_k,
+c     $                         bmf_time1,bmf_time2,F_hgrid,F_vgrid,
+c     $                         bmf_dtyp,F_scat,wrk)
 *
  1000 format('e_bmfsplitxy for ',A,' ni=',i6,' nj=',i6)
 *

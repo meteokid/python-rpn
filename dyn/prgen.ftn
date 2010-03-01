@@ -20,7 +20,7 @@
       subroutine prgen (F_out  , F_in   , F_deriv , F_wlnph,
      %                  F_pres, Nkout, F_cubic_L, DIST_DIM, F_Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM,F_Nk,Nkout
       logical F_cubic_L

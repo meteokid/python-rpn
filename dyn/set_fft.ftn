@@ -99,7 +99,7 @@
 *
  999  if (V4dg_conf.ne.0.and.G_lam.and..not.Fft_fast_L) then
          if (Lun_out.gt.0) write(Lun_out,*) 'ABORT: LAM adjoint not FFT'
-         call gem_stop ('LAM adjoint non FFT',-1)
+         call handle_error0('set_fft','LAM adjoint non FFT',-1)
       endif
 *
  1000 format(

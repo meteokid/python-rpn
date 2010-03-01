@@ -20,7 +20,7 @@
 *
       subroutine horwavg ( F_avg_8, F_in1, F_in2, DIST_DIM )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM
       real*8 F_avg_8

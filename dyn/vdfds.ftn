@@ -17,7 +17,7 @@
 *              at unevenly spaced points (vectorized version)
 *
       subroutine vdfds (F_g, F_f, F_hr, np, n, F_alfa, F_beta)
-#include "impnone.cdk"
+      implicit none
 *
       integer n,np
       real    F_g(np,n), F_f(np,n), F_hr(n), F_alfa, F_beta

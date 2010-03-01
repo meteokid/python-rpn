@@ -17,11 +17,12 @@
 *
 #include "model_macros_f.h"
 *
-      logical function samelevel ( analtopo,ni,nj,za_8,zb_8,lvm,zat_8,zbt_8,lvt)
+      logical function samelevel ( analtopo,ni,nj,za_8,zb_8,lvm,zat_8,zbt_8,lvt,
+     $                             F_topo,Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
 *
-      integer ni,nj,lvm,lvt
-      real analtopo(ni,nj)
+      integer ni,nj,lvm,lvt,Mminx,Mmaxx,Mminy,Mmaxy
+      real analtopo(ni,nj),F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
       real*8 za_8(lvm),zb_8(lvm),zat_8(lvt),zbt_8(lvt)
 *
 *author
@@ -37,7 +38,6 @@
 *implicites
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "ind.cdk"
 #include "vtopo.cdk"
 #include "type.cdk"
 #include "ver.cdk"
@@ -101,7 +101,7 @@
       errprdf = 0
       do j= 1+pil_s, l_nj-pil_n
       do i= 1+pil_w, l_ni-pil_e
-         prdf= abs( analtopo(i,j) - Ind_topo(i,j))
+         prdf= abs( analtopo(i,j) - F_topo(i,j))
          if ( prdf .gt. prdfsgz ) errprdf = 1
       enddo
       enddo

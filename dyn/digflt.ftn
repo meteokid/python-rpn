@@ -1,18 +1,15 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r digflt -  Compute digitally filtered fields
 *
 #include "model_macros_f.h"
@@ -31,6 +28,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Lee V.            - Remove Tr2d
 * v3_30 - Desgagne M.       - Removed phy memcore option
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *	
@@ -38,6 +36,8 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
@@ -46,52 +46,43 @@
 #include "schm.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
-#include "vtx.cdk"
 #include "tr3d.cdk"
 #include "itf_phy_buses.cdk"
 *
-*modules
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-*
-      integer err, key(10), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
-     $        keya(Tr3d_ntr)
-      real tr1,tra
-      pointer (patr1, tr1(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
-      real    busper(max(1,p_bper_siz)), buf(l_ni,G_nk+1), dfcoef 
-      real, allocatable, dimension(:,:,:,:) :: tr2,tr3
+      integer i, j, k, n, err
+      real dfcoef
+      real, pointer, dimension(:,:,:) :: tr,tra
 *
 *     __________________________________________________________________
 *
       dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Lctl_step ) )
 *
-      key(1)  = VMM_KEY(uta  )
-      key(2)  = VMM_KEY(ut1  )
-      key(3)  = VMM_KEY(vta  )
-      key(4)  = VMM_KEY(vt1  )
-      key(5)  = VMM_KEY(tta  )
-      key(6)  = VMM_KEY(tt1  )
-      key(7)  = VMM_KEY(zdta )
-      key(8)  = VMM_KEY(zdt1 )
-      key(9)  = VMM_KEY(sta  )
-      key(10) = VMM_KEY(st1  )
-      err = vmmlod(key,10)
-      err = VMM_GET_VAR(uta  )
-      err = VMM_GET_VAR(ut1  )
-      err = VMM_GET_VAR(vta  )
-      err = VMM_GET_VAR(vt1  )
-      err = VMM_GET_VAR(tta  )
-      err = VMM_GET_VAR(tt1  )
-      err = VMM_GET_VAR(zdta )
-      err = VMM_GET_VAR(zdt1 )
-      err = VMM_GET_VAR(sta  )
-      err = VMM_GET_VAR(st1  )
+      gmmstat = gmm_get(gmmk_uta_s,uta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(uta)'
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vta_s,vta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(vta)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_tta_s,tta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(tta)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_zdta_s,zdta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(zdta)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_sta_s,sta,tmp_meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(sta)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(st1)'
 *
       do k=1,l_nk+1
       do j= 1, l_nj 
       do i= 1, l_ni 
           tta(i,j,k) =   tta(i,j,k) + dfcoef *   tt1(i,j,k)
-         zdta(i,j,k) = zdta(i,j,k) + dfcoef * zdt1(i,j,k)
+          zdta(i,j,k) = zdta(i,j,k) + dfcoef * zdt1(i,j,k)
       end do
       end do
       end do
@@ -110,23 +101,21 @@
       end do
       end do
 *
-      err = vmmuld(-1,0)
-*
 ***************************************************************
 *     Non-hydrostatic model fields                            
 ***************************************************************
 *
       if ( .not. Schm_hydro_L )then
 *
-         key(1) = VMM_KEY(wta  )
-         key(2) = VMM_KEY(wt1  )
-         key(3) = VMM_KEY(qta  )
-         key(4) = VMM_KEY(qt1  )
-         err = vmmlod(key,4)
-         err = VMM_GET_VAR(wta  )
-         err = VMM_GET_VAR(wt1  )
-         err = VMM_GET_VAR(qta  )
-         err = VMM_GET_VAR(qt1  )
+
+         gmmstat = gmm_get(gmmk_wta_s,wta,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(wta)'
+         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(qt1)'
+         gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(wt1)'
+         gmmstat = gmm_get(gmmk_qta_s,qta,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(qta)'
 *
          do k=1,l_nk+1
          do j= 1, l_nj
@@ -142,67 +131,30 @@
          end do
          end do
 *
-         err = vmmuld(-1,0)
-*
       endif
 
 ****************************************************************
 *     Passive tracers (no passive tracers in linear model)
 ****************************************************************
 
-      if ( Init_dftr_L ) then
-*
-         key1_ = VMM_KEY (trt1)
-         keya_ = VMM_KEY (trta)
-         do n=1,Tr3d_ntr
-            key1(n) = key1_ + n
-            keya(n) = keya_ + n
-         end do
-         if (Tr3d_ntr.gt.0) then
-            err = vmmlod(key1,Tr3d_ntr)  
-            err = vmmlod(keya,Tr3d_ntr)  
-            do n=1,Tr3d_ntr
-               err = vmmget(key1(n),patr1,tr1)
-               err = vmmget(keya(n),patra,tra)
-               do k=1,G_nk+1
-               do j=1,l_nj
-               do i=1,l_ni
-                  tra(i,j,k) = tra(i,j,k) + dfcoef * tr1(i,j,k)
-               end do
-               end do
-               end do
+      do n=1,Tr3d_ntr
+
+         gmmstat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, meta3d_nk2)
+         gmmstat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , meta3d_nk2)
+
+         if ( Init_dftr_L ) then
+            do k=1,G_nk+1
+            do j=1,l_nj
+            do i=1,l_ni
+               tra(i,j,k) = tra(i,j,k) + dfcoef * tr(i,j,k)
             end do
-            err = vmmuld(key1,Tr3d_ntr)
-            err = vmmuld(keya,Tr3d_ntr)
-         endif
-*
-      elseif ( Lctl_step .eq. (Init_dfnp-1)/2 ) then
-*
-         key1_ = VMM_KEY (trt1)
-         keya_ = VMM_KEY (trta)
-         do n=1,Tr3d_ntr
-            key1(n) = key1_ + n
-            keya(n) = keya_ + n
-         end do
-         if (Tr3d_ntr.gt.0) then
-            err = vmmlod(key1,Tr3d_ntr)  
-            err = vmmlod(keya,Tr3d_ntr)  
-            do n=1,Tr3d_ntr
-               err = vmmget(key1(n),patr1,tr1)
-               err = vmmget(keya(n),patra,tra)
-               do k=1,G_nk+1
-               do j=1,l_nj
-               do i=1,l_ni
-                  tra(i,j,k) = tr1(i,j,k)
-               end do
-               end do
-               end do
             end do
-            err = vmmuld(key1,Tr3d_ntr)
-            err = vmmuld(keya,Tr3d_ntr)
+            end do
+         elseif ( Lctl_step .eq. (Init_dfnp-1)/2 ) then
+            tra(1:l_ni,1:l_nj,1:G_nk+1) = tr(1:l_ni,1:l_nj,1:G_nk+1)
          endif
-*
-      endif
+
+      end do
 
 ***********************************************************************
 * Physics fields at half span are saved to be used after initialisation

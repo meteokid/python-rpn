@@ -16,7 +16,7 @@
 ***s/r ecmwf_ab  - generates de A and B of the ECMWF model
 *
       subroutine ecmwf_ab(frpia, frpib,  fnk)
-#include "impnone.cdk"
+      implicit none
 *
 *author s gravel  - rpn - apr 2004
 *

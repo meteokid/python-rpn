@@ -31,6 +31,7 @@
 *revision
 * v3_30 - McTaggart-Cowan R.	- initial MPI version
 * v4_03 - Lee V.            - Adapt to using new pressure functions
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *object
 *     Use the model's current orography field (topo) to re-interpolate
@@ -59,20 +60,20 @@
 *--------------------------------------------------------------------------
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
-#include "ind.cdk"
 #include "geomg.cdk"
 #include "hblen.cdk"
 #include "p_geof.cdk"
 #include "vtx.cdk"
 #include "ver.cdk"
 *
-      integer  vmmlod,vmmuld,vmmget,get_px
-      external vmmlod,vmmuld,vmmget,get_px
+      integer  get_px
+      external get_px
 **
       integer :: k,len_x,len_y,err
-      integer, dimension(2) :: key
       real, allocatable, dimension(:,:,:) :: psrc_3d,lnpsrc_3d,lnpdst_3d,temp_nest_t
       real, allocatable, dimension(:,:) :: ps,temp_ps
 *
@@ -81,12 +82,11 @@
 * Subdomain setup
       len_x = xa - xi + 1; len_y = ya - yi + 1
 *
-* Retrieve current orography from VMM
-      key(1) = VMM_KEY(topo)
-      key(2) = VMM_KEY(topo1)
-      err = vmmlod(key,size(key))
-      err = VMM_GET_VAR(topo)
-      err = VMM_GET_VAR(topo1)
+* Retrieve current orography from GMM
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vtopo_predat ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_topo1_s,topo1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vtopo_predat ERROR at gmm_get(topo1)'
 *
 * Compute analysis surface pressure for current orography
       allocate(psrc_3d(xi:xa,yi:ya,nk+1),ps(xi:xa,yi:ya),
@@ -95,7 +95,7 @@
 *     Get pressure on all thermo levels including the surface.
          err = get_px(psrc_3d,nest_s(xi:xa,yi:ya),len_x*len_y,
      $     Ver_a_8%t,Ver_b_8%t,nk+1,Ver_code,.false.)
-         if (err.lt.0) call gem_stop('vtopo_predat:get_px',-1)
+         if (err.lt.0) call handle_error0('vtopo_predat','vtopo_predat:get_px',-1)
 c      call glbstat (psrc_3d,'p3d',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
       call adj_ss2topo(ps,topo(xi:xa,yi:ya),psrc_3d,topo1(xi:xa,yi:ya),
      $     nest_t(xi:xa,yi:ya,:),len_x*len_y,nk+1)
@@ -110,7 +110,7 @@ c      call glbstat (psrc_3d(xi:xa,yi:ya,nk+1),'pso',1,len_x,1,len_y,1,1,len_x,1
       call vslog(temp_ps,ps,len_x*len_y)
       temp_ps=temp_ps-Cstv_Zsrf_8
       err = get_px(lnpdst_3d,temp_ps,len_x*len_y,Ver_a_8%t,Ver_b_8%t,nk+1,Ver_code,.true.)
-      if (err.lt.0) call gem_stop('vtopo_predat:get_px',-1)
+      if (err.lt.0) call handle_error0('vtopo_predat','vtopo_predat:get_px',-1)
 c      call glbstat (lnpsrc_3d,'src',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
 c      call glbstat (lnpdst_3d,'dst',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
 
@@ -122,7 +122,7 @@ c      call glbstat (lnpdst_3d,'dst',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1
 c      call glbstat (temp_nest_t(xi:xa,yi:ya,:),'ttn',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
 c      call glbstat (     nest_t(xi:xa,yi:ya,:),'tto',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
 
-c      call gem_stop('vtopo_predat',-1)
+c      call handle_error0('vtopo_predat','vtopo_predat',-1)
 
 * We do not recompute geopotential since it will be done in rhs.ftn
 *
@@ -130,8 +130,6 @@ c      call gem_stop('vtopo_predat',-1)
 c      nest_s(xi:xa,yi:ya) = dlog(exp(nest_q(xi:xa,yi:ya,nk))/Cstv_pisrf_8)
       nest_t(xi:xa,yi:ya,:) = temp_nest_t(xi:xa,yi:ya,:)
 *
-* Release VMM variables
-      err = vmmuld(key,size(key))
       deallocate(psrc_3d,ps,temp_ps,lnpsrc_3d,lnpdst_3d,temp_nest_t)
 *
 * End of subprogram

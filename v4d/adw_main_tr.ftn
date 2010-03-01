@@ -1,0 +1,134 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adw_main_tr -  Equivalent to adw_main for TRAJECTORY 
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_main_tr ( F_it )
+*
+#include "impnone.cdk"
+*
+      integer F_it
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+* v3_21 - Tanguay M.        - Revision Openmp
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectories           |  i  |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vt0_m.cdk"
+#include "vt1_m.cdk"
+#include "orh_m.cdk"
+#include "rhsc_m.cdk"
+#include "tr3d.cdk"
+#include "cstv.cdk"
+#include "orh.cdk"
+*
+************************************************************************
+      integer n,i,j,k
+*
+      real*8 aaa_8
+      real, pointer    , dimension(:,:,:) :: tr0_m,tr1_m,ortr_m
+*
+************************************************************************
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+************************************************************************
+*
+*     Store TRAJ TRT0 in ORTR for ADW_MAIN_3_INT_AD when Orh_icn .eq. Schm_itcn
+*     -------------------------------------------------------------------------
+      if ( Orh_icn .eq. Schm_itcn ) then
+*
+      aaa_8 = -1.d0 / Cstv_tau_8
+*
+         do n=1,Tr3d_ntr
+*
+            nullify (tr0_m,tr1_m,ortr_m)
+            gmmstat = gmm_get('TRM/'//trim(Tr3d_name_S(n))//':M',tr0_m ,meta3d)
+            gmmstat = gmm_get('TRM/'//trim(Tr3d_name_S(n))//':P',tr1_m ,meta3d)
+            gmmstat = gmm_get('TRM/'//trim(Tr3d_name_S(n))//':O',ortr_m,meta3d)
+*
+!$omp parallel do 
+            do k=1,l_nk+1
+*
+              do j=1,l_nj
+              do i=1,l_ni
+                 tr0_m (i,j,k) = - aaa_8*tr1_m(i,j,k)
+                 ortr_m(i,j,k) =         tr0_m(i,j,k)
+              end do
+              end do
+*
+            end do
+!$omp end parallel do  
+*
+         end do
+*
+      endif
+*
+*     Recover TRAJ RHS interpolated
+*     -----------------------------
+      call v4d_rwtraj (6)
+*
+*     Store TRAJ RUW2/RVW2 in ORH for PRE_AD
+*     --------------------------------------
+      gmmstat = gmm_get(gmmk_ruw2_m_s,ruw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_tr ERROR at gmm_get(ruw2_m)'
+      gmmstat = gmm_get(gmmk_rvw2_m_s,rvw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_tr ERROR at gmm_get(rvw2_m)'
+      gmmstat = gmm_get(gmmk_oruw2_m_s,oruw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_tr ERROR at gmm_get(oruw2_m)'
+      gmmstat = gmm_get(gmmk_orvw2_m_s,orvw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_tr ERROR at gmm_get(orvw2_m)'
+*
+!$omp parallel do  
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         oruw2_m(i,j,k) = ruw2_m(i,j,k)
+         orvw2_m(i,j,k) = rvw2_m(i,j,k)
+      end do
+      end do
+      end do
+!$omp end parallel do  
+*
+***********************************************************************
+*
+ 1000  format(3X,'TRAJ of ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_TR)')
+*
+      return
+      end

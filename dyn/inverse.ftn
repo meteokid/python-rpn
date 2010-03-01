@@ -17,7 +17,7 @@
 *
        subroutine inverse(F_B_8,F_A_8,F_dim,F_len)
 *
-#include "impnone.cdk"
+      implicit none
 *
        integer F_dim, F_len
        real*8 F_A_8(F_dim,F_dim,F_len), F_B_8(F_dim,F_dim,F_len)

@@ -28,69 +28,36 @@
 *
 *revision
 * v3_31 - Desgagne M.       - initial version
+* v4_05 - Lepine M.         - VMM replacement with GMM
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "vt1.cdk"
-#include "vt0.cdk"
 #include "ver.cdk"
-#include "itf_phy_busind.cdk"
+#include "pw.cdk"
 *
-**
-      integer  vmmlod,vmmget
-      external vmmlod,vmmget
-*
-      integer err, key(2), i, j, k, n, keyp_, keyp(phyt_ntr), ninj
-      real, dimension (:,:), allocatable :: sum,vt,hu,px
-      real trp
-      pointer (patrp, trp(LDIST_SHAPE,*))
+      integer ninj
+      real, pointer, dimension(:,:,:)     :: humod
+      real  hu(l_ni,l_nj),px(l_ni,l_nj)
 *
 *     ________________________________________________________________
 *
-      key(1) = VMM_KEY(tt1)
-      key(2) = VMM_KEY(st1)
-      err    = vmmlod(key,2)
-      err    = VMM_GET_VAR(tt1)
-      err    = VMM_GET_VAR(st1)
+      nullify (pw_tplus,st1,humod)
+      gmmstat = gmm_get(gmmk_pw_tplus_s ,pw_tplus,meta3d)
+      gmmstat = gmm_get(gmmk_qt1_s      ,st1     ,meta2d)
+      gmmstat = gmm_get('TR/HU:P'       ,humod   ,meta3d)
 *
-      allocate ( sum(l_ni,l_nj),vt(l_ni,l_nj),
-     $            hu(l_ni,l_nj),px(l_ni,l_nj) )
-*
-      vt(:,:) = tt1(1:l_ni,1:l_nj,ki)
-      keyp_ = VMM_KEY (trt1)
-*
-      do n=1,phyt_ntr
-         keyp(n) = keyp_ + n
-      end do
-      err = vmmlod (keyp,phyt_ntr)  
-
-      err = vmmget (keyp(1),patrp,trp)
-      hu(:,:) = trp(1:l_ni,1:l_nj,ki)
-*
-      px(:,:) = exp ( Ver_a_8%t(ki) + Ver_b_8%t(ki)*st1(1:l_ni,1:l_nj) )
+      tt(:,:) = pw_tplus (1:l_ni,1:l_nj,ki)
+      hu(:,:) = humod    (1:l_ni,1:l_nj,ki)
 *
       ninj = ni*nj
-      if (Schm_wload_L) then
-
-         sum = 0.
-         do n = 2, h2o_ntr
-            err = vmmget(keyp(n),patrp,trp)
-            sum(:,:) = sum(:,:) + trp(1:l_ni,1:l_nj,ki)
-         enddo
-         call mfottvh (tt, vt, hu, sum, ninj, 1, ninj)
-
-      else
-
-         call mfottv ( tt ,vt, hu, ninj, 1, ninj)
-
-      endif
-*Out3_satues_L ???
-
+      px(:,:) = exp ( Ver_a_8%t(ki) + Ver_b_8%t(ki)*st1(1:l_ni,1:l_nj) )
       call mhuaes (es, hu,tt,px,px,0, .true., .false.,ninj,1,ninj)
+*
       es(:,:) = max(0.,es(:,:))
-
-      deallocate ( sum,vt,hu,px )
+*
 *     ________________________________________________________________
 *
       return

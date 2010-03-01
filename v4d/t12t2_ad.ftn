@@ -1,0 +1,3 @@
+      subroutine t12t2_ad
+      return
+      end

@@ -124,8 +124,8 @@
       endif
 *
       call set_opr()
+
       call adw_set()
-      if(Schm_zdotlag_L) call adx_set()
 *
 *     ---------------------------------------------------------------
 *

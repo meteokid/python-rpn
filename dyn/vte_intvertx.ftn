@@ -16,7 +16,7 @@
 ***s/r vte_intvertx  cubic vertical interpolation from eta/sigma to hybrid
 *
       subroutine vte_intvertx (F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var)
-#include "impnone.cdk"
+      implicit none
 *
        integer n, nkd, nks
        real F_dch(n,nkd), F_sch(n,nks), F_srclev(n,nks),F_dstlev(n,nkd)

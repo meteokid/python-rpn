@@ -71,10 +71,31 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
+!      integer G_ni,G_nj
+!      integer l_ni,l_nj,l_nk
 #include "adw.cdk"
+c$$$      #include "type.cdk"
+c$$$      logical Adw_hor_L,Adw_ver_L
+c$$$      integer            Adw_halox, Adw_haloy
+c$$$      integer            Adw_nit, Adw_njt
+c$$$      integer            Adw_int_i_off, Adw_int_j_off
+c$$$      real*8             Adw_x00_8,  Adw_y00_8
+c$$$      real*8             Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8
+c$$$      type (vertical_i)  Adw_lcz
+c$$$      type (vertical_8)  Adw_bsz_8
+c$$$      type (vertical_8)  Adw_diz_8
+c$$$      DCL_DYNVAR(Adw,    lcx,    integer, (*))
+c$$$      DCL_DYNVAR(Adw,    lcy,    integer, (*))
+c$$$      DCL_DYNVAR(Adw,  bsx_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,  bsy_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,  xbc_8,    real*8 , (*))
+c$$$      DCL_DYNVAR(Adw,  ybc_8,    real*8 , (*))
 #include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8  
 #include "v4dcfl.cdk"
+c$$$      DCL_DYNVAR(V4dcfl, p   ,  integer, (l_nk))
+c$$$      DCL_DYNVAR(V4dcfl, n   ,  integer, (l_nk))
 ************************************************************************
 *
       integer n, n0, nijag, nij, o1, o2, i, j, k, iimax, jjmax, kkmax,

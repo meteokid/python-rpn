@@ -165,7 +165,7 @@
          allocate(stn_tmp(nstat),stat=ierr)
          if (ierr /= 0) then
             write(Lun_out,1000) 'stn_tmp'
-            call gem_stop('set_xst')
+            call handle_error0('set_xst','set_xst')
          endif
          i = 1
          do k=1,nstat

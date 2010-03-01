@@ -72,15 +72,6 @@
          call set_vta( )
       endif
 *
-*C             Initialize the comdeck for Crank-Nicholson procedure
-*	       ----------------------------------------------------
-      call set_crni( )
-*
-*C             Initialize the global lists of names, keys
-*C	       and pointers
-*              ------------------------------------------
-      call set_list( )
-*
 *C             Read global dynamic binary restart file
 *              ---------------------------------------
       if (Rstri_rstn_L) call glb_restart ('R')

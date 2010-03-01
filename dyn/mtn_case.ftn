@@ -18,8 +18,17 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine mtn_case
+      subroutine mtn_case (F_u, F_v, F_w, F_t, F_zd, F_s, F_topo,
+     $                     F_q, F_dtopo, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
+*
+      character* (*) pref_tr,suff_tr
+      integer Mminx,Mmaxx,Mminy,Mmaxy
+      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*),
+     $     F_w    (Mminx:Mmaxx,Mminy:Mmaxy,*), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*),
+     $     F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,*), F_s(Mminx:Mmaxx,Mminy:Mmaxy  ),
+     $     F_topo (Mminx:Mmaxx,Mminy:Mmaxy)  , F_q(Mminx:Mmaxx,Mminy:Mmaxy,0:*), 
+     $     F_dtopo(Mminx:Mmaxx,Mminy:Mmaxy)
 *
 *author 
 *     Sylvie Gravel  - rpn - Aug 2003
@@ -33,14 +42,9 @@
 *arguments
 *	none
 *
-*interfaces
-c     INTERFACE
-c        subroutine acqui
-CCC#include "acq_int.cdk"
-c         end subroutine acqui
-c      END INTERFACE
-*
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
@@ -53,7 +57,6 @@ c      END INTERFACE
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "ind.cdk"
-ccc#include "acq.cdk"
 #include "theo.cdk"
 #include "vtopo.cdk"
 #include "mtn.cdk"
@@ -62,21 +65,15 @@ ccc#include "acq.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
 *
+      character*16 tr_name
       integer i,j,k,l,i00,err
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
-      integer key0, key(Tr3d_ntr), longueur
-      real, allocatable, dimension(:,:)   :: psurf
-      real tr,hauteur, tempo
+      real, allocatable, dimension(:,:) :: psurf
+      real hauteur, tempo
       real*8 pdsc1
-      pointer (patr, tr(LDIST_SHAPE,*))
+      real, pointer    , dimension(:,:,:) :: tr
 **
 *     ---------------------------------------------------------------
-*
-*
-*
-      call flush(6)
 *
       allocate(psurf (LDIST_SHAPE))
 
@@ -93,9 +90,9 @@ ccc#include "acq.cdk"
          if ( Theo_case_S .eq. 'MTN_SCHAR'
      $       .or.  Theo_case_S .eq. 'MTN_SCHAR2' ) then
             zfac1= Dcst_pi_8 * zdi / mtn_hwx1
-            Ind_topo(i,j) = mtn_hght* exp(-zfac) * cos(zfac1)**2
+            F_topo(i,j) = mtn_hght* exp(-zfac) * cos(zfac1)**2
          else
-            Ind_topo(i,j) = mtn_hght/(zfac + 1.)
+            F_topo(i,j) = mtn_hght/(zfac + 1.)
          endif
       enddo
       enddo
@@ -106,13 +103,13 @@ ccc#include "acq.cdk"
       if(Vtopo_L) then
          do j=1,l_nj
          do i=1,l_ni
-            Ind_dtopo(i,j) = Dcst_grav_8*Ind_topo(i,j)
-            Ind_topo(i,j)  = 0.
+            F_dtopo(i,j) = Dcst_grav_8*F_topo(i,j)
+            F_topo(i,j)  = 0.
          enddo
          enddo
        endif
 
-      if ( Theo_case_S .eq. 'MTN_SCHAR' 
+      if (      Theo_case_S .eq. 'MTN_SCHAR' 
      $     .or. Theo_case_S .eq. 'MTN_SCHAR2'
      $     .or. Theo_case_S .eq. 'MTN_PINTYNL') then
 
@@ -131,36 +128,44 @@ ccc#include "acq.cdk"
       pdsc1 = geomg_cy_8(j) / Dcst_rayt_8
       do i=1,l_ni
          psurf(i,j)=Cstv_pref_8*(1.-capc1
-     $         +capc1*exp(-a00*Ind_topo(i,j)))**(1./Dcst_cappa_8)
-         Ind_s   (i,j)   = log(psurf(i,j)/Cstv_pref_8)
-         Ind_u   (i,j,1) = mtn_flo * pdsc1
+     $         +capc1*exp(-a00*F_topo(i,j)))**(1./Dcst_cappa_8)
+         F_s   (i,j)   = log(psurf(i,j)/Cstv_pref_8)
+         F_u   (i,j,1) = mtn_flo * pdsc1
       enddo
       enddo
 *
       do k=1,g_nk+1
       do j=1,l_nj
       do i=1,l_ni
-         Ind_u   (i,j,k) = Ind_u (i,j,1)
-         Ind_v   (i,j,k) = 0.
+         F_u (i,j,k) = F_u (i,j,1)
+         F_v (i,j,k) = 0.0
+         F_w (i,j,k) = 0.0
+         F_zd(i,j,k) = 0.0
       enddo
       enddo
       enddo
 *
 *---------------------------------------------------------------------
-*     Initialize temperature field
+*     Initialize temperature and vertical motion fields
 *---------------------------------------------------------------------
 *
        do k=1,g_nk+1
          do j=1,l_nj
             do i=1,l_ni
-               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*Ind_s(i,j))
+               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
                a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
-               Ind_t(i,j,k)=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
+               F_t(i,j,k)=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
             enddo
          enddo
       enddo        
-
+*
+      do j=1,l_nj
+      do i=1,l_ni
+         F_t(i,j,g_nk+2) = F_t(i,j,g_nk+1)
+      enddo
+      enddo
+*
       else   ! MTN_PINTY or MTN_PINTY2
 *-----------------------------------------------------------------------
 *     Generate pressure from Cstv_ptop_8, Cstv_pref_8, and coordinate
@@ -171,8 +176,8 @@ ccc#include "acq.cdk"
       do k=1,g_nk+1
       do j=1,l_nj
       do i=1,l_ni
-         Ind_t (i,j,k) = Cstv_tstr_8
-         Ind_w (i,j,k) = 0.0
+         F_t (i,j,k) = Cstv_tstr_8
+         F_w (i,j,k) = 0.0
       enddo
       enddo
       enddo
@@ -181,8 +186,8 @@ ccc#include "acq.cdk"
       do j=1,l_nj
       pdsc1 = geomg_cy_8(j) / Dcst_rayt_8
       do i=1,l_ni
-         Ind_u (i,j,k) = mtn_flo * pdsc1
-         Ind_v (i,j,k) = 0.
+         F_u (i,j,k) = mtn_flo * pdsc1
+         F_v (i,j,k) = 0.
       enddo
       enddo
       enddo
@@ -190,9 +195,9 @@ ccc#include "acq.cdk"
       do j=1,l_nj
       do i=1,l_ni
          psurf(i,j) = Cstv_pref_8 * 
-     $                exp( -Dcst_grav_8 * Ind_topo(i,j)/
+     $                exp( -Dcst_grav_8 * F_topo(i,j)/
      $                     (Dcst_cpd_8 * Cstv_tstr_8) )	
-         Ind_s(i,j) = log(psurf(i,j)/Cstv_pref_8)
+         F_s(i,j) = log(psurf(i,j)/Cstv_pref_8)
       enddo
       enddo         
 
@@ -203,7 +208,7 @@ ccc#include "acq.cdk"
 *-----------------------------------------------------------------------
       do j=1,l_nj
       do i=1,l_ni
-         Ind_topo(i,j)   = Dcst_grav_8 * Ind_topo(i,j)
+         F_topo(i,j) = Dcst_grav_8 * F_topo(i,j)
       end do
       end do
 *
@@ -211,51 +216,23 @@ ccc#include "acq.cdk"
 *     if non-hydrostatic, initialize pres. perturb. and vert. motion
 *-----------------------------------------------------------------------
 *
-      if(.not.Schm_hydro_L) then
-         do k=0,g_nk+1
-         do j=1,l_nj
-         do i=1,l_ni
-            Ind_q(i,j,k) = 0.
-         enddo
-         enddo
-         enddo
-      endif
+      if(.not.Schm_hydro_L) F_q(:,:,0:g_nk+1) = 0.
 *
-      call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
+      call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
 *-----------------------------------------------------------------------
 *     create tracers (humidity and MTN)
 *-----------------------------------------------------------------------
-      key0 = VMM_KEY (trt1)
       do k=1,Tr3d_ntr
-         key(k) = key0 + k
+         if (Tr3d_name_S(k)(1:2).eq.'HU') then
+            nullify(tr)
+            tr_name = trim(pref_tr)//trim(Tr3d_name_S(k))//trim(suff_tr)
+            gmmstat = gmm_get(tr_name,tr,meta3d)
+            tr = 0.
+         endif
       end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key,Tr3d_ntr)
-         do k=1,Tr3d_ntr
-            err = vmmget(key(k),patr,tr)
-            if (Tr3d_name_S(k).eq.'HU') then
-               do l=1,G_nk+1
-               do j=1,l_nj
-               do i=1,l_ni
-                  tr(i,j,l) = 0.
-               end do
-               end do
-               end do
-            elseif (Tr3d_name_S(k).eq.'MTN') then
-               do l=1,G_nk+1
-               do j=1,l_nj
-               do i=1,l_ni
-                  tr(i,j,l) = Ind_t(i,j,l)
-               end do
-               end do
-               end do
-            endif
-         end do
-         err = vmmuld(key,Tr3d_ntr)
-      endif
-
+*
  9000 format(/,'CREATING INPUT DATA FOR MOUNTAIN WAVE THEORETICAL CASE'
      +      /,'======================================================')
 *

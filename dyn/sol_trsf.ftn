@@ -20,7 +20,7 @@
 *
       subroutine sol_trsf (F_f1_8,F_f2,Xb,Xe,Yb,Ye,DIST_DIM,Nk,F_code)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer Xb,Xe,Yb,Ye,DIST_DIM,Nk,F_code
       real*8  F_f1_8(Xb:Xe,Yb:Ye,Nk)

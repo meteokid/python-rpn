@@ -18,7 +18,7 @@
       subroutine e_intpoly ( frc0, frc1, frc2,
      %                      frdel, frhh, frhm, frhp, fllag )
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical fllag
       real*8   frc0, frc1, frc2, frdel, frhh, frhm, frhp

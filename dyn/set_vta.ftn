@@ -31,6 +31,8 @@
 * v2_21 - J. P. Toviessi - rename some model output variables
 * v2_30 - Edouard S.     - remove pi' at the top
 * v2_31 - Desgagne M.    - re-introduce 3D tracers*
+* v4_05 - Lepine M.         - VMM replacement with GMM
+*
 *object
 *	This subroutine initializes the commons containing the
 *	keys used by the Virtual Memory Manager to identify the
@@ -40,58 +42,52 @@
 *	none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "vta.cdk"
-#include "tr3d.cdk"
-*
-*modules
-      integer  vmmcre,vmmlod,vmmget,vmmuld
-      external vmmcre,vmmlod,vmmget,vmmuld
 *
 **
-      character*80 attri_S,attrit_S
-      integer i
 *
 *     ---------------------------------------------------------------
 *
-*
       if (Lun_out.gt.0) write(Lun_out,1000)
-*
-      COMMON_INIT(vta,-100)
-*
 *
 *C       1.    Create digital filter variables
 *              -------------------------------
 *
-*	Assign the names of the variables
-*
-      VMM_NAM(uta  ) = 'UTA'
-      VMM_NAM(vta  ) = 'VTA'
-      VMM_NAM(wta  ) = 'WTA'
-      VMM_NAM(tta  ) = 'TTA'
-      VMM_NAM(qta  ) = 'QTA'
-      VMM_NAM(zdta ) = 'ZDTA'
-      VMM_NAM(sta  ) = 'STA'
-      VMM_NAM(trta ) = 'TRTA'
-*
-*	Set the attributes of the variables
-*
-      attri_S  = 'SAVE=Y,CL=2,W=5,INIT=0,MUSTEXIST'
-      attrit_S = 'SAVE=Y,CL=3,W=5,INIT=0,MUSTEXIST'
-*
-      VMM_CREATE(uta  , LARRAY3D, 1, attri_S)
-      VMM_CREATE(vta  , LARRAY3D, 1, attri_S)
-      VMM_CREATE(wta  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(tta  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(qta  , LARRAY2D*(l_nk+2), 1, attri_S)
-      VMM_CREATE(zdta , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(sta  , LARRAY2D, 1, attri_S)
-*
-      if ( Tr3d_ntr .gt. 0 ) then
-         VMM_CREATE(trta, LARRAY2D*(l_nk+1), Tr3d_ntr, attrit_S)
-      endif
+      nullify(uta,vta,wta,tta,qta,zdta,sta)
+
+      gmmk_uta_s  = 'DIGF_UU'
+      gmmk_vta_s  = 'DIGF_VV'
+      gmmk_wta_s  = 'DIGF_WW'
+      gmmk_tta_s  = 'DIGF_TT'
+      gmmk_qta_s  = 'DIGF_Q '
+      gmmk_zdta_s = 'DIGF_ZD'
+      gmmk_sta_s  = 'DIGF_S '
+
+      gmmstat = gmm_create(gmmk_uta_s,uta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(uta)'
+
+      gmmstat = gmm_create(gmmk_vta_s,vta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(vta)'
+
+      gmmstat = gmm_create(gmmk_wta_s,wta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(wta)'
+
+      gmmstat = gmm_create(gmmk_tta_s,tta,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(tta)'
+
+      gmmstat = gmm_create(gmmk_qta_s,qta,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(qta)'
+
+      gmmstat = gmm_create(gmmk_zdta_s,zdta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(zdta)'
+
+      gmmstat = gmm_create(gmmk_sta_s,sta,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'set_vta ERROR at gmm_create(sta)'
 *
  1000 format(
      +/,'INITIALIZATION OF DIGITAL FILTER COMDECKS (S/R SET_VTA)',

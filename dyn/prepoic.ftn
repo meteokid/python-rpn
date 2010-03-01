@@ -18,7 +18,7 @@
       subroutine prepoic( F_eval_8, F_evec_8, F_wk1_8, F_wk2_8, 
      %            F_xnor_8, F_ordr_8, F_case, F_i0, F_ni, NIS )
 *
-#include "impnone.cdk"
+      implicit none
 *
       character*1 F_case
       integer F_ni, F_i0, NIS

@@ -1,0 +1,158 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r vgrid_genab  - Generates A and B of the hybrid coordinate for vertical interpolation
+*
+      subroutine vgrid_genab (F_am_8, F_bm_8, F_hybm,
+     %                        F_at_8, F_bt_8, F_hybt, 
+     %                        F_hybuser, F_code, F_unout,
+     %                        F_ptop_8, F_pref_8, F_rcoef, NK, F_err)
+      implicit none
+      
+      integer F_code, F_unout, NK, F_err
+      real F_rcoef(2)
+      real*8 F_ptop_8, F_pref_8
+      real F_hybm(0:NK+1), F_hybt(0:NK+2), F_hybuser(NK)
+      real*8 F_am_8(*), F_bm_8(*), F_at_8(*), F_bt_8(*)
+*
+      integer k
+      logical wronghyb
+      real rcoef
+      real*8 pr1, ztop_8, zsrf_8, eta_8, zeta_8
+*     __________________________________________________________________
+
+      F_err = -1
+
+      if (F_code.eq.6) then
+
+      if (  Nk.lt.1 )  then
+         if (F_unout.ge.0) write (F_unout,9100)
+         return
+      endif
+
+      if (F_ptop_8.le.0.d0) then
+         if (F_unout.ge.0) write(F_unout,9400)
+         return
+      endif
+*     
+*     Checking vertical layering
+*
+      F_hybm(0) = F_ptop_8 / F_pref_8
+      F_hybt(0) = F_hybm(0)
+*
+*     Check range
+*
+      if (F_hybuser(NK).ge.1..or.F_hybuser(1).le.F_hybm(0))then
+         if (F_unout.ge.0) write(F_unout,9550) F_hybm(0)
+         return
+      endif
+*     
+*     Check monotonicity
+*
+      wronghyb = .false.
+      do k=2, NK
+         if (F_hybuser(k).le.F_hybuser(k-1)) wronghyb = .true.
+      enddo
+
+      if (wronghyb) then
+         if (F_unout.ge.0) then
+            write(F_unout,9250)
+            write(F_unout,*)'MOMENTUM LEVELS'
+            do k=1, NK
+               write (F_unout,*) F_hybuser(k),k
+            end do 
+         endif              
+         return            
+      endif
+*
+      ztop_8  = log(F_ptop_8)
+      zsrf_8  = log(F_pref_8)
+c
+c     ------------------------------------------------------------
+c    |                                                            |
+c    |   Set A and B for momentum and thermodynamic levels        |
+c    |                                                            |
+c    |   according to the formulae:                               |
+c    |                                                            |
+c    |                Z = Zsrf + log(hyb)                         |
+c    |                                                            |
+c    |                B = (Z - Ztop)/(Zsrf-Ztop)**R               |
+c    |                                                            |
+c    |                A = Z                                       |
+c    |                                                            |
+c    |                R = Rmax-(Rmax-Rmin)*(Z - Ztop)/(Zsrf-Ztop) |
+c    |                                                            |
+c     ------------------------------------------------------------
+c
+c     Momentum levels
+c
+      pr1 = 1.0d0/(zsrf_8 - ztop_8)
+      do k = 1, Nk
+         zeta_8  = zsrf_8+log(F_hybuser(k))
+          eta_8  = (zeta_8- ztop_8)*pr1
+         rcoef   = F_rcoef(2)-(F_rcoef(2)-F_rcoef(1))*eta_8
+         F_bm_8(k) = eta_8 ** rcoef
+         F_am_8(k) = zeta_8
+      enddo
+
+c     Special momentum levels for vert int.
+      F_am_8(Nk+1) = zsrf_8
+      F_bm_8(Nk+1) = 1.d0 
+      
+
+c     Thermodynamic levels
+
+      do k = 2, Nk
+         F_bt_8(k)    = 0.5d0*(F_bm_8(k)   +F_bm_8(k-1)) 
+         F_at_8(k)    = 0.5d0*(F_am_8(k)   +F_am_8(k-1)) 
+      enddo
+
+c     Special thermo levels for vert int.
+      F_bt_8(1)     = 0.5d0*(F_bm_8(1) + 0.d0)
+      F_bt_8(Nk+1)  = 0.5d0*(F_bm_8(Nk) + 1.d0)
+      F_bt_8(Nk+2)  = 1.d0
+      F_at_8(1)     = 0.5d0*(F_am_8( 1) + ztop_8)
+      F_at_8(Nk+1)  = 0.5d0*(F_am_8(Nk) + zsrf_8)
+      F_at_8(Nk+2)  = zsrf_8
+
+      F_hybm(1:NK) = F_hybuser(1:NK)
+
+      F_hybt(1) = sqrt(F_hybm(0)*F_hybm(1))
+      do k = 2, NK
+         F_hybt(k) = sqrt(F_hybm(k)*F_hybm(k-1))
+      enddo
+      F_hybt(NK+1) = sqrt(F_hybm(NK))
+
+      F_hybt(NK+2) = 1.0
+      F_hybm(NK+1) = 1.0
+
+      F_err = 0
+
+      else
+         if (F_unout.ge.0) write (F_unout,4001) F_code
+      endif
+
+ 4001 format (/'ERROR: Unrecognized F_code= ',i/)
+ 9100 format (/'ERROR: Insufficient number of vertical levels in variable hyb'/)
+ 9250 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
+     $         '      LEVELS MUST BE MONOTONICALLY INCREASING'/
+     $         '      FROM HYB(1) ---- ERROR ----'//
+     $         '      Current choice:')
+ 9400 format (/,'ERROR: Cstv_ptop_8 must be > 0',/)
+ 9550 format (/,'ABORT: hyb must be < 1.0 and > ',es10.4,/)
+
+*     __________________________________________________________________
+      return
+      end

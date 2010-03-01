@@ -53,8 +53,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       add = 0.
       call blkcol ( tr1,nis,njs,gid,gif,gjd,gjf,con,add,
      $              fa,lminx,lmaxx,lminy,lmaxy,nks,ind_o,nks )
-      if (prout_L) call statfld(tr1,nomvar(1:4),Lctl_step,
-     $              "writ3",1,nis,1,njs,nks,1,1,1,nis,njs,nks)
+      if (prout_L) call statfld2 (tr1,nomvar(1:4),Lctl_step,
+     $          "writ3",1,nis,1,njs,1,nks,1,1,1,nis,njs,nks)
 *
       nb = 0
       nbits = Grdc_nbits

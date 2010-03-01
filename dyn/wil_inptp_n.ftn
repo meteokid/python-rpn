@@ -75,7 +75,7 @@ CCC      CDFID = 0
   330         FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $        ' CANNOT OPEN NETCDF FILE: ',A80,/,
      $        ' CHECK FOR CORRECT FILE (NAMELIST PARAMETER FNIN) !')
-          call gem_stop('STOP IN WIL_INPTP_N 1',-1)
+          call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 1',-1)
       ENDIF
 *
       READ(CDFID,*) CASEID 
@@ -85,7 +85,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,340) 
   340        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND TESTCASE VARIABLE IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 2',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 2',-1)
       ENDIF
 *
       READ(CDFID,*) ROTID 
@@ -96,7 +96,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,350) 
   350        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND ROTATION ANGLE VARIABLE IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 3',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 3',-1)
       ENDIF
 *
       READ(CDFID,*) TIMEID 
@@ -106,7 +106,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,360) 
   360        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND TIMESTEP VARIABLE IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 4',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 4',-1)
       ENDIF
 *
       READ(CDFID,*) MMID  
@@ -116,7 +116,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,370) 
   370        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND M-TRUNCATION VARIABLE IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 5',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 5',-1)
       ENDIF
 *
       READ(CDFID,*) NNID  
@@ -126,7 +126,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,380) 
   380        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND N-TRUNCATION VARIABLE IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 6',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 6',-1)
       ENDIF
 *
       READ(CDFID,*) KKID
@@ -136,7 +136,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,390) 
   390        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND K-TRUNCATION VARIABLE IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 7',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 7',-1)
       ENDIF
 *
       ZETAID = 1
@@ -145,7 +145,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,400) 
   400        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND VORTICITY ARRAY IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 8',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 8',-1)
       ENDIF
 *
       DIVID  = 2 
@@ -154,7 +154,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,410) 
   410        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND DIVERGENCE ARRAY IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 9',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 9',-1)
       ENDIF
 *
       PHIID  = 3 
@@ -163,7 +163,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,420) 
   420        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT FIND GEOPOTENTIAL ARRAY IN NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 10',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 10',-1)
       ENDIF
 *
       CASE=CASEID
@@ -246,7 +246,7 @@ CCC      CDFID = 0
          if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,540)
   540        FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE WIL_INPTP_N:',/,
      $       ' CANNOT CLOSE NETCDF FILE')
-         call gem_stop('STOP IN WIL_INPTP_N 17',-1)
+         call handle_error0('wil_inptp_n','STOP IN WIL_INPTP_N 17',-1)
       ENDIF
 *
 *     SET TRUNCATION PARAMETERS

@@ -61,7 +61,7 @@
 
       if ( (Schm_xwvt3 .lt. 0) .or. (Schm_xwvt3 .gt. 2) ) then
          if (lun_out.gt.0) write(lun_out,1200)
-         call gem_stop("SET_SCHM",-1)
+         call handle_error0('set_schm',"SET_SCHM",-1)
       elseif ( (Schm_modcn .eq. 1) .and. (Schm_xwvt3 .ne. 0) ) then
          if (lun_out.gt.0) write(lun_out, 1201)
          if (lun_out.gt.0) write(lun_out, 1202)

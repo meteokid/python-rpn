@@ -124,7 +124,7 @@
 *     
       if(.false.)then
 *
-         call gem_stop('hzd_ho_parite : to do, theta',-1)
+         call handle_error0('hzd_ho_parite','hzd_ho_parite : to do, theta',-1)
 *
 *        Theta
 *        ~~~~~

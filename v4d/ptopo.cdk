@@ -1,0 +1,81 @@
+#if defined (DOC)
+!
+!**comdeck ptopo.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH LOGICAL PARALLEL PROCESSOR TOPOLOGY       |
+!                                                                      |
+!     along Y                                                          |
+!        .           .                    .                            |
+!        .           .                    .                            |
+!   +-----------+-----------+     +---------------+                    |
+!   | (0,myrow) | (1,myrow) |.....| (mycol,myrow) |.....               |
+!   +-----------+-----------+     +---------------+                    |
+!        .           .                    .                            |
+!        .           .                    .                            |
+!   +-----------+-----------+     +---------------+                    |
+!   |   (0,2)   |   (1,2)   |.....|   (mycol,2)   |.....               |
+!   +-----------+-----------+     +---------------+                    |
+!   |   (0,1)   |   (1,1)   |.....|   (mycol,1)   |.....               |
+!   +-----------+-----------+     +---------------+                    |
+!   |   (0,0)   |   (1,0)   |.....|   (mycol,0)   |..... along X       |
+!   +-----------+-----------+     +---------------+                    |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Ptopo_myproc       | local processor number (zero based numbering)   |
+!                    | 0,1,2 ... (Ptopo_npex * Ptopo_npey -1)          |
+! Ptopo_myrow        | local row    number in processor topology       |
+! Ptopo_mycol        | local column number in processor topology       |
+! Ptopo_numproc      | total number of processors used                 |
+! Ptopo_npex         | number of processors along X                    |
+! Ptopo_npey         | number of processors along Y                    |
+! Ptopo_npeOpenMP    | number of processors requested for OpenMp       |
+! Ptopo_smtphy       | number of threads around PHYSICS                |
+! Ptopo_smtdyn       | number of threads for the global run            |
+! Ptopo_bind_L       | TRUE for binding, FALSE for no binding          |
+! Ptopo_nblocx       | number of blocks along X                        |
+! Ptopo_nblocy       | number of blocks along Y                        |
+!                    | 0,1,2 ... (Ptopo_nblocx * Ptopo_nblocy-1)       |
+! Ptopo_mybloc       | bloc number after block topology                |
+! Ptopo_gindx        | contains global indices that represents:        |
+!                    | (1,*)-the minimum I indices on each local PE    |
+!                    | (2,*)-the maximum I indices on each local PE    |
+!                    | (3,*)-the minimum J indices on each local PE    |
+!                    | (4,*)-the maximum J indices on each local PE    |
+!                    | (5,*)-the minimum K indices on each local PE    |
+!                    | (6,*)-the maximum K indices on each local PE    |
+!----------------------------------------------------------------------
+!
+!
+#endif
+      integer Ptopo_myproc    , Ptopo_myrow  , Ptopo_mycol
+      integer Ptopo_numproc   , Ptopo_npex   , Ptopo_npey
+      integer Ptopo_npeOpenMP , Ptopo_npeOpenMP_resv
+      integer Ptopo_nblocx    , Ptopo_nblocy , Ptopo_mybloc
+      integer Ptopo_myblocx   , Ptopo_myblocy, Ptopo_blocme
+      integer Ptopo_numpe_perb, Ptopo_smtphy , Ptopo_smtdyn
+      logical Ptopo_bind_L
+      
+      DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
+!
+      MARK_COMMON_BEG(Ptopo_b)
+      common  / Ptopo_b / Ptopo_myproc   , Ptopo_myrow , Ptopo_mycol
+      common  / Ptopo_b / Ptopo_numproc  , Ptopo_npex  , Ptopo_npey
+      common  / Ptopo_b / Ptopo_npeOpenMP, Ptopo_npeOpenMP_resv
+      common  / Ptopo_b / Ptopo_nblocx   , Ptopo_nblocy
+      common  / Ptopo_b / Ptopo_mybloc   , Ptopo_myblocx,Ptopo_myblocy
+      common  / Ptopo_b / Ptopo_blocme
+      common  / Ptopo_b / Ptopo_numpe_perb,Ptopo_smtphy, Ptopo_smtdyn
+      MARK_COMMON_END(Ptopo_b)
+!
+      MARK_COMMON_BEG(Ptopo_l)
+      common  / Ptopo_l / Ptopo_bind_L
+      MARK_COMMON_END(Ptopo_l)
+      namelist /ptopo/ Ptopo_npex, Ptopo_npey
+      namelist /ptopo/ Ptopo_nblocx, Ptopo_nblocy
+      namelist /ptopo/ Ptopo_smtphy, Ptopo_smtdyn, Ptopo_bind_L
+
+

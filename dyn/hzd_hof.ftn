@@ -123,7 +123,7 @@
      %     Ptopo_npex,Ptopo_npey)
 *     
       if(.false.)then
-         call gem_stop('hzd_hof : do not diffuse t but theta',-1)
+         call handle_error0('hzd_hof','hzd_hof : do not diffuse t but theta',-1)
 *
 *        Theta
 *        ~~~~~

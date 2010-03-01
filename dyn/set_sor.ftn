@@ -44,7 +44,8 @@
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 * v3_20 - Lee V.            - request of physics output via long/short name
 * v3_20 - A. Kallaur        - request chemical var. output (05/2005)
-* v4_03 - Lee V.            -output files set to frequency requested
+* v4_03 - Lee V.            - output files set to frequency requested
+* v4_05 - Lee/Lepine        - remove check for GMM output
 *
 *object
 *     See above id
@@ -71,15 +72,6 @@
 #include "itf_chm_bus.cdk"
 #include "geomg.cdk"
 #include "cstv.cdk"
-#include "rhsc.cdk"
-#include "vt0.cdk"
-#include "vth.cdk"
-#include "vt1.cdk"
-#include "vt2.cdk"
-#include "vta.cdk"
-#include "vtx.cdk"
-#include "orh.cdk"
-#include "p_geof.cdk"
 #include "path.cdk"
 *
       integer srequet,fnom,longueur
@@ -90,7 +82,7 @@
       character*256 fn
       logical iela
       integer pnerror,i,idx,k,j,levset,kk
-      integer ixg(4), sorvmm
+      integer ixg(4)
 *
       if (Lun_out.gt.0) write(Lun_out,5200)
 *    Fill in the positional records for scalar grid
@@ -179,77 +171,6 @@
              enddo
              enddo
           enddo
-*     Check number of VMM variables requested for output
-          sorvmm=0
-          do 100 k=1, Outd_sets
-             do 50 j=1,Outd_var_max(k)
-                if (vt0_first(1).ge.0.and.sorvmm.lt.1) then
-                    do i=1,COMMON_SIZE(vt0)
-                       if (Outd_var_S(j,k) .eq. vt0_n_first(i)) then
-                           sorvmm = sorvmm+1
-                           cycle
-                       endif
-                    enddo
-                endif
-                if (vth_first(1).ge.0.and.sorvmm.lt.1) then
-                    do i=1,COMMON_SIZE(vth)
-                       if (Outd_var_S(j,k) .eq. vth_n_first(i)) then
-                           sorvmm = sorvmm+1
-                           cycle
-                       endif
-                    enddo
-                endif
-                if (vt1_first(1).ge.0.and.sorvmm.lt.1) then
-                    do i=1,COMMON_SIZE(vt1)
-                       if (Outd_var_S(j,k) .eq. vt1_n_first(i)) then
-                           sorvmm = sorvmm+1
-                           cycle
-                       endif
-                    enddo
-                endif
-                if (vtx_first(1).ge.0.and.sorvmm.lt.1) then
-                    do i=1,COMMON_SIZE(vtx)
-                       if (Outd_var_S(j,k) .eq. vtx_n_first(i)) then
-                           sorvmm = sorvmm+1
-                           cycle
-                       endif
-                    enddo
-                endif
-                if (vta_first(1).ge.0.and.sorvmm.lt.1) then
-                    do i=1,COMMON_SIZE(vta)
-                       if (Outd_var_S(j,k) .eq. vta_n_first(i)) then
-                           sorvmm = sorvmm+1
-                           cycle
-                       endif
-                    enddo
-                endif
-                if (rhsc_first(1).ge.0.and.sorvmm.lt.1) then
-                    do i=1,COMMON_SIZE(rhsc)
-                       if (Outd_var_S(j,k) .eq. rhsc_n_first(i)) then
-                           sorvmm = sorvmm+1
-                           cycle
-                       endif
-                    enddo
-                endif
-                if (orh_first(1).ge.0.and.sorvmm.lt.1) then
-                    do i=1,COMMON_SIZE(orh)
-                       if (Outd_var_S(j,k) .eq. orh_n_first(i)) then
-                           sorvmm = sorvmm+1
-                           cycle
-                       endif
-                    enddo
-                endif
-                if (geof_first(1).ge.0.and.sorvmm.lt.1) then
-                    do i=1,COMMON_SIZE(geof)
-                       if (Outd_var_S(j,k) .eq. geof_n_first(i)) then
-                           sorvmm = sorvmm+1
-                           cycle
-                       endif
-                    enddo
-                endif
- 50          continue
- 100      continue
-          if (sorvmm.gt.0) Outd_vmm_L = .true.
       endif
           
       COMMON_BROADCAST(Timestep_i)
@@ -264,7 +185,6 @@
       COMMON_BROADCAST(Outc)
       COMMON_BROADCAST(Outd_c)
       COMMON_BROADCAST(Outd_r)
-      COMMON_BROADCAST(Outd_l)
       COMMON_BROADCAST(Outp_c)
       COMMON_BROADCAST(Outp_r)
       COMMON_BROADCAST(Outc_c)

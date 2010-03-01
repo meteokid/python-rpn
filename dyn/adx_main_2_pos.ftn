@@ -38,6 +38,7 @@
 * v3_20 - Tanguay M.      - Improve alarm when points outside advection grid
 * v3_20 - Dugas B.        - correct calculation for LAM when Glb_pil gt 7
 * v3_21 - Lee V.          - bug correction, ythh should not be modified.
+* v4_05 - Lepine M.       - VMM replacement with GMM
 *
 *language
 *     fortran 77
@@ -57,6 +58,8 @@
 *________|_______________________________________________________|_____|
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
@@ -64,25 +67,15 @@
 #include "adx.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
-#include "vthh.cdk"
+#include "vth.cdk"
 #include "vt1.cdk"
 #include "v4dg.cdk"
 #include "lctl.cdk"
 #include "ver.cdk"
 #include "geomg.cdk"
-c#include "ptopo.cdk"
-*
-*modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
-************************************************************************
-*
-      integer pnerr, pnlkey1(30), pnlod
 *
       integer i, j, k, n, ij, ijk, nij, nijk, it
-      integer i1,j1,k1,nn
-*
-      integer outside,sum_outside,ier
+      integer i1,j1,k1,nn,outside,sum_outside,ier
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1
       real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
@@ -97,6 +90,8 @@ c#include "ptopo.cdk"
 
       integer i0,in,j0,jn, longueur
 *
+*     ---------------------------------------------------------------
+*
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -105,30 +100,28 @@ c#include "ptopo.cdk"
       dthh    = Cstv_dt_8/2.
       pdp    = 1.d0 + 1.d-6
       pdm    = 1.d0 - 1.d-6
+*
+      gmmstat = gmm_get(gmmk_xth_s,xth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(xth)'
+      gmmstat = gmm_get(gmmk_yth_s,yth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(yth)'
+      gmmstat = gmm_get(gmmk_zth_s,zth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(zth)'
 
-************************************************************************
-*
-      pnlkey1(1) = VMM_KEY(xthh)
-      pnlkey1(2) = VMM_KEY(ythh)
-      pnlkey1(3) = VMM_KEY(zthh)
-      pnlkey1(4) = VMM_KEY(xcthh)
-      pnlkey1(5) = VMM_KEY(ycthh)
-      pnlkey1(6) = VMM_KEY(zcthh)
-      pnlkey1(7) = VMM_KEY(xct1)
-      pnlkey1(8) = VMM_KEY(yct1)
-      pnlkey1(9) = VMM_KEY(zct1)
-*
-      pnerr = vmmlod(pnlkey1,9)
-*
-      pnerr = VMM_GET_VAR(xthh)
-      pnerr = VMM_GET_VAR(ythh)
-      pnerr = VMM_GET_VAR(zthh)
-      pnerr = VMM_GET_VAR(xcthh)
-      pnerr = VMM_GET_VAR(ycthh)
-      pnerr = VMM_GET_VAR(zcthh)
-      pnerr = VMM_GET_VAR(xct1)
-      pnerr = VMM_GET_VAR(yct1)
-      pnerr = VMM_GET_VAR(zct1)
+      gmmstat = gmm_get(gmmk_xcth_s,xcth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(xcth)'
+      gmmstat = gmm_get(gmmk_ycth_s,ycth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(ycth)'
+      gmmstat = gmm_get(gmmk_zcth_s,zcth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(zcth)'
+
+      gmmstat = gmm_get(gmmk_xct1_s,xct1,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(xct1)'
+      gmmstat = gmm_get(gmmk_yct1_s,yct1,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(yct1)'
+      gmmstat = gmm_get(gmmk_zct1_s,zct1,tmp_meta1d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(zct1)'
+
       i0=1
       in=l_ni
       j0=1
@@ -370,8 +363,9 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
 !$omp enddo
 !$omp end parallel
 *
-      pnerr = vmmuld(-1,0)
-*
  1000  format(3X,'CALC HORIZONTAL UPSTREAM POSITIONS: (S/R ADX_MAIN_2_POS)')
+*
+*     ---------------------------------------------------------------
+*
       return
       end

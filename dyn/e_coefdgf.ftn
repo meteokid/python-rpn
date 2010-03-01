@@ -17,7 +17,7 @@
 *
       subroutine e_coefdgf ( fnptx, frl, frlc, frcoeff )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer fnptx
       real frl, frlc, frcoeff(fnptx+1)

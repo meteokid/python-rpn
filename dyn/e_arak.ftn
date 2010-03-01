@@ -18,7 +18,7 @@
 #include "model_macros_f.h"
       subroutine e_arak ( fru, frv, frvw, fruvw, fni, fnjfi, fnju, fnjv,
      %                  fnk)
-#include "impnone.cdk"
+      implicit none
       integer  fni, fnjfi, fnju, fnjv, fnk
       real     fru(fni,fnjfi,fnk)  ,  frv(fni,fnjv,fnk),
      %         frvw(fni,fnjfi,fnk) ,fruvw(fni,fnjfi,fnk)

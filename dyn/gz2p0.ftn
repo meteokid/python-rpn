@@ -19,7 +19,7 @@
 *
       subroutine gz2p0(F_ps, F_gz, F_topo,F_rna,NN, Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer NN,Nk
       real F_gz(NN,Nk), F_ps(NN), F_rna(Nk),F_topo(NN)

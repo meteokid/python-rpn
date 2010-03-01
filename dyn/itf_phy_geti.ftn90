@@ -1,0 +1,56 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_geti - "get information" the call back function
+!
+Integer Function itf_phy_geti(vd,opt)
+!
+	Use phy_input_types
+        Use phy_input_iface
+!
+        Implicit None
+        Integer :: ier
+	Type(variable), Pointer :: vd, temp
+	Type(input_options)     :: opt
+!
+!Author
+!     Lubos Spacek - October 2009
+!
+!Revision
+! v4_10 - Spacek, L.     - First revision
+!
+!Object
+!     The callback function. It passes the linked list that contains
+!     the necessary information to others subroutines. Based on it
+!     the called functions will fill the arrays in the linked list
+!     that are passed to the physics via busses
+!
+!Arguments
+!          - Output -
+! vd       Structure containing desired descriptors
+!
+!          - Input -
+! opt      allowed options: geol_hsea,geol_poin,z0cst
+!
+!Implicits
+!
+        ier=itf_phy_puti_fcrest(vd,opt)
+!
+        If(ier<0) then
+           stop 'itf_phy_geti'
+           ier=itf_phy_puti(vd,opt)
+        endif
+!
+End Function itf_phy_geti

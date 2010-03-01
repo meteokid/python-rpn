@@ -20,7 +20,7 @@
       subroutine hzd_areal (F_wk1,F_xp0_8,F_yp0_8,Minx,Maxx,Miny,
      $                                          Maxy,Gni,Gnj,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
 *
       integer  Minx,Maxx,Miny,Maxy

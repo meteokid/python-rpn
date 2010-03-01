@@ -19,7 +19,7 @@
      $                        fni, fnj, fnk, fnis, fnjs, fnks )
 *
 *implicits
-#include "impnone.cdk"
+      implicit none
 *
       integer fnis, fnjs, fnks, fni, fnj, fnk
       real frout(fnis,fnjs,fnks), frin(fnis,fnjs,fnks),

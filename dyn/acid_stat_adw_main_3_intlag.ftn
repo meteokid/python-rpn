@@ -18,13 +18,11 @@
 #include "model_macros_f.h"
 *
       subroutine acid_stat_adw_main_3_intlag (F_ruw1,F_ruw2,F_rvw2,F_flag)
-*
       implicit none
-*
       real    F_ruw1(LDIST_SHAPE,G_nk),F_ruw2(LDIST_SHAPE,G_nk),
-     $     F_rvw2(LDIST_SHAPE,G_nk)
-*     
+     $     F_rvw2(LDIST_SHAPE,G_nk)     
       integer F_flag
+      character(len=80) :: flag_S
 *
 *author
 *     Andre Plante
@@ -60,8 +58,8 @@
      %        7+acid_j0,G_nj-6-acid_jn,
      $        1,G_nk)
       else
-         print*,'flag=',F_flag
-         call gem_stop('acid_stat_adw_main_3_intlag : error with flag',-1)
+         write(flag_S,'(I)') F_flag
+         call handle_error(-1,'acid_stat_adw_main_3_intlag','error with flag='//flag_S)
       endif
 
       return

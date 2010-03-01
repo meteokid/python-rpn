@@ -1,0 +1,55 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+#if defined (DOC)
+!
+!**comdeck nest_m.cdk
+!
+! v4_04 - Tanguay M.        - Staggered version TL/AD
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH NESTING for current timestep              |
+!  For Nest_uf,Nest_vf - used for future timesteps                     |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Nest_u             | x component of velocity                         |
+! Nest_v             | y component of velocity                         |
+! Nest_t             | T (temperature)                                 |
+! Nest_zd            |                                                 |
+! Nest_s             | ln (dpi/dpi*)                                   |
+!--------------------|-------------------------------------------------|
+! Nest_w             | z component of velocity                         |
+! Nest_q             |                                                 |
+!--------------------|-------------------------------------------------|
+! Nest_tr            | tracer 3d variables                             |
+!----------------------------------------------------------------------|
+!
+!
+#endif
+      real, pointer, dimension (:,:,:) :: nest_u_m       ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_v_m       ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_t_m       ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: nest_zd_m      ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:  ) :: nest_s_m       ! effective dimensions are (LDIST_SHAPE         )
+      real, pointer, dimension (:,:,:) :: nest_w_m       ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_q_m       ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+
+      common /nest_m_gmm/ nest_u_m, nest_v_m, nest_t_m, nest_zd_m, nest_s_m, nest_w_m, nest_q_m
+!
+      character(len=8) :: gmmk_nest_u_m_s  , gmmk_nest_v_m_s , gmmk_nest_t_m_s
+      character(len=8) :: gmmk_nest_zd_m_s , gmmk_nest_s_m_s , gmmk_nest_w_m_s , gmmk_nest_q_m_s
+!
+      common /nest_m_n_gmm/ gmmk_nest_u_m_s  , gmmk_nest_v_m_s , gmmk_nest_t_m_s
+      common /nest_m_n_gmm/ gmmk_nest_zd_m_s , gmmk_nest_s_m_s , gmmk_nest_w_m_s , gmmk_nest_q_m_s

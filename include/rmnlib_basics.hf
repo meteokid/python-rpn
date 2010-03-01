@@ -1,0 +1,65 @@
+ 
+!--------------------------------------------------------------------------
+! This is free software, you can use/redistribute/modify it under the terms of
+! the EC-RPN License v2 or any later version found (if not provided) at:
+! - http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
+! - service.rpn@ec.gc.ca
+! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
+!-------------------------------------------------------------------------- 
+!/**
+!@objective Provide basic set of constants
+!**/
+
+!- TYPEDEF
+integer, parameter :: RDOUBLE = 8
+integer, parameter :: IDOUBLE = 8
+
+!- STATUS (error is <0; use min() to collect, use if <RMN_OK to check)
+integer, parameter :: RMN_ERR = -1
+integer, parameter :: RMN_OK  = 0
+#define RMN_IS_OK(STATUS) (STATUS>RMN_ERR)
+#define RMN_COMBINE_STATUS min
+
+!- I/O
+integer, parameter :: RMN_STDOUT = 6
+integer, parameter :: RMN_STDERR = 0
+integer, parameter :: RMN_PATH_LEN = 512 !adjusted to WB_MAX_STRLEN, should move back to 1024 for longer path
+
+integer, parameter :: RMN_DTYPE_UINT = 2 !-unsigned int
+integer, parameter :: RMN_DTYPE_SINT = 4 !-signed int
+integer, parameter :: RMN_DTYPE_IEEE = 5
+
+logical, parameter :: RMN_REWRITE = .true.
+logical, parameter :: RMN_APPEND  = .false.
+
+!- BIT(FLAGS) OPERATIONS [flag = 2^n !single bit ; flags = sum(flag1,flag2...)]
+#define FLAG_TST_ANY(container,flags) (iand(container,flags).ne.0) 
+#define FLAG_TST_ALL(container,flags) (iand(container,flags).eq.flags) 
+#define FLAG_SET(container,flags) (ior(container,flags))
+#define FLAG_CLR(container,flags) (iand(container,not(flags)))
+
+!-
+interface
+   integer function fnom(F_unit,F_filename_S,F_type_S,F_recl)
+      integer,intent(inout) :: F_unit
+      character(len=*),intent(in) :: F_filename_S,F_type_S
+      integer,intent(in) :: F_recl
+   end function fnom
+
+   integer function fstouv(F_unit,F_type_S)
+      integer,intent(in) :: F_unit
+      character(len=*),intent(in) :: F_type_S
+   end function fstouv
+
+   integer function fstfrm(F_unit)
+      integer,intent(in) :: F_unit
+   end function fstfrm
+
+   integer function fclos(F_unit)
+      integer,intent(in) :: F_unit
+   end function fclos
+
+end interface
+
+integer, external :: fstecr

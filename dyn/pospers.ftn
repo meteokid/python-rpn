@@ -19,7 +19,7 @@
 *
       subroutine pospers
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Alain Patoine
@@ -33,36 +33,35 @@
 *     none
 *
 *implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "vth.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 *
-*modules
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-*
-      integer pnerr, pnlkey1(12),i, j, k, ijk, nij
+      integer i, j, k, ijk, nij
       real pr1
 **
+*
+*     ---------------------------------------------------------------
+*
       nij = l_ni * l_nj
 *
-      pnlkey1(1) = VMM_KEY(xth)
-      pnlkey1(2) = VMM_KEY(yth)
-      pnlkey1(3) = VMM_KEY(zth)
-      pnlkey1(4) = VMM_KEY(xcth)
-      pnlkey1(5) = VMM_KEY(ycth)
-      pnlkey1(6) = VMM_KEY(zcth)
-*
-      pnerr = vmmlod(pnlkey1,6)
-*
-      pnerr = VMM_GET_VAR(xth)
-      pnerr = VMM_GET_VAR(yth)
-      pnerr = VMM_GET_VAR(zth)
-      pnerr = VMM_GET_VAR(xcth)
-      pnerr = VMM_GET_VAR(ycth)
-      pnerr = VMM_GET_VAR(zcth)
+      gmmstat = gmm_get(gmmk_xth_s,xth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(xth)'
+      gmmstat = gmm_get(gmmk_yth_s,yth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(yth)'
+      gmmstat = gmm_get(gmmk_zth_s,zth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(zth)'
+
+      gmmstat = gmm_get(gmmk_xcth_s,xcth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(xcth)'
+      gmmstat = gmm_get(gmmk_ycth_s,ycth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(ycth)'
+      gmmstat = gmm_get(gmmk_zcth_s,zcth,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adx_main_2_pos ERROR at gmm_get(zcth)'
 *
       do k = 1, l_nk
       do j = 1, l_nj 
@@ -80,8 +79,6 @@
       enddo
       enddo
       enddo
-*
-      pnerr = vmmuld(-1,0)
 *
 *     ---------------------------------------------------------------
 *

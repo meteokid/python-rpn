@@ -4,7 +4,7 @@
 !
 !______________________________________________________________________
 !                                                                      |
-!  VMM variables at TIME th (t0-dt/2)                                  |
+!  GMM variables at TIME th (t0-dt/2)                                  |
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
@@ -23,22 +23,38 @@
 !
 #endif
 !
-!NOTE: the equivalence statement below MUST mark the
-!FIRST element of the common block or the OUTPUTS will be wrong.
-!If you introduce an element in the beginning of this block, make
-!changes to assure the equivalence statement below MARKS it.
-!
-      MARK_COMMON_BEG(vth)
-      DCL_VMMVAR(vth,    uth	,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR(vth,    vth	,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR(vth,   zdth	,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR(vth,    xth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,    yth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,    zth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,   xcth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,   ycth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,   zcth	,real,(l_ni*l_nj*l_nk))
-      MARK_COMMON_END(vth)
+      real, pointer, dimension (:,:,:) :: uth  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: vth  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: zdth => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:    ) :: xth  => null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: yth  => null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: zth  => null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: xcth => null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: ycth => null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: zcth => null() ! effective dimensions are (l_ni * l_nj * l_nk)
 
-      character*8 vth_n_first(1)
-      equivalence (vth_n_first,VMM_NAM(uth))
+      real, pointer, dimension (:,:,:) :: uthh => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: vthh => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: zdthh=> null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:    ) :: xthh => null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: ythh => null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: zthh => null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: xcthh=> null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: ycthh=> null() ! effective dimensions are (l_ni * l_nj * l_nk)
+      real, pointer, dimension (:    ) :: zcthh=> null() ! effective dimensions are (l_ni * l_nj * l_nk)
+
+      character(len=8) :: gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
+      character(len=8) :: gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
+      character(len=8) :: gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
+
+      character(len=8) :: gmmk_uthh_s , gmmk_vthh_s , gmmk_zdthh_s
+      character(len=8) :: gmmk_xthh_s , gmmk_ythh_s , gmmk_zthh_s
+      character(len=8) :: gmmk_xcthh_s, gmmk_ycthh_s, gmmk_zcthh_s
+
+      common /vth_n_gmm / gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
+      common /vth_n_gmm / gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
+      common /vth_n_gmm / gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
+
+      common /vthh_n_gmm/ gmmk_uthh_s , gmmk_vthh_s , gmmk_zdthh_s
+      common /vthh_n_gmm/ gmmk_xthh_s , gmmk_ythh_s , gmmk_zthh_s
+      common /vthh_n_gmm/ gmmk_xcthh_s, gmmk_ycthh_s, gmmk_zcthh_s

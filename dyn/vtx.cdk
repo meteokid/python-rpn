@@ -4,7 +4,7 @@
 !
 !______________________________________________________________________
 !                                                                      |
-!  VMM variables at no specific time                                   |
+!  GMM variables at no specific time                                   |
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
@@ -15,18 +15,11 @@
 !----------------------------------------------------------------------
 !
 #endif
-!
-!NOTE: the equivalence statement below MUST mark the
-!FIRST element of the common block or the OUTPUTS will be wrong.
-!If you introduce an element in the beginning of this block, make
-!changes to assure the equivalence statement below MARKS it.
-!
-      MARK_COMMON_BEG(vtx)
-      DCL_VMMVAR( vtx,  mutx, real, (LDIST_SHAPE,  l_nk+1) )
-      DCL_VMMVAR( vtx,bspqtx, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vtx, fiptx, real, (LDIST_SHAPE,0:l_nk+1) )
-      MARK_COMMON_END(vtx)
 
-      character*8 vtx_n_first(1)
-      equivalence (vtx_n_first,VMM_NAM(mutx))
+      real, pointer, dimension (:,:,:) :: mutx  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: bspqtx=> null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+      real, pointer, dimension (:,:,:) :: fiptx => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+
+      character(len=8) :: gmmk_bspqtx_s, gmmk_mutx_s, gmmk_fiptx_s
+      common /vtx_n_gmm/ gmmk_bspqtx_s, gmmk_mutx_s, gmmk_fiptx_s
 

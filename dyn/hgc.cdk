@@ -26,13 +26,13 @@
 !
 #endif
       integer Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
-      integer dstf_gid, dstu_gid, dstv_gid
+      integer dstf_gid, dstu_gid, dstv_gid, dstp_gid
       integer dstf_gis, dstu_gis, dstv_gis
       character*4 Hgc_gxtyp_s
 !
       MARK_COMMON_BEG (Hgc)
       common /Hgc/ Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
-      common /Hgc/ dstf_gid, dstu_gid, dstv_gid
+      common /Hgc/ dstf_gid, dstu_gid, dstv_gid, dstp_gid
       common /Hgc/ dstf_gis, dstu_gis, dstv_gis
       MARK_COMMON_END (Hgc)
       MARK_COMMON_BEG (Hgc_s)

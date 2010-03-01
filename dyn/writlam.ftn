@@ -17,7 +17,7 @@
 #include "model_macros_f.h"
 *
       subroutine writlam(f,DIST_DIM,nk,i0,in,j0,jn,k0,kn,unit)
-#include "impnone.cdk"
+      implicit none
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
       integer DIST_DIM,nk,unit

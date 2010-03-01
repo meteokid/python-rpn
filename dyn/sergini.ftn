@@ -65,15 +65,12 @@
 #include "rstr.cdk"
 #include "xst.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_phy_busind.cdk"
 #include "clim.cdk"
-#include "mem.cdk"
-
-*
-*modules
 *
       character (len=SERG_STRING_LENGTH) ptgeonm(CNSRGEO), ptbidon
-      integer pnsurf, i, j, m, pnerr
+      character(len=256) :: msg
+      integer pnsurf, i, j, m, pnerr, soit,lght
+      integer dlat,dlon,z0,mg,lhtg,alvis,snodp,twater,tsoil,glsea,wsoil
       real prcon
       real w1(p_ni),w2(p_ni),w3(p_ni),busper,busper2(max(1,p_bper_siz))
       pointer (pabusper,busper(*))
@@ -108,10 +105,8 @@
       ptgeonm(12) = 'HS'
       pnsurf =  12
       if (pnsurf.gt.CNSRGEO) then
-          write(Lun_out,*)
-     $        'Dimension for ptgeonm TOO SMALL, CNSRGEO= ', CNSRGEO
-          write(Lun_out,*)'Change CNSRGEO in p_serg.cdk > ',pnsurf
-          call gefstop('SERGINI')
+         write(msg,'(a,i,a,i)') 'Dimension for ptgeonm TOO SMALL (change it in p_serg.cdk), CNSRGEO= ',CNSRGEO,' should be > ',pnsurf
+         call handle_error(-1,'sergini',msg)
       endif
 *
 *        ---------------------------------------------------------------
@@ -130,6 +125,18 @@
 *        ---------------------------------------------------------------
 *
       prcon = 180./Dcst_pi_8
+*
+      call getindx ('DLAT'   ,  'P', dlat  , lght, soit)
+      call getindx ('DLON'   ,  'P', dlon  , lght, soit)
+      call getindx ('Z0'     ,  'P', z0    , lght, soit)
+      call getindx ('MG'     ,  'P', mg    , lght, soit)
+      call getindx ('LHTG'   ,  'P', lhtg  , lght, soit)
+      call getindx ('ALVIS'  ,  'P', alvis , lght, soit)
+      call getindx ('SNODP'  ,  'P', snodp , lght, soit)
+      call getindx ('TWATER' ,  'P', twater, lght, soit)
+      call getindx ('TSOIL'  ,  'P', tsoil , lght, soit)
+      call getindx ('GLSEA'  ,  'P', glsea , lght, soit)
+      call getindx ('WSOIL'  ,  'P', wsoil , lght, soit)
 *
       do 35 j= 1, p_nj
 *

@@ -1,0 +1,594 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r readdyn2 - read the dynamics fields from entrance programs
+*
+#include "model_macros_f.h"
+*
+      subroutine readdyn2 (F_u, F_v, F_w, F_t, F_zd, F_s, F_fiptx, F_topo,
+     $                     F_q, F_dtopo, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy)
+      implicit none
+*
+      character* (*) pref_tr,suff_tr
+      integer Mminx,Mmaxx,Mminy,Mmaxy
+      real F_u (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*),
+     $     F_w (Mminx:Mmaxx,Mminy:Mmaxy,*), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*),
+     $     F_zd(Mminx:Mmaxx,Mminy:Mmaxy,*), F_s(Mminx:Mmaxx,Mminy:Mmaxy  ),
+     $     F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*), F_topo (Mminx:Mmaxx,Mminy:Mmaxy),
+     $     F_q    (Mminx:Mmaxx,Mminy:Mmaxy,0:*), F_dtopo(Mminx:Mmaxx,Mminy:Mmaxy)
+*
+*author 
+*     Michel Roch - rpn - jan 1994
+*
+*revision
+* v2_00 - Desgagne M.      - initial MPI version (from readdyn v1_03)
+* V2_20 - Desgagne M.      - longitudes, latitudes and topography now
+* v2_20                      read from gem_osdyn
+* v2_21 - Desgagne M.      - new calling sequence to glbdist and
+* v2_21                      rpn_comm stooge for MPI
+* v2_21 - Lee V.           - modifications for LAM version
+* v2_30 - Corbeil L.       - Added BMF stuff instead of rdfld, added 
+* v2_30                      vertical interpolation
+* v2_31 - Edouard/Lee      - proper treatment of hybrid coordinate 
+* v2_31 - Desgagne         - clean up and introduce tracers
+* v2_31 - Lee V.           - enable case for no interpolation
+* v2_32 - Lee V.           - hybrid coordinate derives from "HY" record
+* v2_32                    - if same grid and levels but the topography is
+* v2_32                      different, vertical interpolation will be done
+* v2_32                    - input winds are always UU,VV
+* v3_00 - Lee V.           - re-arranged sequence to match new LAM entry
+* v3_01 - Corbeil L.       - introduce interface acqui
+* v3_10 - Lee V.           - added deallocate topu_temp,topv_temp,gzu_temp...
+* v3_11 - Gravel S.        - provide for variable topography
+* v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
+* v3_12 - Winger K.        - convert TD to HU with pressure level analysis
+* v3_20 - Pellerin P.      - to run in off-line mode
+* v3_20 - Gravel S.        - allow for initialization with ECMWF analyses
+* v3_21 - Dugas B.         - replace TD by ES in pressure mode
+* v3_30 - McTaggart-Cowan R. - update implementation of variable orography
+* v4_00 - Plante & Girard  - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_03 - Lee V.           - Adapt to using new pressure functions
+* v4_04 - Plante A.        - Remove offline mode
+* v4_04 - Tanguay M.       - modif when autobar on IBM 
+* v4_05 - Plante A.        - Add reads and interpolation for w, zd, q
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "bmf.cdk"
+#include "ptopo.cdk"
+#include "cstv.cdk" 
+#include "dcst.cdk" 
+#include "hblen.cdk"
+#include "geomg.cdk"
+#include "grd.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "out3.cdk"
+#include "acq.cdk"
+#include "vtopo.cdk"
+#include "anal.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "tr3d.cdk"
+#include "vt1.cdk"
+#include "nest.cdk"
+#include "bcsgrds.cdk"
+*
+*modules
+      integer  bmf_get,get_px
+      logical samelevel
+      external bmf_get,samelevel,get_px
+*
+      character*16 tr_name
+      integer nvar,i,j,k,kk,err
+      real, allocatable, dimension(:    ) :: rna
+      real, allocatable, dimension(:,:  ) :: pres,psu_temp,psv_temp,apsu_temp,apsv_temp
+      real, allocatable, dimension(:,:,:) :: u_temp,v_temp, hu_temp, tt_temp,
+     $                                         gz_temp,zd_temp,w_temp,q_temp,
+     $                                         u_temp2,v_temp2,work,srclev,dstlev
+      real, pointer    , dimension(:,:,:) :: tr
+      real*8,allocatable,dimension(:    ) :: za_8,zb_8,zat_8,zbt_8
+      real, dimension(l_ni,l_nj) :: pps, ps , topo_temp
+      real*8 lnpref_8,fistr_top_8
+      real(kind=8), dimension(l_ni,l_nj) :: current_topo
+      real psmin, psmax, psmin_glob, psmax_glob, fact
+      integer errprdf,prdfsum
+*
+*     Acqi_datasp(2) 
+*            0 => p =    A                         (B=0),  prs-anal
+*            1 => p =    A+B*   ps       , F_p0=ps (A=0),  sig-anal
+*            2 => p =    A+B*   ps       , F_p0=ps      ,  etasef-anal
+*            3 => p =    A+B*   ps       , F_p0=ps      ,  eta-anal
+*            4 => p =    A+B*   ps       , F_p0=ps      ,  hyb-anal
+*            5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
+*            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
+
+**
+*     ---------------------------------------------------------------
+*
+      lnpref_8 = log(Cstv_pref_8)
+*
+      if (Ptopo_myproc.eq.0) write(lun_out,9000) bmf_time1, bmf_time2
+*
+* Lecture des donnees
+*
+      call get_bmfvar()
+      allocate ( za_8 (Acqi_vterplv(1)), zb_8 (Acqi_vterplv(1)),
+     $           zat_8(Acqi_vterplv(2)), zbt_8(Acqi_vterplv(2)),
+     $           u_temp(Acqi_niu,Acqi_nju,Acqi_nktmp),
+     $           v_temp(Acqi_niv,Acqi_njv,Acqi_nktmp),
+     $           hu_temp(l_ni,l_nj,Acqi_nktmp), 
+     $           tt_temp(l_ni,l_nj,Acqi_nktmp),
+     $           gz_temp(l_ni,l_nj,Acqi_nktmp),
+     $           zd_temp(l_ni,l_nj,Acqi_nktmp),
+     $            w_temp(l_ni,l_nj,Acqi_nktmp),
+     $            q_temp(l_ni,l_nj,Acqi_nktmp) )
+*
+* Save current model topography for "growing" mode
+*
+      current_topo = F_topo(1:l_ni,1:l_nj)
+      call read_bmf(za_8,zb_8,Acqi_vterplv(1),zat_8,zbt_8,Acqi_vterplv(2),
+     $              u_temp,Acqi_niu,Acqi_nju, v_temp,Acqi_niv,Acqi_njv,
+     $              hu_temp,tt_temp,gz_temp,ps,topo_temp,
+     $              zd_temp,w_temp,q_temp,l_ni,l_nj,Acqi_nktmp)
+
+      if ( Schm_autobar_L ) Acql_vertint = .false.
+      if ( Acql_staganl.and.Vtopo_L ) then
+          Acql_vertint = .false.
+          call handle_error0('readdyn2','readdyn:no vtopo for vstag',-1)
+      endif
+
+* Set first level heights to current for "growing" mode
+      if (Vtopo_L .and. Lctl_step > Vtopo_start) then
+          gz_temp(1:l_ni,1:l_nj,Acqi_vterplv(2)) = current_topo
+      endif
+*
+* Check if levels are the same
+*
+      Acqi_datasp(1) = 0
+      if (.not.Acql_vertint) then
+          Acql_vertint=samelevel(gz_temp(1,1,Acqi_vterplv(2)),l_ni,l_nj,
+     $             za_8,zb_8,Acqi_vterplv(1), zat_8,zbt_8,Acqi_vterplv(2),
+     $             F_topo,l_minx,l_maxx,l_miny,l_maxy )
+      endif
+      if ( Acql_vertint ) Acqi_datasp(1) = 1
+*
+      if(G_lam.and..not.Acql_prsanl)then
+          do j=1,pil_s
+          do i=1,l_ni
+             topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
+          end do
+          end do
+          do j=l_nj-pil_n+1,l_nj
+          do i=1,l_ni
+             topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
+          end do
+          end do
+          do i=1,pil_w
+          do j=pil_s+1,l_nj-pil_n
+             topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
+          end do
+          end do
+          do i=l_ni-pil_e+1,l_ni
+          do j=pil_s+1,l_nj-pil_n
+             topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
+          end do
+          end do
+*
+          call nesajr (topo_temp, gz_temp (1,1,Acqi_vterplv(2)), 1,l_ni,1,l_nj,
+     $                               1,0,0,Hblen_x,Hblen_y,Hblen_z)
+*
+          do j=1,l_nj
+          do i=1,l_ni
+             F_topo (i,j) = topo_temp(i,j)
+          end do
+          end do
+      else
+          do j=1,l_nj
+          do i=1,l_ni
+             F_topo (i,j) = topo_temp(i,j)
+          end do
+          end do
+      endif
+*
+      if (Vtopo_L) then
+         do j=1,l_nj
+         do i=1,l_ni
+            topo_temp(i,j) = gz_temp (i,j,Acqi_vterplv(2))
+         end do
+         end do
+      endif
+*
+      if (Ptopo_myproc.eq.0) then
+         write(lun_out,*)
+     $      ' Acql_horzint=',Acql_horzint,' Acql_vertint=',Acql_vertint,
+     $      ' Acql_etaanl=',Acql_etaanl,' Vtopo_L=',Vtopo_L
+         write(lun_out,*)
+     $      ' Acql_siganl =',Acql_siganl ,' Acql_hybanl =',Acql_hybanl,
+     $      ' Acql_prsanl=',Acql_prsanl, ' Acql_ecmanl=',Acql_ecmanl
+         write(lun_out,*)
+     $      ' Acql_staganl =',Acql_staganl
+*
+      endif
+*
+      allocate(work(l_ni,l_nj,max(Acqi_nktmp,G_nk+2)))
+*
+*---------------------------------------------------------------------
+*     OBTAIN PS,PPS
+*     NOTE: Acqi_vertlv, Acqi_vterplv(1), Acqi_vterplv(2) 
+*     includes the diag/surface level at hyb=1.0, for vert. interp 
+*--------------------------------------------------------------------
+      if(Schm_autobar_L) then
+*
+*         REQUESTED:otherwise IBM has problem with undefined PPS
+*         ------------------------------------------------------
+          do j=1,l_nj
+          do i=1,l_ni
+             pps(i,j)=lnpref_8
+          enddo
+          enddo
+*
+          fistr_top_8=Ver_fistr_8%m(0)
+          do j=1,l_nj
+          do i=1,l_ni
+*            Reduce size of the mountains when Shallow water
+*            -----------------------------------------------
+             F_topo(i,j)=F_topo(i,j)/10.
+             F_s(i,j)=(Dcst_grav_8*gz_temp(i,j,1)-fistr_top_8-F_topo(i,j))
+     $                  /Cstv_rtstr_8
+          enddo
+          enddo
+         do k=1,g_nk+2
+         do j=1,l_nj
+         do i=1,l_ni
+            F_t(i,j,k)  = Cstv_tstr_8
+         end do
+         end do
+         end do
+
+      else
+
+         if (Acql_prsanl) then
+*         ANALYSIS IS ON PRESSURE COORDINATES
+*         Compute pressure on model surface PPS
+*
+             allocate(rna(Acqi_vterplv(1)))
+             do i=1,Acqi_vterplv(1)
+                rna(i)=za_8(i)
+             enddo
+             call gz2p0(pps,gz_temp,topo_temp,rna,Acqi_nbpts,Acqi_vterplv(1))
+             deallocate (rna)
+*
+             do j=1,l_nj
+             do i=1,l_ni
+                F_s (i,j) =pps(i,j)-lnpref_8
+                pps(i,j) = F_s (i,j)
+             enddo
+             enddo
+         else if (Acql_vertint) then
+*         ANALYSIS IS ON ETA/SIG/HYB/ECMWF COORDINATES
+*         Compute pressure on model surface PPS
+*
+          allocate(pres(Acqi_nbpts,Acqi_vterplv(2)))
+            err = get_px(pres,ps,Acqi_nbpts,zat_8,zbt_8,Acqi_vterplv(2),Acqi_datasp(2),.false.)
+            if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)
+            call adj_ss2topo(pps, topo_temp,pres,gz_temp(1,1,Acqi_vterplv(2)),
+     $                       tt_temp,Acqi_nbpts,Acqi_vterplv(2))
+*           ps is p0 for non stag
+             do j=1,l_nj
+             do i=1,l_ni
+                F_s(i,j)=log(pps(i,j))-lnpref_8
+                pps(i,j)= F_s(i,j)
+             enddo
+             enddo
+             deallocate(pres)
+          else
+*NO INTERPOLATION REQUIRED
+             do j=1,l_nj
+             do i=1,l_ni
+                pps   (i,j) =  ps(i,j)
+                F_s(i,j) = pps(i,j)
+             end do
+             end do
+          endif
+*---------------------------------------------------------------------
+*     OBTAIN TT, thermo levels + diag, mass grid
+*---------------------------------------------------------------------
+         if (Acql_vertint) then
+            allocate (srclev(l_ni,l_nj,Acqi_vterplv(2)),
+     $                dstlev(l_ni,l_nj,G_nk+2) )
+            err = get_px(srclev,ps,l_ni*l_nj,zat_8,zbt_8,Acqi_vterplv(2),Acqi_datasp(2),.true.)
+            if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)
+            err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
+            if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)
+            call vte_intvertx(work,tt_temp,srclev,dstlev,Acqi_nbpts,
+     $                        Acqi_vterplv(2),G_nk+2,'VT')
+*
+            do k=1,g_nk+2
+            do j=1,l_nj
+            do i=1,l_ni
+               F_t(i,j,k)  = work(i,j,k) 
+            end do
+            end do
+            end do
+         else
+            do k=1,g_nk+2
+            do j=1,l_nj
+            do i=1,l_ni
+               F_t (i,j,k) = tt_temp(i,j,k)
+            end do
+            end do
+            end do
+         endif
+*
+*---------------------------------------------------------------------
+*     TRACERS, HU, thermo levels + diag, mass grid
+*---------------------------------------------------------------------
+*
+         do  100 k=1,Tr3d_ntr
+            err= bmf_get (Tr3d_name_S(k),bmf_time1,bmf_time2,-1,hu_temp,
+     $                                  -1.,1,l_ni,1,l_nj,1,Acqi_nktmp)
+            nullify(tr)
+            tr_name = trim(pref_tr)//trim(Tr3d_name_S(k))//trim(suff_tr)
+      	    gmmstat = gmm_get(tr_name,tr,meta3d)
+            if (GMM_IS_ERROR(gmmstat)) print *,'readdyn2 ERROR at gmm_get',tr_name
+            if ( err.eq.0 ) then
+               if (Acql_vertint) then
+                  call vte_intvertx(work,hu_temp,srclev,dstlev,Acqi_nbpts,
+     $                                       Acqi_vterplv(2),G_nk+2,'HU')
+                  tr (1:l_ni,1:l_nj,1:g_nk+2) = max(work   (1:l_ni,1:l_nj,1:g_nk+2), 0.)
+               else
+                  tr (1:l_ni,1:l_nj,1:g_nk+2) = max(hu_temp(1:l_ni,1:l_nj,1:g_nk+2), 0.)
+               endif 
+            else
+               tr (1:l_ni,1:l_nj,1:g_nk+2) = Tr3d_sval(k)
+            endif
+ 100     continue
+
+      endif
+
+*---------------------------------------------------------------------
+*     OBTAIN ZD, thermo levels, mass grid
+*---------------------------------------------------------------------
+      if (Acql_vertint) then
+         call vte_intvertx(work,zd_temp,srclev,dstlev,Acqi_nbpts,
+     $                     Acqi_vterplv(2),G_nk+1,'ZD')
+*
+         do k=2,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            F_zd(i,j,k)  = work(i,j,k) 
+         end do
+         end do
+         end do
+      else
+         do k=2,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            F_zd (i,j,k) = zd_temp(i,j,k)
+         end do
+         end do
+         end do
+      endif
+*     The following is not really needed bot just to make sure...
+      do j=1,l_nj
+      do i=1,l_ni
+         F_zd (i,j,1) = 0.0
+         F_zd (i,j,g_nk+1) = 0.0
+      end do
+      end do
+*---------------------------------------------------------------------
+*     OBTAIN W, thermo levels, mass grid
+*               no value on diag level
+*---------------------------------------------------------------------
+      if (Acql_vertint) then
+         call vte_intvertx(work,w_temp,srclev,dstlev,Acqi_nbpts,
+     $                     Acqi_vterplv(2),G_nk+1,'WT')
+*
+         do k=1,g_nk+1
+         do j=1,l_nj
+         do i=1,l_ni
+            F_w(i,j,k)  = work(i,j,k) 
+         end do
+         end do
+         end do
+      else
+         do k=1,g_nk+1
+         do j=1,l_nj
+         do i=1,l_ni
+            F_w (i,j,k) = w_temp(i,j,k)
+         end do
+         end do
+         end do
+      endif
+*---------------------------------------------------------------------
+*     OBTAIN Q, on momentum levels + surface, mass grid
+*---------------------------------------------------------------------
+      if(.not.Schm_hydro_L)then
+         if (Acql_vertint) then
+            deallocate(srclev,dstlev)
+            allocate (srclev(l_ni,l_nj,Acqi_vterplv(1)),
+     $           dstlev(l_ni,l_nj,G_nk+1) )
+            err = get_px(srclev,ps,l_ni*l_nj,za_8,zb_8,Acqi_vterplv(1),Acqi_datasp(2),.true.)
+            if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)
+            err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
+            if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)                  
+            call vte_intvertx(work,q_temp,srclev,dstlev,Acqi_nbpts,
+     $           Acqi_vterplv(1),G_nk+1,'QT')        
+*
+            do k=1,g_nk+1
+            do j=1,l_nj
+            do i=1,l_ni
+               F_q(i,j,k)  = work(i,j,k) 
+            end do
+            end do
+            end do
+         else
+            do k=1,g_nk+1
+            do j=1,l_nj
+            do i=1,l_ni
+               F_q (i,j,k) = q_temp(i,j,k)
+            end do
+            end do
+            end do
+         endif
+         do j=1,l_nj
+         do i=1,l_ni
+            F_q (i,j,0) = 0.
+         end do
+         end do
+      endif
+*---------------------------------------------------------------------
+*     OBTAIN WINDS, momentum levels + diag, on u/v grids
+*---------------------------------------------------------------------
+
+      if (Acql_vertint) then
+        deallocate(srclev,dstlev)
+        allocate (psu_temp(Acqi_niu,Acqi_nju),
+     $             apsu_temp(Acqi_niu,Acqi_nju),
+     $             psv_temp(Acqi_niv,Acqi_njv),
+     $             apsv_temp(Acqi_niv,Acqi_njv))
+        allocate ( u_temp2(Acqi_niu,Acqi_nju,Acqi_nktmp),
+     $              v_temp2(Acqi_niv,Acqi_njv,Acqi_nktmp))
+*
+*       Get pressure on the U,V analysis grid 
+          call adj_ss2uv(ps,l_ni,l_nj,apsu_temp,Acqi_niu,Acqi_nju,
+     $                   apsv_temp,Acqi_niv,Acqi_njv,Acqi_datasp(2))
+*
+*       Get pressure on the U,V destination model grid
+          call adj_ss2uv(pps,l_ni,l_nj,psu_temp,Acqi_niu,Acqi_nju,
+     $                   psv_temp,Acqi_niv,Acqi_njv,Ver_code)
+*
+        allocate ( srclev (Acqi_niu,Acqi_nju,Acqi_vterplv(1)),
+     $              dstlev (Acqi_niu,Acqi_nju,G_nk+1) )
+        err = get_px(srclev,apsu_temp,Acqi_niu*Acqi_nju,za_8,zb_8,Acqi_vterplv(1),Acqi_datasp(2),.true.)
+        if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)
+        err = get_px(dstlev,psu_temp,Acqi_niu*Acqi_nju,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
+        if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)
+        call vte_intvertx(u_temp2,u_temp,srclev,dstlev,Acqi_niu*Acqi_nju,
+     $              Acqi_vterplv(1),G_nk+1,'UU')
+        deallocate (srclev,dstlev)
+*
+        allocate ( srclev (Acqi_niv,Acqi_njv,Acqi_vterplv(1)),
+     $              dstlev (Acqi_niv,Acqi_njv,G_nk+1) )
+        err = get_px(srclev,apsv_temp,Acqi_niv*Acqi_njv,za_8,zb_8,Acqi_vterplv(1),Acqi_datasp(2),.true.)
+        if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)
+        err = get_px(dstlev,psv_temp,Acqi_niv*Acqi_njv,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
+        if (err.lt.0) call handle_error0('readdyn2','readdyn:get_px',-1)
+        call vte_intvertx(v_temp2,v_temp,srclev,dstlev,Acqi_niv*Acqi_njv,
+     $              Acqi_vterplv(1),G_nk+1,'VV')
+        do k=1,g_nk+1
+            do j=1,Acqi_nju
+            do i=1,Acqi_niu
+               u_temp(i,j,k) = u_temp2(i,j,k)
+            enddo
+            enddo
+            do j=1,Acqi_njv
+            do i=1,Acqi_niv
+               v_temp(i,j,k) = v_temp2(i,j,k)
+            enddo
+            enddo
+        enddo
+        deallocate (srclev,dstlev)
+        deallocate ( apsu_temp,apsv_temp,psu_temp,psv_temp,u_temp2,v_temp2)
+      endif
+*
+      if (Acql_horzint)
+     $     call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju,
+     $            Acqi_niv, Acqi_njv, g_nk+1, geomg_y_8(1), geomg_yv_8(1))
+*     Convert wind from KNOTS TO M/S
+      if ( Acqi_vterplv(1).eq.1 ) then
+
+           do k=1,g_nk+1
+           do j=1,Acqi_nju
+           do i=1,Acqi_niu
+              F_u(i,j,k) = u_temp(i,j,1)
+           enddo
+           enddo
+           do j=1,Acqi_njv
+           do i=1,Acqi_niv
+              F_v(i,j,k) = v_temp(i,j,1)
+           enddo
+           enddo
+           enddo
+      else
+           do k=1,g_nk+1
+           do j=1,Acqi_nju
+           do i=1,Acqi_niu
+              F_u(i,j,k) = u_temp(i,j,k)
+           enddo
+           enddo
+           do j=1,Acqi_njv
+           do i=1,Acqi_niv
+              F_v(i,j,k) = v_temp(i,j,k)
+           enddo
+           enddo
+           enddo
+      endif
+
+*     If required, copy difference between initial and target topography 
+*     in F_dtopo and move analysis topography into F_topo
+
+      if (Vtopo_L) then
+        if (Lctl_step <= Vtopo_start) then
+          F_dtopo(1:l_ni,1:l_nj) = F_topo(1:l_ni,1:l_nj) - topo_temp
+        endif
+        F_topo(1:l_ni,1:l_nj) = topo_temp
+      endif
+*
+      deallocate (u_temp,v_temp,gz_temp,tt_temp,hu_temp,zd_temp,w_temp,
+     $     q_temp,work,za_8,zb_8,zat_8,zbt_8)
+*
+      psmin = exp(pps(1,1))
+      psmax = exp(pps(1,1))
+      do j=1,l_nj
+      do i=1,l_ni
+         psmin = min( psmin, exp(pps(i,j)) )
+         psmax = max( psmax, exp(pps(i,j)) )
+      enddo
+      enddo
+*     
+      call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN",
+     $                                                     "grid",err)
+      call rpn_comm_allreduce(psmax,psmax_glob,1,"MPI_REAL","MPI_MAX",
+     $                                                     "grid",err)
+      psmin=psmin_glob
+      psmax=psmax_glob
+*     
+      if ( Ptopo_myproc.eq.0 .and. Lctl_step.eq.0) then
+           write(lun_out,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX,
+     $                     ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
+      endif
+*
+       call bmf_clear
+*     
+      call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+ 9000 format(/,' TREATING INPUT DATA VALID AT: ',i8.6,'.',i8.8,
+     +       /,' ===============================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

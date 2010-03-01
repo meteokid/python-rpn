@@ -43,37 +43,53 @@
 *implicits
 #include "lun.cdk"
 #include "tr3d.cdk"
-#include "itf_phy_busind.cdk"
-#include "mem.cdk"
-#include "schm.cdk"
+#include "itf_phy_buses.cdk"
 *
-      logical hu_L
-      integer i,k,memvmm,longueur
-      external longueur
-      character*4 username_S(MAXTR3D)
+      logical hu_L,wload
+      integer i,k,indx1
+      character*16 tr_name
 **
 *     __________________________________________________________________
 *
+      do i=1,p_bdyn_top
+         indx1 = index (dynnm(i)(1:3),'TR/')
+         if ( indx1.gt.0 ) then
+            wload  = index (dynnm(i),',W') .gt. 0
+            indx1  = index (dynnm(i),',')
+            if (indx1.gt.0) dynnm(i)=dynnm(i)(1:indx1-1)
+
+            tr_name = dynnm(i)(4:)
+            indx1  = index (tr_name,':' )
+            if (indx1.gt.0) tr_name = tr_name(1:indx1-1)
+            do k=1,tr3d_ntr
+               if (trim(Tr3d_name_S(k)).eq.trim(tr_name)) goto 100
+            end do
+            tr3d_ntr = tr3d_ntr + 1
+            Tr3d_name_S(tr3d_ntr) = trim(tr_name)
+            Tr3d_wload (tr3d_ntr) = wload
+         endif
+ 100  end do
+
       hu_L   = .false.
-      hucond = -1
       do k=1,tr3d_ntr
-         if (Tr3d_name_S(k).eq.'HU') then
-            hu_L = .true.
-            hucond  = k
+         if (Tr3d_name_S(k)(1:2).eq.'HU') then
+            hu_L  = .true.
+            indx1 = k
          endif
       end do
+
       if (.not.hu_L) then
          tr3d_ntr = tr3d_ntr + 1
-         Tr3d_name_S(tr3d_ntr) = 'HU'
-         Tr3d_sval(tr3d_ntr) = 0.
-         hucond = tr3d_ntr
+         Tr3d_name_S(tr3d_ntr)(1:4) = 'HU  '
+         indx1 = tr3d_ntr
       endif
+      Tr3d_wload (indx1) = .false.
 
       do 10 i=1,Tr3d_userntr
 *
 * Is user tracers already in Tr3d stack?
          do k=1,tr3d_ntr
-            if (Tr3d_name_S(k).eq.Tr3d_username_S(i)) then
+            if (trim(Tr3d_name_S(k)).eq.trim(Tr3d_username_S(i))) then
                Tr3d_sval(k) = Tr3d_usersval(i)
                goto 10
             endif
@@ -81,34 +97,17 @@
 *
 * Otherwise add user tracer to Tr3d stack
          tr3d_ntr = tr3d_ntr + 1
-         if (Lun_out.gt.0) write(Lun_out,1000) Tr3d_username_S(i)
          Tr3d_name_S(tr3d_ntr) = Tr3d_username_S(i)
-         Tr3d_sval  (tr3d_ntr) = Tr3d_usersval  (i)
  10   continue
 *
-* Special case of HU Tr3d tracer (must always be present)
-*
-*
       if (Lun_out.gt.0) then
-         write (Lun_out,1001) 'TRACERS (3D storage):'
+         write (Lun_out,'(/a)') 'TRACERS (3D storage):'
          do i=1,tr3d_ntr
-            write (Lun_out,1002) Tr3d_name_S(i),Tr3d_sval(i),i
+            write (Lun_out,1002) trim(Tr3d_name_S(i)),i
          end do
       endif
 *
-      if (.not.Schm_phyms_L) Mem_minmem=Mem_minmem-24
-      memvmm = Mem_minmem + 4*max((tr3d_ntr-5),0)
-      if (Mem_mx3db.lt.memvmm) then
-        if (Lun_out.gt.0) write (Lun_out,1003) Mem_mx3db,memvmm
-        call gem_stop('tracers',-1)
-      endif
-*
- 1000 format (/'Tracer ',a4,'will be advected only. Not used by Physics')
- 1001 format (/a)
- 1002 format (2x,a4,d12.7,i4)
- 1003 format (/'  ##### Mem_mx3db NOT large enough #####'/
-     $         'Current value for Mem_mx3db is: ',i5,/
-     $         'Must be set manually in &gem_cfgs to Mem_mx3db=',i5)
+ 1002 format (2x,a16,2x,i4)
 *
 *     __________________________________________________________________
 *

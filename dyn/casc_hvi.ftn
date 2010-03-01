@@ -86,7 +86,6 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
-#include "itf_phy_busind.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
 #include "acid.cdk"
@@ -245,7 +244,7 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
 *       Analysis NOT on pressure coordinates, obtain surface pressure
 *        whether or not there is vertical interpolation
          err = get_px(pres,ssqx,ngd1,ana_at_8,ana_bt_8,nka_t,presstype,.false.)
-         if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+         if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
          call adj_ss2topo(ssq0x, topo_temp,pres,meqx,ttx,ngd1,nka_t)
          deallocate(pres)
 
@@ -328,10 +327,10 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
          if (Vertint_L) then
              allocate (dstlev(nid,njd,G_nk+1),srclev(nid,njd,nka_t-1) )
              err = get_px(srclev,ssqr,ngd,ana_at_8,ana_bt_8,nka_t-1,presstype,.true.)
-             if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+             if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
 
              err = get_px(dstlev,ssq0,ngd,Ver_a_8%t,Ver_b_8%t,G_nk+1,Ver_code,.true.)
-             if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+             if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
 *
              call vte_intvertx(zd1,zdr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'ZD') 
              deallocate(dstlev,srclev)
@@ -362,10 +361,10 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
          if (Vertint_L) then
              allocate (dstlev(nid,njd,G_nk+1),srclev(nid,njd,nka_t-1) )
              err = get_px(srclev,ssqr,ngd,ana_at_8,ana_bt_8,nka_t-1,presstype,.true.)
-             if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+             if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
 
              err = get_px(dstlev,ssq0,ngd,Ver_a_8%t,Ver_b_8%t,G_nk+1,Ver_code,.true.)
-             if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+             if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
 *
              call vte_intvertx(ww1,wwr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'WW') 
              deallocate(dstlev,srclev)
@@ -395,9 +394,9 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
       if (Vertint_L) then
           allocate (dstlev(nid,njd,G_nk+2),srclev(nid,njd,nka_t) )
           err = get_px(srclev,ssqr,ngd,ana_at_8,ana_bt_8,nka_t,presstype,.true.)
-          if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+          if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
           err = get_px(dstlev,ssq0,ngd,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
-          if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+          if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
           call vte_intvertx(tt1,ttr,srclev,dstlev, ngd, nka_t,G_nk+2,'VT') 
        else 
           do k=1,G_nk+2
@@ -424,7 +423,6 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
 *        If data found for this tracer
             if (Vertint_L) then
                 call vte_intvertx(tr3,trr(1,1,jj),srclev,dstlev,ngd,nka_t,G_nk+2,'HU') 
-*               ALWAYS clip tracers to zero after interpolation (Desgagne)
                 do k=1,G_nk+2
                 do j=n3,n4
                 do i=n1,n2
@@ -447,28 +445,12 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
             do k=1,G_nk+2
             do j=n3,n4
             do i=n1,n2
-               tr3(i,j,k)=tr3d_sval(n)
+               tr3(i,j,k)=0.
             enddo
             enddo
             enddo
          endif
-         if (.not.Schm_moist_L) then
-*        See if it is a humid tracer
-            jjj=-1
-            do kk = 1,h2o_ntr
-               if (Tr3d_name_S(n)(1:2).eq.h2o_name_S(kk)(1:2)) jjj=kk
-            enddo
-            if (jjj.gt.0) then
-*           If no moist scheme, put humid tracers to zero
-                do k=1,G_nk+2
-                do j=n3,n4
-                do i=n1,n2
-                   tr3(i,j,k)=0.0
-                enddo
-                enddo
-                enddo
-            endif
-         endif
+
 *        Now Fill the BCS area
          cnt=0
          do k=1,G_nk+2
@@ -489,7 +471,7 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
              if (Vertint_L) then
                 allocate (dstlev(nid,njd,G_nk+1),srclev(nid,njd,nka_m+1) )
                 err = get_px(dstlev,ssq0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk,Ver_code,.true.)
-          if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+          if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
                 do j=1,njd
                 do i=1,nid
                    lnpis_8 = ssq0(i,j) + Cstv_Zsrf_8
@@ -498,7 +480,7 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
                 enddo
 *find pressure levels for qqr(2:nka_m) = qt1(1:G_nk)
                 err = get_px(srclev(1,1,2),ssqr,ngd,ana_am_8,ana_bm_8,nka_m-1,presstype,.true.)
-                if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+                if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
 *set pressure level for qqr(1) = qt1(0)= 0
 *set pressure level for qqr(nka_m+1) = qt1(G_nk+1)= psurf
                 do j=1,njd
@@ -532,16 +514,16 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
       if (Vertint_L) then
           allocate (dstlev(nid,njd,G_nk+1),srclev(nid,njd,nka_m) )
           err = get_px(srclev,ssur,ngd,ana_am_8,ana_bm_8,nka_m,presstype,.true.)
-          if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+          if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
           err = get_px(dstlev,ssu0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk+1,Ver_code,.true.)
-          if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+          if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
           call vte_intvertx(uu1,uur,srclev,dstlev, ngd, nka_m,G_nk+1,'UU') 
           deallocate (ssur,uur,ssu0)
 
           err = get_px(srclev,ssvr,ngd,ana_am_8,ana_bm_8,nka_m,presstype,.true.)
-          if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+          if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
           err = get_px(dstlev,ssv0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk+1,Ver_code,.true.)
-          if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+          if (err.lt.0) call handle_error0('casc_hvi','casc_hvi:get_px',-1)
           call vte_intvertx(vv1,vvr,srclev,dstlev, ngd, nka_m,G_nk+1,'VV') 
           deallocate (dstlev,srclev)
       else

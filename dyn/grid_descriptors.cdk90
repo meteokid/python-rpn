@@ -1193,66 +1193,66 @@ contains
     hr = '-------------------------------------------------------'
 
     ! Dump general descriptor information
-    write(my_stdout,*) '-- 3D Descriptor Information --'
-    write(my_stdout,*) '  ip1=',self%ip1
-    write(my_stdout,*) '  ip2=',self%ip2
-    write(my_stdout,*) trim(hr)
+!    write(my_stdout,*) '-- 3D Descriptor Information --'
+!    write(my_stdout,*) '  ip1=',self%ip1
+!    write(my_stdout,*) '  ip2=',self%ip2
+!    write(my_stdout,*) trim(hr)
 
     ! Dump horizontal descriptor information
     horizontal: if (found_descriptor(self,'x')) then
-       write(my_stdout,*) '-- Horizontal Grid Descriptor Information --'
+!       write(my_stdout,*) '-- Horizontal Grid Descriptor Information --'
     else
-       write(my_stdout,*) '* No Horizontal Grid Desriptor Information Found'
+!       write(my_stdout,*) '* No Horizontal Grid Desriptor Information Found'
     endif horizontal
 
     ! Horizontal rule to separate descriptor directions
-    write(my_stdout,*) trim(hr)
+!    write(my_stdout,*) trim(hr)
 
     ! Dump vertical descriptor information
     vertical: if (found_descriptor(self,'z')) then
-       write(my_stdout,*) '-- Vertical Coordinate Information --'
-       write(my_stdout,*)'  Descriptor Nomvar: ',trim(self%zz%rec%nomvar)
-       write(my_stdout,'(a,i2,a,i3)')'   level kind =',self%zz%kind,', level version = ',self%zz%version
-       if (is_valid(self,ptop_8_valid))  write(my_stdout,*)'  ptop=',self%zz%ptop_8,'Pa'
-       if (is_valid(self,pref_8_valid))  write(my_stdout,*)'  pref=',self%zz%pref_8,'Pa'       
-       if (is_valid(self,rcoef1_8_valid))write(my_stdout,*)'  rcoef1=',real(self%zz%rcoef1_8)
-       if (is_valid(self,rcoef2_8_valid))write(my_stdout,*)'  rcoef2=',real(self%zz%rcoef2_8)
-       if (is_valid(self,ref_name_valid))write(my_stdout,*)'  Surface field nomvar ',self%zz%ref_name
+!       write(my_stdout,*) '-- Vertical Coordinate Information --'
+!       write(my_stdout,*)'  Descriptor Nomvar: ',trim(self%zz%rec%nomvar)
+!       write(my_stdout,'(a,i2,a,i3)')'   level kind =',self%zz%kind,', level version = ',self%zz%version
+!       if (is_valid(self,ptop_8_valid))  write(my_stdout,*)'  ptop=',self%zz%ptop_8,'Pa'
+!       if (is_valid(self,pref_8_valid))  write(my_stdout,*)'  pref=',self%zz%pref_8,'Pa'       
+!       if (is_valid(self,rcoef1_8_valid))write(my_stdout,*)'  rcoef1=',real(self%zz%rcoef1_8)
+!       if (is_valid(self,rcoef2_8_valid))write(my_stdout,*)'  rcoef2=',real(self%zz%rcoef2_8)
+!       if (is_valid(self,ref_name_valid))write(my_stdout,*)'  Surface field nomvar ',self%zz%ref_name
        select case (self%zz%vcode)
        case (1002)
           nk=size(self%zz%ip1_m)
-          write(my_stdout,*)'  Number of levels (momentum levels)',nk
-          write(my_stdout,*)'  Equation to compute hydrostatic pressure (pi): pi = A + B * P0*100'
+!          write(my_stdout,*)'  Number of levels (momentum levels)',nk
+!          write(my_stdout,*)'  Equation to compute hydrostatic pressure (pi): pi = A + B * P0*100'
        case (2001)
           nk=size(self%zz%ip1_m)
-          write(my_stdout,*)'  Number of levels (pressure levels)',nk
-          write(my_stdout,*)'  Equation to pressure (P): P = A'
+!          write(my_stdout,*)'  Number of levels (pressure levels)',nk
+!          write(my_stdout,*)'  Equation to pressure (P): P = A'
        case (5001)
           nk=size(self%zz%ip1_m)
-          write(my_stdout,*)'  Number of levels (momentum levels)',nk
-          write(my_stdout,*)'  Equation to compute hydrostatic pressure (pi): pi = A + B * P0*100'
+!          write(my_stdout,*)'  Number of levels (momentum levels)',nk
+!          write(my_stdout,*)'  Equation to compute hydrostatic pressure (pi): pi = A + B * P0*100'
        case (5002)
           nk=size(self%zz%ip1_m)
-          write(my_stdout,*)'  Number of levels (momentum levels)',nk-1
-          write(my_stdout,*)'  Equation to compute hydrostatic pressure (pi): ln(pi) = A + B * ln(P0*100/pref)'
+!          write(my_stdout,*)'  Number of levels (momentum levels)',nk-1
+!          write(my_stdout,*)'  Equation to compute hydrostatic pressure (pi): ln(pi) = A + B * ln(P0*100/pref)'
        end select
        
        if (is_valid(self,ip1_m_valid))then
           nk=size(self%zz%ip1_m)
-          write(my_stdout,*)'  Momentum levels ip1, A, B:'
+!          write(my_stdout,*)'  Momentum levels ip1, A, B:'
           do k=1,nk
-             write(my_stdout,*)self%zz%ip1_m(k),self%zz%a_m_8(k),self%zz%b_m_8(k)
+!             write(my_stdout,*)self%zz%ip1_m(k),self%zz%a_m_8(k),self%zz%b_m_8(k)
           enddo
        endif
        if (is_valid(self,ip1_t_valid))then
           nk=size(self%zz%ip1_t)
-          write(my_stdout,*)'  Thermodynamic levels ip1, A, B:'
+!          write(my_stdout,*)'  Thermodynamic levels ip1, A, B:'
           do k=1,nk
-             write(my_stdout,*)self%zz%ip1_t(k),self%zz%a_t_8(k),self%zz%b_t_8(k)
+!             write(my_stdout,*)self%zz%ip1_t(k),self%zz%a_t_8(k),self%zz%b_t_8(k)
           enddo
        endif
     else
-       write(my_stdout,*) '* No Vertical Coordinate Information Found'
+!       write(my_stdout,*) '* No Vertical Coordinate Information Found'
     endif vertical
 
     ! Set status and return
