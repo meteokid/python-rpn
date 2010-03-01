@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r nlip_2 - compute non-linear terms:  Nu, Nv, Nt, Nc, Nw, Nf,
 *             - compute full right-hand side of Helmholtz eqn: Rp=Rc-Nc
 *
@@ -17,7 +20,7 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine nlip_2 ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  ,
+      subroutine nlip_2 ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , F_nb,
      $                    F_u  , F_v  , F_t    , F_s  ,  F_q , F_fip ,
      $                    F_rp , F_rc , F_BsPq , F_mu ,
      $                    DIST_DIM, Nk )
@@ -28,6 +31,7 @@
       real    F_nu   (DIST_SHAPE,Nk)    ,F_nv   (DIST_SHAPE,Nk)    ,
      %        F_nt   (DIST_SHAPE,Nk+1)  ,F_nc   (DIST_SHAPE,Nk)    ,
      %        F_nw   (DIST_SHAPE,Nk+1)  ,F_nf   (DIST_SHAPE,Nk+1)  ,
+     %        F_nb   (DIST_SHAPE)       ,
      %        F_u    (DIST_SHAPE,Nk)    ,F_v    (DIST_SHAPE,Nk)    ,
      %        F_t    (DIST_SHAPE,Nk+1)  ,F_s    (DIST_SHAPE)       ,
      %        F_q    (DIST_SHAPE,0:Nk+1),F_fip  (DIST_SHAPE,0:Nk+1),
@@ -47,6 +51,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_21 - Desgagne M.       - Revision OpenMP
 * v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_05 - Girard C.         - Open top
 *
 *object
 *
@@ -59,7 +64,7 @@
 #include "ptopo.cdk"
 
 *
-      integer i01, in1, j01, jn1, nij, i02, in2, j02, jn2
+      integer i01, in1, j01, jn1, nij, i02, in2, j02, jn2, k0
 
 **
 *     __________________________________________________________________
@@ -73,6 +78,7 @@
       in2=l_ni
       j02=1
       jn2=l_nj
+      k0=1+Glb_pil_t
       if (G_lam) then
           if (l_west) i01=1+pil_w -1 
           if (l_east) in1=l_ni-pil_e +1
@@ -84,28 +90,29 @@
           if (l_north)jn2=l_nj-pil_n 
       endif
 *
-      call nlip_2_2     ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  ,
+      call nlip_2_2     ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , F_nb,
      $                    F_u  , F_v  , F_t    , F_s  ,  F_q , F_fip ,
      $                    F_rp , F_rc , F_BsPq , F_mu ,
      $                    DIST_DIM, Nk,
-     $                    i01,j01,in1,jn1,i02,j02,in2,jn2 )
+     $                    i01,j01,in1,jn1,i02,j02,in2,jn2,k0 )
       return
       end
 !
 ! 2nd stage added for OpenMP
 !
-      subroutine nlip_2_2(F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  ,
+      subroutine nlip_2_2(F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , F_nb,
      $                    F_u  , F_v  , F_t    , F_s  ,  F_q , F_fip ,
      $                    F_rp , F_rc , F_BsPq , F_mu ,
      $                    DIST_DIM, Nk,
-     $                    i01,j01,in1,jn1,i02,j02,in2,jn2 )
+     $                    i01,j01,in1,jn1,i02,j02,in2,jn2,k0 )
 *
       implicit none
 *
-      integer DIST_DIM, Nk,i01,j01,in1,jn1,i02,j02,in2,jn2
+      integer DIST_DIM, Nk,i01,j01,in1,jn1,i02,j02,in2,jn2,k0
       real    F_nu   (DIST_SHAPE,Nk)    ,F_nv   (DIST_SHAPE,Nk)    ,
      %        F_nt   (DIST_SHAPE,Nk+1)  ,F_nc   (DIST_SHAPE,Nk)    ,
      %        F_nw   (DIST_SHAPE,Nk+1)  ,F_nf   (DIST_SHAPE,Nk+1)  ,
+     %        F_nb   (DIST_SHAPE)       ,
      %        F_u    (DIST_SHAPE,Nk)    ,F_v    (DIST_SHAPE,Nk)    ,
      %        F_t    (DIST_SHAPE,Nk+1)  ,F_s    (DIST_SHAPE)       ,
      %        F_q    (DIST_SHAPE,0:Nk+1),F_fip  (DIST_SHAPE,0:Nk+1),
@@ -124,18 +131,21 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "acid.cdk"
+c      common/xiln/iln
+c      integer iln
 *
       integer i, j, k, i00, inn, j00, jnn, i0, in, j0, jn, nij  
       real    ndiv (DIST_SHAPE),w_nt
-      real*8  a1, b1,b2,b3, p1,p2,p3,p4, t1, xxx,yyy,
+      real*8  a1, b1,b2,b3,b4,b5, p1,p2,p3,p4, t1, xxx,yyy,
      $        one, half, w1,w2,w3, barz, barzp, wk2(DIST_SHAPE)
 *
       parameter ( one=1.d0, half=.5d0 )
 *
       real*8, dimension(i02:in2,j02:jn2) :: xtmp_8, ytmp_8
+      real qtop(DIST_SHAPE)
 *
 * --------------------------------------------------------------------
-
+*
       call rpn_comm_xch_halo( F_t   , LDIST_DIM,l_ni,l_nj,G_nk+1,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_BsPq, LDIST_DIM,l_ni,l_nj,G_nk+2,
@@ -158,6 +168,8 @@
       b1 = Ver_gamma_8 / Cstv_tau_8
       b2 = Ver_gamma_8 / ( Dcst_cappa_8 * Cstv_tau_8 )
       b3 = Ver_epsilon_8 / Dcst_cappa_8
+      b4 = one / ( Dcst_cappa_8 * Cstv_tau_8 )
+      b5 = one / ( Dcst_cappa_8 * Cstv_tau_8*Cstv_tauT_8*Cstv_Tstr_8 )
 *
       p1 = Dcst_rgasd_8 / Dcst_rayt_8**2
       p2 = one / Dcst_rayt_8**2
@@ -177,7 +189,7 @@
 ************************************************************
 *
 !$omp do
-      do 100 k=1,l_nk
+      do 100 k=k0,l_nk
 *
 *     Compute Nu for hydrostatic version 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -457,7 +469,7 @@
 *     Compute Nt'
 *     ~~~~~~~~~~
 !$omp do
-      do k=1,l_nk+1
+      do k=k0,l_nk+1
 *
          w1 = one / Cstv_tstr_8
          do j= j0, jn
@@ -466,6 +478,14 @@
          end do
          end do
          call vlog ( ytmp_8, xtmp_8, nij )
+*
+         if(Schm_opentop_L.and.k.eq.k0) then
+            do j= j0, jn
+            do i= i0, in
+               F_nb(i,j) = p3*ytmp_8(i,j)
+            end do
+            end do
+         endif
 *
          w1 = Ver_idz_8%t(k) / Cstv_RTstr_8
          do j= j0, jn
@@ -486,7 +506,7 @@
 *     Compute Nc
 *     ~~~~~~~~~~
 !$omp do
-      do k =  1, l_nk
+      do k =  k0, l_nk
 *
          do j = j0, jn
          do i = i0, in
@@ -526,7 +546,7 @@
 !$omp end single
 *
 !$omp do
-      do k=1,l_nk
+      do k=k0,l_nk
 *
          if (G_lam) then
              do j= j0,jn
@@ -556,7 +576,7 @@
 ******************************************************
 *
 !$omp do
-      do k=1,l_nk+1
+      do k=k0,l_nk+1
 *
 *        Compute Nw' and Nf=0
 *        ~~~~~~~~~~~~~~~~~~~~
@@ -609,7 +629,7 @@
 *     Substract NP from RP(Rc") and store result(RP-NP) in RP
 *
 !$omp do
-      do k=1,l_nk
+      do k=k0,l_nk
          xxx=one + Ver_dz_8%m(k) * Ver_wp_8%m(k)
          yyy=one - Ver_dz_8%m(k) * Ver_wm_8%m(k)
          do j= j0, jn 
@@ -630,14 +650,37 @@
          endif
       enddo
 !$omp enddo
-!$omp do
 *     Applying boundary conditions.
+      if(Schm_opentop_L) then
+!$omp do
+         do k=1,k0-1
+         do j= j0, jn
+         do i= i0, in
+            F_rp(i,j,k) = 0.0
+         end do
+         end do
+         end do
+!$omp enddo
+         do j= j0, jn
+         do i= i0, in
+             F_nb(i,j) = F_nt(i,j,k0)-b4*F_nb(i,j)+b5*F_t(i,j,k0)
+         end do
+         end do
+      else
+         do j= j0, jn
+         do i= i0, in
+             F_nb(i,j) = F_nt(i,j,k0)
+         end do
+         end do
+      endif
+*
+!$omp do
       do j= j0, jn 
       do i= i0, in
-         F_rp(i,j,1)      = F_rp(i,j,1)
-     $                    + Dcst_rayt_8**2 * Ver_cstp_8 * F_nt(i,j,1)
-         F_rp(i,j,l_nk)   = F_rp(i,j,l_nk)
-     $                    - Dcst_rayt_8**2 * Ver_cssp_8 * F_nt(i,j,l_nk+1)
+         F_rp(i,j,k0)   = F_rp(i,j,k0)
+     $                  + Dcst_rayt_8**2 * Ver_cstp_8 * F_nb(i,j)
+         F_rp(i,j,l_nk) = F_rp(i,j,l_nk)
+     $                  - Dcst_rayt_8**2 * Ver_cssp_8 * F_nt(i,j,l_nk+1)
       end do
       end do
 !$omp enddo

@@ -1,4 +1,0 @@
-      subroutine hspng_main
-      call gem_stop('hspng_main is obsolete',-1)
-      return
-      end

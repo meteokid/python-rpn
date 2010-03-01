@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/p set_xst - compute the time-series grid points
 *
 #include "model_macros_f.h"
@@ -49,12 +52,13 @@
 #include "xst.cdk"
 *
 **
-      logical llstat_L
-      integer ni,nj,nstat,oldnstat,ij,oldij,i,j,k,m,n,numi,numj,ierr
+      integer ni,nj,nstat,ij,oldij,i,j,k,m,n,numi,numj,ierr
+      integer, dimension(1) :: pos
       integer wk(MAXSTAT)
       real lat((G_ni+1)*G_nj),lon((G_ni+1)*G_nj),
      $     slat(MAXSTAT),slon(MAXSTAT),x(G_ni+1),y(G_nj)
       real*8 cart(3*(G_ni+1)*G_nj),carot(3*(G_ni+1)*G_nj),ri_8(3,3)
+      type(station), dimension(:), allocatable :: stn_tmp
 **
 *     ---------------------------------------------------------------
 *
@@ -72,29 +76,30 @@
 *
       Xst_nstat = 0
       nstat = 0
-      llstat_L = .false.
-      do j=1,MAXSTAT
-         if ( (Xst_statij(1,j).ne.-9999) .and.
-     $        (Xst_statij(2,j).ne.-9999)) then
-            nstat = nstat + 1
-         else
-            goto 100
-         endif
+      j = 1
+      do while ( (Xst_stn_ij(j)%i .ne. STN_MISSING) .and.
+     $           (Xst_stn_ij(j)%j .ne. STN_MISSING) )
+         Xst_stn(nstat+1)%i = Xst_stn_ij(j)%i
+         Xst_stn(nstat+1)%j = Xst_stn_ij(j)%j
+         Xst_stn(nstat+1)%lat = real(STN_MISSING)
+         Xst_stn(nstat+1)%lon = real(STN_MISSING)
+         Xst_stn(nstat+1)%name = Xst_stn_ij(j)%name
+         j = j + 1
+         nstat = nstat + 1
+      enddo
+      j = 1
+      do while ( min(abs(Xst_stn_latlon(j)%lat-real(STN_MISSING)), 
+     $     abs(Xst_stn_latlon(j)%lon-real(STN_MISSING))) > epsilon(1.))
+         Xst_stn(nstat+1)%i = STN_MISSING
+         Xst_stn(nstat+1)%j = STN_MISSING
+         Xst_stn(nstat+1)%lat = Xst_stn_latlon(j)%lat
+         Xst_stn(nstat+1)%lon = Xst_stn_latlon(j)%lon
+         Xst_stn(nstat+1)%name = Xst_stn_latlon(j)%name
+         j = j + 1
+         nstat    = nstat + 1
       enddo
 *
- 100  if (nstat .eq. 0) then
-         do j=1,MAXSTAT
-            if ( (Xst_statll(1,j).ne.-9999) .and.
-     $           (Xst_statll(2,j).ne.-9999)) then
-               nstat    = nstat + 1
-               llstat_L = .true.
-            else
-               goto 200
-            endif
-         enddo
-      endif
-*
- 200  if (nstat.le.0) then
+      if (nstat.le.0) then
 *         NO STATIONS ARE REQUESTED
           if (Lun_out.gt.0) write(Lun_out,914)
           return
@@ -135,75 +140,50 @@
           enddo
       endif
 *
-*     3- Convert the stations from lat-lon to grid nearest points I-J
+*     3a- Convert the stations from lat-lon to grid nearest points I-J
 *
-      if (llstat_l) then
-          call cllaij(lon,lat,nstat,ni,nj)
-          if (Lun_out.gt.0) then
-              write(Lun_out,900)
-              do n = 1,nstat
-                   write(Lun_out,902) n,Xst_statll(1,n),Xst_statll(2,n),
-     %                                  Xst_statij(1,n),Xst_statij(2,n)
-              enddo
-              write(Lun_out,901)
-          endif
-      endif
+      call cllaij(lon,lat,nstat,ni,nj)
+*
+*     3b- Compute the exact lat-lon for the stations corresponding
+*     to the given grid points of the time-series stations.
+*     Thus, if the user gives the stations in lat-lon, the final
+*     stations may or may not be exactly where the user wants
+*     but it will be the closest grid point of the model grid.
+*
+      do n = 1,nstat
+         Xst_stn(n)%lat = lat((Xst_stn(n)%j-1)*ni+Xst_stn(n)%i)
+         Xst_stn(n)%lon = lon((Xst_stn(n)%j-1)*ni+Xst_stn(n)%i)
+      enddo
+      Xst_nstat = nstat
 *
 *     4- Put the stations in increasing order of index in a list
-*        and eliminate stations that appear more than once
 *
-      oldnstat=nstat
-      do k=1,nstat
-         i = Xst_statij(1,k)
-         j = Xst_statij(2,k)
-         wk(k) = i+(j-1)*ni
-      enddo
-
-c     call isort (wk,nstat)
-c     replacing routine isort with this sort:
-      if (nstat.gt.1) then
-          n = nstat
-          do i=1, n-1
-             k = i
-             do j = i+1, n
-                if (wk(k).gt.wk(j)) k=j
-             enddo
-             if (k.ne.i) then
-              m     = wk(k)
-              wk(k) = wk(i)
-              wk(i) = m
-             endif
-          enddo
-      endif
-
-
-      oldij = 0
-      m = 0
-      do k=1,nstat
-         ij=wk(k)
-         i=mod(ij-1,NI)+1
-         j=1+(ij-i)/NI
-         if (ij .ne. oldij) then
-             oldij=ij
-             m=m+1
-             Xst_statij(1,m) = i
-             Xst_statij(2,m) = j
-         else
-             if (lun_out.gt.0) write(lun_out,950)i,j
+      if (nstat > 1) then
+         do k=1,nstat
+            Xst_stn(k)%index = Xst_stn(k)%i+(Xst_stn(k)%j-1)*ni
+         enddo
+         allocate(stn_tmp(nstat),stat=ierr)
+         if (ierr /= 0) then
+            write(Lun_out,1000) 'stn_tmp'
+            call gem_stop('set_xst')
          endif
-      enddo
-      nstat = m
+         i = 1
+         do k=1,nstat
+            pos = minloc(Xst_stn(1:nstat)%index)
+            stn_tmp(i) = Xst_stn(pos(1))
+            Xst_stn(pos(1))%index = ni*nj+1
+            i = i+1
+         enddo
+         Xst_stn(1:nstat) = stn_tmp(1:nstat)
+         deallocate(stn_tmp)
+      endif
 *
-      if (nstat.lt.oldnstat .and. Lun_out.gt.0) 
-     %                         write(Lun_out,960) nstat
-      if (nstat.le.0) return
-*
-* 4-  Re-index the stations after the sorting and elimination 
+* 4-  Re-index the stations after the sorting
 *
       if (.not.G_lam) then
          do n=1,nstat
-            if ( Xst_statij(1,n) .eq. (ni) ) then
-                 Xst_statij(1,n) = 1
+            if ( Xst_stn(n)%i .eq. (ni) ) then
+                 Xst_stn(n)%j = 1
                  if (Lun_out.gt.0) write(Lun_out,970)
             endif
          enddo
@@ -215,43 +195,29 @@ c     replacing routine isort with this sort:
 *     stations may or may not be exactly where the user wants
 *     but it will be the closest grid point of the model grid.
 *
-      do n = 1,nstat
-         Xst_istat(n) = Xst_statij(1,n)
-         Xst_jstat(n) = Xst_statij(2,n)
-         slon(n)=lon((Xst_statij(2,n)-1)*ni+Xst_statij(1,n))
-         slat(n)=lat((Xst_statij(2,n)-1)*ni+Xst_statij(1,n))
-      enddo
-      Xst_nstat = nstat
 *
       if (Lun_out.gt.0) then
           write(Lun_out,910)
           do n = 1,nstat
-           write(Lun_out,912) n,Xst_statij(1,n),Xst_statij(2,n),
-     $                        slat(n),slon(n)
+           write(Lun_out,912) n,Xst_stn(n)%name,Xst_stn(n)%i,Xst_stn(n)%j,
+     $                        Xst_stn(n)%lat,Xst_stn(n)%lon
           enddo
           write(Lun_out,901)
       endif
 *
- 900  format(' _____________________________________________________',
-     %     /,'  User s GIVEN lat-lon and corresponding grid points. ',
-     %     /,' _____________________________________________________',
-     %     /,'    N    |  LAT   |  LON   |   I    |   J    |'
-     %    /,' _____________________________________________________')
- 901  format(' _____________________________________________________'//)
- 902  format(1x,I5,'    ',f8.3,' ',f8.3,' ',I5,'    ',I5,'    ')
- 910  format(' _____________________________________________________',
-     %     /,'  Reordered grid points with ACTUAL lat-lon values    ',
-     %     /,' _____________________________________________________',
-     %     /,'    N    |   I    |   J    |  LAT   |  LON   |'
-     %    /,' _____________________________________________________')
- 912  format(1x,I5,'    ',I5,'    ',I5,'    ',f8.3,' ',f8.3,' ')
+ 901  format(' __________________________________________________________________'//)
+ 910  format(' __________________________________________________________________',
+     %     /,'  Reordered grid points with ACTUAL lat-lon values and short names',
+     %     /,' __________________________________________________________________',
+     %     /,'    N    |        NAME        |   I    |   J    |  LAT   |  LON   |'
+     %     /,' __________________________________________________________________')
+ 912  format(1x,I5,'    ',a18,'   ',I5,'    ',I5,'    ',f8.3,' ',f8.3,' ')
  914  format(/,' NO POINTS ARE REQUESTED FOR TIME SERIES.')
  915  format(/,I5,' POINTS ARE SPECIFIED FOR TIME SERIES.')
  950  format('Redundancy NOTED FOR Station: I,J= ',I5,',',I5)
- 960  format(/'WARNING:Some points had to be erased due to redundancy.',
-     %     /,'The total number of points is reduced to:',I5)
  970  format(/'WARNING (non-LAM GRID): Station I index is G_ni+1 so', 
      %     /,' index is then reset to 1.')
+ 1000 format('Unable to allocate space for ',a)
  1001 format(//,'PROCESSING TIME-SERIES GRID POINTS (S/R SET_XST)',
      %        /,'================================================')
 *     ---------------------------------------------------------------

@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r prep_2 - Add metric corrections to r.h.s. of momentum equations.
 *               Compute advective contributions on geopotential grid.
 *               Interpolate advection contribution from geopotential 
@@ -21,8 +24,8 @@
 #include "model_macros_f.h"
 *
       subroutine prep_2 ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, 
-     $                    F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rc   ,F_rt ,
-     $                    F_rw  ,F_rf  ,F_oru  ,F_orv  ,
+     $                    F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rc   ,F_rt  ,
+     $                    F_rw  ,F_rf  ,F_oru  ,F_orv  ,F_rb ,F_nest_t,
      $                    DIST_DIM, ni, nj, Nk )
 *
       implicit none
@@ -35,7 +38,8 @@
      $     F_zct1  (ni,nj,Nk)       ,F_fis   (DIST_SHAPE)     ,
      $     F_rc    (DIST_SHAPE,Nk)  ,F_rt    (DIST_SHAPE,Nk+1),
      $     F_rw    (DIST_SHAPE,Nk+1),F_rf    (DIST_SHAPE,Nk+1),
-     $     F_oru   (DIST_SHAPE,Nk)  ,F_orv   (DIST_SHAPE,Nk)
+     $     F_oru   (DIST_SHAPE,Nk)  ,F_orv   (DIST_SHAPE,Nk)  ,
+     $     F_rb    (DIST_SHAPE)     ,F_nest_t(DIST_SHAPE,*)
 *
 *author
 *     Alain Patoine 
@@ -48,6 +52,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Gravel S.         - modify for theoretical cases
 * v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_05 - Girard C.         - Open top
 *
 *object
 *
@@ -73,10 +78,10 @@
 #include "ptopo.cdk"
 *
 *modules
-      integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, longueur
+      integer i, j, k, i0, j0, k0, in, jn, i00, inn, j00, jnn
       real*8  x, y, z, cx, cy, cz, rx, ry, rz, bbb, mumu, tot,
-     $        a1,a2,a3,a4,b1,b2,b3,zero,half,one,four,xxx,yyy
-      real    rdiv(DIST_SHAPE), w_rt
+     $        a1,a2,a3,a4,b1,b2,b3,b4,b5,zero,half,one,four,xxx,yyy
+      real    rdiv(DIST_SHAPE), Ttop(DIST_SHAPE), w_rt
 *
       parameter( zero=0.d0, half=.5d0, one=1.d0, four=4.d0 )
 **
@@ -96,6 +101,7 @@
       in = l_ni
       j0 = 1
       jn = l_nj
+      k0 = 1+Glb_pil_t
       if (G_lam) then
          if (l_west)  i0= pil_w
          if (l_east)  in= l_niu - pil_e + 2
@@ -106,7 +112,7 @@
 !$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,
 !$omp$                   mumu,rdiv,xxx,yyy,w_rt)
 !$omp do
-      do 100 k=1,l_nk
+      do 100 k= k0, l_nk
       do 100 j= j0, jn
       do 100 i= i0, in
 
@@ -204,7 +210,7 @@
 !$omp end single
 *
 !$omp do
-      do k=1,l_nk 
+      do k=k0,l_nk 
 
 *     Add advective contributions to Ru & Rv
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -250,9 +256,32 @@
       end do
 !$omp enddo
 *
+*******************************************
+* N.B. OPENTOP BOUNDARY CONDITION:        *
+* Top temperature is externally specified *
+*******************************************
+*
+      if (Schm_opentop_L) then
+c         read(62) Ttop(DIST_SHAPE)
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            F_rb(i,j) = F_rt(i,j,k0)
+            Ttop(i,j) = F_nest_t(i,j,k0)
+         end do
+         end do
+      else
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            F_rb(i,j) = 0.0
+            Ttop(i,j) = 0.0
+         end do 
+         end do
+      endif
+*
 **************************************
 * Combination of governing equations * 
 **************************************
+*
 *
 !$omp single
       a1 = one / ( Dcst_grav_8 * Cstv_tauT_8 )
@@ -264,6 +293,8 @@
       b1 = Ver_gamma_8 / Cstv_tau_8 
       b2 = Ver_gamma_8 / ( Dcst_cappa_8 * Cstv_tau_8 )
       b3 = Ver_epsilon_8 /Dcst_cappa_8
+      b4 = one / ( Dcst_cappa_8 * Cstv_tau_8 )
+      b5 = one / ( Dcst_cappa_8 * Cstv_tau_8*Cstv_tauT_8*Cstv_Tstr_8 )
 *
       call rpn_comm_xch_halo( F_ru, LDIST_DIM,l_niu,l_nj,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 ) 
@@ -272,7 +303,7 @@
 !$omp end single
 *
 !$omp do
-      do k=1,l_nk
+      do k=k0,l_nk
 *
 *        Computing the divergence of the RHS of momentum equations
 *        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -302,7 +333,7 @@
 !$omp enddo
 *
 !$omp do
-      do k=1,l_nk+1
+      do k=k0,l_nk+1
 *
 *        Computing Rt" & Rf"
 *        ~~~~~~~~~~~~~~~~~~~
@@ -346,10 +377,9 @@
 *************************************************************
 *
 *     Finish computations of RP(Rc"), combining Rc', Rt", Rf" 
-*     and applying boundary conditions
 *
 !$omp do
-      do k=1,l_nk
+      do k=k0,l_nk
          xxx=one + Ver_dz_8%m(k) * Ver_wp_8%m(k)
          yyy=one - Ver_dz_8%m(k) * Ver_wm_8%m(k)
          do j= 1+pil_s, l_nj-pil_n
@@ -369,16 +399,20 @@
          endif
       end do
 !$omp enddo
-!$omp do
+*
 *     Applying boundary conditions.
+*
+!$omp do
       do j= 1+pil_s, l_nj-pil_n
       do i= 1+pil_w, l_ni-pil_e
+         F_rb(i,j) = F_rt(i,j,k0)-b4*F_rb(i,j)+ b5*Ttop(i,j)
+         F_rc(i,j,k0) = F_rc(i,j,k0) - Ver_cstp_8 * F_rb(i,j)
          F_rt(i,j,l_nk+1) = F_rt(i,j,l_nk+1) - a3 * F_fis(i,j)
-         F_rc(i,j,1)      = F_rc(i,j,1)    - Ver_cstp_8 * F_rt(i,j,1)
          F_rc(i,j,l_nk)   = F_rc(i,j,l_nk) + Ver_cssp_8 * F_rt(i,j,l_nk+1)
       end do
       end do
 !$omp enddo      
+*
 !$omp end parallel
 *
 *     __________________________________________________________________

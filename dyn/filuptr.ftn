@@ -1,5 +1,0 @@
-      subroutine filuptr ( )
-      implicit none
-      print *,'filuptr discontinued'
-      stop
-      end

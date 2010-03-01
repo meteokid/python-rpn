@@ -1,15 +1,3 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 #include "acid.cdk"
 #include "hybdim.cdk"
 #include "out3.cdk"
@@ -77,9 +65,12 @@
       namelist /gem_cfgs/ G_halox
       namelist /gem_cfgs/ G_haloy
       namelist /gem_cfgs/ Grd_rcoef
+!Glb
+      namelist /gem_cfgs/ Glb_pil_t
 !H
       namelist /gem_cfgs/ Hblen_x
       namelist /gem_cfgs/ Hblen_y
+      namelist /gem_cfgs/ Hblen_z
       namelist /gem_cfgs/ Hspng_coef
       namelist /gem_cfgs/ Hspng_mf
       namelist /gem_cfgs/ Hspng_nj
@@ -110,6 +101,8 @@
       namelist /gem_cfgs/ Lam_nesdt
       namelist /gem_cfgs/ Lam_runstrt_S
       namelist /gem_cfgs/ Lam_toptt_L
+      namelist /gem_cfgs/ Lam_blendoro_L
+      namelist /gem_cfgs/ Lam_cascsfc_L
 !Lctl
       namelist /gem_cfgs/ Lctl_debug_L
       namelist /gem_cfgs/ Lctl_r8stat_L
@@ -159,11 +152,6 @@
       namelist /gem_cfgs/ P_pset_yblnd
       namelist /gem_cfgs/ P_pset_yofset
       namelist /gem_cfgs/ P_pset_yofsett
-      namelist /gem_cfgs/ P_serg_serstp
-      namelist /gem_cfgs/ P_serg_srprf_s
-      namelist /gem_cfgs/ P_serg_srsrf_s
-      namelist /gem_cfgs/ P_serg_srsus_L
-      namelist /gem_cfgs/ P_serg_srwri
       namelist /gem_cfgs/ P_zong_nbin
       namelist /gem_cfgs/ P_zong_znli
       namelist /gem_cfgs/ P_zong_znmod
@@ -175,7 +163,6 @@
 !Schm
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
-      namelist /gem_cfgs/ Schm_flipole_L
       namelist /gem_cfgs/ Schm_hdlast_L
       namelist /gem_cfgs/ Schm_hydro_L
       namelist /gem_cfgs/ Schm_itcn
@@ -186,7 +173,6 @@
       namelist /gem_cfgs/ Schm_pcsty_L
       namelist /gem_cfgs/ Schm_pheat_L
       namelist /gem_cfgs/ Schm_psadj_L
-      namelist /gem_cfgs/ Schm_sfix_L
       namelist /gem_cfgs/ Schm_wload_L
       namelist /gem_cfgs/ Schm_xwvt3
       namelist /gem_cfgs/ Schm_zdotlag_L
@@ -220,9 +206,6 @@
 !Vtopo
       namelist /gem_cfgs/ Vtopo_ndt
       namelist /gem_cfgs/ Vtopo_start
-!X
-      namelist /gem_cfgs/ Xst_statij
-      namelist /gem_cfgs/ Xst_statll
 !Z
       namelist /gem_cfgs/ Zblen_L
       namelist /gem_cfgs/ Zblen_spngthick
@@ -256,14 +239,15 @@
       namelist /gem_cfgs_p/ G_halox
       namelist /gem_cfgs_p/ G_haloy
       namelist /gem_cfgs_p/ Grd_rcoef
+!Glb
+      namelist /gem_cfgs_p/ Glb_pil_t
 !H
       namelist /gem_cfgs_p/ Hblen_x
       namelist /gem_cfgs_p/ Hblen_y
+      namelist /gem_cfgs_p/ Hblen_z
       namelist /gem_cfgs_p/ Hspng_coef
       namelist /gem_cfgs_p/ Hspng_mf
       namelist /gem_cfgs_p/ Hspng_nj
-      namelist /gem_cfgs_p/ Hyb
-      namelist /gem_cfgs_p/ Hgt
 !Hzd
       namelist /gem_cfgs_p/ Hzd_1d_L
       namelist /gem_cfgs_p/ Hzd_difva_L
@@ -289,6 +273,8 @@
       namelist /gem_cfgs_p/ Lam_nesdt
       namelist /gem_cfgs_p/ Lam_runstrt_S
       namelist /gem_cfgs_p/ Lam_toptt_L
+      namelist /gem_cfgs_p/ Lam_blendoro_L
+      namelist /gem_cfgs_p/ Lam_cascsfc_L
 !Lctl
       namelist /gem_cfgs_p/ Lctl_debug_L
       namelist /gem_cfgs_p/ Lctl_r8stat_L
@@ -320,7 +306,6 @@
       namelist /gem_cfgs_p/ Out3_ndigits
       namelist /gem_cfgs_p/ Out3_satues_L
       namelist /gem_cfgs_p/ Out3_unit_S
-      namelist /gem_cfgs_p/ Out3_zund
 !P
       namelist /gem_cfgs_p/ P_fcpkuo_xblnd
       namelist /gem_cfgs_p/ P_fcpkuo_xofset
@@ -337,11 +322,7 @@
       namelist /gem_cfgs_p/ P_pset_xofsetr
       namelist /gem_cfgs_p/ P_pset_yblnd
       namelist /gem_cfgs_p/ P_pset_yofset
-      namelist /gem_cfgs_p/ P_serg_srsus_L
       namelist /gem_cfgs_p/ P_pset_yofsett
-      namelist /gem_cfgs_p/ P_serg_serstp
-      namelist /gem_cfgs_p/ P_serg_srsus_L
-      namelist /gem_cfgs_p/ P_serg_srwri
       namelist /gem_cfgs_p/ P_zong_nbin
       namelist /gem_cfgs_p/ P_zong_znli
       namelist /gem_cfgs_p/ P_zong_znmod
@@ -351,7 +332,6 @@
 !Schm
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
-      namelist /gem_cfgs_p/ Schm_flipole_L
       namelist /gem_cfgs_p/ Schm_hdlast_L
       namelist /gem_cfgs_p/ Schm_hydro_L
       namelist /gem_cfgs_p/ Schm_itcn
@@ -362,7 +342,6 @@
       namelist /gem_cfgs_p/ Schm_pcsty_L
       namelist /gem_cfgs_p/ Schm_pheat_L
       namelist /gem_cfgs_p/ Schm_psadj_L
-      namelist /gem_cfgs_p/ Schm_sfix_L
       namelist /gem_cfgs_p/ Schm_wload_L
       namelist /gem_cfgs_p/ Schm_xwvt3
       namelist /gem_cfgs_p/ Schm_zdotlag_L
@@ -440,6 +419,16 @@
       namelist /grdc_p/ Grdc_runstrt_S
 !
 !End gem_grdc_p
+!
+      namelist /series/ P_serg_serstp
+      namelist /series/ P_serg_srprf_s
+      namelist /series/ P_serg_srsrf_s
+      namelist /series/ P_serg_srsus_L
+      namelist /series/ P_serg_srwri
+      namelist /series/ Xst_stn_ij
+      namelist /series/ Xst_stn_latlon
+!
+!End series
 !
 #include "wil_nml.cdk"
 !

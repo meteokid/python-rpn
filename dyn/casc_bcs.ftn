@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r casc_bcs - For reading cascade 3DF pilot files where
 *                 3DF01 files were written after advection,
@@ -30,7 +33,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *revision
 * v3_30 - Lee V.         - initial version for GEMDM
-* v4_03 - Lee/Desgagne - ISST
+* v4_03 - Lee/Desgagne   - ISST
+* v4_05 - Plante A.      - top nesting
 *
 *
 #include "glb_ld.cdk"
@@ -247,27 +251,27 @@ c     print *,Ptopo_myproc,'casc_hvi E:'
 *
 c        print *,'CASC_BCS wowp=',wowp, ' copying bcs_uf to Ind_u'
          call trnes (Ind_u,bcs_uf(bcs_is),bcs_uf(bcs_in),
-     $       bcs_uf(bcs_iw),bcs_uf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
+     $       bcs_uf(bcs_iw),bcs_uf(bcs_ie),bcs_uf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+1,1)
          call trnes (Ind_v,bcs_vf(bcs_is),bcs_vf(bcs_in),
-     $       bcs_vf(bcs_iw),bcs_vf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
+     $       bcs_vf(bcs_iw),bcs_vf(bcs_ie),bcs_vf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+1,1)
          call trnes (Ind_t,bcs_tf(bcs_is),bcs_tf(bcs_in),
-     $       bcs_tf(bcs_iw),bcs_tf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)
+     $       bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_tf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+2,1)
          call trnes (Ind_s,bcs_sf(bcs_is),bcs_sf(bcs_in),
-     $       bcs_sf(bcs_iw),bcs_sf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
+     $       bcs_sf(bcs_iw),bcs_sf(bcs_ie),bcs_sf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,1,1)
          call trnes (Ind_zd,bcs_zdf(bcs_is),bcs_zdf(bcs_in),
-     $       bcs_zdf(bcs_iw),bcs_zdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
+     $       bcs_zdf(bcs_iw),bcs_zdf(bcs_ie),bcs_zdf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+1,1)
          call trnes (Ind_w,bcs_wf(bcs_is),bcs_wf(bcs_in),
-     $       bcs_wf(bcs_iw),bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
+     $       bcs_wf(bcs_iw),bcs_wf(bcs_ie),bcs_wf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+1,1)
          if (.not.Schm_hydro_L) then
             call trnes (Ind_q,bcs_qf(bcs_is),bcs_qf(bcs_in),
-     $       bcs_qf(bcs_iw),bcs_qf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)
+     $       bcs_qf(bcs_iw),bcs_qf(bcs_ie),bcs_qf(bcs_it),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+2,1)
          endif
          keyp_ = VMM_KEY (nest_trf)
          do n=1,Tr3d_ntr
@@ -279,12 +283,11 @@ c        print *,'CASC_BCS wowp=',wowp, ' copying bcs_uf to Ind_u'
             id = (n-1)*bcs_sz+1
             call trnes(trp,bcs_trf(id),
      $                 bcs_trf(id+bcs_in-1),bcs_trf(id+bcs_iw-1),
-     $                 bcs_trf(id+bcs_ie-1),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)
+     $                 bcs_trf(id+bcs_ie-1),bcs_trf(id+bcs_it-1),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,l_ni,l_nj,G_nk+2,1)
          end do
          err = vmmuld(keyp,Tr3d_ntr)
       endif
-
 *
 *
  100  format (' ',60('*'))

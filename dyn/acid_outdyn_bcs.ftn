@@ -1,5 +1,0 @@
-      subroutine acid_outdyn_bcs 
-      implicit none
-      return
-      end
-*

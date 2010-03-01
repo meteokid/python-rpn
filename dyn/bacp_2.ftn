@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r  bacp_2 - backsubstitution: obtain new values of the variables:
 *                                                   u,v,w,t,q,s,zd,fip 
 *                   from new P , the right-hand sides (Ru,Rv,Rt,Rw,Rf)
@@ -19,26 +22,27 @@
 *
       subroutine bacp_2 ( F_itr , F_itnlh , F_p   , F_fis ,
      $                    F_u   , F_v     , F_w   , F_t   ,
-     $                    F_s   , F_zd    , F_q   , F_fip ,
-     $                    F_ru  , F_rv    , F_rt  , F_rw  , F_rf ,
-     $                    F_nu  , F_nv    , F_nt  , F_nw  , F_nf ,
+     $                    F_s   , F_zd    , F_q   , F_fip , F_nest_q,
+     $                    F_ru  , F_rv    , F_rt  , F_rw  , F_rf , F_rb,
+     $                    F_nu  , F_nv    , F_nt  , F_nw  , F_nf , F_nb,
      $                    DIST_DIM, Nk )
 *
       implicit none
 *
       integer  F_itr, F_itnlh, DIST_DIM, Nk 
 * 
-      real     F_p    (DIST_SHAPE,0:Nk+1) ,  F_fis  (DIST_SHAPE)       ,
-     %         F_u    (DIST_SHAPE,  Nk)   ,  F_v    (DIST_SHAPE,  Nk)  ,
-     %         F_w    (DIST_SHAPE,  Nk+1) ,  F_t    (DIST_SHAPE,  Nk+1),
-     %         F_s    (DIST_SHAPE)        ,  F_zd   (DIST_SHAPE,  Nk+1),
-     %         F_q    (DIST_SHAPE,0:Nk+1) ,  F_fip  (DIST_SHAPE,0:Nk+1),
-     %         F_ru   (DIST_SHAPE,  Nk)   ,  F_rv   (DIST_SHAPE,  Nk)  ,
-     %         F_rt   (DIST_SHAPE,  Nk+1) ,  F_rw   (DIST_SHAPE,Nk+1)  ,
-     %         F_rf   (DIST_SHAPE,  Nk+1) ,
-     %         F_nu   (DIST_SHAPE,  Nk)   ,  F_nv   (DIST_SHAPE,  Nk)  ,
-     %         F_nt   (DIST_SHAPE,  Nk+1) ,  F_nw   (DIST_SHAPE,  Nk+1),
-     %         F_nf   (DIST_SHAPE,  Nk+1)
+      real     F_p     (DIST_SHAPE,0:Nk+1),  F_fis  (DIST_SHAPE)       ,
+     %         F_u     (DIST_SHAPE,  Nk)  ,  F_v    (DIST_SHAPE,  Nk)  ,
+     %         F_w     (DIST_SHAPE,  Nk+1),  F_t    (DIST_SHAPE,  Nk+1),
+     %         F_s     (DIST_SHAPE)       ,  F_zd   (DIST_SHAPE,  Nk+1),
+     %         F_q     (DIST_SHAPE,0:Nk+1),  F_fip  (DIST_SHAPE,0:Nk+1),
+     %         F_nest_q(DIST_SHAPE,0:Nk+1),
+     %         F_ru    (DIST_SHAPE,  Nk)  ,  F_rv   (DIST_SHAPE,  Nk)  ,
+     %         F_rt    (DIST_SHAPE,  Nk+1),  F_rw   (DIST_SHAPE,Nk+1)  ,
+     %         F_rf    (DIST_SHAPE,  Nk+1),  F_rb   (DIST_SHAPE),
+     %         F_nu    (DIST_SHAPE,  Nk)  ,  F_nv   (DIST_SHAPE,  Nk)  ,
+     %         F_nt    (DIST_SHAPE,  Nk+1),  F_nw   (DIST_SHAPE,  Nk+1),
+     %         F_nf    (DIST_SHAPE,  Nk+1),  F_nb   (DIST_SHAPE)
 *
 *author
 *     Alain Patoine - split from bac.ftn
@@ -52,6 +56,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_21 - Desgagne M.       - Revision Openmp
 * v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_05 - Girard            - Open top
 *
 *object
 *     see documentation in s/r bac.
@@ -59,49 +64,52 @@
 *arguments: see documentation of appropriate comdecks 
 *
 *implicits
+#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 *
-      integer i, j, k, i0, j0, in, jn, nij
+      integer i, j, k, i0, j0, k0, in, jn, nij
 
       i0 = 1+pil_w
       in = l_ni-pil_e
       j0 = 1+pil_s
       jn = l_nj-pil_n
+      k0 = 1+Glb_pil_t
 
 
       call  bacp_2_2 ( F_itr , F_itnlh , F_p   , F_fis ,
      $                 F_u   , F_v     , F_w   , F_t   ,
-     $                 F_s   , F_zd    , F_q   , F_fip ,
-     $                 F_ru  , F_rv    , F_rt  , F_rw  , F_rf ,
-     $                 F_nu  , F_nv    , F_nt  , F_nw  , F_nf ,
-     $                 DIST_DIM, Nk, i0, j0, in, jn )
+     $                 F_s   , F_zd    , F_q   , F_fip , F_nest_q,
+     $                 F_ru  , F_rv    , F_rt  , F_rw  , F_rf , F_rb ,
+     $                 F_nu  , F_nv    , F_nt  , F_nw  , F_nf , F_nb ,
+     $                 DIST_DIM, Nk, i0, j0, k0, in, jn )
       return
       end
 !
 ! 2e etage pour OpenMP
 !
 
-      subroutine bacp_2_2 ( F_itr , F_itnlh , F_p   , F_fis ,
-     $                      F_u   , F_v     , F_w   , F_t   ,
-     $                      F_s   , F_zd    , F_q   , F_fip ,
-     $                      F_ru  , F_rv    , F_rt  , F_rw  , F_rf  ,
-     $                      F_nu  , F_nv    , F_nt  , F_nw  , F_nf  ,
-     $                      DIST_DIM, Nk, i0, j0, in, jn )
+      subroutine bacp_2_2 ( F_itr , F_itnlh , F_p  , F_fis ,
+     $                      F_u   , F_v     , F_w  , F_t   ,
+     $                      F_s   , F_zd    , F_q  , F_fip , F_nest_q,
+     $                      F_ru  , F_rv    , F_rt , F_rw  , F_rf , F_rb,
+     $                      F_nu  , F_nv    , F_nt , F_nw  , F_nf , F_nb,
+     $                      DIST_DIM, Nk, i0, j0, k0, in, jn )
 *
       implicit none
 *
-      integer  F_itr, F_itnlh, DIST_DIM, Nk , i0, j0, in, jn
-      real     F_p    (DIST_SHAPE,0:Nk+1) ,  F_fis  (DIST_SHAPE)       ,
-     %         F_u    (DIST_SHAPE,  Nk)   ,  F_v    (DIST_SHAPE,  Nk)  ,
-     %         F_w    (DIST_SHAPE,  Nk+1) ,  F_t    (DIST_SHAPE,  Nk+1),
-     %         F_s    (DIST_SHAPE)        ,  F_zd   (DIST_SHAPE,  Nk+1),
-     %         F_q    (DIST_SHAPE,0:Nk+1) ,  F_fip  (DIST_SHAPE,0:Nk+1),
-     %         F_ru   (DIST_SHAPE,  Nk)   ,  F_rv   (DIST_SHAPE,  Nk)  ,
-     %         F_rt   (DIST_SHAPE,  Nk+1) ,  F_rw   (DIST_SHAPE,Nk+1)  ,
-     %         F_rf   (DIST_SHAPE,  Nk+1) ,
-     %         F_nu   (DIST_SHAPE,  Nk)   ,  F_nv   (DIST_SHAPE,  Nk)  ,
-     %         F_nt   (DIST_SHAPE,  Nk+1) ,  F_nw   (DIST_SHAPE,  Nk+1),
-     %         F_nf   (DIST_SHAPE,  Nk+1)
+      integer  F_itr, F_itnlh, DIST_DIM, Nk , i0, j0, k0, in, jn
+      real     F_p     (DIST_SHAPE,0:Nk+1),  F_fis  (DIST_SHAPE)       ,
+     %         F_u     (DIST_SHAPE,  Nk)  ,  F_v    (DIST_SHAPE,  Nk)  ,
+     %         F_w     (DIST_SHAPE,  Nk+1),  F_t    (DIST_SHAPE,  Nk+1),
+     %         F_s     (DIST_SHAPE)       ,  F_zd   (DIST_SHAPE,  Nk+1),
+     %         F_q     (DIST_SHAPE,0:Nk+1),  F_fip  (DIST_SHAPE,0:Nk+1),
+     %         F_nest_q(DIST_SHAPE,0:Nk+1),
+     %         F_ru    (DIST_SHAPE,  Nk)  ,  F_rv   (DIST_SHAPE,  Nk)  ,
+     %         F_rt    (DIST_SHAPE,  Nk+1),  F_rw   (DIST_SHAPE,Nk+1)  ,
+     %         F_rf    (DIST_SHAPE,  Nk+1),  F_rb   (DIST_SHAPE),
+     %         F_nu    (DIST_SHAPE,  Nk)  ,  F_nv   (DIST_SHAPE,  Nk)  ,
+     %         F_nt    (DIST_SHAPE,  Nk+1),  F_nw   (DIST_SHAPE,  Nk+1),
+     %         F_nf    (DIST_SHAPE,  Nk+1),  F_nb   (DIST_SHAPE)
 *
 *
 *implicits
@@ -118,8 +126,10 @@
 #include "schm.cdk"
 #include "ptopo.cdk"
 #include "acid.cdk"
+c      common/xiln/iln
+c      integer iln
 *
-      integer i, j, k, nij, longueur
+      integer i, j, k, nij, kminzd
       real*8  zero, one, half, xxx, yyy, zzz, p1, p2, p3, p4, p5
       parameter(zero=0.d0, one=1.d0, half=.5d0)
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
@@ -149,15 +159,15 @@
 *
 !$omp do
       do j= j0, jn
-         do i= i0, in
-            F_p(i,j,0)      = Ver_alfat_8 * F_p(i,j,1)
-     $                   + Ver_cst_8*(F_rt(i,j,     1)-F_nt(i,j,     1)) 
-            F_p(i,j,l_nk+1) = Ver_alfas_8 * F_p(i,j,l_nk) 
+      do i= i0, in
+         F_p(i,j,k0-1)   = Ver_alfat_8 * F_p(i,j,k0)
+     $                   + Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
+         F_p(i,j,l_nk+1) = Ver_alfas_8 * F_p(i,j,l_nk) 
      $                   - Ver_css_8*(F_rt(i,j,l_nk+1)-F_nt(i,j,l_nk+1)) 
-         end do
+      end do
       end do
 !$omp enddo
-
+*
 !$omp single
       call rpn_comm_xch_halo(F_p,LDIST_DIM,l_ni,l_nj,G_nk+2,
      $     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
@@ -171,7 +181,7 @@
 *
       if (Cori_cornl_L .or. (finbac.and..not.Cori_cornl_L)) then
 !$omp do
-         do k=1,l_nk
+         do k=k0,l_nk
             do j= j0, jn
             do i= i0, l_niu-pil_e
 
@@ -199,7 +209,7 @@
 *     ~~~~~~~~~~~~~
 *
 !$omp do
-      do k=1,l_nk+1
+      do k=k0,l_nk+1
          do j= j0, jn
          do i= i0, in
             Pbar(i,j,k) = Ver_wp_8%t(k)*F_p(i,j,k)+Ver_wm_8%t(k)*F_p(i,j,k-1)
@@ -220,11 +230,22 @@
 *
       if(.not.Schm_hydro_L) then
 *
-*        N.B.  Boundary condition:  F_q(i,j,0) = 0
+*        N.B.  Top Boundary condition:
+*                 Closed Top:  F_q(i,j,0) = 0
+*                   Open Top:  F_q(i,j,k0-1) is externally specified
+*
+         if (Schm_opentop_L) then
+c            read(63) F_q(DIST_SHAPE,k0-1)
+            do j= j0, jn
+            do i= i0, in
+               F_q(i,j,k0-1)=F_nest_q(i,j,k0-1)
+            end do
+            end do
+         endif
 *
 *        Note : we cannot use omp on loop k 
 *               due to vertical dependency F_q(i,j,k-1)
-         do k=1,l_nk+1
+         do k=k0,l_nk+1
             xxx = p3*Ver_dz_8%t(k)
 !$omp do
             do j= j0, jn
@@ -237,8 +258,9 @@
             end do
 !$omp enddo
          end do
+*
 !$omp do
-         do k=1,l_nk+1
+         do k=k0,l_nk+1
             xxx = Dcst_grav_8 * Ver_idz_8%t(k)
             do j= j0, jn 
             do i= i0, in 
@@ -280,10 +302,15 @@
       if(finbac .and. .not.Schm_autobar_L) then  ! safer for autobar
 c     if(finbac) then
 *
-*     N.B.  Boundary conditions: F_zd(i,j,1) = F_zd(i,j,l_nk+1) = 0
+*        N.B.  Top Boundary condition:
+*                 Closed Top:  F_zd(i,j,1) = 0
+*                   Open Top:  F_zd(i,j,k0) is computed
+*
+      kminzd=2
+      if(Schm_opentop_L) kminzd=k0
 *
 !$omp do
-         do k=2,l_nk
+         do k=kminzd,l_nk
             xxx=Ver_gokt2RT_8*Ver_idz_8%t(k)
             yyy=Ver_gokt2RT_8*Ver_epsilon_8
             zzz=Ver_b_8%t(k)/Cstv_tauT_8
@@ -301,7 +328,7 @@ c     if(finbac) then
 *
          if (.not. Schm_hydro_L) then
 !$omp do
-            do k=2,l_nk
+            do k=kminzd,l_nk
                xxx=half/Cstv_tauT_8
                do j= j0, jn 
                do i= i0, in 
@@ -318,7 +345,7 @@ c     if(finbac) then
 *     ~~~~~~~~~~~
 
 !$omp do
-      do k=0,l_nk+1
+      do k=k0-1,l_nk
          if(k.eq.0) then
             xxx=0.d0
          else
@@ -333,7 +360,7 @@ c     if(finbac) then
 !$omp enddo
       if (.not. Schm_hydro_L) then
 !$omp do
-         do k=0,l_nk
+         do k=k0-1,l_nk
             do j= j0, jn 
             do i= i0, in          
                F_fip(i,j,k)=F_fip(i,j,k)-Cstv_RTstr_8*F_q(i,j,k)       
@@ -354,7 +381,7 @@ c     if(finbac) then
 *
       if(.not.Schm_autobar_L) then            ! safer for autobar
 !$omp do
-      do k=1,l_nk+1
+      do k=k0,l_nk+1
          xxx=p2*Ver_idz_8%t(k)
          do j= j0, jn 
          do i= i0, in          
@@ -369,6 +396,48 @@ c     if(finbac) then
          enddo
          enddo
       enddo
+!$omp enddo
+      endif
+*
+c      if(finbac) then
+c         if(Schm_opentop_L) then
+c               read(64)  F_u(DIST_SHAPE,1:k0-1),
+c     $                   F_v(DIST_SHAPE,1:k0-1),
+c     $                   F_w(DIST_SHAPE,1:k0-1),
+c     $                   F_t(DIST_SHAPE,1:k0-1),
+c     $                  F_zd(DIST_SHAPE,1:k0-1)
+c            if(.not.Schm_hydro_L) 
+c     $         read(64)  F_q(DIST_SHAPE,0:k0-2)
+c         else
+c               write(64) F_u(DIST_SHAPE,1:3),
+c     $                   F_v(DIST_SHAPE,1:3),
+c     $                   F_w(DIST_SHAPE,1:3),
+c     $                   F_t(DIST_SHAPE,1:3),
+c     $                  F_zd(DIST_SHAPE,1:3)
+c               write(62) F_t(DIST_SHAPE,4)
+c            if(.not.Schm_hydro_L) then
+c               write(64) F_q(DIST_SHAPE,0:2)
+c               if(iln.eq.Schm_itnlh) then
+c                  do i=1,Schm_itnlh
+c                     write(63) F_q(DIST_SHAPE,3)
+c                  end do
+c               endif
+c            endif
+c*
+c         endif
+c      endif
+*
+      if(Schm_opentop_L) then
+!$omp do 
+         do j=j0,jn
+            do k= k0-1,1,-1
+            yyy=Cstv_RTstr_8*Ver_dz_8%t(k)/Cstv_Tstr_8
+            do i=i0,in
+               xxx=one+Ver_dbdz_8%t(k)*F_s(i,j)
+               F_fip(i,j,k-1)=F_fip(i,j,k)+yyy*(F_t(i,j,k)*xxx-Cstv_Tstr_8)
+            end do
+            end do
+         end do
 !$omp enddo
       endif
 *

@@ -1,24 +1,27 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r nes4s -- Horizontal nesting on 4 faces
 *
 #include "model_macros_f.h"
 *
       subroutine nes4s (F_fn, F_fd, DIST_DIM, Nk, F_is, F_js, 
-     $                                      F_ndavx, F_ndavy)
+     $                                      F_ndavx, F_ndavy, F_ndavz)
       implicit none
 *
-      integer DIST_DIM, NK, F_is, F_js, F_ndavx, F_ndavy
+      integer DIST_DIM, NK, F_is, F_js, F_ndavx, F_ndavy, F_ndavz
       real F_fn(DIST_SHAPE,Nk), F_fd(DIST_SHAPE,Nk)
 *
 *author 
@@ -39,17 +42,24 @@
 *  F_js         I           staggering parameter along y
 *  F_ndavx      I           thichness of sponge layer along x
 *  F_ndavy      I           thichness of sponge layer along y
+*  F_ndavz      I           thichness of sponge layer along z
 *----------------------------------------------------------------
 *
 *implicit
 #include "glb_ld.cdk"
 #include "hblen.cdk"
+#include "glb_pil.cdk"
 *
 **
-      integer i,j,k,nit,njt,il,ih,jl,jh,un
-      real*8 zero,one,pt5,lx,ly,p,pis2
+      integer i,j,k,nit,njt,il,ih,jl,jh,un,kl,kh
+      integer il_top,ih_top,jl_top,jh_top
+      real*8 zero,one,pt5,lx,ly,lz,p,pis2,poid_top 
       parameter (zero=0.d0, one=1.d0, pt5=0.5d0)
+      real*8, dimension(:,:), allocatable :: phor
 *----------------------------------------------------------------------
+      allocate(phor(DIST_SHAPE))
+      phor=0.d0
+
 *100
 *     * ndavx et ndavy: nombre de points de grille dans la bande de 
 *     *                 pilotage (eponge) excluant les frontieres.
@@ -62,9 +72,22 @@
       ih   = nit - F_ndavx + 1
       jl   = 1   + F_ndavy + pil_s -1
       jh   = njt - F_ndavy + 1
+*     Note : kl to kh define domain where there is no top blending/piloting
+*     Putting .false. here ELIMINATES top blending/piloting, used for opentop debugging
+      if(.true.) then
+         kl   = 1   + F_ndavz + Glb_pil_t
+      else
+         kl   = 1
+      endif
+      kh   = Nk
+      if(Nk.eq.1)then
+      kl   = 1
+      kh   = 1         
+      endif
 *
       lx   = dble(F_ndavx) - pt5
       ly   = dble(F_ndavy) - pt5
+      lz   = dble(F_ndavz) + 2.d0
 *
       pis2 = acos(zero)
       un   = 1
@@ -76,11 +99,20 @@
          un=0
       endif
 *
-      do k=1,Nk
+*     Note : phor(i,j) is overwritten at every k iteration, this should be optimized
+*
+*     Top blending covers all the domain but the pilot areas.
+      jl_top=1+pil_s
+      jh_top=njt
+      il_top=1+pil_w
+      ih_top=nit
+*
+      do k=kl,kh
 *west
          do i=1+pil_w,il-un
          do j=jl,jh
             p       = (cos(pis2*(i-pil_w-1)/lx))**2
+            phor(i,j)=p
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
@@ -88,6 +120,7 @@
          do i=ih+un,nit
          do j=jl,jh
             p       = (cos(pis2*(nit-i)/lx))**2
+            phor(i,j)=p
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
@@ -95,6 +128,7 @@
          do j=1+pil_s,jl-un
          do i=il,ih
             p       = (cos(pis2*(j-pil_s-1)/ly))**2
+            phor(i,j)=p
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
@@ -102,6 +136,7 @@
          do j=jh+un,njt
          do i=il,ih
             p       = (cos(pis2*(njt-j)/ly))**2
+            phor(i,j)=p
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
@@ -110,6 +145,7 @@
          do j=1+pil_s,jl-un
             p = (cos(pis2*(one-min(one,
      $        sqrt(((lx-i+1+pil_w)/lx)**2+((ly-j+1+pil_s)/ly)**2)))))**2
+            phor(i,j)=p
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
@@ -118,6 +154,7 @@
          do j=1+pil_s,jl-un
             p = (cos(pis2*(one-min(one,
      $           sqrt(((i-nit+lx)/lx)**2+((ly-j+1+pil_s)/ly)**2)))))**2
+            phor(i,j)=p
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
@@ -126,6 +163,7 @@
          do j=jh+un,njt
             p = (cos(pis2*(one-min(one,
      $           sqrt(((lx-i+1+pil_w)/lx)**2+((j-njt+ly)/ly)**2)))))**2
+            phor(i,j)=p
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
@@ -134,11 +172,29 @@
          do j=jh+un,njt
             p = (cos(pis2*(one-min(one,
      $           sqrt(((i-nit+lx)/lx)**2+((j-njt+ly)/ly)**2)))))**2
+            phor(i,j)=p
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
       end do
 *
+*     Top (Note, blending and piloting)
+      do k=1,kl-1
+         if(k.le.Glb_pil_t)then
+            poid_top  = 1.d0
+         else
+            poid_top  = (sin(pis2*(k-Glb_pil_t-lz)/lz))**2
+         endif
+         do j=jl_top,jh_top
+         do i=il_top,ih_top
+            p=max(phor(i,j),poid_top)
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+      enddo
+*     
+      deallocate(phor)
+*      
 *----------------------------------------------------------------------
       return
       end

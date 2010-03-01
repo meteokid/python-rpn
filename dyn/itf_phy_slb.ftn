@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_slb - Computes the physical tendencies
 *
 #include "model_macros_f.h"
@@ -63,6 +66,7 @@
 *                             Eliminations of processus specific physics
 *                             tendencies.
 * v4_03 - Spacek L.         - Staggered version
+* v4_05 - Desgagne M.       - Add coupling components
 *
 *object
 *     See above id.
@@ -108,6 +112,7 @@
 #include "itf_phy_config.cdk"
 #include "itf_phy_busind.cdk"
 #include "itf_chm_busind.cdk"
+#include "itf_cpl.cdk"
 #include "v4dg.cdk"
 *
 *modules
@@ -196,10 +201,11 @@ c$$$ todo:
       call itf_phy_fillbus ( busdyn, busper ,busent, busvol,
      $         F_pvptr, NPTR, F_trm,F_trp, j, F_step, LDIST_DIM, nkphy )
 *
-*     Run physics on row jdo
-*      
+*     Fill buses with fields produced by coupling
 *
-*     If active chemical scheme, fill chemical buses with jdo row.
+      if (C_coupling_L) call itf_cpl_fillbus ( busdyn,busper,busvol,j)
+*
+*     Fill chemical buses with jdo row.
 *
       if (Schm_chems_L) then
          chmbusvol = 0.0
@@ -223,18 +229,6 @@ c$$$ todo:
      $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
      $              dt, jdo, F_step, F_cpu, p_ni, nkphy)
       endif
-
-c$$$      print *,'---- phy_slb ----',j,p_nj/2
-c$$$      if (j.eq.p_nj/2) then
-c$$$         call statfldslb(busvol(uphytd)  ,'uphytd',p_ni,nkphy)
-c$$$         call statfldslb(busvol(vphytd)  ,'vphytd',p_ni,nkphy)
-c$$$         call statfldslb(busvol(tphytd)  ,'tphytd',p_ni,nkphy)
-c$$$         do n=1,phyt_ntr
-c$$$            call statfldslb(busvol(phyt_ind(3,n))  ,'phyt',p_ni,nkphy)
-c$$$         enddo
-c$$$         call statfldslb(busvol(km)  ,'km',p_ni,nkphy)
-c$$$         call statfldslb(busvol(kt)  ,'kt',p_ni,nkphy)
-c$$$      endif
 
       if (Schm_chems_L) then
 *
@@ -291,6 +285,10 @@ c$$$ todo:
          end do
          endif
       end do
+*
+*C  Prepare surface variables for the coupling
+*
+      if (C_coupling_L) call itf_cpl_getbus (busdyn, busper, busvol, j)
 *
 *     Save vertical diffusion coefficients
 *
@@ -396,18 +394,6 @@ c           F_ktm(ii,j,nkphy) = busvol(bt + (indx_agrege-1)*p_ni + indx)
       goto 100
 *
  650  continue
-      
-c$$$      call statfld3d(F_tdu  ,'Ftdu',LDIST_DIM,l_nj,l_nj,nkphy)
-c$$$      call statfld3d(F_tdv  ,'Ftdv',LDIST_DIM,l_nj,l_nj,nkphy)
-c$$$      call statfld3d(F_ktm  ,'Fkmm',LDIST_DIM,l_nj,l_nj,nkphy)
-c$$$      call statfld3d(F_ktm  ,'Fktm',LDIST_DIM,l_nj,l_nj,nkphy)
-c$$$      do n=1,phyt_ntr
-c$$$         call statfld3d(F_trp(1,1,1,n)  ,'Ftrp',LDIST_DIM,l_nj,l_nj,nkphy)
-c$$$         call statfld3d(F_trm(1,1,1,n)  ,'Ftrm',LDIST_DIM,l_nj,l_nj,nkphy)
-c$$$      enddo
-c$$$
-c$$$      print *,'---- [end] phy_slb ----'
-
 *
  1000 format(/'PERFORM A PHYSICS STEP: CMC/RPN PHYSICS (S/R itf_phy_SLB)'
      $       /55('='))

@@ -1,19 +1,8 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 #if defined (DOC)
 !
 !**comdeck e_anal.cdk
 !
+!  nvar     - Number of variables found in ANAL
 !  nia      - X dimension of the records in ANAL
 !  nja      - Y dimension of the records in ANAL
 !  ip1a,ip2a,ip3a - IP1, IP2, IP3 of the records in ANAL
@@ -35,7 +24,7 @@
       INTEGER  LVMAX
       PARAMETER (LVMAX   = 201)
 
-      INTEGER        nia, nja, NK, LV,LV_T
+      INTEGER        nvar, nia, nja, NK, LV,LV_T
       INTEGER        ip1a, ip2a, ip3a
       INTEGER        ig1a, ig2a, ig3a, ig4a
       INTEGER        NA(LVMAX),NA_T(LVMAX)
@@ -50,7 +39,7 @@
       CHARACTER*1    GRDA, TVA
       CHARACTER*12   LABANL
 
-      COMMON/anali/  nia, nja, NK, LV, LV_T, NA,NA_T
+      COMMON/anali/  nvar, nia, nja, NK, LV, LV_T, NA,NA_T
       COMMON/anali/  ip1a, ip2a, ip3a
       COMMON/anali/  ig1a, ig2a, ig3a, ig4a
       COMMON/analr/  LNA, RNA, RNA_T,RCOEFA,PTOPA,PREFA,pia,pibb,pib

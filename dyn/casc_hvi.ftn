@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 *** casc_hvi - take incoming lo-res data, interpolate to hi-res data
 *              and place into the pieces of the BCS target grid as
 *              described in bcs_did
@@ -67,8 +70,9 @@
 *
 *revision
 * v3_30 - Lee V.       - initial version for GEMLAM
-* v4_03 - Lee V.            - Adapt to using new pressure functions
-
+* v4_03 - Lee V.       - Adapt to using new pressure functions
+* v4_05 - Plante A.    - top nesting
+* v4_05 - Lee V.       - force vertical interpolation all the time unless ACID
 
 #include "glb_ld.cdk"
 #include "bcsdim.cdk"
@@ -85,6 +89,7 @@
 #include "itf_phy_busind.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
+#include "acid.cdk"
 *
       integer i,j,k,n,nga,err,cnt,tr1_id
       integer n21,n41,nid,njd,nid1,njd1,ngd,ngd1,nidu,njdv
@@ -159,10 +164,12 @@
       call hinterpo ( qqr,nid,njd, qqn,nis,njs,nka_m+1,
      $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       endif
-      if (ana_zdw_L) then
-      call hinterpo ( wwr,nid,njd, wwn,nis,njs,nka_t-1,
-     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      if (ana_zd_L) then
       call hinterpo ( zdr,nid,njd, zdn,nis,njs,nka_t-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      endif
+      if (ana_w_L) then
+      call hinterpo ( wwr,nid,njd, wwn,nis,njs,nka_t-1,
      $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       endif
       do k=1,ntra
@@ -247,8 +254,8 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
             ssq0x(i,j) = log(ssq0x(i,j)/Cstv_pref_8)
          enddo
          enddo
-*        Test if mountains are the same
-         If (presstype.eq.Ver_code) then ! if in staggered hyb coordinate
+*        if in staggered hyb coordinate,then test if mountains are the same
+         If (presstype.eq.Ver_code.and.Acid_test_L.and..not.Acid_pilot_L) then
              Vertint_L=.false.
              do k=1,G_nk+2
                 if (ana_at_8(k).ne. Ver_a_8%t(k))Vertint_L=.true.
@@ -267,8 +274,8 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
                 if (meqx(i+(j-1)*nid1,1).ne.topo_temp(i,j) ) Vertint_L=.true.
              enddo
              enddo
+         if (Vertint_L.and. Lun_debug_L) write(Lun_out,*) "WARNING: Vertical Interpolation is used in Acid TEST CASE"
          endif
-         if (.not.Vertint_L.and. Lun_debug_L) write(Lun_out,*) "Vertical Interpolation is NOT needed"
       endif
 
 *Calc for st1
@@ -317,7 +324,7 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
 *
 * Interpolate ZD,W 
 *
-      if (ana_zdw_L) then
+      if (ana_zd_L) then
          if (Vertint_L) then
              allocate (dstlev(nid,njd,G_nk+1),srclev(nid,njd,nka_t-1) )
              err = get_px(srclev,ssqr,ngd,ana_at_8,ana_bt_8,nka_t-1,presstype,.true.)
@@ -326,7 +333,6 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
              err = get_px(dstlev,ssq0,ngd,Ver_a_8%t,Ver_b_8%t,G_nk+1,Ver_code,.true.)
              if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
 *
-             call vte_intvertx(ww1,wwr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'WW') 
              call vte_intvertx(zd1,zdr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'ZD') 
              deallocate(dstlev,srclev)
          else
@@ -334,7 +340,6 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
              do j=1,njd
              do i=1,nid
                 ii=(j-1)*nid+i
-                ww1(i+n1-1,j+n3-1,k)=wwr(ii,k)
                 zd1(i+n1-1,j+n3-1,k)=zdr(ii,k)
              enddo
              enddo
@@ -344,13 +349,46 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
          do k=1,G_nk+1
             do j=n3,n4
             do i=n1,n2
-               ww1(i,j,k)=0.
                zd1(i,j,k)=0.
             enddo
             enddo
          enddo
       endif
-      deallocate (wwr,zdr)
+      deallocate (zdr)
+*
+* Interpolate W 
+*
+      if (ana_w_L) then
+         if (Vertint_L) then
+             allocate (dstlev(nid,njd,G_nk+1),srclev(nid,njd,nka_t-1) )
+             err = get_px(srclev,ssqr,ngd,ana_at_8,ana_bt_8,nka_t-1,presstype,.true.)
+             if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+
+             err = get_px(dstlev,ssq0,ngd,Ver_a_8%t,Ver_b_8%t,G_nk+1,Ver_code,.true.)
+             if (err.lt.0) call gem_stop('casc_hvi:get_px',-1)
+*
+             call vte_intvertx(ww1,wwr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'WW') 
+             deallocate(dstlev,srclev)
+         else
+             do k=1,G_nk+1
+             do j=1,njd
+             do i=1,nid
+                ii=(j-1)*nid+i
+                ww1(i+n1-1,j+n3-1,k)=wwr(ii,k)
+             enddo
+             enddo
+             enddo
+         endif
+      else
+         do k=1,G_nk+1
+            do j=n3,n4
+            do i=n1,n2
+               ww1(i,j,k)=0.
+            enddo
+            enddo
+         enddo
+      endif
+      deallocate (wwr)
 *
 * Interpolate TT
 *
@@ -444,7 +482,6 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
  100  continue
       deallocate (trr)
       if (Vertint_L) deallocate (dstlev,srclev)
-
 *
 * Interpolate Q
       if (.not.Schm_hydro_L) then
@@ -473,6 +510,7 @@ c        call statfld(trr(1,1,k),trname_a(k),k,"dst",1,nid,1,njd,nka_t,1,1,1,nid
                 enddo
                 call vte_intvertx(qq1(n1,n3,2),qqr,srclev,dstlev, ngd, nka_m+1,G_nk+1,'QQ') 
                 deallocate (dstlev,srclev)
+                qq1(n1:n2,n3:n4,1) = 0.
              else
                 do k=1,G_nk+2
                    do j=1,njd

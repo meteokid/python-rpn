@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r  bac - backsubstitution ( memory management and call to bacp_2 )
 *
 #include "model_macros_f.h"
@@ -29,6 +32,7 @@
 * v2_31 - Desgagne M.       - removed treatment of Hu and Qc
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_05 - Girard            - Open top
 *
 *object
 *******************************************************************************
@@ -54,13 +58,14 @@
 #include "vtx.cdk" 
 #include "lctl.cdk"
 #include "acid.cdk"
+#include "nest.cdk"
 #include "wil_williamson.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(14)
+      integer pnerr, pnlod, pnlkey1(16)
 **
 *     __________________________________________________________________
 *
@@ -79,11 +84,16 @@
       pnlkey1(10) = VMM_KEY(rhsv)
       pnlkey1(11) = VMM_KEY(rhst)
       pnlkey1(12) = VMM_KEY(rhsf)
-      pnlod = 12
+      pnlkey1(13) = VMM_KEY(rhsb)
+      pnlod = 13
       if (.not. Schm_hydro_L) then
-         pnlkey1(13) = VMM_KEY(qt0)
-         pnlkey1(14) = VMM_KEY(rhsw)
-         pnlod = 14
+         pnlkey1(14) = VMM_KEY(qt0)
+         pnlkey1(15) = VMM_KEY(rhsw)
+         pnlod = 15
+         if (Schm_opentop_L) then
+            pnlkey1(16) = VMM_KEY(nest_q)
+            pnlod = 16
+         endif
       endif
 *
       pnerr = vmmlod(pnlkey1,pnlod)
@@ -100,21 +110,28 @@
       pnerr = VMM_GET_VAR(rhsv)
       pnerr = VMM_GET_VAR(rhst)
       pnerr = VMM_GET_VAR(rhsf)
+      pnerr = VMM_GET_VAR(rhsb)
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(qt0)
          pnerr = VMM_GET_VAR(rhsw)
+         if (Schm_opentop_L) then
+            pnerr = VMM_GET_VAR(nest_q)
+         else
+            nest_q_=0
+         endif
       else
          qt0_ = 0
          rhsw_    = 0
+         nest_q_=0
       endif
 *
       if (Acid_test_L)call acid_stat_bac(fiptx,nl_t,topo,st0,ut0,wt0,1)
 *     
-      call  bacp_2 (   Itr   , Itnlh , fiptx ,  topo ,
-     %                 ut0   ,   vt0 ,   wt0 ,   tt0 ,
-     %                 st0   ,  zdt0 ,   qt0 , fiptx ,
-     %                 rhsu  ,  rhsv ,  rhst ,  rhsw , rhsf ,
-     %                 nl_u  ,  nl_v ,  nl_t ,  nl_w , nl_f ,
+      call  bacp_2 (   Itr  , Itnlh , fiptx ,  topo ,
+     %                 ut0  ,   vt0 ,   wt0 ,   tt0 ,
+     %                 st0  ,  zdt0 ,   qt0 , fiptx , nest_q,
+     %                 rhsu ,  rhsv ,  rhst ,  rhsw ,  rhsf , rhsb ,
+     %                 nl_u ,  nl_v ,  nl_t ,  nl_w ,  nl_f , nl_b ,
      $                 LDIST_DIM, l_nk )
 *
       if (Acid_test_L)call acid_stat_bac(fiptx,nl_t,topo,st0,ut0,wt0,2)

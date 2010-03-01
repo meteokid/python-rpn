@@ -1,15 +1,3 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 !______________________________________________________________________
 !                                                                      |
 !  Initial and boundary conditions control for LAM configurations      |
@@ -29,11 +17,12 @@
 !--------------------|-------------------------------------------------|
 !
       character*16 Lam_runstrt_S,Lam_current_S,Lam_hint_S
-      logical Lam_ctebcs_L, Lam_busper_init_L, Lam_toptt_L, Lam_0ptend_L
+      logical Lam_ctebcs_L, Lam_busper_init_L, Lam_toptt_L
+      logical Lam_0ptend_L, Lam_blendoro_L   , Lam_cascsfc_L
       integer Lam_nesdt
 !
       common /lams/ Lam_runstrt_S, Lam_current_S, Lam_hint_S
-      common /laml/ Lam_ctebcs_L, Lam_busper_init_L
-      common /laml/ Lam_toptt_L,  Lam_0ptend_L
+      common /laml/ Lam_ctebcs_L , Lam_busper_init_L, Lam_toptt_L
+      common /laml/ Lam_0ptend_L , Lam_blendoro_L   , Lam_cascsfc_L
       common /lami/ Lam_nesdt
 !

@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_geopfld
 *
 #include "model_macros_f.h"
@@ -26,7 +29,8 @@
 * v3_11 - M. Desgagne          - remove call to phy_30900
 * v3_21 - Lee V.               - output status for geophy.bin
 * v3_30 - Desgagne M.          - modifications for new physics interface
-* v4_03 - Lee/Desgagne - ISST
+* v4_03 - Lee/Desgagne         - ISST
+* v4_05 - Desgagne M.          - add timing information (gemtim3)
 *
 #include "e_topo.cdk"
 #include "itf_phy_buses.cdk"
@@ -108,6 +112,8 @@
           stop
       endif
 *
+      call gemtim3 (6)
+*
  1001 format (/' Analysis    file is unit: ',i4/
      $         ' Climatology file is unit: ',i4/
      $         ' Geophysical file is unit: ',i4)
@@ -115,9 +121,9 @@
      %'* WARNING-WARNING-WARNING!!!! Missing geophysical fields. ',/
      %'*             File GEOPHY.bin NOT produced'                ,/
      %'* consider these 2 options:'                               ,/
-     %'*   1) run geophy_2000.Abs on your analysis and '          ,/
-     %'*      re-run Um_runent.sh'                                ,/
-     %'*   2) re-run Um_runent.sh with Pil_sfc2d_L=.false. and'   ,/
+     %'*   1) run a head script (UM_EXEC_headscript) on your'     ,/ 
+     %'*      analysis and re-run Um_runent.ksh'                  ,/
+     %'*   2) re-run Um_runent.ksh with Pil_sfc2d_L=.false. and'  ,/
      %'*      run the model without physics parameterication'     ,/
      % 60('*')/)
 *

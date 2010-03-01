@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r readdyn - read the dynamics fields from entrance programs
 *
 #include "model_macros_f.h"
@@ -49,7 +52,8 @@
 * v4_00 - Plante & Girard  - Log-hydro-pressure coord on Charney-Phillips grid
 * v4_03 - Lee V.           - Adapt to using new pressure functions
 * v4_04 - Plante A.        - Remove offline mode
-* v4_04 - Tanguay M.        - modif when autobar on IBM 
+* v4_04 - Tanguay M.       - modif when autobar on IBM 
+* v4_05 - Plante A.        - Add reads and interpolation for w, zd, q
 *
 *object
 *	
@@ -91,7 +95,7 @@
       pointer (patr, tr(LDIST_SHAPE,*))
       real*8,allocatable, dimension(:  ) :: za_8,zb_8,zat_8,zbt_8
       real, allocatable, dimension(:,:,:) ::  u_temp,v_temp,
-     $        hu_temp,tt_temp,gz_temp
+     $        hu_temp,tt_temp,gz_temp,zd_temp,w_temp,q_temp
       real, allocatable, dimension(:  ) :: rna
       real, allocatable, dimension(:,:) ::pres
       real, allocatable, dimension(:,:,:) ::  u_temp2,v_temp2,
@@ -131,14 +135,17 @@
      $           v_temp(Acqi_niv,Acqi_njv,Acqi_nktmp),
      $           hu_temp(l_ni,l_nj,Acqi_nktmp), 
      $           tt_temp(l_ni,l_nj,Acqi_nktmp),
-     $           gz_temp(l_ni,l_nj,Acqi_nktmp) )
+     $           gz_temp(l_ni,l_nj,Acqi_nktmp),
+     $           zd_temp(l_ni,l_nj,Acqi_nktmp),
+     $            w_temp(l_ni,l_nj,Acqi_nktmp),
+     $            q_temp(l_ni,l_nj,Acqi_nktmp) )
 *
 * Save current model topography for "growing" mode
       current_topo = Ind_topo(1:l_ni,1:l_nj)
       call read_bmf(za_8,zb_8,Acqi_vterplv(1),zat_8,zbt_8,Acqi_vterplv(2),
      $              u_temp,Acqi_niu,Acqi_nju, v_temp,Acqi_niv,Acqi_njv,
      $              hu_temp,tt_temp,gz_temp,ps,topo_temp,
-     $              l_ni,l_nj,Acqi_nktmp)
+     $              zd_temp,w_temp,q_temp,l_ni,l_nj,Acqi_nktmp)
       if(Schm_autobar_L) Acql_vertint = .false.
 * S.Gravel: if analysis is same type as model, topography can
 *           be grown with time thus
@@ -185,7 +192,7 @@ CVL   Acql_vertint=.true.
           end do
 *
           call nesajr (topo_temp, gz_temp (1,1,Acqi_vterplv(2)), 1,l_ni,1,l_nj,
-     $                               1,0,0,Hblen_x,Hblen_y)
+     $                               1,0,0,Hblen_x,Hblen_y,Hblen_z)
 *
           do j=1,l_nj
           do i=1,l_ni
@@ -226,7 +233,7 @@ CVL   Acql_vertint=.true.
 *---------------------------------------------------------------------
 *     OBTAIN PS,PPS
 *     NOTE: Acqi_vertlv, Acqi_vterplv(1), Acqi_vterplv(2) 
-*     includes the surface level at 12000, for vert. interp 
+*     includes the diag/surface level at hyb=1.0, for vert. interp 
 *--------------------------------------------------------------------
       if(Schm_autobar_L) then
 *
@@ -300,7 +307,7 @@ CVL   Acql_vertint=.true.
          end do
       endif
 *---------------------------------------------------------------------
-*     OBTAIN TT
+*     OBTAIN TT, thermo levels + diag, mass grid
 *---------------------------------------------------------------------
       if (Acql_vertint) then
          allocate (srclev(l_ni,l_nj,Acqi_vterplv(2)),
@@ -329,7 +336,7 @@ CVL   Acql_vertint=.true.
          end do
       endif
 *---------------------------------------------------------------------
-*     TRACERS, HU
+*     TRACERS, HU, thermo levels + diag, mass grid
 *---------------------------------------------------------------------
 *
       if (Tr3d_ntr.gt.0) then
@@ -382,11 +389,102 @@ CVL   Acql_vertint=.true.
           err = vmmuld(key,Tr3d_ntr)
       endif
       endif
+*---------------------------------------------------------------------
+*     OBTAIN ZD, thermo levels, mass grid
+*---------------------------------------------------------------------
+      if (Acql_vertint) then
+         call vte_intvertx(work,zd_temp,srclev,dstlev,Acqi_nbpts,
+     $                     Acqi_vterplv(2),G_nk+1,'ZD')
+*
+         do k=2,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_zd(i,j,k)  = work(i,j,k) 
+         end do
+         end do
+         end do
+      else
+         do k=2,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_zd (i,j,k) = zd_temp(i,j,k)
+         end do
+         end do
+         end do
+      endif
+*     The following is not really needed bot just to make sure...
+      do j=1,l_nj
+      do i=1,l_ni
+         Ind_zd (i,j,1) = 0.0
+         Ind_zd (i,j,g_nk+1) = 0.0
+      end do
+      end do
+*---------------------------------------------------------------------
+*     OBTAIN W, thermo levels, mass grid
+*               no value on diag level
+*---------------------------------------------------------------------
+      if (Acql_vertint) then
+         call vte_intvertx(work,w_temp,srclev,dstlev,Acqi_nbpts,
+     $                     Acqi_vterplv(2),G_nk+1,'WT')
+*
+         do k=1,g_nk+1
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_w(i,j,k)  = work(i,j,k) 
+         end do
+         end do
+         end do
+      else
+         do k=1,g_nk+1
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_w (i,j,k) = w_temp(i,j,k)
+         end do
+         end do
+         end do
+      endif
+*---------------------------------------------------------------------
+*     OBTAIN Q, on momentum levels + surface, mass grid
+*---------------------------------------------------------------------
+      if(.not.Schm_hydro_L)then
+         if (Acql_vertint) then
+            deallocate(srclev,dstlev)
+            allocate (srclev(l_ni,l_nj,Acqi_vterplv(1)),
+     $           dstlev(l_ni,l_nj,G_nk+1) )
+            err = get_px(srclev,ps,l_ni*l_nj,za_8,zb_8,Acqi_vterplv(1),Acqi_datasp(2),.true.)
+            if (err.lt.0) call gem_stop('readdyn:get_px',-1)
+            err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
+            if (err.lt.0) call gem_stop('readdyn:get_px',-1)                  
+            call vte_intvertx(work,q_temp,srclev,dstlev,Acqi_nbpts,
+     $           Acqi_vterplv(1),G_nk+1,'QT')        
+*
+            do k=1,g_nk+1
+            do j=1,l_nj
+            do i=1,l_ni
+               Ind_q(i,j,k)  = work(i,j,k) 
+            end do
+            end do
+            end do
+         else
+            do k=1,g_nk+1
+            do j=1,l_nj
+            do i=1,l_ni
+               Ind_q (i,j,k) = q_temp(i,j,k)
+            end do
+            end do
+            end do
+         endif
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_q (i,j,0) = 0.
+         end do
+         end do
+      endif
+*---------------------------------------------------------------------
+*     OBTAIN WINDS, momentum levels + diag, on u/v grids
+*---------------------------------------------------------------------
       if (Acql_vertint) then
         deallocate(srclev,dstlev)
-*---------------------------------------------------------------------
-*     OBTAIN WINDS
-*---------------------------------------------------------------------
         allocate (psu_temp(Acqi_niu,Acqi_nju),
      $             apsu_temp(Acqi_niu,Acqi_nju),
      $             psv_temp(Acqi_niv,Acqi_njv),
@@ -420,7 +518,6 @@ CVL   Acql_vertint=.true.
         if (err.lt.0) call gem_stop('readdyn:get_px',-1)
         call vte_intvertx(v_temp2,v_temp,srclev,dstlev,Acqi_niv*Acqi_njv,
      $              Acqi_vterplv(1),G_nk+1,'VV')
-        deallocate (srclev,dstlev)
         do k=1,g_nk+1
             do j=1,Acqi_nju
             do i=1,Acqi_niu
@@ -433,6 +530,7 @@ CVL   Acql_vertint=.true.
             enddo
             enddo
         enddo
+        deallocate (srclev,dstlev)
         deallocate ( apsu_temp,apsv_temp,psu_temp,psv_temp,u_temp2,v_temp2)
       endif
 *
@@ -468,7 +566,6 @@ CVL   Acql_vertint=.true.
            enddo
            enddo
       endif
-
 *     If required, copy difference between initial and target topography 
 *     in Ind_dtopo and move analysis topography into Ind_topo
       if (Vtopo_L) then
@@ -478,8 +575,8 @@ CVL   Acql_vertint=.true.
         Ind_topo(1:l_ni,1:l_nj) = topo_temp
       endif
 *
-      deallocate (u_temp,v_temp,gz_temp,tt_temp,hu_temp,work,
-     $            za_8,zb_8,zat_8,zbt_8)
+      deallocate (u_temp,v_temp,gz_temp,tt_temp,hu_temp,zd_temp,w_temp,
+     $     q_temp,work,za_8,zb_8,zat_8,zbt_8)
 *
       psmin = exp(pps(1,1))
       psmax = exp(pps(1,1))

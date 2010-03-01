@@ -1,0 +1,29 @@
+#
+#
+#   Targets to load gemdm
+#
+gem: gemntr_nompi gemdm
+
+gem4d:
+	make gem V4D="v4d modulopt prof_003"
+
+gem_nompi: gemntr_nompi gemdm_nompi
+
+gemntr_nompi:
+	make gemntr MPI=rpn_comm_stubs
+
+gemdm_nompi:
+	make gemdm MPI=rpn_comm_stubs
+
+gemntr:
+	cd $(LCLPO);\
+	$(RBUILD) -obj *.o -bidon -main gemntr -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -libpriv $(PRIV) -codebeta $(CODEBETA) $(MPI);\
+	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)* bidon.o
+
+gemdm:
+	cd $(LCLPO);\
+	$(RBUILD) -obj *.o -bidon -main gemdm -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -libpriv $(PRIV) -codebeta $(CODEBETA) $(MPI) ;\
+	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)* bidon.o
+
+include $(gem)/RCS_DYN/.cibles_sometools
+

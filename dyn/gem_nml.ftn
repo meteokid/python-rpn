@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r gem_nml
 *
 #include "model_macros_f.h"
@@ -26,6 +29,10 @@
 * v3_30 - Desgagne M.       - initial version
 * v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 * v4_03 - Tanguay M.        - Williamson's cases
+* v4_05 - Desgagne M.       - Add Lam_blendoro_L and Lam_cascsfc_L
+* v4_05 - McTaggart-Cowan R.- Remove time series settings
+* v4_05 - Girard C.         - Open top option
+* v4_05 - Plante A.         - Vertical blending option
 *
 *object
 *  Default configuration and reading namelists gem_cfgs and grdc
@@ -41,6 +48,13 @@
 *-------------------------------------------------------------------
 *
       gem_nml = -1
+*
+c      open(unit=62,file="/users/dor/afsg/apm/data/LID/TBOUND",
+c     $     form="UNFORMATTED",status="UNKNOWN")
+c      open(unit=63,file="/users/dor/afsg/apm/data/LID/QBOUND",
+c     $     form="UNFORMATTED",status="UNKNOWN")
+c      open(unit=64,file="/users/dor/afsg/apm/data/LID/VARPIL",
+c     $     form="UNFORMATTED",status="UNKNOWN")
 *
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          gem_nml = 0
@@ -70,6 +84,7 @@
       Hblen_wfct_S  = 'COS2'
       Hblen_x = 10
       Hblen_y = Hblen_x
+      Hblen_z = 0
 *
       Init_balgm_L = .false.
       Init_dfwin_L = .true.
@@ -94,7 +109,6 @@
       Schm_wload_L    = .false.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
-      Schm_sfix_L     = .false.
       Schm_zdotlag_L  = .false.
       Schm_zdotMid_L  = .false.
       Schm_autobar_L  = .false.
@@ -108,6 +122,8 @@
       Lam_ctebcs_L  = .false.
       Lam_toptt_L   = .false.
       Lam_0ptend_L  = .true.
+      Lam_blendoro_L= .true.
+      Lam_cascsfc_L = .true.
       Lam_busper_init_L  = .false.
       Lam_current_S = '20000101.000000'
 *
@@ -117,6 +133,7 @@
       Glb_pil_s = 7
       Glb_pil_w = 7
       Glb_pil_e = 7
+      Glb_pil_t = 0
       Adw_nkbz_L = .true.
       Adw_exdg_L = .false.
       Adw_ckbd_L = .false.
@@ -221,12 +238,6 @@
       P_pset_yblnd   = 1
       P_pbd_dumpbus  = 0
 *
-      P_serg_srsus_L    = .false.
-      P_serg_srsrf_s = ' '
-      P_serg_srprf_s = ' '
-      P_serg_srwri      = 1
-      P_serg_serstp     = 99999
-*
       P_zong_znli = 0
       P_zong_nbin = min( Grd_nj,Grd_ni )
       P_zong_znmod = 1
@@ -234,13 +245,6 @@
       P_zong_znsus_L = .false.
       P_zong_znsrf_s = ' '
       P_zong_znprf_s = ' '
-*
-      do i = 1,MAXSTAT
-         Xst_statij(1,i) = -9999
-         Xst_statij(2,i) = -9999
-         Xst_statll(1,i) = -9999.0
-         Xst_statll(2,i) = -9999.0
-      enddo
 *
       do i = 1,MAXELEM
          Out3_zund(i)     = 0

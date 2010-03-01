@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r sergset - initialization of the physics variables for the
 *                time series extraction and memory allocation.
 *
@@ -75,41 +78,51 @@
 *
       xst_nstatl = 0
       do i = 1, Xst_nstat
-         if (  (Xst_istat(i).ge.Ptopo_gindx(1,Ptopo_myproc+1)).and.
-     $         (Xst_istat(i).le.Ptopo_gindx(2,Ptopo_myproc+1)).and.
-     $         (Xst_jstat(i).ge.Ptopo_gindx(3,Ptopo_myproc+1)).and.
-     $         (Xst_jstat(i).le.Ptopo_gindx(4,Ptopo_myproc+1)) ) then
+         if (  (Xst_stn(i)%i.ge.Ptopo_gindx(1,Ptopo_myproc+1)).and.
+     $         (Xst_stn(i)%i.le.Ptopo_gindx(2,Ptopo_myproc+1)).and.
+     $         (Xst_stn(i)%j.ge.Ptopo_gindx(3,Ptopo_myproc+1)).and.
+     $         (Xst_stn(i)%j.le.Ptopo_gindx(4,Ptopo_myproc+1)) ) then
             xst_nstatl = xst_nstatl + 1
-            Xst_lclsta(xst_nstatl) = i
-            xst_stcori(xst_nstatl) = Xst_istat(i) - 
+            Xst_stn(xst_nstatl)%lclsta = i
+            Xst_stn(xst_nstatl)%stcori = Xst_stn(i)%i - 
      $                               Ptopo_gindx(1,Ptopo_myproc+1) + 1
      $                               - pil_w + p_nmp*west
-            xst_stcorj(xst_nstatl) = Xst_jstat(i) - 
+            Xst_stn(xst_nstatl)%stcorj = Xst_stn(i)%j - 
      $                               Ptopo_gindx(3,Ptopo_myproc+1) + 1
      $                               - pil_s + p_nmp*south
          endif
       end do
 *
       Xst_dimsers = max(1,serdim (Xst_nstat,pnmxsrf,1))
-      Xst_dimserp = max(1,serdim (Xst_nstat,P_serg_srprf,G_nk))
+      Xst_dimserp = max(1,serdim (Xst_nstat,P_serg_srprf,p_nk))
       call hpalloc(Xstb_sers_  ,Xst_dimsers,pnerr,1) 
       call hpalloc(Xstb_serp_  ,Xst_dimserp,pnerr,1) 
       call hpalloc(Xstb_sersx_ ,Xst_dimsers,pnerr,1) 
       call hpalloc(Xstb_serpx_ ,Xst_dimserp,pnerr,1)       
-      call serallc2 (Xstb_sers,Xstb_serp,p_ni,p_nj,G_nk)
+      call serallc2 (Xstb_sers,Xstb_serp,p_ni,p_nj,p_nk)
 *
 *     initializes number of vertical levels
 *
-      call serset  ('ISTAT',Xst_istat,Xst_nstat ,pnerr)
+      call serset  ('ISTAT',Xst_stn(:)%i,Xst_nstat ,pnerr)
       do j= 1, p_nj 
-         call sersetm('KA', j, G_nk)
+         call sersetm('KA', j, p_nk)
       end do
 *
-      call serset  ('ISTAT'  ,xst_stcori ,xst_nstatl,pnerr)
-      call serset  ('JSTAT'  ,xst_stcorj ,xst_nstatl,pnerr)
-      call serset  ('STATION',Xst_lclsta,xst_nstatl,pnerr)
-      call serset  ('ISTAT_G',Xst_istat,Xst_nstat ,pnerr)
-      call serset  ('JSTAT_G',Xst_jstat,Xst_nstat ,pnerr)
+*     add surface log(p) if profiles are requested
+*
+      if (P_serg_srprf > 0) then
+         P_serg_srsrf = P_serg_srsrf+1
+         P_serg_srsrf_s(P_serg_srsrf) = '!!SF'
+      endif
+*
+*     initialize station identities
+*
+      call serset  ('ISTAT'  ,Xst_stn(:)%stcori,xst_nstatl,pnerr)
+      call serset  ('JSTAT'  ,Xst_stn(:)%stcorj,xst_nstatl,pnerr)
+      call serset  ('STATION',Xst_stn(:)%lclsta,xst_nstatl,pnerr)
+      call sersetc ('NAME'   ,Xst_stn(:)%name,xst_nstatl,pnerr)
+      call serset  ('ISTAT_G',Xst_stn(:)%i,Xst_nstat,pnerr)
+      call serset  ('JSTAT_G',Xst_stn(:)%j,Xst_nstat,pnerr)
 *
 *     initializes name of SURFACE type variables (2D variables)
 *
@@ -130,14 +143,8 @@
 *     initializes model and time series output time step
 *     and time series version
 *
-      if ( Clim_climat_L ) then
-        call serset('TSMOYHR', P_out_moyhr, 1, pnerr)
-        call serset('SRWRI', int(P_serg_srwri*Cstv_dt_8), 1, pnerr)
-        P_serg_ver=200
-      else
-        P_serg_ver=100
-      end if
-      call serset('TSVER', P_serg_ver, 1, pnerr)
+      call serset('TSMOYHR', P_out_moyhr, 1, pnerr)
+      call serset('SRWRI', int(P_serg_srwri*Cstv_dt_8), 1, pnerr)
 *
 *     initializes buffers to zero
 *

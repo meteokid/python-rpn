@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_vmmprep - load all fields required by the physics
 *
 #include "model_macros_f.h"
@@ -36,6 +39,8 @@
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - Lee V.            - removed clipping from tracers
 * v4_03 - Spacek L.         - Staggered version
+* v4_05 - McTaggart-Cowan R.- Add log(surface pressure)-zeta0 stplus for profiles
+* v4_05 - Lee V.            - correct loop for h2o_ntr (hucond)
 *
 *object
 *----------------------------------------------------------------
@@ -125,7 +130,7 @@
 **
 *
       integer err, key(14), i, j, k, n, i0, j0, in, jn, nksurf,
-     $        keyd(17), keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
+     $        keyd(18), keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
       integer pnlod, nik, nikp, km1
       real dt, dzsedi, dzmin, dzmin_, sigsfc, trp, trm, con(l_nj)
       real xtmp(l_ni,nkphy)
@@ -195,7 +200,8 @@ cap      endif
       keyd(15) = VMM_KEY(p_eponmod)
       keyd(16) = VMM_KEY(p_fcpf)
       keyd(17) = VMM_KEY(p_fcpw)
-      err = vmmlod(keyd,17)
+      keyd(18) = VMM_KEY(p_stplus)
+      err = vmmlod(keyd,18)
       err = VMM_GET_VAR(p_uplus)
       err = VMM_GET_VAR(p_vplus)
       err = VMM_GET_VAR(p_tplus)
@@ -213,6 +219,7 @@ cap      endif
       err = VMM_GET_VAR(p_eponmod)
       err = VMM_GET_VAR(p_fcpf)
       err = VMM_GET_VAR(p_fcpw)
+      err = VMM_GET_VAR(p_stplus)
 
       nik  = l_ni*(nkphy-1)
       nikp = l_ni*(nkphy)
@@ -263,7 +270,16 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
             p_sigm_t(i,j,nkphy) = p_sigm_m(i,j,nkphy)
          end do
       end do
-
+*
+*     compute log(surface pressure) - zeta0
+*     -------------------------------------
+*
+      do j=1,l_nj
+         do i=1,l_ni
+            p_stplus(i,j) = st1(i,j)
+         enddo
+      enddo
+*
 *     compute vertical omega
 *     -----------------------
 *
@@ -478,8 +494,8 @@ c$$$ TODO: optimize with vslog
 *
          summqj = 0.
          sumpqj = 0.
-*        Sum over Hydrometeors, note: 'HU' is in position 1
-         do n = hucond+1, h2o_ntr
+*        Sum over Hydrometeors, note: 'HU' is not always in position 1
+         do n = hucond+1, h2o_ntr+(hucond-1)
          do k = 1, nkphy
          do j= 1, l_nj
          do i = 1, l_ni

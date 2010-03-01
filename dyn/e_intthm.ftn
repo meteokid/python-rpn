@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_intthm  - Interpolate GZ,VT,HU on model grid.
 *
 #include "model_macros_f.h"
@@ -36,6 +39,8 @@
 *                             NOTE : un-staggered input data only
 * v4_03 - Lee V.            - ISST adaptation, read p0 here
 * v4_03 - Lee V.            - Adapt to using new pressure functions
+* v4_05 - Lee V.            - Always write P0 in Pascals
+* v4_05 - Plante A.         - Read zdt1,wt1,qt1 if present
 *
 *object
 *    Computes  the ln of surface and top pressure given the topo 
@@ -64,9 +69,10 @@
 #include "e_schm.cdk"
 #include "e_grdc.cdk"
 #include "hgc.cdk"
+#include "schm.cdk"
 *
-      integer  e_rdhint3,e_bmfrd,fstprm,fstinl
-      external e_rdhint3,e_bmfrd,fstprm,fstinl
+      integer  e_rdhint3,e_bmfrd,fstprm,fstinl,fstinf
+      external e_rdhint3,e_bmfrd,fstprm,fstinl,fstinf
 *
       character*1 typ,grd,blk_S
       character*4 vtt,vhh,var
@@ -80,13 +86,16 @@
       real      x1,lev,difsig,dx,dy
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
      $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
-      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2,hr
-      real, dimension (:,:), allocatable :: ttn,hun,gzn
-      integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum,nvar
+      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2,hr,zdwq
+      real, dimension (:,:), allocatable :: ttn,hun,gzn,zdn,wn,qn
+      integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum
+      logical zd_L,w_L,q_L
 *
 *---------------------------------------------------------------------
 *
       write(6,1001)
+      w_L=.false.     
+      q_L=.false.
       c1 = Dcst_tcdk_8
       c2 = 10. * Dcst_grav_8
       vtt=vt//'  '
@@ -101,22 +110,21 @@
       endif
       ng = nis*njs
 *
-      allocate(tt(ng),td(ng),es(ng),hr(ng),hu(ng),p0(ng),wk2(ng))
+      allocate(tt(ng),td(ng),es(ng),hr(ng),hu(ng),p0(ng),wk2(ng),zdwq(ng))
 *
 *     For searching the P0 record
 *
       if (anal_hav(2).eq.6) then
-*         Read, interpolate, scale and write SurF
+*         Read, interpolate  write pressure SurFace
           if (e_rdhint3 (p0,dstf_gid,nis,njs,'!!SF',-1,
      $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
      $         call e_arret('e_specanal')
       else if (anal_hav(2).gt.0.and.anal_hav(2).le.5) then
-*        Read, interpolate, scale and write P0.
-          if (e_rdhint3 (p0,dstf_gid,nis,njs,'P0  ',-1,
+*        Read, interpolate, scale and write out P0.
+          if (e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1,
      $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
      $         call e_arret('e_specanal')
-*vl        NO  Scale P0.
-cvl            p0 (:) = wk2(:)*100.
+               p0 (:) = wk2(:)*100.
       endif
 *
 *     Write out P0 record
@@ -137,8 +145,9 @@ cvl            p0 (:) = wk2(:)*100.
 *     correct IP1 targets must be found
       anyip_L = .false.
       arret_L = .true.
-      if (.not.Pil_bmf_L)  allocate(ttn(ng,lv_t),hun(ng,lv_t),gzn(ng,lv_t))
-
+      if (.not.Pil_bmf_L)  allocate(ttn(ng,lv_t),hun(ng,lv_t),
+     $     gzn(ng,lv_t),zdn(ng,lv_t-1),wn(ng,lv_t-1),qn(ng,lv+1))
+      
       if ( Anal_eta_L .or. Anal_sigma_L .or. Anal_hyb_L ) then
          write(6,*)
      $      'ANALYSIS IS IN SIGMA OR ETA OR HYBRID COORDINATES'
@@ -155,7 +164,7 @@ cvl            p0 (:) = wk2(:)*100.
             tt(:) = tt(:) + c1
 *            
             if (vt.eq.'TT') call mfotvt (tt,tt,hu,ng,1,ng)
-            if (Pil_bmf_L) then               
+            if (Pil_bmf_L) then
                 call e_bmfsplitxy2 (hu,nis,njs,'HU  ',k,lv_t,pni,0,0,0)
                 call e_bmfsplitxy2 (tt,nis,njs,'VT  ',k,lv_t,pni,0,0,0)
             else
@@ -163,6 +172,57 @@ cvl            p0 (:) = wk2(:)*100.
                 call e_fill_3df ( hu,hun,nis,njs,lv_t,k,1.0,0.0) 
             endif
          end do
+*
+         key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','ZDT1')
+         if(key.ge.0)then
+            zd_L=.true.
+            do k=1,lv_t-1
+               if (e_rdhint3 (zdwq,dstf_gid,nis,njs,'ZDT1',na_t(k),ip2a,
+     $              ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0) 
+     $              goto 55
+               if (Pil_bmf_L) then
+                  call e_bmfsplitxy2 (zdwq,nis,njs,'ZD  ',k,lv_t-1,pni,0,0,0)
+               else
+                  call e_fill_3df (zdwq,zdn,nis,njs,lv_t-1,k,1.0,0.0) 
+               endif            
+            enddo
+         endif
+*
+         key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','WT1')
+         if(key.ge.0)then
+            w_L=.true.
+            do k=1,lv_t-1
+               if (e_rdhint3 (zdwq,dstf_gid,nis,njs,'WT1 ',na_t(k),ip2a,
+     $              ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0) 
+     $              goto 55
+               if (Pil_bmf_L) then
+                  call e_bmfsplitxy2 (zdwq,nis,njs,'W   ',k,lv_t-1,pni,0,0,0)
+               else
+                  call e_fill_3df (zdwq,wn,nis,njs,lv_t-1,k,1.0,0.0) 
+               endif            
+            enddo
+         endif
+*
+         if (.not.Schm_hydro_L) then
+            key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','QT1')
+            if(key.ge.0)then
+               q_L=.true.
+               do k=1,lv
+                  if (e_rdhint3 (zdwq,dstf_gid,nis,njs,'QT1 ',na(k),ip2a,
+     $                 ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0) 
+     $                 goto 55
+                  if (Pil_bmf_L) then
+c                    Level zero not written in bmf
+                     call e_bmfsplitxy2 (zdwq,nis,njs,'Q   ',k,lv,pni,0,0,0)                
+                  else                    
+                     call e_fill_3df (zdwq,qn,nis,njs,lv+1,k+1,1.0,0.0)
+c                    in 3df files q(:,0) must be present. But level k=0 is never
+c                    available in output file. Since q=0 at k=0, we put 0.0 :
+                     if(k.eq.1)call e_fill_3df (zdwq,qn,nis,njs,lv+1,k,0.0,0.0)
+                  endif
+               enddo
+            endif
+         endif
 *
          if (.not.Pil_bmf_L) then
 *           Read and interpolate surface GZ.
@@ -198,12 +258,35 @@ cvl            p0 (:) = wk2(:)*100.
      $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
      $            lv_t, 'HU  ',unf_casc)
+                if(zd_L)
+     $               call e_write_bcs (zdn,nis,njs,
+     $               e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $               e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $               lv_t-1, 'ZD  ',unf_casc)
+                if(w_L)
+     $               call e_write_bcs ( wn,nis,njs,
+     $               e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $               e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $               lv_t-1, 'W   ',unf_casc)
+                if ((.not.Schm_hydro_L).and.q_L) then
+                   call e_write_bcs ( qn,nis,njs,
+     $                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $                  lv+1, 'Q   ',unf_casc)
+                endif
 *
              else
 *
-                call e_write_3df ( ttn,nis,njs,lv_t,'TT  ',unf_casc)
-                call e_write_3df ( wk2,nis,njs,1 ,'GZ  ',unf_casc)
-                call e_write_3df ( hun,nis,njs,lv_t,'HU  ',unf_casc)
+                call e_write_3df (  ttn,nis,njs,lv_t  ,'TT  ',unf_casc)
+                call e_write_3df (  wk2,nis,njs,1     ,'GZ  ',unf_casc)
+                call e_write_3df (  hun,nis,njs,lv_t  ,'HU  ',unf_casc)
+                if(zd_L)
+     $               call e_write_3df (zdn,nis,njs,lv_t-1,'ZD  ',unf_casc)
+                if(w_L)
+     $               call e_write_3df (wn,nis,njs,lv_t-1,'W   ',unf_casc)
+                if ((.not.Schm_hydro_L).and.q_L) then
+                   call e_write_3df (qn,nis,njs,lv+1  ,'Q   ',unf_casc)
+                endif
 *
              endif
          endif
@@ -342,9 +425,9 @@ cvl            p0 (:) = wk2(:)*100.
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
      $            lv_t, 'HU  ',unf_casc)
              else
-                call e_write_3df ( ttn,nis,njs,lv_t,'TT  ',unf_casc)
-                call e_write_3df ( gzn,nis,njs,lv_t,'GZ  ',unf_casc)
-                call e_write_3df ( hun,nis,njs,lv_t,'HU  ',unf_casc)
+                call e_write_3df ( ttn,nis,njs,lv_t  ,'TT  ',unf_casc)
+                call e_write_3df ( gzn,nis,njs,lv_t  ,'GZ  ',unf_casc)
+                call e_write_3df ( hun,nis,njs,lv_t  ,'HU  ',unf_casc)
              endif
          endif
 *
@@ -384,8 +467,8 @@ cvl            p0 (:) = wk2(:)*100.
          endif 
       end do
 *
-      deallocate(tt,td,es,hu,wk2,p0)
-      if (.not.Pil_bmf_L) deallocate(ttn,hun,gzn)
+      deallocate(tt,td,es,hu,wk2,p0,zdwq)
+      if (.not.Pil_bmf_L) deallocate(ttn,hun,gzn,zdn,wn,qn)
 *     
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
 *

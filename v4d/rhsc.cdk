@@ -1,15 +1,3 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 #if defined (DOC)
 !
 !**comdeck rhsc.cdk
@@ -31,6 +19,7 @@
 ! rhsf               | vertical velocity equation                      |
 !--------------------|-------------------------------------------------|
 ! rhsp               |        Helmholtz equation                       |
+! rhsb               |   boundary condition in opentop                 |
 !--------------------|-------------------------------------------------|
 ! ruw1               | Ru interpolated from U_grid to G_grid           |
 ! ruw2               | advective contributions for U                   |
@@ -53,6 +42,7 @@
       DCL_VMMVAR (rhsc,rhsw,real,(LDIST_SHAPE,l_nk+1))
       DCL_VMMVAR (rhsc,rhsf,real,(LDIST_SHAPE,l_nk+1))
       DCL_VMMVAR (rhsc,rhsp,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhsc,rhsb,real,(LDIST_SHAPE))
 !
       DCL_VMMVAR (rhsc,ruw1  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,rvw1  ,real,(LDIST_SHAPE,l_nk))

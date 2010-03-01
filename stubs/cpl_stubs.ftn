@@ -1,9 +1,9 @@
-      subroutine itf_cpl_oasis_put
+      subroutine cpl_exchg
       return
       end
-      subroutine itf_cpl_oasis_get
+      subroutine cpl_init
       return
       end
-      subroutine itf_cpl_oasis_init
+      subroutine cpl_terminate
       return
       end

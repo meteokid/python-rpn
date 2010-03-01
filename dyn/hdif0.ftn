@@ -1,4 +1,0 @@
-      subroutine hdif0 ()
-      call gem_stop('HDIF0 NOT USED ANYMORE',-1)
-      return
-      end

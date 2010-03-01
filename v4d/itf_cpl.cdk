@@ -1,19 +1,22 @@
 
-      logical C_coupling_L,atm_hotstart,oce_hotstart
-      common /C_nml/ C_coupling_L,atm_hotstart,oce_hotstart
+      logical C_coupling_L,C_wascoupled_L,atm_hotstart,oce_hotstart
+      common /C_nml/ C_coupling_L,C_wascoupled_L,
+     $                 atm_hotstart,oce_hotstart
 
       character*48 CPL_NAME
-      integer rap_dt,ip_fldou,ip_fldin,cpl_maxnvar,write_chan,read_chan
-      parameter (cpl_maxnvar=1000)
-      character*8 cg_writ(cpl_maxnvar), cg_read   (cpl_maxnvar)
-      integer  ig_varidou(cpl_maxnvar), ig_varidin(cpl_maxnvar)
+      logical cpl_exchg_L
+      integer rap_dt,n_fldou,n_fldin,maxnvar,W_chan,R_chan
+      integer cpl_debut,cpl_fin,cpl_freq
+      parameter (maxnvar=1000)
+      character*8 nv_writ(maxnvar), nv_read(maxnvar)
 
-      common/cplg_s/ CPL_NAME,cg_writ,cg_read 
-      common/cplg_i/ rap_dt,ip_fldou,ip_fldin,ig_varidou,ig_varidin
-      common/cplg_i/ write_chan,read_chan
+      common/cplg_s/ CPL_NAME,nv_writ,nv_read 
+      common/cplg_i/ rap_dt,n_fldou,n_fldin
+      common/cplg_i/ cpl_debut,cpl_fin,cpl_freq
+      common/cplg_i/ W_chan,R_chan,cpl_exchg_L
  
       integer nbusin,nbusou,ndiag
       common/atmd_i/ nbusin,nbusou,ndiag
-      real, dimension (:,:  ), pointer :: atm_busin,ice_diag,ice_cum,atm_busou
-      real, dimension (:,:,:), pointer :: atm_local_busin,atm_local_busou
+      real, dimension (:,:  ), pointer :: atm_busin,ice_diag,ice_cum
+      real, dimension (:,:,:), pointer :: atm_local_busin,atm_local_busou,atm_busou
       common/atmd_r/ atm_busin,ice_diag,ice_cum,atm_busou,atm_local_busin,atm_local_busou

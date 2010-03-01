@@ -1,15 +1,3 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 #if defined (DOC)
 !
 !
@@ -49,7 +37,6 @@
 !                    |                           hydrostatic mode only)|
 ! Schm_wload_L       | .true.-> Effet of water loading included        |
 ! Schm_theoc_L       | .true.-> theoretical case                       |
-! Schm_sfix_L        | .true.-> fix surface values to those of l_nk-1  |
 ! Schm_itcn          | number of iterations for Crank-Nicholson        |
 ! Schm_modcn         | frequency of Crank-Nicholson procedure          |
 ! Schm_xwvt3         | type of extrapolation for wind calculation      |
@@ -69,9 +56,9 @@
 !
 #endif
       logical Schm_hydro_L, Schm_moist_L, Schm_nkbz_L , Schm_autobar_L
-      logical Schm_phyms_L, Schm_adcub_L, Schm_psadj_L, Schm_flipole_L
+      logical Schm_phyms_L, Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
       logical Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L
-      logical Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L
+      logical Schm_pheat_L, Schm_theoc_L
       logical Schm_zdotlag_L,Schm_zdotMid_L
 !
       integer Schm_itcn , Schm_modcn, Schm_xwvt3
@@ -81,12 +68,11 @@
       common / schm_l / Schm_hydro_L, Schm_moist_L
       common / schm_l / Schm_nkbz_L , Schm_autobar_L 
       common / schm_l / Schm_phyms_L, Schm_adcub_L
-      common / schm_l / Schm_psadj_L, Schm_flipole_L
+      common / schm_l / Schm_psadj_L, Schm_opentop_L
       common / schm_l / Schm_hdlast_L,Schm_wload_L
       common / schm_l / Schm_pcsty_L, Schm_chems_L
       common / schm_l / Schm_pheat_L, Schm_theoc_L
-      common / schm_l / Schm_sfix_L,  Schm_zdotlag_L
-      common / schm_l / Schm_zdotMid_L
+      common / schm_l /Schm_zdotlag_L,Schm_zdotMid_L
       MARK_COMMON_END (schm_l)
       MARK_COMMON_BEG (schm_i)
       common / schm_i / Schm_itcn , Schm_modcn, Schm_xwvt3

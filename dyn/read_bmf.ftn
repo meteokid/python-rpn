@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r read_bmf - read the dynamics fields from entrance programs
 *
 #include "model_macros_f.h"
@@ -17,12 +20,13 @@
       subroutine read_bmf(za_8,zb_8,lvm, zat_8,zbt_8,lvt,
      $                    u_temp,lniu,lnju, v_temp,lniv,lnjv,
      $                    hu_temp,tt_temp,gz_temp,ps,topo_temp,
-     $                    lni,lnj,nktmp)
+     $                    zd_temp,w_temp,q_temp,lni,lnj,nktmp)
       implicit none
       integer lni,lnj,lniu,lnju,lniv,lnjv,lvm,lvt,nktmp
       real*8  za_8(lvm),zb_8(lvm),zat_8(lvt),zbt_8(lvt)
       real,   dimension(lni,lnj      ) :: ps,topo_temp
-      real,   dimension(lni,lnj,nktmp) :: hu_temp,gz_temp,tt_temp
+      real,   dimension(lni,lnj,nktmp) :: hu_temp,gz_temp,tt_temp,
+     $                                    zd_temp,w_temp,q_temp
       real    u_temp(lniu,lnju,nktmp), v_temp(lniv,lnjv,nktmp)
 *
 *author 
@@ -38,6 +42,7 @@
 * v3_30 - McTaggart-Cowan R.   - update implementation of variable orography
 * v4_03 - Lee V.               - Adapt to using new pressure functions
 * v4_04 - Plante A.            - Remove offline mode
+* v4_05 - Plante A.            - Add read for w, zd, q
 *
 *object
 *	
@@ -74,6 +79,14 @@
       nerr=0
 *
 *     Initialization of some switches and dimensions
+*Notes for coding from Acqi_datasp (originally derived from ip1_param)
+*                        0=pressure
+*                        1=SIGMA
+*                        2=ETASEF (eta for spectral)
+*                        3=SIGPT  (eta, rcoef=1.0)
+*                        4=HYBLG  (hybrid Laprise/Girard)
+*                        5=ECMWF  (data from ECMWF)
+*                        6=HYBSTAG(staggered hybrid Girard)
 *
       err = bmf_get ('AHAV',bmf_time1,bmf_time2,Acqi_datasp,-1,-1.,
      $                                               1,2,1,1,1,1)
@@ -83,8 +96,8 @@
       Acql_etaanl  = (Acqi_datasp(2).eq.3)
       Acql_siganl  = (Acqi_datasp(2).eq.1)
       Acql_prsanl  = (Acqi_datasp(2).eq.0)
-      Acql_ecmanl  = .false.
-      Acql_staganl  = (Acqi_datasp(2).eq.5)
+      Acql_ecmanl  = (Acqi_datasp(2).eq.5)
+      Acql_staganl  = (Acqi_datasp(2).eq.6)
       Acql_vertint = Acql_horzint
       if (Acql_ecmanl) lvm  = lvm+1
       if (.not.Acql_staganl) Acql_vertint = .true.
@@ -143,6 +156,17 @@
          nerr = nerr + 1
          error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1.,
      $                                   1,lni,1,lnj,1,nktmp)
+         err         = bmf_get('ZD  ',bmf_time1,bmf_time2,-1,zd_temp,-1.,
+     $                                   1,lni,1,lnj,1,nktmp)
+         if(err.ne.0)zd_temp=0.
+         err         = bmf_get('W   ',bmf_time1,bmf_time2,-1, w_temp,-1.,
+     $                                   1,lni,1,lnj,1,nktmp)
+         if(err.ne.0)w_temp=0.
+         if(.not.Schm_hydro_L)then
+            err         = bmf_get('Q   ',bmf_time1,bmf_time2,-1, q_temp,-1.,
+     $           1,lni,1,lnj,1,nktmp)
+            if(err.ne.0)q_temp=0.
+         endif
       endif
 *
       if (Acql_ecmanl ) then

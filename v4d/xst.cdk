@@ -1,15 +1,3 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 #if defined (DOC)
 !
 !**comdeck xst.cdk
@@ -26,12 +14,16 @@
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
 ! MAXSTAT            | maximum number of extraction points             |
-! Xst_statij         | time-series stations chosen in (I,J) coordinates|
-! Xst_statll         | time-series stations chosen in lat-lon coordinat|
+! STN_NAME_LENGTH    | maximum length for string associated with points|
+! STN_MISSING        | missing value for station input                 |
+! Xst_stn_ij         | time-series stations chosen in (I,J) coordinates|
+! Xst_stn_latlon     | time-series stations chosen in lat-lon coordinat|
+! Xst_stn            | general structure for storing time series info  |
 ! Xst_istat          | x axis grid indices of the time series          |
 !                    | extraction points                               |
 ! Xst_jstat          | y axis grid indices of the time series          |
 !                    | extraction points                               |
+! Xst_statname_s     | name of time series extraction points           |
 ! Xst_nstat          | total number of extraction points               |
 ! Xst_lclsta         | vector local to each PE which contains the      |
 !                    | time-series station number to be calculated     |
@@ -40,20 +32,39 @@
 !----------------------------------------------------------------------
 !
 #endif
-      integer MAXSTAT
-      parameter (MAXSTAT=999)
-      integer Xst_nstat,Xst_dimsers,Xst_dimserp,xst_nstatl 
-      integer Xst_statij(2,MAXSTAT),Xst_istat (MAXSTAT)
-      integer Xst_jstat   (MAXSTAT),Xst_lclsta(MAXSTAT)
-      integer xst_stcori  (MAXSTAT),xst_stcorj(MAXSTAT)
-      real    Xst_statll(2,MAXSTAT)
+      integer, parameter :: MAXSTAT=999, STN_NAME_LENGTH=128
+      integer, parameter :: STN_MISSING=-9999
+      type station_ij
+        sequence
+        character(STN_NAME_LENGTH) :: name
+        integer :: i,j
+      end type station_ij
+      type station_latlon
+        sequence
+        character(STN_NAME_LENGTH) :: name
+        real :: lat,lon
+      end type station_latlon
+      type station
+        sequence
+        character(STN_NAME_LENGTH) :: name
+        real :: lat,lon
+        integer :: i,j
+        integer :: index,lclsta,stcori,stcorj
+      end type station
+      integer Xst_nstat,Xst_dimsers,Xst_dimserp,xst_nstatl
+      type(station_ij), dimension(MAXSTAT) :: Xst_stn_ij
+      type(station_latlon), dimension(MAXSTAT) :: Xst_stn_latlon
+      type(station), dimension(MAXSTAT) :: Xst_stn
 !
-      MARK_COMMON_BEG (xst_i)      
-      common / xst_i / Xst_istat, Xst_jstat, Xst_nstat
-      common / xst_i / Xst_dimsers, Xst_dimserp, Xst_statij
+      MARK_COMMON_BEG (xst_i)
+      common / xst_i / Xst_nstat,Xst_dimsers, Xst_dimserp
       MARK_COMMON_END (xst_i)
-      MARK_COMMON_BEG (xst_r)      
-      common / xst_r / Xst_statll
-      MARK_COMMON_END (xst_r)
-      common / xst / xst_stcori, xst_stcorj
-
+      MARK_COMMON_BEG (xstation_ij)
+      common / xst_station_ij / Xst_stn_ij
+      MARK_COMMON_END (xstation_ij)
+      MARK_COMMON_BEG (xstation_latlon)
+      common / xst_station_latlon / Xst_stn_latlon
+      MARK_COMMON_END (xstation_latlon)
+      MARK_COMMON_BEG (xstation)
+      common / xst_station / Xst_stn
+      MARK_COMMON_END (xstation)

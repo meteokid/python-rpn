@@ -1,15 +1,18 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_open_files
 *
 #include "model_macros_f.h"
@@ -39,10 +42,9 @@
 *
       character*16 pdate
       character*1024 rootfn,filen
-      integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,nvar,err
+      integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,err
 * ---------------------------------------------------------------------
 *
-      nvar=5
       call datf2p (pdate,datev)
 
       rootfn=trim(Path_output_S)//'/BCDS_3D/'
@@ -80,10 +82,10 @@
      $                 e_grdc_gjdi,e_grdc_hbsn,e_grdc_hbwe,is,nis,
      $                 js,njs,jn,iw,niw,ie,jw,njw)
             call e_sfile_bcs (pdate,is,nis,js,jn,njs,iw,ie,niw,jw,njw,
-     $                                         'DYNAMICS',nvar,rootfn)
+     $                                         'DYNAMICS',rootfn)
          else
             call e_sfile_3df (pdate,'DYNAMICS',
-     $       e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf, nvar,rootfn)
+     $       e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,rootfn)
          endif
       endif
 *

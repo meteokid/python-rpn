@@ -1,5 +1,0 @@
-      integer function v4d_settings
-*
-      call gem_stop ('V4D_SETTINGS NOT USED ANYMORE',-1)
-*
-      end

@@ -1,19 +1,8 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
       character*16  P_pbl_schsl_S,P_pbl_schurb_S
       character*16 P_pbl2_schsl_S,P_cond_stcon_s
 !
       logical P_cond_satu_L, P_pbl_snoalb_L, P_pbl_iceme_L
+      logical P_pbl_icelac_L
       logical P_anal_cond_L, P_pbl_ocean_L , P_pbl2_iceme_L
 !
       integer P_fcpkuo_xofset, P_fcpkuo_xblnd, P_out_moyhr
@@ -25,6 +14,7 @@
       common /phy_s/ P_pbl_schsl_S,P_pbl_schurb_S
       common /phy_s/ P_pbl2_schsl_S,P_cond_stcon_s
       common /phy_l/ P_cond_satu_L, P_pbl_snoalb_L, P_pbl_iceme_L
+      common /phy_l/ P_pbl_icelac_L
       common /phy_l/ P_anal_cond_L, P_pbl_ocean_L , P_pbl2_iceme_L
       common /phy_i/ P_fcpkuo_xofset, P_fcpkuo_xblnd, P_out_moyhr
       common /phy_i/ P_fcpkuo_yofset, P_fcpkuo_yblnd, P_pbd_dumpbus

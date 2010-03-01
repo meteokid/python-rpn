@@ -1,15 +1,3 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 #if defined (DOC)
 !
 !**comdeck ptopo.cdk
@@ -46,7 +34,7 @@
 ! Ptopo_npey         | number of processors along Y                    |
 ! Ptopo_npeOpenMP    | number of processors requested for OpenMp       |
 ! Ptopo_smtphy       | number of threads around PHYSICS                |
-! Ptopo_smtglb       | number of threads for the global run            |
+! Ptopo_smtdyn       | number of threads for the global run            |
 ! Ptopo_bind_L       | TRUE for binding, FALSE for no binding          |
 ! Ptopo_nblocx       | number of blocks along X                        |
 ! Ptopo_nblocy       | number of blocks along Y                        |
@@ -63,22 +51,24 @@
 !
 !
 #endif
-      integer Ptopo_myproc , Ptopo_myrow, Ptopo_mycol
-      integer Ptopo_numproc, Ptopo_npex , Ptopo_npey
-      integer Ptopo_npeOpenMP, Ptopo_nblocx, Ptopo_nblocy,Ptopo_mybloc
-      integer Ptopo_myblocx, Ptopo_myblocy, Ptopo_blocme
-      integer Ptopo_numpe_perb, Ptopo_smtphy, Ptopo_smtglb
+      integer Ptopo_myproc    , Ptopo_myrow  , Ptopo_mycol
+      integer Ptopo_numproc   , Ptopo_npex   , Ptopo_npey
+      integer Ptopo_npeOpenMP , Ptopo_npeOpenMP_resv
+      integer Ptopo_nblocx    , Ptopo_nblocy , Ptopo_mybloc
+      integer Ptopo_myblocx   , Ptopo_myblocy, Ptopo_blocme
+      integer Ptopo_numpe_perb, Ptopo_smtphy , Ptopo_smtdyn
       logical Ptopo_bind_L
       
       DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
 !
       MARK_COMMON_BEG(Ptopo_b)
-      common  / Ptopo_b / Ptopo_myproc ,   Ptopo_myrow,  Ptopo_mycol
-      common  / Ptopo_b / Ptopo_numproc,   Ptopo_npex ,  Ptopo_npey
-      common  / Ptopo_b / Ptopo_npeOpenMP, Ptopo_nblocx, Ptopo_nblocy
-      common  / Ptopo_b / Ptopo_mybloc,    Ptopo_myblocx,Ptopo_myblocy
+      common  / Ptopo_b / Ptopo_myproc   , Ptopo_myrow , Ptopo_mycol
+      common  / Ptopo_b / Ptopo_numproc  , Ptopo_npex  , Ptopo_npey
+      common  / Ptopo_b / Ptopo_npeOpenMP, Ptopo_npeOpenMP_resv
+      common  / Ptopo_b / Ptopo_nblocx   , Ptopo_nblocy
+      common  / Ptopo_b / Ptopo_mybloc   , Ptopo_myblocx,Ptopo_myblocy
       common  / Ptopo_b / Ptopo_blocme
-      common  / Ptopo_b / Ptopo_numpe_perb,Ptopo_smtphy, Ptopo_smtglb
+      common  / Ptopo_b / Ptopo_numpe_perb,Ptopo_smtphy, Ptopo_smtdyn
       MARK_COMMON_END(Ptopo_b)
 !
       MARK_COMMON_BEG(Ptopo_l)
@@ -86,6 +76,6 @@
       MARK_COMMON_END(Ptopo_l)
       namelist /ptopo/ Ptopo_npex, Ptopo_npey
       namelist /ptopo/ Ptopo_nblocx, Ptopo_nblocy
-      namelist /ptopo/ Ptopo_smtphy, Ptopo_smtglb, Ptopo_bind_L
+      namelist /ptopo/ Ptopo_smtphy, Ptopo_smtdyn, Ptopo_bind_L
 
 
