@@ -165,8 +165,6 @@ Do target_file=1,nft
               globalf=field(1:G_ni,1:G_nj)
               If(vd%phyvar/='Z0')&
                  ier=phy_simple_transforms(vd%phyvar,opt%z0cst,globalf)
-              If(Lun_debug_L)call statfld (globalf,vd%phyvar,&
-                       tip,"geopfld",1,G_ni,1,G_nj,1,1,1,1,G_ni,G_nj,1)
            Endif
            call glbdist (globalf,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)
@@ -178,8 +176,6 @@ Do target_file=1,nft
               ier = ezsint(globalf, field)
               If(vd%phyvar/='Z0')&
                   ier = phy_simple_transforms(vd%phyvar,opt%z0cst,globalf)
-              If(Lun_debug_L)call statfld (globalf,vd%phyvar,&
-                       tip,"geopfld",1,G_ni,1,G_nj,1,1,1,1,G_ni,G_nj,1)
            Endif
            call glbdist (globalf,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)
@@ -220,7 +216,6 @@ flag=Final_check(flag)
       ier=phy_simple_transforms(vd%phyvar,opt%z0cst,localf)
       vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
       Call Get_global_fields(vd%phyvar)
-      Call Print_Stat(localf)
    Endif
    If( .Not. Associated(vd%next_value)) Exit
    vd => vd%next_value
@@ -230,8 +225,6 @@ If(Ptopo_myproc==0)Then
    Call modmg(gmg,gglsea,gmt,gdlat,gdlon,gfis,gal,ghs,gsnodp,gvegindx,  &
                       gz0,glhtg,opt%geol_poin,opt%geol_hsea,G_ni,G_nj)
    ier=phy_simple_transforms('Z0',opt%z0cst,gz0)
-   If(Lun_debug_L)call statfld (gz0,'Z0',&
-                       1,"geopfld",1,G_ni,1,G_nj,1,1,1,1,G_ni,G_nj,1)
    Write(*,"(/,a/72('='))")'PROCESSING ANCIENT GEOBUS'
 Endif
    vd=>temp
@@ -282,10 +275,10 @@ main3 : Do
    vd => vd%next_value
 End Do main3
 
-   do k=1,P_bgeo_top
-      call glbstat1(geofld(geopar(k,1)),geonm(k,1)(1:8),"geop",&
-         1,l_ni,1,l_nj,geopar(k,3), 1,G_ni,1,G_nj,1,geopar(k,3))
-   end do
+!   do k=1,P_bgeo_top
+!      call glbstat1(geofld(geopar(k,1)),geonm(k,1)(1:8),"geop",&
+!         1,l_ni,1,l_nj,geopar(k,3), 1,G_ni,1,G_nj,1,geopar(k,3))
+!   end do
 
 If(flag.and.Ptopo_myproc==0)write(*,*)'All variables found!'
 call handle_error_l(flag,'itf_phy_puti_fcrest','Missing variables, see the listing')
@@ -672,16 +665,6 @@ vd=>temp
 'LABEL',3x,'TYPE',1x,'POSITION')
 6010 Format(a4,7x,a16,2x,a16,2x,3a,3x,a8,2x,a2,i8)
 End Subroutine Print_stack
-!
-Subroutine Print_stat(local_file)
-real,dimension(l_ni,l_nj) :: local_file
-If(Lctl_debug_L)Then
-       larr(1:l_ni,1:l_nj)=local_file
-       call glbcolc (globalf,G_ni,G_nj,larr,l_minx,l_maxx,l_miny,l_maxy,1)
-       If(Lun_debug_L)call statfld (globalf,vd%phyvar,&
-                       tip,"geopfld",1,G_ni,1,G_nj,1,1,1,1,G_ni,G_nj,1)
-Endif
-End Subroutine Print_stat
 !
 End Function itf_phy_puti_fcrest
 

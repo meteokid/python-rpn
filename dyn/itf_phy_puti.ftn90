@@ -158,7 +158,6 @@ Do target_file=1,nft
         Endif
         ier=phy_simple_transforms(vd%phyvar,opt%z0cst,localf)
         vd%values(:,:,tip)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
-        Call Print_Stat(localf)
         deallocate(field,ax,ay)
    enddo
    If(Ptopo_myproc==0)Then
@@ -192,7 +191,6 @@ flag=Final_check(flag)
       If(vd%phyvar=='EPONMOD') call itf_phy_vlsp (localf)
       ier=phy_simple_transforms(vd%phyvar,opt%z0cst,localf)
       vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
-      Call Print_Stat(localf)
    Endif
    If( .Not. Associated(vd%next_value)) Exit
    vd => vd%next_value
@@ -471,16 +469,6 @@ vd=>temp
 'LABEL',3x,'TYPE',1x,'POSITION')
 6010 Format(a4,7x,a16,2x,a16,2x,3a,3x,a8,2x,a2,i8)
 End Subroutine Print_stack
-!
-Subroutine Print_stat(local_file)
-real,dimension(l_ni,l_nj) :: local_file
-If(Lctl_debug_L)Then
-       larr(1:l_ni,1:l_nj)=local_file
-       call glbcolc (globalf,G_ni,G_nj,larr,l_minx,l_maxx,l_miny,l_maxy,1)
-       If(Lun_debug_L)call statfld (globalf,vd%phyvar,&
-                       tip,"geopfld",1,G_ni,1,G_nj,1,1,1,1,G_ni,G_nj,1)
-Endif
-End Subroutine Print_stat
 !
 End Function itf_phy_puti
 

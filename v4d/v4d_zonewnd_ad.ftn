@@ -1,0 +1,411 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/p v4d_zonewnd_ad - ADJ of v4d_zonewnd 
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_zonewnd_ad (px,py,npts,fldu,fldv,wx_8,cox_8,six_8,siy_8,i1,i2,j1,j2,
+     %                           nk,jmin,jmax,ni,nimax,gni,grtypi,degree,var,
+     %                           l_north,l_south,kind)
+*
+      use v4dzone
+*
+      implicit none
+*
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,nimax,gni,degree,kind
+*
+      real,   pointer, dimension(:)   :: px,py
+*
+      real fldu(i1:i2,j1:j2,nk),fldv(i1:i2,j1:j2,nk)
+*
+      character*2 var
+*
+      character*1 grtypi
+*
+      real*8 wx_8(*),cox_8(*),six_8(*),siy_8(*)
+*
+      logical l_north,l_south
+*
+*author Tanguay M.
+*
+*revision
+* v3_00 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - select processors at north or south 
+*
+*object
+*     see id section
+*
+*ADJOINT of
+*arguments
+* Name         I/O        Description
+*----------------------------------------------------------------
+* px            I         Position x in INPUT grid
+* py            I         Position y in INPUT grid
+* npts          I         Number of positions
+* fldu-v        I         Wind fields on INPUT grid
+* wx            I         Weights on INPUT grid x axe
+* cox,six,siy   I         Cosinus or Sinus of INPUT grid axes
+* i1-i2         I         Dimension x in INPUT grid
+* j1-j2         I         Dimension y in INPUT grid
+* nk            I         Dimension z in INPUT grid
+* jmin          I         Lower  limit j
+* jmax          I         Higher limit j
+* ni            I         Period if grid='G', Heart if grid = 'Z'
+* nimax         I         ni maximal over all processors
+* gni           I         Global dimension of a latitude circle
+* grtypi        I         Type of INPUT grid
+* degree        I         Degree of interpolation
+* var           I         Name of fldsc
+* l_north       I         TRUE if processor near north pole
+* l_south       I         TRUE if processor near south pole
+* kind          I         kind=1=Preparation, kind=2=Closing
+*----------------------------------------------------------------
+*
+*implicits
+#include "ptopo.cdk"
+*
+      integer i,j,k,ier,ig,status
+*
+      real reverse(2,nk,gni),revsum(2,nk,gni),lineg(2,gni,nk)
+*
+      real*8 vx_8,vy_8,coef1_8,coef2_8
+      real*8, parameter :: ZERO_8 = 0.0
+*
+*     Zero adjoint variables
+*     ----------------------
+      do i=1,gni
+      do k=1,nk
+         reverse(1,k,i) = ZERO_8
+         reverse(2,k,i) = ZERO_8
+         revsum (1,k,i) = ZERO_8
+         revsum (2,k,i) = ZERO_8
+      enddo
+      enddo
+*
+      do k=1,nk
+      do i=1,gni
+         lineg(1,i,k) = ZERO_8
+         lineg(2,i,k) = ZERO_8
+      enddo
+      enddo
+*
+      vx_8 = 0.0
+      vy_8 = 0.0
+*
+*     Adjoint of
+*     --------------------------------
+*     Preparation for polar correction
+*     --------------------------------
+      if(kind.eq.1) then
+*
+*        Adjoint of
+*        Calculations in zone near south pole
+*        ------------------------------------
+*
+*           Adjoint of
+*           Estimate value and fill latitude circle at south pole
+*           based on ADV_POLW
+*           -----------------------------------------------------
+            if(V4dz_nzon(2).ne.0) then
+*
+               j       = jmin 
+               coef1_8 = -1.0
+               coef2_8 =  1.0
+*
+               do k=nk,1,-1
+*
+                  do i=i2,i1,-1
+                     ig = i+Ptopo_gindx(1,Ptopo_myproc+1)-1
+                     if(ig.ge.1.and.ig.le.gni) then
+                        lineg       (2,ig,k) = V4dz_linepolvs(i,k) + lineg(2,ig,k)
+                        V4dz_linepolvs( i,k) = ZERO_8
+                        lineg       (1,ig,k) = V4dz_linepolus(i,k) + lineg(1,ig,k)
+                        V4dz_linepolus( i,k) = ZERO_8
+                     elseif(ig.lt.  1) then
+                        lineg   (2,ig+gni,k) = V4dz_linepolvs(i,k) + lineg(2,ig+gni,k)
+                        V4dz_linepolvs( i,k) = ZERO_8
+                        lineg   (1,ig+gni,k) = V4dz_linepolus(i,k) + lineg(1,ig+gni,k)
+                        V4dz_linepolus( i,k) = ZERO_8
+                     elseif(ig.gt.gni) then
+                        lineg   (2,ig-gni,k) = V4dz_linepolvs(i,k) + lineg(2,ig-gni,k)
+                        V4dz_linepolvs( i,k) = ZERO_8
+                        lineg   (1,ig-gni,k) = V4dz_linepolus(i,k) + lineg(1,ig-gni,k)
+                        V4dz_linepolus( i,k) = ZERO_8
+                     endif
+                  enddo
+*
+                  do i=gni,1,-1
+                     vx_8         = coef1_8 * lineg(2,i,k) * cox_8(i) + vx_8 
+                     vy_8         = coef2_8 * lineg(2,i,k) * six_8(i) + vy_8
+                     lineg(2,i,k) = ZERO_8
+                     vx_8         = lineg(1,i,k) * six_8(i) + vx_8 
+                     vy_8         = lineg(1,i,k) * cox_8(i) + vy_8
+                     lineg(1,i,k) = ZERO_8
+                  enddo
+*
+                  do i=gni,1,-1
+                      lineg(1,i,k) = sngl(wx_8(i) * ( cox_8(i)             * vy_8 )) 
+     %              + lineg(1,i,k)
+                      lineg(2,i,k) = sngl(wx_8(i) * (-six_8(i) *  siy_8(j) * vy_8 )) 
+     %              + lineg(2,i,k)
+                      lineg(1,i,k) = sngl(wx_8(i) * ( six_8(i)             * vx_8 )) 
+     %              + lineg(1,i,k)
+                      lineg(2,i,k) = sngl(wx_8(i) * ( cox_8(i) *  siy_8(j) * vx_8 ))
+     %              + lineg(2,i,k)
+                  enddo
+*
+                  vx_8 = 0.0
+                  vy_8 = 0.0
+*
+               enddo
+*
+            endif
+*
+*           Adjoint of
+*           Gather global first latitude if GRTYPI='Z'
+*           -----------------------------------------
+            if(l_south.and.grtypi.eq.'Z') then
+*
+               do k=nk,1,-1
+               do i=gni,1,-1
+                  reverse(2,k,i) = lineg(2,i,k) + reverse(2,k,i) 
+                  lineg  (2,i,k) = ZERO_8
+                  reverse(1,k,i) = lineg(1,i,k) + reverse(1,k,i)
+                  lineg  (1,i,k) = ZERO_8
+               enddo
+               enddo
+*
+               call rpn_comm_Allreduce(reverse,revsum,2*gni*nk,"MPI_REAL",
+     $                                 "MPI_SUM","EW",ier)
+*
+               do i=1,gni
+               do k=1,nk
+                  reverse(1,k,i) = ZERO_8
+                  reverse(2,k,i) = ZERO_8
+               enddo
+               enddo
+*
+               do k=nk,1,-1
+               do i=ni,1,-1
+                  fldv(i,jmin,k) = revsum(2,k,i+Ptopo_gindx(1,Ptopo_myproc+1)-1) 
+     %          + fldv(i,jmin,k)
+                  fldu(i,jmin,k) = revsum(1,k,i+Ptopo_gindx(1,Ptopo_myproc+1)-1) 
+     %          + fldu(i,jmin,k)
+               enddo
+               enddo
+*
+               do i=1,gni
+               do k=1,nk
+                  revsum(1,k,i) = ZERO_8
+                  revsum(2,k,i) = ZERO_8
+               enddo
+               enddo
+*
+*           Adjoint of
+*           Store global first latitude if GRTYPI='G'
+*           -----------------------------------------
+            elseif(grtypi.eq.'G') then
+*
+               do k = nk,1,-1
+               do i = gni,1,-1
+                  fldu (i,jmin,k) = lineg(1,i,k) + fldu(i,jmin,k)
+                  lineg(1,   i,k) = ZERO_8
+                  fldv (i,jmin,k) = lineg(2,i,k) + fldv(i,jmin,k)
+                  lineg(2,   i,k) = ZERO_8
+               enddo
+               enddo
+*
+            endif
+*
+*        Adjoint of
+*        Calculations in zone near north pole
+*        ------------------------------------
+*
+*           Adjoint of
+*           Estimate value and fill latitude circle at north pole
+*           based on ADV_POLW
+*           -----------------------------------------------------
+            if(V4dz_nzon(1).ne.0) then
+*
+               j       = jmax 
+               coef1_8 =  1.0
+               coef2_8 = -1.0
+*
+               do k= nk,1,-1
+*
+                  do i=i2,i1,-1
+                     ig = i+Ptopo_gindx(1,Ptopo_myproc+1)-1
+                     if(ig.ge.1.and.ig.le.gni) then
+                        lineg       (2,ig,k) = V4dz_linepolvn(i,k) + lineg(2,ig,k)
+                        V4dz_linepolvn( i,k) = ZERO_8
+                        lineg       (1,ig,k) = V4dz_linepolun(i,k) + lineg(1,ig,k)
+                        V4dz_linepolun( i,k) = ZERO_8
+                     elseif(ig.lt.  1) then
+                        lineg   (2,ig+gni,k) = V4dz_linepolvn(i,k) + lineg(2,ig+gni,k)
+                        V4dz_linepolvn( i,k) = ZERO_8
+                        lineg   (1,ig+gni,k) = V4dz_linepolun(i,k) + lineg(1,ig+gni,k)
+                        V4dz_linepolun( i,k) = ZERO_8
+                     elseif(ig.gt.gni) then
+                        lineg   (2,ig-gni,k) = V4dz_linepolvn(i,k) + lineg(2,ig-gni,k)
+                        V4dz_linepolvn( i,k) = ZERO_8
+                        lineg   (1,ig-gni,k) = V4dz_linepolun(i,k) + lineg(1,ig-gni,k)
+                        V4dz_linepolun( i,k) = ZERO_8
+                     endif
+                  enddo
+*
+                  do i=gni,1,-1
+                     vx_8         = coef1_8 * lineg(2,i,k) * cox_8(i) + vx_8
+                     vy_8         = coef2_8 * lineg(2,i,k) * six_8(i) + vy_8
+                     lineg(2,i,k) = ZERO_8
+                     vx_8         = lineg(1,i,k) * six_8(i) + vx_8
+                     vy_8         = lineg(1,i,k) * cox_8(i) + vy_8
+                     lineg(1,i,k) = ZERO_8
+                  enddo
+*
+                  do i=gni,1,-1
+                     lineg(1,i,k) = sngl(wx_8(i) * ( cox_8(i)             * vy_8 ))
+     %             + lineg(1,i,k)
+                     lineg(2,i,k) = sngl(wx_8(i) * (-six_8(i) *  siy_8(j) * vy_8 ))
+     %             + lineg(2,i,k)
+                     lineg(1,i,k) = sngl(wx_8(i) * ( six_8(i)             * vx_8 ))
+     %             + lineg(1,i,k)
+                     lineg(2,i,k) = sngl(wx_8(i) * ( cox_8(i) *  siy_8(j) * vx_8 ))
+     %             + lineg(2,i,k)
+*
+                  enddo
+*
+                  vx_8 = 0.0
+                  vy_8 = 0.0
+*
+               enddo
+*
+            endif
+*
+*           Adjoint of
+*           Gather global last latitude if GRTYPI='Z'
+*           -----------------------------------------
+            if(l_north.and.grtypi.eq.'Z') then
+*
+               do k=nk,1,-1
+               do i=gni,1,-1
+                  reverse(2,k,i) = lineg(2,i,k) + reverse(2,k,i)
+                  lineg  (2,i,k) = ZERO_8
+                  reverse(1,k,i) = lineg(1,i,k) + reverse(1,k,i)
+                  lineg  (1,i,k) = ZERO_8
+               enddo
+               enddo
+*
+               call rpn_comm_Allreduce(reverse,revsum,2*gni*nk,"MPI_REAL",
+     $                                 "MPI_SUM","EW",ier)
+*
+               do i=1,gni
+               do k=1,nk
+                  reverse(1,k,i) = ZERO_8
+                  reverse(2,k,i) = ZERO_8
+               enddo
+               enddo
+*
+               do k=nk,1,-1
+               do i=ni,1,-1
+                  fldv(i,jmax,k) = revsum(2,k,i+Ptopo_gindx(1,Ptopo_myproc+1)-1) 
+     %          + fldv(i,jmax,k)
+                  fldu(i,jmax,k) = revsum(1,k,i+Ptopo_gindx(1,Ptopo_myproc+1)-1) 
+     %          + fldu(i,jmax,k)
+               enddo
+               enddo
+*
+               do i=1,gni
+               do k=1,nk
+                  revsum(1,k,i) = ZERO_8
+                  revsum(2,k,i) = ZERO_8
+               enddo
+               enddo
+*
+*           Store global last latitude if GRTYPI='G'
+*           ----------------------------------------
+            elseif(grtypi.eq.'G') then
+*
+               do k=nk,1,-1
+               do i=gni,1,-1
+                  fldu (i,jmax,k) = lineg(1,i,k) + fldu(i,jmax,k)
+                  lineg(1,   i,k) = ZERO_8
+                  fldv (i,jmax,k) = lineg(2,i,k) + fldv(i,jmax,k)
+                  lineg(2,   i,k) = ZERO_8
+               enddo
+               enddo
+*
+            endif
+
+         if(V4dz_nzon(1).gt.0) then
+            deallocate( V4dz_linepolun, STAT=status )
+            deallocate( V4dz_linepolvn, STAT=status )
+         endif
+         if(V4dz_nzon(2).gt.0) then
+            deallocate( V4dz_linepolus, STAT=status )
+            deallocate( V4dz_linepolvs, STAT=status )
+         endif
+*
+*        Additional deallocations
+*        ------------------------
+         if(npts.gt.0) call v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,l_north,l_south,2)
+*
+*     Adjoint of
+*     --------------------------------------
+*     Deallocations of ZONES internal arrays
+*     --------------------------------------
+      elseif(kind.eq.2) then
+*
+*        Accumulate px,py positions in zones near north and south poles
+*        --------------------------------------------------------------
+         if(npts.gt.0) then
+            call v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,l_north,l_south,1)
+         else
+            V4dz_nzon(1) = 0
+            V4dz_nzon(2) = 0
+         endif
+*
+         if(V4dz_nzon(2).ne.0) then
+            allocate ( V4dz_linepolus(i1:i2,nk), STAT=status )
+            allocate ( V4dz_linepolvs(i1:i2,nk), STAT=status )
+*
+*           Zero adjoint variables
+*           ----------------------
+            do k=1,nk
+            do i=i1,i2
+               V4dz_linepolus(i,k) = ZERO_8
+               V4dz_linepolvs(i,k) = ZERO_8
+            enddo
+            enddo
+         endif
+*
+         if(V4dz_nzon(1).ne.0) then
+            allocate ( V4dz_linepolun(i1:i2,nk), STAT=status )
+            allocate ( V4dz_linepolvn(i1:i2,nk), STAT=status )
+*
+*           Zero adjoint variables
+*           ----------------------
+            do k=1,nk
+            do i=i1,i2
+               V4dz_linepolun(i,k) = ZERO_8
+               V4dz_linepolvn(i,k) = ZERO_8
+            enddo
+            enddo
+         endif
+*
+      endif
+*
+      return
+      end

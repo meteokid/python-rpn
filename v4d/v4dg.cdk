@@ -1,0 +1,152 @@
+!
+!**comdeck v4dg.cdk
+!
+!revision
+! v2_10 - Tanguay M.        - initial MPI version
+! v2_31 - Tanguay M.        - WA files incore
+! v3_00 - Tanguay M.        - V4dg_twin_L and V4dg_4dvar_L/Conversion WA file 
+! v3_00 - Morneau J.        - add obs file for sensitivity analysis
+! v3_00 - Laroche S.        - contribution from physics
+! v3_01 - Tanguay M.        - add V4dg_sgvc_L 
+!                           - add identity and GAUSS=GEM options
+! v3_02 - Buehner M.        - add parameters for ref state file for NLMX event
+!                           - add file unit number for total energy output
+!                           - add numseg for number of segments to divide integrations
+!                           - add steplast for final time step of integration
+! v3_02 - Mahfouf J.-F.     - add V4dg_anincr_L
+! v3_02 - Lee V.            - replaced V4dg_out with V4dg_output_L
+! v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
+! v3_11 - Tanguay M.        - Remove V4dg_ga_eq_ge_L 
+!                           - Introduce V4dg_oktrcv_L 
+!                           - Add option for profiles done on U-V grids for winds 
+! v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
+! v3_20 - Zadra A.          - Introduce V4dg_sgvc_dt0
+! v3_20 - Buehner & Zadra   - Introduce V4dg_chum_s
+! v3_30 - Tanguay M.        - Validation for LAM version 
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+!
+!______________________________________________________________________
+!                                                                      |
+! VARIABLES ASSOCIATED to 4D-Var: GENERAL section                      |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! V4dg_conf          | Configuration of the job                        |
+!--------------------|-------------------------------------------------|
+!                    |   0     : Standard GEM job                      |
+!                    | 100-199 : 4D-Var job with GEM                   |
+!                    | 400-499 : Test of the adjoint model             |
+!                    | 500-599 : Test of the tangent linear model      | 
+!                    | 500     : Ratio TLM test as in Thepaut and      |
+!                    |           Courtier(1991)                        |
+!                    | 510     : Run NLM, NLM perturbed and TLM        |
+!--------------------|-------------------------------------------------|
+! V4dg_sensib_L      | .T. = Sensitivity analysis                      |
+! V4dg_twin_L        | .T. = Twin experiment                           |
+! V4dg_4dvar_L       | .T. = 4D-Var with JO in GEM and JB in 3D-Var    |
+! V4dg_sgvc_L        | .T. = Evaluation of singular vectors            |
+!--------------------|-------------------------------------------------|
+! V4dg_ds_L          | .T. = Integration in the direct sense           |
+! V4dg_nl_L          | .T. = Non-linear integration                    |
+! V4dg_di_L          | .T. =      V4dg_ds.and.     V4dg_nl= NLM int.   |
+! V4dg_tl_L          | .T. =      V4dg_ds.and..not.V4dg_nl= TLM int.   |
+! V4dg_ad_L          | .T. = .not.V4dg_ds.and..not.V4dg_nl= ADJ int.   |
+!--------------------|-------------------------------------------------|
+! V4dg_status        | Identification of the job running               |
+! V4dg_part          | Set partition of dynamic preprocessing to do    |
+!                    | 1 : 2 + 3                                       |
+!                    | 2 : Set control   variables                     |
+!                    | 3 : Set dependent variables                     | 
+! V4dg_identity_L    | .T. = Set integration as identity               |
+! V4dg_anincr_L      | .T. if TLM test with analysis increments        |
+!--------------------|-------------------------------------------------|
+! V4dg_pruv_L        | .T. = Profiles done on U-V grids for winds      |
+! V4dg_ustag_L       | .T. = U from 3D-Var already on U grid           |
+! V4dg_vstag_L       | .T. = V from 3D-Var already on V grid           |
+!--------------------|-------------------------------------------------|
+! V4dg_range         | Range of exponents used in TESTGRD              |
+! V4dg_start         | Starting factor in TESTGRD                      |
+! V4dg_grd_L         | .T. = Gradient test TESTGRD is called           |
+!--------------------|-------------------------------------------------|
+! V4dg_output_L      | Output control during V4d mode (dynout/blocstat)| 
+! V4dg_imguv_L       | .T.= u,v image winds   (used in dynout/blocstat)| 
+!--------------------|-------------------------------------------------|
+! V4dg_stepob        | Observations available at each stepob           |
+! V4dg_inv           | Time 0 NOT in cost J if set to 1                |
+! V4dg_tlm_L         | .T. = TLM used in cost function                 |
+!                    | .F. = NLM used in cost function                 |
+!--------------------|-------------------------------------------------|
+! V4dg_addtr         | Current address of TRAJECTORY on WA file        |
+! V4dg_rwtr          | =0 (Read from) =1 (Write on) TRAJ. WA file      | 
+! V4dg_addtab_tl     | List of addresses stored in a table as a funct. |
+!                    | of V4dg_numtr,timestep and Crank-Nich.iteration |
+!                    | for TLM                                         |
+! V4dg_addtab_ad     | List of addresses stored in a table as a funct. |
+!                    | of V4dg_numtr,timestep and Crank-Nich.iteration |
+!                    | for ADJ                                         |
+! V4dg_trsize        | size of trincore                                |
+! V4dg_oktr_L        | .T. = Allow NLM to write TRAJ at each timestep  | 
+! V4dg_iln           | keep iln (use in non-linear Helmholtz problem)  |
+!--------------------|-------------------------------------------------|
+! V4dg_lun_obs       | Unity of random file containing OBSERVATIONS    |
+!                    | at required time steps                          |
+! V4dg_lun_obs_s     | Name of file associated with V4dg_lun_obs       |
+!--------------------|-------------------------------------------------|
+! V4dg_numseg        | number of TLM/ADJ segments for SV job           |
+! V4dg_iunenrgy      | unit number for file with energy output         |
+! V4dg_steplast      | final time step of integration                  |
+! V4dg_chum_s        | humidity variable ('HU' or 'LQ')                |
+! V4dg_sgvc_dt0      | time btwn analysis and targeting time(in hours) |
+!--------------------|-------------------------------------------------|
+!
+!     ---------------
+!     GENERAL section
+!     ---------------
+!
+      integer, parameter :: MAX_TR_NUMTR = 300
+      integer, parameter :: MAX_TR_STEP  = 300
+      integer, parameter :: MAX_TR_ITCN  = 10
+      integer, parameter :: MAX_TR_ITNLH = 10
+!
+      integer V4dg_conf   , V4dg_status
+      integer V4dg_stepob , V4dg_inv     , V4dg_range   , V4dg_part    
+      integer V4dg_addtr  , V4dg_rwtr    , V4dg_trsize  , V4dg_iln     
+      integer V4dg_numseg , V4dg_iunenrgy, V4dg_steplast, V4dg_sgvc_dt0
+      integer V4dg_lun_obs, V4dg_phy_pbl
+      integer V4dg_addtab_tl(MAX_TR_NUMTR,0:MAX_TR_STEP,MAX_TR_ITCN,MAX_TR_ITNLH)
+      integer V4dg_addtab_ad(MAX_TR_NUMTR,0:MAX_TR_STEP,MAX_TR_ITCN,MAX_TR_ITNLH)
+!
+      common / V4d_gen_i / V4dg_conf     , V4dg_status   , V4dg_stepob   
+      common / V4d_gen_i / V4dg_inv      , V4dg_range    , V4dg_part    
+      common / V4d_gen_i / V4dg_addtr    , V4dg_rwtr     , V4dg_trsize  
+      common / V4d_gen_i / V4dg_iln      , V4dg_numseg   , V4dg_iunenrgy
+      common / V4d_gen_i / V4dg_steplast , V4dg_sgvc_dt0 , V4dg_lun_obs
+      common / V4d_gen_i / V4dg_addtab_tl, V4dg_addtab_ad, V4dg_phy_pbl
+!
+      logical V4dg_sensib_L  , V4dg_twin_L  , V4dg_4dvar_L, V4dg_sgvc_L 
+      logical V4dg_oktr_L    , V4dg_tlm_L   , V4dg_grd_L  , V4dg_ds_L
+      logical V4dg_nl_L      , V4dg_di_L    , V4dg_tl_L   , V4dg_ad_L
+      logical V4dg_identity_L, V4dg_pruv_L  , V4dg_ustag_L, V4dg_vstag_L
+      logical V4dg_anincr_L  , V4dg_output_L, V4dg_imguv_L, V4dg_phy_wsigm_L
+!
+      common / V4d_gen_l / V4dg_sensib_L  , V4dg_twin_L  , V4dg_4dvar_L
+      common / V4d_gen_l / V4dg_sgvc_L    , V4dg_oktr_L  , V4dg_tlm_L   
+      common / V4d_gen_l / V4dg_grd_L     , V4dg_ds_L    , V4dg_nl_L 
+      common / V4d_gen_l / V4dg_di_L      , V4dg_tl_L    , V4dg_ad_L
+      common / V4d_gen_l / V4dg_identity_L, V4dg_pruv_L  , V4dg_ustag_L
+      common / V4d_gen_l / V4dg_vstag_L   , V4dg_anincr_L ,V4dg_output_L
+      common / V4d_gen_l / V4dg_imguv_L   , V4dg_phy_wsigm_L
+!
+      real V4dg_start
+!
+      common / V4d_gen_r / V4dg_start
+!
+      character * 256 V4dg_lun_obs_s
+      character * 2   V4dg_chum_s
+!
+      common / V4d_gen_c / V4dg_lun_obs_s, V4dg_chum_s 
+!
+      real, dimension(:), pointer :: V4dg_trincore
+      common/V4dg/ V4dg_trincore
+!

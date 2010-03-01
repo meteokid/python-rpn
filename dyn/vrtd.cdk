@@ -21,10 +21,6 @@
 #endif
        logical Vrtd_L, Vrtd_theta_L
        real Vrtd_coef
-       MARK_COMMON_BEG(vrtd_r)
        common /vrtd_r/ Vrtd_coef
-       MARK_COMMON_END(vrtd_r)
-       MARK_COMMON_BEG(vrtd_l)
        common /vrtd_l/ Vrtd_L,Vrtd_theta_L
-       MARK_COMMON_END(vrtd_l)
 !

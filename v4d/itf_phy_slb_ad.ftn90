@@ -1,0 +1,240 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_slb - Computes the physical tendencies
+!
+#include "model_macros_f.h"
+!
+      subroutine  itf_phy_slb_ad( F_cpu,F_step,F_pslic,F_obusval,F_cobusval)
+      implicit none
+!
+      integer F_cpu, F_step, F_pslic
+      real F_obusval (*), F_cobusval(*)
+!
+!author
+!     Stephane Laroche        Janvier 2002
+!
+!revision
+! v3_00 - Laroche S.            - initial MPI version
+! v3_02 - Tanguay M./Laroche S. - do not assume TRAJ HU positive
+! v3_11 - Laroche S.            - AIXport+Opti+OpenMP for TLM-ADJ
+! v3_20 - Desgagne/Pellerin S.  - Replaced Mem_pslic with jdo in test for last slice.
+! v3_30 - Tanguay M.            - adapt TL/AD to itf/new tendencies
+!                               - Validation for LAM version
+! v4_03 - Spacek L.             - Staggered version
+! v4_12 - Spacek L.             - GMM version
+!
+!object
+!     See above id.
+!
+!arguments
+!  Name       I/O                 Description
+!----------------------------------------------------------------
+! F_cpu        I    - cpu number
+! F_step       I    - current time step number
+! F_pslic      I    - current slice number
+! F_obusval    O    - physics output bus
+! F_cobusval   O    - chemistry output bus
+!----------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_chm_bus.cdk"
+#include "obus.cdk"
+#include "clim.cdk"
+#include "itf_chm_obus.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_cpl.cdk"
+#include "v4dg.cdk"
+!
+      integer accum,nnc
+      parameter (accum = 0 )
+      character*2 accum_s
+      data    accum_s / ' ' /
+!
+      logical dumpbus_L
+      integer jdo, i, j, k, ii, offbo,offbb,mult
+      real dt
+!
+      real busdyn(max(1,p_bdyn_siz)), busvol(max(1,p_bvol_siz)),            &
+           busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
+      real busdyn_copy(max(1,p_bdyn_siz))
+      pointer (pabusper,busper(*))
+!
+!     Declarations for chemistry buses.
+!
+      real chmbusdyn(max(1,chm_bdyn_siz))
+      real chmbusvol(max(1,chm_bvol_siz))
+      real chmbusent(max(1,chm_bent_siz))
+      real chmbusper, chmbusper2(max(1,chm_bper_siz))
+      pointer (pachmbusper,chmbusper(*))
+!
+!     ---------------------------------------------------------------
+!
+      if ((Lun_out.gt.0).and.(F_cpu.eq.1)) then
+         write(Lun_out,1000)
+         if (Schm_chems_L) write(Lun_out,1005)
+      endif
+!
+      dumpbus_L = .false.
+      if (P_pbd_dumpbus.gt.0) then
+          dumpbus_L = (mod( F_step,P_pbd_dumpbus ).eq.0)
+!$omp critical (lock_dumpini2)
+          call dumpini2( p_bdyn_siz,p_bper_siz,p_bvol_siz,                  &
+                         Ptopo_numproc,p_ni,p_nj, G_ni,G_nj )
+!$omp end critical (lock_dumpini2)
+      endif
+!
+      busdyn = 0.0
+!
+      dt  = Cstv_dt_8
+      jdo = 0
+!
+!     Initialize chemical buses
+!
+      if ((Schm_chems_L).and.(F_step.eq.0)) chmbusent = 0.0
+!
+ 100  continue
+!
+
+!$omp critical      
+      F_pslic = F_pslic + 1
+      jdo  = F_pslic
+      if ( F_pslic .le. p_nj ) then
+!
+         pabusper    = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
+         if (Schm_chems_L) pachmbusper =                                    &
+                       loc(chm_busper3D((jdo-1)*chm_bper_siz+1))
+!
+         call zongopr( +3, jdo )
+!
+      endif
+!$omp end critical
+
+!
+!    Stop if last slice has been completed
+!
+      if ( jdo .gt. p_nj ) goto 650
+!
+!     Fill physics buses with jdo row in subroutine itf_phy_fillbus
+!
+      busdyn = 0.0
+      busvol = 0.0
+      j = jdo + p_offj
+!
+      call itf_phy_fillbus_tr ( busdyn, busper, j, F_step, p_nk )
+
+      call itf_phy_extract_ad ( busvol, j, p_nk )
+
+!
+!     Run physics on row jdo
+!
+       call lin_phyexe1_ad (busent ,busdyn ,busper ,busvol ,                &
+                            p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz, &
+                            dt, jdo, F_step, F_cpu, p_ni, p_nk)
+!
+      call itf_phy_fillbus_ad ( busdyn, busper, j, F_step, p_nk )
+!
+      if (dumpbus_L) call dumpbus2( busdyn,busper,busvol, jdo )
+!
+!     Perform physic slices output
+!
+!$omp critical
+
+      do ii=1,Obus_top
+             offbo= (obus_offset(ii)-1)*l_ni*l_nj
+             offbb= obus_addr(ii)
+         if (obus_bus_S(ii).eq.'P'.and.obus_var_S(ii).eq.'LO') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +                   &
+                                      (j-1)*l_ni + i+ p_offi)=              &
+                   busper(offbb+(k*mult-1)*p_ni + i - 1)
+                   if (F_obusval(offbo+(k*mult-1)*l_ni*l_nj +               &
+                                 (j-1)*l_ni + i+ p_offi) .gt. Dcst_pi_8)    &
+                  F_obusval(offbo+(k*mult-1)*l_ni*l_nj +                    &
+                                      (j-1)*l_ni + i+ p_offi)=              &
+                  F_obusval(offbo+(k*mult-1)*l_ni*l_nj +                    &
+                                 (j-1)*l_ni + i+ p_offi)-2.0*Dcst_pi_8
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'P') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +                   &
+                                             (j-1)*l_ni + i+ p_offi)=       &
+                   busper(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'D') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +                   &
+                                             (j-1)*l_ni + i+ p_offi)=       &
+                   busdyn(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'V') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +                   &
+                                             (j-1)*l_ni + i+ p_offi)=       &
+                   busvol(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'E') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +                   &
+                                             (j-1)*l_ni + i+ p_offi)=       &
+                   busent(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         endif
+      enddo
+
+      call zongopr( -3, jdo )
+!
+!$omp end critical
+!
+      goto 100
+!
+ 650  continue
+!
+ 1000 format(/'PERFORM A PHYSICS STEP: CMC/RPN PHYSICS (S/R itf_phy_slb_ad)' &
+             /58('='))
+ 1005 format(/'AS WELL PERFORM CHEMISTRY STEP (S/R itf_phy_SL)'              &
+             /70('='))
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

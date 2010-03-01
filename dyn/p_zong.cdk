@@ -37,14 +37,8 @@
       character*4 P_zong_znsrf_s(CNZNSFM), P_zong_znprf_s(CNZNPFM)
       logical P_zong_znsus_l,P_zong_znoff_L
 !
-      MARK_COMMON_BEG (pzong_i)
       common / pzong_i  / P_zong_znli,  P_zong_znsrf, P_zong_znprf
       common / pzong_i  / P_zong_znmod, P_zong_nbin
-      MARK_COMMON_END (pzong_i)
-      MARK_COMMON_BEG (pzong_c)
       common / pzong_c / P_zong_znsrf_s, P_zong_znprf_s
-      MARK_COMMON_END (pzong_c)
-      MARK_COMMON_BEG (pzong_l)
       common / pzong_l / P_zong_znsus_L,P_zong_znoff_L
-      MARK_COMMON_END (pzong_l)
 !

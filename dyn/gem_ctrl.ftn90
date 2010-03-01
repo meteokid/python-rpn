@@ -50,8 +50,8 @@
 #include "lun.cdk"
 #include "step.cdk"
 #include "rstr.cdk"
-#include "v4dg.cdk"
 #include "vtopo.cdk"
+       include "v4dg.inc"
 !
       integer pnerr
       logical rstrt_L

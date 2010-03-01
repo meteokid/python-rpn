@@ -1,0 +1,25 @@
+#if defined (DOC)
+!
+!**comdeck vtx.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  GMM variables at no specific time                                   |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! mutx               | mu                                              |
+! bspqtx             | Bs+q                                            |
+! fiptx              | big p & phi'                                    |
+!----------------------------------------------------------------------
+!
+#endif
+
+      real, pointer, dimension (:,:,:) :: mutx  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: bspqtx=> null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+      real, pointer, dimension (:,:,:) :: fiptx => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+
+      character(len=8) :: gmmk_bspqtx_s, gmmk_mutx_s, gmmk_fiptx_s
+      common /vtx_n_gmm/ gmmk_bspqtx_s, gmmk_mutx_s, gmmk_fiptx_s
+

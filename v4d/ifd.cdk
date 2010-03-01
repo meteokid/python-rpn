@@ -1,0 +1,20 @@
+      integer    ifd_maxf
+      parameter (ifd_maxf = 5000)
+
+      character*3  ifd_ftype
+      character*15 ifd_fnext(ifd_maxf)
+
+      logical ifd_bcsphy_L,ifd_needit(ifd_maxf)
+
+      integer ifd_niad, ifd_njad, ifd_niaf, ifd_njaf, ifd_nf
+      integer ifd_minx(ifd_maxf), ifd_maxx(ifd_maxf)
+      integer ifd_miny(ifd_maxf), ifd_maxy(ifd_maxf)
+
+      real ifd_xia(ifd_maxf),ifd_xfa(ifd_maxf)
+      real ifd_yia(ifd_maxf),ifd_yfa(ifd_maxf)
+
+      common /ifd_c/ ifd_ftype,ifd_fnext
+      common /ifd_l/ ifd_bcsphy_L,ifd_needit
+      common /ifd_i/ ifd_niad, ifd_njad, ifd_niaf, ifd_njaf, ifd_nf
+      common /ifd_i/ ifd_minx, ifd_maxx, ifd_miny, ifd_maxy
+      common /ifd_r/ ifd_xia,ifd_xfa,ifd_yia,ifd_yfa

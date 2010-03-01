@@ -1,0 +1,132 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r v4d_zeropilot - Zero F field in pilot region 
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_zeropilot (Ndim,F)
+*
+      implicit none
+*
+      integer Ndim
+      real F(Ndim)
+*
+*author
+*     Monique Tanguay 
+*
+*revision
+* v3_03 - Tanguay M.       - initial MPI version
+* v4_12 - Tanguay M.       - Staggered version TL/AD
+*
+*object
+*     see id section
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+*
+      integer i,j,k,m,n,i0,j0,in,jn
+      real*8, parameter :: ZERO_8 = 0.0
+*
+*----------------------------------------------------------------------
+*
+      if (north+south+west+east.lt.1) return
+*
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
+*
+      m = 0
+*
+      do k=1,l_nk+1
+      do j=1,l_nj
+      do i=1,l_niu
+         m = m+1
+         if(j.ge.l_nj -pil_n+1 .and.j.le.l_nj     ) F(m)=ZERO_8
+         if(i.ge.l_niu-pil_e+1 .and.i.le.l_niu    ) F(m)=ZERO_8           
+*
+         if(j.ge.1             .and.j.le.j0-1     ) F(m)=ZERO_8
+         if(i.ge.1             .and.i.le.i0-1     ) F(m)=ZERO_8
+      end do
+      end do
+      enddo
+*
+      do k=1,l_nk+1
+      do j=1,l_njv
+      do i=1,l_ni
+         m = m+1
+         if(j.ge.l_njv-pil_n+1 .and.j.le.l_njv    ) F(m)=ZERO_8
+         if(i.ge.l_ni -pil_e+1 .and.i.le.l_ni     ) F(m)=ZERO_8           
+*
+         if(j.ge.1             .and.j.le.j0-1     ) F(m)=ZERO_8
+         if(i.ge.1             .and.i.le.i0-1     ) F(m)=ZERO_8
+      end do
+      end do
+      end do
+*
+      do k=1,l_nk+2
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         if(j.ge.l_nj -pil_n+1 .and.j.le.l_nj     ) F(m)=ZERO_8
+         if(i.ge.l_ni -pil_e+1 .and.i.le.l_ni     ) F(m)=ZERO_8           
+*
+         if(j.ge.1             .and.j.le.j0-1     ) F(m)=ZERO_8
+         if(i.ge.1             .and.i.le.i0-1     ) F(m)=ZERO_8
+      end do
+      end do
+      end do
+*
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         if(j.ge.l_nj -pil_n+1 .and.j.le.l_nj     ) F(m)=ZERO_8
+         if(i.ge.l_ni -pil_e+1 .and.i.le.l_ni     ) F(m)=ZERO_8           
+*
+         if(j.ge.1             .and.j.le.j0-1     ) F(m)=ZERO_8
+         if(i.ge.1             .and.i.le.i0-1     ) F(m)=ZERO_8
+      end do
+      end do
+*
+      if (Tr3d_ntr.gt.0) then
+         do n=1,Tr3d_ntr
+            do k=1,l_nk+2
+            do j=1,l_nj
+            do i=1,l_ni
+               m = m+1
+               if(j.ge.l_nj -pil_n+1 .and.j.le.l_nj     ) F(m)=ZERO_8
+               if(i.ge.l_ni -pil_e+1 .and.i.le.l_ni     ) F(m)=ZERO_8           
+*
+               if(j.ge.j0            .and.j.le.1+pil_s-1) F(m)=ZERO_8
+               if(i.ge.i0            .and.i.le.1+pil_w-1) F(m)=ZERO_8
+            end do
+            end do
+            end do
+         end do
+      endif
+*
+*     ______________________________________________________
+*
+      if(m.ne.Ndim) call handle_error(-1,'v4d_zeropilot','m.ne.Ndim')
+*     ______________________________________________________
+*
+      return
+      end

@@ -68,9 +68,9 @@
 #include "glb_pil.cdk"
 !
       logical  set_dcst_8
-      integer  gem_nml,var4d_nml,v4d_config,gemdm_config,grid_nml, &
+      integer  gem_nml,v4d_nml,v4d_config,gemdm_config,grid_nml, &
                itf_cpl_nml,series_nml,adw_nml,adw_config
-      external pe_zero_topo, set_dcst_8, gem_nml, var4d_nml, &
+      external pe_zero_topo, set_dcst_8, gem_nml, v4d_nml, &
                v4d_config, gemdm_config, grid_nml, itf_cpl_nml,  &
                series_nml,adw_nml,adw_config
 !*
@@ -113,11 +113,12 @@
          G_lam = Grd_typ_S(1:1).eq.'L'
          f2 = gem_nml     (Path_nml_S)
          f3 = itf_cpl_nml (Path_nml_S)
-         f4 = var4d_nml   (Path_nml_S)
+         f4 = v4d_nml     (Path_nml_S)
          f5 = series_nml  (Path_nml_S)
          f6 = adw_nml     (Path_nml_S)
          write(msg_S,'(a,6I4)') 'Error Reading nml - ',f1,f2,f3,f4,f5,f6
          call handle_error(min(f1,f2,f3,f4,f5,f6),'set_world_view',msg_S)
+
       endif
 !
 ! Establish final configuration
@@ -130,7 +131,7 @@
       ierr = grid_nml    ('print')
       ierr = gem_nml     ('print')
       ierr = itf_cpl_nml ('print') 
-      ierr = var4d_nml   ('print')
+      ierr = v4d_nml     ('print')
       ierr = series_nml  ('print')
 
       call adw_nml_print ()
@@ -149,40 +150,9 @@
 !
       call set_schm
 !
-! Establish meta_data template variables for gmm_create purpose
+! Initializes GMM
 !
-      call gmm_build_meta2D(meta1d, &
-                            1,l_ni*l_nj*l_nk,0,0,l_ni*l_nj*l_nk, &
-                            0,0,0,0,0, &
-                            0,GMM_NULL_FLAGS)
-      call gmm_build_meta2D(meta1dt, &
-                            1,l_ni*l_nj*(l_nk+1),0,0,l_ni*l_nj*(l_nk+1), &
-                            0,0,0,0,0, &
-                            0,GMM_NULL_FLAGS)
-      call gmm_build_meta2D(meta2d, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
-                            0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_nk, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
-                            1,l_nk,0,0,l_nk, &
-                            0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_nk1, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
-                            1,l_nk+1,0,0,l_nk+1, &
-                            0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_nk2, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
-                            1,l_nk+2,0,0,l_nk+2, &
-                            0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_0nk1, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
-                            0,l_nk+1,0,0,l_nk+2, &
-                            0,GMM_NULL_FLAGS)
+      call set_gmm
 !
 !-------------------------------------------------------------------
 !

@@ -1,0 +1,89 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+subroutine v4d_getevent(kulout,kevent,kstatus,mype)
+  !
+#include "model_macros_f.h"
+  !
+  !author
+  !    P. Gauthier
+  !
+  !revision
+  !v0_06 - P. Gauthier        - initial version
+  !v0_06 - M. Tanguay         - add Path_xchg_S
+  !v3_11 - S. Pellerin        - PROF file opening done by each proc  
+  !
+  !object
+  !
+  !    Get the event from 3D-Var to know what to do next 
+  !
+  !implicits
+  use v4d_prof, only: Pr_mode_S, Pr_llfrm_L, Pr_dsnooze_8
+  !
+  implicit none
+#include "path.cdk"
+#include <clib_interface.cdk>
+#include <prof_f.h>
+  !
+  !Arguments
+  !
+  integer, intent(in)::  kulout, mype
+  integer, intent(inout):: kevent, kstatus
+  !
+  integer ihdlin, istat, prof_rdrec
+  !
+  character*256 pathev_S
+  !
+  !Open evnt PROF file
+  !-------------------
+  pathev_S = trim(Path_xchg_S)//'/evnt.prof'
+  !
+  ! All Proc sleep on waiting on a prof event file.
+  ! prof_open implementation forces the max threads available for each
+  ! task to be 1 while waiting for the event file to appear.
+  ihdlin = prof_open(pathev_S,'READ',Pr_mode_S,Pr_dsnooze_8)
+  !
+  ! Then wait for each other task to unlock...
+  call RPN_COMM_barrier("GRID", istat)
+
+  ! ... and return if not P0
+  if (mype .ne. 0) then
+     istat = prof_close(ihdlin,.false.)
+     return
+  endif
+
+  if(ihdlin.le.0) then
+     if(kulout > 0)then
+        write(kulout,*) 'Probleme avec Fichier evnt PROF IHDLIN = ',IHDLIN
+     end if
+     kstatus = -99
+     kevent = EVN_FERR 
+  else
+  !
+  !  Read record and get PRM_EVNT 
+  !  ----------------------------
+     istat = prof_rdrec(ihdlin)
+     istat = prof_gvar(ihdlin,kevent,PRM_EVNT)
+     if(istat.ne.0) then
+        if(kulout > 0) write(kulout,*) 'Problem with PRM_EVNT'
+        kstatus = -99
+        kevent = EVN_FERR 
+     end if
+     if(kulout > 0) then
+        write(kulout,fmt='(//,"  >>> V4D-GETEVENT::  Event Type: ",i4)')kevent
+     end if
+     istat = prof_close(ihdlin,Pr_llfrm_L)
+  end if
+end subroutine v4d_getevent

@@ -1,0 +1,465 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**   s/r ens_marfield_cg - define a markov chain field
+!     
+#include "model_macros_f.h"
+!     
+      subroutine ens_marfield_cg(fgem,E_nk)
+!
+      use harmonsphere, only : harmon, harmon_init, harmon_destroy, harmons
+      implicit none
+
+      real,    dimension(l_ni,l_nj,E_nk)    :: fgem
+      integer                               :: E_nk
+!     
+!author   
+!     Lubos Spacek - February 2005
+!     
+!revision
+! v4_11 - Spacek L.         - staggered + gmm version
+!
+!object
+!	
+!arguments     none
+!
+!implicits
+#include "gmm.hf"
+#include "ens_gmm_dim.cdk"
+#include "ens_gmm_var.cdk"
+#include "dcst.cdk"
+#include "lun.cdk"
+#include "mem.cdk"
+#include "itf_phy_buses.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "rstr.cdk"
+#include "step.cdk"
+#include "hgc.cdk"
+#include "ens_param.cdk"
+!
+!modules
+       integer, external :: read_db_file,write_db_file
+       real,    external :: plgndr, ran1, gasdev
+       integer, external :: fnom,fstouv,fstfrm,fclos
+       integer, external :: ezgdef_fmem,ezqkdef,ezsint,ezdefset,ezsetopt
+
+!
+! nlat, nlon                 dimension of the Gaussian grid
+! mzt                        Nombre d'onde vertical
+! idum                       Semence du générateur de nombres aléatoires
+!
+      integer :: nlat, nlon, ntrunc, nmdim, mzt, ndim_tot, dgid_myp
+      integer :: l ,m, mz, mzp, i, j, k, naloc, indx, ier, ii, jj
+      integer :: soit,lght,indx_n, gmmstat
+      integer :: gdgem,gdgauss, keys(5), nmstrt, nm, n, mtrunc, nomet
+      real    :: xmn, xmx, xme, std, aa, tau, ar
+      real    :: xf,offi,offj
+      real xfi(l_ni),yfi(l_nj)
+      real*8  :: rad2deg_8
+!
+! placer les chaines de Markov dans perbus
+      integer, save :: mrkv,mrk2
+!
+! pabusper pointer vers le bus permanent busper (busper2)
+! paidum   pointer vers l'etat du generateur sauvegarde idum
+      real, pointer, dimension(:) :: busper => null()
+      integer, pointer :: paiv,paiy,paiset,pagset,paidum
+!
+!      variables et champs auxiliaires reels
+! dt   Pas de temps du modèle (secondes)
+! tau  Temps de décorrélation du champ aléatoire f(i,j) (secondes)
+! eps  EXP(-dt/tau)
+      real    :: pi, dt, eps, sig2, x, z
+      type (harmon) :: harmon_dsc 
+      real,    dimension(:),    allocatable :: veco1,xsiv,xcov
+      complex, dimension(:,:,:),allocatable :: pnm
+      real,    dimension(:,:,:),allocatable :: fgau, fgau_str, fgem_str
+      complex, dimension(:,:),  allocatable :: pnm2
+      real,    dimension(:,:),  allocatable :: fgau2, fgau2_str, fgem2_str
+!
+! variables et champs auxiliaires complexes
+      complex,dimension(:,:),allocatable :: hoco,veco
+!
+! Initialise les variables de Ens_nml.cdk
+!
+      xmn = Ens_mc_min ; xmx = Ens_mc_max   ; xme    = Ens_mc_mean
+      std = Ens_mc_std ; tau = Ens_mc_tau   ; aa     = Ens_mc_str
+      nlon= Ens_gg_nlon; nlat= Ens_gg_nlat  ; ntrunc = Ens_gg_trnh
+      nmdim=Ens_gg_dim ; mzt = Ens_gg_mzt   ; ar     = 6.37122e6
+                                              mtrunc = Ens_gg_trnl
+!
+
+      dt=real(Cstv_dt_8)
+      pi=real(Dcst_pi_8)
+      rad2deg_8=180.0d0/Dcst_pi_8
+!
+!     Look for the spectral coefficients
+!
+      gmmstat = gmm_get(gmmk_anm_s,anm,meta2d_anm)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'anm'
+      gmmstat = gmm_get(gmmk_znm_s,znm,meta2d_znm)  
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'znm'
+      gmmstat = gmm_get(gmmk_dumdum_s,dumdum,meta2d_dum)  
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'dumdum'
+!     
+!     Valeurs initiales des composantes principales
+!     
+!     Assure that busper is to 1 at the begining in inichamp1
+!
+      if ( Lctl_step .eq. 1 .or. Rstri_sdon.eq.1) then
+         
+         do n=1,p_bper_top
+         if(pernm(n)(1:4).eq.'MRKV')call getindx(pernm(n),'P',mrkv,lght,soit)
+         if(pernm(n)(1:4).eq.'MRK2')call getindx(pernm(n),'P',mrk2,lght,soit)
+         end do
+         if (Lun_out.gt.0) then
+            write( Lun_out,1000)
+            write( Lun_out,1009)xmn,xmx,xme,std,tau,ntrunc,nlon,nlat,2*mzt+1
+         endif
+!c         return
+      endif
+
+      paiv  => dumdum( 1,1)
+      paiy  => dumdum(33,1)
+      paiset=> dumdum(34,1)
+      pagset=> dumdum(35,1)
+      paidum=> dumdum(36,1)
+!     Rstri_rstn_L
+      if ( Lctl_step .eq. 1) then
+
+         paiv  => dumdum( 1,1)
+         paiy  => dumdum(33,1)
+         paiset=> dumdum(34,1)
+         pagset=> dumdum(35,1)
+         paidum=> dumdum(36,1)
+         dumdum(:,1)=0
+
+         eps=exp(-dt/Ens_mc_tau)
+         std=Ens_mc_std
+         paidum=-Ens_memb
+
+         xf=pi/REAL((ntrunc-mtrunc+1)*(ntrunc+mtrunc+1)/2)/REAL(2*mzt+1)
+         do mz=-mzt,mzt
+           do l=1,nmdim
+             anm(l,mz)=CMPLX( &
+                std*gasdev(paiv,paiy,paiset,pagset,paidum)*sqrt((1.-eps**2)*xf), &
+                std*gasdev(paiv,paiy,paiset,pagset,paidum)*sqrt((1.-eps**2)*xf))
+           enddo
+         enddo
+!
+         do mz=1,Ens_ncha2
+         mzp=mz+1
+         dumdum(:,mzp)=0
+         paiv  => dumdum( 1,mzp)
+         paiy  => dumdum(33,mzp)
+         paiset=> dumdum(34,mzp)
+         pagset=> dumdum(35,mzp)
+         paidum=> dumdum(36,mzp)
+         paidum=-Ens_memb
+         xf=pi/REAL((Ens_trnh2(mz)-Ens_trnl2(mz)+1)* &
+                                (Ens_trnh2(mz)+Ens_trnl2(mz)+1)/2)
+         eps=exp(-dt/Ens_tau2(mz))
+         std=Ens_std2(mz)
+         do l=1,Ens_dim2(mz)
+             znm(l,mz)=CMPLX( &
+                std*gasdev(paiv,paiy,paiset,pagset,paidum)*sqrt((1.-eps**2)*xf), &
+                std*gasdev(paiv,paiy,paiset,pagset,paidum)*sqrt((1.-eps**2)*xf))
+           enddo
+         enddo
+      endif
+!     
+!     Precalcul exponentials in vertical
+!     
+      naloc=(2*mzt+1)*E_nk
+      allocate(veco1(naloc),xsiv(naloc),xcov(naloc))
+      allocate(veco(E_nk,-mzt:mzt))
+      allocate(fgau(nlon,nlat,E_nk))
+      allocate(pnm(ntrunc+1,ntrunc+1,E_nk))
+!     
+      indx=0
+
+      do mz=-mzt,mzt
+         do k=1,E_nk
+            z=real(k-1)*2.*pi/real(E_nk)
+            indx=indx+1
+            veco1(indx)=mz*z
+         enddo
+      enddo
+!     
+      naloc=(2*mzt+1)*E_nk
+
+      call vssincos(xsiv,xcov,veco1,naloc)
+!     
+      indx=0
+      do mz=-mzt,mzt
+         do k=1,E_nk
+            indx = indx+1
+            veco(k,mz)=cmplx(xcov(indx),xsiv(indx))
+         enddo
+      enddo
+!     
+      deallocate(veco1,xsiv,xcov)
+!     
+!     Begin Markov chains
+!
+      paiv  => dumdum( 1,1)
+      paiy  => dumdum(33,1)
+      paiset=> dumdum(34,1)
+      pagset=> dumdum(35,1)
+      paidum=> dumdum(36,1)
+
+      xf=pi/REAL((ntrunc-mtrunc+1)*(ntrunc+mtrunc+1)/2)/REAL(2*mzt+1)
+      eps=exp(-dt/Ens_mc_tau)
+      std=Ens_mc_std
+      do mz=-mzt,mzt
+         do l=1,nmdim
+            anm(l,mz)=CMPLX(eps*real (anm(l,mz))+ &
+            std*gasdev(paiv,paiy,paiset,pagset,paidum)*sqrt((1.-eps**2)*xf), &
+            eps*aimag(anm(l,mz))+ &
+            std*gasdev(paiv,paiy,paiset,pagset,paidum)*sqrt((1.-eps**2)*xf))
+          enddo
+      enddo
+!
+      do mz=1,Ens_ncha2
+         mzp=mz+1
+         paiv  => dumdum( 1,mzp)
+         paiy  => dumdum(33,mzp)
+         paiset=> dumdum(34,mzp)
+         pagset=> dumdum(35,mzp)
+         paidum=> dumdum(36,mzp)
+         xf=pi/REAL((Ens_trnh2(mz)-Ens_trnl2(mz)+1)* &
+                                (Ens_trnh2(mz)+Ens_trnl2(mz)+1)/2)
+         eps=exp(-dt/Ens_tau2(mz))
+         std=Ens_std2(mz)
+         do l=1,Ens_dim2(mz)
+            znm(l,mz)=CMPLX(eps*real (znm(l,mz))+ &
+            std*gasdev(paiv,paiy,paiset,pagset,paidum)*sqrt((1.-eps**2)*xf), &
+            eps*aimag(znm(l,mz))+ &
+            std*gasdev(paiv,paiy,paiset,pagset,paidum)*sqrt((1.-eps**2)*xf))
+           enddo
+      enddo
+
+      pnm(:,:,:)=(0.,0.)
+      do mz=-mzt,mzt
+         do k=1,E_nk
+            l=0
+            do j=2,ntrunc+1
+            do i=j,ntrunc+1
+               l=l+1
+               pnm(i,j,k)=pnm(i,j,k)+anm(l,mz)*veco(k,mz)
+            enddo
+           enddo
+         enddo
+      enddo
+
+      call harmon_init(harmon_dsc,nlon,nlat,ntrunc,ntrunc,ntrunc)
+
+      do k=1,E_nk
+         call harmons(harmon_dsc,fgau(1,1,k),pnm(1,1,k),nlon,nlat,ntrunc,ntrunc,ntrunc)
+      enddo
+       call harmon_destroy(harmon_dsc)
+!
+!     
+!
+!
+!*    Interpolation to the processors grids and fill in perbus
+!
+     offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+     offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+     do i=1,l_ni
+        indx = offi + i
+        xfi(i) = G_xg_8(indx)*rad2deg_8
+     end do
+     do i=1,l_nj
+        indx = offj + i
+        yfi(i) = G_yg_8(indx)*rad2deg_8
+     end do
+
+     dgid_myp = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro, &
+                Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
+
+      gdgauss = ezqkdef(nlon,nlat,'G', 0,0,0,0,0)
+      ier = ezdefset(dgid_myp, gdgauss)
+      ier = ezsetopt('INTERP_DEGREE', 'LINEAR')
+!      ier = ezsetopt('VERBOSE', 'YES')
+      do k=1,E_nk
+         ier = ezsint(fgem(1,1,k),fgau(1,1,k))
+      enddo
+      if(Ens_bc_stat)then
+          call stat(fgau,nlon,nlat,E_nk,'MCSP','GAUSS')
+          call glbstat2 (fgem,'MCSP','NOSTR', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+!    Check the limits, stretch, and add mean if stretching asked
+!    for the physics perturbation
+!
+      if(.not.Ens_stochphy)return
+      if(aa/=0.and.aa/=1)then
+         where (abs(fgau) > 1.)
+            fgau=sign(1.,fgau)
+         end where
+
+         allocate(fgau_str(nlon,nlat,E_nk),fgem_str(l_ni,l_nj,E_nk))
+         sig2=1./LOG((aa/(aa-1.))**2)
+         fgau_str=fgau*(aa*exp(-fgau**2/2./sig2)+2.-aa)*(xmx-xme)
+         if(xme/=0.0) fgau_str=fgau_str+xme
+!
+         do k=1,E_nk
+            ier = ezsint(fgem_str(1,1,k),fgau_str(1,1,k))
+         enddo
+!
+      if(Ens_bc_stat)then
+          call glbstat2 (fgem_str,'MCSP','STR', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+
+         do j=1,p_nj
+            jj=j+p_offj
+            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
+            do k=1,E_nk
+               do i=1,p_ni
+                  ii=i+p_offi
+                  indx = (k-1)*p_ni+i-1
+                  busper(mrkv+indx)=fgem_str(ii,jj,k)
+               enddo
+            enddo
+         enddo
+         deallocate(fgau_str,fgem_str)
+      else
+!
+         do j=1,p_nj
+            jj=j+p_offj
+            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
+            do k=1,E_nk
+               do i=1,p_ni
+                  ii=i+p_offi
+                  indx = (k-1)*p_ni+i-1
+                  busper(mrkv+indx)=1.0
+               enddo
+            enddo
+         enddo
+      endif
+      deallocate(fgau,pnm,veco)
+!====================================
+      allocate(fgem2_str(l_ni,l_nj))
+      do mz=1,Ens_ncha2
+         allocate(fgau2(Ens_nlon2(mz),Ens_nlat2(mz)))
+         allocate(fgau2_str(Ens_nlon2(mz),Ens_nlat2(mz)))
+         allocate(pnm2(Ens_trnh2(mz)+1,Ens_trnh2(mz)+1))
+         mtrunc=Ens_trnl2(mz)
+         ntrunc=Ens_trnh2(mz)
+            pnm2(:,:)=(0.,0.)
+            l=0
+            do j=2,ntrunc+1
+               do i=j,ntrunc+1
+                  l=l+1
+                  pnm2(i,j)=znm(l,mz)
+               enddo
+            enddo
+
+      call harmon_init(harmon_dsc,Ens_nlon2(mz),Ens_nlat2(mz),               &
+                        Ens_trnh2(mz),Ens_trnh2(mz),Ens_trnh2(mz))
+
+      call harmons(harmon_dsc,fgau2,pnm2,Ens_nlon2(mz),Ens_nlat2(mz),        &
+                        Ens_trnh2(mz),Ens_trnh2(mz),Ens_trnh2(mz))
+      call harmon_destroy(harmon_dsc)
+
+!
+!
+!*    Interpolation to the processors grids and fill in perbus
+!
+        gdgauss = ezqkdef(Ens_nlon2(mz),Ens_nlat2(mz),'G', 0,0,0,0,0)
+
+        ier = ezdefset(dgid_myp, gdgauss)
+        ier = ezsetopt('INTERP_DEGREE', 'LINEAR')
+!       ier = ezsetopt('VERBOSE', 'YES')
+
+!         ier = ezsint(fgem,fgau)
+
+
+!    Check the limits, stretch, and add mean if stretching asked
+!    for the physics perturbation
+!
+           where (abs(fgau2) > 1.)
+              fgau2=sign(1.,fgau2)
+           end where
+      if(Ens_str2(mz)/=0.0)then
+!
+         sig2=1./LOG((Ens_str2(mz)/(Ens_str2(mz)-1.))**2)
+         fgau2_str=fgau2*(Ens_str2(mz)*exp(-fgau2**2/2./sig2)+2.-Ens_str2(mz))* &
+        (Ens_max2(mz)-Ens_mean2(mz))
+         if(Ens_mean2(mz)/=0.0) fgau2_str=fgau2_str+Ens_mean2(mz)
+!
+            ier = ezsint(fgem2_str,fgau2_str)
+!
+         do j=1,p_nj
+            jj=j+p_offj
+            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
+               do i=1,p_ni
+                  ii=i+p_offi
+                  indx = (mz-1)*p_ni+i-1
+                  busper(mrk2+indx)=fgem2_str(ii,jj)
+               enddo
+         enddo
+      else
+                  do j=1,p_nj
+            jj=j+p_offj
+            busper = Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
+               do i=1,p_ni
+                  ii=i+p_offi
+                  indx = (mz-1)*p_ni+i-1
+                  busper(mrk2+indx)=1.0
+               enddo
+         enddo
+       endif
+         deallocate(fgau2,fgau2_str,pnm2)
+      enddo
+!
+      deallocate(fgem2_str)
+!     
+!
+ 1000 format( &
+           /,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R ENS_MARFIELD_CG)', &
+           /,'======================================================')
+ 1008 format(' Physics must be incore!')
+ 1009 format( &
+           /,'MARKOV CHAIN FIELD      MIN    MAX    MEA    STD   TAU  TRUNC ', &
+             'NLON/NLAT/NNIV', &
+           /,20X,4F7.1,1X,F7.0,I4,1X,3(I4,' '),/)
+ 6000 format('ens_marfield_cg at gmm_get(',A,')')
+      return
+
+contains
+
+      subroutine stat(field,nx,ny,nz,msg1,msg2)
+        implicit none
+        integer :: nx,ny,nz
+        real :: mean, std
+        character(len=*) :: msg1,msg2
+        real, dimension(nx,ny,nz) :: field
+        mean=sum(field)/(nx*ny*nz)
+        std=sqrt(sum((field-mean)**2)/(nx*ny*nz-1))
+        if (Lun_out.gt.0)write(Lun_out,99)Lctl_step,msg1,mean,std,         &
+        minloc(field),minval(field),maxloc(field),maxval(field),msg2
+ 99   format (i4,a4,' Mean:',e14.7,' Std:',e14.7, &
+              ' Min:[(',i3,',',i3,',',i3,')', &
+              e14.7,']',' Max:[(',i3,',',i3,',',i3,')', &
+              e14.7,']',a6)
+      end subroutine stat
+      END subroutine ens_marfield_cg
+

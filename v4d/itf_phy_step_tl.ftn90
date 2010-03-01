@@ -1,0 +1,107 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+!**s/r itf_phy_step_tl - Apply the TLM simplified physical processes: CMC/RPN package
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_step_tl (F_stepno)
+      implicit none
+!
+      integer F_stepno
+!
+!author
+!     Stephane Laroche        Janvier 2001
+!
+!revision
+! v3_00 - Laroche S.       - initial MPI version
+! v3_02 - Laroche S.       - allows physic variables outputs
+! v3_11 - Laroche S.       - AIXport+Opti+OpenMP for TLM-ADJ
+! v3_20 - Lee V.           - Introduce obussiz 
+! v3_20 - Laroche S.       - Replace p_vmmphy by p_vmmphy_tl
+! v3_30 - Tanguay M.       - adapt TL/AD to itf/new tendencies
+!                          - Validation for LAM version
+! v4_03 - Spacek L.        - Staggered version
+! v4_12 - Spacek L.        - GMM version
+!
+!object
+!       Computes the physical processes and apply the resulting
+!       tendencies to the dynamic variables of the model:
+!       CMC/RPN package
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_stepno      O           step number
+!----------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "ptopo.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_phy_config.cdk"
+#include "grdc.cdk"
+#include "out3.cdk"
+#include "cstv.cdk"
+#include "v4dg.cdk"
+!
+      integer  omp_get_max_threads
+      external omp_get_max_threads
+!
+      integer j, dim, obussiz,cobussiz,err, pslic
+      character*15 datev,pdate
+      real*8 dayfrac, sec_in_day
+      parameter (sec_in_day=86400.0d0)
+      real, dimension(:,:)   , allocatable :: obusval,cobusval
+      save pslic
+!
+!     ---------------------------------------------------------------
+!
+      call iniobus(obussiz)
+      allocate(obusval(l_ni*l_nj,obussiz))
+      dim  = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*p_nk
+
+      call itf_phy_prep_tl(F_stepno)
+!
+!       4.	compute physics tendencies
+!		--------------------------
+!	initialize the number of slices previously done
+!
+      pslic = 0
+!
+      call pe_rebind (Ptopo_smtphy,(Ptopo_myproc.eq.0).and.                &
+                                   (F_stepno    .eq.0)  )
+!$omp parallel
+!$omp do
+      do j=1,omp_get_max_threads()
+         call itf_phy_slb_tl ( j , F_stepno, pslic, obusval, cobusval)
+      enddo
+!$omp enddo
+!$omp end parallel
+      call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and.                 &
+                                   (F_stepno    .eq.0) )
+!
+      call out_phy (obusval,l_ni,l_nj,F_stepno)
+!
+      deallocate (obusval)
+!
+!   6.	Apply physics tendencies to the appropriate dynamic fields
+!      and insure consistency with other dynamic variables
+!       ----------------------------------------------------------
+!
+      call itf_phy_apply_tl ( F_stepno.gt.0 )
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

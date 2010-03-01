@@ -84,11 +84,11 @@
 #include "rstr.cdk"
 #include "schm.cdk"
 #include "lctl.cdk"
-#include "v4dg.cdk"
 #include "clim.cdk"
 #include "vrtd.cdk"
 #include "hzd.cdk"
 #include "hspng.cdk"
+       include "v4dg.inc"
 !
       logical bkup_L,identity_4dvar_L
       integer last_step,fstep,istep,step0,stepf

@@ -81,7 +81,7 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'bac ERROR at gmm_get(rhst)'
       gmmstat = gmm_get(gmmk_rhsf_s,rhsf,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'bac ERROR at gmm_get(rhsf)'
-      gmmstat = gmm_get(gmmk_rhsb_s,rhsb,meta3d)
+      gmmstat = gmm_get(gmmk_rhsb_s,rhsb,meta2d)
       if (GMM_IS_ERROR(gmmstat)) print *,'bac ERROR at gmm_get(rhsb)'
       gmmstat = gmm_get(gmmk_wt0_s,wt0,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'bac ERROR at gmm_get(wt0)'

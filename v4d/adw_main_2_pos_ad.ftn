@@ -1,0 +1,568 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r adw_main_2_pos_ad - ADJ of adw_main_2_pos_tl when Adw_nosetint_L=.TRUE. 
+*
+#include "model_macros_f.h"
+#include "constants.h"
+#include "msg.h"
+*
+      subroutine adw_main_2_pos_ad(F_it  ,F_l_S ,F_nk  ,
+*
+     $                             F_px  ,F_py  ,F_pz  ,
+     $                             F_u   ,F_v   ,F_w   ,
+     $                             F_xth ,F_yth ,F_zth ,
+     $                             F_xcth,F_ycth,F_zcth,
+     $                             F_xct1,F_yct1,F_zct1,
+     $                             F_pxc ,F_pyc ,
+*
+     $                             F_px_m  ,F_py_m  ,F_pz_m  ,
+     $                             F_u_m   ,F_v_m   ,F_w_m   ,
+     $                             F_xth_m ,F_yth_m ,F_zth_m ,
+     $                             F_xcth_m,F_ycth_m,F_zcth_m,
+     $                             F_xct1_m,F_yct1_m,F_zct1_m,
+     $                             F_pxc_m ,F_pyc_m)
+*
+      implicit none
+*
+      integer F_it,F_nk
+      character(len=1) :: F_l_S
+      real F_px(*)  ,F_py(*)  ,F_pz(*),
+     $     F_u(*)   ,F_v(*)   ,F_w(*),
+     $     F_xth(*) ,F_yth(*) ,F_zth(*),
+     $     F_xcth(*),F_ycth(*),F_zcth(*),
+     $     F_xct1(*),F_yct1(*),F_zct1(*),
+     $     F_pxc(*) ,F_pyc(*)
+*
+      real F_px_m(*)  ,F_py_m(*)  ,F_pz_m(*),
+     $     F_u_m(*)   ,F_v_m(*)   ,F_w_m(*),
+     $     F_xth_m(*) ,F_yth_m(*) ,F_zth_m(*),
+     $     F_xcth_m(*),F_ycth_m(*),F_zcth_m(*),
+     $     F_xct1_m(*),F_yct1_m(*),F_zct1_m(*),
+     $     F_pxc_m(*) ,F_pyc_m(*)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_11 - Tanguay M.        - Remove restoration of vectorization in adjoint of semi-Lag
+*                           - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_20 - Tanguay M.        - Optimized SETINT/TRILIN
+*                           - ADJ of Change test a lower and upper boundaries
+* v3_21 - Tanguay M.        - Call adw_main_2_pos_noset_ad based on Adw_nosetint_L
+* v3_30 - Tanguay M.        - correct calculation for LAM when Glb_pil gt 7 
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+* v4_12 - Tanguay M.        - TL/AD Thermo upstream positions
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectory             |  i  |
+*        |                                                       |     |
+* F_u,F_v| input:  3 components of wind on advection grid        |  io |
+* F_w    | output: 3 upstream positions valid at t1              |     |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+!      logical G_lam
+!      integer G_nk
+!      logical l_north, l_south, l_east, l_west
+!      integer l_ni, l_nj, l_nk, l_niu, l_njv
+!      integer l_minx, l_maxx, l_miny, l_maxy
+!      integer pil_n,pil_s,pil_w,pil_e
+#include "cstv.cdk"
+!      real*8    Cstv_dt_8
+#include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8
+#include "schm.cdk"
+!      logical schm_zdotmid_l
+#include "lun.cdk"
+*
+*modules
+************************************************************************
+      integer i, j, k, n, nm, ij, ijk, nij, nijk, it
+      integer i1,j1,k1,ier,i0,in,j0,jn
+*
+      integer, dimension(l_ni*l_nj*F_nk) :: n1,loci,locj,lock
+      real,    dimension(l_ni*l_nj*F_nk) :: wrkx1,wrky1,wrk_yth
+*
+      real,    dimension(l_ni*l_nj*F_nk) :: capz1_m
+      real,    dimension(l_ni*l_nj*F_nk) :: wrkx1_m,wrky1_m,wrk_yth_m
+*
+      real dummy, dth
+      real*8 r2pi_8,TWO_8,HALF_8,pdp_8,pdm_8,ZERO_8
+      parameter (TWO_8=2.0,HALF_8=0.5,ZERO_8=0.0)
+*
+      real*8 ,dimension(:), pointer :: p_z_8
+*
+*     -----------------------
+*     Define extra space TRAJ
+*     -----------------------
+      integer ind(F_it)
+*
+      integer, dimension(l_ni*l_nj*F_nk*F_it) :: loci_1_m,locj_1_m,lock_1_m
+      integer, dimension(l_ni*l_nj*F_nk*F_it) :: loci_2_m,locj_2_m,lock_2_m
+*
+      real capx1_1_m(l_ni*l_nj*F_nk*F_it),
+     %     capy1_1_m(l_ni*l_nj*F_nk*F_it),
+     %     capz1_1_m(l_ni*l_nj*F_nk*F_it),
+*
+     %     capx1_2_m(l_ni*l_nj*F_nk*F_it),
+     %     capy1_2_m(l_ni*l_nj*F_nk*F_it),
+     %     capz1_2_m(l_ni*l_nj*F_nk*F_it),
+*
+     %     F_yth_3_m  (l_ni*l_nj*F_nk*F_it),
+     %     F_xcth_3_m (l_ni*l_nj*F_nk*F_it),
+     %     F_ycth_3_m (l_ni*l_nj*F_nk*F_it),
+     %     F_zcth_3_m (l_ni*l_nj*F_nk*F_it),
+     %     wrkx1_3_m  (l_ni*l_nj*F_nk*F_it),
+     %     wrky1_3_m  (l_ni*l_nj*F_nk*F_it),
+*
+     %     F_zth_5_m (l_ni*l_nj*F_nk*F_it)
+*
+      real F_xth_m_ref1(l_ni*l_nj*F_nk,F_it),wrk_yth_m_ref1(l_ni*l_nj*F_nk,F_it)
+      real F_xth_m_ref2(l_ni*l_nj*F_nk,F_it),wrk_yth_m_ref2(l_ni*l_nj*F_nk,F_it)
+*
+************************************************************************
+*
+      if (Schm_zdotMid_L) call handle_error(-1,'adw_main_2_pos_ad','Schm_zdotMid_L not DONE')
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+*     Initializations 
+*     ---------------
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *F_nk
+*
+      r2pi_8 = TWO_8 * CONST_PI_8
+      dth    = Cstv_dt_8/2.
+      pdp_8  = 1.d0 + 1.d-6
+      pdm_8  = 1.d0 - 1.d-6
+*
+      if(F_l_S.eq.'m')then
+         p_z_8 =>Ver_z_8%m
+         call msg(MSG_DEBUG,'ADJ of CALC UPSTREAM MOMENTUM POSITIONS: (S/R ADW_MAIN_2_POS_AD)')
+      else if(F_l_S.eq.'t')then
+         p_z_8 =>Ver_z_8%t
+         call msg(MSG_DEBUG,'ADJ of CALC UPSTREAM THERMO   POSITIONS: (S/R ADW_MAIN_2_POS_AD)')
+      else
+         call handle_error(-1,'adw_main_2_pos_ad','wrong level descriptor')
+      endif
+*
+*     Set positions in extra space TRAJ
+*     ---------------------------------
+      do it = 1,F_it
+         ind(it) = nijk*(it-1) + 1
+      enddo
+*
+************************************************************************
+*
+*     Zero adjoint variables 
+*     ----------------------
+      wrkx1 = 0.
+      wrky1 = 0.
+      wrk_yth = 0.
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
+      endif
+*
+************************************************************************
+      do it=1,F_it
+************************************************************************
+*
+*        ==================================================================
+*        3d interpolation of u and v winds
+*        ==================================================================
+*
+         do n = 1,nijk
+*
+            wrk_yth_m(n) = F_yth_m(n)
+*
+         enddo
+*
+         if(G_lam) then
+*
+            do n=1,nijk
+                 F_xth_m_ref1(n,it) =   F_xth_m(n)
+               wrk_yth_m_ref1(n,it) = wrk_yth_m(n)
+           enddo
+*
+            call adw_cliptraj(F_xth_m,wrk_yth_m,i0,in,j0,jn,F_nk,'POS1_TR')
+*
+         else
+*            NOT DONE YET
+         endif
+*
+*           --------------------------------------------------------------------
+*           Preserve loci_m locj_m lock_m capx1_m capy1_m capz1_m for ADJOINT #1
+*           --------------------------------------------------------------------
+*
+            call adw_trilin_turbo_tr (wrkx1_m,F_u_m,1.0,F_xth_m,wrk_yth_m,F_zth_m,
+     %                                capx1_1_m(ind(it)),
+     %                                capy1_1_m(ind(it)),
+     %                                capz1_1_m(ind(it)),
+     %                                loci_1_m (ind(it)),
+     %                                locj_1_m (ind(it)),
+     %                                lock_1_m (ind(it)),nijk,i0,in,j0,jn,F_nk,.true.,.true.)
+*
+            call adw_trilin_turbo (wrky1_m,F_v_m,1.0,F_xth_m,wrk_yth_m,F_zth_m,
+     %                             capz1_1_m(ind(it)),
+     %                             loci_1_m (ind(it)),
+     %                             locj_1_m (ind(it)),
+     %                             lock_1_m (ind(it)),nijk,i0,in,j0,jn,F_nk,.false.,.false.)
+*
+C!$omp parallel do private(ijk)
+      do ijk=1,nijk
+*
+*           ------------------------------------------------------------------------------
+*           Preserve F_yth_m F_xcth_m F_ycth_m F_zcth_m F_wrkx1_m F_wrky1_m for ADJOINT #3
+*           ------------------------------------------------------------------------------
+            F_yth_3_m (ind(it)+ijk-1) = F_yth_m (ijk)
+            F_xcth_3_m(ind(it)+ijk-1) = F_xcth_m(ijk)
+            F_ycth_3_m(ind(it)+ijk-1) = F_ycth_m(ijk)
+            F_zcth_3_m(ind(it)+ijk-1) = F_zcth_m(ijk)
+            wrkx1_3_m (ind(it)+ijk-1) = wrkx1_m (ijk)
+            wrky1_3_m (ind(it)+ijk-1) = wrky1_m (ijk)
+*
+*           ------------------------------------------------
+*           Set loc_2 = loc_1 
+*           NOTE: loc_2 will be changed by adw_trilin_turbo
+*           ------------------------------------------------
+            loci_2_m(ind(it)+ijk-1) = loci_1_m(ind(it)+ijk-1)
+            locj_2_m(ind(it)+ijk-1) = locj_1_m(ind(it)+ijk-1)
+            lock_2_m(ind(it)+ijk-1) = lock_1_m(ind(it)+ijk-1)
+*
+      enddo
+C!$omp end parallel do  
+*
+************************************************************************
+         call adw_trajsp ( F_xth_m, F_yth_m, F_xcth_m, F_ycth_m, F_zcth_m, wrkx1_m, wrky1_m, dth,
+     %        i0,in,j0,jn)
+************************************************************************
+*
+*        ==================================================================
+*        3D interpolation of zeta dot
+*        ==================================================================
+*
+         do n = 1,nijk
+            wrk_yth_m(n) = F_yth_m(n)
+         enddo
+*
+         if (G_lam) then
+*
+            if (.not.Schm_zdotMid_L) then
+*
+                do n=1,nijk
+                     F_xth_m_ref2(n,it) =   F_xth_m(n)
+                   wrk_yth_m_ref2(n,it) = wrk_yth_m(n)
+                enddo
+*
+                call adw_cliptraj ( F_xth_m, wrk_yth_m, i0, in, j0, jn, F_nk, 'POS2_TR')
+*
+            endif
+*
+         else
+*           NOT DONE YET
+         endif
+*
+*        --------------------------------------------------------------------
+*        Preserve capx1_m capy1_m capz1_m loci_m locj_m lock_m for ADJOINT #2
+*        --------------------------------------------------------------------
+            call adw_trilin_turbo_tr (wrkx1_m,F_w_m,-dth,F_xth_m,wrk_yth_m,F_zth_m,
+     %                                capx1_2_m(ind(it)),
+     %                                capy1_2_m(ind(it)),
+     %                                capz1_2_m(ind(it)),
+     %                                loci_2_m (ind(it)),
+     %                                locj_2_m (ind(it)),
+     %                                lock_2_m (ind(it)),nijk,i0,in,j0,jn,F_nk,.true.,.true.)
+
+*
+************************************************************************
+C!$omp parallel private(n,ijk)
+*
+*     --------------------------------
+*     Reset loc_1_m for next iteration
+*     --------------------------------
+      if(it.ne.F_it) then
+*
+C!$omp do
+         do ijk=1,nijk
+            loci_1_m(ind(it)+ijk-1) = loci_2_m(ind(it)+ijk-1)
+            locj_1_m(ind(it)+ijk-1) = locj_2_m(ind(it)+ijk-1)
+            lock_1_m(ind(it)+ijk-1) = lock_2_m(ind(it)+ijk-1)
+         enddo
+C!$omp enddo
+*
+      endif
+*
+*        ==================================================================
+*        Compute new upstream position along zeta
+*        ==================================================================
+*
+C!$omp parallel private(n)
+C!$omp do
+         do k = 2,F_nk-1
+            do j = j0,jn
+            do i = i0,in
+               n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+               F_zth_m(n) = p_z_8(k) + TWO_8*wrkx1_m(n)
+*
+*              -----------------------------
+*              Preserve zth_m for ADJOINT #5
+*              -----------------------------
+               F_zth_5_m (ind(it)+n)  = F_zth_m(n)
+*
+*              Make sure F_zth is below p_z(1) and above p_z(F_nk)
+               F_zth_m(n) = min( pdm_8*p_z_8(F_nk),
+     %              max( 1.0d0*F_zth_m(n), pdp_8*p_z_8(1) ) )
+               F_zth_m(n) = HALF_8*(F_zth_m(n) + p_z_8(k))
+*
+            enddo
+            enddo
+         enddo
+C!$omp enddo
+C!$omp end parallel
+*
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+*
+*     ----------------
+*     TRAJECTORY (END)
+*     ----------------
+*
+*     --------------------
+*     ADJOINT CALCULATIONS
+*     --------------------
+*
+C!$omp parallel private(n)
+*
+      if(F_l_S.eq.'t')then
+C!$omp do
+         do j = j0,jn
+         do i = i0,in
+*
+            n  = l_nk*nij+((j-1)*l_ni) + i !for k=l_nk+1
+            nm = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
+            F_pyc(nm) = F_py(n) + F_pyc(nm)
+            F_py (n)  = ZERO_8 
+            F_pxc(nm) = F_px(n) + F_pxc(nm)
+            F_px (n)  = ZERO_8 
+*
+            n = ((j-1)*l_ni) + i !for k=1
+            F_pyc(n) = F_py(n) + F_pyc(n)
+            F_py (n) = ZERO_8
+            F_pxc(n) = F_px(n) + F_pxc(n)
+            F_px (n) = ZERO_8
+*
+         enddo
+         enddo
+      endif
+C!$omp do
+      do k = F_nk-1,2,-1
+         do j = j0,jn
+         do i = i0,in
+*
+            n=(k-1)*nij+((j-1)*l_ni) + i
+*
+            F_pz(n) = 2.0 * F_pz(n)
+*
+            F_zth(n) = F_pz(n) + F_zth(n)
+            F_pz (n) = ZERO_8
+*
+         enddo
+         enddo
+      enddo 
+C!$omp enddo
+C!$omp do
+      do j = j0,jn
+      do i = i0,in
+*
+         n = (F_nk-1)*nij+((j-1)*l_ni) + i !for k=F_nk
+         F_pz(n) = 0. 
+*
+         n = ((j-1)*l_ni) + i   !for k=1
+         F_pz(n) = 0. 
+*
+      enddo
+      enddo
+C!$omp enddo
+*
+C!$omp end parallel
+*
+      call adw_trajex_ad (F_px,  F_py,  F_xct1,  F_yct1,  F_zct1,  F_xcth,  F_ycth,  F_zcth,
+     %                                                             F_xcth_m,F_ycth_m,F_zcth_m,
+     %                    i0,in,j0,jn)
+*
+************************************************************************
+      do it=F_it,1,-1
+************************************************************************
+*
+*        ==================================================================
+*        ADJ of
+*        Compute new upstream position along zeta
+*        ==================================================================
+*
+C!$omp parallel private(n)
+C!$omp do
+         do k = F_nk-1,2,-1
+            do j = j0,jn
+            do i = i0,in
+               n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+               F_zth(n) = HALF_8*(F_zth(n))
+*
+*              --------------------------
+*              Reset zth_m for ADJOINT #5
+*              --------------------------
+               if (1.0d0*F_zth_5_m(ind(it)+n).lt.pdp_8*p_z_8(1)) then
+                   F_zth (n) = 0.
+               elseif (1.0d0*F_zth_5_m(ind(it)+n).gt.pdm_8*p_z_8(F_nk)) then
+                   F_zth (n) = 0.
+               endif
+*
+               wrkx1(n) = TWO_8*F_zth(n) + wrkx1(n)
+               F_zth(n) = ZERO_8
+*
+            enddo
+            enddo
+         enddo
+C!$omp enddo
+C!$omp end parallel
+*
+*        ==================================================================
+*        ADJ of
+*        3D interpolation of zeta dot
+*        ==================================================================
+*
+*        -----------------------
+*        NOTE:Wthm never changed
+*        -----------------------
+*
+*        -----------------------------------------------------------------
+*        Reset capx1_m capy1_m capz1_m loci_m locj_m lock_m for ADJOINT #2
+*        -----------------------------------------------------------------
+         call adw_trilin_turbo_ad (wrkx1,  F_w,  -dth, F_xth,  wrk_yth,  F_zth,  
+     %                                     F_w_m, 
+     %                             capx1_2_m(ind(it)),
+     %                             capy1_2_m(ind(it)),
+     %                             capz1_2_m(ind(it)),
+     %                             loci_2_m (ind(it)),
+     %                             locj_2_m (ind(it)),
+     %                             lock_2_m (ind(it)),nijk,i0,in,j0,jn,F_nk,.true.,.true.)
+*
+         if (G_lam) then
+             if (.not.Schm_zdotMid_L)
+     %       call adw_cliptraj_ad (F_xth, wrk_yth, F_xth_m_ref2(1,it), wrk_yth_m_ref2(1,it), i0, in, j0, jn, F_nk, 'POS2_AD')
+         else
+*            NOT DONE YET
+         endif
+*
+         do n = 1,nijk
+              F_yth(n) = wrk_yth(n) + F_yth(n)
+            wrk_yth(n) = ZERO_8
+         enddo
+*
+*        ==================================================================
+*        ADJ of
+*        Compute new upstream positions along x and y
+*        ==================================================================
+*
+************************************************************************
+*        ---------------------------------------------------------------------------
+*        Reset F_yth_m F_xcth_m F_ycth_m F_zcth_m F_wrkx1_m F_wrky1_m for ADJOINT #3
+*        ---------------------------------------------------------------------------
+         call adw_trajsp_ad ( F_xth,  F_yth,  F_xcth,  F_ycth,  F_zcth,  wrkx1,  wrky1,
+     %                        F_yth_3_m (ind(it)),
+     %                        F_xcth_3_m(ind(it)),F_ycth_3_m(ind(it)),F_zcth_3_m (ind(it)),
+     %                        wrkx1_3_m (ind(it)),wrky1_3_m (ind(it)),
+     %                        dth,i0,in,j0,jn)
+*
+************************************************************************
+*
+*        ==================================================================
+*        ADJ of
+*        3d interpolation of u and v winds
+*        ==================================================================
+*
+*        ----------------------------
+*        NOTE:Uthm Vthm never changed
+*        ----------------------------
+*
+*        --------------------------------------------------------------------
+*        Reset loci_m locj_m lock_m capx1_m capy1_m capz1_m for ADJOINT #1
+*        --------------------------------------------------------------------
+         call adw_trilin_turbo_ad (wrky1,  F_v,  1.0, F_xth,  wrk_yth,  F_zth,  
+     %                                     F_v_m, 
+     %                             capx1_1_m(ind(it)),
+     %                             capy1_1_m(ind(it)),
+     %                             capz1_1_m(ind(it)),  
+     %                             loci_1_m (ind(it)),
+     %                             locj_1_m (ind(it)),
+     %                             lock_1_m (ind(it)),nijk,i0,in,j0,jn,F_nk,.false.,.false.)
+*
+         call adw_trilin_turbo_ad (wrkx1,  F_u,  1.0, F_xth,  wrk_yth,  F_zth, 
+     %                                     F_u_m,  
+     %                             capx1_1_m(ind(it)),
+     %                             capy1_1_m(ind(it)),
+     %                             capz1_1_m(ind(it)),
+     %                             loci_1_m (ind(it)),
+     %                             locj_1_m (ind(it)),
+     %                             lock_1_m (ind(it)),nijk,i0,in,j0,jn,F_nk,.true.,.true.)
+*
+         if (G_lam) then
+            call adw_cliptraj_ad (F_xth,wrk_yth,F_xth_m_ref1(1,it),wrk_yth_m_ref1(1,it),i0,in,j0,jn,F_nk,'POS1_AD')
+         else
+*           NOT DONE YET
+         endif
+*
+         do n = 1,nijk
+              F_yth(n) = wrk_yth(n) + F_yth(n)
+            wrk_yth(n) = ZERO_8
+         enddo
+*
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+*
+ 1000 format(3X,'ADJ of CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS_AD)')
+*
+      return
+      end

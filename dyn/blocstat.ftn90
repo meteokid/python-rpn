@@ -37,7 +37,6 @@
 #include "glb_ld.cdk"
 #include "step.cdk"
 #include "lctl.cdk"
-#include "v4dg.cdk"
 #include "acid.cdk"
 #include "ptopo.cdk"
 #include "adw.cdk"
@@ -130,7 +129,7 @@
       done = .true.
 !
  1010 format (' MAX COURANT NUMBER:  ', &
-                a3,': [(',i3,',',i3,',',i3,') ',f12.7,']')
+                a3,': [(',i3,',',i3,',',i3,') ',f12.5,']')
  1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')
  1003 format (i4,a10, i4,10X,' N:[',i4,'] S:[',i4,'] E :[',i4,'] W:[',i4,']')

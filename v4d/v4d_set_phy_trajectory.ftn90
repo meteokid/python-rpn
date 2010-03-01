@@ -1,0 +1,108 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r set_vt -	initialization of the commons for time-dependent
+!		variable. Virtual Memory manager initialization
+!
+#define SPY_VMM_CREATE spy_vmm_create
+#include "model_macros_f.h"
+
+      subroutine v4d_set_phy_trajectory()
+!
+      implicit none
+!
+!author
+!     Lubos Spacek - September 2009
+!
+!revision
+! v4_12 - Spacek L.     - First revision
+!
+!object
+!	Initialize physics trajectory variables
+!	
+!arguments
+!	none
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "lun.cdk"
+#include "pw_m.cdk"
+!
+!modules
+!
+      integer i
+!
+!     ---------------------------------------------------------------
+!
+      if (Lun_out.gt.0) write(Lun_out,1000)
+!
+!     1.    Initialize variables at time t+
+!
+      gmmk_utrajp_s    = 'UTRAJP'
+      gmmk_vtrajp_s    = 'VTRAJP'
+      gmmk_ttrajp_s    = 'TTRAJP'
+      gmmk_hutrajp_s   = 'HUTRAJP'
+      gmmk_ptrajp_s    = 'PTRAJP'
+      gmmk_ptrajp_s    = 'STRAJP'
+
+      nullify (utrajp,vtrajp,ttrajp,hutrajp,ptrajp,strajp)
+      gmmstat = gmm_create (gmmk_utrajp_s ,utrajp ,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_vtrajp_s ,vtrajp ,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_ttrajp_s ,ttrajp ,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_hutrajp_s,hutrajp,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_ptrajp_s ,ptrajp ,meta2d)
+      gmmstat = gmm_create (gmmk_strajp_s ,strajp ,meta2d)
+!
+!     2.    Initialize variables at time t-
+!
+      gmmk_utrajm_s    = 'UTRAJM'
+      gmmk_vtrajm_s    = 'VTRAJM'
+      gmmk_ttrajm_s    = 'TTRAJM'
+      gmmk_hutrajm_s   = 'HUTRAJM'
+      gmmk_ptrajm_s    = 'PTRAJM'
+      gmmk_strajm_s    = 'STRAJM'
+
+      nullify (utrajm,vtrajm,ttrajm,hutrajm,ptrajm,strajm)
+
+      gmmstat = gmm_create (gmmk_utrajm_s ,utrajm ,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_vtrajm_s ,vtrajm ,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_ttrajm_s ,ttrajm ,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_hutrajm_s,hutrajm,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_ptrajm_s ,ptrajm ,meta2d)
+      gmmstat = gmm_create (gmmk_strajm_s ,strajm ,meta2d)
+!
+!     2.    Initialize variables for vertical diffusion
+!
+      gmmk_kmm_s    = 'KMM'
+      gmmk_ktm_s    = 'KTM'
+      gmmk_bmm_s    = 'BMM'
+      gmmk_btm_s    = 'BTM'
+
+      nullify (kmm,ktm,bmm,btm)
+
+      gmmstat = gmm_create (gmmk_kmm_s ,kmm ,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_ktm_s ,ktm ,meta3d_nk2)
+      gmmstat = gmm_create (gmmk_bmm_s ,bmm ,meta2d)
+      gmmstat = gmm_create (gmmk_btm_s ,btm ,meta2d)
+!
+ 1000 format(                                                               &
+      /,'SET PHYSICS TRAJECTORY VARIABLES (S/R V4D_SET_PHY_TRAJECTORY)',    &
+      /,'============================================================')
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

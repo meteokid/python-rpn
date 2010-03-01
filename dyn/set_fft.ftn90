@@ -45,7 +45,7 @@
 #include "sol.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
-#include "v4dg.cdk"
+       include "v4dg.inc"
 !
 !*
       real*8 two

@@ -1,0 +1,204 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r ens_gemnml - read parametres for ensemble forecast
+!
+#include "model_macros_f.h"
+!
+      integer function ens_nml                                              &
+      (F_namelist_S,F_Grdtyp_S,F_ens_conf_L,F_stochphy_L,F_imrkv2,F_unout) 
+      implicit none
+!
+      character* (*) F_namelist_S,F_Grdtyp_S
+      logical F_ens_conf_L,F_stochphy_L
+      integer F_imrkv2,F_unout
+!
+!author Lubos Spacek - May 2005
+!
+!revision
+! v4_12 - Spacek L.          - called from itf_ens_init
+!
+!object
+!  To initialize the ensemble forecast system
+!  by reading the namelist ens_nml
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_namelistf_S I                  namelist path
+! F_Grdtyp_S    I                  grid configuration (GU required)
+! F_stochphy_L  O                  stochastic physics
+! F_imrkv2      O                  numbre of 2d markov chains
+! F_unout       I                  output unit
+!----------------------------------------------------------------
+!
+#include "ens_param.cdk"
+    include "v4dg.inc"
+!
+      integer, external :: fnom,wkoffit
+      logical found_namelist_ok
+      integer i, err,err_open,err_read,unf,nrec
+!
+      namelist /ensembles/                                     &
+          Ens_ident,                                           &
+          Ens_conf,    Ens_bc_conf,                            &
+          Ens_bc_stat, Ens_bc_div,  Ens_bc_dif,  Ens_bc_gwd,   &
+          Ens_memb,    Ens_gg_nlon, Ens_gg_nlat, Ens_gg_nniv,  &
+          Ens_gg_trnl, Ens_gg_trnh,                            &
+          Ens_bc_txl,  Ens_bc_txh,  Ens_bc_tyl,  Ens_bc_tyh,   &
+          Ens_mc_max,  Ens_mc_min,  Ens_mc_mean, Ens_mc_std,   &
+          Ens_mc_tau,  Ens_mc_str,  Ens_bc_alph, Ens_bc_alpt,  &
+          Ens_bc_bfc,  Ens_bc_lam,                             &
+          Ens_nlon2,   Ens_nlat2,   Ens_ncha2,   Ens_trnl2,    &
+          Ens_trnh2,   Ens_dim2,    Ens_min2,    Ens_max2,     &
+          Ens_mean2,   Ens_std2,    Ens_tau2,    Ens_str2,     &
+          Ens_stochphy
+!
+!--------------------------------------------------------------------
+!
+      ens_nml = -1; err_read = 0
+!
+      if ((F_namelist_S.eq.'print').or.(F_namelist_S.eq.'PRINT')) then
+         ens_nml = 0
+         if (F_unout.ge.0) write (F_unout,nml=ensembles)
+         goto 999
+      endif
+!
+      Ens_conf      = .false.
+      Ens_ident     = ''
+      Ens_memb      = -1
+      Ens_bc_conf   = .false.
+      Ens_bc_dif    = .false.
+      Ens_bc_gwd    = .false.
+      Ens_bc_stat   = .false.
+      Ens_bc_div    = .false.
+      Ens_gg_nlon   = 16 
+      Ens_gg_nlat   =  8
+      Ens_gg_nniv   =  3
+      Ens_gg_trnl   =  2
+      Ens_gg_trnh   =  8
+      Ens_mc_min    = 0.0
+      Ens_mc_max    = 0.0
+      Ens_mc_mean   = 0.0
+      Ens_mc_std    = 0.0
+      Ens_mc_tau    = 0.0
+      Ens_mc_str    = 0.0
+!
+      Ens_bc_txl    = 0
+      Ens_bc_txh    = 4
+      Ens_bc_tyl    = 0
+      Ens_bc_tyh    = 4
+      Ens_bc_bfc    = 1.0e-01
+      Ens_bc_lam    = 2.0e+05
+      Ens_bc_alph   = 0.0
+      Ens_bc_alpt   = 0.0
+!
+      Ens_stochphy  = .false.
+      Ens_nlon2     = 16
+      Ens_nlat2     =  8
+      Ens_ncha2     =  1
+      Ens_trnl2     =  1
+      Ens_trnh2     =  8
+      Ens_min2      = 0.0
+      Ens_max2      = 0.0
+      Ens_mean2     = 0.0
+      Ens_std2      = 0.0
+      Ens_tau2      = 0.0
+      Ens_str2      = 0.0
+!
+      F_stochphy_L  = Ens_stochphy
+      F_imrkv2      = Ens_ncha2
+
+!
+      unf = 0
+      found_namelist_ok = .false.
+      err = wkoffit (F_namelist_S)
+!
+      if (err.ge.-1) then
+         err_open  = fnom (unf,F_namelist_S, 'SEQ+OLD', nrec)
+         if (err_open.eq.0) then
+            read (unf, nml=ensembles, end = 1000, err=999)
+            found_namelist_ok = .true.
+         endif
+ 1000    call fclos (unf)
+      endif
+!
+      if(found_namelist_ok)then
+         ens_nml = 1
+!
+         if (F_Grdtyp_S.ne.'GU') then
+            if(F_unout.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ensemble only available with grid GU'
+            ens_nml = -1
+         endif
+!
+         if (V4dg_conf.ne.0)then
+            if(V4dg_conf.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ensemble cannot be run with 4dvar'
+            ens_nml = -1
+         endif
+!
+         if ((Ens_ident.eq." ").and.(Ens_memb.le.0))then
+            if(F_unout.ge.0)write(F_unout,*)'Non identified member'
+            ens_nml = -1
+         endif
+!
+         if (Ens_gg_nlon.ne.2*Ens_gg_nlat)then
+            if(F_unout.ge.0)write(F_unout,*)'Nlon must equal 2*nlat'
+            ens_nml = -1
+         endif
+!
+         if (Ens_ncha2.gt.MAX2DC) then
+            if(F_unout.ge.0)write(F_unout,*)'Ens_ncha2 must be <=9'
+            ens_nml = -1
+         endif
+!
+         do i=1,Ens_ncha2
+            if (Ens_nlon2(i).ne.2*Ens_nlat2(i))then
+                if(F_unout.ge.0)write(F_unout,*)'Nlon2 must equal 2*nlat2'
+                ens_nml = -1
+            endif
+         enddo
+!
+         if (ens_nml.lt.0) goto 999
+         Ens_gg_dim    = (Ens_gg_trnh+1)*(Ens_gg_trnh+2)/2
+         Ens_gg_mzt    = (Ens_gg_nniv-1)/2
+         Ens_bc_conf   =  Ens_bc_conf.and.Ens_conf
+         Ens_bc_stat   =  Ens_bc_stat.and.Ens_conf
+         Ens_bc_div    =  Ens_bc_div .and.Ens_conf
+         Ens_dim2      = (Ens_trnh2+1)*(Ens_trnh2+2)/2
+         Ens_dim2_max  = maxval(Ens_dim2)
+         F_ens_conf_L  = Ens_conf
+         F_stochphy_L  = Ens_stochphy
+         F_imrkv2      = Ens_ncha2
+!
+         if(F_unout.ge.0)then
+            write(F_unout,"(a,i5)" )'Ens_gg_dim   = ',Ens_gg_dim
+            write(F_unout,'(a,i5)' )'Ens_gg_mzt   = ',Ens_gg_mzt
+            write(F_unout,'(a,l5)' )'Ens_bc_conf  = ',Ens_bc_conf
+            write(F_unout,'(a,l5)' )'Ens_bc_stat  = ',Ens_bc_stat
+            write(F_unout,'(a,l5)' )'Ens_bc_div   = ',Ens_bc_div
+            write(F_unout,'(a,9i5)')'Ens_dim2     = ',Ens_dim2
+            write(F_unout,'(a,i5)' )'Ens_dim2_max = ',Ens_dim2_max
+            write(F_unout,'(a,l5)' )'F_stochphy_L = ',F_stochphy_L
+            write(F_unout,'(a,i5)' )'F_imrkv2       = ',F_imrkv2
+         endif
+      else
+          ens_nml = 0
+      endif
+!
+!--------------------------------------------------------------------
+!
+ 999  return
+      end
+!

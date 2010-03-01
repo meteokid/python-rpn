@@ -28,9 +28,7 @@
 !
 !
 #endif
-      MARK_COMMON_BEG(Xstb)
       DCL_DYNVAR(Xstb, sers , real,(*))
       DCL_DYNVAR(Xstb, serp , real,(*))
       DCL_DYNVAR(Xstb, sersx, real,(*))
       DCL_DYNVAR(Xstb, serpx, real,(*))
-      MARK_COMMON_END(Xstb)

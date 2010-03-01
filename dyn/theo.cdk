@@ -30,7 +30,5 @@
 
       character*16 Theo_case_S
 
-      MARK_COMMON_BEG (theo_s)
       common / theo_s / Theo_case_S
-      MARK_COMMON_END (theo_s)
 !

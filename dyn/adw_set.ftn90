@@ -372,7 +372,7 @@
                  Adw_bsz_8%t(0:G_nk)  , Adw_bsz_8%m(0:G_nk-1), &
                  Adw_bsz_8%s(0:2*G_nk), &
                  Adw_dlz_8%t(-1:G_nk+1) , Adw_dlz_8%m(-1:G_nk), &
-                 Adw_diz_8(0:2*G_nk+2),Adw_dbz_8(1:2*G_nk+1), &
+                 Adw_diz_8(-1:2*G_nk+2),Adw_dbz_8(0:2*G_nk+1), &
                  stat=istat)
 !
       call hpalloc( Adw_iln_  , G_ni                 , pnerr, 0 )

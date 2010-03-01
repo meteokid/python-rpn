@@ -21,8 +21,6 @@
       real*8 Wil_Dcst_grav_8,Wil_Dcst_rayt_8,Wil_Dcst_pi_8
       real*8 Wil_Dcst_omega_8 
 !
-      MARK_COMMON_BEG (Wil_Dcst_r)
       common / Wil_Dcst_r / Wil_Dcst_grav_8,Wil_Dcst_rayt_8
       common / Wil_Dcst_r / Wil_Dcst_pi_8,Wil_Dcst_omega_8
-      MARK_COMMON_END (Wil_Dcst_r)
 !

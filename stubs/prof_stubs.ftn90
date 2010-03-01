@@ -1,0 +1,39 @@
+      integer function prof_close ()
+      prof_close=0
+      end
+      integer function prof_open ()
+      prof_open=0
+      end
+      integer function prof_rdrec ()
+      prof_rdrec=0
+      end
+      integer function prof_gprm ()
+      prof_gprm=0
+      end
+      integer function prof_gd3dv ()
+      prof_gd3dv=0
+      end
+      integer function prof_gd2dv ()
+      prof_gd2dv=0
+      end
+      integer function prof_wrrec ()
+      prof_wrrec=0
+      end
+      integer function prof_pprm ()
+      prof_pprm=0
+      end
+      integer function prof_pd3dv ()
+      prof_pd3dv=0
+      end
+      integer function prof_pd2dv ()
+      prof_pd2dv=0
+      end
+      integer function prof_pi2dv ()
+      prof_pi2dv=0
+      end
+      integer function prof_gi2dv ()
+      prof_gi2dv=0
+      end
+      integer function prof_bitptrn ()
+      prof_bitptrn=0
+      end

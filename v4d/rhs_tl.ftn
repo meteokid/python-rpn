@@ -1,0 +1,201 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r rhs_tl - TLM of rhs 
+*
+#include "model_macros_f.h"
+*
+      subroutine rhs_tl()
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - replace xfis by topo
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+* v4_12 - Tanguay M.        - Remove fipt1 
+*
+*object
+*     see id section
+*
+*arguments
+*        None
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "ptopo.cdk"
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+#include "orh.cdk"
+#include "orh_m.cdk"
+#include "p_geof.cdk" 
+#include "rhsc.cdk"
+#include "rhsc_m.cdk"
+#include "vt1.cdk" 
+#include "vt1_m.cdk" 
+#include "vtx.cdk" 
+#include "vtx_m.cdk" 
+#include "nest.cdk"
+#include "nest_m.cdk"
+*
+      integer i,j,k
+*
+*     __________________________________________________________________
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+      gmmstat = gmm_get(gmmk_ruw1_s,ruw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(ruw1)'
+      gmmstat = gmm_get(gmmk_rvw1_s,rvw1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(rvw1)'
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(wt1)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_bspqtx_s,bspqtx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(bspqtx)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(st1)'
+      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(zdt1)'
+      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(fiptx)'
+      gmmstat = gmm_get(gmmk_orhsu_s,orhsu,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsu)'
+      gmmstat = gmm_get(gmmk_orhsv_s,orhsv,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsv)'
+      gmmstat = gmm_get(gmmk_orhsc_s,orhsc,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsc)'
+      gmmstat = gmm_get(gmmk_orhst_s,orhst,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhst)'
+      gmmstat = gmm_get(gmmk_orhsf_s,orhsf,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsf)'
+      if (G_lam) then
+         gmmstat = gmm_get(gmmk_rhsu_s,rhsu,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(rhsu)'
+         gmmstat = gmm_get(gmmk_rhsv_s,rhsv,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(rhsv)'
+         gmmstat = gmm_get(gmmk_nest_u_s,nest_u,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(nest_u)'
+         gmmstat = gmm_get(gmmk_nest_v_s,nest_v,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(nest_v)'
+      endif
+      if (.not. Schm_hydro_L) then
+         gmmstat = gmm_get(gmmk_mutx_s,mutx,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(mutx)'
+         gmmstat = gmm_get(gmmk_orhsw_s,orhsw,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsw)'
+         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(qt1)'
+      endif
+*
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(topo)'
+*
+*     TRAJECTORY
+*     ----------
+      gmmstat = gmm_get(gmmk_ruw1_m_s,ruw1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(ruw1_m)'
+      gmmstat = gmm_get(gmmk_rvw1_m_s,rvw1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(rvw1_m)'
+      gmmstat = gmm_get(gmmk_ut1_m_s,ut1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(ut1_m)'
+      gmmstat = gmm_get(gmmk_vt1_m_s,vt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(vt1_m)'
+      gmmstat = gmm_get(gmmk_wt1_m_s,wt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(wt1_m)'
+      gmmstat = gmm_get(gmmk_tt1_m_s,tt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(tt1_m)'
+      gmmstat = gmm_get(gmmk_bspqtx_m_s,bspqtx_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(bspqtx_m)'
+      gmmstat = gmm_get(gmmk_st1_m_s,st1_m,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(st1_m)'
+      gmmstat = gmm_get(gmmk_zdt1_m_s,zdt1_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(zdt1_m)'
+      gmmstat = gmm_get(gmmk_fiptx_m_s,fiptx_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(fiptx_m)'
+      gmmstat = gmm_get(gmmk_orhsu_m_s,orhsu_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsu_m)'
+      gmmstat = gmm_get(gmmk_orhsv_m_s,orhsv_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsv_m)'
+      gmmstat = gmm_get(gmmk_orhsc_m_s,orhsc_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsc_m)'
+      gmmstat = gmm_get(gmmk_orhst_m_s,orhst_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhst_m)'
+      gmmstat = gmm_get(gmmk_orhsf_m_s,orhsf_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsf_m)'
+      if (G_lam) then
+         gmmstat = gmm_get(gmmk_rhsu_m_s,rhsu_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(rhsu_m)'
+         gmmstat = gmm_get(gmmk_rhsv_m_s,rhsv_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(rhsv_m)'
+         gmmstat = gmm_get(gmmk_nest_u_m_s,nest_u_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(nest_u_m)'
+         gmmstat = gmm_get(gmmk_nest_v_m_s,nest_v_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(nest_v_m)'
+      endif
+      if (.not. Schm_hydro_L) then
+         gmmstat = gmm_get(gmmk_mutx_m_s,mutx_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(mutx_m)'
+         gmmstat = gmm_get(gmmk_orhsw_m_s,orhsw_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(orhsw_m)'
+         gmmstat = gmm_get(gmmk_qt1_m_s,qt1_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(qt1_m)'
+      endif
+*
+*     Perform the computation in the first 
+*     cycle of Crank-Nicholson procedure only
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+      call diag_var_tl( bspqtx,  mutx,  st1,  qt1,
+     $                  bspqtx_m,mutx_m,st1_m,qt1_m,
+     $                  1,l_ni,1,l_nj,l_nk)       
+*
+      call diag_fip_tl ( fiptx,  st1,  tt1,     
+     $                   fiptx_m,st1_m,tt1_m, topo,
+     $                   1,l_ni,1,l_nj,l_nk)         
+*
+      call rhsp_2_tl  ( orhsu,   orhsv,  orhsc,  orhst,  orhsw,   orhsf,
+     %                  ruw1,    rvw1,   rhsu,   rhsv,   nest_u,  nest_v,
+     %                  ut1,     vt1,    wt1,    tt1,    st1,     zdt1,
+     %                  bspqtx,  fiptx,  mutx,
+*
+     %                  orhsu_m, orhsv_m,orhsc_m,orhst_m,orhsw_m, orhsf_m,
+     %                  ruw1_m,  rvw1_m, rhsu_m, rhsv_m, nest_u_m,nest_v_m,
+     %                  ut1_m,   vt1_m,  wt1_m,  tt1_m,  st1_m,   zdt1_m,
+     %                  bspqtx_m,fiptx_m,mutx_m,
+     %                  LDIST_DIM,l_nk  )
+*
+1000  format(3X,'TLM of COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS_TL)')
+*
+*     __________________________________________________________________
+*
+      return
+      end

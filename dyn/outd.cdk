@@ -42,14 +42,8 @@
       integer Outd_var_max(MAXSET)
       integer Outd_sets
 
-      MARK_COMMON_BEG (Outd)
       COMMON /Outd/ Outd_lev,Outd_grid,Outd_step
       COMMON /Outd/ Outd_var_max, Outd_sets, Outd_nbit,Outd_filtpass
-      MARK_COMMON_END (Outd)
-      MARK_COMMON_BEG (Outd_c)
       COMMON /Outd_c/ Outd_var_S
-      MARK_COMMON_END (Outd_c)
-      MARK_COMMON_BEG (Outd_r)
       COMMON /Outd_r/ Outd_filtcoef
-      MARK_COMMON_END (Outd_r)
 

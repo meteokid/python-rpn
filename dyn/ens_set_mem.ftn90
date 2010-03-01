@@ -1,0 +1,98 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_ens_init - initialize ensemble prevision system
+!
+      subroutine ens_set_mem(l_minx,l_maxx,G_halox,l_ni,     &
+                             l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
+      implicit none
+!
+      integer l_minx,l_maxx,G_halox,l_ni
+      integer l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out
+!
+!     author   
+!     Lubos Spacek - February 2010
+!     
+!     revision
+! v4_12 - Spacek L.        - Initial version
+!
+!object
+!	See above ID.
+!
+!arguments
+!	none
+!
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "ens_gmm_dim.cdk"
+#include "ens_gmm_var.cdk"
+#include "ens_param.cdk"
+!
+!-------------------------------------------------------------------
+!
+      if(.not.Ens_conf)return
+      if (Lun_out.gt.0)write(Lun_out,6010)
+!
+      call gmm_build_meta3D(meta3d_sh2,          &
+                            1,l_ni,0,0,l_ni,     &
+                            1,l_nj,0,0,l_nj,     &
+                            1,l_nk+2,0,0,l_nk+2, &
+                            0,GMM_NULL_FLAGS)
+      call gmm_build_meta2D(meta2d_anm,                               &
+                            1,Ens_gg_dim,0,0,Ens_gg_dim,              &
+                            -Ens_gg_mzt,Ens_gg_mzt,0,0,2*Ens_gg_mzt+1,&
+                            0,GMM_NULL_FLAGS)
+      call gmm_build_meta2D(meta2d_znm,                      &
+                            1,Ens_dim2_max,0,0,Ens_dim2_max, &
+                            1,Ens_ncha2,0,0,Ens_ncha2,       &
+                            0,GMM_NULL_FLAGS)
+      call gmm_build_meta2D(meta2d_dum,                       &
+                            1,36,0,0,36,                      &
+                            1,MAX2DC+MAX3DC,0,0,MAX2DC+MAX3DC,&
+                            0,GMM_NULL_FLAGS)
+      gmmk_mcsph1_s= 'MCSPH1'
+      gmmk_difut1_s= 'DIFUT1'
+      gmmk_difvt1_s= 'DIFVT1'
+      gmmk_ugwdt1_s= 'UGWDT1'
+      gmmk_vgwdt1_s= 'VGWDT1'
+      gmmk_anm_s   = 'ANMENS'
+      gmmk_znm_s   = 'ZNMENS'
+      gmmk_dumdum_s= 'DUMDUM'
+
+      gmmstat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'mcsph1'
+      gmmstat = gmm_create(gmmk_difut1_s,difut1,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'difut1'
+      gmmstat = gmm_create(gmmk_difvt1_s,difvt1,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'difvt1'
+      gmmstat = gmm_create(gmmk_ugwdt1_s,ugwdt1,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'ugwdt1'
+      gmmstat = gmm_create(gmmk_vgwdt1_s,vgwdt1,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'vgwdt1'
+      gmmstat = gmm_create(gmmk_anm_s   ,anm   ,meta2d_anm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'anm'
+      gmmstat = gmm_create(gmmk_znm_s   ,znm   ,meta2d_znm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'znm'
+      gmmstat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'dum'
+!
+ 6000 format('ens_set_mem at gmm_create(',A,')')
+ 6010 format(/,'INITIALIZATION OF MEMORY FOR ENSEMBLES (S/R ENS_SET_MEM)' &
+             /(55('=')))
+!
+!-------------------------------------------------------------------
+!
+      return
+      end

@@ -74,8 +74,6 @@
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 !
-      COMMON_INIT(intuv,0)
-!
       call hpalloc(intuv_c0xxu_8_  ,LARRAY1DX,err,8)
       call hpalloc(intuv_c1xxu_8_  ,LARRAY1DX,err,8)
       call hpalloc(intuv_c2xxu_8_  ,LARRAY1DX,err,8)

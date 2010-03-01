@@ -34,9 +34,7 @@
       real  bb_dpth2, bb_radius2, bb_xcntr2, bb_zcntr2
 
 !
-      MARK_COMMON_BEG (bubble_r)
       common / bubble_r/ bb_dpth,  bb_radius,  bb_xcntr,  bb_zcntr
       common / bubble_r/ bb_isoth
       common / bubble_r/ bb_dpth2, bb_radius2, bb_xcntr2, bb_zcntr2
-      MARK_COMMON_END (bubble_r)
 

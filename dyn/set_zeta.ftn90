@@ -117,8 +117,10 @@
       Cstv_Ztop_8 = log(Cstv_ptop_8)
 !
       ! Construct vertical coordinate
-      err = vgd_new (vcoord, kind=5, version=2, hyb=F_hybuser, rcoef=Grd_rcoef, &
+      err = vgd_new (vcoord, kind=5, version=2, hyb=F_hybuser, &
+                     rcoef1=Grd_rcoef(1),rcoef2=Grd_rcoef(2) , &
                      ptop_8=Cstv_ptop_8, pref_8=Cstv_pref_8, stdout_unit=Lun_out)
+
       if (err /= VGD_OK) glb_err = -1
       call handle_error (glb_err,'set_zeta','coordinate construction failed')
 

@@ -73,13 +73,6 @@
       in1 = G_ni-acid_in
       j01 = 1+acid_j0
       jn1 = G_nj-acid_jn
-
-      If (Acid_test_L) then
-         If (Lun_out.gt.0) write(Lun_out,*)'Bef diag_fip'
-         call glbstat (F_t  ,' T',LDIST_DIM,G_nk+2,i01,in1 ,j01,jn1 ,1,G_nk+1)
-         call glbstat (F_fis,'ME',LDIST_DIM,1,i01,in1 ,j01,jn1 ,1,1)
-         call glbstat (F_s  ,'S ',LDIST_DIM,1,i01,in1 ,j01,jn1 ,1,1)
-      endif
       
       if( &
            i0.lt.1-G_halox   .or. &
@@ -114,10 +107,6 @@
 !$omp enddo
 !
 !$omp end parallel
-      If (Acid_test_L) then
-          If (Lun_out.gt.0) write(Lun_out,*)'Aft diag_fip'
-      call glbstat (F_fip,'FIP',LDIST_DIM,G_nk+2,i01,in1 ,j01,jn1 ,2,G_nk+2)
-      endif
 !
 1000  format(3X,'COMPUTE FIP: (S/R DIAG_FIP)')
 !

@@ -43,17 +43,17 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( Schm_hdlast_L ) then
+!      if ( Schm_hdlast_L ) then
 !
          call itf_phy_main (Lctl_step)
          call hzd_main ()
 !
-      else
+!      else
 !
-         call hzd_main ()
-         call itf_phy_main (Lctl_step)
+!         call hzd_main ()
+!         call itf_phy_main (Lctl_step)
 !
-      endif
+!      endif
 !
       if (G_lam .and. ifd_bcsphy_L) then
 ! Update Lateral BCs with data that has seen physics

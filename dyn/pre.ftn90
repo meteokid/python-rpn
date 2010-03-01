@@ -77,7 +77,7 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsc)'
       gmmstat = gmm_get(gmmk_rhsf_s,rhsf,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsf)'
-      gmmstat = gmm_get(gmmk_rhsb_s,rhsb,meta3d)
+      gmmstat = gmm_get(gmmk_rhsb_s,rhsb,meta2d)
       if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsb)'
       gmmstat = gmm_get(gmmk_ruw1_s,ruw1,meta3d)
       If (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(ruw1)'

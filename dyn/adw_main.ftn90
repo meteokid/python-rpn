@@ -87,7 +87,7 @@
 #include "adw.cdk"
 !      integer adw_nit,adw_njt
 !      integer            Adw_trunc(4)
-#include "v4dg.cdk"
+       include "v4dg.inc"
 !      integer V4dg_conf
 !      logical V4dg_oktr_L
 #include "vth.cdk"
@@ -153,7 +153,7 @@
 !
 !     Store TRAJ upstream positions 
 !     -----------------------------
-      if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm) 
+      if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt) 
 !
       call adw_main_3_intlag(pxm,pym,pzm,pxt,pyt,pzt,F_isStatStep_L)
 !

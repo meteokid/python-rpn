@@ -26,6 +26,7 @@
 !
 !revision
 ! v4_06 - Desgagne, M.     - First revision
+! v4_12 - Spacek L.        - Trajectories for 4dvar
 !
 #include "gmm.hf"
 #include "var_gmm.cdk"
@@ -209,6 +210,9 @@
          call itf_phy_vlsp 
 
       endif
+!
+      call v4d_rwtraj(20)
+      call v4d_rwtraj(21)
 !     ________________________________________________________________
 !
       return

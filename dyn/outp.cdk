@@ -46,13 +46,7 @@
       integer Outp_sets
 
       COMMON /Outp_l/ Outp_dostep_L
-      MARK_COMMON_BEG (Outp)
       COMMON /Outp/ Outp_lev,Outp_grid,Outp_step
       COMMON /Outp/ Outp_var_max, Outp_sets,Outp_nbit,Outp_filtpass
-      MARK_COMMON_END (Outp)
-      MARK_COMMON_BEG (Outp_c)
       COMMON /Outp_c/ Outp_varnm_S,Outp_var_S
-      MARK_COMMON_END (Outp_c)
-      MARK_COMMON_BEG (Outp_r)
       COMMON /Outp_r/ Outp_filtcoef
-      MARK_COMMON_END (Outp_r)

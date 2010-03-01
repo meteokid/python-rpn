@@ -1,0 +1,76 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r nest_gwa_ad - ADJ of nest_gwa
+*
+#include "model_macros_f.h"
+*
+      subroutine nest_gwa_ad
+
+      use nest_blending_ad, only: nest_blend_ad
+
+      implicit none
+*
+*author 
+*     Michel Desgagne   - Spring 2006
+*
+*revision
+* v3_30 - Lee V.          - initial version
+* v4_05 - Plante A.       - top blending
+* v4_05 - Lepine M.       - VMM replacement with GMM
+* v4_12 - Tanguay M.      - Adapt TL/AD to revised blending
+*
+*object
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+#include "lam.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "vtopo.cdk"
+*
+      integer n
+*
+*----------------------------------------------------------------------
+*
+      if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) return
+*
+* ADJ of
+* Blending main dynamics variables + tracers
+*
+      do n=1,Tr3d_ntr
+         call nest_blend_ad ('TR/'//trim(Tr3d_name_S(n))//':P',
+     $                       'NEST/'//trim(Tr3d_name_S(n))//':C','M')
+      enddo
+
+      if (.not. Schm_hydro_L) 
+     $ call nest_blend_ad (gmmk_qt1_s, gmmk_nest_q_s, 'M')
+
+      call nest_blend_ad (gmmk_st1_s  ,gmmk_nest_s_s  ,'M')
+      call nest_blend_ad (gmmk_tt1_s  ,gmmk_nest_t_s  ,'M')
+      call nest_blend_ad (gmmk_zdt1_s ,gmmk_nest_zd_s ,'M')
+      call nest_blend_ad (gmmk_wt1_s  ,gmmk_nest_w_s  ,'M')
+      call nest_blend_ad (gmmk_vt1_s  ,gmmk_nest_v_s  ,'V')
+      call nest_blend_ad (gmmk_ut1_s  ,gmmk_nest_u_s  ,'U')
+*
+*----------------------------------------------------------------------
+*
+      return
+      end

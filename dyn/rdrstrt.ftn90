@@ -84,8 +84,6 @@
             call rd1rstrt ()
 !
          else
-            print *,'Debug+ appel a gmmm_checkpoint_all(read)'
-            gmmstat = gmm_checkpoint_all(GMM_READ_CKPT)
 !
 !           Read one wa-file per tile
 !

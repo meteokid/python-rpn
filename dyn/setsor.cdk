@@ -37,16 +37,10 @@
       integer Setsor_xnbits(CNMXDYN), Setsor_filtpass(CNMXDYN)
       real    Setsor_filtcoef(CNMXDYN)
       character*7 Setsor_name_S(CNMXDYN)
-      MARK_COMMON_BEG (Setsori)
       common /setsori/  Setsor_useit, Setsor_num, Setsor_key
       common /setsori/  Setsor_xnbits, Setsor_filtpass
-      MARK_COMMON_END (Setsori)
 
-      MARK_COMMON_BEG (Setsorc)
       common /setsorc/  Setsor_name_S
-      MARK_COMMON_END (Setsorc)
 
-      MARK_COMMON_BEG (Setsorr)
       common /setsorr/  Setsor_filtcoef
-      MARK_COMMON_END (Setsorr)
       

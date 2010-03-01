@@ -60,7 +60,7 @@
 #include "outp.cdk"
 #include "outc.cdk"
 #include "timestep.cdk"
-#include "v4dg.cdk"
+       include "v4dg.inc"
 !*
       integer i,j,k,kk,F_set
       integer F_dostep(MAXSET)

@@ -18,7 +18,6 @@
 #include "model_macros_f.h"
 !
       subroutine out_phy ( bus_o,F_ni,F_nj,stepno )
-      use v4d_prof, only: Pr_nsim4d
       use out_vref_mod, only: out_vref
 
       implicit none
@@ -70,7 +69,6 @@
 #include "cube.cdk"
 #include "outp.cdk"
 #include "ptopo.cdk"
-#include "v4dg.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 #include "vt1.cdk"
@@ -91,28 +89,15 @@
       if (Obus_top.le.0) return
 !     setup of ip3 and modifs to label
 !
-
       call tmg_start0(67, 'OUT_PHY  ')
       ip3=0
       etikadd_S = ' '
       ext_S=""
       if (Out3_ip3.eq.-1) ip3 = stepno
       if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
-      if (V4dg_conf.ne.0) then
-          if (.not.V4dg_4dvar_L) then
-              ip3 = V4dg_status
-              if (V4dg_conf/100.eq.1.and.V4dg_ad_L) &
-              ip3 = 20 + V4dg_status
-          else
-              ip3 = V4dg_status
-              if(V4dg_tl_L) ip3 = Pr_nsim4d
-              if(V4dg_ad_L) ip3 = Pr_nsim4d
-          endif
-          ext_S = '_nl'
-          if (V4dg_tl_L) ext_S = '_tl'
-          if (V4dg_ad_L) ext_S = '_ad'
-          write(etikadd_S,'(a3,i3.3)')ext_S,ip3
-      endif
+
+      call v4d_out_ipext (ip3, ext_S, etikadd_S)
+
 !     setup of filename extension if needed
       if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
            ((stepno.gt.(Init_dfnp-1)/2)) ) &

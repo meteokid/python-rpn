@@ -46,7 +46,6 @@
 !arguments
 !     none
 !
-!implicits
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
@@ -59,11 +58,9 @@
 #include "schm.cdk"
 #include "hspng.cdk"
 #include "vspng.cdk"
-!
-!modules
-!
+
       logical no_hzd,no_vspng
-      integer err
+      integer err,i,j,k
 !
 !     _________________________________________________________________
 !
@@ -84,6 +81,8 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(wt1)'
       gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
       if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(st1)'
+
+      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1)
 
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
 !
@@ -139,6 +138,8 @@
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 !
       call psadj ()
+!
+      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
 !
  1001 format(/,3X,'HORIZONTAL DIFFUSION REQUIRED: ',a)
  1002 format(/,3X,'VERTICAL SPONGE REQUIRED: ')

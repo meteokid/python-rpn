@@ -56,15 +56,7 @@
       type(station_latlon), dimension(MAXSTAT) :: Xst_stn_latlon
       type(station), dimension(MAXSTAT) :: Xst_stn
 !
-      MARK_COMMON_BEG (xst_i)
       common / xst_i / Xst_nstat,Xst_dimsers, Xst_dimserp
-      MARK_COMMON_END (xst_i)
-      MARK_COMMON_BEG (xstation_ij)
       common / xst_station_ij / Xst_stn_ij
-      MARK_COMMON_END (xstation_ij)
-      MARK_COMMON_BEG (xstation_latlon)
       common / xst_station_latlon / Xst_stn_latlon
-      MARK_COMMON_END (xstation_latlon)
-      MARK_COMMON_BEG (xstation)
       common / xst_station / Xst_stn
-      MARK_COMMON_END (xstation)

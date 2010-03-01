@@ -160,7 +160,7 @@
                  periodx_L, Grid_stride(gridset), &
                  Grid_etikext_s(gridset),F_etikadd_S )
          endif
-         if (Outd_var_S(ii,F_set).eq.keylist(i)) then
+         if (Outd_var_S(ii,F_set).eq.keylist(i)(1:4)) then
              gmmstat = gmm_getmeta(keylist(i),tmp_meta)
              if (GMM_IS_ERROR(gmmstat))  &
                  print *,'out_gmm ERROR at gmm_getmeta on',keylist(i)

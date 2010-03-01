@@ -79,3 +79,9 @@
 !
       return
       end
+!
+      subroutine glbstat
+      implicit none
+      call handle_error (-1,'glbstat','ABORT - glbstat has been replace by glbstat2')
+      return
+      end

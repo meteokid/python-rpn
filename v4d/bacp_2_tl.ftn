@@ -1,0 +1,647 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r  bacp_2_tl - TLM of bacp_2 
+*
+#include "model_macros_f.h"
+*
+      subroutine bacp_2_tl (
+     $                    F_itr, F_itnlh, F_p , F_fis,
+     $                    F_u  , F_v    , F_w , F_t  ,
+     $                    F_s  , F_zd   , F_q , F_fip, F_nest_q,
+     $                    F_ru , F_rv   , F_rt, F_rw , F_rf    , F_rb,
+     $                    F_nu , F_nv   , F_nt, F_nw , F_nf    , F_nb,
+*
+     $                                    F_p_m ,
+     $                    F_u_m , F_v_m , F_w_m , F_t_m  ,
+     $                    F_s_m , F_zd_m, F_q_m , F_fip_m, F_nest_q_m,
+     $                    F_ru_m, F_rv_m, F_rt_m, F_rw_m , F_rf_m    , F_rb_m,
+     $                    F_nu_m, F_nv_m, F_nt_m, F_nw_m , F_nf_m    , F_nb_m,
+*
+     $                    DIST_DIM, Nk )
+*
+      implicit none
+*
+      integer  F_itr, F_itnlh, DIST_DIM, Nk
+*
+      real     F_p     (DIST_SHAPE,0:Nk+1) ,  F_fis(DIST_SHAPE)       ,
+     %         F_u     (DIST_SHAPE,  Nk)   ,  F_v  (DIST_SHAPE,  Nk)  ,
+     %         F_w     (DIST_SHAPE,  Nk+1) ,  F_t  (DIST_SHAPE,  Nk+1),
+     %         F_s     (DIST_SHAPE)        ,  F_zd (DIST_SHAPE,  Nk+1),
+     %         F_q     (DIST_SHAPE,0:Nk+1) ,  F_fip(DIST_SHAPE,0:Nk+1),
+     %         F_nest_q(DIST_SHAPE,0:Nk+1) ,
+     %         F_ru    (DIST_SHAPE,  Nk)   ,  F_rv (DIST_SHAPE,  Nk)  ,
+     %         F_rt    (DIST_SHAPE,  Nk+1) ,  F_rw (DIST_SHAPE,  Nk+1),
+     %         F_rf    (DIST_SHAPE,  Nk+1) ,  F_rb (DIST_SHAPE)       ,
+     %         F_nu    (DIST_SHAPE,  Nk)   ,  F_nv (DIST_SHAPE,  Nk)  ,
+     %         F_nt    (DIST_SHAPE,  Nk+1) ,  F_nw (DIST_SHAPE,  Nk+1),
+     %         F_nf    (DIST_SHAPE,  Nk+1) ,  F_nb (DIST_SHAPE)
+*
+      real     F_p_m     (DIST_SHAPE,0:Nk+1) ,  
+     %         F_u_m     (DIST_SHAPE,  Nk)   ,  F_v_m  (DIST_SHAPE,  Nk)  ,
+     %         F_w_m     (DIST_SHAPE,  Nk+1) ,  F_t_m  (DIST_SHAPE,  Nk+1),
+     %         F_s_m     (DIST_SHAPE)        ,  F_zd_m (DIST_SHAPE,  Nk+1),
+     %         F_q_m     (DIST_SHAPE,0:Nk+1) ,  F_fip_m(DIST_SHAPE,0:Nk+1),
+     %         F_nest_q_m(DIST_SHAPE,0:Nk+1) ,
+     %         F_ru_m    (DIST_SHAPE,  Nk)   ,  F_rv_m (DIST_SHAPE,  Nk)  ,
+     %         F_rt_m    (DIST_SHAPE,  Nk+1) ,  F_rw_m (DIST_SHAPE,  Nk+1),
+     %         F_rf_m    (DIST_SHAPE,  Nk+1) ,  F_rb_m (DIST_SHAPE)       ,
+     %         F_nu_m    (DIST_SHAPE,  Nk)   ,  F_nv_m (DIST_SHAPE,  Nk)  ,
+     %         F_nt_m    (DIST_SHAPE,  Nk+1) ,  F_nw_m (DIST_SHAPE,  Nk+1),
+     %         F_nf_m    (DIST_SHAPE,  Nk+1) ,  F_nb_m (DIST_SHAPE)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_30 - Edouard S.        - remove pi' at the top (pptt0)
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate and LAM version 
+*                           - adapt for tracers in tr3d  
+* v3_00 - Tanguay M.        - adapt to restructured bacp_2
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp
+* v3_30 - Tanguay M.        - Enforce similarities between NL and TRAJ TL 
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_12 - Tanguay M.        - OPENMP TL/AD
+* v4_12 - Tanguay M.        - TL/AD Open top
+*
+*object
+*     see id section 
+*
+*arguments
+*     see documentation of appropriate comdecks 
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lam.cdk"
+*
+      integer i0, j0, in, jn, k0
+*
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
+      k0 = 1+Lam_gbpil_T
+*
+      call  bacp_2_2_tl ( 
+     $                 F_itr, F_itnlh, F_p , F_fis,
+     $                 F_u  , F_v    , F_w , F_t  ,
+     $                 F_s  , F_zd   , F_q , F_fip, F_nest_q,
+     $                 F_ru , F_rv   , F_rt, F_rw , F_rf    , F_rb,
+     $                 F_nu , F_nv   , F_nt, F_nw , F_nf    , F_nb,
+*
+     $                                 F_p_m ,
+     $                 F_u_m , F_v_m , F_w_m , F_t_m  ,
+     $                 F_s_m , F_zd_m, F_q_m , F_fip_m, F_nest_q_m,
+     $                 F_ru_m, F_rv_m, F_rt_m, F_rw_m , F_rf_m    , F_rb_m,
+     $                 F_nu_m, F_nv_m, F_nt_m, F_nw_m , F_nf_m    , F_nb_m,
+*
+     $                 DIST_DIM, Nk, i0, j0, k0, in, jn )
+*
+      return
+      end
+*
+      subroutine bacp_2_2_tl ( 
+     $                      F_itr, F_itnlh, F_p , F_fis,
+     $                      F_u  , F_v    , F_w , F_t  ,
+     $                      F_s  , F_zd   , F_q , F_fip, F_nest_q,
+     $                      F_ru , F_rv   , F_rt, F_rw , F_rf    , F_rb,
+     $                      F_nu , F_nv   , F_nt, F_nw , F_nf    , F_nb,
+*
+     $                                      F_p_m , 
+     $                      F_u_m , F_v_m , F_w_m , F_t_m  ,
+     $                      F_s_m , F_zd_m, F_q_m , F_fip_m, F_nest_q_m,
+     $                      F_ru_m, F_rv_m, F_rt_m, F_rw_m , F_rf_m    , F_rb_m,
+     $                      F_nu_m, F_nv_m, F_nt_m, F_nw_m , F_nf_m    , F_nb_m,
+*
+     $                      DIST_DIM, Nk, i0, j0, k0, in, jn )
+*
+      implicit none
+*
+      integer  F_itr, F_itnlh, DIST_DIM, Nk , i0, j0, k0, in, jn
+      real     F_p     (DIST_SHAPE,0:Nk+1) ,  F_fis(DIST_SHAPE)       ,
+     %         F_u     (DIST_SHAPE,  Nk)   ,  F_v  (DIST_SHAPE,  Nk)  ,
+     %         F_w     (DIST_SHAPE,  Nk+1) ,  F_t  (DIST_SHAPE,  Nk+1),
+     %         F_s     (DIST_SHAPE)        ,  F_zd (DIST_SHAPE,  Nk+1),
+     %         F_q     (DIST_SHAPE,0:Nk+1) ,  F_fip(DIST_SHAPE,0:Nk+1),
+     %         F_nest_q(DIST_SHAPE,0:Nk+1) ,
+     %         F_ru    (DIST_SHAPE,  Nk)   ,  F_rv (DIST_SHAPE,  Nk)  ,
+     %         F_rt    (DIST_SHAPE,  Nk+1) ,  F_rw (DIST_SHAPE,  Nk+1),
+     %         F_rf    (DIST_SHAPE,  Nk+1) ,  F_rb (DIST_SHAPE)       ,
+     %         F_nu    (DIST_SHAPE,  Nk)   ,  F_nv (DIST_SHAPE,  Nk)  ,
+     %         F_nt    (DIST_SHAPE,  Nk+1) ,  F_nw (DIST_SHAPE,  Nk+1),
+     %         F_nf    (DIST_SHAPE,  Nk+1) ,  F_nb (DIST_SHAPE)
+*
+      real     F_p_m     (DIST_SHAPE,0:Nk+1) ,  
+     %         F_u_m     (DIST_SHAPE,  Nk)   ,  F_v_m  (DIST_SHAPE,  Nk)  ,
+     %         F_w_m     (DIST_SHAPE,  Nk+1) ,  F_t_m  (DIST_SHAPE,  Nk+1),
+     %         F_s_m     (DIST_SHAPE)        ,  F_zd_m (DIST_SHAPE,  Nk+1),
+     %         F_q_m     (DIST_SHAPE,0:Nk+1) ,  F_fip_m(DIST_SHAPE,0:Nk+1),
+     %         F_nest_q_m(DIST_SHAPE,0:Nk+1) ,
+     %         F_ru_m    (DIST_SHAPE,  Nk)   ,  F_rv_m (DIST_SHAPE,  Nk)  ,
+     %         F_rt_m    (DIST_SHAPE,  Nk+1) ,  F_rw_m (DIST_SHAPE,  Nk+1),
+     %         F_rf_m    (DIST_SHAPE,  Nk+1) ,  F_rb_m (DIST_SHAPE)       ,
+     %         F_nu_m    (DIST_SHAPE,  Nk)   ,  F_nv_m (DIST_SHAPE,  Nk)  ,
+     %         F_nt_m    (DIST_SHAPE,  Nk+1) ,  F_nw_m (DIST_SHAPE,  Nk+1),
+     %         F_nf_m    (DIST_SHAPE,  Nk+1) ,  F_nb_m (DIST_SHAPE)
+*
+*implicits
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+#include "orh.cdk"
+#include "cori.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "lun.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "schm.cdk"
+#include "ptopo.cdk"
+*
+      integer i, j, k, nij, kminzd
+      real*8  xxx_8, yyy_8, zzz_8, p1_8, p2_8, p3_8, p4_8, p5_8, xxx_m_8
+*
+      real*8  ONE_8, HALF_8
+      parameter(ONE_8=1.d0, HALF_8=.5d0)
+*
+      real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
+*
+      real*8, dimension(i0:in,j0:jn):: xtmp_m_8, ytmp_m_8
+*
+      real*8 Pbar_8(DIST_SHAPE,Nk+1),Pbar_m_8(DIST_SHAPE,Nk+1)
+*
+      logical finbac_L
+*
+      if (.not.Cori_cornl_L) call handle_error(-1,'bacp_2_tl','.not.Cori_cornl_L not done')
+      if (Schm_opentop_L)    call handle_error(-1,'bacp_2_tl','Schm_opentop_L    not done')
+*
+*     __________________________________________________________________
+*
+      finbac_L=.false.
+      if ( .not. (F_itr .lt. F_itnlh) )finbac_L=.true.
+*     __________________________________________________________________
+*
+      nij = (in - i0 + 1)*(jn - j0 + 1)
+*
+      if ( (Cori_cornl_L) .or. (F_itr .lt. F_itnlh) ) then
+*
+*        TRAJECTORY
+*        ----------
+         call rpn_comm_xch_halo( F_p_m  ,LDIST_DIM,l_ni,l_nj,G_nk+2,
+     $                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+*        TLM 
+*        ---
+         call rpn_comm_xch_halo( F_p  , LDIST_DIM,l_ni,l_nj,G_nk+2,
+     $                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+      endif
+*
+      p1_8 = Cstv_tauT_8*Cstv_RTstr_8/Dcst_grav_8
+      p2_8 = ONE_8/Cstv_RTstr_8
+      p3_8 = ONE_8/Dcst_grav_8
+      p4_8 = ONE_8/Dcst_rayt_8**2
+      p5_8 = ONE_8/Cstv_tauw_8
+*
+!$omp parallel private(xxx_8,yyy_8,zzz_8,xxx_m_8,
+!$omp$                 xtmp_8,ytmp_8,xtmp_m_8,ytmp_m_8)
+*
+*     Compute P at top and bottom
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+!$omp do
+      do j= j0, jn
+         do i= i0, in
+*
+*        TRAJECTORY
+*        ----------
+         F_p_m(i,j,k0-1)   = Ver_alfat_8 * F_p_m(i,j,k0)
+     $                     + Ver_cst_8*(F_rb_m(i,j)-F_nb_m(i,j))
+         F_p_m(i,j,l_nk+1) = Ver_alfas_8 * F_p_m(i,j,l_nk)
+     $                     - Ver_css_8*(F_rt_m(i,j,l_nk+1)-F_nt_m(i,j,l_nk+1))
+*        TLM 
+*        ---
+         F_p(i,j,k0-1)   = Ver_alfat_8 * F_p(i,j,k0)
+     $                   + Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
+         F_p(i,j,l_nk+1) = Ver_alfas_8 * F_p(i,j,l_nk)
+     $                   - Ver_css_8*(F_rt(i,j,l_nk+1)-F_nt(i,j,l_nk+1))
+*
+         end do
+      end do
+!$omp enddo
+*
+!$omp single
+*
+*     TRAJECTORY
+*     ----------
+      call rpn_comm_xch_halo(F_p_m,LDIST_DIM,l_ni,l_nj,G_nk+2,
+     $     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+*     TLM
+*     ---
+      call rpn_comm_xch_halo(F_p,LDIST_DIM,l_ni,l_nj,G_nk+2,
+     $     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+!$omp end single
+*
+*     Compute U & V
+*     ~~~~~~~~~~~~~
+*
+      if (Cori_cornl_L .or. (finbac_L.and..not.Cori_cornl_L)) then
+*
+!$omp do
+         do k=k0,l_nk
+            do j= j0, jn
+            do i= i0, l_niu-pil_e
+
+*              TRAJECTORY
+*              ----------
+               F_u_m(i,j,k)= Cstv_tau_8*( F_ru_m(i,j,k)-F_nu_m(i,j,k) -
+     $         p4_8*(F_p_m(i+1,j,k)-F_p_m(i,j,k)) * Geomg_invhx_8(i) )
+*
+*              TLM 
+*              ---
+               F_u(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) -
+     $         p4_8*(F_p(i+1,j,k)-F_p(i,j,k)) * Geomg_invhx_8(i) )
+*
+            end do
+            end do
+*
+            do j= j0, l_njv-pil_n
+            do i= i0, in
+*
+*              TRAJECTORY
+*              ----------
+               F_v_m(i,j,k)= Cstv_tau_8*( F_rv_m(i,j,k)-F_nv_m(i,j,k) -
+     $                p4_8*(F_p_m(i,j+1,k) - F_p_m(i,j,k))
+     $                  *Geomg_cyv2_8(j)*Geomg_invhsy_8(j) )
+*
+*              TLM 
+*              ---
+               F_v(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) -
+     $                p4_8*(F_p(i,j+1,k) - F_p(i,j,k))
+     $                  *Geomg_cyv2_8(j)*Geomg_invhsy_8(j) )
+*
+            end do
+            end do
+
+         enddo
+!$omp enddo
+      endif
+*
+*     Compute w
+*     ~~~~~~~~~
+*
+!$omp do
+         do k=k0,l_nk+1
+         do j= j0, jn
+         do i= i0, in
+*
+*           TRAJECTORY
+*           ----------
+            Pbar_m_8(i,j,k) = Ver_wp_8%t(k)*F_p_m(i,j,k)+Ver_wm_8%t(k)*F_p_m(i,j,k-1)
+            F_w_m(i,j,k)  = p1_8 * ( F_rf_m(i,j,k) - F_nf_m(i,j,k)
+     $       + Ver_gokt2RT_8 * ( (F_p_m(i,j,k)-F_p_m(i,j,k-1))*Ver_idz_8%t(k)
+     $                               + Dcst_cappa_8 * Pbar_m_8(i,j,k) ) )
+*
+*           TLM
+*           ---
+            Pbar_8(i,j,k) = Ver_wp_8%t(k)*F_p(i,j,k)+Ver_wm_8%t(k)*F_p(i,j,k-1)
+            F_w(i,j,k)  = p1_8 * ( F_rf(i,j,k) - F_nf(i,j,k)
+     $       + Ver_gokt2RT_8 * ( (F_p(i,j,k)-F_p(i,j,k-1))*Ver_idz_8%t(k)
+     $                               + Dcst_cappa_8 * Pbar_8(i,j,k) ) )
+*
+         end do
+         end do
+*
+         end do
+!$omp enddo
+*
+      if(.not.Schm_hydro_L) then
+*
+*        Compute q
+*        ~~~~~~~~~
+*
+*        N.B.  Top Boundary condition:
+*                 Closed Top:  F_q(i,j,0) = 0
+*                   Open Top:  F_q(i,j,k0-1) is externally specified
+*
+         if (Schm_opentop_L) then
+            do j= j0, jn
+            do i= i0, in
+*
+*              TRAJECTORY
+*              ----------
+               F_q_m(i,j,k0-1)=F_nest_q_m(i,j,k0-1)
+*
+*              TLM
+*              ---
+               F_q(i,j,k0-1)=F_nest_q(i,j,k0-1)
+*
+            end do
+            end do
+         endif
+*
+*        Note : we cannot use omp on loop k 
+*               due to vertical dependance F_q(i,j,k-1)
+*
+         do k=k0,l_nk+1
+            xxx_8 = p3_8*Ver_dz_8%t(k)
+!$omp do
+            do j= j0, jn
+            do i= i0, in
+*
+*              TRAJECTORY
+*              ----------
+               F_q_m(i,j,k) = F_q_m(i,j,k-1)
+     $                    - xxx_8 *( F_rw_m(i,j,k) - F_nw_m(i,j,k)
+     $                           - p5_8 *F_w_m(i,j,k)  )
+*
+*              TLM 
+*              ---
+               F_q(i,j,k) = F_q(i,j,k-1)
+     $                    - xxx_8 *( F_rw(i,j,k) - F_nw(i,j,k)
+     $                           - p5_8 *F_w(i,j,k)  )
+*
+            end do
+            end do
+!$omp enddo
+         end do
+*
+      endif
+*
+*     Compute s
+*     ~~~~~~~~~
+*
+!$omp do
+      do j= j0, jn 
+      do i= i0, in 
+*
+*       TRAJECTORY
+*       ----------
+         F_s_m(i,j) = p2_8*(Ver_wp_8%t(l_nk+1)*F_p_m(i,j,l_nk+1)
+     $                     +Ver_wm_8%t(l_nk+1)*F_p_m(i,j,l_nk)-F_fis(i,j))
+*
+*       TLM 
+*       ---
+         F_s(i,j) = p2_8*(Ver_wp_8%t(l_nk+1)*F_p(i,j,l_nk+1)
+     $                   +Ver_wm_8%t(l_nk+1)*F_p(i,j,l_nk))
+*
+      end do
+      end do
+!$omp enddo
+*
+      if (.not. Schm_hydro_L) then 
+!$omp do
+         do j= j0, jn 
+         do i= i0, in 
+*
+*           TRAJECTORY
+*           ----------
+            F_s_m(i,j) = F_s_m(i,j) - Ver_wp_8%t(l_nk+1)*F_q_m(i,j,l_nk+1)
+     $                              - Ver_wm_8%t(l_nk+1)*F_q_m(i,j,l_nk)
+*
+*           TLM
+*           ---
+            F_s(i,j) = F_s(i,j) - Ver_wp_8%t(l_nk+1)*F_q(i,j,l_nk+1)
+     $                          - Ver_wm_8%t(l_nk+1)*F_q(i,j,l_nk)
+*
+         end do
+         end do
+!$omp enddo
+      endif 
+*
+*     Compute zd
+*     ~~~~~~~~~~~
+*
+      if(.not.Schm_autobar_L) then  ! safer for autobar
+*
+*        N.B.  Top Boundary condition:
+*                 Closed Top:  F_zd(i,j,1) = 0
+*                   Open Top:  F_zd(i,j,k0) is computed
+*
+         kminzd=2
+         if(Schm_opentop_L) kminzd=k0
+*
+!$omp do
+         do k=kminzd,l_nk
+*
+            xxx_8=Ver_gokt2RT_8*Ver_idz_8%t(k)
+            yyy_8=Ver_gokt2RT_8*Ver_epsilon_8
+            zzz_8=Ver_b_8%t(k)/Cstv_tauT_8
+            if(Schm_autobar_L) zzz_8=0.d0
+*
+            do j= j0, jn 
+            do i= i0, in 
+*
+*              TRAJECTORY
+*              ----------
+               F_zd_m(i,j,k)=-Cstv_tau_8*( F_rt_m(i,j,k)- F_nt_m(i,j,k)
+     $                    + xxx_8 * ( F_p_m(i,j,k)-F_p_m(i,j,k-1) )
+     $                    - yyy_8 * Pbar_m_8(i,j,k) )
+     $                    - zzz_8 * F_s_m(i,j)
+*
+*              TLM
+*              ---
+               F_zd(i,j,k)=-Cstv_tau_8*( F_rt(i,j,k)- F_nt(i,j,k)
+     $                    + xxx_8 * ( F_p(i,j,k)-F_p(i,j,k-1) )
+     $                    - yyy_8 * Pbar_8(i,j,k) )
+     $                    - zzz_8 * F_s(i,j)
+*
+            enddo
+            enddo
+         enddo   
+!$omp enddo
+*
+         if (.not. Schm_hydro_L) then
+!$omp do
+            do k=kminzd,l_nk
+*
+               xxx_8=HALF_8/Cstv_tauT_8
+*
+*              TRAJECTORY
+*              ----------
+               do j= j0, jn 
+               do i= i0, in 
+                  F_zd_m(i,j,k)=F_zd_m(i,j,k)-xxx_8*(F_q_m(i,j,k)+F_q_m(i,j,k-1))
+               enddo
+               enddo
+*
+*              TLM 
+*              ---
+               do j= j0, jn
+               do i= i0, in
+                  F_zd(i,j,k)=F_zd(i,j,k)-xxx_8*(F_q(i,j,k)+F_q(i,j,k-1))
+               enddo
+               enddo
+*
+            enddo
+!$omp enddo
+         endif
+*
+      endif
+*
+*     Compute FI'
+*     ~~~~~~~~~~~
+
+!$omp do
+      do k=k0-1,l_nk+1
+*
+         if(k.eq.0) then
+            xxx_8=0.d0
+         else
+            xxx_8=Cstv_RTstr_8*Ver_b_8%m(k)
+         endif
+         do j= j0, jn 
+         do i= i0, in          
+*
+*           TRAJECTORY
+*           ----------
+            F_fip_m(i,j,k)=F_p_m(i,j,k)-xxx_8*F_s_m(i,j)
+*
+*           TLM
+*           ---
+            F_fip(i,j,k)=F_p(i,j,k)-xxx_8*F_s(i,j)
+*
+         enddo
+         enddo
+      enddo
+!$omp enddo
+*
+      if (.not. Schm_hydro_L) then
+!$omp do
+         do k=k0-1,l_nk
+            do j= j0, jn 
+            do i= i0, in          
+*
+*              TRAJECTORY
+*              ----------
+               F_fip_m(i,j,k)=F_fip_m(i,j,k)-Cstv_RTstr_8*F_q_m(i,j,k)
+*
+*              TLM
+*              ---
+               F_fip(i,j,k)=F_fip(i,j,k)-Cstv_RTstr_8*F_q(i,j,k)
+*
+            enddo
+            enddo
+         enddo
+!$omp enddo
+      endif    
+*
+      do j= j0, jn
+      do i= i0, in
+*
+*        TRAJECTORY
+*        ----------
+         F_fip_m(i,j,l_nk+1)=F_fis(i,j)
+*
+*        TLM
+*        ---
+         F_fip(i,j,l_nk+1)=0.0
+*
+      enddo
+      enddo
+*
+*     Compute T
+*     ~~~~~~~~~
+*
+      if(.not.Schm_autobar_L) then            ! safer for autobar
+*
+!$omp do
+      do k=k0,l_nk+1
+*
+         xxx_8=p2_8*Ver_idz_8%t(k)
+*
+         do j= j0, jn 
+         do i= i0, in          
+*
+*           TRAJECTORY
+*           ----------
+            xtmp_m_8(i,j)=ONE_8+Ver_dbdz_8%t(k)*F_s_m(i,j)
+*
+*           TLM
+*           ---
+            xtmp_8(i,j)=Ver_dbdz_8%t(k)*F_s(i,j)
+*
+         enddo
+         enddo
+*
+*        TRAJECTORY
+*        ----------
+         call vrec ( ytmp_m_8, xtmp_m_8, nij )
+*
+         do j= j0, jn
+         do i= i0, in
+*
+*           TLM
+*           ---
+            ytmp_8(i,j) = -xtmp_8(i,j)/xtmp_m_8(i,j)**2
+*
+         enddo
+         enddo
+*
+         do j= j0, jn 
+         do i= i0, in          
+*
+*           TRAJECTORY
+*           ----------
+            F_t_m(i,j,k)=Cstv_Tstr_8*ytmp_m_8(i,j)
+     $           *(ONE_8-xxx_8*(F_fip_m(i,j,k)-F_fip_m(i,j,k-1)))
+*
+*           TLM
+*           ---
+            F_t  (i,j,k)=Cstv_Tstr_8*ytmp_m_8(i,j)
+     $           *(   -xxx_8*(F_fip(i,j,k)-F_fip(i,j,k-1))) + 
+     $                   Cstv_Tstr_8*ytmp_8(i,j)
+     $           *(ONE_8-xxx_8*(F_fip_m(i,j,k)-F_fip_m(i,j,k-1)))
+*
+         enddo
+         enddo
+      enddo
+!$omp enddo
+      endif
+*
+      if(Schm_opentop_L) then
+!$omp do
+         do j=j0,jn
+            do k= k0-1,1,-1
+            yyy_8=Cstv_RTstr_8*Ver_dz_8%t(k)/Cstv_Tstr_8
+            do i=i0,in
+*
+*              TRAJECTORY
+*              ----------
+               xxx_m_8=ONE_8+Ver_dbdz_8%t(k)*F_s_m(i,j)
+               F_fip_m(i,j,k-1)=F_fip_m(i,j,k)+yyy_8*(F_t_m(i,j,k)*xxx_8-Cstv_Tstr_8)
+*
+*              TLM
+*              ---
+               xxx_8=Ver_dbdz_8%t(k)*F_s(i,j)
+               F_fip(i,j,k-1)=F_fip(i,j,k)+yyy_8*(F_t_m(i,j,k)*xxx_8+F_t(i,j,k)*xxx_m_8)
+*
+            end do
+            end do
+         end do
+!$omp enddo
+      endif
+*
+!$omp end parallel
+*
+*     __________________________________________________________________
+*
+      return
+      end

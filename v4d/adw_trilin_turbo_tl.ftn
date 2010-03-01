@@ -1,0 +1,281 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/p adw_trilin_turbo_tl - TLM of adw_trilin_turbo
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_trilin_turbo_tl( F_out,  F_in,  F_dt,F_x,  F_y,  F_z,   
+     %                                F_out_m,F_in_m,     F_x_m,F_y_m,F_z_m,
+     %                                F_capx_m,F_capy_m,F_capz_m,
+     %                                F_ii, F_jj, F_kk, 
+     %                                F_num, i0, in, j0, jn, kn,
+     %                                F_hor_L,F_ver_L)
+*
+      implicit none
+*
+      integer F_num, i0, in, j0, jn, kn,F_ii(F_num),F_jj(F_num),F_kk(F_num) 
+*
+      real F_dt, F_in(*), F_in_m(*)
+*
+      real F_out(F_num), F_x(F_num), F_y(F_num), F_z(F_num)
+*
+      real F_out_m(F_num),F_x_m(F_num),F_y_m(F_num),F_z_m(F_num)
+*
+      real F_capx_m(F_num),F_capy_m(F_num),F_capz_m(F_num)
+*
+      logical F_hor_L,F_ver_L
+*
+*authors
+*     Monique Tanguay
+*
+*     (Based on adw_trilin_tl v_3.1.1)
+*
+*revision
+* v3_20 - Tanguay M. -  initial version
+* v4_04 - Tanguay M. -  Staggered version TL/AD
+* v4_12 - Tanguay M. - TL/AD Thermo upstream positions
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+* F_out        | F_dt * result of interpolation                  |  o  |
+* F_in         | field to interpolate                            |  i  |
+*              |                                                 |     |
+* F_dt         | multiplicative constant (1.0 or timestep lenght)|  i  |
+*              |                                                 |     |
+* F_x          | \                                               |  i  |
+* F_y          |   x,y,z positions                               |  i  |
+* F_z          | /                                               |  i  |
+*              |                                                 |     |
+* F_capx       | \                                               |  i  |
+* F_capy       |   precomputed displacements                     |  i  |
+* F_capz       | / along the x,y,z directions                    |  i  |
+*              |                                                 |     |
+* F_ii (jj,kk) | localisation indices                            |  i  |
+*              |                                                 |     |
+* F_num        | number of points to interpolate                 |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+!      integer G_ni,G_nj
+!      integer l_ni,l_nj,l_nk
+#include "adw.cdk"
+!      #include "type.cdk"
+!      logical Adw_hor_L,Adw_ver_L
+!      integer            Adw_halox, Adw_haloy
+!      integer            Adw_nit, Adw_njt
+!      integer            Adw_int_i_off, Adw_int_j_off
+!      real*8             Adw_x00_8,  Adw_y00_8
+!      real*8             Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8
+!      type (vertical_i)  Adw_lcz
+!      type (vertical_8)  Adw_bsz_8
+!      type (vertical_8)  Adw_diz_8
+!      DCL_DYNVAR(Adw,    lcx,    integer, (*))
+!      DCL_DYNVAR(Adw,    lcy,    integer, (*))
+!      DCL_DYNVAR(Adw,  bsx_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw,  bsy_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw,  xbc_8,    real*8 , (*))
+!      DCL_DYNVAR(Adw,  ybc_8,    real*8 , (*))
+#include "ver.cdk"
+!      #include "type.cdk"
+!      type (vertical_8) Ver_z_8  
+*
+************************************************************************
+*
+      integer n, n0, nijag, nij, o1, o2, i, j, k, iimax, jjmax,
+     %        ii,jj,kk
+*
+      real capx, capy, capz
+*
+      real*8 rri_8, rrj_8, rrk_8, prf1_8, prf2_8, prf3_8, prf4_8, p_z00_8
+*
+      real capx_m, capy_m, capz_m
+*
+      real*8 rri_m_8, rrj_m_8, rrk_m_8, prf1_m_8, prf2_m_8, prf3_m_8, prf4_m_8
+*
+************************************************************************
+*
+      p_z00_8 = Ver_z_8%t(1)
+*
+      nijag = Adw_nit * Adw_njt
+      nij = l_ni*l_nj
+*
+      iimax = G_ni+2*Adw_halox-1
+      jjmax = G_nj+Adw_haloy
+*
+C!$omp parallel do private(n,n0,ii,jj,kk,rri_8,rrj_8,rrk_8,rri_m_8,rrj_m_8,rrk_m_8,
+C!$omp&              capx,capy,capz,o1,o2,prf1_8,prf2_8,prf3_8,prf4_8,
+C!$omp&              capx_m,capy_m,capz_m,prf1_m_8,prf2_m_8,prf3_m_8,prf4_m_8)
+      do 100 k=1,kn
+      do  90 j=j0,jn
+      n0 = (k-1)*nij + ((j-1)*l_ni)
+*
+*     ------------------
+*     TRAJECTORY (START)
+*     ------------------
+*
+      if ( F_hor_L ) then
+        do  i=i0,in
+          n = n0 + i
+*
+          rri_m_8= F_x_m(n)
+          ii = ( rri_m_8 - Adw_x00_8 ) * Adw_ovdx_8
+          ii = Adw_lcx( ii+1 ) + 1
+          if ( rri_m_8 .lt. Adw_bsx_8(ii) ) ii = ii - 1
+          F_ii(n) = max(1,min(ii,iimax))
+          ii      = F_ii(n) 
+*
+          F_capx_m(n) = (rri_m_8-Adw_bsx_8(ii)) *Adw_xbc_8(ii)
+*
+          rrj_m_8= F_y_m(n)
+          jj = ( rrj_m_8 - Adw_y00_8 ) * Adw_ovdy_8
+          jj = Adw_lcy( jj+1 ) + 1
+          if ( rrj_m_8 .lt. Adw_bsy_8(jj) ) jj = jj - 1
+          F_jj(n) = max(Adw_haloy,min(jj,jjmax))
+          jj      =  F_jj(n)
+*
+          F_capy_m(n) = (rrj_m_8-Adw_bsy_8(jj)) *Adw_ybc_8(jj)
+*
+        enddo
+      endif
+      if ( F_ver_L ) then
+        do  i=i0,in
+          n = n0 + i
+*
+          rrk_m_8= F_z_m(n)
+          kk = ( rrk_m_8 - p_z00_8 ) * Adw_ovdz_8
+          kk = Adw_lcz%s( kk+1 )
+*
+          rrk_m_8 = rrk_m_8 - Adw_bsz_8%s(kk)
+          if ( rrk_m_8 .lt. 0.0 ) kk = kk - 1
+          F_kk(n) = kk 
+*     
+          F_capz_m(n) = rrk_m_8 * Adw_diz_8(kk)
+          if ( rrk_m_8 .lt. 0.0 ) F_capz_m(n) = 1.0 + F_capz_m(n) 
+*
+        enddo
+      endif
+*
+*     ----------------
+*     TRAJECTORY (END)
+*     ----------------
+*
+      do  80 i=i0,in
+        n = n0 + i
+*
+        ii = F_ii(n)
+        jj = F_jj(n)
+        kk = F_kk(n)
+*
+*       TRAJECTORY
+*       ----------
+C       rri_m_8= F_x_m(n)
+C       rrj_m_8= F_y_m(n)
+C       rrk_m_8= F_z_m(n)
+*
+*       TLM 
+*       ---
+        rri_8= F_x(n)
+        rrj_8= F_y(n)
+        rrk_8= F_z(n)
+*
+*       TRAJECTORY
+*       ----------
+        o1 = (kk)*nijag + (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
+        o2 = o1 + Adw_nit
+*
+************************************************************************
+*     x interpolation
+************************************************************************
+*
+*       TRAJECTORY
+*       ----------
+C       capx_m = (rri_m_8-Adw_bsx_8(ii)) *Adw_xbc_8(ii)
+        capx_m = F_capx_m(n)
+*
+        prf1_m_8 = (1.0 - capx_m) * F_in_m(o1) + capx_m * F_in_m(o1+1)
+        prf2_m_8 = (1.0 - capx_m) * F_in_m(o2) + capx_m * F_in_m(o2+1)
+*
+*       TLM
+*       ---
+        capx = rri_8 *Adw_xbc_8(ii)
+*
+        prf1_8 = (1.0 - capx_m) * F_in(o1) + capx_m * F_in(o1+1) + (F_in_m(o1+1)-F_in_m(o1))*capx 
+        prf2_8 = (1.0 - capx_m) * F_in(o2) + capx_m * F_in(o2+1) + (F_in_m(o2+1)-F_in_m(o2))*capx  
+*
+*       TRAJECTORY
+*       ----------
+        o1 = o1 + nijag
+        o2 = o2 + nijag
+*
+        prf3_m_8 = (1.0 - capx_m) * F_in_m(o1) + capx_m * F_in_m(o1+1)
+        prf4_m_8 = (1.0 - capx_m) * F_in_m(o2) + capx_m * F_in_m(o2+1)
+*
+*       TLM
+*       ---
+        prf3_8 = (1.0 - capx_m) * F_in(o1) + capx_m * F_in(o1+1) + (F_in_m(o1+1)-F_in_m(o1))*capx
+        prf4_8 = (1.0 - capx_m) * F_in(o2) + capx_m * F_in(o2+1) + (F_in_m(o2+1)-F_in_m(o2))*capx
+*
+************************************************************************
+*     y interpolation
+************************************************************************
+*
+*       TRAJECTORY
+*       ----------
+C       capy_m = (rrj_m-Adw_bsy_8(jj)) *Adw_ybc_8(jj)  
+        capy_m = F_capy_m(n)
+*
+        prf1_m_8 = (1.0 - capy_m) * prf1_m_8 + capy_m  * prf2_m_8
+        prf2_m_8 = (1.0 - capy_m) * prf3_m_8 + capy_m  * prf4_m_8
+*
+*       TLM
+*       ---
+        capy = rrj_8 *Adw_ybc_8(jj)  
+*
+        prf1_8 = (1.0 - capy_m) * prf1_8 + capy_m  * prf2_8 + (prf2_m_8-prf1_m_8)*capy
+        prf2_8 = (1.0 - capy_m) * prf3_8 + capy_m  * prf4_8 + (prf4_m_8-prf3_m_8)*capy
+*
+************************************************************************
+*     z interpolation
+************************************************************************
+*
+*       TRAJECTORY
+*       ----------
+C       capz_m = rrk_m_8 * Adw_diz_8(kk)
+C       if ( rrk_m_8 .lt. 0.0 ) capz_m = 1.0 + capz_m) 
+        capz_m = F_capz_m(n)
+*
+        F_out_m(n) = ( (1.0 - capz_m) * prf1_m_8 + capz_m  * prf2_m_8 ) * F_dt
+*
+*       TLM
+*       ---
+        capz = rrk_8 * Adw_diz_8(kk)
+*
+        F_out(n) = ( (1.0 - capz_m) * prf1_8 + capz_m * prf2_8 + (prf2_m_8 - prf1_m_8) * capz ) * F_dt
+*
+   80 continue
+   90 continue
+  100 continue
+C!$omp end parallel do
+*
+      return
+      end

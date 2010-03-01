@@ -41,14 +41,8 @@
       character(len=SERG_STRING_LENGTH) :: P_serg_srsrf_s(cnsrsfm), P_serg_srprf_s(cnsrpfm)
       logical P_serg_sroff_L, P_serg_srsus_L
 !
-      MARK_COMMON_BEG (pserg_i)
       common / pserg_i / P_serg_srsrf, P_serg_srprf, P_serg_srwri
       common / pserg_i / P_serg_serstp, P_serg_ver
-      MARK_COMMON_END (pserg_i)
-      MARK_COMMON_BEG (pserg_c)
       common / pserg_c / P_serg_srsrf_s, P_serg_srprf_s
-      MARK_COMMON_END (pserg_c)
-      MARK_COMMON_BEG (pserg_l)
       common / pserg_l / P_serg_sroff_L, P_serg_srsus_L
-      MARK_COMMON_END (pserg_l)
 !

@@ -69,15 +69,12 @@
 #include "vt1.cdk"
 #include "level.cdk"
 #include "outd.cdk"
-#include "v4dg.cdk"
 #include "lctl.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
+       include "v4dg.inc"
 !
-!modules
-!
-!*
       integer i,j,k,ii,jj,jjj,kk
       integer pnerr, psum
       integer :: lastdt = -1

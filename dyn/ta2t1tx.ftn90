@@ -32,7 +32,10 @@
 !                             re-introduce tracers
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v3_21 - Lee V.            - remove TR2D
+! V4    - Girard-Plante     - Staggered version
 ! v4_05 - Lepine M.         - VMM replacement with GMM
+! V4_11 - Plante A.         - Add diag var on vertical scope
+!                             recompute fip
 !	
 !arguments
 !	none
@@ -45,8 +48,10 @@
 #include "schm.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
+#include "vtx.cdk"
 #include "tr3d.cdk"
 #include "itf_phy_buses.cdk"
+#include "p_geof.cdk"
 !
       integer i,j,k,n
       real, pointer, dimension(:,:,:) :: tr,tra
@@ -80,19 +85,16 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(sta)'
       gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
       if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(st1)'
-!
-      do k=1,l_nk
-      do j= 1, l_nj
-      do i= 1, l_ni
-         ut1  (i,j,k) = uta  (i,j,k)
-         vt1  (i,j,k) = vta  (i,j,k)
-      enddo
-      enddo
-      enddo
+      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(fiptx)'
+      gmmstat = gmm_get(gmmk_topo_s,topo,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(topo)'     
 !
       do k=1,l_nk+1
       do j= 1, l_nj
       do i= 1, l_ni
+         ut1 (i,j,k) = uta (i,j,k)
+         vt1 (i,j,k) = vta (i,j,k)
          wt1 (i,j,k) = wta (i,j,k)
          tt1 (i,j,k) = tta (i,j,k)
          zdt1(i,j,k) = zdta(i,j,k)
@@ -102,9 +104,12 @@
 !
       do j= 1, l_nj 
       do i= 1, l_ni
-         st1  (i,j) = sta  (i,j)
+         tt1 (i,j,l_nk+2) = tta (i,j,l_nk+2)
+         st1 (i,j)        = sta (i,j)
       enddo
       enddo
+!
+      call diag_fip(fiptx, st1, tt1, topo, 1,l_ni,1,l_nj,l_nk)
 !
 !*******************************************************************
 !     Non-hydrostatic model fields
@@ -130,7 +135,7 @@
       do n=1,Tr3d_ntr
          gmmstat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, meta3d_nk2)
          gmmstat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , meta3d_nk2)
-         do k=1,G_nk+1
+         do k=1,G_nk+2
          do j=1,l_nj
          do i=1,l_ni
             tr(i,j,k) = tra(i,j,k)

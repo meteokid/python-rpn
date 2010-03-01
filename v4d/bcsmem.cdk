@@ -1,0 +1,43 @@
+!
+      real, dimension(:), pointer :: BCS_values
+      common /bcsmm/ BCS_values
+!
+      integer bcs_siz_tot
+      common /bcs_siz/ bcs_siz_tot
+      real bcs_u ,bcs_v ,bcs_t , bcs_zd ,bcs_s
+      real bcs_tr , bcs_w , bcs_q
+      real bcs_uf,bcs_vf,bcs_tf, bcs_zdf,bcs_sf
+      real bcs_trf, bcs_wf, bcs_qf
+!
+      pointer (pbcsu   , bcs_u(*))   , (pbcsv ,   bcs_v(*)) 
+      pointer (pbcszd  , bcs_zd(*))  , (pbcss ,   bcs_s(*)) 
+      pointer (pbcstr  , bcs_tr(*))  
+      pointer (pbcst   , bcs_t(*))   
+      pointer (pbcsw   , bcs_w(*))   , (pbcsq ,   bcs_q(*))
+      pointer (pbcsuf  , bcs_uf(*))  , (pbcsvf,   bcs_vf(*))
+      pointer (pbcszdf , bcs_zdf(*)) , (pbcssf,   bcs_sf(*))
+      pointer (pbcstrf , bcs_trf(*)) 
+      pointer (pbcswf  , bcs_wf(*))  , (pbcsqf,   bcs_qf(*))
+      pointer (pbcstf  , bcs_tf(*))
+!
+      common /bcsmem1/ pbcsu  ,pbcsv ,pbcszd ,pbcss 
+      common /bcsmem1/ pbcstr ,pbcst ,pbcsw  ,pbcsq
+      common /bcsmem1/ pbcsuf ,pbcsvf,pbcszdf,pbcssf
+      common /bcsmem1/ pbcstrf,pbcstf,pbcswf ,pbcsqf
+!
+      real, dimension(:), pointer :: BCS_values2
+      common /bcsmm2/ BCS_values2
+!
+      integer bcs_siz_tot2
+      common /bcs_siz2/ bcs_siz_tot2
+      real bcs_u2 ,bcs_v2,bcs_t2,bcs_zd2,bcs_s2
+      real bcs_tr2,bcs_w2,bcs_q2
+!
+      pointer (pbcsu2  , bcs_u2(*))  , (pbcsv2 , bcs_v2(*))
+      pointer (pbcszd2 , bcs_zd2(*)) , (pbcss2 , bcs_s2(*))
+      pointer (pbcstr2 , bcs_tr2(*))
+      pointer (pbcst2  , bcs_t2(*))
+      pointer (pbcsw2  , bcs_w2(*))  , (pbcsq2 , bcs_q2(*))
+!
+      common /bcsmem1_2/ pbcsu2 ,pbcsv2,pbcszd2,pbcss2 
+      common /bcsmem1_2/ pbcstr2,pbcst2,pbcsw2 ,pbcsq2

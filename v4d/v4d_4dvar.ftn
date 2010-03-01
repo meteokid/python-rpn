@@ -1,0 +1,522 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r v4d_4dvar - Control of Main Event Loop of 4D-Var based on GEM model
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_4dvar
+*
+*author
+*    P. Gauthier
+*
+*revision
+* v3_00   P. Gauthier        - initial version 
+* v3_00   M. Tanguay         - adapt to Simon's exchange 
+* v3_01 - M. Tanguay         - introduce gem2gauss for singular vectors
+*                            - introduce identity option
+* v3_02 - M. Tanguay         - address of Physics WA file  
+* v3_02   M. Buehner         - introduce events for SV's: TLMX, ADJX, NLMX
+*                            - loop to divide integrations into a number of segments (for SV job)
+*                            - initialize norm and file for total energy output (for SV job)
+*                            - leave winds as images after 3hr integration
+*                            - do not initialize Pr_nsim4d (read from init.prof)
+*                            - introduce ESRS event for restart of 4dvar/SV job
+* v3_03   M. Tanguay         - replace v4d_procdyn by indata  
+* v3_11   M. Tanguay         - Extend TRAJ for conversion for DYNOUT2 
+*                            - Introduce Pr_nevent=EVN_TLME
+*                            - Introduce V4dg_oktrcv_L 
+*                            - Add V4dg_part=2 before first call to indata
+*                            - ADJ of digital filter
+* v3_11   S. Pellerin        - PROF file opening done by each proc 
+* v3_20   M. Tanguay         - Move getevent before NLM 
+*                            - Correction about V4dg_imguv_L when ADJ  
+* v3_20   A. Zadra           - Introduce V4dg_sgvc_dt0  
+* v3_30 - Tanguay M.         - adapt TL/AD to out_dyn 
+* v3_31 - Tanguay M.         - Control BC
+* v4_12 - Tanguay M.         - Reset Communication 3D_Var-(TL/AD)
+*
+*object
+*     Initialize the TLM/Adjoint and set-up an externally controlled Event Loop
+*
+*arguments
+*     none
+*
+*implicits
+      use v4d_prof, only: Pr_nsim4d,Pr_wopen_L,Pr_ropen_L,Pr_ihdlout,Pr_nevent
+*
+      use v4dz
+*
+      implicit none
+*
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+#include "step.cdk"
+#include <prof_f.h>
+#include <clib_interface.cdk>
+*
+      integer ierr,nevent,nstatus
+      integer fnom,fclos
+      logical done_nlm_L
+      data done_nlm_L/.false./
+      save done_nlm_L
+*
+*     ______________________________________________________
+*
+*     ______________________________________________________
+*
+*     /---------------------------------\
+*     <        Main Event Loop          >
+*     \---------------------------------/
+*
+      nstatus = 0
+      event_loop: do while (nstatus.eq.0)
+*
+      Call v4d_getevent(Lun_out,nevent,nstatus,Ptopo_myproc)
+*
+*     -------------------------------------
+*     NLM trajectory done only once (START) 
+*     -------------------------------------
+      if (.not.done_nlm_L) then
+*
+          write(Lun_out,fmt='(//''-------------------------------------------'')')
+          write(Lun_out,fmt='(  ''V4D_4DVar-  4D-VARIATIONAL JOB with CONF = '',I6)') V4dg_conf
+          write(Lun_out,fmt='(  ''-------------------------------------------'')')
+          write(Lun_out,fmt='(//''--------------------------------------'')')
+          write(Lun_out,fmt='(  ''READ ANALYSIS for reference trajectory'')')
+          write(Lun_out,fmt='(  ''--------------------------------------'')')
+*
+*         --------
+*         Settings
+*         --------
+*
+*            Set non-linear direct run
+*            -------------------------
+             V4dg_ds_L = .true.
+             V4dg_nl_L = .true.
+             V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+             V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+             V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+*            Set status of the nonlinear REFERENCE integration
+*            -------------------------------------------------
+             V4dg_status = 9
+*
+*            Set over-riding switch for dynout and blocstat
+*            ----------------------------------------------
+             V4dg_output_L = .true.
+*
+*            Set WRITE option on TRAJ file
+*            -----------------------------
+             V4dg_rwtr = 1
+*
+*            Set initial and final time steps
+*            --------------------------------
+             Lctl_step     = 0
+             V4dg_steplast = Step_total
+*
+*         ---------------------------------------------
+*         Input: Read given analysis of model variables
+*         ---------------------------------------------
+*
+*            Start Preprocessing: Initialize independent variables 
+*            -----------------------------------------------------
+             V4dg_part = 2
+             call indata()
+*
+*            Store TRAJ variables for conversion from 3D-Var to GEM variables (or vis-versa) 
+*            -------------------------------------------------------------------------------
+             call v4d_rwtraj (40)
+*
+*            Complete Preprocessing: Initialize dependent variables
+*            ------------------------------------------------------
+             V4dg_part = 3
+             call indata
+*
+             if (V4dg_output_L) then
+*
+*                Store TRAJ variables for Output on Standard file of dependent variables
+*                -----------------------------------------------------------------------
+                 call v4d_rwtraj (45)
+*
+                 call v4d_out_dyn  (.true.,-1)
+*
+             endif
+*     
+*         -------------
+*         Run NLM model
+*         -------------
+*
+             call gem_ctrl
+*
+             write(Lun_out,*) '>>> V4D_4DVAR::  End of nonlinear integration over assimilation period'
+*
+             done_nlm_L = .true.
+*
+*     -----------------------------------
+*     NLM trajectory done only once (END) 
+*     -----------------------------------
+      endif
+*
+      if(Ptopo_myproc.eq.0) then
+*     
+*     -------------------------------------
+*     Get the event to know what to do next
+*     -------------------------------------
+      Pr_nevent = nevent
+*
+      write(Lun_out,*) '>>> V4D_4DVAR::  Processing event = ', nevent,' status = ',nstatus 
+*
+      end if
+*
+      call rpn_comm_bcast(   nevent, 1,"MPI_INTEGER",0,"GRID",ierr)
+      call rpn_comm_bcast(Pr_nevent, 1,"MPI_INTEGER",0,"GRID",ierr)
+      call rpn_comm_bcast(nstatus,   1,"MPI_INTEGER",0,"GRID",ierr)
+*     
+*     ---------------------------
+*     Select Case ---------------
+*     ---------------------------
+*     
+*     ----------------------------------
+*   =>EVN_TLMO: Integration of TLM model
+*     ----------------------------------
+      if(nevent.eq.EVN_TLMO) then 
+*
+          Pr_nsim4d = Pr_nsim4d + 1   
+*
+          write(Lun_out,*) '>>> V4D_4DVAR::  Integration of TLM - Nevent = '
+     %                     ,nevent,' EVN_TLMO = ',EVN_TLMO,' NSIM4D = ',Pr_nsim4d
+*
+*         --------
+*         Settings
+*         --------
+*
+*            Set linear direct run
+*            ---------------------
+             V4dg_ds_L = .true.
+             V4dg_nl_L = .false.
+             V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+             V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+             V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+*            Set status of the integration
+*            -----------------------------
+             V4dg_status = 0
+*
+*            Set over-riding switch for dynout and blocstat
+*            ----------------------------------------------
+             V4dg_output_L = .false. 
+*
+*            Set READ option on TRAJ file
+*            ----------------------------
+             V4dg_rwtr   = 0 
+*
+*            Set initial and last time step
+*            ------------------------------
+             Lctl_step = 0
+             V4dg_steplast = Step_total
+*     
+*            Zero variables
+*            --------------
+             call v4d_zero()
+*
+*         -----------------------------------------------------------------------
+*         Input: Read increments from 3D-Var and convert variables 3D-Var --> GEM 
+*         -----------------------------------------------------------------------
+*
+*            Read TRAJ variables for conversion from 3D-Var to GEM variables (or vis-versa)
+*            ------------------------------------------------------------------------------
+             call v4d_rwtraj (40)
+*
+             call v4d_getdx(nstatus)
+*
+CCC          if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_0
+CCC          if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_t_from_bc_0
+*
+          if(nstatus.eq.0) then 
+*
+*            Complete Preprocessing: Initialize dependent variables
+*            ------------------------------------------------------
+             V4dg_part = 3
+             call indata_tl()
+*     
+             if (V4dg_output_L) then
+*
+*                Read TRAJ variables for Output on Standard file of dependent variables
+*                ----------------------------------------------------------------------
+                 call v4d_rwtraj (45)
+*
+                 call v4d_out_dyn  (.true.,-1)
+*
+             endif
+*     
+*         -------------
+*         Run TLM model
+*         -------------
+*
+             call gem_ctrl_tl()
+*
+*         ---------------------------------------------------------------
+*         Output to 3D-Var: model profiles interpolated at obs. locations
+*         ---------------------------------------------------------------
+*         
+*            Close dwyf PROF file to be used by 3D-Var
+*            -----------------------------------------
+             write(Lun_out,*) '>>> V4D_4DVAR::  Closing dwyf MODEL-PROFILE output file'
+             ierr = prof_close(Pr_ihdlout)
+*
+             if(ierr .lt. 0) then
+                write(Lun_out,*) '>>> V4D_4DVAR::  Error in closing dwyf PROF file'
+                nstatus = -99
+             endif
+*
+*            Set write/read flags for the next iteration
+*            -------------------------------------------
+             Pr_wopen_L = .false.
+             Pr_ropen_L = .false.
+*     
+             if(nstatus.eq.0)  then
+                write(Lun_out,*) '>>> V4D_4DVAR::  End of TLM integration  NSIM4D = ',Pr_nsim4d
+             else
+                write(Lun_out,*) '>>> V4D_4DVAR::  Problem in writing dwyf PROF file nstatus = ',
+     %                           nstatus
+                nstatus = -99
+             endif
+*
+          else
+             write(Lun_out,*) '>>> V4D_4DVAR::  Problem in getting dwgf PROF file at initial time nstatus = ',
+     %                           nstatus
+             nstatus = -99
+          endif
+*
+*     -----------------------------------------------
+*   =>EVN_ADJM: Backward integration of Adjoint Model
+*     -----------------------------------------------
+      else if (nevent.eq.EVN_ADJM) then
+*
+          write(Lun_out,*) '>>> V4D_4DVAR::  Backward Integration of Adjoint - Nevent = '
+     %                     ,nevent,' EVN_ADJM = ',EVN_ADJM,' NSIM4D = ',Pr_nsim4d
+*
+*         --------
+*         Settings
+*         --------
+*
+*            Set ADJ integration
+*            -------------------
+             V4dg_ds_L = .false.
+             V4dg_nl_L = .false.
+             V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+             V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+             V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+*            Set status of the integration
+*            -----------------------------
+             V4dg_status = 0
+*
+*            Set over-riding switch for dynout and blocstat
+*            ----------------------------------------------
+             V4dg_output_L = .false. 
+             if(Pr_nsim4d.eq.1) V4dg_output_L = .true.
+*
+*            Set READ option on TRAJ Vmm WA file
+*            -----------------------------------
+             V4dg_rwtr = 0
+*
+*            Set initial and final time step
+*            -------------------------------
+             Lctl_step = Step_total
+             V4dg_steplast = 0 
+*
+*            Zero adjoint variables
+*            ----------------------
+             call v4d_zero()
+*
+*         -----------------------------------------------------------------------------------------
+*         Run ADJ model with Input from 3D-Var: adjoint model states interpolated at obs. locations
+*         -----------------------------------------------------------------------------------------
+*
+          if(nstatus.eq.0) then 
+*
+*            Run ADJ model
+*            -------------
+             call gem_ctrl_ad()
+*
+*            ADJ of
+*            Complete Preprocessing: Initialize dependent variables
+*            ------------------------------------------------------
+             V4dg_part = 3
+             call indata_ad()
+*
+             if (V4dg_output_L) then
+*
+*                Read TRAJ variables for Output on Standard file of dependent variables
+*                ----------------------------------------------------------------------
+                 call v4d_rwtraj (45)
+*
+                 call v4d_out_dyn  (.true.,-1)
+*
+             endif
+*
+CCC          if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_t_from_bc_0_ad
+CCC          if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_0_ad
+*
+*         ------------------------------ 
+*         Output: (Delta X)^* = grad J_o
+*         ------------------------------ 
+*
+*            Read TRAJ variables for conversion from 3D-Var to GEM variables (or vis-versa)
+*            ------------------------------------------------------------------------------
+             call v4d_rwtraj (40)
+*
+*            Prepare and Write adjoint increments to be read by 3D-Var   
+*            ---------------------------------------------------------
+             call v4d_putdx(nstatus)
+*
+             if(nstatus.eq.0)  then
+                write(Lun_out,*) '>>> V4D_4DVAR::  End of ADJ integration  NSIM4D = ',Pr_nsim4d
+*
+             else
+                write(Lun_out,*) '>>> V4D_4DVAR::  Problem in writing dwga PROF at initial time file nstatus = ',
+     %                           nstatus
+                nstatus = -99
+             end if
+*
+          else
+             write(Lun_out,*) '>>> V4D_4DVAR::  Problem in getting dwya PROF file nstatus = ',
+     %                        nstatus
+             nstatus = -99
+          end if
+*
+*     ------------------------------------------------------------------------------------------
+*   =>EVN_TLME:   Integration of TLM model without Profiles and with V4dg_output_L=.T. Then STOP
+*     ------------------------------------------------------------------------------------------
+      else if (nevent.eq.EVN_TLME) then 
+*
+          Pr_nsim4d = Pr_nsim4d + 1   
+*
+          write(Lun_out,*) '>>> V4D_4DVAR::  Integration of TLM - Nevent = '
+     %                     ,nevent,' EVN_TLME = ',EVN_TLME,' NSIM4D = ',Pr_nsim4d
+*
+*         --------
+*         Settings
+*         --------
+*
+*            Set linear direct run
+*            ---------------------
+             V4dg_ds_L = .true.
+             V4dg_nl_L = .false.
+             V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+             V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+             V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+*            Set status of the integration
+*            -----------------------------
+             V4dg_status = 0
+*
+*            Set over-riding switch for dynout and blocstat
+*            ----------------------------------------------
+             V4dg_output_L = .true. 
+*
+*            Set READ option on TRAJ Vmm WA file
+*            -----------------------------------
+             V4dg_rwtr   = 0 
+*
+*            Set initial and last time step
+*            ------------------------------
+             Lctl_step = 0
+             V4dg_steplast = Step_total
+*
+*            Zero variables
+*            --------------
+             call v4d_zero()
+*
+*         -----------------------------------------------------------------------
+*         Input: Read increments from 3D-Var and convert variables 3D-Var --> GEM 
+*         -----------------------------------------------------------------------
+*     
+             call v4d_getdx(nstatus)
+*
+CCC          if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_0
+CCC          if (G_lam.and.V4dg_bc_variant.eq.1) call v4d_set_bc_t_from_bc_0
+*
+             if(nstatus.eq.0) then 
+*     
+*
+*            Complete Preprocessing: Initialize dependent variables
+*            ------------------------------------------------------
+             V4dg_part = 3
+             call indata_tl()
+*
+             if (V4dg_output_L) call v4d_out_dyn  (.true.,-1)
+*     
+*         -------------
+*         Run TLM model
+*         -------------
+*
+             call gem_ctrl_tl()
+*
+             write(Lun_out,*) '>>> V4D_4DVAR::  End of TLM integration  NSIM4D = ',Pr_nsim4d
+*
+             write(Lun_out,*) '>>> V4D_4DVAR::  End of Job - Nevent = '
+     %                        ,nevent,' EVN_TLME = ',EVN_TLME
+             nstatus = -99
+*
+          else
+             write(Lun_out,*) '>>> V4D_4DVAR::  Problem in getting dwgf PROF file at initial time nstatus = ',
+     %                        nstatus
+             nstatus = -99
+          endif
+*
+*     -----------------------------------------------
+*   =>EVN_ESIM: Nothing more to do. You can go home!! 
+*     -----------------------------------------------
+      else if(nevent.eq.EVN_ESIM) then
+*
+          write(Lun_out,*) '>>> V4D_4DVAR::  End of Job - Nevent = '
+     %                     ,nevent,' EVN_ESIM = ',EVN_ESIM
+          nstatus = -99
+*     
+*     --------------------------------------------------------------
+*   =>EVN_FERR:  Something very wrong happened. Close shop and go... 
+*     --------------------------------------------------------------
+      else if(nevent.eq.EVN_FERR) then
+*
+          write(Lun_out,*) '>>> V4D_4DVAR::  Aborting - Nevent = ' 
+     %                     ,nevent,' EVN_FERR = ',EVN_FERR
+          nstatus = -99
+*     
+*     ------------------------------
+*   =>Default Case: Wrong Event Type 
+*     ------------------------------
+      else
+            write(Lun_out,*) '>>> V4D_4DVAR::  wrong event type. Nevent = ',nevent
+            nstatus = -99
+            call handle_error(-1,'v4d_4dvar','wrong event type')
+      end if
+*     
+      end do Event_Loop
+*     
+*     ----------------------------------\
+*     End of Main Event Loop             >
+*     ----------------------------------/
+*     
+      write(Lun_out,*) '>>> V4D_4DVAR::  End of Job' 
+*
+      return
+*
+      end subroutine v4d_4dvar

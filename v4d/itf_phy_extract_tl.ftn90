@@ -1,0 +1,62 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_extract - Fill the slice workspace variable for the physics
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_extract_tl (F_busvol, F_jdo, nk)
+      implicit none
+!
+      integer F_jdo, nk
+      real F_busvol(*) 
+!
+!author 
+!     Lubos Spacek              October 2009
+!
+!revision
+! v4_12 - Spacek L.             - GMM version
+!
+!object
+!	Extract tendencies from busvol
+!
+#include "glb_ld.cdk"
+#include "itf_phy_buses.cdk"
+!
+!notes
+!
+      integer i, k, n, ii, indx, soit,lght,indx_n,cnt
+!*
+!     ---------------------------------------------------------------
+!
+      cnt = 0
+      do n=1,p_bvol_top
+         if (volnm(n)(1:5) .eq. 'PHYTD') then
+            cnt = cnt + 1
+            call getindx (volnm(n),  'V', indx_n, lght, soit)
+            do k= 1, Nk
+            do i= 1, p_ni
+               indx = (k-1)*p_ni+i-1
+               ii   = i + p_offi
+               phy_tend(ii,F_jdo, k,cnt) = F_busvol(indx_n + indx)
+            end do
+            end do
+         endif
+       end do
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

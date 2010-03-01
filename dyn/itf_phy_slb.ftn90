@@ -159,6 +159,8 @@
 !
       call itf_phy_extract ( busvol, j, p_nk )
 !
+      call v4d_phy_extract_pbl ( busvol, j, F_step, p_nk )
+!
       if (dumpbus_L) call dumpbus2( busdyn,busper,busvol, jdo )
 !
 !C  Prepare surface variables for the coupling

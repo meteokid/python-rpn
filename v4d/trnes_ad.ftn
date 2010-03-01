@@ -1,0 +1,155 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r trnes_ad - ADJ of trnes 
+*
+#include "model_macros_f.h"
+*
+      subroutine trnes_ad (fd,bcs,bcn,bcw,bce,bct,lminx,lmaxx,lminy,lmaxy,
+     $ lminxs,lmaxxs,lminys,lmaxys,lminxw,lmaxxw,lminyw,lmaxyw,lni,lnj,lnk,code)
+*
+      implicit none
+*
+      integer lminx,lmaxx,lminy,lmaxy,lminxs,lmaxxs,lminys,lmaxys,
+     $        lminxw,lmaxxw,lminyw,lmaxyw,lni,lnj,lnk,code
+      real fd(lminx:lmaxx,lminy:lmaxy,*),
+     $     bcs(lminxs:lmaxxs,lminys:lmaxys,*),
+     $     bcn(lminxs:lmaxxs,lminys:lmaxys,*),
+     $     bcw(lminxw:lmaxxw,lminyw:lmaxyw,*),
+     $     bce(lminxw:lmaxxw,lminyw:lmaxyw,*),
+     $     bct(lni,lnj,*)
+*
+*author
+*     Monique Tanguay  - December 2006
+*
+*revision
+* v3_30 - Tanguay M.   - initial MPI version
+* v4_04 - Tanguay M.   - Staggered version TL/AD 
+* v4_10 - Tanguay M.   - Adjust AD LAM when BCS
+* v4_12 - Tanguay M.   - Adapt TL/AD to revised blending
+*
+*object - see above
+*
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lam.cdk"
+#include "bcsdim.cdk"
+*
+**
+      integer i,j,k,ofi,ofj
+      real*8, parameter :: ZERO_8 = 0.0
+*----------------------------------------------------------------------
+*
+      ofi = l_ni - Glb_pil_e - Lam_blend_Hx - 1
+      ofj = l_nj - Glb_pil_n - Lam_blend_Hy - 1
+*
+      if (code.eq.0) then
+      do k=1,lnk
+         if (east.gt.0) then
+         do j=minye,maxye
+         do i=minxe,maxxe
+            fd (i,j,k)     = bce(i-ofi,j,k) + fd(i,j,k)
+            bce(i-ofi,j,k) = ZERO_8 
+         end do
+         end do
+         endif
+         if (west.gt.0) then
+         do j=minyw,maxyw
+         do i=minxw,maxxw
+            fd (i,j,k) = bcw(i,j,k) + fd(i,j,k)
+            bcw(i,j,k) = ZERO_8 
+         end do
+         end do
+         endif
+         if (north.gt.0) then
+         do j=minyn,maxyn
+         do i=minxn,maxxn
+            fd (i,j,k)     = bcn(i,j-ofj,k) + fd(i,j,k)
+            bcn(i,j-ofj,k) = ZERO_8
+         end do
+         end do
+         endif
+         if (south.gt.0) then
+         do j=minys,maxys
+         do i=minxs,maxxs
+            fd (i,j,k) = bcs(i,j,k) + fd(i,j,k)
+            bcs(i,j,k) = ZERO_8
+         end do
+         end do
+         endif
+      end do
+      if(lnk.ne.1)then
+         do k=1,Lam_gbpil_T+Lam_blend_T
+            do j=1,lnj
+            do i=1,lni
+               fd (i,j,k) = bct(i,j,k) + fd(i,j,k)
+               bct(i,j,k) = ZERO_8
+            end do
+            end do
+         enddo
+      endif
+      endif
+*
+      if (code.eq.1) then 
+      do k=1,lnk
+         if (east.gt.0) then
+         do j=minye,maxye
+         do i=minxe,maxxe
+            bce(i-ofi,j,k) = fd(i,j,k) + bce(i-ofi,j,k)
+            fd (i,j,k)     = ZERO_8
+         end do
+         end do
+         endif
+         if (west.gt.0) then
+         do j=minyw,maxyw
+         do i=minxw,maxxw
+            bcw(i,j,k) = fd(i,j,k) + bcw(i,j,k)
+            fd (i,j,k) = ZERO_8
+         end do
+         end do
+         endif
+         if (north.gt.0) then
+         do j=minyn,maxyn
+         do i=minxn,maxxn
+            bcn(i,j-ofj,k) = fd(i,j,k) + bcn(i,j-ofj,k)
+            fd (i,j,k)     = ZERO_8
+         end do
+         end do
+         endif
+         if (south.gt.0) then
+         do j=minys,maxys
+         do i=minxs,maxxs
+            bcs(i,j,k) = fd(i,j,k) + bcs(i,j,k)
+            fd (i,j,k) = ZERO_8
+         end do
+         end do
+         endif
+      end do
+      if(lnk.ne.1)then
+         do k=1,Lam_gbpil_T+Lam_blend_T
+            do j=1,lnj
+            do i=1,lni
+               bct(i,j,k) = fd(i,j,k) + bct(i,j,k)
+               fd(i,j,k)  = ZERO_8
+            end do
+            end do
+         enddo
+      endif
+      endif
+*
+*----------------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,261 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r vspng_drv_tl - TLM of vspng_drv 
+*
+#include "model_macros_f.h"
+*
+      subroutine vspng_drv_tl (F_u,F_v,F_zd,F_w,F_t,F_u_m,F_v_m,F_zd_m,F_w_m,F_t_m,DIST_DIM,Nk)
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+      real F_u   (DIST_SHAPE,Nk)  , F_v   (DIST_SHAPE,Nk)  ,
+     $     F_zd  (DIST_SHAPE,Nk+1), F_w   (DIST_SHAPE,Nk+1),
+     $     F_t   (DIST_SHAPE,Nk+1)
+*
+      real F_u_m (DIST_SHAPE,Nk)  , F_v_m (DIST_SHAPE,Nk)  ,
+     $     F_zd_m(DIST_SHAPE,Nk+1), F_w_m (DIST_SHAPE,Nk+1),
+     $     F_t_m (DIST_SHAPE,Nk+1)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_21 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - TLM of control for sponge on momentum and
+*                             T', T'lin & hence T on Vspng_nk levels + 
+*                             sponge on top level only on all other variables
+* v3_00 - Tanguay M.        - correction as in vspng_drv 
+* v3_01 - Laroche/Tanguay   - correction nj as in vspng_drv 
+* v3_01 - Tanguay M.        - adapt to Vspng_rwnd_L 
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_20 - Tanguay M.        - Adjoint of variable higher order diffusion operator 
+*                           - Option of storing instead of redoing TRAJ
+* v3_30 - Tanguay M.        - adjust TL/AD to Vspng_zmean_L
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - Replace tmean by tmean_8 as in GEM333
+*
+*object
+*     see id section
+*
+*arguments
+* 
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "trp.cdk"
+#include "vspng.cdk"
+#include "hzd.cdk"
+#include "opr.cdk"
+#include "grd.cdk"
+*
+      integer i,j,jj,k,nkspng
+      real*8 HALF_8,TWO_8,c_8,invp0t_8
+      parameter( HALF_8  = 0.5 )
+      parameter(  TWO_8  = 2.0 )
+      parameter(invp0t_8 = .00001d0)
+*
+      real*8 tmean_8(l_nj,Nk),tmean_m_8(l_nj,Nk)
+      real*8, dimension (trp_12emax*G_ni*Vspng_nk) :: 
+     $                                          aix_8,bix_8,cix_8,dix_8
+      real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
+      real*8 cy_8(l_nj+1), xp0_8(G_ni), yp0_8(G_nj)
+**
+*     __________________________________________________________________
+*
+      if (Vspng_nk.lt.1) return
+*
+      if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
+*
+      do i = 1, G_ni
+         xp0_8 (i) = G_xg_8(i+1) - G_xg_8(i)
+      end do
+      do j = 1, G_nj
+         yp0_8 (j) = sin(G_yg_8(j+1))-sin(G_yg_8(j))
+      end do
+*
+*     Momentum
+*     ~~~~~~~~
+*
+*     Substract the mean for the zonal component if wanted
+*
+      if (Vspng_zmean_L) then
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_zmean (F_u_m,F_u_m,tmean_m_8,DIST_DIM,Nk,.true.)
+*
+*        TLM
+*        ---
+         call vspng_zmean (F_u,F_u,tmean_8,DIST_DIM,Nk,.true.)
+*
+      endif
+*
+      do j = 1, l_nj+1
+         cy_8(j) = G_yg_8(l_j0+j-1)
+      end do
+      c_8 = Vspng_coef*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+      if (Hzd_difva_L) then
+         call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $        cy_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Hzd_yp2su_8,
+     $        G_ni,G_nj,G_nj)
+      else
+         call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $        cy_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Opr_opsyp2_8,
+     $        G_ni,G_nj,G_nj)
+      endif
+*
+*     TRAJECTORY
+*     ----------
+      call vspng_del2 ( F_u_m, xp0_8, Opr_opsyp0_8(G_nj+1),
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*     TLM
+*     ---
+      call vspng_del2 ( F_u, xp0_8, Opr_opsyp0_8(G_nj+1),
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+      do j = 1, l_nj+1
+         jj = l_j0+j-1
+         cy_8(j) = cos((G_yg_8(jj+1)+G_yg_8(jj)) * HALF_8) **TWO_8
+      end do
+      call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $     cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Hzd_yp0_8,Hzd_yp2_8,
+     $     G_ni,G_nj,G_njv)
+*
+*     TRAJECTORY
+*     ----------
+      call vspng_del2 ( F_v_m, Opr_opsxp0_8(G_ni+1), yp0_8,
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_njv)
+*
+*     TLM
+*     ---
+      call vspng_del2 ( F_v, Opr_opsxp0_8(G_ni+1), yp0_8,
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_njv)
+*
+*     Add back the mean for the zonal component
+*
+      if (Vspng_zmean_L) then
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_zmean (F_u_m,F_u_m,tmean_m_8,DIST_DIM,Nk,.false.)
+*
+*        TLM
+*        ---
+         call vspng_zmean (F_u,F_u,tmean_8,DIST_DIM,Nk,.false.)
+*
+      endif
+*
+      do j = 1, l_nj+1
+         cy_8(j) = G_yg_8(l_j0+j-1)
+      end do
+*     
+      if (Hzd_difva_L) then
+         call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $        cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $        Hzd_yp2su_8,G_ni,G_nj,G_nj)
+      else
+         call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $        cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $        Opr_opsyp2_8,G_ni,G_nj,G_nj)
+      endif
+*
+*     Vertical motion 
+*     ~~~~~~~~~~~~~~~
+*
+*********not physical, done nevertheless*******
+*
+*     TRAJECTORY
+*     ----------
+      call vspng_del2 (F_zd_m,
+     $     Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*     TLM
+*     --- 
+      call vspng_del2 (F_zd,
+     $     Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*     Vertical wind
+*     ~~~~~~~~~~~~~
+      if(.not.Schm_hydro_L) then
+*
+*     TRAJECTORY
+*     ----------
+      call vspng_del2 (F_w_m,
+     $     Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*     TLM
+*     --- 
+      call vspng_del2 (F_w,
+     $     Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+      endif
+*
+*     Temperature, last level only
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      nkspng   = Vspng_nk
+      Vspng_nk = 1
+      if (Hzd_difva_L) then
+         call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $        cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $        Hzd_yp2su_8,G_ni,G_nj,G_nj)
+      else
+         call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $        cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $        Opr_opsyp2_8,G_ni,G_nj,G_nj)
+      endif
+*
+*     TRAJECTORY
+*     ----------
+      call vspng_del2 (F_t_m,
+     $     Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*     TLM
+*     ---
+      call vspng_del2 (F_t,
+     $     Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*     
+      Vspng_nk = nkspng
+*
+ 1000 format(/,3X,
+     $ 'TLM of DEL-2 SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV_TL)')
+*
+*     __________________________________________________________________
+*
+      return
+      end

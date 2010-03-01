@@ -107,16 +107,10 @@
 !
       call diag_fip( fiptx, st0, tt0, topo, 1,l_ni,1,l_nj,l_nk)
 !
-
-      if (Acid_test_L) &
-         call glbstat (bspqtx,'BSPQ',LDIST_DIM,G_nk+2,8+acid_i0,G_ni-8-acid_in, &
-                                               8+acid_j0,G_nj-8-acid_jn,1,G_nk+2)
-
       call nlip_2 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , nl_b, &
                     ut0  , vt0  , tt0  , st0  , qt0  , zdt0 , fiptx, &
                     rhsp , rhsc ,bspqtx, mutx , &
                     LDIST_DIM, l_nk )
-!
 !
       if (Acid_test_L) &
            call acid_stat_nli(qt0,st0,bspqtx,nl_u,nl_v,nl_t,nl_c,nl_f,2)

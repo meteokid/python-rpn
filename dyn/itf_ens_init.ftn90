@@ -1,0 +1,71 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_ens_init - initialize ensemble prevision system
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_ens_init
+      implicit none
+!
+!     author   
+!     Lubos Spacek - December 2009
+!     
+!     revision
+! v4_12 - Spacek L.        - Initial version
+!
+!object
+!	See above ID.
+!
+!arguments
+!	none
+!
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "path.cdk"
+#include "grd.cdk"
+!
+      integer, external :: ens_nml
+      integer           :: ierr(3), imrkv2
+      logical           :: ens_conf,stochphy, prout
+!
+!-------------------------------------------------------------------
+!
+! Read the namelist
+!
+      if (Lun_out.gt.0) write(Lun_out,1000)
+!
+      ierr=0
+
+      ierr(1) = ens_nml (Path_nml_S,Grd_typ_S,ens_conf,stochphy,imrkv2,Lun_out)
+      call handle_error(ierr(1),'itf_ens_init','Problem with ens_nml')
+
+      if (ens_conf) then
+         prout = Lun_out.gt.0
+         call phy_opti('IMRKV2'   , imrkv2   ,1,'SET',prout,ierr(2))
+         call phy_optl('STOCHPHY' , stochphy ,1,'SET',prout,ierr(3))
+         ierr(2) = min(ierr(2),ierr(3))
+         call handle_error(ierr(2),'itf_ens_init','physics initialization')
+         call ens_set_mem (LXDIST_DIM,G_halox,l_ni, &
+                           LYDIST_DIM,G_haloy,l_nj,l_nk,Lun_out)
+
+      endif
+!
+ 1000 format(/,'INITIALIZATION OF ENSEMBLES (S/R ITF_ENS_INIT)'/(46('=')))
+!
+!-------------------------------------------------------------------
+!
+      return
+      end

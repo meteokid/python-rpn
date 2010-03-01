@@ -1,0 +1,77 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r v4d_ezscint - Scalar interpolation and Polar correction,
+*                    based on EZSINT (Y.Chartier EZSCINT 2001)    
+*
+#include "model_macros_f.h"
+      subroutine v4d_ezscint (zo,px,py,npts,zi,ax,ay,cx,cy,i1,i2,j1,j2,nk,
+     %                        jmin,jmax,ni,grtypi,degree)
+*
+      implicit none
+#include "glb_ld.cdk"
+*
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,degree
+*
+      real zo(nk,npts),zi(i1:i2,j1:j2,nk),
+     %     px(npts),py(npts),ax(i1:i2),ay(j1:j2),cx(i1:i2,6),cy(j1:j2,6)
+*
+      character*1 grtypi
+*
+*author Tanguay M. 
+*
+*revision
+* v3_00 - Tanguay M.        - initial MPI version
+* v3_30 - Fillion L.        - Avoid polar treatment when in LAM mode 
+*
+*object
+*  see id section     
+*
+*arguments
+* Name         I/O        Description
+*----------------------------------------------------------------
+* zo            O         Interpolated scalar field at positions px,py
+* px            I         Position x in INPUT grid
+* py            I         Position y in INPUT grid
+* npts          I         Number of positions in zo
+* zi            I         Scalar field on INPUT grid
+* ax            I         X axe of INPUT grid
+* ay            I         Y axe of INPUT grid
+* cx            I         AX difference on INPUT grid
+* cy            I         AY difference on INPUT grid
+* i1-i2         I         Dimension x in INPUT grid
+* j1-j2         I         Dimension y in INPUT grid
+* nk            I         Dimension z in INPUT grid
+* jmin          I         Lower  limit j
+* jmax          I         Higher limit j
+* ni            I         Period if grid='G', Heart if grid = 'Z'
+* grtypi        I         Type of INPUT grid
+* degree        I         Degree of interpolation
+*----------------------------------------------------------------
+*
+*     Scalar interpolation of zo at positions px,py from zi on input grid
+*     -------------------------------------------------------------------
+      call v4d_interp (zo,px,py,npts,zi,ax,ay,cx,cy,i1,i2,j1,j2,nk,
+     %                 jmin,jmax,ni,grtypi,degree)
+*
+*     Polar correction if scalar interpolation 
+*     ----------------------------------------
+      if(.not.G_lam) then
+        call v4d_corrval (zo,npts,zi,ax,ay,cx,cy,i1,i2,j1,j2,nk,
+     %                    jmin,jmax,ni,grtypi,degree)
+      endif
+*
+      return
+      end

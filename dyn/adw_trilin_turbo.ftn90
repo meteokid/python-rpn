@@ -95,7 +95,6 @@
 #include "ver.cdk"
 !      #include "type.cdk"
 !      type (vertical_8) Ver_z_8  
-#include "v4dcfl.cdk"
 !$$$      DCL_DYNVAR(V4dcfl, p   ,  integer, (l_nk))
 !$$$      DCL_DYNVAR(V4dcfl, n   ,  integer, (l_nk))
 !***********************************************************************
@@ -107,27 +106,11 @@
 !
       real*8 rri, rrj, rrk, prf1, prf2, prf3, prf4, p_z00_8
 !
-      integer cfl,err
-      logical done_L
-      data done_L /.false./
-      save done_L
+      integer err
 !
       p_z00_8 = Ver_z_8%t(1)
 !
 !     ----------------------------------------------------------------
-!
-!     Initialize min-max vertical CFL as function of k
-!     ------------------------------------------------
-      if(.not.done_L) then
-         call hpalloc(V4dcfl_p_   ,l_nk+1, err,1)
-         call hpalloc(V4dcfl_n_   ,l_nk+1, err,1)
-         do k = 1,l_nk+1
-            V4dcfl_p(k) = 0
-            V4dcfl_n(k) = 0
-         enddo
-         done_L = .true.
-      endif
-!
       nijag = Adw_nit * Adw_njt
       nij = l_ni*l_nj
 !
@@ -135,7 +118,7 @@
       jjmax = G_nj+Adw_haloy
 !
 !$omp parallel do private(n,n0,ii,jj,kk,rri,rrj,rrk, &
-!$omp capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4,cfl)
+!$omp capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4)
       do 100 k=1,kn
       do  90 j=j0,jn
       n0 = (k-1)*nij + ((j-1)*l_ni)
@@ -177,12 +160,6 @@
           F_capz(n) = capz
 !
           F_kk(n)=kk
-!
-!         Evaluate min-max vertical CFL as function of k 
-!         ----------------------------------------------
-          cfl = (kk+1) - k
-          if (cfl.gt.V4dcfl_p(k) ) V4dcfl_p(k) = cfl
-          if (cfl.lt.V4dcfl_n(k) ) V4dcfl_n(k) = cfl
 !
         enddo
       endif

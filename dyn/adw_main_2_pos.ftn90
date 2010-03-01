@@ -101,7 +101,7 @@
 #include "vt1.cdk"
 !      real, pointer, dimension (:)     :: xct1,yct1,zct1
 !      character(len=8) :: gmmk_xct1_s, gmmk_yct1_s, gmmk_zct1_s
-#include "v4dg.cdk"
+       include "v4dg.inc"
 !      integer V4dg_conf
 #include "ver.cdk"
 !      #include "type.cdk"

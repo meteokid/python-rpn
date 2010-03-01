@@ -25,13 +25,9 @@
       integer, dimension(LEVEL_NTYP) :: Cube_vcount
       real, dimension(MAXSET*MAXLEV,LEVEL_NTYP) :: Cube_v
 
-      MARK_COMMON_BEG (Cube_i)
       COMMON /Cube_i/ &
            Cube_ig1,Cube_ig2,Cube_vcount
-      MARK_COMMON_END (Cube_i)
 
-      MARK_COMMON_BEG (Cube_r)
       COMMON /Cube_r/ &
            Cube_v
-      MARK_COMMON_END (Cube_r)
 

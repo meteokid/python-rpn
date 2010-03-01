@@ -55,16 +55,16 @@
 #include "orh.cdk"
 #include "sol.cdk"
 #include "nl.cdk"
-#include "v4dg.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
 #include "vtopo.cdk"
+       include "v4dg.inc"
+!
 !      common/xiln/iln
 !
       integer iln, dim, dimt, dimb, err
       real dth
 !
-      logical rwtraj_L
       logical isStatStep_L
 !
 !*
@@ -88,11 +88,9 @@
 !
 !     ---------------------------------------------------------------
 !
-      rwtraj_L = V4dg_conf.ne.0 .and. V4dg_oktr_L
-!
 !     Store TRAJ predictive variables
 !     -------------------------------
-      if ( rwtraj_L ) call v4d_rwtraj (2) 
+      call v4d_rwtraj (2) 
 !
       if ( Orh_icn .eq. 1 ) then
          call tmg_start0 ( 3, 'RHS      ' )
@@ -102,8 +100,8 @@
 !
 !     Store TRAJ Positions TH/TRAJ Winds TH
 !     -------------------------------------
-      if ( rwtraj_L ) call v4d_rwtraj (3) 
-      if ( rwtraj_L ) call v4d_rwtraj (4) 
+      call v4d_rwtraj (3) 
+      call v4d_rwtraj (4) 
 !
       call tmg_start0(4, 'ADW      ')
       call adw_main(F_fnitraj, isStatStep_L)
@@ -148,7 +146,7 @@
 !
 !        Store TRAJ modified by BAC at previous Orh_icn
 !        ----------------------------------------------
-         if ( rwtraj_L .and. (Orh_icn.ne.1.and.iln.eq.1) ) call v4d_rwtraj (7) 
+         if ( Orh_icn.ne.1.and.iln.eq.1 ) call v4d_rwtraj (7) 
 !
          call tmg_start0 ( 6, 'NLI      ' )
          call nli ()
@@ -160,8 +158,8 @@
 !
 !        Store TRAJ requested to build BAC_TR 
 !        ------------------------------------
-         if ( rwtraj_L ) V4dg_iln = iln
-         if ( rwtraj_L ) call v4d_rwtraj (8) 
+         if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) V4dg_iln = iln
+         call v4d_rwtraj (8) 
 !
          call tmg_start0 ( 8, 'BAC      ' )
          call bac ( iln, Schm_itnlh )
@@ -169,7 +167,7 @@
 !
 !        Store TRAJ requested during BAC_AD 
 !        ----------------------------------
-         if ( rwtraj_L ) call v4d_rwtraj (9) 
+         call v4d_rwtraj (9) 
 !
  100  continue
 !

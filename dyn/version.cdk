@@ -20,5 +20,5 @@
       save Version_ent_S,Version_mod_S,Version_S,Version_dstp_S
       data Version_ent_S / 'GEMNTR'/
       data Version_mod_S / 'GEMDM' /
-      data Version_dstp_S/ ' --- Release of: Sat Jan  9 11:05:24 GMT 2010'/
-      data Version_S/'V_4.1.1'/
+      data Version_dstp_S/ ' --- Release of: Thu Feb 18 09:57:56 GMT 2010'/
+      data Version_S/'V_4.1.2'/

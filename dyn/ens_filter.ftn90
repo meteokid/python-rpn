@@ -1,0 +1,312 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r ens_filter - Fourier filter
+!
+#include "model_macros_f.h"
+      subroutine ens_filter (F_ugwdt1,F_vgwdt1,F_difut1,F_difvt1, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
+      implicit none
+!
+      integer DIST_DIM, Nk
+      real    F_ugwdt1(DIST_SHAPE,Nk), F_vgwdt1(DIST_SHAPE,Nk)
+      real    F_difut1(DIST_SHAPE,Nk), F_difvt1(DIST_SHAPE,Nk)
+      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk)
+!
+!author 
+!     Lubos Spacek - rpn - apr 2005
+!
+!revision
+! v4_12 - Spacek L.         - staggered + gmm version
+!
+!object
+!	
+!arguments
+!	none
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "dcst.cdk"
+
+#include "ens_gmm_var.cdk"
+#include "ens_param.cdk"
+
+!
+!variables
+      integer ix,iy,iz,iz_local,kx,ky,kz, E_nk
+      integer np, rank, ierr, keys(8), npartiel
+      integer i, j, k, i0, j0, in, jn, nij, inn, trx
+      real    pi, err, deltax, cpdi
+      real*8  dpi, aaa2
+!     Arrays
+      real  , dimension(:,:,:), allocatable  :: dsp_local, fgem
+      real  , dimension(:,:,:), allocatable  :: dsp_dif, dsp_gwd
+      real  , dimension(:,:,:), allocatable  :: derx_local,dery_local
+
+      E_nk = Nk
+!
+      dpi=4.d0*atan(1.0d0)
+      cpdi=1./real(Dcst_cpd_8)
+      aaa2= 1.d0/Dcst_rayt_8**2
+      deltax=sqrt(((2.0*dpi/real(G_ni))*Dcst_rayt_8)* &
+                     ((dpi/real(G_nj))*Dcst_rayt_8))
+!
+!     Get needed fields in memory
+!
+      gmmstat = gmm_get(gmmk_mcsph1_s ,mcsph1,meta3d)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'mcsph11'
+!
+!     Markov chain step and if Ens_bc_conf=.false. return
+!
+      call ens_marfield_cg (mcsph1,E_nk+1)
+!
+      if (.not.Ens_bc_conf) return
+!
+      allocate( dsp_local(LDIST_SHAPE,E_nk))
+      allocate( dsp_dif(LDIST_SHAPE,E_nk))
+      allocate( dsp_gwd(LDIST_SHAPE,E_nk))
+      allocate( derx_local(LDIST_SHAPE,E_nk))
+      allocate( dery_local(LDIST_SHAPE,E_nk))
+
+      call rpn_comm_xch_halo (F_difut1,LDIST_DIM,l_ni,l_nj,E_nk, &
+                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_difvt1,LDIST_DIM,l_ni,l_nj,E_nk, &
+                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_ugwdt1,LDIST_DIM,l_ni,l_nj,E_nk, &
+                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0) 
+      call rpn_comm_xch_halo (F_vgwdt1,LDIST_DIM,l_ni,l_nj,E_nk, &
+                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+ 
+!
+!     Calculate kinetic energy of diffusion tendency
+!     ===============================================
+
+      i0 = 1
+      in = G_ni
+      j0 = 1
+      jn = G_nj
+      inn= 0
+      if (G_lam) then
+           inn=1
+      endif
+!
+!     Diffusion backscatter
+!
+      if(Ens_bc_stat)then
+         call glbstat2 (F_ut1,'UT1','AT BEG', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_vt1,'VT1','AT BEG', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_difut1,'DUT1','AT BEG', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_difvt1,'DVT1','AT BEG', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_ugwdt1,'UGW1','AT BEG', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_vgwdt1,'VGW1','AT BEG', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+
+      dsp_dif=0.0
+      if(Ens_bc_dif)then
+        F_difut1=F_ut1*F_difut1 ; F_difvt1=F_vt1*F_difvt1
+        call ens_uvduv (dsp_dif, F_difut1, F_difvt1, LDIST_DIM, E_nk )
+      endif
+
+      if(Ens_bc_stat)then
+         call glbstat2 (F_difut1,'DUT1','DIFF', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_difvt1,'DVT1','DIFF', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+!
+!     Gravity wave drag backscatter
+!
+      dsp_gwd=0.0
+      if(Ens_bc_gwd)then
+        F_difut1=F_ut1*F_ugwdt1 ; F_difvt1=F_vt1*F_vgwdt1
+        call ens_uvgwd (dsp_gwd, F_difut1, F_difvt1, LDIST_DIM, E_nk )
+      endif
+!
+      if(Ens_bc_stat)then
+         call glbstat2 (F_difut1,'DUT1','GWD', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_difvt1,'DVT1','GWD', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+
+      dsp_local=dsp_dif+dsp_gwd
+
+!
+!     Apply 2D Gaussian filter
+!     ===================================================================
+      if(Ens_bc_stat)then
+          call glbstat2 (dsp_dif,'DSP','DIF', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+          call glbstat2 (dsp_gwd,'DSP','GWD', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+          call glbstat2 (dsp_local,'DSP','TOT', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+
+      call ens_filter_gauss(dble(Ens_bc_bfc),dble(Ens_bc_lam),dsp_local)
+
+      if(Ens_bc_stat)then 
+         call glbstat2 (dsp_local,'DSP','FLTTOT', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+
+      if(Ens_bc_alpt/=0.0)then
+         do k=1,E_nk
+            do j=1,l_nj
+               do i=1,l_ni
+                  F_tt1(i,j,k+1)=F_tt1(i,j,k+1)+Ens_bc_alpt*cpdi*dsp_local(i,j,k)*mcsph1(i,j,k)
+               enddo
+            enddo
+         enddo
+      endif
+!
+      do k=1,E_nk
+         do j=1,l_nj
+            do i=1,l_ni
+! avant on a filtre le champ radical D chapeau
+!               dsp_local(i,j,k)=dsp_local(i,j,k)*mcsph1(i,j,k)
+! maintenant on a filtre le champ D chapeau
+               dsp_local(i,j,k)=sqrt(dsp_local(i,j,k))*mcsph1(i,j,k)
+            enddo
+         enddo
+      enddo
+!
+      call rpn_comm_xch_halo (dsp_local,LDIST_DIM,l_ni,l_nj,E_nk, &
+                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+
+      call rpn_comm_Barrier("grid", ierr)
+
+!     Compute gradient of filtered field
+!     ==================================
+      i0 = 1
+      in = l_niu
+      j0 = 1
+      jn = l_njv
+
+      if ((G_lam).and.(l_west)) i0 = 2
+      if (l_south) j0 = 2
+
+      do k=1,E_nk
+         do j= j0, jn 
+            do i= i0, l_niu
+               F_difut1(i,j,k)= aaa2*(dsp_local(i,j,k)-dsp_local(i-1,j,k)) / geomg_hxu_8(i)
+               F_difut1(i,j,k)=Ens_bc_alph*deltax*F_difut1(i,j,k)
+               F_vt1(i,j,k) = F_vt1(i,j,k)+F_difut1(i,j,k)
+            enddo
+         enddo
+!
+         do j= j0, l_njv-pil_n
+            do i= i0, in 
+               F_difvt1(i,j,k)= aaa2*(dsp_local(i,j+1,k) - dsp_local(i,j,k))*geomg_cy2_8(j)/geomg_hsyv_8(j)
+               F_difvt1(i,j,k)= -Ens_bc_alph*deltax*F_difvt1(i,j,k)
+               F_ut1(i,j,k) = F_ut1(i,j,k)+F_difvt1(i,j,k)
+            enddo
+         enddo
+         if (.not.G_lam) then
+            if (l_south) then
+            do i = i0, in
+               F_difut1(i,1,k)= 0.0
+               F_difvt1(i,1,k)= 0.0
+            end do
+            endif
+
+            if (l_north) then
+            do i = i0, in
+               F_difut1(i,l_nj,k)= 0.0
+               F_difvt1(i,l_nj,k)= 0.0
+            end do
+            endif
+         endif
+      enddo
+
+      if(Ens_bc_stat)then
+         call glbstat2 (F_ut1,'UT1','AT END', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_vt1,'VT1','AT END', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_difut1,'DUT1','AT END', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (F_difvt1,'DVT1','AT END', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+
+      if(Ens_bc_div)then
+         derx_local=0.0; dery_local=0.0
+         call rpn_comm_xch_halo (F_difut1,LDIST_DIM,l_ni,l_nj,E_nk, &
+                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+         call rpn_comm_xch_halo (F_difvt1,LDIST_DIM,l_ni,l_nj,E_nk, &
+                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+
+
+         i0 = 1
+         in = l_niu
+         j0 = 1
+         jn = l_njv
+
+         if (l_west)  i0 = 2
+         if (l_south) j0 = 2
+         do k=1,E_nk
+            do j= j0, l_njv-pil_n
+               do i= i0, in 
+                  derx_local(i,j,k)= aaa2*(F_difvt1(i,j,k)-F_difvt1(i-1,j,k)) / geomg_hxu_8(i)
+
+               enddo
+            enddo
+!
+            do j= j0, jn 
+               do i= i0, l_niu
+                  dery_local(i,j,k)= aaa2*(F_difut1(i,j,k) - F_difut1(i,j-1,k)) &
+                         *geomg_cy2_8(j)/geomg_hsyv_8(j)- derx_local(i,j,k)
+               enddo
+            enddo
+            if (.not.G_lam) then
+               if (l_south) then
+                  do i = i0, in
+                     F_difut1(i,1,k)= 0.0
+                     F_difvt1(i,1,k)= 0.0
+                     F_difut1(i,2,k)= 0.0
+                     F_difvt1(i,2,k)= 0.0
+                  end do
+               endif
+
+               if (l_north) then
+                  do i = i0, in
+                     F_difut1(i,l_nj,k)= 0.0
+                     F_difvt1(i,l_nj,k)= 0.0
+                  end do
+               endif
+            endif
+         enddo
+         endif
+!
+      if(Ens_bc_stat)then
+         call glbstat2 (dery_local,'DVRG','FRCING', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+
+      deallocate(derx_local,dery_local)
+      deallocate(dsp_dif,dsp_gwd,dsp_local)
+
+ 6000 format('ens_filter at gmm_get(',A,')')
+      end subroutine ens_filter

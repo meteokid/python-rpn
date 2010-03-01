@@ -1,0 +1,56 @@
+#if defined (DOC)
+!
+!**comdeck vth.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  GMM variables at TIME th (t0-dt/2)                                  |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+!  uth               | U: x component of velocity                      |
+!  vth               | V: y component of velocity                      |
+! zdth               | Zdot: generalized vertical velocity             |
+!--------------------|-------------------------------------------------|
+!  xth               | upstream x position                             |
+!  yth               | upstream y position                             |
+!  zth               | upstream z position                             |
+! xcth               | upstream x position in cartesian coordinate     |
+! ycth               | upstream y position in cartesian coordinate     |
+! zcth               | upstream z position in cartesian coordinate     |
+! ***h_thermo        | same as above but for thermo levels             |
+!----------------------------------------------------------------------
+!
+#endif
+!
+      real, pointer, dimension (:,:,:) :: uth         => null() ! effective dimensions are (LDIST_SHAPE,   l_nk  )
+      real, pointer, dimension (:,:,:) :: vth         => null() ! effective dimensions are (LDIST_SHAPE,   l_nk  )
+      real, pointer, dimension (:,:,:) :: zdth        => null() ! effective dimensions are (LDIST_SHAPE,   l_nk+1)
+      real, pointer, dimension (:    ) :: xth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: yth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: zth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: xcth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: ycth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: zcth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+!
+      real, pointer, dimension (:    ) :: xth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: yth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: zth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: xcth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: ycth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: zcth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+!
+      character(len=8) :: gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
+      character(len=8) :: gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
+      character(len=8) :: gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
+!
+      character(len=8) :: gmmk_xth_thermo_s , gmmk_yth_thermo_s , gmmk_zth_thermo_s
+      character(len=8) :: gmmk_xcth_thermo_s, gmmk_ycth_thermo_s, gmmk_zcth_thermo_s
+!
+      common /vth_n_gmm / gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
+      common /vth_n_gmm / gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
+      common /vth_n_gmm / gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
+!
+      common /vth_n_gmm/ gmmk_xth_thermo_s , gmmk_yth_thermo_s , gmmk_zth_thermo_s
+      common /vth_n_gmm/ gmmk_xcth_thermo_s, gmmk_ycth_thermo_s, gmmk_zcth_thermo_s

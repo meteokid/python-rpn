@@ -45,6 +45,7 @@
 ! v4_06 - Lepine M.         - VMM replacement with GMM
 ! v4_06 - Lee V.            - predat is called after readdyn, casc_3df_dynp
 ! v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+! v4_12 - Tanguay M.        - Adapt to revised predat
 !
 !object
 !	
@@ -72,21 +73,20 @@
 #include "itf_phy_buses.cdk"
 #include "wil_williamson.cdk"
 #include "path.cdk"
-#include "v4dg.cdk"
 !
+      logical  v4d_indata2,v4d_predat
       integer  nav_3df,newdate,readgeo
-      external nav_3df,newdate,readgeo
+      external nav_3df,newdate,readgeo,v4d_indata2,v4d_predat
 !
-      character*16, dimension (:,:), allocatable ::  listgeonm
+      character*16, dimension (:,:), allocatable :: listgeonm
       character*256 fn
-      integer err,unf,errop,ungeo,dat,k, &
-              err_geo,skipcode
+      integer err,unf,errop,ungeo,dat,k,err_geo,skipcode
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write (Lun_out,1000)
 !
-      call v4d_indata1(Vtopo_L)
+      call v4d_indata1 (Vtopo_L)
 !
       gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'indata ERROR at gmm_get(ut1)'
@@ -118,10 +118,8 @@
          nullify (dtopo)
       endif
 !
-      skipcode=0
-      call v4d_indata2 (skipcode,ut1,vt1,tt1,zdt1,st1,qt1,wt1,topo,fiptx, &
-                                             l_minx,l_maxx,l_miny,l_maxy)
-      if (skipcode.eq.1) goto 9999
+      if ( v4d_indata2 (ut1,vt1,tt1,zdt1,st1,topo,fiptx, &
+                           l_minx,l_maxx,l_miny,l_maxy) ) goto 9999
 !
       Path_ind_S=trim(Path_input_S)//'/INIT_3D'
 !
@@ -189,14 +187,11 @@
       if (Schm_autobar_L.and.Williamson_case.ne.0)  &
                              call wil_prepare_case 
 !
-      if ( V4dg_conf.eq.0 ) then
-         call predat2 ( ut1, vt1, tt1, zdt1, st1, topo, fiptx, &
-                                  l_minx,l_maxx,l_miny,l_maxy)
-      else
-         call v4d_predat (V4dg_part, ut1, vt1, tt1, zdt1, st1, qt1, &
-                          wt1, topo, fiptx,l_minx,l_maxx,l_miny,l_maxy)
-      endif
-
+      if (.not. v4d_predat ( ut1, vt1, tt1, zdt1, st1, topo, fiptx,    &
+                                       l_minx,l_maxx,l_miny,l_maxy) )  &
+           call    predat2 ( ut1, vt1, tt1, zdt1, st1, topo, fiptx,    &
+                                       l_minx,l_maxx,l_miny,l_maxy)
+!
       if (Lun_out.gt.0) write (Lun_out,1001)
 !
       do k=1,P_bgeo_top

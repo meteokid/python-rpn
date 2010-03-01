@@ -1,0 +1,340 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r v4d_vmm_trajectory - Initialize VMM space for TRAJECTORY   
+*
+#define SPY_VMM_CREATE spy_vmm_create
+#include "model_macros_f.h"
+*
+      subroutine v4d_vmm_trajectory 
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt ADJ for new advection code
+*                           - adapt for tracers in tr3d
+* v3_00 - Tanguay M         - open WA file Conversion
+* v3_00 - Laroche S.        - additions for simplified physics
+* v3_02 - Buehner M.        - added section for ref state file for NLMX
+* event (SV job)
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
+* v3_11 - Tanguay M.        - ADJ of digital filter
+* v3_30 - Tanguay M.        - Validation for LAM version
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+* v4_10 - Tanguay M.        - Renamed v4d_settraj as v4d_vmm_trajectory 
+* v4_12 - Tanguay M.        - Remove fipt1
+*
+*object
+*       see id section
+*
+*       **********************************************************************
+*       CAUTION: NAME Must not be longer than 4 characters if used for output,
+*                otherwise, it is OK.
+*       **********************************************************************
+*	
+*arguments
+*	none
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vt0_m.cdk"
+#include "vth_m.cdk"
+#include "vt1_m.cdk"
+#include "vtx_m.cdk"
+#include "rhsc_m.cdk"
+#include "orh_m.cdk"
+#include "nest_m.cdk"
+#include "tr3d.cdk"
+*
+*     ---------------------------------------------------------------
+      real, pointer, dimension (:,:,:) :: tr0_m,tr1_m,ortr_m,trr_m
+      integer i
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+*     --------------------------------
+*     Create variables at time t0 (t0) 
+*     --------------------------------
+      gmmk_wt0_m_s    = 'WT0_M'
+      gmmk_tt0_m_s    = 'TT0_M'
+      gmmk_zdt0_m_s   = 'ZDT0_M'
+      gmmk_st0_m_s    = 'ST0_M'
+      gmmk_qt0_m_s    = 'QT0_M'
+      gmmk_ut0_m_s    = 'UT0_M'
+      gmmk_vt0_m_s    = 'VT0_M'
+
+      nullify(ut0_m,vt0_m,wt0_m,tt0_m,qt0_m,zdt0_m,st0_m)
+      gmmstat = gmm_create(gmmk_ut0_m_s,ut0_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(ut0_m)'
+      gmmstat = gmm_create(gmmk_vt0_m_s,vt0_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(vt0_m)'
+      gmmstat = gmm_create(gmmk_wt0_m_s,wt0_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(wt0_m)'
+      gmmstat = gmm_create(gmmk_tt0_m_s,tt0_m,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(wt0_m)'
+      gmmstat = gmm_create(gmmk_qt0_m_s,qt0_m,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(qt0_m)'
+      gmmstat = gmm_create(gmmk_zdt0_m_s,zdt0_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(zdt0_m)'
+      gmmstat = gmm_create(gmmk_st0_m_s,st0_m,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(st0_m)'
+*
+*     -------------------------------------
+*     Create variables at time t0-dt/2 (th)
+*     -------------------------------------
+      gmmk_uth_m_s = 'UTH_M'
+      gmmk_vth_m_s = 'VTH_M'
+      gmmk_zdth_m_s= 'ZDTH_M'
+      gmmk_xth_m_s = 'XTH_M'
+      gmmk_yth_m_s = 'YTH_M'
+      gmmk_zth_m_s = 'ZTH_M'
+      gmmk_xcth_m_s= 'XCTH_M'
+      gmmk_ycth_m_s= 'YCTH_M'
+      gmmk_zcth_m_s= 'ZCTH_M'
+*
+      gmmk_xth_thermo_m_s = 'XTHT_M'
+      gmmk_yth_thermo_m_s = 'YTHT_M'
+      gmmk_zth_thermo_m_s = 'ZTHT_M'
+      gmmk_xcth_thermo_m_s= 'XCHT_M'
+      gmmk_ycth_thermo_m_s= 'YCHT_M'
+      gmmk_zcth_thermo_m_s= 'ZCHT_M'
+*
+      gmmstat = gmm_create(gmmk_uth_m_s ,uth_m ,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(uth_m)'
+      gmmstat = gmm_create(gmmk_vth_m_s ,vth_m ,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(vth_m)'
+      gmmstat = gmm_create(gmmk_zdth_m_s,zdth_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(zdth_m)'
+      gmmstat = gmm_create(gmmk_xth_m_s ,xth_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(xth_m)'
+      gmmstat = gmm_create(gmmk_yth_m_s ,yth_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(yth_m)'
+      gmmstat = gmm_create(gmmk_zth_m_s ,zth_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(zth_m)'
+      gmmstat = gmm_create(gmmk_xcth_m_s,xcth_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(xcth_m)'
+      gmmstat = gmm_create(gmmk_ycth_m_s,ycth_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(ycth_m)'
+      gmmstat = gmm_create(gmmk_zcth_m_s,zcth_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(zcth_m)'
+*
+      gmmstat = gmm_create(gmmk_xth_thermo_m_s ,xth_thermo_m,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(xth_thermo_m)'
+      gmmstat = gmm_create(gmmk_yth_thermo_m_s ,yth_thermo_m,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(yth_thermo_m)'
+      gmmstat = gmm_create(gmmk_zth_thermo_m_s ,zth_thermo_m,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(zth_thermo_m)'
+      gmmstat = gmm_create(gmmk_xcth_thermo_m_s,xcth_thermo_m,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(xcth_thermo_m)'
+      gmmstat = gmm_create(gmmk_ycth_thermo_m_s,ycth_thermo_m,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(ycth_thermo_m)'
+      gmmstat = gmm_create(gmmk_zcth_thermo_m_s,zcth_thermo_m,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(zcth_thermo_m)'
+*
+*     -----------------------------------
+*     Create variables at time t0-dt (t1)
+*     -----------------------------------
+      gmmk_wt1_m_s   = 'WT1_M'
+      gmmk_tt1_m_s   = 'TT1_M'
+      gmmk_zdt1_m_s  = 'ZDT1_M'
+      gmmk_xct1_m_s  = 'XCT1_M'
+      gmmk_yct1_m_s  = 'YCT1_M'
+      gmmk_zct1_m_s  = 'ZCT1_M'
+      gmmk_st1_m_s   = 'ST1_M'
+      gmmk_qt1_m_s   = 'QT1_M'
+      gmmk_ut1_m_s   = 'UT1_M'
+      gmmk_vt1_m_s   = 'VT1_M'
+
+      nullify(ut1_m,vt1_m,wt1_m,tt1_m)
+      gmmstat = gmm_create(gmmk_ut1_m_s,ut1_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(ut1_m)'
+      gmmstat = gmm_create(gmmk_vt1_m_s,vt1_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(vt1_m)'
+      gmmstat = gmm_create(gmmk_wt1_m_s,wt1_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(wt1_m)'
+      gmmstat = gmm_create(gmmk_tt1_m_s,tt1_m,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(tt1_m)'
+*
+      nullify(qt1_m,zdt1_m,st1_m)
+      gmmstat = gmm_create(gmmk_qt1_m_s,qt1_m,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(qt1_m)'
+      gmmstat = gmm_create(gmmk_zdt1_m_s,zdt1_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(zdt1_m)'
+      gmmstat = gmm_create(gmmk_st1_m_s,st1_m,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(st1_m)'
+* 
+      nullify(xct1_m,yct1_m,zct1_m)
+      gmmstat = gmm_create(gmmk_xct1_m_s,xct1_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(xct1_m)'
+      gmmstat = gmm_create(gmmk_yct1_m_s,yct1_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(yct1_m)'
+      gmmstat = gmm_create(gmmk_zct1_m_s,zct1_m,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(zct1_m)'
+*
+*     ------------------------------------------
+*     Create variables with no specific time tag
+*     ------------------------------------------
+*
+      gmmk_mutx_m_s  = 'MUTX_M'
+      gmmk_bspqtx_m_s= 'BSPQ_M'
+      gmmk_fiptx_m_s = 'FIPTX_M'
+*
+      nullify(bspqtx_m,mutx_m,fiptx_m)
+      gmmstat = gmm_create(gmmk_bspqtx_m_s,bspqtx_m,meta3d_0nk1,GMM_NULL_FLAGS)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(bspqtx_m)'
+      gmmstat = gmm_create(gmmk_mutx_m_s,mutx_m,meta3d_nk1,GMM_NULL_FLAGS)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(mutx_m)'
+      gmmstat = gmm_create(gmmk_fiptx_m_s,fiptx_m,meta3d_0nk1,GMM_NULL_FLAGS)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(fiptx_m)'
+*
+*     ----------------------------------------
+*     Initialize TRAJ right hand sides comdeck
+*     ----------------------------------------
+      gmmk_rhsu_m_s = 'RHSU_M'
+      gmmk_rhsv_m_s = 'RHSV_M'
+      gmmk_rhst_m_s = 'RHST_M'
+      gmmk_rhsc_m_s = 'RHSC_M'
+      gmmk_rhsw_m_s = 'RHSW_M'
+      gmmk_rhsf_m_s = 'RHSF_M'
+      gmmk_rhsp_m_s = 'RHSP_M'
+      gmmk_rhsb_m_s = 'RHSB_M'
+*
+      gmmk_ruw1_m_s = 'RUW1_M'
+      gmmk_ruw2_m_s = 'RUW2_M'
+      gmmk_rvw1_m_s = 'RVW1_M'
+      gmmk_rvw2_m_s = 'RVW2_M'
+*
+      nullify (rhsu_m,rhsv_m,rhst_m,rhsc_m,rhsw_m,rhsf_m,rhsp_m,rhsb_m)
+      nullify (ruw1_m,rvw1_m,ruw2_m,rvw2_m)
+*
+      gmmstat = gmm_create(gmmk_rhsu_m_s,rhsu_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rhsu_m)'
+      gmmstat = gmm_create(gmmk_rhsv_m_s,rhsv_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rhsv_m)'
+      gmmstat = gmm_create(gmmk_rhst_m_s,rhst_m,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rhst_m)'
+      gmmstat = gmm_create(gmmk_rhsc_m_s,rhsc_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rhsc_m)'
+      gmmstat = gmm_create(gmmk_rhsw_m_s,rhsw_m,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rhsw_m)'
+      gmmstat = gmm_create(gmmk_rhsf_m_s,rhsf_m,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rhsf_m)'
+      gmmstat = gmm_create(gmmk_rhsp_m_s,rhsp_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rhsp_m)'
+      gmmstat = gmm_create(gmmk_rhsb_m_s,rhsb_m,meta2d   , GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rhsb_m)'
+*
+      gmmstat = gmm_create(gmmk_ruw1_m_s,ruw1_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(ruw1_m)'
+      gmmstat = gmm_create(gmmk_rvw1_m_s,rvw1_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rvw1_m)'
+      gmmstat = gmm_create(gmmk_ruw2_m_s,ruw2_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(ruw2_m)'
+      gmmstat = gmm_create(gmmk_rvw2_m_s,rvw2_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(rvw2_m)'
+*
+*     -----------------------------------------------------
+*     Initialize TRAJ comdeck for Crank-Nicholson procedure
+*     -----------------------------------------------------
+      gmmk_orhsu_m_s = 'ORHU_M'
+      gmmk_orhsv_m_s = 'ORHV_M'
+      gmmk_orhst_m_s = 'ORHT_M'
+      gmmk_orhsc_m_s = 'ORHC_M'
+      gmmk_orhsw_m_s = 'ORHW_M'
+      gmmk_orhsf_m_s = 'ORHF_M'
+*
+      gmmk_oruw2_m_s = 'ORUW2_M'
+      gmmk_orvw2_m_s = 'ORVW2_M'
+*
+      gmmstat = gmm_create(gmmk_orhsu_m_s,orhsu_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(orhsu_m)'
+      gmmstat = gmm_create(gmmk_orhsv_m_s,orhsv_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(orhsv_m)'
+      gmmstat = gmm_create(gmmk_orhst_m_s,orhst_m,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(orhst_m)'
+      gmmstat = gmm_create(gmmk_orhsc_m_s,orhsc_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(orhsc_m)'
+      gmmstat = gmm_create(gmmk_orhsw_m_s,orhsw_m,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(orhsw_m)'
+      gmmstat = gmm_create(gmmk_orhsf_m_s,orhsf_m,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(orhsf_m)'
+*
+      gmmstat = gmm_create(gmmk_oruw2_m_s,oruw2_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(oruw2_m)'
+      gmmstat = gmm_create(gmmk_orvw2_m_s,orvw2_m,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(orvw2_m)'
+*
+*     -----------------------------------
+*     Initialize TRAJ comdeck for nesting 
+*     -----------------------------------
+      gmmk_nest_u_m_s  = 'NEST_U_M'
+      gmmk_nest_v_m_s  = 'NEST_V_M'
+      gmmk_nest_t_m_s  = 'NEST_T_M'
+      gmmk_nest_zd_m_s = 'NEST_ZD_M'
+      gmmk_nest_w_m_s  = 'NEST_W_M'
+      gmmk_nest_s_m_s  = 'NEST_S_M'
+      gmmk_nest_q_m_s  = 'NEST_Q_M'
+*
+      nullify(nest_u_m ,nest_v_m ,nest_w_m ,nest_t_m ,nest_zd_m ,nest_s_m ,nest_q_m )
+*
+      gmmstat = gmm_create(gmmk_nest_u_m_s, nest_u_m, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(nest_u_m )'
+      gmmstat = gmm_create(gmmk_nest_v_m_s, nest_v_m, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(nest_v_m )'
+      gmmstat = gmm_create(gmmk_nest_w_m_s, nest_w_m, meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(nest_w_m )'
+      gmmstat = gmm_create(gmmk_nest_t_m_s, nest_t_m, meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(nest_t_m )'
+      gmmstat = gmm_create(gmmk_nest_zd_m_s,nest_zd_m,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(nest_zd_m)'
+      gmmstat = gmm_create(gmmk_nest_s_m_s, nest_s_m, meta2d    ,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(nest_s_m )'
+      if (.not. Schm_hydro_L) then
+         gmmstat = gmm_create(gmmk_nest_q_m_s,nest_q_m,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_vmm_trajectory ERROR at gmm_create(nest_q_m)'
+      endif
+*
+*     -----------------------------------
+*     Initialize TRAJ comdeck for TRACERS 
+*     -----------------------------------
+      do i=1,Tr3d_ntr
+         nullify(tr0_m)
+         gmmstat = gmm_create('TRM/'//trim(Tr3d_name_S(i))//':M',tr0_m, meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         nullify(tr1_m)
+         gmmstat = gmm_create('TRM/'//trim(Tr3d_name_S(i))//':P',tr1_m, meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         nullify(ortr_m)
+         gmmstat = gmm_create('TRM/'//trim(Tr3d_name_S(i))//':O',ortr_m,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         nullify(trr_m)
+         gmmstat = gmm_create('TRM/'//trim(Tr3d_name_S(i))//':N',trr_m, meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      end do
+*
+ 1000 format(
+     +/,'Allocate WA file and VMM space for TRAJECTORY (S/R V4D_VMM_TRAJECTORY)',
+     +/,'======================================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

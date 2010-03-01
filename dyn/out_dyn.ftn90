@@ -168,6 +168,8 @@
       if (Out3_ip3.eq.-1) ip3 = Lctl_step
       if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
 !
+      call v4d_out_ipext (ip3, ext_S, etikadd_S)
+!
 !     setup of filename extension if needed
       if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
            ((Lctl_step.ge.(Init_dfnp-1)/2)) ) &

@@ -1,0 +1,118 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r vspng_drv_lam_tl - TLM of vspng_drv_lam 
+*
+#include "model_macros_f.h"
+*
+      subroutine vspng_drv_lam_tl ( F_u, F_v, F_zd, F_w, F_t, F_u_m, F_v_m, F_zd_m, F_w_m, F_t_m,
+     %                              DIST_DIM, Nk)
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+      real     F_u (DIST_SHAPE,Nk  ),F_v(DIST_SHAPE,Nk),
+     %         F_zd(DIST_SHAPE,Nk+1),F_w(DIST_SHAPE,Nk+1),
+     %         F_t (DIST_SHAPE,Nk+1)
+*
+      real     F_u_m (DIST_SHAPE,Nk  ),F_v_m(DIST_SHAPE,Nk),
+     %         F_zd_m(DIST_SHAPE,Nk+1),F_w_m(DIST_SHAPE,Nk+1),
+     %         F_t_m (DIST_SHAPE,Nk+1)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*arguments
+* 
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vspng.cdk"
+*
+      integer nkspng
+*
+*     __________________________________________________________________
+*
+      if (Vspng_nk.lt.1) return
+*
+      if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
+*
+*     Momentum
+*     ~~~~~~~~
+*
+*     TRAJECTORY
+*     ----------
+      call vspng_lam ( F_u_m, LDIST_DIM, l_niu, l_nj )
+      call vspng_lam ( F_v_m, LDIST_DIM, l_ni , l_njv)
+*
+*     TLM
+*     ---
+      call vspng_lam ( F_u,   LDIST_DIM, l_niu, l_nj )
+      call vspng_lam ( F_v,   LDIST_DIM, l_ni , l_njv)
+*
+*     Vertical motion
+*     ~~~~~~~~~~~~~~~
+*
+*********not physical, done nevertheless*******
+*
+*     TRAJECTORY
+*     ----------
+      call vspng_lam ( F_zd_m,LDIST_DIM, l_ni , l_nj )
+*
+*     TLM
+*     ---
+      call vspng_lam ( F_zd,LDIST_DIM, l_ni , l_nj )
+*
+*     Vertical wind
+*     ~~~~~~~~~~~~~
+      if(.not.Schm_hydro_L) then
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_w_m, LDIST_DIM, l_ni , l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_w, LDIST_DIM, l_ni , l_nj)
+*
+      endif
+*
+*     Temperature, last level only
+*     ----------------------------
+      nkspng   = Vspng_nk
+      Vspng_nk = 1
+*    
+*     TRAJECTORY
+*     ----------
+      call vspng_lam ( F_t_m, LDIST_DIM, l_ni , l_nj)
+*
+*     TLM 
+*     ---
+      call vspng_lam ( F_t,   LDIST_DIM, l_ni , l_nj)
+*
+      Vspng_nk = nkspng
+*
+*     __________________________________________________________________
+*
+ 1000 format(/,3X,
+     $ 'TLM of 9PT FILT SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV_LAM_TL)')
+*
+      return
+      end

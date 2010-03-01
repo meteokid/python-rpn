@@ -47,44 +47,44 @@
 !     
       if(F_flag.eq.1)then
          if (Lun_out.gt.0) write(Lun_out,*) 'before bacp_2'
-         call glbstat (F_fiptx, 'FIPT',LDIST_DIM,G_nk+2, &
-              8+acid_i0,G_ni-7-acid_in, &
-              8+acid_j0,G_nj-7-acid_jn, &
-              1,G_nk+2)
-         call glbstat (F_nl_t, 'NL_t',LDIST_DIM,G_nk+1, &
-              8+acid_i0,G_ni-7-acid_in, &
-              8+acid_j0,G_nj-7-acid_jn, &
-              1,G_nk+1)
-         call glbstat (F_topo, 'TOPO',LDIST_DIM,1, &
-              8+acid_i0,G_ni-7-acid_in, &
-              8+acid_j0,G_nj-7-acid_jn, &
-              1,1)
-         call glbstat (F_st0, 'ST0',LDIST_DIM,1, &
-              8+acid_i0,G_ni-7-acid_in, &
-              8+acid_j0,G_nj-7-acid_jn, &
-              1,1)
-         call glbstat (F_ut0, 'UT0',LDIST_DIM,G_nk+1, &
-              8+acid_i0,G_ni-7-acid_in, &
-              8+acid_j0,G_nj-7-acid_jn, &
-              1,G_nk)         
+!         call glbstat (F_fiptx, 'FIPT',LDIST_DIM,G_nk+2, &
+!              8+acid_i0,G_ni-7-acid_in, &
+!              8+acid_j0,G_nj-7-acid_jn, &
+!              1,G_nk+2)
+!         call glbstat (F_nl_t, 'NL_t',LDIST_DIM,G_nk+1, &
+!              8+acid_i0,G_ni-7-acid_in, &
+!              8+acid_j0,G_nj-7-acid_jn, &
+!              1,G_nk+1)
+!         call glbstat (F_topo, 'TOPO',LDIST_DIM,1, &
+!              8+acid_i0,G_ni-7-acid_in, &
+!              8+acid_j0,G_nj-7-acid_jn, &
+!              1,1)
+!         call glbstat (F_st0, 'ST0',LDIST_DIM,1, &
+!              8+acid_i0,G_ni-7-acid_in, &
+!              8+acid_j0,G_nj-7-acid_jn, &
+!              1,1)
+!         call glbstat (F_ut0, 'UT0',LDIST_DIM,G_nk+1, &
+!              8+acid_i0,G_ni-7-acid_in, &
+!              8+acid_j0,G_nj-7-acid_jn, &
+!              1,G_nk)         
       elseif(F_flag.eq.2)then         
          if (Lun_out.gt.0) write(Lun_out,*) 'after bacp_2'
-         call glbstat (F_fiptx, 'FIPT',LDIST_DIM,G_nk+2, &
-              8+acid_i0,G_ni-7-acid_in, &
-              8+acid_j0,G_nj-7-acid_jn, &
-              1,G_nk+2)
-         call glbstat (F_st0, 'ST0',LDIST_DIM,1, &
-              8+acid_i0,G_ni-7-acid_in, &
-              8+acid_j0,G_nj-7-acid_jn, &
-              1,1)
-         call glbstat (F_wt0, 'WT0',LDIST_DIM,G_nk+1, &
-              8+acid_i0,G_ni-7-acid_in, &
-              8+acid_j0,G_nj-7-acid_jn, &
-              1,G_nk+1)
-         call glbstat (F_ut0, 'UT0',LDIST_DIM,G_nk+1, &
-              8+acid_i0,G_ni-8-acid_in, &
-              8+acid_j0,G_nj-8-acid_jn, &
-              1,G_nk)
+!         call glbstat (F_fiptx, 'FIPT',LDIST_DIM,G_nk+2, &
+!              8+acid_i0,G_ni-7-acid_in, &
+!              8+acid_j0,G_nj-7-acid_jn, &
+!              1,G_nk+2)
+!         call glbstat (F_st0, 'ST0',LDIST_DIM,1, &
+!              8+acid_i0,G_ni-7-acid_in, &
+!              8+acid_j0,G_nj-7-acid_jn, &
+!              1,1)
+!         call glbstat (F_wt0, 'WT0',LDIST_DIM,G_nk+1, &
+!              8+acid_i0,G_ni-7-acid_in, &
+!              8+acid_j0,G_nj-7-acid_jn, &
+!              1,G_nk+1)
+!         call glbstat (F_ut0, 'UT0',LDIST_DIM,G_nk+1, &
+!              8+acid_i0,G_ni-8-acid_in, &
+!              8+acid_j0,G_nj-8-acid_jn, &
+!              1,G_nk)
       else
          print*,'flag=',F_flag
          call handle_error(-1,'acid_stat_bac','acid_stat_bac : error with flag')

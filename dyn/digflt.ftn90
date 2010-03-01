@@ -28,7 +28,10 @@
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v3_21 - Lee V.            - Remove Tr2d
 ! v3_30 - Desgagne M.       - Removed phy memcore option
+! v4    - Girard-Plante     - Staggered version
 ! v4_05 - Lepine M.         - VMM replacement with GMM
+! v1_11 - Plante A.         - Add diag var on vertical scope
+!                             Move w out of non-hydrostatic section
 !
 !object
 !	
@@ -77,27 +80,27 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(sta)'
       gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
       if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(st1)'
+      gmmstat = gmm_get(gmmk_wta_s,wta,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(wta)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(wt1)'
 !
       do k=1,l_nk+1
       do j= 1, l_nj 
       do i= 1, l_ni 
-          tta(i,j,k) =   tta(i,j,k) + dfcoef *   tt1(i,j,k)
+          tta (i,j,k) =  tta(i,j,k) + dfcoef *  tt1(i,j,k)
+          uta (i,j,k) =  uta(i,j,k) + dfcoef *  ut1(i,j,k)
+          vta (i,j,k) =  vta(i,j,k) + dfcoef *  vt1(i,j,k)
           zdta(i,j,k) = zdta(i,j,k) + dfcoef * zdt1(i,j,k)
-      end do
-      end do
-      end do
-      do k=1,l_nk
-      do j= 1, l_nj 
-      do i= 1, l_ni 
-           uta(i,j,k) =   uta(i,j,k) + dfcoef *   ut1(i,j,k)
-           vta(i,j,k) =   vta(i,j,k) + dfcoef *   vt1(i,j,k)
+          wta (i,j,k) =  wta(i,j,k) + dfcoef *  wt1(i,j,k)
       end do
       end do
       end do
 !
       do j= 1, l_nj
       do i= 1, l_ni
-         sta(i,j)   = sta(i,j)   + dfcoef * st1(i,j)
+         tta(i,j,l_nk+2) = tta(i,j,l_nk+2) + dfcoef * tt1(i,j,l_nk+2)
+         sta(i,j)        = sta(i,j)        + dfcoef * st1(i,j)
       end do
       end do
 !
@@ -108,26 +111,16 @@
       if ( .not. Schm_hydro_L )then
 !
 
-         gmmstat = gmm_get(gmmk_wta_s,wta,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(wta)'
          gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
          if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(qt1)'
-         gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(wt1)'
          gmmstat = gmm_get(gmmk_qta_s,qta,meta3d)
          if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(qta)'
 !
-         do k=1,l_nk+1
+         do k=0,l_nk+1
          do j= 1, l_nj
          do i= 1, l_ni
-            wta(i,j,k) = wta(i,j,k) + dfcoef * wt1(i,j,k)
             qta(i,j,k) = qta(i,j,k) + dfcoef * qt1(i,j,k)
          end do
-         end do
-         end do
-         do j= 1, l_nj
-         do i= 1, l_ni
-            qta(i,j,0) = qta(i,j,0) + dfcoef * qt1(i,j,0)
          end do
          end do
 !
@@ -143,7 +136,7 @@
          gmmstat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , meta3d_nk2)
 
          if ( Init_dftr_L ) then
-            do k=1,G_nk+1
+            do k=1,G_nk+2
             do j=1,l_nj
             do i=1,l_ni
                tra(i,j,k) = tra(i,j,k) + dfcoef * tr(i,j,k)
@@ -151,7 +144,7 @@
             end do
             end do
          elseif ( Lctl_step .eq. (Init_dfnp-1)/2 ) then
-            tra(1:l_ni,1:l_nj,1:G_nk+1) = tr(1:l_ni,1:l_nj,1:G_nk+1)
+            tra(1:l_ni,1:l_nj,1:G_nk+2) = tr(1:l_ni,1:l_nj,1:G_nk+2)
          endif
 
       end do

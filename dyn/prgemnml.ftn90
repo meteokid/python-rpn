@@ -88,22 +88,6 @@
       return
       end
 !
-!      subroutine nml_var4d()
-!      use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree
-!      implicit none
-!#include "lun.cdk"
-!#include "step.cdk"
-!#include "path.cdk"
-!#include "tr3d.cdk"
-!#include "v4dg.cdk"
-!#include "v4dj.cdk"
-!#include "v4dm.cdk"
-!#include "v4dr.cdk"
-!#include "v4d_nml.cdk"
-!      write (6  ,nml=var4d)
-!      return
-!      end
-!
       subroutine nml_cpl()
       implicit none
 #include "itf_cpl.cdk"

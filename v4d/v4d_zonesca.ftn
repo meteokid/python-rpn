@@ -1,0 +1,229 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/p v4d_zonesca - Preparation (kind=1) or Closing (kind=2) for polar correction
+*                    in case of a scalar field, based on EZ_DEFZONES
+*                    (Y.Chartier EZSCINT 2001)  
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_zonesca (px,py,npts,fldsc,wx_8,i1,i2,j1,j2,nk,jmin,jmax,ni,
+     %                        nimax,gni,grtypi,degree,var,l_north,l_south,kind)
+*
+      use v4dzone
+*
+      implicit none
+*
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,nimax,gni,degree,kind
+*
+      real,   pointer, dimension(:)   :: px,py
+*
+      real fldsc(i1:i2,j1:j2,nk)
+*
+      character*2 var
+*
+      character*1 grtypi
+*
+      real*8 wx_8(*)
+*
+      logical l_north,l_south
+*
+*author Tanguay M.
+*
+*revision
+* v3_00 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - select processors at north or south 
+*
+*object
+*     see id section 
+*
+*arguments
+* Name         I/O        Description
+*----------------------------------------------------------------
+* px            I         Position x in INPUT grid 
+* py            I         Position y in INPUT grid 
+* npts          I         Number of positions  
+* fldsc         I         Scalar field on INPUT grid 
+* wx            I         Weights on INPUT grid x axe 
+* i1-i2         I         Dimension x in INPUT grid 
+* j1-j2         I         Dimension y in INPUT grid 
+* nk            I         Dimension z in INPUT grid 
+* jmin          I         Lower  limit j  
+* jmax          I         Higher limit j 
+* ni            I         Period if grid='G', Heart if grid = 'Z' 
+* nimax         I         ni maximal over all processors  
+* gni           I         Global dimension of a latitude circle  
+* grtypi        I         Type of INPUT grid 
+* degree        I         Degree of interpolation 
+* var           I         Name of fldsc 
+* l_north       I         TRUE if processor near north pole 
+* l_south       I         TRUE if processor near south pole 
+* kind          I         kind=1=Preparation, kind=2=Closing 
+*----------------------------------------------------------------
+*
+*implicits
+#include "ptopo.cdk"
+*
+      integer i,k,ier,status
+*
+      real linel(nk,ni),reverse(nk,gni),lineg(gni,nk)
+*
+      real*8 ww_8
+*
+*     --------------------------------
+*     Preparation for polar correction
+*     --------------------------------
+      if(kind.eq.1) then
+*
+*
+*        Accumulate px,py positions in zones near north and south poles
+*        --------------------------------------------------------------
+         if(npts.gt.0) then
+            call v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,l_north,l_south,kind)
+         else
+            V4dz_nzon(1) = 0
+            V4dz_nzon(2) = 0
+         endif
+*
+*        Calculations in zone near north pole 
+*        ------------------------------------
+*
+*           Gather global last latitude if GRTYPI='Z' 
+*           -----------------------------------------
+            if(l_north.and.grtypi.eq.'Z') then
+*
+               do k=1,nk
+               do i=1,ni
+                  linel(k,i) = fldsc(i,jmax,k)
+               enddo
+               enddo
+*
+               call rpn_comm_Allgather (linel,ni*nk,"MPI_REAL",reverse,
+     $                                  nimax*nk,"MPI_REAL","EW",ier)
+*
+               do k=1,nk
+               do i=1,gni
+                  lineg(i,k) = reverse(k,i)
+               enddo
+               enddo
+*
+*           Store global last latitude if GRTYPI='G' 
+*           ----------------------------------------
+            elseif(grtypi.eq.'G') then
+*
+               do k = 1,nk
+               do i = 1,gni
+                  lineg(i,k) = fldsc(i,jmax,k)
+               enddo
+               enddo
+*
+            endif
+*
+*           Estimate value and fill latitude circle at north pole 
+*           based on ADV_POLS
+*           -----------------------------------------------------
+            if(V4dz_nzon(1).ne.0) then
+*
+               allocate ( V4dz_linepoln(i1:i2,nk), STAT=status )
+*
+               do k=1,nk
+*
+                  ww_8 = 0.0
+*
+                  do i=1,gni
+                     ww_8 = ww_8 + wx_8(i) * dble(lineg(i,k))
+                  enddo
+*
+                  do i=i1,i2
+                     V4dz_linepoln(i,k) = ww_8 
+                  enddo
+*
+               enddo
+*
+            endif
+*
+*        Calculations in zone near south pole 
+*        ------------------------------------
+*
+*           Gather global first latitude if GRTYPI='Z' 
+*           -----------------------------------------
+            if(l_south.and.grtypi.eq.'Z') then
+*
+               do k=1,nk
+               do i=1,ni
+                  linel(k,i) = fldsc(i,jmin,k)
+               enddo
+               enddo
+*
+               call rpn_comm_Allgather (linel,ni*nk,"MPI_REAL",reverse,
+     $                                  nimax*nk,"MPI_REAL","EW",ier)
+*
+               do k=1,nk
+               do i=1,gni
+                  lineg(i,k) = reverse(k,i)
+               enddo
+               enddo
+*
+*           Store global first latitude if GRTYPI='G' 
+*           -----------------------------------------
+            elseif(grtypi.eq.'G') then
+*
+               do k = 1,nk
+               do i = 1,gni
+                  lineg(i,k) = fldsc(i,jmin,k)
+               enddo
+               enddo
+*
+            endif
+*
+*           Estimate value and fill latitude circle at south pole 
+*           based on ADV_POLS
+*           -----------------------------------------------------
+            if(V4dz_nzon(2).ne.0) then
+*
+               allocate ( V4dz_linepols(i1:i2,nk), STAT=status )
+*
+               do k=1,nk
+*
+                  ww_8 = 0.0
+*
+                  do i=1,gni
+                     ww_8 = ww_8 + wx_8(i) * dble(lineg(i,k))
+                  enddo
+
+                  do i=i1,i2
+                     V4dz_linepols(i,k) = ww_8 
+                  enddo
+*
+               enddo
+*
+            endif
+*
+*     --------------------------------------
+*     Deallocations of ZONES internal arrays
+*     --------------------------------------
+      elseif(kind.eq.2) then
+*
+         if(V4dz_nzon(1).gt.0) deallocate( V4dz_linepoln, STAT=status )
+         if(V4dz_nzon(2).gt.0) deallocate( V4dz_linepols, STAT=status )
+*
+*        Additional deallocations
+*        ------------------------
+         if(npts.gt.0) call v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,l_north,l_south,kind)
+*
+      endif
+*
+      return
+      end

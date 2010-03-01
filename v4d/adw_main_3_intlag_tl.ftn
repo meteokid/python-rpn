@@ -1,0 +1,410 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r adw_main_3_intlag_tl - TLM of adw_main_3_intlag when Adw_lag3d_L=.TRUE. 
+*
+#include "model_macros_f.h"
+#include "msg.h"
+*
+      subroutine adw_main_3_intlag_tl (F_pxm  ,F_pym  ,F_pzm  ,
+     $                                 F_pxt  ,F_pyt  ,F_pzt  , 
+     $                                 F_pxm_m,F_pym_m,F_pzm_m,
+     $                                 F_pxt_m,F_pyt_m,F_pzt_m, F_isStatStep_L)
+
+      implicit none
+
+      real F_pxm(*), F_pym(*), F_pzm(*)
+      real F_pxt(*), F_pyt(*), F_pzt(*)
+
+      real F_pxm_m(*), F_pym_m(*), F_pzm_m(*)
+      real F_pxt_m(*), F_pyt_m(*), F_pzt_m(*)
+
+      logical F_isStatStep_L
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - introduce key Adw_mono_L
+* v3_20 - Tanguay M.        - Lagrange 3D
+* v3_21 - Tanguay M.        - Call adw_main_3_intlag_tl based on Adw_lag3d_L
+* v3_30 - Tanguay M.        - correct calculation for LAM when Glb_pil gt 7 
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+* v4_12 - Tanguay M.        - TL/AD Thermo upstream positions
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*     CAUTION: TLM of WUP-ZZ1-ZDUP not done
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_pxm,F_pym,F_pzm | upstream positions at t1 at input, m-levels|  iw |
+* F_pxt,F_pyt,F_pzt | upstream positions at t1 at input, t-levels|  iw |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+!      logical G_lam
+!      logical l_north, l_south, l_east, l_west
+!      integer l_ni, l_nj, l_nk, l_niu, l_njv
+!      integer l_minx, l_maxx, l_miny, l_maxy
+!      integer pil_n,pil_s,pil_w,pil_e
+#include "orh.cdk"
+!      logical Orh_crank_L
+!      integer Orh_icn
+!      real, pointer, dimension (:,:,:) :: orhst,orhsc,orhsw,orhsf
+!      character(len=8) :: gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
+#include "schm.cdk"
+!      logical Schm_zdotlag_L,Schm_zdotMid_L,Schm_hydro_L
+!      integer Schm_itcn
+#include "cstv.cdk"
+!      real*8    Cstv_tau_8
+#include "rhsc.cdk"
+!      real, pointer, dimension (:,:,:) :: ruw1,rvw1,ruw2,rvw2
+!      real, pointer, dimension (:,:,:) :: rhst,rhsc,rhsw,rhsf
+!      character(len=8) :: gmmk_rhst_s,gmmk_rhsc_s
+!      character(len=8) :: gmmk_rhsw_s,gmmk_rhsf_s
+!      character(len=8) :: gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
+#include "adw.cdk"
+!      logical Adw_mono_L,Adw_ckbd_L
+!      integer            Adw_nit, Adw_njt
+!      integer            Adw_for_n, Adw_for_s, Adw_for_a
+!      integer            Adw_fro_n, Adw_fro_s, Adw_fro_a
+!      integer            Adw_trunc(4)
+!      DCL_DYNVAR(Adw,  capx1,    real   , (*))
+!      DCL_DYNVAR(Adw,  capy1,    real   , (*))
+!      DCL_DYNVAR(Adw,  capz1,    real   , (*))
+!      DCL_DYNVAR(Adw,  capx2,    real   , (*))
+!      DCL_DYNVAR(Adw,  capy2,    real   , (*))
+!      DCL_DYNVAR(Adw,  capz2,    real   , (*))
+!      DCL_DYNVAR(Adw,     n1,    real   , (*))
+!      DCL_DYNVAR(Adw,     n2,    real   , (*))
+!      DCL_DYNVAR(Adw,   xdd1,    real   , (*))
+!      DCL_DYNVAR(Adw,   ydd1,    real   , (*))
+!      DCL_DYNVAR(Adw,   xgg1,    real   , (*))
+!      DCL_DYNVAR(Adw,   ygg1,    real   , (*))
+!      DCL_DYNVAR(Adw,   xdd2,    real   , (*))
+!      DCL_DYNVAR(Adw,   ydd2,    real   , (*))
+!      DCL_DYNVAR(Adw,   xgg2,    real   , (*))
+!      DCL_DYNVAR(Adw,   ygg2,    real   , (*))
+!      DCL_DYNVAR(Adw,    cz1,    real   , (*))
+!      DCL_DYNVAR(Adw,    cz2,    real   , (*))
+!      DCL_DYNVAR(Adw,     c1,    real   , (*))
+!      DCL_DYNVAR(Adw,   wrka,    real   , (*))
+!      DCL_DYNVAR(Adw,   wrkb,    real   , (*))
+!      DCL_DYNVAR(Adw,   wrkc,    real   , (*))
+#include "tr3d.cdk"
+!      integer MAXTR3D
+!      parameter ( MAXTR3D = 250 )
+!      character*4 Tr3d_name_S(MAXTR3D)
+!      integer Tr3d_ntr
+#include "vt1.cdk"
+!      real, pointer, dimension (:,:,:) :: zdt1,zdup
+!      character(len=8) :: gmmk_zdt1_s,gmmk_zdup_s
+#include "ver.cdk"
+!      type (vertical_8) Ver_idz_8  
+!      type (vertical_8) Ver_wp_8
+!      type (vertical_8) Ver_wm_8
+#include "adw_m.cdk"
+#include "rhsc_m.cdk"
+#include "orh_m.cdk"
+#include "vt1_m.cdk"
+!**/
+      integer n, nij, nijkt, nijkm, nijkad
+      integer i,j,k, n1,n2,np,i0,j0,in,jn,err
+      real, allocatable, dimension(:) :: pos_x, pos_y, pos_z
+      real, allocatable, dimension(:) :: pos_x_m, pos_y_m, pos_z_m
+      !---------------------------------------------------------------------
+
+      call msg(MSG_DEBUG,
+     $     'TLM of ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INTLAG_TL)')
+
+      if (Schm_zdotMid_L) call handle_error(-1,'adw_main_3_intlag_tl','Schm_zdotMid_L not DONE')
+
+      nij    = l_ni   *l_nj
+      nijkt  = l_ni   *l_nj   *(l_nk+1)
+      nijkm  = l_ni   *l_nj   * l_nk
+      nijkad = Adw_nit*Adw_njt*(l_nk+1)
+
+     !TLM
+     !---
+      call hpalloc(Adw_capx1_   ,nijkt,      err,1)
+      call hpalloc(Adw_capy1_   ,nijkt,      err,1)
+      call hpalloc(Adw_capz1_   ,nijkt,      err,1)
+      call hpalloc(Adw_n1_      ,nijkt,      err,1)
+      call hpalloc(Adw_xdd1_    ,nijkt,      err,1)
+      call hpalloc(Adw_xgg1_    ,nijkt,      err,1)
+      call hpalloc(Adw_ydd1_    ,nijkt,      err,1)
+      call hpalloc(Adw_ygg1_    ,nijkt,      err,1)
+      call hpalloc(Adw_cz1_     ,nijkt,      err,1)
+      call hpalloc(Adw_c1_      ,nijkt,      err,1)
+      call hpalloc(Adw_wrkb_    ,nijkt,      err,1)
+      call hpalloc(Adw_wrkc_    ,nijkt,      err,1)
+
+      allocate ( pos_x(nijkad) )
+      allocate ( pos_y(nijkad) )
+      allocate ( pos_z(nijkad) )
+
+     !TRAJECTORY
+     !----------
+      call hpalloc(Adw_capx1_m_ ,nijkt,      err,1)
+      call hpalloc(Adw_capy1_m_ ,nijkt,      err,1)
+      call hpalloc(Adw_capz1_m_ ,nijkt,      err,1)
+      call hpalloc(Adw_n1_m_    ,nijkt,      err,1)
+      call hpalloc(Adw_xdd1_m_  ,nijkt,      err,1)
+      call hpalloc(Adw_xgg1_m_  ,nijkt,      err,1)
+      call hpalloc(Adw_ydd1_m_  ,nijkt,      err,1)
+      call hpalloc(Adw_ygg1_m_  ,nijkt,      err,1)
+      call hpalloc(Adw_cz1_m_   ,nijkt,      err,1)
+      call hpalloc(Adw_c1_m_    ,nijkt,      err,1)
+      call hpalloc(Adw_wrkb_m_  ,nijkt,      err,1)
+      call hpalloc(Adw_wrkc_m_  ,nijkt,      err,1)
+
+      allocate ( pos_x_m(nijkad) )
+      allocate ( pos_y_m(nijkad) )
+      allocate ( pos_z_m(nijkad) )
+
+      call adw_get_ij0n(i0,j0,in,jn)
+
+***********************************************************************
+* Advection/Interpolation on Momentum levels
+***********************************************************************
+*
+C!$omp parallel do private(n)
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+
+     !   TRAJECTORY
+     !   ----------
+         pos_x_m(n) =  F_pxm_m(n)
+         pos_y_m(n) =  F_pym_m(n)
+         pos_z_m(n) =  F_pzm_m(n)
+
+     !   TLM 
+     !   ---
+         pos_x(n) =  F_pxm(n)
+         pos_y(n) =  F_pym(n)
+         pos_z(n) =  F_pzm(n)
+
+      enddo
+      enddo
+      enddo
+C!$omp end parallel do
+
+      call adw_main_3_prep_tl (pos_x, pos_y, pos_z, pos_x_m, pos_y_m, pos_z_m,
+     $     i0, in, j0, jn, nijkad, l_nk, 'm', F_isStatStep_L)
+
+C!$omp parallel
+      call adw_interp_gmm_tl(gmmk_ruw2_s  , gmmk_ruw1_s  , pos_x  , 
+     %                       gmmk_ruw2_m_s, gmmk_ruw1_m_s, pos_x_m, 
+     %     .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m',1.d0)
+     !   
+      call adw_interp_gmm_tl (gmmk_rvw2_s  , gmmk_rvw1_s  , pos_x  ,
+     %                        gmmk_rvw2_m_s, gmmk_rvw1_m_s, pos_x_m,
+     %     .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m',1.d0)
+     !   
+
+      call adw_interp_gmm_tl (gmmk_rhsc_s  , gmmk_orhsc_s  , pos_x  , 
+     %                        gmmk_rhsc_m_s, gmmk_orhsc_m_s, pos_x_m,
+     %     .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m',1.d0)
+
+C!$omp end parallel
+
+***********************************************************************
+* TLM of
+* Advection/interpolation on thermodynamic levels
+***********************************************************************
+!     from upstream position for momentum levels to upstream
+!     position for thermodynamic levels
+
+C$omp parallel do
+      do n=1,nijkad
+*
+     !   TRAJECTORY
+     !   ----------
+         pos_x_m(n) =  F_pxt_m(n)
+         pos_y_m(n) =  F_pyt_m(n)
+         pos_z_m(n) =  F_pzt_m(n)
+
+     !   TLM
+     !   ---
+         pos_x(n) =  F_pxt(n)
+         pos_y(n) =  F_pyt(n)
+         pos_z(n) =  F_pzt(n)
+*
+      enddo
+C$omp end parallel do
+
+      call adw_main_3_prep_tl (pos_x, pos_y, pos_z, pos_x_m, pos_y_m, pos_z_m,
+     $     i0, in, j0, jn, nijkad, l_nk+1, 't', F_isStatStep_L)
+
+C!$omp parallel
+
+      call adw_interp_gmm_tl (gmmk_rhst_s  , gmmk_orhst_s  , pos_x  , 
+     %                        gmmk_rhst_m_s, gmmk_orhst_m_s, pos_x_m, 
+     %     .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t',1.d0)
+      call adw_interp_gmm_tl (gmmk_rhsf_s  , gmmk_orhsf_s  , pos_x  , 
+     %                        gmmk_rhsf_m_s, gmmk_orhsf_m_s, pos_x_m, 
+     %     .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t',1.d0)
+
+      if (.not. Schm_hydro_L) then
+         call adw_interp_gmm_tl (gmmk_rhsw_s  , gmmk_orhsw_s  , pos_x  ,
+     %                           gmmk_rhsw_m_s, gmmk_orhsw_m_s, pos_x_m,
+     %        .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t',1.d0)
+      endif
+
+C!$omp end parallel
+
+      if (Orh_icn == Schm_itcn) then
+
+C!$omp parallel
+         do n=1,Tr3d_ntr
+            call adw_interp_gmm_tl(
+     $           'TR/'//trim(Tr3d_name_S(n))//':M',
+     $           'TR/'//trim(Tr3d_name_S(n))//':P',
+     $           pos_x,
+     $           'TRM/'//trim(Tr3d_name_S(n))//':M', 
+     $           'TRM/'//trim(Tr3d_name_S(n))//':P', 
+     $           pos_x_m,
+     $           .false. , Adw_mono_L, LDIST_DIM, l_nk+1,i0,in,j0,jn,'t',Cstv_tau_8)
+         end do
+C!$omp end parallel
+
+      endif
+*
+***********************************************************************
+* Deallocate
+***********************************************************************
+      call hpdeallc(Adw_capx1_   ,err,1)
+      call hpdeallc(Adw_capy1_   ,err,1)
+      call hpdeallc(Adw_capz1_   ,err,1)
+      call hpdeallc(Adw_n1_      ,err,1)
+      call hpdeallc(Adw_xdd1_    ,err,1)
+      call hpdeallc(Adw_xgg1_    ,err,1)
+      call hpdeallc(Adw_ydd1_    ,err,1)
+      call hpdeallc(Adw_ygg1_    ,err,1)
+      call hpdeallc(Adw_cz1_     ,err,1)
+      call hpdeallc(Adw_c1_      ,err,1)
+      call hpdeallc(Adw_wrkb_    ,err,1)
+      call hpdeallc(Adw_wrkc_    ,err,1)
+*
+      call hpdeallc(Adw_capx1_m_ ,err,1)
+      call hpdeallc(Adw_capy1_m_ ,err,1)
+      call hpdeallc(Adw_capz1_m_ ,err,1)
+      call hpdeallc(Adw_n1_m_    ,err,1)
+      call hpdeallc(Adw_xdd1_m_  ,err,1)
+      call hpdeallc(Adw_xgg1_m_  ,err,1)
+      call hpdeallc(Adw_ydd1_m_  ,err,1)
+      call hpdeallc(Adw_ygg1_m_  ,err,1)
+      call hpdeallc(Adw_cz1_m_   ,err,1)
+      call hpdeallc(Adw_c1_m_    ,err,1)
+      call hpdeallc(Adw_wrkb_m_  ,err,1)
+      call hpdeallc(Adw_wrkc_m_  ,err,1)
+*
+      deallocate (pos_x,pos_y,pos_z)
+      deallocate (pos_x_m,pos_y_m,pos_z_m)
+      !---------------------------------------------------------------------
+
+      return
+      end
+
+
+
+!/**
+      subroutine adw_main_3_prep_tl (pos_x, pos_y, pos_z, pos_x_m, pos_y_m, pos_z_m, 
+     $     i0, in, j0, jn, F_nijk, F_nk, F_type_S, F_isStatStep_L)
+!
+      implicit none
+!
+      !@objective
+!
+      logical :: F_isStatStep_L
+      character(len=*) :: F_type_S
+      integer :: i0, in, j0, jn, F_nijk, F_nk
+      real, dimension(F_nijk) :: pos_x, pos_y, pos_z
+!
+      real, dimension(F_nijk) :: pos_x_m, pos_y_m, pos_z_m
+!
+#include "glb_ld.cdk"
+!      logical G_lam
+#include "orh.cdk"
+!      logical Orh_crank_L
+!      integer Orh_icn
+#include "schm.cdk"
+!      logical Schm_zdotlag_L,Schm_zdotMid_L,Schm_hydro_L
+!      integer Schm_itcn
+#undef TYPE_CDK
+#include "type.cdk"
+#include "adw.cdk"
+#include "adw_m.cdk"
+!**/
+      integer :: err,dim,i,j,k,n,nij
+      !---------------------------------------------------------------------
+      if (G_lam) then
+
+          call adw_cliptraj_tl (pos_x, pos_y, pos_x_m, pos_y_m, i0, in, j0, jn, F_nk, 
+     $         'INTERP_TL'//trim(F_type_S))
+
+      else 
+     !    NOT DONE YET (TLM of Phone Calls)
+      endif
+
+     ! Keep positions in CAP fields
+
+      nij = l_ni*l_nj
+
+!$omp parallel private(n)
+!$omp do
+      do k=1,F_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+
+     !   TRAJECTORY
+     !   ----------
+         Adw_capx1_m(n) = pos_x_m(n)
+         Adw_capy1_m(n) = pos_y_m(n)
+         Adw_capz1_m(n) = pos_z_m(n)
+
+     !   TLM
+     !   ---
+         Adw_capx1(n) = pos_x(n)
+         Adw_capy1(n) = pos_y(n)
+         Adw_capz1(n) = pos_z(n)
+
+      end do
+      end do
+      end do
+!$omp enddo
+!$omp end parallel
+      !---------------------------------------------------------------------
+      return
+      end

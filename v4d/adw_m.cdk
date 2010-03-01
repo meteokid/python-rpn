@@ -1,0 +1,35 @@
+#if defined (DOC)
+*
+***comdeck adw_m.cdk
+*
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*______________________________________________________________________|
+*                                                                      |
+* VARIABLES FOR ADVECTION (TRAJECTORY)                                 |
+*______________________________________________________________________|
+*
+#endif
+*
+      DCL_DYNVAR(Adw,  capx1_m,    real   , (*))
+      DCL_DYNVAR(Adw,  capy1_m,    real   , (*))
+      DCL_DYNVAR(Adw,  capz1_m,    real   , (*))
+      DCL_DYNVAR(Adw,   xdd1_m,    real   , (*))
+      DCL_DYNVAR(Adw,   ydd1_m,    real   , (*))
+      DCL_DYNVAR(Adw,   xgg1_m,    real   , (*))
+      DCL_DYNVAR(Adw,   ygg1_m,    real   , (*))
+      DCL_DYNVAR(Adw,    cz1_m,    real   , (*))
+      DCL_DYNVAR(Adw,     n1_m,    real   , (*))
+      DCL_DYNVAR(Adw,     c1_m,    real   , (*))
+      DCL_DYNVAR(Adw,   wrkb_m,    real   , (*))
+      DCL_DYNVAR(Adw,   wrkc_m,    real   , (*))
+      DCL_DYNVAR(Adw,  capx2_m,    real   , (*))
+      DCL_DYNVAR(Adw,  capy2_m,    real   , (*))
+      DCL_DYNVAR(Adw,  capz2_m,    real   , (*))
+      DCL_DYNVAR(Adw,   xdd2_m,    real   , (*))
+      DCL_DYNVAR(Adw,   ydd2_m,    real   , (*))
+      DCL_DYNVAR(Adw,   xgg2_m,    real   , (*))
+      DCL_DYNVAR(Adw,   ygg2_m,    real   , (*))
+      DCL_DYNVAR(Adw,    cz2_m,    real   , (*))
+      DCL_DYNVAR(Adw,     n2_m,    real   , (*))
+      DCL_DYNVAR(Adw,   wrka_m,    real   , (*))
+*

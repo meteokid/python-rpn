@@ -1,0 +1,308 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+**s/r vspng_del2_ad - ADJ of vspng_del2
+*
+#include "model_macros_f.h"
+*
+      subroutine vspng_del2_ad ( F_sol, F_opsxp0_8, F_opsyp0_8,
+     $                           F_aix_8,F_bix_8,F_cix_8,F_dix_8,
+     $                           F_aiy_8,F_biy_8,F_ciy_8,
+     $                           DIST_DIM, nke, ntrp12, ntrp22, fnjb)
+*
+      implicit none
+*
+      integer DIST_DIM, nke, ntrp12, ntrp22, fnjb
+*
+      real   F_sol(DIST_SHAPE,*)
+      real*8 F_opsxp0_8(*),F_opsyp0_8(*),
+     $       F_aix_8(nke,ntrp12,*),F_bix_8(nke,ntrp12,*),
+     $       F_cix_8(nke,ntrp12,*),F_dix_8(nke,ntrp12,*),
+     $       F_aiy_8(nke,ntrp22,*),F_biy_8(nke,ntrp22,*),
+     $       F_ciy_8(nke,ntrp22,*)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_21 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_sol       I/O           
+*  
+*----------------------------------------------------------------
+*
+*implicit
+#include "glb_ld.cdk"
+#include "vspng.cdk"
+#include "trp.cdk"
+#include "ldnh.cdk"
+#include "ptopo.cdk"
+*
+      integer i, j, k, dim, cnt
+      real*8 w1_8(ldnh_maxx,Vspng_nk,ldnh_maxy),
+     $       w2_8(ldnh_maxy,Vspng_nk,ldnh_maxx),
+     $       t1_8(Vspng_nk,Trp_12emax,G_ni+Ptopo_npex),
+     $       t2_8(Vspng_nk,Trp_22emax,G_nj+Ptopo_npey),
+     $       g1(Vspng_nk*Trp_12emax,G_ni),ax(Vspng_nk*Trp_12emax,G_ni),
+     $       cx(Vspng_nk*Trp_12emax,G_ni),g2(Vspng_nk*Trp_22emax,G_nj),
+     $       ay(Vspng_nk*Trp_22emax,G_nj),cy(Vspng_nk*Trp_22emax,G_nj)
+*
+      real*8 ZERO_8
+      parameter (ZERO_8=0.0)
+      integer cntmax
+**
+*     __________________________________________________________________
+*
+*     Zero adjoint variables
+*     ----------------------
+      do i = 1,ldnh_maxx
+      do k = 1,Vspng_nk
+      do j = 1,ldnh_maxy
+      w1_8(i,k,j) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      do j = 1,ldnh_maxy
+      do k = 1,Vspng_nk
+      do i = 1,ldnh_maxx
+      w2_8(j,k,i) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      dim = Vspng_nk*Trp_12emax*(G_ni+Ptopo_npex)
+      do i = 1,dim
+      t1_8(i,1,1) = ZERO_8
+      enddo
+*
+      dim = Vspng_nk*Trp_22emax*(G_nj+Ptopo_npey)
+      do i = 1,dim
+      t2_8(i,1,1) = ZERO_8
+      enddo
+*
+      dim = Vspng_nk*Trp_12emax*G_ni 
+      do i = 1,dim
+      g1(i,1) = ZERO_8
+      enddo
+*
+      dim = Vspng_nk*Trp_22emax*G_nj  
+      do i = 1,dim
+      g2(i,1) = ZERO_8
+      enddo
+*
+      do k = Vspng_nk,1,-1
+      do j = l_nj,1,-1
+      do i = l_ni,1,-1
+         w2_8 (j,k,i) = F_sol(i,j,k) + w2_8(j,k,i)
+         F_sol(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+      cnt = 0
+      do i = 1, Trp_22en
+      do k = 1, Vspng_nk
+         cnt = cnt + 1
+         do j = 1, fnjb
+            ay (cnt,j) = F_aiy_8(k,i,j)
+            cy (cnt,j) = F_ciy_8(k,i,j)
+         enddo
+      enddo
+      enddo
+*
+      cntmax=cnt
+*
+*     --------------
+*     END TRAJECTORY
+*     --------------
+      call rpn_comm_transpose ( w2_8 , 1, ldnh_maxy, G_nj, Vspng_nk,
+     %                          1, Trp_22emax, ldnh_maxx, t2_8,  2, 2 )
+*
+*     Zero adjoint variables
+*     ----------------------
+      do j = 1,ldnh_maxy
+      do k = 1,Vspng_nk
+      do i = 1,ldnh_maxx
+      w2_8(j,k,i) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      cnt = cntmax + 1 
+      do i = Trp_22en,1,-1
+      do k = Vspng_nk,1,-1
+         cnt = cnt - 1
+         do j = fnjb,1,-1
+            g2(cnt,j)   = t2_8(k,i,j) + g2(cnt,j)
+            t2_8(k,i,j) = ZERO_8
+         end do
+      enddo
+      enddo
+*
+      do j = 1,fnjb-1
+      do k = cntmax,1,-1
+         g2(k,j+1) = - cy(k,j)* g2 (k,j) + g2(k,j+1)
+      end do
+      end do
+*
+      do j = fnjb,2,-1
+      do k = cntmax,1,-1
+         g2(k,j-1) = - ay(k,j)*g2(k,j) + g2(k,j-1)
+      end do
+      end do
+*
+      cnt = cntmax + 1 
+      do i = Trp_22en,1,-1
+      do k = Vspng_nk,1,-1
+         cnt = cnt - 1
+         do j = fnjb,1,-1
+            t2_8(k,i,j)= F_biy_8(k,i,j)*F_opsyp0_8(j)*g2 (cnt,j) + t2_8(k,i,j)
+            g2 (cnt,j) = ZERO_8
+         enddo
+      enddo
+      enddo
+*
+      call rpn_comm_transpose ( w2_8 , 1, ldnh_maxy, G_nj, Vspng_nk,
+     %                          1, Trp_22emax, ldnh_maxx, t2_8, -2, 2 )
+
+*
+*     Zero_adjoint variables
+*     ----------------------
+      dim = Vspng_nk*Trp_22emax*(G_nj+Ptopo_npey)
+      do i = 1,dim
+      t2_8(i,1,1) = ZERO_8
+      enddo
+*
+      do j = l_nj,1,-1
+      do k = Vspng_nk,1,-1
+      do i = l_ni,1,-1
+         w1_8(i,k,j) = w2_8(j,k,i) + w1_8(i,k,j)
+         w2_8(j,k,i) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+      cnt = 0
+      do j = 1, Trp_12en
+      do k = 1, Vspng_nk
+         cnt = cnt + 1
+         do i = 1, G_ni-1
+            ax(cnt,i) = F_aix_8(k,j,i)
+            cx(cnt,i) = F_cix_8(k,j,i)
+         enddo
+      enddo
+      enddo 
+*
+      cntmax=cnt
+*
+*     --------------
+*     END TRAJECTORY
+*     --------------
+*
+      call rpn_comm_transpose ( w1_8 , 1, ldnh_maxx, G_ni, Vspng_nk,
+     %                          1, Trp_12emax, ldnh_maxy, t1_8,  1, 2 )
+
+*
+*     Zero adjoint variables
+*     ----------------------
+      do i = 1,ldnh_maxx
+      do k = 1,Vspng_nk
+      do j = 1,ldnh_maxy
+      w1_8(i,k,j) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      cnt = cntmax + 1 
+      do j = Trp_12en,1,-1
+*VDIR NOVECTOR
+      do k = Vspng_nk,1,-1
+         cnt = cnt - 1
+         do i = G_ni - 1,1,-1
+            t1_8(k,j,G_ni) = F_dix_8(k,j,i)* t1_8(k,j,i) + t1_8(k,j,G_ni)
+            g1(cnt,i)      =                 t1_8(k,j,i) + g1(cnt,i)
+            t1_8(k,j,i)    = ZERO_8
+         enddo
+         g1(cnt,G_ni  ) = F_bix_8(k,j,G_ni)*t1_8(k,j,G_ni) + g1(cnt,G_ni  )
+         g1(cnt,1     ) = F_cix_8(k,j,G_ni)*t1_8(k,j,G_ni) + g1(cnt,1     )
+         g1(cnt,G_ni-1) = F_aix_8(k,j,1   )*t1_8(k,j,G_ni) + g1(cnt,G_ni-1)
+         t1_8(k,j,G_ni) = ZERO_8
+      enddo
+      enddo
+*
+      do i = 1,G_ni-2
+      do k = cntmax,1,-1
+         g1(k,i+1) = - cx(k,i)*g1(k,i) + g1(k,i+1)
+      end do
+      end do
+*
+      do i = G_ni-1,2,-1
+      do k = cntmax,1,-1
+         g1(k,i-1) = - ax(k,i)*g1(k,i) + g1(k,i-1)
+      end do
+      end do
+*
+      cnt = cntmax + 1 
+      do j = Trp_12en,1,-1
+      do k = Vspng_nk,1,-1
+         cnt = cnt - 1
+         t1_8(k,j,G_ni) = F_opsxp0_8(G_ni)*g1(cnt,G_ni) + t1_8(k,j,G_ni)
+         g1(cnt,G_ni)   = ZERO_8
+         do i = G_ni-1,1,-1
+            t1_8(k,j,i) = F_bix_8(k,j,i)*F_opsxp0_8(i)*g1(cnt,i) + t1_8(k,j,i)
+            g1(cnt,i)   = ZERO_8
+         enddo
+      enddo
+      enddo
+*
+      call rpn_comm_transpose ( w1_8 , 1, ldnh_maxx, G_ni, Vspng_nk,
+     %                          1, Trp_12emax, ldnh_maxy, t1_8,  -1, 2 )
+*
+*     Zero adjoint variables
+*     ----------------------
+      dim = Vspng_nk*Trp_12emax*(G_ni+Ptopo_npex)
+      do i = 1,dim
+      t1_8(i,1,1) = ZERO_8
+      enddo
+*
+      do j = l_nj,1,-1 
+      do k = Vspng_nk,1,-1
+      do i = l_ni,1,-1
+         F_sol(i,j,k) = sngl(w1_8(i,k,j)) + F_sol(i,j,k)
+         w1_8(i,k,j)  = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*     __________________________________________________________________
+*
+      return
+      end

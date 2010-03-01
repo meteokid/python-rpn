@@ -50,19 +50,13 @@
       real    Grid_long(*), Grid_latg(*)
       pointer (Grid_long_, Grid_long), (Grid_latg_,Grid_latg)
 
-      MARK_COMMON_BEG (Grid_i)
       COMMON /Grid_i/ Grid_ig3,Grid_ig4,Grid_ip2
       COMMON /Grid_i/ Grid_xmin,Grid_xmax,Grid_ymin,Grid_ymax,Grid_reduc
       COMMON /Grid_i/ Grid_ixg,Grid_sets,Grid_niout,Grid_njout
       COMMON /Grid_i/ Grid_x0,Grid_x1,Grid_y0,Grid_y1
       COMMON /Grid_i/ Grid_id,Grid_stride
-      MARK_COMMON_END (Grid_i)
 
-      MARK_COMMON_BEG (Grid_c)
       COMMON /Grid_c/ Grid_gxtyp_s,Grid_etikext_s
-      MARK_COMMON_END (Grid_c)
 
-      MARK_COMMON_BEG (Grid_p)
       COMMON /Grid_p/ Grid_long_,Grid_latg_
-      MARK_COMMON_END (Grid_p)
 

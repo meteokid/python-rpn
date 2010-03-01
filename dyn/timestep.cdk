@@ -31,10 +31,6 @@
       integer Timestep_sets
       logical Timestep_init_L(MAXSET)
 
-      MARK_COMMON_BEG (Timestep_i)
       COMMON /Timestep_i/ Timestep,Timestep_max,Timestep_id,Timestep_sets
-      MARK_COMMON_END (Timestep_i)
 
-      MARK_COMMON_BEG (Timestep_l)
       COMMON /Timestep_l/ Timestep_init_L
-      MARK_COMMON_END (Timestep_l)

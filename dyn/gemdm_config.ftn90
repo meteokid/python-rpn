@@ -36,13 +36,12 @@
 !object
 !
 #include "dcst.cdk"
-#include "v4dg.cdk"
 #include "nml.cdk"
 #include "ver.cdk"
 #include "out.cdk"
 #include "modconst.cdk"
+       include "v4dg.inc"
 !
-!modules
       integer  bin2com,newdate
       external bin2com,newdate
 !
@@ -87,6 +86,7 @@
          Lam_blend_H = max(0,Lam_blend_H)
          Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
          if (Schm_theoc_L) Lam_blend_Hy = 0
+         Lam_tdeb = 999999.0
       endif
       Lam_gbpil_T = max(0,Lam_gbpil_T)
       Lam_blend_T = max(0,Lam_blend_T)

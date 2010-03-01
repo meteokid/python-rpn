@@ -1,0 +1,43 @@
+#if defined (DOC)
+!
+!**comdeck orh.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+! GMM variables associated with the Crank-Nicholson procedure          |
+! and used to compute the RHS equation (set_crni)                      |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+!   Storing space for contributions of time t1                         |
+!   to rhs of different equations                                      |
+!  orhsu             | momentum equation along x                       |
+!  orhsv             | momentum equation along y                       |
+!  orhst             | thermodynamic equation                          |
+!  orhsc             | continuity equation                             |
+!  orhsw             | momentum equation along z                       |
+!  orhsf             | vertical velocity equation                      |
+!--------------------|-------------------------------------------------|
+! Orh_icn            | current iteration of C-N procedure              |
+! Orh_crank_L        | switch: .true. if current time step is C-N      |
+!----------------------------------------------------------------------
+!
+#endif
+!
+      logical Orh_crank_L
+      integer Orh_icn
+      common / Orh / Orh_icn, Orh_crank_L
+
+      real, pointer, dimension (:,:,:) :: orhsu => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: orhsv => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: orhst => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: orhsc => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+      real, pointer, dimension (:,:,:) :: orhsw => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: orhsf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+
+      character(len=8) :: gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
+      common /orh_n_gmm/ gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
+
+!======================================================================
+

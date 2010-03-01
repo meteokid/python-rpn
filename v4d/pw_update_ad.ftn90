@@ -1,0 +1,162 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r pw_update_ad - Update physical quantities
+!
+#include "model_macros_f.h"
+!
+      subroutine pw_update_ad (istep)
+      implicit none
+!
+      integer istep
+!author
+!     Lubos Spacek - September 2009
+!
+!revision
+! v4_12 - Spacek L.     - First revision
+!
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "cstv.cdk"
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "schm.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "p_geof.cdk"
+#include "ver.cdk"
+#include "pw.cdk"
+#include "pw_m.cdk"
+#include "geomn.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+!
+
+      integer i, j, k, n, nik, km1
+      real xtmp(l_ni,l_nk+2),wtmp(l_ni,l_nk+1),wtmp2(l_ni,l_nk+1),           &
+           con(l_nj)
+      real*8 r0,ONE_8,CLXXX_8,deg2rad_8
+      parameter( ONE_8   = 1.0, CLXXX_8 = 180.0 )
+      real, pointer, dimension(:,:) :: pw_lat,pw_lon,pw_dxdy
+!
+      character(len=8) , dimension(2), parameter :: ulist  = (/ 'UTRAJP', 'UTRAJM' /)
+      character(len=8) , dimension(2), parameter :: vlist  = (/ 'VTRAJP', 'VTRAJM' /)
+      character(len=8) , dimension(2), parameter :: tlist  = (/ 'TTRAJP', 'TTRAJM' /)
+      character(len=8) , dimension(2), parameter :: hulist = (/ 'HUTRAJP','HUTRAJM'/)
+!
+!     ________________________________________________________________'
+!
+      if (.NOT.Schm_phyms_L) return
+!
+      deg2rad_8 = acos( -ONE_8 )/CLXXX_8
+!
+      gmmstat = gmm_get(gmmk_pw_uplus_s ,pw_uplus  ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_vplus_s ,pw_vplus  ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_tplus_s ,pw_tplus  ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_pmplus_s,pw_pm_plus,meta3d)
+      gmmstat = gmm_get(gmmk_pw_ptplus_s,pw_pt_plus,meta3d)
+      gmmstat = gmm_get(gmmk_pw_umoins_s,pw_umoins ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_vmoins_s,pw_vmoins ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_tmoins_s,pw_tmoins ,meta3d)
+
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
+      gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
+      gmmstat = gmm_get(gmmk_tt0_s,tt0,meta3d)
+      gmmstat = gmm_get(gmmk_strajp_s,strajp,meta2d)
+!
+!     Initialization at start
+!
+      if(istep.lt.0) then
+         gmmstat = gmm_get(gmmk_pw_wplus_s,   pw_wplus   ,meta3d)
+         gmmstat = gmm_get(gmmk_pw_gzplus_s,  pw_gzplus  ,meta3d)
+         gmmstat = gmm_get(gmmk_pw_pmmoins_s ,pw_pm_moins,meta3d)
+         pw_uplus   = 0.0; pw_umoins   = 0.0
+         pw_vplus   = 0.0; pw_vmoins   = 0.0
+         pw_wplus   = 0.0
+         pw_tplus   = 0.0; pw_tmoins   = 0.0
+         pw_pm_plus = 0.0; pw_pm_moins = 0.0
+         pw_pt_plus = 0.0
+         pw_gzplus  = 0.0
+         return
+      endif
+!
+!     Compute temperature from virtual temperature
+!     --------------------------------------------
+      call tt2virt_ad (pw_tmoins, .false.,'M')
+      call tt2virt_ad (pw_tplus , .false.,'P')
+!
+      do j=1,l_nj
+         do i=1,l_ni
+           st1(i,j) = st1(i,j) +Ver_b_8%m(l_nk+1)*exp( Ver_a_8%m(l_nk+1)     &
+                  + Ver_b_8%m(l_nk+1)*strajp(i,j) )*pw_pm_plus(i,j,l_nk+2)
+           pw_pm_plus(i,j,l_nk+2) = 0.0
+         end do
+      end do
+!
+      do j=1,l_nj
+         con(j) = ( 1.0/cos(geomg_y_8(j))) * Dcst_rayt_8
+      enddo
+
+      do k= 1, l_nk+2
+      do j= 1, l_nj
+      do i= 1, l_ni
+         pw_umoins(i,j,k) = pw_umoins(i,j,k)*con(j)
+         pw_vmoins(i,j,k) = pw_vmoins(i,j,k)*con(j)
+         pw_uplus (i,j,k) = pw_uplus(i,j,k)*con(j)
+         pw_vplus( i,j,k) = pw_vplus(i,j,k)*con(j)
+      enddo
+      enddo
+      enddo
+
+      call itf_phy_uvgridscal_ad(pw_umoins,pw_vmoins,LDIST_DIM,l_nk+2,.true.)
+      call itf_phy_uvgridscal_ad(pw_uplus, pw_vplus, LDIST_DIM,l_nk+2,.true.)
+
+      do k=l_nk+2,1,-1
+         km1=max(k-1,1)
+         do j= 1, l_nj
+         do i= 1, l_ni 
+            ut0 (i,j,km1) = ut0 (i,j,km1) + pw_umoins (i,j,k)
+            vt0 (i,j,km1) = vt0 (i,j,km1) + pw_vmoins (i,j,k)
+            ut1 (i,j,km1) = ut1 (i,j,km1) + pw_uplus (i,j,k)
+            vt1 (i,j,km1) = vt1 (i,j,km1) + pw_vplus (i,j,k)
+            pw_uplus (i,j,k) = 0.0
+            pw_vplus (i,j,k) = 0.0
+            pw_umoins(i,j,k) = 0.0
+            pw_vmoins(i,j,k) = 0.0
+         end do
+         end do
+      end do
+!
+!
+!     Only ttraj and hutraj are needed in the 3D interface
+!     and no need to shuffle pw variables
+!
+      if(istep.gt.1)then
+         gmmstat = gmm_shuffle (tlist)
+         gmmstat = gmm_shuffle (hulist)
+         call v4d_rwtraj(31)
+      endif
+!
+!     ________________________________________________________________
+!
+      return
+      end

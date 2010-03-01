@@ -1,0 +1,85 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r adw_main_tr - Equivalent to adw_main for TRAJECTORY 
+*
+#include "model_macros_f.h"
+#include "msg.h"
+*
+      subroutine adw_main_tr (F_it,F_isStatStep_L)
+*
+      implicit none
+*
+      integer F_it
+      logical F_isStatStep_L
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+* v3_21 - Tanguay M.        - Revision Openmp
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+* v4_12 - Tanguay M.        - TL/AD Thermo upstream positions
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectories           |  i  |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "rhsc_m.cdk"
+#include "orh_m.cdk"
+*
+************************************************************************
+      call msg(MSG_DEBUG,'TRAJ of ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_TR)')
+************************************************************************
+*
+*     Recover TRAJ RHS interpolated
+*     -----------------------------
+      call v4d_rwtraj (6)
+*
+*     Store TRAJ RUW2/RVW2 in ORH for PRE_AD
+*     --------------------------------------
+      gmmstat = gmm_get(gmmk_ruw2_m_s,ruw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_tr ERROR at gmm_get(ruw2_m)'
+      gmmstat = gmm_get(gmmk_rvw2_m_s,rvw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_tr ERROR at gmm_get(rvw2_m)'
+      gmmstat = gmm_get(gmmk_oruw2_m_s,oruw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_tr ERROR at gmm_get(oruw2_m)'
+      gmmstat = gmm_get(gmmk_orvw2_m_s,orvw2_m,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_tr ERROR at gmm_get(orvw2_m)'
+*
+      oruw2_m = ruw2_m
+      orvw2_m = rvw2_m
+*
+***********************************************************************
+*
+      return
+      end

@@ -56,7 +56,6 @@
 #include "out3.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
-#include "ind.cdk"
 #include "theo.cdk"
 #include "vtopo.cdk"
 #include "mtn.cdk"

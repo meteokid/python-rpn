@@ -64,14 +64,10 @@
       integer G_mm,G_nn,G_kk,G_khem,G_ntrunc,G_ilath,G_ilh,G_lm,G_nlon
       integer G_nlat
 !
-      MARK_COMMON_BEG (G_wil_i)
       common /G_wil_i/G_mm,G_nn,G_kk,G_khem,G_ntrunc,G_ilath,G_ilh,G_lm
       common /G_wil_i/G_nlon,G_nlat
-      MARK_COMMON_END (G_wil_i)
 !
       integer G_nfc,G_lmn,G_lrm,G_nalp,G_nlatb2
 !
-      MARK_COMMON_BEG (G_derive_i)
       common /G_derive_i/G_nfc,G_lmn,G_lrm,G_nalp,G_nlatb2
-      MARK_COMMON_END (G_derive_i)
 !

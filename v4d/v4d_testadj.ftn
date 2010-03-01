@@ -1,0 +1,347 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r v4d_testadj - Verification of adjoint transposition
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_testadj 
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - add V4dg_conf= 401 and 402 
+* v2_31 - Tanguay M.        - Move v4d_setscalp after set_dync 
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - Add V4dg_anincr_L as in v4d_testadj    
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+*
+*object
+*     see id section
+*
+*     ----------------------------------------------------------------------
+*     For each V4d_conf: Use prescribed TLM initial state (X) and
+*                            prescribed ADJ   final state (Y)
+*     ---------
+*     except if 
+*     ---------
+*
+*     V4d_conf=401: Modify Y by imposing <TLM X,Y> to be 1 for each variable
+*     V4d_conf=402: Set Y = TLM X  
+*     ----------------------------------------------------------------------
+*
+*implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "v4dc.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "step.cdk"
+#include "vt1.cdk"
+*
+      real*8 ps01_8,ps02_8
+*
+      real pj
+*     _________________________________________________________________________
+*
+      integer n,indic
+*
+*     Zero all model variables
+*     ------------------------
+      call v4d_zero
+*
+*     Zero all TRAJ model variables (for LAM)
+*     -----------------------------
+      call v4d_zero_tr
+*
+*     --------------------------------------
+*     Read given analysis of model variables
+*     --------------------------------------
+      if( Lun_out.gt.0 ) then
+         write(Lun_out,fmt=
+     $    '('' TEST OF ADJOINT TRANSPOSE with CONF = '',I6)')V4dg_conf
+         write(Lun_out,fmt=
+     $    '('' -----------------------------------------'')')
+         write(Lun_out, fmt='(//''-------------------'')')
+         write(Lun_out, fmt='(  ''READ GIVEN ANALYSIS'')')
+         write(Lun_out, fmt='(  ''-------------------'')')
+      endif
+*
+      V4dg_part = 2
+      call indata()
+*
+*     ------------------------------------------------------------------
+*     Set inner product in control space variables (done after set_dync)
+*     ------------------------------------------------------------------
+      call v4d_setscalp ()
+*
+      call wlog('CSTR')
+*
+*     -----------------------------------------------------------------
+*     Initialize starting control var. for REFERENCE (NLM), TLM and ADJ
+*     -----------------------------------------------------------------
+
+*        Initialize REFERENCE (NLM) initial control var. in V4dc_ycv 
+*        from model var.
+*        -----------------------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+         if ( V4dg_anincr_L ) then
+*
+*          Read perturbed (NLM) initial conditions for trial field
+*          to create realistic perturbations in V4dc_xcv
+*          -------------------------------------------------------
+           if( Lun_out.gt.0 ) then
+              write(Lun_out, fmt='(//''----------------'')')
+              write(Lun_out, fmt='(  ''READ GIVEN TRIAL'')')
+              write(Lun_out, fmt='(  ''----------------'')')
+           endif
+*
+CCC        call v4d_rdtrial()
+*
+*          Get fields in memory
+*          --------------------
+           gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+           if (GMM_IS_ERROR(gmmstat)) print *,'v4d_testadj ERROR at gmm_get(ut1)'
+           gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+           if (GMM_IS_ERROR(gmmstat)) print *,'v4d_testadj ERROR at gmm_get(vt1)'
+*
+*          Convert wind images to true winds
+*          ---------------------------------
+           call v4d_img2uv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy)
+*
+*          Initialize V4dc_xcv from trial field
+*          ------------------------------------
+           call v4d_cainin (V4dc_ncv,V4dc_xcv)
+*
+*          Initialize TLM initial control var. in V4dc_xcv
+*          -----------------------------------------------
+           do n = 1,V4dc_ncv
+              V4dc_xcv(n) = V4dc_ycv(n) - V4dc_xcv(n)
+           end do
+*
+         else
+*
+*          Keep NLM initial control var. in V4dc_xcv
+*          NOTE: Used later to define TLM initial control var.
+*          ---------------------------------------------------
+           do n = 1,V4dc_ncv
+              V4dc_xcv(n) = V4dc_ycv(n)
+           end do
+*
+         endif
+*
+         if( V4dg_conf.ne.402 ) then
+*
+*        Initialize ADJ final control var. in V4dc_gcv
+*        ---------------------------------------------
+         do n = 1,V4dc_ncv
+            V4dc_gcv(n) = V4dc_ycv(n)
+         end do
+*
+         endif
+*
+*     -------------------------------
+*     Run REFERENCE (NLM) integration 
+*     -------------------------------
+         if( Lun_out.gt.0 ) then
+            write(unit=Lun_out, fmt='(//''---------------------'')')
+            write(unit=Lun_out, fmt='(  ''REFERENCE INTEGRATION'')')
+            write(unit=Lun_out, fmt='(  ''---------------------'')')
+         endif
+*
+*        Set status of the integration (REFERENCE integration)
+*        -----------------------------------------------------
+         V4dg_status = 5
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_output_L = .true.
+*
+         call tmg_start(50,'NLM')
+*
+*        Call 4D-Var simulator with NLM integration without gradient
+*        -----------------------------------------------------------
+         indic = 99
+         call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
+*
+         call tmg_stop(50)
+*
+*        Initialize V4dc_ycv (Image winds) from NLM final model var.
+*        -----------------------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*        Get fields in memory
+*        --------------------
+         gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_testadj ERROR at gmm_get(ut1)'
+         gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_testadj ERROR at gmm_get(vt1)'
+*
+*        Convert wind images to true winds
+*        ---------------------------------
+         call v4d_img2uv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy)
+*
+*        Initialize V4dc_ycv (True winds)) from NLM final model var.
+*        -----------------------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*     ------------------------------
+*     Run TANGENT LINEAR integration 
+*     ------------------------------
+         if( Lun_out.gt.0 ) then
+            write(unit=Lun_out, fmt='(//''--------------------------'')')
+            write(unit=Lun_out, fmt='(  ''TANGENT LINEAR INTEGRATION'')')
+            write(unit=Lun_out, fmt='(  ''--------------------------'')')
+         endif
+*
+*        Define TLM control var. with controlled size perturbations
+*        ----------------------------------------------------------
+         if ( .not.V4dg_anincr_L ) then
+*
+            do n = 1,V4dc_ncv
+CCC            V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
+               V4dc_xcv(n) =  0.1*V4dc_xcv(n)
+            end do
+*
+         endif
+*
+*        Zero pilot region of perturbation fields when G_lam
+*        ---------------------------------------------------
+         if (G_lam) call v4d_zeropilot(V4dc_ncv,V4dc_xcv)
+*
+*        Set status of the integration (TLM integration)
+*        -----------------------------------------------
+         V4dg_status = 10
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_output_L = .true.
+*
+         call tmg_start(51,'TLM')
+*
+*        Call 4D-Var simulator with TLM integration without gradient
+*        -----------------------------------------------------------
+         V4dg_tlm_L = .true.
+         indic      = 99
+         call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
+*
+         call tmg_stop(51)
+*
+*        Reset 4D-Var simulator with NLM integration 
+*        ------------------------------------------- 
+         V4dg_tlm_L = .false.
+*
+*        Initialize V4dc_wkmin from TLM final model var. 
+*        -----------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_wkmin)
+*
+         if( V4dg_conf.eq.401) then
+*        -------------------------------------------------------
+*        Re-Initialize ADJ final control var. (V4dg_conf.eq.401) 
+*        -------------------------------------------------------
+*
+*          ------------------------------------------------
+*          Re-Initialize ADJ final control var. in V4dc_gcv 
+*          by imposing <TLM X,Y> to be 1 for each variable
+*          ------------------------------------------------
+           call v4d_scale (V4dc_ncv,V4dc_wkmin,V4dc_gcv) 
+*
+         endif
+*
+         if( V4dg_conf.eq.402 ) then
+*        ----------------------------------------------------
+*        Initialize ADJ final control var. (V4dg_conf.eq.402) 
+*        as TLM final model var.
+*        ----------------------------------------------------
+           gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+           if (GMM_IS_ERROR(gmmstat)) print *,'v4d_testadj ERROR at gmm_get(ut1)'
+           gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+           if (GMM_IS_ERROR(gmmstat)) print *,'v4d_testadj ERROR at gmm_get(vt1)'
+*
+*          Convert wind images to true winds (#1)
+*          --------------------------------------
+           call v4d_img2uv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy)
+*
+*          Convert wind images to true winds (#2)
+*          --------------------------------------
+           call v4d_img2uv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy)
+*
+*          Initialize V4dc_gcv from TLM final model var.
+*          ---------------------------------------------
+           call v4d_cainin (V4dc_ncv,V4dc_gcv)
+*
+         endif
+*
+*     ---------------------------------------------
+*     Evaluate < TLM V4dc_xcv, V4dc_gcv > in ps01_8
+*     ---------------------------------------------
+         call v4d_scalpro (V4dc_ncv,V4dc_wkmin,V4dc_gcv,ps01_8)
+*
+*     ------------------------
+*     Run ADJOINT  integration
+*     ------------------------
+         if( Lun_out.gt.0 ) then
+            write(unit=Lun_out, fmt='(//''-------------------'')')
+            write(unit=Lun_out, fmt='(  ''ADJOINT INTEGRATION'')')
+            write(unit=Lun_out, fmt='(  ''-------------------'')')
+         endif
+*
+*        Set status of the integration (ADJ integration)
+*        -----------------------------------------------
+         V4dg_status = 20
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_output_L = .true.
+*
+         call tmg_start(52,'ADJ')
+*
+*        Call 4D-Var simulator for gradient only
+*        ---------------------------------------
+         indic = 98 
+         call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
+*
+         call tmg_stop(52)
+*
+*     ----------------------------------------------
+*     Evaluate < V4dc_xcv , ADJ V4dc_gcv > in ps02_8 
+*     ----------------------------------------------
+         call v4d_scalpro (V4dc_ncv,V4dc_gcv,V4dc_xcv,ps02_8)
+*
+*     ---------------------------------
+*     Print of the two scalars products
+*     ---------------------------------
+      if( Lun_out.gt.0 ) then
+         write(unit=Lun_out,fmt='('' TEST OF ADJOINT TRANSPOSITION '')')
+         write(unit=Lun_out,fmt='('' < F(X) , Y >  = '',E26.20)') ps01_8
+         write(unit=Lun_out,fmt='('' < X , F*(Y) > = '',E26.20)') ps02_8
+      endif
+*
+      Lctl_step = Step_total
+*
+      call wlog('FEND')
+      call wlog('CEND')
+*
+      return
+      end

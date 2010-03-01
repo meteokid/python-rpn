@@ -44,11 +44,10 @@
 #include "out3.cdk"
 #include "xst.cdk"
 #include "cstv.cdk"
-#include "v4dg.cdk"
-#include "p4d_simp.cdk"
 #include "pres.cdk"
 #include "clim.cdk"
 #include "p_serg.cdk"
+       include "v4dg.inc"
 !
 #include "itf_cpl.cdk"
 #include "itf_phy_buses.cdk"
@@ -152,7 +151,6 @@
       call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(8))
 !     Re-define P_out_moyhr in units of hours, rather than in timesteps
       P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
-      call phy_opti('LIN_PBL'   , P4d_pbl        ,1, 'GET',prout,err(9))
 !
 !     Consistency check for output saturation calculations
       if (Out3_satues_L .and. .not.P_cond_satu_L) then

@@ -43,10 +43,9 @@
 !
 #include "lctl.cdk"
 #include "step.cdk"
-#include "v4dg.cdk"
-#include "mult.cdk"
-#include "lun.cdk"
-!*
+!
+      logical  v4d_options
+      external v4d_options
 !
 !     ---------------------------------------------------------------
 !
@@ -60,15 +59,19 @@
 !
 !C             Initialize geometry of the model
 !              --------------------------------
-      call set_geom()
+      call set_geom( )
+!
+!C             Initialize the ensemble prevision system
+!              ----------------------------------
+      call itf_ens_init ()
 !
 !C             Initialize the physics parameterization package
 !              ----------------------------------
-      call itf_phy_init ()
+      call itf_phy_init ( )
 !
 !C             Initialize the chemistry package
 !              --------------------------------
-      call itf_chm_init ()
+      call itf_chm_init ( )
 !
 !C             Initialize tracers
 !              ---------------
@@ -78,39 +81,27 @@
 !
 !C             Read restart if present
 !              --------------------------------
-      call rdrstrt( )
+      call rdrstrt ( )
 !
 !C             Initialize coupling
 !              -------------------
-      call itf_cpl_init ()
+      call itf_cpl_init ( )
 !
 !C             Setup commons level 1: VMM tables
 !              ---------------------------------
-      call set_cn1()
+      call set_cn1 ( )
 !
 !C              Additional settings for 4D-Var 
 !               ------------------------------
-      if (V4dg_conf.ne.0) call v4d_setting()
+      call v4d_setting ( )
 !
 !C             Initialize commons for output control
 !              -------------------------------------
-      call set_sor()
+      call set_sor( )
 !
-!     Code branching according to V4dg_conf
-!     -------------------------------------
-      if (V4dg_conf.eq.0) then
-!
-         call gem_ctrl()     ! Regular forward gem
-!
-      else
-!
-         call v4d_options
-!
-      endif
+      if ( .not. v4d_options() ) call gem_ctrl ( ) 
 !
       call set_term()
-!
-      if (V4dg_conf.ne.0) Lctl_step = Step_total
 !
       call stop_world_view (Lctl_step.lt.Step_total)
 !

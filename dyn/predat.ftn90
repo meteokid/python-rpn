@@ -49,6 +49,7 @@
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
 ! v4_05 - Plante A.         - Remove zeroing of w,zd and q (initialized 
 !                             in the entrance)
+! v4_12 - Tanguay M.        - Adapt to revised predat
 !
 !object
 !

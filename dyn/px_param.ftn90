@@ -236,7 +236,7 @@
          xx_key=fstinf (iun,ni, nj, nk, -1,' ',ig1a,ig2a,-1 ,' ','!!  ')
          if (xx_key.ge.0) then
              p0_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,ip2a,ip3a,' ','P0')
-             status = vgd_new(vgd,unit=iun,format='fst',ip1=ig1a,ip2=ig2a)
+             status = vgd_new(vgd,unit=iun,format='fst',ip1=-1,ip2=-1)
              if (status /= VGD_OK) then
                 print*, 'px_param error: cannot build coordinate descriptor'
                 return

@@ -34,6 +34,7 @@
 !revision
 ! v2_00 - Lee V.            - initial MPI version (from verder v1_03)
 ! v3_21 - Lee V.            - Output Optimization
+! v4_12 - Lee V.            - OpenMP racing condition:need omp end parallel
 !
 !object
 !     See above id
@@ -70,6 +71,7 @@
       end do
       end do
 !$omp enddo
+!$omp end parallel
 !
       do j=F_j0,F_jn
       do i=F_i0,F_in
@@ -78,6 +80,7 @@
       end do
 
 !
+!$omp parallel
 !$omp do
       do j=F_j0,F_jn
       do k=2,F_nk-1
@@ -89,7 +92,9 @@
       end do
       end do
 !$omp enddo
+!$omp end parallel
 !
+!$omp parallel
 !$omp do
       do j=F_j0,F_jn
       do i=F_i0,F_in

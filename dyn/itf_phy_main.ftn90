@@ -46,7 +46,7 @@
 #include "xst.cdk"
 #include "rstr.cdk"
 #include "init.cdk"
-#include "v4dg.cdk"
+       include "v4dg.inc"
 !
       logical boot_L
       integer ier,dostep(MAXSET),dostep_max

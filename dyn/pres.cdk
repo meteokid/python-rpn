@@ -16,7 +16,5 @@
 #endif
 
       real Pres_top, Pres_surf, Pres_ptop, Pres_pref
-      MARK_COMMON_BEG (pres)
       common / pres / Pres_top, Pres_surf, Pres_ptop, Pres_pref
-      MARK_COMMON_END (pres)
 

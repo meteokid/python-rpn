@@ -1,0 +1,20 @@
+      real, pointer, dimension (:,:,:) :: pw_uplus    => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_vplus    => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_wplus    => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_tplus    => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_pm_plus  => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_pt_plus  => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_gzplus   => null() ! effective dimensions are (LDIST_SHAPE, pnk) 
+
+      real, pointer, dimension (:,:,:) :: pw_umoins   => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_vmoins   => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_tmoins   => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_pm_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+
+      character(len=16) :: gmmk_pw_uplus_s ,gmmk_pw_vplus_s ,gmmk_pw_wplus_s ,gmmk_pw_tplus_s
+      character(len=16) :: gmmk_pw_pmplus_s,gmmk_pw_ptplus_s,gmmk_pw_gzplus_s
+      character(len=16) :: gmmk_pw_umoins_s,gmmk_pw_vmoins_s,gmmk_pw_tmoins_s,gmmk_pw_pmmoins_s
+
+      common /physical_n_gmm/ gmmk_pw_uplus_s ,gmmk_pw_vplus_s ,gmmk_pw_wplus_s ,gmmk_pw_tplus_s
+      common /physical_n_gmm/ gmmk_pw_pmplus_s,gmmk_pw_ptplus_s,gmmk_pw_gzplus_s
+      common /physical_n_gmm/ gmmk_pw_umoins_s,gmmk_pw_vmoins_s,gmmk_pw_tmoins_s,gmmk_pw_pmmoins_s

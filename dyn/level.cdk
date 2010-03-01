@@ -41,19 +41,11 @@
       logical Level_ip12000_L
       character(len=1) Level_types(LEVEL_NTYP)
 
-      MARK_COMMON_BEG (Level_r)
       COMMON /Level_r/ Level
-      MARK_COMMON_END (Level_r)
 
-      MARK_COMMON_BEG (Level_i)
       COMMON /Level_i/ Level_id,Level_max,Level_typ_indx,Level_version
       COMMON /Level_i/ Level_sets,Level_kind_ip1,Level_mode_ip1
-      MARK_COMMON_END (Level_i)
 
-      MARK_COMMON_BEG (Level_l)
       COMMON /Level_l/ Level_ip12000_L
-      MARK_COMMON_END (Level_l)
 
-      MARK_COMMON_BEG (Level_c)
       COMMON /Level_c/ Level_types
-      MARK_COMMON_END (Level_c)

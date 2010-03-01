@@ -112,6 +112,8 @@
       call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and. &
                                    (F_stepno    .eq.0) )
 !
+      call v4d_rwtraj(22)
+!
       call out_phy (obusval,l_ni,l_nj,F_stepno)
 !
       deallocate (obusval)

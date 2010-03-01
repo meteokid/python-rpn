@@ -42,7 +42,6 @@
 !   fni         I    I    S    folded dimension along X
 !   fnj         I    I    S    folded dimension along Y
 !
-!IMPLICIT
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "dcst.cdk"
@@ -58,10 +57,8 @@
 #include "level.cdk"
 #include "outp.cdk"
 #include "ptopo.cdk"
-#include "v4dg.cdk"
 #include "lun.cdk"
 !
-!*
       integer i,j,k,nis,njs,ind_o(100),cnt
       integer bigk,idx,unf,mult,shp,mode
       integer nks(P_bper_top),nkphy

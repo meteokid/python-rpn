@@ -1,0 +1,209 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r dynstep_tl -  TLM of dynstep 
+*
+#include "model_macros_f.h"
+*
+      subroutine dynstep_tl
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - ADJ of vertical sponge layer
+* v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_30 - Tanguay M.        - Adapt TL/AD to Lam_ctebcs_L 
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+* v4_12 - Tanguay M.        - Adapt TL/AD to revised blending
+*
+*object
+*     TLM of dynstep
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "orh.cdk"
+#include "init.cdk"
+#include "lctl.cdk"
+#include "rstr.cdk"
+#include "schm.cdk"
+#include "lam.cdk"
+#include "v4dg.cdk"
+#include "vtopo.cdk"
+*
+*     ---------------------------------------------------------------
+      integer itraj
+      logical first_L, secon_L
+*     ---------------------------------------------------------------
+*
+      if (Vtopo_L)      call handle_error(-1,'dynstep_tl','Vtopo_L      not done')
+      if (Schm_theoc_L) call handle_error(-1,'dynstep_tl','Schm_theoc_L not done')
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+*     first_L is TRUE  for the first timestep
+*           or the first timestep after digital filter initialisation
+*
+      first_L = (Lctl_step.eq.1).or.(Rstri_idon_L .and. 
+     $           Lctl_step.eq.(Init_dfnp+1)/2)
+*
+*     secon_L is TRUE  for the second timestep
+*            or the second timestep after digital filter initialisation
+*
+      secon_L = (Lctl_step.eq.2).or.(Rstri_idon_L .and. 
+     $           Lctl_step.eq.(Init_dfnp+1)/2 + 1)
+*
+*     Orh_crank_L is TRUE for a time step using C-N procedure
+*
+      Orh_crank_L= first_L .or. ( secon_L .and. ( Schm_xwvt3 .gt. 0 )) 
+     $                     .or. ( mod(Lctl_step-1,Schm_modcn) .eq. 0 )
+*
+*
+*     Set the positions at th as the positions of points grids
+*     --------------------------------------------------------
+      itraj = Schm_itraj
+*
+      if ( first_L) then
+         call pospers_tl( )
+         itraj = max( 5, Schm_itraj )
+      endif
+*
+*     ------------------------------------------------------------
+*     Compute 3D winds at time t0-dt/2 (th)
+*     ------------------------------------------------------------
+*
+      if ( G_lam .and. .not.Lam_ctebcs_L ) then
+*
+*         ------------------------------------------------
+*         Recover TRAJ NESTING fields at current time step
+*         (NEED TO BE INSERTED in NL)
+*         ------------------------------------------------
+CCC       call v4d_rwtraj (10)
+*
+*         ----------------------------------------
+*         Zero NESTING fields at current time step
+*         ----------------------------------------
+          call v4d_zeronest
+*
+      endif
+*
+      if ( Orh_crank_L ) then
+*
+*        DUMMY TIME STEPS AND WIND INTERPOLATION
+*        ---------------------------------------
+*
+*        First guess for winds and positions at th
+*        -----------------------------------------
+         call wdpers_tl( )
+*
+         if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
+*
+         do Orh_icn = 1,Schm_itcn-1
+*
+*	    Perform dummy timestep
+*           ----------------------
+            call tstpdyn_tl( itraj)
+*
+*	    Compute the average of the t1 and t0 winds
+*           ------------------------------------------
+*
+            call wndth_tl( )
+*
+            itraj = Schm_itraj
+*
+         end do
+*
+         if (Lun_debug_L) write(Lun_out,1006)
+*
+         Orh_icn=Schm_itcn
+*     
+      else
+*     
+         Orh_icn = 1
+*
+      endif
+*
+*     ------------------------------------------------------------
+*     Perform the timestep
+*     ------------------------------------------------------------
+      call tstpdyn_tl ( Schm_itraj )
+*
+*     ------------------------------------------------------------
+*     When the timestep is completed, rename all the
+*     variables at time level t1 -> t0 and rename all the
+*     variables at time level t0 -> t1 for the next timestep
+*     ------------------------------------------------------------
+      call t02t1_tl( )
+*
+*     --------------------------------------------------------------
+*     Impose BCs within Pil regions and blend within blending region
+*     --------------------------------------------------------------
+      if (G_lam.and. .not. Schm_theoc_L) then
+*
+*        -------------------------------------
+*        Impose Lateral BCs within Pil regions
+*        -------------------------------------
+*
+*        TRAJ 
+*        ----
+CCC      call nest_bcs_tr
+*
+*        TLM
+*        ---
+         call nest_bcs
+*
+*        ---------------------------------------------------
+*        Perform Horizontal blending within the Hblen region
+*        ---------------------------------------------------
+*
+*        TRAJ 
+*        ----
+CCC      call nest_gwa_tr
+*
+*        TLM
+*        ---
+         call nest_gwa
+*
+      endif
+*
+*     ------------------------------------------------------------
+*     Boundary conditions for theoretical case
+*     ------------------------------------------------------------
+*
+CCC   if ( Schm_theoc_L ) call nest_theoc
+*
+*     ===================
+*     END OF ONE TIMESTEP
+*     ===================
+*
+ 1000 format(
+     +/,'TLM of CONTROL OF DYNAMICAL STEP: (S/R DYNSTEP_TL)',
+     +/,'=================================================='/)
+ 1005 format(
+     $/3X,'TLM of ##### Crank-Nicholson iterations: ===> PERFORMING',I3,
+     $    ' timestep(s) #####'/)
+ 1006 format(
+     $/3X,'TLM of ##### Crank-Nicholson iterations: ===> DONE... #####'/)
+*
+      return
+      end
