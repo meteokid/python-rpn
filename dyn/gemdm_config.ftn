@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r gemdm_config - Establish final model configuration
 *
 #include "model_macros_f.h"
@@ -13,6 +28,7 @@
 * v3_31 - Bilodeau & Lee  - Correction for offline mode
 * v3_31 - Desgagne M.     - Re-defining Glb_pil* and Adw_halo* in terms
 *                           of new control Step_maxcfl
+* v3_31 - Lee V.          - Added Grdc_maxcfl, eliminated Grdc_pil in namelist
 *
 *object
 *
@@ -111,7 +127,6 @@
             pnk = k
          enddo
 *
-         if (Lun_out.gt.0) write(Lun_out,*) (hyb(k),k=1,pnk)
          if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
      $       (hyb(pnk).ne.1.) ) wronghyb = .true.
          do k=2, pnk
@@ -241,6 +256,7 @@
          endif
          Grdc_start = min(max(0,Grdc_start),Step_total)
          Grdc_end   = min(max(0,Grdc_end  ),Step_total)
+         Grdc_pil   = max(1,Grdc_maxcfl) + 5
 c        if (Acid_pilot_L) acid_npas = - Grdc_start
       endif
 *

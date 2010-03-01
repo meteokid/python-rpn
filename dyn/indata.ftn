@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r indata - Read and process the input data at 
 *               beginning of integration
 *
@@ -24,6 +39,8 @@
 * v3_11 - Tanguay M.        - Abort when V4dg_conf.ne.0 and Vtopo_L  
 * v3_30 - Desgagne M.       - re-organize code to eliminate v4d controls
 * v3_30 - Lee V.            - new LAM I/O interface
+* v3_31 - Lee V.            - adaptation to new scripts, give more info on GEO
+* v3_31 - Tanguay M.        - Mix PILOT and ANAL mountains when BCS/3DF  
 *
 *object
 *	
@@ -54,7 +71,7 @@
 *
       character*16, dimension (:,:), allocatable ::  listgeonm
       character*256 fn
-      integer key1(25),nvar,err,unf,errop,ungeo,dat,k,
+      integer key1(35),nvar,err,unf,errop,ungeo,dat,k,
      $        err_geo,skipcode
 *
 *     ---------------------------------------------------------------
@@ -79,7 +96,10 @@
       key1(14) = VMM_KEY( topo)
       key1(15) = VMM_KEY( topu)
       key1(16) = VMM_KEY( topv)
-      nvar = 16
+      key1(17) = VMM_KEY( topa)
+      key1(18) = VMM_KEY( toua)
+      key1(19) = VMM_KEY( tova)
+      nvar = 19
 *
       if (Vtopo_L) then
          key1(nvar+1) = VMM_KEY(dtopo)
@@ -112,6 +132,9 @@
       err = VMM_GET_VAR( topo)
       err = VMM_GET_VAR( topu)
       err = VMM_GET_VAR( topv)
+      err = VMM_GET_VAR( topa)
+      err = VMM_GET_VAR( toua)
+      err = VMM_GET_VAR( tova)
 *
 *     Equivalencing Ind_u to ut1
 *
@@ -131,6 +154,9 @@
       Ind_topo_= topo_
       Ind_topu_= topu_
       Ind_topv_= topv_
+      Ind_topa_= topa_
+      Ind_toua_= toua_
+      Ind_tova_= tova_
 *
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(  wt1)
@@ -152,6 +178,8 @@
       call v4d_indata2(skipcode)
       if (skipcode.eq.1) goto 9999
 *
+      Path_ind_S=trim(Path_input_S)//'/INIT_3D'
+*
       err_geo = readgeo()
       allocate (listgeonm(2,p_bgeo_top))
       listgeonm(1,:) = geonm(:,1)
@@ -161,19 +189,23 @@
       if (G_lam) then
          prefgeo = '!@#$%^&*'
          ungeo   = 91
-         open(ungeo,FILE=trim(Path_input_S)//'/geophy_fileprefix_for_LAM',
-     $                                           status='OLD',iostat=err)
+         fn      = trim(Path_work_S)//'/geophy_fileprefix_for_LAM'
+         open ( ungeo, FILE=fn, status='OLD', iostat=err )
          if (err.eq.0) then
             read (ungeo, '(a)', end = 9120) prefgeo
  9120       close(ungeo)
          endif
-         if (prefgeo.ne.'!@#$%^&*') call geodata (G_ni,G_nj,listgeonm)
+         if (prefgeo.ne.'!@#$%^&*') then
+             call geodata (G_ni,G_nj,listgeonm)
+         else
+             if (Lun_debug_L) write (Lun_out,1002)trim(prefgeo)
+         endif
       endif
 *
       errop = -1
       if (G_lam) then
          unf = 76
-         fn  = trim(Path_input_S)//'/INDATA/casc/3df_filemap.txt'
+         fn  = trim(Path_ind_S)//'/3df_filemap.txt'
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                        iostat=errop,form='FORMATTED')
       endif
@@ -235,6 +267,7 @@
 *
  1000 format(/,'TREATING INITIAL CONDITIONS  (S/R INDATA)',/,41('='))
  1001 format(/,'GLOBAL STAT OF GEOPHYSICAL FIELDS',/,33('='))
+ 1002 format(/,' FILE ',A,'_gfilemap.txt IS NOT AVAILABLE --CONTINUE--',/,/)
 *
       return
       end

@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r adw_main_2_pos - calculate upstream positions at th and t1
 *
 #include "model_macros_f.h"
@@ -24,6 +39,8 @@
 * v3_20 - Dugas B.        - correct calculation for LAM when Glb_pil gt 7
 * v3_21 - Lee V.          - bug correction, yth should not be modified.
 * v3_31 - Desgagne M.     - new scope for operator + adw_cliptraj (LAM)
+* v3_31 - Tanguay M.      - Do adjoint of outsiders in advection
+* v3_31 - Tanguay M.      - SETTLS option
 *
 *language
 *     fortran 77
@@ -54,6 +71,10 @@
 #include "vt1.cdk"
 #include "v4dg.cdk"
 #include "lctl.cdk"
+#include "step.cdk"
+#include "orh.cdk"
+#include "schm.cdk"
+#include "ptopo.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -70,7 +91,7 @@
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1
       real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
-      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1,wrk_yth
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1,wrk_yth,zt1_w1,zt1_w2
       integer, dimension(:), allocatable :: n2
       real,    dimension(:), allocatable :: capx2,capy2,capz2
       real,    dimension(:), allocatable :: xpos2,ypos2,zpos2
@@ -81,7 +102,15 @@
 
       integer i0,in,j0,jn
 *
+      logical done_once_L,step2_settls_L
+      save done_once_L
+      data done_once_L /.false./
+*
+************************************************************************
       if (Lun_debug_L) write (Lun_out,1000)
+*
+      step2_settls_L = Schm_settls_L.and.Orh_crank_L.and.Orh_icn.eq.Schm_itcn
+*
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
 *
@@ -100,8 +129,15 @@
       pnlkey1(7) = VMM_KEY(xct1)
       pnlkey1(8) = VMM_KEY(yct1)
       pnlkey1(9) = VMM_KEY(zct1)
+      pnlod = 9
+      if (step2_settls_L) then
+          pnlkey1(pnlod+1) = VMM_KEY(xt1)
+          pnlkey1(pnlod+2) = VMM_KEY(yt1)
+          pnlkey1(pnlod+3) = VMM_KEY(zt1)
+          pnlod = pnlod+3
+      endif
 *
-      pnerr = vmmlod(pnlkey1,9)
+      pnerr = vmmlod(pnlkey1,pnlod)
 *
       pnerr = VMM_GET_VAR(xth)
       pnerr = VMM_GET_VAR(yth)
@@ -112,7 +148,12 @@
       pnerr = VMM_GET_VAR(xct1)
       pnerr = VMM_GET_VAR(yct1)
       pnerr = VMM_GET_VAR(zct1)
-
+      if (step2_settls_L) then
+          pnerr = VMM_GET_VAR(xt1)
+          pnerr = VMM_GET_VAR(yt1)
+          pnerr = VMM_GET_VAR(zt1)
+      endif
+*
       i0=1
       in=l_ni
       j0=1
@@ -157,7 +198,10 @@ c     endif
                call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
      $                                 "MPI_SUM","grid",ier)
 *
-               if(sum_outside.ne.0) call gem_stop ('ADW_MAIN_2_POS: TLM-ADJ NOT done: INCREASE HALO',-1)
+            if(sum_outside.ne.0.and..not.done_once_L.and.Ptopo_myproc.eq.0) then
+                write(Lun_out,*) 'NUMBER OF PE WITH OUTSIDERS IN ADW_MAIN_2_POS AT current TIME-CN-IT = ',sum_outside
+                call flush(Lun_out)
+            endif
 *
           endif
 *
@@ -304,6 +348,7 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
          deallocate(capx2,capy2,capz2,xpos2,ypos2,zpos2,n2)
       endif
 ************************************************************************
+*
 !$omp parallel private(n)
 !$omp do
       do k = 2,l_nk-1
@@ -324,6 +369,64 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
 ************************************************************************
       call adw_trajex (F_u, F_v, xct1, yct1, zct1, xcth, ycth, zcth,
      %                  i0,in,j0,jn)
+*
+*     Keep xt1,yt1,zt1 positions (used in adw_main_2_int_settls_sw at next timesteps)
+*     -------------------------------------------------------------------------------
+      if (step2_settls_L) then
+*
+         do i=1,l_ni*l_nj*l_nk
+            xt1(i) = F_u(i)
+            yt1(i) = F_v(i)
+         enddo
+*
+         k = 1
+         do j = 1, l_nj
+         do i = 1, l_ni
+            ijk=(k-1)*nij+(j-1)*l_ni+i
+            zt1(ijk)  = Geomg_z_8(k)
+         enddo
+         enddo
+*
+         k = l_nk 
+         do j = 1, l_nj
+         do i = 1, l_ni
+            ijk=(k-1)*nij+(j-1)*l_ni+i
+            zt1(ijk)  = Geomg_z_8(k)
+         enddo
+         enddo
+*
+         zt1_w1 = zt1
+*
+!$omp parallel private(n)
+!$omp do
+         do k = 2,l_nk-1
+         do j = j0,jn
+         do i = i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            zt1(n)    = Geomg_z_8(k) + two*wrkx1(n)
+            zt1_w1(n) = Geomg_z_8(k) + two*wrkx1(n)
+            zt1(n) = min( pdm*Geomg_z_8(l_nk),
+     %                   max( 1.0d0*zt1(n), pdp*Geomg_z_8(1) ) )
+         enddo
+         enddo
+         enddo
+!$omp enddo
+!$omp end parallel
+*
+         if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
+*
+              zt1_w2 = zt1
+              zt1    = zt1_w1
+*
+*             Store TRAJ ZT1 mid-calculation
+*             ------------------------------
+              call v4d_rwtraj (17)
+*
+              zt1 = zt1_w2
+*
+         endif
+*
+      endif
 *
 !$omp parallel private(n)
 !$omp do
@@ -351,6 +454,8 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
 *
       pnerr = vmmuld(-1,0)
 *
- 1000  format(3X,'CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS)')
+      if (V4dg_conf.ne.0.and.Lctl_step.eq.Step_total.and.Orh_icn.eq.Schm_itcn) done_once_L = .true.
+*
+ 1000 format(3X,'CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS)')
       return
       end

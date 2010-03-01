@@ -1,0 +1,453 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r adw_exch_2_tl - TLM of adw_exch_2 
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_exch_2_tl ( F_a_fro,   F_b_fro,   F_c_fro,
+     %                           F_a_for,   F_b_for,   F_c_for,
+     %                           F_a_fro_m, F_b_fro_m, F_c_fro_m,
+     %                           F_a_for_m, F_b_for_m, F_c_for_m,
+     %                           F_n_fro_n, F_n_fro_s, F_n_fro_a,
+     %                           F_n_for_n, F_n_for_s, F_n_for_a,
+     %                           F_n_treat)
+*
+#include "impnone.cdk"
+*
+      integer F_n_fro_n, F_n_fro_s, F_n_fro_a,
+     %        F_n_for_n, F_n_for_s, F_n_for_a, F_n_treat
+*
+      real F_a_fro(F_n_fro_a), F_b_fro(F_n_fro_a), F_c_fro(F_n_fro_a),
+     %     F_a_for(F_n_for_a), F_b_for(F_n_for_a), F_c_for(F_n_for_a)
+*
+      real F_a_fro_m(F_n_fro_a), F_b_fro_m(F_n_fro_a), F_c_fro_m(F_n_fro_a),
+     %     F_a_for_m(F_n_for_a), F_b_for_m(F_n_for_a), F_c_for_m(F_n_for_a)
+*
+*author 
+*     M.Tanguay
+*
+*revision
+* v3_31 - Tanguay M.        - initial MPI version
+* v3_31 - Tanguay M.        - Do adjoint of outsiders in advection
+*
+*language
+*     fortran 90
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_a_fro      | \                                               |  o  |
+* F_b_fro      |   information vectors from neighbors            |  o  |
+* F_c_fro      | /                                               |  o  |
+*              |                                                 |     |
+* F_a_for      | \                                               |  i  |
+* F_b_for      |   information vectors for neighbors             |  i  |
+* F_c_for      | /                                               |  i  |
+*              |                                                 |     |
+* F_n_fro_n    | number of information pieces from north neighbor|  i  |
+* F_n_fro_s    | number of information pieces from south neighbor|  i  |
+* F_n_fro_a    | number of information pieces from all   neighbor|  i  |
+* F_n_for_n    | number of information pieces for  north neighbor|  i  |
+* F_n_for_s    | number of information pieces for  south neighbor|  i  |
+* F_n_for_a    | number of information pieces for  all   neighbor|  i  |
+*              |                                                 |     |
+* F_n_treat    | number of vectors to exchange                   |  i  |
+*              | for exemple, if we exchange upstream positions, |     |
+*              | the 3 coordinates will be carried in a, b and c |     |
+*              | and F_n_treat should be equal to 3              |     |
+*______________|_________________________________________________|_____|
+*
+*notes
+*______________________________________________________________________
+*                                                                      |
+* The information is strored in the following manner:                  |
+*                                                                      |
+* F_n_fro_n values followed by F_n_fro_s values = F_n_fro_a values     |
+* ---------                    ---------          ---------            |
+*                                                                      |
+* F_n_for_n values followed by F_n_for_s values = F_n_for_a values     |
+* ---------                    ---------          ---------            |
+*                                                                      |
+* WARNING: This code may result in allocating arrays with 0 size       |
+*          and therefore will send an empty message                    |
+*______________________________________________________________________|
+*
+*implicits
+#include "glb_ld.cdk"
+*
+************************************************************************
+*
+      integer n,nwrn,nwrs,status
+*
+      real, allocatable ::
+     %   abc_for_n(:), abc_for_s(:), abc_fro_n(:), abc_fro_s(:)
+*
+      real a_for_n(*), b_for_n(*), c_for_n(*)
+      real a_fro_n(*), b_fro_n(*), c_fro_n(*)
+      real a_for_s(*), b_for_s(*), c_for_s(*)
+      real a_fro_s(*), b_fro_s(*), c_fro_s(*)
+      pointer (a_for_n_,  a_for_n),
+     %        (  b_for_n_,  b_for_n), (c_for_n_,  c_for_n),
+     %        (a_for_s_,  a_for_s),
+     %        (  b_for_s_,  b_for_s), (c_for_s_,  c_for_s),
+     %        (a_fro_n_,  a_fro_n),
+     %        (  b_fro_n_,  b_fro_n), (c_fro_n_,  c_fro_n),
+     %        (a_fro_s_,  a_fro_s),
+     %        (  b_fro_s_,  b_fro_s), (c_fro_s_,  c_fro_s)
+*
+      real, allocatable ::
+     %   abc_for_m_n(:), abc_for_m_s(:), abc_fro_m_n(:), abc_fro_m_s(:)
+*
+      real a_for_m_n(*), b_for_m_n(*), c_for_m_n(*)
+      real a_fro_m_n(*), b_fro_m_n(*), c_fro_m_n(*)
+      real a_for_m_s(*), b_for_m_s(*), c_for_m_s(*)
+      real a_fro_m_s(*), b_fro_m_s(*), c_fro_m_s(*)
+      pointer (a_for_m_n_,  a_for_m_n),
+     %        (  b_for_m_n_,  b_for_m_n), (c_for_m_n_,  c_for_m_n),
+     %        (a_for_m_s_,  a_for_m_s),
+     %        (  b_for_m_s_,  b_for_m_s), (c_for_m_s_,  c_for_m_s),
+     %        (a_fro_m_n_,  a_fro_m_n),
+     %        (  b_fro_m_n_,  b_fro_m_n), (c_fro_m_n_,  c_fro_m_n),
+     %        (a_fro_m_s_,  a_fro_m_s),
+     %        (  b_fro_m_s_,  b_fro_m_s), (c_fro_m_s_,  c_fro_m_s)
+*
+      integer F_n_fro_n_R, F_n_fro_s_R, F_n_fro_a_R,
+     %        F_n_for_n_R, F_n_for_s_R, F_n_for_a_R
+*
+************************************************************************
+*
+      allocate(abc_for_n(F_n_treat * F_n_for_n) )
+      allocate(abc_fro_n(F_n_treat * F_n_fro_n) )
+      allocate(abc_for_s(F_n_treat * F_n_for_s) )
+      allocate(abc_fro_s(F_n_treat * F_n_fro_s) )
+*
+      allocate(abc_for_m_n(F_n_treat * F_n_for_n) )
+      allocate(abc_fro_m_n(F_n_treat * F_n_fro_n) )
+      allocate(abc_for_m_s(F_n_treat * F_n_for_s) )
+      allocate(abc_fro_m_s(F_n_treat * F_n_fro_s) )
+*
+      if ( F_n_for_n .gt. 0 ) then
+*
+         if ( F_n_treat .eq. 1 ) then
+*
+*           TRAJECTORY
+*           ----------
+            do n = 1, F_n_for_n
+            abc_for_m_n(n) = F_a_for_m(n)
+            enddo
+*
+*           TLM 
+*           ---
+            do n = 1, F_n_for_n
+            abc_for_n(n) = F_a_for(n)
+            enddo
+*
+         elseif ( F_n_treat .eq. 2 ) then
+*
+*           TRAJECTORY
+*           ----------
+            a_for_m_n_ = loc(abc_for_m_n(          1))
+            b_for_m_n_ = loc(abc_for_m_n(F_n_for_n+1))
+*
+            do n = 1, F_n_for_n
+            a_for_m_n(n) = F_a_for_m(n)
+            b_for_m_n(n) = F_b_for_m(n)
+            enddo
+*
+*           TLM 
+*           ---
+            a_for_n_ = loc(abc_for_n(          1))
+            b_for_n_ = loc(abc_for_n(F_n_for_n+1))
+*
+            do n = 1, F_n_for_n
+            a_for_n(n) = F_a_for(n)
+            b_for_n(n) = F_b_for(n)
+            enddo
+*
+         elseif ( F_n_treat .eq. 3 ) then
+*
+*           TRAJECTORY
+*           ----------
+            a_for_m_n_ = loc(abc_for_m_n(            1))
+            b_for_m_n_ = loc(abc_for_m_n(  F_n_for_n+1))
+            c_for_m_n_ = loc(abc_for_m_n(2*F_n_for_n+1))
+*
+            do n = 1, F_n_for_n
+            a_for_m_n(n) = F_a_for_m(n)
+            b_for_m_n(n) = F_b_for_m(n)
+            c_for_m_n(n) = F_c_for_m(n)
+            enddo
+*
+*           TLM
+*           ---
+            a_for_n_ = loc(abc_for_n(            1))
+            b_for_n_ = loc(abc_for_n(  F_n_for_n+1))
+            c_for_n_ = loc(abc_for_n(2*F_n_for_n+1))
+*
+            do n = 1, F_n_for_n
+            a_for_n(n) = F_a_for(n)
+            b_for_n(n) = F_b_for(n)
+            c_for_n(n) = F_c_for(n)
+            enddo
+*
+         endif
+*
+      endif
+************************************************************************
+      if ( F_n_for_s .gt. 0 ) then
+*
+         if ( F_n_treat .eq. 1 ) then
+*
+*           TRAJECTORY
+*           ----------
+            do n = 1, F_n_for_s
+            abc_for_m_s(n) = F_a_for_m(F_n_for_n+n)
+            enddo
+*
+*           TLM
+*           ---
+            do n = 1, F_n_for_s
+            abc_for_s(n) = F_a_for(F_n_for_n+n)
+            enddo
+*
+         elseif ( F_n_treat .eq. 2 ) then
+*
+*           TRAJECTORY
+*           ----------
+            a_for_m_s_ = loc(abc_for_m_s(          1))
+            b_for_m_s_ = loc(abc_for_m_s(F_n_for_s+1))
+*
+            do n = 1, F_n_for_s
+            a_for_m_s(n) = F_a_for_m(F_n_for_n+n)
+            b_for_m_s(n) = F_b_for_m(F_n_for_n+n)
+            enddo
+*
+*           TLM 
+*           ---
+            a_for_s_ = loc(abc_for_s(          1))
+            b_for_s_ = loc(abc_for_s(F_n_for_s+1))
+*
+            do n = 1, F_n_for_s
+            a_for_s(n) = F_a_for(F_n_for_n+n)
+            b_for_s(n) = F_b_for(F_n_for_n+n)
+            enddo
+*
+         elseif ( F_n_treat .eq. 3 ) then
+*
+*           TRAJECTORY
+*           ----------
+            a_for_m_s_ = loc(abc_for_m_s(            1))
+            b_for_m_s_ = loc(abc_for_m_s(  F_n_for_s+1))
+            c_for_m_s_ = loc(abc_for_m_s(2*F_n_for_s+1))
+*
+            do n = 1, F_n_for_s
+            a_for_m_s(n) = F_a_for_m(F_n_for_n+n)
+            b_for_m_s(n) = F_b_for_m(F_n_for_n+n)
+            c_for_m_s(n) = F_c_for_m(F_n_for_n+n)
+            enddo
+*
+*           TLM
+*           ---
+            a_for_s_ = loc(abc_for_s(            1))
+            b_for_s_ = loc(abc_for_s(  F_n_for_s+1))
+            c_for_s_ = loc(abc_for_s(2*F_n_for_s+1))
+            do n = 1, F_n_for_s
+            a_for_s(n) = F_a_for(F_n_for_n+n)
+            b_for_s(n) = F_b_for(F_n_for_n+n)
+            c_for_s(n) = F_c_for(F_n_for_n+n)
+            enddo
+*
+         endif
+*
+      endif
+************************************************************************
+*
+      F_n_for_n_R = F_n_for_n
+      F_n_for_s_R = F_n_for_s
+      F_n_fro_n_R = F_n_fro_n
+      F_n_fro_s_R = F_n_fro_s
+*
+*     TRAJECTORY
+*     ----------
+      call RPN_COMM_swapns(F_n_treat*F_n_for_n,abc_for_m_n,
+     %                     F_n_treat*F_n_for_s,abc_for_m_s,
+     %                     F_n_treat*F_n_fro_n,nwrn,abc_fro_m_n,
+     %                     F_n_treat*F_n_fro_s,nwrs,abc_fro_m_s,
+     %                     G_periody,status)
+*
+      F_n_for_n = F_n_for_n_R
+      F_n_for_s = F_n_for_s_R
+      F_n_fro_n = F_n_fro_n_R
+      F_n_fro_s = F_n_fro_s_R
+*
+*     TLM 
+*     ---
+      call RPN_COMM_swapns(F_n_treat*F_n_for_n,abc_for_n,
+     %                     F_n_treat*F_n_for_s,abc_for_s,
+     %                     F_n_treat*F_n_fro_n,nwrn,abc_fro_n,
+     %                     F_n_treat*F_n_fro_s,nwrs,abc_fro_s,
+     %                     G_periody,status)
+*
+      if ( F_n_fro_n .gt. 0 ) then
+*
+         if ( F_n_treat .eq. 1 ) then
+*
+*           TRAJECTORY
+*           ----------
+            do n = 1, F_n_fro_n
+            F_a_fro_m(n) = abc_fro_m_n(n)
+            enddo
+*
+*           TLM 
+*           ---
+            do n = 1, F_n_fro_n
+            F_a_fro(n) = abc_fro_n(n)
+            enddo
+*
+         elseif ( F_n_treat .eq. 2 ) then
+*
+*           TRAJECTORY
+*           ----------
+            a_fro_m_n_ = loc(abc_fro_m_n(          1))
+            b_fro_m_n_ = loc(abc_fro_m_n(F_n_fro_n+1))
+*
+            do n = 1, F_n_fro_n
+            F_a_fro_m(n) = a_fro_m_n(n)
+            F_b_fro_m(n) = b_fro_m_n(n)
+            enddo
+*
+*           TLM
+*           ---
+            a_fro_n_ = loc(abc_fro_n(          1))
+            b_fro_n_ = loc(abc_fro_n(F_n_fro_n+1))
+*
+            do n = 1, F_n_fro_n
+            F_a_fro(n) = a_fro_n(n)
+            F_b_fro(n) = b_fro_n(n)
+            enddo
+*
+         elseif ( F_n_treat .eq. 3 ) then
+*
+*           TRAJECTORY
+*           ----------
+            a_fro_m_n_ = loc(abc_fro_m_n(            1))
+            b_fro_m_n_ = loc(abc_fro_m_n(  F_n_fro_n+1))
+            c_fro_m_n_ = loc(abc_fro_m_n(2*F_n_fro_n+1))
+*
+            do n = 1, F_n_fro_n
+            F_a_fro_m(n) = a_fro_m_n(n)
+            F_b_fro_m(n) = b_fro_m_n(n)
+            F_c_fro_m(n) = c_fro_m_n(n)
+            enddo
+*
+*           TLM
+*           ---
+            a_fro_n_ = loc(abc_fro_n(            1))
+            b_fro_n_ = loc(abc_fro_n(  F_n_fro_n+1))
+            c_fro_n_ = loc(abc_fro_n(2*F_n_fro_n+1))
+            do n = 1, F_n_fro_n
+            F_a_fro(n) = a_fro_n(n)
+            F_b_fro(n) = b_fro_n(n)
+            F_c_fro(n) = c_fro_n(n)
+            enddo
+*
+         endif
+*
+      endif
+************************************************************************
+      if ( F_n_fro_s .gt. 0 ) then
+*
+         if ( F_n_treat .eq. 1 ) then
+*
+*           TRAJECTORY
+*           ----------
+            do n = 1, F_n_fro_s
+            F_a_fro_m(F_n_fro_n+n) = abc_fro_m_s(n)
+            enddo
+*
+*           TLM 
+*           ---
+            do n = 1, F_n_fro_s
+            F_a_fro(F_n_fro_n+n) = abc_fro_s(n)
+            enddo
+*
+         elseif ( F_n_treat .eq. 2 ) then
+*
+*           TRAJECTORY
+*           ----------
+            a_fro_m_s_ = loc(abc_fro_m_s(          1))
+            b_fro_m_s_ = loc(abc_fro_m_s(F_n_fro_s+1))
+*
+            do n = 1, F_n_fro_s
+            F_a_fro_m(F_n_fro_n+n) = a_fro_m_s(n)
+            F_b_fro_m(F_n_fro_n+n) = b_fro_m_s(n)
+            enddo
+*
+*           TLM 
+*           ---
+            a_fro_s_ = loc(abc_fro_s(          1))
+            b_fro_s_ = loc(abc_fro_s(F_n_fro_s+1))
+*
+            do n = 1, F_n_fro_s
+            F_a_fro(F_n_fro_n+n) = a_fro_s(n)
+            F_b_fro(F_n_fro_n+n) = b_fro_s(n)
+            enddo
+*
+         elseif ( F_n_treat .eq. 3 ) then
+*
+*           TRAJECTORY
+*           ----------
+            a_fro_m_s_ = loc(abc_fro_m_s(            1))
+            b_fro_m_s_ = loc(abc_fro_m_s(  F_n_fro_s+1))
+            c_fro_m_s_ = loc(abc_fro_m_s(2*F_n_fro_s+1))
+            do n = 1, F_n_fro_s
+            F_a_fro_m(F_n_fro_n+n) = a_fro_m_s(n)
+            F_b_fro_m(F_n_fro_n+n) = b_fro_m_s(n)
+            F_c_fro_m(F_n_fro_n+n) = c_fro_m_s(n)
+            enddo
+*
+*           TLM
+*           ---
+            a_fro_s_ = loc(abc_fro_s(            1))
+            b_fro_s_ = loc(abc_fro_s(  F_n_fro_s+1))
+            c_fro_s_ = loc(abc_fro_s(2*F_n_fro_s+1))
+            do n = 1, F_n_fro_s
+            F_a_fro(F_n_fro_n+n) = a_fro_s(n)
+            F_b_fro(F_n_fro_n+n) = b_fro_s(n)
+            F_c_fro(F_n_fro_n+n) = c_fro_s(n)
+            enddo
+*
+         endif
+*
+      endif
+      deallocate(abc_for_n)
+      deallocate(abc_fro_n)
+      deallocate(abc_for_s)
+      deallocate(abc_fro_s)
+*
+      deallocate(abc_for_m_n)
+      deallocate(abc_fro_m_n)
+      deallocate(abc_for_m_s)
+      deallocate(abc_fro_m_s)
+************************************************************************
+      return
+      end

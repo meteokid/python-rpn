@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r v4d_settraj - Allocate WA file and VMM space for TRAJECTORY 
 *
 #include "model_macros_f.h"
@@ -20,6 +35,7 @@
 * v3_11 - Tanguay M.        - ADJ of digital filter 
 * v3_30 - Tanguay M.        - Validation for LAM version 
 * v3_31 - Tanguay M.        - Introduce time extrapolation
+* v3_31 - Tanguay M.        - SETTLS option
 *
 *object
 *     Open WA file for TRAJECTORY (all timesteps)
@@ -257,6 +273,9 @@
          VMM_NAM(st1m   )= 'ST1M'
          VMM_NAM(trt1m  )= 'TRT1M'
 *
+         VMM_NAM(xt1m   )= 'XT1M'
+         VMM_NAM(yt1m   )= 'YT1M'
+         VMM_NAM(zt1m   )= 'ZT1M'
          VMM_NAM(xct1m  )= 'XCT1M'
          VMM_NAM(yct1m  )= 'YCT1M'
          VMM_NAM(zct1m  )= 'ZCT1M'
@@ -284,6 +303,9 @@
          VMM_CREATE(trt1m, LARRAY3D, Tr3d_ntr, attrit_S)
          endif
 *
+         VMM_CREATE(xt1m  , l_ni*l_nj*l_nk, 1, attrib_S)
+         VMM_CREATE(yt1m  , l_ni*l_nj*l_nk, 1, attrib_S)
+         VMM_CREATE(zt1m  , l_ni*l_nj*l_nk, 1, attrib_S)
          VMM_CREATE(xct1m , l_ni*l_nj*l_nk, 1, attrib_S)
          VMM_CREATE(yct1m , l_ni*l_nj*l_nk, 1, attrib_S)
          VMM_CREATE(zct1m , l_ni*l_nj*l_nk, 1, attrib_S)

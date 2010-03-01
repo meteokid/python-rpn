@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_vmmprep - load all fields required by the physics
 *
 #include "model_macros_f.h"
@@ -103,7 +118,8 @@
       keyd(14) = VMM_KEY(p_eponmod)
       keyd(15) = VMM_KEY(p_fcpf)
       keyd(16) = VMM_KEY(p_fcpw)
-      err = vmmlod(keyd,16)
+      keyd(17) = VMM_KEY(p_sigt)
+      err = vmmlod(keyd,17)
       err = VMM_GET_VAR(p_uplus)
       err = VMM_GET_VAR(p_vplus)
       err = VMM_GET_VAR(p_tplus)
@@ -120,6 +136,7 @@
       err = VMM_GET_VAR(p_eponmod)
       err = VMM_GET_VAR(p_fcpf)
       err = VMM_GET_VAR(p_fcpw)
+      err = VMM_GET_VAR(p_sigt)
 *
 ****************************************************
 *   Copy variables at time t- and t* in workfields *

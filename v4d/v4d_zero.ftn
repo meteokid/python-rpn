@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r v4d_zero - Zero ALL model variables 
 *
 #include "model_macros_f.h"
@@ -20,6 +35,7 @@
 *                           - adapt to bcs
 * v3_31 - Tanguay M.        - Control BC
 * v3_31 - Tanguay M.        - Introduce time extrapolation
+* v3_31 - Tanguay M.        - SETTLS option
 *
 *object
 *    see id section
@@ -191,7 +207,10 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
       pnlkey1(15)= VMM_KEY(xct1 )
       pnlkey1(16)= VMM_KEY(yct1 )
       pnlkey1(17)= VMM_KEY(zct1 )
-      pnlod = 17
+      pnlkey1(18)= VMM_KEY(xt1  )
+      pnlkey1(19)= VMM_KEY(yt1  )
+      pnlkey1(20)= VMM_KEY(zt1  )
+      pnlod = 20 
 *
       if (.not. Schm_hydro_L) then
           pnlkey1(pnlod+1)= VMM_KEY(mut1)
@@ -216,6 +235,9 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
       pnerr = VMM_GET_VAR(xct1 )
       pnerr = VMM_GET_VAR(yct1 )
       pnerr = VMM_GET_VAR(zct1 )
+      pnerr = VMM_GET_VAR(xt1  )
+      pnerr = VMM_GET_VAR(yt1  )
+      pnerr = VMM_GET_VAR(zt1  )
 *
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(mut1)
@@ -261,6 +283,9 @@ cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
          xct1 (i) = 0.
          yct1 (i) = 0.
          zct1 (i) = 0.
+         xt1  (i) = 0.
+         yt1  (i) = 0.
+         zt1  (i) = 0.
       end do
 *
       pnerr = vmmuld( -1, 0 )

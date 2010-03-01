@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r v4d_rwtraj - Read (Write) from (on) TRAJ WA file at each time step
 *
 #include "model_macros_f.h"
@@ -27,6 +42,7 @@
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
 * v3_30 - Tanguay M.        - Validation for LAM Nonhyd
 * v3_31 - Tanguay M.        - Control BC
+* v3_31 - Tanguay M.        - SETTLS option
 *
 *object
 *
@@ -52,6 +68,8 @@
 #include "vthm.cdk"
 #include "vt1.cdk"
 #include "vt1m.cdk"
+#include "vtw.cdk"
+#include "vtwm.cdk"
 #include "vt0.cdk"
 #include "vt0m.cdk"
 #include "vtx.cdk"
@@ -89,7 +107,7 @@
 *
 *     ______________________________________________________
 *
-      if(     numtr.gt.14  ) call gem_stop('v4d_rwtraj 1',-1)
+      if(     numtr.gt.17  ) call gem_stop('v4d_rwtraj 1',-1)
       if(Lctl_step .gt.100 ) call gem_stop('v4d_rwtraj 2',-1)
       if(Orh_icn   .gt.2   ) call gem_stop('v4d_rwtraj 3',-1)
 *     ______________________________________________________
@@ -1724,6 +1742,311 @@
             endif
 *
 *        Store starting ADJOINT address 
+*        ------------------------------
+         V4dg_addtab_ad(numtr,istep,1) = iadd - l_ni*l_nj*l_nk
+         V4dg_addtr                    = iadd
+*
+         endif
+*
+      endif
+*
+*     ---------------------------------------------
+*     TRAJ XT1 YT1 ZT1 before ADV_MAIN_2_POS_SETTLS 
+*     ---------------------------------------------
+      if(numtr.eq.15) then
+*
+*        ----------------
+*        Read TRAJ Fields 
+*        ----------------
+         if(V4dg_rwtr.eq.0) then
+*
+*        Recover starting address
+*        ------------------------
+         if(V4dg_ad_L) iadd = V4dg_addtab_ad(numtr,istep,1)  
+         if(V4dg_tl_L) iadd = V4dg_addtab_tl(numtr,istep,1) 
+*
+         pnlkey1(1) = VMM_KEY(xt1m)
+         pnlkey1(2) = VMM_KEY(yt1m)
+         pnlkey1(3) = VMM_KEY(zt1m)
+         pnlod = 3 
+*        - - - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,pnlod)
+*        - - - - - - - - - - - - - - -
+         pnerr = VMM_GET_VAR(xt1m)
+         pnerr = VMM_GET_VAR(yt1m)
+         pnerr = VMM_GET_VAR(zt1m)
+*
+*        TANGENT LINEAR MODEL
+*        --------------------
+         if(V4dg_tl_L) then
+*
+            call v4d_rwfldx(xt1m, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'XT1M', V4dg_ad_L,0,-1)
+*
+            call v4d_rwfldx(yt1m, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'YT1M', V4dg_ad_L,0,-1)
+*
+            call v4d_rwfldx(zt1m, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'ZT1M', V4dg_ad_L,0,-1)
+*
+         endif
+*
+*        ADJOINT MODEL 
+*        -------------
+         if(V4dg_ad_L) then
+*
+            call v4d_rwfldx(zt1m, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'ZT1M', V4dg_ad_L,
+     %                   l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfldx(yt1m, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'YT1M', V4dg_ad_L,
+     %                   l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfldx(xt1m, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'XT1M', V4dg_ad_L,
+     %                   l_ni*l_nj*l_nk,-1)
+*
+         endif
+*
+*        -----------------
+*        Write TRAJ Fields 
+*        -----------------
+         elseif(V4dg_rwtr.eq.1) then
+*
+         pnlkey1(1) = VMM_KEY(xt1)
+         pnlkey1(2) = VMM_KEY(yt1)
+         pnlkey1(3) = VMM_KEY(zt1)
+         pnlod = 3 
+*        - - - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,pnlod)
+*        - - - - - - - - - - - - - - -
+         pnerr = VMM_GET_VAR(xt1)
+         pnerr = VMM_GET_VAR(yt1)
+         pnerr = VMM_GET_VAR(zt1)
+*
+*        Store starting TLM address
+*        --------------------------
+         V4dg_addtab_tl(numtr,istep,1) = V4dg_addtr 
+         iadd                          = V4dg_addtr 
+*
+            call v4d_rwfldx(xt1, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'XT1', V4dg_ad_L,0,1)
+*
+            call v4d_rwfldx(yt1, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'YT1', V4dg_ad_L,0,1)
+*
+            call v4d_rwfldx(zt1, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'ZT1', V4dg_ad_L,0,1)
+*
+*        Store starting ADJOINT address
+*        ------------------------------
+         V4dg_addtab_ad(numtr,istep,1) = iadd - l_ni*l_nj*l_nk
+         V4dg_addtr                    = iadd
+*
+         endif
+*
+      endif
+*
+*     ---------------------------------------------------------
+*     TRAJ Winds at time T1 and TW before ADV_MAIN_1_WND_SETTLS
+*     ---------------------------------------------------------
+      if(numtr.eq.16) then    
+*
+*        ----------------
+*        Read TRAJ Fields 
+*        ----------------
+         if(V4dg_rwtr.eq.0) then
+*
+*
+*        Recover starting address
+*        ------------------------
+         if(V4dg_ad_L) iadd = V4dg_addtab_ad(numtr,istep,1) 
+         if(V4dg_tl_L) iadd = V4dg_addtab_tl(numtr,istep,1) 
+*
+         pnlkey1(1) = VMM_KEY(ut1m)
+         pnlkey1(2) = VMM_KEY(vt1m)
+         pnlkey1(3) = VMM_KEY(psdt1m)
+         pnlkey1(4) = VMM_KEY(utwm)
+         pnlkey1(5) = VMM_KEY(vtwm)
+         pnlkey1(6) = VMM_KEY(psdtwm)
+         pnlod = 6 
+*        - - - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,pnlod)
+*        - - - - - - - - - - - - - - -
+         pnerr = VMM_GET_VAR(ut1m)
+         pnerr = VMM_GET_VAR(vt1m)
+         pnerr = VMM_GET_VAR(psdt1m)
+         pnerr = VMM_GET_VAR(utwm)
+         pnerr = VMM_GET_VAR(vtwm)
+         pnerr = VMM_GET_VAR(psdtwm)
+*
+*        TANGENT LINEAR MODEL
+*        --------------------
+         if(V4dg_tl_L) then
+*
+            call v4d_rwfld (ut1m,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'UT1M',  V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (vt1m,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'VT1M',  V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (psdt1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'PSDT1M',V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (utwm,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'UTWM',  V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (vtwm,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'VTWM',  V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (psdtwm,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'PSDTWM',V4dg_ad_L,0,-1)
+*
+         endif
+*
+*        ADJOINT MODEL 
+*        -------------
+         if(V4dg_ad_L) then
+*
+            call v4d_rwfld (psdtwm,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'PSDTWM',V4dg_ad_L,l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (vtwm,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'VTWM',  V4dg_ad_L,l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (utwm,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'UTWM',  V4dg_ad_L,l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (psdt1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'PSDT1M',V4dg_ad_L,l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (vt1m,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'VT1M',  V4dg_ad_L,l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (ut1m,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'UT1M',  V4dg_ad_L,l_ni*l_nj*l_nk,-1)
+*
+         endif
+*
+*        -----------------
+*        Write TRAJ Fields 
+*        -----------------
+         elseif(V4dg_rwtr.eq.1) then
+*
+         pnlkey1(1) = VMM_KEY(ut1)
+         pnlkey1(2) = VMM_KEY(vt1)
+         pnlkey1(3) = VMM_KEY(psdt1)
+         pnlkey1(4) = VMM_KEY(utw)
+         pnlkey1(5) = VMM_KEY(vtw)
+         pnlkey1(6) = VMM_KEY(psdtw)
+         pnlod = 6 
+*
+*        - - - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,pnlod)
+*        - - - - - - - - - - - - - - -
+*
+         pnerr = VMM_GET_VAR(ut1)
+         pnerr = VMM_GET_VAR(vt1)
+         pnerr = VMM_GET_VAR(psdt1)
+         pnerr = VMM_GET_VAR(utw)
+         pnerr = VMM_GET_VAR(vtw)
+         pnerr = VMM_GET_VAR(psdtw)
+*
+*        Store starting TLM address
+*        --------------------------
+         V4dg_addtab_tl(numtr,istep,1) = V4dg_addtr 
+         iadd                          = V4dg_addtr
+*
+         call v4d_rwfld (ut1,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iuntr,iadd,plpr_L,'UT1',  V4dg_ad_L,0,1)
+
+         call v4d_rwfld (vt1,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iuntr,iadd,plpr_L,'VT1',  V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (psdt1,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iuntr,iadd,plpr_L,'PSDT1',V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (utw,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iuntr,iadd,plpr_L,'UTW',  V4dg_ad_L,0,1)
+
+         call v4d_rwfld (vtw,  work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iuntr,iadd,plpr_L,'VTW',  V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (psdtw,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iuntr,iadd,plpr_L,'PSDTW',V4dg_ad_L,0,1)
+*
+*        Store starting ADJOINT address
+*        ------------------------------
+         V4dg_addtab_ad(numtr,istep,1) = iadd - l_ni*l_nj*l_nk
+         V4dg_addtr                    = iadd
+*
+         endif
+*
+      endif 
+*
+*     ------------------------------
+*     TRAJ ZT1 inside ADV_MAIN_2_POS 
+*     ------------------------------
+      if(numtr.eq.17) then
+*
+*        ----------------
+*        Read TRAJ Fields 
+*        ----------------
+         if(V4dg_rwtr.eq.0) then
+*
+*        Recover starting address
+*        ------------------------
+         if(V4dg_ad_L) iadd = V4dg_addtab_ad(numtr,istep,1)  
+         if(V4dg_tl_L) iadd = V4dg_addtab_tl(numtr,istep,1) 
+*
+         pnlkey1(1) = VMM_KEY(zt1m)
+         pnlod = 1 
+*        - - - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,pnlod)
+*        - - - - - - - - - - - - - - -
+         pnerr = VMM_GET_VAR(zt1m)
+*
+*        TANGENT LINEAR MODEL
+*        --------------------
+         if(V4dg_tl_L) then
+*
+            call v4d_rwfldx(zt1m, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'ZT1M', V4dg_ad_L,0,-1)
+*
+         endif
+*
+*        ADJOINT MODEL 
+*        -------------
+         if(V4dg_ad_L) then
+*
+            call v4d_rwfldx(zt1m, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'ZT1M', V4dg_ad_L,
+     %                   l_ni*l_nj*l_nk,-1)
+*
+         endif
+*
+*        -----------------
+*        Write TRAJ Fields 
+*        -----------------
+         elseif(V4dg_rwtr.eq.1) then
+*
+         pnlkey1(1) = VMM_KEY(zt1)
+         pnlod = 1 
+*        - - - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,pnlod)
+*        - - - - - - - - - - - - - - -
+         pnerr = VMM_GET_VAR(zt1)
+*
+*        Store starting TLM address
+*        --------------------------
+         V4dg_addtab_tl(numtr,istep,1) = V4dg_addtr 
+         iadd                          = V4dg_addtr 
+*
+            call v4d_rwfldx(zt1, l_ni,l_nj,l_nk,
+     %                   V4dg_iuntr,iadd,plpr_L,'ZT1', V4dg_ad_L,0,1)
+*
+*        Store starting ADJOINT address
 *        ------------------------------
          V4dg_addtab_ad(numtr,istep,1) = iadd - l_ni*l_nj*l_nk
          V4dg_addtr                    = iadd

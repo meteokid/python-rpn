@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r geodata - FROM MC2 - read in geophy file created by gengeo
 *                ?_gfilemap.txt must accompany this ?geophy file
 #include "model_macros_f.h"
@@ -87,13 +102,17 @@
       end do
       end do
 *
-      fn  = trim(Path_input_S)//'/GEOPHY/'//trim(prefgeo)
-
+      fn = trim(Path_input_S)//'/LAM_geophy/'//trim(prefgeo)
+*
       unf = 91
       open (unf,file=trim(fn)//'_gfilemap.txt',access='SEQUENTIAL',
      $                    status='OLD',iostat=err,form='FORMATTED')
-      if (err.ne.0) return
-      if (Lun_out.gt.0) write (Lun_out,1000) trim(fn)//'_gfilemap.txt'
+      if (err.ne.0) then
+        if (Lun_out.gt.0) write (Lun_out,1002) trim(fn)//'_gfilemap.txt'
+        return
+      else
+        if (Lun_out.gt.0) write (Lun_out,1000) trim(fn)//'_gfilemap.txt'
+      endif
 *
       deg2rad  =  acos(-1.0)/180.
       inttyp   = 'LINEAR'
@@ -286,6 +305,7 @@ c        if (geonm(gid,1).eq.'MF'    ) listgeonm(2,gid) = 'OK'
  1000 format (4X,'GEODATA: geophy file description from ',A/)
  1001 format (/' INPUT DATA NOT ON SAME GRID ROTATION AS MODEL ',
      $         '- ABORT IN geodata -'/)
+ 1002 format (4X,'GEODATA: problem with opening geophy file:  ',A/)
 *
 *-----------------------------------------------------------------------
 *
@@ -365,7 +385,7 @@ c        if (geonm(gid,1).eq.'MF'    ) listgeonm(2,gid) = 'OK'
 *
       ip1 = 0
       if (nk.gt.1) call convip ( ip1, real(ki), 3, 1, dum, .false.)
-      if (nv.eq.'ME'.or.nv.eq.'MF') then
+      if (nv.eq.'ME') then
          call convip ( ip1, 0.0,3,1,dum,.false.)
       endif
       key = fstinf(unf,ni1,nj1,nk1,-1,' ',ip1,-1,-1,' ',nv)

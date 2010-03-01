@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r adw_main_3_intlag_tl - TLM of adw_main_3_intlag when Adw_lag3d_L=.TRUE. 
 *
 #include "model_macros_f.h"
@@ -22,6 +37,7 @@
 * v3_30 - Tanguay M.        - correct calculation for LAM when Glb_pil gt 7 
 * v3_31 - Tanguay M.        - Introduce time extrapolation
 * v3_31 - Tanguay M.        - new scope for operator + adw_cliptraj (LAM)
+* v3_31 - Tanguay M.        - Do adjoint of outsiders in advection
 *
 *language
 *     fortran 77
@@ -53,7 +69,6 @@
 #include "rhsc.cdk"
 #include "v4dg.cdk"
 #include "adw.cdk"
-cvl#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
@@ -68,7 +83,7 @@ cvl#include "tr2d.cdk"
 ************************************************************************
       integer i0,in,j0,jn
       integer pnerr, pnlkey1(30), key1(Tr3d_ntr), key0(Tr3d_ntr), 
-     $        key1_, key0_, pnlod, err
+     $        key1_, key0_, pnlod, err, dim
       integer key1m(Tr3d_ntr), key0m(Tr3d_ntr), key1m_, key0m_ 
 *
       integer n, nij, nijk, nijkag, cnt, unf, i,j,k
@@ -83,10 +98,6 @@ cvl#include "tr2d.cdk"
 *
 *     ______________________________________________________
 *
-cvl   if(     Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_tl',-1)
-*     ______________________________________________________
-*
-*
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -99,7 +110,6 @@ cvl   if(     Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_tl',-1)
       call hpalloc(Adw_xgg1_    ,nijk,      err,1)
       call hpalloc(Adw_ydd1_    ,nijk,      err,1)
       call hpalloc(Adw_ygg1_    ,nijk,      err,1)
-      call hpalloc(Adw_cz1_     ,nijk,      err,1)
       call hpalloc(Adw_c1_      ,nijk,      err,1)
       call hpalloc(Adw_wrkb_    ,nijk,      err,1)
       call hpalloc(Adw_wrkc_    ,nijk,      err,1)
@@ -112,12 +122,10 @@ cvl   if(     Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_tl',-1)
       call hpalloc(Adwm_xgg1m_  ,nijk,      err,1)
       call hpalloc(Adwm_ydd1m_  ,nijk,      err,1)
       call hpalloc(Adwm_ygg1m_  ,nijk,      err,1)
-      call hpalloc(Adwm_cz1m_   ,nijk,      err,1)
       call hpalloc(Adwm_c1m_    ,nijk,      err,1)
       call hpalloc(Adwm_wrkbm_  ,nijk,      err,1)
       call hpalloc(Adwm_wrkcm_  ,nijk,      err,1)
 *
-************************************************************************
       i0=1
       in=l_ni
       j0=1
@@ -128,6 +136,36 @@ cvl   if(     Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_tl',-1)
           if (l_south) j0=pil_s
           if (l_north) jn=l_njv - pil_n + 2
           call adw_cliptraj_tl (  F_u, F_v, F_um, F_vm, i0, in, j0, jn, 'IN3_TL')
+      endif
+*
+      if (.not.G_lam) then
+*
+         call adw_exch_1_tl ( Adw_n1,  Adw_xgg1,   Adw_xdd1,   Adw_c1,
+     $                                             F_u,  F_v,  F_w,
+     $                        Adwm_n1m,Adwm_xgg1m, Adwm_xdd1m, Adwm_c1m,
+     $                                             F_um, F_vm, F_wm )
+*
+         dim = max(1,Adw_fro_a)
+*
+         call hpalloc(Adwm_capx2m_ ,dim,      err,1)
+         call hpalloc(Adwm_capy2m_ ,dim,      err,1)
+         call hpalloc(Adwm_capz2m_ ,dim,      err,1)
+         call hpalloc(Adwm_wrkam_  ,dim,      err,1)
+*
+         call hpalloc(Adw_capx2_   ,dim,      err,1)
+         call hpalloc(Adw_capy2_   ,dim,      err,1)
+         call hpalloc(Adw_capz2_   ,dim,      err,1)
+         call hpalloc(Adw_wrka_    ,dim,      err,1)
+*
+         call adw_exch_2_tl ( Adw_capx2,  Adw_capy2,  Adw_capz2,
+     %                        Adw_n1,     Adw_xgg1,   Adw_xdd1,
+     %                        Adwm_capx2m,Adwm_capy2m,Adwm_capz2m,
+     %                        Adwm_n1m,   Adwm_xgg1m, Adwm_xdd1m,
+     %                        Adw_fro_n,  Adw_fro_s,  Adw_fro_a,
+     %                        Adw_for_n,  Adw_for_s,  Adw_for_a, 3 )
+*
+         if ( Adw_fro_a .gt. 0 .and. Adw_ckbd_L )
+     $                              call adw_ckbd ( Adwm_capy2m )
       endif
 *
 ***********************************************************************
@@ -327,7 +365,6 @@ cvl   if(     Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_tl',-1)
       call hpdeallc(Adw_xgg1_    ,err,1)
       call hpdeallc(Adw_ydd1_    ,err,1)
       call hpdeallc(Adw_ygg1_    ,err,1)
-      call hpdeallc(Adw_cz1_     ,err,1)
       call hpdeallc(Adw_c1_      ,err,1)
       call hpdeallc(Adw_wrkb_    ,err,1)
       call hpdeallc(Adw_wrkc_    ,err,1)
@@ -340,10 +377,22 @@ cvl   if(     Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_tl',-1)
       call hpdeallc(Adwm_xgg1m_  ,err,1)
       call hpdeallc(Adwm_ydd1m_  ,err,1)
       call hpdeallc(Adwm_ygg1m_  ,err,1)
-      call hpdeallc(Adwm_cz1m_   ,err,1)
       call hpdeallc(Adwm_c1m_    ,err,1)
       call hpdeallc(Adwm_wrkbm_  ,err,1)
       call hpdeallc(Adwm_wrkcm_  ,err,1)
+      if (.not.G_lam) then
+*
+      call hpdeallc(Adw_capx2_   ,err,1)
+      call hpdeallc(Adw_capy2_   ,err,1)
+      call hpdeallc(Adw_capz2_   ,err,1)
+      call hpdeallc(Adw_wrka_    ,err,1)
+*
+      call hpdeallc(Adwm_capx2m_ ,err,1)
+      call hpdeallc(Adwm_capy2m_ ,err,1)
+      call hpdeallc(Adwm_capz2m_ ,err,1)
+      call hpdeallc(Adwm_wrkam_  ,err,1)
+*
+      endif
 *
       pnerr = vmmuld(-1,0)
 *

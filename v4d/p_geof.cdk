@@ -1,8 +1,24 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 #if defined (DOC)
 *
 *revision
 * v2_20 - Pellerin P.            - adaptation to physics 3.6.6
 * v3_11 - Gravel S.              - add new field for varying topo
+* v3_32 - Tanguay M.             - Mix PILOT and ANAL mountains when BCS/3DF  
 *
 ***comdeck p_geof.cdk
 *
@@ -17,6 +33,9 @@
 * topu               | U   at the surface (xfis) with halos on it      |
 * topv               | V   at the surface (xfis) with halos on it      |
 * dtopo              | difference between analysis and model topo      |
+* topa               | Phi at the surface (xfis) before BLEND of ANAL  |
+* toua               | U   at the surface (xfis) before BLEND of ANAL  |
+* tova               | V   at the surface (xfis) before BLEND of ANAL  |
 *----------------------------------------------------------------------
 *
 *
@@ -32,6 +51,9 @@
       DCL_VMMVAR(geof,topu ,real,(LDIST_SHAPE))
       DCL_VMMVAR(geof,topv ,real,(LDIST_SHAPE))
       DCL_VMMVAR(geof,dtopo,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,topa ,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,toua ,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,tova ,real,(LDIST_SHAPE))
       MARK_COMMON_END(geof)
 
       character*8 geof_n_first(1)

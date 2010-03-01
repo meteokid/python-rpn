@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r v4d_setting - Additional settings for 4D-Var 
 *
 #include "model_macros_f.h"
@@ -37,6 +52,7 @@
 * v3_20 - Zadra A.          - Introduce V4dg_sgvc_dt0  
 * v3_30 - Tanguay M.        - Validation for LAM version 
 * v3_31 - Tanguay M.        - Control BC
+* v3_31 - Tanguay M.        - SETTLS option
 *
 *object
 *     1) Allocate WA files and VMM space
@@ -166,6 +182,14 @@
              V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 1)*l_ni*l_nj*Schm_itcn 
              if(.not.Schm_hydro_L)
      %       V4dg_trsize = V4dg_trsize + itotal*(  1          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+*
+*            numtr.eq.15
+*            -----------
+             V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 0)*l_ni*l_nj 
+*
+*            numtr.eq.16
+*            -----------
+             V4dg_trsize = V4dg_trsize + itotal*(  6          *l_nk + 0)*l_ni*l_nj 
 *
              endif
 *
@@ -305,8 +329,8 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
          else
          write(cprocno_S,fmt='(i2)') Ptopo_myproc
          endif
-         cfilename_S = trim(Path_basedir_S)//
-     $                 '/output/Output_From_Proc_No.'//trim(cprocno_S)
+         cfilename_S = trim(Path_output_S)//
+     $                 '/Output_From_Proc_No.'//trim(cprocno_S)
          ierr = fnom(lun_4dvar,trim(cfilename_S),'SEQ+APPEND',0)
 *
          ilun_out = Lun_out
@@ -314,7 +338,7 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *
 *        Define path to the "exchange" directory with 3D-Var 
 *        ---------------------------------------------------
-         Path_xchg_S = trim(Path_basedir_S)//'/output/xchgdir'
+         Path_xchg_S = trim(Path_output_S)//'/xchgdir'
 *
 *        Flag to do 3hr TRAJ run to get to the starting date of the assimilation
 *        -----------------------------------------------------------------------

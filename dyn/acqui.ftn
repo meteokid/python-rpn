@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r acqui - read the dynamics fields from entrance programs
 *
 #include "model_macros_f.h"
@@ -32,6 +47,7 @@
 #include "bmf.cdk"
 #include "glb_pil.cdk"
 #include "geomg.cdk"
+#include "lam.cdk"
 #include "grd.cdk"
 #include "pres.cdk" 
 #include "dcst.cdk"
@@ -70,9 +86,8 @@
       mm=bmf_time2/10000-hh*100
       ss=bmf_time2/100-hh*10000-mm*100
 *     
-      call bmf_splitname ( pe_file,Ptopo_mycol,
-     $                     Ptopo_myrow,trim(Path_input_S)//'/INDATA',
-     $                                      'BM',bmf_time1,hh,mm,ss )
+      call bmf_splitname ( pe_file,Ptopo_mycol,Ptopo_myrow,
+     $                     trim(Path_ind_S),'BM',bmf_time1,hh,mm,ss )
 *
       do i=1,maxerr
          error(i) = -1
@@ -144,6 +159,13 @@
       error(2) = bmf_get ('ME  ',bmf_time1,bmf_time2,-1,Ind_topo,-1.,
      $                                                 LDIST_DIM,1,1)
 *
+* Check if Vtopo is requested when the analysis is on pressure levels
+      if (Acql_prsanl .and. Vtopo_L) then
+         write(Lun_out,*)
+     $     'PRESSURE input data is incompatible with growing orography.',
+     $     'Set Vtopo_start=-1 in your settings file to continue.'
+         call gem_stop('acqui',-1)
+      endif
       do j=1,l_nj
       do i=1,l_ni
          Ind_topo (i,j) = dble(Ind_topo(i,j)) * Dcst_grav_8
@@ -396,6 +418,7 @@ C        do i=1,l_ni
 *
       if (error(1).ne.0) call gem_stop ('acqui',-1)
 *
+      if (Lam_blendoro_L) then
       if ((Acql_vertint).and.(G_lam).and.(.not.Acql_prsanl).and.(.not.Schm_offline_L)) then
 *
       do j=1,pil_s
@@ -466,9 +489,9 @@ C        do i=1,l_ni
         end do
 *
         call nesajr (topu_temp, gzu_temp(1,1,nk_anal), 1,Acqi_niu,
-     $                    1,Acqi_nju,1,0,0,Hblen_x,Hblen_y)
+     $                    1,Acqi_nju,1,1,0,Hblen_x,Hblen_y)
         call nesajr (topv_temp, gzv_temp(1,1,nk_anal), 1,Acqi_niv,
-     $                    1,Acqi_njv,1,0,0,Hblen_x,Hblen_y)
+     $                    1,Acqi_njv,1,0,1,Hblen_x,Hblen_y)
 *
       endif
 
@@ -479,6 +502,7 @@ C        do i=1,l_ni
       end do
       end do
 *
+      endif
       endif
 *
       if (Vtopo_L) then

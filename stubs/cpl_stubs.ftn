@@ -1,0 +1,9 @@
+      subroutine cpl_exchg
+      return
+      end
+      subroutine cpl_init
+      return
+      end
+      subroutine cpl_terminate
+      return
+      end

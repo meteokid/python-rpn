@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_intwind_offline - Wind components horizontal interpolation
 *
 #include "model_macros_f.h"
@@ -9,6 +24,7 @@
 *
 *revision
 * v3_31 - Bilodeau B.       - initial version
+* v3_31 - Lee V.            - add 3DF pilot for Schm_offline_L
 *
 *object
 *        see above ID
@@ -45,17 +61,12 @@
       character*1 typ,grd
       character*4 var,var_uu,var_vv
       character*12 lab
-      logical flag_ut1
-      logical must_interpo_L,samegrid
-      external samegrid
+      logical must_interpo_L
       real, dimension (:), allocatable :: uu,vv
       real, dimension (:), allocatable :: w1,w2
       real c1
       real, dimension (:,:), allocatable :: uuf,vvf
-*
-      real xlon,ylat
-      pointer (paxlon, xlon(*)), (paylat, ylat(*))
-
+      real, dimension (:,:,:), allocatable :: uun,vvn
 *
       logical must_interpo_s
       integer un_s,nic_s,njc_s,g1_s,g2_s,g3_s,kind,id_s
@@ -64,19 +75,30 @@
 *
 * ---------------------------------------------------------------------
 *
-      nisu = niu
-      njsu = nju
-      nisv = niv
-      njsv = njv
+      write(6,1001)
+      if (Pil_bmf_L) then
+         nisu = niu
+         njsu = nju
+         nisv = niv
+         njsv = njv
+         nis = nifi
+         njs = njfi
+      else
+         nisu = E_Grdc_ni
+         njsu = E_Grdc_nj
+         nisv = E_Grdc_ni
+         njsv = E_Grdc_nj
+         nis  = E_Grdc_ni
+         njs  = E_Grdc_nj
+         allocate (uun(nisu,njsu,lv),vvn(nisv,njsv,lv))
+      endif
 *
       allocate (uu(nisu*njsu),vv(nisv*njsv))
 *     uuf and vvf are on phi grid
-      allocate (uuf(nifi,njfi),vvf(nifi,njfi))
+      allocate (uuf(nis,njs),vvf(nis,njs))
 *
       nu = nisu*njsu
       nv = nisv*njsv
-*
-      anal_hav(1) = 1
 *
       ip2 = ip2a
       ip3 = ip3a
@@ -90,35 +112,21 @@
 *
 *     Should we interpolate the winds?
 *
-      must_interpo_L = .false.
-      if ((nic.ne.nifi).or.(njc.ne.njfi)) then
-          must_interpo_L = .true.
+      If (anal_hav(1).eq.0) then
+          must_interpo_L = .false.
+          print *,'NO interpolation required for winds'
+          if (nic.ne.nis.or.njc.ne.njs) then
+              print *,'ERROR: WINDS ARE NOT ON THE SAME GRID AS TT,HU'
+              print *,'nic=',nic,'.NE. nis=',nis,' njc=',njc,'.NE. njs=',njs
+              goto 55
+          endif
       else
-         if (     (un_s.eq.e_fu_anal).and.(nic_s.eq.nic).and.(njc_s.eq.njc)
-     $       .and.(g1_s.eq.g1 ).and.(g2_s .eq.g2 ).and.(g3_s .eq.g3 )
-     $       .and.(id_s.eq.src_gid)
-     $      ) then
-            must_interpo_L = must_interpo_s
-         else
-            paxlon = loc(xfi(1))
-            paylat = loc(yfi(1))
-            must_interpo_L =
-     $           .not. samegrid (e_fu_anal, nic,njc, g1,g2,g3, Hgc_ig1ro,
-     $                 Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
-            un_s = e_fu_anal
-            nic_s= nic
-            njc_s= njc
-            g1_s = g1
-            g2_s = g2
-            g3_s = g3
-            id_s = src_gid
-            must_interpo_s = must_interpo_L
-         endif
+          must_interpo_L = .true.
       endif
 *
-      do k=1,lv
+      allocate (w1(nic*njc),w2(nic*njc))
 *
-         allocate (w1(nic*njc),w2(nic*njc))
+      do 200 k=1,lv
 *
          ip2 = ip2a
          ip3 = ip3a
@@ -135,15 +143,13 @@
             goto 55
          endif
 *
-*
 *        Horizontal Interpolation on PHI grid, if necessary
 *
          if (must_interpo_L) then
             err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
             err = ezdefset ( dstf_gid, src_gid )
             err = ezuvint  ( uuf,vvf,w1,w2 )
-            write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
-            write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
+            write (6,*) '(S/R e_intwind_offline) Horizontal interpolation:UU,VV with ezuvint CUBIC '
          else
 *
             write(6,'(A25,A30,A3,A12,3I5)') 
@@ -152,34 +158,60 @@
             write(6,'(A25,A30,A3,A12,3I5)') 
      $          "(S/R e_intwind_offline) ",
      $          "NO horizontal interpolation on ","VV"," for ip123= ",na(k),ip2,ip3
-*
-            do j=1,njfi
-               do i=1,nifi
-                  uuf(i,j) = w1((j-1)*nifi+i)
-                  vvf(i,j) = w2((j-1)*nifi+i)
+            do j=1,njs
+               do i=1,nis
+                  uuf(i,j) = w1((j-1)*nis+i)
+                  vvf(i,j) = w2((j-1)*nis+i)
                end do
             end do
          endif     
 *
+         if (Pil_bmf_L) then
 *        copy uuf (phi grid) into uu
-         do j=1,njsu
-            do i=1,nisu
-               uu((j-1)*nisu+i) = uuf(i,j)
-            end do
-         end do
+             do j=1,njsu
+             do i=1,nisu
+                 uu((j-1)*nisu+i) = uuf(i,j)
+             end do
+             end do
 *        copy vvf (phi grid) into vv
-         do j=1,njsv
-            do i=1,nisv
-               vv((j-1)*nisv+i) = vvf(i,j)
-            end do
-         end do
+             do j=1,njsv
+             do i=1,nisv
+                 vv((j-1)*nisv+i) = vvf(i,j)
+             end do
+             end do
+         else
+*        copy and scale uuf (phi grid) into uu
+             do j=1,njsu
+             do i=1,nisu
+                 uu((j-1)*nisu+i) = Dcst_knams_8*uuf(i,j)
+             end do
+             end do
+*        copy and scale vvf (phi grid) into vv
+             do j=1,njsv
+             do i=1,nisv
+                 vv((j-1)*nisv+i) = Dcst_knams_8*vvf(i,j)
+             end do
+             end do
+         endif
 *
-         call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
-         call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+         if (Pil_bmf_L) then
+             call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
+             call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+         else
+             call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
+             call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
+         endif
 *
-         deallocate(uu,vv,uuf,vvf,w1,w2)
-*
-      end do
+  200 continue
+
+      deallocate(uu,vv,uuf,vvf,w1,w2)
+
+      if (.not.Pil_bmf_L) then
+         call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
+         call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
+         deallocate(uun,vvn)
+         return
+      endif
 *
 *
       goto 99
@@ -192,6 +224,7 @@
       call bmf_splitend
       return
 *
+ 1001 format ('COMPUTE UU,VV (S/R E_INTWIND_OFFLINE)',/,25('+'))
  120  format ('|',1x,a8,'|',1x,a2,'  |',2(i7,' |'),i3,'  |',1x,a3,
      $        ' |',1x,a7,'  |',1x,a16,'|')
 * ---------------------------------------------------------------------

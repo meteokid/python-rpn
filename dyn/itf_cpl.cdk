@@ -1,19 +1,37 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 
-      logical C_coupling_L,atm_hotstart,oce_hotstart
-      common /C_nml/ C_coupling_L,atm_hotstart,oce_hotstart
+      logical C_coupling_L,C_wascoupled_L,atm_hotstart,oce_hotstart
+      common /C_nml/ C_coupling_L,C_wascoupled_L,
+     $                 atm_hotstart,oce_hotstart
 
       character*48 CPL_NAME
-      integer rap_dt,ip_fldou,ip_fldin,cpl_maxnvar,write_chan,read_chan
-      parameter (cpl_maxnvar=1000)
-      character*8 cg_writ(cpl_maxnvar), cg_read   (cpl_maxnvar)
-      integer  ig_varidou(cpl_maxnvar), ig_varidin(cpl_maxnvar)
+      logical cpl_exchg_L
+      integer rap_dt,n_fldou,n_fldin,maxnvar,W_chan,R_chan
+      integer cpl_debut,cpl_fin,cpl_freq
+      parameter (maxnvar=1000)
+      character*8 nv_writ(maxnvar), nv_read(maxnvar)
 
-      common/cplg_s/ CPL_NAME,cg_writ,cg_read 
-      common/cplg_i/ rap_dt,ip_fldou,ip_fldin,ig_varidou,ig_varidin
-      common/cplg_i/ write_chan,read_chan
+      common/cplg_s/ CPL_NAME,nv_writ,nv_read 
+      common/cplg_i/ rap_dt,n_fldou,n_fldin
+      common/cplg_i/ cpl_debut,cpl_fin,cpl_freq
+      common/cplg_i/ W_chan,R_chan,cpl_exchg_L
  
       integer nbusin,nbusou,ndiag
       common/atmd_i/ nbusin,nbusou,ndiag
-      real, dimension (:,:  ), pointer :: atm_busin,ice_diag,ice_cum,atm_busou
-      real, dimension (:,:,:), pointer :: atm_local_busin,atm_local_busou
+      real, dimension (:,:  ), pointer :: atm_busin,ice_diag,ice_cum
+      real, dimension (:,:,:), pointer :: atm_local_busin,atm_local_busou,atm_busou
       common/atmd_r/ atm_busin,ice_diag,ice_cum,atm_busou,atm_local_busin,atm_local_busou

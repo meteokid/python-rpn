@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r adw_main_3_intlag_ad - ADJ of adw_main_3_intlag_tl when Adw_lag3d_L=.TRUE. 
 *
 #include "model_macros_f.h"
@@ -31,6 +46,7 @@
 *                           - correction vmmlod/vmmget when OPENMP 
 * v3_31 - Tanguay M.        - Introduce time extrapolation
 * v3_31 - Tanguay M.        - new scope for operator + adw_cliptraj (LAM)
+* v3_31 - Tanguay M.        - Do adjoint of outsiders in advection
 *
 *language
 *     fortran 77
@@ -63,7 +79,6 @@
 #include "rhsc.cdk"
 #include "v4dg.cdk"
 #include "adw.cdk"
-cvl#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
@@ -80,7 +95,7 @@ cvl#include "tr2d.cdk"
      $        pnlkey1(10+Tr3d_ntr),pnlkey2(10+Tr3d_ntr),
      $        pnlkey3(10+Tr3d_ntr),pnlkeys(10+Tr3d_ntr),pnlkey4(10+Tr3d_ntr),
      $        key1(Tr3d_ntr),key0(Tr3d_ntr),key0m(Tr3d_ntr), 
-     $        key1_,key0_,key0m_,pnlod,err
+     $        key1_,key0_,key0m_,pnlod,err,dim
 *
       real*8 aaa_8
       real*8, parameter :: ZERO_8 = 0.0
@@ -91,6 +106,10 @@ cvl#include "tr2d.cdk"
 *
       real, dimension(:,:)  ,allocatable :: u,um 
       real, dimension(:,:)  ,allocatable :: capx1,capy1,capz1 
+      real, dimension(:,:)  ,allocatable :: capx2,capy2,capz2 
+      real, dimension(:,:)  ,allocatable :: wrkc_K 
+*
+      real, dimension(:)    ,allocatable :: F_vm_K 
 *
       real, dimension(:,:,:,:)  ,allocatable :: in0 
 *
@@ -109,19 +128,19 @@ cvl#include "tr2d.cdk"
       integer, dimension(:,:)  ,allocatable :: field,level 
       integer, dimension(:  )  ,allocatable :: thread 
 *
-      real wrkc(l_ni*l_nj*l_nk)
+      real wrkb(l_ni*l_nj*l_nk),wrkc(l_ni*l_nj*l_nk)
 *
       logical done_L
       data done_L /.false./
       save done_L
 *
+      real dummy
+*
+      integer Adw_fro_n_TR,Adw_for_n_TR,Adw_fro_s_TR,Adw_for_s_TR
+*
       real F_um_ref(l_ni*l_nj*l_nk),F_vm_ref(l_ni*l_nj*l_nk)
 *
 *     ______________________________________________________
-*
-cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
-*     ______________________________________________________
-*
 *
       if (Lun_debug_L) write (Lun_out,1000)
 *
@@ -130,6 +149,35 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
       nijkag = Adw_nit*Adw_njt*l_nk
+*
+      if (.not.G_lam) then
+*
+          call hpalloc(Adwm_c1m_    ,nijk,      err,1)
+          call hpalloc(Adwm_n1m_    ,nijk,      err,1)
+          call hpalloc(Adwm_xdd1m_  ,nijk,      err,1)
+          call hpalloc(Adwm_xgg1m_  ,nijk,      err,1)
+*
+          call hpalloc(Adw_n1_      ,nijk,      err,1)
+          call hpalloc(Adw_xdd1_    ,nijk,      err,1)
+          call hpalloc(Adw_xgg1_    ,nijk,      err,1)
+*
+          allocate ( F_vm_K(nijk) )
+*
+*         Zero adjoint variables
+*         ---------------------- 
+          wrkb = 0.
+*
+          do n=1,nijk
+             Adw_n1  (n) = 0.
+             Adw_xdd1(n) = 0.
+             Adw_xgg1(n) = 0.
+          enddo
+*
+      endif
+*
+*     Zero adjoint variables
+*     ---------------------- 
+      wrkc = 0.
 *
       i0=1
       in=l_ni
@@ -147,6 +195,33 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
           enddo
 *
           call adw_cliptraj (  F_um, F_vm, i0, in, j0, jn, 'IN3_TR')
+      endif
+*
+      if (.not.G_lam) then
+*
+         call adw_exch_1_tr ( Adwm_n1m,Adwm_xgg1m,Adwm_xdd1m,Adwm_c1m,
+     $                        F_um,F_vm,F_wm,F_vm_K)
+*
+         dim = max(1,Adw_fro_a)
+         call hpalloc(Adw_wrka_    ,dim,      err,1)
+*
+*        Zero adjoint variables
+*        ---------------------- 
+         do n=1,dim
+            Adw_wrka (n) = 0.
+         enddo
+*
+*        TRAJECTORY
+*        ----------
+         call hpalloc(Adwm_capx2m_   ,dim,      err,1)
+         call hpalloc(Adwm_capy2m_   ,dim,      err,1)
+         call hpalloc(Adwm_capz2m_   ,dim,      err,1)
+*
+         call adw_exch_2 ( Adwm_capx2m,Adwm_capy2m,Adwm_capz2m,
+     %                     Adwm_n1m,   Adwm_xgg1m, Adwm_xdd1m,
+     %                     Adw_fro_n, Adw_fro_s, Adw_fro_a,
+     %                     Adw_for_n, Adw_for_s, Adw_for_a, 3)
+*
       endif
 *
       if (G_lam) then
@@ -245,6 +320,14 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
       allocate ( capy1 (nijk,max_field) )
       allocate ( capz1 (nijk,max_field) )
 *
+      if (.not.G_lam) then
+          allocate ( capx2 (dim,max_field) )
+          allocate ( capy2 (dim,max_field) )
+          allocate ( capz2 (dim,max_field) )
+      endif
+*
+      allocate ( wrkc_K(l_ni*l_nj*l_nk,max_field) )
+*
 *     Allocate arrays for series of threads 
 *     -------------------------------------
       bnd_serie = (max_field * l_nk) / Ptopo_npeOpenMP + 5 
@@ -270,6 +353,23 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
            capz1(n,ff) = ZERO_8
         enddo
 !$omp enddo
+*
+      if (.not.G_lam) then
+!$omp do
+          do n=1,dim
+             capx2(n,ff) = ZERO_8 
+             capy2(n,ff) = ZERO_8 
+             capz2(n,ff) = ZERO_8 
+          enddo
+!$omp enddo
+      endif
+*
+!$omp do
+        do n=1,l_ni*l_nj*l_nk
+           wrkc_K(n,ff) = ZERO_8
+        enddo
+!$omp enddo
+*
 !$omp end parallel
 *
       enddo
@@ -350,6 +450,82 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
 *
       enddo 
 *
+*     Do HERE adjoint of interpolation for OUTSIDERS 
+*     ----------------------------------------------
+      do ff = 1, max_field 
+*
+             if (pnlkeys(ff).eq.3) then
+*
+                err = vmmlod(pnlkey3(ff),1)
+                err = vmmget(pnlkey3(ff),pavmm,vmm)
+                pointer_3(ff) = pavmm
+*
+             else
+*
+                err = vmmlod(pnlkey1(ff),1)
+                err = vmmget(pnlkey1(ff),pavmm,vmm)
+                pointer_1(ff) = pavmm
+*
+             endif
+*
+             if (pnlkeys(ff).eq.3) then
+                 pawork = pointer_3(ff)
+             else 
+                 pawork = pointer_1(ff)
+             endif
+*
+             mono_L = .false.
+             if (pnlkeys(ff).eq.1) mono_L = Adw_mono_L
+*
+!$omp parallel do 
+             do k = l_nk,1,-1 
+             do j = jn,j0,-1
+             do i = in,i0,-1
+                wrkc ( (k-1)*nij+(j-1)*l_ni+i ) = work(i,j,k)
+             enddo
+             enddo
+             enddo
+!$omp end parallel do 
+*
+*            Adjoint of interpolation for outsiders
+*            --------------------------------------
+             if (.not.G_lam) then
+*
+             if ( Adw_for_a .gt. 0 )
+     %       call adw_exch_3_ad ( wrkc,dummy,wrkb,dummy,dummy,Adwm_c1m,1)
+*
+             call adw_exch_2_ad ( wrkb,    dummy,dummy,
+     %                            Adw_wrka,dummy,dummy,
+     %                            Adw_for_n, Adw_for_s, Adw_for_a,
+     %                            Adw_fro_n, Adw_fro_s, Adw_fro_a, 1)
+*
+             if ( Adw_fro_a .gt. 0 ) then
+             call adw_tricub_lag3d_ad ( Adw_wrka,
+     %                                  u (1,ff),capx2(1,ff),capy2(1,ff),capz2(1,ff),
+     %                                  um(1,ff),Adwm_capx2m,Adwm_capy2m,Adwm_capz2m,
+     %                                  Adw_fro_a, mono_L,1,Adw_fro_a,1,1,1)
+             endif
+*
+             endif
+*
+!$omp parallel do 
+             do k = l_nk,1,-1
+             do j = jn,j0,-1
+             do i = in,i0,-1
+                wrkc_K ( (k-1)*nij+(j-1)*l_ni+i, ff ) = wrkc ( (k-1)*nij+(j-1)*l_ni+i ) 
+             enddo
+             enddo
+             enddo
+!$omp end parallel do 
+*
+             if (pnlkeys(ff).eq.3) then
+                 err = vmmuld(pnlkey3(ff),1)
+             else
+                 err = vmmuld(pnlkey1(ff),1)
+             endif
+*
+      enddo
+*
 *     ------------------------------------------
 *     Give a field to interpolate to each thread 
 *     if all threads could be occupied
@@ -377,24 +553,6 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
 *
       do rr = 1,ratio
 *
-         do ff = left_ff, left_ff + Ptopo_npeOpenMP - 1
-*
-            if (pnlkeys(ff).eq.3) then
-*
-               err = vmmlod(pnlkey3(ff),1)
-               err = vmmget(pnlkey3(ff),pavmm,vmm)
-               pointer_3(ff) = pavmm   
-*
-            else
-*
-               err = vmmlod(pnlkey1(ff),1)
-               err = vmmget(pnlkey1(ff),pavmm,vmm)
-               pointer_1(ff) = pavmm   
-*
-            endif
-*
-         enddo
-*
 !$omp parallel do private(mono_L,pnerr,err,i,j,
 !$omp$            work1,pawork,wrkc,ff,lev,tt,ind)
 !$omp$  shared(l_nk,nij,i0,in,j0,jn,u,um,capx1,capy1,capz1,
@@ -403,19 +561,13 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
 *
           do ff = left_ff, left_ff + Ptopo_npeOpenMP - 1
 *
-             if (pnlkeys(ff).eq.3) then
-                 pawork = pointer_3(ff)
-             else 
-                 pawork = pointer_1(ff)
-             endif
-*
              mono_L = .false.
              if (pnlkeys(ff).eq.1) mono_L = Adw_mono_L
 *
-             do k = l_nk,1,-1 
+             do k = l_nk,1,-1
              do j = jn,j0,-1
              do i = in,i0,-1
-                wrkc ( (k-1)*nij+(j-1)*l_ni+i ) = work(i,j,k)
+                wrkc ( (k-1)*nij+(j-1)*l_ni+i ) = wrkc_K ( (k-1)*nij+(j-1)*l_ni+i, ff )
              enddo
              enddo
              enddo
@@ -430,16 +582,6 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
           enddo
 *
 !$omp end parallel do
-*
-         do ff = left_ff, left_ff + Ptopo_npeOpenMP - 1
-*
-             if (pnlkeys(ff).eq.3) then
-                 err = vmmuld(pnlkey3(ff),1)
-             else
-                 err = vmmuld(pnlkey1(ff),1)
-             endif
-*
-         enddo
 *
          left_ff = left_ff + Ptopo_npeOpenMP 
 *
@@ -574,24 +716,6 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
 *     ---------------------------------------------------
       do ss = 1,max_serie
 *
-         do ff = 1, max_field 
-*
-            if (pnlkeys(ff).eq.3) then
-*
-               err = vmmlod(pnlkey3(ff),1)
-               err = vmmget(pnlkey3(ff),pavmm,vmm)
-               pointer_3(ff) = pavmm
-*
-            else
-*
-               err = vmmlod(pnlkey1(ff),1)
-               err = vmmget(pnlkey1(ff),pavmm,vmm)
-               pointer_1(ff) = pavmm
-*
-            endif
-*
-         enddo
-*
 !$omp parallel do private(mono_L,pnerr,err,i,j,
 !$omp$            work1,pawork,wrkc,ff,lev,tt,ind)
 !$omp$  shared(nij,i0,in,j0,jn,u,um,capx1,capy1,capz1,
@@ -603,12 +727,6 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
              ff  = field(tt,ss)
              lev = level(tt,ss)
 *
-             if (pnlkeys(ff).eq.3) then
-                 pawork = pointer_3(ff)
-             else
-                 pawork = pointer_1(ff)
-             endif
-*
              mono_L = .false.
              if (pnlkeys(ff).eq.1) mono_L = Adw_mono_L
 *
@@ -616,7 +734,7 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
 *
              do j = jn,j0,-1
              do i = in,i0,-1
-                wrkc ( (j-1)*l_ni+i ) = work(i,j,lev)
+                wrkc ( (j-1)*l_ni+i ) = wrkc_K ( (lev-1)*nij+(j-1)*l_ni+i, ff )
              enddo
              enddo
 *
@@ -630,16 +748,6 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
           enddo 
 *
 !$omp end parallel do 
-*
-         do ff = 1, max_field 
-*
-             if (pnlkeys(ff).eq.3) then
-                 err = vmmuld(pnlkey3(ff),1)
-             else
-                 err = vmmuld(pnlkey1(ff),1)
-             endif
-*
-         enddo
 *
       enddo
 *
@@ -811,15 +919,70 @@ C            in0(i,j,k,ff) = ZERO_8
 *
       end do
 *
+      if (.not.G_lam) then
+*
+         do ff=max_field,1,-1
+*
+         call adw_exch_2_ad ( capx2(1,ff),capy2(1,ff),capz2(1,ff),
+     %                        Adw_n1,     Adw_xgg1,   Adw_xdd1,
+     %                        Adw_fro_n,  Adw_fro_s,  Adw_fro_a,
+     %                        Adw_for_n,  Adw_for_s,  Adw_for_a, 3)
+*
+         end do
+*
+      endif
+*
+      if (.not.G_lam) then
+*
+         Adw_fro_n_TR = Adw_fro_n
+         Adw_for_n_TR = Adw_for_n
+         Adw_fro_s_TR = Adw_fro_s
+         Adw_for_s_TR = Adw_for_s
+*
+         call adw_exch_1_tr ( dummy,dummy,dummy,Adwm_c1m,
+     $                        F_um,F_vm,F_wm,F_vm_K)
+*
+         Adw_fro_n = Adw_fro_n_TR
+         Adw_for_n = Adw_for_n_TR
+         Adw_fro_s = Adw_fro_s_TR
+         Adw_for_s = Adw_for_s_TR
+*
+         call adw_exch_1_ad ( Adw_n1,Adw_xgg1,Adw_xdd1,
+     $                        F_u,F_v,F_w,Adwm_c1m,F_vm_K)
+*
+      endif
+*
       if (G_lam) call adw_cliptraj_ad (  F_u, F_v, F_um_ref, F_vm_ref, i0, in, j0, jn, 'IN3_AD')
 *
 ***********************************************************************
 * Deallocate
 ***********************************************************************
-      deallocate ( u,um  )
-      if (G_lam) deallocate ( in0  )
-      deallocate ( capx1,capy1,capz1  )
-      deallocate ( field,level,thread )
+      if (.not.G_lam) then
+          call hpdeallc(Adwm_c1m_    ,err,1)
+          call hpdeallc(Adwm_n1m_    ,err,1)
+          call hpdeallc(Adwm_xdd1m_  ,err,1)
+          call hpdeallc(Adwm_xgg1m_  ,err,1)
+*
+          call hpdeallc(Adw_n1_      ,err,1)
+          call hpdeallc(Adw_xdd1_    ,err,1)
+          call hpdeallc(Adw_xgg1_    ,err,1)
+*
+          deallocate ( F_vm_K)
+*
+          deallocate ( capx2,capy2,capz2  )
+          call hpdeallc(Adw_wrka_    ,err,1)
+          call hpdeallc(Adwm_capx2m_ ,err,1)
+          call hpdeallc(Adwm_capy2m_ ,err,1)
+          call hpdeallc(Adwm_capz2m_ ,err,1)
+*
+      endif
+*
+      deallocate ( wrkc_K,u,um  )
+      deallocate ( capx1,capy1,capz1   )
+      deallocate ( field,level,thread  )
+      deallocate ( pointer_1,pointer_3 )
+*
+      if (G_lam) deallocate ( in0 )
 *
       if (Orh_icn.eq.1) done_L = .true.
 *

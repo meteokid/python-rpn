@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r adw_main - adw_main_1_wnd: Process winds in preparation for advection
 *                 adw_main_2_pos: Calculate upstream positions at th and t1
 *                 adw_main_3_int: Interpolation of rhs
@@ -18,6 +33,7 @@
 * v3_01 - Lee V.            - Initialize Lam truncated trajectory counters
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
 * v3_31 - Desgagne M.       - remove Adw_trunc 
+* v3_31 - Tanguay M.        - SETTLS option
 *
 *object
 *     see id section
@@ -73,20 +89,55 @@
 ************************************************************************
       integer nijkag,i
       real , dimension (Adw_nit*Adw_njt*l_nk) :: u,v,w
-      logical v4dstore_L
+      logical v4dstore_L, step_settls_L
 *
 ************************************************************************
       if (Lun_debug_L) write (Lun_out,1000)
 *
 ************************************************************************
+*
+      step_settls_L = .NOT.(Orh_crank_L.or..not.Schm_settls_L)
+*
       v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L .and. .not.V4dr_redotr_L 
 *
-      call adw_main_1_wnd ( u, v, w, Adw_nit, Adw_njt, l_nk)
-* 
-      call adw_main_2_pos ( F_it, u, v, w )
+*     ----------------------------
+      if (.not.step_settls_L) then
+*     ----------------------------
 *
-*     Store TRAJ advection winds 
-*     --------------------------
+         call adw_main_1_wnd ( u, v, w, Adw_nit, Adw_njt, l_nk)
+* 
+         call adw_main_2_pos ( F_it, u, v, w )
+*
+*     ----
+      else
+*     ----
+*
+         if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
+*
+*             Store TRAJ WINDS T1 and TW 
+*             --------------------------
+              call v4d_rwtraj (16)
+*
+         endif
+*
+         call adw_main_1_wnd_settls ( u, v, w, Adw_nit, Adw_njt, l_nk)
+*
+         if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
+*
+*             Store TRAJ XT1 YT1 ZT1
+*             ----------------------
+              call v4d_rwtraj (15)
+*
+         endif
+*
+         call adw_main_2_pos_settls ( F_it, u, v, w )
+*
+*     -----
+      endif
+*     -----
+*
+*     Store TRAJ positions 
+*     --------------------
       if ( v4dstore_L ) call v4d_rwtraj (13,u,v,w) 
 *
       call adw_main_3_int ( u, v, w )

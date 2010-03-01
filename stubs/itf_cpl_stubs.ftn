@@ -1,9 +1,0 @@
-      subroutine itf_cpl_oasis_put
-      return
-      end
-      subroutine itf_cpl_oasis_get
-      return
-      end
-      subroutine itf_cpl_oasis_init
-      return
-      end

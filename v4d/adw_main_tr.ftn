@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r adw_main_tr -  Equivalent to adw_main for TRAJECTORY 
 *
 #include "model_macros_f.h"
@@ -17,6 +32,7 @@
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
 * v3_21 - Tanguay M.        - Revision Openmp
 * v3_31 - Tanguay M.        - Introduce time extrapolation
+* v3_31 - Tanguay M.        - SETTLS option
 *
 *language
 *     fortran 77
@@ -71,81 +87,10 @@
       pointer (paorm, orm(LDIST_SHAPE,*))
 *
 ************************************************************************
-      if (Lun_debug_L) write (Lun_out,1000)
-*
+      if (V4dr_redotr_L) call gem_stop ('ADW_MAIN_TR: REDOTR not done',-1) 
 ************************************************************************
 *
-      if( V4dr_redotr_L ) then
-*
-*     ---------------------
-*     Preserve TRAJ (START)
-*     ---------------------
-      pnlkey1(1)  = VMM_KEY(uthm )
-      pnlkey1(2)  = VMM_KEY(vthm )
-      pnlkey1(3)  = VMM_KEY(xthm )
-      pnlkey1(4)  = VMM_KEY(ythm )
-      pnlkey1(5)  = VMM_KEY(zthm )
-      pnlkey1(6)  = VMM_KEY(xcthm)
-      pnlkey1(7)  = VMM_KEY(ycthm)
-      pnlkey1(8)  = VMM_KEY(zcthm)
-      pnlod = 8
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr = VMM_GET_VAR(uthm )
-      pnerr = VMM_GET_VAR(vthm )
-      pnerr = VMM_GET_VAR(xthm )
-      pnerr = VMM_GET_VAR(ythm )
-      pnerr = VMM_GET_VAR(zthm )
-      pnerr = VMM_GET_VAR(xcthm)
-      pnerr = VMM_GET_VAR(ycthm)
-      pnerr = VMM_GET_VAR(zcthm)
-*
-*     -----------------------
-*     Preserve TRAJ uthm vthm
-*     -----------------------
-!$omp parallel 
-*
-!$omp do
-      do k= 1,l_nk
-      do j= l_miny,l_maxy
-      do i= l_minx,l_maxx
-         wuthm(i,j,k) = uthm(i,j,k)
-         wvthm(i,j,k) = vthm(i,j,k)
-      enddo
-      enddo
-      enddo
-!$omp enddo
-*
-*     ----------------------------------------------
-*     Preserve TRAJ xthm ythm zthm xcthm ycthm zcthm
-*     ----------------------------------------------
-!$omp do
-      do n= 1,l_ni*l_nj*l_nk
-         wxthm (n) = xthm (n)
-         wythm (n) = ythm (n)
-         wzthm (n) = zthm (n)
-         wxcthm(n) = xcthm(n)
-         wycthm(n) = ycthm(n)
-         wzcthm(n) = zcthm(n)
-      enddo
-!$omp enddo
-*
-!$omp end parallel
-*
-      pnerr = vmmuld(-1,0)
-*
-*     -------------------
-*     Preserve TRAJ (END)
-*     -------------------
-*
-      call adw_main_1_wnd_tr ( um, vm, wm, Adw_nit, Adw_njt, l_nk)
-*
-      call adw_main_2_pos_tr ( F_it, um, vm, wm )
-*
-      call adw_main_3_int_tr ( um, vm, wm )
-*
-      else
+      if (Lun_debug_L) write (Lun_out,1000)
 *
 *     ---------------------------------------------------------------
 *     Store in ORTR for ADW_MAIN_3_INT_AD when Orh_icn .eq. Schm_itcn
@@ -202,8 +147,6 @@
 *     -----------------------------
       call v4d_rwtraj (8)
 *
-      endif
-*
 *     ------------------------------
 *     Preserve or Reset TRAJ (START)
 *     ------------------------------
@@ -213,37 +156,12 @@
       pnlkey1(4)  = VMM_KEY(orvw2m)
       pnlod = 4 
 *
-      if( V4dr_redotr_L ) then
-*
-      pnlkey1(pnlod+1) = VMM_KEY(uthm  )
-      pnlkey1(pnlod+2) = VMM_KEY(vthm  )
-      pnlkey1(pnlod+3) = VMM_KEY(xthm  )
-      pnlkey1(pnlod+4) = VMM_KEY(ythm  )
-      pnlkey1(pnlod+5) = VMM_KEY(zthm  )
-      pnlkey1(pnlod+6) = VMM_KEY(xcthm )
-      pnlkey1(pnlod+7) = VMM_KEY(ycthm )
-      pnlkey1(pnlod+8) = VMM_KEY(zcthm )
-      pnlod = pnlod+8 
-*
-      endif
-*
       pnerr = vmmlod(pnlkey1,pnlod)
 *
       pnerr = VMM_GET_VAR(ruw2m )
       pnerr = VMM_GET_VAR(rvw2m )
       pnerr = VMM_GET_VAR(oruw2m)
       pnerr = VMM_GET_VAR(orvw2m)
-*
-      if( V4dr_redotr_L ) then
-      pnerr = VMM_GET_VAR(uthm  )
-      pnerr = VMM_GET_VAR(vthm  )
-      pnerr = VMM_GET_VAR(xthm  )
-      pnerr = VMM_GET_VAR(ythm  )
-      pnerr = VMM_GET_VAR(zthm  )
-      pnerr = VMM_GET_VAR(xcthm )
-      pnerr = VMM_GET_VAR(ycthm )
-      pnerr = VMM_GET_VAR(zcthm )
-      endif
 *
 *     --------------------------
 *     Preserve in ORH for PRE_AD
@@ -258,42 +176,6 @@
       end do
       end do
 !$omp end parallel do  
-*
-      if( V4dr_redotr_L ) then
-*
-!$omp parallel  
-*
-*     --------------------
-*     Reset TRAJ uthm vthm
-*     --------------------
-!$omp do  
-      do k= 1,l_nk
-      do j= l_miny,l_maxy
-      do i= l_minx,l_maxx
-         uthm(i,j,k) = wuthm(i,j,k) 
-         vthm(i,j,k) = wvthm(i,j,k)
-      enddo
-      enddo
-      enddo
-!$omp enddo  
-*
-*     -------------------------------------------
-*     Reset TRAJ xthm ythm zthm xcthm ycthm zcthm
-*     -------------------------------------------
-!$omp do  
-      do n= 1,l_ni*l_nj*l_nk
-         xthm (n) = wxthm (n) 
-         ythm (n) = wythm (n) 
-         zthm (n) = wzthm (n) 
-         xcthm(n) = wxcthm(n)
-         ycthm(n) = wycthm(n) 
-         zcthm(n) = wzcthm(n) 
-      enddo
-!$omp enddo  
-*
-!$omp end parallel  
-*
-      endif
 *
       pnerr = vmmuld(-1,0)
 *

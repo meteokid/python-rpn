@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r bcs_ftype - to determine whether pilot file is BMF,BCS or 3DF
 *
@@ -33,15 +48,13 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
  10   ft_pref = 'NON'
       if (ftperm(1).eq.0) then
-         fn = trim(Path_input_S)//'/INDATA/casc/bcs01_'//datev
+         fn = trim(Path_ind_S)//'/bcs01_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                       iostat=err1,form='UNFORMATTED')
-c        print *,'opening and closing',fn,'err1=',err1
          close (unf)
-         fn = trim(Path_input_S)//'/INDATA/casc/bcs02_'//datev
+         fn = trim(Path_ind_S)//'/bcs02_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                       iostat=err2,form='UNFORMATTED')
-c        print *,'opening and closing',fn,'err2=',err2
          close (unf)  
       else
          err = -1
@@ -51,7 +64,7 @@ c        print *,'opening and closing',fn,'err2=',err2
          ft_pref = 'BCS'
       else
          if (ftperm(2).eq.0) then
-            fn  = trim(Path_input_S)//'/INDATA/casc/3df_filemap.txt'
+            fn  = trim(Path_ind_S)//'/3df_filemap.txt'
             open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                             iostat=err,form='FORMATTED')
          else

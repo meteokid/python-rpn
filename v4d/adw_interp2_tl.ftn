@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r adw_interp2_tl - TLM of adw_interp2 when Adw_lag3d_L=.TRUE. 
 *
 #include "model_macros_f.h"
@@ -30,6 +45,7 @@
 * v3_20 - Tanguay M.        - Lagrange 3D
 * v3_21 - Tanguay M.        - Revision Openmp
 * v3_30 - Tanguay M.        - adjust OPENMP for LAM 
+* v3_31 - Tanguay M.        - Do adjoint of outsiders in advection
 *
 *language
 *     fortran 77
@@ -59,6 +75,8 @@
       integer i, j, k, nij, nijk, nijkag, n, dest_ni
 *
       real dummy
+*
+* --------------------------------------------------------------------
 *
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -168,6 +186,34 @@
      %                         Adwm_wrkcm, F_um,
      %                         Adwm_capx1m,Adwm_capy1m,Adwm_capz1m,
      %                         nijk, F_mono_L,i0,in,j0,jn,l_nk)
+*
+      if (.not.G_lam) then
+*
+         if ( Adw_fro_a .gt. 0 ) then
+            call adw_tricub_lag3d_tl ( Adw_wrka, F_u,
+     %                           Adw_capx2, Adw_capy2, Adw_capz2,
+     %                           Adwm_wrkam, F_um,
+     %                           Adwm_capx2m,Adwm_capy2m,Adwm_capz2m,
+     %                           Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1)
+         endif
+*
+!$omp single
+*
+         call adw_exch_2_tl ( Adw_wrkb,   dummy, dummy,
+     %                        Adw_wrka,   dummy, dummy,
+     %                        Adwm_wrkbm, dummy, dummy,
+     %                        Adwm_wrkam, dummy, dummy,
+     %                        Adw_for_n, Adw_for_s, Adw_for_a,
+     %                        Adw_fro_n, Adw_fro_s, Adw_fro_a, 1)
+*
+         if ( Adw_for_a .gt. 0 ) then
+         call adw_exch_3_tl ( Adw_wrkc,   dummy, Adw_wrkb,   dummy, Adw_c1, 
+     %                        Adwm_wrkcm, dummy, Adwm_wrkbm, dummy, Adwm_c1m, 1 )
+         endif
+*
+!$omp end single
+*
+      endif
 *
 !$omp do
       do k = 1, l_nk

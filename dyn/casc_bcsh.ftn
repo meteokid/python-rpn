@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r casc_bcsh - For reading cascade BCS pilot files where
 *                 BCS01 files were written after advection and
@@ -15,6 +30,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *revision
 * v3_30 - Lee V.         - initial version for GEMDM
+* v3_31 - Tanguay M.     - Mix PILOT and ANAL mountains when BCS/3DF  
 *
 *
 #include "glb_ld.cdk"
@@ -30,6 +46,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "ind.cdk"
 #include "acid.cdk"
 #include "path.cdk"
+#include "hblen.cdk"
 *
       integer  vmmlod,vmmget,vmmuld,longueur
       external vmmlod,vmmget,vmmuld,longueur
@@ -41,8 +58,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       character*256 fn
       logical fb_w,fb_e,fb_s,fb_n,data2treat
       integer i,j,k,nka,ntra,n,err,ngas,ngaw,ofi,ofj,id,
-     $   mode,nit,njt,d1,nis,njs,niw,njw,iscal(2),errcode
-      real htop
+     $   mode,nit,njt,d1,nis,njs,niw,njw,errcode
       real*8 epsilon
       parameter (epsilon=1.0e-6)
       real trp
@@ -56,6 +72,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $ uuns,vvns,psdns,ttns,tpns,tdns,fins,qqns,ssns,fipns,pipns,wwns,muns,
      $ uunw,vvnw,psdnw,ttnw,tpnw,tdnw,finw,qqnw,ssnw,fipnw,pipnw,wwnw,munw
       real topo(bcs_sz),topu(bcs_sz),topv(bcs_sz)
+*
+      real pil_topo(LDIST_SHAPE),pil_topu(LDIST_SHAPE),pil_topv(LDIST_SHAPE)
+      real mix_topo(LDIST_SHAPE),mix_topu(LDIST_SHAPE),mix_topv(LDIST_SHAPE)
 *-----------------------------------------------------------------------
 *
 *
@@ -74,7 +93,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       if (data2treat) then
 *
          write (md,'(i2.2)') wowp
-         fn = trim(Path_input_S)//'/INDATA/casc/bcs'//md//'_'//datev
+         fn = trim(Path_ind_S)//'/bcs'//md//'_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                        iostat=err,form='UNFORMATTED')
 c        print *,'opening ',fn(1:longueur(fn)),'err=',err
@@ -189,141 +208,321 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
 *
  33   data2treat = data2treat .and. (casc_bcsh.eq.0)
 *
-* Perform horizontal and vertical interpolations for S-N 
-* and W-E boundaries
-*
-      nit = max(dimxs,dimxn)
-      njt = 0
-      if (l_south) njt = njt + dimys
-      if (l_north) njt = njt + dimyn
-      d1  = dimys*north
-*
-      if ( data2treat .and. (nit*njt.gt.0) ) then
-         errcode = -1
-         fb_w = (xpn  (1).gt.xpaqs    (2)-epsilon)
-         fb_e = (xpn(nit).lt.xpaqs(nis-1)+epsilon)
-         fb_s = .not.l_south
-         fb_n = .not.l_north
-         if ((.not.fb_s).and.(.not.fb_n)) then
-            fb_s = (ypn(      1).gt.ypaqs(      2)-epsilon).and.
-     $             (ypn(njt/2+1).gt.ypaqs(  njs+2)-epsilon)
-            if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(2)',ypn(1),ypaqs(2),'ypn(njt/2+1)< ypaqs(njs+2)',ypn(njt/2+1),ypaqs(  njs+2) 
-            fb_n = (ypn(njt/2  ).lt.ypaqs(  njs-1)+epsilon).and.
-     $             (ypn(njt    ).lt.ypaqs(2*njs-1)+epsilon)
-            if ( .not.fb_n ) write (6,*) 'ypn(njt/2)>ypaqs(njs-1)',ypn(njt/2),ypaqs(njs-1),'ypn(njt)>ypaqs( 2*njs-1)',ypn(njt),ypaqs( 2*njs-1) 
-         else if (.not.fb_s) then
-            fb_s = (ypn(  1).gt.ypaqs    (2)-epsilon)
-            if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(2)',ypn(1),ypaqs(2)
-            fb_n = (ypn(njt).lt.ypaqs(njs-1)+epsilon)
-            if ( .not.fb_n ) write (6,*) 'ypn(njt)>ypaqs(njs-1)',ypn(njt),ypaqs(njs-1)
-         else if (.not.fb_n) then
-            fb_s = (ypn(  1).gt.ypaqs(  njs+2)-epsilon)
-            if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(njs+2)',ypn(1),ypaqs(njs+2)
-            fb_n = (ypn(njt).lt.ypaqs(2*njs-1)+epsilon)
-            if ( .not.fb_n ) write (6,*) 'ypn(njt)>ypaqs(2*njs-1)',ypn(njt),ypaqs(2*njs-1)
-         endif
-         if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
-         if ( .not.fb_w ) write (6,201) 'W','NS',Ptopo_myproc
-         if ( .not.fb_e ) write (6,201) 'E','NS',Ptopo_myproc
-         if ( .not.fb_s ) write (6,201) 'S','NS',Ptopo_myproc
-         if ( .not.fb_n ) write (6,201) 'N','NS',Ptopo_myproc
-      else
-         errcode = 0
-      endif
-*
-      call gem_stop('CASC_BCSH',errcode)
-*	
-      if (data2treat)then
-      call trnes (Ind_topo,topo(bcs_is),topo(bcs_in),topo(bcs_iw),
-     $            topo(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
-      call trnes (Ind_topu,topu(bcs_is),topu(bcs_in),topu(bcs_iw),
-     $            topu(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
-      call trnes (Ind_topv,topv(bcs_is),topv(bcs_in),topv(bcs_iw),
-     $            topv(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
-      endif
-
-*       PUT DATA into BCS_UF
+      errcode = 0
+*---------------------------------------------------
+*  MAKING SURE DATA COVERAGE IS SUFFICIENT FOR N/S
+*---------------------------------------------------
       if (data2treat) then
-      call casc_hvi (trname_a,
-     $  xpn,ypn,xpun,ypvn,xpaqs,ypaqs,xpaus,ypavs,
-     $  bcs_uf,bcs_uf(bcs_in),bcs_vf,bcs_vf(bcs_in),
-     $  bcs_tf,bcs_tf(bcs_in),bcs_psdf,bcs_psdf(bcs_in),
-     $  bcs_pipf,bcs_pipf(bcs_in),bcs_fipf,bcs_fipf(bcs_in),
-     $  bcs_tdf,bcs_tdf(bcs_in),bcs_fif,bcs_fif(bcs_in),
-     $  bcs_qf,bcs_qf(bcs_in),bcs_tpf,bcs_tpf(bcs_in),
-     $  bcs_trf,bcs_wf,bcs_wf(bcs_in),
-     $  bcs_muf,bcs_muf(bcs_in),bcs_sf,bcs_sf(bcs_in),
-     $  bcs_is-1,bcs_in-1,
-     $  topo,topo(bcs_in),topu,topu(bcs_in),topv,topv(bcs_in),
-     $  uuns,vvns,psdns,ttns,tpns,tdns,fins,qqns,ssns,
-     $  fipns,pipns,wwns,muns,trns,
-     $               minxs,maxxs,minys,maxys,0,d1,G_nk,nit,njt,
-     $               nis,njs*2,nka,nvar,ntra,l_south,l_north)
-        endif
 *
-      nit = 0
-      njt = max(dimyw,dimye)
-      if (l_west) nit = nit + dimxw
-      if (l_east) nit = nit + dimxe
-      d1  = dimxw*east
+*         Data2treat in NORTH and or SOUTH piloting area
+          nit = max(dimxs,dimxn)
+          njt = 0
+          if (l_south) njt = njt + dimys
+          if (l_north) njt = njt + dimyn
+          d1  = dimys*north
 *
-      if ( data2treat .and. (nit*njt.gt.0) ) then
-         errcode = -1
-         fb_s = (ypw  (1).gt.ypaqw    (2)-epsilon)
-         if ( .not.fb_s ) write (6,*) 'ypw(1)<ypaqw(2)',ypw(1),ypaqw(2)
-         fb_n = (ypw(njt).lt.ypaqw(njw-1)+epsilon)
-         if ( .not.fb_n ) write (6,*) 'ypw(njt)>ypaqw(njw-1)',ypw(njt),ypaqw(njw-1)
-         fb_w = .not.l_west
-         fb_e = .not.l_east
-         if ((.not.fb_w).and.(.not.fb_e)) then
-            fb_w = (xpw(      1).gt.xpaqw(      2)-epsilon).and.
-     $             (xpw(nit/2+1).gt.xpaqw(  niw+2)-epsilon)
-            if ( .not.fb_w ) write (6,*) 'xpw(1)<xpaqw(2)',ypn(1),ypaqs(2),'xpw(nit/2+1)< xpaqw(niw+2)',xpw(nit/2+1),xpaqw(  niw+2) 
-            fb_e = (xpw(nit/2  ).lt.xpaqw(  niw-1)+epsilon).and.
-     $             (xpw(nit    ).lt.xpaqw(2*niw-1)+epsilon)
-            if ( .not.fb_e ) write (6,*) 'xpw(nit/2)>ypaqw(niw-1)',xpw(nit/2),xpaqw(niw-1),'xpw(nit)>xpaqw( 2*niw-1)',xpw(nit),xpaqw( 2*niw-1) 
-         else if (.not.fb_w) then
-            fb_w = (xpw(  1).gt.xpaqw    (2)-epsilon)
-            if (.not.fb_w) write(6,*)'xpw(  1)<xpaqw(2)',xpw(  1),xpaqw(2)
-            fb_e = (xpw(nit).lt.xpaqw(niw-1)+epsilon)
-            if (.not.fb_e) write(6,*)'xpw(nit)>xpaqw(niw-1)',xpw(nit),xpaqw(niw-1)
-         else if (.not.fb_e) then
-            fb_w = (xpw(  1).gt.xpaqw(  niw+2)-epsilon)
-            if (.not.fb_w) write(6,*)'xpw(  1)<xpaqw(niw+2)',xpw(  1),xpaqw(niw+2)
-            fb_e = (xpw(nit).lt.xpaqw(2*niw-1)+epsilon)
-            if (.not.fb_e) write(6,*)'xpw(nit)>xpaqw(2*niw-1)',xpw(nit),xpaqw(2*niw-1)
-         endif
-         if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
-         if ( .not.fb_w ) write (6,201) 'W','WE',Ptopo_myproc
-         if ( .not.fb_e ) write (6,201) 'E','WE',Ptopo_myproc
-         if ( .not.fb_s ) write (6,201) 'S','WE',Ptopo_myproc
-         if ( .not.fb_n ) write (6,201) 'N','WE',Ptopo_myproc
-      else
-         errcode = 0
+          if ( nit*njt.gt.0 ) then
+               errcode = -1
+               fb_w = (xpn  (1).gt.xpaqs    (2)-epsilon)
+               fb_e = (xpn(nit).lt.xpaqs(nis-1)+epsilon)
+               fb_s = .not.l_south
+               fb_n = .not.l_north
+               if ((.not.fb_s).and.(.not.fb_n)) then
+                  fb_s = (ypn(      1).gt.ypaqs(      2)-epsilon).and.
+     $              (ypn(njt/2+1).gt.ypaqs(  njs+2)-epsilon)
+                  if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(2)',
+     $              ypn(1),ypaqs(2),'ypn(njt/2+1)< ypaqs(njs+2)',
+     $              ypn(njt/2+1),ypaqs(  njs+2)
+                  fb_n = (ypn(njt/2  ).lt.ypaqs(  njs-1)+epsilon).and.
+     $              (ypn(njt    ).lt.ypaqs(2*njs-1)+epsilon)
+                  if ( .not.fb_n ) write (6,*) 'ypn(njt/2)>ypaqs(njs-1)',
+     $              ypn(njt/2),ypaqs(njs-1),'ypn(njt)>ypaqs( 2*njs-1)',
+     $              ypn(njt),ypaqs( 2*njs-1)
+               else if (.not.fb_s) then
+                  fb_s = (ypn(  1).gt.ypaqs    (2)-epsilon)
+                  if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(2)',ypn(1),ypaqs(2)
+                  fb_n = (ypn(njt).lt.ypaqs(njs-1)+epsilon)
+                  if ( .not.fb_n ) write (6,*) 'ypn(njt)>ypaqs(njs-1)',
+     $              ypn(njt),ypaqs(njs-1)
+               else if (.not.fb_n) then
+                  fb_s = (ypn(  1).gt.ypaqs(  njs+2)-epsilon)
+                  if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(njs+2)',
+     $              ypn(1),ypaqs(njs+2)
+                  fb_n = (ypn(njt).lt.ypaqs(2*njs-1)+epsilon)
+                  if ( .not.fb_n ) write (6,*) 'ypn(njt)>ypaqs(2*njs-1)',
+     $              ypn(njt),ypaqs(2*njs-1)
+               endif
+               if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
+               if ( .not.fb_w ) write (6,201) 'W','NS',Ptopo_myproc
+               if ( .not.fb_e ) write (6,201) 'E','NS',Ptopo_myproc
+               if ( .not.fb_s ) write (6,201) 'S','NS',Ptopo_myproc
+               if ( .not.fb_n ) write (6,201) 'N','NS',Ptopo_myproc
+          endif
+      endif
+      call gem_stop('casc_bcsh',errcode)
+*
+*     Recall ANAL mountains BEFORE blending
+*     -------------------------------------
+      mix_topo = Ind_topa
+      mix_topu = Ind_toua
+      mix_topv = Ind_tova
+
+*---------------------------------------------------
+*  MAKING SURE DATA COVERAGE IS SUFFICIENT FOR W/E
+*---------------------------------------------------
+      errcode = 0
+      if (data2treat) then
+*         Data2treat in WEST and or EAST piloting area
+
+          nit = 0
+          njt = max(dimyw,dimye)
+          if (l_west) nit = nit + dimxw
+          if (l_east) nit = nit + dimxe
+          d1  = dimxw*east
+*
+          if ( nit*njt.gt.0 ) then
+               errcode = -1
+               fb_s = (ypw  (1).gt.ypaqw    (2)-epsilon)
+               if ( .not.fb_s ) write (6,*) 'ypw(1)<ypaqw(2)',ypw(1),ypaqw(2)
+               fb_n = (ypw(njt).lt.ypaqw(njw-1)+epsilon)
+               if ( .not.fb_n ) write (6,*) 'ypw(njt)>ypaqw(njw-1)',
+     $             ypw(njt),ypaqw(njw-1)
+               fb_w = .not.l_west
+               fb_e = .not.l_east
+               if ((.not.fb_w).and.(.not.fb_e)) then
+                  fb_w = (xpw(      1).gt.xpaqw(      2)-epsilon).and.
+     $              (xpw(nit/2+1).gt.xpaqw(  niw+2)-epsilon)
+                  if ( .not.fb_w ) write (6,*) 'xpw(1)<xpaqw(2)',
+     $              ypn(1),ypaqs(2),'xpw(nit/2+1)< xpaqw(niw+2)',
+     $              xpw(nit/2+1),xpaqw(  niw+2)
+                  fb_e = (xpw(nit/2  ).lt.xpaqw(  niw-1)+epsilon).and.
+     $              (xpw(nit    ).lt.xpaqw(2*niw-1)+epsilon)
+                  if ( .not.fb_e ) write (6,*) 'xpw(nit/2)>ypaqw(niw-1)',
+     $              xpw(nit/2),xpaqw(niw-1),'xpw(nit)>xpaqw( 2*niw-1)',
+     $              xpw(nit),xpaqw( 2*niw-1)
+               else if (.not.fb_w) then
+                  fb_w = (xpw(  1).gt.xpaqw    (2)-epsilon)
+                  if (.not.fb_w) write(6,*)'xpw(  1)<xpaqw(2)',xpw(  1),xpaqw(2)
+                  fb_e = (xpw(nit).lt.xpaqw(niw-1)+epsilon)
+                  if (.not.fb_e) write(6,*)'xpw(nit)>xpaqw(niw-1)',
+     $              xpw(nit),xpaqw(niw-1)
+               else if (.not.fb_e) then
+                  fb_w = (xpw(  1).gt.xpaqw(  niw+2)-epsilon)
+                  if (.not.fb_w) write(6,*)'xpw(  1)<xpaqw(niw+2)',
+     $              xpw(  1),xpaqw(niw+2)
+                  fb_e = (xpw(nit).lt.xpaqw(2*niw-1)+epsilon)
+                  if (.not.fb_e) write(6,*)'xpw(nit)>xpaqw(2*niw-1)',
+     $              xpw(nit),xpaqw(2*niw-1)
+               endif
+               if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
+               if ( .not.fb_w ) write (6,201) 'W','WE',Ptopo_myproc
+               if ( .not.fb_e ) write (6,201) 'E','WE',Ptopo_myproc
+               if ( .not.fb_s ) write (6,201) 'S','WE',Ptopo_myproc
+               if ( .not.fb_n ) write (6,201) 'N','WE',Ptopo_myproc
+          endif
       endif
 *
-
       call gem_stop('casc_bcsh',errcode)
 *
       if (data2treat) then
+          if (Lun_debug_L) write (Lun_out,*) 'CALL casc_hvi_topo N-S'
+*
+*         Transfert PILOT mountains in BCS file (N-S)  
+*         -------------------------------------------
+          nit = max(dimxs,dimxn)
+          njt = 0
+          if (l_south) njt = njt + dimys
+          if (l_north) njt = njt + dimyn
+          d1  = dimys*north
+*
+          call casc_hvi_topo (xpn,ypn,xpun,ypvn,xpaqs,ypaqs,xpaus,ypavs, 
+     $         topo,topo(bcs_in),topu,topu(bcs_in),topv,topv(bcs_in),
+     $         fins(1,nka),minxs,maxxs,minys,maxys,0,d1,nit,njt,
+     $         nis,njs*2,l_south,l_north)
+*
+*         Transfert PILOT mountains in BCS file (W-E)  
+*         -------------------------------------------
+          nit = 0
+          njt = max(dimyw,dimye)
+          if (l_west) nit = nit + dimxw
+          if (l_east) nit = nit + dimxe
+          d1  = dimxw*east
+*
+          if (Lun_debug_L) write (Lun_out,*) 'CALL casc_hvi_topo W-E'
+*
+          call casc_hvi_topo (xpw,ypw,xpuw,ypvw,xpaqw,ypaqw,xpauw,ypavw,
+     $       topo(bcs_iw),topo(bcs_ie),topu(bcs_iw),topu(bcs_ie),
+     $       topv(bcs_iw),topv(bcs_ie),
+     $       finw(1,nka),minxw,maxxw,minyw,maxyw,d1,0,nit,njt,
+     $       niw*2,njw,l_west,l_east)
+*
+          if (Lun_debug_L) write (Lun_out,*) 'Copying BCS_TOPO to PIL_TOPO'
+*
+*         Copying BCS_TOPO to PIL_TOPO
+*         ---------------------------- 
+          pil_topo = 0. 
+          pil_topu = 0. 
+          pil_topv = 0. 
+          call trnes (pil_topo,topo(bcs_is),topo(bcs_in),topo(bcs_iw),
+     $            topo(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
+          call trnes (pil_topu,topu(bcs_is),topu(bcs_in),topu(bcs_iw),
+     $            topu(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
+          call trnes (pil_topv,topv(bcs_is),topv(bcs_in),topv(bcs_iw),
+     $            topv(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
+*
+      endif
+*
+*     -------------------------------------------------------------------------- 
+*     Mix PILOT mountains and ANAL mountains and do blending as in CASC_3DF_DYNP   
+*     -------------------------------------------------------------------------- 
+*
+      if (Lun_debug_L) write (Lun_out,*) 
+     % 'Blend PILOT mountains and ANAL mountains in CASC_BCSH'
+*
+*     ------------------------------
+      do j=1,pil_s
+      do i=1,l_ni
+         mix_topo(i,j) = pil_topo(i,j)
+      end do
+      end do
+      do j=l_nj-pil_n+1,l_nj
+      do i=1,l_ni
+         mix_topo(i,j) = pil_topo(i,j)
+      end do
+      end do
+      do i=1,pil_w
+      do j=pil_s+1,l_nj-pil_n
+         mix_topo(i,j) = pil_topo(i,j)
+      end do
+      end do
+      do i=l_ni-pil_e+1,l_ni
+      do j=pil_s+1,l_nj-pil_n
+         mix_topo(i,j) = pil_topo(i,j)
+      end do
+      end do
+*     ------------------------------
+      do j=1,pil_s
+      do i=1,l_niu
+         mix_topu(i,j) = pil_topu(i,j)
+      end do
+      end do
+      do j=l_nj-pil_n+1,l_nj
+      do i=1,l_niu
+         mix_topu(i,j) = pil_topu(i,j)
+      end do
+      end do
+      do i=1,pil_w
+      do j=pil_s+1,l_nj-pil_n
+         mix_topu(i,j) = pil_topu(i,j)
+      end do
+      end do
+      do i=l_niu-pil_e+1,l_niu
+      do j=pil_s+1,l_nj-pil_n
+         mix_topu(i,j) = pil_topu(i,j)
+      end do
+      end do
+*     ------------------------------
+      do j=1,pil_s
+      do i=1,l_ni
+         mix_topv(i,j) = pil_topv(i,j)
+      end do
+      end do
+      do j=l_njv-pil_n+1,l_njv
+      do i=1,l_ni
+         mix_topv(i,j) = pil_topv(i,j)
+      end do
+      end do
+      do i=1,pil_w
+      do j=pil_s+1,l_njv-pil_n
+         mix_topv(i,j) = pil_topv(i,j)
+      end do
+      end do
+      do i=l_ni-pil_e+1,l_ni
+      do j=pil_s+1,l_njv-pil_n
+         mix_topv(i,j) = pil_topv(i,j)
+      end do
+      end do
+*     ------------------------------
+*
+* Blending routines require the shape of LDIST_DIM but the actual
+* calculations and values changed are in the blending region only
+*
+      call nesajr (mix_topo,pil_topo,LDIST_DIM,1,0,0,Hblen_x,Hblen_y)
+      call nesajr (mix_topu,pil_topu,LDIST_DIM,1,1,0,Hblen_x,Hblen_y)
+      call nesajr (mix_topv,pil_topv,LDIST_DIM,1,0,1,Hblen_x,Hblen_y)
+*
+* Copy the new topo
+*
+      Ind_topo = mix_topo
+      Ind_topu = mix_topu
+      Ind_topv = mix_topv
+*
+*
+* Perform horizontal and vertical interpolations for S-N
+* and W-E boundaries
+*	
+      if (data2treat)then
+*
+*         Put data into topo n,s,e,w
+*
+          call trnes (Ind_topo,topo(bcs_is),topo(bcs_in),topo(bcs_iw),
+     $            topo(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+          call trnes (Ind_topu,topu(bcs_is),topu(bcs_in),topu(bcs_iw),
+     $            topu(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+          call trnes (Ind_topv,topv(bcs_is),topv(bcs_in),topv(bcs_iw),
+     $            topv(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+
+*       NS - put data into bcs_uf'
+
+          nit = max(dimxs,dimxn)
+          njt = 0
+          if (l_south) njt = njt + dimys
+          if (l_north) njt = njt + dimyn
+          d1  = dimys*north
+          call casc_hvi (trname_a,
+     $            xpn,ypn,xpun,ypvn,xpaqs,ypaqs,xpaus,ypavs,
+     $            bcs_uf,bcs_uf(bcs_in),bcs_vf,bcs_vf(bcs_in),
+     $            bcs_tf,bcs_tf(bcs_in),bcs_psdf,bcs_psdf(bcs_in),
+     $            bcs_pipf,bcs_pipf(bcs_in),bcs_fipf,bcs_fipf(bcs_in),
+     $            bcs_tdf,bcs_tdf(bcs_in),bcs_fif,bcs_fif(bcs_in),
+     $            bcs_qf,bcs_qf(bcs_in),bcs_tpf,bcs_tpf(bcs_in),
+     $            bcs_trf,bcs_wf,bcs_wf(bcs_in),
+     $            bcs_muf,bcs_muf(bcs_in),bcs_sf,bcs_sf(bcs_in),
+     $            bcs_is-1,bcs_in-1,
+     $            topo,topo(bcs_in),topu,topu(bcs_in),topv,topv(bcs_in),
+     $            uuns,vvns,psdns,ttns,tpns,tdns,fins,qqns,ssns,
+     $            fipns,pipns,wwns,muns,trns,
+     $            minxs,maxxs,minys,maxys,0,d1,G_nk,nit,njt,
+     $            nis,njs*2,nka,nvar,ntra,l_south,l_north)
+*
 *       WE - put data into bcs_uf'
-      call casc_hvi (trname_a, 
-     $               xpw,ypw,xpuw,ypvw,xpaqw,ypaqw,xpauw,ypavw,
-     $  bcs_uf(bcs_iw),bcs_uf(bcs_ie),bcs_vf(bcs_iw),bcs_vf(bcs_ie),
-     $  bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),
-     $  bcs_pipf(bcs_iw),bcs_pipf(bcs_ie),bcs_fipf(bcs_iw),bcs_fipf(bcs_ie),
-     $  bcs_tdf(bcs_iw),bcs_tdf(bcs_ie),bcs_fif(bcs_iw),bcs_fif(bcs_ie),
-     $  bcs_qf(bcs_iw),bcs_qf(bcs_ie),bcs_tpf(bcs_iw),bcs_tpf(bcs_ie),
-     $  bcs_trf,bcs_wf(bcs_iw),bcs_wf(bcs_ie),
-     $  bcs_muf(bcs_iw),bcs_muf(bcs_ie),bcs_sf(bcs_iw),bcs_sf(bcs_ie),
-     $  bcs_iw-1,bcs_ie-1,
-     $  topo(bcs_iw),topo(bcs_ie),topu(bcs_iw),topu(bcs_ie),topv(bcs_iw),topv(bcs_ie),
-     $  uunw,vvnw,psdnw,ttnw,tpnw,tdnw,finw,qqnw,ssnw,fipnw,pipnw,wwnw,munw,
-     $         trnw,minxw,maxxw,minyw,maxyw,d1,0,G_nk,nit,njt,
-     $               niw*2,njw,nka,nvar,ntra,l_west,l_east)
+          nit = 0
+          njt = max(dimyw,dimye)
+          if (l_west) nit = nit + dimxw
+          if (l_east) nit = nit + dimxe
+          d1  = dimxw*east
+*
+          call casc_hvi (trname_a, 
+     $      xpw,ypw,xpuw,ypvw,xpaqw,ypaqw,xpauw,ypavw,
+     $      bcs_uf(bcs_iw),bcs_uf(bcs_ie),bcs_vf(bcs_iw),bcs_vf(bcs_ie),
+     $      bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),
+     $      bcs_pipf(bcs_iw),bcs_pipf(bcs_ie),bcs_fipf(bcs_iw),bcs_fipf(bcs_ie),
+     $      bcs_tdf(bcs_iw),bcs_tdf(bcs_ie),bcs_fif(bcs_iw),bcs_fif(bcs_ie),
+     $      bcs_qf(bcs_iw),bcs_qf(bcs_ie),bcs_tpf(bcs_iw),bcs_tpf(bcs_ie),
+     $      bcs_trf,bcs_wf(bcs_iw),bcs_wf(bcs_ie),
+     $      bcs_muf(bcs_iw),bcs_muf(bcs_ie),bcs_sf(bcs_iw),bcs_sf(bcs_ie),
+     $      bcs_iw-1,bcs_ie-1,
+     $      topo(bcs_iw),topo(bcs_ie),topu(bcs_iw),topu(bcs_ie),
+     $      topv(bcs_iw),topv(bcs_ie),
+     $      uunw,vvnw,psdnw,ttnw,tpnw,tdnw,finw,qqnw,ssnw,fipnw,pipnw,wwnw,munw,
+     $      trnw,minxw,maxxw,minyw,maxyw,d1,0,G_nk,nit,njt,
+     $      niw*2,njw,nka,nvar,ntra,l_west,l_east)
       endif
 *
       if (associated(xpsn)) deallocate(xpsn)
@@ -555,7 +754,9 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
          else
 *
             trname_a(n) = '!@@NOT@@'
-            read (unf)
+            do k=1,nk
+               read (unf)
+            end do
 *
          endif
 *

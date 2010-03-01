@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r grid_nml
 *
 #include "model_macros_f.h"
@@ -12,6 +27,7 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v3_31 - Lee V.            - added extra CHECK for LAM grid
 *
 *object
 *  Default configuration and reading namelist grid
@@ -62,6 +78,7 @@
       Grd_xlon2 = 270.
       Grd_xlat2 = 0.
       Grd_gauss_L = .false.
+      Grd_filename_S ='/dev/null'
 *
       if (F_namelistf_S .ne. '') then
 *
@@ -106,6 +123,12 @@
          endif
          Grd_nila = Grd_ni
          Grd_njla = Grd_nj
+         if (Grd_iref.lt.1.or.Grd_iref.gt.Grd_ni.or.
+     $       Grd_jref.lt.1.or.Grd_jref.gt.Grd_nj) then
+            if (Lun_out.gt.0) write(Lun_out,1002) 
+     $                        Grd_ni,Grd_nj,Grd_iref,Grd_jref
+            goto 9988
+         endif
          Grd_x0   = Grd_lonr - (Grd_iref-1) * Grd_dx
          Grd_y0   = Grd_latr - (Grd_jref-1) * Grd_dy
          Grd_xl   = Grd_x0   + (Grd_ni  -1) * Grd_dx
@@ -199,6 +222,8 @@
  5000 format(' HORIZONTAL GRID ROTATION MATRIX:'/3(3d20.12/))
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/,
      $         ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
+ 1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/,
+     $         ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
  8000 format (/,'========= ABORT IN S/R grid_nml.f ============='/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST grid INVALID IN FILE: ',A/)

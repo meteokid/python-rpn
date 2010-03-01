@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 *** casc_hvi - take incoming lo-res data, interpolate to hi-res data
 *              and place into the pieces of the BCS target grid as
 *              described in bcs_did
@@ -47,6 +62,7 @@
 *
 *revision
 * v3_30 - Lee V.       - initial version for GEMLAM
+* v3_31 - Lee V.       - correction in interpolation of firu,firv
 
 
 #include "glb_ld.cdk"
@@ -163,7 +179,7 @@
      $               idu,idy,cua,cub,cuc,cud,cya,cyb,cyc,cyd,Lam_hint_S)
          call hinterpo (ttru,nid,njd,ttn,nis,njs,nka,
      $               idu,idy,cua,cub,cuc,cud,cya,cyb,cyc,cyd,Lam_hint_S)
-         call hinterpo (firu,nid,njd,fin,nis,njs,nka,
+         call hinterpo (firu(1,nka),nid,njd, fin( 1,nka),nis,njs,1,
      $               idu,idy,cua,cub,cuc,cud,cya,cyb,cyc,cyd,Lam_hint_S)
 
       endif
@@ -183,7 +199,7 @@
      $               idx,idu,cxa,cxb,cxc,cxd,cua,cub,cuc,cud,Lam_hint_S)
          call hinterpo (ttrv,nid,njd,ttn,nis,njs,nka,
      $               idx,idu,cxa,cxb,cxc,cxd,cua,cub,cuc,cud,Lam_hint_S)
-         call hinterpo (firv,nid,njd,fin,nis,njs,nka,
+         call hinterpo (firv(1,nka),nid,njd, fin( 1,nka),nis,njs,1,
      $               idx,idu,cxa,cxb,cxc,cxd,cua,cub,cuc,cud,Lam_hint_S)
       endif
 

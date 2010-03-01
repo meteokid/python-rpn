@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r set_sor - initialization of all control parameters for output
 *
 #include "model_macros_f.h"
@@ -381,13 +396,8 @@
       enddo
       p_bvol_out = kk
 
-      call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy,
-     $     Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow,
-     $     0,0,l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,
-     $     Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S,
-     $     int(Cstv_dt_8),Out3_date,Out3_etik_S, Out3_ndigits,
-     $     Mod_runstrt_S,
-     $     min(Step_total, Lctl_step+Step_rsti),Out3_flipit_L,Out3_debug_L)
+*     No need to proceed, if Chemistry switch is "off".
+      if (.not. Schm_chems_L) goto 9988
 *
 *     FOR CHEMICAL SCHEMES:
 *     =====================
@@ -402,8 +412,6 @@
 *     print *,'chm_bdyn_top=',chm_bdyn_top
 *     print *,'chm_bvol_top=',chm_bvol_top
 *
-*     No need to proceed, if Chemistry switch is "off".
-      if (.not. Schm_chems_L) goto 9988
       kk = 0
       if (Lun_out.gt.0)  then
           write(Lun_out,1001)

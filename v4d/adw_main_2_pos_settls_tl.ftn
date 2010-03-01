@@ -1,0 +1,554 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+***s/r adw_main_2_pos_settls_tl - TLM of adw_main_2_pos_settls when Adw_nosetint_L=.TRUE. 
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_main_2_pos_settls_tl ( F_it, F_u, F_v, F_w, F_um, F_vm, F_wm )
+*
+      implicit none
+*
+      integer F_it
+      real F_u (*),F_v (*),F_w (*)
+      real F_um(*),F_vm(*),F_wm(*)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_20 - Tanguay M.        - Optimized SETINT/TRILIN
+*                           - TLM of Change test a lower and upper boundaries
+* v3_21 - Tanguay M.        - Call adw_main_2_pos_noset_tl based on Adw_nosetint_L
+* v3_30 - Tanguay M.        - correct calculation for LAM when Glb_pil gt 7 
+*                           - correct parameters adw_trilin_turbo_tl
+* v3_31 - Tanguay M.        - new scope for operator + adw_cliptraj (LAM)
+* v3_31 - Tanguay M.        - Do adjoint of outsiders in advection
+* v3_31 - Tanguay M.        - SETTLS option
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectory             |  i  |
+*        |                                                       |     |
+* F_u,F_v| input:  3 components of wind on advection grid        |  io |
+* F_w    | output: 3 components of upstream positions at t1      |     |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+#include "vthm.cdk"
+#include "vt1m.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*
+      logical doh_L
+*
+      integer pnerr, pnlkey1(60), pnlod
+*
+      integer i, j, k, n, ij, ijk, nij, nijk, it
+      integer i1,j1,k1,nn
+*
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1,wrk_yt1
+*
+      real,    dimension(l_ni*l_nj*l_nk) :: capx1m,capy1m,capz1m
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1m,wrky1m,wrkz1m,wrkc1m,wrk_yt1m
+*
+      integer, dimension(:), allocatable :: n2m
+      real,    dimension(:), allocatable :: capx2m,capy2m,capz2m
+      real,    dimension(:), allocatable :: xpos2m,ypos2m,zpos2m
+*
+      integer, dimension(:), allocatable :: n2
+      real,    dimension(:), allocatable :: capx2,capy2,capz2
+      real,    dimension(:), allocatable :: xpos2,ypos2,zpos2
+*
+      real dummy, dth
+      real*8 r2pi_8,TWO_8,HALF_8,pdp_8,pdm_8
+      parameter (TWO_8 = 2.0,HALF_8=0.5)
+*
+      integer i0,in,j0,jn,indice
+*
+************************************************************************
+      if ( .not.Adw_nosetint_L ) call gem_stop ('ABORT adw_main_2_pos_settls_tl',-1)
+************************************************************************
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *l_nk
+*
+      r2pi_8 = TWO_8 * Dcst_pi_8
+      dth    = Cstv_dt_8/2.
+      pdp_8  = 1.d0 + 1.d-6
+      pdm_8  = 1.d0 - 1.d-6
+*
+      pnlkey1(1) = VMM_KEY(xth)
+      pnlkey1(2) = VMM_KEY(yth)
+      pnlkey1(3) = VMM_KEY(zth)
+      pnlkey1(4) = VMM_KEY(xcth)
+      pnlkey1(5) = VMM_KEY(ycth)
+      pnlkey1(6) = VMM_KEY(zcth)
+      pnlkey1(7) = VMM_KEY(xt1)
+      pnlkey1(8) = VMM_KEY(yt1)
+      pnlkey1(9) = VMM_KEY(zt1)
+      pnlkey1(10)= VMM_KEY(xct1)
+      pnlkey1(11)= VMM_KEY(yct1)
+      pnlkey1(12)= VMM_KEY(zct1)
+      pnlkey1(13)= VMM_KEY(uth)
+      pnlkey1(14)= VMM_KEY(vth)
+      pnlkey1(15)= VMM_KEY(psdth)
+      pnlod = 15
+*
+      pnlkey1(1+pnlod) = VMM_KEY(xthm)
+      pnlkey1(2+pnlod) = VMM_KEY(ythm)
+      pnlkey1(3+pnlod) = VMM_KEY(zthm)
+      pnlkey1(4+pnlod) = VMM_KEY(xcthm)
+      pnlkey1(5+pnlod) = VMM_KEY(ycthm)
+      pnlkey1(6+pnlod) = VMM_KEY(zcthm)
+      pnlkey1(7+pnlod) = VMM_KEY(xt1m)
+      pnlkey1(8+pnlod) = VMM_KEY(yt1m)
+      pnlkey1(9+pnlod) = VMM_KEY(zt1m)
+      pnlkey1(10+pnlod)= VMM_KEY(xct1m)
+      pnlkey1(11+pnlod)= VMM_KEY(yct1m)
+      pnlkey1(12+pnlod)= VMM_KEY(zct1m)
+      pnlkey1(13+pnlod)= VMM_KEY(uthm)
+      pnlkey1(14+pnlod)= VMM_KEY(vthm)
+      pnlkey1(15+pnlod)= VMM_KEY(psdthm)
+      pnlod = 15+pnlod
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(xth)
+      pnerr = VMM_GET_VAR(yth)
+      pnerr = VMM_GET_VAR(zth)
+      pnerr = VMM_GET_VAR(xcth)
+      pnerr = VMM_GET_VAR(ycth)
+      pnerr = VMM_GET_VAR(zcth)
+      pnerr = VMM_GET_VAR(xt1)
+      pnerr = VMM_GET_VAR(yt1)
+      pnerr = VMM_GET_VAR(zt1)
+      pnerr = VMM_GET_VAR(xct1)
+      pnerr = VMM_GET_VAR(yct1)
+      pnerr = VMM_GET_VAR(zct1)
+      pnerr = VMM_GET_VAR(uth)
+      pnerr = VMM_GET_VAR(vth)
+      pnerr = VMM_GET_VAR(psdth)
+*
+      pnerr = VMM_GET_VAR(xthm)
+      pnerr = VMM_GET_VAR(ythm)
+      pnerr = VMM_GET_VAR(zthm)
+      pnerr = VMM_GET_VAR(xcthm)
+      pnerr = VMM_GET_VAR(ycthm)
+      pnerr = VMM_GET_VAR(zcthm)
+      pnerr = VMM_GET_VAR(xt1m)
+      pnerr = VMM_GET_VAR(yt1m)
+      pnerr = VMM_GET_VAR(zt1m)
+      pnerr = VMM_GET_VAR(xct1m)
+      pnerr = VMM_GET_VAR(yct1m)
+      pnerr = VMM_GET_VAR(zct1m)
+      pnerr = VMM_GET_VAR(uthm)
+      pnerr = VMM_GET_VAR(vthm)
+      pnerr = VMM_GET_VAR(psdthm)
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
+      endif
+*
+************************************************************************
+      do it=1,F_it
+************************************************************************
+                     doh_L = .false.
+      if (it .eq. 1) doh_L = .true.
+*
+      do n = 1,nijk
+*        TRAJ
+*        ----
+         wrk_yt1m(n)= yt1m(n)
+*
+*        TLM 
+*        ---
+         wrk_yt1(n) = yt1(n)
+      enddo
+*
+      if (G_lam) then
+*
+          call adw_cliptraj_tl ( xt1, wrk_yt1, xt1m, wrk_yt1m, i0, in, j0, jn, 'IN1_TL')
+*
+      else
+*
+          call adw_exch_1_tl ( wrkx1, wrky1, wrkz1, wrkc1,
+     $                                         xt1, wrk_yt1, zt1,
+     $                         wrkx1m,wrky1m,wrkz1m,wrkc1m,
+     $                                         xt1m,wrk_yt1m,zt1m)
+*
+          allocate(capx2m(max(1,Adw_fro_a)),
+     %             capy2m(max(1,Adw_fro_a)),
+     %             capz2m(max(1,Adw_fro_a)),
+     %             xpos2m(max(1,Adw_fro_a)),
+     %             ypos2m(max(1,Adw_fro_a)),
+     %             zpos2m(max(1,Adw_fro_a)),
+     %                n2m(max(1,Adw_fro_a)))
+*
+          allocate(capx2(max(1,Adw_fro_a)),
+     %             capy2(max(1,Adw_fro_a)),
+     %             capz2(max(1,Adw_fro_a)),
+     %             xpos2(max(1,Adw_fro_a)),
+     %             ypos2(max(1,Adw_fro_a)),
+     %             zpos2(max(1,Adw_fro_a)),
+     %                n2(max(1,Adw_fro_a)))
+*
+          call adw_exch_2_tl ( xpos2, ypos2, zpos2,
+     %                         wrkx1, wrky1, wrkz1,
+     %                         xpos2m,ypos2m,zpos2m,
+     %                         wrkx1m,wrky1m,wrkz1m,
+     %                         Adw_fro_n, Adw_fro_s, Adw_fro_a,
+     %                         Adw_for_n, Adw_for_s, Adw_for_a, 3)
+*
+      endif
+*
+*     Part  I of interpolated wind at xth,yth,zth: Interpolate F_u,F_v_F_w at xt1,yt1,zt1
+*     -----------------------------------------------------------------------------------
+      Adw_hor_L = doh_L
+      Adw_ver_L = .true.
+      call adw_trilin_turbo_tl (wrkx1, F_u, 1.0,xt1, wrk_yt1, zt1,
+     %                          wrkx1m,F_um,    xt1m,wrk_yt1m,zt1m,
+     %                          capx1m,capy1m,capz1m,Adw_Fn_I,
+     %                          nijk,i0,in,j0,jn,l_nk)
+*
+      call adw_trilin_turbo_tl (wrky1, F_v, 1.0,xt1, wrk_yt1, zt1,
+     %                          wrky1m,F_vm,    xt1m,wrk_yt1m,zt1m,
+     %                          capx1m,capy1m,capz1m,Adw_Fn_I,
+     %                          nijk,i0,in,j0,jn,l_nk)
+*
+      if (.not.G_lam) then
+*
+         if ( Adw_fro_a .gt. 0 ) then
+*
+              if ( Adw_ckbd_L ) call adw_ckbd ( ypos2m )
+*
+              call adw_setint_tl ( n2,   capx2, dummy,dummy, capy2, dummy,
+     %                             dummy,capz2, dummy,xpos2, ypos2, zpos2,
+     %                             n2m,  capx2m,dummy,dummy, capy2m,dummy,
+     %                             dummy,capz2m,dummy,xpos2m,ypos2m,zpos2m,
+     %                            .true.,.true.,.true.,Adw_fro_a,1,Adw_fro_a,1,1,1)
+*
+              call adw_trilin_tl ( xpos2, F_u, 1.0, n2, capx2, capy2, capz2,
+     %                             xpos2m,F_um,     n2m,capx2m,capy2m,capz2m,
+     %                             Adw_fro_a,1,Adw_fro_a,1,1,1)
+*
+              call adw_trilin_tl ( ypos2, F_v, 1.0, n2, capx2, capy2, capz2,
+     %                             ypos2m,F_vm,     n2m,capx2m,capy2m,capz2m,
+     %                             Adw_fro_a,1,Adw_fro_a,1,1,1)
+*
+         endif
+*
+         call adw_exch_2_tl ( wrkz1, wrk_yt1, dummy,
+     %                        xpos2, ypos2,   dummy,
+     %                        wrkz1m,wrk_yt1m,dummy,
+     %                        xpos2m,ypos2m,  dummy,
+     %                        Adw_for_n, Adw_for_s, Adw_for_a,
+     %                        Adw_fro_n, Adw_fro_s, Adw_fro_a, 2)
+*
+         if ( Adw_for_a .gt. 0 )
+     %         call adw_exch_3_tl ( wrkx1, wrky1, wrkz1, wrk_yt1, wrkc1,
+     %                              wrkx1m,wrky1m,wrkz1m,wrk_yt1m,wrkc1m, 2)
+*
+         deallocate(capx2m,capy2m,capz2m,xpos2m,ypos2m,zpos2m,n2m)
+         deallocate(capx2, capy2, capz2, xpos2, ypos2, zpos2, n2)
+*
+      endif
+*
+*     Part II of interpolated wind at xth,yth,zth: Add to uth,vth
+*     -----------------------------------------------------------
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         indice = l_ni*l_nj*(k-1) + l_ni*(j-1) + i
+*
+*        TRAJ
+*        ---- 
+         wrkx1m(indice) = .5*(wrkx1m(indice) + uthm(i,j,k))
+         wrky1m(indice) = .5*(wrky1m(indice) + vthm(i,j,k))
+*
+*        TLM
+*        ---
+         wrkx1(indice) = .5*(wrkx1(indice) + uth(i,j,k))
+         wrky1(indice) = .5*(wrky1(indice) + vth(i,j,k))
+*
+      enddo
+      enddo
+      enddo
+*
+************************************************************************
+      call adw_trajsp_tl ( xth,  yth,  xcth,  ycth,  zcth,  wrkx1,  wrky1, 
+     %                     xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
+     %                     i0,in,j0,jn)
+************************************************************************
+      call adw_trajex_tl (xt1, yt1, xct1, yct1, zct1, xcth, ycth, zcth,
+     %                    xt1m,yt1m,xct1m,yct1m,zct1m,xcthm,ycthm,zcthm,
+     %                    i0,in,j0,jn)
+*
+      do n = 1,nijk
+*        TRAJ
+*        ----
+         wrk_yt1m(n)= yt1m(n)
+*
+*        TLM
+*        ---
+         wrk_yt1(n) = yt1(n)
+      enddo
+*
+      if (G_lam) then
+*
+          call adw_cliptraj_tl ( xt1, wrk_yt1, xt1m, wrk_yt1m, i0, in, j0, jn, 'IN2_TL')
+*
+      else
+*
+          call adw_exch_1_tl ( wrkx1, wrky1, wrkz1, wrkc1,
+     $                                         xt1, wrk_yt1, zt1,
+     $                         wrkx1m,wrky1m,wrkz1m,wrkc1m,
+     $                                         xt1m,wrk_yt1m,zt1m)
+*
+          allocate(capx2m(max(1,Adw_fro_a)),
+     %             capy2m(max(1,Adw_fro_a)),
+     %             capz2m(max(1,Adw_fro_a)),
+     %             xpos2m(max(1,Adw_fro_a)),
+     %             ypos2m(max(1,Adw_fro_a)),
+     %             zpos2m(max(1,Adw_fro_a)),
+     %                n2m(max(1,Adw_fro_a)))
+*
+          allocate(capx2(max(1,Adw_fro_a)),
+     %             capy2(max(1,Adw_fro_a)),
+     %             capz2(max(1,Adw_fro_a)),
+     %             xpos2(max(1,Adw_fro_a)),
+     %             ypos2(max(1,Adw_fro_a)),
+     %             zpos2(max(1,Adw_fro_a)),
+     %                n2(max(1,Adw_fro_a)))
+*
+          call adw_exch_2_tl ( xpos2, ypos2, zpos2,
+     %                         wrkx1, wrky1, wrkz1,
+     %                         xpos2m,ypos2m,zpos2m,
+     %                         wrkx1m,wrky1m,wrkz1m,
+     %                         Adw_fro_n, Adw_fro_s, Adw_fro_a,
+     %                         Adw_for_n, Adw_for_s, Adw_for_a, 3)
+*
+      endif
+*
+      Adw_hor_L = .true.
+      Adw_ver_L = .false.
+      call adw_trilin_turbo_tl (wrkz1, F_w, -dth,xt1, wrk_yt1, zt1,
+     %                          wrkz1m,F_wm,     xt1m,wrk_yt1m,zt1m,
+     %                          capx1m,capy1m,capz1m,Adw_Fn_I,
+     %                          nijk,i0,in,j0,jn,l_nk)
+*
+      if (.not.G_lam) then
+*
+         if ( Adw_fro_a .gt. 0 ) then
+*
+              if ( Adw_ckbd_L ) call adw_ckbd ( ypos2m )
+*
+              call adw_setint_tl ( n2,   capx2, dummy,dummy, capy2, dummy,
+     %                             dummy,capz2, dummy,xpos2, ypos2, zpos2,
+     %                             n2m,  capx2m,dummy,dummy, capy2m,dummy,
+     %                             dummy,capz2m,dummy,xpos2m,ypos2m,zpos2m,
+     %                            .true.,.true.,.true.,Adw_fro_a,1,Adw_fro_a,1,1,1)
+*
+              call adw_trilin_tl ( xpos2, F_w, -dth,n2, capx2, capy2, capz2,
+     %                             xpos2m,F_wm,     n2m,capx2m,capy2m,capz2m,
+     %                             Adw_fro_a,1,Adw_fro_a,1,1,1)
+         endif
+*
+         call adw_exch_2_tl ( wrkx1, dummy, dummy,
+     %                        xpos2, dummy, dummy,
+     %                        wrkx1m,dummy, dummy,
+     %                        xpos2m,dummy, dummy,
+     %                        Adw_for_n, Adw_for_s, Adw_for_a,
+     %                        Adw_fro_n, Adw_fro_s, Adw_fro_a, 1)
+*
+         if ( Adw_for_a .gt. 0 )
+     %         call adw_exch_3_tl ( wrkz1, dummy,wrkx1, dummy,wrkc1,
+     %                              wrkz1m,dummy,wrkx1m,dummy,wrkc1m, 1)
+*
+         deallocate(capx2m,capy2m,capz2m,xpos2m,ypos2m,zpos2m,n2m)
+         deallocate(capx2, capy2, capz2, xpos2, ypos2, zpos2, n2)
+*
+      endif
+*
+*     Part II of interpolated wind at xth,yth,zth: Add to psdth
+*     ---------------------------------------------------------
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         indice = l_ni*l_nj*(k-1) + l_ni*(j-1) + i
+*
+*        TRAJ
+*        ----
+         wrkz1m(indice) = .5*(wrkz1m(indice) - dth*psdthm(i,j,k))
+*
+*        TLM
+*        ---
+         wrkz1(indice) = .5*(wrkz1(indice) - dth*psdth(i,j,k))
+*
+      enddo
+      enddo
+      enddo
+*
+************************************************************************
+!$omp parallel private(n)
+!$omp do
+      do k = 2,l_nk-1
+      do j = j0,jn
+      do i = i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*        TRAJECTORY
+*        ----------
+         zt1m(n) = Geomg_z_8(k) + TWO_8*wrkz1m(n)
+*
+*        TLM
+*        ---
+         zt1(n) = TWO_8*wrkz1(n)
+*
+*        TRAJECTORY and TLM
+*        ------------------
+*        The following min statement is expanded as two IF blocks:
+*        zt1m(n) = min( pdm_8*Geomg_z_8(l_nk), max( 1.0d0*zt1m(n), pdp_8*Geomg_z_8(1) )
+*
+         if (1.0d0*zt1m(n).lt.pdp_8*Geomg_z_8(1)) then
+             zt1m(n) = pdp_8*Geomg_z_8(1)
+             zt1 (n) = 0.
+         elseif (1.0d0*zt1m(n).gt.pdm_8*Geomg_z_8(l_nk)) then
+             zt1m(n) = pdm_8*Geomg_z_8(l_nk)
+             zt1 (n) = 0.
+         endif
+*
+*        TRAJECTORY and TLM
+*        ------------------
+         zthm(n) = HALF_8*(zt1m(n) + Geomg_z_8(k))
+         zth (n) = HALF_8*(zt1 (n)               )
+*
+      enddo
+      enddo
+      enddo
+*
+!$omp enddo
+!$omp end parallel
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+      call adw_trajex_tl (xt1, yt1, xct1, yct1, zct1, xcth, ycth, zcth,
+     %                    xt1m,yt1m,xct1m,yct1m,zct1m,xcthm,ycthm,zcthm,
+     %                    i0,in,j0,jn)
+*
+*     Store xt1,yt1,zt1 positions in F_u,F_v,F_w (used in adw_main_3_int)
+*     -------------------------------------------------------------------
+      do i=1,l_ni*l_nj*l_nk
+*
+*        TRAJ
+*        ----
+         F_um(i) = xt1m(i)
+         F_vm(i) = yt1m(i)
+*
+*        TLM
+*        ---
+         F_u(i) = xt1(i)
+         F_v(i) = yt1(i)
+*
+      enddo
+*
+!$omp parallel private(n)
+!$omp do
+      do j = j0,jn
+      do i = i0,in
+         n = ((j-1)*l_ni) + i   !for k=1
+*
+*        TRAJECTORY
+*        ----------
+         F_wm(n) = Geomg_z_8(1)
+*
+*        TLM 
+*        ---
+         F_w(n) = 0. 
+*
+         n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
+*
+*        TRAJECTORY
+*        ----------
+         F_wm(n) = Geomg_z_8(l_nk)
+*
+*        TLM 
+*        ---
+         F_w(n) = 0. 
+*
+      enddo
+      enddo
+!$omp enddo
+!$omp do
+      do k = 2,l_nk-1
+         do j = j0,jn
+         do i = i0,in
+            n=(k-1)*nij+((j-1)*l_ni) + i
+*
+*           TRAJECTORY
+*           ----------
+            F_wm(n) = zthm(n) - Geomg_z_8(k)
+            F_wm(n) = Geomg_z_8(k) + 2.0 * F_wm(n)
+*
+*           TLM
+*           ---
+            F_w(n) = zth(n) 
+            F_w(n) = 2.0 * F_w(n)
+*
+         enddo
+         enddo
+      enddo
+*
+!$omp enddo
+!$omp end parallel
+*
+      pnerr = vmmuld(-1,0)
+*
+ 1000 format(3X,'TLM of CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS_SETTLS_TL)')
+      return
+      end

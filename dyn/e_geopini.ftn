@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 *** s/r e_geopini
 *
 #include "model_macros_f.h"
@@ -18,7 +33,7 @@
 * v3_11 - Dugas B.          - Always read AL ( NO SNOW )
 * v3_20 - Delage Y.         - For CLASS
 * v3_30 - Desgagne M.       - modifications for new physics interface
-* v3_31 - Desgagne M.       - new coupling interface to OASIS
+* v3_31 - Plante A.         - added ICEL for iceline
 *
 *object
 *          Establishes requirement in terms of geophysical variables 
@@ -89,6 +104,10 @@
      $'VN=glacen  ; VS=row  ; EN=ga; INTERP=NEAREST ; SEQ=G' )
       call mgsdict (ni, nj, gi8,   
      $'VN=icedpen ; VS=row  ; EN=i8; INTERP=NEAREST ; SEQ=AV')
+      if (P_pbl_icelac_L) then
+          call mgsdict (ni, nj, icel,     
+     $'VN=icelinen; VS=row  ; EN=ICEL; INTERP=NEAREST ; SEQ=AV')
+      endif 
       call mgsdict (ni, nj, gice,  
      $'VN=tglacen ; VS=row*2; EN=i9; INTERP=LINEAR; SEQ=A' )
       call mgsdict (ni, nj, gmice, 
@@ -271,13 +290,13 @@
          write (Lun_out,130)
       endif
 *
- 101  format (10x,'+',35('-'),'+'/10x,'|  **',a3,'BUS**  ni= ',i5,
+ 101  format (20x,'+',35('-'),'+'/20x,'|  **',a3,'BUS**  ni= ',i5,
      $        ' nj= ',i5,'  |')
- 110  format ('|',2x,'Names',2x,'|',' STD ',
-     $        '|  Start | Length | Mul | SEQ | H.INTRP  |')
- 120  format ('|',1x,a8,'|',1x,a2,'  |',2(i7,' |'),i3,'  |',1x,a3,
+ 110  format ('|',2x,'Names',10x,'|',' STD  ',
+     $        '|    Start    |   Length    | Mul | SEQ | H.INTRP  |')
+ 120  format ('|',1x,a16,'|',1x,a4,' |',2(i12,' |'),i3,'  |',1x,a3,
      $        ' |',1x,a7,'  |')
- 130  format ('+',9('-'),'+',5('-'),'+',8('-'),'+',8('-'),'+',5('-'),
+ 130  format ('+',17('-'),'+',6('-'),'+',13('-'),'+',13('-'),'+',5('-'),
      $        '+',5('-'),'+',10('-'),'+')
  151  format (/'LG - ANLREG      NOT AVAILABLE')
  152  format (/'LG - CLIMATOLOGY NOT AVAILABLE')

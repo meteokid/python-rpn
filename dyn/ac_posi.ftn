@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r ac_posi - find the positional points to extract cascade grid
 *                from the current model grid configuration
 #include "model_macros_f.h"
@@ -133,6 +148,7 @@ c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
          if (prout) write (6,1004)
          Grdc_proj_S = '@'
          Grdc_ndt    = -1
+         return 
       endif
       if ((Grdc_hbsn.le.0).or.(Grdc_hbwe.le.0)) then
           if (prout) write(6,1005)
@@ -141,6 +157,7 @@ c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
             call bcs_hollow(Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,
      $      Grdc_gjdi,Grdc_hbsn,Grdc_hbwe,is,nis,js,njs,jn,iw,niw,ie,jw,njw)
 
+            if (prout) write(6,1002)
             if (prout) write(6,1007) is,nis,js,njs,iw,ie,niw,jw,jn,njw
       endif
 *
@@ -210,9 +227,10 @@ c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
       endif
 *
  1001 format (' Tracers to be written for cascade run are ')
+ 1002 format (' Cascade grid: BCS output files will be produced')
  1003 format (' Cascade grid: ',4i6)
- 1004 format (' Cascade grid: NO grid will be output')
- 1005 format (' Cascade grid: Only 3DF files will be output')
+ 1004 format (' Cascade grid: Is too large, NO 3DF/BCS files will be produced')
+ 1005 format (' Cascade grid: Only 3DF files will be produced')
  1006 format (' Cascade grid: Width of W/E band=',I6, ' N/S band=',I6)
  1007 format (' Cascade grid: is,nis,js,njs,iw,ie,niw,jw,jn,njw'//4x,10I6)
 *--------------------------------------------------------------------

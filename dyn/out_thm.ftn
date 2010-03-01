@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r out_thm - output  temperature, humidity and mass fields
 *
 #include "model_macros_f.h"
@@ -91,7 +106,6 @@
 
       integer i,j,k,kl,ii
       real wk1(G_ni,G_nj),wk2(G_ni,G_nj)
-      real wk3(G_ni,G_nj+2),wk4(G_ni,G_nj+2)
       real w1(F_ninj), w2(F_ninj)
       real w3(F_ninj,F_nk)
       real px_pres(F_ninj,F_nko)
@@ -336,8 +350,7 @@
 *        For all under ground grid points at level htx(i,kl)
 *        recompute temperature by HORIZONTAL interpolation
 *
-         if (Ptopo_myproc.eq.0) 
-     $        call liebman_2 (wk1,wk2,wk3,wk4,0.1,G_ni,G_nj)
+         if (Ptopo_myproc.eq.0) call liebman_2 (wk1,wk2,0.1,G_ni,G_nj)
 
          call glbdist (wk1,G_ni,G_nj,w1,l_minx,l_maxx,l_miny,l_maxy,
      $                         1,G_halox,G_haloy)

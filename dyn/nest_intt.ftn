@@ -1,3 +1,18 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
 ***s/r nest_intt -- Linear interpolation in time of nesting data
 *
 #include "model_macros_f.h"
@@ -15,6 +30,7 @@
 * v3_03 - Tanguay M.                - Adjoint Lam configuration
 * v3_20 - Pellerin P. and Y. Delage - Special interpolations for MEC 
 * v3_31 - Bilodeau B.               - Debug offline mode
+* v3_31 - Lee V.                    - add 3DF for Schm_offline_L
 *
 *implicits
 #include "glb_ld.cdk"
@@ -144,33 +160,33 @@
          if (Lctl_step.gt.1) then
 *
             if (.not.Schm_offline_L) then
-*           Copy contents from BCS_UF to BCS_U
+*               Copy contents from BCS_UF to BCS_U
 *
-            do i=1,bcs_sz
-               bcs_u(i) = bcs_uf(i)
-               bcs_v(i) = bcs_vf(i)
-               bcs_t(i) = bcs_tf(i)
-               bcs_psd(i) = bcs_psdf(i)
-               bcs_pip(i) = bcs_pipf(i)
-               bcs_fip(i) = bcs_fipf(i)
-               bcs_td(i) = bcs_tdf(i)
-               bcs_fi(i) = bcs_fif(i)
-               bcs_q(i) = bcs_qf(i)
-               bcs_s(i) = bcs_sf(i)
-               bcs_tp(i) = bcs_tpf(i)
-            enddo
-            if (.not. Schm_hydro_L) then
-               do i=1,bcs_sz
-                  bcs_w(i) = bcs_wf(i)
-                  bcs_mu(i) = bcs_muf(i)
-               enddo
-            endif
-            do n=1,Tr3d_ntr
-               id = (n-1)*bcs_sz+1
-               do i=1,bcs_sz
-                  bcs_tr(id+i-1) = bcs_trf(id+i-1)
-               enddo
-            enddo
+                do i=1,bcs_sz
+                   bcs_u(i) = bcs_uf(i)
+                   bcs_v(i) = bcs_vf(i)
+                   bcs_t(i) = bcs_tf(i)
+                   bcs_psd(i) = bcs_psdf(i)
+                   bcs_pip(i) = bcs_pipf(i)
+                   bcs_fip(i) = bcs_fipf(i)
+                   bcs_td(i) = bcs_tdf(i)
+                   bcs_fi(i) = bcs_fif(i)
+                   bcs_q(i) = bcs_qf(i)
+                   bcs_s(i) = bcs_sf(i)
+                   bcs_tp(i) = bcs_tpf(i)
+                enddo
+                if (.not. Schm_hydro_L) then
+                   do i=1,bcs_sz
+                      bcs_w(i) = bcs_wf(i)
+                      bcs_mu(i) = bcs_muf(i)
+                   enddo
+                endif
+                do n=1,Tr3d_ntr
+                   id = (n-1)*bcs_sz+1
+                   do i=1,bcs_sz
+                      bcs_tr(id+i-1) = bcs_trf(id+i-1)
+                   enddo
+                enddo
             endif
 *
 *           Copy contents from NEST_UF to NEST_U
@@ -249,31 +265,31 @@
       b = one - a
 *
       if (.not.Schm_offline_L) then
-      do i=1,bcs_sz
-         bcs_u(i) = a*bcs_u(i) + b*bcs_uf(i)
-         bcs_v(i) = a*bcs_v(i) + b*bcs_vf(i)
-         bcs_t(i) = a*bcs_t(i) + b*bcs_tf(i)
-         bcs_psd(i) = a*bcs_psd(i) + b*bcs_psdf(i)
-         bcs_pip(i) = a*bcs_pip(i) + b*bcs_pipf(i)
-         bcs_fip(i) = a*bcs_fip(i) + b*bcs_fipf(i)
-         bcs_td(i) = a*bcs_td(i) + b*bcs_tdf(i)
-         bcs_fi(i) = a*bcs_fi(i) + b*bcs_fif(i)
-         bcs_q(i) = a*bcs_q(i) + b*bcs_qf(i)
-         bcs_s(i) = a*bcs_s(i) + b*bcs_sf(i)
-         bcs_tp(i) = a*bcs_tp(i) + b*bcs_tpf(i)
-      enddo
-      if (.not. Schm_hydro_L) then
-         do i=1,bcs_sz
-            bcs_w(i) = a*bcs_w(i) + b*bcs_wf(i)
-            bcs_mu(i) = a*bcs_mu(i) + b*bcs_muf(i)
-         enddo
-      endif
-      do n=1,Tr3d_ntr
-         id = (n-1)*bcs_sz+1
-         do i=1,bcs_sz
-            bcs_tr(id+i-1) = a*bcs_tr(id+i-1) + b*bcs_trf(id+i-1)
-         enddo
-      enddo
+          do i=1,bcs_sz
+             bcs_u(i) = a*bcs_u(i) + b*bcs_uf(i)
+             bcs_v(i) = a*bcs_v(i) + b*bcs_vf(i)
+             bcs_t(i) = a*bcs_t(i) + b*bcs_tf(i)
+             bcs_psd(i) = a*bcs_psd(i) + b*bcs_psdf(i)
+             bcs_pip(i) = a*bcs_pip(i) + b*bcs_pipf(i)
+             bcs_fip(i) = a*bcs_fip(i) + b*bcs_fipf(i)
+             bcs_td(i) = a*bcs_td(i) + b*bcs_tdf(i)
+             bcs_fi(i) = a*bcs_fi(i) + b*bcs_fif(i)
+             bcs_q(i) = a*bcs_q(i) + b*bcs_qf(i)
+             bcs_s(i) = a*bcs_s(i) + b*bcs_sf(i)
+             bcs_tp(i) = a*bcs_tp(i) + b*bcs_tpf(i)
+          enddo
+          if (.not. Schm_hydro_L) then
+              do i=1,bcs_sz
+                 bcs_w(i) = a*bcs_w(i) + b*bcs_wf(i)
+                 bcs_mu(i) = a*bcs_mu(i) + b*bcs_muf(i)
+              enddo
+          endif
+          do n=1,Tr3d_ntr
+             id = (n-1)*bcs_sz+1
+             do i=1,bcs_sz
+                bcs_tr(id+i-1) = a*bcs_tr(id+i-1) + b*bcs_trf(id+i-1)
+             enddo
+          enddo
       endif
 *
       do k= 1, G_nk
@@ -309,18 +325,18 @@
          end do
       end if
       err = vmmuld(key1,nvar)
-      key1_ = VMM_KEY (nest_tr)
-      key2_ = VMM_KEY (nest_trf)
-      do n=1,Tr3d_ntr
-         key1(n) = key1_ + n
-         key2(n) = key2_ + n
-      end do
 
 
       if (Tr3d_ntr.gt.0) then
+         key1_ = VMM_KEY (nest_tr)
+         key2_ = VMM_KEY (nest_trf)
+         do n=1,Tr3d_ntr
+            key1(n) = key1_ + n
+            key2(n) = key2_ + n
+         end do
+         err = vmmlod(key1,Tr3d_ntr)
+         err = vmmlod(key2,Tr3d_ntr)
          if ( .not.Schm_offline_L) then
-             err = vmmlod(key1,Tr3d_ntr)
-             err = vmmlod(key2,Tr3d_ntr)
              do n=1,Tr3d_ntr
                 err = vmmget(key1(n),patr1,tr1)
                 err = vmmget(key2(n),patrf,trf)
