@@ -1,6 +1,6 @@
-      logical  gletaanl, glsiganl, glhybanl
+      logical  gletaanl, glsiganl, glhybanl, glecmanl
       real     ptop, ztop, pref, rcoef
-      common /option_l/ gletaanl,glsiganl, glhybanl
+      common /option_l/ gletaanl,glsiganl, glhybanl, glecmanl
       common /option_r/ ptop, ztop, pref, rcoef
 
 

@@ -30,6 +30,7 @@
 * v3_11 - Gravel S.        - provide for variable topography
 * v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
 * v3_13 - Pellerin P.      - to run in off-line mode
+* v3_13 - Gravel S.        - allow for initialization with ECMWF analyses
 *
 *object
 *	
@@ -64,7 +65,7 @@
       integer  bmf_gobe,bmf_get
       external bmf_gobe,bmf_get
 *
-      integer nvar,i,j,k,err
+      integer nvar,i,j,k,err, nk_anal
       real, pointer, dimension(:  ) :: lna,rna,sdd
       real, pointer, dimension(:,:) :: psu_temp,psv_temp,
      $        apsu_temp,apsv_temp,topu_temp,topv_temp
@@ -95,7 +96,7 @@
       call acqui ( lna, rna, sdd, psu_temp, psv_temp, apsu_temp,
      $             apsv_temp, topu_temp,topv_temp, u_temp,v_temp,
      $             hu_temp,tt_temp, gz_temp, ttu_temp, ttv_temp, 
-     $             gzu_temp, gzv_temp,ps, topo_temp )
+     $             gzu_temp, gzv_temp,ps, topo_temp)
 *
       if (Ptopo_myproc.eq.0) then
          write(lun_out,*)
@@ -103,7 +104,7 @@
      $      ' Acql_etaanl=',Acql_etaanl
          write(lun_out,*)
      $      ' Acql_siganl =',Acql_siganl ,' Acql_hybanl =',Acql_hybanl,
-     $      ' Acql_prsanl=',Acql_prsanl
+     $      ' Acql_prsanl=',Acql_prsanl, ' Acql_ecmanl=',Acql_ecmanl
 *
       if ((schm_offline_L).and.(Acqi_vterplv.eq.1)) then
          Acql_vertint=.false.
@@ -119,7 +120,7 @@
 *---------------------------------------------------------------------
 *     INTERPOLATION IS NOT REQUIRED
 *---------------------------------------------------------------------
-       if (.not.schm_offline_L) then 
+       if (.not.schm_offline_L) then
          do k=1,g_nk
          do j=1,l_nj
          do i=1,l_ni
@@ -133,7 +134,7 @@
          do k=1,g_nk
          do j=1,l_nj
          do i=1,l_ni
-            Ind_t (i,j,k) = tt_temp(i,j,1) 
+            Ind_t (i,j,k) = tt_temp(i,j,1)
             Ind_fi(i,j,k) = gz_temp(i,j,1)
             work  (i,j,k) = hu_temp(i,j,1)
          end do
@@ -141,20 +142,27 @@
          end do
         endif
 *
-      else if(Acql_siganl.or.Acql_etaanl.or.Acql_hybanl) then
+      else if(Acql_siganl.or.Acql_etaanl.or.Acql_hybanl.or.Acql_ecmanl) then
 *---------------------------------------------------------------------
 *     INTERPOLATION REQUIRED
-*     ANALYSIS IS ON EITHER SIGMA or ETA OR HYBRID COORDINATES
+*     ANALYSIS IS ON EITHER SIGMA or ETA, HYBRID or ECMWF COORDINATES
 *---------------------------------------------------------------------
 *
-         allocate ( pia(Acqi_vterplv),pibb(Acqi_vterplv),
-     $              hyba(Acqi_vterplv) )
+         nk_anal = Acqi_vterplv
+         if (Acql_ecmanl) nk_anal = Acqi_vterplv + 1
+         
+         allocate( pia(nk_anal),pibb(nk_anal),hyba(nk_anal) )
+
          if (Acql_siganl) then
             do k=1,Acqi_vterplv
                pia(k) = rna(k)
                pibb(k)= 0.
                hyba(k)= 0.
             enddo
+         else if (Acql_ecmanl) then
+
+            call ecmwf_ab( pia, pibb, nk_anal )
+
          else 
             if (rna(1).eq.0.0) then
                 do k=1,Acqi_vterplv
@@ -172,11 +180,11 @@
 *        Compute hydrostatic GZ on analysis levels
 *
          call p0vt2gz_hyb ( gz_temp,pia,pibb,ps,tt_temp, Acqi_nbpts, 
-     $                             Acqi_vterplv,.false.,Acql_siganl )
+     $                             nk_anal,.false.,Acql_siganl )
 *
 *        Finally, compute pressure on model surface (PS)
          call getp0 ( pps, topo_temp,pia,pibb, ps, gz_temp, tt_temp, 
-     $                         Acqi_nbpts, Acqi_vterplv,Acql_siganl )
+     $                         Acqi_nbpts, nk_anal,Acql_siganl )
          do j=1,l_nj
          do i=1,l_ni
             ps_temp(i,j)=ps(i,j)
@@ -184,7 +192,7 @@
          enddo
 *        Interpolate VT
          call vte_hyb2hyb (work, Geomg_pia, Geomg_pibb,pps,G_nk,tt_temp,
-     $         pia,pibb, ps, Acqi_vterplv, Acqi_nbpts, 'VT',Acql_siganl)
+     $         pia,pibb, ps, nk_anal, Acqi_nbpts, 'VT',Acql_siganl)
 *
 *        Compute hydrostatic GZ on model's levels
          do j=1,l_nj
@@ -207,7 +215,7 @@
 *
          if ( Schm_moist_L ) then
             call vte_hyb2hyb ( work, Geomg_pia, Geomg_pibb,pps,G_nk,
-     $                         hu_temp,pia,pibb, ps, Acqi_vterplv, 
+     $                         hu_temp,pia,pibb, ps, nk_anal, 
      $                         Acqi_nbpts, 'HU',Acql_siganl )
          else
             do k= 1, G_nk
@@ -226,24 +234,24 @@
          enddo
 *
          call p0vt2gz_hyb ( gzu_temp,pia,pibb,apsu_temp,ttu_temp,
-     $             Acqi_niu*Acqi_nju, Acqi_vterplv,.false.,Acql_siganl )
+     $             Acqi_niu*Acqi_nju, nk_anal,.false.,Acql_siganl )
          call getp0 ( psu_temp, topu_temp,pia,pibb, apsu_temp, 
      $                gzu_temp,ttu_temp, Acqi_niu*Acqi_nju, 
-     $                Acqi_vterplv,Acql_siganl)
+     $                nk_anal,Acql_siganl)
          call p0vt2gz_hyb ( gzv_temp,pia,pibb,apsv_temp,ttv_temp,
-     $             Acqi_niv*Acqi_njv, Acqi_vterplv,.false.,Acql_siganl )
+     $             Acqi_niv*Acqi_njv, nk_anal,.false.,Acql_siganl )
          call getp0 ( psv_temp, topv_temp,pia,pibb, apsv_temp, 
      $                gzv_temp,ttv_temp, Acqi_niv*Acqi_njv, 
-     $                Acqi_vterplv,Acql_siganl)
+     $                nk_anal,Acql_siganl)
 *
          allocate ( u_temp2(Acqi_niu,Acqi_nju,Acqi_nktmp), 
      $              v_temp2(Acqi_niv,Acqi_njv,Acqi_nktmp) )
 *
          call vte_hyb2hyb ( u_temp2, Geomg_pia, Geomg_pibb, psu_temp,
-     $                  G_nk,u_temp, pia,pibb, apsu_temp, Acqi_vterplv, 
+     $                  G_nk,u_temp, pia,pibb, apsu_temp, nk_anal, 
      $                  Acqi_niu*Acqi_nju, 'UU',Acql_siganl )
          call vte_hyb2hyb ( v_temp2, Geomg_pia, Geomg_pibb, psv_temp,
-     $                  G_nk,v_temp, pia,pibb, apsv_temp, Acqi_vterplv, 
+     $                  G_nk,v_temp, pia,pibb, apsv_temp, nk_anal, 
      $                  Acqi_niv*Acqi_njv, 'VV',Acql_siganl )
 *
          do k=1,g_nk

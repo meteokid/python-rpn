@@ -19,6 +19,7 @@
 * v3_02 - Lee V.         - revert adw_exch_1 for GLB only, added adw_ckbd_lam
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_12 - Valin & Tanguay - Optimized SETINT/TRILIN 
+* v3_12 - Gravel S.       - Change test a lower and upper boundaries
 *
 *language
 *     fortran 77
@@ -69,8 +70,8 @@
       real,    dimension(:), allocatable :: xpos2,ypos2,zpos2
 *
       real dummy, dth
-      real*8 r2pi_8,two
-      parameter (two = 2.0)
+      real*8 r2pi_8,two,half,pdp,pdm
+      parameter (two = 2.0,half=0.5)
 
       integer i0,in,j0,jn
 *
@@ -80,6 +81,8 @@
 *
       r2pi_8 = two * Dcst_pi_8
       dth    = Cstv_dt_8/2.
+      pdp    = 1.d0 + 1.d-6
+      pdm    = 1.d0 - 1.d-6
 ************************************************************************
 *
       pnlkey1(1) = VMM_KEY(xth)
@@ -269,11 +272,10 @@
       do j = j0,jn
       do i = i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
-         zth(n) = Geomg_z_8(k) + wrkx1(n)
-         zth(n) = min( Geomg_z_8(l_nk), max( 1.0d0*zth(n), Geomg_z_8(1) ) )
-         if ( zth(n).eq.Geomg_z_8(1) .or. zth(n).eq.Geomg_z_8(l_nk)) then
-           zth(n) = (zth(n) + Geomg_z_8(k)) * 0.5
-         endif
+         zth(n) = Geomg_z_8(k) + two*wrkx1(n)
+         zth(n) = min( pdm*Geomg_z_8(l_nk), 
+     %                max( 1.0d0*zth(n), pdp*Geomg_z_8(1) ) )
+         zth(n) = half*(zth(n) + Geomg_z_8(k))
       enddo
       enddo
       enddo
@@ -293,6 +295,8 @@
          F_w(n) = Geomg_z_8(1)
          n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
          F_w(n) = Geomg_z_8(l_nk)
+         F_w(n) = min( Geomg_z_8(l_nk),
+     %                max(1.0d0*F_w(n), Geomg_z_8(1) ))
       enddo
       enddo
 !$omp enddo

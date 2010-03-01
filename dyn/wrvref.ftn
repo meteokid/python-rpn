@@ -18,7 +18,8 @@
       integer err
       call convip(ip1,Pres_ptop,2,+1,' ',.false.)
       err = hybref_to_ig(ig1,ig2,ig3,ig4,Grd_rcoef,Pres_pref,x1,x2)
-      err = fstecr (Pres_ptop,wke,-32,unf,0,0,0,1,1,1,ip1,0,Out_ip3,
+      err = fstecr (Pres_ptop,wke,-32,unf,Out_dateo,
+     $          int(Out_deet),Out_npas,1,1,1,ip1,0,Out_ip3,
      $          'X','HY',Out_etik_S,'X',ig1,ig2,ig3,ig4,5,.true.)
 *
       return

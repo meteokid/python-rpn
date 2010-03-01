@@ -100,6 +100,7 @@
 #include "pilot.cdk"
 #include "vtopo.cdk"
 #include "vrtd.cdk"
+#include "zblen.cdk"
 *
 *modules
       integer fnom,longueur,exdb
@@ -176,6 +177,8 @@
       Schm_pheat_L    = .true.
       Schm_theoc_L    = .false.
       Schm_sfix_L     = .false.
+*
+      Zblen_L   = .false.
 *
       Glb_pil_n = 7
       Glb_pil_s = 7
@@ -339,9 +342,10 @@
             write (Lun_out, 8000)
             return
          else
-             do k=1,G_nk
+             do k=1,maxhlev
               hyb(k)=Geomg_hyb(k)
             enddo
+             write (Lun_out, 7050) Theo_case_S
              call hpdeallc (Geomg_hyb_ , err,1)
          endif
       else
@@ -498,7 +502,7 @@
          Mem_mx3db = 75
          if (V4dg_conf.ne.0) Mem_mx3db = Mem_mx3db + 71
          if (Init_balgm_L  ) Mem_mx3db = Mem_mx3db + 20
-         if (G_lam .and. .not. Schm_theoc_L) then
+         if (G_lam) then
                              Mem_mx3db = Mem_mx3db + 28
 *                      --->  Exclude nest_??x vmm variables
            If (Pil_ctebcs_L) Mem_mx3db = Mem_mx3db - 14
@@ -580,6 +584,7 @@
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
+ 7050 format (/' THEORETICAL CASE IS: ',a/)
  8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ============='/)
  8150 format (/,' NAMELIST ptopo    INVALID IN FILE: model_settings'/)
  9150 format (/,' NAMELIST gem_cfgs INVALID IN FILE: model_settings'/)

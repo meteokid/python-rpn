@@ -52,7 +52,7 @@ CC    call chem_init( )
 *C             Initialize the time-dependent variables comdecks
 *              -------------------------------------------------
       call set_vt( )
-      if (G_lam .and. .not. Schm_theoc_L) call set_nest( )
+      if (G_lam) call set_nest( )
 *
 *C             Initialize right hand sides comdeck
 *              -----------------------------------

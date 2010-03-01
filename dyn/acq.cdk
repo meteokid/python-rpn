@@ -13,7 +13,7 @@
       real     Acqr_prefa, Acqr_ptopa, Acqr_rcoefa
 *      
       logical  Acql_etaanl , Acql_siganl , Acql_hybanl, Acql_prsanl,
-     $         Acql_vertint, Acql_horzint, Acql_nesd
+     $         Acql_vertint, Acql_horzint, Acql_nesd, Acql_ecmanl
 *
       common / acqi / Acqi_datasp,Acqi_vterplv,
      $                Acqi_niu,Acqi_nju,Acqi_niv,Acqi_njv,Acqi_nim,
@@ -22,4 +22,5 @@
       common / acqr / Acqr_prefa, Acqr_ptopa, Acqr_rcoefa
 *
       common / acql / Acql_etaanl, Acql_siganl , Acql_hybanl, 
-     $                Acql_prsanl, Acql_vertint, Acql_horzint
+     $                Acql_prsanl, Acql_vertint, Acql_horzint,
+     $                Acql_ecmanl

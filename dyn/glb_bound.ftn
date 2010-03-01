@@ -12,6 +12,7 @@
 * v3_00 - Desgagne & Lee     - initial version
 * v3_01 - Desgagne M.        - add Robert & Yakimiw horizontal blending
 * v3_11 - Gravel S.          - adapt for theoretical cases
+* v3_1x - Gravel             - include vertical nesting
 *
 *object
 *
@@ -23,10 +24,11 @@
 #include "schm.cdk"
 #include "lun.cdk"
 #include "theo.cdk"
+#include "zblen.cdk"
 *
 *----------------------------------------------------------------------
 *
-      if (north+south+west+east.lt.1) return
+      if (north+south+west+east.lt.1) go to 9988
 *
 *
       if ( Schm_theoc_L .and. (Theo_case_S .eq. 'BUBBLE' 
@@ -36,8 +38,12 @@
       else
           call nestit()
       endif
-         
+
       if ( Schm_theoc_L ) call slabsym()
+ 
+ 9988 continue
+*      
+      if ( Zblen_L ) call height_sponge()
 *
 *----------------------------------------------------------------------
       return

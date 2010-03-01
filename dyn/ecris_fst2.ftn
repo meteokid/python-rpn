@@ -120,7 +120,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
          allocate ( wk2(Out_nisg,Out_njsl) )
          do k=1,nk_o
             n = ind_o(k)
-            if (kind.ge.0) call convip(pnip1,rf(n),kind,+2,dumc,.false.)
+            if (kind.ge.0) call convip(pnip1,rf(n),kind,+1,dumc,.false.)
             do j=1,Out_njsl
             do i=1,Out_nisl
                wk2(i,j)=tr2(i,j,k)
@@ -138,7 +138,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
 *
          do k=1,nk_o
             n = ind_o(k)
-            if (kind.ge.0) call convip(pnip1,rf(n),kind,+2,dumc,.false.)
+            if (kind.ge.0) call convip(pnip1,rf(n),kind,+1,dumc,.false.)
             ier = fstecr (tr2(1,1,k),tr1,-nbit,Out_unf,Out_dateo,int(Out_deet),
      $                    Out_npas,Out_nisl,Out_njsl,1,pnip1,Out_ip2,pnip3,
      $                    Out_typvar_S,nomvar,Out_etik_S,gridtyp,

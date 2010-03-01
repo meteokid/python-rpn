@@ -86,7 +86,7 @@
 *
       ipasa=ipas
 *
-      if ( grd .ne. 'A' .and. grd .ne. 'B' .and.
+      if ( grd .ne. 'A' .and. grd .ne. 'B' .and. grd .ne. 'L' .and.
      %     grd .ne. 'G' .and. grd .ne. 'Z' ) then
          call e_rdhint_out(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,p2,ip3)
          goto 999

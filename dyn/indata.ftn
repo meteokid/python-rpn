@@ -153,10 +153,24 @@
       if ( Schm_phyms_L ) call readgeo()
       
       if ( Schm_theoc_L ) then
+         if (      Theo_case_S.eq.'BUBBLE'
+     $        .or. Theo_case_S.eq.'BUBBLE_G'
+     $        .or. Theo_case_S.eq.'2_BUBBLES') then
             call bubble()
+         else if ( Theo_case_S.eq.'MTN_SCHAR' 
+     $        .or. Theo_case_S.eq.'MTN_SCHAR2'
+     $        .or. Theo_case_S.eq.'MTN_PINTY'
+     $        .or. Theo_case_S.eq.'MTN_PINTY2'
+     $        .or. Theo_case_S.eq.'MTN_PINTYNL') then
+            call mtn_case()
+         else
+            call abort
+         endif
       else
          call readdyn()
       endif
+
+	  
 *
 *     In specific 4D-Var runs, Convert wind images to true winds
 *     ----------------------------------------------------------
@@ -179,7 +193,7 @@
 *
       err = vmmuld(-1,0)
 *
-      if (G_lam.and.(V4dg_conf.eq.0.or.V4dg_part.eq.3) .and. .not. Schm_theoc_L) 
+      if (G_lam.and.(V4dg_conf.eq.0.or.V4dg_part.eq.3)) 
      $      call nest_init 
 *
 *     ---------------------------------------------------------------

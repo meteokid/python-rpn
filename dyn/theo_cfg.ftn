@@ -46,6 +46,9 @@
 #include "lctl.cdk"
 #include "ptopo.cdk"
 #include "bubble.cdk"
+#include "mtn.cdk"
+#include "zblen.cdk"
+#include "vtopo.cdk"
 #include "theonml.cdk"
 *
       integer i, j, k, idatx
@@ -63,15 +66,22 @@
       endif
       Theo_nivdist_S='UNI'
       Theo_case_S='xxx'
+
       Pil_runstrt_S="19980101.000000"
       Out1_etik_s='THEOC'
       Lctl_debug_L=.false.
       rewind ( Lun_in )
       read ( Lun_in, nml=theo_cfgs, end = 9000, err=9000 )
-      if (       Theo_case_S .eq. 'BUBBLE'
+      if (      Theo_case_S .eq. 'BUBBLE'
      %     .or. Theo_case_S .eq. 'BUBBLE_G'
      %     .or. Theo_case_S .eq. '2_BUBBLES') then
            call bubble_cfg(pass_L)
+      elseif (  Theo_case_S .eq. 'MTN_SCHAR'
+     %     .or. Theo_case_S .eq. 'MTN_SCHAR2'
+     %     .or. Theo_case_S .eq. 'MTN_PINTY'
+     %     .or. Theo_case_S .eq. 'MTN_PINTY2'
+     %     .or. Theo_case_S .eq. 'MTN_PINTYNL') then 
+	    call mtn_cfg(pass_L)
       else
         write (Lun_out, 9200) Theo_case_S
         return

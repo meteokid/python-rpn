@@ -70,6 +70,7 @@
 #include "inuvl.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
+#include "schm.cdk"
 *
 *modules
       integer i, j, k, j0, jn, in1, in2, jn1, jn2
@@ -89,6 +90,22 @@
       end do
       end do
 *
+      in1= l_ni
+      in2= l_niu
+      jn1= l_nj
+      jn2= l_njv
+*
+      if ( Schm_theoc_L ) then
+         do k = 1, G_nk
+         do j = 1, jn1
+         do i = 1, in1
+            F_wt1(i,j,k) = 0.0
+         end do
+         end do
+         end do
+         return
+      endif
+*
 ****************************************************
 * TERM1: HORIZONTAL ADVECTION OF GEOGRAPHIC HEIGHT *
 ****************************************************
@@ -97,11 +114,6 @@
 *     ~~~~~~~~~~~~~~~~~~~~~~~~
       call rpn_comm_xch_halo ( F_fi, LDIST_DIM, l_ni, l_nj, G_nk, 
      $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-*
-      in1= l_ni
-      in2= l_niu
-      jn1= l_nj
-      jn2= l_njv
 *
       do k = 1, G_nk 
          do j = 1, jn1

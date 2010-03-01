@@ -1,0 +1,8 @@
+      real Zblen_hmin,Zblen_spngthick
+      logical Zblen_L, Zblen_spngtt_L
+      MARK_COMMON_BEG (Zblen_r)
+      common /Zblen_r/ Zblen_hmin,Zblen_spngthick
+      MARK_COMMON_END (Zblen_r)      
+      MARK_COMMON_BEG (Zblen_l)
+      common /Zblen_l/ Zblen_L, Zblen_spngtt_L
+      MARK_COMMON_END (Zblen_l)      

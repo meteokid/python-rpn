@@ -1,0 +1,406 @@
+***s/r mtn_cfg - reads parameters from namelist mtn_cfgs
+*
+#include <model_macros_f.h>
+*
+      subroutine mtn_cfg ( pass_L )
+      implicit none
+*
+      logical pass_L
+*
+*author 
+*     sylvie gravel   -  Apr 2003
+*
+*revision
+* v3_11 - gravel s          - initial version 
+*
+*object
+*     See above id
+*	
+*arguments - none
+*
+#include "dcst.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "hgc.cdk"
+#include "grd.cdk"
+#include "out1.cdk"
+#include "pilot.cdk"
+#include "hblen.cdk"
+#include "ptopo.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "lun.cdk"
+#include "p_geol.cdk"
+#include "step.cdk"
+#include "pres.cdk"
+#include "schm.cdk"
+#include "adw.cdk"
+#include "cstv.cdk"
+#include "hzd.cdk"
+#include "eigv.cdk"
+#include "vspng.cdk"
+#include "theo.cdk"
+#include "geomg.cdk"
+#include "init.cdk"
+#include "offc.cdk"
+#include "lctl.cdk"
+#include "zblen.cdk"
+#include "vtopo.cdk"
+#include "mtn.cdk"
+#include "bubble.cdk"
+#include "theonml.cdk"
+*
+      integer i, j, k, idatx, longueur
+      real deta, z
+      real*8 ONE_8, CLXXX_8, my_rad2deg_8, my_pi_8, my_rayt_8
+      parameter( ONE_8   = 1.0 )
+      parameter( CLXXX_8 = 180.0 )
+      parameter( my_pi_8 = 0.3141592653590E+01 )
+      parameter( my_rayt_8 = .637122e+7 )
+**
+*     ---------------------------------------------------------------
+
+      my_rad2deg_8 = CLXXX_8/my_pi_8
+
+      pass_L = .false. 
+*
+      do k = 1, maxhlev
+         hyb(k) = -1.
+      end do
+
+      do j=1,3
+      do i=1,3
+         Grd_rot_8(i,j) = 0.0
+      enddo
+      enddo
+         Grd_rot_8(1,1) = 1.
+         Grd_rot_8(2,2) = 1.
+         Grd_rot_8(3,3) = 1.
+*
+      G_lam=.true.
+      Grd_xlat1=0.
+      Grd_xlon1=180.
+      Grd_xlat2=0.
+      Grd_xlon2=270.
+      Grd_roule=.false.
+*
+c     Offc_a0_8 =  1.0
+c     Offc_a1_8 = -1.0
+c     Offc_b0_8 =  0.5
+c     Offc_b1_8 =  0.5
+      	  
+      Tr3d_userntr=1
+      Tr2d_userntr=0
+
+      Pil_nesdt=0
+      Pil_ctebcs_L=.true.
+      
+      P_geol_tourn_L = .false.
+
+      Hzd_lnr = 0.
+
+      Schm_phyms_L = .false.
+      Schm_maxcfl_lam = 1
+      Schm_hydro_L=.false.
+
+      G_halox=3
+ 
+      Zblen_L = .true.
+      Zblen_spngtt_L=.false.
+
+      Adw_lag3d_L = .true.
+
+      if ( Theo_case_S.eq.'MTN_SCHAR') then
+
+         Out1_etik_s='SCHAR'
+	  
+         Pres_ptop = 40.78743336652039
+
+         mtn_tzero=288.
+         mtn_nstar= 0.01
+         mtn_flo  = 10.
+         mtn_hwx  =10
+         mtn_hwx1 = 8
+         mtn_hght = 250.
+
+         Grd_ni = 402
+         Grd_nj = 1
+         G_nk   = 66
+
+         Grd_dx =  0.0045
+	  
+         Hblen_momentx=15
+         Hblen_tx=15
+         Hblen_massx=15
+         Hblen_trx=15
+         Hblen_momenty=0
+         Hblen_ty=0
+         Hblen_massy=0
+         Hblen_try=0
+
+         Zblen_spngthick=7.e+03
+
+         Step_total = 1600
+         Step_gstat = 80
+
+         Cstv_dt_8 = 8.
+         Cstv_tstr_8 = 214.48
+         Cstv_pisrf_8 = 1000.
+
+         Vtopo_start = -1
+         Vtopo_ndt = 0
+
+c        Offc_b0_8 = 0.6 
+c        Offc_b1_8 = 0.4 
+
+         Grd_rcoef = 2.0
+
+      else if ( Theo_case_S.eq.'MTN_SCHAR2') then
+
+         Out1_etik_s='SCHAR2'
+	  
+         Pres_ptop = 40.78743336652039
+
+         mtn_tzero=273.16
+         mtn_nstar= 0.01871
+         mtn_flo  = 18.71
+         mtn_hwx  = 5
+         mtn_hwx1 = 4
+         mtn_hght = 250.
+
+         Grd_ni = 202
+         Grd_nj = 1
+         G_nk   = 66
+
+         Grd_dx =  0.009
+	  
+         Hblen_momentx=15
+         Hblen_tx=15
+         Hblen_massx=15
+         Hblen_trx=15
+         Hblen_momenty=0
+         Hblen_ty=0
+         Hblen_massy=0
+         Hblen_try=0
+      
+         Zblen_spngthick=1.00531e+04
+      
+         Step_total = 2400
+         Step_gstat = 100
+         Cstv_dt_8 = 5.34
+         Cstv_tstr_8 = 273.16
+         Cstv_pisrf_8 = 1000.
+
+         Vtopo_start = -1
+         Vtopo_ndt = 0
+
+c        Offc_b0_8 = 0.6 
+c        Offc_b1_8 = 0.4 
+
+         Grd_rcoef = 2.0
+
+      else if ( Theo_case_S.eq.'MTN_PINTY') then
+
+         Out1_etik_s='PINTY'
+
+         Pres_ptop = 81.98377202734126
+	  
+         mtn_tzero=273.16
+         mtn_flo  = 32.
+         mtn_hwx  =5
+         mtn_hght = 100.
+
+         Grd_ni = 161
+         Grd_nj = 1
+         G_nk   = 81
+
+	 Grd_dx = 0.0287773
+	  
+         Hblen_momentx=15
+         Hblen_tx=15
+         Hblen_massx=15
+         Hblen_trx=15
+         Hblen_momenty=0
+         Hblen_ty=0
+         Hblen_massy=0
+         Hblen_try=0
+      
+         Zblen_spngthick=1.005309649148734e+04
+      
+         Step_total = 800
+         Step_gstat = 100
+
+         Cstv_dt_8 = 50.
+         Cstv_tstr_8 = 273.16
+         Cstv_pisrf_8 = 1000.
+         Vtopo_start = -1
+         Vtopo_ndt = -1
+
+c        Offc_b0_8 = 0.6 
+c        Offc_b1_8 = 0.4 
+
+         Grd_rcoef = 2.0
+
+      else if ( Theo_case_S.eq.'MTN_PINTY2') then
+
+         Out1_etik_s='PINTY2'
+
+         Pres_ptop = 81.98377202734126
+	  
+         mtn_tzero=273.16
+         mtn_flo  = 8.
+         mtn_hwx  =5
+         mtn_hght = 100.
+
+         Grd_ni = 161
+         Grd_nj = 1
+         G_nk   = 81
+
+	 Grd_dx = 0.0287773
+	  
+         Hblen_momentx=15
+         Hblen_tx=15
+         Hblen_massx=15
+         Hblen_trx=15
+         Hblen_momenty=0
+         Hblen_ty=0
+         Hblen_massy=0
+         Hblen_try=0
+      
+         Zblen_spngthick=2.513274122871835e+03
+      
+         Step_total = 1600
+         Step_gstat = 100
+
+         Cstv_dt_8 = 200.
+         Cstv_tstr_8 = 273.16
+         Cstv_pisrf_8 = 1000.
+         Vtopo_start = -1
+         Vtopo_ndt = -1
+
+c        Offc_b0_8 = 0.6 
+c        Offc_b1_8 = 0.4 
+
+         Grd_rcoef = 2.0
+
+      else    ! PINTYNL
+
+         Out1_etik_s='PINTYNL'
+	  
+         Pres_ptop = 95.75000118766453
+
+         mtn_tzero=273.16
+         mtn_nstar= 0.02
+         mtn_flo  = 32.
+         mtn_hwx  =5
+         mtn_hght = 800.
+
+         Grd_ni = 161
+         Grd_nj = 1
+         G_nk   = 81
+
+	 Grd_dx = 0.0287773
+
+         Hblen_momentx=15
+         Hblen_tx=15
+         Hblen_massx=15
+         Hblen_trx=15
+         Hblen_momenty=0
+         Hblen_ty=0
+         Hblen_massy=0
+         Hblen_try=0
+      
+         Zblen_Spngthick=1.005309649148734e+04
+      
+         Step_total = 1000
+         Step_gstat = 100
+         Cstv_dt_8 = 50.
+         Cstv_tstr_8 = 2.946394714296820e+02
+         Cstv_pisrf_8 = 1000.
+         Vtopo_start = -1
+         Vtopo_ndt = 60
+
+c        Offc_b0_8 = 0.6 
+c        Offc_b1_8 = 0.4 
+
+         Grd_rcoef = 2.0
+
+      endif
+      
+      Hgc_gxtyp_s='E'
+      call cxgaig ( Hgc_gxtyp_S,Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,
+     $                        Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )
+
+      rewind ( Lun_in )
+      read ( Lun_in, nml=mtn_cfgs, end = 9220, err=9000)
+      go to 9221
+ 9220 write( Lun_out,9230) Theo_case_S
+ 9221 continue
+ 
+      Step_rsti = Step_total+100
+
+      Pres_pref = Cstv_pisrf_8
+
+*   adjust dimensions to include piloted area (pil_n, s, w, e)
+
+      Grd_ni = Grd_ni + Glb_pil_w + Glb_pil_e
+      Grd_nj = Grd_nj + Glb_pil_n + Glb_pil_s
+      Grd_nila = Grd_ni
+      Grd_njla = Grd_nj
+      Grd_jref = (Grd_nj-1 )/2
+	  
+      if ( Theo_nivdist_S .eq. 'UNI') then
+         write( Lun_out, 9400)
+         deta = 1./(G_nk-1)
+         do k=2,G_nk-1
+            z = Pres_ptop * (Cstv_pisrf_8/Pres_ptop)**((k-1)*deta)
+            hyb(k) = (z - Pres_ptop)/(Cstv_pisrf_8 - Pres_ptop)
+         enddo
+            hyb(1) = 0.
+            hyb(G_nk) = 1.
+         write( Lun_out, *) (hyb(k), k=1,G_nk)
+      endif
+*
+      Grd_dy = Grd_dx
+      Grd_x0=0.
+      Grd_xl=Grd_x0 + (Grd_ni -1) * Grd_dx
+      Grd_y0= - (Grd_jref-1) * Grd_dy
+      Grd_yl=Grd_y0 + (Grd_nj -1) * Grd_dy
+      if ( (Grd_x0.lt.  0.).or.(Grd_y0.lt.-90.).or.
+     $     (Grd_xl.gt.360.).or.(Grd_yl.gt. 90.) ) then
+          write (Lun_out,9600) Grd_x0,Grd_y0,Grd_xl,Grd_yl
+          return
+       endif
+      Grd_dxmax=Grd_xl
+      Grd_dymax=Grd_yl
+      call datp2f( idatx, Pil_runstrt_S)
+      Out1_date= idatx
+	  
+      G_halox = min(G_halox,Grd_ni-1)
+      G_haloy = G_halox
+	  
+      do i=1,Tr3d_userntr
+       Tr3d_username_S(i)="MTN"
+       Tr3d_usersval(i)= 0.
+      enddo
+*
+      do k=1,maxhlev
+        Geomg_hyb(k) = hyb(k)
+      enddo
+*
+      pass_L = .true. 
+      return   
+*
+ 9000 write (Lun_out, 9100)
+*     ---------------------------------------------------------------
+ 9100 format (/,' NAMELIST mtn_cfgs INVALID FROM FILE: model_settings'/)
+ 9230 format (/,' Default setup will be used for :',a/)
+ 9400 format (/1x,'From subroutine mtn_cfg:',
+     $        /1x,'Uniform distribution of level is requested',
+     $        /1x,'Values for hyb calculated by s/r mtn_cfg')
+ 9500 format (/1x,'From subroutine mtn_cfg:',
+     $        /1x,'wrong value for model top')
+ 9600 format (/1x,'From subroutine mtn_cfg:',
+     $        /1x,'wrong lam grid configuration  ')
+      end
+*

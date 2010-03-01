@@ -1,0 +1,193 @@
+***s/r  height_sponge -  Performs vertical blending
+*
+#include <model_macros_f.h>
+*
+      subroutine height_sponge ()
+      implicit none
+*author 
+*     Plante A.           - May 2004 
+*
+*revision
+*
+*object
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+#include "vt0.cdk"
+#include "schm.cdk"
+#include "nest.cdk"
+#include "lun.cdk"
+#include "zblen.cdk"
+#include "dcst.cdk"
+#include "mtn.cdk"
+#include "p_geof.cdk"
+#include "geomg.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer err,key(12),i,j,k,nvar, longueur
+      integer n
+
+      real betav(LDIST_SHAPE,l_nk),work
+
+*----------------------------------------------------------------------
+*
+      key(1)=VMM_KEY(ut0)
+      key(2)=VMM_KEY(vt0)
+      key(3)=VMM_KEY(tt0)
+      key(4)=VMM_KEY(psdt0)
+      key(5)=VMM_KEY(tdt0)
+      key(6)=VMM_KEY(fit0)
+      nvar = 6
+*
+      if (.not.Schm_hydro_L) then
+         key(7)=VMM_KEY(wt0)
+         nvar = 7
+      endif
+*
+      err = vmmlod(key,nvar)
+      err = VMM_GET_VAR(ut0)
+      err = VMM_GET_VAR(vt0)
+      err = VMM_GET_VAR(tt0)
+      err = VMM_GET_VAR(psdt0)
+      err = VMM_GET_VAR(tdt0)
+      err = VMM_GET_VAR(fit0)
+      if (.not.Schm_hydro_L) then
+         err = VMM_GET_VAR(wt0)
+      endif
+*
+      call set_betav(betav,fit0,LDIST_DIM, l_nk)
+
+      work=mtn_flo/Dcst_rayt_8
+
+      call applique(ut0  ,work,betav,LDIST_DIM, l_nk)
+      call applique(vt0  ,0.  ,betav,LDIST_DIM, l_nk)
+      call applique(tdt0 ,0.  ,betav,LDIST_DIM, l_nk)
+      call applique(psdt0,0.  ,betav,LDIST_DIM, l_nk)
+      if (.not.Schm_hydro_L) 
+     &call applique(wt0,0.    ,betav,LDIST_DIM, l_nk)
+      if(Zblen_spngtt_L)
+     &call applique_tt(tt0,fit0,betav,LDIST_DIM, l_nk)
+
+      err = vmmuld(key,nvar)
+*
+*----------------------------------------------------------------------
+      return
+      end
+
+c=======================================================================
+#include <model_macros_f.h>
+
+      subroutine applique(ff,value,betav, DIST_DIM, Nk)
+
+      implicit none
+
+      integer  DIST_DIM, Nk 
+
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+
+      real ff(DIST_SHAPE,Nk),value,betav(DIST_SHAPE,Nk)
+
+      integer i,j,k,i0,in,j0,jn 
+
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
+
+      do k=1,Nk
+         do j=j0,jn
+            do i=i0,in
+               ff(i,j,k)=(1.-betav(i,j,k))*ff(i,j,k)+betav(i,j,k)*value
+            enddo
+         enddo
+      enddo
+      
+      return
+
+      end
+c=======================================================================
+#include <model_macros_f.h>
+
+      subroutine applique_tt(tt,fi,betav, DIST_DIM, Nk)
+
+      implicit none
+
+      integer  DIST_DIM, Nk 
+
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "mtn.cdk"
+
+      real tt(DIST_SHAPE,Nk),fi(DIST_SHAPE,Nk),value,betav(DIST_SHAPE,Nk)
+
+      real capc1,my_tt,a00
+
+      integer i,j,k,i0,in,j0,jn 
+
+      a00 = mtn_nstar * mtn_nstar/Dcst_grav_8
+      capc1 = Dcst_grav_8*Dcst_grav_8/(mtn_nstar*mtn_nstar*Dcst_cpd_8*mtn_tzero)
+
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
+
+      do k=1,Nk
+         do j=j0,jn
+            do i=i0,in
+               my_tt=mtn_tzero*((1.-capc1)*exp(a00*fi(i,j,k)/Dcst_grav_8)+capc1)
+               tt(i,j,k)=(1.-betav(i,j,k))*tt(i,j,k)+betav(i,j,k)*my_tt
+            enddo
+         enddo
+      enddo
+      
+      return
+
+      end
+c=======================================================================
+#include <model_macros_f.h>
+
+      subroutine set_betav(betav,fi, DIST_DIM, Nk)
+
+      implicit none
+
+      integer  DIST_DIM, Nk 
+
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "zblen.cdk"
+
+      real betav(DIST_SHAPE,Nk),fi(DIST_SHAPE,Nk)
+
+      real work1,work2
+
+      integer i,j,k,i0,in,j0,jn 
+
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
+
+      do k=1,l_nk
+         do j=j0,jn
+            do i=i0,in
+               work1=fi(i,j,k)/Dcst_grav_8-Zblen_hmin
+               work2=fi(i,j,1)/Dcst_grav_8-Zblen_hmin
+               work1=max(0.,work1/work2)
+               betav(i,j,k)=work1*work1
+            enddo
+         enddo
+      enddo
+      
+      return
+
+      end

@@ -96,6 +96,7 @@ c     These variables are for OpenMp compilation
       call rpn_comm_mype (Ptopo_myproc, Ptopo_myrow, Ptopo_mycol)
 
       ierr = RPN_COMM_bloc ( Ptopo_nblocx, Ptopo_nblocy )
+      if (ierr.lt.0) call gem_stop ('rpn_comm_bloc',ierr)
 
       call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc,
      $                      n1,n2,n3,n4,n5,n6,n7,mybloc,

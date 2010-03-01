@@ -59,7 +59,7 @@
       imax  = F_in
       jmax  = F_jn
       kmax  = F_kn
-      maxd  = F_field(F_i0,F_j0,F_k0)
+      maxd  = F_field(F_in,F_jn,F_kn)
       mind  = F_field(F_i0,F_j0,F_k0)
 *
       do k=F_k0,F_kn

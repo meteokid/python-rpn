@@ -20,7 +20,7 @@
 *revision
 * v2_00 - Lee V.            - initial MPI version (from calomeg v1_03)
 * v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
-* v3_20 - Leduc A.M???      - replaced geomg_pibb with geomg_dpba
+* v3_20 - Gravel S.         - replaced geomg_pibb with geomg_dpba
 *
 *object
 *	compute vertical velocity in pressure coordinates

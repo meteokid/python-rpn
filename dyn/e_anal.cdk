@@ -39,7 +39,9 @@
       COMMON/analr/  LNA, RNA, RCOEFA,PTOPA,PREFA
       COMMON/anals/  VH,VT,GRDA,TVA,LABANL
       logical anal_sigma, anal_eta, anal_hyb, anal_pres,anal_perturb
+      logical anal_ecmwf
       integer anal_hav
       common /e_anal_l/ 
-     $     anal_sigma, anal_eta, anal_hyb, anal_pres, anal_perturb
+     $     anal_sigma, anal_eta, anal_hyb, anal_pres, anal_perturb,
+     $     anal_ecmwf
       common /e_anal_i/ anal_hav(2)

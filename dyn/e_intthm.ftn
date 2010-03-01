@@ -48,8 +48,8 @@
       character*8 desc
       character*6 inter
       logical anyip_L,arret_L
-      integer i, k, ng, err
-      real c1, c2, hu(nifi*njfi), tt(nifi*njfi), mul
+      integer i, k, ng, err, ip3
+      real c1, c2, hu(nifi*njfi), tt(nifi*njfi), mul, p0(nifi*njfi)
 *
 *---------------------------------------------------------------------
 *
@@ -112,6 +112,61 @@
          endif
          endif
 *     
+      elseif ( glecmanl ) then
+         write(6,*)
+     $      'ANALYSIS IS ECMWF COORDINATES'
+*
+         anal_hav(1)=1
+*
+         do k=1,lv
+
+            ip3 = int(rna(k))
+            if (e_rdhint3 (hu,dstf_gid,nifi,njfi,'HU  ',na(k),-1,
+     $          ip3,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $          goto 55
+            if (e_rdhint3 (tt,dstf_gid,nifi,njfi,vtt,na(k),-1,
+     $          ip3,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $          goto 55
+            do i=1,ng
+               tt(i) = tt(i) + c1
+            enddo
+            if (vt.eq.'TT') call mfotvt (tt,tt,hu,ng,1,ng)
+            call e_bmfsplitxy2 (hu,nifi,njfi,'HU  ',k,lv,pni,0,0,0)
+            call e_bmfsplitxy2 (tt,nifi,njfi,'VT  ',k,lv,pni,0,0,0)
+         end do
+*
+*        For ECMWF analyses, the log of pressure (in pa) is stored in
+*        the variable 2P
+*
+         if (e_rdhint3 (p0,dstf_gid,nifi,njfi,'2P  ',-1,
+     $       -1,-1,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $       goto 55
+         do i=1,ng
+            p0(i) = exp(p0(i))
+         enddo
+         call e_bmfsplitxy2 (p0,nifi,njfi,'P0  ',1,1,pni,0,0,0)
+         err = e_bmfrd (dstf_gid, nifi, njfi, 'GZ  ', 0., c2, -1,
+     $                                                 1, .true.,arret_L )
+*
+*        read temperature and dew point temperature at the surface,
+*        transform into virtual
+*        temperature and specific humidity, store in TS, and HE
+*
+         if (e_rdhint3 (tt,dstf_gid,nifi,njfi,'TS  ',-1,
+     $       -1,-1,' ',' ',.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $       goto 55
+         if (e_rdhint3 (hu,dstf_gid,nifi,njfi,'TD  ',-1,
+     $       -1,-1,' ',' ',.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $       goto 55
+         do i=1,ng
+            hu(i) = tt(i) - hu(i)  ! dew point depression
+            tt(i) = tt(i) + c1
+         enddo
+         call mesahu(hu, hu, tt, 1, p0, 3, .true., .false., ng, 1, ng)
+         call mfotvt(tt, tt, hu, ng, 1, ng)
+         call e_bmfsplitxy2 (hu,nifi,njfi,'HE  ',1,1,pni,0,0,0)
+         call e_bmfsplitxy2 (tt,nifi,njfi,'TE  ',1,1,pni,0,0,0)
+*
       else
 *
          write(6,*)'ANALYSIS IS IN PRESSURE COORDINATES' 

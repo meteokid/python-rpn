@@ -21,5 +21,5 @@
       data Version_ent_S / 'GEMNTR'/
       data Version_mod_S / 'GEMDM' /
       data Version_dstp_S/
-     $  ' --- Release of: Labour Day Sep  6 20:50:32 GMT 2004'/
-      data Version_S/'V_3.1.4'/
+     $  ' --- Release of: Thursday Sep 30 20:05:00 GMT 2004'/
+      data Version_S/'V_3.1.5'/

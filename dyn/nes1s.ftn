@@ -14,6 +14,7 @@
 *
 *revision
 * v3_00 - Desgagne             - initial version
+* v3_20 - Desgagne M.          - correction of starting/ending point for blend
 *
 *object
 *
@@ -45,10 +46,10 @@
       nit  = l_ni-F_is-pil_e
       njt  = l_nj-F_js-pil_n
 *
-      il   = 1   + F_ndavx + pil_w
-      ih   = nit - F_ndavx
-      jl   = 1   + F_ndavy + pil_s
-      jh   = njt - F_ndavy
+      il   = 1   + F_ndavx + pil_w -1
+      ih   = nit - F_ndavx + 1
+      jl   = 1   + F_ndavy + pil_s -1
+      jh   = njt - F_ndavy + 1
 *
       lx   = dble(F_ndavx) - pt5
       ly   = dble(F_ndavy) - pt5
