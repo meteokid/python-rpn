@@ -1,0 +1,49 @@
+#
+#
+#   Targets to load gemdm
+#
+gem: gemntr_nompi gemdm
+
+gemntr:
+	cd $(LCLPO);\
+	$(RBUILD) -obj *.o -bidon -main gemntr -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -libpriv $(PRIV) -codebeta $(CODEBETA) $(MPI);\
+	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)*
+
+gemdm:
+	cd $(LCLPO);\
+	$(RBUILD) -obj *.o -bidon -main gemdm -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -libpriv $(PRIV) -codebeta $(CODEBETA) $(MPI) ;\
+	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)*
+
+gem_nompi: gemntr_nompi gemdm_nompi
+
+gemntr_nompi:
+	make gemntr MPI=rpn_comm_stubs
+
+gemdm_nompi:
+	make gemdm MPI=rpn_comm_stubs
+
+gem4d:
+	make gem V4D="v4d modulopt prof_003"
+
+geophy: geophy.o
+	makebidon geophy
+	$(RBUILD) -obj $(LCLPO)/geophy.o $(LCLPO)/bidon.o -opt "=$(LFLAGS)" -o geophy.Abs -librmn $(RMN)
+	/bin/rm -f $(LCLPO)/geophy.o $(LCLPO)/bidon.o
+
+modelgrid = $(MODEL)grid_$(BASE_ARCH)_${MODEL_VERSION}.Abs
+modelnml  = $(MODEL)prnml_$(BASE_ARCH)_${MODEL_VERSION}.Abs
+
+prgemnml: prgemnml.o
+	makebidon prgemnml
+	$(RBUILD) -obj $(LCLPO)/bidon.o $(LCLPO)/prgemnml.o -libpath $(LIBPATH) -arch $(ARCH) -abi $(ABI) -optf "=$(LFLAGS)" -o $(modelnml)  -libappl "$(LIBS)" -librmn $(RMN) -libpriv $(PRIV) -codebeta $(CODEBETA) rpn_comm_stubs
+	/bin/rm -f $(LCLPO)/prgemnml.o $(LCLPO)/bidon.o
+
+gemgrid: gemgrid.o
+	makebidon gemgrid
+	$(RBUILD) -obj $(LCLPO)/bidon.o $(LCLPO)/gemgrid.o -libpath $(LIBPATH) -arch $(ARCH) -abi $(ABI) -optf "=$(LFLAGS)" -o $(modelgrid)  -libappl "$(LIBS)" -librmn $(RMN) -libpriv $(PRIV) -codebeta $(CODEBETA) rpn_comm_stubs
+	/bin/rm -f $(LCLPO)/gemgrid.o $(LCLPO)/bidon.o
+
+allbin: gemgrid geophy modelgrid
+	make gem
+#
+

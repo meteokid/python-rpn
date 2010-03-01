@@ -154,13 +154,19 @@
       call difdatr( xnday2,xnday1,heur_8 )
       heur_8    = heur_8 * (3600. / Cstv_dt_8 )
 *
+
+        print*,'xnday2= ', xnday2, 'Done_Inincr= ',Done_Inincr, 
+     +   '   heur_8=  ',heur_8, '  Lctl_step=',Lctl_step
+
       if (((Done_Inincr.ne.xnday2)  .and.
      %     (heur_8     .ge. -0.5 )  .and.
      %     (heur_8     .lt. +0.5 )) .or.
      %    ( Lctl_step  .eq.   2   )) then
+
+        print*, 'test true ---------------------'
 *
 *        Make sure we only do this once per target date
-         Done_Inincr = xnday2
+         if(Lctl_step.ne.2)Done_Inincr = xnday2
 *
          xnerr = newdate( xnday1, xndate1,xndate2, -3 )
          if (Lun_out.gt.0) write(Lun_out,1000) xndate1,xndate2

@@ -1,0 +1,40 @@
+#
+#   Common recipes for models
+#
+include $(MODEL_PATH)/Makefile_$(EC_ARCH)
+RCOMPIL = r.compile $(MPI) $(OMP)
+PATCH   =
+OPTF    =
+#
+MODLIBPATH  = $(MODEL_PATH)/lib/$(EC_ARCH)$(ABI)
+
+V4D         = v4d_stubs
+#V4D         = "v4d modulopt prof_003"
+
+PHY_VERSION = 4.4.4
+PHYLIBPATH  = $(ARMNLIB)/modeles/PHY/v_$(PHY_VERSION)/lib/$(EC_ARCH)$(ABI)
+#PHY        = phy_stubs
+PHY         = phy
+
+CHM_VERSION = 0.0
+CHMLIBPATH = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)/lib/$(EC_ARCH)$(ABI)
+CHM         = 
+#CHM        = chm
+
+CPLLIBPATH  = 
+#CPL         = cpl
+CPL         = 
+
+OTHERS   = $(COMM) rtools lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
+
+LIBPATH  = $(MODLIBPATH) $(PHYLIBPATH) $(CHMLIBPATH) $(CPLLIBPATH)
+LIBS     = $(MODEL) $(V4D) $(PHY) $(PATCH) $(CHM) $(CPL) $(OTHERS)
+
+LCLPO   = malib$(EC_ARCH)
+mainntr = main$(MODEL)ntr_$(BASE_ARCH)_${MODEL_VERSION}.Abs
+maindm  = main$(MODEL)dm_$(BASE_ARCH)_${MODEL_VERSION}.Abs
+rmpo:
+	/bin/rm -f $(LCLPO)/*.o
+#
+libdyn: rmpo $(OBJECTS)
+#

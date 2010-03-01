@@ -40,6 +40,7 @@
 * v3_22 - Pellerin G.       - add P_gwd_taufac
 * v3_22 - Spacek L.         - add P_gwd_cdblk
 * v3_22 - Talbot D.         - add PTOP_NML that reads PRES_PTOP
+* v3_28 - Dugas B.          - add P_clim_ininc_L
 *
 *object
 *     See above id.
@@ -220,6 +221,7 @@
       call phyopti('MOYHR'   , P_out_moyhr    ,       1, 'SET' )
 *
       call phyoptl('CLIMAT'  , P_clim_clima_L ,       1, 'SET' )
+      call phyoptl('ININCR'  , P_clim_ininc_L ,       1, 'SET' )
       call phyoptl('STRATOS' , P_str_strato_L ,       1, 'SET' )
 *
       call phyopti('LIN_V4D'   , V4dg_conf    ,       1, 'SET' )
@@ -261,7 +263,7 @@
          call getbus1 (volnm,volon,voldc,volpar,p_bvol_siz,maxbus,
      $                                                  'V',prout)
          call inikey
-         if (V4dg_conf.gt.0) call inikey_tr
+c         if (V4dg_conf.gt.0) call inikey_tr
       else
          if (lun_out.gt.0) write (lun_out,9000) 
      $        max(p_bent_top,p_bdyn_top,p_bper_top,p_bvol_top)

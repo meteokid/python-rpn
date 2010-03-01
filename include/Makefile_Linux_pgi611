@@ -4,6 +4,3 @@ MPI    = -mpi
 RMN    = rmn_008
 COMM   = rpn_comm
 PRIV   = priv
-#OMP   = -mp -lpthreads
-
-
