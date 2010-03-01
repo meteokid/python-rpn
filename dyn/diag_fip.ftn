@@ -4,15 +4,15 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine diag_fip(F_fip,F_csh,F_t,F_qsec,F_fis,
+      subroutine diag_fip(F_fip,F_s,F_t,F_q,F_fis,
      $                                  i0,in,j0,jn,nk)
 *     
       implicit none
 *     
       integer i0,in,j0,jn,nk
       real F_fip(LDIST_SHAPE,0:Nk+1)
-      real F_csh(LDIST_SHAPE), F_t(LDIST_SHAPE,Nk+1)
-      real F_qsec(LDIST_SHAPE,0:Nk+1), F_fis(LDIST_SHAPE)
+      real F_s(LDIST_SHAPE), F_t(LDIST_SHAPE,Nk+1)
+      real F_q(LDIST_SHAPE,0:Nk+1), F_fis(LDIST_SHAPE)
 *
 *author
 *
@@ -28,10 +28,9 @@
 *----------------------------------------------------------------
 * F_fip        O    - perturbation hydrostatic geopotential height
 *                     Note the virtual levels!
-* F_csh        I    - hydrostatic pressure at surface from 
-*                     csh=2*sinh(s/2)*exp(s/2), s=ln(pis/Zs)
+* F_s          I    - log(pis/pistars)
 * F_t          I    - temperature
-* F_qsec       I    - non-hydro perturbation of log(p)
+* F_q          I    - non-hydro perturbation of log(p)
 * F_fis        I    - surface geopotential height
 * i0,in,j0,jn  I    - index over which computation will be made.
 *
@@ -47,8 +46,8 @@
 *     
 **
       integer i,j,k,nij
-      real*8  one,half,pr1_8,xxx,yyy
-      real*8 piop(i0:in,j0:jn,nk+1),qpmqs(i0:in,j0:jn,0:nk+1)
+      real*8  one,half,pr1_8,yyy
+      real*8 piop(i0:in,j0:jn,nk+1)
       real*8 xtmp_8 (i0:in,j0:jn)
 *
       parameter( one = 1.d0, half = .5d0 )
@@ -65,7 +64,7 @@
 
       nij=(in - i0 + 1)*(jn - j0 + 1)
 
-!$omp parallel private (pr1_8,xxx,yyy,xtmp_8)
+!$omp parallel private (pr1_8,yyy,xtmp_8)
 *
       if(Schm_hydro_L)then
 !$omp do
@@ -82,8 +81,7 @@
          do k=1,G_nk+1
             do j=j0,jn
             do i=i0,in
-               xtmp_8(i,j)=-half*(F_qsec(i,j,k  )+
-     $                         F_qsec(i,j,k-1))
+               xtmp_8(i,j)=-half*(F_q(i,j,k)+F_q(i,j,k-1))
             end do
             end do   
             call vexp(piop(i0,j0,k),xtmp_8,nij)
@@ -91,24 +89,12 @@
 !$omp enddo
       endif
 *      
-!$omp do
-       do k=0,l_nk+1
-         do j= j0, jn
-         do i= i0, in
-            xtmp_8(i,j) = one + Ver_boz_8%m(k)*F_csh(i,j)
-         enddo
-         enddo
-         call vlog ( qpmqs(i0,j0,k), xtmp_8, nij )
-      enddo
-!$omp enddo
-*
-      xxx=Ver_zodz_8(G_nk+1)
-      yyy=half*Dcst_rgasd_8*Cstv_tstr_8/xxx
+      yyy=half*Dcst_rgasd_8*Cstv_tstr_8*Ver_dz_8%t(G_nk+1)
 !$omp do 
       do j=j0,jn
       do i=i0,in
          pr1_8=piop(i,j,G_nk+1)/Cstv_tstr_8*
-     $        (one+xxx*(qpmqs(i,j,G_nk+1)-qpmqs(i,j,G_nk)))
+     $        (one+Ver_dbdz_8%t(G_nk+1)*F_s(i,j))
          F_fip(i,j,G_nk+1)=F_fis(i,j)-yyy*(F_t(i,j,G_nk+1)*pr1_8-one)
       end do
       end do
@@ -118,11 +104,10 @@
 *     Note that index on F_fip goes to zero.
       do j=j0,jn
          do k= G_nk+1,1,-1
-         xxx=Ver_zodz_8(k)
-         yyy=Dcst_rgasd_8*Cstv_tstr_8/xxx
+         yyy=Dcst_rgasd_8*Cstv_tstr_8*Ver_dz_8%t(k)
          do i=i0,in
             pr1_8=piop(i,j,k)/Cstv_tstr_8*
-     $            (one+xxx*(qpmqs(i,j,k)-qpmqs(i,j,k-1)))
+     $            (one+Ver_dbdz_8%t(k)*F_s(i,j))
             F_fip(i,j,k-1)=F_fip(i,j,k)+yyy*(F_t(i,j,k)*pr1_8-one)
          end do
          end do

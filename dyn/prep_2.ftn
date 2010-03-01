@@ -12,8 +12,8 @@
 #include "model_macros_f.h"
 *
       subroutine prep_2 ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, 
-     $                    F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rcn  ,F_rth ,
-     $                    F_rw  , F_rvv,F_rhell,
+     $                    F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rc   ,F_rt ,
+     $                    F_rw  ,F_rf  ,F_oru  ,F_orv  ,
      $                    DIST_DIM, ni, nj, Nk )
 *
       implicit none
@@ -24,9 +24,9 @@
      $     F_rvw1  (DIST_SHAPE,Nk)  ,F_rvw2  (DIST_SHAPE,Nk)  ,
      $     F_xct1  (ni,nj,Nk)       ,F_yct1  (ni,nj,Nk)       ,
      $     F_zct1  (ni,nj,Nk)       ,F_fis   (DIST_SHAPE)     ,
-     $     F_rcn   (DIST_SHAPE,Nk)  ,F_rth   (DIST_SHAPE,Nk+1),
-     $     F_rw    (DIST_SHAPE,Nk+1),F_rvv   (DIST_SHAPE,Nk+1),
-     $     F_rhell (DIST_SHAPE,Nk)
+     $     F_rc    (DIST_SHAPE,Nk)  ,F_rt    (DIST_SHAPE,Nk+1),
+     $     F_rw    (DIST_SHAPE,Nk+1),F_rf    (DIST_SHAPE,Nk+1),
+     $     F_oru   (DIST_SHAPE,Nk)  ,F_orv   (DIST_SHAPE,Nk)
 *
 *author
 *     Alain Patoine 
@@ -62,23 +62,15 @@
 #include "cori.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
-#include "matlab.cdk"
 *
 *modules
       integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, longueur
       real*8  x, y, z, cx, cy, cz, rx, ry, rz, b1ob0, mumu, tot,
-     $        a1, a2, a3, b1, b2, b3, zero, half, one, four
-      real    rdiv(DIST_SHAPE), w_rth(DIST_SHAPE)
+     $        a1, a2, a3, b1, b2, b3, zero, half, one, four, xxx, yyy
+      real    rdiv(DIST_SHAPE), w_rt(DIST_SHAPE)
 *
       parameter( zero=0.d0, half=.5d0, one=1.d0, four=4.d0 )
 **
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_prep_2.bin',
-     $        status='replace',form='unformatted')
-         write(62)G_ni-lam_pil_w-lam_pil_e
-         write(62)G_nk
-      endif
 *     __________________________________________________________________
 *
 ******************************************************************
@@ -102,7 +94,7 @@
          if (l_north) jn= l_nj-pil_n +2
       endif
 
-!$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,mumu,rdiv)
+!$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,mumu,rdiv,xxx,yyy)
 !$omp do
       do 100 k=1,l_nk
       do 100 j= j0, jn
@@ -210,7 +202,7 @@
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j0, jn
          do i= i0, in
-            F_ru(i,j,k) =  F_ru(i,j,k) + 
+            F_ru(i,j,k) =  F_oru(i,j,k) + 
      $                   inuvl_wxxu3_8(i,1)*F_ruw2(i-1,j,k)
      $                 + inuvl_wxxu3_8(i,2)*F_ruw2(i  ,j,k)
      $                 + inuvl_wxxu3_8(i,3)*F_ruw2(i+1,j,k)
@@ -221,7 +213,7 @@
 *
          do j= j00, jnn
          do i= i00, inn
-            F_rv(i,j,k) =  F_rv(i,j,k) +
+            F_rv(i,j,k) =  F_orv(i,j,k) +
      $                   inuvl_wyyv3_8(j,1)*F_rvw2(i,j-1,k)
      $                 + inuvl_wyyv3_8(j,2)*F_rvw2(i,j  ,k)
      $                 + inuvl_wyyv3_8(j,3)*F_rvw2(i,j+1,k)
@@ -231,7 +223,7 @@
          if (.not.G_lam) then
             if (l_south) then
             do i = 1, l_ni
-            F_rv(i,1,k) = F_rv(i,1,k) +
+            F_rv(i,1,k) = F_orv(i,1,k) +
      $                  inuvl_wyyv3_8(1,2)*F_rvw2(i,1,k)
      $                + inuvl_wyyv3_8(1,3)*F_rvw2(i,2,k)
      $                + inuvl_wyyv3_8(1,4)*F_rvw2(i,3,k)
@@ -239,7 +231,7 @@
             endif
             if (l_north) then
             do i = 1, l_ni
-            F_rv(i,l_njv,k) = F_rv(i,l_njv,k) +
+            F_rv(i,l_njv,k) = F_orv(i,l_njv,k) +
      $                      inuvl_wyyv3_8(l_njv,1)*F_rvw2(i,l_njv-1,k)
      $                    + inuvl_wyyv3_8(l_njv,2)*F_rvw2(i,l_njv  ,k)
      $                    + inuvl_wyyv3_8(l_njv,3)*F_rvw2(i,l_njv+1,k)
@@ -291,7 +283,7 @@
 *        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
-            F_rcn(i,j,k) = rdiv(i,j) - F_rcn(i,j,k) / Cstv_tau_8
+            F_rc(i,j,k) = rdiv(i,j) - F_rc(i,j,k) / Cstv_tau_8
          end do
          end do
 *
@@ -301,13 +293,13 @@
 !$omp do
       do k=1,l_nk+1
 *        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*        Computing RX stored in Rth & RQ(non-hydro) stored in Rvv
+*        Computing RX stored in Rt & RQ(non-hydro) stored in rq
 *        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
-            w_rth(i,j)    =      F_rth(i,j,k)
-            F_rth (i,j,k) = b2 * F_rth(i,j,k)
-*                                At this stage, F_rth=RX (hydro)
+            w_rt(i,j)    =      F_rt(i,j,k)
+            F_rt (i,j,k) = b2 * F_rt(i,j,k)
+*                                At this stage, F_rt=RX (hydro)
          end do
          end do
          if (.not. Schm_hydro_L) then
@@ -316,11 +308,11 @@
 *           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
-               F_rvv(i,j,k) = a1 *   F_rw (i,j,k) +  a2 * F_rvv(i,j,k) 
-               F_rth(i,j,k) =        F_rth(i,j,k) +  b2 * F_rvv(i,j,k)
-               F_rvv(i,j,k) = b1 * ( F_rvv(i,j,k) -  b3 * w_rth(i,j) )
-*                                At this stage, F_rth = RX (non-hydro)
-*                                At this stage, F_rvv = RQ
+               F_rf(i,j,k) = a1 *   F_rw(i,j,k) +  a2 * F_rf(i,j,k) 
+               F_rt(i,j,k) =        F_rt(i,j,k) +  b2 * F_rf(i,j,k)
+               F_rf(i,j,k) = b1 * ( F_rf(i,j,k) -  b3 * w_rt(i,j) )
+*                                At this stage, F_rt = RX (non-hydro)
+*                                At this stage, F_rf = RQ
             end do
             end do
          endif 
@@ -332,19 +324,20 @@
 ****************************************
 !$omp do
       do k=1,l_nk
+         xxx=one + half * Ver_dz_8%t(k+1)
+         yyy=one - half * Ver_dz_8%t(k)
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
-            F_rhell(i,j,k) = Ver_hz_8%m(k)   * F_rcn(i,j,k) 
-     $                     + Ver_z_8%t (k  ) * F_rth(i,j,k  ) 
-     $                     - Ver_z_8%t (k+1) * F_rth(i,j,k+1)
+            F_rc(i,j,k) = Ver_dz_8%m(k) * F_rc(i,j,k) 
+     $                     - xxx * F_rt(i,j,k+1) + yyy * F_rt(i,j,k)
          end do
          end do
          if (.not. Schm_hydro_L) then    
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
-               F_rhell(i,j,k) = F_rhell(i,j,k) + half *
-     $                          ( Ver_hz_8%t(k  ) * F_rvv(i,j,k  )
-     $                          + Ver_hz_8%t(k+1) * F_rvv(i,j,k+1) )
+               F_rc(i,j,k) = F_rc(i,j,k) + half *
+     $                          ( Ver_dz_8%t(k  ) * F_rf(i,j,k  )
+     $                          + Ver_dz_8%t(k+1) * F_rf(i,j,k+1) )
             end do
             end do
          endif
@@ -354,28 +347,15 @@
 *     Applying boundary conditions.
       do j= 1+pil_s, l_nj-pil_n
       do i= 1+pil_w, l_ni-pil_e
-         F_rth  (i,j,l_nk+1) = F_rth  (i,j,l_nk+1) - a3 * F_fis(i,j)
-         F_rhell(i,j,1)      = F_rhell(i,j,1)
-     $                                - Ver_cstp_8 * F_rth(i,j,1)
-         F_rhell(i,j,l_nk)   = F_rhell(i,j,l_nk)
-     $                                + Ver_cssp_8 * F_rth(i,j,l_nk+1)
+         F_rt  (i,j,l_nk+1) = F_rt  (i,j,l_nk+1) - a3 * F_fis(i,j)
+         F_rc(i,j,1)      = F_rc(i,j,1)
+     $                                - Ver_cstp_8 * F_rt(i,j,1)
+         F_rc(i,j,l_nk)   = F_rc(i,j,l_nk)
+     $                                + Ver_cssp_8 * F_rt(i,j,l_nk+1)
       end do
       end do
 !$omp enddo      
 !$omp end parallel
-      if(matlab_write_L)then      
-         call write_matlab_3d(62,F_ruw1)
-         call write_matlab_3d(62,F_ruw2)
-         call write_matlab_3d(62,F_ru)
-         call write_matlab_3d_th(62,F_rth)
-         call write_matlab_3d(62,F_rcn)
-         if (.not. Schm_hydro_L) then 
-            call write_matlab_3d_th(62,F_rvv)
-         endif
-         call write_matlab_3d(62,F_rhell)
-         write(62)Cstv_tau_8
-         if(Ptopo_myproc.eq.0)close(62)
-      endif
 *
 *     __________________________________________________________________
 *

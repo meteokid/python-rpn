@@ -37,7 +37,7 @@
       key(1)=VMM_KEY(ut1)
       key(2)=VMM_KEY(vt1)
       key(3)=VMM_KEY(tt1)
-      key(4)=VMM_KEY(psdt1)
+      key(4)=VMM_KEY(zdt1)
       key(5)=VMM_KEY(st1)
       nvar = 5
 *
@@ -50,7 +50,7 @@
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(zdt1)
       err = VMM_GET_VAR(st1)
       if (.not.Schm_hydro_L) then
          err = VMM_GET_VAR(wt1)
@@ -69,7 +69,7 @@
             do i=1,l_ni
                vt1  (i,jj,k) = vt1  (i,jin,k)
                tt1  (i,jj,k) = tt1  (i,jin,k)
-               psdt1(i,jj,k) = psdt1(i,jin,k)
+               zdt1(i,jj,k) = zdt1(i,jin,k)
             end do
             do i=1,l_niu
                ut1  (i,jj,k) = ut1  (i,jin,k)
@@ -81,7 +81,7 @@
          jj  = l_nj-pil_n+j
          do i=1,l_ni
             tt1  (i,jj,G_nk+1) = tt1  (i,jin,G_nk+1)
-            psdt1(i,jj,G_nk+1) = psdt1(i,jin,G_nk+1)
+            zdt1(i,jj,G_nk+1) = zdt1(i,jin,G_nk+1)
             st1  (i,jj) = st1  (i,jin)
          end do
          end do
@@ -106,7 +106,7 @@
             do i=1,l_ni
                vt1  (i,jj,k) = vt1  (i,jin,k)
                tt1  (i,jj,k) = tt1  (i,jin,k)
-               psdt1(i,jj,k) = psdt1(i,jin,k)
+               zdt1(i,jj,k) = zdt1(i,jin,k)
             end do
             do i=1,l_niu
                ut1  (i,jj,k) = ut1  (i,jin,k)
@@ -118,7 +118,7 @@
          jj  = pil_s-j+1
          do i=1,l_ni
             tt1  (i,jj,G_nk+1) = tt1  (i,jin,G_nk+1)
-            psdt1(i,jj,G_nk+1) = psdt1(i,jin,G_nk+1)
+            zdt1(i,jj,G_nk+1) = zdt1(i,jin,G_nk+1)
             st1  (i,jj) = st1  (i,jin)
          end do
          end do

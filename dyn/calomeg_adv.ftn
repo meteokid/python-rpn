@@ -42,13 +42,15 @@
       
 *     __________________________________________________________________
 *
-      i0=1-G_halox
-      in=l_ni+G_halox
-      j0=1-G_haloy
-      jn=l_nj+G_haloy
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
 *
       if ( Lctl_step .eq. 0 .and. F_checkstep_L)then
 *
+!$omp parallel
+!$omp do
          do k=1,l_nk+1
             do j=j0,jn
             do i=i0,in
@@ -56,24 +58,25 @@
             end do
             end do
          end do
+!$omp enddo
+!$omp end parallel
 *
       else
 *
-!$omp parallel do
+!$omp parallel
+!$omp do
          do j=j0,jn
             do i=i0,in
                xtmp(i,j)=F_st1(i,j)
             end do
             call vsexp (ytmp(i0,j),xtmp(i0,j),(in-i0+1))
          end do
-!$omp end parallel do
-         call vsexp (ytmp,xtmp,(maxx-minx+1)*(maxy-miny+1))
-!$omp parallel
+!$omp enddo
 !$omp do
          do k=1,l_nk+1
             do j=j0,jn
             do i=i0,in
-               F_ww (i,j,k) = (Ver_pia_8%t(k) + Ver_pib_8%t(k)*ytmp(i,j)
+               F_ww (i,j,k) = (Ver_a_8%t(k) + Ver_b_8%t(k)*ytmp(i,j)
      $              - F_piup(i,j,k) )/Cstv_dt_8            
             end do
             end do

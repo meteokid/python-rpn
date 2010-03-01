@@ -9,7 +9,6 @@
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* csh                | csh = 2*exp(s/2)*sinh(s/2)                      |
 * tdia               | Schm_phyms_L=T : diagnostic temperature at      |
 *                    | special levels (level 1/4,level Nk+1/4,surface) |
 * udia               | as above but for u                              |
@@ -22,12 +21,9 @@
 *
 #endif
 *
-      DCL_VMMVAR( func, csh    , real  ,(LDIST_SHAPE))
       DCL_VMMVAR( func, tdia   , real  ,(LDIST_SHAPE,3))
       DCL_VMMVAR( func, udia   , real  ,(LDIST_SHAPE,3))
       DCL_VMMVAR( func, vdia   , real  ,(LDIST_SHAPE,3))
       DCL_VMMVAR( func, hdia   , real  ,(LDIST_SHAPE))
-c      DCL_VMMVAR( func, that_8 , real*8,(l_nk+1))
-c      DCL_VMMVAR( func, dlnth_8, real*8,(l_nk+1))
       DCL_VMMVAR( func, that_8 , real,(2*(l_nk+1)))
       DCL_VMMVAR( func, dlnth_8, real,(2*(l_nk+1)))

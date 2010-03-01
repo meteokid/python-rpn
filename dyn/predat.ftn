@@ -19,7 +19,7 @@
 * v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
 * v3_21 - Desgagne M.       - Revision OpenMP
 * v3_22 - Belanger/Lee      - Introduce vtap
-* v3_22 - Tanguay M.        - Change postitioning of hzd_hoffld for psd
+* v3_22 - Tanguay M.        - Change postitioning of hzd_hoffld for zd
 * v3_30 - Lee V.            - remove call to rpn_comm_xch
 * v4_00 - Plante A.         - Modif for staggering formulation 1 C. Girard.
 *                             Note : s is now computed in readdyn.ftn or mtn_case.ftn
@@ -53,22 +53,20 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "func.cdk"
-#include "matlab.cdk"
 #include "ptopo.cdk"
 #include "theo.cdk"
 *
       integer i, j, k, longueur, key(3), pnerr, kp, km
-      real  qpmqs(LDIST_SHAPE,0:G_nk+1)
 *
       integer  vmmlod, vmmget, vmmuld, nkey
       external vmmlod, vmmget, vmmuld
 *
-      real dummy,my_csh(LDIST_SHAPE)
+      real dummy
       real*8 zsurf_8            
 **
 *     __________________________________________________________________
 *
-      zsurf_8 = Cstv_pisrf_8            
+      zsurf_8 = log(Cstv_pisrf_8)
 
       if (Lun_debug_L) write (Lun_out,1000)
       if ( V4dg_conf.eq.0 ) then
@@ -87,8 +85,7 @@
 !$omp do
       do j = 1, l_nj
          do i = 1, l_ni
-            Ind_s(i,j)=dlog(Ind_s(i,j)/zsurf_8)
-            my_csh (i,j) = 2.*exp(Ind_s(i,j)*.5)*sinh(Ind_s(i,j)*.5)
+            Ind_s(i,j)=log(Ind_s(i,j))-zsurf_8
          end do
       end do
 !$omp enddo
@@ -104,19 +101,9 @@
       end do
 !$omp enddo
 *
-!$omp do
-      do k = 0, G_nk+1
-         do j = 1, l_nj
-         do i = 1, l_ni
-            qpmqs(i,j,k)=dlog(1.d0+Ver_boz_8%m(k)*my_csh(i,j))
-         end do
-         end do
-      end do
-!$omp enddo
-*
 !$omp end parallel
 *
-         call diag_fip1(Ind_fip,Ind_t,qpmqs,Ind_qsec,Ind_topo,
+         call diag_fip(Ind_fip,Ind_s,Ind_t,Ind_q,Ind_topo,
      $                                     1,l_ni,1,l_nj,G_nk)         
 *
       if(Schm_eulmtemp_L) then
@@ -139,7 +126,7 @@
             kp=min(k+1,G_nk+1)
             km=max(k-1,1)
             dlnth_8(k)=(that_8(kp)-that_8(km))
-     $             /(2.d0*Ver_hz_8%t(k)*(that_8(k)+Cstv_tstr_8))
+     $             /(2.d0*Ver_dz_8%t(k)*(that_8(k)+Cstv_tstr_8))
          end do
       else
          do k= 1, G_nk+1
@@ -154,12 +141,12 @@
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
 *
       if(.false.)then
-         call uvs2psd (Ind_psd,Ind_u,Ind_v,my_csh,LDIST_DIM,l_nk)
+c        call uvs2psd (Ind_zd,Ind_u,Ind_v,my_csh,LDIST_DIM,l_nk)
       else
          do k= 1, G_nk+1
             do j = 1, l_nj
                do i = 1, l_ni
-                  Ind_psd(i,j,k)=0.
+                  Ind_zd(i,j,k)=0.
                end do
             end do
          end do
@@ -168,12 +155,12 @@
 
 
 c     if (Acid_test_L) then 
-c     call glbstat (Ind_psd,'Ipsd',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
+c     call glbstat (Ind_zd,'Izd',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
 c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
 c     call glbstat (Ind_td,'I_td',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
 c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
 
-      if (Hzd_t1_0_L) call hzd_hoffld (Ind_psd, LDIST_DIM, G_nk+1, 3)
+      if (Hzd_t1_0_L) call hzd_hoffld (Ind_zd, LDIST_DIM, G_nk+1, 3)
 *
       if ( .not. Schm_hydro_L ) then
 !$omp parallel
@@ -199,14 +186,14 @@ c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
 *        --------------------------------------------------------
          call v4d_predat (V4dg_part)
 *
-*        Set qsec=0 explicitly when .not.Schm_hydro_L and 4D-Var
+*        Set q=0 explicitly when .not.Schm_hydro_L and 4D-Var
 *        -----------------------------------------------------
          if ( V4dg_part.eq.3.and..not.Schm_hydro_L ) then
 *
            do k=1,G_nk
            do j=1,l_nj
            do i=1,l_ni
-              Ind_qsec(i,j,k) = 0.0
+              Ind_q(i,j,k) = 0.0
            end do
            end do
            end do
@@ -215,27 +202,6 @@ c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
 *
       endif
 
-      if(matlab_write_L)then 
-         if(Ptopo_myproc.eq.0)then
-            open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_predat.bin',
-     $        status='replace',form='unformatted')
-            write(62)G_ni-lam_pil_w-lam_pil_e
-            write(62)G_nk
-            write(62)Cstv_tstr_8
-         endif
-         call write_matlab_2d(62,Ind_topo)
-         call write_matlab_3d_v(62,Ind_fip)
-         call write_matlab_3d_th(62,Ind_t)
-         call write_matlab_2d(62,Ind_s)
-         call write_matlab_2d(62,my_csh)
-         call write_matlab_3d_th(62,Ind_psd)
-         call write_matlab_3d(62,Ind_u)
-         if ( .not. Schm_hydro_L ) then
-            call write_matlab_3d_th(62,Ind_w)
-         endif
-         if(Ptopo_myproc.eq.0)close(62)
-      endif
 *
 *     __________________________________________________________________
       return

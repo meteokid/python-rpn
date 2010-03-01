@@ -42,14 +42,14 @@
       pnlkey1(4) = VMM_KEY(vth)
       pnlkey1(5) = VMM_KEY(vt1)
       pnlkey1(6) = VMM_KEY(vt0)
-      pnlkey1(7) = VMM_KEY(psdth)
-      pnlkey1(8) = VMM_KEY(psdt1)
-      pnlkey1(9) = VMM_KEY(psdt0)
+      pnlkey1(7) = VMM_KEY(zdth)
+      pnlkey1(8) = VMM_KEY(zdt1)
+      pnlkey1(9) = VMM_KEY(zdt0)
 *
       pnerr = vmmlod(pnlkey1,9)
-      pnerr = VMM_GET_VAR(psdth)
-      pnerr = VMM_GET_VAR(psdt1)
-      pnerr = VMM_GET_VAR(psdt0)
+      pnerr = VMM_GET_VAR(zdth)
+      pnerr = VMM_GET_VAR(zdt1)
+      pnerr = VMM_GET_VAR(zdt0)
       pnerr = VMM_GET_VAR(uth)
       pnerr = VMM_GET_VAR(vth)
       pnerr = VMM_GET_VAR(ut1)
@@ -63,7 +63,7 @@
       call tmg_start0 ( 12, 'HZD1D    ' )
       if (Hzd_t0_0_L) call hzd_hoffld (ut0,   LDIST_DIM, G_nk, 1)
       if (Hzd_t0_0_L) call hzd_hoffld (vt0,   LDIST_DIM, G_nk, 2)
-      if (Hzd_t0_0_L) call hzd_hoffld (psdt0, LDIST_DIM, G_nk+1, 3)
+      if (Hzd_t0_0_L) call hzd_hoffld (zdt0, LDIST_DIM, G_nk+1, 3)
       call tmg_stop0 (12)
       endif
 *
@@ -85,7 +85,7 @@
       do k=1,l_nk+1
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
-            psdth(i,j,k) = 0.5 * psdt0(i,j,k) + 0.5 * psdt1(i,j,k)
+            zdth(i,j,k) = 0.5 * zdt0(i,j,k) + 0.5 * zdt1(i,j,k)
          end do
          end do
       end do

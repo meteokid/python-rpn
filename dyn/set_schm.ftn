@@ -58,30 +58,20 @@
       Schm_nith = G_nk
 
 * 1.5 Validate non-hydrostatic parameter
-
-      Schm_nonhy_8 = min(max(Schm_nonhy_8,ZERO_8),ONE_8)
-*
-      if(Schm_hydro_L)then
-         Schm_nonhy_8=0.d0
-      else
-         Schm_nonhy_8=1.d0
-      endif
-*     
+      
       Cstv_tau_8  = Cstv_dt_8 * ( Offc_b0_8/Offc_a0_8 )      
 *
-      Ver_epsilon_8=Schm_nonhy_8*Dcst_rgasd_8*Cstv_tstr_8/
-     $     (Dcst_grav_8*Dcst_grav_8*Cstv_tau_8*Cstv_tau_8)
+      if(Schm_hydro_L)then
+         Ver_epsilon_8=0.d0
+      else
+         Ver_epsilon_8=Dcst_rgasd_8*Cstv_tstr_8/
+     $        (Dcst_grav_8*Dcst_grav_8*Cstv_tau_8*Cstv_tau_8)
+      endif
       Ver_gamma_8=Dcst_cappa_8/(Dcst_cappa_8+Ver_epsilon_8)
       Ver_gokt2RT_8= Ver_gamma_8/
      $     (Dcst_cappa_8*Cstv_tau_8**2*Dcst_rgasd_8*Cstv_tstr_8)
 *
-      if(.not.Schm_cptop_L)then
-         write(Lun_out,*)'Constant pressure top only'
-         call gem_stop('set_dync',-2)
-      endif
-
       Cstv_hco0_8 = Dcst_rayt_8 * Dcst_rayt_8 * Ver_gokt2RT_8
-      Cstv_hco1_8 = Cstv_hco0_8 * Ver_epsilon_8
 *
  1000 format(
      %/,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R SET_SCHM)',

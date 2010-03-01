@@ -12,11 +12,13 @@
 *--------------------|-------------------------------------------------|
 * Nest_u             | x component of velocity                         |
 * Nest_v             | y component of velocity                         |
-* Nest_w             | z component of velocity                         |
 * Nest_t             | T (temperature)                                 |
-*--------------------|-------------------------------------------------|
-* Nest_psd           | pi* dot (vert. vel. in pi* coord.)              |
+* Nest_zd            |                                                 |
 * Nest_s             | ln (dpi/dpi*)                                   |
+*--------------------|-------------------------------------------------|
+* Nest_w             | z component of velocity                         |
+* Nest_q             |                                                 |
+*--------------------|-------------------------------------------------|
 * Nest_tr            | tracer 3d variables                             |
 *----------------------------------------------------------------------|
 *
@@ -25,11 +27,11 @@
       MARK_COMMON_BEG (nest)
       DCL_VMMVAR( nest, nest_u   , real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( nest, nest_v   , real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( nest, nest_w   , real, (LDIST_SHAPE,l_nk+1) )
       DCL_VMMVAR( nest, nest_t   , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_qsec, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( nest, nest_psd , real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( nest, nest_zd  , real, (LDIST_SHAPE,l_nk+1) )
       DCL_VMMVAR( nest, nest_s   , real, (LDIST_SHAPE     ) )
+      DCL_VMMVAR( nest, nest_w   , real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( nest, nest_q   , real, (LDIST_SHAPE,0:l_nk+1) )
       DCL_VMMVAR( nest, nest_tr  , real, (LDIST_SHAPE,l_nk+1,*) )
 
       DCL_VMMVAR( nest, nest_pr  , real, (LDIST_SHAPE,l_nk,*) )
@@ -40,11 +42,11 @@
 
       DCL_VMMVAR( nest, nest_uf   , real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( nest, nest_vf   , real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( nest, nest_wf   , real, (LDIST_SHAPE,l_nk+1) )
       DCL_VMMVAR( nest, nest_tf   , real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( nest, nest_qsecf, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( nest, nest_psdf , real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( nest, nest_zdf  , real, (LDIST_SHAPE,l_nk+1) )
       DCL_VMMVAR( nest, nest_sf   , real, (LDIST_SHAPE     ) )
+      DCL_VMMVAR( nest, nest_wf   , real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( nest, nest_qf   , real, (LDIST_SHAPE,0:l_nk+1) )
       DCL_VMMVAR( nest, nest_trf  , real, (LDIST_SHAPE,l_nk+1,*) )
 
       MARK_COMMON_END (nest)

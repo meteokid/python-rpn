@@ -36,8 +36,8 @@
       key(1)=VMM_KEY(ut1)
       key(2)=VMM_KEY(vt1)
       key(3)=VMM_KEY(tt1)
-      key(4)=VMM_KEY(psdt1)
-      key(5)=VMM_KEY(qsect1)
+      key(4)=VMM_KEY(zdt1)
+      key(5)=VMM_KEY(qt1)
       key(6)=VMM_KEY(st1)
       nvar = 6
 *
@@ -50,8 +50,8 @@
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(psdt1)
-      err = VMM_GET_VAR(qsect1)
+      err = VMM_GET_VAR(zdt1)
+      err = VMM_GET_VAR(qt1)
       err = VMM_GET_VAR(st1)
       if (.not.Schm_hydro_L) then
          err = VMM_GET_VAR(wt1)
@@ -76,8 +76,8 @@
             jj  = l_nj-pil_n+j
             do i=1,l_ni
                tt1   (i,jj,kt) = tt1   (i,jin,kt)
-               psdt1 (i,jj,kt) = psdt1 (i,jin,kt)
-               qsect1(i,jj,k)  = qsect1(i,jin,k)            
+               zdt1 (i,jj,kt) = zdt1 (i,jin,kt)
+               qt1(i,jj,k)  = qt1(i,jin,k)            
             end do
             do i=1,l_niu
                ut1   (i,jj,km) = ut1   (i,jin,km)
@@ -123,8 +123,8 @@
                iin = max(pil_w+1,l_ni-pil_e-i+1)
                ii  = l_ni-pil_e+i
                tt1   (ii,j,kt) = tt1   (iin,j,kt)
-               psdt1 (ii,j,kt) = psdt1 (iin,j,kt)
-               qsect1(ii,j,k)  = qsect1(iin,j,k)            
+               zdt1 (ii,j,kt) = zdt1 (iin,j,kt)
+               qt1(ii,j,k)  = qt1(iin,j,k)            
             end do
             end do
             do j=1,l_njv
@@ -174,8 +174,8 @@
             jj  = pil_s-j+1
             do i=1,l_ni
                tt1   (i,jj,kt) = tt1   (i,jin,kt)
-               psdt1 (i,jj,kt) = psdt1 (i,jin,kt)
-               qsect1(i,jj,k)  = qsect1(i,jin,k)            
+               zdt1 (i,jj,kt) = zdt1 (i,jin,kt)
+               qt1(i,jj,k)  = qt1(i,jin,k)            
             end do
             do i=1,l_niu
                ut1  (i,jj,km) = ut1  (i,jin,km)
@@ -221,8 +221,8 @@
                iin = min(l_ni-pil_e,pil_w+i)
                ii  = pil_w-i+1
                tt1   (ii,j,kt) = tt1   (iin,j,kt)
-               psdt1 (ii,j,kt) = psdt1 (iin,j,kt)
-               qsect1(ii,j,k)  = qsect1(iin,j,k)            
+               zdt1 (ii,j,kt) = zdt1 (iin,j,kt)
+               qt1(ii,j,k)  = qt1(iin,j,k)            
             end do
             end do
             do j=1,l_njv

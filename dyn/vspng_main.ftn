@@ -44,7 +44,7 @@
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      integer pnerr, pnlod, pnlkey1(10), i, j, k
+      integer pnerr, pnlod, pnlkey1(9), i, j, k
       real*8  ONE_8, bbb_8, eta_8
       real wk0(LDIST_SHAPE), wk1(LDIST_SHAPE)
       parameter( ONE_8 = 1. )
@@ -58,14 +58,13 @@
       pnlkey1(3)  = VMM_KEY(tt1)
       pnlkey1(4) = VMM_KEY(st0)
       pnlkey1(5) = VMM_KEY(st1)
-      pnlkey1(6) = VMM_KEY(csh)
-      pnlkey1(7) = VMM_KEY(fiptx)
-      pnlkey1(8) = VMM_KEY(topo)
-      pnlod = 8
+      pnlkey1(6) = VMM_KEY(fiptx)
+      pnlkey1(7) = VMM_KEY(topo)
+      pnlod = 7
       if (.not. Schm_hydro_L) then
-         pnlkey1(9) = VMM_KEY(wt1)
-         pnlkey1(10) = VMM_KEY(qsect1)
-         pnlod = 10
+         pnlkey1(8) = VMM_KEY(wt1)
+         pnlkey1(9) = VMM_KEY(qt1)
+         pnlod = 9
       endif
 *     - - - - - - - - - - - - - - -
       pnerr = vmmlod(pnlkey1,pnlod)
@@ -75,15 +74,14 @@
       pnerr = VMM_GET_VAR(tt1)
       pnerr = VMM_GET_VAR(st0)
       pnerr = VMM_GET_VAR(st1)
-      pnerr = VMM_GET_VAR(csh)
       pnerr = VMM_GET_VAR(fiptx)
       pnerr = VMM_GET_VAR(topo)
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(wt1)
-         pnerr = VMM_GET_VAR(qsect1)
+         pnerr = VMM_GET_VAR(qt1)
       else
          wt1_  = 0
-         qsect1_ = 0
+         qt1_ = 0
       endif
 *
       if (G_lam) then
@@ -91,7 +89,7 @@
          call vspng_drv_lam ( ut1, vt1, tt1, wt1, LDIST_DIM, G_nk )
       else
          if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
-         call vspng_drv (ut1,vt1,wt1,tt1,st1,csh,fiptx,qsect1,topo,
+         call vspng_drv (ut1,vt1,wt1,tt1,st1,fiptx,qt1,topo,
      $        LDIST_DIM,G_nk)
       endif
 *

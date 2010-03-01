@@ -101,20 +101,20 @@ c     print *,'dimxe=',dimxe,' dimye=',dimye
       pbcsu    = loc (BCS_values(             1))
       pbcsv    = loc (BCS_values( bcs_sz1   + 1))
       pbcst    = loc (BCS_values( bcs_sz1*2 + 1))
-      pbcspsd  = loc (BCS_values( bcs_sz1*3 + 1))
+      pbcszd   = loc (BCS_values( bcs_sz1*3 + 1))
       pbcss    = loc (BCS_values( bcs_sz1*4 + 1))
       pbcsuf   = loc (BCS_values( bcs_sz1*5 + 1))
       pbcsvf   = loc (BCS_values( bcs_sz1*6 + 1))
       pbcstf   = loc (BCS_values( bcs_sz1*7 + 1))
-      pbcspsdf = loc (BCS_values( bcs_sz1*8 + 1))
+      pbcszdf  = loc (BCS_values( bcs_sz1*8 + 1))
       pbcssf   = loc (BCS_values( bcs_sz1*9 + 1))
       nvar=9
 *
       if (.not. Schm_hydro_L) then
          pbcsw    = loc (BCS_values( bcs_sz1*(nvar+1) +   1))
-         pbcsqsec = loc (BCS_values( bcs_sz1*(nvar+2) +   1))
+         pbcsq    = loc (BCS_values( bcs_sz1*(nvar+2) +   1))
          pbcswf   = loc (BCS_values( bcs_sz1*(nvar+3) +   1))
-         pbcsqsecf= loc (BCS_values( bcs_sz1*(nvar+4) +   1))
+         pbcsqf   = loc (BCS_values( bcs_sz1*(nvar+4) +   1))
          nvar=13
       endif
 *

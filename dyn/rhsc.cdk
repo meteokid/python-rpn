@@ -11,20 +11,14 @@
 *--------------------|-------------------------------------------------|
 *   Contributions of time t1 to rhs of different equations             |
 *--------------------|-------------------------------------------------|
-* ru                 | momentum equation along x                       |
-* rv                 | momentum equation along y                       |
-* rw                 | momentum equation along z                       |
-* rfi                | vertical velocity equation                      |
-* rcn                | continuity equation                             |
-* rth                | thermodynamic equation                          |
-* rhu                | specific humidity equation                      |
-* rqc                | mixing ratio of cloud water/ice equation        |
+* rhsu               | momentum equation along x                       |
+* rhsv               | momentum equation along y                       |
+* rhst               | thermodynamic equation                          |
+* rhsc               | continuity equation                             |
+* rhsw               | momentum equation along z                       |
+* rhsf               | vertical velocity equation                      |
 *--------------------|-------------------------------------------------|
-* rd                 | rhs of horizontal divergence equations          |
-* r1                 | combined divergence and continuity equations    |
-*--------------------|-------------------------------------------------|
-* rhell              | linear component of rhs of Helmholtz equation   |
-* rheln              | non-linear component of rhs of Helmholtz eqn    |
+* rhsp               |        Helmholtz equation                       |
 *--------------------|-------------------------------------------------|
 * ruw1               | Ru interpolated from U_grid to G_grid           |
 * ruw2               | advective contributions for U                   |
@@ -40,21 +34,20 @@
 *changes to assure the equivalence statement below MARKS it.
 *
       MARK_COMMON_BEG (rhsc)
-      DCL_VMMVAR (rhsc,ru    ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,rv    ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,rw    ,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR (rhsc,rvv   ,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR (rhsc,rcn   ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,rth   ,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR (rhsc,rd    ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,rhell ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhsc,rhsu,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhsc,rhsv,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhsc,rhst,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (rhsc,rhsc,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhsc,rhsw,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (rhsc,rhsf,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (rhsc,rhsp,real,(LDIST_SHAPE,l_nk))
+*
       DCL_VMMVAR (rhsc,ruw1  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,rvw1  ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,r1    ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (rhsc,rheln ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,ruw2  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (rhsc,rvw2  ,real,(LDIST_SHAPE,l_nk))
+*
       MARK_COMMON_END (rhsc)
 
       character*8 rhsc_n_first(1)
-      equivalence (rhsc_n_first,VMM_NAM(ru))
+      equivalence (rhsc_n_first,VMM_NAM(rhsu))

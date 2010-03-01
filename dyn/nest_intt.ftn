@@ -69,20 +69,20 @@
       key1(1)  = VMM_KEY(nest_u)
       key1(2)  = VMM_KEY(nest_v)
       key1(3)  = VMM_KEY(nest_t)
-      key1(4)  = VMM_KEY(nest_psd)
+      key1(4)  = VMM_KEY(nest_zd)
       key1(5)  = VMM_KEY(nest_s)
       key1(6)  = VMM_KEY(nest_uf)
       key1(7)  = VMM_KEY(nest_vf)
       key1(8)  = VMM_KEY(nest_tf)
-      key1(9)  = VMM_KEY(nest_psdf)
+      key1(9)  = VMM_KEY(nest_zdf)
       key1(10) = VMM_KEY(nest_sf)
       nvar = 10
 *
       if (.not. Schm_hydro_L) then
          key1(11) = VMM_KEY(nest_w)
-         key1(12) = VMM_KEY(nest_qsec)
+         key1(12) = VMM_KEY(nest_q)
          key1(13) = VMM_KEY(nest_wf)
-         key1(14) = VMM_KEY(nest_qsecf)
+         key1(14) = VMM_KEY(nest_qf)
          nvar = 14
       endif
 *
@@ -90,18 +90,18 @@
       err = VMM_GET_VAR(nest_u)
       err = VMM_GET_VAR(nest_v)
       err = VMM_GET_VAR(nest_t)
-      err = VMM_GET_VAR(nest_psd)
+      err = VMM_GET_VAR(nest_zd)
       err = VMM_GET_VAR(nest_s)
       err = VMM_GET_VAR(nest_uf)
       err = VMM_GET_VAR(nest_vf)
       err = VMM_GET_VAR(nest_tf)
-      err = VMM_GET_VAR(nest_psdf)
+      err = VMM_GET_VAR(nest_zdf)
       err = VMM_GET_VAR(nest_sf)
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(nest_w)
-         err = VMM_GET_VAR(nest_qsec)
+         err = VMM_GET_VAR(nest_q)
          err = VMM_GET_VAR(nest_wf)
-         err = VMM_GET_VAR(nest_qsecf)
+         err = VMM_GET_VAR(nest_qf)
       endif
 *
       dayfrac = dble(Lctl_step)*Cstv_dt_8*rsid
@@ -124,7 +124,7 @@
                bcs_u(i) = bcs_uf(i)
                bcs_v(i) = bcs_vf(i)
                bcs_t(i) = bcs_tf(i)
-               bcs_psd(i) = bcs_psdf(i)
+               bcs_zd(i) = bcs_zdf(i)
                bcs_s(i) = bcs_sf(i)
             enddo
             if (.not. Schm_hydro_L) then
@@ -148,7 +148,7 @@
                nest_u  (i,j,kk)= nest_uf  (i,j,kk)
                nest_v  (i,j,kk)= nest_vf  (i,j,kk)
                nest_t  (i,j,k) = nest_tf  (i,j,k)
-               nest_psd(i,j,k) = nest_psdf(i,j,k)
+               nest_zd(i,j,k) = nest_zdf(i,j,k)
             end do
             end do
             end do
@@ -163,7 +163,7 @@
                do j= 1, l_nj 
                do i= 1, l_ni
                   nest_w    (i,j,kk)= nest_wf    (i,j,kk)
-                  nest_qsec (i,j,k) = nest_qsecf (i,j,k)
+                  nest_q (i,j,k) = nest_qf (i,j,k)
                end do
                end do
                end do
@@ -212,7 +212,7 @@
          bcs_u(i) = a*bcs_u(i) + b*bcs_uf(i)
          bcs_v(i) = a*bcs_v(i) + b*bcs_vf(i)
          bcs_t(i) = a*bcs_t(i) + b*bcs_tf(i)
-         bcs_psd(i) = a*bcs_psd(i) + b*bcs_psdf(i)
+         bcs_zd(i) = a*bcs_zd(i) + b*bcs_zdf(i)
          bcs_s(i) = a*bcs_s(i) + b*bcs_sf(i)
       enddo
       if (.not. Schm_hydro_L) then
@@ -234,7 +234,7 @@
          nest_u  (i,j,kk)= a*nest_u  (i,j,kk)+ b*nest_uf  (i,j,kk)
          nest_v  (i,j,kk)= a*nest_v  (i,j,kk)+ b*nest_vf  (i,j,kk)
          nest_t  (i,j,k) = a*nest_t  (i,j,k) + b*nest_tf  (i,j,k)
-         nest_psd(i,j,k) = a*nest_psd(i,j,k) + b*nest_psdf(i,j,k)
+         nest_zd(i,j,k) = a*nest_zd(i,j,k) + b*nest_zdf(i,j,k)
       end do
       end do
       end do
@@ -250,7 +250,7 @@
          do j= 1, l_nj 
          do i= 1, l_ni
             nest_w   (i,j,kk)= a*nest_w   (i,j,kk)+ b*nest_wf   (i,j,kk)
-            nest_qsec(i,j,k) = a*nest_qsec(i,j,k) + b*nest_qsecf(i,j,k)
+            nest_q(i,j,k) = a*nest_q(i,j,k) + b*nest_qf(i,j,k)
          end do
          end do
          end do

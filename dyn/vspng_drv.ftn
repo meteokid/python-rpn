@@ -2,7 +2,7 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine vspng_drv(F_u,F_v,F_w,F_t,F_s,F_csh,F_fi,F_qsec,
+      subroutine vspng_drv(F_u,F_v,F_w,F_t,F_s,F_fi,F_q,
      $     F_topo,DIST_DIM,Nk)
 *
       implicit none
@@ -10,9 +10,8 @@
       integer DIST_DIM, Nk
       real F_u   (DIST_SHAPE,Nk)    , F_v   (DIST_SHAPE,Nk)    ,
      $     F_w   (DIST_SHAPE,Nk+1)  , F_t   (DIST_SHAPE,Nk+1)  ,
-     $     F_s   (DIST_SHAPE)       , F_csh (DIST_SHAPE)       ,
-     $     F_fi  (DIST_SHAPE,0:Nk+1), F_qsec(DIST_SHAPE,0:Nk+1),
-     $     F_topo(DIST_SHAPE)
+     $     F_s   (DIST_SHAPE)       , F_fi  (DIST_SHAPE,0:Nk+1),
+     $     F_q   (DIST_SHAPE,0:Nk+1), F_topo(DIST_SHAPE)
 *
 *author
 *     Michel Desgagne  - October 2000
@@ -67,7 +66,6 @@
      $                                          aix_8,bix_8,cix_8,dix_8
       real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
       real*8 cy_8(l_nj+1), xp0_8(G_ni), yp0_8(G_nj)
-      real*8 exps_8(DIST_SHAPE)
       real*8 exner_8(DIST_SHAPE,Vspng_nk)
       real*8 work_iks1(1-G_halox:l_ni+G_halox,Vspng_nk)
       real*8 work_iks2(1-G_halox:l_ni+G_halox,Vspng_nk)
@@ -223,17 +221,14 @@
 !$omp parallel private(work_iks1,work_iks2)
 !$omp do
          do j=j0,jn
-            do i=i0,in
-               exner_8(i,j,1)=F_s(i,j)
-            end do
-            call vexp(exps_8(i0,j),exner_8(i0,j,1),(in-i0+1))
 *
 *           Note : Vspng_nk is generally low, this is why we optimize on j
 *     
             do k=1,Vspng_nk
             do i=i0,in
                work_iks1(i,k) = invp0t_8*
-     $              (Ver_pia_8%t(k)+Ver_pib_8%t(k)*exps_8(i,j))
+     $          exp (Ver_a_8%t(k)+Ver_b_8%t(k)*
+     $              (F_s(i,j)+Ver_z_8%t(G_nk+1)))
             end do
             end do
             call vpown1(work_iks2,work_iks1,Dcst_cappa_8,niks)
@@ -270,7 +265,7 @@ c         call glbstat (F_t     ,'TT'   ,DIST_DIM,G_nk+1,i0,in,j0,jn,1,Vspng_nk)
 c         call glbstat (F_t ,'TT' ,DIST_DIM,G_nk+1,i0,in,j0,jn,1,Vspng_nk)
 c         call glbstat (F_fi,'FIx' ,DIST_DIM,G_nk+2,i0,in,j0,jn,1,Vspng_nk+1)
 
-         call diag_fip(F_fi, F_csh, F_t, F_qsec, F_topo,i0,in,j0,jn,l_nk)
+         call diag_fip(F_fi, F_s, F_t, F_q, F_topo,i0,in,j0,jn,l_nk)
 
 c         call glbstat (F_fi,'FIy' ,DIST_DIM,G_nk+2,i0,in,j0,jn,1,Vspng_nk+1)
 

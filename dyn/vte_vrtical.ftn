@@ -36,7 +36,7 @@
 **
       integer i,l
       real target(np,nk), xlapse, fdcol(np,lv), flapse(np), 
-     $     source(np,lv), d(np,nk), expps(np)
+     $     source(np,lv), d(np,nk)
       real*8 hr_8(lv), hrd_8(lv), hrsq_8(lv), conv_8, x_8, xp1_8, xm1_8
 *
 *     ---------------------------------------------------------------
@@ -70,14 +70,10 @@
          flapse(i)  = (fdcol(i,lv)-fdcol(i,lv-1))*hr_8(lv-1)*xlapse
       end do           ! flapse is column lapse rate for extrapolation
 *
-      do i=1,np        ! precompute exponentials (large savings)
-         expps  (i) = exp(F_ps  (i))
-      end do
-*
+      call gem_stop('vte_vrtical, a revoir pour staggering les %d',-1)
       do l=1,nk      ! compute vertical coordinate of each target point
       do i=1,np
-         target(i,l) =  log( Ver_pia%d(l)+ Ver_pibb%d(l) *expps(i) )
-     $                - conv_8
+         target(i,l) =  Ver_pia%d(l)+ Ver_pib%d(l)*F_ps(i) - conv_8
       end do
       end do
 *

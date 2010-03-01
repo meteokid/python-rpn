@@ -12,12 +12,12 @@
 *--------------------|-------------------------------------------------|
 *   Storing space for contributions of time t1                         |
 *   to rhs of different equations                                      |
-*  oru               | momentum equation along x                       |
-*  orv               | momentum equation along y                       |
-*  orw               | momentum equation along z                       |
-*  orfi              | vertical velocity equation                      |
-*  orcn              | continuity equation                             |
-*  orth              | thermodynamic equation                          |
+*  orhsu             | momentum equation along x                       |
+*  orhsv             | momentum equation along y                       |
+*  orhst             | thermodynamic equation                          |
+*  orhsc             | continuity equation                             |
+*  orhsw             | momentum equation along z                       |
+*  orhsf             | vertical velocity equation                      |
 *--------------------|-------------------------------------------------|
 * Orh_icn            | current iteration of C-N procedure              |
 * Orh_crank_L        | switch: .true. if current time step is C-N      |
@@ -30,15 +30,15 @@
       integer Orh_icn
 
       MARK_COMMON_BEG (orh)
-      DCL_VMMVAR (orh,oru  ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (orh,orv  ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (orh,orw  ,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR (orh,orvv ,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR (orh,orcn ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (orh,orth ,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (orh,orhsu,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orh,orhsv,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orh,orhst,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (orh,orhsc,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orh,orhsw,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (orh,orhsf,real,(LDIST_SHAPE,l_nk+1))
       MARK_COMMON_END (orh)
       character*8 orh_n_first(1)
-      equivalence (orh_n_first,VMM_NAM(oru))
+      equivalence (orh_n_first,VMM_NAM(orhsu))
       common / Orh / Orh_icn, Orh_crank_L
 
 *======================================================================

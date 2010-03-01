@@ -6,10 +6,10 @@
 *
       subroutine casc_hvi (trname_a,   
      $       xpqd,ypqd,xpud,ypvd,xpqs,ypqs,xpus,ypvs,
-     $       uu1,uu2,vv1,vv2,tt1,tt2,psd1,psd2,
-     $       tr1,ww1,ww2,qsec1,qsec2,ss1,ss2,ib1,ib2,
+     $       uu1,uu2,vv1,vv2,tt1,tt2,zd1,zd2,
+     $       tr1,ww1,ww2,q1,q2,ss1,ss2,ib1,ib2,
      $       topo1,topo2,topu1,topu2,topv1,topv2,
-     $       uun,vvn,psdn,ttn,fisn,p0n,ssn,wwn,qsecn,trn,
+     $       uun,vvn,zdn,ttn,fisn,p0n,ssn,wwn,qn,trn,
      $       n1,n2,n3,n4,d1,d2,lnk,nid,njd,
      $       nis,njs,nka,nvar,ntra,b1,b2)
       implicit none
@@ -20,16 +20,16 @@
       integer ii,jj,jjj,nvar,ntra,ib1,ib2,dd1,dd2
       real*8 xpqd(*),ypqd(*),xpud(*),ypvd(*)
       real*8 xpqs(*),ypqs(*),xpus(*),ypvs(*)
-      real uun(*),vvn(*),psdn(*),ttn(*),fisn(*),
+      real uun(*),vvn(*),zdn(*),ttn(*),fisn(*),
      $     p0n(*),ssn(*),
-     $     wwn(*),qsecn(*),trn(*),
+     $     wwn(*),qn(*),trn(*),
      $     uu1(n1:n2,n3:n4,*),uu2(n1:n2,n3:n4,*),
      $     tt1(n1:n2,n3:n4,*),tt2(n1:n2,n3:n4,*),
      $     vv1(n1:n2,n3:n4,*),vv2(n1:n2,n3:n4,*),
-     $    psd1(n1:n2,n3:n4,*),psd2(n1:n2,n3:n4,*),
+     $    zd1(n1:n2,n3:n4,*),zd2(n1:n2,n3:n4,*),
      $     tr1(*),
      $     ww1(n1:n2,n3:n4,*),ww2(n1:n2,n3:n4,*),
-     $     qsec1(n1:n2,n3:n4,*),qsec2(n1:n2,n3:n4,*),
+     $     q1(n1:n2,n3:n4,*),q2(n1:n2,n3:n4,*),
      $     ss1(n1:n2,n3:n4,*),ss2(n1:n2,n3:n4,*),
      $     topo1(n1:n2,n3:n4),topo2(n1:n2,n3:n4),
      $     topu1(n1:n2,n3:n4),topu2(n1:n2,n3:n4),
@@ -59,16 +59,16 @@
       logical Vertint_L
       integer, dimension (:), allocatable :: idx,idu,idy
       real  , dimension (:), allocatable :: ana_p0,ana_p0u,ana_p0v
-      real, dimension (:,:), allocatable :: uur,vvr,psdr,ttr,
-     $     fisr, ssr,wwr,qsecr
-      real, dimension (:,:,:), allocatable :: trr,uu3,vv3,psd3,tt3,
-     $         ss3,ww3,qsec3,tr3
+      real, dimension (:,:), allocatable :: uur,vvr,zdr,ttr,
+     $     fisr, ssr,wwr,qr
+      real, dimension (:,:,:), allocatable :: trr,uu3,vv3,zd3,tt3,
+     $         ss3,ww3,q3,tr3
       real, dimension (:,:), allocatable ::
      $     gz_temp,ttru,ttrv,fisru,fisrv,ps,psu,psv,
      $         topo_temp,topu_temp,topv_temp
       real*8, dimension (:  ), allocatable ::
      $              cxa,cxb,cxc,cxd,cua,cub,cuc,cud,cya,cyb,cyc,cyd
-      real pia_special_t(l_nk+1),pibb_special_t(l_nk+1)
+      real a_special_t(l_nk+1),b_special_t(l_nk+1)
 *
 *-----------------------------------------------------------------------
 *
@@ -86,10 +86,10 @@
       call grid_to_grid_coef(ypqd,njd,ypqs,njs,idy,cya,cyb,cyc,cyd,
      $                                                  Lam_hint_S)
 *
-      allocate (uur(ngd,nka),vvr(ngd,nka),psdr(ngd,nka),
+      allocate (uur(ngd,nka),vvr(ngd,nka),zdr(ngd,nka),
      $          ttr(ngd,nka),fisr(ngd,1),
      $          ssr(ngd,1),
-     $          wwr(ngd,nka),qsecr(ngd,nka),
+     $          wwr(ngd,nka),qr(ngd,nka),
      $          ana_p0(ngd), ana_p0u(ngd),ana_p0v(ngd),
      $          fisru(ngd,1),fisrv(ngd,1),ttru(ngd,nka),ttrv(ngd,nka),
      $          trr(ngd,nka,ntra))
@@ -108,12 +108,12 @@
      $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
          call hinterpo (ssr,nid,njd,ssn,nis,njs,1,
      $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-         call hinterpo (psdr,nid,njd,psdn,nis,njs,nka,
+         call hinterpo (zdr,nid,njd,zdn,nis,njs,nka,
      $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
          If (.not.Schm_hydro_L.and.nvar.gt.11) then
          call hinterpo (wwr,nid,njd,wwn,nis,njs,nka,
      $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-         call hinterpo (qsecr,nid,njd,qsecn,nis,njs,nka,
+         call hinterpo (qr,nid,njd,qn,nis,njs,nka,
      $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
          endif
       endif
@@ -172,12 +172,12 @@
 
       allocate ( uu3(n1:d1+n2,n3:d2+n4,lnk),
      $           vv3(n1:d1+n2,n3:d2+n4,lnk),
-     $           psd3(n1:d1+n2,n3:d2+n4,lnk+1),
+     $           zd3(n1:d1+n2,n3:d2+n4,lnk+1),
      $           tt3(n1:d1+n2,n3:d2+n4,lnk+1),
      $           ss3(n1:d1+n2,n3:d2+n4,1),
      $           tr3 (n1:d1+n2,n3:d2+n4,lnk+1),
      $           ww3(n1:d1+n2,n3:d2+n4,lnk+1),
-     $           qsec3(n1:d1+n2,n3:d2+n4,0:lnk+1) )
+     $           q3(n1:d1+n2,n3:d2+n4,0:lnk+1) )
       allocate  (topo_temp(n1:d1+n2,n3:d2+n4),
      $           topu_temp(n1:d1+n2,n3:d2+n4),
      $           topv_temp(n1:d1+n2,n3:d2+n4) )
@@ -208,29 +208,29 @@
          do i=1,ngd
             gz_temp(i,nka) = fisr(i,1)
          enddo
-         call p0vt2gz_hyb ( gz_temp, ana_pia, ana_pibb, ana_p0,
+         call p0vt2gz_hyb ( gz_temp, ana_a, ana_b, ana_p0,
      $                      ttr,ngd, nka,.false.,.false.)
 
 * Finally, compute pressure on model surface (PS) using p0 and GZ of analysis
-         call getp0 ( ps, topo_temp,ana_pia,ana_pibb, ana_p0, gz_temp,
+         call getp0 ( ps, topo_temp,ana_a,ana_b, ana_p0, gz_temp,
      $                    ttr, ngd, nka,.false.)
 * Interpolate VT
          do k=1,g_nk+1
-            pia_special_t(k)=Ver_pia_spcl_8%t(k)
-            pibb_special_t(k)=Ver_pibb_spcl_8%t(k)
+            a_special_t(k)=Ver_a_spcl_8%t(k)
+            b_special_t(k)=Ver_b_spcl_8%t(k)
          end do
-         call vte_hyb2hyb (tt3,pia_special_t,pibb_special_t,ps,G_nk+1,ttr,
-     $         ana_pia,ana_pibb, ana_p0, nka, ngd, 'VT',.false.)         
+         call vte_hyb2hyb (tt3,a_special_t,b_special_t,ps,G_nk+1,ttr,
+     $         ana_a,ana_b, ana_p0, nka, ngd, 'VT',.false.)         
 *
 * Preparation for vertical interpolation, grid U
 * Compute hydrostatic GZ on analysis levels
          do i=1,ngd
             gz_temp(i,nka) = fisru(i,1)
          enddo
-         call p0vt2gz_hyb ( gz_temp, ana_pia, ana_pibb, ana_p0u,
+         call p0vt2gz_hyb ( gz_temp, ana_a, ana_b, ana_p0u,
      $                      ttru,ngd, nka,.false.,.false.)
 * Finally, compute pressure on model surface (PS)
-         call getp0 ( psu, topu_temp,ana_pia,ana_pibb, ana_p0, 
+         call getp0 ( psu, topu_temp,ana_a,ana_b, ana_p0, 
      $                  gz_temp, ttru, ngd, nka,.false.)
 *
 * Preparation for vertical interpolation, grid V
@@ -238,19 +238,19 @@
          do i=1,ngd
             gz_temp(i,nka) = fisrv(i,1)
          enddo
-         call p0vt2gz_hyb ( gz_temp, ana_pia, ana_pibb, ana_p0v,
+         call p0vt2gz_hyb ( gz_temp, ana_a, ana_b, ana_p0v,
      $                      ttru,ngd, nka,.false.,.false.)
 * Finally, compute pressure on model surface (PS)
 * psv=ana_p0v
-         call getp0 ( psv, topv_temp,ana_pia,ana_pibb, ana_p0, 
+         call getp0 ( psv, topv_temp,ana_a,ana_b, ana_p0, 
      $                  gz_temp, ttrv, ngd, nka,.false.)
 *
 * Interpolate UT1
-         call vte_hyb2hyb (uu3,Ver_pia%m,Ver_pibb%m,psu,G_nk, uur,
-     $         ana_pia,ana_pibb, ana_p0u, nka, ngd, 'UU',.false.)
+         call vte_hyb2hyb (uu3,Ver_pia%m,Ver_pib%m,psu,G_nk, uur,
+     $         ana_a,ana_b, ana_p0u, nka, ngd, 'UU',.false.)
 * Interpolate VT1
-         call vte_hyb2hyb (vv3,Ver_pia%m,Ver_pibb%m,psv,G_nk, vvr,
-     $         ana_pia,ana_pibb, ana_p0v, nka, ngd, 'VV',.false.)
+         call vte_hyb2hyb (vv3,Ver_pia%m,Ver_pib%m,psv,G_nk, vvr,
+     $         ana_a,ana_b, ana_p0v, nka, ngd, 'VV',.false.)
 
 * BCS_predat does not calculate wind related fields. These calculations
 * would be done under the space which contains halos
@@ -265,7 +265,7 @@
             tt3(i+n1-1,j+n3-1,k)=ttr(ii,k)
             uu3(i+n1-1,j+n3-1,kk)=uur(ii,kk)
             vv3(i+n1-1,j+n3-1,kk)=vvr(ii,kk)
-            psd3(i+n1-1,j+n3-1,k)=psdr(ii,k)
+            zd3(i+n1-1,j+n3-1,k)=zdr(ii,k)
          enddo
          enddo
          enddo
@@ -282,7 +282,7 @@
             do i=1,nid
             ii=(j-1)*nid+i
             ww3(i+n1-1,j+n3-1,kk)=wwr(ii,kk)
-            qsec3(i+n1-1,j+n3-1,k)=qsecr(ii,k)
+            q3(i+n1-1,j+n3-1,k)=qr(ii,k)
             enddo
             enddo
             enddo
@@ -299,8 +299,8 @@
 * If data found for this tracer
          if (jj.gt.0) then
             if (Vertint_L) then
-               call vte_hyb2hyb (tr3,pia_special_t,pibb_special_t,ps,G_nk+1,trr(1,1,jj),
-     $           ana_pia,ana_pibb, ana_p0, nka,ngd,trname_a(jj)(1:2),.false.)
+               call vte_hyb2hyb (tr3,a_special_t,b_special_t,ps,G_nk+1,trr(1,1,jj),
+     $           ana_a,ana_b, ana_p0, nka,ngd,trname_a(jj)(1:2),.false.)
             else
                do k=1,lnk+1
                do j=1,njd
@@ -413,7 +413,7 @@
             do k=1,lnk+1
             do j=n3,n4
             do i=n1,n2
-              psd1(i,j,k) = psd3(i,j,k)
+              zd1(i,j,k) = zd3(i,j,k)
             enddo
             enddo
             enddo
@@ -422,7 +422,7 @@
             do k=1,lnk+1
             do j=n3,n4
             do i=n1,n2
-               psd2(i,j,k) = psd3(i+d1,j+d2,k)
+               zd2(i,j,k) = zd3(i+d1,j+d2,k)
             enddo
             enddo
             enddo
@@ -437,7 +437,7 @@
              do j=n3,n4
              do i=n1,n2
                 ww1(i,j,kk) =   ww3(i,j,kk)
-                qsec1(i,j,k)= qsec3(i,j,k)
+                q1(i,j,k)= q3(i,j,k)
              enddo
              enddo
              enddo
@@ -448,19 +448,19 @@
              do j=n3,n4
              do i=n1,n2
                 ww2(i,j,kk) = ww3(i+d1,j+d2,kk)
-                qsec2(i,j,k)= qsec3(i+d1,j+d2,k)
+                q2(i,j,k)= q3(i+d1,j+d2,k)
              enddo
              enddo
              enddo
           endif
       endif
-      deallocate (uur,vvr,psdr,ttr,fisr,
-     $            ssr,trr,wwr,qsecr,
+      deallocate (uur,vvr,zdr,ttr,fisr,
+     $            ssr,trr,wwr,qr,
      $            ps,psu,psv,
      $            ana_p0,ana_p0u,ana_p0v,gz_temp,
      $            fisru,fisrv,ttru,ttrv)
-      deallocate (uu3,vv3,psd3,tt3,
-     $            ss3,tr3,ww3,qsec3)
+      deallocate (uu3,vv3,zd3,tt3,
+     $            ss3,tr3,ww3,q3)
       deallocate (topo_temp,topu_temp,topv_temp)
 *
 *-----------------------------------------------------------------------

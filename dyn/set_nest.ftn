@@ -12,7 +12,7 @@
 *
 *revision
 * v3_00 - Desgagne/Lee      - initial version
-* v3_20 - Lee V.            - shorten length of vmmname for psd
+* v3_20 - Lee V.            - shorten length of vmmname for zd
 * v3_30 - Lee V.            - remove some VMM variables
 *object
 *	This subroutine initializes the commons containing the
@@ -49,19 +49,19 @@
       VMM_NAM(nest_u   ) = 'NEST_U'
       VMM_NAM(nest_v   ) = 'NEST_V'
       VMM_NAM(nest_t   ) = 'NEST_T'
-      VMM_NAM(nest_psd ) = 'NEST_PSD'
+      VMM_NAM(nest_zd  ) = 'NEST_ZD'
       VMM_NAM(nest_w   ) = 'NEST_W'
       VMM_NAM(nest_s   ) = 'NEST_S'
-      VMM_NAM(nest_qsec) = 'NEST_QSEC'
+      VMM_NAM(nest_q   ) = 'NEST_Q'
       VMM_NAM(nest_tr  ) = 'NEST_TR'
-      VMM_NAM(nest_uf   ) = 'NEST_UF'
-      VMM_NAM(nest_vf   ) = 'NEST_VF'
-      VMM_NAM(nest_tf   ) = 'NEST_TF'
-      VMM_NAM(nest_psdf ) = 'NST_PSDF'
-      VMM_NAM(nest_wf   ) = 'NEST_WF'
-      VMM_NAM(nest_sf   ) = 'NEST_SF'
-      VMM_NAM(nest_qsecf) = 'NEST_QSECF'
-      VMM_NAM(nest_trf  ) = 'NEST_TRF'
+      VMM_NAM(nest_uf  ) = 'NEST_UF'
+      VMM_NAM(nest_vf  ) = 'NEST_VF'
+      VMM_NAM(nest_tf  ) = 'NEST_TF'
+      VMM_NAM(nest_zdf ) = 'NEST_ZDF'
+      VMM_NAM(nest_wf  ) = 'NEST_WF'
+      VMM_NAM(nest_sf  ) = 'NEST_SF'
+      VMM_NAM(nest_qf  ) = 'NEST_QF'
+      VMM_NAM(nest_trf ) = 'NEST_TRF'
 *
 *  Set the attributes of the variables
 *
@@ -70,21 +70,21 @@
       VMM_CREATE(nest_u   , LARRAY3D, 1, ptath)
       VMM_CREATE(nest_v   , LARRAY3D, 1, ptath)
       VMM_CREATE(nest_t   , LARRAY2D*(l_nk+1), 1, ptath)
-      VMM_CREATE(nest_psd , LARRAY2D*(l_nk+1), 1, ptath)
+      VMM_CREATE(nest_zd  , LARRAY2D*(l_nk+1), 1, ptath)
       VMM_CREATE(nest_s   , LARRAY2D, 1, ptath)
       if (.not. Lam_ctebcs_L) then
          VMM_CREATE(nest_uf   , LARRAY3D, 1, ptath)
          VMM_CREATE(nest_vf   , LARRAY3D, 1, ptath)
          VMM_CREATE(nest_tf   , LARRAY2D*(l_nk+1), 1, ptath)
-         VMM_CREATE(nest_psdf , LARRAY2D*(l_nk+1), 1, ptath)
+         VMM_CREATE(nest_zdf  , LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_sf   , LARRAY2D, 1, ptath)
       endif
       if (.not. Schm_hydro_L) then
-         VMM_CREATE(nest_w   , LARRAY2D*(l_nk+1), 1, ptath)
-         VMM_CREATE(nest_qsec, LARRAY2D*(l_nk+2), 1, ptath)
+         VMM_CREATE(nest_w, LARRAY2D*(l_nk+1), 1, ptath)
+         VMM_CREATE(nest_q, LARRAY2D*(l_nk+2), 1, ptath)
          if (.not. Lam_ctebcs_L) then
-            VMM_CREATE(nest_wf   , LARRAY2D*(l_nk+1), 1, ptath)
-            VMM_CREATE(nest_qsecf, LARRAY2D*(l_nk+2), 1, ptath)
+            VMM_CREATE(nest_wf, LARRAY2D*(l_nk+1), 1, ptath)
+            VMM_CREATE(nest_qf, LARRAY2D*(l_nk+2), 1, ptath)
          endif
       endif
       if ( Tr3d_ntr .gt. 0 ) then

@@ -56,7 +56,7 @@
       key1(1) = VMM_KEY(nest_uf)
       key1(2) = VMM_KEY(nest_vf)
       key1(3) = VMM_KEY(nest_tf)
-      key1(4) = VMM_KEY(nest_psdf)
+      key1(4) = VMM_KEY(nest_zdf)
       key1(5) = VMM_KEY(nest_sf)
       key1(6) = VMM_KEY(topo)
       key1(7) = VMM_KEY(topu)
@@ -66,7 +66,7 @@
 *
       if (.not. Schm_hydro_L) then
          key1(nvar+1) = VMM_KEY(nest_wf)
-         key1(nvar+2) = VMM_KEY(nest_qsecf)
+         key1(nvar+2) = VMM_KEY(nest_qf)
          nvar = nvar+2
       endif
       err = vmmlod(key1,nvar)
@@ -74,7 +74,7 @@
       err = VMM_GET_VAR(nest_uf)
       err = VMM_GET_VAR(nest_vf)
       err = VMM_GET_VAR(nest_tf)
-      err = VMM_GET_VAR(nest_psdf)
+      err = VMM_GET_VAR(nest_zdf)
       err = VMM_GET_VAR(nest_sf)
       err = VMM_GET_VAR(topo)
       err = VMM_GET_VAR(topu)
@@ -82,7 +82,7 @@
 *
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(  nest_wf)
-         err = VMM_GET_VAR( nest_qsecf)
+         err = VMM_GET_VAR( nest_qf)
       endif
 *
       call hpalloc (pat1, ng*l_nk, err, 1)
@@ -94,16 +94,15 @@
       Ind_u_   = nest_uf_
       Ind_v_   = nest_vf_
       Ind_t_   = nest_tf_
-      Ind_psd_ = nest_psdf_
+      Ind_zd_ = nest_zdf_
       Ind_s_   = nest_sf_
       Ind_topo_= topo_
       Ind_topu_= topu_
       Ind_topv_= topv_
-      Ind_gp_  = pat1
 *
       if (.not. Schm_hydro_L) then
          Ind_w_   = nest_wf_
-         Ind_qsec_  = nest_qsecf_
+         Ind_q_  = nest_qf_
       endif
 *
       errft = 0
@@ -129,18 +128,18 @@
              call stopmpi(-1)
          endif
          if (.not.Acid_test_L) then
-c            Le fait de ne rien faire sur nest_psdf revient a le mettre a zero
-c            call gem_stop('nest_indata : terminer calcul de nest_psdf csh?',-1)
-c             call uvs2psd (nest_psdf,nest_uf,nest_vf,csh,LDIST_DIM,l_nk)            
-             call trnes (nest_psdf,bcs_psdf(bcs_is),bcs_psdf(bcs_in),bcs_psdf(bcs_iw),
-     $            bcs_psdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+c            Le fait de ne rien faire sur nest_zdf revient a le mettre a zero
+c            call gem_stop('nest_indata : terminer calcul de nest_zdf csh?',-1)
+c             call uvs2zd (nest_zdf,nest_uf,nest_vf,csh,LDIST_DIM,l_nk)            
+             call trnes (nest_zdf,bcs_zdf(bcs_is),bcs_zdf(bcs_in),bcs_zdf(bcs_iw),
+     $            bcs_zdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
              if (.not. Schm_hydro_L) then
              call trnes (nest_wf,bcs_wf(bcs_is),bcs_wf(bcs_in),bcs_wf(bcs_iw),
      $            bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
-             call trnes (nest_qsecf,bcs_qsecf(bcs_is),bcs_qsecf(bcs_in),bcs_qsecf(bcs_iw),
-     $            bcs_qsecf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+             call trnes (nest_qf,bcs_qf(bcs_is),bcs_qf(bcs_in),bcs_qf(bcs_iw),
+     $            bcs_qf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,0)
              endif
          endif
@@ -181,8 +180,8 @@ c             call uvs2psd (nest_psdf,nest_uf,nest_vf,csh,LDIST_DIM,l_nk)
          call trnes (nest_tf,bcs_tf(bcs_is),bcs_tf(bcs_in),bcs_tf(bcs_iw),
      $            bcs_tf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
-         call trnes (nest_psdf,bcs_psdf(bcs_is),bcs_psdf(bcs_in),bcs_psdf(bcs_iw),
-     $            bcs_psdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+         call trnes (nest_zdf,bcs_zdf(bcs_is),bcs_zdf(bcs_in),bcs_zdf(bcs_iw),
+     $            bcs_zdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
          call trnes (nest_sf,bcs_sf(bcs_is),bcs_sf(bcs_in),bcs_sf(bcs_iw),
      $            bcs_sf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
@@ -191,8 +190,8 @@ c             call uvs2psd (nest_psdf,nest_uf,nest_vf,csh,LDIST_DIM,l_nk)
              call trnes (nest_wf,bcs_wf(bcs_is),bcs_wf(bcs_in),bcs_wf(bcs_iw),
      $            bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
-             call trnes (nest_qsecf,bcs_qsecf(bcs_is),bcs_qsecf(bcs_in),bcs_qsecf(bcs_iw),
-     $            bcs_qsecf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+             call trnes (nest_qf,bcs_qf(bcs_is),bcs_qf(bcs_in),bcs_qf(bcs_iw),
+     $            bcs_qf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,0)
          endif
          keyp_ = VMM_KEY (nest_trf)

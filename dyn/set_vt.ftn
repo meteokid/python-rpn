@@ -87,8 +87,8 @@
       VMM_NAM(vt0   )= 'VT0'
       VMM_NAM(wt0   )= 'WT0'
       VMM_NAM(tt0   )= 'TT0'
-      VMM_NAM(qsect0)= 'QST0'
-      VMM_NAM(psdt0 )= 'PSD0'
+      VMM_NAM(qt0   )= 'QT0'
+      VMM_NAM(zdt0  )= 'ZDT0'
       VMM_NAM(st0   )= 'ST0'
       VMM_NAM(trt0  )= 'TRT0'
 *
@@ -96,8 +96,8 @@
       VMM_CREATE(vt0  , LARRAY3D, 1, attri2_S)
       VMM_CREATE(wt0  , LARRAY2D*(l_nk+1), 1, attri_S)
       VMM_CREATE(tt0  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(qsect0,LARRAY2D*(l_nk+2), 1, attri2_S)
-      VMM_CREATE(psdt0, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(qt0  , LARRAY2D*(l_nk+2), 1, attri2_S)
+      VMM_CREATE(zdt0 , LARRAY2D*(l_nk+1), 1, attri_S)
       VMM_CREATE(st0  , LARRAY2D, 1, attri_S)
 *
       if ( Tr3d_ntr .gt. 0 ) then
@@ -110,7 +110,7 @@
 *
       VMM_NAM(uth   )= 'UTH'
       VMM_NAM(vth   )= 'VTH'
-      VMM_NAM(psdth )= 'PSDH'
+      VMM_NAM(zdth  )= 'ZDTH'
       VMM_NAM(xth   )= 'XTH'
       VMM_NAM(yth   )= 'YTH'
       VMM_NAM(zth   )= 'ZTH'
@@ -120,7 +120,7 @@
 *
       VMM_CREATE(uth  ,       LARRAY3D, 1, attri_S)
       VMM_CREATE(vth  ,       LARRAY3D, 1, attri_S)
-      VMM_CREATE(psdth, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(zdth , LARRAY2D*(l_nk+1), 1, attri_S)
       VMM_CREATE(xth  , l_ni*l_nj*l_nk, 1, attri_S)
       VMM_CREATE(yth  , l_ni*l_nj*l_nk, 1, attri_S)
       VMM_CREATE(zth  , l_ni*l_nj*l_nk, 1, attri_S)
@@ -138,8 +138,8 @@
       VMM_NAM(tt1   )= 'TT1'
       VMM_NAM(zz1   )= 'ZZ1'
       VMM_NAM(piup  )= 'PIUP'
-      VMM_NAM(qsect1)= 'QST1'
-      VMM_NAM(psdt1 )= 'PSD1'
+      VMM_NAM(qt1   )= 'QT1'
+      VMM_NAM(zdt1  )= 'ZDT1'
       VMM_NAM(st1   )= 'ST1'
       VMM_NAM(trt1  )= 'TRT1'
 *
@@ -153,8 +153,8 @@
       VMM_CREATE(tt1  , LARRAY2D*(l_nk+1), 1, attri_S)
       VMM_CREATE(zz1  , LARRAY2D*(l_nk+1), 1, attri_S)
       VMM_CREATE(piup , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(qsect1,LARRAY2D*(l_nk+2), 1, attri2_S)
-      VMM_CREATE(psdt1, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(qt1  , LARRAY2D*(l_nk+2), 1, attri2_S)
+      VMM_CREATE(zdt1 , LARRAY2D*(l_nk+1), 1, attri_S)
       VMM_CREATE(st1  , LARRAY2D, 1, attri_S)
       if ( Tr3d_ntr .gt. 0 ) then
          VMM_CREATE(trt1, LARRAY2D*(l_nk+1), Tr3d_ntr, attrit_S)
@@ -172,8 +172,8 @@
       VMM_NAM(vt2   )= 'VT2'
       VMM_NAM(wt2   )= 'WT2'
       VMM_NAM(tt2   )= 'TT2'
-      VMM_NAM(qsect2)= 'QST2'
-      VMM_NAM(psdt2 )= 'PSD2'
+      VMM_NAM(qt2   )= 'QT2'
+      VMM_NAM(zdt2  )= 'ZDT2'
       VMM_NAM(st2   )= 'ST2'
       VMM_NAM(trt2  )= 'TRT2'
 *
@@ -181,11 +181,9 @@
 *              ------------------------------------------
 *	Assign the names of the variables
 *
-      VMM_NAM(gptx  )= 'GPTX'
       VMM_NAM(mutx  )= 'MUTX'
-      VMM_NAM(qptx  )= 'QPTX'
-      VMM_NAM(fiptx )= 'FIPX'
-      VMM_NAM(csh)   = 'CSH'
+      VMM_NAM(bspqtx)= 'BSPQTX'
+      VMM_NAM(fiptx )= 'FIPTX'
       VMM_NAM(tdia)  = 'TDIAG'
       VMM_NAM(udia)  = 'UDIAG'
       VMM_NAM(vdia)  = 'VDIAG'
@@ -193,11 +191,9 @@
       VMM_NAM(that_8) = 'THAT'
       VMM_NAM(dlnth_8)= 'DLNT'
 *
-      VMM_CREATE(gptx , LARRAY3D,          1, attri_S)
       VMM_CREATE(mutx , LARRAY2D*(l_nk+1), 1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(qptx , LARRAY2D*(l_nk+2), 1, 'SAVE=Y,CL=1,W=5')
+      VMM_CREATE(bspqtx,LARRAY2D*(l_nk+2), 1, 'SAVE=Y,CL=1,W=5')
       VMM_CREATE(fiptx, LARRAY2D*(l_nk+2), 1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(csh  , LARRAY2D,          1, 'SAVE=Y,CL=1,W=5')
       VMM_CREATE(tdia , LARRAY2D*3,        1, 'SAVE=Y,CL=1,W=5')
       VMM_CREATE(udia , LARRAY2D*3,        1, 'SAVE=Y,CL=1,W=5')
       VMM_CREATE(vdia , LARRAY2D*3,        1, 'SAVE=Y,CL=1,W=5')

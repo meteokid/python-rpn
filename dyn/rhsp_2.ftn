@@ -3,11 +3,11 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine rhsp_2 ( F_ru,  F_rv,  F_rcn, F_rth,   F_rw,    F_rvv,
-     $                    F_oru, F_orv, F_orcn,F_orth,  F_orw,   F_orvv,
-     $                    F_ruw1,F_rvw1,F_u,   F_v,     F_t,     F_qp,  
-     $                    F_qsec,F_s,   F_psd, F_nest_u,F_nest_v,F_w,
-     $                    F_fip, F_mu,  F_csh, F_that_8,F_dlnth_8,
+      subroutine rhsp_2 ( F_ru,  F_rv,  F_rp, F_rt,   F_rw,    F_rq,
+     $                    F_oru, F_orv, F_orc,F_ort,  F_orw,   F_orq,
+     $                    F_ruw1,F_rvw1,F_u,  F_v,    F_t,     F_BsPq,  
+     $                    F_s,   F_zd, F_nest_u,F_nest_v,F_w,
+     $                    F_fip, F_mu,F_that_8,F_dlnth_8,
      $                    DIST_DIM, Nk )
 *
       implicit none
@@ -15,19 +15,18 @@
       integer DIST_DIM, Nk
 *
       real F_ru    (DIST_SHAPE,  Nk)  ,F_rv    (DIST_SHAPE,  Nk)  ,
-     $     F_rcn   (DIST_SHAPE,  Nk)  ,F_rth   (DIST_SHAPE,  Nk+1),
-     $     F_rw    (DIST_SHAPE,  Nk+1),F_rvv   (DIST_SHAPE,  Nk+1),
+     $     F_rp    (DIST_SHAPE,  Nk)  ,F_rt    (DIST_SHAPE,  Nk+1),
+     $     F_rw    (DIST_SHAPE,  Nk+1),F_rq    (DIST_SHAPE,  Nk+1),
      $     F_oru   (DIST_SHAPE,  Nk)  ,F_orv   (DIST_SHAPE,  Nk)  ,
-     $     F_orcn  (DIST_SHAPE,  Nk)  ,F_orth  (DIST_SHAPE,  Nk+1),
-     $     F_orw   (DIST_SHAPE,  Nk+1),F_orvv  (DIST_SHAPE,  Nk+1),
+     $     F_orc   (DIST_SHAPE,  Nk)  ,F_ort   (DIST_SHAPE,  Nk+1),
+     $     F_orw   (DIST_SHAPE,  Nk+1),F_orq   (DIST_SHAPE,  Nk+1),
      $     F_ruw1  (DIST_SHAPE,  Nk)  ,F_rvw1  (DIST_SHAPE,  Nk)  ,
      $     F_u     (DIST_SHAPE,  Nk)  ,F_v     (DIST_SHAPE,  Nk)  ,
-     $     F_t     (DIST_SHAPE,  Nk+1),F_qp    (DIST_SHAPE,0:Nk+1),
-     $     F_qsec  (DIST_SHAPE,0:Nk+1),F_s     (DIST_SHAPE)       ,
-     $     F_psd   (DIST_SHAPE,  Nk+1),F_nest_u(DIST_SHAPE,  Nk)  ,
+     $     F_t     (DIST_SHAPE,  Nk+1),F_BsPq  (DIST_SHAPE,0:Nk+1),
+     $     F_s     (DIST_SHAPE)       ,
+     $     F_zd   (DIST_SHAPE,  Nk+1),F_nest_u(DIST_SHAPE,  Nk)  ,
      $     F_nest_v(DIST_SHAPE,  Nk)  ,F_w     (DIST_SHAPE,  Nk+1),
-     $     F_fip   (DIST_SHAPE,0:Nk+1),F_mu    (DIST_SHAPE,  Nk+1),
-     $     F_csh   (DIST_SHAPE)
+     $     F_fip   (DIST_SHAPE,0:Nk+1),F_mu    (DIST_SHAPE,  Nk+1)
       real*8  F_that_8(Nk+1), F_dlnth_8(Nk+1)
 *
 *author
@@ -70,9 +69,9 @@
 *
       integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, nij
       real    tdiv(DIST_SHAPE)
-      real*8  aaa, bbb, one, half, c1,c2,c3,c4,c5,c6,c7,c8,c9,
+      real*8  aaa, bbb, one, half, c1,c2,c3,c4,c6,c7,c8,c9,
      $        wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, ww1,
-     $        xlog_8(l_ni,l_nj), ylog_8(l_ni,l_nj)
+     $        xxx,yyy,xlog_8(l_ni,l_nj), ylog_8(l_ni,l_nj)
 
       parameter( one=1.d0, half=.5d0 )
 *     - - - - - - - - - - - - - - - - 
@@ -89,7 +88,6 @@
       c2  = bbb / ( Dcst_rayt_8 * Dcst_rayt_8 )
       c3  = aaa * Dcst_cappa_8 * half
       c4  = bbb * Dcst_cappa_8 
-      c5  = aaa * Schm_nonhy_8 
       c6  = bbb * Dcst_grav_8 
       c7  = bbb * Dcst_rgasd_8 * Cstv_tstr_8
       c8  = aaa * half
@@ -108,13 +106,11 @@
      $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_t , LDIST_DIM,l_ni,l_nj,G_nk+1,
      $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_qp , LDIST_DIM,l_ni,l_nj,G_nk+2,
+      call rpn_comm_xch_halo(F_BsPq,LDIST_DIM,l_ni,l_nj,G_nk+2,
      $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_fip, LDIST_DIM,l_ni,l_nj,G_nk+2,
      $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       if (.not. Schm_hydro_L) then
-         call rpn_comm_xch_halo( F_qsec, LDIST_DIM,l_ni,l_nj,G_nk+2,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          call rpn_comm_xch_halo( F_mu, LDIST_DIM,l_ni,l_nj,G_nk+1,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif 
@@ -123,7 +119,7 @@
 *
 *
 !$omp parallel private(i,j,i0,j0,jn,in,i00,inn,j00,jnn,
-!$omp$          tdiv,xlog_8,ylog_8,wk1,wk2,ww1,barz,barzp)
+!$omp$          tdiv,xlog_8,ylog_8,wk1,wk2,ww1,xxx,yyy,barz,barzp)
 *
 !$omp do 
       do 1000 k = 1,l_nk 
@@ -165,7 +161,7 @@
             F_ru(i,j,k) = - aaa * F_u(i,j,k)
      $               - c1 * ( ( one - intuv_c0xxu_8(i) ) * barz
      $                              + intuv_c0xxu_8(i)   * barzp )
-     $                    * ( F_qp(i+1,j,k) - F_qp(i,j,k) ) 
+     $                    * ( F_BsPq(i+1,j,k) - F_BsPq(i,j,k) ) 
      $                    * geomg_invhx_8(i)
      $               - c2 * wk1(i,j) * ( F_fip(i+1,j,k) - F_fip(i,j,k) )
      $                    * geomg_invhx_8(i)
@@ -230,7 +226,7 @@
             F_ru(i,j,k) = - aaa * F_u(i,j,k)
      $               - c1 * ( ( one - intuv_c0xxu_8(i) )* barz
      $                              + intuv_c0xxu_8(i)  * barzp )
-     $                    * ( F_qp(i+1,j,k) - F_qp(i,j,k) )
+     $                    * ( F_BsPq(i+1,j,k) - F_BsPq(i,j,k) )
      $                    * geomg_invhx_8(i)
      $               - c2 * wk1(i,j) * ( F_fip(i+1,j,k) - F_fip(i,j,k) )
      $                    * geomg_invhx_8(i)
@@ -276,7 +272,7 @@
             F_rv(i,j,k) = - aaa * F_v(i,j,k)
      $               - c1 *( ( one - intuv_c0yyv_8(j) ) * barz
      $                             + intuv_c0yyv_8(j)   * barzp )
-     $                    * ( F_qp (i,j+1,k) - F_qp (i,j,k) )
+     $                    * ( F_BsPq (i,j+1,k) - F_BsPq (i,j,k) )
      $                    * geomg_cyv2_8(j) * geomg_invhsy_8(j)
      $               - c2 * wk1(i,j) * ( F_fip(i,j+1,k) - F_fip(i,j,k) )
      $                    * geomg_cyv2_8(j) * geomg_invhsy_8(j)
@@ -321,7 +317,7 @@
             F_rv(i,j,k) = - aaa * F_v(i,j,k)
      $               - c1 *( ( one - intuv_c0yyv_8(j) ) * barz
      $                             + intuv_c0yyv_8(j)   * barzp )
-     $                    * ( F_qp(i,j+1,k) - F_qp (i,j,k) )
+     $                    * ( F_BsPq(i,j+1,k) - F_BsPq (i,j,k) )
      $                    * geomg_cyv2_8(j) * geomg_invhsy_8(j)
      $               - c2 * wk1(i,j) * ( F_fip(i,j+1,k) - F_fip(i,j,k) )
      $                    * geomg_cyv2_8(j) * geomg_invhsy_8(j)
@@ -343,7 +339,7 @@
                   F_rv(i,1,k) = - aaa * F_v(i,1,k)
      $               - c1 * ( ( one - intuv_c0yyv_8(1) ) * barz 
      $                              + intuv_c0yyv_8(1)   * barzp )
-     $                    * ( F_qp(i,1+1,k) - F_qp(i,1,k) )
+     $                    * ( F_BsPq(i,1+1,k) - F_BsPq(i,1,k) )
      $                    * geomg_cyv2_8(1)*geomg_invhsy_8(1)
      $               - c2 * wk1(i,1) * ( F_fip(i,1+1,k) - F_fip(i,1,k) )
      $                    * geomg_cyv2_8(1)*geomg_invhsy_8(1)
@@ -362,7 +358,7 @@
                   F_rv(i,l_njv,k) = - aaa * F_v(i,l_njv,k)
      $               - c1 * ( ( one - intuv_c0yyv_8(l_njv) ) * barz 
      $                              + intuv_c0yyv_8(l_njv)   * barzp )
-     $                    * ( F_qp (i,l_njv+1,k) - F_qp (i,l_njv,k) ) 
+     $                    * ( F_BsPq (i,l_njv+1,k) - F_BsPq (i,l_njv,k) ) 
      $                    * geomg_cyv2_8(l_njv) * geomg_invhsy_8(l_njv)
      $               - c2 * wk1(i,l_njv)
      $                    * ( F_fip(i,l_njv+1,k) - F_fip(i,l_njv,k) )
@@ -402,24 +398,26 @@
      $                         F_v(minx,miny,k), LDIST_DIM, 1)
       endif
 *
+      xxx=one + half*Ver_dz_8%t(k+1)
+      yyy=one - half*Ver_dz_8%t(k)
       do j= 1, l_njv
       do i= 1, l_niu
          tdiv(i,j) = tdiv(i,j)
-     $             + ( F_psd(i,j,k+1) - F_psd(i,j,k) ) / Ver_hz_8%m(k)
+     $             + ( xxx*F_zd(i,j,k+1) - yyy*F_zd(i,j,k) ) * Ver_idz_8%m(k)
       end do
       end do      
 *     
       do j = j0, jn
       do i = i0, in
-         xlog_8(i,j) = one + Ver_dpib_8%m(k) * F_csh(i,j)
+         xlog_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
       end do
       end do
       call vlog( ylog_8, xlog_8, nij)
 *
       do j= j0, jn
       do i= i0, in
-         F_rcn (i,j,k) = -aaa * ylog_8(i,j) - bbb * tdiv(i,j)
-         F_orcn(i,j,k) = F_rcn(i,j,k)
+         F_rp (i,j,k) = -aaa * (Ver_b_8%m(k)*F_s(i,j)+ylog_8(i,j)) - bbb * tdiv(i,j)
+         F_orc(i,j,k) = F_rp(i,j,k)
       end do
       end do
  1000 continue
@@ -442,11 +440,11 @@
 *
       do j= j0, jn
       do i= i0, in
-         F_rth (i,j,k) = - aaa * ylog_8(i,j)
-     $                   + c3  * ( F_qp(i,j,k) + F_qp(i,j,k-1) )
-     $                   + c4  *  F_psd(i,j,k) / Ver_z_8%t(k)
-     $                   - bbb *  F_psd(i,j,k) * F_dlnth_8 (k)
-         F_orth(i,j,k) = F_rth(i,j,k)
+         F_rt (i,j,k) = - aaa * ylog_8(i,j)
+     $                   + c3  * ( F_BsPq(i,j,k) + F_BsPq(i,j,k-1) )
+     $                   + c4  *   F_zd(i,j,k)
+     $                   - bbb *   F_zd(i,j,k) * F_dlnth_8 (k)
+         F_ort(i,j,k) = F_rt(i,j,k)
       end do
       end do         
 *
@@ -458,12 +456,12 @@
       if (.not. Schm_hydro_L) then
          do j= j0, jn
          do i= i0, in
-            F_rw  (i,j,k) = - c5 * F_w(i,j,k) + c6 * F_mu(i,j,k)
-            F_rvv (i,j,k) = - c8 * ( F_fip(i,j,k) + F_fip(i,j,k-1) )
-     $                      + c7 * F_psd(i,j,k) / Ver_z_8%t(k)
-     $                      + c6 * F_w(i,j,k)
-            F_orw (i,j,k) = F_rw (i,j,k)
-            F_orvv(i,j,k) = F_rvv(i,j,k)
+            F_rw (i,j,k) = - aaa * F_w(i,j,k) + c6 * F_mu(i,j,k)
+            F_rq (i,j,k) = - c8  * ( F_fip(i,j,k) + F_fip(i,j,k-1) )
+     $                     + c7  * F_zd(i,j,k)
+     $                     + c6  * F_w(i,j,k)
+            F_orw(i,j,k) = F_rw (i,j,k)
+            F_orq(i,j,k) = F_rq(i,j,k)
          end do
          end do
       endif 

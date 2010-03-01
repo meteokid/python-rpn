@@ -52,14 +52,14 @@
       key(1)  = VMM_KEY(ut0)
       key(2)  = VMM_KEY(vt0)
       key(3)  = VMM_KEY(tt0)
-      key(4)  = VMM_KEY(psdt0)
+      key(4)  = VMM_KEY(zdt0)
 *
       err = vmmlod(key,4)
 *
       err = VMM_GET_VAR(ut0)
       err = VMM_GET_VAR(vt0)
       err = VMM_GET_VAR(tt0)
-      err = VMM_GET_VAR(psdt0)
+      err = VMM_GET_VAR(zdt0)
 *
       if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
 *
@@ -73,7 +73,7 @@
       endif
       call glbstat (ut0  ,'UU',LDIST_DIM,G_nk  ,i0,in-inn,j0,jn  ,1,G_nk  )
       call glbstat (vt0  ,'VV',LDIST_DIM,G_nk  ,i0,in    ,j0,jn-1,1,G_nk  )
-      call glbstat (psdt0,'WW',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
+      call glbstat (zdt0,'WW',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
       call glbstat (tt0  ,'TT',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
 *
 *    Comment the above glbstats and uncomment the following lines for

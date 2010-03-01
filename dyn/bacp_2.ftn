@@ -4,11 +4,11 @@
 *
       subroutine bacp_2 ( F_itr   , F_itnlh , F_st0  ,
      $                    F_fip   , F_fis   , F_tt0  ,
-     $                    F_ut0   , F_vt0   , F_psdt0,
-     $                    F_qsect0, F_wt0   , F_csh  , F_gptx ,
-     $                    F_ru    , F_rv    , F_rth  , F_rw   , 
-     $                    F_rvv   , F_rcn   , F_nu   , F_nv   ,
-     $                    F_nth   , F_nw    , F_nvv  , F_ncn  ,
+     $                    F_ut0   , F_vt0   , F_zdt0 ,
+     $                    F_qt0   , F_wt0   , F_p    ,
+     $                    F_ru    , F_rv    , F_rt   , F_rw   , 
+     $                    F_rf    , F_nu    , F_nv   ,
+     $                    F_nt    , F_nw    , F_nf   ,
      $                    DIST_DIM, Nk )
 *
       implicit none
@@ -18,15 +18,14 @@
       real     F_st0  (DIST_SHAPE)     ,  F_fip   (DIST_SHAPE,0:Nk+1), 
      %         F_fis  (DIST_SHAPE)     ,  F_tt0   (DIST_SHAPE,  Nk+1),
      %         F_ut0  (DIST_SHAPE,Nk)  ,  F_vt0   (DIST_SHAPE,  Nk)  , 
-     %         F_psdt0(DIST_SHAPE,Nk+1),  F_qsect0(DIST_SHAPE,0:Nk+1),
-     %         F_wt0  (DIST_SHAPE,Nk+1),  F_gptx  (DIST_SHAPE,  Nk)  ,
+     %         F_zdt0 (DIST_SHAPE,Nk+1),  F_qt0   (DIST_SHAPE,0:Nk+1),
+     %         F_wt0  (DIST_SHAPE,Nk+1),  F_p     (DIST_SHAPE,0:Nk+1),
      %         F_ru   (DIST_SHAPE,Nk)  ,  F_rv    (DIST_SHAPE,  Nk)  ,
-     %         F_rcn  (DIST_SHAPE,Nk)  ,  F_rth   (DIST_SHAPE,  Nk+1),
-     %         F_rvv  (DIST_SHAPE,Nk+1),  F_nth   (DIST_SHAPE,  Nk+1),
+     %         F_rt   (DIST_SHAPE,Nk+1),
+     %         F_rf   (DIST_SHAPE,Nk+1),  F_nt    (DIST_SHAPE,  Nk+1),
      %         F_rw   (DIST_SHAPE,Nk+1),  F_nu    (DIST_SHAPE,  Nk)  ,
      %         F_nv   (DIST_SHAPE,Nk)  ,  F_nw    (DIST_SHAPE,  Nk+1),
-     %         F_nvv  (DIST_SHAPE,Nk+1),  F_ncn   (DIST_SHAPE,  Nk)  ,
-     %         F_csh  (DIST_SHAPE)
+     %         F_nf   (DIST_SHAPE,Nk+1)
 *
 *author
 *     Alain Patoine - split from bac.ftn
@@ -58,11 +57,11 @@
 
       call  bacp_2_2      ( F_itr   , F_itnlh, F_st0  ,
      $                      F_fip   , F_fis  , F_tt0  ,
-     $                      F_ut0   , F_vt0  , F_psdt0,
-     $                      F_qsect0, F_wt0  , F_csh  , F_gptx,
-     $                      F_ru    , F_rv   , F_rth  , F_rw  ,
-     $                      F_rvv   , F_rcn  , F_nu   , F_nv  ,
-     $                      F_nth   , F_nw   , F_nvv  , F_ncn ,
+     $                      F_ut0   , F_vt0  , F_zdt0 ,
+     $                      F_qt0   , F_wt0  , F_p    ,
+     $                      F_ru    , F_rv   , F_rt   , F_rw  ,
+     $                      F_rf    , F_nu   , F_nv   ,
+     $                      F_nt    , F_nw   , F_nf   ,
      $                      DIST_DIM, Nk, i0, j0, in, jn )
       return
       end
@@ -72,11 +71,11 @@
 
       subroutine bacp_2_2 ( F_itr   , F_itnlh, F_st0  ,
      $                      F_fip   , F_fis  , F_tt0  ,
-     $                      F_ut0   , F_vt0  , F_psdt0,
-     $                      F_qsect0, F_wt0  , F_csh  , F_gptx,
-     $                      F_ru    , F_rv   , F_rth  , F_rw  ,
-     $                      F_rvv   , F_rcn  , F_nu   , F_nv  ,
-     $                      F_nth   , F_nw   , F_nvv  , F_ncn ,
+     $                      F_ut0   , F_vt0  , F_zdt0 ,
+     $                      F_qt0   , F_wt0  , F_p    ,
+     $                      F_ru    , F_rv   , F_rt   , F_rw  ,
+     $                      F_rf    , F_nu   , F_nv   ,
+     $                      F_nt    , F_nw   , F_nf   ,
      $                      DIST_DIM, Nk, i0, j0, in, jn )
 *
       implicit none
@@ -85,15 +84,14 @@
       real     F_st0  (DIST_SHAPE)     ,  F_fip   (DIST_SHAPE,0:Nk+1),
      %         F_fis  (DIST_SHAPE)     ,  F_tt0   (DIST_SHAPE,  Nk+1),
      %         F_ut0  (DIST_SHAPE,Nk)  ,  F_vt0   (DIST_SHAPE,  Nk)  ,
-     %         F_psdt0(DIST_SHAPE,Nk+1),  F_qsect0(DIST_SHAPE,0:Nk+1),
-     %         F_wt0  (DIST_SHAPE,Nk+1),  F_gptx  (DIST_SHAPE,  Nk)  ,
+     %         F_zdt0 (DIST_SHAPE,Nk+1),  F_qt0   (DIST_SHAPE,0:Nk+1),
+     %         F_wt0  (DIST_SHAPE,Nk+1),  F_p     (DIST_SHAPE,0:Nk+1),
      %         F_ru   (DIST_SHAPE,Nk)  ,  F_rv    (DIST_SHAPE,  Nk)  ,
-     %         F_rcn  (DIST_SHAPE,Nk)  ,  F_rth   (DIST_SHAPE,  Nk+1),
-     %         F_rvv  (DIST_SHAPE,Nk+1),  F_nth   (DIST_SHAPE,  Nk+1),
+     %         F_rt   (DIST_SHAPE,Nk+1),
+     %         F_rf   (DIST_SHAPE,Nk+1),  F_nt    (DIST_SHAPE,  Nk+1),
      %         F_rw   (DIST_SHAPE,Nk+1),  F_nu    (DIST_SHAPE,  Nk)  ,
-     %         F_nv   (DIST_SHAPE,Nk)  , F_nw     (DIST_SHAPE,  Nk+1),
-     %         F_nvv  (DIST_SHAPE,Nk+1), F_ncn    (DIST_SHAPE,  Nk)  ,
-     %         F_csh  (DIST_SHAPE)
+     %         F_nv   (DIST_SHAPE,Nk)  ,  F_nw    (DIST_SHAPE,  Nk+1),
+     %         F_nf   (DIST_SHAPE,Nk+1)
 *
 *
 *implicits
@@ -109,31 +107,21 @@
 #include "ver.cdk"
 #include "schm.cdk"
 #include "ptopo.cdk"
-#include "matlab.cdk"
 *
       integer i, j, k, i0, j0, in, jn, nij, longueur
-      real*8  one, two, half, xxx, yyy , zzz, p1, p4, p3, p2, p5, p6
+      real*8  one, two, half, xxx, yyy, zzz, xx1, yy1, p1, p2, p3, p4, p5, p6
       parameter(one=1.d0, two=2.d0, half=.5d0)
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8, ztmp_8
-      real    PPP(DIST_SHAPE,0:Nk+1)
-      real*8  qpmqs(DIST_SHAPE,0:Nk+1)
       logical finbac
 **
       finbac=.false.
       if ( .not. (F_itr .lt. F_itnlh) )finbac=.true.
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_bacp_2.bin',
-     $        status='replace',form='unformatted')
-         write(62)G_ni-lam_pil_w-lam_pil_e
-         write(62)G_nk
-      endif
 *     __________________________________________________________________
 *
       nij = (in - i0 + 1)*(jn - j0 + 1)
 
       if ( (Cori_cornl_L) .or. (F_itr .lt. F_itnlh) )
-     $   call rpn_comm_xch_halo( F_gptx, LDIST_DIM,l_ni,l_nj,G_nk,
+     $   call rpn_comm_xch_halo( F_p  , LDIST_DIM,l_ni,l_nj,G_nk+1,
      $                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       p1 = Dcst_rgasd_8*Cstv_tstr_8
@@ -143,33 +131,24 @@
       p5 = Ver_gokt2RT_8*Ver_epsilon_8
       p6 = Ver_gokt2RT_8
 *
-!$omp parallel private(xxx,yyy,zzz,xtmp_8,ytmp_8,ztmp_8)
+!$omp parallel private(xxx,yyy,zzz,xx1,yy1,xtmp_8,ytmp_8,ztmp_8)
 *
 *     Compute P at top and bottom
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *
-!$omp do 
-      do k=1,l_nk 
-         do j= j0, jn
-         do i= i0, in
-            PPP(i,j,k)=F_gptx(i,j,k)
-         end do
-         end do
-      end do
-!$omp enddo 
 !$omp do
       do j= j0, jn
          do i= i0, in
-            PPP(i,j,0)    = Ver_cst_8 * (F_rth(i,j,1)-F_nth(i,j,1)) 
-     $           + Ver_alphat_8*PPP(i,j,1)
-            PPP(i,j,l_nk+1) = Ver_alphas_8*PPP(i,j,l_nk) 
-     $           - Ver_css_8 * (F_rth(i,j,l_nk+1)-F_nth(i,j,l_nk+1)) 
+            F_p(i,j,0)    = Ver_cst_8 * (F_rt(i,j,1)-F_nt(i,j,1)) 
+     $           + Ver_alphat_8*F_p(i,j,1)
+            F_p(i,j,l_nk+1) = Ver_alphas_8*F_p(i,j,l_nk) 
+     $           - Ver_css_8 * (F_rt(i,j,l_nk+1)-F_nt(i,j,l_nk+1)) 
          end do
       end do
 !$omp enddo
 
 !$omp single
-      call rpn_comm_xch_halo(PPP,LDIST_DIM,l_ni,l_nj,G_nk+2,
+      call rpn_comm_xch_halo(F_p,LDIST_DIM,l_ni,l_nj,G_nk+2,
      $     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !$omp end single
 *
@@ -183,14 +162,14 @@
             do i= i0, l_niu-pil_e
 
                F_ut0(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) -
-     $         p4*(PPP(i+1,j,k)-PPP(i,j,k)) * geomg_invhx_8(i) )
+     $         p4*(F_p(i+1,j,k)-F_p(i,j,k)) * geomg_invhx_8(i) )
             end do
             end do
 *
             do j= j0, l_njv-pil_n
             do i= i0, in
                F_vt0(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) -
-     $                p4*(PPP(i,j+1,k) - PPP(i,j,k))
+     $                p4*(F_p(i,j+1,k) - F_p(i,j,k))
      $                  *geomg_cyv2_8(j)*geomg_invhsy_8(j) )
             end do
             end do
@@ -204,35 +183,35 @@
 *
       if (.not. Schm_hydro_L) then
 *
-         xxx = Ver_zodz_8(1)
-         yyy = half*p3/xxx
+         xxx = p5 * ( Ver_idz_8%t(1) + Dcst_cappa_8*half )
+         yyy = p5 * ( Ver_idz_8%t(1) - Dcst_cappa_8*half )
+         zzz = p3 * half/Ver_idz_8%t(1)
 !$omp do
          do j= j0, jn 
          do i= i0, in 
 c           Boundary condition at top
-            F_qsect0(i,j,0) =  yyy *
-     $                            ( F_rvv(i,j,1) - F_nvv(i,j,1)
-     $             - p5 * ( xxx * (   PPP(i,j,1) -   PPP(i,j,0) )
-     $      + Dcst_cappa_8*half * (   PPP(i,j,1) +   PPP(i,j,0) ) ))
+            F_qt0(i,j,0) =  zzz * ( F_rf(i,j,1) - F_nf(i,j,1)
+     $                       - xxx * F_p(i,j,1) + yyy * F_p(i,j,0)  )
          enddo
          enddo
 !$omp enddo
 *        Note : we cannot use omp on loop k 
-*               due to vertical dependance F_qsect0(i,j,k-1)
+*               due to vertical dependance F_qt0(i,j,k-1)
          do k=1,l_nk+1
-            xxx = Ver_zodz_8(k)
-            yyy = one/(xxx+half)
+            xxx = p5 * ( Ver_idz_8%t(k) + Dcst_cappa_8*half )
+            yyy = p5 * ( Ver_idz_8%t(k) - Dcst_cappa_8*half )
+            zzz = one/(Ver_idz_8%t(k)+half)
+            xx1 = Dcst_grav_8 * (Ver_idz_8%t(k)+half)
+            yy1 = Dcst_grav_8 * (Ver_idz_8%t(k)-half)
 !$omp do
             do j= j0, jn 
             do i= i0, in 
-               F_qsect0(i,j,k) = yyy * (  (xxx-half)*F_qsect0(i,j,k-1)
-     $                       - p3 * ( F_rvv(i,j,k) - F_nvv(i,j,k)
-     $               - p5 * ( xxx * (   PPP(i,j,k) -   PPP(i,j,k-1))
-     $        + Dcst_cappa_8*half * (   PPP(i,j,k) +   PPP(i,j,k-1))) ))
+               F_qt0(i,j,k) = zzz * (  (Ver_idz_8%t(k)-half)*F_qt0(i,j,k-1)
+     $                       - p3 * ( F_rf(i,j,k) - F_nf(i,j,k)
+     $                       - xxx * F_p(i,j,k) + yyy * F_p(i,j,k-1) ) )
 *
                F_wt0(i,j,k) = Cstv_tau_8 * ( F_rw(i,j,k) - F_nw(i,j,k)
-     $                  + Dcst_grav_8 * ( (xxx+half) * F_qsect0(i,j,k)
-     $                                  - (xxx-half) * F_qsect0(i,j,k-1)))
+     $                  + xx1 * F_qt0(i,j,k) - yy1 * F_qt0(i,j,k-1) )
             end do
             end do            
 !$omp enddo     
@@ -246,8 +225,7 @@ c           Boundary condition at top
 !$omp do
       do j= j0, jn 
       do i= i0, in 
-        F_st0(i,j) = p2*( half*(PPP(i,j,l_nk+1)+PPP(i,j,l_nk))
-     $                      -F_fis(i,j) )
+        F_st0(i,j) = p2*( half*(F_p(i,j,l_nk+1)+F_p(i,j,l_nk)) - F_fis(i,j) )
       end do
       end do
 !$omp enddo
@@ -257,13 +235,13 @@ c           Boundary condition at top
          do j= j0, jn 
          do i= i0, in 
             F_st0(i,j) = F_st0(i,j) 
-     $           - half*(F_qsect0(i,j,l_nk+1)+F_qsect0(i,j,l_nk))
+     $           - half*(F_qt0(i,j,l_nk+1)+F_qt0(i,j,l_nk))
          end do
          end do
 !$omp enddo
       endif 
 *
-*     Compute psd
+*     Compute zd
 *     ~~~~~~~~~~~
 *
       if(finbac.or.Schm_eulmtemp_L)then
@@ -271,22 +249,21 @@ c           Boundary condition at top
 !$omp do
          do j= j0, jn 
          do i= i0, in 
-            F_psdt0(i,j,1)=0.
-            F_psdt0(i,j,l_nk+1)=0.
+            F_zdt0(i,j,1)=0.
+            F_zdt0(i,j,l_nk+1)=0.
          enddo
          enddo            
 !$omp enddo
 !$omp do
          do k=2,l_nk
-            xxx=Ver_zodz_8(k)
-            zzz=Cstv_tau_8*Ver_z_8%t(k)
-            yyy=Ver_z_8%t(k)*Ver_boz_8%t(k)/Cstv_tau_8
+            xxx=p6*(Ver_idz_8%t(k)-Ver_epsilon_8*half)
+            yyy=p6*(Ver_idz_8%t(k)+Ver_epsilon_8*half)
+            zzz=Ver_b_8%t(k)/Cstv_tau_8
             do j= j0, jn 
             do i= i0, in 
-               F_psdt0(i,j,k)=-zzz*(F_rth(i,j,k)- F_nth(i,j,k)
-     $                    +p6*( xxx*( PPP(i,j,k) -  PPP(i,j,k-1) ) 
-     $          -Ver_epsilon_8*half*( PPP(i,j,k) +  PPP(i,j,k-1) ) ) )
-     $                         -yyy*F_st0(i,j)
+               F_zdt0(i,j,k)=-Cstv_tau_8*(F_rt(i,j,k)- F_nt(i,j,k)
+     $                        + xxx*F_p(i,j,k) - yyy*F_p(i,j,k-1) )
+     $                        - zzz*F_st0(i,j)
             enddo
             enddo
          enddo   
@@ -295,11 +272,11 @@ c           Boundary condition at top
          if (.not. Schm_hydro_L) then
 !$omp do
             do k=2,l_nk
-               xxx=half*Ver_z_8%t(k)/Cstv_tau_8
+               xxx=half/Cstv_tau_8
                do j= j0, jn 
                do i= i0, in 
-                  F_psdt0(i,j,k)=F_psdt0(i,j,k)
-     $              -xxx*(F_qsect0(i,j,k)+F_qsect0(i,j,k-1))
+                  F_zdt0(i,j,k)=F_zdt0(i,j,k)
+     $              -xxx*(F_qt0(i,j,k)+F_qt0(i,j,k-1))
                enddo
                enddo
             enddo
@@ -313,10 +290,10 @@ c           Boundary condition at top
 
 !$omp do
       do k=0,l_nk+1
-         xxx=p1*Ver_boz_8%m(k)
+         xxx=p1*Ver_b_8%m(k)
          do j= j0, jn 
          do i= i0, in          
-            F_fip(i,j,k)=PPP(i,j,k)-xxx*F_st0(i,j)
+            F_fip(i,j,k)=F_p(i,j,k)-xxx*F_st0(i,j)
          enddo
          enddo
       enddo
@@ -326,65 +303,29 @@ c           Boundary condition at top
          do k=0,l_nk+1
             do j= j0, jn 
             do i= i0, in          
-               F_fip(i,j,k)=F_fip(i,j,k)-p1*F_qsect0(i,j,k)       
+               F_fip(i,j,k)=F_fip(i,j,k)-p1*F_qt0(i,j,k)       
             enddo
             enddo
          enddo
 !$omp enddo
       endif    
 *
-*     Compute csh
-*     ~~~~~~~~~~~
-*
-!$omp do
-      do j= j0, jn
-         do i= i0, in
-            ytmp_8(i,j) = F_st0(i,j)*half
-         end do
-         call vexp  ( ytmp_8(i0,j) , ytmp_8(i0,j), (in-i0+1) )
-         do i= i0, in
-            F_csh(i,j)=two*ytmp_8(i,j)*sinh(F_st0(i,j)*half)
-         end do
-      end do
-!$omp enddo
-*
-*     Compute q'-q"
-*     ~~~~~~~~~~~~~
-*
-!$omp do
-       do k=0,l_nk+1
-         do j= j0, jn
-         do i= i0, in
-            xtmp_8(i,j) = one + Ver_boz_8%m(k)*F_csh(i,j)
-         enddo
-         enddo
-         call vlog ( ytmp_8, xtmp_8, nij )
-*
-         do j= j0, jn
-         do i= i0, in
-            qpmqs(i,j,k)=ytmp_8(i,j)
-         enddo
-         enddo
-      enddo
-!$omp enddo
-*
 *     Compute T
 *     ~~~~~~~~~
 *
 !$omp do
       do k=1,l_nk+1
-         xxx=Ver_zodz_8(k)
-         yyy=xxx*p2
+         xxx=p2*Ver_idz_8%t(k)
          do j= j0, jn 
          do i= i0, in          
-            xtmp_8(i,j)=one+xxx*(qpmqs(i,j,k)-qpmqs(i,j,k-1))
+            xtmp_8(i,j)=one+Ver_dbdz_8%t(k)*F_st0(i,j)
          enddo
          enddo
          call vrec ( ztmp_8, xtmp_8, nij )
          if (.not. Schm_hydro_L) then
             do j= j0, jn 
             do i= i0, in          
-               xtmp_8(i,j) = half*(F_qsect0(i,j,k)+F_qsect0(i,j,k-1))
+               xtmp_8(i,j) = half*(F_qt0(i,j,k)+F_qt0(i,j,k-1))
             enddo
             enddo
             call vexp ( ytmp_8, xtmp_8, nij )
@@ -398,7 +339,7 @@ c           Boundary condition at top
          do j= j0, jn 
          do i= i0, in          
             F_tt0(i,j,k)=Cstv_tstr_8*ytmp_8(i,j)*ztmp_8(i,j)
-     $           *(one-yyy*(F_fip(i,j,k)-F_fip(i,j,k-1)))
+     $           *(one-xxx*(F_fip(i,j,k)-F_fip(i,j,k-1)))
          enddo
          enddo
       enddo
@@ -406,31 +347,6 @@ c           Boundary condition at top
 *
 !$omp end parallel
 
-      if ( matlab_write_L ) then
-         call write_matlab_2d(62,F_fis)
-         call write_matlab_3d_v(62,PPP)
-
-         if (.not. Schm_hydro_L)then
-            call write_matlab_3d_v(62,F_qsect0)
-            call write_matlab_3d_th(62,F_wt0)
-         endif
-
-         call write_matlab_2d(62,F_st0)
-         call write_matlab_2d(62,F_csh)
-         call write_matlab_3d_v(62,F_fip)
-         call write_matlab_3d_th(62,F_tt0 )
-
-         if (finbac) then
-            if(Ptopo_myproc.eq.0)print*,'finbac'
-            call write_matlab_3d(62,F_ut0)
-            call write_matlab_3d_th(62,F_psdt0)
-         endif
-         
-      endif
-*
-*
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)close(62)
-*
 *     __________________________________________________________________
 *
       return

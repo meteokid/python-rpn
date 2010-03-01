@@ -82,7 +82,7 @@
                kv=k
                LipNOv=dvdy
             endif
-            dwdz=abs(F_w(i,j,k)-F_w(i,j,km))/ver_hz_8%m(km)
+            dwdz=abs(F_w(i,j,k)-F_w(i,j,km))*ver_idz_8%m(km)
             if(dwdz.gt.LipNOw) then
                iw=i
                jw=j

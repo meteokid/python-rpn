@@ -65,13 +65,13 @@
       if (Lun_debug_L) write (Lun_out,1000)
       pnlkey1(1)  = VMM_KEY(uth)
       pnlkey1(2)  = VMM_KEY(vth)
-      pnlkey1(3)  = VMM_KEY(psdth)
+      pnlkey1(3)  = VMM_KEY(zdth)
 *
       pnerr = vmmlod(pnlkey1,3)
 *
       pnerr = VMM_GET_VAR(uth)
       pnerr = VMM_GET_VAR(vth)
-      pnerr = VMM_GET_VAR(psdth)
+      pnerr = VMM_GET_VAR(zdth)
 c     if (Acid_test_L)
 c    %call glbstat (uth,'Uth',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in-1,
 c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
@@ -212,7 +212,7 @@ c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_v, 1-Adw_halox, 
      %  Adw_nic+Adw_halox, 1-Adw_haloy, Adw_njc+Adw_haloy, dest_ni, n)
 *
-      call rpn_comm_xch_halox ( psdth, LDIST_DIM, l_ni, l_nj, F_nk+1, 
+      call rpn_comm_xch_halox ( zdth, LDIST_DIM, l_ni, l_nj, F_nk+1, 
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_w, 1-Adw_halox, 
      %  Adw_nic+Adw_halox, 1-Adw_haloy, Adw_njc+Adw_haloy, dest_ni, n)
 !$omp end single

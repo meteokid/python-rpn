@@ -82,17 +82,17 @@
       real, pointer, dimension(:,:,:) ::  u_temp,v_temp,
      $        hu_temp,tt_temp,gz_temp, 
      $        ttu_temp,ttv_temp,gzu_temp,gzv_temp
-      real, allocatable, dimension(:  ) :: pia, pibb, hyba,vlapse
+      real, allocatable, dimension(:  ) :: aaa, bbb, hyba,vlapse
       real, allocatable, dimension(:,:) ::zcol,tcol,vlna
       real, allocatable, dimension(:,:,:) ::  u_temp2,v_temp2,
-     $     xlnp, dz, dt, work, p_t_geo
+     $     xlnp, dz, dt, work, lnp_t
       real, dimension(l_ni,l_nj) :: pps, ps , topo_temp,ps_temp
       real dummy, conv,
      $     psmin, psmax, psmin_glob, psmax_glob
       integer errprdf,prdfsum
       logical NESD
-      real pia_special_t(l_nk+2),pibb_special_t(l_nk+2)
-      real pia_special_m(0:l_nk+2),pibb_special_m(0:l_nk+2)
+      real a_special_t(l_nk+2),b_special_t(l_nk+2)
+      real a_special_m(0:l_nk+2),b_special_m(0:l_nk+2)
 
       real fact
 
@@ -181,17 +181,17 @@
          nk_anal = Acqi_vterplv
          if (Acql_ecmanl) nk_anal = Acqi_vterplv + 1
          
-         allocate( pia(nk_anal),pibb(nk_anal),hyba(nk_anal) )
+         allocate( aaa(nk_anal),bbb(nk_anal),hyba(nk_anal) )
 
          if (Acql_siganl) then
             do k=1,Acqi_vterplv
-               pia(k) = rna(k)
-               pibb(k)= 0.
+               aaa(k) = rna(k)
+               bbb(k)= 0.
                hyba(k)= 0.
             enddo
          else if (Acql_ecmanl) then
 
-            call ecmwf_ab( pia, pibb, nk_anal )
+            call ecmwf_ab( aaa, bbb, nk_anal )
 
          else 
             if (rna(1).eq.0.0) then
@@ -203,17 +203,17 @@
                    hyba(k) = rna(k)
                 enddo
             endif
-            call genab ( pia, pibb, hyba, Acqr_ptopa, Acqr_rcoefa,
+            call genab ( aaa, bbb, hyba, Acqr_ptopa, Acqr_rcoefa,
      $                                               Acqi_vterplv )
          endif
 *     
 *        Compute hydrostatic GZ on analysis levels
 *
-         call p0vt2gz_hyb ( gz_temp,pia,pibb,ps,tt_temp, Acqi_nbpts, 
+         call p0vt2gz_hyb ( gz_temp,aaa,bbb,ps,tt_temp, Acqi_nbpts, 
      $                             nk_anal,.false.,Acql_siganl )
 *
 *        Finally, compute pressure on model surface (PS)
-         call getp0 ( pps, topo_temp,pia,pibb, ps, gz_temp, tt_temp, 
+         call getp0 ( pps, topo_temp,aaa,bbb, ps, gz_temp, tt_temp, 
      $                         Acqi_nbpts, nk_anal,Acql_siganl )
          do j=1,l_nj
          do i=1,l_ni
@@ -222,54 +222,34 @@
          enddo
 *        Interpolate VT
          do k=1,g_nk+2
-            pia_special_t(k)=Ver_pia_spcl_8%t(k)
-            pibb_special_t(k)=Ver_pibb_spcl_8%t(k)
+            a_special_t(k)=Ver_a_spcl_8%t(k)
+            b_special_t(k)=Ver_b_spcl_8%t(k)
          end do
 
          do k=1,g_nk
-            pia_special_m(k)=Ver_pia%m(k)
-            pibb_special_m(k)=Ver_pibb%m(k)
+            a_special_m(k)=Ver_a_8%m(k)
+            b_special_m(k)=Ver_b_8%m(k)
          end do
 c        Top wind for diag wind
-         pia_special_m(0)=1.
-         pibb_special_m(0)=0.
+         a_special_m(0)=1.
+         b_special_m(0)=0.
 c        Special level near surface and surface
          do k=g_nk+1,g_nk+2
-            pia_special_m(k)=Ver_pia_spcl_8%t(k)
-            pibb_special_m(k)=Ver_pibb_spcl_8%t(k)
+            a_special_m(k)=Ver_a_spcl_8%t(k)
+            b_special_m(k)=Ver_b_spcl_8%t(k)
          end do
 
-         if(Schm_dPdlogZ_L)then
-            allocate(p_t_geo(l_ni,l_nj,Acqi_nktmp+2))
-            do k=2,g_nk
-               do j=1,l_nj
-               do i=1,l_ni
-                  p_t_geo(i,j,k)=sqrt(
-     $                 (Ver_pia%m(k  )+Ver_pibb%m(k  )*pps(i,j))*
-     $                 (Ver_pia%m(k-1)+Ver_pibb%m(k-1)*pps(i,j)))
-               end do
-               end do
-               do j=1,l_nj
-               do i=1,l_ni
-                  p_t_geo(i,j,1)=sqrt(
-     $                 (Ver_pia%t(1)+Ver_pibb%t(1)*pps(i,j))*
-     $                 (Ver_pia%m(1)+Ver_pibb%m(1)*pps(i,j)))
-c                  p_t_geo(i,j,1)=Ver_pia%t(1)+Ver_pibb%t(1)*pps(i,j)
-                  p_t_geo(i,j,g_nk+1)=sqrt(pps(i,j)*
-     $                 (Ver_pia%m(g_nk)+Ver_pibb%m(g_nk)*pps(i,j)))
-                  p_t_geo(i,j,g_nk+2)=pps(i,j)
-               end do
-               end do               
-            end do            
-            call vte_hyb2hyb_pres (work,p_t_geo,
-     $           G_nk+2,tt_temp,pia,pibb, ps, nk_anal, Acqi_nbpts,
-     $           'VT',Acql_siganl)
-         else
-            call vte_hyb2hyb (work,pia_special_t,pibb_special_t,pps,
-     $           G_nk+2,tt_temp,pia,pibb, ps, nk_anal, Acqi_nbpts,
-     $           'VT',Acql_siganl)
-            
-         endif
+         allocate(lnp_t(l_ni,l_nj,Acqi_nktmp+2))
+         do k=1,g_nk+2
+            do j=1,l_nj
+            do i=1,l_ni
+               lnp_t(i,j,k)=Ver_a_spcl_8%t(k)+
+     $                 Ver_b_spcl_8%t(k)*log(pps(i,j))
+            end do
+            end do
+         end do            
+         call vte_hyb2pres (work,lnp_t,G_nk+2,tt_temp,
+     $           aaa,bbb,ps,nk_anal,Acqi_nbpts,'VT',Acql_siganl,.true.)
 *
          if(Schm_phyms_L)then
             do j=1,l_nj
@@ -295,18 +275,11 @@ c            end do
          end do
 *
          if ( Schm_moist_L ) then
-            if(Schm_dPdlogZ_L)then
-               call vte_hyb2hyb_pres ( work,p_t_geo,
-     $              G_nk+2,hu_temp,pia,pibb, ps, nk_anal, Acqi_nbpts,
-     $              'HU',Acql_siganl )
-            else
-               call vte_hyb2hyb ( work, pia_special_t, pibb_special_t,pps,G_nk+2,
-     $              hu_temp,pia,pibb, ps, nk_anal, 
-     $              Acqi_nbpts, 'HU',Acql_siganl )
-            endif
+            call vte_hyb2pres(work,lnp_t,G_nk+2,hu_temp,aaa,bbb,ps,
+     $              nk_anal,Acqi_nbpts,'HU',Acql_siganl,.true.)
             do j=1,l_nj
             do i=1,l_ni
-               hdia(i,j)  = work(i,j,G_nk+2) 
+               hdia(i,j)  = work(i,j,G_nk+2)
             end do
             end do
          else
@@ -325,26 +298,26 @@ c            end do
          enddo
          enddo
 *
-         call p0vt2gz_hyb ( gzu_temp,pia,pibb,apsu_temp,ttu_temp,
+         call p0vt2gz_hyb ( gzu_temp,aaa,bbb,apsu_temp,ttu_temp,
      $             Acqi_niu*Acqi_nju, nk_anal,.false.,Acql_siganl )
-         call getp0 ( psu_temp, topu_temp,pia,pibb, apsu_temp, 
+         call getp0 ( psu_temp, topu_temp,aaa,bbb, apsu_temp, 
      $                gzu_temp,ttu_temp, Acqi_niu*Acqi_nju, 
      $                nk_anal,Acql_siganl)
-         call p0vt2gz_hyb ( gzv_temp,pia,pibb,apsv_temp,ttv_temp,
+         call p0vt2gz_hyb ( gzv_temp,aaa,bbb,apsv_temp,ttv_temp,
      $             Acqi_niv*Acqi_njv, nk_anal,.false.,Acql_siganl )
-         call getp0 ( psv_temp, topv_temp,pia,pibb, apsv_temp, 
+         call getp0 ( psv_temp, topv_temp,aaa,bbb, apsv_temp, 
      $                gzv_temp,ttv_temp, Acqi_niv*Acqi_njv, 
      $                nk_anal,Acql_siganl)
 *
          allocate ( u_temp2(Acqi_niu,Acqi_nju,0:Acqi_nktmp+2), 
      $              v_temp2(Acqi_niv,Acqi_njv,0:Acqi_nktmp+2) )
 *
-         call vte_hyb2hyb ( u_temp2,pia_special_m,pibb_special_m, psu_temp,
-     $                  G_nk+3,u_temp, pia,pibb, apsu_temp, nk_anal, 
-     $                  Acqi_niu*Acqi_nju, 'UU',Acql_siganl )
-         call vte_hyb2hyb ( v_temp2,pia_special_m,pibb_special_m, psv_temp,
-     $                  G_nk+3,v_temp, pia,pibb, apsv_temp, nk_anal, 
-     $                  Acqi_niv*Acqi_njv, 'VV',Acql_siganl )
+         call vte_hyb2hybln( u_temp2,a_special_m,b_special_m, psu_temp,
+     $                  G_nk+3,u_temp, aaa,bbb, apsu_temp, nk_anal, 
+     $                  Acqi_niu*Acqi_nju, 'UU',Acql_siganl,.true.)
+         call vte_hyb2hybln( v_temp2,a_special_m,b_special_m, psv_temp,
+     $                  G_nk+3,v_temp, aaa,bbb, apsv_temp, nk_anal, 
+     $                  Acqi_niv*Acqi_njv, 'VV',Acql_siganl,.true.)
 *
          do k=1,g_nk
             do j=1,Acqi_nju
@@ -389,13 +362,13 @@ c            end do
          call flush(6)
          call gem_stop('readdyn',-2)
 
-         allocate ( pia(Acqi_vterplv),
+         allocate ( aaa(Acqi_vterplv),
      $    zcol(Acqi_nim*Acqi_njm,Acqi_nktmp),vlapse(Acqi_nim*Acqi_njm),
      $    tcol(Acqi_nim*Acqi_njm,Acqi_nktmp),xlnp(l_ni,l_nj,Acqi_nktmp),
      $    vlna(Acqi_nim*Acqi_njm,Acqi_nktmp),  dz(l_ni,l_nj,Acqi_nktmp),
      $                                         dt(l_ni,l_nj,Acqi_nktmp))
          do k=1,Acqi_vterplv
-            pia(k) = lna(k)
+            aaa(k) = lna(k)
          enddo
 *
 *        Compute PS,GZ,VT,ZCOL
@@ -415,12 +388,12 @@ c            end do
      $                    *sdd(Acqi_vterplv-1)
          enddo
 *
-         conv = alog(100.)
+         conv = log(100.)
          do k=1,g_nk
          do j=1,l_nj
          do i=1,l_ni
-            xlnp(i,j,k) =  dlog( Ver_pia_8%d(k)
-     %                   + Ver_pibb_8%d(k) * exp( ps(i,j) )) - conv
+            xlnp(i,j,k) =  log( Ver_a_8%d(k)
+     %                   + Ver_b_8%d(k) * exp( ps(i,j) )) - conv
          enddo
          enddo
          enddo
@@ -489,7 +462,7 @@ c            end do
       NESD = .false.
       if (Lctl_step.gt.0) NESD = .true.
       call tr_init ( work,Acqi_datasp,bmf_time1,bmf_time2,Acqi_nktmp,
-     $               pps,pia,pibb,ps_temp,Acqi_vterplv,l_ni,l_nj,NESD )
+     $               pps,aaa,bbb,ps_temp,Acqi_vterplv,l_ni,l_nj,NESD )
 *
       if (Acql_horzint) 
      $     call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju,
@@ -546,8 +519,8 @@ CAP>
          deallocate (psu_temp,psv_temp,topu_temp,topv_temp,
      $               gzu_temp,gzv_temp)
           IF (Acql_vertint) THEN
-              deallocate ( pia )
-              if (.not.Acql_prsanl) deallocate ( pibb )
+              deallocate ( aaa )
+              if (.not.Acql_prsanl) deallocate ( bbb )
           endif
       endif
 *

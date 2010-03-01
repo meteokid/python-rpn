@@ -32,6 +32,7 @@
 #include "schm.cdk"
 #include "intuv.cdk"
 #include "vrtd.cdk"
+#include "ver.cdk"
 
 *
 *modules
@@ -39,7 +40,7 @@
       external vmmlod, vmmget, vmmuld
 **
 
-      integer err, key(5)
+      integer err, key(4)
       integer i,j,k,ij,lnij
       real g_ovr_rd, dt, sig_e, p_0 
 
@@ -52,39 +53,23 @@
 
       call gem_stop('vrtd : A revoir pour staggering',-1)
 
-      key( 1) = VMM_KEY(qptx)
+      key( 1) = VMM_KEY(st1)
       key( 2) = VMM_KEY(tt1)
       key( 3) = VMM_KEY(ut1)
       key( 4) = VMM_KEY(vt1)
-      if (Schm_hydro_L) then
-         err = VMMLOD(key,4)
-         err = VMM_GET_VAR(qptx)
-         err = VMM_GET_VAR(tt1)
-         err = VMM_GET_VAR(ut1)
-         err = VMM_GET_VAR(vt1)
-         do k= 1,l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni
-            pres(i,j,k) = qptx(i,j,k)
-         end do
-         end do
-         end do
-      else
-         key(5) = VMM_KEY(qsect1)
-         err = vmmlod(key,5)
-         err = VMM_GET_VAR(qptx)
-         err = VMM_GET_VAR(tt1)
-         err = VMM_GET_VAR(ut1)
-         err = VMM_GET_VAR(vt1)
-         err = VMM_GET_VAR(qsect1)
-         do k=1,l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni
-            pres(i,j,k) = qptx(i,j,k) - qsect1(i,j,k)
-         end do
-         end do
-         end do
-      endif
+*
+      err = VMMLOD(key,4)
+      err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      do k= 1,l_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         pres(i,j,k) = Ver_z_8%d(k)+Ver_b_8%d(k)*st1(i,j)
+      end do
+      end do
+      end do
 *
 *     calculate sigma levels on scalar grid from local pressure
 *     ---------------------------------------------------------

@@ -1,18 +1,17 @@
-      DCL_DYNVAR(Ind, topo, real, (LDIST_SHAPE))
+*
       DCL_DYNVAR(Ind,    u, real, (LDIST_SHAPE,l_nk))
       DCL_DYNVAR(Ind,    v, real, (LDIST_SHAPE,l_nk))
       DCL_DYNVAR(Ind,    t, real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(Ind,   zd, real, (LDIST_SHAPE,l_nk+1))
       DCL_DYNVAR(Ind,    s, real, (LDIST_SHAPE))
+*
+      DCL_DYNVAR(Ind,    w, real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(Ind,    q, real, (LDIST_SHAPE,0:l_nk+1))
+*
       DCL_DYNVAR(Ind,  fip, real, (LDIST_SHAPE,0:l_nk+1))
-      DCL_DYNVAR(Ind,   tp, real, (LDIST_SHAPE,l_nk+1))
-      DCL_DYNVAR(Ind,   gp, real, (LDIST_SHAPE,0:l_nk+1))
-      DCL_DYNVAR(Ind,  psd, real, (LDIST_SHAPE,l_nk+1))
-      DCL_DYNVAR(Ind,   td, real, (LDIST_SHAPE,l_nk))
 *
-      DCL_DYNVAR(Ind,   w, real, (LDIST_SHAPE,l_nk+1))
-      DCL_DYNVAR(Ind,qsec, real, (LDIST_SHAPE,0:l_nk+1))
-*
-      DCL_DYNVAR(Ind, dtopo, real, (LDIST_SHAPE))
-      DCL_DYNVAR(Ind,  topu, real, (LDIST_SHAPE))
-      DCL_DYNVAR(Ind,  topv, real, (LDIST_SHAPE))
+      DCL_DYNVAR(Ind, topo, real, (LDIST_SHAPE))
+      DCL_DYNVAR(Ind,dtopo, real, (LDIST_SHAPE))
+      DCL_DYNVAR(Ind, topu, real, (LDIST_SHAPE))
+      DCL_DYNVAR(Ind, topv, real, (LDIST_SHAPE))
 *

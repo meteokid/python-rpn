@@ -9,21 +9,21 @@
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* Nl_nu              | non-linear deviation of U                       |
-* Nl_nv              | non-linear deviation of V                       |
-* Nl_nth             | non-linear deviation of T -> X                  |
-* Nl_ncn             | non-linear portion of continuity equation       |
-* Nl_nw              | non-linear deviation of vertical motion         |
-* Nl_vv              | non-linear deviation of FI -> WFI -> Q          |
+* Nl_u               | non-linear deviation of U                       |
+* Nl_v               | non-linear deviation of V                       |
+* Nl_t               | non-linear deviation of T -> X                  |
+* Nl_c               | non-linear portion of continuity equation       |
+* Nl_w               | non-linear deviation of vertical motion         |
+* Nl_f               | non-linear deviation of FI -> WFI -> Q          |
 *----------------------------------------------------------------------
 *
 *
 #endif
       MARK_COMMON_BEG(nl)
-      DCL_DYNVAR(nl,   nu ,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   nv ,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   nth,  real, (LDIST_SHAPE,l_nk+1))
-      DCL_DYNVAR(nl,   ncn,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   nw ,  real, (LDIST_SHAPE,l_nk+1))
-      DCL_DYNVAR(nl,   nvv,  real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(nl,   u ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nl,   v ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nl,   t ,  real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(nl,   c ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nl,   w ,  real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(nl,   f ,  real, (LDIST_SHAPE,l_nk+1))
       MARK_COMMON_END(nl)

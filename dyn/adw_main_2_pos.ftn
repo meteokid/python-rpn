@@ -56,7 +56,6 @@
 #include "ver.cdk"
 #include "geomg.cdk"
 c#include "ptopo.cdk"
-c#include "matlab.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -83,15 +82,6 @@ c#include "matlab.cdk"
 
       integer i0,in,j0,jn, longueur
 *
-c      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-c         open(unit=62,file=
-c     $        matlab_dir_S(1:longueur(matlab_dir_S))
-c     $        //'from_fortran_adw_main_2_pos.bin',
-c     $        status='replace',form='unformatted')
-c         write(62)G_ni-lam_pil_w-lam_pil_e
-c         write(62)G_nk
-c      endif
-
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -193,18 +183,9 @@ c     endif
      %                 .true., .true., .true.,nijk,i0,in,j0,jn,l_nk,'m')
 *
       
-c      if(matlab_write_L)call write_matlab_3d_adw(62,F_u)
-      
       call adw_trilin (wrkx1,F_u,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
       call adw_trilin (wrky1,F_v,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
 *
-c      if(matlab_write_L)then
-c         call write_matlab_3d_lam(62,wrkx1)
-c         call write_matlab_3d_lam(62,capx1)
-c         call write_matlab_3d_lam(62,capz1)
-c         if(Ptopo_myproc.eq.0)close(62)
-c      endif
-
       else
 *
       Adw_hor_L = .true.

@@ -65,7 +65,6 @@
 #include "vt0.cdk"
 #include "vtx.cdk"
 #include "ver.cdk"
-#include "matlab.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld,longueur
@@ -84,7 +83,6 @@
       real*8 aaa
       real tr,tr0,buf(l_ni,G_nk+1), half
       real work(LDIST_SHAPE,G_nk+1),work2(LDIST_SHAPE,G_nk+1)
-      real ytmp(LDIST_SHAPE),xtmp(LDIST_SHAPE)
       parameter( half = 0.5 )
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
@@ -97,14 +95,6 @@
       call gem_stop('adw_main_3_int : review merge 3.2.5 3.3.0',-1)
 
 
-*
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_adw_main_3_int.bin',
-     $        status='replace',form='unformatted')
-         write(62)G_ni-lam_pil_w-lam_pil_e
-         write(62)G_nk
-      endif
 *
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
@@ -223,12 +213,13 @@
       pnlkey1(2) = VMM_KEY(rvw1)
       pnlkey1(3) = VMM_KEY(ruw2)
       pnlkey1(4) = VMM_KEY(rvw2)
-      pnlkey1(5) = VMM_KEY(rcn)
+      pnlkey1(5) = VMM_KEY(rhsc)
       pnlkey1(6) = VMM_KEY(fiptx)
       pnlkey1(7) = VMM_KEY(zz1)
       pnlkey1(8) = VMM_KEY(piup)
       pnlkey1(9) = VMM_KEY(st1)
-      pnlod = 9
+      pnlkey1(10)= VMM_KEY(orhsc)
+      pnlod = 10
 *
       pnerr = vmmlod(pnlkey1,pnlod)
 *
@@ -236,17 +227,18 @@
       pnerr =  VMM_GET_VAR(rvw1)
       pnerr =  VMM_GET_VAR(ruw2)
       pnerr =  VMM_GET_VAR(rvw2)
-      pnerr =  VMM_GET_VAR(rcn)
+      pnerr =  VMM_GET_VAR(rhsc)
       pnerr =  VMM_GET_VAR(fiptx)
       pnerr =  VMM_GET_VAR(zz1)
       pnerr =  VMM_GET_VAR(piup)
       pnerr =  VMM_GET_VAR(st1)
+      pnerr =  VMM_GET_VAR(orhsc)
 *
 c     if (Acid_test_L)then
 c        if (Lun_debug_L) write (Lun_out,*)'Before adw_interp'
 c     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,4+acid_i0,G_ni-3-acid_in,
 c    %                                         4+acid_j0,G_nj-3-acid_jn,1,G_nk)
-c     endif rvw1,rcn,rth
+c     endif rvw1,rc,rt
 *
       call adw_interp (ruw2, ruw1, pos_x, pos_y,
      %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
@@ -260,7 +252,7 @@ c    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
 c     call glbstat (rvw2,'RVW2',LDIST_DIM,G_nk,5+acid_i0,G_ni-4-acid_in,
 c    %                                         6+acid_j0,G_nj-5-acid_jn,1,G_nk)
 c     endif
-      call adw_interp (rcn , rcn , pos_x, pos_y,
+      call adw_interp (rhsc , orhsc , pos_x, pos_y,
      %                .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
 *
       pnerr = vmmuld(pnlkey1,pnlod)
@@ -350,44 +342,41 @@ c     endif
 ***********************************************************************
 * Perform interpolation for equations on thermodynamic levels
 ***********************************************************************
-      pnlkey1(1) = VMM_KEY(rth)
-      pnlod = 1
+      pnlkey1(1) = VMM_KEY(rhst)
+      pnlkey1(2) = VMM_KEY(orhst)
+      pnlod = 2
 *
       if (.not. Schm_hydro_L) then
-         pnlkey1(2) = VMM_KEY(rw)
-         pnlkey1(3) = VMM_KEY(rvv)
-         pnlod = 3 
+         pnlkey1(3) = VMM_KEY(rhsw)
+         pnlkey1(4) = VMM_KEY(orhsw)
+         pnlkey1(5) = VMM_KEY(rhsf)
+         pnlkey1(6) = VMM_KEY(orhsf)
+         pnlod = 6 
       endif
 *
       pnerr = vmmlod(pnlkey1,pnlod)
 *
-      pnerr =  VMM_GET_VAR(rth)
+      pnerr =  VMM_GET_VAR(rhst)
+      pnerr =  VMM_GET_VAR(orhst)
 *
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(rw)
-         pnerr = VMM_GET_VAR(rvv)
+         pnerr = VMM_GET_VAR(rhsw)
+         pnerr = VMM_GET_VAR(orhsw)
+         pnerr = VMM_GET_VAR(rhsf)
+         pnerr = VMM_GET_VAR(orhsf)
       endif
 *
-      call adw_interp (rth, rth, pos_x, pos_y, 
+      call adw_interp (rhst, orhst, pos_x, pos_y, 
      %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
 
       if (.not. Schm_hydro_L) then
-          call adw_interp (rw, rw, pos_x, pos_y, 
+          call adw_interp (rhsw, orhsw, pos_x, pos_y, 
      %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
 *
-          call adw_interp (rvv, rvv, pos_x, pos_y, 
+          call adw_interp (rhsf, orhsf, pos_x, pos_y, 
      %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
        else
          if(Orh_icn.eq.Schm_itcn)then
-
-!$omp parallel do
-            do j=l_miny,l_maxy
-            do i=l_minx,l_maxx
-               xtmp(i,j)=st1(i,j)
-            end do
-            end do
-!$omp end parallel do
-            call vsexp (ytmp,xtmp,(l_maxx-l_minx+1)*(l_maxy-l_miny+1))
 *
 !$omp parallel do
             do k=1,l_nk+1
@@ -395,7 +384,8 @@ c     endif
                do i=i0,in
                   work(i,j,k)=0.5d0*(fiptx(i,j,k)+fiptx(i,j,k-1))
      $                 +Ver_fistr_8%t(k)
-                  work2(i,j,k)=Ver_pia_8%t(k) + Ver_pib_8%t(k)*ytmp(i,j)
+                  work2(i,j,k)=exp(Ver_a_8%t(k) + Ver_b_8%t(k)*
+     $                 (st1(i,j)+Ver_z_8%t(G_nk+1)))
                enddo
                enddo
             enddo
@@ -450,18 +440,6 @@ c     endif
       endif
 *
 *
-      endif
-
-      if(matlab_write_L)then
-         call write_matlab_3d(62,ruw1)
-         call write_matlab_3d(62,ruw2)
-         call write_matlab_3d(62,rcn)
-         call write_matlab_3d_th(62,rth)
-         if (.not. Schm_hydro_L) then 
-            call write_matlab_3d_th(62,rw)
-            call write_matlab_3d_th(62,rvv)
-         endif
-         if(Ptopo_myproc.eq.0)close(62)
       endif
 
 ***********************************************************************

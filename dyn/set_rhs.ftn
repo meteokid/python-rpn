@@ -48,43 +48,35 @@
 *
 *	Assign the names of the variables
 * 
-      VMM_NAM(ru   )= 'MRU'
-      VMM_NAM(rv   )= 'MRV'
-      VMM_NAM(rw   )= 'MRW'
-      VMM_NAM(rcn  )= 'RCN'
-      VMM_NAM(rth  )= 'RTH'
-      VMM_NAM(rvv  )= 'RVV'
+      VMM_NAM(rhsu)= 'RHSU'
+      VMM_NAM(rhsv)= 'RHSV'
+      VMM_NAM(rhst)= 'RHST'
+      VMM_NAM(rhsc)= 'RHSC'
+      VMM_NAM(rhsw)= 'RHSW'
+      VMM_NAM(rhsf)= 'RHSF'
+      VMM_NAM(rhsp)= 'RHSP'
 *
-      VMM_NAM(rd   )= 'MRRD'
-      VMM_NAM(r1   )= 'MR1'
-      VMM_NAM(rhell)= 'RHLL'
-      VMM_NAM(rheln)= 'RHLN'
-*
-      VMM_NAM(ruw1 )= 'RUW1'
-      VMM_NAM(ruw2 )= 'RUW2'
-      VMM_NAM(rvw1 )= 'RVW1'
-      VMM_NAM(rvw2 )= 'RVW2'
+      VMM_NAM(ruw1)= 'RUW1'
+      VMM_NAM(ruw2)= 'RUW2'
+      VMM_NAM(rvw1)= 'RVW1'
+      VMM_NAM(rvw2)= 'RVW2'
 *
 *       Set the attributes of the variables
 *
       attri_S='SAVE=Y,CL=5,W=5,INIT=R'
 *
-      VMM_CREATE(ru   , LARRAY3D, 1, attri_S)
-      VMM_CREATE(rv   , LARRAY3D, 1, attri_S)
-      VMM_CREATE(rw   , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(rcn  , LARRAY3D, 1, attri_S)
-      VMM_CREATE(rth  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(rvv  , LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(rhsu, LARRAY3D, 1, attri_S)
+      VMM_CREATE(rhsv, LARRAY3D, 1, attri_S) 
+      VMM_CREATE(rhst, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(rhsc, LARRAY3D, 1, attri_S) 
+      VMM_CREATE(rhsw, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(rhsf, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(rhsp, LARRAY3D, 1, attri_S) 
 *
-      VMM_CREATE(rd   , LARRAY3D, 1, attri_S)
-      VMM_CREATE(r1   , LARRAY3D, 1, attri_S)
-      VMM_CREATE(rhell, LARRAY3D, 1, attri_S)
-      VMM_CREATE(rheln, LARRAY3D, 1, attri_S)
-*
-      VMM_CREATE(ruw1 , LARRAY3D, 1, attri_S)
-      VMM_CREATE(ruw2 , LARRAY3D, 1, attri_S)
-      VMM_CREATE(rvw1 , LARRAY3D, 1, attri_S)
-      VMM_CREATE(rvw2 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(ruw1, LARRAY3D, 1, attri_S)
+      VMM_CREATE(ruw2, LARRAY3D, 1, attri_S)
+      VMM_CREATE(rvw1, LARRAY3D, 1, attri_S)
+      VMM_CREATE(rvw2, LARRAY3D, 1, attri_S)
 *
  1000 format(
      +/,'INITIALIZATION OF RIGHT-HAND SIDE COMDECK (S/R SET_RHS)',

@@ -40,13 +40,13 @@
       key(1)=VMM_KEY(nest_u)
       key(2)=VMM_KEY(nest_v)
       key(3)=VMM_KEY(nest_t)
-      key(4)=VMM_KEY(nest_psd)
+      key(4)=VMM_KEY(nest_zd)
       key(5)=VMM_KEY(nest_s)
       nvar = 5
 *
       if (.not.Schm_hydro_L) then
          key(6)=VMM_KEY(nest_w)
-         key(7)=VMM_KEY(nest_qsec)
+         key(7)=VMM_KEY(nest_q)
          nvar = 7
       endif
 *
@@ -54,11 +54,11 @@
       err = VMM_GET_VAR(nest_u)
       err = VMM_GET_VAR(nest_v)
       err = VMM_GET_VAR(nest_t)
-      err = VMM_GET_VAR(nest_psd)
+      err = VMM_GET_VAR(nest_zd)
       err = VMM_GET_VAR(nest_s)
       if (.not.Schm_hydro_L) then
          err = VMM_GET_VAR(nest_w)
-         err = VMM_GET_VAR(nest_qsec)
+         err = VMM_GET_VAR(nest_q)
       endif
 *
       call trnes (nest_u,bcs_u(bcs_is),bcs_u(bcs_in),
@@ -73,15 +73,15 @@
       call trnes (nest_s,bcs_s(bcs_is),bcs_s(bcs_in),
      $       bcs_s(bcs_iw),bcs_s(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
-      call trnes (nest_psd,bcs_psd(bcs_is),bcs_psd(bcs_in),
-     $     bcs_psd(bcs_iw),bcs_psd(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+      call trnes (nest_zd,bcs_zd(bcs_is),bcs_zd(bcs_in),
+     $     bcs_zd(bcs_iw),bcs_zd(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
       if (.not.Schm_hydro_L) then
           call trnes (nest_w,bcs_w(bcs_is),bcs_w(bcs_in),
      $       bcs_w(bcs_iw),bcs_w(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
-          call trnes (nest_qsec,bcs_qsec(bcs_is),bcs_qsec(bcs_in),
-     $       bcs_qsec(bcs_iw),bcs_qsec(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+          call trnes (nest_q,bcs_q(bcs_is),bcs_q(bcs_in),
+     $       bcs_q(bcs_iw),bcs_q(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)
       endif
 

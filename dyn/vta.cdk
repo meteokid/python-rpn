@@ -9,21 +9,17 @@
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* uta                | x component of velocity                         |
-* vta                | y component of velocity                         |
-* wta                | z component of velocity                         |
-* tta                | T (temperature)                                 |
-* qpta               | q; = ln p -ln Z                                 |
+*  uta               | U: x component of velocity                      |
+*  vta               | V: y component of velocity                      |
+*  tta               | T: temperature                                  |
+* zdta               | Zdot: generalized vertical velocity             |
+*  sta               | s: log of surface pressure minus a constant     |
 *--------------------|-------------------------------------------------|
-* qsecta             | q''                                             |
+*  wta               | w: z component of velocity                      |
+*  qta               | q: log of non-hydrostatic perturbation pressure |
 *--------------------|-------------------------------------------------|
-* psdta              | pi* dot (vert. vel. in pi* coord.)              |
-* sta                | ln (pi_s/z_s)                                   |
-*--------------------|-------------------------------------------------|
-* huta               | specific humidity                               |
-* qcta               | mixing ratio of cloud water/ice                 |
 * trta               | passive tracer(s)                               |
-*----------------------------------------------------------------------
+*--------------------|-------------------------------------------------|
 *
 #endif
 *
@@ -35,14 +31,11 @@
       MARK_COMMON_BEG(vta)
       DCL_VMMVAR( vta,   uta, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vta,   vta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,   wta, real, (LDIST_SHAPE,l_nk+1) )
       DCL_VMMVAR( vta,   tta, real, (LDIST_SHAPE,l_nk+1) )
-      DCL_VMMVAR( vta,  qpta, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vta,qsecta, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vta, psdta, real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( vta,  zdta, real, (LDIST_SHAPE,l_nk+1) )
       DCL_VMMVAR( vta,   sta, real, (LDIST_SHAPE)      )
-      DCL_VMMVAR( vta,  huta, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vta,  qcta, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vta,   wta, real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( vta,   qta, real, (LDIST_SHAPE,0:l_nk+1) )
       DCL_VMMVAR( vta,  trta, real, (LDIST_SHAPE,l_nk,*) )
       MARK_COMMON_END(vta)
 

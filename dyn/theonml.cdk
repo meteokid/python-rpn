@@ -29,7 +29,6 @@
 #include "ver.cdk"
 #include "dcst.cdk"
 #include "ptopo.cdk"
-#include "matlab.cdk"
 *
       namelist /theo_cfgs/
      $     Theo_case_S, Theo_nivdist_S, 
@@ -44,7 +43,7 @@
      $     Hyb, Grd_rcoef, Pres_ptop,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
      $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,
-     %     Schm_hydro_L, Schm_nonhy_8, 
+     %     Schm_hydro_L,
      %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,
      %     Schm_itnlh, Schm_itraj, Schm_hdlast_L,
      %     Schm_adcub_L, Schm_psadj_L,  Schm_difqp_L, Schm_sfix_L,
@@ -71,11 +70,11 @@
      $     Hyb, Grd_rcoef, Pres_ptop,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
      $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,
-     %     Schm_hydro_L, Schm_nonhy_8, 
+     %     Schm_hydro_L,
      %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,
      %     Schm_itnlh, Schm_itraj, Schm_hdlast_L,
      %     Schm_adcub_L, Schm_psadj_L,  Schm_difqp_L, Schm_sfix_L,
-     %     Schm_dPdlogZ_L, Schm_eulmtemp_L, Schm_moist_L,
+     %     Schm_eulmtemp_L, Schm_moist_L,
      %     Adw_nkbz_L, Adw_exdg_L, Adw_mono_L, Adw_interp_type_S,
      $     Adw_ckbd_L, Adw_halox, Adw_haloy, Adw_trunc_traj_L,
      $     Adw_nosetint_L,
@@ -87,4 +86,4 @@
      $     mtn_tzero,mtn_nstar,mtn_flo,mtn_hwx,
      $     mtn_hwx1, mtn_hght, Zblen_L, Zblen_spngthick, Zblen_spngtt_L,
      $     Vtopo_start, Vtopo_ndt, Out3_etik_s,Lctl_r8stat_L,
-     $     matlab_write_L, matlab_dir_S, Out3_flipit_L, Out3_closestep
+     $     Out3_flipit_L, Out3_closestep

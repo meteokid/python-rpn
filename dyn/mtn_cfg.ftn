@@ -26,6 +26,7 @@
 **
 *     ---------------------------------------------------------------
       mtn_cfg = -1
+      Step_gstat = 1
       do k = 1, maxhlev
          hyb(k) = -1.
       end do
@@ -63,6 +64,7 @@
  
       Zblen_L = .true.
       Zblen_spngtt_L=.true.
+      Out3_flipit_L=.true.
 
       Adw_interp_type_S = 'LAG3D'
 
@@ -94,11 +96,10 @@ CAP         Grd_ni = 101
          Zblen_hmin = Height_top_8 - Zblen_spngthick
 
          Step_total = 1600
-         Step_gstat = 80
+         Out3_closestep=1600
 
          Cstv_dt_8 = 8.
          Cstv_tstr_8 = 2.144760293471223e+02
-         Cstv_pisrf_8 = 1000.
 
          Vtopo_start = -1
          Vtopo_ndt = 0
@@ -131,11 +132,10 @@ c        Zblen_spngthick=1.00531e+04
          Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 2400
-         Step_gstat = 100
+         Out3_closestep=2400
          Cstv_dt_8 = 5.34         !   CFL=0.2
 c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Cstv_tstr_8 = mtn_tzero
-         Cstv_pisrf_8 = 1000.
 
          Vtopo_start = -1
          Vtopo_ndt = 0
@@ -166,11 +166,10 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 800
-         Step_gstat = 100
+         Out3_closestep=800
 
          Cstv_dt_8 = 50.
          Cstv_tstr_8 = mtn_tzero
-         Cstv_pisrf_8 = 1000.
          Vtopo_start = -1
          Vtopo_ndt = -1
 
@@ -200,11 +199,10 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 1600
-         Step_gstat = 100
+         Out3_closestep=1600
 
          Cstv_dt_8 = 200.
          Cstv_tstr_8 = mtn_tzero
-         Cstv_pisrf_8 = 1000.
          Vtopo_start = -1
          Vtopo_ndt = -1
 
@@ -236,10 +234,9 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 1000
-         Step_gstat = 100
+         Out3_closestep=1000
          Cstv_dt_8 = 50.
          Cstv_tstr_8 = 2.946394714296820e+02
-         Cstv_pisrf_8 = 1000.
          Vtopo_start = -1
          Vtopo_ndt = 60
 
@@ -334,17 +331,6 @@ c        write( Lun_out, *) (hyb(k),hyb(k)-hyb(k-1), k=1,G_nk+2)
       enddo
 *
       mtn_cfg = 1
-*
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//
-     $        'from_fortran_mtn_cfg.bin',
-     $        status='replace',form='unformatted')
-         write(62)G_nk
-c a modifer         write(62)(Ver_hyb_8%m(k),k=2,G_nk)
-         close(62)
-      endif
 *
       return   
 *

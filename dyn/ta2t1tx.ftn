@@ -54,8 +54,8 @@
       key(4)  = VMM_KEY(vt1  )
       key(5)  = VMM_KEY(tta  )
       key(6)  = VMM_KEY(tt1  )
-      key(7)  = VMM_KEY(psdta)
-      key(8)  = VMM_KEY(psdt1)
+      key(7)  = VMM_KEY(zdta)
+      key(8)  = VMM_KEY(zdt1)
       key(9)  = VMM_KEY(sta  )
       key(10) = VMM_KEY(st1  )
 *
@@ -66,8 +66,8 @@
       err = VMM_GET_VAR(vt1  )
       err = VMM_GET_VAR(tta  )
       err = VMM_GET_VAR(tt1  )
-      err = VMM_GET_VAR(psdta)
-      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(zdta)
+      err = VMM_GET_VAR(zdt1)
       err = VMM_GET_VAR(sta  )
       err = VMM_GET_VAR(st1  )
 *
@@ -84,7 +84,7 @@
       do j= 1, l_nj
       do i= 1, l_ni
          tt1  (i,j,k) = tta  (i,j,k)
-         psdt1(i,j,k) = psdta(i,j,k)
+         zdt1(i,j,k) = zdta(i,j,k)
       enddo
       enddo
       enddo
@@ -105,24 +105,24 @@
 *
          key(1) = VMM_KEY(wta  )
          key(2) = VMM_KEY(wt1  )
-         key(3) = VMM_KEY(qsecta )
-         key(4) = VMM_KEY(qsect1 )
+         key(3) = VMM_KEY(qta )
+         key(4) = VMM_KEY(qt1 )
          err = vmmlod(key,4)
          err = VMM_GET_VAR(wta  )
          err = VMM_GET_VAR(wt1  )
-         err = VMM_GET_VAR(qsecta )
-         err = VMM_GET_VAR(qsect1 )
+         err = VMM_GET_VAR(qta )
+         err = VMM_GET_VAR(qt1 )
 *
          do j= 1, l_nj 
          do i= 1, l_ni 
-            qsect1(i,j,0) = qsecta(i,j,0)
+            qt1(i,j,0) = qta(i,j,0)
          enddo
          enddo
          do k=1,l_nk+1
          do j= 1, l_nj 
          do i= 1, l_ni 
             wt1   (i,j,k) = wta   (i,j,k)
-            qsect1(i,j,k) = qsecta(i,j,k)
+            qt1(i,j,k) = qta(i,j,k)
          enddo
          enddo
          enddo
@@ -172,20 +172,20 @@
          key(1 )=VMM_KEY(nest_u)
          key(2 )=VMM_KEY(nest_v)
          key(3 )=VMM_KEY(nest_t)
-         key(4 )=VMM_KEY(nest_psd)
+         key(4 )=VMM_KEY(nest_zd)
          key(5 )=VMM_KEY(nest_s)
          key(6 )=VMM_KEY(uta)
          key(7 )=VMM_KEY(vta)
          key(8 )=VMM_KEY(tta)
-         key(9 )=VMM_KEY(psdta)
+         key(9 )=VMM_KEY(zdta)
          key(10)=VMM_KEY(sta)
          nvar = 10
 *     
          if (.not.Schm_hydro_L) then
             key(11)=VMM_KEY(nest_w)
-            key(12)=VMM_KEY(nest_qsec)
+            key(12)=VMM_KEY(nest_q)
             key(13)=VMM_KEY(wta)
-            key(14)=VMM_KEY(qsecta)
+            key(14)=VMM_KEY(qta)
             nvar = 14
          endif
 *     
@@ -193,18 +193,18 @@
          err = VMM_GET_VAR(nest_u)
          err = VMM_GET_VAR(nest_v)
          err = VMM_GET_VAR(nest_t)
-         err = VMM_GET_VAR(nest_psd)
+         err = VMM_GET_VAR(nest_zd)
          err = VMM_GET_VAR(nest_s)
          err = VMM_GET_VAR(uta)
          err = VMM_GET_VAR(vta)
          err = VMM_GET_VAR(tta)
-         err = VMM_GET_VAR(psdta)
+         err = VMM_GET_VAR(zdta)
          err = VMM_GET_VAR(sta)
          if (.not.Schm_hydro_L) then
             err = VMM_GET_VAR(nest_w)
-            err = VMM_GET_VAR(nest_qsec)
+            err = VMM_GET_VAR(nest_q)
             err = VMM_GET_VAR(wta)
-            err = VMM_GET_VAR(qsecta)
+            err = VMM_GET_VAR(qta)
          endif
 *
          if (l_north) then
@@ -224,7 +224,7 @@
                do j=l_nj-pil_n+1,l_nj
                do i=1,l_ni
                   nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_psd(i,j,k) = psdta(i,j,k)
+                  nest_zd(i,j,k) = zdta(i,j,k)
                end do
                end do
             end do
@@ -236,14 +236,14 @@
             if (.not. Schm_hydro_L) then
                do j=l_nj-pil_n+1,l_nj
                do i=1,l_ni
-                  nest_qsec(i,j,0) = qsecta(i,j,0)
+                  nest_q(i,j,0) = qta(i,j,0)
                end do
                end do
                do k=1,G_nk+1
                do j=l_nj-pil_n+1,l_nj
                do i=1,l_ni
                   nest_w   (i,j,k) = wta   (i,j,k)
-                  nest_qsec(i,j,k) = qsecta(i,j,k)
+                  nest_q(i,j,k) = qta(i,j,k)
                end do
                end do
                end do
@@ -267,7 +267,7 @@
                do j=1,l_nj
                do i=l_ni-pil_e+1,l_ni
                   nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_psd(i,j,k) = psdta(i,j,k)
+                  nest_zd(i,j,k) = zdta(i,j,k)
                end do
                end do
             end do
@@ -280,14 +280,14 @@
             if (.not. Schm_hydro_L) then
                do j=1,l_nj
                do i=l_ni-pil_e+1,l_ni
-                  nest_qsec(i,j,0) = qsecta(i,j,0)
+                  nest_q(i,j,0) = qta(i,j,0)
                end do
                end do
                do k=1,G_nk+1
                do j=1,l_nj
                do i=l_ni-pil_e+1,l_ni
                   nest_w   (i,j,k) = wta   (i,j,k)
-                  nest_qsec(i,j,k) = qsecta(i,j,k)
+                  nest_q(i,j,k) = qta(i,j,k)
                end do
                end do
                end do
@@ -311,7 +311,7 @@
                do j=1,pil_s
                do i=1,l_ni
                   nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_psd(i,j,k) = psdta(i,j,k)
+                  nest_zd(i,j,k) = zdta(i,j,k)
                end do
                end do
             end do
@@ -323,14 +323,14 @@
             if (.not. Schm_hydro_L) then
                do j=1,pil_s
                do i=1,l_ni
-                  nest_qsec(i,j,0) = qsecta(i,j,0)
+                  nest_q(i,j,0) = qta(i,j,0)
                end do
                end do
                do k=1,G_nk+1
                do j=1,pil_s
                do i=1,l_ni
                   nest_w   (i,j,k) = wta   (i,j,k)
-                  nest_qsec(i,j,k) = qsecta(i,j,k)
+                  nest_q(i,j,k) = qta(i,j,k)
                end do
                end do
                end do
@@ -354,7 +354,7 @@
                do j=1,l_nj
                do i=1,pil_w
                   nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_psd(i,j,k) = psdta(i,j,k)
+                  nest_zd(i,j,k) = zdta(i,j,k)
                end do
                end do
             end do
@@ -366,14 +366,14 @@
             if (.not. Schm_hydro_L) then
                do j=1,l_nj
                do i=1,pil_w
-                  nest_qsec(i,j,0) = qsecta(i,j,0)
+                  nest_q(i,j,0) = qta(i,j,0)
                end do
                end do
                do k=1,G_nk+1
                do j=1,l_nj
                do i=1,pil_w
                   nest_w   (i,j,k) = wta   (i,j,k)
-                  nest_qsec(i,j,k) = qsecta(i,j,k)
+                  nest_q(i,j,k) = qta(i,j,k)
                end do
                end do
                end do

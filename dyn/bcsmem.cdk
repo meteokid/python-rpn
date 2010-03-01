@@ -4,24 +4,24 @@
 *
       integer bcs_siz_tot
       common /bcs_siz/ bcs_siz_tot
-      real bcs_u ,bcs_v ,bcs_t , bcs_psd ,bcs_s ,
-     $     bcs_tr ,bcs_w , bcs_qsec
-      real bcs_uf,bcs_vf,bcs_tf, bcs_psdf,bcs_sf,
-     $     bcs_trf,bcs_wf, bcs_qsecf
+      real bcs_u ,bcs_v ,bcs_t , bcs_zd ,bcs_s ,
+     $     bcs_tr ,bcs_w , bcs_q
+      real bcs_uf,bcs_vf,bcs_tf, bcs_zdf,bcs_sf,
+     $     bcs_trf,bcs_wf, bcs_qf
 *
       pointer 
      $   (pbcsu   , bcs_u(*))   , (pbcsv ,   bcs_v(*)) ,
-     $   (pbcspsd , bcs_psd(*)) , (pbcss ,   bcs_s(*)) ,
+     $   (pbcszd  , bcs_zd(*))  , (pbcss ,   bcs_s(*)) ,
      $   (pbcstr  , bcs_tr(*))  , (pbcsw ,   bcs_w(*)) ,
-     $   (pbcsqsec, bcs_qsec(*)), (pbcst ,   bcs_t(*)) ,
+     $   (pbcsq   , bcs_q(*))   , (pbcst ,   bcs_t(*)) ,
      $   (pbcsuf  , bcs_uf(*))  , (pbcsvf,   bcs_vf(*)),
      $   (pbcstf  , bcs_tf(*))  , (pbcswf,   bcs_wf(*)),
-     $   (pbcspsdf, bcs_psdf(*)), (pbcssf,   bcs_sf(*)),
-     $   (pbcstrf , bcs_trf(*)) , (pbcsqsecf,bcs_qsecf(*)) 
+     $   (pbcszdf , bcs_zdf(*)) , (pbcssf,   bcs_sf(*)),
+     $   (pbcstrf , bcs_trf(*)) , (pbcsqf,   bcs_qf(*)) 
 *
-      common /bcsmem1/ pbcsu,pbcsv,pbcst,pbcspsd,
+      common /bcsmem1/ pbcsu,pbcsv,pbcst,pbcszd,
      $                 pbcss,pbcsuf,pbcsvf,
-     $                 pbcstf,pbcspsdf,
+     $                 pbcstf,pbcszdf,
      $                 pbcssf,pbcstr,pbcstrf,
-     $                 pbcsw,pbcsqsec,pbcswf,pbcsqsecf
+     $                 pbcsw,pbcsq,pbcswf,pbcsqf
 *

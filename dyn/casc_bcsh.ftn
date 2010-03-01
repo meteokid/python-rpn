@@ -49,11 +49,11 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       integer key1(17),keyp_,keyp(Tr3d_ntr),nvar
       real*8, dimension (:  ), pointer :: xpsn,ypsn,xpwe,ypwe,
      $        xpaqs,ypaqs,xpaus,ypavs,xpaqw,ypaqw,xpauw,ypavw
-      real  , dimension (:  ), allocatable :: pia,pib
+      real  , dimension (:  ), allocatable :: aaa,bbb
       real*8, dimension (:  ), allocatable :: xp1,yp1,zt1
       real  , dimension (:,:), pointer :: 
-     $ uuns,vvns,psdns,ttns,ssns,wwns,qsecns,
-     $ uunw,vvnw,psdnw,ttnw,ssnw,wwnw,qsecnw
+     $ uuns,vvns,zdns,ttns,ssns,wwns,qns,
+     $ uunw,vvnw,zdnw,ttnw,ssnw,wwnw,qnw
       real  , dimension (:), pointer :: 
      $ fisns,p0ns,
      $ fisnw,p0nw
@@ -65,8 +65,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *
       nullify ( xpsn,ypsn,xpwe,ypwe,xpaqs,ypaqs,xpaus,ypavs,xpaqw,ypaqw,
-     $     xpauw,ypavw,uuns,vvns,psdns,ttns,fisns,p0ns,ssns,qsecns,
-     $     uunw,vvnw,psdnw,ttnw,fisnw,p0nw,ssnw,wwnw,qsecnw,trname_a )
+     $     xpauw,ypavw,uuns,vvns,zdns,ttns,fisns,p0ns,ssns,qns,
+     $     uunw,vvnw,zdnw,ttnw,fisnw,p0nw,ssnw,wwnw,qnw,trname_a )
 *
       casc_bcsh = -1
 *
@@ -102,15 +102,15 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
          call hpalloc (pazta  ,nka*2, err,1)
          call hpalloc (papia  ,nka  , err,1)
          call hpalloc (papib  ,nka  , err,1)
-         allocate (zt1(nka),pia(nka),pib(nka))
-         read (unf,end=33) zt1,pia,pib
+         allocate (zt1(nka),aaa(nka),bbb(nka))
+         read (unf,end=33) zt1,aaa,bbb
 *
          do k=1,nka
             ana_z  (k) = zt1(k)
-            ana_pia(k) = pia(k)
-            ana_pibb(k) = pib(k)
+            ana_a(k) = aaa(k)
+            ana_b(k) = bbb(k)
          end do
-         deallocate (zt1,pia,pib)
+         deallocate (zt1,aaa,bbb)
 *
          do i=1,nis
             xpaqs(i) = xpsn(i)
@@ -141,12 +141,12 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
          ngas = nis*njs*2
          ngaw = niw*njw*2
 
-         allocate (uuns(ngas,nka),vvns(ngas,nka),psdns(ngas,nka),
+         allocate (uuns(ngas,nka),vvns(ngas,nka),zdns(ngas,nka),
      $             ttns(ngas,nka),fisns(ngas),p0ns(ngas),ssns(ngas,1),
-     $             wwns(ngas,nka),qsecns(ngas,nka) )
-         allocate (uunw(ngaw,nka),vvnw(ngaw,nka),psdnw(ngaw,nka),
+     $             wwns(ngas,nka),qns(ngas,nka) )
+         allocate (uunw(ngaw,nka),vvnw(ngaw,nka),zdnw(ngaw,nka),
      $             ttnw(ngaw,nka),fisnw(ngas),p0nw(ngas),ssnw(ngaw,1),
-     $             wwnw(ngaw,nka),qsecnw(ngaw,nka) )
+     $             wwnw(ngaw,nka),qnw(ngaw,nka) )
          
 *
          read (unf,end=33) dynophy,nvar,ntra,mode
@@ -163,10 +163,10 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
             call gem_stop('casc_bcsh : a verifier',-2)
             call rdbcs ( ttns, ttnw, nis,njs,niw,njw,nka  , unf)
             call rdbcs ( ssns, ssnw, nis,njs,niw,njw, 1   , unf)
-            call rdbcs (psdns,psdnw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs (zdns,zdnw, nis,njs,niw,njw,nka  , unf)
             if (nvar.gt.11) then
                call rdbcs ( wwns, wwnw, nis,njs,niw,njw,nka  , unf)
-               call rdbcs ( qsecns, qsecnw, nis,njs,niw,njw,nka  , unf)
+               call rdbcs ( qns, qnw, nis,njs,niw,njw,nka  , unf)
             endif
          endif
          if (ntra.gt.0) then
@@ -243,12 +243,12 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
       call casc_hvi (trname_a,
      $  xpn,ypn,xpun,ypvn,xpaqs,ypaqs,xpaus,ypavs,
      $  bcs_uf,bcs_uf(bcs_in),bcs_vf,bcs_vf(bcs_in),
-     $  bcs_tf,bcs_tf(bcs_in),bcs_psdf,bcs_psdf(bcs_in),
+     $  bcs_tf,bcs_tf(bcs_in),bcs_zdf,bcs_zdf(bcs_in),
      $  bcs_trf,bcs_wf,bcs_wf(bcs_in),
-     $  bcs_qsecf,bcs_qsecf(bcs_in),bcs_sf,bcs_sf(bcs_in),
+     $  bcs_qf,bcs_qf(bcs_in),bcs_sf,bcs_sf(bcs_in),
      $  bcs_is-1,bcs_in-1,
      $  topo,topo(bcs_in),topu,topu(bcs_in),topv,topv(bcs_in),
-     $  uuns,vvns,psdns,ttns,fisns,p0ns,ssns,wwns,qsecns,trns,
+     $  uuns,vvns,zdns,ttns,fisns,p0ns,ssns,wwns,qns,trns,
      $               minxs,maxxs,minys,maxys,0,d1,G_nk,nit,njt,
      $               nis,njs*2,nka,nvar,ntra,l_south,l_north)
         endif
@@ -302,12 +302,12 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
       call casc_hvi (trname_a, 
      $               xpw,ypw,xpuw,ypvw,xpaqw,ypaqw,xpauw,ypavw,
      $  bcs_uf(bcs_iw),bcs_uf(bcs_ie),bcs_vf(bcs_iw),bcs_vf(bcs_ie),
-     $  bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),
+     $  bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_zdf(bcs_iw),bcs_zdf(bcs_ie),
      $  bcs_trf,bcs_wf(bcs_iw),bcs_wf(bcs_ie),
-     $  bcs_qsecf(bcs_iw),bcs_qsecf(bcs_ie),bcs_sf(bcs_iw),bcs_sf(bcs_ie),
+     $  bcs_qf(bcs_iw),bcs_qf(bcs_ie),bcs_sf(bcs_iw),bcs_sf(bcs_ie),
      $  bcs_iw-1,bcs_ie-1,
      $  topo(bcs_iw),topo(bcs_ie),topu(bcs_iw),topu(bcs_ie),topv(bcs_iw),topv(bcs_ie),
-     $  uunw,vvnw,psdnw,ttnw,fisnw,p0nw,ssnw,wwnw,qsecnw,
+     $  uunw,vvnw,zdnw,ttnw,fisnw,p0nw,ssnw,wwnw,qnw,
      $         trnw,minxw,maxxw,minyw,maxyw,d1,0,G_nk,nit,njt,
      $               niw*2,njw,nka,nvar,ntra,l_west,l_east)
       endif
@@ -329,24 +329,24 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
 *
       if (associated(uuns)) deallocate(uuns)
       if (associated(vvns))  deallocate(vvns)
-      if (associated(psdns)) deallocate(psdns)
+      if (associated(zdns)) deallocate(zdns)
       if (associated(ttns)) deallocate(ttns)
       if (associated(fisns)) deallocate(fisns)
       if (associated(p0ns)) deallocate(p0ns)
       if (associated(ssns)) deallocate(ssns)
       if (associated(wwns)) deallocate(wwns)
-      if (associated(qsecns)) deallocate(qsecns)
+      if (associated(qns)) deallocate(qns)
       if (associated(trns)) deallocate(trns)
 *
       if (associated(uunw)) deallocate(uunw)
       if (associated(vvnw))  deallocate(vvnw)
-      if (associated(psdnw)) deallocate(psdnw)
+      if (associated(zdnw)) deallocate(zdnw)
       if (associated(ttnw)) deallocate(ttnw)
       if (associated(fisnw)) deallocate(fisnw)
       if (associated(p0nw)) deallocate(p0nw)
       if (associated(ssnw)) deallocate(ssnw)
       if (associated(wwnw)) deallocate(wwnw)
-      if (associated(qsecnw)) deallocate(qsecnw)
+      if (associated(qnw)) deallocate(qnw)
       if (associated(trnw)) deallocate(trnw)
 *
       if (Ptopo_myproc.eq.0) then
@@ -371,15 +371,15 @@ c        print *,'opening ',fn(1:longueur(fn)),'err=',err
      $       bcs_sf(bcs_iw),bcs_sf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
          if (Acid_test_L) then
-             call trnes (Ind_psd,bcs_psdf(bcs_is),bcs_psdf(bcs_in),
-     $       bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+             call trnes (Ind_zd,bcs_zdf(bcs_is),bcs_zdf(bcs_in),
+     $       bcs_zdf(bcs_iw),bcs_zdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
              if (.not. Schm_hydro_L) then
              call trnes (Ind_w,bcs_wf(bcs_is),bcs_wf(bcs_in),
      $         bcs_wf(bcs_iw),bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $         minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
-               call trnes (Ind_qsec,bcs_qsecf(bcs_is),bcs_qsecf(bcs_in),
-     $         bcs_qsecf(bcs_iw),bcs_qsecf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+               call trnes (Ind_q,bcs_qf(bcs_is),bcs_qf(bcs_in),
+     $         bcs_qf(bcs_iw),bcs_qf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $         minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)
              endif
          endif

@@ -105,7 +105,7 @@
 *
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
-            st1(i,j)= log(ONE_8+dble(wk1(i,j)/ver_pib_8%t(G_nk+1)))
+            st1(i,j)= log(ONE_8+wk1(i,j)/Cstv_pisrf_8)
          end do
          end do
 *

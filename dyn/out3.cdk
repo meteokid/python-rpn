@@ -32,7 +32,6 @@
 * Out3_cubdd_L       | .true. for cubic interpolation for DD           |
 * Out3_cubqq_L       | .true. for cubic interpolation for QQ and QR    |
 * Out3_cubww_L       | .true. for cubic interpolation for WW           |
-* Out3_vt2gz_L       | .true. to compute hydrostatic GZ from P0 and VT |
 * Out3_debug_L       | .true. to echo standard out from FST functions  |
 * Out3_ip3           | integer value for IP3 in the FST records        |
 *                    |  default: 0, >0 : given value, -1:uses timestep |
@@ -60,7 +59,7 @@
       character*4  Out3_unit_S
       logical Out3_cliph_L, Out3_cubzt_L, Out3_cubuv_L, 
      $        Out3_cubds_L, Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L, 
-     $        Out3_cubww_L, Out3_vt2gz_L, Out3_flipit_L,Out3_debug_L,
+     $        Out3_cubww_L, Out3_flipit_L,Out3_debug_L,
      $        Out3_compress_L,Out3_satues_L
       integer Out3_nbitg, Out3_linbot, Out3_nundr, Out3_zund(MAXELEM),
      $        Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits,
@@ -73,7 +72,7 @@
       MARK_COMMON_BEG(Out3_l)
       common / Out3_l / Out3_cliph_L,Out3_cubzt_L,Out3_cubuv_L, 
      $                 Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L,Out3_cubqq_L, 
-     $                 Out3_cubww_L, Out3_vt2gz_L, Out3_flipit_L,Out3_debug_L,
+     $                 Out3_cubww_L, Out3_flipit_L,Out3_debug_L,
      $                 Out3_compress_L, Out3_satues_L
       MARK_COMMON_END(Out3_l)
 *

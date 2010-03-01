@@ -67,7 +67,6 @@
       Offc_b1_8 =  0.4
 *
       Schm_hydro_L    = .false.
-      Schm_nonhy_8    = 1.0
       Schm_moist_L    = .true.
       Schm_hdlast_L  = .false.
       Schm_itcn     =   2
@@ -82,9 +81,7 @@
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_sfix_L     = .false.
-      Schm_dPdlogZ_L  = .false.
       Schm_eulmtemp_L = .false.
-
 *
       Schm_phyms_L    = .false.
       Schm_chems_L    = .false.
@@ -151,7 +148,7 @@
       Grd_rcoef = 1.0
       Grd_proj_S = 'E'
       Pres_ptop = -1.
-      Pres_pref = 800.0
+      Pres_pref = 1000.0
       Pres_vtap_L = .false.
       do k = 1, maxhlev
          hyb(k) = -1.
@@ -254,7 +251,6 @@
       Out3_linbot    = 0
       Out3_cliph_L   = .false.
       Out3_satues_L  = .false.
-      Out3_vt2gz_L   = .false.
       Out3_cubzt_L   = .true.
       Out3_cubuv_L   = .true.
       Out3_cubds_L   = .true.

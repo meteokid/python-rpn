@@ -33,20 +33,13 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
-#include "matlab.cdk"
 *
 *modules
 *
       integer k,err,istat, longueur
-      real*8 one, half
-      parameter( one = 1.d0, half = .5d0 )
+      real*8 one, half, quarter, xxx
+      parameter( one = 1.d0, half = .5d0, quarter = .25d0 )
 *
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_set_dync.bin',status='replace',form='unformatted')
-         write(62)G_ni-lam_pil_w-lam_pil_e
-         write(62)G_nk
-      endif
-
 *     ---------------------------------------------------------------
 
       if (lun_out.gt.0) then
@@ -54,7 +47,7 @@
           write(Lun_out,*)'===================================='
       endif
 *     
-      if (Schm_cptop_L.or.Cstv_pitop_8.eq.-one) 
+      if (Cstv_pitop_8.eq.-one) 
      $        Cstv_pitop_8 = dble(Pres_top)
       if (Cstv_pisrf_8.eq.-one) Cstv_pisrf_8 = dble(Pres_surf)
 *
@@ -64,62 +57,25 @@
          write(Lun_out,*) 'Cstv_pisrf_8  = ',Cstv_pisrf_8,'  PASCALS'
       endif
 *     
-      if(matlab_write_L)write(62)(  Ver_z_8%t(k),k=1,G_nk+1)
-      if(matlab_write_L)write(62)(  Ver_z_8%m(k),k=0,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_pia_8%t(k),k=1,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_pia_8%m(k),k=0,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_pib_8%t(k),k=1,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_pib_8%m(k),k=0,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_boz_8%t(k),k=1,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_boz_8%m(k),k=0,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_wphy2m_8(1,k),k=1,G_nk)
-      if(matlab_write_L)write(62)(Ver_wphy2m_8(2,k),k=1,G_nk)
-      if(matlab_write_L)write(62)(Ver_dpib_8%t(k),k=1,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_dpib_8%m(k),k=1,G_nk)
-      if(matlab_write_L)write(62)(Ver_dpia_8%t(k),k=1,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_dpia_8%m(k),k=1,G_nk)
-      if(matlab_write_L)write(62)(Ver_dpba_8(k),k=1,G_nk+1)
+      xxx = quarter*(one-Dcst_cappa_8)*Ver_epsilon_8
+      Ver_alphat_8 = ( Ver_idz_8%t(1) - half*Ver_epsilon_8 ) /
+     $               ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
+      Ver_cst_8    = one / Ver_gokt2RT_8 /
+     $               ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
+      Ver_cstp_8   = ( Ver_idz_8%t(1) - half - xxx*Ver_dz_8%t(1) ) /
+     $               ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
 *
-      if(.not.Schm_cptop_L)then
-         write(Lun_out,*)'Constant pressure top only'
-         call gem_stop('set_dync',-2)
-      else
-         Ver_alphat_8 = ( Ver_zodz_8(1) - half*Ver_epsilon_8 ) /
-     $                  ( Ver_zodz_8(1) + half*Ver_epsilon_8 )
-         Ver_cst_8    = Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Dcst_rgasd_8*Cstv_tstr_8/Ver_gamma_8/
-     $                  ( Ver_zodz_8(1) + half*Ver_epsilon_8 )
-         Ver_cstp_8   = ( Ver_z_8%t(1)*Ver_zodz_8(1)
-     $                        + .25d0*Dcst_cappa_8*Ver_epsilon_8*Ver_hz_8%t(1)
-     $                        - half*Ver_epsilon_8*(Ver_ztild_8(1)-Ver_z_8%t(1)) ) /
-     $                  ( Ver_zodz_8(1) + half*Ver_epsilon_8 )
+      Ver_alphas_8 = ( Ver_idz_8%t(G_nk+1) - half*Dcst_cappa_8 ) /
+     $               ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
+      Ver_css_8    = one / Ver_gokt2RT_8 /
+     $               ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
+      Ver_cssp_8   = ( Ver_idz_8%t(G_nk+1) + half - xxx*Ver_dz_8%t(G_nk+1) ) /
+     $               ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
 *
-         Ver_alphas_8 = ( Ver_zodz_8(G_nk+1) - half*Dcst_cappa_8 ) /
-     $                  ( Ver_zodz_8(G_nk+1) + half*Dcst_cappa_8 )
-         Ver_css_8    = Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Dcst_rgasd_8*Cstv_tstr_8/Ver_gamma_8/
-     $                  ( Ver_zodz_8(G_nk+1) + half*Dcst_cappa_8 )
-         Ver_cssp_8   = ( Ver_z_8%t(G_nk+1)*Ver_zodz_8(G_nk+1)
-     $                        + .25d0*Dcst_cappa_8*Ver_epsilon_8*Ver_hz_8%t(G_nk+1)
-     $                        + half*Ver_epsilon_8*(Ver_ztild_8(G_nk+1)-Ver_z_8%t(G_nk+1)) ) /
-     $                  ( Ver_zodz_8(G_nk+1) + half*Dcst_cappa_8 )
-      endif
-*
-      if(matlab_write_L)write(62)(Ver_hz_8%t(k),k=1,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_hz_8%m(k),k=1,G_nk)
-      if(matlab_write_L)write(62)(Ver_fistr_8%t(k),k=1,G_nk+1)
-      if(matlab_write_L)write(62)(Ver_fistr_8%m(k),k=1,G_nk)
-      if(matlab_write_L)write(62)Ver_alphat_8
-      if(matlab_write_L)write(62)Ver_alphas_8
-      if(matlab_write_L)write(62)Ver_cst_8
-      if(matlab_write_L)write(62)Ver_cstp_8
-      if(matlab_write_L)write(62)Ver_css_8
-      if(matlab_write_L)write(62)Ver_cssp_8
-*     
-       call set_opr()
+      call set_opr()
       call adw_set()
 *
 *     ---------------------------------------------------------------
 *
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)close(62)
-
       return
       end

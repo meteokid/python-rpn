@@ -18,7 +18,6 @@
 *--------------------|-------------------------------------------------|
 * Schm_hydro_L       | .true. -> hydrostatic run                       |
 *                    | .false.-> non-hydrostatic run                   |
-* Schm_cptop_L       | .true.-> model has a const. top pres. (B(1)=0)  |
 * Schm_moist_L       | .true.-> model has moisture                     |
 * Schm_nkbz_L        | .true.-> not-a-knot bc for z-spline             |
 *                    | .false.-> natural bc for z-spline               |
@@ -54,32 +53,28 @@
 *                    | Helmholtz problem                               |
 * Schm_itraj         | number of iterations to compute trjectories     |
 * Schm_nith          | number of vertical modes treated implicitely    |
-* Schm_nonhy_8       | 0 to 1:  from hydrostatic to non-hydrostatic    |
 * Schm_offline_L     | run without the dynamical kernel (GEM)          |
 * Schm_chems_S       | Chemical scheme to use ('NIL' if none)          |
-* Schm_dPdlogZ_L     | logarithmic finite difference for big P         |
 * Schm_eulmtemp_L    | Eulerian treatment of mean temperature          |
 *----------------------------------------------------------------------
 *
 #endif
-      logical Schm_hydro_L, Schm_cptop_L, Schm_moist_L, Schm_nkbz_L , 
+      logical Schm_hydro_L, Schm_moist_L, Schm_nkbz_L , 
      $        Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
      $        Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L,
      $        Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L,
-     $        Schm_dPdlogZ_L,Schm_eulmtemp_L
+     $        Schm_eulmtemp_L
 
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, 
      %        Schm_itnlh, Schm_itraj, Schm_nith
 
-      real*8  Schm_nonhy_8
-
       MARK_COMMON_BEG (schm_l)
       common / schm_l / 
-     $         Schm_hydro_L, Schm_cptop_L, Schm_moist_L, Schm_nkbz_L , 
+     $         Schm_hydro_L, Schm_moist_L, Schm_nkbz_L , 
      $         Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
      $         Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L, 
      $         Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L,
-     $         Schm_dPdlogZ_L,Schm_eulmtemp_L
+     $         Schm_eulmtemp_L
       MARK_COMMON_END (schm_l)
 *
       MARK_COMMON_BEG (schm_i)
@@ -87,7 +82,3 @@
      %                  Schm_itnlh, Schm_itraj, Schm_nith
       MARK_COMMON_END (schm_i)
 *
-      MARK_COMMON_BEG (schm_r8)
-      common / schm_r8/ Schm_nonhy_8
-      MARK_COMMON_END (schm_r8)
-

@@ -1,0 +1,59 @@
+***s/r set_pois - 64 bits interface for preparation of projection matrix
+*                in the east-west or vertical direction
+*             for staggered model symmetric and  nonsymmetric_ln(Z)
+*             version
+*
+#include "model_macros_f.h"
+*
+      subroutine set_pois_2 ( F_eval_8,F_levec_8,F_evec_8,F_npts,F_dim )
+*
+#include "impnone.cdk"
+*
+      integer F_npts, F_dim
+      real*8  F_eval_8(*), F_evec_8(*),F_levec_8(*)
+*
+*author
+*     Abdessamad Qaddouri  2007
+*
+*revision
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_eval_8     O    - eigenvalue vector
+* F_evec_8     O    - eigenvector matrix
+* F_npts       I    - number of points
+* F_dim        I    - field dimension
+
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "ptopo.cdk"
+*
+*implicits
+*
+      integer i, j, pnhperr, longueur
+      real*8, dimension (F_dim*F_dim) :: a_8,br_8,bl_8
+      real*8 r_8(F_dim)
+*
+* --------------------------------------------------------------------
+*
+        call preverln ( r_8, bl_8,br_8, a_8, F_npts, F_dim )
+
+*
+*     transfer results back in input/output arrays
+*
+      do i=1,F_dim*F_dim
+        F_evec_8(i) =br_8(i)
+        F_levec_8(i)=bl_8(i)
+      end do
+*
+      do i=1,F_dim
+         F_eval_8(i)=r_8(i)
+      end do
+*
+* --------------------------------------------------------------------
+*
+      return
+      end

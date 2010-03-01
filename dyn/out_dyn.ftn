@@ -76,8 +76,8 @@
       real ptop(LDIST_SHAPE), p0(LDIST_SHAPE), wlao(LDIST_SHAPE)
       real xtmp(LDIST_SHAPE),ytmp(LDIST_SHAPE)
       real qx(LDIST_SHAPE,G_nk+1),
-     $     wlnph_m(LDIST_SHAPE,0:G_nk+1),
-     $     wlnph_t(LDIST_SHAPE,G_nk+2),
+     $     wlnpi_m(LDIST_SHAPE,0:G_nk+1),
+     $     wlnpi_t(LDIST_SHAPE,G_nk+2),
      $     vtm(LDIST_SHAPE,G_nk)
       integer keym(Tr3d_ntr),key0m,ninj
       integer ktop(LDIST_SHAPE,G_nk+1),kbot(LDIST_SHAPE,G_nk+1)
@@ -141,7 +141,7 @@
 *
       do j=l_miny,l_maxy
       do i=l_minx,l_maxx
-         ptop (i,j) = Ver_pia_8%t(1)
+         ptop (i,j) = exp(Ver_a_8%t(1))
          p0   (i,j) = ytmp(i,j)*Cstv_pisrf_8
       end do
       end do
@@ -156,7 +156,7 @@
       pnlkey(2) = VMM_KEY(tt1)
       pnlkey(3) = VMM_KEY(ut1)
       pnlkey(4) = VMM_KEY(vt1)
-      pnlkey(5) = VMM_KEY(psdt1)
+      pnlkey(5) = VMM_KEY(zdt1)
       pnlkey(6) = VMM_KEY(zz1)
       pnlkey(7) = VMM_KEY(piup)
       pnlkey(8) = VMM_KEY(topo)
@@ -164,8 +164,7 @@
       pnlkey(10) = VMM_KEY(hdia)
       pnlkey(11) = VMM_KEY(udia)
       pnlkey(12) = VMM_KEY(vdia)
-      pnlkey(13)= VMM_KEY(csh)
-      keytotal  = 13
+      keytotal  = 12
       if (.not. Schm_hydro_L) then
          pnlkey(keytotal+1) = VMM_KEY(wt1)
          keytotal  = keytotal+1
@@ -177,48 +176,29 @@
          err = vmmlod (pnlkey,keytotal)
 *
 *        Pressure on momentum levels, with extra levels at top (k=0) and surface (k=G_nk+1)
-         call vslog(wlnph_m(l_minx,l_miny,0     ),ptop,ninj)
-         call vslog(wlnph_m(l_minx,l_miny,G_nk+1),p0  ,ninj)
+         call vslog(wlnpi_m(l_minx,l_miny,0     ),ptop,ninj)
+         call vslog(wlnpi_m(l_minx,l_miny,G_nk+1),p0  ,ninj)
          do k=1,l_nk
             do j=l_miny,l_maxy
             do i=l_minx,l_maxx
-               xtmp(i,j) = Ver_pia_8%m(k) + Ver_pib_8%m(k)*ytmp(i,j)
+               wlnpi_m(i,j,k) = Ver_a_8%m(k) + Ver_b_8%m(k)*wlnpi_m(i,j,G_nk+1)
             enddo
             enddo
-            call vslog(wlnph_m(l_minx,l_miny,k),xtmp,ninj)
          enddo
 *
 *        Pressure on thermo levels.
-         if(Schm_dPdlogZ_L)then
-            do k=1,G_nk+1
-               do j=l_miny,l_maxy
-               do i=l_minx,l_maxx
-                  wlnph_t(i,j,k)=.5*(wlnph_m(i,j,k)+wlnph_m(i,j,k-1))
-               enddo
-               enddo
-            enddo                    
+         do k=1,G_nk+1
             do j=l_miny,l_maxy
             do i=l_minx,l_maxx
-               wlnph_t(i,j,G_nk+2)=wlnph_m(i,j,G_nk+1)
-               xtmp(i,j) = p0(i,j)
+               wlnpi_t(i,j,k)=.5d0*(wlnpi_m(i,j,k)+wlnpi_m(i,j,k-1))
             enddo
             enddo
-         else
-            do k=1,l_nk+1
-               do j=l_miny,l_maxy
-               do i=l_minx,l_maxx
-                  xtmp(i,j) = Ver_pia_spcl_8%t(k) + Ver_pibb_spcl_8%t(k)*Cstv_pisrf_8*ytmp(i,j)
-               enddo
-               enddo
-               call vslog(wlnph_t(l_minx,l_miny,k),xtmp,ninj)
-            enddo
-            do j=l_miny,l_maxy
-               do i=l_minx,l_maxx
-                  xtmp(i,j) = p0(i,j)
-               enddo
-            enddo
-            call vslog(wlnph_t(l_minx,l_miny,l_nk+2),xtmp,ninj)         
-         endif
+         enddo                    
+         do j=l_miny,l_maxy
+         do i=l_minx,l_maxx
+            wlnpi_t(i,j,G_nk+2)=wlnpi_m(i,j,G_nk+1)
+         enddo
+         enddo
 *
       else
 *     <<<<<<<<<<<<<<<<<< CAUTION >>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -231,7 +211,7 @@
          do k=1,l_nk
          do j=1,l_nj
          do i=1,l_ni
-            wlnph_m(i,j,k) = log ( ver_z_8%d(k) )
+            wlnpi_m(i,j,k) = log ( ver_z_8%d(k) )
          enddo
          enddo
          enddo
@@ -252,8 +232,8 @@
       call hpalloc (paposit, ninj*(G_nk+1)*6,err,1)
       call hpalloc (pahuv  , ninj*(G_nk+2+4)*2 ,err,1)
 
-c      call inv_posiz (posit,huv,wlnph_m,wlnph_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
-      call posiz3 (posit,huv,wlnph_m,wlnph_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
+c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
+      call posiz3 (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
 
       err = vmmuld(key0,1)
 
@@ -261,7 +241,7 @@ c      call inv_posiz (posit,huv,wlnph_m,wlnph_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
       err = VMM_GET_VAR(tt1)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
-      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(zdt1)
       err = VMM_GET_VAR(zz1)
       err = VMM_GET_VAR(piup)
       err = VMM_GET_VAR(topo)
@@ -269,7 +249,6 @@ c      call inv_posiz (posit,huv,wlnph_m,wlnph_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
       err = VMM_GET_VAR(hdia)
       err = VMM_GET_VAR(udia)
       err = VMM_GET_VAR(vdia)
-      err = VMM_GET_VAR(csh)
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(wt1)
       endif
@@ -404,29 +383,29 @@ c      call inv_posiz (posit,huv,wlnph_m,wlnph_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
 *
 *     output of 3-D tracers
 *
-               call out_tracer (wlnph_t,trkey0,trkey1,
+               call out_tracer (wlnpi_t,trkey0,trkey1,
      $                      l_minx,l_maxx,l_miny,l_maxy,G_nk,
      $                      Level_typ(levset),Level(1,levset),ind_o,nk_o,kk)
 *
 *     output of temperature, humidity and mass fields,omega
 *     
-               call out_thm(fiptx,tt1,st1,qct1,qx,hut1,psdt1,
-     $              wt1,zz1,ut1,vt1,csh,vtm,hum1,st1m,piup,
-     $              wlnph_m(l_minx,l_miny,1),wlnph_t,ptop,p0,wlao,topo,
+               call out_thm(fiptx,tt1,st1,qct1,qx,hut1,zdt1,
+     $              wt1,zz1,ut1,vt1,vtm,hum1,st1m,piup,
+     $              wlnpi_m(l_minx,l_miny,1),wlnpi_t,ptop,p0,wlao,topo,
      $              tdia,hdia,posit,huv,ninj,G_nk,Level_typ(levset),
      $              Level(1,levset),Level_m(1,levset),ind_o,nk_o,
      $              ind_m_o,nk_m_o,kk)
 *
 *     output of winds
 *
-               call out_uv (ut1,vt1,udia,vdia,wlnph_m(l_minx,l_miny,1),
+               call out_uv (ut1,vt1,udia,vdia,wlnpi_m(l_minx,l_miny,1),
      $              LDIST_DIM,G_nk,Level_typ(levset),Level_m(1,levset),
      $              ind_o,nk_o,kk)
 *
 *     output of divergence and vorticity
 *
 c               A faire pour staggering
-c               call out_dq (ut1,vt1,wlnph_m(l_minx,l_miny,1),wlao,l_minx,l_maxx,l_miny,l_maxy,G_nk,
+c               call out_dq (ut1,vt1,wlnpi_m(l_minx,l_miny,1),wlao,l_minx,l_maxx,l_miny,l_maxy,G_nk,
 c     $                      Level_typ(levset),Level_m(1,levset),ind_m_o,nk_m_o,kk)
 *
 *
@@ -471,7 +450,7 @@ c     $                      Level_typ(levset),Level_m(1,levset),ind_m_o,nk_m_o,
                  call out_slev(Level_typ(levset),Level_m(1,levset),
      $                       ind_m_o,nk_m_o,G_nk,Level_kind_ip1,'d')
                  call out_sfile(Out3_closestep,Lctl_step,etikadd_S,ip3,ext_S)
-                 call out_vmm (wlnph_m(l_minx,l_miny,1),ip3,etikadd_S,ext_S,
+                 call out_vmm (wlnpi_m(l_minx,l_miny,1),ip3,etikadd_S,ext_S,
      $               l_minx,l_maxx,l_miny,l_maxy,G_nk, Level_typ(levset),
      $                Level(1,levset),Level_m(1,levset),ind_o,nk_o,ind_m_o,nk_m_o,kk)
                  deallocate (ind_o,ind_m_o)

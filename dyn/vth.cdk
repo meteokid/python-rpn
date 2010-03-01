@@ -9,13 +9,13 @@
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* uth                | x component of velocity                         |
-* vth                | y component of velocity                         |
-* psdth              | pi* dot (vert. vel. in pi* coord.)              |
+*  uth               | U: x component of velocity                      |
+*  vth               | V: y component of velocity                      |
+* zdth               | Zdot: generalized vertical velocity             |
 *--------------------|-------------------------------------------------|
-* xth                | upstream x position                             |
-* yth                | upstream y position                             |
-* zth                | upstream z position                             |
+*  xth               | upstream x position                             |
+*  yth               | upstream y position                             |
+*  zth               | upstream z position                             |
 * xcth               | upstream x position in cartesian coordinate     |
 * ycth               | upstream y position in cartesian coordinate     |
 * zcth               | upstream z position in cartesian coordinate     |
@@ -29,15 +29,15 @@
 *changes to assure the equivalence statement below MARKS it.
 *
       MARK_COMMON_BEG(vth)
-      DCL_VMMVAR(vth,uth	,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR(vth,vth	,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR(vth,psdth	,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR(vth,xth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,yth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,zth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,xcth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,ycth	,real,(l_ni*l_nj*l_nk))
-      DCL_VMMVAR(vth,zcth	,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vth,    uth	,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR(vth,    vth	,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR(vth,   zdth	,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR(vth,    xth	,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vth,    yth	,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vth,    zth	,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vth,   xcth	,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vth,   ycth	,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vth,   zcth	,real,(l_ni*l_nj*l_nk))
       MARK_COMMON_END(vth)
 
       character*8 vth_n_first(1)

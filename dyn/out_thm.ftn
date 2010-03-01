@@ -3,7 +3,7 @@
 #include <model_macros_f.h>
 *
       subroutine out_thm(F_fiptx,F_tt1,F_st1,F_qct1,F_qh,F_hut1,
-     %                   F_psdt1,F_wt1,F_zz1,F_ut1,F_vt1,F_csh,
+     %                   F_zdt1,F_wt1,F_zz1,F_ut1,F_vt1,
      %                   F_vtm,F_hum1, F_st1m,F_piup,
      %                   F_wlnph_m,F_wlnph_ta,F_ptop,F_p0,F_wlao,F_topo,
      %                   F_tdia,F_hdia,F_posit,F_huv,
@@ -18,8 +18,7 @@
       real F_fiptx  (F_ninj,0:F_nk+1), F_tt1    (F_ninj,F_nk+1),
      %     F_qct1   (F_ninj,F_nk+1), F_qh     (F_ninj,F_nk+1),
      %     F_hut1   (F_ninj,F_nk+1), F_wt1    (F_ninj,F_nk+1),
-     %     F_psdt1  (F_ninj,F_nk+1),
-     %     F_zz1    (F_ninj,F_nk+1), F_csh    (F_ninj),
+     %     F_zdt1  (F_ninj,F_nk+1), F_zz1    (F_ninj,F_nk+1),
      %     F_ut1    (F_ninj,F_nk+1), F_vt1    (F_ninj,F_nk  ),
      %     F_vtm    (F_ninj,F_nk+1), F_piup   (F_ninj,F_nk+1),
      %     F_hum1   (F_ninj,F_nk+1), F_wlnph_m(F_ninj,F_nk+1),
@@ -77,8 +76,8 @@ c    ind_ta : Thermo levels with special levels ("o" on figure below),
 
 c                ind_m(1:G_nk) ind_ta(1:G_nk+2) 
 c model top
-c ===========1        -             X\ Depending on dpdlogz           
-c o o o o o o2                      X/
+c ===========1        -             X
+c o o o o o o2                      X
 c - - - - - -3        X             -           
 c
 c ===========4        -             X           
@@ -152,7 +151,7 @@ c----------------------------------------------------------------------
       real fbot(F_ninj),wlnph_top(F_ninj),wlnph_bot(F_ninj)
       real gz_ta(F_ninj,F_nk+2),tt_temp(F_ninj,F_nk+1)
       real ps_temp(F_ninj),gz_m_plus(F_ninj,0:F_nk+1)
-      real w4(F_ninj,0:F_nk+1),pia_ta(F_nk+2),pib_ta(F_nk+2)
+      real w4(F_ninj,0:F_nk+1),a_ta(F_nk+2),b_ta(F_nk+2)
 * ___________________________________________________________________
 *
 *     1.0     initialization of data
@@ -177,7 +176,7 @@ c----------------------------------------------------------------------
       prmult_pngz  = 0.1 / Dcst_grav_8
       prmult_pnpx  = 0.01
       prmult_pnme  = 1.0 / Dcst_grav_8
-      prmult_pnwe  = 1.0 / (Ver_z_8%d(l_nk) - Ver_z_8%d(1))
+      prmult_pnwe  = 1.0 / (Ver_z_8%t(l_nk) - Ver_z_8%t(1))
 
       pradd_pnwe   = ZERO_8
 
@@ -197,8 +196,8 @@ c     See figure above
       do ii=1,G_nk+2
          ind_ta(ii)=Ver_hyb_8%t(ii)
 c         print*,'ii,ind_ta(ii)=',ii,ind_ta(ii)
-         pia_ta(ii)=Ver_pia_spcl_8%t(ii)
-         pib_ta(ii)=Ver_pibb_spcl_8%t(ii)*Cstv_pisrf_8
+         a_ta(ii)=Ver_a_spcl_8%t(ii)
+         b_ta(ii)=Ver_b_spcl_8%t(ii)
       enddo
       do ii=1,G_nk
          ind_m(ii)=Ver_hybm_8%m(ii)
@@ -279,6 +278,7 @@ c         print*,'ii,ind_ta(ii)=',ii,ind_ta(ii)
       if (F_levtyp_S.eq.'M')then
          do ii=1,Outd_var_max(F_set)
             if (Outd_var_S(ii,F_set).eq.'GZ') pngz%t=ii
+            if (Outd_var_S(ii,F_set).eq.'GZ') pngz%m=ii
             if (Outd_var_S(ii,F_set).eq.'VT') pnvt%t=ii
             if (Outd_var_S(ii,F_set).eq.'TT') pntt%t=ii
             if (Outd_var_S(ii,F_set).eq.'ES') pnes%t=ii
@@ -290,8 +290,8 @@ c            if (Outd_var_S(ii,F_set).eq.'TW') pntw%t=ii
 c            if (Outd_var_S(ii,F_set).eq.'QC') pnqc%t=ii
             if (Outd_var_S(ii,F_set).eq.'WW') pnww%t=ii
             if (Outd_var_S(ii,F_set).eq.'WE') pnwe%t=ii
-c            if (Outd_var_S(ii,F_set).eq.'ZZ') pnzz%t=ii
-c            if (Outd_var_S(ii,F_set).eq.'TH') pnth%t=ii
+            if (Outd_var_S(ii,F_set).eq.'ZZ') pnzz%t=ii
+            if (Outd_var_S(ii,F_set).eq.'TH') pnth%t=ii
          enddo
       endif
 
@@ -400,8 +400,7 @@ c            if (Outd_var_S(ii,F_set).eq.'TH') pnth%p=ii
             hu(i,G_nk+1)=.5*(F_hut1(i,G_nk)+F_hut1(i,G_nk+1))
             hu(i,G_nk+2)=F_hut1(i,G_nk+1)
          enddo
-      endif
-         
+      endif         
 c      i=(l_maxx-l_minx+1)*(101-1+G_haloy)+158+G_halox
 c      print*,'i,j,vt(i,G_nk+1),hu(i,G_nk+1)=',vt(i,G_nk+1),hu(i,G_nk+1)
 c      print*,'i,j,vt(i,G_nk+2),hu(i,G_nk+2)=',vt(i,G_nk+2),hu(i,G_nk+2)
@@ -416,16 +415,6 @@ c      print*,'i,j,vt(i,G_nk+2),hu(i,G_nk+2)=',vt(i,G_nk+2),hu(i,G_nk+2)
          gz (i,k) = F_fiptx(i,k)+Ver_fistr_8%m(k)
       enddo
       enddo
-      do i=1,F_ninj
-         gz_ta(i,G_nk+2)=F_topo(i)
-      enddo
-
-      if ( Out3_vt2gz_L ) then
-*          Compute hydrostatic GZ from P0 and VT
-           call p0vt2gz_hyb (gz_ta,pia_ta,pib_ta,F_st1,
-     $                          vt,F_ninj,G_nk+2,.true.,.false.)
-      endif
-
 *_________________________________________________________________
 *
 *     2.0    Output 2D variables 
@@ -467,20 +456,17 @@ c      print*,'i,j,vt(i,G_nk+2),hu(i,G_nk+2)=',vt(i,G_nk+2),hu(i,G_nk+2)
      $     .or.
      $     (pngz%t.ne.0) ) then
 
-         if (.not.Out3_vt2gz_L) then
-c            call gem_stop('out_thm : a faire GZ',-2)
-c           Compute GZ on thermo levels in gz_ta
-            do i= 1, F_ninj
-               do k=1,l_nk
-                  gz_m_plus(i,k)=gz(i,k)
-               enddo
-               gz_m_plus(i,l_nk+1)=F_topo(i)
-               gz_m_plus(i,0)=.5*(F_fiptx(i,1)+F_fiptx(i,0))+
-     $              Ver_fistr_8%t(1)
-               gz_ta(i,l_nk+2)=F_topo(i)
+c        Compute GZ on thermo levels in gz_ta
+         do i= 1, F_ninj
+            do k=1,l_nk
+               gz_m_plus(i,k)=gz(i,k)
             enddo
-            call vertint3(gz_ta,gz_m_plus,F_posit,F_huv,F_ninj,G_nk+1,G_nk+2)
-         endif
+            gz_m_plus(i,l_nk+1)=F_topo(i)
+            gz_m_plus(i,0)=.5*(F_fiptx(i,1)+F_fiptx(i,0))+
+     $              Ver_fistr_8%t(1)
+            gz_ta(i,l_nk+2)=F_topo(i)
+         enddo
+         call vertint3(gz_ta,gz_m_plus,F_posit,F_huv,F_ninj,G_nk+1,G_nk+2)
 c         i=(l_maxx-l_minx+1)*(1-1+G_haloy)+1+G_halox
 c         print*,'gz_m_plus(i,0),gz_ta(i,1)',gz_m_plus(i,0),gz_ta(i,1)
 c         call gem_stop('out_thm',-1)
@@ -613,8 +599,6 @@ c         call gem_stop('out_thm',-1)
          do i= 1, F_ninj
             omega(i,F_nk+2)=omega(i,F_nk+1)
          enddo         
-c         call calomeg(omega,F_psdt1,F_ut1,F_vt1,F_csh, 
-c     $        l_minx,l_maxx,l_miny,l_maxy,G_nk,1,l_ni,1,l_nj)
       endif
 
       if (pnth%t.ne.0.or.pnth%p.ne.0) then
@@ -639,13 +623,13 @@ c     $        l_minx,l_maxx,l_miny,l_maxy,G_nk,1,l_ni,1,l_nj)
          if (pnwe%t.ne.0)then
             do k= 1,F_nk
             do i= 1, F_ninj
-                  t8(i,k) = F_psdt1(i,k)
+                  t8(i,k) = F_zdt1(i,k)
             enddo
             enddo
 c           Put nk value at special level
             do i= 1, F_ninj
-               t8(i,F_nk+1) = F_psdt1(i,F_nk)
-               t8(i,F_nk+2) = F_psdt1(i,F_nk+1)
+               t8(i,F_nk+1) = F_zdt1(i,F_nk)
+               t8(i,F_nk+2) = F_zdt1(i,F_nk+1)
             enddo
             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,ind_ta,
      $           'WE  ',prmult_pnwe,0.0,Out_kind,F_nk+2, F_indo, F_nko, nbit(pnwe%t) )
@@ -721,7 +705,7 @@ c           Put nk value at special level
 
               call out_padbuf(F_vtm, l_minx,l_maxx,l_miny,l_maxy,F_nk+1)
               call out_padbuf(F_hum1,l_minx,l_maxx,l_miny,l_maxy,F_nk+1)
-              call mfottv_tl (tt,vt,F_hut1,F_vtm,F_hum1,F_ninj,F_nk+2,F_ninj)
+              call mfottv_tl (tt,vt,hu,F_vtm,F_hum1,F_ninj,F_nk+2,F_ninj)
 
            elseif (V4dgconf_L.and.V4dg_ad_L) then
 *
@@ -772,7 +756,7 @@ c         print*,'px_ta(i,1),exp(F_wlnph_m(i,1)),px_ta(i,2),exp(F_wlnph_m(i,2)),
          if (pntw%t.ne.0) then
             call gem_stop('out_thm TW : ajuster pour niveaux quart',-10)
 *        Calculate THETAW TW (t8=TW) (px=PX)
-             call mthtaw2 (t8,F_hut1,vt, px_ta,px_ta,3, .false., .false.,
+             call mthtaw2 (t8,hu,vt, px_ta,px_ta,3, .false., .false.,
      $                     .true.,Dcst_trpl_8,F_ninj,F_nk+2,F_ninj)
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,ind_ta,
      $        'TW  ',1.0,0.0, Out_kind,F_nk+1, F_indo, F_nko, nbit(pntw%t) )
@@ -812,7 +796,7 @@ c         print*,'px_ta(i,1),exp(F_wlnph_m(i,1)),px_ta(i,2),exp(F_wlnph_m(i,2)),
          if (pnhr%t.ne.0) then
             call gem_stop('out_thm HR : ajuster pour niveaux quart',-13)
 *        Calculate HR (t8=HR,tt=TT,px=PX)
-             call mfohra(t8,F_hut1,tt,
+             call mfohra(t8,hu,tt,
      $                   px_ta,px_ta,3,F_ninj,F_nk+1,F_ninj)
              if ( Out3_cliph_L ) then
                 do k= 1,F_nk+1
@@ -885,10 +869,8 @@ c           Put nk value at special level like WE
         enddo
 
 *       Calculate vertical derivative of HUT1 with respect to F_wlnph_ta
-
-        call verder(px_ta, F_hut1, F_wlnph_ta, 2.0,  2.0,l_minx,l_maxx,l_miny,l_maxy,
+        call verder(px_ta, hu, F_wlnph_ta, 2.0,  2.0,l_minx,l_maxx,l_miny,l_maxy,
      $                                       F_nk+2, 1,l_ni,1,l_nj)
-
 *       Calculate HU (hu_pres=HU,px_ta=vert.der)
         call prgen(hu_pres,hu,px_ta,F_wlnph_ta,prprlvl,F_nko, 
      $                      Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy,F_nk+2)

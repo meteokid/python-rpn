@@ -39,48 +39,46 @@
 #include "vtx.cdk" 
 #include "nest.cdk"
 #include "func.cdk"
-#include "matlab.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer  pnerr, pnlod, pnlkey1(30), i,j,k, longueur
+      integer  pnerr, pnlod, pnlkey1(29), i,j,k, longueur
 **
 *     __________________________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
 
-      pnlkey1( 1) = VMM_KEY(ru)
-      pnlkey1( 2) = VMM_KEY(rv)
-      pnlkey1( 3) = VMM_KEY(rcn)
-      pnlkey1( 4) = VMM_KEY(rth)
-      pnlkey1( 5) = VMM_KEY(oru)
-      pnlkey1( 6) = VMM_KEY(orv)
-      pnlkey1( 7) = VMM_KEY(orcn)
-      pnlkey1( 8) = VMM_KEY(orth)
+      pnlkey1( 1) = VMM_KEY(rhsu)
+      pnlkey1( 2) = VMM_KEY(rhsv)
+      pnlkey1( 3) = VMM_KEY(rhsc)
+      pnlkey1( 4) = VMM_KEY(rhst)
+      pnlkey1( 5) = VMM_KEY(orhsu)
+      pnlkey1( 6) = VMM_KEY(orhsv)
+      pnlkey1( 7) = VMM_KEY(orhsc)
+      pnlkey1( 8) = VMM_KEY(orhst)
       pnlkey1( 9) = VMM_KEY(ruw1)
       pnlkey1(10) = VMM_KEY(rvw1)
       pnlkey1(11) = VMM_KEY(ut1)
       pnlkey1(12) = VMM_KEY(vt1)
       pnlkey1(13) = VMM_KEY(tt1)
-      pnlkey1(14) = VMM_KEY(qptx)
+      pnlkey1(14) = VMM_KEY(bspqtx)
       pnlkey1(15) = VMM_KEY(st1)
-      pnlkey1(16) = VMM_KEY(psdt1)
-      pnlkey1(17) = VMM_KEY(csh)
-      pnlkey1(18) = VMM_KEY(fiptx)
-      pnlkey1(19) = VMM_KEY(topo)
-      pnlkey1(20) = VMM_KEY(that_8)
-      pnlkey1(21) = VMM_KEY(dlnth_8)
-      pnlod = 21
+      pnlkey1(16) = VMM_KEY(zdt1)
+      pnlkey1(17) = VMM_KEY(fiptx)
+      pnlkey1(18) = VMM_KEY(topo)
+      pnlkey1(19) = VMM_KEY(that_8)
+      pnlkey1(20) = VMM_KEY(dlnth_8)
+      pnlod = 20
       if (.not. Schm_hydro_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(rw)
-         pnlkey1(pnlod+2) = VMM_KEY(rvv)
-         pnlkey1(pnlod+3) = VMM_KEY(orw)
-         pnlkey1(pnlod+4) = VMM_KEY(orvv)
+         pnlkey1(pnlod+1) = VMM_KEY(rhsw)
+         pnlkey1(pnlod+2) = VMM_KEY(rhsf)
+         pnlkey1(pnlod+3) = VMM_KEY(orhsw)
+         pnlkey1(pnlod+4) = VMM_KEY(orhsf)
          pnlkey1(pnlod+5) = VMM_KEY(wt1)
          pnlkey1(pnlod+6) = VMM_KEY(mutx)
-         pnlkey1(pnlod+7) = VMM_KEY(qsect1)
+         pnlkey1(pnlod+7) = VMM_KEY(qt1)
          pnlod = pnlod+7
       endif
       if (G_lam) then
@@ -91,41 +89,40 @@
 *     - - - - - - - - - - - - - 
       pnerr = vmmlod(pnlkey1,pnlod)
 *     - - - - - - - - - - - - - 
-      pnerr = VMM_GET_VAR(ru)
-      pnerr = VMM_GET_VAR(rv)
-      pnerr = VMM_GET_VAR(rcn)
-      pnerr = VMM_GET_VAR(rth)
-      pnerr = VMM_GET_VAR(oru)
-      pnerr = VMM_GET_VAR(orv)
-      pnerr = VMM_GET_VAR(orcn)
-      pnerr = VMM_GET_VAR(orth)
+      pnerr = VMM_GET_VAR(rhsu)
+      pnerr = VMM_GET_VAR(rhsv)
+      pnerr = VMM_GET_VAR(rhsc)
+      pnerr = VMM_GET_VAR(rhst)
+      pnerr = VMM_GET_VAR(orhsu)
+      pnerr = VMM_GET_VAR(orhsv)
+      pnerr = VMM_GET_VAR(orhsc)
+      pnerr = VMM_GET_VAR(orhst)
       pnerr = VMM_GET_VAR(ruw1)
       pnerr = VMM_GET_VAR(rvw1)
       pnerr = VMM_GET_VAR(ut1)
       pnerr = VMM_GET_VAR(vt1)
       pnerr = VMM_GET_VAR(tt1)
-      pnerr = VMM_GET_VAR(qptx)
+      pnerr = VMM_GET_VAR(bspqtx)
       pnerr = VMM_GET_VAR(st1)
-      pnerr = VMM_GET_VAR(psdt1)
-      pnerr = VMM_GET_VAR(csh)
+      pnerr = VMM_GET_VAR(zdt1)
       pnerr = VMM_GET_VAR(fiptx)
       pnerr = VMM_GET_VAR(topo)
       pnerr = VMM_GET_VAR(that_8)
       pnerr = VMM_GET_VAR(dlnth_8)
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(qsect1)
-         pnerr = VMM_GET_VAR(rw)
-         pnerr = VMM_GET_VAR(rvv)
-         pnerr = VMM_GET_VAR(orw)
-         pnerr = VMM_GET_VAR(orvv)
+         pnerr = VMM_GET_VAR(qt1)
+         pnerr = VMM_GET_VAR(rhsw)
+         pnerr = VMM_GET_VAR(rhsf)
+         pnerr = VMM_GET_VAR(orhsw)
+         pnerr = VMM_GET_VAR(orhsf)
          pnerr = VMM_GET_VAR(wt1)
          pnerr = VMM_GET_VAR(mutx)
       else
-         qsect1_ =0
-         rw_   = 0
-         rvv_  = 0
-         orw_  = 0
-         orvv_ = 0
+         qt1_ =0
+         rhsw_   = 0
+         rhsf_    = 0
+         orhsw_  = 0
+         orhsf_ = 0
          wt1_  = 0
          mutx_ = 0
       endif
@@ -140,113 +137,32 @@
 *     Perform the computation in the first 
 *     cycle of Crank-Nicholson procedure only
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if ( Orh_icn .eq. 1 ) then
 *
-        if(matlab_write_L)then
-
-           if(Ptopo_myproc.eq.0)then
-              print*,'Ecrire pour matlab rhs'
-              open(unit=62,file=
-     $             matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_rhs.bin',
-     $             status='replace',form='unformatted')
-              write(62)G_ni-lam_pil_w-lam_pil_e
-              write(62)G_nk
-           endif
-            call write_matlab_2d(62,topo)
-            call write_matlab_3d(62,ut1)
-            call write_matlab_3d_th(62,tt1)
-            call write_matlab_3d_v(62,fiptx)
-            call write_matlab_3d_v(62,qptx)
-            call write_matlab_2d(62,st1)
-            call write_matlab_2d(62,csh)
-            call write_matlab_3d_th(62,psdt1)
-            if (.not. Schm_hydro_L) then
-               call write_matlab_3d_v(62,qsect1)
-               call write_matlab_3d_th(62,mutx)
-            endif
-         endif
-
-         call diag_var(csh, qptx, mutx, st1, qsect1,
-     $        1-G_halox,l_ni+G_halox,1-G_haloy,l_nj+G_haloy,l_nk)       
+      call diag_var( bspqtx, mutx, st1, qt1,
+     $                       1,l_ni,1,l_nj,l_nk)       
 *
-         call diag_fip1(fiptx, tt1, qptx, qsect1, topo,
-     $        1-G_halox,l_ni+G_halox,1-G_haloy,l_nj+G_haloy,l_nk)         
+      call diag_fip(fiptx, st1, tt1, qt1, topo,
+     $        1,l_ni,1,l_nj,l_nk)         
 *
-         call rhsp_2  (    ru,    rv,   rcn,   rth,    rw,    rvv,
-     %                    oru,   orv,  orcn,  orth,   orw,   orvv,
-     %                   ruw1,  rvw1,   ut1,   vt1,   tt1,   qptx,
-     %                 qsect1,   st1, psdt1,nest_u,nest_v,
-     %                    wt1, fiptx,  mutx,   csh,that_8,dlnth_8,
-     $        LDIST_DIM,l_nk  )
+      call rhsp_2  (  rhsu,  rhsv,  rhsc,  rhst,  rhsw,   rhsf,
+     %               orhsu, orhsv, orhsc, orhst, orhsw,  orhsf,
+     %                ruw1,  rvw1,   ut1,   vt1,   tt1, bspqtx,
+     %                 st1, zdt1,nest_u,nest_v,
+     %                 wt1, fiptx,  mutx,that_8,dlnth_8,
+     $         LDIST_DIM,l_nk  )
 *     
-
-        if(matlab_write_L)then
-            call write_matlab_3d(62,ru)
-            call write_matlab_3d(62,ruw1)
-            call write_matlab_3d(62,rcn)
-            call write_matlab_3d_th(62,rth)
-            if (.not. Schm_hydro_L) then
-               call write_matlab_3d_th(62,rw)
-               call write_matlab_3d_th(62,rvv)
-            endif
-            
-            if(Ptopo_myproc.eq.0)close(62)
-         
-         endif
-         
-      else
-
-!$omp parallel
-!$omp do
-         do k=1,l_nk
-         do j= 1, l_nj 
-         do i= 1, l_ni
-            ru (i,j,k) = oru (i,j,k)
-            rv (i,j,k) = orv (i,j,k)
-            rcn(i,j,k) = orcn(i,j,k)
-         end do
-         end do
-         end do
-!$omp enddo
-
-!$omp do
-         do k=1,l_nk+1
-         do j= 1, l_nj 
-         do i= 1, l_ni
-            rth(i,j,k) = orth(i,j,k)
-         end do
-         end do
-         end do
-!$omp enddo
-
-         if (.not. Schm_hydro_L) then
-!$omp do
-            do k=1,l_nk+1
-            do j= 1, l_nj 
-            do i= 1, l_ni
-               rw (i,j,k) = orw (i,j,k)
-               rvv(i,j,k) = orvv(i,j,k)
-            end do
-            end do
-            end do
-!$omp enddo
-         endif
-!$omp end parallel
-*
-      endif
-*
 c     if (Acid_test_L) then
 c     If (Lun_out.gt.0) write(Lun_out,*) 'After rhsp_2, computed area'
-c     call glbstat (ru,'RU0',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
+c     call glbstat (rhsu,'RU0',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
 c    %                                      8+acid_j0,G_nj-7-acid_jn,1,G_nk)
 c     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
 c    %                                      5+acid_j0,G_nj-4-acid_jn,1,G_nk)
-c     call glbstat (rth,'RTH',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
+c     call glbstat (rhst,'RT',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
 c    %                                      8+acid_j0,G_nj-7-acid_jn,1,G_nk)
-*     Rcn0 will not match to the piloting run because it includes new Ru,Rv
+*     Rc0 will not match to the piloting run because it includes new Ru,Rv
 c     If (Lun_out.gt.0) 
-c    %  write(Lun_out,*) 'Rcn0 includes nesting area and new Ru,Rv, will not match'
-c     call glbstat (rcn,'Rcn0',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
+c    %  write(Lun_out,*) 'Rc0 includes nesting area and new Ru,Rv, will not match'
+c     call glbstat (rhsc,'Rc0',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
 c    %                                        1+acid_j0,G_nj-acid_jn,1,G_nk)
 c     endif
       pnerr = vmmuld(-1,0)

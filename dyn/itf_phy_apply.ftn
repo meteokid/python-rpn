@@ -17,7 +17,7 @@
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
-* v2_30 - Edouard S.        - change call to uv2tdpsd
+* v2_30 - Edouard S.        - change call to uv2tdzd
 * v2_31 - Desgagne M.       - clean up and introduce h2o tracers
 * v3_00 - Laroche S.        - adaptation to include simplified physics
 * v3_02 - Plante A.         - water loading
@@ -93,15 +93,15 @@
 c$$$ What is computed?
 c$$$ 
 c$$$ in 2.2.2
-c$$$ fit1,fipt1,tpt1,tplt1,tdt1,psdt1,tt1,ut1,vt1,trp,trm
+c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
 c$$$ 
 c$$$ in 2.2.5xis:
 c$$$ tdia,udia,vdia,tt1,ut1,vt1,
-c$$$ fiptx [diag_fip(fiptx,csh,tt1,qsect1,topo)],
+c$$$ fiptx [diag_fip(fiptx,st1,tt1,qt1,topo)],
 c$$$ hdia,trp,trm
 c$$$ 
 c$$$ in 3.3.0
-c$$$ fit1,fipt1,tpt1,tplt1,tdt1,psdt1,tt1,ut1,vt1,trp,trm
+c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
 
       i0 =1+pil_w
       in =l_ni-pil_e 
@@ -162,10 +162,10 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,psdt1,tt1,ut1,vt1,trp,trm
       key1(4) = VMM_KEY(tdia )
       key1(5) = VMM_KEY(udia )
       key1(6) = VMM_KEY(vdia )
-      key1(7) = VMM_KEY(csh )
+      key1(7) = VMM_KEY(st1 )
       pnload = 7
       if (.not. Schm_hydro_L ) then
-         key1(pnload+1) = VMM_KEY(qsect1)
+         key1(pnload+1) = VMM_KEY(qt1)
          pnload = pnload+1
       endif
       if (Schm_pheat_L ) then
@@ -174,7 +174,7 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,psdt1,tt1,ut1,vt1,trp,trm
          pnload = pnload+2
       endif
       if (Schm_pcsty_L) then
-         key1(pnload+1) = VMM_KEY(psdt1 )
+         key1(pnload+1) = VMM_KEY(zdt1 )
          pnload = pnload+1
       endif
       err = vmmlod (key1,pnload)
@@ -184,14 +184,14 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,psdt1,tt1,ut1,vt1,trp,trm
       err = VMM_GET_VAR(tdia )
       err = VMM_GET_VAR(udia )
       err = VMM_GET_VAR(vdia )
-      err = VMM_GET_VAR(csh)
-      if(.not. Schm_hydro_L) err = VMM_GET_VAR(qsect1)
+      err = VMM_GET_VAR(st1)
+      if(.not. Schm_hydro_L) err = VMM_GET_VAR(qt1)
       if (Schm_pheat_L ) then
          err = VMM_GET_VAR(fiptx)
          err = VMM_GET_VAR(topo )
       endif
       if (Schm_pcsty_L ) then
-         err = VMM_GET_VAR(psdt1)
+         err = VMM_GET_VAR(zdt1)
       endif
 
 
@@ -419,7 +419,7 @@ c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
 *        ----------------------------------------
 *
       if (Schm_pheat_L) then
-        call diag_fip(fiptx,csh,tt1,qsect1,topo,
+        call diag_fip(fiptx,st1,tt1,qt1,topo,
      $                         i0,in,j0,jn,l_nk)
       endif
 

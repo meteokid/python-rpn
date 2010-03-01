@@ -12,8 +12,7 @@
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
-* v2_30 - Edouard  S.       - replace Schm_elast_L by Schm_cptop_L 
-*
+*         Qaddouri A.       - call set_pois_2
 *object
 *     see ID section above
 *
@@ -32,105 +31,97 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
-#include "matlab.cdk"
 *
 *modules
 **
-      real*8 one
-      parameter( one  = 1.0 )
+      real*8 one, half, quarter
+      parameter( one  = 1.d0, half = .5d0, quarter = .25d0 )
 *
       integer k, k0,longueur
       real*8  pdsc, wk(G_nk)
       real*8, dimension 
      $((trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj) :: a,b,c
 
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_set_oprz.bin',status='replace',form='unformatted')
-         write(62)G_nk
-      endif
 *
 *     ---------------------------------------------------------------
 *
 *     Compute the vertical operators
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*     Pz0
+*
+*     Diagonal Operator
+*     ~~~~~~~~~~~~~~~~~
       do k = 1, G_nk
          Opr_opszp0_8(       k)=0.d0
-         Opr_opszp0_8(G_nk  +k)=Ver_hz_8%m(k)
+         Opr_opszp0_8(G_nk  +k)=Ver_dz_8%m(k)
          Opr_opszp0_8(G_nk*2+k)=0.d0
       end do
-*                                          ~
-*     Prepare Second Derivative Operator  zz/dz       (+--)
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -----       ~~~~~
+*                                          
+*     Second Derivative Operator
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~
       Opr_opszp2_8(     1)=0.d0
       Opr_opszp2_8(G_nk*3)=0.d0
       do k = 1, G_nk-1
-         Opr_opszp2_8(       k+1)= Ver_z_8%t(k+1)*Ver_zodz_8(k+1)
+         Opr_opszp2_8(       k+1)= Ver_idz_8%t(k+1)
          Opr_opszp2_8(G_nk*2+k  )=+ Opr_opszp2_8(k+1)
          Opr_opszp2_8(G_nk  +k  )=-(Opr_opszp2_8(G_nk*2+k)+Opr_opszp2_8(k))
       end do
       Opr_opszp2_8(G_nk*2       )=-Opr_opszp2_8(G_nk)
 *      
-*     Adjust for vertical boundary conditions
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      Opr_opszp2_8(2*G_nk) = Opr_opszp2_8(2*G_nk) + (ver_alphas_8-one)*Ver_z_8%t(G_nk+1)*Ver_zodz_8(G_nk+1)
-      Opr_opszp2_8(G_nk+1) = Opr_opszp2_8(G_nk+1) - (one-Ver_alphat_8)*Ver_z_8%t(1)*Ver_zodz_8(1)
+*     Adjusted for vertical boundary conditions
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      Opr_opszp2_8(2*G_nk) = Opr_opszp2_8(2*G_nk)
+     $                     + (ver_alphas_8-one)*Ver_idz_8%t(G_nk+1)
+      Opr_opszp2_8(G_nk+1) = Opr_opszp2_8(G_nk+1)
+     $                     - (one-Ver_alphat_8)*Ver_idz_8%t(1)
 
-      if (.not. Schm_cptop_L) then
-         print*,'Constant pressure top only'
-         call gem_stop('set_oprz',-1)         
-      endif
-      
       if(.not.Schm_hydro_L)then
 *
-*        Prepare double average operator              (+++)
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~              ~~~~~
+*        Double average operator
+*        ~~~~~~~~~~~~~~~~~~~~~~~
          Opr_opszpm_8(     1)=0.d0
          Opr_opszpm_8(G_nk*3)=0.d0
          do k = 1, G_nk-1
-            Opr_opszpm_8(       k+1)= .25d0*Ver_hz_8%t(k+1)
+            Opr_opszpm_8(       k+1)= quarter*Ver_dz_8%t(k+1)
             Opr_opszpm_8(G_nk*2+k  )=+ Opr_opszpm_8(k+1)
             Opr_opszpm_8(G_nk  +k  )=+(Opr_opszpm_8(G_nk*2+k)+Opr_opszpm_8(k))
          end do
          Opr_opszpm_8(G_nk*2       )=+Opr_opszpm_8(G_nk)
 *        
-*        Adjust for vertical boundary conditions
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         Opr_opszpm_8(2*G_nk)=Opr_opszpm_8(2*G_nk)+(one+ver_alphas_8)*.25d0*Ver_hz_8%t(G_nk+1)
-         Opr_opszpm_8(G_nk+1)=Opr_opszpm_8(G_nk+1)+(one+ver_alphat_8)*.25d0*Ver_hz_8%t(1)
+*        Adjusted for vertical boundary conditions
+*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         Opr_opszpm_8(2*G_nk)=Opr_opszpm_8(2*G_nk)
+     $                       +(one+ver_alphas_8)*quarter*Ver_dz_8%t(G_nk+1)
+         Opr_opszpm_8(G_nk+1)=Opr_opszpm_8(G_nk+1)
+     $                       +(one+ver_alphat_8)*quarter*Ver_dz_8%t(1)
 *
-*        Prepare special operator (non symetric)      (---)
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ~~~~~
-         Opr_opszpl_8(     1)=0.d0
-         Opr_opszpl_8(G_nk*3)=0.d0
-         do k = 1, G_nk-1
-            Opr_opszpl_8(       k+1)= -.5d0*(Ver_ztild_8(k+1)-Ver_z_8%t(k+1))
-            Opr_opszpl_8(G_nk*2+k  )= - Opr_opszpl_8(k+1)
-            Opr_opszpl_8(G_nk  +k  )= -(Opr_opszpl_8(G_nk*2+k)+Opr_opszpl_8(k))
-         end do
-         Opr_opszpl_8(G_nk*2       )= -Opr_opszpl_8(G_nk)
-*
-*        Adjust for vertical boundary conditions
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         Opr_opszpl_8(2*G_nk)=Opr_opszpl_8(2*G_nk)+(one+ver_alphas_8)*(Ver_ztild_8(G_nk+1)-Ver_z_8%t(G_nk+1))
-         Opr_opszpl_8(G_nk+1)=Opr_opszpl_8(G_nk+1)+(one+ver_alphat_8)*(Ver_ztild_8(1)     -Ver_z_8%t(1))
       endif
-
-      if(matlab_write_L)write(62)(Opr_opszp2_8(k),k=1,3*G_nk)
-      if(matlab_write_L)write(62)(Opr_opszpm_8(k),k=1,3*G_nk)
-      if(matlab_write_L)write(62)(Opr_opszp0_8(k),k=1,3*G_nk)
-
+*
+*     First Derivative Operator (non symetric)
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      Opr_opszpl_8(     1)=0.d0
+      Opr_opszpl_8(G_nk*3)=0.d0
+      do k = 1, G_nk-1
+         Opr_opszpl_8(       k+1)= -half
+         Opr_opszpl_8(G_nk*2+k  )= -Opr_opszpl_8(k+1)
+         Opr_opszpl_8(G_nk  +k  )=  .0d0
+      end do
+      Opr_opszpl_8(G_nk*2       )=  .0d0
+*
+*     Adjusted for vertical boundary conditions
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      Opr_opszpl_8(2*G_nk)=Opr_opszpl_8(2*G_nk)+ver_alphas_8*half
+      Opr_opszpl_8(G_nk+1)=Opr_opszpl_8(G_nk+1)-ver_alphat_8*half
 *
 *     Compute eigenvalues and eigenvector in the vertical
 *     ---------------------------------------------------
 *
-      call set_pois (Opr_zeval_8, Opr_zevec_8,G_nk, G_nk)
+       call set_pois_2 (Opr_zeval_8, Opr_lzevec_8,Opr_zevec_8,G_nk, G_nk)
 *
       do k=1,G_nk
          do k0=1,G_nk
             wk(k) = Opr_zevec_8 ((k-1)*G_nk+k0)
          enddo
-         wk(k)= (Cstv_hco0_8*Opr_zeval_8(k)-Cstv_hco1_8)
+         wk(k)= Cstv_hco0_8*Opr_zeval_8(k)
       enddo
 *     
       call sol_abc ( wk,G_yg_8(1),Opr_opsyp0_8,
@@ -141,6 +132,5 @@
 *
 *     ---------------------------------------------------------------
 *
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)close(62)
       return
       end

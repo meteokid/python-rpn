@@ -2,15 +2,13 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine diag_var(F_csh,F_qp,F_mu,
-     $          F_s,F_qsec,i0,in,j0,jn,nk)
+      subroutine diag_var(F_BsPq,F_mu,F_s,F_q,i0,in,j0,jn,nk)
 *     
       implicit none
 *     
       integer nk
-      real F_csh(LDIST_SHAPE), F_s(LDIST_SHAPE)
-      real F_qp  (LDIST_SHAPE,0:Nk+1), F_mu(LDIST_SHAPE,Nk+1)
-      real F_qsec(LDIST_SHAPE,0:Nk+1)
+      real F_BsPq(LDIST_SHAPE,0:Nk+1), F_mu(LDIST_SHAPE,Nk+1)
+      real F_s(LDIST_SHAPE),           F_q(LDIST_SHAPE,0:Nk+1)
 *
 *author
 *
@@ -24,14 +22,10 @@
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
-* F_csh        O    - hydrostatic pressure at surface from 
-*                     csh=2*sinh(s/2)*exp(s/2), s=ln(pis/Zs)
-* F_qp         O    - perturbation ln(pressure)
+* F_BsPq       O    - perturbation ln(pressure)
 * F_mu         O    - 
 * F_s          I    - 
-* F_qsec       I    - non-hydro perturbation of log(p)
-* F_hydro_L    I    - if F_hydro_L=.true. -> no contribution from F_qsec
-*                     if F_hydro_L=.false. -> contribution from F_qsec
+* F_q          I    - non-hydro perturbation of log(p)
 * i0,in,j0,jn  I    - index over which computation will be made.
 *
 *implicits
@@ -49,7 +43,6 @@
       real*8 one, half, xxx
       parameter(one=1.d0, half=.5d0 )
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8, xrec_8, yrec_8
-      real*8 qpmqs(LDIST_SHAPE,0:Nk+1)
 *
 *     ---------------------------------------------------------------
 *
@@ -67,29 +60,10 @@
 !$omp parallel private (xxx,xtmp_8,ytmp_8,xrec_8,yrec_8)
 *
 !$omp do
-      do j= j0, jn
-         do i= i0, in
-            xtmp_8(i,j) = F_s(i,j)*.5d0
-         end do
-         call vexp  ( ytmp_8(i0,j) , xtmp_8(i0,j), (in-i0+1) )
-         do i= i0, in
-            F_csh(i,j)=2.*ytmp_8(i,j)*sinh(F_s(i,j)*.5)
-         end do
-      end do
-!$omp enddo
-*
-!$omp do
        do k=0,l_nk+1
          do j= j0, jn
          do i= i0, in
-            xtmp_8(i,j) = one + Ver_boz_8%m(k)*F_csh(i,j)
-         enddo
-         enddo
-         call vlog ( ytmp_8, xtmp_8, nij )
-*
-         do j= j0, jn
-         do i= i0, in
-            F_qp(i,j,k)=ytmp_8(i,j)
+            F_BsPq(i,j,k)=Ver_b_8%m(k)*F_s(i,j)
          enddo
          enddo
       enddo
@@ -101,16 +75,15 @@
       do k=0,l_nk+1
          do j= j0, jn
          do i= i0, in
-            qpmqs(i,j,k)= F_qp(i,j,k)
-            F_qp(i,j,k) = F_qp(i,j,k) +  F_qsec(i,j,k)
+            F_BsPq(i,j,k) = F_BsPq(i,j,k) +  F_q(i,j,k)
          enddo
          enddo
          if(k.gt.0) then
-            xxx=Ver_zodz_8(k)
+            xxx=Ver_idz_8%t(k)
             do j= j0, jn
             do i= i0, in
-               xrec_8(i,j) =one+xxx*(qpmqs(i,j,k)- qpmqs(i,j,k-1))
-               xtmp_8(i,j) = half*( F_qsec(i,j,k)+F_qsec(i,j,k-1))
+               xrec_8(i,j) =one+ver_dbdz_8%t(k)*F_s(i,j)
+               xtmp_8(i,j) = half*( F_q(i,j,k)+F_q(i,j,k-1))
             enddo
             enddo
             call vrec ( yrec_8, xrec_8, nij )
@@ -118,7 +91,7 @@
             do j= j0, jn
             do i= i0, in
                F_mu(i,j,k)= -one + ytmp_8(i,j)*
-     $         (one+xxx*(F_qsec(i,j,k)-F_qsec(i,j,k-1))*yrec_8(i,j))
+     $         (one+xxx*(F_q(i,j,k)-F_q(i,j,k-1))*yrec_8(i,j))
             enddo
             enddo
          endif

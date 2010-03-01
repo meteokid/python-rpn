@@ -66,7 +66,7 @@
       real busper, busper2(max(1,p_bper_siz))
       real topo_temp(l_ni,l_nj),topu_temp(l_ni,l_nj),topv_temp(l_ni,l_nj),
      $     zero(l_ni,l_nj),dtopo_temp(l_ni,l_nj)
-      real topox_temp(LDIST_SHAPE),pia_special_t(l_nk+1),pibb_special_t(l_nk+1)
+      real topox_temp(LDIST_SHAPE),a_special_t(l_nk+1),b_special_t(l_nk+1)
       pointer (pabusper,busper(*))
 
       integer, dimension (:  ), pointer :: idx,idu,idy,nks
@@ -88,11 +88,10 @@
      $       trn,trr,ttru,ttrv,firu,firv
       real trp
       pointer (patrp, trp(LDIST_SHAPE,*))
-      real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1),zsurf_8
+      real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1)
       data nfphy,nkphy /0,0/
 *-----------------------------------------------------------------------
 *
-      zsurf_8 = Cstv_pisrf_8
       nvargeo = 9
       if (P_pbl_schsl_S.eq.'ISBA') nvargeo = 14
       allocate (geop_name(nvargeo))
@@ -717,10 +716,10 @@
          gz_temp(i,j,nka) = fir(i,j,nka)
       enddo
       enddo
-      call p0vt2gz_hyb ( gz_temp, ana_pia, ana_pibb, ana_p0,
+      call p0vt2gz_hyb ( gz_temp, ana_a, ana_b, ana_p0,
      $                      ttr,ng, nka,.false.,.false.)
 
-      call getp0 ( ps, topo_temp,ana_pia,ana_pibb, ana_p0, gz_temp, ttr,
+      call getp0 ( ps, topo_temp,ana_a,ana_b, ana_p0, gz_temp, ttr,
      $                         ng, nka,.false.)
 *
 * Setup for Vertical interpolation for winds
@@ -730,9 +729,9 @@
          gz_temp(i,j,nka) = firu(i,j,nka)
       enddo
       enddo
-      call p0vt2gz_hyb ( gz_temp, ana_pia, ana_pibb, ana_p0u,
+      call p0vt2gz_hyb ( gz_temp, ana_a, ana_b, ana_p0u,
      $                      ttru,ng, nka,.false.,.false.)
-      call getp0 ( psu, topu_temp,ana_pia,ana_pibb,ana_p0u,gz_temp,ttru,
+      call getp0 ( psu, topu_temp,ana_a,ana_b,ana_p0u,gz_temp,ttru,
      $                         ng, nka,.false.)
 *
       do j=1,l_nj
@@ -740,24 +739,21 @@
          gz_temp(i,j,nka) = firv(i,j,nka)
       enddo
       enddo
-      call p0vt2gz_hyb ( gz_temp, ana_pia, ana_pibb, ana_p0v,
+      call p0vt2gz_hyb ( gz_temp, ana_a, ana_b, ana_p0v,
      $                      ttrv,ng, nka,.false.,.false.)
-      call getp0 ( psv, topv_temp,ana_pia,ana_pibb,ana_p0v,gz_temp,ttrv,
+      call getp0 ( psv, topv_temp,ana_a,ana_b,ana_p0v,gz_temp,ttrv,
      $                         ng, nka,.false.)
 *
 * Interpolate VT
       do k=1,g_nk+1
-         pia_special_t(k)=Ver_pia_spcl_8%t(k)
-         pibb_special_t(k)=Ver_pibb_spcl_8%t(k)
+         a_special_t(k)=Ver_a_spcl_8%t(k)
+         b_special_t(k)=Ver_b_spcl_8%t(k)
       end do
 *
-      if(Schm_dPdlogZ_L)then
-         print*,'casc_3df_dynp : ajoutez code'
-         stop
-      else
-         call vte_hyb2hyb (tt_temp,pia_special_t,pibb_special_t,ps,
-     $        G_nk+1,ttr,ana_pia,ana_pibb,ana_p0,nka,ng,'VT',.false.)
-      endif
+      print*,'casc_3df_dynp : ajoutez code for dPdlogZ'
+      stop
+      call vte_hyb2hyb (tt_temp,a_special_t,b_special_t,ps,
+     $     G_nk+1,ttr,ana_a,ana_b,ana_p0,nka,ng,'VT',.false.)
 *
       do k=1,G_nk+1
       do j=1,l_nj
@@ -769,10 +765,10 @@
 *
 * Interpolate UT1 and VT1
 *
-      call vte_hyb2hyb (w1,Ver_pia%m,Ver_pibb%m,psu,G_nk, uur,
-     $         ana_pia,ana_pibb, ana_p0u, nka, ng, 'UU',.false.)
-      call vte_hyb2hyb (w2,Ver_pia%m,Ver_pibb%m,psv,G_nk, vvr,
-     $         ana_pia,ana_pibb, ana_p0v, nka, ng, 'VV',.false.)
+      call vte_hyb2hyb (w1,Ver_pia%m,Ver_pib%m,psu,G_nk, uur,
+     $         ana_a,ana_b, ana_p0u, nka, ng, 'UU',.false.)
+      call vte_hyb2hyb (w2,Ver_pia%m,Ver_pib%m,psv,G_nk, vvr,
+     $         ana_a,ana_b, ana_p0v, nka, ng, 'VV',.false.)
 *
       do k=1,G_nk
       do j=1,l_nj
@@ -804,8 +800,8 @@ C        Note : s will be computed in predat
             if (Tr3d_name_S(n).eq.trname_a(k)(1:4)) jj=k
          end do
          if ( jj.gt.0 ) then
-               call vte_hyb2hyb (w1,pia_special_t,pibb_special_t,
-     $           ps,G_nk+1,trr(1,1,jj),ana_pia,ana_pibb, ana_p0, 
+               call vte_hyb2hyb (w1,a_special_t,b_special_t,
+     $           ps,G_nk+1,trr(1,1,jj),ana_a,ana_b, ana_p0, 
      $                           nka,ng,trname_a(jj)(1:2),.false.)
 *  ALWAYS clip tracers to zero after vertical interpolation (Desgagne)
              do k=1,G_nk+1
@@ -881,7 +877,7 @@ C        Note : s will be computed in predat
       call predat()
 
       if ( .not. Schm_hydro_L ) then
-            Ind_qsec = 0.
+            Ind_q = 0.
       endif
 *
       deallocate (geop_name)

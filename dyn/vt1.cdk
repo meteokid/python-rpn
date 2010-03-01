@@ -9,19 +9,19 @@
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* ut1                | x component of velocity                         |
-* vt1                | y component of velocity                         |
-* wt1                | z component of velocity                         |
-* tt1                | T (temperature)                                 |
-* zz1                | vertical velocity dz/dt                         |
-* piup               | Upstream hydrostatic pressure at t-dt for omega |
+*  ut1               | U: x component of velocity                      |
+*  vt1               | V: y component of velocity                      |
+*  tt1               | T: temperature                                  |
+* zdt1               | Zdot: generalized vertical velocity             |
+*  st1               | s: log of surface pressure minus a constant     |
 *--------------------|-------------------------------------------------|
-* qsect1             | q''       /                                     |
-*--------------------|-------------------------------------------------|
-* psdt1              | pi* dot (vert. vel. in pi* coord.)              |
-* st1                | ln (pi_s/z_s)                                   |
+*  wt1               | w: z component of velocity                      |
+*  qt1               | q: log of non-hydrostatic perturbation pressure |
 *--------------------|-------------------------------------------------|
 * trt1               | passive tracer(s)                               |
+*----------------------------------------------------------------------
+*  zz1               | vertical velocity dz/dt                         |
+* piup               | Upstream hydrostatic pressure at t-dt for omega |
 *--------------------|-------------------------------------------------|
 * xct1               | upstream x position in cartesian coordinate     |
 * yct1               | upstream y position in cartesian coordinate     |
@@ -38,14 +38,14 @@
       MARK_COMMON_BEG (vt1)
       DCL_VMMVAR( vt1,   ut1, real, (LDIST_SHAPE,l_nk    ) )
       DCL_VMMVAR( vt1,   vt1, real, (LDIST_SHAPE,l_nk    ) )
-      DCL_VMMVAR( vt1,   wt1, real, (LDIST_SHAPE,l_nk+1  ) )
       DCL_VMMVAR( vt1,   tt1, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt1,  zdt1, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt1,   st1, real, (LDIST_SHAPE)        )
+      DCL_VMMVAR( vt1,   wt1, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt1,   qt1, real, (LDIST_SHAPE,0:l_nk+1) )
+      DCL_VMMVAR( vt1,  trt1, real, (LDIST_SHAPE,l_nk+1,*) )
       DCL_VMMVAR( vt1,   zz1, real, (LDIST_SHAPE,l_nk+1  ) )
       DCL_VMMVAR( vt1,  piup, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,qsect1, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vt1, psdt1, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt1,   st1, real, (LDIST_SHAPE)        )
-      DCL_VMMVAR( vt1,  trt1, real, (LDIST_SHAPE,l_nk+1,*) )
       DCL_VMMVAR( vt1,  xct1, real, (l_ni*l_nj*l_nk) )
       DCL_VMMVAR( vt1,  yct1, real, (l_ni*l_nj*l_nk) )
       DCL_VMMVAR( vt1,  zct1, real, (l_ni*l_nj*l_nk) )

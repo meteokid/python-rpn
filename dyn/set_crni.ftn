@@ -38,35 +38,31 @@
 *
 *     - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       if (Lun_out.gt.0) write (Lun_out,1000)
-
+*
 *     Initialization of names and keys commons 
-
+*
       COMMON_INIT(orh,-100)
-
-
+*
 *     Assign the name of the variables
-
-      VMM_NAM(oru  ) = 'RUORU'
-      VMM_NAM(orv  ) = 'RVORV'
-      VMM_NAM(orw  ) = 'RORW'
-      VMM_NAM(orvv ) = 'RORVV'
-      VMM_NAM(orcn ) = 'RORCN'
-      VMM_NAM(orth ) = 'RORTH'
-
+*
+      VMM_NAM(orhsu) = 'ORHSU'
+      VMM_NAM(orhsv) = 'ORHSV'
+      VMM_NAM(orhst) = 'ORHST'
+      VMM_NAM(orhsc) = 'ORHSC'
+      VMM_NAM(orhsw) = 'ORHSW'
+      VMM_NAM(orhsf) = 'ORHSF'
+*
 *     Create the virtual memory for the variables 
-
+*
       ptaorhs='SAVE=Y,CL=5,W=5,INIT=R' !attributes
-
-      VMM_CREATE(oru  , LARRAY3D, 1, ptaorhs)
-      VMM_CREATE(orv  , LARRAY3D, 1, ptaorhs)
-      VMM_CREATE(orcn , LARRAY3D, 1, ptaorhs)
-      VMM_CREATE(orth , LARRAY2D*(l_nk+1), 1, ptaorhs)
-
-      if (.not. Schm_hydro_L) then
-         VMM_CREATE(orw  , LARRAY2D*(l_nk+1), 1, ptaorhs)
-         VMM_CREATE(orvv , LARRAY2D*(l_nk+1), 1, ptaorhs)
-      endif 
-
+*
+      VMM_CREATE(orhsu, LARRAY3D, 1, ptaorhs)
+      VMM_CREATE(orhsv, LARRAY3D, 1, ptaorhs)
+      VMM_CREATE(orhst, LARRAY2D*(l_nk+1), 1, ptaorhs)
+      VMM_CREATE(orhsc, LARRAY3D, 1, ptaorhs) 
+      VMM_CREATE(orhsw, LARRAY2D*(l_nk+1), 1, ptaorhs)
+      VMM_CREATE(orhsf, LARRAY2D*(l_nk+1), 1, ptaorhs)
+*
 1000  format(
      %  /,'INITIALIZATION OF CRANK-NICHOLSON COMDECK (S/R SET_CRNI)',
      %  /,'========================================================')

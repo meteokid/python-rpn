@@ -17,7 +17,7 @@
 *
       character*4 nomvar
       integer i,j,k,ni1,nj1,nk1,nvar1,ntr1,err
-      real  , dimension (:), allocatable :: pia,pib
+      real  , dimension (:), allocatable :: aaa,bbb
       real*8, dimension (:), allocatable :: xp1,yp1,zt1
 *-----------------------------------------------------------------------
 *
@@ -45,14 +45,14 @@
             call hpalloc (pazta  ,nk1*2, err,1)
             call hpalloc (papia  ,nk1  , err,1)
             call hpalloc (papib  ,nk1  , err,1)
-            allocate (zt1(nk1),pia(nk1),pib(nk1))
-            read (unf,end=33,err=33) zt1,pia,pib
+            allocate (zt1(nk1),aaa(nk1),bbb(nk1))
+            read (unf,end=33,err=33) zt1,aaa,bbb
             do k=1,nk1
-               ana_z  (k) = zt1(k)
-               ana_pia(k) = pia(k)
-               ana_pibb(k) = pib(k)
+               ana_z(k) = zt1(k)
+               ana_a(k) = aaa(k)
+               ana_b(k) = bbb(k)
             end do
-            deallocate (zt1,pia,pib)
+            deallocate (zt1,aaa,bbb)
          endif
          do i=1,nia
             xpaq(i) = xp1(ifd_niad+i-1)

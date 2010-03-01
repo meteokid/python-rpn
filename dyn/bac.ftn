@@ -47,7 +47,7 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(17)
+      integer pnerr, pnlod, pnlkey1(14)
 **
 *     __________________________________________________________________
 *
@@ -56,22 +56,19 @@
       pnlkey1( 2) = VMM_KEY(ut0)
       pnlkey1( 3) = VMM_KEY(vt0)
       pnlkey1( 4) = VMM_KEY(tt0)
-      pnlkey1( 5) = VMM_KEY(psdt0)
+      pnlkey1( 5) = VMM_KEY(zdt0)
       pnlkey1( 6) = VMM_KEY(st0)
-      pnlkey1( 7) = VMM_KEY(gptx)
-      pnlkey1( 8) = VMM_KEY(fiptx)
-      pnlkey1( 9) = VMM_KEY(ru)
-      pnlkey1(10) = VMM_KEY(rv)
-      pnlkey1(11) = VMM_KEY(rcn)
-      pnlkey1(12) = VMM_KEY(rth)
-      pnlkey1(13) = VMM_KEY(csh)
-      pnlod = 13
+      pnlkey1( 7) = VMM_KEY(fiptx)
+      pnlkey1( 8) = VMM_KEY(rhsu)
+      pnlkey1( 9) = VMM_KEY(rhsv)
+      pnlkey1(10) = VMM_KEY(rhst)
+      pnlod = 10
       if (.not. Schm_hydro_L) then
-         pnlkey1(14) = VMM_KEY(qsect0)
-         pnlkey1(15) = VMM_KEY(wt0)
-         pnlkey1(16) = VMM_KEY(rvv)
-         pnlkey1(17) = VMM_KEY(rw)
-         pnlod = 17
+         pnlkey1(11) = VMM_KEY(wt0)
+         pnlkey1(12) = VMM_KEY(qt0)
+         pnlkey1(13) = VMM_KEY(rhsf)
+         pnlkey1(14) = VMM_KEY(rhsw)
+         pnlod = 14
       endif
 *
       pnerr = vmmlod(pnlkey1,pnlod)
@@ -80,42 +77,38 @@
       pnerr = VMM_GET_VAR(ut0)
       pnerr = VMM_GET_VAR(vt0)
       pnerr = VMM_GET_VAR(tt0)
-      pnerr = VMM_GET_VAR(psdt0)
+      pnerr = VMM_GET_VAR(zdt0)
       pnerr = VMM_GET_VAR(st0)
-      pnerr = VMM_GET_VAR(gptx)
       pnerr = VMM_GET_VAR(fiptx)
-      pnerr = VMM_GET_VAR(ru)
-      pnerr = VMM_GET_VAR(rv)
-      pnerr = VMM_GET_VAR(rcn)
-      pnerr = VMM_GET_VAR(rth)
-      pnerr = VMM_GET_VAR(csh)
+      pnerr = VMM_GET_VAR(rhsu)
+      pnerr = VMM_GET_VAR(rhsv)
+      pnerr = VMM_GET_VAR(rhst)
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(qsect0)
          pnerr = VMM_GET_VAR(wt0)
-         pnerr = VMM_GET_VAR(rvv)
-         pnerr = VMM_GET_VAR(rw)
+         pnerr = VMM_GET_VAR(qt0)
+         pnerr = VMM_GET_VAR(rhsf)
+         pnerr = VMM_GET_VAR(rhsw)
       else
-         qsect0_ = 0
+         qt0_ = 0
          wt0_    = 0
-         rvv_    = 0
-         rw_     = 0
+         rhsf_    = 0
+         rhsw_    = 0
       endif
 *
-c     if (Acid_test_L) then topo,gptx,nl_ntrh,rth
+c     if (Acid_test_L) then topo,fiptx,nl_ntrh,rt
 c     call glbstat (st0, 'ST0',LDIST_DIM,1,8+acid_i0,G_ni-7-acid_in,
 c    %                                     8+acid_j0,G_nj-7-acid_jn,1,1)
 c     endif
 
       call  bacp_2 (   Itr   , Itnlh,   st0,
      %                 fiptx ,  topo,   tt0,
-     %                 ut0   ,   vt0, psdt0,
-     %                 qsect0,   wt0,   csh,  gptx,
-     %                 ru    ,    rv,   rth,    rw,
-     %                 rvv   ,   rcn, nl_nu, nl_nv,
-     $                 nl_nth, nl_nw,nl_nvv,nl_ncn,
+     %                 ut0   ,   vt0,  zdt0,
+     %                 qt0   ,   wt0, fiptx,
+     %                 rhsu  ,  rhsv,  rhst,  rhsw,  rhsf,
+     %                 nl_u  ,  nl_v,  nl_t,  nl_w,  nl_f,
      $                 LDIST_DIM, l_nk )
 *
-c     if (Acid_test_L) then pipt0,qt0,gxtx,psdt0,tdt0,tplt0
+c     if (Acid_test_L) then pipt0,qt0,gxtx,zdt0,tdt0,tplt0
 c         if (Lun_out.gt.0) write(Lun_out,*) 'after bacp_2'
 c         call glbstat (st0,'ST0',LDIST_DIM,1,8+acid_i0,G_ni-7-acid_in,
 c    %                                     8+acid_j0,G_nj-7-acid_jn,1,1)

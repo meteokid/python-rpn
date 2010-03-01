@@ -47,7 +47,6 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
-#include "matlab.cdk"
 *
       integer i,j,k,l,i00,err
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
@@ -64,18 +63,6 @@
 *
 *
       call flush(6)
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_mtn_case.bin',
-     $        status='replace',form='unformatted')
-         write(62)G_ni-lam_pil_w-lam_pil_e
-         write(62)G_nk
-      endif
-
-      if (Ptopo_myproc.eq.0) then
-         write(lun_out,9000)
-      endif
-* 
 *
       allocate(psurf (LDIST_SHAPE))
 
@@ -119,7 +106,7 @@
 *     Generate surface pressure field and its logarithm (s)
 *     Set wind imags (u,v)
 *     Transform orography from geometric to geopotential height
-*     Set non-hydrostatic perturbation pressure (qsec)
+*     Set non-hydrostatic perturbation pressure (q)
 *---------------------------------------------------------------------
 *
       a00 = mtn_nstar**2/Dcst_grav_8
@@ -134,7 +121,6 @@
 c        Note : s will be computed in predat
          Ind_s   (i,j)   = psurf(i,j)
          Ind_u   (i,j,1) = mtn_flo * pdsc1
-         Ind_topo(i,j)   = Dcst_grav_8 * Ind_topo(i,j)
       enddo
       enddo
 *
@@ -154,9 +140,9 @@ c        Note : s will be computed in predat
        do k=1,g_nk+1
          do j=1,l_nj
             do i=1,l_ni
-               tempo = Ver_pia_8%t(k) + Ver_pibb_8%t(k)*psurf(i,j)
+               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*log(psurf(i,j)))
                a02 = (tempo/Cstv_pisrf_8)**Dcst_cappa_8
-               hauteur=-alog((capc1-1.+a02)/capc1)/a00
+               hauteur=-log((capc1-1.+a02)/capc1)/a00
                Ind_t(i,j,k)=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
             enddo
          enddo
@@ -197,6 +183,8 @@ c        Note : s will be computed in predat
       enddo
       enddo         
 
+      endif
+*
 *-----------------------------------------------------------------------
 *     Transform orography from geometric to geopotential height
 *-----------------------------------------------------------------------
@@ -206,8 +194,6 @@ c        Note : s will be computed in predat
       end do
       end do
 *
-      endif
-*
 *-----------------------------------------------------------------------
 *     if non-hydrostatic, initialize pres. perturb. and vert. motion
 *-----------------------------------------------------------------------
@@ -215,14 +201,14 @@ c        Note : s will be computed in predat
       if(.not.Schm_hydro_L) then
          do j=1,l_nj
          do i=1,l_ni
-            Ind_qsec(i,j,0) = 0.
+            Ind_q(i,j,0) = 0.
          enddo
          enddo
          do k=1,g_nk+1
          do j=1,l_nj
          do i=1,l_ni
-            Ind_w   (i,j,k) = 0.
-            Ind_qsec(i,j,k) = 0.
+            Ind_w(i,j,k) = 0.
+            Ind_q(i,j,k) = 0.
          enddo
          enddo
          enddo
@@ -265,22 +251,6 @@ c        Note : s will be computed in predat
          end do
          err = vmmuld(key,Tr3d_ntr)
       endif
-
-      do j=1,l_nj
-      do i=1,l_ni
-c        Note : s will be computed in predat
-         Ind_s (i,j) = psurf(i,j)
-      enddo
-      enddo
-*
-      if(matlab_write_L)then  
-         call write_matlab_2d(62,Ind_topo)
-         call write_matlab_2d(62,Ind_s)
-         call write_matlab_3d_th(62,Ind_t)
-         call rpn_comm_Barrier("grid", err)
-      endif
-      
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)close(62)
 
  9000 format(/,'CREATING INPUT DATA FOR MOUNTAIN WAVE THEORETICAL CASE'
      +      /,'======================================================')

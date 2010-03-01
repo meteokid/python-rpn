@@ -56,11 +56,9 @@
       VMM_NAM(vta  ) = 'VTA'
       VMM_NAM(wta  ) = 'WTA'
       VMM_NAM(tta  ) = 'TTA'
-      VMM_NAM(qsecta)= 'QSTA'
-      VMM_NAM(psdta) = 'PSDA'
+      VMM_NAM(qta  ) = 'QTA'
+      VMM_NAM(zdta ) = 'ZDTA'
       VMM_NAM(sta  ) = 'STA'
-      VMM_NAM(huta ) = 'HUTA'
-      VMM_NAM(qcta ) = 'QCTA'
       VMM_NAM(trta ) = 'TRTA'
 *
 *	Set the attributes of the variables
@@ -72,11 +70,9 @@
       VMM_CREATE(vta  , LARRAY3D, 1, attri_S)
       VMM_CREATE(wta  , LARRAY2D*(l_nk+1), 1, attri_S)
       VMM_CREATE(tta  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(qsecta,LARRAY2D*(l_nk+2), 1, attri_S)
-      VMM_CREATE(psdta, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(qta  , LARRAY2D*(l_nk+2), 1, attri_S)
+      VMM_CREATE(zdta , LARRAY2D*(l_nk+1), 1, attri_S)
       VMM_CREATE(sta  , LARRAY2D, 1, attri_S)
-      VMM_CREATE(huta , LARRAY3D, 1, attri_S)
-      VMM_CREATE(qcta , LARRAY3D, 1, attri_S)
 *
       if ( Tr3d_ntr .gt. 0 ) then
          VMM_CREATE(trta, LARRAY2D*(l_nk+1), Tr3d_ntr, attrit_S)

@@ -66,7 +66,7 @@
       key1( 1) = VMM_KEY(  ut1)
       key1( 2) = VMM_KEY(  vt1)
       key1( 3) = VMM_KEY(  tt1)
-      key1( 4) = VMM_KEY(psdt1)
+      key1( 4) = VMM_KEY( zdt1)
       key1( 5) = VMM_KEY(  st1)
       key1( 6) = VMM_KEY(fiptx)
       key1( 7) = VMM_KEY( topo)
@@ -81,7 +81,7 @@
 
       if (.not. Schm_hydro_L) then
          key1(nvar+1) = VMM_KEY(wt1)
-         key1(nvar+2) = VMM_KEY(qsect1)
+         key1(nvar+2) = VMM_KEY(qt1)
          nvar = nvar+2
       endif
 *
@@ -90,7 +90,7 @@
       err = VMM_GET_VAR(  ut1)
       err = VMM_GET_VAR(  vt1)
       err = VMM_GET_VAR(  tt1)
-      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR( zdt1)
       err = VMM_GET_VAR(  st1)
       err = VMM_GET_VAR(fiptx)
       err = VMM_GET_VAR( topo)
@@ -102,7 +102,7 @@
       Ind_u_   = ut1_
       Ind_v_   = vt1_
       Ind_t_   = tt1_
-      Ind_psd_ = psdt1_
+      Ind_zd_  = zdt1_
       Ind_s_   = st1_
       Ind_fip_ = fiptx_
       Ind_topo_= topo_
@@ -110,13 +110,13 @@
       Ind_topv_= topv_
 *
       if (.not. Schm_hydro_L) then
-         err = VMM_GET_VAR(   wt1)
-         err = VMM_GET_VAR(qsect1)
-         Ind_w_     = wt1_
-         Ind_qsec_  = qsect1_
+         err = VMM_GET_VAR(wt1)
+         err = VMM_GET_VAR(qt1)
+         Ind_w_  = wt1_
+         Ind_q_  = qt1_
       endif
       if ( Vtopo_L) then
-         err = VMM_GET_VAR( dtopo)
+         err = VMM_GET_VAR(dtopo)
          Ind_dtopo_= dtopo_
       endif
 *

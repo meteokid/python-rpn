@@ -112,14 +112,15 @@
 
 **
 *
-      integer err, key(13), i, j, k, n, i0, j0, in, jn, nksurf,
+      integer err, key(12), i, j, k, n, i0, j0, in, jn, nksurf,
      $        keyd(17), keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
       integer pnlod, nik, nikp, km1
       real dt, dzsedi, dzmin, dzmin_, sigsfc, trp, trm, con(l_nj)
-      real xtmp(l_ni,nkphy),xtmp2(l_ni,nkphy)
+      real xtmp(l_ni,nkphy)
       real wtmp(l_ni,nkphy-1),wtmp2(l_ni,nkphy-1),ztmp(l_ni,l_nj)
       real*8 r0
       real, dimension(LDIST_SHAPE,nkphy) :: summqj, sumpqj, vmm   
+      real*8, dimension(LDIST_SHAPE) :: lnpis_8
       pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
       pointer (pavmm, vmm)
 *
@@ -135,12 +136,11 @@
       key( 8) = VMM_KEY(st1)
       key( 9) = VMM_KEY(fiptx)
       key(10) = VMM_KEY(topo)
-      key(11) = VMM_KEY(csh)
-      key(12) = VMM_KEY(piup)
-      pnlod = 12
+      key(11) = VMM_KEY(piup)
+      pnlod = 11
       if (.not. Schm_hydro_L ) then
-        key(13) = VMM_KEY(qsect1)
-        pnlod = 13
+        key(12) = VMM_KEY(qt1)
+        pnlod = 12
       endif
 
       err = vmmlod(key,pnlod)
@@ -154,10 +154,9 @@
       err = VMM_GET_VAR(st1)   !ln (pi_s/z_s)
       err = VMM_GET_VAR(fiptx) !phi
       err = VMM_GET_VAR(topo)  !Phi at the surface (xfis) with halos on it
-      err = VMM_GET_VAR(csh)   !csh = 2*exp(s/2)*sinh(s/2)
       err = VMM_GET_VAR(piup)  !Upstream hydrostatic pressure at t-dt for omega
       if (.not. Schm_hydro_L ) then
-         err = VMM_GET_VAR(qsect1) !q''
+         err = VMM_GET_VAR(qt1) !q''
       endif
 *
       keyd(1) = VMM_KEY(p_uplus)
@@ -223,7 +222,8 @@
 c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is computed at the end
       do j=1,l_nj
          do i=1,l_ni 
-            p_pplus(i,j) = Ver_z_8%t(l_nk+1)*(1.0d0 + csh(i,j))
+            lnpis_8(i,j)=st1(i,j)+Ver_z_8%t(G_nk+1)
+            p_pplus(i,j) = exp(lnpis_8(i,j))
             p_sigm_m(i,j,nkphy) = p_pplus(i,j)
             p_sigm_t(i,j,nkphy) = p_pplus(i,j)
          end do
@@ -231,43 +231,31 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
 
       do j=1,l_nj
          do i=1,l_ni
-            p_sigm_m(i,j,1) = Ver_pia_8%t(1)
+            p_sigm_m(i,j,1) = exp(Ver_a_8%t(1))
          enddo
       enddo
-
+*
       do k=2,l_nk+1
          do j=1,l_nj
             do i=1,l_ni
-               p_sigm_m(i,j,k) = Ver_pia_8%m(k-1) 
-     $                           + Ver_pibb_8%m(k-1)*p_pplus(i,j)
+               p_sigm_m(i,j,k) = exp(Ver_a_8%m(k-1) 
+     $                           + Ver_b_8%m(k-1)*lnpis_8(i,j))
             enddo
          enddo
       enddo         
-
-
-      if(Schm_dPdlogZ_L)then   
-         do k=1,nkphy-2
-            do j=1,l_nj
-            do i=1,l_ni
-               p_sigm_t(i,j,k)  = sqrt(p_sigm_m(i,j,k+1)*p_sigm_m(i,j,k))
-            enddo
-            enddo
-         enddo
+*
+      do k=1,nkphy-2
          do j=1,l_nj
          do i=1,l_ni
-            p_sigm_t(i,j,nkphy-1) = sqrt(p_pplus(i,j)*p_sigm_m(i,j,nkphy-1))
+            p_sigm_t(i,j,k)  = sqrt(p_sigm_m(i,j,k+1)*p_sigm_m(i,j,k))
          enddo
          enddo
-      else
-         do k= 1,l_nk+1
-            do j=1,l_nj
-            do i= 1, l_ni
-               p_sigm_t(i,j,k) = Ver_pia_spcl_8%t(k) 
-     $                           + Ver_pibb_spcl_8%t(k)*p_pplus(i,j)
-            enddo
-            enddo
-         enddo
-      endif
+      enddo
+      do j=1,l_nj
+      do i=1,l_ni
+         p_sigm_t(i,j,nkphy-1) = sqrt(p_pplus(i,j)*p_sigm_m(i,j,nkphy-1))
+      enddo
+      enddo
 *
 *     compute vertical omega
 *     -----------------------
@@ -289,21 +277,21 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
          call vsexp (ztmp(1,j),st0(1,j),l_ni)
 *
          do i= 1, l_ni
-            xtmp2(i,1)     = p_sigm_t(i,j,1)
-            xtmp2(i,nkphy) = p_pplus(i,j)
+            xtmp(i,1)     = log(p_sigm_t(i,j,1))
+            xtmp(i,nkphy) = lnpis_8(i,j)
             wtmp2(i,1)      = p_sigm_t(i,j,1)
             p_gzplus(i,j,1) = 0.5*(fiptx(i,j,0)+fiptx(i,j,1))+Ver_fistr_8%t(1)
             p_gzplus(i,j,nkphy) =  topo(i,j)
          enddo
          do k= 2, nkphy-1
          do i= 1, l_ni
-            xtmp2(i,k) = Ver_pia_8%m(k-1) + Ver_pibb_8%m(k-1)*p_pplus(i,j)
+            xtmp(i,k) = Ver_a_8%m(k-1) + 
+     $           Ver_b_8%m(k-1)*lnpis_8(i,j)
             wtmp2(i,k) = p_sigm_t(i,j,k)
             p_gzplus(i,j,k) = fiptx(i,j,k-1)+Ver_fistr_8%m(k-1)
          enddo
          enddo
 *
-         call vslog(xtmp,xtmp2,nikp)
          call vslog(wtmp,wtmp2,nik)
 *
          do k= 1, nkphy-1
@@ -565,6 +553,7 @@ c$$$ TODO: check if mfottv can take nkphy
          end do
          end do
       end do
+
 c$$$      print *,'---- vmmprep ----'
 c$$$
 c$$$      call statfld3d(p_uplus  ,'p_up',LDIST_DIM,l_ni,l_nj,nkphy)

@@ -9,23 +9,22 @@
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* ut2                | x component of velocity                         |
-* vt2                | y component of velocity                         |
-* wt2                | z component of velocity                         |
-* tt2                | T (temperature)                                 |
+*  ut2               | U: x component of velocity                      |
+*  vt2               | V: y component of velocity                      |
+*  tt2               | T: temperature                                  |
+* zdt2               | Zdot: generalized vertical velocity             |
+*  st2               | s: log of surface pressure minus a constant     |
 *--------------------|-------------------------------------------------|
-* qsect2             | q''       /                                     |
+*  wt2               | w: z component of velocity                      |
+*  qt2               | q: log of non-hydrostatic perturbation pressure |
 *--------------------|-------------------------------------------------|
-* psdt2              | pi* dot (vert. vel. in pi* coord.)              |
-* st2                | ln (pi_s/z_s)                                   |
-*--------------------|-------------------------------------------------|
-* hut2               | specific humidity                               |
-* qct2               | mixing ratio of cloud water/ice                 |
 * trt2               | passive tracer(s)                               |
 *--------------------|-------------------------------------------------|
-* xt2                | upstream x position                             |
-* yt2                | upstream y position                             |
-* zt2                | upstream z position                             |
+* trt2               | passive tracer(s)                               |
+*--------------------|-------------------------------------------------|
+*  xt2               | upstream x position                             |
+*  yt2               | upstream y position                             |
+*  zt2               | upstream z position                             |
 * xct2               | upstream x position in cartesian coordinate     |
 * yct2               | upstream y position in cartesian coordinate     |
 * zct2               | upstream z position in cartesian coordinate     |
@@ -41,11 +40,11 @@
       MARK_COMMON_BEG(vt2)
       DCL_VMMVAR( vt2,   ut2, real, (LDIST_SHAPE,l_nk    ) )
       DCL_VMMVAR( vt2,   vt2, real, (LDIST_SHAPE,l_nk    ) )
-      DCL_VMMVAR( vt2,   wt2, real, (LDIST_SHAPE,l_nk+1  ) )
       DCL_VMMVAR( vt2,   tt2, real, (LDIST_SHAPE,l_nk+1  ) )
-      DCL_VMMVAR( vt2,qsect2, real, (LDIST_SHAPE,0:l_nk+1) )
-      DCL_VMMVAR( vt2, psdt2, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2,  zdt2, real, (LDIST_SHAPE,l_nk+1  ) )
       DCL_VMMVAR( vt2,   st2, real, (LDIST_SHAPE)        )
+      DCL_VMMVAR( vt2,   wt2, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt2,   qt2, real, (LDIST_SHAPE,0:l_nk+1) )
       DCL_VMMVAR( vt2,  trt2, real, (LDIST_SHAPE,l_nk+1,*) )
       DCL_VMMVAR( vt2,   xt2, real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( vt2,   yt2, real, (LDIST_SHAPE,l_nk) )

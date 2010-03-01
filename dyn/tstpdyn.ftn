@@ -75,9 +75,11 @@
 *
       endif
 *
-      call tmg_start0 ( 3, 'RHS      ' )
-      call rhs ()
-      call tmg_stop0 (3)
+      if ( Orh_icn .eq. 1 ) then
+         call tmg_start0 ( 3, 'RHS      ' )
+         call rhs ()
+         call tmg_stop0 (3)
+      endif
 *
       if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
 *
@@ -119,15 +121,15 @@
 *
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       dimt= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(l_nk+1)
-      call hpalloc (nl_nu_ , dim, err,1)
-      call hpalloc (nl_nv_ , dim, err,1)
-      call hpalloc (nl_nth_, dimt, err,1) 
-      call hpalloc (nl_ncn_, dim, err,1)
-      nl_nw_  = 0
-      nl_nvv_ = 0
+      call hpalloc (nl_u_, dim, err,1)
+      call hpalloc (nl_v_, dim, err,1)
+      call hpalloc (nl_t_, dimt, err,1) 
+      call hpalloc (nl_c_, dim, err,1)
+      nl_w_ = 0
+      nl_f_ = 0
       if ( .not. Schm_hydro_L ) then
-         call hpalloc (nl_nw_ , dimt, err,1)
-         call hpalloc (nl_nvv_, dimt, err,1)
+         call hpalloc (nl_w_, dimt, err,1)
+         call hpalloc (nl_f_, dimt, err,1)
       endif
 *
       do 100 iln=1,Schm_itnlh
@@ -171,13 +173,13 @@
 *
  100  continue
 *
-      call hpdeallc(nl_nu_ , err,1)
-      call hpdeallc(nl_nv_ , err,1)
-      call hpdeallc(nl_nth_, err,1)
-      call hpdeallc(nl_ncn_, err,1)
+      call hpdeallc(nl_u_, err,1)
+      call hpdeallc(nl_v_, err,1)
+      call hpdeallc(nl_t_, err,1)
+      call hpdeallc(nl_c_, err,1)
       if ( .not. Schm_hydro_L ) then
-         call hpdeallc(nl_nw_ , err,1)
-         call hpdeallc(nl_nvv_, err,1)
+         call hpdeallc(nl_w_, err,1)
+         call hpdeallc(nl_f_, err,1)
       endif
 *
 *     ---------------------------------------------------------------

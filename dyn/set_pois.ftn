@@ -1,68 +1,9 @@
 ***s/r set_pois - 64 bits interface for preparation of projection matrix
 *                in the east-west or vertical direction
 *
-#include "model_macros_f.h"
+      subroutine set_pois ( )
 *
-      subroutine set_pois ( F_eval_8,F_evec_8,F_npts,F_dim )
-*
-#include "impnone.cdk"
-*
-      integer F_npts, F_dim
-      real*8  F_eval_8(*), F_evec_8(*)
-*
-*author
-*     michel roch - aug 1992
-*
-*revision
-* v2_00 - Desgagne M.       - initial MPI version (from setpois v1_03)
-* v2_31 - Desgagne M.       - remove stkmemw
-* stg   - Plante A.         - Staggered version
-*
-*arguments
-*  Name        I/O                 Description
-*----------------------------------------------------------------
-* F_eval_8     O    - eigenvalue vector
-* F_evec_8     O    - eigenvector matrix
-* F_npts       I    - number of points
-* F_dim        I    - field dimension
-
-#include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "matlab.cdk"
-*
-*implicits
-*
-      integer i, j, pnhperr, longueur
-      real*8, dimension (F_dim*F_dim) :: a_8,b_8
-      real*8 d_8(3*F_npts-1),r_8(F_dim)
-*
-* --------------------------------------------------------------------
-*
-      call prever ( r_8, b_8, a_8, d_8, F_npts, F_dim )
-*
-*     transfer results back in input/output arrays
-*
-      do i=1,F_dim*F_dim
-         F_evec_8(i)=b_8(i)
-      end do
-*
-      do i=1,F_dim
-         F_eval_8(i)=r_8(i)
-      end do
-      
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))
-     $        //'from_fortran_set_pois.bin',
-     $        status='replace',form='unformatted')
-         write(62)F_dim
-         write(62)(F_evec_8(i),i=1,F_dim*F_dim)
-         write(62)(F_eval_8(i),i=1,F_dim)
-         close(62)
-      endif
+      call gem_stop('set_pois : is obsolete',-1)
 *
 * --------------------------------------------------------------------
 *

@@ -37,11 +37,11 @@
       call shuffle(vmmk_vt1   ,vmmk_vt0   ,vmmk_vt1_s)
       call shuffle(vmmk_wt1   ,vmmk_wt0   ,vmmk_wt1_s)
       call shuffle(vmmk_tt1   ,vmmk_tt0   ,vmmk_tt1_s)
-      call shuffle(vmmk_psdt1 ,vmmk_psdt0 ,vmmk_psdt1_s)
+      call shuffle(vmmk_zdt1 ,vmmk_zdt0 ,vmmk_zdt1_s)
       call shuffle(vmmk_st1   ,vmmk_st0   ,vmmk_st1_s)
 *
       if (.not. Schm_hydro_L) then
-         call shuffle(vmmk_qsect1,vmmk_qsect0,vmmk_qsect1_s)
+         call shuffle(vmmk_qt1,vmmk_qt0,vmmk_qt1_s)
       endif
       if ( Tr3d_ntr .gt. 0 ) then
          call shuffle(vmmk_trt1  ,vmmk_trt0  ,vmmk_trt1_s)

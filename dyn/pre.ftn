@@ -32,6 +32,7 @@
 #include "lun.cdk"
 #include "geomg.cdk"
 #include "rhsc.cdk"
+#include "orh.cdk"
 #include "vt1.cdk"
 #include "p_geof.cdk"
 #include "schm.cdk"
@@ -42,14 +43,14 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(15), i, j
+      integer pnerr, pnlod, pnlkey1(16), i, j
 **
 *     __________________________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
 *
-      pnlkey1(1)  = VMM_KEY(ru)
-      pnlkey1(2)  = VMM_KEY(rv)
+      pnlkey1(1)  = VMM_KEY(rhsu)
+      pnlkey1(2)  = VMM_KEY(rhsv)
       pnlkey1(3)  = VMM_KEY(ruw1)
       pnlkey1(4)  = VMM_KEY(ruw2)
       pnlkey1(5)  = VMM_KEY(rvw1)
@@ -58,20 +59,21 @@
       pnlkey1(8)  = VMM_KEY(yct1)
       pnlkey1(9)  = VMM_KEY(zct1)
       pnlkey1(10) = VMM_KEY(topo)
-      pnlkey1(11) = VMM_KEY(rcn)
-      pnlkey1(12) = VMM_KEY(rth)
-      pnlkey1(13) = VMM_KEY(rhell)
-      pnlod = 13
+      pnlkey1(11) = VMM_KEY(rhsc)
+      pnlkey1(12) = VMM_KEY(rhst)
+      pnlkey1(13) = VMM_KEY(orhsu)
+      pnlkey1(14) = VMM_KEY(orhsv)
+      pnlod = 14
       if (.not. Schm_hydro_L) then
-         pnlkey1(14) = VMM_KEY(rw)
-         pnlkey1(15) = VMM_KEY(rvv)
-         pnlod = 15
+         pnlkey1(15) = VMM_KEY(rhsw)
+         pnlkey1(16) = VMM_KEY(rhsf)
+         pnlod = 16
       endif
 *     - - - - - - - - - - - - - - -
       pnerr = vmmlod(pnlkey1,pnlod)
 *     - - - - - - - - - - - - - - -
-      pnerr = VMM_GET_VAR(ru)
-      pnerr = VMM_GET_VAR(rv)
+      pnerr = VMM_GET_VAR(rhsu)
+      pnerr = VMM_GET_VAR(rhsv)
       pnerr = VMM_GET_VAR(ruw1)
       pnerr = VMM_GET_VAR(ruw2)
       pnerr = VMM_GET_VAR(rvw1)
@@ -80,15 +82,16 @@
       pnerr = VMM_GET_VAR(yct1)
       pnerr = VMM_GET_VAR(zct1)
       pnerr = VMM_GET_VAR(topo)
-      pnerr = VMM_GET_VAR(rcn)
-      pnerr = VMM_GET_VAR(rth)
-      pnerr = VMM_GET_VAR(rhell)
+      pnerr = VMM_GET_VAR(rhsc)
+      pnerr = VMM_GET_VAR(rhst)
+      pnerr = VMM_GET_VAR(orhsu)
+      pnerr = VMM_GET_VAR(orhsv)
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(rw)
-         pnerr = VMM_GET_VAR(rvv)
+         pnerr = VMM_GET_VAR(rhsw)
+         pnerr = VMM_GET_VAR(rhsf)
       else
-         rw_  = 0
-         rvv_ = 0
+         rhsw_ = 0
+         rhsf_ = 0
       endif
 *
 c     if (Acid_test_L)then
@@ -97,31 +100,31 @@ c     call glbstat (xct1,'Xct1',1,l_ni,1,l_nj,G_nk,6+acid_i0,G_ni-5-acid_in,
 c    %                                             6+acid_j0,G_nj-5-acid_jn,1,1)
 c     call glbstat (topo,'FIS',LDIST_DIM,1,1+acid_i0,G_ni-acid_in,
 c    %                                     1+acid_j0,G_nj-acid_jn,1,1)
-c     call glbstat (ru,'RU0',LDIST_DIM,G_nk,7+acid_i0,G_ni-7-acid_in,
+c     call glbstat (rhsu,'RU0',LDIST_DIM,G_nk,7+acid_i0,G_ni-7-acid_in,
 c    %                                      7+acid_j0,G_nj-7-acid_jn,1,G_nk)
 c     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
 c    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
 c     call glbstat (ruw2,'RUW2',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
 c    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
-c     call glbstat (rcn,'RCN',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
+c     call glbstat (rhsc,'RC',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
 c    %                                       8+acid_j0,G_nj-7-acid_jn,1,G_nk)
 c     endif
 *
-      call prep_2 ( ru   ,rv   ,ruw1  ,ruw2 ,rvw1 ,rvw2 ,
-     %              xct1 ,yct1 ,zct1  ,topo ,rcn  ,rth  ,
-     %              rw   ,rvv  ,rhell ,
+      call prep_2 ( rhsu ,rhsv ,ruw1  ,ruw2 ,rvw1 ,rvw2 ,
+     %              xct1 ,yct1 ,zct1  ,topo ,rhsc ,rhst ,
+     %              rhsw ,rhsf ,orhsu ,orhsv,
      %              LDIST_DIM, l_ni, l_nj, l_nk )
 
 *
 * The following 5 glbstats will not match piloting run because they
-* contain the future Ru,Rv inserted in RHS, Ru,Rv,Rd,R1,Rhell
-* But glbstats should match for Rcn,Rth
+* contain the future Ru,Rv inserted in RHS, Ru,Rv
+* But glbstats should match for Rc,Rt
 c     if (Acid_test_L)then
 c     if (Lun_out.gt.0) then
 c         write(Lun_out,*) 'After prep_2'
 c         write(Lun_out,*) 'STATS will not match, contains future RU,RV'
 c     endif
-c     call glbstat (ru,'RU',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
+c     call glbstat (rhsu,'RU',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
 c    %                                     8+acid_j0,G_nj-7-acid_jn,1,G_nk)
 *
       pnerr = vmmuld(-1,0)

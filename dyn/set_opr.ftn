@@ -101,6 +101,7 @@
       call hpalloc( Opr_xeval_8_,      G_ni, err, 8 )
       call hpalloc( Opr_zevec_8_, G_nk*G_nk, err, 8 )
       call hpalloc( Opr_zeval_8_,      G_nk, err, 8 )
+      call hpalloc( Opr_lzevec_8_, G_nk*G_nk, err, 8 )
 *
 *     Calculate dimension for dimension without pilot region
       Gni = G_ni-Lam_pil_w-Lam_pil_e

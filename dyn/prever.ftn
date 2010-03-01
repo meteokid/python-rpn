@@ -2,75 +2,8 @@
 *               exclusively for pseudo-staggered model.
 *               no computational mode
 *
-#include "model_macros_f.h"
-*
-      subroutine prever(F_eval_8,F_evec_8,F_wk1_8,F_wk2_8,F_nk,KDIM)
-#include "impnone.cdk"
-*
-      integer F_nk, KDIM
-      real*8 F_eval_8(*), F_evec_8(KDIM,*), F_wk1_8(KDIM,*), F_wk2_8(*)
-*
-*author jean cote - 1990
-*
-*revision
-* v2_00 - Desgagne M.       - initial MPI version (from prever v1_03)
-* v2_30 - Edouard  S.       - replace Schm_elast_L by Schm_cptop_L
-* stg   - Cote,Plante       - staggered version
-*
-*arguments
-*  Name        I/O                 Description
-*----------------------------------------------------------------
-* F_eval_8     O    - eigenvalues
-* F_evec_8     O    - eigenvector matrix
-* F_wk1_8           - work field
-* F_wk2_8           - work field
-* F_nk         I    - number of vertical levels
-*
-*implicits
-#include "glb_ld.cdk"
-#include "dcst.cdk"
-#include "cstv.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "opr.cdk"
-*
-      integer i, j
-      real*8 pdordr, zero_8, work_8(KDIM,KDIM)
-      parameter(zero_8=.0d0)
-*
-      if(F_nk.ne.G_nk)call gem_stop('prever',-1)
+      subroutine prever( )
 *     
-      pdordr = -1.0
-*
-      do i=1,F_nk
-         do j=1,F_nk
-            work_8(i,j)=zero_8
-            F_evec_8(i,j)=zero_8
-            F_wk1_8(i,j)=zero_8
-         enddo
-      enddo
-*      
-      do j=1,F_nk
-*
-         i = j - 1
-         if ( i.gt.0 ) then
-*           A wing
-            F_evec_8(i,j) =  Opr_opszp2_8(j) + Ver_epsilon_8*(Dcst_cappa_8*Opr_opszpm_8(j)+Opr_opszpl_8(j))
-c           F_evec_8(i,j) =  Opr_opszp2_8(j) + Ver_epsilon_8*Dcst_cappa_8*Opr_opszpm_8(j)
-         endif
-*     
-         i = j
-*        B: positive definit
-         F_wk1_8(i,j) = Opr_opszp0_8(G_nk+i)
-         work_8(i,j)=F_evec_8(i,j)
-*        A diag
-         F_evec_8(i,j) = Opr_opszp2_8(G_nk+i) + Ver_epsilon_8*(Dcst_cappa_8*Opr_opszpm_8(G_nk+i)+Opr_opszpl_8(G_nk+i))
-c        F_evec_8(i,j) = Opr_opszp2_8(G_nk+i) + Ver_epsilon_8*Dcst_cappa_8*Opr_opszpm_8(G_nk+i)
-*     
-      enddo
-      
-      call geneigl( F_eval_8, F_evec_8, F_wk1_8, F_wk2_8, pdordr,
-     %     1, F_nk, KDIM, 3*F_nk-1)
-*     
+      call gem_stop('prever is obsolete',-1)
       return
       end

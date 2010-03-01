@@ -1,0 +1,91 @@
+**s/r prever - prepares projection matrix for the vertical
+*       exclusively for staggered model symmetric and  nonsymmetric_ln(Z) version.
+*       no special treatement for singularity. Matrices are
+*        non-singulars by construction.   
+*
+#include "model_macros_f.h"
+*
+      subroutine preverln(F_eval_8,F_levec_8,F_evec_8,F_wk1_8,F_nk,KDIM)
+#include "impnone.cdk"
+*
+      integer F_nk, KDIM
+      real*8 F_eval_8(*), F_evec_8(KDIM,*), F_wk1_8(KDIM,*)
+      real*8 F_levec_8(KDIM,F_nk),work(8*F_nk),B1(KDIM,F_nk),F_index(F_nk)
+      integer index(F_nk)
+*
+*author  Abdessamad Qaddouri - 2007
+*
+*revision
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_eval_8     O    - eigenvalues
+* F_evec_8     O    - Right eigenvector matrix
+*F_levec_8     O    - left eigenvector matrix
+* F_wk1_8           - work field
+* F_nk         I    - number of vertical levels
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "opr.cdk"
+*
+      integer i, j,k
+      real*8 pdordr, zero_8, work_8(KDIM,KDIM)
+      parameter(zero_8=.0d0)
+*
+      if(F_nk.ne.G_nk)call gem_stop('preverln',-1)
+*     
+      pdordr = -1.0
+*
+      do i=1,F_nk
+         do j=1,F_nk
+            work_8(i,j)=zero_8
+            F_evec_8(i,j)=zero_8
+            F_wk1_8(i,j)=zero_8
+            B1(i,j)=zero_8
+             F_levec_8(i,j)=zero_8
+         enddo
+      enddo
+*      
+      do j=1,F_nk
+*
+         i = j - 1
+         if ( i.gt.0 ) then
+*           A wing
+          F_evec_8(i,j) = Opr_opszp2_8(2*G_nk+i) + Opr_opszpl_8(2*G_nk+i) -
+     $                    Ver_epsilon_8*(1.d0-Dcst_cappa_8)*Opr_opszpm_8(2*G_nk+i)
+         endif
+*     
+         i = j
+*        B: positive definit
+         F_wk1_8(i,j) = Opr_opszp0_8(G_nk+i)
+         work_8(i,j)=F_evec_8(i,j)
+*        A diag
+         F_evec_8(i,j) = Opr_opszp2_8(G_nk+i) + Opr_opszpl_8(G_nk+i) - 
+     $                   Ver_epsilon_8*(1.d0-Dcst_cappa_8)*Opr_opszpm_8(G_nk+i)
+        i=j+1
+        if(i.lt.(F_nk+1)) then
+         F_evec_8(i,j) = Opr_opszp2_8(i) +Opr_opszpl_8(i) -
+     $                   Ver_epsilon_8*(1.d0-Dcst_cappa_8)*Opr_opszpm_8(i)
+        endif
+       enddo
+* note:  B1 is modified by nsyeigl    
+       do j=1,F_nk
+        do  i=1,F_nk
+           F_levec_8(i,j)= F_evec_8(i,j)
+           B1(i,j)= F_wk1_8(i,j) 
+        enddo
+       enddo 
+
+*
+       call  nsyeigl( F_eval_8,F_levec_8,F_evec_8 ,B1, work,
+     $                                   F_nk, KDIM, 8*F_nk )
+                   
+*     
+      return
+      end

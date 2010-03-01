@@ -30,7 +30,6 @@
 #include "p_geof.cdk"
 #include "geomg.cdk"
 #include "ptopo.cdk"
-#include "matlab.cdk"
 *
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
@@ -46,15 +45,15 @@
       key(1)=VMM_KEY(ut1)
       key(2)=VMM_KEY(vt1)
       key(3)=VMM_KEY(tt1)
-      key(4)=VMM_KEY(psdt1)
+      key(4)=VMM_KEY(zdt1)
       key(5)=VMM_KEY(fiptx)
       key(6)=VMM_KEY(topo)
-      key(7)=VMM_KEY(csh)
+      key(7)=VMM_KEY(st1)
       nvar = 7
 *
       if (.not.Schm_hydro_L) then
          key(8)=VMM_KEY(wt1)
-         key(9)=VMM_KEY(qsect1)
+         key(9)=VMM_KEY(qt1)
          nvar = 9
       endif
 *
@@ -62,16 +61,16 @@
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(zdt1)
       err = VMM_GET_VAR(fiptx)
       err = VMM_GET_VAR(topo)
-      err = VMM_GET_VAR(csh)
+      err = VMM_GET_VAR(st1)
       if (.not.Schm_hydro_L) then
          err = VMM_GET_VAR(wt1)
-         err = VMM_GET_VAR(qsect1)
+         err = VMM_GET_VAR(qt1)
       else
          wt1_ = 0
-         qsect1_= 0
+         qt1_= 0
       endif
 *
       call set_betav(betav_m,betav_t,fi_t,fiptx,tt1,
@@ -79,50 +78,24 @@
 
       work=mtn_flo/Dcst_rayt_8
 
-      if(matlab_write_L)then
-         if(Ptopo_myproc.eq.0)then
-            open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_height_sponge.bin',
-     $           status='replace',form='unformatted')
-            write(62)G_ni-lam_pil_w-lam_pil_e
-            write(62)G_nk
-         endif
-         call write_matlab_3d(62,betav_m)
-         call write_matlab_3d_th(62,betav_t)
-         call write_matlab_3d(62,ut1)
-         call write_matlab_3d_th(62,tt1)
-         call write_matlab_3d_v(62,fiptx)
-         if (.not.Schm_hydro_L) 
-     &        call write_matlab_3d_th(62,wt1)
-      endif
-
       call applique(ut1  ,work,betav_m,LDIST_DIM, l_nk)
       call applique(vt1  ,0.  ,betav_m,LDIST_DIM, l_nk)
-      call applique(psdt1,0.  ,betav_t,LDIST_DIM, l_nk+1)
+      call applique(zdt1 ,0.  ,betav_t,LDIST_DIM, l_nk+1)
       if (.not.Schm_hydro_L) then
          call applique(wt1,0.    ,betav_t,LDIST_DIM, l_nk+1)
-c        Note : qsect1 has l_nk+2 level but sponge is on top so
+c        Note : qt1 has l_nk+2 level but sponge is on top so
 c               we drop the las level. Also, the weights could be
 c               adjusted since these are momentum levels but betav_m
 c               is only of lengh l_nk
-         call applique(qsect1,0. ,betav_t,LDIST_DIM, l_nk+1)
+         call applique(qt1,0. ,betav_t,LDIST_DIM, l_nk+1)
       endif
       if(Zblen_spngtt_L)then
          call applique_tt(tt1,fi_t,betav_t,LDIST_DIM, l_nk)
 *        Recomputing the geopotential from new t      
-         call diag_fip(fiptx,csh,tt1,qsect1,topo,
+         call diag_fip(fiptx,st1,tt1,qt1,topo,
      $                            LDIST_DIM,l_nk)         
       endif
 *
-      if(matlab_write_L)then
-         call write_matlab_3d(62,ut1)
-         call write_matlab_3d_th(62,tt1)
-         call write_matlab_3d_v(62,fiptx)
-         if (.not.Schm_hydro_L) 
-     &        call write_matlab_3d_th(62,wt1)
-         if(Ptopo_myproc.eq.0)close(62)
-      endif
-
       err = vmmuld(key,nvar)
 *
 *----------------------------------------------------------------------
