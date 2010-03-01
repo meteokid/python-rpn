@@ -8,6 +8,9 @@
 *
 *author  S. Gravel (from difver6)
 *
+*revision
+* v3_20  - S. Gravel - initial MPI version
+*
 *object
 *	Apply a background vertical diffusion on the horizontal momentum
 *       components u and v, and optionally theta,  using an implicit 

@@ -1,0 +1,308 @@
+***s/r p_physlb_ad - Adjoint of Computes the physical tendencies
+*
+#include <model_macros_f.h>
+*
+      subroutine  p_physlb_ad( F_cpu,   F_step, F_obusval, 
+     $             F_up,  F_vp,  F_wp,  F_tp, F_qp, F_trp,
+     $             F_um,  F_vm,         F_tm,       F_trm,
+     $             F_upm, F_vpm, F_tpm, F_qpm,      F_trpm,
+     $             F_umm, F_vmm, F_tmm,             F_trmm,
+     $             F_lpsm, F_sig, F_kmm, F_ktm, DIST_DIM, Nk )
+*
+      implicit none
+*
+      integer F_cpu, F_step, nvvv, nvov, DIST_DIM, Nk
+*
+      real F_up (DIST_SHAPE,Nk), F_vp (DIST_SHAPE,Nk),
+     $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk), 
+     $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
+     $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk),
+     $     F_tm (DIST_SHAPE,Nk), F_trm(DIST_SHAPE,Nk,*),
+     $     F_upm(DIST_SHAPE,Nk), F_vpm(DIST_SHAPE,Nk),
+     $     F_qpm(DIST_SHAPE,Nk), F_tpm(DIST_SHAPE,Nk),
+     $                           F_trpm(DIST_SHAPE,Nk),
+     $     F_umm(DIST_SHAPE,Nk), F_vmm(DIST_SHAPE,Nk),
+     $     F_tmm(DIST_SHAPE,Nk), F_trmm(DIST_SHAPE,Nk),
+     $     F_lpsm (DIST_SHAPE) , F_sig(DIST_SHAPE,Nk),
+     $     F_kmm(DIST_SHAPE,Nk), F_ktm(DIST_SHAPE,Nk)
+
+      real F_obusval(*)
+*
+*author
+*     Stephane Laroche        Janvier 2002
+*
+*revision
+* v3_00 - Laroche S.            - initial MPI version
+* v3_02 - Tanguay M./Laroche S. - do not assume TRAJ HU positive
+* v3_11 - Laroche S.            - AIXport+Opti+OpenMP for TLM-ADJ             
+* v3_20 - Desgagne/Pellerin S.  - Replaced Mem_pslic with jdo in test for last slice.
+*
+*object
+*     See above id.
+*	
+*arguments
+*  Name       I/O                 Description
+*----------------------------------------------------------------
+* F_cpu        I    - cpu number
+* F_step       I    - current time step number
+* F_up         I    - wind image in x direction at time t*
+*              O    - temperature tendency from convection/condensation
+* F_vp         I    - wind image in y direction at time t*
+*              O    - specific hum tendency from convection/condensation
+* F_tp         I    - virtual temperature at time t*
+* F_qp         I    - ln of pressure at time t*
+* F_um         I    - wind image in x direction at time t-
+*              O    - total wind image tendency in x direction
+* F_vm         I    - wind image in y direction at time t-
+*              O    - total wind image tendency in y direction
+* F_tm         I    - virtual temperature at time t-
+*              O    - temperature tendency due to radiation and vertical
+*                     diffusion
+* F_lpsm       I    - ln of surface pressure at time t-
+* F_wp         I    - vertical motion at time t*
+* F_sig        I    - sigma levels
+* F_kmm        I    - vertical diffusion coefficients for momentum
+* F_ktm        I    - vertical diffusion coefficients for heat
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "mult.cdk"
+#include "mem.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "dimout.cdk"
+#include "macro.cdk"
+#include "p_clim.cdk"
+#include "p_bus.cdk"
+#include "obus.cdk"
+#include "busind.cdk"
+#include "busind_tr.cdk"
+*
+*modules
+      integer  read_db_file,write_db_file
+      external read_db_file,write_db_file
+*
+      integer accum
+      parameter (accum = 0 )
+      character*2 accum_s
+      data    accum_s / ' ' /
+*
+      integer jdo, i, j, k, n, ii, indx, err
+      integer busaddr,offbo,offbb,mult,cnt
+      real dt,con
+      real*8, parameter :: ZERO_8 = 0.0
+*
+      real busdyn(max(1,p_bdyn_siz)), busvol(max(1,p_bvol_siz)),
+     $     busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
+      pointer (pabusper,busper(*))
+**
+*     ---------------------------------------------------------------
+*
+      if ((Lun_out.gt.0).and.(F_cpu.eq.1)) write(Lun_out,1000)
+*
+      if (.not.Mem_phyncore_L) pabusper=loc(busper2(1))
+      if (F_step.eq.0) then
+          do i=1,p_bent_siz
+             busent(i) = 0.
+          end do
+      endif
+*
+      dt  = Cstv_dt_8
+      jdo = 0
+*
+*       DEPLACER LA MISE A ZERO DES BUS A L'INTERIEUR DE LA BOUCLE!!!!!
+*
+*     ===================================================================
+*                                 LOOP ON SLICES
+*     ===================================================================
+ 100  continue
+*
+cs      do i=1,p_bdyn_siz
+cs         busdyn(i) = 0.
+cs      end do
+cs      do i=1,p_bvol_siz
+cs         busvol(i) = 0.
+cs      end do
+      busdyn = 0.
+      busvol = 0.
+*
+      
+!$omp critical      
+      Mem_pslic = Mem_pslic + 1
+      jdo  = Mem_pslic
+      if ( Mem_pslic .le. p_nj ) then
+*
+         if (Mem_phyncore_L) then
+            pabusper = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
+         else
+            if (F_step.gt.0) then
+                err = read_db_file (Lun_waphy,jdo,1)
+                err = read_db_file (Lun_waphy,busper,p_bper_siz)
+            endif
+         endif
+*
+      endif
+!$omp end critical
+*
+*
+*C    Stop if last slice has been completed
+*
+      if ( jdo .gt. p_nj ) goto 650
+*
+*     Fill buses with jdo row
+*     -----------------------
+*
+      j = jdo + p_offj
+      call p_fillbus_tr ( busdyn,busper,
+     $         F_upm , F_vpm , F_tpm , F_qpm, F_trpm,
+     $         F_umm , F_vmm , F_tmm ,        F_trmm,
+     $         F_kmm , F_ktm , F_sig ,
+     $         j, F_step, LDIST_DIM, l_nk )
+
+*
+*
+*C    Combine tendencies of row jdo and store back in 3D space
+*     --------------------------------------------------------
+*
+      con = cos(geomg_y_8(j)) / Dcst_rayt_8
+      do k = 1, l_nk
+      do i = 1, p_ni
+         indx = (k-1)*p_ni+i-1
+         ii = i + p_offi
+
+         busvol(ugwd +indx) = busvol(ugwd +indx) + F_um(ii,j,k)*con
+         busvol(udifv+indx) = busvol(udifv+indx) + F_um(ii,j,k)*con
+         busvol(vgwd +indx) = busvol(vgwd +indx) + F_vm(ii,j,k)*con
+         busvol(vdifv+indx) = busvol(vdifv+indx) + F_vm(ii,j,k)*con
+         busvol(trad +indx) = busvol(trad +indx) + F_tm(ii,j,k)
+         busvol(tdifv+indx) = busvol(tdifv+indx) + F_tm(ii,j,k)
+         busvol(tcond+indx) = busvol(tcond+indx) + F_up(ii,j,k)
+         busvol(qdifv+indx) = busvol(qdifv+indx) + F_vp(ii,j,k)
+         F_um (ii,j,k) = ZERO_8
+         F_vm (ii,j,k) = ZERO_8
+         F_tm (ii,j,k) = ZERO_8
+         F_up (ii,j,k) = ZERO_8
+         F_vp (ii,j,k) = ZERO_8
+
+      end do
+      end do
+      do n=1,h2o_ntr
+         do k= 1,Nk
+         do i= 1, p_ni
+            indx = (k-1)*p_ni+i-1
+            ii = i + p_offi
+
+            busvol(h2o_ind(3,n)+indx) = busvol(h2o_ind(3,n)+indx) + F_trm(ii,j,k,n)
+            F_trm(ii,j,k,n) = ZERO_8
+
+         end do
+         end do
+      end do
+
+*      
+*C     Run the adjoint simplified physics
+*      ----------------------------------
+*
+       call lin_phyexe1_ad (busent ,busdyn ,busper ,busvol ,
+     $                      p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
+     $                      dt, jdo, F_step, F_cpu, p_ni, Nk)
+*
+* 
+      call p_fillbus_ad ( busdyn,
+     $         F_up , F_vp , F_wp , F_tp , F_qp, F_trp,
+     $         F_um , F_vm , F_tm , F_trm, F_lpsm, F_trpm, F_trmm,
+     $         F_qpm,
+     $         j, F_step, LDIST_DIM, l_nk )
+*
+*
+*
+*     Perform physic slices output
+!$omp critical
+
+      do ii=1,Obus_top
+             offbo= (obus_offset(ii)-1)*l_ni*l_nj
+             offbb= obus_addr(ii)
+         if (obus_bus_S(ii).eq.'P'.and.obus_var_S(ii).eq.'LO') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)=
+     $             busper(offbb+(k*mult-1)*p_ni + i - 1)
+                   if (F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi) .gt. Dcst_pi_8)
+     $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)=
+     $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)-2.0*Dcst_pi_8
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'P') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busper(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'D') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busdyn(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'V') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busvol(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'E') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busent(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         endif
+      enddo
+
+      if (.not.Mem_phyncore_L) then
+         err = write_db_file (Lun_waphy,jdo,1)
+         err = write_db_file (Lun_waphy,busper,p_bper_siz)
+      endif
+!$omp end critical
+*
+*
+*     ===================================================================
+*                           RETURN FOR ANOTHER SLICE
+*     ===================================================================
+      goto 100
+*
+ 650  continue
+*
+ 1000 format(/,
+     %'PERFORM A SIMPLIFIED PHYSICS STEP: CMC/RPN PHYSICS (S/R P_PHYSLB_AD)',/
+     %'=================================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

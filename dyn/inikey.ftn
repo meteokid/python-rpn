@@ -17,6 +17,7 @@
 * v3_03 - Mailhot J.        - change name of physical tendency (for other physics tracers)
 * v3_03 - Leduc A-M         - Add gzmoins6
 * v3_12 - Bilodeau B.       - change length of vn_S from 8 to 16 characters
+* v3_13 - Pellerin P.       - Add the off-line mode
 *
 *object
 *
@@ -75,8 +76,11 @@
       call getindx ('UFCP',      'P',ufcp,     lght, init0)
       call getindx ('VFCP',      'P',vfcp,     lght, init0)
       call getindx ('FDSI',      'P',fdsi,     lght, init0)
+      if (Schm_offline_L) then
+          call getindx ('FLUSOLIS',  'P',flusolis, lght, init0)
+      endif
       call getindx ('TSS',       'P',tss,      lght, init0)
-cpp      call getindx ('FLUSOLIS',  'P',flusolis, lght, init0)
+      call getindx ('COSZ',      'P',cosz,     lght, init0)
 *
       call getindx ('TRAD',    'V',trad,     lght, init0)
       call getindx ('UDIFV',   'V',udifv,    lght, init0)
@@ -90,8 +94,6 @@ cpp      call getindx ('FLUSOLIS',  'P',flusolis, lght, init0)
       call getindx ('KT',      'V',kt,       lght, init0)
       call getindx ('BM',      'V',bm,       lght, init0)
       call getindx ('BT',      'V',bt,       lght, init0)
-      call getindx ('FLUSOLIS',  'V',flusolis, lght, init0)
-
 *
 * H2O tracers
 *
@@ -131,21 +133,6 @@ cstl
          vn_S=phyt_liste_S(i)(1:2)//'PLUS'
          call getindx (vn_S, 'D', deb, lght, init)
 *
-*     For the offline mode:
-*
-         if (Schm_offline_L) then
-         deb=-1
-         vn_S=phyt_liste_S(i)
-         if (vn_S.eq.'FI') call getindx ('FDSI',      'P',deb,     lght, init)
-         if (vn_S.eq.'PR') call getindx ('TSS',       'P',deb,     lght, init)
-         if (vn_S.eq.'P0') call getindx ('PPLUS',     'D',deb,     lght, init)
-         if (vn_S.eq.'FB') call getindx ('FLUSOLIS',  'V',deb,     lght, init)
-         if (vn_S.eq.'N4') call getindx ('flusolaf',  'P',deb,     lght, init)
-         if (vn_S.eq.'AD') call getindx ('fiaf',      'P',deb,     lght, init)
-         if (vn_S.eq.'RT') call getindx ('rt',        'V',deb,     lght, init)
-         if (vn_S.eq.'M4') call getindx ('cosz',      'P',deb,     lght, init)
-         endif
-*
          if (deb.gt.0) then
             phyt_ntr = phyt_ntr + 1
             phyt_name_S(phyt_ntr) = phyt_liste_S(i)(1:2)
@@ -156,6 +143,7 @@ cstl
             call getindx (vn_S, 'V',phyt_ind(3,phyt_ntr), lght, init)
          endif
       end do
+*
       do 20 i=1,phyt_ntr
          do k=1,tr3d_ntr
             if (Tr3d_name_S(k).eq.phyt_name_S(i)) goto 20
@@ -164,6 +152,46 @@ cstl
          Tr3d_name_S(tr3d_ntr) = phyt_name_S(i)
          Tr3d_sval(tr3d_ntr) = 0.
  20   continue
+*
+*     For the offline mode:
+*
+         if (Schm_offline_L) then
+*
+         do i=1,Tr3d_userntr
+            deb=-1
+            vn_S=Tr3d_username_S(i)
+*
+         if (vn_S.eq.'FI') call getindx ('FDSI',      'P',deb,     lght, init)
+         if (vn_S.eq.'PR') call getindx ('TSS',       'P',deb,     lght, init)
+         if (vn_S.eq.'PR0')call getindx ('TSS',       'P',deb,     lght, init)
+         if (vn_S.eq.'P0') call getindx ('PPLUS',     'D',deb,     lght, init)
+         if (vn_S.eq.'FB') call getindx ('FLUSOLIS',  'P',deb,     lght, init)
+         if (vn_S.eq.'N4') call getindx ('FLUSOLIS',  'P',deb,     lght, init)
+         if (vn_S.eq.'N40')call getindx ('FLUSOLIS',  'P',deb,     lght, init)
+         if (vn_S.eq.'AD') call getindx ('FDSI',      'P',deb,     lght, init)
+         if (vn_S.eq.'AD0')call getindx ('FDSI',      'P',deb,     lght, init)
+         if (vn_S.eq.'RT') call getindx ('TSS',       'P',deb,     lght, init)
+         if (vn_S.eq.'M4') call getindx ('COSZ',      'P',deb,     lght, init)
+*
+         if (deb.gt.0) then
+            phyt_ntr = phyt_ntr + 1
+            phyt_name_S(phyt_ntr) = Tr3d_username_S(i)(1:3)
+            phyt_ind(1,phyt_ntr)  = deb
+         endif
+*
+         end do
+*
+         do 30 i=1,phyt_ntr
+            do k=1,tr3d_ntr
+               if (Tr3d_name_S(k).eq.phyt_name_S(i)) goto 30
+            end do
+            tr3d_ntr = tr3d_ntr + 1
+            Tr3d_name_S(tr3d_ntr) = phyt_name_S(i)
+            Tr3d_sval(tr3d_ntr) = 0.
+ 30      continue
+*
+      endif
+
 *
 *-------------------------------------------------------------------
 *

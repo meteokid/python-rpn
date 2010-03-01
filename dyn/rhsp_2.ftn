@@ -61,7 +61,6 @@
 #include "schm.cdk"
 #include "intuv.cdk"
 #include "inuvl.cdk"
-#include "ptopo.cdk"
 *
       integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, nij
       real*8  aaa, bbb, zero, one, r, pd1,c1,c2,c3,c4,c5,c6,c7,c8

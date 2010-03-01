@@ -55,7 +55,7 @@
      %         RPN_COMM_bloc
 **
       integer ipcode,ipmode,ierr,mindimx,mindimy,
-     $        n1,n2,n3,n4,n5,n6,n7,mybloc,
+     $        n1,n2,n3,n4,n5,n6,n7,
      $        maxblenx,maxbleny,cte_ok
       character*256 prejob_S
       character*12 dumc1_S
@@ -85,6 +85,8 @@ c     These variables are for OpenMp compilation
      $                                     Ptopo_npex  , Ptopo_npey)
       Ptopo_npeOpenMP = gnthread()
       if (Lun_out.gt.0) then
+         write(6,*) 'BLOC TOPO: Ptopo_nblocx=',
+     $                Ptopo_nblocx, 'Ptopo_nblocy=',Ptopo_nblocy
          call write_status_file2 ('communications_established=YES' )
 	 write(6,*) 'OpenMP will use ',Ptopo_npeOpenMP
      $                    ,' thread(s)'
@@ -93,13 +95,13 @@ c     These variables are for OpenMp compilation
       call bcastc1 ()
       Ptopo_numpe_perb = Ptopo_npex/Ptopo_nblocx * Ptopo_npey/Ptopo_nblocy
 
-      call rpn_comm_mype (Ptopo_myproc, Ptopo_myrow, Ptopo_mycol)
+      call rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
 
       ierr = RPN_COMM_bloc ( Ptopo_nblocx, Ptopo_nblocy )
       if (ierr.lt.0) call gem_stop ('rpn_comm_bloc',ierr)
 
       call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc,
-     $                      n1,n2,n3,n4,n5,n6,n7,mybloc,
+     $                      n1,n2,n3,n4,n5,n6,n7,Ptopo_mybloc,
      $                      Ptopo_myblocx,Ptopo_myblocy,Ptopo_blocme,dumc1_S )
       call tmg_init ( Ptopo_myproc, 'GEMDM' )
       call tmg_start ( 1, 'GEMDM' ) 
@@ -130,10 +132,10 @@ c      call system (prejob_S)
 *
 *     Establishing data topology
 *
-      l_west  = (0            .eq. Ptopo_myrow)
-      l_east  = (Ptopo_npex-1 .eq. Ptopo_myrow)
-      l_south = (0            .eq. Ptopo_mycol)
-      l_north = (Ptopo_npey-1 .eq. Ptopo_mycol)
+      l_west  = (0            .eq. Ptopo_mycol)
+      l_east  = (Ptopo_npex-1 .eq. Ptopo_mycol)
+      l_south = (0            .eq. Ptopo_myrow)
+      l_north = (Ptopo_npey-1 .eq. Ptopo_myrow)
       north   = 0
       south   = 0
       east    = 0
@@ -168,10 +170,15 @@ c      call system (prejob_S)
          mindimy = G_nj/2 - (1-mod(G_nj,2))
          maxblenx= max ( Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx )
          maxbleny= max ( Hblen_momenty,Hblen_ty,Hblen_massy,Hblen_try )
+
+         if ( (max(Glb_pil_w,Glb_pil_e)+maxblenx).gt.mindimx .or.
+     $        (max(Glb_pil_s,Glb_pil_n)+maxbleny).gt.mindimy )
+     $        call gem_stop
+     $        ('LAM grid too small -- ABORT in set_world_view --',-1)
 *
-         if (Hblen_wfct_S .eq. "const") then
-            maxblenx=mindimx-(max(Glb_pil_w,Glb_pil_e))
-            maxbleny=mindimy-(max(Glb_pil_s,Glb_pil_n))
+         if (Hblen_wfct_S .eq. "CONST") then
+            maxblenx=mindimx-(max(Glb_pil_w,Glb_pil_e))+2
+            maxbleny=mindimy-(max(Glb_pil_s,Glb_pil_n))+2
             Hblen_momentx=maxblenx
             Hblen_momenty=maxbleny
             Hblen_tx=maxblenx
@@ -184,12 +191,12 @@ c      call system (prejob_S)
             print *,'Constant Function applied for Pilot Zones'
             print *,'Values maxblenx, maxbleny=',maxblenx, maxbleny
             print *,'*****************************************'
+*
+            if ((Ptopo_npex.gt.2).or.(Ptopo_npey.gt.2))
+     $        call gem_stop
+     $        ('IN OFF-LINE MODE:MAXIMUM PE ALONG X,Y IS 2--',-1)
          endif
 *
-         if ( (max(Glb_pil_w,Glb_pil_e)+maxblenx).gt.mindimx .or.
-     $        (max(Glb_pil_s,Glb_pil_n)+maxbleny).gt.mindimy ) 
-     $        call gem_stop
-     $        ('LAM grid too small -- ABORT in set_world_view --',-1)
       endif
 *
       call rpn_comm_topo ( G_ni,l_minx,l_maxx,l_ni,G_lnimax,
@@ -214,7 +221,7 @@ c      call system (prejob_S)
       if ((l_east).and.(G_lam)) l_niu = l_ni - 1
 *
 *     Check grid dimensions for LAM
-      if (G_lam) then
+      if (G_lam.and.Hblen_wfct_S .ne."CONST") then
          mindimx  = max ( pil_w,pil_e ) + maxblenx
          mindimy  = max ( pil_s,pil_n ) + maxbleny
          ierr=0
@@ -225,7 +232,7 @@ c      call system (prejob_S)
 *
       call glbpos  
 *
-      call set_run_dir_xy (Ptopo_myrow, Ptopo_mycol)
+      call set_run_dir_xy (Ptopo_mycol, Ptopo_myrow)
 *
 *
 *C    Initialize the schemes control comdeck

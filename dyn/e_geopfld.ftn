@@ -35,7 +35,6 @@
       nv = niv*njv
       e_fu_climat = 0
       e_fu_geophy = 0
-      ipas_last    = 120000
       if (fnom  (e_fu_climat,'process/climato','RND+OLD',0).lt.0) stop
       if (fstouv(e_fu_climat,'RND').lt.0) stop
       if (fnom  (e_fu_geophy,'process/geophy' ,'RND+OLD',0).lt.0) stop
@@ -58,20 +57,17 @@
       if (e_Schm_offline_L) then
          call hpalloc (paa_pr_m, n , err, 1)
          call hpalloc (pai_pr_m, n , err, 1)
-         call hpalloc (paa_pr_x, n , err, 1)
          call hpalloc (paa_ir_m, n , err, 1)
          call hpalloc (pai_ir_m, n , err, 1)
-         call hpalloc (paa_ir_x, n , err, 1)
          call hpalloc (paa_so_m, n , err, 1)
          call hpalloc (pai_so_m, n , err, 1)
-         call hpalloc (paa_so_x, n , err, 1)
          do i=1,n
              i_pr_m(i)= -2.
              i_ir_m(i)= -2.
              i_so_m(i)= -2.
-             a_pr_x(i)= -2.
-             a_ir_x(i)= -2.
-             a_so_x(i)= -2.
+             a_pr_m(i)= -2.
+             a_ir_m(i)= -2.
+             a_so_m(i)= -2.
          enddo
 	endif	
 *

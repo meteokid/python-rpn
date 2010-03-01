@@ -1,0 +1,177 @@
+***s/r tstpdyn_tl -  TLM of tstpdyn 
+*
+#include <model_macros_f.h>
+*
+      subroutine tstpdyn_tl ( F_fnitraj )
+*
+#include "impnone.cdk"
+*
+      integer F_fnitraj
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - ADJ of HO option
+*                           - ADJ of vertical sponge layer
+* v2_31 - Tanguay M.        - adapt ADJ to new advection code,
+*                             hybrid coord. and diffusion in gem_run
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_02 - Tanguay M.        - TLM of Eigv_parity_L and Hspng_main done
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
+*                           - Remove V4dg_oktrtl_L
+*
+*object
+*     see id section
+*
+*arguments
+*     see tstpdyn
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "orh.cdk"
+#include "sol.cdk"
+#include "nl.cdk"
+#include "v4dg.cdk"
+#include "nlm.cdk"
+#include "vt1m.cdk"
+#include "lctl.cdk"
+#include "v4dr.cdk"
+*
+*modules
+      integer  vmmlod,vmmuld,vmmget
+      external vmmlod,vmmuld,vmmget
+*
+      integer iln,dim,err,pnerr,pnlkey1(4)
+      real prdth
+*     ______________________________________________________
+*
+      prdth =  Cstv_dt_8/2.
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+*     Recover TRAJ predictive variables
+*     ---------------------------------
+      if (Orh_crank_L.and.Orh_icn.eq.1) call v4d_rwtraj (3) 
+*
+      call rhs_tl ()
+*
+*     Recover TRAJ Positions TH
+*     -------------------------
+      call v4d_rwtraj (4)
+*
+*     Recover TRAJ Winds TH
+*     ---------------------
+      call v4d_rwtraj (5)
+*
+      call adw_main_tl ( F_fnitraj )
+*
+      call pre_tl ()
+*
+      if (Orh_icn.eq.1) call frstgss   ( )
+      if (Orh_icn.eq.1) call frstgss_tr( )
+*
+      if (Lun_debug_L) write (Lun_out,1005) Schm_itnlh
+*
+*     TRAJECTORY
+*     ----------
+      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      call hpalloc (nlm_num_  , dim, err,1)
+      call hpalloc (nlm_nvm_  , dim, err,1)
+      call hpalloc (nlm_nthm_ , dim, err,1)
+      call hpalloc (nlm_ncnm_ , dim, err,1)
+      nlm_n3m_  = 0
+      nlm_n3pm_ = 0
+      if (.not. Schm_hydro_L) then
+         call hpalloc (nlm_n3m_  , dim, err,1)
+         call hpalloc (nlm_n3pm_ , dim, err,1)
+      endif
+*
+*     TLM
+*     ---
+      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      call hpalloc (nl_nu_  , dim, err,1)
+      call hpalloc (nl_nv_  , dim, err,1)
+      call hpalloc (nl_nth_ , dim, err,1)
+      call hpalloc (nl_ncn_ , dim, err,1)
+      nl_n3_  = 0
+      nl_n3p_ = 0
+      if (.not. Schm_hydro_L) then
+         call hpalloc (nl_n3_  , dim, err,1)
+         call hpalloc (nl_n3p_ , dim, err,1)
+      endif
+*
+      do 100 iln=1,Schm_itnlh
+*
+*        Recover fields at T0 and TX used as INPUT that were modified by subr. BAC
+*        at the previous Orh_icn
+*        -------------------------------------------------------------------------
+         if (Orh_icn.ne.1.and.iln.eq.1) call v4d_rwtraj (6) 
+*
+*        Recover fields at TX used as INPUT that were modified by subr. BAC
+*        at the previous time step (.not.Schm_hydro only)
+*        ------------------------------------------------------------------
+         if (.not.Schm_hydro_L.and.Orh_icn.eq.1.and.iln.eq.1) call v4d_rwtraj (7) 
+*
+         call nli_tl ()
+*
+*        TLM
+*        ---
+         call sol_main ()
+*
+         if (V4dr_redotr_L) then
+*
+*        TRAJECTORY
+*        ----------
+         call sol_main_tr ()
+*
+         else
+*
+*        Recover TRAJ GPTX at end of SOL_MAIN
+*        ------------------------------------
+         V4dr_iln = iln
+         call v4d_rwtraj (9)
+*
+         endif
+*
+         call bac_tl ( iln, Schm_itnlh )
+*
+ 100  continue
+*
+*     TRAJECTORY 
+*     ----------
+      call hpdeallc(nlm_num_ , err)
+      call hpdeallc(nlm_nvm_ , err)
+      call hpdeallc(nlm_nthm_, err)
+      call hpdeallc(nlm_ncnm_, err)
+      if (.not. Schm_hydro_L) then
+         call hpdeallc(nlm_n3m_ , err)
+         call hpdeallc(nlm_n3pm_, err)
+      endif
+*
+*     TLM
+*     ---
+      call hpdeallc(nl_nu_ , err)
+      call hpdeallc(nl_nv_ , err)
+      call hpdeallc(nl_nth_, err)
+      call hpdeallc(nl_ncn_, err)
+      if (.not. Schm_hydro_L) then
+         call hpdeallc(nl_n3_ , err)
+         call hpdeallc(nl_n3p_, err)
+      endif
+*
+*     ---------------------------------------------------------------
+*
+ 1000 format(
+     + 3X,'TLM of PERFORM A DYNAMICAL STEP: (S/R TSTPDYN_TL)',
+     +/3X,'================================================',/)
+ 1005 format(
+     $3X,'TLM of ITERATING SCHM_ITNLH=',I3,' TIMES TO SOLVE NON-LINEAR '
+     $   'HELMHOLTZ PROBLEM')
+      return
+      end

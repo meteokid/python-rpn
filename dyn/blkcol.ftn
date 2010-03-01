@@ -53,9 +53,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                                 tag, 'BLOC', status, err )
                len  = 0
                offi = max(g_id,Out_bloci0)
-               if (Out_myrow.eq.0) offi = g_id
+               if (Out_mycol.eq.0) offi = g_id
                offj = max(g_jd,Out_blocj0)
-               if (Out_mycol.eq.0) offj = g_jd
+               if (Out_myrow.eq.0) offj = g_jd
                offi = l_id + proci0 - 1 - offi
                offj = l_jd + procj0 - 1 - offj
                do k = 1, nk_out

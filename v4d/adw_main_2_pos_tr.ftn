@@ -1,0 +1,206 @@
+***s/r adw_main_2_pos_tr - Equivalent to adw_main_2_pos for TRAJECTORY
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_main_2_pos_tr ( F_it, F_um, F_vm, F_wm )
+*
+#include "impnone.cdk"
+*
+      integer F_it
+      real F_um(*),F_vm(*),F_wm(*)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_20 - Tanguay M.        - Optimized SETINT/TRILIN
+*                           - TRAJ of Change test a lower and upper boundaries
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*TRAJECTORY of
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectory             |  i  |
+*        |                                                       |     |
+* F_u,F_v| input:  3 components of wind on advection grid        |  io |
+* F_w    | output: 3 components of upstream positions at t1      |     |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "vthm.cdk"
+#include "vt1m.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+************************************************************************
+      logical doh_L
+*
+      integer pnerr, pnlkey1(30), pnlod
+*
+      integer i, j, k, n, ij, ijk, nij, nijk, it
+      integer i1,j1,k1,nn
+*
+      integer, dimension(l_ni*l_nj*l_nk) :: n1m
+      real,    dimension(l_ni*l_nj*l_nk) :: capx1m,capy1m,capz1m
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1m,wrky1m,wrkz1m,wrkc1m
+*
+*
+      real dummy, dth
+      real*8 r2pi_8,TWO_8,HALF_8,pdp_8,pdm_8
+      parameter (TWO_8 = 2.0,HALF_8=0.5)
+
+      integer i0,in,j0,jn
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *l_nk
+*
+      r2pi_8 = TWO_8 * Dcst_pi_8
+      dth    = Cstv_dt_8/2.
+      pdp_8  = 1.d0 + 1.d-6
+      pdm_8  = 1.d0 - 1.d-6
+************************************************************************
+*
+      pnlkey1(1) = VMM_KEY(xthm)
+      pnlkey1(2) = VMM_KEY(ythm)
+      pnlkey1(3) = VMM_KEY(zthm)
+      pnlkey1(4) = VMM_KEY(xcthm)
+      pnlkey1(5) = VMM_KEY(ycthm)
+      pnlkey1(6) = VMM_KEY(zcthm)
+      pnlkey1(7) = VMM_KEY(xct1m)
+      pnlkey1(8) = VMM_KEY(yct1m)
+      pnlkey1(9) = VMM_KEY(zct1m)
+*
+      pnerr = vmmlod(pnlkey1,9)
+*
+      pnerr = VMM_GET_VAR(xthm)
+      pnerr = VMM_GET_VAR(ythm)
+      pnerr = VMM_GET_VAR(zthm)
+      pnerr = VMM_GET_VAR(xcthm)
+      pnerr = VMM_GET_VAR(ycthm)
+      pnerr = VMM_GET_VAR(zcthm)
+      pnerr = VMM_GET_VAR(xct1m)
+      pnerr = VMM_GET_VAR(yct1m)
+      pnerr = VMM_GET_VAR(zct1m)
+
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
+      endif
+************************************************************************
+      do it=1,F_it
+************************************************************************
+                     doh_L = .false.
+      if (it .eq. 1) doh_L = .true.
+*
+      if( .not. Adw_nosetint_L ) then
+*
+      call adw_setint ( n1m, capx1m, dummy, dummy, capy1m, dummy,
+     %                  dummy, capz1m, dummy, xthm, ythm, zthm,
+     %                  doh_L, .true., .true.,nijk,i0,in,j0,jn,l_nk)
+*
+      call adw_trilin (wrkx1m,F_um,1.0,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+      call adw_trilin (wrky1m,F_vm,1.0,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+*
+      else
+*
+      Adw_hor_L = doh_L
+      Adw_ver_L = .true.
+      call adw_trilin_turbo (wrkx1m,F_um,1.0,xthm,ythm,zthm,
+     %                       capz1m,
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+      call adw_trilin_turbo (wrky1m,F_vm,1.0,xthm,ythm,zthm,
+     %                       capz1m,
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+*
+      endif
+*
+************************************************************************
+      call adw_trajsp ( xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
+     %                  i0,in,j0,jn)
+************************************************************************
+*
+      if( .not. Adw_nosetint_L ) then
+*
+      call adw_setint ( n1m, capx1m, dummy, dummy, capy1m, dummy,
+     %                  dummy, capz1m, dummy, xthm, ythm, zthm,
+     %                 .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
+*
+      call adw_trilin (wrkx1m,F_wm,-dth,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+*
+      else
+*
+      Adw_hor_L = .true. 
+      Adw_ver_L = .false.
+      call adw_trilin_turbo (wrkx1m,F_wm,-dth,xthm,ythm,zthm,
+     %                       capz1m,
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+      endif
+*
+************************************************************************
+      do k = 2,l_nk-1
+      do j = j0,jn
+      do i = i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         zthm(n) = Geomg_z_8(k) + TWO_8*wrkx1m(n)
+         zthm(n) = min( pdm_8*Geomg_z_8(l_nk),
+     %                max( 1.0d0*zthm(n), pdp_8*Geomg_z_8(1) ) )
+         zthm(n) = HALF_8*(zthm(n) + Geomg_z_8(k))
+      enddo
+      enddo
+      enddo
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+      call adw_trajex (F_um, F_vm, xct1m, yct1m, zct1m, xcthm, ycthm, zcthm,
+     %                 i0,in,j0,jn)
+*
+      do j = j0,jn
+      do i = i0,in
+         n = ((j-1)*l_ni) + i   !for k=1
+         F_wm(n) = Geomg_z_8(1)
+         n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
+         F_wm(n) = Geomg_z_8(l_nk)
+      enddo
+      enddo
+      do k = 2,l_nk-1
+         do j = j0,jn
+         do i = i0,in
+            n=(k-1)*nij+((j-1)*l_ni) + i
+            F_wm(n) = zthm(n) - Geomg_z_8(k)
+            F_wm(n) = Geomg_z_8(k) + 2.0 * F_wm(n)
+         enddo
+         enddo
+      enddo
+*
+      pnerr = vmmuld(-1,0)
+*
+ 1000  format(3X,'TRAJ of CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS_TR)')
+      return
+      end

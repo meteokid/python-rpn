@@ -2,12 +2,13 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine out_vmm (F_wlnph,F_ip3,F_ext_S,minx,maxx,miny,maxy,
+      subroutine out_vmm (F_wlnph,F_ip3,F_etikadd_S,F_ext_S,minx,maxx,miny,maxy,
      %                   F_nk, F_levtyp_S,F_rf,F_indo,F_nko,F_set)
 *
       implicit none
 *
       character*1 F_levtyp_S
+      character*6 F_etikadd_S
       character*4 F_ext_S
       integer F_nk,minx,maxx,miny,maxy,F_nko,F_indo(*),F_set,F_ip3
       real F_wlnph(minx:maxx,miny:maxy,F_nk), F_rf(F_nko)
@@ -367,7 +368,7 @@
             endif
          enddo
          if (uvgrid_L) 
-     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
+     $       call out_sfile(Out3_closestep,Lctl_step,F_etikadd_S,F_ip3,F_ext_S)
 *        Output on V  grid
          uvgrid_L = .false.
          call out_sgrid(
@@ -386,7 +387,7 @@
             endif
          enddo
          if (uvgrid_L) 
-     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
+     $       call out_sfile(Out3_closestep,Lctl_step,F_etikadd_S,F_ip3,F_ext_S)
 
       else
 *_______________________________________________________________________
@@ -419,7 +420,7 @@
             endif
          enddo
          if (uvgrid_L) 
-     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
+     $       call out_sfile(Out3_closestep,Lctl_step,F_etikadd_S,F_ip3,F_ext_S)
 *        Output on V  grid
          uvgrid_L = .false.
          call out_sgrid(
@@ -446,7 +447,7 @@
             endif
          enddo
          if (uvgrid_L) 
-     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
+     $       call out_sfile(Out3_closestep,Lctl_step,F_etikadd_S,F_ip3,F_ext_S)
       endif
       pnerr = vmmuln(windkey,windidx)
 

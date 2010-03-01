@@ -1,0 +1,15 @@
+*revision
+* v3_01 - Lee V.             - add control for sponge on poles only
+*
+      logical Hspng_uvwdt_L,Hspng_rwnd_L
+      integer Hspng_nj
+      real Hspng_mf
+      MARK_COMMON_BEG(hspngl)
+      common /hspngl/ Hspng_uvwdt_L,Hspng_rwnd_L
+      MARK_COMMON_END(hspngl)
+      MARK_COMMON_BEG(hspngi)
+      common /hspngi/ Hspng_nj
+      MARK_COMMON_END(hspngi)
+      MARK_COMMON_BEG(hspngr)
+      common /hspngr/ Hspng_mf
+      MARK_COMMON_END(hspngr)

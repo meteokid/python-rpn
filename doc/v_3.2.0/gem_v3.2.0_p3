@@ -1,0 +1,36 @@
+
+        ############# GEMDM Model -- Version 3.2.0 ###############
+                              August 24 2005
+
+Release of patch "p3". 
+
+As usual this patch can be activated by adding the following 
+line to your file .exper_cour:
+
+   MyPatches='GEMDM/3.2.0/p3' . patch_exp.dot
+
+   If modifications are needed on the "patched" decks, then add
+   this line in file .exper_cour instead:
+
+   ExtraOptions=-ignore_conflicts MyPatches='GEMDM/3.2.1/p3' . patch_exp.dot
+
+You MUST add this to file 'mes_recettes':
+COMM = rpn_comm208
+PATCH= p3
+
+and then reload the Makefile with r.make_exp.
+
+
+
+#######################################################################
+This patch contains:
+
+1) Recorrection in adw_main_2_pos.ftn. 
+2) Correction for MEMORY LEAK in all LAM configurations and 
+    also for configurations which use MXMA, Hzd_ho and Hzd_uvwdt=true.
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+AND includes the previous patch p2 (see gem_v3.2.0_p2)
+
+
+#######################################################################

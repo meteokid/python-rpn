@@ -1,6 +1,0 @@
-      subroutine v4d_readlalo
-*
-      call gem_stop('v4d_readlalo',-1)
-*
-      return
-      end

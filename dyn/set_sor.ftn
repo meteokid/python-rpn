@@ -27,6 +27,7 @@
 * v2_32                       of output more than unit requested
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
+* v3_20 - Lee V.            - request of physics output via long/short name
 *
 *object
 *     See above id
@@ -68,11 +69,9 @@
 *
       character*5 blank_S
       character*8 unit_S
-      character*4 udolist_S(maxbus)
-      integer     udolist_max,cnt
       character*256 fn
       logical iela
-      integer pnerror,i,idx,k,j,levset
+      integer pnerror,i,idx,k,j,levset,kk
       real seconds,min_seconds
       integer ixg(4), sorvmm
 *
@@ -145,13 +144,13 @@
           do k=1, Outp_sets
              do j=1,Outp_var_max(k)
              do i=1,Out3_filtpass_max
-                if (Outp_var_S(j,k) .eq. Out3_filt_S(i)) then
+                if (Outp_varnm_S(j,k) .eq. Out3_filt_S(i)) then
                     Outp_filtpass(j,k) = Out3_filtpass(i)
                     Outp_filtcoef(j,k) = Out3_filtcoef(i)
                 endif
              enddo
              do i=1,Out3_xnbits_max
-                if (Outp_var_S(j,k) .eq. Out3_xnbits_S(i)) then
+                if (Outp_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
                     Outp_nbit(j,k) = Out3_xnbits(i)
                 endif
              enddo
@@ -229,9 +228,8 @@
  50          continue
  100      continue
           if (sorvmm.gt.0) Outd_vmm_L = .true.
-          
       endif
-
+          
       COMMON_BROADCAST(Timestep_i)
       COMMON_BROADCAST(Timestep_l)
       COMMON_BROADCAST(Grid_i)
@@ -248,27 +246,26 @@
       COMMON_BROADCAST(Outp_r)
       COMMON_BROADCAST(Out3_c)
       COMMON_BROADCAST(Out3_i)
+      COMMON_BROADCAST(Out3_l)
 
-      call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy,
-     $     Ptopo_myblocx,Ptopo_myblocy, Ptopo_myrow, Ptopo_mycol,
-     $     0,0,l_ni,l_nj,Ptopo_blocme,
-     $     Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S,
-     $     int(Cstv_dt_8),Out1_date,Out1_etik_S,Out3_ndigits,Pil_runstrt_S,
-     $     min(Step_total, Lctl_step+Step_rsti) )
+* Print table of dynamic variables demanded for output
 
-*     Build short list of possible outputs for physics variables
-      cnt = 0
-      do k=1, Outp_sets
-         do j=1,Outp_var_max(k)
-            cnt = cnt+1
-            udolist_S(cnt) =  Outp_var_S(j,k)
-            do i=1,cnt-1
-               if (udolist_S(cnt).eq.udolist_S(i)) cnt = cnt-1
-            enddo
-         enddo
-      enddo
-      
-*     cnt = total number of variables requested for output
+      if (Lun_out.gt.0) then
+          write(Lun_out,900)
+          write(Lun_out,1006)
+          write(Lun_out,901)
+          do j=1,Outd_sets
+          do i=1,Outd_var_max(j)
+             write(Lun_out,1008) Outd_var_S(i,j),Outd_var_S(i,j),Outd_nbit(i,j),
+     $       Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_typ(Outd_lev(j))
+          enddo
+          enddo
+          write(Lun_out,1006)
+          write(Lun_out,2001)
+      endif
+
+* Save only the short name of the requested physics variables
+* and print table of variables demanded for output
 *     p_bent_out=total number of output variables found in busent
 *     p_bper_out=total number of output variables found in busper
 *     p_bdyn_out=total number of output variables found in busdyn
@@ -277,96 +274,128 @@ c     print *,'P_bent_top=',P_bent_top
 c     print *,'P_bper_top=',P_bper_top
 c     print *,'P_bdyn_top=',P_bdyn_top
 c     print *,'P_bvol_top=',P_bvol_top
-      k = 0
-      do i = 1, P_bent_top
-         do j=1,cnt
-            if (udolist_S(j).eq.enton(i)(1:4)) then
-                k=k+1
-                p_bent_idx(k)=i
-            endif
-         enddo
-      enddo
-      p_bent_out = k
-      k = 0
-      do i = 1, P_bper_top
-         do j=1,cnt
-            if (udolist_S(j).eq.peron(i)(1:4)) then
-                k=k+1
-                p_bper_idx(k)=i
-            endif
-         enddo
-      enddo
-      p_bper_out = k
-      k = 0
-      do i = 1, P_bdyn_top
-         do j=1,cnt
-            if (udolist_S(j).eq.dynon(i)(1:4)) then
-                k=k+1
-                p_bdyn_idx(k)=i
-            endif
-         enddo
-      enddo
-      p_bdyn_out = k
-      k=0
-      do i = 1, P_bvol_top
-         do j=1,cnt
-            if (udolist_S(j).eq.volon(i)(1:4)) then
-                k=k+1
-                p_bvol_idx(k)=i
-            endif
-         enddo
-      enddo
-      p_bvol_out = k
-      print *,'P_bent_out=',P_bent_out
-      print *,'P_bper_out=',P_bper_out
-      print *,'P_bdyn_out=',P_bdyn_out
-      print *,'P_bvol_out=',P_bvol_out
-*
-*
-      if (Lun_out.gt.0) then
-* Print table of dynamic variables demanded for output
-
-          write(Lun_out,900)
-          write(Lun_out,1006)
-          write(Lun_out,901)
-          do j=1,Outd_sets
-          do i=1,Outd_var_max(j)
-             write(Lun_out,1008) Outd_var_S(i,j),Outd_nbit(i,j),
-     $       Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_typ(Outd_lev(j))
-          enddo
-          enddo
-          write(Lun_out,1006)
-          write(Lun_out,2001)
-
-* Print table of physics variables demanded for output
-
+      kk = 0
+      if (Lun_out.gt.0)  then
           write(Lun_out,1000)
           write(Lun_out,1006)
-          write(Lun_out, 901)
-          do j=1,Outp_sets
-          do i=1,Outp_var_max(j)
-             write(Lun_out,1008) Outp_var_S(i,j),Outp_nbit(i,j),
-     $       Outp_filtpass(i,j),Outp_filtcoef(i,j),Level_typ(Outp_lev(j))
-          enddo
-          enddo
-
+          write(Lun_out,1005)
           write(Lun_out,1006)
-
+          write(Lun_out,902)
       endif
+      do i = 1, P_bent_top
+         do k=1, Outp_sets
+            do j=1,Outp_var_max(k)
+            if (Outp_varnm_S(j,k).eq.entnm(i)(1:16) .or.
+     $          Outp_varnm_S(j,k).eq.enton(i)(1:4)) then
+                Outp_var_S(j,k)= enton(i)(1:4)
+                if (Lun_out.gt.0) write(Lun_out,1007)
+     $             enton(i)(1:4),entnm(i)(1:16),Outp_nbit(j,k),
+     $             Outp_filtpass(j,k),Outp_filtcoef(j,k),'M'
+                kk=kk+1
+                p_bent_idx(kk)=i
+            endif
+            enddo
+         enddo
+      enddo
+      p_bent_out = kk
+      kk = 0
+      if (Lun_out.gt.0)  then
+          write(Lun_out,1006)
+          write(Lun_out,1002)
+          write(Lun_out,1006)
+          write(Lun_out,902)
+      endif
+      do i = 1, P_bper_top
+         do k=1, Outp_sets
+            do j=1,Outp_var_max(k)
+            if (Outp_varnm_S(j,k).eq.pernm(i)(1:16) .or.
+     $          Outp_varnm_S(j,k).eq.peron(i)(1:4)) then
+                Outp_var_S(j,k)= peron(i)(1:4)
+                if (Lun_out.gt.0) write(Lun_out,1007)
+     $             peron(i)(1:4),pernm(i)(1:16),Outp_nbit(j,k),
+     $             Outp_filtpass(j,k),Outp_filtcoef(j,k),'M'
+                kk=kk+1
+                p_bper_idx(kk)=i
+            endif
+            enddo
+         enddo
+      enddo
+      p_bper_out = kk
+      kk = 0
+      if (Lun_out.gt.0)  then
+          write(Lun_out,1006)
+          write(Lun_out,1003)
+          write(Lun_out,1006)
+          write(Lun_out,902)
+      endif
+      do i = 1, P_bdyn_top
+         do k=1, Outp_sets
+            do j=1,Outp_var_max(k)
+            if (Outp_varnm_S(j,k).eq.dynnm(i)(1:16) .or.
+     $          Outp_varnm_S(j,k).eq.dynon(i)(1:4)) then
+                Outp_var_S(j,k)= dynon(i)(1:4)
+                if (Lun_out.gt.0) write(Lun_out,1007)
+     $             dynon(i)(1:4),dynnm(i)(1:16),Outp_nbit(j,k),
+     $             Outp_filtpass(j,k),Outp_filtcoef(j,k),'M'
+                kk=kk+1
+                p_bdyn_idx(kk)=i
+            endif
+            enddo
+         enddo
+      enddo
+      p_bdyn_out = kk
+      kk=0
+      if (Lun_out.gt.0)  then
+          write(Lun_out,1006)
+          write(Lun_out,1004)
+          write(Lun_out,1006)
+          write(Lun_out,902)
+      endif
+      do i = 1, P_bvol_top
+         do k=1, Outp_sets
+            do j=1,Outp_var_max(k)
+            if (Outp_varnm_S(j,k).eq.volnm(i)(1:16) .or.
+     $          Outp_varnm_S(j,k).eq.volon(i)(1:4)) then
+                Outp_var_S(j,k)= volon(i)(1:4)
+                if (Lun_out.gt.0) write(Lun_out,1007)
+     $             volon(i)(1:4),volnm(i)(1:16),Outp_nbit(j,k),
+     $             Outp_filtpass(j,k),Outp_filtcoef(j,k),'M'
+                kk=kk+1
+                p_bvol_idx(kk)=i
+            endif
+            enddo
+         enddo
+      enddo
+      p_bvol_out = kk
+      if (Lun_out.gt.0)  write(Lun_out,1006)
+c     print *,'P_bent_out=',P_bent_out
+c     print *,'P_bper_out=',P_bper_out
+c     print *,'P_bdyn_out=',P_bdyn_out
+c     print *,'P_bvol_out=',P_bvol_out
+
+
+      call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy,
+     $     Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow,
+     $     0,0,l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,
+     $     Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S,
+     $     int(Cstv_dt_8),Out1_date,Out1_etik_S, Out3_ndigits,
+     $     Pil_runstrt_S,
+     $     min(Step_total, Lctl_step+Step_rsti),Out3_flipit_L,Out3_debug_L)
+
       return
 *
-  900 format(/'+',25('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT    |',5x,'|')
-
-  901 format('|',1x,'Output Names',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
- 1000 format(/'+',25('-'),'+',17('-'),'+',5('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT    |',5x,'|')
- 2000 format(/'+',25('-'),'+',17('-'),'+',5('-'),'+'/'| CHEMIST VARIABLES REQUESTED FOR OUTPUT    |',5x,'|')
- 1002 format('|',1x,'Permanent   ',2x,'|',2x,'                      |')
- 1003 format('|',1x,'Dynamic Bus ',2x,'|',2x,'                      |')
- 1004 format('|',1x,'Volatile Bus',2x,'|',2x,'                      |')
- 1007 format('|',1x,'Entry    Bus',2x,'|',2x,'                      |')
- 1005 format('|',6x,a4,5x,'|',i5,'              |')
- 1008 format('|',6x,a4,5x,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
- 1006 format('+',15('-'),'+',9('-'),'+',8('-'),'+',8('-'),'+',5('-'))
+  900 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
+  901 format('|',1x,'OUTPUT',1x,'|',2x,'   OUTCFG   ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
+  902 format('|',1x,'OUTPUT',1x,'|',2x,'PHYSIC NAME ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
+ 1000 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
+ 1005 format('|',5X,'Entry     Bus ',40x, '|')
+ 1002 format('|',5X,'Permanent Bus ',40x, '|')
+ 1003 format('|',5X,'Dynamic   Bus ',40x, '|')
+ 1004 format('|',5X,'Volatile  Bus ',40x, '|')
+ 1006 format('+',8('-'),'+',16('-'),'+',9('-'),'+',8('-'),'+',8('-'),'+',5('-'))
+ 1007 format('|',2x,a4,2x,'|',a16,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
+ 1008 format('|',2x,a4,2x,'|',a4,12x,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
+ 2000 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| CHEMIST VARIABLES REQUESTED FOR OUTPUT     |',5x,'|')
  2001 format('* Note: NO filter is applied to 3D fields on M levels')
  3000 format(
      $    /,'SET_SOR - WARNING: OUTPUT REQUEST IS MORE FREQUENT THAN ',A8

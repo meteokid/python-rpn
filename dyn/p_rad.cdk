@@ -5,7 +5,7 @@
 * v2_32 - Dugas B.               - add P_rad_nivl
 * v3_02 - Dugas B.               - add P_rad_qco2
 * v3_03 - Leduc A-M.             - add P_rad_filter_L
-* v3_12 - Bilodeau B.            - character*8 to character*16
+* v3_20 - Bilodeau B.            - character*8 to character*16
 *
 ***comdeck p_rad.cdk
 *

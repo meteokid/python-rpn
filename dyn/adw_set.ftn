@@ -10,7 +10,7 @@
 *     alain patoine
 *
 *revision
-* v3_12 - Gravel & Valin & Tanguay - Lagrange 3D and optimized SETINT/TRILIN
+* v3_20 - Gravel & Valin & Tanguay - Lagrange 3D and optimized SETINT/TRILIN
 *
 *language
 *     fortran 77
@@ -422,7 +422,6 @@
 *     Initialization for localisation indices (used in optimized SETINT/TRILIN) 
 *     ------------------------------------------------------------------------- 
       call hpalloc( Adw_Fn_I_   , l_ni*l_nj*l_nk   , pnerr, 0 )
-      call hpalloc( Adw_Fn_I2_  , l_ni*l_nj*l_nk   , pnerr, 0 )
 *
       Adw_hor_L = .true.
       Adw_ver_L = .true.
@@ -434,7 +433,6 @@
          n = (k-1)*nij + ((j-1)*l_ni) + i
 *
          Adw_Fn_I (n) = transfer(-1,1.0) 
-         Adw_Fn_I2(n) = transfer(-1,1.0) 
 *
       enddo
       enddo

@@ -1,0 +1,181 @@
+<html>
+<body bgcolor="#FFFFFF">
+<pre class=text>
+<b>
+
+        ############# GEMDM Model -- Version 3.2.0 ###############
+                            January 20 2005
+</b>
+
+        Version 3.2.0 of the GEMDM dynamics is now ready and available 
+        in directories:
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.2.0/RCS_DYN"
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.2.0/RCS_4DVAR"
+	It is connected to RPN/CMC physics version 4.2 in directory:
+	      "$ARMNLIB/modeles/PHY/v_4.2/RCS:4.2"    
+
+############################################################################
+<b>
+MAIN FEATURES:
+</b>
+
+  There has been many significant changes in this version which do not
+  seem to change the meteorological results. This version will however
+  not bit reproduce results of version v_3.1.2. It is connected to
+  Physics version 4.2 so please refer to the Physics 4.2 release 
+  notes for details. Documentation on previous GEMDM releases can be
+  found in:
+
+  http://notos.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+  This note is available in the website under Version Rel. Date at v 3.2.0
+
+  Please note that there are additional files at this GEMDM website (v3.2.0)
+  which are related to this version:
+  "gem_settings.nml.txt" 
+  "outcfg.out.txt"
+  "configexp.cfg.txt"
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+                          IMPORTANT NOTE
+  The source code has been divided in 2 RCS with corresponding libraries.
+  The non-linear forward code is stored in $gem/RCS_DYN whereas the
+  4DVAR code is stored in $gem/RCS_4DVAR. The makefile load target for
+  the non-linear GEMDM is unchanged (make gemdm). An additional target
+  has been added to the Makefile in order to load an executable containing
+  4DVAR capabilities - make gem4d.
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+  Changes that affect run time computation:
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+1) New physics package (4.2) (Leduc/Bilodeau),
+
+2) New optimized advection code by Valin+Tanguay. Control keys for
+   this "turbo-advection" are in "gem_cfgs" namelist:
+      - Adw_nosetint_L (default = .false.) when set to .true.
+        this option activates an optimized version of subroutine
+        adw_main_2_pos.ftn. The better performance will mainly be
+        noticed under TL and AD configurations,
+      - Adw_lag3d_L (default = .false.) when set to .true. this
+        option activates the Lagrange cubic interpolation
+        in the vertical. With this option both horizontal and
+        vertical interpolations have been optimized,
+
+3) System library "MASSVP4" has been upgraded since Sept.27 thus, 
+   comparison with previous operational executables will definitely 
+   not bit pattern validate,
+
+4) Important correction in the computation of vertical velocity in 
+   pressure coordinate - impacts the physics behaviour   (Gravel),
+
+5) For LAM only, blending with lateral boundary conditions is enlarged
+   by 1 point around global boundaries (Desgagne),
+
+6) Bugfixes:
+    - vertical sponge: correction to indexing 
+    - computation of dzmin in p_vmmphy.ftn
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+  Major changes to the output package affecting final result 
+  and format of output. Output requests and configuration are 
+  also affected:  (Lee & Desgagne)
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+1) Output is no longer in SLAB files. The model directly produces 
+   FSTD RPN file format using grid type '#'. Moreover it is now possible
+   to put more than 1 timeframe per file and to produce less files than
+   the actual number of processor used for the run. This is made possible
+   by the use of regular block partioning of the PEs themselves with
+   "ptopo" namelist variables Ptopo_nblocx and Ptopo_nblocy.
+
+     ex: Ptopo_npex   = 4, Ptopo_npey   = 8,
+         Ptopo_nblocx = 2, Ptopo_nblocy = 4,
+
+   will block partition the 32 PEs into 8 regular blocks of 2x2 PEs.
+   Output of the whole domain would here produce 8 files. Of course
+   this reduction in the number of output files is done at the cost
+   of extra communications in order to collect the data. This can
+   however be minimized through a wise choice of Ptopo_nbloc* that
+   would actually minimized inter-node communications.
+
+   The "delamineur" program is no longer used but the "bemol" program 
+   can still be used to re-assemble the global domain (d2z=1 in configexp.dot.cfg).
+
+   The number of PEs must be divisible into the number of blocks on each
+   axis i.e. mod(Ptopo_npex,Ptopo_nblocx)=0 and mod(Ptopo_npey,Ptopo_nblocy)=0.
+   Be aware that an output of 4x8 versus 2x4 will look slightly different 
+   because of the compaction of FSTD files. The filtered fields are also 
+   slightly changed because they were previously scaled before being filtered 
+   in v_3.1.2 and now, it is the reverse.
+
+2) Output requests and configuration have changed in two files.
+   a) in gem_cfgs namelist
+      All keys names Out_??? are changed to Out3_???
+      Out_xnbit and Out_filt keys are deleted and the control is now
+      in "outcfg.out" file. There are 3 more new keys:
+      (i)   Out3_ip3     - to change value of IP3 written in output
+      (ii)  Out3_debug_L - control of stdio from FSTD functions
+      (iii) Out3_etik_S  - change "etiket" given in GEMNTR during GEMDM run
+      (iv)  Out3_closestep-requested number of steps to close output file
+      See gem_settings.nml.txt.
+
+   b) in outcfg.out file
+      new output command to control special compaction on certain fields
+      ie:xnbit([GZ,P0],bits,32)
+      new output command to control special filter on certain fields
+      ie: filtre([PN,GZ,TT], coef, 0.5, pass,2)
+
+      user must now request physics fields using the command "sortie_p"
+      and can use the variable names given in the first OR second column
+      of the physics buses descriptions in the listing of the runs.
+      ie: sortie_p([MF,MY,MG,ALVIS,LA,DLON,WFLUX,N2],grid,1,levels,1,steps,2)
+
+      Variables requested under "sortie" are considered to be from dynamics.
+
+      Definition of grid other than size of model or core is now defined
+      with "reduc".
+
+      Please read the file "outcfg.out.txt" for more details
+
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+   Other Changes related to new schemes and/or packages:
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+1) GEMDM offline mode (MEC). (P. Pellerin & Delage)
+   E_schm_offline_L (default = .false.)
+
+2) Patch for the surface prognostic variables when running without 
+   physics (Gravel) 
+   Schm_sfix_L (default = .false.)
+
+3) Background vertical diffusion (Gravel)
+   Vrtd_L (default = .false.)
+
+4) Updated canonical cases (Gravel)
+
+5) 4Dvar for operational implementation (Tanguay,Buehner,Zadra)
+
+6) Re-introduction of variable diffusion operator (Toviessi & Qaddouri)
+   Hzd_difva_L (default = .false.)
+
+7) New keys to control physics v_4.2:
+   P_pbl_impflx_L     - implicit surface fluxes                 (default = .false.)
+   P_pbl_z0tlat       - latitude used to specify Z0T over water (default = 0.,0.  )
+   P_cond_pcptype_S   - PCPTYPE                                 (default = 'NIL'  )
+   P_cond_kticefrac_L - ice fraction                            (default = .true. )
+
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+   Sample run configurations can be found at $gem/run_configs
+   Sample analysis given in these examples are not guaranteed to exist
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+
+############################################################################
+    
+</pre>
+</body>
+</html>
+

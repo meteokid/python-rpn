@@ -1,6 +1,0 @@
-      subroutine v4d_predat1_ad
-*
-      call gem_stop('v4d_predat1_ad',-1)
-*
-      return
-      end

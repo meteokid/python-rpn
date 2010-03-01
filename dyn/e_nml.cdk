@@ -18,9 +18,10 @@
      $     E_geol_hss    , E_geol_hsn    , E_geol_hse    , E_geol_hsw  ,
      $     E_geol_hsea   , E_geol_poin   , E_geol_modex_L,
      $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L,
-     $     E_tr3d_list_S, E_trvs_list_S,
+     $     E_tr3d_list_S, E_trvs_list_S, 
+     $     E_schm_offline_L,Offline_ip1a, Offline_int_accu_S,
      $     Pil_runstrt_S, Pil_nesdt,Pil_datacvrg, Pil_ctebcs_L,
-     $     Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx,e_schm_offline_L,
+     $     Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx,
      $     Hblen_wfct_S
 *
       namelist /gement_p/
@@ -32,8 +33,9 @@
      $     E_geol_gls    , E_geol_gln    , E_geol_gle    , E_geol_glw  ,
      $     E_geol_hss    , E_geol_hsn    , E_geol_hse    , E_geol_hsw  ,
      $     E_geol_hsea   , E_geol_poin   , E_geol_modex_L,
-     $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L,
+     $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L, 
+     $     E_schm_offline_L,Offline_ip1a, Offline_int_accu_S,
      $     Pil_runstrt_S, Pil_nesdt,Pil_datacvrg, Pil_ctebcs_L,
-     $     Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx,e_schm_offline_L,
+     $     Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx,
      $     Hblen_wfct_S
 *

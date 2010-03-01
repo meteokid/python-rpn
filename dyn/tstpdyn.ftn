@@ -18,6 +18,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
 *
 *object
 *    
@@ -37,6 +38,7 @@
 #include "sol.cdk"
 #include "nl.cdk"
 #include "v4dg.cdk"
+#include "v4dr.cdk"
 *
       integer iln, dim, err
       real dth
@@ -131,6 +133,15 @@
          call tmg_start ( 7, 'SOL' )
          call sol_main ()
          call tmg_stop (7)
+*
+         if ( V4dg_conf.ne.0 .and. V4dg_oktr_L .and. .not.V4dr_redotr_L  ) then
+*
+*           Store TRAJ GPTX at end of SOL_MAIN
+*           ----------------------------------
+            V4dr_iln = iln
+            call v4d_rwtraj (9)
+*
+         endif
 *
          call tmg_start ( 8, 'BAC' )
          call bac ( iln, Schm_itnlh )

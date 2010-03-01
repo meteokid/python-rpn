@@ -24,9 +24,6 @@
 *implicits
 #include "lun.cdk"
 #include "rstr.cdk"
-#include "lctl.cdk"
-#include "path.cdk"
-#include "ptopo.cdk"
 *
 **
       integer fnom,wkoffit

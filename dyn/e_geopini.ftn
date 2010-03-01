@@ -93,8 +93,6 @@
      $'VN=z0en    ; VS=row  ; EN=zp; INTERP=LINEAR; SEQ=G' )
       call mgsdict (ni, nj, snodp, 
      $'VN=snodpen ; VS=row  ; EN=sd; INTERP=NEAREST ; SEQ=AV')
-      call mgsdict (ni, nj, i0,     
-     $'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
       call mgsdict (ni, nj, vegf,  
      $'VN=vegfen ; VS=row*26; EN=vf; INTERP=NEAREST ; SEQ=G' )
 *
@@ -130,6 +128,8 @@
 *  FOR FORCE-RESTORE
 *
       if (P_pbl_schsl_s.eq.'FCREST') then
+         call mgsdict (ni, nj, i0,     
+     $    'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
 *
       if (.not. E_geol_hscon_L) then
          k1 = fstinf (e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
@@ -181,6 +181,8 @@
 *  FOR ISBA
 *
       if (P_pbl_schsl_s.eq.'ISBA') then
+        call mgsdict (ni, nj, i0,
+     $   'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
         call mgsdict (ni, nj, wsoil, 
      $  'VN=wsoilen; VS=row*2 ; EN=i1; INTERP=NEAREST  ; SEQ=A' )
         call mgsdict (ni, nj, isoil, 
@@ -205,6 +207,8 @@
       endif
 *
       if (P_pbl_schsl_s.eq.'CLASS') then
+         call mgsdict (ni, nj, i0,
+     $    'VN=tsoilen ; VS=row*3; EN=i0; INTERP=LINEAR; SEQ=AV')
         call mgsdict (ni, nj, wsoil,
      $  'VN=wsoilen; VS=row*3 ; EN=i1; INTERP=NEAREST  ; SEQ=A' )
         call mgsdict (ni, nj, isoil,

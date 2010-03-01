@@ -20,9 +20,8 @@
 *
 *     (Based on adw_tricub v_3.1.1)
 *      
-*
 *revision
-* v3_12 - Gravel & Valin & Tanguay - initial version 
+* v3_20 - Gravel & Valin & Tanguay - initial version 
 *
 *object
 *     see id section
@@ -74,10 +73,13 @@
 *
       if(F_mono_L) then
 *
-!$omp parallel do private(a1, a2, a3, a4, b1, b2, b3, b4,
-!$omp& c1, c2, c3, c4, d1, d2, d3, d4 ,p1, p2, p3, p4, prmin
-!$omp& , prmax, n, o1, o2, o3, o4)
 *
+!$omp parallel private(n,i,j,k,
+!$omp&  ii,jj,kk,zcubic_L,prmin,prmax,
+!$omp&  o1, o2, o3, o4 , a1, a2, a3, a4 , b1, b2, b3, b4,
+!$omp&  c1, c2, c3, c4 , d1, d2, d3, d4 , p1, p2, p3, p4,
+!$omp&  rri,rrj,rrk,ra,rb,rc,rd)
+!$omp do
       do 100 k=1,kn
       do  90 j=j0,jn
       do  80 i=i0,in
@@ -205,13 +207,17 @@
    80 continue
    90 continue
   100 continue
-!$omp end parallel do 
+!$omp enddo
+!$omp end parallel
 *
       else
 *
-!$omp parallel do private(a1, a2, a3, a4, b1, b2, b3, b4,
-!$omp& c1, c2, c3, c4, d1, d2, d3, d4 ,p1, p2, p3, p4, prmin
-!$omp& , prmax, n, o1, o2, o3, o4)
+!$omp parallel private(n,i,j,k,
+!$omp&  ii,jj,kk,zcubic_L,prmin,prmax,
+!$omp&  o1, o2, o3, o4 , a1, a2, a3, a4 , b1, b2, b3, b4,
+!$omp&  c1, c2, c3, c4 , d1, d2, d3, d4 , p1, p2, p3, p4,
+!$omp&  rri,rrj,rrk,ra,rb,rc,rd)
+!$omp do
 *
       do 101 k=1,kn
       do  91 j=j0,jn
@@ -334,7 +340,8 @@
    81 continue
    91 continue
   101 continue
-!$omp end parallel do
+!$omp enddo
+!$omp end parallel
 *
       endif
 *

@@ -24,6 +24,7 @@
 * v3_00 - Laroche S.        - adaptation to include simplified physics
 * v3_02 - Plante A.         - water loading
 * v3_03 - Desgagne M.       - new switches for secondary tendencies
+* v3_20 - Laroche S.        - slight modification to rpn_comm_xch_halo call
 *
 *object
 *	apply consistency of the tendencies on physics variables
@@ -200,9 +201,9 @@
             end do
             end do
             end do
-            call rpn_comm_xch_halo( F_tdu, LDIST_DIM, l_ni, l_nj,G_nk,
+            call rpn_comm_xch_halo( F_tdu, LDIST_DIM, l_niu, l_nj,G_nk,
      $                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            call rpn_comm_xch_halo( F_tdv, LDIST_DIM, l_ni, l_nj,G_nk,
+            call rpn_comm_xch_halo( F_tdv, LDIST_DIM, l_ni, l_njv,G_nk,
      $                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
             call uv2tdpsd ( F_qp, wk3, F_tdu, F_tdv,st1,LDIST_DIM,G_nk )

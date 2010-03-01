@@ -18,6 +18,8 @@
 * v3_00 - Qaddouri & Lee    - Lam configuration
 * v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
 * v3_01 - Lee V.            - add setup for horizontal sponge
+* v3_20 - Qaddouri/Toviessi - variable higher order diffusion operator
+* v3_20 - Tanguay M.        - 1d higher order diffusion operator
 *
 *object
 *     see id section
@@ -41,12 +43,14 @@
 #include "hspng.cdk"
 #include "ptopo.cdk"
 *      
-      integer i,j,k,istat,dim,dpwr,Gni,NSTOR
+      integer i,j,k,istat,dim,dpwr,Gni,Gnj,NSTOR,dimx
       real*8, dimension(:)  ,allocatable :: wk1_8,wk2_8
       real*8 ZERO_8, ONE_8, HALF_8
       real*8 c_8, gdx_8
       PARAMETER( ZERO_8 = 0.0 , ONE_8  = 1.0 , HALF_8 = 0.5 )
 **
+*     ---------------------------------------------------------------
+      real*8, dimension(:), allocatable:: h0_8,h0t_8,h2_8,h2t_8
 *     ---------------------------------------------------------------
 *
 *
@@ -54,6 +58,7 @@
 *     the pilot region for LAM
 
       Gni=G_ni-Lam_pil_w-Lam_pil_e
+      Gnj = G_nj-Lam_pil_s-Lam_pil_n
 *
       Hzd_fact_L = .false.
       Hzd_ho_L   = .false.
@@ -71,6 +76,57 @@
          call hpalloc(VAR_PTR(Hzd_xp2_8)      ,3*G_ni*2,istat,1)
          call hpalloc(VAR_PTR(Hzd_yp0_8)      ,3*G_nj*2,istat,1)
          call hpalloc(VAR_PTR(Hzd_yp2_8)      ,3*G_nj*2,istat,1)
+*
+         if (Hzd_1d_L) call hpalloc(VAR_PTR(Hz1d_yp2_8)      ,3*G_nj*2,istat,1) 
+
+*_____________________________________________________________________________
+*NOTES relative a la difusion hizon. variable:
+*------
+*  1) calcul de xp0 et xp2
+*     Comme g0_8 == g0t_8 == 1.0 on a alors Hzd_xp0sv_8 == opr_opsxp0
+*                               Hzd_xp2sv_8 == opr_opsxp2
+*        et                     hzd_xp0_8 ne change pas  pour U
+*                               Hzd_xp2_8  == hzd_xp2_8 pour U
+*        donc on ne reacule pas hzd_xp0_8
+*        et on utilise les valeurs calculees de opr_opsxp0, opr_opsxp2,hzd_xp2_8
+*        on utilise aussi les valeurs Hzd_xeval_8 qui auraient ete
+*          Hzd_xevalsv_8 et Hzd_xeval_8 si g0_8 # 1.0 # g0t_8.
+*        de plus on utilise aussi les valeurs Hzd_xevec_8 qui auraient ete
+*          Hzd_xevecsv_8 et Hzd_xevec_8 si g0_8 # 1.0 # g0t_8.
+*                                                Hzd_xevecsv_8,Hzd_xevec_8
+*  2) calcul de yp2 (remarque yp0 ne change pas ): On doit recalculer
+*      opr_opsyp2 dans Hzd_yp2su ( pour S et U) et Hzd_yp2 pour V
+*
+
+         call hpalloc(VAR_PTR(Hzd_yp2su_8 )   ,3*G_nj*2,istat,1)
+*
+         if (Hzd_1d_L) call hpalloc(VAR_PTR(Hz1d_yp2su_8 )   ,3*G_nj*2,istat,1)
+*
+         allocate (h0_8( G_nj*2),h0t_8(G_nj*2),h2_8(G_nj*2)
+     %         ,h2t_8(G_nj*2))
+         if (Hzd_difva_L) then
+           do i = 1, G_nj
+             h0_8(i)  = ONE_8 / (ONE_8 + 2*((cos(G_yg_8(i)))**2))
+             h0t_8(i) = ONE_8 / (ONE_8 + 2*((cos(G_yg_8(i)))**2))
+*            h0 == h2 and h2t == h0t
+             h2_8(i)  = h0_8(i)
+             h2t_8(i) = h0t_8(i)
+           enddo
+
+           do j = 1, 3*G_nj
+              Hzd_yp2su_8 (j) = ZERO_8
+           end do
+*
+         else
+           do i = 1, G_nj
+             h0_8(i)  = ONE_8
+             h0t_8(i) = ONE_8
+*            h0 == h2 and h2t == h0t
+             h2_8(i)  = h0_8(i)
+             h2t_8(i) = h0t_8(i)
+           enddo
+         endif
+*_____________________________________________________________________________
 
          do i = 1, 3*G_ni
             Hzd_xp0_8(i) = ZERO_8
@@ -108,24 +164,56 @@
          end do
 *
          j=1+Lam_pil_s
-         Hzd_yp2_8(2*G_nj+j)= (cos(G_yg_8(j+1))**2)/(
+         Hzd_yp2_8(2*G_nj+j)= ((cos(G_yg_8(j+1))**2)*h2_8(j+1))/(
      %                      sin((G_yg_8(j+2)+G_yg_8(j+1  ))* HALF_8)-
      %                      sin((G_yg_8(j  )+G_yg_8(j+1))* HALF_8))
          Hzd_yp2_8(G_nj+j) =-Hzd_yp2_8(2*G_nj+j)
 
          do j = 2+Lam_pil_s, G_njv-1-Lam_pil_n
-            Hzd_yp2_8(2*G_nj+j)= (cos(G_yg_8(j+1))**2)/(
+            Hzd_yp2_8(2*G_nj+j)= ((cos(G_yg_8(j+1))**2)*h2_8(j+1))/(
      %                          sin((G_yg_8(j+2)+G_yg_8(j+1))* HALF_8)-
      %                          sin((G_yg_8(j+1)+G_yg_8(j  ))* HALF_8))
-            Hzd_yp2_8(j) = (cos(G_yg_8(j))**2)/(
+            Hzd_yp2_8(j) = ((cos(G_yg_8(j))**2)*h2_8(j-1))/(
      %                      sin((G_yg_8(j+1)+G_yg_8(j  ))* HALF_8)-
      %                      sin((G_yg_8(j  )+G_yg_8(j-1))* HALF_8))
             Hzd_yp2_8(G_nj+j) = - (Hzd_yp2_8(j) + Hzd_yp2_8(2*G_nj+j))
          enddo
 
          j=G_njv-Lam_pil_n
-         Hzd_yp2_8(j) =Hzd_yp2_8(2*G_nj+j-1)
+         Hzd_yp2_8(j) = h2_8(j-1)*Hzd_yp2_8(2*G_nj+j-1)
          Hzd_yp2_8(G_nj+j) = - (Hzd_yp2_8(j) + Hzd_yp2_8(2*G_nj+j))
+*
+         if (Hzd_1d_L) then
+             do j=1,3*G_nj
+                Hz1d_yp2_8(j) = ZERO_8
+             enddo
+         endif
+*
+*_____________________________________________________________________________
+*
+         if (Hzd_difva_L) then
+            allocate ( wk1_8(Gnj) )
+            do j = 1+Lam_pil_s, G_nj-1-Lam_pil_n
+               wk1_8(j-Lam_pil_s) = (sin (G_yg_8(j+1))-sin(G_yg_8(j))) /
+     $             (cos ((G_yg_8(j+1)+G_yg_8(j))*HALF_8)**2)
+            end do
+            allocate ( wk2_8(Gnj*3) )
+            call hzd_set_ops8(wk2_8,wk1_8,ZERO_8,G_periody,Gnj,Gnj,1,h2t_8)
+            do j=1,Gnj
+               Hzd_yp2su_8(j+Lam_pil_s)=wk2_8(j)
+               Hzd_yp2su_8(G_nj+j+Lam_pil_s)=wk2_8(Gnj+j)
+               Hzd_yp2su_8(G_nj*2+j+Lam_pil_s)=wk2_8(Gnj*2+j)
+            enddo
+            deallocate (wk1_8, wk2_8 )
+*
+            if (Hzd_1d_L) then
+                do j=1,3*G_nj
+                   Hz1d_yp2su_8(j) = ZERO_8
+                enddo
+            endif
+*
+         endif
+*_____________________________________________________________________________
 *
          if (Hzd_fact_L.or.Hspng_nj.gt.0) then
 *
@@ -214,6 +302,13 @@
             call hpalloc(Hzd_cs_8_    , dim, istat, 1)
             call hpalloc(Hzd_deltas_8_, dim, istat, 1)
 *
+            if (Hzd_1d_L) then
+                dimx= G_ni * G_nj * dpwr*dpwr * 2 
+                call hpalloc(Hz1d_deltau_8_, dimx, istat, 1)
+                call hpalloc(Hz1d_deltav_8_, dimx, istat, 1)
+                call hpalloc(Hz1d_deltas_8_, dimx, istat, 1)
+            endif
+*
             c_8= 1.E+32
             if(max(G_ni,2*G_nj).eq.G_ni) then
                do i = 1+Lam_pil_w, G_ni-Lam_pil_e
@@ -237,19 +332,13 @@
             enddo
             do j = 1+Lam_pil_s, G_nj-Lam_pil_n
                wk1_8 (       j) = ZERO_8
-               wk1_8 (  G_nj+j) = Opr_opsyp0_8(G_nj+j)/cos(G_yg_8(j))**2
+               wk1_8 (  G_nj+j) = Opr_opsyp0_8(G_nj+j)*h0_8(j)/cos(G_yg_8(j))**2
                wk1_8 (2*G_nj+j) = ZERO_8
                wk2_8 (       j) = ZERO_8
-               wk2_8 (  G_nj+j) = (sin(G_yg_8(j+1))-sin(G_yg_8(j)))/
+               wk2_8 (  G_nj+j) = (sin(G_yg_8(j+1))-sin(G_yg_8(j)))*h0t_8(j)/
      %               ( cos ( (G_yg_8(j+1  )+G_yg_8(j))* HALF_8) **2)
                wk2_8 (2*G_nj+j) = ZERO_8
             end do
-*
-            if (Lun_debug_L) print *,'HZD_DELPWR on U'
-            call hzd_delpwr (Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,dpwr,
-     $                       trp_22min,trp_22max,G_nj,trp_22n,trp_22n0,
-     $                       Opr_opsyp0_8,Opr_opsyp2_8,wk1_8,
-     $                       Hzd_xeval_8, Hzd_cdiff)
 *
             if (Lun_debug_L) print *,'HZD_DELPWR on V'
             call hzd_delpwr (Hzd_av_8,Hzd_cv_8,Hzd_deltav_8,dpwr,
@@ -257,14 +346,66 @@
      $                       Hzd_yp0_8,Hzd_yp2_8,wk2_8,
      $                       Opr_xeval_8, Hzd_cdiff)
 *
-            if (Lun_debug_L) print *,'HZD_DELPWR on scalar'
-            call hzd_delpwr (Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,dpwr,
+            if (Hzd_difva_L) then
+               if (Lun_debug_L) print *,'HZD_DELPWR on U'
+               call hzd_delpwr (Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,dpwr,
+     $                       trp_22min,trp_22max,G_nj,trp_22n,trp_22n0,
+     $                       Opr_opsyp0_8,Hzd_yp2su_8,wk1_8,
+     $                       Hzd_xeval_8, Hzd_cdiff)
+*
+               if (Lun_debug_L) print *,'HZD_DELPWR on scalar'
+               call hzd_delpwr (Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,dpwr,
+     $                       trp_22min,trp_22max,G_nj,trp_22n,trp_22n0,
+     $                       Opr_opsyp0_8,Hzd_yp2su_8,wk1_8,
+     $                       Opr_xeval_8, Hzd_cdiff)
+            else
+               if (Lun_debug_L) print *,'HZD_DELPWR on U'
+               call hzd_delpwr (Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,dpwr,
+     $                       trp_22min,trp_22max,G_nj,trp_22n,trp_22n0,
+     $                       Opr_opsyp0_8,Opr_opsyp2_8,wk1_8,
+     $                       Hzd_xeval_8, Hzd_cdiff)
+*
+               if (Lun_debug_L) print *,'HZD_DELPWR on scalar'
+               call hzd_delpwr (Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,dpwr,
      $                       trp_22min,trp_22max,G_nj,trp_22n,trp_22n0,
      $                       Opr_opsyp0_8,Opr_opsyp2_8,wk1_8,
      $                       Opr_xeval_8, Hzd_cdiff)
+            endif
+*
+            if (Hzd_1d_L) then
+*
+               if (Lun_debug_L) print *,'HZD_DELPWR 1D on V'
+               call hzd_delpwr_1d (Hz1d_deltav_8,dpwr,G_ni,G_nj,
+     $                          Hzd_yp0_8,Hz1d_yp2_8,wk2_8,
+     $                          Opr_xeval_8, Hzd_cdiff)
+*
+               if (Hzd_difva_L) then
+                  if (Lun_debug_L) print *,'HZD_DELPWR 1D on U'
+                  call hzd_delpwr_1d (Hz1d_deltau_8,dpwr,G_ni,G_nj,
+     $                          Opr_opsyp0_8,Hz1d_yp2su_8,wk1_8,
+     $                          Hzd_xeval_8, Hzd_cdiff)
+*
+                  if (Lun_debug_L) print *,'HZD_DELPWR 1D on scalar'
+                  call hzd_delpwr_1d (Hz1d_deltas_8,dpwr,G_ni,G_nj,
+     $                          Opr_opsyp0_8,Hz1d_yp2su_8,wk1_8,
+     $                          Opr_xeval_8, Hzd_cdiff)
+               else
+                  if (Lun_debug_L) print *,'HZD_DELPWR 1D on U'
+                  call hzd_delpwr_1d (Hz1d_deltau_8,dpwr,G_ni,G_nj,
+     $                          Opr_opsyp0_8,Opr_opsyp2_8,wk1_8,
+     $                          Hzd_xeval_8, Hzd_cdiff)
+*
+                  if (Lun_debug_L) print *,'HZD_DELPWR 1D on scalar'
+                  call hzd_delpwr_1d (Hz1d_deltas_8,dpwr,G_ni,G_nj,
+     $                          Opr_opsyp0_8,Opr_opsyp2_8,wk1_8,
+     $                          Opr_xeval_8, Hzd_cdiff)
+               endif
+*
+            endif
 *
             deallocate (wk1_8,wk2_8)
          endif
+         deallocate (h0_8,h0t_8,h2_8,h2t_8)
       else
          if (Lun_out.gt.0) write(Lun_out,1003)
       endif

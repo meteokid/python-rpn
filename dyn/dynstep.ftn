@@ -18,7 +18,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Tanguay M.        - Adjoint Lam configuration
 * v3_11 - Gravel S.         - provide for variable topography
-* v3_13 - Pellerin P.       - schm_offline_l: allow to run 
+* v3_20 - Pellerin P.       - schm_offline_l: allow to run 
 *                             without the dynamical kernel
 *
 *object

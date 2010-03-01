@@ -28,7 +28,9 @@
 * v3_11 - Desgagne M.       - add P_pbl_impflx_L
 * v3_12 - Plante A.         - add P_cond_pcptype_s
 * v3_12 - Bilodeau B.       - modify P_cond_kfctrig
-* v3_12 - Leduc/Bilodeau    - add P_pbl_z0tlat
+* v3_20 - Leduc/Bilodeau    - add P_pbl_z0tlat, delete P_pbl_z0tcst
+* v3_20 - Leduc/Bilodeau    - add P_cond_kticefrac_L
+* v3_20 - Pellerin/Delage   - add P_pbl_zua,zta for Schm_offline_L
 *
 *object
 *     See above id.
@@ -120,6 +122,10 @@
       call phyoptr('AS'      , P_pbl_as       ,       1, 'SET' )
       call phyoptr('BETA'    , P_pbl_beta     ,       1, 'SET' )
       call phyoptr('Z0TLAT'   ,P_pbl_z0tlat   ,       2, 'SET' )
+      if (Schm_offline_L) then
+      call phyoptr('ZUA'     , P_pbl_zua      ,       1, 'SET' )
+      call phyoptr('ZTA'     , P_pbl_zta      ,       1, 'SET' )
+      endif
 *
       call phyoptc('GWDRAG'  , p_gwd_s        ,       1, 'SET' )
 *

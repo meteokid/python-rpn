@@ -13,6 +13,8 @@
 *                    | requested from the physics                      |
 * Outp_var_S         | A table containing "Outp_sets" sets of output   |
 *                    | variables requested from the physics            |
+* Out_varnm_S        | A table containing "Outp_sets" sets of output   |
+*                    | variables (longname) requested from the physics |
 * Outp_nbit          | A table containing "Outp_sets" sets of compact  |
 *                    | bit corresponding to Outp_var_S                 |
 * Outp_filtpass      | A table containing "Outp_sets" sets of filter   |
@@ -27,13 +29,12 @@
 *                    | the Grid set to use for Outp_var(*,j)           |
 * Outp_step          | Outp_step(i) contains the index that indicates  |
 *                    | the Step set to use for Outp_var(*,j)           |
-* Outp_typvar_S      | Outp_typvar_S(i) is the assigned datatype for   |
-*                    | the fields defined in Outp_var(*,j)             |
 *----------------------------------------------------------------------
 *
 #endif
 
       character*4 Outp_var_S(MAXELEM,MAXSET)
+      character*16 Outp_varnm_S(MAXELEM,MAXSET)
       logical Outp_dostep_L(MAXSET)
       integer Outp_nbit(MAXELEM,MAXSET)
       integer Outp_filtpass(MAXELEM,MAXSET)
@@ -43,7 +44,6 @@
       integer Outp_step(MAXSET)
       integer Outp_var_max(MAXSET)
       integer Outp_sets
-      character*1 Outp_typvar_S(MAXSET)
 
       COMMON /Outp_l/ Outp_dostep_L
       MARK_COMMON_BEG (Outp)
@@ -51,7 +51,7 @@
      $              Outp_var_max, Outp_sets,Outp_nbit,Outp_filtpass
       MARK_COMMON_END (Outp)
       MARK_COMMON_BEG (Outp_c)
-      COMMON /Outp_c/ Outp_var_S,Outp_typvar_S
+      COMMON /Outp_c/ Outp_varnm_S,Outp_var_S
       MARK_COMMON_END (Outp_c)
       MARK_COMMON_BEG (Outp_r)
       COMMON /Outp_r/ Outp_filtcoef

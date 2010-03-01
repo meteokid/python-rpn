@@ -33,7 +33,7 @@
 * v3_02 - Plante A.         - Further clean up and introduction of
 *                             water loading via virtual temperature.
 * v3_12 - Leduc A-M         - Add arguments gzm and topo
-* v3_13 - Pellerin P.       - To allow the off-line mode
+* v3_20 - Pellerin P.       - To allow the off-line mode
 *
 *object
 *	Fill the slice workspace variable for the physics.
@@ -70,11 +70,14 @@
 #include "p_bus.cdk"
 #include "busind.cdk"
 #include "schm.cdk"
+#include "tr3d.cdk"
 *
 *notes
 *
       integer i, k, n, m, ii, indx, offp, offg, pid, gid, mul, tlevel
+      integer ntr
       real con, sumqj(p_ni,Nk,2), tpm(p_ni*Nk,2)
+      real somme, pcpmoy
 **
 *     ---------------------------------------------------------------
 *
@@ -131,10 +134,10 @@
                F_busdyn(vplus +indx) = F_vp (ii,F_jdo,k) * con
                tpm(indx+1,1)         = F_tp (ii,F_jdo,k)
                F_busdyn(tplus +indx) = F_tp (ii,F_jdo,k)
-               F_busdyn(umoins+indx) = F_up (ii,F_jdo,k) * con
-               F_busdyn(vmoins+indx) = F_vp (ii,F_jdo,k) * con
-               tpm(indx+1,2)         = F_tp (ii,F_jdo,k)
-               F_busdyn(tmoins+indx) = F_tp (ii,F_jdo,k)
+               F_busdyn(umoins+indx) = F_um (ii,F_jdo,k) * con
+               F_busdyn(vmoins+indx) = F_vm (ii,F_jdo,k) * con
+               tpm(indx+1,2)         = F_tm (ii,F_jdo,k)
+               F_busdyn(tmoins+indx) = F_tm (ii,F_jdo,k)
                F_busdyn(gzmoins6+indx)= F_gzm(ii,F_jdo,k) - F_topo(ii,F_jdo)
                F_busdyn(omegap+indx) = F_wp (ii,F_jdo,k)
                F_busdyn(sigm  +indx) = F_sig(ii,F_jdo,k)
@@ -161,9 +164,9 @@
                   indx = i-1
                   ii = i + p_offi
                   F_busper(FLUSOLIS  + indx)= F_trp(ii,F_jdo,1,n)
-c                  F_busvol(FLUSOLIS  + indx)= F_trp(ii,F_jdo,1,n)
                end do
-            else if (phyt_name_S(n).eq.'RT'.or.phyt_name_S(n).eq.'PR') then
+            else if (phyt_name_S(n).eq.'RT'.or.phyt_name_S(n).eq.'PR'
+     $               .or.phyt_name_S(n).eq.'PR0') then
                do i= 1, p_ni
                   indx = i-1
                   ii = i + p_offi
@@ -179,7 +182,7 @@ c                  F_busvol(FLUSOLIS  + indx)= F_trp(ii,F_jdo,1,n)
                end do
                end do
             endif
-         end do
+	  end do
 *
       endif
 

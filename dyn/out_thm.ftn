@@ -86,13 +86,14 @@
       real px_pres(F_ninj,F_nko)
       real hu_pres(F_ninj,F_nko)
       real td_pres(F_ninj,F_nko)
+      real th_pres(F_ninj,F_nko)
       real w5(F_ninj,F_nko)
       real prprlvl(F_nko)
       real tt_pres(F_ninj,F_nko)
       real vt_pres(F_ninj,F_nko)
       real htx(F_ninj,Out3_nundr)
       real ttx(F_ninj,Out3_nundr)
-      real px(F_ninj,F_nk)
+      real px(F_ninj,F_nk), th(F_ninj,F_nk)
       real tt(F_ninj,F_nk), t8(F_ninj,F_nk),
      $     vt(F_ninj,F_nk), gz(F_ninj,F_nk)
       real gz_temp(F_ninj,F_nk),tt_temp(F_ninj,F_nk)
@@ -107,6 +108,7 @@
      $        pnhr,pnpx,pnhu,pntw,pnqc,
      $        pnpn,pnpt,pnp0,pnla,pnlo,
      $        pnme,pnmx,pnww,pnwe,pnzz,
+     $        pnth,
      $        psum
       integer nbit(0:Outd_var_max(F_set)+1),filt(0:Outd_var_max(F_set)+1)
       real    coef(0:Outd_var_max(F_set)+1)
@@ -157,6 +159,7 @@
       pnww=0
       pnwe=0
       pnzz=0
+      pnth=0
 
       do ii=0,Outd_var_max(F_set)
          coef(ii)=0.0
@@ -185,6 +188,7 @@
         if (Outd_var_S(ii,F_set).eq.'WW') pnww=ii
         if (Outd_var_S(ii,F_set).eq.'WE') pnwe=ii
         if (Outd_var_S(ii,F_set).eq.'ZZ') pnzz=ii
+        if (Outd_var_S(ii,F_set).eq.'TH') pnth=ii
         nbit(ii)=Outd_nbit(ii,F_set)
         filt(ii)=Outd_filtpass(ii,F_set)
         coef(ii)=Outd_filtcoef(ii,F_set)
@@ -193,7 +197,7 @@
       if (pnpt.ne.0.and.Grd_rcoef.ne.1.0) pnpt=0
 
       psum=pngz+pnvt+pntt+pnes+pntd+pnhr+pnpx+pnhu+pntw+pnqc+
-     $     pnpn+pnpt+pnp0+pnla+pnlo+pnme+pnmx+pnww+pnwe+pnzz
+     $     pnpn+pnpt+pnp0+pnla+pnlo+pnme+pnmx+pnww+pnwe+pnzz+pnth
 
       if (psum.eq.0)return
 
@@ -245,10 +249,9 @@
 *     2.0    Output 2D variables 
 *_________________________________________________________________
 *
-      if (pnme.ne.0) then
-          call ecris_fst2(gz,l_minx,l_maxx,l_miny,l_maxy,0.0,
+      if (pnme.ne.0)
+     $    call ecris_fst2(gz,l_minx,l_maxx,l_miny,l_maxy,0.0,
      $        'ME  ',prmult_pnme,0.0,-1,1, F_nk, 1, nbit(pnme) )
-      endif
       if (pnmx.ne.0)
      $    call ecris_fst2(gz,l_minx,l_maxx,l_miny,l_maxy,0.0,
      $        'MX  ',1.0,0.0,-1,1, F_nk, 1, nbit(pnmx) )
@@ -407,15 +410,46 @@
          if (pnvt.ne.0)
      $       call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
      $        'VT  ',1.0,pradd_pnvt,Out_kind,F_nk, F_indo, F_nko, nbit(pnvt) )
-         if (pnhu.ne.0)
-     $       call ecris_fst2(F_hut1,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+         if (pnth.ne.0) then
+          do k= 1,F_nk
+            do i= 1, F_ninj
+              th(i,k)= F_tt1(i,k)*(exp(F_wlnph(i,l_nk))/
+     $                            exp(F_wlnph(i,k)))**Dcst_cappa_8 
+            enddo
+          enddo
+            call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'TH  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnth) )
+         endif
+         if (pnhu.ne.0) then
+            if (Out3_cliph_L) then
+                do k= 1,F_nk
+                 do i= 1, F_ninj
+                    t8(i,k) = amax1( F_hut1(i,k), 0. )
+                 enddo
+                enddo
+                call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
      $        'HU  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnhu) )
+            else
+                call ecris_fst2(F_hut1,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'HU  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnhu) )
+            endif
+         endif
 
          if ( .not.(Lctl_step .eq. 0) .and. Schm_phyms_L
      $                 .and.  pnqc.ne.0  ) then
 *            QC output for timestep 0 is done after physics have executed
-             call ecris_fst2(F_qct1,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+             if (Out3_cliph_L) then
+                do k= 1,F_nk
+                 do i= 1, F_ninj
+                    t8(i,k) = amax1( F_qct1(i,k), 0. )
+                 enddo
+                enddo
+                call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
      $        'QC  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnqc) )
+             else
+                call ecris_fst2(F_qct1,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $        'QC  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnqc) )
+             endif
          endif
 
          if ( pntt.ne.0 .or. pntd.ne.0 .or. pnhr.ne.0 ) then
@@ -433,7 +467,10 @@
               call mfottv_tl (tt,vt,F_hut1,F_vtm,F_hum1,F_ninj,F_nk,F_ninj)
 
            elseif (V4dgconf_L.and.V4dg_ad_L) then
-
+*
+              call v4d_zerohalo (vt,    l_ni,l_nj,LDIST_DIM, F_nk)
+              call v4d_zerohalo (F_hum1,l_ni,l_nj,LDIST_DIM, F_nk)
+*
               do k=  1, F_nk
               do i=1,F_ninj
                  tt(i,k) = dble(vt(i,k)) * 
@@ -546,7 +583,7 @@
 *       Calculate vertical derivative of HUT1 with respect to F_wlnph
 
         call verder(px, F_hut1, F_wlnph, 2.0,  2.0,l_minx,l_maxx,l_miny,l_maxy,
-     $                                       F_nk, l_minx,l_maxx,l_miny,l_maxy)
+     $                                       F_nk, 1,l_ni,1,l_nj)
 
 *       Calculate HU (hu_pres=HU,px=vert.der)
         call prgen( hu_pres, F_hut1, px, F_wlnph, prprlvl,F_nko, 
@@ -668,6 +705,21 @@
      $        'VT  ',1.0,pradd_pnvt, Out_kind,F_nko,F_indo, F_nko, nbit(pnvt) )
         endif
 
+         if (pnth.ne.0) then
+          do k= 1,F_nk
+            do i= 1, F_ninj
+              th(i,k)= F_tt1(i,k)*(exp(F_wlnph(i,l_nk))/
+     $                            exp(F_wlnph(i,k)))**Dcst_cappa_8 
+            enddo
+          enddo
+          call verder(px, th, F_wlnph, 2.0, 2.0, l_minx,l_maxx,l_miny,l_maxy,
+     $                                       F_nk, 1,l_ni,1,l_nj)
+          call prgen( th_pres, th, px, F_wlnph, prprlvl,F_nko,
+     $                      Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy, F_nk)
+            call ecris_fst2(th_pres,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $        'TH  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnth) )
+         endif
+
         if (pnhu.ne.0) then
             if (filt(pnhu).gt.0)
      $          call filter(hu_pres,filt(pnhu),coef(pnhu),'G', .false.,
@@ -688,7 +740,7 @@
      $                 .and.  pnqc.ne.0  ) then
 *         QC output for timestep 0 is done after physics have executed
           call verder(px, F_qct1, F_wlnph, 2.0,2.0,l_minx,l_maxx,l_miny,l_maxy,
-     $                                        F_nk,l_minx,l_maxx,l_miny,l_maxy)
+     $                                        F_nk,1,l_ni,1,l_nj)
 *         Calculate QC (qc_pres=w5,px=vert.der)
           call prgen( w5, F_qct1, px, F_wlnph, prprlvl,F_nko, 
      $                      Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy, F_nk)

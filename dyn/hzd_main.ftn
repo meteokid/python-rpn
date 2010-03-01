@@ -18,6 +18,7 @@
 * v3_01 - Toviessi J. P.    - add call hzd_ho_parite
 * v3_02 - Desgagne M.       - correction for non-hydrostatic version
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_20 - Tanguay M.        - Introduce Hzd_hzdmain_n_L
 *
 *object
 *	
@@ -50,7 +51,7 @@ c#include "nest.cdk"
 **
 *     _________________________________________________________________
 *
-      if ((.not.Hzd_fact_L).and.(.not.Hzd_ho_L)) then
+      if ((.not.Hzd_fact_L).and.(.not.Hzd_ho_L).or..not.Hzd_hzdmain_0_L) then
          if (Lun_debug_L) write(Lun_out,1001)
          return
       endif

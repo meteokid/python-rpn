@@ -2,7 +2,7 @@ OPTIL  = 2
 OMP    =
 MPI    = -mpi
 RMN    = rmn_007
-COMM   = rpn_comm205
+COMM   = rpn_comm206
 PRIV   = priv
 
 

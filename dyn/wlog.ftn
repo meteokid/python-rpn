@@ -16,6 +16,7 @@
 * v2_21 - Lee V.            - removed Slab_dato, using Out1_dato
 * v3_01 - Desgagne M.       - only Ptopo_myproc.eq.0 will write
 * v3_12 - Lee V.            - force wlog to write in proper time units
+* v3_20 - Lee V.            - added RPN_COMM_BARRIER before wlog print
 *
 *object
 *     see above id
@@ -57,6 +58,7 @@
 **
 *     ---------------------------------------------------------------
 *
+      call rpn_comm_Barrier("grid", err)
       if (Ptopo_myproc.ne.0) return
 *
       do m=1,80

@@ -57,7 +57,6 @@
 #include "schm.cdk"
 #include "intuv.cdk"
 #include "inuvl.cdk"
-#include "ptopo.cdk"
 #include "adw.cdk"
 #include "cori.cdk"
 *

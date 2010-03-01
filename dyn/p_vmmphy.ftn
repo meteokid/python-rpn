@@ -25,7 +25,7 @@
 * v2_31 - Desgagne          - clean up and introduce h2o tracers
 * v3_00 - Laroche S.        - adaptation for v4d
 * v3_12 - Leduc A-M.        - Add arguments gzm and topo
-* v3_13 - Lee V.            - Corrected loop i=1,p_nj to i-1,p_ni
+* v3_20 - Lee V.            - Corrected loop i=1,p_nj to i-1,p_ni
 *
 *object
 *

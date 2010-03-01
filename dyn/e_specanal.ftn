@@ -11,7 +11,7 @@
 *revision
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 * v3_02 - Lee V.            - correction to storage of ip1 in NA, in-lined sort
-* v3_13 - Pellerin P.       - MEC option (off-line mode)
+* v3_20 - Pellerin P.       - MEC option (off-line mode)
 *
 #include "e_anal.cdk"
 #include "e_fu.cdk"
@@ -177,7 +177,6 @@
      $                           ip2a, ip3a, tva, var, list, nka, lvmax)
          endif
       else
-         ip1a=11950
          key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, ip1a,
      $                     ip2a, ip3a, tva, var, list, nka, lvmax)
          write (6,130)

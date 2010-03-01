@@ -27,8 +27,6 @@
 *                    | the Grid set to use for Outd_var(*,j)           |
 * Outd_step          | Outd_step(i) contains the index that indicates  |
 *                    | the Step set to use for Outd_var(*,j)           |
-* Outd_typvar_S      | Outd_typvar_S(i) is the assigned datatype for   |
-*                    | the fields defined in Outd_var(*,j)             |
 * Outd_vmm_L         | To indicate if any VMM model variables are req  |
 *----------------------------------------------------------------------
 *
@@ -45,14 +43,13 @@
       integer Outd_var_max(MAXSET)
       integer Outd_sets
       logical Outd_vmm_L
-      character*1 Outd_typvar_S(MAXSET)
 
       MARK_COMMON_BEG (Outd)
       COMMON /Outd/ Outd_lev,Outd_grid,Outd_step,
      $              Outd_var_max, Outd_sets, Outd_nbit,Outd_filtpass
       MARK_COMMON_END (Outd)
       MARK_COMMON_BEG (Outd_c)
-      COMMON /Outd_c/ Outd_var_S,Outd_typvar_S
+      COMMON /Outd_c/ Outd_var_S
       MARK_COMMON_END (Outd_c)
       MARK_COMMON_BEG (Outd_r)
       COMMON /Outd_r/ Outd_filtcoef

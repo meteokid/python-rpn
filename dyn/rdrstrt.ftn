@@ -31,7 +31,6 @@
 #include "mem.cdk"
 #include "p_bus.cdk"
 #include "c_cplg.cdk"
-#include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "tr2d.cdk"
 #include "pres.cdk"

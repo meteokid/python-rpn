@@ -22,7 +22,7 @@
 * v2_11 - Desgagne M.       - initial version 
 * v3_03 - Desgagne M.       - adjust horizontal scope (in,jn)
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-* v3_13 - Lee V.            - correction to insure index in,jn >=0
+* v3_20 - Lee V.            - correction to insure index in,jn >=0
 *
 *object
 *       

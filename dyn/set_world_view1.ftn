@@ -49,6 +49,10 @@
 *                           - Add V4dg_anincr_L for V4dg_conf/100.eq.4
 * v3_20 - Gravel S.         - background vertical diffusion
 * v3_20 - Valin/Tanguay     - Turbo advection option
+* v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
+*                           - 1d higher order diffusion operator
+* v3_20 - Zadra A.          - Introduce V4dg_sgvc_dt0
+* v3_20 - Buehner & Zadra   - Introduce V4dg_chum_s
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -93,6 +97,7 @@
 #include "out1.cdk"
 #include "tr2d.cdk"
 #include "tr3d.cdk"
+#include "offline.cdk"
 #include "pres.cdk"
 #include "v4dj.cdk"
 #include "v4dm.cdk"
@@ -101,6 +106,7 @@
 #include "vtopo.cdk"
 #include "vrtd.cdk"
 #include "zblen.cdk"
+#include "v4dr.cdk"
 *
 *modules
       integer fnom,longueur,exdb
@@ -235,6 +241,17 @@
       Vspng_uvwdt_L  = .true.
       Vspng_rwnd_L   = .false.
       Vspng_njpole   = 3
+*
+      Hzd_t1_0_L = .false.
+      Hzd_t1_1_L = .false.
+      Hzd_t0_0_L = .false.
+      Hzd_t0_1_L = .false.
+      Hzd_1d_L   = .false.
+      Hzd_hdif0_0_L   = .false.
+      Hzd_hdif0_1_L   = .false.
+      Hzd_hzdmain_0_L = .true.
+      Hzd_hzdmain_1_L = .true.
+*
       Vrtd_L         = .false.
       Vrtd_theta_L   = .false.
       Vrtd_coef      = 1.
@@ -262,8 +279,10 @@
          Out3_zund(i)     = 0
       enddo
       Out3_unit_S    = ' '
+      Out3_etik_S    = ' '
       Out3_closestep = -1
       Out3_ndigits   = -1
+      Out3_ip3       = 0
       Out3_nbitg     = 16
       Out3_linbot    = 0
       Out3_cliph_L   = .false.
@@ -275,6 +294,8 @@
       Out3_cubdd_L   = .true.
       Out3_cubqq_L   = .true.
       Out3_cubww_L   = .true.
+      Out3_debug_L   = .false.
+      Out3_flipit_L  = .false.
 *
 *     4D-Var section
 *     --------------
@@ -285,6 +306,10 @@
       V4dg_4dvar_L  = .false.
       V4dg_sgvc_L   = .false.
       V4dj_mask_L   = .false.     
+      V4dg_sgvc_dt0 = 0
+      V4dg_chum_s   = 'LQ'
+*
+      V4dr_redotr_L = .false.
 *
       V4dg_stepob   = Step_total
       V4dg_inv      = 1
@@ -335,6 +360,7 @@
       err = fnom (lun_in, Path_nml_S, 'SEQ' , nrec)
       rewind ( Lun_in )
       if ( Schm_theoc_L ) then
+         Out3_ip3 = -1
          call hpalloc (Geomg_hyb_ , maxhlev, err,1)
          call theo_cfg(theo_pass)
          if (.not. theo_pass) then
@@ -427,6 +453,7 @@
       if ( .not. Schm_theoc_L ) then
           call bin2com
           call fclos (lun_lab)
+          If (Out3_etik_S.ne.' ') Out1_etik_S = Out3_etik_S
       endif
 *
 *
@@ -445,7 +472,7 @@
          pnk=4
          hyb(1)=0.
          hyb(2)=0.05
-         hyb(3)=0.995
+         hyb(3)=(Offline_ip1a-2000)*0.0001
          hyb(4)=1.0
       endif
 
@@ -523,7 +550,7 @@
       Schm_phyms_L    = .true.
       Init_balgm_L    = .false.
       Pres_ptop       = 10.0
-      Hzd_type_s        = 'nil' 
+      Hzd_type_s        = 'NIL' 
       Vspng_nk          = 0 
       endif
 *

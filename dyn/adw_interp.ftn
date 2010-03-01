@@ -22,7 +22,7 @@
 * v2_31 - Tanguay M.        - correction parameters adw_vder 
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-* v3_12 - Gravel & Valin & Tanguay - Lagrange 3D   
+* v3_20 - Gravel & Valin & Tanguay - Lagrange 3D   
 *
 *language
 *     fortran 77

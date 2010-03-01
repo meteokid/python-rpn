@@ -35,7 +35,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "ptopo.cdk"
 *
       integer i,j,k
 *

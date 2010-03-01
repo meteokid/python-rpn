@@ -18,8 +18,10 @@
 * v3_00 - Desgagne & Lee - Lam configuration
 * v3_02 - Lee V.         - revert adw_exch_1 for GLB only, added adw_ckbd_lam
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-* v3_12 - Valin & Tanguay - Optimized SETINT/TRILIN 
-* v3_12 - Gravel S.       - Change test a lower and upper boundaries
+* v3_20 - Valin & Tanguay - Optimized SETINT/TRILIN 
+* v3_20 - Gravel S.       - Change test a lower and upper boundaries
+* v3_20 - Tanguay M.      - Improve alarm when points outside advection grid
+* v3_20 - Dugas B.        - correct calculation for LAM when Glb_pil gt 7
 *
 *language
 *     fortran 77
@@ -61,6 +63,8 @@
 *
       integer i, j, k, n, ij, ijk, nij, nijk, it
       integer i1,j1,k1,nn
+*
+      integer outside,sum_outside,ier
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1
       real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
@@ -112,10 +116,10 @@
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
+          if (l_west) i0=4       + (Glb_pil_w - 7)
+          if (l_east) in=l_niu-2 - (Glb_pil_e - 7)
+          if (l_south) j0=4      + (Glb_pil_s - 7)
+          if (l_north) jn=l_njv-2- (Glb_pil_n - 7)
       endif
 ************************************************************************
       do it=1,F_it
@@ -131,8 +135,19 @@
 *
           call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,yth,zth )
 *
-          if ( Adw_fro_a .gt. 0 .and. V4dg_conf.ne.0.0 )
-     %         call gem_stop('adw_main_2_pos',-1) 
+          if ( V4dg_conf.ne.0.0 ) then
+*
+               outside = 0
+*
+               if ( Adw_fro_a .gt. 0 ) outside = 1
+*
+               sum_outside = 0
+               call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
+     $                                 "MPI_SUM","grid",ier)
+*
+               if(sum_outside.ne.0) call gem_stop ('ADW_MAIN_2_POS: TLM-ADJ NOT done: INCREASE HALO',-1)
+*
+          endif
 *
           allocate(capx2(max(1,Adw_fro_a)),
      %             capy2(max(1,Adw_fro_a)),
@@ -295,8 +310,6 @@
          F_w(n) = Geomg_z_8(1)
          n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
          F_w(n) = Geomg_z_8(l_nk)
-         F_w(n) = min( Geomg_z_8(l_nk),
-     %                max(1.0d0*F_w(n), Geomg_z_8(1) ))
       enddo
       enddo
 !$omp enddo
@@ -307,7 +320,6 @@
             n=(k-1)*nij+((j-1)*l_ni) + i
             F_w(n) = zth(n) - Geomg_z_8(k)
             F_w(n) = Geomg_z_8(k) + 2.0 * F_w(n)
-            F_w(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_w(n), Geomg_z_8(1) ))
          enddo
          enddo
       enddo

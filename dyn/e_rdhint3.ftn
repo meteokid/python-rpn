@@ -84,8 +84,6 @@
      $              P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA, 
      $              LNG, DLF, UBC, EX1, EX2, EX3)
 *
-      ipasa=ipas
-*
       if ( grd .ne. 'A' .and. grd .ne. 'B' .and. grd .ne. 'L' .and.
      %     grd .ne. 'G' .and. grd .ne. 'Z' ) then
          call e_rdhint_out(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,p2,ip3)

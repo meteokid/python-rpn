@@ -1,0 +1,202 @@
+#include <model_macros_f.h>
+***s/r statf_dm - calcule la moyenne, la variance, le minimum et 
+*                 le maximum d un champs et imprime le resultat.
+*
+      subroutine statf_dm( F_field, F_nv_S, F_no, F_from_S, F_r8stat_L,
+     $                      lminx,lmaxx,lminy,lmaxy,lnk,
+     $                      F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+      implicit none
+* 
+      character*(*) F_nv_S , F_from_S
+      logical F_r8stat_L
+      integer lminx,lmaxx,lminy,lmaxy,lnk,
+     $        F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,unf
+      real F_field(lminx:lmaxx,lminy:lmaxy,lnk)
+*
+*author
+*     M. Desgagne
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from MC2)
+* v3_20 - Desgagne & Lee    - to statfld on each tile, then MPI reduce
+* v3_20                       to obtain global stats
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_field       I         Field to be operated on
+* F_nv_S        I         User provided string to define F_field
+* F_no          I         Usually the timestep #
+* F_from_S      I         Usually the name of the calling subroutine
+* F_i0,F_j0     I         Global lower-left indexes of the sub-domain
+*                            on which to perform statistics
+* F_in,F_jn     I         Global upper-right indexes of the sub-domain
+*                            on which to perform statistics
+* F_k0,F_kn     I         Range of levels on which to perform statistics
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "ptopo.cdk"
+*
+      integer i,j,k,imin,jmin,kmin,imax,jmax,kmax,err,
+     $        nijk(8,Ptopo_numproc),tnijk(8,Ptopo_numproc),nw,i0,in,j0,jn
+      real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8,
+     $       minmax(3,max(2,Ptopo_numproc)),tminmax(3,max(2,Ptopo_numproc))
+*
+*--------------------------------------------------------------------
+*
+      nijk  (:,:) = 0
+      minmax(:,:) = 0.0d0
+*
+      i0 = max(F_i0 - Ptopo_gindx(1,Ptopo_myproc+1) + 1, 1)
+      in = min(F_in - Ptopo_gindx(1,Ptopo_myproc+1) + 1, l_ni)
+      j0 = max(F_j0 - Ptopo_gindx(3,Ptopo_myproc+1) + 1, 1)
+      jn = min(F_jn - Ptopo_gindx(3,Ptopo_myproc+1) + 1, l_nj)
+      nijk(8,Ptopo_myproc+1) = 0
+      if ((i0.le.l_ni).and.(in.ge.1).and.
+     $    (j0.le.l_nj).and.(jn.ge.1) ) nijk(8,Ptopo_myproc+1) = 1
+*
+      if (nijk(8,Ptopo_myproc+1).gt.0) then
+         sum   = 0.0
+         sumd2 = 0.0
+         imin  = i0
+         jmin  = j0
+         kmin  = F_k0
+         imax  = i0
+         jmax  = j0
+         kmax  = F_k0
+         maxd  = F_field(i0,j0,F_k0)
+         mind  = F_field(i0,j0,F_k0)
+*
+         do k=F_k0,F_kn
+         do j=j0,jn
+         do i=i0,in
+            fijk = F_field(i,j,k)
+            sum = sum + fijk
+            sumd2 = sumd2 + fijk*fijk
+            if (fijk .gt. maxd) then
+               maxd = fijk
+               imax = i
+               jmax = j
+               kmax = k
+            endif
+            if (fijk .lt. mind) then
+               mind = fijk
+               imin = i
+               jmin = j
+               kmin = k
+            endif
+         end do
+         end do
+         end do
+*
+         minmax(1,Ptopo_myproc+1) = maxd
+         minmax(2,Ptopo_myproc+1) = mind
+         minmax(3,1) = sum
+         minmax(3,2) = sumd2
+*
+         nijk  (1,Ptopo_myproc+1) = imax + Ptopo_gindx(1,Ptopo_myproc+1) - 1
+         nijk  (2,Ptopo_myproc+1) = jmax + Ptopo_gindx(3,Ptopo_myproc+1) - 1
+         nijk  (3,Ptopo_myproc+1) = kmax
+         nijk  (4,Ptopo_myproc+1) = imin + Ptopo_gindx(1,Ptopo_myproc+1) - 1
+         nijk  (5,Ptopo_myproc+1) = jmin + Ptopo_gindx(3,Ptopo_myproc+1) - 1
+         nijk  (6,Ptopo_myproc+1) = kmin
+         nijk  (7,1) = (in-i0+1)*(jn-j0+1)*(F_kn-F_k0+1)
+*
+      endif
+*
+      nw = 3*max(2,Ptopo_numproc)
+c     call MPI_REDUCE (  nijk  , tnijk  , 8*Ptopo_numproc,MPI_INTEGER, 
+c    $                          MPI_SUM, 0, MPI_COMM_WORLD, err ) 
+c     call MPI_REDUCE ( minmax, tminmax, nw,MPI_DOUBLE_PRECISION, 
+c    $                          MPI_SUM, 0, MPI_COMM_WORLD, err ) 
+      call rpn_comm_REDUCE ( nijk, tnijk, 8*Ptopo_numproc,
+     $                 "MPI_INTEGER","MPI_SUM",0,"grid",err )
+      call rpn_comm_REDUCE ( minmax, tminmax, nw,
+     $                 "MPI_DOUBLE_PRECISION","MPI_SUM",0,"grid",err )
+*       
+      if (Ptopo_myproc.eq.0) then
+*
+         imax  = tnijk (1,1)
+         jmax  = tnijk (2,1)
+         kmax  = tnijk (3,1)
+         imin  = tnijk (4,1)
+         jmin  = tnijk (5,1)
+         kmin  = tnijk (6,1)
+         maxd  = tminmax(1,1)
+         mind  = tminmax(2,1)
+*
+         do i=1,Ptopo_numproc
+            if ( tnijk (8,i) .gt. 0 ) then
+               fijk = tminmax(1,i)
+               if (fijk .gt. maxd) then
+                  maxd = fijk
+                  imax = tnijk (1,i)
+                  jmax = tnijk (2,i)
+                  kmax = tnijk (3,i)
+               else if (fijk .eq. maxd) then
+                  if (kmax.gt.tnijk(3,i)) then
+                      imax = tnijk (1,i)
+                      jmax = tnijk (2,i)
+                      kmax = tnijk (3,i)
+                  else if (kmax.eq.tnijk(3,i).and.jmax.gt.tnijk(2,i)) then
+                      imax = tnijk (1,i)
+                      jmax = tnijk (2,i)
+                      kmax = tnijk (3,i)
+                  endif
+               endif
+               fijk = tminmax(2,i)
+               if (fijk .lt. mind) then
+                  mind = fijk
+                  imin = tnijk (4,i)
+                  jmin = tnijk (5,i)
+                  kmin = tnijk (6,i)
+               else if (fijk .eq. mind) then
+                  if (kmin.gt.tnijk(6,i)) then
+                      imin = tnijk (4,i)
+                      jmin = tnijk (5,i)
+                      kmin = tnijk (6,i)
+                  else if (kmin.eq.tnijk(6,i).and.jmin.gt.tnijk(5,i)) then
+                      imin = tnijk (4,i)
+                      jmin = tnijk (5,i)
+                      kmin = tnijk (6,i)
+                  endif
+               endif
+            endif
+         end do
+*
+         npt_8 = dble(tnijk(7,1))
+         sum   = tminmax(3,1)
+         sumd2 = tminmax(3,2)
+         moy   = sum / npt_8 
+         var   = max(0.d0,(sumd2 + moy*moy*npt_8 - 2*moy*sum) / npt_8)
+         var   = sqrt(var)
+*
+         if (F_r8stat_L) then
+            write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+     $                  imax,jmax,kmax,maxd,F_from_S
+         else
+            write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+     $                  imax,jmax,kmax,maxd,F_from_S
+         endif
+*
+      endif
+*
+*
+ 98   format (i4,a4,' Mean:',e14.7,' Var:',e14.7,
+     $        ' Min:[(',i3,',',i3,',',i3,')',
+     $        e14.7,']',' Max:[(',i3,',',i3,',',i3,')',
+     $        e14.7,']',a6)
+ 99   format (i4,a4,' Mean:',e22.14,' Var:',e22.14,/
+     $        ' Min:[(',i3,',',i3,',',i3,')',
+     $        e22.14,']',' Max:[(',i3,',',i3,',',i3,')',
+     $        e22.14,']',a6)
+*
+*----------------------------------------------------------------
+*
+      return
+      end 

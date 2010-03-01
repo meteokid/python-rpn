@@ -1,0 +1,653 @@
+***s/r adw_main_2_pos_ad - ADJ of adw_main_2_pos_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_main_2_pos_ad ( F_it, F_u, F_v, F_w, F_um, F_vm, F_wm )
+*
+      implicit none
+*
+      integer F_it
+      real F_u (*),F_v (*),F_w (*)
+      real F_um(*),F_vm(*),F_wm(*)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_11 - Tanguay M.        - Remove restoration of vectorization in adjoint of semi-Lag
+*                           - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_20 - Tanguay M.        - Optimized SETINT/TRILIN
+*                           - ADJ of Change test a lower and upper boundaries
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectory             |  i  |
+*        |                                                       |     |
+* F_u,F_v| input:  3 components of wind on advection grid        |  io |
+* F_w    | output: 3 components of upstream positions at t1      |     |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+#include "vthm.cdk"
+#include "vt1m.cdk"
+#include "ptopo.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+************************************************************************
+      logical doh_L
+*
+      integer pnerr, pnlkey1(30), pnlod
+*
+      integer i, j, k, n, ij, ijk, nij, nijk, nijkag, it
+*
+      integer, dimension(l_ni*l_nj*l_nk) :: n1
+      real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1
+*
+      integer, dimension(l_ni*l_nj*l_nk) :: n1m
+      real,    dimension(l_ni*l_nj*l_nk) :: capx1m,capy1m,capz1m
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1m,wrky1m,wrkz1m,wrkc1m
+*
+      real,    dimension(l_ni*l_nj*l_nk) :: capxm,capym,capzm
+*
+      real dummy, dth
+      real*8 r2pi_8,ZERO_8,TWO_8,HALF_8,pdp_8,pdm_8
+      parameter (ZERO_8 = 0.0,TWO_8 = 2.0,HALF_8=0.5)
+*
+      logical plpr_L
+*
+*     -----------------------
+*     Define extra space TRAJ
+*     -----------------------
+      integer ind(F_it)
+*
+      integer i0,in,j0,jn
+*
+*     USED only IF NOSETINT_L = FALSE 
+*     -------------------------------
+      integer n1m_3(l_ni*l_nj*l_nk*F_it),
+     %        n1m_7(l_ni*l_nj*l_nk*F_it)
+*
+      real xthm_2(l_ni*l_nj*l_nk*F_it),
+     %     ythm_2(l_ni*l_nj*l_nk*F_it),
+     %     zthm_2(l_ni*l_nj*l_nk*F_it)
+*
+      real xthm_6(l_ni*l_nj*l_nk),
+     %     ythm_6(l_ni*l_nj*l_nk)
+*
+      real capx1m_7(l_ni*l_nj*l_nk*F_it),
+     %     capy1m_7(l_ni*l_nj*l_nk*F_it),
+     %     capz1m_7(l_ni*l_nj*l_nk*F_it)
+*     ---------------------------------
+*   
+      integer Fn_I_3(l_ni*l_nj*l_nk*F_it),
+     %        Fn_I_7(l_ni*l_nj*l_nk*F_it)
+*
+      real capx1m_3(l_ni*l_nj*l_nk*F_it),
+     %     capy1m_3(l_ni*l_nj*l_nk*F_it),
+     %     capz1m_3(l_ni*l_nj*l_nk*F_it),
+*
+     %     capx1m_6(l_ni*l_nj*l_nk),
+     %     capy1m_6(l_ni*l_nj*l_nk),
+*
+     %     xcthm_4 (l_ni*l_nj*l_nk*F_it),
+     %     ycthm_4 (l_ni*l_nj*l_nk*F_it),
+     %     zcthm_4 (l_ni*l_nj*l_nk*F_it),
+*
+     %     wrkx1m_4(l_ni*l_nj*l_nk*F_it),
+     %     wrky1m_4(l_ni*l_nj*l_nk*F_it),
+*
+     %     ythm_5  (l_ni*l_nj*l_nk*F_it),
+*
+     %     zthm_8a (l_ni*l_nj*l_nk*F_it),
+*
+     %     wuthm(Adw_nit*Adw_njt*l_nk),
+     %     wvthm(Adw_nit*Adw_njt*l_nk),
+     %     wwthm(Adw_nit*Adw_njt*l_nk)
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+*     Flag for diagnostics
+*     --------------------
+      plpr_L =.false.
+*
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *l_nk
+      nijkag = Adw_nit*Adw_njt*l_nk
+*
+      r2pi_8 = TWO_8 * Dcst_pi_8
+      dth    = Cstv_dt_8/2.
+      pdp_8  = 1.d0 + 1.d-6
+      pdm_8  = 1.d0 - 1.d-6
+************************************************************************
+*
+!$omp parallel shared (ind) 
+*
+*     Zero adjoint variables 
+*     ----------------------
+!$omp do 
+      do n = 1,l_ni*l_nj*l_nk
+         n1(n)      = ZERO_8
+         capx1(n)   = ZERO_8
+         capy1(n)   = ZERO_8
+         capz1(n)   = ZERO_8
+         wrkx1(n)   = ZERO_8
+         wrky1(n)   = ZERO_8
+         wrkz1(n)   = ZERO_8
+         wrkc1(n)   = ZERO_8
+      enddo
+!$omp enddo 
+*
+*     Set Positions in extra space TRAJ
+*     ---------------------------------
+!$omp do 
+      do it = 1,F_it
+      ind(it) = nijk*(it-1) + 1
+      enddo
+!$omp enddo 
+*
+*     ----------------------------
+*     Preserve TRAJ uthm vthm wthm
+*     ----------------------------
+!$omp do 
+      do ijk =1,nijkag
+         wuthm(ijk) = F_um(ijk)
+         wvthm(ijk) = F_vm(ijk)
+         wwthm(ijk) = F_wm(ijk)
+      enddo
+!$omp enddo 
+*
+!$omp end parallel 
+*
+      pnlkey1(1) = VMM_KEY(xth)
+      pnlkey1(2) = VMM_KEY(yth)
+      pnlkey1(3) = VMM_KEY(zth)
+      pnlkey1(4) = VMM_KEY(xcth)
+      pnlkey1(5) = VMM_KEY(ycth)
+      pnlkey1(6) = VMM_KEY(zcth)
+      pnlkey1(7) = VMM_KEY(xct1)
+      pnlkey1(8) = VMM_KEY(yct1)
+      pnlkey1(9) = VMM_KEY(zct1)
+      pnlod = 9
+*
+      pnlkey1(1+pnlod) = VMM_KEY(xthm)
+      pnlkey1(2+pnlod) = VMM_KEY(ythm)
+      pnlkey1(3+pnlod) = VMM_KEY(zthm)
+      pnlkey1(4+pnlod) = VMM_KEY(xcthm)
+      pnlkey1(5+pnlod) = VMM_KEY(ycthm)
+      pnlkey1(6+pnlod) = VMM_KEY(zcthm)
+      pnlkey1(7+pnlod) = VMM_KEY(xct1m)
+      pnlkey1(8+pnlod) = VMM_KEY(yct1m)
+      pnlkey1(9+pnlod) = VMM_KEY(zct1m)
+      pnlod = 9+pnlod
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(xth)
+      pnerr = VMM_GET_VAR(yth)
+      pnerr = VMM_GET_VAR(zth)
+      pnerr = VMM_GET_VAR(xcth)
+      pnerr = VMM_GET_VAR(ycth)
+      pnerr = VMM_GET_VAR(zcth)
+      pnerr = VMM_GET_VAR(xct1)
+      pnerr = VMM_GET_VAR(yct1)
+      pnerr = VMM_GET_VAR(zct1)
+*
+      pnerr = VMM_GET_VAR(xthm)
+      pnerr = VMM_GET_VAR(ythm)
+      pnerr = VMM_GET_VAR(zthm)
+      pnerr = VMM_GET_VAR(xcthm)
+      pnerr = VMM_GET_VAR(ycthm)
+      pnerr = VMM_GET_VAR(zcthm)
+      pnerr = VMM_GET_VAR(xct1m)
+      pnerr = VMM_GET_VAR(yct1m)
+      pnerr = VMM_GET_VAR(zct1m)
+*
+*     ------------------
+*     TRAJECTORY (START)
+*     ------------------
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
+      endif
+************************************************************************
+      do it=1,F_it
+************************************************************************
+                     doh_L = .false.
+      if (it .eq. 1) doh_L = .true.
+*
+      if( .not. Adw_nosetint_L ) then
+*
+*     --------------------------------------
+*     Preserve xthm ythm zthm for ADJOINT #2
+*     --------------------------------------
+!$omp parallel do  
+      do ijk =1,nijk
+         xthm_2(ind(it)+ijk-1) = xthm(ijk)
+         ythm_2(ind(it)+ijk-1) = ythm(ijk)
+         zthm_2(ind(it)+ijk-1) = zthm(ijk)
+      enddo
+!$omp end parallel do  
+*
+      call adw_setint ( n1m, capx1m, dummy, dummy, capy1m, dummy,
+     %                  dummy, capz1m, dummy, xthm, ythm, zthm,
+     %                  doh_L, .true., .true.,nijk,i0,in,j0,jn,l_nk)
+*
+*     ------------------------------------------------
+*     Preserve n1m capx1m capy1m capz1m for ADJOINT #3
+*     ------------------------------------------------
+!$omp parallel do  
+      do ijk=1,nijk
+         n1m_3   (ind(it)+ijk-1) = n1m   (ijk)
+         capx1m_3(ind(it)+ijk-1) = capx1m(ijk)
+         capy1m_3(ind(it)+ijk-1) = capy1m(ijk)
+         capz1m_3(ind(it)+ijk-1) = capz1m(ijk)
+      enddo
+!$omp end parallel do  
+*
+      endif
+*
+*     ----------------------------
+*     NOTE:Uthm Vthm never changed
+*     ----------------------------
+*
+      if( .not. Adw_nosetint_L ) then
+*
+      call adw_trilin (wrkx1m,wuthm,1.0,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+      call adw_trilin (wrky1m,wvthm,1.0,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+*
+      else
+      Adw_hor_L = doh_L
+      Adw_ver_L = .true.
+*     --------------------------------------------------------
+*     Also Preserve Fn_Im capx1m capy1m capz1m for ADJOINT #3X
+*     --------------------------------------------------------
+      call adw_trilin_turbo_tr (wrkx1m,wuthm,1.0,xthm,ythm,zthm,
+     %                          capx1m_3(ind(it)),capy1m_3(ind(it)),capz1m_3(ind(it)),
+     %                          Fn_I_3(ind(it)),nijk,i0,in,j0,jn,l_nk)
+*
+      call adw_trilin_turbo (wrky1m,wvthm,1.0,xthm,ythm,zthm,
+     %                       capz1m_3(ind(it)),
+     %                       Fn_I_3(ind(it)),nijk,i0,in,j0,jn,l_nk)
+*
+      endif
+*
+!$omp parallel  
+*
+*     -------------------------------------------------------
+*     Preserve xcthm ycthm zcthm wrkx1m wrky1m for ADJOINT #4
+*     -------------------------------------------------------
+!$omp do  
+      do ijk=1,nijk
+         xcthm_4 (ind(it)+ijk-1)  = xcthm (ijk)
+         ycthm_4 (ind(it)+ijk-1)  = ycthm (ijk)
+         zcthm_4 (ind(it)+ijk-1)  = zcthm (ijk)
+         wrkx1m_4(ind(it)+ijk-1)  = wrkx1m(ijk)
+         wrky1m_4(ind(it)+ijk-1)  = wrky1m(ijk)
+      enddo
+!$omp enddo  
+*
+*     ----------------------------
+*     Preserve ythm for ADJOINT #5
+*     ----------------------------
+!$omp do  
+      do ijk=1,nijk
+         ythm_5 (ind(it)+ijk-1)  = ythm(ijk)
+      enddo
+!$omp enddo  
+*
+!$omp end parallel  
+*
+************************************************************************
+      call adw_trajsp ( xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
+     %                  i0,in,j0,jn)
+************************************************************************
+*
+      if(it.eq.F_it .and. .not. Adw_nosetint_L) then
+*     --------------------------------------
+*     Preserve xthm ythm zthm for ADJOINT #6
+*     --------------------------------------
+*
+!$omp parallel do  
+      do ijk=1,nijk
+         xthm_6(ijk) = xthm(ijk)
+         ythm_6(ijk) = ythm(ijk)
+      enddo
+!$omp end parallel do  
+*
+      endif
+*
+      if( .not. Adw_nosetint_L ) then
+*
+      call adw_setint ( n1m, capx1m, dummy, dummy, capy1m, dummy,
+     %                  dummy, capz1m, dummy, xthm, ythm, zthm,
+     %                 .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
+*
+*     ------------------------------------------------
+*     Preserve n1m capx1m capy1m capz1m for ADJOINT #7
+*     ------------------------------------------------
+!$omp parallel do  
+      do ijk=1,nijk
+         n1m_7   (ind(it)+ijk-1) = n1m   (ijk)
+         capx1m_7(ind(it)+ijk-1) = capx1m(ijk)
+         capy1m_7(ind(it)+ijk-1) = capy1m(ijk)
+         capz1m_7(ind(it)+ijk-1) = capz1m(ijk)
+      enddo
+!$omp end parallel do  
+*
+      endif
+*
+*     -----------------------
+*     NOTE:Wthm never changed
+*     -----------------------
+*
+      if( .not. Adw_nosetint_L ) then
+      call adw_trilin (wrkx1m,wwthm,-dth,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+*
+      else
+      Adw_hor_L = .true.
+      Adw_ver_L = .false.
+*
+*     -------------------------------------------
+*     Preserve Fn_I_7 for ADJOINT #7X
+*     NOTE: Fn_I_7 is changed by adw_trilin_turbo
+*     -------------------------------------------
+!$omp parallel do
+      do ijk=1,nijk
+         Fn_I_7(ind(it)+ijk-1) = Fn_I_3(ind(it)+ijk-1)
+      enddo
+!$omp end parallel do
+*
+      if(it.eq.F_it) then
+*     -----------------------------------------------------------------
+*     Preserve capx1m capy1m for ADJOINT #6X and Fn_I_7 for ADJOINT #7X
+*     -----------------------------------------------------------------
+      call adw_trilin_turbo_tr (wrkx1m,wwthm,-dth,xthm,ythm,zthm,
+     %                          capx1m_6,capy1m_6,capz1m_3(ind(it)),
+     %                          Fn_I_7(ind(it)),nijk,i0,in,j0,jn,l_nk)
+      else
+      call adw_trilin_turbo (wrkx1m,wwthm,-dth,xthm,ythm,zthm,
+     %                       capz1m_3(ind(it)),
+     %                       Fn_I_7(ind(it)),nijk,i0,in,j0,jn,l_nk)
+*
+*     -------------------------------
+*     Reset Fn_I_3 for next iteration
+*     -------------------------------
+!$omp parallel do
+      do ijk=1,nijk
+         Fn_I_3(ind(it+1)+ijk-1) = Fn_I_7(ind(it)+ijk-1)
+      enddo
+!$omp end parallel do
+*
+      endif
+*
+      endif
+*
+************************************************************************
+!$omp parallel private(n)
+!$omp do
+      do k = 2,l_nk-1
+      do j = j0,jn
+      do i = i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         zthm(n) = Geomg_z_8(k) + TWO_8*wrkx1m(n)
+*
+*        -----------------------------
+*        Preserve zthm for ADJOINT #8a
+*        -----------------------------
+         zthm_8a (ind(it)+n)  = zthm(n)
+*
+         zthm(n) = min( pdm_8*Geomg_z_8(l_nk), max( 1.0d0*zthm(n), pdp_8*Geomg_z_8(1) ) )
+*
+         zthm(n) = HALF_8 * (zthm(n) + Geomg_z_8(k))
+*
+      enddo
+      enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+*
+*     ----------------
+*     TRAJECTORY (END)
+*     ----------------
+*
+!$omp parallel private(n)
+*
+*     ADJOINT CALCULATIONS
+*     --------------------
+!$omp do
+      do k = l_nk-1,2,-1
+         do j = j0,jn
+         do i = i0,in
+            n=(k-1)*nij+((j-1)*l_ni) + i
+*
+            F_w(n) = 2.0 * F_w(n)
+            zth(n) = F_w(n) + zth(n)
+            F_w(n) = ZERO_8
+*
+         enddo
+         enddo
+      enddo
+!$omp enddo
+*
+!$omp do
+      do j = j0,jn
+      do i = i0,in
+*
+         n = ((j-1)*l_ni) + i   !for k=1
+*
+         F_w(n) = 0.
+*
+         n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
+*
+         F_w(n) = 0.
+*
+      enddo
+      enddo
+!$omp enddo
+*
+!$omp end parallel
+*
+      call adw_trajex_ad (F_u, F_v, xct1, yct1, zct1, xcth, ycth, zcth,
+     %                                                xcthm,ycthm,zcthm,
+     %                    i0,in,j0,jn)
+*
+*
+************************************************************************
+      do it=F_it,1,-1
+************************************************************************
+*
+      doh_L = .false.
+      if (it .eq.    1 .and. .not.Adw_nosetint_L) doh_L = .true.
+      if (it .eq. F_it .and.      Adw_nosetint_L) doh_L = .true.
+*
+!$omp parallel private(n)
+!$omp do
+      do k = l_nk-1,2,-1
+      do j = j0,jn
+      do i = i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+         zth (n) = HALF_8 * (zth (n))
+*
+*        --------------------------
+*        Reset zthm for ADJOINT #8a
+*        --------------------------
+         if (1.0d0*zthm_8a(ind(it)+n).lt.pdp_8*Geomg_z_8(1)) then
+             zth (n) = 0.
+         elseif (1.0d0*zthm_8a(ind(it)+n).gt.pdm_8*Geomg_z_8(l_nk)) then
+             zth (n) = 0.
+         endif
+*
+         wrkx1(n) = TWO_8*zth(n) + wrkx1(n)
+         zth  (n) = ZERO_8
+*
+      enddo
+      enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+*
+*     -----------------------
+*     NOTE:Wthm never changed
+*     -----------------------
+*
+      if( .not. Adw_nosetint_L ) then
+*
+*     ---------------------------------------------
+*     Reset n1m capx1m capy1m capz1m for ADJOINT #7
+*     ---------------------------------------------
+*
+      call adw_trilin_ad (wrkx1, F_w, -dth,  capx1, capy1, capz1,
+     %                           wwthm,  n1m_7   (ind(it)),capx1m_7(ind(it)),
+     %                                   capy1m_7(ind(it)),capz1m_7(ind(it)),
+     %                           nijk,i0,in,j0,jn,l_nk)
+*
+*     -----------------------------------
+*     Reset xthm ythm zthm for ADJOINT #6
+*     -----------------------------------
+      if(it.eq.F_it) then 
+      call adw_setint_ad ( n1,   capx1, dummy, dummy, capy1,   dummy,
+     %                     dummy,capz1, dummy, xth, yth, zth,
+     %                     xthm_6,ythm_6,zthm_2(ind(it)),
+     %                     .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
+      else
+      call adw_setint_ad ( n1,   capx1, dummy, dummy, capy1,   dummy,
+     %                     dummy,capz1, dummy, xth, yth, zth,
+     %                     xthm_2(ind(it+1)),ythm_2(ind(it+1)),zthm_2(ind(it)),
+     %                     .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
+      endif
+*
+      else
+*
+      if(it.eq.F_it) then
+*
+*     -------------------------------------------------------
+*     Reset capz1m for ADJOINT #3X and Fn_I_7 for ADJOINT #7X 
+*     Reset capx1m capy1m for ADJOINT #6X 
+*     -------------------------------------------------------
+      call adw_trilin_turbo_ad (wrkx1, F_w, -dth, xth, yth, zth, 
+     %                                 wwthm,  
+     %                          capx1m_6,capy1m_6,capz1m_3(ind(it)),
+     %                          Fn_I_7(ind(it)),nijk,i0,in,j0,jn,l_nk)
+      else
+*
+*     ---------------------------------------------------------------------
+*     Reset capx1m capy1m capz1m for ADJOINT #3X and Fn_I_7 for ADJOINT #7X 
+*     ---------------------------------------------------------------------
+      call adw_trilin_turbo_ad (wrkx1, F_w, -dth, xth, yth, zth,
+     %                                 wwthm,
+     %                          capx1m_3(ind(it+1)),capy1m_3(ind(it+1)),capz1m_3(ind(it)),
+     %                          Fn_I_7(ind(it)),nijk,i0,in,j0,jn,l_nk)
+      endif
+*
+      endif
+*
+*     ----------------------------------------------------
+*     Reset xcthm ycthm zcthm wrkx1m wrky1m for ADJOINT #4
+*     ----------------------------------------------------
+*
+*     -------------------------
+*     Reset ythm for ADJOINT #5
+*     -------------------------
+************************************************************************
+      call adw_trajsp_ad ( xth,  yth,  xcth,  ycth,  zcth,  wrkx1,  wrky1,
+     %                           ythm_5(ind(it)),xcthm_4 (ind(it)),
+     %                                           ycthm_4 (ind(it)),
+     %                                           zcthm_4 (ind(it)), 
+     %                                           wrkx1m_4(ind(it)),wrky1m_4(ind(it)),
+     %                     dth,i0,in,j0,jn)
+************************************************************************
+*
+*     ----------------------------
+*     NOTE:Uthm Vthm never changed
+*     ----------------------------
+*
+      if( .not. Adw_nosetint_L ) then
+*
+*     ---------------------------------------------
+*     Reset n1m capx1m capy1m capz1m for ADJOINT #3
+*     ---------------------------------------------
+*
+      call adw_trilin_ad (wrky1, F_v, 1.0, capx1, capy1, capz1,
+     %                           wvthm, n1m_3   (ind(it)),capx1m_3(ind(it)),
+     %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),
+     %                    nijk,i0,in,j0,jn,l_nk)
+*
+      call adw_trilin_ad (wrkx1, F_u, 1.0, capx1, capy1, capz1,
+     %                           wuthm, n1m_3   (ind(it)),capx1m_3(ind(it)),
+     %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),
+     %                    nijk,i0,in,j0,jn,l_nk)
+*
+*     -----------------------------------
+*     Reset xthm ythm zthm for ADJOINT #2
+*     -----------------------------------
+      call adw_setint_ad ( n1,    capx1,  dummy, dummy, capy1,    dummy,
+     %                     dummy, capz1,  dummy, xth, yth, zth,
+     %                     xthm_2(ind(it)),ythm_2(ind(it)),zthm_2(ind(it)),
+     %                     doh_L, .true., .true.,nijk,i0,in,j0,jn,l_nk)
+*
+      else
+*
+*     ------------------------------------------------
+*     Reset Fn_Im capx1m capy1m capz1m for ADJOINT #3X
+*     ------------------------------------------------
+      call adw_trilin_turbo_ad (wrky1, F_v, 1.0, xth, yth, zth, 
+     %                                 wvthm, 
+     %                          capx1m_3(ind(it)),capy1m_3(ind(it)),capz1m_3(ind(it)),  
+     %                          Fn_I_3(ind(it)),nijk,i0,in,j0,jn,l_nk)
+*
+      call adw_trilin_turbo_ad (wrkx1, F_u, 1.0, xth, yth, zth, 
+     %                                 wuthm, 
+     %                          capx1m_3(ind(it)),capy1m_3(ind(it)),capz1m_3(ind(it)),  
+     %                          Fn_I_3(ind(it)),nijk,i0,in,j0,jn,l_nk)
+*
+      endif
+*
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+*
+      pnerr = vmmuld(-1,0)
+*
+ 1000  format(3X,'ADJ of CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS_AD)')
+*
+      return
+      end

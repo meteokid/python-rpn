@@ -10,19 +10,25 @@
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
 * Out_flipit_L       | .true. to flip field from ni*nj*nk to ni*nk*nj  |
+* Out_debug_L        | .true. to print stdout from FST functions       |
 * Out_etik_S         | label, etiket                                   |
+* Out_etiket_S       | original label                                  |
 * Out_runstrt_S      | date and time of start of pilot run             |
 * Out_endstepno      | last timestep to be included in current output  |
-* Out_ndigits        | number of digits in the suffix of filename      |
 * Out_typvar_S       | type of variable 'P'-predicted, 'A'-analysis    |
 * Out_deet           | timestep interval in seconds Cstv_dt_8          |
 * Out_dateo          | date and time of origin                         |
 * Out_ixg(4)         | grid descriptors                                |
+* Out_ip2            | value for IP2                                   |
+* Out_ip3            | value for IP3                                   |
+* Out_ndigits        | number of digits in the suffix of filename      |
+*                    | which contains usually the value IP2            |
 * Out_gridtyp_S      | grid type 'E' or '#' or 'M' or 'G'              |
 * Out_numpe_perb     | number of processors per block                  |
 * Out_blocme         | local block processor id                        |
 * Out_nblocx         | number of blocks along x                        |
 * Out_nblocy         | number of blocks along y                        |
+* Out_mybloc         | local block                                     |
 * Out_myblocx        | local column of block topology                  |
 * Out_myblocy        | local row of block topology                     |
 * Out_bloci0         | global starting I for local block               |
@@ -31,6 +37,7 @@
 * Out_blocjn         | global ending   J for local block               |
 * Out_blocni         | total points along NI for local block           |
 * Out_blocnj         | total points along NJ for local block           |
+* Out_myproc         | processor number                                |
 * Out_myprocni       | l_ni                                            |
 * Out_myprocnj       | l_ni                                            |
 * Out_idg            | global starting I for loc. blk within outputgrid|
@@ -54,11 +61,11 @@
       character*256 Out_filename_S
       character*256 Out_filenamep_S
       character*15 Out_runstrt_S
-      character*12 Out_etik_S
+      character*12 Out_etik_S, Out_etiket_S
       character*1  Out_gridtyp_S,Out_levtyp_S, Out_proj_S,Out_unit_S
       character*2  Out_typvar_S,Out_prefix_S
       character*3  Out_ext_S
-      logical      Out_flipit_L
+      logical      Out_flipit_L, Out_debug_L
       real         Out_xpos(*), Out_ypos(*)
       pointer      (Out_xpos_,Out_xpos), (Out_ypos_,Out_ypos)
 
@@ -68,7 +75,7 @@
      $        Out_bloci0,Out_blocin,Out_blocj0,Out_blocjn,
      $        Out_blocwest,Out_bloceast,Out_blocnorth,Out_blocsouth,
      $        Out_blocni, Out_blocnj,Out_myblocx, Out_myblocy, Out_nk,
-     $        Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn,
+     $        Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn, Out_mybloc,
      $        Out_rgridi0,Out_rgridj0, Out_reduc,Out_ndigits,
      $        Out_hx,Out_hy,
      $        Out_idg, Out_ifg, Out_jdg, Out_jfg,
@@ -87,7 +94,7 @@
      $        Out_bloci0,Out_blocin,Out_blocj0,Out_blocjn,
      $        Out_blocwest,Out_bloceast,Out_blocnorth,Out_blocsouth,
      $        Out_blocni, Out_blocnj,Out_myblocx, Out_myblocy, Out_nk,
-     $        Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn,
+     $        Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn, Out_mybloc,
      $        Out_rgridi0,Out_rgridj0, Out_reduc,Out_ndigits,
      $        Out_hx,Out_hy,
      $        Out_idg, Out_ifg, Out_jdg, Out_jfg,
@@ -100,10 +107,10 @@
      $        Out_mywest,Out_myeast,Out_mynorth,Out_mysouth
 
       common /out_c/
-     $        Out_filename_S, Out_runstrt_S, Out_etik_S,
+     $        Out_filename_S, Out_runstrt_S, Out_etik_S, Out_etiket_S,
      $        Out_gridtyp_S,Out_levtyp_S, Out_proj_S,Out_unit_S,
      $        Out_typvar_S,Out_prefix_S, Out_ext_s
 
-      common /out_l/  Out_flipit_L
+      common /out_l/  Out_flipit_L, Out_debug_L
       common /out_p/  Out_xpos_, Out_ypos_
 

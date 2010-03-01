@@ -88,7 +88,7 @@
 *
 *     Build the name of the zonal diagnostic output file
 *
-      write (dummy_S,'(i2.2,"_",i2.2)') Ptopo_myrow,Ptopo_mycol
+      write (dummy_S,'(i2.2,"_",i2.2)') Ptopo_mycol,Ptopo_myrow
       cnt=0
       mype_S=""
       do i=1,6

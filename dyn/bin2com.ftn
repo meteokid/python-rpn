@@ -19,7 +19,7 @@
 * v2_31                       references to vertical levels
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L
-* v3_13 - Pellerin P.       - Introduce: Hblen_wfct_S, schm_offline_L
+* v3_20 - Pellerin P.       - Introduce: Hblen_wfct_S, schm_offline_L
 *
 *object
 *     See above id
@@ -36,6 +36,7 @@
 #include "p_pbl.cdk"
 #include "tr2d.cdk"
 #include "tr3d.cdk"
+#include "offline.cdk"
 #include "lun.cdk"
 #include "p_geol.cdk"
 *
@@ -58,7 +59,8 @@
       read(lun_lab)  P_pbl_schsl_s, P_pbl_snoalb_L,
      $             Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
      $             Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try,
-     $             Hblen_wfct_S,schm_offline_L
+     $             Hblen_wfct_S,schm_offline_L,Offline_int_accu_S,
+     $             Offline_ip1a
 *
       read(lun_lab) Out1_etik_s, Out1_date,
      $        Pil_runstrt_S, Pil_nesdt, Pil_ctebcs_L,

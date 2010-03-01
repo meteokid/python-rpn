@@ -1,4 +1,4 @@
-***s/p set_filt - initialize list of variables to output
+***s/p set_filt - initialize list of variables for filtering before output
 *
 #include <model_macros_f.h>
 *
@@ -9,19 +9,14 @@
       integer F_argc,F_v1,F_v2
       character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
 *
-*author Vivian Lee - rpn - April 1999
+*author Vivian Lee - rpn - July 2004 
 *
 *revision
-* v2_00 - Lee V.            - initial MPI version
-* v2_10 - Lee V.            - replaced CNMXPHY with Slab_pntop
-* v2_21 - J. P. Toviessi    - set diez (#) slab output
-* v2_31 - Lee V.            - add chemistry output list
-* v2_32 - Lee V.            - gridset,levset,stepset are now IDs defined by the
-* v2_32                       user so, they are matched to the SORTIE command
+* v3_20 - Lee V.            - initial MPI version
 *
 *object
-*       initialization of the common blocks OUTD,OUTP,OUTC. This function is
-*       called when the keyword "sortie" is found in the first word
+*       initialization of the common blocks OUT3. This function is
+*       called when the keyword "filtre" is found in the first word
 *       of the directives in the input file given in the statement
 *       "process_f_callback". This feature is enabled by the
 *       ARMNLIB "rpn_fortran_callback" routine (called in "srequet")
@@ -29,8 +24,7 @@
 *       the conventional FORTRAN namelist. This function will process
 *       the following example command read from the named input file.
 *
-* ie:   sortie([UU,VV,TT],levels,2,grid,3,steps,1,typvar,'A')
-*       sortie([PR,PC,RR],grid,3,steps,2,levels,1)
+* ie:   filtre([UU,VV,TT],coef,.1,pass,3)
 *
 *       The "rpn_fortran_callback" routine will process the above
 *       statement and return 5 arguments to this function. For more
@@ -49,38 +43,17 @@
 * F_v2         I    - integer parameter 2 - not used
 *----------------------------------------------------------------
 *
-*Notes:
-*    ie:   sortie([UU,VV,TT],levels,2,grid,3,steps,1,typvar,A)
-*          sortie([PR,PC,RR],grid,3,steps,2,levels,1)
-*
-* sortie([vr1,vr2,vr3,...],levels,[levelset],grid,[gridset],steps,[stepset])
-*
-*  vr1,vr2,vr3... - set of variable names to output (max of 60)
-*  levelset - levelset number to use for this set of variables
-*  gridset  - gridset number to use for this set of variables
-*  stepset  - stepset number (timestep set) to use for this set of variables
-*  typvar   - character to represent variable type specifed for each set,
-*             by default, it will be "P" for prevision
-*
-*  For each "sortie" command, the levelset, gridset and stepset must be
-*  specified or an error will occur.
 *
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "dimout.cdk"
-#include "setsor.cdk"
-#include "p_bus.cdk"
 #include "out3.cdk"
-#include "grid.cdk"
-#include "level.cdk"
-#include "timestep.cdk"
 *
 **
 *
-      character*1 typvar_S
       character*5 stuff_S
-      character*8 varname_S
+      character*16 varname_S
       integer pass, varmax
       real coef
       integer i, j, k, m, pndx, ii, jj, kk

@@ -4,12 +4,13 @@
      $                                           anyip_L,arret_L,inter )
       implicit none
 *
-      character*4 nv
-      character*6 inter
+      character* (*) nv, inter
       logical arret_L,anyip_L
       integer dgid, nix, njx, gnk, ip1(*)
       real    ad, mp
 *
+*revisions
+* v3_20 -  Spacek L. - corrected passing character argument declaration
 *arguments
 *______________________________________________________________________
 *                                                                      |
@@ -64,7 +65,7 @@
 *
 *    For the offline mode: accumulation is changed into rate:
 *
-cvl   if (e_schm_offline_L) call e_liaccu (w1,nix,njx,nv)
+      if (e_schm_offline_L) call e_liaccu (w1,nix,njx,nv)
 *     
          call e_bmfsplitxy2 (w1,nix,njx,nv,k,gnk,pni,0,0,0)
 *

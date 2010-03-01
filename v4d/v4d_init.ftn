@@ -1,0 +1,161 @@
+***s/r v4d_init - Initialization of parameters in 4D-Var comdecks   
+*                 not already initialized in subr. SET_WORLD_VIEW1
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_init 
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - set V4dg_oktrtl_L = .T. as default 
+* v2_31 - Tanguay M.        - WA files incore
+* v3_00 - Tanguay M.        - V4dg_4dvar_L,V4dg_sensib_L,V4dg_twin_L in namelist
+* v3_01 - Morneau J.        - V4dj_mask_L in namelist and remove grdtst when
+*                             V4dg_sensib_L = .T.
+* v3_01 - Tanguay M.        - introduce identity option
+* v3_02 - Tanguay M.        - V4dg_identity_L,V4dg_ga_eq_ge_L in namelist 
+* v3_03 - Tanguay M.        - introduce V4dg_imguv_L
+* v3_11 - Tanguay M.        - Introduce V4dg_oktrcv_L 
+* v3_20 - Tanguay M.        - Remove V4dg_oktrtl_L 
+*
+*object
+*     see id section
+*	
+*arguments
+*     none
+*
+*implicits
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "tr3d.cdk"
+#include "v4dj.cdk"
+#include "v4dm.cdk"
+*
+*----------------------------------------------------------------
+*
+*     -----------------------------
+*     Variables for GENERAL section 
+*     -----------------------------
+*
+*        NLM used in cost function if V4dg_tlm_L = .F.
+*        TLM used in cost function if V4dg_tlm_L = .T.
+*        ---------------------------------------------
+         V4dg_tlm_L = .false.
+*
+            if (V4dg_conf/100.eq.4) V4dg_tlm_L = .false. 
+            if (V4dg_conf/100.eq.5) V4dg_tlm_L = .false. 
+*
+*           Identical twin experiment valid only
+*           if NLM used in cost function
+*           ------------------------------------
+            if (V4dg_twin_L) V4dg_tlm_L = .false.
+*
+*           Sensitivity experiment valid only
+*           if TLM used in cost function
+*           ------------------------------------
+            if (V4dg_sensib_L) V4dg_tlm_L = .true.
+*
+*        Allow NLM to WRITE TRAJECTORY on WA file at each timestep
+*        ---------------------------------------------------------
+         V4dg_oktr_L = .true.
+*
+*        Allow NLM to WRITE TRAJECTORY Conversion on WA file
+*        ---------------------------------------------------
+         V4dg_oktrcv_L = .true.
+*
+*        Ask for a Gradient test
+*        -----------------------
+         V4dg_grd_L = .false.
+*
+*        Parameters for Gradient test
+*        ----------------------------
+         V4dg_range = 5 
+         V4dg_start = 0.1 
+*
+*        Set default V4dg_imguv_L
+*        ----------------------------------------------------
+*        NOTE: .T.= u,v image winds (used in dynout/blocstat)  
+*        ----------------------------------------------------
+         V4dg_imguv_L = .true.
+*
+         if (Lun_out.gt.0) write(Lun_out,4000) V4dg_tlm_L,V4dg_oktr_L,V4dg_oktrcv_L, 
+     %                                         V4dg_grd_L,V4dg_range,V4dg_start,V4dg_imguv_L 
+*
+*     -----------------------------------
+*     Variables for COST FUNCTION section 
+*     -----------------------------------
+*
+      if (V4dg_conf/100.eq.1) then
+*
+*        Set cost function (JB=1) or (JA=0) 
+*        ----------------------------------
+         V4dj_jb = 1 
+*
+*        Kind of cost fonction (Energy=2)
+*        --------------------------------
+         V4dj_kdcst = 2 
+*
+*        Set type of observations location (Full=100) (Full less poles=101)
+*        ------------------------------------------------------------------
+         V4dj_locob = 100
+*
+         if (Lun_out.gt.0) write(Lun_out,4001) V4dj_jb,V4dj_kdcst,V4dj_locob 
+*
+      endif
+*
+*     ----------------------------------
+*     Variables for MINIMIZATION section
+*     ----------------------------------
+*
+      if (V4dg_conf/100.eq.1) then
+*
+*        Minimization (M1QN3) parameters
+*        -------------------------------
+         V4dm_impres= 5
+         V4dm_hot   = 0
+*
+*        Constants required by MODULOPT
+*        ------------------------------
+         V4dm_dxmin = 1.e-5
+         V4dm_epsg  = 1.e-5
+*
+         if (Lun_out.gt.0) write(Lun_out,4002) V4dm_impres,V4dm_hot,V4dm_dxmin,V4dm_epsg 
+*
+      endif
+*
+4000  format(
+     %//,'INITIALIZATION (S/R V4D_INIT GENERAL)',
+     % /,'=====================================',
+     % /,'  TLM_L      = ',L2,
+     % /,'  OKTR_L     = ',L2,
+     % /,'  OKTRCV_L   = ',L2,
+     % /,'  TESTGRD    = ',L2,
+     % /,'  RANGE      = ',I6,
+     % /,'  XRSTART    = ',E13.7,
+     % /,'  IMGUV_L    = ',L2,
+     % /)
+*
+4001  format(
+     %//,'INITIALIZATION (S/R V4D_INIT COST FUNCTION)',
+     % /,'===========================================',
+     % /,'  JB       = ',I6,
+     % /,'  KDCST    = ',I6,
+     % /,'  LOCOB    = ',I6,
+     % /)
+*
+4002  format(
+     %//,'INITIALIZATION (S/R V4D_INIT MINIMIZATION)',
+     % /,'==========================================',
+     % /,'  IMPRES   = ',I6,
+     % /,'  HOT      = ',I6,
+     % /,'  DXMIN    = ',E13.7,
+     % /,'  EPSG     = ',E13.7,
+     % /)
+*
+      return
+      end

@@ -27,6 +27,7 @@
 #include "ptopo.cdk"
 #include "pilot.cdk"
 #include "hblen.cdk"
+#include "offline.cdk"
 #include "e_nml.cdk"
 *
       integer  fnom, set_dcst8
@@ -62,7 +63,7 @@
       Pil_nesdt     = 0
       Pil_datacvrg  = 0
 *
-      Hblen_wfct_S  = 'cos2'
+      Hblen_wfct_S  = 'COS2'
       Hblen_momentx = 10
       Hblen_tx      = 10
       Hblen_massx   = 10
@@ -80,7 +81,6 @@
       anal_perturb= .false.
       E_schm_stlag   = .true.
       E_schm_adcub   = .true.
-      E_schm_offline_L=.false.
       E_geol_glanl_L = .true.
       E_geol_glreg_L = .false.
       E_geol_hsanl_L = .true.
@@ -99,6 +99,9 @@
       E_geol_modex_L = .false.
       E_geol_z0cst   = -1.
 *
+      E_schm_offline_L=.false.
+      Offline_int_accu_S = 'LINEAR'
+      Offline_ip1a = 11950   
       P_pbl_schsl_S  = 'FCREST'
       P_pbl_snoalb_L = .true.
 *
@@ -129,9 +132,13 @@
       call low2up (Grd_typ_S,dumc)
       Grd_typ_S = dumc
       LAM = Grd_typ_S(1:1).eq.'L'
+      call low2up (Hblen_wfct_S,dumc)
+      Hblen_wfct_S = dumc
+      call low2up (Offline_int_accu_S,dumc)
+      Offline_int_accu_S = dumc
 *
 *     CONSTANT BOUNDARY CONDITIONS APPLIED in offline mode
-      if (E_schm_offline_L) Hblen_wfct_S  = 'const'
+      if (E_schm_offline_L) Hblen_wfct_S  = 'CONST'
 *
       Hblen_momentx = max(Hblen_momentx, 0)
       Hblen_tx      = max(Hblen_tx     , 0)

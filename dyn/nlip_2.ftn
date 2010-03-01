@@ -125,7 +125,7 @@
       integer i, j, k, i00, inn, j00, jnn, i0, in, j0, jn, nij
       real w1, w2, w3, pd1, pd2, pd3, wk2(DIST_SHAPE)
       real*8  a1, a2, b1, b2, b3, eps, gamma, bb1,bb2,bb3,aa1,aa2,
-     $       one, half, quarter, aaa, bbb, ccc
+     $       one, half, quarter, aaa, bbb, ccc,pd3_8
       parameter ( one=1.0, half=.5, quarter=.25 )
       real*8  tmp_8, inv_hx_8(l_ni), inv_hsy_8(l_nj), inv_hsyv_8(0:l_nj)
       real*8, dimension(i01:in1,j01:jn1) :: xlog, ylog
@@ -480,7 +480,7 @@ c Don't change
       a1 = one/Cstv_tstr_8
       b1 = gamma/Cstv_tau_8 
       b2 = gamma/Cstv_tau_8/Dcst_cappa_8
-      tmp_8 = 1.0d0/Cstv_tau_8
+      pd3_8 = 1.0d0/Cstv_tau_8
       aaa = Dcst_rayt_8*Dcst_rayt_8
 *
 *     compute Ncn
@@ -555,7 +555,7 @@ c Don't change
          do j= j0, jn
          do i= i0, in
             ccc = ylog2(i,j) - F_tplt0(i,j,k)*a1
-            F_nth(i,j,k) = (-Dcst_cappa_8*F_wijk1(i,j,k)+ccc)*tmp_8
+            F_nth(i,j,k) = (-Dcst_cappa_8*F_wijk1(i,j,k)+ccc)*pd3_8
             F_wijk1(i,j,k) = F_n1(i,j,k) - pd3 * F_ncn(i,j,k)
             F_wijk2(i,j,k) = b2*F_nth(i,j,k) 
          end do
@@ -564,7 +564,7 @@ c Don't change
          if (.not. Schm_hydro_L) then
          do j= j0, jn
          do i= i0, in
-            F_n3 (i,j,k) = ( F_multx(i,j,k) - F_mut0(i,j,k) )*tmp_8
+            F_n3 (i,j,k) = ( F_multx(i,j,k) - F_mut0(i,j,k) )*pd3_8
             F_n3p(i,j,k) =  F_n3(i,j,k) - eps*F_nth(i,j,k)
             F_wijk1(i,j,k) = F_wijk1(i,j,k) +  b1*F_n3p(i,j,k)
             F_wijk2(i,j,k) = F_wijk2(i,j,k) +  b2*F_n3 (i,j,k)

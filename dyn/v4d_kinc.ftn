@@ -1,3 +1,0 @@
-      subroutine v4d_kinc  
-      call gem_stop('V4D_KINC',-1)
-      end

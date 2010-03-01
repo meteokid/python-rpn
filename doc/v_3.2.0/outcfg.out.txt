@@ -1,0 +1,190 @@
+_____________________________________________________________________________
+*                                                                             |
+*     FILE outcfg.out                 (last update: Nov.18,2004- v3.2.0)      |
+*_____________________________________________________________________________|
+*                                                                             |
+*  Example in outcfg.out                                                      |
+*                                                                             |
+* grid=1,model;                                                               |
+* levels=1,eta,-1;                                                            | 
+* levels=3,pres,[1000.,850.];                                                 |
+* steps=1,hour,0.;                                                            |
+* steps=2,step,<0.,6.,1.>;                                                    |
+* sortie([ME,PN,P0,PT],grid, 1, levels, 1, steps, 2)                          |
+* sortie_p([MF,MY,MG,ALVIS,DLAT,DLON,WFLUX],grid, 1, levels, 3, steps, 1)     |
+* filtre([PN,GZ,TT], coef, 0.5, pass,2)                                       |
+* xnbit([Z0,MX],bits,24)                                                      |
+*_____________________________________________________________________________|
+* Output GRID definitions                                                     |
+*                                                                             |
+* examples:                                                                   |
+* grid=4,model;                                                               |
+* grid=2,core;                                                                |
+* grid=1,reduc,4,10,4,10,2                                                    |
+* grid=3,reduc,4,10,4,10                                                      |
+*                                                                             |
+* general syntax                                                              |
+* grid=gridid,[model/core/reduc],[gridx0,gridx1,gridy0,gridy1];               |
+*                                                                             |
+*      gridid  - number to identify gridset to relate to sortie statement     |
+*       model  - total grid of the model,in LAM, this includes pilot area     |
+*       core   - only the uniform part of the grid, in LAM, excludes pilot are|
+*      reduc   - reduced grid from the model defined as follows               |
+*       gridx0 - starting I value along X                                     |
+*       gridx1 - ending   I value along X                                     |
+*       gridy0 - starting J value along X                                     |
+*       gridy1 - ending   J value along X                                     |
+* IMPORTANT NOTE:                                                             |
+*     Limit the number of definitions for "grid" to improve the efficiency    |
+*     in the output routines. The maximum number of definitions is 4.         |
+*                                                                             |
+*_____________________________________________________________________________|
+* Output LEVEL definitions                                                    |
+*                                                                             |
+* examples:                                                                   |
+* levels=1,eta,-1;                                                            | 
+* levels=2,eta,0;                                                             |
+* levels=6,eta,<1,12,2>;                                                      |
+* levels=5,pres,[1000.,850.,700.,500.];                                       |
+*                                                                             |
+* general syntax                                                              |
+*    levels=levelid , pres/eta,{list}                                         |
+*                                                                             |
+*    levelid   - number to identify levelset to relate to sortie statement    |
+*      eta - model levels (eta)                                               |
+*          - the integer corresponds to the "nth" defined model level thus    |
+*            make sure that the largest digit <= # of elements defined in  hyb|
+*      pres- pressure levels                                                  |
+*      '-1' with "eta" levels will give all model levels.                     |
+*      '0'  with "eta" levels will give the ground "G_nk" level               |
+*      [a,b,c] means level a,b and c are requested                            |
+*      <a,b,c> means levels a to b, every c are requested                     |
+*                                                                             |
+* IMPORTANT NOTE:                                                             |
+*     Limit the number of definitions for "level" to improve the efficiency   |
+*     the output routines. The maximum number of definitions is 32.           |
+*     The maximum number of levels defined in each "level" command is 201     |
+*                                                                             |
+*-----------------------------------------------------------------------------|
+* Output FREQUENCY definitions                                                |
+*                                                                             |
+* examples:                                                                   |
+* steps=1,step,-1;                                                            |
+* steps=2,hour,0.,3.,6.,12.,24.,48.;                                          |
+* steps=3,hour,<0.,48.,3.>;                                                   |
+* steps=4,init,hour,<0.,6.,1.>;                                               |
+* steps=5,hour,<0.,24.,3.>,<24.,48.,6.>;                                      |
+* steps=6,step,<0,5,1>,[6,12,18];                                             |
+*                                                                             |
+* general syntax                                                              |
+* steps=stepid,  [init],step/hour,{list};                                     |
+*                                                                             |
+*     stepid  - number to identify stepset  to relate to sortie statement     |
+*      'init' - means this command only applies to output during the          |
+*               initialization period                                         |
+*      'hour' - output in hours                                               |
+*      'step' - output in timesteps in the model                              |
+*      '-1' with "step" will give every timestep of the model                 |
+*      [a,b,c] means a,b and c are requested                                  |
+*      <a,b,c> means a to b, incrementing every c are requested               |
+* IMPORTANT NOTE:                                                             |
+*     Limit the number of definitions for "steps" to improve the efficiency   |
+*     the output routines. The maximum number of definitions is 32.           |
+*     The maximum number of step/hour defined in each "steps" command is 50000|
+*-----------------------------------------------------------------------------|
+* Output FILTER    definitions                                                |
+*                                                                             |
+* examples:                                                                   |
+* filtre([PN,GZ,TT], coef, 0.5, pass,2)                                       |
+* filtre([WW,QQ], coef, 0.5, pass,1)                                          |
+* filtre(([ES], coef, 0.1, pass,1)                                            |
+*                                                                             |
+* general syntax                                                              |
+* filtre([var list], coef,coefnum,pass,passnum)                               |
+*      var list - list of variables (long names for physics fields)           |
+*      coefnum  - filter coefficient                                          |
+*      passnum  - number of filter passes                                     |
+*-----------------------------------------------------------------------------|
+* Output BIT specific compaction definitions                                  |
+*   -all other fields are defined in the key Out3_nbitg in gem_settings.nml   |
+*                                                                             |
+* examples:                                                                   |
+* xnbit([Z0,MX,ALVIS],bits,24)                                                |
+* xnbit([VG],bits,32)                                                         |
+* xnbit([GZ],bits,16)                                                         |
+*                                                                             |
+* general syntax                                                              |
+* xnbit( [var list], bits,bitnum)                                             |
+*      var list - list of variables (long or short names for physics fields   |
+*                 but they must match what was requested in sortie_p)         |
+*                                                                             |
+*      bitnum   - number of bits for compaction                               |
+*-----------------------------------------------------------------------------|
+* Output REQUEST definitions                                                  |
+*                                                                             |
+* examples:                                                                   |
+* sortie([PN,TT,GZ,HU,HR,ES,UU,VV,QC,WW,WE], grid,1,levels,1,steps,4)         |
+* sortie_p([A2,C6,PR,LA,LO,EI,EV,PCOEF,PR ], grid,1,levels,2,steps,3)         |
+*           grid, 1, levels, 1, steps, 1)                                     |
+*                                                                             |
+* general syntax for dynamic fields                                           |
+*  sortie([vr1,vr2,vr3,...],levels,[levelset],grid,[gridset],steps,[stepset]);|
+* general syntax for physics fields                                           |
+*  sortie_p([vr1,vr2,...],levels,[levelset],grid,[gridset],steps,[stepset]);  |
+*  vr1,vr2,vr3... - set of variable names to output (max of 60)               |
+*                                                                             |
+*      Note that LONG and SHORT names are recognized for physics fields       |
+*      (1st column in the listing of physics fields)                          |
+*  levelset - levelset number defined in the output level definitions         |
+*  gridset  - gridset number  defined in the output grid  definitions         |
+*  stepset  - stepset number  defined in the output frequency definitions     |
+*                                                                             |
+*  For each "sortie/sortie_p" command, the levelset, gridset and stepset      | 
+*  must be defined or no output for that statement will occur.                |
+* IMPORTANT NOTE:                                                             |
+*     Limit the number of commands for sortie and sortie_p to improve the     |
+*     efficiency in the output routines. The maximum number of commands       |
+*     for each SORTIE or SORTIE_P is 32. The maximum number of variables      |
+*     (fields) requested in each SORTIE/SORTIE_P command is 60.               |
+*                                                                             |
+*-----------------------------------------------------------------------------
+*  OUTPUT filename description                                                |
+*                                                                             |
+*   For RPN fstd files:   (in '#' grids)                                      |
+*   ie:                 dp20021224230000-01-00_000, pm20021224230000-01-00_000|
+*   generic:            #@YYYYMMDDhh[mmss]-XX-YY_ddd[U]                       |
+*                                                                             |
+*   For final format (pieced together by bemol) files(RPN fstd):              |
+*   ie:                 dp20021224230000_000, pm20021224230000_000            |
+*   generic:            #@YYYYMMDDhh[mmss]_ddd[U]                             |
+*                                                                             |
+*   where:                                                                    |
+*                 # - 1 alphabetic character taking value:                    |
+*                     d = for output of dynamics  variables                   |
+*                     p = for output of physics   variables                   |
+*                     c = for output of chemistry variables                   |
+*                 @ - 1 alphabetic character taking value:                    |
+*                     m = for output on model levels                          |
+*                     p = for output interpolated on pressure levels          |
+*                                                                             |
+*                 YYYYMMDD - year+month+day (from newdate)                    |
+*                 hh       - hour                                             |
+*                 mn       - minute                                           |
+*                 ss       - second                                           |
+*                 XX       - PE on row XX                                     |
+*                 YY       - PE on column YY                                  |
+*                 ddd      - is a count/multiple of units in the integration  |
+*                            see  Out3_ndigits in gem_settings.nml.txt        |
+*                 U        - type of unit (1 character)                       |
+*                            suggested representations for unit:              |
+*                            P - timesteps                                    |
+*                            D - days                                         |
+*                            H - hours                                        |
+*                            M - minutes                                      |
+*                            S - seconds                                      |
+*                            see Out3_unit_s in gem_settings.nml.txt          |
+*                 Note: Only one time frame can be written per output file    |
+*                       so if outputs are more frequent than 1 hour,          |
+*                       set Out3_unit_s to minutes,timesteps or seconds       |
+*                                                                             |
+*-----------------------------------------------------------------------------

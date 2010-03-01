@@ -20,6 +20,7 @@
 *                         grid to wind grids. Note that variables pil_?
 *                         and linear interpolation are not yet
 *                         implemented in these options.
+* v3_20 - Tanguay M.    - replace grido by gridi in exchange halo
 *
 *object
 *     Subroutine to move a given field to a specified target grid
@@ -76,8 +77,8 @@
       else 
          nie = l_ni
          nje = l_nj
-         if (F_grido.eq.1) nie = l_niu
-         if (F_grido.eq.2) nje = l_njv
+         if (F_gridi.eq.1) nie = l_niu
+         if (F_gridi.eq.2) nje = l_njv
          call rpn_comm_xch_halo (F_src,LDIST_DIM,nie,nje,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 

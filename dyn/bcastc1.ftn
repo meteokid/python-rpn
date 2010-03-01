@@ -32,6 +32,8 @@
 * v3_03 - Desgagne M.       - replace stop by stopmpi
 * v3_11 - Gravel S.         - broadcast common theo and vtopo
 * v3_20 - Gravel S.         - broadcast common vrtd and zblen
+* v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
+* v3_20 - Buehner & Zadra   - Add broadcast of V4d_gen_c
 *
 *object
 *
@@ -79,6 +81,8 @@
 #include "vtopo.cdk"
 #include "vrtd.cdk"
 #include "zblen.cdk"
+#include "v4dr.cdk"
+#include "offline.cdk"
 *
       integer err
 *------------------------------------------------------------------
@@ -148,6 +152,7 @@
       COMMON_BROADCAST(V4d_gen_i)
       COMMON_BROADCAST(V4d_gen_l)
       COMMON_BROADCAST(V4d_gen_r)
+      COMMON_BROADCAST(V4d_gen_c)
       COMMON_BROADCAST(V4d_jcst_i)
       COMMON_BROADCAST(V4d_jcst_r)
       COMMON_BROADCAST(V4d_jcst_l)
@@ -161,7 +166,11 @@
       COMMON_BROADCAST(vrtd_r)
       COMMON_BROADCAST(zblen_l)
       COMMON_BROADCAST(zblen_r)
+      COMMON_BROADCAST(offline_c)
+      COMMON_BROADCAST(offline_i)
       COMMON_BROADCAST(Glb_pil_i)
+      COMMON_BROADCAST(V4d_redo_i)
+      COMMON_BROADCAST(V4d_redo_l)
 *
       call RPN_COMM_bcast(Ptopo_nblocx, 1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(Ptopo_nblocy, 1,"MPI_INTEGER",0,"grid",err )

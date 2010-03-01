@@ -1,0 +1,89 @@
+#if defined (DOC)
+*
+*
+*revision
+* v2_10 - Desgagne M.         - removed MITH (not used) 
+* v3_02 - Plante A.           - add key Schm_wload_L for water loading
+* v3_03 - Pellerin P.         - add key Schm_offline_L
+*
+***comdeck schm.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH CONTROLLING SCHEMES USED IN THE MODEL     |
+*                                         (set_schm)                   |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Schm_hydro_L       | .true. -> hydrostatic run                       |
+*                    | .false.-> non-hydrostatic run                   |
+* Schm_cptop_L       | .true.-> model has a const. top pres. (B(1)=0)  |
+* Schm_moist_L       | .true.-> model has moisture                     |
+* Schm_nkbz_L        | .true.-> not-a-knot bc for z-spline             |
+*                    | .false.-> natural bc for z-spline               |
+* Schm_phyms_L       | .true. PHYSICS package is used in model run     |
+*                    | .false. No PHYSICS used                         |
+* Schm_hdlast_L      | .true.-> physics before horizontal diffusion    |
+* Schm_adcub_L       | .true.-> cubic interpolation for                |
+*                    |                 advection (RU,RV) -> (PHI)      |
+*                    | .false.  linear interpolotion used instead      |
+* Schm_difqp_L       | .false.=> no diffusion on q'                    |
+*                    | .true. => indirect diffusion on q' & direct     |
+*                    |           diffusion on (dp/dpi-1) & (1+d)q'     |
+* Schm_psadj_L       | .true.->  ps adjust is activated (at every time |
+*                    |         step, the integral of ps over the domain|
+*                    |         is restored to the value of the previous|
+*                    |         time step; afterward, q and s are re-   |
+*                    |         computed;this can be done in            |
+*                    |                           hydrostatic mode only)|
+* Schm_wload_L       | .true.-> Effet of water loading included        |
+* Schm_theoc_L       | .true.-> theoretical case                       |
+* Schm_sfix_L        | .true.-> fix surface values to those of l_nk-1  |
+* Schm_itcn          | number of iterations for Crank-Nicholson        |
+* Schm_modcn         | frequency of Crank-Nicholson procedure          |
+* Schm_xwvt3         | type of extrapolation for wind calculation      |
+*                    | at time t-dt/2 (th):                            |
+*                    |    =0  => two time levels (t1, t2)              |
+*                    |    =1  => two time levels (t1, t2) for u,v      |
+*                    |         three time levels for vertical wind     |
+*                    |    =2  => three time levels (t1, t2, t3)        |
+* Schm_itnlh         | number of iterations to solve non-linear        |
+*                    | Helmholtz problem                               |
+* Schm_itraj         | number of iterations to compute trjectories     |
+* Schm_nith          | number of vertical modes treated implicitely    |
+* Schm_alpco_8       | Relaxation parameter for Coriolis inversion     |
+* Schm_nonhy_8       | 0 to 1:  from hydrostatic to non-hydrostatic    |
+* Schm_offline_L     | run without the dynamical kernel (GEM)          |
+*----------------------------------------------------------------------
+*
+#endif
+
+      logical Schm_hydro_L, Schm_cptop_L, Schm_moist_L, Schm_nkbz_L , 
+     $        Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
+     $        Schm_chems_L, Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L,
+     $        Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L
+
+      integer Schm_itcn , Schm_modcn, Schm_xwvt3, 
+     %        Schm_itnlh, Schm_itraj, Schm_nith, Schm_maxcfl_lam
+
+      real*8  Schm_alpco_8, Schm_nonhy_8
+
+      MARK_COMMON_BEG (schm_l)
+      common / schm_l / 
+     $         Schm_hydro_L, Schm_cptop_L, Schm_moist_L, Schm_nkbz_L , 
+     $         Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
+     $         Schm_chems_L, Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L,
+     $         Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L
+      MARK_COMMON_END (schm_l)
+*
+      MARK_COMMON_BEG (schm_i)
+      common / schm_i / Schm_itcn , Schm_modcn, Schm_xwvt3, 
+     %                  Schm_itnlh, Schm_itraj, Schm_nith,
+     $                  Schm_maxcfl_lam
+      MARK_COMMON_END (schm_i)
+*
+      MARK_COMMON_BEG (schm_r8)
+      common / schm_r8/ Schm_alpco_8, Schm_nonhy_8
+      MARK_COMMON_END (schm_r8)
+

@@ -24,10 +24,10 @@
       integer e_rdhint3,e_moclim2
       external e_rdhint3,e_moclim2
 *
-      character*2 nv
+      character*4 nv
       character*8 etk,typ,interp,seq,dum
       logical anyip
-      integer ivar, im, i, longueur, unf, indx, ip1, ip2
+      integer ivar, im, i, longueur, unf, indx, ip1, ip2, iniv
       integer, dimension(:),allocatable :: err
 *
 *----------------------------------------------------------------------
@@ -41,6 +41,7 @@
 *
       write (6,1000)
       do ivar = 1, p_bgeo_top
+         iniv = 1
          nv    = geonm(ivar,2)
          if (nv.ne.'00') then
             etk   = geonm(ivar,3)
@@ -67,11 +68,12 @@
      $                 nv,ip1,ip2,-1,etk,typ,anyip,.false.,interp,unf,6)
                   if (err(ivar).lt.0) then
                      seq = seq(2:longueur(seq))
+                     iniv = im 
                      goto 670
                   endif
                end do
             elseif (seq(1:1).eq."V") then
-               do im=1,geopar(ivar,3)
+               do im=iniv,geopar(ivar,3)
                   ip1 = -1
                   if (geopar(ivar,3).gt.1) 
      $                 call convip ( ip1, real(im), 3, 1, dum, .false. )
@@ -97,7 +99,7 @@
       deallocate (err)
 *
  1000 format (/' PROCESSING EVERY ELEMENT IN GEOBUS:')
- 1001 format (/'====>',' Processing ',a2,4a8,' <====')
+ 1001 format (/'====>',' Processing ',a4,4a8,' <====')
  1005 format (' GEOPHYSICAL FIELD: 'a,' NOT AVAILABLE !!!')
 *
 *----------------------------------------------------------------------

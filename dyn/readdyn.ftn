@@ -29,8 +29,8 @@
 * v3_10 - Lee V.           - added deallocate topu_temp,topv_temp,gzu_temp...
 * v3_11 - Gravel S.        - provide for variable topography
 * v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
-* v3_13 - Pellerin P.      - to run in off-line mode
-* v3_13 - Gravel S.        - allow for initialization with ECMWF analyses
+* v3_20 - Pellerin P.      - to run in off-line mode
+* v3_20 - Gravel S.        - allow for initialization with ECMWF analyses
 *
 *object
 *	
@@ -98,6 +98,8 @@
      $             hu_temp,tt_temp, gz_temp, ttu_temp, ttv_temp, 
      $             gzu_temp, gzv_temp,ps, topo_temp)
 *
+      if (schm_offline_L) Acql_vertint=.false.
+*
       if (Ptopo_myproc.eq.0) then
          write(lun_out,*)
      $      ' Acql_horzint=',Acql_horzint,' Acql_vertint=',Acql_vertint,
@@ -107,7 +109,6 @@
      $      ' Acql_prsanl=',Acql_prsanl, ' Acql_ecmanl=',Acql_ecmanl
 *
       if ((schm_offline_L).and.(Acqi_vterplv.eq.1)) then
-         Acql_vertint=.false.
          write(lun_out,*) '  '
          write(lun_out,*) 'MEC: ARCHIVED DATA FOR:',  bmf_time1, bmf_time2
          write(lun_out,*) 'MEC: ONLY 1 LEVEL FOUND INITIALLY FOR TT HU UU VV P0'

@@ -178,7 +178,6 @@
 #include "nl.cdk"
 #include "vt0.cdk" 
 #include "vtx.cdk" 
-#include "ptopo.cdk"
 #include "lctl.cdk"
 *
 *modules

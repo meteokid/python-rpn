@@ -31,6 +31,7 @@
 * v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2
 *                           - ADJ of digital filter
 * v3_20 - Gravel S.         - background vertical diffusion
+* v3_20 - Tanguay M.        - Introduce Hzd_hdif0_L
 *
 *object
 *	Performs the integration of the model
@@ -63,6 +64,7 @@
 #include "v4dg.cdk"
 #include "p_clim.cdk"
 #include "vrtd.cdk"
+#include "hzd.cdk"
 
 *
       logical bkup_L,carryon_L,identity_4dvar_L
@@ -70,7 +72,9 @@
 **
 *     ---------------------------------------------------------------
       if ( V4dg_conf.ne.0 ) then
-         if ( Schm_chems_L ) call gem_stop('gem_run',-1)
+         if ( Schm_chems_L    ) call gem_stop('gem_run Schm_chems_L  ',-1)
+         if ( Vrtd_L          ) call gem_stop('gem_run Vrtd_L        ',-1)
+         if ( Schm_offline_L  ) call gem_stop('gem_run Schm_offline_L',-1)
       endif
 *     ---------------------------------------------------------------
 *
@@ -92,7 +96,7 @@
 *
 *C    4D-Var: Control Cost function at INITIAL time
 *     ---------------------------------------------
-      call v4d_ctrlcst ()
+      if ( V4dg_conf.ne.0 ) call v4d_ctrlcst ()
 *
  500  Lctl_step  = Lctl_step  + 1
       Rstri_sdon = Rstri_sdon + 1
@@ -140,22 +144,18 @@
 *
 *        Horizontal diffusion & Vertical sponge (Initial timestep)
 *        ---------------------------------------------------------
-         if (Lctl_step.eq.1.and.V4dg_conf.ne.0.and.(.not.schm_offline_l)) 
+         if (Lctl_step.eq.1.and.Hzd_hdif0_0_L.and.(.not.schm_offline_l)) 
      $         call hdif0
 *
 *        Dynamics timestep
 *        -----------------
-C        call tmg_start ( 2, 'DYN+HD+PHY' )
          call dynstep
 *
          if (Vrtd_L) call vrtd
 *
 *        Physics timestep & Horizontal diffusion & Vertical sponge
 *        ---------------------------------------------------------
-         call tmg_start ( 7, 'HD+PHY' )
          call hdif_phy
-         call tmg_stop (7)
-C        call tmg_stop (2)
 *
       endif
 *
@@ -171,7 +171,7 @@ C        call tmg_stop (2)
 *
 *C    4D-Var: Control Cost function at .NOT.INITIAL time
 *     --------------------------------------------------
-      call v4d_ctrlcst ()
+      if ( V4dg_conf.ne.0 ) call v4d_ctrlcst ()
 *
 *C    Perform output if required
 *     --------------------------

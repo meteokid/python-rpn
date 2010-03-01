@@ -25,6 +25,7 @@
 *revision
 * v3_01 - Lee V             - initial MPI version for HSPONGE 
 * v3_01 - Desgagne M        - introduce hspng_rwnd_L
+* v3_20 - Toviessi J. P.    - variable higher order diffusion operator
 *
 *object
 *     The diffusion coefficients are (Cstv_uvdf_8*Cstv_dt_8) for the
@@ -93,9 +94,15 @@
             end do
          endif
          c_8 = Cstv_uvdf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
-         call hspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+         if (Hzd_difva_L) then
+            call hspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $               Geomg_cy2_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Hzd_yp2su_8,
+     $               G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
+         else
+            call hspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
      $               Geomg_cy2_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Opr_opsyp2_8,
      $               G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
+         endif
 *
          call hzd_del2 (F_u, wk1_8, Hzd_opsxp0_8, Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
@@ -135,9 +142,15 @@
 *
          c_8 = Cstv_phidf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
          
-         call hspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+         if (Hzd_difva_L) then
+            call hspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $                     Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $                     Hzd_yp2su_8,G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
+         else
+            call hspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
      $                     Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
      $                     Opr_opsyp2_8,G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
+         endif
 *
 *        Vertical motion
 *        ~~~~~~~~~~~~~~~

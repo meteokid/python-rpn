@@ -11,8 +11,9 @@
 *author   M. Desgagne - April 2002
 *
 *revision
-* v3_01 - Desgagne M.       - initial version (after MC2 v_4.9.3)
-* v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_01 - Desgagne M.               - initial version (after MC2 v_4.9.3)
+* v3_03 - Tanguay M.                - Adjoint Lam configuration
+* v3_20 - Pellerin P. and Y. Delage - Special interpolations for MEC 
 *
 *implicits
 #include "glb_ld.cdk"
@@ -20,6 +21,7 @@
 #include "pilot.cdk"
 #include "nest.cdk"
 #include "tr3d.cdk"
+#include "offline.cdk"
 #include "schm.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
@@ -31,15 +33,19 @@
       external vmmlod,vmmget,vmmuld,newdate
       logical done
       character*16 datev
-      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat
-      real tr1,trf
+      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat,np,ip
+      real tr1,trf,a2,b2
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
       integer err, key1(26+Tr3d_ntr), nvar, nstepno, key1_, 
      $        key2(Tr3d_ntr),key2_,n
-      real*8  one,sid,rsid,dayfrac,tx,tf_nest,dtf,a,b,rate
+      real*8  one,sid,rsid,dayfrac,tx,tf_nest,dtf,a,b,ax,bx
+      integer int_temp
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
       data done /.false./
       save done,tf_nest
+      if(Offline_int_accu_S.eq.'CONST')  int_temp=1
+      if(Offline_int_accu_S.eq.'LINEAR') int_temp=2
+c     print*,'nest_intt int_temp = ',int_temp
 *
 *     ---------------------------------------------------------------
 *
@@ -245,51 +251,80 @@
       if (Tr3d_ntr.gt.0) then
          err = vmmlod(key1,Tr3d_ntr)
          err = vmmlod(key2,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),patr1,tr1)
-            err = vmmget(key2(n),patrf,trf)
+
+         if ( Schm_offline_L) then
+* special interpolation for tracers during offline/MEC mode
+             np = nint(Pil_nesdt/Cstv_dt_8)
+             ip = np - nint((tf_nest-tx)*sid/Cstv_dt_8)
+             if(ip.eq.1) then
+               b2 = 0.5 * b
+             else
+               b2 = 1.0 / (np-ip+1.5)
+             endif
+             a2 = 1.0 - b2
+             do n=1,Tr3d_ntr
+                err = vmmget(key1(n),patr1,tr1)
+                err = vmmget(key2(n),patrf,trf)
+                if (Tr3d_name_S(n).eq.'PR'.or.Tr3d_name_S(n).eq.'PR0'.or.
+     $              Tr3d_name_S(n).eq.'AD'.or.Tr3d_name_S(n).eq.'AD0'.or.
+     $              Tr3d_name_S(n).eq.'N4'.or.Tr3d_name_S(n).eq.'N40')  then
+                    if (int_temp.eq.1) then 
+                             ax = 0.0
+                             bx = 1.0
+                    elseif (int_temp.eq.2) then
+                             ax = 1.0
+                             bx = 0.0
+                    endif
+                else
+                             ax = a
+                             bx = b
+                endif
 *
-            if (.not.Schm_offline_L) then
+                do k= 1, G_nk
+                do j= 1, l_nj 
+                do i= 1, l_ni
+                   tr1 (i,j,k) = ax*tr1(i,j,k) + bx*trf(i,j,k)
+                end do
+                end do
+                end do
 *
-              do k= 1, G_nk
-              do j= 1, l_nj 
-              do i= 1, l_ni
-                tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
-              end do
-              end do
-              end do
+                if ((Tr3d_name_S(n).eq.'PR'.or.Tr3d_name_S(n).eq.'PR0'.or.
+     $              Tr3d_name_S(n).eq.'AD'.or.Tr3d_name_S(n).eq.'AD0'.or.
+     $              Tr3d_name_S(n).eq.'N4'.or.Tr3d_name_S(n).eq.'N40')
+     $                        .and.int_temp.eq.2) then
+                    do j= 1, l_nj
+                    do i= 1, l_ni
+                       if(trf(i,j,1).lt.0.)   then
+                          tr1 (i,j,1) = -trf(i,j,1)
+                       else
+                          tr1 (i,j,1) = a2*abs(tr1(i,j,1)) + b2*trf(i,j,1)
+                       endif
+                    enddo
+                    enddo
+                    do k=2, G_nk
+                    do j= 1, l_nj
+                    do i= 1, l_ni
+                       tr1 (i,j,k)=tr1 (i,j,1)
+                    enddo
+                    enddo
+                    enddo
+                endif
+             end do
+         else
+* Normal mode
+             do n=1,Tr3d_ntr
+                err = vmmget(key1(n),patr1,tr1)
+                err = vmmget(key2(n),patrf,trf)
+                do k= 1, G_nk
+                do j= 1, l_nj 
+                do i= 1, l_ni
+                   tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
+                end do
+                end do
+                end do
+             end do
+         endif
 *
-              else
-*
-*     Accumulation not interpolated (off-line mode)
-*
-           if ((Tr3d_name_S(n).eq.'PR').or.(Tr3d_name_S(n).eq.'AD').or.
-     $         (Tr3d_name_S(n).eq.'N4')) then
-*
-	       rate=1./dble(Pil_nesdt)
-               do k= 1, G_nk
-               do j= 1, l_nj 
-               do i= 1, l_ni
-                  tr1 (i,j,k) = rate*trf(i,j,k)
-               end do
-               end do
-               end do
-*
-            else
-*
-              do k= 1, G_nk
-              do j= 1, l_nj 
-              do i= 1, l_ni
-                tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
-              end do
-              end do
-              end do
-*
-           endif
-*
-        endif
-*
-      end do
          err = vmmuld(key1,Tr3d_ntr)
          err = vmmuld(key2,Tr3d_ntr)
       endif

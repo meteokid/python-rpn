@@ -13,7 +13,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Lee V.            - added one more argument to e_bmfrd
 * v3_02 -                   - correction to search for GZ at 1.0 eta/sg
-* v3_13 - Pellerin Pierre   - To run off-line (surface)
+* v3_20 - Pellerin Pierre   - To run off-line (surface)
 *
 *object
 *    Computes  the ln of surface and top pressure given the topo 
@@ -202,7 +202,7 @@
       anyip_L = .true.
       arret_L = .false.
       do i=1,E_tr3d_ntr
-         print*, E_tr3d_name_S(i),i
+c         print*, E_tr3d_name_S(i),i
          if (.not.E_Schm_offline_L) then
          err = e_bmfrd ( dstf_gid, nifi, njfi, E_tr3d_name_S(i), 
      $                           0., 1., na, lv, anyip_L,arret_L,'CUBIC' )
@@ -216,7 +216,7 @@
                desc='SOLAR FL'
                inter='LINEAR'
                mul=1.
-            else if (E_tr3d_name_S(i).eq.'PR') then
+	    else if ((E_tr3d_name_S(i).eq.'PR').or.(E_tr3d_name_S(i).eq.'PR0')) then
                desc='PRECIP T'
                inter='LINEAR'
                mul=1. 
@@ -224,11 +224,11 @@
                desc='PCP RATE'
                inter='LINEAR'
                mul=1.
-            else if (E_tr3d_name_S(i).eq.'N4') then
+            else if ((E_tr3d_name_S(i).eq.'N4').or.(E_tr3d_name_S(i).eq.'N40')) then
                desc='AC SOL F'
                inter='LINEAR'
                mul=1.
-            else if (E_tr3d_name_S(i).eq.'AD') then
+            else if ((E_tr3d_name_S(i).eq.'AD').or.(E_tr3d_name_S(i).eq.'AD0')) then
                desc='ACC IR F'
                inter='LINEAR'
                mul=1.
@@ -240,6 +240,10 @@
                desc='SRFPRES '
                inter='LINEAR'
                mul=100.
+            else if (E_tr3d_name_S(i).eq.'M4') then
+               desc='COS_ZANG'
+               inter='LINEAR'
+               mul=1.
             endif
 *
              err = e_bmfrd    (dstf_gid, nifi, njfi,E_tr3d_name_S(i), 
@@ -260,7 +264,7 @@
 
  110  format ('|',2x,'Names',2x,'|',' STD ',
      $        '|  Start | Length | Mul | SEQ | H.INTRP  |')
- 120  format ('|',1x,a8,'|',1x,a2,'  |',2(i7,' |'),i3,'  |',1x,a3,
+ 120  format ('|',1x,a8,'|',1x,a4,'|',2(i7,' |'),i3,'  |',1x,a3,
      $        ' |',1x,a7,'  |',1x,a16,'|')
  130  format ('|',9('-'),'+',5('-'),'+',8('-'),'+',8('-'),'+',5('-'),
      $        '+',5('-'),'+',10('-'),'|')

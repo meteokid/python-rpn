@@ -22,7 +22,7 @@
 *     (Based on adw_trilin v_3.1.1)
 *
 *revision
-* v3_12 -Valin & Tanguay -  initial version 
+* v3_20 -Valin & Tanguay -  initial version 
 *
 *object
 *     see id section
@@ -58,7 +58,7 @@
 *
       real capx, capy, capz
 *
-      real*8 rri, rrj, rrk, rb, rc, prf1, prf2, prf3, prf4
+      real*8 rri, rrj, rrk, prf1, prf2, prf3, prf4
 *
 *     ----------------------------------------------------------------
 *
@@ -69,7 +69,9 @@
       jjmax = G_nj+Adw_haloy
       kkmax = l_nk-1
 *
-!$omp parallel do private(n,o1,o2,prf1,prf2,prf3,prf4)
+!$omp parallel private(n,n0,ii,jj,kk,rri,rrj,rrk,
+!$omp&              capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4)
+!$omp do
       do 100 k=1,kn
       do  90 j=j0,jn
       n0 = (k-1)*nij + ((j-1)*l_ni)
@@ -160,7 +162,8 @@
    80 continue
    90 continue
   100 continue
-!$omp end parallel do
+!$omp enddo
+!$omp end parallel
 *
       Adw_hor_L = .false.
       Adw_ver_L = .false.

@@ -118,7 +118,6 @@
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "schm.cdk"
-#include "ptopo.cdk"
 *
       integer i, j, k, i0, j0, in, jn, nij
       real*8  zero, one, two, half, quarter, gamma, eps,

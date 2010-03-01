@@ -27,6 +27,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Lee V. (from IBM) - added min,max on index calcs
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_20 - Tanguay M.        - Correction for haloy.gt.2
 *
 *object
 *     see id section
@@ -97,23 +98,29 @@
             prd = dble(F_x(n))
             ii = ( prd - Adw_x00_8 ) * Adw_ovdx_8
             ii = Adw_lcx( ii+1 ) + 1
+*
+            ii = max(2,ii)
+            ii = min(ii,G_ni+2*Adw_halox-2)
+*
             prdt = prd - Adw_bsx_8(ii)
             if ( prdt .lt. 0.0 ) then
                ii = max(2,ii - 1)
                prdt = prd - Adw_bsx_8(ii)
             endif
-            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capx(n) = prdt * Adw_dix_8(ii)
 
             prd = dble(F_y(n))
             jj = ( prd - Adw_y00_8 ) * Adw_ovdy_8
             jj = Adw_lcy( jj+1 ) + 1
+*
+            jj = max(Adw_haloy,jj)
+            jj = min(jj,G_nj+Adw_haloy)
+*
             prdt = prd - Adw_bsy_8(jj)
             if ( prdt .lt. 0.0 ) then
-               jj = max(2,jj - 1)
+               jj = max(Adw_haloy,jj - 1)
                prdt = prd - Adw_bsy_8(jj)
             endif
-            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capy(n) = prdt * Adw_diy_8(jj)
 
             prd = dble(F_z(n))
@@ -138,23 +145,29 @@
             prd = dble(F_x(n))
             ii = ( prd - Adw_x00_8 ) * Adw_ovdx_8
             ii = Adw_lcx( ii+1 ) + 1
+*
+            ii = max(2,ii)
+            ii = min(ii,G_ni+2*Adw_halox-2)
+*
             prdt = prd - Adw_bsx_8(ii)
             if ( prdt .lt. 0.0 ) then
                ii = max(2,ii - 1)
                prdt = prd - Adw_bsx_8(ii)
             endif
-            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capx(n) = prdt * Adw_dix_8(ii)
 
             prd = dble(F_y(n))
             jj = ( prd - Adw_y00_8 ) * Adw_ovdy_8
             jj = Adw_lcy( jj+1 ) + 1
+*
+            jj = max(Adw_haloy,jj)
+            jj = min(jj,G_nj+Adw_haloy)
+*
             prdt = prd - Adw_bsy_8(jj)
             if ( prdt .lt. 0.0 ) then
-               jj = max(2,jj - 1)
+               jj = max(Adw_haloy,jj - 1)
                prdt = prd - Adw_bsy_8(jj)
             endif
-            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capy(n) = prdt * Adw_diy_8(jj)
 
             prd = dble(F_z(n))
@@ -189,23 +202,29 @@
             prd = dble(F_x(n))
             ii = ( prd - Adw_x00_8 ) * Adw_ovdx_8
             ii = Adw_lcx( ii+1 ) + 1
+*
+            ii = max(2,ii)
+            ii = min(ii,G_ni+2*Adw_halox-2)
+*
             prdt = prd - Adw_bsx_8(ii)
             if ( prdt .lt. 0.0 ) then
                ii = max(2,ii - 1)
                prdt = prd - Adw_bsx_8(ii)
             endif
-            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capx(n) = prdt * Adw_dix_8(ii)
 
             prd = dble(F_y(n))
             jj = ( prd - Adw_y00_8 ) * Adw_ovdy_8
             jj = Adw_lcy( jj+1 ) + 1
+*
+            jj = max(Adw_haloy,jj)
+            jj = min(jj,G_nj+Adw_haloy)
+*
             prdt = prd - Adw_bsy_8(jj)
             if ( prdt .lt. 0.0 ) then
-               jj = max(2,jj - 1)
+               jj = max(Adw_haloy,jj - 1)
                prdt = prd - Adw_bsy_8(jj)
             endif
-            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capy(n) = prdt * Adw_diy_8(jj)
             ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
             F_n(n) = kk*nijag + ij
@@ -223,23 +242,29 @@
             prd = dble(F_x(n))
             ii = ( prd - Adw_x00_8 ) * Adw_ovdx_8
             ii = Adw_lcx( ii+1 ) + 1
+*
+            ii = max(2,ii)
+            ii = min(ii,G_ni+2*Adw_halox-2)
+*
             prdt = prd - Adw_bsx_8(ii)
             if ( prdt .lt. 0.0 ) then
                ii = max(2,ii - 1)
                prdt = prd - Adw_bsx_8(ii)
             endif
-            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capx(n) = prdt * Adw_dix_8(ii)
 
             prd = dble(F_y(n))
             jj = ( prd - Adw_y00_8 ) * Adw_ovdy_8
             jj = Adw_lcy( jj+1 ) + 1
+*
+            jj = max(Adw_haloy,jj)
+            jj = min(jj,G_nj+Adw_haloy)
+*
             prdt = prd - Adw_bsy_8(jj)
             if ( prdt .lt. 0.0 ) then
-               jj = max(2,jj - 1)
+               jj = max(Adw_haloy,jj - 1)
                prdt = prd - Adw_bsy_8(jj)
             endif
-            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capy(n) = prdt * Adw_diy_8(jj)
             F_xgg(n) = Adw_dlx_8(ii-1) * Adw_dix_8(ii)
             F_xdd(n) = Adw_dlx_8(ii+1) * Adw_dix_8(ii)

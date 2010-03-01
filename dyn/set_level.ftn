@@ -175,8 +175,8 @@
 
                   Level_typ(j)='M'
 
-                  if (Level(i,j) .le. G_nk .and. Level(i,j) .gt. 0) then
-                     idx = nint(Level(i,j))
+                  if (Level(i,j) .gt. 0) then
+                     idx = max(nint(Level(i,j)),G_nk)
                      call convip( Level_ip1(i,j), geomg_hyb(idx),
      $                            Level_kind_ip1,modeip1,blank_S,.false.)
                   else

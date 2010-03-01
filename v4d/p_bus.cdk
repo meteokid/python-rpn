@@ -1,0 +1,83 @@
+#if defined (DOC)
+*
+*revisions
+* v2_10 - Lee V.                 - added MAXBUS
+* v2_20 - Pellerin P.            - added geobus,entry bus
+* v3_12 - Bilodeau B.            - 16-character names
+*
+***comdeck p_bus.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH THE SIZES OF PHYSICS BUSES (p_config)     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* MAXBUS             | maximum number of elements allowed in a bus     |
+* p_bdyn_top         | number of variables in the dynamic bus          |
+* p_bdyn_siz         | memory size (words) of the dynamic bus          |
+* p_bper_top         | number of variables in the permanent bus        |
+* p_bper_siz         | memory size (words) of the permanent bus        |
+* p_bvol_top         | number of variables in the volatile  bus        |
+* p_bvol_siz         | memory size (words) of the volatile  bus        |
+* p_bphy_top         | total amount of different variables from physic |
+* p_bent_top         | number of variables in the entry     bus        |
+* p_bent_siz         | memory size (words) of the entry     bus        |
+* p_bgeo_top         | number of variables in the geo       bus        |
+* p_bgeo_siz         | memory size (words) of the geo       bus        |
+* p_nslice           | number of physics slices (set in p_busper)      |
+* Phy_useit          | vector to indicate whether the physics variable |
+*                    | from the physics buses would be outputted       |
+* Phy_xnbits         | vector to indicate whether the physics variable |
+*                    | requires a different compaction other than the  |
+*----------------------------------------------------------------------
+*       
+*
+#endif
+      integer MAXBUS
+      parameter (MAXBUS = 1000)
+      integer p_bdyn_top,p_bper_top,p_bvol_top,p_bent_top,p_bgeo_top,
+     $        p_bdyn_siz,p_bper_siz,p_bvol_siz,p_bent_siz,p_bgeo_siz,
+     $        p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj,
+     $        p_bdyn_out,p_bper_out,p_bvol_out,p_bent_out,
+     $        p_bent_idx(maxbus),p_bper_idx(maxbus),
+     $        p_bdyn_idx(maxbus),p_bvol_idx(maxbus)
+      integer entpar(maxbus,7),dynpar(maxbus,7),
+     $        perpar(maxbus,7),volpar(maxbus,7)
+      common / p_bus / 
+     $        p_bdyn_top,p_bper_top,p_bvol_top,p_bent_top,p_bgeo_top,
+     $        p_bdyn_siz,p_bper_siz,p_bvol_siz,p_bent_siz,p_bgeo_siz,
+     $        p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj,
+     $        p_bdyn_out,p_bper_out,p_bvol_out,p_bent_out,
+     $        entpar,dynpar,perpar,volpar,
+     $        p_bent_idx,p_bper_idx,
+     $        p_bdyn_idx,p_bvol_idx
+*
+      character*1  p_outbus_s(maxbus)
+      character*16  entnm(maxbus),dynnm(maxbus),
+     $              pernm(maxbus),volnm(maxbus)
+      character*8   enton(maxbus),dynon(maxbus),
+     $              peron(maxbus),volon(maxbus)
+      character*60  entdc(maxbus),dyndc(maxbus),
+     $              perdc(maxbus),voldc(maxbus)
+      common /busdync/ entnm, dynnm, pernm, volnm, 
+     $                 entdc, dyndc, perdc, voldc,
+     $                 enton, dynon, peron, volon,p_outbus_s
+*
+      DCL_DYNVAR (Phy, busper3D     , real,(*))
+      DCL_DYNVAR (Phy, busper3D_digf, real,(*))
+*
+      integer MAXGEO
+      parameter (MAXGEO=1000)
+*
+      character*16 geonm(MAXGEO,6)
+      common /busgeoc/ geonm
+*
+      integer geopar(MAXGEO,3)
+      common /busgeoi/ geopar
+*
+      real geobus(*),geofld(*)
+      POINTER (pageobus,geobus)
+      POINTER (pageofld,geofld)
+      common /busgeor/ pageobus,pageofld

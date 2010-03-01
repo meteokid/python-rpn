@@ -53,21 +53,23 @@
       endif
 *
 *     Build short list of possible outputs on this timestep only
+      if (Lun_out.gt.0) write(Lun_out,5000) Lctl_step
       cnt = 0
-      do m=1, dostep_max
       do k=1, Outp_sets
-              Outp_dostep_L(k) = .false.
-         if ( Outp_step(k).eq. dostep(m) ) then
-              Outp_dostep_L(k) = .true.
-            do j=1,Outp_var_max(k)
-               cnt = cnt+1
-               udolist_S(cnt) =  Outp_var_S(j,k)
-               do i=1,cnt-1
-                  if (udolist_S(cnt).eq.udolist_S(i)) cnt = cnt-1
+         Outp_dostep_L(k) = .false.
+         do m=1, dostep_max
+            if ( Outp_step(k).eq. dostep(m) ) then
+                 Outp_dostep_L(k) = .true.
+               do j=1,Outp_var_max(k)
+                  cnt = cnt+1
+                  udolist_S(cnt) =  Outp_var_S(j,k)
+                  do i=1,cnt-1
+                     if (udolist_S(cnt).eq.udolist_S(i)) exit
+                  enddo
+                  if (i.le.cnt-1) cnt=cnt-1
                enddo
-            enddo
-         endif
-      enddo
+            endif
+         enddo
       enddo
 
 *   Determine the number of variables to be outputted from each bus 

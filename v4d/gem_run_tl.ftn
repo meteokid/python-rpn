@@ -1,0 +1,154 @@
+***s/r gem_run_tl - TLM of gem_run 
+*
+#include <model_macros_f.h>
+*
+      subroutine gem_run_tl (F_dgtflt_L, F_rstrt_L)
+*
+      implicit none
+*
+      logical F_dgtflt_L, F_rstrt_L
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - modification as in gem_run
+* v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
+* v3_00 - Ek N./Tanguay M.  - introduce v4d_ctrlcst
+* v3_00 - Laroche S.        - include simplified physics
+* v3_01 - Tanguay M.        - introduce identity option
+* v3_02 - Tanguay M.        - TLM of Hspng_main done
+* v3_02 - Tanguay M.        - cosmetics for identity option  
+* v3_02 - Buehner M.        - added call to v4d_calcenergy for SV job
+*                           - integration stops at V4dg_steplast
+* v3_03 - Tanguay M.        - Call hdif_phy
+* v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2 
+*                           - ADJ of digital filter
+* v3_20 - Tanguay M.        - Adjoint Surfix  
+*                           - Introduce Hzd_hdif0_L
+*
+*object
+*     see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_dgtflt_L    I         Digital initiatization mode
+* F_rstrt_L     O         Is a restart required
+*----------------------------------------------------------------
+*
+*implicits
+#include "init.cdk"
+#include "lun.cdk"
+#include "step.cdk"
+#include "rstr.cdk"
+#include "schm.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+#include "p_clim.cdk"
+#include "hzd.cdk"
+*
+      logical carryon_L,identity_4dvar_L
+      integer last_step,initial_step
+*     ______________________________________________________
+*
+      if( F_rstrt_L      ) call gem_stop('gem_run_tl',-1)
+      if( P_clim_clima_L ) call gem_stop('gem_run_tl',-1)
+      if( Schm_chems_L   ) call gem_stop('gem_run_tl',-1)
+*     ______________________________________________________
+*
+      identity_4dvar_L = V4dg_conf.ne.0.and.V4dg_identity_L
+*
+      call blocstat ()
+*
+         last_step = V4dg_steplast
+      initial_step = Lctl_step
+*
+      if ((F_dgtflt_L).and.(Step_total.ge.(Init_dfnp-1)/2))
+     $     last_step = Init_dfnp-1
+*
+*     4D-Var: Read trajectory for conversion if requested
+*     ---------------------------------------------------
+      call v4d_rwconv0
+*
+*C    4D-Var: Control Cost function at INITIAL time
+*     ---------------------------------------------
+      call v4d_ctrlcst ()
+      if(V4dg_sgvc_L) call v4d_calcenergy
+*
+ 500  Lctl_step = Lctl_step + 1
+*
+      if (Lctl_step.gt.last_step) then
+         Lctl_step=last_step
+         goto 600
+      endif
+*
+      carryon_L = ((Lctl_step.lt.last_step).and.(.not.F_rstrt_L))
+*
+      if (F_dgtflt_L) then
+         if (Lun_out.gt.0) write(Lun_out,1000) Lctl_step,last_step
+      else
+         if (Lun_out.gt.0) write(Lun_out,1001) Lctl_step,initial_step,last_step
+      endif
+*
+*C    Diffusion, Dynamics and Physics
+*     -------------------------------
+      if ( .not.identity_4dvar_L ) then
+*
+*        Horizontal diffusion & Vertical sponge (Initial timestep)
+*        ---------------------------------------------------------
+         if (Lctl_step.eq.1.and.Hzd_hdif0_1_L) call hdif0_tl
+*
+*        Dynamics timestep
+*        -----------------
+         call dynstep_tl( )
+*
+*        Physics timestep & Horizontal diffusion & Vertical sponge
+*        ---------------------------------------------------------
+         call hdif_phy_tl
+*
+      endif
+*
+*C    Digital filter
+*     --------------
+      if ( F_dgtflt_L ) call digflt_tl( )
+*
+      if (Schm_sfix_L) call surfix_tl ( )
+*
+*     4D-Var: Read trajectory for conversion if requested
+*     ---------------------------------------------------
+      call v4d_rwconv0
+*
+*C    4D-Var: Control Cost function at .NOT.INITIAL time
+*     --------------------------------------------------
+      call v4d_ctrlcst ()
+*
+      if(V4dg_sgvc_L) call v4d_calcenergy
+*
+*C    Perform output if required
+*     --------------------------
+      call blocstat ()
+      call out_dyn  ()
+*
+      if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+*
+      if (carryon_L)  goto 500
+*
+ 600  if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
+*
+*     ---------------------------------------------------------------
+*
+ 1000 format(/,'GEM_RUN_TL: PERFORMING TLM INITIALIZATION TIMESTEP #',I8,
+     $         ' OUT OF ',I8,
+     +       /,'================================================')
+ 1001 format(/,'GEM_RUN_TL: PERFORMING TIMESTEP #',I8,' BETWEEN ',I8,' AND ',I8,
+     +       /,'=================================================')
+ 3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
+ 4000 format(/,'END OF THE TIME LOOP (S/R GEM_RUN_TL) AT TIMESTEP',I8,
+     +/,'========================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

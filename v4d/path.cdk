@@ -1,0 +1,30 @@
+#if defined (DOC)
+*
+***comdeck path.cdk
+*
+* v3_00 - Tanguay M.        - add Path_xchg_S 
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH THE PATHs/DIRECTORIES (set_world_view1)   |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Path_swv1_L        | .true. if all the paths are found               |
+* Path_dfwmil_S      | path to the "process" directory                 |
+* Path_nml_S         | path and name of the file "model_settings"      |
+* Path_xchg_S        | path to the "exchange" directory with 3D-Var    |
+*----------------------------------------------------------------------
+*
+#endif
+!
+      logical Path_swv1_L
+      character*256 Path_dfwmil_S,Path_nml_S,Path_xchg_S
+!
+      MARK_COMMON_BEG (Path1)
+      common / Path1 / Path_swv1_L
+      MARK_COMMON_END (Path1)
+      MARK_COMMON_BEG (Path2)
+      common / Path2 / Path_dfwmil_S,Path_nml_S,Path_xchg_S
+      MARK_COMMON_END (Path2)

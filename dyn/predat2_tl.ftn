@@ -1,6 +1,0 @@
-      subroutine predat2_tl
-*
-      call gem_stop('predat2_tl',-1)
-*
-      return
-      end

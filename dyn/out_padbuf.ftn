@@ -52,7 +52,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       end do
 *
       do k=1,lnk
-      do i=id-1,miny,-1
+c     do i=id-1,miny,-1
+      do i=id-1,minx,-1
       do j=miny,maxy
          f(i,j,k) = f(id,j,k)
       end do

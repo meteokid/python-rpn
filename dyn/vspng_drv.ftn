@@ -31,6 +31,7 @@
 *                             top; remove top_only_L and stkmemw
 * v3_01 - Desgagne & Lee    - introduce Vspng_rwnd_L
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Toviessi J. P.    - variable higher order diffusion operator
 *
 *object
 *     The diffusion coefficients are (Cstv_uvdf_8*Cstv_dt_8) for the
@@ -107,9 +108,15 @@
             cy_8(j) = G_yg_8(l_j0+j-1)
          end do
          c_8 = Cstv_uvdf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
-         call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+         if (Hzd_difva_L) then
+           call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $               cy_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Hzd_yp2su_8,
+     $               G_ni,G_nj,G_nj)
+         else
+           call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
      $               cy_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Opr_opsyp2_8,
      $               G_ni,G_nj,G_nj)
+         endif
 *
          call vspng_del2 ( F_u, xp0_8, Opr_opsyp0_8(G_nj+1),
      $                 aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
@@ -156,9 +163,15 @@
             cy_8(j) = G_yg_8(l_j0+j-1)
          end do
          
-         call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+         if (Hzd_difva_L) then
+           call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $                     cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $                     Hzd_yp2su_8,G_ni,G_nj,G_nj)
+         else
+           call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
      $                     cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
      $                     Opr_opsyp2_8,G_ni,G_nj,G_nj)
+         endif
 *
 *        Vertical motion
 *        ~~~~~~~~~~~~~~~
@@ -200,9 +213,16 @@
          if (Vspng_uvwdt_L) then
             nkspng   = Vspng_nk
             Vspng_nk = 1
-            call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,
+            
+            if (Hzd_difva_L) then
+              call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,
+     $                      ciy_8,c_8,cy_8,Opr_opsxp0_8,Opr_opsxp2_8,
+     $                      Opr_opsyp0_8,Hzd_yp2su_8,G_ni,G_nj,G_nj)
+            else
+              call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,
      $                      ciy_8,c_8,cy_8,Opr_opsxp0_8,Opr_opsxp2_8,
      $                      Opr_opsyp0_8,Opr_opsyp2_8,G_ni,G_nj,G_nj)
+            endif
          endif
 *         
          call vspng_del2 (F_ip,

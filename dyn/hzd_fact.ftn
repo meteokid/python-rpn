@@ -34,6 +34,7 @@
 * v2_31 - Desgagne M.       - remove stkmemw
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Corbeil L.        - new RPNCOMM transpose
+* v3_20 - J. P. Toviessi    - variable higher order diffusion operator
 *
 *object
 *     The diffusion coefficients are (Cstv_uvdf_8*Cstv_dt_8) for the
@@ -78,10 +79,17 @@
 *        Horizontal Momentum
 *        ~~~~~~~~~~~~~~~~~~~      
          c_8 = Cstv_uvdf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
-         call hzd_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+         if (Hzd_difva_L) then
+           call hzd_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $       Geomg_cy2_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Hzd_yp2su_8,
+     $       G_ni,G_nj,Ldnh_maxy,l_nj,
+     $       Trp_22max,Trp_22n,LYDIST_DIM,G_nj,l_nj)
+         else
+           call hzd_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
      $       Geomg_cy2_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Opr_opsyp2_8,
      $       G_ni,G_nj,Ldnh_maxy,l_nj,
      $       Trp_22max,Trp_22n,LYDIST_DIM,G_nj,l_nj)
+         endif
 *
          call hzd_del2 (F_u, wk1_8, Hzd_opsxp0_8, Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
@@ -103,10 +111,17 @@
       if ( Cstv_phidf_8 .gt. 0.0) then
 *
          c_8 = Cstv_phidf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
-         call hzd_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+         if (Hzd_difva_L) then
+           call hzd_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $       Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $       Hzd_yp2su_8,G_ni,G_nj,Ldnh_maxy,l_nj,
+     $       Trp_22max,Trp_22n,LYDIST_DIM,G_nj,l_nj)
+         else
+           call hzd_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
      $       Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
      $       Opr_opsyp2_8,G_ni,G_nj,Ldnh_maxy,l_nj,
      $       Trp_22max,Trp_22n,LYDIST_DIM,G_nj,l_nj)
+         endif
 *
 *        Vertical motion in pressure coord. 
 *        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

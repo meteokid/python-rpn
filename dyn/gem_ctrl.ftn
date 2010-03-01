@@ -31,9 +31,7 @@
 #include "lctl.cdk"
 #include "lun.cdk"
 #include "step.cdk"
-#include "schm.cdk"
 #include "rstr.cdk"
-#include "ptopo.cdk"
 #include "v4dg.cdk"
 *
       integer pnerr

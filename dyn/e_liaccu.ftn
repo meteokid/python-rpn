@@ -1,0 +1,187 @@
+*** s/r e_liaccu - to change accumulation to rate
+*
+      integer function e_liaccu ( w1, nix, njx, nv) 
+      implicit none
+*
+      character*4 nv
+      integer nix, njx
+      real    w1(nix*njx)
+*
+*
+*author 
+*     P. Pellerin   - rpn  - October 2004
+*
+*revision
+* v3_20 - Pellerin P.      - initial MPI version
+*
+*object
+*     For the offline mode: accumulation is changed into rate:
+*     This accumulation will be spread between two input time (pilot).
+*     See also the subroutine nest_intt.ftn directly in the model.
+*        w1: difference between the new and last input time (pilot)
+*            is calculated.
+*        a_xx_m : accumulation at the previous input time.
+*        i_xx_m : instantaneous rate at the previous input time
+*
+*arguments
+*______________________________________________________________________
+*                                                                      |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* w1                 | field to change into rate                       |
+* NIX                | number of points on I                           |
+* NJX                | number of points on J                           |
+* NV                 | name of the field to read                       |
+*Offline_int_accu_S   | Type of interpolation used for accumulators     |
+*                    | Const:  rate is constant with the time          |
+*                    | LINEAR: rate is linearly interpolated           |
+*----------------------------------------------------------------------
+*
+*implicits
+#include <model_macros_f.h>
+#include "e_grids.cdk"
+#include "e_fu.cdk"
+#include "e_anal.cdk"
+#include "e_topo.cdk"
+#include "pilot.cdk"
+#include "e_schm.cdk"
+#include "offline.cdk"
+*
+*modules
+*
+      integer err,i,k,ideb
+      real w2(nix*njx),dtinv,taumoy
+      integer int_temp
+      if(Offline_int_accu_S .eq.'CONST')  int_temp=1
+      if(Offline_int_accu_S .eq.'LINEAR') int_temp=2
+      dtinv=1./Pil_nesdt
+*
+*     ---------------------------------------------------------------
+*
+
+            ideb=1
+      if(int_temp.eq.1)     then
+         if (nv.eq.'PR') then
+            do i=ideb,ideb+nix*njx-1
+               w2(i)=a_pr_m(i)
+               a_pr_m(i)=w1(i)
+               w1(i)=max(0.,w1(i)-w2(i))*dtinv
+            enddo
+         endif
+         if (nv.eq.'AD') then
+            do i=ideb,ideb+nix*njx-1
+               w2(i)=a_ir_m(i) 
+               a_ir_m(i)=w1(i)
+               w1(i)=max(0.,w1(i)-w2(i))*dtinv
+            enddo
+         endif
+         if (nv.eq.'N4') then
+            do i=ideb,ideb+nix*njx-1
+               w2(i)=a_so_m(i) 
+               a_so_m(i)=w1(i)
+               w1(i)=max(0.,w1(i)-w2(i))*dtinv
+            enddo
+         endif   
+         if (nv.eq.'PR0'.or.nv.eq.'AD0'.or.nv.eq.'N40') then
+            do i=ideb,ideb+nix*njx-1
+               w1(i)=max(0.,w1(i))*dtinv
+            enddo
+         endif
+      elseif(int_temp.eq.2)    then
+         if (nv.eq.'PR'.or.nv.eq.'PR0') then
+            if(i_pr_m(1).lt.-1..and.a_pr_m(1).lt.-1.)  then
+                   a_pr_m(1)= 0.0
+                do i=ideb,ideb+nix*njx-1
+                   w1(i)=0.0
+                enddo
+            else if(i_pr_m(1).lt.-1.)  then
+                do i=ideb,ideb+nix*njx-1
+                   a_pr_m(i)=w1(i)
+                   i_pr_m(i)=max(0.,w1(i))*dtinv
+                   w1(i)=-i_pr_m(i)
+                enddo
+            else
+                do i=ideb,ideb+nix*njx-1
+                   w2(i)=w1(i)
+                   if(nv.eq.'PR0') a_pr_m(i) = 0.
+                   taumoy=max(0.,w1(i)-a_pr_m(i))*dtinv
+                   w1(i)= -i_pr_m(i)+2*taumoy
+                   if(w1(i).lt.0.) then
+                      i_pr_m(i)=taumoy
+                      w1(i)=min(-i_pr_m(i),-1.e-10)
+                   else
+                      i_pr_m(i)=w1(i)
+                   endif
+                   a_pr_m(i)=w2(i)
+                enddo
+             endif
+c
+           endif
+         if (nv.eq.'AD'.or.nv.eq.'AD0') then
+            if(i_ir_m(1).lt.-1..and.a_ir_m(1).lt.-1.)  then
+                   a_ir_m(1)= 0.0
+                do i=ideb,ideb+nix*njx-1
+                   w1(i)=0.0
+                enddo
+            else if(i_ir_m(1).lt.-1.)  then
+                do i=ideb,ideb+nix*njx-1
+                   a_ir_m(i)=w1(i)
+                   i_ir_m(i)=max(0.,w1(i))*dtinv
+                   w1(i)=-i_ir_m(i)
+                enddo
+            else
+                do i=ideb,ideb+nix*njx-1
+                   w2(i)=w1(i)
+                   if(nv.eq.'AD0') a_ir_m(i) = 0.
+                   taumoy=max(0.,w1(i)-a_ir_m(i))*dtinv
+                   w1(i)= -i_ir_m(i)+2*taumoy
+                   if(w1(i).lt.0.) then
+                      i_ir_m(i)=taumoy
+                      w1(i)=min(-i_ir_m(i),-1.e-10)
+                   else
+                      i_ir_m(i)=w1(i)
+                   endif
+                   a_ir_m(i)=w2(i)
+                enddo
+             endif
+c
+           endif
+         if (nv.eq.'N4'.or.nv.eq.'N40') then
+            if(i_so_m(1).lt.-1..and.a_so_m(1).lt.-1.)  then
+                   a_so_m(1)= 0.0
+                do i=ideb,ideb+nix*njx-1
+                   w1(i)=0.0
+                enddo
+            else if(i_so_m(1).lt.-1.)  then
+                do i=ideb,ideb+nix*njx-1
+                   a_so_m(i)=w1(i)
+                   i_so_m(i)=max(0.,w1(i))*dtinv
+                   w1(i)=-i_so_m(i)
+                enddo
+            else
+                do i=ideb,ideb+nix*njx-1
+                   w2(i)=w1(i)
+                   if(nv.eq.'N40') a_so_m(i) = 0.
+                   taumoy=max(0.,w1(i)-a_so_m(i))*dtinv
+                   w1(i)= -i_so_m(i)+2*taumoy
+                   if(w1(i).lt.0.) then
+                      i_so_m(i)=taumoy
+                      w1(i)=min(-i_so_m(i),-1.e-10)
+                   else
+                      i_so_m(i)=w1(i)
+                   endif
+                   a_so_m(i)=w2(i)
+                enddo
+             endif
+c
+           endif
+         endif
+*
+      return
+*
+ 102  format ('|',1x,'PRECIP. RATE FROM ACCUM.: TIMESTEPS USED:',
+     %            1x,I5,' -',I5,1x,'|')
+*     ---------------------------------------------------------------
+*
+ 900  return
+      end

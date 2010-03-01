@@ -1,0 +1,138 @@
+***s/r  bac_tr - Equivalent to bac for TRAJECTORY 
+*
+#include <model_macros_f.h>
+*
+      subroutine bac_tr( Itr, Itnlh )
+*
+      implicit none
+*
+      integer Itr, Itnlh
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - replace xfis by topo
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+*                           - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+*
+*object
+*     see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  Itr          I           current nonlinear iteration number
+*  Itnlh        I           total number of nonlinear iterations
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "p_geof.cdk"
+#include "rhscm.cdk"
+#include "nlm.cdk"
+#include "vt0m.cdk" 
+#include "vtxm.cdk" 
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*
+      integer pnerr, pnlod, pnlkey1(30)
+*
+      real wijk0(LDIST_SHAPE,l_nk),wijk1 (LDIST_SHAPE,l_nk)
+*
+      integer i,j,k
+*     ______________________________________________________
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+      pnlkey1( 1) = VMM_KEY(st0m)
+      pnlkey1( 2) = VMM_KEY(pipt0m)
+      pnlkey1( 3) = VMM_KEY(qt0m)
+      pnlkey1( 4) = VMM_KEY(fit0m)
+      pnlkey1( 5) = VMM_KEY(fipt0m)
+      pnlkey1( 6) = VMM_KEY(topo)
+      pnlkey1( 7) = VMM_KEY(tt0m)
+      pnlkey1( 8) = VMM_KEY(tpt0m)
+      pnlkey1( 9) = VMM_KEY(tplt0m)
+      pnlkey1(10) = VMM_KEY(ut0m)
+      pnlkey1(11) = VMM_KEY(vt0m)
+      pnlkey1(12) = VMM_KEY(psdt0m)
+      pnlkey1(13) = VMM_KEY(tdt0m)
+      pnlkey1(14) = VMM_KEY(gptxm)
+      pnlkey1(15) = VMM_KEY(gxtxm)
+      pnlkey1(16) = VMM_KEY(rum)
+      pnlkey1(17) = VMM_KEY(rvm)
+      pnlkey1(18) = VMM_KEY(rcnm)
+      pnlkey1(19) = VMM_KEY(rthm)
+      pnlod = 19
+      if (.not. Schm_hydro_L) then
+         pnlkey1(20) = VMM_KEY(qpt0m)
+         pnlkey1(21) = VMM_KEY(wt0m)
+         pnlkey1(22) = VMM_KEY(mut0m)
+         pnlkey1(23) = VMM_KEY(multxm)
+         pnlkey1(24) = VMM_KEY(rvvm)
+         pnlkey1(25) = VMM_KEY(r3m)
+         pnlkey1(26) = VMM_KEY(r3pm)
+         pnlod = 26
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(st0m)
+      pnerr = VMM_GET_VAR(pipt0m)
+      pnerr = VMM_GET_VAR(qt0m)
+      pnerr = VMM_GET_VAR(fit0m)
+      pnerr = VMM_GET_VAR(fipt0m)
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(tt0m)
+      pnerr = VMM_GET_VAR(tpt0m)
+      pnerr = VMM_GET_VAR(tplt0m)
+      pnerr = VMM_GET_VAR(ut0m)
+      pnerr = VMM_GET_VAR(vt0m)
+      pnerr = VMM_GET_VAR(psdt0m)
+      pnerr = VMM_GET_VAR(tdt0m)
+      pnerr = VMM_GET_VAR(gptxm)
+      pnerr = VMM_GET_VAR(gxtxm)
+      pnerr = VMM_GET_VAR(rum)
+      pnerr = VMM_GET_VAR(rvm)
+      pnerr = VMM_GET_VAR(rcnm)
+      pnerr = VMM_GET_VAR(rthm)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(qpt0m)
+         pnerr = VMM_GET_VAR(wt0m)
+         pnerr = VMM_GET_VAR(mut0m)
+         pnerr = VMM_GET_VAR(multxm)
+         pnerr = VMM_GET_VAR(rvvm)
+         pnerr = VMM_GET_VAR(r3m)
+         pnerr = VMM_GET_VAR(r3pm)
+      else
+         qpt0m_ = 0
+         wt0m_  = 0
+         mut0m_ = 0
+         multxm_= 0
+         rvvm_  = 0
+         r3m_   = 0
+         r3pm_  = 0
+      endif
+*
+      call  bacp_2 ( Itr     , Itnlh  , st0m    , pipt0m , qt0m    , 
+     %               fit0m   , fipt0m , topo    , tt0m   , tpt0m   , tplt0m,
+     %               ut0m    , vt0m   , psdt0m  , tdt0m  ,
+     %               qpt0m   , wt0m   , mut0m   , multxm , gptxm   , gxtxm , 
+     %               rum     , rvm    , rthm    , r3m    , r3pm    , rvvm  , rcnm,
+     %               nlm_num , nlm_nvm, nlm_nthm, nlm_n3m, nlm_n3pm, 
+     $               nlm_ncnm, wijk0  , wijk1   , LDIST_DIM, l_nk )
+*
+      pnerr = vmmuld(-1,0)
+
+1000  format (5X,'TRAJ of BACK SUBSTITUTION: (S/R BAC_TR)')
+
+      return
+      end

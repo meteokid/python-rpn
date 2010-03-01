@@ -24,8 +24,6 @@
 #include "lun.cdk"
 #include "p_serg.cdk"
 #include "p_zong.cdk"
-#include "p_geol.cdk"
-#include "ptopo.cdk"
 #include "glb_ld.cdk"
 *
 *

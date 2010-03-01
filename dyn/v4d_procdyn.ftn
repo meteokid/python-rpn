@@ -1,6 +1,0 @@
-      subroutine v4d_procdyn 
-*
-      call gem_stop('v4d_procdyn',-1)
-*
-      return
-      end

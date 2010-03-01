@@ -57,6 +57,7 @@
       integer err,nrec,dostep(MAXSET), dostep_max, step, key0, key1,
      $        pnlkey(15),i,j,k,trkey0(Tr3d_ntr),trkey1(Tr3d_ntr),keytotal
       character*4 ext_S
+      character*6 etikadd_S
       integer i0,in,j0,jn,ii,jj,kk,levset,n,ip3,pnerr,nk_o
       integer,   dimension(:), allocatable :: ind_o
       real deg2rad
@@ -84,7 +85,7 @@
       dostep_max = doout(dostep,1)
       deg2rad    = acos( -1.0)/180.
 *
-      if (dostep_max .gt. 0) then
+      if (dostep_max.gt.0 .and. V4dg_output_L) then
 
          if (Lun_out.gt.0) write(Lun_out,7001) Lctl_step
       else
@@ -93,6 +94,7 @@
          return
 *     
       endif
+      call tmg_start( 66, 'OUT_DYN')
 *
 *     PREPARATION for OUT_THM
 *    ---------------------------
@@ -101,14 +103,6 @@
       err = vmmlod (key0,1)
       err = VMM_GET_VAR(pipt1)
 *
-*
-      do k=1,l_nk
-      do j=1,l_nj
-      do i=1,l_ni
-         wlnph (i,j,k) = log ( geomg_z_8(k) + pipt1(i,j,k) )
-      enddo
-      enddo
-      enddo
       do j=1,l_nj
       do i=1,l_ni
          ptop (i,j) = geomg_z_8(1) + pipt1(i,j,1)
@@ -116,7 +110,6 @@
       end do
       end do
 *
-      err = vmmuld(key0,1)
       pnlkey(1) = VMM_KEY(fit1)
       pnlkey(2) = VMM_KEY(tt1)
       pnlkey(3) = VMM_KEY(st1)
@@ -127,22 +120,43 @@
       pnlkey(8) = VMM_KEY(zz1)
       keytotal  = 8
 *
+*
       if(.not.v4dgconf_L.or.(v4dgconf_L.and.V4dg_di_L)) then
-*
-      err = vmmlod (pnlkey,8)
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            wlnph (i,j,k) = log ( geomg_z_8(k) + pipt1(i,j,k) )
+         enddo
+         enddo
+         enddo
+         err = vmmlod (pnlkey,8)
       else
+*     <<<<<<<<<<<<<<<<<< CAUTION >>>>>>>>>>>>>>>>>>>>>>>>>>
+*     Temporary patch for pressure levels when TLM,ADJ.
+*     Correct evaluation should use TRAJECTORY when TLM,ADJ
+*     on pressure levels will be activated.
+*     <<<<<<<<<<<<<<<<<< CAUTION >>>>>>>>>>>>>>>>>>>>>>>>>>
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            wlnph(i,j,k) = log ( geomg_z_8(k) )
+         enddo
+         enddo
+         enddo
 *
-      pnlkey(9) = VMM_KEY(tpt1)
-      pnlkey(10) = VMM_KEY(tpt1m)
-      pnlkey(11) = VMM_KEY(st1m)
+         pnlkey(9) = VMM_KEY(tpt1)
+         pnlkey(10) = VMM_KEY(tpt1m)
+         pnlkey(11) = VMM_KEY(st1m)
 *
-      keytotal  =11 
-      pnerr = vmmlod(pnlkey,11)
-      pnerr = VMM_GET_VAR(tpt1)
-      pnerr = VMM_GET_VAR(tpt1m)
-      pnerr = VMM_GET_VAR(st1m)
+         keytotal  =11 
+         pnerr = vmmlod(pnlkey,11)
+         pnerr = VMM_GET_VAR(tpt1)
+         pnerr = VMM_GET_VAR(tpt1m)
+         pnerr = VMM_GET_VAR(st1m)
 *
       endif
+
+      err = vmmuld(key0,1)
 
       err = VMM_GET_VAR(fit1)
       err = VMM_GET_VAR(tt1)
@@ -216,10 +230,13 @@
       endif
       
 *
-*     setup of ip3
+*     setup of ip3 and modifs to label
 *
       ip3 = 0
-      if (Schm_theoc_L) ip3 = Lctl_step
+      etikadd_S = ' '
+      ext_S=""
+      if (Out3_ip3.eq.-1) ip3 = Lctl_step
+      if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
       if (v4dgconf_L) then
           if (.not.V4dg_4dvar_L) then
               ip3 = V4dg_status
@@ -227,14 +244,17 @@
      %        ip3 = 20 + V4dg_status
           else
               ip3 = V4dg_status
-              if(V4dg_tl_L) ip3 = 1000 + Pr_nsim4d
-              if(V4dg_ad_L) ip3 = 2000 + Pr_nsim4d
+              if(V4dg_tl_L) ip3 = Pr_nsim4d
+              if(V4dg_ad_L) ip3 = Pr_nsim4d
           endif
+          ext_S = '_nl'
+          if (V4dg_tl_L) ext_S = '_tl'
+          if (V4dg_ad_L) ext_S = '_ad'
+          write(etikadd_S,'(a3,i3.3)')ext_S,ip3
       endif
       
 *
 *     setup of filename extension if needed
-      ext_S=""
       if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
      $     ((Lctl_step.ge.(Init_dfnp-1)/2)) )
      $     ext_S = '_dgf'
@@ -261,7 +281,7 @@
                allocate (ind_o(nk_o+1))
                call out_slev(Level_typ(levset),Level(1,levset),
      $                       ind_o,nk_o,G_nk,Level_kind_ip1,'d')
-               call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
+               call out_sfile(Out3_closestep,Lctl_step,etikadd_S,ip3,ext_S)
  
 *
 *     output of 3-D tracers
@@ -301,7 +321,7 @@
       if(v4dgconf_L.and.(V4dg_tl_L.or.V4dg_ad_L)) pnerr = vmmuln(keym,Tr3d_ntr)
 
 
-      if (.not.Outd_vmm_L) return
+      if (Outd_vmm_L) then
 
 *     Output VMM model variables
 
@@ -325,15 +345,17 @@
                  allocate (ind_o(nk_o+1))
                  call out_slev(Level_typ(levset),Level(1,levset),
      $                       ind_o,nk_o,G_nk,Level_kind_ip1,'d')
-                 call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
+                 call out_sfile(Out3_closestep,Lctl_step,etikadd_S,ip3,ext_S)
 
-                 call out_vmm (wlnph,ip3,ext_S,l_minx,l_maxx,l_miny,l_maxy,
+                 call out_vmm (wlnph,ip3,etikadd_S,ext_S,
+     $               l_minx,l_maxx,l_miny,l_maxy,
      $               G_nk, Level_typ(levset),Level(1,levset),ind_o,nk_o,kk)
                  deallocate (ind_o)
             endif
             call out_cfile
  150     continue
  200  continue
+      endif
  
 *
 *     Delay closure of files, de-allocation, wlog write out if...
@@ -346,6 +368,7 @@
              call wlog('FOUT')
          endif
       endif
+      call tmg_stop(66, 'OUT_DYN')
 *
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,')')
  7002 format(/,' OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (',I8,')')

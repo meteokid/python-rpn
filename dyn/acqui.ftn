@@ -60,7 +60,7 @@
       mm=bmf_time2/10000-hh*100
       ss=bmf_time2/100-hh*10000-mm*100
 *     
-      call bmf_splitname ( pe_file,Ptopo_myrow,Ptopo_mycol,'../','BM',
+      call bmf_splitname ( pe_file,Ptopo_mycol,Ptopo_myrow,'../','BM',
      $                                            bmf_time1,hh,mm,ss )
 *
       do i=1,maxerr

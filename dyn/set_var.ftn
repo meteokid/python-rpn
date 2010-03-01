@@ -20,7 +20,7 @@
 * v2_32                       user so, they are matched to the SORTIE command
 *
 *object
-*       initialization of the common blocks OUTD,OUTP,OUTC. This function is
+*       initialization of the common blocks OUTD,OUTP. This function is
 *       called when the keyword "sortie" is found in the first word
 *       of the directives in the input file given in the statement
 *       "process_f_callback". This feature is enabled by the
@@ -29,7 +29,7 @@
 *       the conventional FORTRAN namelist. This function will process
 *       the following example command read from the named input file.
 *
-* ie:   sortie([UU,VV,TT],levels,2,grid,3,steps,1,typvar,'A')
+* ie:   sortie([UU,VV,TT],levels,2,grid,3,steps,1)
 *       sortie([PR,PC,RR],grid,3,steps,2,levels,1)
 *
 *       The "rpn_fortran_callback" routine will process the above
@@ -50,7 +50,7 @@
 *----------------------------------------------------------------
 *
 *Notes:
-*    ie:   sortie([UU,VV,TT],levels,2,grid,3,steps,1,typvar,A)
+*    ie:   sortie([UU,VV,TT],levels,2,grid,3,steps,1)
 *          sortie([PR,PC,RR],grid,3,steps,2,levels,1)
 *
 * sortie([vr1,vr2,vr3,...],levels,[levelset],grid,[gridset],steps,[stepset])
@@ -59,8 +59,6 @@
 *  levelset - levelset number to use for this set of variables
 *  gridset  - gridset number to use for this set of variables
 *  stepset  - stepset number (timestep set) to use for this set of variables
-*  typvar   - character to represent variable type specifed for each set,
-*             by default, it will be "P" for prevision
 *
 *  For each "sortie" command, the levelset, gridset and stepset must be
 *  specified or an error will occur.
@@ -80,7 +78,6 @@
 *
 **
 *
-      character*1 typvar_S
       character*5 stuff_S
       character*8 varname_S
       integer levset,stepset,gridset,varmax
@@ -109,7 +106,6 @@
       levset=-1
       gridset=-1
       stepset=-1
-      typvar_S='P'
       do i=varmax+2, F_argc
          if (F_argv_S(i).eq.'levels') then
             read(F_argv_S(i+1),*) levset
@@ -117,8 +113,6 @@
             read(F_argv_S(i+1),*) gridset
          else if (F_argv_S(i).eq.'steps') then
             read(F_argv_S(i+1),*) stepset
-         else if (F_argv_S(i).eq.'typvar') then
-            read(F_argv_S(i+1),*) typvar_S
          endif
       enddo
 
@@ -203,7 +197,6 @@
               Outd_grid(j)    = gridset
               Outd_lev(j)     = levset
               Outd_step(j)    = stepset
-              Outd_typvar_S(j)= typvar_S
           else
               if (Lun_out.gt.0) write(Lun_out,1400)
           endif
@@ -219,7 +212,7 @@
           jj=0
           do ii=1,varmax
              jj = jj + 1
-             Outp_var_S(jj,j)=F_argv_S(ii+1)
+             Outp_varnm_S(jj,j)=F_argv_S(ii+1)
              Outp_nbit(jj,j)  = Out3_nbitg
           enddo
           if (jj.gt.0) then
@@ -228,55 +221,18 @@
               Outp_grid(j)    = gridset
               Outp_lev(j)     = levset
               Outp_step(j)    = stepset
-              Outp_typvar_S(j)= typvar_S
               if (Lun_out.gt.0) then
                  write(Lun_out,*) '***PHY***Outp_sets=',Outp_sets
                  write(Lun_out,*) 'Outp_var_max=',Outp_var_max(j)
-                 write(Lun_out,*) 'Outp_var_S=',
-     $                        (Outp_var_S(jj,j),jj=1,Outp_var_max(j))
+                 write(Lun_out,*) 'Outp_varnm_S=',
+     $                        (Outp_varnm_S(jj,j),jj=1,Outp_var_max(j))
                  write(Lun_out,*) 'Outp_grid=',Outp_grid(j)
                  write(Lun_out,*) 'Outp_lev=',Outp_lev(j)
                  write(Lun_out,*) 'Outp_step=',Outp_step(j)
-                 write(Lun_out,*) 'Outp_typvar_S=',Outp_typvar_S(j)
               endif
           else
               if (Lun_out.gt.0) write(Lun_out,1400)
           endif
-c     else if (F_argv_S(0).eq.'sortie_c') then
-c         j = Outc_sets + 1
-c         if (j.gt.MAXSET) then
-c         if (Lun_out.gt.0) write(Lun_out,*)
-c    $                      'SET_VAR WARNING: too many OUTC sets'
-c         set_var=1
-c         return
-c         endif
-c
-c         jj=0
-c         do ii=1,varmax
-c            jj = jj + 1
-c            Outc_var_S(jj,j)=F_argv_S(ii+1)
-c            Outc_nbit(jj,j)  = Out3_nbitg
-c         enddo
-c         if (jj.gt.0) then
-c             Outc_sets       = j
-c             Outc_var_max(j) = jj
-c             Outc_grid(j)    = gridset
-c             Outc_lev(j)     = levset
-c             Outc_step(j)    = stepset
-c             Outc_typvar_S(j)= typvar_S
-c             if (Lun_out.gt.0) then
-c                write(Lun_out,*) '***CHEM**Outc_sets=',Outc_sets
-c                write(Lun_out,*) 'Outc_var_max=',Outc_var_max(j)
-c                write(Lun_out,*) 'Outc_var_S=',
-c    $                        (Outc_var_S(jj,j),jj=1,Outc_var_max(j))
-c                write(Lun_out,*) 'Outc_grid=',Outc_grid(j)
-c                write(Lun_out,*) 'Outc_lev=',Outc_lev(j)
-c                write(Lun_out,*) 'Outc_step=',Outc_step(j)
-c                write(Lun_out,*) 'Outc_typvar_S=',Outc_typvar_S(j)
-c             endif
-c         else
-c             if (Lun_out.gt.0) write(Lun_out,1400)
-c         endif
       endif
 *
 *----------------------------------------------------------------

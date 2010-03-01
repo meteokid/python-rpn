@@ -106,6 +106,7 @@
       else if (index(F_argv_S(2),'core') .ne. 0) then
           grdtyp_S='core'
       else if (index(F_argv_S(2),'reduc') .ne. 0) then
+          grdtyp_S='reduc'
                gridout(1)=0
                gridout(2)=0
                gridout(3)=0
@@ -133,6 +134,7 @@
      %        Grd_rot_8, P_geol_tourn_L)
          Grid_ig1(j) = Grid_ig1(j) + j-1
          if (G_lam) Grid_ig1(j)=Grid_ig1(j)+10
+         if (grdtyp_S.eq.'reduc') Grid_ig1(j)=Grid_ig1(j)+10
 
 *    Calculate the origin and outer coordinates of the output grid
 *    and set to the maximum/minimum possible

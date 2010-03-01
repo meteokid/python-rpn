@@ -39,7 +39,9 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
 * v3_12 - Leduc A-M.        - Add arguments gzm and topo
-* v3_13 - Pellerin P.       - Add busvol in p_fillbus
+* v3_20 - Lee V             - replace slab Output with FST file output
+* v3_20 - Pellerin P.       - Add busvol in p_fillbus
+* v3_20 - Desgagne/Pellerin S.- Replaced Mem_pslic with jdo in test for last slice.
 *
 *object
 *     See above id.
@@ -138,9 +140,8 @@
 
 !$omp critical      
       Mem_pslic = Mem_pslic + 1
+      jdo  = Mem_pslic
       if ( Mem_pslic .le. p_nj ) then
-*
-         jdo  = Mem_pslic
 *
          if (Mem_phyncore_L) then
             pabusper = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
@@ -159,7 +160,7 @@
 *
 *C    Stop if last slice has been completed
 *
-      if ( Mem_pslic .gt. p_nj ) goto 650
+      if ( jdo .gt. p_nj ) goto 650
 *
 *     Fill buses with jdo row
 *
@@ -251,7 +252,7 @@
      $                                (j-1)*l_ni + i+ p_offi)=
      $             busper(offbb+(k*mult-1)*p_ni + i - 1)
                    if (F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
-     $                                (j-1)*l_ni + i+ p_offi) .gt. Dcst_pi_8) 
+     $                                (j-1)*l_ni + i+ p_offi) .gt. Dcst_pi_8)
      $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
      $                                (j-1)*l_ni + i+ p_offi)=
      $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +

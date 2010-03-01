@@ -1,0 +1,624 @@
+***s/r v4d_grdjok - At first call, read time-variable adjoint profiles from 3D-Var
+*                   and fill the adjoint model profiles structure. At the current
+*                   bin, do adjoint of interpolation at obs. locations.
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_grdjok 
+*
+      use v4d_prof
+      use v4dz
+      use v4d_interint0
+*
+      implicit none
+*
+*author N.Ek
+*
+*revision
+* v3_00 - N. Ek             - initial MPI version
+* v3_00   M. Tanguay        - adapt to Simon's exchange
+* v3_01 - M. Tanguay        - correction for empty processors 
+* v3_02 - M. Tanguay        - locate HU in tracers 
+* v3_11 - M. Tanguay        - correct relationship between stepob and timestep
+*                           - Add option for profiles done on U-V grids for winds 
+*
+*object
+*     -----------------------------------------------------------------------
+*     Each processor do the following:
+*         1) At first call: Read time-variable adjoint profiles from 3D-Var
+*                           and fill the adjoint model profiles structure (l_mv).
+*         2) At the current bin, do adjoint of
+*            Conversion from GEM units to 3D-Var units and Reverse Staggering
+*     -----------------------------------------------------------------------
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "vt1.cdk"
+#include "vt1m.cdk"
+#include "ptopo.cdk"
+#include "tr3d.cdk"
+#include "path.cdk"
+#include <prof_f.h>
+#include "step.cdk"
+*
+*     Local variables
+*     ---------------
+      integer  vmmlod, vmmget, vmmuld, prof_rdrec, prof_bitptrn, longueur
+      external vmmlod, vmmget, vmmuld, prof_rdrec, prof_bitptrn, longueur
+*
+      integer pnerr, ier, ip, pnlkey1(12), i, j, k, irec, inmvar8, nobproc,
+     %        kkk, ibid1, ibid2, ind, nsim3d, nbin, npr, i1, i2, j1, j2,
+     %        kstatus, jobs, n 
+*
+      integer key1(Tr3d_ntr), key1_, key1m(Tr3d_ntr), key1m_
+      real hut1, hut1m
+      pointer (pahu1, hut1(LDIST_SHAPE,*)),(pahu1m, hut1m(LDIST_SHAPE,*))
+*
+      real,    pointer, dimension(:,:) :: profx,profy,prbid 
+      real*8,  pointer, dimension(:,:) :: fprof_8
+      real*8,  pointer, dimension(:)   :: fprof2d_8
+      integer, pointer, dimension(:)   :: mdltag
+*
+      integer, pointer, dimension(:)   :: done 
+      integer, pointer, dimension(:)   :: nob 
+*
+      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk),wbid(LDIST_SHAPE,l_nk),
+     %     wijk3(LDIST_SHAPE,l_nk),wijk4(LDIST_SHAPE,l_nk),wij5(LDIST_SHAPE)
+*
+      logical plpr_L, rdvar_L
+*
+      real*8, parameter :: ZERO_8 = 0.0
+*
+      character(len=2) :: cljx_S, cljy_S
+*     ______________________________________________________
+*
+      write(Lun_out,1000) Lctl_step
+*
+*     Nullify pointers for prof_gvar
+*     ------------------------------
+      nullify(profx,profy,prbid,fprof_8,fprof2d_8,mdltag)
+*
+*     Flag for diagnostics 
+*     --------------------
+      plpr_L = .false.
+      plpr_L = plpr_L.and.Lun_out.gt.0
+*
+*     Recall the dimensions of the fields presented to the interpolation
+*     ------------------------------------------------------------------
+      i1=V4dz_i1
+      i2=V4dz_i2
+      j1=V4dz_j1
+      j2=V4dz_j2
+*
+*     Establish at which bin we are    
+*     -----------------------------
+      nbin = (Lctl_step - Pr_ibin0) / V4dg_stepob + 1
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k = 1,l_nk
+        do j=l_miny,l_maxy
+          do i=l_minx,l_maxx
+            wijk1(i,j,k) = ZERO_8
+            wijk2(i,j,k) = ZERO_8
+            wijk3(i,j,k) = ZERO_8
+            wijk4(i,j,k) = ZERO_8
+          enddo
+        enddo
+      enddo
+*
+      if(V4dg_pruv_L) then
+      do k=1,l_nk
+         do j=l_miny,l_maxy
+           do i=l_minx,l_maxx
+               wbid(i,j,k) = ZERO_8
+            end do
+         end do
+      end do
+      endif
+*
+      do j=l_miny,l_maxy
+        do i=l_minx,l_maxx
+          wij5(i,j) = ZERO_8
+        end do
+      end do
+*
+*     -----------------------------------------------------------------------------
+*     Read dwya PROF file containing time-variables adjoint profiles ONLY ONCE 
+*     (at FIRST CALL to v4d_grdjok) and fill adjoint model profiles structure (l_mv) 
+*     by classifying them according to their model tag
+*     -----------------------------------------------------------------------------
+      if(.not.Pr_ropen_L) then
+*
+         Pr_ropen_L = .true.
+*
+*        Initialize counter for maximal number of adjoint profiles in the local processor
+*        as function of bin 
+*        --------------------------------------------------------------------------------
+         if(Pr_nobproc.ne.0) then 
+            allocate(done(Pr_nobproc),STAT=pnerr)
+            do i = 1,Pr_nobproc
+               done(i) = 0
+            enddo
+         endif
+*
+         allocate(nob(Pr_maxbin),STAT=pnerr)
+         do n = 1,Pr_maxbin
+            nob(n) = 0
+         enddo
+*
+*        Open dwya PROF file to read the adjoint model profiles
+*        ------------------------------------------------------
+         write(cljx_S,'(i2.2)') Ptopo_mycol
+         write(cljy_S,'(i2.2)') Ptopo_myrow
+*
+         Pr_type3file_S = Path_xchg_S(1:longueur( Path_xchg_S) )//'/dwya_'
+     %                    //cljx_S//'_'//cljy_S//'.prof'
+*
+         write(Lun_out,*) 'Opening adjoint dwya MODEL-PROFILE input file'
+*
+         Pr_ihdlin = prof_open (Pr_type3file_S,'READ','FILE',Pr_dsnooze_8)
+*
+         if(Pr_ihdlout.le.0) then
+            write(Lun_out,*) 'Cannot open adjoint MODEL-PROFILE input file !'
+            kstatus = - 99
+         endif
+*
+         write(Lun_out,*) 'Reading records in dwya PROF file'  
+*
+*        N.B.!!  Currently there is no direct verification that adjoint
+*                profiles and model profiles have the same dimensions
+*        -------------------------------------------------------------
+*
+         irec = 0
+         nobproc = 0
+*
+*        Verify if record 
+*        ----------------
+         readrec: do
+*
+         ier = prof_rdrec(Pr_ihdlin)
+*
+         if(ier .ne. 0) then  ! Record is no read
+            if(irec .ne. 0) then
+               exit readrec     ! We are at the end of the file
+            else
+               write(Lun_out,*) 'No records to read in ADJOINT-PROFILE input file!'
+               call gem_stop('v4d_grdjok',-1)
+            endif
+         else                 ! There is a record
+*
+           irec = irec + 1
+*
+           write(Lun_out,*) 'READING RECORD #', irec,'.....(prof_rdrec)'
+*
+*          Verify 3d-Var simulation no.
+*          ----------------------------
+           pnerr = prof_gvar(Pr_ihdlin, nsim3d,PRM_EVNT)
+           if(nsim3d.ne.Pr_nsim4d) then
+              write(Lun_out,*) 'WRONG SIMULATION NUMBER NSIM3D = ',nsim3d,' NSIM4D = ',Pr_nsim4d
+              call gem_stop('v4d_grdjok',-1)
+           else
+              write(Lun_out,*) 'NSIM3D IS THE RIGHT SIMULATION NUMBER = ',nsim3d
+           endif
+*
+*          Input the corresponding Model-profile Tag(s)
+*          --------------------------------------------
+           pnerr = prof_gvar(Pr_ihdlin, mdltag, V2D_MTAG)
+*
+           if(pnerr .ne. 0 ) then
+              write(Lun_out,*) 'Error: No V2D_MTAG found'
+              call gem_stop('v4d_grdjok',-1)
+           endif
+*
+           npr = size(mdltag, 1)
+*
+           if(plpr_L) then
+              write(Lun_out,*) 'Size of MDLTAG =',npr,'in record =',irec
+              write(Lun_out,*) 'Content of MDLTAG =',(mdltag(k), k=1,npr),'in record =',irec
+           endif
+           write(Lun_out,*) 'Total number of adjoint profiles in this record = ',npr
+*
+           nobproc = nobproc + npr
+           if(nobproc.gt.Pr_nobproc) then
+              write(Lun_out,*) 'Error: NOBPROC GT PR_NOBPROC'
+              call gem_stop('v4d_grdjok',-1)
+           endif
+*
+*          Find out which fields are in current record
+*          -------------------------------------------
+           pnerr = prof_bitptrn(Pr_ihdlin,ibid1,ibid2,kkk,inmvar8) 
+*
+           if(pnerr .ne. 0) then ! PRM_MVAR is not input
+              write(Lun_out,*) 'Error: cannot read PRM_MVAR'
+              call gem_stop('v4d_grdjok',-1)
+           endif
+*
+           do i = 1, Pr_nvars
+              rdvar_L = btest( inmvar8, Pr_varindx(i) )   
+*
+              if(rdvar_L ) then
+                 kkk = i   
+                 if(plpr_L) write(Lun_out,*) 'Fill adjoint structure of Varindx =',Pr_varindx(i),
+     %                                       'Variable: ',Pr_varname(i),'from record =',irec
+*
+*                Read the adjoint profiles
+*                ------------------------- 
+                 if(Pr_varindx(kkk).eq.V2D_PSUR ) then
+                    pnerr = prof_gvar( Pr_ihdlin,fprof2d_8,V2D_PSUR )
+                    npr = size ( fprof2d_8, 1 )
+                 else
+                    pnerr = prof_gvar( Pr_ihdlin,fprof_8,Pr_varindx(kkk) )
+                    npr = size ( fprof_8,   2 )
+                 endif
+*
+*                Use Model-profile-tags to insert the adjoint profiles
+*                in the location that matches the correct px,py for this bin 
+*                -----------------------------------------------------------
+                 do ip = 1, npr      ! for all the adjoint profiles
+*
+                   if ( Pr_varindx(kkk).eq.V2D_PSUR ) then
+                         Pr_mlprof(1,mdltag(ip),kkk)% ptr = fprof2d_8(ip)
+                   else  
+                      do k = 1, l_nk
+                         Pr_mlprof(k,mdltag(ip),kkk)% ptr = fprof_8(k,ip)
+                      enddo
+                   endif
+*
+*                  Accumulate number of adjoint profiles at the given bin 
+*                  ------------------------------------------------------ 
+                   if(done(mdltag(ip)).eq.0) nob(Pr_bintag(mdltag(ip))) = 
+     %                                       nob(Pr_bintag(mdltag(ip))) + 1
+                      done(mdltag(ip)) = 1
+*
+                 enddo ! npr
+*
+              endif ! rdvar_L
+*
+           enddo ! Pr_nvars 
+*
+         endif  ! if (ier .eq. 0) ! Record is read
+*
+         deallocate ( fprof_8,    STAT=ier )
+         deallocate ( fprof2d_8,  STAT=ier )
+         deallocate ( mdltag,     STAT=ier )
+
+         enddo readrec
+*
+*        Diagnostics  
+*        -----------
+         do n = 1,Pr_maxbin
+            write(Lun_out,*) 'For BIN =',n,' Local number of adjoint profiles = ',nob(n)
+            if(nob(n).ne.Pr_nob(n)) then 
+               write(Lun_out,*) 'For BIN =',n,' PR_NOB and NOB are different ',Pr_nob(n),nob(n)
+               call gem_stop('v4d_grdjok',-1)
+            endif
+         enddo
+         write(Lun_out,*) 'Local number of adjoint profiles for all times = ',nobproc
+         if(nobproc.ne.Pr_nobproc) then 
+            write(Lun_out,*) 'PR_NOBPROC and NOBPROC are different ',Pr_nobproc,nobproc
+            call gem_stop('v4d_grdjok',-1)
+         endif
+*
+         if(Pr_nobproc.ne.0) deallocate( done, STAT=ier )
+         deallocate( nob, STAT=ier )
+*
+         write(Lun_out,*) ' '
+*
+*     Close dwya PROF file 
+*     --------------------
+      ier = prof_close (Pr_ihdlin,Pr_llfrm_L)
+*
+      write(Lun_out,*) 'Closing adjoint dwya MODEL-PROFILE input file'
+        
+      endif  ! if (.not.Pr_ropen_L)
+*
+      if(plpr_L) then
+         npr = Pr_l_mv(V3D_UTRU,nbin) % nprof
+         npr=min(npr,Pr_l_mv(V3D_TEMP,nbin) % nprof)
+         npr=min(npr,Pr_l_mv(V3D_SPHU,nbin) % nprof)
+         npr=min(npr,Pr_l_mv(V2D_PSUR,nbin) % nprof)
+         if(npr.ne.0) then
+         jobs=1
+         write(Lun_out,fmt='(//,6x,"Printing one profile of GOMOBS ADJOINT...",/,2x,a,4(4x,A))')
+     S                        'Level','UU','VV','TT','HU'
+         do k = 1,G_nk
+         write(Lun_out,fmt='(2x,i3,4(4x,e12.5))')k,
+     %         Pr_l_mv(V3D_UTRU,nbin) % fprof(k,jobs),
+     %         Pr_l_mv(V3D_VTRU,nbin) % fprof(k,jobs),
+     %         Pr_l_mv(V3D_TEMP,nbin) % fprof(k,jobs),
+     %         Pr_l_mv(V3D_SPHU,nbin) % fprof(k,jobs)
+         end do
+         write(Lun_out,fmt='(//,6x,"Printing GOMOBS ADJOINT...",(4x,A),(4x,e12.5))')
+     %                     'PS',Pr_l_mv(V2D_PSUR,nbin) % fprof(1,jobs)
+         end if
+      end if
+*
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1) = VMM_KEY(ut1 )
+      pnlkey1(2) = VMM_KEY(vt1 )
+      pnlkey1(3) = VMM_KEY(tpt1)
+      pnlkey1(4) = VMM_KEY(st1 )
+*
+*     Get trajectory fields in memory
+*     -------------------------------
+      pnlkey1(5) = VMM_KEY(tpt1m)
+      pnlkey1(6) = VMM_KEY(st1m )
+*
+*     - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,6)
+*     - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1 )
+      pnerr = VMM_GET_VAR(vt1 )
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(st1 )
+*
+      pnerr = VMM_GET_VAR(tpt1m)
+      pnerr = VMM_GET_VAR(st1m )
+*
+*     Load humidity field
+*     -------------------
+      key1_ = VMM_KEY (trt1)
+      do k=1,Tr3d_ntr
+         key1(k) = key1_ + k
+      end do
+      pnerr = vmmlod(key1,Tr3d_ntr)
+      do k=1,Tr3d_ntr
+      if (Tr3d_name_S(k).eq.'HU') pnerr = vmmget(key1(k),pahu1,hut1) 
+      end do
+*
+*     Load TRAJ humidity field
+*     ------------------------
+      key1m_ = VMM_KEY (trt1m)
+      do k=1,Tr3d_ntr
+        key1m(k) = key1m_ + k
+      end do
+      pnerr = vmmlod(key1m,Tr3d_ntr)
+      do k=1,Tr3d_ntr
+      if (Tr3d_name_S(k).eq.'HU') pnerr = vmmget(key1m(k),pahu1m,hut1m) 
+      end do
+*
+*     ADJOINT of
+*     Evaluate profiles at observations locations
+*     -------------------------------------------
+*
+*     ADJOINT of
+*     ----------------------------------
+*     Contribution from surface pressure
+*     ----------------------------------
+      npr = Pr_l_mv(V2D_PSUR,nbin) % nprof
+      write(Lun_out,*) 'Evaluate adjoint profiles PS at BIN = ',nbin,
+     %                 'Number of profiles = ',npr
+*
+      if(npr.ne.0) then
+*
+        allocate ( profx (1,npr), STAT=ier )
+*
+        do j=1,npr
+          profx(1,j) = Pr_l_mv(V2D_PSUR,nbin) % fprof(1,j)
+        enddo
+
+      endif
+
+*     Adjoint of
+*     Interpolation to observation locations using EZSCINT
+*     ----------------------------------------------------
+      call v4d_scint0_ad(profx,Pr_l_mv(V2D_PSUR,nbin)%px,Pr_l_mv(V2D_PSUR,nbin)%py,npr,
+     %                   wij5,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,V4dz_wx_8,i1,i2,j1,j2,1,
+     %                   V4dz_grtypi,V4dz_degree,'4S')
+*
+      if(npr.ne.0) deallocate( profx ) 
+*
+*     ADJOINT of
+*     --------------------------
+*     Contribution from humidity
+*     --------------------------
+      npr =  Pr_l_mv(V3D_SPHU,nbin) % nprof 
+      write(Lun_out,*) 'Evaluate adjoint profiles HU at BIN = ',nbin,
+     %                 'Number of profiles = ',npr
+*
+      if(npr.ne.0) then
+*
+        allocate ( profx (l_nk,npr), STAT=ier )
+*
+        do k = 1,l_nk
+          do j=1,npr
+            profx(k,j)= Pr_l_mv(V3D_SPHU,nbin) % fprof(k,j)
+          enddo
+        enddo
+*
+      endif 
+*
+*     Adjoint of
+*     Interpolation to observation locations using EZSCINT
+*     ----------------------------------------------------
+      call v4d_scint0_ad(profx,Pr_l_mv(V3D_SPHU,nbin)%px,Pr_l_mv(V3D_SPHU,nbin)%py,npr,
+     %                   wijk4,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,V4dz_wx_8,i1,i2,j1,j2,l_nk,
+     %                   V4dz_grtypi,V4dz_degree,'HU')
+*
+      if(npr.ne.0) deallocate( profx ) 
+*
+*     ADJOINT of
+*     -----------------------------
+*     Contribution from temperature
+*     -----------------------------
+      npr =  Pr_l_mv(V3D_TEMP,nbin) % nprof 
+      write(Lun_out,*) 'Evaluate adjoint profiles TT at BIN = ',nbin,
+     %                 'Number of profiles = ',npr
+*
+      if(npr.ne.0) then
+*
+        allocate ( profx (l_nk,npr), STAT=ier )
+*
+        do k = 1,l_nk
+          do j=1,npr
+            profx(k,j)= Pr_l_mv(V3D_TEMP,nbin) % fprof(k,j)
+          enddo
+        enddo
+*
+      endif
+*
+*     Adjoint of
+*     Interpolation to observation locations using EZSCINT
+*     ----------------------------------------------------
+      call v4d_scint0_ad(profx,Pr_l_mv(V3D_TEMP,nbin)%px,Pr_l_mv(V3D_TEMP,nbin)%py,npr,
+     %                   wijk3,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,V4dz_wx_8,i1,i2,j1,j2,l_nk,
+     %                   V4dz_grtypi,V4dz_degree,'TT')
+*
+      if(npr.ne.0) deallocate( profx ) 
+*
+*     ADJOINT of
+*     --------------------------------
+*     Contribution from U-V components
+*     --------------------------------
+      npr = Pr_l_mv(V3D_UTRU,nbin) % nprof
+      write(Lun_out,*) 'Evaluate adjoint profiles UV at BIN = ',nbin,
+     %                 'Number of profiles = ',npr
+*
+      if(npr.ne.0) then
+*
+        allocate ( profx (l_nk,npr), STAT=ier )
+        allocate ( profy (l_nk,npr), STAT=ier )
+        if(V4dg_pruv_L) allocate ( prbid (l_nk,npr), STAT=ier )
+*
+        do k=1,l_nk
+          do j=1,npr
+            profx(k,j)= Pr_l_mv(V3D_UTRU,nbin) % fprof(k,j)
+            profy(k,j)= Pr_l_mv(V3D_VTRU,nbin) % fprof(k,j)
+          enddo
+        enddo
+*
+        if(V4dg_pruv_L)  then
+        do k=1,l_nk
+          do j=1,npr
+            prbid(k,j)= ZERO_8
+          enddo
+        enddo
+        endif
+*
+      endif
+*
+*     Adjoint of
+*     Interpolation to observation locations using EZSCINT
+*     ----------------------------------------------------
+      if(.not.V4dg_pruv_L) then
+*
+      call v4d_uvint0_ad(profx,profy,Pr_l_mv(V3D_UTRU,nbin)%px,Pr_l_mv(V3D_UTRU,nbin)%py,npr,
+     %                   wijk1,wijk2,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,V4dz_wx_8,V4dz_cox_8,V4dz_six_8,V4dz_siy_8,
+     %                   i1,i2,j1,j2,l_nk,V4dz_grtypi,V4dz_degree,'UV')
+*
+      else
+*
+      call v4d_uvint0_ad (prbid,profy,Pr_l_mv(V3D_UTRU,nbin)%px,Pr_l_mv(V3D_UTRU,nbin)%pyv,npr,
+     %                    wbid,wijk2,V4dz_ax,V4dz_ayv,V4dz_cx,V4dz_cyv,V4dz_wx_8,V4dz_cox_8,V4dz_six_8,V4dz_siyv_8,
+     %                    i1,i2,j1,j2,l_nk,'V',V4dz_degree,'UV')
+*
+      do k=1,l_nk
+         do j=l_miny,l_maxy
+           do i=l_minx,l_maxx
+               wbid(i,j,k) = ZERO_8
+            end do
+         end do
+      end do
+*
+      if(npr.ne.0) then
+        do k=1,l_nk
+          do j=1,npr
+            prbid(k,j)= ZERO_8
+          enddo
+        enddo
+      endif
+*
+      call v4d_uvint0_ad (profx,prbid,Pr_l_mv(V3D_UTRU,nbin)%pxu,Pr_l_mv(V3D_UTRU,nbin)%py,npr,
+     %                    wijk1,wbid,V4dz_axu,V4dz_ay,V4dz_cxu,V4dz_cy,V4dz_wxu_8,V4dz_coxu_8,V4dz_sixu_8,V4dz_siy_8,
+     %                    i1,i2,j1,j2,l_nk,'U',V4dz_degree,'UV')
+*
+      do k=1,l_nk
+         do j=l_miny,l_maxy
+           do i=l_minx,l_maxx
+               wbid(i,j,k) = ZERO_8
+            end do
+         end do
+      end do
+*
+      endif
+*
+      if(npr.ne.0) deallocate( profx, profy ) 
+      if(npr.ne.0.and.V4dg_pruv_L) deallocate( prbid ) 
+*
+      if(plpr_L) then
+         if(Ptopo_myproc.eq.0) write(Lun_out,*) 'AFTER EZSCINT_AD'
+         call glbstat(wijk1,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat(wijk2,'VV',LDIST_DIM,G_nk,1,G_ni,1,G_nj-1,1,G_nk)
+         call glbstat(wijk3,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat(wij5 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,1,   1)
+         call glbstat(wijk4,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         if(Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
+      endif
+*
+*     ADJOINT of
+*     Convert the GEM variables to observation variables
+*     --------------------------------------------------
+      call v4d_varconv_ad( wijk1, wijk2, wijk3, wijk4, wij5,
+     $                     tpt1m, hut1m, st1m, LDIST_DIM, l_nk, .false. )
+*
+      if(plpr_L) then
+         if(Ptopo_myproc.eq.0) write(Lun_out,*) 'AFTER VARCONV_AD'
+         call glbstat(wijk1,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat(wijk2,'VV',LDIST_DIM,G_nk,1,G_ni,1,G_nj-1,1,G_nk)
+         call glbstat(wijk3,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat(wij5 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,1,   1)
+         call glbstat(wijk4,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         if(Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
+      endif
+*
+*     ADJOINT of
+*     Transfer fields
+*     ---------------
+      do j=1,l_nj
+            do i=1,l_ni
+           st1(i,j) = wij5(i,j) + st1(i,j)
+          wij5(i,j) = ZERO_8
+        enddo
+      enddo
+*
+      do k=1,l_nk
+        do j=1,l_njv
+          do i=1,l_ni
+            vt1  (i,j,k) = wijk2(i,j,k) + vt1 (i,j,k)
+            wijk2(i,j,k) = ZERO_8
+          end do
+        end do
+        do j=1,l_nj
+          do i=1,l_ni
+            hut1 (i,j,k) = wijk4(i,j,k) + hut1(i,j,k)
+            wijk4(i,j,k) = ZERO_8
+            tpt1 (i,j,k) = wijk3(i,j,k) + tpt1(i,j,k)
+            wijk3(i,j,k) = ZERO_8
+          end do
+          do i=1,l_niu
+            ut1  (i,j,k) = wijk1(i,j,k) + ut1 (i,j,k)
+            wijk1(i,j,k) = ZERO_8
+          end do
+        end do
+      enddo
+*
+      pnerr = vmmuld(-1,0)
+*
+      write(Lun_out,1001) Lctl_step
+      call flush(Lun_out)
+*
+ 1000 format(/,'V4D_GRDJOK: Beginning for TIMESTEP = ',I8,
+     +       /,'==================================')
+ 1001 format(/,'V4D_GRDJOK:    Ending for TIMESTEP = ',I8,
+     +       /,'==================================')
+*
+      return
+      end

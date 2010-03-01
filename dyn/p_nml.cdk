@@ -13,7 +13,7 @@
 * v3_03 _ Leduc A-M              - added P_rad_filter_L
 * v3_12 _ Plante A.              - added P_cond_pcptype_s
 * v3_12 _ Bilodeau B.            - replaced P_cond_kfctrig by P_cond_kfctrig4
-* v3_12 _ Leduc/Bilodeau         - added P_pbl_z0tlat and removed P_pbl_z0tcst
+* v3_20 _ Leduc/Bilodeau         - added P_pbl_z0tlat and removed P_pbl_z0tcst
 *
 ***comdeck p_nml.cdk
 *
@@ -37,7 +37,7 @@
 #include "p_pset.cdk"
 *
       namelist /physics/
-     $     P_pset_second_L, P_pbl_advectke_L,
+     $     P_pset_second_L, 
      $     P_pset_xofset  ,P_pset_xofsetr ,
      $     P_pset_yofset  ,P_pset_yofsett ,
      $     P_pset_xblnd   ,P_pset_yblnd   ,
@@ -46,11 +46,10 @@
      $     P_rad_ftp_s    ,P_rad_nivl     , P_rad_qco2    ,
      $     P_rad_filter_L,
 *
-     $     P_clim_clima_L ,P_clim_ininc_L ,
+     $     P_clim_clima_L ,P_clim_ininc_L , P_str_strato_L,
 *
-     $     P_str_strato_L ,P_pbl_impflx_L ,
-*
-     $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
+     $     P_pbl_advectke_L,
+     $     P_pbl_drag_L   ,P_pbl_ocean_L  ,P_pbl_impflx_L ,
      $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
      $     P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L ,
      $     P_pbl_cortm_L  ,P_pbl_corts_L  ,
@@ -62,6 +61,7 @@
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
      $     P_pbl_mix_s    ,P_pbl_dumpbus  ,
      $     P_pbl_as       ,P_pbl_beta     ,P_pbl_z0tlat   ,
+     $     P_pbl_zua      ,P_pbl_zta      ,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
@@ -89,7 +89,7 @@
      $     P_zong_nbin
 *
       namelist /physics_p/
-     $     P_pset_second_L, P_pbl_advectke_L,
+     $     P_pset_second_L,
      $     P_pset_xofset  ,P_pset_xofsetr ,
      $     P_pset_yofset  ,P_pset_yofsett ,
      $     P_pset_xblnd   ,P_pset_yblnd   ,
@@ -97,11 +97,10 @@
      $     P_rad_schm_s   ,P_rad_knt      , P_rad_fomic_L ,
      $     P_rad_ftp_s    ,P_rad_qco2     , P_rad_filter_L,
 *
-     $     P_clim_clima_L ,P_clim_ininc_L ,
+     $     P_clim_clima_L ,P_clim_ininc_L , P_str_strato_L,
 *
-     $     P_str_strato_L ,
-*
-     $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
+     $     P_pbl_advectke_L,
+     $     P_pbl_drag_L   ,P_pbl_ocean_L  ,P_pbl_impflx_L ,
      $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
      $     P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L ,
      $     P_pbl_cortm_L  ,P_pbl_corts_L  ,
@@ -111,8 +110,8 @@
      $     P_pbl_csg      ,P_pbl_kst      ,P_pbl_ksn      ,
      $     P_pbl_ksg      ,P_pbl_valml_8  ,P_pbl_mllat_8  ,
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
-     $     P_pbl_mix_s    ,P_pbl_z0tlat   ,
-     $     P_pbl_as       ,P_pbl_beta     ,
+     $     P_pbl_mix_s    ,P_pbl_z0tlat   ,P_pbl_zua      ,
+     $     P_pbl_as       ,P_pbl_beta     ,P_pbl_zta      ,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,

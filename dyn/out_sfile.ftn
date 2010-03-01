@@ -1,10 +1,10 @@
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r Out_sfile
 *
-      subroutine out_sfile (clostep_int,stepno,F_ip3,F_suffix_S)
+      subroutine out_sfile (clostep_int,stepno,F_etikadd_S,F_ip3,F_ext_S)
       implicit none
 *
-      character*(*) F_suffix_S
+      character*(*) F_ext_S, F_etikadd_S
       integer clostep_int,stepno,F_ip3
 *
 *AUTHOR   Michel Desgagne     September   2003 (MC2)
@@ -18,8 +18,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "out.cdk"
 *
 
-      integer  prog_filename,fnom,fstouv,fstinl,fstecr,longueur
-      external prog_filename,fnom,fstouv,fstinl,fstecr,longueur
+      integer  prog_filename,fnom,fstouv,fstinl,fstecr,longueur,fstopc
+      external prog_filename,fnom,fstouv,fstinl,fstecr,longueur,fstopc
 *
       character*3 ros 
       character*15 datev,startindx
@@ -37,6 +37,11 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 **
 *----------------------------------------------------------------------
 *
+      if (Out_debug_L) then
+          if (Out_mybloc.ne.0) err = fstopc('MSGLVL','SYSTEM',.false.)
+      else
+          err = fstopc('MSGLVL','SYSTEM',0)
+      endif
       Out_npas = stepno
 *
       if ((Out_blocme.eq.0).and.(Out_nisl.gt.0).and.(Out_njsl.gt.0)) then
@@ -75,13 +80,18 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                           Out_myblocx,Out_myblocy,prognum,Out_ndigits,
      $                           Out_unit_S)
             Out_filenamep_S = Out_filename_S(1:longueur(Out_filename_S))
-     $                        //F_suffix_S(1:longueur(F_suffix_S))
+     $                        //F_ext_S(1:longueur(F_ext_S))
          endif
+         Out_etik_S = Out_etiket_S
+         if (F_etikadd_S.ne.' ') Out_etik_S =
+     $        Out_etiket_S(1:min(longueur(Out_etiket_S),6))//F_etikadd_S
+        
 
          if (Out_unf.eq.0) then
              err = fnom (Out_unf ,Out_filenamep_S(1:longueur(Out_filenamep_S)),'STD+'//ros,0)
              err = fstouv(Out_unf ,ros)
-             write (6,101) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
+             if (Out_debug_L)
+     $       write (6,101) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
          endif
          nrec= fstinl (Out_unf,n1,n2,n3,' ',' ',Out_ig1,Out_ig2,0,
      $                                 ' ','>>',liste,lislon,nlis)
@@ -93,12 +103,12 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
             if ( Out_reduc .le. 1 ) then
                Out_rgridi0 = max(glb1,Out_gridi0)
                Out_rgridj0 = max(glb3,Out_gridj0)
-               err=fstecr(Out_xpos(Out_gridi0+Out_hx),xpq,-32,Out_unf,0,0,0,
+               err=fstecr(Out_xpos(Out_gridi0+Out_hx),xpq,-32,Out_unf,Out_dateo,0,0,
      $                    Out_nisg,1,
      $                    1,Out_ig1,Out_ig2,0,'X', '>>',Out_etik_S,Out_gridtyp_S,
      $                    Out_ixg(1), Out_ixg(2), Out_ixg(3), Out_ixg(4), 
      $                    5, .true.)
-               err=fstecr(Out_ypos(Out_gridj0+Out_hy),ypq,-32,Out_unf,0,0,0,
+               err=fstecr(Out_ypos(Out_gridj0+Out_hy),ypq,-32,Out_unf,Out_dateo,0,0,
      $                    1, Out_njsg,
      $                    1,Out_ig1,Out_ig2,0,'X', '^^',Out_etik_S,Out_gridtyp_S,
      $                    Out_ixg(1), Out_ixg(2), Out_ixg(3), Out_ixg(4),
@@ -116,11 +126,11 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
                   ypos(i) = Out_ypos(indx+Out_hy)
                   if (indx.ge.glb3) Out_rgridj0= min(Out_rgridj0,max(glb3,indx))
                end do
-               err= fstecr (xpos,xpq,-32,Out_unf,0,0,0,Out_nisg,1,1,
+               err= fstecr (xpos,xpq,-32,Out_unf,Out_dateo,0,0,Out_nisg,1,1,
      $                      Out_ig1,Out_ig2,0,'X', '>>','POS_X',Out_gridtyp_S,
      $                      Out_ixg(1), Out_ixg(2), Out_ixg(3), Out_ixg(4), 
      $                      5, .true.)
-               err= fstecr (ypos,ypq,-32,Out_unf,0,0,0,1,Out_njsg,1,
+               err= fstecr (ypos,ypq,-32,Out_unf,Out_dateo,0,0,1,Out_njsg,1,
      $                      Out_ig1,Out_ig2,0,'X', '^^','POS_Y',Out_gridtyp_S,
      $                      Out_ixg(1), Out_ixg(2), Out_ixg(3), Out_ixg(4),
      $                      5, .true.)
@@ -142,8 +152,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 #include "out.cdk"
 *
-      integer  fstfrm,longueur
-      external fstfrm,longueur
+      integer  fstfrm,longueur,fstopc
+      external fstfrm,longueur,fstopc
 *
       integer err
 *----------------------------------------------------------------------
@@ -151,8 +161,14 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       if ((Out_blocme.eq.0).and.(Out_unf.gt.0)) then
          err = fstfrm(Out_unf)
          call fclos(Out_unf)
-         write (6,102) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
+         if (Out_debug_L.and.Out_mybloc.eq.0)
+     $      write (6,102) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
          Out_unf = 0
+      endif
+      if (Out_debug_L) then
+          if (Out_mybloc.ne.0) err = fstopc('MSGLVL','INFORM',.false.)
+      else
+          err = fstopc('MSGLVL','INFORM',0)
       endif
 *
  102  format (' FST FILE UNIT=',i3,' FILE = ',a,' IS CLOSED')

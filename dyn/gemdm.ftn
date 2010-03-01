@@ -77,30 +77,9 @@
 *
          call gem_ctrl()     ! Regular forward gem
 *
-      elseif (V4dg_conf/100.eq.1) then
+      else
 *
-           if(V4dg_sensib_L.or.V4dg_twin_L) then
-*
-              call v4d_gem   ! Sensitivity analysis or Twin experiment 
-*
-           elseif(V4dg_4dvar_L.or.V4dg_sgvc_L) then
-*
-              call v4d_4dvar ! 4D-Var + exchange with 3D-Var OR Singular vectors 
-*
-           else 
-*
-              if(Lun_out.gt.0)  write(Lun_out,*)'One of SENSIB_L,TWIN_L,4DVAR_L or SGVC_L should be TRUE'
-              call gem_stop('GEMDM',-1)
-*
-           endif
-*
-      elseif (V4dg_conf/100.eq.4) then
-*
-         call v4d_testadj()  ! Verification of adjoint transposition
-*
-      elseif (V4dg_conf/100.eq.5) then
-*
-         call v4d_testtlm()  ! Verification of tangent linear model
+         call v4d_options
 *
       endif
 *
