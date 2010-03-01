@@ -17,7 +17,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_10 - Desgagne M.       - change output file name
-* v2_10                       remove Schm_ihel (not used)
+* v2_10                       remove Schm_ithel (not used)
 * v2_10 - Lee V.            - introduce maxcfl_x and maxcfl_y in 
 * v2_10                       gem_cfgs to control halo thickness
 * v2_10 - Tanguay M.        - add namelist 4D-Var
@@ -55,8 +55,9 @@
 * v3_20 - Buehner & Zadra   - Introduce V4dg_chum_s
 * v3_21 - Lee V.            - Set Mem_phyncore_L to always TRUE.
 * v3_21 - Valcke, S.        - Init of namelist coupling section
-*                           - Move read of namelist coupling to c_init_cplfdl
+*                           - Move read of namelist coupling to c_init_cplfdl 
 * v3_21 - Lee V.            - Added Lctl_reset key, remove TR2D
+* v3_22 - Lee V.            - Add Pres_vtap_L key for vtap
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -82,7 +83,6 @@
 #include "init.cdk"
 #include "offc.cdk"
 #include "schm.cdk"
-#include "type.cdk"
 #include "adw.cdk"
 #include "cstv.cdk"
 #include "lctl.cdk"
@@ -92,6 +92,7 @@
 #include "hspng.cdk"
 #include "xst.cdk"
 #include "cori.cdk"
+#include "geomg.cdk"
 #include "grd.cdk"
 #include "v4dg.cdk"
 #include "c_cplg.cdk"
@@ -110,7 +111,6 @@
 #include "vrtd.cdk"
 #include "zblen.cdk"
 #include "v4dr.cdk"
-#include "ver.cdk"
 *
 *modules
       integer fnom,longueur,exdb
@@ -120,12 +120,11 @@
       character*256 fln_S
       logical wronghyb,theo_pass
       integer i, k, nrec, err, pnk,
-     $        kind, ipcode, ipmode, istat
+     $        kind, ipcode, ipmode
       real pcode
 *
 #include "nml.cdk"
 *
-      real*8 hyb_8(maxhlev),hybm_8(maxhlev),hyb_top_8
 *-------------------------------------------------------------------
 *
       call  open_status_file2 ('status_mod.dot')
@@ -181,13 +180,12 @@
       Schm_alpco_8  = 1.0
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
-      Schm_difqp_L    = .false.
+      Schm_difqp_L    = .true.
       Schm_wload_L    = .false.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_theoc_L    = .false.
       Schm_sfix_L     = .false.
-      Schm_eulmtemp_L = .false.
 *
       Zblen_L   = .false.
 *
@@ -223,8 +221,8 @@
       Grd_rcoef = 1.0
       Grd_proj_S = 'E'
       Pres_ptop = -1.
-      Pres_vtap_L = .false.
       Pres_pref = 800.0
+      Pres_vtap_L = .false.
       do k = 1, maxhlev
          hyb(k) = -1.
       end do
@@ -342,6 +340,7 @@
          from_land_S(i)  = ''
          from_atmos_S(i) = ''
       enddo
+
 *     
       call getenvc('rep_from_which_model_is_launched',Path_dfwmil_S)
 *      
@@ -370,36 +369,19 @@
       rewind ( Lun_in )
       if ( Schm_theoc_L ) then
          Out3_ip3 = -1
-         allocate(Ver_hyb%m(maxhlev),Ver_hyb_8%m(maxhlev),stat=istat)
-         if(istat.ne.0)then
-            write (Lun_out,*)
-     $           'Allocation problem in set_world_view1, #1, stat=',istat
-            return
-         endif
-*
+         call hpalloc (Geomg_hyb_ , maxhlev, err,1)
          call theo_cfg(theo_pass)
          if (.not. theo_pass) then
-            deallocate(Ver_hyb%m,Ver_hyb_8%m,stat=istat)            
-            if(istat.ne.0)then
-               write (Lun_out,*)
-     $              'Dellocation problem in set_world_view1, #1, stat=',istat
-            endif           
-            write (Lun_out, 8000)1
+            call hpdeallc (Geomg_hyb_ , err,1)
+            write (Lun_out, 8000)
             return
          else
              do k=1,maxhlev
-              hyb  (k)=Ver_hyb_8%m(k)
-              hyb_8(k)=Ver_hyb_8%m(k)
+              hyb(k)=Geomg_hyb(k)
             enddo
              write (Lun_out, 7050) Theo_case_S
-             deallocate(Ver_hyb%m,Ver_hyb_8%m,stat=istat)
-
-            if(istat.ne.0)then
-               write (Lun_out,*)
-     $              'Dellocation problem in set_world_view1, #2, stat=',istat
-            endif           
+             call hpdeallc (Geomg_hyb_ , err,1)
          endif
-         goto 6666
       else
          read (Lun_in, nml=ptopo,    end = 9110, err=9110)
          if (Ptopo_nblocx.eq.-1 .or. Ptopo_nblocy.eq.-1) then
@@ -408,12 +390,14 @@
          endif
          rewind ( Lun_in )
          read (Lun_in, nml=gem_cfgs, end = 9120, err=9120)
-         do k=1,maxhlev
-            hyb_8(k)=hyb(k)
-         enddo
       endif
       read (Lun_in, nml=var4d, end = 6666, err = 9140)
  6666 continue
+*
+*     Read the namelist for the ensembles
+*
+      call ens_nml(lun_in)
+
       call fclos (lun_in)
 *        
 *     Set Mem_phyncore_L to true permanently
@@ -504,9 +488,8 @@
          hyb(2)=0.05
          hyb(3)=(Offline_ip1a-2000)*0.0001
          hyb(4)=1.0
-         print*,'Ajouter les niveaux momentum'
-         return
       endif
+
       write(Lun_out,*) (hyb(k),k=1,pnk)
  110  if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
      $       (hyb(pnk).ne.1.) ) wronghyb = .true.
@@ -515,69 +498,44 @@
       end do
       if (wronghyb) then
          write(Lun_out,9200)
-         write(Lun_out,*)'MOMENTUM LEVELS'
          do k=1, pnk
             write (Lun_out,*) hyb(k),k
          end do
          return
       endif
-*     Do not count hyb 0.0 and 1.0 as momentum level and
-*     remove them from the list.
-      hyb_top_8=hyb_8(1)
-      pnk=pnk-2
-      do k = 1,pnk
-         hyb(k)=hyb(k+1)
-         hyb_8(k)=hyb_8(k+1)
-      enddo
+      call hpalloc (Geomg_hyb_ , pnk, err,1)
+      call hpalloc (Geomg_hybm_, pnk, err,1) 
 *
-      allocate(Ver_hyb%m(pnk),Ver_hybm%m(pnk),
-     $         Ver_hyb_8%m(pnk),Ver_hybm_8%m(pnk),
-     $         stat=istat)
-      if(istat.ne.0)then
-         write (Lun_out,*)
-     $        'Allocation problem in set_world_view1, #2, stat=',istat
-         return
-      endif
-*
+*     fst2000 ip1 encoding 
       if (Level_ip12000_L) 
      $     call convip ( ipcode, pcode, ipmode, 0, ' ', .false. )
-      if ( Schm_theoc_L ) then
-         do k=1,pnk
-            Ver_hyb_8%m(k)= hyb_8(k)
-            Ver_hybm_8%m(k) = hyb_8(k)
-     $           + (1.-hyb_8(k))*Pres_ptop/Pres_pref
-            Ver_hyb%m(k)=Ver_hyb_8%m(k)
-            Ver_hybm%m(k)=Ver_hybm_8%m(k)
-         end do
-         kind=5
-         Level_mode_ip1 = 2
+*
+      if (Pres_ptop .lt. 0.) then
+          do k=1,pnk
+             call convip ( i , hyb(k)      , 5   ,  2, dumc_S, .false. )
+             call convip ( i , Geomg_hyb(k), kind, -1, dumc_S, .false. )
+             Geomg_hybm(k) = Geomg_hyb(k)
+          end do
+          Pres_ptop = Geomg_hybm(1)*Pres_pref
       else
-         if (Pres_ptop .lt. 0.) then
-            Level_mode_ip1 = 2
-            do k=1,pnk
-               call convip ( i , hyb(k)      , 5   ,Level_mode_ip1, dumc_S, .false. )
-               call convip ( i , Ver_hyb%m(k), kind, -1, dumc_S, .false. )
-               Ver_hybm%m(k) = Ver_hyb%m(k)
-            end do
-            Pres_ptop = hyb_top_8*Pres_pref
-         else
-            Level_mode_ip1 = 1
-            do k=1,pnk
-               call convip ( i , hyb(k)      , 1   ,Level_mode_ip1, dumc_S, .false. )
-               call convip ( i , Ver_hyb%m(k), kind, -1, dumc_S, .false. )
-               Ver_hybm%m(k) = Ver_hyb%m(k)
-     $              + (1.-Ver_hyb%m(k))*Pres_ptop/Pres_pref
-            end do
-         endif
-         do k=1,pnk
-            Ver_hyb_8%m(k)=Ver_hyb%m(k)
-            Ver_hybm_8%m(k)=Ver_hybm%m(k)
-         end do
+          do k=1,pnk
+             call convip ( i , hyb(k)      , 1   ,  1, dumc_S, .false. )
+             call convip ( i , Geomg_hyb(k), kind, -1, dumc_S, .false. )
+             Geomg_hybm(k) = Geomg_hyb(k)
+     $                   + (1.-Geomg_hyb(k))*Pres_ptop/Pres_pref
+          end do
       endif
       Level_kind_ip1 = kind
 *
       F_npx = Ptopo_npex
       F_npy = Ptopo_npey
+*
+      call hpalloc (Geomg_pia_ , pnk ,err,1)
+      call hpalloc (Geomg_pibb_, pnk ,err,1)
+      call hpalloc (Geomg_dpba_, pnk ,err,1)
+*
+      call genab2 ( Geomg_pia, Geomg_pibb, Geomg_dpba, Geomg_hybm,
+     $              Pres_ptop,  Grd_rcoef, Cstv_pisrf_8, pnk )
 *
       call newdate (Out1_date, Out1_dato(1), Out1_dato(2),-3)
 *
@@ -628,44 +586,36 @@
          endif
          if (Hzd_type_S.eq.'FACT') then
             write (Lun_out, 7000) Hzd_type_S
-            write (Lun_out, 8000)2
+            write (Lun_out, 8000)
             return
          endif
          if (Hspng_nj.ne.0) then
             write (Lun_out, 7015)
-            write (Lun_out, 8000)3
+            write (Lun_out, 8000)
             return
          endif
          if (Schm_psadj_L) then
             write (Lun_out, 7020)
-            write (Lun_out, 8000)4
+            write (Lun_out, 8000)
             return
          endif
 	 Adw_halox  = Schm_maxcfl_lam * 3
          Adw_haloy  = Adw_halox-1
       endif
 *
-      if (Offc_b0_8.lt.Offc_b1_8.or.
-     $     Offc_b0_8+Offc_b1_8.ne.1.d0) then
-         write (Lun_out, 7020)
-         write (Lun_out, 8000)5
-         return
-      endif
-*     
       Lun_debug_L = Lctl_debug_L
 *
       Path_swv1_L = .true.
-*
       return
 *
  9110 write (Lun_out, 8150)
-      write (Lun_out, 8000)6
+      write (Lun_out, 8000)
       return
  9120 write (Lun_out, 9150)
-      write (Lun_out, 8000)7
+      write (Lun_out, 8000)
       return
  9140 write (Lun_out, 9350)
-      write (Lun_out, 8000)8
+      write (Lun_out, 8000)
       return
 *
  7000 format (/' WRONG OPTION FOR HZD_TYP WHEN LAM: ',a/)
@@ -673,7 +623,7 @@
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  7050 format (/' THEORETICAL CASE IS: ',a/)
- 8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ========= FLAG ='/,i)
+ 8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ============='/)
  8150 format (/,' NAMELIST ptopo    INVALID IN FILE: model_settings'/)
  9150 format (/,' NAMELIST gem_cfgs INVALID IN FILE: model_settings'/)
  9250 format (/,' NAMELIST coupling INVALID IN FILE: model_settings '/)
@@ -687,8 +637,6 @@
  9300 format (/,' sensib_L twin_L 4dvar_L sgvc_L when V4dg_conf/100=1 only'/)  
  9400 format (/,' Step_total lt Init_dfnp-1 and Init_balgm_L  when V4dg_conf.ne.0 NOT VALID '/)
  9401 format (/,' Schm_theoc_L when V4dg_conf.ne.0 NOT VALID '/)
- 9402 format (/,' Pres_ptop must be greater than zero '/)
- 9403 format (/,' fst2000 ip1 encoding not suported '/)
 *
 *-------------------------------------------------------------------
 *

@@ -21,25 +21,22 @@
 *	none
 *
 *implicits
-#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "opr.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
 #include "vtx.cdk"
-c#include "vt0.cdk"
 #include "rhsc.cdk"
 #include "trp.cdk"
 #include "fft.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
-#include "matlab.cdk"
 *
 *modules
       integer vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer i,j,k,pnerr,keys(2),dim,longueur
+      integer i,j,k,pnerr,keys(2),dim
       real*8 pdwrd(2)
       real   prwrd(2)
 *      
@@ -50,14 +47,6 @@ c#include "vt0.cdk"
 *
 *     ---------------------------------------------------------------
 **
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_sol_main.bin',
-     $        status='replace',form='unformatted')
-         write(62)G_ni-lam_pil_w-lam_pil_e
-         write(62)G_nk
-      endif
-
       if (Lun_debug_L) write(Lun_out,1000)
 *
 *     Get needed fields in memory
@@ -70,7 +59,6 @@ c#include "vt0.cdk"
       pnerr = VMM_GET_VAR(gptx)
 *
 * Transfering rheln (real*4 with halo) into rhs (real*8 without halo)
-
       call sol_trsf (rhs,rheln,ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy,
      $                                              LDIST_DIM,l_nk, 1)
 *
@@ -79,20 +67,12 @@ c#include "vt0.cdk"
       call sol_hcr  (sol,rhs,wk1,wk2,fdg1,fdg2,fdwfft,
      $                ldnh_minx,ldnh_maxx,
      $                ldnh_miny,ldnh_maxy,ldnh_ni,ldnh_nj,l_nk)
-
       call tmg_stop0(40)
 *
 * Transfering sol (real*8 without halo) into gptx (real*4 with halo)
       call sol_trsf (sol,gptx ,ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy,
      $                                              LDIST_DIM,l_nk,-1)
-c      call sol_trsf (sol,fiptx(mettre dim ici?),ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy,
-c     $                                              LDIST_DIM,l_nk,-1)
 *
-      if(matlab_write_L)then
-         call write_matlab_3d(62,rheln)
-         call write_matlab_3d_v(62,gptx)
-      endif
-
       pnerr = vmmuld( -1, 0 )
 *
  1000 format(
@@ -100,8 +80,6 @@ c     $                                              LDIST_DIM,l_nk,-1)
 *
 *     ---------------------------------------------------------------
 *
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)close(62)
-
       return
       end
 

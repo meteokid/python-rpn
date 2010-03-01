@@ -31,8 +31,7 @@
 *----------------------------------------------------------------------
 *
 #include "glb_ld.cdk"
-#include "type.cdk"
-#include "ver.cdk"
+#include "geomg.cdk"
 **
       integer i,l
       real target(np,nk), xlapse, fdcol(np,lv), flapse(np), 
@@ -76,7 +75,7 @@
 *
       do l=1,nk      ! compute vertical coordinate of each target point
       do i=1,np
-         target(i,l) =  log( Ver_pia%d(l)+ Ver_pibb%d(l) *expps(i) )
+         target(i,l) =  log( Geomg_pia(l)+ Geomg_pibb(l) *expps(i) )
      $                - conv_8
       end do
       end do

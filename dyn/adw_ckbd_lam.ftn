@@ -5,11 +5,11 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine adw_ckbd_lam ( F_x_in,  F_y_in,  F_z_in, i0, in,j0,jn,F_nk )
+      subroutine adw_ckbd_lam ( F_x_in,  F_y_in,  F_z_in, i0, in,j0,jn )
 *
 #include "impnone.cdk"
 *
-      integer i0, in, j0, jn, F_nk
+      integer i0, in, j0, jn
       real    F_x_in  ( * ), F_y_in  ( * ), F_z_in  ( * )
 *
 *author
@@ -56,7 +56,6 @@
 *implicits
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "type.cdk"
 #include "geomg.cdk"
 #include "adw.cdk"
 ************************************************************************
@@ -70,7 +69,7 @@
 !$omp parallel private(n,npts)
       if (l_north) then
 !$omp do
-         do k=1,F_nk
+         do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -94,7 +93,7 @@ c    %           'Adw_dly_8(1)=',Adw_dly_8(1)
 !$omp enddo
       else
 !$omp do
-         do k=1,F_nk
+         do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -114,7 +113,7 @@ c    %           Adw_yy_8(Adw_njt-1), 'Adw_dly_8(1)=',Adw_dly_8(1)
 *
       if (l_south) then
 !$omp do
-         do k=1,F_nk
+         do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -136,7 +135,7 @@ c    %           Adw_yy_8(Adw_haloy+2), 'Adw_dly_8(1)=',Adw_dly_8(1)
 !$omp enddo
       else
 !$omp do
-         do k=1,F_nk
+         do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -156,7 +155,7 @@ c    %           Adw_yy_8(2), 'Adw_dly_8(1)=',Adw_dly_8(1)
 *
       if (l_east) then
 !$omp do
-         do k=1,F_nk
+         do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -180,7 +179,7 @@ c    %           ' Adw_dlx_8(1)=',Adw_dlx_8(1)
 !$omp enddo
       else
 !$omp do
-         do k=1,F_nk
+         do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -200,7 +199,7 @@ c    %           Adw_xx_8(Adw_nit-1), 'Adw_dlx_8(1)=',Adw_dlx_8(1)
 *
       if (l_west) then
 !$omp do
-         do k=1,F_nk
+         do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -222,7 +221,7 @@ c    %           Adw_xx_8(Adw_halox+2), 'Adw_dlx_8(1)=',Adw_dlx_8(1)
 !$omp enddo
       else
 !$omp do
-         do k=1,F_nk
+         do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i

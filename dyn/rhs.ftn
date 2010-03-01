@@ -16,19 +16,107 @@
 * v2_31 - Desgagne M.       - remove treatment of hut1 and qct1
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Desgagne M.       - Revision Openmp
-* v_stg - Plante A.         - Staggered version
 *
 *object
 ***********************************************************************
-* See GEMergo4.doc
+*                                                                     *
+*        1  a         b                    1  a         b             *
+* R  = - -- -- F   -  -- G          R  = - -- -- F   -  -- G          *
+*  U     dt b   U     b   U          V     dt b   V     b   V         *
+*            0         0                       0         0            *
+*                                                                     *
+*                                            _____________________    *
+*                                           |                     |   *
+* where:                                    | NONHYDROSTATIC ONLY |   *
+*                                           |_____________________|   *
+*                                                                     *
+*                               1  dq      1  dphi  |   1       dphi  *
+* F  =  U          G   =  R  T --- --  +  --- ----  +  --- (mu) ----  *
+*  U                U      d     2          2       |    2            *
+*                               a  dx      a   dx   |   a        dx   *
+*                                                   |                 *
+*                                                   |                 *
+*                               C  dq      1  dphi  |   1       dphi  *
+* F  =  V          G   =  R  T --- --  +  --- ----  +  --- (mu) ----  *
+*  V                V      d     2          2       |    2            *
+*                               a  dy      a   dy   |   a        dy   *
+*                                                                     *
+*         _                                                      _    *
+*        DV       _   _       D    _           _    _           DV'   *
+*        -- + f ( k ^ V )  =  -- [ V + 2 Omg ( k' ^ r ) ]  -->  --    *
+*        Dt                   Dt                                Dt    *
+*                                                                     *
+***********************************************************************
+*                                                                     *
+*         1  a          b                                             *
+* R   = - -- -- F    -  -- G                                          *
+*  cn     dt b   cn     b   cn                                        *
+*             0          0                                            *
+*                                                                     *
+*                                                                     *
+* where:                                                              *
+*            /  /\A + /\b exp(s) \                                    *
+* F   =  log | ----------------- |    ;  where  /\(.) = d/d(eta) (.)  *
+*  cn        \    /\A + /\b      /                                    *
+*                                                                     *
+*         . *                                                         *
+*        dpi                                                          *
+* G   =  ----  + D                                                    *
+*  cn     dz                                                          *
+*                                                                     *
+***********************************************************************
+*                                                                     *
+*         1  a          b                                             *
+* R   = - -- -- F    -  -- G                                          *
+*  th     dt b   th     b   th                                        *
+*             0          0                                            *
+*                                                                 .   *
+*           T          /          \                               pi* *
+* F   =  ln -- + cappa | ln z - q |                 G   = - cappa --- 
+*  th       T*         \          /                  th            z  *
+*                                                                     *
+***********************************************************************
+*                                            _____________________    *
+*          1  a         b                   |                     |   *
+* R  =  -  -- -- F   -  -- G                | NONHYDROSTATIC ONLY |   *
+*  w       dt b   w     b   w               |_____________________|   *
+*              0         0                                            *
+*                                                                     *
+*                                                                     *
+* F  =  &  w   (& refers to "delta")                  G  = - (mu) g   *
+*  w     H                                             w              *
+*                                                                     *
+***********************************************************************
+*                                            _____________________    *
+*         1  a          b                   |                     |   *
+* R   = - -- -- F    -  -- G                | NONHYDROSTATIC ONLY |   *
+*  vv     dt b   vv     b   vv              |_____________________|   *
+*             0          0                                            *
+*                                                                .    *
+*                                               /     *  pi*       \  *
+* F   =  phi  + phi'                    G   = - | R  T   --- + g w |  *
+*  vv       s                            vv     \  d      z        /  *
+*                                                                     *
+***********************************************************************
+*                                                                     *
+*                  1  a                                               *
+* R            = - -- -- F                                            *
+*  (hu,qc,tr)      dt b   (hu,qc,tr)                                  *
+*                      0                                              *
+*                                                                     *
+* F  is the field to be advected (specific humidity, mixing ratio     *
+*  (hu,qc,tr)   of cloud water/ice or passive tracer(s))              *
+*                                                                     *
+***********************************************************************
+*                                                                     *
+* Interpolate Ru, Rv from wind grids to geopotential grid             *
+*                                                                     *
 ***********************************************************************
 *
 *arguments
 *        None
 *
 *implicits
-#include "ptopo.cdk"
-#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
@@ -36,16 +124,13 @@
 #include "p_geof.cdk" 
 #include "rhsc.cdk"
 #include "vt1.cdk" 
-#include "vtx.cdk" 
 #include "nest.cdk"
-#include "func.cdk"
-#include "matlab.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer  pnerr, pnlod, pnlkey1(30), i,j,k, longueur
+      integer  pnerr, pnlod, pnlkey1(30), i,j,k
 **
 *     __________________________________________________________________
 *
@@ -64,24 +149,22 @@
       pnlkey1(11) = VMM_KEY(ut1)
       pnlkey1(12) = VMM_KEY(vt1)
       pnlkey1(13) = VMM_KEY(tt1)
-      pnlkey1(14) = VMM_KEY(qptx)
-      pnlkey1(15) = VMM_KEY(st1)
-      pnlkey1(16) = VMM_KEY(psdt1)
-      pnlkey1(17) = VMM_KEY(csh)
-      pnlkey1(18) = VMM_KEY(fiptx)
-      pnlkey1(19) = VMM_KEY(topo)
-      pnlkey1(20) = VMM_KEY(that_8)
-      pnlkey1(21) = VMM_KEY(dlnth_8)
-      pnlod = 21
+      pnlkey1(14) = VMM_KEY(qt1)
+      pnlkey1(15) = VMM_KEY(fit1)
+      pnlkey1(16) = VMM_KEY(st1)
+      pnlkey1(17) = VMM_KEY(tdt1)
+      pnlkey1(18) = VMM_KEY(psdt1)
+      pnlod = 18
       if (.not. Schm_hydro_L) then
          pnlkey1(pnlod+1) = VMM_KEY(rw)
          pnlkey1(pnlod+2) = VMM_KEY(rvv)
          pnlkey1(pnlod+3) = VMM_KEY(orw)
          pnlkey1(pnlod+4) = VMM_KEY(orvv)
          pnlkey1(pnlod+5) = VMM_KEY(wt1)
-         pnlkey1(pnlod+6) = VMM_KEY(mutx)
-         pnlkey1(pnlod+7) = VMM_KEY(qsect1)
-         pnlod = pnlod+7
+         pnlkey1(pnlod+6) = VMM_KEY(topo)
+         pnlkey1(pnlod+7) = VMM_KEY(fipt1)
+         pnlkey1(pnlod+8) = VMM_KEY(mut1)
+         pnlod = pnlod+8
       endif
       if (G_lam) then
          pnlkey1(pnlod+1) = VMM_KEY(nest_u)
@@ -104,30 +187,29 @@
       pnerr = VMM_GET_VAR(ut1)
       pnerr = VMM_GET_VAR(vt1)
       pnerr = VMM_GET_VAR(tt1)
-      pnerr = VMM_GET_VAR(qptx)
+      pnerr = VMM_GET_VAR(qt1)
+      pnerr = VMM_GET_VAR(fit1)
       pnerr = VMM_GET_VAR(st1)
+      pnerr = VMM_GET_VAR(tdt1)
       pnerr = VMM_GET_VAR(psdt1)
-      pnerr = VMM_GET_VAR(csh)
-      pnerr = VMM_GET_VAR(fiptx)
-      pnerr = VMM_GET_VAR(topo)
-      pnerr = VMM_GET_VAR(that_8)
-      pnerr = VMM_GET_VAR(dlnth_8)
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(qsect1)
          pnerr = VMM_GET_VAR(rw)
          pnerr = VMM_GET_VAR(rvv)
          pnerr = VMM_GET_VAR(orw)
          pnerr = VMM_GET_VAR(orvv)
          pnerr = VMM_GET_VAR(wt1)
-         pnerr = VMM_GET_VAR(mutx)
+         pnerr = VMM_GET_VAR(topo)
+         pnerr = VMM_GET_VAR(fipt1)
+         pnerr = VMM_GET_VAR(mut1)
       else
-         qsect1_ =0
          rw_   = 0
          rvv_  = 0
          orw_  = 0
          orvv_ = 0
          wt1_  = 0
-         mutx_ = 0
+         topo_ = 0
+         fipt1_= 0
+         mut1_ = 0
       endif
       if (G_lam) then
          pnerr = VMM_GET_VAR(nest_u)
@@ -142,85 +224,31 @@
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if ( Orh_icn .eq. 1 ) then
 *
-        if(matlab_write_L)then
-
-           if(Ptopo_myproc.eq.0)then
-              print*,'Ecrire pour matlab rhs'
-              open(unit=62,file=
-     $             matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_rhs.bin',
-     $             status='replace',form='unformatted')
-              write(62)G_ni-lam_pil_w-lam_pil_e
-              write(62)G_nk
-           endif
-            call write_matlab_2d(62,topo)
-            call write_matlab_3d(62,ut1)
-            call write_matlab_3d_th(62,tt1)
-            call write_matlab_3d_v(62,fiptx)
-            call write_matlab_3d_v(62,qptx)
-            call write_matlab_2d(62,st1)
-            call write_matlab_2d(62,csh)
-            call write_matlab_3d_th(62,psdt1)
-            if (.not. Schm_hydro_L) then
-               call write_matlab_3d_v(62,qsect1)
-               call write_matlab_3d_th(62,mutx)
-            endif
-         endif
-
-         call diag_var(csh, qptx, mutx, st1, qsect1, LDIST_DIM,l_nk )
-*
-         call diag_fip(fiptx, csh, tt1, qsect1, topo, LDIST_DIM,l_nk )
 *
          call rhsp_2  (    ru,    rv,   rcn,   rth,    rw,   rvv,
      %                    oru,   orv,  orcn,  orth,   orw,  orvv,
-     %                   ruw1,  rvw1,   ut1,   vt1,   tt1,   qptx,
-     %                   qsect1,   st1, psdt1,nest_u,nest_v,
-     %                  wt1,  topo, fiptx,  mutx, csh, 
-     $                  that_8, dlnth_8,
-     $        LDIST_DIM,l_nk  )
-*     
-
-        if(matlab_write_L)then
-            call write_matlab_3d(62,ru)
-            call write_matlab_3d(62,ruw1)
-            call write_matlab_3d(62,rcn)
-            call write_matlab_3d_th(62,rth)
-            if (.not. Schm_hydro_L) then
-               call write_matlab_3d_th(62,rw)
-               call write_matlab_3d_th(62,rvv)
-            endif
-            
-            if(Ptopo_myproc.eq.0)close(62)
-         
-         endif
-         
+     %                   ruw1,  rvw1,   ut1,   vt1,   tt1,   qt1,
+     %                   fit1,   st1,  tdt1, psdt1,nest_u,nest_v,
+     %                    wt1,  topo, fipt1,  mut1, LDIST_DIM,l_nk  )
+*
       else
 
 !$omp parallel
-!$omp do
+!$omp do 
          do k=1,l_nk
          do j= 1, l_nj 
          do i= 1, l_ni
             ru (i,j,k) = oru (i,j,k)
             rv (i,j,k) = orv (i,j,k)
             rcn(i,j,k) = orcn(i,j,k)
-         end do
-         end do
-         end do
-!$omp enddo
-
-!$omp do
-         do k=1,l_nk+1
-         do j= 1, l_nj 
-         do i= 1, l_ni
             rth(i,j,k) = orth(i,j,k)
          end do
          end do
          end do
 !$omp enddo
-
          if (.not. Schm_hydro_L) then
-!$omp do
-            do k=1,l_nk+1
+!$omp do 
+            do k=1,l_nk
             do j= 1, l_nj 
             do i= 1, l_ni
                rw (i,j,k) = orw (i,j,k)

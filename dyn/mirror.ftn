@@ -26,7 +26,7 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer err,key(7),i,j,k,km,kt,nvar
+      integer err,key(13),i,j,k,nvar
       integer ii, iin, jj, jin
       integer key0(Tr3d_ntr),key0_,n
       real tr0
@@ -37,13 +37,19 @@
       key(2)=VMM_KEY(vt0)
       key(3)=VMM_KEY(tt0)
       key(4)=VMM_KEY(psdt0)
-      key(5)=VMM_KEY(qsect0)
-      key(6)=VMM_KEY(st0)
-      nvar = 6
+      key(5)=VMM_KEY(pipt0)
+      key(6)=VMM_KEY(fipt0)
+      key(7)=VMM_KEY(tdt0)
+      key(8)=VMM_KEY(fit0)
+      key(9)=VMM_KEY(qt0)
+      key(10)=VMM_KEY(st0)
+      key(11)=VMM_KEY(tpt0)
+      nvar = 11
 *
       if (.not.Schm_hydro_L) then
-         key(7)=VMM_KEY(wt0)
-         nvar = 7
+         key(12)=VMM_KEY(wt0)
+         key(13)=VMM_KEY(mut0)
+         nvar = 13
       endif
 *
       err = vmmlod(key,nvar)
@@ -51,36 +57,45 @@
       err = VMM_GET_VAR(vt0)
       err = VMM_GET_VAR(tt0)
       err = VMM_GET_VAR(psdt0)
-      err = VMM_GET_VAR(qsect0)
+      err = VMM_GET_VAR(pipt0)
+      err = VMM_GET_VAR(fipt0)
+      err = VMM_GET_VAR(tdt0)
+      err = VMM_GET_VAR(fit0)
+      err = VMM_GET_VAR(qt0)
       err = VMM_GET_VAR(st0)
+      err = VMM_GET_VAR(tpt0)
       if (.not.Schm_hydro_L) then
          err = VMM_GET_VAR(wt0)
+         err = VMM_GET_VAR(mut0)
       endif
 *
       if (l_north) then
-         do k=0,G_nk+1
-            km=max(1,min(k,G_nk))
-            kt=max(k,1)
+         do k=1,G_nk
             do i=1,l_ni
-               vt0  (i,l_nj-pil_n,km) = 0.
+               vt0  (i,l_nj-pil_n,k) = 0.
             end do
             do j=1,pil_n-1
             jin = max(pil_s+1,l_nj-pil_n-j)
             jj = l_nj-pil_n+j
             do i=1,l_ni
-               vt0  (i,jj,km) = - vt0  (i,jin,km)
+               vt0  (i,jj,k) = - vt0  (i,jin,k)
             end do
             end do
             do j=1,pil_n
             jin = max(pil_s+1,l_nj-pil_n-j+1)
             jj  = l_nj-pil_n+j
             do i=1,l_ni
-               tt0   (i,jj,kt) = tt0   (i,jin,kt)
-               psdt0 (i,jj,kt) = psdt0 (i,jin,kt)
-               qsect0(i,jj,k)  = qsect0(i,jin,k)            
+               tt0  (i,jj,k) = tt0  (i,jin,k)
+               psdt0(i,jj,k) = psdt0(i,jin,k)
+               pipt0(i,jj,k) = pipt0(i,jin,k)
+               fipt0(i,jj,k) = fipt0(i,jin,k)
+               tdt0 (i,jj,k) = tdt0 (i,jin,k)
+               fit0 (i,jj,k) = fit0 (i,jin,k)
+               qt0  (i,jj,k) = qt0  (i,jin,k)            
+               tpt0 (i,jj,k) = tpt0 (i,jin,k)            
             end do
             do i=1,l_niu
-               ut0   (i,jj,km) = ut0   (i,jin,km)
+               ut0  (i,jj,k) = ut0  (i,jin,k)
             end do
             end do
          end do
@@ -92,12 +107,13 @@
          end do
          end do
          if (.not. Schm_hydro_L) then
-            do k=1,G_nk+1
+            do k=1,G_nk
             do j=1,pil_n
             jin = max(pil_s+1,l_nj-pil_n-j+1)
             jj  = l_nj-pil_n+j
             do i=1,l_ni
                wt0 (i,jj,k) = wt0 (i,jin,k)
+               mut0(i,jj,k) = mut0(i,jin,k)
             end do
             end do
             end do
@@ -105,33 +121,36 @@
       endif
 *
       if (l_east) then
-         do k=0,G_nk+1
-            km=max(1,min(k,G_nk))
-            kt=max(k,1)
+         do k=1,G_nk
             do j=1,l_nj
-               ut0  (l_ni-pil_e,j,km) = 0.
+               ut0  (l_ni-pil_e,j,k) = 0.
             end do
             do j=1,l_nj
             do i=1,pil_e-1
                iin = max(pil_w+1,l_ni-pil_e-i)
                ii  = l_ni-pil_e+i
-               ut0  (ii,j,km) = - ut0  (iin,j,km)
+               ut0  (ii,j,k) = - ut0  (iin,j,k)
             end do
             end do
             do j=1,l_nj
             do i=1,pil_e
                iin = max(pil_w+1,l_ni-pil_e-i+1)
                ii  = l_ni-pil_e+i
-               tt0   (ii,j,kt) = tt0   (iin,j,kt)
-               psdt0 (ii,j,kt) = psdt0 (iin,j,kt)
-               qsect0(ii,j,k)  = qsect0(iin,j,k)            
+               tt0  (ii,j,k) = tt0  (iin,j,k)
+               psdt0(ii,j,k) = psdt0(iin,j,k)
+               pipt0(ii,j,k) = pipt0(iin,j,k)
+               fipt0(ii,j,k) = fipt0(iin,j,k)
+               tdt0 (ii,j,k) = tdt0 (iin,j,k)
+               fit0 (ii,j,k) = fit0 (iin,j,k)
+               qt0  (ii,j,k) = qt0  (iin,j,k)            
+               tpt0 (ii,j,k) = tpt0 (iin,j,k)            
             end do
             end do
             do j=1,l_njv
             do i=1,pil_e
                iin = max(pil_w+1,l_ni-pil_e-i+1)
                ii  = l_ni-pil_e+i
-               vt0  (ii,j,km) = vt0  (iin,j,km)
+               vt0  (ii,j,k) = vt0  (iin,j,k)
             end do
             end do
          end do
@@ -143,12 +162,13 @@
          end do
          end do
          if (.not. Schm_hydro_L) then
-            do k=1,G_nk+1
+            do k=1,G_nk
             do j=1,l_nj
             do i=1,pil_e
                iin = max(pil_w+1,l_ni-pil_e-i+1)
                ii  = l_ni-pil_e+i
                wt0 (ii,j,k) = wt0 (iin,j,k)
+               mut0(ii,j,k) = mut0(iin,j,k)
             end do
             end do
             end do
@@ -156,29 +176,32 @@
       endif
 *
       if (l_south) then
-         do k=0,G_nk+1
-            km=max(1,min(k,G_nk))
-            kt=max(k,1)
+         do k=1,G_nk
             do i=1,l_ni
-               vt0  (i,pil_s,km) = 0.
+               vt0  (i,pil_s,k) = 0.
             end do
             do j=1,pil_s-1
             jin = min(l_nj-pil_n-1,pil_s+j)
             jj  = pil_s-j
             do i=1,l_ni
-               vt0  (i,jj,km) = - vt0 (i,jin,km)
+               vt0  (i,jj,k) = - vt0 (i,jin,k)
             end do
             end do
             do j=1,pil_s
             jin = min(l_nj-pil_n,pil_s+j)
             jj  = pil_s-j+1
             do i=1,l_ni
-               tt0   (i,jj,kt) = tt0   (i,jin,kt)
-               psdt0 (i,jj,kt) = psdt0 (i,jin,kt)
-               qsect0(i,jj,k)  = qsect0(i,jin,k)            
+               tt0  (i,jj,k) = tt0  (i,jin,k)
+               psdt0(i,jj,k) = psdt0(i,jin,k)
+               pipt0(i,jj,k) = pipt0(i,jin,k)
+               fipt0(i,jj,k) = fipt0(i,jin,k)
+               tdt0 (i,jj,k) = tdt0 (i,jin,k)
+               fit0 (i,jj,k) = fit0 (i,jin,k)
+               qt0  (i,jj,k) = qt0  (i,jin,k)            
+               tpt0 (i,jj,k) = tpt0 (i,jin,k)            
             end do
             do i=1,l_niu
-               ut0  (i,jj,km) = ut0  (i,jin,km)
+               ut0  (i,jj,k) = ut0  (i,jin,k)
             end do
             end do
          end do
@@ -190,12 +213,13 @@
          end do
          end do
          if (.not. Schm_hydro_L) then
-            do k=1,G_nk+1
+            do k=1,G_nk
             do j=1,pil_s
             jin = min(l_nj-pil_n,pil_s+j)
             jj  = pil_s-j+1
             do i=1,l_ni
                wt0 (i,jj,k) = wt0 (i,jin,k)
+               mut0(i,jj,k) = mut0(i,jin,k)
             end do
             end do
             end do
@@ -203,33 +227,36 @@
       endif
 *
       if (l_west) then
-         do k=0,G_nk+1
-            km=max(1,min(k,G_nk))
-            kt=max(k,1)
+         do k=1,G_nk
             do j=1,l_nj
-               ut0  (pil_w,j,km) = 0.
+               ut0  (pil_w,j,k) = 0.
             end do
             do j=1,l_nj
             do i=1,pil_w-1
                iin = min(l_ni-pil_e-1,pil_w+i)
                ii  = pil_w-i
-               ut0  (ii,j,km) = - ut0  (iin,j,km)
+               ut0  (ii,j,k) = - ut0  (iin,j,k)
             end do
             end do
             do j=1,l_nj
             do i=1,pil_w
                iin = min(l_ni-pil_e,pil_w+i)
                ii  = pil_w-i+1
-               tt0   (ii,j,kt) = tt0   (iin,j,kt)
-               psdt0 (ii,j,kt) = psdt0 (iin,j,kt)
-               qsect0(ii,j,k)  = qsect0(iin,j,k)            
+               tt0  (ii,j,k) = tt0  (iin,j,k)
+               psdt0(ii,j,k) = psdt0(iin,j,k)
+               pipt0(ii,j,k) = pipt0(iin,j,k)
+               fipt0(ii,j,k) = fipt0(iin,j,k)
+               tdt0 (ii,j,k) = tdt0 (iin,j,k)
+               fit0 (ii,j,k) = fit0 (iin,j,k)
+               qt0  (ii,j,k) = qt0  (iin,j,k)            
+               tpt0 (ii,j,k) = tpt0 (iin,j,k)            
             end do
             end do
             do j=1,l_njv
             do i=1,pil_w
                iin = min(l_ni-pil_e,pil_w+i)
                ii  = pil_w-i+1
-               vt0  (ii,j,km) = vt0  (iin,j,km)
+               vt0  (ii,j,k) = vt0  (iin,j,k)
             end do
             end do
          end do
@@ -241,12 +268,13 @@
          end do
          end do
          if (.not. Schm_hydro_L) then
-            do k=1,G_nk+1
+            do k=1,G_nk
             do j=1,l_nj
             do i=1,pil_w
                iin = min(l_ni-pil_e,pil_w+i)
                ii  = pil_w-i+1
                wt0 (ii,j,k) = wt0 (iin,j,k)
+               mut0(ii,j,k) = mut0(iin,j,k)
             end do
             end do
             end do
@@ -264,7 +292,7 @@
          do n=1,Tr3d_ntr
             err = vmmget(key0(n),patr0,tr0)
             if (l_north) then
-                do k=1,G_nk+1
+                do k=1,G_nk
                    do j=1,pil_n
                    jin = max(pil_s+1,l_nj-pil_n-j+1)
                    jj  = l_nj-pil_n+j
@@ -275,7 +303,7 @@
                 enddo
             endif
             if (l_east) then
-                do k=1,G_nk+1
+                do k=1,G_nk
                    do j=1,l_nj
                    do i=1,pil_e
                       iin = max(pil_w+1,l_ni-pil_e-i+1)
@@ -286,7 +314,7 @@
                 enddo
             endif
             if (l_south) then
-                do k=1,G_nk+1
+                do k=1,G_nk
                    do j=1,pil_s
                    jin = min(l_nj-pil_n,pil_s+j)
                    jj  = pil_s-j+1
@@ -297,7 +325,7 @@
                 enddo
             endif
             if (l_west) then
-                do k=1,G_nk+1
+                do k=1,G_nk
                    do j=1,l_nj
                    do i=1,pil_w
                       iin = min(l_ni-pil_e,pil_w+i)

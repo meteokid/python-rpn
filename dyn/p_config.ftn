@@ -37,6 +37,9 @@
 * v3_21 - Valcke S.         - add COUPLING and CPL_FLD and indx_xxx
 * v3_22 - Leduc A-M.        - add P_pbl_limsnodp_L
 * v3_22 - Degas B.          - add P_cond_kfctriga 
+* v3_22 - Pellerin G.       - add P_gwd_taufac
+* v3_22 - Spacek L.         - add P_gwd_cdblk
+* v3_22 - Talbot D.         - add PTOP_NML that reads PRES_PTOP
 *
 *object
 *     See above id.
@@ -139,6 +142,8 @@
       endif
 *
       call phyoptc('GWDRAG'  , p_gwd_s        ,       1, 'SET' )
+      call phyoptr('TAUFAC'  , P_gwd_taufac   ,       1, 'SET' )
+      call phyoptr('CDBLK'   , P_gwd_cdblk    ,       1, 'SET' )
 *
       call phyoptc('CONVEC'  , P_cond_conv_s  ,       1, 'SET' )
       call low2up (P_cond_stcon_s,dumc)
@@ -176,7 +181,7 @@
       call phyopti('KNTRAD'  , P_rad_knt      ,       1, 'SET' )
       call phyoptr('QCO2'    , P_rad_qco2     ,       1, 'SET' )
       call phyoptl('TS_FLXIR', P_rad_tsflxir_L,       1, 'SET' )
-
+      call phyoptr('PTOP_NML', Pres_ptop      ,       1, 'SET' )
       CALL phyoptl('COUPLING', C_coupling_L   ,       1, 'SET' )
       CALL phyoptl('CPL_FLD' , lga_cplfld     ,      24, 'SET' )
       IF (C_coupling_L) then
@@ -190,17 +195,19 @@
      $        ig_indx_water, ig_indx_ice, ig_indx_agrege
       ENDIF
 *
+      call phyoptr('PTOP_NML', Pres_ptop      ,       1, 'SET' )
+*
       NV = 0
       do i=1,CNMXRAD
          if (P_rad_nivl(i).eq.0) goto 100
          NV = NV+1
       enddo
 *
-  100 if (NV.gt.0 .and. NV.lt.G_nk+2) then
+  100 if (NV.gt.0 .and. NV.lt.G_nk) then
          do i=NV,1,-1
             P_rad_nivl(i+1) = P_rad_nivl(i)
          enddo
-      else if (NV.eq.G_nk+2) then
+      else if (NV.eq.G_nk) then
          NV = 0
       end if
 *
@@ -240,7 +247,7 @@
       p_offi = 1 + pil_w - p_nmp*west  - 1
       p_offj = 1 + pil_s - p_nmp*south - 1
 *
-      call phydebu4 ( p_ni, G_nk+2, p_bent_top ,p_bdyn_top, p_bper_top, 
+      call phydebu4 ( p_ni, G_nk, p_bent_top ,p_bdyn_top, p_bper_top, 
      $                p_bvol_top, prout, p_radiaf )
 *
       if ( (p_bent_top.le.maxbus).and.(p_bdyn_top.le.maxbus).and.

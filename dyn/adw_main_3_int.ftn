@@ -57,17 +57,13 @@
 #include "cstv.cdk"
 #include "rhsc.cdk"
 #include "v4dg.cdk"
-#include "type.cdk"
 #include "adw.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
-#include "vtx.cdk"
-#include "ver.cdk"
-#include "matlab.cdk"
 *
 *modules
-      integer  vmmlod, vmmget, vmmuld,longueur,
+      integer  vmmlod, vmmget, vmmuld,
      $         read_db_file,write_db_file,rewind_db_file
       external vmmlod, vmmget, vmmuld,
      $         read_db_file,write_db_file,rewind_db_file
@@ -78,53 +74,34 @@
 *
       integer outside,sum_outside,ier
 *
-      integer n, nij, nijkt, nijkm, nijkad, cnt, unf
-      integer i,j,k, n1,n2,np 
-      integer DIST_DIM
+      integer n, nij, nijk, nijkag, cnt, unf, i,j,k
 *
       real*8 aaa
-      real tr,tr0,buf(l_ni,G_nk+1), half
-      real work(LDIST_SHAPE,G_nk+1),work2(LDIST_SHAPE,G_nk+1)
-      real ytmp(LDIST_SHAPE),xtmp(LDIST_SHAPE)
-      parameter( half = 0.5 )
+      real tr,tr0,buf(l_ni,G_nk)
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
-      real, allocatable, dimension(:) :: pos_x, pos_y, pos_z
 *
       if ( Adw_lag3d_L ) then
          call adw_main_3_intlag ( F_u, F_v, F_w )
          return
       endif
 *
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_adw_main_3_int.bin',
-     $        status='replace',form='unformatted')
-         write(62)G_ni-lam_pil_w-lam_pil_e
-         write(62)G_nk
-      endif
-*
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
-      nijkt  = l_ni   *l_nj   *(l_nk+1)
-      nijkm  = l_ni   *l_nj   * l_nk
-      nijkad = Adw_nit*Adw_njt*(l_nk+1)
-      call hpalloc(Adw_capx1_   ,nijkt,      err,1)
-      call hpalloc(Adw_capy1_   ,nijkt,      err,1)
-      call hpalloc(Adw_capz1_   ,nijkt,      err,1)
-      call hpalloc(Adw_n1_      ,nijkt,      err,1)
-      call hpalloc(Adw_xdd1_    ,nijkt,      err,1)
-      call hpalloc(Adw_xgg1_    ,nijkt,      err,1)
-      call hpalloc(Adw_ydd1_    ,nijkt,      err,1)
-      call hpalloc(Adw_ygg1_    ,nijkt,      err,1)
-      call hpalloc(Adw_cz1_     ,nijkt,      err,1)
-      call hpalloc(Adw_c1_      ,nijkt,      err,1)
-      call hpalloc(Adw_wrkb_    ,nijkt,      err,1)
-      call hpalloc(Adw_wrkc_    ,nijkt,      err,1)
-*
-      allocate ( pos_x(nijkad) )
-      allocate ( pos_y(nijkad) )
-      allocate ( pos_z(nijkad) )
+      nijk   = l_ni   *l_nj   *l_nk
+      nijkag = Adw_nit*Adw_njt*l_nk
+      call hpalloc(Adw_capx1_   ,nijk,      err,1)
+      call hpalloc(Adw_capy1_   ,nijk,      err,1)
+      call hpalloc(Adw_capz1_   ,nijk,      err,1)
+      call hpalloc(Adw_n1_      ,nijk,      err,1)
+      call hpalloc(Adw_xdd1_    ,nijk,      err,1)
+      call hpalloc(Adw_xgg1_    ,nijk,      err,1)
+      call hpalloc(Adw_ydd1_    ,nijk,      err,1)
+      call hpalloc(Adw_ygg1_    ,nijk,      err,1)
+      call hpalloc(Adw_cz1_     ,nijk,      err,1)
+      call hpalloc(Adw_c1_      ,nijk,      err,1)
+      call hpalloc(Adw_wrkb_    ,nijk,      err,1)
+      call hpalloc(Adw_wrkc_    ,nijk,      err,1)
 *
 ************************************************************************
       i0=1
@@ -136,36 +113,14 @@
           if (l_east)  in=l_niu-2 - (Glb_pil_e - 7)
           if (l_south) j0=4       + (Glb_pil_s - 7)
           if (l_north) jn=l_njv-2 - (Glb_pil_n - 7)
-      endif
-
-***********************************************************************
-* Prepare for advection on momentum levels
-***********************************************************************
-!
-!$omp parallel do private(n)
-      do k=1,l_nk
-      do j=j0,jn
-      do i=i0,in
-         n = (k-1)*nij + ((j-1)*l_ni) + i
-         pos_x(n) =  F_u(n)
-         pos_y(n) =  F_v(n)
-         pos_z(n) =  F_w(n)
-      enddo
-      enddo
-      enddo
-!$omp end parallel do
-
-      if (G_lam) then
           if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
      $         (mod(Lctl_step,Step_gstat).eq.0) )
-     $         call adw_cfl_lam ( pos_x, pos_y, pos_z, 
-     $                            i0, in, j0, jn, l_nk,'m' )
-          call adw_ckbd_lam( pos_x, pos_y, pos_z, i0, in, j0, jn, l_nk )
+     $         call adw_cfl_lam ( F_u, F_v, F_w, i0, in, j0, jn )
+          call adw_ckbd_lam( F_u, F_v, F_w, i0, in, j0, jn )
       endif
 *
       if (.not.G_lam) then
-      call adw_exch_1 ( Adw_n1, Adw_xgg1, Adw_xdd1, Adw_c1,
-     $                  pos_x, pos_y, pos_z, l_nk )
+      call adw_exch_1 ( Adw_n1, Adw_xgg1, Adw_xdd1, Adw_c1,F_u,F_v,F_w )
 *
           if ( V4dg_conf.ne.0.0 ) then
 *
@@ -200,17 +155,41 @@
 *
       endif
 *
+      if( .not. Adw_lag3d_L ) then
       call adw_setint ( Adw_n1,Adw_capx1,Adw_xgg1,Adw_xdd1,Adw_capy1,Adw_ygg1,
-     %                  Adw_ydd1,Adw_capz1,Adw_cz1,pos_x,pos_y,pos_z,
-     %                  .true., .true., .false., nijkm,i0,in,j0,jn,l_nk,'m')
+     %                  Adw_ydd1, Adw_capz1, Adw_cz1, F_u, F_v, F_w,
+     %                 .true., .true., .false., nijk,i0,in,j0,jn,l_nk)
+      else
+*     ----------------------------
+*     Keep positions in CAP fields
+*     ----------------------------
+!$omp parallel do private(n)
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         Adw_capx1(n) = F_u(n)
+         Adw_capy1(n) = F_v(n)
+         Adw_capz1(n) = F_w(n)
+      end do
+      end do
+      end do
+!$omp end parallel do
+      endif
 *
       if ( Adw_fro_a .gt. 0 .and. .not. G_lam) then
 *
          if ( Adw_ckbd_L ) call adw_ckbd ( Adw_capy2 )
 *
+         if( .not. Adw_lag3d_L ) then
          call adw_setint(Adw_n2,Adw_capx2,Adw_xgg2,Adw_xdd2,Adw_capy2,Adw_ygg2,
      %                 Adw_ydd2,Adw_capz2,Adw_cz2,Adw_capx2,Adw_capy2,Adw_capz2,
-     %                 .true., .true., .false., Adw_fro_a,1,Adw_fro_a,1,1,1,'m')
+     %                   .true., .true., .false., Adw_fro_a,1,Adw_fro_a,1,1,1)
+         else
+*        -----------------------------------
+*        Positions are already in CAP fields
+*        -----------------------------------
+         endif
 *
       endif
 *
@@ -222,11 +201,16 @@
       pnlkey1(3) = VMM_KEY(ruw2)
       pnlkey1(4) = VMM_KEY(rvw2)
       pnlkey1(5) = VMM_KEY(rcn)
-      pnlkey1(6) = VMM_KEY(fiptx)
-      pnlkey1(7) = VMM_KEY(zz1)
-      pnlkey1(8) = VMM_KEY(piup)
-      pnlkey1(9) = VMM_KEY(st1)
-      pnlod = 9
+      pnlkey1(6) = VMM_KEY(rth)
+      pnlkey1(7) = VMM_KEY(fit1)
+      pnlkey1(8) = VMM_KEY(zz1)
+      pnlod = 8
+*
+      if (.not. Schm_hydro_L) then
+         pnlkey1(9) = VMM_KEY(rw)
+         pnlkey1(10) = VMM_KEY(rvv)
+         pnlod = 10 
+      endif
 *
       pnerr = vmmlod(pnlkey1,pnlod)
 *
@@ -235,165 +219,37 @@
       pnerr =  VMM_GET_VAR(ruw2)
       pnerr =  VMM_GET_VAR(rvw2)
       pnerr =  VMM_GET_VAR(rcn)
-      pnerr =  VMM_GET_VAR(fiptx)
-      pnerr =  VMM_GET_VAR(zz1)
-      pnerr =  VMM_GET_VAR(piup)
-      pnerr =  VMM_GET_VAR(st1)
-*
-      call adw_interp (ruw2, ruw1, pos_x, pos_y,
-     %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
-*
-      call adw_interp (rvw2, rvw1, pos_x, pos_y,
-     %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
-*
-      call adw_interp (rcn , rcn , pos_x, pos_y,
-     %                .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
-*
-      pnerr = vmmuld(pnlkey1,pnlod)
-
-      if (.not.G_lam) then
-      call hpdeallc(Adw_capx2_   ,err)
-      call hpdeallc(Adw_capy2_   ,err)
-      call hpdeallc(Adw_capz2_   ,err)
-      call hpdeallc(Adw_n2_      ,err)
-      call hpdeallc(Adw_xdd2_    ,err)
-      call hpdeallc(Adw_xgg2_    ,err)
-      call hpdeallc(Adw_ydd2_    ,err)
-      call hpdeallc(Adw_ygg2_    ,err)
-      call hpdeallc(Adw_cz2_     ,err)
-      call hpdeallc(Adw_wrka_    ,err)
-      endif
-*
-***********************************************************************
-* Prepare for advection on thermodynamic levels
-***********************************************************************
-!     from upstream position for momentum levels to upstream
-!     position for thermodynamic levels
-!
-      call adw_meanpos (pos_x, pos_y, pos_z, F_u, F_v, F_w, i0, in,
-     %                  j0, jn)
-
-      if (G_lam) then
-          if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
-     $         (mod(Lctl_step,Step_gstat).eq.0) )
-     $         call adw_cfl_lam ( pos_x, pos_y, pos_z, 
-     $                            i0, in, j0, jn, l_nk+1, 't')
-          call adw_ckbd_lam( pos_x, pos_y, pos_z, i0, in, j0, jn, l_nk+1 )
-      endif
-*
-      if (.not.G_lam) then
-      call adw_exch_1 ( Adw_n1, Adw_xgg1, Adw_xdd1, Adw_c1,
-     $                  pos_x, pos_y, pos_z, l_nk+1 )
-*
-          if ( V4dg_conf.ne.0.0 ) then
-*
-               outside = 0
-*
-               if ( Adw_fro_a .gt. 0 ) outside = 1
-*
-               sum_outside = 0
-               call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
-     $                                 "MPI_SUM","grid",ier)
-*
-               if(sum_outside.ne.0) call gem_stop ('ADW_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
-*
-          endif
-*
-      dim = max(1,Adw_fro_a)
-      call hpalloc(Adw_capx2_   ,dim,      err,1)
-      call hpalloc(Adw_capy2_   ,dim,      err,1)
-      call hpalloc(Adw_capz2_   ,dim,      err,1)
-      call hpalloc(Adw_n2_      ,dim,      err,1)
-      call hpalloc(Adw_xdd2_    ,dim,      err,1)
-      call hpalloc(Adw_xgg2_    ,dim,      err,1)
-      call hpalloc(Adw_ydd2_    ,dim,      err,1)
-      call hpalloc(Adw_ygg2_    ,dim,      err,1)
-      call hpalloc(Adw_cz2_     ,dim,      err,1)
-      call hpalloc(Adw_wrka_    ,dim,      err,1)
-*
-      call adw_exch_2 ( Adw_capx2, Adw_capy2, Adw_capz2,
-     %                  Adw_n1, Adw_xgg1, Adw_xdd1,
-     %                  Adw_fro_n, Adw_fro_s, Adw_fro_a,
-     %                  Adw_for_n, Adw_for_s, Adw_for_a, 3 )
-*
-      endif
-*
-
-      call adw_setint ( Adw_n1,Adw_capx1,Adw_xgg1,Adw_xdd1,Adw_capy1,Adw_ygg1,
-     %                  Adw_ydd1,Adw_capz1,Adw_cz1,pos_x,pos_y,pos_z,
-     %                  .true., .true., .false., nijkt,i0,in,j0,jn,l_nk+1,'t')
-*
-      if ( Adw_fro_a .gt. 0 .and. .not. G_lam) then
-*
-         if ( Adw_ckbd_L ) call adw_ckbd ( Adw_capy2 )
-*
-         call adw_setint(Adw_n2,Adw_capx2,Adw_xgg2,Adw_xdd2,Adw_capy2,Adw_ygg2,
-     %                 Adw_ydd2,Adw_capz2,Adw_cz2,Adw_capx2,Adw_capy2,Adw_capz2,
-     %                 .true., .true., .false., Adw_fro_a,1,Adw_fro_a,1,1,1,'t')
-*
-      endif
-*
-***********************************************************************
-* Perform interpolation for equations on thermodynamic levels
-***********************************************************************
-      pnlkey1(1) = VMM_KEY(rth)
-      pnlod = 1
-*
-      if (.not. Schm_hydro_L) then
-         pnlkey1(2) = VMM_KEY(rw)
-         pnlkey1(3) = VMM_KEY(rvv)
-         pnlod = 3 
-      endif
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
       pnerr =  VMM_GET_VAR(rth)
+      pnerr =  VMM_GET_VAR(fit1)
+      pnerr =  VMM_GET_VAR(zz1)
 *
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(rw)
          pnerr = VMM_GET_VAR(rvv)
       endif
 *
-      call adw_interp (rth, rth, pos_x, pos_y, 
-     %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
-
+      call adw_interp (ruw2, ruw1, F_u, F_v,
+     %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      call adw_interp (rvw2, rvw1, F_u, F_v,
+     %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      call adw_interp (rcn, rcn, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      call adw_interp (rth, rth, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      call adw_interp (zz1, fit1, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
       if (.not. Schm_hydro_L) then
-          call adw_interp (rw, rw, pos_x, pos_y, 
-     %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
+
+          call adw_interp (rw, rw, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
 *
-          call adw_interp (rvv, rvv, pos_x, pos_y, 
-     %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
-       else
-         if(Orh_icn.eq.Schm_itcn)then
-
-!$omp parallel do
-            do j=l_miny,l_maxy
-            do i=l_minx,l_maxx
-               xtmp(i,j)=st1(i,j)
-            end do
-            end do
-!$omp end parallel do
-            call vsexp (ytmp,xtmp,(l_maxx-l_minx+1)*(l_maxy-l_miny+1))
-*
-!$omp parallel do
-            do k=1,l_nk+1
-               do j=j0,jn
-               do i=i0,in
-                  work(i,j,k)=0.5d0*(fiptx(i,j,k)+fiptx(i,j,k-1))
-     $                 +Ver_fistr_8%t(k)
-                  work2(i,j,k)=Ver_pia_8%t(k) + Ver_pib_8%t(k)*ytmp(i,j)
-               enddo
-               enddo
-            enddo
-!$omp end parallel do
-          
-            call adw_interp (zz1, work, pos_x, pos_y, 
-     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
-            call adw_interp (piup,work2, pos_x, pos_y, 
-     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
-
-       endif
-
+          call adw_interp (rvv, rvv, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
       endif
 *
       if ( Orh_icn .eq. Schm_itcn ) then
@@ -416,16 +272,16 @@
          do n=1,Tr3d_ntr
             err = vmmget(key1(n),patr,tr)
             err = vmmget(key0(n),patr0,tr0)
-            do k=1,l_nk+1
+            do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni
                tr0(i,j,k) = - aaa*tr(i,j,k)
             end do
             end do
             end do
-            call adw_interp ( tr0, tr0, pos_x, pos_y,
-     %               .false. , Adw_mono_L, LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
-            do k=1,l_nk+1
+            call adw_interp ( tr0, tr0, F_u, F_v,
+     %                        .false. , Adw_mono_L, LDIST_DIM, l_nk,i0,in,j0,jn)
+            do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni
                tr0(i,j,k) = Cstv_tau_8*tr0(i,j,k)
@@ -441,19 +297,6 @@
 *
 *
       endif
-
-      if(matlab_write_L)then
-         call write_matlab_3d(62,ruw1)
-         call write_matlab_3d(62,ruw2)
-         call write_matlab_3d(62,rcn)
-         call write_matlab_3d_th(62,rth)
-         if (.not. Schm_hydro_L) then 
-            call write_matlab_3d_th(62,rw)
-            call write_matlab_3d_th(62,rvv)
-         endif
-         if(Ptopo_myproc.eq.0)close(62)
-      endif
-
 ***********************************************************************
 * Deallocate
 ***********************************************************************
@@ -481,8 +324,6 @@
       call hpdeallc(Adw_cz2_     ,err)
       call hpdeallc(Adw_wrka_    ,err)
       endif
-*
-      deallocate (pos_x,pos_y,pos_z)
 *
       pnerr = vmmuld(-1,0)
 *

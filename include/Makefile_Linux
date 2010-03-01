@@ -1,9 +1,0 @@
-OPTIL  = 2
-OMP    =
-MPI    = -mpi
-RMN    = rmn_007
-COMM   = rpn_comm208
-PRIV   = priv
-#OMP   = -mp -lpthreads
-
-

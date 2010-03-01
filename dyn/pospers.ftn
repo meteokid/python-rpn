@@ -21,8 +21,6 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "vth.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -55,7 +53,7 @@
          ijk=(k-1)*nij+(j-1)*l_ni+i
          xth(ijk)  = Geomg_x_8(i)
          yth(ijk)  = Geomg_y_8(j)
-         zth(ijk)  = Ver_z_8%m(k)
+         zth(ijk)  = Geomg_z_8(k)
 *
          pr1         = cos(yth(ijk))
 *

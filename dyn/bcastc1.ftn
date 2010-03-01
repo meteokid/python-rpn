@@ -23,7 +23,7 @@
 * v2_21 - Lee V.            - broadcast path for slab outputs
 * v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
 * v2_30 - Lee V.            - broadcast common Out_c
-* v2_31 - Lee V.            - allocate Ver_hyb,change Ver_eta to Ver_hybm
+* v2_31 - Lee V.            - allocate Geomg_hyb,change Geomg_eta to Geomg_hybm
 * v2_32 - Lee V.            - removed broadcast for P_pbl,P_gwd variables
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
@@ -44,7 +44,6 @@
 *        none
 *
 *implicits
-#include "lun.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "dimout.cdk"
@@ -53,6 +52,7 @@
 #include "path.cdk"
 #include "step.cdk"
 #include "grd.cdk"
+#include "geomg.cdk"
 #include "p_geol.cdk"
 #include "out1.cdk"
 #include "hgc.cdk"
@@ -60,7 +60,6 @@
 #include "init.cdk"
 #include "offc.cdk"
 #include "schm.cdk"
-#include "type.cdk"
 #include "adw.cdk"
 #include "lctl.cdk"
 #include "cstv.cdk"
@@ -85,11 +84,10 @@
 #include "vrtd.cdk"
 #include "zblen.cdk"
 #include "v4dr.cdk"
-#include "ver.cdk"
 #include "offline.cdk"
-#include "matlab.cdk"
+#include "ens_param.cdk"
 *
-      integer err, istat
+      integer err
 *------------------------------------------------------------------
 *
       COMMON_BROADCAST(G)
@@ -111,6 +109,10 @@
       COMMON_BROADCAST(Hgc_s)
       COMMON_BROADCAST(Out1)
       COMMON_BROADCAST(Out1c)
+      COMMON_BROADCAST(Ens_c)
+      COMMON_BROADCAST(Ens_l)
+      COMMON_BROADCAST(Ens_i)
+      COMMON_BROADCAST(Ens_r)
       COMMON_BROADCAST(Grd_c)
       COMMON_BROADCAST(Grd_l)
       COMMON_BROADCAST(Grd_i)
@@ -148,7 +150,7 @@
       COMMON_BROADCAST(Out3_l)
       COMMON_BROADCAST(Out3_c)
       COMMON_BROADCAST(Out3_i)
-      COMMON_BROADCAST(Level_i)
+      COMMON_BROADCAST(Level_l)
       COMMON_BROADCAST(V4d_gen_i)
       COMMON_BROADCAST(V4d_gen_l)
       COMMON_BROADCAST(V4d_gen_r)
@@ -172,7 +174,6 @@
       COMMON_BROADCAST(Glb_pil_i)
       COMMON_BROADCAST(V4d_redo_i)
       COMMON_BROADCAST(V4d_redo_l)
-      COMMON_BROADCAST(matlab_l)
 *
       call RPN_COMM_bcast(Ptopo_nblocx, 1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(Ptopo_nblocy, 1,"MPI_INTEGER",0,"grid",err )
@@ -193,20 +194,18 @@
       call stopmpi(err)
 *
       if (Ptopo_myproc.gt.0) then
-         allocate(Ver_hyb%m(G_nk)  ,Ver_hybm%m(G_nk),
-     $            Ver_hyb_8%m(G_nk),Ver_hybm_8%m(G_nk),
-     $        stat=istat)
-         if(istat.ne.0)then
-            write (Lun_out,*)
-     $           'Allocation problem in set_world_view1, #1, stat=',istat
-            return
-         endif
+          call hpalloc (Geomg_hyb_ , G_nk, err, 1)
+          call hpalloc (Geomg_hybm_, G_nk, err, 1)
+          call hpalloc (Geomg_pia_ , G_nk, err, 1)
+          call hpalloc (Geomg_pibb_, G_nk, err, 1)
+          call hpalloc (Geomg_dpba_, G_nk, err, 1)
       endif
 *
-      call RPN_COMM_bcast (Ver_hyb%m ,G_nk  ,"MPI_REAL",0,"grid",err) 
-      call RPN_COMM_bcast (Ver_hybm%m,G_nk  ,"MPI_REAL",0,"grid",err)
-      call RPN_COMM_bcast (Ver_hyb_8%m ,G_nk  ,"MPI_DOUBLE_PRECISION",0,"grid",err) 
-      call RPN_COMM_bcast (Ver_hybm_8%m,G_nk  ,"MPI_DOUBLE_PRECISION",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_hyb ,G_nk,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_hybm,G_nk,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_pia ,G_nk,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_pibb,G_nk,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_dpba,G_nk,"MPI_REAL",0,"grid",err)
 *
 *------------------------------------------------------------------
       return

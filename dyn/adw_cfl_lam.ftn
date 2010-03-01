@@ -3,12 +3,10 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine adw_cfl_lam ( F_x_in, F_y_in, F_z_in, 
-     %                         i0, in, j0, jn, F_nk, F_lev_S )
+      subroutine adw_cfl_lam ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn )
       implicit none
 *
-      character*1 F_lev_S
-      integer i0, in, j0, jn, F_nk
+      integer i0, in, j0, jn
       real    F_x_in( * ), F_y_in( * ), F_z_in( * )
 *
 *author
@@ -30,14 +28,12 @@
 * in           | ending i position to check for LAM              |  i  |
 * j0           | starting j position to check for LAM            |  i  |
 * jn           | ending j position to check for LAM              |  i  |
-* F_lev_S      | "m" momentum level, "t" thermodynamic level     |  i  |
 *______________|_________________________________________________|_____|
 *
 *
 *implicits
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "type.cdk"
 #include "adw.cdk"
 ************************************************************************
 *
@@ -45,18 +41,8 @@
      $        imax,jmax,kmax,iwk(3,3,Ptopo_numproc)
       real*8 x_cfl, y_cfl, z_cfl, xy_cfl, xyz_cfl, max_cfl_8,
      $       cfl_8(3),wk_8(3,Ptopo_numproc)
-      real*8,   dimension(:),pointer :: p_bsz_8, p_dlz_8
 *
 ************************************************************************
-
-      if ( F_lev_S .eq. 'm') then
-         p_bsz_8 =>Adw_bsz_8%m
-         p_dlz_8 =>Adw_dlz_8%m
-      else
-         p_bsz_8 =>Adw_bsz_8%t
-         p_dlz_8 =>Adw_dlz_8%t
-      endif
-
       nij  = l_ni*l_nj
       Adw_cfl_8 (:  ) = 0.0d0
       Adw_cfl_i (:,:) = 0
@@ -67,7 +53,7 @@
       kmax = 0
       max_cfl_8 = 0.d0
 *      
-      do k=1,F_nk
+      do k=1,l_nk
       do j=j0,jn
       do i=i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -95,11 +81,11 @@
       kmax = 0
       max_cfl_8 = 0.d0
 *
-      do k=1,F_nk
+      do k=1,l_nk
       do j=j0,jn
       do i=i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
-         z_cfl = (abs( F_z_in(n)-p_bsz_8(k-1)))/p_dlz_8(k-2)
+         z_cfl = (abs( F_z_in(n)-Adw_bsz_8(k-1)))/Adw_dlz_8(k-2)
          if (z_cfl.gt.max_cfl_8) then
             imax = i
             jmax = j
@@ -121,13 +107,13 @@
       kmax = 0
       max_cfl_8 = 0.0d0
 *
-      do k=1,F_nk
+      do k=1,l_nk
       do j=j0,jn
       do i=i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
          x_cfl = (abs( F_x_in(n)-Adw_xx_8(i+Adw_halox)))/Adw_dlx_8(1)
          y_cfl = (abs( F_y_in(n)-Adw_yy_8(j+Adw_haloy)))/Adw_dly_8(1)
-         z_cfl = (abs( F_z_in(n)-p_bsz_8(k-1)))/p_dlz_8(k-2)
+         z_cfl = (abs( F_z_in(n)-Adw_bsz_8(k-1)))/Adw_dlz_8(k-2)
          xyz_cfl= sqrt(x_cfl*x_cfl + y_cfl*y_cfl + z_cfl*z_cfl)
          if (xyz_cfl.gt.max_cfl_8) then
             imax = i

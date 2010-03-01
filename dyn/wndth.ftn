@@ -12,7 +12,6 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version 
 * v3_20 - Tanguay M.        - 1d higher order diffusion operator 
-* v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
 *
 *object
 *	
@@ -26,7 +25,6 @@
 #include "vth.cdk"
 #include "vt1.cdk"
 #include "hzd.cdk"
-#include "lctl.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -59,13 +57,11 @@
 *
 *     Filtering
 *     ---------
-      if (Lctl_step.gt.1) then
       call tmg_start0 ( 12, 'HZD1D    ' )
       if (Hzd_t0_0_L) call hzd_hoffld (ut0,   LDIST_DIM, G_nk, 1)
       if (Hzd_t0_0_L) call hzd_hoffld (vt0,   LDIST_DIM, G_nk, 2)
-      if (Hzd_t0_0_L) call hzd_hoffld (psdt0, LDIST_DIM, G_nk+1, 3)
+      if (Hzd_t0_0_L) call hzd_hoffld (psdt0, LDIST_DIM, G_nk, 3)
       call tmg_stop0 (12)
-      endif
 *
 *C       1.    Perform the averaging
 *              ---------------------
@@ -74,18 +70,12 @@
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
               uth(i,j,k) = 0.5 *   ut0(i,j,k) + 0.5 *   ut1(i,j,k)
+            psdth(i,j,k) = 0.5 * psdt0(i,j,k) + 0.5 * psdt1(i,j,k)
          end do
          end do
          do j= 1+pil_s, l_njv-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
             vth(i,j,k)   = 0.5 * vt0(i,j,k) + 0.5 * vt1(i,j,k)
-         end do
-         end do
-      end do
-      do k=1,l_nk+1
-         do j= 1+pil_s, l_nj-pil_n 
-         do i= 1+pil_w, l_ni-pil_e 
-            psdth(i,j,k) = 0.5 * psdt0(i,j,k) + 0.5 * psdt1(i,j,k)
          end do
          end do
       end do

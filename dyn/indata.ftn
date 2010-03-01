@@ -41,13 +41,12 @@
 #include "vtx.cdk"
 #include "theo.cdk"
 #include "vtopo.cdk"
-#include "ptopo.cdk"
 #include "lctl.cdk"
 *
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer key1(10),nvar,err
+      integer key1(19),nvar,err
 *
 *     ---------------------------------------------------------------
 *
@@ -58,14 +57,21 @@
       if ( V4dg_conf.ne.0.and.V4dg_part.eq.3.and.V4dg_oktr_L ) 
      $     call v4d_rwtraj (1) 
 *
-      key1( 1) = VMM_KEY(  ut1)
-      key1( 2) = VMM_KEY(  vt1)
-      key1( 3) = VMM_KEY(  tt1)
-      key1( 4) = VMM_KEY(psdt1)
-      key1( 5) = VMM_KEY(  st1)
-      key1( 6) = VMM_KEY(fiptx)
-      key1( 7) = VMM_KEY( topo)
-      nvar = 7
+      key1( 1) = VMM_KEY( fit1)
+      key1( 2) = VMM_KEY(  ut1)
+      key1( 3) = VMM_KEY(  vt1)
+      key1( 4) = VMM_KEY(  tt1)
+      key1( 5) = VMM_KEY(  qt1)
+      key1 (6) = VMM_KEY(fipt1)
+      key1 (7) = VMM_KEY(  st1)
+      key1 (8) = VMM_KEY(pipt1)
+      key1 (9) = VMM_KEY( tpt1)
+      key1(10) = VMM_KEY(tplt1)
+      key1(11) = VMM_KEY( gptx)
+      key1(12) = VMM_KEY(psdt1)
+      key1(13) = VMM_KEY( tdt1)
+      key1(14) = VMM_KEY( topo)
+      nvar = 14
 *
       Vtopo_L = ((Vtopo_start .ge. 0)
      %           .and. (Lctl_step-Vtopo_start .le. Vtopo_ndt))
@@ -75,40 +81,61 @@
       endif   
 
       if (Vtopo_L) then
-         key1(8) = VMM_KEY(dtopo)
-         nvar=8
+         key1(15) = VMM_KEY(dtopo)
+         nvar=15
       endif
 
       if (.not. Schm_hydro_L) then
          key1(nvar+1) = VMM_KEY(wt1)
-         key1(nvar+2) = VMM_KEY(qsect1)
-         nvar = nvar+2
+         key1(nvar+2) = VMM_KEY(mut1)
+         key1(nvar+3) = VMM_KEY(multx)
+         key1(nvar+4) = VMM_KEY(qpt1)
+         nvar = nvar+4
       endif
 *
       err = vmmlod(key1,nvar)
 *
+      err = VMM_GET_VAR( fit1)
       err = VMM_GET_VAR(  ut1)
       err = VMM_GET_VAR(  vt1)
       err = VMM_GET_VAR(  tt1)
-      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(  qt1)
+      err = VMM_GET_VAR(fipt1)
       err = VMM_GET_VAR(  st1)
-      err = VMM_GET_VAR(fiptx)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR( tpt1)
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR( gptx)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR( tdt1)
       err = VMM_GET_VAR( topo)
 *
+      Ind_fi_  = fit1_
       Ind_u_   = ut1_
       Ind_v_   = vt1_
       Ind_t_   = tt1_
-      Ind_psd_ = psdt1_
+      Ind_q_   = qt1_
+      Ind_fip_ = fipt1_
       Ind_s_   = st1_
-      Ind_fip_ = fiptx_
+      Ind_pip_ = pipt1_
+      Ind_tp_  = tpt1_
+      Ind_tpl_ = tplt1_
+      Ind_gp_  = gptx_
+      Ind_psd_ = psdt1_
+      Ind_td_  = tdt1_
       Ind_topo_= topo_
 *
       if (.not. Schm_hydro_L) then
-         err = VMM_GET_VAR(   wt1)
-         err = VMM_GET_VAR(qsect1)
-         Ind_w_     = wt1_
-         Ind_qsec_  = qsect1_
+         err = VMM_GET_VAR(  wt1)
+         err = VMM_GET_VAR( mut1)
+         err = VMM_GET_VAR(multx)
+         err = VMM_GET_VAR(qpt1)
+         Ind_w_   = wt1_
+         Ind_mu_  = mut1_
+         Ind_mul_ = multx_
+         Ind_qp_  = qpt1_
       endif
+
       if ( Vtopo_L) then
          err = VMM_GET_VAR( dtopo)
          Ind_dtopo_= dtopo_
@@ -125,6 +152,7 @@
       bmf_time1 = Out1_dato(1)
       bmf_time2 = Out1_dato(2)
       if ( Schm_phyms_L ) call readgeo()
+      
       if ( Schm_theoc_L ) then
          if (      Theo_case_S.eq.'BUBBLE'
      $        .or. Theo_case_S.eq.'BUBBLE_G'
@@ -142,6 +170,8 @@
       else
          call readdyn()
       endif
+
+	  
 *
 *     In specific 4D-Var runs, Convert wind images to true winds
 *     ----------------------------------------------------------
@@ -165,7 +195,7 @@
 *C       2.    Performs preprocessing of the dynamics input data
 *              -------------------------------------------------
 *
-      call predat()
+      call predat() 
 *
       err = vmmuld(-1,0)
 *

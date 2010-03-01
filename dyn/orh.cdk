@@ -15,7 +15,7 @@
 *  oru               | momentum equation along x                       |
 *  orv               | momentum equation along y                       |
 *  orw               | momentum equation along z                       |
-*  orfi              | vertical velocity equation                      |
+*  orvv              | vertical velocity equation                      |
 *  orcn              | continuity equation                             |
 *  orth              | thermodynamic equation                          |
 *--------------------|-------------------------------------------------|
@@ -32,10 +32,10 @@
       MARK_COMMON_BEG (orh)
       DCL_VMMVAR (orh,oru  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (orh,orv  ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (orh,orw  ,real,(LDIST_SHAPE,l_nk+1))
-      DCL_VMMVAR (orh,orvv ,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (orh,orw  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orh,orvv ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (orh,orcn ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (orh,orth ,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR (orh,orth ,real,(LDIST_SHAPE,l_nk))
       MARK_COMMON_END (orh)
       character*8 orh_n_first(1)
       equivalence (orh_n_first,VMM_NAM(oru))

@@ -23,6 +23,114 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 *
 *object
+*******************************************************************************
+*                                                                             *
+* First, add metric corrections to the RHS of momentum equations              *
+*                                                                             *
+*  R\' =   C   R   +  C   R                                                   *
+*    U      xx  U      xy  V                                                  *
+*                                                                             *
+*                                                                             *
+*  R\' =   C   R   +  C   R                                                   *
+*    V      yx  U      yy  V                                                  *
+*                                                                             *
+* where:                                                                      *
+*                          _   _                              _   _           *
+*                 /        r . A     \               /        r . A     \     *
+*         _   _   | _           x  _ |           _   | _           x  _ |     *
+*  C   =  k . r ^ | A  -  -------- c |     C   = k . | A  -  -------- c |     *
+*   xx            |  x     _   _     |      yx       |  x     _   _     |     *
+*                 \        r . c     /               \        r . c     /     *
+*                                                                             *
+*                          _   _                              _   _           *
+*                 /        r . A     \               /        r . A     \     *
+*         _   _   | _           y  _ |           _   | _           y  _ |     *
+*  C   =  k . r ^ | A  -  -------- c |     C   = k . | A  -  -------- c |     *
+*   xy            |  y     _   _     |      yy       |  y     _   _     |     *
+*                 \        r . c     /               \        r . c     /     *
+*                                                                             *
+*  _      1             _         _                                           *
+*  A  = ----- ( - sin x i + cos x j )                                         *
+*   x   cos y                                                                 *
+*                                                                             *
+*  _      1                   _               _         _                     *
+*  A  = ----- ( - cos x sin y i - sin x sin y j + cos y k )                   *
+*   y   cos y                                                                 *
+*                                                                             *
+*  _     _          b1  _                                                     *
+*  c  =  r(t0)  +  ---- r(t1)                                                 *
+*                   b0                                                        *
+*                                                                             *
+*******************************************************************************
+*                                                                             *
+* Then calculate the advective contributions #Ru & #Rv on G-grid,             *
+* and interpolate them from G- to U- & V-grid.                                *
+*                                                                             *
+* Consequently, we get the final form of RHS of horizontal momentum equation  *
+* by adding the advective and topographic contributions to that downstream:   *
+*                                                                             *
+*                      1   dphi                                               *
+*                              s                                              *
+* R" =  R  +  #Ru  -  --- ------                                         (ru) *
+*  U     U              2                                                     *
+*                      a    dx                                                *
+*                                                                             *
+*                                                                             *
+*                      C   dphi                                               *
+*                              s                                              *
+* R" =  R  +  #Rv  -  --- ------                                         (rv) *
+*  V     V              2                                                     *
+*                      a    dy                                                *
+*                                                                             *
+*                                                                             *
+*                      /  dR"       dR"  \                                    *
+*                   1  |    U         V  |                                    *
+* then compute R  = -- | ----- + C ----- |                               (rd) *
+*               D    2 |                 |                                    *
+*                   C  \  dx        dy   /                                    *
+*                                                                             *
+*******************************************************************************
+*            1                                                                *
+* R  = R  - --- R                                                        (r1) *
+*  1    D   tau  cn                                                           *
+*                                                                             *
+*******************************************************************************
+*                                                                             *
+*                      &    /                \       _____________________    *
+*         1             H   |        1       |      |                     |   *
+* R  =  ----- R   +  ------ | R   - --- phi  |      | NONHYDROSTATIC ONLY |   *
+*  3    g tau  w      2   2 |  vv   tau    s |      |_____________________|   *
+*                    g tau  \                /                                *
+*                                                                             *
+*******************************************************************************
+*                                                    _____________________    *
+* We are now ready to calculate the                 |                     |   *
+* linear RHS of Helmholtz equation:                 | NONHYDROSTATIC ONLY |   *
+*                                                   |_____________________|   *
+*                                      |                                      *
+*                                      |                                      *
+*       / _z \+     gamma   / ___z  \- |   gamma   / ___z \-   gamma / __z \+ *
+* R  =  | R  |  + --------- | z R   |  + --------- | z R  |  + ----- | R'  |  *
+*  h    \  1 /    cappa tau \    th /  | cappa tau \    3 /     tau  \  3  /  *
+*                                      |                                      *
+*                                      |   where                              *
+*                                      |                       R  T*          *
+*                                      |                        d             *
+* The involved operators are defined   |   R'  =  R   -  &  ------------ R    *
+* as in Cote et al., 1990, M.W.R. 118, |    3      3      H        2   2  th  *
+* 2707-2717:                           |                    cappa g tau       *
+*                                                                             *
+*                                                                             *
+* / _z \+     P(k-1) + P(k) dz(k-1)     P(k) + P(k+1) dz(k)                   *
+* | P  |   =  ------------- -------  +  ------------- -----                   *
+* \    /k           2          2              2         2                     *
+*                                                                             *
+* / _z \-     M(k-1) + M(k)     M(k) + M(k+1)     M(k-1) - M(k+1)             *
+* | M  |   =  -------------  -  -------------  =  ---------------             *
+* \    /k           2                 2                  2                    *
+*                                                                             *
+*                                                                             *
+*******************************************************************************
 *
 *arguments
 *        None
@@ -41,7 +149,8 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(15), i, j
+      integer pnerr, pnlod, pnlkey1(19), i, j
+      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk)
 **
 *     __________________________________________________________________
 *
@@ -57,14 +166,18 @@
       pnlkey1(8)  = VMM_KEY(yct1)
       pnlkey1(9)  = VMM_KEY(zct1)
       pnlkey1(10) = VMM_KEY(topo)
-      pnlkey1(11) = VMM_KEY(rcn)
-      pnlkey1(12) = VMM_KEY(rth)
-      pnlkey1(13) = VMM_KEY(rhell)
-      pnlod = 13
+      pnlkey1(11) = VMM_KEY(rd)
+      pnlkey1(12) = VMM_KEY(rcn)
+      pnlkey1(13) = VMM_KEY(r1)
+      pnlkey1(14) = VMM_KEY(rth)
+      pnlkey1(15) = VMM_KEY(rhell)
+      pnlod = 15
       if (.not. Schm_hydro_L) then
-         pnlkey1(14) = VMM_KEY(rw)
-         pnlkey1(15) = VMM_KEY(rvv)
-         pnlod = 15
+         pnlkey1(16) = VMM_KEY(rw)
+         pnlkey1(17) = VMM_KEY(rvv)
+         pnlkey1(18) = VMM_KEY(r3)
+         pnlkey1(19) = VMM_KEY(r3p)
+         pnlod = 19
       endif
 *     - - - - - - - - - - - - - - -
       pnerr = vmmlod(pnlkey1,pnlod)
@@ -79,21 +192,26 @@
       pnerr = VMM_GET_VAR(yct1)
       pnerr = VMM_GET_VAR(zct1)
       pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(rd)
       pnerr = VMM_GET_VAR(rcn)
+      pnerr = VMM_GET_VAR(r1)
       pnerr = VMM_GET_VAR(rth)
       pnerr = VMM_GET_VAR(rhell)
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(rw)
          pnerr = VMM_GET_VAR(rvv)
+         pnerr = VMM_GET_VAR(r3)
+         pnerr = VMM_GET_VAR(r3p)
       else
          rw_  = 0
          rvv_ = 0
+         r3_  = 0
+         r3p_ = 0
       endif
 *
-      call prep_2 ( ru   ,rv   ,ruw1  ,ruw2 ,rvw1 ,rvw2 ,
-     %              xct1 ,yct1 ,zct1  ,topo ,rcn  ,rth  ,
-     %              rw   ,rvv  ,rhell ,
-     %              LDIST_DIM, l_ni, l_nj, l_nk )
+      call prep_2 ( ru,rv, ruw1,ruw2,rvw1,rvw2,xct1,yct1,zct1,topo, 
+     %              rd,rcn,r1,rth, rw,rvv,r3,r3p, rhell,
+     %              wijk1,wijk2,LDIST_DIM,l_ni,l_nj,l_nk )
 *
       pnerr = vmmuld(-1,0)
 *

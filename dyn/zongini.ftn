@@ -40,6 +40,7 @@
 #include "p_zong.cdk"
 *
 #include "grd.cdk"
+#include "geomg.cdk"
 #include "geomn.cdk"
 *
 #include "lun.cdk"
@@ -50,9 +51,6 @@
 #include "p_geol.cdk"
 *
 #include "ptopo.cdk"
-*
-#include "type.cdk"
-#include "ver.cdk"
 *
 **
 *     INZONO2 arguments pour which will be calculated here
@@ -362,7 +360,7 @@ CCC               mp(3,2) =  cos( latr(ij) )
 *
       call inzono2(poid, rang, theta, P_zong_znli, ndelt,
      %            P_zong_znmod, P_zong_znsrf, znsrf, P_zong_znprf,
-     %            znprf, nlatmn, irot, Lun_zonl, Ver_hyb%d, Out1_etik_s,
+     %            znprf, nlatmn, irot, Lun_zonl, Geomg_hyb, Out1_etik_s,
      %            Out1_date, G_ni, G_nj, G_nk,Lun_out,
      %            noutzon_S(1:longueur(noutzon_S)))
 *

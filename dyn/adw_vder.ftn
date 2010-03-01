@@ -3,11 +3,9 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine adw_vder (F_inzz, F_in, F_nit, F_njt, F_nk, F_lev_S)
+      subroutine adw_vder (F_inzz, F_in, F_nit, F_njt, F_nk)
 *
 #include "impnone.cdk"
-*
-      character*1 F_lev_S
 *
       integer F_nit, F_njt, F_nk
 *
@@ -42,27 +40,14 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "schm.cdk"
-#include "type.cdk"
 #include "adw.cdk"
-#include "ver.cdk"
+#include "geomg.cdk"
+#include "schm.cdk"
 ************************************************************************
 *
       integer i, j, i_deb, j_deb, i_fin, j_fin
 *
       real prd, pr1, pr2, pr1p, pr2p
-!
-      real*8,   dimension(:),pointer :: p_z_8, p_qzz_8, p_qzi_8
-!
-      if ( F_lev_S .eq. 'm') then
-         p_z_8   => Ver_z_8%m
-         p_qzz_8 =>Adw_qzz_8%m
-         p_qzi_8 =>Adw_qzi_8%m
-      else
-         p_z_8   => Ver_z_8%t
-         p_qzz_8 =>Adw_qzz_8%t
-         p_qzi_8 =>Adw_qzi_8%t
-      endif
 ************************************************************************
                                   i_deb = 1
       if ( l_west .and. G_lam)    i_deb = Adw_halox-1 +2
@@ -78,24 +63,24 @@
       if ( l_north .and.G_lam)    j_fin = Adw_haloy + Adw_njc - 2
 *
 ************************************************************************
-      call optriss7 (F_inzz,F_in, i_deb,j_deb,i_fin,j_fin,F_nk,
-     %               'Z', p_qzz_8, p_qzz_8(F_nk+1), 
-     %               p_qzz_8(2*F_nk+1), .false.,
-     %               Adw_nit, Adw_njt, F_nk, 1 )
+      call optriss7 (F_inzz,F_in, i_deb,j_deb,i_fin,j_fin,l_nk,
+     %               'Z', Adw_qzz_8, Adw_qzz_8(G_nk+1), 
+     %               Adw_qzz_8(2*G_nk+1), .false.,
+     %               Adw_nit, Adw_njt, l_nk, 1 )
 *
-      call opinv7 (F_inzz, i_deb, j_deb,i_fin, j_fin,F_nk, 'Z', prd, prd,
-     %             prd, p_qzi_8, p_qzi_8(F_nk+1), 
-     %             p_qzi_8(2*F_nk+1), p_qzi_8(3*F_nk+1), .false.,
-     %             'D', Adw_nit, Adw_njt, F_nk, 1 )
+      call opinv7 (F_inzz, i_deb, j_deb,i_fin, j_fin,l_nk, 'Z', prd, prd,
+     %             prd, Adw_qzi_8, Adw_qzi_8(G_nk+1), 
+     %             Adw_qzi_8(2*G_nk+1), Adw_qzi_8(3*G_nk+1), .false.,
+     %             'D', Adw_nit, Adw_njt, l_nk, 1 )
 *
       if ( Adw_nkbz_L ) then
-         if ( G_nk.eq.3 ) then
+         if ( l_nk.eq.3 ) then
             pr1 = 0.0
             pr2 = 0.0
          else
-            pr1= (p_z_8(2)-p_z_8(1))/(p_z_8(3)-p_z_8(2))
-            pr2= (p_z_8(F_nk  )-p_z_8(F_nk-1)) /
-     %           (p_z_8(F_nk-1)-p_z_8(F_nk-2))
+            pr1= (Geomg_z_8(2)-Geomg_z_8(1))/(Geomg_z_8(3)-Geomg_z_8(2))
+            pr2= (Geomg_z_8(l_nk  )-Geomg_z_8(l_nk-1)) /
+     %           (Geomg_z_8(l_nk-1)-Geomg_z_8(l_nk-2))
          endif
          pr1p = pr1 + 1.0
          pr2p = pr2 + 1.0
@@ -106,8 +91,8 @@
          do i=i_deb,i_fin
             F_inzz(i,j,1   ) = pr1p*F_inzz(i,j,2)
      %                       + pr1 *F_inzz(i,j,3)
-            F_inzz(i,j,F_nk) = pr2p*F_inzz(i,j,F_nk-1)
-     %                       + pr2 *F_inzz(i,j,F_nk-2)
+            F_inzz(i,j,l_nk) = pr2p*F_inzz(i,j,l_nk-1)
+     %                       + pr2 *F_inzz(i,j,l_nk-2)
          enddo
          enddo
 !$omp end parallel do

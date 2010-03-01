@@ -3,7 +3,7 @@
 #include "model_macros_f.h"
 *
       subroutine p_fillbus ( F_busdyn, F_busper, F_busent, F_busvol,
-     $                       F_up, F_vp, F_wp, F_tp , F_pp, F_trp, 
+     $                       F_up, F_vp, F_wp, F_tp , F_qp, F_trp, 
      $                       F_um, F_vm, F_tm, F_gzm, F_topo,F_trm, 
      $                       F_lpsm,F_sig,F_jdo,F_step,DIST_DIM,Nk)
 *
@@ -14,7 +14,7 @@
       real F_busdyn(*),F_busper(*),F_busent(*), F_busvol(*)
       real F_up (DIST_SHAPE,Nk), F_vp (DIST_SHAPE,Nk),
      $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk), 
-     $     F_pp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
+     $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
      $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk),
      $     F_tm (DIST_SHAPE,Nk), F_gzm (DIST_SHAPE,Nk),
      $     F_topo (DIST_SHAPE),  F_trm(DIST_SHAPE,Nk,*),
@@ -48,7 +48,7 @@
 * F_up          I       - wind image in x direction at time t*
 * F_vp          I       - wind image in y direction at time t*
 * F_tp          I       - virtual temperature at time t*
-* F_pp          I       - pressure at time t*
+* F_qp          I       - ln of pressure at time t*
 * F_um          I       - wind image in x direction at time t-
 * F_vm          I       - wind image in y direction at time t-
 * F_tm          I       - virtual temperature at time t-
@@ -192,7 +192,7 @@
       do i= 1, p_ni
          indx = i-1
          ii = i + p_offi
-         F_busdyn(pplus  + indx) =  F_pp (ii,F_jdo,Nk)
+         F_busdyn(pplus  + indx) = exp( F_qp (ii,F_jdo,Nk) )
          F_busdyn(pmoins + indx) = exp( F_lpsm (ii,F_jdo)  )
          F_busdyn(dxdy   + indx) = 
      $                geomg_hxu_8(ii-1)*geomg_hyv_8(F_jdo-1)*

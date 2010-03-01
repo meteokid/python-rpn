@@ -83,7 +83,7 @@
          nje = l_nj
          if (F_gridi.eq.1) nie = l_niu
          if (F_gridi.eq.2) nje = l_njv
-         call rpn_comm_xch_halo (F_src,LDIST_DIM,nie,nje,Nk,
+         call rpn_comm_xch_halo (F_src,LDIST_DIM,nie,nje,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
 !$omp end single

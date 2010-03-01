@@ -31,10 +31,11 @@
 #include "vt0.cdk"
 #include "vth.cdk"
 #include "vt1.cdk"
+#include "ens_vt1.cdk"
+#include "ens_param.cdk"
 #include "vt2.cdk"
 #include "vtx.cdk"
 #include "tr3d.cdk"
-#include "func.cdk"
 *
 *modules
       integer vmmcre
@@ -85,22 +86,40 @@
       VMM_NAM(ut0   )= 'UT0'
       VMM_NAM(vt0   )= 'VT0'
       VMM_NAM(wt0   )= 'WT0'
+      VMM_NAM(tdt0  )= 'TDT0'
       VMM_NAM(tt0   )= 'TT0'
-      VMM_NAM(qsect0)= 'QST0'
+      VMM_NAM(fit0  )= 'FIT0'
+      VMM_NAM(qt0   )= 'QT0'
+      VMM_NAM(tpt0  )= 'TPT0'
+      VMM_NAM(fipt0 )= 'FIP0'
+      VMM_NAM(qpt0  )= 'QPT0'
+      VMM_NAM(pipt0 )= 'PIP0'
+      VMM_NAM(tplt0 )= 'TPL0'
+      VMM_NAM(mut0  )= 'MUT0'
       VMM_NAM(psdt0 )= 'PSD0'
       VMM_NAM(st0   )= 'ST0'
       VMM_NAM(trt0  )= 'TRT0'
 *
       VMM_CREATE(ut0  , LARRAY3D, 1, attri2_S)
       VMM_CREATE(vt0  , LARRAY3D, 1, attri2_S)
-      VMM_CREATE(wt0  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(tt0  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(qsect0,LARRAY2D*(l_nk+2), 1, attri2_S)
-      VMM_CREATE(psdt0, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(wt0  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tdt0 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tt0  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fit0 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(qt0  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tpt0 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fipt0, LARRAY3D, 1, attri_S)
+      VMM_CREATE(qpt0 , LARRAY3D, 1, attri2_S)
+      VMM_CREATE(pipt0, LARRAY3D, 1, attri_S)
+      VMM_CREATE(tplt0, LARRAY3D, 1, attri_S)
+      VMM_CREATE(psdt0, LARRAY3D, 1, attri_S)
       VMM_CREATE(st0  , LARRAY2D, 1, attri_S)
 *
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE( mut0, LARRAY3D, 1, attri_S )
+      endif
       if ( Tr3d_ntr .gt. 0 ) then
-         VMM_CREATE(trt0, LARRAY2D*(l_nk+1), Tr3d_ntr, attrit_S)
+         VMM_CREATE(trt0, LARRAY3D, Tr3d_ntr, attrit_S)
       endif
 *
 *C       3.    Create variables at time t0-dt/2 (th)
@@ -119,7 +138,7 @@
 *
       VMM_CREATE(uth  ,       LARRAY3D, 1, attri_S)
       VMM_CREATE(vth  ,       LARRAY3D, 1, attri_S)
-      VMM_CREATE(psdth, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(psdth,       LARRAY3D, 1, attri_S)
       VMM_CREATE(xth  , l_ni*l_nj*l_nk, 1, attri_S)
       VMM_CREATE(yth  , l_ni*l_nj*l_nk, 1, attri_S)
       VMM_CREATE(zth  , l_ni*l_nj*l_nk, 1, attri_S)
@@ -134,34 +153,60 @@
       VMM_NAM(ut1   )= 'UT1'
       VMM_NAM(vt1   )= 'VT1'
       VMM_NAM(wt1   )= 'WT1'
+      VMM_NAM(tdt1  )= 'TDT1'
       VMM_NAM(tt1   )= 'TT1'
+      VMM_NAM(fit1  )= 'FIT1'
+      VMM_NAM(qt1   )= 'QT1'
       VMM_NAM(zz1   )= 'ZZ1'
-      VMM_NAM(piup  )= 'PIUP'
-      VMM_NAM(qsect1)= 'QST1'
+      VMM_NAM(tpt1  )= 'TPT1'
+      VMM_NAM(fipt1 )= 'FIP1'
+      VMM_NAM(qpt1  )= 'QPT1'
+      VMM_NAM(pipt1 )= 'PIP1'
+      VMM_NAM(tplt1 )= 'TPL1'
+      VMM_NAM(mut1  )= 'MUT1'
       VMM_NAM(psdt1 )= 'PSD1'
+      VMM_NAM(difut1)= 'DUT1'
+      VMM_NAM(difvt1)= 'DVT1'
+      VMM_NAM(ugwdt1)= 'GUT1'
+      VMM_NAM(vgwdt1)= 'GVT1'
       VMM_NAM(st1   )= 'ST1'
       VMM_NAM(trt1  )= 'TRT1'
 *
       VMM_NAM(xct1  )= 'XCT1'
       VMM_NAM(yct1  )= 'YCT1'
       VMM_NAM(zct1  )= 'ZCT1'
+      VMM_NAM(mcsph1)= 'MCS1'
 *
       VMM_CREATE(ut1  , LARRAY3D, 1, attri2_S)
       VMM_CREATE(vt1  , LARRAY3D, 1, attri2_S)
-      VMM_CREATE(wt1  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(tt1  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(piup , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(zz1  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(qsect1,LARRAY2D*(l_nk+2), 1, attri2_S)
-      VMM_CREATE(psdt1, LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(wt1  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tdt1 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tt1  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fit1 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(qt1  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(zz1  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tpt1 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fipt1, LARRAY3D, 1, attri_S)
+      VMM_CREATE(qpt1 , LARRAY3D, 1, attri2_S)
+      VMM_CREATE(pipt1, LARRAY3D, 1, attri_S)
+      VMM_CREATE(tplt1, LARRAY3D, 1, attri_S)
+      VMM_CREATE(psdt1, LARRAY3D, 1, attri_S)
+      VMM_CREATE(difut1,LARRAY3D, 1, attri2_S)
+      VMM_CREATE(difvt1,LARRAY3D, 1, attri2_S)
+      VMM_CREATE(ugwdt1,LARRAY3D, 1, attri2_S)
+      VMM_CREATE(vgwdt1,LARRAY3D, 1, attri2_S)
       VMM_CREATE(st1  , LARRAY2D, 1, attri_S)
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE(  mut1, LARRAY3D, 1, attri_S )
+      endif
       if ( Tr3d_ntr .gt. 0 ) then
-         VMM_CREATE(trt1, LARRAY2D*(l_nk+1), Tr3d_ntr, attrit_S)
+         VMM_CREATE(trt1, LARRAY3D, Tr3d_ntr, attrit_S)
       endif
 *
       VMM_CREATE(xct1 , l_ni*l_nj*l_nk, 1, attri_S)
       VMM_CREATE(yct1 , l_ni*l_nj*l_nk, 1, attri_S)
       VMM_CREATE(zct1 , l_ni*l_nj*l_nk, 1, attri_S)
+      VMM_CREATE(mcsph1,l_ni*l_nj*l_nk, 1, attri_S)
 *
 *C       5.    Create variables at time t0-2dt (t2)
 *              ------------------------------------
@@ -170,8 +215,16 @@
       VMM_NAM(ut2   )= 'UT2'
       VMM_NAM(vt2   )= 'VT2'
       VMM_NAM(wt2   )= 'WT2'
+      VMM_NAM(tdt2  )= 'TDT2'
       VMM_NAM(tt2   )= 'TT2'
-      VMM_NAM(qsect2)= 'QST2'
+      VMM_NAM(fit2  )= 'FIT2'
+      VMM_NAM(qt2   )= 'QT2'
+      VMM_NAM(tpt2  )= 'TPT2'
+      VMM_NAM(fipt2 )= 'FIP2'
+      VMM_NAM(qpt2  )= 'QPT2'
+      VMM_NAM(pipt2 )= 'PIP2'
+      VMM_NAM(tplt2 )= 'TPL2'
+      VMM_NAM(mut2  )=  'MUT2'
       VMM_NAM(psdt2 )= 'PSD2'
       VMM_NAM(st2   )= 'ST2'
       VMM_NAM(trt2  )= 'TRT2'
@@ -181,29 +234,26 @@
 *	Assign the names of the variables
 *
       VMM_NAM(gptx  )= 'GPTX'
-      VMM_NAM(mutx  )= 'MUTX'
-      VMM_NAM(qptx  )= 'QPTX'
-      VMM_NAM(fiptx )= 'FIPX'
-      VMM_NAM(csh)   = 'CSH'
-      VMM_NAM(tdia)  = 'TDIAG'
-      VMM_NAM(udia)  = 'UDIAG'
-      VMM_NAM(vdia)  = 'VDIAG'
-      VMM_NAM(hdia)  = 'HDIAG'
-      VMM_NAM(that_8) = 'THAT'
-      VMM_NAM(dlnth_8)= 'DLNT'
+      VMM_NAM(gxtx  )= 'GXTX'
+      VMM_NAM(multx) = 'MULX'
 *
-      VMM_CREATE(gptx , LARRAY3D,          1, attri_S)
-      VMM_CREATE(mutx , LARRAY2D*(l_nk+1), 1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(qptx , LARRAY2D*(l_nk+2), 1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(fiptx, LARRAY2D*(l_nk+2), 1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(csh  , LARRAY2D,          1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(tdia , LARRAY2D*3,        1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(udia , LARRAY2D*3,        1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(vdia , LARRAY2D*3,        1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(hdia , LARRAY2D,          1, 'SAVE=Y,CL=1,W=5')
-      VMM_CREATE(that_8 ,2*(l_nk+1), 1, attri2_S)
-      VMM_CREATE(dlnth_8,2*(l_nk+1), 1, attri2_S)
+      VMM_CREATE(gptx , LARRAY3D, 1, attri_S)
+      VMM_CREATE(gxtx , LARRAY3D, 1, attri_S)
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE(multx, LARRAY3D, 1, attri_S)
+      endif
 *
+*
+*C       6.    Create variables with no specific time tag
+*              ------------------------------------------
+*	Assign the names of the variables
+*
+      VMM_NAM(anm)= 'ANM'
+      VMM_NAM(znm)= 'ZNM'
+*
+      VMM_CREATE(anm,2*Ens_gg_dim*Ens_gg_nniv, 1, attri_S)
+      VMM_CREATE(znm,2*Ens_dim2_max*Ens_ncha2, 1, attri_S)
+
  1000 format(
      +/,'INITIALIZATION OF TIME-DEP. VARIABLE COMDECKS (S/R SET_VT)',
      +/,'=========================================================')

@@ -1,14 +1,14 @@
 ***s/r hzd_exhrdif - applies horizontal explicit diffusion
 *
 #include "model_macros_f.h"
-      subroutine hzd_exhrdif ( F_u, F_v, F_psd, DIST_DIM, Nk )
+      subroutine hzd_exhrdif ( F_u, F_v, F_psd, F_td, DIST_DIM, Nk )
 *
 #include "impnone.cdk"
 *
       integer DIST_DIM, Nk
 *
-      real     F_u(DIST_SHAPE,Nk)  , F_v(DIST_SHAPE,Nk),
-     $         F_psd(DIST_SHAPE,Nk+1)
+      real     F_u(DIST_SHAPE,Nk),  F_v(DIST_SHAPE,Nk),
+     %       F_psd(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk)
 *
 *AUTHORs    C. Girard & M. Desgagne
 *
@@ -28,7 +28,7 @@
       real*8 pt25,nu_dif,epsilon,khdim,lnr,visco
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
       real smu  (LDIST_SHAPE,Nk),smv (LDIST_SHAPE,Nk),
-     $     smpsd(LDIST_SHAPE,Nk)
+     $     smpsd(LDIST_SHAPE,Nk),smtd(LDIST_SHAPE,Nk)
 **
 *     __________________________________________________________________
 *
@@ -44,7 +44,9 @@
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo ( F_v  , LDIST_DIM, l_ni,l_nj,G_nk,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo ( F_psd, LDIST_DIM, l_ni,l_nj,G_nk+1,
+      call rpn_comm_xch_halo ( F_psd, LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_td , LDIST_DIM, l_ni,l_nj,G_nk,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       nn=Hzd_pwr/2
@@ -52,9 +54,10 @@
 !$omp parallel
       do mm=1,nn
 *
-         call hzd_nudeln (F_u  ,smu  ,LDIST_DIM,Nk  ,visco,1,0,mm,nn)
-         call hzd_nudeln (F_v  ,smv  ,LDIST_DIM,Nk  ,visco,0,1,mm,nn)
-         call hzd_nudeln (F_psd,smpsd,LDIST_DIM,Nk+1,visco,0,0,mm,nn)
+         call hzd_nudeln (F_u  ,smu  ,LDIST_DIM,Nk,visco,1,0,mm,nn)
+         call hzd_nudeln (F_v  ,smv  ,LDIST_DIM,Nk,visco,0,1,mm,nn)
+         call hzd_nudeln (F_psd,smpsd,LDIST_DIM,Nk,visco,0,0,mm,nn)
+         call hzd_nudeln (F_td ,smtd ,LDIST_DIM,Nk,visco,0,0,mm,nn)
 *
          if(mm.ne.nn) then
 !$omp single
@@ -62,7 +65,9 @@
      $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
             call rpn_comm_xch_halo( smv  , LDIST_DIM, l_ni,l_nj,G_nk,
      $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            call rpn_comm_xch_halo( smpsd, LDIST_DIM, l_ni,l_nj,G_nk+1,
+            call rpn_comm_xch_halo( smpsd, LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smtd , LDIST_DIM, l_ni,l_nj,G_nk,
      $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !$omp end single
          endif

@@ -1,0 +1,47 @@
+***s/r ens_marfield_init - initialization of 3d Markov chain
+*
+#include <model_macros_f.h>
+      subroutine ens_marfield_init
+#include "impnone.cdk"
+*
+*author 
+*     Lubos Spacek - rpn - apr 2005
+*
+*revision
+*
+*object 
+*     Cosmetic - initialize in order to have values for output at t=0
+*
+*arguments
+*	none
+*
+*implicits
+*
+#include "vt1.cdk"
+#include "glb_ld.cdk"
+
+*
+*modules
+      integer vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*
+*variables
+      integer i,j,k,keys(1), ierr
+
+****************************************************************
+      keys = VMM_KEY(mcsph1)
+      ierr = vmmlod( keys, 1 )
+      ierr = VMM_GET_VAR(mcsph1)
+*
+      mcsph1=1.0
+!      do k=1,l_nk
+!         do j=1,l_nj
+!            do i=1,l_ni
+!               mcsph1(i,j,k)=1.0
+!            enddo
+!         enddo
+!      enddo
+*
+      ierr = vmmuld(keys, 1)
+
+      end subroutine ens_marfield_init

@@ -27,6 +27,7 @@
 #include "glb_ld.cdk"
 #include "dimout.cdk"
 #include "dcst.cdk"
+#include "geomg.cdk"
 #include "out1.cdk"
 #include "hgc.cdk"
 #include "p_cond.cdk"
@@ -35,8 +36,6 @@
 #include "xstb.cdk"
 #include "p_serg.cdk"
 #include "lctl.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
       logical wr_L
       integer i, j, k, pnidate(14), pnigrot(4), err
@@ -83,7 +82,7 @@
          end do
          wr_L=(.not.P_serg_sroff_L.and.(Lctl_step.le.P_serg_serstp))
       endif
-      call serwrit2 ( pnidate, ptetik_S , Ver_hybm%d, 1000., 0.0, pnigrot,
+      call serwrit2 ( pnidate, ptetik_S , Geomg_hybm, 1000., 0.0, pnigrot,
      %              0.0, real(Dcst_rgasd_8), real(Dcst_grav_8), .false.,
      %              P_cond_satu_L, F_headr_L, wr_L)
       if (Ptopo_myproc.eq.0) then

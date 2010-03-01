@@ -104,6 +104,10 @@
      $         write (6,120) 'SRFPRES ','P0',0,0,1,'A',' CUBIC '
 *
          if (.not.e_schm_offline_l) then
+
+*LUBOS - pour forcer le recalcul de GZ pour le filtre de kalman
+          anal_hav(1)=1
+
          if (anal_hav(1).eq.0) then
             err = e_bmfrd (dstf_gid, nifi, njfi, 'GZ  ', 0., c2,na,
      $                                 lv, anyip_L,arret_L,'CUBIC' )

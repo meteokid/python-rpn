@@ -20,6 +20,8 @@
 * v3_01 - Desgagne M.        - Introduce Geomn_latrx,Geomn_lonrx
 * v3_11 - Tanguay M.         - Introduce Grd_gauss_L 
 * v3_21 - Desgagne M.        - Optimization
+* v3_22 - L.Spacek           - Added dgid_myp to interpolate
+*                              from gauss grid in p_marfield
 *
 *object
 *	
@@ -40,8 +42,6 @@
 #include "hgc.cdk"
 #include "xst.cdk"
 #include "ptopo.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
 *modules
       integer stretch_axis2
@@ -49,7 +49,7 @@
 *
       character*12 gem_debug
       integer offi,offj,indx,err,dgid,ezgdef_fmem,gdll
-      integer i,j,k,nila,ierx,iery,nimax,njmax,dimx,dimy,istat
+      integer i,j,k,nila,ierx,iery,nimax,njmax,dimx,dimy
       real s1,r1,xfi(l_ni),yfi(l_nj)
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
@@ -98,7 +98,7 @@
          write(Lun_out, nml=dyngrid)
          write (Lun_out,1005) G_nk
          do k=1,G_nk
-            write (Lun_out,1006) k,Ver_hyb_8%m(k),Ver_hybm_8%m(k)
+            write (Lun_out,1006) k,Geomg_hyb(k),Geomg_hybm(k)
          end do
       endif
 *
@@ -175,10 +175,14 @@
       call hpalloc(geomg_hsyv_8_,LARRAY1DY*2, err,1)
       call hpalloc(geomg_wxs_8_ ,LARRAY1DX*2, err,1)
       call hpalloc(geomg_ys_8_  ,LARRAY1DY*2, err,1)
+      call hpalloc(geomg_z_8_   ,     G_nk*2, err,1)
+      call hpalloc(geomg_hz_8_  ,     G_nk*2, err,1)
+      call hpalloc(geomg_dpia_  ,     G_nk*2, err,1)
+      call hpalloc(geomg_dpib_  ,     G_nk*2, err,1)
       call hpalloc(geomg_invhx_8_   ,LARRAY1DX*2, err,1)
       call hpalloc(geomg_invhsy_8_  ,LARRAY1DY*2, err,1)
       call hpalloc(geomg_invhsyv_8_ ,LARRAY1DY*2, err,1)
-      call hpalloc(geomg_invcy2_8_  ,LARRAY1DY*2, err,1)
+      call hpalloc(geomg_invz_8_    ,     G_nk*2, err,1)
 *
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
@@ -189,9 +193,7 @@
          geomg_xu_8 (i) = (G_xg_8(indx+1)+ G_xg_8(indx)) * HALF_8
          geomg_hx_8 (i) =  G_xg_8(indx+1)- G_xg_8(indx)
          geomg_hxu_8(i) = (G_xg_8(indx+2)- G_xg_8(indx)) * HALF_8
-         
       end do
-
       do j=1-G_haloy,l_nj+G_haloy
          indx = offj + j
          geomg_y_8  (j) =  G_yg_8(indx)
@@ -226,7 +228,6 @@
       call vrec (geomg_invhx_8   , geomg_hx_8  , dimx )
       call vrec (geomg_invhsy_8  , geomg_hsy_8 , dimy )
       call vrec (geomg_invhsyv_8 , geomg_hsyv_8, dimy )
-      call vrec (geomg_invcy2_8  , geomg_cy2_8 , dimy )
 *
 *C             Set variables for polar extention in diffusion operators
 *              --------------------------------------------------------
@@ -266,11 +267,13 @@
       enddo 
       enddo 
 *
+      dgid_myp = dgid
+*
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)',
      %       /,'===============================================')
- 1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS:'/
-     $         1x,'level #',5x,'HYB%M',14x,'HYBM%M',)
- 1006 format (1x,i4,2(3x,f16.14))
+ 1005 format (/' VERTICAL LAYERING ON',I4,' HYBRID LEVELS:'/
+     $         5x,'level #',4x,'HYB',10x,'HYBM')
+ 1006 format (5x,i4,2(3x,f10.7))
 *
 *     ---------------------------------------------------------------
 *

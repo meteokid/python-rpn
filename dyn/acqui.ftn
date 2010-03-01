@@ -24,6 +24,7 @@
 #include "lun.cdk"
 #include "bmf.cdk"
 #include "glb_pil.cdk"
+#include "geomg.cdk"
 #include "grd.cdk"
 #include "pres.cdk" 
 #include "dcst.cdk"
@@ -34,8 +35,6 @@
 #include "acq.cdk"
 #include "vtopo.cdk"
 #include "schm.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *modules
       integer  bmf_gobe,bmf_get
       external bmf_gobe,bmf_get
@@ -143,10 +142,10 @@
       Acqi_njm    = max (l_nj, Acqi_nju, Acqi_njv)
       nk_anal     = Acqi_vterplv
       if (Acql_ecmanl) nk_anal  = Acqi_vterplv+1
-      Acqi_nktmp  = max (nk_anal,G_nk+1 )
+      Acqi_nktmp  = max (nk_anal,G_nk )
       allocate ( u_temp(Acqi_niu ,Acqi_nju ,Acqi_nktmp),  
      $           v_temp(Acqi_niv ,Acqi_njv ,Acqi_nktmp),
-     $     hu_temp(l_ni,l_nj,Acqi_nktmp+1), tt_temp(l_ni,l_nj,Acqi_nktmp+1),
+     $     hu_temp(l_ni,l_nj,Acqi_nktmp), tt_temp(l_ni,l_nj,Acqi_nktmp),
      $     gz_temp(l_ni,l_nj,Acqi_nktmp) )
 *
       nerr = nerr + 1
@@ -232,7 +231,7 @@
          if (abs(Acqr_prefa -Pres_pref) .gt. difsig) Acql_vertint=.true.
          if (abs(Acqr_ptopa -Pres_ptop) .gt. difsig) Acql_vertint=.true.
          do i=1,Acqi_vterplv
-           if (abs(rna(i)-Ver_hyb%d(i)) .gt. difsig) Acql_vertint=.true.
+           if (abs(rna(i)-Geomg_hyb(i)) .gt. difsig) Acql_vertint=.true.
          end do
       endif
 *

@@ -25,7 +25,7 @@
 *
       real tr1,trf
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
-      integer i,j,k,err,pnlkey1(12),nvar,key1(Tr3d_ntr),key1_, 
+      integer i,j,k,err,pnlkey1(26),nvar,key1(Tr3d_ntr),key1_, 
      $        key2(Tr3d_ntr),key2_,n
 *
       logical done_init_L
@@ -43,35 +43,63 @@
 *
       pnlkey1(1)  = VMM_KEY(ut1)
       pnlkey1(2)  = VMM_KEY(vt1)
-      pnlkey1(3)  = VMM_KEY(tt1)
-      pnlkey1(4)  = VMM_KEY(psdt1)
-      pnlkey1(5)  = VMM_KEY(st1)
-      pnlkey1(6)  = VMM_KEY(nest_u)
-      pnlkey1(7)  = VMM_KEY(nest_v)
-      pnlkey1(8)  = VMM_KEY(nest_t)
-      pnlkey1(9)  = VMM_KEY(nest_psd)
-      pnlkey1(10) = VMM_KEY(nest_s)
-      nvar = 10
+      pnlkey1(3)  = VMM_KEY(qt1)
+      pnlkey1(4)  = VMM_KEY(tt1)
+      pnlkey1(5)  = VMM_KEY(fit1)
+      pnlkey1(6)  = VMM_KEY(tdt1)
+      pnlkey1(7)  = VMM_KEY(psdt1)
+      pnlkey1(8)  = VMM_KEY(pipt1)
+      pnlkey1(9)  = VMM_KEY(fipt1)
+      pnlkey1(10) = VMM_KEY(st1)
+      pnlkey1(11) = VMM_KEY(tpt1)
+      pnlkey1(12) = VMM_KEY(nest_u)
+      pnlkey1(13) = VMM_KEY(nest_v)
+      pnlkey1(14) = VMM_KEY(nest_t)
+      pnlkey1(15) = VMM_KEY(nest_psd)
+      pnlkey1(16) = VMM_KEY(nest_pip)
+      pnlkey1(17) = VMM_KEY(nest_fip)
+      pnlkey1(18) = VMM_KEY(nest_td)
+      pnlkey1(19) = VMM_KEY(nest_fi)
+      pnlkey1(20) = VMM_KEY(nest_q)
+      pnlkey1(21) = VMM_KEY(nest_s)
+      pnlkey1(22) = VMM_KEY(nest_tp)
+      nvar = 22
 *
       if (.not. Schm_hydro_L) then
-         pnlkey1(11) = VMM_KEY(wt1)
-         pnlkey1(12) = VMM_KEY(nest_w)
-         nvar = 12
+         pnlkey1(23) = VMM_KEY(wt1)
+         pnlkey1(24) = VMM_KEY(mut1)
+         pnlkey1(25) = VMM_KEY(nest_w)
+         pnlkey1(26) = VMM_KEY(nest_mu)
+         nvar = 26
       endif
 *
       err = vmmlod(pnlkey1,nvar)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(qt1)
       err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(tdt1)
       err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(fipt1)
       err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(tpt1)
       err = VMM_GET_VAR(nest_u)
       err = VMM_GET_VAR(nest_v)
       err = VMM_GET_VAR(nest_t)
       err = VMM_GET_VAR(nest_psd)
+      err = VMM_GET_VAR(nest_pip)
+      err = VMM_GET_VAR(nest_fip)
+      err = VMM_GET_VAR(nest_td)
+      err = VMM_GET_VAR(nest_fi)
+      err = VMM_GET_VAR(nest_q)
       err = VMM_GET_VAR(nest_s)
+      err = VMM_GET_VAR(nest_tp)
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(wt1)
+         err = VMM_GET_VAR(mut1)
+         err = VMM_GET_VAR(nest_mu)
          err = VMM_GET_VAR(nest_w)
       endif
 *
@@ -80,14 +108,14 @@
       do i= 1, l_ni
          nest_u  (i,j,k) = ut1  (i,j,k)
          nest_v  (i,j,k) = vt1  (i,j,k)
-      end do
-      end do
-      end do
-      do k= 1, G_nk+1
-      do j= 1, l_nj 
-      do i= 1, l_ni
          nest_t  (i,j,k) = tt1  (i,j,k)
          nest_psd(i,j,k) = psdt1(i,j,k)
+         nest_pip(i,j,k) = pipt1(i,j,k)
+         nest_fip(i,j,k) = fipt1(i,j,k)
+         nest_td (i,j,k) = tdt1 (i,j,k)
+         nest_fi (i,j,k) = fit1 (i,j,k)
+         nest_q  (i,j,k) = qt1  (i,j,k)
+         nest_tp (i,j,k) = tpt1 (i,j,k)
       end do
       end do
       end do
@@ -98,10 +126,11 @@
       end do
 *
       if (.not. Schm_hydro_L) then
-          do k= 1, G_nk+1
+          do k= 1, G_nk
           do j= 1, l_nj 
           do i= 1, l_ni
              nest_w  (i,j,k) = wt1  (i,j,k)
+             nest_mu (i,j,k) = mut1 (i,j,k)
           end do
           end do
           end do
@@ -121,7 +150,7 @@
          do n=1,Tr3d_ntr
             err = vmmget(key1(n),patr1,tr1)
             err = vmmget(key2(n),patrf,trf)
-            do k= 1, G_nk+1
+            do k= 1, G_nk
             do j= 1, l_nj 
             do i= 1, l_ni
                trf (i,j,k) = tr1 (i,j,k)

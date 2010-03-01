@@ -35,12 +35,20 @@
       call shuffle(vmmk_ut0   ,vmmk_ut2   ,vmmk_ut0_s)
       call shuffle(vmmk_vt0   ,vmmk_vt2   ,vmmk_vt0_s)
       call shuffle(vmmk_wt0   ,vmmk_wt2   ,vmmk_wt0_s)
+      call shuffle(vmmk_tdt0  ,vmmk_tdt2  ,vmmk_tdt0_s)
       call shuffle(vmmk_tt0   ,vmmk_tt2   ,vmmk_tt0_s)
+      call shuffle(vmmk_fit0  ,vmmk_fit2  ,vmmk_fit0_s)
+      call shuffle(vmmk_qt0   ,vmmk_qt2   ,vmmk_qt0_s)
+      call shuffle(vmmk_tpt0  ,vmmk_tpt2  ,vmmk_tpt0_s)
+      call shuffle(vmmk_fipt0 ,vmmk_fipt2 ,vmmk_fipt0_s)
+      call shuffle(vmmk_qpt0  ,vmmk_qpt2  ,vmmk_qpt0_s)
+      call shuffle(vmmk_pipt0 ,vmmk_pipt2 ,vmmk_pipt0_s)
+      call shuffle(vmmk_tplt0 ,vmmk_tplt2 ,vmmk_tplt0_s)
       call shuffle(vmmk_psdt0 ,vmmk_psdt2 ,vmmk_psdt0_s)
       call shuffle(vmmk_st0   ,vmmk_st2   ,vmmk_st0_s)
 
       if (.not. Schm_hydro_L) then
-         call shuffle(vmmk_qsect0,vmmk_qsect2,vmmk_qsect0_s)
+         call shuffle(vmmk_mut0 ,vmmk_mut2 ,vmmk_mut0_s)
       endif
       if ( Tr3d_ntr .gt. 0 ) then
          call shuffle(vmmk_trt0  ,vmmk_trt2  ,vmmk_trt0_s)

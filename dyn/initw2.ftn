@@ -72,8 +72,6 @@
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "schm.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
 *modules
       integer i, j, k, j0, jn, in1, in2, jn1, jn2, ng
@@ -100,7 +98,6 @@
 *
 !$omp do
       do k = 1, G_nk
-         if(k.eq.G_nk)F_mu (:,:,G_nk+1) = 0.
          F_mul(:,:,k) = 0.
          F_mu (:,:,k) = 0.
          wk1  (:,:,k) = 0.
@@ -109,14 +106,14 @@
          wk4  (:,:,k) = 0.
          do j = 1, jn1
          do i = 1, in2
-            wk1(i,j,k) = ( F_fi(i+1,j,k) - F_fi(i,j,k) ) * geomg_invhx_8(i)
+            wk1(i,j,k) = ( F_fi(i+1,j,k) - F_fi(i,j,k) ) / geomg_hx_8(i)
      $                   * F_uu(i,j,k) / Dcst_grav_8
          end do
          end do
          do j = 1, jn2
          do i = 1, in1
             wk2(i,j,k) = ( F_fi(i,j+1,k)-F_fi(i,j,k) ) * geomg_cyv2_8(j)
-     $                    * geomg_invhsy_8(j) * F_vv(i,j,k) / Dcst_grav_8
+     $                    / geomg_hsy_8(j) * F_vv(i,j,k) / Dcst_grav_8
          end do
          end do
       end do
@@ -179,7 +176,7 @@
          do j = 1, jn1
          do i = 1, in1
             F_wt1(i,j,k) = ( wk3(i,j,k) + wk1(i,j,k) ) / geomg_cy2_8(j) 
-              wk1(i,j,k) = 1 + Ver_dpib_8%d(k) * (exp(F_ss(i,j)) - 1.0)
+              wk1(i,j,k) = 1 + geomg_dpib(k) * (exp(F_ss(i,j)) - 1.0)
          end do
          end do
       end do
@@ -230,7 +227,7 @@
 *     Vertical integration over pi*
 *
       ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
-      call hatoprg (wk4,wk2,1.0,Ver_hz_8%d,ng,G_nk )
+      call hatoprg (wk4,wk2,1.0,geomg_hz_8,ng,G_nk)
 *
 !$omp do
       do k = 1, G_nk
@@ -238,8 +235,8 @@
       do i = 1, in1
          F_wt1(i,j,k) = F_wt1(i,j,k) + 
      $        Dcst_rgasd_8 * F_tt(i,j,k) / Dcst_grav_8 / 
-     $        ( Ver_pia_8%d(k) + Ver_pib_8%d(k)*exp(F_ss(i,j)) ) *
-     $        ( wk4(i,j,1) * Ver_pib_8%d(k) / Cstv_pisrf_8 - 
+     $        ( geomg_pia(k) + geomg_pib(k)*exp(F_ss(i,j)) ) *
+     $        ( wk4(i,j,1) * geomg_pib(k) / Cstv_pisrf_8 - 
      $        F_psd(i,j,k) * wk1(i,j,k) )
       end do
       end do

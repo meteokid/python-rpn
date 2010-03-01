@@ -42,7 +42,6 @@
 *implicits
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "type.cdk"
 #include "adw.cdk"
 ************************************************************************
       integer n

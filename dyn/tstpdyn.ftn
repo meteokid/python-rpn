@@ -40,9 +40,8 @@
 #include "nl.cdk"
 #include "v4dg.cdk"
 #include "v4dr.cdk"
-#include "lctl.cdk"
 *
-      integer iln, dim, dimt, err
+      integer iln, dim, err
       real dth
 *
 **
@@ -68,9 +67,7 @@
 *
 *        Store TRAJ predictive variables
 *        -------------------------------
-         if ( Orh_crank_L .and. Orh_icn.eq.1 ) then
-            call v4d_rwtraj (3) 
-         endif
+         if ( Orh_crank_L .and. Orh_icn.eq.1 ) call v4d_rwtraj (3) 
 *
       endif
 *
@@ -103,16 +100,15 @@
       if ( Lun_debug_L ) write (Lun_out,1005) Schm_itnlh
 *
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
-      dimt= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(l_nk+1)
-      call hpalloc (nl_nu_ , dim, err,1)
-      call hpalloc (nl_nv_ , dim, err,1)
-      call hpalloc (nl_nth_, dimt, err,1) 
-      call hpalloc (nl_ncn_, dim, err,1)
-      nl_nw_  = 0
-      nl_nvv_ = 0
+      call hpalloc (nl_nu_  , dim, err,1)
+      call hpalloc (nl_nv_  , dim, err,1)
+      call hpalloc (nl_nth_ , dim, err,1) 
+      call hpalloc (nl_ncn_ , dim, err,1)
+      nl_n3_  = 0
+      nl_n3p_ = 0
       if ( .not. Schm_hydro_L ) then
-         call hpalloc (nl_nw_ , dimt, err,1)
-         call hpalloc (nl_nvv_, dimt, err,1)
+         call hpalloc (nl_n3_  , dim, err,1)
+         call hpalloc (nl_n3p_ , dim, err,1)
       endif
 *
       do 100 iln=1,Schm_itnlh
@@ -134,7 +130,7 @@
          call tmg_start0 ( 6, 'NLI      ' )
          call nli ()
          call tmg_stop0 (6)
-*         
+*
          call tmg_start0 ( 7, 'SOL      ' )
          call sol_main ()
          call tmg_stop0 (7)
@@ -151,7 +147,6 @@
          call tmg_start0 ( 8, 'BAC      ' )
          call bac ( iln, Schm_itnlh )
          call tmg_stop0 (8)
-
 *
  100  continue
 *
@@ -160,8 +155,8 @@
       call hpdeallc(nl_nth_, err)
       call hpdeallc(nl_ncn_, err)
       if ( .not. Schm_hydro_L ) then
-         call hpdeallc(nl_nw_ , err)
-         call hpdeallc(nl_nvv_, err)
+         call hpdeallc(nl_n3_ , err)
+         call hpdeallc(nl_n3p_, err)
       endif
 *
 *     ---------------------------------------------------------------

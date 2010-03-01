@@ -40,7 +40,7 @@
 **
       integer i,j,k,i0u,j0u,inu,jnu,i0v,j0v,inv,jnv
       integer nsu,ndu,nsv,ndv
-      real wk_u(LDIST_SHAPE,Nk), wk_v(LDIST_SHAPE,Nk)
+      real wk_u(LDIST_SHAPE,l_nk), wk_v(LDIST_SHAPE,l_nk)
 *
 *     ---------------------------------------------------------------
 *
@@ -58,14 +58,14 @@
 C
 C     x component
 C
-      call uv_acg2g (wk_u,F_put,nsu,ndu,LDIST_DIM,Nk,i0u,inu,j0u,jnu)
+      call uv_acg2g (wk_u,F_put,nsu,ndu,LDIST_DIM,l_nk,i0u,inu,j0u,jnu)
 C
 C     y component
 C
-      call uv_acg2g (wk_v,F_pvt,nsv,ndv,LDIST_DIM,Nk,i0v,inv,j0v,jnv)
+      call uv_acg2g (wk_v,F_pvt,nsv,ndv,LDIST_DIM,l_nk,i0v,inv,j0v,jnv)
 *
 !$omp do
-      do k=1,Nk
+      do k=1,l_nk
          do j= j0u, jnu
          do i= i0u, inu
             F_put(i,j,k) = wk_u(i,j,k)

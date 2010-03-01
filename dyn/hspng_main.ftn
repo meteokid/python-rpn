@@ -22,21 +22,19 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
+#include "geomg.cdk"
 #include "cstv.cdk"
 #include "hspng.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "p_geof.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
 *modules
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      integer pnerr, pnlod, pnlkey1(6), i, j, k
-      real wk0(LDIST_SHAPE), wk1(LDIST_SHAPE)
+      integer pnerr, pnlod, pnlkey1(20), i, j, k
       real*8  ONE_8, bbb_8, eta_8
       parameter( ONE_8 = 1. )
 **
@@ -47,57 +45,76 @@
 *
       pnlkey1(1)  = VMM_KEY(ut1)
       pnlkey1(2)  = VMM_KEY(vt1)
-      pnlkey1(3)  = VMM_KEY(tt1)
-      pnlkey1(4) = VMM_KEY(st1)
-      pnlkey1(5) = VMM_KEY(st0)
-      pnlod = 5
+      pnlkey1(3)  = VMM_KEY(psdt1)
+      pnlkey1(4)  = VMM_KEY(tpt1)
+      pnlkey1(5)  = VMM_KEY(fipt1)
+      pnlkey1(6)  = VMM_KEY(tdt1)
+      pnlkey1(7)  = VMM_KEY(tt1)
+      pnlkey1(8)  = VMM_KEY(fit1)
+      pnlkey1(9)  = VMM_KEY(topo)
+      pnlkey1(10) = VMM_KEY(tplt1)
+      pnlkey1(11) = VMM_KEY(qt1)
+      pnlkey1(12) = VMM_KEY(pipt0)
+      pnlkey1(13) = VMM_KEY(pipt1)
+      pnlkey1(14) = VMM_KEY(st1)
+      pnlod = 14
       if (.not. Schm_hydro_L) then
-         pnlkey1(6) = VMM_KEY(wt1)
-         pnlod = 6
+         pnlkey1(15) = VMM_KEY(wt1)
+         pnlkey1(16) = VMM_KEY(qpt1)
+         pnlkey1(17) = VMM_KEY(mut1)
+         pnlkey1(18) = VMM_KEY(multx)
+         pnlod = 18
       endif
 *     - - - - - - - - - - - - - - -
       pnerr = vmmlod(pnlkey1,pnlod)
 *     - - - - - - - - - - - - - - -
       pnerr = VMM_GET_VAR(ut1)
       pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(psdt1)
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(fipt1)
+      pnerr = VMM_GET_VAR(tdt1)
       pnerr = VMM_GET_VAR(tt1)
+      pnerr = VMM_GET_VAR(fit1)
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(tplt1)
+      pnerr = VMM_GET_VAR(qt1)
+      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(pipt1)
       pnerr = VMM_GET_VAR(st1)
-      pnerr = VMM_GET_VAR(st0)
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(wt1)
+         pnerr = VMM_GET_VAR(qpt1)
+         pnerr = VMM_GET_VAR(mut1)
+         pnerr = VMM_GET_VAR(multx)
       else
          wt1_  = 0
+         qpt1_ = 0
+         mut1_ = 0
+         multx_= 0
       endif
 *
-*
-      call hspng_drv ( ut1, vt1, tt1, wt1, LDIST_DIM, G_nk)
-*
+
+      call hspng_drv ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                 tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
+     %                 qpt1, mut1, multx, st1 , topo ,
+     %                 LDIST_DIM, G_nk)
+
 *
       if (Cstv_phidf_8.gt.0.) then
 *
 *     Adjust surface pressure and hence pi' (FOR CLIMATE APPLICATIONS) 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if (Schm_psadj_L) then
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            wk0(i,j) = st0(i,j)
-            wk1(i,j) = st1(i,j)
-         end do
-         call vsexp (wk0(1+pil_w,j),wk0(1+pil_w,j),(l_ni-pil_e-pil_w))
-         call vsexp (wk1(1+pil_w,j),wk1(1+pil_w,j),(l_ni-pil_e-pil_w))
-         do i= 1+pil_w, l_ni-pil_e
-            wk0(i,j) = (wk0(i,j)-1.)*Cstv_pisrf_8
-            wk1(i,j) = (wk1(i,j)-1.)*Cstv_pisrf_8
-         end do
-         end do
 *
-         call horwavg ( bbb_8, wk0, wk1, LDIST_DIM )
+         call horwavg ( bbb_8, pipt0(l_minx,l_miny,G_nk),
+     $                         pipt1(l_minx,l_miny,G_nk),LDIST_DIM )
 *
 *        Redistribute the average mass loss at the surface, ...
 *
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
-            wk1(i,j) = wk1(i,j) + bbb_8
+            pipt1(i,j,G_nk) = pipt1(i,j,G_nk) + bbb_8
          end do
          end do
 *
@@ -105,11 +122,56 @@
 *
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
-            st1(i,j)= log(ONE_8+dble(wk1(i,j)/ver_pib_8%t(G_nk+1)))
+            st1(i,j)= log(ONE_8+dble(pipt1(i,j,G_nk)/geomg_pib(G_nk)))
          end do
          end do
 *
+*        ... refine pi' everywhere else accordingly.
+*
+         do k=1,G_nk-1
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               pipt1(i,j,k) = geomg_pib(k) *( exp(st1(i,j)) - 1 )
+            end do
+            end do
+         end do
+*
+      else
+*
+*******************************************
+*  $. Indirect diffusion of s through pi' *
+*******************************************
+*
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         st1(i,j)= log(ONE_8+dble(pipt1(i,j,G_nk)/geomg_pib(G_nk)))
+      end do
+      end do
+*
       endif
+
+*
+*******************************************
+*  $. Indirect diffusion of q through pi' *
+*******************************************
+*
+      do k=1,G_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         qt1(i,j,k) = log( Geomg_z_8(k) + dble(pipt1(i,j,k)) )
+      end do
+      end do
+      end do
+*
+      if ( .not. Schm_hydro_L ) then
+         do k=1,G_nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            qt1(i,j,k) = qt1(i,j,k) + qpt1(i,j,k) 
+         end do
+         end do
+         end do
+      endif 
 *
       endif
 *

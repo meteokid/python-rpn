@@ -36,14 +36,13 @@
       integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat,np,ip
       real tr1,trf,a2,b2
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
-      integer err, key1(14+Tr3d_ntr), nvar, nstepno, key1_, 
+      integer err, key1(26+Tr3d_ntr), nvar, nstepno, key1_, 
      $        key2(Tr3d_ntr),key2_,n
       real*8  one,sid,rsid,dayfrac,tx,tf_nest,dtf,a,b,ax,bx
       integer int_temp
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
       data done /.false./
       save done,tf_nest
-
       if(Offline_int_accu_S.eq.'CONST')  int_temp=1
       if(Offline_int_accu_S.eq.'LINEAR') int_temp=2
 c     print*,'nest_intt int_temp = ',int_temp
@@ -67,20 +66,32 @@ c     print*,'nest_intt int_temp = ',int_temp
       key1(2)  = VMM_KEY(nest_v)
       key1(3)  = VMM_KEY(nest_t)
       key1(4)  = VMM_KEY(nest_psd)
-      key1(5)  = VMM_KEY(nest_s)
-      key1(6)  = VMM_KEY(nest_uf)
-      key1(7)  = VMM_KEY(nest_vf)
-      key1(8)  = VMM_KEY(nest_tf)
-      key1(9)  = VMM_KEY(nest_psdf)
-      key1(10) = VMM_KEY(nest_sf)
-      nvar = 10
+      key1(5)  = VMM_KEY(nest_pip)
+      key1(6)  = VMM_KEY(nest_fip)
+      key1(7)  = VMM_KEY(nest_td)
+      key1(8)  = VMM_KEY(nest_fi)
+      key1(9)  = VMM_KEY(nest_q)
+      key1(10) = VMM_KEY(nest_s)
+      key1(11) = VMM_KEY(nest_tp)
+      key1(12) = VMM_KEY(nest_uf)
+      key1(13) = VMM_KEY(nest_vf)
+      key1(14) = VMM_KEY(nest_tf)
+      key1(15) = VMM_KEY(nest_psdf)
+      key1(16) = VMM_KEY(nest_pipf)
+      key1(17) = VMM_KEY(nest_fipf)
+      key1(18) = VMM_KEY(nest_tdf)
+      key1(19) = VMM_KEY(nest_fif)
+      key1(20) = VMM_KEY(nest_qf)
+      key1(21) = VMM_KEY(nest_sf)
+      key1(22) = VMM_KEY(nest_tpf)
+      nvar = 22
 *
       if (.not. Schm_hydro_L) then
-         key1(11) = VMM_KEY(nest_w)
-         key1(12) = VMM_KEY(nest_qsec)
-         key1(13) = VMM_KEY(nest_wf)
-         key1(14) = VMM_KEY(nest_qsecf)
-         nvar = 14
+         key1(23) = VMM_KEY(nest_w)
+         key1(24) = VMM_KEY(nest_mu)
+         key1(25) = VMM_KEY(nest_wf)
+         key1(26) = VMM_KEY(nest_muf)
+         nvar = 26
       endif
 *
       err = vmmlod(key1,nvar)
@@ -88,17 +99,29 @@ c     print*,'nest_intt int_temp = ',int_temp
       err = VMM_GET_VAR(nest_v)
       err = VMM_GET_VAR(nest_t)
       err = VMM_GET_VAR(nest_psd)
+      err = VMM_GET_VAR(nest_pip)
+      err = VMM_GET_VAR(nest_fip)
+      err = VMM_GET_VAR(nest_td)
+      err = VMM_GET_VAR(nest_fi)
+      err = VMM_GET_VAR(nest_q)
       err = VMM_GET_VAR(nest_s)
+      err = VMM_GET_VAR(nest_tp)
       err = VMM_GET_VAR(nest_uf)
       err = VMM_GET_VAR(nest_vf)
       err = VMM_GET_VAR(nest_tf)
       err = VMM_GET_VAR(nest_psdf)
+      err = VMM_GET_VAR(nest_pipf)
+      err = VMM_GET_VAR(nest_fipf)
+      err = VMM_GET_VAR(nest_tdf)
+      err = VMM_GET_VAR(nest_fif)
+      err = VMM_GET_VAR(nest_qf)
       err = VMM_GET_VAR(nest_sf)
+      err = VMM_GET_VAR(nest_tpf)
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(nest_w)
-         err = VMM_GET_VAR(nest_qsec)
+         err = VMM_GET_VAR(nest_mu)
          err = VMM_GET_VAR(nest_wf)
-         err = VMM_GET_VAR(nest_qsecf)
+         err = VMM_GET_VAR(nest_muf)
       endif
 *
       dayfrac = dble(Lctl_step)*Cstv_dt_8*rsid
@@ -121,27 +144,26 @@ c     print*,'nest_intt int_temp = ',int_temp
                nest_v  (i,j,k) = nest_vf  (i,j,k)
                nest_t  (i,j,k) = nest_tf  (i,j,k)
                nest_psd(i,j,k) = nest_psdf(i,j,k)
+               nest_pip(i,j,k) = nest_pipf(i,j,k)
+               nest_fip(i,j,k) = nest_fipf(i,j,k)
+               nest_td (i,j,k) = nest_tdf (i,j,k)
+               nest_fi (i,j,k) = nest_fif (i,j,k)
+               nest_q  (i,j,k) = nest_qf  (i,j,k)
+               nest_tp (i,j,k) = nest_tpf (i,j,k)
             end do
             end do
             end do
             do j= 1, l_nj 
             do i= 1, l_ni
-               nest_t  (i,j,G_nk+1) = nest_tf  (i,j,G_nk+1)
-               nest_psd(i,j,G_nk+1) = nest_psdf(i,j,G_nk+1)
                nest_s(i,j) = nest_sf(i,j)
             end do
             end do
             if (.not. Schm_hydro_L) then
+               do k= 1, G_nk
                do j= 1, l_nj 
                do i= 1, l_ni
-                  nest_qsec (i,j,0) = nest_qsecf (i,j,0)
-               end do
-               end do
-               do k= 1, G_nk+1
-               do j= 1, l_nj 
-               do i= 1, l_ni
-                  nest_w    (i,j,k) = nest_wf    (i,j,k)
-                  nest_qsec (i,j,k) = nest_qsecf (i,j,k)
+                  nest_w  (i,j,k) = nest_wf  (i,j,k)
+                  nest_mu (i,j,k) = nest_muf (i,j,k)
                end do
                end do
                end do
@@ -158,7 +180,7 @@ c     print*,'nest_intt int_temp = ',int_temp
                do n=1,Tr3d_ntr
                   err = vmmget(key1(n),patr1,tr1)
                   err = vmmget(key2(n),patrf,trf)
-                  do k= 1, G_nk+1
+                  do k= 1, G_nk
                   do j= 1, l_nj 
                   do i= 1, l_ni
                      tr1 (i,j,k) = trf (i,j,k)
@@ -194,28 +216,27 @@ c     print*,'nest_intt int_temp = ',int_temp
          nest_v  (i,j,k) = a*nest_v  (i,j,k) + b*nest_vf  (i,j,k)
          nest_t  (i,j,k) = a*nest_t  (i,j,k) + b*nest_tf  (i,j,k)
          nest_psd(i,j,k) = a*nest_psd(i,j,k) + b*nest_psdf(i,j,k)
+         nest_pip(i,j,k) = a*nest_pip(i,j,k) + b*nest_pipf(i,j,k)
+         nest_fip(i,j,k) = a*nest_fip(i,j,k) + b*nest_fipf(i,j,k)
+         nest_td (i,j,k) = a*nest_td (i,j,k) + b*nest_tdf (i,j,k)
+         nest_fi (i,j,k) = a*nest_fi (i,j,k) + b*nest_fif (i,j,k)
+         nest_q  (i,j,k) = a*nest_q  (i,j,k) + b*nest_qf  (i,j,k)
+         nest_tp (i,j,k) = a*nest_tp (i,j,k) + b*nest_tpf (i,j,k)
       end do
       end do
       end do
 *
       do j= 1, l_nj 
       do i= 1, l_ni
-         nest_t  (i,j,G_nk+1) = a*nest_t  (i,j,G_nk+1) + b*nest_tf  (i,j,G_nk+1)
-         nest_psd(i,j,G_nk+1) = a*nest_psd(i,j,G_nk+1) + b*nest_psdf(i,j,G_nk+1)
          nest_s(i,j) = a*nest_s(i,j) + b*nest_sf(i,j)
       end do
       end do
       if (.not. Schm_hydro_L) then
+         do k= 1, G_nk
          do j= 1, l_nj 
          do i= 1, l_ni
-            nest_qsec(i,j,0) = a*nest_qsec(i,j,0) + b*nest_qsecf(i,j,0)
-         end do
-         end do
-         do k= 1, G_nk+1
-         do j= 1, l_nj 
-         do i= 1, l_ni
-            nest_w   (i,j,k) = a*nest_w   (i,j,k) + b*nest_wf   (i,j,k)
-            nest_qsec(i,j,k) = a*nest_qsec(i,j,k) + b*nest_qsecf(i,j,k)
+            nest_w  (i,j,k) = a*nest_w (i,j,k) + b*nest_wf (i,j,k)
+            nest_mu (i,j,k) = a*nest_mu(i,j,k) + b*nest_muf(i,j,k)
          end do
          end do
          end do
@@ -259,7 +280,7 @@ c     print*,'nest_intt int_temp = ',int_temp
                              bx = b
                 endif
 *
-                do k= 1, G_nk+1
+                do k= 1, G_nk
                 do j= 1, l_nj 
                 do i= 1, l_ni
                    tr1 (i,j,k) = ax*tr1(i,j,k) + bx*trf(i,j,k)
@@ -280,7 +301,7 @@ c     print*,'nest_intt int_temp = ',int_temp
                        endif
                     enddo
                     enddo
-                    do k=2, G_nk+1
+                    do k=2, G_nk
                     do j= 1, l_nj
                     do i= 1, l_ni
                        tr1 (i,j,k)=tr1 (i,j,1)
@@ -294,7 +315,7 @@ c     print*,'nest_intt int_temp = ',int_temp
              do n=1,Tr3d_ntr
                 err = vmmget(key1(n),patr1,tr1)
                 err = vmmget(key2(n),patrf,trf)
-                do k= 1, G_nk+1
+                do k= 1, G_nk
                 do j= 1, l_nj 
                 do i= 1, l_ni
                    tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)

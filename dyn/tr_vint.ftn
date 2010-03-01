@@ -24,10 +24,9 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "geomg.cdk"
 #include "acq.cdk"
 #include "schm.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
       integer i,j,k,err,bmf_get
       external bmf_get
@@ -66,7 +65,7 @@
             enddo         
             enddo 
          else
-            call vte_hyb2hyb ( w2, Ver_pia%d(1), Ver_pibb%d(1), pps, G_nk,
+            call vte_hyb2hyb ( w2, Geomg_pia, Geomg_pibb, pps, G_nk,
      $                         w1, rna_pia,pibb, ps, vterp_lv, 
      $                         l_ni*l_nj, '  ',data_spec(2).eq.3)
             do k=1,G_nk

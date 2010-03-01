@@ -59,11 +59,11 @@
       VMM_CREATE(oru  , LARRAY3D, 1, ptaorhs)
       VMM_CREATE(orv  , LARRAY3D, 1, ptaorhs)
       VMM_CREATE(orcn , LARRAY3D, 1, ptaorhs)
-      VMM_CREATE(orth , LARRAY2D*(l_nk+1), 1, ptaorhs)
+      VMM_CREATE(orth , LARRAY3D, 1, ptaorhs)
 
       if (.not. Schm_hydro_L) then
-         VMM_CREATE(orw  , LARRAY2D*(l_nk+1), 1, ptaorhs)
-         VMM_CREATE(orvv , LARRAY2D*(l_nk+1), 1, ptaorhs)
+         VMM_CREATE(orw  , LARRAY3D, 1, ptaorhs)
+         VMM_CREATE(orvv , LARRAY3D, 1, ptaorhs)
       endif 
 
 1000  format(

@@ -26,6 +26,7 @@
 #include "dcst.cdk"
 #include "dimout.cdk"
 #include "lun.cdk"
+#include "geomg.cdk"
 #include "geomn.cdk"
 #include "schm.cdk"
 #include "pres.cdk"
@@ -42,8 +43,6 @@
 #include "lctl.cdk"
 #include "vt1.cdk"
 #include "cstv.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
 **
       integer doout, longueur,
@@ -104,15 +103,14 @@
 *     PREPARATION for out_qc0
 *    ---------------------------
 
-c     key0 = VMM_KEY(pipt1)
-c     err = vmmlod (key0,1)
-c     err = VMM_GET_VAR(pipt1)
-      call gem_stop('out_qc0: calculate ln(pi)',-1)
+      key0 = VMM_KEY(pipt1)
+      err = vmmlod (key0,1)
+      err = VMM_GET_VAR(pipt1)
 
       do k=1,l_nk
       do j=1,l_nj
       do i=1,l_ni
-c        wlnph (i,j,k) = log ( ver_z_8%d(k) + pipt1(i,j,k) )
+         wlnph (i,j,k) = log ( geomg_z_8(k) + pipt1(i,j,k) )
       enddo
       enddo
       enddo
@@ -168,12 +166,12 @@ c        wlnph (i,j,k) = log ( ver_z_8%d(k) + pipt1(i,j,k) )
                    enddo
                    enddo
               call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,
-     $                Ver_hyb%d, 'QC  ',1.0,0.0,  Out_kind,G_nk, 
+     $                Geomg_hyb, 'QC  ',1.0,0.0,  Out_kind,G_nk, 
      $                ind_o, nk_o, qcnbit )
               deallocate(w5)
               else
               call ecris_fst2(qct1,l_minx,l_maxx,l_miny,l_maxy,
-     $                Ver_hyb%d, 'QC  ',1.0,0.0,  Out_kind,G_nk, 
+     $                Geomg_hyb, 'QC  ',1.0,0.0,  Out_kind,G_nk, 
      $                ind_o, nk_o, qcnbit )
               endif
           else

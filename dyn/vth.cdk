@@ -31,7 +31,7 @@
       MARK_COMMON_BEG(vth)
       DCL_VMMVAR(vth,uth	,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR(vth,vth	,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR(vth,psdth	,real,(LDIST_SHAPE,l_nk+1))
+      DCL_VMMVAR(vth,psdth	,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR(vth,xth	,real,(l_ni*l_nj*l_nk))
       DCL_VMMVAR(vth,yth	,real,(l_ni*l_nj*l_nk))
       DCL_VMMVAR(vth,zth	,real,(l_ni*l_nj*l_nk))

@@ -2,20 +2,17 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine adw_interp ( F_out, F_in, F_u, F_v, 
-     %                        F_wind_L, F_mono_L, DIST_DIM, F_nk,
-     %                        i0,in,j0,jn, F_lev_S )
+      subroutine adw_interp ( F_out, F_in, F_u, F_v,
+     %                        F_wind_L, F_mono_L, DIST_DIM, Nk,i0,in,j0,jn )
 *
       implicit none
 *
-      character*1 F_lev_S
-*
       logical F_wind_L, F_mono_L
 *
-      integer DIST_DIM, F_nk, i0,in,j0,jn
+      integer DIST_DIM, Nk, i0,in,j0,jn
 *
-      real F_out (DIST_SHAPE, F_nk),
-     %     F_in  (DIST_SHAPE, F_nk)
+      real F_out (DIST_SHAPE, Nk),
+     %     F_in  (DIST_SHAPE, Nk)
       real F_u(*), F_v(*)
 *
 *author
@@ -48,7 +45,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
 #include "adw.cdk"
 *
 ************************************************************************
@@ -57,9 +53,8 @@
       real dummy
 *
       nij    = l_ni   *l_nj
-      nijk   = l_ni   *l_nj   *F_nk
-      nijkag = Adw_nit*Adw_njt*F_nk
-*
+      nijk   = l_ni   *l_nj   *l_nk
+      nijkag = Adw_nit*Adw_njt*l_nk
 *
 ************************************************************************
 *
@@ -75,7 +70,7 @@
           n=999
           dest_ni=G_ni
       endif
-      call rpn_comm_xch_halox (F_in, LDIST_DIM, l_ni, l_nj, F_nk,
+      call rpn_comm_xch_halox (F_in, LDIST_DIM, l_ni, l_nj, l_nk,
      % Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, -Adw_halox+1,
      % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, n)
 *
@@ -84,26 +79,26 @@
 *     
          if ( F_wind_L ) then
             call adw_pol0 (F_u, 0, Adw_nic,Adw_halox,Adw_njc,
-     %                     Adw_haloy,F_nk)
+     %                     Adw_haloy,l_nk)
          else
             call adw_pols (F_u,Adw_wx_8, 0, Adw_nic,Adw_halox,
-     %                     Adw_njc,Adw_haloy,F_nk)
+     %                     Adw_njc,Adw_haloy,l_nk)
          endif
             call adw_polx (F_u,Adw_xg_8,.true.,Adw_nic,Adw_halox,
-     %                     Adw_njc,Adw_haloy,F_nk)
+     %                     Adw_njc,Adw_haloy,l_nk)
       endif
 *     
       if ( l_north ) then
 *
          if ( F_wind_L ) then
             call adw_pol0 (F_u,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,
-     %                     Adw_haloy,F_nk)
+     %                     Adw_haloy,l_nk)
          else
             call adw_pols (F_u,Adw_wx_8, Adw_njc+1,Adw_nic,Adw_halox,
-     %                     Adw_njc,Adw_haloy,F_nk)
+     %                     Adw_njc,Adw_haloy,l_nk)
          endif
             call adw_polx (F_u,Adw_xg_8,.false.,Adw_nic,Adw_halox,
-     %                     Adw_njc,Adw_haloy,F_nk)
+     %                     Adw_njc,Adw_haloy,l_nk)
       endif
       endif
 ************************************************************************
@@ -111,25 +106,37 @@
 * Compute second derivative for cubic spline in the vertical
 *
 ************************************************************************
-       call adw_vder ( F_v, F_u, Adw_nit, Adw_njt, F_nk, F_lev_S ) 
+      if ( .not. Adw_lag3d_L ) call adw_vder ( F_v, F_u, Adw_nit, Adw_njt, l_nk ) 
 ************************************************************************
 *
 * Interpolate
 *
 ************************************************************************
+      if ( .not. Adw_lag3d_L ) then 
       call adw_tricub ( Adw_wrkc, F_u, F_v,
      %                  Adw_n1, Adw_capx1, Adw_xgg1,
      %                  Adw_xdd1, Adw_capy1, Adw_ygg1,
      %                  Adw_ydd1, Adw_capz1,Adw_cz1,
-     %                  nijk, F_mono_L,i0,in,j0,jn,F_nk)
+     %                  nijk, F_mono_L,i0,in,j0,jn,l_nk)
+      else
+      call adw_tricub_lag3d ( Adw_wrkc, F_u,
+     %                        Adw_capx1, Adw_capy1, Adw_capz1,
+     %                        nijk, F_mono_L,i0,in,j0,jn,l_nk)
+      endif
 *
       if (.not.G_lam) then
       if ( Adw_fro_a .gt. 0 ) then
+         if ( .not. Adw_lag3d_L ) then 
          call adw_tricub ( Adw_wrka, F_u, F_v,
      %                     Adw_n2, Adw_capx2, Adw_xgg2,
      %                     Adw_xdd2, Adw_capy2, Adw_ygg2,
      %                     Adw_ydd2, Adw_capz2, Adw_cz2,
      %                     Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1)
+         else
+         call adw_tricub_lag3d ( Adw_wrka, F_u,
+     %                           Adw_capx2, Adw_capy2, Adw_capz2, 
+     %                           Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1)
+         endif
       endif
 *
       call adw_exch_2 ( Adw_wrkb, dummy, dummy,
@@ -143,7 +150,7 @@
       endif
 !$omp parallel
 !$omp do
-      do k = 1, F_nk
+      do k = 1, l_nk
       do j = j0,jn
       do i = i0,in
       F_out(i,j,k) = Adw_wrkc ( (k-1)*nij+(j-1)*l_ni+i )

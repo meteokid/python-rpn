@@ -7,13 +7,10 @@
      %                        F_capy, F_ygg, F_ydd,
      %                        F_capz, F_cz,
      %                        F_x,    F_y,   F_z,
-     %                        F_h_L,  F_z_L, F_lin_L, 
-     %                        F_num, i0,in,j0,jn,kn, F_lev_S)
+     %                        F_h_L,  F_z_L, F_lin_L, F_num, i0,in,j0,jn,kn)
 *
       implicit none
 *
-      character*1 F_lev_S
-!
       integer F_num, F_n(F_num),i0,in,j0,jn,kn
 *
       real    F_capx(F_num), F_xgg(F_num), F_xdd(F_num)
@@ -66,8 +63,6 @@
 *              |                 only for linear interpolation   |     |
 *              |                                                 |     |
 * F_num        | number of points to treat                       |  i  |
-*              |                                                 |     |
-* F_lev_S      | "m" momentum level, "t" thermodynamic level     |  i  |
 *______________|_________________________________________________|_____|
 *
 *Notes on computations of positions in the 3D volume of interpolation 
@@ -82,32 +77,12 @@
 * 
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
 #include "adw.cdk"
-#include "ver.cdk"
 ************************************************************************
       integer n, ii, jj, kk, ij, nijag, nij,i, j, k
-      real*8  prd, prdt, p_z00_8
-!
-      integer,dimension(:),pointer :: p_lcz
-      real*8,   dimension(:),pointer :: p_bsz_8, p_diz_8, p_dbz_8
+      real*8  prd, prdt
 *
 !     call tmg_start ( 31, 'adw_setint' )
-!
-      if ( F_lev_S .eq. 'm') then
-         p_z00_8 = Ver_z_8%m(1)
-         p_lcz =>Adw_lcz%m
-         p_bsz_8 =>Adw_bsz_8%m
-         p_diz_8 =>Adw_diz_8%m
-         p_dbz_8 =>Adw_dbz_8%m
-      else
-         p_z00_8 = Ver_z_8%t(1)
-         p_lcz =>Adw_lcz%t
-         p_bsz_8 =>Adw_bsz_8%t
-         p_diz_8 =>Adw_diz_8%t
-         p_dbz_8 =>Adw_dbz_8%t
-      endif
-
       nij   = l_ni * l_nj
       nijag = Adw_nit * Adw_njt
 ************************************************************************
@@ -149,11 +124,11 @@
             F_capy(n) = prdt * Adw_diy_8(jj)
 
             prd = dble(F_z(n))
-            kk = ( prd - p_z00_8 ) * Adw_ovdz_8
-            kk = p_lcz( kk+1 )
-            prd = prd - p_bsz_8(kk)
+            kk = ( prd - Adw_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz( kk+1 )
+            prd = prd - Adw_bsz_8(kk)
             if ( prd .lt. 0.0 ) kk = kk - 1
-            F_capz(n) = prd * p_diz_8(kk)
+            F_capz(n) = prd * Adw_diz_8(kk)
             if ( prd .lt. 0.0 ) F_capz(n) = 1.0 + F_capz(n)
             ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
             F_n(n) = kk*nijag + ij
@@ -196,17 +171,17 @@
             F_capy(n) = prdt * Adw_diy_8(jj)
 
             prd = dble(F_z(n))
-            kk = ( prd - p_z00_8 ) * Adw_ovdz_8
-            kk = p_lcz( kk+1 )
-            prd = prd - p_bsz_8(kk)
+            kk = ( prd - Adw_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz( kk+1 )
+            prd = prd - Adw_bsz_8(kk)
             if ( prd .lt. 0.0 ) kk = kk - 1
-            F_capz(n) = prd * p_diz_8(kk)
+            F_capz(n) = prd * Adw_diz_8(kk)
             if ( prd .lt. 0.0 ) F_capz(n) = 1.0 + F_capz(n)
             F_xgg(n) = Adw_dlx_8(ii-1) * Adw_dix_8(ii)
             F_xdd(n) = Adw_dlx_8(ii+1) * Adw_dix_8(ii)
             F_ygg(n) = Adw_dly_8(jj-1) * Adw_diy_8(jj)
             F_ydd(n) = Adw_dly_8(jj+1) * Adw_diy_8(jj)
-            F_cz (n) = (F_capz(n)-1.0)*F_capz(n)*p_dbz_8(kk)
+            F_cz (n) = (F_capz(n)-1.0)*F_capz(n)*Adw_dbz_8(kk)
             ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
             F_n(n) = kk*nijag + ij
             enddo
@@ -313,11 +288,11 @@
             n = (k-1)*nij + ((j-1)*l_ni) + i
             ij = mod ( F_n(n), nijag )
             prd = dble(F_z(n))
-            kk = ( prd - p_z00_8 ) * Adw_ovdz_8
-            kk = p_lcz( kk+1 )
-            prd = prd - p_bsz_8(kk)
+            kk = ( prd - Adw_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz( kk+1 )
+            prd = prd - Adw_bsz_8(kk)
             if ( prd .lt. 0.0 ) kk = kk - 1
-            F_capz(n) = prd * p_diz_8(kk)
+            F_capz(n) = prd * Adw_diz_8(kk)
             if ( prd .lt. 0.0 ) F_capz(n) = 1.0 + F_capz(n)
             F_n(n) = kk*nijag + ij
             enddo
@@ -332,13 +307,13 @@
             n = (k-1)*nij + ((j-1)*l_ni) + i
             ij = mod ( F_n(n), nijag )
             prd = dble(F_z(n))
-            kk = ( prd - p_z00_8 ) * Adw_ovdz_8
-            kk = p_lcz( kk+1 )
-            prd = prd - p_bsz_8(kk)
+            kk = ( prd - Adw_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz( kk+1 )
+            prd = prd - Adw_bsz_8(kk)
             if ( prd .lt. 0.0 ) kk = kk - 1
-            F_capz(n) = prd * p_diz_8(kk)
+            F_capz(n) = prd * Adw_diz_8(kk)
             if ( prd .lt. 0.0 ) F_capz(n) = 1.0 + F_capz(n)
-            F_cz(n) = (F_capz(n)-1.0)*F_capz(n)*p_dbz_8(kk)
+            F_cz(n) = (F_capz(n)-1.0)*F_capz(n)*Adw_dbz_8(kk)
             F_n(n) = kk*nijag + ij
             enddo
             enddo

@@ -16,11 +16,11 @@
 #include "model_macros_f.h"
 *
       subroutine adw_exch_1 ( F_x_out, F_y_out, F_z_out, F_c_out,
-     %                        F_x_in,  F_y_in,  F_z_in , F_nk)
+     %                        F_x_in,  F_y_in,  F_z_in )
 *
 #include "impnone.cdk"
 *
-      integer F_c_out ( * ), F_nk
+      integer F_c_out ( * )
       real    F_x_out ( * ), F_y_out ( * ), F_z_out ( * ),
      %        F_x_in  ( * ), F_y_in  ( * ), F_z_in  ( * )
 *
@@ -67,7 +67,6 @@
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "type.cdk"
 #include "adw.cdk"
 ************************************************************************
 *
@@ -75,7 +74,7 @@
 *
       integer n, nijk,i,j,k,npts
 *
-      nijk = l_ni*l_nj*F_nk
+      nijk = l_ni*l_nj*l_nk
 *
       Adw_for_n = 0
       Adw_for_s = 0

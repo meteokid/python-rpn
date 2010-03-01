@@ -2,13 +2,22 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine hspng_drv ( F_u, F_v, F_t, F_w, DIST_DIM, Nk)
+      subroutine hspng_drv ( F_u,    F_v,  F_psd,  F_tp,  F_ip,
+     %                      F_td,    F_t,   F_it, F_plt,   F_q,
+     %                     F_pip,    F_w,   F_qp,  F_mu, F_mul, F_s, 
+     %                     F_xfis, DIST_DIM,Nk)
 *
 #include "impnone.cdk"
 *
       integer DIST_DIM, Nk
-      real     F_u(DIST_SHAPE,Nk  ), F_v(DIST_SHAPE,Nk  ),
-     %         F_t(DIST_SHAPE,Nk+1), F_w(DIST_SHAPE,Nk+1) 
+      real     F_u(DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
+     %       F_psd(DIST_SHAPE,Nk), F_tp(DIST_SHAPE,Nk),
+     %        F_ip(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
+     %         F_t(DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
+     %       F_plt(DIST_SHAPE,Nk), F_q (DIST_SHAPE,Nk),
+     %       F_pip(DIST_SHAPE,Nk), F_w (DIST_SHAPE,Nk),
+     %        F_qp(DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
+     %       F_mul(DIST_SHAPE,Nk), F_s(DIST_SHAPE), F_xfis(DIST_SHAPE)
 *
 *author
 *     Michel Desgagne  - from hzd_fact.ftn
@@ -44,8 +53,6 @@
 #include "opr.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
       integer i, j, jj, k
       real*8 HALF_8,TWO_8,c_8,c1
@@ -129,22 +136,6 @@
             end do
          endif
 *
-*       ************************
-*       *Nonyhydrostatic model *
-*       ************************
-*
-         if ( .not. Schm_hydro_L ) then
-*
-*           Vertical wind (physical)
-*           ~~~~~~~~~~~~~~~~~~~~~~~~
-            call hzd_del2  (F_w, wk1_8,
-     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
-     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
-     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
-     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
-*
-         endif
-*
       endif     
 *
       if ( Cstv_phidf_8 .gt. 0.0) then
@@ -161,24 +152,159 @@
      $                     Opr_opsyp2_8,G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
          endif
 *
-*        Mass related fields
-*        ~~~~~~~~~~~~~~~~~~~
-*         
-	call gem_stop('hspng_drv: do you really want to do that?',-1)	
-*
-*       Then, you must also recompute FI
-*       Why not in fact diffuse something like potential temperature
-*
-*        The temperature
+*        Vertical motion
 *        ~~~~~~~~~~~~~~~
-         call hzd_del2  (F_t, wk1_8,
+         call hzd_del2  (F_psd, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+*        Total divergence 
+*        ~~~~~~~~~~~~~~~~
+         call hzd_del2  (F_td, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*
+         if (Hspng_uvwdt_L) goto 9988
+*
+*     Mass related fields
+*     ~~~~~~~~~~~~~~~~~~~
+*         
+         call hzd_del2  (F_ip, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*
+         call hzd_del2  (F_it, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         do k = 2, Nk
+         do j = 1, l_nj
+         do i = 1, l_ni
+            F_it(i,j,k) = F_ip(i,j,k) + Cstvr_fistr_8(k) + F_xfis(i,j)
+         end do
+         end do
+         end do
+*
+* updating phi' at the top 
+*
+         do j = 1, l_nj
+         do i = 1, l_ni
+            F_ip(i,j,1) = F_it(i,j,1) - Cstvr_fistr_8(1) - F_xfis(i,j)
+         end do
+         end do
+*
+*
+*     The temperature: T', T'lin & hence T 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         call hzd_del2  (F_tp, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         call hzd_del2  (F_plt, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+         do k=1, Nk
+         do j=1, l_nj
+         do i=1, l_ni 
+            F_t(i,j,k) = F_tp(i,j,k) + Cstv_tstr_8
+         end do
+         end do
+         end do
+*
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+            do k = 1, Nk
+            do j = 1, l_nj 
+            do i = 1, l_ni 
+               work(i,j,k) = F_pip(i,j,k)
+            end do
+            end do
+            end do
+         endif 
+*
+*     The hydrostatic pressure: pi'  
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         call hzd_del2  (F_pip, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*****************************
+*  3. Nonyhydrostatic model * 
+*****************************
+*
+         if ( .not. Schm_hydro_L ) then
+*
+*     Vertical wind (physical) 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~
+         call hzd_del2  (F_w, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         if ( Schm_difqp_L ) then ! q' & related variables
+*
+         call hzd_del2  (F_mu, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+         call hzd_del2  (F_mul, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        Indirect diffusion of q' 
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+         do k=1, Nk 
+         do j=1, l_nj
+         do i=1, l_ni
+            work(i,j,k) = ( Geomg_z_8(k) + dble(work(i,j,k)) )
+     %                       *exp( dble(F_qp(i,j,k)) )
+         end do
+         end do
+         end do
+*
+         call hzd_del2  (work, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         do k=1, Nk
+         do j=1, l_nj
+         do i=1, l_ni
+            F_qp(i,j,k) = log(             dble(work(i,j,k))
+     %                       /( Geomg_z_8(k) + dble(F_pip(i,j,k)) )  )
+         end do
+         end do
+         end do
+*
+         endif
+         endif         
+*
+*
       endif
 *
+ 9988 continue
 *     __________________________________________________________________
  1000 format(/,3X,
      + 'PERFORM FACTORIZED DEL-2 HORIZONTAL DIFFUSION: (S/R HSPNG_DRV)')

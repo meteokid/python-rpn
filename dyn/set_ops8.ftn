@@ -130,17 +130,6 @@
             F_oper_8(1,2)   = - half
             F_oper_8(NN,2) =   half
          endif
-      else if ( F_case .eq. 5 ) then
-*               Average operator
-         F_oper_8(NN,3) = zero
-         F_oper_8(1,1)   = zero
-         do j=1,NN-1
-            F_oper_8(j,3)   = one/F_delt_8(j)
-            F_oper_8(j+1,1) = F_oper_8(j,3)
-            F_oper_8(j,2)   = F_oper_8(j,1) + F_oper_8(j,3)
-         enddo
-          F_oper_8(NN,2) = F_oper_8(NN,1) + F_oper_8(NN,3)
-
       endif
       return
       end

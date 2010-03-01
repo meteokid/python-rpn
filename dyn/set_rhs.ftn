@@ -56,6 +56,8 @@
 *
       VMM_NAM(rd   )= 'MRRD'
       VMM_NAM(r1   )= 'MR1'
+      VMM_NAM(r3   )= 'MR3'
+      VMM_NAM(r3p  )= 'MR3P'
       VMM_NAM(rhell)= 'RHLL'
       VMM_NAM(rheln)= 'RHLN'
 *
@@ -70,13 +72,15 @@
 *
       VMM_CREATE(ru   , LARRAY3D, 1, attri_S)
       VMM_CREATE(rv   , LARRAY3D, 1, attri_S)
-      VMM_CREATE(rw   , LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(rw   , LARRAY3D, 1, attri_S)
       VMM_CREATE(rcn  , LARRAY3D, 1, attri_S)
-      VMM_CREATE(rth  , LARRAY2D*(l_nk+1), 1, attri_S)
-      VMM_CREATE(rvv  , LARRAY2D*(l_nk+1), 1, attri_S)
+      VMM_CREATE(rth  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rvv  , LARRAY3D, 1, attri_S)
 *
       VMM_CREATE(rd   , LARRAY3D, 1, attri_S)
       VMM_CREATE(r1   , LARRAY3D, 1, attri_S)
+      VMM_CREATE(r3   , LARRAY3D, 1, attri_S)
+      VMM_CREATE(r3p  , LARRAY3D, 1, attri_S)
       VMM_CREATE(rhell, LARRAY3D, 1, attri_S)
       VMM_CREATE(rheln, LARRAY3D, 1, attri_S)
 *

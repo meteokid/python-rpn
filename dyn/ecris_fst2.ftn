@@ -1,8 +1,5 @@
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r ecris_fst2
-*
-#include "model_macros_f.h"
-*
       subroutine ecris_fst2 ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul,
      $                           add,kind,nkfa,ind_o,nk_o,nbit)
       implicit none
@@ -12,9 +9,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       real fa(lminx:lmaxx,lminy:lmaxy,*),rf(*),mul,add
 *
 **
-#include "dimout.cdk"
 #include "out.cdk"
-#include "level.cdk"
 *
       integer  fstecr
       external fstecr
@@ -112,7 +107,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
          do j=1,Out_njsl
             do k=1,nk_o
             do i=1,Out_nisl
-               wk2(i,nk_o-k+1) = tr2(i,j,k)
+               wk2(i,k) = tr2(i,j,k)
             end do
             end do
             ier= fstecr(wk2,wk2,-nbit,Out_unf,Out_dateo,int(Out_deet),Out_npas,
@@ -123,10 +118,9 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
 *
       else if (Out_nisg.eq.Out_nisl+1)then
          allocate ( wk2(Out_nisg,Out_njsl) )
-
          do k=1,nk_o
             n = ind_o(k)
-            if (kind.ge.0) call convip(pnip1,rf(n),kind,level_mode_ip1,dumc,.false.)
+            if (kind.ge.0) call convip(pnip1,rf(n),kind,+1,dumc,.false.)
             do j=1,Out_njsl
             do i=1,Out_nisl
                wk2(i,j)=tr2(i,j,k)
@@ -144,7 +138,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
 *
          do k=1,nk_o
             n = ind_o(k)
-            if (kind.ge.0) call convip(pnip1,rf(n),kind,level_mode_ip1,dumc,.false.)
+            if (kind.ge.0) call convip(pnip1,rf(n),kind,+1,dumc,.false.)
             ier = fstecr (tr2(1,1,k),tr1,-nbit,Out_unf,Out_dateo,int(Out_deet),
      $                    Out_npas,Out_nisl,Out_njsl,1,pnip1,Out_ip2,pnip3,
      $                    Out_typvar_S,nomvar,Out_etik_S,gridtyp,

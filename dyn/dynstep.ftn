@@ -84,9 +84,7 @@
 *C       Compute 3D winds at time t0-dt/2 (th)
 *        ------------------------------------------------------------
 *
-      if ( G_lam .and. .not.Pil_ctebcs_L ) then
-         call nest_intt (done_intt_L) 
-      endif
+      if ( G_lam .and. .not.Pil_ctebcs_L ) call nest_intt (done_intt_L) 
 *
       if (.not.schm_offline_l) then
 *
@@ -131,7 +129,6 @@
       endif
 *
       if (G_lam) call glb_bound ()
-
 *
 *         ------------------------------------------------------------
 *C	  When the timestep is completed, rename all the
@@ -142,6 +139,7 @@
       call t12t2( )
       call t02t1( )
       call t22t0( )
+
 *
 *         ------------------------------------------------------------
 *C        If necessary vary topogragphy according to Vtopo_start and 

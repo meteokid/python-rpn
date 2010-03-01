@@ -101,7 +101,7 @@
      %                   l_maxx,l_miny,l_maxy,Nk,G_ni,l_ni,l_nj,
      %                   trp_12dn,Hzd_xp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                   Ptopo_npex,Ptopo_npey)
-*     
+*
              elseif ( grid.eq.2 ) then
              call hzd_solfft_1d (F, wk1_8, Fft_pri_8 ,
      %                   Hz1d_deltav_8,

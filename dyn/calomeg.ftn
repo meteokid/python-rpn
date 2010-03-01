@@ -1,36 +1,54 @@
-***s/p calomeg - compute vertical velocity in pressure coordinates
+***s/p calF_omeg - compute vertical velocity in pressure coordinates
 *
 #include "model_macros_f.h"
 *
-      subroutine calomeg(F_omeg,F_psd,F_u,F_v,F_csh,DIST_DIM,Nk,
-     $     F_i0,F_in,F_j0,F_jn)
+      subroutine calomeg(F_omeg, F_psd, F_td, F_s, DIST_DIM, Nk,
+     $                                       F_i0,F_in,F_j0,F_jn)
 *
 #include "impnone.cdk"
 *
-      integer DIST_DIM,Nk
+      integer DIST_DIM, Nk
       integer F_i0,F_in,F_j0,F_jn
-      real F_omeg(DIST_SHAPE,Nk+1)
-      real F_psd(DIST_SHAPE,Nk+1),F_u(DIST_SHAPE,Nk)
-      real F_v(DIST_SHAPE,Nk),F_csh(DIST_SHAPE)
-*     
-* author
-*     Andre Plante based on calomeg from A. Methot A. Patoine.
+      real F_omeg(DIST_SHAPE,Nk)
+      real F_psd(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk)
+      real F_s(DIST_SHAPE)
+*
+*author
+*     Andre Methot - cmc - nov 1995 - v0_16
+*                  adapted from sort5 v0_15, A. Patoine
 *
 *revision
+* v2_00 - Lee V.            - initial MPI version (from calomeg v1_03)
+* v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
+* v3_20 - Gravel S.         - replaced geomg_pibb with geomg_dpba
+* v3_21 - Lee V.            - Output Optimization
 *
 *object
-*	Compute vertical velocity in pressure coordinates pi dot (omega)
+*	compute vertical velocity in pressure coordinates
 *
 ****************************************************************************
+*                                                                          
+*
+*           dp    . /                 db \       .             d /db\   db
+* F_omega = -- =  z | 1 + (exp(s) -1) -- | - b * z (exp(s) -1) --|--| / -- 
+*           dt      \                 dz /                     dz\dz/   dz
+*                                .
+*                       /      dpz \ /                 db \
+*                 - b * | D + ---- | | 1 + (exp(s) -1) -- |
+*                       \      dpz / \                 dz /
+*                                                                            
+*
+* where dp/dpz means partial derivative w.r.t  z
+*
+*****************************************************************************
 *
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
 * F_omeg       O    - omega
-* F_psd        I    - model vertical velocity (pi* coordinates)
-* F_u          I    - model u wind
-* F_v          I    - model v wind
-* F_csh        I    - 2.*exp(s*.5).*sinh(s*.5), where s=ln(pis/Zs)
+* F_psd        I    - model s vertical velocity (pi* coordinates)
+* F_td         I    - model s total divergence
+* F_s          I    - ln ( dpi/dpi* )
 * F_i0         I    - starting point of calculation on W-E axis
 * F_in         I    - ending point of calculation on W-E axis
 * F_j0         I    - starting point of calculation on N-S axis
@@ -38,89 +56,34 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "hzd.cdk"
+#include "geomg.cdk"
 *
 **
-      integer i,j,k,kk,i0,j0
-      real td(DIST_SHAPE,Nk)
-      real pr1,dt_t
+      integer i,j,k
+      real pr1, pr2
 *     __________________________________________________________________
 *
-      if(F_i0.le.Minx.or.F_j0.le.Miny.or.F_in.gt.Maxx.or.F_jn.gt.Maxy)then
-         call gem_stop('calomeg',-1)
-      endif
-*
-*     Compute total divergence
-*
-      i0=F_i0
-      j0=F_j0
-      if (G_lam)then
-         if (l_west)  i0 = max(2,F_i0)
-         if (l_south) j0 = max(2,F_j0)
-      endif      
-*
-      call rpn_comm_xch_halo( F_u , LDIST_DIM,l_niu,l_nj,G_nk,
-     $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_v , LDIST_DIM,l_ni,l_njv,G_nk,
-     $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-!$omp parallel private(pr1,dt_t,kk)
 !$omp do
       do k=1,l_nk
-         call caldiv_2(td(minx,miny,k),F_u(minx,miny,k), 
-     $                   F_v(minx,miny,k),DIST_DIM,1)
-         do j= j0, F_jn
-         do i= i0, F_in
-            td(i,j,k)=td(i,j,k)+
-     $           (F_psd(i,j,k+1)-F_psd(i,j,k))/Ver_hz_8%m(k)
-         end do
-         end do
-      end do
-!$omp enddo
-*
-!$omp do
-      do k=1,l_nk+1
          if (k.eq.1) then
-            do j= F_j0, F_jn
-            do i= F_i0, F_in
-               F_omeg (i,j,k) = 0.
-            end do
-            end do
+         do j= F_j0, F_jn
+         do i= F_i0, F_in
+            F_omeg (i,j,k) = 0.
+         end do
+         end do
          else
-            pr1=ver_dpba_8(k)-
-     $           ver_pib_8%t(k)*ver_dpia_8%t(k)/ver_dpba_8(k)
-            do j= j0, F_jn
-            do i= i0, F_in
-               kk=min(k,l_nk)
-c              Divergence is assumed constant below momentum level nk
-               dt_t=.5*(td(i,j,kk)+td(i,j,k-1))               
-               F_omeg (i,j,k) = F_psd(i,j,k)
-     $              + F_psd(i,j,k)*F_csh(i,j)*pr1
-     %              - dt_t * ver_pib_8%t(k)*
-     %              (1.+F_csh(i,j)*ver_dpba_8(k))/ver_dpba_8(k)               
-            end do
-            end do
-         endif
-         if (.not.G_lam) then
-*           Zonal component of divergence is too imprecise in global mode
-*           so with take the neighbor value.
-            if (l_south) then
-            do i = i0, F_in
-               F_omeg(i,1,k) = F_omeg (i,2,k)
-            end do
-            endif
-            if (l_north) then
-            do i = i0, F_in
-               F_omeg(i,l_nj,k) = F_omeg(i,l_nj-1,k)
-            end do
-            endif
-         endif
-*     
+         pr1 = geomg_dpba(k) - geomg_pib(k)*geomg_dpia(k)/geomg_dpba(k)
+         do j= F_j0, F_jn
+         do i= F_i0, F_in
+           pr2 = exp(F_s(i,j)) - 1.0
+           F_omeg (i,j,k) = F_psd(i,j,k) + F_psd(i,j,k) * pr2 * pr1 -
+     %                      F_td(i,j,k) * geomg_pib(k)*
+     %                      (1.+geomg_dpba(k)*pr2) / geomg_dpba(k)
+        end do
+        end do
+        endif
       end do
 !$omp enddo
-!$omp end parallel
 *
 *     __________________________________________________________________
 *

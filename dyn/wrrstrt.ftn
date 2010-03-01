@@ -36,7 +36,8 @@
 #include "glb_ld.cdk"
 #include "pres.cdk"
 #include "pilot.cdk"
-#include "zblen.cdk"
+#include "ens_param.cdk"
+#include "ens_stochphy.cdk"
 
 *
 *modules
@@ -58,6 +59,9 @@
       if (Schm_phyms_L.and.Mem_phyncore_L) then
          call wawrit (Lun_rstrt,Phy_busper3D,adr,p_bper_siz*p_nj)
          adr = adr + p_bper_siz*p_nj
+         dim=36*(MAX2DC+MAX3DC)
+         call wawrit (Lun_rstrt,dumdum,adr,dim)
+         adr = adr + dim
          if ( Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L )
      $        then
             call wawrit (Lun_rstrt,Rstri_half_L     ,adr,1)
@@ -76,11 +80,7 @@
       call datp2f (current_nest,Pil_current_S )
       adr = adr + 1
       call wawrit (Lun_rstrt, current_nest  ,adr, 1)
-      if(Schm_theoc_L)then
-         adr = adr + 1
-         call wawrit (Lun_rstrt,Zblen_hmin,adr, 1)
-      endif
-*     
+*
       ier = vmmckmx()
       call waclos(Lun_rstrt)
       ier = fclos(Lun_rstrt)  

@@ -14,7 +14,7 @@
 * v2_30 - Edouard  S.       - remove pi' at the top
 * v2_31 - Desgagne M.       - re-introduce tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
-* v3_21 - Lee V.            - Remove Tr2d
+* v3_21 - Lee V.            - Remove TR2d
 *
 *object
 *	
@@ -43,11 +43,11 @@
       external open_db_file,close_db_file,rewind_db_file,
      $         read_db_file,write_db_file
 *
-      integer err, key(10), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
+      integer err, key(26), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
      $        keya(Tr3d_ntr)
       real tr1,tra
       pointer (patr1, tr1(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
-      real    busper(max(1,p_bper_siz)), buf(l_ni,G_nk+1), dfcoef 
+      real    busper(max(1,p_bper_siz)), buf(l_ni,G_nk), dfcoef 
       real, allocatable, dimension(:,:,:,:) :: tr2,tr3
 *
 *     __________________________________________________________________
@@ -58,37 +58,71 @@
       key(2)  = VMM_KEY(ut1  )
       key(3)  = VMM_KEY(vta  )
       key(4)  = VMM_KEY(vt1  )
-      key(5)  = VMM_KEY(tta  )
-      key(6)  = VMM_KEY(tt1  )
-      key(7)  = VMM_KEY(psdta)
-      key(8)  = VMM_KEY(psdt1)
-      key(9)  = VMM_KEY(sta  )
-      key(10) = VMM_KEY(st1  )
-      err = vmmlod(key,10)
+      key(5)  = VMM_KEY(tdta )
+      key(6)  = VMM_KEY(tdt1 )
+      key(7)  = VMM_KEY(fita )
+      key(8)  = VMM_KEY(fit1 )
+      key(9)  = VMM_KEY(fipta)
+      key(10) = VMM_KEY(fipt1)
+      key(11) = VMM_KEY(tta  )
+      key(12) = VMM_KEY(tt1  )
+      key(13) = VMM_KEY(qta  )
+      key(14) = VMM_KEY(qt1  )
+      key(15) = VMM_KEY(tpta )
+      key(16) = VMM_KEY(tpt1 )
+      key(17) = VMM_KEY(pipta)
+      key(18) = VMM_KEY(pipt1)
+      key(19) = VMM_KEY(tplta)
+      key(20) = VMM_KEY(tplt1)
+      key(21) = VMM_KEY(psdta)
+      key(22) = VMM_KEY(psdt1)
+      key(23) = VMM_KEY(sta  )
+      key(24) = VMM_KEY(st1  )
+      key(25) = VMM_KEY(gpta )
+      key(26) = VMM_KEY(gptx )
+      err = vmmlod(key,26)
       err = VMM_GET_VAR(uta  )
       err = VMM_GET_VAR(ut1  )
       err = VMM_GET_VAR(vta  )
       err = VMM_GET_VAR(vt1  )
+      err = VMM_GET_VAR(tdta )
+      err = VMM_GET_VAR(tdt1 )
+      err = VMM_GET_VAR(fita )
+      err = VMM_GET_VAR(fit1 )
+      err = VMM_GET_VAR(fipta)
+      err = VMM_GET_VAR(fipt1)
       err = VMM_GET_VAR(tta  )
       err = VMM_GET_VAR(tt1  )
+      err = VMM_GET_VAR(qta  )
+      err = VMM_GET_VAR(qt1  )
+      err = VMM_GET_VAR(tpta )
+      err = VMM_GET_VAR(tpt1 )
+      err = VMM_GET_VAR(pipta)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(tplta)
+      err = VMM_GET_VAR(tplt1)
       err = VMM_GET_VAR(psdta)
       err = VMM_GET_VAR(psdt1)
       err = VMM_GET_VAR(sta  )
       err = VMM_GET_VAR(st1  )
+      err = VMM_GET_VAR(gpta )
+      err = VMM_GET_VAR(gptx )
 *
-      do k=1,l_nk+1
-      do j= 1, l_nj 
-      do i= 1, l_ni 
-           tta(i,j,k) =   tta(i,j,k) + dfcoef *   tt1(i,j,k)
-         psdta(i,j,k) = psdta(i,j,k) + dfcoef * psdt1(i,j,k)
-      end do
-      end do
-      end do
       do k=1,l_nk
       do j= 1, l_nj 
       do i= 1, l_ni 
            uta(i,j,k) =   uta(i,j,k) + dfcoef *   ut1(i,j,k)
            vta(i,j,k) =   vta(i,j,k) + dfcoef *   vt1(i,j,k)
+          tdta(i,j,k) =  tdta(i,j,k) + dfcoef *  tdt1(i,j,k)
+          fita(i,j,k) =  fita(i,j,k) + dfcoef *  fit1(i,j,k)
+         fipta(i,j,k) = fipta(i,j,k) + dfcoef * fipt1(i,j,k)
+           tta(i,j,k) =   tta(i,j,k) + dfcoef *   tt1(i,j,k)
+           qta(i,j,k) =   qta(i,j,k) + dfcoef *   qt1(i,j,k)
+          tpta(i,j,k) =  tpta(i,j,k) + dfcoef *  tpt1(i,j,k)
+         pipta(i,j,k) = pipta(i,j,k) + dfcoef * pipt1(i,j,k)
+         tplta(i,j,k) = tplta(i,j,k) + dfcoef * tplt1(i,j,k)
+         psdta(i,j,k) = psdta(i,j,k) + dfcoef * psdt1(i,j,k)
+          gpta(i,j,k) =  gpta(i,j,k) + dfcoef *  gptx(i,j,k)
       end do
       end do
       end do
@@ -109,25 +143,30 @@
 *
          key(1) = VMM_KEY(wta  )
          key(2) = VMM_KEY(wt1  )
-         key(3) = VMM_KEY(qsecta )
-         key(4) = VMM_KEY(qsect1 )
-         err = vmmlod(key,4)
+         key(3) = VMM_KEY(qpta )
+         key(4) = VMM_KEY(qpt1 )
+         key(5) = VMM_KEY(multa)
+         key(6) = VMM_KEY(multx)
+         key(7) = VMM_KEY(muta )
+         key(8) = VMM_KEY(mut1 )
+         err = vmmlod(key,8)
          err = VMM_GET_VAR(wta  )
          err = VMM_GET_VAR(wt1  )
-         err = VMM_GET_VAR(qsecta )
-         err = VMM_GET_VAR(qsect1 )
+         err = VMM_GET_VAR(qpta )
+         err = VMM_GET_VAR(qpt1 )
+         err = VMM_GET_VAR(multa)
+         err = VMM_GET_VAR(multx)
+         err = VMM_GET_VAR(muta )
+         err = VMM_GET_VAR(mut1 )
 *
-         do k=1,l_nk+1
+         do k=1,l_nk
          do j= 1, l_nj
          do i= 1, l_ni
               wta(i,j,k) =   wta(i,j,k) + dfcoef *   wt1(i,j,k)
-           qsecta(i,j,k) =qsecta(i,j,k) + dfcoef *qsect1(i,j,k)
+             qpta(i,j,k) =  qpta(i,j,k) + dfcoef *  qpt1(i,j,k)
+            multa(i,j,k) = multa(i,j,k) + dfcoef * multx(i,j,k)
+             muta(i,j,k) =  muta(i,j,k) + dfcoef *  mut1(i,j,k)
          end do
-         end do
-         end do
-         do j= 1, l_nj
-         do i= 1, l_ni
-           qsecta(i,j,0) =qsecta(i,j,0) + dfcoef *qsect1(i,j,0)
          end do
          end do
 *
@@ -153,7 +192,7 @@
             do n=1,Tr3d_ntr
                err = vmmget(key1(n),patr1,tr1)
                err = vmmget(keya(n),patra,tra)
-               do k=1,G_nk+1
+               do k=1,G_nk
                do j=1,l_nj
                do i=1,l_ni
                   tra(i,j,k) = tra(i,j,k) + dfcoef * tr1(i,j,k)
@@ -179,7 +218,7 @@
             do n=1,Tr3d_ntr
                err = vmmget(key1(n),patr1,tr1)
                err = vmmget(keya(n),patra,tra)
-               do k=1,G_nk+1
+               do k=1,G_nk
                do j=1,l_nj
                do i=1,l_ni
                   tra(i,j,k) = tr1(i,j,k)

@@ -19,9 +19,9 @@
 *
 *author
 *     alain patoine
-* v3_21 - Desgagne M.           - Revision Openmp
 *
 *revision
+* v3_21 - Desgagne M.       - Revision Openmp
 *
 *language
 *     fortran 77
@@ -50,7 +50,6 @@
 *______________|_________________________________________________|_____|
 *
 *implicits
-#include "type.cdk"
 #include "adw.cdk"
 *
 *modules

@@ -28,7 +28,6 @@
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "vt1.cdk"
-#include "vtx.cdk"
 #include "schm.cdk"
 #include "intuv.cdk"
 #include "vrtd.cdk"
@@ -50,37 +49,35 @@
       real aa(LDIST_SIZ,l_nk),bb(LDIST_SIZ,l_nk),cc(LDIST_SIZ,l_nk),
      $     dd(LDIST_SIZ,l_nk)
 
-      call gem_stop('vrtd : A revoir pour staggering',-1)
-
-      key( 1) = VMM_KEY(qptx)
+      key( 1) = VMM_KEY(qt1)
       key( 2) = VMM_KEY(tt1)
       key( 3) = VMM_KEY(ut1)
       key( 4) = VMM_KEY(vt1)
       if (Schm_hydro_L) then
          err = VMMLOD(key,4)
-         err = VMM_GET_VAR(qptx)
+         err = VMM_GET_VAR(qt1)
          err = VMM_GET_VAR(tt1)
          err = VMM_GET_VAR(ut1)
          err = VMM_GET_VAR(vt1)
          do k= 1,l_nk
          do j= 1, l_nj
          do i= 1, l_ni
-            pres(i,j,k) = qptx(i,j,k)
+            pres(i,j,k) = qt1(i,j,k)
          end do
          end do
          end do
       else
-         key(5) = VMM_KEY(qsect1)
+         key(5) = VMM_KEY(qpt1)
          err = vmmlod(key,5)
-         err = VMM_GET_VAR(qptx)
+         err = VMM_GET_VAR(qt1)
          err = VMM_GET_VAR(tt1)
          err = VMM_GET_VAR(ut1)
          err = VMM_GET_VAR(vt1)
-         err = VMM_GET_VAR(qsect1)
+         err = VMM_GET_VAR(qpt1)
          do k=1,l_nk
          do j= 1, l_nj
          do i= 1, l_ni
-            pres(i,j,k) = qptx(i,j,k) - qsect1(i,j,k)
+            pres(i,j,k) = qt1(i,j,k) - qpt1(i,j,k)
          end do
          end do
          end do

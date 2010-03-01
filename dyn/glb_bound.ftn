@@ -28,21 +28,22 @@
 *
 *----------------------------------------------------------------------
 *
-      if ( Zblen_L )      call height_sponge()
+      if (north+south+west+east.lt.1) go to 9988
 *
-      if (north+south+west+east.eq.0) return
 *
       if ( Schm_theoc_L .and. (Theo_case_S .eq. 'BUBBLE' 
      %                  .or.   Theo_case_S .eq. 'BUBBLE_G' 
      %                  .or.   Theo_case_S .eq. '2_BUBBLES' )) then
-*
-                          call mirror()
-*
+          call mirror()
       else
-                          call nestit()
+          call nestit()
       endif
 
       if ( Schm_theoc_L ) call slabsym()
+ 
+ 9988 continue
+*      
+      if ( Zblen_L ) call height_sponge()
 *
 *----------------------------------------------------------------------
       return

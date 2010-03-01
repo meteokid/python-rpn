@@ -43,7 +43,7 @@
       il_cnt = 0
       il_n = 2
       l_ninj = l_ni*l_nj
-      il_nkm1 = l_ninj*(G_nk)
+      il_nkm1 = l_ninj*(l_nk-2)
       l_niFjm1 = l_ni*(F_jdo-1)
       IF (lg_atmos) THEN
           IF (iga_n_tja(il_n) .gt. 0) THEN

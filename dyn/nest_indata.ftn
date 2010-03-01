@@ -28,25 +28,31 @@
       integer  vmmlod,vmmget
       external vmmlod,vmmget
 *
-      integer key1(7),nvar,err,ng
+      integer key1(13),nvar,err,ng
       real t1,t2,t3,t4
       pointer (pat1, t1(*)), (pat2, t2(*)), (pat3, t3(*)), (pat4, t4(*))
 **
 *     ---------------------------------------------------------------
 *
       ng = LDIST_SIZ
-      key1(1) = VMM_KEY(nest_uf)
-      key1(2) = VMM_KEY(nest_vf)
-      key1(3) = VMM_KEY(nest_tf)
-      key1(4) = VMM_KEY(nest_psdf)
-      key1(5) = VMM_KEY(nest_sf)
+      key1(1)  = VMM_KEY(nest_uf)
+      key1(2)  = VMM_KEY(nest_vf)
+      key1(3)  = VMM_KEY(nest_tf)
+      key1(4)  = VMM_KEY(nest_psdf)
+      key1(5)  = VMM_KEY(nest_pipf)
+      key1(6)  = VMM_KEY(nest_fipf)
+      key1(7)  = VMM_KEY(nest_tdf)
+      key1(8)  = VMM_KEY(nest_fif)
+      key1(9)  = VMM_KEY(nest_qf)
+      key1(10) = VMM_KEY(nest_sf)
+      key1(11) = VMM_KEY(nest_tpf)
 *
-      nvar = 5
+      nvar = 11
 *
       if (.not. Schm_hydro_L) then
-         key1(6) = VMM_KEY(nest_wf)
-         key1(7) = VMM_KEY(nest_qsecf)
-         nvar = 7
+         key1(12) = VMM_KEY(nest_wf)
+         key1(13) = VMM_KEY(nest_muf)
+         nvar = 13
       endif
       err = vmmlod(key1,nvar)
 *
@@ -54,9 +60,15 @@
       err = VMM_GET_VAR(nest_vf)
       err = VMM_GET_VAR(nest_tf)
       err = VMM_GET_VAR(nest_psdf)
+      err = VMM_GET_VAR(nest_pipf)
+      err = VMM_GET_VAR(nest_fipf)
+      err = VMM_GET_VAR(nest_tdf)
+      err = VMM_GET_VAR(nest_fif)
+      err = VMM_GET_VAR(nest_qf)
       err = VMM_GET_VAR(nest_sf)
+      err = VMM_GET_VAR(nest_tpf)
       call hpalloc (pat1, ng*l_nk, err, 1)
-      call hpalloc (pat2, ng*(l_nk+1), err, 1)
+      call hpalloc (pat2, ng*l_nk, err, 1)
       call hpalloc (pat3, ng*l_nk, err, 1)
       call hpalloc (pat4, ng     , err, 1)
 *
@@ -64,15 +76,23 @@
       Ind_v_   = nest_vf_
       Ind_t_   = nest_tf_
       Ind_psd_ = nest_psdf_
+      Ind_pip_ = nest_pipf_
+      Ind_fip_ = nest_fipf_
+      Ind_td_  = nest_tdf_
+      Ind_fi_  = nest_fif_
+      Ind_q_   = nest_qf_
       Ind_s_   = nest_sf_
+      Ind_tp_  = nest_tpf_
       Ind_gp_  = pat1
+      Ind_tpl_ = pat2
+      Ind_mul_ = pat3
       Ind_topo_= pat4
 *
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(  nest_wf)
-         err = VMM_GET_VAR( nest_qsecf)
+         err = VMM_GET_VAR( nest_muf)
          Ind_w_   = nest_wf_
-         Ind_qsec_  = nest_qsecf_
+         Ind_mu_  = nest_muf_
       endif
 *
       call readdyn()

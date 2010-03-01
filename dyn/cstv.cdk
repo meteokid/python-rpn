@@ -14,6 +14,7 @@
 *--------------------|-------------------------------------------------|
 * Cstv_dt_8          | timestep used by the model                      |
 * Cstv_tstr_8        | t*  (basic state temperature)                   |
+* Cstv_fistr_8       | phi* (basic state geopotential)                 |
 * Cstv_uvdf_8        | horizontal diffusion coeff. for horiz. winds    |
 * Cstv_phidf_8       | horizontal diffusion coeff. for phi, T, etc.    |
 * Cstv_tau_8         | effective timestep parameter on the left        |
@@ -34,3 +35,6 @@
      %                Cstv_pitop_8, Cstv_pisrf_8, Cstv_uvdf_8, 
      $                Cstv_phidf_8, Cstv_hco0_8 , Cstv_hco1_8
       MARK_COMMON_END (Cstv)
+*
+      DCL_DYNVAR(Cstvr, fistr_8,  real*8, (*))
+

@@ -11,22 +11,24 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine prep_2 ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, 
-     $                    F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rcn  ,F_rth ,
-     $                    F_rw  , F_rvv,F_rhell,
-     $                    DIST_DIM, ni, nj, Nk )
+      subroutine prep_2 ( F_ru, F_rv, F_ruw1, F_ruw2, F_rvw1, F_rvw2, 
+     $                    F_xct1, F_yct1, F_zct1, F_fis, F_rd, F_rcn,
+     $                    F_r1, F_rth, F_rw, F_rvv, F_r3, F_r3p, 
+     $                    F_rhell, F_wijk1, F_wijk2, DIST_DIM,ni,nj,Nk)
 *
       implicit none
 *
       integer DIST_DIM, ni, nj, Nk
-      real F_ru    (DIST_SHAPE,Nk)  ,F_rv    (DIST_SHAPE,Nk)  ,
-     $     F_ruw1  (DIST_SHAPE,Nk)  ,F_ruw2  (DIST_SHAPE,Nk)  ,
-     $     F_rvw1  (DIST_SHAPE,Nk)  ,F_rvw2  (DIST_SHAPE,Nk)  ,
-     $     F_xct1  (ni,nj,Nk)       ,F_yct1  (ni,nj,Nk)       ,
-     $     F_zct1  (ni,nj,Nk)       ,F_fis   (DIST_SHAPE)     ,
-     $     F_rcn   (DIST_SHAPE,Nk)  ,F_rth   (DIST_SHAPE,Nk+1),
-     $     F_rw    (DIST_SHAPE,Nk+1),F_rvv   (DIST_SHAPE,Nk+1),
-     $     F_rhell (DIST_SHAPE,Nk)
+      real F_ru    (DIST_SHAPE,Nk), F_rv    (DIST_SHAPE,Nk),
+     %     F_ruw1  (DIST_SHAPE,Nk), F_ruw2  (DIST_SHAPE,Nk),
+     %     F_rvw1  (DIST_SHAPE,Nk), F_rvw2  (DIST_SHAPE,Nk),
+     %     F_xct1  (ni,nj,Nk), F_yct1  (ni,nj,Nk), F_zct1  (ni,nj,Nk),
+     %     F_rd    (DIST_SHAPE,Nk), F_rcn   (DIST_SHAPE,Nk),
+     %     F_r1    (DIST_SHAPE,Nk), F_rth   (DIST_SHAPE,Nk),
+     %     F_rw    (DIST_SHAPE,Nk), F_rvv   (DIST_SHAPE,Nk),
+     %     F_r3    (DIST_SHAPE,Nk), F_r3p   (DIST_SHAPE,Nk),
+     %     F_rhell (DIST_SHAPE,Nk), F_fis   (DIST_SHAPE)   ,
+     %     F_wijk1 (DIST_SHAPE,Nk), F_wijk2 (DIST_SHAPE,Nk)
 *
 *author
 *     Alain Patoine 
@@ -38,7 +40,6 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Gravel S.         - modify for theoretical cases
-* v_stg - Plante A.         - Staggered version
 *
 *object
 *
@@ -46,7 +47,6 @@
 *     see appropriate comdeck documentation
 *
 *implicits
-#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
@@ -57,29 +57,21 @@
 #include "schm.cdk"
 #include "intuv.cdk"
 #include "inuvl.cdk"
-#include "type.cdk"
 #include "adw.cdk"
 #include "cori.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "matlab.cdk"
 *
 *modules
-      integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, longueur
-      real*8  x, y, z, cx, cy, cz, rx, ry, rz, b1ob0, mumu, tot,
-     $        a1, a2, a3, b1, b2, eps, zero, half, one, four
-      real    rdiv(DIST_SHAPE), w_rth(DIST_SHAPE)
-*
-      parameter( zero=0.d0, half=.5d0, one=1.d0, four=4.d0 )
+      integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn
+      real*8  x, y, z, cx, cy, cz, rx, ry, rz, b1ob0, mumu, tot
+      real*8  a1, a2, b1, b2, b3, ccc, eps, gamma 
+      real*8  zero, one, two, four, half, quarter
+      parameter( zero=0.0, one=1.0, two=2.0, four=4.0, 
+     $           half=0.5, quarter=.25 )
+      real wij1(DIST_SHAPE), wij2(DIST_SHAPE)
 **
-      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
-         open(unit=62,file=
-     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_prep_2.bin',
-     $        status='replace',form='unformatted')
-         write(62)G_ni-lam_pil_w-lam_pil_e
-         write(62)G_nk
-      endif
 *     __________________________________________________________________
+*
+      ccc = one/( Dcst_rayt_8*Dcst_rayt_8 )
 *
 ******************************************************************
 * Metric corrections to the RHS of horizontal momentum equations *
@@ -88,7 +80,7 @@
 *
 *     Coriolis term is zero for theoretical cases
 *
-      if( Schm_theoc_L ) tot = zero
+      if( Schm_theoc_L ) tot = 0.
       b1ob0 = Offc_b1_8/Offc_b0_8
 *
       i0 = 1
@@ -102,7 +94,7 @@
          if (l_north) jn= l_nj-pil_n +2
       endif
 
-!$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,mumu,rdiv)
+!$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,b3,mumu)
 !$omp do
       do 100 k=1,l_nk
       do 100 j= j0, jn
@@ -167,7 +159,7 @@
          
 100   continue 
 !$omp enddo
-*
+
 **********************************************************
 * Final form of the RHS of horizontal momentum equations *
 **********************************************************
@@ -202,15 +194,31 @@
          if (l_north) jnn = l_njv-1
       endif
 !$omp end single
+!$omp do
+      do j = 1, l_nj
+      do i = 1, l_ni
+         wij1(i,j) = ( F_fis(i+1,j) - F_fis(i,j) ) / geomg_hx_8(i)
+      end do
+      end do
+!$omp enddo
+!$omp do
+      do j = 1, l_njv
+      do i = 1, l_ni
+         wij2(i,j) = ( F_fis(i,j+1) - F_fis(i,j) ) * 
+     $               geomg_cyv2_8(j) / geomg_hsy_8(j)
+      end do
+      end do
+!$omp enddo
 *
+
 !$omp do
       do k=1,l_nk 
 
-*     Add advective contributions to Ru & Rv
+*     Add advective & topographic contributions to Ru & Rv
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j0, jn
          do i= i0, in
-            F_ru(i,j,k) =  F_ru(i,j,k) + 
+            F_ru(i,j,k) =  F_ru(i,j,k) - ccc*wij1(i,j) + 
      $                   inuvl_wxxu3_8(i,1)*F_ruw2(i-1,j,k)
      $                 + inuvl_wxxu3_8(i,2)*F_ruw2(i  ,j,k)
      $                 + inuvl_wxxu3_8(i,3)*F_ruw2(i+1,j,k)
@@ -221,7 +229,7 @@
 *
          do j= j00, jnn
          do i= i00, inn
-            F_rv(i,j,k) =  F_rv(i,j,k) +
+            F_rv(i,j,k) =  F_rv(i,j,k) - ccc*wij2(i,j) +
      $                   inuvl_wyyv3_8(j,1)*F_rvw2(i,j-1,k)
      $                 + inuvl_wyyv3_8(j,2)*F_rvw2(i,j  ,k)
      $                 + inuvl_wyyv3_8(j,3)*F_rvw2(i,j+1,k)
@@ -231,7 +239,7 @@
          if (.not.G_lam) then
             if (l_south) then
             do i = 1, l_ni
-            F_rv(i,1,k) = F_rv(i,1,k) +
+            F_rv(i,1,k) = F_rv(i,1,k) - ccc*wij2(i,1) +
      $                  inuvl_wyyv3_8(1,2)*F_rvw2(i,1,k)
      $                + inuvl_wyyv3_8(1,3)*F_rvw2(i,2,k)
      $                + inuvl_wyyv3_8(1,4)*F_rvw2(i,3,k)
@@ -239,7 +247,7 @@
             endif
             if (l_north) then
             do i = 1, l_ni
-            F_rv(i,l_njv,k) = F_rv(i,l_njv,k) +
+            F_rv(i,l_njv,k) = F_rv(i,l_njv,k) - ccc*wij2(i,l_njv) +
      $                      inuvl_wyyv3_8(l_njv,1)*F_rvw2(i,l_njv-1,k)
      $                    + inuvl_wyyv3_8(l_njv,2)*F_rvw2(i,l_njv  ,k)
      $                    + inuvl_wyyv3_8(l_njv,3)*F_rvw2(i,l_njv+1,k)
@@ -249,19 +257,24 @@
 
       end do
 !$omp enddo
-*
 **************************************
 * Combination of governing equations * 
 **************************************
-*
 !$omp single
-      eps= Ver_epsilon_8 /Dcst_cappa_8
-      a1 = one / ( Dcst_grav_8 * Cstv_tau_8 )
-      a2 = Schm_nonhy_8 / ( Dcst_grav_8**2 * Cstv_tau_8**2 )
-      a3 = one / ( Cstv_tau_8**2 * Dcst_rgasd_8 * Cstv_tstr_8 )
-      b1 = Ver_gamma_8 / Cstv_tau_8 
-      b2 = Ver_gamma_8 / Cstv_tau_8 / Dcst_cappa_8
-*
+      gamma = one
+      if (.not. Schm_hydro_L) then 
+           eps =  Schm_nonhy_8 * Dcst_rgasd_8   * Cstv_tstr_8
+     %         /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**2 )
+         gamma =  one/( one + eps )
+      endif 
+      a1 = one/( Dcst_grav_8 * Cstv_tau_8 )
+      a2 = Schm_nonhy_8/( Dcst_grav_8**2 * Cstv_tau_8**2 )
+      b1 = gamma/Cstv_tau_8 
+      b2 = gamma/Cstv_tau_8/Dcst_cappa_8
+
+
+*     Compute the RHS of divergence equation 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       call rpn_comm_xch_halo( F_ru, LDIST_DIM,l_niu,l_nj,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 ) 
       call rpn_comm_xch_halo( F_rv, LDIST_DIM,l_ni,l_njv,G_nk,
@@ -269,112 +282,97 @@
 !$omp end single
 !$omp do
       do k=1,l_nk
-*
-*        Computing the RHS of divergence equation 
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
          if (G_lam) then
              do j= 1+pil_s, l_nj-pil_n
              do i= 1+pil_w, l_ni-pil_e
-                rdiv(i,j) = ( F_ru(i,j,k) - F_ru(i-1,j,k) )
-     $                        / ( geomg_cy2_8(j)*geomg_hxu_8(i-1) )
-     $                    + ( F_rv(i,j,k) - F_rv(i,j-1,k) )
-     $                        * geomg_invhsyv_8(j-1)
+                F_rd(i,j,k) =  ( F_ru(i,j,k) - F_ru(i-1,j,k) )
+     $               /( geomg_cy2_8(j)*geomg_hxu_8(i-1) )
+     $               + ( F_rv(i,j,k) - F_rv(i,j-1,k) )/geomg_hsyv_8(j-1)
              end do
              end do
          else
-             call caldiv_2 ( rdiv, F_ru(minx,miny,k), 
-     $                             F_rv(minx,miny,k), LDIST_DIM, 1)
+             call caldiv_2 ( F_rd(minx,miny,k), F_ru(minx,miny,k), 
+     $                       F_rv(minx,miny,k), LDIST_DIM, 1)
          endif
-*
-*        Combining divergence & continuity equations 
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     Combination of divergence & continuity equations 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
-            F_rcn(i,j,k) = rdiv(i,j) - F_rcn(i,j,k) / Cstv_tau_8
+             F_r1(i,j,k) = F_rd(i,j,k) - F_rcn(i,j,k)/Cstv_tau_8 
+            F_wijk1(i,j,k) = F_r1(i,j,k) 
+            F_wijk2(i,j,k) = b2*F_rth(i,j,k)
          end do
          end do
-*
-      end do
-!$omp enddo
-*
-!$omp do
-      do k=1,l_nk+1
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*        Computing RX stored in Rth & RQ(non-hydro) stored in Rvv
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            w_rth(i,j)    =      F_rth(i,j,k)
-            F_rth (i,j,k) = b2 * F_rth(i,j,k)
-*                                At this stage, F_rth=RX (hydro)
-         end do
-         end do
-         if (.not. Schm_hydro_L) then
-*           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*           non-hydrostatic contributions
-*           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+         if (.not. Schm_hydro_L) then 
+ 
+*        Combination of equations for vertical motion 
+*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
-               F_rvv(i,j,k) = a1 *   F_rw (i,j,k) +  a2 * F_rvv(i,j,k) 
-               F_rth(i,j,k) =        F_rth(i,j,k) +  b2 * F_rvv(i,j,k)
-               F_rvv(i,j,k) = b1 * ( F_rvv(i,j,k) - eps * w_rth(i,j) )
-*                                At this stage, F_rth = RX (non-hydro)
-*                                At this stage, F_rvv = RQ
+               F_rvv(i,j,k) = F_rvv(i,j,k) - F_fis(i,j)/Cstv_tau_8 
+               F_r3 (i,j,k) = a1*F_rw(i,j,k)+ a2*F_rvv(i,j,k) 
+               F_r3p(i,j,k) = F_r3(i,j,k) - eps*F_rth(i,j,k)
+               F_wijk1(i,j,k) = F_wijk1(i,j,k) + b1*F_r3p(i,j,k) 
+               F_wijk2(i,j,k) = F_wijk2(i,j,k) + b2*F_r3(i,j,k) 
             end do
             end do
          endif 
-      enddo
+
+      end do
 !$omp enddo
-*
 ****************************************
 * The linear RHS of Helmholtz equation *
 ****************************************
+
 !$omp do
       do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            F_rhell(i,j,k) = Ver_hz_8%m(k)   * F_rcn(i,j,k) 
-     $                     + Ver_z_8%t (k  ) * F_rth(i,j,k  ) 
-     $                     - Ver_z_8%t (k+1) * F_rth(i,j,k+1)
-         end do
-         end do
-         if (.not. Schm_hydro_L) then    
+         
+         if ( k .eq. 1 ) then 
+
+            a2 = quarter*Geomg_hz_8(k)
+            b2 = half*Geomg_z_8(k)
+            b3 = half*Geomg_z_8(k+1)
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
-               F_rhell(i,j,k) = F_rhell(i,j,k) + half *
-     $                          ( Ver_hz_8%t(k  ) * F_rvv(i,j,k  )
-     $                          + Ver_hz_8%t(k+1) * F_rvv(i,j,k+1) )
+               F_rhell(i,j,k) = a2*( F_wijk1(i,j,k) + F_wijk1(i,j,k+1) )
+     %                        - b2*F_wijk2(i,j,k) - b3*F_wijk2(i,j,k+1) 
             end do
             end do
+
+         elseif( k .eq. l_nk ) then 
+
+            a1 = quarter*Geomg_hz_8(k-1)
+            b1 = half*Geomg_z_8(k-1)
+            b2 = half*Geomg_z_8(k)
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               F_rhell(i,j,k) = a1*( F_wijk1(i,j,k-1) + F_wijk1(i,j,k) )
+     %                        + b1*F_wijk2(i,j,k-1) + b2*F_wijk2(i,j,k) 
+            end do
+            end do
+
+         else
+
+            a1 = quarter*Geomg_hz_8(k-1)
+            a2 = quarter*Geomg_hz_8(k)
+            b1 = half*Geomg_z_8(k-1)
+            b3 = half*Geomg_z_8(k+1)
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               F_rhell(i,j,k) = a1*( F_wijk1(i,j,k-1) + F_wijk1(i,j,k) )
+     %                        + a2*( F_wijk1(i,j,k) + F_wijk1(i,j,k+1) )
+     %                       + b1*F_wijk2(i,j,k-1) - b3*F_wijk2(i,j,k+1)
+            end do
+            end do
+            
          endif
+
       end do
 !$omp enddo
-!$omp do
-*     Applying boundary conditions.
-      do j= 1+pil_s, l_nj-pil_n
-      do i= 1+pil_w, l_ni-pil_e
-         F_rth  (i,j,l_nk+1) = F_rth  (i,j,l_nk+1) - a3 * F_fis(i,j)
-         F_rhell(i,j,1)      = F_rhell(i,j,1)
-     $                                - Ver_cstp_8 * F_rth(i,j,1)
-         F_rhell(i,j,l_nk)   = F_rhell(i,j,l_nk)
-     $                                + Ver_cssp_8 * F_rth(i,j,l_nk+1)
-      end do
-      end do
-!$omp enddo      
 !$omp end parallel
-      if(matlab_write_L)then      
-         call write_matlab_3d(62,F_ruw1)
-         call write_matlab_3d(62,F_ruw2)
-         call write_matlab_3d(62,F_ru)
-         call write_matlab_3d_th(62,F_rth)
-         call write_matlab_3d(62,F_rcn)
-         if (.not. Schm_hydro_L) then 
-            call write_matlab_3d_th(62,F_rvv)
-         endif
-         call write_matlab_3d(62,F_rhell)
-         write(62)Cstv_tau_8
-         if(Ptopo_myproc.eq.0)close(62)
-      endif
 *
 *     __________________________________________________________________
 *

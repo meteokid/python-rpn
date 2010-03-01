@@ -24,7 +24,6 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Lee V.            - place output in local PE directory
 * v3_21 - Desgagne M.       - using RMNLIB to access constants
-* v_stg - Plante A.         - staggered version
 *
 *object
 *
@@ -55,7 +54,7 @@
      %         longueur,hybref_to_ig,gnthread,
      %         RPN_COMM_bloc
 **
-      integer ipmode,ierr,mindimx,mindimy,
+      integer ipcode,ipmode,ierr,mindimx,mindimy,
      $        n1,n2,n3,n4,n5,n6,n7,
      $        maxblenx,maxbleny,cte_ok
       character*256 prejob_S
@@ -106,9 +105,10 @@ c     These variables are for OpenMp compilation
      $                      Ptopo_myblocx,Ptopo_myblocy,Ptopo_blocme,dumc1_S )
       call tmg_init0  ( Ptopo_myproc, 'GEMDM' )
       call tmg_start0 ( 1, 'GEMDM' ) 
-
-c      call my_xch_halo(-2)
-
+*
+*     fst2000 ip1 encoding 
+      if ((Level_ip12000_L).and.(Ptopo_myproc.gt.0))
+     $     call convip( ipcode, pcode, ipmode, 0, ' ', .false. )
 *
 #if defined (NEC)
       if (Lun_out.gt.0) call gemtim (Lun_out)
@@ -122,17 +122,6 @@ c      call my_xch_halo(-2)
      $                      Ptopo_myproc,Ptopo_numproc ) ) 
      $     cte_ok=-1
       call gem_stop ('set_dcst_8',cte_ok)
-*     
-      if (Cstv_pitop_8.ne.-1.d0) Cstv_pitop_8=100.d0*Cstv_pitop_8
-      if (Cstv_pisrf_8.ne.-1.d0) Cstv_pisrf_8=100.d0*Cstv_pisrf_8
-*      
-*     Compute vertical parameters
-c      call my_xch_halo(-1)
-
-      call genab2_8()
-
-c      call my_xch_halo(0)
-
 *
 *     Running script Um_hook.sh
 *

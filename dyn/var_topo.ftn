@@ -31,7 +31,7 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer  pnerr, pnlod, pnlkey1(2), i,j,k
+      integer  pnerr, pnlod, pnlkey1(3), i,j,k
 **
       real*8 lt, pio2, f, atime, two
       parameter (two = 2.0d0)
@@ -40,12 +40,14 @@
 
       pnlkey1( 1) = VMM_KEY(topo)
       pnlkey1( 2) = VMM_KEY(dtopo)
-      pnlod = 2
+      pnlkey1( 3) = VMM_KEY(fit1)
+      pnlod = 3
 *     - - - - - - - - - - - - - 
       pnerr = vmmlod(pnlkey1,pnlod)
 *     - - - - - - - - - - - - - 
       pnerr = VMM_GET_VAR(topo)
       pnerr = VMM_GET_VAR(dtopo)
+      pnerr = VMM_GET_VAR(fit1)
 *
       lt = Vtopo_ndt
       pio2 = Dcst_pi_8 / two
@@ -53,10 +55,17 @@
       f = min(Lctl_step-Vtopo_start+1,Vtopo_ndt)
       atime  = (cos(pio2 * (f-1.)/ lt))**two
      %       - (cos(pio2 * f    / lt))**two
-
       do j= 1, l_nj 
       do i= 1, l_ni
          topo (i,j)   = topo(i,j)  + atime * dtopo(i,j)
+      end do
+      end do
+
+      do k= 1, l_nk
+      do j= 1, l_nj 
+      do i= 1, l_ni
+         fit1 (i,j,k) = fit1(i,j,k) + atime * dtopo(i,j)
+      end do
       end do
       end do
 

@@ -1,0 +1,119 @@
+#if defined (DOC)
+*
+***comdeck ens_param.cdk
+*
+*revision
+* v3.2.0 - L.Spacek.       - initial version
+*
+*_____________________________________________________________________________
+*                                                                             |
+*  VARIABLES ASSOCIATED TO 3D MARKOV CHAINES/ ENSEMBLE PREDICTION SYSTEM      |
+*_____________________________________________________________________________|
+*                    |                                                        |
+* NAME               | DEFAULT           DESCRIPTION                          |
+*--------------------|--------------------------------------------------------|
+*     Ens_conf      = .false.            ensembles will be run
+*     Ens_ident     = ''                 identification of ensemble
+*     Ens_memb      = -1                 identification of a member
+*     Ens_bc_conf   = .false.            configuration backstr will be run
+*     Ens_bc_dif    = .false.            diffusion backstr will be run
+*     Ens_bc_gwd    = .false.            gravity wave backstr will be run
+*     Ens_bc_stat   = .false.            stat for backscatter
+*     Ens_bc_div    = .false.            divergent for backscatter calculated
+*     Ens_gg_nlon   = 16                 no. of longitudes for Markov chain
+*     Ens_gg_nlat   =  8                 no. of latitudes for Markov chain
+*     Ens_gg_nniv   =  3                 vertical truncation for Narkov chain
+*     Ens_gg_trnl   =  8                 low  hor. truncation for Markov chain
+*     Ens_gg_trnh   =  8                 high hor. truncation for Markov chain
+*     Ens_mc_max    = 0.0                max value for Markov chain
+*     Ens_mc_min    = 0.0                min value for Markov chain
+*     Ens_mc_mean   = 0.0                mean value for Markov chain
+*     Ens_mc_std    = 0.0                std. dev. value for Markov chain
+*     Ens_mc_tau    = 0.0                decorrelation for Markov chain
+*     Ens_mc_str    = 0.0                value of stretch for Markov chain
+*     Ens_bc_txl    = 0                  Fourier filter in x - low
+*     Ens_bc_txh    = 0                  Fourier filter in x - jigh
+*     Ens_bc_tyl    = 0                  Fourier filter in y - low
+*     Ens_bc_tyh    = 0                  Fourier filter in y - high
+*     Ens_bc_alph   = 0                  coeff. alpha for backsct. momentum
+*     Ens_bc_alpt   = 0                  coeff. alpha for backsct. temperature
+*     Ens_bc_bfc    = 1.e-01             coeff. for Gaussian filter
+*     Ens_bc_lam    = 2.e+05             wavelength for Gaussian filter
+*
+*     Ens_gg_dim    = (Ens_gg_trnh+1)*(Ens_gg_trnh+2)/2
+*     Ens_gg_mzt    = (Ens_gg_nniv-1)/2
+*     Ens_bc_conf   =  Ens_bc_conf.and.Ens_conf
+*     Ens_bc_stat   =  Ens_bc_stat.and.Ens_conf
+*     Ens_bc_div    =  Ens_bc_div .and.Ens_conf
+*
+*_____________________________________________________________________________
+*                                                                             |
+*  VARIABLES ASSOCIATED TO 2D MARKOV CHAINES/ ENSEMBLE PREDICTION SYSTEM      |
+*_____________________________________________________________________________|
+*
+*     MAX2DC        = 9                  max number of 2d Markov chains
+*     Ens_nlon2     = 16                 no. of longitudes for Markov chain
+*     Ens_nlat2     =  8                 no. of latitudes for Markov chain
+*     Ens_ncha2     =  1                 number of 2d Narkov chains
+*     Ens_trnl2     =  8                 low  hor. truncation for Markov chain
+*     Ens_trnh2     =  8                 high hor. truncation for Markov chain
+*     Ens_min2      = 0.0                min value for Markov chain
+*     Ens_max2      = 0.0                max value for Markov chain
+*     Ens_mean2     = 0.0                mean value for Markov chain
+*     Ens_std2      = 0.0                std. dev. value for Markov chain
+*     Ens_tau2      = 0.0                decorrelation for Markov chain
+*     Ens_str2      = 0.0                value of stretch for Markov chain
+*
+*     Ens_dim2      = (Ens_trnh2+1)*(Ens_trnh2+2)/2
+*
+*Notes:
+*
+*If Ens_mc_str=0. "no stretching" 3d Markov chains dans phybus = 1.0
+*If Ens_bc_conf=.false. "no shutts", however physics can be perturbed
+*                        if Ens_mc_str /= 0.0
+*If Ens_conf=.false.  no Markov chains are generated
+*----------------------------------------------------------------------
+*
+#endif
+      integer MAX2DC, MAX3DC
+      parameter (MAX2DC=9,MAX3DC=1)
+
+      character*8 Ens_ident 
+      integer Ens_memb, Ens_gg_nlon, Ens_gg_nlat, Ens_gg_nniv,
+     $        Ens_gg_trnl, Ens_gg_trnh, Ens_gg_mzt, Ens_gg_dim,
+     $        Ens_bc_txl, Ens_bc_txh, Ens_bc_tyl,  Ens_bc_tyh,
+     $        Ens_nlon2(MAX2DC), Ens_nlat2(MAX2DC), Ens_ncha2,
+     $        Ens_trnl2(MAX2DC), Ens_trnh2(MAX2DC), Ens_dim2(MAX2DC),
+     $        Ens_dim2_max
+      logical Ens_conf, Ens_bc_conf, Ens_bc_dif, Ens_bc_gwd,
+     $        Ens_bc_stat, Ens_bc_div
+      real    Ens_mc_max, Ens_mc_min, Ens_mc_mean, Ens_mc_std,
+     $        Ens_mc_tau, Ens_mc_str, Ens_bc_alph, Ens_bc_alpt,
+     $        Ens_bc_bfc, Ens_bc_lam,
+     $        Ens_min2(MAX2DC), Ens_max2(MAX2DC), Ens_mean2(MAX2DC),
+     $        Ens_std2(MAX2DC), Ens_tau2(MAX2DC), Ens_str2(MAX2DC)
+*
+      MARK_COMMON_BEG (Ens_c)
+      common / Ens_c / Ens_ident
+      MARK_COMMON_END (Ens_c)
+*
+      MARK_COMMON_BEG (Ens_l)
+      common / Ens_l / Ens_conf, Ens_bc_conf, Ens_bc_dif, Ens_bc_gwd,
+     $                 Ens_bc_stat, Ens_bc_div
+      MARK_COMMON_END (Ens_l)
+*
+      MARK_COMMON_BEG (Ens_i)
+      common / Ens_i / Ens_memb, Ens_gg_nlon, Ens_gg_nlat, Ens_gg_nniv,
+     $                 Ens_gg_trnl, Ens_gg_trnh, Ens_gg_mzt, Ens_gg_dim,
+     $                 Ens_bc_txl, Ens_bc_txh, Ens_bc_tyl,  Ens_bc_tyh,
+     $                 Ens_nlon2, Ens_nlat2, Ens_ncha2,
+     $                 Ens_trnl2, Ens_trnh2, Ens_dim2, Ens_dim2_max
+      MARK_COMMON_END (Ens_i)
+*
+      MARK_COMMON_BEG (Ens_r)
+      common / Ens_r / Ens_mc_max, Ens_mc_min, Ens_mc_mean, Ens_mc_std,
+     $                 Ens_mc_tau, Ens_mc_str, Ens_bc_alph, Ens_bc_alpt,
+     $                 Ens_bc_bfc, Ens_bc_lam,
+     $                 Ens_min2, Ens_max2, Ens_mean2,
+     $                 Ens_std2, Ens_tau2, Ens_str2
+      MARK_COMMON_END (Ens_r)
