@@ -16,6 +16,9 @@
 * v3_20 _ Leduc/Bilodeau         - added P_pbl_z0tlat and removed P_pbl_z0tcst
 * v3_20 _ Talbot D.              - Added P_pbl_tdiaglim_L
 * v3_20 _ Leduc A-M.             - added P_rad_tsflxir_L
+* v3_22 _ Leduc A-M.             - added P_pbl_limsnodp_L
+* v3_22 _ Dugas B.               - added P_cond_kfctriga
+
 *
 ***comdeck p_nml.cdk
 *
@@ -64,6 +67,7 @@
      $     P_pbl_mix_s    ,P_pbl_dumpbus  ,
      $     P_pbl_as       ,P_pbl_beta     ,P_pbl_z0tlat   ,
      $     P_pbl_zua      ,P_pbl_zta      ,P_pbl_tdiaglim_L,
+     $     P_pbl_limsnodp_L,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
@@ -75,6 +79,7 @@
      $     P_cond_kfcmom_L ,P_cond_kfctrig4 , P_cond_kfcrad  ,
      $     P_cond_kfcdepth ,P_cond_kfcdlev  , P_cond_kfcdet  ,
      $     P_cond_kfctimec ,P_cond_kfctimea , P_cond_kfcpcp_s,
+     $     P_cond_kfctriga  ,
 
      $     P_cond_kticefrac_L ,
 
@@ -115,7 +120,7 @@
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
      $     P_pbl_mix_s    ,P_pbl_z0tlat   ,P_pbl_zua      ,
      $     P_pbl_as       ,P_pbl_beta     ,P_pbl_zta      ,
-     $     P_pbl_tdiaglim_L,
+     $     P_pbl_tdiaglim_L,P_pbl_limsnodp_L,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
@@ -127,6 +132,7 @@
      $     P_cond_kfcmom_L ,P_cond_kfctrig4 , P_cond_kfcrad  ,
      $     P_cond_kfcdepth ,P_cond_kfcdlev  , P_cond_kfcdet  ,
      $     P_cond_kfctimec ,P_cond_kfctimea , P_cond_kfcpcp_s,
+     $     P_cond_kfctriga ,
 
      $     P_cond_kticefrac_L ,
 

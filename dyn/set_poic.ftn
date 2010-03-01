@@ -1,7 +1,7 @@
 ***s/r set_poic - preparation of projection matrix in the east-west, 
 *                   C grid model
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_poic ( F_eval_8, F_evec_8, F_xp0_8, F_xp2_8,
      %                                                F_npts, NSTOR )

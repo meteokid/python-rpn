@@ -1,6 +1,6 @@
 ***s/r pnm2 - calculates MSL pressure
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
 	subroutine pnm2( F_pnm,   F_vts,   F_fis, F_lnps, F_la,
      %                   F_vtund, F_fiund, F_und,

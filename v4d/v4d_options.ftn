@@ -1,6 +1,6 @@
 ***s/r v4d_options - Activate one 4D-Var job according to V4dg_conf 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_options 
 *

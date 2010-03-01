@@ -1,6 +1,6 @@
 ***s/r set_term - Job termination
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_term
 *

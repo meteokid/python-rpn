@@ -1,7 +1,0 @@
-      MARK_COMMON_BEG(Geomg_n1)
-      DCL_DYNVAR(Geomg, invhx_8  ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invhsy_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invhsyv_8,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invz_8   ,  real*8, (*))
-      MARK_COMMON_END(Geomg_n1)
-*

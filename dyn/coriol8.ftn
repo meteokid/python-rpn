@@ -1,7 +1,7 @@
 ***s/r coriol8 - compute coriolis FACTOR multiplied by a constant
 *		 on the U and V grids
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine coriol8 ( F_u_8, F_v_8, F_x_8, F_y_8, 
      $                     F_xu_8, F_yv_8, F_ct_8, F_rot_8, DIST_DIM)

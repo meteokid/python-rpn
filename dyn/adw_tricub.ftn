@@ -1,7 +1,7 @@
 ***s/r adw_tricub - tri-cubic interpolation: lagrange in the 
 *                   horizontal and spline cubic in the vertical
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_tricub ( F_out, F_in, F_inzz, F_n,
      %                        F_capx, F_xgg, F_xdd,

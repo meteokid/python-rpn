@@ -270,4 +270,3 @@
       logical :: lg_mcpl
 ! (defined by proc 0 in readgeo.ftn, used by proc 0 in c_set_coupling.ftn)
       common /C_mcpl/ lg_mcpl
-!

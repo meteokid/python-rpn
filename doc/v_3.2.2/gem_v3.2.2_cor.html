@@ -1,0 +1,52 @@
+<html>
+<body bgcolor="#FFFFFF">
+<pre class=text>
+<b>
+
+        ############# GEMDM Model -- Version 3.2.2 CORRECTION ####
+                            January  9 2006
+</b>
+
+        Please note that a correction has been made in the current
+        version 3.2.2 of GEMDM. Unfortunately, for those who have
+        done tests since the original release (Dec.16,2005) with more 
+        than 1 PE(cpu), results are incorrect. Sorry for the 
+        inconvenience this may have caused you.
+
+        The key "Pres_vtap_L" was not properly broadcasted to all PEs.
+        Only one routine was modified with respect to the original 
+        library and this is "bcastc1.ftn". Also note that this change has
+        also been done in the directories for guide to version upgrade in:
+
+        /users/dor/armn/viv/v3.2.0/newcode10/ (upgrade v_3.2.0-> v_3.2.2)
+        /users/dor/armn/viv/v3.2.1/newcode1/  (upgrade v_3.2.1-> v_3.2.2)
+
+        Thank-you.
+
+
+############################################################################
+<b>
+REMINDER:
+</b>
+
+  Documentation on current and previous GEMDM releases can also be
+  found in:
+
+  http://notos.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+  or
+
+  http://web-mrb.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+  Also note that the GEMDM Workshop PPT and PDF format is now available on
+  the left column of the GEMDM website.
+
+  This note is available in the website under Version Rel. Date at v_3.2.2
+  as gem_v3.2.2_cor.html.
+
+############################################################################
+    
+</pre>
+</body>
+</html>
+

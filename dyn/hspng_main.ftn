@@ -1,7 +1,7 @@
 ***s/r hspng_main - applies del-2 horizontal diffusion on the poles
 *                   for Hspng_nj rows with the diffusion coefficient Hspng_mf
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hspng_main
 *

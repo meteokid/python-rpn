@@ -1,6 +1,6 @@
 ***s/r sol_main_tr - Equivalent to sol_main for TRAJECTORY 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine sol_main_tr
 *

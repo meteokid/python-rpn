@@ -1,6 +1,6 @@
 ***s/r hzd_exhrdif - applies horizontal explicit diffusion
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
       subroutine hzd_exhrdif ( F_u, F_v, F_psd, F_td, DIST_DIM, Nk )
 *
 #include "impnone.cdk"

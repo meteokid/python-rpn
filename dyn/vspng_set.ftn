@@ -2,7 +2,7 @@
 *                  the factorized del-2 horizontal diffusion for non-LAM
 *                  and 9 point filter for LAM.
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine vspng_set
 *

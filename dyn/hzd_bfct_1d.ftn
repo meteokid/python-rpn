@@ -1,7 +1,7 @@
 ***s/r hzd_bfct_1d - Same as hzd_bfct for 1d diffusion
 *                    (based on HZD_BFCT, A.Qaddouri)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hzd_bfct_1d (F_a_8,F_b_8,F_c_8,F_deltainv_8,F_pwr,gni,nx3)
 *

@@ -1,6 +1,6 @@
 ***s/r nest_init -- Initializes nesting data for LAM configuration
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine nest_init
       implicit none

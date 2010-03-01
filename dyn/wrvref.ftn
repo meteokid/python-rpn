@@ -1,6 +1,6 @@
 ***s/r wrvref (from MC2)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
       subroutine wrvref ( unf )
       implicit none
 *

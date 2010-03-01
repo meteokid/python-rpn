@@ -1,7 +1,7 @@
 **s/r p_config - initialize CMC/RPN physics switches, and install the
 *		 configuration
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine p_config
       implicit none
@@ -35,6 +35,8 @@
 * v3_21 - Lemonsu A.        - add P_pbl_schurb_s
 * v3_21 - Leduc A-M.        - add P_rad_tsflxir_L
 * v3_21 - Valcke S.         - add COUPLING and CPL_FLD and indx_xxx
+* v3_22 - Leduc A-M.        - add P_pbl_limsnodp_L
+* v3_22 - Degas B.          - add P_cond_kfctriga 
 *
 *object
 *     See above id.
@@ -65,6 +67,7 @@
 #include "p_pset.cdk"
 #include "p_cond2.cdk"
 #include "p_pbl2.cdk"
+#include "pres.cdk"
 #include "c_cplg.cdk"
 *
 *modules
@@ -128,6 +131,7 @@
       call phyoptr('AS'      , P_pbl_as       ,       1, 'SET' )
       call phyoptr('BETA'    , P_pbl_beta     ,       1, 'SET' )
       call phyoptl('TDIAGLIM',P_pbl_tdiaglim_L,       1, 'SET' )
+      call phyoptl('LIMSNODP',P_pbl_limsnodp_L,       1, 'SET' )
       call phyoptr('Z0TLAT'   ,P_pbl_z0tlat   ,       2, 'SET' )
       if (Schm_offline_L) then
       call phyoptr('ZUA'     , P_pbl_zua      ,       1, 'SET' )
@@ -149,6 +153,7 @@
 *
       call phyoptl('KFCMOM'  , P_cond_kfcmom_L,       1, 'SET' )
       call phyoptr('KFCTRIG4', P_cond_kfctrig4,       4, 'SET' )
+      call phyoptr('KFCTRIGA', P_cond_kfctriga,       1, 'SET' )
       call phyoptr('KFCRAD'  , P_cond_kfcrad  ,       1, 'SET' )
       call phyoptr('KFCDEPTH', P_cond_kfcdepth,       1, 'SET' )
       call phyoptr('KFCDLEV' , P_cond_kfcdlev ,       1, 'SET' )
@@ -268,7 +273,8 @@
          call phyoptl('INILWC'  , P_cond2_ilwc_L  ,   1, 'SET' )
 *
          call phyoptl('KFCMOM'  , P_cond2_kfcmom_L,   1, 'SET' )
-         call phyoptr('KFCTRIG4', P_cond2_kfctrig4,   1, 'SET' )
+         call phyoptr('KFCTRIG4', P_cond2_kfctrig4,   4, 'SET' )
+         call phyoptr('KFCTRIGA', P_cond2_kfctriga,   1, 'SET' )
          call phyoptr('KFCRAD'  , P_cond2_kfcrad  ,   1, 'SET' )
          call phyoptr('KFCDEPTH', P_cond2_kfcdepth,   1, 'SET' )
          call phyoptr('KFCDLEV' , P_cond2_kfcdlev ,   1, 'SET' )

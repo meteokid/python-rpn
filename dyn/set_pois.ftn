@@ -1,7 +1,7 @@
 ***s/r set_pois - 64 bits interface for preparation of projection matrix
 *                in the east-west or vertical direction
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_pois ( F_eval_8,F_evec_8,F_x_8,F_xdist_8,F_npts,
      $                                                        F_dim )

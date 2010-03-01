@@ -1,6 +1,6 @@
 ***s/r v4d_rdfld - read one field from a random file
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       integer function v4d_rdfld (F_d,F_un,nis,njs,F_ip1,
      $                            F_ip2,F_ip3,F_typ_S,F_var_S,niw,njw)

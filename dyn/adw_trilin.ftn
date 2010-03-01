@@ -1,6 +1,6 @@
 ***s/p adw_trilin - tri-linear interpolation
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_trilin ( F_out, F_in, F_dt, F_n,
      %                        F_capx, F_capy, F_capz, F_num,i0,in,j0,jn,kn)

@@ -1,6 +1,6 @@
 ***s/r tr_vint - Perform vertical interpolation on 3D tracers
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine tr_vint ( tr,trname,trval,data_spec,bmf_time1,
      $      bmf_time2,nk,pps,rna_pia,pibb,ps,vterp_lv,DIST_DIM )

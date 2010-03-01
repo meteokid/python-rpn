@@ -1,6 +1,6 @@
 ***s/r p_init - initialize RPN physics
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine p_init
 *

@@ -1,7 +1,7 @@
 ***s/r set_rhs - initialization of the VMM common for right-hand side of
 *               equations
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_rhs
 *

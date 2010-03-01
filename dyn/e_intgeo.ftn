@@ -1,6 +1,6 @@
 ** s/r e_intgeo  Read geophysic fields and interpolate on model grid.
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       logical function e_intgeo ()
       implicit none

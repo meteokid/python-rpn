@@ -1,6 +1,6 @@
 ***s/r set_cori - allocate and compute coriolis factor
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_cori
 #include "impnone.cdk"

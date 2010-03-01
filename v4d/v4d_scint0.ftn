@@ -1,7 +1,7 @@
 ***s/r v4d_scint0 - Preparation for polar correction and interpolation of
 *                   scalar field FLDSC at positions px,py 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_scint0 (fldscint,px,py,npts,fldsc,ax,ay,cx,cy,wx_8,
      %                       i1,i2,j1,j2,nk,grtypi,degree,var)

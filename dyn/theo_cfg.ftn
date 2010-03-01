@@ -2,7 +2,7 @@
 *                 s/r called when file labfl is not present (entry 
 *                 program not executed)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine theo_cfg ( pass_L )
       implicit none

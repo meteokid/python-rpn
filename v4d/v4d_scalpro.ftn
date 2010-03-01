@@ -1,6 +1,6 @@
 ***s/r v4d_scalpro - Compute distributed inner product <F_px,F_py> 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_scalpro (Ndim,F_px,F_py,F_psc_8)
 *

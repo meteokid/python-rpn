@@ -1,6 +1,6 @@
 ***s/r  height_sponge -  Performs vertical blending
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine height_sponge ()
       implicit none
@@ -81,7 +81,7 @@
       end
 
 c=======================================================================
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 
       subroutine applique(ff,value,betav, DIST_DIM, Nk)
 
@@ -113,7 +113,7 @@ c=======================================================================
 
       end
 c=======================================================================
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 
       subroutine applique_tt(tt,fi,betav, DIST_DIM, Nk)
 
@@ -153,7 +153,7 @@ c=======================================================================
 
       end
 c=======================================================================
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 
       subroutine set_betav(betav,fi, DIST_DIM, Nk)
 

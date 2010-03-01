@@ -47,7 +47,6 @@
 *
 #endif
 *
-      MARK_COMMON_BEG(Geomg)
       DCL_DYNVAR(Geomg, x_8   ,  real*8, (XDIST_SHAPE))
       DCL_DYNVAR(Geomg, y_8   ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, xu_8  ,  real*8, (XDIST_SHAPE))
@@ -70,6 +69,10 @@
       DCL_DYNVAR(Geomg, ys_8  ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, z_8   ,  real*8, (*))
       DCL_DYNVAR(Geomg, hz_8  ,  real*8, (*))
+      DCL_DYNVAR(Geomg, invhx_8  ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invhsy_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invhsyv_8,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invz_8   ,  real*8, (*))
       DCL_DYNVAR(Geomg, hyb   ,  real  , (*))
       DCL_DYNVAR(Geomg, hybm  ,  real  , (*))
       DCL_DYNVAR(Geomg, pia   ,  real  , (*))
@@ -78,5 +81,4 @@
       DCL_DYNVAR(Geomg, dpia   ,  real  , (*))
       DCL_DYNVAR(Geomg, dpib   ,  real  , (*))
       DCL_DYNVAR(Geomg, dpba   ,  real  , (*))
-      MARK_COMMON_END(Geomg)
 *

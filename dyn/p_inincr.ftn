@@ -1,6 +1,6 @@
 ***s/r p_inincr - define physics surface forcing increments
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine p_inincr
 *
@@ -33,6 +33,7 @@
 * v3_10 - Lee V.            - RPN_bcastc for bcast on MPI_CHARACTER
 * v3_11 - Bernard Dugas     - use glacier AND (maybe) sea ice SNODP to define INCRNE
 *                           - Account for P_pbl_iceme_L = .true.
+* v3_22 - Bernard Dugas     - add check for Done_inincr and correct xncibl(5) = 12
 *
 *object
 *
@@ -97,6 +98,9 @@
       CHARACTER*256 clima_S,anclima_S
       CHARACTER*8  soli_S,soli2_S
 *
+      integer Done_Inincr
+      save    Done_Inincr
+*
       real xrwrk3, neige
       pointer (iwork3,xrwrk3(1))
       real xrlon(p_ni), xrlat(p_ni), xrwrk1(p_ni), xrwrk2(p_ni)
@@ -106,6 +110,7 @@
       pointer (pabusper,busper(*))
 *
       DATA         clim_S /'SD','HS','I8','LG','TP','TM'/
+      DATA         Done_Inincr / -1 /
 *
 *
 **       -------------------------------------------------
@@ -142,16 +147,20 @@
       xncibl(2) = xndate(2)
       xncibl(3) = 15
       xncibl(4) = xndate(4)
-      xncibl(5) = 00
+      xncibl(5) = 12
       xncibl(6) = 00
 *
       xnday2    = idatmg2( xncibl )
       call difdatr( xnday2,xnday1,heur_8 )
       heur_8    = heur_8 * (3600. / Cstv_dt_8 )
 *
-      if (( Lctl_step .eq.   2 ) .or.
-     %   (( heur_8    .ge. -0.5) .and.
-     %    ( heur_8    .lt. +0.5) ) ) then
+      if (((Done_Inincr.ne.xnday2)  .and.
+     %     (heur_8     .ge. -0.5 )  .and.
+     %     (heur_8     .lt. +0.5 )) .or.
+     %    ( Lctl_step  .eq.   2   )) then
+*
+*        Make sure we only do this once per target date
+         Done_Inincr = xnday2
 *
          xnerr = newdate( xnday1, xndate1,xndate2, -3 )
          if (Lun_out.gt.0) write(Lun_out,1000) xndate1,xndate2
@@ -716,7 +725,6 @@ C           call flush( Lun_out )
 *
          deallocate (xrclim)
 * 
-
       endif
 *
  1000 format(

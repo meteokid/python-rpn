@@ -1,7 +1,7 @@
 ***s/r - calddqr - horizontal divergence and horizontal relative
 *                  vorticity from pi* vertical coordinates to pressure
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine calddqr( F_diver, F_relv, F_wlnph, F_ui , F_vi, F_dpdx,
      $                    F_dpdy , F_dudp, F_dvdp, F_wrk, DIST_DIM, Nk)

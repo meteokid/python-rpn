@@ -1,6 +1,6 @@
 ***s/r hzd_ho  - applies horizontal diffusion on a given set of fields
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hzd_ho (  F_u,    F_v,  F_psd,  F_tp, F_ip,
      %                     F_td,   F_t,  F_it,   F_plt,   
@@ -30,6 +30,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Corbeil L.        - new RPNCOMM transpose
+* v3_22 - Lee V.            - mv deallocate after 9988 for memory leak
 *
 *object
 * The diffusion includes: second order(Hzd_pwr=1), 
@@ -79,20 +80,23 @@
       dpwr = Hzd_pwr / 2
       if (Lun_debug_L) write(Lun_out,1000) Hzd_pwr
 *
-      if ( Hzd_cdiff .gt. 0.0 ) then
+      if ( Hzd_cdiff .le. 0.0 ) then
+           if (Lun_debug_L) write(Lun_out,1001) Hzd_cdiff
+           return
+      endif
 *
-         allocate ( wkh_evec_8(Gni*Gni), wk_evec_8(Gni*Gni) )
-         do j=1,Gni
-         do i=1,Gni
-           wkh_evec_8((j-1)*Gni+i)=Hzd_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
-           wk_evec_8((j-1)*Gni+i)=Opr_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
-         enddo
-         enddo
+      allocate ( wkh_evec_8(Gni*Gni), wk_evec_8(Gni*Gni) )
+      do j=1,Gni
+      do i=1,Gni
+         wkh_evec_8((j-1)*Gni+i)=Hzd_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
+         wk_evec_8((j-1)*Gni+i)=Opr_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
+      enddo
+      enddo
 
 *     Momentum
 *     ~~~~~~~~
-c        print *,'hzd_areal on F_u'
-c        do i=1,100
+c     print *,'hzd_areal on F_u'
+c     do i=1,100
          call hzd_solmxma(F_u, wk1_8, wkh_evec_8,
      %                    Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
@@ -100,14 +104,14 @@ c        do i=1,100
      %                    l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
      %                    trp_12dn, Hzd_xp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
-c        enddo
-c        call hzd_areal(F_u,Hzd_xp0_8,Opr_opsyp0_8,
+c     enddo
+c     call hzd_areal(F_u,Hzd_xp0_8,Opr_opsyp0_8,
 c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
 *
-c        print *,'hzd_areal on F_v'
-c        call hzd_areav(F_v,Opr_opsxp0_8,Hzd_yp0_8,
+c     print *,'hzd_areal on F_v'
+c     call hzd_areav(F_v,Opr_opsxp0_8,Hzd_yp0_8,
 c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
-c        do i=1,100
+c     do i=1,100
          call hzd_solmxma(F_v, wk1_8, wk_evec_8 ,
      %                    Hzd_av_8,Hzd_cv_8, Hzd_deltav_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
@@ -115,17 +119,17 @@ c        do i=1,100
      %                    l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
      %                    trp_12dn,Opr_opsxp0_8,Hzd_yp0_8, Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
-c        enddo
-c        call hzd_areav(F_v,Opr_opsxp0_8,Hzd_yp0_8,
+c     enddo
+c     call hzd_areav(F_v,Opr_opsxp0_8,Hzd_yp0_8,
 c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
 *
 *     Vertical motion in pressure coord. 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-c        print *,'hzd_areal on F_psd'
-c        call hzd_areal(F_psd,Opr_opsxp0_8,Opr_opsyp0_8,
+c     print *,'hzd_areal on F_psd'
+c     call hzd_areal(F_psd,Opr_opsxp0_8,Opr_opsyp0_8,
 c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
-c        print *,'hzd_solmxma on F_psd'
-c        do i=1,100
+c     print *,'hzd_solmxma on F_psd'
+c     do i=1,100
          call hzd_solmxma(F_psd, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
@@ -133,13 +137,13 @@ c        do i=1,100
      %                    l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
      %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
-c        enddo
-c        call hzd_areal(F_psd,Opr_opsxp0_8,Opr_opsyp0_8,
+c     enddo
+c     call hzd_areal(F_psd,Opr_opsxp0_8,Opr_opsyp0_8,
 c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
 *
 *     Total divergence 
 *     ~~~~~~~~~~~~~~~~
-         call hzd_solmxma(F_td, wk1_8, wk_evec_8 ,
+      call hzd_solmxma(F_td, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
      %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
@@ -147,11 +151,11 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
      %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
 *
-         if (Hzd_uvwdt_L) goto 9988
+      if (Hzd_uvwdt_L) goto 9988
 *
 *     Mass related fields
 *     ~~~~~~~~~~~~~~~~~~~
-         call hzd_solmxma(F_ip, wk1_8, wk_evec_8 ,
+      call hzd_solmxma(F_ip, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
      %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
@@ -159,7 +163,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
      %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8,Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
 *
-         call hzd_solmxma(F_it, wk1_8, wk_evec_8 ,
+      call hzd_solmxma(F_it, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
      %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
@@ -192,7 +196,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
 
 *     The temperature: T', T'lin & hence T 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         call hzd_solmxma(F_tp, wk1_8, wk_evec_8 ,
+      call hzd_solmxma(F_tp, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
      %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
@@ -200,7 +204,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
      %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
 *
-         call hzd_solmxma(F_plt, wk1_8, wk_evec_8 ,
+      call hzd_solmxma(F_plt, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
      %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
@@ -221,7 +225,8 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
 *
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+      if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+*
 !$omp do
             do k = 1, Nk
             do j = 1+pil_s,l_nj-pil_n
@@ -231,12 +236,12 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
             end do
             end do
 !$omp enddo
-         endif
+      endif
 !$omp end parallel 
 *
 *     The hydrostatic pressure: pi'  
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         call hzd_solmxma(F_pip, wk1_8, wk_evec_8 ,
+      call hzd_solmxma(F_pip, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
      %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
@@ -248,7 +253,7 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
 *  3. Nonyhydrostatic model * 
 *****************************
 *
-         if ( .not. Schm_hydro_L ) then
+      if ( .not. Schm_hydro_L ) then
 *
 *     Vertical wind (physical) 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -311,15 +316,17 @@ c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
 !$omp end parallel do
 *
          endif
-         endif
-*
-         deallocate( wkh_evec_8,wk_evec_8 )
       endif
 *
  9988 continue
+
+      deallocate( wkh_evec_8,wk_evec_8 )
+*
 *
  1000 format(/,
      $     3X,'PERFORM DEL-',i1,' HORIZONTAL DIFFUSION: (S/R HZD_HO)')
+ 1001 format(/,
+     $     3X,'HZD_CDIFF=',F20.8,' NO HORIZONTAL DIFFUSION: (S/R HZD_HO)')
 *     __________________________________________________________________
 *
       return

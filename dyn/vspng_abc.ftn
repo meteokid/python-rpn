@@ -1,6 +1,6 @@
 ***s/r vspng_abc -- Prepares matrices aix,bix,cix,dix,aiy,biy,ciy
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine vspng_abc(F_aix_8, F_bix_8, F_cix_8, F_dix_8 ,
      $                     F_aiy_8, F_biy_8, F_ciy_8, F_coef_8,

@@ -1,7 +1,7 @@
 ***s/r horwavg - Compute difference of horizontal area
 *                weighted averages of a field 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine horwavg ( F_avg_8, F_in1, F_in2, DIST_DIM )
 *

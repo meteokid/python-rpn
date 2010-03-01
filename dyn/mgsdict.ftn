@@ -1,6 +1,6 @@
 ***s/r mgsdict
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
       subroutine mgsdict (ni,nj,lindex,lachaine)
 #include "impnone.cdk"
 *

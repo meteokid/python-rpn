@@ -13,7 +13,7 @@
 *                   Exchange number of points to be exchanged to 
 *                   allow temporary space allocation.
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_exch_1 ( F_x_out, F_y_out, F_z_out, F_c_out,
      %                        F_x_in,  F_y_in,  F_z_in )

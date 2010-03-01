@@ -1,7 +1,7 @@
 ***s/r v4d_rwconv - Read (Write) from (on) TRAJ Conversion WA file 
 *                   at each observation time (needed in v4d_varconv)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_rwconv ()
 *
@@ -158,6 +158,7 @@ C     threshold = 0.02
          do k=1,l_nk
           do j=l_miny,l_maxy
            do i=l_minx,l_maxx
+*              hut1work(i,j,k) = MAX(2.5e-6,hut1(i,j,k))
               hut1work(i,j,k) = hut1(i,j,k)
            enddo
           enddo
@@ -184,6 +185,7 @@ C     threshold = 0.02
 
            do k=1,l_nk
             do i=1,l_ni
+             huwork(i,k) = MAX(2.5e-6,huwork(i,k))
              if(hut1(i,j,k).lt.huwork(i,k)) hut1work(i,j,k) = huwork(i,k)
             enddo
            enddo

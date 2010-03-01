@@ -1,7 +1,7 @@
 ***s/r slabsym - symmetrical boundary conditions for theoretical
 *               cases
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine slabsym ()
       implicit none

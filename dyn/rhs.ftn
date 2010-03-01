@@ -1,7 +1,7 @@
 ***s/r rhs - compute rhs of different equations 
 *            ( memory management and call to rhsp_2 )
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine rhs()
 *

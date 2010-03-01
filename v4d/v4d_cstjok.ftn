@@ -1,7 +1,7 @@
 ***s/r v4d_cstjok - Interpolate model states at obs. locations and 
 *                   output the result to be read by 3D-Var 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_cstjok 
 *
@@ -13,7 +13,7 @@
       interface
       subroutine v4d_putfld (cdvar,kstatus,gomvar_8,kdim,kobs,indexvar)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       use v4d_prof
 *

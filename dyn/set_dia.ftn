@@ -1,7 +1,7 @@
 ***s/r set_dia - calculates the number of surface and profile variables
 *                requested for zonal diagnostics and time-series
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_dia
 *

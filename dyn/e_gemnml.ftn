@@ -1,6 +1,6 @@
 ***s/r e_gemnml
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine e_gemnml 
       implicit none
@@ -9,6 +9,7 @@
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
 * v3_21 - Desgagne M.       - Revision on Dcst read
 * v3_21 - Lemonsu A.        - add P_pbl_schurb_s
+* v3_22 - Lee V.            - removed Trvs tracers
 *
       integer ni, nila
       integer l_ni,l_nj
@@ -111,7 +112,6 @@
 *
       do i=1, MAXTR
          E_tr3d_list_S(i) = ''
-         E_trvs_list_S(i) = ''
       enddo
 *
       unf = 0

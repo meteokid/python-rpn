@@ -1,7 +1,7 @@
 **s/r v4d_ezuvint - Wind interpolation and Polar correction,
 *                   based on EZUVINT (Y.Chartier EZSCINT 2001)    
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_ezuvint (zuo,zvo,px,py,npts,zui,zvi,ax,ay,cx,cy,
      %                        i1,i2,j1,j2,nk,jmin,jmax,ni,grtypi,degree)

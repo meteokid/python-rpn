@@ -1,6 +1,6 @@
 ***s/r set_world_view1
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_world_view1 (F_npx, F_npy )
 *
@@ -57,6 +57,7 @@
 * v3_21 - Valcke, S.        - Init of namelist coupling section
 *                           - Move read of namelist coupling to c_init_cplfdl 
 * v3_21 - Lee V.            - Added Lctl_reset key, remove TR2D
+* v3_22 - Lee V.            - Add Pres_vtap_L key for vtap
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -221,6 +222,7 @@
       Grd_proj_S = 'E'
       Pres_ptop = -1.
       Pres_pref = 800.0
+      Pres_vtap_L = .false.
       do k = 1, maxhlev
          hyb(k) = -1.
       end do

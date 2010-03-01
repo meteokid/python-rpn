@@ -1,7 +1,7 @@
 ***s/r p_vlsp - allocate and compute latitudinal modulation of 
 *                 vertical diffusion coefficient on momentum
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine p_vlsp
 *

@@ -1,6 +1,6 @@
 ***s/r mtn_cfg - reads parameters from namelist mtn_cfgs
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine mtn_cfg ( pass_L )
       implicit none

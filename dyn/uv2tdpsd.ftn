@@ -1,7 +1,7 @@
 *** s/r uv2tdpsd - Computes total divergence & 
 *                  vertical velocity diagnostically 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine uv2tdpsd (F_td, F_psd, F_uu, F_vv, F_ss, DIST_DIM, Nk)
 *
@@ -125,7 +125,7 @@
       call rpn_comm_xch_halo( F_ss, LDIST_DIM, l_ni, l_nj , 1,
      %                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
-!$omp parallel
+!$omp parallel private(pr1)
 *
 !$omp do
       do k = 1, Nk

@@ -1,6 +1,6 @@
 ***s/r adw_main_3_intlag_ad - ADJ of adw_main_3_intlag_tl when Adw_lag3d_L=.TRUE. 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_main_3_intlag_ad ( F_u, F_v, F_w, F_um, F_vm, F_wm )
 *
@@ -25,6 +25,7 @@
 *                           - Lagrange 3D
 * v3_21 - Tanguay / Valin   - Use OPENMP as Salmond (ECMWF) 
 *                           - Call adw_main_3_intlag_ad based on Adw_lag3d_L
+* v3_22 - Tanguay M.        - Correction reproductibility  
 *
 *language
 *     fortran 77
@@ -331,7 +332,8 @@ cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_intlag_ad',-1)
 *
       left_ff = 1
 *
-      if( ratio.ne.0 ) then
+c     if( ratio.ne.0 ) then
+      if(  .FALSE.   ) then
 *
       do rr = 1,ratio
 *

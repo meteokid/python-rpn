@@ -8,7 +8,7 @@
 *            compute the linear rhs of Helmholtz equation
 *            ( memory management and call to prep )
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine pre
 *

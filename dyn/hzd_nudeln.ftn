@@ -1,7 +1,7 @@
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r hzd_nudeln
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
       subroutine hzd_nudeln (rfd,sfd,lminx,lmaxx,lminy,lmaxy,lnk,nu,
      $                                                    is,js,m,n)
       implicit none

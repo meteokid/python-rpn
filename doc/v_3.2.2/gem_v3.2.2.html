@@ -1,0 +1,127 @@
+<html>
+<body bgcolor="#FFFFFF">
+<pre class=text>
+<b>
+
+        ############# GEMDM Model -- Version 3.2.2 ###############
+                            December 9 2005
+</b>
+
+        Version 3.2.2 of the GEMDM dynamics is now ready and available 
+        in directories:
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.2.2/RCS"
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.2.2/RCS_4DVAR"
+	It is connected to RPN/CMC physics version 4.4 in directory:
+	      "$ARMNLIB/modeles/PHY/v_4.4/RCS"    
+
+############################################################################
+<b>
+MAIN FEATURES:
+</b>
+
+  There has been many significant changes in this version from the
+  previous version of (v_3.2.0,phy v_4.2) but it does not seem to change 
+  the meteorological results dramatically. It will definitely not
+  bit reproduce results of the v_3.2.0. It is connected to
+  Physics version 4.4 so please refer to the Physics 4.4 release 
+  notes for details. This release is targeted for the mesoglobal
+  operational runs. Documentation on previous GEMDM releases can be
+  found in:
+
+  http://notos.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+  or
+
+  http://web-mrb.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+  Also note that the GEMDM Workshop PPT and PDF format is now available.
+
+  This note is available in the website under Version Rel. Date at v_3.2.2
+
+  Please note that there are additional files at this GEMDM website (v_3.2.2)
+  which are related to this version:
+  "gem_settings.nml.txt" 
+  "outcfg.out.txt"
+  "configexp.cfg.txt"
+
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+  Changes that affect run time computation:
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+1) New physics package (v_4.4)
+
+2) Optimization code for the 4dvar OpenMp to work 8-way (Desgagne/Valin)
+
+4) Optimized code for output in RPN standard files (Lee)
+
+5) Printout per timestep includes resident memory size
+
+6) Bugfixes: 
+    - Memory leak in hzd_ho for 'HO' option in MXMA config
+    - memory leak in BMF functions in RPN_COMM (now using 208)
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+   Other Changes related to new schemes and/or packages:
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+
+1) Added Lctl_reset (default=-1) to change starting step of integration
+
+2) Pres_vtap_L namelist key added to calculate GZ
+   from temperature based on VTAP relationship. (default=.false.)
+
+3) Code from Oasis coupling (Valcke)
+
+4) New keys to control physics v_4.4:
+   P_pbl_limsnodp_L   - to limit snow depth to 10cm on seaice and 
+                        glaciers (default = .false.)
+   P_pbl_schurb_s     - SCHMURB: name of urban surface processes
+                        (default='NIL' and only in the GEMNTR namelist only)
+   P_pbl_tdiaglim_L   - to limit on decrease of tdiag     (default = .false.)
+   P_rad_tsflxir_L    - TS_IRFLX: to use TT(12000) instead of
+                        skin Temp in downward IR flux calc.(Default= .false.)
+   P_cond_kfctriga    - nominal resolution for which KFCTRIG4 is set
+                        this is inactive if value <= 0 (default=-1.0)
+   P_cond2_kfctriga (same as P_cond_kfctriga)
+
+5) Memory for PHYSICS is always in core
+
+6) Entry program e_gemntr will print a bigger warning when it fails to
+   produce the file geophy.bin
+
+7) Values for constants are obtained through RMNLIB functions
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+   Cleanup and cosmetic changes:
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+1) Replaced the line #include <model_macros_f.h> to 
+                     #include "model_macros_f.h"
+
+2) Removed Tr2d tracers as they have never been used
+
+3) Removed geomg_n1.cdk and incorporated this code into geomg.cdk
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+   Upgrading:
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+From GEMDM v_3.2.0, code changes are in /users/dor/armn/viv/v3.2.0/newcode10/
+
+From GEMDM v_3.2.1, code changes are in /users/dor/armn/viv/v3.2.1/newcode1/
+
+Note  the change in almost all routines from 
+<model_macros_f.h> to "model_macros_f.h"
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+   Sample run configurations can be found at $gem/run_configs
+   Sample analysis given in these examples are not guaranteed to exist
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+
+############################################################################
+    
+</pre>
+</body>
+</html>
+

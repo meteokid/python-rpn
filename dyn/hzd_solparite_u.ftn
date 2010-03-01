@@ -1,6 +1,6 @@
 ***s/r hzd_solmxma - parallel direct solution of high-order diffusion 
 *        equation with mxma8 using reflexion symmetry of U-grid (global)
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
        subroutine hzd_solparite_U (
      $           F_sol, F_Rhs_8, F_evxevec_8 ,F_oddxevec_8,

@@ -1,6 +1,6 @@
 ***s/r frstgss_tr - Equivalent to frstgss for TRAJECTORY 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine frstgss_tr ()
 *

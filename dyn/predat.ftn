@@ -1,6 +1,6 @@
 ***s/r predat - Performs preprocessing of the data: part1
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine predat
 *
@@ -20,6 +20,8 @@
 *                             topography
 * v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat 
 * v3_21 - Desgagne M.       - Revision OpenMP
+* v3_22 - Belanger/Lee      - Introduce vtap 
+* v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
 *
 *object
 *	Performs preprocessing of the data: part1. We compute:
@@ -48,6 +50,7 @@
 #include "vt1.cdk"
 #include "v4dg.cdk"
 #include "vtopo.cdk"
+#include "pres.cdk"
 #include "hzd.cdk"
 *
       integer i, j, k
@@ -64,7 +67,7 @@
           if ( Schm_phyms_L ) call phycom ('varmtn' ,0 ,1,'set')
       endif
 *
-!$omp parallel
+!$omp parallel private (pr1,pr2)
 !$omp do
       do j= 1, l_nj
       do i= 1, l_ni
@@ -115,9 +118,14 @@
 *
 !$omp end parallel
 *
+*     We recalculate the geopotential using vtap
+*     ------------------------------------------
+      if (Pres_vtap_L) then
+          call vtap
+      endif
+*
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
-      if (Hzd_t1_0_L) call hzd_hoffld (Ind_psd, LDIST_DIM, G_nk, 3)
 *
       call rpn_comm_xch_halo( Ind_u, LDIST_DIM, l_niu, l_nj , l_nk,
      $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
@@ -125,6 +133,8 @@
      $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
       call uv2tdpsd ( Ind_td,Ind_psd,Ind_u,Ind_v,Ind_s,LDIST_DIM,l_nk )
+*
+      if (Hzd_t1_0_L) call hzd_hoffld (Ind_psd, LDIST_DIM, G_nk, 3)
 *
       if ( .not. Schm_hydro_L ) then
          if ( Schm_theoc_L ) then

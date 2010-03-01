@@ -1,6 +1,6 @@
 ***s/p adw_trilin_ad - ADJ of adw_trilin_tl
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_trilin_ad ( F_out,  F_in, F_dt, 
      %                           F_capx, F_capy, F_capz,

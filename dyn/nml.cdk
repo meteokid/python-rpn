@@ -5,7 +5,7 @@
 *
       namelist /gem_cfgs/
      $     Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup,
-     $     hyb, Grd_rcoef, Pres_ptop, Level_ip12000_L,
+     $     hyb, Grd_rcoef, Pres_ptop, Pres_vtap_L, Level_ip12000_L,
      $     Mem_mx3db , Mem_phyncore_L, G_halox, G_haloy,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
      $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,
@@ -38,7 +38,7 @@
      $     Zblen_L, Zblen_spngthick, Zblen_spngtt_L
       namelist /gem_cfgs_p/
      $     Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup,
-     $     Grd_rcoef, Pres_ptop, Level_ip12000_L,
+     $     Grd_rcoef, Pres_ptop, Pres_vtap_L, Level_ip12000_L,
      $     Mem_mx3db , Mem_phyncore_L, G_halox, G_haloy,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
      $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,

@@ -1,7 +1,7 @@
 ***s/r frstgss - Copy data from time level t1 that will be used as a
 *                first guess at time level t0
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine frstgss ()
 *

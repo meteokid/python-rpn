@@ -1,6 +1,6 @@
 ***s/r glbpos - sets up global indices for each PE
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine glbpos
 *

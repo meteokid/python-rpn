@@ -1,6 +1,6 @@
 ***s/r c_getbus - Get the slice workspace variable from the physics
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       SUBROUTINE c_getbus ( F_busdyn, F_busper, F_busvol, F_jdo)
 *

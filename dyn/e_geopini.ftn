@@ -1,6 +1,6 @@
 *** s/r e_geopini
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine e_geopini (ni,nj,lun_out)
       implicit none

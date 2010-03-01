@@ -1,6 +1,6 @@
 ***s/r gemntr - gemdm entry program
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine gemntr
       implicit none
@@ -70,7 +70,7 @@
      %       '* WARNING!!!! No GEOPHY.bin file produced       *',/
      %       '* GEMDM can run with no PHYSICS only            *',/
      %       '*************************************************')
- 1005 format (' GEOPHYSICAL FIELD: 'a,' NOT AVAILABLE !!!')
+ 1005 format (' GEOPHYSICAL FIELD: ',a,' NOT AVAILABLE !!!')
 
       stop
       end

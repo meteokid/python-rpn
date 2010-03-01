@@ -1,6 +1,6 @@
 ***s/p set_var - initialize list of variables to output
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       integer function set_var (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 *

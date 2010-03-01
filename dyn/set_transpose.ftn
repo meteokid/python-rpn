@@ -1,7 +1,7 @@
 ***s/r set_transpose - Establish layout for the 2 level-transpose used
 *                      in the solver and the horizontal diffusion
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_transpose ()
 *

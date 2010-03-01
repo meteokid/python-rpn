@@ -1,6 +1,6 @@
 _____________________________________________________________________________
 *                                                                             |
-*     FILE outcfg.out                 (last update: Nov.18,2004- v3.2.0)      |
+*     FILE outcfg.out                 (last update: Apr. 8,2007- v3.2.2)      |
 *_____________________________________________________________________________|
 *                                                                             |
 *  Example in outcfg.out                                                      |
@@ -11,7 +11,7 @@ _____________________________________________________________________________
 * steps=1,hour,0.;                                                            |
 * steps=2,step,<0.,6.,1.>;                                                    |
 * sortie([ME,PN,P0,PT],grid, 1, levels, 1, steps, 2)                          |
-* sortie_p([MF,MY,MG,ALVIS,DLAT,DLON,WFLUX],grid, 1, levels, 3, steps, 1)     |
+* sortie_p([MF,MY,MG,ALVIS,DLAT,DLON,WFLUX],grid, 1, levels, 1, steps, 1)     |
 * filtre([PN,GZ,TT], coef, 0.5, pass,2)                                       |
 * xnbit([Z0,MX],bits,24)                                                      |
 *_____________________________________________________________________________|
@@ -64,6 +64,8 @@ _____________________________________________________________________________
 *     Limit the number of definitions for "level" to improve the efficiency   |
 *     the output routines. The maximum number of definitions is 32.           |
 *     The maximum number of levels defined in each "level" command is 201     |
+* VERY IMPORTANT NOTE:                                                        |
+*     No physics variable output on PRESSURE levels                           |
 *                                                                             |
 *-----------------------------------------------------------------------------|
 * Output FREQUENCY definitions                                                |
@@ -104,6 +106,8 @@ _____________________________________________________________________________
 *      var list - list of variables (long names for physics fields)           |
 *      coefnum  - filter coefficient                                          |
 *      passnum  - number of filter passes                                     |
+* NOTE: the filter (if requested) would only be applied to variables on       |
+*       pressure levels or to surface (2D) variables                          |
 *-----------------------------------------------------------------------------|
 * Output BIT specific compaction definitions                                  |
 *   -all other fields are defined in the key Out3_nbitg in gem_settings.nml   |
@@ -146,6 +150,9 @@ _____________________________________________________________________________
 *     efficiency in the output routines. The maximum number of commands       |
 *     for each SORTIE or SORTIE_P is 32. The maximum number of variables      |
 *     (fields) requested in each SORTIE/SORTIE_P command is 60.               |
+* VERY IMPORTANT NOTE:                                                        |
+*     No physics variable output on PRESSURE levels. This can be done in      |
+*     a post treatment after the model run                                    |
 *                                                                             |
 *-----------------------------------------------------------------------------
 *  OUTPUT filename description                                                |

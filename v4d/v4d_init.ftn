@@ -1,7 +1,7 @@
 ***s/r v4d_init - Initialization of parameters in 4D-Var comdecks   
 *                 not already initialized in subr. SET_WORLD_VIEW1
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_init 
 *

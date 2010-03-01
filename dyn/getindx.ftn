@@ -1,6 +1,6 @@
 ***s/r getindx
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine getindx ( F_vn_S, F_bus_S, F_deb, F_nm, F_init )
 #include "impnone.cdk"

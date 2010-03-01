@@ -1,6 +1,6 @@
 ***s/r readdyn - read the dynamics fields from entrance programs
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine readdyn
       implicit none

@@ -1,6 +1,6 @@
 ***s/r set_intuv - computes (u,v) cubic lagrange interpolation coefficients
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_intuv
 *

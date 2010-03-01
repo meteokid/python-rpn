@@ -1,6 +1,6 @@
 ***s/r v4d_predat - Same as predat but with partition for 4D-Var 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_predat (ipart)
 *
@@ -17,6 +17,7 @@
 *                           - modify evaluation of Ind_pip
 * v3_21 - Tanguay M.        - Revision Openmp 
 *                           - do filtering at t=0 in v4d_predat
+* v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
 *
 *object
 *     Preprocessing of Control   variables only if ipart=2
@@ -47,9 +48,9 @@
 *     -------------------------------------------------------------
 *     Set dependent variables phi',phi from T',s' when Schm_hydro_L
 *     -------------------------------------------------------------
-      if(ipart.eq.3.and.Schm_hydro_L) call v4d_vtap () 
+      if(ipart.eq.3.and.Schm_hydro_L) call vtap () 
 *
-!$omp parallel
+!$omp parallel private (pr1,pr2)
 *
       if(.not.Schm_hydro_L) then
 *
@@ -236,7 +237,6 @@
 *
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
-      if (Hzd_t1_0_L) call hzd_hoffld (Ind_psd, LDIST_DIM, G_nk, 3)
 *
       if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img 
 *
@@ -250,6 +250,8 @@
 *     Compute total divergence and vertical velocity
 *     ----------------------------------------------
       call uv2tdpsd ( Ind_td,Ind_psd,Ind_u,Ind_v,Ind_s,LDIST_DIM,l_nk )
+*
+      if (Hzd_t1_0_L) call hzd_hoffld (Ind_psd, LDIST_DIM, G_nk, 3)
 *
       if ( .not. Schm_hydro_L ) then
          do k= 1, G_nk

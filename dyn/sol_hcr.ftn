@@ -1,7 +1,7 @@
 **s/r sol_hcr - iterative solution of horizontal Helmholtz problem
 *               cgrid model with rotated poles
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine sol_hcr (F_sol_8,F_rhs_8,F_w1_8,F_w2_8,F_dg1_8,F_dg2_8,
      $                    F_dwfft_8,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk)

@@ -1,6 +1,6 @@
 ***s/r p_physlb_tl - TLM of Computes the physical tendencies
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine  p_physlb_tl( F_cpu,   F_step, F_obusval,
      $             F_up,  F_vp,  F_wp,  F_tp, F_qp, F_trp,

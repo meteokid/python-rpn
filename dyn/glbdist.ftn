@@ -1,6 +1,6 @@
 ***s/r glbdist
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine glbdist (F_2bc,bni,bnj,F_2rc,DIST_DIM,nk,hx,hy)
 *

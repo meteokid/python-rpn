@@ -1,6 +1,6 @@
 ***s/r adw_setint_ad - ADJ of adw_setint_tl
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_setint_ad ( F_n,
      %                           F_capx, F_xgg, F_xdd,

@@ -1,7 +1,7 @@
 ***s/r v4d_corrval - Polar correction if scalar interpolation,
 *                    based on EZ_CORRVAL (Y.Chartier EZSCINT 2001)  
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_corrval (zo,npts,zi,ax,ay,cx,cy,i1,i2,j1,j2,nk,
      %                        jmin,jmax,ni,grtypi,degree)

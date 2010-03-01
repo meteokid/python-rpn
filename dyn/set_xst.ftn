@@ -1,6 +1,6 @@
 ***s/p set_xst - compute the time-series grid points
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_xst 
 *

@@ -1,6 +1,6 @@
 *** s/r calvor - compute horizontal absolute vorticity (pi*)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine calvor (F_vor,F_u,F_v,F_wrk,DIST_DIM,nk)
 *

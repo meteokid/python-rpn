@@ -1,6 +1,6 @@
 ***s/r initw2 -- initialize vertical nonhydrostatic wind "wt1"
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine initw2 ( F_wt1, F_mul, F_mu, F_uu, F_vv, F_psd, F_fi, 
      $                                           F_tt, F_ss, DIST_DIM )

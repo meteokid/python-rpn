@@ -2,7 +2,7 @@
 *                    in case of a scalar field, based on EZ_DEFZONES
 *                    (Y.Chartier EZSCINT 2001)  
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_zonesca (px,py,npts,fldsc,wx_8,i1,i2,j1,j2,nk,jmin,jmax,ni,
      %                        nimax,gni,grtypi,degree,var,l_north,l_south,kind)

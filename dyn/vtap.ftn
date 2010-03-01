@@ -1,8 +1,9 @@
-***s/r v4d_vtap_tr - TRAJECTORY equivalent to v4d_vtap  
+***s/r vtap - Build geopotential from temperature
+*                 based on VTAP relationship
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
-      subroutine v4d_vtap_tr
+      subroutine vtap
 *
 #include "impnone.cdk"
 *
@@ -10,7 +11,12 @@
 *     M.Tanguay
 *
 *revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - replace xfis by topo 
+* v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 * v3_03 - Tanguay M.        - use Ind comdeck
+* v3_22 - Lee V.            - name change from V4d_vtap to vtap
 *
 *object
 *     see id section
@@ -26,7 +32,6 @@
 #include "geomg.cdk"
 #include "schm.cdk"
 #include "ind.cdk"
-#include "indm.cdk"
 *
 *modules
       integer i,j,k,ik,jk
@@ -47,10 +52,10 @@
       do k=1,l_nk
       do j=l_miny,l_maxy
       do i=l_minx,l_maxx
-         Indm_fim (i,j,k) = ZERO_8
-         Indm_fipm(i,j,k) = ZERO_8
-         work1    (i,j,k) = ZERO_8
-         work2    (i,j,k) = ZERO_8
+         Ind_fi (i,j,k) = ZERO_8
+         Ind_fip(i,j,k) = ZERO_8
+         work1  (i,j,k) = ZERO_8
+         work2  (i,j,k) = ZERO_8
       end do
       end do
       end do
@@ -64,12 +69,12 @@
 *
 *        Evaluate exp(qt1)
 *        -----------------
-         work2(i,j,k) = Geomg_pia(k) + Geomg_pib(k)*exp(Indm_sm(i,j))
+         work2(i,j,k) = Geomg_pia(k) + Geomg_pib(k)*exp(Ind_s(i,j))
 *
 *        Evaluate special T 
 *        ------------------
-         work2(i,j,k)= (Cstv_tstr_8+Indm_tpm(i,j,k))*
-     %                 (1.0+Geomg_dpib(k)*(exp(Indm_sm(i,j))-1.))*
+         work2(i,j,k)= (Cstv_tstr_8+Ind_tp(i,j,k))*
+     %                 (1.0+Geomg_dpib(k)*(exp(Ind_s(i,j))-1.))*
      %                 (Geomg_z_8(k) / work2(i,j,k)) -  Cstv_tstr_8
 *
       end do
@@ -106,8 +111,8 @@
       do j=1,l_nj
       do i=1,l_ni
 *
-         Indm_fim (i,j,k) = Cstvr_fistr_8(k) + work1(i,j,k)
-         Indm_fipm(i,j,k) = Indm_fim(i,j,k) - Cstvr_fistr_8(k) - Ind_topo(i,j)
+         Ind_fi (i,j,k) = Cstvr_fistr_8(k) + work1(i,j,k)
+         Ind_fip(i,j,k) = Ind_fi(i,j,k) - Cstvr_fistr_8(k) - Ind_topo(i,j)
 *
       end do
       end do

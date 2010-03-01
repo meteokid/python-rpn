@@ -1,7 +1,7 @@
 ***s/r sol_fft8_lam - parallel direct solution of horizontal Helmholtz
 *                   problem. With ffft8  for LAM
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine sol_fft8_lam( sol, Rhs, pri,
      $                       Minx, Maxx, Miny, Maxy, njl,
@@ -95,7 +95,7 @@ c     call tmg_start(89,'sol_fft_lam')
      %                         Minz, Maxz, Nk, fdwfft, 1, 2 )
 
 *     projection ( wfft = x transposed * g )
-!$omp parallel private(jr)
+!$omp parallel private(jr,p0,pn)
 !$omp do
          do i= 1,Gni
             do k= Minz, nkl

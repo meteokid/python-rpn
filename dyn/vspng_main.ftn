@@ -1,7 +1,7 @@
 ***s/r vspng_main - applies horizontal diffusion with vertical modulation
 *                   on Vspng_nk top levels
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine vspng_main
 *

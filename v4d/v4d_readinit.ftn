@@ -1,7 +1,7 @@
 ***s/r v4d_readinit - read lat-lon observations positions from init PROF file and
 *                     evaluate associated px,py grid positioning needed in EZSCINT package
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_readinit
 *

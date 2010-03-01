@@ -1,6 +1,6 @@
 ***s/r xyfil - Filtering of a field (x-y filter)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine xyfil ( F_d, F_s, F_w1, F_co, F_whx_8, F_why_8, 
      $                   F_pole_L, DIST_DIM,Nk)

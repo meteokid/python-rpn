@@ -1,6 +1,6 @@
 ***s/r set_ops8 - prepares tri-diagonal basic operators
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_ops8 (F_oper_8, F_delt_8, F_wt_8, F_period_L, 
      %                                             NN, MXDM, F_case )

@@ -1,6 +1,6 @@
 ***s/r filter - filters given field using 2-delta x and/or dgf filter
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine filter (F_fd, F_lx, F_coef, F_d_S, 
      $                   F_flag_L,DIST_DIM,Nk)

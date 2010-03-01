@@ -1,7 +1,7 @@
 ***s/r v4d_rwtraj_kmkt - Read (Write) from (on) TRAJ WA file for
 *                        vertical diffusion coefficients
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_rwtraj_kmkt(F_kmm, F_ktm, DIST_DIM, Nk)
 *

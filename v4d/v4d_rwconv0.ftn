@@ -3,7 +3,7 @@
 *                       When V4dg_tl_L: Read  trajectory for conversion 
 *                       When V4dg_ad_L: Read  trajectory for conversion 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_rwconv0 ()
 *
@@ -16,6 +16,7 @@
 *
 *revision
 * v3_11 - Tanguay M.        - initial MPI version
+* v3_22 - Tanguay M.        - Allow conversion TRAJ even if not obs at TIME0 
 *
 *object
 *  see id section	
@@ -58,7 +59,7 @@
 *
 *         Verify if INITIAL TIME requested
 *         --------------------------------
-          time0_L = Lctl_step.eq.0.and.Pr_doobs(0).gt.0
+          time0_L = Lctl_step.eq.0
 *
 *         Verify if .NOT.INITIAL time requested
 *         -------------------------------------

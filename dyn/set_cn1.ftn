@@ -1,6 +1,6 @@
 ***s/r set_cn1 - initialization of the commons at level one
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_cn1
 *

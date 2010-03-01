@@ -20,7 +20,7 @@
 #include "e_grids.cdk"
 #include "e_geol.cdk"
 * comdecks used also in GEMDM
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 #include "dcst.cdk"
 #include "p_bus.cdk"
 #include "p_geobus.cdk"

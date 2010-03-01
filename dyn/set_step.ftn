@@ -1,6 +1,6 @@
 ***s/r set_step - initialization of common block TIMESTEP
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       integer function set_step(F_argc,F_argv_S,F_cmdtyp,F_v1,F_v2)
 *

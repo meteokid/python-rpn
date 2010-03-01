@@ -1,6 +1,6 @@
 ***s/r glbstat
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine glbstat (F_field, F_var_S, DIST_DIM, nk,
      $                    F_i0,F_in,F_j0,F_jn,F_k0,F_kn)

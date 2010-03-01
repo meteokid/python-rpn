@@ -1,6 +1,6 @@
 ***s/r hzd_solmxma - parallel direct solution of high-order 
 *                    diffusion equation with mxma8  
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hzd_solmxma (F_sol, F_Rhs_8, F_Xevec_8 ,
      %               F_a_8, F_c_8 ,F_deltai_8,

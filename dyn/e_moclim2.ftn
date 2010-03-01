@@ -1,6 +1,6 @@
 *** s/r e_moclim2 reading and horizontal interpolation
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       integer function e_moclim2 (  f, ni, nj, nomvar, ip1, ip3, 
      $     month, day, etik, typvar, dest_g, interp, un1, stdo)

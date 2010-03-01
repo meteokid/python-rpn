@@ -1,7 +1,7 @@
 ***s/p adw_trilin_turbo - Optimized tri-linear interpolation
 *                         with SETINT inside 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_trilin_turbo ( F_out, F_in, F_dt, 
      %                              F_x, F_y, F_z, F_capz,

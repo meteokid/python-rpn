@@ -1,7 +1,7 @@
 ***s/r sol_main - Envelope for the memory management of the 
 *                 Linear Helmholtz solver
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine sol_main
 *

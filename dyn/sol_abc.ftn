@@ -1,7 +1,7 @@
 ***s/r sol_abc - initialisation de l'operateur unidimensionnel.
 *                direction de travail: suivant la latitude.
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine sol_abc ( F_hcon_8,F_yg_8,F_opsyp0_8,F_opsyp2_8,F_xeval_8,
      $                     F_n10,F_n20,MINX1,MAXX1,MINX2,MAXX2,F_nx1,F_nx2,NX3,

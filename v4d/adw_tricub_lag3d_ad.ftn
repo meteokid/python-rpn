@@ -1,6 +1,6 @@
 ***s/r adw_tricub_lag3d_ad - ADJ of adw_tricub_lag3d_tl 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_tricub_lag3d_ad ( F_out,  F_in,  F_x,  F_y,  F_z,
      %                                         F_inm, F_xm, F_ym, F_zm,

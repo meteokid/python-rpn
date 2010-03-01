@@ -2,7 +2,7 @@
 *                   extrapolation using positions at 
 *                   mid-trajectory (m)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_trajex ( F_xto,  F_yto,  F_xcto, F_ycto,
      %                        F_zcto, F_xctm, F_yctm, F_zctm,i0,in,j0,jn)

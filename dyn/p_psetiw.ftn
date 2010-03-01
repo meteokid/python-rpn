@@ -1,7 +1,7 @@
 ***s/r p_psetiw  - allocate and prepare indices and weights
 *                  for the second physics set option
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine p_psetiw
 *

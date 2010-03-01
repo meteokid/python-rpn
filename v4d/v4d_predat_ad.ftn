@@ -1,6 +1,6 @@
 ***s/r v4d_predat_ad - ADJ of v4d_predat_tl 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_predat_ad
 *
@@ -14,6 +14,7 @@
 * v3_11 - Tanguay M.        - modify evaluation of Ind_pip
 * v3_21 - Tanguay M.        - Revision Openmp 
 *                           - do filtering at t=0 in v4d_predat
+* v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
 *
 *object
 *     see id section
@@ -55,9 +56,9 @@
 *     -------------------------------------------------------------
 *     Set dependent variables phi',phi from T',s' when Schm_hydro_L
 *     -------------------------------------------------------------
-      if(Schm_hydro_L) call v4d_vtap_tr ()
+      if(Schm_hydro_L) call vtap_tr ()
 *
-!$omp parallel
+!$omp parallel private (pr1,pr2)
 *
       if(.not.Schm_hydro_L) then
 *
@@ -161,9 +162,8 @@
 *
 !$omp end parallel 
 *
-      if (Hzd_t1_0_L) call hzd_hoffld (Indm_psdm, LDIST_DIM, G_nk, 3)
-      if (Hzd_t1_0_L) call hzd_hoffld (Indm_vm,   LDIST_DIM, G_nk, 2)
       if (Hzd_t1_0_L) call hzd_hoffld (Indm_um,   LDIST_DIM, G_nk, 1)
+      if (Hzd_t1_0_L) call hzd_hoffld (Indm_vm,   LDIST_DIM, G_nk, 2)
 *
       if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_tr
 *
@@ -178,6 +178,8 @@
 *     Compute total divergence and vertical velocity
 *     ----------------------------------------------
       call uv2tdpsd ( Indm_tdm,Indm_psdm,Indm_um,Indm_vm,Indm_sm,LDIST_DIM,l_nk )
+*
+      if (Hzd_t1_0_L) call hzd_hoffld (Indm_psdm, LDIST_DIM, G_nk, 3)
 *
 *     ----------------
 *     END TRAJECTORY
@@ -201,6 +203,8 @@
          end do
 *
       endif
+*
+      if (Hzd_t1_1_L) call hzd_hoffld_ad (Ind_psd, LDIST_DIM, G_nk, 3)
 *
 *     ADJ of
 *     Compute total divergence and vertical velocity
@@ -227,7 +231,6 @@
 *     ---
       if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_ad
 *
-      if (Hzd_t1_1_L) call hzd_hoffld_ad (Ind_psd, LDIST_DIM, G_nk, 3)
       if (Hzd_t1_1_L) call hzd_hoffld_ad (Ind_v,   LDIST_DIM, G_nk, 2)
       if (Hzd_t1_1_L) call hzd_hoffld_ad (Ind_u,   LDIST_DIM, G_nk, 1)
 *
@@ -235,7 +238,7 @@
 *     START TRAJECTORY
 *     ----------------
 *
-!$omp parallel
+!$omp parallel private (pr1,pr2)
 *
 *     Recover pipt1m as in V4D_PREDAT_TL
 *     ----------------------------------
@@ -399,7 +402,7 @@
 *     -------------------------------------------------------------
 *     Set dependent variables phi',phi from T',s' when Schm_hydro_L
 *     -------------------------------------------------------------
-      if(Schm_hydro_L) call v4d_vtap_ad ()
+      if(Schm_hydro_L) call vtap_ad ()
 *
 1003  format(//,'ADJ of PREPROCESSING DATA: (S/R V4D_PREDAT_AD PART 3)',
      %        /,'=====================================================',//)

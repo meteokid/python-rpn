@@ -1,6 +1,6 @@
 ***s/p adw_trilin_turbo_tr - Equivalent to adw_trilin_turbo for TRAJECTORY 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_trilin_turbo_tr ( F_out, F_in, F_dt, 
      %                                 F_x, F_y, F_z, F_capx, F_capy, F_capz, 

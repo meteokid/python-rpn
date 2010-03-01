@@ -13,7 +13,7 @@
 *
 #include "e_grids.cdk"
 * comdecks used also in GEMPP
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 #include "p_bus.cdk"
 #include "p_geobus.cdk"
 #include "lun.cdk"

@@ -1,7 +1,7 @@
 ***s/r hzd_ho_parite_tr  - Equivalent to hzd_ho_parite_tr for TRAJECTORY 
 *                         (F_pip, F_qp (No Hyd) ONLY)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hzd_ho_parite_tr ( F_pip,F_qp,DIST_DIM,Nk) 
 *

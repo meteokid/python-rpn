@@ -1,6 +1,6 @@
 ***s/r p_set - initialize the physics model configuration
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine p_set
 *
@@ -40,6 +40,8 @@
 * v3_21 - Leduc A-M.         - add P_rad_tsflxir_L
 * v3_21 - Lemonsu A.         - add P_pbl_schurb_s
 * v3_21 - Desgagne M.        - call inctphy3
+* v3_22 - Leduc A-M.         - add P_pbl_limsnodp_L
+* v3_22 - Dugas B.           - add kfctriga support
 *
 *object
 *       See above id
@@ -147,6 +149,8 @@
       P_pbl_iceme_L  = .false.
       P_pbl_impflx_L = .false.
       P_pbl_tdiaglim_L = .false.
+      P_pbl_limsnodp_L = .false.
+      
 *
       do 50 i=1,cnmaxad
          P_pbl_spng(i) = 0.0
@@ -173,6 +177,7 @@
       P_cond_kfctrig4(2) = 0.
       P_cond_kfctrig4(3) = 0.05
       P_cond_kfctrig4(4) = 0.05
+      P_cond_kfctriga    = -1.0
       P_cond_kfcrad  = 1500.
       P_cond_kfcdepth= 4000.
       P_cond_kfcdlev = 0.5
@@ -255,6 +260,7 @@
          P_cond2_ilwc_L   = P_cond_ilwc_L
          P_cond2_kfcmom_L = P_cond_kfcmom_L
          P_cond2_kfctrig4 = P_cond_kfctrig4
+         P_cond2_kfctriga = P_cond_kfctriga
          P_cond2_kfcrad   = P_cond_kfcrad
          P_cond2_kfcdepth = P_cond_kfcdepth
          P_cond2_kfcdlev  = P_cond_kfcdlev

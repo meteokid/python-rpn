@@ -1,7 +1,7 @@
 ***s/r v4d_corrvec - Polar correction if wind interpolation,
 *                    based on EZ_CORRVEC (Y.Chartier EZSCINT 2001)  
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_corrvec (zuo,zvo,npts,zui,zvi,ax,ay,cx,cy,i1,i2,j1,j2,nk,
      %                        jmin,jmax,ni,grtypi,degree)

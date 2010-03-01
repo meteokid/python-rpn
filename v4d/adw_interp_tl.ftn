@@ -1,6 +1,6 @@
 ***s/r adw_interp_tl - TLM of adw_interp
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_interp_tl ( F_out, F_in, F_u, F_v,
      %                           F_outm,F_inm,F_um,F_vm,

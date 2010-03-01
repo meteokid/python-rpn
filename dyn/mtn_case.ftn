@@ -1,7 +1,7 @@
 ***s/r mtn_case - generates initial condition for mountain wave
 *                 experiment (Schar et al. 2002 or Pinty et al. 1995)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine mtn_case
       implicit none

@@ -1,7 +1,7 @@
 ***s/r v4d_uvint0 - Preparation for polar correction and interpolation of 
 *                   wind fields FLDU,FLDV at positions px,py
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_uvint0 (flduint,fldvint,px,py,npts,fldu,fldv,ax,ay,cx,cy,
      %                       wx_8,cox_8,six_8,siy_8,i1,i2,j1,j2,nk,grtypi,degree,var)

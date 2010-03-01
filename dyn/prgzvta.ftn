@@ -1,7 +1,7 @@
 ***s/r prgzvta - interpolation of geopotential and virtual temperature on
 *                given pressure levels
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine prgzvta(F_gzout, F_vtout,  F_pres, Nkout,
      %                   F_gzin,  F_vtin,   F_wlnph,  F_la,

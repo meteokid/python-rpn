@@ -1,7 +1,7 @@
 ***s/r  sol_mxma8_2 - parallel direct solution of horizontal Helmholtz
 *                     problem. With  mxma8
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
       subroutine  sol_mxma8_2 ( Sol, Rhs, Xevec,
      $                          Minx, Maxx, Miny, Maxy, njl,
      $                          Minz, Maxz, Nk, Nkl, 

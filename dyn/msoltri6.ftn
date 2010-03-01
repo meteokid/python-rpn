@@ -1,6 +1,6 @@
 ***s/r msoltri6 - solution of a tridiagonal problem
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine msoltri6 ( F_r, F_rhs,
      %                      F_bi_8, F_ci_8, F_ai_8,

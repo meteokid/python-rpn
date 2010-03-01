@@ -2,7 +2,7 @@
 *                 in view of cubic lagrange interpolation along the
 *                 north-south direction
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_polx ( F_field, F_xg, F_sud,
      %                      F_nic, F_halox, F_njc, F_haloy, F_nk )

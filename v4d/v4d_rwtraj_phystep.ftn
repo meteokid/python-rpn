@@ -1,6 +1,6 @@
 ***s/r v4d_rwtraj_phystep - Read (Write) from (on) TRAJ WA file at each time step
 *                           in the physics interface
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_rwtraj_phystep(F_up,F_vp,F_tp,F_qp,F_trp,
      $                              F_um,F_vm,F_tm     ,F_trm,

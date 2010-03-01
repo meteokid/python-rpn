@@ -1,6 +1,6 @@
 ***s/r zongini - initialization of the zonal diagnostics package
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine zongini
 #include "impnone.cdk"

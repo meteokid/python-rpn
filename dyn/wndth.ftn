@@ -1,6 +1,6 @@
 ***s/r wndth - Compute an average wind valid at time t0-dt/2 (th)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine wndth
 *

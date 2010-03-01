@@ -1,6 +1,6 @@
 ***s/r adw_main_2_pos - calculate upstream positions at th and t1
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_main_2_pos ( F_it, F_u, F_v, F_w )
 *

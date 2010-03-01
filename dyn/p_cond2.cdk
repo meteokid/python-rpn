@@ -5,6 +5,7 @@
 *revision
 * v3_02 - Dugas B.               - adapted from p_cond.cdk
 * v3_12 - Bilodeau B.            - character*8 to character*16
+* v3_22 - Dugas B.               - add P_cond2_kfctriga 
 *______________________________________________________________________
 *                                                                      |
 *  OUTPUT GLOBAL CONTROL VARIABLES (second set)                        |
@@ -22,6 +23,8 @@
 * P_cond2_kfcmom_L   | KFCMOM : true if want convective transport      |
 *                    |          of momentum                            |
 * P_cond2_kfctrig4   | trigger parameter in KF (Kain Fritsch)          |
+* P_cond2_kfctriga   | nominal resolution for which KFCTRIG4 is set    |
+*                    | (does nothing if its value <= 0., units: m)     |
 *                    |                                                 |
 * P_cond2_kfcrad     | initial convective updraft radius in KF (metres)|
 *                    |                                                 |
@@ -35,7 +38,7 @@
 *                    |                                                 |
 * P_cond2_kfctimea   | convective time adjustment in KF                |
 *                    |                                                 |
-* P_cond2_kticefrac_L  KTICEFRAC=true, if want to use the calculation  |
+* P_cond2_kticefrac_L| KTICEFRAC=true, if want to use the calculation  |
 *                    |           of ice fraction                       |
 *                    |                                                 |
 *----------------------------------------------------------------------
@@ -44,9 +47,9 @@
       character*16 P_cond2_conv_S , P_cond2_stcon_S, P_cond2_shlct_S(2)
       logical P_cond2_satu_L   ,P_cond2_ilwc_L, P_cond2_kfcmom_L,
      $        P_cond2_kticefrac_L
-      real P_cond2_kfctrig4(4), P_cond2_kfcrad, P_cond2_kfcdepth, 
-     $     P_cond2_kfcdlev, P_cond2_kfcdet, P_cond2_kfctimec,
-     $     P_cond2_kfctimea
+      real P_cond2_kfctrig4(4), P_cond2_kfctriga, P_cond2_kfcrad,
+     $     P_cond2_kfcdepth, P_cond2_kfcdlev, P_cond2_kfcdet,
+     $     P_cond2_kfctimec, P_cond2_kfctimea
 *
       MARK_COMMON_BEG (pcond2_c)
       common /pcond2_c/ P_cond2_conv_S,P_cond2_stcon_S,P_cond2_shlct_S
@@ -58,7 +61,7 @@
       MARK_COMMON_END (pcond2_l)
 
       MARK_COMMON_BEG (pcond2_r)
-      common /pcond2_r/ P_cond2_kfctrig4,P_cond2_kfcrad,P_cond2_kfcdepth,
-     $                  P_cond2_kfcdlev,P_cond2_kfcdet,P_cond2_kfctimec,
-     $                  P_cond2_kfctimea
+      common /pcond2_r/P_cond2_kfctrig4,P_cond2_kfctriga,P_cond2_kfcrad,
+     $                  P_cond2_kfcdepth,P_cond2_kfcdlev,P_cond2_kfcdet,
+     $                  P_cond2_kfctimec,P_cond2_kfctimea
       MARK_COMMON_END (pcond2_r)

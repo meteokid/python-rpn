@@ -12,10 +12,15 @@
 *                    | the maximum and minimum value) in Pascals       |
 * Pres_ptop          | top required for the  model top (Schm_cptop_L=T)|
 * Pres_pref          | reference pressure for hybride coordinate (mb)  |
+* Pres_vtap_L        | .true. to calculate Grand PI from VT            |
 * ---------------------------------------------------------------------
 #endif
 
       real Pres_top, Pres_surf, Pres_ptop, Pres_pref
+      logical Pres_vtap_L
       MARK_COMMON_BEG (pres)
       common / pres / Pres_top, Pres_surf, Pres_ptop, Pres_pref
       MARK_COMMON_END (pres)
+      MARK_COMMON_BEG (pres_l)
+      common / presl/ Pres_vtap_L
+      MARK_COMMON_END (pres_l)

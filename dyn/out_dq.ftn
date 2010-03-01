@@ -1,6 +1,6 @@
 ***s/r out_dq - calculate and output divergence and vorticity fields
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine out_dq (F_ut1,F_vt1,F_wlnph,F_wlao,minx,maxx,miny,maxy,
      %                   F_nk, F_levtyp_S,F_rf,F_indo,F_nko,F_set)

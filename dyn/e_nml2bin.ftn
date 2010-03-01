@@ -1,6 +1,6 @@
 ***s/r e_nml2bin - writes parameters to labfl
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine e_nml2bin
 *
@@ -20,6 +20,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L
 * v3_21 - Lemonsu A.        - add P_pbl_schurb_s
+* v3_22 - Lee V.            - removed Trvs tracers
 *
 *language
 *	fortran 77
@@ -58,11 +59,9 @@
      $             Grd_dx  , Grd_dy  , Grd_rot_8 , lam      ,
      $             Grd_x0  , Grd_xl  , Grd_y0    , Grd_yl   , 
      $             Grd_dxmax, Grd_dymax, Grd_typ_S, Grd_gauss_L,
-     $             e_tr3d_ntr, e_trvs_ntr, 
+     $             e_tr3d_ntr,
      $             (E_tr3d_name_S(k),k=1,E_tr3d_ntr),
-     $             (E_tr3d_sval  (k),k=1,E_tr3d_ntr),
-     $             (E_trvs_name_S(k),k=1,E_trvs_ntr),
-     $             (E_trvs_sval  (k),k=1,E_trvs_ntr)
+     $             (E_tr3d_sval  (k),k=1,E_tr3d_ntr)
 *
       write(labfl) P_pbl_schsl_s, P_pbl_snoalb_L,P_pbl_schurb_s,
      $             Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,

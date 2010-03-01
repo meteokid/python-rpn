@@ -1,6 +1,6 @@
 ***s/r v4d_varconv_tl - TLM of conversion control variables GEM <--> 3D-Var
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_varconv_tl( C_ut1, C_vt1, C_tt1, C_hut1, C_st1,
      $                           C_tt1m, C_hut1m, C_st1m, DIST_DIM, Nk, inverse_L )

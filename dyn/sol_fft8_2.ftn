@@ -1,7 +1,7 @@
 ***s/r sol_fft8_2 - parallel direct solution of horizontal Helmholtz
 *                   problem. With ffft8
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine sol_fft8_2( sol, Rhs, pri,
      $                       Minx, Maxx, Miny, Maxy, njl,

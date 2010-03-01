@@ -2,6 +2,8 @@
 *
 ***comdeck p_cond.cdk
 *
+*revision
+* v3_22 - Dugas B.               - add P_cond_kfctriga 
 *______________________________________________________________________
 *                                                                      |
 *  OUTPUT GLOBAL CONTROL VARIABLES                                     |
@@ -44,6 +46,8 @@
 * P_cond_kfcmom_L    | KFCMOM : true if want convective transport      |
 *                    |          of momentum                            |
 * P_cond_kfctrig4    | trigger parameters in KF (Kain Fritsch)         |
+* P_cond_kfctriga    | nominal resolution for which KFCTRIG4 is set    |
+*                    | (does nothing if its value <= 0., units: m*)    |
 *                    |                                                 |
 * P_cond_kfcrad      | initial convective updraft radius in KF (metres)|
 *                    |                                                 |
@@ -75,9 +79,9 @@
       integer P_cond_filtend, P_cond_xofset,
      $        P_cond_xblnd  , P_cond_yofset, P_cond_yblnd
       real P_cond_hc, P_cond_hf, P_cond_hm, P_cond_filco, P_cond_dzsedi,
-     $     P_cond_kfctrig4(4), P_cond_kfcrad, P_cond_kfcdepth, 
-     $     P_cond_kfcdlev, P_cond_kfcdet, P_cond_kfctimec,
-     $     P_cond_kfctimea,P_cond_kkl
+     $     P_cond_kfctrig4(4), P_cond_kfctriga, P_cond_kfcrad,
+     $     P_cond_kfcdepth, P_cond_kfcdlev, P_cond_kfcdet,
+     $     P_cond_kfctimec, P_cond_kfctimea,P_cond_kkl
 *
       MARK_COMMON_BEG (pcond_c)
       common /pcond_c/ P_cond_conv_s, P_cond_stcon_s, 
@@ -96,9 +100,10 @@
 
       MARK_COMMON_BEG (pcond_r)
       common /pcond_r/ P_cond_hc, P_cond_hf, P_cond_hm, P_cond_filco, 
-     $                 P_cond_dzsedi,   P_cond_kfctrig4, P_cond_kfcrad, 
-     $                 P_cond_kfcdepth, P_cond_kfcdlev, P_cond_kfcdet, 
-     $                 P_cond_kfctimec, P_cond_kfctimea,P_cond_kkl
+     $                 P_cond_dzsedi, P_cond_kfctrig4, P_cond_kfctriga,
+     $                 P_cond_kfcrad, P_cond_kfcdepth, P_cond_kfcdlev,
+     $                 P_cond_kfcdet, P_cond_kfctimec, P_cond_kfctimea,
+     $                 P_cond_kkl
       MARK_COMMON_END (pcond_r)
 *
       DCL_DYNVAR(P_cond, fcpf ,  real, (l_ni,l_nj))

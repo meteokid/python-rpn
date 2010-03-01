@@ -1,6 +1,6 @@
 ***s/r set_opr - initialize the commons containing model operators
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_opr
 *

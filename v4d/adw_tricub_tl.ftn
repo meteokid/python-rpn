@@ -1,6 +1,6 @@
 ***s/r adw_tricub_tl - TLM of adw_tricub 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_tricub_tl ( F_out,  F_in,  F_inzz, F_n,
      %                           F_capx, F_xgg, F_xdd,

@@ -1,7 +1,7 @@
 ***s/r adw_cfl_lam - Compute the courrant numbers for this time step
 *
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_cfl_lam ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn )
       implicit none

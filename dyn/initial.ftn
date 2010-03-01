@@ -1,6 +1,6 @@
 ***s/r initial - Performs initialisation
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine initial (F_rstrt_L)
 *

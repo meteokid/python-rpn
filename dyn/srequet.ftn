@@ -1,7 +1,7 @@
 ***function srequet - reads from a file to initialize output requests
 *                     for grid, levels, timesteps and variables
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       integer function srequet()
 *

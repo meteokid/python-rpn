@@ -1,6 +1,6 @@
 ***s/r vspng_lam
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine vspng_lam ( F_champ, DIST_DIM, pni, pnj )
 #include "impnone.cdk"

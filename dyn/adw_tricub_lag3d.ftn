@@ -1,6 +1,6 @@
 ***s/r adw_tricub_lag3d - Tri-cubic interpolation: Lagrange 3d 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_tricub_lag3d ( F_out, F_in, F_x, F_y, F_z,
      %                              F_num, F_mono_L, i0, in, j0, jn, kn )

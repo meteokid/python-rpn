@@ -1,6 +1,6 @@
 ***s/r v4d_putfld - Put model profiles on Pr_ihdlout  
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_putfld (cdvar,kstatus,gomvar_8,kdim,kobs,indexvar)
 *

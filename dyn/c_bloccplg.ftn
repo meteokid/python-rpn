@@ -1,6 +1,6 @@
 ***s/r c_bloccplg To obtain the dynamical fields used for the coupling
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine c_bloccplg(F_fields,CNI,CNJ,FLDNUM)
 *

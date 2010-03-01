@@ -1,7 +1,7 @@
 ***s/r hzd_hoffld - applies 1D or 2D horizontal diffusion on a given field 
 *                   according to its grid (based on HZD_HOF, A.Qaddouri)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hzd_hoffld (F, DIST_DIM, Nk, grid) 
 *

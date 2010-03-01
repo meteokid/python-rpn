@@ -1,7 +1,7 @@
 ***s/r hspng_main_tr - Equivalent to hspng_main for TRAJECTORY
 *                      (F_pip, F_qp (No Hyd) ONLY)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hspng_main_tr
 *

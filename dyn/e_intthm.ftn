@@ -1,6 +1,6 @@
 ***s/r e_intthm  - Interpolate GZ,VT,HU on model grid.
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine e_intthm
 *
@@ -14,6 +14,7 @@
 * v3_02 - Lee V.            - added one more argument to e_bmfrd
 * v3_02 -                   - correction to search for GZ at 1.0 eta/sg
 * v3_20 - Pellerin Pierre   - To run off-line (surface)
+* v3_22 - Lee V.            - removed Trvs tracers
 *
 *object
 *    Computes  the ln of surface and top pressure given the topo 
@@ -252,11 +253,6 @@ c         print*, E_tr3d_name_S(i),i
          endif
       end do
 *
-      do i=1,E_trvs_ntr
-         print*, E_trvs_name_S(i),i
-         err = e_bmfrd ( dstf_gid, nifi, njfi, E_trvs_name_S(i), 
-     $                            0., 1., na, lv, anyip_L,arret_L,'CUBIC' )
-      end do
 *     
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
 *

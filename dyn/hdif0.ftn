@@ -1,6 +1,6 @@
 ***s/r hdif0 - Execute horizontal diffusions at initial timestep for 4D-Var type job 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hdif0 ()
 *

@@ -1,6 +1,6 @@
 ***s/r sergini - Prepares "first record" output for time series.
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine sergini
 *

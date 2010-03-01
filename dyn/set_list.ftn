@@ -1,7 +1,7 @@
 ***s/r set_list - initialization of SETSOR table with output names,pointers
 *                 to VMM keys for dynamic variables
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_list
 *

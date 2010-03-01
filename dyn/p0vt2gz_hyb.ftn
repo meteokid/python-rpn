@@ -1,6 +1,6 @@
 ***s/r p0vt2gz_hyb - Compute hydrostatic GZ from P0 and VT
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine p0vt2gz_hyb (F_gz, F_pia, F_pib, F_ps, F_vt, 
      $                             n, Nk, F_pib_L, F_sig_L)

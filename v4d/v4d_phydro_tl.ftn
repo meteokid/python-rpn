@@ -1,6 +1,6 @@
 ***s/r v4d_phydro_tl - TLM of v4d_phydro  
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_phydro_tl (Ndim,F)  
 *
@@ -188,7 +188,7 @@
 *     -------------------------------------------
 *     Set dependent variables phi',phi from T',s'
 *     -------------------------------------------
-      call v4d_vtap_tl ()
+      call vtap_tl ()
 *
       err = vmmuld(-1,0)
 *

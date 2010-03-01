@@ -1,7 +1,7 @@
 ***s/r set_crni - initialization of the common for right-hand side of
 *                 equations when using a Crank-Nicholson procedure
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_crni
 *

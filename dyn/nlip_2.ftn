@@ -5,7 +5,7 @@
 *
 ***********************************************************************
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine nlip_2 ( F_nu, F_nv, F_n1, F_nth, F_n3, F_n3p, 
      $                    F_rheln, F_rhell, F_tpt0, F_tplt0, F_pipt0, 
@@ -117,7 +117,6 @@
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
-#include "geomg_n1.cdk"
 #include "cori.cdk"
 #include "schm.cdk"
 #include "intuv.cdk"

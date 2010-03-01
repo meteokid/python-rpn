@@ -2,7 +2,7 @@
 *                 adw_main_2_pos: Calculate upstream positions at th and t1
 *                 adw_main_3_int: Interpolation of rhs
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_main ( F_it )
 *

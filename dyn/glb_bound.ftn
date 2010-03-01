@@ -1,7 +1,7 @@
 ***s/r glb_bound - Updates lateral boundaries and performs
 *                  horizontal blending (LAM configuration)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine glb_bound ()
       implicit none

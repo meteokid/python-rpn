@@ -1,14 +1,12 @@
 ***s/p calF_omeg - compute vertical velocity in pressure coordinates
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
-      subroutine calzz(F_zz, F_fit1, F_fit2,  DIST_DIM, Nk,
-     $                                       F_i0,F_in,F_j0,F_jn)
+      subroutine calzz(F_zz, F_fit1, F_fit2,  DIST_DIM, Nk)
 *
       implicit none
 *
       integer DIST_DIM, Nk
-      integer F_i0,F_in,F_j0,F_jn
       real F_zz(DIST_SHAPE,Nk)
       real F_fit1(DIST_SHAPE,Nk), F_fit2(DIST_SHAPE,Nk)
 *
@@ -17,6 +15,7 @@
 *
 *revision
 * v3_03 - Moffet R.        - add ZZ calc at step=0
+* v3_22 - Lee V.           - correct calc for LAM,remove F_i0,F_j0..
 *
 *object
 *	compute vertical velocity in z coordinates
@@ -38,8 +37,8 @@
       if ( Lctl_step .ne. 0 )then
 
       do k=2,l_nk
-         do j= F_j0, F_jn
-         do i= F_i0, F_in
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
            F_zz (i,j,k) = (F_fit1(i,j,k) - F_fit2(i,j,k))
      %                                / (Cstv_dt_8*Dcst_grav_8)
         end do
@@ -47,8 +46,8 @@
       end do
 
 *
-      do j= F_j0, F_jn
-      do i= F_i0, F_in
+      do j= 1, l_nj
+      do i= 1, l_ni
          F_zz (i,j,1) = 0.
       end do
       end do
@@ -56,8 +55,8 @@
       else
 
       do k=1,l_nk
-         do j= F_j0, F_jn
-         do i= F_i0, F_in
+         do j= 1, l_nj
+         do i= 1, l_ni
            F_zz (i,j,k) = 0.0
         end do
         end do

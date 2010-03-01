@@ -1,7 +1,7 @@
 ***s/r hzd_main_tr - Equivalent to hzd_main for TRAJECTORY 
 *                    (F_pip, F_qp (No Hyd) ONLY)
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hzd_main_tr 
 *

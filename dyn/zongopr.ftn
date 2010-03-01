@@ -1,6 +1,6 @@
 ***s/r zongopr  - controls zonal diagnostics package
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine zongopr(F_opr, F_val)
 *

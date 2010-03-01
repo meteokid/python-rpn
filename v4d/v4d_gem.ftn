@@ -1,6 +1,6 @@
 ***s/r v4d_gem - Control 4-D variational job based on GEM model 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_gem
 *

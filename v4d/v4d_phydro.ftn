@@ -1,6 +1,6 @@
 ***s/r v4d_phydro - Set phi' hydrostatic in control variable F  
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine v4d_phydro (Ndim,F)  
 *
@@ -139,7 +139,7 @@
 *     -------------------------------------------
 *     Set dependent variables phi',phi from T',s'
 *     -------------------------------------------
-      call v4d_vtap ()
+      call vtap ()
 *
       err = vmmuld(-1,0)
 *

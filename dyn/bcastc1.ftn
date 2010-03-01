@@ -1,6 +1,6 @@
 ***s/r bcastc1
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine bcastc1
 *
@@ -36,6 +36,7 @@
 * v3_20 - Buehner & Zadra   - Add broadcast of V4d_gen_c
 * v3_21 - Valcke, S.        - Remove broadcast of C_pipe, C_nml, C_step
 * v3_21 - Lee V.            - Remove broadcast of TR2d..., added Lctl_i
+* v3_22 - Gravel S.         - Add broadcast of mtn_r
 *
 *object
 *
@@ -78,6 +79,7 @@
 #include "v4dm.cdk"
 #include "theo.cdk"
 #include "bubble.cdk"
+#include "mtn.cdk"
 #include "vtopo.cdk"
 #include "vrtd.cdk"
 #include "zblen.cdk"
@@ -94,6 +96,7 @@
       COMMON_BROADCAST(Memi)
       COMMON_BROADCAST(Stepi)
       COMMON_BROADCAST(pres)
+      COMMON_BROADCAST(pres_l)
       COMMON_BROADCAST(Xst_i)
       COMMON_BROADCAST(Xst_r)
       COMMON_BROADCAST(Pils)
@@ -154,6 +157,7 @@
       COMMON_BROADCAST(V4d_min_r)
       COMMON_BROADCAST(theo_s)
       COMMON_BROADCAST(bubble_r)
+      COMMON_BROADCAST(mtn_r)
       COMMON_BROADCAST(vtopo_l)
       COMMON_BROADCAST(vtopo_i)
       COMMON_BROADCAST(vrtd_l)
@@ -171,6 +175,11 @@
       call RPN_COMM_bcast(V4dz_degree,  1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(V4dzge_degree,1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(V4dzga_degree,1,"MPI_INTEGER",0,"grid",err )
+************************
+*** COMMONBROADCAST(pres_l) above is not valid due to typo error in pres.cdk
+*** Broadcast will be done as follows:
+      call RPN_COMM_bcast(Pres_vtap_L,1,"MPI_LOGICAL",0,"grid",err )
+************************
 *
       err = 0
       if (.not.Path_swv1_L) then

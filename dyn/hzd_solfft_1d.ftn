@@ -1,7 +1,7 @@
 ***s/r hzd_solfft_1d - parallel direct solution of 1D high-order diffusion 
 *                      equation with ffft8 (based on HZD_SOLFFT, A.Qaddouri) 
 
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
        subroutine hzd_solfft_1d (F_sol, F_Rhs_8, F_pri_8, F_deltai_8,
      %             minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr,

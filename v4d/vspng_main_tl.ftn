@@ -1,6 +1,6 @@
 ***s/r vspng_main - TLM of vspng_main 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine vspng_main_tl
 *

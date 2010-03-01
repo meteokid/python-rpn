@@ -1,22 +1,20 @@
-#include <model_macros_f.h>
+#include "model_macros_f.h"
       subroutine e_trinit ()
       implicit none
 *
+*revision
+* v3_22 - Lee V.            - removed Trvs tracers
 #include "e_tr.cdk"
 *
       character*50 dumc
       integer i,in
 *
       E_tr3d_ntr = 0
-      E_trvs_ntr = 0
       do i=1,MAXTR
          E_tr3d_name_S(i) = '0000'
-         E_trvs_name_S(i) = '0000'
          call low2up (E_tr3d_list_S(i),dumc)
          if ((dumc(1:2).eq."HU").or.(dumc(1:2).eq."ES")) dumc = ''
          E_tr3d_list_S(i) = dumc
-         call low2up (E_trvs_list_S(i),dumc)
-         E_trvs_list_S(i) = dumc
       end do
 *
       do i=1,MAXTR
@@ -29,17 +27,6 @@
             else
                E_tr3d_name_S(E_tr3d_ntr) = E_tr3d_list_S(i)
                E_tr3d_sval  (E_tr3d_ntr) = 0.
-            endif
-         endif
-         if (E_trvs_list_S(i).ne.'') then
-            E_trvs_ntr = E_trvs_ntr+1
-            in=index(E_trvs_list_S(i),"=")+1
-            if (in.ge.3) then
-               E_trvs_name_S(E_trvs_ntr) = E_trvs_list_S(i)(1:in-2)
-               read (E_trvs_list_S(i)(in:20),*) E_trvs_sval (E_trvs_ntr)
-            else
-               E_trvs_name_S(E_trvs_ntr) = E_trvs_list_S(i)
-               E_trvs_sval  (E_trvs_ntr) = 0.
             endif
          endif
       end do

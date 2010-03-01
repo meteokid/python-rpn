@@ -1,5 +1,5 @@
 ***s/p - readlam
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine readlam(f,DIST_DIM,nk,i0,in,j0,jn,k0,kn,unit)
 #include "impnone.cdk"

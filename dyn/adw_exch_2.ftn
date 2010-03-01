@@ -1,7 +1,7 @@
 ***s/r adw_exch_2 -    exchange 1 to 3 fields among processors
 *                   ( upstream positions or interpolated values )
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_exch_2 ( F_a_fro,   F_b_fro,   F_c_fro,
      %                        F_a_for,   F_b_for,   F_c_for,

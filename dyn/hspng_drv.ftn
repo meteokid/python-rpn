@@ -1,6 +1,6 @@
 ***s/r hspng_drv - Main driver for horizontal sponge on poles
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine hspng_drv ( F_u,    F_v,  F_psd,  F_tp,  F_ip,
      %                      F_td,    F_t,   F_it, F_plt,   F_q,

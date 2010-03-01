@@ -141,6 +141,7 @@
 *
          if (key_ws3.lt.0 ) then
             key_ws2= fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I1')
+            if (key_ws2.lt.0) print *,'I1 is not created'
             if(key_ws2.lt.0) go to 555
             err= fstprm (key_ws2, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3, 
@@ -160,6 +161,7 @@
          key_is0 = fstinf(iun2,ni,nj,nk,-1,' ',-1  ,-1,-1,' ','I2')
          key_is1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I2')
 *
+         if (key_is0.lt.0) print *,'I2 is not created'
          if(key_is0.lt.0) go to 555
          if(key_is1.lt.0 .and. key_is0.ge.0) then
             err= fstprm (key_is0, dte, det, ipas, ni, nj, nk, bit, dty,

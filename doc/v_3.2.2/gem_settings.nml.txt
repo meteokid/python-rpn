@@ -1,6 +1,6 @@
 _____________________________________________________________________________
 *                                                                             |
-*     FILE gem_settings.nml           (last update: Oct.18,2004- v3.2.0)VL    |
+*     FILE gem_settings.nml           (last update: Jan.23,2007- v3.2.2)VL    |
 *_____________________________________________________________________________|
 
 *_____________________________________________________________________________
@@ -18,7 +18,7 @@ _____________________________________________________________________________
 
 *_____________________________________________________________________________
 *                                                                             |
-*     GRILLE namelist                                                         |
+*     GRID   namelist                                                         |
 *_____________________________________________________________________________|
 *                    |                                                 |      |
 * NAME               | DESCRIPTION                                     |DEFVAL|
@@ -171,6 +171,7 @@ The following 4 parameters apply only for LAM grids                    |      |
 *                    | to pressure surfaces range: 1. <= rcoef <= 2.   |      |
 *	             | rcoef=1.0 means NO transition                   |      |
 * Pres_ptop          | top required for non-rigid model top            |-1.0  |
+* Pres_vtap_L        | TRUE to calc GZ from Temp based on VTAP         |false |
 * Level_ip12000_L    | TRUE to use fst2000 IP1 encoding                |false |
 * Mem_mx3db          |  Factor to multiply space needed to allocate    | 50   |
 *                    |  central memory for VMM Manager                 |      |
@@ -252,7 +253,13 @@ The following 4 parameters apply only for LAM grids                    |      |
 * Cstv_pitop_8       | basic state pressure at the top                 |-1.0  |
 * Cstv_pisrf_8       | basic state pressure at the surface             |1000.0|
 * Cstv_tstr_8        | t*  (basic state temperature)                   | 200.0|
-* Hzd_type_S         | Hor. diffusion type:Factorized or High Order(HO)| "HO" |
+*--------------------|-------------------------------------------------|------|
+* Horizontal diffusion if activated, will be applied to the following  |      |
+* variables  :  * Winds, Temperature, Pressure, Total Divergence, GZ...|      |
+*--------------------|-------------------------------------------------|------|
+* Hzd_type_S         | "HO" High Order horizontal diffusion            | "HO" |
+*                    | "FACT" for factorized horizontal diffusion      |      |
+*                    | "NIL" for no horizontal diffusion               |      |
 * Hzd_pwr            | Hor. diffusion order when using HO del-n        |  6   |
 *                    |  available: 2, 4, 6, 8                          |      |
 * Hzd_lnr            | 2 delta-x removal ratio when using HO           | 0.2  |
@@ -272,17 +279,32 @@ The following 4 parameters apply only for LAM grids                    |      |
 * Eigv_parity_L      | .true. to apply the parallel direct solution    |false |
 *                    | of high-order diffusion equation with mxma8     |      |
 *                    | using reflexion symmetry of C-grid(global)      |      |
-* Vspng_njpole       | Number of points along j on which to apply      |  3   |
-*                    | modulation to 0. of the diff. coefficient       |      |
-* Vspng_nk           | nb of levels for vertical sponge layer profile  |  0   |
-* Vspng_mf           | based on multiplicative factor(s) of horizontal | -1   |
-*                    | diffusion coefficient                           |      |
-* Vspng_nutop        | the horizontal diffusion coefficient for        | -1   |
-*                    |                                 top sponge layer| -1   |
-* Vspng_uvwdt_L      | Logical control to limit application of vertical| true |
-*                    | sponge on momentum variables only               |      |
+*--------------------|-------------------------------------------------|------|
+* Vertical sponge if activated, will be applied to the following variables  : |
+* Winds, Temperature, Pressure, Total Divergence, GZ...                |      |
+*--------------------|-------------------------------------------------|------|
+* Vspng_nk           | # of levels from the top of the model (thickness|      |
+*                    | of the vertical sponge layer)                   |  0   |
+* Vspng_mf           | (non-LAM)  the multiplicative factor(s) of the  | -1   |
+*                    | the the factorized del-2 horizontal diffusion   |      |
+* Vspng_njpole       | (non-LAM) Number of points along j on which to  |  3   |
+*                    | apply modulation to 0. of the diff. coefficient |      |
+* Vspng_nutop        | (LAM only) the diffusion coefficient for the    | -1   |
+*                    | 9 point explicit horizontal filter  (0.0 to 2.0)|      |
+*                    | Note: the higher the value, the smoother        |      |
+* Vspng_uvwdt_L      | .true. Logical control to force vertical sponge | true |
+*                    | to be applied ONLY on momentum and temperature  |      |
+*                    | for Vspng_nk levels and only the very top level |      |
+*                    | for the other variables                         |      |
+*                    | .false. To apply vertical sponge on all         |      |
+*                    |   variables for Vspng_nk levels                 |      |
 * Vspng_rwnd_L       | Logical control to diffuse real wind instead of |false |
 *                    | wind images within the vertical sponge scheme   |      |
+*--------------------|-------------------------------------------------|------|
+* Horizontal sponge    if activated, will be applied to the following  |      |
+* variables  :  * Winds, Temperature, Pressure, Total Divergence, GZ...|      |
+* It is not available for LAM                                          |      |
+*--------------------|-------------------------------------------------|------|
 * Hspng_nj           | Number of rows from numerical poles on which    |  0   |
 *                    | to apply an increasing FACT horizontal diffusion|      |
 * Hspng_mf           | Multiplicative factor(s) of horizontal          | 800  |
@@ -418,6 +440,8 @@ The following 4 parameters apply only for LAM grids                    |      |
 * P_rad_filter_L     | RADFLTR: .true. for vertical smoothing on       | true |
 *                    |          radiative fluxes                       |      |
 *                    |          .false. for no vertical smoothing      |      |
+* P_rad_tsflxir_L    | TS_IRFLX: to use TT(12000) instead of skin Temp |false |
+*                    |          in downward IR flux calculation        |      |
 *--------------------|-------------------------------------------------|      |
 * P_clim_clima_L     | CLIMAT: .true. for climate mode                 |false |
 * P_clim_ininc_L     | .true. to define physics surface forcing increm |false |
@@ -494,6 +518,8 @@ The following 4 parameters apply only for LAM grids                    |      |
 *                    | in between, linear interpolation is used        |      |
 * P_pbl_zua          | height of wind input for surface flux calculat  | -1   |
 * P_pbl_zta          | height of temp and humidity input for SFX calc  | -1   |
+* P_pbl_tdiaglim_L   | to limit on decrease of tdiag                   |false |
+* P_pbl_limsnodp_L   | to limit snow depth to 10cm on seaice and glacie|false |
 * P_cond_satu_L      | SATUCO: .true. water/ice phase for saturation   |false |
 *                    |         .false. water phase only for saturation |      |
 * P_cond_ilwc_L      | INILWC: to initialize water content and cloud   |false |
@@ -553,6 +579,8 @@ The following 4 parameters apply only for LAM grids                    |      |
 * P_cond_kfctimea    | convective time adjustment in Kain-Fritsch schem| 3600.|
 * P_cond_kfcpcp_s    | 'ORI': orig. scheme to not retain precip in KFCP|'ORI' |
 *                    | 'CONSPCPN': conservation of precip. in KFCP     |      |
+* P_cond_kfctriga    | nominal resolution for which KFCTRIG4 is set    | -1.0 |
+*                    | this is inactive if value <= 0                  |      |
 * P_cond_kticefrac_L | .true. to use ice fraction calculation          | true |
 * P_gwd_s            | GWDRAG: gravity wave drag formulation           | GWD86|
 * P_serg_srsus_L     | .true. for time-series requested                |false |

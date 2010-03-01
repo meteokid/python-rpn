@@ -1,6 +1,6 @@
 ***s/r set_geof - initialization of the VMM commons for geophysical fields
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_geof
 *

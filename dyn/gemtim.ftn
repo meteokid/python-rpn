@@ -1,6 +1,6 @@
 ***s/r gemtim - Print out date and cpu statistics
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine gemtim (unf)
 *
@@ -14,6 +14,7 @@
 *revision
 * v2_30 - Dugas B.       - initial version
 * v3_11 - Dugas B.       - Adapt to AIX envvironment
+* v3_22 - Lee V.         - add max residual memory 
 *
 *object
 *     
@@ -33,6 +34,8 @@
       if (timini_L) write(unf,1000) temp_S, users, systs
 #endif
 #if defined (AIX)
+      integer get_max_rss
+      external get_max_rss
       character date_S*8 ,time_S*10
       character jour_S*11,heure_S*10
       real          users,systs
@@ -51,7 +54,7 @@
       call cpu_time( systs )
 *
       if (timini_L)  write(unf,1000)
-     +               ' At '//jour_S//heure_S, users-user0, systs-syst0
+     +    ' At '//jour_S//heure_S, users-user0, systs-syst0,get_max_rss()
 *
       user0 = users
       syst0 = systs
@@ -60,7 +63,8 @@
 *
 *----------------------------------------------------------------
  1000    format(/A,' User Time (sec) : ',f10.6,
-     +             ' Sys  Time (sec) : ',f10.6)
+     +             ' Sys  Time (sec) : ',f10.6,
+     +            ', Mem (Kbytes/PE) : ',i10)
 *
       return
       end

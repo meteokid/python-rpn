@@ -1,6 +1,6 @@
 ***s/r gz2p0 - Compute P0 from GZ from pressure coordinate
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine gz2p0 (F_ps, F_gz, F_topo, F_zcol, F_tcol, F_sdd, F_lna, 
      $                             NN, Nk)

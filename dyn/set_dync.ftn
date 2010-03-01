@@ -1,6 +1,6 @@
 ***s/r set_dync - initialize the dynamics model configuration
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_dync
       implicit none
@@ -26,7 +26,6 @@
 #include "lun.cdk"
 #include "cstv.cdk"
 #include "geomg.cdk"
-#include "geomg_n1.cdk"
 #include "grd.cdk"
 #include "schm.cdk"
 #include "pres.cdk"

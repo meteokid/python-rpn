@@ -1,6 +1,6 @@
 *** s/r caldiv_2 - Computes horizontal divergence of wind-like fields 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine caldiv_2 ( F_div, F_uu, F_vv, DIST_DIM, Nk )
 *

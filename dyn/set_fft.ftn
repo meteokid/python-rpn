@@ -1,7 +1,7 @@
 ***s/r set_fft - determine if fast fourier transforms is needed and
 *                if so, initialize and prepare the FFT projector
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine set_fft
 *

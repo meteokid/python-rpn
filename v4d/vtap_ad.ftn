@@ -1,8 +1,8 @@
-***s/r v4d_vtap_ad - ADJ of v4d_vtap_tl 
+***s/r vtap_ad - ADJ of vtap_tl 
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
-      subroutine v4d_vtap_ad()
+      subroutine vtap_ad()
 *
 #include "impnone.cdk"
 *
@@ -15,6 +15,7 @@
 * v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 * v3_03 - Tanguay M.        - use Ind comdeck
+* v3_22 - Lee V.            - Name change from v4d_vtap_ad for to vtap_ad
 *
 *object
 *     see id section

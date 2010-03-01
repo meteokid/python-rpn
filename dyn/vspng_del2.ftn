@@ -1,6 +1,6 @@
 **s/r vspng_del2 - horizontal diffusion problem
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine vspng_del2 ( F_sol, F_opsxp0_8, F_opsyp0_8,
      $                        F_aix_8,F_bix_8,F_cix_8,F_dix_8,

@@ -1,7 +1,7 @@
 ***s/r adw_exch_3 - fetch back interpolated values after being 
 *                   obtained from neighbor processors for 1 or 2 fields
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine adw_exch_3 ( F_1_out, F_2_out,
      %                        F_1_in,  F_2_in,  F_c_in, F_n_treat )

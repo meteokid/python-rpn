@@ -1,6 +1,6 @@
 ***s/r bin2com - reads parameters from labfl
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine bin2com
       implicit none

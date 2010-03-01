@@ -1,7 +1,7 @@
 ***s/r p_fcpfw  - allocate and prepare flags et weights for FCPKUO 
 *                 or KFCKUO options
 *
-#include <model_macros_f.h>
+#include "model_macros_f.h"
 *
       subroutine p_fcpfw
 *

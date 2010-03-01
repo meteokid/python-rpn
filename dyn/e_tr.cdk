@@ -1,12 +1,11 @@
       integer MAXTR
       parameter ( MAXTR = 25 )
 *
-      character*4  E_tr3d_name_S,E_trvs_name_S
-      character*50 E_tr3d_list_S,E_trvs_list_S
-      integer E_tr3d_ntr,E_trvs_ntr
-      real E_tr3d_sval,E_trvs_sval
+      character*4  E_tr3d_name_S
+      character*50 E_tr3d_list_S
+      integer E_tr3d_ntr
+      real E_tr3d_sval
 
-      common /E_tr_c/ E_tr3d_list_S(MAXTR), E_tr3d_name_S(MAXTR),
-     $                E_trvs_list_S(MAXTR), E_trvs_name_S(MAXTR)
-      common /E_tr_i/ E_tr3d_ntr,E_trvs_ntr
-      common /E_tr_r/ E_tr3d_sval(MAXTR),E_trvs_sval(MAXTR)
+      common /E_tr_c/ E_tr3d_list_S(MAXTR), E_tr3d_name_S(MAXTR)
+      common /E_tr_i/ E_tr3d_ntr
+      common /E_tr_r/ E_tr3d_sval(MAXTR)
