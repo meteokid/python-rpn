@@ -22,6 +22,7 @@
 * v2_32 - Lee V.            - slab related calls are moved to p_phystep
 * v3_00 - Laroche S.        - remove hpdeallc (pageofld, ier, 1)
 * v3_02 - Lee V.            - output QC at time 0 here
+* v3_12 - Lee V.            - add rpn_comm_Barrier before wlog
 *      
 *object
 *
@@ -72,6 +73,7 @@
          endif
 
          if (Dslab_slab_p+Dslab_slab_e+Pslab_slab .gt.0) then
+            call rpn_comm_Barrier("grid", ier)
             if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
                 call wlog('IOUT')
             else

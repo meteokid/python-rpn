@@ -32,6 +32,7 @@
 * v3_02 - Tanguay M.        - IP3 depends on # iterations when 4dvar_L
 * v3_11 - Gravel S.         - IP3 depends on timestep for theoretical cases
 * v3_11 - Tanguay M.        - ADJ of digital filter
+* v3_12 - Lee V.            - add rpn_comm_Barrier before wlog
 *
 *object
 *     Subroutine to control the production of
@@ -200,6 +201,7 @@
       call hpdeallc(Out2_wlao_ , err, 0) 
       call hpdeallc(Out2_ptop_ , err, 0) 
 *
+      call rpn_comm_Barrier("grid", err)
          if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
              call wlog('IOUT')
          else

@@ -24,7 +24,10 @@
 *                             and add qco2 initialization
 * v3_03 - Bilodeau B.       - add P_pbl_as, P_pbl_beta and P_cond_kkl
 * v3_03 - Dugas B.          - add P_str_strato
-* v3_11 - Desgagne M.       - sdd P_pbl_impflx_L
+* v3_03 - Leduc A-M.        - add P_rad_filter_L
+* v3_11 - Desgagne M.       - add P_pbl_impflx_L
+* v3_12 - Plante A.         - add P_cond_pcptype_s
+* v3_12 - Bilodeau B.       - modify P_cond_kfctrig
 *
 *object
 *     See above id.
@@ -131,7 +134,7 @@
       call phyoptr('HM'      , P_cond_hm      ,       1, 'SET' )
 *
       call phyoptl('KFCMOM'  , P_cond_kfcmom_L,       1, 'SET' )
-      call phyoptr('KFCTRIG' , P_cond_kfctrig ,       1, 'SET' )
+      call phyoptr('KFCTRIG4', P_cond_kfctrig4,       4, 'SET' )
       call phyoptr('KFCRAD'  , P_cond_kfcrad  ,       1, 'SET' )
       call phyoptr('KFCDEPTH', P_cond_kfcdepth,       1, 'SET' )
       call phyoptr('KFCDLEV' , P_cond_kfcdlev ,       1, 'SET' )
@@ -142,10 +145,12 @@
 *
       call phyoptr('DZSEDI'  , P_cond_dzsedi  ,       1, 'SET' )
       call phyoptr('KKL'     , P_cond_kkl     ,       1, 'SET' )
+      call phyoptc('PCPTYPE' , P_cond_pcptype_s,      1, 'SET' )
 *
       call phyoptc('RADIA'   , P_rad_schm_s   ,       1, 'SET' )
       call phyoptc('RADFILES', P_rad_ftp_s    ,       1, 'SET' )
       call phyoptl('FOMICHEV', P_rad_fomic_L  ,       1, 'SET' )
+      call phyoptl('RADFLTR' , P_rad_filter_L ,       1, 'SET' )
       call phyopti('DATE'    , P_rad_datim    ,      14, 'SET' )
       call phyopti('KNTRAD'  , P_rad_knt      ,       1, 'SET' )
       call phyoptr('QCO2'    , P_rad_qco2     ,       1, 'SET' )
@@ -233,7 +238,7 @@
          call phyoptl('INILWC'  , P_cond2_ilwc_L  ,   1, 'SET' )
 *
          call phyoptl('KFCMOM'  , P_cond2_kfcmom_L,   1, 'SET' )
-         call phyoptr('KFCTRIG' , P_cond2_kfctrig ,   1, 'SET' )
+         call phyoptr('KFCTRIG4', P_cond2_kfctrig4,   1, 'SET' )
          call phyoptr('KFCRAD'  , P_cond2_kfcrad  ,   1, 'SET' )
          call phyoptr('KFCDEPTH', P_cond2_kfcdepth,   1, 'SET' )
          call phyoptr('KFCDLEV' , P_cond2_kfcdlev ,   1, 'SET' )

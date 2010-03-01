@@ -15,6 +15,7 @@
 * v2_00 - Desgagne M.       - initial MPI version (from wlog v1_03)
 * v2_21 - Lee V.            - removed Slab_dato, using Out1_dato
 * v3_01 - Desgagne M.       - only Ptopo_myproc.eq.0 will write
+* v3_12 - Lee V.            - force wlog to write in proper time units
 *
 *object
 *     see above id
@@ -40,14 +41,19 @@
 #include "dimout.cdk"
 #include "cstv.cdk"
 #include "out1.cdk"
+#include "out.cdk"
 #include "ptopo.cdk"
 *
 *modules
-      integer  cmcwlog
-      external cmcwlog
+      integer  cmcwlog,longueur
+      external cmcwlog,longueur
 *
-      character ptip2_S*3, ptmesg_S*80, ptcy_S*8, ptwcy_S*10, ptzcy_S*10
-      integer err, ip2, m, cy, i
+      character ptmesg_S*80, ptcy_S*8, ptwcy_S*10, ptzcy_S*10
+      character*20 string_S
+      character*10 unit_S,ptip2_S
+      character*6  format_S
+      character*1  dumc_S
+      integer err, ip2, m, cy, i,ndigits
 **
 *     ---------------------------------------------------------------
 *
@@ -57,23 +63,53 @@
          ptmesg_S(m:m) = ' '
       end do
 *
+*     Default, ip2 is in hours
       ip2 = nint(real(Lctl_step)*Cstv_dt_8/3600.)
-      write(ptip2_S,'(I3.3)') ip2
+      unit_S = 'hours'
+
+*     For just the prog in days
+      if (Out_unit_S.eq.'D')then
+      ip2 = nint(dble(Lctl_step)*Cstv_dt_8/3600./24.)
+      unit_S = 'days'
+      endif
+*     For just the prog in minutes
+      if (Out_unit_S.eq.'M')then
+      ip2 = nint((dble(Lctl_step)*Cstv_dt_8) / 60.)
+      unit_S = 'minutes'
+      endif
+*     For just the prog in seconds
+      if (Out_unit_S.eq.'S')then
+      ip2 = nint(dble(Lctl_step)*Cstv_dt_8)
+      unit_S = 'seconds'
+      endif
+*     For just the prog in steps
+      if (Out_unit_S.eq.'P')then
+      ip2 = Lctl_step
+      unit_S = 'timesteps'
+      endif
+      ndigits = Out_ndigits
+      if (ndigits.eq.-1) ndigits=3
+      write(format_S,999)ndigits,ndigits
+ 999  format('(I',I1,'.',I1,')')
+      write(ptip2_S,format_S) ip2
+      call up2low(Out_unit_S,dumc_S)
+      string_s=ptip2_s(1:longueur(ptip2_s))//dumc_S//' '//unit_s(1:longueur(unit_s))
 *
+
       if ( F_code_S .eq. 'IOUT' ) then
-         ptmesg_S=' '//ptip2_S//' hours completed during initialization'
+         ptmesg_S=' '//string_S(1:longueur(string_S))//' completed during initialization'
          err = cmcwlog('OU',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'FOUT' ) then
-         ptmesg_S = ' '//ptip2_S//' hours completed during forecast'
+         ptmesg_S = ' '//string_S(1:longueur(string_S))//' completed during forecast'
          err = cmcwlog('OU',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'IEND' ) then
-         ptmesg_S = ' END OF INITIALIZATION at '//ptip2_S//' hours'
+         ptmesg_S = ' END OF INITIALIZATION at '//string_S(1:longueur(string_s))
          err = cmcwlog('EN',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'FEND' ) then
-         ptmesg_S = ' END OF INTEGRATION at '//ptip2_S//' hours'
+         ptmesg_S = ' END OF INTEGRATION at '//string_S(1:longueur(string_s))
          err = cmcwlog('EN',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'BKUP' ) then
-         ptmesg_S = ' BACKUP FOR RESTART at '//ptip2_S//' hours'
+         ptmesg_S = ' BACKUP FOR RESTART at '//string_S(1:longueur(string_s))
          err = cmcwlog('BU',ip2,Out1_etik_s,ptmesg_S)
       else if ( F_code_S .eq. 'STOP' ) then
          ptmesg_S = ' PREMATURED STOP: END OF INTEGRATION'

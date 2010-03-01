@@ -3,7 +3,7 @@
 #include <model_macros_f.h>
 *
       subroutine p_vmmphy( F_up, F_vp, F_wp, F_tp, F_qp, F_trp,
-     $                     F_um, F_vm,       F_tm,       F_trm,
+     $                     F_um,F_vm,F_tm,F_gzm,F_topo,  F_trm,
      $                     F_lnpsm, F_sig, DIST_DIM, Nk )
 *
       implicit none
@@ -13,7 +13,8 @@
      $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk)  , 
      $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
      $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk)  ,
-     $     F_tm (DIST_SHAPE,Nk), F_trm(DIST_SHAPE,Nk,*),
+     $     F_tm (DIST_SHAPE,Nk), F_gzm (DIST_SHAPE,Nk), 
+     $     F_topo(DIST_SHAPE) ,  F_trm(DIST_SHAPE,Nk,*),
      $     F_lnpsm(DIST_SHAPE),  F_sig(DIST_SHAPE,Nk)  
 *
 *author
@@ -23,6 +24,7 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_31 - Desgagne          - clean up and introduce h2o tracers
 * v3_00 - Laroche S.        - adaptation for v4d
+* v3_12 _ Leduc A-M.        - Add arguments gzm and topo
 *
 *object
 *
@@ -44,12 +46,13 @@
 #include "vt1.cdk"
 #include "vt0.cdk"
 #include "busind.cdk"
+#include "p_geof.cdk"
 *
 **
       integer  vmmlod,vmmget,vmmuln
       external vmmlod,vmmget,vmmuln
 *
-      integer err, key(10), i, j, k, n, i0, j0, in, jn, nksurf,
+      integer err, key(12), i, j, k, n, i0, j0, in, jn, nksurf,
      $        keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
       real dt, dzmin, dzmin_, sigsfc, trp, trm
       real wk1(LDIST_SHAPE),wk2(LDIST_SHAPE),wk3(LDIST_SHAPE),
@@ -64,15 +67,19 @@
       key( 4) = VMM_KEY(ut1)
       key( 5) = VMM_KEY(vt1)
       key( 6) = VMM_KEY(tt1)
-      key( 7) = VMM_KEY(qt0)
-      key( 8) = VMM_KEY(qt1)
-      err = vmmlod(key,8)
+      key( 7) = VMM_KEY(fit1)
+      key( 8) = VMM_KEY(topo)
+      key( 9) = VMM_KEY(qt0)
+      key( 10) = VMM_KEY(qt1)
+      err = vmmlod(key,10)
       err = VMM_GET_VAR(ut0)
       err = VMM_GET_VAR(vt0)
       err = VMM_GET_VAR(tt0)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(topo)
       err = VMM_GET_VAR(qt0)
       err = VMM_GET_VAR(qt1)
 *
@@ -86,6 +93,7 @@
          F_um(i,j,k) =  ut0(i,j,k)
          F_vm(i,j,k) =  vt0(i,j,k)
          F_tm(i,j,k) =  tt0(i,j,k)
+         F_gzm(i,j,k)=  fit1(i,j,k)
          F_up(i,j,k) =  ut1(i,j,k)
          F_vp(i,j,k) =  vt1(i,j,k)
          F_tp(i,j,k) =  tt1(i,j,k)
@@ -93,6 +101,14 @@
       end do
       end do
 *
+
+      do j= 1, l_nj
+      do i= 1, l_ni
+         F_topo(i,j) = topo(i,j)
+      end do
+      end do
+
+
       if (Schm_hydro_L) then
          do k= 1,l_nk
          do j= 1, l_nj
@@ -106,12 +122,12 @@
             F_lnpsm(i,j) = qt0(i,j,l_nk)
          end do
          end do
-         err = vmmuln(key,8)
+         err = vmmuln(key,10)
       else
-         err = vmmuln(key,6)
-         key(9) = VMM_KEY(qpt0)
-         key(10) = VMM_KEY(qpt1)
-         err = vmmlod(key(9),2)
+         err = vmmuln(key,8)
+         key(11) = VMM_KEY(qpt0)
+         key(12) = VMM_KEY(qpt1)
+         err = vmmlod(key(11),2)
          err = VMM_GET_VAR(qpt0)
          err = VMM_GET_VAR(qpt1)
          do j= 1, l_nj 
@@ -126,7 +142,7 @@
          end do
          end do
          end do
-         err = vmmuln(key(7),4)
+         err = vmmuln(key(9),4)
       endif
 *
 *     calculate sigma levels from F_qp

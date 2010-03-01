@@ -29,8 +29,10 @@
 * v3_03 - Desgagne M.        - re-activate P_cond_filco for LAM
 * v3_03 - Bilodeau B.        - add P_pbl_as, P_pbl_beta and P_cond_kkl
 * v3_03 - Dugas B.           - add P_str_strato_L
+* v3_03 - Leduc A-M.         - add P_rad_filter_L
 * v3_10 - Lee V.             - check read error in some namelists, added stopmpi
-* v3_11 - Desgagne M.        - sdd P_pbl_impflx_L
+* v3_11 - Desgagne M.        - add P_pbl_impflx_L
+* v3_12 - Plante A.          - add P_cond_pcptype_s
 *
 *object
 *       See above id
@@ -83,6 +85,7 @@
       P_rad_schm_s   = 'oldrad' 
       P_rad_knt      = 3 
       P_rad_fomic_L  = .false.
+      P_rad_filter_L = .true.
       P_rad_ftp_s    = "STD"
       P_rad_qco2     = 360.
 *
@@ -152,7 +155,10 @@
       P_cond_hm      = 0.0
       P_cond_filco   = 0.0
       P_cond_kfcmom_L= .false.
-      P_cond_kfctrig = 0.05
+      P_cond_kfctrig4(1) = 0.
+      P_cond_kfctrig4(2) = 0.
+      P_cond_kfctrig4(3) = 0.05
+      P_cond_kfctrig4(4) = 0.05
       P_cond_kfcrad  = 1500.
       P_cond_kfcdepth= 4000.
       P_cond_kfcdlev = 0.5
@@ -161,6 +167,7 @@
       P_cond_kfctimea= 3600.
       P_cond_kfcpcp_s= 'ORI'
       P_cond_kkl     = 0.1
+      P_cond_pcptype_s='NIL'
 *
       P_gwd_s        = 'GWD86'
 *
@@ -232,7 +239,7 @@
          P_cond2_satu_L   = P_cond_satu_L
          P_cond2_ilwc_L   = P_cond_ilwc_L
          P_cond2_kfcmom_L = P_cond_kfcmom_L
-         P_cond2_kfctrig  = P_cond_kfctrig
+         P_cond2_kfctrig4 = P_cond_kfctrig4
          P_cond2_kfcrad   = P_cond_kfcrad
          P_cond2_kfcdepth = P_cond_kfcdepth
          P_cond2_kfcdlev  = P_cond_kfcdlev

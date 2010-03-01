@@ -3,6 +3,7 @@
 *revisions
 * v2_10 - Lee V.                 - added MAXBUS
 * v2_20 - Pellerin P.            - added geobus,entry bus
+* v3_12 - Bilodeau B.            - 16-character names
 *
 ***comdeck p_bus.cdk
 *
@@ -47,12 +48,12 @@
      $        p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj,
      $        entpar,dynpar,perpar,volpar
 *
-      character*8  entnm(maxbus),dynnm(maxbus),
-     $             pernm(maxbus),volnm(maxbus)
-      character*8  enton(maxbus),dynon(maxbus),
-     $             peron(maxbus),volon(maxbus)
-      character*60 entdc(maxbus),dyndc(maxbus),
-     $             perdc(maxbus),voldc(maxbus)
+      character*16  entnm(maxbus),dynnm(maxbus),
+     $              pernm(maxbus),volnm(maxbus)
+      character*8   enton(maxbus),dynon(maxbus),
+     $              peron(maxbus),volon(maxbus)
+      character*60  entdc(maxbus),dyndc(maxbus),
+     $              perdc(maxbus),voldc(maxbus)
       common /busdync/ entnm, dynnm, pernm, volnm, 
      $                 entdc, dyndc, perdc, voldc,
      $                 enton, dynon, peron, volon
@@ -65,7 +66,7 @@
       integer MAXGEO
       parameter (MAXGEO=1000)
 *
-      character*8  geonm(MAXGEO,6)
+      character*16 geonm(MAXGEO,6)
       common /busgeoc/ geonm
 *
       integer geopar(MAXGEO,3)

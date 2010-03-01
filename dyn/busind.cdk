@@ -1,7 +1,7 @@
 *
       integer
 *busdyn
-     $        umoins,vmoins,tmoins,humoins,pmoins,
+     $        umoins,vmoins,tmoins,gzmoins6,humoins,pmoins,
      $        uplus ,vplus ,tplus ,huplus ,pplus ,
      $        omegap,sigm,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
 *busvol
@@ -13,7 +13,7 @@
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp
 
       common /dynbusid/
-     $        umoins,vmoins,tmoins,humoins,pmoins,
+     $        umoins,vmoins,tmoins,gzmoins6,humoins,pmoins,
      $        uplus ,vplus ,tplus ,huplus ,pplus ,
      $        omegap,sigm,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
      $        trad,udifv,vdifv,tdifv,qdifv,ugwd,vgwd,tcond,hucond,

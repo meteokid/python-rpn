@@ -1,0 +1,50 @@
+<html>
+<body bgcolor="#FFFFFF">
+<pre class=text>
+<b>
+
+        ############# GEMDM Model -- Version 3.1.2 ###############
+                            April 27   2004
+</b>
+
+        Version 3.1.2 of the GEMDM dynamics is now ready and available 
+        in directory:
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.1.2/RCS_DYN"
+	It is connected to RPN/CMC physics version 4.1 in directory:
+	      "$ARMNLIB/modeles/PHY/v_4.1/RCS:4.1"
+
+############################################################################
+<b>
+MAIN FEATURES:
+</b>
+
+  This version is very similar to the previous version 3.1.1
+  EXCEPT that it uses Physics version 4.1 instead of 4.0. This
+  is the official version for the 15km regional operation run.
+  Note that it will not necessarily bit-reproduce results for
+  configurations used in the version 3.1.1 because of changes
+  in the physics code. Please refer to the Physics 4.1 release 
+  notes for details. Documentation on previous releases can be
+  found in:
+
+  http://notos.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+
+  The main features of this version are:
+
+1) Namelist changes in gem_settings.nml (for namelist physics):
+   Variable P_cond_kfctrig4 replaced  P_cond_kfctrig
+   Addition of new variables: P_cond_pcptype_S, P_radfilter_L
+
+2) Correction of bug in GEMNTR (uninitialized variable which
+   may or may not cause a crash in the entry program)
+
+3) RPN_comm_barrier statement added to insure message written to cmclog
+   file is after output is complete. The type of time unit written
+   in the cmc log file also corresponds to the time units of the output.
+
+############################################################################
+    
+</pre>
+</body>
+</html>

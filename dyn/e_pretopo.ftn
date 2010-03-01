@@ -12,6 +12,7 @@
 * v2_11                     is always done (e_setgeom) if Topo_init_L=T
 * v2_30 - L. Corbeil      - Writing of xdy and xdyv to bmf files
 * v3_00 - Desgagne & Lee  - Lam configuration
+* v3_12 - V. Lee          - bug correction; undefined xdhy(pnj) in non-LAM
 *
 *object
 *       See above ID.
@@ -119,8 +120,10 @@ C     Compute xdx,xdxu,xu,yv,xdy,xdyv
          do j = 1, pnjv-1
             xdhyv(j)  = xdyv(j+1) - xdyv(j)
          enddo
+
+         xdhy(pnj) = xdhy(pnj-1)
+
          if (lam) then
-            xdhy(pnj) = xdhy(pnj-1)
             xdhyv(0)  = xdhyv(1)
             xdhyv(pnjv) = xdhyv(pnjv-1)
          else

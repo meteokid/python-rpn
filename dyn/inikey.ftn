@@ -15,6 +15,8 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Laroche S.        - new conditional when P_cond_stcon_s(1:3).eq.' NIL'
 * v3_03 - Mailhot J.        - change name of physical tendency (for other physics tracers)
+* v3_03 - Leduc A-M         - Add gzmoins6
+* v3_12 - Bilodeau B.       - change length of vn_S from 8 to 16 characters
 *
 *object
 *
@@ -25,7 +27,7 @@
 #include "p_cond.cdk"
 *
 **
-      character*8 vn_S
+      character*16 vn_S
       integer init0,init,i,k,deb,lght
       data init0,init /0,-1/
 *
@@ -34,6 +36,7 @@
       call getindx ('UMOINS',  'D',umoins,   lght, init0)
       call getindx ('VMOINS',  'D',vmoins,   lght, init0)
       call getindx ('TMOINS',  'D',tmoins,   lght, init0)
+      call getindx ('GZMOINS6','D',gzmoins6, lght, init0)
       call getindx ('PMOINS',  'D',pmoins,   lght, init0)
       call getindx ('UPLUS',   'D',uplus,    lght, init0)
       call getindx ('VPLUS',   'D',vplus,    lght, init0)

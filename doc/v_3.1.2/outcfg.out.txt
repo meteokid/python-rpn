@@ -1,0 +1,189 @@
+_____________________________________________________________________________
+*                                                                             |
+*     FILE outcfg.out                 (last update: Aug.04,2004- v3.1.2)      |
+*_____________________________________________________________________________|
+*                                                                             |
+*  Example of Use                                                             |
+*                                                                             |
+* grid=1,model;                                                               |
+* levels=1,eta,-1;                                                            | 
+* levels=2,eta,28;                                                            |
+* levels=5,pres,[1000.,850.,700.,500.];                                       |
+* steps=1,hour,0.;                                                            |
+* steps=2,hour,<0.,6.,1.>;                                                    |
+* steps=3,step,<0.,3.,1.>;                                                    |
+* sortie([ME,PN,P0,PT],grid, 1, levels, 1, steps, 2)                          |
+* sortie([MF,2T,KM,GL,LA,LH,LO,MG,SD,FN,AL], grid, 1, levels, 1, steps, 2)    |
+* sortie([HUT1,FIT1,XCTH,XCT1,MUT1,ST1],grid, 1, levels, 1, steps, 3)         |
+* sortie([VT,TW,TD,TT,GZ,HU,HR,ES,UU,VV],grid, 1, levels, 5, steps, 2)        |
+*_____________________________________________________________________________|
+*  GRID SETS                                                                  |
+*                                                                             |
+*  Command to define the sets of grid output (type of grid per set):          |
+*                                                                             |
+* grid=gridset#,model/core,[gridx0,gridx1,gridy0,gridy1];                     |
+*                              gridx0 to gridy1 is optional                   |
+*                                                                             |
+*      Should label the gridset# sequentially: 1,2,3,....(max of 4)           |
+*       model       - total grid of the model                                 |
+*       core        - only the uniform part of the grid                       |
+*       gridx0      - value to add/subtract from X origin of                  |
+*                     core or model grid                                      |
+*       gridx1      - value to add/subtract from X upper corner               |
+*                     of core or model grid                                   |
+*       gridy0      - value to add/subtract from Y origin of                  |
+*                     core or model grid                                      |
+*       gridy1      - value to add/subtract from Y upper corner               |
+*                     of core or model grid                                   |
+*  HINT: normally you have positive values to add to the origins              |
+*        and negative values to subtract from the upper corners               |
+*                                                                             |
+*   ie: grid=1,model;                                                         |
+*       grid=2,core;                                                          |
+*       grid=3,model,2,-2,1,-1;                                               |
+*                                                                             |
+* Translation of above examples:                                              |
+*  Grid Output #1 asks for full model grid                                    |
+*  Grid Output #2 asks for the core (uniform part) of the variable grid       |
+*  Grid Output #3 asks for the model grid but starting 2 points from          |
+*                 X origin, 2 points from the Y origin, ending 1 point        |
+*                 from the X upper corner and ending 1 point from the         |
+*                 Y upper corner. (points are grid points)                    |
+*                                                                             |
+*_____________________________________________________________________________|
+*                                                                             |
+*  LEVEL SETS                                                                 |
+*                                                                             |
+*  Command to define the sets of level outputs:                               |
+*                                                                             |
+*    levels=levelset#,pres/eta,{list}                                         |
+*                                                                             |
+*                                                                             |
+*    ie:  levels=1,pres,[1000.,925.,850.];                                    |
+*         levels=2,eta,[1,5,10],<10,20,2>;                                    |
+*         levels=3,eta,<4,24,4>,<24,28,2>;                                    |
+*         levels=4,eta,-1;                                                    |
+*                                                                             |
+*      Should label the levelset# sequentially: 1,2,3,....                    |
+*      eta - model levels (eta)                                               |
+*          - the integer corresponds to the "nth" defined model level thus    |
+*            make sure that the largest digit <= # of elements defined in  hyb|
+*      pres- pressure levels                                                  |
+*      '-1' with "eta" levels will give all model levels.                     |
+*      [a,b,c] means level a,b and c are requested                            |
+*      <a,b,c> means levels a to b, every c are requested                     |
+*                                                                             |
+*    Translation of above examples:                                           |
+*    Level Output #1 asks for output in 1000mb,925mb and 850mb                |
+*    Level Output #2 asks for output in model levels 1,5,10,12,14,16,18,20    |
+*    Level Output #3 asks for output in model levels 4,8,12,16,20,24,26,28    |
+*    Level Output #4 asks for output in ALL model levels                      |
+*-----------------------------------------------------------------------------|
+*  STEP SETS                                                                  |
+*                                                                             |
+*  Command to define the sets of frequency outputs:                           |
+*                                                                             |
+* steps=stepset#,[init],step/hour,{list};                                     |
+*                                                                             |
+*      Should label the stepset# sequentially: 1,2,3,....                     |
+*      'init' - means this command only applies to output during the          |
+*               initialization period                                         |
+*      'hour' - output in hours                                               |
+*      'step' - output in timesteps in the model                              |
+*      '-1' with "step" will give every timestep of the model                 |
+*      [a,b,c] means a,b and c are requested                                  |
+*      <a,b,c> means a to b, incrementing every c are requested               |
+*                                                                             |
+*    ie:steps=1,step,-1;                                                      |
+*       steps=2,hour,0.,3.,6.,12.,24.,48.;                                    |
+*       steps=3,hour,<0.,48.,3.>;                                             |
+*       steps=4,init,hour,<0.,6.,1.>;                                         |
+*       steps=5,hour,<0.,24.,3.>,<24.,48.,6.>;                                |
+*       steps=6,step,<0,5,1>,[6,12,18];                                       |
+*                                                                             |
+*    Translation of above examples:                                           |
+*    Step Output #1 asks for every timestep of the model                      |
+*    Step Output #2 asks for hour 0,3,6,12,24,48                              |
+*    Step Output #3 asks for hour 0 through to 48, every 3 hours              |
+*    Step Output #4 asks for hour 0 through to 6, every hour for the          |
+*                   initialization period only (Init_balgm_L = .true.)        |
+*    Step Output #5 asks for hour 0 through to 24, every 3 hours and then     |
+*                   every 6 hours until hour 48                               |
+*    Step Output #6 asks for first 5 timesteps of the model including         |
+*                   timestep 0.                                               |
+*                                                                             |
+*-----------------------------------------------------------------------------|
+*  SORTIE (output) SETS                                                       |
+*                                                                             |
+*  Command to define the sets of variables for output associated with         |
+*  the above defined sets.                                                    |
+*                                                                             |
+*  sortie([vr1,vr2,vr3,...],levels,[levelset],grid,[gridset],                 |
+*                                              steps,[stepset]);              |
+*                             OR                                              |
+*  sortie([vr1,vr2,vr3,...],levels,[levelset],grid,[gridset],                 |
+*                                      steps,[stepset],typvar,A);             |
+*  vr1,vr2,vr3... - set of variable names to output (max of 60)               |
+*  levelset - levelset number to use for this set of variables                |
+*  gridset  - gridset number to use for this set of variables                 |
+*  stepset  - stepset number (timestep set) to use for this set of vars       |
+*  typvar   - A character to define the TYPVAR for this set of vars           |
+*           - the default is 'P' if left undefined                            |
+*                                                                             |
+*  For each "sortie" command, the levelset, gridset and stepset must be       |
+*  specified or an error will occur.                                          |
+*                                                                             |
+*    ie:   sortie([UU,VV,TT],levels,2,grid,3,steps,1,typvar,A);               |
+*          sortie([PR,PC,RR],grid,3,steps,2,levels,1);                        |
+*                                                                             |
+*    Translation of above examples:                                           |
+*    "sortie([UU,VV,TT],levels,2,grid,3,steps,1,typvar,A);"                   |
+*       asks for UU,VV,TT output at levels defined in Levelset #2,            |
+*           Gridset #3,and at the frequency defined in Stepset #1,            |
+*           and the TYPVAR will be marked as 'A' instead of 'P'               |
+*                                                                             |
+*    "sortie([PR,PC,RR],grid,3,steps,2,levels,1);"                            |
+*       asks for PR,PC,RR output at levels defined in Levelset #1,            |
+*       Gridset #3,and at the frequency defined in Stepset #2                 |
+*                                                                             |
+*-----------------------------------------------------------------------------
+*  OUTPUT filename description                                                |
+*                                                                             |
+*   For slab files(binary) and "delaminated" files(RPN fstd):                 |
+*   ie:                 dp20021224230000-01-00_000, pm20021224230000-01-00_000|
+*   generic:            #@YYYYMMDDhh[mmss]-XX-YY_ddd[U]                       |
+*                                                                             |
+*   For final format (pieced together by bemol) files(RPN fstd):              |
+*   ie:                 dp20021224230000_000, pm20021224230000_000            |
+*   generic:            #@YYYYMMDDhh[mmss]_ddd[U]                             |
+*                                                                             |
+*   where:                                                                    |
+*                 # - 1 alphabetic character taking value:                    |
+*                     d = for output of dynamics  variables                   |
+*                     p = for output of physics   variables                   |
+*                     c = for output of chemistry variables                   |
+*                 @ - 1 alphabetic character taking value:                    |
+*                     m = for output on model levels                          |
+*                     p = for output interpolated on pressure levels          |
+*                                                                             |
+*                 YYYYMMDD - year+month+day (from newdate)                    |
+*                 hh       - hour                                             |
+*                 mn       - minute                                           |
+*                 ss       - second                                           |
+*                 XX       - PE on row XX                                     |
+*                 YY       - PE on column YY                                  |
+*                 ddd      - is a count/multiple of units in the integration  |
+*                            see  Out_ndigits above                           |
+*                 U        - type of unit (1 character)                       |
+*                            suggested representations for unit:              |
+*                            P - timesteps                                    |
+*                            D - days                                         |
+*                            H - hours                                        |
+*                            M - minutes                                      |
+*                            S - seconds                                      |
+*                            see Out_unit_s above                             |
+*                 Note: Only one time frame can be written per output file    |
+*                       so if outputs are more frequent than 1 hour,          |
+*                       set Out_unit_s to minutes,timesteps or seconds        |
+*                                                                             |
+*-----------------------------------------------------------------------------

@@ -4,6 +4,7 @@
 * v2_21 - Dugas B.               - removed p_rad_clima
 * v2_32 - Dugas B.               - add P_rad_nivl
 * v3_02 - Dugas B.               - add P_rad_qco2
+* v3_03 - Leduc A-M.             - add P_rad_filter_L
 *
 ***comdeck p_rad.cdk
 *
@@ -18,6 +19,7 @@
 * P_rad_ftp_s        | RADFILES: type of radiation file;               |
 *                    |          'STD'-RPN standard or 'UNF'-unformatted|
 * P_rad_fomic_L      | FOMIC: .true. to have Fomichev radiation code   |
+* P_rad_filter_L     | RADFLTR: .true. to smooth net rad. fluxes       |
 * P_rad_knt          | KNTRAD:number of timesteps between full         |
 *                    |        radiation calculation. (2hrs + 1 timestep|
 * P_rad_datim        | DATE: date time stamp (14 words)                |
@@ -33,7 +35,7 @@
       parameter (CNMXRAD = 200)
 *
       character*8 P_rad_schm_s, P_rad_ftp_s
-      logical P_rad_fomic_L
+      logical P_rad_fomic_L, P_rad_filter_L
       integer P_rad_knt, P_rad_datim(14),  P_rad_nivl(CNMXRAD+1)
       real    P_rad_qco2
 *
@@ -42,7 +44,7 @@
       MARK_COMMON_END (prad_c)
 *
       MARK_COMMON_BEG (prad_l)
-      common /prad_l/ P_rad_fomic_L
+      common /prad_l/ P_rad_fomic_L,P_rad_filter_L
       MARK_COMMON_END (prad_l)
 *
       MARK_COMMON_BEG (prad_i)

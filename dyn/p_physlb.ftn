@@ -4,7 +4,7 @@
 *
       subroutine  p_physlb( F_cpu,   F_step, 
      $             F_up, F_vp, F_wp, F_tp, F_qp, F_trp,
-     $             F_um, F_vm,       F_tm,       F_trm,
+     $             F_um, F_vm,  F_tm, F_gzm, F_topo,  F_trm,
      $             F_lpsm, F_sig, F_kmm, F_ktm, DIST_DIM, Nk )
 *
       implicit none
@@ -15,7 +15,8 @@
      $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk), 
      $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
      $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk),
-     $     F_tm (DIST_SHAPE,Nk), F_trm(DIST_SHAPE,Nk,*),
+     $     F_tm (DIST_SHAPE,Nk), F_gzm (DIST_SHAPE,Nk),
+     $     F_topo (DIST_SHAPE) , F_trm(DIST_SHAPE,Nk,*),
      $     F_lpsm (DIST_SHAPE) , F_sig(DIST_SHAPE,Nk),
      $     F_kmm(DIST_SHAPE,Nk), F_ktm(DIST_SHAPE,Nk)
 *
@@ -34,6 +35,7 @@
 *                             and add optional call to dump full physics buses
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
+* v3_12 - Leduc A-M.        - Add arguments gzm and topo
 *
 *object
 *     See above id.
@@ -160,8 +162,8 @@
       j = jdo + p_offj
       call p_fillbus ( busdyn, busper ,busent,
      $         F_up , F_vp , F_wp , F_tp , F_qp, F_trp,
-     %         F_um , F_vm , F_tm , F_trm, F_lpsm, F_sig,
-     %         j, F_step, LDIST_DIM, l_nk )
+     %         F_um , F_vm , F_tm , F_gzm, F_topo,F_trm, 
+     %         F_lpsm,F_sig, j, F_step, LDIST_DIM, l_nk )
 *
 *     Run physics on row jdo
 *      

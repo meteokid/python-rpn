@@ -1,0 +1,104 @@
+_____________________________________________________________________________
+*                                                                             |
+*     FILE configexp.dot.cfg             (last update: Aug.10,2004- v3.1.2)VL |
+*_____________________________________________________________________________|
+*                                                                             |
+*  This file is an alternative input for "Um_launch [dir]" where it will be   |
+*  found in  [dir]/configexp.dot.cfg                                          |
+*                                                                             |
+*  Or alternatively, Um_launch can be given parameters in the command line    |
+*  as such:                                                                   |
+*                                                                             |
+*  Um_launch dbg1 -exp dummy -t 10800 -mach azur -npeOMP=1 -anal myanalysis   |
+*  Files gem_settings.nml and outcfg.out must exist in "dbg1" directory       |
+*                                                                             |
+*  Example of what could be in "configexp.dot.cfg" :                          |
+*  (arguments should start on first column,'#' indicates comment)             |
+*                                                                             |
+* exp=dummy;                                                                  |
+* model=gem;                                                                  |
+* version=3.1.2                                                               |
+* t=10800;                                                                    |
+* mach=azur;                                                                  |
+* npeOMP=4;                                                                   |
+* #absaddres=/fs/mrb/01/armn/armnviv/absolutes/massvp4safe;                   |
+* geophy=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.1.1/geophy_400            |
+* climato=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.1.1/clim_gef_400_mars96  |
+* anal=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.1.1/1996071900_000          |
+* #anal=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.1.1/anlm2000120100_000     |
+* #inrep=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.1.1;                      |
+* listing=/users/dor/armn/viv/listings;                                       |
+* #prefix=prg;                                                                |
+* d2z=1;                                                                      |
+* #xfer="lorentz:/data/local2/armn/armnviv/lorentz/stuff3";                   |
+*                                                                             |
+*Description of control variables in Um_launch                                |
+*                                                                             |
+*Name        Default Description                                              |
+*                                                                             |
+*model               model name, ABORTS if not defined                        |
+*version             Version of model, ABORTS if not defined                  |
+*exp         dbg1    Name of your experiment                                  |
+*mach                Execution machine                                        |
+*t           600     CPU (wall-clock) time allowed in seconds                 |
+*cm          400     Memory size in Megabytes(not applicable on AZUR)         |
+*restart       0     Restart mode                                             |
+*xfer                WS:full-path-dir on which to rcp results                 |
+*xferl         0     Transfer the listing file along with model output        |
+*fst89         0     produce older 89 FST files                               |
+*d2z           0     re-assemble output if -gt 0                              |
+*d2z_dplusp    0     produce older 89 FST files                               |
+*prefix        0     prefix to add to output filenames                        |
+*f             0     Compile local .f                                         |
+*objexp        0     make compexp instead of make compil                      |
+*abs           0     Forces a load of main executable (r.build)               |
+*absaddres           Use a pre-loaded executable (path+dir)                   |
+*prevjob             Previous experiment from which to restart                |
+*execdir             Execution directory under $HOME/$model/hostname          |
+*xchgdir             Exchange directory for coupling                          |
+*r_ent         1     Run entry program                                        |
+*r_mod         1     Run main model program                                   |
+*inrep               Input directory for LAM  pilot files                     |
+*anal                Path and filename for analysis file for non-LAM runs     |
+*climato             Path and filename for climatology file for non-LAM runs  |
+*geophy              Path and filename for geophysical file                   |
+*anclim              Analyzed climatology for non-LAM runs                    |
+*job                 User defined jobname                                     |
+*jobM                User defined Model job                                   |
+*tailscript          Path and filename of tail script to be executed after    |
+*                    Um_maindriver.sh                                         |
+*tailjob             Path and filename of tail job to be qsubbed after        |
+*                    Um_xfer.sh                                               |
+*cl                  Specific NQS class to be used by soumet                  |
+*npeOMP        1     # of OpenMP threads                                      |
+*maxstep  1000000    Maximum # of timesteps(overrides settings in model run if|
+*                    smaller than what is given in model settings             |
+*debug         0     Debug mode flag                                          |
+*theoc         0     Theoretical case flag                                    |
+*ppid                Optional process ID value passed on to soumet            |
+*listing       0     Listing directory                                        |
+*delayed       0     Use delayed job mechamism                                |
+*nosubmit      0     Create but do not submit job                             |
+*npex          0     ANAL:Number of cpus along x                              |
+*npey          0     ANAL:Number of cpus along y                              |
+*climat        0     CLIMAT:Climate mode flag                                 |
+*continue            CLIMAT:Internal - prevjob for climatic mode              |
+*startdate           CLIMAT:Date of step zero, YYYY MM DD HH                  |
+*enddate             CLIMAT:Ending date of climate study, idem                |
+*interval            CLIMAT:Lengh of study block in months                    |
+*newdate             CLIMAT:New startdate when using prevjob                  |
+*step_total    0     CLIMAT:total number of timesteps for run                 |
+*deltat        0     CLIMAT:timestep length in seconds                        |
+*stepout             CLIMAT:begin output at this step                         |
+*fularch             CLIMAT:Name of archive for restart                       |
+*archdir       .     CLIMAT:Directory where to put archive                    |
+*arch_mach  pollux   CLIMAT:Achive destination                                |
+*clean         0     CLIMAT:Clean after archiving                             |
+*strip_phy     0     CLIMAT:Convert multi-level outputs in physics to pressure|
+*diagnos       0     CLIMAT:Run script Climat_lancer_diag                     |
+*prntdiag            CLIMAT:Printer for metacode. Archive diag if set         |
+*gaussout      1     CLIMAT:Interpoler les sorties sur des grilles gaussiennes|
+*zoncal        1     CLIMAT:Calcul des moyennes zonales en sus                |
+*pilout        0     CLIMAT:Save original files to drive a LAM?               |
+*splitout      0     CLIMAT:Coarse and core outputs requested from bemol      |
+*-----------------------------------------------------------------------------

@@ -13,6 +13,7 @@
 * v2_20 - Pellerin P.          - Adapted from MC2 
 * v2_21 - Desgagne M.          - To decode etk,typ,interp,seq
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_12 - Bilodeau B.          - 16-letter names
 *                                
 *
 *object
@@ -52,7 +53,8 @@
 **
 *
       character*3   shape
-      character*8   varname,stdname,etk,typ,interp,seq
+      character*16  varname
+      character*8   stdname,etk,typ,interp,seq
       character*120 string
       integer fadd,fmul
       integer i,esp,longueur

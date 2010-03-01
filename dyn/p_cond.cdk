@@ -43,7 +43,7 @@
 * P_cond_filco       | filtering coefficients                          |
 * P_cond_kfcmom_L    | KFCMOM : true if want convective transport      |
 *                    |          of momentum                            |
-* P_cond_kfctrig     | trigger parameter in KF (Kain Fritsch)          |
+* P_cond_kfctrig4    | trigger parameters in KF (Kain Fritsch)         |
 *                    |                                                 |
 * P_cond_kfcrad      | initial convective updraft radius in KF (metres)|
 *                    |                                                 |
@@ -59,24 +59,25 @@
 *                    |                                                 |
 * P_cond_kfcpcp_s    | conservation of precipitation in kfcp           |
 *                    |                                                 |
-* P_cond_kkl         | sedimentation threshold in mixphase
+* P_cond_kkl         | sedimentation threshold in mixphase             |
 *                    |                                                 |
+* P_cond_pcptype_s   | PCPTYPE: Precipitation type diagnostic          |
 *----------------------------------------------------------------------
 #endif
 
       character*8 P_cond_conv_s , P_cond_stcon_s, P_cond_shlct_s(2),
-     $            p_cond_kfcpcp_s
+     $            p_cond_kfcpcp_s, P_cond_pcptype_s
       logical P_cond_satu_L   ,P_cond_ilwc_L, P_cond_kfcmom_L
       integer P_cond_filtend, P_cond_xofset,
      $        P_cond_xblnd  , P_cond_yofset, P_cond_yblnd
       real P_cond_hc, P_cond_hf, P_cond_hm, P_cond_filco, P_cond_dzsedi,
-     $     P_cond_kfctrig, P_cond_kfcrad, P_cond_kfcdepth, 
+     $     P_cond_kfctrig4(4), P_cond_kfcrad, P_cond_kfcdepth, 
      $     P_cond_kfcdlev, P_cond_kfcdet, P_cond_kfctimec,
      $     P_cond_kfctimea,P_cond_kkl
 *
       MARK_COMMON_BEG (pcond_c)
       common /pcond_c/ P_cond_conv_s, P_cond_stcon_s, 
-     $                 P_cond_shlct_s,P_cond_kfcpcp_s
+     $                 P_cond_shlct_s,P_cond_kfcpcp_s, P_cond_pcptype_s
       MARK_COMMON_END (pcond_c)
 
       MARK_COMMON_BEG (pcond_l)
@@ -90,7 +91,7 @@
 
       MARK_COMMON_BEG (pcond_r)
       common /pcond_r/ P_cond_hc, P_cond_hf, P_cond_hm, P_cond_filco, 
-     $                 P_cond_dzsedi,   P_cond_kfctrig, P_cond_kfcrad, 
+     $                 P_cond_dzsedi,   P_cond_kfctrig4, P_cond_kfcrad, 
      $                 P_cond_kfcdepth, P_cond_kfcdlev, P_cond_kfcdet, 
      $                 P_cond_kfctimec, P_cond_kfctimea,P_cond_kkl
       MARK_COMMON_END (pcond_r)

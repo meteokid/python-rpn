@@ -19,6 +19,7 @@
 * v3_02 - Tanguay M.        - Add V4dg_oktr_L for v4d_rwtraj_kmkt 
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
+* v3_12 - Leduc A-M         - Add variables gzm and topo
 *   
 *object
 *	Computes the physical processes and apply the resulting
@@ -51,7 +52,8 @@
 **
       integer dim,err,i,j,k
       real, dimension(:), allocatable :: up,vp,wp,tp,qp,trp,
-     $                                   um,vm,tm,trm,lnpsm,
+     $                                   um,vm,tm,gzm,topo,
+     $                                   trm,lnpsm,
      $                                   sig,kmm,ktm
 *
 *     ---------------------------------------------------------------
@@ -59,15 +61,16 @@
       call genslabp()
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       allocate (up(dim),vp(dim),wp(dim),tp(dim),qp(dim),
-     $          um(dim),vm(dim),tm(dim),lnpsm(dim),
-     $          sig(dim),kmm(dim),ktm(dim),
+     $          um(dim),vm(dim),tm(dim),gzm(dim),
+     $          topo(dim),
+     $          lnpsm(dim),sig(dim),kmm(dim),ktm(dim),
      $          trp(dim*phyt_ntr),trm(dim*phyt_ntr))
 *
 *C       2.	load all fields required by the physic in memory
 *		------------------------------------------------
 *
       call p_vmmphy ( up, vp, wp, tp, qp, trp,
-     $                um, vm,     tm,     trm,
+     $                um, vm, tm, gzm, topo, trm,
      $                lnpsm, sig, LDIST_DIM,l_nk )
 *
 *
@@ -76,7 +79,7 @@
       if ( V4dg_conf.ne.0 .and. F_stepno.gt.0) then 
                          call v4d_rwtraj_sigma  (sig,LDIST_DIM,l_nk)
         if( V4dg_oktr_L) call v4d_rwtraj_phystep(up,vp,tp,qp,trp,
-     $                                           um,vm,tm,   trm,
+     $                                           um,vm,tm,trm,
      $                                           LDIST_DIM,l_nk)
       endif
 *
@@ -98,7 +101,7 @@
       do j=1,Ptopo_npeOpenMP
       call p_physlb ( j , F_stepno,
      $                up, vp, wp, tp, qp, trp,
-     $                um, vm,     tm,     trm,
+     $                um, vm, tm,gzm,topo, trm,
      $                lnpsm, sig, kmm, ktm, LDIST_DIM, l_nk)
       enddo
 !$omp enddo
@@ -124,7 +127,8 @@
       if ( V4dg_conf.ne.0 .and. P4d_pbl.eq.2 .and. F_stepno.gt.0 .and.
      $     V4dg_oktr_L ) call v4d_rwtraj_kmkt(kmm,ktm,LDIST_DIM,l_nk) 
 
-      deallocate (up,vp,wp,tp,qp,trp,um,vm,tm,trm,lnpsm,sig,kmm,ktm)
+      deallocate (up,vp,wp,tp,qp,trp,um,vm,tm,gzm,topo,
+     $            trm,lnpsm,sig,kmm,ktm)
 *
       call frmslabfhand(Pslab_fhand,Pslab_slab,.true.)
 *     ---------------------------------------------------------------

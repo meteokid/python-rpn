@@ -4,8 +4,8 @@
 *
       subroutine p_fillbus ( F_busdyn, F_busper, F_busent,
      $                       F_up, F_vp, F_wp, F_tp , F_qp, F_trp, 
-     $                       F_um, F_vm, F_tm, F_trm, F_lpsm, F_sig,
-     $                       F_jdo, F_step, DIST_DIM, Nk )
+     $                       F_um, F_vm, F_tm, F_gzm, F_topo,F_trm, 
+     $                       F_lpsm,F_sig,F_jdo,F_step,DIST_DIM,Nk)
 *
       implicit none
 *
@@ -16,7 +16,8 @@
      $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk), 
      $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
      $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk),
-     $     F_tm (DIST_SHAPE,Nk), F_trm(DIST_SHAPE,Nk,*),
+     $     F_tm (DIST_SHAPE,Nk), F_gzm (DIST_SHAPE,Nk),
+     $     F_topo (DIST_SHAPE),  F_trm(DIST_SHAPE,Nk,*),
      $     F_lpsm (DIST_SHAPE),  F_sig(DIST_SHAPE,Nk)
 *
 *author 
@@ -31,6 +32,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Plante A.         - Further clean up and introduction of
 *                             water loading via virtual temperature.
+* v3_12 - Leduc A-M         - Add arguments gzm and topo
 *
 *object
 *	Fill the slice workspace variable for the physics.
@@ -49,6 +51,8 @@
 * F_um          I       - wind image in x direction at time t-
 * F_vm          I       - wind image in y direction at time t-
 * F_tm          I       - virtual temperature at time t-
+* F_gzm         I       - geopotential at time t-
+* F_topo        I       - topography
 * F_lpsm        I       - ln of surface pressure at time t-
 * F_wp          I       - vertical motion at time t*
 * F_sig         I       - sigma levels
@@ -88,6 +92,7 @@
          F_busdyn(vmoins+indx) = F_vm (ii,F_jdo,k) * con
          tpm(indx+1,2)         = F_tm (ii,F_jdo,k)
          F_busdyn(tmoins+indx) = F_tm (ii,F_jdo,k)
+         F_busdyn(gzmoins6+indx)= F_gzm(ii,F_jdo,k) - F_topo(ii,F_jdo)
          F_busdyn(omegap+indx) = F_wp (ii,F_jdo,k)
          F_busdyn(sigm  +indx) = F_sig(ii,F_jdo,k)
       end do

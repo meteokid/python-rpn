@@ -10,6 +10,9 @@
 * v3_02 - Dugas B.               - account for a possible second call to the physics,
 *                                  add P_pbl_dumpbus and P_rad_qco2 to the physics namelist
 * v3_03 - Bilodeau B.            - added P_pbl_as, P_pbl_beta and P_cond_kkl
+* v3_03 _ Leduc A-M              - added P_rad_filter_L
+* v3_12 _ Plante A.              - added P_cond_pcptype_s
+* v3_12 _ Bilodeau B.            - replaced P_cond_kfctrig by P_cond_kfctrig4
 *
 ***comdeck p_nml.cdk
 *
@@ -33,19 +36,20 @@
 #include "p_pset.cdk"
 *
       namelist /physics/
-     $     P_pset_second_L,
+     $     P_pset_second_L, P_pbl_advectke_L,
      $     P_pset_xofset  ,P_pset_xofsetr ,
      $     P_pset_yofset  ,P_pset_yofsett ,
      $     P_pset_xblnd   ,P_pset_yblnd   ,
 *
      $     P_rad_schm_s   ,P_rad_knt      , P_rad_fomic_L ,
      $     P_rad_ftp_s    ,P_rad_nivl     , P_rad_qco2    ,
+     $     P_rad_filter_L,
 *
      $     P_clim_clima_L ,P_clim_ininc_L ,
 *
      $     P_str_strato_L ,P_pbl_impflx_L ,
 *
-     $     P_pbl_drag_L   ,P_pbl_ocean_L  ,P_pbl_advectke_L,
+     $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
      $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
      $     P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L ,
      $     P_pbl_cortm_L  ,P_pbl_corts_L  ,
@@ -63,9 +67,9 @@
      $     P_cond_yofset   ,P_cond_yblnd    ,P_cond_conv_s   ,
      $     P_cond_stcon_s  ,P_cond_shlct_s  ,P_cond_hc       ,
      $     P_cond_hf       ,P_cond_hm       ,P_cond_filco    ,
-     $     P_cond_kkl      ,
+     $     P_cond_kkl      ,P_cond_pcptype_s,
 *
-     $     P_cond_kfcmom_L ,P_cond_kfctrig  , P_cond_kfcrad  ,
+     $     P_cond_kfcmom_L ,P_cond_kfctrig4 , P_cond_kfcrad  ,
      $     P_cond_kfcdepth ,P_cond_kfcdlev  , P_cond_kfcdet  ,
      $     P_cond_kfctimec ,P_cond_kfctimea , P_cond_kfcpcp_s,
 
@@ -88,7 +92,7 @@
      $     P_pset_xblnd   ,P_pset_yblnd   ,
 *
      $     P_rad_schm_s   ,P_rad_knt      , P_rad_fomic_L ,
-     $     P_rad_ftp_s    ,P_rad_qco2     ,
+     $     P_rad_ftp_s    ,P_rad_qco2     , P_rad_filter_L,
 *
      $     P_clim_clima_L ,P_clim_ininc_L ,
 *
@@ -114,7 +118,7 @@
      $     P_cond_hf       ,P_cond_hm       ,P_cond_filco    ,
      $     P_cond_kkl      ,
 
-     $     P_cond_kfcmom_L ,P_cond_kfctrig  , P_cond_kfcrad  ,
+     $     P_cond_kfcmom_L ,P_cond_kfctrig4 , P_cond_kfcrad  ,
      $     P_cond_kfcdepth ,P_cond_kfcdlev  , P_cond_kfcdet  ,
      $     P_cond_kfctimec ,P_cond_kfctimea , P_cond_kfcpcp_s,
 
