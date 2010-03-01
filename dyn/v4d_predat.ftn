@@ -4,7 +4,7 @@
 *
       subroutine v4d_predat (ipart)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer ipart
 *
@@ -13,6 +13,8 @@
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - Correction: do not call uv2img for 4dvar/SV job
+*                           - modify evaluation of Ind_pip
 *
 *object
 *     Preprocessing of Control   variables only if ipart=2
@@ -27,6 +29,7 @@
 #include "schm.cdk"
 #include "ind.cdk"
 #include "lctl.cdk"
+#include "v4dg.cdk"
 *
       integer i, j, k
       real pr1, pr2
@@ -159,7 +162,8 @@
       do k= 2, G_nk
       do j= 1, l_nj
       do i= 1, l_ni
-         Ind_pip(i,j,k)= exp(Ind_q(i,j,k)) - Geomg_z_8(k)
+         Ind_pip(i,j,k)= Geomg_pia(k)+Geomg_pib(k)*exp(Ind_s(i,j))
+     $                 - Geomg_z_8(k)
       end do
       end do
       end do
@@ -201,7 +205,7 @@
 *     ---------------------------------------
       if(ipart.eq.3) then 
 *
-      call v4d_uv2img 
+      if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img 
 *
 *     Exchange the haloes for computing derivatives
 *     ---------------------------------------------

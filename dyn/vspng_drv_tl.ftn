@@ -10,7 +10,7 @@
      %                          F_pipm, F_wm, F_qpm , F_mum , F_mulm, F_sm, 
      %                          F_xfis, DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real   F_u  (DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
@@ -43,6 +43,7 @@
 * v3_01 - Laroche/Tanguay   - correction nj as in vspng_drv 
 * v3_01 - Tanguay M.        - adapt to Vspng_rwnd_L 
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -61,7 +62,7 @@
 #include "opr.cdk"
 *
       integer i, j, jj, k, nkspng
-      real*8 HALF_8,TWO_8,c_8,c1
+      real*8 HALF_8,TWO_8,c_8,c1_8
       parameter( HALF_8  = 0.5 )
       parameter(  TWO_8  = 2.0 )
 *
@@ -83,36 +84,40 @@
       if ( Cstv_uvdf_8 .gt. 0.0 ) then
 *
          if (Vspng_rwnd_L) then
+!$omp parallel private(c1_8)
+!$omp do
             do k=1,G_nk
                do j=1,l_nj
-                  c1 = Dcst_rayt_8 / geomg_cy_8(j)
+                  c1_8 = Dcst_rayt_8 / geomg_cy_8(j)
                   do i=1,l_ni
 *
 *                    TRAJECTORY
 *                    ----------
-                     f_um(i,j,k) = f_um(i,j,k) * c1
+                     f_um(i,j,k) = f_um(i,j,k) * c1_8
 *
 *                    TLM
 *                    ---
-                     f_u(i,j,k) = f_u(i,j,k) * c1
+                     f_u(i,j,k) = f_u(i,j,k) * c1_8
 *
                   end do
                end do
                do j=1,l_njv
-                  c1 = Dcst_rayt_8 / geomg_cy_8(j)
+                  c1_8 = Dcst_rayt_8 / geomg_cy_8(j)
                   do i=1,l_ni
 *
 *                    TRAJECTORY
 *                    ----------
-                     f_vm(i,j,k) = f_vm(i,j,k) * c1
+                     f_vm(i,j,k) = f_vm(i,j,k) * c1_8
 *
 *                    TLM
 *                    ---
-                     f_v(i,j,k) = f_v(i,j,k) * c1
+                     f_v(i,j,k) = f_v(i,j,k) * c1_8
 *
                   end do
                end do
             end do
+!$omp enddo
+!$omp end parallel
          endif
 *
 *        Horizontal Momentum
@@ -158,36 +163,40 @@
      $                 LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_njv)
 *
          if (Vspng_rwnd_L) then
+!$omp parallel private(c1_8)
+!$omp do
             do k=1,G_nk
                do j=1,l_nj
-                  c1 = geomg_cy_8(j) / Dcst_rayt_8
+                  c1_8 = geomg_cy_8(j) / Dcst_rayt_8
                   do i=1,l_ni
 *
 *                    TRAJECTORY
 *                    ----------
-                     f_um(i,j,k) = f_um(i,j,k) * c1
+                     f_um(i,j,k) = f_um(i,j,k) * c1_8
 *
 *                    TLM
 *                    ---
-                     f_u(i,j,k) = f_u(i,j,k) * c1
+                     f_u(i,j,k) = f_u(i,j,k) * c1_8
 *
                   end do
                end do
                do j=1,l_nj
-                  c1 = geomg_cy_8(j) / Dcst_rayt_8
+                  c1_8 = geomg_cy_8(j) / Dcst_rayt_8
                   do i=1,l_ni
 *
 *                    TRAJECTORY
 *                    ----------
-                     f_vm(i,j,k) = f_vm(i,j,k) * c1
+                     f_vm(i,j,k) = f_vm(i,j,k) * c1_8
 *
 *                    TLM
 *                    ---
-                     f_v(i,j,k) = f_v(i,j,k) * c1
+                     f_v(i,j,k) = f_v(i,j,k) * c1_8
 *
                   end do
                end do
             end do
+!$omp enddo
+!$omp end parallel
          endif
 *
       endif     
@@ -268,6 +277,7 @@
      $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
+!$omp parallel do
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -283,6 +293,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
 *     Mass related fields
 *     ~~~~~~~~~~~~~~~~~~~
@@ -322,6 +333,8 @@
      $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
+!$omp parallel
+!$omp do
          do k = 2, Vspng_nk
          do j = 1, l_nj
          do i = 1, l_ni
@@ -337,9 +350,11 @@
          end do
          end do
          end do
+!$omp enddo
 *
 * updating phi' at the top 
 *
+!$omp do
          do j = 1, l_nj
          do i = 1, l_ni
 *
@@ -353,10 +368,12 @@
 *
          end do
          end do
+!$omp enddo
 *
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp do
             do k = 1, Vspng_nk
             do j = 1, l_nj
             do i = 1, l_ni
@@ -372,7 +389,9 @@
             end do
             end do
             end do
+!$omp enddo
          endif
+!$omp end parallel
 *
 *     The hydrostatic pressure: pi'  
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -446,6 +465,7 @@
 *
 *        Indirect diffusion of q' 
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do
          do k=1, Vspng_nk 
          do j=1, l_nj
          do i=1, l_ni
@@ -465,6 +485,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
 *        TRAJECTORY
 *        ----------
@@ -479,6 +500,7 @@
      $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
+!$omp parallel do
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -497,6 +519,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
          endif
          endif         

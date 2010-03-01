@@ -2,24 +2,19 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine adw_trilin_ad ( F_out,  F_dt, 
+      subroutine adw_trilin_ad ( F_out,  F_in, F_dt, 
      %                           F_capx, F_capy, F_capz,
      %                                   F_inm,      F_nm,
-     %                           F_capxm,F_capym,F_capzm, F_num, 
-     %                           F_ibase,F_inca,F_kinc,F_zinc,F_kdim,
-     %                           F_nij,F_nijplus,F_nk,F_ksep,i0,in,j0,jn,kn)
+     %                           F_capxm,F_capym,F_capzm,F_num,i0,in,j0,jn,kn)
 *
-#include "impnone.cdk"
+      implicit none
 *
-      integer F_num, F_nm(F_num),i0,in,j0,jn,kn
+      integer F_num, F_nm(F_num), i0, in, j0, jn, kn
 *
-      real F_dt, F_inm(*)
+      real F_dt, F_in(*), F_inm(*)
 *
       real F_out (F_num),F_capx (F_num),F_capy (F_num),F_capz (F_num)
       real               F_capxm(F_num),F_capym(F_num),F_capzm(F_num)
-*
-      integer F_ibase,F_inca,F_kdim,F_nij,F_nijplus,F_nk,F_ksep,F_kinc(F_nijplus,F_kdim*F_nk)
-      real F_zinc(F_nijplus,F_kdim*F_nk)
 *
 *author
 *     monique tanguay
@@ -28,6 +23,8 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
 * v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_11 - Tanguay M.        - Remove restoration of vectorization in adjoint of semi-Lag
+* v3_11 - Lee V.            - OpenMP for ADW_TRILIN_AD
 *
 *language
 *     fortran 77
@@ -55,54 +52,50 @@
 * F_capz       | / along the x,y,z directions                    |  i  |
 *              |                                                 |     |
 * F_num        | number of points to interpolate                 |  i  |
-*--------------|-------------------------------------------------|-----|
-*              | PARAMETERS TO RESTORE  VECTORIZATION            |     | 
-*--------------|-------------------------------------------------|-----|
-* F_ibase      | starting loc. in buffer of field to interp.     |  i  |
-* F_inca       | starting loc. in F_kinc and F_zinc              |  i  |
-* F_kdim       | number of independent positions at a given level|  i  |
-* F_nij        | horizontal dimension of field to interp.        |  i  |
-* F_nijplus    | horizontal dimension modified for efficiency    |  i  |
-* F_nk         | vertical   dimension of field to interp.        |  i  |
-* F_ksep       | coloring of vertical levels                     |  i  |
-* F_kinc       | indices  of upstream positions                  |  o  |
-* F_zinc       | content  at indices of upstream positions       |  o  |
 *______________|_________________________________________________|_____|
 *
 *implicits
 #include "glb_ld.cdk"
 #include "adw.cdk"
 ************************************************************************
-      integer n, nijag, o1, o2, k, ij, ib, klev, ilev, ip11, ip12, ip21, ip22, i, j
+      integer n, nijag, o1, o2, i,j,k,nij,kilon,kk,ki0,kin
 *
+      real psum(Adw_nit*Adw_njt*l_nk,4)
       real*8 prf1_8, prf2_8, prf3_8, prf4_8, prf1_y_8, prf2_y_8
       real*8 prf1m_8,prf2m_8,prf3m_8,prf4m_8,prf1m_y_8,prf2m_y_8
 *
-      real*8, parameter :: ZERO_8 = 0.0
-*     ___________________________________________________________________
+      real*8 ZERO_8
+      parameter (ZERO_8 = 0.0)
 *
+      nij   = l_ni*l_nj
       nijag = Adw_nit * Adw_njt
 *
-*     Use to define indices of upstream positions 
-*     -------------------------------------------
-      ip11 = 0
-      ip12 = 1
-      ip21 = ip11 + Adw_nit
-      ip22 = ip12 + Adw_nit 
+*     Initialize local adjoint variables
+*     ----------------------------------
+      prf1_8 = ZERO_8
+      prf2_8 = ZERO_8
+      prf3_8 = ZERO_8
+      prf4_8 = ZERO_8
+      prf1_y_8 = ZERO_8
+      prf2_y_8 = ZERO_8
 *
-      ilev = 1
+!$omp parallel private(kk,n,o1,o2,prf1m_8,prf2m_8,prf3m_8,
+!$omp& prf4m_8,prf1m_y_8,prf2m_y_8,prf1_8, prf2_8, prf3_8,
+!$omp& prf4_8, prf1_y_8, prf2_y_8) shared(psum)
+
+      kilon = (kn+4)/4
+!$omp do
+      do 200 kk=1,4
+         do n=1,Adw_nit*Adw_njt*l_nk
+            psum(n,kk) = 0.0
+         enddo
+         ki0 = 1 + kilon*(kk-1)
+         kin = min(ki0+kilon-1,kn)
+      do 100 k=ki0,kin
+      do  90 j=j0,jn
+      do  80 i=i0,in
 *
-      do  klev=1,F_ksep
-      do  k=klev,F_nk,F_ksep
-*
-      ib = (ilev-1)*F_kdim + F_inca
-*
-      do j=j0,jn
-      do i=i0,in
-*
-      ij = ((j-1)*l_ni) + i
-*
-      n  = F_nij*(k-1) + ij
+      n  = nij*(k-1) + ((j-1)*l_ni) + i 
 *
       o1 = F_nm(n)
       o2 = F_nm(n) + Adw_nit
@@ -151,50 +144,42 @@
 ************************************************************************
 *     x interpolation
 ************************************************************************
+      psum(o2+1,kk) = psum(o2+1,kk)  +      F_capxm(n)  * prf4_8
+      psum(o2  ,kk) = psum(o2  ,kk)  + (1.0-F_capxm(n)) * prf4_8
 *
-*     ------------------------------------
-*     NOTE: Store increments
-*     (otherwise annihilate vectorization)
-*     ------------------------------------
-      F_kinc(ij,ib+5) = F_ibase + o1 + ip11
-      F_kinc(ij,ib+6) = F_ibase + o1 + ip12
-      F_kinc(ij,ib+7) = F_ibase + o1 + ip21
-      F_kinc(ij,ib+8) = F_ibase + o1 + ip22
-*
-      F_zinc(ij,ib+5) = (1.0-F_capxm(n)) * prf3_8
-      F_zinc(ij,ib+6) =      F_capxm(n)  * prf3_8
-      F_zinc(ij,ib+7) = (1.0-F_capxm(n)) * prf4_8
-      F_zinc(ij,ib+8) =      F_capxm(n)  * prf4_8
+      psum(o1+1,kk) = psum(o1+1,kk)  +      F_capxm(n)  * prf3_8
+      psum(o1  ,kk) = psum(o1  ,kk)  + (1.0-F_capxm(n)) * prf3_8
 *
       F_capx(n)  = F_capx(n) + (F_inm(o2+1) - F_inm(o2)) * prf4_8
      %                       + (F_inm(o1+1) - F_inm(o1)) * prf3_8
 *
-*     ------------------------------------
-*
       o1 = F_nm(n)
       o2 = F_nm(n) + Adw_nit
 *
-*     ------------------------------------
-      F_kinc(ij,ib+1) = F_ibase + o1 + ip11
-      F_kinc(ij,ib+2) = F_ibase + o1 + ip12
-      F_kinc(ij,ib+3) = F_ibase + o1 + ip21
-      F_kinc(ij,ib+4) = F_ibase + o1 + ip22
+      psum(o2+1,kk) = psum(o2+1,kk)  +      F_capxm(n)  * prf2_8
+      psum(o2  ,kk) = psum(o2  ,kk)  + (1.0-F_capxm(n)) * prf2_8
 *
-      F_zinc(ij,ib+1) = (1.0-F_capxm(n)) * prf1_8
-      F_zinc(ij,ib+2) =      F_capxm(n)  * prf1_8
-      F_zinc(ij,ib+3) = (1.0-F_capxm(n)) * prf2_8
-      F_zinc(ij,ib+4) =      F_capxm(n)  * prf2_8
+      psum(o1+1,kk) = psum(o1+1,kk)  +      F_capxm(n)  * prf1_8
+      psum(o1  ,kk) = psum(o1  ,kk)  + (1.0-F_capxm(n)) * prf1_8
 *
       F_capx(n)  = F_capx(n) + (F_inm(o2+1) - F_inm(o2)) * prf2_8
      %                       + (F_inm(o1+1) - F_inm(o1)) * prf1_8
 *
+   80 continue
+   90 continue
+  100 continue
+  200 continue
+!$omp enddo
+
+!$omp do
+      do n=1,Adw_nit*Adw_njt*l_nk
+      do kk=1,4
+         F_in(n)= F_in(n)+psum(n,kk)
       enddo
       enddo
-*
-      ilev = ilev + 1
-*
-      enddo
-      enddo
+!$omp enddo
+
+!$omp end parallel
 *
       return
       end

@@ -4,20 +4,23 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,kind) 
+      subroutine v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,l_north,l_south,kind) 
 *
       use v4dzone
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer npts,i1,i2,nk,jmin,jmax,degree,kind
 *
       real px(npts),py(npts)
 *
+      logical l_north,l_south
+*
 *author Tanguay M. 
 *
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - select processors at north or south 
 *
 *object
 *     see id section
@@ -59,8 +62,10 @@
 *
 *           Zone near north pole
 *           --------------------
-               if(degree.eq.1) jleft = jmax-1
-               if(degree.eq.3) jleft = jmax-2
+            if(l_north) then
+*
+               if(degree.eq.1) jleft = jmax
+               if(degree.eq.3) jleft = jmax-1
 *
 *              Accumulate positions
 *              --------------------
@@ -89,8 +94,12 @@
                   enddo
                endif
 *
+            endif
+*
 *           Zone near south pole
 *           --------------------
+            if(l_south) then
+*
                if(degree.eq.1) jright = jmin 
                if(degree.eq.3) jright = jmin+1 
 *
@@ -120,6 +129,8 @@
                      V4dz_izon2(i) = itmp(i)
                   enddo
                endif
+*
+            endif
 *
             deallocate( xtmp, STAT=status )
             deallocate( ytmp, STAT=status )

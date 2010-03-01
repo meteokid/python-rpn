@@ -7,7 +7,7 @@
      %                     F_pip,  F_w,  F_qp,   F_mu, F_mul,  
      %                     F_xfis, DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *
@@ -29,6 +29,7 @@
 * v2_31 - Desgagne M.       - remove stkmemw
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Corbeil L.        - new RPNCOMM transpose
 *
 *object
 * The diffusion includes: second order(Hzd_pwr=1), 
@@ -68,7 +69,7 @@
 #include "ptopo.cdk"
 *
       integer i, j, k, dpwr, i0,in,j0,jn,Gni
-      real*8 wk1_8 (LDIST_SHAPE,Nk)
+      real*8 wk1_8(LDIST_SHAPE,Nk)
       real   wk2 (LDIST_SHAPE,Nk)
       real*8, dimension(:)  , allocatable :: wkh_evec_8,wk_evec_8
 **

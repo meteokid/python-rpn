@@ -4,7 +4,7 @@
 *
       subroutine rhs_tr()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -15,6 +15,7 @@
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d 
 * v3_00 - Tanguay M.        - adapt to restructured rhs 
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -131,16 +132,12 @@
 *     cycle of Crank-Nicholson procedure only
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if ( Orh_icn .eq. Schm_itcn ) then
-
-*PDIR RESERVE=Ptopo_npeOpenMP
 *
          call rhsp_2  (    rum,   rvm,   rcnm,   rthm,      rwm,     rvvm,
      %                    orum,  orvm,  orcnm,  orthm,     orwm,    orvvm,
      %                   ruw1m, rvw1m,   ut1m,   vt1m,     tt1m,     qt1m,  
      %                   fit1m,  st1m,  tdt1m, psdt1m, nestm_um, nestm_vm,  
      %                    wt1m,  topo, fipt1m,  mut1m, LDIST_DIM,l_nk  )
-*
-*PDIR RELEASE
 *
       else
 *

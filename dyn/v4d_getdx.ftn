@@ -8,7 +8,7 @@
       use v4d_prof, only: Pr_mode_S, Pr_llfrm_L, Pr_dsnooze_8, Pr_nsim4d
       use v4dz,     only: V4dzgauss_ni,V4dzgauss_nj
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer, intent(inout):: kstatus
 *
@@ -21,6 +21,7 @@
 * v3_01 - Tanguay/Buehner    - introduce gem2gauss for singular vectors
 * v3_02 - Tanguay M.         - locate HU in tracers 
 * v3_02 - Buehner M.         - read simulation no. and verify consistency
+* v3_11 - Tanguay M.         - Remove V4dg_ga_eq_ge_L
 *
 *object
 *     -------------------------
@@ -45,6 +46,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "lun.cdk"
 #include "v4dg.cdk"
 #include "vt1.cdk"
@@ -58,7 +60,7 @@
 *     ---------------
       integer idim(2),istat,ihdlin,icount,nvar,jlon,jlat,jlev,i,j,k,
      %        ierr,pnlkey1(9),err,pnerr,nigauss,njgauss,status,ininj,
-     %        nsim3d
+     %        nsim3d,nstag
 *
       real*8,pointer    :: dlbuff_8(:,:),dlbuff2d_8(:)
       real,  allocatable:: zbuff(:,:,:),zbuff2d(:,:)
@@ -184,21 +186,29 @@
          call mvbits(ininj,16,16,V4dzgauss_ni,0)
          call mvbits(ininj, 0,16,V4dzgauss_nj,0)
 *
-         if((V4dzgauss_ni.ne.G_ni.or.
-     %       V4dzgauss_nj.ne.G_nj).and.V4dg_ga_eq_ge_L) then
-             write(Lun_out,*) 'GAUSS=GEM not allowed when dimensions not equal'
-             kstatus = -99
-             goto 1001
-         endif
-*
 *        Get simulation number
 *        ---------------------
-         istat = prof_gvar(ihdlin,nsim3d     ,PRM_EVNT)
+         istat = prof_gvar(ihdlin,nsim3d,PRM_EVNT)
          if(nsim3d.ne.Pr_nsim4d) then
             write(Lun_out,*) 'WRONG SIMULATION NUMBER NSIM3D = ',nsim3d,' NSIM4D = ',Pr_nsim4d
             call gem_stop('v4d_getdx',-1)
          else
             write(Lun_out,*) 'NSIM3D IS THE RIGHT SIMULATION NUMBER = ',nsim3d
+         endif
+*
+*        Get prm_stag parameter 
+*        ----------------------
+         istat = prof_gvar(ihdlin,nstag,PRM_STAG)
+*
+*        If nstag = 1, the staggering was already done by 3D-Var
+*        If nstag = 0, the staggering     will be done by GEM     
+*        -------------------------------------------------------
+         if(nstag.ne.0.and.nstag.ne.1) then
+*
+            write(Lun_out,*) 'PRM_STAG IS WRONG = ',nstag
+            kstatus = -99
+            goto 1001
+*
          endif
 *
       end if
@@ -209,6 +219,25 @@
 *
       call rpn_comm_bcast(V4dzgauss_ni,1,"MPI_INTEGER",0,"GRID",ierr)
       call rpn_comm_bcast(V4dzgauss_nj,1,"MPI_INTEGER",0,"GRID",ierr)
+*
+      call rpn_comm_bcast(nstag,1,"MPI_INTEGER",0,"GRID",ierr)
+*
+*     If nstag = 1, the staggering was already done by 3D-Var
+*     If nstag = 0, the staggering     will be done by GEM
+*     -------------------------------------------------------
+      if(nstag.eq.1) then
+*
+         write(Lun_out,*) 'WIND STAGGERING ALREADY DONE BY 3D-VAR: PRM_STAG = ',nstag
+         V4dg_ustag_L = .true.
+         V4dg_vstag_L = .true.
+*
+      elseif(nstag.eq.0) then
+*
+         write(Lun_out,*) 'WIND STAGGERING WILL BE DONE BY GEM-DM: PRM_STAG = ',nstag
+         V4dg_ustag_L = .false.
+         V4dg_vstag_L = .false.
+*
+      endif
 *
 *     Store dimensions of 3D-Var Gaussian grid 
 *     ----------------------------------------
@@ -444,7 +473,7 @@
       contains
       subroutine v4d_getfld(cdvar,kstatus)
 *
-#include "impnone.cdk"
+      implicit none
 *
       character*2, intent(in):: cdvar
       integer, intent(inout) :: kstatus
@@ -455,6 +484,7 @@
 *revision
 * v3_00 - P. Gauthier        - initial MPI version
 * v3_01 - M. Tanguay         - introduce gem2gauss for singular vectors
+* v3_11 - P. Gauthier        - Adjust latitude reversing when V4dg_vstag_L 
 *
 *object
 *
@@ -464,6 +494,11 @@
 * cdvar        I                   Type of profile
 * kstatus      I                   Status of the job
 *----------------------------------------------------------------
+*
+*implicits
+#include "v4dg.cdk"
+*
+      integer njx
 *
 *     Read 3D field if request 
 *     ------------------------
@@ -501,12 +536,15 @@
 *              -----------------------
                if(.not.allocated(zbuff))allocate(zbuff(nigauss,njgauss,G_nk))
                zbuff(:,:,:) = 0.
+*
+               njx = njgauss
+               if(cdvar.eq.'VV'.and.V4dg_vstag_L) njx = njgauss -1
                do jlev = 1, G_nk
                   icount = 0
-                  do jlat = 1,njgauss
+                  do jlat = 1,njx
                      do jlon = 1,nigauss
                         icount = icount+1
-                        zbuff(jlon,njgauss -jlat+1,jlev) = dlbuff_8(icount,jlev) 
+                        zbuff(jlon,njx -jlat+1,jlev) = dlbuff_8(icount,jlev) 
                      end do
                   end do
                end do

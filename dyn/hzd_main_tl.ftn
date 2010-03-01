@@ -4,7 +4,7 @@
 *
       subroutine hzd_main_tl 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -18,7 +18,8 @@
 *                           - change name 
 * v3_01 - Tanguay M.        - TLM of Eigv_parity_L not done yet 
 * v3_02 - Tanguay M.        - TLM of Eigv_parity_L done 
-* v3-03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -159,9 +160,7 @@
 *************************************
 *  1. Implicit horizontal diffusion *
 *************************************
-
-c*PDIR RESERVE=Macr_cpud
-
+*
       if (Hzd_fact_L) then
 *
          call hzd_fact_tl ( ut1  , vt1  , psdt1 , tpt1 , fipt1 , tdt1 ,
@@ -230,14 +229,15 @@ c*PDIR RESERVE=Macr_cpud
 *
       endif
 *
-c*PDIR RELEASE
-
       if ((Hzd_fact_L.and.Cstv_phidf_8.gt.0.).or.(Hzd_ho_L)) then
+*
+!$omp parallel
 *
 ***********************************************
 *  $. Indirect diffusion of s & q through pi' *
 ***********************************************
 *
+!$omp do 
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
 *
@@ -252,7 +252,9 @@ c*PDIR RELEASE
 *
       end do
       end do
+!$omp end do 
 *
+!$omp do 
       do k=1,G_nk
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
@@ -269,8 +271,10 @@ c*PDIR RELEASE
       end do
       end do
       end do
+!$omp end do 
 *
       if ( .not. Schm_hydro_L ) then
+!$omp do 
          do k=1,G_nk
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
@@ -286,7 +290,10 @@ c*PDIR RELEASE
          end do
          end do
          end do
+!$omp enddo 
       endif
+*
+!$omp end parallel 
 *
       endif
 *

@@ -42,7 +42,11 @@
 * v3_02 - Lee V.              Adw_trunc_traj_L for LAM (truncate trajectories)
 * v3_02 - Desgagne M.       - Precalculate Mem_mx3db value
 * v3_02 - Mahfouf J.-F.     - add V4dg_anincr_L
-* v3_10 - Lee V.            - check on read errors in namelists
+* v3_11 - Gravel S.         - modif for theoretical cases and variable topo
+* v3_11 - Winger K.         - add Step_cleanup
+* v3_11 - Tanguay M.        - Remove V4dg_ga_eq_ge_L
+*                           - Add option for profiles done on U-V grids for winds
+*                           - Add V4dg_anincr_L for V4dg_conf/100.eq.4
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -59,6 +63,7 @@
 #include "out.cdk"
 #include "level.cdk"
 #include "glb_ld.cdk"
+#include "glb_pil.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
 #include "mem.cdk"
@@ -89,6 +94,9 @@
 #include "pres.cdk"
 #include "v4dj.cdk"
 #include "v4dm.cdk"
+#include "theo.cdk"
+#include "pilot.cdk"
+#include "vtopo.cdk"
 *
 *modules
       integer fnom,longueur,exdb
@@ -96,8 +104,8 @@
 *
       character*12 dumc_S
       character*256 fln_S
-      logical lam_L,wronghyb
-      integer i, k, nrec, err, pni, pnj, pniu, pnjv, pnk, 
+      logical wronghyb,theo_pass
+      integer i, k, nrec, err, pnk,
      $        kind, ipcode, ipmode
       real pcode
 *
@@ -105,11 +113,11 @@
 *
 *-------------------------------------------------------------------
 *
-      call open_status_file ()
-      call write_status_file ('_status=ABORT;')
+      call  open_status_file2 ('status_mod.dot')
+      call write_status_file2 ('_status=ABORT' )
 *
       Path_swv1_L = .false.
-      err = exdb('GEMDM',version_S, 'NON')
+      err = exdb(Version_mod_S//Version_dstp_S,Version_S, 'NON')
 *
       lun_in   =  5
       lun_out  =  6
@@ -122,12 +130,15 @@
       Step_rsti  =  9999
       Step_bkup  = 9999
       Step_gstat = 9999
+      Step_cleanup = 0
 *
       Mem_mx3db    = -1
       Mem_phyncore_L = .false.
 *
       Ptopo_npex = 1
       Ptopo_npey = 1
+      G_halox = 4
+      G_haloy = G_halox
 *
       Init_balgm_L = .false.
       Init_dfwin_L = .true.
@@ -158,11 +169,17 @@
       Schm_wload_L    = .false.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
+      Schm_theoc_L    = .false.
 *
+      Glb_pil_n = 7
+      Glb_pil_s = 7
+      Glb_pil_w = 7
+      Glb_pil_e = 7
       Schm_maxcfl_lam = 2
       Adw_nkbz_L = .true.
       Adw_exdg_L = .false.
       Adw_ckbd_L = .false.
+      Adw_mono_L = .true.
       Adw_trunc_traj_L = .false.
       Adw_halox  = 3
       Adw_haloy  = 2
@@ -206,6 +223,9 @@
       Vspng_uvwdt_L  = .true.
       Vspng_rwnd_L   = .false.
       Vspng_njpole   = 3
+*
+      Vtopo_start = -1
+      Vtopo_ndt = 0
 *
       Tr2d_ntr = 0
       Tr3d_ntr = 0
@@ -260,7 +280,8 @@
       V4dg_incore_L = .true.
 *
       V4dg_identity_L = .false.
-      V4dg_ga_eq_ge_L = .false.
+*
+      V4dg_pruv_L     = .true.
 *
       V4dz_degree     = 1
       V4dzge_degree   = 1
@@ -276,8 +297,25 @@
       C_coupling_L  = .false.
       C_wave_L      = .false.
       C_ocean_iml_L = .false. 
-*
+*     
       call getenvc('rep_from_which_model_is_launched',Path_dfwmil_S)
+*      
+*     Look for file labfl.bin created by entry program
+*
+      fln_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
+     $                            //'/process/labfl.bin'
+      write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+      err = fnom (lun_lab, fln_S, 'SEQ+FTN+UNF+OLD', nrec)
+*
+*     If labfl not found, assume theoretical case
+*
+      if ( err .ne. 0 ) then
+         write (Lun_out,*)'Assume Theoretical case'
+         Schm_theoc_L = .true. 
+      endif
+*
+*     open configuration file
+*
       Path_nml_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
      $                          //'/process/model_settings'
 *
@@ -285,18 +323,42 @@
      $     'Opening file: ',Path_nml_S(1:longueur(Path_nml_S))
       err = fnom (lun_in, Path_nml_S, 'SEQ' , nrec)
       rewind ( Lun_in )
-      read (Lun_in, nml=gem_cfgs, end = 9120,err = 9130)
-      rewind ( Lun_in )
-      read (Lun_in, nml=coupling, end = 5555,err = 9131)
+      if ( Schm_theoc_L ) then
+         call hpalloc (Geomg_hyb_ , maxhlev, err,1)
+         call theo_cfg(theo_pass)
+         if (.not. theo_pass) then
+            call hpdeallc (Geomg_hyb_ , err,1)
+            write (Lun_out, 8000)
+            return
+         else
+            do k=1,G_nk
+              hyb(k)=Geomg_hyb(k)
+            enddo
+            call hpdeallc (Geomg_hyb_ , err,1)
+         endif
+      else
+         read (Lun_in, nml=gem_cfgs, end = 9120, err=9120)
+         rewind ( Lun_in )
+         read (Lun_in, nml=coupling, end = 5555, err=9130)
+      endif
  5555 rewind ( Lun_in )
-      read (Lun_in, nml=var4d, end = 6666,err=9132)
- 6666 call fclos (lun_in)
-*
+      read (Lun_in, nml=var4d, end = 6666, err = 9140)
+ 6666 continue
+      call fclos (lun_in)
+*        
+      if ( V4dg_conf.ne.0.and.Step_total.lt.Init_dfnp-1.and.Init_balgm_L ) then
+           write(Lun_out,9400)
+           return
+      endif
+      if ( V4dg_conf.ne.0.and.Schm_theoc_L) then
+           write(Lun_out,9401)
+           return
+      endif
       if ((V4dg_conf/100.ne.1) .and.
      $    (V4dg_sensib_L.or.V4dg_twin_L.or.V4dg_4dvar_L.or.V4dg_sgvc_L))
      $     then
          write(Lun_out,9300)
-         goto 1111
+         return
       endif
 *
       call low2up  (Hzd_type_S,dumc_S)
@@ -305,6 +367,11 @@
       Hzd_pwr    = Hzd_pwr / 2
       Hzd_pwr    = min(max(2,Hzd_pwr*2),8)
 *
+      Glb_pil_n = max(7,Glb_pil_n)
+      Glb_pil_s = max(7,Glb_pil_s)
+      Glb_pil_w = max(7,Glb_pil_w)
+      Glb_pil_e = max(7,Glb_pil_e)
+*
       call low2up  (Out_unit_S,Out_unit_S)
       if (V4dg_conf.ne.0) then
          call v4d_init()
@@ -312,7 +379,7 @@
          Schm_wload_L  = .false.
       endif
       if ((V4dg_conf/100.eq.1.and.V4dg_sensib_L).or.
-     $    (V4dg_conf/100.eq.5.and.V4dg_anincr_L)) then
+     $   ((V4dg_conf/100.eq.4.or.V4dg_conf/100.eq.5).and.V4dg_anincr_L)) then
         V4dg_lun_obs_s=Path_dfwmil_S(1:longueur(Path_dfwmil_S))
      $                                //'/v4d_obsfile_std'
         V4dg_lun_obs = 0
@@ -334,14 +401,13 @@
 *
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
 *      
-*     Reading entry programm config data from file labfl.bin
+*     if not theoretical case, read data from file labfl.bin 
 *
-      fln_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
-     $                            //'/process/labfl.bin'
-      write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
-      err = fnom (lun_lab, fln_S, 'SEQ+FTN+UNF+OLD', nrec)
-*        
-      call bin2com
+      if ( .not. Schm_theoc_L ) then
+          call bin2com
+          call fclos (lun_lab)
+      endif
+*
 *
       Schm_cptop_L = .true.
 *
@@ -353,6 +419,7 @@
          if (hyb(k) .lt. 0.) go to 60
          pnk = k
       enddo
+      write(Lun_out,*) (hyb(k),k=1,pnk)
  60   if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
      $       (hyb(pnk).ne.1.) ) wronghyb = .true.
       do k=2, pnk
@@ -363,7 +430,7 @@
          do k=1, pnk
             write (Lun_out,*) hyb(k),k
          end do
-         goto 1111
+         return
       endif
       call hpalloc (Geomg_hyb_ , pnk, err,1)
       call hpalloc (Geomg_hybm_, pnk, err,1) 
@@ -396,10 +463,8 @@
       call hpalloc (Geomg_pibb_, pnk ,err,1)
       call hpalloc (Geomg_dpba_, pnk ,err,1)
 *
-      call genab2 ( Geomg_pia, Geomg_pibb, Geomg_dpba, Geomg_hybm, 
+      call genab2 ( Geomg_pia, Geomg_pibb, Geomg_dpba, Geomg_hybm,
      $              Pres_ptop,  Grd_rcoef, Cstv_pisrf_8, pnk )
-*
-      call fclos (lun_lab)
 *
       call newdate (Out1_date, Out1_dato(1), Out1_dato(2),-3)
 *
@@ -407,8 +472,14 @@
          Mem_mx3db = 75
          if (V4dg_conf.ne.0) Mem_mx3db = Mem_mx3db + 71
          if (Init_balgm_L  ) Mem_mx3db = Mem_mx3db + 20
-         if (G_lam         ) Mem_mx3db = Mem_mx3db + 42
+         if (G_lam .and. .not. Schm_theoc_L) then
+                             Mem_mx3db = Mem_mx3db + 28
+*                      --->  Exclude nest_??x vmm variables
+           If (Pil_ctebcs_L) Mem_mx3db = Mem_mx3db - 14
+*                      --->  Exclude nest_??f vmm variables
+         endif
          Mem_mx3db = (Mem_mx3db + 5) * 1.1
+
       endif
 *
       Lun_sortie_s = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
@@ -433,49 +504,45 @@
          if (Hzd_type_S.eq.'FACT') then
             write (Lun_out, 7000) Hzd_type_S
             write (Lun_out, 8000)
-            goto 1111
+            return
          endif
          if (Hspng_nj.ne.0) then
             write (Lun_out, 7015)
             write (Lun_out, 8000)
-            goto 1111
+            return
          endif
          if (Schm_psadj_L) then
             write (Lun_out, 7020)
             write (Lun_out, 8000)
-            goto 1111
+            return
          endif
 	 Adw_halox  = Schm_maxcfl_lam * 3
          Adw_haloy  = Adw_halox-1
       endif
 *
-      G_halox = 4
-      G_haloy = G_halox
       Lun_debug_L = Lctl_debug_L
 *
       Path_swv1_L = .true.
-      goto 1111
+      return
 *
  9120 write (Lun_out, 9150)
-      goto 1110
- 9130 write (Lun_out, 9151)
-      goto 1110
- 9131 write (Lun_out, 9152)
-      goto 1110
- 9132 write (Lun_out, 9153)
-      
- 1110 continue
       write (Lun_out, 8000)
+      return
+ 9130 write (Lun_out, 9250)
+      write (Lun_out, 8000)
+      return
+ 9140 write (Lun_out, 9350)
+      write (Lun_out, 8000)
+      return
 *
  7000 format (/' WRONG OPTION FOR HZD_TYP WHEN LAM: ',a/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ============='/)
- 9150 format (/,' NAMELIST gem_cfgs NOT FOUND IN FILE: model_settings'/)
- 9151 format (/,' READ ERROR in NAMELIST gem_cfgs IN FILE: model_settings'/)
- 9152 format (/,' READ ERROR in NAMELIST coupling IN FILE: model_settings'/)
- 9153 format (/,' READ ERROR in NAMELIST var4d    IN FILE: model_settings'/)
+ 9150 format (/,' NAMELIST gem_cfgs INVALID IN FILE: model_settings'/)
+ 9250 format (/,' NAMELIST coupling INVALID IN FILE: model_settings '/)
+ 9350 format (/,' NAMELIST var4d    INVALID IN FILE: model_settings '/)
  9154 format (/,' Out_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
      $         '      HYB(1) MUST BE 0.0 AND HYB(NK) MUST BE 1.0'/
@@ -483,8 +550,9 @@
      $         '      FROM HYB(1) ---- ABORT ----'//
      $         '      Current choice:')
  9300 format (/,' sensib_L twin_L 4dvar_L sgvc_L when V4dg_conf/100=1 only'/)  
+ 9400 format (/,' Step_total lt Init_dfnp-1 and Init_balgm_L  when V4dg_conf.ne.0 NOT VALID '/)
+ 9401 format (/,' Schm_theoc_L when V4dg_conf.ne.0 NOT VALID '/)
 *
 *-------------------------------------------------------------------
 *
- 1111 return
       end

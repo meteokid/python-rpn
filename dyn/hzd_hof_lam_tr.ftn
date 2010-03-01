@@ -4,7 +4,7 @@
 #include <model_macros_f.h>
       subroutine hzd_hof_lam_tr (F_pip,F_qp,DIST_DIM,Nk) 
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *
@@ -15,6 +15,7 @@
 *
 *revision
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_11 - Tanguay M.        - modification wk1_8
 *
 *object
 *     see id section
@@ -36,7 +37,7 @@
 #include "ptopo.cdk"
 *
       integer i, j, k, dpwr
-      real*8 wk1_8(LDIST_SHAPE,Nk)
+      real*8 wk1_8
       real   wk2(LDIST_SHAPE,Nk)
 *     __________________________________________________________________
 *

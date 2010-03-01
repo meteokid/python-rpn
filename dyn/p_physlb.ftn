@@ -33,6 +33,7 @@
 * v3_02 - Dugas B.          - account for a possible second call to the physics
 *                             and add optional call to dump full physics buses
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
 *
 *object
 *     See above id.
@@ -111,8 +112,10 @@
       dumpbus_L = .false.
       if (P_pbl_dumpbus.gt.0) then
           dumpbus_L = (mod( F_step,P_pbl_dumpbus ).eq.0)
+!$omp critical (lock_dumpini2)
           call dumpini2( p_bdyn_siz,p_bper_siz,p_bvol_siz,
      $                   Ptopo_numproc,p_ni,p_nj, G_ni,G_nj )
+!$omp end critical (lock_dumpini2)
       endif
 *
       if (.not.Mem_phyncore_L) pabusper=loc(busper2(1))
@@ -259,10 +262,7 @@
 *
       goto 100
 *
- 650  continue
-     
-*
-      if (dumpbus_L) call dumpwrit2( Lun_out, F_step, Ptopo_myproc )
+ 650  continue     
 *
  1000 format(/'PERFORM A PHYSICS STEP: CMC/RPN PHYSICS (S/R P_PHYSLB)'
      $       /55('='))

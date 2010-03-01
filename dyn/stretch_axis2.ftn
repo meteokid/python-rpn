@@ -3,14 +3,14 @@
 *
       integer function stretch_axis2
      $     ( F_x_8, F_dxla, F_xbeg, F_xend, F_margin, NX, F_nxla, F_amp,
-     $       F_stagger_L, F_print_L, F_dxmax, F_nimax)
+     $       F_stagger_L, F_print_L, F_dxmax, F_nimax, F_gauss_L)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_margin, NX, F_nxla, F_nimax
       real    F_amp, F_dxla, F_xbeg, F_xend, F_dxmax
       real*8  F_x_8(NX)
-      logical F_stagger_L, F_print_L
+      logical F_stagger_L, F_print_L, F_gauss_L
 
 *author  Vivian Lee - July 1999
 *
@@ -19,6 +19,7 @@
 * v2_20 - Lee V.            - converted input F_x to F_x_8 (real*8)
 * v2_30 - A. Methot         - introduction of a new stretch grid design
 * v2_30 -                     with upper limits on grid point spacing   
+* v3_11 - M. Tanguay        - Introduce Grd_gauss_L 
 *
 *object
 *        see above id
@@ -45,6 +46,7 @@
 * F_print_L    I     - .TRUE. to print comments,values of this function
 * F_dxmax      I     - upper limit on grid spacing (degrees)
 * F_nimax      O     - number of points having upper limit grid spacing
+* F_gauss_L    I     - TRUE if GEM grid is set as Gaussian 
 * 
 *
 *notes
@@ -59,6 +61,15 @@
       real*8 a0, am, eps, xdist_8, e, guess, hx, x1, x2
       real*8 amp_8, F_dxla_8
       real*8 hxmax
+*
+      real*8  deg2rad_8
+      real*8, parameter :: CLXXX_8 = 180.0
+      real*8, parameter :: ONE_8   = 1.0
+*
+      real groots(NX)
+      real ay(NX)
+      real*8 G_ygauss_8(NX+1)
+      integer status,j
 *
       F_dxla_8 = F_dxla
       hxmax    = F_dxmax
@@ -75,6 +86,25 @@
       guess = - 1.0
       eps   = 1.0e-15
       nit   = 10
+*
+*     Evaluate Gaussian latitudes if requested
+*     ----------------------------------------
+      if(F_gauss_L.and.F_stagger_L) then
+*
+        if( NX .ne. F_nxla) then
+            call gem_stop('STRETCH_AXIS2 NOT VALID',-1)
+        endif
+*
+        deg2rad_8 = acos( -ONE_8 )/CLXXX_8
+*
+        call ez_glat (ay,groots,NX,0)
+*
+        do j=1,NX
+           G_ygauss_8(j) = ay(j) 
+        enddo
+           G_ygauss_8(NX+1) = G_ygauss_8(1) + 180.0 
+*
+      endif
 *
       if ( NX .lt. F_nxla ) then
            print *,'*'
@@ -188,7 +218,8 @@
 *
       x1  = - 0.5 * ( F_nxla - 1 ) * F_dxla_8 + (F_xbeg+F_xend)/2.0
       F_x_8(F_nimax+F_margin+1) = x1
-
+      if(F_gauss_L.and.F_stagger_L) F_x_8(F_nimax+F_margin+1) = G_ygauss_8(1)
+*
 C                               computed grid points in the stretched sector
 C                                      to the left or bottom of central area
       x2 = x1
@@ -211,10 +242,17 @@ C                                      to the left or bottom of central area
 
 C                               compute grid points in the central area 
 C                                                  of uniform resolution   
-      do i=F_nimax+F_margin+1,F_nimax+F_margin+F_nxla-1
+      if(F_gauss_L.and.F_stagger_L) then
+         do i=F_nimax+F_margin+1,F_nimax+F_margin+F_nxla-1
+            F_x_8(i+1) = G_ygauss_8(i+1) 
+         enddo
+      else
+         do i=F_nimax+F_margin+1,F_nimax+F_margin+F_nxla-1
          x2     = x1 + ( i - F_margin - F_nimax ) * F_dxla_8
          F_x_8(i+1) = x2
-      enddo
+         enddo
+      endif
+*
 
       hx = F_dxla_8
 
@@ -233,14 +271,14 @@ C                                       to the right or top of central area
              return
       endif
 C                 NOTING IS DONE HERE IF F_nimax=0
-C                               compute grid points in the upper limit uniform
-C                               resolution area to the left or bottom end of grid
+C                        compute grid points in the upper limit uniform
+C                        resolution area to the left or bottom end of grid
       do i=F_nimax,1,-1
          F_x_8(i)=F_x_8(i+1)-hxmax
       enddo
 C                 NOTING IS DONE HERE IF F_nimax=0
-C                               compute grid points in the upper limit uniform
-C                               resolution area to the right or top end of grid
+C                        compute grid points in the upper limit uniform
+C                        resolution area to the right or top end of grid
       do i=NX-F_nimax+1,NX
          F_x_8(i)=F_x_8(i-1)+hxmax
       enddo

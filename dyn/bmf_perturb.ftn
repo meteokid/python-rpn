@@ -1,0 +1,43 @@
+***s/r bmf_perturb - performs bit flip data perturbation
+*
+      subroutine bmf_perturb (varname,f,fni,fnj,fnk)
+      implicit none
+*
+      character*4 varname
+      integer fni,fnj,fnk
+      integer f(fni,fnj,fnk)
+*
+*author   Michel Desgagne -- summer 2003
+*
+*revision
+* v3_11 - M. Desgagne       - initial version
+*
+*implicits
+#include "e_anal.cdk"      
+*
+      integer i,j,k
+*
+* ---------------------------------------------------------------------
+*
+      if (anal_perturb) then
+      if (     (varname.eq.'HU').or.(varname.eq.'ES')
+     $     .or.(varname.eq.'VT').or.(varname.eq.'TT')
+     $     .or.(varname.eq.'UU').or.(varname.eq.'VV')) then
+         print*, 'Bit flip perturbation on ',varname
+*
+      do k=1,fnk
+      do j=1,fnj,10
+      do i=1,fni,10
+         f(i,j,k) = xor(f(i,j,k),1)
+      end do
+      end do
+      end do
+*
+      endif
+      endif
+*
+* ---------------------------------------------------------------------
+*
+      return
+      end
+*

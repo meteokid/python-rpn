@@ -18,6 +18,7 @@
 * v3_00 - Laroche S.        - adapted for simplified physics
 * v3_02 - Tanguay M.        - Add V4dg_oktr_L for v4d_rwtraj_kmkt 
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
 *   
 *object
 *	Computes the physical processes and apply the resulting
@@ -42,6 +43,7 @@
 #include "v4dg.cdk"
 #include "p4d_simp.cdk"
 #include "p_bus.cdk"
+#include "p_pbl.cdk"
 *
 *modules
       integer  open_db_file,rewind_db_file,close_db_file
@@ -102,6 +104,10 @@
 !$omp enddo
 !$omp end parallel
 *
+      if (P_pbl_dumpbus.gt.0) then
+        if (mod( F_stepno,P_pbl_dumpbus ).eq.0)
+     $    call dumpwrit2( Lun_out, F_stepno, Ptopo_myproc )
+      endif
 *
       if (.not.Mem_phyncore_L) err = close_db_file (Lun_waphy)
 *

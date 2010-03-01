@@ -35,8 +35,8 @@
      %               ig1a, ig2a, ig3a, ig4a
       COMMON/analr/  LNA, RNA, RCOEFA,PTOPA,PREFA
       COMMON/anals/  VH,VT,GRDA,TVA,LABANL
-      logical anal_sigma, anal_eta, anal_hyb, anal_pres
+      logical anal_sigma, anal_eta, anal_hyb, anal_pres,anal_perturb
       integer anal_hav
       common /e_anal_l/ 
-     $     anal_sigma, anal_eta, anal_hyb, anal_pres
+     $     anal_sigma, anal_eta, anal_hyb, anal_pres, anal_perturb
       common /e_anal_i/ anal_hav(2)

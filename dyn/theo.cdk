@@ -1,0 +1,28 @@
+#if defined (DOC)
+*
+*
+*revision
+* v3_11 - Gravel S.           - initial version
+*
+***comdeck theo.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH THEORETICAL CASES                         |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Theo_case_S        | 'BUBBLE','BUBBLE_G', '2_BUBBLES'  only cases    |
+*                    |  supported for now                              |
+* Theo_nivdist_S     | 'UNI' generates equally spaced hyb levels       |
+*----------------------------------------------------------------------
+*
+#endif
+
+      character*16 Theo_case_S, Theo_nivdist_S
+
+      MARK_COMMON_BEG (theo_s)
+      common / theo_s / Theo_case_S, Theo_nivdist_S
+      MARK_COMMON_END (theo_s)
+*

@@ -5,7 +5,7 @@
 *
       subroutine v4d_rwtraj_kmkt(F_kmm, F_ktm, DIST_DIM, Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real F_kmm (DIST_SHAPE,Nk),F_ktm (DIST_SHAPE,Nk)
@@ -15,6 +15,7 @@
 *
 *revision
 * v3_00 - Laroche S.        - initial MPI version (from v4d_rwtraj)
+* v3_11 - Tanguay M.        - ADJ of digital filter
 *
 *object
 *
@@ -32,7 +33,6 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "init.cdk"
 #include "schm.cdk"
 #include "v4dg.cdk"
 *
@@ -44,9 +44,7 @@
 *
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('v4d_rwtraj_kmkt')
-      if(.not. Schm_cptop_L) call gefstop('v4d_rwtraj_kmkt')
-      if(Init_balgm_L      ) call gefstop('v4d_rwtraj_kmkt')
+      if(.not. Schm_hydro_L) call gem_stop('v4d_rwtraj_kmkt',-1)
 *     ______________________________________________________
 *
 *
@@ -54,7 +52,6 @@
 *     --------------------------------------------------
       plpr_L = .false.
       plpr_L = plpr_L.and.Lun_out.gt.0 
-*
 *
 *     ----------------
 *     Read TRAJ Fields 
@@ -72,7 +69,6 @@
          call v4d_rwfld (F_ktm,work,l_ni,l_nj,LDIST_DIM,Nk,
      %                V4dg_iunph,V4dg_addph,plpr_L,'KT',  V4dg_ad_L,0,-1)
 *
-**
       endif
 *
 *     ADJOINT MODEL 
@@ -100,7 +96,6 @@
 *
       call v4d_rwfld (F_ktm,work,l_ni,l_nj,LDIST_DIM,Nk,
      %                V4dg_iunph,V4dg_addph,plpr_L,'KT',V4dg_ad_L,0,1)
-*
 *
       endif
 *

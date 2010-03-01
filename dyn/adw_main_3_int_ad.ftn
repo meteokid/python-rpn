@@ -4,7 +4,8 @@
 *
       subroutine adw_main_3_int_ad ( F_u, F_v, F_w, F_um, F_vm, F_wm )
 *
-#include "impnone.cdk"
+      implicit none
+*
       real F_u (*),F_v (*),F_w (*)
       real F_um(*),F_vm(*),F_wm(*)
 *
@@ -17,6 +18,9 @@
 * v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
 * v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
 * v3_03 - Tanguay M.        - Adjoint Lam and Nohyd configuration 
+* v3_11 - Tanguay M.        - Remove restoration of vectorization in adjoint of semi-Lag
+*                           - Introduce key Adw_mono_L
+* v3_11 - Lee V.            - OpenMP for ADW_MAIN_3_INT_AD
 *
 *language
 *     fortran 77
@@ -63,46 +67,47 @@
       external vmmlod, vmmget, vmmuld
 ************************************************************************
       integer i0,in,j0,jn
-      integer pnerr, pnlkey1(30), key1(Tr3d_ntr), key0(Tr3d_ntr), 
+      integer pnerr, pnlkey1(10),pnlkey2(10),pnlkey3(10),pnlkeys(10)
+      integer key1(Tr3d_ntr), key0(Tr3d_ntr), 
      $        key1_, key0_, pnlod, err
       integer key0m(Tr3d_ntr), key0m_ 
 *
-      integer n, nij, nijk, nijkag, i,j,k
+      integer n, nij, nijk, nijkag, i,j,k,kk,dest_ni,nn
+      logical wind_L
 *
       real*8 aaa_8
+      real u (Adw_nit*Adw_njt*l_nk,max(Tr3d_ntr,7))
+      real um(Adw_nit*Adw_njt*l_nk,max(Tr3d_ntr,7))
+      real tr1(LDIST_SHAPE,l_nk),tr01(LDIST_SHAPE,l_nk)
+      real tr0m1(LDIST_SHAPE,l_nk),in0(LDIST_SHAPE,l_nk)
       real tr,tr0
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real tr0m
       pointer (patr0m, tr0m(LDIST_SHAPE,*))
+
+      real fin1(LDIST_SHAPE,l_nk),finm1(LDIST_SHAPE,l_nk)
+      real fin,finm
+      pointer (pafin,fin(LDIST_SHAPE,*)), (pafinm,finm(LDIST_SHAPE,*))
 *
 *     ---------------------------------------------------
 *     Allocate extra space TRAJ (x y z upstream position)
 *     ---------------------------------------------------
       real F_um_1(l_ni*l_nj*l_nk),F_vm_1(l_ni*l_nj*l_nk)
       real F_wm_1(l_ni*l_nj*l_nk)
+      real capx1(Adw_nit*Adw_njt*l_nk,Tr3d_ntr+7)
+      real capy1(Adw_nit*Adw_njt*l_nk,Tr3d_ntr+7)
+      real capz1(Adw_nit*Adw_njt*l_nk,Tr3d_ntr+7)
+      real cz1  (Adw_nit*Adw_njt*l_nk,Tr3d_ntr+7)
 *
 *     -----------------------
 *     Define extra work space
 *     -----------------------
-      real work(LDIST_SHAPE,l_nk)
+      real work1(LDIST_SHAPE,l_nk),work
+      pointer (pawork,work(LDIST_SHAPE,*))
 *
       real*8, parameter :: ZERO_8 = 0.0
 *
       logical plpr_L
-*
-*     ------------------------------------------
-*     Variables needed to restore  vectorization
-*     in semi-Lagrangian adjoint interp.
-*     (Based on Clive Temperton ECMWF method)
-*     ------------------------------------------
-      integer inca,ibase1,ibase2,count,stencil,nfld,kdim,ksep,klev,ilevels,
-     %        istart,istop,ij,jinc,nijplus,iscrap,group,
-     %        myint1,myint2,plus1,plus2,minus1,minus2,ijk
-      real scrap,tempo
-      logical lscrap_L
-      integer, dimension(:,:),allocatable :: kinc
-      real   , dimension(:,:),allocatable :: zinc
-      real   , dimension(:)  ,allocatable :: buff
 *     ______________________________________________________
 *
       if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_ad',-1)
@@ -154,8 +159,12 @@
           if (l_north) jn=l_njv-2
       endif
 *
+!$omp parallel private(n,kk)
+!$omp$         shared(capx1,capy1,capz1,cz1)
+*
 *     Zero adjoint variables 
 *     ----------------------
+!$omp do 
       do n=1,nijk
          Adw_capx1(n) = ZERO_8
          Adw_capy1(n) = ZERO_8
@@ -170,70 +179,32 @@
          Adw_wrkb (n) = ZERO_8
          Adw_wrkc (n) = ZERO_8
       enddo
-*
-*     -------------------------------------
-*     Prepare restoration  of vectorization
-*     in semi-Lagrangian adjoint interp.
-*     -------------------------------------
-*
-*        Modify dimension for efficiency
-*        -------------------------------
-         nijplus = nij
-         if(2*(nij/2).eq.nij) nijplus = nij + 1
-*
-*        Size of the stencil for 3D cubic interpolation
-*        ----------------------------------------------
-         stencil = 64
-*
-*        Set if done in 1 or 2 groups
-*        ----------------------------------------------------------------------------
-*        NOTE: This is used to allow a trade off between the memory of buffer and
-*              the size of the loop where increments F_zinc are added back to buffer.
-*        ----------------------------------------------------------------------------
-*        NOTE: If group=1, all variables to interpolate are done together.
-*              If group=2, the variables to interpolate are divided in 2 groups.
-*                          Remark:group=29 will refer to the 2nd group of variables.
-*        ----------------------------------------------------------------------------
-         group = 2
-*
-*        Set coloring of vertical levels
-*        -------------------------------
-         ksep   = 0
-         myint2 = 0
-          plus2 = 0
-         minus2 = 0
-         do k =1,l_nk
-         do j =j0,jn
-         do i =i0,in
-            ijk = nij*(k-1) + l_ni*(j-1) + i
-            tempo  =         l_nk*(      F_wm(ijk)-Geomg_z_8(k))/
-     %                            (Geomg_z_8(l_nk)-Geomg_z_8(1))
-            myint1 = int(abs(tempo)) + 1
-            if(tempo.gt.0.) then
-               plus1 = myint1
-               plus2 = max(plus2,plus1)
-            else
-               minus1 = - myint1
-               minus2 = - max(- minus2,- minus1)
-            endif
-            myint2 = max(myint2,myint1)
-         enddo
-         enddo
-         enddo
-         ksep = max(ksep,- minus2 + plus2 + 1)
-         if(plpr_L) write(6,*) ' Ptopo_myproc =',Ptopo_myproc,
-     %                         ' TRICUB ksep minus2 plus2 =',ksep,minus2,plus2
+!$omp enddo 
+!$omp do 
+      do kk=1,Tr3d_ntr+7
+      do n=1,nijk
+         capx1(n,kk) = ZERO_8
+         capy1(n,kk) = ZERO_8
+         capz1(n,kk) = ZERO_8
+         cz1  (n,kk) = ZERO_8
+      enddo
+      enddo
+!$omp enddo 
 *
 ************************************************************************
 *
 *     ----------------------------------------------------
 *     Preserve x y z upstream position in extra space TRAJ
 *     ----------------------------------------------------
+!$omp do 
       do n =1,nijk
          F_um_1(n)  = F_um(n)
          F_vm_1(n)  = F_vm(n)
          F_wm_1(n)  = F_wm(n)
       enddo
+!$omp enddo 
+*
+!$omp end parallel 
 *
 *     ----------
 *     TRAJECTORY
@@ -241,6 +212,13 @@
       call adw_setint ( Adwm_n1m,Adwm_capx1m,Adwm_xgg1m,Adwm_xdd1m,Adwm_capy1m,Adwm_ygg1m,
      %                  Adwm_ydd1m, Adwm_capz1m, Adwm_cz1m, F_um, F_vm, F_wm,
      %                 .true., .true., .false., nijk,i0,in,j0,jn,l_nk)
+      if (G_lam) then
+          nn=0
+          dest_ni=l_ni
+      else
+          nn=999
+          dest_ni=G_ni
+      endif
 *
 *     --------------------
 *     ADJOINT CALCULATIONS
@@ -255,80 +233,13 @@
 *     NOTE: F_um F_vm used as WORK SPACE
 *     ----------------------------------
 *
- 3000 continue
-*
-*     -------------------------------------
-*     Prepare restoration  of vectorization
-*     in semi-Lagrangian adjoint interp.
-*     -------------------------------------
-*
-*        Number of fields to treat
-*        -------------------------
-         if(group.eq.1) then
-*
-            nfld = 4 
-            if(.not. Schm_hydro_L  ) nfld = 6
-*
-            if(Orh_icn.eq.Schm_itcn) nfld = nfld + Tr3d_ntr
-*
-         elseif(group.eq.2) then
-*
-            nfld = 2
-            if(.not. Schm_hydro_L  ) nfld = 4 
-*
-            if(Orh_icn.eq.Schm_itcn) nfld = nfld + Tr3d_ntr
-*
-         elseif(group.eq.29) then
-*
-            nfld = 2 
-*
-         else
-            call gem_stop('adw_main_3_int_ad',-1)
-         endif
-*
-*        Number of independent positions at a given level
-*        ------------------------------------------------
-         kdim = stencil*nfld
-*
-         if(group.eq.29) deallocate(kinc,zinc,buff)
-*
-*        Allocation
-*        ----------
-         allocate (kinc(nijplus,kdim*l_nk),zinc(nijplus,kdim*l_nk),
-     %             buff(0:nijkag*nfld*2))
-*
-*        Zero adjoint variables
-*        ----------------------
-         do i = 1,kdim*nijplus*l_nk
-            kinc(i,1) = 0
-         enddo
-*
-         do i = 1,kdim*nijplus*l_nk
-            zinc(i,1) = 0
-         enddo
-*
-         do i = 0,nijkag*nfld*2
-            buff(i) = ZERO_8
-         enddo
-*
-*        Zero counter
-*        ------------
-         count = 0
-*
-         if(group.eq.29) goto 3001
-*
-*     -----------------------------------
-*     -----------------------------------
-*     Adjoint of interpolations (IPART=1)
-*     ----------------------------------------------------------------------------------------
-*     NOTE:In adw_interp_ad, IPART=1 i.e does the adjoint of tri-cubic semi-Lagrangian interp.
-*          but keeps in zinc the increments causing unvectorization.
-*     ----------------------------------------------------------------------------------------
+*     -------------------------
+*     Adjoint of interpolations
 *     ----------------------------------------------------------------------------------------
 *
-*     --------------------------------------------
-*     Adjoint of 3D Tracer interpolation (IPART=1)
-*     --------------------------------------------
+*     ----------------------------------
+*     Adjoint of 3D Tracer interpolation
+*     ----------------------------------
       if ( Orh_icn .eq. Schm_itcn ) then
 *
 * ADJ of
@@ -336,18 +247,40 @@
 *
       aaa_8 = ( Offc_a1_8 / Offc_b0_8 )/ Cstv_dt_8
 *
+      key1_ = VMM_KEY (trt1)
       key0_ = VMM_KEY (trt0)
       key0m_= VMM_KEY (trt0m)
       do n=1,Tr3d_ntr
+         key1 (n)= key1_  + n
          key0 (n)= key0_  + n
          key0m(n)= key0m_ + n
       end do
+
       if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1, Tr3d_ntr)
          err = vmmlod(key0, Tr3d_ntr)
          err = vmmlod(key0m,Tr3d_ntr)
+         patr0m = loc(tr0m1)
          do n=1,Tr3d_ntr
-            err = vmmget(key0 (n),patr0, tr0 )
-            err = vmmget(key0m(n),patr0m,tr0m)
+            do i = 1,nijkag
+               um(i,n) = ZERO_8
+            enddo
+             err = vmmget(key0m(n),patr0m,tr0m)
+             call rpn_comm_xch_halox (tr0m, LDIST_DIM, l_ni, l_nj, l_nk,
+     % Adw_halox, Adw_haloy, G_periodx, G_periody, um(1,n), -Adw_halox+1,
+     % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, nn)
+         enddo
+*
+!$omp parallel private(patr0,patr,patr0m,pawork,work1,tr1,tr01
+!$omp$         ,pnerr)
+!$omp$         shared(u,um,capx1,capy1,capz1,cz1)
+!$omp do 
+         do n=1,Tr3d_ntr
+            pawork = loc(work1)
+            patr0  = loc(tr01 )
+            pnerr = vmmget(key0 (n),patr0, tr0 )
+*
+*
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni
@@ -369,350 +302,58 @@
             enddo
             enddo
 *
-*           Fix localization parameters
-*           ---------------------------
-            count  =    count+1
-            inca   =   (count-1) * stencil
-            ibase1 = 2*(count-1) * nijkag
-            ibase2 = ibase1      + nijkag
-*
-*           Adjoint of interpolation (IPART=1)
-*           ----------------------------------
-            call adw_interp_ad (work,scrap,scrap,scrap,
-     %                               tr0m, F_um, F_vm,
-     %                          .false.,.true.,LDIST_DIM,l_nk,
-     %                          1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*           Set kinc separately from adw_interp_ad
-*           --------------------------------------
-            call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
-     %                      nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-         end do
-         err = vmmuld(key0, Tr3d_ntr)
-         err = vmmuld(key0m,Tr3d_ntr)
-      endif
-*
-      endif
-*
-      if (.not. Schm_hydro_L) then
-*
-         pnlod = 0
-*
-         pnlkey1(1+pnlod) = VMM_KEY(rw)
-         pnlkey1(2+pnlod) = VMM_KEY(rvv)
-         pnlod = 2+pnlod
-*
-         pnlkey1(1+pnlod) = VMM_KEY(rwm)
-         pnlkey1(2+pnlod) = VMM_KEY(rvvm)
-         pnlod = 2+pnlod
-*
-         pnerr = vmmlod(pnlkey1,pnlod)
-
-         pnerr = VMM_GET_VAR(rw)
-         pnerr = VMM_GET_VAR(rvv)
-*
-         pnerr = VMM_GET_VAR(rwm)
-         pnerr = VMM_GET_VAR(rvvm)
-*
-*     Transfer field in extra work space
-*     ----------------------------------
-      do k=1,l_nk
-      do j=l_miny,l_maxy
-      do i=l_minx,l_maxx
-         work(i,j,k) = rvv(i,j,k)
-          rvv(i,j,k) = ZERO_8
-      enddo
-      enddo
-      enddo
-*
-*     Fix localization parameters
-*     ---------------------------
-      count  =    count+1
-      inca   =   (count-1) * stencil
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag
-*
-*     Adjoint of interpolation (IPART=1)
-*     ----------------------------------
-      call adw_interp_ad (work,scrap,scrap,scrap,
-     %                         rvvm, F_um, F_vm,
-     %                    .false.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Set kinc separately from adw_interp_ad
-*     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Transfer field in extra work space
-*     ----------------------------------
-      do k=1,l_nk
-      do j=l_miny,l_maxy
-      do i=l_minx,l_maxx
-         work(i,j,k) = rw(i,j,k)
-          rw (i,j,k) = ZERO_8
-      enddo
-      enddo
-      enddo
-*
-*     Fix localization parameters
-*     ---------------------------
-      count  =    count+1
-      inca   =   (count-1) * stencil
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag
-*
-*     Adjoint of interpolation (IPART=1)
-*     ----------------------------------
-      call adw_interp_ad (work,scrap,scrap,scrap,
-     %                         rwm, F_um, F_vm,
-     %                    .false.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Set kinc separately from adw_interp_ad
-*     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-      pnerr = vmmuld(-1,0)
-*
-      endif
-*
-*     -----------------------------------------------
-*     Adjoint of RCN and RTH interpolations (IPART=1)
-*     -----------------------------------------------
-*
-*     VMM Initializations
-*     -------------------
-      pnlkey1(1) = VMM_KEY(rcn)
-      pnlkey1(2) = VMM_KEY(rth)
-      pnlod = 2
-*
-      pnlkey1(1+pnlod) = VMM_KEY(rcnm)
-      pnlkey1(2+pnlod) = VMM_KEY(rthm)
-      pnlod = 2+pnlod
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr = VMM_GET_VAR(rcn)
-      pnerr = VMM_GET_VAR(rth)
-*
-      pnerr = VMM_GET_VAR(rcnm)
-      pnerr = VMM_GET_VAR(rthm)
-*
-*     Transfer field in extra work space
-*     ----------------------------------
-      do k=1,l_nk
-      do j=l_miny,l_maxy
-      do i=l_minx,l_maxx
-         work(i,j,k) = rth(i,j,k)
-          rth(i,j,k) = ZERO_8
-      enddo
-      enddo
-      enddo
-*
-*     Fix localization parameters
-*     ---------------------------
-      count  =    count+1
-      inca   =   (count-1) * stencil
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag
-*
-*     Adjoint of interpolation (IPART=1)
-*     ----------------------------------
-      call adw_interp_ad (work,scrap,scrap,scrap,
-     %                         rthm, F_um, F_vm,
-     %                    .false.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Set kinc separately from adw_interp_ad
-*     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Transfer field in extra work space
-*     ----------------------------------
-      do k=1,l_nk
-      do j=l_miny,l_maxy
-      do i=l_minx,l_maxx
-         work(i,j,k) = rcn(i,j,k)
-          rcn(i,j,k) = ZERO_8
-      enddo
-      enddo
-      enddo
-*
-*     Fix localization parameters
-*     ---------------------------
-      count  =    count+1
-      inca   =   (count-1) * stencil
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag
-*
-      call adw_interp_ad (work,scrap,scrap,scrap,
-     %                         rcnm, F_um, F_vm,
-     %                    .false.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Set kinc separately from adw_interp_ad
-*     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-      pnerr = vmmuld(-1,0)
-*
-      if(group.eq.2) goto 3002
-*
- 3001 continue
-*
-*     -------------------------------------------------
-*     Adjoint of RVW2 and RUW2 interpolations (IPART=1)
-*     -------------------------------------------------
-*
-*     VMM Initializations
-*     -------------------
-      pnlkey1(1) = VMM_KEY(ruw2)
-      pnlkey1(2) = VMM_KEY(rvw2)
-      pnlod = 2
-*
-      pnlkey1(1+pnlod) = VMM_KEY(ruw1m)
-      pnlkey1(2+pnlod) = VMM_KEY(rvw1m)
-      pnlod = 2+pnlod
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr = VMM_GET_VAR(ruw2)
-      pnerr = VMM_GET_VAR(rvw2)
-*
-      pnerr = VMM_GET_VAR(ruw1m)
-      pnerr = VMM_GET_VAR(rvw1m)
-*
-*     Fix localization parameters
-*     ---------------------------
-      count  =    count+1
-      inca   =   (count-1) * stencil
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag
-*
-*     Adjoint of interpolation (IPART=1)
-*     ----------------------------------
-      call adw_interp_ad (rvw2,scrap,scrap,scrap,
-     %                         rvw1m,F_um, F_vm,
-     %                    .true.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Set kinc separately from adw_interp_ad
-*     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Fix localization parameters
-*     ---------------------------
-      count  =    count+1
-      inca   =   (count-1) * stencil
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag
-*
-*     Adjoint of interpolation (IPART=1)
-*     ----------------------------------
-      call adw_interp_ad (ruw2,scrap,scrap,scrap,
-     %                         ruw1m,F_um, F_vm,
-     %                    .true.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-*     Set kinc separately from adw_interp_ad
-*     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
-*
-      pnerr = vmmuld(-1,0)
-*
- 3002 continue
-*
-*     ------------------------------
-*     Introduce increments in buffer
-*     ------------------------------
-*
-*     ----------------------------------------------------
-*     CAUTION: DO NOT CHANGE the following loop ordering
-*     1) Loop on JINC must be innermost for vectorization
-*     2) The chopping is done to guarantee safety
-*        of the vectorization
-*     ----------------------------------------------------
-      do j=j0,jn
-      do i=i0,in
-*
-      ij = ((j-1)*l_ni) + i
-*
-         istop  = 0
-*
-         do klev=1,ksep
-*
-            ilevels=(l_nk-klev)/ksep + 1
-            istart = istop + 1
-            istop  = istart+ilevels*kdim-1
-*
-*VDIR NODEP
-            do jinc=istart,istop
-               buff(kinc(ij,jinc)) = buff(kinc(ij,jinc)) + zinc(ij,jinc)
-            enddo
-*
+*           Adjoint of interpolation 
+*           ------------------------
+            call adw_interp_ad (work, u(1,n), um(1,n),
+     %                          capx1(1,n),capy1(1,n),capz1(1,n),cz1(1,n),
+     %                         .false., Adw_mono_L, LDIST_DIM, l_nk,i0,in,j0,jn)
          enddo
-*
-      enddo
-      enddo
-*
-*     -------------------------------------
-*     -------------------------------------
-*     Transfer of buffer in model variables
-*     -----------------------------------------------------------------------------------------
-*     NOTE:In adw_interp_ad, IPART=2 i.e does the adjoint of 2nd derivate and addition to field   
-*     -----------------------------------------------------------------------------------------
-*     -----------------------------------------------------------------------------------------
-*
-      count = 0 
-*
-      if(group.eq.29) goto 3003
-*
-*     --------------------------------------------
-*     Adjoint of 3D Tracer interpolation (IPART=2)
-*     --------------------------------------------
-      if ( Orh_icn .eq. Schm_itcn ) then
-*
-      aaa_8 = ( Offc_a1_8 / Offc_b0_8 )/ Cstv_dt_8
-*
-*     VMM Initializations
-*     -------------------
-      key1_ = VMM_KEY (trt1)
-      key0_ = VMM_KEY (trt0)
-      do n=1,Tr3d_ntr
-         key1 (n)= key1_  + n
-         key0 (n)= key0_  + n
-      end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1, Tr3d_ntr)
-         err = vmmlod(key0, Tr3d_ntr)
+!$omp end do 
+      if (G_lam) then
+!$omp do
+          do k=1,l_nk
+          do j=l_miny,l_maxy
+          do i=l_minx,l_maxx
+          in0(i,j,k) = tr0(i,j,k)
+          end do
+          end do
+          end do
+!$omp end do 
+      endif
+
+!$omp single
          do n=1,Tr3d_ntr
-            err = vmmget(key1 (n),patr,  tr  )
-            err = vmmget(key0 (n),patr0, tr0 )
+            err = vmmget(key0(n),patr0,tr0)
+            call rpn_comm_adj_halox (tr0, LDIST_DIM, l_ni, l_nj, l_nk,
+     % Adw_halox, Adw_haloy, G_periodx, G_periody, u(1,n), -Adw_halox+1,
+     % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, nn)
+         enddo
+!$omp end single
+
+      if (G_lam) then
+!$omp do
+          do k=1,l_nk
+          do j=l_miny,l_maxy
+          do i=l_minx,l_maxx
+          tr0(i,j,k) = in0(i,j,k) + tr0(i,j,k)
+c         in0(i,j,k) = ZERO_8
+          end do
+          end do
+          end do
+!$omp end do 
+      endif
 *
-*           Fix localization parameters   
-*           ---------------------------
-            count  =    count+1
-            ibase1 = 2*(count-1) * nijkag
-            ibase2 = ibase1      + nijkag  
+            patr   = loc(tr1  )
+            patr0  = loc(tr01 )
 *
-*           Adjoint of interpolation (IPART=2) 
-*           ----------------------------------
-            call adw_interp_ad (scrap, tr0,buff(ibase1+1),buff(ibase2+1),
-     %                               scrap,scrap,         scrap,
-     %                          .false.,lscrap_L,LDIST_DIM,l_nk,
-     %                          2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
-*
+!$omp do 
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr ,tr  )
+            err = vmmget(key0(n),patr0,tr0)
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni
-*              ADJ 
+*              ADJ
 *              ---
                tr (i,j,k) = - aaa_8*tr0(i,j,k) + tr(i,j,k)
                tr0(i,j,k) = ZERO_8
@@ -720,152 +361,155 @@
             end do
             end do
          end do
+!$omp end do 
+
          err = vmmuld(key1, Tr3d_ntr)
          err = vmmuld(key0, Tr3d_ntr)
+         err = vmmuld(key0m,Tr3d_ntr)
+*
+!$omp end parallel 
+      endif
       endif
 *
-      endif
-*
+      pnlod = 0
+
       if (.not. Schm_hydro_L) then
 *
-         pnlod = 0
+         pnlod = pnlod+1
+         pnlkey1(pnlod) = VMM_KEY(rvv)
+         pnlkey2(pnlod) = VMM_KEY(rvvm)
+         pnlkey3(pnlod) = 0
+         pnlkeys(pnlod) = 2
 *
-         pnlkey1(1+pnlod) = VMM_KEY(rw)
-         pnlkey1(2+pnlod) = VMM_KEY(rvv)
-         pnlod = 2+pnlod
-*
-         pnerr = vmmlod(pnlkey1,pnlod)
+         pnlod = pnlod+1
+         pnlkey1(pnlod) = VMM_KEY(rw)
+         pnlkey2(pnlod) = VMM_KEY(rwm)
+         pnlkey3(pnlod) = 0
+         pnlkeys(pnlod) = 2
+      endif
 
-         pnerr = VMM_GET_VAR(rw)
-         pnerr = VMM_GET_VAR(rvv)
+         pnlod = pnlod+1
+         pnlkey1(pnlod) = VMM_KEY(rth)
+         pnlkey2(pnlod) = VMM_KEY(rthm)
+         pnlkey3(pnlod) = 0
+         pnlkeys(pnlod) = 2
+
+         pnlod = pnlod+1
+         pnlkey1(pnlod) = VMM_KEY(rcn)
+         pnlkey2(pnlod) = VMM_KEY(rcnm)
+         pnlkey3(pnlod) = 0
+         pnlkeys(pnlod) = 2
+
+         pnlod = pnlod+1
+         pnlkey1(pnlod) = VMM_KEY(rvw1)
+         pnlkey2(pnlod) = VMM_KEY(rvw1m)
+         pnlkey3(pnlod) = VMM_KEY(rvw2)
+         pnlkeys(pnlod) = 3
+
+         pnlod = pnlod+1
+         pnlkey1(pnlod) = VMM_KEY(ruw1)
+         pnlkey2(pnlod) = VMM_KEY(ruw1m)
+         pnlkey3(pnlod) = VMM_KEY(ruw2)
+         pnlkeys(pnlod) = 3
+
+         pnerr = vmmlod(pnlkey1,pnlod)
+         pnerr = vmmlod(pnlkey2,pnlod)
+         pnerr = vmmlod(pnlkey3,pnlod)
+
+      do kk=1,pnlod
+         do i = 1,nijkag
+            um(i,kk) = ZERO_8
+         enddo
+         pnerr = vmmget(pnlkey2(kk),pafinm,finm)
+         call rpn_comm_xch_halox (finm, LDIST_DIM, l_ni, l_nj, l_nk,
+     % Adw_halox, Adw_haloy, G_periodx, G_periody,um(1,kk), -Adw_halox+1,
+     % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, nn)
+       enddo
 *
-*        Fix localization parameters
-*        ---------------------------
-         count  =    count+1
-         ibase1 = 2*(count-1) * nijkag
-         ibase2 = ibase1      + nijkag
-*
-*        Adjoint of interpolation (IPART=2)
+*     Transfer field in extra work space
+*     ----------------------------------
+!$omp parallel private(wind_L,pnerr,work1,n,finm1,fin1,
+!$omp$                 pafin,pafinm,pawork)
+!$omp$  shared(u,um,capx1,capy1,capz1,cz1)
+
+!$omp do
+      do kk=1,pnlod
+         pafin = loc(fin1)
+         pnerr = vmmget(pnlkey1(kk),pafin,fin)
+         n=kk+Tr3d_ntr
+         if (pnlkeys(kk).eq.3) then
+             pawork = loc(work1)
+             pnerr = vmmget(pnlkey3(kk),pawork,work)
+             wind_L = .true.
+         else
+*        Transfer field in extra work space
 *        ----------------------------------
-         call adw_interp_ad (scrap,  rvv,buff(ibase1+1),buff(ibase2+1),
-     %                             scrap,scrap,         scrap,
-     %                       .false.,lscrap_L,LDIST_DIM,l_nk,
-     %                       2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
-*
-*        Fix localization parameters
-*        ---------------------------
-         count  =    count+1
-         ibase1 = 2*(count-1) * nijkag
-         ibase2 = ibase1      + nijkag
-*
-*        Adjoint of interpolation (IPART=2)
-*        ----------------------------------
-         call adw_interp_ad (scrap,  rw,buff(ibase1+1),buff(ibase2+1),
-     %                             scrap,scrap,         scrap,
-     %                       .false.,lscrap_L,LDIST_DIM,l_nk,
-     %                       2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
-*
-         pnerr = vmmuld(-1,0)
-*
+             wind_L = .false.
+             pawork = loc(work1)
+             do k=1,l_nk
+                do j=l_miny,l_maxy
+                   do i=l_minx,l_maxx
+                      work(i,j,k) = fin(i,j,k)
+                      fin(i,j,k) = ZERO_8
+                   enddo
+                enddo
+             enddo
+  
+         endif
+*        Adjoint of interpolation
+*        ------------------------
+         call adw_interp_ad (work, u(1,kk), um(1,kk),
+     %                    capx1(1,n),capy1(1,n),capz1(1,n),cz1(1,n),
+     %                    wind_L, .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+
+      enddo
+!$omp end do
+      if (G_lam) then
+!$omp do
+          do k=1,l_nk
+          do j=l_miny,l_maxy
+          do i=l_minx,l_maxx
+          in0(i,j,k) = fin(i,j,k)
+          end do
+          end do
+          end do
+!$omp end do
       endif
-*
-*     -----------------------------------------------
-*     Adjoint of RCN and RTH interpolations (IPART=2) 
-*     -----------------------------------------------
-*
-*     VMM Initializations
-*     -------------------
-      pnlkey1(1) = VMM_KEY(rcn)
-      pnlkey1(2) = VMM_KEY(rth)
-      pnlod = 2 
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr = VMM_GET_VAR(rcn)
-      pnerr = VMM_GET_VAR(rth)
-*
-*     Fix localization parameters   
-*     ---------------------------
-      count  =    count+1
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag  
-*
-*     Adjoint of interpolation (IPART=2) 
-*     ----------------------------------
-      call adw_interp_ad (scrap,  rth,buff(ibase1+1),buff(ibase2+1),
-     %                          scrap,scrap,         scrap,
-     %                    .false.,lscrap_L,LDIST_DIM,l_nk,
-     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
-*
-*     Fix localization parameters   
-*     ---------------------------
-      count  =    count+1
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag  
-*
-*     Adjoint of interpolation (IPART=2) 
-*     ----------------------------------
-      call adw_interp_ad (scrap,  rcn,buff(ibase1+1),buff(ibase2+1),
-     %                          scrap,scrap,         scrap,
-     %                    .false.,lscrap_L,LDIST_DIM,l_nk,
-     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
-*
-      pnerr = vmmuld(-1,0)
-*
-      if(group.eq.2) then
-         group = 29
-         goto 3000
+
+!$omp single
+         do kk=1,pnlod
+            pnerr = vmmget(pnlkey1(kk),pafin,fin)
+            call rpn_comm_adj_halox (fin, LDIST_DIM, l_ni, l_nj, l_nk,
+     % Adw_halox, Adw_haloy, G_periodx, G_periody, u(1,kk), -Adw_halox+1,
+     % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, nn)
+         enddo
+!$omp end single
+      if (G_lam) then
+!$omp do
+          do k=1,l_nk
+          do j=l_miny,l_maxy
+          do i=l_minx,l_maxx
+          fin (i,j,k) = in0(i,j,k) + fin(i,j,k)
+c         in0(i,j,k) = ZERO_8
+          end do
+          end do
+          end do
+!$omp end do
       endif
-*
- 3003 continue
-*
-*     -------------------------------------------------
-*     Adjoint of RVW2 and RUW2 interpolations (IPART=2) 
-*     -------------------------------------------------
-*
-*     VMM Initializations
-*     -------------------
-      pnlkey1(1) = VMM_KEY(ruw1)
-      pnlkey1(2) = VMM_KEY(rvw1)
-      pnlod = 2 
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr = VMM_GET_VAR(ruw1)
-      pnerr = VMM_GET_VAR(rvw1)
-*
-*     Fix localization parameters   
-*     ---------------------------
-      count  =    count+1
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag  
-*
-*     Adjoint of interpolation (IPART=2) 
-*     ----------------------------------
-      call adw_interp_ad (scrap, rvw1,buff(ibase1+1),buff(ibase2+1),
-     %                          scrap,scrap,         scrap,
-     %                     .true.,lscrap_L,LDIST_DIM,l_nk,
-     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
-*
-*     Fix localization parameters   
-*     ---------------------------
-      count  =    count+1
-      ibase1 = 2*(count-1) * nijkag
-      ibase2 = ibase1      + nijkag  
-*
-*     Adjoint of interpolation (IPART=2) 
-*     ----------------------------------
-      call adw_interp_ad (scrap, ruw1,buff(ibase1+1),buff(ibase2+1),
-     %                          scrap,scrap,         scrap,
-     %                     .true.,lscrap_L,LDIST_DIM,l_nk,
-     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
-*
+!$omp end parallel
       pnerr = vmmuld(-1,0)
-*
-***********************************************************************
-* Deallocate
-***********************************************************************
-      deallocate(kinc,zinc,buff)
+!$omp parallel
+!$omp do
+      do n = 1, nijk
+         do kk=1,Tr3d_ntr+pnlod
+            Adw_capx1(n) = Adw_capx1(n) + capx1(n,kk)
+            Adw_capy1(n) = Adw_capy1(n) + capy1(n,kk)
+            Adw_capz1(n) = Adw_capz1(n) + capz1(n,kk)
+            Adw_cz1  (n) = Adw_cz1(n)   +   cz1(n,kk)
+         enddo
+      enddo
+!$omp end do
+!$omp end parallel
 *
 ************************************************************************
 *
@@ -905,8 +549,6 @@
       call hpdeallc(Adwm_c1m_    ,err,1)
       call hpdeallc(Adwm_wrkbm_  ,err,1)
       call hpdeallc(Adwm_wrkcm_  ,err,1)
-*
-      pnerr = vmmuld(-1,0)
 *
  1000  format(3X,'ADJ of ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INT_AD)')
 *

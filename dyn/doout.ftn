@@ -4,7 +4,7 @@
 *
       integer function doout(F_dostep,F_set)
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     J. Caveen - rpn - december 1994
@@ -14,6 +14,7 @@
 * v2_30 - Lee V.            - corrected output logic to have physics output
 * v2_30                       during (Init_dfnp-1)/2
 * v2_31 - Lee V.            - added another set of output, chem (=3)
+* v3_11 - Tanguay M.        - ADJ of digital filter 
 *
 *object
 *     This function returns the indices of each timestep set
@@ -43,6 +44,7 @@
 #include "outp.cdk"
 #include "outc.cdk"
 #include "timestep.cdk"
+#include "v4dg.cdk"
 **
       integer i,j,k,kk,F_set
       integer F_dostep(MAXSET)
@@ -62,8 +64,12 @@
          else
             if (.not.Init_balgm_L) then
                 ok2output = .true.
-            else if ((F_set.eq.1.or.F_set.eq.3) .and.
+            else if ((F_set.eq.1.or.F_set.eq.3) .and. 
+     $                  (V4dg_conf.eq.0.or.(V4dg_di_L.or.V4dg_tl_L)) .and.
      $                  (Rstri_idon_L.or.Lctl_step.lt.(Init_dfnp-1)/2)) then
+                ok2output = .true.
+            else if ((F_set.eq.1.or.F_set.eq.3) .and. (V4dg_conf.ne.0.and.V4dg_ad_L) .and.
+     $                  (.not.Rstri_idon_L.or.Lctl_step.gt.Init_dfnp-1)) then
                 ok2output = .true.
             else if (F_set.eq.2.and.
      $                  (Rstri_idon_L.or.Lctl_step.le.(Init_dfnp-1)/2)) then

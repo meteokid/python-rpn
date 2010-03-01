@@ -8,7 +8,7 @@
      $        trad,udifv,vdifv,tdifv,qdifv,ugwd,vgwd,tcond,hucond,
      $        km,kt,bm,bt,
 *busper
-     $        dlat,dlon,mg,z0,lhtg,alvis,twater,tglacier,tsoil,
+     $        dlat,dlon,mg,ml,z0,lhtg,alvis,twater,tglacier,tsoil,
      $        wsoil,snodp,icedp,glsea,glsea0,ufcp,vfcp,
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp
 
@@ -18,7 +18,7 @@
      $        omegap,sigm,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
      $        trad,udifv,vdifv,tdifv,qdifv,ugwd,vgwd,tcond,hucond,
      $        km,kt,bm,bt,
-     $        dlat,dlon,mg,z0,lhtg,alvis,twater,tglacier,tsoil,
+     $        dlat,dlon,mg,ml,z0,lhtg,alvis,twater,tglacier,tsoil,
      $        wsoil,snodp,icedp,glsea,glsea0,ufcp,vfcp,
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp
 

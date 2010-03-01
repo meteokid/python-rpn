@@ -4,33 +4,35 @@
 *
       subroutine p_inincr
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author   
 *     Bernard Dugas - july 97
 *
 *revision
-* v2_21 - Bernard Dugas  - Adaption to GEM DM v2.2 and to physics v3.67:
-*                      1) change all includes and variables to DM specs;
-*                      2) each PE does the interpolations for its own area;
-*                      3) INCRTS is only used for water points (TWATER);
-*                      4) INCRTG is only used for glacier points (TGLACIER(2));
-*                      5) INCRTP is only used for deep soil points when the
-*                         force-restore surface scheme is selected (TSOIL(2));
-*                      6) INCRICD is added for sea ice depht increments (ICEDP);
-*                      7) INCRGL is now used with GLSEAS0, as GLSEA can be
-*                         modified to account for lake ice evolution;
-*                      8) INCRAL is no longer defined, since CALCALB
-*                         is used instead (called by CLIMPHS2).
-* v2_31 - Desgagne M.   - remove stkmemw
-* v2_31 - Bernard Dugas - adapt to new climatological file descriptors
-* v2_32 - Bernard Dugas - correct exit condition codes
+* v2_21 - Bernard Dugas     - Adaption to GEM DM v2.2 and to physics v3.67:
+*                             1) change all includes and variables to DM specs;
+*                             2) each PE does the interpolations for its own area;
+*                             3) INCRTS is only used for water points (TWATER);
+*                             4) INCRTG is only used for glacier points (TGLACIER(2));
+*                             5) INCRTP is only used for deep soil points when the
+*                                force-restore surface scheme is selected (TSOIL(2));
+*                             6) INCRICD is added for sea ice depht increments (ICEDP);
+*                             7) INCRGL is now used with GLSEAS0, as GLSEA can be
+*                                modified to account for lake ice evolution;
+*                             8) INCRAL is no longer defined, since CALCALB
+*                                is used instead (called by CLIMPHS2).
+* v2_31 - Desgagne M.       - remove stkmemw
+* v2_31 - Bernard Dugas     - adapt to new climatological file descriptors
+* v2_32 - Bernard Dugas     - correct exit condition codes
 * v3_00 - Desgagne & Lee    - Lam configuration
-* v3_01 - Bernard Dugas - add call to INTOZON
-* v3_02 - Lubos Spacek  - remplacer l_ni et l_nj par p_ni et p_nj
-* v3_02 - Bernard Dugas - remettre le code de controle d'interpolation O3
-*                       - toujours initialiser incrtp (independamment de soli_L)
-* v3_10 - Lee V.        - RPN_bcastc for bcast on MPI_CHARACTER
+* v3_01 - Bernard Dugas     - add call to INTOZON
+* v3_02 - Lubos Spacek      - remplacer l_ni et l_nj par p_ni et p_nj
+* v3_02 - Bernard Dugas     - remettre le code de controle d'interpolation O3
+*                           - toujours initialiser incrtp (independamment de soli_L)
+* v3_10 - Lee V.            - RPN_bcastc for bcast on MPI_CHARACTER
+* v3_11 - Bernard Dugas     - use glacier AND (maybe) sea ice SNODP to define INCRNE
+*                           - Account for P_pbl_iceme_L = .true.
 *
 *object
 *
@@ -58,6 +60,9 @@
 #include "lctl.cdk"
 #include "rstr.cdk"
 #include "out1.cdk"
+#include "p_pbl.cdk"
+#include "p_pbl2.cdk"
+#include "p_pset.cdk"
 #include "cstv.cdk"
 #include "glb_ld.cdk"
 *
@@ -77,22 +82,22 @@
       INTEGER      xncfld
       PARAMETER   (xncfld=6)
       CHARACTER    gtyp_S(xncfld),gtypz_S(xncfld)
-      INTEGER      xnip1(xncfld), xnip2(xncfld), xnip3(xncfld)
       INTEGER      xnzig1(xncfld),xnzig2(xncfld),xnzig3(xncfld)
       INTEGER      xnig1(xncfld), xnig2(xncfld), xnig3(xncfld)
       INTEGER      xnig4(xncfld), xnzig4(xncfld)
       INTEGER      xnilu(xncfld), xnjlu(xncfld)
       CHARACTER*4  clim_S(xncfld)
 *
-      LOGICAL      acli_L,soli_L
+      LOGICAL      acli_L,IntSol_L,IntIce_L
       INTEGER      xndate1,xndate2,xniz,xnjz
       INTEGER      Lun_clim,Lun_acli,Lun_activ,ppjour,aujour
       INTEGER      xnerr,xncle,xnhold,xnpos,xnzpos,xncoupe
       INTEGER      i,xni,xnj,xnk,xnim,xnjm,xnzm,xnmxfld
-      CHARACTER    typvar_S,hold_S*12,soli_S*8
-      CHARACTER    clima_S*256,anclima_S*256
+      CHARACTER    typvar_S,hold_S*12
+      CHARACTER*256 clima_S,anclima_S
+      CHARACTER*8  soli_S,soli2_S
 *
-      real xrwrk3
+      real xrwrk3, neige
       pointer (iwork3,xrwrk3(1))
       real xrlon(p_ni), xrlat(p_ni), xrwrk1(p_ni), xrwrk2(p_ni)
       real, dimension (:), allocatable :: xrclim
@@ -258,7 +263,6 @@
          if (( xnmxfld  .le. 0 ) .or. ( Lun_clim .eq. 0 ))
      %      call gem_stop( 'p_inincr',-1 )
 *
-*
 **       Every one allocates the xncfld 2D climatology fields
 *
          allocate (xrtic(xnzm*xncfld),xrtac(xnzm*xncfld))
@@ -300,6 +304,30 @@ C        call flush( Lun_out )
 *
          rad_8 = 180./acos( -1.0D0 )
 *
+**       Determine whether the surface land scheme is fully
+**       interactive or not. If it is, the TP increments will
+**       only be used for TGLACIER(2)
+*
+         call low2up( P_pbl_schsl_S,soli_S )
+         soli2_S = soli_S
+         if (P_pset_second_L) call low2up( P_pbl2_schsl_S,soli2_S )
+            
+         if ((soli_S  .eq.'CLASS' .or. soli_S  .eq.'ISBA') .and.
+     %       (soli2_S .eq.'CLASS' .or. soli2_S .eq.'ISBA')) then
+            IntSol_L = .true.
+         else
+            IntSol_L = .false.
+         endif
+*
+**       Check for interactive snow (in glacier & sea ice
+**       modules) and ice thichness (in sea ice module)
+*
+         IntIce_L = P_pbl_iceme_L
+         if (P_pset_second_L) IntIce_L = (IntIce_L .and. P_pbl2_iceme_L)
+*
+C        print *,'Dans p_inincr: soli_S ',soli_S
+C        call flush( Lun_out )
+*
          if ( Ptopo_myproc .eq. 0 ) then
 *
 **       3. Processor 0 reads the target month's climatic fields
@@ -307,89 +335,99 @@ C        call flush( Lun_out )
 *
             do i=1,xncfld
 *
-               xncle = -1
+               if ((clim_S(i).eq.'SD' .and. IntIce_L .and. IntSol_L)
+     %        .or. (clim_S(i).eq.'I8' .and. IntIce_L)
+     %        .or. (clim_S(i).eq.'HS' .and. IntSol_L)) then
 *
-**             Always try reading from Lun_acli first, if possible
-*
-               if (acli_L)
-     %            xncle = fstlir( xrclim(xnpos), Lun_acli,
-     %                            xnilu(i),xnjlu(i), xnk, -1,' ',
-     %                            -1,xncibl(2),xncibl(4),'A',clim_S(i) )
-*
-**             Otherwise read from Lun_clim
-*
-               if ( xncle .lt. 0 )
-     %            xncle = fstlir( xrclim(xnpos), Lun_clim,
-     %                            xnilu(i),xnjlu(i), xnk, -1,' ',
-     %                            -1,xncibl(2),-1,'C',clim_S(i) )
-*
-               if ( xncle .lt. 0 ) then
                   if (Lun_out.gt.0) write( Lun_out,1004 ) clim_S(i)
-                  goto 0040
-               endif
 *
-**             Save the grid description parameters
+               else
 *
-               xnerr = fstprm( xncle, xnhold,xnhold,xnhold,
-     %                         xnilu(i),xnjlu(i),xnk,
-     %                         xnhold,xnhold,xnhold,xnhold,xnhold,
-     %                         typvar_S,clim_S(i),hold_S,
-     %                         gtyp_S(i),xnig1(i),xnig2(i),
-     %                                   xnig3(i),xnig4(i),
-     %                         xnhold,xnhold,xnhold,xnhold,
-     %                         xnhold,xnhold,xnhold )
+                  xncle = -1
 *
-               if (gtyp_S(i).eq.'Z') then
+**                Always try reading from Lun_acli first, if possible
 *
-**                 Retreive necessary Z-grid descriptors.
+                  if (acli_L)
+     %               xncle = fstlir( xrclim(xnpos), Lun_acli,
+     %                               xnilu(i),xnjlu(i), xnk, -1,' ',-1,
+     %                               xncibl(2),xncibl(4),'A',clim_S(i) )
 *
-                   if (typvar_S.eq.'A') then
-                       Lun_activ = Lun_acli
-                   else if (typvar_S.eq.'C') then
-                       Lun_activ = Lun_clim
-                   endif
+**                Otherwise read from Lun_clim
 *
-                   xnzpos = (i-1)*xnzm+1
+                  if ( xncle .lt. 0 )
+     %               xncle = fstlir( xrclim(xnpos), Lun_clim,
+     %                               xnilu(i),xnjlu(i), xnk, -1,' ',
+     %                               -1,xncibl(2),-1,'C',clim_S(i) )
 *
-                   xncle = fstlir( xrtic(xnzpos), Lun_activ,
-     %                             xniz,xnjz,xnhold, -1,' ',
-     %                             xnig1(i),xnig2(i),xnig3(i),
-     %                             typvar_S,'>>')
+                  if ( xncle .lt. 0 ) then
+                     if (Lun_out.gt.0) write( Lun_out,1005 ) clim_S(i)
+                     goto 0040
+                  endif
 *
-                   if ( xncle .lt. 0 .or.
+**                Save the grid description parameters
+*
+                  xnerr = fstprm( xncle, xnhold,xnhold,xnhold,
+     %                            xnilu(i),xnjlu(i),xnk,
+     %                            xnhold,xnhold,xnhold,xnhold,xnhold,
+     %                            typvar_S,clim_S(i),hold_S,
+     %                            gtyp_S(i),xnig1(i),xnig2(i),
+     %                                      xnig3(i),xnig4(i),
+     %                            xnhold,xnhold,xnhold,xnhold,
+     %                            xnhold,xnhold,xnhold )
+*
+                  if (gtyp_S(i).eq.'Z') then
+*
+**                   Retreive necessary Z-grid descriptors
+*
+                     if (typvar_S.eq.'A') then
+                        Lun_activ = Lun_acli
+                     else if (typvar_S.eq.'C') then
+                        Lun_activ = Lun_clim
+                     endif
+*
+                     xnzpos = (i-1)*xnzm+1
+*
+                     xncle = fstlir( xrtic(xnzpos), Lun_activ,
+     %                               xniz,xnjz,xnhold, -1,' ',
+     %                               xnig1(i),xnig2(i),xnig3(i),
+     %                               typvar_S,'>>')
+*
+                     if ( xncle .lt. 0 .or.
      %                  xniz  .ne. xnilu(i) ) then
-                      if (Lun_out.gt.0) write( Lun_out,1005 )
-                      xncle = -1
-                      goto 0040
-                   endif
+                        if (Lun_out.gt.0) write( Lun_out,1006 )
+                        xncle = -1
+                        goto 0040
+                     endif
 *                       
-                   xncle = fstlir( xrtac(xnzpos), Lun_activ,
-     %                             xniz,xnjz,xnhold, -1,' ',
-     %                             xnig1(i),xnig2(i),xnig3(i),
-     %                             typvar_S,'^^')
+                     xncle = fstlir( xrtac(xnzpos), Lun_activ,
+     %                               xniz,xnjz,xnhold, -1,' ',
+     %                               xnig1(i),xnig2(i),xnig3(i),
+     %                               typvar_S,'^^')
 *
-                   if ( xncle .lt. 0 .or.
-     %                  xnjz  .ne. xnjlu(i) ) then
-                      if (Lun_out.gt.0) write( Lun_out,1006 )
-                      xncle = -1
-                      goto 0040
-                   endif
+                     if ( xncle .lt. 0 .or.
+     %                    xnjz  .ne. xnjlu(i) ) then
+                        if (Lun_out.gt.0) write( Lun_out,1007 )
+                        xncle = -1
+                        goto 0040
+                     endif
 *
-                   xnerr = fstprm( xncle, xnhold,xnhold,xnhold,
-     %                         xnhold,xnhold,xnhold,
-     %                         xnhold,xnhold,xnhold,xnhold,xnhold,
-     %                         hold_S,hold_S,hold_S,
-     %                         gtypz_S(i),xnzig1(i),xnzig2(i),
-     %                                    xnzig3(i),xnzig4(i),
-     %                         xnhold,xnhold,xnhold,xnhold,
-     %                         xnhold,xnhold,xnhold )
+                     xnerr = fstprm( xncle, xnhold,xnhold,xnhold,
+     %                               xnhold,xnhold,xnhold,
+     %                               xnhold,xnhold,xnhold,xnhold,xnhold,
+     %                               hold_S,hold_S,hold_S,
+     %                               gtypz_S(i),xnzig1(i),xnzig2(i),
+     %                                          xnzig3(i),xnzig4(i),
+     %                               xnhold,xnhold,xnhold,xnhold,
+     %                               xnhold,xnhold,xnhold )
+
+                  endif
+*
+C                 print *,'Dans p_inincr: lu ',clim_S(i)
+C                 call flush( Lun_out )
 *
                endif
 *
                xnpos = xnpos+xnmxfld
-*
-C              print *,'Dans p_inincr: lu ',clim_S(i)
-C              call flush( Lun_out )
 *
             enddo
 *
@@ -408,40 +446,22 @@ C              call flush( Lun_out )
  0040    call RPN_COMM_bcast( xncle ,1,"MPI_INTEGER",0,"grid",xnerr )
          if (xncle.lt.0) call gem_stop( 'p_inincr',-1 )
 *
-         call RPN_COMM_bcast(xrtic  ,xncfld*xnzm   ,"MPI_REAL"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xrtac  ,xncfld*xnzm   ,"MPI_REAL"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xrclim ,xncfld*xnmxfld,"MPI_REAL"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnilu  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnjlu  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnig1  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnig2  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnig3  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnig4  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcastc(gtyp_S,xncfld     ,"MPI_CHARACTER",0,"grid",xnerr)
-         call RPN_COMM_bcast(xnzig1 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnzig2 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnzig3 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
-         call RPN_COMM_bcast(xnzig4 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xrtic  ,xncfld*xnzm   ,"MPI_REAL" ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xrtac  ,xncfld*xnzm   ,"MPI_REAL" ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xrclim ,xncfld*xnmxfld,"MPI_REAL" ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnilu  ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnjlu  ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnig1  ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnig2  ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnig3  ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnig4  ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcastc(gtyp_S ,xncfld    ,"MPI_CHARACTER",0,"grid",xnerr)
+         call RPN_COMM_bcast (xnzig1 ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnzig2 ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnzig3 ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast (xnzig4 ,xncfld    ,"MPI_INTEGER"  ,0,"grid",xnerr)
          call RPN_COMM_bcastc(gtypz_S,xncfld    ,"MPI_CHARACTER",0,"grid",xnerr)
-         call RPN_COMM_bcastc(clim_S,xncfld*4   ,"MPI_CHARACTER",0,"grid",xnerr)
-*
-**       Determine the type of surface land scheme and
-**       set a logical switch to indicate wether it is
-**       interactive or not. If it is, the TP increments
-**       will only be used for TGLACIER(2)
-*
-         call phyoptc( 'SCHMSOL', soli_S , 1 ,'GET' )
-         call low2up( soli_S,soli_S )
-*
-         if ( soli_S .eq.'CLASS' .or.
-     %        soli_S .eq.'ISBA') then
-            soli_L = .true.
-         else
-            soli_L = .false.
-         endif
-*
-C        print *,'Dans p_inincr: soli_S ',soli_S
-C        call flush( Lun_out )
+         call RPN_COMM_bcastc(clim_S ,xncfld*4  ,"MPI_CHARACTER",0,"grid",xnerr)
 *
 **    4. Loop on the p_nj physics slabs.
 **       The increments are updated in place
@@ -458,7 +478,7 @@ C        call flush( Lun_out )
                   xnerr = read_db_file (Lun_waphy,xncoupe,1)
                   xnerr = read_db_file (Lun_waphy,busper,p_bper_siz)
                else
-                  if (Lun_out.gt.0) write( Lun_out,1007 )
+                  if (Lun_out.gt.0) write( Lun_out,1008 )
                   call gem_stop( 'p_inincr',-1 )
                endif
             endif
@@ -475,10 +495,11 @@ C        call flush( Lun_out )
 *
             call ez_rgoptc( 'INTERP','VOISIN',.true. )
 *
-**          Start with the snow depth. It is always used over glaciers
-**          and sea-ice. Soil uses it only with the Force-restore scheme
-**          The GLACIER snow depth (which is currently in the second row)
-**          is used here as it is always incremented in climate mode.
+**          Start with the snow depth. It is used over glaciers and sea-ice
+**          when ICEMELT is false. Soil uses it only with the Force-restore
+**          scheme. Either the maximum GLACIER and GLSEA snow depth (which
+**          are currently in the second and fourth rows) or the soil snow
+**          depth is used here.
 *
             xnzpos = 1
             xnpos  = 1
@@ -486,105 +507,109 @@ C        call flush( Lun_out )
 *
 C           xnpos = 0
 *
-C           do i=1,xnilu(1)*xnjlu(1)
-C              xrwrk3(i) = xrclim(xnpos+i)
-C           enddo
+            if (.not.IntIce_L .or. .not.IntSol_L) then
 *
-            if (gtyp_S(1).ne.'Z') then
-               call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
-     %                    xrwrk3,xnilu(1),xnjlu(1),
-     %                    gtyp_S(1),xnig1(1),xnig2(1),
-     %                    xnig3(1),xnig4(1),.TRUE. )
-c              call ez_rgfree
-            else
-               call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
-     %                    xrwrk3,xnilu(1),xnjlu(1),'Z',
-     %                    gtypz_S(1),xnzig1(1),xnzig2(1),
-     %                    xnzig3(1),xnzig4(1),.TRUE.,
-     %                    xrtic(xnzpos),xrtac(xnzpos) )
-            endif
+               if (gtyp_S(1).ne.'Z') then
+                  call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
+     %                             xrwrk3,xnilu(1),xnjlu(1),
+     %                             gtyp_S(1),xnig1(1),xnig2(1),
+     %                             xnig3(1),xnig4(1),.TRUE. )
+c                 call ez_rgfree
+               else
+                  call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
+     %                             xrwrk3,xnilu(1),xnjlu(1),'Z',
+     %                             gtypz_S(1),xnzig1(1),xnzig2(1),
+     %                             xnzig3(1),xnzig4(1),.TRUE.,
+     %                             xrtic(xnzpos),xrtac(xnzpos) )
+               endif
 *
-            do i=0,p_ni-1
-               busper(incrne+i) = (xrwrk1(i+1) - busper(snodp+p_ni+i))
-     %                            * scal_8
-            enddo
-*
-C           print *,'Dans p_inincr: Busp_snodp interpole/initialise'
-C           call flush( Lun_out )
-*
-**          Continue with the soil moisture (only for Force-restore) ...
-*
-            xnzpos = xnzpos+xnzm
-            xnpos  = xnpos+xnmxfld
-            iwork3 = loc( xrclim(xnpos) )
-*
-C           do i=1,xnilu(2)*xnjlu(2)
-C              xrwrk3(i) = xrclim(xnpos+i)
-C           enddo
-*
-            if (gtyp_S(2).ne.'Z') then
-               call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
-     %                    xrwrk3,xnilu(2),xnjlu(2),
-     %                    gtyp_S(2),xnig1(2),xnig2(2),
-     %                    xnig3(2),xnig4(2),.TRUE. )
-c            call ez_rgfree
-            else
-               call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
-     %                    xrwrk3,xnilu(2),xnjlu(2),'Z',
-     %                    gtypz_S(2),xnzig1(2),xnzig2(2),
-     %                    xnzig3(2),xnzig4(2),.TRUE.,
-     %                    xrtic(xnzpos),xrtac(xnzpos) )
-            endif
-*
-            do i=0,p_ni-1
-               busper(incrhs+i) = (xrwrk1(i+1)  - busper(wsoil+i))
-     %                            * scal_8
-            enddo
-*
-C           print *,'Dans p_inincr: Busp_wsoil interpole/initialise'
-C           call flush( Lun_out )
-*
-**          ... With the sea ice thickness ...
-*
-            xnzpos = xnzpos+xnzm
-            xnpos  = xnpos+xnmxfld
-            iwork3 = loc( xrclim(xnpos) )
-*
-C           do i=1,xnilu(3)*xnjlu(3)
-C              xrwrk3(i) = xrclim(xnpos+i)
-C           enddo
-*
-            if (gtyp_S(3).ne.'Z') then
-               call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
-     %                    xrwrk3,xnilu(3),xnjlu(3),
-     %                    gtyp_S(3),xnig1(3),xnig2(3),
-     %                    xnig3(3),xnig4(3),.TRUE. )
-c              call ez_rgfree
-            else
-               call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
-     %                    xrwrk3,xnilu(3),xnjlu(3),'Z',
-     %                    gtypz_S(3),xnzig1(3),xnzig2(3),
-     %                    xnzig3(3),xnzig4(3),.TRUE.,
-     %                    xrtic(xnzpos),xrtac(xnzpos) )
-            endif
-*
-            do i=0,p_ni-1
-               busper(incricd+i) = (xrwrk1(i+1)  - busper(icedp+i))
+               if (.not.IntIce_L) then
+                  do i=0,p_ni-1
+                  neige            = max( busper(snodp+  p_ni+i) ,
+     %                                    busper(snodp+3*p_ni+i) )
+                  busper(incrne+i) = (xrwrk1(i+1) - neige) * scal_8
+                  enddo
+               else
+                  do i=0,p_ni-1
+                  busper(incrne+i) = (xrwrk1(i+1) -busper(snodp+i))
      %                             * scal_8
-            enddo
+                  enddo
+               endif
 *
-C           print *,'Dans p_inincr: Busp_icedp interpole/initialise'
-C           call flush( Lun_out )
+C              print *,'Dans p_inincr: Busp_snodp interpole/initialise'
+C              call flush( Lun_out )
+*
+            endif           
+*
+**          Continue with the soil moisture (again, only for Force-restore) ...
+*
+            xnzpos = xnzpos+xnzm
+            xnpos  = xnpos+xnmxfld
+            iwork3 = loc( xrclim(xnpos) )
+*
+            if (.not.IntSol_L) then
+*
+               if (gtyp_S(2).ne.'Z') then
+                  call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
+     %                             xrwrk3,xnilu(2),xnjlu(2),
+     %                             gtyp_S(2),xnig1(2),xnig2(2),
+     %                             xnig3(2),xnig4(2),.TRUE. )
+c                 call ez_rgfree
+               else
+                  call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
+     %                             xrwrk3,xnilu(2),xnjlu(2),'Z',
+     %                             gtypz_S(2),xnzig1(2),xnzig2(2),
+     %                             xnzig3(2),xnzig4(2),.TRUE.,
+     %                             xrtic(xnzpos),xrtac(xnzpos) )
+               endif
+*
+               do i=0,p_ni-1
+                  busper(incrhs+i) = (xrwrk1(i+1)  - busper(wsoil+i))
+     %                               * scal_8
+               enddo
+*
+C              print *,'Dans p_inincr: Busp_wsoil interpole/initialise'
+C              call flush( Lun_out )
+*
+            endif
+*
+**          ... With the sea ice thickness (if ICEMELT is false) ...
+*
+            xnzpos = xnzpos+xnzm
+            xnpos  = xnpos+xnmxfld
+            iwork3 = loc( xrclim(xnpos) )
+*
+            if (.not.IntIce_L) then
+*
+               if (gtyp_S(3).ne.'Z') then
+                  call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
+     %                             xrwrk3,xnilu(3),xnjlu(3),
+     %                             gtyp_S(3),xnig1(3),xnig2(3),
+     %                             xnig3(3),xnig4(3),.TRUE. )
+c                 call ez_rgfree
+               else
+                  call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
+     %                             xrwrk3,xnilu(3),xnjlu(3),'Z',
+     %                             gtypz_S(3),xnzig1(3),xnzig2(3),
+     %                             xnzig3(3),xnzig4(3),.TRUE.,
+     %                             xrtic(xnzpos),xrtac(xnzpos) )
+               endif
+*
+               do i=0,p_ni-1
+                  busper(incricd+i) = (xrwrk1(i+1)  - busper(icedp+i))
+     %                                * scal_8
+               enddo
+*
+C              print *,'Dans p_inincr: Busp_icedp interpole/initialise'
+C              call flush( Lun_out )
+*
+            endif
 *
 **          ... And with the sea ice mask
 *
             xnzpos = xnzpos+xnzm
             xnpos  = xnpos+xnmxfld
             iwork3 = loc( xrclim(xnpos) )
-*
-C           do i=1,xnilu(4)*xnjlu(4)
-C              xrwrk3(i) = xrclim(xnpos+i)
-C           enddo
 *
             if (gtyp_S(4).ne.'Z') then
                call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
@@ -620,10 +645,6 @@ C           call flush( Lun_out )
             xnpos  = xnpos+xnmxfld
             iwork3 = loc( xrclim(xnpos) )
 *
-C           do i=1,xnilu(5)*xnjlu(5)
-C              xrwrk3(i) = xrclim(xnpos+i)
-C           enddo
-*
             if (gtyp_S(5).ne.'Z') then
                call ez_rgscint( xrwrk2,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(5),xnjlu(5),
@@ -643,10 +664,6 @@ c              call ez_rgfree
             xnzpos = xnzpos+xnzm
             xnpos  = xnpos+xnmxfld
             iwork3 = loc( xrclim(xnpos) )
-*
-C           do i=1,xnilu(6)*xnjlu(6)
-C              xrwrk3(i) = xrclim(xnpos+i)
-C           enddo
 *
             if (gtyp_S(6).ne.'Z') then
                call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
@@ -711,10 +728,11 @@ C           call flush( Lun_out )
  1001 format(' Unable to open climatological file ',A)
  1002 format(' Analysed/climatological file not opened')
  1003 format(' Using analysed/climatological file ',A)
- 1004 format(' Unable to read climatological ',A4)
- 1005 format(' Unable to read >> record')
- 1006 format(' Unable to read ^^ record')
- 1007 format(' Physics not initialized before p_inincr')
+ 1004 format(' Climatological ',A4,' will not be read')
+ 1005 format(' Unable to read climatological ',A4)
+ 1006 format(' Unable to read >> record')
+ 1007 format(' Unable to read ^^ record')
+ 1008 format(' Physics not initialized before p_inincr')
 
       return
       end

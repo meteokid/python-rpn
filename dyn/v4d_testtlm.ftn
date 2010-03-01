@@ -4,7 +4,7 @@
 *
       subroutine v4d_testtlm 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -13,6 +13,8 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v3_02 - Mahfouf J.-F.     - add V4dg_anincr_L
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - Introduce V4dg_oktrcv_L 
+*                           - Add diagnostics of HU  
 *
 *object
 *     see id section
@@ -30,18 +32,20 @@
 #include "ptopo.cdk"
 #include "vt1.cdk"
 #include "ind.cdk"
+#include "tr3d.cdk"
 *
 *
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer n,nn,lambda,lima,limb,wrt_out,indic,i0,j0,in,jn,key1(2),err
+      integer n,nn,lambda,lima,limb,wrt_out,indic,i0,j0,in,jn,key1(2),err,
+     %        kk,istart,status   
       real pj
 *
 *     -----------------------------------------------------------------
 *     Parameters for list of stations and variables where TLM is tested
 *     -----------------------------------------------------------------
-      integer NSTA_H,NVAR_H,NSTA_NH,NVAR_NH,NSTA_TOT,NVAR_TOT 
+      integer NSTA_H,NVAR_H,NSTA_NH,NVAR_NH,NSTA_TOT,NVAR_TOT,NSTA_TR,NVAR_TR 
 *
 *     --------------------------------------
 *     Range of exponents used in TLM testing
@@ -74,8 +78,13 @@
          NVAR_NH = 0 
       endif
 *
-      NSTA_TOT= NSTA_H + NSTA_NH
-      NVAR_TOT= NVAR_H + NVAR_NH
+*     Tracers
+*     -------
+      NSTA_TR = 3 
+      NVAR_TR = Tr3d_ntr 
+*
+      NSTA_TOT= NSTA_H + NSTA_NH + NSTA_TR
+      NVAR_TOT= NVAR_H + NVAR_NH + NVAR_TR
 *
 *     Table Allocations
 *     -----------------
@@ -84,7 +93,7 @@
      %          npos(NSTA_TOT),ix(NSTA_TOT),jx(NSTA_TOT),kx(NSTA_TOT),lx(NSTA_TOT))
 *
 *     Select array without pilot region when G_lam 
-*     NOTE: SHould be valid for all variables   
+*     NOTE: Should be valid for all variables   
 *     --------------------------------------------
       i0 = 1+pil_w
       in = l_niu-pil_e
@@ -151,7 +160,9 @@
        nj(5) = l_nj 
        nk(5) = l_nk 
 *
-       do nn = NSTA_H+1, NSTA_TOT
+*      Set positions
+*      -------------
+       do nn = NSTA_H+1, NSTA_H + NSTA_NH 
 *
 *        -------------------------------------
 *        LX=    Range of a predictive variable
@@ -160,14 +171,51 @@
 *        KX= K indice of a predictive variable
 *        -------------------------------------
          lx(nn) = mod(nn,NVAR_NH) + 1
-         lx(nn) = lx(nn) + NSTA_H 
-         ix(nn) = (float(nn-1)/NSTA_NH)*(in-i0+1) + i0
-         jx(nn) = (float(nn-1)/NSTA_NH)*(jn-j0+1) + j0
-         kx(nn) = (float(nn-1)/NSTA_NH)*l_nk  + 1
+         lx(nn) = lx(nn) + NVAR_H 
+         ix(nn) = (float(nn-(NSTA_H+1))/NSTA_NH)*(in-i0+1) + i0
+         jx(nn) = (float(nn-(NSTA_H+1))/NSTA_NH)*(jn-j0+1) + j0
+         kx(nn) = (float(nn-(NSTA_H+1))/NSTA_NH)*l_nk  + 1
 *
        end do
 *
-      endif
+       endif
+*
+*      ------------------------------- 
+*      Predictives 3D tracer variables
+*      ------------------------------- 
+*
+       istart = NVAR_H + NVAR_NH  
+*
+*      Dimensions
+*      ----------
+       do kk = 1,NVAR_TR
+          ni(kk+istart) = l_ni 
+          nj(kk+istart) = l_nj 
+          nk(kk+istart) = l_nk 
+       end do
+*
+*      Set positions
+*      -------------
+       do nn = NSTA_H+NSTA_NH+1, NSTA_TOT
+*
+*        -------------------------------------
+*        LX=    Range of a predictive variable
+*        IX= I indice of a predictive variable
+*        JX= J indice of a predictive variable
+*        KX= K indice of a predictive variable
+*        -------------------------------------
+*
+C        Get HU only
+C        -----------
+C        lx(nn) = mod(nn,NVAR_TR) + 1
+         lx(nn) = 1
+*
+         lx(nn) = lx(nn) + NVAR_H + NVAR_NH
+         ix(nn) = (float(nn-(NSTA_H+NSTA_NH+1))/NSTA_TR)*(in-i0+1) + i0
+         jx(nn) = (float(nn-(NSTA_H+NSTA_NH+1))/NSTA_TR)*(jn-j0+1) + j0
+         kx(nn) = (float(nn-(NSTA_H+NSTA_NH+1))/NSTA_TR)*l_nk  + 1
+*
+       end do
 *
 *     Block Position of previous predictive variable  
 *     ----------------------------------------------
@@ -204,7 +252,7 @@
          if ( V4dg_anincr_L ) then
 *
 *          Read perturbed (NLM) initial conditions for trial field
-*          to create realistic pertubations in V4dc_xcv
+*          to create realistic perturbations in V4dc_xcv
 *          -------------------------------------------------------
            if( Lun_out.gt.0 ) then
               write(Lun_out, fmt='(//''----------------'')')
@@ -343,16 +391,16 @@
            write(Lun_out, fmt='(  ''--------------------------'')')
         endif
 *
-*       Define TLM control var. with realistic size of perturbations
-*       ------------------------------------------------------------     
+*       Define TLM control var. with controlled size perturbations
+*       ----------------------------------------------------------     
         if ( .not.V4dg_anincr_L ) then
-* 
+*
            do n = 1,V4dc_ncv
               V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
            end do
 *
-        endif 
-*
+        endif
+* 
 *       Use a TLM hydrostatic phi' when .not.Schm_hydro_L
 *       -------------------------------------------------
         if(.not.Schm_hydro_L) call v4d_phydro_tl (V4dc_ncv,V4dc_xcv) 
@@ -401,9 +449,13 @@
 *
       endif
 *
-*     Deactivate writing on TRAJECTORY
-*     --------------------------------
+*     Deactivate writing on TRAJECTORY VMM
+*     ------------------------------------
       V4dg_oktr_L = .false. 
+*
+*     Deactivate writing on TRAJECTORY Conversion
+*     -------------------------------------------
+      V4dg_oktrcv_L = .false. 
 *
       if( V4dg_conf.eq.510 ) then
 *     --------------------------------------------
@@ -565,6 +617,9 @@
                if(lx(nn).eq.2) write(Lun_out,3002) ix(nn),jx(nn),kx(nn)
                if(lx(nn).eq.3) write(Lun_out,3003) ix(nn),jx(nn),kx(nn)
                if(lx(nn).eq.4) write(Lun_out,3004) ix(nn),jx(nn)
+               if(lx(nn).eq.5.and..not.Schm_hydro_L) write(Lun_out,3005) ix(nn),jx(nn),kx(nn)
+               if(lx(nn).eq.5.and.     Schm_hydro_L) write(Lun_out,3006) ix(nn),jx(nn),kx(nn)
+               if(lx(nn).eq.6.and..not.Schm_hydro_L) write(Lun_out,3006) ix(nn),jx(nn),kx(nn)
 *
                do lambda = lima,limb
                   write(Lun_out,4000) -lambda,(tab(indic,lambda+1,nn),indic=1,8)
@@ -577,6 +632,8 @@
          end do
 *
       endif
+*
+      deallocate( tab, STAT=status )
 *
  3000 format(
      +//,'TEST OF THE TANGENT LINEAR AT POINT = ',I6,' PROCESS = ',I4,
@@ -595,6 +652,14 @@
      +//)
  3004 format(
      +'S AT (I,J) = (',I5,',',I5,')',
+     + /,'==========================================================',
+     +//)
+ 3005 format(
+     +'FP PRIME AT (I,J,K) = (',I5,',',I5,',',I5,')'
+     + /,'==========================================================',
+     +//)
+ 3006 format(
+     +'HU PRIME AT (I,J,K) = (',I5,',',I5,',',I5,')'
      + /,'==========================================================',
      +//)
 *

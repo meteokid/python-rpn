@@ -14,6 +14,7 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_11 - Lee V.            - add logic for memory allocation
 * v2_31 - Desgagne M.       - bugfixe to call to sersetm
+* v3_11 - A. Plante       - Adjust code for LAM time-series
 *
 *object
 *               This routine initializes the physics variables
@@ -39,6 +40,7 @@
 #include "xstb.cdk"
 #include "p_geol.cdk"
 #include "ptopo.cdk"
+#include "p_bus.cdk"
 *
       integer serdim
       external serdim
@@ -65,8 +67,10 @@
             Xst_lclsta(xst_nstatl) = i
             xst_stcori(xst_nstatl) = Xst_istat(i) - 
      $                               Ptopo_gindx(1,Ptopo_myproc+1) + 1
+     $                               - pil_w + p_nmp*west
             xst_stcorj(xst_nstatl) = Xst_jstat(i) - 
      $                               Ptopo_gindx(3,Ptopo_myproc+1) + 1
+     $                               - pil_s + p_nmp*south
          endif
       end do
 *
@@ -76,12 +80,12 @@
       call hpalloc(Xstb_serp_  ,Xst_dimserp,pnerr,1) 
       call hpalloc(Xstb_sersx_ ,Xst_dimsers,pnerr,1) 
       call hpalloc(Xstb_serpx_ ,Xst_dimserp,pnerr,1)       
-      call serallc2 (Xstb_sers,Xstb_serp,l_ni,l_nj,G_nk)
+      call serallc2 (Xstb_sers,Xstb_serp,p_ni,p_nj,G_nk)
 *
 *     initializes number of vertical levels
 *
       call serset  ('ISTAT',Xst_istat,Xst_nstat ,pnerr)
-      do j= 1+pil_s, l_nj-pil_n 
+      do j= 1, p_nj 
          call sersetm('KA', j, G_nk)
       end do
 *

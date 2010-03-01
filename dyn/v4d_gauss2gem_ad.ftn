@@ -8,7 +8,7 @@
       use v4dz
       use v4d_interint0
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer nigauss,njgauss,DIST_DIM,Nk
       real gut1 (nigauss,njgauss,Nk), gvt1 (nigauss,njgauss,Nk),
@@ -26,6 +26,8 @@
 * v3_01 - Tanguay M.        - introduce gem2gauss for singular vectors
 * v3_01 - Buehner M.        - external already_done
 * v3_02 - Buehner M.        - V4dzga_degree in namelist var4d
+* v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
+*                           - Remove V4dg_ga_eq_ge_L
 *
 *object
 *  see id section
@@ -34,6 +36,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
 #include "dcst.cdk"
@@ -42,8 +45,8 @@
 #include "ptopo.cdk"
 #include "v4dg.cdk"
 *
-      integer  ezqkdef,gdxyfll,gdrls,gdll,ezgdef 
-      external ezqkdef,gdxyfll,gdrls,gdll,ezgdef
+      integer  ezqkdef,gdxyfll,gdrls,ezgdef 
+      external ezqkdef,gdxyfll,gdrls,ezgdef
 *
       integer gdin,gdout,i,j,k,n,i1,i2,j1,j2,ni,nj,
      %        ier,status
@@ -60,6 +63,10 @@
       real*8, parameter ::  TWO_8 = 2.0
       real*8, parameter ::CLXXX_8 = 180.0
       real*8  deg2rad_8
+*
+      logical same_grid_L
+*
+      same_grid_L = V4dzgauss_ni.eq.G_ni.and.V4dzgauss_nj.eq.G_nj.and.Grd_gauss_L
 *
 *     Set parameters of interpolation 
 *     -------------------------------
@@ -81,19 +88,9 @@
 *
 *        Define output grid = global GEM scalar Z grid
 *        ---------------------------------------------
-         if(.not.V4dg_ga_eq_ge_L) then
-*
          gdout = ezgdef(G_ni,G_nj,'Z',Hgc_gxtyp_s,
      %           Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
      %           Geomn_longs, Geomn_latgs)
-*
-*        Define output grid = Gaussian grid
-*        ----------------------------------
-         else
-*
-         gdout = ezqkdef (G_ni,G_nj,'G',0,0,0,0,0)
-*
-         endif
 *
          V4dzga_npts = G_ni*G_nj
 *
@@ -104,7 +101,6 @@
 *
 *        Prescribe global GEM scalar Z grid lat-lon 
 *        ------------------------------------------
-         if(.not.V4dg_ga_eq_ge_L) then
 *
          do j=1,G_nj
          do i=1,G_ni
@@ -113,14 +109,6 @@
             lat(n) = Geomn_latgs(j)
          enddo
          enddo
-*
-*        Prescribe Gaussian grid lat-lon 
-*        -------------------------------
-         else
-*
-         ier = gdll (gdout,lat,lon)
-*
-         endif
 *
 *        Allocations OUTPUT grid parameters
 *        ----------------------------------
@@ -308,6 +296,8 @@
 *
       if(Ptopo_myproc.eq.0) then
 *
+      if(.not.same_grid_L) then
+*
 *       Adjoint of
 *       Reserve order of indices
 *       ------------------------
@@ -329,6 +319,22 @@
      %                      gut1,gvt1,V4dzga_ax,V4dzga_ay,V4dzga_cx,V4dzga_cy,
      %                      V4dzga_wx_8,V4dzga_cox_8,V4dzga_six_8,V4dzga_siy_8,
      %                      i1,i2,j1,j2,Nk,V4dzga_grtypi,V4dzga_degree,'UV')
+*
+      else
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gvt1(i,j,k) = wo(n,k) + gvt1(i,j,k)
+           gut1(i,j,k) = zo(n,k) + gut1(i,j,k)
+           wo(n,k) = ZERO_8 
+           zo(n,k) = ZERO_8 
+        end do
+        end do
+        end do
+*
+      endif
 *
       endif
 *
@@ -353,6 +359,8 @@
 *
       if(Ptopo_myproc.eq.0) then
 *
+      if(.not.same_grid_L) then
+*
 *       Adjoint of
 *       Reserve order of indices
 *       ------------------------
@@ -368,6 +376,18 @@
         call v4d_scint0_ad (    fld2d,V4dzga_px,V4dzga_py,V4dzga_npts,gst1,
      %                      V4dzga_ax,V4dzga_ay,V4dzga_cx,V4dzga_cy,V4dzga_wx_8,
      %                      i1,i2,j1,j2,1,V4dzga_grtypi,V4dzga_degree,'4S')
+*
+      else
+*
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gst1(i,j) = zo(n,1) + gst1(i,j)
+           zo(n,1) = ZERO_8
+        end do
+        end do
+*
+      endif
 *
       endif
 *
@@ -394,6 +414,8 @@
 *
       if(Ptopo_myproc.eq.0) then
 *
+      if(.not.same_grid_L) then
+*
 *       Adjoint of
 *       Reserve order of indices
 *       ------------------------
@@ -411,6 +433,20 @@
         call v4d_scint0_ad ( fldscint,V4dzga_px,V4dzga_py,V4dzga_npts,ghut1,
      %                      V4dzga_ax,V4dzga_ay,V4dzga_cx,V4dzga_cy,V4dzga_wx_8,
      %                      i1,i2,j1,j2,Nk,V4dzga_grtypi,V4dzga_degree,'HU')
+*
+      else  
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           ghut1(i,j,k) = zo(n,k) + ghut1(i,j,k)
+           zo(n,k) = ZERO_8
+        end do
+        end do
+        end do
+*
+      endif
 *
       endif
 *
@@ -437,6 +473,8 @@
 *
       if(Ptopo_myproc.eq.0) then
 *
+      if(.not.same_grid_L) then
+*
 *       Adjoint of
 *       Reserve order of indices
 *       ------------------------
@@ -454,6 +492,20 @@
         call v4d_scint0_ad ( fldscint,V4dzga_px,V4dzga_py,V4dzga_npts,gtpt1,
      %                      V4dzga_ax,V4dzga_ay,V4dzga_cx,V4dzga_cy,V4dzga_wx_8,
      %                      i1,i2,j1,j2,Nk,V4dzga_grtypi,V4dzga_degree,'4T')
+*
+      else
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gtpt1(i,j,k) = zo(n,k) + gtpt1(i,j,k)
+           zo(n,k) = ZERO_8
+        end do
+        end do
+        end do
+*
+      endif
 *
       endif
 *

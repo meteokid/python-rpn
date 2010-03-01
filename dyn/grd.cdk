@@ -1,5 +1,5 @@
       character*2 Grd_typ_S
-      logical Grd_roule, Grd_uniform_L
+      logical Grd_roule, Grd_uniform_L, Grd_gauss_L
       integer Grd_ni, Grd_nj, Grd_nila, Grd_njla, Grd_left, Grd_belo,
      $        Grd_iref, Grd_jref
       real Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax, 
@@ -11,7 +11,7 @@
       common / Grd_c / Grd_typ_S
       MARK_COMMON_END (Grd_c)
       MARK_COMMON_BEG (Grd_l)
-      common / Grd_l / Grd_roule, Grd_uniform_L
+      common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L
       MARK_COMMON_END (Grd_l)
       MARK_COMMON_BEG (Grd_i)
       common / Grd_i / Grd_ni  , Grd_nj  , Grd_nila, Grd_njla, 

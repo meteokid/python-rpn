@@ -7,7 +7,7 @@
 *
       use v4d_interzone
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer npts,i1,i2,j1,j2,nk,degree
 *
@@ -27,6 +27,7 @@
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
 * v3_03 - Tanguay M.        - use v4d_zerohalo 
+* v3_11 - Tanguay M.        - correct for nk in v4d_zerohalo 
 *
 *object
 *     see id section
@@ -107,7 +108,7 @@
 *
 *        Zero fldsc halo
 *        ---------------
-         call v4d_zerohalo ( fldsc,l_ni,l_nj,LDIST_DIM,l_nk)
+         call v4d_zerohalo ( fldsc,l_ni,l_nj,LDIST_DIM,nk)
 *
       endif
 *

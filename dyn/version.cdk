@@ -13,6 +13,13 @@
 *----------------------------------------------------------------------
 *
 #endif
+      character*60 Version_dstp_S
       character*10 Version_S
-      save Version_S
-      data Version_S/'V_3.0.3'/
+      character*6 Version_ent_S
+      character*5 Version_mod_S
+      save Version_ent_S,Version_mod_S,Version_S,Version_dstp_S
+      data Version_ent_S / 'GEMNTR'/
+      data Version_mod_S / 'GEMDM' /
+      data Version_dstp_S/
+     $  ' --- Release of: Thu Oct 23 12:27:14 GMT 2003'/
+      data Version_S/'V_3.1.1'/

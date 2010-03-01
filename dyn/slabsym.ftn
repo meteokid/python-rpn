@@ -1,0 +1,198 @@
+***s/r slabsym - symmetrical boundary conditions for theoretical
+*               cases
+*
+#include <model_macros_f.h>
+*
+      subroutine slabsym ()
+      implicit none
+*author 
+*     Gravel              - spring 2003 (after MC2 v_4.9.3)
+*
+*revision
+* v3_11 - Gravel             - initial version
+*
+*object
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "vt0.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer err,key(13),i,j,k,nvar
+      integer jin, jj
+      integer key0(Tr3d_ntr),key0_,n
+      real tr0
+      pointer (patr0,tr0(LDIST_SHAPE,*))
+*----------------------------------------------------------------------
+*
+      key(1)=VMM_KEY(ut0)
+      key(2)=VMM_KEY(vt0)
+      key(3)=VMM_KEY(tt0)
+      key(4)=VMM_KEY(psdt0)
+      key(5)=VMM_KEY(pipt0)
+      key(6)=VMM_KEY(fipt0)
+      key(7)=VMM_KEY(tdt0)
+      key(8)=VMM_KEY(fit0)
+      key(9)=VMM_KEY(qt0)
+      key(10)=VMM_KEY(st0)
+      key(11)=VMM_KEY(tpt0)
+      nvar = 11
+*
+      if (.not.Schm_hydro_L) then
+         key(12)=VMM_KEY(wt0)
+         key(13)=VMM_KEY(mut0)
+         nvar = 13
+      endif
+*
+      err = vmmlod(key,nvar)
+      err = VMM_GET_VAR(ut0)
+      err = VMM_GET_VAR(vt0)
+      err = VMM_GET_VAR(tt0)
+      err = VMM_GET_VAR(psdt0)
+      err = VMM_GET_VAR(pipt0)
+      err = VMM_GET_VAR(fipt0)
+      err = VMM_GET_VAR(tdt0)
+      err = VMM_GET_VAR(fit0)
+      err = VMM_GET_VAR(qt0)
+      err = VMM_GET_VAR(st0)
+      err = VMM_GET_VAR(tpt0)
+      if (.not.Schm_hydro_L) then
+         err = VMM_GET_VAR(wt0)
+         err = VMM_GET_VAR(mut0)
+      endif
+*
+      if (l_north) then
+         do k=1,G_nk
+            jin = l_nj-pil_n-1
+            jj  = l_nj-pil_n
+            do i=1,l_ni
+               vt0  (i,jj,k) = vt0  (i,jin,k)
+            enddo
+            jin = l_nj-pil_n
+            do j=1,pil_n
+            jj  = l_nj-pil_n+j
+            do i=1,l_ni
+               vt0  (i,jj,k) = vt0  (i,jin,k)
+               tt0  (i,jj,k) = tt0  (i,jin,k)
+               psdt0(i,jj,k) = psdt0(i,jin,k)
+               pipt0(i,jj,k) = pipt0(i,jin,k)
+               fipt0(i,jj,k) = fipt0(i,jin,k)
+               tdt0 (i,jj,k) = tdt0 (i,jin,k)
+               fit0 (i,jj,k) = fit0 (i,jin,k)
+               qt0  (i,jj,k) = qt0  (i,jin,k)            
+               tpt0 (i,jj,k) = tpt0 (i,jin,k)            
+            end do
+            do i=1,l_niu
+               ut0  (i,jj,k) = ut0  (i,jin,k)
+            end do
+            end do
+         end do
+         jin = l_nj-pil_n
+         do j=1,pil_n
+         jj  = l_nj-pil_n+j
+         do i=1,l_ni
+            st0  (i,jj) = st0  (i,jin)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            jin = l_nj-pil_n
+            do j=1,pil_n
+            jj  = l_nj-pil_n+j
+            do i=1,l_ni
+               wt0 (i,jj,k) = wt0 (i,jin,k)
+               mut0(i,jj,k) = mut0(i,jin,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if (l_south) then
+         do k=1,G_nk
+            jin = pil_s+1
+            do j=1,pil_s
+            jj  = pil_s-j+1
+            do i=1,l_ni
+               vt0  (i,jj,k) = vt0  (i,jin,k)
+               tt0  (i,jj,k) = tt0  (i,jin,k)
+               psdt0(i,jj,k) = psdt0(i,jin,k)
+               pipt0(i,jj,k) = pipt0(i,jin,k)
+               fipt0(i,jj,k) = fipt0(i,jin,k)
+               tdt0 (i,jj,k) = tdt0 (i,jin,k)
+               fit0 (i,jj,k) = fit0 (i,jin,k)
+               qt0  (i,jj,k) = qt0  (i,jin,k)
+               tpt0 (i,jj,k) = tpt0 (i,jin,k)
+            end do
+            do i=1,l_niu
+               ut0  (i,jj,k) = ut0  (i,jin,k)
+            end do
+            end do
+         end do
+         jin = pil_s+1
+         do j=1,pil_s
+         jj  = pil_s-j+1
+         do i=1,l_ni
+            st0  (i,jj) = st0  (i,jin)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            jin = pil_s+1
+            do j=1,pil_s
+            jj  = pil_s-j+1
+            do i=1,l_ni
+               wt0 (i,jj,k) = wt0 (i,jin,k)
+               mut0(i,jj,k) = mut0(i,jin,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+      err = vmmuld(key,nvar)
+*
+      key0_ = VMM_KEY (trt0)
+      do n=1,Tr3d_ntr
+         key0(n) = key0_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key0,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key0(n),patr0,tr0)
+           if (l_north) then
+                do k=1,G_nk
+                   jin = l_nj-pil_n
+                   do j=1,pil_n
+                   jj  = l_nj-pil_n+j
+                   do i=1,l_ni
+                      tr0  (i,jj,k) = tr0 (i,jin,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_south) then
+                do k=1,G_nk
+                   jin = pil_s+1
+                   do j=1,pil_s
+                   jj  = pil_s-j+1
+                   do i=1,l_ni
+                      tr0  (i,jj,k) = tr0 (i,jin,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+         enddo
+         err = vmmuld(key0,Tr3d_ntr)
+      endif
+*
+*----------------------------------------------------------------------
+      return
+      end

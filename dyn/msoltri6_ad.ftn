@@ -1,10 +1,12 @@
 ***s/r msoltri6_ad - ADJ of msoltri6 
 *
+#include <model_macros_f.h>
+*
       subroutine msoltri6_ad ( F_r, F_rhs,
      %                         F_bi_8, F_ci_8, F_ai_8,
      %                         NIDIST, NJDIST, NI, NJ )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer NIDIST, NJDIST, NI, NJ
       real    F_r(NIDIST,NI), F_rhs(NIDIST,NI)
@@ -15,6 +17,7 @@
 *
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -35,25 +38,43 @@
 * NI           I    - x-dimension
 * NJ           I    - y-dimension
 *
-      integer i,l
+#include "ptopo.cdk"
 *
-      do i=1,NI-1
-      do l=1,NJ*NJDIST,NJDIST
-      F_r(l,i+1) = F_r(l,i+1) - F_ci_8(i) * F_r(l,i)
-      enddo
-      enddo
+      integer i,l, kkii, kilon, kin, ki0
 *
-      do i=NI,2,-1
-      do l=1,NJ*NJDIST,NJDIST
-      F_r(l,i-1) = F_r(l,i-1) - F_ai_8(i) * F_r(l,i) 
-      enddo
-      enddo
+      kilon = (NJ + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
 *
-      do i=NI,1,-1
-      do l=1,NJ*NJDIST,NJDIST
-      F_rhs(l,i) = F_r(l,i) * F_bi_8(i) 
+!$omp parallel private(ki0,kin,l)
+!$omp do
+      do kkii = 1, Ptopo_npeOpenMP
+*
+         ki0 = 1 + kilon*(kkii-1)*NJDIST
+         kin = NJDIST*min(NJ,kilon*kkii)
+*
+         do i=1,NI-1
+C        do l=1,NJ*NJDIST,NJDIST
+         do l=ki0 ,kin,NJDIST
+         F_r(l,i+1) = F_r(l,i+1) - F_ci_8(i) * F_r(l,i)
+         enddo
+         enddo
+*
+         do i=NI,2,-1
+C        do l=1,NJ*NJDIST,NJDIST
+         do l=ki0 ,kin,NJDIST
+         F_r(l,i-1) = F_r(l,i-1) - F_ai_8(i) * F_r(l,i) 
+         enddo
+         enddo
+*
+         do i=NI,1,-1
+C        do l=1,NJ*NJDIST,NJDIST
+         do l=ki0 ,kin,NJDIST
+         F_rhs(l,i) = F_r(l,i) * F_bi_8(i) 
+         enddo
+         enddo
+*
       enddo
-      enddo
+!$omp enddo
+!$omp end parallel
 *
       return
       end

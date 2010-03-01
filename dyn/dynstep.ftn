@@ -17,6 +17,7 @@
 * v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Tanguay M.        - Adjoint Lam configuration
+* v3_11 - Gravel S.         - provide for variable topography
 *
 *object
 *
@@ -33,6 +34,7 @@
 #include "schm.cdk"
 #include "pilot.cdk"
 #include "step.cdk"
+#include "vtopo.cdk"
 *
       integer itraj
       logical first_L, secon_L
@@ -130,6 +132,19 @@
       call t12t2( )
       call t02t1( )
       call t22t0( )
+
+*
+*         ------------------------------------------------------------
+*C        If necessary vary topogragphy according to Vtopo_start and 
+*C        Vtopo_ndt
+*         ------------------------------------------------------------
+      if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
+          call var_topo( )
+          if ( Schm_phyms_L ) call phycom ('varmtn' ,1 ,1,'set')
+      else
+          if ( Schm_phyms_L ) call phycom ('varmtn' ,0 ,1,'set')
+      endif
+
 *
 *     ===================
 *     END OF ONE TIMESTEP

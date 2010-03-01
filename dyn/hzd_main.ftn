@@ -4,7 +4,7 @@
 *
       subroutine hzd_main 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Joseph-Pierre Toviessi ( after version v1_03 of dif )
@@ -109,9 +109,6 @@ c#include "nest.cdk"
 *************************************
 
 
-      if (Lctl_debug_L) then
-      if (lun_out.gt.0) print *,'HZD_MAIN: Hzd_fact_L=',Hzd_fact_L,' Hzd_ho_L=',Hzd_ho_L
-      endif
       if (Hzd_fact_L) then
          call hzd_fact ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
      %                   tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,

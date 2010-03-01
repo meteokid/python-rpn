@@ -4,7 +4,7 @@
 *
       subroutine adw_main_3_int_tr ( F_um, F_vm, F_wm )
 *
-#include "impnone.cdk"
+      implicit none
       real F_um(*), F_vm(*), F_wm(*)
 *
 *author
@@ -15,6 +15,7 @@
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Gravel S.           - introduce key Adw_mono_L
 *
 *language
 *     fortran 77
@@ -199,7 +200,7 @@
             end do
             end do
             call adw_interp_tr ( tr0m, tr0m, F_um, F_vm,
-     %                          .false., .true., LDIST_DIM, l_nk,i0,in,j0,jn)
+     %                          .false., Adw_mono_L, LDIST_DIM, l_nk,i0,in,j0,jn)
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni

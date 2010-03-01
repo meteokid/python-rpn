@@ -17,7 +17,7 @@
 *
       use v4d_prof
 *
-#include "impnone.cdk"
+      implicit none
 *
       character*2,INTENT(IN)   :: cdvar
       integer,    INTENT(INOUT):: kstatus
@@ -35,10 +35,12 @@
 * v3_00   M.Tanguay         - adapt to Simon's exchange
 * v3_01 - M.Tanguay         - correction for empty processors 
 * v3_02 - M.Tanguay         - locate HU in tracers 
+* v3_11 - M.Tanguay         - correct relationship between stepob and timestep
+*                           - Add option for profiles done on U-V grids for winds 
 *
 *object
 *     -----------------------------------------------------------------------
-*     Each processor do the following at the current observation time:
+*     Each processor do the following at the current bin:
 *         1) Conversion from GEM units to 3D-Var units and Reverse Staggering
 *         2) Interpolate model profiles to obs. locations
 *         3) Write model profiles to be read by 3D-Var
@@ -55,7 +57,6 @@
 #include "vt1m.cdk"
 #include "ptopo.cdk"
 #include "tr3d.cdk"
-#include "adw.cdk"
 #include "path.cdk"
 #include <prof_f.h>
 *
@@ -65,21 +66,23 @@
       external vmmlod, vmmget, vmmuld, prof_wrrec, longueur
 *
       integer nvar, kstatus, pnlkey1(9), err, pnerr, istat, i, j,
-     %        k, n, i1, i2, j1, j2, ntime, npr
+     %        k, n, i1, i2, j1, j2, nbin, npr
 *
       integer key1(Tr3d_ntr), key1_, key1m(Tr3d_ntr), key1m_
       real hut1, hut1m
       pointer (pahu1, hut1(LDIST_SHAPE,*)), (pahu1m, hut1m(LDIST_SHAPE,*))
 *
-      real,   pointer, dimension(:,:) :: profx,profy,prof2d 
+      real,   pointer, dimension(:,:) :: profx,profy,prof2d,prbid 
       real*8, pointer, dimension(:,:) :: gomu_8,gomv_8,gomt_8,gomq_8,gomps_8 
 *
-      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk),
+      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk),wbid(LDIST_SHAPE,l_nk),
      %     wijk3(LDIST_SHAPE,l_nk),wijk4(LDIST_SHAPE,l_nk),wij5(LDIST_SHAPE)
 *
       logical plpr_L
 *
       character(len=2) :: cljx_S, cljy_S
+*
+      real*8, parameter :: ZERO_8 = 0.0
 *     ______________________________________________________
 *
       write(Lun_out,1000) Lctl_step
@@ -123,9 +126,9 @@
       j1=V4dz_j1
       j2=V4dz_j2
 *
-*     Define observation time as timestep scaled by V4dg_stepob 
-*     ---------------------------------------------------------
-      ntime = Lctl_step/V4dg_stepob 
+*     Establish at which bin we are  
+*     -----------------------------
+      nbin = (Lctl_step - Pr_ibin0) / V4dg_stepob + 1
 *
 *     Get fields in memory
 *     --------------------
@@ -182,12 +185,18 @@
 *     ---------------
       do k=1,l_nk
          do j=1,l_nj
-           do i=1,l_ni
+           do i=1,l_niu
                wijk1(i,j,k) = ut1 (i,j,k)
-               wijk2(i,j,k) = vt1 (i,j,k)
+           end do
+           do i=1,l_ni
                wijk3(i,j,k) = tpt1(i,j,k)
                wijk4(i,j,k) = hut1(i,j,k)
-            end do
+           end do
+         end do
+         do j=1,l_njv
+           do i=1,l_ni
+               wijk2(i,j,k) = vt1 (i,j,k)
+           end do
          end do
       end do
 *
@@ -207,9 +216,9 @@
          if(Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
       endif
 *
-*     ----------------------------------------------------------------
-*     Conversion from GEM units to 3D-Var units and Reverse Staggering
-*     ----------------------------------------------------------------
+*     --------------------------------------------------------------------------------------
+*     Conversion from GEM units to 3D-Var units and Reverse Staggering (if .not.V4dg_pruv_L)
+*     --------------------------------------------------------------------------------------
 *     Direct (nonlinear)
 *     ------------------
       if(V4dg_di_L) then
@@ -242,17 +251,48 @@
 *     --------------------------------
 *     Contribution from U-V components  
 *     --------------------------------
-      npr = Pr_l_mv(V3D_UTRU,ntime) % nprof
-      write(Lun_out,*) 'Evaluate profiles UV at OBSTIME = ',ntime,
+      npr = Pr_l_mv(V3D_UTRU,nbin) % nprof
+      write(Lun_out,*) 'Evaluate profiles UV at BIN = ',nbin,
      %                 'Number of profiles = ',npr 
 *
       if(npr.ne.0) allocate(gomu_8(l_nk,npr),gomv_8(l_nk,npr),profx(l_nk,npr),profy(l_nk,npr)) 
+      if(npr.ne.0.and.V4dg_pruv_L) allocate(prbid(l_nk,npr)) 
 *
 *     Interpolation to observation locations using EZSCINT
 *     ----------------------------------------------------
-      call v4d_uvint0 (profx,profy,Pr_l_mv(V3D_UTRU,ntime)%px,Pr_l_mv(V3D_UTRU,ntime)%py,npr,
-     %                 wijk1,wijk2,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,Adw_wx_8,Adw_cx_8,Adw_sx_8,Adw_sy_8,
+      if(.not.V4dg_pruv_L) then
+*
+      call v4d_uvint0 (profx,profy,Pr_l_mv(V3D_UTRU,nbin)%px,Pr_l_mv(V3D_UTRU,nbin)%py,npr,
+     %                 wijk1,wijk2,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,V4dz_wx_8,V4dz_cox_8,V4dz_six_8,V4dz_siy_8,
      %                 i1,i2,j1,j2,l_nk,V4dz_grtypi,V4dz_degree,'UV')
+*
+      else
+*
+      do k=1,l_nk
+         do j=l_miny,l_maxy
+           do i=l_minx,l_maxx
+               wbid(i,j,k) = ZERO_8
+            end do
+         end do
+      end do
+*
+      call v4d_uvint0 (profx,prbid,Pr_l_mv(V3D_UTRU,nbin)%pxu,Pr_l_mv(V3D_UTRU,nbin)%py,npr,
+     %                 wijk1,wbid,V4dz_axu,V4dz_ay,V4dz_cxu,V4dz_cy,V4dz_wxu_8,V4dz_coxu_8,V4dz_sixu_8,V4dz_siy_8,
+     %                 i1,i2,j1,j2,l_nk,'U',V4dz_degree,'UV')
+*
+      do k=1,l_nk
+         do j=l_miny,l_maxy
+           do i=l_minx,l_maxx
+               wbid(i,j,k) = ZERO_8
+            end do
+         end do
+      end do
+*
+      call v4d_uvint0 (prbid,profy,Pr_l_mv(V3D_UTRU,nbin)%px,Pr_l_mv(V3D_UTRU,nbin)%pyv,npr,
+     %                 wbid,wijk2,V4dz_ax,V4dz_ayv,V4dz_cx,V4dz_cyv,V4dz_wx_8,V4dz_cox_8,V4dz_six_8,V4dz_siyv_8,
+     %                 i1,i2,j1,j2,l_nk,'V',V4dz_degree,'UV')
+*
+      endif
 *
       if(npr.ne.0) then
 *
@@ -286,19 +326,21 @@
 *
       if(npr.ne.0) deallocate(profy,gomv_8)
 *
+      if(npr.ne.0.and.V4dg_pruv_L) deallocate(prbid)
+*
 *     -----------------------------
 *     Contribution from temperature  
 *     -----------------------------
-      npr = Pr_l_mv(V3D_TEMP,ntime) % nprof
-      write(Lun_out,*) 'Evaluate profiles TT at OBSTIME = ',ntime,
+      npr = Pr_l_mv(V3D_TEMP,nbin) % nprof
+      write(Lun_out,*) 'Evaluate profiles TT at BIN = ',nbin,
      %                 'Number of profiles = ',npr 
 *
       if(npr.ne.0) allocate(gomt_8(l_nk,npr),profx(l_nk,npr))
 *
 *     Interpolation to observation locations using EZSCINT
 *     ----------------------------------------------------
-      call v4d_scint0 (profx,Pr_l_mv(V3D_TEMP,ntime)%px,Pr_l_mv(V3D_TEMP,ntime)%py,npr,
-     %                 wijk3,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,Adw_wx_8,i1,i2,j1,j2,l_nk,
+      call v4d_scint0 (profx,Pr_l_mv(V3D_TEMP,nbin)%px,Pr_l_mv(V3D_TEMP,nbin)%py,npr,
+     %                 wijk3,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,V4dz_wx_8,i1,i2,j1,j2,l_nk,
      %                 V4dz_grtypi,V4dz_degree,'TT')
 *
       if(npr.ne.0) then
@@ -320,16 +362,16 @@
 *     --------------------------
 *     Contribution from humidity  
 *     --------------------------
-      npr = Pr_l_mv(V3D_SPHU,ntime) % nprof
-      write(Lun_out,*) 'Evaluate profiles HU at OBSTIME = ',ntime,
+      npr = Pr_l_mv(V3D_SPHU,nbin) % nprof
+      write(Lun_out,*) 'Evaluate profiles HU at BIN = ',nbin,
      %                 'Number of profiles = ',npr 
 *
       if(npr.ne.0) allocate(gomq_8(l_nk,npr),profx(l_nk,npr))
 *
 *     Interpolation to observation locations using EZSCINT
 *     ----------------------------------------------------
-      call v4d_scint0 (profx,Pr_l_mv(V3D_SPHU,ntime)%px,Pr_l_mv(V3D_SPHU,ntime)%py,npr,
-     %                 wijk4,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,Adw_wx_8,i1,i2,j1,j2,l_nk,
+      call v4d_scint0 (profx,Pr_l_mv(V3D_SPHU,nbin)%px,Pr_l_mv(V3D_SPHU,nbin)%py,npr,
+     %                 wijk4,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,V4dz_wx_8,i1,i2,j1,j2,l_nk,
      %                 V4dz_grtypi,V4dz_degree,'HU')
 *
       if(npr.ne.0) then
@@ -351,16 +393,16 @@
 *     ----------------------------------
 *     Contribution from surface pressure  
 *     ----------------------------------
-      npr = Pr_l_mv(V2D_PSUR,ntime) % nprof
-      write(Lun_out,*) 'Evaluate profiles PS at OBSTIME = ',ntime,
+      npr = Pr_l_mv(V2D_PSUR,nbin) % nprof
+      write(Lun_out,*) 'Evaluate profiles PS at BIN = ',nbin,
      %                 'Number of profiles = ',npr 
 *
       if(npr.ne.0) allocate (gomps_8(1,npr),prof2d(1,npr))
 *
 *     Interpolation to observation locations using EZSCINT
 *     ----------------------------------------------------
-      call v4d_scint0 (prof2d,Pr_l_mv(V2D_PSUR,ntime)%px,Pr_l_mv(V2D_PSUR,ntime)%py,npr,
-     %                 wij5,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,Adw_wx_8,i1,i2,j1,j2,1,
+      call v4d_scint0 (prof2d,Pr_l_mv(V2D_PSUR,nbin)%px,Pr_l_mv(V2D_PSUR,nbin)%py,npr,
+     %                 wij5,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy,V4dz_wx_8,i1,i2,j1,j2,1,
      %                 V4dz_grtypi,V4dz_degree,'4S')
 *
       if(npr.ne.0) then

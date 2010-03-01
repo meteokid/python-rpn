@@ -4,7 +4,7 @@
 *
       subroutine set_geom
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne - V. Lee ( after version v1_03 of setgeom )
@@ -18,6 +18,7 @@
 * v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
 * v3_00 - Desgagne & Lee     - Lam configuration
 * v3_01 - Desgagne M.        - Introduce Geomn_latrx,Geomn_lonrx
+* v3_11 - Tanguay M.         - Introduce Grd_gauss_L 
 *
 *object
 *	
@@ -43,6 +44,7 @@
       integer stretch_axis2
       external stretch_axis2
 *
+      character*12 gem_debug
       integer offi,offj,indx,err,dgid,ezgdef_fmem,gdll
       integer i,j,k,nila,ierx,iery,nimax,njmax
       real s1,r1,xfi(l_ni),yfi(l_nj)
@@ -58,7 +60,7 @@
      $     Grd_ni  , Grd_nj , Grd_nila, Grd_njla, Grd_left, 
      $     Grd_belo, Grd_x0 , Grd_xl  , Grd_y0  , Grd_yl  ,
      $     Grd_dx  , Grd_dy , Grd_rot_8, Grd_rcoef,
-     $     Grd_dxmax, Grd_dymax
+     $     Grd_dxmax, Grd_dymax, Grd_gauss_L
 *
 *     ---------------------------------------------------------------
 *
@@ -76,16 +78,16 @@
 *
       if (G_lam) then
          ierx= stretch_axis2( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left,
-     $     Grd_ni, Grd_nila, r1, .false., Lun_debug_L, Grd_dxmax, nimax)
+     $     Grd_ni, Grd_nila, r1, .false., Lun_debug_L, Grd_dxmax, nimax, Grd_gauss_L)
          iery= stretch_axis2( ygi_8, Grd_dy, Grd_y0, Grd_yl, Grd_belo,
-     $     Grd_nj, Grd_njla, s1, .false., Lun_debug_L, Grd_dymax, njmax)
+     $     Grd_nj, Grd_njla, s1, .false., Lun_debug_L, Grd_dymax, njmax, Grd_gauss_L)
       else
          nila = Grd_nila
          if (Grd_ni.eq.Grd_nila)  nila = Grd_nila+1
          ierx= stretch_axis2( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left,
-     $     Grd_ni+1, nila  , r1, .false., Lun_debug_L, Grd_dxmax, nimax)
+     $     Grd_ni+1, nila  , r1, .false., Lun_debug_L, Grd_dxmax, nimax, Grd_gauss_L)
          iery= stretch_axis2( ygi_8, Grd_dy, Grd_y0, Grd_yl, Grd_belo,
-     $     Grd_nj, Grd_njla, s1, .true. , Lun_debug_L, Grd_dymax, njmax)
+     $     Grd_nj, Grd_njla, s1, .true. , Lun_debug_L, Grd_dymax, njmax, Grd_gauss_L)
       endif
 *
       if (Lun_out.gt.0) then
@@ -108,7 +110,7 @@
           call gem_stop('set_geom',-1)
       endif
 *
-      Grd_uniform_L   = (G_ni.eq.Grd_nila).and.(G_nj.eq.Grd_njla)
+      Grd_uniform_L   = (G_ni.eq.Grd_nila).and.(G_nj.eq.Grd_njla).and..not.Grd_gauss_L
 *
       do i=1,G_ni
          G_xg_8(i) = xgi_8(i)*deg2rad_8
@@ -232,6 +234,17 @@
          indx = offj + i
          yfi(i) = ygi_8(indx)
       end do
+*
+      call getenvc ('GEM_DEBUG',gem_debug)
+      if (gem_debug.eq.'print') then
+      do i=1,l_ni
+         print *,'PE_xpos:',Ptopo_myproc,i,xfi(i)
+      enddo
+      do i=1,l_nj
+         print *,'PE_ypos:',Ptopo_myproc,i,yfi(i)
+      enddo
+      endif
+*
       dgid = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro,
      $          Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
       err = gdll (dgid,Geomn_latrx,Geomn_lonrx)

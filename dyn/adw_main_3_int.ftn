@@ -20,6 +20,7 @@
 * v3_02                         added adw_ckbd_lam,adw_cfl_lam for LAM only
 * v3_03 - Tanguay M.          - stop if adw_exch_1 is activated when 4D-Var
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Gravel S.           - introduce key Adw_mono_L 
 *
 *language
 *     fortran 77
@@ -234,7 +235,7 @@ C     call tmg_start ( 40, 'adw_main_3_int' )
             end do
             end do
             call adw_interp ( tr0, tr0, F_u, F_v,
-     %                        .false., .true., LDIST_DIM, l_nk,i0,in,j0,jn)
+     %                        .false. , Adw_mono_L, LDIST_DIM, l_nk,i0,in,j0,jn)
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni
@@ -260,7 +261,7 @@ C     call tmg_start ( 40, 'adw_main_3_int' )
             end do
             end do
             call adw_interp ( tr, tr, F_u, F_v,
-     %                        .false., .true., LDIST_DIM, l_nk,i0,in,j0,jn)
+     %                        .false., Adw_mono_L, LDIST_DIM, l_nk,i0,in,j0,jn)
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni

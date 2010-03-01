@@ -7,7 +7,7 @@
      %                           F_outm, F_inm,      F_nm,
      %                           F_capxm,F_capym,F_capzm, F_num,i0,in,j0,jn,kn)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_num, F_n(F_num), F_nm(F_num),i0,in,j0,jn,kn
 *
@@ -22,6 +22,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *language
 *     fortran 77
@@ -53,6 +54,7 @@
 *implicits
 #include "glb_ld.cdk"
 #include "adw.cdk"
+*
 ************************************************************************
       integer n, nijag, nij, o1, o2, i, j, k
 *
@@ -62,6 +64,9 @@
       nijag = Adw_nit * Adw_njt
       nij = l_ni*l_nj
 *
+!$omp parallel do private(n,o1,o2,prf1m_8,prf2m_8,prf3m_8,prf4m_8,
+!$omp$                    prf1m_y_8,prf2m_y_8,prf1_8,prf2_8,                     
+!$omp$                    prf3_8,prf4_8,prf1_y_8,prf2_y_8)
       do 100 k=1,kn
       do  90 j=j0,jn
       do  80 i=i0,in
@@ -130,6 +135,7 @@
    80 continue
    90 continue
   100 continue
+!$omp end parallel do
 *
       return
       end

@@ -11,6 +11,7 @@
 * v2_21 - M. Desgagne          - initial version
 * v3_00 - Desgagne & Lee       - Lam configuration
 * v3_02 - Dugas B.             - convip for topography
+* v3_11 - M. Desgagne          - remove call to phy_30900
 *
 #include "e_topo.cdk"
 #include "p_bus.cdk"
@@ -27,7 +28,6 @@
 *
 *----------------------------------------------------------------------
 *
-      call phy_30900 ()
       n  = nifi*njfi
       nu = niu*nju
       nv = niv*njv

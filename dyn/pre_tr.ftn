@@ -4,7 +4,7 @@
 *
       subroutine pre_tr
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -14,6 +14,7 @@
 * v2_21 - Tanguay M.        - reduce standard output as in model 
 * v2_31 - Tanguay M.        - adapt ADJ for new advection code 
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -96,13 +97,9 @@
          r3pm_ = 0
       endif
 *
-*PDIR RESERVE=Ptopo_npeOpenMP
-*
       call prep_2 ( rum,  rvm, ruw1m, ruw2m, rvw1m, rvw2m, xct1m, yct1m,  zct1m, topo, 
      %              rdm, rcnm,   r1m,  rthm,   rwm,  rvvm,   r3m,  r3pm, rhellm,
      %              wijk1,wijk2,LDIST_DIM,l_ni,l_nj,l_nk )
-*
-*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
 *

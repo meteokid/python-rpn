@@ -30,6 +30,7 @@
 * v3_01 - Lee V.            - broadcast common hspng for horizontal sponge
 * v3_02 - Tanguay M.        - Broadcast V4dz_degree,V4dzge_degree,V4dzga_degree
 * v3_03 - Desgagne M.       - replace stop by stopmpi
+* v3_11 - Gravel S.         - broadcast common theo and vtopo
 *
 *object
 *
@@ -38,6 +39,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "glb_pil.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
 #include "mem.cdk"
@@ -71,6 +73,9 @@
 #include "v4dg.cdk"
 #include "v4dj.cdk"
 #include "v4dm.cdk"
+#include "theo.cdk"
+#include "bubble.cdk"
+#include "vtopo.cdk"
 *
       integer err
 *------------------------------------------------------------------
@@ -144,6 +149,11 @@
       COMMON_BROADCAST(V4d_jcst_l)
       COMMON_BROADCAST(V4d_min_i)
       COMMON_BROADCAST(V4d_min_r)
+      COMMON_BROADCAST(theo_s)
+      COMMON_BROADCAST(bubble_r)
+      COMMON_BROADCAST(vtopo_l)
+      COMMON_BROADCAST(vtopo_i)
+      COMMON_BROADCAST(Glb_pil_i)
 *
       call RPN_COMM_bcast(V4dz_degree,  1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(V4dzge_degree,1,"MPI_INTEGER",0,"grid",err )

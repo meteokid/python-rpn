@@ -7,12 +7,18 @@ module v4d_prof
 !author N. Ek
 !
 !revision
-! v0_06 - N. Ek          - initial MPI version
-! v0_06 - M. Tanguay     - adapt to Simon's exchange
+! v3_00 - N. Ek          - initial MPI version
+! v3_00 - M. Tanguay     - adapt to Simon's exchange
+! v3_11 - M. Tanguay     - correct relationship between stepob and timestep 
+!                        - add option for profiles done on U-V grids for winds 
 !
-#include "impnone.cdk"
+      implicit none
 !
   save
+!
+!     Parameters linked to the event  
+!     ------------------------------
+      integer Pr_nevent
 !
 !     Parameters linked to PROF files  
 !     -------------------------------
@@ -38,8 +44,9 @@ module v4d_prof
       character*2,dimension(Pr_nvars) :: Pr_varname
       integer,    dimension(Pr_nvars) :: Pr_varindx  ! initialized in v4d_setting
 !
-      integer, parameter :: Pr_maxnmv    = 31        ! Max. no. of variables
-      integer, parameter :: Pr_maxstepob = 12        ! Max. no. of obs. times
+      integer, parameter :: Pr_maxnmv    = 31        ! Max. number of variables
+      integer, parameter :: Pr_upperbin  = 12        ! Upper limit on number of bins
+      integer Pr_ibin0                               ! Timestep of the first bin 
 !
       type real2dptr
        real, pointer :: ptr                          ! Profile elements
@@ -50,29 +57,31 @@ module v4d_prof
        integer :: nprof                           ! Number of profiles
        integer, pointer, dimension(:)  :: obstag  ! Observations' tags
        integer, pointer, dimension(:)  :: mdltag  ! Model variables' tags
-       real,    pointer, dimension(:)  :: px      ! Latitudes in model units
-       real,    pointer, dimension(:)  :: py      ! Longitudes in model units
+       real,    pointer, dimension(:)  :: px      ! Longitudes in model units (Z grid)
+       real,    pointer, dimension(:)  :: py      ! Latitudes  in model units (Z grid)
+       real,    pointer, dimension(:)  :: pxu     ! Longitudes in model units (U grid)
+       real,    pointer, dimension(:)  :: pyv     ! Latitudes  in model units (V grid)
        real,    pointer, dimension(:,:):: fprof   ! Profiles of the variable               
       end type modelprof
 !
 !     Define structure l_mv
 !     ---------------------
-      type (modelprof), dimension(Pr_maxnmv,0:Pr_maxstepob) :: Pr_l_mv
+      type (modelprof), dimension(Pr_maxnmv,Pr_upperbin) :: Pr_l_mv
 !
 !     Array of pointers to real array
 !     -------------------------------
       type (real2dptr), dimension(:,:,:), pointer :: Pr_mlprof
 !
-!     Time associated to each model tag 
-!     ---------------------------------
-      integer, pointer, dimension(:)  :: Pr_timetag ! Time of mdltag 
+!     Bin associated to each model tag 
+!     --------------------------------
+      integer, pointer, dimension(:)  :: Pr_bintag ! Bin of mdltag 
 !
 !     Statistics for profiles  
 !     -----------------------
-      integer  Pr_timobmax                        ! maximal no. of observation time   
-      integer  Pr_maxprof                         ! no. of profiles in lalo PROF file  
-      integer  Pr_nobproc                         ! no. of profiles in local processor  
-      integer, pointer, dimension(:)  :: Pr_nob   ! no. of profiles by obs. time in local proc.  
+      integer  Pr_maxbin                          ! number of bins   
+      integer  Pr_maxprof                         ! number of profiles in lalo PROF file  
+      integer  Pr_nobproc                         ! number of profiles in local processor  
+      integer, pointer, dimension(:)  :: Pr_nob   ! number of profiles by bin in local proc.  
       integer, pointer, dimension(:)  :: Pr_doobs ! 1 if profiles in any proc. at this timestep       
 !
       end module v4d_prof 

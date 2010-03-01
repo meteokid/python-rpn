@@ -16,7 +16,7 @@
      $                    F_r1, F_rth, F_rw, F_rvv, F_r3, F_r3p, 
      $                    F_rhell, F_wijk1, F_wijk2, DIST_DIM,ni,nj,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, ni, nj, Nk
       real F_ru    (DIST_SHAPE,Nk), F_rv    (DIST_SHAPE,Nk),
@@ -39,6 +39,7 @@
 * v2_31 - Desgagne M.       - remove stkmemw and switch to adw_*
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Gravel S.         - modify for theoretical cases
 *
 *object
 *
@@ -77,6 +78,10 @@
 * Metric corrections to the RHS of horizontal momentum equations *
 ******************************************************************
       tot = - four*Dcst_omega_8/Cstv_dt_8
+*
+*     Coriolis term is zero for theoretical cases
+*
+      if( Schm_theoc_L ) tot = 0.
       b1ob0 = Offc_b1_8/Offc_b0_8
 *
       i0 = 1

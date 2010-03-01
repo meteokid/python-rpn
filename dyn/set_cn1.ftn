@@ -4,7 +4,7 @@
 *
       subroutine set_cn1
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     michel roch - rpn - june 1993
@@ -12,6 +12,7 @@
 *revision
 * v2_00 - Desgagne/Lee      - initial MPI version (from setcn1 v1_03)
 * v2_31 - Desgagne/Lee      - introduce tracers, output of sliced tracers
+* v3_11 - Gravel S.         - modify for theoretical cases
 *
 *object
 *	This subroutine initializes the commons containing the
@@ -64,7 +65,7 @@
 *C             Initialize the time-dependent variables comdecks
 *              -------------------------------------------------
       call set_vt( )
-      if (G_lam) call set_nest( )
+      if (G_lam .and. .not. Schm_theoc_L) call set_nest( )
 *
 *C             Initialize right hand sides comdeck
 *              -----------------------------------

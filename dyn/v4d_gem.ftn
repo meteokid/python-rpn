@@ -4,7 +4,7 @@
 *
       subroutine v4d_gem
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -14,6 +14,8 @@
 * v2_31 - Tanguay M.        - Move v4d_setscalp after set_dync
 * v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L
 * v3_01 - Morneau J.        - add V4dg_sensib_L
+* v3_11 - Tanguay M.        - Introduce V4dg_oktrcv_L 
+*                           - Add V4dg_part=2 before first call to indata
 *
 *object
 *     see id section
@@ -63,6 +65,7 @@
             write(Lun_out, fmt='(  ''-------------------'')')
          endif
 *
+         V4dg_part = 2 
          call indata()
 *
 *     ------------------------------------------------------------------
@@ -101,18 +104,26 @@
 *           ----------------------------------------------
             V4dg_output_L = .true.
 *
-*           Deactivate WRITE option on TRAJECTORY WA file
-*           ---------------------------------------------
+*           Deactivate WRITE option on TRAJECTORY VMM WA file
+*           -------------------------------------------------
             V4dg_oktr_L = .false.
+*
+*           Deactivate WRITE option on TRAJECTORY Conversion WA file
+*           --------------------------------------------------------
+            V4dg_oktrcv_L = .false.
 *
 *           Call 4D-Var simulator without gradient
 *           --------------------------------------
             indic = 99 
             call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
 *
-*           Reactivate WRITE option on TRAJECTORY WA file
-*           ---------------------------------------------
+*           Reactivate WRITE option on TRAJECTORY VMM WA file
+*           -------------------------------------------------
             V4dg_oktr_L = .true.
+*
+*           Reactivate WRITE option on TRAJECTORY Conversion WA file
+*           --------------------------------------------------------
+            V4dg_oktrcv_L = .true.
 *
 *        Initialize CURRENT (first iterate) initial state  
 *        ------------------------------------------------

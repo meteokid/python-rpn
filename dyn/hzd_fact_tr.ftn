@@ -5,7 +5,7 @@
 *
       subroutine hzd_fact_tr (F_pip,F_qp,DIST_DIM,Nk) 
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real    F_pip(DIST_SHAPE,Nk), F_qp(DIST_SHAPE,Nk)
@@ -18,6 +18,7 @@
 * v2_21 - Tanguay M.        - remove vertical modulation
 * v2_31 - Tanguay M.        - TRAJ of control for diffusion on momentum only
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -40,7 +41,7 @@
       integer i, j, k, dim
       real*8 c_8
       real work(LDIST_SHAPE,Nk)
-      real*8 wk1_8(LDIST_SIZ*Nk)
+      real*8 wk1_8
       real*8 g1_8(LYDIST_SIZ*(Trp_12dmax-Trp_12dmin+1)*(G_ni+Ptopo_npex))
       real*8 g2_8((Trp_12dmax-Trp_12dmin+1)*(Trp_22max-Trp_22min+1)*(G_nj+Ptopo_npey))
       real*8, dimension (Ldnh_maxy*G_ni) :: aix_8,bix_8,cix_8,dix_8
@@ -66,6 +67,7 @@
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp parallel do
             do k = 1, Nk
             do j = 1,l_nj
             do i = 1,l_ni
@@ -73,6 +75,7 @@
             end do
             end do
             end do
+!$omp end parallel do
          endif
 *
 *     The hydrostatic pressure: pi'  
@@ -93,6 +96,7 @@
 *
 *        Indirect diffusion of q'
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do
          do k=1, Nk  !
          do j=1,l_nj ! p = (pi)exp(q')
          do i=1,l_ni ! ~~~~~~~~~~~~~~~
@@ -101,6 +105,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
          call hzd_del2  (work, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
@@ -108,6 +113,7 @@
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+!$omp parallel do
          do k=1, Nk  !
          do j=1,l_nj ! q' = log(p/pi)
          do i=1,l_ni ! ~~~~~~~~~~~~~~
@@ -116,6 +122,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
          endif
          endif

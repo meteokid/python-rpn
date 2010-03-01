@@ -16,6 +16,8 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Desgagne M.       - correction for non-hydrostatic version
 * v3_03 - Tanguay M.        - put v4d_predat inside 
+* v3_11 - Gravel S.         - modify evaluation of Ind_pip, include variable
+*                             topography
 *
 *object
 *	Performs preprocessing of the data: part1. We compute:
@@ -43,6 +45,7 @@
 #include "lctl.cdk"
 #include "vt1.cdk"
 #include "v4dg.cdk"
+#include "vtopo.cdk"
 *
       integer i, j, k
       real pr1, pr2
@@ -50,6 +53,13 @@
 *     __________________________________________________________________
 *
       if ( V4dg_conf.eq.0 ) then
+*
+      if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
+          call var_topo( )
+          if ( Schm_phyms_L ) call phycom ('varmtn' ,1 ,1,'set')
+      else
+          if ( Schm_phyms_L ) call phycom ('varmtn' ,0 ,1,'set')
+      endif
 *
       do j= 1, l_nj
       do i= 1, l_ni 
@@ -62,8 +72,9 @@
       do k= 2, G_nk-1
       do j= 1, l_nj
       do i= 1, l_ni
-           Ind_q(i,j,k)= alog(geomg_pia(k)+geomg_pib(k)*exp(Ind_s(i,j)))
-         Ind_pip(i,j,k)= exp(Ind_q(i,j,k)) - geomg_z_8(k)
+         Ind_q  (i,j,k)= alog(geomg_pia(k)+geomg_pib(k)*exp(Ind_s(i,j)))
+         Ind_pip(i,j,k)= geomg_pia(k)+geomg_pib(k)*exp(Ind_s(i,j))
+     $                 - geomg_z_8(k)
       end do
       end do
       end do

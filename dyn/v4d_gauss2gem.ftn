@@ -8,7 +8,7 @@
       use v4dz
       use v4d_interint0
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer nigauss,njgauss,DIST_DIM,Nk
       real gut1 (nigauss,njgauss,Nk), gvt1 (nigauss,njgauss,Nk),
@@ -27,6 +27,8 @@
 *                           - introduce GAUSS=GEM option
 * v3_01 - Buehner M.        - external already_done  
 * v3_02 - Tanguay M.        - V4dzga_degree in namelist var4d
+* v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
+*                           - Remove V4dg_ga_eq_ge_L
 *
 *object
 *  see id section
@@ -35,6 +37,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
 #include "dcst.cdk"
@@ -43,8 +46,8 @@
 #include "ptopo.cdk"
 #include "v4dg.cdk"
 *
-      integer  ezqkdef,gdxyfll,gdrls,gdll,ezgdef 
-      external ezqkdef,gdxyfll,gdrls,gdll,ezgdef
+      integer  ezqkdef,gdxyfll,gdrls,ezgdef 
+      external ezqkdef,gdxyfll,gdrls,ezgdef
 *
       integer gdin,gdout,i,j,k,n,i1,i2,j1,j2,ni,nj,
      %        ier,status
@@ -61,6 +64,10 @@
       real*8, parameter ::  TWO_8 = 2.0
       real*8, parameter ::CLXXX_8 = 180.0
       real*8  deg2rad_8
+*
+      logical same_grid_L
+*
+      same_grid_L = V4dzgauss_ni.eq.G_ni.and.V4dzgauss_nj.eq.G_nj.and.Grd_gauss_L
 *
 *     Set parameters of interpolation 
 *     -------------------------------
@@ -82,19 +89,9 @@
 *
 *        Define output grid = global GEM scalar Z grid
 *        ---------------------------------------------
-         if(.not.V4dg_ga_eq_ge_L) then
-*
          gdout = ezgdef(G_ni,G_nj,'Z',Hgc_gxtyp_s,
      %           Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
      %           Geomn_longs, Geomn_latgs)
-*
-*        Define output grid = Gaussian grid
-*        ----------------------------------
-         else
-*
-         gdout = ezqkdef (G_ni,G_nj,'G',0,0,0,0,0)
-*
-         endif
 *
          V4dzga_npts = G_ni*G_nj
 *
@@ -105,7 +102,6 @@
 *
 *        Prescribe global GEM scalar Z grid lat-lon 
 *        ------------------------------------------
-         if(.not.V4dg_ga_eq_ge_L) then
 *
          do j=1,G_nj
          do i=1,G_ni
@@ -114,14 +110,6 @@
             lat(n) = Geomn_latgs(j)
          enddo
          enddo
-*
-*        Prescribe Gaussian grid lat-lon 
-*        -------------------------------
-         else
-*
-         ier = gdll (gdout,lat,lon)
-*
-         endif
 *
 *        Allocations OUTPUT grid parameters
 *        ----------------------------------
@@ -266,6 +254,8 @@
 *     -----------------------------------
       if(Ptopo_myproc.eq.0) then
 *
+      if(.not.same_grid_L) then
+*
 *       -----------------------------------------------------
 *       Preparation for polar correction and interpolation of
 *       scalar field FLDSC at positions px,py
@@ -282,6 +272,19 @@
         end do
         end do
 *
+      else 
+*
+        do k = 1,Nk
+        do j = 1,njgauss 
+        do i = 1,nigauss 
+           n = nigauss*(j-1) + i 
+           zo(n,k) = gtpt1(i,j,k) 
+        end do
+        end do
+        end do
+*
+      endif
+*
       endif
 *
 *     Global distribution
@@ -292,6 +295,8 @@
 *     Scalar interpolation of humidity 
 *     --------------------------------
       if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
 *
 *       -----------------------------------------------------
 *       Preparation for polar correction and interpolation of
@@ -309,6 +314,19 @@
         end do
         end do
 *
+      else
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           zo(n,k) = ghut1(i,j,k)
+        end do
+        end do
+        end do
+*
+      endif
+*
       endif
 *
 *     Global distribution
@@ -319,6 +337,8 @@
 *     Scalar interpolation of surface pressure
 *     ----------------------------------------
       if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
 *
 *       -----------------------------------------------------
 *       Preparation for polar correction and interpolation of
@@ -334,6 +354,17 @@
            zo(n,1) = fld2d(1,n)
         end do
 *
+      else
+*
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           zo(n,1) = gst1(i,j)
+        end do
+        end do
+*
+      endif
+*
       endif
 *
 *     Global distribution
@@ -344,6 +375,8 @@
 *     Vector interpolation
 *     --------------------
       if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
 *
 *       -----------------------------------------------------
 *       Preparation for polar correction and interpolation of
@@ -362,6 +395,20 @@
            wo(n,k) = fldvint(k,n)
         end do
         end do
+*
+      else
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           zo(n,k) = gut1(i,j,k)
+           wo(n,k) = gvt1(i,j,k) 
+        end do
+        end do
+        end do
+*
+      endif
 *
       endif
 *

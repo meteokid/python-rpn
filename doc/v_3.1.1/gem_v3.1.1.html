@@ -1,0 +1,64 @@
+<html>
+<body bgcolor="#FFFFFF">
+<pre class=text>
+<b>
+
+        ############# GEMDM Model -- Version 3.1.1 ###############
+                            December 4 2003
+</b>
+
+        Version 3.1.1 of the GEMDM dynamics is now ready and available 
+        in directory:
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.1.1/RCS_DYN"
+	It is connected to RPN/CMC physics version 4.0 in directory:
+	      "$ARMNLIB/modeles/PHY/v_4.0/RCS:4.0"
+
+############################################################################
+<b>
+MAIN FEATURES:
+</b>
+
+  This version is very similar to the previous version 3.1.0
+  EXCEPT that it will NO LONGER RUN ON THE SX6 (YATA). Please
+  see notes on previous releases and documentation in:
+
+  http://riemann.cmc.ec.gc.ca/eng/gemdm/gemdm.html
+
+
+  The main features of this version are:
+
+1) Namelist changes in gem_settings.nml:
+   The variables Ptopo_npex and Ptopo_npey formally in 
+   namelist gem_cfgs is now in a separate namelist as follows:
+
+   &ptopo
+     Ptopo_npex = 2, Ptopo_npey = 8,
+   /
+
+   New options to run a few theoretical cases (Sylvie Gravel)
+   Look in gem_settings.doc for the new options; extract by
+   'omd_exp gem_settings.doc' in an opened experiment
+
+2) IBM port of most 4D-var routines
+
+3) Output changes which is transparent from version 3.1.0 to
+   this version 3.1.1. A little note here for those interested
+   in the change internally:
+      Each processor now writes directly to it's own local 
+      directory rather than the directory 'output'. At completion 
+      of a model run, the files are moved to the directory 'output'. 
+      Then a job will be submitted to itself (same machine) to 
+      'delam' the raw slab data files and written out as RPN
+      '#' standard files. Post-processing will be done at this
+      point and a separate job is launched for actual transfer.
+
+4) Horizontal Diffusion: Correction of openmp bugs and addition of a 
+   new (faster) transpose function from RPN_COMM
+
+5) GEM LAM: Time-series output is enabled and correction in Vspng
+
+############################################################################
+    
+</pre>
+</body>
+</html>

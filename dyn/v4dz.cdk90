@@ -6,6 +6,7 @@ module v4dz
 ! v3_00 - Tanguay M.        - initial MPI version
 ! v3_01 - Tanguay M.        - introduce gem2gauss for singular vectors
 ! v3_01 - Buehner M.        - external already_done
+! v3_11 - M.Tanguay         - Add option for profiles done on U-V grids for winds 
 !
 !______________________________________________________________________
 !                                                                      |
@@ -14,16 +15,28 @@ module v4dz
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
-! ax                 | X axe of INPUT grid                             |
-! ay                 | Y axe of INPUT grid                             |
-! cx                 | AX difference on INPUT grid                     |
-! cy                 | AY difference on INPUT grid                     |
+! ax                 | X axe of INPUT Z grid                           |
+! ay                 | Y axe of INPUT Z grid                           |
+! cx                 | AX difference on INPUT Z grid                   |
+! cy                 | AY difference on INPUT Z grid                   |
+! wx                 | global Z grid weights proportional grid dist.   |
+! cox                | local Z grid cos of x                           |
+! six                | local Z grid sin of x                           |
+! siy                | local z grid sin of y                           |
+! axu                | X axe of INPUT U grid                           |
+! ayv                | Y axe of INPUT V grid                           |
+! cxu                | AX difference on INPUT U grid                   |
+! cyv                | AY difference on INPUT V grid                   |
+! wxu                | global U grid weights proportional grid dist.   |
+! coxu               | local U grid cos of x                           |
+! sixu               | local U grid sin of x                           |
+! siyv               | local V grid sin of y                           |
 ! i1-i2              | Dimension x in INPUT grid                       |
 ! j1-j2              | Dimension y in INPUT grid                       |
 ! degree             | Degree of interpolation                         |
 ! grtypi             | Type of grid                                    |
-!______________________________________________________________________
-!                                                                      |
+!____________________|_________________________________________________|
+!
  save
 !
       integer V4dzgauss_ni,V4dzgauss_nj
@@ -33,7 +46,11 @@ module v4dz
 !     ------------------------------
       integer V4dz_i1,V4dz_i2,V4dz_j1,V4dz_j2,V4dz_degree
 !
-      real, allocatable, dimension (:) :: V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy
+      real,   allocatable, dimension (:) :: V4dz_ax, V4dz_ay, V4dz_cx, V4dz_cy
+      real,   allocatable, dimension (:) :: V4dz_axu,V4dz_ayv,V4dz_cxu,V4dz_cyv
+!
+      real*8, allocatable, dimension (:) :: V4dz_wx_8, V4dz_cox_8, V4dz_six_8, V4dz_siy_8
+      real*8, allocatable, dimension (:) :: V4dz_wxu_8,V4dz_coxu_8,V4dz_sixu_8,V4dz_siyv_8
 !
       character*1 V4dz_grtypi
 !

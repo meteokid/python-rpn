@@ -34,6 +34,7 @@
 *              |                  and south pe's for which an interpo- |
 *              |                  lation is requested are inside own   |
 *              |                  advection source grid                |
+* Adw_mono_L   | switch: .true. : advection of tracers is monotonic    |
 *----------------------------------------------------------------------|
 * GRIDS SIZE SPECIFICATIONS                                            |
 *----------------------------------------------------------------------|
@@ -135,7 +136,8 @@
 *
 #endif
 *
-      logical            Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L
+      logical            Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L,
+     %                   Adw_mono_L
 *
       integer            Adw_halox, Adw_haloy,
      %                   Adw_nic, Adw_nit, Adw_njc, Adw_njt,
@@ -148,7 +150,8 @@
      %                   Adw_x00_8,  Adw_y00_8,  Adw_z00_8, Adw_cfl_8(3)
 *
       MARK_COMMON_BEG (adw_l)
-      common / adw_l  /  Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L
+      common / adw_l  /  Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L,
+     %                   Adw_mono_L
       MARK_COMMON_END (adw_l)
 *
       MARK_COMMON_BEG (adw_ia)

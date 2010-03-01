@@ -6,7 +6,7 @@
      %                           F_zcto,  F_xctm,  F_yctm,  F_zctm,
      %                                    F_xctm_m,F_yctm_m,F_zctm_m,i0,in,j0,jn)
 *
-#include "impnone.cdk"
+      implicit none
 *
       real   F_xto (*), F_yto (*), F_xcto(*), F_ycto(*),
      %       F_zcto(*), F_xctm(*), F_yctm(*), F_zctm(*)
@@ -21,6 +21,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_01 - Tanguay M.        - correction minmax_m = +-1
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *language
 *     fortran 77
@@ -49,8 +50,9 @@
 #include "glb_ld.cdk"
 #include "adw.cdk"
 #include "dcst.cdk"
+*
 ************************************************************************
-      integer i,j,k, n, ij, nij, nijk
+      integer i,j,k, n, ij, nij
 *
       real*8 prx_8, pry_8, prz_8, prdot2_8, r2pi_8, TWO_8, ZERO_8 
 *
@@ -63,9 +65,9 @@
 *
 ************************************************************************
       nij  = l_ni*l_nj
-      nijk = l_ni*l_nj*l_nk
 *
       r2pi_8 = TWO_8 * Dcst_pi_8
+*
 ************************************************************************
 *
 *     Zero adjoint variables
@@ -73,14 +75,12 @@
       minmax   = ZERO_8
       prdot2_8 = ZERO_8
 *
+!$omp parallel
+!$omp do
       do k=1,l_nk
       do j=j0,jn
       do i=i0,in
       n = (k-1)*nij+((j-1)*l_ni) + i
-*
-*     ----------------------------------------
-*     DO LOOP ADAPTED TO RESTORE VECTORIZATION
-*     ----------------------------------------
 *
       ij = mod( n-1, nij ) + 1
 *
@@ -154,6 +154,8 @@ C     minmax    = ZERO_8
       enddo
       enddo
       enddo
+!$omp enddo
+!$omp end parallel
 *
       return
       end

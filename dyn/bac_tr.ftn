@@ -4,7 +4,7 @@
 *
       subroutine bac_tr( Itr, Itnlh )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer Itr, Itnlh
 *
@@ -17,6 +17,7 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 *                           - adapt for tracers in tr3d  
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -122,8 +123,6 @@
          r3pm_  = 0
       endif
 *
-*PDIR RESERVE=Ptopo_npeOpenMP
-
       call  bacp_2 ( Itr     , Itnlh  , st0m    , pipt0m , qt0m    , 
      %               fit0m   , fipt0m , topo    , tt0m   , tpt0m   , tplt0m,
      %               ut0m    , vt0m   , psdt0m  , tdt0m  ,
@@ -131,8 +130,6 @@
      %               rum     , rvm    , rthm    , r3m    , r3pm    , rvvm  , rcnm,
      %               nlm_num , nlm_nvm, nlm_nthm, nlm_n3m, nlm_n3pm, 
      $               nlm_ncnm, wijk0  , wijk1   , LDIST_DIM, l_nk )
-
-*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
 

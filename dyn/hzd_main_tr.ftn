@@ -5,13 +5,14 @@
 *
       subroutine hzd_main_tr 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -57,8 +58,6 @@
 *************************************
 *  1. Implicit horizontal diffusion *
 *************************************
-
-c*PDIR RESERVE=Macr_cpud
 *
       if (Hzd_fact_L) call hzd_fact_tr (pipt1m,qpt1m,LDIST_DIM,G_nk) 
 *
@@ -79,8 +78,6 @@ c*PDIR RESERVE=Macr_cpud
             endif
          endif
       endif
-*
-c*PDIR RELEASE
 *
       err = vmmuld(-1,0)
 *    

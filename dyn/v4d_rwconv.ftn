@@ -5,7 +5,7 @@
 *
       subroutine v4d_rwconv ()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Stephane Laroche
@@ -69,7 +69,7 @@
 C     threshold = 0.02
       threshold = 0.05
 *
-      if(.not.done_once_L) write(Lun_out,*) 'VALUE OF THRESHOLD =',threshold
+      if(.not.done_once_L.and.Lun_out.gt.0) write(Lun_out,*) 'VALUE OF THRESHOLD =',threshold
       done_once_L = .true.
 *
 *     ----------------

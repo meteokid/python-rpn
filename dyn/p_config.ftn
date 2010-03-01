@@ -24,6 +24,7 @@
 *                             and add qco2 initialization
 * v3_03 - Bilodeau B.       - add P_pbl_as, P_pbl_beta and P_cond_kkl
 * v3_03 - Dugas B.          - add P_str_strato
+* v3_11 - Desgagne M.       - sdd P_pbl_impflx_L
 *
 *object
 *     See above id.
@@ -109,6 +110,7 @@
       call phyoptl('SNOALB_ANL',P_pbl_snoalb_L,       1, 'SET' )
       call phyoptl('Z0TCST'   ,P_pbl_z0tcst_L ,       1, 'SET' )
       call phyoptl('ADVECTKE', P_pbl_advectke_L,      1, 'SET' )
+      call phyoptl('IMPFLX',   P_pbl_impflx_L ,       1, 'SET' )
       call phyopti('NSLOFLUX' ,P_pbl_nslof    ,       1, 'SET' )
       call phyoptr('PARSOL'  , P_pbl_prsol    ,       6, 'SET' )
       call phyoptr('EPONGE'  , P_pbl_spng     , cnmaxad, 'SET' )

@@ -5,6 +5,9 @@
       subroutine e_gemnml 
       implicit none
 *
+*revision
+* v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
+*
       integer ni, nila
       integer l_ni,l_nj
       parameter (l_ni=1,l_nj=1)
@@ -14,6 +17,7 @@
 #include "e_geol.cdk"
 #include "e_grids.cdk"
 #include "e_tr.cdk"
+#include "e_anal.cdk"
 *
 #include "cst_lis.cdk"
 #include "dcst.cdk"
@@ -51,6 +55,7 @@
       Grd_xlat1 = 0.
       Grd_xlon2 = 0.
       Grd_xlat2 = 0.
+      Grd_gauss_L = .false.
 *
       Pil_runstrt_S =' '
       Pil_ctebcs_L  = .false.
@@ -71,6 +76,7 @@
       Topo_dgfmx_L= .false.
       Topo_dgfms_L= .true.
 *
+      anal_perturb= .false.
       E_schm_stlag   = .true.
       E_schm_adcub   = .true.
       E_geol_glanl_L = .true.
@@ -109,9 +115,11 @@
       endif
 *
       rewind(unf)
-      read  (unf,nml=grid,   END=910)
+      read  (unf,nml=ptopo,  END=930, ERR=930)
       rewind(unf)
-      read  (unf,nml=gement, END=920)
+      read  (unf,nml=grid,   END=910, ERR=910)
+      rewind(unf)
+      read  (unf,nml=gement, END=920, ERR=920)
       call fclos (unf)
 *
       call low2up (P_pbl_schsl_S,dumc)
@@ -224,10 +232,13 @@
  910  write(6,801)
       goto 998
  920  write(6,802)
+      goto 998
+ 930  write(6,803)
  998  call e_arret ('GEMNML')
 *
  801  format(/,' ERROR in NAMELIST GRID: STOP IN GEMNTR',/)
  802  format(/,' ERROR in NAMELIST GEMENT: STOP IN GEMNTR',/)
+ 803  format(/,' ERROR in NAMELIST PTOPO:  STOP IN GEMNTR',/)
  1000 format(/,' Pil_runstrt_S, Pil_nesdt and Pil_datacvrg must'/
      $         ' all be defined in LAM configuration',/)
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/,

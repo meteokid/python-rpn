@@ -8,7 +8,7 @@
 *
       use v4d_interzone
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer npts,i1,i2,j1,j2,nk,degree
 *
@@ -29,6 +29,8 @@
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
 * v3_03 - Tanguay M.        - use v4d_zerohalo 
+* v3_11 - Tanguay M.        - correct for nk in v4d_zerohalo
+*                           - Add option for profiles done on U-V grids for winds 
 *
 *object
 *     see id section
@@ -59,61 +61,76 @@
 *implicits
 #include "glb_ld.cdk"
 *
-      integer i,j,k,gni,jmin,jmax,ni
+      integer i,j,k,gni,jmin,jmax,ni,nie,nje
 *
       real*8, parameter :: ZERO_8 = 0.0
 *
-*     Recall ni = Period if grid='G', Heart if grid='Z'
-*     -------------------------------------------------
-      if(grtypi.eq.'Z') ni = l_ni
+      character*1 grtypi_x
+*
+*     Use grtypi_x ='Z' for interpolation when grtypi.ne.'G'
+*     ------------------------------------------------------
+      grtypi_x = grtypi
+      if(grtypi.eq.'U'.or.grtypi.eq.'V') grtypi_x = 'Z'
+*
+*     Recall ni = Period if grid='G', Heart if grid.ne.'G'
+*     ---------------------------------------------------
+      if(grtypi.ne.'G') ni = l_ni
+      if(grtypi.eq.'U') ni = l_niu
       if(grtypi.eq.'G') ni = i2-i1+1
 *
 *     Recall dimension of a latitude circle in INPUT grid
 *     ---------------------------------------------------
-      if(grtypi.eq.'Z') gni = G_ni
+      if(grtypi.ne.'G') gni = G_ni
+      if(grtypi.eq.'U') gni = G_niu 
       if(grtypi.eq.'G') gni = ni
 *
 *     Recall j limit
 *     --------------
       jmin=j1
       jmax=j2
-      if(grtypi.eq.'Z'.and.l_north) jmax=l_nj
-      if(grtypi.eq.'Z'.and.l_south) jmin=1
+      if(grtypi.ne.'G'.and.l_north) jmax=l_nj
+      if(grtypi.ne.'G'.and.l_south) jmin=1
+      if(grtypi.eq.'V'.and.l_north) jmax=l_njv
 *
 *     Adjoint of
 *     Closing if wind interpolation in polar zones
 *     --------------------------------------------
       if(l_north.or.l_south) call v4d_zonewnd_ad (px,py,npts,fldu,fldv,wx_8,cox_8,six_8,siy_8,
-     %                                            i1,i2,j1,j2,nk,jmin,jmax,ni,G_lnimax,gni,grtypi,
+     %                                            i1,i2,j1,j2,nk,jmin,jmax,ni,G_lnimax,gni,grtypi_x,
      %                                            degree,var,l_north,l_south,2)
 *
 *     Adjoint of
 *     Wind interpolation at px,py positions using EZSCINT
 *     ---------------------------------------------------
       if(npts.ne.0) call v4d_ezuvint_ad (flduint,fldvint,px,py,npts,fldu,fldv,ax,ay,cx,cy,
-     %                                   i1,i2,j1,j2,nk,jmin,jmax,ni,grtypi,degree)
+     %                                   i1,i2,j1,j2,nk,jmin,jmax,ni,grtypi_x,degree)
 *
 *     Adjoint of
 *     Preparation for polar correction if wind interpolation
 *     ------------------------------------------------------
       if(l_north.or.l_south) call v4d_zonewnd_ad (px,py,npts,fldu,fldv,wx_8,cox_8,six_8,siy_8,
-     %                                            i1,i2,j1,j2,nk,jmin,jmax,ni,G_lnimax,gni,grtypi,
+     %                                            i1,i2,j1,j2,nk,jmin,jmax,ni,G_lnimax,gni,grtypi_x,
      %                                            degree,var,l_north,l_south,1)
 *
 *     Adjoint of
-*     Fill halo for interpolation between processors if INPUT grid='Z"
-*     ----------------------------------------------------------------
-      if(grtypi.eq.'Z') then
+*     Fill halo for interpolation between processors if INPUT grid.ne.'G'
+*     -------------------------------------------------------------------
+      if(grtypi.ne.'G') then
 *
-         call rpn_comm_adj_halo( fldv, LDIST_DIM,l_ni,l_nj,nk,
+         nie = l_ni
+         nje = l_nj
+         if(grtypi.eq.'U') nie = l_niu
+         if(grtypi.eq.'V') nje = l_njv
+*
+         call rpn_comm_adj_halo( fldv, LDIST_DIM,nie,nje,nk,
      %                           G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-         call rpn_comm_adj_halo( fldu, LDIST_DIM,l_ni,l_nj,nk,
+         call rpn_comm_adj_halo( fldu, LDIST_DIM,nie,nje,nk,
      %                           G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
 *        Zero fldv,fldu halo
 *        -------------------
-         call v4d_zerohalo ( fldv,l_ni,l_nj,LDIST_DIM,l_nk)
-         call v4d_zerohalo ( fldu,l_ni,l_nj,LDIST_DIM,l_nk)
+         call v4d_zerohalo ( fldv,nie,nje,LDIST_DIM,nk)
+         call v4d_zerohalo ( fldu,nie,nje,LDIST_DIM,nk)
 *
       endif
 *

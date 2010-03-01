@@ -6,7 +6,7 @@
 *
       use v4d_prof
 *
-#include "impnone.cdk"
+      implicit none
 *
       character*2,INTENT(IN)   :: cdvar
       integer,    INTENT(INOUT):: kstatus
@@ -19,7 +19,8 @@
 *revision
 * v3_00 - P. Gauthier        - initial MPI version
 * v3_00   M. Tanguay         - adapt to Simon's exchange
-* v3_xx - M. Tanguay         - correction for empty processors 
+* v3_01 - M. Tanguay         - correction for empty processors 
+* v3_11 - M. Tanguay         - correct relationship between stepob and timestep
 *
 *object
 *
@@ -41,7 +42,7 @@
 *
       integer  prof_wrrec
       external prof_wrrec
-      integer icma, indx, indy, ntime, istat
+      integer icma, indx, indy, nbin, istat
 *
 *     Prepare number of processors in X and Y to be send to 3D-Var
 *     ------------------------------------------------------------
@@ -49,9 +50,9 @@
       indy = Ptopo_npey-1
       call mvbits(indx,0,16,indy,16)
 *
-*     Define observation time as timestep scaled by V4dg_stepob
-*     ---------------------------------------------------------
-      ntime = Lctl_step/V4dg_stepob
+*     Establish at which bin we are
+*     -----------------------------
+      nbin = (Lctl_step - Pr_ibin0) / V4dg_stepob + 1
 *
 *     Store simulation no. in each PROF record
 *     ----------------------------------------
@@ -68,8 +69,8 @@
       istat = prof_pvar (Pr_ihdlout, icma, PRM_MVAR ) + istat
 *
       if(kobs.ne.0) then
-      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,ntime) % obstag, V2D_OTAG ) + istat
-      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,ntime) % mdltag, V2D_MTAG ) + istat
+      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,nbin) % obstag, V2D_OTAG ) + istat
+      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,nbin) % mdltag, V2D_MTAG ) + istat
       istat = prof_pvar (Pr_ihdlout, gomvar_8, indexvar ) + istat
       endif
 *

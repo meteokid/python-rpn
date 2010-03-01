@@ -4,7 +4,7 @@
 *
       subroutine pre_ad
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -14,6 +14,8 @@
 * v2_21 - Tanguay M.        - reduce standard output as in model 
 * v2_31 - Tanguay M.        - adapt ADJ for new advection code
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - Add work arrays 
+*                           - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -40,9 +42,12 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(60), i, j 
+      integer pnerr, pnlod, pnlkey1(60), i, j, k 
 *
       real wijk1 (LDIST_SHAPE,l_nk),wijk2 (LDIST_SHAPE,l_nk)
+*
+      real*8 ZERO_8
+      parameter( ZERO_8=0.0)
 *     ______________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
@@ -118,15 +123,22 @@
       pnerr = VMM_GET_VAR(yct1m)
       pnerr = VMM_GET_VAR(zct1m)
 *
-*PDIR RESERVE=Ptopo_npeOpenMP
+*     Zero adjoint work arrays
+*     ------------------------  
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+      wijk1(i,j,k) = ZERO_8
+      wijk2(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
 *
       call prep_2_ad ( ru    ,rv    ,ruw1 ,ruw2 ,rvw1 ,rvw2 ,xct1 ,yct1 ,zct1  , topo,
      %                 rd    ,rcn   ,r1   ,rth  ,rw   ,rvv  ,r3   ,r3p  ,rhell ,
      %                 wijk1 ,wijk2 ,
      %                                     ruw2m,      rvw2m,xct1m,yct1m,zct1m,
      %                 LDIST_DIM,l_ni,l_nj,l_nk )
-*
-*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
 

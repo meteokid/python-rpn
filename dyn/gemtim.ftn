@@ -4,7 +4,7 @@
 *
       subroutine gemtim (unf)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer unf
 *
@@ -13,25 +13,54 @@
 *
 *revision
 * v2_30 - Dugas B.       - initial version
+* v3_11 - Dugas B.       - Adapt to AIX envvironment
 *
 *object
 *     
 **
       logical, save :: timini_L
+      data timini_L / .false. /
+*
+#if defined (NEC)
       character*24 temp_S,fdate
       real totals,users,systs,ra(2),dtime
       equivalence (ra(1),users),(ra(2),systs)
-*
-      data timini_L / .false. /
 *----------------------------------------------------------------
 *
       totals = dtime( ra )
       temp_S = fdate( )
+*
       if (timini_L) write(unf,1000) temp_S, users, systs
+#endif
+#if defined (AIX)
+      character date_S*8 ,time_S*10
+      character jour_S*11,heure_S*10
+      real          users,systs
+      real, save :: user0,syst0
+      data          user0,syst0 / 0.0, 0.0 /
+*----------------------------------------------------------------
+*
+      call date_and_time( date_S,time_S )
+      jour_S  = date_S(1:4)//'/'//date_S(5:6)//'/'//date_S(7:8)//' '
+      heure_S = time_S(1:2)//'h'//time_S(3:4)//'m'//time_S(5:6)//'s,'
+*
+      call setrteopts('cpu_time_type=total_usertime')
+      call cpu_time( users )
+*
+      call setrteopts('cpu_time_type=total_systime')
+      call cpu_time( systs )
+*
+      if (timini_L)  write(unf,1000)
+     +               ' At '//jour_S//heure_S, users-user0, systs-syst0
+*
+      user0 = users
+      syst0 = systs
+#endif
       timini_L = .true.
 *
+*----------------------------------------------------------------
  1000    format(/A,' User Time (sec) : ',f10.6,
      +             ' Sys  Time (sec) : ',f10.6)
-*----------------------------------------------------------------
+*
       return
       end

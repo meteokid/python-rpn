@@ -4,7 +4,7 @@
 *
       subroutine v4d_simul (F_indic,Ndim,F_px,F_pj,F_pgraj)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_indic,Ndim
       real F_pj,F_px(Ndim),F_pgraj(Ndim)
@@ -22,6 +22,8 @@
 * v3_02 - M.Tanguay         - integration stops at Lctl_steplast
 * v3_03 - M.Tanguay         - introduce V4dg_imguv_L  
 *                           - replace v4d_procdyn by indata  
+* v3_11   M Tanguay         - Extend TRAJ for conversion for DYNOUT2
+*                           - ADJ of digital filter
 *
 *object
 *     Simulator 4D (in minimization language).
@@ -56,17 +58,17 @@
 #include "schm.cdk"
 #include "init.cdk"
 *
-*
 *modules
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
       integer  ierr,k
       real plocal
+*
+      integer lunx
 *     ______________________________________________________
 *
       if ( Rstri_rstn_L ) call gem_stop('v4d_simul',-1)
-      if ( Init_balgm_L ) call gem_stop('v4d_simul',-1)
 *     ______________________________________________________
 *
 *     ----------------
@@ -127,6 +129,15 @@
          V4dg_addob = 1 
          V4dg_addfr = 1 
          V4dg_addph = 1 + l_ni*l_nj*l_nk
+         V4dg_addcv = 1
+*
+*        Initilizations for digital filtering
+*        ------------------------------------
+         if( Init_balgm_L ) Rstri_idon_L = .false.
+*
+*        Write trajectory for conversion if requested
+*        --------------------------------------------
+         if( V4dg_oktrcv_L ) call v4d_rwconv0
 *
 *        Complete preprocessing
 *        ----------------------
@@ -162,6 +173,15 @@
          V4dg_addfr = 1
          V4dg_addob = 1
          V4dg_addph = 1 + l_ni*l_nj*l_nk
+         V4dg_addcv = 1
+*
+*        Initilizations for digital filtering
+*        ------------------------------------
+         if( Init_balgm_L ) Rstri_idon_L = .false.
+*
+*        Read trajectory for conversion if requested
+*        -------------------------------------------
+         call v4d_rwconv0
 *
 *        Complete preprocessing
 *        ----------------------
@@ -240,6 +260,11 @@
          V4dg_addfr = V4dg_addfr - l_ni*l_nj
          V4dg_addob = V4dg_addob - l_ni*l_nj 
          V4dg_addph = V4dg_addph - l_ni*l_nj*l_nk
+         V4dg_addcv = V4dg_addcv - l_ni*l_nj
+*
+*        Initilizations for digital filtering
+*        ------------------------------------
+         if( Init_balgm_L ) Rstri_idon_L = .true.
 *
 *        Run ADJ model
 *        -------------
@@ -250,6 +275,10 @@
 *        ----------------------
          V4dg_part = 3
          call indata_ad()
+*
+*        Read trajectory for conversion at initial time
+*        ----------------------------------------------
+         call v4d_rwconv0()
 *
 *        Output adjoint fields knowing that u,v are true winds
 *        -----------------------------------------------------         

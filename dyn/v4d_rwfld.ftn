@@ -5,7 +5,7 @@
       subroutine v4d_rwfld (F_field,F_work,Ni,Nj,DIST_DIM,Nk,
      %                      F_iun,F_addr,F_diag_L,F_name_S,F_adjoint_L,F_diff,F_icode)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer Ni,Nj,DIST_DIM,Nk,F_icode
       real F_field(DIST_SHAPE,Nk),F_work(*)
@@ -24,6 +24,7 @@
 * v3_00 - Tanguay M         - incore option for Conversion WA file 
 * v3_00 - Laroche S.        - adapted for simplified physics
 * v3_02 - Buehner M.        - added section for ref state file for NLMX event (SV job)
+* v3_11 - Tanguay M.        - Diagnostics 
 *
 *object
 *     see id section
@@ -74,8 +75,7 @@
              if(F_iun.eq.V4dg_iuntr) then
 *
                 if(V4dg_trsize.lt.F_addr + Ni*Nj*Nk - 1) then
-                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY TRINCORE TOO SMALL'
-                   call gem_stop ('v4d_rwfld',-1)
+                   call gem_stop ('v4d_rwfld ARRAY TRINCORE TOO SMALL',-1)
                 endif
                 do ind = 1,Ni*Nj*Nk
                   V4dg_trincore(F_addr + ind - 1) = F_work(ind)
@@ -84,8 +84,7 @@
              elseif(F_iun.eq.V4dg_iunph) then
 *
                 if(V4dg_phsize.lt.F_addr + Ni*Nj*Nk - 1) then
-                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY PHINCORE TOO SMALL'
-                   call gem_stop ('v4d_rwfld',-1)
+                   call gem_stop ('v4d_rwfld ARRAY PHINCORE TOO SMALL',-1)
                 endif
                 do ind = 1,Ni*Nj*Nk
                   V4dg_phincore(F_addr + ind - 1) = F_work(ind)
@@ -94,8 +93,7 @@
              elseif(F_iun.eq.V4dg_iunfr) then
 *
                 if(V4dg_frsize.lt.F_addr + Ni*Nj*Nk - 1) then
-                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY FRINCORE TOO SMALL'
-                   call gem_stop ('v4d_rwfld',-1)
+                   call gem_stop ('v4d_rwfld ARRAY FRINCORE TOO SMALL',-1)
                 endif
                 do ind = 1,Ni*Nj*Nk
                   V4dg_frincore(F_addr + ind - 1) = F_work(ind)
@@ -104,8 +102,7 @@
              elseif(F_iun.eq.V4dg_iunob) then
 *
                 if(V4dg_obsize.lt.F_addr + Ni*Nj*Nk -1) then
-                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY OBINCORE TOO SMALL'
-                   call gem_stop ('v4d_rwfld',-1)
+                   call gem_stop ('v4d_rwfld ARRAY OBINCORE TOO SMALL',-1)
                 endif
                 do ind = 1,Ni*Nj*Nk
                   V4dg_obincore(F_addr + ind - 1) = F_work(ind)
@@ -114,8 +111,7 @@
              elseif(F_iun.eq.V4dg_iuncv) then
 *
                 if(V4dg_cvsize.lt.F_addr + Ni*Nj*Nk - 1) then
-                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY CVINCORE TOO SMALL'
-                   call gem_stop ('v4d_rwfld',-1)
+                   call gem_stop ('v4d_rwfld ARRAY CVINCORE TOO SMALL',-1)
                 endif
                 do ind = 1,Ni*Nj*Nk
                   V4dg_cvincore(F_addr + ind - 1) = F_work(ind)
@@ -124,8 +120,7 @@
              elseif(F_iun.eq.V4dg_iunnl) then
 *
                 if(V4dg_nlsize.lt.F_addr + Ni*Nj*Nk - 1) then
-                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY NLINCORE TOO SMALL'
-                   call gem_stop ('v4d_rwfld',-1)
+                   call gem_stop ('v4d_rwfld ARRAY NLINCORE TOO SMALL',-1)
                 endif
                 do ind = 1,Ni*Nj*Nk
                   V4dg_nlincore(F_addr + ind - 1) = F_work(ind)

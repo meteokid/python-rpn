@@ -8,6 +8,7 @@
 *revision
 * v2_31 - V.Lee  -removed ni1,nj1,nk1, placed all fstprm calls to be
 * v2_31           before allocation of memory
+* v3_11 - V.Lee  -added qqexit(1) if program stops/goto 9876(aborts)
 *
       integer fnom,fstouv,fstinf,fstinl,fstprm,fstluk,
      $        fstecr,fstfrm,fclos,fstopl,fstsel,fstlis,longueur
@@ -61,10 +62,12 @@
          if (fnom(iun2,def2_S(1),'RND+OLD',0).ge.0) then
             if (fstouv(iun2,'RND').lt.0) then
                write (6,8001) def2_S(1)
+               call qqexit(1)
                stop
             endif
          else
             write (6,8000) def2_S(1)
+            call qqexit(1)
             stop
          endif
 *
@@ -285,7 +288,7 @@
             deallocate (w1)
          endif
 *     
- 9876    err = fstfrm(iun2)
+         err = fstfrm(iun2)
          err = fclos(iun2)
 *     
       endif
@@ -298,10 +301,12 @@
          if (fnom(iun2,def2_S(2),'RND+OLD',0).ge.0) then
             if (fstouv(iun2,'RND').lt.0) then
                write (6,8001) def2_S(2)
+               call qqexit(1)
                stop
             endif
          else
             write (6,8000) def2_S(2)
+            call qqexit(1)
             stop
          endif
          filename_S = def2_S(2)(1:longueur(def2_S(2)))//'_cor'
@@ -338,6 +343,12 @@
         err = fclos(iun2)
 *            
       endif
+      return
+
+ 9876 err = fstfrm(iun2)
+      err = fclos(iun2)
+      call qqexit(1)
+      return
 *
  210  format (' ***** Putting ',a2,'(',i3,') into ',a2,'(',i5,')')
  211  format (' ***** Putting Avg[',a2,'(',i3,') + 271.2] into ',a2,
@@ -347,6 +358,5 @@
 *
 *---------------------------------------------------------------------
 *
-      return
       end
 

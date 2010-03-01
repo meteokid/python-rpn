@@ -1,47 +1,34 @@
-***s/r adw_interp_ad - ADJ of adw_interp_tl
+***s/r adw_interp_ad - ADJ of adw_interp_tl 
 *
 #include <model_macros_f.h>
 *
-      subroutine adw_interp_ad ( F_out, F_in, F_u, F_v,
-     %                                  F_inm,F_um,F_vm,
-     %                           F_wind_L,F_mono_L,DIST_DIM,Nk,
-     %                           ipart,F_inca,F_zinc,F_kdim,F_nij,F_nijplus,
-     %                           F_nk,F_ksep,i0,in,j0,jn)
+      subroutine adw_interp_ad ( F_out, u, um,
+     %                           F_capx1,F_capy1,F_capz1,F_cz1,
+     %                           F_wind_L, F_mono_L, DIST_DIM, Nk,i0,in,j0,jn )
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_wind_L, F_mono_L
 *
-      integer DIST_DIM, Nk,i0,in,j0,jn
+      integer DIST_DIM, Nk, i0,in,j0,jn
 *
-      real F_out (DIST_SHAPE, Nk),
-     %     F_in  (DIST_SHAPE, Nk)
-      real F_u(*), F_v(*)
+      real F_out (DIST_SHAPE, Nk)
 *
-      real F_inm (DIST_SHAPE, Nk)
-      real F_um(*), F_vm(*)
-*
-      integer ipart,F_inca,F_kdim,F_nij,F_nijplus,F_nk,F_ksep
-      real F_zinc(F_nijplus,F_kdim*F_nk)
+      real F_capx1(*),F_capy1(*),F_capz1(*),F_cz1(*)
 *
 *author
 *     monique tanguay
 *
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
-* v3_00 - Tanguay M.        - adapt to restructured Adw_main 
-* v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
-* v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_11 - Tanguay M.        - Remove restoration of vectorization in adjoint of semi-Lag
+* v3_11 - Lee V.            - OpenMP for ADW_MAIN_3_INT_AD
 *
 *language
 *     fortran 77
 *
 *object
-*     The adjoint is divided in two parts:
-*
-*       1)IPART=1 does the adjoint of tri-cubic semi-Lagrangian interpolation
-*                 but keeps in F_zinc the increments causing unvectorization
-*       2)IPART=2 does the adjoint of 2nd derivate and add to F_in
+*     see id section
 *
 *ADJ of
 *arguments
@@ -55,16 +42,6 @@
 * F_wind_L     | switch: .true. : field to interpolate is a wind |  i  |
 *              |                  like quantity                  |  i  |
 * F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
-*--------------|-------------------------------------------------|-----|
-*              | PARAMETERS TO RESTORE  VECTORIZATION            |     |
-*--------------|-------------------------------------------------|-----|
-* F_inca       | starting loc. in F_kinc and F_zinc              |     |
-* F_kdim       | number of independent positions at a given level|     |
-* F_nij        | horizontal dimension of field to interp.        |     |
-* F_nijplus    | horizontal dimension modified for efficiency    |     |
-* F_nk         | vertical   dimension of field to interp.        |     |
-* F_ksep       | coloring of vertical levels                     |     |
-* F_zinc       | content  at indices of upstream positions       |     |
 *______________|_________________________________________________|_____|
 *
 *implicits
@@ -72,25 +49,18 @@
 #include "adw.cdk"
 #include "adwm.cdk"
 ************************************************************************
-      integer i, j, k, nijk, nijkag, n, dest_ni
+      integer i, j, k, nij, nijk, nijkag, n, dest_ni
 *
-      real F_in0(LDIST_SHAPE,l_nk)
+      real u(Adw_nit*Adw_njt*l_nk), v(Adw_nit*Adw_njt*l_nk)
+      real um(Adw_nit*Adw_njt*l_nk), vm(Adw_nit*Adw_njt*l_nk)
+      real wrkc(Adw_nit*Adw_njt*l_nk)
 *
-      real*8, parameter :: ZERO_8 = 0.0
+      real*8 ZERO_8
+      parameter (ZERO_8 = 0.0)
 *
-*     ____________________________________________________________
-*
-      if (ipart.ne.1.and.ipart.ne.2) call gem_stop('adw_interp_ad',-1)
-*     ____________________________________________________________
-*
-      nijk   = F_nij*l_nk
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *l_nk
       nijkag = Adw_nit*Adw_njt*l_nk
-*
-*     -------------------------------------------------------------------
-*     IPART=1 does the adjoint of tri-cubic semi-Lagrangian interpolation
-*             but keeps in F_zinc the increments causing unvectorization
-*     -------------------------------------------------------------------
-      if(ipart.eq.1) then
 *
 *     ------------------
 *     TRAJECTORY (START)
@@ -102,41 +72,39 @@
 * Compute extension beyond the pole if appropriate
 *
 ************************************************************************
-      if (G_lam) then
-          n=0
-          dest_ni=l_ni
-      else
-          n=999
-          dest_ni=G_ni
-      endif
-      call rpn_comm_xch_halox (F_inm, LDIST_DIM, l_ni, l_nj, l_nk,
-     % Adw_halox, Adw_haloy, G_periodx, G_periody, F_um, -Adw_halox+1,
-     % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, n)
+*     Zero adjoint variable
+*     ---------------------
+      do n = 1,nijkag
+          u(n)   = ZERO_8
+          v(n)   = ZERO_8
+         vm(n)   = ZERO_8
+         wrkc(n) = ZERO_8
+      enddo
 *
       if (.not.G_lam) then
       if ( l_south ) then
 *
          if ( F_wind_L ) then
-            call adw_pol0 (F_um, 0, Adw_nic,Adw_halox,Adw_njc,
+            call adw_pol0 (um, 0, Adw_nic,Adw_halox,Adw_njc,
      %                     Adw_haloy,l_nk)
          else
-            call adw_pols (F_um,Adw_wx_8, 0, Adw_nic,Adw_halox,
+            call adw_pols (um,Adw_wx_8, 0, Adw_nic,Adw_halox,
      %                     Adw_njc,Adw_haloy,l_nk)
          endif
-            call adw_polx (F_um,Adw_xg_8,.true.,Adw_nic,Adw_halox,
+            call adw_polx (um,Adw_xg_8,.true.,Adw_nic,Adw_halox,
      %                     Adw_njc,Adw_haloy,l_nk)
       endif
 *
       if ( l_north ) then
 *
          if ( F_wind_L ) then
-            call adw_pol0 (F_um,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,
+            call adw_pol0 (um,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,
      %                     Adw_haloy,l_nk)
          else
-            call adw_pols (F_um,Adw_wx_8, Adw_njc+1,Adw_nic,Adw_halox,
+            call adw_pols (um,Adw_wx_8, Adw_njc+1,Adw_nic,Adw_halox,
      %                     Adw_njc,Adw_haloy,l_nk)
          endif
-            call adw_polx (F_um,Adw_xg_8,.false.,Adw_nic,Adw_halox,
+            call adw_polx (um,Adw_xg_8,.false.,Adw_nic,Adw_halox,
      %                     Adw_njc,Adw_haloy,l_nk)
       endif
       endif
@@ -145,7 +113,7 @@
 * Compute second derivative for cubic spline in the vertical
 *
 ************************************************************************
-      call adw_vder ( F_vm, F_um, Adw_nit, Adw_njt, l_nk )
+      call adw_vder ( vm, um, Adw_nit, Adw_njt, l_nk )
 *
 *     ----------------
 *     TRAJECTORY (END)
@@ -156,37 +124,34 @@
 * Interpolate
 *
 ************************************************************************
+*
       do k = l_nk,1,-1
       do j = jn,j0,-1
       do i = in,i0,-1
 *
-      Adw_wrkc ( (k-1)*F_nij+(j-1)*l_ni+i ) = F_out(i,j,k) + Adw_wrkc ( (k-1)*F_nij+(j-1)*l_ni+i )
-      F_out(i,j,k)                          = ZERO_8
+      wrkc ( (k-1)*nij+(j-1)*l_ni+i ) = F_out(i,j,k)
+      F_out(i,j,k)                    = ZERO_8
 *
       enddo
       enddo
       enddo
 *
-      call adw_tricub_ad ( Adw_wrkc,
-     %                     Adw_capx1, Adw_capy1,  Adw_capz1,Adw_cz1, 
-     %                                F_um,       F_vm,
+      call adw_tricub_ad ( wrkc,  u,        v,
+     %                                F_capx1,  
+     %                                F_capy1,  
+     %                                F_capz1,  F_cz1,
+     %                                um,       vm,
      %                     Adwm_n1m,  Adwm_capx1m,Adwm_xgg1m,
      %                     Adwm_xdd1m,Adwm_capy1m,Adwm_ygg1m,
      %                     Adwm_ydd1m,Adwm_capz1m,Adwm_cz1m,
-     %                     nijk, F_mono_L,
-     %                     F_inca,F_zinc,F_kdim,F_nij,F_nijplus,F_nk,F_ksep,i0,in,j0,jn,l_nk)
-*
-*     -------------------------------------------------------------
-*     IPART=2 does the adjoint of 2nd derivate and addition to F_in
-*     -------------------------------------------------------------
-      elseif(ipart.eq.2) then
+     %                     nijk, F_mono_L,i0,in,j0,jn,l_nk)
 *
 ************************************************************************
 * ADJ of
 * Compute second derivative for cubic spline in the vertical
 *
 ************************************************************************
-      call adw_vder_ad ( F_v, F_u, Adw_nit, Adw_njt, l_nk )
+      call adw_vder_ad ( v, u, Adw_nit, Adw_njt, l_nk )
 *
 ************************************************************************
 * ADJ of
@@ -200,14 +165,14 @@
 *
       if ( l_north ) then
 *
-            call adw_polx_ad (F_u,Adw_xg_8,.false.,Adw_nic,Adw_halox,
+            call adw_polx_ad (u,Adw_xg_8,.false.,Adw_nic,Adw_halox,
      %                        Adw_njc,Adw_haloy,l_nk)
 *
          if ( F_wind_L ) then
-            call adw_pol0_ad (F_u,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,
+            call adw_pol0_ad (u,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,
      %                        Adw_haloy,l_nk)
          else
-            call adw_pols_ad (F_u,Adw_wx_8, Adw_njc+1,Adw_nic,Adw_halox,
+            call adw_pols_ad (u,Adw_wx_8, Adw_njc+1,Adw_nic,Adw_halox,
      %                        Adw_njc,Adw_haloy,l_nk)
          endif
 *
@@ -215,60 +180,19 @@
 *
       if ( l_south ) then
 *
-            call adw_polx_ad (F_u,Adw_xg_8,.true.,Adw_nic,Adw_halox,
+            call adw_polx_ad (u,Adw_xg_8,.true.,Adw_nic,Adw_halox,
      %                        Adw_njc,Adw_haloy,l_nk)
 *
          if ( F_wind_L ) then
-            call adw_pol0_ad (F_u, 0, Adw_nic,Adw_halox,Adw_njc,
+            call adw_pol0_ad (u, 0, Adw_nic,Adw_halox,Adw_njc,
      %                        Adw_haloy,l_nk)
          else
-            call adw_pols_ad (F_u,Adw_wx_8, 0, Adw_nic,Adw_halox,
+            call adw_pols_ad (u,Adw_wx_8, 0, Adw_nic,Adw_halox,
      %                        Adw_njc,Adw_haloy,l_nk)
          endif
 *
       endif
 *
       endif
-      if (G_lam) then
-          n=0
-          dest_ni=l_ni
-      else
-          n=999
-          dest_ni=G_ni
-      endif
-*
-      if (G_lam) then
-          do k=1,l_nk
-          do j=l_miny,l_maxy
-          do i=l_minx,l_maxx
-          F_in0(i,j,k) = F_in(i,j,k) 
-          end do
-          end do
-          end do
-      endif
-*
-      call rpn_comm_adj_halox (F_in, LDIST_DIM, l_ni, l_nj, l_nk,
-     % Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, -Adw_halox+1,
-     % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, n)
-*
-      if (G_lam) then
-          do k=1,l_nk
-          do j=l_miny,l_maxy
-          do i=l_minx,l_maxx
-          F_in (i,j,k) = F_in0(i,j,k) + F_in(i,j,k)
-          F_in0(i,j,k) = ZERO_8 
-          end do
-          end do
-          end do
-      endif
-*
-*     Zero adjoint variable
-*     ---------------------
-      do n = 1,nijkag
-         F_u(n) = ZERO_8
-      enddo
-*
-      endif
-*
       return
       end

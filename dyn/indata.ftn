@@ -20,6 +20,8 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 * v3_02 - Buehner M.        - leave winds as images for 4dvar or SV jobs
 * v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_11 - Gravel S.         - Adapt for theoretical cases and varying topo
+* v3_11 - Tanguay M.        - Abort when V4dg_conf.ne.0 and Vtopo_L  
 *
 *object
 *	
@@ -36,11 +38,14 @@
 #include "p_geof.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
+#include "theo.cdk"
+#include "vtopo.cdk"
+#include "lctl.cdk"
 *
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer key1(18),nvar,err
+      integer key1(19),nvar,err
 *
 *     ---------------------------------------------------------------
 *
@@ -67,12 +72,24 @@
       key1(14) = VMM_KEY( topo)
       nvar = 14
 *
+      Vtopo_L = ((Vtopo_start .ge. 0)
+     %           .and. (Lctl_step-Vtopo_start .le. Vtopo_ndt))
+*
+      if(V4dg_conf.ne.0.and.Vtopo_L) then
+         call gem_stop ('INDATA: V4dg_conf.ne.0.and.Vtopo_L NOT VALID', -1)
+      endif   
+
+      if (Vtopo_L) then
+         key1(15) = VMM_KEY(dtopo)
+         nvar=15
+      endif
+
       if (.not. Schm_hydro_L) then
-         key1(15) = VMM_KEY(wt1)
-         key1(16) = VMM_KEY(mut1)
-         key1(17) = VMM_KEY(multx)
-         key1(18) = VMM_KEY(qpt1)
-         nvar = 18
+         key1(nvar+1) = VMM_KEY(wt1)
+         key1(nvar+2) = VMM_KEY(mut1)
+         key1(nvar+3) = VMM_KEY(multx)
+         key1(nvar+4) = VMM_KEY(qpt1)
+         nvar = nvar+4
       endif
 *
       err = vmmlod(key1,nvar)
@@ -117,9 +134,15 @@
          Ind_mul_ = multx_
          Ind_qp_  = qpt1_
       endif
+
+      if ( Vtopo_L) then
+         err = VMM_GET_VAR( dtopo)
+         Ind_dtopo_= dtopo_
+      endif
 *
-*C       1.    Read input data
-*              ---------------
+*C       1.    If theoretical case, generate initial data, 
+*              otherwise read input data
+*              -------------------------------------------
 *
 *     -----------------------------------------
       if ( V4dg_conf.eq.0.or.V4dg_part.eq.2 ) then 
@@ -128,7 +151,12 @@
       bmf_time1 = Out1_dato(1)
       bmf_time2 = Out1_dato(2)
       if ( Schm_phyms_L ) call readgeo()
-      call readdyn()
+      
+      if ( Schm_theoc_L ) then
+            call bubble()
+      else
+         call readdyn()
+      endif
 *
 *     In specific 4D-Var runs, Convert wind images to true winds
 *     ----------------------------------------------------------
@@ -151,7 +179,8 @@
 *
       err = vmmuld(-1,0)
 *
-      if (G_lam.and.(V4dg_conf.eq.0.or.V4dg_part.eq.3)) call nest_init 
+      if (G_lam.and.(V4dg_conf.eq.0.or.V4dg_part.eq.3) .and. .not. Schm_theoc_L) 
+     $      call nest_init 
 *
 *     ---------------------------------------------------------------
 *

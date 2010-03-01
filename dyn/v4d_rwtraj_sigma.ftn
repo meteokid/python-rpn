@@ -4,7 +4,7 @@
 *
       subroutine v4d_rwtraj_sigma(F_sig, DIST_DIM, Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real F_sig (DIST_SHAPE,Nk)
@@ -14,6 +14,7 @@
 *
 *revision
 * v3_00 - Laroche S.        - initial MPI version (from v4d_rwtraj)
+* v3_11 - Tanguay M.        - ADJ of digital filter
 *
 *object
 *
@@ -30,7 +31,6 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "init.cdk"
 #include "schm.cdk"
 #include "v4dg.cdk"
 #include "p4d_simp.cdk"
@@ -45,9 +45,7 @@
 *
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('v4d_rwtraj_sigma')
-      if(.not. Schm_cptop_L) call gefstop('v4d_rwtraj_sigma')
-      if(Init_balgm_L      ) call gefstop('v4d_rwtraj_sigma')
+      if(.not. Schm_hydro_L) call gem_stop('v4d_rwtraj_sigma',-1)
 *     ______________________________________________________
 *
 *

@@ -7,7 +7,7 @@
 *
       use v4d_prof
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author Nils Ek 
 *
@@ -18,6 +18,9 @@
 *                        - introduce GAUSS=GEM option
 * v3_02 - M. Buehner     - changed file and subroutine names to "init"
 *                        - read the restart iteration no. and SGVC parameters
+* v3_11 - M. Tanguay     - correct relationship between stepob and timestep
+*                        - Remove V4dg_ga_eq_ge_L
+*                        - Add option for profiles done on U-V grids for winds 
 *
 *object
 *	
@@ -42,14 +45,14 @@
 #include "path.cdk"
 #include <prof_f.h>
 *
-      integer  ezqkdef,longueur,newdate,ezgdef,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
-      external ezqkdef,longueur,newdate,ezgdef,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
+      integer  ezqkdef,longueur,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
+      external ezqkdef,longueur,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
 *
       logical ropr_L,rdvar_L
 *
-      integer gdin,offi,offj,pnerr,ier,jer,i,j,k,kkk,nnn,n,ntime,
+      integer gdin,gdinu,gdinv,pnerr,ier,jer,i,j,k,kkk,nnn,n,ntime,
      %        ihdlin0,irec,nrec,iprof,stepob,pdtst,nowdtst,startdate,enddate,
-     %        isize,mytag,nrectot,testmaxprof,sumzero
+     %        isize,mytag,nrectot,testmaxprof,sumzero,ifact,middle,nbin
 *
       character*256 pathob_S
 *
@@ -70,6 +73,8 @@
        integer, pointer, dimension(:) :: locproc! 1 if profile on processor
        real,    pointer, dimension(:) :: pxg    ! PX global index 
        real,    pointer, dimension(:) :: pyg    ! PY global index 
+       real,    pointer, dimension(:) :: pxug   ! PX global index (U) 
+       real,    pointer, dimension(:) :: pyvg   ! PY global index (V) 
        real*8,  pointer, dimension(:) :: lat    ! Latitudes in degrees  
        real*8,  pointer, dimension(:) :: lon    ! Longitudes in degrees 
        integer :: inmvar                        ! Binary variable indicator
@@ -185,18 +190,19 @@ c         call gem_stop('v4d_readinit',-1)
 *     Define input grid to locate pxg-pyg global grid positioning  
 *     of each profile
 *     -----------------------------------------------------------
-      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
-      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-*
-      if(.not.V4dg_ga_eq_ge_L) then
-*
-      gdin = ezgdef( G_ni,G_nj,'Z',Hgc_gxtyp_s,
+      gdin = ezgdef_fmem ( G_ni,G_nj,'Z',Hgc_gxtyp_s,
      %               Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
      %               Geomn_longs, Geomn_latgs)
 *
-      else
+      if(V4dg_pruv_L) then
 *
-      gdin = ezqkdef (G_ni,G_nj,'G',0,0,0,0,0)
+      gdinu = ezgdef_fmem ( G_niu,G_nj,'Z',Hgc_gxtyp_s,
+     %                Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
+     %                Geomn_longu, Geomn_latgs)
+*
+      gdinv = ezgdef_fmem( G_ni,G_njv,'Z',Hgc_gxtyp_s,
+     %                Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
+     %                Geomn_longs, Geomn_latgv)
 *
       endif
 *
@@ -245,31 +251,50 @@ c         call gem_stop('v4d_readinit',-1)
 *
       write(Lun_out,*) 'Stepob (minutes) from 3D-Var =',stepob 
 *
+*     --------------------------------------------------------  
+*     Evaluate at which timesteps are located the observations
+*     --------------------------------------------------------  
+*
 *     Evaluate corresponding V4dg_stepob
 *     ----------------------------------
       V4dg_stepob = nint(float(stepob*60)/Cstv_dt_8)
       write(Lun_out,*) 'V4dg_stepob (Lctl_step unit) in GEM ',V4dg_stepob 
 *
-      Pr_timobmax = Step_total/V4dg_stepob + 1
+      if(V4dg_stepob*Cstv_dt_8.ne.stepob*60) goto 9999
 *
-      if(Pr_maxstepob.lt.Pr_timobmax-1) then
-         write(Lun_out,*) 'Error: Pr_maxstepob is not big enough' 
+      middle = Step_total/2
+*
+      if(middle*2.ne.Step_total) goto 9999
+*
+      ifact = middle/V4dg_stepob
+*
+      Pr_ibin0 = (middle-ifact*V4dg_stepob)
+*
+      Pr_maxbin = 2*ifact + 1
+*
+      write(Lun_out,*) 'READINIT Pr_ibin0     ',Pr_ibin0
+      write(Lun_out,*) 'READINIT ifact        ',ifact 
+      write(Lun_out,*) 'READINIT middle       ',middle 
+      write(Lun_out,*) 'READINIT Pr_maxbin    ',Pr_maxbin
+*
+      if(Pr_upperbin.lt.Pr_maxbin) then
+         write(Lun_out,*) 'Error: Pr_maxbin is not big enough' 
          call gem_stop('v4d_readinit',-1)
       endif
 *
 *     Initialize counter for maximal number of profiles in the local processor
-*     as function of observation time
+*     as function of bin 
 *     ------------------------------------------------------------------------
-      allocate( Pr_nob (0:Pr_timobmax-1), STAT=pnerr)
-      do n = 0,Pr_timobmax-1
+      allocate( Pr_nob (Pr_maxbin), STAT=pnerr)
+      do n = 1,Pr_maxbin
          Pr_nob(n) = 0
       enddo
 *
 *     Initialize counter for maximal number of profiles in the local processor   
-*     as function of variables and observation time
+*     as function of variable and bin 
 *     ------------------------------------------------------------------------
       do i = 1,Pr_maxnmv
-      do n = 0,Pr_timobmax-1
+      do n = 1,Pr_maxbin
          Pr_l_mv(i,n) % nprof = 0
       enddo
       enddo
@@ -278,11 +303,18 @@ c         call gem_stop('v4d_readinit',-1)
 *     ---------------------------------------------------------------------
       allocate( Pr_doobs (0:Step_total), STAT=pnerr)
 *
-*     Loop over the potential time of observations
-*     --------------------------------------------
-      do ntime =0,Pr_timobmax-1
+*     Initialization to ZERO
+*     ----------------------
+      do n = 0,Step_total
+         Pr_doobs(n) = 0
+      enddo
 *
-        hour_8 = (ntime*V4dg_stepob*Cstv_dt_8)/3600.
+*     Loop over all bins 
+*     ------------------
+      do nbin = 1,Pr_maxbin
+*
+        ntime  = (Pr_ibin0 + (nbin-1) * V4dg_stepob)
+        hour_8 = (ntime * Cstv_dt_8)/3600.    
 *
 *       Update nowdtst for the current read
 *       -----------------------------------
@@ -326,8 +358,8 @@ c         call gem_stop('v4d_readinit',-1)
                call gem_stop('v4d_readinit',-1)
             endif
 *
-*           The record is at the appropriate observation time
-*           -------------------------------------------------
+*           The record is at the appropriate bin 
+*           ------------------------------------
             if(nowdtst.eq.pdtst) then
 *
               nrec = nrec + 1
@@ -337,7 +369,7 @@ c         call gem_stop('v4d_readinit',-1)
                  call gem_stop('v4d_readinit',-1)
               endif
 *
-              Pr_doobs(ntime*V4dg_stepob) = 1
+              Pr_doobs(ntime) = 1
 *
               write(Lun_out,*) '  Right date-time stamp for Record Number =',nrectot
 *
@@ -358,12 +390,33 @@ c         call gem_stop('v4d_readinit',-1)
               allocate( g_pf(nrec) % pxg    (g_pf(nrec) % nprof), STAT=pnerr)
               allocate( g_pf(nrec) % pyg    (g_pf(nrec) % nprof), STAT=pnerr)
 *
+              if(V4dg_pruv_L) then
+*
+              allocate( g_pf(nrec) % pxug   (g_pf(nrec) % nprof), STAT=pnerr)
+              allocate( g_pf(nrec) % pyvg   (g_pf(nrec) % nprof), STAT=pnerr)
+*
+              endif
+*
               ier = gdxyfll(gdin, g_pf(nrec) % pxg,       g_pf(nrec) % pyg, 
      $                       sngl(g_pf(nrec) % lat), sngl(g_pf(nrec) % lon), 
      $                            g_pf(nrec) % nprof)
 *
+              if(V4dg_pruv_L) then
+*
+              ier = gdxyfll(gdinu,g_pf(nrec) % pxug,      g_pf(nrec) % pyg, 
+     $                       sngl(g_pf(nrec) % lat), sngl(g_pf(nrec) % lon), 
+     $                            g_pf(nrec) % nprof)
+*
+              ier = gdxyfll(gdinv,g_pf(nrec) % pxg,       g_pf(nrec) % pyvg, 
+     $                       sngl(g_pf(nrec) % lat), sngl(g_pf(nrec) % lon), 
+     $                            g_pf(nrec) % nprof)
+*
+              endif
+*
 *             Identify to which processor belongs each observation
-*             ----------------------------------------------------
+*             ------------------------------------------------------------------
+*             NOTE: Scalar grid identifies the processor even if V4dg_pruv_L=.T. 
+*             ------------------------------------------------------------------
               do 400 i = 1, g_pf(nrec) % nprof 
 *
 *                Observations in the interior 
@@ -374,7 +427,7 @@ c         call gem_stop('v4d_readinit',-1)
      $                (g_pf(nrec) %pyg(i).le.Ptopo_gindx(4,Ptopo_myproc+1)  ) ) then
 *
                       Pr_nobproc    = Pr_nobproc    + 1
-                      Pr_nob(ntime) = Pr_nob(ntime) + 1 
+                      Pr_nob(nbin)  = Pr_nob(nbin)  + 1 
 *
                       g_pf(nrec) % mdltag (i) = Pr_nobproc  
                       g_pf(nrec) % locproc(i) = 1  
@@ -388,7 +441,7 @@ c         call gem_stop('v4d_readinit',-1)
      $                (g_pf(nrec) %pyg(i).gt.G_nj.and.l_north               ) ) then
 *
                       Pr_nobproc    = Pr_nobproc    + 1
-                      Pr_nob(ntime) = Pr_nob(ntime) + 1 
+                      Pr_nob(nbin)  = Pr_nob(nbin)  + 1 
 *
                       g_pf(nrec) % mdltag (i) = Pr_nobproc  
                       g_pf(nrec) % locproc(i) = 1  
@@ -402,7 +455,7 @@ c         call gem_stop('v4d_readinit',-1)
      $                (g_pf(nrec) %pxg(i).gt.G_ni.and.l_east                ) ) then
 *
                       Pr_nobproc    = Pr_nobproc    + 1
-                      Pr_nob(ntime) = Pr_nob(ntime) + 1 
+                      Pr_nob(nbin)  = Pr_nob(nbin)  + 1 
 *
                       g_pf(nrec) % mdltag (i) = Pr_nobproc 
                       g_pf(nrec) % locproc(i) = 1  
@@ -416,7 +469,7 @@ c         call gem_stop('v4d_readinit',-1)
      $                (g_pf(nrec) %pyg(i).gt.G_nj.and.l_north) ) then
 *
                       Pr_nobproc    = Pr_nobproc    + 1
-                      Pr_nob(ntime) = Pr_nob(ntime) + 1 
+                      Pr_nob(nbin)  = Pr_nob(nbin)  + 1 
 *
                       g_pf(nrec) % mdltag (i) = Pr_nobproc  
                       g_pf(nrec) % locproc(i) = 1  
@@ -479,26 +532,25 @@ c         call gem_stop('v4d_readinit',-1)
 *
 *           We are at the end of the file
 *           -----------------------------
-            if(nrec.eq.0) Pr_doobs(ntime*V4dg_stepob) = 0
             exit readrec
 *
           endif ! ier.eq.0 
 *
         enddo readrec
 *
-      write(Lun_out,*) '  Local number of profiles in this record =',Pr_nob(ntime)
+      write(Lun_out,*) '  Local number of profiles in this record =',Pr_nob(nbin)
 *
 *     Convert obstag,mdltag,pxg,pyg informations in l_mv structure 
 *     ------------------------------------------------------------
-      if(Pr_nob(ntime).ne.0) then
+      if(Pr_nob(nbin).ne.0) then
 *
       do i = 1,Pr_nvars 
 *
         if(Pr_varindx(i).ne.V3D_VTRU) then    ! skip V; U is sufficient
 *
-*         Count local number of profiles for a given variable and observation time  
-*         ------------------------------------------------------------------------
-          Pr_l_mv(Pr_varindx(i),ntime) % nprof = 0
+*         Count local number of profiles for a given variable and a given bin  
+*         -------------------------------------------------------------------
+          Pr_l_mv(Pr_varindx(i),nbin) % nprof = 0
 *
           do irec = 1, nrec
             rdvar_L = btest( g_pf(irec) % inmvar,Pr_varindx(i) )   
@@ -508,7 +560,7 @@ c         call gem_stop('v4d_readinit',-1)
               do j = 1, g_pf(irec) % nprof ! size of this record
 *
                 if(g_pf(irec) % locproc(j).eq.1)
-     $          Pr_l_mv(Pr_varindx(i),ntime) % nprof = Pr_l_mv(Pr_varindx(i),ntime) % nprof + 1
+     $          Pr_l_mv(Pr_varindx(i),nbin) % nprof = Pr_l_mv(Pr_varindx(i),nbin) % nprof + 1
 *
               enddo
 *
@@ -516,14 +568,22 @@ c         call gem_stop('v4d_readinit',-1)
 *
           enddo  ! enddo for irec= 1, nrec
 *
-          isize = Pr_l_mv(Pr_varindx(i),ntime) % nprof 
+          isize = Pr_l_mv(Pr_varindx(i),nbin) % nprof 
 *
 *         Allocate arrays for local coverage of observations 
 *         --------------------------------------------------   
-          allocate (Pr_l_mv(Pr_varindx(i), ntime)%px    (isize), STAT=pnerr)
-          allocate (Pr_l_mv(Pr_varindx(i), ntime)%py    (isize), STAT=pnerr)
-          allocate (Pr_l_mv(Pr_varindx(i), ntime)%obstag(isize), STAT=pnerr)
-          allocate (Pr_l_mv(Pr_varindx(i), ntime)%mdltag(isize), STAT=pnerr)
+          allocate (Pr_l_mv(Pr_varindx(i), nbin)%px    (isize), STAT=pnerr)
+          allocate (Pr_l_mv(Pr_varindx(i), nbin)%py    (isize), STAT=pnerr)
+*
+          if(V4dg_pruv_L) then
+*
+          allocate (Pr_l_mv(Pr_varindx(i), nbin)%pxu   (isize), STAT=pnerr)
+          allocate (Pr_l_mv(Pr_varindx(i), nbin)%pyv   (isize), STAT=pnerr)
+*
+          endif
+*
+          allocate (Pr_l_mv(Pr_varindx(i), nbin)%obstag(isize), STAT=pnerr)
+          allocate (Pr_l_mv(Pr_varindx(i), nbin)%mdltag(isize), STAT=pnerr)
 *
 *         Introduce obstag,mdltag,pxg,pyg informations in l_mv structure
 *         --------------------------------------------------------------
@@ -533,22 +593,51 @@ c         call gem_stop('v4d_readinit',-1)
 *
             if(rdvar_L) then
 *
+              if(.not.V4dg_pruv_L) then
+*
               do j = 1, g_pf(irec) % nprof ! size of this record
 *
                 if(g_pf(irec) % locproc(j).eq.1) then
 *
                   nnn = nnn + 1 
 *
-                  Pr_l_mv(Pr_varindx(i),ntime) %px     (nnn) = g_pf(irec) % pxg(j)
+                  Pr_l_mv(Pr_varindx(i),nbin) %px     (nnn) = g_pf(irec) % pxg(j)
      $                 - Ptopo_gindx(1,Ptopo_myproc+1)+1
-                  Pr_l_mv(Pr_varindx(i),ntime) %py     (nnn) = g_pf(irec) % pyg(j) 
+                  Pr_l_mv(Pr_varindx(i),nbin) %py     (nnn) = g_pf(irec) % pyg(j) 
      $                 - Ptopo_gindx(3,Ptopo_myproc+1)+1
-                  Pr_l_mv(Pr_varindx(i),ntime) % obstag(nnn) = g_pf(irec) % obstag(j)
-                  Pr_l_mv(Pr_varindx(i),ntime) % mdltag(nnn) = g_pf(irec) % mdltag(j)
+                  Pr_l_mv(Pr_varindx(i),nbin) % obstag(nnn) = g_pf(irec) % obstag(j)
+                  Pr_l_mv(Pr_varindx(i),nbin) % mdltag(nnn) = g_pf(irec) % mdltag(j)
 *
                 endif
 *
               enddo
+*
+              else
+*
+              do j = 1, g_pf(irec) % nprof ! size of this record
+*
+                if(g_pf(irec) % locproc(j).eq.1) then
+*
+                  nnn = nnn + 1
+*
+                  Pr_l_mv(Pr_varindx(i),nbin) %px     (nnn) = g_pf(irec) % pxg(j)
+     $                 - Ptopo_gindx(1,Ptopo_myproc+1)+1
+                  Pr_l_mv(Pr_varindx(i),nbin) %py     (nnn) = g_pf(irec) % pyg(j)
+     $                 - Ptopo_gindx(3,Ptopo_myproc+1)+1
+*
+                  Pr_l_mv(Pr_varindx(i),nbin) %pxu    (nnn) = g_pf(irec) % pxug(j)
+     $                 - Ptopo_gindx(1,Ptopo_myproc+1)+1
+                  Pr_l_mv(Pr_varindx(i),nbin) %pyv    (nnn) = g_pf(irec) % pyvg(j)
+     $                 - Ptopo_gindx(3,Ptopo_myproc+1)+1
+*
+                  Pr_l_mv(Pr_varindx(i),nbin) % obstag(nnn) = g_pf(irec) % obstag(j)
+                  Pr_l_mv(Pr_varindx(i),nbin) % mdltag(nnn) = g_pf(irec) % mdltag(j)
+*
+                endif
+*
+              enddo
+*
+              endif
 *
             endif
 *
@@ -556,27 +645,34 @@ c         call gem_stop('v4d_readinit',-1)
 *
         endif
 *
-        if(Pr_l_mv(Pr_varindx(i),ntime) % nprof.ne.0) write(Lun_out,*) 
-     %     '    Variable = ',i,' with local number of profiles =',Pr_l_mv(Pr_varindx(i),ntime) % nprof
+        if(Pr_l_mv(Pr_varindx(i),nbin) % nprof.ne.0) write(Lun_out,*) 
+     %     '    Variable = ',i,' with local number of profiles =',Pr_l_mv(Pr_varindx(i),nbin) % nprof
 *
       enddo  !  enddo for i = 1, Pr_nvars
 *
 *     Set pointers for V point to those of U
 *     --------------------------------------
-      Pr_l_mv(V3D_VTRU,ntime) % nprof  =  Pr_l_mv(V3D_UTRU,ntime) % nprof
-      Pr_l_mv(V3D_VTRU,ntime) % obstag => Pr_l_mv(V3D_UTRU,ntime) % obstag
-      Pr_l_mv(V3D_VTRU,ntime) % mdltag => Pr_l_mv(V3D_UTRU,ntime) % mdltag
-      Pr_l_mv(V3D_VTRU,ntime) % px     => Pr_l_mv(V3D_UTRU,ntime) % px
-      Pr_l_mv(V3D_VTRU,ntime) % py     => Pr_l_mv(V3D_UTRU,ntime) % py
+      Pr_l_mv(V3D_VTRU,nbin) % nprof  =  Pr_l_mv(V3D_UTRU,nbin) % nprof
+      Pr_l_mv(V3D_VTRU,nbin) % obstag => Pr_l_mv(V3D_UTRU,nbin) % obstag
+      Pr_l_mv(V3D_VTRU,nbin) % mdltag => Pr_l_mv(V3D_UTRU,nbin) % mdltag
+      Pr_l_mv(V3D_VTRU,nbin) % px     => Pr_l_mv(V3D_UTRU,nbin) % px
+      Pr_l_mv(V3D_VTRU,nbin) % py     => Pr_l_mv(V3D_UTRU,nbin) % py
+*
+      if(V4dg_pruv_L) then
+*
+      Pr_l_mv(V3D_VTRU,nbin) % pxu    => Pr_l_mv(V3D_UTRU,nbin) % pxu
+      Pr_l_mv(V3D_VTRU,nbin) % pyv    => Pr_l_mv(V3D_UTRU,nbin) % pyv
+*
+      endif
 *
 *     Allocation for storage of profiles
 *     ---------------------------------- 
       do i = 1,Pr_nvars 
 *
           if(Pr_varindx(i).eq.V2D_PSUR) then
-             allocate (Pr_l_mv(Pr_varindx(i),ntime)%fprof(   1,isize), STAT=pnerr )
+             allocate (Pr_l_mv(Pr_varindx(i),nbin)%fprof(   1,isize), STAT=pnerr )
           else
-             allocate (Pr_l_mv(Pr_varindx(i),ntime)%fprof(l_nk,isize), STAT=pnerr )
+             allocate (Pr_l_mv(Pr_varindx(i),nbin)%fprof(l_nk,isize), STAT=pnerr )
           endif
 *
       enddo
@@ -595,9 +691,23 @@ c         call gem_stop('v4d_readinit',-1)
         deallocate( g_pf(i) %pyg,    STAT=ier )
       enddo
 *
-      enddo ! ntime =0,Pr_timobmax-1
+      if(V4dg_pruv_L) then
+*
+      do i = 1, nrec
+        deallocate( g_pf(i) %pxug,   STAT=ier )
+        deallocate( g_pf(i) %pyvg,   STAT=ier )
+      enddo
+*
+      endif
+*
+      enddo ! nbin =1,Pr_maxbin
 *
       ier = gdrls(gdin)
+*
+      if(V4dg_pruv_L) then
+      ier = gdrls(gdinu)
+      ier = gdrls(gdinv)
+      endif
 *
 *     For simulated 4DVAR cycles, Initialize a tag for each 
 *     profile, to be used later to sort the adjoint profiles
@@ -614,23 +724,23 @@ c         call gem_stop('v4d_readinit',-1)
 *
       allocate ( Pr_mlprof (l_nk,Pr_nobproc,Pr_nvars), STAT=pnerr )
 *
-      do ntime = 0, Pr_timobmax-1
+      do nbin= 1, Pr_maxbin
 *
-      if(Pr_nob(ntime).ne.0) then
+      if(Pr_nob(nbin).ne.0) then
 *
         do j = 1, Pr_nvars
 *
-          nnn = Pr_l_mv(Pr_varindx(j),ntime) % nprof
+          nnn = Pr_l_mv(Pr_varindx(j),nbin) % nprof
 *
           do iprof = 1, nnn
 *
-             mytag = Pr_l_mv(Pr_varindx(j),ntime) % mdltag(iprof)  
+             mytag = Pr_l_mv(Pr_varindx(j),nbin) % mdltag(iprof)  
 *
              if(Pr_varindx(j).eq. V2D_PSUR) then
-                Pr_mlprof(1,mytag,j)% ptr => Pr_l_mv(Pr_varindx(j),ntime)%fprof(1,iprof)
+                Pr_mlprof(1,mytag,j)% ptr => Pr_l_mv(Pr_varindx(j),nbin)%fprof(1,iprof)
              else  
                 do k = 1, l_nk
-                Pr_mlprof(k,mytag,j)% ptr => Pr_l_mv(Pr_varindx(j),ntime)%fprof(k,iprof)
+                Pr_mlprof(k,mytag,j)% ptr => Pr_l_mv(Pr_varindx(j),nbin)%fprof(k,iprof)
                 enddo
              endif
 *
@@ -640,25 +750,25 @@ c         call gem_stop('v4d_readinit',-1)
 *
       endif
 *
-      enddo ! ntime
+      enddo ! nbin
 *
-      allocate ( Pr_timetag (Pr_nobproc), STAT=pnerr )
+      allocate ( Pr_bintag (Pr_nobproc), STAT=pnerr )
 *
-*     Keep observation time associated to each model tag  
-*     --------------------------------------------------
-      do ntime = 0, Pr_timobmax-1
+*     Keep bin associated to each model tag  
+*     -------------------------------------
+      do nbin = 1, Pr_maxbin
 *
-      if(Pr_nob(ntime).ne.0) then
+      if(Pr_nob(nbin).ne.0) then
 *
         do j = 1, Pr_nvars
 *
-          nnn = Pr_l_mv(Pr_varindx(j),ntime) % nprof
+          nnn = Pr_l_mv(Pr_varindx(j),nbin) % nprof
 *
           do iprof = 1, nnn
 *
-             mytag = Pr_l_mv(Pr_varindx(j),ntime) % mdltag(iprof)
+             mytag = Pr_l_mv(Pr_varindx(j),nbin) % mdltag(iprof)
 *
-             Pr_timetag(mytag) = ntime
+             Pr_bintag(mytag) = nbin
 *
           enddo ! iprof
 *
@@ -666,7 +776,7 @@ c         call gem_stop('v4d_readinit',-1)
 *
       endif
 *
-      enddo ! ntime
+      enddo ! nbin
 *
       endif ! reading initialization file for 4dvar job
 * *****************************************************************************
@@ -695,6 +805,13 @@ c         call gem_stop('v4d_readinit',-1)
      +/,'==========================================================')
 *
 *     ---------------------------------------------------------------
+*
+      return
+*
+ 9999 continue 
+*
+      write(Lun_out,*) 'STEPOB is not coherent with DT'
+      call gem_stop('v4d_readinit',-1)
 *
       return
       end

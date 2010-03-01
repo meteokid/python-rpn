@@ -18,6 +18,7 @@
 * v2_31 - Desgagne/Lee      - Clean up, introduce tracers and remove
 * v2_31                       references to vertical levels
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_11 - Tanguay M.        - Introduce Grd_gauss_L
 *
 *object
 *     See above id
@@ -47,7 +48,7 @@
       read(lun_lab) Grd_ni  , Grd_nj  , Grd_nila  , Grd_njla ,
      $              Grd_dx  , Grd_dy  , Grd_rot_8 , G_lam    ,
      $              Grd_x0  , Grd_xl  , Grd_y0    , Grd_yl   , 
-     $              Grd_dxmax, Grd_dymax, Grd_typ_S,
+     $              Grd_dxmax, Grd_dymax, Grd_typ_S, Grd_gauss_L,
      $              Ptopo_npex, Ptopo_npey, Tr3d_userntr, Tr2d_userntr,
      $              (Tr3d_username_S(k),k=1,Tr3d_userntr),
      $              (Tr3d_usersval  (k),k=1,Tr3d_userntr),

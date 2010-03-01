@@ -10,7 +10,7 @@
 *
       use v4dzone
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,nimax,gni,degree,kind
 *
@@ -30,6 +30,7 @@
 *
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - select processors at north or south 
 *
 *object
 *     see id section
@@ -76,7 +77,7 @@
 *        Accumulate px,py positions in zones near north and south poles
 *        --------------------------------------------------------------
          if(npts.gt.0) then
-            call v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,kind)
+            call v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,l_north,l_south,kind)
          else
             V4dz_nzon(1) = 0
             V4dz_nzon(2) = 0
@@ -264,7 +265,7 @@
 *
 *        Additional deallocations
 *        ------------------------
-         call v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,kind)
+         call v4d_pxpypole (px,py,npts,i1,i2,nk,jmin,jmax,degree,l_north,l_south,kind)
 *
       endif
 *

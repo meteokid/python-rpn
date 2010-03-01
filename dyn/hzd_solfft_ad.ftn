@@ -7,7 +7,7 @@
      %             minx,maxx,miny,maxy,gnk,gni,nil,njl,nkl,
      %             F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer  minx1, maxx1, minx2, maxx2 , nx1, nx2, nx3, F_pwr,
      $         minx , maxx , miny , maxy  , gnk, gni,
@@ -16,7 +16,7 @@
      $            F_a_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
      $            F_c_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
      $       F_deltai_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
-     $       F_Rhs_8(minx:maxx,miny:maxy,gnk)
+     $       F_Rhs_8
       real   F_cdiff, F_sol(minx:maxx,miny:maxy,gnk)
 *
 *author
@@ -25,6 +25,7 @@
 *revision
 * v2_21 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -36,21 +37,28 @@
 *  F_Rhs_8     I/O      work vector
 *
 *----------------------------------------------------------------
-*
+*implicits
+#include "ptopo.cdk"
 **
       real*8   fdg1_8 ( miny:maxy, minx1:maxx1, gni+F_npex ),
      $         fdg2_8 (minx1:maxx1,minx2:maxx2, nx3+F_npey ),
      $         dn3_8 (minx1:maxx1,minx2:maxx2,F_pwr,nx3),
      $         sol_8 (minx1:maxx1,minx2:maxx2,F_pwr,nx3),
      $         fwft_8( miny:maxy ,minx1:maxx1,gni+2+F_npex)
-      real*8   ZERO_8, b_8
+      real*8   ZERO_8, b_8, fact_8
       parameter( ZERO_8 = 0.0 )      
-      integer o1,o2,i,j,k,jw,m
-**
+      integer o1,o2,i,j,k,jw,m,
+     $        ki,kkii,ki0,kin,kilon,kitotal,pi0,pin
+*
 *     __________________________________________________________________
 *
 *     Zero adjoint variables
 *     ----------------------
+      kilon = (maxx2-minx2+1 +Ptopo_npeOpenMP)/Ptopo_npeOpenMP
+*
+!$omp parallel
+*
+!$omp do 
       do k= 1,gni+F_npex
       do j= minx1,maxx1
       do i= miny ,maxy
@@ -58,7 +66,9 @@
       end do
       end do
       end do
+!$omp end do 
 *
+!$omp do 
       do k= 1,gni+2+F_npex
       do j= minx1,maxx1
       do i= miny ,maxy
@@ -66,7 +76,9 @@
       end do
       end do
       end do
+!$omp end do 
 *
+!$omp do 
       do k= 1,nx3+F_npey
       do j= minx2,maxx2
       do i= minx1,maxx1
@@ -74,7 +86,9 @@
       end do
       end do
       end do
+!$omp end do 
 *
+!$omp do 
       do m= 1,nx3
       do k= 1,F_pwr
       do j= minx2,maxx2
@@ -85,6 +99,9 @@
       end do
       end do
       end do
+!$omp end do 
+*
+!$omp end  parallel 
 *
 * ADJ of
 * Resolution
@@ -95,24 +112,26 @@
 * ADJ of
 * retour
 *
-      do k= 1, gnk
-      do j= 1, njl
-      do i= 1, nil
-         F_Rhs_8(i,j,k) = dble(F_sol(i,j,k)) + F_Rhs_8(i,j,k)
-         F_sol(i,j,k)   = ZERO_8
-      enddo
-      enddo
-      enddo
-*
 *     ADJ of
 *     inverse projection ( r = x * w )
 *
-      call rpn_comm_transpose( F_Rhs_8,Minx, Maxx, Gni, (Maxy-Miny+1),
-     %                              Minx1, Maxx1, gnk, fwft_8, 1, 2 )
+      call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1),
+     %                          (Maxy-Miny+1),minx1, maxx1, Gnk, fwft_8, 1,
+     %                             1.d0,0.d0)
 *
-      call ffft8 ( fwft_8, (Maxy-Miny+1) * (maxx1-minx1+1), 1,
-     %                               (Maxy-Miny+1) * Nkl, -1 )
+!$omp parallel 
 *
+c     call ffft8 ( fwft_8, (Maxy-Miny+1) * (maxx1-minx1+1), 1,
+c    %                               (Maxy-Miny+1) * Nkl, -1 )
+*
+!$omp do
+      do k=Nkl,1,-1
+         call ffft8 (fwft_8(miny,k,1),(Maxy-Miny+1)*(maxx1-minx1+1),
+     %                     1, (Maxy-Miny+1) , -1 )
+      enddo
+!$omp enddo
+*
+!$omp do
       do k = nkl,1,-1
          do j = (Maxy-Miny+1),1,-1
             fwft_8(j,k,Gni+2) = ZERO_8
@@ -127,11 +146,15 @@
          enddo
          enddo
       enddo
+!$omp enddo
 *
+!$omp single 
       call rpn_comm_transpose
      $     ( fdg1_8 , Miny, Maxy, nx3, (Maxx1-Minx1+1),
      $               minx2, maxx2,gni, fdg2_8,  2, 2 )
+!$omp end single 
 *
+!$omp do 
       do k = 1, nx1
       do i = 1, nx2
       do j = 1, nx3
@@ -140,11 +163,21 @@
       enddo
       enddo
       enddo
+!$omp enddo 
+*
+*
+!$omp do 
+      do kkii = Ptopo_npeOpenMP,1,-1
+         ki0 = minx2 + kilon*(kkii-1)
+         kin = min(ki0+kilon-1, maxx2)
+         pi0 = 1    + kilon*(kkii-1)
+         pin = min(pi0+kilon-1,nx2)
 *
       do j = 1,nx3-1
-         do k = nx1,1,-1
+*
          do o1= F_pwr,1,-1
-         do i = nx2,1,-1
+         do i = pin,pi0,-1
+         do k = nx1,1,-1
             dn3_8(k,i,o1,j)=  sol_8(k,i,o1,j) + dn3_8(k,i,o1,j)
             sol_8(k,i,o1,j)= -sol_8(k,i,o1,j)
          enddo
@@ -153,33 +186,38 @@
 *
          do o1= F_pwr,1,-1
          do o2= F_pwr,1,-1
+         do i = kin,ki0,-1
          do k = maxx1,minx1,-1
-         do i = maxx2,minx2,-1
             sol_8(k,i,o2,j+1)=F_c_8(o1,o2,i,j)*sol_8(k,i,o1,j) + sol_8(k,i,o2,j+1)
          enddo
          enddo
          enddo
          enddo
-*
       enddo
+      enddo
+!$omp end do 
 *
-      do k = nx1,1,-1
+!$omp do 
       do o1= F_pwr,1,-1
          do i = nx2,1,-1
+            do k = nx1,1,-1
             dn3_8(k,i,o1,nx3)= sol_8(k,i,o1,nx3) + dn3_8(k,i,o1,nx3)
             sol_8(k,i,o1,nx3)= ZERO_8
             do j =  nx3,1,-1
 C              sol_8(k,i,o1,j)= 0.0
                sol_8(k,i,o1,j)= ZERO_8
             enddo
+            enddo
          enddo
       enddo
-      enddo
+!$omp enddo 
 *
 * ADJ of
 * scale le cote droit pour retour
 *
+!$omp do 
       do j= nx3,1,-1
+*
          do o1= F_pwr,1,-1
          do o2= F_pwr,1,-1
          do k = maxx1,minx1,-1
@@ -200,137 +238,172 @@ C           dn3_8(k,i,o1,j)= 0.0
          enddo
 *
       enddo
+!$omp enddo 
 *
 * ADJ of
 * aller
 *
-      do j = nx3,2,-1
-         do k = nx1,1,-1
-         do o1= F_pwr,1,-1
-         do i = nx2,1,-1
-            dn3_8(k,i,o1,j)=  sol_8(k,i,o1,j) + dn3_8(k,i,o1,j)
-            sol_8(k,i,o1,j)= -sol_8(k,i,o1,j)
-         enddo
-         enddo
-         enddo
-         do o1= F_pwr,1,-1
-         do o2= F_pwr,1,-1
-         do k = nx1,1,-1
-            do i = maxx2,minx2,-1
-               sol_8(k,i,o2,j-1) = F_a_8(o1,o2,i,j)*sol_8(k,i,o1,j) 
-     %                             + sol_8(k,i,o2,j-1)
-            enddo
-         enddo
-         enddo
-         enddo
-      enddo
 *
-      do k = 1, nx1
+!$omp do 
+      do kkii = Ptopo_npeOpenMP,1,-1
+         ki0 = minx2 + kilon*(kkii-1)
+         kin = min(ki0+kilon-1, maxx2)
+         pi0 = 1+ kilon*(kkii-1)
+         pin = min(pi0+kilon-1, nx2)
+*
+        do j = nx3,2,-1
+          do o1= F_pwr,1,-1
+C         do i = nx2,1,-1
+          do i = pin, pi0, -1
+          do k = nx1,1,-1
+             dn3_8(k,i,o1,j)=  sol_8(k,i,o1,j) + dn3_8(k,i,o1,j)
+             sol_8(k,i,o1,j)= -sol_8(k,i,o1,j)
+          enddo
+          enddo
+          enddo
+          do o1= F_pwr,1,-1
+          do o2= F_pwr,1,-1
+c         do i = maxx2,minx2,-1
+          do i = kin, ki0, -1 
+             do k = nx1,1,-1
+                sol_8(k,i,o2,j-1) = F_a_8(o1,o2,i,j)*sol_8(k,i,o1,j) 
+     %                             + sol_8(k,i,o2,j-1)
+             enddo
+          enddo
+          enddo
+          enddo
+        enddo
+      enddo
+!$omp enddo 
+*
+!$omp do 
       do o1= 1, F_pwr
       do i = 1, nx2
+      do k = 1, nx1
          dn3_8(k,i,o1,1)= sol_8(k,i,o1,1) + dn3_8(k,i,o1,1)
          sol_8(k,i,o1,1)= ZERO_8
       enddo
       enddo
       enddo
+!$omp enddo 
 *
 * ADJ of
 * cote droit
 *
-      do k = nx1,1,-1
-      do i = nx2,1,-1
+!$omp do 
       do j = nx3,1,-1
+*
+      do i = nx2,1,-1
+      do k = nx1,1,-1
          fdg2_8(k,i,j) = F_opsyp0_8(nx3+j)*dn3_8(k,i,1,j) + fdg2_8(k,i,j)
          dn3_8(k,i,1,j)= ZERO_8
       enddo
       enddo
-      enddo
 *
-      do k = minx1, maxx1
+      do o1 = 1, F_pwr
       do i = minx2, maxx2
-         do o1 = 1, F_pwr
-         do j  = 1, nx3
+      do k = minx1, maxx1
             sol_8(k,i,o1,j)= ZERO_8
             dn3_8(k,i,o1,j)= ZERO_8
-         enddo
-         enddo
       enddo
       enddo
+      enddo
+*
+      enddo
+!$omp enddo 
 *
 *     ADJ of
 *     projection ( wfft = x transposed * g )
 *
+!$omp single 
       call rpn_comm_transpose (fwft_8(Miny,1,2),Miny,Maxy,nx3,
      $            (Maxx1-Minx1+1),minx2, maxx2,gni,fdg2_8,-2,2)
+!$omp end single 
 *
+!$omp do 
       do k = 1, Nkl
          do j = 1, (Maxy-Miny+1)
             fwft_8(j,k,1) = fwft_8(j,k,2) + fwft_8(j,k,1)
             fwft_8(j,k,2) = ZERO_8
             fwft_8(j,k,Gni+2) = ZERO_8
          enddo
-         do i = 0, (Gni)/2
-            b_8 = F_pri_8
-            do jw = 1, (Maxy-Miny+1)
-               fwft_8(jw,k,2*i+2) = b_8 * fwft_8(jw,k,2*i+2)
-               fwft_8(jw,k,2*i+1) = b_8 * fwft_8(jw,k,2*i+1)
+      enddo
+!$omp enddo 
+*
+C     b_8 = F_pri_8
+*
+!$omp do 
+      do i = 0, (Gni)/2
+         do k = 1, Nkl
+C           do jw = 1, (Maxy-Miny+1)
+            do jw = 1, njl
+               fwft_8(jw,k,2*i+2) = F_pri_8 * fwft_8(jw,k,2*i+2)
+               fwft_8(jw,k,2*i+1) = F_pri_8 * fwft_8(jw,k,2*i+1)
             enddo
          enddo
       enddo
+!$omp enddo 
 *
-      call ffft8 (fwft_8,(Maxy-Miny+1)*(maxx1-minx1+1),
-     %                     1, (Maxy-Miny+1) * Nkl,  1 )
+C     call ffft8 (fwft_8,(Maxy-Miny+1)*(maxx1-minx1+1),
+C    %                     1, (Maxy-Miny+1) * Nkl,  1 )
 *
-      do k=1,nkl
-         do j=1,njl
-         do i = 1, Gni
-C           FDG1_8 should have been set to zero previously 
-C           fdg1_8(j,k,i) = fwft_8(j,k,i) + fdg1_8(j,k,i)
-            fdg1_8(j,k,i) = fwft_8(j,k,i) 
-            fwft_8(j,k,i) = ZERO_8
-         enddo
-         enddo
-         do j= miny,0
-         do i= 1,gni
-            fwft_8(j,k,i) = ZERO_8
-         enddo
-         enddo
+!$omp do
+      do k=Nkl,1,-1
+         call ffft8 (fwft_8(Miny,k,1),(Maxy-Miny+1)*(maxx1-minx1+1),1,
+     %                               (Maxy-Miny+1), +1 )
       enddo
+!$omp enddo
 *
-      do k= Nkl+1, maxx1
-      do j= miny,maxy
-      do i= 1,gni
-         fwft_8(j,k,i) = ZERO_8
-      enddo
-      enddo
-      enddo
-*
-      do k = 1, nkl
-         do j= njl+1,maxy
-         do i= 1,gni
-            fwft_8(j,k,i) = ZERO_8
-         enddo
-         enddo
-*
-         do j = 1, njl
-         do i = 1, Gni
-            fdg1_8(j,k,i) = F_opsxp0_8(gni+i)*fdg1_8(j,k,i)
-         enddo
+!$omp do
+      do i= 1,gni+2
+         do k=minx1,0
+            do j= miny,maxy
+               fwft_8(j,k,i) = ZERO_8
+            enddo
          enddo
       enddo
+!$omp enddo
 *
-      call rpn_comm_transpose ( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
-     %                          Minx1, Maxx1, gnk, fdg1_8,-1,2 )
+!$omp do
+      do i = 1, Gni
+         do k=1,nkl
+           do j=1,njl
+C             FDG1_8 should have been set to zero previously 
+C             fdg1_8(j,k,i) = fwft_8(j,k,i) + fdg1_8(j,k,i)
+              fdg1_8(j,k,i) = fwft_8(j,k,i) 
+              fwft_8(j,k,i) = ZERO_8
+           enddo
+           do j= miny,0
+              fwft_8(j,k,i) = ZERO_8
+           enddo
+         enddo
 *
-      do k = 1, gnk
-      do j = 1, njl  
-      do i = 1,nil
-         F_sol(i,j,k)  =sngl(((-1)**F_pwr)*dble(F_cdiff)*F_Rhs_8(i,j,k)) + F_sol(i,j,k)
-         F_Rhs_8(i,j,k)=ZERO_8
-      enddo
-      enddo
-      enddo
+         do k= nkl+1, maxx1
+           do j= miny,maxy
+              fwft_8(j,k,i) = ZERO_8
+           enddo
+         enddo
 *
+         do k = 1, nkl
+           do j= njl+1,maxy
+              fwft_8(j,k,i) = ZERO_8
+           enddo
+         enddo
+*
+         do k=1,nkl
+           do j = 1, njl
+              fdg1_8(j,k,i) = F_opsxp0_8(gni+i)*fdg1_8(j,k,i)
+           enddo
+         enddo
+      enddo
+!$omp enddo
+*
+!$omp end parallel 
+*
+      fact_8=((-1)**F_pwr)*dble(F_cdiff)
+      call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1),
+     %                          (Maxy-Miny+1),minx1, maxx1, Gnk, fdg1_8, -1,
+     %                             fact_8,0.d0)
 *     __________________________________________________________________
 *
       return

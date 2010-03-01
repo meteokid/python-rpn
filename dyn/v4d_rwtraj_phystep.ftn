@@ -6,7 +6,7 @@
      $                              F_um,F_vm,F_tm     ,F_trm,
      $                              DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM,Nk
       real F_up (DIST_SHAPE,Nk)  , F_vp (DIST_SHAPE,Nk), 
@@ -22,6 +22,7 @@
 * v3_00 - Laroche S.        - initial version (from v4d_rwtraj)
 * v3_01 - Laroche S.        - check if hucond.ne.1
 * v3_03 - Tanguay M.        - adapt to changes in v4d_rwtraj 
+* v3_11 - Tanguay M.        - ADJ of digital filter
 *
 *object
 *     see id section
@@ -35,9 +36,10 @@
 #include "lctl.cdk"
 #include "v4dg.cdk"
 #include "cstv.cdk"
-#include "init.cdk"
 #include "schm.cdk"
 #include "busind.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
 *
 *modules
       integer numtr,istep,i,j,k,n,iadd,iaddold
@@ -50,23 +52,28 @@
 *
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('v4d_rwtraj_phystep')
-      if(Init_balgm_L      ) call gefstop('v4d_rwtraj_phystep')
-      if(Lctl_step .gt.100 ) call gefstop('v4d_rwtraj_phystep')
+      if(.not. Schm_hydro_L) call gem_stop('v4d_rwtraj_phystep',-1)
+      if(Lctl_step .gt.100 ) call gem_stop('v4d_rwtraj_phystep',-1)
       if(hucond.ne.1) then
        write(Lun_out,*) 'hucond should be equal to 1'
-       call gefstop('v4d_rwtraj_phystep')
+       call gem_stop('v4d_rwtraj_phystep',-1)
       endif
 *     ______________________________________________________
 *
+      numtr  = 10
 *
 *     Flag to trace storing and retrieving of trajectory
 *     --------------------------------------------------
       plpr_L = .false.
       plpr_L = plpr_L.and.Lun_out.gt.0 
-      istep  = Lctl_step 
-      numtr  = 10
-
+*
+      istep = Lctl_step
+*
+*     Create a monotonic function of time step (istep) to allow for
+*     unique addresses when digital filter is in use
+*     -------------------------------------------------------------
+      if(Init_balgm_L.and.Rstri_idon_L) istep = Lctl_step - (Init_dfnp-1)/2 + Init_dfnp - 1
+*
 *     ----------------
 *     Read TRAJ Fields 
 *     ----------------

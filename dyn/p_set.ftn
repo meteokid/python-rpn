@@ -30,6 +30,7 @@
 * v3_03 - Bilodeau B.        - add P_pbl_as, P_pbl_beta and P_cond_kkl
 * v3_03 - Dugas B.           - add P_str_strato_L
 * v3_10 - Lee V.             - check read error in some namelists, added stopmpi
+* v3_11 - Desgagne M.        - sdd P_pbl_impflx_L
 *
 *object
 *       See above id
@@ -128,6 +129,7 @@
       P_pbl_drylp_L  = .true.
       P_pbl_monta_L  = .true.
       P_pbl_iceme_L  = .false.
+      P_pbl_impflx_L = .false.
 *
       do 50 i=1,cnmaxad
          P_pbl_spng(i) = 0.0

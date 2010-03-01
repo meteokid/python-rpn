@@ -4,7 +4,7 @@
 *
       subroutine gem_run_ad (F_dgtflt_L, F_rstrt_L)
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_dgtflt_L, F_rstrt_L
 *
@@ -22,6 +22,8 @@
 * v3_02 - Tanguay M.        - cosmetics for identity option
 * v3_02 - Buehner M.        - integration stops when timestep V4dg_steplast is reached (not 0)
 * v3_03 - Tanguay M.        - Call hdif_phy
+* v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2 
+*                           - ADJ of digital filter
 *
 *object
 *     see id section
@@ -53,7 +55,6 @@
       integer last_step,initial_step
 *     ______________________________________________________
 *
-      if( F_dgtflt_L     ) call gem_stop('gem_run_ad',-1)
       if( F_rstrt_L      ) call gem_stop('gem_run_ad',-1)
       if( P_clim_clima_L ) call gem_stop('gem_run_ad',-1)
       if( Schm_chems_L   ) call gem_stop('gem_run_ad',-1)
@@ -64,13 +65,29 @@
       initial_step = Lctl_step
          last_step = V4dg_steplast
 *
+      if (Init_balgm_L.and..not.F_dgtflt_L.and.(Step_total.ge.(Init_dfnp-1)/2))
+     $     last_step = (Init_dfnp-1)/2
+*
  500  continue
 *
-      if (Lun_out.gt.0) write(Lun_out,1001) Lctl_step,last_step,initial_step
+      if (F_dgtflt_L) then
+         if (Lun_out.gt.0) write(Lun_out,1000) Lctl_step,initial_step
+      else
+         if (Lun_out.gt.0) write(Lun_out,1001) Lctl_step,last_step,initial_step
+      endif
 *
+*     4D-Var: Read trajectory for conversion if requested
+*     ---------------------------------------------------
+      call v4d_rwconv0
+
 *C    Evaluate gradient forcing at required time
 *     ------------------------------------------
       call v4d_ctrlgrd ()
+*
+*     Adjoint of
+*C    Digital filter
+*     --------------
+      if ( F_dgtflt_L ) call digflt_ad( )
 *
 *C    Perform output if required
 *     --------------------------
@@ -95,7 +112,7 @@
 *        Adjoint of
 *        Horizontal diffusion & Vertical sponge (Initial timestep)
 *        ---------------------------------------------------------
-         if (Lctl_step.eq.1) call hdif0_ad
+         if (Lctl_step.eq.1.and..not.V4dg_4dvar_L) call hdif0_ad
 *
       endif ! identity_4dvar_L
 *
@@ -107,6 +124,10 @@
 *
       if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
 *
+*     4D-Var: Read trajectory for conversion if requested
+*     ---------------------------------------------------
+      call v4d_rwconv0
+*
 *C    Evaluate gradient forcing at INITIAL time (before adjoint of preprocessing) 
 *     ---------------------------------------------------------------------------
       call v4d_ctrlgrd ()
@@ -117,6 +138,9 @@
 *
 *     ---------------------------------------------------------------
 *
+ 1000 format(/,'GEM_RUN_AD: PERFORMING ADJ INITIALIZATION TIMESTEP #',I8,
+     $         ' OUT OF ',I8,
+     +       /,'================================================')
  1001 format(/,'GEM_RUN_AD: PERFORMING TIMESTEP #',I8,' BETWEEN ',I8,' AND ',I8,
      +       /,'=================================================')
  3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')

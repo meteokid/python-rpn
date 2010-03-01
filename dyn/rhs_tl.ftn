@@ -4,7 +4,7 @@
 *
       subroutine rhs_tl()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -14,6 +14,7 @@
 * v2_21 - Tanguay M.        - replace xfis by topo
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d  
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -220,8 +221,6 @@
 *     cycle of Crank-Nicholson procedure only
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if ( Orh_icn .eq. 1 ) then
-
-*PDIR RESERVE=Ptopo_npeOpenMP
 *
          call rhsp_2_tl  (    ru,    rv,   rcn,   rth,      rw,     rvv,
      %                       oru,   orv,  orcn,  orth,     orw,    orvv,
@@ -237,8 +236,6 @@
 *
      %                     LDIST_DIM,l_nk  )
 *
-*PDIR RELEASE
-         
       else
 *
          do k=1,l_nk

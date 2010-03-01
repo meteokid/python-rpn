@@ -1,0 +1,93 @@
+***s/r theo_cfg - reads parameters from namelist theo_cfgs
+*                 s/r called when file labfl is not present (entry 
+*                 program not executed)
+*
+#include <model_macros_f.h>
+*
+      subroutine theo_cfg ( pass_L )
+      implicit none
+*
+      logical pass_L
+*
+*author 
+*     sylvie gravel   -  Apr 2003
+*
+*revision
+* v3_11 - gravel s          - initial version 
+*
+*object
+*     See above id
+*	
+*arguments - none
+*
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "hgc.cdk"
+#include "grd.cdk"
+#include "out1.cdk"
+#include "pilot.cdk"
+#include "hblen.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "lun.cdk"
+#include "p_geol.cdk"
+#include "step.cdk"
+#include "pres.cdk"
+#include "schm.cdk"
+#include "adw.cdk"
+#include "cstv.cdk"
+#include "hzd.cdk"
+#include "eigv.cdk"
+#include "vspng.cdk"
+#include "theo.cdk"
+#include "geomg.cdk"
+#include "init.cdk"
+#include "offc.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+#include "bubble.cdk"
+#include "theonml.cdk"
+*
+      integer i, j, k, idatx
+**
+*     ---------------------------------------------------------------
+      pass_L = .false. 
+*
+      Ptopo_npex = 1
+      Ptopo_npey = 1
+      rewind ( Lun_in )
+      read ( Lun_in, nml=ptopo, end = 9001, err=9001 )
+      if ( Ptopo_npey .gt.1) then
+           write (Lun_out, 9240)
+           return
+      endif
+      Theo_nivdist_S='UNI'
+      Theo_case_S='xxx'
+      Pil_runstrt_S="19980101.000000"
+      Out1_etik_s='THEOC'
+      Lctl_debug_L=.false.
+      rewind ( Lun_in )
+      read ( Lun_in, nml=theo_cfgs, end = 9000, err=9000 )
+      if (       Theo_case_S .eq. 'BUBBLE'
+     %     .or. Theo_case_S .eq. 'BUBBLE_G'
+     %     .or. Theo_case_S .eq. '2_BUBBLES') then
+           call bubble_cfg(pass_L)
+      else
+        write (Lun_out, 9200) Theo_case_S
+        return
+      endif
+      return
+*
+ 9000 write (Lun_out, 9100)
+      return
+ 9001 write (Lun_out, 9140)
+      return
+
+*     ---------------------------------------------------------------
+ 9100 format (/,' NAMELIST theo_cfgs ABSENT or INVALID FROM FILE: model_settings'/)
+ 9140 format (/,' NAMELIST ptopo ABSENT or INVALID FROM FILE: model_settings'/)
+ 9200 format (/,' Unsupported theoretical case: ',a/)
+ 9240 format (/,' For theoretical cases, number of PEs in y must be 1 '/)
+      return
+      end
+*

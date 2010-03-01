@@ -4,13 +4,14 @@
 *
       subroutine v4d_predat_ad
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - modify evaluation of Ind_pip
 *
 *object
 *     see id section
@@ -37,7 +38,7 @@
       integer i, j, k
       real pr1, pr2
 *
-      real wpipt1m(LDIST_SHAPE,l_nk),wqt1m(LDIST_SHAPE,l_nk)
+      real wpipt1m(LDIST_SHAPE,l_nk)
 *
       real*8, parameter :: ZERO_8 = 0.0
 *     __________________________________________________________________
@@ -201,27 +202,14 @@
 *     START TRAJECTORY
 *     ----------------
 *
-*     Recover qt1m as in V4D_PREDAT_TL
-*     --------------------------------
-      do k=1,G_nk
-      do j= 1, l_nj
-      do i= 1, l_ni
-*
-      wqt1m(i,j,k) = alog( Geomg_pia(k) + Geomg_pib(k)*exp(Indm_sm(i,j)) )
-*
-      end do
-      end do
-      end do
-*
-C     endif
-*
-*     Recover pipt1m from exp(qt1m) as in V4D_PREDAT_TL
-*     -------------------------------------------------
+*     Recover pipt1m as in V4D_PREDAT_TL
+*     ----------------------------------
       do k=2,G_nk
       do j= 1, l_nj
       do i= 1, l_ni
 *
-      wpipt1m(i,j,k) = exp(wqt1m(i,j,k)) - Geomg_z_8(k)
+      wpipt1m(i,j,k) = Geomg_pia(k)+Geomg_pib(k)*exp(Indm_sm(i,j))
+     %                - Geomg_z_8(k)
 *
       end do
       end do
@@ -296,7 +284,7 @@ C     endif
       do j= 1, l_nj
       do i= 1, l_ni
 *
-         Ind_q  (i,j,k) = exp(wqt1m(i,j,k)) * Ind_pip(i,j,k) + Ind_q(i,j,k)
+         Ind_s  (i,j)   = Geomg_pib(k)*exp(Indm_sm(i,j))* Ind_pip(i,j,k) + Ind_s(i,j)
          Ind_pip(i,j,k) = ZERO_8
 *
       end do

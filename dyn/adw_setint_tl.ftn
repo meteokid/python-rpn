@@ -14,7 +14,7 @@
      %                           F_xm,   F_ym,  F_zm,
      %                           F_h_L,  F_z_L, F_lin_L, F_num,i0,in,j0,jn,kn)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_num, F_n(F_num),i0,in,j0,jn,kn
 *
@@ -37,6 +37,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *language
 *     fortran 77
@@ -79,6 +80,7 @@
 *implicits
 #include "glb_ld.cdk"
 #include "adw.cdk"
+*
 ************************************************************************
       integer n, ii, jj, kk, ij, nijag, nij,i, j, k
       real*8  prd_8, prdt_8
@@ -87,9 +89,13 @@
       nij   = l_ni * l_nj
       nijag = Adw_nit * Adw_njt
 ************************************************************************
+*
+!$omp parallel private(n,prd_8,prdm_8,ii,prdt_8,prdtm_8,jj,kk,ij)
+*
       if ( F_h_L .and. F_z_L ) then
 ************************************************************************
          if ( F_lin_L ) then
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -102,9 +108,10 @@
             ii = Adw_lcx( ii+1 ) + 1
             prdtm_8 = prdm_8 - Adw_bsx_8(ii)
             if ( prdtm_8 .lt. 0.0 ) then
-               ii = ii - 1
+               ii = max(2,ii - 1)
                prdtm_8 = prdm_8 - Adw_bsx_8(ii)
             endif
+            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capxm(n) = prdtm_8 * Adw_dix_8(ii)
 *
 *           TLM 
@@ -120,9 +127,10 @@
             jj = Adw_lcy( jj+1 ) + 1
             prdtm_8 = prdm_8 - Adw_bsy_8(jj)
             if ( prdtm_8 .lt. 0.0 ) then
-               jj = jj - 1
+               jj = max(2,jj - 1)
                prdtm_8 = prdm_8 - Adw_bsy_8(jj)
             endif
+            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capym(n) = prdtm_8 * Adw_diy_8(jj)
 *
 *           TLM 
@@ -153,8 +161,9 @@ C           prd_8 = prd_8
             enddo
             enddo
             enddo
-*
+!$omp enddo
          else
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -167,9 +176,10 @@ C           prd_8 = prd_8
             ii = Adw_lcx( ii+1 ) + 1
             prdtm_8 = prdm_8 - Adw_bsx_8(ii)
             if ( prdtm_8 .lt. 0.0 ) then
-               ii = ii - 1
+               ii = max(2,ii - 1)
                prdtm_8 = prdm_8 - Adw_bsx_8(ii)
             endif
+            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capxm(n) = prdtm_8 * Adw_dix_8(ii)
 *
 *           TLM 
@@ -185,9 +195,10 @@ C           prd_8 = prd_8
             jj = Adw_lcy( jj+1 ) + 1
             prdtm_8 = prdm_8 - Adw_bsy_8(jj)
             if ( prdtm_8 .lt. 0.0 ) then
-               jj = jj - 1
+               jj = max(2,jj - 1)
                prdtm_8 = prdm_8 - Adw_bsy_8(jj)
             endif
+            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capym(n) = prdtm_8 * Adw_diy_8(jj)
 *
 *           TLM 
@@ -230,11 +241,13 @@ C           prd_8 = prd_8
             enddo
             enddo
             enddo
+!$omp enddo
          endif
 ************************************************************************
       elseif (F_h_L) then
 ************************************************************************
          if ( F_lin_L ) then
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -248,9 +261,10 @@ C           prd_8 = prd_8
             ii = Adw_lcx( ii+1 ) + 1
             prdtm_8 = prdm_8 - Adw_bsx_8(ii)
             if ( prdtm_8 .lt. 0.0 ) then
-               ii = ii - 1
+               ii = max(2,ii - 1)
                prdtm_8 = prdm_8 - Adw_bsx_8(ii)
             endif
+            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capxm(n) = prdtm_8 * Adw_dix_8(ii)
 *
 *           TLM 
@@ -267,9 +281,10 @@ C           kk = ( F_n(n) - (mod ( F_n(n), nijag ))) / nijag
             jj = Adw_lcy( jj+1 ) + 1
             prdtm_8 = prdm_8 - Adw_bsy_8(jj)
             if ( prdtm_8 .lt. 0.0 ) then
-               jj = jj - 1
+               jj = max(2,jj - 1)
                prdtm_8 = prdm_8 - Adw_bsy_8(jj)
             endif
+            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capym(n) = prdtm_8 * Adw_diy_8(jj)
             ij = (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
             F_nm(n) = kk*nijag + ij
@@ -284,7 +299,9 @@ C           kk = ( F_n(n) - (mod ( F_n(n), nijag ))) / nijag
             enddo
             enddo
             enddo
+!$omp enddo
          else
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -298,9 +315,10 @@ C           kk = ( F_n(n) - (mod ( F_n(n), nijag ))) / nijag
             ii = Adw_lcx( ii+1 ) + 1
             prdtm_8 = prdm_8 - Adw_bsx_8(ii)
             if ( prdtm_8 .lt. 0.0 ) then
-               ii = ii - 1
+               ii = max(2,ii - 1)
                prdtm_8 = prdm_8 - Adw_bsx_8(ii)
             endif
+            ii = min(ii,G_ni+2*Adw_halox-2)
             F_capxm(n) = prdtm_8 * Adw_dix_8(ii)
 *
 *           TLM 
@@ -317,9 +335,10 @@ C           kk = ( F_n(n) - (mod ( F_n(n), nijag ))) / nijag
             jj = Adw_lcy( jj+1 ) + 1
             prdtm_8 = prdm_8 - Adw_bsy_8(jj)
             if ( prdtm_8 .lt. 0.0 ) then
-               jj = jj - 1
+               jj = max(2,jj - 1)
                prdtm_8 = prdm_8 - Adw_bsy_8(jj)
             endif
+            jj = min(jj,G_nj+2*Adw_haloy-2)
             F_capym(n) = prdtm_8 * Adw_diy_8(jj)
             F_xggm(n) = Adw_dlx_8(ii-1) * Adw_dix_8(ii)
             F_xddm(n) = Adw_dlx_8(ii+1) * Adw_dix_8(ii)
@@ -342,11 +361,13 @@ C           kk = ( F_n(n) - (mod ( F_n(n), nijag ))) / nijag
             enddo
             enddo
             enddo
+!$omp enddo
          endif
 ************************************************************************
       elseif (F_z_L) then
 ************************************************************************
          if ( F_lin_L ) then
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -374,7 +395,9 @@ C           prd_8 = prd_8
             enddo
             enddo
             enddo
+!$omp enddo
          else
+!$omp do
             do k=1,kn
             do j=j0,jn
             do i=i0,in
@@ -405,9 +428,12 @@ C           prd_8 = prd_8
             enddo
             enddo
             enddo
+!$omp enddo
          endif
 ************************************************************************
       endif
+!$omp end parallel
 ************************************************************************
+*
       return
       end

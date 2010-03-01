@@ -4,7 +4,7 @@
 *
       subroutine adw_main_2_pos_tl ( F_it, F_u, F_v, F_w, F_um, F_vm, F_wm )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_it
       real F_u (*),F_v (*),F_w (*)
@@ -16,6 +16,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *language
 *     fortran 77
@@ -193,6 +194,8 @@
      %                    wrkx1m,F_wm,     n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
 *
 ************************************************************************
+!$omp parallel private(n)
+!$omp do
       do k = 2,l_nk-1
       do j = j0,jn
       do i = i0,in
@@ -229,6 +232,8 @@
       enddo
       enddo
       enddo
+!$omp enddo
+!$omp end parallel
 ************************************************************************
       enddo ! end of iterations loop
 ************************************************************************
@@ -236,6 +241,8 @@
      %                    F_um,F_vm,xct1m,yct1m,zct1m,xcthm,ycthm,zcthm,
      %                    i0,in,j0,jn)
 *
+!$omp parallel private(n)
+!$omp do
       do j = j0,jn
       do i = i0,in
          n = ((j-1)*l_ni) + i   !for k=1
@@ -260,6 +267,8 @@
 *
       enddo
       enddo
+!$omp enddo
+!$omp do
       do k = 2,l_nk-1
          do j = j0,jn
          do i = i0,in
@@ -291,6 +300,8 @@
          enddo
          enddo
       enddo
+!$omp enddo
+!$omp end parallel
 *
       pnerr = vmmuld(-1,0)
 *

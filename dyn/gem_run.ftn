@@ -28,6 +28,8 @@
 * v3_02                       if in V4d mode
 * v3_03 - Tanguay M.        - Call hdif_phy  
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2
+*                           - ADJ of digital filter
 *
 *object
 *	Performs the integration of the model
@@ -66,7 +68,6 @@
 *     ---------------------------------------------------------------
       if ( V4dg_conf.ne.0 ) then
          if ( Schm_chems_L ) call gem_stop('gem_run',-1)
-         if ( F_dgtflt_L )   call gem_stop('gem_run',-1)
       endif
 *     ---------------------------------------------------------------
 *
@@ -82,6 +83,10 @@
       if ((F_dgtflt_L).and.(Step_total.ge.(Init_dfnp-1)/2)) 
      $     last_step = Init_dfnp-1
 *
+*     4D-Var: Write trajectory for conversion if requested
+*     ----------------------------------------------------
+      if ( V4dg_oktrcv_L ) call v4d_rwconv0
+*
 *C    4D-Var: Control Cost function at INITIAL time
 *     ---------------------------------------------
       call v4d_ctrlcst ()
@@ -89,7 +94,7 @@
  500  Lctl_step  = Lctl_step  + 1
       Rstri_sdon = Rstri_sdon + 1
 *
-#if defined (NEC)
+#if defined (NEC) || defined (AIX)
       if (Lun_out.gt.0) call gemtim (Lun_out)
 #endif
 *
@@ -132,23 +137,29 @@
 *
 *        Dynamics timestep
 *        -----------------
-         call tmg_start ( 2, 'DYN+HD+PHY' )
+C        call tmg_start ( 2, 'DYN+HD+PHY' )
          call dynstep
 *
 *        Physics timestep & Horizontal diffusion & Vertical sponge
 *        ---------------------------------------------------------
+         call tmg_start ( 7, 'HD+PHY' )
          call hdif_phy
-	 call tmg_stop (2)
+         call tmg_stop (7)
+C        call tmg_stop (2)
 *
       endif
-*
-*C    4D-Var: Control Cost function at .NOT.INITIAL time
-*     --------------------------------------------------
-      call v4d_ctrlcst ()
 *
 *C    Digital filter
 *     --------------
       if ( F_dgtflt_L ) call digflt( )
+*
+*     4D-Var: Write trajectory for conversion if requested
+*     ----------------------------------------------------
+      if ( V4dg_oktrcv_L ) call v4d_rwconv0
+*
+*C    4D-Var: Control Cost function at .NOT.INITIAL time
+*     --------------------------------------------------
+      call v4d_ctrlcst ()
 *
 *C    Perform output if required
 *     --------------------------
@@ -158,7 +169,11 @@
       if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 *
       if (bkup_L.and..not.F_rstrt_L) call wrrstrt ()
-      if (carryon_L)  goto 500
+*
+      if (carryon_L)  then
+         call trans_clean ()
+         goto 500
+      end if
 *
  600  if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
 *

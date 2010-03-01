@@ -16,6 +16,7 @@
 *revision
 * v2_31 - Desgagne M.       - initial version
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
 *
 *object
 *
@@ -44,7 +45,7 @@
             enddo         
             enddo 
          else if (data_spec(2).eq.4) then
-            call vte_vrtical ( w1, pps, l_ni*l_nj, G_nk, rna_pia, 
+            call vte_vrtical ( w1, ps, l_ni*l_nj, G_nk, rna_pia, 
      $                                          vterp_lv, .false. )
             do k=1,G_nk
             do j=1,l_nj

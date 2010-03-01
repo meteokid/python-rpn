@@ -7,7 +7,7 @@
 *implicits
       use v4d_prof, only: Pr_nsim4d
 *
-#include "impnone.cdk"
+      implicit none
 *
 *
 *author 
@@ -29,7 +29,9 @@
 * v3_01 - Tanguay M.        - Temporary patch for pressure levels when TLM,ADJ
 * v3_02 - Lee V.            - delay closure of slab files at time 0 if 
 * v3_02                       Schm_phyms_L in case QC is to be outputted later.
-* v3_02 - Tanguay M.        - IP3 depend on # iterations when 4dvar_L
+* v3_02 - Tanguay M.        - IP3 depends on # iterations when 4dvar_L
+* v3_11 - Gravel S.         - IP3 depends on timestep for theoretical cases
+* v3_11 - Tanguay M.        - ADJ of digital filter
 *
 *object
 *     Subroutine to control the production of
@@ -138,6 +140,7 @@
 *
       Slab_ip2 = nint(float(Lctl_step)*Cstv_dt_8/3600.0)
       Slab_ip3 = 0
+      if (Schm_theoc_L) Slab_ip3 = Lctl_step
       if (V4dg_conf.ne.0) then
           if (.not.V4dg_4dvar_L) then
               Slab_ip3 = V4dg_status  
@@ -153,9 +156,11 @@
 *
 *     setup of filename extension if needed
       Dslab_ext_S=""
+      if ( V4dg_conf.eq.0 ) then
       if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
      $     ((Lctl_step.ge.(Init_dfnp-1)/2)) )
      $     Dslab_ext_S = '_dgf'
+      endif
 *
 *     output of 3-D tracers
 *

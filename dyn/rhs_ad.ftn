@@ -4,7 +4,7 @@
 *
       subroutine rhs_ad()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -15,6 +15,8 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 *                           - adapt for tracers in tr3d  
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - Correction TRAJ wk1m NoHyd 
+*                           - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -92,6 +94,10 @@
       pnlkey1(pnlod + 3 ) = VMM_KEY(st1m)
       pnlkey1(pnlod + 4 ) = VMM_KEY(fit1m)
       pnlod = pnlod + 4 
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(mut1m)
+         pnlod = pnlod+1 
+      endif
 *
 *     - - - - - - - - - - - - - 
       pnerr = vmmlod(pnlkey1,pnlod)
@@ -147,13 +153,12 @@
       pnerr = VMM_GET_VAR(qt1m)
       pnerr = VMM_GET_VAR(st1m)
       pnerr = VMM_GET_VAR(fit1m)
+      if (.not. Schm_hydro_L) pnerr = VMM_GET_VAR(mut1m) 
 *
 *     Perform the computation in the first 
 *     cycle of Crank-Nicholson procedure only
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if ( Orh_icn .eq. 1 ) then
-
-*PDIR RESERVE=Ptopo_npeOpenMP
 *
          call rhsp_2_ad  (    ru,    rv,   rcn,   rth,      rw,     rvv,
      %                       oru,   orv,  orcn,  orth,     orw,    orvv,
@@ -163,11 +168,10 @@
 *
      %                                                    tt1m,    qt1m,
      %                     fit1m,  st1m, 
+     %                                          mut1m,
 *
      %                     LDIST_DIM,l_nk  )
 *
-*PDIR RELEASE
-
       else
 *
          if (.not. Schm_hydro_L) then

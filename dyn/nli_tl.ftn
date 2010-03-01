@@ -4,7 +4,7 @@
 *
       subroutine nli_tl()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -15,6 +15,7 @@
 * v2_30 - Edouard S.        - remove pi' at the top
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *
 *object
@@ -158,8 +159,6 @@
          vt0m_ = 0
       endif
 *
-*PDIR RESERVE=Ptopo_npeOpenMP
-*
       call nlip_2_tl ( nl_nu  ,nl_nv  ,wk1   ,nl_nth  ,nl_n3   ,nl_n3p  , 
      $                 rheln  ,rhell  ,tpt0  ,tplt0   ,pipt0   ,nl_ncn  , 
      $                 st0    ,qt0    ,fipt0 ,topo    ,ut0     ,vt0     ,mut0 ,multx , 
@@ -171,8 +170,6 @@
      $                 wijk1m, wijk2m ,
 *
      $                 LDIST_DIM,l_nk )
-*
-*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
 *

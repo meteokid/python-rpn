@@ -3,8 +3,7 @@
 #include <model_macros_f.h>
 *
       subroutine p_phystep_tl (F_stepno)
-*
-#include "impnone.cdk"
+      implicit none
 *
       integer F_stepno
 *
@@ -14,6 +13,7 @@
 *revision
 * v3_00 - Laroche S.       - initial MPI version
 * v3_02 - Laroche S.       - allows physic variables outputs
+* v3_11 - Laroche S.       - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *       Computes the physical processes and apply the resulting
@@ -91,12 +91,18 @@
       endif
 *
 *
-      call p_physlb_tl ( 1, F_stepno,
+!$omp parallel
+!$omp do
+      do j=1,Ptopo_npeOpenMP
+      call p_physlb_tl ( j, F_stepno,
      $                   up, vp, wp, tp, qp,  trp,
      $                   um, vm,     tm,      trm,
      $                   upm, vpm,  tpm, qpm, trpm,
      $                   umm, vmm,  tmm,      trmm,
      $                   lnpsm, sig, kmm, ktm, LDIST_DIM, l_nk)
+      enddo
+!$omp enddo
+!$omp end parallel
 *
 *
       if (.not.Mem_phyncore_L) err = close_db_file (Lun_waphy)

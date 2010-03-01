@@ -4,7 +4,7 @@
 *
       subroutine v4d_testgrd (Ndim,F_px,F_pgraj,F_py,F_pj0,F_start,F_range)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer Ndim,F_range
       real F_px(Ndim),F_pgraj(Ndim),F_py(Ndim),F_pj0,F_start
@@ -14,6 +14,7 @@
 *
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - Introduce V4dg_oktrcv_L 
 *
 *object
 *     Evaluate the correctness of the gradient
@@ -86,18 +87,26 @@
          wrt_out = Lun_out
          Lun_out = -99
 *
-*        Deactivate WRITE option on TRAJECTORY WA file
-*        ---------------------------------------------
+*        Deactivate WRITE option on TRAJECTORY VMM WA file
+*        -------------------------------------------------
          V4dg_oktr_L = .false.
+*
+*        Deactivate WRITE option on TRAJECTORY Conversion WA file
+*        --------------------------------------------------------
+         V4dg_oktrcv_L = .false.
 *
 *        Call 4D-Var simulator without gradient
 *        --------------------------------------
          indic = 99
          call v4d_simul (indic,Ndim,F_py,pjf,F_pgraj)
 *
-*        Reactivate WRITE option on TRAJECTORY WA file
-*        ---------------------------------------------
+*        Reactivate WRITE option on TRAJECTORY VMM WA file
+*        -------------------------------------------------
          V4dg_oktr_L = .true.
+*
+*        Reactivate WRITE option on TRAJECTORY Conversion WA file
+*        --------------------------------------------------------
+         V4dg_oktrcv_L = .true.
 *
 *        Reset write(Lun_out)
 *        --------------------

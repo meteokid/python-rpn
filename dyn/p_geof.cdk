@@ -2,6 +2,7 @@
 *
 *revision
 * v2_20 - Pellerin P.            - adaptation to physics 3.6.6
+* v3_11 - Gravel S.              - add new field for varying topo
 *
 ***comdeck p_geof.cdk
 *
@@ -13,6 +14,7 @@
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
 * topo               | Phi at the surface (xfis) with halos on it      |
+* dtopo              | difference between analysis and model topo      |
 * xfis               | phi at the surface                              |
 *----------------------------------------------------------------------
 *
@@ -26,6 +28,7 @@
 *
       MARK_COMMON_BEG(geof)
       DCL_VMMVAR(geof,topo ,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,dtopo,real,(LDIST_SHAPE))
       DCL_VMMVAR(geof,xfis ,real,(l_ni,l_nj))
       MARK_COMMON_END(geof)
 

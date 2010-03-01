@@ -5,7 +5,7 @@
      %                       F_ai_8, F_bi_8, F_ci_8, F_di_8,
      %                       F_prep_L,  F_case, NIS,   NJS,  NKS, SKIP )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_ideb, F_jdeb,F_ifin,F_jfin,F_nk, NIS, NJS, NKS, SKIP
       real    F_r(SKIP,NIS,NJS,NKS)
@@ -19,6 +19,7 @@
 *
 *revision
 * v3_01 - Tanguay M.        - initial MPI version (from opinv6_ad v2_10)
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section 
@@ -89,6 +90,8 @@
       if ( plper_L ) pnm = pnm - 1
 *
          if ( plper_L ) then
+!$omp parallel
+!$omp do
             do k=pnm,1,-1
                do j=1,NJS
                   do i=1,NIS
@@ -96,6 +99,8 @@
                   enddo
                enddo
             enddo
+!$omp enddo
+!$omp do
             do j=1,NJS
                do i=1,NIS
                F_r(1,i,j, pnm) = F_r(1,i,j,pnm) + F_ai_8(1)   *F_r(1,i,j,F_nk)
@@ -103,6 +108,8 @@
                F_r(1,i,j,F_nk) =                  F_bi_8(F_nk)*F_r(1,i,j,F_nk)
                enddo
             enddo
+!$omp enddo
+!$omp end parallel
          endif
 *
          call msoltri6_ad

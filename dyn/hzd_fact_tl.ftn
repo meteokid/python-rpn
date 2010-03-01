@@ -10,7 +10,7 @@
      %                         F_pipm, F_wm, F_qpm , F_mum , F_mulm, F_sm, 
      %                         F_xfis, DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real   F_u  (DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
@@ -41,6 +41,7 @@
 *                           - replace xfis by topo
 * v2_31 - Tanguay M.        - TLM of control for diffusion on momentum only
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -63,7 +64,7 @@
       integer i, j, k
       real*8 c_8
       real work(LDIST_SHAPE,Nk), work_m(LDIST_SHAPE,Nk)
-      real*8 wk1_8(LDIST_SIZ*Nk)
+      real*8 wk1_8
       real*8 g1_8(LYDIST_SIZ*(Trp_12dmax-Trp_12dmin+1)*(G_ni+Ptopo_npex))
       real*8 g2_8((Trp_12dmax-Trp_12dmin+1)*(Trp_22max-Trp_22min+1)*(G_nj+Ptopo_npey))
       real*8, dimension (Ldnh_maxy*G_ni) :: aix_8,bix_8,cix_8,dix_8
@@ -202,6 +203,8 @@
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+!$omp parallel 
+!$omp do
          do k = 2, Nk
          do j = 1,l_nj
          do i = 1,l_ni
@@ -217,9 +220,11 @@
          end do
          end do
          end do
+!$omp enddo
 *
 * updating phi' at the top
 *
+!$omp do
          do j = 1,l_nj
          do i = 1,l_ni
 *
@@ -233,6 +238,8 @@
 *
          end do
          end do
+!$omp enddo
+!$omp end parallel 
 *
 *     The temperature: T', T'lin & hence T 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -269,6 +276,8 @@
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+!$omp parallel 
+!$omp do
          do k=1, Nk
          do j=1,l_nj
          do i=1,l_ni 
@@ -284,10 +293,12 @@
          end do
          end do
          end do
+!$omp enddo
 *
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp do
             do k = 1, Nk
             do j = 1,l_nj
             do i = 1,l_ni
@@ -303,7 +314,10 @@
             end do
             end do
             end do
+!$omp enddo
          endif
+*
+!$omp end parallel 
 *
 *     The hydrostatic pressure: pi'  
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -385,6 +399,7 @@
 *
 *        Indirect diffusion of q' 
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do 
          do k=1, Nk  ! 
          do j=1,l_nj ! p = (pi)exp(q') 
          do i=1,l_ni ! ~~~~~~~~~~~~~~~ 
@@ -404,6 +419,7 @@
          end do
          end do
          end do
+!$omp end parallel do 
 *
 *        TRAJECTORY
 *        ----------
@@ -421,6 +437,7 @@
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+!$omp parallel do 
          do k=1, Nk  ! 
          do j=1,l_nj ! q' = log(p/pi) 
          do i=1,l_ni ! ~~~~~~~~~~~~~~
@@ -439,6 +456,7 @@
          end do
          end do
          end do
+!$omp end parallel do 
 *
          endif
          endif

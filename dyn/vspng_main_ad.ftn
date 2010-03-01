@@ -4,7 +4,7 @@
 *
       subroutine vspng_main_ad
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -15,6 +15,7 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 *                           - change name 
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -129,6 +130,7 @@
 *
 *        Preserve TRAJ PIPT1,QPT1M before VSPNG diffusion
 *        ------------------------------------------------
+!$omp parallel do
          do k=1,l_nk
          do j=1,l_nj
          do i=1,l_ni
@@ -137,6 +139,7 @@
          enddo
          enddo
          enddo
+!$omp end parallel do
 *
          pnerr = vmmuld(pnlkey1_m,2)
 *
@@ -160,9 +163,11 @@
 *  $. Indirect diffusion of s & q through pi' *
 ***********************************************
 *
+!$omp parallel
       if (Cstv_phidf_8.gt.0.) then
 *
       if ( .not. Schm_hydro_L ) then
+!$omp do 
          do k=1,G_nk
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
@@ -174,8 +179,10 @@
          end do
          end do
          end do
+!$omp enddo 
       endif
 *
+!$omp do 
       do k=1,G_nk
       do j= 1+pil_s, l_nj-pil_n
       do i= 1+pil_w, l_ni-pil_e
@@ -191,7 +198,9 @@
       end do
       end do
       end do
+!$omp enddo 
 *
+!$omp do 
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
 *
@@ -204,8 +213,10 @@
 *
       end do
       end do
+!$omp enddo 
 *
       endif
+!$omp end parallel
 *
       pnerr = vmmuld(pnlkey1_m,1)
 *
@@ -228,6 +239,7 @@
           pnerr = VMM_GET_VAR(pipt1m)
           pnerr = VMM_GET_VAR(qpt1m )
 *
+!$omp parallel do
           do k=1,l_nk
           do j=1,l_nj
           do i=1,l_ni
@@ -236,6 +248,7 @@
           enddo
           enddo
           enddo
+!$omp end parallel do
 *
       else
           pipt1m_= 0

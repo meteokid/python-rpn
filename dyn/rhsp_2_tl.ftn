@@ -58,6 +58,7 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate and LAM version 
 *                           - adapt for tracers in tr3d  
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section 
@@ -84,7 +85,7 @@
 #include "inuvl.cdk"
 #include "ptopo.cdk"
 *
-      integer i, j, k, i0, j0, in, jn,i00,inn,j00,jnn
+      integer i, j, k, i0, j0, in, jn,i00,inn,j00,jnn,nij
       real*8  aaa_8, bbb_8, ZERO_8, ONE_8, pd1_8
       real*8  c1_8,c2_8,c3_8,c4_8,c5_8,c6_8,c7_8,c8_8
 
@@ -93,6 +94,14 @@
 *
       real wk1 (DIST_SHAPE), wk2 (DIST_SHAPE)
       real wk1m(DIST_SHAPE), wk2m(DIST_SHAPE)
+*
+      real*8 xmassm_8(l_ni,l_nj), y1logm_8(l_ni,l_nj), y2logm_8(l_ni,l_nj),
+     $      expfm_8(l_ni,l_nj), invsm_8(l_ni,l_nj), invtm_8(l_ni,l_nj)
+*
+      real*8 inv_Cstv_tstr_8
+      real*8 inv_Geomg_hx_8(l_niu)
+      real*8 inv_Geomg_hsy_8(l_njv)
+      real*8 inv_Geomg_z_8(l_nk)
 *
 *     ______________________________________________________
 *
@@ -116,7 +125,7 @@
 *
 *     Exchange haloes for derivatives & interpolation 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*PDIR SERIAL
+*
 *     TRAJECTORY
 *     ----------
       call rpn_comm_xch_halo( F_um, LDIST_DIM,l_niu,l_nj,G_nk,
@@ -150,25 +159,69 @@
          call rpn_comm_xch_halo( F_mu, LDIST_DIM,l_ni,l_nj,G_nk,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif 
-*PDIR ENDSERIAL
 *
+      nij = l_ni*l_nj
+*
+!$omp parallel
+!$omp do
+      do j = 1, l_nj
+      do i = 1, l_ni
+*
+         xmassm_8(i,j) = F_sm(i,j)
+*
+      end do
+      end do
+!$omp enddo
+*
+!$omp single
+      call vexp (expfm_8,xmassm_8,nij)
+!$omp end single
+*
+      inv_Cstv_tstr_8 = 1.0d0 / Cstv_tstr_8
+*
+!$omp do
+      do i = 1, l_niu
+         inv_Geomg_hx_8(i) = 1.0d0 / Geomg_hx_8(i)
+      end do
+!$omp enddo
+*
+!$omp do
+      do j = 1, l_njv
+         inv_Geomg_hsy_8(j) = 1.0d0 / Geomg_hsy_8(j)
+      end do
+!$omp enddo
+*
+!$omp do
+      do k = 1, l_nk
+         inv_Geomg_z_8(k) = 1.0d0 / Geomg_z_8(k)
+      end do
+!$omp enddo
+!$omp end parallel
+*
+!$omp parallel private(i,j,i0,j0,jn,in,i00,inn,j00,jnn,
+!$omp$                 pd1_8,xmassm_8,y1logm_8,y2logm_8,
+!$omp$                 invsm_8,invtm_8,
+!$omp$                 wk1m,wk2m,wk1,wk2)
+*
+!$omp do
+      do 1000 k = 1,l_nk 
+*
+      if (Schm_hydro_L) then
       do j = 1, l_nj
       do i = 1, l_ni
 *
 *        TRAJECTORY
 *        ----------
-         wk1m(i,j) = ONE_8 
+         wk1m  (i,j) = ONE_8
 *
 *        TLM 
 *        ---
-         wk1 (i,j) = ZERO_8 
+         wk1   (i,j) = ZERO_8 
 *
       end do
       end do
-
-*PDIR PARDO FOR=Ptopo_npeOpenMP
-      do 1000 k = 1,l_nk 
-
+      endif
+*
 *****************************
 * Compute RHS of U equation *
 *****************************
@@ -205,9 +258,9 @@
 *
      %                    - c1_8 *( ( 1. - intuv_c0xxu_8(i) )* F_tm(i  ,j,k)
      %                                   + intuv_c0xxu_8(i)  * F_tm(i+1,j,k) )
-     %                           *          ( F_qm (i+1,j,k) - F_qm (i,j,k) ) / Geomg_hx_8(i)
+     %                           *          ( F_qm (i+1,j,k) - F_qm (i,j,k) ) * inv_Geomg_hx_8(i)
 *
-     %                    - c2_8 *wk1m(i,j)*( F_fim(i+1,j,k) - F_fim(i,j,k) ) / Geomg_hx_8(i)
+     %                    - c2_8 *wk1m(i,j)*( F_fim(i+1,j,k) - F_fim(i,j,k) ) * inv_Geomg_hx_8(i)
 *
             F_orum(i,j,k) = F_rum (i,j,k)
 *
@@ -217,15 +270,15 @@
 *
      %                    - c1_8 *( ( 1. - intuv_c0xxu_8(i) )* F_tm(i  ,j,k)
      %                                   + intuv_c0xxu_8(i)  * F_tm(i+1,j,k) )
-     %                           *         ( F_q (i+1,j,k) - F_q (i,j,k) ) / Geomg_hx_8(i)
+     %                           *         ( F_q (i+1,j,k) - F_q (i,j,k) ) * inv_Geomg_hx_8(i)
 *
      %                    - c1_8 *( ( 1. - intuv_c0xxu_8(i) )* F_t(i  ,j,k)
      %                                   + intuv_c0xxu_8(i)  * F_t(i+1,j,k) )
-     %                           *         ( F_qm(i+1,j,k) - F_qm(i,j,k) ) / Geomg_hx_8(i)
+     %                           *         ( F_qm(i+1,j,k) - F_qm(i,j,k) ) * inv_Geomg_hx_8(i)
 *
-     %                    - c2_8 *wk1m(i,j)*( F_fi (i+1,j,k) - F_fi (i,j,k) ) / Geomg_hx_8(i)
+     %                    - c2_8 *wk1m(i,j)*( F_fi (i+1,j,k) - F_fi (i,j,k) ) * inv_Geomg_hx_8(i)
 *
-     %                    - c2_8 *wk1 (i,j)*( F_fim(i+1,j,k) - F_fim(i,j,k) ) / Geomg_hx_8(i)
+     %                    - c2_8 *wk1 (i,j)*( F_fim(i+1,j,k) - F_fim(i,j,k) ) * inv_Geomg_hx_8(i)
 *
             F_oru(i,j,k) = F_ru (i,j,k)
          end do
@@ -321,10 +374,10 @@
 *
      %                - c1_8 *( ( 1. - intuv_c0xxu_8(i) )* F_tm(i  ,j,k)
      %                               + intuv_c0xxu_8(i)  * F_tm(i+1,j,k) )
-     %                  * ( F_qm(i+1,j,k) - F_qm(i,j,k) ) / Geomg_hx_8(i)
+     %                  * ( F_qm(i+1,j,k) - F_qm(i,j,k) ) * inv_Geomg_hx_8(i)
 *
      %                - c2_8 *wk1m(i,j) * ( F_fim(i+1,j,k) - F_fim(i,j,k) )
-     %                     / Geomg_hx_8(i) 
+     %                     * inv_Geomg_hx_8(i) 
 *
      %                + c8_8 * Cori_fcoru_8(i,j) *
      %     (inuvl_wxxu3_8(i,1)*wk2m(i-1,j)+inuvl_wxxu3_8(i,2)*wk2m(i  ,j)
@@ -338,17 +391,17 @@
 *
      %              - c1_8 *( ( 1. - intuv_c0xxu_8(i) )* F_tm(i  ,j,k)
      %                             + intuv_c0xxu_8(i)  * F_tm(i+1,j,k) )
-     %                * ( F_q (i+1,j,k) - F_q (i,j,k) ) / Geomg_hx_8(i)
+     %                * ( F_q (i+1,j,k) - F_q (i,j,k) ) * inv_Geomg_hx_8(i)
 *
      %              - c1_8 *( ( 1. - intuv_c0xxu_8(i) )* F_t(i  ,j,k)
      %                             + intuv_c0xxu_8(i)  * F_t(i+1,j,k) )
-     %                * ( F_qm(i+1,j,k) - F_qm(i,j,k) ) / Geomg_hx_8(i)
+     %                * ( F_qm(i+1,j,k) - F_qm(i,j,k) ) * inv_Geomg_hx_8(i)
 *
      %              - c2_8 *wk1m(i,j) * ( F_fi (i+1,j,k) - F_fi (i,j,k) ) 
-     %                     / Geomg_hx_8(i) 
+     %                     * inv_Geomg_hx_8(i) 
 *
      %              - c2_8 *wk1 (i,j) * ( F_fim(i+1,j,k) - F_fim(i,j,k) ) 
-     %                     / Geomg_hx_8(i) 
+     %                     * inv_Geomg_hx_8(i) 
 *
      %              + c8_8 * Cori_fcoru_8(i,j) *
      %     (inuvl_wxxu3_8(i,1)*wk2(i-1,j)+inuvl_wxxu3_8(i,2)*wk2(i  ,j)
@@ -397,10 +450,10 @@
      %                    - c1_8 *( ( 1. - intuv_c0yyv_8(j) )*F_tm(i,j  ,k)
      %                                   + intuv_c0yyv_8(j)  *F_tm(i,j+1,k) )
      %                           *         ( F_qm (i,j+1,k) - F_qm (i,j,k) )
-     %                           * Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                           * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
      %                    - c2_8 *wk1m(i,j)*( F_fim(i,j+1,k) - F_fim(i,j,k) )
-     %                           * Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                           * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
             F_orvm(i,j,k) = F_rvm (i,j,k)
 *
@@ -411,18 +464,18 @@
      %                    - c1_8 *( ( 1. - intuv_c0yyv_8(j) )*F_tm(i,j  ,k)
      %                                   + intuv_c0yyv_8(j)  *F_tm(i,j+1,k) )
      %                           *         ( F_q (i,j+1,k) -  F_q (i,j,k) )
-     %                           * Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                           * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
      %                    - c1_8 *( ( 1. - intuv_c0yyv_8(j) )*F_t(i,j  ,k)
      %                                   + intuv_c0yyv_8(j)  *F_t(i,j+1,k) )
      %                           *         ( F_qm(i,j+1,k) -  F_qm(i,j,k) )
-     %                           * Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                           * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
      %                    - c2_8 *wk1m(i,j)*( F_fi (i,j+1,k) -  F_fi (i,j,k) )
-     %                           * Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                           * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
      %                    - c2_8 *wk1 (i,j)*( F_fim(i,j+1,k) -  F_fim(i,j,k) )
-     %                           * Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                           * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
             F_orv(i,j,k) = F_rv (i,j,k)
          end do
@@ -476,10 +529,10 @@
 *
      %               - c1_8 *( ( 1. - intuv_c0yyv_8(j) )*F_tm(i,j  ,k) 
      %                              + intuv_c0yyv_8(j)  *F_tm(i,j+1,k) )
-     %                 * (F_qm(i,j+1,k)-F_qm(i,j,k))*Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                 * (F_qm(i,j+1,k)-F_qm(i,j,k))*Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
      %               - c2_8 *wk1m(i,j)*( F_fim(i,j+1,k) - F_fim(i,j,k) ) 
-     %                 * Geomg_cyv2_8(j)/Geomg_hsy_8(j) 
+     %                 * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j) 
 *
      %               - c8_8 * Cori_fcorv_8(i,j) *
      %       (inuvl_wyyv3_8(j,1)*wk2m(i,j-1)+inuvl_wyyv3_8(j,2)*wk2m(i,j  )
@@ -493,17 +546,17 @@
 *
      %              - c1_8 *( ( 1. - intuv_c0yyv_8(j) )*F_tm(i,j  ,k)
      %                             + intuv_c0yyv_8(j)  *F_tm(i,j+1,k) )
-     %                * (F_q(i,j+1,k)-F_q (i,j,k))*Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                * (F_q(i,j+1,k)-F_q (i,j,k))*Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
      %              - c1_8 *( ( 1. - intuv_c0yyv_8(j) )*F_t(i,j  ,k)
      %                             + intuv_c0yyv_8(j)  *F_t(i,j+1,k) )
-     %                * (F_qm(i,j+1,k)-F_qm(i,j,k))*Geomg_cyv2_8(j)/Geomg_hsy_8(j)
+     %                * (F_qm(i,j+1,k)-F_qm(i,j,k))*Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j)
 *
      %              - c2_8 *wk1m(i,j)*( F_fi (i,j+1,k) - F_fi (i,j,k) )
-     %                * Geomg_cyv2_8(j)/Geomg_hsy_8(j) 
+     %                * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j) 
 *
      %              - c2_8 *wk1 (i,j)*( F_fim(i,j+1,k) - F_fim(i,j,k) )
-     %                * Geomg_cyv2_8(j)/Geomg_hsy_8(j) 
+     %                * Geomg_cyv2_8(j) * inv_Geomg_hsy_8(j) 
 *
      %              - c8_8 * Cori_fcorv_8(i,j) *
      %       (inuvl_wyyv3_8(j,1)*wk2(i,j-1)+inuvl_wyyv3_8(j,2)*wk2(i,j  )
@@ -523,10 +576,10 @@
 *
      %                 - c1_8 *( ( 1. - intuv_c0yyv_8(1) )*F_tm(i,1  ,k) 
      %                                + intuv_c0yyv_8(1)  *F_tm(i,1+1,k) )
-     %                   * (F_qm(i,1+1,k)-F_qm(i,1,k))*Geomg_cyv2_8(1)/Geomg_hsy_8(1)
+     %                   * (F_qm(i,1+1,k)-F_qm(i,1,k))*Geomg_cyv2_8(1) * inv_Geomg_hsy_8(1)
 *
      %                 - c2_8 * wk1m(i,1) * ( F_fim(i,1+1,k) - F_fim(i,1,k) ) 
-     %                   * Geomg_cyv2_8(1)/Geomg_hsy_8(1)
+     %                   * Geomg_cyv2_8(1) * inv_Geomg_hsy_8(1)
 *
      %                 - c8_8 * Cori_fcorv_8(i,1)
      %         * (inuvl_wyyv3_8(1,2)*wk2m(i,1)+inuvl_wyyv3_8(1,3)*wk2m(i,2) 
@@ -540,17 +593,17 @@
 *
      %                 - c1_8 *( ( 1. - intuv_c0yyv_8(1) )*F_tm(i,1  ,k)
      %                                + intuv_c0yyv_8(1)  *F_tm(i,1+1,k) )
-     %                   * (F_q (i,1+1,k)-F_q(i,1,k))*Geomg_cyv2_8(1)/Geomg_hsy_8(1)
+     %                   * (F_q (i,1+1,k)-F_q(i,1,k))*Geomg_cyv2_8(1) * inv_Geomg_hsy_8(1)
 *
      %                 - c1_8 *( ( 1. - intuv_c0yyv_8(1) )*F_t(i,1  ,k)
      %                                + intuv_c0yyv_8(1)  *F_t(i,1+1,k) )
-     %                   * (F_qm(i,1+1,k)-F_qm(i,1,k))*Geomg_cyv2_8(1)/Geomg_hsy_8(1)
+     %                   * (F_qm(i,1+1,k)-F_qm(i,1,k))*Geomg_cyv2_8(1) * inv_Geomg_hsy_8(1)
 *
      %                - c2_8 * wk1m(i,1) * ( F_fi (i,1+1,k) - F_fi (i,1,k) )
-     %                   * Geomg_cyv2_8(1)/Geomg_hsy_8(1) 
+     %                   * Geomg_cyv2_8(1) * inv_Geomg_hsy_8(1) 
 *
      %                - c2_8 * wk1 (i,1) * ( F_fim(i,1+1,k) - F_fim(i,1,k) )
-     %                   * Geomg_cyv2_8(1)/Geomg_hsy_8(1) 
+     %                   * Geomg_cyv2_8(1) * inv_Geomg_hsy_8(1) 
 *
      %                - c8_8 * Cori_fcorv_8(i,1)
      %         * (inuvl_wyyv3_8(1,2)*wk2(i,1)+inuvl_wyyv3_8(1,3)*wk2(i,2)
@@ -570,10 +623,10 @@
      %         - c1_8 *(( 1. - intuv_c0yyv_8(l_njv) )*F_tm(i,l_njv  ,k) 
      %                       + intuv_c0yyv_8(l_njv)  *F_tm(i,l_njv+1,k))
      %           * ( F_qm(i,l_njv+1,k) - F_qm(i,l_njv,k) ) 
-     %           * Geomg_cyv2_8(l_njv)/Geomg_hsy_8(l_njv)
+     %           * Geomg_cyv2_8(l_njv) * inv_Geomg_hsy_8(l_njv)
 *
      %         - c2_8 *wk1m(i,l_njv)*( F_fim(i,l_njv+1,k)
-     %           - F_fim(i,l_njv,k))*Geomg_cyv2_8(l_njv)/Geomg_hsy_8(l_njv)
+     %           - F_fim(i,l_njv,k))*Geomg_cyv2_8(l_njv) * inv_Geomg_hsy_8(l_njv)
 *
      %         - c8_8 * Cori_fcorv_8(i,l_njv) *
      %           (   inuvl_wyyv3_8(l_njv,1)*wk2m(i,l_njv-1) 
@@ -589,18 +642,18 @@
      %         - c1_8 *(( 1. - intuv_c0yyv_8(l_njv) )*F_tm(i,l_njv  ,k)
      %                       + intuv_c0yyv_8(l_njv)  *F_tm(i,l_njv+1,k))
      %           * ( F_q(i,l_njv+1,k) - F_q(i,l_njv,k) )
-     %           * Geomg_cyv2_8(l_njv)/Geomg_hsy_8(l_njv)
+     %           * Geomg_cyv2_8(l_njv) * inv_Geomg_hsy_8(l_njv)
 *
      %         - c1_8 *(( 1. - intuv_c0yyv_8(l_njv) )*F_t(i,l_njv  ,k)
      %                       + intuv_c0yyv_8(l_njv)  *F_t(i,l_njv+1,k))
      %           * ( F_qm(i,l_njv+1,k) - F_qm(i,l_njv,k) )
-     %           * Geomg_cyv2_8(l_njv)/Geomg_hsy_8(l_njv)
+     %           * Geomg_cyv2_8(l_njv) * inv_Geomg_hsy_8(l_njv)
 *
      %         - c2_8 *wk1m(i,l_njv)*( F_fi (i,l_njv+1,k)
-     %           - F_fi (i,l_njv,k))*Geomg_cyv2_8(l_njv)/Geomg_hsy_8(l_njv)
+     %           - F_fi (i,l_njv,k))*Geomg_cyv2_8(l_njv) * inv_Geomg_hsy_8(l_njv)
 *
      %         - c2_8 *wk1 (i,l_njv)*( F_fim(i,l_njv+1,k)
-     %           - F_fim(i,l_njv,k))*Geomg_cyv2_8(l_njv)/Geomg_hsy_8(l_njv)
+     %           - F_fim(i,l_njv,k))*Geomg_cyv2_8(l_njv) * inv_Geomg_hsy_8(l_njv)
 *
      %         - c8_8 * Cori_fcorv_8(i,l_njv) *
      %           (   inuvl_wyyv3_8(l_njv,1)*wk2(i,l_njv-1)
@@ -618,38 +671,47 @@
       j0 = 1
       in = l_ni
       jn = l_nj
-
+*
+      do j = j0, jn
+      do i = i0, in
+         xmassm_8(i,j) = ONE_8+Geomg_dpba(k)*(expfm_8(i,j) - ONE_8)
+      end do
+      end do
+      call vlog(y1logm_8, xmassm_8, nij)
+      call vrec( invsm_8, xmassm_8, nij)
+*
+      do j = j0, jn
+      do i = i0, in
+         xmassm_8(i,j) = F_tm(i,j,k)*inv_Cstv_tstr_8
+      end do
+      end do
+      call vlog(y2logm_8, xmassm_8, nij)
+      call vrec( invtm_8, xmassm_8, nij)
+*
       pd1_8 = log(Geomg_z_8(k))
       do j= j0, jn
       do i= i0, in
 *
 *        TRAJECTORY
 *        ----------
-         F_rcnm(i,j,k) = - aaa_8*log(1+Geomg_dpba(k)*(exp(F_sm(i,j))- 1.)) -
+         F_rcnm(i,j,k) = - aaa_8*y1logm_8(i,j) - bbb_8*F_tdm(i,j,k)
 *
-     %                     bbb_8*F_tdm(i,j,k)
+         F_rthm(i,j,k) = - aaa_8*y2logm_8(i,j) - c3_8*(pd1_8-F_qm(i,j,k)) 
 *
-         F_rthm(i,j,k) = - aaa_8*log( F_tm(i,j,k)/Cstv_tstr_8 ) 
-*
-     %                   - c3_8*(pd1_8-F_qm(i,j,k))
-*
-     %                   + c4_8*F_psdm(i,j,k)/Geomg_z_8(k)
+     %                   + c4_8*F_psdm(i,j,k)*inv_Geomg_z_8(k)
 *
          F_orcnm(i,j,k)=   F_rcnm(i,j,k)
          F_orthm(i,j,k)=   F_rthm(i,j,k)
 *
 *        TLM 
 *        ---
-         F_rcn(i,j,k) = - aaa_8*(Geomg_dpba(k)*(F_s(i,j)*exp(F_sm(i,j))))/
-     %                    (1+Geomg_dpba(k)*(exp(F_sm(i,j))- 1.)) -
+         F_rcn(i,j,k) = - aaa_8*(Geomg_dpba(k)*(F_s(i,j)*expfm_8(i,j))) * invsm_8(i,j)
+     %                  - bbb_8*F_td(i,j,k)
 *
-     %                    bbb_8*F_td(i,j,k)
+         F_rth(i,j,k) = - aaa_8*( F_t(i,j,k) * inv_Cstv_tstr_8 ) * invtm_8(i,j)
+     %                  - c3_8 *(-F_q(i,j,k))
 *
-         F_rth(i,j,k) = - aaa_8*( F_t(i,j,k)/Cstv_tstr_8 )/( F_tm(i,j,k)/Cstv_tstr_8 )
-*
-     %                  - c3_8*(-F_q(i,j,k))
-*
-     %                  + c4_8*F_psd(i,j,k)/Geomg_z_8(k)
+     %                  + c4_8 *F_psd(i,j,k) * inv_Geomg_z_8(k)
 *
          F_orcn(i,j,k)=   F_rcn(i,j,k)
          F_orth(i,j,k)=   F_rth(i,j,k)
@@ -666,7 +728,7 @@
             F_rwm (i,j,k) = - c5_8*F_wm(i,j,k) + c6_8*F_mum(i,j,k)
 *
             F_rvvm(i,j,k) = - aaa_8*( F_fis(i,j) + F_fipm(i,j,k) )
-     %                     + c7_8*F_psdm(i,j,k)/Geomg_z_8(k)+c6_8*F_wm(i,j,k)
+     %                     + c7_8*F_psdm(i,j,k)*inv_Geomg_z_8(k)+c6_8*F_wm(i,j,k)
 *
             F_orwm (i,j,k) = F_rwm (i,j,k)
 *
@@ -677,7 +739,7 @@
             F_rw (i,j,k) = - c5_8*F_w(i,j,k) + c6_8*F_mu(i,j,k)
 *
             F_rvv(i,j,k) = - aaa_8*( F_fip(i,j,k) )
-     %                     + c7_8*F_psd(i,j,k)/Geomg_z_8(k)+c6_8*F_w(i,j,k)
+     %                     + c7_8*F_psd(i,j,k)*inv_Geomg_z_8(k)+c6_8*F_w(i,j,k)
 *
             F_orw (i,j,k) = F_rw (i,j,k)
             F_orvv(i,j,k) = F_rvv(i,j,k)
@@ -686,12 +748,13 @@
       endif 
 
  1000 continue
+!$omp enddo
 *
 *******************************************************
 * Interpolate Ru, Rv from U-, V-grid to G-grid, resp. *
 *******************************************************
-
-*PDIR SERIAL
+*
+!$omp single
 *     TRAJECTORY
 *     ----------
       call rpn_comm_xch_halo ( F_rum,LDIST_DIM,l_niu,l_nj,G_nk,
@@ -705,7 +768,8 @@
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo ( F_rv, LDIST_DIM,l_ni,l_njv,G_nk,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-*PDIR ENDSERIAL
+*
+!$omp end single
 *
 *     set indices for Ruw1
       i0 = 1
@@ -719,7 +783,7 @@
          if (l_north) jn = l_njv-1
       endif
 *      
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp do
       do k=1,l_nk
          do j = j0, jn
          do i = i0, in
@@ -740,6 +804,7 @@
          end do
          end do
       end do
+!$omp enddo
 *
 *     set indices for Rvw1
       i0 = 1
@@ -756,7 +821,7 @@
           if (l_north) jn = l_njv-2
       endif
 *
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp do
       do k=1,l_nk
          do j = j0, jn
          do i = i0, in
@@ -818,11 +883,13 @@
             endif
          endif
       end do
+!$omp enddo
 *
 *  Change Ru, Rv values on the boundaries of the LAM grid
-*PDIR SERIAL
+*
       if (G_lam) then
           if (l_west) then
+!$omp do
              do k=1,l_nk
              do j= 1+pil_s, l_nj-pil_n
 *
@@ -837,8 +904,10 @@
                 F_oru(pil_w,j,k) = F_ru(pil_w,j,k)
              enddo
              enddo
+!$omp enddo
           endif
           if (l_east) then
+!$omp do
              do k=1,l_nk
              do j= 1+pil_s, l_nj-pil_n
 *
@@ -853,8 +922,10 @@
                 F_oru(l_ni-pil_e,j,k) = F_ru(l_ni-pil_e,j,k)
              enddo
              enddo
+!$omp enddo
           endif
           if (l_south) then
+!$omp do
              do k=1,l_nk
              do i= 1+pil_w, l_ni-pil_e
 *
@@ -869,8 +940,10 @@
                 F_orv(i,pil_s,k) = F_rv(i,pil_s,k)
              enddo
              enddo
+!$omp enddo
           endif
           if (l_north) then
+!$omp do
              do k=1,l_nk
              do i= 1+pil_w, l_ni-pil_e
 *
@@ -885,9 +958,11 @@
                 F_orv(i,l_nj-pil_n,k) = F_rv(i,l_nj-pil_n,k)
              enddo
              enddo
+!$omp enddo
           endif
       endif
-*PDIR ENDSERIAL
+*
+!$omp end parallel
 *
       return
       end

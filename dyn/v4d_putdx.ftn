@@ -8,7 +8,7 @@
       use v4d_prof, only: Pr_mode_S, Pr_nsim4d 
       use v4dz,     only: V4dzgauss_ni,V4dzgauss_nj
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer, intent(inout):: kstatus
 *
@@ -419,7 +419,7 @@
       contains
       subroutine v4d_putfld(cdvar,kstatus)
 *
-#include "impnone.cdk"
+      implicit none
 *
       character*2, intent(in) :: cdvar
       integer,  intent(inout) :: kstatus
@@ -430,6 +430,7 @@
 *revision
 * v3_00 - P. Gauthier        - initial MPI version
 * v3_01 - M. Tanguay         - introduce gem2gauss for singular vectors
+* v3_11 - P. Gauthier        - Adjust latitude reversing when V4dg_vstag_L
 *
 *object
 *
@@ -440,6 +441,11 @@
 * kstatus      I                   Status of the job
 *----------------------------------------------------------------
 *
+*implicits
+#include "v4dg.cdk"
+*
+      integer njx
+*
       write(Lun_out,*)'     ... collecting variable ',cdvar
 *
 *     Adjoint of
@@ -448,12 +454,15 @@
       select case (cdvar)
       case('UU','VV','TT','HU')
          dlbuff_8(:,:) = 0.
+*
+         njx = njgauss
+         if(cdvar.eq.'VV'.and.V4dg_vstag_L) njx = njgauss -1
          do jlev = 1, G_nk
             icount = 0
-            do jlat = 1,njgauss
+            do jlat = 1,njx
                do jlon = 1,nigauss
                   icount = icount+1
-                  dlbuff_8(icount,jlev) = zbuff(jlon,njgauss -jlat+1,jlev)
+                  dlbuff_8(icount,jlev) = zbuff(jlon,njx -jlat+1,jlev)
                end do
             end do
          end do

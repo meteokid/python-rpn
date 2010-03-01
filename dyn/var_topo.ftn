@@ -1,0 +1,79 @@
+***s/r var_topo - varies topography incrementally from analysis
+*                 topography to target topography
+*
+#include <model_macros_f.h>
+*
+      subroutine var_topo()
+*
+      implicit none
+*
+*author
+*     Sylvie Gravel
+*
+*revision
+* v3_11 - Gravel S.         - initial version
+*
+*object
+* (see above)
+*
+*arguments
+*        None
+*
+*implicits
+#include "glb_ld.cdk"
+#include "p_geof.cdk" 
+#include "lctl.cdk"
+#include "dcst.cdk"
+#include "vtopo.cdk"
+#include "vt1.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*
+      integer  pnerr, pnlod, pnlkey1(3), i,j,k
+**
+      real*8 lt, pio2, f, atime, two
+      parameter (two = 2.0d0)
+*     __________________________________________________________________
+*
+
+      pnlkey1( 1) = VMM_KEY(topo)
+      pnlkey1( 2) = VMM_KEY(dtopo)
+      pnlkey1( 3) = VMM_KEY(fit1)
+      pnlod = 3
+*     - - - - - - - - - - - - - 
+      pnerr = vmmlod(pnlkey1,pnlod)
+*     - - - - - - - - - - - - - 
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(dtopo)
+      pnerr = VMM_GET_VAR(fit1)
+*
+      lt = Vtopo_ndt
+      pio2 = Dcst_pi_8 / two
+
+      f = min(Lctl_step-Vtopo_start+1,Vtopo_ndt)
+      atime  = (cos(pio2 * (f-1.)/ lt))**two
+     %       - (cos(pio2 * f    / lt))**two
+      do j= 1, l_nj 
+      do i= 1, l_ni
+         topo (i,j)   = topo(i,j)  + atime * dtopo(i,j)
+      end do
+      end do
+
+      do k= 1, l_nk
+      do j= 1, l_nj 
+      do i= 1, l_ni
+         fit1 (i,j,k) = fit1(i,j,k) + atime * dtopo(i,j)
+      end do
+      end do
+      end do
+
+      if ( Lctl_step-Vtopo_start+1 .eq. Vtopo_ndt) Vtopo_L = .false.
+*
+      pnerr = vmmuld(-1,0)
+*
+*     __________________________________________________________________
+*
+      return
+      end

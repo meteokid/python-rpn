@@ -10,6 +10,7 @@
 * v2_30 - Dugas B.          - use real*8 rotation matrices and 
 * v2_30                       cartesian coordinates
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
 *
 *implicits
 #include "e_grids.cdk"
@@ -70,7 +71,7 @@
 *     compute x and y positions of the PHI grid
 *
       ier=stretch_axis2 ( x_8, Grd_dx, Grd_x0, Grd_xl, nleft, ni, nila,
-     $                    r1, .false., .false., Grd_dxmax, nimax )
+     $                    r1, .false., .false., Grd_dxmax, nimax, Grd_gauss_L )
 *
       if (ier.ne.0) then
           write(6,*)'ERROR in generating X axis!!! ABORT!!!!'
@@ -79,10 +80,10 @@
 *
       if (LAM) then
          ier=stretch_axis2 ( y_8, Grd_dy, Grd_y0, Grd_yl, nbelo, Grd_nj,
-     $                   Grd_njla, s1, .false.,.false.,Grd_dymax,njmax )
+     $                   Grd_njla, s1, .false.,.false.,Grd_dymax,njmax, Grd_gauss_L )
       else
          ier=stretch_axis2 ( y_8, Grd_dy, Grd_y0, Grd_yl, nbelo, Grd_nj,
-     $                   Grd_njla, s1, .true. ,.false.,Grd_dymax,njmax )
+     $                   Grd_njla, s1, .true. ,.false.,Grd_dymax,njmax, Grd_gauss_L )
       endif 
 *
       if (ier.ne.0) then

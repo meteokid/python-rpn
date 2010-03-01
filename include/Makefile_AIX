@@ -1,9 +1,9 @@
 OPTIL  = 2
-DEFINE = -DCVMG=cvmg
 OMP    = -openmp
 MPI    = -mpi
-RMN    = rmn_x
+RMN    = rmn_007
+COMM   = rpn_comm205 rmn_pre_009
 PRIV   = priv
-COMM   = rpn_comm201
-IBM_LD = hpm pmapi
+
+IBM_LD = hpm_r pmapi
 

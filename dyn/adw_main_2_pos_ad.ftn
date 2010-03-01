@@ -4,7 +4,7 @@
 *
       subroutine adw_main_2_pos_ad ( F_it, F_u, F_v, F_w, F_um, F_vm, F_wm )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_it
       real F_u (*),F_v (*),F_w (*)
@@ -18,6 +18,8 @@
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
 * v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_11 - Tanguay M.        - Remove restoration of vectorization in adjoint of semi-Lag
+*                           - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *language
 *     fortran 77
@@ -110,22 +112,6 @@
       real wuthm(Adw_nit*Adw_njt*l_nk),wvthm(Adw_nit*Adw_njt*l_nk),
      %     wwthm(Adw_nit*Adw_njt*l_nk)
 *
-*     ------------------------------------------
-*     Variables needed to restore  vectorization
-*     in semi-Lagrangian adjoint interp.
-*     (Based on Clive Temperton ECMWF method)
-*     ------------------------------------------
-      integer inca,ibase,itx,count,fldu,fldv,fldw,stencil,nfld,kdim,ksep(F_it),
-     %        klev,ilevels,istart,istop,jinc,indice,nijplus,
-     %        myint1,myint2,plus1,plus2,minus1,minus2
-      real tempo
-*
-      integer, dimension(:,:),allocatable :: kinc
-      real,    dimension(:,:),allocatable :: zinc
-      real,    dimension(:)  ,allocatable :: buff
-*
-*     ------------------------------------------
-*
       if (Lun_debug_L) write (Lun_out,1000)
 *
 *     Flag for diagnostics
@@ -140,8 +126,11 @@
       dth    = Cstv_dt_8/2.
 ************************************************************************
 *
+!$omp parallel shared (ind) 
+*
 *     Zero adjoint variables 
 *     ----------------------
+!$omp do 
       do n = 1,l_ni*l_nj*l_nk
          n1(n)      = ZERO_8
          capx1(n)   = ZERO_8
@@ -153,53 +142,28 @@
          wrkc1(n)   = ZERO_8
          wrk_yth(n) = ZERO_8
       enddo
+!$omp enddo 
 *
 *     Set Positions in extra space TRAJ
 *     ---------------------------------
+!$omp do 
       do it = 1,F_it
       ind(it) = nijk*(it-1) + 1
       enddo
-*
-*     -------------------------------------
-*     Prepare restoration  of vectorization
-*     in semi-Lagrangian adjoint interp.
-*     -------------------------------------
-*
-*        Size of the stencil for 3D linear interpolation
-*        -----------------------------------------------
-         stencil = 8
-*
-*        Number of fields to treat
-*        -------------------------
-         nfld = 3
-*
-*        Number of independent positions at a given level
-*        ------------------------------------------------
-         kdim = stencil*nfld
-*
-*        Modify dimension for efficiency
-*        -------------------------------
-         nijplus = nij
-         if(2*(nij/2).eq.nij) nijplus = nij + 1
-*
-         allocate ( kinc(nijplus,kdim*l_nk),
-     %              zinc(nijplus,kdim*l_nk),
-     %              buff(0:nijkag*nfld))
-*
-*        Zero adjoint variables
-*        ----------------------
-         do i = 0,nijkag*nfld
-            buff(i) = ZERO_8
-         enddo
+!$omp enddo 
 *
 *     ----------------------------
 *     Preserve TRAJ uthm vthm wthm
 *     ----------------------------
+!$omp do 
       do ijk =1,nijkag
          wuthm(ijk) = F_um(ijk)
          wvthm(ijk) = F_vm(ijk)
          wwthm(ijk) = F_wm(ijk)
       enddo
+!$omp enddo 
+*
+!$omp end parallel 
 *
       pnlkey1(1) = VMM_KEY(xth)
       pnlkey1(2) = VMM_KEY(yth)
@@ -265,46 +229,26 @@
                      doh_L = .false.
       if (it .eq. 1) doh_L = .true.
 *
+!$omp parallel  
+*
+!$omp do  
       do n = 1,nijk
       wrk_ythm(n) = ythm(n)
       enddo
+!$omp enddo  
 *
 *     ------------------------------------------
 *     Preserve xthm wrk_ythm zthm for ADJOINT #2
 *     ------------------------------------------
+!$omp do  
       do ijk =1,nijk
          xthm_2    (ind(it)+ijk-1)  = xthm    (ijk)
          wrk_ythm_2(ind(it)+ijk-1)  = wrk_ythm(ijk)
          zthm_2    (ind(it)+ijk-1)  = zthm    (ijk)
       enddo
+!$omp enddo  
 *
-*     Set coloring of vertical levels
-*     -------------------------------
-        ksep(it) = 0
-          myint2 = 0
-           plus2 = 0
-          minus2 = 0
-        do k =1,l_nk
-        do j =j0,jn
-        do i =i0,in
-           ijk = nij*(k-1) + l_ni*(j-1) + i
-           tempo  =         l_nk*(      zthm(ijk)-Geomg_z_8(k))/
-     %                           (Geomg_z_8(l_nk)-Geomg_z_8(1))
-           myint1 = int(abs(tempo)) + 1
-           if(tempo.gt.0.) then
-              plus1 = myint1
-              plus2 = max(plus2,plus1)
-           else
-              minus1 = - myint1
-              minus2 = - max(- minus2,- minus1)
-           endif
-           myint2 = max(myint2,myint1)
-        enddo
-        enddo
-        enddo
-        ksep(it) = max(ksep(it),- minus2 + plus2 + 1)
-        if(plpr_L) write(6,*) 'For IT=',it,' Ptopo_myproc =',Ptopo_myproc,
-     %                        ' TRILIN ksep minus2 plus2 =',ksep(it),minus2,plus2
+!$omp end parallel  
 *
       call adw_setint ( n1m, capx1m, dummy, dummy, capy1m, dummy,
      %                  dummy, capz1m, dummy, xthm,   wrk_ythm, zthm,
@@ -313,12 +257,14 @@
 *     ------------------------------------------------
 *     Preserve n1m capx1m capy1m capz1m for ADJOINT #3
 *     ------------------------------------------------
+!$omp parallel do  
       do ijk=1,nijk
          n1m_3   (ind(it)+ijk-1) = n1m   (ijk)
          capx1m_3(ind(it)+ijk-1) = capx1m(ijk)
          capy1m_3(ind(it)+ijk-1) = capy1m(ijk)
          capz1m_3(ind(it)+ijk-1) = capz1m(ijk)
       enddo
+!$omp end parallel do  
 *
 *     ----------------------------
 *     NOTE:Uthm Vthm never changed
@@ -326,9 +272,12 @@
       call adw_trilin (wrkx1m,wuthm,1.0,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
       call adw_trilin (wrky1m,wvthm,1.0,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
 *
+!$omp parallel  
+*
 *     -------------------------------------------------------
 *     Preserve xcthm ycthm zcthm wrkx1m wrky1m for ADJOINT #4
 *     -------------------------------------------------------
+!$omp do  
       do ijk=1,nijk
          xcthm_4 (ind(it)+ijk-1)  = xcthm (ijk)
          ycthm_4 (ind(it)+ijk-1)  = ycthm (ijk)
@@ -336,31 +285,44 @@
          wrkx1m_4(ind(it)+ijk-1)  = wrkx1m(ijk)
          wrky1m_4(ind(it)+ijk-1)  = wrky1m(ijk)
       enddo
+!$omp enddo  
 *
 *     ----------------------------
 *     Preserve ythm for ADJOINT #5
 *     ----------------------------
+!$omp do  
       do ijk=1,nijk
          ythm_5 (ind(it)+ijk-1)  = ythm(ijk)
       enddo
+!$omp enddo  
 *
+!$omp end parallel  
 *
 ************************************************************************
       call adw_trajsp ( xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
      %                  i0,in,j0,jn)
 ************************************************************************
+*
+!$omp parallel  
+*
+!$omp do  
       do n = 1,nijk
       wrk_ythm(n) = ythm(n)
       enddo
+!$omp enddo  
 *
 *     ------------------------------------------
 *     Preserve xthm wrk_ythm zthm for ADJOINT #6
 *     ------------------------------------------
+!$omp do  
       do ijk=1,nijk
          xthm_6    (ind(it)+ijk-1)  = xthm    (ijk)
          wrk_ythm_6(ind(it)+ijk-1)  = wrk_ythm(ijk)
          zthm_6    (ind(it)+ijk-1)  = zthm    (ijk)
       enddo
+!$omp enddo  
+*
+!$omp end parallel  
 *
       call adw_setint ( n1m, capx1m, dummy, dummy, capy1m, dummy,
      %                  dummy, capz1m, dummy, xthm,   wrk_ythm, zthm,
@@ -369,13 +331,14 @@
 *     ------------------------------------------------
 *     Preserve n1m capx1m capy1m capz1m for ADJOINT #7
 *     ------------------------------------------------
+!$omp parallel do  
       do ijk=1,nijk
          n1m_7   (ind(it)+ijk-1) = n1m   (ijk)
          capx1m_7(ind(it)+ijk-1) = capx1m(ijk)
          capy1m_7(ind(it)+ijk-1) = capy1m(ijk)
          capz1m_7(ind(it)+ijk-1) = capz1m(ijk)
       enddo
-*
+!$omp end parallel do  
 *
 *     -----------------------
 *     NOTE:Wthm never changed
@@ -383,6 +346,8 @@
       call adw_trilin (wrkx1m,wwthm,-dth,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
 *
 ************************************************************************
+!$omp parallel private(n)
+!$omp do
       do k = 2,l_nk-1
       do j = j0,jn
       do i = i0,in
@@ -407,12 +372,16 @@
       enddo
       enddo
       enddo
+!$omp enddo
+!$omp end parallel
 ************************************************************************
       enddo ! end of iterations loop
 ************************************************************************
       call adw_trajex (F_um, F_vm, xct1m, yct1m, zct1m, xcthm, ycthm, zcthm,
      %                 i0,in,j0,jn)
 *
+!$omp parallel private(n)
+!$omp do 
       do j = j0,jn
       do i = i0,in
 C        n = ((j-1)*l_ni) + i   !for k=1
@@ -421,6 +390,9 @@ C        n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
 C        F_wm(n) = Geomg_z_8(l_nk)
       enddo
       enddo
+!$omp enddo 
+*
+!$omp do
       do k = 2,l_nk-1
          do j = j0,jn
          do i = i0,in
@@ -436,14 +408,15 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
          enddo
          enddo
       enddo
+!$omp enddo
 *
 *     ----------------
 *     TRAJECTORY (END)
 *     ----------------
 *
-*
 *     ADJOINT CALCULATIONS
 *     --------------------
+!$omp do
       do k = l_nk-1,2,-1
          do j = j0,jn
          do i = i0,in
@@ -462,7 +435,9 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
          enddo
          enddo
       enddo
+!$omp enddo
 *
+!$omp do
       do j = j0,jn
       do i = i0,in
 *
@@ -476,6 +451,9 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
 *
       enddo
       enddo
+!$omp enddo
+*
+!$omp end parallel
 *
       call adw_trajex_ad (F_u, F_v, xct1, yct1, zct1, xcth, ycth, zcth,
      %                                                xcthm,ycthm,zcthm,
@@ -486,25 +464,11 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
       do it=F_it,1,-1
 ************************************************************************
 *
-*     Zero adjoint variables
-*     ----------------------
-      do i = 1,kdim*nijplus*l_nk
-         kinc(i,1) = 0
-      enddo
-*
-      do i = 1,kdim*nijplus*l_nk
-         zinc(i,1) = 0
-      enddo
-*
-      itx = F_it-it+1
-*
-*     Zero counter
-*     ------------
-      count = 0
-*
                      doh_L = .false.
       if (it .eq. 1) doh_L = .true.
 *
+!$omp parallel private(n)
+!$omp do
       do k = l_nk-1,2,-1
       do j = j0,jn
       do i = i0,in
@@ -532,6 +496,8 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
       enddo
       enddo
       enddo
+!$omp enddo
+!$omp end parallel
 *
 *     ---------------------------------------------
 *     Reset n1m capx1m capy1m capz1m for ADJOINT #7
@@ -539,17 +505,10 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
 *     -----------------------
 *     NOTE:Wthm never changed
 *     -----------------------
-*     ------------------------------------------------------------------
-*     NOTE:In ADW_TRILIN_AD, we store increments causing unvectorization
-*     ------------------------------------------------------------------
-      count =  count + 1
-      inca  = (count - 1) * stencil
-      ibase = (count - 1) * nijkag
-      call adw_trilin_ad (wrkx1,        -dth, capx1, capy1, capz1,
-     %                           wwthm, n1m_7   (ind(it)),capx1m_7(ind(it)),
-     %                                  capy1m_7(ind(it)),capz1m_7(ind(it)),nijk,
-     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it),
-     %                    i0,in,j0,jn,l_nk)
+      call adw_trilin_ad (wrkx1, F_w, -dth,  capx1, capy1, capz1,
+     %                           wwthm,  n1m_7   (ind(it)),capx1m_7(ind(it)),
+     %                                   capy1m_7(ind(it)),capz1m_7(ind(it)),
+     %                           nijk,i0,in,j0,jn,l_nk)
 *
 *
 *     ---------------------------------------
@@ -562,12 +521,14 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
      %                                         zthm_6    (ind(it)),
      %                     .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
 *
+!$omp parallel do
       do n = 1,nijk
 *
       yth(n)     = wrk_yth(n) + yth(n)
       wrk_yth(n) = ZERO_8
 *
       enddo
+!$omp end parallel do
 *
 *
 *     ----------------------------------------------------
@@ -593,26 +554,15 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
 *     ----------------------------
 *     NOTE:Uthm Vthm never changed
 *     ----------------------------
-*     ------------------------------------------------------------------
-*     NOTE:In ADW_TRILIN_AD, we store increments causing unvectorization
-*     ------------------------------------------------------------------
-      count =  count + 1
-      inca  = (count - 1) * stencil
-      ibase = (count - 1) * nijkag
-      call adw_trilin_ad (wrky1,        1.0, capx1, capy1, capz1,
+      call adw_trilin_ad (wrky1, F_v, 1.0, capx1, capy1, capz1,
      %                           wvthm, n1m_3   (ind(it)),capx1m_3(ind(it)),
-     %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),nijk,
-     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it),
-     %                    i0,in,j0,jn,l_nk)
+     %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),
+     %                    nijk,i0,in,j0,jn,l_nk)
 *
-      count =  count + 1
-      inca  = (count - 1) * stencil
-      ibase = (count - 1) * nijkag
-      call adw_trilin_ad (wrkx1,        1.0, capx1, capy1, capz1,
+      call adw_trilin_ad (wrkx1, F_u, 1.0, capx1, capy1, capz1,
      %                           wuthm, n1m_3   (ind(it)),capx1m_3(ind(it)),
-     %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),nijk,
-     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it),
-     %                    i0,in,j0,jn,l_nk)
+     %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),
+     %                    nijk,i0,in,j0,jn,l_nk)
 *
 *     ---------------------------------------
 *     Reset xthm wrk_ythm zthm for ADJOINT #2
@@ -624,72 +574,20 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
      %                                           zthm_2    (ind(it)), 
      %                     doh_L, .true., .true.,nijk,i0,in,j0,jn,l_nk)
 *
+!$omp parallel do
       do n = 1,nijk
 *
       yth(n)     = wrk_yth(n) + yth(n)
       wrk_yth(n) = ZERO_8
 *
       enddo
-*
-*     -----------------------------
-*     Transfer increments in buffer
-*     -----------------------------
-*
-*     -----------------------------------------------------------
-*     CAUTION: DO NOT CHANGE the following loop ordering
-*     -----------------------------------------------------------
-*              1) Loop on JINC must be innermost for vectorization
-*              2) The chopping is done to guarantee safety
-*                 of the vectorization
-*     -----------------------------------------------------------
-      do j=j0,jn
-      do i=i0,in
-*
-      ij = ((j-1)*l_ni) + i
-*
-        istop = 0
-*
-        do klev=1,ksep(it)
-*
-          ilevels=(l_nk-klev)/ksep(it) + 1
-          istart = istop + 1
-          istop  = istart+ilevels*kdim-1
-*
-*VDIR NODEP
-          do jinc=istart,istop
-             buff(kinc(ij,jinc)) = buff(kinc(ij,jinc)) + zinc(ij,jinc)
-          enddo
-*
-        enddo
-*
-      enddo
-      enddo
+!$omp end parallel do
 *
 ************************************************************************
       enddo ! end of iterations loop
 ************************************************************************
 *
-*     -------------------------------------
-*     Add buffer content to model variables
-*     -------------------------------------
-      fldw  = 1
-      fldv  = 2
-      fldu  = 3
-*
-      do k = 1,l_nk
-      do j = 1,Adw_njt
-      do i = 1,Adw_nit
-         indice = Adw_nit*Adw_njt*(k-1) + Adw_nit*(j-1) + i
-         F_w(indice) = buff((fldw-1) * nijkag + indice) + F_w(indice)
-         F_v(indice) = buff((fldv-1) * nijkag + indice) + F_v(indice)
-         F_u(indice) = buff((fldu-1) * nijkag + indice) + F_u(indice)
-      end do
-      end do
-      end do
-*
       pnerr = vmmuld(-1,0)
-*
-      deallocate (kinc,zinc,buff)
 *
  1000  format(3X,'ADJ of CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS_AD)')
 *

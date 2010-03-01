@@ -27,6 +27,8 @@
 * v3_00 - Lee V.           - re-arranged sequence to match new LAM entry
 * v3_01 - Corbeil L.       - introduce interface acqui
 * v3_10 - Lee V.           - added deallocate topu_temp,topv_temp,gzu_temp...
+* v3_11 - Gravel S.        - provide for variable topography
+* v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
 *
 *object
 *	
@@ -55,6 +57,7 @@
 #include "out1.cdk"
 #include "ind.cdk"
 #include "acq.cdk"
+#include "vtopo.cdk"
 *
 *modules
       integer  bmf_gobe,bmf_get
@@ -71,7 +74,7 @@
       real, allocatable, dimension(:,:) ::zcol,tcol,vlna
       real, allocatable, dimension(:,:,:) ::  u_temp2,v_temp2,
      $     xlnp, dz, dt, work
-      real, dimension(l_ni,l_nj) :: pps, ps , topo_temp
+      real, dimension(l_ni,l_nj) :: pps, ps , topo_temp,ps_temp
       real dummy, conv,
      $     psmin, psmax, psmin_glob, psmax_glob
       integer errprdf,prdfsum
@@ -153,6 +156,11 @@
 *        Finally, compute pressure on model surface (PS)
          call getp0 ( pps, topo_temp,pia,pibb, ps, gz_temp, tt_temp, 
      $                         Acqi_nbpts, Acqi_vterplv,Acql_siganl )
+         do j=1,l_nj
+         do i=1,l_ni
+            ps_temp(i,j)=ps(i,j)
+         enddo
+         enddo
 *        Interpolate VT
          call vte_hyb2hyb (work, Geomg_pia, Geomg_pibb,pps,G_nk,tt_temp,
      $         pia,pibb, ps, Acqi_vterplv, Acqi_nbpts, 'VT',Acql_siganl)
@@ -253,6 +261,11 @@
 *
          call gz2p0 ( ps, gz_temp, topo_temp, zcol,tcol, sdd, lna, 
      $                                   Acqi_nbpts, Acqi_vterplv )
+         do j=1,l_nj
+         do i=1,l_ni
+            ps_temp(i,j)=ps(i,j)
+         enddo
+         enddo
 *
 *        Compute geopotential (GZ) and temperature (TT)
 *
@@ -339,7 +352,7 @@
       NESD = .false.
       if (Lctl_step.gt.0) NESD = .true.
       call tr_init ( work,Acqi_datasp,bmf_time1,bmf_time2,Acqi_nktmp,
-     $               pps,pia,pibb,ps,Acqi_vterplv,l_ni,l_nj,NESD )
+     $               pps,pia,pibb,ps_temp,Acqi_vterplv,l_ni,l_nj,NESD )
 *
       if (Acql_horzint) 
      $     call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju,
@@ -358,6 +371,17 @@
          enddo
          enddo
       enddo
+
+*     If required, copy difference between initial and target topography 
+*     in Ind_dtopo and move analysis topography into Ind_topo
+      if (Vtopo_L) then
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_dtopo(i,j) = Ind_topo(i,j) - topo_temp(i,j) 
+            Ind_topo(i,j)  = topo_temp(i,j) 
+         enddo
+         enddo
+      endif
 *
       deallocate ( u_temp,v_temp,gz_temp,tt_temp,hu_temp,work,lna,rna,
      $             sdd )

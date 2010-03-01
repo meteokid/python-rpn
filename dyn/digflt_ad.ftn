@@ -1,0 +1,286 @@
+***s/r digflt_ad - ADJ of digflt_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine digflt_ad
+*
+      implicit none
+*
+*author
+*     M Tanguay - rpn - july 2003
+*
+*revision
+* v3_11 - Tanguay M.       - initial MPI version
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "mem.cdk"
+#include "init.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "rstr.cdk"
+#include "schm.cdk"
+#include "vta.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "p_bus.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+      integer  open_db_file,close_db_file,rewind_db_file,
+     $         read_db_file,write_db_file
+      external open_db_file,close_db_file,rewind_db_file,
+     $         read_db_file,write_db_file
+*
+      integer err, key(52), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
+     $        keya(Tr3d_ntr), pnlod
+      real tr1,tra
+      pointer (patr1,  tr1 (LDIST_SHAPE,*)),(patra,  tra (LDIST_SHAPE,*))
+      real    busper(max(1,p_bper_siz)), dfcoef 
+*
+      real*8, parameter :: ZERO_8 = 0.0
+*     __________________________________________________________________
+*
+      if ( Tr2d_ntr.ne.0 ) call gem_stop ('digflt_ad',-1) 
+*
+      dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Lctl_step ) )
+*
+***********************************************************************
+* Physics fields at half span are saved to be used after initialisation
+***********************************************************************
+*     --------------------------------------------------------------------------------
+*     NOTE: For ADJ of simplified physics, the requested TRAJECTORY is given in RWTRAJ
+*     --------------------------------------------------------------------------------
+      if (.FALSE.) then
+      if ( Lctl_step .eq. (Init_dfnp-1)/2 .and. Schm_phyms_L ) then
+         if (Mem_phyncore_L) then
+            call hpalloc(Phy_busper3D_digf_,p_bper_siz*p_nj,err,1)
+            do i=1,p_bper_siz*p_nj
+               Phy_busper3D_digf(i) = Phy_busper3D(i)
+            end do
+         else
+            err = open_db_file   (Lun_waphy)
+            err = rewind_db_file (Lun_waphy)
+            err = open_db_file   (Lun_wapta)
+            err = rewind_db_file (Lun_wapta)
+            do k = 1,p_nj
+               err = read_db_file  (Lun_waphy,j,1)
+               err = read_db_file  (Lun_waphy,busper,p_bper_siz)
+               err = write_db_file (Lun_wapta,j,1)
+               err = write_db_file (Lun_wapta,busper,p_bper_siz)
+            end do
+            err = close_db_file (Lun_waphy)
+            err = close_db_file (Lun_wapta)
+         endif
+      endif
+*
+      Rstri_half_L = .false.
+      if (Lctl_step.ge.(Init_dfnp-1)/2) Rstri_half_L = .true.
+      endif
+*
+****************************************************************
+*     ADJ of
+*     Passive tracers (no passive tracers in linear model)
+****************************************************************
+
+      if ( Init_dftr_L ) then
+*
+         key1_  = VMM_KEY (trt1)
+         keya_  = VMM_KEY (trta)
+         do n=1,Tr3d_ntr
+            key1(n) = key1_ + n
+            keya(n) = keya_ + n
+         end do
+         if (Tr3d_ntr.gt.0) then
+            err = vmmlod(key1, Tr3d_ntr)  
+            err = vmmlod(keya, Tr3d_ntr)  
+            do n=1,Tr3d_ntr
+               err = vmmget(key1 (n),patr1, tr1)
+               err = vmmget(keya (n),patra, tra)
+               do k=1,G_nk
+               do j=1,l_nj
+               do i=1,l_ni
+                  tr1 (i,j,k) = dfcoef * tra (i,j,k) + tr1 (i,j,k)
+               end do
+               end do
+               end do
+            end do
+            err = vmmuld(key1, Tr3d_ntr)
+            err = vmmuld(keya, Tr3d_ntr)
+         endif
+*
+      elseif ( Lctl_step .eq. (Init_dfnp-1)/2 ) then
+*
+         key1_  = VMM_KEY (trt1)
+         keya_  = VMM_KEY (trta)
+         do n=1,Tr3d_ntr
+            key1 (n) = key1_  + n
+            keya (n) = keya_  + n
+         end do
+         if (Tr3d_ntr.gt.0) then
+            err = vmmlod(key1, Tr3d_ntr)  
+            err = vmmlod(keya, Tr3d_ntr)  
+            do n=1,Tr3d_ntr
+               err = vmmget(key1 (n),patr1, tr1)
+               err = vmmget(keya (n),patra, tra)
+               do k=1,G_nk
+               do j=1,l_nj
+               do i=1,l_ni
+                  tr1(i,j,k) = tra(i,j,k) + tr1(i,j,k)
+                  tra(i,j,k) = ZERO_8
+               end do
+               end do
+               end do
+            end do
+            err = vmmuld(key1, Tr3d_ntr)
+            err = vmmuld(keya, Tr3d_ntr)
+         endif
+*
+      endif
+*
+***************************************************************
+*     ADJ of
+*     Non-hydrostatic model fields                            
+***************************************************************
+*
+      if ( .not. Schm_hydro_L )then
+*
+         key(1) = VMM_KEY(wta  )
+         key(2) = VMM_KEY(wt1  )
+         key(3) = VMM_KEY(qpta )
+         key(4) = VMM_KEY(qpt1 )
+         key(5) = VMM_KEY(multa)
+         key(6) = VMM_KEY(multx)
+         key(7) = VMM_KEY(muta )
+         key(8) = VMM_KEY(mut1 )
+         pnlod  = 8
+*
+         err = vmmlod(key,pnlod)
+*
+         err = VMM_GET_VAR(wta  )
+         err = VMM_GET_VAR(wt1  )
+         err = VMM_GET_VAR(qpta )
+         err = VMM_GET_VAR(qpt1 )
+         err = VMM_GET_VAR(multa)
+         err = VMM_GET_VAR(multx)
+         err = VMM_GET_VAR(muta )
+         err = VMM_GET_VAR(mut1 )
+*
+         do k=1,l_nk
+         do j= 1, l_nj
+         do i= 1, l_ni
+*
+             mut1(i,j,k) = dfcoef *  muta(i,j,k) +  mut1(i,j,k)
+            multx(i,j,k) = dfcoef * multa(i,j,k) + multx(i,j,k)
+             qpt1(i,j,k) = dfcoef *  qpta(i,j,k) +  qpt1(i,j,k)
+              wt1(i,j,k) = dfcoef *   wta(i,j,k) +   wt1(i,j,k)
+*
+         end do
+         end do
+         end do
+*
+         err = vmmuld(-1,0)
+*
+      endif
+*
+***************************************************************
+*     ADJ of
+*     Hydrostatic model fields
+***************************************************************
+      key(1)  = VMM_KEY(uta  )
+      key(2)  = VMM_KEY(ut1  )
+      key(3)  = VMM_KEY(vta  )
+      key(4)  = VMM_KEY(vt1  )
+      key(5)  = VMM_KEY(tdta )
+      key(6)  = VMM_KEY(tdt1 )
+      key(7)  = VMM_KEY(fita )
+      key(8)  = VMM_KEY(fit1 )
+      key(9)  = VMM_KEY(fipta)
+      key(10) = VMM_KEY(fipt1)
+      key(11) = VMM_KEY(tta  )
+      key(12) = VMM_KEY(tt1  )
+      key(13) = VMM_KEY(qta  )
+      key(14) = VMM_KEY(qt1  )
+      key(15) = VMM_KEY(tpta )
+      key(16) = VMM_KEY(tpt1 )
+      key(17) = VMM_KEY(pipta)
+      key(18) = VMM_KEY(pipt1)
+      key(19) = VMM_KEY(tplta)
+      key(20) = VMM_KEY(tplt1)
+      key(21) = VMM_KEY(psdta)
+      key(22) = VMM_KEY(psdt1)
+      key(23) = VMM_KEY(sta  )
+      key(24) = VMM_KEY(st1  )
+      key(25) = VMM_KEY(gpta )
+      key(26) = VMM_KEY(gptx )
+      pnlod   = 26
+*
+      err = vmmlod(key,pnlod)
+      err = VMM_GET_VAR(uta  )
+      err = VMM_GET_VAR(ut1  )
+      err = VMM_GET_VAR(vta  )
+      err = VMM_GET_VAR(vt1  )
+      err = VMM_GET_VAR(tdta )
+      err = VMM_GET_VAR(tdt1 )
+      err = VMM_GET_VAR(fita )
+      err = VMM_GET_VAR(fit1 )
+      err = VMM_GET_VAR(fipta)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(tta  )
+      err = VMM_GET_VAR(tt1  )
+      err = VMM_GET_VAR(qta  )
+      err = VMM_GET_VAR(qt1  )
+      err = VMM_GET_VAR(tpta )
+      err = VMM_GET_VAR(tpt1 )
+      err = VMM_GET_VAR(pipta)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(tplta)
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR(psdta)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(sta  )
+      err = VMM_GET_VAR(st1  )
+      err = VMM_GET_VAR(gpta )
+      err = VMM_GET_VAR(gptx )
+*
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         st1(i,j)   = dfcoef * sta(i,j) + st1(i,j)
+*
+      end do
+      end do
+*
+      do k=1,l_nk
+      do j= 1, l_nj 
+      do i= 1, l_ni 
+*
+           gptx(i,j,k) = dfcoef *  gpta(i,j,k) +  gptx(i,j,k)
+          psdt1(i,j,k) = dfcoef * psdta(i,j,k) + psdt1(i,j,k)
+          tplt1(i,j,k) = dfcoef * tplta(i,j,k) + tplt1(i,j,k)
+          pipt1(i,j,k) = dfcoef * pipta(i,j,k) + pipt1(i,j,k)
+           tpt1(i,j,k) = dfcoef *  tpta(i,j,k) +  tpt1(i,j,k)
+            qt1(i,j,k) = dfcoef *   qta(i,j,k) +   qt1(i,j,k)
+            tt1(i,j,k) = dfcoef *   tta(i,j,k) +   tt1(i,j,k)
+          fipt1(i,j,k) = dfcoef * fipta(i,j,k) + fipt1(i,j,k)
+           fit1(i,j,k) = dfcoef *  fita(i,j,k) +  fit1(i,j,k)
+           tdt1(i,j,k) = dfcoef *  tdta(i,j,k) +  tdt1(i,j,k)
+            vt1(i,j,k) = dfcoef *   vta(i,j,k) +   vt1(i,j,k)
+            ut1(i,j,k) = dfcoef *   uta(i,j,k) +   ut1(i,j,k)  
+*
+      end do
+      end do
+      end do
+*
+      err = vmmuld(-1,0)
+*
+      return
+      end

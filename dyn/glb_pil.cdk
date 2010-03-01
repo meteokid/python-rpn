@@ -1,5 +1,9 @@
-      integer glb_pil_n, glb_pil_s,glb_pil_w,glb_pil_e
-      parameter (glb_pil_n=7, glb_pil_s=7, glb_pil_w=7, glb_pil_e=7)
 *
-      integer lam_pil_n,lam_pil_s,lam_pil_w,lam_pil_e
-      common /lam_pil/lam_pil_n,lam_pil_s,lam_pil_w,lam_pil_e
+      integer Glb_pil_n, Glb_pil_s, Glb_pil_w, Glb_pil_e,
+     $        Lam_pil_n, Lam_pil_s, Lam_pil_w, Lam_pil_e
+*
+      MARK_COMMON_BEG (Glb_pil_i)
+      common /Glb_pil_i/ Glb_pil_n, Glb_pil_s, Glb_pil_w, Glb_pil_e
+      MARK_COMMON_END (Glb_pil_i)
+*
+      common /Lam_pil_i/ Lam_pil_n, Lam_pil_s, Lam_pil_w, Lam_pil_e

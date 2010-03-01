@@ -6,7 +6,7 @@
       subroutine coriol8 ( F_u_8, F_v_8, F_x_8, F_y_8, 
      $                     F_xu_8, F_yv_8, F_ct_8, F_rot_8, DIST_DIM)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM
       real*8 F_u_8(DIST_SHAPE), F_v_8(DIST_SHAPE), 
@@ -19,6 +19,7 @@
 *
 *revision
 * v2_00 - Desgagne/Lee      - initial MPI version (from coriol v1_03)
+* v3_11 - Gravel S          - theoretical case
 *
 *object
 *       See above id.
@@ -39,6 +40,7 @@
 #include "lun.cdk"
 #include "dcst.cdk"
 #include "p_geol.cdk"
+#include "schm.cdk"
 *
 **
 *
@@ -50,6 +52,16 @@
       integer i, j, pn
       real*8  c0, sa, ca, s0, ang
 *
+*
+      if ( Schm_theoc_L ) then
+         do j=1-G_haloy,l_nj+G_haloy
+         do i=1-G_halox,l_ni+G_halox
+            F_u_8(i,j) = ZERO
+            F_v_8(i,j) = ZERO
+         enddo
+         enddo
+         return
+      endif
 *	set rotation parameters
 *
       s0 = F_rot_8(3,3)

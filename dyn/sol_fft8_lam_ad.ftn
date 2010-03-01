@@ -9,7 +9,9 @@
      $                       minx1, maxx1, minx2, maxx2,nx3,
      $                       F_npex1, F_npey1, ai, bi, ci,
      $                       fdg2,fdwfft)
-#include "impnone.cdk"
+*
+      implicit none
+*
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -19,6 +21,7 @@
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -79,6 +82,7 @@
       real*8   fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
 *
       integer i,  j, k, jr, l_pil_w,l_pil_e
+      integer piece,p0,pn,plon,ptotal
 *
       real*8 ZERO_8 
       parameter( ZERO_8 = 0.0 )
@@ -93,13 +97,16 @@
       if (l_south) l_pil_w= Lam_pil_w
       if (l_north) l_pil_e= Lam_pil_e
 *
-*PDIR SERIAL
+!$omp parallel private(jr)
+*
+!$omp single 
       call rpn_comm_transpose( sol, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                              Minz, Maxz, Nk, fdwfft, 1, 2 )
-*PDIR ENDSERIAL
+!$omp end single 
 *
 *     Zero adjoint variables
 *     ----------------------
+!$omp do 
       do k= 1,Nk
       do j= Miny,Maxy
       do i= Minx,Maxx
@@ -107,25 +114,28 @@
       enddo
       enddo
       enddo
+!$omp enddo 
 *
 *     ADJOINT of
 *     inverse projection ( r = x * w )
 
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp do
       do k=1, Nkl
       call qcfft8 ( fdwfft(1+pil_s,k,1+Lam_pil_w),
      %                    (Maxy-Miny+1)*(Maxz-Minz+1),1,
      %                    (Maxy-Miny+1-pil_s-pil_n), -1 )
       enddo
+!$omp enddo
 *
-*PDIR SERIAL
-*
+!$omp single 
       call rpn_comm_transpose
      $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
      $                        Minij, Maxij, Gni, fdg2,  2, 2 )
+!$omp end single 
 *
 *     Zero adjoint variables
 *     ----------------------
+!$omp do 
       do k= 1,Gni+2+F_npex1
       do j= Minz,Maxz
       do i= Miny,Maxy
@@ -133,40 +143,58 @@
       enddo
       enddo
       enddo
+!$omp enddo 
 *
-      do j = 1+Lam_pil_s,Gnj-1-Lam_pil_n
-         jr =  j + 1
-         do i=L_nij-l_pil_e,1+l_pil_w,-1
+       ptotal = L_nij-l_pil_e-l_pil_w-1
+       plon = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
+*
+!$omp do
+       do piece=1,Ptopo_npeOpenMP
+          p0 = 1+l_pil_w + plon*(piece-1)
+          pn = min(L_nij-l_pil_e,plon*piece+l_pil_w)
+*
+          do j = 1+Lam_pil_s,Gnj-1-Lam_pil_n
+             jr =  j + 1
+c            do i=L_nij-l_pil_e,1+l_pil_w,-1
+             do i=pn,p0,-1
+             do k=Nkl,1,-1
+             fdg2(k,i,jr) = - ci(k,i,j) * fdg2(k,i,j) + fdg2(k,i,jr) 
+             enddo
+             enddo
+          enddo
+*
+         do j = Gnj-Lam_pil_n,2+Lam_pil_s,-1
+            jr =  j - 1
+c           do i=L_nij-l_pil_e,1+l_pil_w,-1
+            do i=pn,p0,-1
+            do k=Nkl,1,-1
+            fdg2(k,i,jr) = - ai(k,i,j) * fdg2(k,i,j) + fdg2(k,i,jr)
+            fdg2(k,i,j ) =   bi(k,i,j) * fdg2(k,i,j)
+            enddo
+            enddo
+         enddo
+*
+         j =1+Lam_pil_s
+*
+c        do i=L_nij-l_pil_e,1+l_pil_w,-1
+         do i=pn,p0,-1
          do k=Nkl,1,-1
-         fdg2(k,i,jr) = - ci(k,i,j) * fdg2(k,i,j) + fdg2(k,i,jr) 
+            fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j)
          enddo
          enddo
-      enddo
 *
-      do j = Gnj-Lam_pil_n,2+Lam_pil_s,-1
-         jr =  j - 1
-         do i=L_nij-l_pil_e,1+l_pil_w,-1
-         do k=Nkl,1,-1
-         fdg2(k,i,jr) = - ai(k,i,j) * fdg2(k,i,j) + fdg2(k,i,jr)
-         fdg2(k,i,j ) =   bi(k,i,j) * fdg2(k,i,j)
-         enddo
-         enddo
       enddo
+!$omp enddo
 *
-      j =1+Lam_pil_s
-*
-      do i=L_nij-l_pil_e,1+l_pil_w,-1
-      do k=Nkl,1,-1
-         fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j)
-      enddo
-      enddo
-*
+!$omp single 
       call rpn_comm_transpose
      $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
      $                         Minij, Maxij, Gni, fdg2,-2, 2 )
+!$omp end single 
 *
 *     Zero adjoint variables
 *     ----------------------
+!$omp do 
       do k= 1,Gnj+F_npey1
       do j= Minij,Maxij
       do i= Minz,Maxz
@@ -174,62 +202,60 @@
       enddo
       enddo
       enddo
+!$omp enddo 
 *
-*PDIR ENDSERIAL
-*
-      do k = Nkl,1,-1
-         do i = Gni-1-Lam_pil_e,0+Lam_pil_w,-1
+!$omp do 
+      do i = Gni-1-Lam_pil_e,0+Lam_pil_w,-1
+         do k = Nkl,1,-1
             do j = (Maxy-Miny+1)-pil_n,1+pil_s,-1
                fdwfft(j,k,i+1) = pri * fdwfft(j,k,i+1)
             enddo
          enddo
       enddo
+!$omp enddo 
 *
-*PDIR PARDO FOR=Ptopo_npeOpenMP
+!$omp do 
       do k=1,Nkl
       call qcfft8(fdwfft(1+pil_s,k,1+Lam_pil_w),
      %                  (Maxy-Miny+1)*(Maxz-Minz+1),1,
      %                  (Maxy-Miny+1-pil_s-pil_n),  1 )
       enddo
-*
-*PDIR SERIAL
+!$omp enddo 
 *
 *     ADJOINT of
 *     projection ( wfft = x transposed * g )
 *
+!$omp do 
+      do i= 1,Gni
          do k= Minz, 0
             do j= Miny,Maxy
-               do i= 1,Gni
                   fdwfft(j,k,k)=ZERO_8
-               enddo
             enddo
          enddo
          do k= Nkl+1,Maxz
             do j= Miny,Maxy
-               do i= 1,Gni
                   fdwfft(j,k,i)=ZERO_8
-               enddo
             enddo
          enddo
-*
          do k= Minz, nkl
             do j= Miny, pil_s
-               do i= 1,Gni
                   fdwfft(j,k,i)=ZERO_8
-               enddo
             enddo
             do j= njl+1-pil_n,Maxy
-               do i= 1,Gni
                   fdwfft(j,k,i)=ZERO_8
-               enddo
             enddo
          enddo
+      enddo
+!$omp enddo 
 *
+!$omp single 
       call rpn_comm_transpose( rhs, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                         Minz, Maxz, Nk, fdwfft, -1, 2 )
+!$omp end single 
 *
 *     Zero adjoint variables
 *     ----------------------
+!$omp do 
       do k= 1,Gni+2+F_npex1
       do j= Minz,Maxz
       do i= Miny,Maxy
@@ -237,8 +263,9 @@
       enddo
       enddo
       enddo
+!$omp enddo 
 *
-*PDIR ENDSERIAL
+!$omp end parallel
 *
       return
       end

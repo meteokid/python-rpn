@@ -55,7 +55,7 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer i, j, k, n, err, key1(6),
+      integer i, j, k, n, err, key1(7),
      $     keyp(phyt_ntr), keym(h2o_ntr), keyp_, keym_
       real wk1(LDIST_SHAPE,Nk), wk2(LDIST_SHAPE,Nk), 
      $     wk3(LDIST_SHAPE,Nk), wk4(LDIST_SHAPE,Nk), 

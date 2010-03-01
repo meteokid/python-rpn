@@ -9,7 +9,7 @@
      $             F_umm, F_vmm, F_tmm,             F_trmm,
      $             F_lpsm, F_sig, F_kmm, F_ktm, DIST_DIM, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_cpu, F_step, nvvv, nvov, DIST_DIM, Nk
 *
@@ -32,6 +32,7 @@
 *revision
 * v3_00 - Laroche S.            - initial MPI version
 * v3_02 - Tanguay M./Laroche S. - do not assume TRAJ HU positive
+* v3_11 - Laroche S.            - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     See above id.
@@ -114,14 +115,14 @@
 *     ===================================================================
  100  continue
 *
-      do i=1,p_bdyn_siz
-         busdyn(i) = 0.
-      end do
-      do i=1,p_bvol_siz
-         busvol(i) = 0.
-      end do
+cs      do i=1,p_bdyn_siz
+cs         busdyn(i) = 0.
+cs      end do
+cs      do i=1,p_bvol_siz
+cs         busvol(i) = 0.
+cs      end do
 *
-      
+!$omp critical      
       Mem_pslic = Mem_pslic + 1
       if ( Mem_pslic .le. p_nj ) then
 *
@@ -137,6 +138,7 @@
          endif
 *
       endif
+!$omp end critical
 *
 *
 *C    Stop if last slice has been completed
@@ -146,6 +148,8 @@
 *     Fill buses with jdo row
 *     -----------------------
 *
+      busdyn = 0.
+      busvol = 0.
       j = jdo + p_offj
       call p_fillbus_tr ( busdyn,busper,
      $         F_upm , F_vpm , F_tpm , F_qpm, F_trpm,
@@ -198,6 +202,7 @@
 * 
 *
 *     Perform physic slices output
+!$omp critical
       do i=1,Pslab_slab
          if (Pslab_bus_s(i).eq.'P') then
             call writslabp(busper, p_bper_siz, jdo, i)
@@ -221,6 +226,7 @@ cstl
          err = write_db_file (Lun_waphy,jdo,1)
          err = write_db_file (Lun_waphy,busper,p_bper_siz)
       endif
+!$omp end critical
 *
 *
 *     ===================================================================

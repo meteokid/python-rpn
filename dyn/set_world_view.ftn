@@ -22,6 +22,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Desgagne M.       - new procedure for call to set_dcst8
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Lee V.            - place output in local PE directory
 *
 *object
 *
@@ -78,6 +79,7 @@ c     These variables are for OpenMp compilation
      $                                     Ptopo_npex  , Ptopo_npey)
       Ptopo_npeOpenMP = gnthread()
       if (Lun_out.gt.0) then
+         call write_status_file2 ('communications_established=YES' )
 	 write(6,*) 'OpenMP will use ',Ptopo_npeOpenMP
      $                    ,' thread(s)'
       endif
@@ -97,7 +99,7 @@ c     These variables are for OpenMp compilation
 *
 *     Setting up output of slabs 
 *
-      Lun_outgem_s=Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/output/'
+      Lun_outgem_s='./'
       Slab_send_s = 'SLB9'
       call convip(Slab_ip1,Pres_ptop,2,+1,' ',.false.)
       ierr = hybref_to_ig(Slab_ig1,Slab_ig2,Slab_ig3,Slab_ig4,

@@ -4,7 +4,8 @@
 *
       subroutine uv_acg2g_ad (F_dst,F_src,F_gridi,F_grido,DIST_DIM, 
      $                        Nk,F_i0,F_in,F_j0,F_jn)
-#include "impnone.cdk"
+*
+      implicit none
 *
       integer DIST_DIM,Nk,F_i0,F_in,F_j0,F_jn
       integer F_gridi, F_grido
@@ -19,6 +20,7 @@
 * v3_00 - Laroche S.    - initial MPI version
 * v3_02 - Tanguay M.    - introduce nie,nje as in uv_acg2g 
 * v3_03 - Tanguay M.    - Adjoint Lam configuration 
+* v3_11 - Tanguay M.    - Allow .not.cubic interpolation 
 *
 *object
 *     see id section
@@ -53,8 +55,6 @@
 *-----------------------------------------------------------------
 *
       cubic = Schm_adcub_L
-*
-      if (.not.cubic) call gem_stop('uv_acg2g_ad',-1)
 *
 *     check input grid
 *

@@ -4,7 +4,7 @@
 *
       subroutine v4d_zero 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -14,6 +14,7 @@
 * v2_31 - Tanguay M.        - adapt ADJ for new advection code
 *                           - adapt for tracers in tr3d  
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - ADJ of digital filter 
 *
 *object
 *    see id section
@@ -28,22 +29,27 @@
 #include "vt1.cdk"
 #include "vth.cdk"
 #include "vtx.cdk"
+#include "vta.cdk"
 #include "rhsc.cdk"
 #include "orh.cdk"
+#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "nest.cdk"
 #include "schm.cdk"
+#include "init.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
       integer pnerr, pnlkey1(50), key1_, key0_, key_, 
      $        key1(Tr3d_ntr), key0(Tr3d_ntr), key(Tr3d_ntr),
-     $        pnlod, err, i, j, k, n 
+     $        pnlod, err, i, j, k, n, keya_, keya(Tr3d_ntr) 
 *
-      real tr,tr0,trf
+      real tr,tr0,trf,tra
       pointer (patr,  tr (LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*)),
-     $        (patrf, trf(LDIST_SHAPE,*))
+     $        (patrf, trf(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
+*
+      if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
 *
       if( Lun_debug_L ) then
          write(Lun_out,fmt='(/,''V4D_ZERO:Zero ALL model variables'')')
@@ -561,6 +567,122 @@
          end do
          err = vmmuld(key,Tr3d_ntr)
       endif
+*
+      endif
+*
+      if ( Init_balgm_L ) then
+*
+*     ---------------------------
+*     Zero comdeck vta 
+*     ---------------------------
+      pnlkey1(1)  = VMM_KEY(uta  )
+      pnlkey1(2)  = VMM_KEY(vta  )
+      pnlkey1(3)  = VMM_KEY(tdta )
+      pnlkey1(4)  = VMM_KEY(fita )
+      pnlkey1(5)  = VMM_KEY(fipta)
+      pnlkey1(6)  = VMM_KEY(tta  )
+      pnlkey1(7)  = VMM_KEY(qta  )
+      pnlkey1(8)  = VMM_KEY(tpta )
+      pnlkey1(9)  = VMM_KEY(pipta)
+      pnlkey1(10) = VMM_KEY(tplta)
+      pnlkey1(11) = VMM_KEY(psdta)
+      pnlkey1(12) = VMM_KEY(sta  )
+      pnlkey1(13) = VMM_KEY(gpta )
+*
+      err = vmmlod(pnlkey1,13)
+*
+      err = VMM_GET_VAR(uta  )
+      err = VMM_GET_VAR(vta  )
+      err = VMM_GET_VAR(tdta )
+      err = VMM_GET_VAR(fita )
+      err = VMM_GET_VAR(fipta)
+      err = VMM_GET_VAR(tta  )
+      err = VMM_GET_VAR(qta  )
+      err = VMM_GET_VAR(tpta )
+      err = VMM_GET_VAR(pipta)
+      err = VMM_GET_VAR(tplta)
+      err = VMM_GET_VAR(psdta)
+      err = VMM_GET_VAR(sta  )
+      err = VMM_GET_VAR(gpta )
+*
+      do k=1,l_nk
+      do j= 1, l_nj 
+      do i= 1, l_ni 
+           uta(i,j,k) = 0. 
+           vta(i,j,k) = 0. 
+          tdta(i,j,k) = 0. 
+          fita(i,j,k) = 0. 
+         fipta(i,j,k) = 0. 
+           tta(i,j,k) = 0. 
+           qta(i,j,k) = 0. 
+          tpta(i,j,k) = 0. 
+         pipta(i,j,k) = 0. 
+         tplta(i,j,k) = 0. 
+         psdta(i,j,k) = 0. 
+          gpta(i,j,k) = 0. 
+      end do
+      end do
+      end do
+*
+      do j= 1, l_nj
+      do i= 1, l_ni
+         sta(i,j)   = 0. 
+      end do
+      end do
+*
+      err = vmmuld(-1,0)
+*
+*     Non-hydrostatic model fields                            
+*     ----------------------------
+      if ( .not. Schm_hydro_L )then
+*
+         pnlkey1(1) = VMM_KEY(wta  )
+         pnlkey1(2) = VMM_KEY(qpta )
+         pnlkey1(3) = VMM_KEY(multa)
+         pnlkey1(4) = VMM_KEY(muta )
+*
+         err = vmmlod(pnlkey1,4)
+*
+         err = VMM_GET_VAR(wta  )
+         err = VMM_GET_VAR(qpta )
+         err = VMM_GET_VAR(multa)
+         err = VMM_GET_VAR(muta )
+*
+         do k=1,l_nk
+         do j= 1, l_nj
+         do i= 1, l_ni
+              wta(i,j,k) = 0. 
+             qpta(i,j,k) = 0. 
+            multa(i,j,k) = 0. 
+             muta(i,j,k) = 0. 
+         end do
+         end do
+         end do
+*
+         err = vmmuld(-1,0)
+*
+      endif
+
+*     Passive tracers Tr3d 
+*     --------------------
+         keya_ = VMM_KEY (trta)
+         do n=1,Tr3d_ntr
+            keya(n) = keya_ + n
+         end do
+         if (Tr3d_ntr.gt.0) then
+            err = vmmlod(keya,Tr3d_ntr)  
+            do n=1,Tr3d_ntr
+               err = vmmget(keya(n),patra,tra)
+               do k=1,G_nk
+               do j=1,l_nj
+               do i=1,l_ni
+                  tra(i,j,k) = 0. 
+               end do
+               end do
+               end do
+            end do
+            err = vmmuld(keya,Tr3d_ntr)
+         endif
 *
       endif
 *

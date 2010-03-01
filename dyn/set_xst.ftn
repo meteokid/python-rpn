@@ -4,9 +4,8 @@
 *
       subroutine set_xst 
 *
-#include "impnone.cdk"
+      implicit none
 *
-      integer ni,nj
 *
 *author     V. Lee - May 2000 - (from e_gridgef,M.Roch)
 *
@@ -16,6 +15,7 @@
 * v2_30 - Dugas B.           - model coordinate calculation are now performed
 * v2_30                        with real*8 matrices and cartesian coordinates
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_11 - Lee V.             - inlined function ISORT (for IBM)
 *
 *object
 *
@@ -147,7 +147,25 @@
          j = Xst_statij(2,k)
          wk(k) = i+(j-1)*ni
       enddo
-      call isort (wk,nstat)
+
+c     call isort (wk,nstat)
+c     replacing routine isort with this sort:
+      if (nstat.gt.1) then
+          n = nstat
+          do i=1, n-1
+             k = i
+             do j = i+1, n
+                if (wk(k).gt.wk(j)) k=j
+             enddo
+             if (k.ne.i) then
+              m     = wk(k)
+              wk(k) = wk(i)
+              wk(i) = m
+             endif
+          enddo
+      endif
+
+
       oldij = 0
       m = 0
       do k=1,nstat
@@ -207,14 +225,14 @@
      %     /,'  User s GIVEN lat-lon and corresponding grid points. ',
      %     /,' _____________________________________________________',
      %     /,'    N    |  LAT   |  LON   |   I    |   J    |'
-     %    /,' _____________________________________________________',)
+     %    /,' _____________________________________________________')
  901  format(' _____________________________________________________'//)
- 902  format(1x,I5,'    ',f8.3,' ',f8.3,' ',I5,'    ',I5,'    ',)
+ 902  format(1x,I5,'    ',f8.3,' ',f8.3,' ',I5,'    ',I5,'    ')
  910  format(' _____________________________________________________',
      %     /,'  Reordered grid points with ACTUAL lat-lon values    ',
      %     /,' _____________________________________________________',
      %     /,'    N    |   I    |   J    |  LAT   |  LON   |'
-     %    /,' _____________________________________________________',)
+     %    /,' _____________________________________________________')
  912  format(1x,I5,'    ',I5,'    ',I5,'    ',f8.3,' ',f8.3,' ')
  914  format(/,' NO POINTS ARE REQUESTED FOR TIME SERIES.')
  915  format(/,I5,' POINTS ARE SPECIFIED FOR TIME SERIES.')

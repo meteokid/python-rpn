@@ -5,7 +5,7 @@
 *
       subroutine vspng_drv_tr (F_pip,F_qp,DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real   F_pip(DIST_SHAPE,Nk), F_qp(DIST_SHAPE,Nk)
@@ -21,6 +21,7 @@
 * v3_00 - Tanguay M.        - correction as in vspng_drv 
 * v3_01 - Laroche/Tanguay   - correction nj as in vspng_drv
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -72,9 +73,12 @@
      $                     Opr_opsyp0_8,Opr_opsyp2_8,G_ni,G_nj,G_nj)
          endif
 *
+*
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp do
             do k = 1, Vspng_nk
             do j = 1, l_nj
             do i = 1, l_ni
@@ -82,7 +86,9 @@
             end do
             end do
             end do
+!$omp enddo
          endif
+!$omp end parallel
 *
 *     The hydrostatic pressure: pi'  
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -101,6 +107,7 @@
 *
 *        Indirect diffusion of q'
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -109,12 +116,14 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
          call vspng_del2 (work,
      $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
      $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
+!$omp parallel do
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -123,6 +132,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
          endif
          endif

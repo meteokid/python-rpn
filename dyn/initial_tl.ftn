@@ -1,0 +1,135 @@
+***s/r initial_tl - TLM of initial
+*
+#include <model_macros_f.h>
+*
+      subroutine initial_tl (F_rstrt_L)
+*
+      implicit none
+*
+      logical F_rstrt_L
+*
+*author 
+*     M Tanguay - rpn - july 2003 
+*
+*revision
+* v3_11 - Tanguay M.       - initial MPI version
+*
+*object
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_rstrt_L     O         TRUE if a restart is required
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "init.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "step.cdk"
+#include "rstr.cdk"
+#include "schm.cdk"
+*
+**
+      integer n, pndfnph, pnerr  
+      real    prn, promegc, prsum, prwin1, prwin2
+*
+*     ---------------------------------------------------------------
+*
+      if ( mod(Init_dfnp,2) .ne. 1 ) then
+         if (Lun_out.gt.0) write(Lun_out,2010) Init_dfnp
+         call gem_stop('INITIAL_TL',-1)
+      endif
+*
+      if (Lun_out.gt.0) write(Lun_out,2020) Init_dfnp
+*
+*********************************************************************
+*
+      pndfnph = (Init_dfnp - 1) / 2
+
+      call hpalloc(Init_dfco_, pndfnph+1, pnerr,1)
+
+      promegc = (2.0 * Dcst_pi_8) / Init_dfpl_8
+      prwin1  = Dcst_pi_8 / real(pndfnph + 1)
+
+*
+*********************************************************************
+*
+      Init_dfco(0) = promegc * Cstv_dt_8 / Dcst_pi_8
+      prsum        = Init_dfco(0)
+*
+*********************************************************************
+*
+      do n=1,pndfnph
+         prwin2 = 1.0
+         prn    = real(n)
+*
+         if ( Init_dfwin_L ) then
+            prwin2 = prn * prwin1
+            prwin2 = sin(prwin2) / prwin2
+         endif
+*
+         Init_dfco(n) = prwin2 *dsin(prn * promegc * Cstv_dt_8) / 
+     $                  (prn * Dcst_pi_8)
+         prsum     = prsum + 2.0 * Init_dfco(n)
+      end do
+*
+      if (Lun_out.gt.0) write(Lun_out,2030)
+      if (Lun_out.gt.0) 
+     $    write(Lun_out,*) (Init_dfco(n),n=0,pndfnph), prsum
+*
+*********************************************************************
+*
+      do n=0,pndfnph
+         Init_dfco(n) = Init_dfco(n) / prsum
+      end do
+*
+      prsum = Init_dfco(0)
+      do n=1,pndfnph
+         prsum = prsum + 2.0 * Init_dfco(n)
+      end do
+*
+      if (Lun_out.gt.0) write(Lun_out,2040)
+      if (Lun_out.gt.0)
+     $    write(Lun_out,*) (Init_dfco(n),n=0,pndfnph), prsum
+*
+*********************************************************************
+*
+      if ( .not. Rstri_rstn_L ) call digflt_tl()
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+      call gem_run_tl (.true., F_rstrt_L)
+*
+      if (Lctl_step.eq.Init_dfnp-1) then
+         Rstri_idon_L = .true.
+         call ta2t1tx_tl()
+         Lctl_step = (Init_dfnp-1)/2
+         if (Lun_out.gt.0) write(Lun_out,1010) Lctl_step
+         if (Lun_out.gt.0) write(Lun_out,1020) Lctl_step
+         call dynout2 ()
+      endif
+*
+ 1000 format(/,'TLM of DIGITAL FILTER INITIALIZATION: (S/R INITIAL_TL)',
+     + /,'============================================')
+ 1010 format(/,'TLM of INITIALIZATION COMPLETED       (S/R INITIAL_TL)',
+     + /,'LAST TIMESTEP COMPLETED RESET TO:', I5,'    ',
+     + /,'============================================')
+ 1020 format(/,'THE TIMESTEP ',i5,' IS COMPLETED',/)
+ 2010 format(/,'PROBLEM: THE VARIABLE Init_dfnp = ',i4,'  IS EVEN',
+     %/,'==============================================')
+ 2020 format(/,'PREPARATION OF DIGITAL FILTER PARAMETERS',
+     %/,'AND COEFFICIENTS (S/R INITIAL_TL)          ',
+     %/,'========================================',/,'Init_dfnp  = ',i4)
+ 2030 format(/,'Digital filter coefficients and sum',
+     %/,'before normalization               ')
+ 2040 format(/,'Digital filter coefficients and sum',
+     %/,'after normalization                ')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -8,7 +8,7 @@
      %                     F_pip,    F_w,   F_qp,  F_mu, F_mul, F_s, 
      %                     F_xfis, DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real     F_u(DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
@@ -33,6 +33,7 @@
 * v2_21 - Desgagne M.       - control for diffusion on momentum only
 * v2_31 - Desgagne M.       - remove stkmemw
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Corbeil L.        - new RPNCOMM transpose
 *
 *object
 *     The diffusion coefficients are (Cstv_uvdf_8*Cstv_dt_8) for the
@@ -60,7 +61,7 @@
       integer i, j, k
       real*8 c_8
       real work(LDIST_SHAPE,Nk)
-      real*8 wk1_8(LDIST_SIZ*Nk)
+      real*8 wk1_8
       real*8 g1_8(LYDIST_SIZ*(Trp_12dmax-Trp_12dmin+1)*(G_ni+Ptopo_npex))
       real*8 g2_8((Trp_12dmax-Trp_12dmin+1)*(Trp_22max-Trp_22min+1)*(G_nj+Ptopo_npey))
       real*8, dimension (Ldnh_maxy*G_ni) :: aix_8,bix_8,cix_8,dix_8

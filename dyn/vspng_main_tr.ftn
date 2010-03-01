@@ -5,13 +5,14 @@
 *
       subroutine vspng_main_tr
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -50,15 +51,11 @@
          pnerr = VMM_GET_VAR(qpt1m)
       endif
 *
-c*PDIR RESERVE=Macr_cpud
-*
       if (G_lam) then
          call vspng_drv_lam_tr (pipt1m,qpt1m,LDIST_DIM,G_nk)
       else
          call vspng_drv_tr (pipt1m,qpt1m,LDIST_DIM,G_nk)
       endif
-*
-c*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
 *    

@@ -68,6 +68,8 @@
 *                    | factor becomes P_pbl_valeq_8                    |
 * P_pbl_snoalb_L     | .true.  when SNOALEN analysis is used           |
 *                    | .false. when SNOALEN is derived in physics      |
+* P_pbl_impflx_L     | .true.   ==> implicit surface fluxes            |
+*                    | .false. 	==> explicit surface fluxes (default)  |
 *----------------------------------------------------------------------
 *
 *
@@ -82,7 +84,7 @@
      $        P_pbl_albkg_L  ,P_pbl_cortm_L  ,P_pbl_corts_L  ,
      $        P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L  ,
      $        P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_z0tcst_L ,
-     $        P_pbl_advectke_L
+     $        P_pbl_advectke_L,P_pbl_impflx_L
       integer P_pbl_nslof    ,P_pbl_dumpbus
       real                 P_pbl_cst        ,P_pbl_csn      ,
      $     P_pbl_csg      ,P_pbl_kst        ,P_pbl_ksn      ,
@@ -103,7 +105,8 @@
      $     P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L  ,
      $     P_pbl_albkg_L  ,P_pbl_cortm_L  ,P_pbl_corts_L   ,
      $     P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L   ,
-     $     P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_z0tcst_L
+     $     P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_z0tcst_L  ,
+     $     P_pbl_impflx_L
       MARK_COMMON_END (ppbl_l)
 
       MARK_COMMON_BEG (ppbl_i)

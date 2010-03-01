@@ -49,6 +49,7 @@
       call getindx ('DLAT',      'P',dlat,     lght, init0)
       call getindx ('DLON',      'P',dlon,     lght, init0)
       call getindx ('MG',        'P',mg,       lght, init0)
+      call getindx ('ML',        'P',ml,       lght, init0)
       call getindx ('Z0',        'P',z0,       lght, init0)
       call getindx ('LHTG',      'P',lhtg,     lght, init0)
       call getindx ('ALVIS',     'P',alvis,    lght, init0)

@@ -4,9 +4,9 @@
 *
       subroutine v4d_ctrlcst ()
 *
-      use v4d_prof, only: Pr_doobs 
+      use v4d_prof, only: Pr_doobs, Pr_nevent 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -17,6 +17,9 @@
 * v3_01 - Morneau J.        - read obs from file and add TLM in cost function 
 *                             for V4dg_sensib_L = .T.
 * v3_01 - Tanguay M.        - add V4dg_sgvc_L
+* v3_11 - Tanguay M.        - No profiles when Pr_nevent=EVN_TLME 
+*                           - Write/Read TRAJ for conv. moved to v4d_rwconv0
+*                           - ADJ of digital filter
 *
 *object
 *  see id section	
@@ -28,10 +31,13 @@
 #include "v4dg.cdk"
 #include "lctl.cdk"
 #include "tr3d.cdk"
+#include <prof_f.h>
+#include "init.cdk"
+#include "rstr.cdk"
 *
       logical time0_L, time_L
 *
-      if(V4dg_conf/100.ne.1.or.V4dg_sgvc_L) return 
+      if(V4dg_conf/100.ne.1.or.V4dg_sgvc_L.or.Pr_nevent.eq.EVN_TLME) return 
 *
 *     ----------------------------------------
 *     Sensitivity analysis or Twin experiments
@@ -45,6 +51,7 @@
 *       Verify if .NOT.INITIAL time requested
 *       -------------------------------------
         time_L = Lctl_step.ne.0.and.mod(Lctl_step,V4dg_stepob).eq.0
+        if(Init_balgm_L.and..not.Rstri_idon_L.and.Lctl_step.ge.(Init_dfnp-1)/2) time_L = .false.
 *
         if(.not.(time0_L.or.time_L)) return
 *
@@ -56,10 +63,10 @@
            call v4d_rwobfr (1)
 *
         endif
-*       ---------------------------------------
-*       Read and Store  OBSERVATIONS if request
-*        ---------------------------------------
-        if(V4dg_sensib_L.and.V4dg_status.eq.5 ) then 
+*       --------------------------------------
+*       Read and Store OBSERVATIONS if request
+*        -------------------------------------
+        if(V4dg_sensib_L.and.V4dg_status.eq.5) then 
 *
 *         Read on random file
 *
@@ -92,29 +99,16 @@
 *       Verify if .NOT.INITIAL time requested
 *       -------------------------------------
         time_L = Lctl_step.ne.0.and.Pr_doobs(Lctl_step).gt.0
+        if(Init_balgm_L.and..not.Rstri_idon_L.and.Lctl_step.ge.(Init_dfnp-1)/2) time_L = .false.
 *
         if(.not.(time0_L.or.time_L)) return
-*
-*       Write trajectory for conversion
-*       -------------------------------
-        if(V4dg_status.eq.9.and.V4dg_di_L) then 
-*
-           V4dg_rwcv = 1
-           call v4d_rwconv()
-*
-*       Read trajectory for conversion
-*       ------------------------------
-        elseif(V4dg_tl_L) then
-*
-           V4dg_rwcv = 0
-           call v4d_rwconv()
-* 
-        endif
 *
 *       Interpolate model states at obs. locations and
 *       output the result to be read by 3D-Var
 *       ----------------------------------------------
-        if((V4dg_status.eq.7.and.V4dg_di_L).or.V4dg_tl_L) call v4d_cstjok() 
+        call tmg_start ( 53, 'CSTJOK' )
+        if((V4dg_status.eq.7.and.V4dg_di_L).or.V4dg_tl_L) call v4d_cstjok()
+        call tmg_stop ( 53 )
 *
       endif
 *

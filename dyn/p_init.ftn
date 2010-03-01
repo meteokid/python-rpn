@@ -22,6 +22,7 @@
 * v2_31 - Lee V.            - remove call to busvar and busent
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Dugas B.          - account for a possible second call to the physics
+* v3_11 - A. Plante         - Add call to set_dia for LAM for time-series
 *
 *object
 *	See above ID.
@@ -58,8 +59,9 @@
 *C      Initialize zonal, grid points and dynamic diagnostics
 *       -----------------------------------------------------
 *
-      if (.not.G_lam) then
       call set_dia()
+
+      if (.not.G_lam) then
 *
 *C      computes FCPKUO flags and weights
 *       ---------------------------------

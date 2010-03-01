@@ -4,7 +4,7 @@
 *
       subroutine v4d_settraj
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -17,6 +17,7 @@
 * v3_00 - Laroche S.        - additions for simplified physics
 * v3_02 - Buehner M.        - added section for ref state file for NLMX event (SV job)
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - ADJ of digital filter 
 *
 *object
 *     Open WA file for TRAJECTORY (all timesteps)
@@ -34,11 +35,14 @@
 #include "vt1m.cdk"
 #include "vt2m.cdk"
 #include "vtxm.cdk"
+#include "vtam.cdk"
 #include "rhscm.cdk"
 #include "orhm.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
 #include "nestm.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
 *
 *modules
       external fnom, vmmcre
@@ -46,8 +50,7 @@
 *
       integer i,pnerr
 *
-      character*80 attrib_S,attrit_S
-**
+      character*80 attrib_S,attrit_S,attri_S
 *
 *C    -------------------------------------------
 *C    Open WA file for TRAJECTORY (all timesteps)
@@ -436,6 +439,73 @@
          endif
 *
          endif
+*
+*C    --------------------------------------------
+*C    Allocate VMM space for Initialization arrays 
+*C    --------------------------------------------
+      if ( Init_balgm_L ) then
+*
+      COMMON_INIT(vtam,-100)
+*
+*     -------------------------------
+*     Create digital filter variables
+*     -------------------------------
+*
+*     Assign the names of the variables
+*     ---------------------------------
+      VMM_NAM(utam  ) = 'UTAM'
+      VMM_NAM(vtam  ) = 'VTAM'
+      VMM_NAM(wtam  ) = 'WTAM'
+      VMM_NAM(tdtam ) = 'TDTAM'
+      VMM_NAM(ttam  ) = 'TTAM'
+      VMM_NAM(fitam ) = 'FITAM'
+      VMM_NAM(qtam  ) = 'QTAM'
+      VMM_NAM(tptam ) = 'TPTAM'
+      VMM_NAM(fiptam) = 'FIPAM'
+      VMM_NAM(qptam ) = 'QPTAM'
+      VMM_NAM(piptam) = 'PIPAM'
+      VMM_NAM(tpltam) = 'TPLAM'
+      VMM_NAM(mutam)  = 'MUTAM'
+      VMM_NAM(psdtam) = 'PSDAM'
+      VMM_NAM(stam  ) = 'STAM'
+      VMM_NAM(gptam ) = 'GPTAM'
+      VMM_NAM(multam) = 'MULAM'
+      VMM_NAM(hutam ) = 'HUTAM'
+      VMM_NAM(qctam ) = 'QCTAM'
+      VMM_NAM(trtam ) = 'TRTAM'
+*
+*     Set the attributes of the variables
+*     -----------------------------------
+      attri_S  = 'SAVE=Y,CL=2,W=5,INIT=0,MUSTEXIST'
+      attrit_S = 'SAVE=Y,CL=3,W=5,INIT=0,MUSTEXIST'
+*
+      VMM_CREATE(utam  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(vtam  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(wtam  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tdtam , LARRAY3D, 1, attri_S)
+      VMM_CREATE(ttam  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fitam , LARRAY3D, 1, attri_S)
+      VMM_CREATE(qtam  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tptam , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fiptam, LARRAY3D, 1, attri_S)
+      VMM_CREATE(qptam , LARRAY3D, 1, attri_S)
+      VMM_CREATE(piptam, LARRAY3D, 1, attri_S)
+      VMM_CREATE(tpltam, LARRAY3D, 1, attri_S)
+      VMM_CREATE(psdtam, LARRAY3D, 1, attri_S)
+      VMM_CREATE(stam  , LARRAY2D, 1, attri_S)
+      VMM_CREATE(gptam , LARRAY3D, 1, attri_S)
+      VMM_CREATE(hutam , LARRAY3D, 1, attri_S)
+      VMM_CREATE(qctam , LARRAY3D, 1, attri_S)
+*
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE(  mutam, LARRAY3D, 1, attri_S )
+         VMM_CREATE( multam, LARRAY3D, 1, attri_S )
+      endif
+      if ( Tr3d_ntr .gt. 0 ) then
+         VMM_CREATE(trtam, LARRAY3D, Tr3d_ntr, attrit_S)
+      endif
+*
+      endif
 *
 *     ---------------------------------------------------------------
 *

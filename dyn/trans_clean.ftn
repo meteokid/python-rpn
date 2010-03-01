@@ -1,0 +1,124 @@
+***s/r trans_clean - launches Um_xfer.sh during a job run
+*
+#include <model_macros_f.h>
+*
+      subroutine trans_clean
+*
+      implicit none
+*
+*author   
+*     Katja Winger -- summer 2003
+*
+*revision
+* v3_11 - Winger K.         - initial version, Dec. 2002
+*
+*implicits
+#include "ptopo.cdk"
+#include "path.cdk"
+#include "step.cdk"
+#include "lctl.cdk"
+#include "rstr.cdk"
+*
+*modules
+      INTEGER      longueur, fnom
+      EXTERNAL     longueur, fnom
+**
+*
+      integer i, j, err, unit
+      integer steps, rest, cpus
+      character exp*20, job*256, jobname*30
+      character Lctl_step_S*9, Rstri_sdon_S*9, cpus_S*2, Step_total_S*9
+      character home*256, config*256
+      character model*10, dummy*20
+*
+*     ---------------------------------------------------------------
+*
+      if (Step_cleanup.eq.0) return
+*
+      steps = Step_cleanup
+      rest = mod(Rstri_sdon,steps)
+      if (Rstri_sdon.ne.0 .and. rest.eq.0) then
+*
+* wait for all processors to be here
+         call rpn_comm_Barrier("grid", err)
+*
+* only one process should launch Um_xfer.sh
+         if (Ptopo_myproc .eq. 0) then
+
+* get experiment name
+            do i=longueur(Path_dfwmil_S),1,-1
+               if (Path_dfwmil_S(i:i) .eq. "/") goto 100
+            end do
+            i=0
+100         continue
+            exp=Path_dfwmil_S(i+1:longueur(Path_dfwmil_S))
+*
+* get home directory
+            j=0
+            do i=longueur(Path_dfwmil_S),1,-1
+               if (Path_dfwmil_S(i:i) .eq. "/") j=j+1
+               if (j .eq. 3) goto 200
+            end do
+200         continue
+            home=Path_dfwmil_S(1:i)
+*
+* open ".config_file.dot.cfg"
+            config=home(1:longueur(home)) // 
+     &             'exper_configs/' // 
+     &             exp(1:longueur(exp)) //
+     &             '.generic/.config_file.dot.cfg'
+            unit=0
+            err=fnom(unit,config,'FTN+FNT',0)
+*
+* get model 
+301         read (unit,'(a20)',end=300) dummy
+              if (dummy(1:5) .eq. 'model') then
+                 do i=longueur(dummy),1,-1
+                    if (dummy(i:i) .eq. "'") goto 302
+                 end do
+302              continue
+                 model=dummy(8:i-1)
+              end if
+            goto 301
+300         continue
+*
+            call fclos(unit)
+*
+* get number of cpus
+            cpus=Ptopo_npex*Ptopo_npey
+*
+* convert integer to character
+            write (Lctl_step_S,*) Lctl_step
+            write (cpus_S,*) cpus
+            write (Step_total_S,*) Step_total
+            Step_total_S=adjustl(Step_total_S)
+*
+* create jobname
+            jobname=model(1:longueur(model)) // '_' //
+     &              exp(1:longueur(exp))
+*
+* call Um_xfer.sh         
+            job=
+     &    ' echo " cd '  // Path_dfwmil_S(1:longueur(Path_dfwmil_S))
+     &                   // ';' //
+     &    ' Um_xfer.sh ' // exp(1:longueur(exp))  // 
+     &    ' -job ' // jobname(1:longueur(jobname)) //
+     &    ' -endstepno ' // Lctl_step_S(1:longueur(Lctl_step_S)) // 
+     &    ' -npe ' // cpus_S //
+     &    ' -status CL  " | /bin/ksh  '
+CCC     &    ' -status CL  " | /bin/ksh -x 1> Um_xfer_job_output 2>&1 & '
+*
+            write (6,*) '!!!!!! job: ', job
+            call system(job)
+*
+         end if
+*
+* wait for all processors to be here
+         call rpn_comm_Barrier("grid", err)
+*
+      end if
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

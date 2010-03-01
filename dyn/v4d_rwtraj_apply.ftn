@@ -4,7 +4,7 @@
 *
       subroutine v4d_rwtraj_apply(F_tdu,F_tdv,F_tdt,F_trm,F_st1,DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM,Nk
       real F_tdu (DIST_SHAPE,Nk) , F_tdv (DIST_SHAPE,Nk), 
@@ -16,6 +16,7 @@
 *
 *revision
 * v3_00 - Laroche S.        - initial version (from v4d_rwtraj)
+* v3_11 - Tanguay M.        - ADJ of digital filter
 *
 *object
 *     see id section
@@ -29,9 +30,10 @@
 #include "lctl.cdk"
 #include "vt1.cdk"
 #include "v4dg.cdk"
-#include "init.cdk"
 #include "schm.cdk"
 #include "dcst.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -47,20 +49,24 @@
 *
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('v4d_rwtraj_apply')
-      if(.not. Schm_cptop_L) call gefstop('v4d_rwtraj_apply')
-      if(Init_balgm_L      ) call gefstop('v4d_rwtraj_apply')
-      if(Lctl_step .gt.100 ) call gefstop('v4d_rwtraj_apply')
+      if(.not. Schm_hydro_L) call gem_stop('v4d_rwtraj_apply',-1)
+      if(Lctl_step .gt.100 ) call gem_stop('v4d_rwtraj_apply',-1)
 *     ______________________________________________________
 *
+      numtr = 11
 *
 *     Flag to trace storing and retrieving of trajectory
 *     --------------------------------------------------
       plpr_L = .false.
       plpr_L = plpr_L.and.Lun_out.gt.0 
+*
       istep = Lctl_step 
-      numtr = 11
-
+*
+*     Create a monotonic function of time step (istep) to allow for
+*     unique addresses when digital filter is in use
+*     -------------------------------------------------------------
+      if(Init_balgm_L.and.Rstri_idon_L) istep = Lctl_step - (Init_dfnp-1)/2 + Init_dfnp - 1
+*
 *     ----------------
 *     Read TRAJ Fields 
 *     ----------------

@@ -5,7 +5,7 @@
 *
       subroutine v4d_init 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -20,6 +20,7 @@
 * v3_01 - Tanguay M.        - introduce identity option
 * v3_02 - Tanguay M.        - V4dg_identity_L,V4dg_ga_eq_ge_L in namelist 
 * v3_03 - Tanguay M.        - introduce V4dg_imguv_L
+* v3_11 - Tanguay M.        - Introduce V4dg_oktrcv_L 
 *
 *object
 *     see id section
@@ -67,6 +68,10 @@
 *        --------------------------------------------------------------
          V4dg_oktrtl_L = .true.
 *
+*        Allow NLM to WRITE TRAJECTORY Conversion on WA file
+*        ---------------------------------------------------
+         V4dg_oktrcv_L = .true.
+*
 *        Ask for a Gradient test
 *        -----------------------
          V4dg_grd_L = .false.
@@ -82,7 +87,7 @@
 *        ----------------------------------------------------
          V4dg_imguv_L = .true.
 *
-         if (Lun_out.gt.0) write(Lun_out,4000) V4dg_tlm_L,V4dg_oktr_L,V4dg_oktrtl_L, 
+         if (Lun_out.gt.0) write(Lun_out,4000) V4dg_tlm_L,V4dg_oktr_L,V4dg_oktrtl_L,V4dg_oktrcv_L, 
      %                                         V4dg_grd_L,V4dg_range,V4dg_start,V4dg_imguv_L 
 *
 *     -----------------------------------
@@ -133,6 +138,7 @@
      % /,'  TLM_L      = ',L2,
      % /,'  OKTR_L     = ',L2,
      % /,'  OKTRTL_L   = ',L2,
+     % /,'  OKTRCV_L   = ',L2,
      % /,'  TESTGRD    = ',L2,
      % /,'  RANGE      = ',I6,
      % /,'  XRSTART    = ',E13.7,

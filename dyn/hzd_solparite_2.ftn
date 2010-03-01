@@ -9,7 +9,7 @@
      %           minx,maxx,miny,maxy,gnk,gni,nil,njl,nkl,
      %           F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey,NSTOR,nev)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer minx1, maxx1, minx2, maxx2, nx1, nx2, nx3  ,
      $        minx , maxx , miny , maxy , gnk, gni, F_pwr,
@@ -18,7 +18,7 @@
      $            F_a_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
      $            F_c_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
      $       F_deltai_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
-     $       F_Rhs_8(minx:maxx,miny:maxy,gnk)
+     $       F_Rhs_8
       real*8   F_evxevec_8(NSTOR*NSTOR),F_oddxevec_8(NSTOR*NSTOR)
 
       real F_cdiff, F_sol(minx:maxx,miny:maxy,gnk)
@@ -30,6 +30,7 @@
 * v3_01 - Qaddouri A.        - initial version
 * v3_02 - J. P. Toviessi     - remove data overflow bug
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Corbeil L.        - new RPNCOMM transpose
 *
 *object
 *
@@ -50,34 +51,24 @@
      $         fwft_8( miny:maxy ,minx1:maxx1,gni )
       real*8   fdg12_8( miny:maxy ,minx1:maxx1,Gni)
 
-      real*8   ZERO_8
+      real*8   ZERO_8, fact_8
       parameter( ZERO_8 = 0.0 )
-      integer o1,o2,i,j,k,nevi,gnii,kkii,ki0,kin,kilon,pilon,pi0,pin
+      integer o1,o2,i,j,k,nevi,gnii,kkii,ki0,kin,kilon,pi0,pin
 
 
 **
 *     __________________________________________________________________
 *
 c      call tmg_start(79,'hzd_solparite_2')
+      kilon = (maxx2-minx2 +1+Ptopo_npeOpenMP)/Ptopo_npeOpenMP
+
+      fact_8 = ((-1)**F_pwr)*dble(F_cdiff)
+      call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1,(Maxy-Miny+1),
+     %                          (Maxy-Miny+1),Minx1, Maxx1, gnk, fdg1_8, 
+     %                            1,fact_8,0.d0 )
+*
 !$omp parallel private(kkii,pi0,pin,ki0,kin,gnii,nevi) 
-!$omp$         shared (pilon,kilon)
-!$omp do
-      do k = 1, gnk
-      do j = 1, njl  
-      do i = 1,nil
-         F_Rhs_8(i,j,k)=  ((-1)**F_pwr)*dble(F_cdiff)*dble(F_sol(i,j,k))
-      enddo
-      enddo
-      enddo
-!$omp enddo
-*
-* Resolution
-*
-!$omp single
-      call rpn_comm_transpose ( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
-     %                          Minx1, Maxx1, gnk, fdg1_8, 1,2 )
-!$omp end single
-*
+!$omp$         shared (kilon)
 !$omp do
       do k = 1, nkl
       do i = 1, Gni
@@ -221,14 +212,12 @@ c    %                     Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
       enddo
 !$omp end do
 *
-      kilon = (maxx2-minx2+1+Ptopo_npeOpenMP)/Ptopo_npeOpenMP
-      pilon = (nx2          +Ptopo_npeOpenMP)/Ptopo_npeOpenMP
 !$omp do
       do kkii = 1, Ptopo_npeOpenMP
          ki0 = minx2+ kilon*(kkii-1)
          kin = min(ki0+kilon-1,maxx2)
-         pi0 = 1    + pilon*(kkii-1)
-         pin = min(pi0+pilon-1,nx2)
+         pi0 = 1    + kilon*(kkii-1)
+         pin = min(pi0+kilon-1,nx2)
          do j = 2, nx3
             do o1= 1, F_pwr
             do o2= 1, F_pwr
@@ -300,14 +289,12 @@ c    %                     Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
       enddo
 !$omp enddo
 *
-      kilon = (maxx2-minx2 +1+Ptopo_npeOpenMP)/Ptopo_npeOpenMP
-      pilon = (nx2          +Ptopo_npeOpenMP)/Ptopo_npeOpenMP
 !$omp do
       do kkii = 1, Ptopo_npeOpenMP
          ki0 = minx2 + kilon*(kkii-1)
          kin = min(ki0+kilon-1, maxx2)
-         pi0 = 1    + pilon*(kkii-1)
-         pin = min(pi0+pilon-1,nx2)
+         pi0 = 1    + kilon*(kkii-1)
+         pin = min(pi0+kilon-1,nx2)
 
          do j = nx3-1, 1, -1
             do o1= 1, F_pwr
@@ -430,21 +417,11 @@ c    %                        Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
 !$omp end do
       endif
 
-!$omp single
-      call rpn_comm_transpose(F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
-     %                               Minx1, Maxx1, gnk, fdg1_8, -1,2 )
-!$omp end single
-*
-!$omp do
-      do k= 1, gnk
-      do j= 1, njl
-      do i= 1, nil
-         F_sol(i,j,k)= sngl(F_Rhs_8(i,j,k))
-      enddo
-      enddo
-      enddo 
-!$omp end do
 !$omp end parallel
+      call rpn_comm_transpose48(F_sol, Minx, Maxx, Gni,1,(Maxy-Miny+1),
+     %                          (Maxy-Miny+1),Minx1, Maxx1, gnk, fdg1_8,
+     %                           -1,1.d0,0.d0 )
+
 c      call tmg_stop(79)
 *
 *     __________________________________________________________________

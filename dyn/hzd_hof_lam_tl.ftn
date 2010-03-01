@@ -10,7 +10,7 @@
      %                            F_pipm, F_wm, F_qpm , F_mum , F_mulm,  
      %                            F_xfis, DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *
@@ -37,6 +37,7 @@
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - modification wk1_8 
 *
 *object
 *     see id section
@@ -58,9 +59,13 @@
 #include "ptopo.cdk"
 *
       integer i, j, k, dpwr
-      real*8 wk1_8(LDIST_SHAPE,Nk)
+      real*8 wk1_8
       real   wk2(LDIST_SHAPE,Nk), wk2_m(LDIST_SHAPE,Nk)
 *     ______________________________________________________
+*
+      if ( .not. Schm_hydro_L ) then
+           call gem_stop ('HZD_HOF_LAM_TL NOT COMPLETED',-1)
+      endif
 *
       dpwr = Hzd_pwr / 2
       if (Lun_debug_L) write(Lun_out,1000) Hzd_pwr

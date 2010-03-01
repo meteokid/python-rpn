@@ -5,7 +5,7 @@
 *
       subroutine hzd_ho_tr (F_pip,F_qp,DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real     F_pip(DIST_SHAPE,Nk), F_qp(DIST_SHAPE,Nk)
@@ -18,6 +18,7 @@
 * v2_31 - Tanguay M.        - TRAJ of control for diffusion on momentum only
 * v3_00 - Tanguay M.        - adapt to restructured hzd_ho 
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -39,7 +40,7 @@
 #include "ptopo.cdk"
 *
       integer dpwr, i0,in,j0,jn,Gni,i,j,k
-      real*8 wk1_8 (LDIST_SHAPE,Nk)
+      real*8 wk1_8
       real   wk2 (LDIST_SHAPE,Nk)
       real*8, dimension(:)  , allocatable :: wk_evec_8
 **
@@ -63,6 +64,7 @@
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp parallel do
             do k = 1, Nk
             do j = 1+pil_s,l_nj-pil_n
             do i = 1+pil_w,l_ni-pil_e
@@ -70,6 +72,7 @@
             end do
             end do
             end do
+!$omp end parallel do
          endif
 *
 *     The hydrostatic pressure: pi'  
@@ -86,12 +89,11 @@
 *  3. Nonyhydrostatic model *
 *****************************
 *
-         if ( .not. Schm_hydro_L ) then
-*
-         if ( Schm_difqp_L ) then ! q' & related variables
+         if ( .not. Schm_hydro_L .and. Schm_difqp_L ) then ! q' & related variables
 *
 *        Indirect diffusion of q'
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do
          do k=1, Nk  !
          do j=1+pil_s,l_nj-pil_n ! p = (pi)exp(q')
          do i=1+pil_w,l_ni-pil_e ! ~~~~~~~~~~~~~~~
@@ -100,6 +102,7 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
          call hzd_solmxma(wk2, wk1_8, wk_evec_8 ,
      %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
@@ -109,6 +112,7 @@
      %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                    Ptopo_npex,Ptopo_npey)
 *
+!$omp parallel do
          do k=1, Nk  !
          do j=1+pil_s,l_nj-pil_n ! q' = log(p/pi)
          do i=1+pil_w,l_ni-pil_e ! ~~~~~~~~~~~~~~
@@ -117,8 +121,8 @@
          end do
          end do
          end do
+!$omp end parallel do
 *
-         endif
          endif
 *
          deallocate( wk_evec_8 )

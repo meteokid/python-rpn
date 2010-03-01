@@ -2,7 +2,7 @@
 *
       subroutine v4d_irgdint_3_nw_ad (zo,px,py,npts,ax,ay,cx,cy,zi,i1,i2,j1,j2,nk,jmin,jmax)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer npts,i1,i2,j1,j2,nk,jmin,jmax
       real zo(nk,npts),zi(i1:i2,j1:j2,nk),
@@ -12,6 +12,7 @@
 *
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - correction for px or py negative
 *
 *object
 *  see id section
@@ -57,6 +58,10 @@
 *        -----
          i = min(i2-2,  max(i1+1,  ifix(px(n))))
          j = min(jmax-2,max(jmin+1,ifix(py(n))))
+*
+         if (px(n).lt.0.) i = i-1 
+*
+         if (py(n).lt.0.) j = j-1 
 *
          x1_8 = ax(i-1)
          x2_8 = ax(i)

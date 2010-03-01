@@ -6,7 +6,7 @@
      $                         F_a_8, F_b_8, F_c_8,
      %                         F_idel, F_jdel, fni, fnj, F_per_L )
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_per_L
       integer F_idel, F_jdel, fni, fnj
@@ -19,6 +19,7 @@
 *
 *revision
 * v2_00 - Qaddouri A.       - initial MPI version 
+* v3_11 - Gravel S.         - modify for theoretical cases
 *
 *object
 *       
@@ -45,7 +46,8 @@
          m=fni
       endif
 *     
-      do i=2, m-1
+      if ( m .gt. 1) then    ! to avoid calculation with theoretical cases
+	  do i=2, m-1
       do l= 1,fnj*F_jdel,F_jdel
          F_bi_8(l,i) = one/( F_b_8(l,i) - F_a_8(l,i) * F_ci_8(l,i-1) )
          F_ci_8(l,i) = F_bi_8(l,i) * F_c_8(l,i)
@@ -57,6 +59,7 @@
          F_bi_8(l,m)=one/( F_b_8(l,m)-F_a_8(l,m) *F_ci_8(l,m-1) )
          F_ai_8(l,m)=F_bi_8(l,m)*F_a_8(l,m)
       enddo
+      endif                  ! end of exception for theoretical cases
 *
       if (F_per_L) then
          

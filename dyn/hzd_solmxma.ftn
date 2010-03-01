@@ -27,6 +27,7 @@
 * v2_10 - Qaddouri A.        - initial version
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Corbeil L.        - new RPNCOMM transpose
 *
 *object
 *
@@ -71,10 +72,10 @@
       real*8, dimension(Miny:Maxy ,minx1:maxx1,Gni) :: fwft_8
       real*8, dimension(minx1:maxx1,minx2:maxx2,nx3+F_npey) :: fdg2_8
       real*8, dimension(minx1:maxx1,minx2:maxx2,F_pwr,nx3) ::dn3_8,sol_8
-      real*8   ZERO_8
+      real*8   ZERO_8, fact_8
       parameter( ZERO_8 = 0.0 )
       integer dim, o1,o2,i,j,k,l_pil_w,l_pil_e
-      integer kkii,  kilon, ki0, kin, pilon,pi0,pin
+      integer kkii,  kilon, ki0, kin, pin
 **
 *     __________________________________________________________________
 *
@@ -85,23 +86,27 @@ c     call tmg_start(99,'hzd_solmxma')
       if (l_south) l_pil_w= Lam_pil_w
       if (l_north) l_pil_e= Lam_pil_e
 
-!$omp parallel private(kkii,ki0,kin,pi0,pin) shared(kilon,pilon)
-!$omp do
-      do k = 1, Gnk
-      do j = 1+pil_s, njl-pil_n
-      do i = 1+pil_w,nil-pil_e
-         F_Rhs_8(i,j,k)=  ((-1)**F_pwr)*dble(F_cdiff)*dble(F_sol(i,j,k))
-      enddo
-      enddo
-      enddo
-!$omp enddo
-!$omp single
 *
 *
-      call rpn_comm_transpose ( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
+      kilon = ( maxx2-l_pil_e-minx2+l_pil_w+1 + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
+      if (G_lam) then
+          do k = 1, Gnk
+          do j = 1+pil_s, njl-pil_n
+          do i = 1+pil_w,nil-pil_e
+             F_Rhs_8(i,j,k)=  ((-1)**F_pwr)*dble(F_cdiff)*dble(F_sol(i,j,k))
+          enddo
+          enddo
+          enddo
+          call rpn_comm_transpose ( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                          minx1, maxx1, Gnk, fdg1_8, 1,2 )
-*
-!$omp end single
+      else
+          fact_8=((-1)**F_pwr)*dble(F_cdiff)
+          call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1),
+     %                          (Maxy-Miny+1),minx1, maxx1, Gnk, fdg1_8,1,
+     %                             fact_8,0.d0)
+      endif
+
+!$omp parallel private(kkii,ki0,kin,pin) shared(kilon)
 !$omp do
       do i = 1+Lam_pil_w, Gni-Lam_pil_e
       do k = 1, nkl
@@ -193,14 +198,11 @@ c      enddo
       enddo
 !$omp enddo
 *
-      kilon = ( maxx2-l_pil_e-minx2+l_pil_w+1 + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
-      pilon = ( nx2  -l_pil_e      +l_pil_w   + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
 !$omp do
       do kkii = 1, Ptopo_npeOpenMP
-         ki0 = minx2+l_pil_w + kilon*(kkii-1)
+         ki0 = 1 +l_pil_w + kilon*(kkii-1)
          kin = min(ki0+kilon-1, maxx2-l_pil_e)
-         pi0 = 1    +l_pil_w + pilon*(kkii-1)
-         pin = min(pi0+pilon-1,   nx2-l_pil_e)
+         pin = min(ki0+kilon-1,   nx2-l_pil_e)
 
          do j = 2+Lam_pil_s, nx3-Lam_pil_n
             do o1= 1, F_pwr
@@ -215,7 +217,7 @@ c      enddo
             enddo
          
             do o1= 1, F_pwr
-            do i = pi0,pin
+            do i = ki0,pin
             do k = 1, nx1
                sol_8(k,i,o1,j)=dn3_8(k,i,o1,j)-sol_8(k,i,o1,j)
             enddo
@@ -277,14 +279,11 @@ c      enddo
       enddo
 !$omp enddo 
 *
-      kilon = ( maxx2-l_pil_e-minx2+l_pil_w+1 + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
-      pilon = ( nx2  -l_pil_e      +l_pil_w   + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
 !$omp do
       do kkii = 1, Ptopo_npeOpenMP
-         ki0 = minx2+l_pil_w + kilon*(kkii-1)
+         ki0 = 1 +l_pil_w + kilon*(kkii-1)
          kin = min(ki0+kilon-1, maxx2-l_pil_e)
-         pi0 = 1    +l_pil_w + pilon*(kkii-1)
-         pin = min(pi0+pilon-1,   nx2-l_pil_e)
+         pin = min(ki0+kilon-1,   nx2-l_pil_e)
 
          do j = nx3-1-Lam_pil_n, 1+Lam_pil_s, -1
             do o1= 1, F_pwr
@@ -298,7 +297,7 @@ c      enddo
             enddo
             enddo
             do o1= 1, F_pwr
-            do i = pi0, pin
+            do i = ki0, pin
             do k = 1, nx1
                sol_8(k,i,o1,j)= dn3_8(k,i,o1,j) - sol_8(k,i,o1,j)
             enddo
@@ -345,21 +344,23 @@ c      enddo
      .             (maxy-miny+1) * (maxx1-minx1+1))
        enddo
 !$omp enddo
-!$omp single
+!$omp end parallel
+      if (G_lam) then
       call rpn_comm_transpose(F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                               minx1, maxx1, Gnk, fdg1_8, -1,2 )
-!$omp end single
-*
-!$omp do
       do k= 1, Gnk
       do j= 1+pil_s, njl-pil_n
       do i= 1+pil_w, nil-pil_e
          F_sol(i,j,k)= sngl(F_Rhs_8(i,j,k))
       enddo
       enddo
-      enddo 
-!$omp enddo
-!$omp end parallel
+      enddo
+      else
+      call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1),
+     %                          (Maxy-Miny+1),minx1, maxx1, Gnk, fdg1_8, -1,
+     %                             1.0d0,0.d0)
+      endif
+
 c     call tmg_stop(99)
 *
 *

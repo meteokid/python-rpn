@@ -3,7 +3,7 @@
 #include <model_macros_f.h>
 *
       subroutine e_geopini (ni,nj,lun_out)
-#include "impnone.cdk"
+      implicit none
 *
       integer ni,nj,lun_out
 *
@@ -15,6 +15,7 @@
 * v2_21 - Desgagne M.       - new treatment of geophysical fields
 * v2_31 - Talbot D.         - dhdx,dhdy,dhdxdy for "blocage"
 * v3_00 - Desgagne M.       - Lam configuration
+* v3_11 - Dugas B.          - Always read AL ( NO SNOW )
 *
 *object
 *          Establishes requirement in terms of geophysical variables 
@@ -171,15 +172,10 @@
       call mgsdict (ni, nj, vegindx,
      $'VN=veginden ; VS=row  ; EN=vg; INTERP=NEAREST ; SEQ=G' )
 *
-      call mgsdict (ni, nj, al,    
-     $'VN=alen    ; VS=row  ; EN=al; INTERP=NEAREST ; SEQ=C; etk=NO SNOW')
-
-      else
-
-      call mgsdict (ni, nj, al,    
-     $'VN=alen    ; VS=row  ; EN=al; INTERP=NEAREST ; SEQ=AC;')
-
       endif
+*
+      call mgsdict (ni, nj, al,    
+     $'VN=alen    ; VS=row  ; EN=al; INTERP=NEAREST ; SEQ=GC; etk=NO SNOW')
 *
 *  FOR ISBA
 *

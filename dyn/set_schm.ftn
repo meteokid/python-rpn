@@ -5,7 +5,7 @@
 *
       subroutine set_schm
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne - V. Lee ( after version v1_03 of setschm )
@@ -14,6 +14,7 @@
 * v2_00 - Desgagne/Lee       - initial MPI version
 * v2_10 - Desgagne M.        - removed MITH (not used)
 * v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
+* v3_11 - Gravel S.          - modify for theoretical cases
 *
 *object
 *
@@ -58,7 +59,7 @@
 
 * 1.4 Validate coriolis parameter
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if (Schm_alpco_8 .le. ZERO_8 ) then
+      if (Schm_alpco_8 .le. ZERO_8 .and. .not. Schm_theoc_L) then
          if (lun_out.gt.0) write(lun_out, 1400)
          call gefstop('set_schm')
       endif
@@ -116,6 +117,11 @@
 *
       if ( l_nk .eq. 1 .and. Schm_phyms_L ) then
          if (lun_out.gt.0) write(lun_out,9000)
+         Schm_phyms_L=.false.
+      endif
+*
+      if ( Schm_theoc_L  .and. Schm_phyms_L ) then
+         if (lun_out.gt.0) write(lun_out,9500)
          Schm_phyms_L=.false.
       endif
 *
@@ -180,6 +186,9 @@
  9000 format(
      %/,'SHALLOW WATER MODEL: THE SWITCH (Schm_phyms_L) ',
      %/,'PHYSICS MAIN SWITCH IS RESET TO .FALSE.')
+ 9500 format(
+     %/,'THEORETICAL CASE: THE SWITCH (Schm_phyms_L) ',
+     %/,'IS NOT SUPPORTED FOR NOW')
 *
 *    _________________________________________________________________
 *

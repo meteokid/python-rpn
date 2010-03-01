@@ -10,6 +10,7 @@
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - If 4dvar_L, cancel hdif0 but write TRAJ 
 *
 *object
 *     see id section
@@ -34,9 +35,13 @@
                Lctl_step  = 1
             endif
 *
+            if(.not.V4dg_4dvar_L) then
+*
             call   hzd_main ()
             call vspng_main ()
             if (.not.G_lam) call hspng_main ()
+*
+            endif
 *
          endif
 *

@@ -4,7 +4,7 @@
 *
       subroutine nli_tr()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -15,6 +15,7 @@
 * v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *    see id section
@@ -95,14 +96,10 @@
          vt0m_ = 0
       endif
 *
-*PDIR RESERVE=Ptopo_npeOpenMP
-*
       call nlip_2 ( nlm_num, nlm_nvm, wk1   , nlm_nthm, nlm_n3m, nlm_n3pm, 
      $              rhelnm , rhellm , tpt0m , tplt0m  , pipt0m , nlm_ncnm,  
      $              st0m   , qt0m   , fipt0m, topo    , ut0m   , vt0m    , mut0m, multxm, 
      $              wijk1  , wijk2  , LDIST_DIM,l_nk )
-*
-*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
 *

@@ -4,7 +4,7 @@
 *
       subroutine v4d_testadj 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
@@ -14,6 +14,7 @@
 * v2_21 - Tanguay M.        - add V4dg_conf= 401 and 402 
 * v2_31 - Tanguay M.        - Move v4d_setscalp after set_dync 
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - Add V4dg_anincr_L as in v4d_testtlm    
 *
 *object
 *     see id section
@@ -89,12 +90,58 @@
 *        ---------------------------------------------
          if(.not.Schm_hydro_L) call v4d_phydro (V4dc_ncv,V4dc_ycv)
 *
-*        Keep NLM initial control var. in V4dc_xcv
-*        NOTE: Used later to define TLM initial control var.
-*        ---------------------------------------------------
-         do n = 1,V4dc_ncv
-            V4dc_xcv(n) = V4dc_ycv(n)
-         end do
+         if ( V4dg_anincr_L ) then
+*
+*          Read perturbed (NLM) initial conditions for trial field
+*          to create realistic perturbations in V4dc_xcv
+*          -------------------------------------------------------
+           if( Lun_out.gt.0 ) then
+              write(Lun_out, fmt='(//''----------------'')')
+              write(Lun_out, fmt='(  ''READ GIVEN TRIAL'')')
+              write(Lun_out, fmt='(  ''----------------'')')
+           endif
+*
+           call v4d_rdtrial()
+*
+*          Get fields in memory
+*          --------------------
+           key1(1) = VMM_KEY(ut1)
+           key1(2) = VMM_KEY(vt1)
+           err = vmmlod(key1,2)
+           err = VMM_GET_VAR(ut1)
+           err = VMM_GET_VAR(vt1)
+*
+*          Associate with Ind
+*          ------------------
+           Ind_u_   = ut1_
+           Ind_v_   = vt1_
+*
+*          Convert wind images to true winds
+*          ---------------------------------
+           call v4d_img2uv()
+*
+           err = vmmuld(-1,0)
+*
+*          Initialize V4dc_xcv from trial field
+*          ------------------------------------
+           call v4d_cainin (V4dc_ncv,V4dc_xcv)
+*
+*          Initialize TLM initial control var. in V4dc_xcv
+*          -----------------------------------------------
+           do n = 1,V4dc_ncv
+              V4dc_xcv(n) = V4dc_ycv(n) - V4dc_xcv(n)
+           end do
+*
+         else
+*
+*          Keep NLM initial control var. in V4dc_xcv
+*          NOTE: Used later to define TLM initial control var.
+*          ---------------------------------------------------
+           do n = 1,V4dc_ncv
+              V4dc_xcv(n) = V4dc_ycv(n)
+           end do
+*
+         endif
 *
          if( V4dg_conf.ne.402 ) then
 *
@@ -123,10 +170,14 @@
 *        ----------------------------------------------
          V4dg_output_L = .true.
 *
+         call tmg_start(50,'NLM')
+*
 *        Call 4D-Var simulator with NLM integration without gradient
 *        -----------------------------------------------------------
          indic = 99
          call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
+*
+         call tmg_stop(50)
 *
 *        Initialize V4dc_ycv (Image winds) from NLM final model var.
 *        -----------------------------------------------------------
@@ -164,19 +215,15 @@
             write(unit=Lun_out, fmt='(  ''--------------------------'')')
          endif
 *
-*        Define TLM control var. with realistic size of perturbations
-*        ------------------------------------------------------------
+*        Define TLM control var. with controlled size perturbations
+*        ----------------------------------------------------------
+         if ( .not.V4dg_anincr_L ) then
 *
-*        -----------------------------------------
-*        SHOULD BE TRUE TO VALIDATE GEM-DM v_3.0.2
-*        -----------------------------------------
-         IF(.TRUE.) THEN
-*        DO NOTHING
-         ELSE
-         do n = 1,V4dc_ncv
-            V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
-         end do
-         ENDIF
+            do n = 1,V4dc_ncv
+               V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
+            end do
+*
+         endif
 *
 *        Use a TLM hydrostatic phi' when .not.Schm_hydro_L
 *        -------------------------------------------------
@@ -194,11 +241,15 @@
 *        ----------------------------------------------
          V4dg_output_L = .true.
 *
+         call tmg_start(51,'TLM')
+*
 *        Call 4D-Var simulator with TLM integration without gradient
 *        -----------------------------------------------------------
          V4dg_tlm_L = .true.
          indic      = 99
          call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
+*
+         call tmg_stop(51)
 *
 *        Reset 4D-Var simulator with NLM integration 
 *        ------------------------------------------- 
@@ -221,7 +272,7 @@
 *
          endif
 *
-         if( V4dg_conf.eq.402) then
+         if( V4dg_conf.eq.402 ) then
 *        ----------------------------------------------------
 *        Initialize ADJ final control var. (V4dg_conf.eq.402) 
 *        as TLM final model var.
@@ -296,10 +347,14 @@
 *        ----------------------------------------------
          V4dg_output_L = .true.
 *
+         call tmg_start(52,'ADJ')
+*
 *        Call 4D-Var simulator for gradient only
 *        ---------------------------------------
          indic = 98 
          call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
+*
+         call tmg_stop(52)
 *
 *     ----------------------------------------------
 *     Evaluate < V4dc_xcv , ADJ V4dc_gcv > in ps02_8 

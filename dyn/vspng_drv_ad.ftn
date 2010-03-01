@@ -7,7 +7,7 @@
      %                          F_pip , F_w  , F_qp  , F_mu , F_mul, F_s,
      %                          F_pipm, F_qpm, F_xfis, DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real   F_u  (DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
@@ -33,6 +33,7 @@
 * v3_01 - Laroche/Tanguay   - correction nj as in vspng_drv
 * v3_01 - Tanguay M.        - adapt to Vspng_rwnd_L
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
 *
 *object
 *     see id section
@@ -51,7 +52,7 @@
 #include "opr.cdk"
 *
       integer i, j, jj, k, nkspng
-      real*8 HALF_8,TWO_8,c_8,c1
+      real*8 HALF_8,TWO_8,c_8,c1_8
       parameter( HALF_8  = 0.5 )
       parameter(  TWO_8  = 2.0 )
 *
@@ -66,6 +67,7 @@
 *
 *     Zero adjoint variables
 *     ----------------------
+!$omp parallel do
       do k=1,Nk
       do j=l_miny,l_maxy
       do i=l_minx,l_maxx
@@ -73,6 +75,7 @@
       enddo
       enddo
       enddo
+!$omp end parallel do
 *
       if ( Cstv_phidf_8 .gt. 0.0) then
 *
@@ -98,6 +101,10 @@
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+*
+!$omp parallel 
+*
+!$omp do 
             do k = 1, Vspng_nk
             do j = 1, l_nj
             do i = 1, l_ni
@@ -107,21 +114,18 @@
             end do
             end do
             end do
-         endif
+!$omp enddo 
 *
 *****************************
 *  3. Nonyhydrostatic model * 
 *****************************
-*
-         if ( .not. Schm_hydro_L ) then
-*
-         if ( Schm_difqp_L ) then ! q' & related variables
 *
 *        ----------------
 *        START TRAJECTORY
 *        ----------------
 *        Indirect diffusion of q'
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp do 
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -132,6 +136,9 @@
          end do
          end do
          end do
+!$omp enddo 
+*
+!$omp end parallel 
 *
          call vspng_del2 (work_m,
      $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
@@ -144,6 +151,7 @@
 *
 *        START ADJOINT CALCULATIONS
 *        --------------------------
+!$omp parallel do 
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -157,6 +165,7 @@
          end do
          end do
          end do
+!$omp end parallel do 
 *
          call vspng_del2_ad (work,
      $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
@@ -165,6 +174,7 @@
 *
 *        Indirect diffusion of q'
 *        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do 
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -178,6 +188,7 @@
          end do
          end do
          end do
+!$omp end parallel do 
 *
          call vspng_del2_ad (F_mul,
      $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
@@ -193,6 +204,8 @@
 *        ------------------------
 *
          endif         
+*
+         if ( .not. Schm_hydro_L ) then
 *
 *     ADJ of
 *     Vertical wind (physical)
@@ -216,7 +229,10 @@
 *     ADJ of
 *     Save pi' for the diffusion of q'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel 
+*
          if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp do 
             do k = 1, Vspng_nk
             do j = 1, l_nj
             do i = 1, l_ni
@@ -227,22 +243,26 @@
             end do
             end do
             end do
+!$omp enddo 
          endif
 *
 * ADJ of
 * updating phi' at the top
 *
+!$omp do 
          do j = 1, l_nj
          do i = 1, l_ni
             F_it(i,j,1) = F_ip(i,j,1) + F_it(i,j,1)
             F_ip(i,j,1) = ZERO_8
          end do
          end do
+!$omp enddo 
 *
 *        ADJ 
 *        ---
          if (Vspng_nk.ge.2) then
 *
+!$omp do 
          do k = 2, Vspng_nk
          do j = 1, l_nj
          do i = 1, l_ni
@@ -251,8 +271,11 @@
          end do
          end do
          end do
+!$omp enddo 
 *
          endif
+*
+!$omp end parallel 
 *
 *     ADJ of
 *     Mass related fields
@@ -276,6 +299,7 @@
 *     ADJ of
 *     The temperature: T', T'lin & hence T
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do 
          do k=1, Vspng_nk
          do j=1, l_nj
          do i=1, l_ni
@@ -284,6 +308,7 @@
          end do
          end do
          end do
+!$omp end parallel do 
 *
          call vspng_del2_ad (F_plt,
      $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
@@ -338,20 +363,24 @@
      $               G_ni,G_nj,G_njv)
 *
          if (Vspng_rwnd_L) then
+!$omp parallel private(c1_8)
+!$omp do
             do k=1,G_nk
                do j=1,l_nj
-                  c1 = geomg_cy_8(j) / Dcst_rayt_8
+                  c1_8 = geomg_cy_8(j) / Dcst_rayt_8
                   do i=1,l_ni
-                     f_v(i,j,k) = f_v(i,j,k) * c1
+                     f_v(i,j,k) = f_v(i,j,k) * c1_8
                   end do
                end do
                do j=1,l_nj
-                  c1 = geomg_cy_8(j) / Dcst_rayt_8
+                  c1_8 = geomg_cy_8(j) / Dcst_rayt_8
                   do i=1,l_ni
-                     f_u(i,j,k) = f_u(i,j,k) * c1
+                     f_u(i,j,k) = f_u(i,j,k) * c1_8
                   end do
                end do
             end do
+!$omp enddo
+!$omp end parallel
          endif
 *
          call vspng_del2_ad ( F_v, Opr_opsxp0_8(G_ni+1), yp0_8,
@@ -370,20 +399,24 @@
      $                 LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 *
          if (Vspng_rwnd_L) then
+!$omp parallel private(c1_8)
+!$omp do
             do k=1,G_nk
                do j=1,l_njv
-                  c1 = Dcst_rayt_8 / geomg_cy_8(j)
+                  c1_8 = Dcst_rayt_8 / geomg_cy_8(j)
                   do i=1,l_ni
-                     f_v(i,j,k) = f_v(i,j,k) * c1
+                     f_v(i,j,k) = f_v(i,j,k) * c1_8
                   end do
                end do
                do j=1,l_nj
-                  c1 = Dcst_rayt_8 / geomg_cy_8(j)
+                  c1_8 = Dcst_rayt_8 / geomg_cy_8(j)
                   do i=1,l_ni
-                     f_u(i,j,k) = f_u(i,j,k) * c1
+                     f_u(i,j,k) = f_u(i,j,k) * c1_8
                   end do
                end do
             end do
+!$omp enddo
+!$omp end parallel
          endif
 *
       endif     

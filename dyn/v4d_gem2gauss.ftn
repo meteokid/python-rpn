@@ -8,7 +8,7 @@
       use v4dz
       use v4d_interint0
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer nigauss,njgauss,DIST_DIM,Nk
       real gut1 (nigauss,njgauss,Nk), gvt1 (nigauss,njgauss,Nk),
@@ -26,6 +26,8 @@
 *                           - introduce GAUSS=GEM option
 * v3_01 - Buehner M.        - external already_done
 * v3_02 - Tanguay M.        - V4dzge_degree in namelist var4d
+* v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
+*                           - Remove V4dg_ga_eq_ge_L
 *
 *object
 *  see id section
@@ -34,6 +36,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
 #include "dcst.cdk"
@@ -48,7 +51,7 @@
       integer gdin,gdout,i,j,k,n,i1,i2,j1,j2,ni,nj,ier,status
 *
       real,   allocatable, dimension(:,:) :: zo,wo
-      real,   allocatable, dimension(:)   :: groots,lat,lon
+      real,   allocatable, dimension(:)   :: lat,lon
       real*8, allocatable, dimension(:)   :: x_8,y_8
 *
       real,   pointer, dimension(:,:) :: fldscint,flduint,fldvint,fld2d 
@@ -59,6 +62,10 @@
       real*8, parameter ::  TWO_8 = 2.0  
       real*8, parameter ::CLXXX_8 = 180.0  
       real*8  rad2deg_8,deg2rad_8
+*
+      logical same_grid_L
+*
+      same_grid_L = V4dzgauss_ni.eq.G_ni.and.V4dzgauss_nj.eq.G_nj.and.Grd_gauss_L
 *
 *     Set parameters of interpolation 
 *     -------------------------------
@@ -102,19 +109,9 @@
 *
 *        Define input grid = global GEM scalar Z grid
 *        --------------------------------------------
-         if(.not.V4dg_ga_eq_ge_L) then
-*
          gdin = ezgdef(G_ni,G_nj,'Z',Hgc_gxtyp_s,
      %          Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
      %          Geomn_longs, Geomn_latgs)
-*
-*        Define input grid = Gaussian grid
-*        ---------------------------------
-         else
-*
-         gdin = ezqkdef (G_ni,G_nj,'G',0,0,0,0,0)
-*
-         endif
 *
 *        Index in INPUT grid of each lat lon point in OUTPUT grid
 *        --------------------------------------------------------
@@ -160,8 +157,6 @@
 *
 *        Prescribe global GEM scalar Z grid axes 
 *        ---------------------------------------
-         if(.not.V4dg_ga_eq_ge_L) then
-*
          rad2deg_8 = CLXXX_8/Dcst_pi_8
          do i=1,ni
             V4dzge_ax(i) = G_xg_8(i) * rad2deg_8
@@ -169,22 +164,6 @@
          do j=1,nj
             V4dzge_ay(j) = G_yg_8(j) * rad2deg_8
          enddo
-*
-*        Prescribe Gaussian grid axes
-*        ----------------------------
-         else
-*
-         do i=1,ni
-            V4dzge_ax(i) = float(i-1) * (360./float(ni))
-         enddo
-*
-         allocate ( groots(nj), STAT=status )
-*
-         call ez_glat (V4dzge_ay,groots,nj,0)
-*
-         deallocate( groots, STAT=status )
-*
-         endif
 *
 *        Evaluate AX,AY differences in CX,CY for cubic interpolation
 *        -----------------------------------------------------------
@@ -274,6 +253,8 @@
 *     -----------------------------------
       if(Ptopo_myproc.eq.0) then
 *
+      if(.not.same_grid_L) then
+*
 *       -----------------------------------------------------
 *       Preparation for polar correction and interpolation of
 *       scalar field FLDSC at positions px,py
@@ -290,6 +271,21 @@
         end do
         end do
 *
+      else
+*
+*       Reserve order of indices
+*       ------------------------
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gtpt1(n,1,k) = zo(n,k) 
+        end do
+        end do
+        end do
+*
+      endif
+*
       endif
 *
 *     Global collect 
@@ -301,6 +297,8 @@
 *     Scalar interpolation of humidity 
 *     --------------------------------
       if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
 *
 *       -----------------------------------------------------
 *       Preparation for polar correction and interpolation of
@@ -318,6 +316,19 @@
         end do
         end do
 *
+      else
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           ghut1(i,j,k) = zo(n,k)
+        end do
+        end do
+        end do
+*
+      endif
+*
       endif
 *
 *     Global collect 
@@ -329,6 +340,8 @@
 *     Scalar interpolation of surface pressure
 *     ----------------------------------------
       if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
 *
 *       -----------------------------------------------------
 *       Preparation for polar correction and interpolation of
@@ -344,6 +357,17 @@
            gst1(n,1) = fld2d(1,n)
         end do
 *
+      else
+*
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gst1(i,j) = zo(n,1)
+        end do
+        end do
+*
+      endif
+*
       endif
 *
 *     Global collect 
@@ -357,6 +381,8 @@
 *     Vector interpolation
 *     --------------------
       if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
 *
 *       -----------------------------------------------------
 *       Preparation for polar correction and interpolation of
@@ -375,6 +401,20 @@
            gvt1(n,1,k) = fldvint(k,n)
         end do
         end do
+*
+      else
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gut1(i,j,k) = zo(n,k) 
+           gvt1(i,j,k) = wo(n,k)
+        end do
+        end do
+        end do
+*
+      endif
 *
       endif
 *

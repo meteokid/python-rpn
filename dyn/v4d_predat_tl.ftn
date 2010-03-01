@@ -4,13 +4,14 @@
 *
       subroutine v4d_predat_tl
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M.Tanguay
 *
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - modify evaluation of Ind_pip
 *
 *object
 *     see id section
@@ -114,11 +115,12 @@
 *
 *        TRAJECTORY
 *        ----------
-         Indm_pipm(i,j,k) = exp(Indm_qm(i,j,k)) - Geomg_z_8(k)
+         Indm_pipm(i,j,k) = Geomg_pia(k)+Geomg_pib(k)*exp(Indm_sm(i,j))
+     %                      - Geomg_z_8(k)
 *
 *        TLM
 *        ---
-         Ind_pip(i,j,k) =  exp(Indm_qm(i,j,k)) * Ind_q(i,j,k)
+         Ind_pip(i,j,k) = Geomg_pib(k)*exp(Indm_sm(i,j))*Ind_s(i,j)
 *
       end do
       end do

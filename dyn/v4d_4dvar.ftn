@@ -20,6 +20,12 @@
 *                            - do not initialize Pr_nsim4d (read from init.prof)
 *                            - introduce ESRS event for restart of 4dvar/SV job
 * v3_03   M. Tanguay         - replace v4d_procdyn by indata  
+* v3_11   M. Tanguay         - Extend TRAJ for conversion for DYNOUT2 
+*                            - Introduce Pr_nevent=EVN_TLME
+*                            - Introduce V4dg_oktrcv_L 
+*                            - Add V4dg_part=2 before first call to indata
+*                            - ADJ of digital filter
+* v3_11   S. Pellerin        - PROF file opening done by each proc 
 *
 *object
 *     Initialize the TLM/Adjoint and set-up an externally controlled Event Loop
@@ -28,9 +34,10 @@
 *     none
 *
 *implicits
-      use v4d_prof, only: Pr_nsim4d,Pr_wopen_L,Pr_ropen_L,Pr_ihdlout,Pr_traj0to9_L 
+      use v4d_prof, only: Pr_nsim4d,Pr_wopen_L,Pr_ropen_L,Pr_ihdlout,Pr_traj0to9_L,
+     %                    Pr_nevent 
 *
-#include "impnone.cdk"
+      implicit none
 *
 #include "lun.cdk"
 #include "glb_ld.cdk"
@@ -41,6 +48,8 @@
 #include <prof_f.h>
 #include "cstv.cdk"
 #include "path.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
 *
       external longueur
       integer ierr, nevent, nstatus, keepsteptotal,iseg_steptotal,isv_step
@@ -68,6 +77,7 @@
       write(Lun_out,fmt='(  ''READ ANALYSIS for reference trajectory'')')
       write(Lun_out,fmt='(  ''--------------------------------------'')')
 *
+      V4dg_part = 2
       call indata()
 *
       call v4d_setscalp
@@ -127,6 +137,14 @@
 *       ---------------------------------------
         V4dg_oktr_L = .false.
 *
+*       Set no WRITE option on TRAJ Conversion file
+*       -------------------------------------------
+        V4dg_oktrcv_L = .false.
+*
+*       Initilizations for digital filtering
+*       ------------------------------------
+        if( Init_balgm_L ) Rstri_idon_L = .false.
+*
 *       Complete the preprocessing (derived fields)
 *       -------------------------------------------
         V4dg_part = 3
@@ -177,6 +195,14 @@
       V4dg_oktr_L = .true.
       V4dg_rwtr   = 1
 *
+*     Set WRITE option on TRAJ Conversion file
+*     ----------------------------------------
+      V4dg_oktrcv_L = .true.
+*
+*     Initilizations for digital filtering
+*     ------------------------------------
+      if( Init_balgm_L ) Rstri_idon_L = .false.
+*
 *     Set number of timesteps per segment
 *     -----------------------------------
       iseg_steptotal = Step_total/V4dg_numseg
@@ -192,6 +218,10 @@
         V4dg_steplast = isv_step    *iseg_steptotal
         write(Lun_out,*) 'first and last steps=',isv_step,Lctl_step,V4dg_steplast
 *
+*       Write trajectory for conversion at initial time 
+*       -----------------------------------------------
+        call v4d_rwconv0() 
+*
 *       Complete the preprocessing (derived fields)
 *       -------------------------------------------
         if(isv_step.eq.1) then
@@ -201,25 +231,21 @@
           call v4d_rwtraj (1)
         endif
 *
-*       Prepare and Write trajectory for conversion in v4d_getdx or v4d_putdx at initial time 
-*       -------------------------------------------------------------------------------------
-        V4dg_rwcv = 1
-        call v4d_rwconv() 
-*
         call dynout2( )
 *     
 *       Run NLM model
 *       -------------
+        call tmg_start (50,'NLM')
         call gem_ctrl
+        call tmg_stop  (50)
 *
       enddo
 *
       if(V4dg_sgvc_L) then
 *
-*        Write trajectory for conversion in v4d_getdx or v4d_putdx at final time 
-*        -----------------------------------------------------------------------
-         V4dg_rwcv = 1
-         call v4d_rwconv()
+*        Write trajectory for conversion at final time 
+*        ---------------------------------------------
+         call v4d_rwconv0()
 *
 *        Prepare and Write reference trajectory at final time for NL evolution of perturbation 
 *        -------------------------------------------------------------------------------------
@@ -237,18 +263,23 @@
       nstatus = 0
       event_loop: do while (nstatus.eq.0)
 *     
+      Call v4d_getevent(Lun_out,nevent,nstatus,Ptopo_myproc)
+
          if(Ptopo_myproc.eq.0) then
 *     
 *           Get the event to know what to do next
 *           -------------------------------------
-            Call v4d_getevent(Lun_out,nevent,nstatus)
+
+*
+            Pr_nevent = nevent
 *
             write(Lun_out,*) '>>> V4D_4DVAR::  Processing event = ', nevent,' status = ',nstatus 
 *
          end if
 *
-         call rpn_comm_bcast(nevent, 1,"MPI_INTEGER",0,"GRID",ierr)
-         call rpn_comm_bcast(nstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+         call rpn_comm_bcast(   nevent, 1,"MPI_INTEGER",0,"GRID",ierr)
+         call rpn_comm_bcast(Pr_nevent, 1,"MPI_INTEGER",0,"GRID",ierr)
+         call rpn_comm_bcast(nstatus,   1,"MPI_INTEGER",0,"GRID",ierr)
 *     
 *     Select Case ---------------
 *     
@@ -283,7 +314,6 @@
 *
 *           Set READ option on TRAJ Vmm WA file
 *           -----------------------------------
-            V4dg_oktr_L = .true.
             V4dg_rwtr   = 0 
 *
 *           Reset addresses of TRAJ Conversion/Physics WA files
@@ -291,10 +321,13 @@
             V4dg_addcv  = 1
             V4dg_addph  = 1 + l_ni*l_nj*l_nk
 *
-*           Read trajectory for conversion in v4d_getdx at initial time 
-*           -----------------------------------------------------------
-            V4dg_rwcv = 0 
-            call v4d_rwconv()
+*           Initilizations for digital filtering
+*           ------------------------------------
+            if( Init_balgm_L ) Rstri_idon_L = .false.
+*
+*           Read trajectory for conversion at initial time 
+*           ----------------------------------------------
+            call v4d_rwconv0()
 *
 *           Read increments from 3D-Var and prepare them for GEM
 *           ----------------------------------------------------
@@ -316,13 +349,14 @@
 *           Set over-riding switch for dynout and blocstat
 *           ----------------------------------------------
             V4dg_output_L = .false. 
-            if(Pr_nsim4d.eq.2) V4dg_output_L = .true. 
 *
             call dynout2( )
 *     
 *           Run TLM model
 *           -------------
+            call tmg_start (51,'TLM')
             call gem_ctrl_tl()
+            call tmg_stop (51)
 *
 *     C.   Output to 3D-Var: model profiles interpolated at obs. locations
 *
@@ -389,13 +423,16 @@
 *     
 *           Set READ option on TRAJ Vmm WA file
 *           -----------------------------------
-            V4dg_oktr_L = .true.
             V4dg_rwtr = 0
 *
 *           Reset addresses of TRAJ Conversion/Physics WA files
 *           ---------------------------------------------------
             V4dg_addcv = V4dg_addcv - l_ni*l_nj
             V4dg_addph = V4dg_addph - l_ni*l_nj*l_nk
+*
+*           Initilizations for digital filtering
+*           ------------------------------------
+            if( Init_balgm_L ) Rstri_idon_L = .true.
 *
 *     B.   Run the adjoint model backward
 *
@@ -408,7 +445,13 @@
 *
 *           Run ADJ model
 *           -------------
+            call tmg_start (52,'ADJ')
             call gem_ctrl_ad()
+            call tmg_stop (52)
+*
+*           Read trajectory for conversion at initial time
+*           ----------------------------------------------
+            call v4d_rwconv0()
 *
 *           ADJOINT of
 *           Complete the preprocessing (derived fields)
@@ -416,14 +459,19 @@
             V4dg_part = 3
             call indata_ad()
 *
-            if( V4dg_output_L ) call v4d_dynout
-*     
-*     C.   Output: (Delta X)^* = grad J_o
+*           Output adjoint fields knowing that u,v are true winds
+*           -----------------------------------------------------
+            if (V4dg_output_L) then
 *
-*           Read trajectory for conversion in v4d_putdx at initial time
-*           -----------------------------------------------------------
-            V4dg_rwcv = 0
-            call v4d_rwconv()
+                V4dg_imguv_L = .false.
+*
+                call v4d_dynout()
+*
+                V4dg_imguv_L = .true.
+*
+            endif
+*
+*     C.   Output: (Delta X)^* = grad J_o
 *
 *           Prepare and Write adjoint increments to be read by 3D-Var   
 *           ---------------------------------------------------------
@@ -481,7 +529,6 @@
 *
 *           Set READ option on TRAJ Vmm WA file
 *           -----------------------------------
-            V4dg_oktr_L = .true.
             V4dg_rwtr   = 0 
 *
 *           Reset addresses of TRAJ Conversion/Physics WA files
@@ -489,10 +536,13 @@
             V4dg_addcv  = 1
             V4dg_addph  = 1 + l_ni*l_nj*l_nk
 *
-*           Read trajectory for conversion in v4d_getdx at initial time  
-*           -----------------------------------------------------------
-            V4dg_rwcv = 0 
-            call v4d_rwconv()
+*           Initilizations for digital filtering
+*           ------------------------------------
+            if( Init_balgm_L ) Rstri_idon_L = .false.
+*
+*           Read trajectory for conversion at initial time  
+*           ----------------------------------------------
+            call v4d_rwconv0()
 *
             if(Ptopo_myproc.eq.0) then
               write(V4dg_iunenrgy,*) "INTEGRATION #",Pr_nsim4d
@@ -544,10 +594,9 @@
 *
 *     C.   Output to 3D-Var: TLM Model state at final time
 *
-*             Read trajectory for conversion in v4d_putdx at final time
-*             ---------------------------------------------------------
-              V4dg_rwcv = 0
-              call v4d_rwconv()
+*             Read trajectory for conversion at final time
+*             --------------------------------------------
+              call v4d_rwconv0()
 *
 *             Write increments to be read by 3D-Var
 *             -------------------------------------
@@ -596,7 +645,6 @@
 *     
 *           Set READ option on TRAJ Vmm WA file
 *           -----------------------------------
-            V4dg_oktr_L = .true.
             V4dg_rwtr = 0
 *
 *           Reset addresses of TRAJ Conversion/Physics WA files
@@ -604,10 +652,13 @@
             V4dg_addcv = V4dg_addcv - l_ni*l_nj
             V4dg_addph = V4dg_addph - l_ni*l_nj*l_nk
 *
-*           Read trajectory for conversion in v4d_getdx at final time
-*           ---------------------------------------------------------
-            V4dg_rwcv = 0
-            call v4d_rwconv()
+*           Initilizations for digital filtering
+*           ------------------------------------
+            if( Init_balgm_L ) Rstri_idon_L = .true.
+*
+*           Read trajectory for conversion at final time
+*           --------------------------------------------
+            call v4d_rwconv0()
 *
 *           Loop over segments
 *           ------------------
@@ -646,20 +697,29 @@
 *             -------------
               call gem_ctrl_ad()
 *
+*             Read trajectory for conversion at initial time
+*             ----------------------------------------------
+              call v4d_rwconv0()
+*
 *             ADJOINT of
 *             Complete the preprocessing (derived fields)
 *             -------------------------------------------
               V4dg_part = 3
               call indata_ad()
 *
-              if( V4dg_output_L ) call v4d_dynout
-*     
-*     C.   Output to 3D-Var: ADJ Model state at initial time
+*             Output adjoint fields knowing that u,v are true winds
+*             -----------------------------------------------------
+              if (V4dg_output_L) then
 *
-*             Read trajectory for conversion in v4d_putdx at initial time
-*             -----------------------------------------------------------
-              V4dg_rwcv = 0
-              call v4d_rwconv()
+                  V4dg_imguv_L = .false.
+*
+                  call v4d_dynout()
+*
+                  V4dg_imguv_L = .true.
+*
+              endif
+*
+*     C.   Output to 3D-Var: ADJ Model state at initial time
 *
 *             Prepare and Write adjoint increments to be read by 3D-Var   
 *             ---------------------------------------------------------
@@ -713,22 +773,29 @@
             V4dg_addcv  = 1
             V4dg_addnl  = 1
 *
-*           Read trajectory for conversion in v4d_getdx at initial time  
-*           -----------------------------------------------------------
-            V4dg_rwcv = 0 
-            call v4d_rwconv()
+*           Read trajectory for conversion at initial time  
+*           ----------------------------------------------
+            call v4d_rwconv0()
 *
 *           Set status of the integration period
-*           ------------------------------------------------------------------
+*           ------------------------------------
             V4dg_status = 8 
 * 
 *           Set over-riding switch for dynout and blocstat
 *           ----------------------------------------------
             V4dg_output_L = .true. 
 *
-*           Turn off WRITE option off TRAJ Vmm WA file
-*           -----------------------------------------
+*           Turn off WRITE option TRAJ Vmm WA file
+*           --------------------------------------
             V4dg_oktr_L = .false.
+*
+*           Turn off WRITE option TRAJ Conversion WA file
+*           ---------------------------------------------
+            V4dg_oktrcv_L = .false.
+*
+*           Initilizations for digital filtering
+*           ------------------------------------
+            if( Init_balgm_L ) Rstri_idon_L = .false.
 *
             if(Ptopo_myproc.eq.0) then
               write(V4dg_iunenrgy,*) "INTEGRATION #",Pr_nsim4d
@@ -780,10 +847,9 @@
 *             -------------
               call gem_ctrl
 *     
-*             Read trajectory for conversion in v4d_putdx at final time
-*             ---------------------------------------------------------
-              V4dg_rwcv = 0
-              call v4d_rwconv()
+*             Read trajectory for conversion at final time
+*             --------------------------------------------
+              call v4d_rwconv0()
 *
             enddo
 *
@@ -804,6 +870,91 @@
               nstatus = -99
             endif
 *
+*        ------------------------------------------------------------------------------------------
+*   ===> EVN_TLME:   Integration of TLM model without Profiles and with V4dg_output_L=.T. Then STOP 
+*        ------------------------------------------------------------------------------------------
+         else if (nevent.eq.EVN_TLME) then 
+*
+            Pr_nsim4d = Pr_nsim4d + 1   
+*
+            write(Lun_out,*) '>>> V4D_4DVAR::  Integration of TLM - Nevent = '
+     %                       ,nevent,' EVN_TLME = ',EVN_TLME,' NSIM4D = ',Pr_nsim4d
+*
+*           Zero variables
+*           --------------
+            call v4d_zero()
+*
+*           Set linear direct run
+*           ---------------------
+            V4dg_ds_L = .true.
+            V4dg_nl_L = .false.
+            V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+            V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+            V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*     
+*     A.   Input: initial conditions and convert variables 3D-Var --> GEM
+*     
+*           Set initial and last time step
+*           ------------------------------
+            Lctl_step = 0
+            V4dg_steplast = Step_total
+*
+*           Set READ option on TRAJ Vmm WA file
+*           -----------------------------------
+            V4dg_rwtr   = 0 
+*
+*           Reset addresses of TRAJ Conversion/Physics WA files
+*           ---------------------------------------------------
+            V4dg_addcv  = 1
+            V4dg_addph  = 1 + l_ni*l_nj*l_nk
+*
+*           Initilizations for digital filtering
+*           ------------------------------------
+            if( Init_balgm_L ) Rstri_idon_L = .false.
+*
+*           Read trajectory for conversion at initial time 
+*           ----------------------------------------------
+            call v4d_rwconv0()
+*
+*           Read increments from 3D-Var and prepare them for GEM
+*           ----------------------------------------------------
+            call v4d_getdx(nstatus)
+*
+*     B.   Run the tangent linear model
+*     
+            if(nstatus.eq.0) then 
+*
+*           Set status of the integration
+*           -----------------------------
+            V4dg_status = 0
+*     
+*           Complete the preprocessing (derived fields)
+*           -------------------------------------------
+            V4dg_part = 3
+            call indata_tl()
+*
+*           Set over-riding switch for dynout and blocstat
+*           ----------------------------------------------
+            V4dg_output_L = .true. 
+*
+            call dynout2( )
+*     
+*           Run TLM model
+*           -------------
+            call gem_ctrl_tl()
+*
+               write(Lun_out,*) '>>> V4D_4DVAR::  End of TLM integration  NSIM4D = ',Pr_nsim4d
+*
+               write(Lun_out,*) '>>> V4D_4DVAR::  End of Job - Nevent = '
+     %                          ,nevent,' EVN_TLME = ',EVN_TLME
+               nstatus = -99
+*
+            else
+               write(Lun_out,*) '>>> V4D_4DVAR::  Problem in getting dwgf PROF file at initial time nstatus = ',
+     %                          nstatus
+               nstatus = -99
+            endif
+*     
 *        ------------------------------------------------
 *   ===> EVN_ESIM: Nothing more to do. You can go home!!
 *        ------------------------------------------------
@@ -820,7 +971,7 @@
 *
             write(Lun_out,*) '>>> V4D_4DVAR::  End of Job with restart - Nevent = '
      %                       ,nevent,' EVN_ESRS = ',EVN_ESRS
-            call write_status_file ('_restart4d=oui;')
+            call write_status_file2 ('_restart4d=oui')
             nstatus = -99
 *     
 *        -----------------------------------------------------------------
