@@ -1,0 +1,31 @@
+***s/r wil_dftfax
+*
+      SUBROUTINE WIL_DFTFAX(MAXH,NFC,LAMBDA,TRIGS)
+*
+      implicit none
+*
+      INTEGER MAXH, NFC
+      REAL LAMBDA
+*
+      REAL TRIGS(MAXH+1,2)
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version DFTFAX 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     COMPUTE COEFFICIENTS FOR INVERSE DISCRETE FOURIER TRANSFORM
+*
+*------------------------------------------------------------------
+      INTEGER I
+*------------------------------------------------------------------
+*
+      DO 100 I = 1,NFC
+         TRIGS(I,1) = SIN((I-1)*LAMBDA)
+         TRIGS(I,2) = COS((I-1)*LAMBDA)
+  100 CONTINUE
+*
+      RETURN
+      END

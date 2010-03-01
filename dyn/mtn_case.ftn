@@ -134,7 +134,7 @@ ccc#include "acq.cdk"
       enddo
       enddo
 *
-      do k=1,g_nk
+      do k=1,g_nk+1
       do j=1,l_nj
       do i=1,l_ni
          Ind_u   (i,j,k) = Ind_u (i,j,1)

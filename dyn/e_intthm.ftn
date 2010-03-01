@@ -34,6 +34,8 @@
 *                             produce BCS or 3DF files
 * v4_00 - A. Plante         - Adapt for staggering
 *                             NOTE : un-staggered input data only
+* v4_03 - Lee V.            - ISST adaptation, read p0 here
+* v4_03 - Lee V.            - Adapt to using new pressure functions
 *
 *object
 *    Computes  the ln of surface and top pressure given the topo 
@@ -90,11 +92,6 @@
       vtt=vt//'  '
       vhh=vh//'  '
 *
-*
-      if(e_schm_offline_l.and.(.not.Pil_bmf_L))
-     $     call gem_stop("e_intthm : bmf file only in offline mode",-1)
-*
-
       if (Pil_bmf_L) then
           nis=nifi
           njs=njfi
@@ -106,9 +103,38 @@
 *
       allocate(tt(ng),td(ng),es(ng),hr(ng),hu(ng),p0(ng),wk2(ng))
 *
-*     For searching the GZ(at surface),HU,TT,VT,P0 records, 
-*     correct IP1 targets must be found
+*     For searching the P0 record
 *
+      if (anal_hav(2).eq.6) then
+*         Read, interpolate, scale and write SurF
+          if (e_rdhint3 (p0,dstf_gid,nis,njs,'!!SF',-1,
+     $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $         call e_arret('e_specanal')
+      else if (anal_hav(2).gt.0.and.anal_hav(2).le.5) then
+*        Read, interpolate, scale and write P0.
+          if (e_rdhint3 (p0,dstf_gid,nis,njs,'P0  ',-1,
+     $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $         call e_arret('e_specanal')
+*vl        NO  Scale P0.
+cvl            p0 (:) = wk2(:)*100.
+      endif
+*
+*     Write out P0 record
+      if (Pil_bmf_L) then
+          call e_bmfsplitxy2 (p0 ,nifi,njfi,'P0  ',1,1,pni ,0,0,0)
+      else
+         if (Pil_bcs_hollow_L) then
+            call e_write_bcs (p0 ,nis,njs,
+     $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $            1 , 'S   ',unf_casc)
+         else
+            call e_write_3df ( p0 ,nis,njs,1 ,'S   ',unf_casc)
+         endif
+       endif
+*
+*     For searching the GZ(at surface),HU,TT,VT records, 
+*     correct IP1 targets must be found
       anyip_L = .false.
       arret_L = .true.
       if (.not.Pil_bmf_L)  allocate(ttn(ng,lv_t),hun(ng,lv_t),gzn(ng,lv_t))
@@ -138,25 +164,23 @@
             endif
          end do
 *
-         if (.not.e_schm_offline_l) then
-            if (.not.Pil_bmf_L) then
-*              Read and interpolate surface GZ.
-               err = e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na_t(lv_t),
-     $              ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
-               if (err.lt.0) goto 55
-*              Scale
-               wk2(:)=wk2(:)*c2
-*              Surface GZ is written below.
-            else if (anal_hav(1).eq.0) then
-*              No interpolation : read, scale and write surface GZ.
-               err = e_bmfrd (dstf_gid,nis,njs,'GZ  ',0.,c2,na_t(lv_t),
-     $              1,.false.,.true.,'CUBIC')
-            else
-*              Read, interpolate, scale and write surface GZ.
-               err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ',   0., c2,na_t(lv_t),
-     $              1, anyip_L,arret_L,'CUBIC')               
-            endif               
-         endif
+         if (.not.Pil_bmf_L) then
+*           Read and interpolate surface GZ.
+            err = e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na_t(lv_t),
+     $           ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (err.lt.0) goto 55
+*           Scale
+            wk2(:)=wk2(:)*c2
+*           Surface GZ is written below.
+         else if (anal_hav(1).eq.0) then
+*           No interpolation : read, scale and write surface GZ.
+            err = e_bmfrd (dstf_gid,nis,njs,'GZ  ',0.,c2,na_t(lv_t),
+     $           1,.false.,.true.,'CUBIC')
+         else
+*           Read, interpolate, scale and write surface GZ.
+            err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ',   0., c2,na_t(lv_t),
+     $           1, anyip_L,arret_L,'CUBIC')               
+         endif               
 *
          if (.not.Pil_bmf_L) then
 
@@ -337,53 +361,6 @@
      %        E_trname_S(i) = E_Tr3d_name_S(i)(1:2)//'  '
       enddo
 *
-      if (E_Schm_offline_L) then
-          do 200 i=1,E_tr3d_ntr
-            mul=1.
-            if      (E_tr3d_name_S(i).eq.'FI') then
-               desc='IR FLUX '
-               inter='LINEAR'
-               mul=1.
-            else if (E_tr3d_name_S(i).eq.'FB') then
-               desc='SOLAR FL'
-               inter='LINEAR'
-               mul=1.
-	    else if ((E_tr3d_name_S(i).eq.'PR').or.(E_tr3d_name_S(i).eq.'PR0')) then
-               desc='PRECIP T'
-               inter='LINEAR'
-               mul=1. 
-            else if (E_tr3d_name_S(i).eq.'RT') then
-               desc='PCP RATE'
-               inter='LINEAR'
-               mul=1.
-            else if ((E_tr3d_name_S(i).eq.'N4').or.(E_tr3d_name_S(i).eq.'N40')) then
-               desc='AC SOL F'
-               inter='LINEAR'
-               mul=1.
-            else if ((E_tr3d_name_S(i).eq.'AD').or.(E_tr3d_name_S(i).eq.'AD0')) then
-               desc='ACC IR F'
-               inter='LINEAR'
-               mul=1.
-            else if (E_tr3d_name_S(i).eq.'PC') then
-               desc='PRECIP C'
-               inter='LINEAR'
-               mul=1.
-            else if (E_tr3d_name_S(i).eq.'P0') then
-               desc='SRFPRES '
-               inter='LINEAR'
-               mul=100.
-            else if (E_tr3d_name_S(i).eq.'M4') then
-               desc='COS_ZANG'
-               inter='LINEAR'
-               mul=1.
-            endif
-*
-            err = e_bmfrd    (dstf_gid, nis, njs,E_tr3d_name_S(i), 
-     $                         0., mul, na_t, lv_t, anyip_L,arret_L,inter)
- 200      continue
-          return
-      endif
-
       do i=1,E_tr3d_ntr
          do k=1,lv_t
             if (e_rdhint3 (wk2,dstf_gid,nis,njs, E_tr3d_name_S(i),
@@ -395,9 +372,7 @@
                  call e_fill_3df ( wk2,hun,nis,njs,lv_t,k,1.0,0.0)
              endif
          enddo
-      end do
-      if (.not.Pil_bmf_L) then
-         do i=1,E_tr3d_ntr
+         if (.not.Pil_bmf_L) then
             if (Pil_bcs_hollow_L) then
                 call e_write_bcs (hun,nis,njs,
      $                    e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
@@ -406,8 +381,8 @@
             else
                 call e_write_3df ( hun,nis,njs,lv_t,E_trname_S(i),unf_casc)
             endif
-         end do
-      endif 
+         endif 
+      end do
 *
       deallocate(tt,td,es,hu,wk2,p0)
       if (.not.Pil_bmf_L) deallocate(ttn,hun,gzn)

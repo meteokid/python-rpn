@@ -41,6 +41,7 @@
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 * v3_20 - Lee V.            - request of physics output via long/short name
 * v3_20 - A. Kallaur        - request chemical var. output (05/2005)
+* v4_03 - Lee V.            -output files set to frequency requested
 *
 *object
 *     See above id
@@ -86,7 +87,6 @@
       character*256 fn
       logical iela
       integer pnerror,i,idx,k,j,levset,kk
-      real seconds,min_seconds
       integer ixg(4), sorvmm
 *
       if (Lun_out.gt.0) write(Lun_out,5200)
@@ -113,31 +113,23 @@
           endif
 
           if (Out3_unit_s .eq. ' '.or. Out3_unit_s .eq. 'H') then
-              min_seconds = 3600.0
               unit_S = 'HOURS'
           endif
           if (Out3_unit_s .eq. 'D') then
-              min_seconds = 3600.0*24.0
               unit_S = 'DAYS'
           endif
           if (Out3_unit_s .eq. 'M') then
-              min_seconds = 60.0
               unit_S = 'MINUTES'
           endif
-          if (Out3_unit_s .ne. 'S'.and. Out3_unit_s .ne. 'P') then
-              seconds=min_seconds
-              do j=1,Timestep_sets
-              do i=2,Timestep_max(j)
-                 seconds = min ( 1.0d0*(seconds),
-     $                Cstv_dt_8*1.0d0*(Timestep(i,j)-Timestep(i-1,j)))
-              enddo
-              enddo
-              if (seconds.lt.min_seconds) then
-                  Out3_unit_s = 'P'
-                  Out3_ndigits = 6
-                  write(Lun_out,3000)unit_S
-              endif
+          if (Out3_unit_s .eq. 'S') then
+              unit_S = 'SECONDS'
+              Out3_ndigits = 6
           endif
+          if (Out3_unit_s .eq. 'P') then
+              unit_S = 'TIMESTEPS'
+              Out3_ndigits = 6
+          endif
+          write(Lun_out,3000)unit_S
 * Transfer filter and xnbit info to requested variables
           do k=1, Outd_sets
              do j=1,Outd_var_max(k)
@@ -537,10 +529,7 @@
  1007 format('|',2x,a4,2x,'|',a16,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
  1008 format('|',2x,a4,2x,'|',a4,12x,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
  2001 format('* Note: NO filter is applied to 3D fields on M levels')
- 3000 format(
-     $    /,'SET_SOR - WARNING: OUTPUT REQUEST IS MORE FREQUENT THAN ',A8
-     $    /,' *** Directive Out3_unit_S *** will be set to "P" ',
-     $    /,' *** Output files will be in TIMESTEPS')
+ 3000 format(/,'SET_SOR - OUTPUT FILES will be in ',A8)
  5000 format(
      $     ' TOTAL NUMBER OF WARNINGS ENCOUNTERED IN',
      $     ' DIRECTIVE SETS: ', I5)

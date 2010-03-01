@@ -1,0 +1,53 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+#if defined (DOC)
+*
+***comdeck nest_m.cdk
+*
+* v4_04 - Tanguay M.        - Staggered version TL/AD
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH NESTING for current timestep              |
+*  For Nest_uf,Nest_vf - used for future timesteps                     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Nest_u             | x component of velocity                         |
+* Nest_v             | y component of velocity                         |
+* Nest_t             | T (temperature)                                 |
+* Nest_zd            |                                                 |
+* Nest_s             | ln (dpi/dpi*)                                   |
+*--------------------|-------------------------------------------------|
+* Nest_w             | z component of velocity                         |
+* Nest_q             |                                                 |
+*--------------------|-------------------------------------------------|
+* Nest_tr            | tracer 3d variables                             |
+*----------------------------------------------------------------------|
+*
+*
+#endif
+      MARK_COMMON_BEG (nest_m)
+      DCL_VMMVAR( nest_m, nest_u_m   , real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( nest_m, nest_v_m   , real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( nest_m, nest_t_m   , real, (LDIST_SHAPE,l_nk+2) )
+      DCL_VMMVAR( nest_m, nest_zd_m  , real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( nest_m, nest_s_m   , real, (LDIST_SHAPE       ) )
+      DCL_VMMVAR( nest_m, nest_w_m   , real, (LDIST_SHAPE,l_nk+1) )
+      DCL_VMMVAR( nest_m, nest_q_m   , real, (LDIST_SHAPE,0:l_nk+1) )
+      DCL_VMMVAR( nest_m, nest_tr_m  , real, (LDIST_SHAPE,l_nk+2,*) )
+
+      MARK_COMMON_END (nest_m)
+      character*8 nest_m_n_first(1)
+      equivalence (nest_m_n_first,VMM_NAM(nest_u_m))

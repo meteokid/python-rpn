@@ -1,0 +1,86 @@
+***s/r write_encode_bang - to return A,B and corresponding IP1 values
+*
+***function write_encode_bang - to read and encode !! record
+*
+      integer function write_encode_bang(iun,NK,
+     $        hyb_m,hyb_t, a_m_8,b_m_8,a_t_8,b_t_8,rcoef,ptop_8,
+     $        prescode,Out_ig1,Out_ig2,Out_dateo,Out_deet,Out_npas,Out_etik_S)
+*
+      implicit none
+*
+      integer iun,NK,prescode,Out_ig1,Out_ig2
+      real hyb_t(NK+2), hyb_m(NK+1),rcoef(2)
+      real*8  ptop_8,a_t_8(NK+2),b_t_8(NK+2),a_m_8(NK+1),b_m_8(NK+1)
+      character*12  Out_etik_S
+      integer Out_dateo,Out_deet,Out_npas
+
+* ________________________________________________________________
+*  Name        I/O      Description
+* ----------------------------------------------------------------
+* iun           I       unit number to input file
+* NK            I       number of momentum levels not including surface
+* hyb_m         I       value between 0.0 and 1.0 for momentum levels
+* hyb_t         I       value between 0.0 and 1.0 for thermo levels
+* a_m_8         I       list of A coefficients for each momentum level
+* b_m_8         I       list of B coefficients for each momentum level
+* a_t_8         I       list of A coefficients for each thermo level
+* b_t_8         I       list of B coefficients for each thermo level
+* ptop_8        I       Pressure at top in Pascals
+* rcoef         I       Two rcoef coefficients (btwn 1.0 to 2.0)
+* prescode      I       code number for type of vertical coordinate
+*                        0=pressure
+*                        1=SIGMA
+*                        2=ETASEF (eta for spectral)
+*                        3=SIGPT  (eta, rcoef=1.0)
+*                        4=HYBLG  (hybrid Laprise/Girard)
+* *** only existing ***  5=HYBSTAG(staggered hybrid Girard)
+* Out_ig1       I       ig1 tag
+* Out_ig2       I       ig2 tag
+* Out_dateo     I       date of origin
+* Out_deet      I       timestep in seconds
+* Out_npas      I       number of timesteps
+* Out_etik_S    I       etiket
+* ----------------------------------------------------------------
+* the function will return 0 upon success
+**
+
+      integer  fstecr
+      external fstecr
+      integer  k,kind,ig1,ig2,ig3,ig4,ip1
+      real*8   work_8(3,NK*2+3),work1_8,wke_8(3,NK*2+3)
+
+      write_encode_bang = -1
+      kind = 5
+      do k=1,NK
+         call convip(ip1,hyb_m(k),kind,+1,' ',.false.)
+         work_8(1,k)=ip1
+         work_8(2,k)=a_m_8(k)
+         work_8(3,k)=b_m_8(k)
+      enddo
+*     The very top level
+      call convip(ip1,0.0,kind,+1,' ',.false.)
+      work_8(1,NK+1)=ip1
+      work_8(2,NK+1)=a_t_8(1)
+      work_8(3,NK+1)=b_t_8(1)
+      do k=1,NK+1
+         call convip(ip1,hyb_t(k),kind,+1,' ',.false.)
+         work_8(1,k+NK+1)=ip1
+         work_8(2,k+NK+1)=a_t_8(k)
+         work_8(3,k+NK+1)=b_t_8(k)
+      enddo
+*     The very bottom level
+      call convip(ip1,1.0,kind,+1,' ',.false.)
+      work_8(1,NK*2+3)=ip1
+      work_8(2,NK*2+3)=a_t_8(NK+2)
+      work_8(3,NK*2+3)=b_t_8(NK+2)
+*     Parameters are defined in Pascals
+      ig4 = nint(rcoef(2)*1000)
+      ig3 = nint(rcoef(1)*1000)
+      ig2 = nint(ptop_8)
+      ig1 = prescode
+      write_encode_bang = fstecr (work_8,wke_8,-64,iun,Out_dateo,
+     $          int(Out_deet),Out_npas,3,nk*2+3,1,Out_ig1,Out_ig2,0,
+     $          'X',"!!  ",Out_etik_S,'X',ig1,ig2,ig3,ig4,
+     $           5,.true.)
+      return
+      end

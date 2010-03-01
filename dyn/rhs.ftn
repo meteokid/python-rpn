@@ -27,7 +27,7 @@
 * v2_31 - Desgagne M.       - remove treatment of hut1 and qct1
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Desgagne M.       - Revision Openmp
-* v_stg - Plante A.         - Staggered version
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 *
 *object
 ***********************************************************************
@@ -49,6 +49,7 @@
 #include "vt1.cdk" 
 #include "vtx.cdk" 
 #include "nest.cdk"
+#include "acid.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -151,31 +152,22 @@
 !$omp enddo
 !$omp end parallel
 *
+      if (Acid_test_L)call acid_stat_rhs(fipt1,orhsu,ruw1,orhst,orhsc,1)
+*
       call rhsp_2  ( orhsu, orhsv, orhsc,  orhst, orhsw,  orhsf,
      %                ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v,
      %                 ut1,   vt1,   wt1,    tt1,   st1,   zdt1,
      %              bspqtx, fiptx,  mutx,
      $               LDIST_DIM,l_nk  )
 *     
-c     if (Acid_test_L) then
-c     If (Lun_out.gt.0) write(Lun_out,*) 'After rhsp_2, computed area'
-c     call glbstat (orhsu,'RU0',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
-c    %                                      8+acid_j0,G_nj-7-acid_jn,1,G_nk)
-c     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
-c    %                                      5+acid_j0,G_nj-4-acid_jn,1,G_nk)
-c     call glbstat (orhst,'RT',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
-c    %                                      8+acid_j0,G_nj-7-acid_jn,1,G_nk)
-*     Rc0 will not match to the piloting run because it includes new Ru,Rv
-c     If (Lun_out.gt.0) 
-c    %  write(Lun_out,*) 'Rc0 includes nesting area and new Ru,Rv, will not match'
-c     call glbstat (orhsc,'Rc0',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
-c    %                                        1+acid_j0,G_nj-acid_jn,1,G_nk)
-c     endif
+      if (Acid_test_L)call acid_stat_rhs(fipt1,orhsu,ruw1,orhst,orhsc,2)
 
 C     Pour debug
-c      call glbstat (orhsc,'rhsc',LDIST_DIM,G_nk  ,1,l_ni,1,l_nj,1,G_nk  )
-c      call glbstat (orhst,'rhst',LDIST_DIM,G_nk+1,1,l_ni,1,l_nj,1,G_nk+1)
-c      call gem_stop('rhs',-1)
+c      if (Acid_test_L) then
+c         call glbstat (orhsc,'rhsc',LDIST_DIM,G_nk  ,1,l_ni,1,l_nj,1,G_nk  )
+c         call glbstat (orhst,'rhst',LDIST_DIM,G_nk+1,1,l_ni,1,l_nj,1,G_nk+1)
+c         call gem_stop('rhs',-1)
+c      endif
 
       pnerr = vmmuld(-1,0)
       pnerr = vmmuld(-1,0)

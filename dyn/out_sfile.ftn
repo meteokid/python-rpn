@@ -30,7 +30,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *                             2) Do not use Out_endstepno in climate mode
 * v3_30 - McTaggart-Cowan R.- Use existing Out_etik_S string instead of namelist value
 * v3_31 - Winger K.         - correction to size in ypq(Out_nisg) to Out_njsg
-* v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
+* v4_03 - Lee V.            - ISST + modification of Out_etik_S in out_sgrid only
 *
 *ARGUMENTS
 *    NAMES       I/O  TYPE  DESCRIPTION
@@ -38,6 +38,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "clim.cdk"
 #include "out.cdk"
 #include "glb_ld.cdk"
+#include "path.cdk"
 *
 
       integer  prog_filename,fnom,fstouv,longueur,fstopc
@@ -102,21 +103,19 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
             call incdatsd (datev,Out_runstrt_S,dayfrac)
             write (startindx,'((i7.7),a1,(i7.7))') Out_idg,'-',Out_jdg
             Out_filename_S='ic'//datev//'_'//startindx
-            Out_filenamep_S = '../../output/casc/'//
+            Out_filenamep_S = trim(Path_output_S)//'/casc/'//
      $                     Out_filename_S(1:longueur(Out_filename_S))
          else
             err = prog_filename (Out_filename_S,Out_prefix_S,date,hour,-1,-1,
      $                           Out_myblocx,Out_myblocy,prognum,Out_ndigits,
      $                           Out_unit_S)
-            Out_filenamep_S = Out_filename_S(1:longueur(Out_filename_S))
-     $                        //F_ext_S(1:longueur(F_ext_S))
+            Out_filenamep_S = trim(Out_filename_S)//trim(F_ext_S)
             if (Clim_climat_L .and.
      $         (Out_prefix_S.eq.'dm' .or.
      $          Out_prefix_S.eq.'dp' .or.
      $          Out_prefix_S.eq.'pm' )) then
-                Out_filenamep_S =
-     $          '../../output/current_last_step/' // blocxy_S //
-     $          '/' // Out_filenamep_S(1:longueur(Out_filenamep_S))
+                Out_filenamep_S = trim(Path_output_S)//'/current_last_step/'
+     $                           // blocxy_S // '/' // trim(Out_filenamep_S)
             endif
          endif
 

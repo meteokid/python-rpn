@@ -24,6 +24,8 @@
 * v3_03 - Tanguay M.        - initial MPI version
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_30 - Desgagne/Lee      - new physics interface + extra nesting 
+* v4_04 - Plante A.         - move hspng_main/hspng_drv in vspng_main
+* v4_04 - Tanguay M.        - Staggered version TL/AD
 *
 *object
 *     see id section
@@ -47,41 +49,35 @@
             if ( Schm_phyms_L ) call itf_phy_main    (Lctl_step)
             call tmg_stop0(9)
 *
-*           Store TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
-*           ----------------------------------------------------
-            if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) call v4d_rwtraj (2) 
-*
             call tmg_start0(10,'HZD      ')
-            call   hzd_main ()
+            call hzd_main ()
             call tmg_stop0(10)
+*
+            call psadj ()
 *
             call tmg_start0(11,'VSPNG    ')
             call vspng_main () 
             call tmg_stop0(11)
-*
-            if (.not.G_lam) call hspng_main ()
 *
          else
 *
-*           Store TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
-*           ----------------------------------------------------
-            if(V4dg_conf.ne.0.and.V4dg_oktr_L) call v4d_rwtraj (2) 
-*     
             call tmg_start0(10,'HZD      ')
             call   hzd_main ()
             call tmg_stop0(10)
 *
+            call psadj ()
+*
             call tmg_start0(11,'VSPNG    ')
             call vspng_main () 
             call tmg_stop0(11)
-*
-            if (.not.G_lam) call hspng_main ()
 *
             call tmg_start0( 9, 'PHY      ' )
             if ( Schm_phyms_L ) call itf_phy_main    (Lctl_step)
             call tmg_stop0(9)
 *
          endif
+*
+         if ( .not. Schm_phyms_L ) call dummy_diag ()
 *
       if (G_lam .and. ifd_ftype.ne.'BMF') then
 * Update Lateral BCs with data that has seen physics

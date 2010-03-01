@@ -25,6 +25,7 @@
 * v3_01 - Desgagne M.     - initial version
 * v3_03 - Tanguay M.      - Adjoint Lam configuration
 * v3_30 - Lee V.          - Hollow cubes and acid test for LAM
+* v4_03 - Lee/Desgagne    - ISST
 *
 *object
 *	
@@ -48,6 +49,7 @@
 #include "adw.cdk"
 #include "lun.cdk"
 #include "acid.cdk"
+#include "path.cdk"
 *
       integer  vmmlod,vmmget,vmmuld,bcs_ftype,casc_bcs,casc_bcsh
       external vmmlod,vmmget,vmmuld,bcs_ftype,casc_bcs,casc_bcsh
@@ -105,6 +107,8 @@
          Ind_q_  = nest_qf_
       endif
 *
+      Path_ind_S=trim(Path_input_S)//'/BCDS_3D'
+*
       errft = 0
       unf = 76
       nav_L = .false.
@@ -143,6 +147,12 @@
 *
          call readdyn()
 *
+*        In specific 4D-Var runs, Convert wind images to true winds
+*        (due to the action of v4d_uv2img in v4d_predat)
+*        ----------------------------------------------------------
+         if ( V4dg_conf.ne.0.and..not.(V4dg_4dvar_L.or.V4dg_sgvc_L) )
+     $        call v4d_img2uv ()
+*
 *        Regular forward gem
 *        -------------------
          if(V4dg_conf.eq.0) then
@@ -169,16 +179,16 @@
 
              call trnes (nest_uf,bcs_uf(bcs_is),bcs_uf(bcs_in),bcs_uf(bcs_iw),
      $            bcs_uf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
              call trnes (nest_vf,bcs_vf(bcs_is),bcs_vf(bcs_in),bcs_vf(bcs_iw),
      $            bcs_vf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
              call trnes (nest_wf,bcs_wf(bcs_is),bcs_wf(bcs_in),bcs_wf(bcs_iw),
      $            bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
              call trnes (nest_tf,bcs_tf(bcs_is),bcs_tf(bcs_in),bcs_tf(bcs_iw),
      $            bcs_tf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,0)
              call trnes (nest_zdf,bcs_zdf(bcs_is),bcs_zdf(bcs_in),bcs_zdf(bcs_iw),
      $            bcs_zdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
@@ -202,7 +212,7 @@
                 call trnes (trp,bcs_trf(id),bcs_trf(id+bcs_in-1),
      $               bcs_trf(id+bcs_iw-1),bcs_trf(id+bcs_ie-1),
      $               l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $               minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,0)
+     $               minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,0)
              end do
              err = vmmuld(keyp,Tr3d_ntr)
          endif

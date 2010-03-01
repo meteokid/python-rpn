@@ -15,11 +15,16 @@
 #include "model_macros_f.h"
 *
       integer function sid3df (xpaq,ypaq,xpau,ypav,unf,done,
-     $                    nia,nja,nka_m,nka_s,nka_t,presstype,nvar,ntra)
+     $                    nia,nja,nka_m,nka_t,presstype)
       implicit none
+*author
+*     Michel Desgagne - rpn - MC2 2001
+*
+*revision
+* v4_03 - Lee V.            - Adapt to using new pressure functions
 *
       logical done
-      integer unf,nia,nja,nka_m,nka_s,nka_t,nvar,ntra,presstype
+      integer unf,nia,nja,nka_m,nka_t,presstype
       real*8 xpaq(nia), ypaq(nja), xpau(nia), ypav(nja)
 *
 #include "ifd.cdk"
@@ -28,7 +33,7 @@
 #include "lun.cdk"
 *
       character*4 nomvar
-      integer i,j,k,ni1,nj1,nk1,nvar1,ntr1,err
+      integer i,j,k,ni1,nj1,nk1,err
       real*8, dimension (:), allocatable :: xp1,yp1
 *-----------------------------------------------------------------------
 *
@@ -37,16 +42,17 @@
       if (.not.done) then
 *
          read (unf,end=33,err=33) 
-     $         nomvar,ni1,nj1,nka_m,nka_s,nka_t,presstype,nvar,ntra
+     $         nomvar,ni1,nj1,nka_m,nka_t,presstype
          if (Lun_debug_L) then
               write(Lun_out,*)'sid3df:'
-              write(Lun_out,*)'nomvar,ni1,nj1,nvar,ntra=',
-     $         nomvar,ni1,nj1,presstype,nvar,ntra
-              write(Lun_out,*)'nka_m.s.t=',nka_m,nka_s,nka_t
-              if (presstype.eq.1)write(Lun_out,*)'hybrid coordinate found'
-              if (presstype.eq.2)write(Lun_out,*)'eta coordinate found'
-              if (presstype.eq.3)write(Lun_out,*)'sigma coordinate found'
-              if (presstype.eq.4)write(Lun_out,*)'pressure coordinate found'
+              write(Lun_out,*)'nomvar,ni1,nj1,presstype=',
+     $         nomvar,ni1,nj1,presstype
+              write(Lun_out,*)'nka_m,nka_t=',nka_m,nka_t
+              if (presstype.eq.0)write(Lun_out,*)'pressure coordinate found'
+              if (presstype.eq.1)write(Lun_out,*)'sigma coordinate found'
+              if (presstype.eq.2)write(Lun_out,*)'eta sef coordinate found'
+              if (presstype.eq.3)write(Lun_out,*)'eta gem coordinate found'
+              if (presstype.eq.4)write(Lun_out,*)'hybrid coordinate found'
               if (presstype.eq.5)write(Lun_out,*)'ecmwf coordinate found'
               if (presstype.eq.6)write(Lun_out,*)'staggered hyb coordinate found'
          endif
@@ -68,35 +74,30 @@
 *
          if (associated(ana_am_8)) deallocate(ana_am_8)
          if (associated(ana_bm_8)) deallocate(ana_bm_8)
-         if (associated(ana_as_8)) deallocate(ana_as_8)
-         if (associated(ana_bs_8)) deallocate(ana_bs_8)
          if (associated(ana_at_8)) deallocate(ana_at_8)
          if (associated(ana_bt_8)) deallocate(ana_bt_8)
 *
          allocate(ana_am_8(nka_m), ana_bm_8(nka_m),
-     $            ana_as_8(nka_s), ana_bs_8(nka_s),
      $            ana_at_8(nka_t), ana_bt_8(nka_t) )
 *
          read (unf,end=33,err=33) 
-     $         ana_am_8,ana_bm_8,ana_as_8,ana_bs_8,ana_at_8,ana_bt_8
+     $         ana_am_8,ana_bm_8,ana_at_8,ana_bt_8
          if (Lun_debug_L) then
              write(Lun_out,*)'sid3df:'
              write(Lun_out,*)'ana_am_8=',ana_am_8
              write(Lun_out,*)'ana_bm_8=',ana_bm_8
-             write(Lun_out,*)'ana_as_8=',ana_as_8
-             write(Lun_out,*)'ana_bs_8=',ana_bs_8
              write(Lun_out,*)'ana_at_8=',ana_at_8
              write(Lun_out,*)'ana_bt_8=',ana_bt_8
          endif
 *
       else
          read (unf,end=33,err=33) 
-     $         nomvar,ni1,nj1,nka_m,nka_s,nka_t,presstype,nvar,ntra
+     $         nomvar,ni1,nj1,nka_m,nka_t,presstype
          if (Lun_debug_L) then
               write(Lun_out,*)'sid3df done'
-              write(Lun_out,*)'nomvar,ni1,nj1,nvar,ntra=',
-     $         nomvar,ni1,nj1,presstype,nvar,ntra
-              write(Lun_out,*)'nka_m.t.s=',nka_m,nka_s,nka_t
+              write(Lun_out,*)'nomvar,ni1,nj1=',
+     $         nomvar,ni1,nj1,presstype
+              write(Lun_out,*)'nka_m,nka_t=',nka_m,nka_t
          endif
          read (unf,end=33,err=33)
          read (unf,end=33,err=33)

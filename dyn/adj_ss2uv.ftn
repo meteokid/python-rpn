@@ -37,14 +37,14 @@
 *     ---------------------------------------------------------------
 *
 *Pressure coordinate
-      if (vcoord.eq.4) then
+      if (vcoord.eq.0) then
           F_ssu0 = 0.0
           F_ssv0 = 0.0
           return
       endif
 *     ---------------------------------------------------------------
 *V stag   coordinate
-      if (vcoord.eq.0.or.vcoord.eq.6) then
+      if (vcoord.eq.6) then
 *         F_ssq0 is log of p0
 *         Transfer to vector with halos
           do j=1,l_nj
@@ -66,7 +66,7 @@
           enddo
       else
 *     ---------------------------------------------------------------
-*Assume p0 is in Pascals
+*Assume p0 is in milli-bars
           do j=1,l_nj
           do i=1,l_ni
              p0_temp(i,j) = log(F_ssq0(i,j))

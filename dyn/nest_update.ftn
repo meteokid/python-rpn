@@ -75,16 +75,16 @@
 *
       call trnes (nest_u,bcs_u(bcs_is),bcs_u(bcs_in),
      $       bcs_u(bcs_iw),bcs_u(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
       call trnes (nest_v,bcs_v(bcs_is),bcs_v(bcs_in),
      $       bcs_v(bcs_iw),bcs_v(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
       call trnes (nest_w,bcs_w(bcs_is),bcs_w(bcs_in),
      $       bcs_w(bcs_iw),bcs_w(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
       call trnes (nest_t,bcs_t(bcs_is),bcs_t(bcs_in),
      $       bcs_t(bcs_iw),bcs_t(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)
       call trnes (nest_s,bcs_s(bcs_is),bcs_s(bcs_in),
      $       bcs_s(bcs_iw),bcs_s(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
@@ -111,7 +111,7 @@
             call trnes(tr,bcs_tr(id),
      $                 bcs_tr(id+bcs_in-1),bcs_tr(id+bcs_iw-1),
      $                 bcs_tr(id+bcs_ie-1),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)
          enddo
          err = vmmuld(key1,Tr3d_ntr)
       endif

@@ -36,6 +36,9 @@
 * v3_21 - Valcke, S.        - Bugfix: no call to itf_phy_apply in offline mode
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+* v4_03 - Spacek L.         - Staggered version
+* v4    - Chamberland-Spacek - Staggered version
+* v4_04 - Plante A.         - Remove offline mode
 *   
 *object
 *	Computes the physical processes and apply the resulting
@@ -124,16 +127,6 @@ c$$$         endif
 c$$$ TODO: fix itf_chm
 c$$$      call itf_chm_prep(cvptrp,cvptrm)
 *
-*
-*               Store TRAJ for the simplified physics
-*               -------------------------------------
-      if ( V4dg_conf.ne.0 .and. F_stepno.gt.0) then
-         call gem_stop('itf_phy_step -- v4d_rwtraj_sigma_phystep',-1)
-c$$$ TODO: fix v4d for new staggered dyn
-c$$$         call v4d_rwtraj_sigma_phystep (tp,qp,trp,vtmoins,trm,
-c$$$     $                                           LDIST_DIM,p_nk)
-      endif
-*
 *C       4.	compute physics tendencies
 *		--------------------------
 *	initialize the number of slices previously done
@@ -169,7 +162,7 @@ c$$$         if (cobussiz>0) deallocate (cobusval)
 *
       deallocate (obusval)
 *
-      if (Grdc_gid .gt. 0.and.F_stepno.eq.Grdc_start) then
+      if (Grdc_ndt .gt. 0.and.F_stepno.eq.Grdc_start) then
 *     Only done once in the integration
 *        Accumulate data from permanent bus
             Mem_pslic = 0
@@ -225,19 +218,15 @@ c$$$ TODO: check this
 *C      and insure consistency with other dynamic variables
 *       ----------------------------------------------------------
 *
-      if (.not. schm_offline_L) then
-         call itf_phy_apply( tdu,tdv,tdt,trp,trm,
-     $                        tp,LDIST_DIM,p_nk,F_stepno.gt.0 )
-      endif
+      call itf_phy_apply( tdu,tdv,tdt,trp,trm,
+     $     tp,LDIST_DIM,p_nk,F_stepno.gt.0 )
 *
 *
 *       Store TRAJ of vertical exchange coefficients from full-physics
 *       --------------------------------------------------------------
       if ( V4dg_conf.ne.0 .and. P4d_pbl.eq.2 .and. F_stepno.gt.0 .and.
      $     V4dg_oktr_L ) then
-         call gem_stop('itf_phy_step -- v4d_rwtraj_kmkt',-1)
-c$$$ TODO: fix v4d for new staggered dyn
-c$$$         call v4d_rwtraj_kmkt(kmm,ktm,LDIST_DIM,p_nk) 
+         call v4d_rwtraj(22, kmm, ktm) 
       endif
 
       deallocate (pvptr,tdu,tdv,tdt,trp,trm,tp,kmm,ktm)

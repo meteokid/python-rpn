@@ -75,10 +75,6 @@
                w1(i) = mp * (w1(i)+ad)
             enddo
          endif
-*
-*    For the offline mode: accumulation is changed into rate:
-*
-         if (e_schm_offline_L) err = e_liaccu (w1,nix,njx,nv)
 *     
          call e_bmfsplitxy2 (w1,nix,njx,nv,k,gnk,pni,0,0,0)
 *

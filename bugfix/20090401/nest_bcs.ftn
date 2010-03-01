@@ -1,0 +1,330 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r nest_bcs -
+*
+#include "model_macros_f.h"
+*
+      subroutine nest_bcs ()
+      implicit none
+*
+*author 
+*     Michel Desgagne   - Spring 2006
+*
+*revision
+* v3_30 - Lee V.          - initial version
+* v4_03 - Lee/Plante      - acid test
+*
+*object
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "bcsdim.cdk"
+#include "bcsgrds.cdk"
+#include "bcsmem.cdk"
+#include "vt1.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "lam.cdk"
+#include "schm.cdk"
+#include "acid.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer err,key(14),i,j,k,nvar
+      integer key0(Tr3d_ntr),key0_,key1(Tr3d_ntr),key1_, n
+      real tr,tr0
+      pointer (patr, tr(LDIST_SHAPE,*)),(patr0,tr0(LDIST_SHAPE,*))
+*----------------------------------------------------------------------
+*
+      if (north+south+west+east.lt.1) then
+*
+         if (Lam_toptt_L) then
+*
+*           Pilot the temperature for the whole top level
+            key(1 )= VMM_KEY(nest_t)
+            key(2 )= VMM_KEY(tt1)
+            nvar   = 2
+            err = VMM_GET_VAR(nest_t)
+            err = VMM_GET_VAR(tt1)
+*
+            do j=1,l_nj
+               do i=1,l_ni
+                  tt1(i,j,1) = nest_t(i,j,1)
+               end do
+            end do
+*
+            err = vmmuld(key,nvar)
+*
+         endif
+*
+         return
+      endif
+*
+      key(1 )=VMM_KEY(nest_u)
+      key(2 )=VMM_KEY(nest_v)
+      key(3 )=VMM_KEY(nest_w)
+      key(4 )=VMM_KEY(nest_t)
+      key(5 )=VMM_KEY(nest_zd)
+      key(6 )=VMM_KEY(nest_s)
+      key(7 )=VMM_KEY(ut1)
+      key(8 )=VMM_KEY(vt1)
+      key(9 )=VMM_KEY(wt1)
+      key(10)=VMM_KEY(tt1)
+      key(11)=VMM_KEY(zdt1)
+      key(12)=VMM_KEY(st1)
+      nvar = 12
+*
+      if (.not.Schm_hydro_L) then
+         key(13)=VMM_KEY(nest_q)
+         key(14)=VMM_KEY(qt1)
+         nvar = 14
+      endif
+*
+      err = vmmlod(key,nvar)
+      err = VMM_GET_VAR(nest_u)
+      err = VMM_GET_VAR(nest_v)
+      err = VMM_GET_VAR(nest_w)
+      err = VMM_GET_VAR(nest_t)
+      err = VMM_GET_VAR(nest_zd)
+      err = VMM_GET_VAR(nest_s)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(wt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(zdt1)
+      err = VMM_GET_VAR(st1)
+      if (.not.Schm_hydro_L) then
+         err = VMM_GET_VAR(nest_q)
+         err = VMM_GET_VAR(qt1)
+      endif
+
+*
+      if (l_north) then
+         do k=1,G_nk+1
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_ni
+               wt1  (i,j,k) = nest_w  (i,j,k)
+               tt1  (i,j,k) = nest_t  (i,j,k)
+               zdt1 (i,j,k) = nest_zd (i,j,k)
+            end do
+            end do
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_niu
+               ut1  (i,j,k) = nest_u (i,j,k)
+            end do
+            end do
+            do j=l_nj-pil_n,l_njv
+            do i=1,l_ni
+               vt1  (i,j,k) = nest_v (i,j,k)
+            end do
+            end do
+         end do
+         do j=l_nj-pil_n+1,l_nj
+         do i=1,l_ni
+            st1  (i,j) = nest_s (i,j)
+            tt1  (i,j,G_nk+2) = nest_t (i,j,G_nk+2)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=0,G_nk+1
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_ni
+               qt1(i,j,k)  = nest_q(i,j,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if (l_east) then
+         do k=1,G_nk+1
+            do j=1,l_nj
+            do i=l_ni-pil_e+1,l_ni
+               wt1  (i,j,k) = nest_w  (i,j,k)
+               tt1  (i,j,k) = nest_t  (i,j,k)
+               zdt1 (i,j,k) = nest_zd (i,j,k)
+            end do
+            end do
+            do j=1,l_nj
+            do i=l_ni-pil_e,l_niu
+               ut1  (i,j,k) = nest_u  (i,j,k)
+            end do
+            end do
+            do j=1,l_njv
+            do i=l_ni-pil_e+1,l_ni
+               vt1  (i,j,k) = nest_v  (i,j,k)
+            end do
+            end do
+         end do
+         do j=1,l_nj
+         do i=l_ni-pil_e+1,l_ni
+            st1  (i,j) = nest_s  (i,j)
+            tt1  (i,j,G_nk+2) = nest_t  (i,j,G_nk+2)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=0,G_nk+1
+            do j=1,l_nj
+            do i=l_ni-pil_e+1,l_ni
+               qt1(i,j,k)  = nest_q(i,j,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if (l_south) then
+         do k=1,G_nk+1
+            do j=1,pil_s
+            do i=1,l_ni
+               wt1  (i,j,k) = nest_w  (i,j,k)
+               vt1  (i,j,k)= nest_v  (i,j,k)
+               tt1  (i,j,k) = nest_t  (i,j,k)
+               zdt1 (i,j,k) = nest_zd (i,j,k)
+            end do
+            end do
+            do j=1,pil_s
+            do i=1,l_niu
+               ut1  (i,j,k) = nest_u  (i,j,k)
+            end do
+            end do
+         end do
+         do j=1,pil_s
+         do i=1,l_ni
+            st1  (i,j) = nest_s  (i,j)
+            tt1  (i,j,G_nk+2) = nest_t  (i,j,G_nk+2)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=0,G_nk+1
+            do j=1,pil_s
+            do i=1,l_ni
+               qt1(i,j,k)  = nest_q(i,j,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if (l_west) then
+         do k=1,G_nk+1
+            do j=1,l_nj
+            do i=1,pil_w
+               wt1  (i,j,k) = nest_w  (i,j,k)
+               ut1  (i,j,k) = nest_u  (i,j,k)
+               tt1  (i,j,k) = nest_t  (i,j,k)
+               zdt1 (i,j,k) = nest_zd (i,j,k)
+            end do
+            end do
+            do j=1,l_njv
+            do i=1,pil_w
+               vt1  (i,j,k) = nest_v  (i,j,k)
+            end do
+            end do
+         end do
+         do j=1,l_nj
+         do i=1,pil_w
+            st1  (i,j) = nest_s  (i,j)
+            tt1  (i,j,G_nk+2) = nest_t  (i,j,G_nk+2)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=0,G_nk+1
+            do j=1,l_nj
+            do i=1,pil_w
+               qt1(i,j,k) = nest_q(i,j,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if (Lam_toptt_L) then
+*
+*        Pilot the temperature for the whole top level
+         do j=1,l_nj
+            do i=1,l_ni
+               tt1(i,j,1) = nest_t(i,j,1)
+            end do
+         end do
+      endif
+*
+      err = vmmuld(key,nvar)
+*
+      key1_ = VMM_KEY (nest_tr)
+      key0_ = VMM_KEY (trt1)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+         key0(n) = key0_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)
+         err = vmmlod(key0,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr ,tr )
+            err = vmmget(key0(n),patr0,tr0)
+            if (l_north) then
+                do k=1,G_nk+2
+                   do j=l_nj-pil_n+1,l_nj
+                   do i=1,l_ni
+                      tr0  (i,j,k) = tr  (i,j,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_east) then
+                do k=1,G_nk+2
+                   do j=1,l_nj
+                   do i=l_ni-pil_e+1,l_ni
+                      tr0  (i,j,k) = tr  (i,j,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_south) then
+                do k=1,G_nk+2
+                   do j=1,pil_s
+                   do i=1,l_ni
+                      tr0  (i,j,k) = tr  (i,j,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_west) then
+                do k=1,G_nk+2
+                   do j=1,l_nj
+                   do i=1,pil_w
+                      tr0  (i,j,k) = tr  (i,j,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+
+            if(acid_test_L)call acid_stat_nest_bcs(tr0,tr,n,1)
+
+         enddo
+*
+*
+         err = vmmuld(key1,Tr3d_ntr)
+         err = vmmuld(key0,Tr3d_ntr)
+      endif
+*
+*----------------------------------------------------------------------
+      return
+ 1000 format (/,19('#'),' NEST_BCS STAT ',i6,1X,19('#'))
+ 1001 format(3X,'NEST Boundary ConditionS: (S/R NEST_BCS)')
+      end

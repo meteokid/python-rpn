@@ -1,0 +1,38 @@
+***s/r acid_readpos
+*		
+#include "model_macros_f.h"
+*
+      subroutine acid_readpos(xgi_8,ygi_8)
+*
+      implicit none
+      real*8 xgi_8(*), ygi_8(*)
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "grd.cdk"
+         integer i,j,err
+*
+*     ---------------------------------------------------------------
+*
+         if (Lun_out.gt.0) then
+          write(Lun_out,*) 'ACID BIT TEST:reading positional parameters'
+          do i=1,G_ni
+             read (44) xgi_8(i)
+          enddo
+          do j=1,G_nj
+             read (44) ygi_8(j)
+          enddo
+         endif
+        call RPN_COMM_bcast(xgi_8,Grd_ni+2,"MPI_DOUBLE_PRECISION",0,"grid",err)
+        call RPN_COMM_bcast(ygi_8,Grd_nj+2,"MPI_DOUBLE_PRECISION",0,"grid",err)
+*     ---------------------------------------------------------------
+*
+      return
+      end

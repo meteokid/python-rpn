@@ -32,6 +32,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
 * v3_21 - Desgagne M.       - introduce new timing routines
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
 *
 *object
 *    
@@ -51,12 +52,13 @@
 #include "sol.cdk"
 #include "nl.cdk"
 #include "v4dg.cdk"
-#include "v4dr.cdk"
 #include "lctl.cdk"
 #include "vtopo.cdk"
 *
       integer iln, dim, dimt, err
       real dth
+*
+      logical rwtraj_L
 *
 **
 *     ---------------------------------------------------------------
@@ -77,15 +79,11 @@
 *
 *     ---------------------------------------------------------------
 *
-      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
+      rwtraj_L = V4dg_conf.ne.0 .and. V4dg_oktr_L
 *
-*        Store TRAJ predictive variables
-*        -------------------------------
-         if ( Orh_crank_L .and. Orh_icn.eq.1 ) then
-            call v4d_rwtraj (3) 
-         endif
-*
-      endif
+*     Store TRAJ predictive variables
+*     -------------------------------
+      if ( rwtraj_L ) call v4d_rwtraj (2) 
 *
       if ( Orh_icn .eq. 1 ) then
          call tmg_start0 ( 3, 'RHS      ' )
@@ -93,17 +91,10 @@
          call tmg_stop0 (3)
       endif
 *
-      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
-*
-*        Store TRAJ Positions TH
-*        -----------------------
-         call v4d_rwtraj (4)
-*
-*        Store TRAJ Winds TH
-*        -------------------
-         call v4d_rwtraj (5)
-*
-      endif
+*     Store TRAJ Positions TH/TRAJ Winds TH
+*     -------------------------------------
+      if ( rwtraj_L ) call v4d_rwtraj (3) 
+      if ( rwtraj_L ) call v4d_rwtraj (4) 
 *
       if(Schm_zdotlag_L) call adx_main ( F_fnitraj )
 
@@ -147,19 +138,10 @@
 *
       do 100 iln=1,Schm_itnlh
 *
-         if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) then
 *
-*           Store fields at T0 and TX used as INPUT but changed by updating (subr. BAC)
-*           ---------------------------------------------------------------------------
-            if ( Orh_icn.ne.1 .and. iln.eq.1 ) call v4d_rwtraj (6) 
-*
-*
-*           Store fields at TX used as INPUT but changed by updating (subr. BAC)
-*           -------------------------------------------------------------------
-            if ( .not.Schm_hydro_L .and. Orh_icn.eq.1 .and. iln.eq.1 ) 
-     $           call v4d_rwtraj (7) 
-*
-         endif
+*        Store TRAJ modified by BAC at previous Orh_icn
+*        ----------------------------------------------
+         if ( rwtraj_L .and. (Orh_icn.ne.1.and.iln.eq.1) ) call v4d_rwtraj (7) 
 *
          call tmg_start0 ( 6, 'NLI      ' )
          call nli ()
@@ -169,18 +151,18 @@
          call sol_main (iln)
          call tmg_stop0 (7)
 *
-         if ( V4dg_conf.ne.0 .and. V4dg_oktr_L .and. .not.V4dr_redotr_L  ) then
-*
-*           Store TRAJ GPTX at end of SOL_MAIN
-*           ----------------------------------
-            V4dr_iln = iln
-            call v4d_rwtraj (9)
-*
-         endif
+*        Store TRAJ requested to build BAC_TR 
+*        ------------------------------------
+         if ( rwtraj_L ) V4dg_iln = iln
+         if ( rwtraj_L ) call v4d_rwtraj (8) 
 *
          call tmg_start0 ( 8, 'BAC      ' )
          call bac ( iln, Schm_itnlh )
          call tmg_stop0 (8)
+*
+*        Store TRAJ requested during BAC_AD 
+*        ----------------------------------
+         if ( rwtraj_L ) call v4d_rwtraj (9) 
 *
  100  continue
 *

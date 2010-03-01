@@ -1,0 +1,36 @@
+***s/r wil_shtrns
+*
+#include "model_macros_f.h"
+*
+      SUBROUTINE WIL_SHTRNS (L3D,LV,ITYPE,X,SCOEF)                
+*
+      implicit none
+*
+#include "wil_glb_ld.cdk"
+*
+      INTEGER L3D,LV,ITYPE
+*
+      REAL X(G_nlon+2,G_nlat,L3D)
+      COMPLEX SCOEF(G_NALP)
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version SHTRNS 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     LV:
+*          -1 => FORWARD TRANSFORM X -> SCOEF
+*          +1 => INVERSE TRANSFORM SCOEF -> X
+*
+*implicits
+#include "wil_init2.cdk"
+*------------------------------------------------------------------
+      COMPLEX   CEVEN(G_NFC,G_NLATB2), CODD(G_NFC,G_NLATB2)            
+*------------------------------------------------------------------
+*
+      CALL WIL_SHTRNS_W(L3D,LV,ITYPE,X,SCOEF,CEVEN,CODD,CEVEN,CODD)
+*
+      RETURN
+      END                                                                       

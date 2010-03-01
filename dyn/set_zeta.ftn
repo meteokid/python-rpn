@@ -10,7 +10,7 @@
 ! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
 ! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
 ! ------------------------------------------------------------------------------------------------------------------------------
-c  s/r set_hybv    - Generates A and B of the hybrid coordinate
+c  s/r set_zeta    - Generates A and B of the hybrid coordinate
 c                    Also sets Z and other related vertical parameters.
 c
 #include "model_macros_f.h"
@@ -23,6 +23,8 @@ c      A. Plante & C. Girard - CMC - janvier 2008
 c
 c revision
 c
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+*
 c object
 c    To return A, B parameters for momentum and thermodynamic levels
 c    These levels are used for DYNAMICAL CALCULATIONS in the models
@@ -74,19 +76,15 @@ c
 c     __________________________________________________________________
 c
       allocate(
-     $            Ver_a_8%m(0:G_nk+1),     Ver_a_8%t(G_nk+1),
-     $            Ver_b_8%m(0:G_nk+1),     Ver_b_8%t(G_nk+1),
+     $            Ver_a_8%m(  G_nk+1),     Ver_a_8%t(G_nk+2),
+     $            Ver_b_8%m(  G_nk+1),     Ver_b_8%t(G_nk+2),
      $            Ver_z_8%m(0:G_nk+1),     Ver_z_8%t(G_nk+1),
      $           Ver_dz_8%m(  G_nk  ),    Ver_dz_8%t(G_nk+1),
      $          Ver_idz_8%m(  G_nk  ),   Ver_idz_8%t(G_nk+1),
      $         Ver_dbdz_8%m(  G_nk  ),  Ver_dbdz_8%t(G_nk+1),
-     $        Ver_fistr_8%m(0:G_nk+1), Ver_fistr_8%t(G_nk+1),
-     $        Ver_a_spcl_8%m( G_nk+1),Ver_a_spcl_8%t(G_nk+2),
-     $        Ver_b_spcl_8%m( G_nk+1),Ver_b_spcl_8%t(G_nk+2),
-     $           Ver_wp_8_m ( G_nk  ),    Ver_wm_8_m(G_nk  ),
-     $          Ver_w2p_8_m ( G_nk  ),   Ver_w2m_8_m(G_nk  ),
-     $          Ver_w3p_8_m ( G_nk  ),   Ver_w3m_8_m(G_nk  ),
-     $        Ver_dbdza_8_m ( G_nk  ),
+     $        Ver_fistr_8%m(0:G_nk  ), Ver_fistr_8%t(G_nk+1),
+     $           Ver_wp_8%m ( G_nk  ),    Ver_wm_8%m(G_nk  ),
+     $           Ver_wp_8%t ( G_nk+1),    Ver_wm_8%t(G_nk+1),
      $                                            stat=istat)
       call check_alloc(istat,'set_zeta',1)
 c
@@ -113,59 +111,20 @@ c    |                Z = A(Z) + B(Z) * Zsrf                    |
 c    |                                                          |
 c    |                R = Rmax-(Rmax-Rmin)*(Z-Ztop)/(Zsrf-Ztop) |
 c    |                                                          |
-c    |   Ver_code=1 is assigned to this formula                 |
+c    |   Ver_code=6 is assigned to this formula                 |
 c     ----------------------------------------------------------
 c
-      Ver_code=1
-      call genab_8 (Ver_a_spcl_8%m,Ver_b_spcl_8%m,
-     %              Ver_a_spcl_8%t,Ver_b_spcl_8%t,
+      Ver_code=6
+      call genab_8 (Ver_a_8%m,Ver_b_8%m,
+     %              Ver_a_8%t,Ver_b_8%t,
      %              Ver_hyb%m, Cstv_ptop_8,Cstv_pref_8,Grd_rcoef,G_nk)
 c
-c     Note:
-c     genab_8 has defined:
-c        Ver_a_spcl_8%m which is the same as Ver_a_8%m from 1 to G_nk
-c        Ver_b_spcl_8%m which is the same as Ver_b_8%m from 1 to G_nk
-c        Ver_a_spcl_8%t which is the same as Ver_a_8%t from 2 to G_nk
-c        Ver_b_spcl_8%t which is the same as Ver_b_8%t from 2 to G_nk
-
-      Ver_a_8%m(0)=Cstv_Ztop_8
-      Ver_b_8%m(0)=0.d0
-      do k=1,G_nk+1
-         Ver_a_8%m(k) = Ver_a_spcl_8%m(k)
-         Ver_b_8%m(k) = Ver_b_spcl_8%m(k)
-         Ver_a_8%t(k) = Ver_a_spcl_8%t(k)
-         Ver_b_8%t(k) = Ver_b_spcl_8%t(k)
-      enddo
+c     -------------
+c     Now define Z:
+c     -------------
 c
-c     ------------------------------------------------------
-c     Now define A and B for the remaining levels and then Z:
-c     ------------------------------------------------------
-c
-      if(Schm_virlev_L) then
-c
-c        Momentum levels  
-c
-c        Top virtual level
-         Ver_b_8%m(0)=               -Ver_b_8%m(1)
-         Ver_a_8%m(0)=two*Cstv_Ztop_8-Ver_a_8%m(1)
-c
-c        Bottom virtual level
-         Ver_b_8%m(G_nk+1)=two            -Ver_b_8%m(G_nk)
-         Ver_a_8%m(G_nk+1)=two*Cstv_Zsrf_8-Ver_a_8%m(G_nk)
-c     
-c        Thermodynamic levels
-c
-c        True Top
-         Ver_b_8%t(1)=zero
-         Ver_a_8%t(1)=Cstv_Ztop_8
-c
-c        True Bottom: surface
-         Ver_b_8%t(G_nk+1)=one
-         Ver_a_8%t(G_nk+1)=Cstv_Zsrf_8
-c
-      endif
-c
-      do k = 0, G_nk+1
+      Ver_z_8%m(0) = Cstv_Ztop_8
+      do k = 1, G_nk+1
          Ver_z_8%m(k) = Ver_a_8%m(k)
       enddo
 c
@@ -177,81 +136,65 @@ c     --------------
 c     Compute fistar
 c     --------------
 c     
-      if(Schm_virlev_L)then
-         do k = 1, G_nk
-            Ver_fistr_8%m(k)=-Cstv_RTstr_8*(Ver_z_8%m(k)-Cstv_Zsrf_8)
-            Ver_fistr_8%t(k)=-Cstv_RTstr_8*(Ver_z_8%t(k)-Cstv_Zsrf_8)
-         enddo
-         Ver_fistr_8%t(G_nk+1)=zero
-      else
-         do k = 1, G_nk+1
-            Ver_fistr_8%m(k-1)=-Cstv_RTstr_8*(Ver_z_8%m(k-1)-Cstv_Zsrf_8)
-            Ver_fistr_8%t(k  )=-Cstv_RTstr_8*(Ver_z_8%t(k  )-Cstv_Zsrf_8)
-         enddo
-      endif
+      do k = 1, G_nk+1
+         Ver_fistr_8%m(k-1)=-Cstv_RTstr_8*(Ver_z_8%m(k-1)-Cstv_Zsrf_8)
+         Ver_fistr_8%t(k  )=-Cstv_RTstr_8*(Ver_z_8%t(k  )-Cstv_Zsrf_8)
+      enddo
 c
-c     ----------------------------------------
-c     Compute dZ, 1/dZ, dBdZ, wp, wm, w2p, w2m
-c     ----------------------------------------
+c     ----------------------
+c     Compute dZ, 1/dZ, dBdZ
+c     ----------------------
 c
-      do k=1,G_nk
-           Ver_dz_8%m(k) =  Ver_z_8%t(k+1)-Ver_z_8%t(k)
+      Ver_dz_8%m(1)      = Ver_z_8%t(2)     - Ver_z_8%m(0)
+      do k=2,G_nk-1
+         Ver_dz_8%m(k)   = Ver_z_8%t(k+1)   - Ver_z_8%t(k)
       enddo      
-*
-      if(.not.Schm_virlev_L) then
-         Ver_dz_8%m(1)    = Ver_z_8%t(2)     -Ver_z_8%m(0)
-         Ver_dz_8%m(G_nk) = Ver_z_8%m(G_nk+1)-Ver_z_8%t(G_nk)
-      endif
-*
+      Ver_dz_8%m(G_nk)   = Ver_z_8%m(G_nk+1)- Ver_z_8%t(G_nk)
+c
       do k=1,G_nk
-          Ver_idz_8%m(k) =  one/Ver_dz_8%m(k)
+         Ver_idz_8%m(k)  =  one/Ver_dz_8%m(k)
       enddo      
 c     
       do k=1,G_nk+1
            Ver_dz_8%t(k) = Ver_z_8%m(k) - Ver_z_8%m(k-1)
           Ver_idz_8%t(k) = one/Ver_dz_8%t(k)
-         Ver_dbdz_8%t(k) = (Ver_b_8%m(k)-Ver_b_8%m(k-1))*Ver_idz_8%t(k)
-      enddo
-
-      do k=1,G_nk
-         if(Schm_virlev_L) then
-            Ver_wp_8_m(k)  = Ver_dz_8%t(k+1)*half*Ver_idz_8%m(k)
-            Ver_w2p_8_m(k) = Ver_dz_8%t(k+1)*half*Ver_idz_8%m(k)
-            Ver_w3p_8_m(k) =                 half
-         else
-*
-*        AVERGING WEIGHTS
-*        wp:  linearly interpolating
-*        w2p: special commuting
-*       (w3p: for non-linear terms)
-*
-            if(k.eq.1) then
-               Ver_wp_8_m(k)  = Ver_dz_8%t(k)
-     $                        /(Ver_dz_8%t(k)+Ver_dz_8%t(k+1))     !~2/3
-               Ver_w2p_8_m(k) = Ver_dz_8%t(k+1)*half*Ver_idz_8%m(k)!~1/2
-               Ver_w3p_8_m(k) = Ver_wp_8_m(k)
-            else if(k.eq.G_nk) then
-               Ver_wp_8_m(k)  = Ver_dz_8%t(k)
-     $                        /(Ver_dz_8%t(k+1)+Ver_dz_8%t(k))       !~2/3
-               Ver_w2p_8_m(k) = Ver_dz_8%t(k+1)*Ver_idz_8%m(k)     !~1/2
-               Ver_w3p_8_m(k) = Ver_wp_8_m(k)
-            else
-               Ver_wp_8_m(k)  = Ver_dz_8%t(k  )*half*Ver_idz_8%m(k)
-               Ver_w2p_8_m(k) = Ver_dz_8%t(k+1)*half*Ver_idz_8%m(k)
-               Ver_w3p_8_m(k) = Ver_wp_8_m(k)
-            endif
-         endif
-         Ver_wm_8_m(k)  = one-Ver_wp_8_m(k)
-         Ver_w2m_8_m(k) = one-Ver_w2p_8_m(k)
-         Ver_w3m_8_m(k) = one-Ver_w3p_8_m(k)
-*
-         Ver_dbdz_8%m(k) = 
-     %      Ver_w2p_8_m(k)*(Ver_b_8%m(k+1)-Ver_b_8%m(k  ))*Ver_idz_8%t(k+1)
-     %     +Ver_w2m_8_m(k)*(Ver_b_8%m(k  )-Ver_b_8%m(k-1))*Ver_idz_8%t(k)
       enddo
 c
-      call set_dBdZa(Ver_dbdza_8_m,Ver_z_8%m(1),Cstv_Zsrf_8,Cstv_Ztop_8,
-     $                                               Grd_rcoef,G_nk)
+
+         Ver_dbdz_8%t(1) = (Ver_b_8%m(1)-0.d0)*Ver_idz_8%t(1)
+      do k=2,G_nk+1
+         Ver_dbdz_8%t(k) = (Ver_b_8%m(k)-Ver_b_8%m(k-1))*Ver_idz_8%t(k)
+      enddo
+c
+c     -------------------------------------------------------
+c     Compute AVERGING WEIGHTS FROM THERMO TO MOMENTUM LEVELS 
+c     -------------------------------------------------------
+c
+      do k=1,G_nk
+         if(k.eq.G_nk) then
+            Ver_wp_8%m(k) = Ver_dz_8%t(k+1)*Ver_idz_8%m(k)
+         else
+            Ver_wp_8%m(k) = Ver_dz_8%t(k+1)*half*Ver_idz_8%m(k)
+         endif
+
+            Ver_wm_8%m(k) = one-Ver_wp_8%m(k)
+c
+          Ver_dbdz_8%m(k) = Ver_wp_8%m(k) * Ver_dbdz_8%t(k+1) 
+     %                    + Ver_wm_8%m(k) * Ver_dbdz_8%t(k)
+      enddo
+c
+c     -------------------------------------------------------
+c     Compute AVERGING WEIGHTS FROM MOMENTUM TO THERMO LEVELS 
+c     -------------------------------------------------------
+c
+      Ver_wp_8%t(1) = 0.d0
+      Ver_wm_8%t(1) = 1.d0
+      do k=2,G_nk
+         Ver_wp_8%t(k) = half
+         Ver_wm_8%t(k) = half
+      enddo
+      Ver_wp_8%t(G_nk+1) = 1.d0
+      Ver_wm_8%t(G_nk+1) = 0.d0
 c
 c     SETUP for OUTPUT
 c
@@ -262,6 +205,7 @@ c
 c
 c     Top level
       Ver_hyb%t(1)=sqrt(Ver_hyb_top*Ver_hyb%m(1))
+      if(Schm_autobar_L) Ver_hyb%t(1)=Ver_hyb_top
       do k = 2, G_nk
          Ver_hyb%t(k)=sqrt(Ver_hyb%m(k)*Ver_hyb%m(k-1))
       enddo

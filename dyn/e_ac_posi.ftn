@@ -26,10 +26,13 @@
 *        Vivian Lee      - 2006 (from MC2 ac_posi)
 *revision
 * v3_30 - Lee V.       - initial version for GEMDM
+* v4_03 - Lee/Desgagne - ISST
 **
 #include "e_grids.cdk"
 #include "e_anal.cdk"
 #include "e_grdc.cdk"
+#include "path.cdk"
+#include <clib_interface.cdk>
 *
       integer  stretch_axis2
       external stretch_axis2
@@ -96,6 +99,12 @@
             e_grdc_gif = e_grdc_gif + 3
             e_grdc_gjf = e_grdc_gjf + 3
          else
+         print *,'e_ac_posi: '
+         print *,'trop serre, il faut que'
+         print *,'e_grdc_gid=',e_grdc_gid,'-2.gt.0'
+         print *,'e_grdc_gjd=',e_grdc_gjd,'-2.gt.0'
+         print *,'e_grdc_gif=',e_grdc_gif,'+3.lt.',dimgx
+         print *,'e_grdc_gjf=',e_grdc_gjf,'+3.lt.',dimgy
             e_grdc_gid = 0
             e_grdc_gjd = 0
          endif
@@ -118,48 +127,42 @@
       if (4.*b2*(n2-b2)/n2/n2.gt.0.95) e_grdc_hbsn = -1
       write (6,1003) e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf
       if ((e_grdc_hbsn.le.0).or.(e_grdc_hbwe.le.0)) then
-         write(6,1005)
+         If (F_bcs_hollow_L)write(6,1005)
          F_bcs_hollow_L = .false.
-      endif
-*
-* Write out the 3df_filemap.txt
-*
-      filen='process/casc/3df_filemap.txt'
-      open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
-      write (9,'(2i8,4e15.7,2i10)') 
-     $               idg,jdg,
-     $               xg_8(e_grdc_gid),xg_8(e_grdc_gif),
-     $               yg_8(e_grdc_gjd),yg_8(e_grdc_gjf),
-     $               e_grdc_gif-e_grdc_gid+1,e_grdc_gjf-e_grdc_gjd+1
-      e_ac_posi = 0
-      close (9)
+         e_grdc_ni = e_grdc_gif-e_grdc_gid+1
+         e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
+      else
 *
 * Calculate indices for BCS output
-      call bcs_hollow(e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,
+         call bcs_hollow(e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,
      $                e_grdc_gjdi,e_grdc_hbsn,e_grdc_hbwe,is,nis,j
      $                s,njs,jn,iw,niw,ie,jw,njw)
-      e_grdc_is  = is - e_grdc_gid+1 !Grdc_gid
-      e_grdc_nis = nis
-      e_grdc_js  = js - e_grdc_gjd+1 !grdc_gjd
-      e_grdc_njs = njs
-      e_grdc_jn  = jn - e_grdc_gjd+1 !Grdc_gjf-njs
+         e_grdc_is  = is - e_grdc_gid+1 !Grdc_gid
+         e_grdc_nis = nis
+         e_grdc_js  = js - e_grdc_gjd+1 !grdc_gjd
+         e_grdc_njs = njs
+         e_grdc_jn  = jn - e_grdc_gjd+1 !Grdc_gjf-njs
 *
-      e_grdc_iw  = iw - e_grdc_gid+1 !Grdc_gid
-      e_grdc_niw = niw
-      e_grdc_ie  = ie - e_grdc_gid+1 !Grdc_gif-niw
+         e_grdc_iw  = iw - e_grdc_gid+1 !Grdc_gid
+         e_grdc_niw = niw
+         e_grdc_ie  = ie - e_grdc_gid+1 !Grdc_gif-niw
 *
-      e_grdc_jw  = jw - e_grdc_gjd+1 !Grdc_gjdi-2
-      e_grdc_njw = njw
+         e_grdc_jw  = jw - e_grdc_gjd+1 !Grdc_gjdi-2
+         e_grdc_njw = njw
 *
-      e_grdc_ni = e_grdc_gif-e_grdc_gid+1
-      e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
-      write(6,1006)
-      print *,'is,nis,js,njs,jn,iw,niw,ie,jw,njw=',
-     $   e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_njs,e_grdc_jn,
-     $   e_grdc_iw,e_grdc_niw,e_grdc_ie,e_grdc_jw,e_grdc_njw
+         e_grdc_ni = e_grdc_gif-e_grdc_gid+1
+         e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
+         write(6,1006)
+         print *,'is,nis,js,njs,jn,iw,niw,ie,jw,njw=',
+     $        e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_njs,e_grdc_jn,
+     $        e_grdc_iw,e_grdc_niw,e_grdc_ie,e_grdc_jw,e_grdc_njw
+      endif
+
+      e_ac_posi = 0
+
 *
  1003 format (' Cascade grid:gid,gif,gjd,gjf ',4i6)
- 1005 format (' 3DF Cascade grid output')
+ 1005 format (' BCS HOLLOW chosen but grid is too small: 3DF Cascade grid outputonly')
  1006 format (' For HOLLOW BCS Cascade grid output')
 *--------------------------------------------------------------------
       return

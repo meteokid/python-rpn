@@ -1,0 +1,153 @@
+***s/r wil_duv
+*
+      SUBROUTINE WIL_DUV(NNH,DIVSC,ZETASC,LDIAG,TRIGS,ALP,DALP,ANNP1,
+     $                   CORSC1,CORSC2,RLAT,U,V,MAXH,NALPH)  
+*
+      implicit none
+*
+      COMPLEX DIVSC(NALPH),ZETASC(NALPH)
+      INTEGER MAXH,NALPH,NNH,LDIAG(0:MAXH,2)
+      REAL TRIGS(MAXH+1,2),ALP(NALPH),DALP(NALPH),ANNP1(MAXH) 
+      REAL CORSC1,CORSC2,RLAT,U,V
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version DUV 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     THIS SUBROUTINE OBTAINS CAPITAL U AND V MOMENTUM COMPONENTS FROM THE  
+*     VORTICITY AND DIVERGENCE SPECTRAL COEFFICIENTS
+*     IT IS A REDUCED VERSION OF ROUTINE UV FOR A SINGLE POINT
+
+*------------------------------------------------------------------
+      COMPLEX CMAT1(NALPH), CMAT2(NALPH), 
+     $        CMAT3(NALPH), CMAT4(NALPH) 
+      COMPLEX UTMP1(MAXH+1), UTMP2(MAXH+1),             
+     $        VTMP1(MAXH+1), VTMP2(MAXH+1)              
+      COMPLEX UCOSFC(MAXH+1),VCOSFC(MAXH+1)
+*
+      INTEGER M,N,JM,JN,IS,INDEX
+      REAL UCOS,VCOS,DIV
+*------------------------------------------------------------------
+*
+*     COMPUTE U AND V MOMENTUM COMPONENTS FROM VORTICITY AND DIVERGENCE         
+*     -------------------------------------------------------------
+*                                                                               
+*     COMPUTE INTERMEDIATE QUANTITIES FOR COMPUTATIONAL EFFICIENCY           
+*     ------------------------------------------------------------
+      DO 230 JN=0,NNH 
+         IS = LDIAG(JN,2)                                                    
+*
+         DO 220 JM=1,LDIAG(JN,1)                                             
+            M = JM-1                                                         
+            N = M + JN                                                       
+*
+*           TERMS N=0 UNDEFINED
+*           -------------------
+            IF (N .GT. 0) THEN
+               CMAT1(IS+JM)  = ANNP1(N)*REAL(M)*CMPLX(
+     $                 -AIMAG(DIVSC(IS+JM)),REAL(DIVSC(IS+JM)))        
+               CMAT2(IS+JM)  = ANNP1(N)*ZETASC(IS+JM)
+               CMAT3(IS+JM)  = ANNP1(N)*REAL(M)*CMPLX( 
+     $               -AIMAG(ZETASC(IS+JM)),REAL(ZETASC(IS+JM)))        
+               CMAT4(IS+JM)  = ANNP1(N)*DIVSC(IS+JM)                         
+            ENDIF
+  220    CONTINUE                                                            
+  230 CONTINUE                                                               
+*
+*     ADD CORIOLIS TERM FOR ROTATED COORDINATES
+*     -----------------------------------------
+*
+*     WAVE M=0, N=1
+*     -------------
+      INDEX = LDIAG(1,2)+1
+      CMAT2(INDEX) = CMAT2(INDEX)-CMPLX(ANNP1(1)*CORSC1,0.0)
+*
+*     WAVE M=1, N=1
+*     -------------
+      INDEX = LDIAG(0,2)+2
+      CMAT2(INDEX) = CMAT2(INDEX)-CMPLX(ANNP1(1)*CORSC2,0.0)
+      CMAT3(INDEX) = CMAT3(INDEX)-CMPLX(0.0,ANNP1(1)*CORSC2)
+*                                                                               
+*     EVEN DIAGONALS FIRST                                                      
+*     --------------------
+      DO 280 JN=0,NNH,2 
+         IS = LDIAG(JN,2)                                                       
+*                                                                               
+*     THIS DETOUR ELIMINATES NEED TO EXPLICITLY ZERO UTMP1, UTMP2, ETC.         
+*     -----------------------------------------------------------------
+         IF (JN .EQ. 0) THEN                                                   
+*
+*           SPECIAL HANDLING FOR N=M=0
+*           --------------------------
+            UTMP1(1) = CMPLX(0.0,0.0)
+            UTMP2(1) = CMPLX(0.0,0.0)
+            VTMP1(1) = CMPLX(0.0,0.0)
+            VTMP2(1) = CMPLX(0.0,0.0)
+            DO 250 JM=2,LDIAG(0,1)                                           
+               UTMP1(JM) = - CMAT1(JM)*ALP(JM)                
+               UTMP2(JM) =   CMAT2(JM)*DALP(JM)               
+               VTMP1(JM) = - CMAT3(JM)*ALP(JM)                
+               VTMP2(JM) = - CMAT4(JM)*DALP(JM)               
+  250       CONTINUE                                                         
+         ELSE
+*                                                                               
+*           ALL OTHER EVEN DIAGONALS
+*           ------------------------
+            DO 270 JM=1,LDIAG(JN,1)  
+               UTMP1(JM) = UTMP1(JM) - CMAT1(IS+JM)*ALP(IS+JM)         
+               UTMP2(JM) = UTMP2(JM) + CMAT2(IS+JM)*DALP(IS+JM)        
+               VTMP1(JM) = VTMP1(JM) - CMAT3(IS+JM)*ALP(IS+JM)         
+               VTMP2(JM) = VTMP2(JM) - CMAT4(IS+JM)*DALP(IS+JM)        
+  270       CONTINUE 
+         ENDIF
+  280 CONTINUE                                                                  
+*                                                                               
+*     ODD DIAGONALS NEXT                                                        
+*     ------------------
+      DO 310 JN=1,NNH,2 
+         IS = LDIAG(JN,2)                                                       
+         DO 300 JM=1,LDIAG(JN,1)                                                
+            UTMP2(JM) = UTMP2(JM) - CMAT1(IS+JM)*ALP(IS+JM)         
+            UTMP1(JM) = UTMP1(JM) + CMAT2(IS+JM)*DALP(IS+JM)        
+            VTMP2(JM) = VTMP2(JM) - CMAT3(IS+JM)*ALP(IS+JM)         
+            VTMP1(JM) = VTMP1(JM) - CMAT4(IS+JM)*DALP(IS+JM)        
+  300    CONTINUE                                                               
+  310 CONTINUE                                                                  
+*                                                                               
+*     COMBINE CONTRIBUTIONS OF EVEN AND ODD WAVENUMBERS TO OBTAIN            
+*     FOURIER COEFFICIENTS                                                   
+*     -----------------------------------------------------------
+      DO 330 JM=1,LDIAG(0,1)                                                 
+         IF (RLAT .GE. 0.0) THEN
+            UCOSFC(JM) = UTMP1(JM) + UTMP2(JM)               
+            VCOSFC(JM) = VTMP1(JM) + VTMP2(JM)
+         ELSE
+            UCOSFC(JM) = UTMP1(JM) - UTMP2(JM)               
+            VCOSFC(JM) = VTMP1(JM) - VTMP2(JM)
+         ENDIF
+  330 CONTINUE                                                               
+*                                                                               
+*     CALL DFT ROUTINE FOR INVERSE TRANSFORM OF UCOS AND VCOS                   
+*     -------------------------------------------------------
+      CALL WIL_DFT991(UCOSFC,TRIGS,MAXH,LDIAG(0,1),UCOS)
+      CALL WIL_DFT991(VCOSFC,TRIGS,MAXH,LDIAG(0,1),VCOS)
+*
+*     RENORMALIZE WIND FIELD
+*     ----------------------
+      DIV = COS(RLAT)
+      IF (DIV .NE. 0.0) THEN
+         U = UCOS/DIV
+         V = VCOS/DIV
+      ELSE
+         WRITE (0,350) 
+  350    FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE DUV',
+     $          /,' VELOCITY COMPONENTS MULTIVALUED AT POLES')
+         STOP
+      ENDIF
+*
+      RETURN                                                                    
+*
+      END                                                                       

@@ -1,0 +1,98 @@
+<html>
+
+<body bgcolor="#ffffff">
+<center>
+<br>
+<font face="Arial,Helvetica,Geneva,Swiss,SunSans-Regular" size="+2">
+<H2 ><b>Configexp.dot.cfg Conversion</b></H2>
+<H2 ><b>New versus Old Definitions</b></H2>
+<table cellpadding="3" cellspacing="3" border="1" width="100%">
+<font face="Arial,Helvetica,Geneva,Swiss,SunSans-Regular" size="+2">
+<tr><td><b>(v_3.3.2+)</b></a></td>
+<td> <b>(v_3.3.0-)</b></td>
+<td> <b>description</b></td>
+</tr>
+<tr><td>BACKEND_mach</td><td>mach</td>
+<td>machine name of where job will be submitted</td></tr>
+<tr><td>BACKEND_time_ntr</td><td>t_ent</td>
+<td>gemntr wall clock time</td></tr>
+<tr><td>BACKEND_time_mod</td><td>t</td>
+<td>gemdm wall clock time</td></tr>
+<tr><td>BACKEND_cm</td><td>cm</td>
+<td>gemdm memory size</td></tr>
+<tr><td>BACKEND_omp</td><td>npeOMP</td>
+<td>Number of PEs dedicated for OpenMP (max of 16)</td></tr>
+<tr><td>BACKEND_execdir</td><td>execdir</td>
+<td>full path of execution directory</td></tr>
+<tr><td>BACKEND_listings</td><td>listings</td>
+<td>Full path for job listings</td></tr>
+<tr><td>BACKEND_class</td><td>cl</td>
+<td>Control -cl option with soumet</td></tr>
+<tr><td>BACKEND_nosubmit</td><td>nosubmit</td>
+<td>Control -cl option with soumet</td></tr>
+<tr><td>UM_EXEC_exp</td><td>exp</td>
+<td>experiment name</td></tr>
+<tr><td>UM_EXEC_anal</td><td>anal</td>
+<td>full path of the analysis</td></tr>
+<tr><td>UM_EXEC_inrep</td><td>inrep</td>
+<td>Full path of RPN std files to initialize and pilot LAM (for GEMNTR)</td></tr>
+<tr><td>UM_EXEC_lam_init</td><td>inrep_m</td>
+<td>Full path of 3DF files to initialize LAM (for GEMDM)</td></tr>
+<tr><td>UM_EXEC_lam_bcs</td><td>inrep_m</td>
+<td>Full path of BCS files to pilot LAM (for GEMDM)</td></tr>
+<tr><td>UM_EXEC_ovbin</td><td>absaddres</td>
+<td>full path of where to find the main model executables</td></tr>
+<tr><td>UM_EXEC_climato</td><td>climato</td>
+<td>Full path of climatology file</td></tr>
+<tr><td>UM_EXEC_geophy</td><td>geophy</td>
+<td>Full path of geophysical file (for GEMNTR)</td></tr>
+<tr><td>UM_EXEC_geophy_m</td><td>geophy_m</td>
+<td>Full path of geophysical file (for GEMDM)</td></tr>
+<tr><td>UM_EXEC_ozone</td><td>N/A</td>
+<td>Full path of climatological ozone file</td></tr>
+<tr><td>UM_EXEC_irtab</td><td>N/A</td>
+<td>Full path of radiation table</td></tr>
+<tr><td>UM_EXEC_constantes</td><td>N/A</td>
+<td>Full path of geophysical constantes file</td></tr>
+<tr><td>UM_EXEC_r_ent</td><td>r_ent</td>
+<td>"1" to run entry program GEMNTR</td></tr>
+<tr><td>UM_EXEC_r_mod</td><td>r_mod</td>
+<td>"1" to run main program GEMDM</td></tr>
+<tr><td>UM_EXEC_d2z</td><td>d2z</td>
+<td>"1" to re-assemble the diese output files</td></tr>
+<tr><td>UM_EXEC_xfer</td><td>xfer</td>
+<td>WS:Full path directory to where to transfer the output</td></tr>
+<tr><td>UM_EXEC_xferl</td><td>xferl</td>
+<td>"1" to transfer the job listings with the model output</td></tr>
+<tr><td>UM_EXEC_casc</td><td>N/A</td>
+<td>"1" to transfer the sub-directory "casc" with the model output <br>
+    "2" to transfer the sub-directory "casc" with the model output
+and not delete it from the original output directory</td></tr>
+<tr><td>UM_EXEC_prefix</td><td>prefix</td>
+<td>prefix name to add to the output filenames</td></tr>
+<tr><td>UM_EXEC_dplusp</td><td>dplusp</td>
+<td>"1" to combine the dynamics and physics output files together (dm+pm=m)</td></tr>
+<tr><td>UM_EXEC_headscript</td><td>N/A</td>
+<td>script to execute before GEMNTR</td></tr>
+<tr><td>UM_EXEC_tailjob_M</td><td>tailscript</td>
+<td>Job to submit after Um_runmod.ksh</td></tr>
+<tr><td>UM_EXEC_tailjob_X</td><td>tailjob</td>
+<td>Job to submit after Um_output_xfer.ksh</td></tr>
+<tr><td>UM_EXEC_xchgdir</td><td>xchgdir</td>
+<td>Exchange directory for coupling</td></tr>
+<tr><td>UM_EXEC_cmclog</td><td>cmclog</td>
+<td>Full path for CMC log file</td></tr>
+<tr><td>UM_EXEC_barrier</td><td>N/A</td>
+<td>Third party job (SM) will run the model</td></tr>
+<tr><td>UM_EXEC_manoutp</td><td>N/A</td>
+<td>Model output management by Um_runmod</td></tr>
+<tr><td>UM_EXEC_nmlcpl</td><td>N/A</td>
+<td>Full path of file containing common namelists for coupling models </td></tr>
+<tr><td>UM_EXEC_timing</td><td>N/A</td>
+<td>"1" to have AIX HPM timing information of the model runs</td></tr>
+</table>
+<br>
+</font>
+</center>
+</body>
+</html>

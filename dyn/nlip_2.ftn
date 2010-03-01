@@ -46,6 +46,7 @@
 * v3_00                       of the LAM grid to zeros.
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_21 - Desgagne M.       - Revision OpenMP
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 *
 *object
 *
@@ -58,7 +59,7 @@
 #include "ptopo.cdk"
 
 *
-      integer i01, in1, j01, jn1, nij, i02, in2, j02, jn2, longueur
+      integer i01, in1, j01, jn1, nij, i02, in2, j02, jn2
 
 **
 *     __________________________________________________________________
@@ -122,10 +123,11 @@
 #include "ptopo.cdk"
 #include "type.cdk"
 #include "ver.cdk"
+#include "acid.cdk"
 *
       integer i, j, k, i00, inn, j00, jnn, i0, in, j0, jn, nij  
       real    ndiv (DIST_SHAPE),w_nt
-      real*8  a1, b1,b2,b3, p1,p2,p3,p4, t1, xxx,yyy,aaa,
+      real*8  a1, b1,b2,b3, p1,p2,p3,p4, t1, xxx,yyy,
      $        one, half, w1,w2,w3, barz, barzp, wk2(DIST_SHAPE)
 *
       parameter ( one=1.d0, half=.5d0 )
@@ -163,7 +165,7 @@
       p4 = one / Cstv_tau_8
 *
 !$omp parallel private(xtmp_8, ytmp_8,w_nt,barz,barzp,ndiv,wk2,
-!$omp$   i0,in,j0,jn,nij,i00,j00,inn,jnn,w1,w2,w3,t1,xxx,yyy,aaa)
+!$omp$   i0,in,j0,jn,nij,i00,j00,inn,jnn,w1,w2,w3,t1,xxx,yyy)
       i0=i01
       j0=j01
       in=in1
@@ -190,16 +192,18 @@
 *
       do j= j0, jn
       do i= i0, in
-         barz  = Ver_w3p_8_m(k)*F_t(i  ,j,k+1)
-     %          +Ver_w3m_8_m(k)*F_t(i  ,j,k)
-         barzp = Ver_w3p_8_m(k)*F_t(i+1,j,k+1)
-     %          +Ver_w3m_8_m(k)*F_t(i+1,j,k)
+         barz  = Ver_wp_8%m(k)*F_t(i  ,j,k+1)
+     %          +Ver_wm_8%m(k)*F_t(i  ,j,k)
+         barzp = Ver_wp_8%m(k)*F_t(i+1,j,k+1)
+     %          +Ver_wm_8%m(k)*F_t(i+1,j,k)
          w2 = ( one - intuv_c0xxu_8(i) ) * barz
      %              + intuv_c0xxu_8(i)   * barzp - Cstv_tstr_8
          w3 = ( F_BsPq(i+1,j,k) - F_BsPq(i,j,k) ) * Geomg_invhx_8(i)
          F_nu(i,j,k) = p1 * ( w2 * w3 )
       end do
       end do
+*
+      if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,1)
 *
       if (Cori_cornl_L) then
 *        Set indices for calculating wk2
@@ -255,6 +259,8 @@
          end do
       endif
 *
+      if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,2)
+*
 *     Compute Nv for hydrostatic version 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       i0 = 1+pil_w
@@ -268,10 +274,10 @@
       do j= j0, jn
       t1 = geomg_cyv2_8(j) * Geomg_invhsy_8(j)
       do i= i0, in
-         barz  = Ver_w3p_8_m(k)*F_t(i,j  ,k+1)
-     %          +Ver_w3m_8_m(k)*F_t(i,j  ,k)
-         barzp = Ver_w3p_8_m(k)*F_t(i,j+1,k+1)
-     %          +Ver_w3m_8_m(k)*F_t(i,j+1,k)
+         barz  = Ver_wp_8%m(k)*F_t(i,j  ,k+1)
+     %          +Ver_wm_8%m(k)*F_t(i,j  ,k)
+         barzp = Ver_wp_8%m(k)*F_t(i,j+1,k+1)
+     %          +Ver_wm_8%m(k)*F_t(i,j+1,k)
          w2 = ( one - intuv_c0yyv_8(j) ) * barz
      %              + intuv_c0yyv_8(j)   * barzp - Cstv_tstr_8
          w3 = ( F_BsPq(i,j+1,k) - F_BsPq(i,j,k) ) * t1
@@ -355,10 +361,10 @@
 *        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j0, jn
          do i= i0, in
-            barz  = Ver_w3p_8_m(k)*F_mu(i  ,j,k+1)
-     %             +Ver_w3m_8_m(k)*F_mu(i  ,j,k)
-            barzp = Ver_w3p_8_m(k)*F_mu(i+1,j,k+1)
-     %             +Ver_w3m_8_m(k)*F_mu(i+1,j,k)
+            barz  = Ver_wp_8%m(k)*F_mu(i  ,j,k+1)
+     %             +Ver_wm_8%m(k)*F_mu(i  ,j,k)
+            barzp = Ver_wp_8%m(k)*F_mu(i+1,j,k+1)
+     %             +Ver_wm_8%m(k)*F_mu(i+1,j,k)
             w1 = ( one - intuv_c0xxu_8(i) ) * barz
      %                 + intuv_c0xxu_8(i)   * barzp
             w2 = ( F_fip(i+1,j,k)-F_fip(i,j,k) ) * Geomg_invhx_8(i)
@@ -366,14 +372,16 @@
          end do
          end do
 *
+         if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,3)
+*
 *        Add nonhydrostatic contributions to Nv 
 *        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j00, jnn
          do i= i00, inn            
-            barz  = Ver_w3p_8_m(k)*F_mu(i,j  ,k+1)
-     %             +Ver_w3m_8_m(k)*F_mu(i,j  ,k)
-            barzp = Ver_w3p_8_m(k)*F_mu(i,j+1,k+1)
-     %             +Ver_w3m_8_m(k)*F_mu(i,j+1,k)
+            barz  = Ver_wp_8%m(k)*F_mu(i,j  ,k+1)
+     %             +Ver_wm_8%m(k)*F_mu(i,j  ,k)
+            barzp = Ver_wp_8%m(k)*F_mu(i,j+1,k+1)
+     %             +Ver_wm_8%m(k)*F_mu(i,j+1,k)
             w1 = ( one - intuv_c0yyv_8(j) ) * barz
      %                 + intuv_c0yyv_8(j)   * barzp
             w2 = ( F_fip(i,j+1,k) - F_fip(i,j,k) )
@@ -428,6 +436,8 @@
          endif
       endif
 *
+      if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,4)
+*
       i0=1
       in=l_ni
       j0=1
@@ -477,30 +487,27 @@
 *     ~~~~~~~~~~
 !$omp do
       do k =  1, l_nk
+*
          do j = j0, jn
          do i = i0, in
-            xtmp_8(i,j) = one + Ver_dbdza_8_m(k) * F_s(i,j)
+            xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
          end do
          end do
          call vlog(ytmp_8, xtmp_8, nij)
-         if(Cstv_iC2str_8.eq.0.d0) then
-            do j = j0, jn
-            do i = i0, in
-               w1 = ytmp_8(i,j) + F_BsPq(i,j,k)
-               w2 = Ver_dbdz_8%m(k) * F_s(i,j) + half *
-     $               (Ver_wp_8_m(k)*(F_BsPq(i,j,k+1)+F_BsPq(i,j,k))
-     $               +Ver_wm_8_m(k)*(F_BsPq(i,j,k-1)+F_BsPq(i,j,k)))
-               F_nc(i,j,k) = p3 * ( w1 - w2 )
-            enddo
-            enddo
-         else
-            do j = j0, jn
-            do i = i0, in
-               w1 = ytmp_8(i,j) - Ver_dbdz_8%m(k) * F_s(i,j)
-               F_nc(i,j,k) = p3 * w1
-            enddo
-            enddo
-         endif
+*
+                            xxx = one
+         if(Schm_autobar_L) xxx = 0.d0
+         do j = j0, jn
+         do i = i0, in
+            w1 = ytmp_8(i,j) - Ver_dbdz_8%m(k) * F_s(i,j)
+            w2 = F_BsPq(i,j,k)
+     $          -Ver_wp_8%m(k)*(Ver_wp_8%t(k+1)*F_BsPq(i,j,k+1)
+     $                         +Ver_wm_8%t(k+1)*F_BsPq(i,j,k))
+     $          -Ver_wm_8%m(k)*(Ver_wp_8%t(k)*F_BsPq(i,j,k)
+     $                         +Ver_wm_8%t(k)*F_BsPq(i,j,k-1))
+            F_nc(i,j,k) = p3 * ( w1 + xxx * w2 )
+         enddo
+         enddo
       enddo
 !$omp enddo
 *
@@ -603,11 +610,8 @@
 *
 !$omp do
       do k=1,l_nk
-         aaa=one
-         if(k.eq.1)    aaa=one/(one-Ver_chit_8)
-         if(k.eq.l_nk) aaa=one/(one-Ver_chis_8)
-         xxx=aaa + Ver_dz_8%m(k) * Ver_wp_8_m(k)
-         yyy=aaa - Ver_dz_8%m(k) * Ver_wm_8_m(k)
+         xxx=one + Ver_dz_8%m(k) * Ver_wp_8%m(k)
+         yyy=one - Ver_dz_8%m(k) * Ver_wm_8%m(k)
          do j= j0, jn 
          do i= i0, in
             F_rp(i,j,k) = Dcst_rayt_8**2 * ( F_rc(i,j,k)
@@ -619,8 +623,8 @@
             do j= j0, jn 
             do i= i0, in
                F_rp(i,j,k) = F_rp(i,j,k) - Dcst_rayt_8**2 * Ver_dz_8%m(k) *
-     $                          ( Ver_w2p_8_m(k) * F_nf(i,j,k+1)
-     $                          + Ver_w2m_8_m(k) * F_nf(i,j,k  ) )
+     $                          ( Ver_wp_8%m(k) * F_nf(i,j,k+1)
+     $                          + Ver_wm_8%m(k) * F_nf(i,j,k  ) )
             end do
             end do
          endif
@@ -630,8 +634,6 @@
 *     Applying boundary conditions.
       do j= j0, jn 
       do i= i0, in
-         F_nt(i,j,1)      = F_nt(i,j,1)      - Ver_chit_8 * F_nt(i,j,2)
-         F_nt(i,j,l_nk+1) = F_nt(i,j,l_nk+1) - Ver_chis_8 * F_nt(i,j,l_nk)
          F_rp(i,j,1)      = F_rp(i,j,1)
      $                    + Dcst_rayt_8**2 * Ver_cstp_8 * F_nt(i,j,1)
          F_rp(i,j,l_nk)   = F_rp(i,j,l_nk)

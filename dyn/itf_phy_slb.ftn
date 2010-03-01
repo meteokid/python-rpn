@@ -62,6 +62,7 @@
 *                             huphytd,qcphytd,qrphytd,qgphytd,qiphytd
 *                             Eliminations of processus specific physics
 *                             tendencies.
+* v4_03 - Spacek L.         - Staggered version
 *
 *object
 *     See above id.
@@ -295,7 +296,7 @@ c$$$ todo:
 *
       if ( V4dg_conf.ne.0 ) then 
 c$$$ todo: Level diag [nkphy]?
-        do k = 1, nkphy-2
+        do k = 1, nkphy-1
         do i = 1, p_ni
            indx = (k-1)*p_ni+i-1
            ii = i + p_offi
@@ -306,8 +307,8 @@ c$$$ todo: Level diag [nkphy]?
         do i= 1, p_ni
            indx = i-1
            ii = i + p_offi
-           F_kmm(ii,j,nkphy-1) = busvol(bm + indx)
-           F_ktm(ii,j,nkphy-1) = busvol(bt + indx)
+           F_kmm(ii,j,nkphy) = busvol(bm + indx)
+c           F_ktm(ii,j,nkphy) = busvol(bt + (indx_agrege-1)*p_ni + indx)
         end do
       endif
 * 

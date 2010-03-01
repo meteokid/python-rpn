@@ -36,6 +36,8 @@
 * v3_21 - Dugas B.             - replace TD by ES in pressure mode
 * v3_30 - Tanguay M.           - Modify Check topo when no interpolation 
 * v3_30 - McTaggart-Cowan R.   - update implementation of variable orography
+* v4_03 - Lee V.               - Adapt to using new pressure functions
+* v4_04 - Plante A.            - Remove offline mode
 *
 *object
 *	
@@ -77,12 +79,12 @@
      $                                               1,2,1,1,1,1)
 *
       Acql_horzint = (Acqi_datasp(1).eq.1)
-      Acql_hybanl  = (Acqi_datasp(2).eq.1)
-      Acql_etaanl  = (Acqi_datasp(2).eq.2)
-      Acql_siganl  = (Acqi_datasp(2).eq.3)
-      Acql_prsanl  = (Acqi_datasp(2).eq.4)
-      Acql_ecmanl  = (Acqi_datasp(2).eq.5)
-      Acql_staganl  = (Acqi_datasp(2).eq.6)
+      Acql_hybanl  = (Acqi_datasp(2).eq.4)
+      Acql_etaanl  = (Acqi_datasp(2).eq.3)
+      Acql_siganl  = (Acqi_datasp(2).eq.1)
+      Acql_prsanl  = (Acqi_datasp(2).eq.0)
+      Acql_ecmanl  = .false.
+      Acql_staganl  = (Acqi_datasp(2).eq.5)
       Acql_vertint = Acql_horzint
       if (Acql_ecmanl) lvm  = lvm+1
       if (.not.Acql_staganl) Acql_vertint = .true.
@@ -114,9 +116,7 @@
       error(nerr) = bmf_get('VV  ',bmf_time1,bmf_time2,-1,v_temp,-1,
      $                               1,lniv,1,lnjv,1,nktmp)
 *
-      if (Schm_offline_L) then
-          gz_temp = 0;
-      else if (Acql_prsanl) then
+      if (Acql_prsanl) then
          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
      $                 gz_temp,-1.,1,lni,1,lnj,1,nktmp)
       else

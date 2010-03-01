@@ -50,7 +50,7 @@
 * v3_00                       of the LAM grid with values from Nesting data
 * v3_02 - Edouard S.        - correct bug in Ru and Rv in the non hydrostatic version
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-* v_stg - Plante A.         - Staggered version
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 *
 *object
 *     see rhs
@@ -71,12 +71,12 @@
 #include "ver.cdk"
 #include "lun.cdk"
 *
-      integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, nij, pom1
+      integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, nij
       real    tdiv(DIST_SHAPE)
-      real*8  aaa,aaT,aaw, bbb,bbT,bbw, one, half, c1,c2,c3,c4,
+      real*8  aaa,aaT,aaw, bbb,bbT,bbw, one, half, c1,c2,c3,
      $        wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, ww1,ww2,
-     $        xxx,yyy,zzz,xlog_8(l_ni,l_nj), ylog_8(l_ni,l_nj),
-     $        wk3(DIST_SHAPE,Nk+1)
+     $        xxx,yyy,xlog_8(l_ni,l_nj), ylog_8(l_ni,l_nj),
+     $        lnT(DIST_SHAPE,Nk+1)
 
       parameter( one=1.d0, half=.5d0 )
 *     - - - - - - - - - - - - - - - - 
@@ -101,12 +101,6 @@
       else
          c3 = bbb - one
       endif
-
-      if (Cstv_iC2str_8.gt.(1.1-Dcst_cappa_8)/Cstv_RTstr_8) then
-         c4 = 0.d0
-      else
-         c4 = one
-      endif
 *
 *     Exchanging halos for derivatives & interpolation 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -128,8 +122,8 @@
       nij = l_ni*l_nj
 *
 *
-!$omp parallel private(i,j,i0,j0,jn,in,i00,inn,j00,jnn,pom1,
-!$omp$      tdiv,xlog_8,ylog_8,wk1,wk2,ww1,ww2,xxx,yyy,zzz,barz,barzp)
+!$omp parallel private(i,j,i0,j0,jn,in,i00,inn,j00,jnn,
+!$omp$      tdiv,xlog_8,ylog_8,wk1,wk2,ww1,ww2,xxx,yyy,barz,barzp)
 *
 !$omp do 
       do 1000 k = 1,l_nk 
@@ -154,10 +148,10 @@
       else
          do j = j0, jn
          do i = i0, in
-            barz  = Ver_w3p_8_m(k)*F_mu(i  ,j,k+1)
-     $             +Ver_w3m_8_m(k)*F_mu(i  ,j,k)
-            barzp = Ver_w3p_8_m(k)*F_mu(i+1,j,k+1)
-     $             +Ver_w3m_8_m(k)*F_mu(i+1,j,k)
+            barz  = Ver_wp_8%m(k)*F_mu(i  ,j,k+1)
+     $             +Ver_wm_8%m(k)*F_mu(i  ,j,k)
+            barzp = Ver_wp_8%m(k)*F_mu(i+1,j,k+1)
+     $             +Ver_wm_8%m(k)*F_mu(i+1,j,k)
             wk1(i,j) = one + ( one - intuv_c0xxu_8(i) ) * barz
      $                             + intuv_c0xxu_8(i)   * barzp
          end do
@@ -168,10 +162,10 @@
 *        Computing Ru without the Coriolis factor
          do j= j0, jn
          do i= i0, in
-            barz  = Ver_w3p_8_m(k)*F_t(i  ,j,k+1)
-     %             +Ver_w3m_8_m(k)*F_t(i  ,j,k)
-            barzp = Ver_w3p_8_m(k)*F_t(i+1,j,k+1)
-     %             +Ver_w3m_8_m(k)*F_t(i+1,j,k)
+            barz  = Ver_wp_8%m(k)*F_t(i  ,j,k+1)
+     %             +Ver_wm_8%m(k)*F_t(i  ,j,k)
+            barzp = Ver_wp_8%m(k)*F_t(i+1,j,k+1)
+     %             +Ver_wm_8%m(k)*F_t(i+1,j,k)
             F_oru(i,j,k) = aaa * F_u(i,j,k)
      $               - c1 * ( ( one - intuv_c0xxu_8(i) ) * barz
      $                              + intuv_c0xxu_8(i)   * barzp )
@@ -234,10 +228,10 @@
 *        Ru with the Coriolis factor
          do j= j0, jn
          do i= i0, in
-            barz  = Ver_w3p_8_m(k)*F_t(i  ,j,k+1)
-     %             +Ver_w3m_8_m(k)*F_t(i  ,j,k)
-            barzp = Ver_w3p_8_m(k)*F_t(i+1,j,k+1)
-     %             +Ver_w3m_8_m(k)*F_t(i+1,j,k)
+            barz  = Ver_wp_8%m(k)*F_t(i  ,j,k+1)
+     %             +Ver_wm_8%m(k)*F_t(i  ,j,k)
+            barzp = Ver_wp_8%m(k)*F_t(i+1,j,k+1)
+     %             +Ver_wm_8%m(k)*F_t(i+1,j,k)
             F_oru(i,j,k) = aaa * F_u(i,j,k)
      $               - c1 * ( ( one - intuv_c0xxu_8(i) )* barz
      $                              + intuv_c0xxu_8(i)  * barzp )
@@ -269,10 +263,10 @@
       if (.not. Schm_hydro_L) then
          do j = j0, jn
          do i = i0, in
-            barz  = Ver_w3p_8_m(k)*F_mu(i,j  ,k+1)
-     %             +Ver_w3m_8_m(k)*F_mu(i,j  ,k)
-            barzp = Ver_w3p_8_m(k)*F_mu(i,j+1,k+1)
-     %             +Ver_w3m_8_m(k)*F_mu(i,j+1,k)
+            barz  = Ver_wp_8%m(k)*F_mu(i,j  ,k+1)
+     %             +Ver_wm_8%m(k)*F_mu(i,j  ,k)
+            barzp = Ver_wp_8%m(k)*F_mu(i,j+1,k+1)
+     %             +Ver_wm_8%m(k)*F_mu(i,j+1,k)
             wk1(i,j) = one + ( one - intuv_c0yyv_8(j) ) * barz 
      $                             + intuv_c0yyv_8(j)   * barzp
          end do
@@ -283,10 +277,10 @@
 *        Computing Rv without the Coriolis factor
          do j= j0, jn
          do i= i0, in
-            barz  = Ver_w3p_8_m(k)*F_t(i,j  ,k+1)
-     %             +Ver_w3m_8_m(k)*F_t(i,j  ,k)
-            barzp = Ver_w3p_8_m(k)*F_t(i,j+1,k+1)
-     %             +Ver_w3m_8_m(k)*F_t(i,j+1,k)
+            barz  = Ver_wp_8%m(k)*F_t(i,j  ,k+1)
+     %             +Ver_wm_8%m(k)*F_t(i,j  ,k)
+            barzp = Ver_wp_8%m(k)*F_t(i,j+1,k+1)
+     %             +Ver_wm_8%m(k)*F_t(i,j+1,k)
             F_orv(i,j,k) = aaa * F_v(i,j,k)
      $               - c1 *( ( one - intuv_c0yyv_8(j) ) * barz
      $                             + intuv_c0yyv_8(j)   * barzp )
@@ -329,10 +323,10 @@
 *        Rv with the Coriolis factor
          do j = j0, jn
          do i = i0, in
-            barz  = Ver_w3p_8_m(k)*F_t(i,j  ,k+1)
-     %             +Ver_w3m_8_m(k)*F_t(i,j  ,k)
-            barzp = Ver_w3p_8_m(k)*F_t(i,j+1,k+1)
-     %             +Ver_w3m_8_m(k)*F_t(i,j+1,k)
+            barz  = Ver_wp_8%m(k)*F_t(i,j  ,k+1)
+     %             +Ver_wm_8%m(k)*F_t(i,j  ,k)
+            barzp = Ver_wp_8%m(k)*F_t(i,j+1,k+1)
+     %             +Ver_wm_8%m(k)*F_t(i,j+1,k)
             F_orv(i,j,k) = aaa * F_v(i,j,k)
      $               - c1 *( ( one - intuv_c0yyv_8(j) ) * barz
      $                             + intuv_c0yyv_8(j)   * barzp )
@@ -352,10 +346,10 @@
 *
             if (l_south) then
                do i = i0, in
-                  barz  = Ver_w3p_8_m(k)*F_t(i,1  ,k+1)
-     %                   +Ver_w3m_8_m(k)*F_t(i,1  ,k)
-                  barzp = Ver_w3p_8_m(k)*F_t(i,1+1,k+1)
-     %                   +Ver_w3m_8_m(k)*F_t(i,1+1,k)
+                  barz  = Ver_wp_8%m(k)*F_t(i,1  ,k+1)
+     %                   +Ver_wm_8%m(k)*F_t(i,1  ,k)
+                  barzp = Ver_wp_8%m(k)*F_t(i,1+1,k+1)
+     %                   +Ver_wm_8%m(k)*F_t(i,1+1,k)
                   F_orv(i,1,k) = aaa * F_v(i,1,k)
      $               - c1 * ( ( one - intuv_c0yyv_8(1) ) * barz 
      $                              + intuv_c0yyv_8(1)   * barzp )
@@ -372,10 +366,10 @@
 *
             if (l_north) then
                do i = i0, in                  
-                  barz  = Ver_w3p_8_m(k)*F_t(i,l_njv  ,k+1)
-     %                   +Ver_w3m_8_m(k)*F_t(i,l_njv  ,k)
-                  barzp = Ver_w3p_8_m(k)*F_t(i,l_njv+1,k+1)
-     %                   +Ver_w3m_8_m(k)*F_t(i,l_njv+1,k)
+                  barz  = Ver_wp_8%m(k)*F_t(i,l_njv  ,k+1)
+     %                   +Ver_wm_8%m(k)*F_t(i,l_njv  ,k)
+                  barzp = Ver_wp_8%m(k)*F_t(i,l_njv+1,k+1)
+     %                   +Ver_wm_8%m(k)*F_t(i,l_njv+1,k)
                   F_orv(i,l_njv,k) = aaa * F_v(i,l_njv,k)
      $               - c1 * ( ( one - intuv_c0yyv_8(l_njv) ) * barz 
      $                              + intuv_c0yyv_8(l_njv)   * barzp )
@@ -418,41 +412,21 @@
       end do
       call vlog( ylog_8, xlog_8, nij )
 *
-      if(.not.Schm_virlev_L.and.k.eq.1) then
-         zzz=Ver_chit_8
-         pom1=+1
-         do j = j0, jn
-         do i = i0, in
-            wk2(i,j) = Ver_chit_8*half*(F_fip(i,j,2)+F_fip(i,j,1))
-     $               + (one-Ver_chit_8)*F_fip(i,j,0)
-         end do
-         end do
-      elseif(.not.Schm_virlev_L.and.k.eq.G_nk+1) then
-         zzz=Ver_chis_8
-         pom1=-1
-         do j = j0, jn
-         do i = i0, in
-            wk2(i,j)=Ver_chis_8*half*(F_fip(i,j,G_nk-1)+F_fip(i,j,G_nk))
-     $              +(one-Ver_chis_8)*F_fip(i,j,G_nk+1)
-         end do
-         end do
-      else
-         zzz=one
-         pom1=0
-         do j= j0, jn
-         do i= i0, in
-            wk2(i,j) = half * ( F_fip(i,j,k) + F_fip(i,j,k-1) )
-         end do
-         end do
-      endif
       do j= j0, jn
       do i= i0, in
-         wk3(i,j,k) = ylog_8(i,j)
-         F_ort (i,j,k) = aaT * ( ylog_8(i,j)
-     $              - Dcst_cappa_8*half*(F_BsPq(i,j,k)+F_BsPq(i,j,k-1)))
-     $                 + bbT * Dcst_cappa_8 * zzz * F_zd(i,j,k+pom1)
+         wk1(i,j) = Ver_wp_8%t(k)*F_BsPq(i,j,k)+Ver_wm_8%t(k)*F_BsPq(i,j,k-1)
+         wk2(i,j) = Ver_wp_8%t(k)* F_fip(i,j,k)+Ver_wm_8%t(k)* F_fip(i,j,k-1)
+      end do
+      end do
+                         xxx=Dcst_cappa_8
+      if(Schm_autobar_L) xxx=0.d0
+      do j= j0, jn
+      do i= i0, in
+         lnT(i,j,k) = ylog_8(i,j)
+         F_ort (i,j,k) = aaT * ( ylog_8(i,j) - xxx * wk1(i,j) )
+     $                 + bbT * Dcst_cappa_8 * F_zd(i,j,k)
          F_orf (i,j,k) = aaT * wk2(i,j)
-     $                 + bbT * Cstv_RTstr_8 * zzz * F_zd(i,j,k+pom1)
+     $                 + bbT * Cstv_RTstr_8 * F_zd(i,j,k)
      $                 + bbT * Dcst_grav_8 * F_w(i,j,k)
       end do
       end do         
@@ -494,54 +468,38 @@
      $                         F_v(minx,miny,k), LDIST_DIM, 1)
       endif
 *
-      if(Cstv_iC2str_8.eq.0.d0) then
-         xxx=one + Ver_dz_8%m(k) * Ver_w2p_8_m(k)
-         yyy=one - Ver_dz_8%m(k) * Ver_w2m_8_m(k)
-      else
-         xxx=one
-         yyy=one
-      endif
       do j= 1, l_njv
       do i= 1, l_niu
          tdiv(i,j) = tdiv(i,j)
-     $        + ( xxx*F_zd(i,j,k+1) - yyy*F_zd(i,j,k) ) * Ver_idz_8%m(k)
+     $        + ( F_zd(i,j,k+1) - F_zd(i,j,k) ) * Ver_idz_8%m(k)
+     $        + Ver_wp_8%m(k) * F_zd(i,j,k+1)
+     $        + Ver_wm_8%m(k) * F_zd(i,j,k)
       end do
       end do
 *
       do j = j0, jn
       do i = i0, in
-         xlog_8(i,j) = one + Ver_dbdza_8_m(k) * F_s(i,j)
+         xlog_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
       end do
       end do
       call vlog( ylog_8, xlog_8, nij)
 *
-      if(Cstv_iC2str_8.eq.0.d0) then
-         do j= j0, jn
-         do i= i0, in
-            F_orc (i,j,k) = aaT * ( F_BsPq(i,j,k) + ylog_8(i,j) )
-     $                    - bbT * tdiv(i,j)
-         end do
-         end do
-      else
-         do j= j0, jn
-         do i= i0, in
-            ww1=(F_fip(i,j,k)+Cstv_RTstr_8*F_BsPq(i,j,k))*Cstv_iC2str_8
-     $         +c4*(Ver_wp_8_m(k)*wk3(i,j,k+1)+Ver_wm_8_m(k)*wk3(i,j,k))
-            ww2=Dcst_grav_8*Cstv_iC2str_8*
-     $             (Ver_wp_8_m(k)*F_w(i,j,k+1)+Ver_wm_8_m(k)*F_w(i,j,k))
-            F_orc (i,j,k) = aaT * ( ww1 + ylog_8(i,j) )
-     $                    - bbT * ( tdiv(i,j) - ww2 )
-         end do
-         end do
-      endif
+                         xxx=one
+      if(Schm_autobar_L) xxx=0.d0
+      do j= j0, jn
+      do i= i0, in
+         F_orc (i,j,k) = aaT * ( xxx * F_BsPq(i,j,k) + ylog_8(i,j) )
+     $                 - bbT * tdiv(i,j)
+      end do
+      end do
  3000 continue
 !$omp enddo
 *
 !$omp single
 *
-*******************************************************
-* Interpolate Ru, Rv from U-, V-grid to G-grid, resp. *
-*******************************************************
+*********************************************************
+* Interpolating Ru, Rv from U-, V-grid to G-grid, resp. *
+*********************************************************
 
       call rpn_comm_xch_halo ( F_oru, LDIST_DIM,l_niu,l_nj,G_nk,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -557,8 +515,8 @@
       if (G_lam) then
          if (l_west)  i0 = 4
          if (l_east)  in = l_niu-2
-         if (l_south) j0 = 3
-         if (l_north) jn = l_njv-1
+         if (l_south) j0 = 4
+         if (l_north) jn = l_njv-2
       endif
 *      
 !$omp do
@@ -583,8 +541,8 @@
       if (l_north) jn = l_njv-1
 
       if (G_lam) then
-          if (l_west)  i0 = 3
-          if (l_east)  in = l_niu-1
+          if (l_west)  i0 = 4
+          if (l_east)  in = l_niu-2
           if (l_south) j0 = 4
           if (l_north) jn = l_njv-2
       endif
@@ -622,7 +580,10 @@
       end do
 !$omp enddo
 *
-*  Store Ru, Rv values on the boundaries of the LAM grid
+**************************************************
+* Applying HORIZONTAL BOUNDARY CONDITIONS if LAM *
+**************************************************
+*
       if (G_lam) then
           if (l_west) then
 !$omp do

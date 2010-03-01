@@ -1,0 +1,54 @@
+***s/r wil_us
+*
+#include "model_macros_f.h"
+*
+      REAL FUNCTION WIL_US(RLATD) 
+*
+      implicit none 
+*
+      REAL RLATD
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version US 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     SPECIFIES ZONALLY SYMMETRIC U FIELD AS A FUNCTION OF LATITUDE             
+*     (BUMP FUNCTION).  REQUIRES REAL FUNCTION BF2                              
+*     USED FOR TEST CASE 3 (SEE PAPER BY BROWNING ET AL.)
+*
+*implicits
+#include "wil_dcst.cdk"
+*
+*------------------------------------------------------------------
+*
+*     NORTH-SOUTH EXTENT OF FLOW FIELD
+*     --------------------------------
+      REAL RLATE,RLATB
+*
+*     FLOW PROFILE TEMPORARIES
+*     ------------------------
+      REAL XE,X
+*
+*     MAX AMPLITUDE OF FLOW (12 DAY ROTATION SPEED)
+*     ---------------------------------------------
+      REAL UBAR
+*
+*     AUXILIARY FUNCTION (SEE BELOW)
+*     ------------------------------
+      EXTERNAL WIL_BF2
+      REAL WIL_BF2
+*
+*------------------------------------------------------------------
+*
+      UBAR  = (2.0*Wil_Dcst_pi_8*Wil_Dcst_rayt_8)/(12.0*24.0*3600.0)
+      RLATB = -Wil_Dcst_pi_8/6.                                                            
+      RLATE =  Wil_Dcst_pi_8/2.                                                            
+      XE    = 3.0E-1                                                            
+      X     = XE*(RLATD-RLATB)/(RLATE-RLATB)                                    
+      WIL_US= UBAR*WIL_BF2(X)*WIL_BF2(XE-X)*EXP(4.0/XE)
+*
+      RETURN                                                                    
+      END                                                                       

@@ -104,7 +104,7 @@
       e_intgeo = .true.
       do ivar = 1, p_bgeo_top
          if (geoerr(ivar).lt.0) then
-            if (.not.e_Schm_offline_L) e_intgeo = .false.
+            e_intgeo = .false.
             write (6,1005) geonm(ivar,2)
          endif
       end do

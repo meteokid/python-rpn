@@ -21,12 +21,13 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       character* (*) msg,datev
       integer stepno, unf, is,nis,js,jn,njs,iw,ie,niw,jw,njw
-      integer nvar, ntr, mode, presstype
+      integer nvar, ntr, mode
 *
 *author Michel Desgagne (MC2 2001)
 *
 *revision
 * v3_30 - Lee V. - initial version for GEM LAM
+* v4_03 - Lee V.            - Adapt to using new pressure functions
 *
 #include "glb_ld.cdk"
 #include "ver.cdk"
@@ -41,7 +42,6 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       if (Ptopo_myproc.eq.0) then
           unf = 202
-          presstype=6
 *
           write (md,'(i2.2)') mode
           filen= 'bcs'//md//'_'//datev
@@ -50,10 +50,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                                          position='APPEND')
           call wrgeo_bcs (G_xg_8(is),nis+1,G_yg_8(js),G_yg_8(jn),njs+1,
      $                G_xg_8(iw),G_xg_8(ie),niw+1,G_yg_8(jw),njw+1,
-     $                Ver_a_8%m(1),Ver_b_8%m(1),Ver_a_spcl_8%t,Ver_b_spcl_8%t,
-     $                Ver_a_8%t,Ver_b_8%t,
-     $                G_nk+1,G_nk+2,G_nk+1,presstype,nvar,ntr,unf)
-          write (unf) msg,mode
+     $                Ver_a_8%m(1),Ver_b_8%m(1),Ver_a_8%t,Ver_b_8%t,
+     $                G_nk+1,G_nk+2,Ver_code,unf)
+          write (unf) msg,mode,nvar,ntr
       endif
 *
 *------------------------------------------------------------------

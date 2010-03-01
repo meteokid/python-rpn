@@ -1,0 +1,170 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r diag_var_ad - ADJ of diag_var_tl 
+*
+#include "model_macros_f.h"
+*
+      subroutine diag_var_ad (F_BsPq,F_mu,F_s,F_q,F_s_m,F_q_m,i0,in,j0,jn,nk)
+*     
+      implicit none
+*     
+      integer nk
+      real F_BsPq(LDIST_SHAPE,0:Nk+1), F_mu(LDIST_SHAPE,Nk+1)
+      real F_s(LDIST_SHAPE),           F_q(LDIST_SHAPE,0:Nk+1)
+*
+      real F_s_m(LDIST_SHAPE),F_q_m(LDIST_SHAPE,0:Nk+1)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v4_04 - Tanguay M.        - initial MPI version
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+***********************************************************************
+* See GEMergo4.doc
+***********************************************************************
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_BsPq       O    - perturbation ln(pressure)
+* F_mu         O    - 
+* F_s          I    - 
+* F_q          I    - non-hydro perturbation of log(p)
+* i0,in,j0,jn  I    - index over which computation will be made.
+*----------------------------------------------------------------
+*
+*implicits
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "cstv.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "schm.cdk"
+*
+#include "ptopo.cdk"
+*     
+**
+      integer i,j,k,i0,in,j0,jn,nij
+      real*8 ONE_8, HALF_8, xxx_8, ZERO_8
+      parameter(ONE_8=1.d0, HALF_8=.5d0, ZERO_8=0.d0 )
+      real*8, dimension(i0:in,j0:jn):: xrec_8, yrec_8
+      real*8, dimension(i0:in,j0:jn):: xrec_m_8, yrec_m_8
+*
+*     ---------------------------------------------------------------
+*
+      if(Ptopo_npeOpenMP.gt.1) 
+     $    call gem_stop('diag_var_AD : VERIFY OPENMP',-1)
+*
+      if(
+     $     i0.lt.1-G_halox   .or.
+     $     in.gt.l_ni+G_halox.or.
+     $     j0.lt.1-G_haloy   .or.
+     $     jn.gt.l_nj+G_haloy
+     $     )then
+         call gem_stop('diag_var_AD : dimension error',-1)
+      endif
+*
+      nij = (in - i0 + 1)*(jn - j0 + 1)
+*
+*     Zero adjoint variables 
+*     ----------------------
+      xrec_8 = 0.
+      yrec_8 = 0.
+*
+C!$omp parallel private (xxx_8,xrec_8,yrec_8,xrec_m_8,yrec_m_8)
+*
+      if (.not. Schm_hydro_L) then
+C!$omp do
+      do k=l_nk+1,0,-1
+         if(k.gt.0) then
+*
+*           TRAJECTORY
+*           ----------
+            xxx_8=Ver_idz_8%t(k)
+            do j= j0, jn
+            do i= i0, in
+*
+               xrec_m_8(i,j) =ONE_8+ver_dbdz_8%t(k)*F_s_m(i,j)
+*
+            enddo
+            enddo
+*
+            call vrec ( yrec_m_8, xrec_m_8, nij )
+*
+*           ADJ
+*           ---
+            do j= j0, jn
+            do i= i0, in
+               yrec_8(i,j)    = xxx_8*( F_q_m(i,j,k)-F_q_m(i,j,k-1))*F_mu(i,j,k) + yrec_8(i,j)
+               F_q   (i,j,k)  = xxx_8*( F_mu (i,j,k))*yrec_m_8(i,j)              + F_q   (i,j,k) 
+               F_q   (i,j,k-1)= xxx_8*(-F_mu (i,j,k))*yrec_m_8(i,j)              + F_q   (i,j,k-1)
+               F_mu  (i,j,k)  = ZERO_8
+            enddo
+            enddo
+*
+            do j= j0, jn
+            do i= i0, in
+*
+               xrec_8(i,j) = - yrec_8(i,j)/xrec_m_8(i,j)**2 + xrec_8(i,j)
+               yrec_8(i,j) = ZERO_8
+*
+            enddo
+            enddo
+*
+            do j= j0, jn
+            do i= i0, in
+*
+                F_s   (i,j)  = ver_dbdz_8%t(k)*xrec_8(i,j) + F_s(i,j)
+                xrec_8(i,j)  = ZERO_8
+*
+            enddo
+            enddo
+         endif
+         do j= j0, jn
+         do i= i0, in
+            F_q(i,j,k) = F_BsPq(i,j,k) + F_q(i,j,k)
+         enddo
+         enddo
+      enddo
+C!$omp enddo
+      endif
+*
+C!$omp do
+       do k=l_nk+1,0,-1
+         if(k.eq.0) then
+            xxx_8=0.d0
+         else
+            xxx_8=Ver_b_8%m(k)
+         endif
+         do j= j0, jn
+         do i= i0, in
+*
+            F_s   (i,j)   = xxx_8* F_BsPq(i,j,k) + F_s(i,j)
+            F_BsPq(i,j,k) = ZERO_8
+*
+         enddo
+         enddo
+      enddo
+C!$omp enddo
+*      
+C!$omp end parallel
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,30 @@
+***s/r wil_glon
+*
+#include "model_macros_f.h"
+*
+      REAL FUNCTION WIL_GLON(I)
+*
+      implicit none
+*
+*author Jacob et al. 1992
+*
+*revision
+* v4_04 - Jacob et al.     - initial version GLON
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     THIS FUNCTION RETURNS THE LONGITUDE OF THE REGULAR
+*     GRID IN RADIANS
+*
+*implicits
+#include "wil_glb_ld.cdk"
+#include "wil_dcst.cdk"
+
+*------------------------------------------------------------------
+      INTEGER I
+*------------------------------------------------------------------
+*
+      WIL_GLON = (2.0*Wil_Dcst_pi_8)/REAL(G_nlon)*REAL(I-1)
+*
+      RETURN
+      END

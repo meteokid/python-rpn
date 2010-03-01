@@ -22,6 +22,7 @@
 *
 *revision
 * v3_30 - Lee V.          - initial version
+* v4_03 - Lee/Plante      - acid test
 *
 *object
 *
@@ -38,11 +39,12 @@
 #include "tr3d.cdk"
 #include "lam.cdk"
 #include "schm.cdk"
+#include "acid.cdk"
 *
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer err,key(14),i,j,k,nvar,id,kk
+      integer err,key(14),i,j,k,nvar,kk
       integer key0(Tr3d_ntr),key0_,key1(Tr3d_ntr),key1_, n
       real tr,tr0
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0,tr0(LDIST_SHAPE,*))
@@ -109,6 +111,7 @@
          err = VMM_GET_VAR(nest_q)
          err = VMM_GET_VAR(qt1)
       endif
+
 *
       if (l_north) then
          do k=1,G_nk+1
@@ -272,7 +275,6 @@
          err = vmmlod(key1,Tr3d_ntr)
          err = vmmlod(key0,Tr3d_ntr)
          do n=1,Tr3d_ntr
-            id = (n-1)*bcs_sz+1
             err = vmmget(key1(n),patr ,tr )
             err = vmmget(key0(n),patr0,tr0)
             if (l_north) then
@@ -311,7 +313,12 @@
                    enddo
                 enddo
             endif
+
+            if(acid_test_L)call acid_stat_nest_bcs(tr0,tr,n,1)
+
          enddo
+*
+*
          err = vmmuld(key1,Tr3d_ntr)
          err = vmmuld(key0,Tr3d_ntr)
       endif
@@ -319,4 +326,5 @@
 *----------------------------------------------------------------------
       return
  1000 format (/,19('#'),' NEST_BCS STAT ',i6,1X,19('#'))
+ 1001 format(3X,'NEST Boundary ConditionS: (S/R NEST_BCS)')
       end

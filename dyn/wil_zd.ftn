@@ -1,0 +1,208 @@
+***s/r wil_zd
+*
+#include "model_macros_f.h"
+*
+      SUBROUTINE WIL_ZD(UIC,VIC,DIVSC,ZETASC,NLON,NLAT,NN,MM,NLATB2,NALP,NFC)
+*
+      implicit none
+*
+      INTEGER NLON,NLAT,NN,MM,NLATB2,NALP,NFC
+      REAL UIC(NLON+2,NLAT),VIC(NLON+2,NLAT)
+*
+      COMPLEX DIVSC(NALP),ZETASC(NALP)
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version ZD 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     THIS SUBROUTINE OBTAINS VORTICITY AND DIVERGENCE SPECTRAL 
+*     COEFFICIENTS FROM THE GRIDPOINT VELOCITIES (UNSCALED BY COS(THETA)) 
+*     THE SUBROUTINE MAKES USE OF INFORMATION           
+*     CONTAINED IN COMMON BLOCKS (POLYNOMIALS, COEFFICIENTS, ETC.)              
+*
+*implicits
+#include "wil_fft.cdk"
+#include "wil_init2.cdk"
+#include "wil_init3.cdk"
+*------------------------------------------------------------------
+*
+*     EQUIVALENCE TO WORKSPACE STORAGE POOL /WRKSPC/                            
+*     ----------------------------------------------
+      REAL UTMP(NLON+2,NLAT),VTMP(NLON+2,NLAT)
+      COMPLEX UTMPFC(NFC,NLAT),VTMPFC(NFC,NLAT)
+*
+      COMPLEX CTDP(MM+1,NLATB2), CTDH(MM+1,NLATB2)
+      COMPLEX CTZP(MM+1,NLATB2), CTZH(MM+1,NLATB2)              
+*
+*     TEMPORARIES
+*     -----------
+      REAL RLAT, FAC
+      INTEGER I,J,JM,JN,NL,IS,INDEX,SL,ULB
+*
+      REAL WIL_GLAT
+      EXTERNAL WIL_GLAT
+*
+*------------------------------------------------------------------
+*
+*     COMPUTE VORTICITY AND DIVERGENCE SPECTRAL COEFFICIENTS                    
+*     FROM U AND V MOMENTUM COEFFICIENTS                                        
+*     ------------------------------------------------------
+*
+*     SCALE FIELDS BY COS(THETA)
+*     --------------------------
+      DO 20 J=1,NLAT
+         RLAT = COS(WIL_GLAT(J))
+*
+*        LATITUDE = RLAT = GLAT(J)
+*        -------------------------
+         DO 10 I=1,NLON
+            UTMP(I,J)=UIC(I,J) * RLAT
+            VTMP(I,J)=VIC(I,J) * RLAT
+   10    CONTINUE
+   20 CONTINUE
+*
+*     FOURIER TRANSFORM U*COS(PHI) AND V*COS(PHI) FIELDS
+*     --------------------------------------------------
+      CALL FFT771(UTMP(1,1),FFTWS2,TRIGS,IFAX,1,NLON+2,
+     $               NLON,NLAT,-1)                 
+      CALL FFT771(VTMP(1,1),FFTWS2,TRIGS,IFAX,1,NLON+2,
+     $               NLON,NLAT,-1)                 
+*
+*     COMPUTE VORTICITY AND DIVERGENCE COEFFICIENTS FROM U AND V FOURIER        
+*     COEFFICIENTS. VARY M AND N SO THAT PROCEDURE MOVES ALONG DIAGONALS        
+*     DENOTED BY INDEX JN.  M IS GIVEN BY (JM-1); N IS GIVEN BY (JN+M).         
+*     TAKE ADVANTAGE OF SYMMETRIC CHARACTER OF LEGENDRE POLYNOMIALS             
+*     ------------------------------------------------------------------
+*                                                                               
+*     PROCEDURE FOR EVEN NUMBER OF GAUSSIAN LATITUDES ...                       
+*     ---------------------------------------------------
+      DO 105 NL=1,NLATB2  
+         SL = NLAT-NL+1
+         FAC = WTS(NL)*WTACSJ(NL)
+*                                                                               
+*        CALCULATE INTERMEDIATE QUANTITIES FOR COMPUTATIONL EFFICIENCY          
+*        -------------------------------------------------------------
+         DO 100 JM=1,MM+1
+*                                                                               
+            CTDP(JM,NL) = (UTMPFC(JM,NL) + UTMPFC(JM,SL)) * 
+     $                  CMPLX(0.0,REALM(JM)*FAC)        
+            CTDH(JM,NL) = (VTMPFC(JM,NL) - VTMPFC(JM,SL))*FAC              
+*
+            CTZP(JM,NL) = (VTMPFC(JM,NL) + VTMPFC(JM,SL)) * 
+     $                  CMPLX(0.0,REALM(JM)*FAC)        
+            CTZH(JM,NL) = (UTMPFC(JM,NL) - UTMPFC(JM,SL))*FAC              
+  100    CONTINUE                                                               
+  105 CONTINUE
+*
+      DO 150 JN=0,NN,2
+         IS = LDIAG(JN,2)
+         ULB = LDIAG(JN,1)
+*
+*        SPECIAL HANDLING OF THE FIRST LATITUDE IN THE ACCUMULATIONS            
+*        DETOUR ELIMINATES THE NEED TO SEPARATELY ZERO DIVSC AND ZETASC         
+*        --------------------------------------------------------------
+         DO 120 NL=1,NLATB2
+*
+            IF (NL .EQ. 1) THEN  
+*                                                                               
+*              EVEN DIAGONALS FIRST LATITUDE 
+*              -----------------------------
+               DO 110 JM=1,ULB
+                  DIVSC(IS+JM) = CTDP(JM,NL)*ALP_0(IS+JM,NL)                     
+     $                         - CTDH(JM,NL)*DALP_0(IS+JM,NL)
+*                                                                               
+                  ZETASC(IS+JM) = CTZP(JM,NL)*ALP_0(IS+JM,NL)                    
+     $                          + CTZH(JM,NL)*DALP_0(IS+JM,NL)                 
+  110          CONTINUE                                                         
+*
+            ELSE 
+*                                                                               
+*              EVEN DIAGONALS OTHER LATITUDES 
+*              ------------------------------
+               DO 130 JM=1,ULB
+                  DIVSC(IS+JM) = DIVSC(IS+JM)                                
+     $                         + CTDP(JM,NL)*ALP_0(IS+JM,NL)                     
+     $                         - CTDH(JM,NL)*DALP_0(IS+JM,NL)                    
+*
+                  ZETASC(IS+JM) = ZETASC(IS+JM)                              
+     $                          + CTZP(JM,NL)*ALP_0(IS+JM,NL)                    
+     $                          + CTZH(JM,NL)*DALP_0(IS+JM,NL)                   
+  130          CONTINUE  
+            ENDIF
+  120    CONTINUE  
+*
+  150 CONTINUE
+*
+*        CALCULATE INTERMEDIATE QUANTITIES FOR COMPUTATIONAL EFFICIENCY
+*        --------------------------------------------------------------
+      DO 165 NL=1,NLATB2
+         SL = NLAT-NL+1
+         FAC = WTS(NL)*WTACSJ(NL)
+*
+         DO 160 JM=1,MM+1
+*
+            CTDP(JM,NL) = (UTMPFC(JM,NL) - UTMPFC(JM,SL)) * 
+     $                  CMPLX(0.0,REALM(JM)*FAC)        
+            CTDH(JM,NL) = (VTMPFC(JM,NL) + VTMPFC(JM,SL))*FAC              
+*
+            CTZP(JM,NL) = (VTMPFC(JM,NL) - VTMPFC(JM,SL)) * 
+     $                  CMPLX(0.0,REALM(JM)*FAC)        
+            CTZH(JM,NL) = (UTMPFC(JM,NL) + UTMPFC(JM,SL))*FAC              
+  160    CONTINUE                                                               
+  165 CONTINUE
+*
+      DO 210 JN=1,NN,2
+         IS = LDIAG(JN,2)
+         ULB = LDIAG(JN,1)
+*
+*        SPECIAL HANDLING OF THE FIRST LATITUDE IN THE ACCUMULATIONS            
+*        DETOUR ELIMINATES THE NEED TO SEPARATELY ZERO DIVSC AND ZETASC         
+*        --------------------------------------------------------------
+         DO 180 NL=1,NLATB2
+*
+            IF (NL .EQ. 1) THEN 
+*
+*              ODD DIAGONALS FIRST LATITUDE  
+*              ----------------------------
+               DO 170 JM=1,ULB
+                  DIVSC(IS+JM) = CTDP(JM,NL)*ALP_0(IS+JM,NL)                     
+     $                         - CTDH(JM,NL)*DALP_0(IS+JM,NL)                  
+*
+                  ZETASC(IS+JM) = CTZP(JM,NL)*ALP_0(IS+JM,NL)                    
+     $                          + CTZH(JM,NL)*DALP_0(IS+JM,NL)                 
+  170          CONTINUE                                                         
+*
+            ELSE 
+*
+*              ODD DIAGONALS REMAING LATITUDES  
+*              -------------------------------
+               DO 190 JM=1,ULB
+                  DIVSC(IS+JM) = DIVSC(IS+JM)                                
+     $                         + CTDP(JM,NL)*ALP_0(IS+JM,NL)                     
+     $                         - CTDH(JM,NL)*DALP_0(IS+JM,NL)                    
+*
+                  ZETASC(IS+JM) = ZETASC(IS+JM)                              
+     $                          + CTZP(JM,NL)*ALP_0(IS+JM,NL)                    
+     $                          + CTZH(JM,NL)*DALP_0(IS+JM,NL)                   
+  190          CONTINUE   
+            ENDIF
+  180    CONTINUE 
+*
+  210 CONTINUE
+*                                                                               
+*     ADD CORIOLIS TERM FOR ROTATED COORDINATE SYSTEM
+*     -----------------------------------------------
+*     WAVE M=0, N=1
+*     ------------- 
+      INDEX = LDIAG(1,2)+1
+      ZETASC(INDEX) = ZETASC(INDEX) + CORSC1
+*     WAVE M=1, N=1
+*     -------------
+      INDEX = LDIAG(0,2)+2
+      ZETASC(INDEX) = ZETASC(INDEX) + CORSC2
+*
+      RETURN                                                                    
+      END

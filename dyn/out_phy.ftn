@@ -28,6 +28,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 * v3_20 - Lee V.            -  initial GEMDM version
 * v3_21 - Lee V.            -  bugfix for LAM output
 * v3_30 - McTaggart-Cowan R.-  allow for user-defined domain tag extensions
+* v3_31 - Lee V.            - kind is set to 2 (press) for 2D fields, not -1
 * v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
 *
 *
@@ -183,7 +184,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *                      2d field
                           call ecris_fst2(bus_o(1,obus_offset(j)),
      $                             1,l_ni,1,l_nj,0.0,obus_var_s(j),
-     $                             Obus_mul(j),Obus_add(j), -1,1,1,1, 
+     $                             Obus_mul(j),Obus_add(j),  2,1,1,1, 
      $                             Outp_nbit(ii,kk) )
                        endif
                     endif

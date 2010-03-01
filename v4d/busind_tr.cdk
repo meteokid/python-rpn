@@ -1,0 +1,13 @@
+!
+!busdyn
+      integer utrajm, vtrajm, ttrajm, hutrajm
+      integer utrajp, vtrajp, ttrajp, hutrajp
+      integer ptrajp
+!busvol
+      integer kmm,ktm,bmm,btm
+
+      common /dynbusidtr/ utrajm, vtrajm, ttrajm, hutrajm
+      common /dynbusidtr/ utrajp, vtrajp, ttrajp, hutrajp
+      common /dynbusidtr/ ptrajp
+      common /dynbusidtr/ kmm,ktm,bmm,btm
+!

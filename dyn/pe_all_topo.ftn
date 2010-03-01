@@ -22,19 +22,22 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v4_03 - Desgagne/Lee      - adaptation to new scripts
 *
 *implicits
 #include "ptopo.cdk"
 #include "path.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
+#include <clib_interface.cdk>
 *
       integer  rpn_comm_bloc,ouvrstrt,wkoffit
       external rpn_comm_bloc,ouvrstrt,wkoffit
-*
+* 
+      character*3 mycol_S,myrow_S
       character*12 dumc1_S
       character*500 fn
-      integer err,n1,n2,n3,n4,n5,n6,n7,bufnml(10000),unf
+      integer err,n1,n2,n3,n4,n5,n6,n7,bufnml(10000),bufcte(10000),unf
 *
 *-------------------------------------------------------------------
 *
@@ -60,10 +63,9 @@
       COMMON_BROADCAST (Ptopo_b)
       COMMON_BROADCAST (Ptopo_l)
 *
-* Initializes Path_dfwmil_S and Path_nml_S
+* Initializes Path_nml_S
 *
-      call getenvc ('rep_from_which_model_is_launched',Path_dfwmil_S)
-      Path_nml_S = trim(Path_dfwmil_S)//'/process/model_settings'
+      Path_nml_S = trim(Path_input_S)//'/model_settings'
 *
 * Initializes PEs block partitions for the PEs (grouping PEs)
 *
@@ -78,34 +80,41 @@
 *
 * Initializes OpenMP
 *
-      call omp_set_num_threads(Ptopo_npeOpenMP)
-      if (Ptopo_myproc.eq.0) print *, 'OpenMP will use ',
+      if (Ptopo_myproc.eq.0) print *, 'OpenMP allocation is ',
      $     Ptopo_npeOpenMP,' thread(s)'
       call pe_rebind(0)
 * Reading namelist file Path_nml_S (blind read)
 *
       if (Ptopo_myproc.eq.0) then
          call array_from_file(bufnml,size(bufnml),Path_nml_S)
+         call array_from_file(bufcte,size(bufcte),trim(Path_input_S)//'/constantes')
          lun_out  =  6
       endif
 * 
 * Changing directory to local Ptopo_mycol_Ptopo_myrow 
 *
-      call set_run_dir_xy (Ptopo_mycol, Ptopo_myrow)
+      write(mycol_S,10) Ptopo_mycol
+      write(myrow_S,10) Ptopo_myrow
+10    format(i3.3)
+      err= clib_mkdir(mycol_S//'-'//myrow_S)
+      err= clib_chdir(mycol_S//'-'//myrow_S)
 *
 * Writing local namelist file Path_nml_S (blind write)
 *
       call RPN_COMM_bcast(bufnml,size(bufnml),"MPI_INTEGER",0,
      $                                           "grid",err )
+      call RPN_COMM_bcast(bufcte,size(bufcte),"MPI_INTEGER",0,
+     $                                           "grid",err )
       call array_to_file (bufnml,size(bufnml),'model_settings')
+      call array_to_file (bufcte,size(bufcte),'constantes'    )
 *
       Lun_rstrt = ouvrstrt( )
 *
-* Determine theoretical mode with presence of file process/theoc
+* Determine theoretical mode with presence of file ${TASK_WORK}/theoc
 *
       unf=0
       Schm_theoc_L = .false.
-      fn=trim(Path_dfwmil_S)//'/process/theoc'
+      fn=trim(Path_work_S)//'/theoc'
       if (wkoffit(fn).gt.-3) then
          if (Ptopo_myproc.eq.0) write (Lun_out,*)
      $                          'Assume Theoretical case'

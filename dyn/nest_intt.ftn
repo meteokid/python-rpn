@@ -26,6 +26,8 @@
 * v3_01 - Desgagne M.               - initial version (after MC2 v_4.9.3)
 * v3_03 - Tanguay M.                - Adjoint Lam configuration
 * v3_20 - Pellerin P. and Y. Delage - Special interpolations for MEC 
+* v4    - Girard-Plante-Lee         - Staggered version
+* v4_04 - Plante A.                 - Remove offline
 *
 *implicits
 #include "glb_ld.cdk"
@@ -33,7 +35,6 @@
 #include "lam.cdk"
 #include "nest.cdk"
 #include "tr3d.cdk"
-#include "offline.cdk"
 #include "schm.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
@@ -54,13 +55,12 @@
       integer err, key1(14+Tr3d_ntr), nvar, nstepno, key1_, 
      $        key2(Tr3d_ntr),key2_,n
       real*8  one,sid,rsid,dayfrac,tx,tf_nest,dtf,a,b,ax,bx
-      integer int_temp
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
       data done /.false./
       save done,tf_nest
-
-      if(Offline_int_accu_S.eq.'CONST')  int_temp=1
-      if(Offline_int_accu_S.eq.'LINEAR') int_temp=2
+*
+      integer bidon_rwtr
+*
 *
 *     ---------------------------------------------------------------
 *
@@ -154,7 +154,7 @@
 *
 *           Copy contents from NEST_UF to NEST_U
 *
-            do k= 1, G_nk
+            do k= 1, G_nk+1
             do j= 1, l_nj 
             do i= 1, l_ni
                nest_u (i,j,k) = nest_uf (i,j,k)
@@ -168,9 +168,7 @@
             do j= 1, l_nj 
             do i= 1, l_ni
                nest_s(i,j) = nest_sf(i,j)
-               nest_t (i,j,G_nk+1) = nest_tf (i,j,G_nk+1)
-               nest_zd(i,j,G_nk+1) = nest_zdf(i,j,G_nk+1)
-               nest_w (i,j,G_nk+1) = nest_wf (i,j,G_nk+1)
+               nest_t (i,j,G_nk+2) = nest_tf (i,j,G_nk+2)
 
             end do
             end do
@@ -195,7 +193,7 @@
                do n=1,Tr3d_ntr
                   err = vmmget(key1(n),patr1,tr1)
                   err = vmmget(key2(n),patrf,trf)
-                  do k= 1, G_nk+1
+                  do k= 1, G_nk+2
                   do j= 1, l_nj 
                   do i= 1, l_ni
                      tr1 (i,j,k) = trf (i,j,k)
@@ -243,7 +241,7 @@
          enddo
       enddo
 *
-      do k= 1, G_nk
+      do k= 1, G_nk+1
       do j= 1, l_nj 
       do i= 1, l_ni
          nest_u (i,j,k) = a*nest_u (i,j,k) + b*nest_uf (i,j,k)
@@ -258,9 +256,7 @@
       do j= 1, l_nj 
       do i= 1, l_ni
          nest_s(i,j) = a*nest_s(i,j) + b*nest_sf(i,j)
-         nest_t (i,j,G_nk+1) = a*nest_t (i,j,G_nk+1) + b*nest_tf (i,j,G_nk+1)
-         nest_zd(i,j,G_nk+1) = a*nest_zd(i,j,G_nk+1) + b*nest_zdf(i,j,G_nk+1)
-         nest_w (i,j,G_nk+1) = a*nest_w (i,j,G_nk+1) + b*nest_wf (i,j,G_nk+1)
+         nest_t (i,j,G_nk+2) = a*nest_t (i,j,G_nk+2) + b*nest_tf (i,j,G_nk+2)
       end do
       end do
       if (.not. Schm_hydro_L) then
@@ -281,81 +277,19 @@
       end do
 
       if (Tr3d_ntr.gt.0) then
-         if ( .not.Schm_offline_L) then
-             err = vmmlod(key1,Tr3d_ntr)
-             err = vmmlod(key2,Tr3d_ntr)
-             do n=1,Tr3d_ntr
-                err = vmmget(key1(n),patr1,tr1)
-                err = vmmget(key2(n),patrf,trf)
-                do k= 1, G_nk+1
-                do j= 1, l_nj 
-                do i= 1, l_ni
-                   tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
-                end do
-                end do
-                end do
-             end do
-         else
-
-*           ( Schm_offline_L)     
-* special interpolation for tracers during offline/MEC mode
-             np = nint(Lam_nesdt/Cstv_dt_8)
-             ip = np - nint((tf_nest-tx)*sid/Cstv_dt_8)
-             if(ip.eq.1) then
-               b2 = 0.5 * b
-             else
-               b2 = 1.0 / (np-ip+1.5)
-             endif
-             a2 = 1.0 - b2
-             do n=1,Tr3d_ntr
-                err = vmmget(key1(n),patr1,tr1)
-                err = vmmget(key2(n),patrf,trf)
-                if (Tr3d_name_S(n).eq.'PR'.or.Tr3d_name_S(n).eq.'PR0'.or.
-     $              Tr3d_name_S(n).eq.'AD'.or.Tr3d_name_S(n).eq.'AD0'.or.
-     $              Tr3d_name_S(n).eq.'N4'.or.Tr3d_name_S(n).eq.'N40')  then
-                    if (int_temp.eq.1) then 
-                             ax = 0.0
-                             bx = 1.0
-                    elseif (int_temp.eq.2) then
-                             ax = 1.0
-                             bx = 0.0
-                    endif
-                else
-                             ax = a
-                             bx = b
-                endif
-*
-                do k= 1, G_nk+1
-                do j= 1, l_nj 
-                do i= 1, l_ni
-                   tr1 (i,j,k) = ax*tr1(i,j,k) + bx*trf(i,j,k)
-                end do
-                end do
-                end do
-*
-                if ((Tr3d_name_S(n).eq.'PR'.or.Tr3d_name_S(n).eq.'PR0'.or.
-     $              Tr3d_name_S(n).eq.'AD'.or.Tr3d_name_S(n).eq.'AD0'.or.
-     $              Tr3d_name_S(n).eq.'N4'.or.Tr3d_name_S(n).eq.'N40')
-     $                        .and.int_temp.eq.2) then
-                    do j= 1, l_nj
-                    do i= 1, l_ni
-                       if(trf(i,j,1).lt.0.)   then
-                          tr1 (i,j,1) = -trf(i,j,1)
-                       else
-                          tr1 (i,j,1) = a2*abs(tr1(i,j,1)) + b2*trf(i,j,1)
-                       endif
-                    enddo
-                    enddo
-                    do k=2, G_nk+1
-                    do j= 1, l_nj
-                    do i= 1, l_ni
-                       tr1 (i,j,k)=tr1 (i,j,1)
-                    enddo
-                    enddo
-                    enddo
-                endif
-             end do
-         endif
+         err = vmmlod(key1,Tr3d_ntr)
+         err = vmmlod(key2,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr1,tr1)
+            err = vmmget(key2(n),patrf,trf)
+               do k= 1, G_nk+2
+               do j= 1, l_nj 
+               do i= 1, l_ni
+                  tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
+               end do
+               end do
+            end do
+         end do
 *
          err = vmmuld(key1,Tr3d_ntr)
          err = vmmuld(key2,Tr3d_ntr)
@@ -368,8 +302,7 @@
 *        ----------------------------------------------
 *        Store TRAJ NESTING fields at current time step
 *        ----------------------------------------------
-         V4dg_rwnest = 1
-         call v4d_rwnest ()
+         call v4d_rwtraj (10)
 *
       endif
 *
@@ -381,8 +314,12 @@
 *        ------------------------------------------------
 *        Recover TRAJ NESTING fields at current time step
 *        ------------------------------------------------
-         V4dg_rwnest = 0
-         call v4d_rwnest ()
+         bidon_rwtr = V4dg_rwtr
+*
+         V4dg_rwtr = 0
+         call v4d_rwtraj (10)
+*
+         V4dg_rwtr = bidon_rwtr
 *
       endif
 *

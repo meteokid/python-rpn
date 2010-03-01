@@ -10,21 +10,19 @@
 ! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
 ! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
 ! ------------------------------------------------------------------------------------------------------------------------------
-      subroutine wrgeo_3df ( xp,ni,yp,nj,am,bm,as,bs,at,bt,
-     $                         nkm,nks,nkt,presstype,nvar,ntr,unf )
+      subroutine wrgeo_3df ( xp,ni,yp,nj,am,bm,at,bt,
+     $                         nkm,nkt,presstype,unf )
       implicit none
 *
-      integer ni,nj,nkm,nkt,nks,presstype,nvar,ntr,unf
-      real*8 xp(ni),yp(nj),am(nkm),bm(nkm),at(nkt),bt(nkt),as(nks),bs(nks)
+      integer ni,nj,nkm,nkt,presstype,unf
+      real*8 xp(ni),yp(nj),am(nkm),bm(nkm),at(nkt),bt(nkt)
 *
 *------------------------------------------------------------------
-      write (unf) '>>^^',ni,nj,nkm,nks,nkt,presstype,nvar,ntr
+      write (unf) '>>^^',ni,nj,nkm,nkt,presstype
       write (unf) xp,yp
-      write (unf) am,bm,as,bs,at,bt
+      write (unf) am,bm,at,bt
 c     write (6,*) 'am=',am
 c     write (6,*) 'bm=',bm
-c     write (6,*) 'as=',as
-c     write (6,*) 'bs=',bs
 c     write (6,*) 'at=',at
 c     write (6,*) 'bt=',bt
 *------------------------------------------------------------------

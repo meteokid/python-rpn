@@ -1,0 +1,147 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r v4d_cainin_ad - ADJ of v4d_cainin
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_cainin_ad (Ndim,F_px)
+*
+#include "impnone.cdk"
+*
+      integer Ndim
+      real F_px(Ndim)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+*                             (Based on CAININAD of IFS/ARPEGE)
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*     see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* Ndim         I                   Dimension of F_px
+* F_px         I/O                 Control variable
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "vt1.cdk"
+#include "v4dc.cdk"
+#include "tr3d.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+      integer pnerr, pnlkey1(5), key1(Tr3d_ntr),
+     $        key1_, err, i, j, k, m, n
+      real tr
+      pointer (patr, tr(LDIST_SHAPE,*))
+*
+      pnlkey1(1) = VMM_KEY(ut1 )
+      pnlkey1(2) = VMM_KEY(vt1 )
+      pnlkey1(3) = VMM_KEY(tt1)
+      pnlkey1(4) = VMM_KEY(st1 )
+      pnerr = vmmlod(pnlkey1,4)
+*
+*     - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1 )
+      pnerr = VMM_GET_VAR(vt1 )
+      pnerr = VMM_GET_VAR(tt1)
+      pnerr = VMM_GET_VAR(st1 )
+*     - - - - - - - - - - - - -
+*
+*     Change the metric
+*     -----------------
+      do m = 1,Ndim
+         F_px(m) = F_px(m)*V4dc_scalp(m)
+      end do
+*
+      m = 0
+      do k=1,l_nk+1
+      do j=1,l_nj
+      do i=1,l_niu
+         m = m+1
+         ut1(i,j,k) = F_px(m) + ut1(i,j,k)
+         F_px(m)    = 0.
+      end do
+      end do
+      end do
+*
+      do k=1,l_nk+1
+      do j=1,l_njv
+      do i=1,l_ni
+         m = m+1
+         vt1(i,j,k) = F_px(m) + vt1(i,j,k)
+         F_px(m)    = 0.
+      end do
+      end do
+      end do
+*
+      do k=1,l_nk+2
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         tt1(i,j,k)  = F_px(m) + tt1(i,j,k)
+         F_px(m)     = 0.
+      end do
+      end do
+      end do
+*
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         st1(i,j) = F_px(m) + st1(i,j)
+         F_px(m)  = 0.
+      end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+      key1_ = VMM_KEY (trt1)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+*
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr,tr)
+            do k=1,l_nk+2
+            do j=1,l_nj
+            do i=1,l_ni
+               m = m+1
+               tr(i,j,k) = F_px(m) + tr(i,j,k)
+               F_px(m)   = 0.
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+      endif
+*
+*     ______________________________________________________
+*
+      if(m.ne.Ndim) call gem_stop('v4d_cainin_ad',-1)
+*     ______________________________________________________
+*
+      return
+      end

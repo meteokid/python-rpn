@@ -1,0 +1,172 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adw_polx_ad - ADJ of adw_polx 
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_polx_ad ( F_field, F_xg, F_sud,
+     %                         F_nic, F_halox, F_njc, F_haloy, F_nk )
+*
+#include "impnone.cdk"
+*
+      logical F_sud
+*
+      integer F_nic, F_halox, F_njc, F_haloy, F_nk
+*
+      real   F_field (-F_halox+1:F_nic+F_halox,
+     %                -F_haloy+1:F_njc+F_haloy, F_nk)
+      real*8 F_xg    (-F_halox+1:F_nic+F_halox)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_21 - Tanguay M.        - Revision Openmp
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_field      | field to treat                                  |  io |
+* F_xg         | x coordinates of global grid                    |  i  |
+* F_sud        | switch: .true.: pole extension is for south pole|  i  |
+*              |        .false.: pole extension is for north pole|  i  |
+*              |                                                 |     |
+* F_nic        | number of points in x direction (advection grid)|  i  |
+* F_njc        | number of points in y direction (advection grid)|  i  |
+*              |                                                 |     |
+* F_halox      | size of halo in x direction (advection grid)    |  i  |
+* F_haloy      | size of halo in y direction (advection grid)    |  i  |
+*              |                                                 |     |
+* F_nk         | number of levels                                |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "adw.cdk"
+*
+*modules
+*     none
+************************************************************************
+      integer m, ns, nd, i, j, k
+      real e(0:F_nic+49)
+*
+      real*8 ZERO_8
+      parameter (ZERO_8=0.0)
+*
+*     TRAJECTORY (START)
+*     ------------------
+*
+* Basic statement functions for cubic int. on a non-uniform mesh
+*
+      real triprd, delta, poly
+      real*8 y_8, y1_8, y2_8, y3_8, y4_8
+      real v1, v2, v3, v4
+      triprd( y1_8, y2_8, y3_8, y4_8 ) = ( y1_8 - y2_8 ) * ( y1_8 - y3_8 ) * ( y1_8 - y4_8 )
+*
+* triprd is fully symmetric in y2, y3, y4.
+* and hence delta is symmetric in y2, y3, y4.
+*
+      delta( y_8, y1_8, y2_8, y3_8, y4_8 ) = triprd(  y_8, y2_8, y3_8, y4_8 )
+     %                           / triprd( y1_8, y2_8, y3_8, y4_8 )
+*
+* delta is a cubic in y which asumes the value 1.0 at y_8 = y1_8,
+* and the value 0.0 for y_8 = y2_8, y3_8, y4_8.
+* consequently a cubic which takes the values v1, v2, v3, v4 at
+* y_8 = y1_8, y2_8, y3_8, y4_8, is
+*
+*
+      poly( v1, v2, v3, v4, y_8, y1_8, y2_8, y3_8, y4_8 ) =
+     %      v1 * delta( y_8, y1_8, y2_8, y3_8, y4_8 ) +
+     %      v2 * delta( y_8, y2_8, y1_8, y3_8, y4_8 ) +
+     %      v3 * delta( y_8, y3_8, y1_8, y2_8, y4_8 ) +
+     %      v4 * delta( y_8, y4_8, y1_8, y2_8, y3_8 )
+*
+**
+                   ns = F_njc
+      if ( F_sud ) ns = 1
+                   nd = F_njc+2
+      if ( F_sud ) nd = -1
+                   m  = F_nic + 1
+*
+*     TRAJECTORY (END)
+*     ----------------
+*
+*     Zero adjoint variables
+*     ----------------------
+      do i = 1,(F_nic+50)
+         e(i-1)  = 0.0
+      enddo
+*
+!$omp do
+      do k = F_nk,1,-1
+*
+         do i = F_halox,1,-1
+            F_field(F_nic+1-i,nd,k) = F_field(    1-i,nd,k) + F_field(F_nic+1-i,nd,k)
+            F_field(      1-i,nd,k) = ZERO_8 
+            F_field(        i,nd,k) = F_field(F_nic+i,nd,k) + F_field(        i,nd,k)
+            F_field(F_nic+  i,nd,k) = ZERO_8 
+         enddo
+*
+*        ADJ of
+*        ----------------------------------------------------------------
+*        do i=1,F_nic
+*           j = Adw_iln(i)
+*           F_field(i,nd,k) = poly(e(j-1),e(j),e(j+1),e(j+2),Adw_lnr_8(i),
+*    %                          F_xg(j-1),F_xg(j),F_xg(j+1),F_xg(j+2))
+*        enddo
+*        ----------------------------------------------------------------
+         do i=F_nic,1,-1
+            j = Adw_iln(i)
+*
+            y_8  = Adw_lnr_8(i)
+            y1_8 = F_xg(j-1)
+            y2_8 = F_xg(j)
+            y3_8 = F_xg(j+1)
+            y4_8 = F_xg(j+2)
+*
+            e(j+2)    = F_field(i,nd,k) * delta( y_8, y4_8, y1_8, y2_8, y3_8 ) + e(j+2)
+            e(j+1)    = F_field(i,nd,k) * delta( y_8, y3_8, y1_8, y2_8, y4_8 ) + e(j+1)
+            e(j)      = F_field(i,nd,k) * delta( y_8, y2_8, y1_8, y3_8, y4_8 ) + e(j)
+            e(j-1)    = F_field(i,nd,k) * delta( y_8, y1_8, y2_8, y3_8, y4_8 ) + e(j-1)
+            F_field(i,nd,k) = ZERO_8 
+*
+         enddo
+*
+         do i=F_nic,1,-1
+            F_field(i,ns,k) = e(i) + F_field(i,ns,k)
+                  e(i)      = ZERO_8 
+         enddo
+*
+         F_field(2,     ns, k) = e(m+1) + F_field(2,     ns, k)
+         e(m+1)                = ZERO_8 
+         F_field(1,     ns, k) = e(m)   + F_field(1,     ns, k)
+         e(m)                  = ZERO_8 
+         F_field(F_nic, ns, k) = e(0)   + F_field(F_nic, ns, k)
+         e(0)                  = ZERO_8 
+*     
+      enddo
+!$omp enddo
+*
+      return
+      end

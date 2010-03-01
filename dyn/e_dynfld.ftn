@@ -21,6 +21,8 @@
 *revision 
 * v3_21 - Desgagne M. - dayfrac calc displaced
 * v3_30 - Desgagne/Lee - new LAM I/O interface
+* v3_31 - Lee V.      - bugfix: eliminate save_bmf key
+* v4_03 - Lee/Desgagne - ISST
 *
 *IMPLICIT
 #include "e_fu.cdk"
@@ -41,14 +43,13 @@
       external fstfrm,newdate,fclos
 *
       character*16 date1,date2
-      logical save_Pil_bmf_L,save_Pil_bcs_hollow_L
+      logical save_Pil_bcs_hollow_L
       integer err,yy,dd,dum
       real*8 dayfrac,sec_in_day
       parameter (sec_in_day=86400.0d0)
 *
 *---------------------------------------------------------------------
 *
-      save_Pil_bmf_L        = Pil_bmf_L
       save_Pil_bcs_hollow_L = Pil_bcs_hollow_L
 *
       bmf_dtyp = 41
@@ -67,6 +68,8 @@
          call prsdate  (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,date1)
          call e_specanal
 *
+         call e_open_files (date1.eq.Mod_runstrt_S)
+*
          call e_intthm
 *
          call e_intwind 
@@ -77,7 +80,6 @@
          call incdatsd (date2,date1,dayfrac)
          date1 = date2
          Pil_bcs_hollow_L = save_Pil_bcs_hollow_L 
-         Pil_bmf_L        = save_Pil_bmf_L 
 *
       end do
 *     

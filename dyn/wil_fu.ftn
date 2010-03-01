@@ -1,0 +1,33 @@
+***s/r wil_fu
+*
+#include "model_macros_f.h"
+*
+      REAL FUNCTION WIL_FU(RLATD) 
+*
+      implicit none
+*
+      REAL RLATD
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version FU 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     SPECIFIES RIGHT HAND SIDE OF BALANCE EQUATION FOR PURPOSES OF             
+*     NUMERICAL INTEGRATION; REQUIRES REAL FUNCTION US; 
+*     USED FOR TEST CASE 3 GEOPOTENTIAL FIELD IN SUBROUTINE INIT
+*
+*implicits
+#include "wil_dcst.cdk"
+*------------------------------------------------------------------
+      EXTERNAL WIL_US
+      REAL WIL_US
+*------------------------------------------------------------------
+*
+      WIL_FU = (2.0*Wil_Dcst_omega_8*Wil_Dcst_rayt_8*SIN(RLATD) + 
+     $          TAN(RLATD)*WIL_US(RLATD))*WIL_US(RLATD)          
+*
+      RETURN                                                                    
+      END                                                                       

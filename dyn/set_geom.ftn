@@ -57,14 +57,16 @@
 #include "ptopo.cdk"
 #include "type.cdk"
 #include "ver.cdk"
+#include "acid.cdk"
 *
 *modules
       integer stretch_axis2
       external stretch_axis2
 *
       character*12 gem_debug
+      character*8 dumc
       integer offi,offj,indx,err,dgid,ezgdef_fmem,gdll
-      integer i,j,k,nila,ierx,iery,nimax,njmax,dimx,dimy,istat
+      integer i,j,k,nila,ierx,iery,nimax,njmax,dimx,dimy,istat,pnip1
       real s1,r1,xfi(l_ni),yfi(l_nj)
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
@@ -110,7 +112,8 @@
          write(Lun_out, nml=dyngrid)
          write (Lun_out,1005) G_nk,Grd_rcoef
          do k=1,G_nk
-            write (Lun_out,1006) k,Ver_hyb%m(k)
+            call convip(pnip1,Ver_hyb%m(k),5,1,dumc,.false.)
+            write (Lun_out,1006) k,Ver_hyb%m(k),pnip1
          end do
       endif
 *
@@ -123,6 +126,15 @@
           if (Lun_out.gt.0)
      $       write (Lun_out,*)'ERROR in generating YGI_8 values!'
           call gem_stop('set_geom',-1)
+      endif
+*
+*   FOR THE ACID BIT TEST
+      if (Acid_test_L) then
+        if (.not.Acid_pilot_L.and.Acid_readposi_L) then
+          call acid_readpos(xgi_8,ygi_8)
+        else
+          call acid_writepos(xgi_8,ygi_8)
+        endif
       endif
 *
       Grd_uniform_L   = (G_ni.eq.Grd_nila).and.(G_nj.eq.Grd_njla).and..not.Grd_gauss_L
@@ -259,8 +271,7 @@
          yfi(i) = ygi_8(indx)
       end do
 *
-      call getenvc ('GEM_DEBUG',gem_debug)
-      if (gem_debug.eq.'print') then
+      if (Lun_debug_L) then
       do i=1,l_ni
          print *,'PE_xpos:',Ptopo_myproc,i,xfi(i)
       enddo
@@ -295,8 +306,8 @@
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)',
      %       /'===============================================')
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ',
-     $         'Grd_rcoef= ',2f7.2,':'/1x,'level',12x,'HYB',15x,'HYBM')
- 1006 format (1x,i4,3x,es16.4)
+     $         'Grd_rcoef= ',2f7.2,':'/1x,'level',12x,'HYB',15x,'IP1')
+ 1006 format (1x,i4,3x,es16.4,10x,i10)
 *
 *     ---------------------------------------------------------------
 *

@@ -25,13 +25,16 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_10 - Desgagne M.       - introduce WA files
 * v2_30 - Dugas B.          - call ouvrstrt to open restrart file
+* v2_30 - Corbeil L.        - Added reading of pres_surf and pres_top
 * v2_31 - Desgagne M.       - Add Tr2d tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Valcke, S.        - Oasis coupling: Removed waread of c_cplg_step
 * v3_21 - Lee V.            - Remove Tr2d tracers
 * v3_30 - Desgagne M.       - restart for coupling
 * v3_30 - Desgagne & Winger - Read one global binary restart file if existing
-* v4_02 - Lee V.            - bugfix for restart for LAM BCS
+* v3_31 - Lee V.            - bugfix for restart for LAM BCS
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
+* v3_31 - Desgagne M.       - restart with physics BUSPER
 *
 *object
 *	
@@ -85,27 +88,7 @@
             call waopen (Lun_rstrt)
             call waread (Lun_rstrt,Lctl_step   ,1,1)
             call waread (Lun_rstrt,Rstri_idon_L,2,1)
-            call waread (Lun_rstrt,dim         ,3,1)
-            adr = 4
-*
-            if (dim.gt.0) then
-               if ( .not. associated ( Phy_busper3D ) ) 
-     $                    allocate   ( Phy_busper3D (dim) )
-               call waread (Lun_rstrt,Phy_busper3D,adr,dim)
-               adr = adr + dim
-               call waread (Lun_rstrt,Rstri_half_L,adr,1)
-               adr = adr + 1
-*
-               if (Init_balgm_L .and.
-     $        .not.Rstri_idon_L .and.
-     $             Rstri_half_L) then
-                  if ( .not. associated ( Phy_busper3D_digf ) ) 
-     $                       allocate   ( Phy_busper3D_digf (dim))
-                  call waread (Lun_rstrt,Phy_busper3D_digf,adr,dim)
-                  adr = adr + dim
-               endif
-* 
-           endif
+            adr = 3
 *
             call waread (Lun_rstrt,dim,adr,1)
             adr = adr + 1
@@ -122,12 +105,21 @@
             endif
 *
             call waread (Lun_rstrt, Cstv_ptop_8, adr, 2)
-            adr = adr + 1
+            adr = adr + 2
             call waread (Lun_rstrt, current_nest  ,adr, 1)
             adr = adr + 1 
             if(Schm_theoc_L)then
                adr = adr + 1
                call waread (Lun_rstrt,Zblen_hmin,adr, 1)
+            endif
+*
+            call waread (Lun_rstrt,dim,adr,1)
+            adr = adr + 1
+            if (dim>0) then
+               if ( .not. associated ( atm_busin ) ) 
+     $                    allocate   ( atm_busin (G_ni,dim) )
+               call waread (Lun_rstrt, atm_busin ,adr, G_ni*dim)
+               adr = adr + G_ni*dim
             endif
 *
             call waclos(Lun_rstrt)
@@ -141,6 +133,8 @@
          ier = bcs_ftype (ifd_ftype,errft,Lam_current_S, nav_L, unf)
 *
       endif
+*
+      call rdrstrt_phy ()
 *
 *     ---------------------------------------------------------------
 *      

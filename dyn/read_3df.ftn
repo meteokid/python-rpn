@@ -15,18 +15,18 @@
 #include "model_macros_f.h"
 *
       subroutine read_3df (unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn,
-     $                     trname_a,nvar,ntra,nga,nka_m,nka_s,nka_t,
+     $                     trname_a,nvar,ntra,nga,nka_m,nka_t,
      $                     ofi,ofj,cumerr)
       implicit none
 *
-      integer unf,nvar,ntra,nga,nka_m,nka_t,nka_s,ofi,ofj,cumerr
-      character*4 trname_a(ntra)
+      integer unf,nvar,ntra,nga,nka_m,nka_t,ofi,ofj,cumerr
+      character*8 trname_a(ntra)
       
       real  uun(nga,nka_m), vvn (nga,nka_m),
-     $      zdn(nga,nka_t), ttn (nga,nka_s),
+     $      zdn(nga,nka_t-1), ttn (nga,nka_t),
      $      ssqn(nga,1  )  , meqn(nga,*  ),
-     $      qqn(nga,nka_m+1), wwn(nga,nka_t),
-     $      trn (nga,nka_s,ntra)
+     $      qqn(nga,nka_m+1), wwn(nga,nka_t-1),
+     $      trn (nga,nka_t,ntra)
 *
 *author
 *     M. Desgagne  April 2006 (MC2 read_3df)
@@ -47,20 +47,11 @@
 *
 *-----------------------------------------------------------------------
 *
-c     print *,'read_3df ntra=',ntra, 'nvar=',nvar
       if (ntra.le.0) then
           if (Lun_out.gt.0) write(Lun_out,*)'No tracers are available including HU'
           call gem_stop('read_3df',-1)
       endif
       cumerr=0
-      uun = 0.0 
-      vvn = 0.0
-      zdn = 0.0
-      ttn = 0.0
-      ssqn= 0.0
-      qqn = 0.0
-      wwn = 0.0
-      trn = 0.0
       ntr=0
       s_L=.false.
       gz_L=.false.
@@ -89,7 +80,7 @@ c         print*, nomvar,ni1,nj1,nk1,nbits
           if (nomvar.eq.'TT  ') then
               tt_L=.true.
               call filmup (nomvar,ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                          nka_s,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+     $                          nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
           endif
           if (nomvar.eq.'UU  ') then
               uu_L=.true.
@@ -104,12 +95,12 @@ c         print*, nomvar,ni1,nj1,nk1,nbits
           if (nomvar.eq.'W   ') then
               w_L=.true.
               call filmup (nomvar,wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                          nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+     $                          nka_t-1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
           endif
           if (nomvar.eq.'ZD  ') then
               zd_L=.true.
               call filmup (nomvar,zdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                          nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+     $                          nka_t-1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
           endif
           if (nomvar.eq.'Q   ') then
               q_L=.true.
@@ -125,8 +116,9 @@ c         print*, nomvar,ni1,nj1,nk1,nbits
               if (takeit.gt.0) then
                   ntr=ntr+1
                   trname_a(ntr)=Tr3d_name_S(takeit)
-                  call filmup (trname_a(ntr),trn(1,1,ntr),ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                           nka_s,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                  call filmup (trname_a(ntr),trn(1,1,ntr),
+     $                 ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                 nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
               endif
           endif
       enddo

@@ -61,19 +61,6 @@
       large = 1.0e20
       pdov6 = 1.0d0/6.0d0
 ************************************************************************
-* Validation of halo sizes                                             *
-************************************************************************
-      if (( Adw_halox .lt. 3 ) .or. ( Adw_haloy .lt. 2 )) then
-         print *,'*************************************************'
-         print *,'*                                               *'
-         print *,'* PROBLEM:  Adw_halox and Adw_haloy cannot be   *'
-         print *,'*           less than 2.                        *'
-         print *,'*                                               *'
-         print *,'*************************************************'
-         call flush(6)
-         call gem_stop('adw_set',-1)
-      endif
-************************************************************************
 * In the general situation where only the tiles adjacent to the poles  *
 * would have an advection source grid periodic in x, we would have the *
 * following decision tree:                                             *

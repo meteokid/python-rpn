@@ -51,25 +51,6 @@
 **
 *     __________________________________________________________________
 *
-
-      do 10 i=1,Tr3d_userntr
-*
-* Is user tracers already in Tr3d stack?
-         do k=1,tr3d_ntr
-            if (Tr3d_name_S(k).eq.Tr3d_username_S(i)) then
-               Tr3d_sval(k) = Tr3d_usersval(i)
-               goto 10
-            endif
-         end do
-*
-* Otherwise add user tracer to Tr3d stack
-         tr3d_ntr = tr3d_ntr + 1
-         Tr3d_name_S(tr3d_ntr) = Tr3d_username_S(i)
-         Tr3d_sval  (tr3d_ntr) = Tr3d_usersval  (i)
- 10   continue
-*
-* Special case of HU Tr3d tracer (must always be present)
-*
       hu_L   = .false.
       hucond = -1
       do k=1,tr3d_ntr
@@ -84,6 +65,26 @@
          Tr3d_sval(tr3d_ntr) = 0.
          hucond = tr3d_ntr
       endif
+
+      do 10 i=1,Tr3d_userntr
+*
+* Is user tracers already in Tr3d stack?
+         do k=1,tr3d_ntr
+            if (Tr3d_name_S(k).eq.Tr3d_username_S(i)) then
+               Tr3d_sval(k) = Tr3d_usersval(i)
+               goto 10
+            endif
+         end do
+*
+* Otherwise add user tracer to Tr3d stack
+         tr3d_ntr = tr3d_ntr + 1
+         if (Lun_out.gt.0) write(Lun_out,1000) Tr3d_username_S(i)
+         Tr3d_name_S(tr3d_ntr) = Tr3d_username_S(i)
+         Tr3d_sval  (tr3d_ntr) = Tr3d_usersval  (i)
+ 10   continue
+*
+* Special case of HU Tr3d tracer (must always be present)
+*
 *
       if (Lun_out.gt.0) then
          write (Lun_out,1001) 'TRACERS (3D storage):'
@@ -99,6 +100,7 @@
         call gem_stop('tracers',-1)
       endif
 *
+ 1000 format (/'Tracer ',a4,'will be advected only. Not used by Physics')
  1001 format (/a)
  1002 format (2x,a4,d12.7,i4)
  1003 format (/'  ##### Mem_mx3db NOT large enough #####'/

@@ -67,6 +67,7 @@
 #include "lctl.cdk"
 #include "type.cdk"
 #include "ver.cdk"
+#include "schm.cdk"
 *
 *modules
 *
@@ -89,6 +90,7 @@
       real uu_temp,vv_temp
       pointer (pauutmp, uu_temp(minx:maxx,miny:maxy,G_nk+1) )
       pointer (pavvtmp, vv_temp(minx:maxx,miny:maxy,G_nk+1) ) 
+      real uu_temp1(minx:maxx,miny:maxy),vv_temp1(minx:maxx,miny:maxy)
 
 * ___________________________________________________________________
 *
@@ -181,6 +183,7 @@
             end do
          end do
       endif
+      
 *_______________________________________________________________________
 *
 *     5.0     Compute real wind from image wind
@@ -190,7 +193,6 @@
       do j= 1, l_nj
          c1_8(j) = Dcst_rayt_8 / geomg_cy_8(j)
       end do
-*
 *
       call uv_acg2g (uu ,uu_temp ,1,0,LDIST_DIM,G_nk+1 ,i0 ,in ,j0 ,jn )
       call uv_acg2g (vv ,vv_temp ,2,0,LDIST_DIM,G_nk+1 ,i0v,inv,j0v,jnv)

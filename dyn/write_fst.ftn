@@ -54,7 +54,7 @@
 *-------------------------------------------------------------------
 *
       write (startindx,'((i3.3),a1,(i3.3))') Ptopo_mycol,'-',Ptopo_mycol
-      fn = Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/process/'//
+      fn = Path_input_S(1:longueur(Path_input_S))//
      $     filename(1:longueur(filename))//'_'//startindx
 *
       unf = 0

@@ -1,0 +1,56 @@
+***s/r wil_zeta_abs
+*
+#include "model_macros_f.h"
+*
+      SUBROUTINE WIL_ZETA_ABS (ZETASC,LDIAG,MAXH_Read,NALP_Read,NN_Read,CORSC1,CORSC2) 
+*
+      implicit none
+*
+      integer MAXH_Read,NALP_Read,NN_Read
+      COMPLEX ZETASC(NALP_Read)
+      INTEGER LDIAG(0:MAXH_Read,2)
+      REAL CORSC1,CORSC2
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version ZETA_ABS 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     COMPUTED VORTICITY SPECTRAL COEFFICIENTS
+*     THIS ROUTINE COMPUTES ABSOLUTE VORTICITY FROM RELATIVE VORTICITY C
+*
+*-----------------------------------------------------------------------
+      INTEGER M,N,K,IS,JN,JM
+*-----------------------------------------------------------------------
+*
+      DO 120 JN=0,NN_Read                                                           
+        DO 110 JM=1,LDIAG(JN,1)
+*
+*       USE SYMMETRY OF M
+*       -----------------
+*
+*          COMPUTE SPECTRAL INDEX
+*          ----------------------
+           M = JM - 1
+           N = JM - 1 + JN
+           IS = LDIAG(JN,2)
+*
+*          COMPUTE ABSOLUTE VORTICITY BY ADDING 
+*          SPECTRAL CORIOLIS TERM
+*          ------------------------------------
+           IF ((N .EQ. 1) .AND. (M .EQ. 0)) THEN
+              ZETASC(IS+JM) = ZETASC(IS+JM) + CORSC1
+           ELSEIF ((N .EQ. 1) .AND. (M .EQ. 1)) THEN
+              ZETASC(IS+JM) = ZETASC(IS+JM) + CORSC2
+           ELSE
+              ZETASC(IS+JM) = ZETASC(IS+JM)
+           ENDIF
+*
+  110   CONTINUE
+*
+  120 CONTINUE                                                                  
+*
+      RETURN                                                                    
+      END                                                                       

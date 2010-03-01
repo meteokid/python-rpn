@@ -26,6 +26,7 @@
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
 *                             add Ncn
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 *
 *object
 *******************************************************************************
@@ -45,6 +46,7 @@
 #include "vtx.cdk" 
 #include "ptopo.cdk"
 #include "lctl.cdk"
+#include "acid.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -100,37 +102,27 @@
          vt0_ = 0
       endif
 *
-c     if (Acid_test_L) then tpt0,tplt0,pipt0,st0
-c     call glbstat (tpt0,'tpt0',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
-c    %                                         8+acid_j0,G_nj-8-acid_jn,1,G_nk)
-c     call glbstat (st0,'st0',LDIST_DIM,1,8+acid_i0,G_ni-8-acid_in,
-c    %                                    8+acid_j0,G_nj-8-acid_jn,1,1)
-c     endif
+      if (Acid_test_L)
+     $     call acid_stat_nli(qt0,st0,bspqtx,nl_u,nl_v,nl_t,nl_c,nl_f,1)
 *
       call diag_var( bspqtx, mutx, st0, qt0, 1,l_ni,1,l_nj,l_nk)
 *
       call diag_fip( fiptx, st0, tt0, topo, 1,l_ni,1,l_nj,l_nk)
 *
+
+      if (Acid_test_L)
+     %   call glbstat (bspqtx,'BSPQ',LDIST_DIM,G_nk+2,8+acid_i0,G_ni-8-acid_in,
+     %                                         8+acid_j0,G_nj-8-acid_jn,1,G_nk+2)
+
       call nlip_2 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , 
      $              ut0  , vt0  , tt0  , st0  , qt0  , fiptx,
      $              rhsp , rhsc ,bspqtx, mutx ,
      $              LDIST_DIM, l_nk )
 *
 *
-c     if (Acid_test_L) then nu,nv,nt,nc
-c     call glbstat (nl_u,'NU',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
-c    %                                        8+acid_j0,G_nj-8-acid_jn,1,G_nk)
-*     Rhsp sees future Ru,Rv so it will not match to the piloting run
-c     if (Lun_out.gt.0) 
-c    % write(Lun_out,*)'Rhsp has future Ru,Rv so no match to pilot run'
-c     call glbstat (rhsp,'Rhsp',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
-c    %                                        8+acid_j0,G_nj-8-acid_jn,1,G_nk)
-c     endif
-
-c     Pour debug
-c      call glbstat (rhsp,'rhsp',LDIST_DIM,G_nk,1,l_ni,1,L_nj,1,G_nk)
-c      call gem_stop('nli',-1)
-
+      if (Acid_test_L)
+     $     call acid_stat_nli(qt0,st0,bspqtx,nl_u,nl_v,nl_t,nl_c,nl_f,2)
+*
       pnerr = vmmuld(-1,0)
 *
  1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')

@@ -125,7 +125,7 @@
       do k=1,G_nk
          do j=j0,jn
          do i=i0,in
-            www=Ver_wp_8_m(k)*wt0(i,j,k+1)+Ver_wm_8_m(k)*wt0(i,j,k)
+            www=Ver_wp_8%m(k)*wt0(i,j,k+1)+Ver_wm_8%m(k)*wt0(i,j,k)
             www      =      half*(www       + wup(i,j,k))
             zz(i,j,k)=      half*(zz(i,j,k) + zz1(i,j,k))
             zdth(i,j,k) = ( (zzh1(i,j,k)-fiptx(i,j,k))/Cstv_dt_8
@@ -141,7 +141,7 @@
       do k=1,G_nk
          do j=j0,jn 
          do i=i0,in
-            zdd=Ver_wp_8_m(k)*zdt0(i,j,k+1)+Ver_wm_8_m(k)*zdt0(i,j,k)
+            zdd=Ver_wp_8%m(k)*zdt0(i,j,k+1)+Ver_wm_8%m(k)*zdt0(i,j,k)
             zdth(i,j,k) = half*(zdd+zdup(i,j,k))
          end do
          end do

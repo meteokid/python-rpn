@@ -1,0 +1,31 @@
+***s/r wil_dft991
+*
+      SUBROUTINE WIL_DFT991(X,TRIGS,MAXH,NFC,SUM)
+*
+      implicit none
+*
+      INTEGER MAXH, NFC
+      COMPLEX X(MAXH+1)
+      REAL TRIGS(MAXH+1,2),SUM
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version DFT991 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     INVERSE DISCRETE FOURIER TRANSFORM 
+*------------------------------------------------------------------
+      INTEGER I
+*------------------------------------------------------------------
+*
+      SUM = REAL(X(1))
+      DO 100 I = 2, NFC
+         SUM = SUM + 2.0*(REAL(X(I))*TRIGS(I,2) -
+     $                    AIMAG(X(I))*TRIGS(I,1))
+  100 CONTINUE
+*
+      RETURN
+*
+      END

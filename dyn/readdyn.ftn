@@ -46,6 +46,10 @@
 * v3_20 - Gravel S.        - allow for initialization with ECMWF analyses
 * v3_21 - Dugas B.         - replace TD by ES in pressure mode
 * v3_30 - McTaggart-Cowan R. - update implementation of variable orography
+* v4_00 - Plante & Girard  - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_03 - Lee V.           - Adapt to using new pressure functions
+* v4_04 - Plante A.        - Remove offline mode
+* v4_04 - Tanguay M.        - modif when autobar on IBM 
 *
 *object
 *	
@@ -58,6 +62,7 @@
 #include "bmf.cdk"
 #include "ptopo.cdk"
 #include "cstv.cdk" 
+#include "dcst.cdk" 
 #include "hblen.cdk"
 #include "geomg.cdk"
 #include "grd.cdk"
@@ -76,9 +81,9 @@
 #include "itf_phy_busind.cdk"
 *
 *modules
-      integer  bmf_get,vmmlod,vmmget,vmmuld
+      integer  bmf_get,vmmlod,vmmget,vmmuld,get_px
       logical samelevel
-      external bmf_get,vmmlod,vmmget,vmmuld,samelevel
+      external bmf_get,vmmlod,vmmget,vmmuld,samelevel,get_px
 *
       integer nvar,i,j,k,err
       integer kk,key0,key(Tr3d_ntr)
@@ -93,13 +98,22 @@
      $     work, srclev,dstlev
       real, allocatable, dimension(:,:) :: psu_temp,psv_temp,apsu_temp,apsv_temp
       real, dimension(l_ni,l_nj) :: pps, ps , topo_temp
-      real*8 lnpref_8
+      real*8 lnpref_8,fistr_top_8
       real(kind=8), dimension(l_ni,l_nj) :: current_topo
       real psmin, psmax, psmin_glob, psmax_glob
       integer errprdf,prdfsum
       logical Humidtracer_L
 
       real fact
+
+*     Acqi_datasp(2) 
+*            0 => p =    A                         (B=0),  prs-anal
+*            1 => p =    A+B*   ps       , F_p0=ps (A=0),  sig-anal
+*            2 => p =    A+B*   ps       , F_p0=ps      ,  etasef-anal
+*            3 => p =    A+B*   ps       , F_p0=ps      ,  eta-anal
+*            4 => p =    A+B*   ps       , F_p0=ps      ,  hyb-anal
+*            5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
+*            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
 
 **
 *     ---------------------------------------------------------------
@@ -125,6 +139,7 @@
      $              u_temp,Acqi_niu,Acqi_nju, v_temp,Acqi_niv,Acqi_njv,
      $              hu_temp,tt_temp,gz_temp,ps,topo_temp,
      $              l_ni,l_nj,Acqi_nktmp)
+      if(Schm_autobar_L) Acql_vertint = .false.
 * S.Gravel: if analysis is same type as model, topography can
 *           be grown with time thus
       if( Acql_staganl.and.Vtopo_L ) then
@@ -147,17 +162,7 @@ CVL   Acql_vertint=.true.
       if ( Acql_vertint ) Acqi_datasp(1) = 1
 *
 *
-      if (Schm_offline_L) then
-          if (Acqi_vterplv(1).eq.1) then
-              write(lun_out,*) '  '
-              write(lun_out,*) 'MEC: ARCHIVED DATA FOR:',  bmf_time1, bmf_time2
-              write(lun_out,*) 'MEC: ONLY 1 LEVEL FOUND INITIALLY FOR TT HU UU VV P0'
-              write(lun_out,*) 'MEC: THIS LAST WILL BE USED DIRECTLY'
-          endif
-          print*,'Please review for Offline staggering'
-          call flush(6)
-          call gem_stop('readdyn',-1)
-      else if (G_lam.and..not.Acql_prsanl)then
+      if(G_lam.and..not.Acql_prsanl)then
           do j=1,pil_s
           do i=1,l_ni
              topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
@@ -223,6 +228,34 @@ CVL   Acql_vertint=.true.
 *     NOTE: Acqi_vertlv, Acqi_vterplv(1), Acqi_vterplv(2) 
 *     includes the surface level at 12000, for vert. interp 
 *--------------------------------------------------------------------
+      if(Schm_autobar_L) then
+*
+*         REQUESTED:otherwise IBM has problem with undefined PPS
+*         ------------------------------------------------------
+          do j=1,l_nj
+          do i=1,l_ni
+             pps(i,j)=lnpref_8
+          enddo
+          enddo
+*
+          fistr_top_8=Ver_fistr_8%m(0)
+          do j=1,l_nj
+          do i=1,l_ni
+*            Reduce size of the mountains when Shallow water
+*            -----------------------------------------------
+             Ind_topo(i,j)=Ind_topo(i,j)/10.
+             Ind_s(i,j)=(Dcst_grav_8*gz_temp(i,j,1)-fistr_top_8-Ind_topo(i,j))
+     $                  /Cstv_rtstr_8
+          enddo
+          enddo
+         do k=1,g_nk+2
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_t(i,j,k)  = Cstv_tstr_8
+         end do
+         end do
+         end do
+      else
       if (Acql_prsanl) then
 *         ANALYSIS IS ON PRESSURE COORDINATES
 *         Compute pressure on model surface PPS
@@ -245,8 +278,8 @@ CVL   Acql_vertint=.true.
 *         Compute pressure on model surface PPS
 *
           allocate(pres(Acqi_nbpts,Acqi_vterplv(2)))
-          call get_press3d(pres,ps,Acqi_nbpts,zat_8,
-     $                      zbt_8,Cstv_pref_8,Acqi_vterplv(2),Acqi_datasp(2))
+         err = get_px(pres,ps,Acqi_nbpts,zat_8,zbt_8,Acqi_vterplv(2),Acqi_datasp(2),.false.)
+         if (err.lt.0) call gem_stop('readdyn:get_px',-1)
           call adj_ss2topo(pps, topo_temp,pres,gz_temp(1,1,Acqi_vterplv(2)),
      $                     tt_temp,Acqi_nbpts,Acqi_vterplv(2))
 *         ps is p0 for non stag
@@ -272,10 +305,10 @@ CVL   Acql_vertint=.true.
       if (Acql_vertint) then
          allocate (srclev(l_ni,l_nj,Acqi_vterplv(2)),
      $            dstlev(l_ni,l_nj,G_nk+2) )
-         call get_lnpress3d(srclev,ps,l_ni*l_nj,zat_8,zbt_8,
-     $                      Cstv_pref_8,Acqi_vterplv(2),Acqi_datasp(2))
-         call get_lnpress3d(dstlev,pps,l_ni*l_nj,Ver_a_spcl_8%t,Ver_b_spcl_8%t,
-     $                      Cstv_pref_8,G_nk+2,6)
+         err = get_px(srclev,ps,l_ni*l_nj,zat_8,zbt_8,Acqi_vterplv(2),Acqi_datasp(2),.true.)
+             if (err.lt.0) call gem_stop('readdyn:get_px',-1)
+         err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
+             if (err.lt.0) call gem_stop('readdyn:get_px',-1)
          call vte_intvertx(work,tt_temp,srclev,dstlev,Acqi_nbpts,
      $                     Acqi_vterplv(2),G_nk+2,'VT')
 *
@@ -348,6 +381,7 @@ CVL   Acql_vertint=.true.
  100      continue
           err = vmmuld(key,Tr3d_ntr)
       endif
+      endif
       if (Acql_vertint) then
         deallocate(srclev,dstlev)
 *---------------------------------------------------------------------
@@ -360,30 +394,30 @@ CVL   Acql_vertint=.true.
         allocate ( u_temp2(Acqi_niu,Acqi_nju,Acqi_nktmp),
      $              v_temp2(Acqi_niv,Acqi_njv,Acqi_nktmp))
 *
-*       Get pressure on the U,V analysis grid
+*       Get pressure on the U,V analysis grid 
           call adj_ss2uv(ps,l_ni,l_nj,apsu_temp,Acqi_niu,Acqi_nju,
      $                   apsv_temp,Acqi_niv,Acqi_njv,Acqi_datasp(2))
 *
 *       Get pressure on the U,V destination model grid
           call adj_ss2uv(pps,l_ni,l_nj,psu_temp,Acqi_niu,Acqi_nju,
-     $                   psv_temp,Acqi_niv,Acqi_njv,6)
+     $                   psv_temp,Acqi_niv,Acqi_njv,Ver_code)
 *
         allocate ( srclev (Acqi_niu,Acqi_nju,Acqi_vterplv(1)),
      $              dstlev (Acqi_niu,Acqi_nju,G_nk+1) )
-        call get_lnpress3d(srclev,apsu_temp,Acqi_niu*Acqi_nju,za_8,zb_8,
-     $                      Cstv_pref_8,Acqi_vterplv(1),Acqi_datasp(2))
-        call get_lnpress3d(dstlev,psu_temp,Acqi_niu*Acqi_nju,
-     $              Ver_a_spcl_8%m,Ver_b_spcl_8%m,Cstv_pref_8,G_nk+1,6)
+        err = get_px(srclev,apsu_temp,Acqi_niu*Acqi_nju,za_8,zb_8,Acqi_vterplv(1),Acqi_datasp(2),.true.)
+        if (err.lt.0) call gem_stop('readdyn:get_px',-1)
+        err = get_px(dstlev,psu_temp,Acqi_niu*Acqi_nju,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
+        if (err.lt.0) call gem_stop('readdyn:get_px',-1)
         call vte_intvertx(u_temp2,u_temp,srclev,dstlev,Acqi_niu*Acqi_nju,
      $              Acqi_vterplv(1),G_nk+1,'UU')
         deallocate (srclev,dstlev)
 *
         allocate ( srclev (Acqi_niv,Acqi_njv,Acqi_vterplv(1)),
      $              dstlev (Acqi_niv,Acqi_njv,G_nk+1) )
-        call get_lnpress3d(srclev,apsv_temp,Acqi_niv*Acqi_njv,za_8,zb_8,
-     $                      Cstv_pref_8,Acqi_vterplv(1),Acqi_datasp(2))
-        call get_lnpress3d(dstlev,psv_temp,Acqi_niv*Acqi_njv,
-     $              Ver_a_spcl_8%m,Ver_b_spcl_8%m,Cstv_pref_8,G_nk+1,6)
+        err = get_px(srclev,apsv_temp,Acqi_niv*Acqi_njv,za_8,zb_8,Acqi_vterplv(1),Acqi_datasp(2),.true.)
+        if (err.lt.0) call gem_stop('readdyn:get_px',-1)
+        err = get_px(dstlev,psv_temp,Acqi_niv*Acqi_njv,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
+        if (err.lt.0) call gem_stop('readdyn:get_px',-1)
         call vte_intvertx(v_temp2,v_temp,srclev,dstlev,Acqi_niv*Acqi_njv,
      $              Acqi_vterplv(1),G_nk+1,'VV')
         deallocate (srclev,dstlev)
@@ -407,6 +441,7 @@ CVL   Acql_vertint=.true.
      $            Acqi_niv, Acqi_njv, g_nk+1, geomg_y_8(1), geomg_yv_8(1))
 *     Convert wind from KNOTS TO M/S
       if ( Acqi_vterplv(1).eq.1 ) then
+
            do k=1,g_nk+1
            do j=1,Acqi_nju
            do i=1,Acqi_niu

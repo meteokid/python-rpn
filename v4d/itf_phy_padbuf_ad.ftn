@@ -1,0 +1,84 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_phy_padbuf_ad (f,minx,maxx,miny,maxy,lnk)
+      implicit none
+*
+*author
+*     L. Spacek -  Apr 2008
+*
+*revision
+* v4_03 - Spacek L.         - Staggered version
+*
+*object
+*     To fill non-initialized values in halo area.
+*     Based on the initial version itf_phy_padbuf
+*implicits
+#include "glb_ld.cdk"
+
+*arguments
+* F   field to be treated
+*
+      integer minx,maxx,miny,maxy,lnk
+      character*1 grid
+      real f(minx:maxx,miny:maxy,lnk)
+*
+      integer i,j,k,iff,id,jd,jf
+*----------------------------------------------------------------------
+       id   = 1            
+       jd   = 1           
+       iff  = l_ni
+       jf   = l_nj
+*
+      do k=1,lnk
+      do i=minx,id-1
+      do j=miny,maxy
+         f(id,j,k) = f(id,j,k) + f(i,j,k)
+         f(i,j,k)  = 0.0
+      end do
+      end do
+      end do
+*
+      do k=1,lnk
+      do i=maxx,iff+1,-1
+      do j=miny,maxy
+         f(iff,j,k) = f(iff,j,k) + f(i,j,k)
+         f(i,j,k)   = 0.0
+      end do
+      end do
+      end do
+*
+      do k=1,lnk
+      do j=miny,jd-1
+      do i=id,iff
+         f(i,jd,k) = f(i,jd,k) + f(i,j,k)
+         f(i,j,k)  = 0.0
+      end do
+      end do
+      end do
+*
+      do k=1,lnk
+      do j=maxy,jf+1,-1
+      do i=id,iff
+         f(i,jf,k) = f(i,jf,k) + f(i,j,k)
+         f(i,j,k)  = 0.0
+      end do
+      end do
+      end do
+*
+*----------------------------------------------------------------------
+      return
+      end

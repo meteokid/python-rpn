@@ -27,6 +27,7 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
 *
 *object
 *  Default configuration and reading namelist var4d
@@ -39,7 +40,6 @@
 #include "v4dg.cdk"
 #include "v4dj.cdk"
 #include "v4dm.cdk"
-#include "v4dr.cdk"
 #include "v4d_nml.cdk"
 *
       integer  fnom
@@ -66,28 +66,23 @@
       V4dg_twin_L   = .false.
       V4dg_4dvar_L  = .false.
       V4dg_sgvc_L   = .false.
-      V4dj_mask_L   = .false.     
-      V4dg_sgvc_dt0 = 0
-      V4dg_chum_s   = 'LQ'
 *
-      V4dr_redotr_L = .false.
+      V4dg_identity_L = .false.
+      V4dg_grd_L      = .false.
+      V4dj_mask_L     = .false.     
+      V4dg_chum_s     = 'LQ'
+      V4dg_sgvc_dt0   = 0
+      V4dg_anincr_L   = .false.
 *
       V4dg_stepob   = Step_total
       V4dg_inv      = 1
-      V4dg_incore_L = .true.
-*
-      V4dg_identity_L = .false.
-*
-      V4dg_pruv_L     = .true.
-*
-      V4dz_degree     = 1
-      V4dzge_degree   = 1
-      V4dzga_degree   = 1
-*
-      V4dg_anincr_L = .false.
-*
       V4dm_itmax    = 2 
       V4dm_simax    = 2 
+*
+      V4dz_degree   = 1
+      V4dzge_degree = 1
+      V4dzga_degree = 1
+      V4dg_pruv_L   = .true.
 *
       if (F_namelistf_S .ne. '') then
 *

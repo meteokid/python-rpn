@@ -59,7 +59,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "lun.cdk"
 *
 **
-      integer i,j,k,nis,njs,nks,ind_o(100),cnt
+      integer i,j,k,nis,njs,ind_o(100),cnt
       integer bigk,idx,unf,mult,shp,mode
       integer nks(P_bper_top),nkphy
 *----------------------------------------------------------------------

@@ -27,6 +27,7 @@
 * v2_21 - Desgagne M.          - rpn_comm stooge for MPI
 * v3_10 - Lee V.               - RPN_bcastc for bcast on MPI_CHARACTER
 * v3_30 - Valcke, S.           - Read land-sea or coupling mask for coupling
+* v4_03 - Lee/Desgagne - ISST
 *
 *object
 **      Reads the entire content of bus "geobus" from file "geophy.bin"
@@ -43,6 +44,7 @@
 #include "ptopo.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
+#include "path.cdk"
 *
 *modules
 *
@@ -64,6 +66,7 @@
 * NEW    '5A' ,'TM' ,'9A' ,'9A' ,'2B' ,'2B','LE' ,     ,'1B'
 *
 **
+      character*512 fn
       integer i, ierr, err, err_read, nfields, osgeo, offg, il_siz, gid
       real, dimension(:), allocatable :: busgeo
       data osgeo/33/
@@ -75,7 +78,8 @@
 *
       if (Ptopo_myproc.eq.0) then
 *
-          open (osgeo,file='../geophy.bin',access='SEQUENTIAL',
+          fn  = trim(Path_input_S)//'/INIT_SFC/geophy.bin'
+          open (osgeo,file=fn,access='SEQUENTIAL',
      $          status='OLD',iostat=err_read,form='UNFORMATTED')
 *
           if (err_read.ne.0) then

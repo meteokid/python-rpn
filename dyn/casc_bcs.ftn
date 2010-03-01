@@ -30,6 +30,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *revision
 * v3_30 - Lee V.         - initial version for GEMDM
+* v4_03 - Lee/Desgagne - ISST
 *
 *
 #include "glb_ld.cdk"
@@ -45,7 +46,17 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "ind.cdk"
 #include "nest.cdk"
 #include "acid.cdk"
+#include "path.cdk"
 *
+*        presstype
+*            0 => p =    A                         (B=0),  prs-anal
+*            1 => p =    A+B*   ps       , F_p0=ps (A=0),  sig-anal
+*            2 => p =    A+B*   ps       , F_p0=ps      ,  etasef-anal
+*            3 => p =    A+B*   ps       , F_p0=ps      ,  eta-anal
+*            4 => p =    A+B*   ps       , F_p0=ps      ,  hyb-anal
+*         ?  5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
+*            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
+
       integer  vmmlod,vmmget,vmmuld,longueur,sid3df
       external vmmlod,vmmget,vmmuld,longueur,sid3df
       character*2 md
@@ -59,7 +70,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       real, dimension (:,:,:), pointer :: trn
       integer i,j,k,ntra,n,err,ngd,nga,errop,ofi,ofj,mode,ioerr,
      $   errdyn,cumerr,cnt,nit,njt,d1,ni1,nj1,nk1,nbits,id,nvar,
-     $   nka_m,nka_s,nka_t,presstype
+     $   nka_m,nka_t,presstype
       integer key1(17),keyp_,keyp(Tr3d_ntr)
       real*8  , dimension (:  ), pointer :: xpaq,ypaq,xpau,ypav
       real, dimension (:,:), pointer :: 
@@ -85,7 +96,6 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       nga  = bcs_nia * bcs_nja
       nka_m=0
       nka_t=0
-      nka_s=0
       ntra = 0
       err  = 0
       done = .false.
@@ -97,7 +107,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       do 50 n=1,ifd_nf
       if (ifd_needit(n)) then
          errdyn = -1
-         fn ='../casc/3df'//md//'_'//datev//'_'//ifd_fnext(n)
+         fn= trim(Path_ind_S)//'/3df'//md//'_'//datev//'_'//ifd_fnext(n)
          open (unf,file=fn(1:longueur(fn)),access='SEQUENTIAL',
      $            form='UNFORMATTED',status='OLD',iostat=errop)
 c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
@@ -109,17 +119,17 @@ c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
          if (.not.done) allocate (xpaq(bcs_nia), ypaq(bcs_nja), 
      $                            xpau(bcs_nia), ypav(bcs_nja))
          err = sid3df (xpaq,ypaq,xpau,ypav,unf,done,
-     $                 bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,nvar,ntra)
-         read (unf,end=33) dynophy,mode
+     $                 bcs_nia,bcs_nja,nka_m,nka_t,presstype)
+         read (unf,end=33) dynophy,mode,nvar,ntra
 *
          if (.not.done) then
             allocate (uun(nga,nka_m),vvn(nga,nka_m),
-     $                zdn(nga,nka_t),ttn(nga,nka_s),
+     $                zdn(nga,nka_t-1),ttn(nga,nka_t),
      $                ssqn(nga,1),
-     $                qqn(nga,nka_m+1), wwn(nga,nka_t),
-     $                trn(nga,nka_s,ntra),
+     $                qqn(nga,nka_m+1), wwn(nga,nka_t-1),
+     $                trn(nga,nka_t,ntra),
      $                trname_a(ntra) )
-            if (presstype.eq.4) then
+            if (presstype.eq.0) then ! if in pressure levels
                 allocate (meqn(nga,nka_m))
             else
                 allocate (meqn(nga,1))
@@ -131,7 +141,7 @@ c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
          ofj = ifd_miny(n)-1
          cumerr=0
          call read_3df(unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn,
-     $             trname_a,nvar,ntra,nga,nka_m,nka_s,nka_t,ofi,ofj,cumerr)
+     $             trname_a,nvar,ntra,nga,nka_m,nka_t,ofi,ofj,cumerr)
          errdyn = cumerr
  33      continue
 *
@@ -152,7 +162,6 @@ c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
          casc_bcs = 0
       endif
 *
-      if (.not.data2treat .or. casc_bcs.lt.0) return
 *
 * topo is inflated!
       call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
@@ -165,6 +174,8 @@ c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
      $         minxe,maxxe+1-(east*1),minye,maxye+1,
      $         1)
 
+      if (.not.data2treat .or. casc_bcs.lt.0) return
+
 * Perform horizontal and vertical interpolations for South boundary
       
       if (l_south) 
@@ -172,10 +183,10 @@ c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
      $  xps,yps,xpus,ypvs,xpaq,ypaq,xpau,ypav,
      $  bcs_uf,bcs_vf, bcs_tf,bcs_zdf,
      $  bcs_sf,bcs_qf, bcs_wf,bcs_trf,
-     $  bcs_is-1, topo_s,
+     $  bcs_is-1, bcs_sz, topo_s,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  minxs,maxxs,minys,maxys,maxxs+1-(east*1),maxys+1, G_nk, 
-     $  bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,ntra)
+     $  bcs_nia,bcs_nja,nka_m,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for North boundary
 c     print *,Ptopo_myproc,'casc_hvi N:',minxn,maxxn,minyn,maxyn
@@ -184,10 +195,10 @@ c     print *,Ptopo_myproc,'casc_hvi N:',minxn,maxxn,minyn,maxyn
      $  xpn,ypn,xpun,ypvn,xpaq,ypaq,xpau,ypav,
      $  bcs_uf(bcs_in),bcs_vf(bcs_in), bcs_tf(bcs_in),bcs_zdf(bcs_in),
      $  bcs_sf(bcs_in),bcs_qf(bcs_in),bcs_wf(bcs_in),bcs_trf,
-     $  bcs_in-1, topo_n,
+     $  bcs_in-1, bcs_sz, topo_n,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  minxn,maxxn,minyn,maxyn,maxxn+1-(east*1),maxyn+1-(north*1), G_nk,
-     $  bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,ntra)
+     $  bcs_nia,bcs_nja,nka_m,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for West boundary
 c     print *,Ptopo_myproc,'casc_hvi W:'
@@ -196,10 +207,10 @@ c     print *,Ptopo_myproc,'casc_hvi W:'
      $  xpw,ypw,xpuw,ypvw,xpaq,ypaq,xpau,ypav,
      $  bcs_uf(bcs_iw),bcs_vf(bcs_iw), bcs_tf(bcs_iw),bcs_zdf(bcs_iw),
      $  bcs_sf(bcs_iw),bcs_qf(bcs_iw),bcs_wf(bcs_iw),bcs_trf,
-     $  bcs_iw-1, topo_w,
+     $  bcs_iw-1, bcs_sz, topo_w,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  minxw,maxxw,minyw,maxyw,maxxw+1,maxyw+1, G_nk,
-     $  bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,ntra)
+     $  bcs_nia,bcs_nja,nka_m,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for East boundary
 c     print *,Ptopo_myproc,'casc_hvi E:'
@@ -208,10 +219,10 @@ c     print *,Ptopo_myproc,'casc_hvi E:'
      $  xpe,ype,xpue,ypve,xpaq,ypaq,xpau,ypav,
      $  bcs_uf(bcs_ie),bcs_vf(bcs_ie), bcs_tf(bcs_ie),bcs_zdf(bcs_ie),
      $  bcs_sf(bcs_ie),bcs_qf(bcs_ie),bcs_wf(bcs_ie),bcs_trf,
-     $  bcs_ie-1, topo_e,
+     $  bcs_ie-1, bcs_sz, topo_e,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  minxe,maxxe,minye,maxye,maxxe+1-(east*1),maxye+1, G_nk,
-     $  bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,ntra)
+     $  bcs_nia,bcs_nja,nka_m,nka_t,presstype,ntra)
 *
       if (associated(xpaq)) deallocate (xpaq)
          if (associated(ypaq)) deallocate (ypaq)

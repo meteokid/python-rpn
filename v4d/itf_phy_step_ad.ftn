@@ -1,0 +1,176 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r itf_phy_step_ad - Apply the adjoint simplified  physical processes: CMC/RPN package
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_phy_step_ad (F_stepno)
+      implicit none
+*
+      integer F_stepno
+*
+*author
+*     Stephane Laroche        Janvier 2001
+*
+*revision
+* v3_00 - Laroche S.       - initial MPI version
+* v3_02 - Laroche S.       - allows physic variables outputs
+* v3_11 - Laroche S.       - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_30 - Tanguay M.       - adapt TL/AD to itf/new tendencies
+*                          - Validation for LAM version
+* v4_03 - Spacek L.        - Staggered version
+*
+*object
+*       Computes the physical processes and apply the resulting
+*       tendencies to the dynamic variables of the model:
+*       CMC/RPN package
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_stepno      O           step number
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "mem.cdk"
+#include "ptopo.cdk"
+#include "schm.cdk"
+#include "itf_phy_vmm.cdk"
+#include "itf_phy_busind.cdk"
+#include "itf_chm_busind.cdk"
+#include "dimout.cdk"
+#include "v4dg.cdk"
+#include "p4d_simp.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_vmm.cdk"
+*
+*modules
+      integer  open_db_file,rewind_db_file,close_db_file
+      external open_db_file,rewind_db_file,close_db_file
+      integer  omp_get_max_threads
+      external omp_get_max_threads
+**
+      integer dim,err,i,j,k,n,ndim,obussiz,cobussiz, keyd(17)
+      character*15 datev,pdate
+      real*8 dayfrac, sec_in_day
+      parameter (sec_in_day=86400.0d0)
+      real*8, parameter :: ZERO_8 = 0.0
+      real  vtmoins(LDIST_SHAPE,p_nk)
+      real, dimension(:,:)   , allocatable :: obusval,cobusval
+      real, dimension(:)     , allocatable :: trm,trp,kmm,ktm,tp
+      real, dimension(:)     , allocatable :: tdu,tdv,tdt
+      integer*8, dimension(:), allocatable :: pvptr
+      real, dimension(LDIST_SHAPE,p_nk)   :: vmm, tr
+      pointer (patr, tr)
+      pointer (pavmm, vmm)
+*
+*     Declare pointers to temporary 3D chemical tracer fields 
+*     for time levels t+ and t-.
+*
+      integer*8, dimension(:), allocatable :: cvptrp,cvptrm
+*
+*     ---------------------------------------------------------------
+*
+      call iniobus(obussiz)
+      allocate(obusval(l_ni*l_nj,obussiz))
+      dim  = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*p_nk
+      ndim = COMMON_SIZE(p_phy)
+      allocate (pvptr(ndim),kmm(dim),ktm(dim),tp(dim),
+     $          tdu(dim),tdv(dim),tdt(dim),
+     $          trp(dim*phyt_ntr),trm(dim*phyt_ntr))
+*
+      if(Schm_chems_L              ) call gem_stop('P_STEP_TL 1',-1)
+*
+*     Set adjoint variables to zero
+*     -----------------------------
+*
+         tdu = ZERO_8
+         tdv = ZERO_8
+         tdt = ZERO_8
+         tp  = ZERO_8
+         trp = ZERO_8
+         trm = ZERO_8
+         vtmoins = ZERO_8
+*
+*  Initialize the pointers (for TL done in itf_phy_vmmprep!!)
+*  and corresponding arrays
+*
+      do i=1,COMMON_SIZE(p_phy)
+         keyd(i) = p_phy_first(i)
+         err = vmmget(keyd(i),pavmm,vmm)
+         pvptr(i) = pavmm
+      enddo
+*
+      do n= 1,p_phy3d_max
+         patr = pvptr(n)
+         tr=0.0
+      end do
+*
+      do n= p_phy3d_max+1,p_phy_max
+         patr = pvptr(n)
+         tr(:,:,1)=0.0
+      end do
+*
+*
+*C   6.	Apply physics tendencies to the appropriate dynamic fields
+*C      and insure consistency with other dynamic variables
+*       ----------------------------------------------------------
+*
+      
+      call itf_phy_apply_ad ( tdu,tdv,tdt,trp,trm,
+     $                        tp,LDIST_DIM,p_nk,F_stepno.gt.0 )
+
+*
+*      
+*
+*C       4.	compute physics tendencies
+*		--------------------------
+*	initialize the number of slices previously done
+*
+      Mem_pslic = 0
+*
+*
+      call pe_rebind(1)
+!$omp parallel
+!$omp do
+      do j=1,Ptopo_npeOpenMP
+      call itf_phy_slb_ad ( j, F_stepno,obusval, cobusval,
+     $                   pvptr, cvptrp,cvptrm, ndim, chmt_ntr,
+     $                   trp,trm, tdu,tdv,tdt,kmm,ktm,
+     $                   LDIST_DIM, p_nk)
+      enddo
+!$omp enddo
+!$omp end parallel
+      call pe_rebind(-1)
+      tdu=0. ; tdv=0.
+*
+*
+*C       2.	load all fields required by the physic in memory
+*		------------------------------------------------
+*
+      call out_phy(obusval,p_ni,p_nj,F_stepno)
+      deallocate(obusval)
+*
+      call itf_phy_vmmprep_ad (pvptr, ndim, trp, trm, tp, vtmoins,
+     $                          LDIST_DIM,p_nk )
+*
+*
+      deallocate (pvptr,tdu,tdv,tdt,trp,trm,tp,kmm,ktm)
+*
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,77 @@
+#if defined (DOC)
+!
+!**comdeck wil_glb_ld.cdk
+!
+!author Jacob et al. 1992 (PARAMS) 
+!
+!revision
+! v4_04 - Jacob et al.     - initial version PARAMS
+! v4_04 - Tanguay M.       - Williamson's cases
+!
+!***********************************************************************
+!                                                                      *
+!     DEFINITION OF ARRAY SIZES                                        *
+!     SPECTRAL SPACE TRUNCATION:                                       *
+!                                                                      *
+!          |                                                           *
+!          |                                                           *
+!       KK |- - - - - - - - + + + + + + + + +                          *
+!          |              + + + + + + + + + +   ^ NORTH-SOUTH          *
+!          |            + + + + + + + + + + +   | LEGENDRE FUNCTION    *
+!          |          + + + + + + + + + + + +                          *
+!          |        + + + + + + + + + + + + .                          *
+!          |      + + + + + + + + + + + +   .                          *
+!          |    + + + + + + + + + + + +     .                          *
+!          |  + + + + + + + + + + + +       .                          *
+!    ^  NN |+ + + + + + + + + + + +         .                          *
+!    |     |+ + + + + + + + + + +           .                          *
+!    |     |+ + + + + + + + + +             .                          *
+!    N     |+ + + + + + + + +               .                          *
+!          |+ + + + + + + +                 .                          *
+!          |+ + + + + + +                   .                          *
+!        . |+ + + + + +                     .                          *
+!        . |+ + + + +                       .                          *
+!        . |+ + + +                         .                          *
+!        2 |+ + +                           .                          *
+!        1 |+ +                             .                          *
+!        0 |+_______________________________._________________         *
+!           0 1 2 ...                      MM                          *
+!                                                                      *
+!                                 M --->                               *
+!               (EAST-WEST FOURIER WAVENUMBER)                         *
+!                                                                      *
+!     MM, NN, and KK are the spectral truncation parameters illustrated*
+!     above.  NLAT specifies the number of gaussian latitudes, and NLON*
+!     specifies the number of longitudes.  For reasons of efficiency   *
+!     NLAT is required to be an even number. For the FFT transforms,   *
+!     NLON can have only prime factors of 2,3 and 5.                   *
+!                                                                      *
+!***********************************************************************
+!     DERIVED PARAMETER VARIABLES                                      *
+!***********************************************************************
+!     NALP is the number of                                            *
+!     Associated Legendre Polynomials, and is calculated using the     *
+!     intermediate parameter LMN.                                      *
+!                                                                      *
+!     NFC is the number of complex Fourier                             *
+!     coefficients.                                                    * 
+!                                                                      *
+!     LRM is the length of the Belousov recurrence coefficient matrices*
+!                                                                      *
+!***********************************************************************
+#endif
+!
+      integer G_mm,G_nn,G_kk,G_khem,G_ntrunc,G_ilath,G_ilh,G_lm,G_nlon
+      integer G_nlat
+!
+      MARK_COMMON_BEG (G_wil_i)
+      common /G_wil_i/G_mm,G_nn,G_kk,G_khem,G_ntrunc,G_ilath,G_ilh,G_lm
+      common /G_wil_i/G_nlon,G_nlat
+      MARK_COMMON_END (G_wil_i)
+!
+      integer G_nfc,G_lmn,G_lrm,G_nalp,G_nlatb2
+!
+      MARK_COMMON_BEG (G_derive_i)
+      common /G_derive_i/G_nfc,G_lmn,G_lrm,G_nalp,G_nlatb2
+      MARK_COMMON_END (G_derive_i)
+!

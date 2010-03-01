@@ -29,6 +29,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Lee V.            - Initialize Lam truncated trajectory counters
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
 *
 *object
 *     see id section
@@ -78,7 +79,6 @@
 #include "type.cdk"
 #include "adw.cdk"
 #include "v4dg.cdk"
-#include "v4dr.cdk"
 #include "orh.cdk"
 #include "schm.cdk"
 *
@@ -92,7 +92,7 @@
       if (Lun_debug_L) write (Lun_out,1000)
 *
 ************************************************************************
-      v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L .and. .not.V4dr_redotr_L 
+      v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L 
 *
       do i=1, 4
          Adw_trunc(i) = 0
@@ -102,15 +102,15 @@
 * 
       call adw_main_2_pos ( F_it, u, v, w )
 *
-*     Store TRAJ advection winds 
-*     --------------------------
-      if ( v4dstore_L ) call v4d_rwtraj (13,u,v,w) 
+*     Store TRAJ upstream positions 
+*     -----------------------------
+      if ( v4dstore_L ) call v4d_rwtraj (5,u,v,w) 
 *
       call adw_main_3_int ( u, v, w )
 *
 *     Store TRAJ RHS interpolated
 *     ---------------------------
-      if ( v4dstore_L ) call v4d_rwtraj (8)
+      if ( v4dstore_L ) call v4d_rwtraj (6)
 *
 ***********************************************************************
 *

@@ -1,0 +1,37 @@
+***s/r acid_writepos
+*		
+#include "model_macros_f.h"
+*
+      subroutine acid_writepos(xgi_8,ygi_8)
+*
+      implicit none
+      real*8 xgi_8(*), ygi_8(*)
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+         integer i,j
+*
+*     ---------------------------------------------------------------
+*
+         if (Lun_out.gt.0) then
+          write(Lun_out,*) 'ACID BIT TEST:writing positional parameters'
+          do i=1,G_ni
+             write (44) xgi_8(i)
+             print *,'acid_write xgi',i,xgi_8(i)
+          enddo
+          do j=1,G_nj
+             write (44) ygi_8(j)
+             print *,'acid_write ygi',j,ygi_8(j)
+          enddo
+         endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

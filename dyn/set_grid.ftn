@@ -68,7 +68,7 @@
 * grid=2,core;
 * grid=1,reduc,4,10,4,10,2
 * grid=3,reduc,4,10,4,10
-* grid=5,reduc,2,11,2,15,1,"NEW"
+* grid=5,reduc,"NEW",2,11,2,15
 * grid=7,core,"CO";
 *
 * general syntax

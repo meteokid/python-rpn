@@ -1,0 +1,27 @@
+***s/r wil_bf2
+*
+      REAL FUNCTION WIL_BF2(X)
+*
+      implicit none
+*
+      REAL X
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version BF2 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     USED IN CONJUNCTION WITH FUNCTION US
+*
+*---------------------------------------------------------------
+*
+      IF (X .LE. 0.0) THEN  
+         WIL_BF2 = 0.0                                                              
+      ELSE                                                                      
+         WIL_BF2 = EXP(-1.0/X)                                                      
+      ENDIF                                                                     
+*
+      RETURN                                                                    
+      END                                                                       

@@ -53,14 +53,6 @@
 *     
       Vspng_nk = max(0,min(G_nk,Vspng_nk))
 *
-      if (G_lam) then
-         ok_L=.true.
-         if (Vspng_nutop.gt.0..and.Vspng_nk.le.0)ok_L=.false.
-         if (Vspng_nutop.le.0..and.Vspng_nk.gt.0)ok_L=.false.
-         if (.not.ok_L)call gem_stop(
-     $   "vspng_set: Vspng_nutop and Vspng_nk are inconsistant",-2)
-      endif
-*
       if (Vspng_nk.le.0) return
 
       if (G_lam) then
@@ -77,10 +69,10 @@ cap         call gem_stop('vspng_set 1 : review code for hgt',-1)
 
 cap         Le code est probablement OK mais n a pas ete teste.
 
-         delp_8= exp(Ver_z_8%m(Vspng_nk))-exp(Ver_z_8%m(1))
+         delp_8= exp(Ver_z_8%m(Vspng_nk+1))-exp(Ver_z_8%m(1))
          do k=1,Vspng_nk
             Vspng_nu(k) = 
-     $           wh_8*( sin(pis2_8*(exp(Ver_z_8%m(Vspng_nk))-exp(Ver_z_8%m(k)))
+     $           wh_8*( sin(pis2_8*(exp(Ver_z_8%m(Vspng_nk+1))-exp(Ver_z_8%m(k)))
      $           /(delp_8)))**2
             if (Lun_out.gt.0) write (Lun_out,2005) Vspng_nu(k),k
          end do

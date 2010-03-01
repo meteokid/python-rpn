@@ -1,0 +1,102 @@
+***s/r read_decode_bang - to return A,B and corresponding IP1 values
+*
+***function read_decode_bang - to read and decode !! record
+*
+      integer function read_decode_bang(iun,ig1,ig2,datev,etik_S,
+     $                lookup_ip1,lookup_max,lookup_a_8,lookup_b_8,
+     $                prescode,presvar_8,presvar_S,presvar_max)
+*
+      implicit none
+*
+      integer iun,ig1,ig2,datev,lookup_max,prescode,presvar_max
+      real*8 presvar_8(presvar_max)
+      integer lookup_ip1(lookup_max)
+      real*8  ptop_8,rcoef_8(2),pref_8
+      real*8  lookup_a_8(lookup_max),lookup_b_8(lookup_max)
+      character*6 presvar_S(presvar_max)
+      character*12 etik_S
+
+* ________________________________________________________________
+*  Name        I/O      Description
+* ----------------------------------------------------------------
+* iun           I       unit number to input file
+* ig1           I       first grid descriptor
+* ig2           I       second grid descriptor
+* datev         I       valid date (dateo+npas*deet)
+* etik_S        I       label
+* lookup_max    I       max number of keys in !!
+* lookup_ip1    O       ip1 list returned
+* lookup_a_8    O       list of A coefficients for each lookup_ip1
+* lookup_b_8    O       list of B coefficients for each lookup_ip1
+* prescode      O       code number for type of vertical coordinate
+*                        6=HYBSTAG(staggered hybrid Girard)
+* ----------------------------------------------------------------
+* the function will return 0 upon success, -1 if there is an error
+**
+
+      integer   fstinf, fstprm, fstlir
+      external  fstinf, fstprm, fstlir
+      integer  ni,nj,nk,ni1,nj1,nk1,i,j,k,n,m,ip1x,ip2x,ip3x
+      integer  xx_key
+      integer  dateo, deet, ipas, ip1a, ip2a, ip3a, 
+     $         ig1a, ig2a, ig3a, ig4a, bit, datyp,
+     $         swa, lng, dlf, ubc, ex1, ex2, ex3
+      character*1   tva, grda
+      character*4   var
+      character*12  etika
+
+      real*8, dimension(:,:),allocatable:: work_8
+
+
+      xx_key=fstinf (iun,ni, nj, nk, datev,etik_S,ig1, ig2 , -1 ,'X','!!  ')
+      if (xx_key.lt.0) then
+          print *,'read_decode_bang error: cannot find record !!'
+          read_decode_bang = -1
+          return
+      endif
+      if (nj.gt.lookup_max) then
+          read_decode_bang=-1
+          print *,'read_decode_bang error: nj in !! is greater than lookup_max'
+          return
+      endif
+
+      read_decode_bang = fstprm ( xx_key, dateo, deet, ipas, 
+     $    ni, nj, nk, bit, datyp,ip1x,ip2x,ip3x, tva, var, etika,
+     $    grda,ig1a,ig2a,ig3a,ig4a, swa,lng, dlf, ubc, ex1, ex2, ex3 )
+      if (read_decode_bang.lt.0) then
+          print *,'read_decode_bang error: in fstprm !!'
+          return
+      endif
+
+      prescode = ig1a
+      ptop_8  = ig2a/100.0d0 !mb
+      pref_8  = 1000.0d0 !assumed in this coordinate
+      rcoef_8(1) = ig3a/1000.0d0 !(btwn 1.0 and 2.0)
+      rcoef_8(2) = ig4a/1000.0d0 !(btwn 1.0 and 2.0)
+
+      presvar_8(1)=pref_8
+      presvar_8(2)=ptop_8
+      presvar_8(3)=0.0 
+      presvar_8(4)=rcoef_8(1)
+      presvar_8(5)=rcoef_8(2)
+
+      presvar_S(1)='pref'
+      presvar_S(2)='ptop'
+      presvar_S(3)='etatop'
+      presvar_S(4)='rcoef1'
+      presvar_S(5)='rcoef2'
+      allocate(work_8(ni,lookup_max))
+      read_decode_bang = fstlir (work_8,iun,ni1,nj1,nk1,datev,
+     $               ' ',ip1x,ip2x,ip3x,tva,'!!  ')
+      if (read_decode_bang.lt.0) then
+              print *,'read_decode_bang error: in fstlir !!'
+              return
+      endif
+      do j=1,lookup_max
+         lookup_ip1(j)=nint(work_8(1,j))
+         lookup_a_8(j)=work_8(2,j)
+         lookup_b_8(j)=work_8(3,j)
+      enddo
+      read_decode_bang = 0
+      return
+      end

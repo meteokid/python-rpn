@@ -35,6 +35,7 @@
 * v3_21 - Dugas B.          - Add F_busdyn(p_phis) = topo
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - Lee V.            - removed clipping from tracers
+* v4_03 - Spacek L.         - Staggered version
 *
 *object
 *----------------------------------------------------------------
@@ -119,6 +120,7 @@
 #include "ver.cdk"
 #include "itf_vmm.cdk"
 #include "tr3d.cdk"
+#include "v4dg.cdk"
 
 **
 *
@@ -145,11 +147,11 @@
       key( 8) = VMM_KEY(st1)
       key( 9) = VMM_KEY(fiptx)
       key(10) = VMM_KEY(topo)
-      if(G_lam)then
+cap      if(G_lam)then
          key(11) = VMM_KEY(wt1)
-      else
-         key(11) = VMM_KEY(piup)
-      endif         
+cap      else
+cap         key(11) = VMM_KEY(piup)
+cap      endif         
       pnlod = 11
       if (.not. Schm_hydro_L ) then
         key(12) = VMM_KEY(qt1)
@@ -167,11 +169,11 @@
       err = VMM_GET_VAR(st1)
       err = VMM_GET_VAR(fiptx)
       err = VMM_GET_VAR(topo)
-      if(G_lam)then
+cap      if(G_lam)then
          err = VMM_GET_VAR(wt1)
-      else
-         err = VMM_GET_VAR(piup)
-      endif
+cap      else
+cap         err = VMM_GET_VAR(piup)
+cap      endif
       if (.not. Schm_hydro_L ) then
          err = VMM_GET_VAR(qt1)
       endif
@@ -248,8 +250,8 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
       do k=1,nkphy-1
          do j=1,l_nj
          do i=1,l_ni
-            p_sigm_m(i,j,k+1) = exp( Ver_a_spcl_8%m(k) 
-     $                             + Ver_b_spcl_8%m(k)*st1(i,j) )
+            p_sigm_m(i,j,k+1) = exp( Ver_a_8%m(k) 
+     $                             + Ver_b_8%m(k)*st1(i,j) )
             p_sigm_t(i,j,k)  = sqrt(p_sigm_m(i,j,k+1)*p_sigm_m(i,j,k))
          enddo
          enddo
@@ -265,11 +267,11 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
 *     compute vertical omega
 *     -----------------------
 *
-      if(G_lam)then
+cap      if(G_lam)then
          call calomeg_w (p_omegap,st1,wt1,tt1,LDIST_DIM,l_nk)            
-      else
-         call calomeg_adv (p_omegap,st1,piup,LDIST_DIM,l_nk,.false.)
-      endif
+cap      else
+cap         call calomeg_adv (p_omegap,st1,piup,LDIST_DIM,l_nk,.false.)
+cap      endif
 !     calomeg_adv compute p_omegap up to nkphy-2+1 
 !     p_omegap(nkphy)=p_omegap(nkphy-1)  below
 
@@ -280,29 +282,19 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
 *
       do j=1,l_nj
 
-         if(Schm_virlev_L)then
-            do i= 1, l_ni
-               p_omegap(i,j,nkphy-1) = 0.25d0*p_omegap(i,j,nkphy-2) 
-     $                               + 0.75d0*p_omegap(i,j,nkphy-1)
-            enddo
-         endif
          call vsexp (ztmp(1,j),st0(1,j),l_ni)
 *
          do i= 1, l_ni
             xtmp(i,1)     = log(p_sigm_t(i,j,1))
             xtmp(i,nkphy) = st1(i,j)+Cstv_Zsrf_8
             wtmp2(i,1)      = p_sigm_t(i,j,1)
-            if(Schm_virlev_L)then
-               p_gzplus(i,j,1) = 0.5*(fiptx(i,j,0)+fiptx(i,j,1))+Ver_fistr_8%t(1)
-            else
-               p_gzplus(i,j,1) = fiptx(i,j,0)+Ver_fistr_8%m(0)
-            endif
+            p_gzplus(i,j,1) = fiptx(i,j,0)+Ver_fistr_8%m(0)
             p_gzplus(i,j,nkphy) =  topo(i,j)
          enddo
          do k= 2, nkphy-1
          do i= 1, l_ni
-            xtmp(i,k) = Ver_a_spcl_8%m(k-1) + 
-     $                  Ver_b_spcl_8%m(k-1)*st1(i,j)
+            xtmp(i,k) = Ver_a_8%m(k-1) + 
+     $                  Ver_b_8%m(k-1)*st1(i,j)
             wtmp2(i,k) = p_sigm_t(i,j,k)
             p_gzplus(i,j,k) = fiptx(i,j,k-1)+Ver_fistr_8%m(k-1)
          enddo
@@ -370,7 +362,8 @@ c           p_vplus(i,j,nkphy)   = p_vplus(i,j,nkphy-1)
             end do
             enddo
 *For HU, take NK+2 level for diagnostics, for others,copy NK+1 to Nk+2
-            if (n.ne.1) then
+*Note that hucond not equal to 1 always, use hucond for HU reference in F_trt1
+            if (n.ne.hucond) then
             do j= 1, l_nj
             do i= 1, l_ni
                F_trp(i,j,l_nk+2,n) =  trp(i,j,l_nk+1)
@@ -486,7 +479,7 @@ c$$$ TODO: optimize with vslog
          summqj = 0.
          sumpqj = 0.
 *        Sum over Hydrometeors, note: 'HU' is in position 1
-         do n = 2, h2o_ntr
+         do n = hucond+1, h2o_ntr
          do k = 1, nkphy
          do j= 1, l_nj
          do i = 1, l_ni
@@ -500,11 +493,11 @@ c$$$ TODO: optimize with vslog
          call itf_phy_padbuf(sumpqj,l_minx,l_maxx,l_miny,l_maxy,nkphy)
 c$$$ TODO: check if mfottvh can take nkphy
          call mfottvh ( p_tplus ,F_tp,
-     $            F_trp(l_minx,l_miny,1,1),sumpqj,
+     $            F_trp(l_minx,l_miny,1,hucond),sumpqj,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),nkphy,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
          call mfottvh ( p_tmoins,F_vtm,
-     $            F_trm(l_minx,l_miny,1,1),summqj,
+     $            F_trm(l_minx,l_miny,1,hucond),summqj,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),nkphy,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
 *
@@ -512,11 +505,11 @@ c$$$ TODO: check if mfottvh can take nkphy
 *
 c$$$ TODO: check if mfottv can take nkphy
          call mfottv ( p_tplus ,F_tp,
-     $            F_trp(l_minx,l_miny,1,1),
+     $            F_trp(l_minx,l_miny,1,hucond),
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),nkphy,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
          call mfottv ( p_tmoins,F_vtm,
-     $            F_trm(l_minx,l_miny,1,1),
+     $            F_trm(l_minx,l_miny,1,hucond),
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),nkphy,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
 
@@ -569,28 +562,39 @@ c$$$ TODO: check if mfottv can take nkphy
          err = vmmget(keyd(i),pavmm,vmm)
          F_pvptr(i) = pavmm
       enddo
-
-
+*
+*     Store TRAJ for the simplified physics
+*     -------------------------------------
+      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L) then
+*
+         call v4d_rwtraj (23)
+         call v4d_rwtraj (21, F_tp, F_trp, F_vtm, F_trm)
+         call v4d_rwtraj (26, st1)
+*
+      endif
+*
 c$$$
 c         call statfld3d(p_uplus  ,'p_up',LDIST_DIM,G_ni-1,G_nj,nkphy)
 c         call statfld3d(p_vplus  ,'p_vp',LDIST_DIM,G_ni,G_nj-1,nkphy)
 c         call statfld3d(p_tplus  ,'p_tp',LDIST_DIM,G_ni,G_nj,nkphy)
 c         call statfld3d(p_umoins ,'p_um',LDIST_DIM,G_ni-1,G_nj,nkphy)
+c         call statfld3d(st1 ,'st1 ',LDIST_DIM,G_ni,G_nj,1)
+c         call statfld3d(wt1 ,'wt1 ',LDIST_DIM,G_ni,G_nj,G_nk+1)
 c         call statfld3d(p_vmoins ,'p_vm',LDIST_DIM,G_ni,G_nj-1,nkphy)
-c$$$      call statfld3d(p_tmoins ,'p_tm',LDIST_DIM,G_ni,G_nj,nkphy)
-c$$$      call statfld3d(p_gzplus ,'p_gz',LDIST_DIM,G_ni,G_nj,nkphy)
-c$$$      call statfld3d(p_omegap ,'p_om',LDIST_DIM,G_ni,G_nj,nkphy)
-c$$$      call statfld3d(p_sigm_t ,'p_st',LDIST_DIM,G_ni,G_nj,nkphy)
-c$$$      call statfld3d(p_sigm_m ,'p_sm',LDIST_DIM,G_ni,G_nj,nkphy)
-c$$$      call statfld3d(p_phis ,'p_ph',LDIST_DIM,G_ni,G_nj,1)
-c$$$      call statfld3d(p_pplus ,'p_pp',LDIST_DIM,G_ni,G_nj,1)
-c$$$      call statfld3d(p_pmoins ,'p_pm',LDIST_DIM,G_ni,G_nj,1)
-c$$$      call statfld3d(p_dxdy ,'p_dx',LDIST_DIM,G_ni,G_nj,1)
-c$$$      call statfld3d(p_eponmod ,'p_ep',LDIST_DIM,G_ni,G_nj,1)
+c         call statfld3d(p_tmoins ,'p_tm',LDIST_DIM,G_ni,G_nj,nkphy)
+c         call statfld3d(p_gzplus ,'p_gz',LDIST_DIM,G_ni,G_nj,nkphy)
+c         call statfld3d(p_omegap ,'p_om',LDIST_DIM,G_ni,G_nj,nkphy)
+c         call statfld3d(p_sigm_t ,'p_st',LDIST_DIM,G_ni,G_nj,nkphy)
+c         call statfld3d(p_sigm_m ,'p_sm',LDIST_DIM,G_ni,G_nj,nkphy)
+c         call statfld3d(p_phis ,'p_ph',LDIST_DIM,G_ni,G_nj,1)
+c         call statfld3d(p_pplus ,'p_pp',LDIST_DIM,G_ni,G_nj,1)
+c         call statfld3d(p_pmoins ,'p_pm',LDIST_DIM,G_ni,G_nj,1)
+c         call statfld3d(p_dxdy ,'p_dx',LDIST_DIM,G_ni,G_nj,1)
+c         call statfld3d(p_eponmod ,'p_ep',LDIST_DIM,G_ni,G_nj,1)
 c$$$      call statfld3d(p_fcpf ,'p_ff',LDIST_DIM,G_ni,G_nj,1)
 c$$$      call statfld3d(p_fcpw ,'p_fw',LDIST_DIM,G_ni,G_nj,1)
-c$$$      call statfld3d(F_tp ,'F_tp',LDIST_DIM,G_ni,G_nj,nkphy)
-c$$$      call statfld3d(F_vtm ,'F_vtm',LDIST_DIM,G_ni,G_nj,nkphy)
+c         call statfld3d(F_tp ,'F_tp',LDIST_DIM,G_ni,G_nj,nkphy)
+c         call statfld3d(F_vtm ,'F_vtm',LDIST_DIM,G_ni,G_nj,nkphy)
 c$$$
 *
 *     ________________________________________________________________

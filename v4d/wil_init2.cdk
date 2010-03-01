@@ -1,0 +1,38 @@
+#if defined (DOC)
+!
+!**comdeck wil_init2.cdk
+!
+!author Jacob et al. 1992 
+!
+!revision
+! v4_04 - Jacob et al.     - initial version INIT
+! v4_04 - Tanguay M.       - Williamson's cases
+!
+!------------------------------------------------------------------
+!    LDIAG  : Information on structure of ALP, DALP 
+!    ALP    : Associated Legendre Polynomials
+!    DALP   : Derivatives of Associated Legendre Polynomials
+!------------------------------------------------------------------
+!    THTA   : Gaussian co-latitude angle (radians) 
+!    WTS    : Gaussian weights
+!    FFTWS2 : FFT991 work array
+!    ANNP1  : Expression A/(N*(N+1)) 
+!    A2NNP1 : Expression (N*(N+1))/A**2 
+!             where A is the radius of the earth and 
+!             N is the 2-dimensional wavenumber 
+!    WTACSJ : 1.0/(A*COS(LAT)**2)
+!    REALM  : Real(M-1) where M Index  
+!------------------------------------------------------------------
+!
+#endif
+!------------------------------------------------------------------
+      integer,  pointer, dimension (:,:) :: LDIAG
+      COMMON/ wil_init2_i_/ LDIAG 
+!
+      real,     pointer, dimension (:,:) :: ALP_0, DALP_0
+      COMMON/ wil_init2_r1/ ALP_0, DALP_0 
+!
+      real,     pointer, dimension (:)   :: THTA,WTS,FFTWS2,ANNP1
+      real,     pointer, dimension (:)   :: A2NNP1,WTACSJ,REALM
+      COMMON/ wil_init2_r2/ THTA,WTS,FFTWS2,ANNP1,A2NNP1,WTACSJ,REALM 
+!------------------------------------------------------------------

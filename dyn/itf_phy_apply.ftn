@@ -41,6 +41,8 @@
 * v3_21 - Desgagne M.       - Revision OpenMP
 * v3_30 - Spacek L.         - Eliminate filter for condensation tendencies
 *                             and arguments F_tcond,F_qdifv
+* v4_03 - Spacek L.         - Staggered version
+*
 *object
 *       Apply consistency of the tendencies on physics variables
 *       with related dynamical variables. Interpolate wind
@@ -84,12 +86,11 @@
 *
 *
       integer*8 pnt_trp(phyt_ntr),pnt_trm(phyt_ntr)
-      integer i, j, k, n, err, key1(11), key_p(2), ng, kk,
+      integer i, j, k, n, err, key1(11),
      $     keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
-      integer i0,in,j0,jn,inu,jnv, pnload
+      integer i0,in,j0,jn, pnload
       real,dimension(LDIST_SHAPE,nkphy) :: wk1, wk2, wk3, wk4
       real trp, trm
-      real*8 con_8
       pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
 *
 *notes
@@ -100,26 +101,12 @@
 **
 *     __________________________________________________________________
 *
-
-c$$$ What is computed?
-c$$$ 
-c$$$ in 2.2.2
-c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
-c$$$ 
-c$$$ in 2.2.5xis:
-c$$$ tdia,udia,vdia,tt1,ut1,vt1,
-c$$$ fiptx [diag_fip(fiptx,st1,tt1,qt1,topo)],
-c$$$ hdia,trp,trm
-c$$$ 
-c$$$ in 3.3.0
-c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
-
-      i0 =1+pil_w
-      in =l_ni-pil_e 
-      inu=l_niu-pil_e 
-      j0 =1+pil_s
-      jn =l_nj-pil_n 
-      jnv=l_njv-pil_n 
+c     i0 =1+pil_w
+c     in =l_ni-pil_e 
+c     inu=l_niu-pil_e 
+c     j0 =1+pil_s
+c     jn =l_nj-pil_n 
+c     jnv=l_njv-pil_n 
 
       keyp_ = VMM_KEY (trt1)
       keym_ = VMM_KEY (trt0)
@@ -196,43 +183,10 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
          err = VMM_GET_VAR(zdt1)
       endif
 
-
-      key_p(1) = VMM_KEY(p_uplus)
-      key_p(2) = VMM_KEY(p_vplus)
-      err = vmmlod(key_p,2)
-      err = VMM_GET_VAR(p_uplus)
-      err = VMM_GET_VAR(p_vplus)
-
-
-      if ( Lam_0ptend_L .and. G_lam .and.
-     $   ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
-         wk2 = 0.
-         call nesajr (F_tdu, wk2, LDIST_DIM,nkphy,1,0,Hblen_x,Hblen_y)
-         call nesajr (F_tdv, wk2, LDIST_DIM,nkphy,0,1,Hblen_x,Hblen_y)
-         call nesajr (F_tp, wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
-         do n=1,phyt_ntr
-            call nesajr (F_trm(minx,miny,1,n), wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
-            call nesajr (F_trp(minx,miny,1,n), wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
-         enddo
-      endif
-
-c$$$
-c$$$      call statfld3d(p_uplus  ,'p_up',LDIST_DIM,G_ni,G_nj,p_nk)
-c$$$      call statfld3d(p_vplus  ,'p_vp',LDIST_DIM,G_ni,G_nj,p_nk)
-c$$$      call statfld3d(F_tdu  ,'Ftdu',LDIST_DIM,G_ni,G_nj,p_nk)
-c$$$      call statfld3d(F_tdv  ,'Ftdv',LDIST_DIM,G_ni,G_nj,p_nk)
-c$$$      call statfld3d(F_tp  ,'F_tp',LDIST_DIM,G_ni,G_nj,p_nk)
-c$$$
-c$$$      print *,'---- [end] apply ----'
-
-
-
-
 *  .  Interpolation of the wind associated tendencies
 *     ---------------------------------------------------
 
       call itf_phy_uvgridscal(F_tdu,   F_tdv,   LDIST_DIM, nkphy, .false. )
-      call itf_phy_uvgridscal(p_uplus, p_vplus, LDIST_DIM, nkphy, .false. )
 
 *    Add condensation tendencies and other contributions to get
 *    TOTAL temperature tendency and TOTAL specific humidity tendency
@@ -249,6 +203,8 @@ c$$$      print *,'---- [end] apply ----'
 
 !$omp parallel
 
+      wk1 = 0.
+      wk2 = 0.
       wk3 = 0.
       wk4 = 0.
 *
@@ -274,7 +230,16 @@ c$$$      print *,'---- [end] apply ----'
 !$omp enddo
          enddo
       endif
+!$omp end parallel
+*
+*     Store TRAJ for the simplified physics
+*     -------------------------------------
+      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L) then
+c$$$ TODO: fix v4d
+        call v4d_rwtraj(20,F_tdt,F_trm)
+      endif
 
+!$omp parallel
 *
 *    Compute VIRTUAL temperature tendency from:  temperature tendency,
 *    specific humidity, virtual temperature & specific humidity tendency
@@ -309,42 +274,29 @@ c$$$      print *,'---- [end] apply ----'
 
 *
 *
-*     de-stagger wind tendancies in the vertical
+*     de-stagger wind tendencies in the vertical
 *     ------------------------------------------
 *
 !$omp do
-      do j=j0,jn
-      do k=1,l_nk+1
-      do i=i0,inu
+      do j= 1+pil_s, l_nj-pil_n
+         do k=1,l_nk+1
+         do i= 1+pil_w, l_niu-pil_e
          F_tdu(i,j,k) =F_tdu(i,j,k+1)
-      end do
-      end do
+         end do
+         end do
       end do
 !$omp enddo
 !$omp do
-      do j=j0,jnv
-      do k=1,l_nk+1
-      do i=i0,in
+      do j= 1+pil_s, l_njv-pil_n
+         do k=1,l_nk+1
+         do i= 1+pil_w, l_ni-pil_e
          F_tdv(i,j,k) =F_tdv(i,j,k+1)
-      end do
-      end do
+         end do
+         end do
       end do
 !$omp enddo
 
 *
-!$omp end parallel
-*
-*     Store TRAJ for the simplified physics
-*     -------------------------------------
-      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L) then
-c$$$ TODO: fix v4d
-         call gem_stop('itf_phy_apply -- v4d_rwtraj_apply',-1)
-c$$$         call v4d_rwtraj_apply(F_tdu,F_tdv,F_tdt,F_trm,wk4,LDIST_DIM,nkphy)
-      endif
-
-!$omp parallel
-
-
 *C       apply tendencies to primary variables
 *        -------------------------------------
 
@@ -386,7 +338,7 @@ c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
 *
       if (Schm_pheat_L) then
         call diag_fip(fiptx,st1,tt1,topo,
-     $                         i0,in,j0,jn,l_nk)
+     $              1+pil_w,l_ni-pil_e,1+pil_s,l_nj-pil_n,l_nk)
       endif
 
 c     if (Acid_test_L) then
@@ -407,8 +359,6 @@ c     if (Acid_test_L.and.Lun_out.gt.0)print 'Statfld for tracers'
      $      ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
             call nesajr (F_trm(minx,miny,1,n), wk2, LDIST_DIM,nkphy,
      $                                          0,0,Hblen_x,Hblen_y)
-            call nesajr (F_trp(minx,miny,1,n), wk2, LDIST_DIM,nkphy,
-     $                                          0,0,Hblen_x,Hblen_y)
          endif
 
 *        humidity tendencies for diagnostic (surface) level
@@ -422,7 +372,7 @@ c     if (Acid_test_L.and.Lun_out.gt.0)print 'Statfld for tracers'
                end do
             end do
 !$omp enddo
-         if (n.ne.1) then
+         if (n.ne.hucond) then
              do j= 1+pil_s, l_nj-pil_n
              do i= 1+pil_w, l_ni-pil_e
                trp(i,j,l_nk+2) = trp(i,j,l_nk+1)

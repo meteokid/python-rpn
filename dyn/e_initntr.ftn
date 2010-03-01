@@ -1,0 +1,37 @@
+***s/r e_initntr
+*
+      subroutine e_initntr
+      implicit none
+*
+*author   Michel Desgagne -- Fal 2008 --
+*
+*revision
+* v3_31 - M. Desgagne       - Initial version
+*
+*implicits
+#include "path.cdk"
+#include "version.cdk"
+#include <clib_interface.cdk>
+*
+      integer  exdb
+      external exdb
+
+      integer err
+*
+*--------------------------------------------------------------------
+*
+      call base_dir_env
+
+      err= clib_mkdir (Path_output_S)
+      err= clib_mkdir (Path_work_S  )
+      err= clib_chdir (Path_work_S  )
+
+      call  open_status_file2 (trim(Path_output_S)//'/status_ent.dot')
+      call write_status_file2 ('_status=ABORT' )
+      err = exdb(Version_ent_S//Version_dstp_S,Version_S,'NON')
+*
+*--------------------------------------------------------------------
+*
+      return
+      end
+

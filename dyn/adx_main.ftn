@@ -78,7 +78,6 @@
 #include "type.cdk"
 #include "adx.cdk"
 #include "v4dg.cdk"
-#include "v4dr.cdk"
 #include "orh.cdk"
 #include "schm.cdk"
 *
@@ -92,7 +91,7 @@
       if (Lun_debug_L) write (Lun_out,1000)
 *
 ************************************************************************
-      v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L .and. .not.V4dr_redotr_L 
+      v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L
 *
       do i=1, 4
          adx_trunc(i) = 0

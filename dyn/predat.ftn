@@ -37,6 +37,7 @@
 *                             Note : s is now computed in readdyn.ftn or 
 *                             mtn_case.ftn or bubble.ftn 
 * v5_00 - Lee V.            - Removed VTAP
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
 *
 *object
 *
@@ -164,20 +165,6 @@ c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
 *        Preprocessing of Dependent variables only if V4dg_part=3
 *        --------------------------------------------------------
          call v4d_predat (V4dg_part)
-*
-*        Set q=0 explicitly when .not.Schm_hydro_L and 4D-Var
-*        -----------------------------------------------------
-         if ( V4dg_part.eq.3.and..not.Schm_hydro_L ) then
-*
-           do k=0,G_nk+1
-           do j=1,l_nj
-           do i=1,l_ni
-              Ind_q(i,j,k) = 0.0
-           end do
-           end do
-           end do
-*
-         endif
 *
       endif
 

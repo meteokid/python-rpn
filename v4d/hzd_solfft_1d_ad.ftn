@@ -1,0 +1,234 @@
+***s/r hzd_solfft_1d_ad - ADJ of hzd_solfft_1d 
+*
+#include "model_macros_f.h"
+*
+       subroutine hzd_solfft_1d_ad (F_sol, F_Rhs_8, F_pri_8, F_deltai_8,
+     %             minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr,
+     %             minx,maxx,miny,maxy,gnk,gni,nil,njl,nkl,
+     %             F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
+*
+      implicit none
+*
+      integer  minx1, maxx1, minx2, maxx2 , nx1, nx2, nx3, F_pwr,
+     $         minx , maxx , miny , maxy  , gnk, gni,
+     $         njl  , nkl  , nil  , F_npex, F_npey
+      real*8  F_opsxp0_8(*), F_opsyp0_8(*),F_pri_8,
+     $        F_deltai_8(1:F_pwr,1:F_pwr,1:gni,nx3),F_Rhs_8
+      real   F_cdiff, F_sol(minx:maxx,miny:maxy,gnk)
+*
+*author
+*    M.Tanguay
+*
+*revision
+* v3_20 - Tanguay M.        - initial version
+* v3_21 - Tanguay M.        - Revision Openmp
+* v4_04 - Tanguay M.        - Staggered version TL/AD
+*
+*object
+*    see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_sol       I/O      r.h.s. and result of horizontal diffusion
+*  F_Rhs_8     I/O      work vector
+*----------------------------------------------------------------
+*implicits
+#include "ptopo.cdk"
+**
+      real*8   fdg1_8( miny:maxy, minx1:maxx1,gni+  F_npex),
+     $         fwft_8( miny:maxy ,minx1:maxx1,gni+2+F_npex)
+*
+      real*8   ZERO_8, b_8, fact_8
+      parameter( ZERO_8 = 0.0 )      
+*
+      integer o1,o2,i,j,k,jw,m,offj,indy
+*
+*     __________________________________________________________________
+*
+*----------------------
+*Zero adjoint variables
+*----------------------
+*
+!$omp parallel
+*
+!$omp do 
+      do k= 1,gni+F_npex
+      do j= minx1,maxx1
+      do i= miny ,maxy
+      fdg1_8(i,j,k) = ZERO_8
+      end do
+      end do
+      end do
+!$omp end do 
+*
+!$omp do 
+      do k= 1,gni+2+F_npex
+      do j= minx1,maxx1
+      do i= miny ,maxy
+      fwft_8(i,j,k) = ZERO_8
+      end do
+      end do
+      end do
+!$omp end do 
+*
+!$omp end  parallel 
+*
+* ----------
+* ADJ of
+* Resolution
+* ----------
+*
+*     ADJ of
+*     inverse projection ( r = x * w )
+*     --------------------------------
+*
+      call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1),
+     %                          (Maxy-Miny+1),minx1, maxx1, Gnk, fwft_8, 1,
+     %                             1.d0,0.d0)
+*
+!$omp parallel private(indy) 
+*
+c     call ffft8 ( fwft_8, (Maxy-Miny+1) * (maxx1-minx1+1), 1,
+c    %                               (Maxy-Miny+1) * Nkl, -1 )
+*
+!$omp do
+      do k=Nkl,1,-1
+         call ffft8 (fwft_8(miny,k,1),(Maxy-Miny+1)*(maxx1-minx1+1),
+     %                     1, (Maxy-Miny+1) , -1 )
+      enddo
+!$omp enddo
+*
+!$omp do
+      do k = nkl,1,-1
+         do j = (Maxy-Miny+1),1,-1
+            fwft_8(j,k,Gni+2) = ZERO_8
+            fwft_8(j,k,2)     = ZERO_8
+            fwft_8(j,k,2)     = fwft_8(j,k,1) + fwft_8(j,k,2)
+            fwft_8(j,k,1)     = ZERO_8
+         enddo
+         do j=njl,1,-1
+         do i = Gni,1,-1
+            fdg1_8(j,k,i)   = fwft_8(j,k,i+1) + fdg1_8(j,k,i)
+            fwft_8(j,k,i+1) = ZERO_8
+         enddo
+         enddo
+      enddo
+!$omp enddo
+*
+*     ADJ of
+*     Scaling only (WE DO NOT RESOLVE A TRIDIAGONAL MATRIX in Y)
+*     ----------------------------------------------------------
+*
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+*
+!$omp do
+      do i = 1,gni
+      do k = 1,nkl
+      do j = 1,njl
+         indy = offj + j
+         fwft_8(j,k,i+1)= F_opsyp0_8(nx3+indy)*
+     %                   (F_deltai_8(F_pwr,1,i,indy)*fdg1_8(j,k,i)) + fwft_8(j,k,i+1) 
+C        fdg1_8(j,k,i)  = ZERO_8
+      enddo
+      enddo
+      enddo
+!$omp enddo
+*
+*     ADJ of
+*     projection ( wfft = x transposed * g )
+*     --------------------------------------
+*
+!$omp do 
+      do k = 1, Nkl
+         do j = 1, (Maxy-Miny+1)
+            fwft_8(j,k,1) = fwft_8(j,k,2) + fwft_8(j,k,1)
+            fwft_8(j,k,2) = ZERO_8
+            fwft_8(j,k,Gni+2) = ZERO_8
+         enddo
+      enddo
+!$omp enddo 
+*
+!$omp do 
+      do i = 0, (Gni)/2
+         do k = 1, Nkl
+C           do jw = 1, (Maxy-Miny+1)
+            do jw = 1, njl
+               fwft_8(jw,k,2*i+2) = F_pri_8 * fwft_8(jw,k,2*i+2)
+               fwft_8(jw,k,2*i+1) = F_pri_8 * fwft_8(jw,k,2*i+1)
+            enddo
+         enddo
+      enddo
+!$omp enddo 
+*
+C     call ffft8 (fwft_8,(Maxy-Miny+1)*(maxx1-minx1+1),
+C    %                     1, (Maxy-Miny+1) * Nkl,  1 )
+*
+!$omp do
+      do k=Nkl,1,-1
+         call ffft8 (fwft_8(Miny,k,1),(Maxy-Miny+1)*(maxx1-minx1+1),1,
+     %                               (Maxy-Miny+1), +1 )
+      enddo
+!$omp enddo
+*
+C!$omp do
+C      do i= 1,gni+2
+C         do k=minx1,0
+C            do j= miny,maxy
+C               fwft_8(j,k,i) = ZERO_8
+C            enddo
+C         enddo
+C      enddo
+C!$omp enddo
+*
+      fact_8=((-1)**F_pwr)*dble(F_cdiff)
+*
+!$omp do
+      do i = 1, Gni
+         do k=1,nkl
+           do j=1,njl
+              fdg1_8(j,k,i) = fact_8*(F_opsxp0_8(gni+i)*fwft_8(j,k,i)) 
+C             fdg1_8(j,k,i) = F_opsxp0_8(gni+i)*fwft_8(j,k,i) 
+C             fwft_8(j,k,i) = ZERO_8
+           enddo
+C          do j= miny,0
+C             fwft_8(j,k,i) = ZERO_8
+C          enddo
+         enddo
+*
+C        do k= nkl+1, maxx1
+C          do j= miny,maxy
+C             fwft_8(j,k,i) = ZERO_8
+C          enddo
+C        enddo
+*
+C        do k = 1, nkl
+C          do j= njl+1,maxy
+C             fwft_8(j,k,i) = ZERO_8
+C          enddo
+C        enddo
+*
+      enddo
+!$omp enddo
+*
+!$omp end parallel 
+*
+      call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1),
+     %                          (Maxy-Miny+1),minx1, maxx1, Gnk, fdg1_8, -1,
+C    %                             fact_8,0.d0)
+     %                             1.d0,0.d0)
+*
+C!$omp parallel do 
+C      do k = 1, Gnk
+C      do j = 1, njl
+C      do i = 1, nil
+C         F_sol(i,j,k) = fact_8*F_sol(i,j,k)
+C      enddo
+C      enddo
+C      enddo
+C!$omp end parallel do 
+*
+*     __________________________________________________________________
+*
+      return
+      end

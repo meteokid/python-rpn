@@ -15,6 +15,7 @@
 *
 *revision
 * v3_30 - McTaggart-Cowan R.	- initial MPI version
+* v4_03 - Lee V.            - Adapt to using new pressure functions
 *
 *object
 *     Use the model's current orography field (topo) to re-interpolate
@@ -52,9 +53,10 @@
 #include "vtx.cdk"
 #include "ver.cdk"
 *
-      integer :: vmmlod,vmmuld,vmmget
+      integer  vmmlod,vmmuld,vmmget,get_px
+      external vmmlod,vmmuld,vmmget,get_px
 **
-      integer :: k,len_x,len_y,err,datatype
+      integer :: k,len_x,len_y,err
       integer, dimension(2) :: key
       real, allocatable, dimension(:,:,:) :: psrc_3d,lnpsrc_3d,lnpdst_3d,temp_nest_t
       real, allocatable, dimension(:,:) :: ps,temp_ps
@@ -72,13 +74,13 @@
       err = VMM_GET_VAR(topo1)
 *
 * Compute analysis surface pressure for current orography
-      datatype=6
       allocate(psrc_3d(xi:xa,yi:ya,nk+1),ps(xi:xa,yi:ya),
      $     temp_ps(xi:xa,yi:ya),lnpsrc_3d(xi:xa,yi:ya,nk+1),
      $     lnpdst_3d(xi:xa,yi:ya,nk+1),temp_nest_t(xi:xa,yi:ya,nk+1))
 *     Get pressure on all thermo levels including the surface.
-      call get_press3d(psrc_3d,nest_s(xi:xa,yi:ya),len_x*len_y,
-     $     Ver_a_8%t,Ver_b_8%t,Cstv_pref_8,nk+1,datatype)
+         err = get_px(psrc_3d,nest_s(xi:xa,yi:ya),len_x*len_y,
+     $     Ver_a_8%t,Ver_b_8%t,nk+1,Ver_code,.false.)
+         if (err.lt.0) call gem_stop('vtopo_predat:get_px',-1)
 c      call glbstat (psrc_3d,'p3d',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
       call adj_ss2topo(ps,topo(xi:xa,yi:ya),psrc_3d,topo1(xi:xa,yi:ya),
      $     nest_t(xi:xa,yi:ya,:),len_x*len_y,nk+1)
@@ -92,8 +94,8 @@ c      call glbstat (psrc_3d(xi:xa,yi:ya,nk+1),'pso',1,len_x,1,len_y,1,1,len_x,1
       call vslog(lnpsrc_3d,psrc_3d,len_x*len_y*(nk+1))
       call vslog(temp_ps,ps,len_x*len_y)
       temp_ps=temp_ps-Cstv_Zsrf_8
-      call get_lnpress3d(lnpdst_3d,temp_ps,len_x*len_y,Ver_a_8%t,Ver_b_8%t,
-     $     Cstv_pref_8,nk+1,6)
+      err = get_px(lnpdst_3d,temp_ps,len_x*len_y,Ver_a_8%t,Ver_b_8%t,nk+1,Ver_code,.true.)
+      if (err.lt.0) call gem_stop('vtopo_predat:get_px',-1)
 c      call glbstat (lnpsrc_3d,'src',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
 c      call glbstat (lnpdst_3d,'dst',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
 

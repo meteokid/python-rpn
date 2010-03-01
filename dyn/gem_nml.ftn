@@ -24,6 +24,8 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_03 - Tanguay M.        - Williamson's cases
 *
 *object
 *  Default configuration and reading namelists gem_cfgs and grdc
@@ -55,6 +57,8 @@
       Step_bkup  = 9999999
       Step_gstat = 9999999
       Step_cleanup = 0
+      Step_maxcfl  = 1
+      Step_cliptraj_L = .false.
 *
       Rstri_glbcol_L = .false.
 *
@@ -93,9 +97,7 @@
       Schm_sfix_L     = .false.
       Schm_zdotlag_L  = .false.
       Schm_zdotMid_L  = .false.
-      Schm_virlev_L   = .true.
-      Schm_nullchi_L  = .true.
-      Schm_etape_S    = 'ETAPE6'
+      Schm_autobar_L  = .false.
 *
       Schm_phyms_L    = .false.
       Schm_chems_L    = .false.
@@ -124,11 +126,6 @@
       Adw_trunc_traj_L = .false.
       Adw_halox  = 3
       Adw_haloy  = 2
-      if (G_lam) then
-          Adw_halox  = 7
-          Adw_haloy  = 7
- 	  if (Lun_out.ge.0) write (Lun_out, 9000)
-      endif
 *
       Clim_climat_L  = .false.
       Clim_inincr_L  = .false.
@@ -195,8 +192,6 @@
       Hzd_t0_0_L = .false.
       Hzd_t0_1_L = .false.
       Hzd_1d_L   = .false.
-      Hzd_hdif0_0_L   = .false.
-      Hzd_hdif0_1_L   = .false.
       Hzd_hzdmain_0_L = .true.
       Hzd_hzdmain_1_L = .true.
 *
@@ -270,6 +265,11 @@
       Out3_flipit_L  = .false.
       Out3_compress_L= .false.
 *
+*     Williamson's cases section
+*     --------------------------
+      Williamson_case     = 0 
+      Williamson_alpha    = 0.0
+*
       Grdc_proj_S = 'L'
       Grdc_xlat1  = Grd_xlat1
       Grdc_xlon1  = Grd_xlon1
@@ -278,7 +278,7 @@
       Grdc_ni     = 0
       Grdc_nj     = 0
       Grdc_Hblen  = 10
-      Grdc_pil    = 7
+      Grdc_maxcfl = 1
       Grdc_nfe    = ''
       Grdc_initphy_L = .false.
       Grdc_runstrt_S = Lam_runstrt_S
@@ -296,6 +296,12 @@
          rewind(unf)
          read (unf, nml=gem_cfgs, end = 9120, err=9120)
          rewind(unf)
+*
+         rewind(unf)
+         read  (unf, nml=williamson, end = 1001, err = 9125)
+ 1001    continue
+         rewind(unf)
+*
          read (unf, nml=grdc,     end = 1000, err=9130)
  1000    call fclos (unf)
 *
@@ -334,6 +340,12 @@
       endif
       goto 9999
 *
+ 9125 if (Lun_out.gt.0) then
+          write (Lun_out, 9525)
+          write (Lun_out, 8000)
+      endif
+      goto 9999
+*
  9130 call fclos (unf)
       if (Lun_out.ge.0) then  
          write (Lun_out, 9150) 'grdc',trim( F_namelistf_S ) 
@@ -341,13 +353,12 @@
       endif
 *
  8000 format (/,'========= ABORT IN S/R gem_nml.f ============='/)
- 9000 format (/,' LAM MODE: default values for ADW_HALOX,ADW_HALOY=7,7'/,
-     $          '           unless otherwise specified in gem_cfgs'/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
  9500 format (/,' INVALID back-trajectory interpolator'/
      $         '      (Adw_interp_type = ',a,').  Valid interpolator'/
      $         '      types are "lagrangian", "truncated", "cubic".')
+ 9525 format (/,' NAMELIST williamson INVALID IN FILE: model_settings '/)
 *
 *-------------------------------------------------------------------
 *

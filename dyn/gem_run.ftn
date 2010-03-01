@@ -46,6 +46,9 @@
 * v3_20 - Tanguay M.        - Introduce Hzd_hdif0_L
 * v3_20 - Dugas B.          - Replace GEMTIM by GEMTIM2(may re-define Step_rsti)
 * v3_30 - Desgagne M.       - Restructure code, added output for cascade mode
+* v4    - Gravel-Girard-Plante - staggered version
+* v4_04 - Tanguay M.        - Staggered version TL/AD
+* v4_04 - Plante A.         - Remove offline mode
 *
 *object
 *	Performs the integration of the model
@@ -79,6 +82,7 @@
 #include "clim.cdk"
 #include "vrtd.cdk"
 #include "hzd.cdk"
+#include "hspng.cdk"
 *
       logical bkup_L,identity_4dvar_L
       integer last_step,fstep,istep,step0,stepf
@@ -89,26 +93,27 @@
       call blocstat ()
 
       fstep = Step_total
-
+*
 **** =====> BLOC 4D - debut
+*
       if ( V4dg_conf.ne.0 ) then
          if ( Schm_chems_L  ) call gem_stop('gem_run Schm_chems_L  ',-1)
          if ( Vrtd_L        ) call gem_stop('gem_run Vrtd_L        ',-1)
-         if ( Schm_offline_L) call gem_stop('gem_run Schm_offline_L',-1)
          if ( F_dgtflt_L    ) call gem_stop('gem_run F_dgtflt_L'    ,-1)
+         if ( F_rstrt_L     ) call gem_stop('gem_run F_rstrt_L     ',-1)
+         if ( Clim_climat_L ) call gem_stop('gem_run Clim_climat_L ',-1)
+         if ( Schm_sfix_L   ) call gem_stop('gem_run Schm_sfix_L   ',-1)
+         if ( Hspng_nj.ne.0 ) call gem_stop('gem_run Hspng_nj.ne.0 ',-1)
          fstep = V4dg_steplast
       endif
 *     ---------------------------------------------------------------
 *
       identity_4dvar_L = V4dg_conf.ne.0 .and. V4dg_identity_L 
 *
-*     4D-Var: Write trajectory for conversion if requested
-*     ----------------------------------------------------
-      if ( V4dg_oktrcv_L ) call v4d_rwconv0
-*
 *C    4D-Var: Control Cost function at INITIAL time
 *     ---------------------------------------------
-      if ( V4dg_conf.ne.0 ) call v4d_ctrlcst ()
+CCC   if ( V4dg_conf.ne.0 ) call v4d_ctrlcst ()
+*
 **** =====> BLOC 4D - fin
 *
       if (F_dgtflt_L) fstep = Init_dfnp-1
@@ -146,11 +151,6 @@
 *     -------------------------------
          if ( .not.identity_4dvar_L ) then
 *
-*        Horizontal diffusion & Vertical sponge (Initial timestep)
-*        ---------------------------------------------------------
-         if ( Lctl_step.eq.1.and.Hzd_hdif0_0_L.and.
-     $                     (.not.schm_offline_l) ) call hdif0
-*
 *        Dynamics timestep
 *        -----------------
          call dynstep
@@ -169,19 +169,13 @@
 *     --------------
          if ( F_dgtflt_L ) call digflt
 *
-         if (Schm_sfix_L.and.V4dg_conf.ne.0) call surfix
-*
-*     4D-Var: Write trajectory for conversion if requested
-*     ----------------------------------------------------
-         if ( V4dg_oktrcv_L ) call v4d_rwconv0
-*
 *C    4D-Var: Control Cost function at .NOT.INITIAL time
 *     --------------------------------------------------
-         if ( V4dg_conf.ne.0 ) call v4d_ctrlcst
+CCC      if ( V4dg_conf.ne.0 ) call v4d_ctrlcst
 *
 *C    Perform output if required
 *     --------------------------
-         if (Schm_sfix_L.and.V4dg_conf.eq.0) call surfix
+         if (Schm_sfix_L) call surfix
 *
          call out_dyn (.true.,-1)
          call blocstat

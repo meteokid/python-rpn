@@ -33,6 +33,7 @@
 * v3_20 - Pellerin P.       - schm_offline_l: allow to run 
 * v3_30 - Lee V.            - new Lam I/O with acid test
 *                             without the dynamical kernel
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 *
 *object
 *
@@ -87,7 +88,7 @@
          if (.not.Acid_skippospers_L) then
             call pospers( )
 *           Pour advection horizontales de fi pour zdot
-            call pospers_h( )
+            if (Schm_zdotlag_L) call pospers_h( )
          endif
          itraj = max( 5, Schm_itraj )
       endif
@@ -99,57 +100,53 @@
 * Perform time interpolation of Lateral BCs for LAM configurations
 *
       if ( G_lam .and. .not.Lam_ctebcs_L ) call nest_intt (done_intt_L) 
-*
-      if (.not.schm_offline_l) then
-*
+*     
       if ( Orh_crank_L ) then
-*
-*C          DUMMY TIME STEPS AND WIND INTERPOLATION
-*
-*          first guess for winds and positions at th
-*
+*     
+*        DUMMY TIME STEPS AND WIND INTERPOLATION
+*     
+*        first guess for winds and positions at th
+*     
          call wdpers( )
          if(Schm_zdotlag_L) call wdpers_h( )
-*
+*     
          if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
          do Orh_icn = 1,Schm_itcn-1
-*
-*C	        Perform dummy timestep
-*
+*     
+*           Perform dummy timestep
+*     
             call tstpdyn( itraj)
-*
-*C	        Compute the average of the t1 and t0 winds
-*
+*     
+*           Compute the average of the t1 and t0 winds
+*     
             call wndth( )
             if(Schm_zdotlag_L) call wndth_h( )
-*
+*     
             itraj = Schm_itraj
-*
+*     
          end do
          if (Lun_debug_L) write(Lun_out,1006)
-*
+*     
          Orh_icn=Schm_itcn
 *     
       else
 *     
          Orh_icn = 1
-*
+*     
       endif
-*
-*        ------------------------------------------------------------
-*C        Perform the timestep
-*        ------------------------------------------------------------
-*
+*     
+*     ------------------------------------------------------------
+*     Perform the timestep
+*     ------------------------------------------------------------
+*     
       call tstpdyn ( Schm_itraj )
-*
-      endif
-*
-*         ------------------------------------------------------------
-*C	  When the timestep is completed, rename all the
-*C        variables at time level t1 -> t0 and rename all the
-*C        variables at time level t0 -> t1 for the next timestep
-*         ------------------------------------------------------------
-*
+*     
+*     ------------------------------------------------------------
+*     C	  When the timestep is completed, rename all the
+*     C        variables at time level t1 -> t0 and rename all the
+*     C        variables at time level t0 -> t1 for the next timestep
+*     ------------------------------------------------------------
+*     
       call t12t2( )
       call t02t1( )
       call t22t0( )

@@ -1,0 +1,76 @@
+***s/r wil_rotate 
+*
+#include "model_macros_f.h"
+*
+      SUBROUTINE WIL_ROTATE(RLON,RLAT,ALPHA,ROTLON,ROTLAT)
+*
+      implicit none
+*
+      REAL RLON, RLAT, ALPHA, ROTLON, ROTLAT
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version ROTATE 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     THIS SUBROUTINE COMPUTES THE ROTATED COORDINATES
+*     ROTLON,ROTLAT FOR A ROTATION BY ANGLE ALPHA
+*
+*implicits
+#include "wil_dcst.cdk"
+*
+      REAL TEST
+*
+      IF (ALPHA .EQ. 0.0) THEN
+*
+*        NO ROTATION
+*        -----------
+         ROTLON = RLON
+         ROTLAT = RLAT
+*
+      ELSE
+*
+*        ROTATION BY ANGLE ALPHA
+*        -----------------------
+*
+*        ROTATED LATITUDE
+*        ----------------
+         TEST = SIN(RLAT)*COS(ALPHA)-COS(RLAT)*COS(RLON)*SIN(ALPHA)
+         IF (TEST .GT. 1.0) THEN
+            ROTLAT = Wil_Dcst_pi_8/2.0
+         ELSEIF (TEST .LT. -1.0) THEN
+            ROTLAT = -Wil_Dcst_pi_8/2.0
+         ELSE
+            ROTLAT = ASIN(TEST)
+         ENDIF
+*
+*        ROTATED LONGITUDE
+*        -----------------
+         TEST = COS(ROTLAT)
+         IF (TEST .EQ. 0.0) THEN
+            ROTLON = 0.0
+         ELSE
+            TEST = SIN(RLON)*COS(RLAT)/TEST
+            IF (TEST .GT. 1.0) THEN
+               ROTLON = Wil_Dcst_pi_8/2.0
+            ELSEIF (TEST .LT. -1.0) THEN
+               ROTLON = -Wil_Dcst_pi_8/2.0
+            ELSE
+               ROTLON = ASIN(TEST)
+            ENDIF
+         ENDIF
+*
+*        ADJUST FOR CORRECT BRANCH OF INVERSE SINE
+*        -----------------------------------------
+         TEST = COS(ALPHA)*COS(RLON)*COS(RLAT)
+     $          + SIN(ALPHA)*SIN(RLAT)
+         IF (TEST .LT. 0.0) THEN
+            ROTLON = Wil_Dcst_pi_8 - ROTLON
+         ENDIF
+*
+      ENDIF
+*
+      RETURN
+      END

@@ -43,7 +43,7 @@
 *
       real tr1,trf
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
-      integer i,j,k,kk,err,pnlkey1(14),nvar,key1(Tr3d_ntr),key1_, 
+      integer i,j,k,err,pnlkey1(14),nvar,key1(Tr3d_ntr),key1_, 
      $        key2(Tr3d_ntr),key2_,n,id
       integer*8 pnt_tr1(Tr3d_ntr),pnt_trf(Tr3d_ntr)
 *
@@ -159,11 +159,10 @@
 *     copying values from UT1 to nest_u variables
 *
       do k= 1, G_nk+1
-      kk=min(k,G_nk)
       do j= 1, l_nj 
       do i= 1, l_ni
-         nest_u (i,j,kk)= ut1 (i,j,kk)
-         nest_v (i,j,kk)= vt1 (i,j,kk)
+         nest_u (i,j,k) = ut1 (i,j,k)
+         nest_v (i,j,k) = vt1 (i,j,k)
          nest_w (i,j,k) = wt1 (i,j,k)
          nest_t (i,j,k) = tt1 (i,j,k)
          nest_zd(i,j,k) = zdt1(i,j,k)
@@ -173,6 +172,7 @@
       do j= 1, l_nj 
       do i= 1, l_ni
          nest_s(i,j) = st1(i,j)
+         nest_t (i,j,G_nk+2) = tt1 (i,j,G_nk+2)
       end do
       end do
 *
@@ -195,7 +195,7 @@ c    %                                        1+acid_j0,G_nj-acid_jn,1,G_nk)
       do n=1,Tr3d_ntr
          patr1 = pnt_tr1(n)
          patrf = pnt_trf(n)
-         do k= 1, G_nk+1
+         do k= 1, G_nk+2
             do j= 1, l_nj 
             do i= 1, l_ni
                trf (i,j,k) = tr1 (i,j,k)

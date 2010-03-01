@@ -24,6 +24,8 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v3_31 - Lee V.            - added extra CHECK for LAM grid
+* v4_04 - Plante            - Remove offline mode
 *
 *object
 *  Default configuration and reading namelist grid
@@ -118,6 +120,12 @@
          endif
          Grd_nila = Grd_ni
          Grd_njla = Grd_nj
+         if (Grd_iref.lt.1.or.Grd_iref.gt.Grd_ni.or.
+     $       Grd_jref.lt.1.or.Grd_jref.gt.Grd_nj) then
+            if (Lun_out.gt.0) write(Lun_out,1002)
+     $                        Grd_ni,Grd_nj,Grd_iref,Grd_jref
+            goto 9988
+         endif
          Grd_x0   = Grd_lonr - (Grd_iref-1) * Grd_dx
          Grd_y0   = Grd_latr - (Grd_jref-1) * Grd_dy
          Grd_xl   = Grd_x0   + (Grd_ni  -1) * Grd_dx
@@ -128,7 +136,7 @@
      $        (Grd_xl.gt.360.).or.(Grd_yl.gt. 90.) ) then
             if (Lun_out.gt.0) write (Lun_out,1001) 
      $                        Grd_x0,Grd_y0,Grd_xl,Grd_yl
-            if (.not.Schm_offline_L) goto 9988
+            goto 9988
          endif
       endif
 *     
@@ -211,6 +219,8 @@
  5000 format(' HORIZONTAL GRID ROTATION MATRIX:'/3(3d20.12/))
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/,
      $         ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
+ 1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/,
+     $         ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
  8000 format (/,'========= ABORT IN S/R grid_nml.f ============='/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST grid INVALID IN FILE: ',A/)

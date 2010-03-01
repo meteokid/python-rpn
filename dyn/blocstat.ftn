@@ -48,6 +48,7 @@
 #include "adw.cdk"
 #include "schm.cdk"
 #include "glb_pil.cdk"
+#include "acid.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -64,6 +65,9 @@
       elseif (V4dg_conf.eq.0) then
 *
       if (mod(Lctl_step,Step_gstat).eq.0) then
+          
+          if (Acid_test_L.and.Acid_pilot_L.and.Lctl_step.lt.Acid_npas) return
+          if (Lctl_step.eq.Acid_npas.and.Acid_test_L) write(6,999)
 *
       key(1)  = VMM_KEY(ut1)
       key(2)  = VMM_KEY(vt1)
@@ -91,26 +95,33 @@
       err = VMM_GET_VAR(st1)
       if(.not.Schm_hydro_L) err = VMM_GET_VAR(qt1)
 *
-      if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
+      if (Ptopo_myproc.eq.0) then
+          if (Acid_test_L) then
+              write(6,2000) Lctl_step-Acid_npas
+          else
+              write(6,1000) Lctl_step
+          endif
+      endif
 *
-      i0 = 1
-      in = G_ni
-      j0 = 1
-      jn = G_nj
+      i0 = 1+acid_i0
+      in = G_ni-acid_in
+      j0 = 1+acid_j0
+      jn = G_nj-acid_jn
       inn= 0
       if (G_lam) then
            inn=1
       endif
-      call glbstat (ut1  ,' U',LDIST_DIM,G_nk+1,i0,in-inn,j0,jn  ,1,G_nk)
-      call glbstat (vt1  ,' V',LDIST_DIM,G_nk+1,i0,in    ,j0,jn-1,1,G_nk)
+      call glbstat (ut1  ,' U',LDIST_DIM,G_nk+1,i0,in-inn,j0,jn  ,1,G_nk+1)
+      call glbstat (vt1  ,' V',LDIST_DIM,G_nk+1,i0,in    ,j0,jn-1,1,G_nk+1)
       call glbstat (wt1  ,' W',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
       if(Schm_zdotMid_L) then
          call glbstat (zdth ,'ZD',LDIST_DIM,G_nk,i0,in ,j0,jn  ,1,G_nk)
       else
          call glbstat (zdt1 ,'ZD',LDIST_DIM,G_nk+1,i0,in ,j0,jn  ,1,G_nk+1)
       endif
-      call glbstat (tt1  ,' T',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+1)
-      call glbstat (fiptx,'GZ',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
+      call glbstat (tt1  ,' T',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
+      if(.not.acid_test_L)
+     $     call glbstat (fiptx,'GZ',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
       call glbstat (st1,' S',LDIST_DIM,1,i0,in    ,j0,jn  ,1,1)
       if(.not.Schm_hydro_L)
      $   call glbstat (qt1  ,' Q',LDIST_DIM,G_nk+2,i0,in ,j0,jn  ,1,G_nk+2)
@@ -127,15 +138,10 @@
       end do
       if (Tr3d_ntr.gt.0) then
          err = vmmlod(key,Tr3d_ntr)  
-         if(Schm_moist_L) then
-            err = vmmget(key(1),patr,tr)
-            call glbstat (tr,Tr3d_name_S(1),LDIST_DIM,G_nk+2,i0,in,j0,jn,
-     $                                                          1,G_nk+1)
-         endif
-         do k=2,Tr3d_ntr
+         do k=1,Tr3d_ntr
             err = vmmget(key(k),patr,tr)
             call glbstat (tr,Tr3d_name_S(k),LDIST_DIM,G_nk+2,i0,in,j0,jn,
-     $                                                          1,G_nk+1)
+     $                                                          1,G_nk+2)
          end do
          err = vmmuld(key,Tr3d_ntr)
       endif
@@ -149,7 +155,13 @@
       endif
 *
 *
-      if (Ptopo_myproc.eq.0) write(6,1001)
+      if (Ptopo_myproc.eq.0) then
+          if (Acid_test_L) then
+              write(6,2001)
+          else
+              write(6,1001)
+          endif
+      endif
 *
 *     Print max courrant numbers if LAM mode
       if (G_lam) then
@@ -181,10 +193,13 @@
 *
  101  format (' MAX COURANT NUMBER:  ',
      $          a3,': [(',i3,',',i3,',',i3,') ',f12.7,']')
+  999 format (' START OF ACID TEST!!!!!!!!!')
  1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')
  1002 format (i4,a10, i4,10X,' Max:[(',i3,',',i3,',',i3,')]',a6)
  1003 format (i4,a10, i4,10X,' N:[',i4,'] S:[',i4,'] E :[',i4,'] W:[',i4,']')
+ 2000 format (/ 19('#'),' ACID BLOC STAT ',i6,1X,19('#'))
+ 2001 format (  19('#'),' ACID BLOC STAT ...done')
 *     ---------------------------------------------------------------
 *
       return

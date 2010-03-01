@@ -30,7 +30,12 @@
 * v3_30 - Milbrandt J.      - Added extra hydrometeor variables (snow and hail)
 *                             for Milbrandt-Yau scheme for water-loading
 * v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+*                             QR to QL(rain),QG to QJ(graupel),
+*                             QC to QB(cloud;Kong-Yau and Milbrandt-Yau only)
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 * v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
+* v4_04 - Tanguay M.        - Staggered version TL/AD
 *
 *object
 *     Subroutine to control the production of
@@ -51,6 +56,7 @@
 #include "rstr.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
+#include "vt1_m.cdk"
 #include "vtx.cdk"
 #include "vth.cdk"
 #include "p_geof.cdk"
@@ -89,18 +95,19 @@
       real deg2rad
       real ptop(LDIST_SHAPE), p0(LDIST_SHAPE), wlao(LDIST_SHAPE)
       real xtmp(LDIST_SHAPE),ytmp(LDIST_SHAPE)
-      real qx(LDIST_SHAPE,G_nk+2),
+      real qx(LDIST_SHAPE,G_nk+2),qc(LDIST_SHAPE,G_nk+2),
+     $     hu(LDIST_SHAPE,G_nk+2), hu_m(LDIST_SHAPE,G_nk+2),
      $     wlnpi_m(LDIST_SHAPE,0:G_nk+1),
      $     wlnpi_t(LDIST_SHAPE,G_nk+2),
-     $     vtm(LDIST_SHAPE,G_nk)
-      integer keym(Tr3d_ntr),key0m,ninj
+     $     vt_m(LDIST_SHAPE,G_nk+2)
+      integer key_m(Tr3d_ntr),key0_m,ninj
       integer ktop(LDIST_SHAPE,G_nk+1),kbot(LDIST_SHAPE,G_nk+1)
       logical periodx_L,v4dgconf_L,doneonce,ontimec
-      real hut1,qct1,hum1,qjt1,posit,huv
+      real hut1,qct1,hut1_m,qjt1,posit,huv
       pointer (paposit, posit(*)), (pahuv, huv(*))
-      pointer (patrm, hum1(LDIST_SHAPE,*))
-      pointer (patr, hut1(LDIST_SHAPE,*)),(patr2, qjt1(LDIST_SHAPE,*)),
-     $        (patr1, qct1(LDIST_SHAPE,*))
+      pointer (pahu_m, hut1_m(LDIST_SHAPE,*))
+      pointer (pahu, hut1(LDIST_SHAPE,*)),(paqj, qjt1(LDIST_SHAPE,*)),
+     $        (paqc, qct1(LDIST_SHAPE,*))
       real*8 dayfrac,sec_in_day
       parameter ( sec_in_day=86400.0d0 )
       data doneonce/.false./
@@ -178,10 +185,19 @@
       pnlkey(10)= VMM_KEY(zdth)
       keytotal  = 10
 *
-*
-      if(.not.v4dgconf_L.or.(v4dgconf_L.and.V4dg_di_L)) then
+         if(.not.v4dgconf_L.or.(v4dgconf_L.and.V4dg_di_L)) then
 *
          err = vmmlod (pnlkey,keytotal)
+*
+         else
+            pnlkey(keytotal+1) = VMM_KEY(tt1_m)
+            pnlkey(keytotal+2) = VMM_KEY(st1_m)
+*
+            keytotal=keytotal+2
+            pnerr = vmmlod(pnlkey,keytotal)
+            pnerr = VMM_GET_VAR(tt1_m)
+            pnerr = VMM_GET_VAR(st1_m)
+         endif
 *
 *        Log-pressure on momentum and thermo levels, 
 *        with extra momentum levels at top (k=0) and surface (k=G_nk+1)
@@ -191,45 +207,29 @@
          do k=1,G_nk+1
             do j=l_miny,l_maxy
             do i=l_minx,l_maxx
-               wlnpi_m(i,j,k) = Ver_a_spcl_8%m(k)
-     &                        + Ver_b_spcl_8%m(k)*st1(i,j)
+               if(.not.v4dgconf_L.or.(v4dgconf_L.and.V4dg_di_L)) then
+               wlnpi_m(i,j,k) = Ver_a_8%m(k) + Ver_b_8%m(k)*st1(i,j)
+               else
+               wlnpi_m(i,j,k) = Ver_a_8%m(k) + Ver_b_8%m(k)*st1_m(i,j)
+               endif
                wlnpi_t(i,j,k)=.5d0*(wlnpi_m(i,j,k)+wlnpi_m(i,j,k-1))
             enddo
             enddo
          enddo
+*
+         if(Schm_autobar_L) then
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               wlnpi_t(i,j,1)=Cstv_ztop_8
+            enddo
+            enddo
+         endif
 *
          do j=l_miny,l_maxy
          do i=l_minx,l_maxx
             wlnpi_t(i,j,G_nk+2)=wlnpi_m(i,j,G_nk+1)
          enddo
          enddo
-*
-      else
-*     <<<<<<<<<<<<<<<<<< CAUTION >>>>>>>>>>>>>>>>>>>>>>>>>>
-*     Temporary patch for pressure levels when TLM,ADJ.
-*     Correct evaluation should use TRAJECTORY when TLM,ADJ
-*     on pressure levels will be activated.
-*     <<<<<<<<<<<<<<<<<< CAUTION >>>>>>>>>>>>>>>>>>>>>>>>>>
-         print*,'4DVAR A ajuster pour staggering, aussi ajouter k=0 et k=G_nk+1'
-         call gem_stop('out_dyn',-1)
-         do k=1,l_nk
-         do j=1,l_nj
-         do i=1,l_ni
-c        TO BE REVIEWED
-c           wlnpi_m(i,j,k) = log ( ver_z_8%d(k) )
-         enddo
-         enddo
-         enddo
-*
-         pnlkey(keytotal+1) = VMM_KEY(tt1m)
-         pnlkey(keytotal+2) = VMM_KEY(st1m)
-*
-         keytotal=keytotal+2
-         pnerr = vmmlod(pnlkey,keytotal)
-         pnerr = VMM_GET_VAR(tt1m)
-         pnerr = VMM_GET_VAR(st1m)
-*
-      endif
 *
 *     Precomputations for interpolation from momentum to thermo levels.
       v_interp='CUBIC_UQAM'
@@ -253,13 +253,12 @@ c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
       err = VMM_GET_VAR(wt1)
       err = VMM_GET_VAR(zdth)
 
-      do k=1,l_nk+2
-      do j=j0,jn
-      do i=i0,in
-         qx (i,j,k) = 0.0
-      enddo
-      enddo
-      enddo
+*     Allocate work space and initialize
+      hu = 0.; hu_m = 0.;
+      qc = 0.; qx = 0.;
+      pahu = loc(hu)
+      pahu_m=loc(hu_m)
+      paqc = loc(qc)
 
       key0 = VMM_KEY (trt0)
       key1 = VMM_KEY (trt1)
@@ -271,20 +270,21 @@ c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
       pnerr = vmmlod(trkey1,Tr3d_ntr)
       do n=1,Tr3d_ntr
          if (Tr3d_name_S(n).eq.'HU') then
-            pnerr = vmmget(trkey1(n),patr,hut1)
+            pnerr = vmmget(trkey1(n),pahu,hut1)
          endif
          if (Schm_phyms_L) then
-             if (Tr3d_name_S(n).eq.'QC') then
-                 pnerr = vmmget(trkey1(n),patr1,qct1)
+             if (Tr3d_name_S(n).eq.'QC'.or.Tr3d_name_S(n).eq.'QB') then
+                 pnerr = vmmget(trkey1(n),paqc,qct1)
              endif
              if(Schm_wload_L)then
                if (Tr3d_name_S(n).eq.'QC'.or.
-     $             Tr3d_name_S(n).eq.'QR'.or.
+     $             Tr3d_name_S(n).eq.'QB'.or.
+     $             Tr3d_name_S(n).eq.'QL'.or.
      $             Tr3d_name_S(n).eq.'QI'.or.
      $             Tr3d_name_S(n).eq.'QN'.or.
-     $             Tr3d_name_S(n).eq.'QG'.or.
+     $             Tr3d_name_S(n).eq.'QJ'.or.
      $             Tr3d_name_S(n).eq.'QH'    ) then
-                   pnerr = vmmget(trkey1(n),patr2,qjt1)
+                   pnerr = vmmget(trkey1(n),paqj,qjt1)
                    do k=1,l_nk+2
                    do j=j0,jn
                    do i=i0,in
@@ -298,23 +298,21 @@ c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
       enddo
 *
       if(v4dgconf_L.and.(V4dg_tl_L.or.V4dg_ad_L)) then
-         print*,'4DVAR A ajuster pour staggering'
-         call gem_stop('out_dyn',-2)         
-         do k=1,l_nk
+         do k=1,l_nk+2
          do j=j0,jn
          do i=i0,in
-            vtm (i,j,k) = tt1m(i,j,k)
+            vt_m (i,j,k) = tt1_m(i,j,k)
          enddo
          enddo
          enddo
-         key0m = VMM_KEY (trt1m)
+         key0_m = VMM_KEY (trt1_m)
          do k=1,Tr3d_ntr
-            keym(k) = key0m + k
+            key_m(k) = key0_m + k
          end do
-         pnerr = vmmlod(keym,Tr3d_ntr)
+         pnerr = vmmlod(key_m,Tr3d_ntr)
          do n=1,Tr3d_ntr
             if (Tr3d_name_S(n).eq.'HU') then
-                pnerr = vmmget(keym(n),patrm,hum1)
+                pnerr = vmmget(key_m(n),pahu_m,hut1_m)
             endif
          enddo
       endif
@@ -328,8 +326,6 @@ c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
       if (Out3_ip3.eq.-1) ip3 = Lctl_step
       if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
       if (v4dgconf_L) then
-         print*,'4DVAR A ajuster pour staggering'
-         call gem_stop('out_dyn',-3)         
           if (.not.V4dg_4dvar_L) then
               ip3 = V4dg_status
               if (V4dg_conf/100.eq.1.and.V4dg_ad_L)
@@ -387,14 +383,14 @@ c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
 *     
                 if(Schm_zdotMid_L) then
                    call out_thm(fiptx,tt1,st1,qct1,qx,hut1,zdth,
-     $              wt1,zz1,vtm,hum1,st1m,piup,
+     $              wt1,zz1,vt_m,hut1_m,st1_m,piup,
      $              wlnpi_m(l_minx,l_miny,1),wlnpi_t,ptop,p0,wlao,topo,
      $              posit,huv,
      $              ninj,G_nk,Out_levtyp_S, Level(1,levset),
      $              ind_o,nk_o,nk_ot,kk)
                 else
                    call out_thm(fiptx,tt1,st1,qct1,qx,hut1,zdt1,
-     $              wt1,zz1,vtm,hum1,st1m,piup,
+     $              wt1,zz1,vt_m,hut1_m,st1_m,piup,
      $              wlnpi_m(l_minx,l_miny,1),wlnpi_t,ptop,p0,wlao,topo,
      $              posit,huv,
      $              ninj,G_nk,Out_levtyp_S, Level(1,levset),
@@ -424,7 +420,7 @@ c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
       pnerr = vmmuln(pnlkey,keytotal)
       pnerr = vmmuln(trkey0,Tr3d_ntr)
       pnerr = vmmuln(trkey1,Tr3d_ntr)
-      if(v4dgconf_L.and.(V4dg_tl_L.or.V4dg_ad_L)) pnerr = vmmuln(keym,Tr3d_ntr)
+      if(v4dgconf_L.and.(V4dg_tl_L.or.V4dg_ad_L)) pnerr = vmmuln(key_m,Tr3d_ntr)
 
       if (Outd_vmm_L) then
 
@@ -513,7 +509,7 @@ c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
              call datf2p (pdate,Out3_date)
              dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
              call incdatsd (datev,pdate,dayfrac)
-             if (Acid_test_L) then
+             if (Acid_test_L.and.Lctl_step.eq.Grdc_start) then
                call acid_outdyn_3df (datev,casc_out,Grdc_gid,Grdc_gif,
      $                                              Grdc_gjd,Grdc_gjf)
              else
@@ -528,13 +524,8 @@ c      call inv_posiz (posit,huv,wlnpi_m,wlnpi_t,ktop,kbot,ninj,G_nk+1,G_nk+2)
             call datf2p (pdate,Out3_date)
             dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
             call incdatsd (datev,pdate,dayfrac)
-            if (Acid_test_L) then
-                call acid_outdyn_bcs (datev,is,nis,js,jn,njs,iw,ie,
+            call out_dyn_bcs (datev,is,nis,js,jn,njs,iw,ie,
      $                                   niw,jw,njw,casc_out)
-            else
-                call out_dyn_bcs (datev,is,nis,js,jn,njs,iw,ie,
-     $                                   niw,jw,njw,casc_out)
-            endif
          endif
 *
       endif

@@ -88,40 +88,21 @@ C     call tmg_start ( 33, 'adw_meanpos' )
          call vcos(xcos, xcos, vnik)
          call vcos(ycos, ycos, vnik)
 *
-         if(Schm_virlev_L) then
 ************************************************************************
 * For 1st and last thermodynamic levels positions in the horizontal are*
 * those of the momentum levels; no displacement allowed in the vertical*
 ************************************************************************
-            do i=i0,in
-               n = ((j-1)*l_ni) + i
-               F_xt(n) = F_xm(n)
-               F_yt(n) = F_ym(n)
-               F_zt(n) = Ver_z_8%t(1)
-               nm = (l_nk-1)*nij + ((j-1)*l_ni) + i
-               nt = (l_nk  )*nij + ((j-1)*l_ni) + i
-               F_xt(nt) = F_xm(nm)
-               F_yt(nt) = F_ym(nm)
-               F_zt(nt) = Ver_z_8%t(l_nk+1)
-            enddo
-         else
-*
-************************************************************************
-* For the first and last thermodynamic levels,                         *
-* positions in the horizontal are those of the momentum levels         *
-************************************************************************
-            do i=i0,in
-               n = ((j-1)*l_ni) + i
-               F_xt(n) = F_xm(n)
-               F_yt(n) = F_ym(n)
-               F_zt(n) = half*(Ver_z_8%m(0)+F_zm(n))
-               nm = (l_nk-1)*nij + ((j-1)*l_ni) + i
-               nt = (l_nk  )*nij + ((j-1)*l_ni) + i
-               F_xt(nt) = F_xm(nm)
-               F_yt(nt) = F_ym(nm)
-               F_zt(nt) = half*(Ver_z_8%m(l_nk+1)+F_zm(nm))
-            enddo
-         endif
+         do i=i0,in
+            n = ((j-1)*l_ni) + i
+            F_xt(n) = F_xm(n)
+            F_yt(n) = F_ym(n)
+            F_zt(n) = Ver_z_8%t(1)
+            nm = (l_nk-1)*nij + ((j-1)*l_ni) + i
+            nt = (l_nk  )*nij + ((j-1)*l_ni) + i
+            F_xt(nt) = F_xm(nm)
+            F_yt(nt) = F_ym(nm)
+            F_zt(nt) = Ver_z_8%t(l_nk+1)
+         enddo
 *
 ************************************************************************
 * cartesian coordinates of each momemtum levels                        *

@@ -1,0 +1,92 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+
+#if !defined(ITF_PHY_CDK)
+#define ITF_PHY_CDK 1
+
+!      integer  phy_init,phy_debu
+!      external phy_init,phy_debu
+      integer  phy_debu
+      external phy_debu
+
+      interface 
+
+         integer function phy_init(F_namelist,call_back,F_phys,F_unout)
+           character(len=*), intent(IN) :: F_namelist
+           logical, external   ::  call_back
+           logical, intent(IN) ::  F_phys
+           integer, intent(IN) ::  F_unout
+         end function phy_init
+         
+!         subroutine PHY_OPTC(NOM,VALEURC,NV,MODE,prout,err)
+!           character *(*), intent(IN) :: NOM, MODE
+!           logical, intent(IN) :: prout
+!           integer, intent(IN) :: NV,err
+!           character *(*), intent(INOUT) :: VALEURC(NV)
+!         end subroutine PHY_OPTC
+         
+!         subroutine PHY_OPTI(NOM,VALEURI,NV,MODE,prout,err)
+!           character *(*), intent(IN) :: NOM, MODE
+!           logical, intent(IN)    :: prout
+!           integer, intent(IN)    :: NV,err
+!           integer, intent(INOUT) :: VALEURI(NV)
+!         end subroutine PHY_OPTI
+         
+!         subroutine PHY_OPTR(NOM,VALEURR,NV,MODE,prout,err)
+!           character *(*), intent(IN) :: NOM, MODE
+!           logical, intent(IN) :: prout
+!           integer, intent(IN) :: NV,err
+!           real, intent(INOUT) :: VALEURR(NV)
+!         end subroutine PHY_OPTR
+         
+!         subroutine PHY_OPTL(NOM,VALEURL,NV,MODE,prout,err)
+!           character *(*), intent(IN) :: NOM, MODE
+!           logical, intent(IN)    :: prout
+!           integer, intent(IN)    :: NV,err
+!           logical, intent(INOUT) :: VALEURL(NV)
+!         end subroutine PHY_OPTL
+         
+!         integer function phy_debu(n,nk,dimbuse,dimbusd,dimbusp,dimbusv,prout,rdradf_d)
+!           logical, intent(IN)  :: prout
+!           integer, intent(IN)  :: n,nk
+!           integer, intent(OUT) :: dimbuse,dimbusd,dimbusp,dimbusv
+!         end function phy_debu
+         
+         subroutine phy_getbus(nm,on,desc,para,esp,n,bus,prout)
+           logical, intent(IN)  :: prout
+           character*1, intent(IN)  :: bus
+           integer, intent(IN)  :: n
+           integer, intent(OUT)  :: esp,para(n,8)
+           character*(*), intent(OUT)  :: nm(n),on(n),desc(n)
+         end subroutine phy_getbus
+         
+         subroutine phycom(nom,valeur,nv,mode)
+           integer, intent(IN) :: nv
+           character *(*), intent(IN) ::  nom, mode
+           integer, intent(INOUT) ::   valeur(nv)
+         end subroutine phycom
+
+         subroutine phy_exe(e,d,f,v, esiz,dsiz,fsiz,vsiz,dt,trnch,kount,task,ni,nk)
+           integer, intent(IN) :: esiz,dsiz,fsiz,vsiz,trnch,kount,task,ni,nk
+           real, intent(IN)    :: dt
+           real, intent(IN)    :: e(esiz), d(dsiz)
+           real, intent(INOUT) :: f(fsiz)
+           real, intent(OUT)   :: v(vsiz)
+         end subroutine phy_exe
+
+      end interface
+
+! TODO: Create interface block for all of them
+!      phy_zeracc
+
+#endif

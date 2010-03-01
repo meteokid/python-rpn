@@ -1,0 +1,266 @@
+***s/r wil_d01ahe
+*
+      FUNCTION WIL_D01AHE (A,B,EPSIL,NPTS,RELERR,F,NLIMIT,IER)
+*
+      implicit none
+*
+      real WIL_D01AHE,A,B,EPSIL,RELERR
+      integer NPTS,NLIMIT,IER
+      EXTERNAL F
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version D01AHE 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+* --------------------------------------------------------------------
+* LATEST REVISION        FEBRUARY 1992
+*
+* PURPOSE                TO CALCULATE AUTOMATICALLY THE INTEGRAL OF F(X)
+*                        OVER THE FINITE INTERVAL (A,B) WITH RELATIVE
+*                        ERROR LESS THAN EPSIL.  THE PACKAGE CONTAINS
+*                        TWO ROUTINES, D01AHE AND QUAD.  D01AHE IS
+*                        RECOMMENDED AS THE PRIMARY USER ENTRY, THOUGH
+*                        USERS DESIRING MORE CONTROL MAY WISH TO CALL
+*                        SUBROUTINE QUAD THEMSELVES.
+*
+* SPECIAL CONDITIONS     IF THE RANGE INCLUDES DISCONTINUITIES OR
+*                        SINGULARITIES, SPECIAL TREATMENT MAY BE
+*                        NECESSARY.  DISCONTINUITIES MAY BE TREATED BY
+*                        SUBDIVIDING THE INTERVAL AT EACH DISCONTINUITY.
+*                        THE ROUTINE WILL COPE WITH A SINGULARITY OF THE
+*                        TYPE X**P, WHERE 0 .GT. P .GT. -.9 AT EITHER OR
+*                        BOTH ENDS OF THE RANGE, BUT THE CALCULATION IS
+*                        TIME CONSUMING, INVOLVING MANY FUNCTION
+*                        EVALUATIONS.
+*
+* HISTORY                THIS PACKAGE IS A FORTRAN 66 STANDARDIZED
+*                        VERSION OF ACM ALGORITHM 468.  IT WAS
+*                        CODED AT NCAR IN THE EARLY 1970'S
+*                        BY MEMBERS OF THE SCIENTIFIC COMPUTING
+*                        DIVISION IN BOULDER, COLORADO.
+*                        MODIFIED TO SAME INTERFACE AS NAG ROUTINE
+*
+* REFERENCES             SEE PUBLICATION
+*                          ALGORITHM FOR AUTOMATIC NUMERICAL
+*                          INTEGRATION OVER A FINITE INTERVAL
+*                        BY T.N.L. PATTERSON, 1973
+*                        COMMUNICATIONS OF THE ACM, VOL. 16,
+*                        PP. 694-699.
+* --------------------------------------------------------------------
+* FUNCTION D01AHE (A,B,F,EPSIL,NPTS,RELERR,IER)
+*
+* PURPOSE                TO CALCULATE AUTOMATICALLY THE INTEGRAL OF F(X)
+*                        OVER THE FINITE INTERVAL (A,B) WITH RELATIVE
+*                        ERROR LESS THAN EPSIL.
+*
+* USAGE                  R = D01AHE (A,B,F,EPSIL,NPTS,RELERR,IER)
+*                        WHERE R IS THE VALUE OF THE INTEGRAL.
+*
+* ARGUMENTS
+*
+* ON INPUT               A
+*                          LOWER LIMIT OF INTEGRATION.
+*
+*                        B
+*                          UPPER LIMIT OF INTEGRATION.
+*
+*                        F
+*                          F(X) IS USER WRITTEN FUNCTION TO CALCULATE
+*                          THE INTEGRAND.  F MUST BE DECLARED EXTERNAL
+*                          IN THE CALLING PROGRAM.
+*
+*                        EPSIL
+*                          REQUIRED RELATIVE ERROR OF THE INTEGRAL.  IT
+*                          IS RECOMMENDED THAT EPSIL BE LESS THAN .001.
+*
+* ON OUTPUT              NPTS
+*                          NUMBER OF INTEGRAND EVALUATIONS PERFORMED.
+*
+*                        RELERR
+*                          CRUDE ESTIMATE OF RELATIVE ERROR OBTAINED BY
+*                          SUMMING THE ABSOLUTE VALUES OF THE ERRORS
+*                          PRODUCED BY QUAD ON EACH SUBINTERVAL AND
+*                          DIVIDING BY THE CALCULATED VALUE OF THE
+*                          INTEGRAL.
+*
+*                        IER
+*                          ERROR PARAMETER.
+*                          = 0  REQUIRED ACCURACY ACHIEVED.
+*                          = 1  RELAXED CONVERGENCE FOR AT LEAST ONE
+*                               SUBINTERVAL.  ACCURACY SHOULD BE CHECKED
+*                               BY EXAMINING RELERR.  IF A SUBINTERVAL
+*                               DOES NOT CONVERGE WITH RELATIVE ERROR
+*                               EPSIL, A RELAXED CONVERGENCE CRITERION
+*                               IS APPLIED.  THIS IS
+*                                 ABS(RESULT(K)-RESULT(K-1)) .LE.
+*                                 ESTIM*EPSIL
+*                               WHERE ESTIM IS THE ESTIMATE OF THE
+*                               INTEGRAL OBTAINED BY APPLYING QUAD TO
+*                               THE WHOLE INTERVAL.  THIS ALLOWS FOR THE
+*                               SITUATION WHERE NEARLY ALL THE ERROR MAY
+*                               BE CONCENTRATED IN ONE SUBINTERVAL AS
+*                               FOR A SINGULARITY.
+*                          = 2  INTERVAL STACK OVERFLOW.  CHECK
+*                               ACCURACY.  THE INTERVAL STACK ALLOWS FOR
+*                               50 INTERVALS NEEDING FURTHER
+*                               SUBDIVISION.  IF THE STACK IS FULL WHEN
+*                               ANOTHER INTERVAL NEEDS TO BE ADDED, THAT
+*                               INTERVAL IS ACCEPTED AS IT STANDS, EVEN
+*                               THOUGH CONVERGENCE HAS FAILED.  THIS
+*                               ENTAILS LOSS OF ACCURACY.
+*
+* METHOD                 D01AHE CALLS SUBROUTINE QUAD TO INTEGRATE
+*                        OVER A FINITE INTERVAL EMPLOYING SUCCESSIVE
+*                        ADAPTIVE SUBDIVISION IF CONVERGENCE TO THE
+*                        REQUIRED ACCURACY IS NOT ACHIEVED.
+* --------------------------------------------------------------------
+*implicits
+#include "wil_lun.cdk"
+* --------------------------------------------------------------------
+*
+      REAL RESULT(8),STACK(10000),ESTIM,SUB1,SUB2,SUB3,COMP
+      INTEGER ISMAX/10000/,K,IS,IC,ISTACK,IIER,NF
+*
+* --------------------------------------------------------------------
+*
+*     THE FOLLOWING CALL IS FOR GATHERING STATISTICS ON LIBRARY USE AT NCAR
+*     ---------------------------------------------------------------------
+CCC   LOGICAL Q8Q4
+CCC   SAVE Q8Q4
+CCC   DATA Q8Q4 /.TRUE./
+CCC   IF (Q8Q4) THEN
+CCC       CALL Q8QST4('LOCLIB','ADQUAD','ADQUAD','VERSION 12')
+CCC       Q8Q4 = .FALSE.
+CCC   ENDIF
+*
+      CALL WIL_QUAD (A,B,F,RESULT,-EPSIL,NPTS,K,IER)
+      WIL_D01AHE = RESULT(K)
+      RELERR = 0.0
+      IF (WIL_D01AHE .NE. 0.0) RELERR = ABS((RESULT(K)-RESULT(K-1))/WIL_D01AHE)
+*
+*     CHECK IF SUBDIVISION IS NEEDED
+*     ------------------------------
+      IF (IER .EQ. 0) RETURN
+*
+*     SUBDIVIDE
+*     ---------
+      ESTIM = ABS(WIL_D01AHE*EPSIL)
+      RELERR = 0.0
+      WIL_D01AHE = 0.0
+      IS = 1
+      IC = 0
+      ISTACK = 0
+      SUB1 = A
+      SUB3 = B
+  101 CONTINUE
+      SUB2 = (SUB1+SUB3)*0.5
+      CALL WIL_QUAD (SUB1,SUB2,F,RESULT,-EPSIL,NF,K,IER)
+      NPTS = NPTS+NF
+      COMP = ABS(RESULT(K)-RESULT(K-1))
+*
+*     CHECK FOR INTERVAL CONVERGENCE
+*     ------------------------------ 
+      IF (IER .EQ. 0) GO TO 103
+*
+*     CHECK FOR RELAXED CONVERGENCE
+*     -----------------------------
+      IF (COMP .LE. ESTIM) GO TO 110
+*
+*     CHECK FOR FULL STACK
+*     --------------------
+      IF (IS .GE. ISMAX) GO TO 102
+*
+*     SUBINTERVAL(SUB1,SUB2) DID NOT CONVERGE. STACK FOR FUTURE PROCESSING
+*     --------------------------------------------------------------------
+      STACK(IS) = SUB1
+      IS = IS+1
+      STACK(IS) = SUB2
+      IS = IS+1
+      GO TO 104
+*
+*     STACK FULL, CONVERGENCE FAILURE IGNORED. ISTACK SET TO 1 TO INDICATE THIS
+*     -------------------------------------------------------------------------
+*
+  102 CONTINUE
+      ISTACK = 1
+*
+*     FIRST HALF INTERVAL CONVERGED
+*     -----------------------------
+  103 CONTINUE
+      WIL_D01AHE = WIL_D01AHE+RESULT(K)
+      RELERR = RELERR+COMP
+*
+*     PROCESS SECOND HALF INTERVAL
+*     ---------------------------- 
+  104 CONTINUE
+      CALL WIL_QUAD (SUB2,SUB3,F,RESULT,-EPSIL,NF,K,IER)
+      NPTS = NPTS+NF
+      COMP = ABS(RESULT(K)-RESULT(K-1))
+*
+*     CHECK FOR CONVERGENCE
+*     ---------------------
+      IF (IER .EQ. 0) GO TO 105
+*
+*     CHECK FOR RELAXED CONVERGENCE
+*     -----------------------------
+*
+      IF (COMP .LE. ESTIM) GO TO 111
+*
+*     NO CONVERGENCE. SUBDIVIDE INTERVAL(SUB2,SUB3) AND REPEAT
+*     --------------------------------------------------------
+      SUB1 = SUB2
+      GO TO 101
+*
+*     SECOND HALF INTERVAL CONVERGED
+*     ------------------------------
+  105 CONTINUE
+      WIL_D01AHE = WIL_D01AHE+RESULT(K)
+      RELERR = RELERR+COMP
+*
+*     CHECK FOR ALL DELINQUENT INTERVALS NOW PROCESSED
+*     ------------------------------------------------
+      IF (IS .EQ. 1) GO TO 106
+*
+*     SUBDIVIDE DELINQUENT INTERVAL LAST STACKET
+*     ------------------------------------------
+      IS = IS-1
+      SUB3 = STACK(IS)
+      IS = IS-1
+      SUB1 = STACK(IS)
+      GO TO 101
+*
+*     FINAL RESULT WITH SUBDIVISION
+*     -----------------------------
+  106 CONTINUE
+      IER = IC
+      IF(ISTACK.NE.0)IER=2
+      IIER = IER+1
+      GO TO (109,107,108),IIER
+  107 CONTINUE
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,112) 
+  112    FORMAT(/,' WIL_D01AHE: RELAXED CONVERGENCE')
+CCC   CALL ULIBER (IER,27H ADQUAD-RELAXED CONVERGENCE,27)
+      GO TO 109
+  108 CONTINUE
+         if (Wil_Lun_out.gt.0) WRITE(Wil_Lun_out,113)
+  113    FORMAT(/,' WIL_D01AHE: INTERVAL STACK OVERFLOW, CHECK ACCURACY')
+CCC   CALL ULIBER (IER,
+CCC  1             47H ADQUAD-INTERVAL STACK OVERFLOW, CHECK ACCURACY,
+CCC  2             47)
+  109 CONTINUE
+      IF (WIL_D01AHE .NE. 0.0) RELERR = RELERR/ABS(WIL_D01AHE)
+      RETURN
+*
+*     RELAXED CONVERGENCE
+*     -------------------
+  110 CONTINUE
+      IC = 1
+      GO TO 103
+  111 CONTINUE
+      IC = 1
+      GO TO 105
+*
+      END

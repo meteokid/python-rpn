@@ -1,0 +1,544 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r  bacp_2_ad - ADJ of bacp_2_tl 
+*
+#include "model_macros_f.h"
+*
+      subroutine bacp_2_ad (
+     $                    F_itr, F_itnlh, F_p , F_fis,
+     $                    F_u  , F_v    , F_w , F_t  ,
+     $                    F_s  , F_zd   , F_q , F_fip,
+     $                    F_ru , F_rv   , F_rt, F_rw , F_rf,
+     $                    F_nu , F_nv   , F_nt, F_nw , F_nf,
+*
+     $                    F_s_m, F_fip_m, 
+*
+     $                    DIST_DIM, Nk )
+*
+      implicit none
+*
+      integer  F_itr, F_itnlh, DIST_DIM, Nk
+*
+      real     F_p    (DIST_SHAPE,0:Nk+1) ,  F_fis  (DIST_SHAPE)       ,
+     %         F_u    (DIST_SHAPE,  Nk)   ,  F_v    (DIST_SHAPE,  Nk)  ,
+     %         F_w    (DIST_SHAPE,  Nk+1) ,  F_t    (DIST_SHAPE,  Nk+1),
+     %         F_s    (DIST_SHAPE)        ,  F_zd   (DIST_SHAPE,  Nk+1),
+     %         F_q    (DIST_SHAPE,0:Nk+1) ,  F_fip  (DIST_SHAPE,0:Nk+1),
+     %         F_ru   (DIST_SHAPE,  Nk)   ,  F_rv   (DIST_SHAPE,  Nk)  ,
+     %         F_rt   (DIST_SHAPE,  Nk+1) ,  F_rw   (DIST_SHAPE,Nk+1)  ,
+     %         F_rf   (DIST_SHAPE,  Nk+1) ,
+     %         F_nu   (DIST_SHAPE,  Nk)   ,  F_nv   (DIST_SHAPE,  Nk)  ,
+     %         F_nt   (DIST_SHAPE,  Nk+1) ,  F_nw   (DIST_SHAPE,  Nk+1),
+     %         F_nf   (DIST_SHAPE,  Nk+1)
+*
+      real     F_s_m  (DIST_SHAPE)       , 
+     %         F_fip_m(DIST_SHAPE,0:Nk+1)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_30 - Edouard S.        - remove pi' at the top (F_pptt0)
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate and LAM version 
+*                           - adapt for tracers in tr3d  
+* v3_00 - Tanguay M.        - adapt to restructured bacp_2 
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp
+* v3_30 - Tanguay M.        - Enforce similarities between NL and TRAJ TL  
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*     see id section 
+*
+*arguments
+*     see documentation of appropriate comdecks 
+*
+*implicits
+#include "glb_ld.cdk"
+*
+      integer i0, j0, in, jn
+*
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
+*
+      call  bacp_2_2_ad (
+     $                 F_itr, F_itnlh, F_p , F_fis,
+     $                 F_u  , F_v    , F_w , F_t  ,
+     $                 F_s  , F_zd   , F_q , F_fip,
+     $                 F_ru , F_rv   , F_rt, F_rw , F_rf,
+     $                 F_nu , F_nv   , F_nt, F_nw , F_nf,
+*
+     $                 F_s_m, F_fip_m, 
+*
+     $                 DIST_DIM, Nk, i0, j0, in, jn )
+*
+      return
+      end
+*
+      subroutine bacp_2_2_ad (
+     $                      F_itr, F_itnlh, F_p , F_fis,
+     $                      F_u  , F_v    , F_w , F_t  ,
+     $                      F_s  , F_zd   , F_q , F_fip,
+     $                      F_ru , F_rv   , F_rt, F_rw , F_rf,
+     $                      F_nu , F_nv   , F_nt, F_nw , F_nf,
+*
+     $                      F_s_m, F_fip_m, 
+*
+     $                      DIST_DIM, Nk, i0, j0, in, jn )
+*
+      implicit none
+*
+      integer  F_itr, F_itnlh, DIST_DIM, Nk , i0, j0, in, jn
+      real     F_p    (DIST_SHAPE,0:Nk+1) ,  F_fis  (DIST_SHAPE)       ,
+     %         F_u    (DIST_SHAPE,  Nk)   ,  F_v    (DIST_SHAPE,  Nk)  ,
+     %         F_w    (DIST_SHAPE,  Nk+1) ,  F_t    (DIST_SHAPE,  Nk+1),
+     %         F_s    (DIST_SHAPE)        ,  F_zd   (DIST_SHAPE,  Nk+1),
+     %         F_q    (DIST_SHAPE,0:Nk+1) ,  F_fip  (DIST_SHAPE,0:Nk+1),
+     %         F_ru   (DIST_SHAPE,  Nk)   ,  F_rv   (DIST_SHAPE,  Nk)  ,
+     %         F_rt   (DIST_SHAPE,  Nk+1) ,  F_rw   (DIST_SHAPE,Nk+1)  ,
+     %         F_rf   (DIST_SHAPE,  Nk+1) ,
+     %         F_nu   (DIST_SHAPE,  Nk)   ,  F_nv   (DIST_SHAPE,  Nk)  ,
+     %         F_nt   (DIST_SHAPE,  Nk+1) ,  F_nw   (DIST_SHAPE,  Nk+1),
+     %         F_nf   (DIST_SHAPE,  Nk+1)
+*
+      real     F_s_m  (DIST_SHAPE)       , 
+     %         F_fip_m(DIST_SHAPE,0:Nk+1)
+*
+*implicits
+#include "glb_pil.cdk"
+#include "glb_ld.cdk"
+#include "orh.cdk"
+#include "cori.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "lun.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "schm.cdk"
+#include "ptopo.cdk"
+*
+      integer i, j, k, nij
+      real*8  xxx_8, yyy_8, zzz_8, p1_8, p2_8, p3_8, p4_8, p5_8
+*
+      real*8  ONE_8, HALF_8, ZERO_8
+      parameter(ONE_8=1.d0, HALF_8=.5d0, ZERO_8=0.0)
+*
+      real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
+*
+      real*8, dimension(i0:in,j0:jn):: xtmp_m_8, ytmp_m_8
+*
+      real*8 Pbar_8(DIST_SHAPE,Nk+1)
+*
+      logical finbac_L
+*     __________________________________________________________________
+      finbac_L=.false.
+      if ( .not. (F_itr .lt. F_itnlh) )finbac_L=.true.
+*     ______________________________________________________
+*
+      if (.not.Cori_cornl_L)  call gem_stop ('bacp_2_AD: NOT Cori_cornl_L not done',-1)
+*
+      nij = (in - i0 + 1)*(jn - j0 + 1)
+*
+*     ZERO adjoint work fields  
+*     ------------------------
+      xtmp_8 = 0.
+      ytmp_8 = 0.
+      Pbar_8 = 0.
+*
+      p1_8 = ONE_8/(Cstv_tauT_8*Cstv_RTstr_8)
+      p2_8 = ONE_8/Cstv_RTstr_8
+      p3_8 = Cstv_tau_8*Cstv_tauT_8
+      p4_8 = ONE_8/Dcst_rayt_8**2
+      p5_8 = Ver_gokt2RT_8*Ver_epsilon_8
+*
+C!$omp parallel private(xxx_8,yyy_8,zzz_8,
+C!$omp$                 xtmp_8,ytmp_8,xtmp_m_8,ytmp_m_8)
+*
+*     ADJ of
+*     Compute T
+*     ~~~~~~~~~
+*
+      if(.not.Schm_autobar_L) then            ! safer for autobar
+*
+C!$omp do
+      do k=l_nk+1,1,-1
+*
+*        TRAJECTORY
+*        ----------
+         do j= j0, jn
+         do i= i0, in
+*
+            xtmp_m_8(i,j)=ONE_8+Ver_dbdz_8%t(k)*F_s_m(i,j)
+*
+         enddo
+         enddo
+*
+         call vrec ( ytmp_m_8, xtmp_m_8, nij )
+*
+*        ADJ 
+*        ---
+         xxx_8=p2_8*Ver_idz_8%t(k)
+*
+         do j= j0, jn
+         do i= i0, in
+*
+            ytmp_8(i,j)    = Cstv_Tstr_8*F_t(i,j,k)
+     $           *(ONE_8-xxx_8*(F_fip_m(i,j,k)-F_fip_m(i,j,k-1))) + ytmp_8(i,j)
+            F_fip (i,j,k)  = Cstv_Tstr_8*ytmp_m_8(i,j)
+     $           *(     -xxx_8*( F_t(i,j,k)) )                    + F_fip (i,j,k)
+            F_fip (i,j,k-1)= Cstv_Tstr_8*ytmp_m_8(i,j)
+     $           *(     -xxx_8*(-F_t(i,j,k)) )                    + F_fip (i,j,k-1)
+            F_t  (i,j,k)= ZERO_8  
+*
+         enddo
+         enddo
+*
+         do j= j0, jn
+         do i= i0, in
+*
+            xtmp_8(i,j) = -ytmp_8(i,j)/xtmp_m_8(i,j)**2 + xtmp_8(i,j)
+            ytmp_8(i,j) = ZERO_8
+*
+         enddo
+         enddo
+*
+         do j= j0, jn
+         do i= i0, in
+*
+            F_s   (i,j) = Ver_dbdz_8%t(k)*xtmp_8(i,j) + F_s(i,j)
+            xtmp_8(i,j) = ZERO_8
+*
+         enddo
+         enddo
+*
+      enddo
+C!$omp enddo
+*
+      endif
+*
+      do j= j0, jn
+      do i= i0, in
+*
+         F_fip(i,j,l_nk+1)=0.0
+*
+      enddo
+      enddo
+*
+*     ADJ of
+*     Compute FI'
+*     ~~~~~~~~~~~
+*
+      if (.not. Schm_hydro_L) then
+C!$omp do
+         do k=0,l_nk
+            do j= j0, jn
+            do i= i0, in
+*
+               F_q(i,j,k) = -Cstv_RTstr_8*F_fip(i,j,k) + F_q(i,j,k)
+*
+            enddo
+            enddo
+         enddo
+C!$omp enddo
+      endif
+*
+C!$omp do
+      do k=l_nk+1,0,-1
+*
+         if(k.eq.0) then
+            xxx_8=0.d0
+         else
+            xxx_8=Cstv_RTstr_8*Ver_b_8%m(k)
+         endif
+*
+         do j= j0, jn
+         do i= i0, in
+*
+            F_p  (i,j,k) =        F_fip(i,j,k) + F_p(i,j,k)
+            F_s  (i,j)   = -xxx_8*F_fip(i,j,k) + F_s(i,j)
+            F_fip(i,j,k) = ZERO_8
+*
+         enddo
+         enddo
+      enddo
+C!$omp enddo
+*
+*     ADJ of
+*     Compute zd
+*     ~~~~~~~~~~
+*
+      if(finbac_L .and. .not.Schm_autobar_L) then  ! safer for autobar
+c     if(finbac_L) then
+*
+*     ADJ of
+*
+*     N.B.  Boundary conditions: F_zd(i,j,1) = F_zd(i,j,l_nk+1) = 0
+*
+         if (.not. Schm_hydro_L) then
+C!$omp do
+            do k=l_nk,2,-1
+*
+               xxx_8=HALF_8/Cstv_tauT_8
+*
+               do j= j0, jn
+               do i= i0, in
+                  F_q(i,j,k)  = -xxx_8*(F_zd(i,j,k)) + F_q(i,j,k)
+                  F_q(i,j,k-1)= -xxx_8*(F_zd(i,j,k)) + F_q(i,j,k-1)
+               enddo
+               enddo
+*
+            enddo
+C!$omp enddo
+         endif
+*
+C!$omp do
+         do k=l_nk,2,-1
+*
+            xxx_8=Ver_gokt2RT_8*Ver_idz_8%t(k)
+            yyy_8=Ver_gokt2RT_8*Ver_epsilon_8
+            zzz_8=Ver_b_8%t(k)/Cstv_tauT_8
+            if(Schm_autobar_L) zzz_8=0.d0
+*
+            do j= j0, jn
+            do i= i0, in
+*
+               F_rt  (i,j,k)  =-Cstv_tau_8*(          F_zd(i,j,k) ) + F_rt  (i,j,k)
+               F_nt  (i,j,k)  =-Cstv_tau_8*(         -F_zd(i,j,k) ) + F_nt  (i,j,k) 
+               F_p   (i,j,k)  =-Cstv_tau_8*(  xxx_8*( F_zd(i,j,k))) + F_p   (i,j,k)
+               F_p   (i,j,k-1)=-Cstv_tau_8*(  xxx_8*(-F_zd(i,j,k))) + F_p   (i,j,k-1)
+               Pbar_8(i,j,k)  =-Cstv_tau_8*(- yyy_8*  F_zd(i,j,k) ) + Pbar_8(i,j,k)
+               F_s   (i,j)    =             - zzz_8*  F_zd(i,j,k)   + F_s   (i,j)
+               F_zd  (i,j,k)  =ZERO_8               
+*
+            enddo
+            enddo
+         enddo
+C!$omp enddo
+*
+      endif
+*
+*     ADJ of
+*     Compute s
+*     ~~~~~~~~~
+*
+      if (.not. Schm_hydro_L) then
+C!$omp do
+         do j= j0, jn
+         do i= i0, in
+            F_q(i,j,l_nk+1) = - Ver_wp_8%t(l_nk+1)*F_s(i,j) + F_q(i,j,l_nk+1)
+            F_q(i,j,l_nk)   = - Ver_wm_8%t(l_nk+1)*F_s(i,j) + F_q(i,j,l_nk)  
+         end do
+         end do
+C!$omp enddo
+      endif
+*
+C!$omp do
+      do j= j0, jn
+      do i= i0, in
+*
+         F_p(i,j,l_nk+1) = p2_8*(Ver_wp_8%t(l_nk+1)*F_s(i,j)) + F_p(i,j,l_nk+1)
+         F_p(i,j,l_nk)   = p2_8*(Ver_wm_8%t(l_nk+1)*F_s(i,j)) + F_p(i,j,l_nk) 
+         F_s(i,j)        = ZERO_8
+*
+      end do
+      end do
+C!$omp enddo
+*
+*     ADJ of
+*     Compute q & w
+*     ~~~~~~~~~~~~~
+*
+      if(.not.Schm_hydro_L) then
+*
+*        ADJ of
+*
+*        N.B.  Boundary condition:  F_q(i,j,0) = 0
+*
+*        Note : we cannot use omp on loop k
+*               due to vertical dependance F_q(i,j,k-1)
+*
+C!$omp do
+         do k=l_nk+1,1,-1
+            xxx_8 = Dcst_grav_8 * Ver_idz_8%t(k)
+            do j= j0, jn
+            do i= i0, in
+*
+               F_rw(i,j,k)  = Cstv_tauw_8 * (   F_w(i,j,k) )          + F_rw(i,j,k)
+               F_nw(i,j,k)  = Cstv_tauw_8 * ( - F_w(i,j,k) )          + F_nw(i,j,k)
+               F_q (i,j,k)  = Cstv_tauw_8 * ( xxx_8 * (  F_w(i,j,k))) + F_q (i,j,k)
+               F_q (i,j,k-1)= Cstv_tauw_8 * ( xxx_8 * (- F_w(i,j,k))) + F_q (i,j,k-1)
+               F_w (i,j,k)  = ZERO_8
+*
+            end do
+            end do
+         end do
+C!$omp enddo
+*
+         do k=l_nk+1,1,-1
+            xxx_8 = p3_8*Ver_dz_8%t(k)
+C!$omp do
+            do j= j0, jn
+            do i= i0, in
+*
+               F_q   (i,j,k-1)=                                    F_q(i,j,k)      + F_q   (i,j,k-1)
+               F_rf  (i,j,k)  = - xxx_8*(                          F_q(i,j,k)    ) + F_rf  (i,j,k)
+               F_nf  (i,j,k)  = - xxx_8*(                         -F_q(i,j,k)    ) + F_nf  (i,j,k)
+               F_p   (i,j,k)  = - xxx_8*(- p5_8*(Ver_idz_8%t(k)* ( F_q(i,j,k)) ) ) + F_p   (i,j,k)
+               F_p   (i,j,k-1)= - xxx_8*(- p5_8*(Ver_idz_8%t(k)* (-F_q(i,j,k)) ) ) + F_p   (i,j,k-1)
+               Pbar_8(i,j,k)  = - xxx_8*(- p5_8*(Dcst_cappa_8  *   F_q(i,j,k)  ) ) + Pbar_8(i,j,k)
+               F_q   (i,j,k)  = ZERO_8  
+*
+            end do
+            end do
+C!$omp enddo
+         end do
+*
+       endif
+*
+C!$omp do
+         do k=l_nk+1,1,-1
+*
+            if (Schm_hydro_L) then
+*
+            do j= j0, jn
+            do i= i0, in
+*
+               F_rf  (i,j,k)  = Cstv_RTstr_8/(Dcst_cappa_8*Dcst_grav_8)*(          F_w(i,j,k)                 ) + F_rf(i,j,k)
+               F_nf  (i,j,k)  = Cstv_RTstr_8/(Dcst_cappa_8*Dcst_grav_8)*(         -F_w(i,j,k)                 ) + F_nf(i,j,k)
+               F_p   (i,j,k)  = Cstv_RTstr_8/(Dcst_cappa_8*Dcst_grav_8)*(p1_8*(  ( F_w(i,j,k))*Ver_idz_8%t(k))) + F_p (i,j,k)
+               F_p   (i,j,k-1)= Cstv_RTstr_8/(Dcst_cappa_8*Dcst_grav_8)*(p1_8*(  (-F_w(i,j,k))*Ver_idz_8%t(k))) + F_p (i,j,k-1)
+               Pbar_8(i,j,k)  = Cstv_RTstr_8/(Dcst_cappa_8*Dcst_grav_8)*(p1_8*(Dcst_cappa_8   *F_w(i,j,k)    )) + Pbar_8(i,j,k)
+               F_w   (i,j,k)  = ZERO_8
+*
+            end do
+            end do
+*
+            endif
+*
+            do j= j0, jn
+            do i= i0, in
+               F_p   (i,j,k)  = Ver_wp_8%t(k)*Pbar_8(i,j,k) + F_p(i,j,k)
+               F_p   (i,j,k-1)= Ver_wm_8%t(k)*Pbar_8(i,j,k) + F_p(i,j,k-1)
+               Pbar_8(i,j,k)  = ZERO_8
+            end do
+            end do
+*
+         end do
+C!$omp enddo
+*
+*     ADJ of
+*     Compute U & V
+*     ~~~~~~~~~~~~~
+*
+      if (Cori_cornl_L .or. (finbac_L.and..not.Cori_cornl_L)) then
+*
+C!$omp do
+         do k=l_nk,1,-1
+*
+            do j= l_njv-pil_n,j0,-1
+            do i= i0, in
+*
+               F_rv (i,j,  k) = Cstv_tau_8*(          F_v(i,j,k) ) + F_rv(i,j,  k)
+               F_nv (i,j,  k) = Cstv_tau_8*(        - F_v(i,j,k) ) + F_nv(i,j,  k) 
+               F_p  (i,j+1,k) = Cstv_tau_8*(-p4_8*(   F_v(i,j,k) ) 
+     $                   *Geomg_cyv2_8(j)*Geomg_invhsy_8(j) )      + F_p (i,j+1,k)
+               F_p  (i,j,  k) = Cstv_tau_8*(-p4_8*( - F_v(i,j,k) )
+     $                   *Geomg_cyv2_8(j)*Geomg_invhsy_8(j) )      + F_p (i,j,  k)
+               F_v  (i,j,  k) = ZERO_8
+*
+            end do
+            end do
+*
+            do j= j0, jn
+            do i= l_niu-pil_e,i0,-1
+*
+               F_ru (i,  j,k) = Cstv_tau_8*(          F_u(i,j,k) ) + F_ru(i,j,k) 
+               F_nu (i,  j,k) = Cstv_tau_8*(        - F_u(i,j,k) ) + F_nu(i,j,k)
+               F_p  (i+1,j,k) = Cstv_tau_8*(-p4_8*(   F_u(i,j,k) ) * Geomg_invhx_8(i) ) + F_p(i+1,j,k)
+               F_p  (i,  j,k) = Cstv_tau_8*(-p4_8*( - F_u(i,j,k) ) * Geomg_invhx_8(i) ) + F_p(i,  j,k) 
+               F_u  (i,  j,k) = ZERO_8
+*
+            end do
+            end do
+*
+         enddo
+C!$omp enddo
+      endif
+*
+C!$omp single
+*
+      call rpn_comm_adj_halo(F_p,LDIST_DIM,l_ni,l_nj,G_nk+2,
+     $     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+C!$omp end single
+*
+C!$omp do
+      do k= 0,G_nk+1
+*
+*        Zero F_p halo
+*        --------------
+         call v4d_zerohalo ( F_p(l_minx,l_miny,k),l_ni,l_nj,LDIST_DIM, 1)
+*
+      enddo
+C!$omp enddo
+*
+*     ADJ of
+*     Compute P at top and bottom
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+C!$omp do
+      do j= j0, jn
+         do i= i0, in
+*
+            F_p (i,j,l_nk)   =   Ver_alfas_8 *   F_p(i,j,l_nk+1)  + F_p (i,j,l_nk) 
+            F_rt(i,j,l_nk+1) = - Ver_css_8   *(  F_p(i,j,l_nk+1)) + F_rt(i,j,l_nk+1)
+            F_nt(i,j,l_nk+1) = - Ver_css_8   *(- F_p(i,j,l_nk+1)) + F_nt(i,j,l_nk+1)
+            F_p (i,j,l_nk+1) = ZERO_8
+*
+            F_p (i,j,1) = Ver_alfat_8 *  F_p(i,j,0)  + F_p (i,j,1) 
+            F_rt(i,j,1) = Ver_cst_8   *( F_p(i,j,0)) + F_rt(i,j,1)
+            F_nt(i,j,1) = Ver_cst_8   *(-F_p(i,j,0)) + F_nt(i,j,1)
+            F_p (i,j,0) = ZERO_8
+*
+         end do
+      end do
+C!$omp enddo
+*
+C!$omp end parallel
+*
+      if ( (Cori_cornl_L) .or. (F_itr .lt. F_itnlh) ) then
+*
+         call rpn_comm_adj_halo( F_p  , LDIST_DIM,l_ni,l_nj,G_nk+2,
+     $                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+C!$omp do
+      do k= 0,G_nk+1
+*
+*        Zero F_p halo
+*        --------------
+         call v4d_zerohalo ( F_p(l_minx,l_miny,k),l_ni,l_nj,LDIST_DIM, 1)
+*
+      enddo
+C!$omp enddo
+*
+      endif
+*
+*     __________________________________________________________________
+*
+      return
+      end

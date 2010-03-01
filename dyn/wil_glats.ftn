@@ -1,0 +1,106 @@
+***s/r wil_glats
+*
+#include "model_macros_f.h"
+*
+      SUBROUTINE WIL_GLATS(NLAT, EPS, F, WT)                                    
+*
+      implicit none 
+*
+      INTEGER NLAT
+      REAL EPS
+*
+      REAL F(NLAT), WT(NLAT)
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version GLATS 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     THIS ROUTINE CALCULATES THE ROOTS OF THE ORDINARY LEGENDRE                
+*     POLYNOMIALS OF ORDER NLAT WHICH CORRESPOND TO THE LATITUDE              
+*     POINTS USED IN A GAUSSIAN QUADRATURE PROCEDURE ON THE SPHERE.             
+*     THE ROUTINE USES A NEWTON-RAPHSON ITERATION PROCEDURE TO                  
+*     DETERMINE THE ROOTS TO A PRECISION GIVEN BY EPS.  A ROUTINE TO            
+*     CALCULATE THE ORDINARY LEGENDRE POLYNOMIALS, IN THIS CASE ORDLEG,         
+*     IS REQUIRED.                                                              
+*
+*implicits
+#include "wil_dcst.cdk"
+*
+*------------------------------------------------------------------
+      REAL FI, FI1, FN, DOT, DN, DN1, A, B, G, GM, GP, GT,
+     &     FTEMP, GTEMP
+      INTEGER IR, NL, IRP, IRM, NITER
+*------------------------------------------------------------------
+*
+      IR  = NLAT                                                            
+      FI  = REAL(IR)                                                           
+      FI1 = FI+1.                                                               
+      FN  = REAL(NLAT/2)                                                       
+*
+*     FIRST GUESS AT ROOTS; F REPRESENTS COSINE OF COLATITUDE                   
+*     -------------------------------------------------------
+*                                                                               
+      DO 20 NL = 1, NLAT/2                                                      
+         DOT   = REAL(NL-1)                                                    
+         F(NL) = -Wil_Dcst_pi_8*.5*(DOT+.5)/FN + Wil_Dcst_pi_8*.5                                     
+         F(NL) =  SIN(F(NL))                                                    
+   20 CONTINUE                                                                  
+*                                                                               
+      DN  = FI/SQRT(4.*FI*FI-1.)                                                
+      DN1 = FI1/SQRT(4.*FI1*FI1-1.)                                             
+      A   = DN1*FI                                                              
+      B   = DN*FI1                                                              
+      IRP = IR + 1                                                              
+      IRM = IR - 1                                                              
+C                                                                               
+      DO 50 NL = 1, NLAT/2                                                      
+*                                                                               
+*        NEWTON ITERATION LOOP                                                  
+*        ---------------------
+         NITER = 0                                                              
+*                                                                               
+   30    NITER = NITER + 1                                                      
+         IF(NITER .GE. 100) THEN                                                
+            WRITE (0, 90) NL                                                    
+   90       FORMAT(/,' STSWM: FATAL ERROR IN WIL_GLATS:',/,
+     &        ' NO CONVERGENCE IN NEWTON ITERATION FOR ROOT',/, 
+     &             ' LATITUDE  NL = ', I3)                                  
+            STOP                                                                
+         ENDIF                                                                  
+*                                                                               
+         CALL WIL_ORDLEG_W(F(NL), IR, G)                                            
+         CALL WIL_ORDLEG_W(F(NL), IRM, GM)                                            
+         CALL WIL_ORDLEG_W(F(NL), IRP, GP)                                            
+         GT    = (A*GP-B*GM)/(F(NL)*F(NL)-1.)                                   
+         FTEMP = F(NL) - G/GT                                                   
+         GTEMP = F(NL) - FTEMP                                                  
+         F(NL) = FTEMP                                                          
+*
+*        CONVERGENCE CRITERION
+*        --------------------- 
+         IF (ABS(GTEMP) .GT. 2.0*EPS) GO TO 30  
+*                                                                               
+   50 CONTINUE                                                                  
+*                                                                               
+*     CALCULATE WEIGHTS AND EXPRESS ROOTS IN TERMS OF COLATITUDE                
+*     ----------------------------------------------------------
+      DO 60 NL = 1, NLAT/2                                                      
+         A      = 2.0*(1.0 - F(NL)**2)                                          
+         CALL WIL_ORDLEG_W(F(NL), IRM, B)                                             
+         B      = B*B*FI*FI                                                     
+         WT(NL) = A*(FI - 0.5)/B                                                
+         F (NL) = Wil_Dcst_pi_8/2.0-ACOS(F(NL)) 
+   60 CONTINUE                                                                  
+*
+*     FILL IN THE INFORMATION ON THE OTHER HALF OF THE SPHERE
+*     -------------------------------------------------------
+      DO 70 NL = 1,NLAT/2
+         F (NLAT-NL+1) = - F(NL)
+         WT(NLAT-NL+1) = WT(NL)
+   70 CONTINUE
+*
+      RETURN                                                                    
+      END                                                                       

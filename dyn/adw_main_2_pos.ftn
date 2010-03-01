@@ -68,6 +68,7 @@
 #include "ver.cdk"
 #include "geomg.cdk"
 #include "schm.cdk"
+#include "acid.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -104,12 +105,8 @@
       pdp    = 1.d0 + 1.d-6
       pdm    = 1.d0 - 1.d-6
 
-      kmin   =1
-      kmax   =l_nk
-      if(Schm_virlev_L) then
-         kmin=2
-         kmax=l_nk-1
-      endif
+      kmin=2
+      kmax=l_nk-1
 ************************************************************************
 *
       pnlkey1(1) = VMM_KEY(xth)
@@ -139,17 +136,15 @@
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west) i0=4       + (Glb_pil_w - 7)
-          if (l_east) in=l_niu-2 - (Glb_pil_e - 7)
-          if (l_south) j0=4      + (Glb_pil_s - 7)
-          if (l_north) jn=l_njv-2- (Glb_pil_n - 7)
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
       endif
-c     if (Acid_test_L)
-c    %    call glbstat (xth,'Xth',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
-c    %                                            4+acid_j0,G_nj-3-acid_jn,1,1)
-c         call glbstat (xcth,'Xcth',1,l_ni,1,l_nj,G_nk,5+acid_i0,G_ni-4-acid_in,
-c    %                                           5+acid_j0,G_nj-4-acid_jn,1,1)
-c     endif
+*
+      if (Acid_test_L)
+     $     call acid_stat_adw_main_2_pos(xth,xcth,wrkx1,i0,in,j0,jn,1)
+*
 ************************************************************************
       do it=1,F_it ! begin iterations loop
 ************************************************************************
@@ -164,7 +159,7 @@ c
 
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn, G_nk )
+          call adw_cliptraj ( xth, wrk_yth, i0, in, j0, jn, G_nk, '')          
 *
       else
 *
@@ -219,9 +214,10 @@ c
      %                          Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
 *
       endif
-c     if (Acid_test_L)
-c    %call glbstat (wrkx1,'wrkX',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
-c    %                                    4+acid_j0,G_nj-3-acid_jn,1,G_nk)
+*
+      if (Acid_test_L)
+     $     call acid_stat_adw_main_2_pos(xth,xcth,wrkx1,i0,in,j0,jn,2)
+*
 c        ==================================================================
 c        Compute new upstream postions along x and y
 c        ==================================================================
@@ -267,11 +263,9 @@ c
       do n = 1,nijk
       wrk_yth(n) = yth(n)
       enddo
-c     if (Acid_test_L)
-c     call glbstat (xth,'Xth',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
-c    %                                           4+acid_in,G_nj-3-acid_jn,1,1)
-c     call glbstat (xcth,'Xcth',1,l_ni,1,l_nj,G_nk,5+acid_i0,G_ni-4-acid_in,
-c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
+*
+      if (Acid_test_L)
+     $     call acid_stat_adw_main_2_pos(xth,xcth,wrkx1,i0,in,j0,jn,3)
 *     
       if(Schm_zdotMid_L)then
          do k = 1, l_nk
@@ -288,7 +282,7 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
 
       if (G_lam) then
 *
-          if(.not.Schm_zdotMid_L)call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn, G_nk )
+          if(.not.Schm_zdotMid_L)call adw_cliptraj ( xth, wrk_yth, i0, in, j0, jn, G_nk, '')
 *
       else
 *
@@ -327,7 +321,8 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
 
          call adw_trilin (wrkx1,F_w,-dth,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
 *     
-c       call glbstat (wrkx1 ,'x1',1,l_ni,1,l_nj,l_nk,i0,in,j0,jn,1,l_nk)
+         if (Acid_test_L)
+     $        call acid_stat_adw_main_2_pos(xth,xcth,wrkx1,i0,in,j0,jn,4)
 
       else
 *         
@@ -407,7 +402,6 @@ c        Make sure zth is below Ver_z_8%m(1) and above Ver_z_8%m(l_nk)
      %                  i0,in,j0,jn)
 *
 !$omp parallel private(n)
-      if(Schm_virlev_L) then
 !$omp do
          do j = j0,jn
          do i = i0,in
@@ -418,7 +412,6 @@ c        Make sure zth is below Ver_z_8%m(1) and above Ver_z_8%m(l_nk)
          enddo
          enddo
 !$omp enddo
-      endif
 
 !$omp do
       do k = kmin,kmax

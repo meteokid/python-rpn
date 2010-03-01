@@ -55,7 +55,7 @@
 **
       logical  set_dcst
       integer  fnom
-      external set_dcst,itf_phy_radiaf,fnom
+      external set_dcst,itf_phy_rdfile,fnom
 *
       logical prout
       integer DIM_ERR,nrec
@@ -94,10 +94,9 @@
       call phy_optl('WET'        , Schm_moist_L  ,1,'SET',prout,err(4))
       call phy_optl('CLIMAT'     , Clim_climat_L ,1,'SET',prout,err(5))
       call phy_optl('COUPLING'   , C_coupling_L  ,1,'SET',prout,err(6))
-      call phy_optl('OFFLINE'    , Schm_offline_L,1,'SET',prout,err(7))
 *
 * Continue physics initialization with simplified physics parameter
-      call phy_opti('LIN_V4D'   , V4dg_conf      ,1,'SET',prout,err(8))
+      call phy_opti('LIN_V4D'   , V4dg_conf      ,1,'SET',prout,err(7))
 *
 * Initialize physics configuration with default values and read 
 * user configuration in namelist from file 'model_settings'
@@ -151,7 +150,7 @@
 * Complete physics initialization (bus descriptions become available)
 *
       err = phy_debu ( p_ni, p_nk, p_bent_top ,p_bdyn_top, p_bper_top, 
-     $                 p_bvol_top, prout, itf_phy_radiaf )
+     $                 p_bvol_top, prout, itf_phy_rdfile )
       call gem_stop('itf_phy_init (debu)',err)
 *
 * Fetch a few physics configuration parameters needed for dynamics

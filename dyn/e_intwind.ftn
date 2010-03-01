@@ -100,7 +100,6 @@
 *        
          if (LAM) then
 *
-            if (e_schm_offline_l) write (6,199)
             do k=1,lv               
                key1 = fstlir(uu,e_fu_anal,iu,ju,nkc,datev,' ',na(k),
      $                                         ip2a,ip3a,tva,'UT1')
@@ -120,10 +119,6 @@
                do i=1,nisv*njsv
                   vv(i) = vv(i)
                end do
-               if (e_schm_offline_l) then
-                  write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
-                  write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
-               endif
                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
                call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
             end do
@@ -175,11 +170,6 @@
                if (key1.lt.0 .or. i.ne.iv  .or. j.ne.jv) then
                   write(6,*)'ERROR: VV NOT AVAILABLE,'
                   call e_arret( 'e_intwind' )
-               endif
-*
-               if (e_schm_offline_l) then
-                  write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
-                  write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
                endif
 *
                if (.not. flag_ut1) then
@@ -251,11 +241,6 @@
             err = ezuvint  ( uu,vw,w1,w2 )
             err = ezdefset ( dstv_gid, src_gid )
             err = ezuvint  ( uw,vv,w1,w2 )
-*
-            if (e_schm_offline_l) then
-               write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
-               write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
-            endif
 *
             do i=1,nisu*njsu
                uu(i) = uu(i) * dcst_knams_8

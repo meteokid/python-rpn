@@ -1,0 +1,80 @@
+_____________________________________________________________________________
+*                                                                             |
+*     FILE configexp.dot.cfg             (last update: Jan.20,2009- v4.0.4)VL |
+*_____________________________________________________________________________|
+*                                                                             |
+*  This file is an alternative input for "Um_lance  [dir]" where it will be   |
+*  found in  [dir]/configexp.dot.cfg                                          |
+*                                                                             |
+*  Or alternatively, Um_lance  can be given parameters in the command line    |
+*  as such:                                                                   |
+*                                                                             |
+*  Um_lance  dbg1 -UM_EXEC_exp dummy -BACKEND_time_mod 10800                  |
+*                               -BACKEND_mach maia -UM_EXEC_anal myanalysis   |
+*  Files gem_settings.nml and outcfg.out must exist in "dbg1" directory       |
+*                                                                             |
+*  Example of what could be in "configexp.dot.cfg" :                          |
+*  (arguments should start on first column,'#' indicates comment)             |
+*                                                                             |
+* Um_EXEC_exp=dummy;                                                          |
+* BACKEND_time_mod=10800;                                                     |
+* BACKEND_time_ntr=3600;t_ent=3600                                            |
+* BACKEND_mach=maia;                                                          |
+* #UM_EXEC__ovbin=/fs/mrb/01/armn/armnviv/absolutes/massvp4safe;              |
+* UM_EXEC_geophy=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.3.2/geophy_400    |
+* UM_EXEC_climato=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.3.2/clim_gef_400_|
+*                                                                     mars96  |
+* UM_EXEC_anal=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.3.2/1996071900_000  |
+* #UM_EXEC_anal=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.3.2/anlm2000120100_|
+*                                                                     000     |
+* #UM_EXEC_inrep=/fs/mrb/01/armn/armnmod/MODELES/bcmk/gem_3.3.2;              |
+* BACKEND_listings=/users/dor/armn/viv/listings;                              |
+* #UM_EXEC_prefix=prg;                                                        |
+* UM_EXEC_d2z=1;                                                              |
+* #UM_EXEC_d2z_dplusp=1;                                                      |
+* #UM_EXEC_xfer="lorentz:/data/local2/armn/armnviv/lorentz/stuff3";           |
+*                                                                             |
+*Description of control variables in Um_lance                                 |
+*                                                                             |
+*Name        Def        Description                                           |
+*                                                                             |
+*BACKEND_mach           Execution machine                                     |
+*BACKEND_time_ntr  600  CPU (wall-clock) time allowed in seconds for GEMDM    |
+*BACKEND_time_mod  900  CPU (wall-clock) time allowed in seconds for GEMNTR   |
+*BACKEND_cm        400  Memory size in Megabytes(not applicable on MAIA/NAOS  |
+*BACKEND_OMP       1    Number of PEs dedicated for OpenMP (MAX of 16)        |
+*BACKEND_execdir        full path of execution directory                      |
+*BACKEND_listings  $HOME/listings   Full path for job listings                |
+*BACKEND_class          Control -cl option with soumet                        |
+*BACKEND_nosubmit  0    Issue -nosubmit option with soumet                    |
+*UM_EXEC_exp       dbg1 Experiment name                                       |
+*UM_EXEC_anal           Full path of the analysis                             |
+*UM_EXEC_inrep          Full path of RPN std files to pilot LAM (GEMNTR)      | 
+*UM_EXEC_lam_init       Full path of 3DF files to init LAM (GEMDM)            |
+*UM_EXEC_lam_bcs        Full path of BCS files to pilot LAM (GEMDM)           |
+*UM_EXEC_ovbin          full path of where to find the main model executables |
+*UM_EXEC_climato        Full path of climatology file                         |
+*UM_EXEC_geophy         Full path of geophysical file (for GEMNTR)            |
+*UM_EXEC_geophy_m       Full path of geophysical file (for GEMDM)             |
+*UM_EXEC_ozone          Full path of climatological ozone file                |
+*UM_EXEC_irtab          Full path of radiation table                          |
+*UM_EXEC_constantes     Full path of geophysical constantes file              |
+*UM_EXEC_r_ent     1    Run entry program GEMNTR                              |
+*UM_EXEC_r_mod     1    Run main program GEMDM                                |
+*UM_EXEC_d2z       0    Re-assemble the diese output files                    |
+*UM_EXEC_xfer           WS:Full path directory to where to transfer the output|
+*UM_EXEC_xferl     0    Transfer the job listings with the model output       |
+*UM_EXEC_casc      -1   Transfer the sub-directory "casc",'2' to not delete   |
+*UM_EXEC_prefix         Prefix name to add to the output filenames            |
+*UM_EXEC_dplusp    0    Combine the dynamics and physics output files(dm+pm=m)|
+*UM_EXEC_headscript     Script to execute before GEMNTR                       |
+*UM_EXEC_tailjob_M      Job to submit after Um_runmod.ksh                     |
+*UM_EXEC_tailjob_X      Job to submit after Um_output_xfer.ksh                |
+*UM_EXEC_xchgdir        Exchange directory for coupling                       |
+*UM_EXEC_cmclog         Full path for CMC logfile                             |
+*UM_EXEC_barrier   0    Third party job (SM) will run the model               |
+*UM_EXEC_manoutp   -1   Model output management by Um_runmod                  |
+*UM_EXEC_nmlcpl         Full path of file containing common namelists         |
+*                       for coupling models                                   |
+*UM_EXEC_timing    0    AIX HPM timing information of the model               |
+*-----------------------------------------------------------------------------

@@ -35,6 +35,8 @@
 * v3_21 - Lemonsu A.        - add P_pbl_schurb_s
 * v3_22 - Lee V.            - removed Trvs tracers
 * v3_30 - Lee/Desgagne      - minimized parameters passed in labfl.bin
+* v4_03 - Spacek/Desgagne   - ISST
+* v4_04 - Plante A.         - Remove offline mode
 *
 *arguments
 *	none
@@ -43,19 +45,23 @@
 #include "e_anal.cdk"
 #include "e_schm.cdk"
 #include "e_tr.cdk"
-#include "offline.cdk"
 #include "modconst.cdk"
+#include "path.cdk"
+#include <clib_interface.cdk>
 *
 **
       integer  fnom
       external fnom
-      integer k,labfl
+      integer k,labfl,err
+      character*1024 rootfn
 *
 *     ---------------------------------------------------------------
 *
       labfl=0
-      if (fnom(labfl,'process/labfl.bin','SEQ/UNF',0).lt.0)
-     $    stop 'In e_nm2bin: Trying to open file process/labfl.bin'
+      rootfn = trim(Path_output_S)//'/INIT_SFC/'
+      err    = clib_mkdir (trim(rootfn))
+      if (fnom(labfl,trim(rootfn)//'/labfl.bin','SEQ/UNF',0).lt.0)
+     $    stop 'In e_nm2bin: Trying to open file labfl.bin'
 *
       write(labfl) Mod_runstrt_S
 *
@@ -63,8 +69,7 @@
      $             (E_trname_S(k),k=1,E_tr3d_ntr),
      $             (E_tr3d_sval  (k),k=1,E_tr3d_ntr)
 *
-      write(labfl) Anal_cond_L, E_schm_offline_L,
-     $             Offline_ip1a,Offline_int_accu_S
+      write(labfl) Anal_cond_L
 *
       close (labfl)
 *

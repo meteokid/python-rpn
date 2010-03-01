@@ -107,25 +107,11 @@
       if(.not.Schm_zdotMid_L) then
 !$omp do
       do k=1,l_nk+1
-         if(k.eq.1) then
-            do j= 1+pil_s, l_nj-pil_n 
-            do i= 1+pil_w, l_ni-pil_e 
-               zdth(i,j,k)= Ver_chit_8*0.5*(zdt0(i,j,k+1)+zdt1(i,j,k+1))
-            end do
-            end do
-         elseif(k.eq.l_nk+1) then
-            do j= 1+pil_s, l_nj-pil_n 
-            do i= 1+pil_w, l_ni-pil_e 
-               zdth(i,j,k)= Ver_chis_8*0.5*(zdt0(i,j,k-1)+zdt1(i,j,k-1))
-            end do
-            end do
-         else
-            do j= 1+pil_s, l_nj-pil_n 
-            do i= 1+pil_w, l_ni-pil_e 
-               zdth(i,j,k) = 0.5 * ( zdt0(i,j,k) + zdt1(i,j,k) )
-            end do
-            end do
-         endif
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            zdth(i,j,k) = 0.5 * ( zdt0(i,j,k) + zdt1(i,j,k) )
+         end do
+         end do
       end do      
 !$omp enddo
       endif

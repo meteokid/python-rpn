@@ -1,0 +1,122 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r hdif_phy_ad - ADJ of hdif_phy_ad 
+*
+#include "model_macros_f.h"
+*
+      subroutine hdif_phy_ad ()
+*
+      implicit none
+*
+*author M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+* v3_30 - Tanguay M.        - adapt to bcs
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*     see id section
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "ifd.cdk"
+#include "lctl.cdk"
+*
+*     ________________________________________________________________
+*
+      if (Schm_psadj_L) call gem_stop('Schm_psadj_L NOT DONE in hdif_phy_AD',-1)
+*
+      if (G_lam .and. ifd_ftype.ne.'BMF') then
+*
+*         ADJ of
+*         Impose Lateral BCs within Pil regions
+*         -------------------------------------
+          call nest_bcs_ad
+*
+*         ADJ of
+*         Update Lateral BCs with data that has seen physics
+*         -------------------------------------------------- 
+          call nest_update_ad
+*
+      endif
+*
+         if ( .not. Schm_phyms_L ) call dummy_diag_ad ()
+*
+*        Adjoint of
+*        Physics timestep & Horizontal diffusion & Vertical sponge
+*        ---------------------------------------------------------
+*
+         if (     Schm_hdlast_L) goto 10 
+         if (.not.Schm_hdlast_L) goto 30 
+*
+   10    continue 
+*
+*        Go to Adjoint of
+*        Horizontal diffusion & Vertical sponge
+*        --------------------------------------
+         goto 50
+*
+   20    continue
+*
+*        Adjoint of
+*        Physics timestep
+*        ----------------
+         if ( Schm_phyms_L ) call itf_phy_main_ad (Lctl_step)
+*
+         return
+*
+   30    continue
+*
+*        Adjoint of
+*        Physics timestep
+*        ----------------
+         if ( Schm_phyms_L ) call itf_phy_main_ad (Lctl_step)
+*
+*        Go to Adjoint of
+*        Horizontal diffusion & Vertical sponge
+*        --------------------------------------
+         goto 50
+*
+   40    continue
+*
+         return
+*
+   50    continue
+*
+*        --------------------------------------------------------------
+*        COMMON SECTION (START) of Schm_hdlast_L and .not.Schm_hdlast_L 
+*        --------------------------------------------------------------
+*
+*        Adjoint of
+*        Horizontal diffusion & Vertical sponge
+*        --------------------------------------
+*
+*           Adjoint of vspng_main_tl
+*           ------------------------
+            call vspng_main_ad 
+*
+*           Adjoint of hzd_main_tl
+*           ----------------------
+            call hzd_main_ad 
+*
+*        ------------------------------------------------------------
+*        COMMON SECTION (END) of Schm_hdlast_L and .not.Schm_hdlast_L 
+*        ------------------------------------------------------------
+         if(     Schm_hdlast_L) goto 20
+         if(.not.Schm_hdlast_L) goto 40
+*
+      end

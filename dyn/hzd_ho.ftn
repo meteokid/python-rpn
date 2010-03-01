@@ -14,15 +14,15 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine hzd_ho ( F_u, F_v, F_w, F_t, F_s, DIST_DIM, Nk)
+      subroutine hzd_ho ( F_u, F_v, F_zd, F_w, F_t, F_s, DIST_DIM, Nk)
 *
       implicit none
 *
       integer DIST_DIM, Nk
 *
       real   F_u(DIST_SHAPE,Nk),    F_v(DIST_SHAPE,Nk),
-     %       F_w(DIST_SHAPE,Nk+1),  F_t(DIST_SHAPE,Nk+1),
-     %       F_s(DIST_SHAPE)
+     %       F_zd(DIST_SHAPE,Nk+1), F_w(DIST_SHAPE,Nk+1),
+     %       F_t(DIST_SHAPE,Nk+1),  F_s(DIST_SHAPE)
 *
 *author
 *     Abdessamad Qaddouri
@@ -35,6 +35,9 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Corbeil L.        - new RPNCOMM transpose
 * v3_22 - Lee V.            - mv deallocate after 9988 for memory leak
+* V4    - Gravel-Girard-Plante Staggered version 
+* V4_04 - Plante A.         - Diffuse only real winds and zdot.
+
 *
 *object
 * The diffusion includes: second order(Hzd_pwr=1), 
@@ -93,8 +96,6 @@ c      call gem_stop('hzd_ho',-1)
 *
 *     Momentum
 *     ~~~~~~~~
-c     print *,'hzd_areal on F_u'
-c     do i=1,100
       call hzd_solmxma(F_u, wk1_8, wkh_evec_8,
      %     Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,
      %     trp_12dmin,trp_12dmax,trp_22min,trp_22max,
@@ -102,14 +103,6 @@ c     do i=1,100
      %     l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
      %     trp_12dn, Hzd_xp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %     Ptopo_npex,Ptopo_npey)
-c     enddo
-c     call hzd_areal(F_u,Hzd_xp0_8,Opr_opsyp0_8,
-c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
-*
-c     print *,'hzd_areal on F_v'
-c     call hzd_areav(F_v,Opr_opsxp0_8,Hzd_yp0_8,
-c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
-c     do i=1,100
       call hzd_solmxma(F_v, wk1_8, wk_evec_8 ,
      %     Hzd_av_8,Hzd_cv_8, Hzd_deltav_8,
      %     trp_12dmin,trp_12dmax,trp_22min,trp_22max,
@@ -117,20 +110,26 @@ c     do i=1,100
      %     l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
      %     trp_12dn,Opr_opsxp0_8,Hzd_yp0_8, Hzd_cdiff,
      %     Ptopo_npex,Ptopo_npey)
-c     enddo
-c     call hzd_areav(F_v,Opr_opsxp0_8,Hzd_yp0_8,
-c    $        l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,Nk)
-*
+
 *     Vertical motion
 *     ~~~~~~~~~~~~~~~
-
-      call hzd_solmxma(F_w, wk1_8, wk_evec_8 ,
+*********not physical, done nevertheless*******
+      call hzd_solmxma(F_zd, wk1_8, wk_evec_8 ,
      %     Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %     trp_p12dmin,trp_p12dmax,trp_22min,trp_22max,
      %     trp_p12dn,trp_22n,G_nj, dpwr,l_minx,
      %     l_maxx, l_miny, l_maxy,Nk+1,G_ni,l_ni,l_nj,
      %     trp_p12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %     Ptopo_npex,Ptopo_npey)
+      if(.not.Schm_hydro_L) then
+         call hzd_solmxma(F_w, wk1_8, wk_evec_8 ,
+     %        Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
+     %        trp_p12dmin,trp_p12dmax,trp_22min,trp_22max,
+     %        trp_p12dn,trp_22n,G_nj, dpwr,l_minx,
+     %        l_maxx, l_miny, l_maxy,Nk+1,G_ni,l_ni,l_nj,
+     %        trp_p12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
+     %        Ptopo_npex,Ptopo_npey)
+      endif
 *     
       if (.false.)then
 

@@ -85,13 +85,6 @@
       call apply(wt1  ,0.  ,betav_t,LDIST_DIM, l_nk+1)
       if(.not.Schm_hydro_L) then
          call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM, l_nk)
-         if(Schm_virlev_L) then
-            do j=1,l_nj
-            do i=1,l_ni
-               qt1(i,j,0)=-qt1(i,j,1)
-            enddo
-            enddo
-         endif
       endif
       if(Zblen_spngtt_L)then
          call apply_tt(tt1,betav_t,st1,LDIST_DIM, l_nk)

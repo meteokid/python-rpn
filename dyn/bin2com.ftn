@@ -36,6 +36,8 @@
 * v3_21 - Lee V.            - Remove Tr2d 
 * v3_30 - Lee/Desgagne      - Reduced number of variables passed from
 *                             gemntr to gemdm.
+* v4_03 - Spacek/Desgagne   - ISST
+* v4_04 - Plante A.         - Remove offline mode.
 *
 *object
 *     See above id
@@ -46,7 +48,6 @@
 #include "anal.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
-#include "offline.cdk"
 #include "path.cdk"
 #include "modconst.cdk"
 #include "out3.cdk"
@@ -62,7 +63,7 @@
       bin2com = -1
 *
       unf = 0
-      fn  = trim(Path_dfwmil_S) // '/process/labfl.bin'
+      fn  = trim(Path_input_S)//'/INIT_SFC/labfl.bin'
       ierr = wkoffit(fn)
 *
       if (ierr.ge.-1) then
@@ -74,8 +75,7 @@
      $             (Tr3d_username_S(k),k=1,Tr3d_userntr),
      $             (Tr3d_usersval  (k),k=1,Tr3d_userntr)
 *
-         read(unf)  Anal_cond_L,   schm_offline_L,
-     $              Offline_ip1a,  Offline_int_accu_S
+         read(unf)  Anal_cond_L
 *
          call fclos (unf)
 *

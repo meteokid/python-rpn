@@ -23,6 +23,7 @@
 *
 *revision
 * v3_30 - Desgagne, Winger & Dugas - initial version
+* v3_31 - Desgagne M.       - new coupling interface to OASIS
 *
 *object
 *	
@@ -340,6 +341,10 @@ C        Regroup variables in Chm_busper_cube from cubes per variable to slabs
          deallocate (Chm_busper_cube)
 *
       end if
+*
+C     Check for possible coupling information
+*
+      check_flag = 0
 *
 C     Distribute other scalar variables to all processors
 *

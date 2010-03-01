@@ -24,6 +24,7 @@
 * v2_21 - Desgagne M.       - Include global statistics
 * v2_21 - Lee V.            - Correction on IF statement for LAM
 * v3_30 - Desgagne M.       - new physics interface
+* v4_03 - Lee/Desgagne - ISST
 *
 #include "e_grids.cdk"
 * comdecks used also in GEMPP
@@ -32,11 +33,14 @@
 #include "geobus.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
+#include "path.cdk"
+#include <clib_interface.cdk>
 *
 *MODULES
 *
 **
-      integer i, j, nim, njm, ict, ivar, im, osgeo,topovar,topoict
+      integer i, j, nim, njm, ict, ivar, im, osgeo,topovar,topoict,err
+      character*1024 rootfn
 *
 *----------------------------------------------------------------------
 *
@@ -88,8 +92,10 @@ c              if (geonm(ivar,1).eq.'MF') print*,'ict=',ict,'geobus(ict)=',geobu
       end do
       if (topovar.eq.0) print *,'NO TOPO FOUNd'
 *
+      rootfn = trim(Path_output_S)//'/INIT_SFC/'
+      err    = clib_mkdir (trim(rootfn))
       osgeo = 53
-      open(osgeo,file='process/geophy.bin',access='SEQUENTIAL',
+      open(osgeo,file=trim(rootfn)//'/geophy.bin',access='SEQUENTIAL',
      $                                      form='UNFORMATTED')
 *
       if (topo_L) then

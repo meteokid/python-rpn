@@ -27,6 +27,7 @@
 *revision
 * v3_20 - Lee V.            - initial MPI version (from blocqc0 v3_12)
 * v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
+* v3_31 - Lee V.            - bugfix for requested QC but does not exist in PHY
 * v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
 *
 *object
@@ -73,9 +74,9 @@
       real, dimension(:,:,:), allocatable :: w5
       real, dimension(:), allocatable :: prprlvl
       real wlnpi_m(LDIST_SHAPE,0:G_nk+1), wlnpi_t(LDIST_SHAPE,G_nk+2)
-      real px_ta(LDIST_SHAPE,G_nk+2)
+      real px_ta(LDIST_SHAPE,G_nk+2),qc(LDIST_SHAPE,G_nk+2)
       real deg2rad,qccoef,qct1
-      pointer (patr, qct1(LDIST_SHAPE,*))
+      pointer (paqc, qct1(LDIST_SHAPE,*))
       logical periodx_L
 
 **
@@ -129,8 +130,8 @@
          do k=1,G_nk+1
             do j=1,l_nj
             do i=1,l_ni
-               wlnpi_m(i,j,k) = Ver_a_spcl_8%m(k)
-     %                        + Ver_b_spcl_8%m(k)*st1(i,j)
+               wlnpi_m(i,j,k) = Ver_a_8%m(k)
+     %                        + Ver_b_8%m(k)*st1(i,j)
                wlnpi_t(i,j,k)=.5d0*(wlnpi_m(i,j,k)+wlnpi_m(i,j,k-1))
             enddo
             enddo
@@ -147,6 +148,9 @@
       ip3 = 0
       if (Out3_ip3.eq.-1) ip3 = Lctl_step
       if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
+
+      qc = 0.
+      paqc = loc(qc)
       
       key1 = VMM_KEY (trt1)
       do k=1,Tr3d_ntr
@@ -155,7 +159,7 @@
       pnerr = vmmlod(trkey1,Tr3d_ntr)
       do n=1, Tr3d_ntr
          if (Tr3d_name_S(n).eq.'QC') then
-             pnerr = vmmget(trkey1(n),patr,qct1)
+             pnerr = vmmget(trkey1(n),paqc,qct1)
          endif
       enddo
       do j= 1, l_nj

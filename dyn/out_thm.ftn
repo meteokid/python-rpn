@@ -16,7 +16,7 @@
 *
       subroutine out_thm(F_fiptx,F_tt1,F_st1,F_qct1,F_qh,F_hut1,
      %                   F_zdt1,F_wt1,F_zz1,
-     %                   F_vtm,F_hum1, F_st1m,F_piup,
+     %                   F_vt_m,F_hut1_m, F_st1_m,F_piup,
      %                   F_wlnph_m,F_wlnph_ta,F_ptop,F_p0,F_wlao,F_topo,
      %                   F_posit,F_huv,
      %                   F_ninj,F_nk,F_levtyp_S,F_rf,
@@ -32,11 +32,11 @@
      %     F_qct1   (F_ninj,F_nk+2), F_qh     (F_ninj,F_nk+2),
      %     F_hut1   (F_ninj,F_nk+2), F_wt1    (F_ninj,F_nk+1),
      %     F_zdt1   (F_ninj,F_nk+1), F_zz1    (F_ninj,F_nk+1),
-     %     F_vtm    (F_ninj,F_nk+1), F_piup   (F_ninj,F_nk+1),
-     %     F_hum1   (F_ninj,F_nk+1), F_wlnph_m(F_ninj,F_nk+1),
+     %     F_vt_m   (F_ninj,F_nk+2), F_piup   (F_ninj,F_nk+1),
+     %     F_hut1_m (F_ninj,F_nk+2), F_wlnph_m(F_ninj,F_nk+1),
      %     F_wlnph_ta(F_ninj,F_nk+2),
      %     F_posit  (F_ninj*(F_nk+1)*6),F_huv(F_ninj*(F_nk+2+4)*2),
-     %     F_ptop(F_ninj),F_p0(F_ninj),F_st1(F_ninj),F_st1m(F_ninj),
+     %     F_ptop(F_ninj),F_p0(F_ninj),F_st1(F_ninj),F_st1_m(F_ninj),
      %     F_wlao(F_ninj),F_topo(F_ninj)
    
 *
@@ -45,7 +45,7 @@
 *
 *revision
 * v2_00 - Lee V.            - initial MPI version (from blocthm v1_03)
-* v2_11 - Desgagne M.       - ptop reproducubility
+* v2_11 - Desgagne M.       - ptop producubility
 * v2_21 - Desgagne M.       - new calling sequence for glbdist + correct
 * v2_21                       calling sequence mfohra
 * v2_21 - J. P. Toviessi    - set dieze (#) slab output and rename
@@ -70,6 +70,7 @@
 * v3_22 - Lee V.            - reduced args in calling sequence for calzz
 * v3_30 - Bilodeau/Tanguay  - Output pair (TT,HU) for the adjoint
 * v3_30 - Plante A.         - Correction for THETA (TH) output
+* v4_04 - Tanguay M.        - Staggered version TL/AD
 *
 *object
 *     See above id.
@@ -136,7 +137,7 @@ c----------------------------------------------------------------------
 
       parameter (theta_p0=100000.)
 
-      integer i,j,k,kl,ii,my_nko
+      integer i,j,k,kl,ii,my_nko,l1
       real wk1(G_ni,G_nj),wk2(G_ni,G_nj)
       real wk3(G_ni,G_nj+2),wk4(G_ni,G_nj+2)
       real w1(F_ninj), w2(F_ninj)
@@ -154,7 +155,7 @@ c----------------------------------------------------------------------
      $     vt(F_ninj,F_nk+2),gz(F_ninj,F_nk), omega(F_ninj,F_nk+2)
       real fbot(F_ninj),wlnph_top(F_ninj),wlnph_bot(F_ninj)
       real ps_temp(F_ninj)
-      real w4(F_ninj,0:F_nk+1),a_ta(F_nk+2),b_ta(F_nk+2)
+      real w4(F_ninj,0:F_nk+1)
       integer pnindo(F_nk+2)
       integer :: lastdt = -1
       real, dimension(:,:), pointer :: gz_m_plus,gz_ta,ttx,htx
@@ -167,7 +168,7 @@ c----------------------------------------------------------------------
       integer     
      $        pngz,pnvt,pntt,pnes,pntd,
      $        pnhr,pnpx,pnhu,pntw,pnqc,
-     $        pnww,pnwe,pnzz,pnth
+     $        pnww,pnzz,pnth
       integer pnpn,psum,pnpt,pnp0,pnla,pnlo,pnme,pnmx
 
       integer nbit(0:Outd_var_max(F_set)+1),filt(0:Outd_var_max(F_set)+1)
@@ -178,14 +179,11 @@ c----------------------------------------------------------------------
 
       real*8, parameter :: ZERO_8 = 0.0
       real    prmult_pngz, prmult_pnpx, prmult_pnme
-      real    pradd_pnvt,  pradd_pntt,  pradd_pntd,  pradd_pnwe
-      real    ver_hyb_w(F_nk+2)
+      real    pradd_pnvt,  pradd_pntt,  pradd_pntd
 
       prmult_pngz  = 0.1 / Dcst_grav_8
       prmult_pnpx  = 0.01
       prmult_pnme  = 1.0 / Dcst_grav_8
-
-      pradd_pnwe   = ZERO_8
 
       V4dgconf_L = V4dg_conf .ne. 0
 
@@ -198,12 +196,6 @@ c----------------------------------------------------------------------
         pradd_pntt   = -Dcst_tcdk_8
         pradd_pntd   = -Dcst_tcdk_8
       endif
-
-c     See figure above
-      do ii=1,G_nk+2
-         a_ta(ii)=Ver_a_spcl_8%t(ii)
-         b_ta(ii)=Ver_b_spcl_8%t(ii)
-      enddo
 
       pnpn=0
       pnpt=0
@@ -224,7 +216,6 @@ c     See figure above
       pntw=0
       pnqc=0
       pnww=0
-      pnwe=0
       pnzz=0
       pnth=0
 
@@ -259,7 +250,6 @@ c     See figure above
          if (Outd_var_S(ii,F_set).eq.'TW') pntw=ii
          if (Outd_var_S(ii,F_set).eq.'QC') pnqc=ii
          if (Outd_var_S(ii,F_set).eq.'WW') pnww=ii
-         if (Outd_var_S(ii,F_set).eq.'WE') pnwe=ii
          if (Outd_var_S(ii,F_set).eq.'ZZ') pnzz=ii
          if (Outd_var_S(ii,F_set).eq.'TH') pnth=ii
         nbit(ii)=Outd_nbit(ii,F_set)
@@ -273,7 +263,7 @@ c     See figure above
 
       psum=psum + 
      $     pngz+pnvt+pntt+pnes+pntd+pnhr+pnpx+pnhu+
-     $     pntw+pnqc+pnww+pnwe+pnzz+pnth
+     $     pntw+pnqc+pnww+pnzz+pnth
 
       if (psum.eq.0)return
 
@@ -307,25 +297,6 @@ c     See figure above
          enddo
       endif
 
-*     Bring virtual temperature from top/surface to special levels
-*     and add diagnostic temperature (2 m) at G_nk+2
-*     Keep dynamic temperature at top
-      if(Schm_phyms_L)then
-         do i=1,F_ninj
-            vt(i,G_nk+2)=F_tt1(i,G_nk+2)
-            hu(i,G_nk+2)=F_hut1(i,G_nk+2)
-         enddo
-      else
-         do i=1,F_ninj
-c           vt(i,G_nk+1)=F_tt1(i,G_nk+1)
-c           hu(i,G_nk+1)=F_hut1(i,G_nk+1)
-            vt(i,G_nk+1)=.5*(F_tt1(i,G_nk)+F_tt1(i,G_nk+1))
-            vt(i,G_nk+2)=F_tt1(i,G_nk+1)
-            hu(i,G_nk+1)=.5*(F_hut1(i,G_nk)+F_hut1(i,G_nk+1))
-            hu(i,G_nk+2)=F_hut1(i,G_nk+1)
-         enddo
-      endif
-         
       call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,F_nk+2)
       call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,F_nk+2)
 
@@ -386,17 +357,10 @@ c     Compute GZ on thermo levels in gz_ta
                gz_m_plus(i,k)=gz(i,k)
             enddo
                gz_m_plus(i,l_nk+1)=F_topo(i)
-               if(Schm_virlev_L)then
-                  gz_m_plus(i,0)=.5*(F_fiptx(i,1)+F_fiptx(i,0))+
-     $                 Ver_fistr_8%t(1)
-               else
-                  gz_m_plus(i,0)=F_fiptx(i,0)+Ver_fistr_8%m(0)
-               endif
+               gz_m_plus(i,0)=F_fiptx(i,0)+Ver_fistr_8%m(0)
             gz_ta(i,l_nk+2)=F_topo(i)
          enddo
          call vertint3(gz_ta,gz_m_plus,F_posit,F_huv,F_ninj,G_nk+1,G_nk+2)
-c        call out_padbuf(gz_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk+2) 
-c        call out_padbuf(gz_m_plus,l_minx,l_maxx,l_miny,l_maxy,G_nk+2) 
       endif
       if ( Out3_nundr.gt.0 .and. lastdt .ne. Lctl_step ) then
          
@@ -481,7 +445,7 @@ c        call out_padbuf(gz_m_plus,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
 *     Calculate PN
       if (pnpn.ne.0) then
           call vslog(w2,F_p0,F_ninj)
-          call pnm2(w1,F_tt1(1,F_nk+1),F_topo,w2,F_wlao,
+          call pnm2(w1,F_tt1(1,F_nk+2),F_topo,w2,F_wlao,
      $         ttx,htx,Out3_nundr,l_minx,l_maxx,l_miny,l_maxy,1)
           if (filt(pnpn).gt.0)
      $      call filter(w1,filt(pnpn),coef(pnpn),'G', .false.,
@@ -499,17 +463,13 @@ c        call out_padbuf(gz_m_plus,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
              enddo
 
           elseif(V4dgconf_L .and. V4dg_tl_L) then
-             print*,'Ajuster code pour staggering'
-             call gem_stop('out_thm',-2)
              do i= 1, F_ninj
-                w1(i) =  Ver_z_8%t(F_nk+1) * exp(F_st1m(i)) * F_st1(i)
+                w1(i) =  exp(F_st1_m(i))*F_st1(i)*Cstv_pref_8
              enddo
 
           elseif(V4dgconf_L .and. V4dg_ad_L) then
-             print*,'Ajuster code pour staggering'
-             call gem_stop('out_thm',-3)
              do i= 1, F_ninj
-                w1(i) = F_st1(i)/(Ver_z_8%t(F_nk+1) * exp(F_st1m(i)))
+                w1(i) = F_st1(i)/(exp(F_st1_m(i))*Cstv_pref_8)
              enddo
           endif
 
@@ -523,17 +483,11 @@ c        call out_padbuf(gz_m_plus,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
 
       if (pnww.ne.0) then
 cccparallel
-         if(G_lam)then
+cap         if(G_lam)then
             call calomeg_w (omega,F_st1,F_wt1,F_tt1,LDIST_DIM,F_nk)            
-         else
-            call calomeg_adv (omega,F_st1,F_piup,LDIST_DIM,F_nk,.true.)
-         endif
-         if(Schm_virlev_L)then
-            do i= 1, F_ninj
-               omega(i,F_nk+1) = 0.25d0*omega(i,F_nk) 
-     $                         + 0.75d0*omega(i,F_nk+1)
-            enddo
-         endif
+cap         else
+cap            call calomeg_adv (omega,F_st1,F_piup,LDIST_DIM,F_nk,.true.)
+cap         endif
 cvl      calomeg  gives values to F_nk+1 ! 
 cccend parallel
          do i= 1, F_ninj
@@ -559,28 +513,7 @@ cccend parallel
 *     4.0   Output 3-D Derived Variables on ETA levels (momentum/thermo)
 *_______________________________________________________________________
          
-         if (pnww.ne.0.or.pnwe.ne.0.or.pnzz.ne.0) then
-             do k=2,F_nk
-                Ver_hyb_w(k)= Ver_hyb%t(k)
-             enddo
-             Ver_hyb_w(1)= 0.0
-             Ver_hyb_w(F_nk+1)= 1.0
-             Ver_hyb_w(F_nk+2)= 1.0
-         endif 
-         if (pnwe.ne.0)then
-            do k= 1,F_nk
-            do i= 1, F_ninj
-                  t8(i,k) = F_zdt1(i,k)*Ver_hyb%t(k)
-            enddo
-            enddo
-            do i= 1, F_ninj
-               t8(i,F_nk+1) = F_zdt1(i,F_nk)
-               t8(i,F_nk+2) = F_zdt1(i,F_nk+1)
-            enddo
-!            call gem_stop('out_thm : WE needs to be assessed',-1)
-            call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb_w,
-     $           'WE  ',1.0,0.0,Out_kind,F_nk+2, F_indo, F_nkot, nbit(pnwe) )
-         endif
+
          if (pngz.ne.0)then
              do i=1,F_nk+2
                  pnindo(i)= i
@@ -642,18 +575,14 @@ cccend parallel
 
            elseif (V4dgconf_L.and.V4dg_tl_L) then
 
-              call gem_stop('out_thm : ajuster pour staggering',-1)
-
-              call out_padbuf(F_vtm, l_minx,l_maxx,l_miny,l_maxy,F_nk+1)
-              call out_padbuf(F_hum1,l_minx,l_maxx,l_miny,l_maxy,F_nk+1)
-              call mfottv_tl (tt,vt,hu,F_vtm,F_hum1,F_ninj,F_nk+2,F_ninj)
+               call out_padbuf(F_vt_m,  l_minx,l_maxx,l_miny,l_maxy,F_nk+2)
+               call out_padbuf(F_hut1_m,l_minx,l_maxx,l_miny,l_maxy,F_nk+2)
+               call mfottv_tl (tt,vt,hu,F_vt_m,F_hut1_m,F_ninj,F_nk+2,F_ninj)
 
            elseif (V4dgconf_L.and.V4dg_ad_L) then
 *
-              call gem_stop('out_thm : ajuster pour staggering',-1)
-
-              call v4d_zerohalo (vt,    l_ni,l_nj,LDIST_DIM, F_nk+2)
-              call v4d_zerohalo (F_hum1,l_ni,l_nj,LDIST_DIM, F_nk+1)
+               call v4d_zerohalo (vt,      l_ni,l_nj,LDIST_DIM, F_nk+2)
+               call v4d_zerohalo (F_hut1_m,l_ni,l_nj,LDIST_DIM, F_nk+2)
 *
               do k=  1, F_nk+2
               do i=1,F_ninj
@@ -674,7 +603,7 @@ cccend parallel
 
          if (pntt.ne.0)then            
             call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t,
-     $           'TT  ',1.0,pradd_pntt, Out_kind,F_nk+2, F_indo,F_nkot, nbit(pntt) )
+     $           'TT ' ,1.0,pradd_pntt, Out_kind,F_nk+2, F_indo,F_nkot, nbit(pntt) )
          endif
          if (pnes.ne.0.or.pnpx.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0)then
 
@@ -761,7 +690,7 @@ cccend parallel
          endif
 
          if (pnww.ne.0) then
-             call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb_w,
+             call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t,
      $           'WW  ',1.0,0.0, Out_kind,F_nk+2, F_indo, F_nkot, nbit(pnww) )
          endif
 
@@ -771,12 +700,11 @@ cccend parallel
                   t8(i,k)=F_wt1(i,k)
                enddo
             enddo
-*           Put nk value at special level like WE
+*           Put a copy of value at NK+1 into diagnostic level for output
             do i= 1, F_ninj
                t8(i,F_nk+2) = t8(i,F_nk+1)
-               t8(i,F_nk+1) = t8(i,F_nk)
             enddo            
-            call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb_w,
+            call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t,
      $              'ZZ  ',1.0,0.0, Out_kind,F_nk+2, F_indo, F_nkot, nbit(pnzz) )
          endif
       else

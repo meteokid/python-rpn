@@ -77,7 +77,7 @@
 *     This is a more efficient process but will not necessarily give the same
 *     answers in different topology.
 *     
-         call statf_dm (F_field,F_var_S,Lctl_step,F_from_S, .false.,
+         call statf_dm (F_field,F_var_S,Lctl_step,F_from_S,
      $                  Minx,Maxx,Miny,Maxy,Nk,
      $                  F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
       endif

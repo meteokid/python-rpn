@@ -1,6 +1,6 @@
 OPTIL  = 2
 OMP    = -openmp
 MPI    = -mpi
-RMN    = rmn_x
+RMN    = rmn_rc010
 COMM   = rpn_comm208a
 PRIV   = priv

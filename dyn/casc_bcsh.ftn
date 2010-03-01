@@ -27,6 +27,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *revision
 * v3_30 - Lee V.         - initial version for GEMDM
+* v4_03 - Lee/Desgagne - ISST
 *
 *
 #include "glb_ld.cdk"
@@ -41,6 +42,16 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "lctl.cdk"
 #include "ind.cdk"
 #include "acid.cdk"
+#include "path.cdk"
+*
+*        presstype
+*            0 => p =    A                         (B=0),  prs-anal
+*            1 => p =    A+B*   ps       , F_p0=ps (A=0),  sig-anal
+*            2 => p =    A+B*   ps       , F_p0=ps      ,  etasef-anal
+*            3 => p =    A+B*   ps       , F_p0=ps      ,  eta-anal
+*            4 => p =    A+B*   ps       , F_p0=ps      ,  hyb-anal
+*        ?   5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
+*            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
 *
       integer  vmmlod,vmmget,vmmuld,longueur
       external vmmlod,vmmget,vmmuld,longueur
@@ -54,7 +65,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       logical s_L,gz_L,tt_L,uu_L,vv_L,w_L,zd_L,q_L
       integer i,j,k,ntra,n,err,ngas,ngaw,ofi,ofj,id,
      $   mode,nit,njt,d1,nis,njs,niw,njw,iscal(2),errcode,takeit
-      integer ni1,nj1,ni2,nj2,nk1,nka_m,nka_s,nka_t,ntr,presstype,cumerr,nbits
+      integer ni1,nj1,ni2,nj2,nk1,nka_m,nka_t,ntr,presstype,cumerr,nbits
       real htop
       real*8 epsilon
       parameter (epsilon=1.0e-6)
@@ -82,6 +93,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $     uunw,vvnw,zdnw,ttnw,meqnw,ssnw,qqnw,wwnw,trns,trnw,trname_a )
 *
       casc_bcsh = -1
+* topo is inflated!
+          call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
       data2treat = (l_south.or.l_north.or.l_west.or.l_east)
 *
@@ -99,23 +113,15 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       if (data2treat) then
 *
          write (md,'(i2.2)') wowp
-         fn = '../casc/bcs'//md//'_'//datev
+         fn = trim(Path_ind_S)//'/bcs'//md//'_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                        iostat=err,form='UNFORMATTED')
 c        print *,'opening ',fn(1:longueur(fn)),'err=',err
 *
          if (err.ne.0) goto 33
 *
-         read (unf,end=33) dynophy,mode
-c        print *,'casc_bcsh',dynophy,mode
          read (unf,end=33) nomvar,nis,njs,niw,njw,
-     $                     nka_m,nka_s,nka_t,presstype,nvar,ntra
-         if (ntra.le.0) then
-             if (Lun_out.gt.0) write(Lun_out,*)'No tracers are available including HU'
-             call gem_stop('casc_bcsh',-1)
-         endif
-c        print *,'casc_bcsh: ',nomvar,nis,njs,niw,njw,
-c    $                     nka_m,nka_s,nka_t,presstype,nvar,ntra
+     $                     nka_m,nka_t,presstype
          allocate (xpsn (nis),ypsn (njs*2),xpwe (niw*2),ypwe (njw))
          read (unf,end=33) xpsn,ypsn,xpwe,ypwe
          nis = nis - 1 
@@ -131,19 +137,21 @@ c    $                     nka_m,nka_s,nka_t,presstype,nvar,ntra
          if (associated(ana_bt_8)) deallocate(ana_bt_8)
 *
          allocate(ana_am_8(nka_m), ana_bm_8(nka_m),
-     $            ana_at_8(nka_t), ana_bt_8(nka_t),
-     $            ana_as_8(nka_s), ana_bs_8(nka_s) )
+     $            ana_at_8(nka_t), ana_bt_8(nka_t))
 
          read (unf,end=33,err=33) 
-     $         ana_am_8,ana_bm_8,ana_as_8,ana_bs_8,ana_at_8,ana_bt_8
+     $         ana_am_8,ana_bm_8,ana_at_8,ana_bt_8
          if (Lun_debug_L) then
              write(Lun_out,*)'sid3df:'
              write(Lun_out,*)'ana_am_8=',ana_am_8
              write(Lun_out,*)'ana_bm_8=',ana_bm_8
-             write(Lun_out,*)'ana_as_8=',ana_as_8
-             write(Lun_out,*)'ana_bs_8=',ana_bs_8
              write(Lun_out,*)'ana_at_8=',ana_at_8
              write(Lun_out,*)'ana_bt_8=',ana_bt_8
+         endif
+         read (unf,end=33) dynophy,mode,nvar,ntra
+         if (ntra.le.0) then
+             if (Lun_out.gt.0) write(Lun_out,*)'No tracers are available including HU'
+             call gem_stop('casc_bcsh',-1)
          endif
 *
          do i=1,nis
@@ -176,14 +184,14 @@ c    $                     nka_m,nka_s,nka_t,presstype,nvar,ntra
          ngaw = niw*njw*2
 
 
-         allocate (uuns(ngas,nka_m),vvns(ngas,nka_m),zdns(ngas,nka_t),
-     $             ttns(ngas,nka_s),ssns(ngas,1),
-     $             wwns(ngas,nka_t),qqns(ngas,nka_m+1),trns(ngas,nka_s,ntra),
-     $             uunw(ngaw,nka_m),vvnw(ngaw,nka_m),zdnw(ngaw,nka_t),
-     $             ttnw(ngaw,nka_s),ssnw(ngaw,1),
-     $             wwnw(ngaw,nka_t),qqnw(ngaw,nka_m+1),trnw(ngaw,nka_s,ntra),
+         allocate (uuns(ngas,nka_m),vvns(ngas,nka_m),zdns(ngas,nka_t-1),
+     $             ttns(ngas,nka_t),ssns(ngas,1),
+     $             wwns(ngas,nka_t-1),qqns(ngas,nka_m+1),trns(ngas,nka_t,ntra),
+     $             uunw(ngaw,nka_m),vvnw(ngaw,nka_m),zdnw(ngaw,nka_t-1),
+     $             ttnw(ngaw,nka_t),ssnw(ngaw,1),
+     $             wwnw(ngaw,nka_t-1),qqnw(ngaw,nka_m+1),trnw(ngaw,nka_t,ntra),
      $             trname_a(ntra) )
-            if (presstype.eq.4) then
+            if (presstype.eq.0) then ! pressure levels
                 allocate (meqns(ngas,nka_m),meqnw(ngaw,nka_m))
             else
                 allocate (meqns(ngas,1),meqnw(ngaw,1))
@@ -200,8 +208,6 @@ c    $                     nka_m,nka_s,nka_t,presstype,nvar,ntra
          trns = 0.0; trnw = 0.0
          meqns= 0.0; meqnw= 0.0
          ntr=0
-c        print *,'read_bcs ntra=',ntra, 'nvar=',nvar
-c        print *,'read_bcs nis,njs,niw,njw=',nis,njs,niw,njw
 
 * read tt1,st1, ME(GZ)
          do 30 k=1,nvar+ntra
@@ -280,7 +286,6 @@ c        print *,'read_bcs nis,njs,niw,njw=',nis,njs,niw,njw
       endif
 *
  33   data2treat = data2treat .and. (casc_bcsh.eq.0)
-c     print *,'casc_bcsh:33',data2treat
 *
 * Perform horizontal and vertical interpolations for S,N,W and E boundaries
 *
@@ -298,12 +303,13 @@ c     print *,'casc_bcsh:33',data2treat
      $                      yps(1), ypaqs(2)
            if ( .not.fb_n ) write (6 ,*) 'yps(dimys+1)<ypaqs(njs-1)',
      $                      yps(dimys+1), ypaqs(njs-1)
-      if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
-      call gem_stop('CASC_BCSH:dimxs*dimys',errcode)
+           if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
+      else
+           errcode = 0
       endif
+      call gem_stop('CASC_BCSH:dimxs*dimys',errcode)
 
       if ( data2treat .and. (dimxn*dimyn.gt.0) ) then
-c          print *,'north:',dimxn,dimyn,xpn(1)
            errcode = -1
            fb_w = (xpn  (1).gt.xpaqs    (2)-epsilon)
            fb_e = (xpn(dimxn+1-(east*1)).lt.xpaqs(nis-1)+epsilon)
@@ -317,9 +323,11 @@ c          print *,'north:',dimxn,dimyn,xpn(1)
      $                                  ypn(1), ypaqs(njs+2)
            if ( .not.fb_n ) write (6 ,*) 'ypn(dimyn+1-(north*1))<ypaqs(2*njs-1)',
      $                            ypn(dimyn+1-(north*1)),ypaqs(2*njs-1)
-      if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
-      call gem_stop('CASC_BCSH:dimxn*dimyn',errcode)
+           if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
+      else
+           errcode = 0
       endif
+      call gem_stop('CASC_BCSH:dimxn*dimyn',errcode)
 
       if ( data2treat .and. (dimxw*dimyw.gt.0) ) then
            errcode = -1
@@ -335,9 +343,11 @@ c          print *,'north:',dimxn,dimyn,xpn(1)
      $                                    ypw(1),ypaqw(2)
            if ( .not.fb_n ) write (6 ,*) 'ypw(dimyw+1)<ypaqw(njw-1)',
      $                                    ypw(dimyw+1),ypaqw(njw-1)
-      if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
-      call gem_stop('CASC_BCSH:dimxw*dimyw',errcode)
+           if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
+      else
+           errcode = 0
       endif
+      call gem_stop('CASC_BCSH:dimxw*dimyw',errcode)
 
       if ( data2treat .and. (dimxe*dimye.gt.0) ) then
            errcode = -1
@@ -353,14 +363,13 @@ c          print *,'north:',dimxn,dimyn,xpn(1)
      $                                   ype(1),ypaqw(2)
            if ( .not.fb_n )write (6 ,*) 'ype(dimye+1)<ypaqw(njw-1)',
      $                                   ype(dimye+1),ypaqw(njw-1)
-      if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
-      call gem_stop('CASC_BCSH:dimxe*dimye',errcode)
+           if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
+      else
+           errcode = 0
       endif
+      call gem_stop('CASC_BCSH:dimxe*dimye',errcode)
 *
       if (data2treat)then
-* topo is inflated!
-          call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
-     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
           call trnes1(Ind_topo,topo_s,topo_n,topo_w,topo_e,
      $         LDIST_DIM,
      $         minxs,maxxs+1-(east*1),minys,maxys+1,
@@ -371,16 +380,15 @@ c          print *,'north:',dimxn,dimyn,xpn(1)
 
 *       PUT DATA into BCS_UF
 * Perform horizontal and vertical interpolations for South boundary
-c      print *,'casc_bcsh:south hvi'
       if (l_south)
      $call casc_hvi (trname_a,
      $  xps,yps,xpus,ypvs,xpaqs,ypaqs,xpaus,ypavs,
      $  bcs_uf,bcs_vf, bcs_tf,bcs_zdf,
      $  bcs_sf,bcs_qf, bcs_wf,bcs_trf,
-     $  bcs_is-1, topo_s,
+     $  bcs_is-1, bcs_sz, topo_s,
      $  uuns,vvns,ttns,zdns,meqns,ssns,qqns,wwns,trns,
      $  minxs,maxxs,minys,maxys,maxxs+1-(east*1),maxys+1, G_nk,
-     $  nis,njs*2,nka_m,nka_s,nka_t,presstype,ntra)
+     $  nis,njs*2,nka_m,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for North boundary
       if (l_north)
@@ -388,10 +396,10 @@ c      print *,'casc_bcsh:south hvi'
      $  xpn,ypn,xpun,ypvn,xpaqs,ypaqs,xpaus,ypavs,
      $  bcs_uf(bcs_in),bcs_vf(bcs_in), bcs_tf(bcs_in),bcs_zdf(bcs_in),
      $  bcs_sf(bcs_in),bcs_qf(bcs_in),bcs_wf(bcs_in),bcs_trf,
-     $  bcs_in-1, topo_n,
+     $  bcs_in-1, bcs_sz, topo_n,
      $  uuns,vvns,ttns,zdns,meqns,ssns,qqns,wwns,trns,
      $  minxn,maxxn,minyn,maxyn,maxxn+1-(east*1),maxyn+1-(north*1),G_nk,
-     $  nis,njs*2,nka_m,nka_s,nka_t,presstype,ntra)
+     $  nis,njs*2,nka_m,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for West boundary
       if (l_west)
@@ -399,10 +407,10 @@ c      print *,'casc_bcsh:south hvi'
      $  xpw,ypw,xpuw,ypvw,xpaqw,ypaqw,xpauw,ypavw,
      $  bcs_uf(bcs_iw),bcs_vf(bcs_iw), bcs_tf(bcs_iw),bcs_zdf(bcs_iw),
      $  bcs_sf(bcs_iw),bcs_qf(bcs_iw),bcs_wf(bcs_iw),bcs_trf,
-     $  bcs_iw-1, topo_w,
+     $  bcs_iw-1, bcs_sz, topo_w,
      $  uunw,vvnw,ttnw,zdnw,meqnw,ssnw,qqnw,wwnw,trnw,
      $  minxw,maxxw,minyw,maxyw,maxxw+1,maxyw+1, G_nk,
-     $  niw*2,njw,nka_m,nka_s,nka_t,presstype,ntra)
+     $  niw*2,njw,nka_m,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for East boundary
       if (l_east)
@@ -410,10 +418,10 @@ c      print *,'casc_bcsh:south hvi'
      $  xpe,ype,xpue,ypve,xpaqw,ypaqw,xpauw,ypavw,
      $  bcs_uf(bcs_ie),bcs_vf(bcs_ie), bcs_tf(bcs_ie),bcs_zdf(bcs_ie),
      $  bcs_sf(bcs_ie),bcs_qf(bcs_ie),bcs_wf(bcs_ie),bcs_trf,
-     $  bcs_ie-1, topo_e,
+     $  bcs_ie-1, bcs_sz, topo_e,
      $  uunw,vvnw,ttnw,zdnw,meqnw,ssnw,qqnw,wwnw,trnw,
      $  minxe,maxxe,minye,maxye,maxxe+1-(east*1),maxye+1, G_nk,
-     $  niw*2,njw,nka_m,nka_s,nka_t,presstype,ntra)
+     $  niw*2,njw,nka_m,nka_t,presstype,ntra)
 *
       endif
       if (associated(xpsn)) deallocate(xpsn)

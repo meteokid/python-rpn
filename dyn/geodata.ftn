@@ -24,6 +24,7 @@
 *
 *revision
 * v3_30 Lee/Desgagne - initial GEM LAM version
+* v4_03 - Lee/Desgagne - ISST
 *
 #include "glb_ld.cdk"
 #include "hgc.cdk"
@@ -38,6 +39,7 @@
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
 #include "lctl.cdk"
+#include "path.cdk"
 *
       integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos,
      $         fstopc,nav_3df,fstrhint
@@ -98,12 +100,17 @@
       end do
       end do
 *
-      fn  = '../geophy/'//trim(prefgeo)//'_gfilemap.txt'
-      if (Lun_out.gt.0) write (Lun_out,1000) trim(fn)
+      fn = trim(Path_input_S)//'/LAM_geophy/'//trim(prefgeo)
+
       unf = 91
-      open (unf,file=fn,access='SEQUENTIAL',
-     $      status='OLD',iostat=err,form='FORMATTED')
-      if (err.ne.0) return
+      open (unf,file=trim(fn)//'_gfilemap.txt',access='SEQUENTIAL',
+     $                    status='OLD',iostat=err,form='FORMATTED')
+      if (err.ne.0) then
+        if (Lun_out.gt.0) write (Lun_out,1002) trim(fn)//'_gfilemap.txt'
+        return
+      else
+        if (Lun_out.gt.0) write (Lun_out,1000) trim(fn)//'_gfilemap.txt'
+      endif
 *
       deg2rad  =  acos(-1.0)/180.
       inttyp   = 'LINEAR'
@@ -136,9 +143,7 @@
 
       do n=1,ifd_nf
       if (ifd_needit(n)) then
-         fn = 
-     $   '../geophy/'//prefgeo(1:longueur(prefgeo))//'_'//ifd_fnext(n)
-         ier  = fnom   (unf2,fn,'RND+OLD+R/O',0)
+         ier  = fnom (unf2,trim(fn)//'_'//ifd_fnext(n),'RND+OLD+R/O',0)
          ier  = fstouv (unf2,'RND')
 *
 * Use first file to establish geo-references
@@ -252,11 +257,11 @@
          if (h_inttyp.eq.'LINEAR') then
             err = fstrhint (geofld(offg),varname,ni1,nj1,mul,
      $                      nia,nja,idxl,idyl,cxal,cxbl,cxcl,cxdl,
-     $                      cyal,cybl,cycl,cydl,h_inttyp)
+     $                      cyal,cybl,cycl,cydl,h_inttyp,fn)
          else
             err = fstrhint (geofld(offg),varname,ni1,nj1,mul,
      $                      nia,nja,idxn,idyn,cxan,cxbn,cxcn,cxdn,
-     $                      cyan,cybn,cycn,cydn,h_inttyp)
+     $                      cyan,cybn,cycn,cydn,h_inttyp,fn)
          endif
          if (err.eq.0) listgeonm(2,location) = 'OK'
  101  continue
@@ -304,17 +309,18 @@ c        if (geonm(gid,1).eq.'MF'    ) listgeonm(2,gid) = 'OK'
  1000 format (4X,'GEODATA: reading geophy file description from ',A/)
  1001 format (/' INPUT DATA NOT ON SAME GRID ROTATION AS MODEL ',
      $         '- ABORT IN geodata -'/)
+ 1002 format (4X,'GEODATA: problem with opening geophy file:  ',A/)
 *
 *-----------------------------------------------------------------------
 *
       return
       end
 *
-      integer function fstrhint (f,nv,ni,nj,nk,nia,nja,idx,idy,
-     $                           cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,inttyp)
+      integer function fstrhint (f,nv,ni,nj,nk,nia,nja,idx,idy,cxa,cxb,
+     $                           cxc,cxd,cya,cyb,cyc,cyd,inttyp,path)
       implicit none
 *
-      character* (*) nv,inttyp
+      character* (*) nv,inttyp,path
       integer ni,nj,nk,nia,nja,idx(*),idy(*)
       real f(ni*nj,*)
       real*8 cxa(*),cxb(*),cxc(*),cxd(*),cya(*),cyb(*),cyc(*),cyd(*)
@@ -325,7 +331,7 @@ c        if (geonm(gid,1).eq.'MF'    ) listgeonm(2,gid) = 'OK'
       integer filsfc
       external filsfc
       integer fnom,fstouv,fstfrm,fclos
-      character*256 fn
+      character*512 fn
       integer k,n,ier,unf,ofi,ofj,i,j
       real wk1(nia*nja)
 *
@@ -340,8 +346,7 @@ c        if (geonm(gid,1).eq.'MF'    ) listgeonm(2,gid) = 'OK'
 *
       do n=1,ifd_nf
       if (ifd_needit(n)) then
-         fn = 
-     $   '../geophy/'//trim(prefgeo)//'_'//ifd_fnext(n)
+         fn = trim(path)//'_'//ifd_fnext(n)
          ier  = fnom   (unf,fn,'RND+OLD+R/O',0)
          ier  = fstouv (unf,'RND')
          ofi = ifd_minx(n)-1

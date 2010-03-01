@@ -76,7 +76,7 @@
      %     .or. Theo_case_S .eq. 'MTN_SCHAR2'
      %     .or. Theo_case_S .eq. 'MTN_PINTY'
      %     .or. Theo_case_S .eq. 'MTN_PINTY2'
-     %     .or. Theo_case_S .eq. 'MTN_PINTYNL') then 
+     %     .or. Theo_case_S .eq. 'MTN_PINTYNL') then
          print *,'Theo_case_S=',Theo_case_S
          err = mtn_cfg (unf)
          print *,'after mtn_cfg err=',err

@@ -27,6 +27,8 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_40 - Lee/Qaddouri      - for LAM version
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_03 - Tanguay M.        - Williamson's cases
 *
 *object
 *	
@@ -46,6 +48,9 @@ c#include "vt0.cdk"
 #include "fft.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
+#include "acid.cdk"
+#include "schm.cdk"
+#include "wil_williamson.cdk"
 *
 *modules
       integer vmmlod, vmmget, vmmuld
@@ -61,6 +66,8 @@ c#include "vt0.cdk"
       real*8 fdwfft((ldnh_maxy -ldnh_miny +1)*(trp_12smax-trp_12smin+1)*(G_ni+2+Ptopo_npex))
 *
 *     ---------------------------------------------------------------
+*
+      if (Schm_autobar_L.and.Williamson_case.eq.1) return
 **
       if (Lun_debug_L) write(Lun_out,1000)
 *
@@ -90,6 +97,8 @@ c#include "vt0.cdk"
       call sol_trsf (sol,fiptx(l_minx,l_miny,1),
      $               ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy,
      $               LDIST_DIM,l_nk,-1)
+*
+      if (Acid_test_L)call acid_stat_sol_main(rhsp,fiptx,1)
 *
       pnerr = vmmuld( -1, 0 )
 *

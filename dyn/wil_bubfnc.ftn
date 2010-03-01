@@ -1,0 +1,30 @@
+***s/r wil_bubfnc
+*
+      REAL FUNCTION WIL_BUBFNC(RLAT) 
+*
+      implicit none 
+*
+      REAL RLAT
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version BUBFNC 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     SPECIFIES FUNCTIONAL FORM OF U BAR
+*     (USED FOR FORCED SOLUTION ICOND = 4)
+*     SEE PAPER BY BROWNING ET. AL.:
+*     A COMPARISON OF THREE NUMERICAL METHODS ...
+*     (EQUATION 5.10a)*COS(RLAT)
+*
+*implicits
+#include "wil_init1.cdk"
+*
+*     --------------------------------------------
+*
+      WIL_BUBFNC = SU0*(2.0*SIN(RLAT)*COS(RLAT))**NPWR
+*
+      RETURN                                                                    
+      END                                                                       

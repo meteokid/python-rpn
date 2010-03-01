@@ -22,10 +22,12 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+* v4_03 - Lee/Desgagne      - ISST, add Grdc_maxcfl, Step_maxcfl, elim Grdc_pil
+* v4_04 - Plante A.         - Remove offline mode
 *
 *object
 *
-#include "offline.cdk"
 #include "dcst.cdk"
 #include "v4dg.cdk"
 #include "nml.cdk"
@@ -34,8 +36,8 @@
 #include "modconst.cdk"
 *
 *modules
-      integer  bin2com,newdate
-      external bin2com,newdate
+      integer  bin2com,newdate,longueur
+      external bin2com,newdate,longueur
 *
       character nfe
       integer   nfe_nsec, len, time1, time2, istat
@@ -64,10 +66,18 @@
       Hzd_pwr    = Hzd_pwr / 2
       Hzd_pwr    = min(max(2,Hzd_pwr*2),8)
 *
-      Glb_pil_n = max(7,Glb_pil_n)
-      Glb_pil_s = max(7,Glb_pil_s)
-      Glb_pil_w = max(7,Glb_pil_w)
-      Glb_pil_e = max(7,Glb_pil_e)
+      if (G_lam) then
+         Step_maxcfl = max(1,Step_maxcfl)
+         Glb_pil_n = Step_maxcfl + 5
+         Glb_pil_s = Glb_pil_n
+         Glb_pil_w = Glb_pil_n
+         Glb_pil_e = Glb_pil_n
+         Adw_halox = Step_maxcfl + 1
+         Adw_haloy = Adw_halox
+      else
+         Adw_halox = max(3,Adw_halox)
+         Adw_haloy = max(2,Adw_haloy)
+      endif
 *
       deg_2_rad = Dcst_pi_8/180.
 *
@@ -115,48 +125,38 @@
 *     Checking vertical layering
 *
       wronghyb = .false.
-      if (schm_offline_l) then         
-         call gem_stop('gemdm_config : review for staggering')
-         G_nk=4
-         hyb(1)=0.
-         hyb(2)=0.05
-         hyb(3)=(Offline_ip1a-2000)*0.0001
-         hyb(4)=1.0
+*     Counting vertical levels
+      G_nk = 0
+      do k = 1, maxhlev
+         if (hyb(k) .lt. 0.) exit
+         G_nk = k
+      enddo
+      if (Lun_out.gt.0) write(Lun_out,*) (hyb(k),k=1,G_nk)         
+*     
+      if (Cstv_ptop_8.le.0.d0)then
+         write(Lun_out,9400)
          return
-      else
-*        Counting vertical levels
-         G_nk = 0
-         do k = 1, maxhlev
-            if (hyb(k) .lt. 0.) exit
-            G_nk = k
-         enddo
-         if (Lun_out.gt.0) write(Lun_out,*) (hyb(k),k=1,G_nk)         
-*
-         if (Cstv_ptop_8.le.0.d0)then
-             write(Lun_out,9400)
-            return
-         endif
-*
-*        Check range
-         if (hyb(G_nk).ge.1..or.hyb(1).le.Ver_hyb_top)then
-             write(Lun_out,9550)Ver_hyb_top
-             return
-         endif
-*
-*        Check monotonicity
-            do k=2, G_nk
-               if (hyb(k).le.hyb(k-1)) wronghyb = .true.
-            enddo
-         if (wronghyb)then
-             write(Lun_out,9250)
-             write(Lun_out,*)'MOMENTUM LEVELS'
-             do k=1, G_nk
-                write (Lun_out,*) hyb(k),k
-             end do               
-             return            
-         endif
       endif
-*
+*     
+*     Check range
+      if (hyb(G_nk).ge.1..or.hyb(1).le.Ver_hyb_top)then
+         write(Lun_out,9550)Ver_hyb_top
+         return
+      endif
+*     
+*        Check monotonicity
+      do k=2, G_nk
+         if (hyb(k).le.hyb(k-1)) wronghyb = .true.
+      enddo
+      if (wronghyb)then
+         write(Lun_out,9250)
+         write(Lun_out,*)'MOMENTUM LEVELS'
+         do k=1, G_nk
+            write (Lun_out,*) hyb(k),k
+         end do               
+         return            
+      endif
+*     
 *     Ver_hyb%m is allocated a bit larger for output diagnostics
       allocate(Ver_hyb%m(G_nk+1),Ver_hyb%t(G_nk+2),stat=istat)
       
@@ -201,18 +201,9 @@
 
       if (Mem_mx3db.lt.0) Mem_mx3db = Mem_minmem
 *
-      Lun_sortie_s = trim(Path_dfwmil_S)//'/process/output_settings'
+      Lun_sortie_s = trim(Path_input_S)//'/output_settings'
 *
 *     Options used for the Off-line mode (MEC)
-*
-      if (Schm_offline_L) then
-          Schm_phyms_L    = .true.
-          Init_balgm_L    = .false.
-          Cstv_ptop_8     = 1000.d0
-          Hzd_type_s        = 'NIL' 
-          Vspng_nk          = 0 
-          Hblen_wfct_S  = 'CONST'
-      endif
 *
       if (Mod_runstrt_S.eq."@#$%") Mod_runstrt_S = Lam_runstrt_S
       if (Lam_runstrt_S.eq."@#$%") Lam_runstrt_S = Mod_runstrt_S
@@ -240,6 +231,7 @@
       Grdc_ndt   = -1
       Grdc_start = -1
       len=len_trim( Grdc_nfe )
+      Acid_npas=0
       if (len.gt.0) then
          call low2up (Grdc_nfe(len:len),nfe)
          nfe_nsec = 3600
@@ -263,7 +255,26 @@
          endif
          Grdc_start = min(max(0,Grdc_start),Step_total)
          Grdc_end   = min(max(0,Grdc_end  ),Step_total)
-c        if (Acid_pilot_L) acid_npas = - Grdc_start
+         Grdc_maxcfl = max(1,Grdc_maxcfl)
+         Grdc_pil = Grdc_maxcfl + 5
+         if (Acid_pilot_L) acid_npas = Grdc_start
+      endif
+      if ( Acid_test_L) then
+           if (Acid_pilot_L) then
+           fln_S  = trim(Path_output_S) // '/casc/solver.bin'
+           write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+           open (50, file=fln_S,form='unformatted')
+           fln_S  = trim(Path_output_S) // '/casc/posixy.bin'
+           write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+           open (44, file=fln_S,form='unformatted')
+           else
+           fln_S  = trim(Path_input_S) // '/INIT_3D/solver.bin'
+           write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+           open (50, file=fln_S,form='unformatted')
+           fln_S  = trim(Path_input_S) // '/INIT_3D/posixy.bin'
+           write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+           open (44, file=fln_S,form='unformatted')
+           endif
       endif
 *
       call low2up  (Lam_hint_S ,dumc_S)
@@ -299,7 +310,6 @@ c        if (Acid_pilot_L) acid_npas = - Grdc_start
             return
          endif
       endif
-*
 *
       gemdm_config = 1
 *

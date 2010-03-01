@@ -1,0 +1,192 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r hzd_exhrdif_tl - TLM of hzd_exhrdif 
+*
+#include "model_macros_f.h"
+*
+      subroutine hzd_exhrdif_tl ( F_u,  F_v,  F_zd,  F_w,  F_t,  F_s, 
+     %                            F_u_m,F_v_m,F_zd_m,F_w_m,F_t_m,F_s_m,
+     %                            DIST_DIM, Nk )
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+*
+      real     F_u (DIST_SHAPE,Nk)  ,F_v(DIST_SHAPE,Nk),
+     $         F_zd(DIST_SHAPE,Nk+1),F_w(DIST_SHAPE,Nk+1), 
+     $         F_t (DIST_SHAPE,Nk+1),F_s(DIST_SHAPE)
+*
+      real     F_u_m (DIST_SHAPE,Nk)   ,F_v_m(DIST_SHAPE,Nk),
+     $         F_zd_m(DIST_SHAPE,Nk+1) ,F_w_m(DIST_SHAPE,Nk+1),
+     $         F_t_m (DIST_SHAPE,Nk+1 ),F_s_m(DIST_SHAPE)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_30 - Tanguay M.  - initial MPI version 
+* v4_04 - Tanguay M.  - Staggered version TL/AD 
+*
+*implicits
+#include "glb_ld.cdk"
+#include "hzd.cdk"
+#include "schm.cdk"
+#include "ver.cdk"
+#include "dcst.cdk"
+*
+      integer i,j,k, nn, mm, nij,i0,in,j0,jn
+      real*8 pt25,nu_dif,epsilon,khdim,lnr,visco
+      parameter (epsilon = 1.0d-12, pt25=0.25d0)
+      real smu (LDIST_SHAPE,Nk)  ,smv(LDIST_SHAPE,Nk),
+     $     smzd(LDIST_SHAPE,Nk+1),smt(LDIST_SHAPE,Nk+1),
+     $     smw (LDIST_SHAPE,Nk+1)
+      real smu_m (LDIST_SHAPE,Nk)  ,smv_m(LDIST_SHAPE,Nk),
+     $     smzd_m(LDIST_SHAPE,Nk+1),smt_m(LDIST_SHAPE,Nk+1),
+     $     smw_m (LDIST_SHAPE,Nk+1)
+*     __________________________________________________________________
+*
+      nu_dif = 0.d0
+      lnr    = 1.0d0 - exp(Hzd_lnr)
+      if (Hzd_pwr.gt.0) nu_dif = pt25*lnr**(2.d0/Hzd_pwr)
+      nu_dif = min(nu_dif,pt25-epsilon)
+      if (nu_dif.lt.1.0e-10) return
+      i0=Minx
+      in=Maxx
+      j0=Miny
+      jn=Maxy
+      nij=(in-i0+1)*(jn-j0+1)
+*
+      visco = min ( nu_dif, pt25 )
+*
+*     TRAJECTORY
+*     ----------
+      if (Hzd_hzdmain_0_L) then
+*
+      call rpn_comm_xch_halo ( F_u_m  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_v_m  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_zd_m, LDIST_DIM, l_ni,l_nj,G_nk+1,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+      if(.not.Schm_hydro_L) then
+         call rpn_comm_xch_halo ( F_w_m, LDIST_DIM, l_ni,l_nj,G_nk+1,
+     $        G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      endif
+*
+      endif
+*
+*     TLM
+*     ---
+      if (Hzd_hzdmain_1_L) then
+*
+      call rpn_comm_xch_halo ( F_u  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_v  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_zd, LDIST_DIM, l_ni,l_nj,G_nk+1,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+      if(.not.Schm_hydro_L) then
+         call rpn_comm_xch_halo ( F_w, LDIST_DIM, l_ni,l_nj,G_nk+1,
+     $        G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      endif
+*
+      endif
+*
+      nn=Hzd_pwr/2
+*
+C!$omp parallel shared( visco,nn)
+*
+      do mm=1,nn
+*
+*        TRAJECTORY
+*        ----------
+         if (Hzd_hzdmain_0_L) then
+*
+         call hzd_nudeln (F_u_m  ,smu_m  ,LDIST_DIM,Nk  ,visco,1,0,mm,nn)
+         call hzd_nudeln (F_v_m  ,smv_m  ,LDIST_DIM,Nk  ,visco,0,1,mm,nn)
+*********not physical, done nevertheless*******
+         call hzd_nudeln (F_zd_m ,smzd_m, LDIST_DIM,Nk+1,visco,0,0,mm,nn)
+*
+         if(.not.Schm_hydro_L) then
+            call hzd_nudeln (F_w_m,smw_m, LDIST_DIM,Nk+1,visco,0,0,mm,nn)
+         endif
+*
+         endif
+*
+*        TLM
+*        ---
+         if (Hzd_hzdmain_1_L) then
+*
+         call hzd_nudeln (F_u  ,smu  ,LDIST_DIM,Nk  ,visco,1,0,mm,nn)
+         call hzd_nudeln (F_v  ,smv  ,LDIST_DIM,Nk  ,visco,0,1,mm,nn)
+         call hzd_nudeln (F_w  ,smw,  LDIST_DIM,Nk+1,visco,0,0,mm,nn)
+*********not physical, done nevertheless*******
+         call hzd_nudeln (F_zd ,smzd, LDIST_DIM,Nk+1,visco,0,0,mm,nn)
+*
+         if(.not.Schm_hydro_L) then
+            call hzd_nudeln (F_w,smw, LDIST_DIM,Nk+1,visco,0,0,mm,nn)
+         endif
+*
+         endif
+*
+         if(mm.ne.nn) then
+C!$omp single
+*
+*           TRAJECTORY
+*           ----------
+            if (Hzd_hzdmain_0_L) then
+*
+            call rpn_comm_xch_halo( smu_m  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smv_m  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smzd_m , LDIST_DIM, l_ni,l_nj,G_nk+1,
+     $           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+            if(.not.Schm_hydro_L) then
+               call rpn_comm_xch_halo( smw_m,LDIST_DIM, l_ni,l_nj,G_nk+1,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            endif
+*
+            endif
+*
+*           TLM
+*           ---
+            if (Hzd_hzdmain_1_L) then
+*
+            call rpn_comm_xch_halo( smu  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smv  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smzd , LDIST_DIM, l_ni,l_nj,G_nk+1,
+     $           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+            if(.not.Schm_hydro_L) then
+               call rpn_comm_xch_halo( smw,LDIST_DIM, l_ni,l_nj,G_nk+1,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            endif
+*
+            endif
+*     
+C!$omp end single
+         endif
+*
+      end do
+*
+C!$omp end parallel
+*     __________________________________________________________________
+*
+      return
+      end

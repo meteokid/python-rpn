@@ -1,15 +1,3 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r acid_3df_dynp  - read 3df files for acid test
 *
 #include "model_macros_f.h"
@@ -19,6 +7,803 @@
 *
       integer dimgx,dimgy,unf
 *
+*author
+*        Vivian Lee - Dec 2006 (from casc_3df_dynp)
+*revision
+* v3_30 - Lee V.       - initial version for GEMDM
+* v4_03 - Lee V.            - Adapt to using new pressure functions
+*
+*
+#include "glb_ld.cdk"
+#include "bcsdim.cdk"
+#include "bcsgrds.cdk"
+#include "bcsmem.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "geomg.cdk"
+#include "ifd.cdk"
+#include "ind.cdk"
+#include "pres.cdk"
+#include "lam.cdk"
+#include "ptopo.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+#include "vt1.cdk"
+#include "vth.cdk"
+#include "vthh.cdk"
+#include "vtx.cdk"
+#include "lun.cdk"
+#include "p_geof.cdk"
+#include "filename.cdk"
+#include "path.cdk"
+#include "lctl.cdk"
+#include "hblen.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_phy_busind.cdk"
+#include "acid.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld,longueur,sid3df
+      external vmmlod,vmmget,vmmuld,longueur,sid3df
+*
+      character*2  md
+      character*4  nomvar
+      character*8  dynophy
+      character*8, dimension (:), pointer :: trname_a
+      character*4, dimension (:), pointer :: phynm
+      character*15 datev
+      character*256 fn
+      logical done,dyn_done,phy_done,same_topo_L,vertint_L
+      logical dyn_init,busper_init,phy_init
+      integer*8 pnt_trp(Tr3d_ntr)
+      integer i,j,k,jj,jjj,kk,nia,nja,nga,ntra,ni1,nj1,nk1,n,err,
+     $        errop,ofi,ofj,mode,nvar, vmmnvar,ungeo,
+     $        cnt,nkphy,errdyn,errphy,cumerr,pid,gid,nfphy,
+     $        wowp,key1(14),nij,ijk
+
+      integer nka_t,nka_m,presstype
+
+      integer i0,in,j0,jn,keyp_,keyp(Tr3d_ntr)
+      integer idd,jdo,mult,shp,bigk,offbb,offbo,offg,ng
+      integer difftopo,tdifftopo
+      real busper, busper2(max(1,p_bper_siz))
+      real topo_temp(l_ni,l_nj)
+      pointer (pabusper,busper(*))
+
+      integer, dimension (:  ), pointer :: idx,idu,idy,nks
+      real    psmin, psmax, psmin_glob, psmax_glob, pr1,pr2
+      real  , dimension (:  ), pointer :: phybr
+      real*8, dimension (:  ), pointer :: 
+     $              xpaq,ypaq,xpau,ypav,xpuu,ypvv,
+     $              cxa,cxb,cxc,cxd,cua,cub,cuc,cud,cya,cyb,cyc,cyd
+      real, dimension (:,:), pointer :: 
+     $       uun,vvn,zdn,ttn,fipn,ssqn,meqn,qqn,wwn,
+     $       xxn,yyn,zzn,xxcn,yycn,zzcn,
+     $       xxhn,yyhn,zzhn,xxchn,yychn,zzchn,
+     $       phybn,ssqr,meqr
+      real, dimension (:,:,:), pointer ::
+     $       uur,vvr,zdr,ttr,fipr,qqr,wwr,
+     $       xxr,yyr,zzr,xxcr,yycr,zzcr,
+     $       xxhr,yyhr,zzhr,xxchr,yychr,zzchr,
+     $       trn,trr
+      real trp
+      pointer (patrp, trp(LDIST_SHAPE,*))
+      real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1)
+      data nfphy,nkphy /0,0/
+*-----------------------------------------------------------------------
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+      key1( 1) = VMM_KEY(  xth)
+      key1( 2) = VMM_KEY(  yth)
+      key1( 3) = VMM_KEY(  zth)
+      key1( 4) = VMM_KEY( xcth)
+      key1( 5) = VMM_KEY( ycth)
+      key1( 6) = VMM_KEY( zcth)
+      key1( 7) = VMM_KEY( xthh)
+      key1( 8) = VMM_KEY( ythh)
+      key1( 9) = VMM_KEY( zthh)
+      key1(10) = VMM_KEY(xcthh)
+      key1(11) = VMM_KEY(ycthh)
+      key1(12) = VMM_KEY(zcthh)
+      vmmnvar = 12
+*
+      err = vmmlod(key1,vmmnvar)
+*
+      err = VMM_GET_VAR(  xth)
+      err = VMM_GET_VAR(  yth)
+      err = VMM_GET_VAR(  zth)
+      err = VMM_GET_VAR( xcth)
+      err = VMM_GET_VAR( ycth)
+      err = VMM_GET_VAR( zcth)
+      err = VMM_GET_VAR( xthh)
+      err = VMM_GET_VAR( ythh)
+      err = VMM_GET_VAR( zthh)
+      err = VMM_GET_VAR(xcthh)
+      err = VMM_GET_VAR(ycthh)
+      err = VMM_GET_VAR(zcthh)
+*
+      keyp_ = VMM_KEY (trt1)
+      do k=1,Tr3d_ntr
+         keyp(k) = keyp_ + k
+      end do
+      err = vmmlod(keyp,Tr3d_ntr)
+      do k=1,Tr3d_ntr
+         err = vmmget(keyp(k),patrp,trp)
+         pnt_trp(k) = patrp
+      end do
+*
+*
+* Positional parameters on extended global grid
+*
+      do i=1,dimgx
+         xpxext(i) = G_xg_8(i)
+      end do
+      xpxext(0) = xpxext(1) - (xpxext(2)-xpxext(1))
+      xpxext(dimgx+1) = xpxext(dimgx) + (xpxext(dimgx)-xpxext(dimgx-1))
+*
+      do i=1,dimgy
+         ypxext(i) = G_yg_8(i)
+      end do
+      ypxext(0) = ypxext(1) - (ypxext(2)-ypxext(1))
+      ypxext(dimgy+1) = ypxext(dimgy) + (ypxext(dimgy)-ypxext(dimgy-1))
+*
+* Read all needed files and construct the source domain for
+* the horozontal interpolation
+*
+      bcs_nia = ifd_niaf - ifd_niad + 1
+      bcs_nja = ifd_njaf - ifd_njad + 1
+      nia = bcs_nia
+      nja = bcs_nja
+      nullify(xpaq,xpau,ypaq,ypav,trname_a,phynm,
+     $        phybr)
+      nullify(
+     $       uun,vvn,zdn,ttn,fipn,ssqn,meqn,qqn,wwn,
+     $       xxn,yyn,zzn,xxcn,yycn,zzcn,
+     $       xxhn,yyhn,zzhn,xxchn,yychn,zzchn,
+     $       phybn)
+      nullify(
+     $       uur,vvr,zdr,ttr,fipr,ssqr,meqr,qqr,wwr,
+     $       xxr,yyr,zzr,xxcr,yycr,zzcr,
+     $       xxhr,yyhr,zzhr,xxchr,yychr,zzchr,
+     $       trn,trr)
+*
+      allocate (xpaq(nia), ypaq(nja), xpau(nia), ypav(nja))
+*
+      datev= Lam_runstrt_S
+*
+      ntra = 0
+      err  = 0
+*
+*     wowp = 2 ===> input data has seen the physics
+*     wowp = 1 ===> input data just after dynamics (no physics)
+*     We prefer to initialize uup, vvp etc... with wowp=2 status.
+*
+      wowp = 3
+ 48   wowp = wowp - 1
+      if (wowp.lt.1) then
+         write (6,204)
+         err = -1
+         goto 999
+      endif
+*
+      write (md,'(i2.2)') wowp
+      done     = .false.
+      dyn_init = .false.
+      busper_init = .false.
+      phy_init = .false.
+      Lam_busper_init_L=.false.
+*
+      do 500 n=1,ifd_nf
+*
+         ofi = ifd_minx(n)-1
+         ofj = ifd_miny(n)-1
+         if (ifd_needit(n)) then
+*
+            errdyn   = -1
+            errphy   = -1
+            dyn_done = .false.
+            phy_done = .false.
+*
+c           fn ='../casc/3df'//md//'_'//datev//'_'//ifd_fnext(n)
+            fn = trim(Path_ind_S)//'/3df'//md//
+     $                 '_'//datev//'_'//ifd_fnext(n)
+            open (unf,file=fn(1:longueur(fn)),access='SEQUENTIAL',
+     $                form='UNFORMATTED',status='OLD',iostat=errop)
+           
+            if (Lun_debug_L) write(Lun_out,*) 'opening',fn(1:longueur(fn)),'err=',errop
+            if (errop.ne.0) goto 33
+*
+* Use first file to establish 3D grid dimensions and geo-references
+* of all input staggered grids (xpaq, ypaq, xpau and ypva).
+*
+ 55         if (dyn_done.and.phy_done) goto 33
+            err = sid3df (xpaq,ypaq,xpau,ypav,unf,done,nia,nja,
+     $                         nka_m,nka_t,presstype)
+            if (presstype.ne.Ver_code) then !not staggered hyb coordinate
+                if (Lun_out.gt.0) write (Lun_out,1012)
+                goto 999
+            endif
+            if (err.lt.0.and.dyn_done) then
+* This means that no physics data are available. Must read in geophy file.
+                err = 0
+                phy_done = .true.
+                errphy   = 0
+                goto 33
+            endif
+            read (unf,end=33) dynophy,mode,nvar,ntra
+*
+            if (dynophy.eq.'PHYSICSS') then
+               if (Lun_debug_L) write (Lun_out,1001)
+               nfphy=cnt
+               if (.not.phy_init) then
+                  if (associated(phybn)) deallocate(phybn)
+                  if (associated(phynm)) deallocate(phynm)
+                  if (associated(nks)) deallocate(nks)
+                  allocate (phynm(nfphy),nks(nfphy))
+               endif
+               read(unf,end=33)(phynm(i),nks(i),i=1,nfphy)
+               if (Lun_debug_L) then
+                   write(Lun_out,*) (phynm(i),nks(i),i=1,nfphy)
+               endif
+               nkphy=0
+               do i=1,nfphy
+                  nkphy=nkphy+nks(i)
+               enddo
+               if (.not.phy_init) allocate(phybn(nia*nja,nkphy))
+               phy_init = .true.
+               cumerr = 0
+               nkphy=1
+               do i=1,nfphy
+                  k = nks(i)
+                  call filmup (phybn(1,nkphy),ifd_niad,ifd_niaf,ifd_njad,
+     $                                 ifd_njaf,k,unf,ofi,ofj,cumerr)
+                  nkphy = nkphy + k
+               enddo
+               errphy=cumerr
+               phy_done = .true.
+               nkphy = nkphy - 1
+               if (.not. dyn_done) goto 55
+            elseif (dynophy.eq.'PERBUSSS') then
+               if (Lun_debug_L) write (Lun_out,1003)
+               if (.not.busper_init) then
+                  if (associated(phybn)) deallocate(phybn)
+                  if (associated(phynm)) deallocate(phynm)
+                  if (associated(nks)) deallocate(nks)
+                  allocate (phynm(p_bper_top),nks(p_bper_top))
+               endif
+               read(unf,end=33)(phynm(i),nks(i),i=1,P_bper_top)
+               nkphy=0
+               do i=1,p_bper_top
+                  nkphy=nkphy+nks(i)
+               enddo
+               if (.not.Lam_busper_init_L) allocate(phybn(nia*nja,nkphy))
+
+               Lam_busper_init_L= .true.
+               cumerr = 0
+               nkphy=1
+               do i=1,p_bper_top
+                  k = nks(i)
+                  call filmup (phybn(1,nkphy),ifd_niad,ifd_niaf,ifd_njad,
+     $                                 ifd_njaf,k,unf,ofi,ofj,cumerr)
+                  nkphy = nkphy + k
+               enddo
+               errphy=cumerr
+               phy_done = .true.
+               nkphy = nkphy - 1
+               if (.not. dyn_done) goto 55
+            endif
+*
+            if (dynophy.eq.'DYNAMICS') then
+*
+               if (.not.dyn_init) then
+                  if (nka_m-1.ne.G_nk) then
+                   if (Lun_out.gt.0) write (Lun_out,1012)
+                   goto 999
+                  endif
+                  nga=nia*nja
+                  allocate ( uun(nia*nja,nka_m),
+     $                   vvn(nia*nja,nka_m), zdn(nia*nja,nka_t-1),
+     $                   ttn(nia*nja,nka_t), fipn(nia*nja,nka_t),ssqn(nia,nja),
+     $                   meqn(nia,nja), qqn(nia*nja,nka_m+1), 
+     $                   wwn(nia*nja,nka_t-1),
+     $                   xxn(nia*nja,nka_m-1), xxcn(nia*nja,nka_m-1), 
+     $                   yyn(nia*nja,nka_m-1), yycn(nia*nja,nka_m-1), 
+     $                   zzn(nia*nja,nka_m-1), zzcn(nia*nja,nka_m-1), 
+     $                   xxhn(nia*nja,nka_m-1), xxchn(nia*nja,nka_m-1), 
+     $                   yyhn(nia*nja,nka_m-1), yychn(nia*nja,nka_m-1), 
+     $                   zzhn(nia*nja,nka_m-1), zzchn(nia*nja,nka_m-1), 
+     $                   trn(nia*nja,nka_t,ntra), trname_a(ntra) )
+                  dyn_init = .true.
+               endif
+*
+               cumerr=0
+               if (nvar.lt.8) then
+                   if (Lun_out.gt.0) write (Lun_out,1010)
+                   goto 999
+               endif
+               call read_acid_3df(unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn,
+     $            fipn,
+     $            xxn,yyn,zzn,xxcn,yycn,zzcn,
+     $            xxhn,yyhn,zzhn,xxchn,yychn,zzchn,
+     $            trname_a,nvar,ntra,nga,nka_m,nka_t,ofi,ofj,cumerr)
+		       errdyn   = cumerr
+		       dyn_done = .true.
+		       if ((.not.phy_done).and.(Schm_phyms_L)) goto 55
+		    endif
+*
+ 33         close (unf)
+            if ((errdyn.lt.0).and.(wowp.gt.1)) goto 48
+*
+            if (.not.Schm_phyms_L) errphy = 0
+            err  = err + errdyn + errphy
+	    done = .true.
+	    if (err.lt.0) then
+	       write (6,203) fn(1:longueur(fn)),Ptopo_myproc
+	       goto 999
+	    endif
+	 endif
+ 500  continue
+*
+ 999  call gem_stop('acid_3df_dynp',err)
+*
+*     Obtain topography field from geodata
+      do gid=1,P_bgeo_top
+	 if (geonm(gid,1).eq.'MF') then
+	     offg = geopar(gid,1)
+	     cnt = 0
+	     do j=1,l_nj
+	     do i=1,l_ni
+		cnt=cnt+1
+		topo_temp(i,j)=dble(geofld(offg +cnt-1))*Dcst_grav_8
+	     enddo
+	     enddo
+	 endif
+      enddo 
+*
+* Establish geo-references of model target horizontal grids 
+*                                 (xp1, yp1, xpuu and ypvv).
+      i0  = 1  
+      j0  = 1  
+      in  = l_ni
+      jn  = l_nj
+      ni1 = in - i0 + 1
+      nj1 = jn - j0 + 1
+*
+      allocate ( meqr(ni1,nj1),      uur(ni1,nj1,nka_m),
+     $           vvr(ni1,nj1,nka_m), zdr(ni1,nj1,nka_t-1),
+     $           ttr(ni1,nj1,nka_t), fipr(ni1,nj1,nka_t),ssqr(ni1,nj1),
+     $           qqr(ni1,nj1,nka_m+1), wwr(ni1,nj1,nka_t), 
+     $           xxr(ni1,nj1,nka_m-1), xxcr(ni1,nj1,nka_m-1), 
+     $           yyr(ni1,nj1,nka_m-1), yycr(ni1,nj1,nka_m-1), 
+     $           zzr(ni1,nj1,nka_m-1), zzcr(ni1,nj1,nka_m-1), 
+     $           xxhr(ni1,nj1,nka_m-1), xxchr(ni1,nj1,nka_m-1), 
+     $           yyhr(ni1,nj1,nka_m-1), yychr(ni1,nj1,nka_m-1), 
+     $           zzhr(ni1,nj1,nka_m-1), zzchr(ni1,nj1,nka_m-1), 
+     $           trr(ni1*nj1,nka_t,ntra))
+
+      allocate (xpuu(l_ni),ypvv(l_nj))
+*
+      ofi = l_i0 - 1
+      ofj = l_j0 - 1
+*
+      do i=i0,in
+	 xpuu(i) = 0.5d0 * (xpxext(ofi+i+1)+xpxext(ofi+i))
+      end do
+      do j=j0,jn
+	 ypvv(j) = 0.5d0 * (ypxext(ofj+j+1)+ypxext(ofj+j))
+      end do 
+*
+* Horizontal interpolation (xpaq,ypaq) ===> (xp1,yp1) PHI GRID
+*
+      allocate (idx(l_ni), idu(max(l_ni,l_nj)),idy(l_nj))
+      allocate (cxa(l_ni),cxb(l_ni),cxc(l_ni),cxd(l_ni),
+     $          cua(max(l_ni,l_nj)),cub(max(l_ni,l_nj)),
+     $          cuc(max(l_ni,l_nj)),cud(max(l_ni,l_nj)),
+     $          cya(l_nj),cyb(l_nj),cyc(l_nj),cyd(l_nj))
+
+      call grid_to_grid_coef (xpxext(l_i0),ni1,
+     $                        xpaq,nia,idx,cxa,cxb,cxc,cxd,Lam_hint_S)
+      call grid_to_grid_coef (ypxext(l_j0),nj1,
+     $                        ypaq,nja,idy,cya,cyb,cyc,cyd,Lam_hint_S)
+*
+* Topography is stored in geofld and may be overwritten if
+* available in fields from GEOPHYSS or PHYSICSS
+
+* Obtain topography from analysis GZ
+      call hinterpo ( meqr,ni1,nj1, meqn,nia,nja,1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call glbstat1(topo_temp,'TOPO','befo',1,l_ni,1,l_nj,1, 
+     $             1,G_ni,1,G_nj, 1,1)
+      if (.not.Schm_phyms_L) then
+	  do j=1,l_nj
+	  do i=1,l_ni
+	     topo_temp(i,j)= meqr(i,j)
+	  enddo
+	  enddo
+      endif
+*
+* Fill geophysical bus  partially      ===> (xp1,yp1) (geophysics grid)
+      if (nkphy.gt.0 .and. phy_init) then
+	      if (Lun_debug_L) write (Lun_out,1004)
+	      if (associated(phybr)) deallocate (phybr)
+	      allocate(phybr(ni1*nj1*nkphy))
+	      call hinterpo (phybr,ni1,nj1,phybn,nia,nja,nkphy,
+     $         idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+	 ofj=0
+	 do pid=1,nfphy
+	 do gid=1,p_bgeo_top
+	    nomvar = geonm(gid,2)
+	    if (phynm(pid).eq.nomvar) then
+		if (Lun_debug_L) write(Lun_out,*)'REFilling',nomvar
+		ofi = geopar(gid,1) -1
+		if ((nomvar.eq.'LG').or.(nomvar.eq.'AL')
+     $                          .or.(nomvar.eq.'HS')) then
+		   do i=1,ni1*nj1*geopar(gid,3)
+		      geofld(ofi+i) = min(max(0.,phybr(ofj+i)),1.)
+		   end do
+		else
+		   do i=1,ni1*nj1*geopar(gid,3)
+		      geofld(ofi+i) = phybr(ofj+i)
+		   end do
+		endif
+	    endif
+	 enddo
+	    ofj=ofj+nks(pid)*ni1*nj1
+	 enddo
+	 if (Lctl_debug_L) then
+	   do gid=1,p_bgeo_top
+	    call glbstat1(geofld(geopar(gid,1)),geonm(gid,1)(1:8),"geop",
+     $      1,l_ni,1,l_nj,geopar(gid,3), 1,G_ni,1,G_nj,1,geopar(gid,3))
+	   enddo
+	 endif
+      endif
+
+* Check topography from geofld to the one in the analysis
+      same_topo_L=.true.
+      difftopo=0
+      do j=1,l_nj
+      do i=1,l_ni
+	if (topo_temp(i,j).ne.meqr(i,j)) difftopo=1
+      enddo
+      enddo
+      call glbstat1(topo_temp,'TOPO','afte',1,l_ni,1,l_nj,1, 
+     $             1,G_ni,1,G_nj, 1,1)
+      call glbstat1(meqr     ,'MEQR','afte',1,ni1 ,1,nj1 ,1,
+     $             1,G_ni,1,G_nj, 1,1)
+      call rpn_comm_ALLREDUCE ( difftopo, tdifftopo, 1,
+     $                 "MPI_INTEGER","MPI_SUM","grid",err )
+      if (tdifftopo.gt.0) same_topo_L=.false.
+      if (Lun_debug_L) write(Lun_out,*)'same_topo_L=',same_topo_L
+      if (.not.same_topo_L)then
+	  err=-1
+	  if (Lun_out.gt.0) write (Lun_out,1011)
+	  goto 999
+      endif
+
+* Check vertical coordinate for model vs analysis
+      vertint_L=.false.
+      do k=1,G_nk
+         if (Ver_a_8%m(k).ne.ana_am_8(k))   vertint_L=.true.
+         if (Ver_b_8%m(k).ne.ana_bm_8(k))   vertint_L=.true.
+      enddo
+
+      If (Lun_debug_L) write(Lun_out,*) 'vertint=',vertint_L
+
+      if (vertint_L)then
+          if (Lun_out.gt.0) write (Lun_out,1012)
+          goto 999
+      endif
+      call hinterpo ( ttr,ni1,nj1, ttn,nia,nja,nka_t,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( fipr,ni1,nj1,fipn,nia,nja,nka_t,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( ssqr,ni1,nj1, ssqn,nia,nja,1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( xxr,ni1,nj1, xxn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( yyr,ni1,nj1, yyn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( zzr,ni1,nj1, zzn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( xxcr,ni1,nj1, xxcn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( yycr,ni1,nj1, yycn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( zzcr,ni1,nj1, zzcn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      if (Schm_zdotlag_L) then
+         call hinterpo ( xxhr,ni1,nj1, xxhn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+         call hinterpo ( yyhr,ni1,nj1, yyhn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+         call hinterpo ( zzhr,ni1,nj1, zzhn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+         call hinterpo ( xxchr,ni1,nj1,xxchn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+         call hinterpo ( yychr,ni1,nj1,yychn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+         call hinterpo ( zzchr,ni1,nj1,yychn,nia,nja,nka_m-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      endif
+      if (.not.Schm_hydro_L) then
+      call hinterpo ( qqr,ni1,nj1, qqn,nia,nja,nka_m+1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      endif
+      call hinterpo ( wwr,ni1,nj1, wwn,nia,nja,nka_t-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+      call hinterpo ( zdr,ni1,nj1, zdn,nia,nja,nka_t-1,
+     $               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+
+*
+*     Humidity is in first cube of trr(1,1,1)
+      do kk=1,ntra
+          if (trname_a(kk).ne.'!@@NOT@@') then
+              call hinterpo (trr(1,1,kk),ni1,nj1,trn(1,1,kk),nia,nja,nka_t,
+     $         idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+          endif
+      end do
+*
+* Fill permanent bus in Physic         ===> (xp1,yp1) (physics grid)
+      if (nkphy.gt.0 .and. Lam_busper_init_L) then
+         if (associated(phybr)) deallocate (phybr)
+         allocate(phybr(ni1*nj1*nkphy))
+         call hinterpo (phybr,ni1,nj1,phybn,nia,nja,nkphy,
+     $         idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+         do jdo=1,p_nj
+            pabusper=loc(Phy_busper3D((jdo-1)*p_bper_siz+1))
+            bigk=1
+            do idd=1,p_bper_top
+               offbo=(bigk-1)*l_ni*l_nj
+               offbb=perpar(idd,1)
+               j = jdo + p_offj
+               if (perpar(idd,5).gt.p_ni) then
+                 shp=l_nk
+               else
+                 shp=1
+               endif
+               do mult=1,perpar(idd,6)
+                  do k=1,shp
+                  do i=1,p_ni
+                     busper(offbb+(k*mult-1)*p_ni + i - 1)=
+     $                  phybr(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)
+                  enddo
+                  enddo
+               enddo
+               bigk = bigk + shp*perpar(idd,6)
+
+            enddo
+         enddo
+      endif
+*
+*
+* Horizontal interpolation (xpau,ypaq) ===> (xpuu,yp1) U GRID
+*
+      call grid_to_grid_coef (xpuu,ni1,xpau,nia,idu,cua,cub,cuc,cud,
+     $                                                   Lam_hint_S)
+      call hinterpo (uur,ni1,nj1,uun,nia,nja,nka_m,
+     $               idu,idy,cua,cub,cuc,cud,cya,cyb,cyc,cyd,Lam_hint_S)
+
+*
+* Horizontal interpolation (xpaq,ypav) ===> (xp1,ypvv) V GRID
+*
+      call grid_to_grid_coef (ypvv,nj1,ypav,nja,idu,cua,cub,cuc,cud,
+     $                                                   Lam_hint_S)
+      call hinterpo (vvr,ni1,nj1,vvn,nia,nja,nka_m,
+     $               idx,idu,cxa,cxb,cxc,cxd,cua,cub,cuc,cud,Lam_hint_S)
+*
+*
+*    Put the lo-res topography back in the piloting region
+*
+      do j=1,pil_s
+      do i=1,l_ni
+         topo_temp(i,j) = meqr(i,j)
+      end do
+      end do
+      do j=l_nj-pil_n+1,l_nj
+      do i=1,l_ni
+         topo_temp(i,j) = meqr(i,j)
+      end do
+      end do
+      do i=1,pil_w
+      do j=pil_s+1,l_nj-pil_n
+         topo_temp(i,j) = meqr(i,j)
+      end do
+      end do
+      do i=l_ni-pil_e+1,l_ni
+      do j=pil_s+1,l_nj-pil_n
+         topo_temp(i,j) = meqr(i,j)
+      end do
+      end do
+      call nesajr (topo_temp, meqr, 1,l_ni,1,l_nj,
+     $                        1,0,0,Hblen_x,Hblen_y)
+*
+* Allocate surface pressures for scalar,U,V grid
+*
+      ng = ni1*nj1
+* -----------------------------------------------------------
+*
+*     NO VERTICAL INTERPOLATION
+      print *,'NO VERTICAL INT, copy'
+      Ind_u(1:l_ni+1-(east*1),1:l_nj,1:G_nk+1) = uur
+      Ind_v(1:l_ni,1:l_nj+1-(north*1),1:G_nk+1) = vvr
+      Ind_t(1:l_ni,1:l_nj,1:G_nk+2)   = ttr
+      Ind_zd(1:l_ni,1:l_nj,1:G_nk+1)  = zdr
+      Ind_s(1:l_ni,1:l_nj)            = ssqr
+      Ind_w(1:l_ni,1:l_nj,1:G_nk+1)   = wwr
+      Ind_fip(1:l_ni,1:l_nj,0:G_nk+1) = fipr
+      if (.not. Schm_hydro_L) then
+        Ind_q(1:l_ni,1:l_nj,0:G_nk+1) = qqr
+      endif
+      if (Acid_skippospers_L) then
+          nij=l_ni*l_nj
+          do k=1,G_nk
+          do j=1,l_nj
+          do i=1,l_ni
+             ijk = (k-1)*nij+(j-1)*l_ni+i
+             xth  (ijk) = xxr(i,j,k)
+             yth  (ijk) = yyr(i,j,k)
+             zth  (ijk) = zzr(i,j,k)
+             xcth (ijk) = xxcr(i,j,k)
+             ycth (ijk) = yycr(i,j,k)
+             zcth (ijk) = zzcr(i,j,k)
+          end do
+          end do
+          end do
+      endif
+      if (Acid_skippospers_L.and.Schm_zdotlag_L) then
+          nij=l_ni*l_nj
+          do k=1,G_nk
+          do j=1,l_nj
+          do i=1,l_ni
+             ijk = (k-1)*nij+(j-1)*l_ni+i
+             xthh (ijk) = xxhr(i,j,k)
+             ythh (ijk) = yyhr(i,j,k)
+             zthh (ijk) = zzhr(i,j,k)
+            xcthh (ijk) = xxchr(i,j,k)
+            ycthh (ijk) = yychr(i,j,k)
+            zcthh (ijk) = zzchr(i,j,k)
+          end do
+          end do
+          end do
+      endif
+* TRACERS
+      do 200 n=1,Tr3d_ntr
+         patrp = pnt_trp(n)
+         jj=-1
+         do k=1,ntra
+            if (Tr3d_name_S(n).eq.trname_a(k)(1:4)) jj=k
+         end do
+         if ( jj.gt.0 ) then
+            do k=1,G_nk+2
+            do j=1,l_nj
+            do i=1,l_ni
+               trp(i,j,k) = trr((j-1)*l_ni+i,k,jj)
+            end do
+            end do
+            end do
+            if (.not.Schm_moist_L) then
+                jjj=-1
+                do kk = 1,h2o_ntr
+                   if (trname_a(jj)(1:2).eq.h2o_name_S(kk)(1:2)) jjj=kk
+                enddo
+                if (jjj.gt.0) then
+                    do k=1,G_nk+2
+                    do j=1,l_nj
+                    do i=1,l_ni
+                       trp(i,j,k) = 0.
+                    end do
+                    end do
+                    end do
+                endif
+            endif
+         endif
+ 200  continue
+*
+* Copy topography into vmm field
+      do j=1,l_nj
+      do i=1,l_ni
+         Ind_topo(i,j) = topo_temp(i,j)
+         ssqr(i,j)     = Cstv_pref_8*exp(ssqr(i,j))
+      enddo
+      enddo
+
+*
+      if (Lun_debug_L) then
+         write(Lun_out,100)
+         write(Lun_out,101) datev,wowp
+         write(Lun_out,100)
+      endif
+      psmin = ssqr(1,1)
+      psmax = ssqr(1,1)
+      do j=1,l_nj
+      do i=1,l_ni
+         psmin = min( psmin, ssqr(i,j) )
+         psmax = max( psmax, ssqr(i,j) )
+      enddo
+      enddo
+*
+      call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN",
+     $                                                     "grid",err)
+      call rpn_comm_allreduce(psmax,psmax_glob,1,"MPI_REAL","MPI_MAX",
+     $                                                     "grid",err)
+      psmin=psmin_glob
+      psmax=psmax_glob
+*     
+      if ( Ptopo_myproc.eq.0 ) then
+           write(6,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX,
+     $                     ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
+      endif
+*
+      call v4d_indata3 ()
+      call set_dync
+*
+c     call casc_predat()
+*
+c     if (Acid_skippospers_L) then
+c           do k= 1, G_nk
+c              pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * geomg_pib(k) / geomg_z_8(k)
+c              pr2 = Cstv_tstr_8*(geomg_pib(k)/geomg_z_8(k) - geomg_dpib(k))
+c              do j= 1, l_nj
+c              do i= 1, l_ni
+c                 Ind_gp(i,j,k) = Ind_fip(i,j,k) + pr1 * Ind_s(i,j)
+c              end do
+c              end do
+c           end do
+c     else
+c           do k= 1, G_nk
+c              pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * geomg_pib(k) / geomg_z_8(k)
+c              pr2 = Cstv_tstr_8*(geomg_pib(k)/geomg_z_8(k) - geomg_dpib(k))
+c              do j= 1, l_nj
+c              do i= 1, l_ni
+c                 Ind_gp(i,j,k) = Ind_fip(i,j,k) + pr1 * Ind_s(i,j)
+c                 Ind_tpl(i,j,k) = (Cstv_tstr_8+Ind_tp(i,j,k))*
+c    $           (1.0+geomg_dpib(k)*(exp(Ind_s(i,j))-1.))*
+c    $           geomg_z_8(k)/(geomg_z_8(k)+Ind_pip(i,j,k))-Cstv_tstr_8
+c                 Ind_tpl(i,j,k) = Ind_tpl(i,j,k) + pr2 * Ind_s(i,j)
+c              end do
+c              end do
+c           end do
+c     endif
+
+*Unload VMM variables
+      err = vmmuld(keyp,Tr3d_ntr)
+      err = vmmuld(key1,vmmnvar)
+*Cleanup heap
+      deallocate(xpaq,ypaq,xpau,ypav,xpuu,ypvv)
+      deallocate(idx,idu,idy)
+      deallocate(cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,cua,cub,cuc,cud)
+      deallocate(uun,vvn,zdn,ttn,fipn,ssqn,meqn,qqn,wwn,trn)
+      deallocate(xxn,yyn,zzn,xxcn,yycn,zzcn)
+      deallocate(xxhn,yyhn,zzhn,xxchn,yychn,zzchn)
+      deallocate(uur,vvr,zdr,ttr,fipr,ssqr,meqr,qqr,wwr,trr)
+      deallocate(xxr,yyr,zzr,xxcr,yycr,zzcr)
+      deallocate(xxhr,yyhr,zzhr,xxchr,yychr,zzchr)
+      if (associated(phybn)) deallocate(phybn)
+      if (associated(phynm)) deallocate(phynm)
+      if (associated(nks)) deallocate(nks)
+*
+ 100  format (' ',65('*'))
+ 101  format (' (acid_3df_dynp) JUST READ INIT DATA FOR DATE: ',a15,1x,i3)
+ 203  format (/' PROBLEM WITH FILE: ',a,', PROC#:',i4,' --ABORT--'/)
+ 204  format (/' NO DATA IN acid_3df_dynp --ABORT--'/)
+ 1000 format(
+     +3X,'READING DATA IN (S/R acid_3df_dynp)')
+ 1001 format(
+     +3X,'READING PHYSICSS DATA IN (S/R acid_3df_dynp)')
+ 1003 format(
+     +3X,'READING BUSPER   DATA IN (S/R acid_3df_dynp)')
+ 1004 format(
+     +3X,'UPDATING GEOPHY  DATA IN (S/R acid_3df_dynp)')
+ 1010 format(
+     +3X,'NVAR=5, PILOTING DATA INSUFFICIENT FOR ACID TEST (S/R acid_3df_dynp)')
+ 1011 format(
+     +3X,'TOPOGRAPHY DIFFERENT IN CASCADE AND PILOT (S/R acid_3df_dynp)')
+ 1012 format(
+     +3X,'VERT LEVELS DIFFERENT BTWN CASCADE AND PILOT (S/R acid_3df_dynp)')
+*
+*-----------------------------------------------------------------------
       return
       end
 *

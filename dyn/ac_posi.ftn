@@ -1,15 +1,3 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r ac_posi - find the positional points to extract cascade grid
 *                from the current model grid configuration
 #include "model_macros_f.h"
@@ -26,6 +14,7 @@
 *revision
 * v3_30 - Lee V.       - initial version for GEMDM
 * v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+* v4_03 - Lee/Desgagne - ISST
 *
 **
 **
@@ -40,6 +29,8 @@
 #include "ptopo.cdk"
 #include "tr3d.cdk"
 #include "lun.cdk"
+#include "acid.cdk"
+#include "path.cdk"
 *
       integer  stretch_axis2
       external stretch_axis2
@@ -88,23 +79,24 @@
 *
       do i=1,dimgx
          if (xpx(i).le.ac_xp(1)) Grdc_gid=i
-         if (xpx(i).le.ac_xp(Grdc_hblen+Grdc_pil+1)+ Grdc_dx) gidi=i
-         if (xpx(i).le.ac_xp(Grdc_ni)+ Grdc_dx) Grdc_gif=i
-         if (xpx(i).le.ac_xp(Grdc_ni-Grdc_hblen-Grdc_pil)- Grdc_dx) gifi=i
+         if (xpx(i).le.ac_xp(Grdc_hblen+Grdc_pil+1)) gidi=i
+         if (xpx(i).le.ac_xp(Grdc_ni)) Grdc_gif=i
+         if (xpx(i).le.ac_xp(Grdc_ni-Grdc_hblen-Grdc_pil)) gifi=i
       enddo
       if (Grdc_gid.ge.Grdc_gif) Grdc_gid = 0
 *
       do i=1,dimgy
          if (ypx(i).le.ac_yp(1)) Grdc_gjd=i
-         if (ypx(i).le.ac_yp(Grdc_hblen+Grdc_pil+1)+ Grdc_dx) Grdc_gjdi=i
-         if (ypx(i).le.ac_yp(Grdc_nj)+ Grdc_dx) Grdc_gjf=i
-         if (ypx(i).le.ac_yp(Grdc_nj-Grdc_hblen-Grdc_pil)- Grdc_dx) gjfi=i
+         if (ypx(i).le.ac_yp(Grdc_hblen+Grdc_pil+1)) Grdc_gjdi=i
+         if (ypx(i).le.ac_yp(Grdc_nj)) Grdc_gjf=i
+         if (ypx(i).le.ac_yp(Grdc_nj-Grdc_hblen-Grdc_pil)) gjfi=i
       enddo
       if (Grdc_gjd.ge.Grdc_gjf) Grdc_gjd = 0
 *
 * 
-c     if (Acid_test_L.and.Acid_pilot_L) 
-c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
+      if (Acid_test_L.and.Acid_pilot_L)
+     $    call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
+           
 
       if ((Grdc_gid.gt.0).and.(Grdc_gjd.gt.0)) then
 
@@ -141,6 +133,7 @@ c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
          if (prout) write (6,1004)
          Grdc_proj_S = '@'
          Grdc_ndt    = -1
+         return
       endif
       if ((Grdc_hbsn.le.0).or.(Grdc_hbwe.le.0)) then
           if (prout) write(6,1005)
@@ -149,6 +142,7 @@ c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
             call bcs_hollow(Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,
      $      Grdc_gjdi,Grdc_hbsn,Grdc_hbwe,is,nis,js,njs,jn,iw,niw,ie,jw,njw)
 
+            if (prout) write(6,1002)
             if (prout) write(6,1007) is,nis,js,njs,iw,ie,niw,jw,jn,njw
       endif
 *
@@ -167,7 +161,7 @@ c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
      $                              4, "MPI_INTEGER"  ,0,"GRID", ierx)
 *
          if (prout) then
-         filen='../../output/casc/3df_filemap.txt'
+         filen=trim(Path_output_S)//'/casc/3df_filemap.txt'
          open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
          do i=1,Ptopo_numproc
             if ( (outindx_g(3,i).gt.0).and.(outindx_g(4,i).gt.0) ) then
@@ -218,9 +212,10 @@ c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
       endif
 *
  1001 format (' Tracers to be written for cascade run are ')
+ 1002 format (' Cascade grid: BCS output files will be produced')
  1003 format (' Cascade grid: ',4i6)
- 1004 format (' Cascade grid: NO grid will be output')
- 1005 format (' Cascade grid: Only 3DF files will be output')
+ 1004 format (' Cascade grid: Is too large, NO 3DF/BCS files will be produced')
+ 1005 format (' Cascade grid: Only 3DF files will be produced')
  1006 format (' Cascade grid: Width of W/E band=',I6, ' N/S band=',I6)
  1007 format (' Cascade grid: is,nis,js,njs,iw,ie,niw,jw,jn,njw'//4x,10I6)
 *--------------------------------------------------------------------

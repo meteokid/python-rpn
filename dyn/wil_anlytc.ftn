@@ -1,0 +1,349 @@
+***s/r wil_anlytc
+*
+#include "model_macros_f.h"
+*
+      SUBROUTINE WIL_ANLYTC(TIME,
+     $                  UICLL,VICLL,PICLL,DICLL,EICLL,
+     $                  UIC12,VIC12,PIC12,DIC12,EIC12,MOUNT,
+     $                  CASE,ANGLE,NLON,NLAT,MAXH,NALPH)
+*
+      implicit none
+*
+      INTEGER CASE,NLON,NLAT,MAXH,NALPH
+*
+      REAL TIME,ANGLE
+*
+      REAL UICLL(NLON+2,NLAT), VICLL(NLON+2,NLAT),
+     %     PICLL(NLON+2,NLAT), DICLL(NLON+2,NLAT),
+     %     EICLL(NLON+2,NLAT),
+     %     UIC12(NLON+2,NLAT), VIC12(NLON+2,NLAT),
+     %     PIC12(NLON+2,NLAT), DIC12(NLON+2,NLAT),
+     %     EIC12(NLON+2,NLAT), MOUNT(NLON+2,NLAT)
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version ANLYTC 
+* v4_04 - Tanguay M.       - Williamson's cases
+* v4_04 - Tanguay M.       - Galewski's case 
+*
+*object
+*     THIS PROCEDURE RETURNS THE ANALYTIC SOLUTION FOR THE TEST CASES.
+*     IT IS CALLED FOR THE INITIALIZATION OF
+*     THE PROGNOSTIC AND ANALYTIC FIELDS AND DURING ERROR ANALYSIS. 
+*     THE RESULTS ARE RETURNED IN THE ARRAYS UICLL,VICLL,PICLL,DICLL, 
+*     AND EICLL. THE ROUTINE USES MANY VALUES FROM THE COMMON
+*     BLOCKS /CONST/ AND /CONST2/ WHICH WERE COMPUTED IN ROUTINES 
+*     INPUT AND INIT.
+*                                                                              
+*implicits
+#include "wil_lun.cdk"
+#include "wil_dcst.cdk"
+#include "wil_init1.cdk"
+#include "wil_init3.cdk"
+*
+*---------------------------------------------------------------
+      INTEGER I,J
+      REAL DIV,ZETA,PHI,U,V
+      REAL TMSHFT,AI,A2I,SNJ,CSJ,SRCSJ,TMPRY,TMPRY2,DEN,
+     $     AACSJI,CORR,BIGUBR,DBUB,C,PSIB,DCDM,DCDL,D2CDM,
+     $     D2CDL,TMP1,TMP2,DKDM,DKDL,D2KDM,D2KDL,DLON,SINT,
+     $     COST
+*
+      REAL WIL_DBUBF,WIL_GLON,WIL_GLAT
+      EXTERNAL WIL_DBUBF,WIL_GLON,WIL_GLAT
+*
+*     FOR_CASE1
+      REAL RLONA,RRLONA,RLON,RLATA,RRLATA,RLAT
+      REAL RADIUS,DIST
+*
+*     SPECTRAL COEFFICIENTS FROM NETCDF FILE
+*     --------------------------------------
+      COMPLEX ZETASC(NALPH),DIVSC(NALPH),PHISC(NALPH)
+*
+*     SPECTRAL TRUNCATION PARAMETERS OF FILE
+*     --------------------------------------
+      INTEGER MMH,NNH,KKH
+      INTEGER LDIAG(0:MAXH,2),LROW(0:MAXH,2)
+      REAL TRIGS(MAXH+1,2),CMN(NALPH),DMN(NALPH),EMN(NALPH)
+      REAL EPSIL(NALPH)
+*
+*     VALUE OF POLYNOMIALS AND DERIVATIVES
+*     ------------------------------------
+      REAL ALP(NALPH),DALP(NALPH),ANNP1(MAXH)
+*
+*     Addition for CASE8 (Galewski) 
+*     -----------------------------
+      real wk_uini(NLAT), wk_vorini(NLAT), wk_thini(NLAT), wk_pert(NLON,NLAT)
+*
+*---------------------------------------------------------------
+*
+*     ---------------------
+      IF (CASE .EQ. 1) THEN
+*     ---------------------
+*     COPY DATA FOR U,V,ZETA,DIV SINCE STEADY FLOW FIELD
+*     COMPUTE LOCATION OF ADVECTED HEIGHT
+*
+         RLATA = RLAT0
+         RLONA = RLON0 + SU0*COS(RLAT0)*TIME/Wil_Dcst_rayt_8
+         CALL WIL_ROTATE(RLONA,RLATA,-ANGLE,RRLONA,RRLATA)
+*
+*        SIZE OF FEATURE
+*        --------------- 
+         RADIUS = Wil_Dcst_rayt_8/3.0
+*
+         DO J=1,NLAT
+            RLAT = WIL_GLAT(J)
+            DO I=1,NLON
+               RLON = WIL_GLON(I)
+*
+               DICLL(I,J) = DIC12(I,J)
+               EICLL(I,J) = EIC12(I,J)
+               UICLL(I,J) = UIC12(I,J)
+               VICLL(I,J) = VIC12(I,J)
+*
+*              CONSTRUCT ADVECTED LOW
+*              ----------------------
+               DIST = Wil_Dcst_rayt_8*ACOS(SIN(RRLATA)*SIN(RLAT) + COS(RRLATA)
+     $                *COS(RLAT)*COS(RLON-RRLONA))
+               IF (DIST .LE. RADIUS) THEN
+                   PICLL(I,J) = PHI0/2.0*(1.0 + COS(Wil_Dcst_pi_8*DIST/RADIUS))
+               ELSE
+                   PICLL(I,J) = 0.0
+               ENDIF
+*
+            ENDDO
+         ENDDO
+*
+*     ----------------------------------------------
+      ELSEIF ((CASE .EQ. 2) .OR. (CASE .EQ. 3)) THEN
+*     ----------------------------------------------
+*     COPY INITIAL DATA, SINCE STEADY STATE SOLUTION
+*
+      DO J=1,NLAT
+         DO I=1,NLON  
+            DICLL(I,J) = DIC12(I,J)
+            EICLL(I,J) = EIC12(I,J)
+            UICLL(I,J) = UIC12(I,J)
+            VICLL(I,J) = VIC12(I,J)
+            PICLL(I,J) = PIC12(I,J)
+         ENDDO
+      ENDDO
+*
+      ELSEIF (CASE .EQ. 4) THEN
+*     -------------------------
+*     CALCULATE ANALYTIC SOLUTION TO FORCED NONLINEAR PROBLEM                   
+*                                                                               
+*        LONGITUDINAL CHANGE OF LOW IN BASIC FLOW
+*        ----------------------------------------
+         TMSHFT =  SU0*TIME/Wil_Dcst_rayt_8                                                      
+
+         DO 101 J=1,NLAT
+*
+*           GAUSSIAN LATITUDE
+*           -----------------
+            RLAT = WIL_GLAT(J)
+*
+*           TEMPORARY VARIABLES INDEPENDENT OF LONGITUDE
+*           --------------------------------------------
+            AI     = 1.0/Wil_Dcst_rayt_8  
+            A2I    = 1.0/(Wil_Dcst_rayt_8*Wil_Dcst_rayt_8) 
+            SNJ    = SIN(RLAT)
+            CSJ    = COS(RLAT)*COS(RLAT)
+            SRCSJ  = COS(RLAT)
+            TMPRY  = TAN(RLAT)
+            TMPRY2 = TMPRY*TMPRY
+            DEN    = 1.0/COS(RLAT)
+            AACSJI = 1.0/(Wil_Dcst_rayt_8*Wil_Dcst_rayt_8*CSJ)
+            CORR   = 2.0*Wil_Dcst_omega_8*SNJ
+*
+*           NONLINEAR STEADY ZONAL FLOW
+*           ---------------------------
+            BIGUBR = UCON(J)*SRCSJ
+            DBUB   = WIL_DBUBF(RLAT,SU0,NPWR)
+*
+            DO 100 I=1,NLON  
+               RLON = WIL_GLON(I) 
+*
+*              LONGITUDE = RLON = GLON(I)
+*              LATITUDE  = RLAT = GLAT(J)
+*
+*              COMPUTE LOCATION OF TRANSLATING LOW
+*              -----------------------------------
+               C      = SIN(RLAT0)*SNJ + COS(RLAT0)*SRCSJ* 
+     $                                   COS(RLON-TMSHFT-RLON0)             
+               PSIB   = ALFA*EXP(-SIGMA*((1.0-C)/(1.0+C)))   
+*                                                                               
+*              COMPUTE PARTIAL DERIVATIVES OF C
+*              --------------------------------
+               DCDM   = SIN(RLAT0) - COS(RLON-TMSHFT-RLON0)* 
+     $                  COS(RLAT0)*TMPRY
+               DCDL   = -COS(RLAT0)*SRCSJ*SIN(RLON-TMSHFT-RLON0)                  
+               D2CDM  = -COS(RLAT0)*COS(RLON-TMSHFT-RLON0)*                       
+     $                         (1.0 + TMPRY2)/SRCSJ                                
+               D2CDL  = -COS(RLAT0)*SRCSJ*COS(RLON-TMSHFT-RLON0)                  
+*                                                                               
+*              COMPUTE PARTIAL DERIVATIVES OF PSI BAR
+*              --------------------------------------
+               TMP1   = 2.0*SIGMA*PSIB/((1.0 + C)**2) 
+               TMP2   = (SIGMA - (1.0 + C))/((1.0 + C)**2) 
+               DKDM   = TMP1*DCDM   
+               DKDL   = TMP1*DCDL  
+               D2KDM  = TMP1*(D2CDM + 2.0*(DCDM**2)*TMP2) 
+               D2KDL  = TMP1*(D2CDL + 2.0*(DCDL**2)*TMP2) 
+*                                                                               
+*              ANALYTIC SOLUTIONS 
+*              ------------------
+               DICLL(I,J) = 0.0
+               EICLL(I,J) = D2KDL*AACSJI + CORR - DBUB*AI
+     $                      + (CSJ*D2KDM - 2.0*SNJ*DKDM)*A2I 
+               UICLL(I,J) = BIGUBR*DEN - SRCSJ*AI*DKDM 
+               VICLL(I,J) = (DKDL*AI)*DEN 
+               PICLL(I,J) = PHICON(J)+CORR*PSIB/Wil_Dcst_grav_8
+  100       CONTINUE 
+  101    CONTINUE
+*                                                                               
+      ELSEIF ((CASE .EQ. 5) .AND. (TIME .EQ. 0.0)) THEN
+*     -------------------------------------------------
+*     ZONAL FLOW OVER ISOLATED MOUNTAIN
+*
+*        COPY INITIAL DATA 
+*        -----------------
+         DO 121 J=1,NLAT
+            DO 120 I=1,NLON
+*
+*              LONGITUDE = RLON = GLON(I)
+*              LATITUDE  = RLAT = GLAT(J)
+*              --------------------------
+               DICLL(I,J) = DIC12(I,J)
+               EICLL(I,J) = EIC12(I,J)
+               UICLL(I,J) = UIC12(I,J)
+               VICLL(I,J) = VIC12(I,J)
+               PICLL(I,J) = PIC12(I,J) 
+  120       CONTINUE
+  121    CONTINUE
+*
+      ELSEIF ((CASE .EQ. 6) .AND. (TIME .EQ. 0.0)) THEN
+*     -------------------------------------------------
+*     ROSSBY-HAURWITZ WAVE
+*
+*        LONGITUDINAL CHANGE OF FEATURE
+*        ------------------------------
+         DLON = (R_Case*(3+R_Case)*OMG - 2.0*Wil_Dcst_omega_8)/((1+R_Case)*(2+R_Case))*TIME
+*
+         DO 151 J=1,NLAT
+            RLAT = WIL_GLAT(J)
+            DO 150 I=1,NLON
+               RLON = WIL_GLON(I)
+*
+*              LONGITUDE = RLON = GLON(I)
+*              LATITUDE  = RLAT = GLAT(J)
+*              --------------------------
+               SINT = SIN(RLAT)
+               COST = COS(RLAT)
+               DICLL(I,J) = 0.0
+               EICLL(I,J) = 2.0*(OMG+Wil_Dcst_omega_8)*SINT - (1+R_Case)*(2+R_Case)*SINT*
+     $                      K_Case*COST**R_Case*COS(R_Case*(RLON-DLON))
+               UICLL(I,J) = Wil_Dcst_rayt_8*OMG*COST + Wil_Dcst_rayt_8*K_Case*COST**(R_Case-1)*
+     $                      (R_Case*SINT*SINT-COST*COST)*COS(R_Case*(RLON-DLON))
+               VICLL(I,J) = -Wil_Dcst_rayt_8*K_Case*R_Case*COST**(R_Case-1)*SINT
+     $                      * SIN(R_Case*(RLON-DLON))
+               PICLL(I,J) = PHI0 + (Wil_Dcst_rayt_8*Wil_Dcst_rayt_8*(PHIA(J)+PHIB(J)
+     $                      * COS(R_Case*(RLON-DLON))+PHIC(J)
+     $                      * COS(2*R_Case*(RLON-DLON))))/Wil_Dcst_grav_8
+  150       CONTINUE
+  151    CONTINUE
+*
+      ELSEIF ((CASE .EQ. 7) .OR. (TIME .GT. 0.0)) THEN
+*     ------------------------------------------------
+*     USE HIGH RESOLUTION SOLUTION FROM FILE
+*
+*        READ SPECTRAL COEFFICIENTS BACK IN
+*        ----------------------------------
+CCC      CALL WIL_INPTP_N(FNIN,TIME,MAXH,LDIAG,ZETASC,DIVSC,PHISC,
+         CALL WIL_INPTP_N("KO",TIME,MAXH,LDIAG,ZETASC,DIVSC,PHISC,
+     $                    MMH,NNH,KKH,CASE,ANGLE)
+*
+*        COMPUTES ABSOLUTE VORTICITY FROM RELATIVE VORTICITY
+*        ---------------------------------------------------
+         CALL WIL_ZETA_ABS (ZETASC,LDIAG,MAXH,NALPH,MAXH,CORSC1,CORSC2)
+*
+*        PROJECT ONTO IRREGULAR GRID
+*        ---------------------------
+         DO 451 J=1,NLAT
+            RLAT = WIL_GLAT(J)
+            DO 450 I=1,NLON
+               RLON = WIL_GLON(I)
+*
+*              LONGITUDE = RLON = GLON(I)
+*              LATITUDE  = RLAT = GLAT(J)
+*              --------------------------
+*
+*              COMPUTE VALUES AT LOCATION
+*              --------------------------
+               CALL WIL_EVAL(DIVSC,ZETASC,PHISC,MMH,NNH,KKH,sngl(Wil_Dcst_rayt_8),ANGLE,
+     $                       sngl(Wil_Dcst_omega_8),RLON,RLAT,DIV,ZETA,PHI,U,V,
+     $                       LDIAG,LROW,TRIGS,CMN,DMN,EMN,EPSIL,ALP,DALP,ANNP1,MAXH,NALPH)
+*
+               DICLL(I,J) = DIV
+               EICLL(I,J) = ZETA
+               UICLL(I,J) = U
+               VICLL(I,J) = V
+               PICLL(I,J) = PHI/Wil_Dcst_grav_8
+               IF (FTOPO_L) THEN
+                  PICLL(I,J) = PICLL(I,J) + MOUNT (I,J)
+               ENDIF
+*
+  450       CONTINUE
+  451    CONTINUE
+*
+      ELSEIF ((CASE .EQ. 8)) THEN
+*     ------------------------------------------------
+*
+*        1) Define uini and calculate vorini by diff wrt phi
+*        2) Calculate dthetadphi from uini_z and integrate wrt phi -> thini
+*        3) Convert vorini to ABSOLUTE vorticity
+*           BASED on INITUTH (code BOB 2003)
+
+         call wil_inituth (wk_uini, wk_vorini, wk_thini, NLAT)
+*
+*        Initialize starting BALANCED fields
+*        -----------------------------------
+         DO J=1,NLAT
+         DO I=1,NLON
+*
+            DICLL(I,J) = 0.0 
+*CAUTION : ABSOLUTE OR RELATIVE
+*------------------------------
+            EICLL(I,J) = wk_vorini(NLAT-j+1) 
+            UICLL(I,J) = wk_uini  (NLAT-j+1) 
+            VICLL(I,J) = 0.0 
+            PICLL(I,J) = wk_thini(NLAT-j+1)/Wil_Dcst_grav_8
+*
+         ENDDO
+         ENDDO
+*
+*        Add perturbation to HEIGHT field (bump localized in longitude)
+*        --------------------------------------------------------------
+         call wil_initpert (wk_pert,NLON,NLAT)
+*
+         DO J=1,NLAT
+         DO I=1,NLON
+            PICLL(I,J) = PICLL(I,J) + wk_pert(i,NLAT-j+1) 
+         ENDDO
+         ENDDO
+*
+      ELSE
+*     ----
+         if (Wil_Lun_out.gt.0) WRITE (Wil_Lun_out,300) CASE 
+  300        FORMAT (/,' STSWM: FATAL ERROR IN WIL_ANLYTC: ',/,
+     $       ' NO ANALYTIC SOLUTION PROVIDED FOR TEST CASE ',I2,/)
+         call gem_stop('STOP IN WIL_ANLYTC',-1)
+      ENDIF
+*     -----
+*
+*----------------------------------------------------------------
+*
+      RETURN
+*
+      END                                                                       

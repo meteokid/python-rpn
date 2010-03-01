@@ -16,10 +16,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "model_macros_f.h"
 *
       subroutine e_sfile_3df (datev,msg,gid, gif, gjd, gjf,
-     $                                             nvar)
+     $                                             nvar,rootfn)
       implicit none
 *
-      character* (*) datev, msg
+      character* (*) datev, msg,rootfn
       integer  gid, gif, gjd, gjf, nvar
 
 *author  M. Desgagne 2001 (MC2 out_sfile_3df)
@@ -27,11 +27,13 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *revision
 * v3_30 - Lee. V - modified to open a 3DF file for data extracted
 *                  from analysis input
+* v4_03 - Lee/Desgagne - ISST
 *
 #include "e_anal.cdk"
 #include "e_grids.cdk"
 #include "grdc.cdk"
 #include "e_tr.cdk"
+#include "path.cdk"
 *
       integer  longueur
       external longueur
@@ -51,8 +53,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       write (md,'(i2.2)') mode
       write (startindx,'((i7.7),a1,(i7.7))') idg,'-',jdg
-      filen= '3df'//md//'_'//datev//'_'//startindx
-      filen= './process/casc/'//filen(1:longueur(filen))
+      filen= '3df'//md//'_'//trim(datev)//'_'//startindx
+      filen= trim(rootfn)//trim(filen)
       open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
      $                                          position='APPEND')
       print *,'e_sfile_3df anal_hav(2)=',anal_hav(2)
@@ -63,9 +65,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          print *,'zat_8=',zat_8(k),zbt_8(k)
       enddo
       call wrgeo_3df (xg_8(gid),gif-gid+1,yg_8(gjd),gjf-gjd+1,
-     $                za_8,zb_8,zat_8,zbt_8,zat_8,zbt_8,lv,lv_t,lv_t,
-     $                Anal_hav(2),nvar,ntr,unf_casc)
-      write (unf_casc) msg,mode
+     $                za_8,zb_8,zat_8,zbt_8,lv,lv_t,
+     $                Anal_hav(2),unf_casc)
+      write (unf_casc) msg,mode,nvar,ntr
 *
 *------------------------------------------------------------------
       return

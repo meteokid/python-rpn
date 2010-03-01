@@ -1,0 +1,93 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r acid_stat_nli - gblstat for acid test
+
+#include "model_macros_f.h"
+*
+      subroutine acid_stat_nli(F_qt0,F_st0,F_bspqtx,F_nl_u,F_nl_v,
+     $     F_nl_t,F_nl_c,F_nl_f,F_flag)
+*
+      implicit none
+*
+      real F_qt0(LDIST_SHAPE,0:G_nk+1),F_st0(LDIST_SHAPE),
+     $     F_bspqtx(LDIST_SHAPE,0:G_nk+1),
+     $     F_nl_u(LDIST_SHAPE,G_nk),F_nl_v(LDIST_SHAPE,G_nk),
+     $     F_nl_t(LDIST_SHAPE,G_nk+1),F_nl_c(LDIST_SHAPE,G_nk),
+     $     F_nl_f(LDIST_SHAPE,G_nk+1)
+*     
+      integer F_flag
+*
+*author
+*     Andre Plante
+*     
+*revision
+*
+*language
+*     fortran 77
+*
+*object
+*     glbstat for LAM acid test
+*     Note : the acid test is conducted with one CPU.
+*
+*implicits
+#include "lun.cdk"
+#include "schm.cdk"
+#include "glb_ld.cdk"
+#include "acid.cdk"
+*     
+      if(F_flag.eq.1)then
+         if(.not. Schm_hydro_L)then
+            call glbstat (F_qt0,'qt0',LDIST_DIM,G_nk+2,
+     $           8+acid_i0,G_ni-8-acid_in,
+     $           8+acid_j0,G_nj-8-acid_jn,
+     $           1,G_nk+2)
+         endif
+         call glbstat (F_st0,'st0',LDIST_DIM,1,
+     $        8+acid_i0,G_ni-8-acid_in,
+     $        8+acid_j0,G_nj-8-acid_jn,
+     $        1,1)
+      elseif(F_flag.eq.2)then
+         call glbstat (F_nl_u,'NU',LDIST_DIM,G_nk,
+     $        8+acid_i0,G_ni-8-acid_in,
+     $        8+acid_j0,G_nj-8-acid_jn,
+     $        1,G_nk)
+         call glbstat (F_nl_v,'NV',LDIST_DIM,G_nk,
+     $        8+acid_i0,G_ni-8-acid_in,
+     $        8+acid_j0,G_nj-8-acid_jn,
+     $        1,G_nk)
+         call glbstat (F_nl_t,'NT',LDIST_DIM,G_nk,
+     $        8+acid_i0,G_ni-8-acid_in,
+     $        8+acid_j0,G_nj-8-acid_jn,
+     $        1,G_nk)
+         print *,'nl_c  range at i=8 to G_ni-8, j=8 to G_nj-8 will not match due to hor div wind'         
+         call glbstat (F_nl_c,'NC',LDIST_DIM,G_nk,
+     $        8+acid_i0,G_ni-8-acid_in,
+     $        8+acid_j0,G_nj-8-acid_jn,
+     $        1,G_nk)
+         print *,'nl_c smaller range at i=9 to G_ni-8, j=9 to G_nj-8 does match'
+         call glbstat (F_nl_c,'NC1',LDIST_DIM,G_nk,
+     $        9+acid_i0,G_ni-8-acid_in,
+     $        9+acid_j0,G_nj-8-acid_jn,
+     $        1,G_nk)
+         call glbstat (F_nl_f,'NF',LDIST_DIM,G_nk,
+     $        8+acid_i0,G_ni-8-acid_in,
+     $        8+acid_j0,G_nj-8-acid_jn,
+     $        1,G_nk)
+      else
+         print*,'flag=',F_flag
+         call gem_stop('acid_stat_nli : error with flag',-1)
+      endif
+
+      return
+      
+      end

@@ -1,0 +1,78 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r acid_stat_adw_main_2_pos - gblstat for acid test
+
+#include "model_macros_f.h"
+*
+      subroutine acid_stat_adw_main_2_pos (F_xth,F_xcth,F_wrkx1,
+     $     F_i0,F_in,F_j0,F_jn,F_flag)
+*
+      implicit none
+*
+      real F_xth(LDIST_SHAPE,G_nk),F_xcth(LDIST_SHAPE,G_nk),
+     $     F_wrkx1(G_ni*G_nj*G_nk)
+*     
+      integer F_i0,F_in,F_j0,F_jn,F_flag
+*
+*author
+*     Andre Plante
+*     
+*revision
+*
+*language
+*     fortran 77
+*
+*object
+*     glbstat for LAM acid test
+*     Note : the acid test is conducted with one CPU. 
+*
+*implicits
+#include "glb_ld.cdk"
+#include "acid.cdk"
+*     
+      if(F_flag.eq.1)then
+         call glbstat (F_xth,'Xth',1,l_ni,1,l_nj,G_nk,
+     $        7+acid_i0,G_ni-6-acid_in,
+     $        7+acid_j0,G_nj-6-acid_jn,
+     $        1,1)
+         call glbstat (F_xcth,'Xcth',1,l_ni,1,l_nj,G_nk,
+     $        7+acid_i0,G_ni-6-acid_in,
+     $        7+acid_j0,G_nj-6-acid_jn,
+     $        1,1)
+      elseif(F_flag.eq.2)then         
+         call glbstat (F_wrkx1,'wrkX',1,l_ni,1,l_nj,G_nk,
+     $        7+acid_i0,G_ni-6-acid_in,
+     $        7+acid_j0,G_nj-6-acid_jn,
+     $        1,G_nk)
+      elseif(F_flag.eq.3)then
+         call glbstat (F_xth,'Xth3',1,l_ni,1,l_nj,G_nk,
+     $        7+acid_i0,G_ni-6-acid_in,
+     $        7+acid_j0,G_nj-6-acid_jn,
+     $        1,1)
+         call glbstat (F_xcth,'Xcth',1,l_ni,1,l_nj,G_nk,
+     $        7+acid_i0,G_ni-6-acid_in,
+     $        7+acid_j0,G_nj-6-acid_jn,
+     $        1,1)         
+      elseif(F_flag.eq.4)then
+         call glbstat (F_wrkx1 ,'x1',1,G_ni,1,G_nj,G_nk,
+     $        F_i0+acid_i0,F_in-acid_in,
+     $        F_j0+acid_j0,F_jn-acid_jn,
+     $        1,G_nk)
+      else
+         print*,'flag=',F_flag
+         call gem_stop('acid_stat_adw_main_2_pos : error with flag',-1)
+      endif
+
+      return
+      
+      end

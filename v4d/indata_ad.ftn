@@ -1,0 +1,159 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r indata_ad - ADJ of indata_tl 
+*
+#include "model_macros_f.h"
+*
+      subroutine indata_ad
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+* v3_30 - Tanguay M.        - adapt to bcs
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "schm.cdk"
+#include "glb_ld.cdk"
+#include "v4dg.cdk"
+#include "ind.cdk"
+#include "ind_m.cdk"
+#include "p_geof.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "vt1_m.cdk"
+#include "vtx_m.cdk"
+#include "vtopo.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer key1(50),nvar,err,i,j,k
+*     ______________________________________________________
+*
+      if (Vtopo_L) call gem_stop ('Vtopo NOT DONE in indata_AD',-1)
+*
+*     ----------------------------------------
+*     Recover TRAJ initial state
+*     for Preprocessing of Dependent variables
+*     ----------------------------------------
+      call v4d_rwtraj (1)
+*
+*     ADJ of
+*     -------------------------------------------------
+*     Performs preprocessing of the dynamics input data
+*     -------------------------------------------------
+*
+*     Get VMM fields in memory
+*     ------------------------
+      key1( 1) = VMM_KEY(  ut1)
+      key1( 2) = VMM_KEY(  vt1)
+      key1( 3) = VMM_KEY(  wt1)
+      key1( 4) = VMM_KEY(  tt1)
+      key1( 5) = VMM_KEY( zdt1)
+      key1( 6) = VMM_KEY(  st1)
+      key1( 7) = VMM_KEY(fiptx)
+      key1( 8) = VMM_KEY( topo)
+      nvar = 8 
+*
+      if (Vtopo_L) then
+         key1(nvar+1) = VMM_KEY(dtopo)
+         nvar=nvar+1
+      endif
+
+      if (.not. Schm_hydro_L) then
+         key1(nvar+1) = VMM_KEY(qt1)
+         nvar = nvar+1
+      endif
+*
+*     TRAJECTORY
+*     ----------
+      key1(nvar+ 1) = VMM_KEY(  tt1_m)
+      key1(nvar+ 2) = VMM_KEY(  st1_m)
+      nvar=nvar+ 2 
+*
+      if (.not. Schm_hydro_L) then
+         key1(nvar+1) = VMM_KEY(qt1_m)
+         nvar = nvar+1
+      endif
+*
+      err = vmmlod(key1,nvar)
+*
+      err = VMM_GET_VAR(  ut1)
+      err = VMM_GET_VAR(  vt1)
+      err = VMM_GET_VAR(  wt1)
+      err = VMM_GET_VAR(  tt1)
+      err = VMM_GET_VAR( zdt1)
+      err = VMM_GET_VAR(  st1)
+      err = VMM_GET_VAR(fiptx)
+      err = VMM_GET_VAR( topo)
+*
+*     TRAJECTORY
+*     ----------
+      err = VMM_GET_VAR(  tt1_m)
+      err = VMM_GET_VAR(  st1_m)
+*
+*     Equivalencing Ind_u to ut1
+*
+      Ind_u_   = ut1_
+      Ind_v_   = vt1_
+      Ind_w_   = wt1_
+      Ind_t_   = tt1_
+      Ind_zd_  = zdt1_
+      Ind_s_   = st1_
+      Ind_fip_ = fiptx_
+      Ind_topo_= topo_
+*
+*     TRAJECTORY
+*     ----------
+      Ind_m_t_   = tt1_m_
+      Ind_m_s_   = st1_m_
+*
+      if (.not. Schm_hydro_L) then
+*
+*        TLM
+*        ---
+         err = VMM_GET_VAR(qt1)
+         Ind_q_  = qt1_
+*
+*        TRAJECTORY
+*        ----------
+         err = VMM_GET_VAR(qt1_m)
+         Ind_m_q_  = qt1_m_
+*
+      endif
+      if ( Vtopo_L) then
+         err = VMM_GET_VAR(dtopo)
+         Ind_dtopo_= dtopo_
+      endif
+*
+*       ADJ of Preprocessing of Dependent variables only if V4dg_part=3
+*       ---------------------------------------------------------------
+        call v4d_predat_ad( )
+*
+        err = vmmuld(-1,0)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

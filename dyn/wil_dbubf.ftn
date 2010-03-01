@@ -1,0 +1,27 @@
+***s/r wil_dbubf
+*
+      REAL FUNCTION WIL_DBUBF(RLAT) 
+*
+      REAL RLAT
+*
+*author Jacob et al. 1992
+*
+*revision
+* v4_04 - Jacob et al.     - initial version DBUBF 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     SPECIFIES FUNCTIONAL FORM OF 1ST DERIVATIVE OF BIG U BAR (BUBFNC)
+*
+*implicits
+#include "wil_init1.cdk"
+*------------------------------------------------------------------
+      REAL RMU,COSLAT
+*
+      RMU       = SIN(RLAT)
+      COSLAT    = COS(RLAT)
+      WIL_DBUBF = 2.0*SU0*(2.0*RMU*COSLAT)**(NPWR-1)*
+     $            (REAL(NPWR)-REAL(2*NPWR+1)*RMU*RMU)
+*
+      RETURN                                                                    
+      END                                                                       

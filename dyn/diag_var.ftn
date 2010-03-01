@@ -73,9 +73,14 @@
 *
 !$omp do
        do k=0,l_nk+1
+         if(k.eq.0) then
+            xxx=0.d0
+         else
+            xxx=Ver_b_8%m(k)
+         endif
          do j= j0, jn
          do i= i0, in
-            F_BsPq(i,j,k)=Ver_b_8%m(k)*F_s(i,j)
+            F_BsPq(i,j,k)=xxx*F_s(i,j)
          enddo
          enddo
       enddo

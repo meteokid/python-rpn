@@ -28,6 +28,10 @@
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
 * v3_02 - Lee V.            - adapt for LAM 
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v4    - Gravel-Girard-PLante - staggered version
+* v4_04 - Girard-PLante     - diffuse only winds, zdot and first Temp. level.
+*                           - Move hspng_main/hspng_drv from hdif_phy 
+*                           - Always diffuse real winds if not LAM.
 *
 *object
 * applies horizontal diffusion with vertical modulation of 
@@ -40,9 +44,9 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "lun.cdk"
 #include "schm.cdk"
 #include "vspng.cdk"
+#include "hspng.cdk"
 #include "vt1.cdk"
 *
 *modules
@@ -52,37 +56,41 @@
       integer pnerr, pnlod, pnlkey1(4)
 **
 *     _________________________________________________________________
-*
 
-      if (Vspng_nk.lt.1) return
-*
+      if(Hspng_nj.lt.1.and.Vspng_nk.lt.1)then
+         return
+      endif
+
       pnlkey1(1)  = VMM_KEY(ut1)
       pnlkey1(2)  = VMM_KEY(vt1)
-      pnlkey1(3) = VMM_KEY(wt1)
+      pnlkey1(3) = VMM_KEY(zdt1)
       pnlkey1(4) = VMM_KEY(tt1)
       pnlod = 4
+      if (.not. Schm_hydro_L) then
+         pnlod = pnlod +1
+         pnlkey1(pnlod) = VMM_KEY(wt1)
+      endif
 *     - - - - - - - - - - - - - - -
       pnerr = vmmlod(pnlkey1,pnlod)
 *     - - - - - - - - - - - - - - -
       pnerr = VMM_GET_VAR(ut1)
       pnerr = VMM_GET_VAR(vt1)
-      pnerr = VMM_GET_VAR(wt1)
+      pnerr = VMM_GET_VAR(zdt1)
       pnerr = VMM_GET_VAR(tt1)
-*
-      if (G_lam) then
-         if (Lun_debug_L) write (Lun_out,1001) Vspng_nk
-         call vspng_drv_lam (ut1,vt1,wt1,tt1,LDIST_DIM,G_nk )
-      else
-         if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
-         call vspng_drv (ut1,vt1,wt1,tt1,LDIST_DIM,G_nk)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(wt1)
       endif
+*
+      call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
+      if (G_lam) then
+         call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk )
+      else
+         call vspng_drv (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
+         call hspng_drv (ut1,vt1,zdt1,wt1,LDIST_DIM,G_nk)
+      endif
+      call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 *
       pnerr = vmmuld(-1,0)
 *    
- 1000 format(/,3X,
-     $ 'DEL-2 SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV)')
- 1001 format(/,3X,
-     $ '9PT FILT SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV_LAM)')
-*
       return
       end

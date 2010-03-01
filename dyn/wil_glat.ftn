@@ -1,0 +1,31 @@
+***s/r wil_glat
+*
+#include "model_macros_f.h"
+*
+      REAL FUNCTION WIL_GLAT(J) 
+*
+*
+      implicit none
+*
+*author Jacob et al. 1992
+*
+*revision
+* v4_04 - Jacob et al.     - initial version GLAT
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     THIS FUNCTION RETURNS THE LATITUDE OF THE GAUSSIAN
+*     GRID IN RADIANS
+*
+*implicits
+#include "wil_dcst.cdk"
+#include "wil_init2.cdk"
+
+*------------------------------------------------------------------
+      INTEGER J
+*------------------------------------------------------------------
+*
+      WIL_GLAT = THTA(J)
+*
+      RETURN
+      END

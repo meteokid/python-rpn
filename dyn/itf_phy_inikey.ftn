@@ -43,6 +43,8 @@
 * v3_30 - Milbrandt J.      - Exclude water-loading of QR from multimoment scheme
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - Bilodeau-Desgagne - Define PMOINS for offline mode
+* v4    - Chamberland-Spacek - Staggered version
+* v4_04 - Plante A.         - Remove offline mode
 *
 *object
 *
@@ -131,7 +133,7 @@
       call getindx ('VDIAG',     'P',vdiag,    lght, soit)
       call getindx ('QDIAG',     'P',qdiag,    lght, soit)
       call getindx ('TMICE',     'P',tmice,    lght, soit)
-      if (Schm_offline_L .or. C_coupling_L) then
+      if (C_coupling_L) then
           call getindx ('FLUSOLIS',  'P',flusolis, lght, soit)
       endif
       call getindx ('TSS',       'P',tss,      lght, soit)
@@ -205,52 +207,6 @@
          Tr3d_name_S(tr3d_ntr) = phyt_name_S(i)
          Tr3d_sval(tr3d_ntr) = 0.
  20   continue
-
-*
-*     For the offline mode:
-*
-      if (Schm_offline_L) then
-*
-          do i=1,Tr3d_userntr
-             deb=-1
-             vn_S=Tr3d_username_S(i)
-*
-             if (vn_S.eq.'FI') call getindx ('FDSI',    'P',deb, lght, opti)
-             if (vn_S.eq.'PR') call getindx ('TSS',     'P',deb, lght, opti)
-             if (vn_S.eq.'PR0')call getindx ('TSS',     'P',deb, lght, opti)
-             if (vn_S.eq.'P0') then
-                call getindx ('PPLUS',   'D',deb, lght, opti)
-                call getindx ('PMOINS',  'D',deb2,lght, opti)
-             endif
-             if (vn_S.eq.'FB') call getindx ('FLUSOLIS','P',deb, lght, opti)
-             if (vn_S.eq.'N4') call getindx ('FLUSOLIS','P',deb, lght, opti)
-             if (vn_S.eq.'N40')call getindx ('FLUSOLIS','P',deb, lght, opti)
-             if (vn_S.eq.'AD') call getindx ('FDSI',    'P',deb, lght, opti)
-             if (vn_S.eq.'AD0')call getindx ('FDSI',    'P',deb, lght, opti)
-             if (vn_S.eq.'RT') call getindx ('TSS',     'P',deb, lght, opti)
-             if (vn_S.eq.'M4') call getindx ('COSZ',    'P',deb, lght, opti)
-*
-             if (deb.gt.0) then
-                 phyt_ntr = phyt_ntr + 1
-                 phyt_name_S(phyt_ntr) = Tr3d_username_S(i)(1:3)
-                 phyt_ind(1,phyt_ntr)  = deb
-                 if (phyt_name_S(phyt_ntr).eq.'P0') then
-                    phyt_ind(2,phyt_ntr)  = deb2
-                 endif
-             endif
-*
-          end do
-*
-          do 30 i=1,phyt_ntr
-            do k=1,tr3d_ntr
-               if (Tr3d_name_S(k).eq.phyt_name_S(i)) goto 30
-            end do
-            tr3d_ntr = tr3d_ntr + 1
-            Tr3d_name_S(tr3d_ntr) = phyt_name_S(i)
-            Tr3d_sval(tr3d_ntr) = 0.
-  30      continue
-*
-      endif
 *
 *-------------------------------------------------------------------
 *

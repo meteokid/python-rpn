@@ -1,0 +1,97 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r surfix - Copy last level dynamical field in diag level. 
+*
+#include "model_macros_f.h"
+*
+      subroutine dummy_diag
+*
+#include "impnone.cdk"
+*
+*
+*author
+*         C. Girard & A. Plante, Nov. 2008
+*
+*revision
+*
+*object
+*	
+*implicits
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+#include "tr3d.cdk"
+*
+**
+      integer  vmmlod,vmmget,vmmuln,vmmuld
+      external vmmlod,vmmget,vmmuln,vmmuld
+
+      integer err, key(3),key1(Tr3d_ntr),key1_
+      integer i,j,n
+      integer*8 pnt_trt1(Tr3d_ntr)
+      real tr1
+      pointer (patr1, tr1(LDIST_SHAPE,*))
+*
+*     ---------------------------------------------------------------
+*
+      key( 1) = VMM_KEY(ut1)
+      key( 2) = VMM_KEY(vt1)
+      key( 3) = VMM_KEY(tt1)
+      err = vmmlod(key,3)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+*
+      if (Tr3d_ntr.gt.0) then
+         key1_ = VMM_KEY (trt1)
+         do n=1,Tr3d_ntr
+            key1(n) = key1_ + n
+         end do
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr1,tr1)
+            pnt_trt1(n) = patr1
+         end do
+      endif
+*
+      do j=1,l_nj
+      do i=1,l_ni
+        tt1(i,j,l_nk+2) = tt1(i,j,l_nk+1)
+      enddo
+      enddo
+      do j=1,l_nj
+      do i=1,l_niu
+        ut1(i,j,l_nk+1) = ut1(i,j,l_nk)
+      enddo
+      enddo
+      do j=1,l_njv
+      do i=1,l_ni
+        vt1(i,j,l_nk+1) = vt1(i,j,l_nk)
+      enddo
+      enddo
+
+      do n=1,Tr3d_ntr
+         patr1 = pnt_trt1(n)
+         do j=1,l_nj
+         do i=1,l_ni
+            tr1(i,j,l_nk+2) = tr1(i,j,l_nk+1)
+         enddo
+         enddo
+      enddo
+
+      err = vmmuld(key1,Tr3d_ntr)
+      err = vmmuln(key,3)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,87 @@
+***s/r wil_inituth
+*
+#include "model_macros_f.h"
+*
+      subroutine wil_inituth (uini,vorini,thini,nlat)
+*
+      implicit none
+*
+      integer nlat
+*
+      real uini(nlat),vorini(nlat),thini(nlat)
+*
+*author BOB et al. 1992
+*
+*revision
+* v4_04 - BOB et al.       - initial version INITUTH 
+* v4_04 - Tanguay M.       - Galewski's case
+*
+*object
+*     Initialize Latitudinal balanced state of Galewski's case 
+*     (Based on Galewski in Tellus(2004) )  
+*
+*implicits
+#include "wil_lun.cdk"
+#include "wil_glb_ld.cdk"
+#include "wil_dcst.cdk"
+*
+*     -----------------------------------------------------------
+      integer j
+      real*8 rad2deg_8,hmean_ref_8,thinimean_8
+*
+      real*8 ONE_8, HALF_8, CLXXX_8 
+      parameter( ONE_8  = 1.0 , HALF_8 = 0.5, CLXXX_8 = 180.0 )
+*
+      real*8   wil_galewski_wind_8, wil_galewski_geo_8, wil_galewski_mean_8
+      external wil_galewski_wind_8, wil_galewski_geo_8, wil_galewski_mean_8
+*
+      real     wil_glat
+      external wil_glat
+*
+*     -----------------------------------------------------------
+*     NOTE: Use Latitudes SOUTH to NORTH as GEM (not as Williamson's cases)
+*     -----------------------------------------------------------
+*
+      if (Wil_Lun_out.gt.0) write (Wil_Lun_out,1000)
+*
+      rad2deg_8 = CLXXX_8 /acos( -ONE_8 )
+*
+*     Uini is a barotropically unstable state (with jet at 45N)
+*     ---------------------------------------------------------
+      do j=1,nlat
+         uini(j) = wil_galewski_wind_8 (dble(WIL_GLAT(G_nlat-j+1)),1)
+      enddo
+*
+*     Vorini is the corresponding vorticity = -1/a cos(theta)*d(cos(theta)*uini)/d(theta)
+*     -----------------------------------------------------------------------------------
+      do j=1,nlat
+         vorini(j) = wil_galewski_wind_8 (dble(WIL_GLAT(G_nlat-j+1)),2)
+      enddo
+*
+*     Thini is the height in gradient wind balance with uini
+*     ------------------------------------------------------
+*     - ( af + u*tan(theta) )*u = dthini/d(theta)
+*
+      do j=1,nlat
+         thini(j) = wil_galewski_geo_8 (dble(WIL_GLAT(G_nlat-j+1)))
+      enddo
+*
+*     Evaluate mean thini
+*     -------------------
+      thinimean_8 = wil_galewski_mean_8 (Wil_Dcst_pi_8/2.) 
+*
+      hmean_ref_8 = 10.*1000. 
+*
+*     Change mean thini 
+*     -----------------
+      do j=1,nlat
+         thini(j) = thini(j) - thinimean_8 + Wil_Dcst_grav_8 * hmean_ref_8
+      enddo
+*
+      return
+*
+*     -----------------------------------------------------------
+1000  format(3X,' Initialize Latitudinal balanced state of Galewski-s case: (S/R WIL_INITUTH)')
+*     -----------------------------------------------------------
+*
+      end

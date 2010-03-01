@@ -1,0 +1,28 @@
+***s/r base_dir_env - Initialize basic directory paths
+*
+      subroutine base_dir_env
+      implicit none
+*
+*author
+*     Michel Desgagne - Spring 2008
+*
+*revision
+* v3_31 - Desgagne M.       - initial version for ISST
+*
+*implicits
+#include "path.cdk"
+#include <clib_interface.cdk>
+*
+      integer err
+*
+*-------------------------------------------------------------------
+*
+      err = clib_getcwd (Path_basedir_S)
+      Path_input_S = trim(Path_basedir_S)//'/input'
+      Path_output_S= trim(Path_basedir_S)//'/output'
+      Path_work_S  = trim(Path_basedir_S)//'/work'
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

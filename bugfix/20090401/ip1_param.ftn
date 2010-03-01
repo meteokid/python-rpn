@@ -1,0 +1,4 @@
+      subroutine ip1_param()
+      print *,'ip1_param'
+      stop
+      end

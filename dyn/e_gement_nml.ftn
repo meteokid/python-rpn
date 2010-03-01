@@ -24,6 +24,8 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
+* v3_31 - Lee V.            - add Pil_maxcfl to control Pil_pil
+* v4_03 - Lee/Desgagne - ISST
 *
 *object
 *  Default configuration and reading namelist gement
@@ -56,8 +58,9 @@
       Pil_3df_L        = .true.
       Pil_bcs_hollow_L = .true.
       Pil_bmf_L        = .false.
+      Pil_dx           = 0.0
+      Pil_maxcfl    = 1
       Pil_nesdt     = 0
-      Pil_pil       = 7
       Pil_hblen     = 10
 *
       Topo_filmx_L= .true.
@@ -69,7 +72,6 @@
       anal_perturb_L  = .false.
       E_schm_stlag    = .true.
       E_schm_adcub    = .true.
-      Schm_offline_L  = .false.
       E_geol_glanl_L  = .true.
       E_geol_glreg_L  = .false.
       E_geol_hsanl_L  = .true.
@@ -88,9 +90,6 @@
       E_geol_modex_L = .false.
       E_geol_z0cst   = -1.
 *
-      Offline_int_accu_S = 'LINEAR'
-      Offline_ip1a = 11950   
-*
       E_tr3d_list_S = ''
 *
       unf=0
@@ -99,10 +98,7 @@
          read (unf, nml=gement, end=9110, err=9110)
          call fclos (unf)
          e_gement_nml = 1
-         call low2up (Offline_int_accu_S,dumc)
-         Offline_int_accu_S = dumc
-         E_schm_offline_L=Schm_offline_L
-         if (Schm_offline_L) Pil_bmf_L =.true.
+         Pil_pil = max(1,Pil_maxcfl) + 5
          goto 7777
       else
          goto 9220

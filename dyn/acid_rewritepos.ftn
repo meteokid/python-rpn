@@ -1,0 +1,91 @@
+***s/r acid_rewritepos
+#include "model_macros_f.h"
+*     
+      subroutine acid_rewritepos (xpx,dimgx,ac_xp,ni,ypx,dimgy,ac_yp,nj)
+      implicit none
+*     
+      logical prout
+      integer dimgx,dimgy,ni,nj
+      real*8  ac_xp(max(1,ni)), ac_yp(max(1,nj)),
+     $       xpx(dimgx), ypx(dimgy), rad2deg_8,xgi_8(G_ni),ygi_8(G_ni)
+**
+#include "dcst.cdk"
+#include "grd.cdk"
+#include "grdc.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "geomn.cdk"
+#include "out.cdk"
+#include "rstr.cdk"
+#include "ptopo.cdk"
+#include "tr3d.cdk"
+#include "acid.cdk"
+#include "lun.cdk"
+*
+      integer  stretch_axis2
+      external stretch_axis2
+      character* 512 filen
+      integer i,j,k,cnt,ierx,dum1,dum2,ofi,ofj,
+     $        outindx(4),outindx_g(4,Ptopo_numproc)
+      integer is,nis,js,njs,iw,ie,niw,jw,jn,njw
+      integer gidi,gifi,gjfi
+      real x0, xl, y0, yl, dum, n1, n2, b1, b2
+*
+*---------------------------------------------------------------------
+*
+      acid_i0  = 0
+      acid_j0  = 0
+      acid_in  = 0
+      acid_jn  = 0
+      do i=1,dimgx
+         if (xpx(i).le.ac_xp(1).or.abs(xpx(i)-ac_xp(1)).le.1.0e-05) 
+     $       Grdc_gid=i
+         if (xpx(i).le.ac_xp(Grdc_hblen+Grdc_pil+1).or.
+     $       abs(xpx(i)-ac_xp(Grdc_hblen+Grdc_pil+1)).le.1.0e-05) gidi=i
+         if (xpx(i).le.ac_xp(Grdc_ni).or.
+     $       abs(xpx(i)-ac_xp(Grdc_ni)).le.1.0e-05) Grdc_gif=i
+         if (xpx(i).le.ac_xp(Grdc_ni-Grdc_hblen-Grdc_pil).or.
+     $       abs(xpx(i)-ac_xp(Grdc_ni-Grdc_hblen-Grdc_pil)).le.1.0e-05)gifi=i
+      enddo
+      if (Grdc_gid.ge.Grdc_gif) Grdc_gid = 0
+      do i=1,dimgy
+         if (ypx(i).le.ac_yp(1).or.abs(ypx(i)-ac_yp(1)).le.1.0e-05) 
+     $       Grdc_gjd=i
+         if (ypx(i).le.ac_yp(Grdc_hblen+Grdc_pil+1).or.
+     $       abs(ypx(i)-ac_yp(Grdc_hblen+Grdc_pil+1)).le.1.0e-05) Grdc_gjdi=i
+         if (ypx(i).le.ac_yp(Grdc_nj).or.
+     $       abs(ypx(i)-ac_yp(Grdc_nj)).le.1.0e-05) Grdc_gjf=i
+         if (ypx(i).le.ac_yp(Grdc_nj-Grdc_hblen-Grdc_pil).or.
+     $       abs(ypx(i)-ac_yp(Grdc_nj-Grdc_hblen-Grdc_pil)).le.1.0e-05)gjfi=i
+      enddo
+      if (Grdc_gjd.ge.Grdc_gjf) Grdc_gjd = 0
+      acid_i0  = Grdc_gid - 1
+      acid_j0  = Grdc_gjd - 1
+      acid_in  = G_ni - Grdc_gif
+      acid_jn  = G_nj - Grdc_gjf
+      if (Lun_out.gt.0) then
+            rewind(44)
+*           Read the original positional parameters
+            write(Lun_out,*)'Re-reading the positional parameters'
+            do i=1,G_ni
+             read (44) xgi_8(i)
+            enddo
+            do i=1,G_nj
+             read (44) ygi_8(i)
+            enddo
+            rewind(44)
+*           Write out only the domain for the Cascade grid
+            write(Lun_out,*)'Re-writing the positional parameters on cascade grid'
+            do i=Grdc_gid,Grdc_gif
+             write (44) xgi_8(i)
+             print *,'acid rewrit xgi',i,xgi_8(i)
+            enddo
+            do i=Grdc_gjd,Grdc_gjf
+             write (44) ygi_8(i)
+             print *,'acid rewrit ygi',i,ygi_8(i)
+            enddo
+      endif
+*--------------------------------------------------------------------
+      return
+      end
+

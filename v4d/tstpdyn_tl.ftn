@@ -1,0 +1,167 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r tstpdyn_tl -  TLM of tstpdyn 
+*
+#include "model_macros_f.h"
+*
+      subroutine tstpdyn_tl ( F_fnitraj )
+*
+      implicit none
+*
+      integer F_fnitraj
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - ADJ of HO option
+*                           - ADJ of vertical sponge layer
+* v2_31 - Tanguay M.        - adapt ADJ to new advection code,
+*                             hybrid coord. and diffusion in gem_run
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_02 - Tanguay M.        - TLM of Eigv_parity_L and Hspng_main done
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
+*                           - Remove V4dg_oktrtl_L
+* v3_30 - Tanguay M.        - add parameter iln in sol_main 
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*     see id section
+*
+*arguments
+*     see tstpdyn
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "orh.cdk"
+#include "nl.cdk"
+#include "v4dg.cdk"
+#include "nl_m.cdk"
+#include "vtopo.cdk"
+*
+*modules
+*
+      integer iln, dim, dimt, err
+*
+*     ______________________________________________________
+*
+      if (Schm_zdotlag_L) call gem_stop ('Schm_zdotlag_L not DONE in tstpdyn_TL',-1)
+      if (Vtopo_L)        call gem_stop ('Vtopo_L not DONE in tstpdyn_TL',-1)
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+*     Recover TRAJ predictive variables
+*     ---------------------------------
+      call v4d_rwtraj (2) 
+*
+      if ( Orh_icn .eq. 1 ) call rhs_tl () 
+*
+*     Recover TRAJ Positions TH/TRAJ Winds TH
+*     ---------------------------------------
+      call v4d_rwtraj (3)
+      call v4d_rwtraj (4)
+*
+      call adw_main_tl ( F_fnitraj )
+*
+      call pre_tl ()
+*
+      if (Orh_icn.eq.1) call frstgss   ( )
+      if (Orh_icn.eq.1) call frstgss_tr( )
+*
+      if (Lun_debug_L) write (Lun_out,1005) Schm_itnlh
+*
+*     TRAJECTORY
+*     ----------
+      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      dimt= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(l_nk+1)
+      call hpalloc (nl_m_u_, dim, err,1)
+      call hpalloc (nl_m_v_, dim, err,1)
+      call hpalloc (nl_m_t_, dimt,err,1)
+      call hpalloc (nl_m_c_, dim, err,1)
+      call hpalloc (nl_m_f_, dimt,err,1)
+      nl_m_w_ = 0
+      if ( .not. Schm_hydro_L ) then
+         call hpalloc (nl_m_w_, dimt, err,1)
+      endif
+*
+*     TLM
+*     ---
+      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      dimt= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(l_nk+1)
+      call hpalloc (nl_u_, dim, err,1)
+      call hpalloc (nl_v_, dim, err,1)
+      call hpalloc (nl_t_, dimt,err,1)
+      call hpalloc (nl_c_, dim, err,1)
+      call hpalloc (nl_f_, dimt,err,1)
+      nl_w_ = 0
+      if ( .not. Schm_hydro_L ) then
+         call hpalloc (nl_w_, dimt, err,1)
+      endif
+*
+      do 100 iln=1,Schm_itnlh
+*
+*        Recover TRAJ modified by BAC at previous Orh_icn
+*        ------------------------------------------------
+         if (Orh_icn.ne.1.and.iln.eq.1) call v4d_rwtraj (7) 
+*
+         call nli_tl ()
+*
+*        TLM
+*        ---
+         call sol_main (iln)
+*
+*        Recover TRAJ requested to build BAC_TR
+*        --------------------------------------
+         V4dg_iln = iln
+         call v4d_rwtraj (8)
+*
+         call bac_tl ( iln, Schm_itnlh )
+*
+ 100  continue
+*
+*     TRAJECTORY 
+*     ----------
+      call hpdeallc(nl_m_u_, err,1)
+      call hpdeallc(nl_m_v_, err,1)
+      call hpdeallc(nl_m_t_, err,1)
+      call hpdeallc(nl_m_c_, err,1)
+      if ( .not. Schm_hydro_L ) then
+         call hpdeallc(nl_m_w_, err,1)
+         call hpdeallc(nl_m_f_, err,1)
+      endif
+*
+*     TLM
+*     ---
+      call hpdeallc(nl_u_, err,1)
+      call hpdeallc(nl_v_, err,1)
+      call hpdeallc(nl_t_, err,1)
+      call hpdeallc(nl_c_, err,1)
+      call hpdeallc(nl_f_, err,1)
+      if ( .not. Schm_hydro_L ) then
+         call hpdeallc(nl_w_, err,1)
+      endif
+*
+*     ---------------------------------------------------------------
+*
+ 1000 format(
+     + 3X,'TLM of PERFORM A DYNAMICAL STEP: (S/R TSTPDYN_TL)',
+     +/3X,'================================================',/)
+ 1005 format(
+     $3X,'TLM of ITERATING SCHM_ITNLH=',I3,' TIMES TO SOLVE NON-LINEAR ',
+     $   'HELMHOLTZ PROBLEM')
+      return
+      end

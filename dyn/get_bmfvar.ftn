@@ -29,6 +29,7 @@
 * v3_21 - Dugas B.             - replace TD by ES in pressure mode
 * v3_30 - Tanguay M.           - Modify Check topo when no interpolation 
 * v3_30 - McTaggart-Cowan R.   - update implementation of variable orography
+* v4_03 - Lee V.            - ISST
 *
 *object
 *	
@@ -42,11 +43,12 @@
 #include "glb_pil.cdk"
 #include "ptopo.cdk"
 #include "acq.cdk"
+#include "path.cdk"
 *modules
       integer  bmf_gobe
       external bmf_gobe
 *
-      character*32 pe_file
+      character*1024 pe_file
       integer hh,mm,ss, length, i,j,k
       integer, allocatable, dimension(:) :: bmfni,bmfnj,bmfnk,
      $         bmfdatyp,bmfvtime1,bmfvtime2,
@@ -61,9 +63,11 @@
       hh=bmf_time2/1000000
       mm=bmf_time2/10000-hh*100
       ss=bmf_time2/100-hh*10000-mm*100
-*     
-      call bmf_splitname ( pe_file,Ptopo_mycol,Ptopo_myrow,'../','BM',
-     $                                            bmf_time1,hh,mm,ss )
+*
+      call bmf_splitname ( pe_file,Ptopo_mycol, Ptopo_myrow,
+     $                     trim(Path_ind_S), 'BM',bmf_time1,hh,mm,ss )
+
+C     write(*,*) trim(pe_file)
 *
 *     Read the BMF file associated to Ptopo_myproc
 *

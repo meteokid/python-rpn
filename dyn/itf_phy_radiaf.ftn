@@ -1,17 +1,5 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r itf_phy_radiaf -- Initialization of climatological ozone data
-*                 and radiation table
+*                        and radiation table
 *
 #include "model_macros_f.h"
 *
@@ -28,9 +16,8 @@
 *     M. Desgagne
 *
 *revision
-* v2_00 - Desgagne M.       - initial MPI version
-* v2_21 - Desgagne M.       - rpn_comm stooge for MPI
-* v3_30 - Desgagne M.       - new itf_phy interface
+* v3_31 - Desgagne M.       - initial version
+* v4_03 - Desgagne M.       - ISST + new ozone file
 *
 *object
 *     This routine is called by the physics package to initialize
@@ -48,83 +35,67 @@
 *                      .false.for sequential unformatted file format (radiation)
 *
 #include "ptopo.cdk"
-      character*26 datatype_S(2)
+#include "path.cdk"
+*
+      character*1024 filename
+      character*26 datatype_S
       logical local_L,found_L,isfst_L
       integer iun,ilir,inbr,indice,long,status,ityp,ierr
       integer fnom,fstouv,fstopc,fstfrm,fclos,wkoffit
       data iun /26/
-      data datatype_S /'CLIMATOLOGICAL OZONE FILE ',
-     $               'RADIATION TABLE FILE '/
+      data datatype_S /'RADIATION TABLE FILE: '/
 *-----------------------------------------------------------------
 *
-      inbr   = fstopc ('MSGLVL','SYSTEM',.false.)
-      status = -1
-      ityp = 1
-      if (.not.F_flag_L) ityp=2
+      if (F_flag_L) then
+         if (Ptopo_myproc.eq.0) then
+             write(*,*)'F_fichier_S',F_fichier_S
+             write(*,*)'F_chemin_S',F_chemin_S
+         endif
+         call itf_phy_rdozone (F_fichier_S, F_chemin_S)
+         return
+      endif
+*
+      status = 0
 *
       if (Ptopo_myproc.eq.0) then
 *
-         inquire (FILE=F_fichier_S,EXIST=local_L)
-         if (local_L) then
-            F_chemin_S = F_fichier_S
-            found_L   = .true.
-            indice = 0
-            long   = len (F_fichier_S)
-         else
-            indice = index(F_chemin_S,' ')
-            long   = len(F_fichier_S)
-            F_chemin_S(indice:indice+long-1) = F_fichier_S
-            inquire (FILE=F_chemin_S,EXIST=found_L)
+         filename = trim(Path_input_S)//'/'//trim(F_fichier_S)
+         inquire (FILE=filename,EXIST=found_L)
+         if (.not.found_L) then
+            filename = trim(F_chemin_S)//trim(F_fichier_S)
+            inquire (FILE=filename,EXIST=found_L)
          endif
 *
          if (found_L) then
-            ilir = wkoffit(F_chemin_S)
+            ilir = wkoffit(filename)
             if ((ilir.eq.1) .or.(ilir.eq.2).or.
      $          (ilir.eq.33).or.(ilir.eq.34) ) then
-               ilir  = fnom (iun,F_chemin_S,'STD+RND+OLD',0)
-               ilir  = fstouv (iun,'RND')
-               isfst_L = .true.
-            else
-               open(iun,file=F_chemin_S,access='SEQUENTIAL',
-     $                             form='UNFORMATTED')
-               isfst_L = .false.
-            endif
-*
-            print*
-            if (isfst_L) then
-               print *, datatype_S(ityp),'(FST): ',F_chemin_S(1:indice+long)
-               inbr   = fstopc ('MSGLVL','INFORM',.false.)
-            else
-               print *, datatype_S(ityp),'(SEQ): ',F_chemin_S(1:indice+long)
-            endif
-*
-            call rdradf (F_value,iun,isfst_L,NX,F_flag_L,status)
-*
-            if (isfst_L) then            
+               write (6,1001) trim(datatype_S),trim(filename)
+               ilir = fnom (iun,filename,'STD+RND+OLD',0)
+               ilir = fstouv (iun,'RND')
+               call rd_radtab (F_value,iun,NX,status)
                inbr = fstfrm (iun)
                inbr = fclos  (iun)    
             else
-               close (iun)
+               print*, ' FILE ',trim(filename)
+               print*, ' NOT FST FILE FORMAT -- ABORT --'
+               status = -1
             endif
-*
          else
-*
             print*
             print *,'********************************************'
-            print *,'   CAN NOT FIND ',datatype_S(ityp)
+            print *,'   CAN NOT FIND ',datatype_S,trim(filename)
             print *,'********************************************'
-*
+            status = -1
          endif
 *     
       endif
 *
-      call RPN_COMM_bcast (status,1,"MPI_INTEGER",0,"grid",ierr)
-      if (status.eq.0) then
-         call RPN_COMM_bcast (F_value,NX,"MPI_REAL",0,"grid",ierr)
-      else
-         if(Ptopo_myproc.eq.0) print*, 'COULD NOT READ ',datatype_S(ityp)
-         stop
-      endif
+      call gem_stop('itf_phy_radiaf',status)
+*
+      call RPN_COMM_bcast (F_value,NX,"MPI_REAL",0,"grid",ierr)
+*
+ 1001 format (/a/a)
 *
 *-----------------------------------------------------------------
 *

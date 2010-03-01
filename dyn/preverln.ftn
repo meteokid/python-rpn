@@ -29,6 +29,8 @@
 *
 *revision
 *
+* v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+*
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
@@ -64,12 +66,10 @@
          enddo
       enddo
 *      
-      if(Schm_virlev_L) then
-         xxx = - Ver_epsilon_8*(one-Dcst_cappa_8) + Cstv_hco1_8
-      else
-         xxx = - one
-      endif
+      xxx = - Ver_epsilon_8*(one-Dcst_cappa_8) + Cstv_hco1_8
       yyy = - Cstv_hco1_8
+*
+      if(Schm_autobar_L) xxx = zero
 *
       do j=1,F_nk
 *
@@ -103,11 +103,9 @@
            B1(i,j)= F_wk1_8(i,j) 
         enddo
        enddo 
-
 *
        call  nsyeigl( F_eval_8,F_levec_8,F_evec_8 ,B1, work,
      $                                   F_nk, KDIM, 8*F_nk )
-                   
 *     
       return
       end

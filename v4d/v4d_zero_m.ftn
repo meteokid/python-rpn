@@ -1,0 +1,411 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r v4d_zero_m - Zero ALL model variables 
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_zero_m 
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt ADJ for new advection code
+*                           - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - ADJ of digital filter 
+* v3_21 - Lee V.            - removed Tr2d
+* v3_30 - Tanguay M.        - Validation for LAM version 
+*                           - adapt to bcs
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object
+*    see id section
+*
+*arguments
+*    none
+*
+*implicits
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "vt0_m.cdk"
+#include "vt1_m.cdk"
+#include "vth_m.cdk"
+#include "vtx_m.cdk"
+#include "rhsc_m.cdk"
+#include "orh_m.cdk"
+#include "tr3d.cdk"
+#include "nest_m.cdk"
+#include "schm.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+      integer pnerr, pnlkey1(50), key1_, key0_, keyn_, 
+     $        key1(Tr3d_ntr), key0(Tr3d_ntr), keyn(Tr3d_ntr), 
+     $        pnlod, err, i, j, k, n, id 
+*
+      real tr1,tr0,trn
+      pointer (patr1,  tr1(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
+      pointer (patrn,  trn(LDIST_SHAPE,*))
+*
+      if( Lun_debug_L ) then
+         write(Lun_out,fmt='(/,''V4D_ZERO_M:Zero ALL model variables'')')
+         write(Lun_out,fmt='(  ''==================================='')')
+      endif
+*
+*     ---------------------------
+*     Zero comdeck vt0
+*     ---------------------------
+      pnlkey1( 1)= VMM_KEY(ut0_m  )
+      pnlkey1( 2)= VMM_KEY(vt0_m  )
+      pnlkey1( 3)= VMM_KEY(tt0_m  )
+      pnlkey1( 4)= VMM_KEY(st0_m  )
+      pnlkey1( 5)= VMM_KEY(zdt0_m )
+      pnlkey1( 6)= VMM_KEY(wt0_m  )
+      pnlod =  6 
+*
+      if (.not. Schm_hydro_L) then
+          pnlkey1(pnlod+1)= VMM_KEY(qt0_m )
+          pnlod = pnlod+1
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(ut0_m  )
+      pnerr = VMM_GET_VAR(vt0_m  )
+      pnerr = VMM_GET_VAR(tt0_m  )
+      pnerr = VMM_GET_VAR(st0_m  )
+      pnerr = VMM_GET_VAR(zdt0_m )
+      pnerr = VMM_GET_VAR(wt0_m  )
+*
+      if (.not. Schm_hydro_L) then
+          pnerr = VMM_GET_VAR(qt0_m )
+      endif
+*
+      ut0_m  = 0.
+      vt0_m  = 0.
+      tt0_m  = 0.
+      zdt0_m = 0.
+      st0_m  = 0.
+      wt0_m  = 0.
+*
+      if (.not. Schm_hydro_L) then
+         qt0_m = 0.
+      end if
+*
+      pnerr = vmmuld( -1, 0 )
+*
+      key0_ = VMM_KEY (trt0_m)
+      do n=1,Tr3d_ntr
+         key0(n) = key0_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key0,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key0(n),patr0,tr0)
+            do k=1,l_nk+2
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               tr0(i,j,k) = 0. 
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key0,Tr3d_ntr)
+      endif
+*
+*     ---------------------------
+*     Zero comdeck vt1
+*     ---------------------------
+      pnlkey1( 1)= VMM_KEY(ut1_m  )
+      pnlkey1( 2)= VMM_KEY(vt1_m  )
+      pnlkey1( 3)= VMM_KEY(tt1_m  )
+      pnlkey1( 4)= VMM_KEY(st1_m  )
+      pnlkey1( 5)= VMM_KEY(zdt1_m )
+      pnlkey1( 6)= VMM_KEY(fipt1_m)
+      pnlkey1( 7)= VMM_KEY(wt1_m  )
+*
+      pnlkey1( 8)= VMM_KEY(xct1_m )
+      pnlkey1( 9)= VMM_KEY(yct1_m )
+      pnlkey1(10)= VMM_KEY(zct1_m )
+      pnlod = 10 
+*
+      if (.not. Schm_hydro_L) then
+          pnlkey1(pnlod+1)= VMM_KEY(qt1_m )
+          pnlod = pnlod+1
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(ut1_m  )
+      pnerr = VMM_GET_VAR(vt1_m  )
+      pnerr = VMM_GET_VAR(tt1_m  )
+      pnerr = VMM_GET_VAR(st1_m  )
+      pnerr = VMM_GET_VAR(zdt1_m )
+      pnerr = VMM_GET_VAR(fipt1_m)
+      pnerr = VMM_GET_VAR(wt1_m  )
+*
+      pnerr = VMM_GET_VAR(xct1_m )
+      pnerr = VMM_GET_VAR(yct1_m )
+      pnerr = VMM_GET_VAR(zct1_m )
+*
+      if (.not. Schm_hydro_L) then
+          pnerr = VMM_GET_VAR(qt1_m )
+      endif
+*
+      ut1_m  = 0.
+      vt1_m  = 0.
+      tt1_m  = 0.
+      zdt1_m = 0.
+      fipt1_m= 0.
+      st1_m  = 0.
+      wt1_m  = 0.
+*
+      xct1_m = 0.
+      yct1_m = 0.
+      zct1_m = 0.
+*
+      if (.not. Schm_hydro_L) then
+         qt1_m = 0.
+      end if
+*
+      pnerr = vmmuld( -1, 0 )
+*
+      key1_ = VMM_KEY (trt1_m)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr1,tr1)
+            do k=1,l_nk+2
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               tr1(i,j,k) = 0. 
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+      endif
+*
+*     ---------------------------
+*     Zero comdeck vth
+*     ---------------------------
+      pnlkey1(1) = VMM_KEY(uth_m  )
+      pnlkey1(2) = VMM_KEY(vth_m  )
+      pnlkey1(3) = VMM_KEY(zdth_m )
+      pnlkey1(4) = VMM_KEY(xth_m  )
+      pnlkey1(5) = VMM_KEY(yth_m  )
+      pnlkey1(6) = VMM_KEY(zth_m  )
+      pnlkey1(7) = VMM_KEY(xcth_m )
+      pnlkey1(8) = VMM_KEY(ycth_m )
+      pnlkey1(9) = VMM_KEY(zcth_m )
+      pnlod = 9 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(uth_m  )
+      pnerr = VMM_GET_VAR(vth_m  )
+      pnerr = VMM_GET_VAR(zdth_m)
+      pnerr = VMM_GET_VAR(xth_m  )
+      pnerr = VMM_GET_VAR(yth_m  )
+      pnerr = VMM_GET_VAR(zth_m  )
+      pnerr = VMM_GET_VAR(xcth_m )
+      pnerr = VMM_GET_VAR(ycth_m )
+      pnerr = VMM_GET_VAR(zcth_m )
+*
+      uth_m  = 0.
+      vth_m  = 0.
+      zdth_m = 0.
+*
+      xth_m  = 0.
+      yth_m  = 0.
+      zth_m  = 0.
+      xcth_m = 0.
+      ycth_m = 0.
+      zcth_m = 0.
+*
+      pnerr = vmmuld( -1, 0 )
+*
+*     ---------------------------
+*     Zero comdeck vtx
+*     ---------------------------
+      pnlkey1(1) = VMM_KEY(bspqtx_m)
+      pnlkey1(2) = VMM_KEY(fiptx_m)
+      pnlod = 2 
+*
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(mutx_m)
+         pnlod = pnlod+1
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(bspqtx_m)
+      pnerr = VMM_GET_VAR(fiptx_m)
+*
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(mutx_m)
+      endif
+*
+      bspqtx_m = 0.
+      fiptx_m  = 0.
+*
+      if (.not. Schm_hydro_L) then
+         mutx_m  = 0.
+      endif
+*
+      pnerr = vmmuld( -1, 0 )
+*
+*     ---------------------------
+*     Zero comdeck rhsc 
+*     ---------------------------
+      pnlkey1( 1)= VMM_KEY(rhsu_m )
+      pnlkey1( 2)= VMM_KEY(rhsv_m )
+      pnlkey1( 3)= VMM_KEY(rhst_m )
+      pnlkey1( 4)= VMM_KEY(rhsc_m )
+      pnlkey1( 5)= VMM_KEY(rhsw_m )
+      pnlkey1( 6)= VMM_KEY(rhsf_m )
+      pnlkey1( 7)= VMM_KEY(rhsp_m )
+      pnlkey1( 8)= VMM_KEY(ruw1_m )
+      pnlkey1( 9)= VMM_KEY(rvw1_m )
+      pnlkey1(10)= VMM_KEY(ruw2_m )
+      pnlkey1(11)= VMM_KEY(rvw2_m )
+      pnlod = 11 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(rhsu_m ) 
+      pnerr = VMM_GET_VAR(rhsv_m )
+      pnerr = VMM_GET_VAR(rhst_m )
+      pnerr = VMM_GET_VAR(rhsc_m )
+      pnerr = VMM_GET_VAR(rhsw_m )
+      pnerr = VMM_GET_VAR(rhsf_m )
+      pnerr = VMM_GET_VAR(rhsp_m )
+      pnerr = VMM_GET_VAR(ruw1_m )
+      pnerr = VMM_GET_VAR(rvw1_m )
+      pnerr = VMM_GET_VAR(ruw2_m )
+      pnerr = VMM_GET_VAR(rvw2_m )
+*
+      rhsu_m = 0.
+      rhsv_m = 0.
+      rhsc_m = 0.
+      rhsp_m = 0.
+      ruw1_m = 0.
+      rvw1_m = 0.
+      ruw2_m = 0.
+      rvw2_m = 0.
+*
+      rhst_m = 0.
+      rhsw_m = 0.
+      rhsf_m = 0.
+*
+      pnerr = vmmuld( -1, 0 )
+*
+*     ---------------------------
+*     Zero comdeck orh 
+*     ---------------------------
+      pnlkey1(1)= VMM_KEY(orhsu_m)
+      pnlkey1(2)= VMM_KEY(orhsv_m)
+      pnlkey1(3)= VMM_KEY(orhst_m)
+      pnlkey1(4)= VMM_KEY(orhsc_m)
+      pnlkey1(5)= VMM_KEY(orhsw_m)
+      pnlkey1(6)= VMM_KEY(orhsf_m)
+      pnlod = 6 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(orhsu_m)
+      pnerr = VMM_GET_VAR(orhsv_m)
+      pnerr = VMM_GET_VAR(orhst_m)
+      pnerr = VMM_GET_VAR(orhsc_m)
+      pnerr = VMM_GET_VAR(orhsw_m)
+      pnerr = VMM_GET_VAR(orhsf_m)
+*
+      orhsu_m = 0.
+      orhsv_m = 0.
+      orhsc_m = 0.
+*
+      orhst_m = 0.
+      orhsw_m = 0.
+      orhsf_m = 0.
+*
+      pnerr = vmmuld( -1, 0 )
+*
+C     if(G_lam) then
+      if(.FALSE.) then
+*
+*     DID NOT WORK: DONT KNOW WHY
+*
+*     ---------------------------
+*     Zero comdeck nest 
+*     ---------------------------
+      pnlkey1( 1)=VMM_KEY(nest_u_m  )
+      pnlkey1( 2)=VMM_KEY(nest_v_m  )
+      pnlkey1( 3)=VMM_KEY(nest_w_m  )
+      pnlkey1( 4)=VMM_KEY(nest_t_m  )
+      pnlkey1( 5)=VMM_KEY(nest_zd_m )
+      pnlkey1( 6)=VMM_KEY(nest_s_m  )
+      pnlod =  6   
+*
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1)=VMM_KEY(nest_q_m )
+         pnlod = pnlod+1
+      endif
+*
+      err = vmmlod(pnlkey1,pnlod)
+      err = VMM_GET_VAR(nest_u_m  )
+      err = VMM_GET_VAR(nest_v_m  )
+      err = VMM_GET_VAR(nest_w_m  )
+      err = VMM_GET_VAR(nest_t_m  )
+      err = VMM_GET_VAR(nest_zd_m )
+      err = VMM_GET_VAR(nest_s_m  )
+*
+      if (.not. Schm_hydro_L) then
+         err = VMM_GET_VAR(nest_q_m )
+      endif
+*
+      nest_u_m  = 0. 
+      nest_v_m  = 0. 
+      nest_w_m  = 0.
+      nest_t_m  = 0. 
+      nest_zd_m = 0. 
+      nest_s_m  = 0. 
+*
+      if (.not. Schm_hydro_L) nest_q_m = 0. 
+*
+      pnerr = vmmuld( -1, 0 )
+*
+      keyn_ = VMM_KEY (nest_tr_m)
+      do n=1,Tr3d_ntr
+         keyn(n) = keyn_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(keyn,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(keyn(n),patrn,trn)
+            do k=1,l_nk+2
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               trn(i,j,k) = 0. 
+            end do 
+            end do
+            end do
+         end do
+         err = vmmuld(keyn,Tr3d_ntr)
+      endif
+*
+      endif
+*
+      return
+      end

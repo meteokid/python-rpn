@@ -13,15 +13,15 @@
 ***s/r hzd_hof - applies horizontal diffusion on a given set of fields
 *
 #include "model_macros_f.h"
-      subroutine hzd_hof ( F_u, F_v, F_w, F_t, F_s, DIST_DIM, Nk)
+      subroutine hzd_hof ( F_u, F_v, F_zd, F_w, F_t, F_s, DIST_DIM, Nk)
 *
       implicit none
 *
       integer DIST_DIM, Nk
 *
-      real     F_u(DIST_SHAPE,Nk  ), F_v(DIST_SHAPE,Nk  ),
-     %         F_w(DIST_SHAPE,Nk+1), F_t(DIST_SHAPE,Nk+1),
-     %         F_s(DIST_SHAPE)
+      real     F_u (DIST_SHAPE,Nk  ), F_v(DIST_SHAPE,Nk  ),
+     %         F_zd(DIST_SHAPE,Nk+1), F_w(DIST_SHAPE,Nk+1),
+     %         F_t (DIST_SHAPE,Nk+1), F_s(DIST_SHAPE)
 *
 *author
 *     Abdessamad Qaddouri
@@ -31,6 +31,8 @@
 * v2_21 - Desgagne M.       - control for diffusion on momentum only
 * v2_31 - Desgagne M.       - remove stkmemw
 * v3_11 - Corbeil L.        - new RPNCOMM transpose
+* v4    - Gravel-Girard-Plante - staggered version
+* v4_04 - Girard-Plante     - Diffuse only real winds and zdot.
 *
 *object
 * The diffusion includes: second order(Hzd_pwr=1), 
@@ -78,7 +80,7 @@
 *     Momentum
 *     ~~~~~~~~
 *
-      call hzd_solfft(F_u, wk1_8, Fft_pri_8, 
+      call hzd_solfft(F_u, wk1_8, Fft_pri_8 , 
      %     Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,
      %     trp_12dmin,trp_12dmax,trp_22min,trp_22max,
      %     trp_12dn,trp_22n,G_nj, dpwr,l_minx, 
@@ -96,13 +98,27 @@
 *     
 *     Vertical momentum
 *     ~~~~~~~~~~~~~~~~~
-      call hzd_solfft(F_w, wk1_8, Fft_pri_8 ,
+*
+      if(.true.) then
+*********not physical, done nevertheless*******
+         call hzd_solfft(F_zd,wk1_8, Fft_pri_8 ,
      %     Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %     trp_p12dmin,trp_p12dmax,trp_22min,trp_22max,
      %     trp_p12dn,trp_22n,G_nj, dpwr,l_minx,
      %     l_maxx, l_miny, l_maxy,Nk+1,G_ni,l_ni,l_nj,
      %     trp_p12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %     Ptopo_npex,Ptopo_npey)
+      endif
+*
+      if(.not.Schm_hydro_L) then
+         call hzd_solfft(F_w ,wk1_8, Fft_pri_8 ,
+     %     Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
+     %     trp_p12dmin,trp_p12dmax,trp_22min,trp_22max,
+     %     trp_p12dn,trp_22n,G_nj, dpwr,l_minx,
+     %     l_maxx, l_miny, l_maxy,Nk+1,G_ni,l_ni,l_nj,
+     %     trp_p12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
+     %     Ptopo_npex,Ptopo_npey)
+      endif
 *     
       if(.false.)then
          call gem_stop('hzd_hof : do not diffuse t but theta',-1)

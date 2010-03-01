@@ -1,0 +1,66 @@
+***s/r wil_infld_x
+*
+      SUBROUTINE WIL_INFLD_X(CDFID,VARID,STEP,MAXH,LDIAG,MM,NN,KK,VAR) 
+*
+      implicit none
+*
+      INTEGER CDFID,VARID
+      INTEGER STEP,MM,NN,KK
+      INTEGER MAXH,LDIAG(0:MAXH,2)                                      
+*
+      COMPLEX VAR(*)
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version INFLD 
+* v4_04 - Tanguay M.       - Williamson's cases
+*                                                                              
+*object
+*     READS A SPECTRAL COEFFICIENT FIELD
+*     IN NETCDF FORMAT
+*
+*------------------------------------------------------------------
+
+      INTEGER M,N,MDUM,NDUM
+      REAL DREAL,DIMAG
+      REAL BIG1,BIG2
+*
+*     ADDRESS COMPUTATION OF ALP, DALP, EPSIL            
+*     ---------------------------------------
+      INTEGER IDSP
+      IDSP(MDUM,NDUM) = 1 + LDIAG(NDUM-MDUM,2)+MDUM                             
+*------------------------------------------------------------------
+*
+      READ(CDFID,*)
+*
+      DO 1060 N=0,MAXH                                                   
+*        DO 1040 M=0,N                                                      
+         DO 1040 M=0,MAXH                                                      
+*
+            READ(CDFID,*)
+*                                                                               
+            IF ((M .LE. MM) .AND. (N .LE. MIN0(KK,M+NN)) .AND. M.LE.N)
+     $         THEN
+*
+               READ(CDFID,*) DREAL,DIMAG
+*                                                                               
+*              READ REAL AND IMAGINARY PARTS
+*              -----------------------------
+               VAR(IDSP(M,N)) = CMPLX(DREAL,DIMAG)
+*
+            ELSE
+*
+               READ(CDFID,*) BIG1,BIG2
+*
+*              UNDEFINED COEFFICIENT (ASSUMING 0.0)
+*              ------------------------------------
+               VAR(IDSP(M,N)) = CMPLX(0.0,0.0)
+*
+            ENDIF
+*                                                                               
+ 1040    CONTINUE                                                               
+ 1060 CONTINUE                                                                  
+*
+      RETURN                                                                    
+      END                                                                       

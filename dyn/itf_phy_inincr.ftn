@@ -49,6 +49,7 @@
 * v3_22 - Katja Winger      - make sure that BC are read twice in first month
 *                             (at Lctl_step=2 and in the middle of the month)
 * v3_30 - Dugas B.          - new itf_phy interface
+* v4_03 - Lee/Desgagne - ISST
 *
 *object
 *
@@ -190,7 +191,7 @@
             xnjm    = 0
             xnzm    = 0
 *
-            clima_S = trim( Path_dfwmil_S ) // '/process/imclima'
+            clima_S = trim(Path_input_S)//'/imclima'
 *
             xnerr = wkoffit( clima_S )
 *
@@ -232,7 +233,7 @@
             xnerr  =  0
             acli_L = .false.
 *
-            anclima_S = trim( Path_dfwmil_S ) // '/process/imanclima'
+            anclima_S = trim( Path_input_S ) // '/imanclima'
 *
             xnerr = wkoffit( anclima_S )
 *

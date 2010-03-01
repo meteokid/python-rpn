@@ -59,59 +59,14 @@
       real*8 work_8(3,G_nk*2+3),work1_8
       real hyb
       integer ig1,ig2,ig3,ig4,ip1,k
-      integer  fstecr,fst_data_length
-      external fstecr,fst_data_length
+      integer  fstecr,fst_data_length,write_encode_bang
+      external fstecr,fst_data_length,write_encode_bang
 *
       integer err
       if ((Out_blocme.eq.0).and.(Out_nisl.gt.0).and.(Out_njsl.gt.0)) then
-*        The momentum levels
-         do k=1,G_nk
-            call convip(ip1,Ver_hyb%m(k),Out_kind,+1,' ',.false.)
-            work_8(1,k)=ip1
-            work_8(2,k)=Ver_a_8%m(k)
-            work_8(3,k)=Ver_b_8%m(k)
-         enddo
-
-*        The very top level
-         call convip(ip1,0.0,Out_kind,+1,' ',.false.)
-         work_8(1,G_nk+1)=ip1
-         work_8(2,G_nk+1)=Ver_a_8%t(1)
-         work_8(3,G_nk+1)=Ver_b_8%t(1)
-         do k=1,G_nk+1
-            call convip(ip1,Ver_hyb%t(k),Out_kind,+1,' ',.false.)
-            work_8(1,k+G_nk+1)=ip1
-            work_8(2,k+G_nk+1)=Ver_a_spcl_8%t(k)
-            work_8(3,k+G_nk+1)=Ver_b_spcl_8%t(k)
-         enddo
-
-*        The very bottom level
-         call convip(ip1,1.0,Out_kind,+1,' ',.false.)
-         work_8(1,G_nk*2+3)=ip1
-         work_8(2,G_nk*2+3)=Ver_a_8%t(G_nk+1)
-         work_8(3,G_nk*2+3)=Ver_b_8%t(G_nk+1)
-
-*        For printout
-*        do k=1,G_nk
-*           ip1 = nint(work_8(k,1))
-*           call convip(ip1,hyb,Out_kind,-1,' ',.false.)
-*        enddo
-*        do k=G_nk+1,G_nk*2+3
-*           ip1 = nint(work_8(1,k))
-*           call convip(ip1,hyb,Out_kind,-1,' ',.false.)
-*        enddo
-*
-*        Parameters are described in Pascals
-         ig4 = nint(Grd_rcoef(2)*1000)
-         ig3 = nint(Grd_rcoef(1)*1000)
-         ig2 = nint(Cstv_ptop_8)
-*        Code for this type of staggered hybrid
-         ig1 = Ver_code
-
-
-         err = fstecr (work_8,wke_8,-64,Out_unf,Out_dateo,
-     $          int(Out_deet),Out_npas,3,G_nk*2+3,1,Out_ig1,Out_ig2,0,
-     $          'X',"!!  ",Out_etik_S,'X',ig1,ig2,ig3,ig4,
-     $           5,.true.)
+         err=write_encode_bang(Out_unf,G_nk,Ver_hyb%m,Ver_hyb%t,
+     $    Ver_a_8%m,Ver_b_8%m,Ver_a_8%t,Ver_b_8%t,Grd_rcoef,Cstv_ptop_8,
+     $    Ver_code, Out_ig1,Out_ig2,Out_dateo,Out_deet,Out_npas,Out_etik_S)
       endif
 
 *     Write out the ST1 (log of surface pressure)

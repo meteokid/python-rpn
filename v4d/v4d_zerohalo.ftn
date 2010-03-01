@@ -1,0 +1,67 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r v4d_zerohalo - Zero the halo of a variable  
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_zerohalo ( F, in, jn, DIST_DIM, Nk) 
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM,Nk,in,jn
+      real    F(DIST_SHAPE,Nk)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+* v4_04 - Tanguay M.        - Staggered version TL/AD 
+*
+*object 
+*     see id section
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+*
+      integer i, j, k
+      real*8, parameter :: ZERO_8 = 0.0
+*
+      do k=1,Nk
+         do j=l_miny,0
+         do i=l_minx,l_maxx
+            F(i,j,k) = ZERO_8 
+         end do
+         end do
+         do j=jn+1,  l_maxy
+         do i=l_minx,l_maxx
+            F(i,j,k) = ZERO_8 
+         end do
+         end do
+         do i=l_minx,0
+         do j=l_miny,l_maxy
+            F(i,j,k) = ZERO_8 
+         end do
+         end do
+         do i=in+1,  l_maxx
+         do j=l_miny,l_maxy
+            F(i,j,k) = ZERO_8 
+         end do
+         end do
+      end do
+*
+      return
+      end

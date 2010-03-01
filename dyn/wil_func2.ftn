@@ -1,0 +1,38 @@
+***s/r wil_func2
+*
+#include "model_macros_f.h"
+*
+      REAL FUNCTION WIL_FUNC2(THETA) 
+*
+      implicit none
+*
+      REAL THETA
+*
+*author Jacob et al. 1992 
+*
+*revision
+* v4_04 - Jacob et al.     - initial version FUNC2 
+* v4_04 - Tanguay M.       - Williamson's cases
+*
+*object
+*     SPECIFIES RIGHT HAND SIDE OF NON-LINEAR BALANCE EQUATION FOR              
+*     PURPOSES OF NUMERICAL INTEGRATION; REQUIRES REAL FUNCTION BUBFNC          
+*     MAKE SURE THAT CONSTANTS ARE CONSISTANT WITH THOSE IN INPUT!!             
+*     USED FOR TEST CASE 4 IN ROUTINE INIT
+*
+*implicits
+#include "wil_dcst.cdk"
+*------------------------------------------------------------------
+      REAL SU
+*
+*     ZONAL FLOW FUNCTION
+*     -------------------
+      EXTERNAL WIL_BUBFNC
+      REAL WIL_BUBFNC
+*------------------------------------------------------------------
+*
+      SU         = WIL_BUBFNC(THETA)
+      WIL_FUNC2  = (2.0*Wil_Dcst_omega_8*Wil_Dcst_rayt_8*SIN(THETA) + TAN(THETA)*SU)*SU                      
+*
+      RETURN                                                                    
+      END                                                                       

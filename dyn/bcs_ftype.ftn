@@ -24,6 +24,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *        Michel Desgagne - 2001 (from MC2 bcs_ftype)
 *revision
 * v3_30 - Desgagne M.  - initial version for GEMDM
+* v4_03 - Lee/Desgagne - ISST
 *
 *ARGUMENTS
 *    NAMES     I/O  TYPE  A/S        DESCRIPTION
@@ -32,6 +33,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *IMPLICIT
 #include "bcsdim.cdk"
 #include "ifd.cdk"
+#include "path.cdk"
 *
       integer  nav_3df
       external nav_3df
@@ -44,12 +46,12 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
  10   ft_pref = 'NON'
       if (ftperm(1).eq.0) then
-         fn = '../casc/bcs01_'//datev
+         fn = trim(Path_ind_S)//'/bcs01_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                       iostat=err1,form='UNFORMATTED')
 c        print *,'opening and closing',fn,'err1=',err1
          close (unf)
-         fn = '../casc/bcs02_'//datev
+         fn = trim(Path_ind_S)//'/bcs02_'//datev
          open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                       iostat=err2,form='UNFORMATTED')
 c        print *,'opening and closing',fn,'err2=',err2
@@ -62,7 +64,7 @@ c        print *,'opening and closing',fn,'err2=',err2
          ft_pref = 'BCS'
       else
          if (ftperm(2).eq.0) then
-            fn  = '../casc/3df_filemap.txt'
+           fn  = trim(Path_ind_S)//'/3df_filemap.txt'
             open (unf,file=fn,access='SEQUENTIAL',status='OLD',
      $                             iostat=err,form='FORMATTED')
          else

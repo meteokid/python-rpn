@@ -37,6 +37,7 @@
 * v3_20 - Tanguay M.          - Improve alarm when points outside advection grid
 * v3_20 - Dugas B.            - correct calculation for LAM when Glb_pil gt 7
 * v3_21 - Desgagne M.         - if  Lagrange 3D, call adw_main_3_intlag
+* v4_04 - Tanguay M.          - Staggered version TL/AD
 *
 *language
 *     fortran 77
@@ -75,6 +76,7 @@
 #include "vt1.cdk"
 #include "vt0.cdk"
 #include "ver.cdk"
+#include "acid.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -126,10 +128,10 @@
       j0=1
       jn=l_nj
       if (G_lam) then
-          if (l_west)  i0=4       + (Glb_pil_w - 7)
-          if (l_east)  in=l_niu-2 - (Glb_pil_e - 7)
-          if (l_south) j0=4       + (Glb_pil_s - 7)
-          if (l_north) jn=l_njv-2 - (Glb_pil_n - 7)
+          if (l_west)  i0=pil_w
+          if (l_east)  in=l_niu - pil_e + 2
+          if (l_south) j0=pil_s
+          if (l_north) jn=l_njv - pil_n + 2
       endif
 
 ***********************************************************************
@@ -150,13 +152,25 @@
 !$omp end parallel do
 
       if (G_lam) then
+*
           if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
      $         (mod(Lctl_step,Step_gstat).eq.0) )
      $         call adw_cfl_lam ( pos_x, pos_y, pos_z, 
      $                            i0, in, j0, jn, l_nk,'m' )
-          call adw_ckbd_lam( pos_x, pos_y, pos_z, i0, in, j0, jn, l_nk )
+          call adw_cliptraj( pos_x, pos_y, i0, in, j0, jn, l_nk, 'INTERP MT')
           if ( V4dg_conf.ne.0.0 ) then
-             call gem_stop('adw_main_3_intlag : ajouter code',-1)            
+*
+            outside = 0
+            if ( Adw_trunc(1) + Adw_trunc(2) +
+     $           Adw_trunc(3) + Adw_trunc(4) .gt. 0 ) outside = 1
+*
+            sum_outside = 0
+            call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
+     $                                             "MPI_SUM","grid",ier)
+*
+            if(sum_outside.ne.0) call gem_stop
+     $           ('ADW_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
+*
           endif
       endif
 *
@@ -236,6 +250,9 @@
 *     ----------------------------
 *     Keep positions in CAP fields
 *     ----------------------------
+*
+      if (Acid_test_L)call acid_stat_adw_main_3_intlag(ruw1,ruw2,rvw2,1)
+*
 !$omp parallel private(n)
 !$omp do
       do k=1,l_nk
@@ -258,6 +275,8 @@
 *
       call adw_interp2 (rhsc , orhsc , pos_x, pos_y,
      %                 .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
+*
+      if (Acid_test_L)call acid_stat_adw_main_3_intlag(ruw1,ruw2,rvw2,2)
 *
       if(Schm_zdotlag_L) then
 !$omp do
@@ -286,8 +305,8 @@
          do k=1,l_nk
             do j=j0,jn
             do i=i0,in
-               wup(i,j,k) = Ver_wp_8_m(k) * wt1(i,j,k+1)
-     %                     +Ver_wm_8_m(k) * wt1(i,j,k)
+               wup(i,j,k) = Ver_wp_8%m(k) * wt1(i,j,k+1)
+     %                     +Ver_wm_8%m(k) * wt1(i,j,k)
             enddo
             enddo
          enddo
@@ -305,8 +324,8 @@
          do k=1,l_nk
             do j=j0,jn
             do i=i0,in
-               zdup(i,j,k) = Ver_wp_8_m(k)*zdt1(i,j,k+1)
-     %                      +Ver_wm_8_m(k)*zdt1(i,j,k)
+               zdup(i,j,k) = Ver_wp_8%m(k)*zdt1(i,j,k+1)
+     %                      +Ver_wm_8%m(k)*zdt1(i,j,k)
                enddo
             enddo
          enddo
@@ -347,8 +366,7 @@
      $         (mod(Lctl_step,Step_gstat).eq.0) )
      $         call adw_cfl_lam ( pos_x, pos_y, pos_z, 
      $                            i0, in, j0, jn, l_nk+1, 't')
-          call adw_ckbd_lam( pos_x, pos_y, pos_z, i0, in, j0, jn, l_nk+1 )
-
+          call adw_cliptraj( pos_x, pos_y, i0, in, j0, jn, l_nk+1, 'INTERP TH')
 *
       endif
 *
@@ -468,25 +486,25 @@
      %                 .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
       endif
 *
-      if(.not.G_lam)then
-         if(Orh_icn.eq.Schm_itcn)then
-*
-!$omp do
-            do k=1,l_nk+1
-               do j=j0,jn
-               do i=i0,in
-                  piup(i,j,k)=exp(Ver_z_8%t(k) + Ver_b_8%t(k)*st1(i,j))
-               enddo
-               enddo
-            enddo
-!$omp enddo
-*
-            call adw_interp2 (piup,piup, pos_x, pos_y, 
-     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')         
-*
-         endif
-      endif
-*
+cap      if(.not.G_lam)then
+cap         if(Orh_icn.eq.Schm_itcn)then
+cap*
+cap!$omp do
+cap            do k=1,l_nk+1
+cap               do j=j0,jn
+cap               do i=i0,in
+cap                  piup(i,j,k)=exp(Ver_z_8%t(k) + Ver_b_8%t(k)*st1(i,j))
+cap               enddo
+cap               enddo
+cap            enddo
+cap!$omp enddo
+cap*
+cap            call adw_interp2 (piup,piup, pos_x, pos_y, 
+cap     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')         
+cap*
+cap         endif
+cap      endif
+cap*
 !$omp end parallel
 *
       if ( (Orh_icn .eq. Schm_itcn) .and. (Tr3d_ntr.gt.0) ) then
