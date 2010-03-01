@@ -77,8 +77,6 @@
       real*8, dimension(:), allocatable :: lookup_a_8,lookup_b_8
       real*8, dimension(:,:), allocatable :: work_8
       real*8    xyz1(3),xyz2(3)
-      real*8 Cstv_pref_8
-      parameter (Cstv_pref_8=100000.0)
       parameter (difsig = 1.e-5)
       integer list(2000), i, j, k, l, m, n, ier,numi,numj,sgid,dgid
       integer lookup_max
@@ -209,6 +207,7 @@
       err = px_param(e_fu_anal,list,na,nka,lv,hyb_8,
      $                presvar_8,presvar_S,presvar_max,
      $                za_8,zb_8,vcode_S,vcode)
+
       if (err.lt.0) call e_arret( 'e_specanal')
 *
       Anal_sigma_L   = .false.
@@ -287,7 +286,8 @@ c     if (vcode_S.eq."ETASEF") Anal_etasef_L=.true.
 *     Sort and Get info on vertical coordinate
       err = px_param(e_fu_anal,list,na_t,nka,lv_t,hyb_t_8,
      $                presvar_t_8,presvar_t_S,presvar_max,
-     $                zat_8,zbt_8,vcode_t_S,vcode_t,.true.)
+     $                zat_8,zbt_8,vcode_t_S,vcode_t)
+      
       if (err.lt.0) call e_arret( 'e_specanal')
 *
 ***************************************************8
@@ -533,12 +533,13 @@ c     if (vcode_S.eq."ETASEF") Anal_etasef_L=.true.
           do i=1,nia-2
              xpxu(i)= 0.5 * ( xpx(i) + xpx(i+1) )
           enddo
-          xpxu(nia-1) = ( xpx(nia-1) + xpx(nia) )
+          xpxu(nia-1) = 0.5 * ( xpx(nia-1) + xpx(nia) )
+C         xpxu(nia  ) = xpxu(nia-1) + (xpxu(nia-1)-xpxu(nia-2))
           allocate(ypxv(nja-1))
           do i=1,nja-2
              ypxv(i)= 0.5 * ( ypx(i) + ypx(i+1) )
           enddo
-          ypxv(nja-1) = ( ypx(nja-1) + ypx(nja) )
+          ypxv(nja-1) = 0.5 * ( ypx(nja-1) + ypx(nja) )
 
 
           if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil,Pil_bcs_hollow_L).eq.0) then

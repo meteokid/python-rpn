@@ -42,6 +42,7 @@
 * v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 * v4_03 - Tanguay M.        - Williamson's cases
 * v4_03 - Lee/Desgagne - ISST
+* v4_05 - Lee V.            - predat is called after readdyn, casc_3df_dynp
 
 *
 *object
@@ -190,14 +191,14 @@
          else
             call readdyn ()
          endif	  
-*
-         call v4d_indata3()
-         call set_dync ()
-*
-         if (Schm_autobar_L.and.Williamson_case.ne.0) call wil_prepare_case 
-*
-         call predat   ()
       endif
+*
+      call v4d_indata3()
+      call set_dync ()
+*
+      if (Schm_autobar_L.and.Williamson_case.ne.0) call wil_prepare_case 
+*
+      call predat   ()
 *
       if (Lun_out.gt.0) write (Lun_out,1001)
 *

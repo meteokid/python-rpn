@@ -84,6 +84,7 @@
       real pr1,pr2, dummy
       real c1, c2, mul
       real      x1,lev,difsig,dx,dy
+      real, parameter :: pref=100000.
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
      $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
       real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2,hr,zdwq
@@ -116,14 +117,15 @@
 *
       if (anal_hav(2).eq.6) then
 *         Read, interpolate  write pressure SurFace
-          if (e_rdhint3 (p0,dstf_gid,nis,njs,'!!SF',-1,
+          if (e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1,
      $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
-     $         call e_arret('e_specanal')
+     $         call e_arret('e_intthm')
+          p0 = log(wk2*100./pref)
       else if (anal_hav(2).gt.0.and.anal_hav(2).le.5) then
 *        Read, interpolate, scale and write out P0.
           if (e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1,
      $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
-     $         call e_arret('e_specanal')
+     $         call e_arret('e_intthm')
                p0 (:) = wk2(:)*100.
       endif
 *
@@ -326,7 +328,7 @@ c                    available in output file. Since q=0 at k=0, we put 0.0 :
          enddo
          call e_bmfsplitxy2 (p0,nis,njs,'P0  ',1,1,pni,0,0,0)
          err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ', 0., c2, -1,
-     $                                                 1, .true.,arret_L )
+     $        1, .true.,arret_L,'CUBIC')
 *
 *        read temperature and dew point temperature at the surface,
 *        transform into virtual

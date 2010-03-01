@@ -49,13 +49,6 @@
 *
       gem_nml = -1
 *
-c      open(unit=62,file="/users/dor/afsg/apm/data/LID/TBOUND",
-c     $     form="UNFORMATTED",status="UNKNOWN")
-c      open(unit=63,file="/users/dor/afsg/apm/data/LID/QBOUND",
-c     $     form="UNFORMATTED",status="UNKNOWN")
-c      open(unit=64,file="/users/dor/afsg/apm/data/LID/VARPIL",
-c     $     form="UNFORMATTED",status="UNKNOWN")
-*
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          gem_nml = 0
          if (Lun_out.ge.0) write (Lun_out,nml=gem_cfgs_p)
@@ -127,7 +120,8 @@ c     $     form="UNFORMATTED",status="UNKNOWN")
       Lam_busper_init_L  = .false.
       Lam_current_S = '20000101.000000'
 *
-      Zblen_L   = .false.
+      Zblen_L        = .false.
+      Zdot_divHLM_L  = .false.
 *
       Glb_pil_n = 7
       Glb_pil_s = 7

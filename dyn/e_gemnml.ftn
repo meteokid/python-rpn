@@ -91,6 +91,7 @@
       call phy_optl ('SNOALB_ANL', P_pbl_snoalb_L,1, 'GET',.True.,err)
       call phy_optl ('ICELAC'    , P_pbl_icelac_L,1, 'GET',.True.,err)
       call phy_optl ('CHAUF'     , P_pbl_ocean_L ,1, 'GET',.True.,err)
+      call phy_optl ('RADSLOPE'  , P_radslope_L ,1,  'GET',.True.,err)
 *
       call low2up (P_pbl_schsl_S,dumc)
       P_pbl_schsl_S = dumc

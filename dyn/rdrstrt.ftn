@@ -120,9 +120,9 @@
             adr = adr + 1
             if (dim>0) then
                if ( .not. associated ( atm_busin ) ) 
-     $                    allocate   ( atm_busin (G_ni,dim) )
-               call waread (Lun_rstrt, atm_busin ,adr, G_ni*dim)
-               adr = adr + G_ni*dim
+     $                    allocate   ( atm_busin (cpl_ni,cpl_nj,n_fldin) )
+               call waread (Lun_rstrt, atm_busin ,adr, dim)
+               adr = adr + dim
             endif
 *
             call waclos(Lun_rstrt)

@@ -41,7 +41,7 @@
 *  Name        I/O                 Description
 *----------------------------------------------------------------
 * F_px           O    - 3D pressure field in Pascals
-* F_p0           I    - incoming 2D surface pressure (P0 in Pa, !!SF as is)
+* F_p0           I    - incoming 2D surface pressure (P0 in Pa, or dimensionless)
 * NN             I    - number of points in the 2D field of F_p0
 * F_a_8          I    - A 
 * F_b_8          I    - B
@@ -93,7 +93,7 @@
               enddo
               enddo
           else if (F_vcode.eq.6) then
-*             Staggered Hybrid levels (lnp-type),p0 (!!SF) is ln pascals
+*             Staggered Hybrid levels (lnp-type),p0 is dimensionless
               do k=1,NK
               do i=1,NN
                  F_px(i,k) = F_a_8(k) + F_b_8(k)*F_p0(i)
@@ -131,7 +131,7 @@
               enddo
               enddo
           else if (F_vcode.eq.6) then
-*             Staggered Hybrid levels (lnp-type),p0 (!!SF) is ln pascals
+*             Staggered Hybrid levels (lnp-type),p0 is dimensionless
               do k=1,NK
               do i=1,NN
                  F_px(i,k) = exp(F_a_8(k) + F_b_8(k)*F_p0(i))

@@ -47,10 +47,10 @@
       character*4 nomvar
       character*16 datev,datem
       logical flag,first
-      integer key(3),err,i,j,send,recv
+      integer key(3),err,i,j,send,recv,ii,jj,n
       real u(LDIST_SHAPE),v(LDIST_SHAPE),uug(l_ni,l_nj),vvg(l_ni,l_nj),
-     $     tt(l_ni,l_nj), es(l_ni,l_nj),sbuf(G_ni,G_nj),mask(G_ni,G_nj)
-     $
+     $     tt(l_ni,l_nj), es(l_ni,l_nj)
+      real, dimension (:,:,:), allocatable :: glbbus
       real*8  dayfrac,one,sid,rsid
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
       data first/.true./
@@ -63,8 +63,9 @@
       endif
 
       atm_busin = 0.
-      if (.not. ( (Lctl_step.ge.cpl_debut) .and.
-     $            (Lctl_step.le.cpl_fin  ) ) ) return
+
+      if (.not. ( (Lctl_step.ge.cpl_debut)   .and. 
+     $            (Lctl_step.le.cpl_fin) ) ) return
 *
       key( 1) = VMM_KEY(ut1)
       key( 2) = VMM_KEY(vt1)
@@ -92,9 +93,11 @@
       atm_local_busou(:,:,3) = vvg
       atm_local_busou(:,:,4) = es
 *
-      call glbcolc (atm_busou, G_ni, G_nj, atm_Local_busou,
-     $                           1, l_ni, 1, l_nj, n_fldou)
+      allocate (glbbus(G_ni,G_nj,max(n_fldou,n_fldin)))
+      call glbcolc (glbbus, G_ni, G_nj, atm_Local_busou,
+     $                        1, l_ni, 1, l_nj, n_fldou)
 *
+      err = 0
       if (Ptopo_myproc.eq.0) then
 *
          dayfrac = dble(Lctl_step)*Cstv_dt_8*rsid
@@ -102,13 +105,44 @@
          dayfrac = dble( max(Lctl_step-1,0) )*Cstv_dt_8*rsid
          call incdatsd  (datem,Mod_runstrt_S,dayfrac)
 *
-         atm_busou(:,:,2) = 1.
+         do n=1,n_fldou
+            jj = 0
+            do j=cpl_j0,cpl_jn
+               jj= jj+1
+               ii= 0
+               do i=cpl_i0,cpl_in
+                  ii=ii+1
+                  atm_busou(ii,jj,n,1) = glbbus(i,j,n)
+                  atm_busou(ii,jj,n,2) = 1.
+               end do
+            end do
+         end do
 
-         call cpl_exchg (datev, atm_busou, datem, atm_busin, 
-     $                            G_ni, G_nj, 2, send, recv)
+         call cpl_exchg (datev(1:15),atm_busou, datem(1:15),atm_busin, 
+     $                                  cpl_ni, cpl_nj, 2, send, recv)
 
-         if ((send.lt.0).or.(recv.lt.0)) C_coupling_L = .false.
-         if (.not.C_coupling_L) goto 999
+         glbbus = 0.
+         do n=1,n_fldin
+            jj = 0
+            do j=cpl_j0,cpl_jn
+               jj=jj+1
+               ii = 0
+               do i=cpl_i0,cpl_in
+                  ii=ii+1
+                  glbbus(i,j,n) = atm_busin(ii,jj,n)
+               end do
+            end do
+         end do
+
+         if ((send.lt.0).or.(recv.lt.0)) then
+            write (6,9900)
+            C_coupling_L = .false.
+            if (.not. C_continue_L) then
+               err = -1
+               goto 999
+            endif
+            write (6,9901)
+         endif
 *
          flag = (mod(Lctl_step,1).eq.0)
          flag = .false.
@@ -117,25 +151,30 @@
             nomvar = nv_writ(i)(5:7)
             if (nomvar.eq.'UDA') nomvar='UU'
             if (nomvar.eq.'VDA') nomvar='VV'
-            call r_rawfstw(atm_busou(1,(i-1)*G_nj+1,1),G_ni,G_nj,nomvar,
+            call r_rawfstw(atm_busou(1,1,i,1),cpl_ni,cpl_nj,nomvar,
      $         Lctl_step,int(Cstv_dt_8),Out3_date,'..//gem_cpl_out.fst')
+            call statfld (atm_busou(1,1,i,1),nomvar,Lctl_step,
+     $           "",1,cpl_ni,1,cpl_nj,1, 1,1,1,cpl_ni,cpl_nj,1)
             end do
             do i=1,n_fldin
             nomvar = nv_read(i)(5:7)
             if (nomvar.eq.'UDA') nomvar='UU'
             if (nomvar.eq.'VDA') nomvar='VV'
-            call r_rawfstw(atm_busin(1,(i-1)*G_nj+1)  ,G_ni,G_nj,nomvar,
+            call r_rawfstw(atm_busin(1,1,i)  ,cpl_ni,cpl_nj,nomvar,
      $         Lctl_step,int(Cstv_dt_8),Out3_date,'..//gem_cpl_in.fst' )
+            call statfld (atm_busin(1,1,i),nomvar,Lctl_step,
+     $           "",1,cpl_ni,1,cpl_nj,1, 1,1,1,cpl_ni,cpl_nj,1)
             end do
          endif
 *
       endif
 *
- 999  call RPN_COMM_bcast (C_coupling_L, 1, "MPI_LOGICAL", 0,"grid",err)
+ 999  call gem_stop('ITF_CPL_FILLATM',err)
+      call RPN_COMM_bcast (C_coupling_L, 1, "MPI_LOGICAL", 0,"grid",err)
       if (.not.C_coupling_L) return
 
-      call glbdist (atm_busin, G_ni, G_nj, atm_local_busin,
-     $                     1, l_ni, 1, l_nj, n_fldin, 0, 0)
+      call glbdist (glbbus, G_ni, G_nj, atm_local_busin,
+     $                  1, l_ni, 1, l_nj, n_fldin, 0, 0)
 *
       atm_local_busin (1:l_ni,1:l_nj,2)=  
      $   max(atm_local_busin (1:l_ni,1:l_nj,2),250.)
@@ -148,7 +187,12 @@
          atm_local_busin (1:l_ni,1:l_nj,5)=0.
       endif
 
+      deallocate (glbbus)
+
  1001 first = .false.
+
+ 9900 format (/,' PROBLEM WITH COUPLER')
+ 9901 format (/,' WILL CONTINUE WITHOUT'/)
 *
 *     ________________________________________________________________
 *

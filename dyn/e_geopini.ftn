@@ -121,6 +121,23 @@
      $'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
       call mgsdict (ni, nj, vegf,  
      $'VN=vegfen ; VS=row*26; EN=vf; INTERP=NEAREST ; SEQ=G' )
+
+      if (P_radslope_L) then
+******************************************************************
+* fraction of the tile with aspect 0, 90, 180, 270 deg
+*
+         call mgsdict (ni, nj, fsa,
+     $'VN=fsa; VS=row*4; EN=FSA; INTERP=LINEAR ; SEQ=G' )
+
+******************************************************************
+* mean slope on the aspect 0, 90, 180, 270 deg
+*
+         call mgsdict (ni, nj, sla,
+     $'VN=sla; VS=row*4; EN=sla; INTERP=LINEAR ; SEQ=G' )
+
+******************************************************************
+      endif
+
 *
       if (P_pbl_schurb_s.eq.'TEB') then
        call mgsdict (ni, nj, urbf,  

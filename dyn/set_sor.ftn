@@ -57,7 +57,7 @@
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "out3.cdk"
-#include "level.cdk"
+#include "cube.cdk"
 #include "modconst.cdk"
 #include "timestep.cdk"
 #include "schm.cdk"
@@ -67,7 +67,6 @@
 #include "outp.cdk"
 #include "outc.cdk"
 #include "hgc.cdk"
-#include "grid.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_chm_bus.cdk"
 #include "geomg.cdk"
@@ -273,6 +272,8 @@
       COMMON_BROADCAST(Out3_c)
       COMMON_BROADCAST(Out3_i)
       COMMON_BROADCAST(Out3_l)
+      COMMON_BROADCAST(Cube_i)
+      COMMON_BROADCAST(Cube_r)
 
 * Print table of dynamic variables demanded for output
 
@@ -283,7 +284,7 @@
           do j=1,Outd_sets
           do i=1,Outd_var_max(j)
              write(Lun_out,1008) Outd_var_S(i,j),Outd_var_S(i,j),Outd_nbit(i,j),
-     $       Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_typ(Outd_lev(j))
+     $       Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_types(Level_typ_indx(Outd_lev(j)))
           enddo
           enddo
           write(Lun_out,1006)

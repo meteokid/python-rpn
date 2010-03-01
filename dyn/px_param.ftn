@@ -19,6 +19,7 @@
       integer function px_param(iun,fstkeys,ip1,fstkeys_max,ip1_max,hyb_8,
      $                           presvar_8,presvar_S, presvar_max,
      $                           a_8,b_8,vcode_S,vcode)
+      use Grid_Descriptors, only: grid_descriptor,gd_new,gd_get,GD_OK
 *
       implicit none
 *
@@ -73,19 +74,22 @@
       external  fstinf, fstprm, fstlir, fstluk, fnom,
      $          read_decode_hyb,read_decode_bang
       integer  ni,nj,nk,ni1,nj1,nk1,i,j,k,n,m,ip1x,ip2x,ip3x
-      integer  e1_key,hy_key,pt_key,p0_key,sf_key,xx_key,lookup_max
+      integer  e1_key,hy_key,pt_key,p0_key,xx_key
       integer  datev, dateo, deet, ipas, ip1a, ip2a, ip3a, 
      $         ig1a, ig2a, ig3a, ig4a, bit, datyp,
-     $         swa, lng, dlf, ubc, ex1, ex2, ex3, kind, ip1mode
+     $         swa, lng, dlf, ubc, ex1, ex2, ex3, kind, ip1mode, status
       real     rcoef(2),lev,ptop,pref,pr1
       real*8   x1_8,etatop_8,eta1_8,ptop_8,pref_8,pr1_8,pr2_8,rcoef_8(2)
       character*1   tva, grda, blk_S
+      character*1, dimension(2) :: staglevs=(/'M','T'/)
       character*4   var
       character*12  etik_S
+      logical found
+      type(grid_descriptor) :: gd
 
-      integer,dimension(:), allocatable :: lookup_ip1
-      real,   dimension(:,:),allocatable:: work
-      real*8, dimension(:), allocatable :: lookup_a_8,lookup_b_8
+      integer,dimension(:), pointer :: lookup_ip1
+      real,   dimension(:,:), allocatable :: work
+      real*8, dimension(:), pointer :: lookup_a_8,lookup_b_8
       real*8, dimension(:,:),allocatable:: work_8
 
       px_param=0
@@ -229,34 +233,48 @@
          rcoef(2) = 1.0
          pref_8  = 800.0
          ptop_8=0.0
-         xx_key=fstinf (iun,ni, nj, nk, datev,etik_S,ig1a,ig2a,-1 ,' ','!!  ')
-         sf_key=fstinf (iun,ni1,nj1,nk1,datev,etik_S,-1,ip2a,ip3a,' ','!!SF')
-         if (xx_key.ge.0.and.sf_key.ge.0) then
-             lookup_max=nj 
-             allocate (lookup_a_8(lookup_max))
-             allocate (lookup_b_8(lookup_max))
-             allocate (lookup_ip1(lookup_max))
-             px_param = read_decode_bang (iun,ig1a,ig2a,datev,etik_S,
-     $                   lookup_ip1,lookup_max,lookup_a_8,lookup_b_8,
-     $                   vcode,presvar_8,presvar_S,presvar_max)
-             if (px_param.lt.0) then
-                 print *,'px_param error: in fstprm !!'
-                 return
+         xx_key=fstinf (iun,ni, nj, nk, -1,' ',ig1a,ig2a,-1 ,' ','!!  ')
+         if (xx_key.ge.0) then
+             p0_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,ip2a,ip3a,' ','P0')
+             status = gd_new(gd,unit=iun,format='fst',ip1=ig1a,ip2=ig2a)
+             if (status /= GD_OK) then
+                print*, 'px_param error: cannot build coordinate descriptor'
+                return
              endif
-             vcode_S='HYBSTAG'
-             do i=1,ip1_max
-             do j=1,lookup_max
-                if (ip1(i).eq.lookup_ip1(j)) then
-                    a_8(i)=lookup_a_8(j)
-                    b_8(i)=lookup_b_8(j)
+             do k=1,size(stagLevs)
+                status = gd_get(gd,key='CA_'//stagLevs(k),value=lookup_a_8)
+                status = status + gd_get(gd,key='CB_'//stagLevs(k),value=lookup_b_8)
+                status = status + gd_get(gd,key='VIP'//stagLevs(k),value=lookup_ip1)
+                if (status /= GD_OK) then
+                   print*, 'px_param error: cannot retrieve info from !!'
+                   return
                 endif
+                do i=1,size(ip1)
+                   j = 1; found = .false.
+                   do while (.not.found .and. j<=minval((/size(lookup_a_8),size(lookup_b_8),size(lookup_ip1)/)))
+                      if (ip1(i).eq.lookup_ip1(j)) then                         
+                         a_8(i)=lookup_a_8(j)
+                         b_8(i)=lookup_b_8(j)
+                         found = .true.
+                      endif
+                      j = j+1
+                   enddo
+                enddo
              enddo
-             enddo
-             pref_8=presvar_8(1)
-             ptop_8=presvar_8(2)
-             rcoef_8(1)=presvar_8(4)
-             rcoef_8(2)=presvar_8(5)
-             deallocate (lookup_a_8,lookup_b_8,lookup_ip1)
+             if (.not.found) then
+                print*, 'px_param error: cannot match ip1 to a/b coefs: ',ip1(i)
+                return
+             endif
+             status = gd_get(gd,key='PREF - reference pressure',value=pref_8)
+             status = status + gd_get(gd,key='PTOP - top level pressure',value=ptop_8)
+             status = status + gd_get(gd,key='RC_1 - first R-coef value',value=rcoef_8(1))
+             status = status + gd_get(gd,key='RC_2 - second R-coef value',value=rcoef_8(2))
+             if (status /= GD_OK) then
+                print*, 'px_param error: cannot retrieve coordinate details'
+                return
+             endif
+             vcode = 6
+             vcode_S='HYBSTAG'
          else if (hy_key.ge.0) then
               p0_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,ip2a,ip3a,' ','P0')
               if (p0_key.lt.0) then

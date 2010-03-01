@@ -479,9 +479,13 @@ c     Compute GZ on thermo levels in gz_ta
           if (filt(pnp0).gt.0)
      $       call filter(w1,filt(pnp0),coef(pnp0),'G', .false.,
      $                  l_minx,l_maxx,l_miny,l_maxy, 1)
-          call ecris_fst2(w1,l_minx,l_maxx,l_miny,l_maxy,0.0,
-     $        'P0  ',.01,0.0,-1,1, 1, 1, nbit(pnp0) )
-
+c
+c         Do not write P0 since it is already output in full
+c         precision from out_vref() as the model's surface
+c         reference field
+c          call ecris_fst2(w1,l_minx,l_maxx,l_miny,l_maxy,0.0,
+c     $        'P0  ',.01,0.0,-1,1, 1, 1, nbit(pnp0) )
+c
       endif
 
       if (pnww.ne.0) then

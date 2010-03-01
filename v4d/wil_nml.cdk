@@ -1,3 +1,0 @@
-!
-      namelist /williamson/ Williamson_case, Williamson_alpha
-!

@@ -35,6 +35,7 @@
 #include "ptopo.cdk"
 #include "clim.cdk"
 #include "rstr.cdk"
+#include "zdot.cdk"
 #include "itf_phy_config.cdk"
 #include "p_serg.cdk"
 #include "p_zong.cdk"
@@ -210,6 +211,7 @@
       namelist /gem_cfgs/ Zblen_L
       namelist /gem_cfgs/ Zblen_spngthick
       namelist /gem_cfgs/ Zblen_spngtt_L
+      namelist /gem_cfgs/ Zdot_divHLM_L
 !
 !End gem_cfgs
 !
@@ -378,6 +380,7 @@
       namelist /gem_cfgs_p/ Zblen_L
       namelist /gem_cfgs_p/ Zblen_spngthick
       namelist /gem_cfgs_p/ Zblen_spngtt_L
+      namelist /gem_cfgs_p/ Zdot_divHLM_L
 !
 !End gem_cfgs_p_p
 !

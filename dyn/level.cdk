@@ -21,8 +21,10 @@
 !                    | levels defined in each set                      |
 ! Level_typ          | level type: "P" for pressure in mb, "E" for eta |
 !                    | which corresponds to each defined Level set     |
+! Level_ntyp         | number of supported vertical coordinates        |
 ! Level_ip12000_L    | TRUE to use fst2000 IP1 encoding                |
 ! Level_kind_ip1     | value of KIND to be used in CONVIP function     |
+! Level_version      | Level version 2 is Staggered CP Girard V4       |
 !----------------------------------------------------------------------
 !
 !
@@ -30,18 +32,21 @@
 
       integer MAXLEV
       PARAMETER (MAXLEV = 201)
+      integer LEVEL_NTYP
+      parameter (LEVEL_NTYP=2)
       real Level(MAXLEV,MAXSET)
-      integer Level_id(MAXSET),Level_sets
+      integer Level_id(MAXSET),Level_sets,Level_typ_indx(MAXSET)
       integer Level_max(MAXSET),Level_kind_ip1,Level_mode_ip1
+      integer Level_version
       logical Level_ip12000_L
-      character*1 Level_typ(MAXSET)
+      character(len=1) Level_types(LEVEL_NTYP)
 
       MARK_COMMON_BEG (Level_r)
       COMMON /Level_r/ Level
       MARK_COMMON_END (Level_r)
 
       MARK_COMMON_BEG (Level_i)
-      COMMON /Level_i/ Level_id,Level_max
+      COMMON /Level_i/ Level_id,Level_max,Level_typ_indx,Level_version
       COMMON /Level_i/ Level_sets,Level_kind_ip1,Level_mode_ip1
       MARK_COMMON_END (Level_i)
 
@@ -50,5 +55,5 @@
       MARK_COMMON_END (Level_l)
 
       MARK_COMMON_BEG (Level_c)
-      COMMON /Level_c/ Level_typ
+      COMMON /Level_c/ Level_types
       MARK_COMMON_END (Level_c)

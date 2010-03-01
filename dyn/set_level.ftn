@@ -114,7 +114,10 @@
 
       endif
 
+      Level_types = (/'M','P'/)
+
       j=Level_sets
+
       i=0
       Level_id(j)=levset
 
@@ -139,7 +142,6 @@
                 set_level=1
                 return
             endif
-
             kindip1 = 1
             eta_L = .true.
 
@@ -164,7 +166,7 @@
 
 *              request for all model eta levels
 
-                  Level_typ(j)='M'
+                  Level_typ_indx(j)=1
 
                   i = i-1
                   do idx=1,G_nk
@@ -176,15 +178,12 @@
 *
 *              request ground level (equivalent to G_nk)
 
-                 Level_typ(j)='M'
+                 Level_typ_indx(j)=1
                  Level(i,j) = G_nk
 
             else 
-
                if (kindip1.eq.1) then
-
-                  Level_typ(j)='M'
-
+                  Level_typ_indx(j)=1
                   if (Level(i,j) .gt. 0) then
                      Level(i,j) = min(nint(Level(i,j)),G_nk)
                      idx = Level(i,j)
@@ -195,7 +194,7 @@
                   endif
                else if (kindip1.eq.2) then
 
-                  Level_typ(j)='P'
+                  Level_typ_indx(j)=2
 
                else
 
@@ -251,7 +250,7 @@
       if (Lun_out.gt.0) then
 
       write(Lun_out,*) ' Level_set(',j,') : Level_id=',Level_id(j)
-      write(Lun_out,*) ' Level_typ=',Level_typ(j)
+      write(Lun_out,*) ' Level_type=',Level_types(Level_typ_indx(j))
       write(Lun_out,*) ' Level=',(Level(i,j),i=1,Level_max(j))
 
       endif

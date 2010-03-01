@@ -71,14 +71,18 @@ c
 #include "type.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
+#include "dimout.cdk"
+#include "level.cdk"
 c
 
       integer k,istat
       real*8 zero, half, one, two
       parameter(zero=0.d0,half=0.5d0,one=1.d0,two=2.d0)
+      character*8 dumc
 c     __________________________________________________________________
 c
       allocate(
+     $            Ver_ip1%m(  G_nk+1),     Ver_ip1%t(G_nk+2),
      $            Ver_a_8%m(  G_nk+1),     Ver_a_8%t(G_nk+2),
      $            Ver_b_8%m(  G_nk+1),     Ver_b_8%t(G_nk+2),
      $            Ver_z_8%m(0:G_nk+1),     Ver_z_8%t(G_nk+1),
@@ -217,6 +221,12 @@ c     Bot special level
 c     Diag level
       Ver_hyb%t(G_nk+2)=1.0
       Ver_hyb%m(G_nk+1)=1.0
+c
+      do k=1,G_nk+1
+         call convip(Ver_ip1%m(k),Ver_hyb%m(k),level_kind_ip1,level_mode_ip1,dumc,.false.)         
+         call convip(Ver_ip1%t(k),Ver_hyb%t(k),level_kind_ip1,level_mode_ip1,dumc,.false.)         
+      enddo
+      Ver_ip1%t(G_nk+2)=Ver_ip1%m(G_nk+1)
 c
 c     __________________________________________________________________
 c

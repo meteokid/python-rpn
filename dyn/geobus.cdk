@@ -6,7 +6,7 @@
       parameter (maxel = 60)
 !
       integer glsea,glseac,hs,hsc,mg,mcpl,mh,mq,snodp,al,vegindx
-      integer twater,i0,z0,lhtg,dlat,dlon,la,lo,mt,ml,fis
+      integer twater,i0,z0,lhtg,dlat,dlon,la,lo,mt,ml,fis,fsa,sla
       integer mi,ga,gi8,gice,gmice,icel,vegf,urbf,dhdx,dhdy,dhdxdy
 !
 ! for both ISBA and CLASS
@@ -22,7 +22,7 @@
 !
       common /p_geobusid/ glsea,glseac,hs,hsc,mg,mcpl,mh,mq,snodp,al
       common /p_geobusid/ vegindx
-      common /p_geobusid/ twater,i0,z0,lhtg,dlat,dlon,la,lo,mt,ml,fis
+      common /p_geobusid/ twater,i0,z0,lhtg,dlat,dlon,la,lo,mt,ml,fis,fsa,sla
       common /p_geobusid/ mi,ga,gi8,gice,gmice,icel,vegf,urbf,dhdx,dhdy
       common /p_geobusid/ dhdxdy
 !

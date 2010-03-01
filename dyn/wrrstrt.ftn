@@ -110,13 +110,12 @@ C        Write one wa-file per tile
             call wawrit (Lun_rstrt,Zblen_hmin,adr, 1)
          endif
 *
-         dim = 0
-         if (C_coupling_L) dim = nbusin
-         call wawrit (Lun_rstrt,dim           ,adr, 1)
+         dim = cpl_ni*cpl_nj*n_fldin
+         call wawrit (Lun_rstrt, dim, adr, 1)
          adr = adr + 1
          if (dim>0) then
-            call wawrit (Lun_rstrt, atm_busin ,adr, G_ni*dim)
-            adr = adr + G_ni*dim
+            call wawrit (Lun_rstrt, atm_busin ,adr, dim)
+            adr = adr + dim
          endif
 *
 C        Write Vmm-files

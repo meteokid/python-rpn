@@ -10,7 +10,7 @@ gem4d:
 gem_nompi: gemntr_nompi gemdm_nompi
 
 gemntr_nompi:
-	make gemntr MPI=rpn_comm_stubs
+	make gemntr MPI=rpn_comm_stubs COMM=rpn_comm222
 
 gemdm_nompi:
 	make gemdm MPI=rpn_comm_stubs

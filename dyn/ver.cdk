@@ -11,6 +11,8 @@
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
+! Ver_ip1%(t,m)      | ip1      for the hybrid vertical coordinate     |
+!--------------------|-------------------------------------------------|
 ! Ver_a_8%(t,m)      | A        for the hybrid vertical coordinate     |
 !----------------------------------------------------------------------|
 ! Ver_b_8%(t,m)      | B        for the hybrid vertical coordinate     |
@@ -30,6 +32,7 @@
 !
 #endif
 !
+      type (vertical_i) Ver_ip1
       type (vertical_8) Ver_a_8  
       type (vertical_8) Ver_b_8  
       type (vertical_8) Ver_z_8  
@@ -58,4 +61,4 @@
       common / alphast / Ver_epsilon_8,Ver_gamma_8,Ver_gokt2RT_8
 !
       integer Ver_code
-      common /ver_i/ Ver_code
+      common /ver_i/ Ver_code,Ver_ip1

@@ -1,41 +1,44 @@
 #
 #   Common recipes for models
 #
-include $(MODEL_PATH)/Makefile_$(EC_ARCH)
-RCOMPIL = r.compile $(MPI) $(OMP) -includes $(ARMNLIB)/modeles/PHY_shared/ops//v_$(PHY_VERSION)/include
+include       $(ATM_MODEL_PATH)/Makefile_$(EC_ARCH)
+MODLIBPATH  = $(ATM_MODEL_PATH)/lib/$(EC_ARCH)$(ABI)
+PHY_VERSION = 5.0.4
+
+RCOMPIL = r.compile $(MPI) $(OMP) -includes ./ $(MODLIBPATH)/mod $(ARMNLIB)/modeles/PHY_shared/ops/v_$(PHY_VERSION)/include
 PATCH   =
 OPTF    =
 #
 #MPI = rpn_comm_stubs
-CODEBETA = write_encode_bang read_decode_bang bmf_get bmf_get2 fstd98
-
-MODLIBPATH  = $(ARMNLIB)/modeles/$(FULL_MODEL)/v_$(MODEL_VERSION)/lib/$(EC_ARCH)$(ABI)
+CODEBETA = bmf_get_620 bmf_get2_620 fstd98_597+ calc_crc_625 mgilib2_623 gossip_sock_622 client_timeout_624
 
 V4D         = v4d_stubs
 #V4D         = "v4d modulopt prof_003"
 
-PHY_VERSION = 5.0.3
 PHYLIBPATH  = $(ARMNLIB)/modeles/PHY/v_$(PHY_VERSION)/lib/$(EC_ARCH)$(ABI)
-#PHY        = phy_stubs
+#PHY         = phy_stubs
 PHY         = phy
 
 CHM_VERSION = 0.0
-CHMLIBPATH = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)/lib/$(EC_ARCH)$(ABI)
+CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)/lib/$(EC_ARCH)$(ABI)
 CHM         = chm_stubs
-#CHM        = chm
+#CHM         = chm
 
-#CPL         = cpl
-CPL         = cpl_stubs
+CPL         = cpl_106
+#CPL         = cpl_stubs
 
 OTHERS   = $(COMM) rtools lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
 LIBPATH  = $(MODLIBPATH) $(PHYLIBPATH) $(CHMLIBPATH) $(CPLLIBPATH)
-LIBS     = $(MODEL) $(V4D) $(PHY) $(PATCH) $(CHM) $(CPL) $(OTHERS)
+LIBS     = $(ATM_MODEL) $(V4D) $(PHY) $(PATCH) $(CHM) $(CPL) $(OTHERS)
 
 LCLPO   = malib$(EC_ARCH)
-mainntr = main$(MODEL)ntr_$(BASE_ARCH)_${MODEL_VERSION}.Abs
-maindm  = main$(MODEL)dm_$(BASE_ARCH)_${MODEL_VERSION}.Abs
+mainntr = main$(ATM_MODEL)ntr_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs
+maindm  = main$(ATM_MODEL)dm_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs
 rmpo:
 	/bin/rm -f $(LCLPO)/*.o
 #
 libdyn: rmpo $(OBJECTS)
 #
+out_vref_mod.o: out_vref_mod.cdk90      cstv.cdk        dimout.cdk      	glb_ld.cdk \
+		grd.cdk         	grid.cdk        grid_descriptors.o	level.cdk  \
+        	lun.cdk        		 out.cdk    	type.cdk        	ver.cdk

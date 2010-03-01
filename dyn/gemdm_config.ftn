@@ -185,6 +185,7 @@
       Level_mode_ip1 = 1
 *
       Level_kind_ip1=5
+      Level_version=2
       do k=1,G_nk
          call convip ( i , hyb(k)      , Level_kind_ip1,  1, dumc_S, .false. )
          call convip ( i , Ver_hyb%m(k), Level_kind_ip1, -1, dumc_S, .false. )

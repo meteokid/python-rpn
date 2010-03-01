@@ -1,2 +1,0 @@
-      integer idate,datev,month,day
-      common /cdate_i/ idate(14),datev,month,day

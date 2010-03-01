@@ -36,6 +36,8 @@
 * v4_05 - Desgagne M.    - Add P_pbl_icelac_L, Lam_cascsfc_L 
 *                          and Lam_blendoro_L options
 * v4_05 - Lee V.         - Ind_u,Ind_v vectors are filled incorrectly
+* v4_06 - McTaggart-Cowan R. - Nesajr correction
+* v4_06 - Lee V.         - Predat is called outside of this routine
 *
 #include "glb_ld.cdk"
 #include "bcsdim.cdk"
@@ -455,7 +457,7 @@ cap          topo_temp = meqr
          end do
          zero = 0.
          call nesajr (dtopo_temp, zero(1,1), 1,l_ni,1,l_nj,
-     $        1,0,0,Hblen_x,Hblen_y)
+     $        1,0,0,Hblen_x,Hblen_y,Hblen_z)
          endif
          Ind_dtopo(1:l_ni,1:l_nj) = dtopo_temp
       else
@@ -494,7 +496,7 @@ cap          topo_temp = meqr
          end do
          end do
          call nesajr (topo_temp, meqr, 1,l_ni,1,l_nj,
-     $                         1,0,0,Hblen_x,Hblen_y)
+     $                         1,0,0,Hblen_x,Hblen_y,Hblen_z)
          endif
          endif
       endif
@@ -576,13 +578,6 @@ cap          topo_temp = meqr
            write(6,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX,
      $                     ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
       endif
-*
-      call v4d_indata3 ()
-      call set_dync
-*
-      call casc_predat()
-
-c      if ( .not. Schm_hydro_L ) Ind_qsec = 0.
 *
 *
  100  format (' ',65('*'))

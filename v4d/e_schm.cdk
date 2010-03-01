@@ -1,3 +1,0 @@
-      logical  e_schm_stlag, e_schm_cocub, e_schm_adcub, e_schm_fgcub
-      common /e_schm/ e_schm_stlag, e_schm_cocub, e_schm_adcub
-      common /e_schm/ e_schm_fgcub

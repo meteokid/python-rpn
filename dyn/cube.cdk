@@ -1,0 +1,37 @@
+#if defined (DOC)
+!
+!**comdeck cube.cdk
+!
+!revision
+! v4_06 - R. McTaggart-Cowan     - Initial implementation
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES FOR DEFINITION OF THE OUTPUT GRIDS (set_grid)             |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Cube_ig1           | ig1 value (ip1 of positional record)            |
+! Cube_ig2           | ig2 vaule (ip2 of positional record)            |
+! Cube_v             | list of all requested vertical levels           |
+! Cube_vcount        | number of total levels in each supported type   | 
+!----------------------------------------------------------------------
+#endif
+
+#include "grid.cdk"
+#include "level.cdk"
+
+      integer, dimension(MAXGRID1,LEVEL_NTYP) :: Cube_ig1,Cube_ig2
+      integer, dimension(LEVEL_NTYP) :: Cube_vcount
+      real, dimension(MAXSET*MAXLEV,LEVEL_NTYP) :: Cube_v
+
+      MARK_COMMON_BEG (Cube_i)
+      COMMON /Cube_i/
+     $     Cube_ig1,Cube_ig2,Cube_vcount
+      MARK_COMMON_END (Cube_i)
+
+      MARK_COMMON_BEG (Cube_r)
+      COMMON /Cube_r/
+     $     Cube_v
+      MARK_COMMON_END (Cube_r)
+

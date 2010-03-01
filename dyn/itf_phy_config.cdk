@@ -4,6 +4,7 @@
       logical P_cond_satu_L, P_pbl_snoalb_L, P_pbl_iceme_L
       logical P_pbl_icelac_L
       logical P_anal_cond_L, P_pbl_ocean_L , P_pbl2_iceme_L
+      logical P_radslope_L
 !
       integer P_fcpkuo_xofset, P_fcpkuo_xblnd, P_out_moyhr
       integer P_fcpkuo_yofset, P_fcpkuo_yblnd, P_pbd_dumpbus
@@ -16,6 +17,7 @@
       common /phy_l/ P_cond_satu_L, P_pbl_snoalb_L, P_pbl_iceme_L
       common /phy_l/ P_pbl_icelac_L
       common /phy_l/ P_anal_cond_L, P_pbl_ocean_L , P_pbl2_iceme_L
+      common /phy_l/ P_radslope_L
       common /phy_i/ P_fcpkuo_xofset, P_fcpkuo_xblnd, P_out_moyhr
       common /phy_i/ P_fcpkuo_yofset, P_fcpkuo_yblnd, P_pbd_dumpbus
       common /phy_r8/p_lmvd_valml_8  ,p_lmvd_mllat_8

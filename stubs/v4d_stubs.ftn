@@ -4,9 +4,6 @@
       subroutine v4d_blocstat
       return
       end
-      subroutine v4d_predat
-      return
-      end
       subroutine v4d_setting
       return
       end
@@ -17,6 +14,9 @@
       return
       end
       subroutine v4d_img2uv
+      return
+      end
+      subroutine v4d_predat
       return
       end
       subroutine v4d_zerohalo

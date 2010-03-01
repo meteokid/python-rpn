@@ -1,5 +1,0 @@
-      character*512 pilot_dir, pilot_f(500),prefgeo
-      integer npilf,ipilf
-!
-      common /fname_c/ pilot_dir, pilot_f,prefgeo
-      common /fname_i/ npilf,ipilf

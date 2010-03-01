@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 *
       subroutine out_qc0 ()
+      use out_vref_mod, only: out_vref
 *
 *implicits
 *
@@ -39,7 +40,7 @@
 *arguments
 *  NONE
 *
-*implicits
+*implicitss
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
@@ -50,12 +51,11 @@
 #include "rstr.cdk"
 #include "out3.cdk"
 #include "out.cdk"
-#include "level.cdk"
+#include "cube.cdk"
 #include "outd.cdk"
 #include "ptopo.cdk"
 #include "tr3d.cdk"
 #include "grd.cdk"
-#include "grid.cdk"
 #include "lctl.cdk"
 #include "vt1.cdk"
 #include "cstv.cdk"
@@ -71,13 +71,14 @@
       integer err,nrec,dostep(MAXSET),dostep_max,step,key0,key1,
      $        i,j,k,trkey1(Tr3d_ntr),qcset(MAXSET),qcset_max
       character*4 ext_S
-      integer i0,in,j0,jn,ii,jj,kk,levset,n,ip3,pnerr,nk_o,nk_ot
+      integer i0,in,j0,jn,ii,jj,kk,levset,n,ip3,pnerr,nk_o,nk_ot,gridset
       integer qcnbit,qcfilt
       integer,   dimension(:), allocatable :: ind_o
       real, dimension(:,:,:), allocatable :: w5
       real, dimension(:), allocatable :: prprlvl
       real wlnpi_m(LDIST_SHAPE,0:G_nk+1), wlnpi_t(LDIST_SHAPE,G_nk+2)
       real px_ta(LDIST_SHAPE,G_nk+2),qc(LDIST_SHAPE,G_nk+2)
+      real p0(LDIST_SHAPE)
       real deg2rad,qccoef,qct1
       pointer (paqc, qct1(LDIST_SHAPE,*))
       logical periodx_L
@@ -120,10 +121,13 @@
 
 *     PREPARATION of wlnpi_t for out_qc0 
 *    ---------------------------
-
+*
+*     get p0 for reference field output
       key0 = VMM_KEY(st1)
-      err = vmmlod (key0,1)
+      err = vmmlod(key0,1)
       err = VMM_GET_VAR(st1)
+      call out_padbuf(st1,l_minx,l_maxx,l_miny,l_maxy,1)
+      p0(l_minx:l_maxx,l_miny:l_maxy) = exp(st1(l_minx:l_maxx,l_miny:l_maxy)) * Cstv_pref_8
 *
 *        Log-pressure on momentum and thermo levels,
 *        with extra momentum levels at top (k=0) and surface (k=G_nk+1)
@@ -176,27 +180,29 @@
       do 100 n=1, qcset_max
           kk = qcset(n)
           periodx_L=.false.
+          gridset = Outd_grid(kk)
           if (.not.G_lam .and. 
-     $         (Grid_x1(Outd_grid(kk))-Grid_x0(Outd_grid(kk))+1)
+     $         (Grid_x1(gridset)-Grid_x0(gridset)+1)
      $                                    .eq. G_ni ) periodx_L=.true.
-          call out_sgrid(Grid_x0(outd_grid(kk)),Grid_x1(outd_grid(kk)),
-     $                   Grid_y0(outd_grid(kk)),Grid_y1(outd_grid(kk)),
-     $                   periodx_L, Grid_stride(outd_grid(kk)),
-     $                   Grid_etikext_s(outd_grid(kk)),' ' )
+          call out_sgrid(Grid_x0(gridset),Grid_x1(gridset),
+     $                   Grid_y0(gridset),Grid_y1(gridset),
+     $                   periodx_L, Grid_stride(gridset),
+     $                   Grid_etikext_s(gridset),' ' )
 
           levset = Outd_lev(kk)
 
           nk_o   = Level_max(levset)
           allocate (ind_o(nk_o+2))
 
-          call out_slev(Level_typ(levset),Level(1,levset),
+          call out_slev(Level_types(Level_typ_indx(levset)),Level(1,levset),
      $                    ind_o,nk_o,nk_ot,G_nk,Level_kind_ip1,'d')
           call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
-          call out_href(Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
+          call out_href(Cube_ig1(gridset,Level_typ_indx(levset)),
+     $                  Cube_ig2(gridset,Level_typ_indx(levset)),
      $                  Geomn_longs,Geomn_latgs)
  
           if (Out_levtyp_S.eq.'M') then
-              call out_vref(st1,l_minx,l_maxx,l_miny,l_maxy)
+              call out_vref(p0,l_minx,l_maxx,l_miny,l_maxy)
               if ( Out3_cliph_L ) then
                    allocate(w5(LDIST_SHAPE,G_nk+2))
                    do k= 1, G_nk+2

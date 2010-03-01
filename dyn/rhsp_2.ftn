@@ -74,7 +74,7 @@
 #include "ver.cdk"
 #include "lun.cdk"
 *
-      integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, nij
+      integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, nij, jp1
       real    tdiv(DIST_SHAPE)
       real*8  aaa,aaT,aaw, bbb,bbT,bbw, one, half, c1,c2,c3,
      $        wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, ww1,ww2,
@@ -466,12 +466,14 @@
      $                    * geomg_invhsyv_8(j-1)
          end do
          end do
+         jp1 = 0
       else
          call caldiv_2 ( tdiv, F_u(minx,miny,k),
      $                         F_v(minx,miny,k), LDIST_DIM, 1)
+         jp1 = north
       endif
 *
-      do j= 1, l_njv
+      do j= 1, l_njv + jp1
       do i= 1, l_niu
          tdiv(i,j) = tdiv(i,j)
      $        + ( F_zd(i,j,k+1) - F_zd(i,j,k) ) * Ver_idz_8%m(k)

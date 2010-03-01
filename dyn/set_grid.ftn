@@ -160,17 +160,6 @@
           return
       endif
 
-*    Get values for ip1,ip2,ip3 for the positional records which
-*        is also the ig1,ig2,ig3 for the scalar grid
-*    Note the result of Grid_ig3 is invalid because it is determined
-*        by dieseig34
-         call ipig(Grid_ig1(j), Grid_ig2(j), Grid_ig3(j),
-     %        Grd_dx, Grd_dy, Grd_nila, Grd_njla, G_ni, G_nj,
-     %        Grd_rot_8, Grd_roule)
-         Grid_ig1(j) = Grid_ig1(j) + j-1
-         if (G_lam) Grid_ig1(j)=Grid_ig1(j)+10
-         if (grdtyp_S.eq.'reduc') Grid_ig1(j)=Grid_ig1(j)+10
-
 *    Calculate the origin and outer coordinates of the output grid
 *    and set to the maximum/minimum possible
 *

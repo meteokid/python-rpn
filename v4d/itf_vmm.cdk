@@ -1,9 +1,0 @@
-#if !defined(ITF_VMM_CDK)
-#define ITF_VMM_CDK 1
-
-      integer  vmmcre,vmmlod,vmmkey,vmmget,vmmuln,vmmuld
-      external vmmcre,vmmlod,vmmkey,vmmget,vmmuln,vmmuld
-
-! TODO: Create interface block for all of them
-
-#endif

@@ -34,6 +34,7 @@
 #include "schm.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
+#include "ver.cdk"
 #include "itf_phy_busind.cdk"
 *
 **
@@ -48,10 +49,10 @@
 *     ________________________________________________________________
 *
       key(1) = VMM_KEY(tt1)
-      key(2) = VMM_KEY(qt1)
+      key(2) = VMM_KEY(st1)
       err    = vmmlod(key,2)
       err    = VMM_GET_VAR(tt1)
-      err    = VMM_GET_VAR(qt1)
+      err    = VMM_GET_VAR(st1)
 *
       allocate ( sum(l_ni,l_nj),vt(l_ni,l_nj),
      $            hu(l_ni,l_nj),px(l_ni,l_nj) )
@@ -67,7 +68,7 @@
       err = vmmget (keyp(1),patrp,trp)
       hu(:,:) = trp(1:l_ni,1:l_nj,ki)
 *
-      px(:,:) = exp(qt1(1:l_ni,1:l_nj,ki))
+      px(:,:) = exp ( Ver_a_8%t(ki) + Ver_b_8%t(ki)*st1(1:l_ni,1:l_nj) )
 *
       ninj = ni*nj
       if (Schm_wload_L) then
@@ -86,8 +87,10 @@
       endif
 *Out3_satues_L ???
 
-      call mhuaes (es, hu,tt,px,px,3, .true., .false.,ninj,1,ninj)
-*
+      call mhuaes (es, hu,tt,px,px,0, .true., .false.,ninj,1,ninj)
+      es(:,:) = max(0.,es(:,:))
+
+      deallocate ( sum,vt,hu,px )
 *     ________________________________________________________________
 *
       return

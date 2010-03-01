@@ -31,11 +31,13 @@
 *  Default configuration and reading namelist coupling
 *
 *implicits
+#include "grd.cdk"
 #include "lun.cdk"
 #include "step.cdk"
 #include "itf_cpl.cdk"
 *
-      namelist /coupling/ CPL_NAME ,cpl_debut, cpl_fin
+      namelist /coupling/ CPL_NAME ,cpl_debut, cpl_fin, C_continue_L,
+     $                    cpl_i0,cpl_in,cpl_j0,cpl_jn
 *
       integer  fnom,wkoffit
       external fnom,wkoffit
@@ -57,6 +59,11 @@
       CPL_NAME = 'NIL'
       cpl_debut= 0
       cpl_fin  = Step_total
+      C_continue_L = .false.
+      cpl_i0=1
+      cpl_in=Grd_ni
+      cpl_j0=1
+      cpl_jn=Grd_nj
 *
       unf = 0
       err = wkoffit(F_namelistf_S)
@@ -68,6 +75,11 @@
       endif
       endif
 *
+      cpl_i0=min(max(     1,cpl_i0),Grd_ni)
+      cpl_in=min(max(cpl_i0,cpl_in),Grd_ni)
+      cpl_j0=min(max(     1,cpl_j0),Grd_nj)
+      cpl_jn=min(max(cpl_j0,cpl_jn),Grd_nj)
+
       itf_cpl_nml = 1
       goto 7777
 *

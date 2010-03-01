@@ -82,6 +82,7 @@
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "nest.cdk"
+#include "bcsgrds.cdk"
 #include "itf_phy_busind.cdk"
 *
 *modules
@@ -146,6 +147,9 @@
      $              u_temp,Acqi_niu,Acqi_nju, v_temp,Acqi_niv,Acqi_njv,
      $              hu_temp,tt_temp,gz_temp,ps,topo_temp,
      $              zd_temp,w_temp,q_temp,l_ni,l_nj,Acqi_nktmp)
+      if (.not. Ana_zd_L) zd_temp=0.0
+      if (.not. Ana_w_L) w_temp=0.0
+      if (.not. Ana_q_L) q_temp=0.0
       if(Schm_autobar_L) Acql_vertint = .false.
 * S.Gravel: if analysis is same type as model, topography can
 *           be grown with time thus

@@ -43,6 +43,7 @@
 * v4_04 - Tanguay M.        - Staggered version TL/AD 
 * v4_05 - Plante A.         - Remove zeroing of w,zd and q (initialized 
 *                             in the entrance)
+* v4_06 - Plante A.         - Initialize Ind_zd with uvs2psd
 *
 *object
 *
@@ -59,71 +60,37 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
 #include "schm.cdk"
 #include "ind.cdk"
-#include "lctl.cdk"
-#include "vt1.cdk"
-#include "vtx.cdk"
-#include "vth.cdk"
 #include "v4dg.cdk"
-#include "vtopo.cdk"
-#include "pres.cdk"
 #include "hzd.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "theo.cdk"
-#include "adw.cdk"
+#include "bcsgrds.cdk"
+#include "zdot.cdk"
 *
-      integer i, j, k, longueur, key(2), pnerr, kp, km
+      integer i, j, k
 *
-      integer  vmmlod, vmmget, vmmuld, nkey
-      external vmmlod, vmmget, vmmuld
-*
-      real dummy
 **
 *     __________________________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
       if ( V4dg_conf.eq.0 ) then
 *
-      key(1)=VMM_KEY(zdth)
-      nkey=1
-*
-      pnerr=vmmlod(key,nkey)
-      pnerr=VMM_GET_VAR(zdth)
-*
-      call diag_fip(Ind_fip,Ind_s,Ind_t,Ind_topo,
+          call diag_fip(Ind_fip,Ind_s,Ind_t,Ind_topo,
      $     1,l_ni,1,l_nj,G_nk)         
 *
-      pnerr=vmmuld(key,nkey)
 *
-      if (Hzd_t1_0_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
-      if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
-*
-c        call uvs2psd (Ind_zd,Ind_u,Ind_v,my_csh,LDIST_DIM,l_nk)
-      
-c     if (Acid_test_L) then 
-c     call glbstat (Ind_zd,'Izd',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
-c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
-c     call glbstat (Ind_td,'I_td',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
-c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
+          if (Hzd_t1_0_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
+          if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
 
-      if (Hzd_t1_0_L) call hzd_hoffld (Ind_zd, LDIST_DIM, G_nk+1, 3)
+          if (.not.Ana_zd_L) then
+             if (Zdot_divHLM_L) then
+                call uvs2psd2 (Ind_zd,Ind_u,Ind_v,Ind_t,Ind_s,LDIST_DIM,l_nk)
+             else
+                call uvs2psd (Ind_zd,Ind_u,Ind_v,Ind_s,LDIST_DIM,l_nk)
+             endif
+          endif
 *
-!$omp parallel
-!$omp do
-      do k= 1, G_nk
-         do j = 1, l_nj
-            do i = 1, l_ni
-               zdth(i,j,k)=Ind_zd(i,j,k)
-            end do
-         end do
-      end do
-!$omp enddo
-!$omp end parallel
+          if (Hzd_t1_0_L) call hzd_hoffld (Ind_zd, LDIST_DIM, G_nk+1, 3)
 *
 
 *     ------
@@ -138,7 +105,6 @@ c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
 *
       endif
 
-*
 *     __________________________________________________________________
       return
  1000 format(3X,'PREDAT:      (S/R PREDAT)')
