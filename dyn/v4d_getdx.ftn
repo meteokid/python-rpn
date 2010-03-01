@@ -5,7 +5,7 @@
 *
       subroutine v4d_getdx(kstatus)
 *
-      use v4d_prof, only: Pr_mode_S, Pr_llfrm_L, Pr_dsnooze_8
+      use v4d_prof, only: Pr_mode_S, Pr_llfrm_L, Pr_dsnooze_8, Pr_nsim4d
       use v4dz,     only: V4dzgauss_ni,V4dzgauss_nj
 *
 #include "impnone.cdk"
@@ -19,6 +19,8 @@
 * v3_00 - P. Gauthier        - initial MPI version
 * v3_00 - M. Tanguay         - add v4d_gauss2gem_ad/Simon's exchange
 * v3_01 - Tanguay/Buehner    - introduce gem2gauss for singular vectors
+* v3_02 - Tanguay M.         - locate HU in tracers 
+* v3_02 - Buehner M.         - read simulation no. and verify consistency
 *
 *object
 *     -------------------------
@@ -55,7 +57,8 @@
 *     Local variables
 *     ---------------
       integer idim(2),istat,ihdlin,icount,nvar,jlon,jlat,jlev,i,j,k,
-     %        ierr,pnlkey1(9),err,pnerr,nigauss,njgauss,status,ininj
+     %        ierr,pnlkey1(9),err,pnerr,nigauss,njgauss,status,ininj,
+     %        nsim3d
 *
       real*8,pointer    :: dlbuff_8(:,:),dlbuff2d_8(:)
       real,  allocatable:: zbuff(:,:,:),zbuff2d(:,:)
@@ -75,7 +78,6 @@
 *
 *     ______________________________________________________
 *
-      if ( Tr3d_ntr.gt.1 ) call gem_stop('v4d_getdx',-1)
       if ( V4dg_di_L     ) call gem_stop('v4d_getdx',-1)
 *     ______________________________________________________
 *
@@ -104,18 +106,16 @@
       err = VMM_GET_VAR( tpt1)
       err = VMM_GET_VAR( st1)
 *
-*     Load humidity field assuming Tr3d_ntr=1
-*     ---------------------------------------
+*     Load humidity field
+*     -------------------
       key1_ = VMM_KEY (trt1)
       do n=1,Tr3d_ntr
          key1(n) = key1_ + n
       end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),pahu1,hut1)
-         end do
-      endif
+      err = vmmlod(key1,Tr3d_ntr)
+      do n=1,Tr3d_ntr
+      if (Tr3d_name_S(n).eq.'HU') err = vmmget(key1(n),pahu1,hut1) 
+      end do
 *     
       kstatus = 0
 *
@@ -189,6 +189,16 @@
              write(Lun_out,*) 'GAUSS=GEM not allowed when dimensions not equal'
              kstatus = -99
              goto 1001
+         endif
+*
+*        Get simulation number
+*        ---------------------
+         istat = prof_gvar(ihdlin,nsim3d     ,PRM_EVNT)
+         if(nsim3d.ne.Pr_nsim4d) then
+            write(Lun_out,*) 'WRONG SIMULATION NUMBER NSIM3D = ',nsim3d,' NSIM4D = ',Pr_nsim4d
+            call gem_stop('v4d_getdx',-1)
+         else
+            write(Lun_out,*) 'NSIM3D IS THE RIGHT SIMULATION NUMBER = ',nsim3d
          endif
 *
       end if
@@ -369,18 +379,16 @@
          err = VMM_GET_VAR( tpt1m)
          err = VMM_GET_VAR( st1m)
 *
-*        Load TRAJ humidity field assuming Tr3d_ntr=1
-*        --------------------------------------------
+*        Load TRAJ humidity field
+*        ------------------------
          key1m_ = VMM_KEY (trt1m)
          do n=1,Tr3d_ntr
             key1m(n) = key1m_ + n
          end do
-         if (Tr3d_ntr.gt.0) then
-            err = vmmlod(key1m,Tr3d_ntr)
-            do n=1,Tr3d_ntr
-            err = vmmget(key1m(n),pahu1m,hut1m)
-            end do
-         endif
+         err = vmmlod(key1m,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+         if (Tr3d_name_S(n).eq.'HU') err = vmmget(key1m(n),pahu1m,hut1m) 
+         end do
 *
       endif
 *

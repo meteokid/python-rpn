@@ -2,7 +2,8 @@
 *
 *
 *revision
-* v2_10 - Desgagne M.            - removed MITH (not used) 
+* v2_10 - Desgagne M.         - removed MITH (not used) 
+* v3_02 - Plante A.           - add key Schm_wload_L for water loading
 *
 ***comdeck schm.cdk
 *
@@ -35,6 +36,7 @@
 *                    |         time step; afterward, q and s are re-   |
 *                    |         computed;this can be done in            |
 *                    |                           hydrostatic mode only)|
+* Schm_wload_L       | .true.-> Effet of water loading included        |
 * Schm_itcn          | number of iterations for Crank-Nicholson        |
 * Schm_modcn         | frequency of Crank-Nicholson procedure          |
 * Schm_xwvt3         | type of extrapolation for wind calculation      |
@@ -55,10 +57,10 @@
 
       logical Schm_hydro_L, Schm_cptop_L, Schm_moist_L, Schm_nkbz_L , 
      $        Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
-     $        Schm_chems_L, Schm_hdlast_L
+     $        Schm_chems_L, Schm_hdlast_L,Schm_wload_L
 
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, 
-     %        Schm_itnlh, Schm_itraj, Schm_nith 
+     %        Schm_itnlh, Schm_itraj, Schm_nith, Schm_maxcfl_lam
 
       real*8  Schm_alpco_8, Schm_nonhy_8
 
@@ -66,12 +68,13 @@
       common / schm_l / 
      $         Schm_hydro_L, Schm_cptop_L, Schm_moist_L, Schm_nkbz_L , 
      $         Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
-     $         Schm_chems_L, Schm_hdlast_L
+     $         Schm_chems_L, Schm_hdlast_L,Schm_wload_L
       MARK_COMMON_END (schm_l)
 *
       MARK_COMMON_BEG (schm_i)
       common / schm_i / Schm_itcn , Schm_modcn, Schm_xwvt3, 
-     %                  Schm_itnlh, Schm_itraj, Schm_nith 
+     %                  Schm_itnlh, Schm_itraj, Schm_nith,
+     $                  Schm_maxcfl_lam
       MARK_COMMON_END (schm_i)
 *
       MARK_COMMON_BEG (schm_r8)

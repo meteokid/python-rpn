@@ -63,11 +63,9 @@
 *
          call indata()
 *
-         call dynout2 (.true.)
+         call dynout2 ()
 *
-         if (Ptopo_myproc.eq.0) then
-            call wlog('CSTR')
-         endif
+         call wlog('CSTR')
 *
       else
          call set_dync()
@@ -95,12 +93,10 @@
       if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 *
       if ( V4dg_conf.eq.0 ) then
-      if (Lctl_step.eq.Step_total) then
-         if (Lun_out.gt.0) then
-             call wlog('FEND')
-             call wlog('CEND')
+         if (Lctl_step.eq.Step_total) then
+            call wlog('FEND')
+            call wlog('CEND')
          endif
-      endif
       endif
 *
  3000 format(

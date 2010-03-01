@@ -1,0 +1,213 @@
+***s/r v4d_rwnlpert - Read (Write) from (on) Reference Trajectory WA file 
+*                     at initial and final time for non-linearly evolving perturbations (NLMX event)
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_rwnlpert ()
+*
+#include "impnone.cdk"
+*
+*author
+*     Mark Buehner
+*
+*revision
+* v3_02 - M. Buehner     - initial MPI version (from v4d_rwconv)
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*	
+*implicits
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+#include "vt1m.cdk"
+#include "tr3d.cdk"
+#include "v4dg.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnerr,pnlod,pnlkey1(5),pnlkey1m(5),key1_,key1(max(Tr3d_ntr,4)),
+     &   key1m_, key1m(max(Tr3d_ntr,4)),i,j,k
+*
+      real pr1,hut1,hut1m
+      pointer (pahu1,hut1(LDIST_SHAPE,*)),(pahu1m,hut1m(LDIST_SHAPE,*))
+*
+      logical plpr_L
+*
+*     Work arrays 
+*     -----------
+      real work(l_ni*l_nj*l_nk)
+*
+*     Flag to trace storing and retrieving of trajectory
+*     --------------------------------------------------
+      plpr_L = .true.
+      plpr_L = plpr_L.and.Lun_out.gt.0 
+*     --------------------
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1) = VMM_KEY(ut1)
+      pnlkey1(2) = VMM_KEY(vt1)
+      pnlkey1(3) = VMM_KEY(tpt1)
+      pnlkey1(4) = VMM_KEY(st1)
+      pnlod= 4 
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR( ut1)
+      pnerr = VMM_GET_VAR( vt1)
+      pnerr = VMM_GET_VAR( tpt1)
+      pnerr = VMM_GET_VAR( st1)
+*
+*     Load humidity field assuming Tr3d_ntr=1
+*     ---------------------------------------
+      key1_ = VMM_KEY (trt1)
+      do k=1,Tr3d_ntr
+         key1(k) = key1_ + k
+      end do
+      pnerr = vmmlod(key1,Tr3d_ntr)
+      do k=1,Tr3d_ntr
+      if (Tr3d_name_S(k).eq.'HU') pnerr = vmmget(key1(k),pahu1,hut1)
+      end do
+*     
+*     ----------------
+*     Read TRAJ Fields 
+*     ----------------
+      if(V4dg_rwnl.eq.0) then
+*
+*        -------------------------
+*        Get TRAJ Fields in memory 
+*        -------------------------
+         pnlkey1m(1) = VMM_KEY(ut1m)
+         pnlkey1m(2) = VMM_KEY(vt1m)
+         pnlkey1m(3) = VMM_KEY(tpt1m)
+         pnlkey1m(4) = VMM_KEY(st1m)
+         pnlod = 4  
+         pnerr = vmmlod(pnlkey1m,pnlod)
+         pnerr = VMM_GET_VAR(ut1m)
+         pnerr = VMM_GET_VAR(vt1m)
+         pnerr = VMM_GET_VAR(tpt1m)
+         pnerr = VMM_GET_VAR(st1m)
+*
+*        Load TRAJ humidity field assuming Tr3d_ntr=1
+*        --------------------------------------------
+         key1m_ = VMM_KEY (trt1m)
+         do k=1,Tr3d_ntr
+           key1m(k) = key1m_ + k
+         end do
+         pnerr = vmmlod(key1m,Tr3d_ntr)
+         do k=1,Tr3d_ntr
+         if (Tr3d_name_S(k).eq.'HU') pnerr = vmmget(key1m(k),pahu1m,hut1m)
+         end do
+*
+         call v4d_rwfld (ut1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'UT1M', V4dg_ad_L,0,-1)
+*
+         call v4d_rwfld (vt1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'VT1M', V4dg_ad_L,0,-1)
+*
+         call v4d_rwfld (tpt1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'TPT1M', V4dg_ad_L,0,-1)
+*
+         call v4d_rwfld (hut1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'HUT1M', V4dg_ad_L,0,-1)
+*
+         call v4d_rwfld (st1m,work,l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'ST1M',  V4dg_ad_L,0,-1)
+*
+         if(Lctl_step.eq.0) then
+*
+*           Add initial reference state to supplied increment
+*           -------------------------------------------------
+            do k=1,l_nk
+            do j=1,l_nj
+            do i=1,l_niu
+               ut1(i,j,k)  = ut1(i,j,k)  + ut1m(i,j,k)
+            end do
+            end do
+            end do
+            do k=1,l_nk
+            do j=1,l_njv
+            do i=1,l_ni
+               vt1(i,j,k)  = vt1(i,j,k)  + vt1m(i,j,k)
+            end do
+            end do
+            end do
+            do k=1,l_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tpt1(i,j,k) = tpt1(i,j,k) + tpt1m(i,j,k)
+               hut1(i,j,k) = hut1(i,j,k) + hut1m(i,j,k)
+            end do
+            end do
+            end do
+            do j=1,l_nj
+            do i=1,l_ni
+               st1(i,j)  = st1(i,j)  + st1m(i,j)
+            end do
+            end do
+*
+         else
+*
+*           Subtract final reference state from nl evolved state
+*           ----------------------------------------------------
+            do k=1,l_nk
+            do j=1,l_nj
+            do i=1,l_niu
+               ut1(i,j,k)  = ut1(i,j,k)  - ut1m(i,j,k)
+            end do
+            end do
+            end do
+            do k=1,l_nk
+            do j=1,l_njv
+            do i=1,l_ni
+               vt1(i,j,k)  = vt1(i,j,k)  - vt1m(i,j,k)
+            end do
+            end do
+            end do
+            do k=1,l_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tpt1(i,j,k) = tpt1(i,j,k) - tpt1m(i,j,k)
+               hut1(i,j,k) = hut1(i,j,k) - hut1m(i,j,k)
+            end do
+            end do
+            end do
+            do j=1,l_nj
+            do i=1,l_ni
+               st1(i,j)  = st1(i,j)  - st1m(i,j)
+            end do
+            end do
+* 
+         endif
+*
+*     -----------------
+*     Write TRAJ Fields 
+*     -----------------
+      elseif(V4dg_rwnl.eq.1) then
+*
+         call v4d_rwfld (ut1 ,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'UT1' , V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (vt1 ,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'VT1' , V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (tpt1,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'TPT1', V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (hut1,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'HUT1', V4dg_ad_L,0,1)
+*
+         call v4d_rwfld (st1,work,l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iunnl,V4dg_addnl,plpr_L,'ST1',  V4dg_ad_L,0,1)
+*
+      endif
+*
+      pnerr = vmmuld(-1,0)
+*
+      return
+      end
+

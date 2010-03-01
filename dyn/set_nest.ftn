@@ -11,7 +11,7 @@
 *
 *revision
 * v3_00 - Desgagne/Lee      - initial version
-*
+* v3_02 - Edouard S.        - correct non-hydrostatic version (F_mut0,F_tpt0,b2)*
 *object
 *	This subroutine initializes the commons containing the
 *	keys used by the Virtual Memory Manager to identify the
@@ -88,7 +88,7 @@
 *
 *  Set the attributes of the variables
 *
-      ptath='SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
+      ptath='SAVE=Y,CL=1,W=5,INIT=0,MUSTEXIST'
 *
       VMM_CREATE(nest_u   , LARRAY3D, 1, ptath)
       VMM_CREATE(nest_v   , LARRAY3D, 1, ptath)

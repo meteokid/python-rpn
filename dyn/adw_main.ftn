@@ -15,6 +15,7 @@
 *
 *revision
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Lee V.            - Initialize Lam truncated trajectory counters
 *
 *object
 *     see id section
@@ -60,9 +61,10 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
+#include "ptopo.cdk"
 #include "adw.cdk"
 ************************************************************************
-      integer nijkag
+      integer nijkag,i,k
       real , dimension (Adw_nit*Adw_njt*l_nk) :: u,v,w
 *
 ************************************************************************
@@ -70,6 +72,10 @@
 *
 ************************************************************************
 *
+      do i=1, 4
+         Adw_trunc(i) = 0
+      enddo
+
       call adw_main_1_wnd ( u, v, w, Adw_nit, Adw_njt, l_nk)
 *
       call adw_main_2_pos ( F_it, u, v, w )

@@ -26,7 +26,8 @@
 *     Stephane Laroche (Dec 2001)
 *
 *revision
-* v3_00 - Laroche S.       - initial MPI version (from p_fillbus)
+* v3_00 - Laroche S.            - initial MPI version (from p_fillbus)
+* v3_02 - Tanguay M./Laroche S. - do not assume TRAJ HU positive
 *
 *object
 *	Fill the slice workspace variable for the physics trajectory.
@@ -79,8 +80,8 @@
          F_busdyn(utrajm +indx)  = F_umm (ii,F_jdo,k) * con
          F_busdyn(vtrajm +indx)  = F_vmm (ii,F_jdo,k) * con
          F_busdyn(ttrajm +indx)  = F_tmm (ii,F_jdo,k)
-         F_busdyn(hutrajp+indx)  = F_trpm(ii,F_jdo,k)
-         F_busdyn(hutrajm+indx)  = F_trmm(ii,F_jdo,k)
+         F_busdyn(hutrajp+indx)  = max(0., F_trpm(ii,F_jdo,k))
+         F_busdyn(hutrajm+indx)  = max(0., F_trmm(ii,F_jdo,k))
          F_busdyn(sigm   +indx)  = F_sig (ii,F_jdo,k)
       end do
       end do

@@ -26,6 +26,8 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Lee V.            - Added output of ThetaW
 * v3_01 - Morneau J.        - remove conversion to Celcius for TL or AD output
+* v3_02 - Plante A.         - Water loading
+* v3_02 - Lee V.            - LA and LO output (not physics), add QC output
 *
 *object
 *     See above id.
@@ -44,6 +46,7 @@
 #include "dimout.cdk"
 #include "lun.cdk"
 #include "geomg.cdk"
+#include "geomn.cdk"
 #include "schm.cdk"
 #include "pres.cdk"
 #include "vt1.cdk"
@@ -53,12 +56,12 @@
 #include "level.cdk"
 #include "outd.cdk"
 #include "ptopo.cdk"
-#include "slab.cdk"
 #include "dslab.cdk"
 #include "tr3d.cdk"
 #include "grd.cdk"
 #include "grid.cdk"
 #include "v4dg.cdk"
+#include "lctl.cdk"
 *
 *modules
       integer  vmmlod, vmmuld, vmmget, vmmuln, vmmulk
@@ -68,22 +71,24 @@
 *
 **
       integer cnmvar, cn3dvar, cnnkey, cn2dvar
-      parameter (cnmvar=14, cn3dvar=9, cn2dvar=4, cnnkey=5)
-      integer i,j,k,kl,jj,kk,jjj,kkk,ii,iii,i0,in,j0,jn
+      parameter (cnmvar=14, cn3dvar=10, cn2dvar=6, cnnkey=5)
+      integer i,j,k,kl,jj,kk,jjj,kkk,ii,iii,i0,in,j0,jn,n
       integer pnlkey (cnnkey),key(Tr3d_ntr),key0
       integer pnerr,pnkey,levset,pnindex,pni2d,pni3d
       integer pni2dx(cn2dvar), pni3dx(cn3dvar)
-      real prmult(cn3dvar), pradd(cn3dvar), prmult_pnme,prprlvl,hu
+      real prmult(cn3dvar), pradd(cn3dvar), prmult_pnme,prprlvl,hu,qj,lo,qc
       character*8 ptmvar(cnmvar), pt3dvar(cn3dvar),pt2dvar(cn2dvar)
       character*5 blank_S
       logical pl3dvar(cn3dvar)
-      pointer (patr, hu(LDIST_SHAPE,*))
+      pointer (patr, hu(LDIST_SHAPE,*)),(patr2, qj(LDIST_SHAPE,*)),
+     $        (patr1, qc(LDIST_SHAPE,*))
       real wk1(G_ni,G_nj),wk2(G_ni,G_nj)
       real wk3(G_ni,G_nj+2),wk4(G_ni,G_nj+2)
       real w1(LDIST_SHAPE), w2(LDIST_SHAPE), w3(LDIST_SHAPE)
       real w4(LDIST_SHAPE), w5(LDIST_SHAPE), w6(LDIST_SHAPE)
       real t1(LDIST_SHAPE,G_nk), t2(LDIST_SHAPE,G_nk)
-      real t3(LDIST_SHAPE,G_nk), t4(LDIST_SHAPE,G_nk)
+      real t3(LDIST_SHAPE,G_nk), t4(LDIST_SHAPE,G_nk),
+     $     t5(LDIST_SHAPE,G_nk)
       real gz_temp(l_ni,l_nj,G_nk),tt_temp(l_ni,l_nj,G_nk)
       real ps_temp(l_ni,l_nj)
 
@@ -108,15 +113,15 @@
      $     'FIT1', 'QT1',  'FIP1', 'QPT1', 'PIP1', 'TT1',  'TPL1' /
 *     list of derived 3-D variables that may be produced by blocthm
 *     NOTE: This routine also outputs ME, PN, P0 and PT
-      data pt3dvar /'GZ','VT','TT','ES','TD','HR','PX','HU','TW'/
-      data pt2dvar /'ME','PN','PT','P0'/
-      integer pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu,pntw
-      integer pnme,pnpn,pnpt,pnp0
+      data pt3dvar /'GZ','VT','TT','ES','TD','HR','PX','HU','TW','QC'/
+      data pt2dvar /'ME','PN','PT','P0','LA','LO'/
+      integer pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu,pntw,pnqc
+      integer pnme,pnpn,pnpt,pnp0,pnla,pnlo
 *     index of each symbol in the list
-      data pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu,pntw
-     $     /  1,   2,   3,   4,   5,   6,   7,   8,   9/
-      data pnme,pnpn,pnpt,pnp0
-     $     /  1,   2,   3,   4/
+      data pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu,pntw,pnqc
+     $     /  1,   2,   3,   4,   5,   6,   7,   8,   9,  10/
+      data pnme,pnpn,pnpt,pnp0,pnla,pnlo
+     $     /  1,   2,   3,   4,   5,   6/
 *     initialize conversion of units
       data prmult  / cn3dvar*1.0/
       data pradd   / cn3dvar*0.0/
@@ -226,20 +231,56 @@
 *_________________________________________________________________
 *_________________________________________________________________
 *
-*     4.4    Obtain HUT1 from TR3D
-*            _____________________
+*     4.4    Obtain HUT1 and sum of QJ from TR3D
+*            ___________________________________
 *_________________________________________________________________
 *_________________________________________________________________
+
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         t5 (i,j,k) = 0.0
+      enddo
+      enddo
+      enddo
 
       key0 = VMM_KEY (trt1)
       do k=1,Tr3d_ntr
          key(k) = key0 + k
       end do
       pnerr = vmmlod(key,Tr3d_ntr)
-      do k=1,Tr3d_ntr
-         if (Tr3d_name_S(k).eq.'HU') then
-            pnerr = vmmget(key(k),patr,hu)
+      do n=1,Tr3d_ntr
+         if (Tr3d_name_S(n).eq.'HU') then
+            pnerr = vmmget(key(n),patr,hu)
          endif
+         if (Tr3d_name_S(n).eq.'QC') then
+            pnerr = vmmget(key(n),patr1,qc)
+         endif
+         if(Schm_wload_L)then
+            if (Tr3d_name_S(n).eq.'QC'.or.
+     $          Tr3d_name_S(n).eq.'QR'.or.
+     $          Tr3d_name_S(n).eq.'QI'.or.
+     $          Tr3d_name_S(n).eq.'QG'    ) then
+               pnerr = vmmget(key(n),patr2,qj)
+               do k=1,l_nk
+               do j=j0,jn
+               do i=i0,in
+                  t5 (i,j,k) = t5 (i,j,k) + max(0.0,qj(i,j,k))
+               enddo
+               enddo
+               enddo
+            endif         
+         endif
+      enddo
+*     Compute Virtual temperature without water loading t5
+      do k=1,l_nk
+         do j=j0,jn
+            call mfottvh (w1(1,j),tt1(1,j,k),hu(1,j,k),
+     $                    t5(1,j,k),l_maxx-l_minx+1,1,l_ni)
+            do i=i0,in
+               t5 (i,j,k) = tt1(i,j,k) + w1(i,j) * t5(i,j,k)
+            enddo
+         enddo
       enddo
 *_________________________________________________________________
 *
@@ -383,7 +424,7 @@
      $                                            i0,in,j0,jn)
 *_______________________________________________________________________
 *
-*     6.0 Output 2-D Derived Variables (P0,PT,PN)
+*     6.0 Output 2-D Derived Variables (P0,PT,PN,ME,LA,LO)
 *_______________________________________________________________________
 *
       if (pni2d.gt.0) then
@@ -398,6 +439,30 @@
                   if (Outd_var(ii,kk).eq.pni2dx(pnme)) then
                      call insrtslab_d(t4,w2,LDIST_DIM,G_nk,G_nk,
      $                  kk,prmult_pnme,0.0,pni2dx(pnme),0,mtout_e,
+     $                  var_e_S,typvar_e_S,ip1_e,bit_e,mtval_e,
+     $                  LDIST_SIZ,mxout_e,Grid_sets)
+                  endif
+*            if LA requested for output...
+                  if (Outd_var(ii,kk).eq.pni2dx(pnla)) then
+                     do j=j0,jn
+                     do i=i0,in
+                        w1(i,j) = Geomn_latrx(i,j)
+                     enddo
+                     enddo
+                     call insrtslab_d(w1,w2,LDIST_DIM,1   ,1   ,
+     $                  kk,1.0,0.0,pni2dx(pnla),0,mtout_e,
+     $                  var_e_S,typvar_e_S,ip1_e,bit_e,mtval_e,
+     $                  LDIST_SIZ,mxout_e,Grid_sets)
+                  endif
+*            if LO requested for output...
+                  if (Outd_var(ii,kk).eq.pni2dx(pnlo)) then
+                     do j=j0,jn
+                     do i=i0,in
+                        w1(i,j) = Geomn_lonrx(i,j)
+                     enddo
+                     enddo
+                     call insrtslab_d(w1,w2,LDIST_DIM,1   ,1   ,
+     $                  kk,1.0,0.0,pni2dx(pnlo),0,mtout_e,
      $                  var_e_S,typvar_e_S,ip1_e,bit_e,mtval_e,
      $                  LDIST_SIZ,mxout_e,Grid_sets)
                   endif
@@ -479,7 +544,7 @@
      $                    LDIST_SIZ,mxout_e,Grid_sets)
                      endif
                      if (pl3dvar(pnvt)) then
-                          call insrtslab_d(tt1,w2,LDIST_DIM,G_nk,k,
+                          call insrtslab_d(t5,w2,LDIST_DIM,G_nk,k,
      $                    kk,prmult(pnvt),pradd(pnvt),pni3dx(pnvt),
      $                    Level_ip1(jjj,levset),mtout_e,var_e_S,
      $                    typvar_e_S,ip1_e,bit_e,mtval_e,
@@ -492,11 +557,19 @@
      $                    typvar_e_S,ip1_e,bit_e,mtval_e,
      $                    LDIST_SIZ,mxout_e,Grid_sets)
                      endif
+                     if ( .not. (Lctl_step .eq. 0 .and. Schm_phyms_L)
+     $                    .and.  pl3dvar(pnqc) ) then
+                          call insrtslab_d(qc,w2,LDIST_DIM,G_nk,k,
+     $                    kk,prmult(pnqc),pradd(pnqc),pni3dx(pnqc),
+     $                    Level_ip1(jjj,levset),mtout_e,var_e_S,
+     $                    typvar_e_S,ip1_e,bit_e,mtval_e,
+     $                    LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
                      if (pl3dvar(pntt).or.pl3dvar(pntd)
      $                    .or.pl3dvar(pnhr)) then
 *       Calculate TT (in w1)
                         do j= j0, jn 
-                        call mfottv (w1(1,j),tt1(1,j,k),hu(1,j,k),
+                        call mfottv (w1(1,j),t5(1,j,k),hu(1,j,k),
      $                                      l_maxx-l_minx+1,1,l_ni)
                         enddo
                      endif
@@ -527,7 +600,7 @@
                      if (pl3dvar(pntw)) then
 *     Calculate THETAW TW (in w2) (w3=PX)
                         do j= j0, jn 
-                        call mthtaw2 (w2(1,j),hu(1,j,k),tt1(1,j,k),
+                        call mthtaw2 (w2(1,j),hu(1,j,k),t5(1,j,k),
      $                          w3(1,j),w3(1,j),3, .false., .false.,
      $                          .true.,Dcst_trpl_8,l_maxx-l_minx+1,1,l_ni)
                         enddo
@@ -540,7 +613,7 @@
                      if (pl3dvar(pnes).or.pl3dvar(pntd)) then
 *     Calculate ES (in w2) (w3=PX)
                         do j= j0, jn 
-                        call mhuaes(w2(1,j),hu(1,j,k),tt1(1,j,k),
+                        call mhuaes(w2(1,j),hu(1,j,k),t5(1,j,k),
      $                          w3(1,j),w3(1,j),3, .false., .false.,
      $                          l_maxx-l_minx+1,1,l_ni)
                         enddo
@@ -640,8 +713,8 @@
                if (pnkey.gt.0) then
                   do 550 jjj = 1, Level_max(levset)
                      prprlvl = Level(jjj,levset) * 100.0
-*       Calculate GZ,VT (w1=GZ, w2=VT)
-                     call prgzvta( w1, w2, prprlvl, t4, tt1, Out2_wlnph, Out2_wlao,
+*       Interpolate GZ,VT (w1=GZ, w2=VT)
+                     call prgzvta( w1, w2, prprlvl, t4, t5, Out2_wlnph, Out2_wlao,
      %                        t2, t1, Out_nundr,Out_cubzt_L, 
      $                        Out_linbot, LDIST_DIM,G_nk)
 *     Calculate HU (w4=HU,t3=vert.der)

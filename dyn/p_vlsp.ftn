@@ -33,9 +33,9 @@
       integer pnerr
 *
       real*8 zero, one, two
-      parameter( zero = 0.0 )
-      parameter( one  = 1.0 )
-      parameter( two  = 2.0 )
+      parameter( zero = 0.0d0 )
+      parameter( one  = 1.0d0 )
+      parameter( two  = 2.0d0 )
 *
       integer i, j, i_glob, j_glob
 *
@@ -82,7 +82,7 @@
          pdang = zero
       endif
 *
-      pdc0 = sqrt( max( zero, one - pds0 ** 2 ) )
+      pdc0 = sqrt( max( zero, one - 1.0d0*pds0 ** 2 ) )
 ***********************************************************************
 * use position l_nj of field P_pbl_vlsp as temporary storage space
 ***********************************************************************
@@ -105,7 +105,7 @@
          pdca = pdc0 * cos( G_yg_8(j_glob) )
 *
          do i=1,l_ni
-            pdtmp = asin(max(-1.,min(1.,pdca*P_pbl_vlsp(i,l_nj)+pdsa)))
+            pdtmp = asin(max(-1.d0,min(1.d0,pdca*1.0d0*(P_pbl_vlsp(i,l_nj))+pdsa)))
             P_pbl_vlsp(i,j) = P_pbl_valml_8
 *
 ***********************************************************************

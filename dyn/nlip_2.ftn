@@ -38,6 +38,7 @@
 *                             remove F_pptt0 and introduce Ncn
 * v3_00 - Qaddouri & Lee    - For LAM, set Nu, Nv values on the boundaries
 * v3_00                       of the LAM grid to zeros.
+* v3_02 - Edouard S.        - correct non-hydrostatic version (F_mut0,F_tpt0,b2)
 *
 *object
 *
@@ -446,7 +447,6 @@ c Don't change
             F_n3 (i,j,k) = ( F_multx(i,j,k) - F_mut0(i,j,k) )/Cstv_tau_8
             F_n3p(i,j,k) =  F_n3(i,j,k) - eps*F_nth(i,j,k)
             F_wijk1(i,j,k) = F_wijk1(i,j,k) +  b1*F_n3p(i,j,k)
-     $                       - pd3 * F_ncn(i,j,k)
             F_wijk2(i,j,k) = F_wijk2(i,j,k) +  b2*F_n3 (i,j,k)
          end do
          end do

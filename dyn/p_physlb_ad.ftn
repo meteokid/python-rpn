@@ -30,7 +30,8 @@
 *     Stephane Laroche        Janvier 2002
 *
 *revision
-* v3_00 - Laroche S.       - initial MPI version
+* v3_00 - Laroche S.            - initial MPI version
+* v3_02 - Tanguay M./Laroche S. - do not assume TRAJ HU positive
 *
 *object
 *     See above id.
@@ -214,7 +215,8 @@
 * 
       call p_fillbus_ad ( busdyn,
      $         F_up , F_vp , F_wp , F_tp , F_qp, F_trp,
-     $         F_um , F_vm , F_tm , F_trm, F_lpsm,
+     $         F_um , F_vm , F_tm , F_trm, F_lpsm, F_trpm, F_trmm,
+     $         F_qpm,
      $         j, F_step, LDIST_DIM, l_nk )
 *
 *
@@ -223,6 +225,19 @@
       call pllock(Mult_lkphy)
 #endif
 #endif
+*
+*     Perform physic slices output
+      do i=1,Pslab_slab
+         if (Pslab_bus_s(i).eq.'P') then
+            call writslabp(busper, p_bper_siz, jdo, i)
+         else if (Pslab_bus_s(i).eq.'D') then
+            call writslabp(busdyn, p_bdyn_siz, jdo, i)
+         else if (Pslab_bus_s(i).eq.'V') then
+            call writslabp(busvol, p_bvol_siz, jdo, i)
+         else if (Pslab_bus_s(i).eq.'E' .and. F_step.eq.0) then
+            call writslabp(busent, p_bent_siz, jdo, i)
+         endif
+      enddo
 
       if (.not.Mem_phyncore_L) then
          err = write_db_file (Lun_waphy,jdo,1)

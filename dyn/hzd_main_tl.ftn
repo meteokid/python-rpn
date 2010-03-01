@@ -17,6 +17,7 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 *                           - change name 
 * v3_01 - Tanguay M.        - TLM of Eigv_parity_L not done yet 
+* v3_02 - Tanguay M.        - TLM of Eigv_parity_L done 
 *
 *object
 *     see id section
@@ -57,10 +58,9 @@
       endif
 *     ______________________________________________________
 *
-      if(      Eigv_parity_L ) call gefstop('hzd_main_tl') 
-      if( .not. Schm_hydro_L ) call gefstop('hzd_main_tl')
-      if(       Schm_psadj_L ) call gefstop('hzd_main_tl')
-      if( .not. Schm_cptop_L ) call gefstop('hzd_main_tl')
+      if( .not. Schm_hydro_L ) call gem_stop('hzd_main_tl',-1)
+      if(       Schm_psadj_L ) call gem_stop('hzd_main_tl',-1)
+      if( .not. Schm_cptop_L ) call gem_stop('hzd_main_tl',-1)
 *     ______________________________________________________
 *
 *
@@ -179,10 +179,17 @@ c*PDIR RESERVE=Macr_cpud
      %                        LDIST_DIM, G_nk)
          else
 *           use MXMA in diffusion-solver
+            if ( .not. Eigv_parity_L) then
             call hzd_ho_tl  ( ut1 , vt1 , psdt1, tpt1 , fipt1, tdt1,
      %                        tt1 , fit1, tplt1, pipt1, wt1  ,
      %                        qpt1, mut1, multx, topo ,
      %                        LDIST_DIM, G_nk)
+            else
+            call hzd_ho_parite_tl( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                             tt1 , fit1, tplt1,  pipt1, wt1 ,
+     %                             qpt1, mut1, multx,  topo ,
+     %                             LDIST_DIM, G_nk)
+            endif
          endif
 *
 *        TRAJECTORY
@@ -195,10 +202,17 @@ c*PDIR RESERVE=Macr_cpud
      %                     LDIST_DIM, G_nk)
          else
 *           use MXMA in diffusion-solver
-            call hzd_ho  ( ut1m , vt1m  , psdt1m, tpt1m , fipt1m, tdt1m,
-     %                     wtt1m, wfit1m, tplt1m, pipt1m, wt1   ,
-     %                     qpt1 , mut1  , multx , topo  ,
-     %                     LDIST_DIM, G_nk)
+            if ( .not. Eigv_parity_L) then
+                call hzd_ho ( ut1m , vt1m , psdt1m, tpt1m, fipt1m, tdt1m,
+     %                    wtt1m , wfit1m, tplt1m,  pipt1m, wt1 ,
+     %                    qpt1, mut1, multx,  topo ,
+     %                    LDIST_DIM, G_nk)
+            else
+                call hzd_ho_parite( ut1m , vt1m , psdt1m, tpt1m, fipt1m, tdt1m,
+     %                    wtt1m , wfit1m, tplt1m,  pipt1m, wt1 ,
+     %                    qpt1, mut1, multx,  topo ,
+     %                    LDIST_DIM, G_nk)
+            endif
          endif
       endif
 *

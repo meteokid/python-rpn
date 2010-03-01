@@ -22,6 +22,8 @@
 * v3_00 - Laroche S.       - initial MPI version
 * v3_00 - Gauthier P.      - ln q to q
 * v3_00 - Tanguay M.       - verify zeroing of hut1m
+* v3_02 - Laroche S.       - conversion to hybrid coordinate
+* v3_02 - Buehner M.       - temporarilly set humidity to zero for SV job
 *
 *object
 *
@@ -40,6 +42,7 @@
 #include "geomg.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
+#include "v4dg.cdk"
 *
 *modules
 *
@@ -107,8 +110,7 @@ C
          do j= 1+pil_s, l_nj-pil_n 
             do i= 1+pil_w, l_ni-pil_e 
 
-               C_st1(i,j) =  (Geomg_z_8(Nk) - Cstv_pitop_8)
-     $              * exp(C_st1m(i,j)) * C_st1(i,j)
+            C_st1(i,j) =  Geomg_z_8(Nk) * exp(C_st1m(i,j)) * C_st1(i,j)
 
             end do
          end do
@@ -161,8 +163,8 @@ C     ----------------
 C     
          do j= 1+pil_s, l_nj-pil_n 
             do i= 1+pil_w, l_ni-pil_e 
-               C_st1(i,j) = C_st1(i,j)/((Geomg_z_8(Nk) - Cstv_pitop_8)
-     $              * exp(C_st1m(i,j)))
+
+               C_st1(i,j) = C_st1(i,j)/(Geomg_z_8(Nk) * exp(C_st1m(i,j)))
 
             end do
          end do
@@ -178,6 +180,9 @@ C
          end do
 *
       endif
+*
+* TEMPORARY: Set humidity field to zero for SV job
+      if(V4dg_sgvc_L) C_hut1(:,:,:)=0.0
 *
       return
       end

@@ -1,11 +1,11 @@
 *** s/r e_bmfrd 
 *
       integer function e_bmfrd ( dgid, nix, njx, nv, ad, mp, ip1, gnk, 
-     $                                                           sinf )
+     $                                                   anyip_L,arret_L )
       implicit none
 *
       character*4 nv
-      logical sinf
+      logical arret_L,anyip_L
       integer dgid, nix, njx, gnk, ip1(*)
       real    ad, mp
 *
@@ -14,13 +14,17 @@
 *                                                                      |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* nix*njx            | horizontal I*J dimension for F, LAT, LON        |
+* dgid               | description of destination grid used for EZ     |
+* NIX                | number of points on I                           |
+* NJX                | number of points on J                           |
 * NV                 | name of the field to read                       |
 * AD                 | constant to add to field                        |
 * MP                 | constant to multiply to field                   |
-* LAT                | latitudes                                       |
-* LON                | longitudes                                      |
-* NNIV               | number of levels to read                        |
+* IP1                | value(s) of encoded IP1 to read                 |
+* GNK                | number of IP1 values in IP1 array               |
+* anyip_L            | .true. to obtain any IP1 of field NV if         |
+*                    | specified IP1 is not found                      |
+* arret_L            | .true. to abort if record is not found at all   |
 *----------------------------------------------------------------------
 *
 *implicits
@@ -42,7 +46,7 @@
       do k=1,gnk
 *
          e_bmfrd = e_rdhint3 (w1,dgid,nix,njx,nv,ip1(k),ip2a,ip3a,' ',
-     $                         tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+     $                         tva,anyip_L,.false.,'CUBIC',e_fu_anal,6)
          if (e_bmfrd.lt.0) goto 500
 *     
 *        SCALING
@@ -59,7 +63,7 @@
 *
       return
  500  write(6,*) ' Variable = ',NV, ' NOT AVAILABLE'
-      if (sinf) call e_arret( 'e_bmfrd' )
+      if (arret_L) call e_arret( 'e_bmfrd' )
 *
 *     ---------------------------------------------------------------
 *

@@ -13,6 +13,7 @@
 *
 *revision
 * v3_00 - Laroche S.       - initial MPI version
+* v3_02 - Laroche S.       - allows physic variables outputs
 *
 *object
 *       Computes the physical processes and apply the resulting
@@ -32,6 +33,8 @@
 #include "macro.cdk"
 #include "ptopo.cdk"
 #include "busind.cdk"
+#include "dimout.cdk"
+#include "pslab.cdk"
 #include "v4dg.cdk"
 #include "p4d_simp.cdk"
 *
@@ -49,6 +52,7 @@
 *
 *     ---------------------------------------------------------------
 *
+      call genslabp()
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       allocate (up(dim),vp(dim),wp(dim),tp(dim),qp(dim),
      $          um(dim),vm(dim),tm(dim),lnpsm(dim),
@@ -156,6 +160,8 @@
       deallocate (up,vp,wp,tp,qp,trp,um,vm,tm,trm,lnpsm,sig,kmm,ktm,
      $            upm,vpm,tpm,qpm,trpm,umm,vmm,tmm,trmm)
 *
+*
+      call frmslabfhand(Pslab_fhand,Pslab_slab,.true.)
 *     ---------------------------------------------------------------
 *
       return

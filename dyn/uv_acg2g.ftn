@@ -50,7 +50,7 @@
 *modules
 **
       logical cubic
-      integer i,j,k
+      integer i,j,k,nie,nje
 *-----------------------------------------------------------------
 *
       cubic = Schm_adcub_L
@@ -74,8 +74,11 @@
          end do
 *
       else 
-
-         call rpn_comm_xch_halo (F_src,LDIST_DIM,l_ni,l_nj,G_nk,
+         nie = l_ni
+         nje = l_nj
+         if (F_grido.eq.1) nie = l_niu
+         if (F_grido.eq.2) nje = l_njv
+         call rpn_comm_xch_halo (F_src,LDIST_DIM,nie,nje,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       endif

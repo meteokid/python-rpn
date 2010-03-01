@@ -11,6 +11,7 @@
 *
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
+* v3_02 - Mahfouf J.-F.     - add V4dg_anincr_L
 *
 *object
 *     see id section
@@ -120,12 +121,43 @@
 *        from model var. 
 *        -----------------------------------------------------------
          call v4d_cainin (V4dc_ncv,V4dc_ycv)
+
+         if ( V4dg_anincr_L ) then
 *
-*        Initialize TLM initial control var. in V4dc_xcv
-*        -----------------------------------------------
-         do n = 1,V4dc_ncv
-            V4dc_xcv(n) = V4dc_ycv(n)
-         end do
+*          Read perturbed (NLM) initial conditions for trial field
+*          to create realistic pertubations in V4dc_xcv
+*          -------------------------------------------------------
+           if( Lun_out.gt.0 ) then
+              write(Lun_out, fmt='(//''----------------'')')
+              write(Lun_out, fmt='(  ''READ GIVEN TRIAL'')')
+              write(Lun_out, fmt='(  ''----------------'')')
+           endif 
+*
+           call v4d_rdtrial()
+*
+*          Convert wind images to true winds
+*          ---------------------------------
+           call v4d_img2uv()
+*
+*          Initialize V4dc_xcv from trial field
+*          ------------------------------------
+           call v4d_cainin (V4dc_ncv,V4dc_xcv) 
+*
+*          Initialize TLM initial control var. in V4dc_xcv
+*          -----------------------------------------------
+           do n = 1,V4dc_ncv
+              V4dc_xcv(n) = V4dc_ycv(n) - V4dc_xcv(n)
+           end do
+*         
+         else
+*
+*          Keep TLM initial control var. in V4dc_xcv
+*          -----------------------------------------
+           do n = 1,V4dc_ncv
+              V4dc_xcv(n) = V4dc_ycv(n)
+           end do
+*
+         endif
 *
       if( V4dg_conf.ne.510 ) then
 *     -------------------------------------------
@@ -137,12 +169,12 @@
          end do
 *
       else
-*     -----------------------------------------
-*     Keep NLM initial control var. in V4dc_gcv  
-*     -----------------------------------------
+*     -------------------------------------------
+*     Keep NLM initial control var. in V4dc_wkmin  
+*     -------------------------------------------
 *
          do n = 1,V4dc_ncv
-            V4dc_gcv(n)= V4dc_ycv(n)
+            V4dc_wkmin(n)= V4dc_ycv(n)
          end do
 *
       endif
@@ -162,16 +194,34 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 1
+         V4dg_output_L = .true.
 *
 *        Call 4D-Var simulator with NLM integration without gradient
 *        -----------------------------------------------------------
          indic = 99
          call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
 *
-*        Initialize V4dc_ycv from NLM final model var.
-*        ---------------------------------------------
+*        Initialize V4dc_ycv (Image winds) from NLM final model var.
+*        -----------------------------------------------------------
          call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*        Convert wind images to true winds
+*        ---------------------------------
+         call v4d_img2uv()
+*
+*        Initialize V4dc_gcv (True winds)) from NLM final model var.
+*        -----------------------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_gcv)
+*
+      if ( .not.V4dg_anincr_L ) then
+* 
+*       Define TLM control var. with realistic size of perturbations
+*       ------------------------------------------------------------     
+        do n = 1,V4dc_ncv
+           V4dc_xcv(n) = V4dc_gcv(n) - V4dc_xcv(n)
+        end do
+*
+      endif 
 *
 *     -----------------------------------------
 *     Keep NLM final control var. in V4dc_wkmin 
@@ -187,19 +237,9 @@
 *     --------------------------------------------
 *     Keep TLM initial control var. in  V4dc_wkmin  
 *     --------------------------------------------
-      if( V4dg_conf.ne.510 ) then
-*
-         do n = 1,V4dc_ncv
-            V4dc_wkmin(V4dc_ncv+n) = V4dc_xcv(n)
-         end do
-*
-      else
-*
-         do n = 1,V4dc_ncv
-            V4dc_wkmin(n) = V4dc_xcv(n)
-         end do
-*
-      endif
+      do n = 1,V4dc_ncv
+         V4dc_wkmin(V4dc_ncv+n) = V4dc_xcv(n)
+      end do
 *
 *     ------------------------------
 *     Run TANGENT LINEAR integration 
@@ -216,7 +256,7 @@
 *
 *       Set over-riding switch for dynout and blocstat 
 *       ----------------------------------------------
-        V4dg_out = 1
+        V4dg_output_L = .true.
 *
 *       Call 4D-Var simulator with TLM model without gradient
 *       -----------------------------------------------------
@@ -261,7 +301,7 @@
 *        Set CURRENT initial control var. as REFERENCE + TLM  
 *        ---------------------------------------------------
          do n = 1,V4dc_ncv
-            V4dc_ycv(n) = V4dc_gcv(n) + V4dc_wkmin(n)
+            V4dc_ycv(n) = V4dc_wkmin(n) + V4dc_wkmin(V4dc_ncv+n)
          end do
 *
 *        Set status of the integration (CURRENT integration)
@@ -270,7 +310,7 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 1
+         V4dg_output_L = .true.
 *
 *        Call 4D-Var simulator with NLM integration without gradient
 *        -----------------------------------------------------------
@@ -321,8 +361,8 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 0
-         if(lambda.eq.lima) V4dg_out = 1
+         V4dg_output_L = .false. 
+         if(lambda.eq.lima) V4dg_output_L = .true.
 *
 *        Cancel write(Lun_out)
 *        ---------------------

@@ -165,7 +165,7 @@
 *                     get address of the data for the model variable
                       pnerr = vmmget(pnlkey(i),pawork,prwork)
                       call insrtslab_d(prwork,w1,LDIST_DIM,1,1,
-     $                kk,1.0,0.0,pnikey(i),0.0, mtout_e, var_e_S,typvar_e_S, 
+     $                kk,1.0,0.0,pnikey(i),0, mtout_e, var_e_S,typvar_e_S, 
      $                ip1_e,bit_e,mtval_e, LDIST_SIZ,mxout_e,Grid_sets)
                   endif
   50           continue

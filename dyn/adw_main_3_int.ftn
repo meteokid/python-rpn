@@ -13,7 +13,11 @@
 *revision
 * v2_31 - Desgagne & Tanguay  - removed stkmemw, introduce tracers
 * v2_31                       - tracers not monotone if V4dg_conf.ne.0
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v2_31 - R.Moffet            - do precalc (zz1) for ZZ in blomega
+* v3_00 - Desgagne & Lee      - Lam configuration
+* v3_02 - Tanguay             - Restore tracers monotone if V4dg_conf.ne.0 
+* v3_02 - Lee V.              - revert adw_exch_1 for GLB only, 
+* v3_02                         added adw_ckbd_lam,adw_cfl_lam for LAM only
 *
 *language
 *     fortran 77
@@ -38,6 +42,8 @@
 #include "ptopo.cdk"
 #include "geomg.cdk"
 #include "orh.cdk"
+#include "lctl.cdk"
+#include "step.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "offc.cdk"
@@ -67,8 +73,6 @@
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
 *
-      logical mono_L
-*
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -96,11 +100,14 @@
           if (l_east) in=l_niu-2
           if (l_south) j0=4
           if (l_north) jn=l_njv-2
+          if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
+     $         (mod(Lctl_step,Step_gstat).eq.0) )
+     $         call adw_cfl_lam ( F_u, F_v, F_w, i0, in, j0, jn )
+          call adw_ckbd_lam( F_u, F_v, F_w, i0, in, j0, jn )
       endif
-      call adw_exch_1 ( Adw_n1, Adw_xgg1, Adw_xdd1, Adw_c1, F_u, F_v, F_w,
-     %                  i0, in, j0, jn )
 *
       if (.not.G_lam) then
+      call adw_exch_1 ( Adw_n1, Adw_xgg1, Adw_xdd1, Adw_c1,F_u,F_v,F_w )
       dim = max(1,Adw_fro_a)
       call hpalloc(Adw_capx2_   ,dim,      err,1)
       call hpalloc(Adw_capy2_   ,dim,      err,1)
@@ -142,12 +149,14 @@
       pnlkey1(4) = VMM_KEY(rvw2)
       pnlkey1(5) = VMM_KEY(rcn)
       pnlkey1(6) = VMM_KEY(rth)
-      pnlod = 6
+      pnlkey1(7) = VMM_KEY(fit1)
+      pnlkey1(8) = VMM_KEY(zz1)
+      pnlod = 8
 *
       if (.not. Schm_hydro_L) then
-         pnlkey1(7) = VMM_KEY(rw)
-         pnlkey1(8) = VMM_KEY(rvv)
-         pnlod = 8
+         pnlkey1(9) = VMM_KEY(rw)
+         pnlkey1(10) = VMM_KEY(rvv)
+         pnlod = 10 
       endif
 *
       pnerr = vmmlod(pnlkey1,pnlod)
@@ -158,6 +167,8 @@
       pnerr =  VMM_GET_VAR(rvw2)
       pnerr =  VMM_GET_VAR(rcn)
       pnerr =  VMM_GET_VAR(rth)
+      pnerr =  VMM_GET_VAR(fit1)
+      pnerr =  VMM_GET_VAR(zz1)
 *
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(rw)
@@ -176,6 +187,9 @@
       call adw_interp (rth, rth, F_u, F_v,
      %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
 *
+      call adw_interp (zz1, fit1, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
       if (.not. Schm_hydro_L) then
 
           call adw_interp (rw, rw, F_u, F_v,
@@ -186,16 +200,6 @@
       endif
 *
       if ( Orh_icn .eq. Schm_itcn ) then
-*
-      mono_L = .true. 
-      if(V4dg_conf.ne.0) then
-         mono_L = .false. 
-         if(Lun_out.gt.0) then
-            write(Lun_out,fmt='(3X,''#######################################################'')')
-            write(Lun_out,fmt='(3X,''ADVEC_MAIN: MONOTONE ADV. replaced by NOT MONOTONE ADV.'')')
-            write(Lun_out,fmt='(3X,''#######################################################'')')
-         endif
-      endif
 *
 * tr3d and tr2d advection
 *
@@ -221,7 +225,7 @@
             end do
             end do
             call adw_interp ( tr0, tr0, F_u, F_v,
-     %                        .false., mono_L, LDIST_DIM, l_nk,i0,in,j0,jn)
+     %                        .false., .true., LDIST_DIM, l_nk,i0,in,j0,jn)
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni

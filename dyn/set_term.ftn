@@ -57,7 +57,7 @@
 *
  300  continue
 *
-      pnerr = vmmdiag( )
+      if (Lun_out.gt.0) pnerr = vmmdiag( )
 *
  1000 format(
      %/ /,'TERMINATION OF THE RUN... CLOSING ALL FILES S/R SETTERM',

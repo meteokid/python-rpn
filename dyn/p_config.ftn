@@ -21,6 +21,8 @@
 * v2_32 - Desgagne M.       - connection to physics 3.72
 * v3_00 - Laroche S.        - adapted for the simplified physics
 *                             trajectory and options
+* v3_02 - Dugas B.          - account for a possible second call to the physics
+*                             and add qco2 initialization
 *
 *object
 *     See above id.
@@ -46,6 +48,10 @@
 #include "busind.cdk"
 #include "v4dg.cdk"
 #include "p4d_simp.cdk"
+*
+#include "p_pset.cdk"
+#include "p_cond2.cdk"
+#include "p_pbl2.cdk"
 *
 *modules
       integer  ouvrstrt
@@ -134,6 +140,7 @@
       call phyoptl('FOMICHEV', P_rad_fomic_L  ,       1, 'SET' )
       call phyopti('DATE'    , P_rad_datim    ,      14, 'SET' )
       call phyopti('KNTRAD'  , P_rad_knt      ,       1, 'SET' )
+      call phyoptr('QCO2'    , P_rad_qco2     ,       1, 'SET' )
 *
       NV = 0
       do i=1,CNMXRAD
@@ -204,6 +211,44 @@
          if (lun_out.gt.0) write (lun_out,9000) 
      $        max(p_bent_top,p_bdyn_top,p_bper_top,p_bvol_top)
          stop
+      endif
+*
+      if (P_pset_second_L) then
+*
+         call save_options( 1 )
+*
+         call phyoptc('CONVEC'  , P_cond2_conv_s  ,   1, 'SET' )
+         call phyoptc('STCOND'  , P_cond2_stcon_s ,   1, 'SET' )
+         call phyoptc('SHLCVT'  , P_cond2_shlct_s ,   1, 'SET' )
+*
+         call phyoptl('SATUCO'  , P_cond2_satu_L  ,   1, 'SET' )
+         call phyoptl('INILWC'  , P_cond2_ilwc_L  ,   1, 'SET' )
+*
+         call phyoptl('KFCMOM'  , P_cond2_kfcmom_L,   1, 'SET' )
+         call phyoptr('KFCTRIG' , P_cond2_kfctrig ,   1, 'SET' )
+         call phyoptr('KFCRAD'  , P_cond2_kfcrad  ,   1, 'SET' )
+         call phyoptr('KFCDEPTH', P_cond2_kfcdepth,   1, 'SET' )
+         call phyoptr('KFCDLEV' , P_cond2_kfcdlev ,   1, 'SET' )
+         call phyoptr('KFCDET'  , P_cond2_kfcdet  ,   1, 'SET' )
+         call phyoptr('KFCTIMEC', P_cond2_kfctimec,   1, 'SET' )
+         call phyoptr('KFCTIMEA', P_cond2_kfctimea,   1, 'SET' )
+*
+         call phyoptc('FLUVERT' , P_pbl2_bndlr_s  ,   1, 'SET' )
+         call phyoptc('SCHMSOL' , P_pbl2_schsl_s  ,   1, 'SET' )
+         call phyoptc('LONGMEL' , P_pbl2_mix_s    ,   1, 'SET' )
+*
+         call phyoptl('DRAG'    , P_pbl2_drag_L   ,   1, 'SET' )
+         call phyoptl('CHAUF'   , P_pbl2_ocean_L  ,   1, 'SET' )
+         call phyoptl('EVAP'    , P_pbl2_evap_L   ,   1, 'SET' )
+         call phyoptl('SNOWMELT', P_pbl2_snwmlt_L ,   1, 'SET' )
+         call phyoptl('STOMATE' , P_pbl2_stomat_L ,   1, 'SET' )
+         call phyoptl('TYPSOL'  , P_pbl2_typsol_L ,   1, 'SET' )
+         call phyoptl('ICEMELT'  ,P_pbl2_iceme_L  ,   1, 'SET' )
+         call phyoptl('AGREGAT'  ,P_pbl2_agreg_L  ,   1, 'SET' )
+*
+         call save_options( 2 )
+         call restore_options( 1 )
+*
       endif
 *
  1000 format(/,'PHYSICS CONFIGURATION (S/R P_CONFIG)',

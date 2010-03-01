@@ -1,0 +1,193 @@
+***s/r adw_cfl_lam - Compute the courrant numbers for this time step
+*
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_cfl_lam ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn )
+      implicit none
+*
+      integer i0, in, j0, jn
+      real    F_x_in( * ), F_y_in( * ), F_z_in( * )
+*
+*author
+*     Vivian Lee         October 2002 
+*
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+* F_x_in       | \                                               |  i  |
+* F_y_in       |   upstream positions                            |  i  |
+* F_z_in       | /                                               |  i  |
+* i0           | starting i position to check for LAM            |  i  |
+* in           | ending i position to check for LAM              |  i  |
+* j0           | starting j position to check for LAM            |  i  |
+* jn           | ending j position to check for LAM              |  i  |
+*______________|_________________________________________________|_____|
+*
+*
+*implicits
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "adw.cdk"
+************************************************************************
+*
+      integer n, nij, i, j, k, cfl_i(3,3), err, iproc,
+     $        imax,jmax,kmax,iwk(3,3,Ptopo_numproc)
+      real*8 x_cfl, y_cfl, z_cfl, xy_cfl, xyz_cfl, max_cfl_8,
+     $       cfl_8(3),wk_8(3,Ptopo_numproc)
+*
+************************************************************************
+      nij  = l_ni*l_nj
+      Adw_cfl_8 (:  ) = 0.0d0
+      Adw_cfl_i (:,:) = 0
+*
+*     Compute the largest horizontal courrant number
+      imax = 0
+      jmax = 0
+      kmax = 0
+      max_cfl_8 = 0.d0
+*      
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         x_cfl = (abs( F_x_in(n)-Adw_xx_8(i+Adw_halox)))/Adw_dlx_8(1)
+         y_cfl = (abs( F_y_in(n)-Adw_yy_8(j+Adw_haloy)))/Adw_dly_8(1)
+         xy_cfl= sqrt(x_cfl*x_cfl + y_cfl*y_cfl)
+         if (xy_cfl.gt.max_cfl_8) then
+            imax = i
+            jmax = j
+            kmax = k
+            max_cfl_8 = xy_cfl
+         endif
+      enddo
+      enddo
+      enddo
+*
+      cfl_8(1)   = max_cfl_8
+      cfl_i(1,1) = imax+Adw_int_i_off
+      cfl_i(2,1) = jmax+Adw_int_j_off
+      cfl_i(3,1) = kmax
+*
+*     Compute the largest vertical courrant number
+      imax = 0
+      jmax = 0
+      kmax = 0
+      max_cfl_8 = 0.d0
+*
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         z_cfl = (abs( F_z_in(n)-Adw_bsz_8(k-1)))/Adw_dlz_8(k-2)
+         if (z_cfl.gt.max_cfl_8) then
+            imax = i
+            jmax = j
+            kmax = k
+            max_cfl_8=z_cfl
+         endif
+      enddo
+      enddo
+      enddo
+*
+      cfl_8(2)   = max_cfl_8
+      cfl_i(1,2) = imax+Adw_int_i_off
+      cfl_i(2,2) = jmax+Adw_int_j_off
+      cfl_i(3,2) = kmax
+*
+*     Calculate the largest 3D courrant number
+      imax = 0
+      jmax = 0
+      kmax = 0
+      max_cfl_8 = 0.0d0
+*
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         x_cfl = (abs( F_x_in(n)-Adw_xx_8(i+Adw_halox)))/Adw_dlx_8(1)
+         y_cfl = (abs( F_y_in(n)-Adw_yy_8(j+Adw_haloy)))/Adw_dly_8(1)
+         z_cfl = (abs( F_z_in(n)-Adw_bsz_8(k-1)))/Adw_dlz_8(k-2)
+         xyz_cfl= sqrt(x_cfl*x_cfl + y_cfl*y_cfl + z_cfl*z_cfl)
+         if (xyz_cfl.gt.max_cfl_8) then
+            imax = i
+            jmax = j
+            kmax = k
+            max_cfl_8=xyz_cfl
+         endif
+      enddo
+      enddo
+      enddo
+*
+      cfl_8(3)   = max_cfl_8
+      cfl_i(1,3) = imax+Adw_int_i_off
+      cfl_i(2,3) = jmax+Adw_int_j_off
+      cfl_i(3,3) = kmax
+*
+      call RPN_COMM_gather (cfl_8,3,"MPI_DOUBLE_PRECISION",wk_8,3,
+     $                      "MPI_DOUBLE_PRECISION",0,"GRID", err)
+      call RPN_COMM_gather (cfl_i,9,"MPI_INTEGER",iwk,9,
+     $                      "MPI_INTEGER",0,"GRID", err)
+*
+      if (Ptopo_myproc.eq.0) then
+         imax = iwk(1,1,1)
+         jmax = iwk(2,1,1)
+         kmax = iwk(3,1,1)
+         max_cfl_8 = wk_8(1,1)
+         do iproc = 2, Ptopo_numproc
+            if (wk_8(1,iproc).gt.max_cfl_8) then
+               imax = iwk(1,1,iproc)
+               jmax = iwk(2,1,iproc)
+               kmax = iwk(3,1,iproc)
+               max_cfl_8=wk_8(1,iproc)
+            endif
+         end do
+         Adw_cfl_8(1)   = max_cfl_8
+         Adw_cfl_i(1,1) = imax
+         Adw_cfl_i(2,1) = jmax
+         Adw_cfl_i(3,1) = kmax
+*
+         imax = iwk(1,2,1)
+         jmax = iwk(2,2,1)
+         kmax = iwk(3,2,1)
+         max_cfl_8 = wk_8(2,1)
+         do iproc = 2, Ptopo_numproc
+            if (wk_8(2,iproc).gt.max_cfl_8) then
+               imax = iwk(1,2,iproc)
+               jmax = iwk(2,2,iproc)
+               kmax = iwk(3,2,iproc)
+               max_cfl_8=wk_8(2,iproc)
+            endif
+         end do
+         Adw_cfl_8(2)   = max_cfl_8
+         Adw_cfl_i(1,2) = imax
+         Adw_cfl_i(2,2) = jmax
+         Adw_cfl_i(3,2) = kmax
+*
+         imax = iwk(1,3,1)
+         jmax = iwk(2,3,1)
+         kmax = iwk(3,3,1)
+         max_cfl_8 = wk_8(3,1)
+         do iproc = 2, Ptopo_numproc
+            if (wk_8(3,iproc).gt.max_cfl_8) then
+               imax = iwk(1,3,iproc)
+               jmax = iwk(2,3,iproc)
+               kmax = iwk(3,3,iproc)
+               max_cfl_8=wk_8(3,iproc)
+            endif
+         end do
+         Adw_cfl_8(3)   = max_cfl_8
+         Adw_cfl_i(1,3) = imax
+         Adw_cfl_i(2,3) = jmax
+         Adw_cfl_i(3,3) = kmax
+*
+      endif
+*
+      return
+      end

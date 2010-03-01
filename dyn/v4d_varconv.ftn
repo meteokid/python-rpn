@@ -19,6 +19,7 @@
 *revision
 * v3_00 - Laroche S.       - initial MPI version
 * v3_00 - Gauthier P.      - ln q to q
+* v3_02 - Laroche S.       - conversion to hybrid coordinate
 *
 *object
 *
@@ -88,8 +89,7 @@ C
        do j= 1+pil_s, l_nj-pil_n 
         do i= 1+pil_w, l_ni-pil_e 
 
-         C_st1(i,j) =  Cstv_pitop_8 + (Geomg_z_8(Nk) - Cstv_pitop_8)
-     $                              *  exp(C_st1(i,j))
+         C_st1(i,j) = Geomg_z_8(Nk)*exp(C_st1(i,j))
 
         end do
        end do
@@ -160,8 +160,7 @@ C
        do j= 1+pil_s, l_nj-pil_n 
         do i= 1+pil_w, l_ni-pil_e 
 
-         C_st1(i,j) = log( (    C_st1(i,j) - Cstv_pitop_8 )
-     $              /      ( Geomg_z_8(Nk) - Cstv_pitop_8 ) )   
+         C_st1(i,j) = log( C_st1(i,j) / Geomg_z_8(Nk) )
 
         end do
        end do

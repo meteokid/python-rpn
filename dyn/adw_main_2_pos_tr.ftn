@@ -146,7 +146,7 @@
       do i = i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
          zthm(n) = Geomg_z_8(k) + wrkx1m(n)
-         zthm(n) = min( Geomg_z_8(l_nk), max( zthm(n), Geomg_z_8(1) ) )
+         zthm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*zthm(n), Geomg_z_8(1) ) )
          if ( zthm(n).eq.Geomg_z_8(1) .or. zthm(n).eq.Geomg_z_8(l_nk)) then
            zthm(n) = (zthm(n) + Geomg_z_8(k)) * 0.5
          endif
@@ -173,7 +173,7 @@
             n=(k-1)*nij+((j-1)*l_ni) + i
             F_wm(n) = zthm(n) - Geomg_z_8(k)
             F_wm(n) = Geomg_z_8(k) + 2.0 * F_wm(n)
-            F_wm(n) = min( Geomg_z_8(l_nk), max( F_wm(n), Geomg_z_8(1) ))
+            F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
          enddo
          enddo
       enddo

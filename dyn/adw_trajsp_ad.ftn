@@ -18,6 +18,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_02 - Tanguay M.        - correction when abs(F_zm)=1
 *
 *language
 *     fortran 77
@@ -186,8 +187,12 @@ C     pdsinalm_8  = sin( sqrt( F_um(n) ** 2 + F_vm(n) ** 2 ) * F_dt )
       F_x(n)   = (-F_ym(n)*F_lon(n))/(F_xm(n)*F_xm(n) + F_ym(n)*F_ym(n)) + F_x(n)
       F_lon(n) = ZERO_8 
 *
+      if ( abs(F_zm3) .ne. 1.0D0 ) then
       F_z(n)   = F_lat(n) /( sqrt(1.0 - F_zm3*F_zm3) ) + F_z(n)
       F_lat(n) = ZERO_8 
+      else
+      F_lat(n) =  0.0D0
+      endif
 *
       if ( F_zm(n) .lt. -1.0D0 ) then
          F_z (n) =  0.0D0

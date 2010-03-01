@@ -31,8 +31,33 @@
 *-----------------------|-------------------------------------------------|
 * P4d_sgo               | Option number of sub-grid scale orography       |
 *                       |                                                 |
-*                       |    0 = no parameterization                      |
-*                       |    1 =                                          |
+*                       |  option    GWD   BLOCKING  AA1  AA2  APPLYTEND  |
+*                       |    0       No parameterization                  |
+*                       |   100      true    true     1    1     false    |
+*                       |   110      true    true     0    1     false    |
+*                       |   120      true    true     1    0     false    |
+*                       |   130      true    true     0    0     false    |
+*                       |   101      true    true     1    1     true     |
+*                       |   111      true    true     0    1     true     |
+*                       |   121      true    true     1    0     true     |
+*                       |   131      true    true     0    0     true     |
+*                       |   210      false   true     0    1     false    |
+*                       |   220      false   true     1    0     false    |
+*                       |   230      false   true     0    0     false    |
+*                       |   201      false   true     1    1     true     |
+*                       |   211      false   true     0    1     true     |
+*                       |   221      false   true     1    0     true     |
+*                       |   231      false   true     0    0     true     |
+*                       |   300      true    false    0    0     false    |
+*                       |   301      true    false    0    0     true     |
+*  where:                                                                 |
+*      GWD = true/false => gravity-wave drag tendency is/isn't computed   |
+* BLOCKING = true/false => orographic-blocking tendency is/isn't computed |
+* APPLYTEND = true/false => total tendency is/isn't applied to winds      |
+*                           inside the scheme                             |
+*    AA1 = 1/0 => directional factor in blocking term is/isn't linearized |
+*    AA2 = 1/0 => vertical factor in blocking term is/isn't linearized    |
+*                       |                                                 |
 *_______________________|_________________________________________________|
 * P4d_sigma_wrt         | T : to write the sigma levels used in the       |
 *                       |     physics and keep them invariant             |

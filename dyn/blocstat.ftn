@@ -13,6 +13,7 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_10 - Desgagne M.       - 4D-var statistics control
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Lee V.            - CFL, trajectory stats for LAM
 *
 *object
 *     see above
@@ -29,19 +30,20 @@
 #include "v4dg.cdk"
 #include "tr2d.cdk"
 #include "tr3d.cdk"
+#include "adw.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
       external vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
 
-      integer i,j,k,i0,in,j0,jn,inn,cnt,m,n,unf,ntr2do,j2do
-      integer err, key(max(Tr3d_ntr,5)), key0
-      real tr,buf(l_ni,G_nk)
+      integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf,ntr2do,j2do
+      integer err, key(max(Tr3d_ntr,5)), key0, trunc(4)
+      real tr,buf(l_ni,G_nk),cfl
       pointer (patr, tr(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
 *     ---------------------------------------------------------------
 *
-      if ((V4dg_conf.ne.0).and.(V4dg_out.ne.0)) then
+      if ((V4dg_conf.ne.0).and.(V4dg_output_L)) then
          call v4d_blocstat ()
       elseif (V4dg_conf.eq.0) then
 *
@@ -132,12 +134,40 @@
 *
       if (Ptopo_myproc.eq.0) write(6,1001)
 *
+*     Print max courrant numbers if LAM mode
+      if (G_lam) then
+         if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0) then
+            cfl = Adw_cfl_8(1)
+            write (6,101) 'x,y',Adw_cfl_i(1,1),Adw_cfl_i(2,1),
+     $                          Adw_cfl_i(3,1),cfl
+            cfl = Adw_cfl_8(2)
+            write (6,101) 'z'  ,Adw_cfl_i(1,2),Adw_cfl_i(2,2),
+     $                          Adw_cfl_i(3,2),cfl
+            cfl = Adw_cfl_8(3)
+            write (6,101) '3D' ,Adw_cfl_i(1,3),Adw_cfl_i(2,3),
+     $                          Adw_cfl_i(3,3),cfl
+            Adw_cfl_8 (:  ) = 0.0d0
+            Adw_cfl_i (:,:) = 0
+         endif
+         if (Adw_trunc_traj_L) then
+            call rpn_comm_Allreduce (Adw_trunc,trunc,4,
+     $                            "MPI_INTEGER","MPI_SUM","grid",err)
+            if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0)
+     $         write(6,1003)Lctl_step,  " Trj Cut :",trunc(1)+trunc(2)+
+     $           trunc(3)+trunc(4),trunc(1),trunc(2),trunc(3),trunc(4)
+         endif
       endif
 *
       endif
 *
+      endif
+*
+ 101  format (' MAX COURANT NUMBER:  ',
+     $          a3,': [(',i3,',',i3,',',i3,') ',f12.7,']')
  1000 format (/,19('#'),' BLOC STAT ',i6,1X,,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')
+ 1002 format (i4,a10, i4,10X,' Max:[(',i3,',',i3,',',i3,')]',a6)
+ 1003 format (i4,a10, i4,10X,' N:[',i4,'] S:[',i4,'] E :[',i4,'] W:[',i4,']')
 *     ---------------------------------------------------------------
 *
       return

@@ -10,6 +10,7 @@
 *
 *revision
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
+* v3_02 - Lee V.            - correction to storage of ip1 in NA, in-lined sort
 *
 #include "e_anal.cdk"
 #include "e_fu.cdk"
@@ -30,11 +31,11 @@
       character*1   typ, grd, blk_S
       character*4   var
       character*12  lab
-      real      difsig,x1,x2
+      real      difsig,x1
       real, allocatable, dimension(:) :: topp
       real*8    pdip2
       parameter (difsig = 1.e-5)
-      integer list(2000), i, j, k, nib, l, m, ier
+      integer list(2000), i, j, k, nib, l, m, n, ier
 *
       real*8  one,sid,rsid,dayfrac
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
@@ -156,6 +157,7 @@
          call e_arret('e_specanal')
       endif
 *
+      print *,'Levels searched: fstinl on var=',var
       key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, 
      $                     ip2a, ip3a, tva, var, list, nka, lvmax)
 *
@@ -182,24 +184,70 @@
             call e_arret( 'e_specanal')
          else
             rna(k) = lev
-            if (anal_pres) lna(k) = alog(rna(k))
+            na(k)  = ip1a
          endif
       enddo
 *
-      if ( (anal_pres).and.(lv.lt.16) ) then
-         write(6,*)': NEED 16 OR MORE PRESSURE LEVELS. ',
-     x                     lv, ' levels found'
-         call e_arret('e_specanal')
+      if ( (anal_pres) ) then
+           if ( (lv.lt.16) ) then
+                 write(6,*)': NEED 16 OR MORE PRESSURE LEVELS. ',
+     x                        lv, ' levels found'
+                 call e_arret('e_specanal')
+           endif
+           if ( (lv.gt.35) ) then
+                 write(6,*)': GREATER THAN 35 PRESSURE LEVELS: ',
+     x                        lv, ' levels found'
+                 write(6,*)': WARNING, TT on pressure levels are NOT USED '
+                 write(6,*)': WARNING, TT on pressure levels are DERIVED  '
+                 write(6,*)': and maybe WRONG if too many pressure levels '
+           endif
       endif
 *
-*     Sort levels in ascending order
-      call e_sortr (rna, lv)
+*     Sort levels in ascending order (originally done in e_sortr)
+
+      if (lv.ne.1) then
+         n = lv
+         do i = 1, n-1
+         k = i
+         do j = i+1, n
+            if (rna(k) .gt. rna(j))  k=j
+         enddo
+         if (k .ne. i) then
+            x1     = rna(k)
+            m      = na(k)
+            rna(k) = rna(i)
+            na(k)  = na(i)
+            rna(i) = x1
+            na(i)  = m
+         endif
+         enddo
+
+*        eliminate levels that are redundant in LISTE
+         i = 1
+         do j=2,n
+            if (rna(i) .ne. rna(j)) then
+                i = i+1
+                if (i .ne. j) then
+                    rna(i) = rna(j)
+                     na(i) =  na(j)
+                endif
+            endif
+         enddo
+         lv = i
+
+      endif
 *
       print*, ' ANALYSIS LEVELS FOUND ARE:'
       do k=1,lv
-         call convip (na (k), rna(k), kind, ip1mode, blk_S, .false.)
-         write(6,801) rna(k),k
+         write(6,801) rna(k),k,na(k)
       end do 
+      if (glhybanl.or.gletaanl.or.glsiganl) then
+          if (rna(lv).ne.1.0) then
+              write(6,*)'**************************************'
+              write(6,*)'WARNING: NO topography level found!!!!'
+              write(6,*)'**************************************'
+          endif
+      endif
 *
       glhybanl = anal_hyb
       gletaanl = anal_eta
@@ -210,6 +258,13 @@
       write(6,*) 'gletaanl=', gletaanl
       write(6,*) 'glsiganl=', glsiganl
 *
+      if (glhybanl.or.gletaanl.or.glsiganl) then
+          if (rna(lv).ne.1.0) then
+              write(6,*)'**************************************'
+              write(6,*)'WARNING: NO topography level found!!!!'
+              write(6,*)'**************************************'
+          endif
+      endif
       call bmf_splitwrall ('RNA ',LV,1,1,Bmf_time1,Bmf_time2, 
      $                                    0,0,bmf_dtyp,0,RNA)
       if (anal_hyb.or.anal_eta) then
@@ -221,7 +276,7 @@
      $                                 ,0,0,bmf_dtyp,0,rcoefa)
       endif
 *
- 801  format (' LEVEL anal = ',d15.8,2X,' k = ',i4)
+ 801  format (' LEVEL anal = ',d15.8,2X,' k = ',i4,' IP1= ',I8)
  900  format (a/a,i5,a,e14.7,a,e14.7,a/'   >>>>> ABORT <<<<<')
  1001 format(/,'EXTRACTION OF ANALYSIS LEVELS (S/R E_SPECANAL)',/40('-'))
  1002 format(' DATE = ', 6i5 , 7a4 , i10 )

@@ -23,6 +23,8 @@
 * v2_30                - also calculations of the slab grids. Fill variables
 * v2_30                  locally allocated in "BLOC??" here.
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Lee V.       - filter only on 2D or pressure output if requested
+* v3_02 - Lee V.       - special typvar for V4d adj/tlm
 *
 *object
 *     see above id
@@ -38,7 +40,6 @@
 * F_add         I           bias to add to the output field
 * F_index       I           index pointing to global tables for the variable
 * F_level_ip1   I           IP1 value corresponding to the "F_k" level
-* F_typevar_S   I           TYPVAR indicated for the current output set
 * F_mtout       I/O         accumulater of number of records in the slab
 * F_var_S       O           array of variable names for each record to output
 * F_typvar_S    O           array of TYPVAR values for each record to output
@@ -53,14 +54,16 @@
 #include "outd.cdk"
 #include "setsor.cdk"
 #include "dslab.cdk"
+#include "v4dg.cdk"
 *
 **
 *NOTE: Every dynamic variable is output using PHi grid descriptors.
 *
+      character*1 blk_S
       real wk1(LDIST_SHAPE,1)
-      real wk2(LDIST_SHAPE,1)
+      real wk2(LDIST_SHAPE,1),lev
 *
-      integer i,j,ii,jj,i1,j1,idx,ij,nnio,gridset
+      integer i,j,ii,jj,i1,j1,idx,ij,nnio,gridset,kind
 *
       gridset=Outd_grid(F_sets)
 *     convert to proper units
@@ -71,8 +74,11 @@
       enddo
 *
       if (Setsor_filtpass(F_index).gt.0) then
-      call filter(F_work1, wk1,wk2, Setsor_filtpass(F_index),
-     $    Setsor_filtcoef(F_index), 'G', .false., LDIST_DIM, 1)
+*         Filter output variable only if in pressure units
+          call convip(F_level_ip1, lev, kind, -1, blk_S, .false.)
+          if (kind.eq.2)
+     $        call filter(F_work1, wk1,wk2, Setsor_filtpass(F_index),
+     $             Setsor_filtcoef(F_index), 'G', .false., LDIST_DIM, 1)
       endif
 
 **____________________________________________________________________
@@ -83,6 +89,9 @@
       idx = F_mtout(gridset)
       F_var_S(idx,gridset)= Setsor_name_S(F_index)(1:4)
       F_typvar_S(idx,gridset)=Outd_typvar_S(F_sets)
+*     Special coding of typvar for V4d TLM and V4d ADJ only
+      if (V4dg_tl_L) F_typvar_S(idx,gridset) = 'R'
+      if (V4dg_ad_L) F_typvar_S(idx,gridset) = 'G'
       F_ip1(idx,gridset)= F_level_ip1
       F_bit(idx,gridset)= Setsor_xnbits(F_index)
 *

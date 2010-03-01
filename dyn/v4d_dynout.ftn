@@ -212,7 +212,7 @@
 *
 *     Perform output if required
 *     --------------------------
-      call dynout2 (.true.)
+      call dynout2 ( )
 *
 *     Reset original fields 
 *     ---------------------

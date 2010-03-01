@@ -1,5 +1,5 @@
-***s/r v4d_init - Initialization of sections  
-*                 COST FUNCTION and MINIMIZATION in 4D-Var comdeck 
+***s/r v4d_init - Initialization of parameters in 4D-Var comdecks   
+*                 not already initialized in subr. SET_WORLD_VIEW1
 *
 #include <model_macros_f.h>
 *
@@ -18,6 +18,7 @@
 * v3_01 - Morneau J.        - V4dj_mask_L in namelist and remove grdtst when
 *                             V4dg_sensib_L = .T.
 * v3_01 - Tanguay M.        - introduce identity option
+* v3_02 - Tanguay M.        - V4dg_identity_L,V4dg_ga_eq_ge_L in namelist 
 *
 *object
 *     see id section
@@ -67,27 +68,15 @@
 *
 *        Ask for a Gradient test
 *        -----------------------
-         V4dg_grd_L = .true.
-         if (V4dg_sensib_L)  V4dg_grd_L = .false.
+         V4dg_grd_L = .false.
 *
 *        Parameters for Gradient test
 *        ----------------------------
          V4dg_range = 5 
          V4dg_start = 0.1 
 *
-*        Parameter set to TRUE if integration = Identity
-*        -----------------------------------------------
-         V4dg_identity_L = .false.
-*
-*        Parameter set to TRUE if GAUSSIAN grid = GEM grid
-*        -------------------------------------------------
-         V4dg_ga_eq_ge_L = .false.
-*
-         if (Lun_out.gt.0) write(Lun_out,4000) V4dg_conf,V4dg_sensib_L,
-     %                        V4dg_stepob,V4dg_inv,V4dg_tlm_L,
-     %                        V4dg_oktr_L,V4dg_oktrtl_L,
-     %                        V4dg_grd_L,V4dg_range,V4dg_start,V4dg_incore_L,
-     %                        V4dg_identity_L,V4dg_ga_eq_ge_L
+         if (Lun_out.gt.0) write(Lun_out,4000) V4dg_tlm_L,V4dg_oktr_L,V4dg_oktrtl_L, 
+     %                                         V4dg_grd_L,V4dg_range,V4dg_start
 *
 *     -----------------------------------
 *     Variables for COST FUNCTION section 
@@ -103,17 +92,11 @@
 *        --------------------------------
          V4dj_kdcst = 2 
 *
-*        Set type of observations location (Full=100)
-*        --------------------------------------------
+*        Set type of observations location (Full=100) (Full less poles=101)
+*        ------------------------------------------------------------------
          V4dj_locob = 100
 *
-*        Read mask on stdfile if .T.
-*        Default is V4dj_mask_L = .F. in set_world_view1
-*        Then       V4dj_mask_L is read in namelist var4d
-*        ---------------------------
-*
-         if (Lun_out.gt.0) write(Lun_out,4001) V4dj_jb,V4dj_kdcst, 
-     %                        V4dj_locob,V4dj_mask_L
+         if (Lun_out.gt.0) write(Lun_out,4001) V4dj_jb,V4dj_kdcst,V4dj_locob 
 *
       endif
 *
@@ -133,27 +116,19 @@
          V4dm_dxmin = 1.e-5
          V4dm_epsg  = 1.e-5
 *
-         if (Lun_out.gt.0) write(Lun_out,4002) V4dm_itmax,V4dm_simax,
-     %                        V4dm_impres,V4dm_hot,V4dm_dxmin,V4dm_epsg
+         if (Lun_out.gt.0) write(Lun_out,4002) V4dm_impres,V4dm_hot,V4dm_dxmin,V4dm_epsg 
 *
       endif
 *
 4000  format(
      %//,'INITIALIZATION (S/R V4D_INIT GENERAL)',
      % /,'=====================================',
-     % /,'  CONF       = ',I6
-     % /,'  SENSIB_L   = ',L2,
-     % /,'  STEPOB     = ',I6,
-     % /,'  INV        = ',I6,
      % /,'  TLM_L      = ',L2,
      % /,'  OKTR_L     = ',L2,
      % /,'  OKTRTL_L   = ',L2,
      % /,'  TESTGRD    = ',L2,
      % /,'  RANGE      = ',I6,
      % /,'  XRSTART    = ',E13.7,
-     % /,'  INCORE_L   = ',L2,
-     % /,'  IDENTITY_L = ',L2
-     % /,'  GA_EQ_GE_L = ',L2
      % /)
 *
 4001  format(
@@ -162,14 +137,11 @@
      % /,'  JB       = ',I6,
      % /,'  KDCST    = ',I6,
      % /,'  LOCOB    = ',I6,
-     % /,'  MASK_L   = ',L2,
      % /)
 *
 4002  format(
      %//,'INITIALIZATION (S/R V4D_INIT MINIMIZATION)',
      % /,'==========================================',
-     % /,'  ITMAX    = ',I6,
-     % /,'  SIMAX    = ',I6,
      % /,'  IMPRES   = ',I6,
      % /,'  HOT      = ',I6,
      % /,'  DXMIN    = ',E13.7,

@@ -1,0 +1,238 @@
+***s/r  sol_parite_2_ad - ADJ of sol_parite_2 
+*
+#include <model_macros_f.h>
+*
+      subroutine  sol_parite_2_ad ( Sol, Rhs, evxevec,oddxevec,
+     $                              Minx, Maxx, Miny, Maxy, njl,
+     $                              Minz, Maxz, Nk, Nkl, 
+     $                              Gni, Gnj, Minij, Maxij, L_nij,
+     $                              minx1, maxx1, minx2, maxx2,nx3,
+     $                              F_npex1, F_npey1, ai, bi, ci,
+     $                              fdg1,fdg2,fdwfft,fdg12,NSTOR,nev)
+*
+#include "impnone.cdk"
+*
+      integer  F_npex1 , F_npey1
+      integer  minx1, maxx1, minx2, maxx2,nx3
+
+      Real*8   ai(minx1:maxx1,minx2:maxx2,nx3),
+     $         bi(minx1:maxx1,minx2:maxx2,nx3),
+     $         ci(minx1:maxx1,minx2:maxx2,nx3)
+*
+      integer  Minx, Maxx, Miny, Maxy, njl,
+     $         Minz, Maxz, Nk  , Nkl ,
+     $         Gni , Gnj , Minij, Maxij, L_nij,NSTOR,nev
+      real*8   Rhs(Minx:Maxx,Miny:Maxy,Nk), Sol(Minx:Maxx,Miny:Maxy,Nk)
+      real*8   evxevec(NSTOR*NSTOR),oddxevec(NSTOR*NSTOR)
+
+      real*8   fdwfft(Miny:Maxy,Minz:Maxz,Gni)
+      real*8   fdg1(Miny:Maxy,Minz:Maxz,Gni+F_npex1)
+      real*8   fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
+      real*8   fdg12(Miny:Maxy,Minz:Maxz,Gni)
+*
+*author M.Tanguay 
+*
+*revision
+* v3_02 - Tanguay M.         - initial version
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*   o      - Sol      - result
+*   i      - Rhs      - r.h.s. of elliptic equation
+*   i      - ev-Xevec - Even eigenvectors
+*   i      - odd-Xevec- Odd eigenvectors
+*   i      - Gni      - number of points in x-direction
+*   i      - Gnj      - number of points in y-direction
+*
+#include "ptopo.cdk"
+*
+      integer  j, jr, ki, i,  k, nevi, gnii
+*
+      real*8   ZERO_8, ONE_8
+      parameter( ZERO_8 = 0.0 )
+      parameter( ONE_8  = 1.0 )
+*
+*ADJ of
+* combine even and odd parts
+*
+*PDIR SERIAL
+      call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                             Minz, Maxz, Nk, fdg1, 1, 2)
+
+*PDIR ENDSERIAL
+*
+      if( Gni.eq.(2*(Gni/2)) ) then
+      do k= 1,Nkl
+        do j= 1,njl
+           fdg12(j,k,nev) = fdg1(j,k,nev) + fdg12(j,k,nev)
+           fdg1 (j,k,nev) = ZERO_8
+        enddo
+      enddo
+      endif
+*
+      do k= Nkl,1,-1
+        do j= njl,1,-1
+*VDIR NODEP
+          do i= (Gni+1)/2,2,-1
+           gnii=Gni+2-i
+           nevi=nev-1+i
+*
+           fdg12(j,k,i)    =  fdg1(j,k,gnii) + fdg12(j,k,i)
+           fdg12(j,k,nevi) = -fdg1(j,k,gnii) + fdg12(j,k,nevi)
+           fdg1 (j,k,gnii) = ZERO_8
+*
+           fdg12(j,k,i)    =  fdg1(j,k,i) + fdg12(j,k,i)
+           fdg12(j,k,nevi) =  fdg1(j,k,i) + fdg12(j,k,nevi)
+           fdg1 (j,k,i)    = ZERO_8
+*
+          enddo
+        enddo
+      enddo
+*
+*VDIR NODEP
+      do k= 1,Nkl
+        do j= 1,njl
+          fdg12(j,k,1) = fdg1(j,k,1) + fdg12(j,k,1)
+          fdg1 (j,k,1) = ZERO_8
+        enddo
+      enddo
+*
+*     ADJ of
+*     inverse projection ( r = x * w )
+*
+c*PDIR PARDO FOR=Ptopo_npeOpenMP
+*
+      call mxma8( oddxevec,               NSTOR,1,
+     %            fdg12 (1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1),   1,
+     %            fdwfft(1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1),   1,
+     %                        Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+*
+      call mxma8( evxevec,                NSTOR,1,
+     %            fdg12 (1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1),   1,
+     %            fdwfft(1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1),   1,
+     %                         nev, nev, (Maxy-Miny+1) * Nkl )
+*
+*PDIR SERIAL
+*
+      call rpn_comm_transpose
+     $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
+     $                        Minij, Maxij, Gni, fdg2, 2, 2 )
+*
+         do j = 1,Gnj-1
+            jr =  j + 1
+            do ki= (Maxz-Minz+1)*L_nij,1,-1
+              fdg2(ki,i,jr) = - ci(ki,i,j) * fdg2(ki,i,j) + fdg2(ki,i,jr)
+            enddo
+         enddo
+*
+      do j =Gnj,2,-1
+            jr =  j - 1
+            do ki= (Maxz-Minz+1)*L_nij,1,-1
+               fdg2(ki,i,jr) = - ai(ki,i,j) * fdg2(ki,i,j) + fdg2(ki,i,jr)
+               fdg2(ki,i,j)  =   bi(ki,i,j) * fdg2(ki,i,j)
+            enddo
+      enddo
+*
+       j =1
+       do ki= (Maxz-Minz+1) *L_nij,1,-1
+          fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
+       enddo
+*
+      call rpn_comm_transpose
+     $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
+     $                         Minij, Maxij, Gni, fdg2, -2, 2 )
+*
+*PDIR ENDSERIAL
+*
+*     ADJ of
+*     projection ( wfft = x transposed * g )
+*
+c*PDIR PARDO FOR=Ptopo_npeOpenMP
+*
+      call mxma8( oddxevec,         1,NSTOR,
+     %            fdwfft(1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1), 1,
+     %            fdg12 (1,1,nev+1),(Maxy-Miny+1) * (Maxz-Minz+1), 1,
+     %                     Gni-nev, Gni-nev, (Maxy-Miny+1) * Nkl )
+*
+      call mxma8( evxevec,          1,NSTOR,
+     %            fdwfft(1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+     %            fdg12 (1,1,1), (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+     %                     nev, nev, (Maxy-Miny+1) * Nkl )
+*
+*  ADJ of
+*  odd part of rhs
+          do k=Nkl,1,-1
+*
+*           RESTAURE VECTORIZATION
+*           do j=njl,1,-1
+*             do i=Gni-nev,1,-1
+            do i=Gni-nev,1,-1
+              do j=njl,1,-1
+              fdg1 (j,k,i+1)     =  fdg12(j,k,i+nev) + fdg1(j,k,i+1)
+              fdg1 (j,k,Gni+1-i) = -fdg12(j,k,i+nev) + fdg1(j,k,Gni+1-i)
+              fdg12(j,k,i+nev)   = ZERO_8
+             enddo
+            enddo
+          enddo
+*
+*  ADJ of
+*  even  part of rhs
+         if(Gni.eq.(2*(Gni/2)) ) then
+          do k=Nkl,1,-1
+            do j=njl,1,-1
+               fdg1 (j,k,nev) = fdg12(j,k,nev) + fdg1(j,k,nev)
+               fdg12(j,k,nev) = ZERO_8
+            enddo
+          enddo
+         endif
+*
+          do k=Nkl,1,-1
+*
+*           RESTAURE VECTORIZATION
+*           do j=njl,1,-1
+*              do i= (Gni+1)/2,2,-1
+            do i= (Gni+1)/2,2,-1
+               do j=njl,1,-1
+                fdg1 (j,k,i)       = fdg12(j,k,i) + fdg1(j,k,i)
+                fdg1 (j,k,Gni+2-i) = fdg12(j,k,i) + fdg1(j,k,Gni+2-i)
+                fdg12(j,k,i)       = ZERO_8
+              enddo
+            enddo
+          enddo
+*
+          do k=1,Nkl
+            do j=1,njl
+              fdg1 (j,k,1) = fdg12(j,k,1) + fdg1(j,k,1)
+              fdg12(j,k,1) = ZERO_8
+            enddo
+          enddo
+*
+*PDIR SERIAL
+*
+         do k= Nkl+1,Maxz
+            do j= Miny,Maxy
+               do i= 1,Gni
+                  fdwfft(j,k,i)=ZERO_8
+               enddo
+            enddo
+         enddo
+*
+          do k= Minz,Maxz
+            do j= njl+1,Maxy
+               do i= 1,Gni
+                  fdg1 (j,k,i)=ZERO_8
+                  fdg12(j,k,i)=ZERO_8
+               enddo
+            enddo
+         enddo
+*
+      call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                                   Minz, Maxz, Nk, fdg1, -1,2 )
+*
+*PDIR ENDSERIAL
+*
+      return
+      end

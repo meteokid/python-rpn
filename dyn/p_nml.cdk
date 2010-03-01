@@ -6,6 +6,8 @@
 * v2_21 - Dugas B.               - added climate mode flags
 * v2.31 - Dugas B.               - added P_zong_znoff_L and P_zong_nbin
 * v2.32 - Dugas B.               - added P_rad_nivl
+* v3_02 - Dugas B.               - account for a possible second call to the physics,
+*                                  add P_pbl_dumpbus and P_rad_qco2 to the physics namelist
 *
 ***comdeck p_nml.cdk
 *
@@ -25,12 +27,18 @@
 #include "p_serg.cdk"
 #include "p_zong.cdk"
 #include "p4d_simp.cdk"
+#include "p_pset.cdk"
 *
       namelist /physics/
-     $     P_rad_schm_s, P_rad_knt, P_rad_fomic_L,
-     $     P_rad_ftp_s,  P_rad_nivl,
+     $     P_pset_second_L,
+     $     P_pset_xofset  ,P_pset_xofsetr ,
+     $     P_pset_yofset  ,P_pset_yofsett ,
+     $     P_pset_xblnd   ,P_pset_yblnd   ,
 *
-     $     P_clim_clima_L ,P_clim_ininc_L,
+     $     P_rad_schm_s   ,P_rad_knt      , P_rad_fomic_L ,
+     $     P_rad_ftp_s    ,P_rad_nivl     , P_rad_qco2    ,
+*
+     $     P_clim_clima_L ,P_clim_ininc_L ,
 *
      $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
      $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
@@ -38,11 +46,11 @@
      $     P_pbl_cortm_L  ,P_pbl_corts_L  ,
      $     P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L  ,
      $     P_pbl_agreg_L  ,P_pbl_bndlr_s  ,P_pbl_nslof    ,
-     $     P_pbl_cst      ,P_pbl_csn      ,P_pbl_albkg_L  ,
+     $     P_pbl_albkg_L  ,P_pbl_cst      ,P_pbl_csn      ,
      $     P_pbl_csg      ,P_pbl_kst      ,P_pbl_ksn      ,
      $     P_pbl_ksg      ,P_pbl_valml_8  ,P_pbl_mllat_8  ,
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
-     $     P_pbl_mix_s    ,P_pbl_z0tcst_L ,
+     $     P_pbl_mix_s    ,P_pbl_z0tcst_L ,P_pbl_dumpbus  ,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
@@ -67,10 +75,15 @@
      $     P_zong_nbin
 *
       namelist /physics_p/
-     $     P_rad_schm_s, P_rad_knt, P_rad_fomic_L,
-     $     P_rad_ftp_s,
+     $     P_pset_second_L,
+     $     P_pset_xofset  ,P_pset_xofsetr ,
+     $     P_pset_yofset  ,P_pset_yofsett ,
+     $     P_pset_xblnd   ,P_pset_yblnd   ,
 *
-     $     P_clim_clima_L ,P_clim_ininc_L,
+     $     P_rad_schm_s   ,P_rad_knt      , P_rad_fomic_L ,
+     $     P_rad_ftp_s    ,P_rad_qco2     ,
+*
+     $     P_clim_clima_L ,P_clim_ininc_L ,
 *
      $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
      $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,

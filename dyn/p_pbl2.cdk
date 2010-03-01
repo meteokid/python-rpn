@@ -1,0 +1,46 @@
+#if defined (DOC)
+*
+***comdeck p_pbl2.cdk
+*
+*revision
+* v3_02 - Dugas B.               - adapted from p_pbl.cdk
+*_______________________________________________________________________
+*                                                                       |
+*  VARIABLES ASSOCIATED WITH PLANETARY BOUNDARY LAYER (second set)      |
+*_______________________________________________________________________|
+*                     |                                                 |
+* NAME                | DESCRIPTION                                     |
+*---------------------|-------------------------------------------------|
+* P_pbl2_bndlr_S      | FLUVERT: name of boundary layer processes       |
+* P_pbl2_schsl_S      | SCHMSOL: name of land surface processes         |
+* P_pbl2_mix_S        | name of the mixing lenght formulation           |
+*       The following switches are activated if TRUE                    |
+* P_pbl2_drag_L       | DRAG: surface friction  (simplified Physics)    |
+* P_pbl2_ocean_L      | CHAUF:surface heat flux from oceans(simp.Physics|
+* P_pbl2_evap_L       | EVAP: surface evaporation                       |
+* P_pbl2_snwmlt_L     | SNOWMELT: snow melting                          |
+* P_pbl2_stomat_L     | STOMATE: stomatal resistance                    |
+* P_pbl2_typsol_L     | TYPSOL: soil surface parameters                 |
+* P_pbl2_iceme_L      | ICEMELT: sea ice melting                        |
+* P_pbl2_agreg_L      | AGREGAT: switch to control aggregation of       |
+*                     |          properties                             |
+*-----------------------------------------------------------------------
+*
+*
+#endif
+*
+      character*8 P_pbl2_bndlr_S, P_pbl2_schsl_S, P_pbl2_mix_S
+      logical P_pbl2_drag_L   ,P_pbl2_ocean_L  ,P_pbl2_evap_L   ,
+     $        P_pbl2_snwmlt_L ,P_pbl2_stomat_L ,P_pbl2_typsol_L ,
+     $        P_pbl2_iceme_L  ,P_pbl2_agreg_L
+*
+      MARK_COMMON_BEG (ppbl2_c)
+      common /ppbl2_c/ P_pbl2_bndlr_S, P_pbl2_schsl_S, P_pbl2_mix_S
+      MARK_COMMON_END (ppbl2_c)
+
+      MARK_COMMON_BEG (ppbl2_l)
+      common /ppbl2_l/
+     $     P_pbl2_drag_L   ,P_pbl2_ocean_L  ,P_pbl2_evap_L   ,
+     $     P_pbl2_snwmlt_L ,P_pbl2_stomat_L ,P_pbl2_typsol_L ,
+     $     P_pbl2_iceme_L  ,P_pbl2_agreg_L
+      MARK_COMMON_END (ppbl2_l)

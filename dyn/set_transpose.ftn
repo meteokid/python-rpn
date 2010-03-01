@@ -86,6 +86,7 @@
 *                  Vspng_n_spng top layers NOT distributed
 *                  G_nj distributed on Ptopo_npex*Ptopo_npey PEs
 *                  G_ni NOT distributed
+*
       if (Vspng_nk.gt.0) then
       istat = rpn_comm_topo ( ldnh_maxy, minx, maxx, n, npartiel ,
      %                                   0, n0, .true. , .true. )
@@ -124,7 +125,8 @@
 *                  Vspng_n_spng top layers NOT distributed
 *                  G_ni distributed on Ptopo_npex*Ptopo_npey PEs
 *                  G_nj NOT distributed
-
+*
+      if (Vspng_nk.gt.0) then
       istat = rpn_comm_topo ( ldnh_maxx, minx, maxx, n, npartiel ,
      %                               0, n0, .false. , .true. )
       if (.not.check_parti (n0,ldnh_maxx,Ptopo_npey)) then
@@ -137,7 +139,8 @@
       trp_22emax = maxx
       trp_22en   = n
       trp_22en0  = n0
-
+      endif
+*
  1001 format (a/a/' ----- ABORT in set_transpose -----'/)
 *     ---------------------------------------------------------------
 *

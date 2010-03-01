@@ -21,6 +21,7 @@
 * v2_30                       added Pslab_xnio
 * v2_31 - Lee V.            - remove call to busvar and busent
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Dugas B.          - account for a possible second call to the physics
 *
 *object
 *	See above ID.
@@ -39,7 +40,7 @@
 #include "schm.cdk"
 *
 **
-      integer err,n,i
+      integer err
 *
 *     ---------------------------------------------------------------
 *
@@ -64,6 +65,11 @@
 *       ---------------------------------
 *
       call p_fcpfw()
+*
+*C      computes weights and indices for (optional) second physics
+*       ----------------------------------------------------------
+*
+      call p_psetiw()
 *
 *C      computes vertical diffusion amplification factor
 *       ------------------------------------------------

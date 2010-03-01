@@ -28,10 +28,8 @@
 *
 *     ---------------------------------------------------------------
 *
-      if (Lun_out.gt.0) then
-         write(Lun_out,1000) F_name_S
-         call wlog('STOP')
-      endif
+      if (Lun_out.gt.0) write(Lun_out,1000) F_name_S
+      call wlog('STOP')
       call stopmpi (-1) 
 *
  1000 format(

@@ -14,6 +14,7 @@
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
 * v2_31 - Desgagne M.       - remove treatment of HUT1 and QCT1
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Desgagne M.       - correction for non-hydrostatic version
 *
 *object
 *	Performs preprocessing of the data: part1. We compute:
@@ -41,9 +42,7 @@
 #include "lctl.cdk"
 *
       integer i, j, k
-      real pr1, pr2, w1(LDIST_SHAPE),
-     $     t1(LDIST_SHAPE,G_nk),t2(LDIST_SHAPE,G_nk),
-     $     t3(LDIST_SHAPE,G_nk),t4(LDIST_SHAPE,G_nk)
+      real pr1, pr2
 **
 *     __________________________________________________________________
 *
@@ -98,7 +97,7 @@
          end do
          end do
          call initw2 ( Ind_w, Ind_u, Ind_v, Ind_psd, Ind_fi, Ind_t, 
-     $                       Ind_s,t1,t2,t3,t4,w1, LDIST_DIM, l_nk ) 
+     $                                            Ind_s, LDIST_DIM ) 
       endif
 *
 *     __________________________________________________________________

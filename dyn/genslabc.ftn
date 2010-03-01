@@ -4,13 +4,16 @@
 *
       subroutine genslabc ()
 *
-#include "impnone.cdk"
+*implicits
+      use v4d_prof, only: Pr_nsim4d
 *
+#include "impnone.cdk"
 *
 *author 
 *     Vivian Lee (rpn) - Oct 2001 (genslabp v2_30)
 *
 *revision
+* v3_02 - Tanguay M.        - IP3 depend on # iterations when 4dvar_L
 *
 *object
 *	This subroutine generates slab descriptors
@@ -80,9 +83,15 @@
       Slab_ip2 = nint(float(Lctl_step)*Cstv_dt_8/3600.0)
       Slab_ip3 = 0
       if (V4dg_conf.ne.0) then
-          Slab_ip3 =  V4dg_status
-          if (V4dg_conf/100.eq.1.and.V4dg_ad_L)
+          if (.not.V4dg_4dvar_L) then
+              Slab_ip3 = V4dg_status
+              if (V4dg_conf/100.eq.1.and.V4dg_ad_L)
      %        Slab_ip3 = 20 + V4dg_status
+          else
+              Slab_ip3 = V4dg_status
+              if(V4dg_tl_L) Slab_ip3 = 1000 + Pr_nsim4d
+              if(V4dg_ad_L) Slab_ip3 = 2000 + Pr_nsim4d
+          endif
       endif
 *
       output_in_PE_L = .false.

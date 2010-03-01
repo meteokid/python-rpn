@@ -1,0 +1,180 @@
+***s/r v4d_rdtrial - Read from TRIAL STD file at required time step
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_rdtrial
+*
+#include "impnone.cdk"
+*
+*author 
+*     Michel Roch - rpn - jan 1994
+*
+*revision
+* v3_02 - J.-F. Mahfouf.    - initial MPI version (from readdyn v2_21)
+*                             read trial file for evaluation of
+*                             the tangent-linear approximation
+*
+*object
+*	
+*arguments
+*	none
+*
+*constants
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "v4d_vmm.cdk"
+#include "vt1.cdk"
+#include "tr3d.cdk"
+#include "ptopo.cdk"
+#include "geomg.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer  fstouv,fstlir,fstfrm,v4d_rdfld,longueur
+      external fstouv,fstlir,fstfrm,v4d_rdfld,longueur
+*
+      integer nvar,i,j,k, iip1(G_nk),iip2
+      integer nerr, err, pnlkey1(9),  error(16), dum1
+      character*5 blank_S,var_S
+
+      real wk1(G_ni,G_nj,G_nk)
+
+      integer key1(Tr3d_ntr), key1_, n
+      real hut1
+      pointer (pahu1, hut1(LDIST_SHAPE,*))
+**
+*     ---------------------------------------------------------------
+*
+      if (Lun_out > 0) then
+         write(lun_out,9000)
+         write (Lun_out,*)'Opening file: ',
+     $        V4dg_lun_obs_s(1:longueur(V4dg_lun_obs_s))
+      endif
+      if (Ptopo_myproc.eq.0) then
+         err = fstouv(V4dg_lun_obs,'RND')
+      endif
+*
+      pnlkey1( 1)=VMM_KEY( ut1)
+      pnlkey1( 2)=VMM_KEY( vt1)
+      pnlkey1( 3)=VMM_KEY(tpt1)
+      pnlkey1( 4)=VMM_KEY( st1)      
+      nvar=4
+*
+      err = vmmlod(pnlkey1,nvar)
+*
+      err = VMM_GET_VAR( ut1)
+      err = VMM_GET_VAR( vt1)
+      err = VMM_GET_VAR(tpt1)
+      err = VMM_GET_VAR( st1)
+*
+*     Load humidity field
+*     -------------------
+      key1_ = VMM_KEY(trt1)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+      err = vmmlod(key1,Tr3d_ntr)
+      do n=1,Tr3d_ntr
+         if (Tr3d_name_S(n).eq.'HU') err = vmmget(key1(n),pahu1,hut1) 
+      end do
+* 
+*     ----------------------------------------------
+*     Compute IP1, IP2 of TRIAL to be read
+*     ----------------------------------------------
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          call convip(iip1(k),geomg_hyb(k),1,+1,blank_S,.false.)
+        enddo
+        iip2 = nint(float(Lctl_step)*Cstv_dt_8/3600.0)
+      endif
+*     ----------------------------------------------
+*
+      if (Ptopo_myproc.eq.0) then
+        nerr = 0
+        do i=1,nvar
+          error(i)=0
+          nerr = nerr + 1
+        enddo
+      endif
+*
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          err = v4d_rdfld(wk1(1,1,k),V4dg_lun_obs,G_ni,G_nj,
+     $                    iip1(k),iip2,0,'P','UT1',G_niu+1,G_nj)
+          error(1) = error(1)+err
+        enddo
+      endif
+      call glbdist(wk1,G_ni,G_nj,ut1,LDIST_DIM,G_nk,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          err = v4d_rdfld(wk1(1,1,k),V4dg_lun_obs,G_ni,G_nj,
+     $                    iip1(k),iip2,0,'P','VT1',G_ni+1,G_njv)
+          error(2) = error(2)+err
+        enddo
+      endif
+      call glbdist(wk1,G_ni,G_nj,vt1,LDIST_DIM,G_nk,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          err = v4d_rdfld(wk1(1,1,k),V4dg_lun_obs,G_ni,G_nj,
+     $                    iip1(k),iip2,0,'P','TPT1',G_ni+1,G_nj)
+          error(3) = error(3)+err
+        enddo
+      endif
+      call glbdist(wk1,G_ni,G_nj,tpt1,LDIST_DIM,G_nk,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+          err = v4d_rdfld(wk1(1,1,1),V4dg_lun_obs,G_ni,G_nj,
+     $                    0,iip2,0,'P','ST1',G_ni+1,G_nj)
+          error(4) = error(4)+err
+      endif
+      call glbdist(wk1,G_ni,G_nj,st1,LDIST_DIM,1,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          err = v4d_rdfld(wk1(1,1,k),V4dg_lun_obs,G_ni,G_nj,
+     $                    iip1(k),iip2,0,'P','HUT1',G_ni+1,G_nj)
+          error(5) = error(5)+err
+        enddo
+      endif
+      call glbdist(wk1,G_ni,G_nj,hut1,LDIST_DIM,G_nk,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+         err = 0
+         do i=1,nerr
+            err = err + error(i)
+         end do
+      endif
+*
+      call RPN_COMM_bcast (err,1,"MPI_INTEGER",0,"grid",dum1)
+      if (err.ne.0) call gefstop('v4d_rdtrial')
+*
+      err = vmmuld(-1,0)
+*   
+      if (Lun_out > 0) write(Lun_out,9900)
+*
+      if (Ptopo_myproc.eq.0) then
+         err = fstfrm (V4dg_lun_obs)
+      endif
+*
+ 9000 format(
+     +/,'BEGIN READING TRIAL FILES       (V4D_RDTRIAL)',
+     +/,'=============================================')
+ 9900 format(
+     +/,'END READING TRIAL FILES         (V4D_RDTRIAL)',
+     +/,'=============================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

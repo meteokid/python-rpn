@@ -33,30 +33,48 @@
 #include "glb_ld.cdk"
 #include "vspng.cdk"
 #include "trp.cdk"
+#include "ptopo.cdk"
 *     
-      integer i, j, k, ii, jj
+      integer i, j, k, ii, jj, j2
       real*8 ax_8(Vspng_nk,trp_12emax,G_ni), 
      $       bx_8(Vspng_nk,trp_12emax,G_ni), 
      $       cx_8(Vspng_nk,trp_12emax,G_ni), 
      $       ay_8(Vspng_nk,trp_22emax,G_nj),
      $       by_8(Vspng_nk,trp_22emax,G_nj), 
-     $       cy_8(Vspng_nk,trp_22emax,G_nj),diy_8
+     $       cy_8(Vspng_nk,trp_22emax,G_nj),diy_8,mdifc(Gnj)
       real*8 ZERO_8,ONE_8,HALF_8
       parameter ( ZERO_8 = 0.0 , ONE_8 = 1.0 , HALF_8 = 0.5 )
 **
 *     ---------------------------------------------------------------
+*
+      if (Vspng_njpole .lt. 1) then
+         do j = 1, Gnj
+            mdifc(j) = ONE_8
+         end do
+      else
+         do j = 1, Vspng_njpole
+            mdifc(j) = dble(j-1)/dble(Vspng_njpole)
+         end do
+         do j = Vspng_njpole+1, F_gnjv-Vspng_njpole
+            mdifc(j) = ONE_8
+         end do
+         do j = F_gnjv-Vspng_njpole+1, Gnj
+            mdifc(j) = max(ZERO_8,dble(F_gnjv-j)/dble(Vspng_njpole))
+         end do
+      endif
 *
 *     Calcul le long de X
 *
       do k = 1, Vspng_nk
          do j = 1, trp_12en
             jj = Trp_12en0 + j - 1
+            j2 = Ptopo_gindx(3,Ptopo_myproc+1) + jj - 1
             do i = 1, G_ni
-            ax_8(k,j,i) = F_xp0_8(i,1) - F_xp2_8(i,1)
+            ax_8(k,j,i) = F_xp0_8(i,1) - F_xp2_8(i,1) * mdifc(j2)
      $                   *F_coef_8*Vspng_mf(k) / cos(F_cy2_8(jj))**2
-            bx_8(k,j,i) = F_xp0_8(i,2) - F_xp2_8(i,2)
+            bx_8(k,j,i) = F_xp0_8(i,2) - F_xp2_8(i,2) * mdifc(j2)
      $                   *F_coef_8*Vspng_mf(k) / cos(F_cy2_8(jj))**2
-            cx_8(k,j,i) = F_xp0_8(i,3) - F_xp2_8(i,3)
+            cx_8(k,j,i) = F_xp0_8(i,3) - F_xp2_8(i,3) * mdifc(j2)
      $                   *F_coef_8*Vspng_mf(k) / cos(F_cy2_8(jj))**2
             enddo
          enddo
@@ -82,11 +100,11 @@
          do i= 1, trp_22en
          do j= 1, F_gnjv
             ay_8(k,i,j) =  F_yp0_8(j,1) - F_yp2_8(j,1) 
-     $                   * F_coef_8 * Vspng_mf(k)
+     $                   * F_coef_8 * Vspng_mf(k) * mdifc(j)
             by_8(k,i,j) =  F_yp0_8(j,2) - F_yp2_8(j,2) 
-     $                   * F_coef_8 * Vspng_mf(k)
+     $                   * F_coef_8 * Vspng_mf(k) * mdifc(j)
             cy_8(k,i,j) =  F_yp0_8(j,3) - F_yp2_8(j,3) 
-     $                   * F_coef_8 * Vspng_mf(k)
+     $                   * F_coef_8 * Vspng_mf(k) * mdifc(j)
          enddo
          ay_8(k,i,1) = ZERO_8
          enddo

@@ -22,6 +22,8 @@
 * v2_32 - Dugas B.           - add p_rad_nivl
 * v3_00 - Laroche S.         - initialize simplified physics variable
 *                              add namelist simplified physics
+* v3_02 - Dugas B.           - account for a possible second call to the physics
+*                              and add P_rad_qco2, P_pbl_dumpbus initializations
 *
 *object
 *       See above id
@@ -42,6 +44,7 @@
 #include "p_out.cdk"
 #include "p_nml.cdk"
 #include "ptopo.cdk"
+#include "p_nml2.cdk"
 *
 *modules
       character*256 fln1_S,fln2_S
@@ -49,7 +52,7 @@
       integer fnom,longueur
       external inctphy2, set_dcst, fnom, longueur
 *
-      integer i,err,nrec,bidon,status_nml
+      integer i,err,nrec,bidon,status_nml,status_nml2
       real deg_2_rad
 **
 *     ---------------------------------------------------------------
@@ -61,10 +64,19 @@
          stop
       endif
 *
+      P_pset_second_L= .false.
+      P_pset_xofset  = 0
+      P_pset_yofset  = 0
+      P_pset_xofsetr =-1
+      P_pset_yofsett =-1
+      P_pset_xblnd   = 1
+      P_pset_yblnd   = 1
+*
       P_rad_schm_s   = 'oldrad' 
       P_rad_knt      = 3 
       P_rad_fomic_L  = .false.
       P_rad_ftp_s    = "STD"
+      P_rad_qco2     = 360.
 *
       do i=1,CNMXRAD+1
          P_rad_nivl(i) = 0
@@ -95,6 +107,7 @@
       P_pbl_valeq_8  = 1.0
       P_pbl_eqlat_8  = 5.0
       P_pbl_nslof    = 0
+      P_pbl_dumpbus  = 0
 
       P_pbl_albkg_L  = .false. 
       P_pbl_agreg_L  = .false.
@@ -166,6 +179,7 @@
       P4d_sgo        = 0
 *
       P_out_moyhr = 0
+      status_nml2 = 0
 *
       if (lun_out.gt.0) then
          status_nml = -1
@@ -180,19 +194,72 @@
          read (Lun_in, nml=simplified_physics, end = 80)
          write(Lun_out, nml=simplified_physics_p)
  80      continue
-         call fclos (lun_in)
+*
+         if (.not.P_pset_second_L) call fclos (lun_in)
+*
       endif
 *
-      call RPN_COMM_bcast (status_nml,1,"MPI_INTEGER",0,"grid",err)
+      call RPN_COMM_bcast (status_nml ,1,"MPI_INTEGER",0,"grid",err)
+*
       if (status_nml.lt.0) then
-         if (lun_out.gt.0) write (lun_out,9004)
+         if (lun_out.gt.0)write (lun_out,9004)
+         stop
+      endif
+*
+      if (P_pset_second_L) then
+*
+         P_cond2_conv_S   = P_cond_conv_S
+         P_cond2_stcon_S  = P_cond_stcon_S
+         P_cond2_shlct_S  = P_cond_shlct_S
+         P_cond2_satu_L   = P_cond_satu_L
+         P_cond2_ilwc_L   = P_cond_ilwc_L
+         P_cond2_kfcmom_L = P_cond_kfcmom_L
+         P_cond2_kfctrig  = P_cond_kfctrig
+         P_cond2_kfcrad   = P_cond_kfcrad
+         P_cond2_kfcdepth = P_cond_kfcdepth
+         P_cond2_kfcdlev  = P_cond_kfcdlev
+         P_cond2_kfcdet   = P_cond_kfcdet
+         P_cond2_kfctimec = P_cond_kfctimec
+         P_cond2_kfctimea = P_cond_kfctimea
+*
+         P_pbl2_bndlr_S   = P_pbl_bndlr_S
+         P_pbl2_schsl_S   = P_pbl_schsl_S
+         P_pbl2_mix_S     = P_pbl_mix_S
+         P_pbl2_drag_L    = P_pbl_drag_L
+         P_pbl2_ocean_L   = P_pbl_ocean_L
+         P_pbl2_evap_L    = P_pbl_evap_L
+         P_pbl2_snwmlt_L  = P_pbl_snwmlt_L
+         P_pbl2_stomat_L  = P_pbl_stomat_L
+         P_pbl2_typsol_L  = P_pbl_typsol_L
+         P_pbl2_iceme_L   = P_pbl_iceme_L
+         P_pbl2_agreg_L   = P_pbl_agreg_L
+*
+         if (lun_out.gt.0) then
+            status_nml2 = -1
+            rewind ( Lun_in )
+            read (Lun_in, nml=physics2, end = 90)
+            write(Lun_out, nml=physics2)
+            status_nml2 = 0
+ 90         continue
+            call fclos (lun_in)
+         endif
+*
+      endif
+*
+      call RPN_COMM_bcast (status_nml2,1,"MPI_INTEGER",0,"grid",err)
+*
+      if (status_nml2.lt.0) then
+         if (lun_out.gt.0) write (lun_out,9005)
          stop
       endif
 *
 *     Broadcast the data received from physics namelist
+      COMMON_BROADCAST(ppset_i)
+      COMMON_BROADCAST(ppset_l)
       COMMON_BROADCAST(prad_c)
       COMMON_BROADCAST(prad_l)
       COMMON_BROADCAST(prad_i)
+      COMMON_BROADCAST(prad_r)
       COMMON_BROADCAST(pclim_l)
       COMMON_BROADCAST(ppbl_c)
       COMMON_BROADCAST(ppbl_l)
@@ -213,6 +280,14 @@
       COMMON_BROADCAST(pzong_l)
       COMMON_BROADCAST(P4d_simp_i)
       COMMON_BROADCAST(P4d_simp_l)
+*
+      if (P_pset_second_L) then
+         COMMON_BROADCAST(pcond2_c)
+         COMMON_BROADCAST(pcond2_l)
+         COMMON_BROADCAST(pcond2_r)
+         COMMON_BROADCAST(ppbl2_c)
+         COMMON_BROADCAST(ppbl2_l)
+      endif
 *
       P_rad_datim(14) = Out1_date
       call newdate (Out1_date,P_rad_datim,bidon,-4)
@@ -288,5 +363,9 @@
 *
  9004 format(
      $/,'PROBLEM WITH NAMELIST physics OR NAMELIST is not found',
+     +/,'====================== ABORT =========================')
+*
+ 9005 format(
+     $/,'PROBLEM WITH NAMELIST physics2 OR NAMELIST is not found',
      +/,'====================== ABORT =========================')
       end

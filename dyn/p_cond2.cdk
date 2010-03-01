@@ -1,0 +1,58 @@
+#if defined (DOC)
+*
+***comdeck p_cond2.cdk
+*
+*revision
+* v3_02 - Dugas B.               - adapted from p_cond.cdk
+*______________________________________________________________________
+*                                                                      |
+*  OUTPUT GLOBAL CONTROL VARIABLES (second set)                        |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* P_cond2_conv_S     | CONVEC: convection scheme name                  |
+* P_cond2_stcon_S    | STCOND: condensation scheme name                |
+* P_cond2_shlct_S    | SCHLCVT: shallow convection name                |
+* P_cond2_satu_L     | SATUCO: .true. water/ice phase for saturation   |
+*                    |         .false. water phase only for saturation |
+* P_cond2_ilwc_L     | INILWC: to initialize water content and cloud   |
+*                    |         fraction at time 0 for Sundqvist schemes|
+* P_cond2_kfcmom_L   | KFCMOM : true if want convective transport      |
+*                    |          of momentum                            |
+* P_cond2_kfctrig    | trigger parameter in KF (Kain Fritsch)          |
+*                    |                                                 |
+* P_cond2_kfcrad     | initial convective updraft radius in KF (metres)|
+*                    |                                                 |
+* P_cond2_kfcdepth   | minimum depth of convective updraft in KF (m)   |
+*                    |                                                 |
+* P_cond2_kfcdlev    | 0.0 -> 1.0 ; initial level of forced detrainment|
+*                    |              in KF (between cloud base and top) |
+* P_cond2_kfcdet     | 0.0 -> 1.0 ; total forced detrainment in FK.    |
+*                    |              fraction of upward mass flux       |
+* P_cond2_kfctimec   | convective time scale in KF                     |  
+*                    |                                                 |
+* P_cond2_kfctimea   | convective time adjustment in KF                |
+*                    |                                                 |
+*----------------------------------------------------------------------
+#endif
+
+      character*8 P_cond2_conv_S , P_cond2_stcon_S, P_cond2_shlct_S
+      logical P_cond2_satu_L   ,P_cond2_ilwc_L, P_cond2_kfcmom_L
+      real P_cond2_kfctrig, P_cond2_kfcrad, P_cond2_kfcdepth, 
+     $     P_cond2_kfcdlev, P_cond2_kfcdet, P_cond2_kfctimec,
+     $     P_cond2_kfctimea
+*
+      MARK_COMMON_BEG (pcond2_c)
+      common /pcond2_c/ P_cond2_conv_S,P_cond2_stcon_S,P_cond2_shlct_S
+      MARK_COMMON_END (pcond2_c)
+
+      MARK_COMMON_BEG (pcond2_l)
+      common /pcond2_l/ P_cond2_satu_L, P_cond2_ilwc_L,P_cond2_kfcmom_L
+      MARK_COMMON_END (pcond2_l)
+
+      MARK_COMMON_BEG (pcond2_r)
+      common /pcond2_r/ P_cond2_kfctrig,P_cond2_kfcrad,P_cond2_kfcdepth,
+     $                  P_cond2_kfcdlev,P_cond2_kfcdet,P_cond2_kfctimec,
+     $                  P_cond2_kfctimea
+      MARK_COMMON_END (pcond2_r)

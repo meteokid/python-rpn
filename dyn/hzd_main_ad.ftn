@@ -17,6 +17,7 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 *                           - change name 
 * v3_01 - Tanguay M.        - ADJ of Eigv_parity_L not done yet
+* v3_02 - Tanguay M.        - ADJ of Eigv_parity_L done
 *
 *object
 *     see id section
@@ -58,10 +59,9 @@
       endif
 *     ______________________________________________________
 *
-      if(      Eigv_parity_L ) call gefstop('hzd_main_ad')
-      if( .not. Schm_hydro_L ) call gefstop('hzd_main_ad')
-      if(       Schm_psadj_L ) call gefstop('hzd_main_ad')
-      if( .not. Schm_cptop_L ) call gefstop('hzd_main_ad')
+      if( .not. Schm_hydro_L ) call gem_stop('hzd_main_ad',-1)
+      if(       Schm_psadj_L ) call gem_stop('hzd_main_ad',-1)
+      if( .not. Schm_cptop_L ) call gem_stop('hzd_main_ad',-1)
 *     ______________________________________________________
 *
 *     ADJ of
@@ -155,10 +155,17 @@ c*PDIR RESERVE=Macr_cpud
      %                        LDIST_DIM, G_nk)
          else
 *           use MXMA in diffusion-solver
+            if ( .not. Eigv_parity_L) then
             call hzd_ho_ad  ( ut1 , vt1 , psdt1, tpt1 , fipt1, tdt1,
      %                        tt1 , fit1, tplt1, pipt1, wt1  ,
      %                        qpt1, mut1, multx, topo ,
      %                        LDIST_DIM, G_nk)
+            else
+            call hzd_ho_parite_ad( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                             tt1 , fit1, tplt1,  pipt1, wt1 ,
+     %                             qpt1, mut1, multx,  topo ,
+     %                             LDIST_DIM, G_nk)
+            endif
          endif
 *
       endif
@@ -175,7 +182,7 @@ c*PDIR RESERVE=Macr_cpud
 c*PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)
-*    
+*
  1001 format(/,
      + 3X,'NO ADJ HORIZONTAL DIFFUSION REQUIRED',
      +/3X,'====================================',/)

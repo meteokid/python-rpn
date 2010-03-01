@@ -16,6 +16,7 @@
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Toviessi J. P.    - add call hzd_ho_parite
+* v3_02 - Desgagne M.       - correction for non-hydrostatic version
 *
 *object
 *	
@@ -35,7 +36,7 @@
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "p_geof.cdk"
-#include "nest.cdk"
+c#include "nest.cdk"
 #include "lctl.cdk"
 *
 *modules
@@ -70,17 +71,10 @@
       nlod = 14
       if (.not. Schm_hydro_L) then
          key1(nlod+1) = VMM_KEY(wt1)
-         nlod = nlod+1
-         if (Schm_difqp_L) then
-             key1(nlod+1) = VMM_KEY(qpt1)
-             key1(nlod+2) = VMM_KEY(mut1)
-             key1(nlod+3) = VMM_KEY(multx)
-             nlod = nlod+3
-         endif
-      endif
-      if (G_lam) then
-         key1(nlod+1) = VMM_KEY(nest_psd)
-         nlod = nlod+1
+         key1(nlod+2) = VMM_KEY(qpt1)
+         key1(nlod+3) = VMM_KEY(mut1)
+         key1(nlod+4) = VMM_KEY(multx)
+         nlod = nlod+4
       endif
 *     - - - - - - - - - - - - - - -
       err = vmmlod(key1,nlod)
@@ -99,49 +93,15 @@
       err = VMM_GET_VAR(pipt0)
       err = VMM_GET_VAR(pipt1)
       err = VMM_GET_VAR(st1)
+      wt1_  = 0
+      qpt1_ = 0
+      mut1_ = 0
+      multx_= 0
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(wt1)
          err = VMM_GET_VAR(qpt1)
          err = VMM_GET_VAR(mut1)
-         err = VMM_GET_VAR(multx)
-      else
-         wt1_  = 0
-         qpt1_ = 0
-         mut1_ = 0
-         multx_= 0
-      endif
-      if (G_lam) then
-         err = VMM_GET_VAR(nest_psd)
-         if (l_west) then
-            do k=1,l_nk
-               do j=1+pil_s,l_nj-pil_n
-                  psdt1(pil_w,j,k) = nest_psd(pil_w,j,k)
-               enddo
-            enddo
-         endif
-         if (l_east) then
-            do k=1,l_nk
-               do j=1+pil_s,l_nj-pil_n
-                  psdt1(l_ni-pil_e+1,j,k) = nest_psd(l_ni-pil_e+1,j,k)
-               enddo
-            enddo
-         endif
-         if (l_south) then
-            do k=1,l_nk
-               do i=1+pil_w,l_ni-pil_e
-                  psdt1(i,pil_s,k) = nest_psd(i,pil_s,k)
-               enddo
-            enddo
-         endif
-         if (l_north) then
-            do k=1,l_nk
-               do i=1+pil_w,l_ni-pil_e
-                  psdt1(i,l_nj-pil_n+1,k) = nest_psd(i,l_nj-pil_n+1,k)
-               enddo
-            enddo
-         endif
-      else
-         nest_psd_ = 0
+         err = VMM_GET_VAR(multx)            
       endif
 
 *************************************

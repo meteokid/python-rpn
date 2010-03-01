@@ -21,6 +21,7 @@
 * v3_00 - Lee V.            - must interpolate if not fhint_L
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
+* v3_02 - Dugas B.          - convip for topography
 *
 *implicites
 #include "e_grids.cdk"
@@ -54,9 +55,9 @@
       pointer (paxlon, xlon(*)), (paylat, ylat(*))
       real,   dimension(:), allocatable  :: w1
       logical must_interpo_s
-      integer un_s,nic_s,njc_s,g1_s,g2_s,g3_s,kind
-      data un_s,nic_s,njc_s,g1_s,g2_s,g3_s /-1,-1,-1,-1,-1,-1/
-      save un_s,nic_s,njc_s,g1_s,g2_s,g3_s,must_interpo_s
+      integer un_s,nic_s,njc_s,g1_s,g2_s,g3_s,kind,id_s
+      data un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s /-1,-1,-1,-1,-1,-1,-1/
+      save un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s,must_interpo_s
 *
 *--------------------------------------------------------------------
 *
@@ -99,6 +100,7 @@
          else
             if (     (un_s.eq.un1).and.(nic_s.eq.nic).and.(njc_s.eq.njc)
      $          .and.(g1_s.eq.g1 ).and.(g2_s .eq.g2 ).and.(g3_s .eq.g3 )
+     $          .and.(id_s.eq.dgid)
      $         ) then
                must_interpo_L = must_interpo_s
             else
@@ -121,6 +123,7 @@
                g1_s = g1
                g2_s = g2
                g3_s = g3
+               id_s = dgid
                must_interpo_s = must_interpo_L
             endif
          endif

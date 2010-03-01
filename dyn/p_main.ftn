@@ -21,6 +21,7 @@
 * v2_31 - Dugas B.          - re-activate zonal diagnostics
 * v2_32 - Lee V.            - slab related calls are moved to p_phystep
 * v3_00 - Laroche S.        - remove hpdeallc (pageofld, ier, 1)
+* v3_02 - Lee V.            - output QC at time 0 here
 *      
 *object
 *
@@ -42,10 +43,14 @@
 #include "pslab.cdk"
 #include "rstr.cdk"
 #include "init.cdk"
+#include "out2.cdk"
+#include "v4dg.cdk"
 *
 *
       logical boot_L
-      integer ier
+      integer ier,dostep(MAXSET),dostep_max
+      integer   doout
+      external  doout
       real prip2
       save boot_L
       data boot_L /.true./
@@ -55,6 +60,17 @@
       if (F_stepno.eq.1) then
          Lctl_step = 0
          call p_phystep (0)
+         dostep_max = doout(dostep,1)
+         if (dostep_max.gt.0.and.V4dg_conf.eq.0) then
+             call blocqc0(dostep,dostep_max)
+             call frmslabfhand(Dslab_fhand_p,Dslab_slab_p,.false.)
+             call frmslabfhand(Dslab_fhand_e,Dslab_slab_e,.true.)
+*
+             call hpdeallc(Out2_wlnph_, ier, 0)
+             call hpdeallc(Out2_wlao_ , ier, 0)
+             call hpdeallc(Out2_ptop_ , ier, 0)
+         endif
+
          if (Dslab_slab_p+Dslab_slab_e+Pslab_slab .gt.0) then
             if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
                 call wlog('IOUT')

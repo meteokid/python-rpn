@@ -19,6 +19,7 @@
 * v3_00 - P. Gauthier        - initial MPI version
 * v3_00 - M. Tanguay         - add v4d_gauss2gem_ad/Simon's exchange  
 * v3_01 - Tanguay/Buehner    - introduce gem2gauss for singular vectors
+* v3_02 - Tanguay M.         - locate HU in tracers 
 *
 *object
 *     -------------------------
@@ -78,7 +79,6 @@
       logical plpr_L
 *     ______________________________________________________
 *
-      if ( Tr3d_ntr.gt.1 ) call gem_stop('v4d_putdx',-1)
       if ( V4dg_di_L     ) call gem_stop('v4d_putdx',-1)
 *     ______________________________________________________
 *
@@ -135,37 +135,35 @@
 *
       if(V4dg_tl_L.or.V4dg_ad_L) then
 *
-*     Load PERT and TRAJ humidity fields assuming Tr3d_ntr=1
-*     ------------------------------------------------------
+*     Load PERT and TRAJ humidity fields
+*     ----------------------------------
       key1_ = VMM_KEY (trt1 )
       key1m_= VMM_KEY (trt1m)
       do n=1,Tr3d_ntr
          key1 (n) = key1_  + n
          key1m(n) = key1m_ + n
       end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1, Tr3d_ntr)
-         err = vmmlod(key1m,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1 (n),pahu1, hut1 )
-            err = vmmget(key1m(n),pahu1m,hut1m)
-         end do
+      err = vmmlod(key1, Tr3d_ntr)
+      err = vmmlod(key1m,Tr3d_ntr)
+      do n=1,Tr3d_ntr
+      if (Tr3d_name_S(n).eq.'HU') then
+          err = vmmget(key1 (n),pahu1, hut1 )
+          err = vmmget(key1m(n),pahu1m,hut1m)
       endif
+      end do
 *
       elseif(V4dg_di_L) then
 *
-*     Load humidity fields assuming Tr3d_ntr=1
-*     ----------------------------------------
+*     Load humidity fields
+*     --------------------
       key1_ = VMM_KEY (trt1 )
       do n=1,Tr3d_ntr
          key1 (n) = key1_  + n
       end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1, Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1 (n),pahu1, hut1 )
-         end do
-      endif
+      err = vmmlod(key1, Tr3d_ntr)
+      do n=1,Tr3d_ntr
+      if (Tr3d_name_S(n).eq.'HU') err = vmmget(key1 (n),pahu1, hut1 ) 
+      end do
 *
       endif
 *

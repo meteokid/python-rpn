@@ -10,7 +10,7 @@
 *     Michel Roch - rpn - jan 1994
 *
 *revision
-* v3_01 - Morneau J.        - initial MPI version (from readdyn v2_21)
+* v3_02 - Morneau J.        - initial MPI version (from readdyn v2_21)
 *                             read obs from file for sensitivity analysis
 *
 *object
@@ -75,6 +75,7 @@
           call convip(iip1(k),geomg_hyb(k),1,+1,blank_S,.false.)
         enddo
         iip2 = nint(float(Lctl_step)*Cstv_dt_8/3600.0)
+        write(*,*) 'iip2 ',iip2
       endif
 *     ----------------------------------------------
 *
@@ -107,7 +108,7 @@
       if (Ptopo_myproc.eq.0) then
         do k=1,G_nk
           err = v4d_rdfld(wk1(1,1,k),V4dg_lun_obs,G_ni,G_nj,
-     $                    iip1(k),iip2,0,'P','4T',G_ni+1,G_nj)
+     $                    iip1(k),iip2,0,'P','TPT1',G_ni+1,G_nj)
           error(3) = error(3)+err
         enddo
       endif
@@ -115,7 +116,7 @@
 *
       if (Ptopo_myproc.eq.0) then
           err = v4d_rdfld(wk1(1,1,1),V4dg_lun_obs,G_ni,G_nj,
-     $                    iip1(G_nk),iip2,0,'P','4S',G_ni+1,G_nj)
+     $                    iip1(G_nk),iip2,0,'P','PIP1',G_ni+1,G_nj)
           error(4) = error(4)+err
       endif
       call glbdist(wk1,G_ni,G_nj,st1r,LDIST_DIM,1,G_halox,G_haloy)

@@ -14,7 +14,8 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
-* v3_00 - Tanguay M.        - restore  vectorization in adjoint of semi-Lag.
+* v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
+* v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
 *
 *language
 *     fortran 77
@@ -372,7 +373,7 @@
 *           ----------------------------------
             call adw_interp_ad (work,scrap,scrap,scrap,
      %                               tr0m, F_um, F_vm,
-     %                          .false.,.false.,LDIST_DIM,l_nk,
+     %                          .false.,.true.,LDIST_DIM,l_nk,
      %                          1,inca,zinc,kdim,nij,nijplus,l_nk,ksep)
 *
 *           Set kinc separately from adw_interp_ad

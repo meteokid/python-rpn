@@ -21,6 +21,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
 * v3_00 - Tanguay M.        - adapt to restructured sol_hcr 
+* v3_02 - Tanguay M.        - ADJ of Eigv_parity_L done
 *
 *object
 *     see id section
@@ -37,24 +38,31 @@
 #include "ldnh.cdk"
 #include "sol.cdk"
 #include "opr.cdk"
+#include "eigv.cdk"
 #include "ptopo.cdk"
 #include "fft.cdk"
 #include "cstv.cdk"
 #include "schm.cdk"
 #include "trp.cdk"
 *
-      integer i, j, k, k0, offi, offj, Gni, Gnj
-*
+      integer i, j, k, k0, offi, offj, Gni, Gnj,NSTOR,nev
+      real*8 abpt((maxy-miny+1)*(trp_12smax-trp_12smin+1)*G_ni) 
       real*8 con(G_nk)
       real*8, dimension(:),allocatable :: wk_evec_8
-
+*
       real*8 ZERO_8
       parameter( ZERO_8 = 0.0 )
 *
 *     ______________________________________________________
 *
-      if(G_lam) call gefstop('sol_hcr_ad')
+      if(G_lam) call gem_stop('sol_hcr_ad',-1)
 *     ______________________________________________________
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k=1,(maxy-miny+1)*(trp_12smax-trp_12smin+1)*G_ni
+      abpt(k) = ZERO_8
+      enddo
 *
 * Calculate length of working vector without pilot region
       Gni=G_ni-Lam_pil_w-Lam_pil_e
@@ -108,6 +116,8 @@
      $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
      $            F_dg2_8,F_dwfft_8)
       else
+         if(.not. Eigv_parity_L) then
+*
          call sol_mxma8_2_ad ( F_w2_8, F_w1_8, wk_evec_8,
      $                         Minx, Maxx, Miny, Maxy, ldnh_nj,
      $            trp_12smin, trp_12smax, Schm_nith, trp_12sn ,
@@ -115,6 +125,20 @@
      $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
      $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
      $            F_dg1_8,F_dg2_8,F_dwfft_8)
+        else
+*
+            nev= (G_ni+2)/2
+            NSTOR = nev + ( 1 - mod(nev,2) )
+*
+            call sol_parite_2_ad ( F_w2_8, F_w1_8, Opr_evvec_8, Opr_odvec_8,
+     $                       Minx, Maxx, Miny, Maxy, l_nj,
+     $            trp_12smin, trp_12smax, Schm_nith, trp_12sn ,
+     $            G_ni, G_nj, trp_22min , trp_22max, trp_22n  ,
+     $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
+     $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
+     $            F_dg1_8,F_dg2_8,F_dwfft_8,Abpt,NSTOR,nev)
+         endif
+*
       endif
 *
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1

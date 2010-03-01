@@ -17,6 +17,7 @@
 * v2_31 - Desgagne          - clean up and introduce h2o tracers
 * v2_32 - Lee V.            - call genslabp here, add "HY" record to slabs
 * v3_00 - Laroche S.        - adapted for simplified physics
+* v3_02 - Tanguay M.        - Add V4dg_oktr_L for v4d_rwtraj_kmkt 
 *   
 *object
 *	Computes the physical processes and apply the resulting
@@ -129,9 +130,8 @@
 *
 *       Store TRAJ of vertical exchange coefficients from full-physics
 *       --------------------------------------------------------------
-      if ( V4dg_conf.ne.0 .and. P4d_pbl.eq.2 .and. F_stepno.gt.0 ) then
-        call v4d_rwtraj_kmkt(kmm,ktm,LDIST_DIM,l_nk)
-      endif
+      if ( V4dg_conf.ne.0 .and. P4d_pbl.eq.2 .and. F_stepno.gt.0 .and.
+     $     V4dg_oktr_L ) call v4d_rwtraj_kmkt(kmm,ktm,LDIST_DIM,l_nk) 
 
       deallocate (up,vp,wp,tp,qp,trp,um,vm,tm,trm,lnpsm,sig,kmm,ktm)
 *

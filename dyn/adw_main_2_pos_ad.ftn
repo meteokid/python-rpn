@@ -393,7 +393,7 @@
 *        -----------------------------
          zthm_8a (ind(it)+n)  = zthm(n)
 *
-         zthm(n) = min( Geomg_z_8(l_nk), max( zthm(n), Geomg_z_8(1) ) )
+         zthm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*zthm(n), Geomg_z_8(1) ) )
 *
 *        -----------------------------
 *        Preserve zthm for ADJOINT #8b
@@ -430,7 +430,7 @@ C        F_wm(n) = Geomg_z_8(l_nk)
 *           ------------------------------------------------------------------
 *           Do not need to Preserve F_wm for ADJOINT #10 since it is used next
 *           ------------------------------------------------------------------
-C           F_wm(n) = min( Geomg_z_8(l_nk), max( F_wm(n), Geomg_z_8(1) ))
+C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
 *
          enddo
          enddo

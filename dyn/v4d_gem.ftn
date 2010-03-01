@@ -99,7 +99,7 @@
 *
 *           Set over-riding switch for dynout and blocstat
 *           ----------------------------------------------
-            V4dg_out = 1
+            V4dg_output_L = .true.
 *
 *           Deactivate WRITE option on TRAJECTORY WA file
 *           ---------------------------------------------
@@ -167,7 +167,7 @@
 *
 *           Set over-riding switch for dynout and blocstat
 *           ----------------------------------------------
-            V4dg_out = 1
+            V4dg_output_L = .true.
 *
 *           Call 4D-Var simulator without gradient
 *           --------------------------------------
@@ -235,7 +235,7 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 1
+         V4dg_output_L = .true.
 *
 *        ----------------------
 *        Don't do gradient test 
@@ -276,7 +276,7 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 0 
+         V4dg_output_L = .false.
 *
 *        Cancel write(Lun_out)
 *        ---------------------
@@ -329,7 +329,7 @@ C        V4dm_df1 = pj
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 1
+         V4dg_output_L = .true.
 *
 *        ----------------------
 *        Don't do gradient test 

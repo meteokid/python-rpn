@@ -14,6 +14,7 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate
 *                           - preserve model fields content
 *                           - adapt for tracers in tr3d  
+* v3_02 - Laroche S.        - modified weight for hu (V4dj_trwt(n))
 *
 *object
 *     see id section
@@ -76,7 +77,7 @@
 *
       if (Tr3d_ntr.gt.0) then
           do n=1,Tr3d_ntr
-             V4dj_trwt(n) = 1.
+             V4dj_trwt(n) = ( Dcst_chlc_8**2 )/ ( Dcst_cpd_8 * 270. )
           enddo
       endif
 *

@@ -66,9 +66,7 @@
 *     ------------------------------------------------------------------
       call v4d_setscalp ()
 *
-      if (Ptopo_myproc.eq.0) then
-         call wlog('CSTR')
-      endif
+      call wlog('CSTR')
 *
 *     -----------------------------------------------------------------
 *     Initialize starting control var. for REFERENCE (NLM), TLM and ADJ
@@ -110,7 +108,7 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 1
+         V4dg_output_L = .true.
 *
 *        Call 4D-Var simulator with NLM integration without gradient
 *        -----------------------------------------------------------
@@ -132,7 +130,7 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 1 
+         V4dg_output_L = .true.
 *
 *        Call 4D-Var simulator with TLM integration without gradient
 *        -----------------------------------------------------------
@@ -205,7 +203,7 @@
 *
 *        Set over-riding switch for dynout and blocstat 
 *        ----------------------------------------------
-         V4dg_out = 1 
+         V4dg_output_L = .true.
 *
 *        Call 4D-Var simulator for gradient only
 *        ---------------------------------------
@@ -228,10 +226,8 @@
 *
       Lctl_step = Step_total
 *
-      if (Lun_out.gt.0) then
-          call wlog('FEND')
-          call wlog('CEND')
-      endif
+      call wlog('FEND')
+      call wlog('CEND')
 *
       return
       end

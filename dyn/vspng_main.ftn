@@ -1,6 +1,5 @@
-***s/r vspng_main - applies del-2 horizontal diffusion with vertical
-*                   modulation of the diffusion coefficient on
-*                   Vspng_nk top levels. 
+***s/r vspng_main - applies horizontal diffusion with vertical modulation
+*                   on Vspng_nk top levels
 *
 #include <model_macros_f.h>
 *
@@ -15,8 +14,13 @@
 * v2_11 - Desgagne M.       - initial version 
 * v2_21 - Desgagne M.       - new call to horwavg
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
+* v3_02 - Lee V.            - adapt for LAM 
 *
 *object
+* applies horizontal diffusion with vertical modulation of 
+* the diffusion coefficient on Vspng_nk top levels 
+*  (1) del-2 horizontal diffusion used for non-LAM
+*  (2) 9 point explicit filter used for LAM
 *	
 *arguments
 *     none
@@ -44,7 +48,6 @@
 *     _________________________________________________________________
 *
       if (Vspng_nk.lt.1) return
-      if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
 *
       pnlkey1(1)  = VMM_KEY(ut1)
       pnlkey1(2)  = VMM_KEY(vt1)
@@ -97,14 +100,19 @@
          multx_= 0
       endif
 *
-c*PDIR RESERVE=Macr_cpud
-
-      call vspng_drv ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
-     %                 tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
-     %                 qpt1, mut1, multx, st1 , topo ,
-     %                 LDIST_DIM, G_nk)
-
-c*PDIR RELEASE
+      if (G_lam) then
+         if (Lun_debug_L) write (Lun_out,1001) Vspng_nk
+         call vspng_drv_lam ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                        tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
+     %                        qpt1, mut1, multx, st1 , topo ,
+     %                        LDIST_DIM, G_nk )
+      else
+         if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
+         call vspng_drv ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                    tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
+     %                    qpt1, mut1, multx, st1 , topo ,
+     %                    LDIST_DIM, G_nk )
+      endif
 *
       if (Cstv_phidf_8.gt.0.) then
 *
@@ -184,6 +192,8 @@ c*PDIR RELEASE
 *    
  1000 format(/,3X,
      $ 'DEL-2 SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV)')
+ 1001 format(/,3X,
+     $ '9PT FILT SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV_LAM)')
 *
       return
       end

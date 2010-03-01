@@ -181,7 +181,7 @@
  40      continue
 *
          if ( prvttop .le. prvtc ) then
-              prvtbot = min( prvttop + Dcst_stlo_8 * prfitop,  prvtc)
+              prvtbot = min( 1.0d0*prvttop + Dcst_stlo_8 * 1.0d0*prfitop,  1.0d0*prvtc)
          else
               prvtbot = prvtc - 0.005 * ( prvttop - prvtc ) **2
          endif

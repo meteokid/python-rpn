@@ -33,7 +33,8 @@
 *revision
 * v3_00 - N.Ek              - initial MPI version
 * v3_00   M.Tanguay         - adapt to Simon's exchange
-* v3_xx - M.Tanguay         - correction for empty processors 
+* v3_01 - M.Tanguay         - correction for empty processors 
+* v3_02 - M.Tanguay         - locate HU in tracers 
 *
 *object
 *     -----------------------------------------------------------------------
@@ -79,9 +80,6 @@
       logical plpr_L
 *
       character(len=2) :: cljx_S, cljy_S
-*     ______________________________________________________
-*
-      if ( Tr3d_ntr.gt.1 ) call gefstop('v4d_cstjok')
 *     ______________________________________________________
 *
       write(Lun_out,1000) Lctl_step
@@ -131,56 +129,53 @@
 *
 *     Get fields in memory
 *     --------------------
-      pnlkey1(1)= VMM_KEY( ut1)
-      pnlkey1(2)= VMM_KEY( vt1)
-      pnlkey1(3)= VMM_KEY( tpt1)
-      pnlkey1(4)= VMM_KEY( st1)
-      nvar= 4 
+      pnlkey1(1)= VMM_KEY(ut1)
+      pnlkey1(2)= VMM_KEY(vt1)
+      pnlkey1(3)= VMM_KEY(tpt1)
+      pnlkey1(4)= VMM_KEY(st1)
+      nvar=   4 
+*
+      if(V4dg_tl_L) then
+        pnlkey1(nvar+1)= VMM_KEY(tpt1m)
+        pnlkey1(nvar+2)= VMM_KEY(st1m)
+        nvar=   nvar+2
+      endif
 *
       err = vmmlod(pnlkey1,nvar)
 *
-      err = VMM_GET_VAR( ut1)
-      err = VMM_GET_VAR( vt1)
-      err = VMM_GET_VAR( tpt1)
-      err = VMM_GET_VAR( st1)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tpt1)
+      err = VMM_GET_VAR(st1)
+      if(V4dg_tl_L) then
+         err = VMM_GET_VAR(tpt1m)
+         err = VMM_GET_VAR(st1m)
+      endif
 *
-      err = VMM_GET_VAR( tpt1m)
-      err = VMM_GET_VAR( st1m)
-*
-*     Load humidity field assuming Tr3d_ntr=1
-*     ---------------------------------------
+*     Load humidity field
+*     -------------------
       key1_ = VMM_KEY (trt1)
       do n=1,Tr3d_ntr
          key1(n) = key1_ + n
       end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),pahu1,hut1)
-         end do
-      endif
+      err = vmmlod(key1,Tr3d_ntr)
+      do n=1,Tr3d_ntr
+      if (Tr3d_name_S(n).eq.'HU') err = vmmget(key1(n),pahu1,hut1) 
+      end do
 *     
       if(V4dg_tl_L) then
-         pnlkey1(1)= VMM_KEY(tpt1m)
-         pnlkey1(2)= VMM_KEY( st1m)
-         nvar= 2 
-         err = vmmlod(pnlkey1,nvar)
 *
-         err = VMM_GET_VAR( tpt1m)
-         err = VMM_GET_VAR( st1m)
-*
-*        Load TRAJ humidity field assuming Tr3d_ntr=1
-*        --------------------------------------------
+*        Load TRAJ humidity field
+*        ------------------------
          key1m_ = VMM_KEY (trt1m)
          do n=1,Tr3d_ntr
             key1m(n) = key1m_ + n
          end do
-         if (Tr3d_ntr.gt.0) then
-            err = vmmlod(key1m,Tr3d_ntr)
-            do n=1,Tr3d_ntr
-            err = vmmget(key1m(n),pahu1m,hut1m)
-            end do
-         endif
+         err = vmmlod(key1m,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+         if (Tr3d_name_S(n).eq.'HU') err = vmmget(key1m(n),pahu1m,hut1m) 
+         end do
+*
       end if
 *
 *     Transfer fields
@@ -385,6 +380,7 @@
       pnerr = vmmuld(-1,0)
 *
       write(Lun_out,1001) Lctl_step
+      call flush(Lun_out)
 *
       return
 *

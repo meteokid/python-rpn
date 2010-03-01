@@ -28,7 +28,7 @@
       REAL           LNA(LVMAX), RNA(LVMAX),RCOEFA,PTOPA,PREFA
       CHARACTER*2    VH,VT
       CHARACTER*1    GRDA, TVA
-      CHARACTER*8    LABANL
+      CHARACTER*12   LABANL
 
       COMMON/anali/  nia, nja, NK, LV, NA,
      %               ip1a, ip2a, ip3a,

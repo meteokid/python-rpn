@@ -19,6 +19,7 @@
 * v3_00 - Laroche S.        - adapt for simplified physics
 * v3_01 - Morneau J.        - run NLM trajectory when V4dg_sensib_L
 *                             and v4dg_status=5
+* v3_02 - M.Tanguay         - integration stops at Lctl_steplast
 *
 *object
 *     Simulator 4D (in minimization language).
@@ -83,9 +84,10 @@
 *        ------------------------
          if (V4dg_conf/100.eq.1.and.V4dg_status.ne.5) V4dj_pj = 0 
 *
-*        Set initial time step
-*        ---------------------
+*        Set initial and final time step
+*        -------------------------------
          Lctl_step = 0
+         V4dg_steplast = Step_total
 *
 *        Initialize all variables to zero 
 *        --------------------------------
@@ -128,7 +130,7 @@
          V4dg_part = 3
          call v4d_procdyn()
 *
-         call dynout2( V4dg_out.ne.0 )
+         call dynout2()
 *
 *        Run NLM model
 *        -------------
@@ -163,7 +165,7 @@
          V4dg_part = 3
          call v4d_procdyn_tl()
 *
-         call dynout2( V4dg_out.ne.0 )
+         call dynout2()
 *
 *        Run TLM model
 *        -------------
@@ -200,9 +202,10 @@
 *
  1000 continue
 *
-*        Set final time step
-*        -------------------
-         Lctl_step = Step_total
+*        Set initial and final time step
+*        -------------------------------
+         Lctl_step = Step_total 
+         V4dg_steplast = 0 
 *
 *        Set adjoint variables to zero
 *        -----------------------------
@@ -239,7 +242,7 @@
 *        -------------
          call gem_ctrl_ad()
 *
-         if( V4dg_out.ne.0 ) call v4d_dynout()
+         if( V4dg_output_L ) call v4d_dynout()
 *
 *        ADJOINT of
 *        Complete preprocessing

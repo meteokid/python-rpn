@@ -17,7 +17,7 @@
 * v2_30                        with upper limits on grid point spacing
 * v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
 * v3_00 - Desgagne & Lee     - Lam configuration
-* v3_01 - Desgagne M.        - Introduce Geomn_latr[x,u,v]
+* v3_01 - Desgagne M.        - Introduce Geomn_latrx,Geomn_lonrx
 *
 *object
 *	
@@ -45,7 +45,7 @@
 *
       integer offi,offj,indx,err,dgid,ezgdef_fmem,gdll
       integer i,j,k,nila,ierx,iery,nimax,njmax
-      real s1,r1,xfi(l_ni),yfi(l_nj),lat(l_ni,l_nj),lon(l_ni,l_nj)
+      real s1,r1,xfi(l_ni),yfi(l_nj)
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
@@ -71,9 +71,8 @@
       call hpalloc (Geomn_longu_ , G_ni+1   , err, 1)
       call hpalloc (Geomn_latgs_ , G_nj     , err, 1)
       call hpalloc (Geomn_latgv_ , G_nj     , err, 1)
-      call hpalloc (Geomn_latrx _, l_ni *l_nj , err, 1)
-      call hpalloc (Geomn_latru _, l_niu*l_nj , err, 1)
-      call hpalloc (Geomn_latrv _, l_ni *l_njv, err, 1)
+      call hpalloc (Geomn_latrx_, l_ni *l_nj , err, 1)
+      call hpalloc (Geomn_lonrx_, l_ni *l_nj , err, 1)
 *
       if (G_lam) then
          ierx= stretch_axis2( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left,
@@ -235,7 +234,12 @@
       end do
       dgid = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro,
      $          Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
-      err = gdll (dgid,Geomn_latrx,lon)
+      err = gdll (dgid,Geomn_latrx,Geomn_lonrx)
+      do j=1,l_nj
+      do i=1,l_ni
+         if (Geomn_lonrx(i,j).ge.180.0) Geomn_lonrx(i,j)=Geomn_lonrx(i,j)-360.0
+      enddo 
+      enddo 
 *
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)',
      %       /,'===============================================')

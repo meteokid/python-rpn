@@ -24,6 +24,7 @@
 *revision
 * v3_01 - Tanguay M.        - initial MPI version
 * v3_01 - Buehner M.        - external already_done
+* v3_02 - Tanguay M.        - V4dzge_degree in namelist var4d
 *
 *object
 *  see id section
@@ -62,10 +63,11 @@
 *     -------------------------------
       if(Ptopo_myproc.eq.0.and..not.V4dzge_already_done_L) then
 *
-*        Set cubic(degree=3) or linear(degree=1) interpolation
-*        ----------------------------------------------------- 
-C        V4dzge_degree = 3 
-         V4dzge_degree = 1 
+*        ---------------------------------------------------------
+*        Type of interpolation V4dzge_degree now in namelist var4d
+*        ---------------------------------------------------------
+*        NOTE: 1= Linear and 3=Cubic Lagrange
+*        ---------------------------------------------------------
 *
 *        ------------------
 *        Type of input grid

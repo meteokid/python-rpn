@@ -16,6 +16,7 @@
 * v2_31 - Desgagne M.    - removed stkmemw
 * v2_31 - Tanguay M.     - gem_stop if Adw_fro_a.gt.0.and.V4dg_conf.ne.0
 * v3_00 - Desgagne & Lee - Lam configuration
+* v3_02 - Lee V.         - revert adw_exch_1 for GLB only, added adw_ckbd_lam
 *
 *language
 *     fortran 77
@@ -122,13 +123,17 @@
       wrk_yth(n) = yth(n)
       enddo
 *
-      call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1, xth, wrk_yth, zth,
-     %                  i0, in, j0, jn )
+      if (G_lam) then
 *
-      if ( Adw_fro_a .gt. 0 .and. V4dg_conf.ne.0.0 )
-     %        call gem_stop('adw_main_2_pos',-1) 
+          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
 *
-      if (.not.G_lam) then
+      else
+*
+          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth )
+*
+          if ( Adw_fro_a .gt. 0 .and. V4dg_conf.ne.0.0 )
+     %         call gem_stop('adw_main_2_pos',-1) 
+*
           allocate(capx2(max(1,Adw_fro_a)),
      %             capy2(max(1,Adw_fro_a)),
      %             capz2(max(1,Adw_fro_a)),
@@ -151,6 +156,7 @@
       call adw_trilin (wrky1,F_v,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
 *
       if (.not.G_lam) then
+
          if ( Adw_fro_a .gt. 0 ) then
 *
 *
@@ -184,9 +190,14 @@
       wrk_yth(n) = yth(n)
       enddo
 *
-      call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1, xth, wrk_yth, zth,
-     %                  i0,in,j0,jn)
-      if (.not.G_lam) then
+      if (G_lam) then
+*
+          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
+*
+      else
+*
+          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth )
+*
           allocate(capx2(max(1,Adw_fro_a)),
      %             capy2(max(1,Adw_fro_a)),
      %             capz2(max(1,Adw_fro_a)),
@@ -194,7 +205,6 @@
      %             ypos2 (max(1,Adw_fro_a)),
      %             zpos2 (max(1,Adw_fro_a)),
      %             n2 (max(1,Adw_fro_a)) )
-*
 *
           call adw_exch_2 ( xpos2, ypos2, zpos2,
      %                  wrkx1, wrky1, wrkz1,
@@ -238,7 +248,7 @@
       do i = i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
          zth(n) = Geomg_z_8(k) + wrkx1(n)
-         zth(n) = min( Geomg_z_8(l_nk), max( zth(n), Geomg_z_8(1) ) )
+         zth(n) = min( Geomg_z_8(l_nk), max( 1.0d0*zth(n), Geomg_z_8(1) ) )
          if ( zth(n).eq.Geomg_z_8(1) .or. zth(n).eq.Geomg_z_8(l_nk)) then
            zth(n) = (zth(n) + Geomg_z_8(k)) * 0.5
          endif
@@ -265,7 +275,7 @@
             n=(k-1)*nij+((j-1)*l_ni) + i
             F_w(n) = zth(n) - Geomg_z_8(k)
             F_w(n) = Geomg_z_8(k) + 2.0 * F_w(n)
-            F_w(n) = min( Geomg_z_8(l_nk), max( F_w(n), Geomg_z_8(1) ))
+            F_w(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_w(n), Geomg_z_8(1) ))
          enddo
          enddo
       enddo

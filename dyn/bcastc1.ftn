@@ -4,6 +4,9 @@
 *
       subroutine bcastc1
 *
+*implicits
+      use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree
+*
 #include "impnone.cdk"
 *
 *author
@@ -25,6 +28,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
 * v3_01 - Lee V.            - broadcast common hspng for horizontal sponge
+* v3_02 - Tanguay M.        - Broadcast V4dz_degree,V4dzge_degree,V4dzga_degree
 *
 *object
 *
@@ -140,6 +144,10 @@
       COMMON_BROADCAST(V4d_jcst_l)
       COMMON_BROADCAST(V4d_min_i)
       COMMON_BROADCAST(V4d_min_r)
+*
+      call RPN_COMM_bcast(V4dz_degree,  1,"MPI_INTEGER",0,"grid",err )
+      call RPN_COMM_bcast(V4dzge_degree,1,"MPI_INTEGER",0,"grid",err )
+      call RPN_COMM_bcast(V4dzga_degree,1,"MPI_INTEGER",0,"grid",err )
 *
       if (.not.Path_swv1_L) stop
 *

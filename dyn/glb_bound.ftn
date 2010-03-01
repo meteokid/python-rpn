@@ -346,11 +346,11 @@
                    enddo
                 enddo
             endif
+            if ((Hblen_trx.gt.0).or.(Hblen_try.gt.0)) then
+               call nesajr (tr0 ,tr ,LDIST_DIM,G_nk  ,0,0,
+     $                                Hblen_trx,Hblen_try)
+            endif
          enddo
-         if ((Hblen_trx.gt.0).or.(Hblen_try.gt.0)) then
-            call nesajr (tr0 ,tr ,LDIST_DIM,G_nk  ,0,0,
-     $                            Hblen_trx,Hblen_try)
-         endif
          err = vmmuld(key1,Tr3d_ntr)
          err = vmmuld(key0,Tr3d_ntr)
       endif

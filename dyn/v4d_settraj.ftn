@@ -15,6 +15,7 @@
 *                           - adapt for tracers in tr3d  
 * v3_00 - Tanguay M         - open WA file Conversion  
 * v3_00 - Laroche S.        - additions for simplified physics
+* v3_02 - Buehner M.        - added section for ref state file for NLMX event (SV job)
 *
 *object
 *     Open WA file for TRAJECTORY (all timesteps)
@@ -46,7 +47,7 @@
       character*80 attrib_S,attrit_S
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('v4d_settraj')
+      if(.not. Schm_hydro_L) call gem_stop('v4d_settraj',-1)
 *     ______________________________________________________
 *
 *C    -------------------------------------------
@@ -97,6 +98,25 @@
 *        Open WA file
 *        ------------
          call waopen(V4dg_iuncv)
+*
+*C    ------------------------------------------
+*C    Open WA file for NL Perturbation Evolution
+*C    ------------------------------------------
+*
+      if (Lun_out.gt.0) write(Lun_out,1003)
+*
+*        Set Unit
+*        --------
+         V4dg_iunnl = 0
+         pnerr = fnom(V4dg_iunnl,'NLPERTEVOL','RND',0)
+*
+*        Set starting address
+*        --------------------
+         V4dg_addnl = 1
+*
+*        Open WA file
+*        ------------
+         call waopen(V4dg_iunnl)
 *
 *C    ----------------------------------------------------------
 *C    Allocate VMM space for TRAJECTORY comdecks (one time step)
@@ -327,6 +347,11 @@ C        VMM_CREATE(r3p  , LARRAY3D, 1, attrib_S)
  1002 format(
      +//,'Open WA file for CONV (S/R V4D_SET_TRAJ)',
      + /,'========================================',
+     +//)
+*
+ 1003 format(
+     +//,'Open WA file for NL PERT EVOL (S/R V4D_SET_TRAJ)',
+     + /,'================================================',
      +//)
 *
  2000 format(

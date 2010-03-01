@@ -39,6 +39,7 @@
 #include "dcst.cdk"
 #include "schm.cdk"
 #include "p_cond.cdk"
+#include "p_bus.cdk"
 #include "inuvl.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
@@ -201,25 +202,25 @@
       if ( nksurf .eq. G_nk-1 ) then
 *C                                     The sedimentation is made
 *C                                     over all model levels
-        do j= 1, l_nj
-        do i= 1, l_ni 
-         dzmin_= min(dzmin_,
-     $         Dcst_rgasd_8*(F_tp(i,j,G_nk-1)+F_tp(i,j,G_nk-2))/2./
-     $         Dcst_grav_8 * log(geomg_hybm(G_nk-1)/geomg_hybm(G_nk-2)))
+        do j= 1, p_nj
+        do i= 1, p_ni 
+         dzmin_= min(1.0d0*(dzmin_),
+     $         Dcst_rgasd_8*(1.0d0*(F_tp(i,j,G_nk-1)+F_tp(i,j,G_nk-2)))/2.d0/
+     $         Dcst_grav_8 * log(1.0d0*(geomg_hybm(G_nk-1)/geomg_hybm(G_nk-2))))
         end do
         end do
 *
       else  
 *C                                     The sedimentation is made
 *C                                     over a reduced set of levels
-        do j= 1, l_nj 
-        do i= 1, l_nj
-         dzmin_= min(dzmin_,
-     $      Dcst_rgasd_8*(F_tp(i,j,nksurf-1)+F_tp(i,j,nksurf-2))/2./
-     $      Dcst_grav_8 *log(geomg_hybm(nksurf-1)/geomg_hybm(nksurf-2)))
-         dzmin_= min(dzmin_,
-     $      Dcst_rgasd_8*(F_tp(i,j,G_nk-1)+F_tp(i,j,nksurf-1))/2./
-     $      Dcst_grav_8 *log(geomg_hybm(G_nk-1)/geomg_hybm(nksurf-1)))
+        do j= 1, p_nj 
+        do i= 1, p_nj
+         dzmin_= min(1.0d0*(dzmin_),
+     $      Dcst_rgasd_8*(1.0d0*(F_tp(i,j,nksurf-1)+F_tp(i,j,nksurf-2)))/2.d0/
+     $      Dcst_grav_8 *log(1.0d0*(geomg_hybm(nksurf-1)/geomg_hybm(nksurf-2))))
+         dzmin_= min(1.0d0*(dzmin_),
+     $      Dcst_rgasd_8*(1.0d0*(F_tp(i,j,G_nk-1)+F_tp(i,j,nksurf-1)))/2.d0/
+     $      Dcst_grav_8 *log(1.0d0*(geomg_hybm(G_nk-1)/geomg_hybm(nksurf-1))))
         end do
         end do
 *

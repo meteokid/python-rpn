@@ -21,6 +21,7 @@
 * v2_32 - Lee V.         - levset is now an ID defined by user, not the 
 * v2_32                    actual "set" number forced to be in sequence
 * v3_01 - Lee V.         - new ip1 encoding (kind=5 -- unnormalized)
+* v3_02 - Lee V.         - eliminate levels repeated in one level set
 *
 *
 *object
@@ -73,9 +74,9 @@
 #include "lun.cdk"
 *
 **
-      logical press_L,eta_L
+      logical press_L,eta_L,found_L
       character*5 stuff_S,blank_S
-      integer i,j,k,ii,idx,levset,num,kindip1,modeip1
+      integer i,j,k,ii,idx,levset,num,kindip1,modeip1,ilevel
 *
 *     ---------------------------------------------------------------
 *
@@ -115,6 +116,13 @@
             read( stuff_S(2:4), * ) num
 
          else if (F_argv_S(ii).eq.'eta') then
+            if (press_L) then
+                if (Lun_out.gt.0) write(Lun_out,*)
+     $              'SET_LEVEL WARNING: Only one level type can be defined'
+                Level_sets = Level_sets -1
+                set_level=1
+                return
+            endif
 
             kindip1 = 1
             modeip1 = +1
@@ -122,6 +130,13 @@
             eta_L = .true.
 
          else if (F_argv_S(ii).eq.'pres') then
+            if (eta_L) then
+                if (Lun_out.gt.0) write(Lun_out,*)
+     $              'SET_LEVEL WARNING: Only one level type can be defined'
+                Level_sets = Level_sets -1
+                set_level=1
+                return
+            endif
 
             kindip1 = 2
             press_L = .true.
@@ -196,7 +211,21 @@
 
       endif
 
-      Level_max(j)=i
+*     Eliminate repeated levels in one Level set
+      ilevel = 1
+      do ii = 2, i
+         found_L = .false.
+         do k = 1, ii-1
+            if ( Level_ip1(ii,j).eq.Level_ip1(k,j) ) found_L = .true.
+         enddo
+         if (.not. found_L) then
+             ilevel = ilevel + 1
+             Level_ip1(ilevel,j) = Level_ip1(ii,j)
+             Level(ilevel,j)     = Level(ii,j)
+         endif
+      enddo
+
+      Level_max(Level_sets)=ilevel
 
       if (Lun_out.gt.0) then
 

@@ -99,7 +99,7 @@
           seconds=min_seconds
           do j=1,Timestep_sets
           do i=2,Timestep_max(j)
-             seconds = min ( seconds,Cstv_dt_8*(Timestep(i,j)-Timestep(i-1,j)))
+             seconds = min ( 1.0d0*(seconds),Cstv_dt_8*1.0d0*(Timestep(i,j)-Timestep(i-1,j)))
           enddo
           enddo
           if (seconds.lt.min_seconds) then

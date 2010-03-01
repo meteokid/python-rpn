@@ -29,6 +29,8 @@
 * v2_31 - Desgagne M.       - clean up and introduce h2o tracers
 * v3_00 - Laroche S.        - add sigma levels in the arguments
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Plante A.         - Further clean up and introduction of
+*                             water loading via virtual temperature.
 *
 *object
 *	Fill the slice workspace variable for the physics.
@@ -43,14 +45,10 @@
 * F_up          I       - wind image in x direction at time t*
 * F_vp          I       - wind image in y direction at time t*
 * F_tp          I       - virtual temperature at time t*
-* F_hup         I       - specific humidity tendency at time t*
-* F_qcp         I       - mixing ratio of cloud water/ice at time t*
 * F_qp          I       - ln of pressure at time t*
 * F_um          I       - wind image in x direction at time t-
 * F_vm          I       - wind image in y direction at time t-
 * F_tm          I       - virtual temperature at time t-
-* F_hum         I       - specific humidity at time t-
-* F_qcm         I       - mixing ratio of cloud water/ice at time t-
 * F_lpsm        I       - ln of surface pressure at time t-
 * F_wp          I       - vertical motion at time t*
 * F_sig         I       - sigma levels
@@ -66,11 +64,12 @@
 #include "p_geol.cdk"
 #include "p_bus.cdk"
 #include "busind.cdk"
+#include "schm.cdk"
 *
 *notes
 *
-      integer i, k, n, ii, indx, offp, offg, pid, gid, mul
-      real con
+      integer i, k, n, m, ii, indx, offp, offg, pid, gid, mul, tlevel
+      real con, sumqj(p_ni,Nk),tpm(p_ni*Nk,2)
 **
 *     ---------------------------------------------------------------
 *
@@ -83,9 +82,11 @@
          ii = i + p_offi
          F_busdyn(uplus +indx) = F_up (ii,F_jdo,k) * con
          F_busdyn(vplus +indx) = F_vp (ii,F_jdo,k) * con
+         tpm(indx+1,1)         = F_tp (ii,F_jdo,k)
          F_busdyn(tplus +indx) = F_tp (ii,F_jdo,k)
          F_busdyn(umoins+indx) = F_um (ii,F_jdo,k) * con
          F_busdyn(vmoins+indx) = F_vm (ii,F_jdo,k) * con
+         tpm(indx+1,2)         = F_tm (ii,F_jdo,k)
          F_busdyn(tmoins+indx) = F_tm (ii,F_jdo,k)
          F_busdyn(omegap+indx) = F_wp (ii,F_jdo,k)
          F_busdyn(sigm  +indx) = F_sig(ii,F_jdo,k)
@@ -132,10 +133,63 @@
 *C    Compute temperature from virtual temperature
 *     --------------------------------------------
 *
-      call mfottv ( F_busdyn(tplus  ) , F_busdyn(tplus) , 
-     $              F_busdyn(h2o_ind(1,hucond)) , p_ni, Nk, p_ni )
-      call mfottv ( F_busdyn(tmoins ) , F_busdyn(tmoins), 
-     $              F_busdyn(h2o_ind(2,hucond)) , p_ni, Nk, p_ni )
+      if(Schm_wload_L)then
+
+*         print*,'Water loading on p_fillbus'
+
+*        Loop over the two time levels.
+         do m=1,2
+
+            if(m.eq.1)tlevel=tplus
+            if(m.eq.2)tlevel=tmoins
+
+            do k= 1, Nk
+               do i= 1, p_ni
+                  sumqj(i,k)=0.0
+               end do
+            end do
+            
+*           Sum over Hydrometeors, note that vapor 'HU' is in position hucond
+            do n=1,hucond-1
+               if(h2o_liste_S(n).eq.'QC'.or.
+     $              h2o_liste_S(n).eq.'QR'.or.
+     $              h2o_liste_S(n).eq.'QI'.or.
+     $              h2o_liste_S(n).eq.'QG'    )then
+                  do k= 1, Nk
+                  do i = 1, p_ni
+                     indx = (k-1)*p_ni+i-1
+                     sumqj(i,k)=sumqj(i,k)+F_busdyn(h2o_ind(m,n)+indx)
+                  end do
+                  end do
+               endif
+            end do
+            do n=hucond+1,h2o_ntr
+               if(h2o_liste_S(n).eq.'QC'.or.
+     $              h2o_liste_S(n).eq.'QR'.or.
+     $              h2o_liste_S(n).eq.'QI'.or.
+     $              h2o_liste_S(n).eq.'QG'    )then
+                  do k= 1, Nk
+                  do i = 1, p_ni
+                     indx = (k-1)*p_ni+i-1
+                     sumqj(i,k)=sumqj(i,k)+F_busdyn(h2o_ind(m,n)+indx)
+                  end do
+                  end do
+               endif
+            end do
+
+            call mfottvh ( F_busdyn(tlevel),tpm(1,m),
+     $                   F_busdyn(h2o_ind(m,hucond)),sumqj,p_ni,Nk,p_ni)
+
+         end do
+
+      else
+
+         call mfottv ( F_busdyn(tplus  ) , tpm(1,1) , 
+     $        F_busdyn(h2o_ind(1,hucond)) , p_ni, Nk, p_ni )
+         call mfottv ( F_busdyn(tmoins ) , tpm(1,2) , 
+     $        F_busdyn(h2o_ind(2,hucond)) , p_ni, Nk, p_ni )         
+
+      endif
 *
       if (F_step.eq.0) then
 *

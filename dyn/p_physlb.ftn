@@ -30,6 +30,8 @@
 * v2_31 - Dugas B.          - re-activate zonal diagnostics
 * v2_32 - Desgagne M.       - connection to physics 3.72
 * v3_00 - Laroche S.        - adaptation for v4d
+* v3_02 - Dugas B.          - account for a possible second call to the physics
+*                             and add optional call to dump full physics buses
 *
 *object
 *     See above id.
@@ -65,6 +67,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "ptopo.cdk"
 #include "lun.cdk"
 #include "mult.cdk"
 #include "mem.cdk"
@@ -76,6 +79,8 @@
 #include "macro.cdk"
 #include "p_clim.cdk"
 #include "p_bus.cdk"
+#include "p_pbl.cdk"
+#include "p_pset.cdk"
 #include "busind.cdk"
 #include "busind_tr.cdk"
 #include "v4dg.cdk"
@@ -89,6 +94,7 @@
       character*2 accum_s
       data    accum_s / ' ' /
 *
+      logical dumpbus_L
       integer jdo, i, j, k, n, ii, indx, err
       real dt,con
 *
@@ -99,6 +105,13 @@
 *     ---------------------------------------------------------------
 *
       if ((Lun_out.gt.0).and.(F_cpu.eq.1)) write(Lun_out,1000)
+*
+      dumpbus_L = .false.
+      if (P_pbl_dumpbus.gt.0) then
+          dumpbus_L = (mod( F_step,P_pbl_dumpbus ).eq.0)
+          call dumpini2( p_bdyn_siz,p_bper_siz,p_bvol_siz,
+     $                   Ptopo_numproc,p_ni,p_nj, G_ni,G_nj )
+      endif
 *
       if (.not.Mem_phyncore_L) pabusper=loc(busper2(1))
       if (F_step.eq.0) then
@@ -163,10 +176,19 @@
 *
 *     Run physics on row jdo
 *      
-      call phyexe1 (busent ,busdyn ,busper ,busvol ,
+      if ( .NOT. P_pset_second_L ) then
+         call phyexe1
+     $             (busent ,busdyn ,busper ,busvol ,
      $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
      $              dt, jdo, F_step, F_cpu, p_ni, Nk)
+      else
+         call p_phyexe
+     $             (busent ,busdyn ,busper ,busvol ,
+     $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
+     $              dt, jdo, F_step, F_cpu, p_ni, Nk)
+      endif
 *
+      if (dumpbus_L) call dumpbus2( busdyn,busper,busvol, jdo )
 *
 *C  Combine tendencies of row jdo and store back in 3D space
 *
@@ -256,6 +278,8 @@
       goto 100
 *
  650  continue
+*
+      if (dumpbus_L) call dumpwrit2( Lun_out, F_step, Ptopo_myproc )
 *
  1000 format(/'PERFORM A PHYSICS STEP: CMC/RPN PHYSICS (S/R P_PHYSLB)'
      $       /55('='))

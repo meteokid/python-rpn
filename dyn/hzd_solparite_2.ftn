@@ -28,6 +28,7 @@
 *
 *revision
 * v3_01 - Qaddouri A.        - initial version
+* v3_02 - J. P. Toviessi     - remove data overflow bug
 *
 *object
 *
@@ -79,7 +80,8 @@
       do j = miny , 0
       do k = minx1, maxx1 
       do i = 1, gni
-         fdg1_8(j,k,i)= ZERO_8
+         fdg1_8 (j,k,i)= ZERO_8
+         fdg12_8(j,k,i)= ZERO_8
       enddo
       enddo
       enddo
@@ -273,6 +275,25 @@ c*PDIR PARDO FOR=Ptopo_npeOpenMP
      %                                  minx2, maxx2,gni,fdg2_8,-2,2)
 *
 *     inverse projection ( r = x * w )
+*
+*___________________________________________________________
+      do j = miny , 0
+      do k = minx1, maxx1 
+      do i = 1, gni
+         fwft_8(j,k,i)= ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      do j = njl+1, maxy
+      do k = minx1, maxx1
+      do i = 1, gni
+         fwft_8(j,k,i)= ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*___________________________________________________________
 *
       call mxma8( F_evxevec_8,                1, NSTOR,
      %            fwft_8(1,1,1), (Maxy-Miny+1) * (maxx1-minx1+1),   1,

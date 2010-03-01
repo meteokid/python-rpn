@@ -31,7 +31,8 @@
 * v2_31 - Lee V.            - to generate any sliced slab output
 * v2_32 - Lee V.            - correction of output (bug in filling temp arrays)
 * v3_00 - Desgagne & Lee    - Lam configuration
-* v2_01 - Lee V.            - correct MAX SLAB bug by opening output file here
+* v3_01 - Lee V.            - correct MAX SLAB bug by opening output file here
+* v3_02 - Lee V.            - special typvar for V4d adj/tlm
 *
 *object
 *	This subroutine generates slab descriptors
@@ -79,6 +80,7 @@
 #include "slab.cdk"
 #include "pslab.cdk"
 #include "level.cdk"
+#include "v4dg.cdk"
 *
 *modules
       integer  slabdsc
@@ -230,8 +232,19 @@
       endif
 
       if (mtout.gt.0) then
+*         Special coding of typvar for V4d TLM and V4d ADJ only
+          if (V4dg_tl_L) then
+              do i=1,mtout
+                 typvar_S(i) = 'R'
+              enddo
+          endif
+          if (V4dg_ad_L) then
+              do i=1,mtout
+                 typvar_S(i) = 'G'
+              enddo
+          endif
           if (Pslab_fhand.eq.-1) then
-*         Open physics slab file
+*         Open physics/chem slab file
               exten_s= ""
               if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
      $                           ((Lctl_step.gt.(Init_dfnp-1)/2)) )

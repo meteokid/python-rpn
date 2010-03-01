@@ -13,6 +13,7 @@
 *                             physics interface)
 * v2_32 - Desgagne M.       - connection to physics 3.72
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Laroche S.        - new conditional when P_cond_stcon_s(1:3).eq.' NIL'
 *
 *object
 *
@@ -83,9 +84,18 @@
 *
 * H2O tracers
 *
+cstl
+cstl   NOTE: v3_02
+cstl
+cstl   To avoid to carry QC when no condensation is selected,
+cstl   a new conditional have been added when P_cond_stcon_s(1:3).eq.' NIL'
+cstl
+
       do i=1,h2o_maxn
          vn_S=h2o_liste_S(i)(1:2)//'PLUS'
          call getindx (vn_S, 'D', deb, lght, init)
+         if ( (h2o_liste_S(i)(1:2).eq.'QC').and.
+     $        (P_cond_stcon_s(1:3).eq.'NIL' ) ) deb = -1
          if ( (h2o_liste_S(i)(1:2).eq.'QR').and.
      $        (P_cond_stcon_s(1:4).ne.'EXCR') ) deb = -1
          if (deb.gt.0) then

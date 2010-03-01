@@ -26,6 +26,10 @@
 * v2_31 - Bernard Dugas     - adapt to new climatological file descriptors
 * v2_32 - Bernard Dugas     - correct exit condition codes
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_01 - Bernard Dugas     - add call to INTOZON
+* v3_02 - Lubos Spacek      - remplacer l_ni et l_nj par p_ni et p_nj
+* v3_02 - Bernard Dugas     - remettre le code de controle d'interpolation O3
+*                           - toujours initialiser incrtp (independamment de soli_L)
 *
 *object
 *
@@ -51,6 +55,7 @@
 #include "busind.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
+#include "rstr.cdk"
 #include "out1.cdk"
 #include "cstv.cdk"
 #include "glb_ld.cdk"
@@ -80,7 +85,7 @@
 *
       LOGICAL      acli_L,soli_L
       INTEGER      xndate1,xndate2,xniz,xnjz
-      INTEGER      Lun_clim,Lun_acli,Lun_activ
+      INTEGER      Lun_clim,Lun_acli,Lun_activ,ppjour,aujour
       INTEGER      xnerr,xncle,xnhold,xnpos,xnzpos,xncoupe
       INTEGER      i,xni,xnj,xnk,xnim,xnjm,xnzm,xnmxfld
       CHARACTER    typvar_S,hold_S*12,soli_S*8
@@ -88,7 +93,7 @@
 *
       real xrwrk3
       pointer (iwork3,xrwrk3(1))
-      real xrlon(l_ni), xrlat(l_ni), xrwrk1(l_ni), xrwrk2(l_ni)
+      real xrlon(p_ni), xrlat(p_ni), xrwrk1(p_ni), xrwrk2(p_ni)
       real, dimension (:), allocatable :: xrclim
       real, dimension (:), allocatable :: xrtic,xrtac
       real busper, busper2(max(1,p_bper_siz))
@@ -109,6 +114,23 @@
       heur_8    = Lctl_step * (Cstv_dt_8 / 3600. )
       call incdatr( xnday1,Out1_date,heur_8 )
       call datmgp2( xndate )
+*
+**    Update the climatological ozone field every 24 hours
+**    (and note that it is first done at timestep 1)
+*
+      if (Cstv_dt_8 .lt. 43200. ) then
+*
+         ppjour = nint( 86400. / Cstv_dt_8 )
+         aujour = mod( Lctl_step, ppjour )
+*
+         if (Rstri_sdon .gt. 0 .and.
+     %       aujour     .eq. 1 )
+     %       call intozon( xndate(3), xndate(2), lun_out.gt.0 )
+*
+      endif
+*
+**    Check to see if the current model date and time
+**    are "close" to the 15th of the month at 12Z
 *
       xncibl(1) = 0
       xncibl(2) = xndate(2)
@@ -442,7 +464,7 @@ C        call flush( Lun_out )
 *
 **          Convert Busp_idlat,Busp_idlon from radians to degrees
 *
-            do i=0,l_ni-1
+            do i=0,p_ni-1
                xrlat(i+1) = busper(dlat+i)*rad_8
                xrlon(i+1) = busper(dlon+i)*rad_8
             enddo
@@ -468,21 +490,21 @@ C              xrwrk3(i) = xrclim(xnpos+i)
 C           enddo
 *
             if (gtyp_S(1).ne.'Z') then
-               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(1),xnjlu(1),
      %                    gtyp_S(1),xnig1(1),xnig2(1),
      %                    xnig3(1),xnig4(1),.TRUE. )
 c              call ez_rgfree
             else
-               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(1),xnjlu(1),'Z',
      %                    gtypz_S(1),xnzig1(1),xnzig2(1),
      %                    xnzig3(1),xnzig4(1),.TRUE.,
      %                    xrtic(xnzpos),xrtac(xnzpos) )
             endif
 *
-            do i=0,l_ni-1
-               busper(incrne+i) = (xrwrk1(i+1) - busper(snodp+l_ni+i))
+            do i=0,p_ni-1
+               busper(incrne+i) = (xrwrk1(i+1) - busper(snodp+p_ni+i))
      %                            * scal_8
             enddo
 *
@@ -500,20 +522,20 @@ C              xrwrk3(i) = xrclim(xnpos+i)
 C           enddo
 *
             if (gtyp_S(2).ne.'Z') then
-               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(2),xnjlu(2),
      %                    gtyp_S(2),xnig1(2),xnig2(2),
      %                    xnig3(2),xnig4(2),.TRUE. )
 c            call ez_rgfree
             else
-               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(2),xnjlu(2),'Z',
      %                    gtypz_S(2),xnzig1(2),xnzig2(2),
      %                    xnzig3(2),xnzig4(2),.TRUE.,
      %                    xrtic(xnzpos),xrtac(xnzpos) )
             endif
 *
-            do i=0,l_ni-1
+            do i=0,p_ni-1
                busper(incrhs+i) = (xrwrk1(i+1)  - busper(wsoil+i))
      %                            * scal_8
             enddo
@@ -532,20 +554,20 @@ C              xrwrk3(i) = xrclim(xnpos+i)
 C           enddo
 *
             if (gtyp_S(3).ne.'Z') then
-               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(3),xnjlu(3),
      %                    gtyp_S(3),xnig1(3),xnig2(3),
      %                    xnig3(3),xnig4(3),.TRUE. )
 c              call ez_rgfree
             else
-               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(3),xnjlu(3),'Z',
      %                    gtypz_S(3),xnzig1(3),xnzig2(3),
      %                    xnzig3(3),xnzig4(3),.TRUE.,
      %                    xrtic(xnzpos),xrtac(xnzpos) )
             endif
 *
-            do i=0,l_ni-1
+            do i=0,p_ni-1
                busper(incricd+i) = (xrwrk1(i+1)  - busper(icedp+i))
      %                             * scal_8
             enddo
@@ -564,20 +586,20 @@ C              xrwrk3(i) = xrclim(xnpos+i)
 C           enddo
 *
             if (gtyp_S(4).ne.'Z') then
-               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(4),xnjlu(4),
      %                    gtyp_S(4),xnig1(4),xnig2(4),
      %                    xnig3(4),xnig4(4),.TRUE. )
 c              call ez_rgfree
             else
-               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(4),xnjlu(4),'Z',
      %                    gtypz_S(4),xnzig1(4),xnzig2(4),
      %                    xnzig3(4),xnzig4(4),.TRUE.,
      %                    xrtic(xnzpos),xrtac(xnzpos) )
             endif
 *
-            do i=0,l_ni-1
+            do i=0,p_ni-1
                busper(incrgl+i) = (xrwrk1(i+1)  - busper(glsea0+i))
      %                            * scal_8
             enddo
@@ -602,13 +624,13 @@ C              xrwrk3(i) = xrclim(xnpos+i)
 C           enddo
 *
             if (gtyp_S(5).ne.'Z') then
-               call ez_rgscint( xrwrk2,l_ni,1,xrlat,xrlon,
+               call ez_rgscint( xrwrk2,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(5),xnjlu(5),
      %                    gtyp_S(5),xnig1(5),xnig2(5),
      %                    xnig3(5),xnig4(5),.TRUE. )
 c              call ez_rgfree
             else
-               call ez_igscint( xrwrk2,l_ni,1,xrlat,xrlon,
+               call ez_igscint( xrwrk2,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(5),xnjlu(5),'Z',
      %                    gtypz_S(5),xnzig1(5),xnzig2(5),
      %                    xnzig3(5),xnzig4(5),.TRUE.,
@@ -626,13 +648,13 @@ C              xrwrk3(i) = xrclim(xnpos+i)
 C           enddo
 *
             if (gtyp_S(6).ne.'Z') then
-               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_rgscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(6),xnjlu(6),
      %                    gtyp_S(6),xnig1(6),xnig2(6),
      %                    xnig3(6),xnig4(6),.TRUE. )
 c              call ez_rgfree
             else
-               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+               call ez_igscint( xrwrk1,p_ni,1,xrlat,xrlon,
      %                    xrwrk3,xnilu(6),xnjlu(6),'Z',
      %                    gtypz_S(6),xnzig1(6),xnzig2(6),
      %                    xnzig3(6),xnzig4(6),.TRUE.,
@@ -641,23 +663,21 @@ c              call ez_rgfree
 *
 **          Convert the new temperatures from Celsius to Kelvin
 *
-            do i=1,l_ni
+            do i=1,p_ni
                xrwrk1(i) = xrwrk1(i) + Dcst_tcdk_8
                xrwrk2(i) = xrwrk2(i) + Dcst_tcdk_8
             enddo
 *
 **          Busp_incrts is used for SSTs, Busp_incrtg is used in the
 **          second layer Continental Ice temperature and Busp_incrtp
-**          is used with the Force-Restore. The latter is only defined
-**          if we have determined that the soil is interactive (soli_L).
+**          is used with the Force-Restore.
 *
-            do i=0,l_ni-1
+            do i=0,p_ni-1
               busper(incrts+i) = (xrwrk1(i+1)  - busper(twater+i))
      %                           * scal_8
               busper(incrtg+i) = (min( Dcst_trpl_8, 
-     %               xrwrk2(i+1)) - busper(tglacier+l_ni+i)) * scal_8
-              if (.not.soli_L)
-     %        busper(incrtp+i) = (xrwrk2(i+1)  - busper(tsoil+l_ni+i))
+     %           1.0d0*xrwrk2(i+1)) - busper(tglacier+p_ni+i)) * scal_8
+              busper(incrtp+i) = (xrwrk2(i+1)  - busper(tsoil+p_ni+i))
      %                           * scal_8
             enddo
 *

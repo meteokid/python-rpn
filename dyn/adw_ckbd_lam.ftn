@@ -1,0 +1,227 @@
+***s/r adw_ckbd_lam - check if upstream points from each north/south/east/west
+*                   pe's for which an interpolation is requested are
+*                   inside own advection source grid.
+*
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_ckbd_lam ( F_x_in,  F_y_in,  F_z_in, i0, in,j0,jn )
+*
+#include "impnone.cdk"
+*
+      integer i0, in, j0, jn
+      real    F_x_in  ( * ), F_y_in  ( * ), F_z_in  ( * )
+*
+*author
+*     Vivian Lee         March 2002 
+*
+*revision
+* v3_02 - Lee V.  - extracted LAM code originally placed in adw_exch_1
+*
+*object
+*     For LAM mode only:
+*     Check if upstream points of each PE from their local boundaries
+*     north/south/east/west are outside their local advection source
+*     grid. If they are and the local boundary is NOT the border of
+*     the global grid, the routine will stop. If the local boundary is
+*     the border of the global grid AND Adw_trunc_traj_L is TRUE, then
+*     the routine will truncate the trajectory and the model will 
+*     continue. (Counter for truncated trajectories is activated)
+*     If Adw_trunc_traj_L is set to FALSE, the routine will stop and
+*     recommend the user to reduce Cstv_dt_8 (timestep length).
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+* F_x_out      | \ coordinates of upstream                       |  o  |
+* F_y_out      |   positions outside advection                   |  o  |
+* F_z_out      | / source grid                                   |  o  |
+*              |                                                 |     |
+* F_c_out      | 3D coordinates of points for which upstream     |  o  |
+*              | positions are outside advection source grid     |     |
+*              |                                                 |     |
+* F_x_in       | \                                               |  i  |
+* F_y_in       |   upstream positions                            |  i  |
+* F_z_in       | /                                               |  i  |
+* i0           | starting i position to check for LAM            |  i  |
+* in           | ending i position to check for LAM              |  i  |
+* j0           | starting j position to check for LAM            |  i  |
+* jn           | ending j position to check for LAM              |  i  |
+*______________|_________________________________________________|_____|
+*
+*
+*implicits
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+************************************************************************
+*
+      integer n, nij, i, j, k, npts, err
+*
+      err = 0
+      nij  = l_ni*l_nj
+*
+************************************************************************
+      if (l_north) then
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            if ( F_y_in(n).ge.Adw_yy_8(Adw_njt-(Adw_haloy+1)) ) then
+c                print *,'F_y_in(',n,')=',F_y_in(n),
+c    %           'Adw_yy_8(Adw_njt-(Adw_haloy+1))=',
+c    %            Adw_yy_8(Adw_njt-(Adw_haloy+1))
+c    %           'Adw_dly_8(1)=',Adw_dly_8(1)
+                 if (Adw_trunc_traj_L) then
+                     F_y_in(n) = Adw_yy_8(Adw_njt-(Adw_haloy+2))
+                     Adw_trunc(1)=Adw_trunc(1) + 1
+                 else
+                     print *,'PE ',Ptopo_myproc,
+     %              'Error exch on NORTH WALL: reduce Cstv_dt_8'
+                    err = -1
+                 endif
+            endif
+         enddo
+         enddo
+         enddo
+      else
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            if ( F_y_in(n).ge.Adw_yy_8(Adw_njt-1) ) then
+c                print *,'F_y_in(',n,')=',F_y_in(n),' Adw_yy_8(Adw_njt-1)=',
+c    %           Adw_yy_8(Adw_njt-1), 'Adw_dly_8(1)=',Adw_dly_8(1)
+                 npts = 1+ (F_y_in(n)-Adw_yy_8(Adw_njt-1))/Adw_dly_8(1)
+                 print *,'PE ',Ptopo_myproc,
+     %           'Error exch northwards: Adw_haloy+',npts
+                 err = -1
+            endif
+         enddo
+         enddo
+         enddo
+      endif
+*
+      if (l_south) then
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            if ( F_y_in(n).le.Adw_yy_8(Adw_haloy+2) ) then
+c                print *,'F_y_in(',n,')=',F_y_in(n),' Adw_yy_8(Adw_haloy+2)=',
+c    %           Adw_yy_8(Adw_haloy+2), 'Adw_dly_8(1)=',Adw_dly_8(1)
+                 if (Adw_trunc_traj_L) then
+                     F_y_in(n) = Adw_yy_8(Adw_haloy+3)
+                     Adw_trunc(2)=Adw_trunc(2) + 1
+                 else
+                     print *,'PE ',Ptopo_myproc,
+     %              'Error exch on SOUTH WALL: reduce Cstv_dt_8'
+                     err = -1
+                 endif
+            endif
+         enddo
+         enddo
+         enddo
+      else
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            if ( F_y_in(n).le.Adw_yy_8(2) ) then
+c                print *,'F_y_in(',n,')=',F_y_in(n),' Adw_yy_8(2)=',
+c    %           Adw_yy_8(2), 'Adw_dly_8(1)=',Adw_dly_8(1)
+                 npts = 1+ (Adw_yy_8(2)-F_y_in(n))/Adw_dly_8(1)
+                 print *,'PE ',Ptopo_myproc,
+     %           'Error exch southwards:Adw_haloy+',npts
+                 err = -1
+            endif
+         enddo
+         enddo
+         enddo
+      endif
+*
+      if (l_east) then
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            if ( F_x_in(n).ge.Adw_xx_8(Adw_nit-(Adw_halox+1)) ) then
+c                print *,'F_x_in(',n,')=',F_x_in(n),
+c    %           ' Adw_xx_8(Adw_nit-(Adw_halox+1))=',
+c    %             Adw_xx_8(Adw_nit-(Adw_halox+1)),
+c    %           ' Adw_dlx_8(1)=',Adw_dlx_8(1)
+                 if (Adw_trunc_traj_L) then
+                     F_x_in(n) = Adw_xx_8(Adw_nit-(Adw_halox+2))
+                     Adw_trunc(3)=Adw_trunc(3) + 1
+                 else
+                     print *,'PE ',Ptopo_myproc,
+     %              'Error exch EAST WALL: reduce Cstv_dt_8'
+                     err = -1
+                 endif
+            endif
+         enddo
+         enddo
+         enddo
+      else
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            if ( F_x_in(n).ge.Adw_xx_8(Adw_nit-1) ) then
+c                print *,'F_x_in(',n,')=',F_x_in(n),' Adw_xx_8(Adw_nit-1)=',
+c    %           Adw_xx_8(Adw_nit-1), 'Adw_dlx_8(1)=',Adw_dlx_8(1)
+                 npts = 1+ (F_x_in(n)-Adw_xx_8(Adw_nit-1))/Adw_dlx_8(1)
+                 print *,'PE ',Ptopo_myproc,
+     %           'Error exch eastwards: Adw_halox+',npts
+                 err = -1
+            endif
+         enddo
+         enddo
+         enddo
+      endif
+*
+      if (l_west) then
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            if ( F_x_in(n).le.Adw_xx_8(Adw_halox+2) ) then
+c                print *,'F_x_in(',n,')=',F_x_in(n),' Adw_xx_8(Adw_halox+2)=',
+c    %           Adw_xx_8(Adw_halox+2), 'Adw_dlx_8(1)=',Adw_dlx_8(1)
+                 if (Adw_trunc_traj_L) then
+                     F_x_in(n) = Adw_xx_8(Adw_halox+3)
+                     Adw_trunc(4)=Adw_trunc(4) + 1
+                 else
+                     print *,'PE ',Ptopo_myproc,
+     %              'Error exch WEST WALL: reduce Cstv_dt_8'
+                     err = -1
+                 endif
+            endif
+         enddo
+         enddo
+         enddo
+      else
+         do k=1,l_nk
+         do j=j0,jn
+         do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            if ( F_x_in(n).le.Adw_xx_8(2) ) then
+c                print *,'F_x_in(',n,')=',F_x_in(n),'Adw_xx_8(2)=',Adw_xx_8(2), 
+c    %           'Adw_dlx_8(1)=',Adw_dlx_8(1)
+                 npts = 1+ (Adw_xx_8(2)-F_x_in(n))/Adw_dlx_8(1)
+                 print *,'PE ',Ptopo_myproc,
+     %           'Error exch westwards: Adw_halox+',npts
+                 err = -1
+            endif
+         enddo
+         enddo
+         enddo
+      endif
+*     
+      call gem_stop ( 'adw_ckbd_lam', err )
+*     
+      return
+      end

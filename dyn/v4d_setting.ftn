@@ -4,8 +4,9 @@
 *
       subroutine v4d_setting 
 *
-      use v4d_prof, only: Pr_wopen_L, Pr_ropen_L, Pr_read_L, 
-     %                    Pr_traj0to9_L, Pr_varindx, Pr_varname
+      use v4d_prof, only: Pr_wopen_L, Pr_ropen_L, Pr_read_L, Pr_llfrm_L, Pr_traj0to9_L, 
+     %                    Pr_varindx, Pr_varname, Pr_dsnooze_8, Pr_traj0to9_L, Pr_mode_S
+*
       use v4dz
 *
 #include "impnone.cdk"
@@ -24,6 +25,10 @@
 * v3_00 - Laroche S.        - additions for simplified physics
 * v3_01 - Tanguay M.        - add V4dg_sgvc_L
 *                           - introduce GAUSS=GEM option
+* v3_02 - Buehner M.        - added section for ref state file for NLMX event (SV job)
+*                           - changed call readlalo to readinit
+*                           - no 3hr preliminary integration for SV job
+* v3_02 - Tanguay M.        - V4dz_degree in namelist var4d
 *
 *object
 *     1) Allocate WA files and VMM space
@@ -50,7 +55,7 @@
 *modules
       external hpalloc,longueur
 *
-      integer pnerr,ier,timobmax,i,j,i1,i2,j1,j2,ni,lun_4dvar,longueur,
+      integer pnerr,timobmax,i,j,i1,i2,j1,j2,ni,lun_4dvar,longueur,
      %        ierr,fnom,ilun_out,status,offi,offj,indx,err
 *
       real,   allocatable, dimension(:)   :: groots
@@ -181,6 +186,14 @@
 *
              call hpalloc (V4dg_cvincore_, V4dg_cvsize, pnerr, 1)
 *
+*         Estimate size of NLINCORE defined in V4d_RWNLPERT
+*         -------------------------------------------------
+             V4dg_nlsize = 0
+*
+             V4dg_nlsize = V4dg_nlsize + (1+timobmax) *( (3 + Tr3d_ntr)*l_nk + 1 )*l_ni*l_nj
+*
+             call hpalloc (V4dg_nlincore_, V4dg_nlsize, pnerr, 1)
+*
           endif
 *
           endif
@@ -225,7 +238,7 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
          write(cprocno_S,fmt='(i1)') Ptopo_myproc
          cfilename_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))//
      $                 '/output/Output_From_Proc_No.'//trim(cprocno_S)
-         ierr = fnom(lun_4dvar,trim(cfilename_S),'SEQ',0)
+         ierr = fnom(lun_4dvar,trim(cfilename_S),'SEQ+APPEND',0)
 *
          ilun_out = Lun_out
          Lun_out  = lun_4dvar
@@ -236,10 +249,28 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *
 *        Flag to do 3hr TRAJ run to get to the starting date of the assimilation
 *        -----------------------------------------------------------------------
-         Pr_traj0to9_L = .true.
+         Pr_traj0to9_L = .false.
+*
+*          Do not perform initial 3hr integration for SV job - initial time = synoptic time!!!!
+*          ------------------------------------------------------------------------------------
+           if(V4dg_sgvc_L) Pr_traj0to9_L = .false.       
+*
          write(Lun_out,*) 'Flag to do 3hr TRAJ run TRAJ0TO9_L = ',Pr_traj0to9_L
 *
-         if(V4dg_4dvar_L) then
+*        Initialization of static information regarding PROF files 
+*        ---------------------------------------------------------
+         Pr_llfrm_L = .true.
+         Pr_dsnooze_8 = 0.01
+         Pr_mode_S = 'FILE'
+         write(Lun_out,*) 'SNOOZE TIME = ',Pr_dsnooze_8,' LLFRM = ',Pr_llfrm_L
+*
+         if(V4dg_sgvc_L) then
+*
+*        Input parameters from 3dvar
+*        ---------------------------
+         call v4d_readinit ()
+*
+         else
 *
 *        Initialize the obs variable indices
 *        -----------------------------------
@@ -251,10 +282,6 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *
          Pr_varname = (/'UU', 'VV', 'TT', 'HU', 'SP'/)
 *
-*        Flag to read in obs positions once only
-*        ---------------------------------------
-         Pr_read_L = .false.
-*
 *        Flag to allow model-profile file to be opened 
 *        ---------------------------------------------
          Pr_wopen_L = .false.     
@@ -265,15 +292,20 @@ c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1
 *
 *        Input obs lists if not already done.
 *        -----------------------------------
-         if(.not. Pr_read_L) call v4d_readlalo ()
+         call v4d_readinit ()
 *
 *        ----------------------------------------------------
 *        Initialization for EZSCINT interpolation of profiles  
 *        ----------------------------------------------------
 *
-*        Horizontal interpolation type ( 1 = linear, 3 = cubic )
 *        -------------------------------------------------------
-         V4dz_degree = 1
+*        Type of interpolation V4dz_degree now in namelist var4d
+*        -------------------------------------------------------
+*        NOTE: 1= Linear and 3=Cubic Lagrange
+*        -------------------------------------------------------
+*
+*        Type of input grid
+*        ------------------
          V4dz_grtypi = 'Z'
 *
 *        Initialize dimensions I1,I2,J1,J2, axes AX,AY

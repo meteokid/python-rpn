@@ -179,7 +179,7 @@
       t1 = F_cz(n) * ( xm + 1.0 )
       t2 = F_cz(n) * ( xx + 1.0 )
 *
-      F_out(n) = max ( prmin, ( min ( prmax, xm * a1 + t1 * b1 + xx * c1 + t2 * d1 )))
+      F_out(n) = max ( 1.0d0*prmin , ( min ( 1.0d0*prmax, xm * a1 + t1 * b1 + xx * c1 + t2 * d1 )))
 *
    80 continue
    90 continue

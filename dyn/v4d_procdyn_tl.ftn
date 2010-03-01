@@ -14,6 +14,7 @@
 * v3_00 - Tanguay M.        - v4d_uv2img done in varconv_tl if V4dg_4dvar_L
 * v3_00 - Laroche S.        - adapt for simplified physics
 * v3_01 - Tanguay M.        - add V4dg_sgvc_L 
+* v3_02 - Buehner M.        - do not call uv2img, winds already images for 4dvar/SV job
 *
 *object
 *     see id section
@@ -39,7 +40,7 @@
 *
 *     TRAJECTORY
 *     ----------
-      call v4d_uv2img_tr 
+      if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_tr 
 *
 *     TLM 
 *     ---

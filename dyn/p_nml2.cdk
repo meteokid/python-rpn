@@ -1,0 +1,30 @@
+#if defined (DOC)
+*
+*revisions
+* v3.02 - Dugas B.               - adapted from p_nml.cdk
+*
+***comdeck p_nml.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES IN THE 'PHYSICS2' NAMELIST                                |
+*  descriptions of each variable are found in each individual comdeck  |
+*______________________________________________________________________|
+*
+*
+#endif
+#include "p_pbl2.cdk"
+#include "p_cond2.cdk"
+*
+      namelist /physics2/
+     $     P_pbl2_bndlr_S   ,P_pbl2_schsl_S   ,P_pbl2_mix_S     ,
+     $     P_cond2_conv_S   ,P_cond2_stcon_S  ,P_cond2_shlct_S  ,
+*
+     $     P_pbl2_drag_L    ,P_pbl2_ocean_L   ,P_pbl2_evap_L    ,
+     $     P_pbl2_snwmlt_L  ,P_pbl2_stomat_L  ,P_pbl2_typsol_L  ,
+     $     P_pbl2_iceme_L   ,P_pbl2_agreg_L   ,
+     $     P_cond2_satu_L   ,P_cond2_ilwc_L   ,
+*
+     $     P_cond2_kfcmom_L ,P_cond2_kfctrig  , P_cond2_kfcrad  ,
+     $     P_cond2_kfcdepth ,P_cond2_kfcdlev  , P_cond2_kfcdet  ,
+     $     P_cond2_kfctimec ,P_cond2_kfctimea

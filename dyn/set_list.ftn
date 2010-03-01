@@ -20,6 +20,7 @@
 * v2_31 - Lee V.            - HU and QC outputs from BLOCTR, not BLOCTHM
 * v2_32 - Lee V.            - ME, HU output from BLOCTHM, tracer outputs
 * v2_32                       (TRT0, TRT1) from BLOCTR
+* v3_02 - Lee V.            - LA, LO, QC output from BLOCTHM
 *
 *object
 *	
@@ -45,13 +46,13 @@
 *
 **
       integer i,nbre,k
-      parameter (nbre = 26)
+      parameter (nbre = 29)
       character*4 derive_S(nbre)
       integer derivkey(nbre)
       data derive_S / 
      $     'UU','VV','UV','WW','WE','GZ','P0','PS','PT','PN',
      $     'DD','QQ','QR','QS','Q3','DS','VT','TT','TD','ES',
-     $     'HR','TW','PX','ZZ','HU','ME'/
+     $     'HR','TW','PX','ZZ','HU','ME','LA','LO','QC'/
 *
 *     ---------------------------------------------------------------
 *

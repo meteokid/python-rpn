@@ -18,6 +18,7 @@
 * v2_20 -                     will be from the entry or permanent physics bus
 * v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+* v3_02 - Buehner M.        - leave winds as images for 4dvar or SV jobs
 *
 *object
 *	
@@ -116,7 +117,9 @@
 *     --------------------------------------------
 *     In 4D-Var, Convert wind images to true winds
 *     --------------------------------------------
-      if(V4dg_conf.ne.0) call v4d_img2uv()
+      if(V4dg_conf.ne.0) then
+         if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_img2uv() 
+      endif
 *
 *C       2.    performs preprocessing of the dynamics input data
 *              -------------------------------------------------

@@ -318,12 +318,14 @@
             allocate (w1(ni*nj+header))
             err= fstluk( w1, liste(i), ni,nj,nk) 
             if ((var_S.eq.'>>').or.(var_S.eq.'^^')) goto 88
-            if (p1.gt.0) p2 = p1
+            if (p1.gt.0) then
+               p2 = p1
+               p1 = 0
+            endif
             if (p3.gt.0) then
                call convip ( p1, real(p3), 3, 1, lab_S, .false. )
                p3 = 0
             endif
-            p1 = 0
  88         err= fstecr (w1, w1, -bit, iun1, dte, det, ipas, ni, nj,1,
      $                   p1, p2, p3, typ_S, var_S, lab_S, grd_S,
      $                   g1, g2, g3, g4, dty, .true.)

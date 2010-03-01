@@ -3,6 +3,7 @@
 *revisions
 * v2_21 - Dugas B.               - removed p_rad_clima
 * v2_32 - Dugas B.               - add P_rad_nivl
+* v3_02 - Dugas B.               - add P_rad_qco2
 *
 ***comdeck p_rad.cdk
 *
@@ -22,6 +23,7 @@
 * P_rad_datim        | DATE: date time stamp (14 words)                |
 * P_rad_nivl         | RADNIVL: list of levels on which radiation (IR  |
 *                    |          and visible) calculations are performed|
+* P_rad_qco2         | QCO2: CO2 concentration in PPMV (default 360)   |
 *----------------------------------------------------------------------
 *
 *
@@ -32,17 +34,23 @@
 *
       character*8 P_rad_schm_s, P_rad_ftp_s
       logical P_rad_fomic_L
-      integer P_rad_knt, P_rad_datim(14), P_rad_nivl(CNMXRAD+1)
+      integer P_rad_knt, P_rad_datim(14),  P_rad_nivl(CNMXRAD+1)
+      real    P_rad_qco2
 *
       MARK_COMMON_BEG (prad_c)
       common /prad_c/ P_rad_schm_s, P_rad_ftp_s
       MARK_COMMON_END (prad_c)
-
+*
       MARK_COMMON_BEG (prad_l)
       common /prad_l/ P_rad_fomic_L
       MARK_COMMON_END (prad_l)
-
+*
       MARK_COMMON_BEG (prad_i)
       common /prad_i/ P_rad_knt, P_rad_datim, P_rad_nivl
       MARK_COMMON_END (prad_i)
+*
+      MARK_COMMON_BEG (prad_r)
+      common /prad_r/ P_rad_qco2
+      MARK_COMMON_END (prad_r)
+
 *

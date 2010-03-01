@@ -16,6 +16,7 @@
 * v2_00 - Lee V.            - initial MPI version
 * v2_32 - Lee V.            - stepset is now an ID defined by the user, not the
 * v2_32                       actual "set" number forced to be in sequence
+* v3_02 - Lee V.            - eliminate steps repeated in one step set
 *
 *
 *object
@@ -76,7 +77,7 @@
 **
 *
       integer i,j,k,ii,num,istep
-      logical hour_flag,step_flag
+      logical hour_flag,step_flag,found_L
       real frarg,hour,step
       integer transtep,stepset,argc_out
       transtep(frarg) = nint(3600.0 * frarg / Cstv_dt_8)
@@ -153,7 +154,21 @@
           set_step=1
           return
       endif
-      Timestep_max(Timestep_sets)=i
+*
+*     Eliminate repeated timesteps in one Timestep set
+      istep = 1
+      do ii = 2, i
+         found_L = .false.
+         do k = 1, ii-1
+            if ( Timestep(ii,j).eq.Timestep(k,j) ) found_L = .true.
+         enddo
+         if (.not. found_L) then
+             istep = istep + 1
+             Timestep(istep,j) = Timestep(ii,j)
+         endif
+      enddo
+
+      Timestep_max(Timestep_sets)=istep
 
       if (Lun_out.gt.0) then
       write(Lun_out,*) ' Timestep_set(',j,') : Timestep_id=',Timestep_id(j)

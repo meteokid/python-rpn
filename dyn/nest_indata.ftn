@@ -87,8 +87,8 @@
       Ind_topo_= pat4
 *
       if (.not. Schm_hydro_L) then
-         err = VMM_GET_VAR(  nest_w)
-         err = VMM_GET_VAR( nest_mu)
+         err = VMM_GET_VAR(  nest_wf)
+         err = VMM_GET_VAR( nest_muf)
          Ind_w_   = nest_wf_
          Ind_mu_  = nest_muf_
       endif

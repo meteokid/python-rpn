@@ -4,6 +4,7 @@
 *
 *revision
 * v2_20 - Pellerin P.            - adaptation to physics 3.6.6
+* v3_02 - Dugas B.               - add P_pbl_dumpbus
 *______________________________________________________________________
 *                                                                      |
 *  VARIABLES ASSOCIATED WITH PLANETARY BOUNDARY LAYER                  |
@@ -19,6 +20,8 @@
 * P_pbl_drag_L       | DRAG: surface friction  (simplified Physics)    |
 * P_pbl_ocean_L      | CHAUF:surface heat flux from oceans(simp.Physics|
 * P_pbl_evap_L       | EVAP: surface evaporation                       |
+* P_pbl_dumpbus      | DUMPBUS: timestep frequency at which to print   |
+*                    |          statistics on all physics buses        |
 * P_pbl_dbgvv_L      | DBGMEM: debug physics memory                    |
 * P_pbl_truew_L      | true: the physic interface will receive geograph|
 *                    |      -ical wind components (meridionnal and     |
@@ -74,7 +77,7 @@
      $        P_pbl_albkg_L  ,P_pbl_cortm_L  ,P_pbl_corts_L  ,
      $        P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L  ,
      $        P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_z0tcst_L
-      integer P_pbl_nslof
+      integer P_pbl_nslof    ,P_pbl_dumpbus
       real                 P_pbl_cst        ,P_pbl_csn      ,
      $     P_pbl_csg      ,P_pbl_kst        ,P_pbl_ksn      ,
      $     P_pbl_ksg      ,P_pbl_prsol(6)   ,P_pbl_spng(CNMAXAD)
@@ -97,7 +100,7 @@
       MARK_COMMON_END (ppbl_l)
 
       MARK_COMMON_BEG (ppbl_i)
-      common /ppbl_i/ P_pbl_nslof
+      common /ppbl_i/ P_pbl_nslof  ,P_pbl_dumpbus
       MARK_COMMON_END (ppbl_i)
 
       MARK_COMMON_BEG (ppbl_r)

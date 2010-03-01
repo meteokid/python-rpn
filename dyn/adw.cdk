@@ -105,23 +105,50 @@
 * Adw_dbz_8    |  |                                                    |
 * Adw_qzz_8    |  |                                                    |
 * Adw_qzi_8    | /                                                     |
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH CFL COMPUTATION FOR LAM (ADW_CFL_LAM)     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Adw_cfl(i,j,PE)    | i = the max value of the following:             |
+*                    |     1: max cfl value found                      |
+*                    |     2: the "I" grid point of max cfl found      |
+*                    |     3: the "J" grid point of max cfl found      |
+*                    |     4: the "K" grid point of max cfl found      |
+*                    | j = the type of max cfl computed                |
+*                    |     1: the largest horizontal courrant number   |
+*                    |     2: the largest vertical   courrant number   |
+*                    |     3: the largest 3-dimensional courrant number|
+*                    |PE = the number of the PE (processor)            |
+*                    |     The overall maximum cfl value of the entire |
+*                    |     grid will be placed in PE 1 before printing |
+* Adw_trunc(i)       | i = the boundary where the trajectories were    |
+*                    |     truncated and a count is placed here        |
+*                    |     truncated and a count is placed here        |
+*                    |     1: north                                    |
+*                    |     2: south                                    |
+*                    |     3: east                                     |
+*                    |     4: west                                     |
 *______________________________________________________________________|
 *
 #endif
 *
-      logical            Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L
+      logical            Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L
 *
       integer            Adw_halox, Adw_haloy,
      %                   Adw_nic, Adw_nit, Adw_njc, Adw_njt,
      %                   Adw_int_i_off, Adw_int_j_off,
      %                   Adw_for_n, Adw_for_s, Adw_for_a,
-     %                   Adw_fro_n, Adw_fro_s, Adw_fro_a
+     %                   Adw_fro_n, Adw_fro_s, Adw_fro_a,
+     %                   Adw_trunc(4), Adw_cfl_i(3,3)
 *
       real*8             Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8, 
-     %                   Adw_x00_8,  Adw_y00_8,  Adw_z00_8
+     %                   Adw_x00_8,  Adw_y00_8,  Adw_z00_8, Adw_cfl_8(3)
 *
       MARK_COMMON_BEG (adw_l)
-      common / adw_l  /  Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L
+      common / adw_l  /  Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L
       MARK_COMMON_END (adw_l)
 *
       MARK_COMMON_BEG (adw_ia)
@@ -131,10 +158,11 @@
       common / adw_ib /  Adw_nic, Adw_nit, Adw_njc, Adw_njt,
      %                   Adw_int_i_off, Adw_int_j_off,
      %                   Adw_for_n, Adw_for_s, Adw_for_a,
-     %                   Adw_fro_n, Adw_fro_s, Adw_fro_a
+     %                   Adw_fro_n, Adw_fro_s, Adw_fro_a,
+     %                   Adw_trunc, Adw_cfl_i
 *
       common / adw_r8 /  Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8, 
-     %                   Adw_x00_8,  Adw_y00_8,  Adw_z00_8
+     %                   Adw_x00_8,  Adw_y00_8,  Adw_z00_8, Adw_cfl_8
 *
       DCL_DYNVAR(Adw,   xg_8,    real*8 , (*))
       DCL_DYNVAR(Adw,   yg_8,    real*8 , (*))

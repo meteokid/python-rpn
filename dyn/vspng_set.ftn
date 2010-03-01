@@ -1,5 +1,6 @@
 ***s/r vspng_set - Vertical sponge using a vertical modulation of 
-*                  the factorized del-2 horizontal diffusion.
+*                  the factorized del-2 horizontal diffusion for non-LAM
+*                  and 9 point filter for LAM.
 *
 #include <model_macros_f.h>
 *
@@ -13,6 +14,7 @@
 *
 *revision
 * v2_11 - Desgagne M.       - initial version
+* v3_02 - Lee V.            - add setup for LAM vertical sponge
 *
 *object
 *       
@@ -34,32 +36,55 @@
 *     ---------------------------------------------------------------
 *     
       Vspng_nk = max(0,min(G_nk,Vspng_nk))
-      if ((Cstv_uvdf_8.le.0.0).and.(Cstv_phidf_8.le.0.0)) Vspng_nk = 0
+      if (Vspng_nk.le.0) return
+
+      if (G_lam) then
+         if (Vspng_nutop.lt.0.) Vspng_nk=0
+         if (Vspng_nk.le.0) return
 *
-      if (Vspng_mf(2).gt.1.) then
-         if (Lun_out.gt.0) write (Lun_out,2000)
+         Vspng_niter = int(4.*Vspng_nutop+0.99)
+         if (Lun_out.gt.0) write (Lun_out,2003) 
+     $        Vspng_nutop,Vspng_nk,Vspng_niter
+         wh_8  = Vspng_nutop/max(1.,float(Vspng_niter))
+         pis2_8= Dcst_pi_8/TWO_8
+         delp_8= dble(Geomg_hybm(Vspng_nk))-dble(Geomg_hybm(1))
+         do k=1,Vspng_nk
+            Vspng_nu(k) = 
+     $           wh_8*( sin(pis2_8*(dble(Geomg_hybm(Vspng_nk))-
+     $           dble(Geomg_hybm(k)) ) / (delp_8)))**TWO_8
+            if (Lun_out.gt.0) write (Lun_out,2005) Vspng_nu(k),k
+         end do
+*
       else
-         if (Vspng_nk.gt.0) then
+*     
+         if ((Cstv_uvdf_8.le.0.0).and.(Cstv_phidf_8.le.0.0)) Vspng_nk=0
+         if (Vspng_mf(1).lt.0.) Vspng_nk=0
+         if (Vspng_nk.le.0) return
+*
+         if (Vspng_mf(2).gt.1.) then
+            if (Lun_out.gt.0) write (Lun_out,2000)
+         else
             if (Lun_out.gt.0) write (Lun_out,2002) Vspng_mf(1),Vspng_nk
-            if (Vspng_nk.lt.2) goto 888
             pis2_8= Dcst_pi_8/TWO_8
             delp_8= dble(Geomg_hybm(Vspng_nk))-dble(Geomg_hybm(1))
-            do k=1,Vspng_nk
+            do k=2,Vspng_nk
                wh_8= ( sin(pis2_8*(dble(Geomg_hybm(Vspng_nk))-
      $                 dble(Geomg_hybm(k)) ) / (delp_8)))**TWO_8
                Vspng_mf(k) = 1.+(Vspng_mf(1)-1.)*wh_8
             end do
          endif
+         do k=1, Vspng_nk
+            Vspng_mf(k) = max(1.,Vspng_mf(k))
+            if (Lun_out.gt.0) write (Lun_out,2005) Vspng_mf(k),k
+         end do
+*
       endif
-*     
- 888  do k=1, Vspng_nk
-         Vspng_mf(k) = max(1.,Vspng_mf(k))
-         if (Lun_out.gt.0) write (Lun_out,2005) Vspng_mf(k),k
-      end do
 *
  2000 format('USER DEFINED SPONGE LAYER PROFILE')
- 2002 format('SPONGE LAYER PROFILE BASED ON: vspng_mf(1)= ',f8.4,
-     $       '  AND vspng_nk= ',i4)
+ 2002 format('SPONGE LAYER PROFILE BASED ON: Vspng_mf(1)= ',f8.4,
+     $       '  AND Vspng_nk= ',i4)
+ 2003 format('SPONGE LAYER PROFILE BASED ON: Vspng_nutop= ',f8.4,
+     $       '  AND Vspng_nk= ',i4, ' AND iterations= ',i4)
  2005 format(f10.5,i5)
 *
 *     ---------------------------------------------------------------

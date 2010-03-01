@@ -1,0 +1,123 @@
+***s/r blocqc0 - output QC at timestep 0 after physics initialization
+*
+#include <model_macros_f.h>
+*
+      subroutine blocqc0(F_dostep,F_dostep_max)
+*
+#include "impnone.cdk"
+*
+      integer F_dostep(*),F_dostep_max
+*
+*author
+*     Vivian Lee            - Nov 2002 (from blocthm v3_02)
+*
+*revision
+* v3_02 - Lee V.            - initial MPI version
+*
+*object
+*     See above id.
+*
+*arguments
+*implicits
+
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "dimout.cdk"
+#include "vt1.cdk"
+#include "setsor.cdk"
+#include "level.cdk"
+#include "outd.cdk"
+#include "dslab.cdk"
+#include "tr3d.cdk"
+#include "grid.cdk"
+*
+*modules
+      integer  vmmlod, vmmuld, vmmget, vmmuln, vmmulk
+      external vmmlod, vmmuld, vmmget, vmmuln, vmmulk
+      integer getvndx
+      external getvndx
+*
+**
+      integer i,j,k,kl,jj,kk,jjj,kkk,ii,iii,i0,in,j0,jn,n
+      integer key(Tr3d_ntr),key0,pnerr,pnkey,levset,qcindex
+*     initialize conversion of units
+      real prmult,pradd,qc
+      real w2(LDIST_SHAPE)
+      pointer (patr, qc(LDIST_SHAPE,*))
+      data prmult  / 1.0/
+      data pradd   / 0.0/
+
+*     Declarations for slab output
+      integer mxout_e
+      character*4, dimension(:,:),allocatable :: var_e_S
+      character*1, dimension(:,:),allocatable :: typvar_e_S
+      integer,     dimension(:,:),allocatable :: ip1_e
+      integer,     dimension(:,:),allocatable :: bit_e
+      real,        dimension(:,:),allocatable :: mtval_e
+      integer,     dimension(:,:),allocatable :: xnio
+      integer,     dimension(:), allocatable  :: mtout_e
+
+      qcindex = getvndx('QC')
+      if (qcindex.le.0) return
+      mxout_e = Setsor_useit(qcindex)*(1 + l_nk)
+      allocate ( var_e_S(mxout_e,Grid_sets),
+     %           typvar_e_S(mxout_e,Grid_sets),
+     %           ip1_e(mxout_e,Grid_sets),
+     %           bit_e(mxout_e,Grid_sets),
+     %           mtval_e(LDIST_SIZ*mxout_e,Grid_sets),
+     %           mtout_e(Grid_sets),
+     %           xnio(LDIST_SIZ,Grid_sets)
+     %)
+      call set_dslab(0,xnio,LDIST_SIZ,Grid_sets)
+      do i=1,Grid_sets
+         mtout_e(i)=0
+      enddo
+      key0 = VMM_KEY (trt1)
+      do k=1,Tr3d_ntr
+         key(k) = key0 + k
+      end do
+      pnerr = vmmlod(key,Tr3d_ntr)
+      do n=1,Tr3d_ntr
+         if (Tr3d_name_S(n).eq.'QC') then
+            pnerr = vmmget(key(n),patr,qc)
+         endif
+      enddo
+*_______________________________________________________________________
+*
+*     7.0A   Output QC                    on ETA levels
+*_______________________________________________________________________
+         do 400 jj=1,F_dostep_max
+*        For every Timestep set that outputs at the current timestep
+         do 300 kk=1,Outd_sets
+            if (Outd_step(kk).eq.F_dostep(jj))then
+*           if the Timestep set for this request set Outd(kk) outputs
+*           at the current timestep (Lctl_step)
+            levset = Outd_lev(kk)
+            if (Level_typ(levset) .eq. 'E') then
+            do 200 ii=1,Outd_var_max(kk)
+               if (qcindex .eq. Outd_var(ii,kk)) then
+                  do 150 jjj = 1, Level_max(levset)
+                     k = nint(Level(jjj,levset))
+                     call insrtslab_d(qc,w2,LDIST_DIM,G_nk,k,
+     $                    kk,prmult,pradd,qcindex,
+     $                    Level_ip1(jjj,levset),mtout_e,var_e_S,
+     $                    typvar_e_S,ip1_e,bit_e,mtval_e,
+     $                    LDIST_SIZ,mxout_e,Grid_sets)
+ 150              continue
+               endif
+ 200        continue
+           endif
+           endif
+ 300     continue
+ 400     continue
+      call writslab_d(Dslab_fhand_e,Dslab_slab_e,Dslab_nnio,'dm',
+     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+      deallocate ( var_e_S,ip1_e,bit_e,mtval_e,typvar_e_S,mtout_e,xnio )
+*
+* ___________________________________________________________________
+      pnerr = vmmuln(key,Tr3d_ntr)
+*
+*
+      return
+      end

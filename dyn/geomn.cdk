@@ -13,13 +13,14 @@
 * Geomn_longs        | phi longitudes in degrees for model output      |
 * Geomn_latgv        | V   latitudes in degrees for model output       |
 * Geomn_longu        | U   longitudes in degrees for model output      |
+* Geomn_latrx        | phi geographical latitudes in degrees           |
+* Geomn_lonrx        | phi geographical longitudes in degrees          |
 *----------------------------------------------------------------------
 *
 #endif
 *
       DCL_DYNVAR(Geomn, latrx, real, (l_ni ,l_nj ))
-      DCL_DYNVAR(Geomn, latru, real, (l_niu,l_nj ))
-      DCL_DYNVAR(Geomn, latrv, real, (l_ni ,l_njv))
+      DCL_DYNVAR(Geomn, lonrx, real, (l_ni ,l_nj ))
       DCL_DYNVAR(Geomn, latgs, real, (*))
       DCL_DYNVAR(Geomn, longs, real, (*))
       DCL_DYNVAR(Geomn, latgv, real, (*))

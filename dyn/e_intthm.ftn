@@ -10,6 +10,8 @@
 *revision
 * v2_31 - M. Desgagne
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Lee V.            - added one more argument to e_bmfrd
+* v3_02 -                   - correction to search for GZ at 1.0 eta/sg
 *
 *object
 *    Computes  the ln of surface and top pressure given the topo 
@@ -40,6 +42,7 @@
       external e_rdhint3,e_bmfrd
 *
       character*4 vtt,vhh
+      logical anyip_L,arret_L
       integer i, k, ng, err
       real c1, c2, hu(nifi*njfi), tt(nifi*njfi)
 *
@@ -53,6 +56,9 @@
 *
       write(6,1001)
 *
+*     For searching the GZ,HU,TT,VT records, correct IP1 targets must be found
+      anyip_L = .false.
+      arret_L = .true.
       if ( gletaanl .or. glsiganl .or. glhybanl ) then
          write(6,*)
      $      'ANALYSIS IS IN SIGMA OR ETA OR HYBRID COORDINATES'
@@ -73,23 +79,23 @@
          end do
 *
          err = e_bmfrd (dstf_gid, nifi, njfi, 'P0  ', 0., 100., -1, 
-     $                                                 1, .true. )
+     $                                                 1, anyip_L,arret_L)
          if (anal_hav(1).eq.0) then
             err = e_bmfrd (dstf_gid, nifi, njfi, 'GZ  ', 0., c2,na,
-     $                                                 lv, .true. )
+     $                                                 lv, anyip_L,arret_L )
          else
-            err = e_bmfrd (dstf_gid, nifi, njfi, 'GZ  ', 0., c2,12000, 
-     $                                                     1, .true. )
+            err = e_bmfrd (dstf_gid, nifi, njfi, 'GZ  ', 0., c2,na(lv), 
+     $                                                 1, anyip_L,arret_L )
          endif
 *     
       else
 *
          write(6,*)'ANALYSIS IS IN PRESSURE COORDINATES' 
          anal_hav(1) = e_bmfrd ( dstf_gid, nifi, njfi, 'GZ  ', 0., 10.,
-     $                                                  na,lv, .true. )
+     $                                                  na,lv, anyip_L,arret_L )
          if (vh.eq.'HU') then
             err = e_bmfrd ( dstf_gid, nifi, njfi, vhh   , 0., 1. ,
-     $                                             na,lv, .true. )
+     $                                             na,lv, anyip_L,arret_L )
          else
             do k=1,lv
                if (e_rdhint3 (hu,dstf_gid,nifi,njfi,vhh,na(k),ip2a,
@@ -113,15 +119,18 @@
 *
       endif
 *
+*     For tracer variables, search does not have to be successful
+      anyip_L = .true.
+      arret_L = .false.
       do i=1,E_tr3d_ntr
          print*, E_tr3d_name_S(i),i
          err = e_bmfrd ( dstf_gid, nifi, njfi, E_tr3d_name_S(i), 
-     $                                 0., 1., na, lv, .false. )
+     $                                 0., 1., na, lv, anyip_L,arret_L )
       end do
       do i=1,E_trvs_ntr
          print*, E_trvs_name_S(i),i
          err = e_bmfrd ( dstf_gid, nifi, njfi, E_trvs_name_S(i), 
-     $                                 0., 1., na, lv, .false. )
+     $                                 0., 1., na, lv, anyip_L,arret_L )
       end do
 *     
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))

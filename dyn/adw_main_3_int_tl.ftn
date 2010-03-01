@@ -14,6 +14,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
 *
 *language
 *     fortran 77
@@ -217,7 +218,7 @@
             end do
             call adw_interp_tl ( tr0, tr0, F_u, F_v,
      %                           tr0m,tr0m,F_um,F_vm,
-     %                           .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+     %                           .false., .true., LDIST_DIM, l_nk,i0,in,j0,jn)
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni

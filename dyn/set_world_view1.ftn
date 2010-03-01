@@ -4,6 +4,9 @@
 *
       subroutine set_world_view1 (F_npx, F_npy)
 *
+*implicits
+      use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree 
+*
 #include "impnone.cdk"
 *
       integer F_npx, F_npy
@@ -33,6 +36,12 @@
 * v3_01 - Morneau J.        - V4dj_mask_L,V4dm_itmax,V4dm_simax in namelist
 * v3_01 - Tanguay M.        - add V4dg_sgvc_L
 * v3_01 - Lee V.            - add Horizontal sponge parameter controls:Hspng_*
+* v3_02 - Tanguay M.        - V4dg_ga_eq_ge_L,V4dz_degree,V4dzge_degree,V4dzga_degree in namelist 
+*                           - Hspng_nj.gt.0 available for V4dg_conf.gt.0 
+* v3_02 - Lee V.            - added Vspng_nu,Vspng_nutop (vertical sponge)
+* v3_02 - Lee V.              Adw_trunc_traj_L for LAM (truncate trajectories)
+* v3_02 - Desgagne M.       - Precalculate Mem_mx3db value
+* v3_02 - Mahfouf J.-F.     - add V4dg_anincr_L
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -88,7 +97,7 @@
       character*256 fln_S
       logical lam_L,wronghyb
       integer i, k, nrec, err, pni, pnj, pniu, pnjv, pnk, 
-     $        maxcfl_x, maxcfl_y, kind, ipcode, ipmode
+     $        kind, ipcode, ipmode
       real pcode
 *
 #include "nml.cdk"
@@ -113,11 +122,8 @@
       Step_bkup  = 9999
       Step_gstat = 9999
 *
-      Mem_mx3db    = 80
+      Mem_mx3db    = -1
       Mem_phyncore_L = .false.
-*
-      maxcfl_x = 3
-      maxcfl_y = 3
 *
       Ptopo_npeOpenMP = 1
       Ptopo_npeMacro  = 1
@@ -150,12 +156,15 @@
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_difqp_L    = .true.
+      Schm_wload_L    = .false.
 *
-      Adw_halox  = 3
-      Adw_haloy  = 2
+      Schm_maxcfl_lam = 2
       Adw_nkbz_L = .true.
       Adw_exdg_L = .false.
       Adw_ckbd_L = .false.
+      Adw_trunc_traj_L = .false.
+      Adw_halox  = 3
+      Adw_haloy  = 2
 *
       Cori_cornl_L = .true.
 *
@@ -190,9 +199,12 @@
       Vspng_nk = 0
       do i = 1, Vspng_maxn
          Vspng_mf(i) = -1.
+         Vspng_nu(i) = -1.
       end do
+      Vspng_nutop = -1.
       Vspng_uvwdt_L  = .true.
       Vspng_rwnd_L   = .false.
+      Vspng_njpole   = 3
 *
       Tr2d_ntr = 0
       Tr3d_ntr = 0
@@ -235,6 +247,7 @@
 *     4D-Var section
 *     --------------
       V4dg_conf     = 0
+      V4dg_output_L = .true.
       V4dg_sensib_L = .false.
       V4dg_twin_L   = .false.
       V4dg_4dvar_L  = .false.
@@ -244,7 +257,15 @@
       V4dg_stepob   = Step_total
       V4dg_inv      = 1
       V4dg_incore_L = .true.
+*
       V4dg_identity_L = .false.
+      V4dg_ga_eq_ge_L = .false.
+*
+      V4dz_degree     = 1
+      V4dzge_degree   = 1
+      V4dzga_degree   = 1
+*
+      V4dg_anincr_L = .false.
 *
       V4dm_itmax    = 2 
       V4dm_simax    = 2 
@@ -287,9 +308,10 @@
       if (V4dg_conf.ne.0) then
          call v4d_init()
          Out_ndigits = 6
-         Hspng_nj = 0
+         Schm_wload_L  = .false.
       endif
-      if (V4dg_conf/100.eq.1.and.V4dg_sensib_L) then 
+      if ((V4dg_conf/100.eq.1.and.V4dg_sensib_L).or.
+     $    (V4dg_conf/100.eq.5.and.V4dg_anincr_L)) then
         V4dg_lun_obs_s=Path_dfwmil_S(1:longueur(Path_dfwmil_S))
      $                                //'/v4d_obsfile_std'
         V4dg_lun_obs = 0
@@ -381,8 +403,17 @@
 *
       call newdate (Out1_date, Out1_dato(1), Out1_dato(2),-3)
 *
-      Lun_sortie_s= 
-     $          Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/output.cfg'
+      if (Mem_mx3db.lt.0) then
+         Mem_mx3db = 75
+         if (V4dg_conf.ne.0) Mem_mx3db = Mem_mx3db + 71
+         if (Init_balgm_L  ) Mem_mx3db = Mem_mx3db + 20
+         if (G_lam         ) Mem_mx3db = Mem_mx3db + 42
+         Mem_mx3db = (Mem_mx3db + 5) * 1.1
+      endif
+*
+      Lun_sortie_s = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
+     $                          //'/process/output_settings'
+
 *
       write (lun_out, nml=gem_cfgs_p)
       if(V4dg_conf.ne.0) write (lun_out, nml=var4d)
@@ -399,17 +430,8 @@
             Eigv_parity_L = .false.
             write (Lun_out, 7005)
          endif
-         if (.not.Schm_hydro_L) then
-            Schm_hydro_L = .true.
-            write (Lun_out, 7006)
-         endif
          if (Hzd_type_S.eq.'FACT') then
             write (Lun_out, 7000) Hzd_type_S
-            write (Lun_out, 8000)
-            goto 1111
-         endif
-         if (Vspng_nk.ne.0) then
-            write (Lun_out, 7010)
             write (Lun_out, 8000)
             goto 1111
          endif
@@ -423,10 +445,12 @@
             write (Lun_out, 8000)
             goto 1111
          endif
+	 Adw_halox  = Schm_maxcfl_lam * 3
+         Adw_haloy  = Adw_halox-1
       endif
 *
-      G_halox = maxcfl_x + 1
-      G_haloy = maxcfl_y + 1
+      G_halox = 4
+      G_haloy = G_halox
       Lun_debug_L = Lctl_debug_L
 *
       Path_swv1_L = .true.
@@ -437,8 +461,6 @@
 *
  7000 format (/' WRONG OPTION FOR HZD_TYP WHEN LAM: ',a/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
- 7006 format (/' NON-HYDROSTATIC MODE NOT AVAILABLE IF LAM'/)
- 7010 format (/' VERTICAL SPONGE (Vspng_nk) NOT AVAILABLE IF LAM'/)
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ============='/)

@@ -17,7 +17,8 @@
 *revision
 * v3_00 - N. Ek             - initial MPI version
 * v3_00   M. Tanguay        - adapt to Simon's exchange
-* v3_xx - M. Tanguay        - correction for empty processors 
+* v3_01 - M. Tanguay        - correction for empty processors 
+* v3_02 - M. Tanguay        - locate HU in tracers 
 *
 *object
 *     -----------------------------------------------------------------------
@@ -74,9 +75,6 @@
       real*8, parameter :: ZERO_8 = 0.0
 *
       character(len=2) :: cljx_S, cljy_S
-*     ______________________________________________________
-*
-      if ( Tr3d_ntr.gt.1 ) call gefstop('v4d_grdjok')
 *     ______________________________________________________
 *
       write(Lun_out,1000) Lctl_step
@@ -181,7 +179,7 @@
                exit readrec     ! We are at the end of the file
             else
                write(Lun_out,*) 'No records to read in ADJOINT-PROFILE input file!'
-               call gefstop('v4d_grdjok')
+               call gem_stop('v4d_grdjok',-1)
             endif
          else                 ! There is a record
 *
@@ -194,7 +192,7 @@
            pnerr = prof_gvar(Pr_ihdlin, nsim3d,PRM_EVNT)
            if(nsim3d.ne.Pr_nsim4d) then
               write(Lun_out,*) 'WRONG SIMULATION NUMBER NSIM3D = ',nsim3d,' NSIM4D = ',Pr_nsim4d
-              call gefstop('v4d_grdjok')
+              call gem_stop('v4d_grdjok',-1)
            else
               write(Lun_out,*) 'NSIM3D IS THE RIGHT SIMULATION NUMBER = ',nsim3d
            endif
@@ -205,7 +203,7 @@
 *
            if(pnerr .ne. 0 ) then
               write(Lun_out,*) 'Error: No V2D_MTAG found'
-              call gefstop('v4d_grdjok')
+              call gem_stop('v4d_grdjok',-1)
            endif
 *
            npr = size(mdltag, 1)
@@ -219,7 +217,7 @@
            nobproc = nobproc + npr
            if(nobproc.gt.Pr_nobproc) then
               write(Lun_out,*) 'Error: NOBPROC GT PR_NOBPROC'
-              call gefstop('v4d_grdjok')
+              call gem_stop('v4d_grdjok',-1)
            endif
 *
 *          Find out which fields are in current record
@@ -228,7 +226,7 @@
 *
            if(pnerr .ne. 0) then ! PRM_MVAR is not input
               write(Lun_out,*) 'Error: cannot read PRM_MVAR'
-              call gefstop('v4d_grdjok')
+              call gem_stop('v4d_grdjok',-1)
            endif
 *
            do i = 1, Pr_nvars
@@ -288,13 +286,13 @@
             write(Lun_out,*) 'For OBSTIME =',n,' Local number of adjoint profiles = ',nob(n)
             if(nob(n).ne.Pr_nob(n)) then 
                write(Lun_out,*) 'For OBSTIME =',n,' PR_NOB and NOB are different ',Pr_nob(n),nob(n)
-               call gefstop('v4d_grdjok')
+               call gem_stop('v4d_grdjok',-1)
             endif
          enddo
          write(Lun_out,*) 'Local number of adjoint profiles for all times = ',nobproc
          if(nobproc.ne.Pr_nobproc) then 
             write(Lun_out,*) 'PR_NOBPROC and NOBPROC are different ',Pr_nobproc,nobproc
-            call gefstop('v4d_grdjok')
+            call gem_stop('v4d_grdjok',-1)
          endif
 *
          if(Pr_nobproc.ne.0) deallocate( done, STAT=ier )
@@ -333,53 +331,48 @@
 *
 *     Get fields in memory
 *     --------------------
-      pnlkey1(1) = VMM_KEY(ut1  )
-      pnlkey1(2) = VMM_KEY(vt1  )
-      pnlkey1(3) = VMM_KEY(tpt1 )
+      pnlkey1(1) = VMM_KEY(ut1 )
+      pnlkey1(2) = VMM_KEY(vt1 )
+      pnlkey1(3) = VMM_KEY(tpt1)
       pnlkey1(4) = VMM_KEY(st1 )
-*     - - - - - - - - - - - - -
-      pnerr = vmmlod(pnlkey1,4)
-*     - - - - - - - - - - - - -
-      pnerr = VMM_GET_VAR(ut1  )
-      pnerr = VMM_GET_VAR(vt1  )
-      pnerr = VMM_GET_VAR(tpt1 )
-      pnerr = VMM_GET_VAR(st1  )
 *
-*     Load humidity field assuming Tr3d_ntr=1
-*     ---------------------------------------
+*     Get trajectory fields in memory
+*     -------------------------------
+      pnlkey1(5) = VMM_KEY(tpt1m)
+      pnlkey1(6) = VMM_KEY(st1m )
+*
+*     - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,6)
+*     - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1 )
+      pnerr = VMM_GET_VAR(vt1 )
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(st1 )
+*
+      pnerr = VMM_GET_VAR(tpt1m)
+      pnerr = VMM_GET_VAR(st1m )
+*
+*     Load humidity field
+*     -------------------
       key1_ = VMM_KEY (trt1)
       do k=1,Tr3d_ntr
          key1(k) = key1_ + k
       end do
-      if (Tr3d_ntr.gt.0) then
-         pnerr = vmmlod(key1,Tr3d_ntr)
-         do k=1,Tr3d_ntr
-            pnerr = vmmget(key1(k),pahu1,hut1)
-         end do
-      endif
+      pnerr = vmmlod(key1,Tr3d_ntr)
+      do k=1,Tr3d_ntr
+      if (Tr3d_name_S(k).eq.'HU') pnerr = vmmget(key1(k),pahu1,hut1) 
+      end do
 *
-*     Get trajectory fields in memory
-*     -------------------------------
-      pnlkey1(1) = VMM_KEY(tpt1m )
-      pnlkey1(2) = VMM_KEY(st1m  )
-*     - - - - - - - - - - - - -
-      pnerr = vmmlod(pnlkey1,2)
-*     - - - - - - - - - - - - -
-      pnerr = VMM_GET_VAR(tpt1m )
-      pnerr = VMM_GET_VAR(st1m  )
-*
-*     Load TRAJ humidity field assuming Tr3d_ntr=1
-*     --------------------------------------------
+*     Load TRAJ humidity field
+*     ------------------------
       key1m_ = VMM_KEY (trt1m)
       do k=1,Tr3d_ntr
         key1m(k) = key1m_ + k
       end do
-      if (Tr3d_ntr.gt.0) then
-        pnerr = vmmlod(key1m,Tr3d_ntr)
-        do k=1,Tr3d_ntr
-          pnerr = vmmget(key1m(k),pahu1m,hut1m)
-        end do
-      endif
+      pnerr = vmmlod(key1m,Tr3d_ntr)
+      do k=1,Tr3d_ntr
+      if (Tr3d_name_S(k).eq.'HU') pnerr = vmmget(key1m(k),pahu1m,hut1m) 
+      end do
 *
 *     ADJOINT of
 *     Evaluate profiles at observations locations
@@ -555,6 +548,7 @@
       pnerr = vmmuld(-1,0)
 *
       write(Lun_out,1001) Lctl_step
+      call flush(Lun_out)
 *
  1000 format(/,'V4D_GRDJOK: Beginning for TIMESTEP = ',I8,
      +       /,'==================================')

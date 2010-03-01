@@ -18,6 +18,7 @@
 * v2_31 - Tanguay M.        - adapt ADJ to new advection code,
 *                             hybrid coord. and diffusion in gem_run
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_02 - Tanguay M.        - TLM of Eigv_parity_L and Hspng_main done
 *
 *object
 *     see id section
@@ -37,8 +38,10 @@
 #include "nlm.cdk"
 #include "vt1m.cdk"
 #include "hzd.cdk"
+#include "eigv.cdk"
 #include "fft.cdk"
 #include "vspng.cdk"
+#include "hspng.cdk"
 #include "lctl.cdk"
 *
 *modules
@@ -49,8 +52,8 @@
       real prdth
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('tstpdyn_tl')
-      if(.not. Orh_crank_L ) call gefstop('tstpdyn_tl')
+      if(.not. Schm_hydro_L) call gem_stop('tstpdyn_tl',-1)
+      if(.not. Orh_crank_L ) call gem_stop('tstpdyn_tl',-1)
 *     ______________________________________________________
 *
       prdth =  Cstv_dt_8/2.
@@ -78,9 +81,14 @@
             if( Hzd_fact_L ) call hzd_fact_tr (pipt1m,LDIST_DIM,G_nk)
             if( Hzd_ho_L   ) then
               if( Fft_fast_L ) then
-               call hzd_hof_tr(pipt1m,LDIST_DIM,G_nk)
+                  call hzd_hof_tr(pipt1m,LDIST_DIM,G_nk)
               else
-               call hzd_ho_tr (pipt1m,LDIST_DIM,G_nk)
+*                 use MXMA in diffusion-solver
+                  if ( .not. Eigv_parity_L) then
+                      call hzd_ho_tr(pipt1m,LDIST_DIM,G_nk)
+                  else
+                      call hzd_ho_parite_tr(pipt1m,LDIST_DIM,G_nk)
+                  endif
               endif
             endif
             pnerr = vmmuld(-1,0)
@@ -95,6 +103,18 @@
             pnerr = vmmlod(pnlkey1,1)
             pnerr = VMM_GET_VAR(pipt1m)
             call vspng_drv_tr(pipt1m,LDIST_DIM,G_nk)
+            pnerr = vmmuld(-1,0)
+*
+         endif
+*
+*        HSNPG Diffusion of TRAJ PIPT1
+*        -----------------------------
+         if ( Hspng_nj.ge.1 ) then
+*
+            pnlkey1(1) = VMM_KEY(pipt1m)
+            pnerr = vmmlod(pnlkey1,1)
+            pnerr = VMM_GET_VAR(pipt1m)
+            call hspng_drv_tr(pipt1m,LDIST_DIM,G_nk)
             pnerr = vmmuld(-1,0)
 *
          endif
