@@ -22,6 +22,7 @@
 * v3_03 - Desgagne M.       - split call to rpn_comm_xch_halo for uv
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_21 - Desgagne M.       - Optimization
+* v3_30 - Lee V.            - Zero psd only if k=1,k=G_nk
 *
 *object
 *******************************************************************************
@@ -125,7 +126,7 @@
       call rpn_comm_xch_halo( F_ss, LDIST_DIM, l_ni, l_nj , 1,
      %                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
-!$omp parallel private(pr1)
+!$omp parallel
 *
 !$omp do
       do k = 1, Nk
@@ -225,13 +226,16 @@
          end do
       end do
 !$omp enddo
+!$omp end parallel
 *
-      call p_uvgridscal ( uv(minx,miny,1,1), uv(minx,miny,1,2), 
+      call itf_phy_uvgridscal ( uv(minx,miny,1,1), uv(minx,miny,1,2), 
      $                    LDIST_DIM, l_nk, .true. )
 *
 *     Compute total divergence
 *     ------------------------
       prsc = 1./geomg_pib(G_nk)
+
+!$omp parallel private(pr1)
 !$omp do
       do k=1,G_nk
          do j= 1, l_nj
@@ -243,10 +247,8 @@
             F_td(i,j,k) = F_td(i,j,k)/(1+geomg_dpib(k)*expfm1(i,j))
          enddo
          enddo
-         if (k.eq.1) then
-            F_psd(:,:,   1) = 0.
-            F_psd(:,:,G_nk) = 0.
-         endif
+* for openmp, the k must be checked to apply the zero
+         if (k.eq.1.or.k.eq.G_nk) F_psd(:,:,   k) = 0.
       enddo
 !$omp enddo
 *

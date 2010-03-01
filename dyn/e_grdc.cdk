@@ -1,0 +1,11 @@
+      integer E_grdc_ni,E_grdc_nj,
+     $        E_grdc_gid,E_grdc_gif,E_grdc_gjd,E_grdc_gjf,E_grdc_gjdi,
+     $        E_grdc_hbwe,E_grdc_hbsn,
+     $        E_grdc_is,E_grdc_ie,E_grdc_iw,E_grdc_niw,E_grdc_nis,
+     $        E_grdc_js,E_grdc_jn,E_grdc_jw,E_grdc_njw,E_grdc_njs
+*
+      common / E_grdc_i / E_grdc_ni,E_grdc_nj,
+     $        E_grdc_gid,E_grdc_gif,E_grdc_gjd,E_grdc_gjf,E_grdc_gjdi,
+     $        E_grdc_hbwe,E_grdc_hbsn,
+     $        E_grdc_is,E_grdc_ie,E_grdc_iw,E_grdc_niw,E_grdc_nis,
+     $        E_grdc_js,E_grdc_jn,E_grdc_jw,E_grdc_njw,E_grdc_njs

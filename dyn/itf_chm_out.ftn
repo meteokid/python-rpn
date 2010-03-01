@@ -1,0 +1,188 @@
+*copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***s/r itf_chm_out
+#include "model_macros_f.h"
+*
+      subroutine itf_chm_out ( bus_o,F_ni,F_nj,stepno )
+      use v4d_prof, only: Pr_nsim4d
+
+      implicit none
+*
+      integer F_ni,F_nj,ni,nj,stepno
+      real bus_o(F_ni*F_nj,*)
+*
+*author 
+*     A. Kallaur - arqi - june 2005
+*
+*revision
+* v3_30 - Kallaur A.       - initial version
+* v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+*
+*OBJECT
+*    Gather the index of physics variables to write on disk 
+*    for the current timestep.
+*
+*ARGUMENTS
+*    NAMES     I/O  TYPE  A/S        DESCRIPTION
+*
+*   fni         I    I    S    folded dimension along X
+*   fnj         I    I    S    folded dimension along Y
+*   l_ni        I    I    S    computational hor. dimension along X
+*   l_nj        I    I    S    computational hor. dimension along Y
+*   ni          I    I    S    regular dimension along X
+*   nj          I    I    S    regular dimension along Y
+*   stepno      I    I    S    step number
+*
+*IMPLICIT
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "dcst.cdk"
+#include "out3.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
+#include "grid.cdk"
+#include "out.cdk"
+#include "itf_chm_bus.cdk"
+#include "itf_chm_obus.cdk"
+#include "grd.cdk"
+#include "level.cdk"
+#include "outc.cdk"
+#include "ptopo.cdk"
+#include "v4dg.cdk"
+*
+**
+      character*4 ext_S
+      character*6 etikadd_S
+      integer i,j,k,mult,nk_o,levset,ii,jj,kk,ip3,ig1
+      integer, dimension (:), allocatable :: ind_o
+      integer irff(100)
+      integer grille_x0,grille_x1,grille_y0,grille_y1
+      logical periodx_L
+      real rff(100)
+*----------------------------------------------------------------------
+*
+      if (chm_Obus_top.le.0) return
+*
+*     setup of ip3 and modifs to label
+*
+      call tmg_start(67, 'ITF_CHM_OUT')
+      ip3=0
+      etikadd_S = ' '
+      ext_S=""
+      if (Out3_ip3.eq.-1) ip3 = stepno
+      if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
+      if (V4dg_conf.ne.0) then
+          if (.not.V4dg_4dvar_L) then
+              ip3 = V4dg_status
+              if (V4dg_conf/100.eq.1.and.V4dg_ad_L)
+     %        ip3 = 20 + V4dg_status
+          else
+              ip3 = V4dg_status
+              if(V4dg_tl_L) ip3 = Pr_nsim4d
+              if(V4dg_ad_L) ip3 = Pr_nsim4d
+          endif
+          ext_S = '_nl'
+          if (V4dg_tl_L) ext_S = '_tl'
+          if (V4dg_ad_L) ext_S = '_ad'
+          write(etikadd_S,'(a3,i3.3)')ext_S,ip3
+      endif
+*     setup of filename extension if needed
+      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
+     $     ((stepno.gt.(Init_dfnp-1)/2)) )
+     $       ext_S = '_dgf'
+
+*########## REGULAR OUTPUT #######################################
+*
+*     ON fait sortir les sets de sortie_chm
+*
+      do 100 kk=1,Outc_sets
+         if ( Outc_dostep_L(kk) )then
+         periodx_L=.false.
+         if (.not.G_lam .and. (Grid_x1(Outc_grid(kk))-Grid_x0(Outc_grid(kk))+1).eq. G_ni ) periodx_L= .true.
+         ig1 = Grid_ig1(outc_grid(kk))
+            grille_x0 = max( 1+Lam_pil_w - chm_nmp, Grid_x0(outc_grid(kk)) )
+            grille_x1 = min( Grid_x1(outc_grid(kk)), G_ni - Lam_pil_e + chm_nmp )
+            grille_y0 = max( 1+Lam_pil_s - chm_nmp,Grid_y0(outc_grid(kk)) )
+            grille_y1 = min( Grid_y1(outc_grid(kk)), G_nj - Lam_pil_n + chm_nmp )
+            if (G_lam .and. 
+     $                 ( grille_x0.ne.Grid_x0(outc_grid(kk)).or.
+     $                   grille_x1.ne.Grid_x1(outc_grid(kk)).or.
+     $                   grille_y0.ne.Grid_y0(outc_grid(kk)).or.
+     $                   grille_y1.ne.Grid_y1(outc_grid(kk)) ) )
+     $                   ig1=Grid_ig1(outc_grid(kk))+100
+
+            call out_sgrid(grille_x0,grille_x1,grille_y0,grille_y1,
+     $                   periodx_L,
+     $                   ig1,Grid_ig2(outc_grid(kk)),
+     $                   Grid_stride(outc_grid(kk)),
+     $                   Grid_etikext_s(outc_grid(kk)),
+     $                   Geomn_longs, Geomn_latgs          )
+         levset= Outc_lev(kk)
+         nk_o =  Level_max(levset)
+         allocate (ind_o(nk_o+1))
+         call out_slev(Level_typ(levset),Level(1,levset),
+     $                 ind_o,nk_o,G_nk,Level_kind_ip1,'k')
+         call out_sfile(Out3_closestep,stepno,etikadd_S,ip3,ext_S)
+         if (Level_typ(levset).eq.'M') then
+         do ii=1, Outc_var_max(kk)
+            do j=1,chm_Obus_top
+               if ( Outc_var_S(ii,kk).eq. chm_Obus_var_S(j) ) then
+*
+                    if (chm_obus_shp(j).gt.1) then
+*                   3D field
+                       if (chm_obus_stag(j).eq.0) then
+                           call ecris_fst2(bus_o(1,chm_obus_offset(j)),
+     $                       1,l_ni,1,l_nj,Geomg_hyb,chm_obus_var_s(j),
+     $                       chm_Obus_mul(j),chm_Obus_add(j),Out_kind,G_nk,ind_o,nk_o,
+     $                       Outc_nbit(ii,kk) )
+                       else
+*                   3D field staggerred
+                           do i=1,G_nk-2
+                              rff(i)= (Geomg_hyb(i+1)+Geomg_hyb(i))/2.
+                           enddo
+                           do i=G_nk-1,G_nk
+                              rff(i)=Geomg_hyb(i)
+                           enddo
+                           call ecris_fst2(bus_o(1,chm_obus_offset(j)),
+     $                       1,l_ni,1,l_nj,rff,chm_obus_var_s(j),
+     $                       chm_Obus_mul(j),chm_Obus_add(j),Out_kind,G_nk,ind_o,nk_o,
+     $                       Outc_nbit(ii,kk) )
+                       endif
+                    else
+*                      2D field-multiple
+                       if ( chm_obus_mult(j).gt.1) then
+                          do mult=1,chm_obus_mult(j)
+                              rff(mult)= mult
+                              irff(mult)=mult
+                          enddo
+                          call ecris_fst2(bus_o(1,chm_obus_offset(j)),
+     $                    1,l_ni,1,l_nj,rff,chm_obus_var_s(j),
+     $                    chm_Obus_mul(j),chm_Obus_add(j),3,chm_obus_mult(j),
+     $                    irff,chm_obus_mult(j), Outc_nbit(ii,kk) )
+                       else
+*                      2d field
+                          call ecris_fst2(bus_o(1,chm_obus_offset(j)),
+     $                             1,l_ni,1,l_nj,0.0,chm_obus_var_s(j),
+     $                             chm_Obus_mul(j),chm_Obus_add(j), -1,1,1,1, 
+     $                             Outc_nbit(ii,kk) )
+                       endif
+                    endif
+               endif
+            enddo
+         enddo
+         endif
+*
+         deallocate (ind_o)
+*
+         call out_cfile
+         endif
+*
+  100 continue
+      call tmg_stop (67, 'ITF_CHM_OUT')
+*
+*----------------------------------------------------------------------
+*
+      return
+      end
+

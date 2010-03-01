@@ -1,0 +1,54 @@
+***   fillup field from data in 3DF files
+#include "model_macros_f.h"
+*
+      subroutine filmup ( f,n1,n2,n3,n4,nk,unf,ofi,ofj,cumerr )
+      implicit none
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+*
+      integer n1,n2,n3,n4,nk,unf,ofi,ofj,cumerr
+      real f(n1:n2,n3:n4,nk)
+*
+      character*4 nomvar
+      integer i,j,k,ni1,nj1,nk1,err,n,nbits,nb
+      real, dimension (:), allocatable :: wkc
+      real, dimension (:,:,:), allocatable :: tr1
+*
+*-----------------------------------------------------------------------
+      nb = 0
+      err = -1
+
+      read (unf,end=44,err=44) nomvar,ni1,nj1,nk1,nbits
+      if (Lun_debug_L)  write(Lun_out,1000) nomvar,ni1,nj1,nk1,nbits
+
+      allocate (tr1(ni1,nj1,nk1))
+      if (nbits.ge.32) then
+         read (unf,end=45,err=45) tr1
+      else
+         n = (ni1*nj1*nbits+120+32-1)/32
+         allocate (wkc(n))
+         do k=1,nk1
+            read (unf,end=45,err=45) wkc
+            call xxpak (tr1(1,1,k), wkc, ni1, nj1, -nbits, nb, 2)
+         end do
+         deallocate (wkc)
+      endif
+      do k=1,nk1
+      do j=1,nj1
+      do i=1,ni1
+         f(ofi+i,ofj+j,k) = tr1(i,j,k)
+      end do
+      end do
+      end do
+      if (Lun_debug_L.and.Ptopo_numproc.eq.1) 
+     $    call statfld (f,nomvar(1:4),Lctl_step,"filmup",
+     $                  n1,n2,n3,n4,nk1,n1,n3,1,n2,n4,nk1)
+      err = 0
+ 45   continue
+      deallocate (tr1)
+ 44   cumerr = cumerr + err
+ 1000 format("filmup",a6," ni1=",i4," nj1=",i4," nk1=",i4," nbits=",i4)
+*-----------------------------------------------------------------------
+      return
+      end

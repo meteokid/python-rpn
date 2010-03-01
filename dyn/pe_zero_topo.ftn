@@ -1,0 +1,48 @@
+***s/r pe_zero_topo - Initialize processor topology
+*
+#include "model_macros_f.h"
+*
+      subroutine pe_zero_topo (F_npx, F_npy )
+      implicit none
+*
+      integer F_npx, F_npy
+*
+*author
+*     Michel Desgagne - Summer 2006
+*
+*revision
+* v3_30 - Desgagne M.       - initial version
+*
+*implicits
+#include "ptopo.cdk"
+#include "version.cdk"
+*
+      integer  exdb,ptopo_nml
+      external exdb,ptopo_nml
+*
+      integer err
+*
+*-------------------------------------------------------------------
+*
+      call  open_status_file2 ('status_mod.dot')
+      call write_status_file2 ('_status=ABORT' )
+      err = exdb(Version_mod_S//Version_dstp_S,Version_S, 'NON')
+*
+* Read namelist ptopo from file model_settings
+*
+      if (ptopo_nml ('process/model_settings') .eq. 1 ) then
+         F_npx = Ptopo_npex
+         F_npy = Ptopo_npey
+         err = ptopo_nml ('print')
+      else
+         write (6, 8000)
+         F_npx = 0
+         F_npy = 0
+      endif
+*
+ 8000 format (/,'========= ABORT IN S/R PE_TOPO ============='/)
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

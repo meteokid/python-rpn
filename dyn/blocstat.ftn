@@ -4,7 +4,7 @@
 *
       subroutine blocstat 
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne
@@ -33,8 +33,8 @@
 #include "adw.cdk"
 *
 *modules
-      integer  vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
-      external vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
 
       integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf
       integer err, key(max(Tr3d_ntr,5)), key0, trunc(4)
@@ -131,7 +131,7 @@
 *
  101  format (' MAX COURANT NUMBER:  ',
      $          a3,': [(',i3,',',i3,',',i3,') ',f12.7,']')
- 1000 format (/,19('#'),' BLOC STAT ',i6,1X,,19('#'))
+ 1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')
  1002 format (i4,a10, i4,10X,' Max:[(',i3,',',i3,',',i3,')]',a6)
  1003 format (i4,a10, i4,10X,' N:[',i4,'] S:[',i4,'] E :[',i4,'] W:[',i4,']')

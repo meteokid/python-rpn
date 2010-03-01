@@ -4,7 +4,6 @@
 #include "model_macros_f.h"
 *
       subroutine set_schm
-*
       implicit none
 *
 *author
@@ -14,7 +13,9 @@
 * v2_00 - Desgagne/Lee       - initial MPI version
 * v2_10 - Desgagne M.        - removed MITH (not used)
 * v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
+* v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
 * v3_11 - Gravel S.          - modify for theoretical cases
+* v3_30 - Desgagne M.        - simplification
 *
 *object
 *
@@ -30,12 +31,9 @@
 #include "schm.cdk"
 *
 *notes
-*	when cubic interpolation is choosen, cubic splines are always
-*	used in the vertical
 *
-      real*8   ZERO_8, HALF_8, ONE_8, pd1_8, gamma_8
+      real*8   ZERO_8, ONE_8, gamma_8
       parameter( ZERO_8 = 0.0 )
-      parameter( HALF_8 = 0.5 )
       parameter( ONE_8  = 1.0 )
 **
 *    _________________________________________________________________
@@ -46,89 +44,26 @@
 
       if ( (Schm_xwvt3 .lt. 0) .or. (Schm_xwvt3 .gt. 2) ) then
          if (lun_out.gt.0) write(lun_out,1200)
-         call gefstop('set_schm')
+         call gem_stop("SET_SCHM",-1)
       elseif ( (Schm_modcn .eq. 1) .and. (Schm_xwvt3 .ne. 0) ) then
          if (lun_out.gt.0) write(lun_out, 1201)
          if (lun_out.gt.0) write(lun_out, 1202)
          Schm_xwvt3=0
       endif
 
-* 1.3 Extract the number of vertical modes treated implicitly
+* 1.3 Set the number of vertical modes treated implicitly
 
       Schm_nith = G_nk - 1
 
-* 1.4 Validate coriolis parameter
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if (Schm_alpco_8 .le. ZERO_8 .and. .not. Schm_theoc_L) then
-         if (lun_out.gt.0) write(lun_out, 1400)
-         call gefstop('set_schm')
-      endif
-
 * 1.5 Validate non-hydrostatic parameter
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if ( (Schm_nonhy_8.lt.ZERO_8) .or. (Schm_nonhy_8.gt.ONE_8) ) then
-         if (lun_out.gt.0) write(lun_out, 1500)
-         call gefstop('set_schm')
-      endif
 
-* 2.1 Validate Shallow-water model and reset parameters when necessary
-*     and possible
-*     ----------------------------------------------------------------
-      if(Schm_nith.ge.l_nk .and. l_nk.gt.1) then
-         if (lun_out.gt.0) write(lun_out,4000)
-         Schm_nith=l_nk-1
-      elseif(Schm_nith.eq.0 .and. l_nk.eq.1) then
-         if (lun_out.gt.0) write(lun_out,5000)
-         call gefstop('set_schm')
-      endif
-*
-      if(l_nk.eq.1 .and. .not.Schm_hydro_L) then
-         if (lun_out.gt.0) write(lun_out,6000)
-         call gefstop('set_schm')
-      endif
-*
-      if(l_nk.eq.1 .and. Schm_itnlh.eq.1) then
-         if (lun_out.gt.0) write(lun_out,7000)
-*
-*        restriction for "phi'D" formulation for the continuity
-*        equation in the Shallow-water model
-*
-           pd1_8 = abs(Offc_a0_8-ONE_8)
-           if (pd1_8.gt.1.e-6) then
-              if (lun_out.gt.0) write(lun_out,8000)
-              call gefstop('set_schm')
-           endif
-           pd1_8 = abs(Offc_a1_8+ONE_8)
-           if (pd1_8.gt.1.e-6) then
-              if (lun_out.gt.0) write(lun_out,8000)
-              call gefstop('set_schm')
-           endif
-           pd1_8 = abs(Offc_b0_8-HALF_8)
-           if (pd1_8.gt.1.e-6) then
-              if (lun_out.gt.0) write(lun_out,8000)
-              call gefstop('set_schm')
-           endif
-           pd1_8 = abs(Offc_b1_8-HALF_8)
-           if (pd1_8.gt.1.e-6) then
-              if (lun_out.gt.0) write(lun_out,8000)
-              call gefstop('set_schm')
-           endif
-      endif
-*
-      if ( l_nk .eq. 1 .and. Schm_phyms_L ) then
-         if (lun_out.gt.0) write(lun_out,9000)
-         Schm_phyms_L=.false.
-      endif
-*
-      if ( Schm_theoc_L  .and. Schm_phyms_L ) then
-         if (lun_out.gt.0) write(lun_out,9500)
-         Schm_phyms_L=.false.
-      endif
+      Schm_nonhy_8 = min(max(Schm_nonhy_8,ZERO_8),ONE_8)
 *
       Cstv_tau_8  = Cstv_dt_8 * ( Offc_b0_8/Offc_a0_8 )
       Cstv_hco0_8 = Dcst_rayt_8 *Dcst_rayt_8/(Dcst_rgasd_8*
      $              Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Cstv_tstr_8)
       Cstv_hco1_8 = ZERO_8
+*
       if ( .not. Schm_hydro_L) then
          gamma_8 =   Schm_nonhy_8 *  Dcst_rgasd_8*Cstv_tstr_8
      %             /(Dcst_cappa_8 * (Dcst_grav_8 *Cstv_tau_8)**2 )
@@ -152,43 +87,6 @@
  1202 format(
      %'THE PARAMETER CONTROLING THE TYPE OF WIND EXTRAPOLATION IS ',
      %'VOID (Schm_xwvt3) AND WILL THEN BE RESET TO 0.')
- 1400 format(
-     %'THE RELAXATION PARAMETER (Schm_alpco_8) FOR CORIOLIS INVERSION ',
-     %     'MUST BE GREATER THAN ZERO')
- 1500 format(
-     %'THE NON-HYDROSTATIC COUPLING PARAMETER (Schm_nonhy_8) MUST BE',
-     %     'BETWEEN ZERO AND ONE')
- 4000 format(
-     %'THE NUMBER OF VERTICAL MODES TREATED IMPLICITLY (Schm_nith) ',
-     $'MUST BE ',
-     $/,'SMALLER THAN THE NUMBER OF LEVELS: IT IS RESET TO GNK-1 ')
- 5000 format(
-     %'SHALLOW-WATER MODEL: NUMBER OF ITERATIONS FOR HELMHOLTZ PROBLEM',
-     %/,'WAS SET TO ZERO BY USER. AT LEAST ONE ITERATION IS NECESSARY',
-     %/,'CORRECT THE VALUE OF Schm_nith ')
- 6000 format(
-     %'SHALLOW-WATER MODEL: THE HYDROSTATIC ASSUMPTION IS REQUIRED BY',
-     %/,'THE MODEL. Set Schm_hydro_L=TRUE. ')
- 7000 format(
-     %'SHALLOW-WATER MODEL: Schm_itnlh = 1, THEREFORE THE LOGARITHMIC',
-     %'FORMULATION FOR THE CONTINUITY EQUATION WILL NOT BE USED.')
- 8000 format(
-     % /,'SHALLOW WATER MODEL: OFF-CENTERING PARAMETERS        ',
-     % /,'INCOMPATIBLE WITH CHOSEN FORMULATION FOR CONTINUITY  ',
-     % /,'EQUATION.  WITH Schm_itnlh = 1, THE VALUES MUST BE:     ',
-     % /,'  Offc_a0_8 = 1.0'
-     % /,'  Offc_a1_8 =-1.0'
-     % /,'  Offc_a2_8 = 0.0'
-     % /,'  Offc_b0_8 = 0.5'
-     % /,'  Offc_b1_8 = 0.5'
-     % /,'  Offc_b2_8 = 0.0'
-     % /,'(S/R SET_SCHM)')
- 9000 format(
-     %/,'SHALLOW WATER MODEL: THE SWITCH (Schm_phyms_L) ',
-     %/,'PHYSICS MAIN SWITCH IS RESET TO .FALSE.')
- 9500 format(
-     %/,'THEORETICAL CASE: THE SWITCH (Schm_phyms_L) ',
-     %/,'IS NOT SUPPORTED FOR NOW')
 *
 *    _________________________________________________________________
 *

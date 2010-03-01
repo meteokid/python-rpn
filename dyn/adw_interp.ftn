@@ -22,7 +22,9 @@
 * v2_31 - Tanguay M.        - correction parameters adw_vder 
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-* v3_20 - Gravel & Valin & Tanguay - Lagrange 3D   
+* v3_20 - Gravel & Valin & Tanguay - Lagrange 3D
+* v3_20 - McTaggart-Cowan   - Add semi-cubic Lagrangian interpolation
+* v3_30 - Desgagne          - Moved semi-cubic Lag interp to adw_interp2
 *
 *language
 *     fortran 77
@@ -103,40 +105,23 @@
       endif
 ************************************************************************
 *
-* Compute second derivative for cubic spline in the vertical
-*
-************************************************************************
-      if ( .not. Adw_lag3d_L ) call adw_vder ( F_v, F_u, Adw_nit, Adw_njt, l_nk ) 
-************************************************************************
-*
 * Interpolate
 *
 ************************************************************************
-      if ( .not. Adw_lag3d_L ) then 
+      call adw_vder ( F_v, F_u, Adw_nit, Adw_njt, l_nk ) !2nd deriv for spline
       call adw_tricub ( Adw_wrkc, F_u, F_v,
      %                  Adw_n1, Adw_capx1, Adw_xgg1,
      %                  Adw_xdd1, Adw_capy1, Adw_ygg1,
      %                  Adw_ydd1, Adw_capz1,Adw_cz1,
      %                  nijk, F_mono_L,i0,in,j0,jn,l_nk)
-      else
-      call adw_tricub_lag3d ( Adw_wrkc, F_u,
-     %                        Adw_capx1, Adw_capy1, Adw_capz1,
-     %                        nijk, F_mono_L,i0,in,j0,jn,l_nk)
-      endif
 *
       if (.not.G_lam) then
       if ( Adw_fro_a .gt. 0 ) then
-         if ( .not. Adw_lag3d_L ) then 
          call adw_tricub ( Adw_wrka, F_u, F_v,
      %                     Adw_n2, Adw_capx2, Adw_xgg2,
      %                     Adw_xdd2, Adw_capy2, Adw_ygg2,
      %                     Adw_ydd2, Adw_capz2, Adw_cz2,
      %                     Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1)
-         else
-         call adw_tricub_lag3d ( Adw_wrka, F_u,
-     %                           Adw_capx2, Adw_capy2, Adw_capz2, 
-     %                           Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1)
-         endif
       endif
 *
       call adw_exch_2 ( Adw_wrkb, dummy, dummy,

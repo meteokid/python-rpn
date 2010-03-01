@@ -2,7 +2,7 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine bin2com
+      integer function bin2com ()
       implicit none
 *
 *author 
@@ -19,8 +19,11 @@
 * v2_31                       references to vertical levels
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L
+* v3_12 - Winger K.         - transfer Anal_cond_L
 * v3_20 - Pellerin P.       - Introduce: Hblen_wfct_S, schm_offline_L
 * v3_21 - Lee V.            - Remove Tr2d 
+* v3_30 - Lee/Desgagne      - Reduced number of variables passed from
+*                             gemntr to gemdm.
 *
 *object
 *     See above id
@@ -28,44 +31,59 @@
 *arguments - none
 *
 #include "glb_ld.cdk"
-#include "hgc.cdk"
-#include "grd.cdk"
-#include "out1.cdk"
+#include "anal.cdk"
 #include "schm.cdk"
-#include "pilot.cdk"
-#include "hblen.cdk"
-#include "p_pbl.cdk"
 #include "tr3d.cdk"
 #include "offline.cdk"
+#include "path.cdk"
+#include "modconst.cdk"
+#include "out3.cdk"
 #include "lun.cdk"
-#include "p_geol.cdk"
 *
-      integer i, j, k
-      real*8 ONE_8
-      parameter( ONE_8   = 1.0 )
+      integer  fnom,wkoffit
+      external fnom,wkoffit
+      character*512 fn
+      integer  k, unf, ierr
 **
 *     ---------------------------------------------------------------
 *
-      read(lun_lab) Grd_ni  , Grd_nj  , Grd_nila  , Grd_njla ,
-     $              Grd_dx  , Grd_dy  , Grd_rot_8 , G_lam    ,
-     $              Grd_x0  , Grd_xl  , Grd_y0    , Grd_yl   , 
-     $              Grd_dxmax, Grd_dymax, Grd_typ_S, Grd_gauss_L,
-     $              Tr3d_userntr,
-     $              (Tr3d_username_S(k),k=1,Tr3d_userntr),
-     $              (Tr3d_usersval  (k),k=1,Tr3d_userntr)
+      bin2com = -1
 *
-      read(lun_lab)  P_pbl_schsl_s, P_pbl_snoalb_L,P_pbl_schurb_s,
-     $             Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
-     $             Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try,
-     $             Hblen_wfct_S,schm_offline_L,Offline_int_accu_S,
-     $             Offline_ip1a
+      unf = 0
+      fn  = trim(Path_dfwmil_S) // '/process/labfl.bin'
+      ierr = wkoffit(fn)
 *
-      read(lun_lab) Out1_etik_s, Out1_date,
-     $        Pil_runstrt_S, Pil_nesdt, Pil_ctebcs_L,
-     $        Hgc_gxtyp_s, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
+      if (ierr.ge.-1) then
+      if ( fnom (unf, fn, 'SEQ+FTN+UNF+OLD',ierr ) .eq. 0 ) then
+
+         read(unf)   Mod_runstrt_S
 *
-      P_geol_tourn_L = (abs((abs(Grd_rot_8(3,3))-ONE_8)).gt.1.0e-10)
+         read(unf)  Tr3d_userntr,
+     $             (Tr3d_username_S(k),k=1,Tr3d_userntr),
+     $             (Tr3d_usersval  (k),k=1,Tr3d_userntr)
 *
+         read(unf)  Anal_cond_L,   schm_offline_L,
+     $              Offline_ip1a,  Offline_int_accu_S
+*
+         call fclos (unf)
+*
+         bin2com = 0
+*
+      endif
+      endif
+*
+      if (bin2com .lt. 0) then
+         if (G_lam) then
+            Mod_runstrt_S='@#$%'
+            Out3_date    = 0
+            Tr3d_userntr = 0
+            bin2com      = 0
+         else
+            if (Lun_out.gt.0) write (6,1001) trim(fn)
+         endif
+      endif
+*
+ 1001 format (/' File ',a,' not available - ABORT -'/)
 *     ---------------------------------------------------------------
 *
       return

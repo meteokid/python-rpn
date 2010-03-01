@@ -1,0 +1,149 @@
+***s/r itf_phy_fcpfw  - allocate and prepare flags et weights 
+*                       for FCPKUO or KFCKUO options
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_phy_fcpfw (F_lunout)
+*
+      implicit none
+*
+      integer F_lunout
+*author
+*     Andre Methot - cmc - may 1998
+*
+*revision
+* v2_00 - Patoine A.        - initial MPI version (from fckwf v1_03)
+* v3_30 - Desgagne M.       - new itf_phy interface
+*
+*object
+*       Prepare flags et weights for FCPKUO/KFCKUO options.
+*       Those options allow the use of FCP (or KFC) scheme in a
+*       central window and KUO outside of this central window,
+*       with an optionnal blending region where both FCP (or KFC)
+*       and KUO scheme are in use.  
+*       The weights are "1." and flags are "2" where only FCP (or KFC)
+*       scheme is requested.
+*       The weights are "0." and flags are "0" where only KUOSYM
+*       scheme is requested.
+*       The weights correspond to a weighting factor to FCP (or KFC)
+*       scheme's contribution with respect to KUO's contribution.
+*       The flag "-2" indicates a blending region where both schemes
+*       are requested.  
+*       The weights vary linearly in the blending region.
+*
+*arguments
+*       None
+*
+*implicits
+#include "glb_ld.cdk"
+#include "itf_phy_config.cdk"
+*
+**
+      real prfcpf, prfcpw
+      integer i, j, i_glob, j_glob, pnerr
+*
+*     ---------------------------------------------------------------
+*
+*
+      if (F_lunout.gt.0) write(F_lunout,1000)
+*
+***********************************************************************
+* allocate memory for 2D amplification factor field
+***********************************************************************
+*
+      call hpalloc(P_fcpkuo_fcpf_, l_ni * l_nj, pnerr, 1)
+      call hpalloc(P_fcpkuo_fcpw_, l_ni * l_nj, pnerr, 1)
+*
+***********************************************************************
+* put constraints on blending parameters
+***********************************************************************
+*
+      P_fcpkuo_xofset = max( P_fcpkuo_xofset, 0 )
+      P_fcpkuo_xofset = min( P_fcpkuo_xofset, (G_ni-2)/2 )
+
+      P_fcpkuo_xblnd  = max( P_fcpkuo_xblnd, 1 )
+      P_fcpkuo_xblnd  = min( P_fcpkuo_xblnd, 
+     $                   ( max(1,(G_ni/2)-P_fcpkuo_xofset) ) )
+
+      P_fcpkuo_yofset = max( P_fcpkuo_yofset, 0 )
+      P_fcpkuo_yofset = min( P_fcpkuo_yofset, (G_nj-2)/2 )
+      
+      P_fcpkuo_yblnd  = max( P_fcpkuo_yblnd, 1 )
+      P_fcpkuo_yblnd  = min( P_fcpkuo_yblnd, 
+     $                   ( max(1,(G_nj/2)-P_fcpkuo_yofset) ) )
+
+*C    Initialize the entire local domain to "KUOSYM ONLY"
+
+      do j=1,l_nj
+      do i=1,l_ni
+         P_fcpkuo_fcpf(i,j) = 0.0
+         P_fcpkuo_fcpw(i,j) = 0.0
+      enddo
+      enddo
+
+*C    Consider row index and compute flag and weight for Y direction
+
+      do j=1,l_nj
+*
+      j_glob=l_j0+j-1
+*
+      if ( ( j_glob .gt. P_fcpkuo_yofset ) .and. 
+     $     ( j_glob .lt. ( G_nj-P_fcpkuo_yofset+1) ) ) then
+*
+         if ( j_glob .lt. P_fcpkuo_yofset+P_fcpkuo_yblnd ) then
+*
+            prfcpf= -2.
+            prfcpw= real(j_glob - P_fcpkuo_yofset)/real(P_fcpkuo_yblnd)
+*
+         else if (j_glob.lt.G_nj-P_fcpkuo_yofset-P_fcpkuo_yblnd+2) then
+*
+            prfcpf= 2.
+            prfcpw= 1.
+*
+         else
+*
+            prfcpf= -2.
+            prfcpw= real(G_nj-P_fcpkuo_yofset-j_glob+1)/
+     $              real(P_fcpkuo_yblnd)
+*
+         endif
+
+*C      Consider column index and compute flag and weight
+
+        do i= 1,l_ni
+*
+        i_glob=l_i0+i-1
+*
+        if ( ( i_glob .gt. P_fcpkuo_xofset ) .and. 
+     $       ( i_glob .lt. P_fcpkuo_xofset+P_fcpkuo_xblnd ) ) then
+*
+           P_fcpkuo_fcpf(i,j)= -2.
+           P_fcpkuo_fcpw(i,j)= prfcpw * 
+     $                real(i_glob-P_fcpkuo_xofset)/real(P_fcpkuo_xblnd)
+*
+        elseif ((i_glob.ge.P_fcpkuo_xofset+P_fcpkuo_xblnd ) .and. 
+     $          (i_glob.lt.G_ni-P_fcpkuo_xofset-P_fcpkuo_xblnd+2 )) then
+*
+           P_fcpkuo_fcpf(i,j)= prfcpf
+           P_fcpkuo_fcpw(i,j)= prfcpw
+*
+        elseif ((i_glob.ge.G_ni-P_fcpkuo_xofset-P_fcpkuo_xblnd+2) .and. 
+     $          (i_glob.lt.G_ni-P_fcpkuo_xofset+1)) then
+*
+           P_fcpkuo_fcpf(i,j)= -2.
+           P_fcpkuo_fcpw(i,j)= prfcpw*real(G_ni-P_fcpkuo_xofset-i_glob+1)
+     $                             / real(P_fcpkuo_xblnd)
+        endif
+        enddo
+*
+      endif
+*
+      enddo
+*
+      return
+*
+ 1000 format(/'ALLOCATE AND PREPARE FLAGS ET WEIGHTS FOR FCPKUO OR ', 
+     %       /'KFCKUO OPTIONS                   (S/R itf_phy_fcpfw)',
+     %       /'====================================================')
+*
+      end

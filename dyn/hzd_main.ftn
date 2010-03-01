@@ -20,6 +20,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_20 - Tanguay M.        - Introduce Hzd_hzdmain_n_L
 * v3_21 - Desgagne M.       - added explicit horiz diff.
+* v3_30 - Tanguay M.        - activate Hzd_type_S='EXPLICIT' 
 *
 *object
 *	
@@ -41,22 +42,19 @@
 #include "p_geof.cdk"
 #include "grd.cdk"
 #include "lctl.cdk"
-#include "ens_param.cdk"
 *
 *modules
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      character*8 Hzd_type
       integer err, nlod, key1(20), i, j, k
       real*8  ONE_8, bbb_8, eta_8
       parameter( ONE_8 = 1. )
 **
 *     _________________________________________________________________
 *
-c      Hzd_type='EXPLICIT'
-      Hzd_type='IMPLICIT'
-      if(.not.G_lam) Hzd_type='IMPLICIT'
+      if (.not.G_lam.and.Hzd_type_S.eq.'EXPLICIT') 
+     %    call gem_stop('ABORT .not.G_lam.and.Hzd_type=EXPLICIT',-1)
 *
       if ((.not.Hzd_fact_L).and.(.not.Hzd_ho_L).or..not.Hzd_hzdmain_0_L) then
          if (Lun_debug_L) write(Lun_out,1001)
@@ -77,9 +75,7 @@ c      Hzd_type='EXPLICIT'
       key1(12) = VMM_KEY(pipt0)
       key1(13) = VMM_KEY(pipt1)
       key1(14) = VMM_KEY(st1)
-      key1(15) = VMM_KEY(difut1)
-      key1(16) = VMM_KEY(difvt1)
-      nlod = 16
+      nlod = 14
       if (.not. Schm_hydro_L) then
          key1(nlod+1) = VMM_KEY(wt1)
          key1(nlod+2) = VMM_KEY(qpt1)
@@ -104,8 +100,6 @@ c      Hzd_type='EXPLICIT'
       err = VMM_GET_VAR(pipt0)
       err = VMM_GET_VAR(pipt1)
       err = VMM_GET_VAR(st1)
-      err = VMM_GET_VAR(difut1)
-      err = VMM_GET_VAR(difvt1)
       wt1_  = 0
       qpt1_ = 0
       mut1_ = 0
@@ -119,11 +113,8 @@ c      Hzd_type='EXPLICIT'
 *************************************
 *  1. Implicit horizontal diffusion *
 *************************************
-      if(Ens_bc_conf) then
-         difut1=ut1
-         difvt1=vt1
-      endif
-*
+
+
       if (Hzd_fact_L) then
          call hzd_fact ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
      %                   tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
@@ -132,7 +123,7 @@ c      Hzd_type='EXPLICIT'
       endif
 *
       if (Hzd_ho_L) then
-         if (Hzd_type.eq.'EXPLICIT') then
+         if (Hzd_type_S.eq.'EXPLICIT') then
             call hzd_exhrdif ( ut1 , vt1 , psdt1, tdt1, LDIST_DIM, G_nk)
          else
          if (Fft_fast_L) then
@@ -256,15 +247,8 @@ c      Hzd_type='EXPLICIT'
 *
       endif
 *
-      if(Ens_bc_conf) then
-         difut1=ut1-difut1
-         difvt1=vt1-difvt1
-      endif
-*
       err = vmmuld(-1,0)
 *    
-      if(Ens_conf) call ens_filter()
-
  1001 format(/,3X,'NO HORIZONTAL DIFFUSION REQUIRED')
 
 *

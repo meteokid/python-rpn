@@ -21,7 +21,7 @@
 #endif
 
       integer MAXTR3D
-      parameter ( MAXTR3D = 25 )
+      parameter ( MAXTR3D = 250 )
 *
       character*4  Tr3d_name_S,Tr3d_username_S
       integer Tr3d_ntr,Tr3d_userntr

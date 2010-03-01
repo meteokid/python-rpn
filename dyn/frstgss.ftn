@@ -5,7 +5,7 @@
 *
       subroutine frstgss ()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Michel Roch - rpn - nov 1993
@@ -158,6 +158,9 @@
 !$omp end parallel do 
       endif
 *
+c     if (Acid_test_L) tplt0
+c    $call glbstat (tpt0,'tpt0',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
+c    $                                          8+acid_j0,G_nj-8-acid_jn,1,G_nk)
       pnerr = vmmuld(-1,0)
 
 1000  format(3X,'FIRST GUESS: (S/R FRSTGSS)')

@@ -1,7 +1,12 @@
-***s/r e_infiles
+***s/r e_infiles - to determine list of inputfiles for LAM
 *
       subroutine e_infiles ()
       implicit none
+*
+*author   Michel Desgagne (MC2) 2006
+*
+*revision
+* v3_30 - Desgagne M.      - initial version
 *
 #include "filename.cdk"
 *
@@ -47,11 +52,6 @@
       end do
       npilf = i
 *
-      if (npilf.lt.1) then
-         write (6,1000) pilot_dir(1:longueur(pilot_dir))
-         stop
-      endif
-*
       ipilf  =  1
 *
       write (6,900) pilot_dir(1:longueur(pilot_dir))
@@ -63,8 +63,6 @@
  901  format (4x,a)
  905  format (' FILE ',a,' FROM DIRECTORY ',a,
      $        ' UNAVAILABLE OR NOT RPN-STD FORMAT - WILL BE IGNORED')
- 1000 format (/' NO RPN-STD AVAILABLE IN ',a/' ---- ABORT ----'/)
-*
 *---------------------------------------------------------------------
       return
       end

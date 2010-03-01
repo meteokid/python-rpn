@@ -1,0 +1,182 @@
+***s/r acid_outdyn_3df - output 3df files for the cascade run: acid test
+*
+#include "model_macros_f.h"
+*
+      subroutine acid_outdyn_3df ( datev, mode, gid, gif, gjd, gjf )
+      implicit none
+*
+      character* (*) datev
+      integer mode, gid, gif, gjd, gjf
+*
+*author
+*        Vivian Lee - Dec 2006
+*revision
+* v3_30 - Lee V.       - initial version for GEMDM
+*
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "out.cdk"
+#include "vt1.cdk"
+#include "vth.cdk"
+#include "schm.cdk"
+#include "grdc.cdk"
+#include "tr3d.cdk"
+#include "lctl.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer*8 pnt_trp(Grdc_ntr)
+      integer i,j,k,nis,njs,ind_o(G_nk+1),cnt,unf,key(21),
+     $        nvar,err,keyp_,keyp(Grdc_ntr)
+      real trp
+      pointer (patrp, trp(LDIST_SHAPE,*))
+*
+*------------------------------------------------------------------
+*
+      if ((out_nisl.le.0).or.(out_njsl.le.0)) return
+*
+      nis = out_ifg - out_idg + 1
+      njs = out_jfg - out_jdg + 1
+      do k=1,G_nk+1
+         ind_o(k) = k
+      end do
+      
+*
+      key (1)=VMM_KEY(ut1)
+      key (2)=VMM_KEY(vt1)
+      key (3)=VMM_KEY(tt1)
+      key (4)=VMM_KEY(pipt1)
+      key (5)=VMM_KEY(fit1)
+      key (6)=VMM_KEY(qt1)
+      key (7)=VMM_KEY(psdt1)
+      key (8)=VMM_KEY(fipt1)
+      key (9)=VMM_KEY(tdt1)
+      key(10)=VMM_KEY(st1)
+      key(11)=VMM_KEY(tpt1)
+      nvar=11
+      if (.not.Schm_hydro_L) then
+          key(nvar+1)=VMM_KEY(wt1)
+          key(nvar+2)=VMM_KEY(mut1)
+          nvar= nvar+2
+      endif
+      if (Lctl_step.eq.Grdc_start.and.Lctl_step.ne.0.and.
+     $    mode.eq.2) then
+          key(nvar+1)=VMM_KEY(tplt1)
+          key(nvar+2)=VMM_KEY(xth)
+          key(nvar+3)=VMM_KEY(yth)
+          key(nvar+4)=VMM_KEY(zth)
+          key(nvar+5)=VMM_KEY(xcth)
+          key(nvar+6)=VMM_KEY(ycth)
+          key(nvar+7)=VMM_KEY(zcth)
+          nvar = nvar+7
+      endif
+*
+      err = vmmlod (key,nvar)
+
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(qt1)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(tdt1)
+      err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(tpt1)
+      if (.not.Schm_hydro_L) then
+         err = VMM_GET_VAR(wt1)
+         err = VMM_GET_VAR(mut1)
+      endif
+
+      if (Lctl_step.eq.Grdc_start.and.Lctl_step.ne.0.and.
+     $    mode.eq.2) then
+         err = VMM_GET_VAR(tplt1)
+         err = VMM_GET_VAR(xth)
+         err = VMM_GET_VAR(yth)
+         err = VMM_GET_VAR(zth)
+         err = VMM_GET_VAR(xcth)
+         err = VMM_GET_VAR(ycth)
+         err = VMM_GET_VAR(zcth)
+      endif
+*
+      keyp_ = VMM_KEY (trt1)
+      do k=1,Grdc_ntr
+         do i=1,Tr3d_ntr
+            if (Grdc_trnm_S(k).eq.Tr3d_name_S(i)) keyp(k) = keyp_ + i
+         end do
+      end do
+      err = vmmlod(keyp,Grdc_ntr)
+      do k=1,Grdc_ntr
+         err = vmmget(keyp(k),patrp,trp)
+         pnt_trp(k) = patrp
+      end do
+*
+      if (Out_blocme.eq.0) 
+     $     call out_sfile_3df (datev,unf,'DYNAMICS',gid, gif, gjd, gjf,
+     $                                              nvar,Grdc_ntr,mode)
+*
+       call write_3df (  tt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'TT  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       call write_3df ( fit1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'PHI ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       call write_3df (  qt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'LNP ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       call write_3df (pipt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'PIPT',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       call write_3df ( tpt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'TP  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       call write_3df (  st1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,1    ,
+     $                       'ST  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       call write_3df (fipt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'FIPT',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       call write_3df (psdt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'WDOT',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       call write_3df ( tdt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'DD  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       if (.not.Schm_hydro_L) then
+            call write_3df (  wt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'WW  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+            call write_3df ( mut1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'MU  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+       endif
+*
+      do k=1,Grdc_ntr
+         patrp = pnt_trp(k)
+         call write_3df (trp,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                Grdc_trnm_S(k),gid, gif, gjd, gjf,1.0,ind_o,unf )
+      end do
+
+      call write_3df (  ut1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'UU  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+      call write_3df (  vt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'VV  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+*
+      if (Lctl_step.eq.Grdc_start.and.Lctl_step.ne.0.and.
+     $    mode.eq.2) then
+         call write_3df (tplt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk ,
+     $                       'TPLT',gid, gif, gjd, gjf,1.0,ind_o,unf )
+         call write_3df (  xth,1,l_ni,1,l_nj,nis,njs,G_nk ,
+     $                       'XTH ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+         call write_3df (  yth,1,l_ni,1,l_nj,nis,njs,G_nk ,
+     $                       'YTH ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+         call write_3df (  zth,1,l_ni,1,l_nj,nis,njs,G_nk ,
+     $                       'ZTH ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+         call write_3df ( xcth,1,l_ni,1,l_nj,nis,njs,G_nk ,
+     $                       'XCTH',gid, gif, gjd, gjf,1.0,ind_o,unf )
+         call write_3df ( ycth,1,l_ni,1,l_nj,nis,njs,G_nk ,
+     $                       'YCTH',gid, gif, gjd, gjf,1.0,ind_o,unf )
+         call write_3df ( zcth,1,l_ni,1,l_nj,nis,njs,G_nk ,
+     $                       'ZCTH',gid, gif, gjd, gjf,1.0,ind_o,unf )
+*
+      endif
+*
+      if (Out_blocme.eq.0) then
+         close (unf)
+      endif
+*
+*------------------------------------------------------------------
+      return
+      end
+*

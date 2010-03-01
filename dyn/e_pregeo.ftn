@@ -10,6 +10,7 @@
 *
 *revision
 * v3_20  - Roch/Bilodeau     - change units of snodp
+* v3_30 - Desgagne M.            - renamed comdecks for new PHYSICS interface
 *
 *object
 *
@@ -21,9 +22,9 @@
       parameter(l_ni=1,l_nj=1)
 #include "e_grids.cdk"
 #include "e_geol.cdk"
-#include "p_bus.cdk"
-#include "p_pbl.cdk"
-#include "p_geobus.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_phy_buses.cdk"
+#include "geobus.cdk"
 #include "dcst.cdk"
 #include "hgc.cdk"
 **

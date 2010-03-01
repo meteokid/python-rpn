@@ -13,6 +13,7 @@
 *
 *revision
 * v3_20 - Pellerin P.      - initial MPI version
+* v3_30 - Desgagne M.      - e_liaccu always return a value 0
 *
 *object
 *     For the offline mode: accumulation is changed into rate:
@@ -176,6 +177,8 @@ c
 c
            endif
          endif
+*
+      e_liaccu = 0
 *
       return
 *

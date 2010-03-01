@@ -1,6 +1,10 @@
 ***s/r adw_interp2 - Interpolation of one rhs
 *
 #include "model_macros_f.h"
+#if defined (NEC)
+#define ADW_TRITRUNC_LAG3D adw_tritrunc_lag3d_vec
+#define ADW_TRICUB_LAG3D   adw_tricub_lag3d_vec
+#endif
 *
       subroutine adw_interp2 ( F_out, F_in, F_u, F_v, F_wind_L,
      %                         F_mono_L, DIST_DIM, Nk,i0,in,j0,jn )
@@ -23,6 +27,9 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_20 - Gravel & Valin & Tanguay - Lagrange 3D   
 * v3_21 - Desgagne M.       - Revision Openmp
+* v3_30 - McTaggart-Cowan   - Add truncated lag3d interpolator
+* v3_30 - McTaggart-Cowan   - Vectorization subroutines *_vec
+* v3_30 - Tanguay M.        - adjust OPENMP for LAM 
 *
 *object
 *     see id section
@@ -60,6 +67,7 @@
 * Compute extension beyond the pole if appropriate
 *
 ************************************************************************
+!$omp single
       if (G_lam) then
           n=0
           dest_ni=l_ni
@@ -68,7 +76,6 @@
           dest_ni=G_ni
       endif
 *
-!$omp single
       call rpn_comm_xch_halox (F_in, LDIST_DIM, l_ni, l_nj, l_nk,
      % Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, -Adw_halox+1,
      % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, n)
@@ -101,20 +108,36 @@
      %                     Adw_njc,Adw_haloy,l_nk)
       endif
       endif
+
 ************************************************************************
 *
 * Interpolate
 *
 ************************************************************************
-      call adw_tricub_lag3d ( Adw_wrkc, F_u,
-     %                        Adw_capx1, Adw_capy1, Adw_capz1,
-     %                        nijk, F_mono_L,i0,in,j0,jn,l_nk)
+
+      select case (trim(Adw_interp_type_S))
+         case ('LAG3D_TRUNC')
+         call ADW_TRITRUNC_LAG3D ( Adw_wrkc, F_u,
+     %                             Adw_capx1, Adw_capy1, Adw_capz1,
+     %                             nijk, F_mono_L,i0,in,j0,jn,l_nk)
+         case DEFAULT	
+         call ADW_TRICUB_LAG3D   ( Adw_wrkc, F_u,
+     %                             Adw_capx1, Adw_capy1, Adw_capz1,
+     %                             nijk, F_mono_L,i0,in,j0,jn,l_nk)
+      end select
 *
       if (.not.G_lam) then
          if ( Adw_fro_a .gt. 0 ) then
-            call adw_tricub_lag3d ( Adw_wrka, F_u,
-     %                           Adw_capx2, Adw_capy2, Adw_capz2, 
+	   select case (trim(Adw_interp_type_S))
+	      case ('LAG3D_TRUNC')
+              call ADW_TRITRUNC_LAG3D ( Adw_wrka, F_u,
+     %                                  Adw_capx2, Adw_capy2, Adw_capz2,
+     %                            Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1)
+	      case DEFAULT
+              call ADW_TRICUB_LAG3D ( Adw_wrka, F_u,
+     %                                Adw_capx2, Adw_capy2, Adw_capz2, 
      %                           Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1)
+ 	   end select
          endif
 *
 !$omp single

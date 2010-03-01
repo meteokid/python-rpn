@@ -3,7 +3,7 @@
 #include "model_macros_f.h"
       subroutine hzd_exhrdif ( F_u, F_v, F_psd, F_td, DIST_DIM, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *
@@ -14,6 +14,7 @@
 *
 *revision
 * v3_21 - Desgagne M. - initial MPI version
+* v3_30 - Desgagne M. - openMP precision in shared variables
 *
 *arguments
 *  Name        I/O        Description
@@ -51,7 +52,7 @@
 
       nn=Hzd_pwr/2
 *
-!$omp parallel
+!$omp parallel shared( visco,nn )
       do mm=1,nn
 *
          call hzd_nudeln (F_u  ,smu  ,LDIST_DIM,Nk,visco,1,0,mm,nn)

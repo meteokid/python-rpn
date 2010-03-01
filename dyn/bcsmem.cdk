@@ -1,0 +1,34 @@
+*
+      real, dimension(:), pointer :: BCS_values
+      common /bcsmm/ BCS_values
+*
+      integer bcs_siz_tot
+      common /bcs_siz/ bcs_siz_tot
+      real bcs_u , bcs_v, bcs_t, bcs_psd, bcs_pip, bcs_fip, bcs_td,
+     $     bcs_fi, bcs_q, bcs_s, bcs_tp , bcs_tr , bcs_w  , bcs_mu
+      real bcs_uf , bcs_vf , bcs_tf, bcs_psdf, bcs_pipf, bcs_fipf,
+     $     bcs_tdf, bcs_fif, bcs_qf, bcs_sf  , bcs_tpf , bcs_trf ,
+     $     bcs_wf , bcs_muf
+*
+      pointer 
+     $   (pbcsu  , bcs_u(*))  , (pbcsv  , bcs_v(*))  ,
+     $   (pbcspsd, bcs_psd(*)), (pbcspip, bcs_pip(*)), 
+     $   (pbcsfip, bcs_fip(*)), (pbcstd , bcs_td(*)) , 
+     $   (pbcsfi , bcs_fi(*)) , (pbcsq  , bcs_q(*))  , 
+     $   (pbcss  , bcs_s(*))  , (pbcstp , bcs_tp(*)) ,
+     $   (pbcstr , bcs_tr(*)) , (pbcsw  , bcs_w(*))  ,
+     $   (pbcsmu , bcs_mu(*)) , (pbcst  , bcs_t(*))  ,
+     $   (pbcsuf  , bcs_uf(*))  , (pbcsvf  , bcs_vf(*))  ,
+     $   (pbcstf  , bcs_tf(*))  , (pbcswf  , bcs_wf(*))  ,
+     $   (pbcspsdf, bcs_psdf(*)), (pbcspipf, bcs_pipf(*)), 
+     $   (pbcsfipf, bcs_fipf(*)), (pbcstdf , bcs_tdf(*)) , 
+     $   (pbcsfif , bcs_fif(*)) , (pbcsqf  , bcs_qf(*))  , 
+     $   (pbcssf  , bcs_sf(*))  , (pbcstpf , bcs_tpf(*)) ,
+     $   (pbcstrf , bcs_trf(*)) , (pbcsmuf , bcs_muf(*)) 
+*
+      common /bcsmem1/ pbcsu,pbcsv,pbcst,pbcspsd,pbcspip,pbcsfip,
+     $                 pbcstd,pbcsfi,pbcsq,pbcss,pbcstp,pbcsuf,pbcsvf,
+     $                 pbcstf,pbcspsdf,pbcspipf,pbcsfipf,pbcstdf,
+     $                 pbcsfif,pbcsqf,pbcssf,pbcstpf,pbcstr,pbcstrf,
+     $                 pbcsw,pbcsmu,pbcswf,pbcsmuf
+*

@@ -6,7 +6,7 @@
      $                     minx,maxx,miny,maxy,lnk,
      $                     F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
 *
-#include "impnone.cdk"
+      implicit none
 * 
       character*(*) F_nv_S , F_from_S
       integer minx,maxx,miny,maxy,lnk,
@@ -19,6 +19,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version (from MC2)
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_30 - Tanguay M.        - Ask if Lun_out.gt.0 
 *
 *object
 *     calcule et imprime: la moyenne    (moy)
@@ -92,18 +93,18 @@
 *
       if (Lctl_r8stat_L) then
          if (G_lam) then
-         write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+         if(Lun_out.gt.0) write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
      $                                imax,jmax,kmax,maxd,F_from_S 
          else
-         write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+         if(Lun_out.gt.0) write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
      $                                imax,jmax,kmax,maxd,F_from_S 
          endif
       else
          if (G_lam) then
-         write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+         if(Lun_out.gt.0) write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
      $                                imax,jmax,kmax,maxd,F_from_S 
          else
-         write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+         if(Lun_out.gt.0) write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
      $                                imax,jmax,kmax,maxd,F_from_S 
          endif
       endif

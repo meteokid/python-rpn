@@ -4,7 +4,7 @@
 *
       subroutine adw_set
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     alain patoine
@@ -225,6 +225,7 @@
 ************************************************************************
       do i=1,Adw_nit
          Adw_xx_8 (i) = Adw_xg_8(Adw_int_i_off+i)
+c        print *,'Adw_xx_8(',i,')=',Adw_xx_8 (i)
       enddo
 *
       if (.not.G_lam) then
@@ -236,19 +237,25 @@
       do i=1,Adw_nic
          Adw_cx_8(i) = cos ( Adw_xx_8(Adw_halox+i) )
          Adw_sx_8(i) = sin ( Adw_xx_8(Adw_halox+i) )
+c        print *,'Adw_cx_8(',i,')=',Adw_cx_8 (i)
+c        print *,'Adw_sx_8(',i,')=',Adw_sx_8 (i)
       enddo
 *
       do j=1,Adw_njt
          Adw_yy_8 (j) = Adw_yg_8(Adw_int_j_off+j)
+c        print *,'Adw_yy_8(',j,')=',Adw_yy_8 (j)
       enddo
 *
       do j=1,Adw_njc
          Adw_cy_8(j) = cos ( Adw_yy_8(Adw_haloy+j) )
          Adw_sy_8(j) = sin ( Adw_yy_8(Adw_haloy+j) )
+c        print *,'Adw_cy_8(',j,')=',Adw_cy_8 (j)
+c        print *,'Adw_sy_8(',j,')=',Adw_sy_8 (j)
       enddo
 ************************************************************************
 * fill 2D fields for use in adw_trajsp and adw_trajex                  *
 ************************************************************************
+c        print *,'trj_i_off=',trj_i_off
       do j= 1, l_nj 
       do i= 1, l_ni 
          ij = i + ( j-1 ) * l_ni

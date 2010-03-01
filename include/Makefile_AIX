@@ -4,8 +4,7 @@ MPI    = -mpi
 RMN    = rmn_009
 COMM   = rpn_comm208
 PRIV   = priv
-CODEBETA = c_ezscint-519 f_ezscint-519
+LLAPI  = llapi
 
-IBM_LD = hpm_r pmapi
-
+IBM_LD = hpm_r
 

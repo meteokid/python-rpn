@@ -1,0 +1,67 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+*** s/r out_sfile_bcs - open BCS file for cascade mode
+*
+#include "model_macros_f.h"
+*
+      subroutine out_sfile_bcs (datev,unf,is,nis,js,jn,njs,
+     $                          iw,ie,niw,jw,njw,msg,nvar,ntr,mode)
+      implicit none
+*
+      character* (*) msg,datev
+      integer stepno, unf, is,nis,js,jn,njs,iw,ie,niw,jw,njw
+      integer nvar, ntr, mode
+*
+*author Michel Desgagne (MC2 2001)
+*
+*revision
+* v3_30 - Lee V. - initial version for GEM LAM
+*
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "ptopo.cdk"
+*
+      integer  longueur
+      external longueur
+      character*2  md
+      character*512 filen
+*
+*------------------------------------------------------------------
+*
+      if (Ptopo_myproc.eq.0) then
+          unf = 202
+*
+          write (md,'(i2.2)') mode
+          filen= 'bcs'//md//'_'//datev
+          filen= '../../output/casc/'//filen(1:longueur(filen))
+          open (unf,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
+     $                                          position='APPEND')
+          call wrgeo_bcs (G_xg_8(is),nis+1,G_yg_8(js),G_yg_8(jn),njs+1,
+     $                G_xg_8(iw),G_xg_8(ie),niw+1,G_yg_8(jw),njw+1,
+     $                Geomg_z_8,Geomg_pia,Geomg_pibb,G_nk,unf)
+          write (unf) msg,nvar,ntr,mode
+      endif
+*
+*------------------------------------------------------------------
+      return
+      end
+*
+      subroutine wrgeo_bcs ( xps,nis,yps,ypn,njs,
+     $                       xpw,xpe,niw,ypw,njw,
+     $                       z,pia,pib,nk,unf )
+      implicit none
+*
+      integer nis,njs,niw,njw
+      integer ni,nj,nk,nvar,unf
+      real pia(nk), pib(nk)
+      real*8 xps(nis), yps(njs), ypn(njs), xpw(niw), xpe(niw), ypw(njw)
+      real*8 z(nk)
+*
+*------------------------------------------------------------------
+      write (unf) '>>^^',nis,njs,niw,njw
+      write (unf) xps,yps,ypn,xpw,xpe,ypw
+      write (unf) 'ZAB ',nk
+      write (unf) z,pia,pib
+*------------------------------------------------------------------
+*
+      return
+      end

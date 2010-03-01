@@ -6,7 +6,7 @@
 *
       subroutine vspng_set
 *
-#include "impnone.cdk"
+      implicit none
 *
 *
 *author    
@@ -15,6 +15,8 @@
 *revision
 * v2_11 - Desgagne M.       - initial version
 * v3_02 - Lee V.            - add setup for LAM vertical sponge
+* v3_22 - Spacek L.         - add Vspng_zmean_L
+* v3_30 - Spacek L./m.Roch  - add zmean for Grd_gauss_L 
 *
 *object
 *       
@@ -28,6 +30,7 @@
 #include "dcst.cdk"
 #include "lun.cdk"
 #include "vspng.cdk"
+#include "grd.cdk"
 *      
       integer k
       real*8 pis2_8,wh_8,delp_8,TWO_8
@@ -78,6 +81,14 @@
             if (Lun_out.gt.0) write (Lun_out,2005) Vspng_mf(k),k
          end do
 *
+         if(Vspng_zmean_L.and.(.not.Grd_gauss_L))then
+            if(G_lam.or.Grd_roule.or..not.Grd_uniform_L)then
+                if (Lun_out.gt.0) write (Lun_out,2006)
+                call gem_stop('vspng_set',-1)
+            endif
+         endif
+         if (Lun_out.gt.0) write (Lun_out,2007)Vspng_zmean_L
+*
       endif
 *
  2000 format('USER DEFINED SPONGE LAYER PROFILE')
@@ -86,6 +97,8 @@
  2003 format('SPONGE LAYER PROFILE BASED ON: Vspng_nutop= ',f8.4,
      $       '  AND Vspng_nk= ',i4, ' AND iterations= ',i4)
  2005 format(f10.5,i5)
+ 2006 format('Vspng_zmean_L works ONLY with GAUSS or Global Uniform unrotated grid')
+ 2007 format('SPONGE LAYER Vspng_zmean_L =',l2)
 *
 *     ---------------------------------------------------------------
  999  return

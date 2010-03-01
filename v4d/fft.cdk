@@ -1,0 +1,21 @@
+#if defined (DOC)
+*
+***comdeck fft.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH FFT                                       |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Fft_fast_L         | .true.   when the FFT is to be used             |
+* Fft_pri_8          | inverse projector in Fourier space              |
+*----------------------------------------------------------------------
+*
+*
+#endif
+      logical Fft_fast_L
+      real*8  Fft_pri_8
+*
+      common / fft / Fft_pri_8, Fft_fast_L

@@ -1,13 +1,12 @@
-***s/r adw_ckbd_lam - check if upstream points from each north/south/east/west
+**s/r adw_ckbd_lam - check if upstream points from each north/south/east/west
 *                   pe's for which an interpolation is requested are
 *                   inside own advection source grid.
-*
 *
 #include "model_macros_f.h"
 *
       subroutine adw_ckbd_lam ( F_x_in,  F_y_in,  F_z_in, i0, in,j0,jn )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer i0, in, j0, jn
       real    F_x_in  ( * ), F_y_in  ( * ), F_z_in  ( * )
@@ -18,6 +17,7 @@
 *revision
 * v3_02 - Lee V.  - extracted LAM code originally placed in adw_exch_1
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_30 - Lee V.  - Stop run with only one print statement of problem
 *
 *object
 *     For LAM mode only:
@@ -58,189 +58,174 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "adw.cdk"
+#include "lun.cdk"
+
 ************************************************************************
 *
-      integer n, nij, i, j, k, npts, err
+      integer n, nij, i, j, k, ierr
+      integer err(8),totalerr(8)
 *
-      err = 0
+      err(:) = 0
       nij  = l_ni*l_nj
 *
 ************************************************************************
-!$omp parallel private(n,npts)
+*
       if (l_north) then
-!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             if ( F_y_in(n).ge.Adw_yy_8(Adw_njt-(Adw_haloy+1)) ) then
-c                print *,'F_y_in(',n,')=',F_y_in(n),
-c    %           'Adw_yy_8(Adw_njt-(Adw_haloy+1))=',
-c    %            Adw_yy_8(Adw_njt-(Adw_haloy+1))
-c    %           'Adw_dly_8(1)=',Adw_dly_8(1)
                  if (Adw_trunc_traj_L) then
                      F_y_in(n) = Adw_yy_8(Adw_njt-(Adw_haloy+2))
                      Adw_trunc(1)=Adw_trunc(1) + 1
                  else
-                     print *,'PE ',Ptopo_myproc,
-     %              'Error exch on NORTH WALL: reduce Cstv_dt_8'
-                    err = -1
+                    err(1) = 1
                  endif
             endif
          enddo
          enddo
          enddo
-!$omp enddo
       else
-!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             if ( F_y_in(n).ge.Adw_yy_8(Adw_njt-1) ) then
-c                print *,'F_y_in(',n,')=',F_y_in(n),' Adw_yy_8(Adw_njt-1)=',
-c    %           Adw_yy_8(Adw_njt-1), 'Adw_dly_8(1)=',Adw_dly_8(1)
-                 npts = 1+ (F_y_in(n)-Adw_yy_8(Adw_njt-1))/Adw_dly_8(1)
-                 print *,'PE ',Ptopo_myproc,
-     %           'Error exch northwards: Adw_haloy+',npts
-                 err = -1
+                 err(1) = 1
+                 err(2) = 1+ (F_y_in(n)-Adw_yy_8(Adw_njt-1))/Adw_dly_8(1)
             endif
          enddo
          enddo
          enddo
-!$omp enddo
       endif
 *
       if (l_south) then
-!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             if ( F_y_in(n).le.Adw_yy_8(Adw_haloy+2) ) then
-c                print *,'F_y_in(',n,')=',F_y_in(n),' Adw_yy_8(Adw_haloy+2)=',
-c    %           Adw_yy_8(Adw_haloy+2), 'Adw_dly_8(1)=',Adw_dly_8(1)
                  if (Adw_trunc_traj_L) then
                      F_y_in(n) = Adw_yy_8(Adw_haloy+3)
                      Adw_trunc(2)=Adw_trunc(2) + 1
                  else
-                     print *,'PE ',Ptopo_myproc,
-     %              'Error exch on SOUTH WALL: reduce Cstv_dt_8'
-                     err = -1
+                     err(3) = 1
                  endif
             endif
          enddo
          enddo
          enddo
-!$omp enddo
       else
-!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             if ( F_y_in(n).le.Adw_yy_8(2) ) then
-c                print *,'F_y_in(',n,')=',F_y_in(n),' Adw_yy_8(2)=',
-c    %           Adw_yy_8(2), 'Adw_dly_8(1)=',Adw_dly_8(1)
-                 npts = 1+ (Adw_yy_8(2)-F_y_in(n))/Adw_dly_8(1)
-                 print *,'PE ',Ptopo_myproc,
-     %           'Error exch southwards:Adw_haloy+',npts
-                 err = -1
+                 err(3) = 1
+                 err(4) = 1+ (Adw_yy_8(2)-F_y_in(n))/Adw_dly_8(1)
             endif
          enddo
          enddo
          enddo
-!$omp enddo
       endif
 *
       if (l_east) then
-!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             if ( F_x_in(n).ge.Adw_xx_8(Adw_nit-(Adw_halox+1)) ) then
-c                print *,'F_x_in(',n,')=',F_x_in(n),
-c    %           ' Adw_xx_8(Adw_nit-(Adw_halox+1))=',
-c    %             Adw_xx_8(Adw_nit-(Adw_halox+1)),
-c    %           ' Adw_dlx_8(1)=',Adw_dlx_8(1)
                  if (Adw_trunc_traj_L) then
                      F_x_in(n) = Adw_xx_8(Adw_nit-(Adw_halox+2))
                      Adw_trunc(3)=Adw_trunc(3) + 1
                  else
-                     print *,'PE ',Ptopo_myproc,
-     %              'Error exch EAST WALL: reduce Cstv_dt_8'
-                     err = -1
+                     err(5) = 1
                  endif
             endif
          enddo
          enddo
          enddo
-!$omp enddo
       else
-!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             if ( F_x_in(n).ge.Adw_xx_8(Adw_nit-1) ) then
-c                print *,'F_x_in(',n,')=',F_x_in(n),' Adw_xx_8(Adw_nit-1)=',
-c    %           Adw_xx_8(Adw_nit-1), 'Adw_dlx_8(1)=',Adw_dlx_8(1)
-                 npts = 1+ (F_x_in(n)-Adw_xx_8(Adw_nit-1))/Adw_dlx_8(1)
-                 print *,'PE ',Ptopo_myproc,
-     %           'Error exch eastwards: Adw_halox+',npts
-                 err = -1
+                 err(6) = 1+ (F_x_in(n)-Adw_xx_8(Adw_nit-1))/Adw_dlx_8(1)
+                 err(5) = 1
             endif
          enddo
          enddo
          enddo
-!$omp enddo
       endif
 *
       if (l_west) then
-!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             if ( F_x_in(n).le.Adw_xx_8(Adw_halox+2) ) then
-c                print *,'F_x_in(',n,')=',F_x_in(n),' Adw_xx_8(Adw_halox+2)=',
-c    %           Adw_xx_8(Adw_halox+2), 'Adw_dlx_8(1)=',Adw_dlx_8(1)
                  if (Adw_trunc_traj_L) then
                      F_x_in(n) = Adw_xx_8(Adw_halox+3)
                      Adw_trunc(4)=Adw_trunc(4) + 1
                  else
-                     print *,'PE ',Ptopo_myproc,
-     %              'Error exch WEST WALL: reduce Cstv_dt_8'
-                     err = -1
+                     err(7) = 1
                  endif
             endif
          enddo
          enddo
          enddo
-!$omp enddo
       else
-!$omp do
          do k=1,l_nk
          do j=j0,jn
          do i=i0,in
             n = (k-1)*nij + ((j-1)*l_ni) + i
             if ( F_x_in(n).le.Adw_xx_8(2) ) then
-c                print *,'F_x_in(',n,')=',F_x_in(n),'Adw_xx_8(2)=',Adw_xx_8(2), 
-c    %           'Adw_dlx_8(1)=',Adw_dlx_8(1)
-                 npts = 1+ (Adw_xx_8(2)-F_x_in(n))/Adw_dlx_8(1)
-                 print *,'PE ',Ptopo_myproc,
-     %           'Error exch westwards: Adw_halox+',npts
-                 err = -1
+                 err(8) = 1+ (Adw_xx_8(2)-F_x_in(n))/Adw_dlx_8(1)
+                 err(7) = 1
             endif
          enddo
          enddo
          enddo
-!$omp enddo
       endif
-!$omp end parallel
-*     
-      call gem_stop ( 'adw_ckbd_lam', err )
+*
+      call rpn_comm_ALLREDUCE ( err, totalerr, 8,
+     $                 "MPI_INTEGER","MPI_MAX","grid",ierr )
+      if (Lun_out.gt.0) then
+          if (totalerr(1).gt.0) then
+              if (totalerr(2).gt.0) then
+                   print *,'error exch northwards: Adw_haloy+',totalerr(2)
+              else
+                   print *, 'error exch NORTH WALL: reduce Cstv_dt_8'
+              endif
+          endif
+          if (totalerr(3).gt.0) then
+              if (totalerr(4).gt.0) then
+                   print *,'error exch southwards: Adw_haloy+',totalerr(4)
+              else
+                   print *, 'error exch SOUTH WALL: reduce Cstv_dt_8'
+              endif
+          endif
+          if (totalerr(5).gt.0) then
+              if (totalerr(6).gt.0) then
+                   print *,'error exch eastwards: Adw_halox+',totalerr(6)
+              else
+                   print *, 'error exch EAST WALL: reduce Cstv_dt_8'
+              endif
+          endif
+          if (totalerr(7).gt.0) then
+              if (totalerr(8).gt.0) then
+                   print *,'error exch westwards: Adw_halox+',totalerr(8)
+              else
+                   print *, 'error exch WEST WALL: reduce Cstv_dt_8'
+              endif
+          endif
+      endif
+      
+      if   (totalerr(1).gt.0.or.totalerr(3).gt.0.or.
+     %      totalerr(5).gt.0.or.totalerr(7).gt.0) 
+     %      call gem_stop ( 'adw_ckbd_lam', -1 )
 *     
       return
       end

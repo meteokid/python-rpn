@@ -24,228 +24,86 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Lee V.            - place output in local PE directory
 * v3_21 - Desgagne M.       - using RMNLIB to access constants
+* v3_30 - Desgagne M.       - Cleaner approach to model startup
+* v3_30 - Desgagne & Winger - Initialize variable for VMM files
 *
 *object
 *
-*arguments
-*
 *implicits
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "lun.cdk"
 #include "cst_lis.cdk"
 #include "dcst.cdk"
-#include "path.cdk"
 #include "ptopo.cdk"
-#include "grid.cdk"
-#include "hgc.cdk"
-#include "pres.cdk"
 #include "grd.cdk"
-#include "dimout.cdk"
-#include "cstv.cdk"
-#include "level.cdk"
-#include "hblen.cdk"
-#include "pilot.cdk"
+#include "schm.cdk"
+#include "glb_ld.cdk"
+#include "path.cdk"
+#include "vmmlist.cdk"
+#include "itf_phy_config.cdk"
 *
-*modules
-      logical  check_parti,set_dcst_8
-      integer  longueur, hybref_to_ig, gnthread, RPN_COMM_bloc
-      external set_world_view1,set_dcst_8,check_parti,
-     %         longueur,hybref_to_ig,gnthread,
-     %         RPN_COMM_bloc
+      logical  set_dcst_8
+      integer  gem_nml,var4d_nml,v4d_config,gemdm_config,grid_nml
+      external pe_zero_topo, set_dcst_8, gem_nml, var4d_nml,
+     $         v4d_config, gemdm_config, grid_nml
 **
-      integer ipcode,ipmode,ierr,mindimx,mindimy,
-     $        n1,n2,n3,n4,n5,n6,n7,
-     $        maxblenx,maxbleny,cte_ok
-      character*256 prejob_S
-      character*12 dumc1_S
-      real pcode,x1,x2
-*
-      integer pni, pnj, pniu, pnjv, pnk, lam
-      
-      namelist / dyndim / pni, pnj, pniu, pnjv, pnk, lam
-*
-c     integer omp_get_num_threads,omp_get_thread_num
-c     These variables are for OpenMp compilation
+      integer ierr,cte_ok,f1,f2,f3
 *
 *-------------------------------------------------------------------
 *
-      lun_out  = -1
-      lun_in   = -1
-      lun_lab  = -1
-      lun_tsrs = -1
-      Lun_zonl = -1
-      Lun_cte  = -1
-      lun_waphy= 65
-      lun_wapta= 66
-      Lun_rstrt= -1
-      Lun_debug_L=.false.
+* Initializing MPI and processor topology (pe_zero_topo on PE #0 only)
 *
-      call rpn_comm_init (set_world_view1, Ptopo_myproc, Ptopo_numproc, 
-     $                                     Ptopo_npex  , Ptopo_npey)
-      Ptopo_npeOpenMP = gnthread()
-      if (Lun_out.gt.0) then
-         write(6,*) 'BLOC TOPO: Ptopo_nblocx=',
-     $                Ptopo_nblocx, 'Ptopo_nblocy=',Ptopo_nblocy
-         call write_status_file2 ('communications_established=YES' )
-	 write(6,*) 'OpenMP will use ',Ptopo_npeOpenMP
-     $                    ,' thread(s)'
-      endif
+      call rpn_comm_init ( pe_zero_topo, Ptopo_myproc, Ptopo_numproc, 
+     $                               Ptopo_npex  , Ptopo_npey )
 *
-      call bcastc1 ()
-      Ptopo_numpe_perb = Ptopo_npex/Ptopo_nblocx * Ptopo_npey/Ptopo_nblocy
-
-      call rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
-
-      ierr = RPN_COMM_bloc ( Ptopo_nblocx, Ptopo_nblocy )
-      if (ierr.lt.0) call gem_stop ('rpn_comm_bloc',ierr)
-
-      call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc,
-     $                      n1,n2,n3,n4,n5,n6,n7,Ptopo_mybloc,
-     $                      Ptopo_myblocx,Ptopo_myblocy,Ptopo_blocme,dumc1_S )
-      call tmg_init0  ( Ptopo_myproc, 'GEMDM' )
-      call tmg_start0 ( 1, 'GEMDM' ) 
+* Broadcasts processor topology and continue initialization steps
 *
-*     fst2000 ip1 encoding 
-      if ((Level_ip12000_L).and.(Ptopo_myproc.gt.0))
-     $     call convip( ipcode, pcode, ipmode, 0, ' ', .false. )
-*
-#if defined (NEC)
-      if (Lun_out.gt.0) call gemtim (Lun_out)
-#endif
-*
-*
-*     Initializing physical constants
-*
+      call pe_all_topo
       cte_ok = 0
       if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre,
-     $                      Ptopo_myproc,Ptopo_numproc ) ) 
-     $     cte_ok=-1
+     $                        Lun_out,Ptopo_numproc ) ) cte_ok=-1
       call gem_stop ('set_dcst_8',cte_ok)
 *
-*     Running script Um_hook.sh
+      if ( Schm_theoc_L ) then
 *
-c      write (prejob_S,33) Ptopo_myproc
-c      prejob_S='Um_hook.sh -pre '//prejob_S(1:longueur(prejob_S))
-c      call system (prejob_S)
+         call theo_cfg
 *
-*     Establishing data topology
+      else
 *
-      l_west  = (0            .eq. Ptopo_mycol)
-      l_east  = (Ptopo_npex-1 .eq. Ptopo_mycol)
-      l_south = (0            .eq. Ptopo_myrow)
-      l_north = (Ptopo_npey-1 .eq. Ptopo_myrow)
-      north   = 0
-      south   = 0
-      east    = 0
-      west    = 0
-      if (l_north) north = 1
-      if (l_south) south = 1
-      if (l_east ) east  = 1
-      if (l_west ) west  = 1
-      pil_w     = 0
-      pil_n     = 0
-      pil_e     = 0
-      pil_s     = 0
-      Lam_pil_w = 0
-      Lam_pil_n = 0
-      Lam_pil_e = 0
-      Lam_pil_s = 0
-      G_periodx = .true.
-      G_periody = .false.
-      Pil_current_S = '20000101.000000'
-*     
-      if (G_lam) then
-         if (l_west ) pil_w = Glb_pil_w
-         if (l_north) pil_n = Glb_pil_n
-         if (l_east ) pil_e = Glb_pil_e
-         if (l_south) pil_s = Glb_pil_s
-         G_periodx = .false.
-         Lam_pil_w = Glb_pil_w
-         Lam_pil_n = Glb_pil_n
-         Lam_pil_e = Glb_pil_e
-         Lam_pil_s = Glb_pil_s
-         mindimx = G_ni/2 - (1-mod(G_ni,2))
-         mindimy = G_nj/2 - (1-mod(G_nj,2))
-         maxblenx= max ( Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx )
-         maxbleny= max ( Hblen_momenty,Hblen_ty,Hblen_massy,Hblen_try )
-
-         if ( (max(Glb_pil_w,Glb_pil_e)+maxblenx).gt.mindimx .or.
-     $        (max(Glb_pil_s,Glb_pil_n)+maxbleny).gt.mindimy )
-     $        call gem_stop
-     $        ('LAM grid too small -- ABORT in set_world_view --',-1)
+* Initializes physical constants
 *
-         if (Hblen_wfct_S .eq. "CONST") then
-            maxblenx=mindimx-(max(Glb_pil_w,Glb_pil_e))+2
-            maxbleny=mindimy-(max(Glb_pil_s,Glb_pil_n))+2
-            Hblen_momentx=maxblenx
-            Hblen_momenty=maxbleny
-            Hblen_tx=maxblenx
-            Hblen_ty=maxbleny
-            Hblen_massx=maxblenx
-            Hblen_massy=maxbleny
-            Hblen_trx=maxblenx
-            Hblen_try=maxbleny
-            print *,'*****************************************'
-            print *,'Constant Function applied for Pilot Zones'
-            print *,'Values maxblenx, maxbleny=',maxblenx, maxbleny
-            print *,'*****************************************'
 *
-            if ((Ptopo_npex.gt.2).or.(Ptopo_npey.gt.2))
-     $        call gem_stop
-     $        ('IN OFF-LINE MODE:MAXIMUM PE ALONG X,Y IS 2--',-1)
-         endif
+* Read namelist gem_cfgs and var4d from file Path_nml_S
 *
+         f1 = grid_nml  (Path_nml_S)
+         G_lam = Grd_typ_S(1:1).eq.'L'
+         f2 = gem_nml   (Path_nml_S)
+         f3 = var4d_nml (Path_nml_S)
+         call gem_stop  ('SET_WORLD_VIEW_SET',min(f1,f2,f3))
       endif
 *
-      call rpn_comm_topo ( G_ni,l_minx,l_maxx,l_ni,G_lnimax,
-     $                            G_halox,l_i0,.true.,.true.) 
-      call rpn_comm_topo ( G_nj,l_miny,l_maxy,l_nj,G_lnjmax,
-     $                           G_haloy,l_j0,.false.,.true.)
-      if (.not.check_parti (l_i0,G_ni,Ptopo_npex)) then
-         if (Lun_out.gt.0) write(Lun_out,1001) 
-     $        Ptopo_myproc,l_i0,Ptopo_npex
-         call gem_stop('set_world_view',-1)
-      endif
-      if (.not.check_parti (l_j0,G_nj,Ptopo_npey)) then
-         if (Lun_out.gt.0) write(Lun_out,1002) 
-     $        Ptopo_myproc,l_j0,Ptopo_npey
-         call gem_stop('set_world_view',-1)
-      endif
 *
-      l_nk = G_nk
-      l_njv= l_nj
-      l_niu= l_ni
-      if (l_north) l_njv= l_nj - 1
-      if ((l_east).and.(G_lam)) l_niu = l_ni - 1
+* Establish final configuration
 *
-*     Check grid dimensions for LAM
-      if (G_lam.and.Hblen_wfct_S .ne."CONST") then
-         mindimx  = max ( pil_w,pil_e ) + maxblenx
-         mindimy  = max ( pil_s,pil_n ) + maxbleny
-         ierr=0
-         if (l_niu.le.mindimx .or. l_njv.le.mindimy) ierr=-1
-         call gem_stop
-     $         ('LAM grid too small for chosen processor topology',ierr)
-      endif
+      f1 = gemdm_config ( )
+      f2 = v4d_config   ( )
+      call gem_stop ('SET_WORLD_VIEW',min(f1,f2))
 *
-      call glbpos  
+      ierr = grid_nml  ('print')
+      ierr = gem_nml   ('print')
+      ierr = var4d_nml ('print')
 *
-      call set_run_dir_xy (Ptopo_mycol, Ptopo_myrow)
+      call gemtim2 (Lun_out,.false.,0,ierr)
 *
+* Establish domain decomposition (mapping subdomains and processors)
 *
-*C    Initialize the schemes control comdeck
-*     --------------------------------------
-      call set_schm()
+      call domain_decomp
 *
- 1001 format (/,'Checkparti G_ni error on PE:',i4,' l_i0=',i4,' npex=',i4,/)
- 1002 format (/,'Checkparti G_nj error on PE:',i4,' l_j0=',i4,' npey=',i4,/)
- 1003 format ('PE ',i4,': l_niu or l_njv smaller than pil_?')
- 1004 format ('l_niu=',i5,' l_njv=',i5,
-     %        ' pil_w=',i3,' pil_e=',i3,' pil_s=',i3,'pil_n=',i3)
- 5000 format (' Standard file version: ',i6/)
- 9115 format (/,' PROBLEM INITIALIZATING PHYSICAL CONSTANTS',/)
- 33   format (i6)
+* Initializes schemes control comdeck
+*
+      call set_schm
+*
+* Initialize variable for VMM files
+      vmm_read_done_L = .false.
 *
 *-------------------------------------------------------------------
 *

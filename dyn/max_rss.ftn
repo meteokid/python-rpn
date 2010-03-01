@@ -1,0 +1,27 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+      subroutine max_rss (msg,prout)
+      implicit none
+*
+      character* (*) msg
+      logical prout
+*
+*author 
+*     Michel Desgagne   -  Summer 2006
+*
+*revision
+* v3_30 - Desgagne M.     - initial version 
+*
+**
+      integer  get_max_rss
+      external get_max_rss
+*--------------------------------------------------------------------
+*
+#if defined (AIX)
+      if (prout) write (6,920) msg,get_max_rss ()
+#endif
+*
+ 920  format (/a,' MAXIMUM MEMORY USED: ',i15,' Kbytes/PE'/)
+*--------------------------------------------------------------------
+*
+      return
+      end

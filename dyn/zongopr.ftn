@@ -4,7 +4,7 @@
 *
       subroutine zongopr(F_opr, F_val)
 *
-#include "impnone.cdk"
+      implicit none
 *
         integer F_opr, F_val
 *
@@ -16,6 +16,8 @@
 * v1_02 - Andre Methot  - remove calls mzonopr level 4
 * v1_02 - Pellerin/Methot - add call mzonopr level 5 for multi-tasking
 * v2_31 - Bernard Dugas - Adapt to GEMDM
+* v3_30 - Bernard Dugas - add calls to mzonopr level 9 and correct
+*                         level 7 and 8 calls for Lam-mode.
 *
 *language
 *	fortran 90
@@ -52,12 +54,17 @@
 *implicits
 #include "lun.cdk"
 #include "glb_ld.cdk"
+#include "glb_pil.cdk"
 #include "lctl.cdk"
 *
 *
 *modules
 *
-      external zongini, zongoff, mzonopr
+      integer  dummy,  pi0,pj0
+      external zongini,zongoff, mzonopr
+      integer          max_threads
+      integer  omp_get_max_threads
+      external omp_get_max_threads
 **
 *     ---------------------------------------------------------------
 *
@@ -72,9 +79,24 @@
 *            ----------------------------------------
 *
          call zongini()
-         call mzonopr(7,l_i0)
-         call mzonopr(8,l_j0)
-         call mzonopr(5,1)
+*
+         if (Lun_out.lt.0) call mzonopr(9,dummy)
+*
+         call pe_rebind(1)
+         max_threads = omp_get_max_threads()
+         call pe_rebind(-1)
+*
+         call mzonopr( 5, max_threads )
+*
+         pi0 = l_i0
+         pj0 = l_j0
+*
+         if (G_lam .and. .not.l_west ) pi0 = pi0-Glb_pil_w+3
+         if (G_lam .and. .not.l_south) pj0 = pj0-Glb_pil_s+3
+*
+         call mzonopr( 7, pi0 )
+         call mzonopr( 8, pj0 )
+*
          call mzonopr(1, Lun_zonl)
 *
 *

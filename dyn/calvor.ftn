@@ -4,7 +4,7 @@
 *
       subroutine calvor (F_vor,F_u,F_v,F_wrk,DIST_DIM,nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer  DIST_DIM, nk
       real   F_vor(DIST_SHAPE,nk), F_u  (DIST_SHAPE,nk)
@@ -52,7 +52,7 @@
       do i = i0, in
          F_wrk(i,j,k) = ( F_v(i+1,j,k) - F_v(i,j,k) ) 
      %                / (geomg_cyv2_8(j) * geomg_hx_8(i)) -
-     $          ( F_u(i,j+1,k) - F_u(i,j,k) ) / geomg_hsy_8(j)
+     $          ( F_u(i,j+1,k) - F_u(i,j,k) ) * geomg_invhsy_8(j)
       end do
       end do
       end do

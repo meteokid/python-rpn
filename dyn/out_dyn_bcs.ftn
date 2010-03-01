@@ -1,0 +1,98 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***s/r out_dyn_bcs - output in the form of BCS files
+*
+#include "model_macros_f.h"
+*
+      subroutine out_dyn_bcs ( datev, is,nis,js,jn,njs,
+     $                         iw, ie, niw, jw, njw, mode  )
+      implicit none
+*
+      character* (*) datev
+      integer is,nis,js,jn,njs,iw,ie,niw,jw,njw,mode
+*
+*author M.Desgagne ( MC2 2001)
+*
+*revision
+* v3_30 - V.Lee - initial version for GEM LAM (new I/O)
+*
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "out.cdk"
+#include "vt1.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "grdc.cdk"
+#include "tr3d.cdk"
+#include "ptopo.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer*8 pnt_trp(Grdc_ntr)
+      integer i,j,k,ind_o(G_nk+1),cnt,unf,key(13),
+     $        nvar,err,keyp_,keyp(Grdc_ntr)
+      real trp
+      pointer (patrp, trp(LDIST_SHAPE,*))
+*
+*------------------------------------------------------------------
+*
+      do k=1,G_nk+1
+         ind_o(k) = k
+      end do
+*
+      key (1)=VMM_KEY(ut1)
+      key (2)=VMM_KEY(vt1)
+      key (3)=VMM_KEY(tt1)
+      key (4)=VMM_KEY(pipt1)
+      key (5)=VMM_KEY(fit1)
+      nvar = 5
+*
+      err = vmmlod (key,nvar)
+*
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(pipt1)
+*
+      keyp_ = VMM_KEY (trt1)
+      do k=1,Grdc_ntr
+         do i=1,Tr3d_ntr
+            if (Grdc_trnm_S(k).eq.Tr3d_name_S(i)) keyp(k) = keyp_ + i
+         end do
+      end do
+      err = vmmlod(keyp,Grdc_ntr)
+      do k=1,Grdc_ntr
+         err = vmmget(keyp(k),patrp,trp)
+         pnt_trp(k) = patrp
+      end do
+*
+      call out_sfile_bcs (datev,unf,is,nis,js,jn,njs,iw,ie,
+     $                    niw,jw,njw,'DYNAMICS', nvar,Grdc_ntr,mode)
+*
+      call write_bcs (  tt1,l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
+     $                  njs,iw,ie,niw,jw,njw,G_nk,'TT  ',1.0,ind_o,unf)
+      call write_bcs ( fit1(l_minx,l_miny,G_nk),
+     $                  l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
+     $                  njs,iw,ie,niw,jw,njw,1,'PHI ',1.0,ind_o,unf)
+      call write_bcs (pipt1(l_minx,l_miny,G_nk),
+     $                  l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
+     $                  njs,iw,ie,niw,jw,njw,1,'PIPT',1.0,ind_o,unf)
+      do k=1,Grdc_ntr
+         patrp = pnt_trp(k)
+         call write_bcs (trp,l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
+     $                  njs,iw,ie,niw,jw,njw,G_nk,Grdc_trnm_S(k),1.0,ind_o,unf)
+      end do
+      call write_bcs (  ut1,l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
+     $                  njs,iw,ie,niw,jw,njw,G_nk,'UU  ',1.0,ind_o,unf)
+      call write_bcs (  vt1,l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
+     $                  njs,iw,ie,niw,jw,njw,G_nk,'VV  ',1.0,ind_o,unf)
+*
+      if (Out_myproc.eq.0) then
+         close (unf)
+      endif
+*
+*------------------------------------------------------------------
+      return
+      end
+*

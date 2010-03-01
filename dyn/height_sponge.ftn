@@ -8,6 +8,8 @@
 *     Plante A.           - May 2004 
 *
 *revision
+* v3_30 Lee V.    - changed variables from time level t0 -> t1
+*                   see (dynstep and theo_nest)
 *
 *object
 *
@@ -17,7 +19,7 @@
 *implicits
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
-#include "vt0.cdk"
+#include "vt1.cdk"
 #include "schm.cdk"
 #include "nest.cdk"
 #include "lun.cdk"
@@ -37,42 +39,42 @@
 
 *----------------------------------------------------------------------
 *
-      key(1)=VMM_KEY(ut0)
-      key(2)=VMM_KEY(vt0)
-      key(3)=VMM_KEY(tt0)
-      key(4)=VMM_KEY(psdt0)
-      key(5)=VMM_KEY(tdt0)
-      key(6)=VMM_KEY(fit0)
+      key(1)=VMM_KEY(ut1)
+      key(2)=VMM_KEY(vt1)
+      key(3)=VMM_KEY(tt1)
+      key(4)=VMM_KEY(psdt1)
+      key(5)=VMM_KEY(tdt1)
+      key(6)=VMM_KEY(fit1)
       nvar = 6
 *
       if (.not.Schm_hydro_L) then
-         key(7)=VMM_KEY(wt0)
+         key(7)=VMM_KEY(wt1)
          nvar = 7
       endif
 *
       err = vmmlod(key,nvar)
-      err = VMM_GET_VAR(ut0)
-      err = VMM_GET_VAR(vt0)
-      err = VMM_GET_VAR(tt0)
-      err = VMM_GET_VAR(psdt0)
-      err = VMM_GET_VAR(tdt0)
-      err = VMM_GET_VAR(fit0)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(tdt1)
+      err = VMM_GET_VAR(fit1)
       if (.not.Schm_hydro_L) then
-         err = VMM_GET_VAR(wt0)
+         err = VMM_GET_VAR(wt1)
       endif
 *
-      call set_betav(betav,fit0,LDIST_DIM, l_nk)
+      call set_betav(betav,fit1,LDIST_DIM, l_nk)
 
       work=mtn_flo/Dcst_rayt_8
 
-      call applique(ut0  ,work,betav,LDIST_DIM, l_nk)
-      call applique(vt0  ,0.  ,betav,LDIST_DIM, l_nk)
-      call applique(tdt0 ,0.  ,betav,LDIST_DIM, l_nk)
-      call applique(psdt0,0.  ,betav,LDIST_DIM, l_nk)
+      call applique(ut1  ,work,betav,LDIST_DIM, l_nk)
+      call applique(vt1  ,0.  ,betav,LDIST_DIM, l_nk)
+      call applique(tdt1 ,0.  ,betav,LDIST_DIM, l_nk)
+      call applique(psdt1,0.  ,betav,LDIST_DIM, l_nk)
       if (.not.Schm_hydro_L) 
-     &call applique(wt0,0.    ,betav,LDIST_DIM, l_nk)
+     &call applique(wt1,0.    ,betav,LDIST_DIM, l_nk)
       if(Zblen_spngtt_L)
-     &call applique_tt(tt0,fit0,betav,LDIST_DIM, l_nk)
+     &call applique_tt(tt1,fit1,betav,LDIST_DIM, l_nk)
 
       err = vmmuld(key,nvar)
 *

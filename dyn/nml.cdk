@@ -1,76 +1,202 @@
+#include "acid.cdk"
 #include "hybdim.cdk"
-*
-      namelist /ptopo/
-     $     Ptopo_npex, Ptopo_npey, Ptopo_nblocx, Ptopo_nblocy
+#include "out3.cdk"
+#include "level.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "grdc.cdk"
+#include "hblen.cdk"
+#include "lam.cdk"
+#include "lun.cdk"
+#include "mem.cdk"
+#include "step.cdk"
+#include "path.cdk"
+#include "init.cdk"
+#include "offc.cdk"
+#include "schm.cdk"
+#include "adw.cdk"
+#include "cstv.cdk"
+#include "lctl.cdk"
+#include "hzd.cdk"
+#include "eigv.cdk"
+#include "vspng.cdk"
+#include "hspng.cdk"
+#include "xst.cdk"
+#include "cori.cdk"
+#include "geomg.cdk"
+#include "grd.cdk"
+#include "sol.cdk"
+#include "tr3d.cdk"
+#include "pres.cdk"
+#include "vtopo.cdk"
+#include "vrtd.cdk"
+#include "zblen.cdk"
+#include "ptopo.cdk"
+#include "clim.cdk"
+#include "rstr.cdk"
+#include "itf_phy_config.cdk"
+#include "p_serg.cdk"
+#include "p_zong.cdk"
 *
       namelist /gem_cfgs/
-     $     Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup,
-     $     hyb, Grd_rcoef, Pres_ptop, Pres_vtap_L, Level_ip12000_L,
-     $     Mem_mx3db , Mem_phyncore_L, G_halox, G_haloy,
-     $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
-     $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,
-     %     Schm_hydro_L, Schm_nonhy_8, Schm_moist_L, Schm_chems_L,
-     %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,Schm_wload_L,
-     %     Schm_itnlh, Schm_itraj,  Schm_alpco_8, Schm_hdlast_L,
-     %     Schm_adcub_L, Schm_psadj_L,  Schm_difqp_L, Schm_maxcfl_lam,
-     %     Schm_pcsty_L, Schm_pheat_L, Schm_sfix_L, 
-     $     Adw_nkbz_L, Adw_exdg_L, 
-     $     Adw_ckbd_L, Adw_halox, Adw_haloy, Adw_trunc_traj_L,
-     $     Adw_mono_L, Adw_lag3d_L,Adw_nosetint_L,
-     $     Glb_pil_n, Glb_pil_s, Glb_pil_w, Glb_pil_e,
-     $     Cstv_dt_8, Cstv_uvdf_8, Cstv_phidf_8, Cori_cornl_L,
-     $     Cstv_pitop_8, Cstv_pisrf_8, Cstv_tstr_8,
-     $     Hzd_type_S,Hzd_pwr,Hzd_lnr,Hzd_difva_L,Hzd_uvwdt_L,
-     $     Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L,Hzd_1d_L,
-     $     Hzd_hdif0_0_L,Hzd_hdif0_1_L,Hzd_hzdmain_0_L,Hzd_hzdmain_1_L,
-     $     Eigv_parity_L,Vspng_njpole,
-     $     Vspng_nk,Vspng_mf,Vspng_nutop,Vspng_uvwdt_L,Vspng_rwnd_L,
-     $     Hspng_nj,Hspng_mf,Hspng_uvwdt_L,Hspng_rwnd_L,
-     $     Xst_statij, Xst_statll, 
-     $     Lctl_debug_L, Lctl_r8stat_L, Lctl_reset,
-     $     Out3_etik_S, Out3_flipit_L, Out3_debug_L, Out3_ip3, 
-     $     Out3_nbitg, Out3_unit_S, Out3_ndigits, Out3_closestep,
-     $     Out3_linbot, Out3_zund, Out3_cliph_L,
-     $     Out3_vt2gz_L, Out3_cubzt_L, Out3_cubuv_L, Out3_cubds_L,
-     $     Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L, Out3_cubww_L, 
-     $     Vtopo_start, Vtopo_ndt,
-     $     Vrtd_L, Vrtd_theta_L, Vrtd_coef,
-     $     Zblen_L, Zblen_spngthick, Zblen_spngtt_L
+     $     Acid_test_L,
+     $     Adw_ckbd_L, Adw_exdg_L,
+     $     Adw_halox,  Adw_haloy,
+     $     Adw_interp_type_S, Adw_mono_L, Adw_nkbz_L,
+     $     Adw_nosetint_L,    Adw_trunc_traj_L,
+     $     Clim_climat_L, Clim_inincr_L,
+     $     Cori_cornl_L,
+     $     Cstv_dt_8,    Cstv_phidf_8, Cstv_pisrf_8,
+     $     Cstv_pitop_8, Cstv_tstr_8, Cstv_uvdf_8, 
+     $     Eigv_parity_L,
+     $     G_halox,       G_haloy,
+     $     Glb_pil_e,     Glb_pil_n,    Glb_pil_s,     Glb_pil_w,
+     $     Grd_rcoef,
+     $     Hblen_x,       Hblen_y,
+     $     Hspng_mf,      Hspng_nj,     Hspng_rwnd_L,  Hspng_uvwdt_L,
+     $     HYB,
+     $     Hzd_1d_L,      Hzd_difva_L,
+     $     Hzd_hdif0_0_L, Hzd_hdif0_1_L,
+     $     Hzd_hzdmain_0_L,             Hzd_hzdmain_1_L,
+     $     Hzd_lnr,       Hzd_pwr,
+     $     Hzd_t0_1_L,    Hzd_t0_0_L,   Hzd_t1_0_L,   Hzd_t1_1_L,
+     $     Hzd_type_S,    Hzd_uvwdt_L,
+     $     Init_balgm_L,  Init_dfwin_L, Init_dfnp,
+     $     Init_dfpl_8,   Init_dftr_L,
+     $     Lam_0ptend_L,  Lam_ctebcs_L, Lam_hint_S,
+     $     Lam_nesdt,     Lam_runstrt_S,Lam_toptt_L,
+     $     Lctl_debug_L,  Lctl_r8stat_L,Lctl_reset,
+     $     Level_ip12000_L,
+     $     Mem_mx3db ,
+     $     Offc_a0_8,     Offc_a1_8, 
+     $     Offc_b0_8,     Offc_b1_8,
+     $     Out3_cliph_L,  Out3_closestep,  Out3_compress_L,
+     $     Out3_cubdd_L,  Out3_cubds_L, Out3_cubqq_L,  Out3_cubqs_L,
+     $     Out3_cubuv_L,  Out3_cubww_L, Out3_cubzt_L,
+     $     Out3_debug_L,  Out3_etik_S,  Out3_flipit_L, Out3_ip3, 
+     $     Out3_linbot,   Out3_nbitg,   Out3_ndigits,  Out3_satues_L,
+     $     Out3_unit_S,   Out3_vt2gz_L,  Out3_zund,
+     $     Pres_ptop,     Pres_vtap_L,
+     $     Rstri_glbcol_L,
+     %     Schm_adcub_L,  Schm_difqp_L,    Schm_hdlast_L, 
+     %     Schm_itcn,     Schm_itnlh,      Schm_itraj,
+     %     Schm_hydro_L,  Schm_modcn,      Schm_moist_L,  Schm_nonhy_8,
+     %     Schm_pcsty_L,  Schm_pheat_L,    Schm_psadj_L,
+     %     Schm_sfix_L,   Schm_wload_L,    Schm_xwvt3,
+     $     Sol_eps,       Sol_fft_L,       Sol_im,
+     $     Sol_maxits,    Sol_precond_S,   Sol_type_S,
+     $     Step_bkup,     Step_cleanup,
+     $     Step_gstat,    Step_rsti,       Step_total,
+     $     Vspng_mf,      Vspng_njpole,    Vspng_nk,     Vspng_nutop,
+     $     Vspng_rwnd_L,  Vspng_uvwdt_L,   Vspng_zmean_L,
+     $     Vtopo_ndt,     Vtopo_start,
+     $     Vrtd_L,        Vrtd_coef,       Vrtd_theta_L,
+     $     Xst_statij,    Xst_statll, 
+     $     Zblen_L,       Zblen_spngthick, Zblen_spngtt_L,
+
+     $     P_fcpkuo_xblnd,P_fcpkuo_xofset,
+     $     P_fcpkuo_yblnd,P_fcpkuo_yofset,
+     $     P_lmvd_valml_8,P_lmvd_mllat_8,
+     $     P_lmvd_valeq_8,P_lmvd_eqlat_8,
+     $     P_pbd_dumpbus,
+     $     P_pset_second_L,
+     $     P_pset_xblnd,  P_pset_xofset, P_pset_xofsetr,
+     $     P_pset_yblnd,  P_pset_yofset, P_pset_yofsett,
+
+     $     P_serg_serstp,
+     $     P_serg_srprf_s,P_serg_srsrf_s,P_serg_srsus_L,
+     $     P_serg_srwri,
+
+     $     P_zong_nbin,    P_zong_znli,    P_zong_znmod,
+     $     P_zong_znprf_s, P_zong_znsrf_s, P_zong_znsus_L
+*
       namelist /gem_cfgs_p/
-     $     Step_total, Step_rsti, Step_bkup, Step_gstat, Step_cleanup,
-     $     Grd_rcoef, Pres_ptop, Pres_vtap_L, Level_ip12000_L,
-     $     Mem_mx3db , Mem_phyncore_L, G_halox, G_haloy,
-     $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
-     $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,
-     %     Schm_hydro_L, Schm_nonhy_8, Schm_moist_L, Schm_chems_L,
-     %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,Schm_wload_L,
-     %     Schm_itnlh, Schm_itraj,  Schm_alpco_8, Schm_hdlast_L,
-     %     Schm_adcub_L, Schm_psadj_L,  Schm_difqp_L, Schm_maxcfl_lam,
-     %     Schm_pcsty_L, Schm_pheat_L, Schm_sfix_L,
-     $     Adw_nkbz_L, Adw_exdg_L, 
-     $     Adw_ckbd_L, Adw_halox, Adw_haloy, Adw_trunc_traj_L,
-     $     Adw_mono_L, Adw_lag3d_L,Adw_nosetint_L,
-     $     Glb_pil_n, Glb_pil_s, Glb_pil_w, Glb_pil_e,
-     $     Cstv_dt_8, Cstv_uvdf_8, Cstv_phidf_8, Cori_cornl_L,
-     $     Cstv_pitop_8, Cstv_pisrf_8, Cstv_tstr_8,
-     $     Hzd_type_S,Hzd_pwr,Hzd_lnr,Hzd_difva_L,Hzd_uvwdt_L,
-     $     Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L,Hzd_1d_L,
-     $     Hzd_hdif0_0_L,Hzd_hdif0_1_L,Hzd_hzdmain_0_L,Hzd_hzdmain_1_L,
-     $     Eigv_parity_L,Vspng_njpole,
-     $     Vspng_nk,Vspng_mf,Vspng_nutop,Vspng_uvwdt_L,Vspng_rwnd_L,
-     $     Hspng_nj,Hspng_mf,Hspng_rwnd_L,Hspng_uvwdt_L,
-     $     Lctl_debug_L,Lctl_r8stat_L,Lctl_reset,
-     $     Out3_etik_S,  Out3_flipit_L, Out3_debug_L,Out3_ip3,
-     $     Out3_nbitg, Out3_unit_S, Out3_ndigits, Out3_closestep,
-     $     Out3_linbot, Out3_cliph_L,
-     $     Out3_vt2gz_L, Out3_cubzt_L, Out3_cubuv_L, Out3_cubds_L, 
-     $     Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L, Out3_cubww_L, 
-     $     Vtopo_start, Vtopo_ndt,
-     $     Vrtd_L, Vrtd_theta_L, Vrtd_coef,
-     $     Zblen_L, Zblen_spngthick, Zblen_spngtt_L
-      namelist /var4d/ V4dg_conf, V4dg_stepob, V4dg_inv, V4dg_incore_L,
-     $                 V4dg_4dvar_L, V4dg_sensib_L, V4dg_twin_L, 
-     $                 V4dg_sgvc_L, V4dj_mask_L, V4dm_itmax, V4dm_simax,
-     $                 V4dg_identity_L,V4dg_pruv_L, V4dg_chum_s,
-     $                 V4dzge_degree,V4dzga_degree,V4dz_degree,
-     $                 V4dg_anincr_L,V4dr_redotr_L,V4dg_sgvc_dt0
+     $     Acid_test_L,
+     $     Adw_ckbd_L, Adw_exdg_L,
+     $     Adw_halox,  Adw_haloy,
+     $     Adw_interp_type_S, Adw_mono_L, Adw_nkbz_L,
+     $     Adw_nosetint_L,    Adw_trunc_traj_L,
+     $     Clim_climat_L, Clim_inincr_L,
+     $     Cori_cornl_L,
+     $     Cstv_dt_8,    Cstv_phidf_8, Cstv_pisrf_8,
+     $     Cstv_pitop_8, Cstv_tstr_8, Cstv_uvdf_8, 
+     $     Eigv_parity_L,
+     $     G_halox,       G_haloy,
+     $     Glb_pil_e,     Glb_pil_n,    Glb_pil_s,     Glb_pil_w,
+     $     Grd_rcoef,
+     $     Hblen_x,       Hblen_y,
+     $     Hspng_mf,      Hspng_nj,     Hspng_rwnd_L,  Hspng_uvwdt_L,
+     $     Hzd_1d_L,      Hzd_difva_L,
+     $     Hzd_hdif0_0_L, Hzd_hdif0_1_L,
+     $     Hzd_hzdmain_0_L,             Hzd_hzdmain_1_L,
+     $     Hzd_lnr,       Hzd_pwr,
+     $     Hzd_t0_1_L,    Hzd_t0_0_L,   Hzd_t1_0_L,   Hzd_t1_1_L,
+     $     Hzd_type_S,    Hzd_uvwdt_L,
+     $     Init_balgm_L,  Init_dfwin_L, Init_dfnp,
+     $     Init_dfpl_8,   Init_dftr_L,
+     $     Lam_0ptend_L,  Lam_ctebcs_L, Lam_hint_S,
+     $     Lam_nesdt,     Lam_runstrt_S,Lam_toptt_L,
+     $     Lctl_debug_L,  Lctl_r8stat_L,Lctl_reset,
+     $     Level_ip12000_L,
+     $     Mem_mx3db ,
+     $     Offc_a0_8,     Offc_a1_8, 
+     $     Offc_b0_8,     Offc_b1_8,
+     $     Out3_cliph_L,  Out3_closestep,  Out3_compress_L,
+     $     Out3_cubdd_L,  Out3_cubds_L, Out3_cubqq_L,  Out3_cubqs_L,
+     $     Out3_cubuv_L,  Out3_cubww_L, Out3_cubzt_L,
+     $     Out3_debug_L,  Out3_etik_S,  Out3_flipit_L, Out3_ip3, 
+     $     Out3_linbot,   Out3_nbitg,   Out3_ndigits,  Out3_satues_L,
+     $     Out3_unit_S,   Out3_vt2gz_L,  Out3_zund,
+     $     Pres_ptop,     Pres_vtap_L,
+     $     Rstri_glbcol_L,
+     %     Schm_adcub_L,  Schm_difqp_L,    Schm_hdlast_L, 
+     %     Schm_itcn,     Schm_itnlh,      Schm_itraj,
+     %     Schm_hydro_L,  Schm_modcn,      Schm_moist_L,  Schm_nonhy_8,
+     %     Schm_pcsty_L,  Schm_pheat_L,    Schm_psadj_L,
+     %     Schm_sfix_L,   Schm_wload_L,    Schm_xwvt3,
+     $     Sol_eps,       Sol_fft_L,       Sol_im,
+     $     Sol_maxits,    Sol_precond_S,   Sol_type_S,
+     $     Step_bkup,     Step_cleanup,
+     $     Step_gstat,    Step_rsti,       Step_total,
+     $                    Vspng_njpole,    Vspng_nk,     Vspng_nutop,
+     $     Vspng_rwnd_L,  Vspng_uvwdt_L,   Vspng_zmean_L,
+     $     Vtopo_ndt,     Vtopo_start,
+     $     Vrtd_L,        Vrtd_coef,       Vrtd_theta_L,
+     $     Zblen_L,       Zblen_spngthick, Zblen_spngtt_L,
+
+     $     P_fcpkuo_xblnd,P_fcpkuo_xofset,
+     $     P_fcpkuo_yblnd,P_fcpkuo_yofset,
+     $     P_lmvd_valml_8,P_lmvd_mllat_8,
+     $     P_lmvd_valeq_8,P_lmvd_eqlat_8,
+     $     P_pbd_dumpbus,
+     $     P_pset_second_L,
+     $     P_pset_xblnd,  P_pset_xofset, P_pset_xofsetr,
+     $     P_pset_yblnd,  P_pset_yofset, P_pset_yofsett,
+
+     $     P_serg_serstp,
+     $                                   P_serg_srsus_L,
+     $     P_serg_srwri,
+
+     $     P_zong_nbin,    P_zong_znli,    P_zong_znmod,
+     $                                     P_zong_znsus_L
+*
+      namelist /grdc/
+     $     Grdc_bcs_hollow_L,
+     $     Grdc_dx,       Grdc_Hblen,   Grdc_initphy_L,
+     $     Grdc_iref,     Grdc_jref,
+     $     Grdc_latr,     Grdc_lonr,
+     $     Grdc_nbits,    Grdc_nfe,     Grdc_ni,      
+     $     Grdc_ni,       Grdc_nj,
+     $     Grdc_pil,      Grdc_proj_S,   
+     $     Grdc_runend_S, Grdc_runstrt_S, Grdc_trnm_S
+*
+      namelist /grdc_p/
+     $     Grdc_bcs_hollow_L,
+     $     Grdc_dx,       Grdc_Hblen,   Grdc_initphy_L,
+     $     Grdc_iref,     Grdc_jref,
+     $     Grdc_latr,     Grdc_lonr,
+     $     Grdc_nbits,    Grdc_nfe,     Grdc_ni,      
+     $     Grdc_ni,       Grdc_nj,
+     $     Grdc_pil,      Grdc_proj_S,   
+     $     Grdc_runend_S, Grdc_runstrt_S
+*

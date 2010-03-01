@@ -19,6 +19,7 @@
 * v3_03 - Tanguay M.        - Adjoint Lam configuration
 * v3_11 - Gravel S.         - provide for variable topography
 * v3_20 - Pellerin P.       - schm_offline_l: allow to run 
+* v3_30 - Lee V.            - new Lam I/O with acid test
 *                             without the dynamical kernel
 *
 *object
@@ -34,9 +35,11 @@
 #include "lctl.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
-#include "pilot.cdk"
+#include "lam.cdk"
 #include "step.cdk"
 #include "vtopo.cdk"
+#include "adw.cdk"
+#include "acid.cdk"
 *
       integer itraj
       logical first_L, secon_L
@@ -65,18 +68,10 @@
       Orh_crank_L= first_L .or. ( secon_L .and. ( Schm_xwvt3 .gt. 0 )) 
      $                     .or. ( mod(Lctl_step-1,Schm_modcn) .eq. 0 )
 *
-*         -------------------------------------------------------
-*C	  Conditionnal:
-*C
-*C           1) set the positions at th as the positions of points grids
-*C           2) iteration number for trajectory computation
-*C
-*         --------------------------------------------------------
-*
       itraj = Schm_itraj
 *
       if ( first_L) then
-         call pospers( )
+         if (.not.Acid_skippospers_L) call pospers( )
          itraj = max( 5, Schm_itraj )
       endif
 *
@@ -84,7 +79,9 @@
 *C       Compute 3D winds at time t0-dt/2 (th)
 *        ------------------------------------------------------------
 *
-      if ( G_lam .and. .not.Pil_ctebcs_L ) call nest_intt (done_intt_L) 
+* Perform time interpolation of Lateral BCs for LAM configurations
+*
+      if ( G_lam .and. .not.Lam_ctebcs_L ) call nest_intt (done_intt_L) 
 *
       if (.not.schm_offline_l) then
 *
@@ -128,8 +125,6 @@
 *
       endif
 *
-      if (G_lam) call glb_bound ()
-*
 *         ------------------------------------------------------------
 *C	  When the timestep is completed, rename all the
 *C        variables at time level t1 -> t0 and rename all the
@@ -139,7 +134,6 @@
       call t12t2( )
       call t02t1( )
       call t22t0( )
-
 *
 *         ------------------------------------------------------------
 *C        If necessary vary topogragphy according to Vtopo_start and 
@@ -151,12 +145,25 @@
       else
           if ( Schm_phyms_L ) call phycom ('varmtn' ,0 ,1,'set')
       endif
-
+*
+*         ------------------------------------------------------------
+*C	  Impose Lateral BCs within Pil regions and blend within Hblen
+*         ------------------------------------------------------------
+      if (G_lam.and. .not. Schm_theoc_L) then
+         call nest_bcs
+         call nest_blen
+      endif
+*
+*         ------------------------------------------------------------
+*C	  Nesting for theoretical case
+*         ------------------------------------------------------------
+      if ( Schm_theoc_L ) call theo_nest
 *
 *     ===================
 *     END OF ONE TIMESTEP
 *     ===================
 *
+      if ( Lctl_step-Vtopo_start+1 .eq. Vtopo_ndt) Vtopo_L = .false.
       if ( G_lam.and.(Lctl_step.eq.Step_total) ) done_intt_L = .true.
 *
  1000 format(

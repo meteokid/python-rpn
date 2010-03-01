@@ -1,7 +1,7 @@
 ***S/R E_ARRET   To prematurely abort program GEMNTR and close files
 *
       SUBROUTINE E_ARRET( FTNAME )
-#include "impnone.cdk"
+      implicit none
 *
       character FTNAME(8)
 *
@@ -12,6 +12,7 @@
 * v1_97 - vivian lee             - changed argument STATUS to FTNAME so 
 * v1_97                            that it prints where it aborts
 * v1_97                            ELIMINATED efrabrt,stopgdntr in GEFNTR
+* v3_30 - Desgagne M.            - removed call to e_wlogntr STOP
 *
 *object
 *       see above ID
@@ -35,7 +36,6 @@
       write(6,*)' **           ',FTNAME,     '           **'
       write(6,*)' *****************************************'
       write(6,*)' *****************************************'
-      call e_wlogntr('STOP','XX')
 
       i = fstfrm( e_fu_anal )
       i = fstfrm( e_fu_climat )

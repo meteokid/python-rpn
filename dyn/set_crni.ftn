@@ -1,11 +1,12 @@
 ***s/r set_crni - initialization of the common for right-hand side of
 *                 equations when using a Crank-Nicholson procedure
 *
+#define SPY_VMM_CREATE spy_vmm_create
 #include "model_macros_f.h"
 *
       subroutine set_crni
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     sylvie gravel - rpn - nov 1994

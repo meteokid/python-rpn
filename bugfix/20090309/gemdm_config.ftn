@@ -1,0 +1,313 @@
+***s/r gemdm_config - Establish final model configuration
+*
+#include "model_macros_f.h"
+*
+      integer function gemdm_config ( )
+      implicit none
+*
+*author
+*     M. Desgagne    - Summer 2006
+*
+*revision
+* v3_30 - Desgagne M.- initial version
+* v3_3? - Lee V.     - Force output to newstyle if coordinate is "unnormalized"
+*
+*object
+*
+#include "offline.cdk"
+#include "dcst.cdk"
+#include "v4dg.cdk"
+#include "nml.cdk"
+#include "out.cdk"
+#include "modconst.cdk"
+*
+*modules
+      integer  bin2com,newdate
+      external bin2com,newdate
+*
+      character nfe
+      integer   nfe_nsec, len, time1, time2
+*
+      character*16 dumc_S
+      character*256 fln_S
+      logical wronghyb
+      integer i, k, nrec, err, pnk, kind, ipcode, ipmode, ntr
+      real pcode,deg_2_rad
+*
+      real*8 dayfrac,sec_in_day
+      parameter ( sec_in_day=86400.0d0 )
+*
+*-------------------------------------------------------------------
+*
+      gemdm_config = -1
+*
+      if (Init_balgm_L) then
+          if (Lctl_reset.lt.Init_dfnp) Lctl_reset = -1
+      endif
+*        
+      call low2up  (Hzd_type_S,dumc_S)
+      Hzd_type_S = dumc_S
+      Hzd_lnr    = min(max(0.,Hzd_lnr),0.9999999)
+      Hzd_pwr    = Hzd_pwr / 2
+      Hzd_pwr    = min(max(2,Hzd_pwr*2),8)
+*
+      Glb_pil_n = max(7,Glb_pil_n)
+      Glb_pil_s = max(7,Glb_pil_s)
+      Glb_pil_w = max(7,Glb_pil_w)
+      Glb_pil_e = max(7,Glb_pil_e)
+*
+      deg_2_rad = Dcst_pi_8/180.
+*
+      P_lmvd_mllat_8 = ( abs(P_lmvd_mllat_8) * deg_2_rad )
+      P_lmvd_eqlat_8 = ( abs(P_lmvd_eqlat_8) * deg_2_rad )
+*
+      call low2up  (Out3_unit_S,dumc_S)
+      Out3_unit_S=dumc_S
+*
+      Out_datyp=1
+      if (Out3_compress_L) Out_datyp=134
+      Out_rewrit_L=.false.
+      if (Clim_climat_L) Out_rewrit_L=.true.
+
+      if(Out3_nbitg .lt. 0) then
+         if (lun_out.gt.0) write (Lun_out, 9154)
+         Out3_nbitg=16
+      endif
+      Out3_nundr = 0
+      do i = 1, MAXELEM
+         if(Out3_zund(i) .eq. 0 ) goto 80
+         Out3_nundr = Out3_nundr + 1
+      enddo
+ 80   continue
+*
+      if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
+*      
+*     if not theoretical case, read data from file labfl.bin 
+*
+      if ( Schm_theoc_L ) then
+           Mod_runstrt_S=Lam_runstrt_S
+      else
+          if ( bin2com ().lt.0) return
+      endif
+*
+      Schm_cptop_L = .true.
+*
+*     Checking vertical layering
+*
+      wronghyb = .false.
+      if (schm_offline_l) then
+         pnk=4
+         hyb(1)=0.
+         hyb(2)=0.05
+         hyb(3)=(Offline_ip1a-2000)*0.0001
+         hyb(4)=1.0
+      else
+         pnk = 0
+         do k = 1, maxhlev
+            if (hyb(k) .lt. 0.) exit
+            pnk = k
+         enddo
+*
+         if (Lun_out.gt.0) write(Lun_out,*) (hyb(k),k=1,pnk)
+         if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
+     $       (hyb(pnk).ne.1.) ) wronghyb = .true.
+         do k=2, pnk
+            if (hyb(k).le.hyb(k-1)) wronghyb = .true.
+         end do
+         if (wronghyb) then
+            if (Lun_out.gt.0) then
+               write(Lun_out,9200)
+               do k=1, pnk
+                  write (Lun_out,*) hyb(k),k
+               end do
+            endif
+            return
+         endif
+      endif
+*
+      call hpalloc (Geomg_hyb_ , pnk, err,1)
+      call hpalloc (Geomg_hybm_, pnk, err,1) 
+*
+*
+      if (Pres_ptop .lt. 0.) then
+*     fst2000 ip1 encoding mandatory
+          call convip ( ipcode, pcode, ipmode, 0, ' ', .false. )
+          do k=1,pnk
+             call convip ( i , hyb(k)      , 5   ,  2, dumc_S, .false. )
+             call convip ( i , Geomg_hyb(k), kind, -1, dumc_S, .false. )
+             Geomg_hybm(k) = Geomg_hyb(k)
+          end do
+          Pres_ptop = Geomg_hybm(1)*Pres_pref
+      else
+*     fst2000 ip1 encoding - user defined
+      if (Level_ip12000_L) 
+     $     call convip ( ipcode, pcode, ipmode, 0, ' ', .false. )
+          do k=1,pnk
+             call convip ( i , hyb(k)      , 1   ,  1, dumc_S, .false. )
+             call convip ( i , Geomg_hyb(k), kind, -1, dumc_S, .false. )
+             Geomg_hybm(k) = Geomg_hyb(k)
+     $                   + (1.-Geomg_hyb(k))*Pres_ptop/Pres_pref
+          end do
+      endif
+      Level_kind_ip1 = kind
+*
+      call hpalloc (Geomg_pia_ , pnk ,err,1)
+      call hpalloc (Geomg_pibb_, pnk ,err,1)
+      call hpalloc (Geomg_dpba_, pnk ,err,1)
+*
+      call genab2 ( Geomg_pia, Geomg_pibb, Geomg_dpba, Geomg_hybm,
+     $              Pres_ptop,  Grd_rcoef, Cstv_pisrf_8, pnk )
+*
+      if (V4dg_conf.ne.0.and.Sol_type_S.eq.'ITERATIF') then
+          if (Lun_out.gt.0)  write (Lun_out, 9300) 
+          return
+      endif
+*
+      ntr = 4
+      Mem_minmem = 49                 ! dry dynamic with 1 tracer (HU)
+      Mem_minmem = Mem_minmem + 8     ! + physics interface
+      Mem_minmem = Mem_minmem + 4*ntr ! + 4 additional tracers
+      if (V4dg_conf.ne.0) Mem_minmem = Mem_minmem + 71
+      if (Init_balgm_L  ) Mem_minmem = Mem_minmem + 20
+      if (G_lam) then
+                       Mem_minmem = Mem_minmem + 28
+*                --->  Exclude nest_??x vmm variables
+         if (Lam_ctebcs_L) Mem_minmem = Mem_minmem - 14
+*                --->  Exclude nest_??f vmm variables
+      endif
+      Mem_minmem = Mem_minmem * 1.1 ! adding 10% for safeguard
+
+      if (Mem_mx3db.lt.0) Mem_mx3db = Mem_minmem
+*
+      Lun_sortie_s = trim(Path_dfwmil_S)//'/process/output_settings'
+*
+*     Options used for the Off-line mode (MEC)
+*
+      if (Schm_offline_L) then
+          Schm_phyms_L    = .true.
+          Init_balgm_L    = .false.
+          Pres_ptop       = 10.0
+          Hzd_type_s        = 'NIL' 
+          Vspng_nk          = 0 
+          Hblen_wfct_S  = 'CONST'
+      endif
+*
+      if (Mod_runstrt_S.eq."@#$%") Mod_runstrt_S = Lam_runstrt_S
+      if (Lam_runstrt_S.eq."@#$%") Lam_runstrt_S = Mod_runstrt_S
+*
+      if (Mod_runstrt_S.eq."@#$%") then
+         if (lun_out.gt.0) then
+            write (Lun_out, 6005)
+            write (Lun_out, 8000)
+         endif
+         return
+      endif
+*
+      if (G_lam .and. .not.Lam_ctebcs_L .and. (Lam_nesdt.le.0) ) then
+         if (lun_out.gt.0) then
+            write (Lun_out, 6006)
+            write (Lun_out, 8000)
+         endif
+         return
+      endif
+*       
+      call datp2f ( Out3_date, Mod_runstrt_S )
+      err = newdate ( Out3_date, time1, time2, -3 )
+      if (lun_out.gt.0) write (Lun_out,6007) Mod_runstrt_S,time1,time2
+*
+      Grdc_ndt   = -1
+      Grdc_start = -1
+      len=len_trim( Grdc_nfe )
+      if (len.gt.0) then
+         call low2up (Grdc_nfe(len:len),nfe)
+         nfe_nsec = 3600
+         if (nfe.eq.'D') nfe_nsec = 86400
+         if (nfe.eq.'M') nfe_nsec = 60
+         if (nfe.eq.'S') nfe_nsec = 1
+         if ((nfe.eq.'D').or.(nfe.eq.'H').or.
+     $       (nfe.eq.'M').or.(nfe.eq.'S')) len= len-1
+         read ( Grdc_nfe(1:len), * ) Grdc_ndt
+         Grdc_ndt = max( 1, Grdc_ndt * nfe_nsec / nint(Cstv_dt_8) )
+
+         Grdc_start = 0
+         if (Grdc_runstrt_S.ne."@#$%") then 
+            call difdatsd (dayfrac,Mod_runstrt_S,Grdc_runstrt_S)
+            Grdc_start = nint (dayfrac*sec_in_day/Cstv_dt_8)
+         endif
+         Grdc_end   = Step_total
+         if (Grdc_runend_S.ne."@#$%") then 
+            call difdatsd (dayfrac,Mod_runstrt_S,Grdc_runend_S)
+            Grdc_end   = nint (dayfrac*sec_in_day/Cstv_dt_8)
+         endif
+         Grdc_start = min(max(0,Grdc_start),Step_total)
+         Grdc_end   = min(max(0,Grdc_end  ),Step_total)
+c        if (Acid_pilot_L) acid_npas = - Grdc_start
+      endif
+*
+      call low2up  (Lam_hint_S ,dumc_S)
+      Lam_hint_S= dumc_S
+      call low2up  (sol_type_S ,dumc_S)
+      sol_type_S= dumc_S
+      call low2up  (sol_precond_S ,dumc_S)
+      sol_precond_S= dumc_S
+*
+      G_ni  = Grd_ni
+      G_nj  = Grd_nj
+      G_nk  = pnk
+*
+      G_niu = G_ni
+      G_njv = G_nj - 1
+      if (G_lam) then
+         G_niu = G_ni - 1
+         if (Eigv_parity_L) then
+            Eigv_parity_L = .false.
+            if (lun_out.gt.0) write (Lun_out, 7005)
+         endif
+         if (Hzd_type_S.eq.'FACT') then
+            if (lun_out.gt.0) then
+               write (Lun_out, 7000) Hzd_type_S
+               write (Lun_out, 8000)
+            endif
+            return
+         endif
+         if (Hspng_nj.ne.0) then
+            if (lun_out.gt.0) then
+               write (Lun_out, 7015)
+               write (Lun_out, 8000)
+            endif
+            return
+         endif
+         if (Schm_psadj_L) then
+            if (lun_out.gt.0) then
+               write (Lun_out, 7020)
+               write (Lun_out, 8000)
+            endif
+            return
+         endif
+      endif
+*
+      Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
+*
+      gemdm_config = 1
+*
+ 6005 format (/' Starting time Mod_runstrt_S not specified'/)
+ 6006 format (/' In LAM configuration: Lam_nesdt must be specified'/)
+ 6007 format (/X,63('#'),/,2X,'STARTING DATE for RUN is: ',a16,'= ',
+     $        i8.8,'.',i8.8,/X,63('#')/)
+ 7000 format (/' WRONG OPTION FOR HZD_TYP WHEN LAM: ',a/)
+ 7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
+ 7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
+ 7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
+ 8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
+ 9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
+ 9200 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
+     $         '      HYB(1) MUST BE 0.0 AND HYB(NK) MUST BE 1.0'/
+     $         '      OTHER LEVELS MUST BE MONOTONICALLY INCREASING'/
+     $         '      FROM HYB(1) ---- ABORT ----'//
+     $         '      Current choice:')
+ 9300 format (/,'ABORT: ADJOINT not done for Sol_type_S = ITERATIF',/)
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

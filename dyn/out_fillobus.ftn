@@ -1,0 +1,132 @@
+***s/r out_fillobus - to fill obus with physics output at time 0 
+*
+#include "model_macros_f.h"
+*
+      subroutine  out_fillobus( F_cpu, F_obusval)
+*
+      implicit none
+*
+      integer F_cpu, F_step
+*
+      real F_obusval(*)
+
+*
+*author 
+*     V.Lee       - rpn - nov  2006
+*
+*revision
+* v3_30 - Lee V. - removed Mem_phyncore
+*
+*object
+*     See above id.
+*	
+*arguments
+*  Name       I/O                 Description
+*----------------------------------------------------------------
+* F_cpu        I    - cpu number
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "mem.cdk"
+#include "dcst.cdk"
+#include "itf_phy_buses.cdk"
+#include "obus.cdk"
+#include "clim.cdk"
+*
+*modules
+*
+      integer accum
+      parameter (accum = 0 )
+      character*2 accum_s
+      data    accum_s / ' ' /
+*
+      integer ii,jdo, i, j, k, n, indx, err,idx
+      integer busaddr,offbo,offbb,mult,cnt,shp,bigk
+*
+      real busper, busper2(max(1,p_bper_siz))
+      pointer (pabusper,busper(*))
+*
+**
+*     ---------------------------------------------------------------
+*
+      if ((Lun_out.gt.0).and.(F_cpu.eq.1)) write(Lun_out,1000)
+*
+      jdo = 0
+*
+ 100  continue
+*
+
+!$omp critical      
+      Mem_pslic = Mem_pslic + 1
+      jdo  = Mem_pslic
+      if ( Mem_pslic .le. p_nj ) then
+*
+            pabusper = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
+      endif
+!$omp end critical
+
+*
+*C    Stop if last slice has been completed
+*
+      if ( jdo .gt. p_nj ) goto 650
+      j = jdo + p_offj
+*
+*     Perform physic slices output
+
+      bigk = 1
+!$omp critical
+      do ii=1,Obus_top
+             offbo= (obus_offset(ii)-1)*l_ni*l_nj
+             offbb= obus_addr(ii)
+         if (obus_bus_S(ii).eq.'P'.and.obus_var_S(ii).eq.'LO') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)=
+     $             busper(offbb+(k*mult-1)*p_ni + i - 1)
+                   if (F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi) .gt. Dcst_pi_8)
+     $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)=
+     $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)-2.0*Dcst_pi_8
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'P') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busper(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         endif
+      enddo
+*
+*     In climate mode, zero out the physic accumulators after
+*     saving them, i.e. when output is greater than zero.
+*
+      if ( Clim_climat_L .and. Obus_top.gt.0)
+     $          call phy_zeracc( busper,accum_s,accum )
+*
+!$omp end critical
+*
+*
+      goto 100
+*
+ 650  continue     
+*
+ 1000 format(/'FILL OBUS at 0: CMC/RPN PHYSTEP 0 OMITTED (S/R out_fillobus)'
+     $       /55('='))
+ 1001 format(/'Error in out_fillobus: MEMORY FOR PHYSICS MUST BE IN CORE')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

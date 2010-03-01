@@ -29,8 +29,11 @@
 * v3_10 - Lee V.           - added deallocate topu_temp,topv_temp,gzu_temp...
 * v3_11 - Gravel S.        - provide for variable topography
 * v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
+* v3_12 - Winger K.        - convert TD to HU with pressure level analysis
 * v3_20 - Pellerin P.      - to run in off-line mode
 * v3_20 - Gravel S.        - allow for initialization with ECMWF analyses
+* v3_21 - Dugas B.         - replace TD by ES in pressure mode
+* v3_30 - McTaggart-Cowan R. - update implementation of variable orography
 *
 *object
 *	
@@ -56,10 +59,11 @@
 #include "pres.cdk" 
 #include "lctl.cdk"
 #include "schm.cdk"
-#include "out1.cdk"
+#include "out3.cdk"
 #include "ind.cdk"
 #include "acq.cdk"
 #include "vtopo.cdk"
+#include "anal.cdk"
 *
 *modules
       integer  bmf_gobe,bmf_get
@@ -103,7 +107,7 @@
       if (Ptopo_myproc.eq.0) then
          write(lun_out,*)
      $      ' Acql_horzint=',Acql_horzint,' Acql_vertint=',Acql_vertint,
-     $      ' Acql_etaanl=',Acql_etaanl
+     $      ' Acql_etaanl=',Acql_etaanl,' Vtopo_L=',Vtopo_L
          write(lun_out,*)
      $      ' Acql_siganl =',Acql_siganl ,' Acql_hybanl =',Acql_hybanl,
      $      ' Acql_prsanl=',Acql_prsanl, ' Acql_ecmanl=',Acql_ecmanl
@@ -297,7 +301,7 @@
          enddo
          enddo
 *
-*        Compute geopotential (GZ) and temperature (TT)
+*        Compute geopotential (GZ) and temperature (VT)
 *
          do i=1,Acqi_nbpts
             vlapse(i)= (tcol(i,Acqi_vterplv)-tcol(i,Acqi_vterplv-1))
@@ -352,13 +356,20 @@
          if ( Schm_moist_L ) then
             call vte_vrtical ( hu_temp, ps, Acqi_nbpts, g_nk, lna, 
      $                                        Acqi_vterplv,.false. )
+*
             do k= 1, G_nk
             do j= 1, l_nj 
             do i= 1, l_ni 
-               work(i,j,k) = hu_temp(i,j,k)
+               dz(i,j,k) = exp(xlnp(i,j,k))*100.
+               dt(i,j,k) = Ind_t(i,j,k) 
             end do
             end do
             end do
+*
+*           convert ES to HU
+            call mesahu (work,hu_temp,dt,dummy,dz,
+     $                   3,.false.,Anal_cond_L,Acqi_nbpts,g_nk,
+     $                   Acqi_nbpts)
          else
             do k= 1, G_nk
             do j= 1, l_nj 
@@ -383,8 +394,6 @@
       if (Lctl_step.gt.0) NESD = .true.
       call tr_init ( work,Acqi_datasp,bmf_time1,bmf_time2,Acqi_nktmp,
      $               pps,pia,pibb,ps_temp,Acqi_vterplv,l_ni,l_nj,NESD )
-*
-      if (Lctl_step==0)call Ens_marfield_init()
 *
       if (Acql_horzint) 
      $     call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju,
@@ -422,20 +431,22 @@
 *     If required, copy difference between initial and target topography 
 *     in Ind_dtopo and move analysis topography into Ind_topo
       if (Vtopo_L) then
-         do j=1,l_nj
-         do i=1,l_ni
-            Ind_dtopo(i,j) = Ind_topo(i,j) - topo_temp(i,j) 
-            Ind_topo(i,j)  = topo_temp(i,j) 
-         enddo
-         enddo
+        if (Lctl_step <= Vtopo_start) then
+          Ind_dtopo(1:l_ni,1:l_nj) = Ind_topo(1:l_ni,1:l_nj) - topo_temp
+        endif
+        Ind_topo(1:l_ni,1:l_nj) = topo_temp
       endif
 *
       deallocate ( u_temp,v_temp,gz_temp,tt_temp,hu_temp,work,lna,rna,
      $             sdd )
-      if (Acql_vertint) then
-         deallocate (psu_temp,psv_temp,
-     $               topu_temp,topv_temp,gzu_temp,gzv_temp,pia)
-         if (.not.Acql_prsanl) deallocate ( pibb )
+*
+      if (Acql_vertint.or.Schm_offline_L) then
+         deallocate (psu_temp,psv_temp,topu_temp,topv_temp,
+     $               gzu_temp,gzv_temp)
+          IF (Acql_vertint) THEN
+              deallocate ( pia )
+              if (.not.Acql_prsanl) deallocate ( pibb )
+          endif
       endif
 *
       psmin = ps(1,1)

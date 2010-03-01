@@ -1,0 +1,59 @@
+***s/r t02t1_ad -  ADJ of t02t1 
+*
+#include "model_macros_f.h"
+*
+      subroutine t02t1_ad
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_30 - Edouard S.        - remove pi' a the top
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+*
+*object
+*     see id section
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+*     ______________________________________________________
+*
+*
+*       1.    Change all variable names and exchange their keys
+*              -------------------------------------------------
+*
+      call shuffle(vmmk_ut0   ,vmmk_ut1   ,vmmk_ut1_s)
+      call shuffle(vmmk_vt0   ,vmmk_vt1   ,vmmk_vt1_s)
+      call shuffle(vmmk_wt0   ,vmmk_wt1   ,vmmk_wt1_s)
+      call shuffle(vmmk_tdt0  ,vmmk_tdt1  ,vmmk_tdt1_s)
+      call shuffle(vmmk_tt0   ,vmmk_tt1   ,vmmk_tt1_s)
+      call shuffle(vmmk_fit0  ,vmmk_fit1  ,vmmk_fit1_s)
+      call shuffle(vmmk_qt0   ,vmmk_qt1   ,vmmk_qt1_s)
+      call shuffle(vmmk_tpt0  ,vmmk_tpt1  ,vmmk_tpt1_s)
+      call shuffle(vmmk_fipt0 ,vmmk_fipt1 ,vmmk_fipt1_s)
+      call shuffle(vmmk_qpt0  ,vmmk_qpt1  ,vmmk_qpt1_s)
+      call shuffle(vmmk_pipt0 ,vmmk_pipt1 ,vmmk_pipt1_s)
+      call shuffle(vmmk_tplt0 ,vmmk_tplt1 ,vmmk_tplt1_s)
+      call shuffle(vmmk_psdt0 ,vmmk_psdt1 ,vmmk_psdt1_s)
+      call shuffle(vmmk_st0   ,vmmk_st1   ,vmmk_st1_s)
+*
+      if (.not. Schm_hydro_L) then
+         call shuffle(vmmk_mut0 ,vmmk_mut1 ,vmmk_mut1_s)
+      endif
+      if ( Tr3d_ntr .gt. 0 ) then
+         call shuffle(vmmk_trt0  ,vmmk_trt1  ,vmmk_trt1_s)
+      endif
+*
+      return
+      end

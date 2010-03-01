@@ -1,0 +1,93 @@
+***s/r itf_phy_main - Main controller for the physics interface
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_phy_main (F_stepno)
+*
+      implicit none
+*
+      integer F_stepno
+*
+*author 
+*     Michel Desgagne - Mars 2000
+*
+*revision
+* v3_30 - Desgagne M.       - initial version
+*      
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_stepno      I           step number
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "dimout.cdk"
+#include "xst.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_cpl_cplg.cdk"
+#include "rstr.cdk"
+#include "init.cdk"
+#include "out2.cdk"
+#include "v4dg.cdk"
+#include "lam.cdk"
+*
+*
+      logical boot_L
+      integer ier,dostep(MAXSET),dostep_max
+      integer   doout
+      external  doout
+      real prip2
+      save boot_L
+      data boot_L /.true./
+**
+*     ---------------------------------------------------------------
+*
+      if (F_stepno.eq.1) then
+         Lctl_step = 0
+        if (.not.Lam_busper_init_L) then
+              call itf_phy_step (0)
+         else
+              call out_phy0()
+         endif
+         if (V4dg_conf.eq.0) call out_qc0()
+         if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
+             call wlog('IOUT')
+         else
+             call wlog('FOUT')
+         endif
+         Lctl_step = 1
+      endif
+*
+      if (boot_L) then
+         if (Xst_nstat.gt.0) then
+            call sergset ()
+            if (F_stepno.eq.1) call sergini ()
+         endif
+         call zongopr( 1,0 )
+         boot_L = .false.
+      endif
+*
+      call sergoff()
+      call serset('KOUNT', F_stepno, 1,  ier)
+      prip2 = float(F_stepno)*Cstv_dt_8/3600.
+      call serset('HEURE',  prip2,  1,  ier)      
+*
+      call zongopr( +2,0 )
+*
+      call itf_phy_step (F_stepno)
+*
+      call zongopr( -2,0 )
+*     
+      if (Xst_nstat.gt.0) call sergout( F_stepno.eq.1 )
+*
+*     Coupling with other surface modules or models via Oasis
+*
+      if (C_coupling_L) call itf_cpl_cplg_surf()
+*   
+      return
+      end

@@ -1,0 +1,505 @@
+*** s/r uv2tdpsd_ad - ADJ of uv2tdpsd_tl 
+*
+#include "model_macros_f.h"
+*
+      subroutine uv2tdpsd_ad( F_td, F_psd, F_uu, F_vv, F_ss,
+     $                                     F_uum,F_vvm,F_ssm,
+     $                                     DIST_DIM, Nk )
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+*
+      real    F_td(DIST_SHAPE,Nk), F_psd(DIST_SHAPE,Nk),
+     $        F_uu(DIST_SHAPE,Nk), F_vv (DIST_SHAPE,Nk),
+     $        F_ss(DIST_SHAPE),
+     $        F_uum(DIST_SHAPE,Nk),F_vvm (DIST_SHAPE,Nk),
+     $        F_ssm(DIST_SHAPE)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate
+* v3_00 - Laroche S.        - cleanup 
+* v3_02 - Tanguay M.        - correct zeroing of winds halo 
+* v3_03 - Tanguay M.        - use v4d_zerohalo 
+*                           - split call to rpn_comm_xch_halo for uv
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp 
+* v3_30 - Tanguay M.        - Revision Openmp LAM 
+*
+*object
+*     see id section
+*
+*arguments
+*_________________________________________________________________________
+*          |                                             |           |   |
+* NAME     |             DESCRIPTION                     | DIMENSION |I/O|
+*----------|---------------------------------------------|-----------|---|
+* F_td     | total divergence                            | 3D        |io |
+* F_psd    | vertical velocity ( pi*-dot )               | 3D        |io |
+*----------|---------------------------------------------|-----------|---|
+* F_uu     | x component of velocity                     | 3D        |io |
+* F_vv     | y component of velocity                     | 3D        |io |
+* F_ss     | ln ( pi / z )                               | 2D        |io |
+*          |        s   s                                |           |   |
+* F_uum    | traj of x component of velocity             | 3D        |i  |
+* F_vvm    | traj of y component of velocity             | 3D        |i  |
+* F_ssm    | traj of ln ( pi / z )                       | 2D        |i  |
+*          |                s   s                        |           |   |
+*__________|_____________________________________________|___________|___|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "intuv.cdk"
+#include "inuvl.cdk"
+*
+      integer i, j, k, ng
+      real pr1, prsc, pr1m
+      real*8, parameter :: ZERO_8 = 0.0
+*
+      real F_psdm(LDIST_SHAPE,l_nk),F_tdm(LDIST_SHAPE,l_nk)
+      real  uv(DIST_SHAPE,Nk,2), dvi(DIST_SHAPE,Nk), w1(DIST_SHAPE,Nk)
+      real uvm(DIST_SHAPE,Nk,2),dvim(DIST_SHAPE,Nk),w1m(DIST_SHAPE,Nk)
+      real*8 expfm_8(l_niu+1,l_njv+1), expfm1m_8(l_niu+1,l_njv+1),
+     $       inv_Geomg_hx_8(l_ni), gratio_8(l_nj), inv_Geomg_cy2_8(l_nj),
+     $       dpib1m_8(l_niu+1,l_njv+1), inv1m_8(l_niu+1,l_njv+1,Nk),
+     $       dpib2m_8(l_niu+1,l_njv+1), inv2m_8(l_niu+1,l_njv+1,Nk)
+*
+*     ________________________________________________________________
+*
+*     ZERO adjoint and working variables
+*     ----------------------------------
+C     pr1 = ZERO_8
+*
+      w1   = 0.
+      dvi  = 0.
+      uv   = 0.
+*     ________________________________________________________________
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+      call rpn_comm_xch_halo( F_ssm, LDIST_DIM, l_ni, l_nj , 1,
+     $                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+!$omp parallel 
+!$omp do 
+      do k=1,Nk
+*
+*     TRAJECTORY
+*     ----------
+      F_tdm (:,:,k  ) = 0.
+      uvm   (:,:,k,:) = 0.
+*
+      if(k.eq.1) then
+*
+      do j = 1,l_njv+1
+      do i = 1,l_niu+1
+         expfm_8  (i,j) = exp(F_ssm(i,j))
+         expfm1m_8(i,j) = expfm_8(i,j) - 1.0d0
+      end do
+      end do
+      do i = 1, l_niu
+         inv_Geomg_hx_8(i) = 1.0d0 / Geomg_hx_8(i)
+      end do
+*
+      do j = 1, l_nj
+         gratio_8(j) = Geomg_cyv2_8(j) / Geomg_hsy_8(j)
+         inv_Geomg_cy2_8(j) = 1.0d0 / Geomg_cy2_8(j)
+      end do
+*
+      endif
+*
+      end do
+!$omp end do 
+*              __              *
+*  b) compute  \/ . ( V dpi/dpi )
+
+!$omp do 
+      do k=1,G_nk
+         do j = 1, l_nj
+         do i = 1, l_niu
+
+            uvm(i,j,k,1) = F_uum(i,j,k) * (
+     $  (1.-intuv_c0xxu_8(i))*(1.+(Geomg_dpib(k)*expfm1m_8(i  ,j)))
+     $   +  intuv_c0xxu_8(i) *(1.+(Geomg_dpib(k)*expfm1m_8(i+1,j))) )
+
+         end do
+         end do
+
+         do j = 1, l_njv
+         do i = 1, l_ni
+
+           uvm(i,j,k,2) = F_vvm(i,j,k) * (
+     $  (1.-intuv_c0yyv_8(j))*(1.+(Geomg_dpib(k)*expfm1m_8(i,j  )))
+     $   +  intuv_c0yyv_8(j) *(1.+(Geomg_dpib(k)*expfm1m_8(i,j+1))) )
+
+         end do
+         end do
+      end do
+!$omp end do 
+*
+!$omp single 
+      call rpn_comm_xch_halo (uvm,               LDIST_DIM, l_niu,l_nj,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo (uvm(minx,miny,1,2),LDIST_DIM, l_ni,l_njv,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single 
+*
+!$omp do
+      do k=1,G_nk
+         call caldiv_2 ( F_tdm(minx,miny,k), uvm(minx,miny,k,1),
+     $                   uvm(minx,miny,k,2), LDIST_DIM, 1 )
+      end do
+!$omp end do
+!$omp end parallel 
+*
+*                   *
+*                 pi
+*                /  gnk
+*                |   __             *      *
+*  c) compute    |   \/ . ( V dpi/dpi ) dpi
+*                |
+*                /  *
+*                 pi
+*                   k
+*
+      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      call hatoprg (dvim,F_tdm,1.0,Geomg_hz_8,ng,G_nk)
+*
+!$omp parallel private (pr1m) 
+!$omp do 
+      do k=1,G_nk
+       do j=1,l_nj
+       do i=1,l_ni
+*
+         pr1m = 1.0 + Geomg_dpib(k) * expfm1m_8(i,j)
+         F_psdm(i,j,k) = (dvim(i,j,k) + ((Geomg_pib(k)/
+     $                   Geomg_pib(G_nk)) -1) * dvim(i,j,1))/pr1m
+*
+       end do
+       end do
+      end do
+!$omp end do 
+*                   .*
+*                dpi
+*  Compute   D + ----  integrated vertically
+*  -------          *
+*                dpi
+*
+*   compute  V . \/ (dpi/dpi )
+*
+!$omp do 
+      do k=1,G_nk
+*
+         do j = 1, l_nj
+         do i = 1, l_niu
+           uvm(i,j,k,1) = (F_ssm(i+1,j)-F_ssm(i,j))*inv_Geomg_hx_8(i)*F_uum(i,j,k)
+         end do
+         end do
+*
+         do j = 1, l_njv
+         do i = 1, l_ni
+           uvm(i,j,k,2) = (F_ssm(i,j+1) - F_ssm(i,j))*gratio_8(j)*F_vvm(i,j,k)
+         end do   
+         end do
+*
+      end do
+!$omp end do 
+*
+!$omp end parallel 
+*
+      call itf_phy_uvgridscal ( uvm(minx,miny,1,1), uvm(minx,miny,1,2),
+     $                    LDIST_DIM, l_nk, .true.)
+*
+!$omp parallel 
+*
+*   Compute total divergence
+*   ------------------------
+*
+      prsc = 1./Geomg_pib(G_nk)
+*
+!$omp do 
+       do k=1,G_nk
+        do j= 1, l_nj
+        do i= 1, l_ni
+*
+         pr1m = (uvm(i,j,k,1)+uvm(i,j,k,2))*inv_Geomg_cy2_8(j)
+         F_tdm(i,j,k)= Geomg_dpib(k)* (prsc*dvim(i,j,1)
+     $                 -expfm_8(i,j) * pr1m)
+     $                 -F_psdm(i,j,k)*expfm1m_8(i,j)*Geomg_dpia(k)
+*
+        enddo
+        enddo
+       enddo
+!$omp enddo 
+*
+*     --------------
+*     END TRAJECTORY
+*     --------------
+*     ________________________________________________________________
+*
+*       ---------
+*       START ADJ
+*       ---------
+*
+*     ADJ of
+*     Boundary conditions for vertical velocity
+*
+!$omp do 
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         F_psd(i,j,1)    = 0.0
+         F_psd(i,j,G_nk) = 0.0
+*
+      end do
+      end do
+!$omp end do 
+*
+*   Compute total divergence
+*   ------------------------
+*
+       prsc = 1./Geomg_pib(G_nk)
+*
+!$omp single 
+       do k=G_nk,1,-1
+*
+         do j= 1, l_njv+1
+         do i= 1, l_niu+1
+            dpib1m_8(i,j) = ( 1.0d0 + Geomg_dpib(k)* expfm1m_8(i,j)  )
+            dpib2m_8(i,j) = dpib1m_8(i,j) * dpib1m_8(i,j)
+         end do
+         end do
+         call vrec (  inv1m_8(1,1,k), dpib1m_8, (l_niu+1)*(l_njv+1) )
+         call vrec (  inv2m_8(1,1,k), dpib2m_8, (l_niu+1)*(l_njv+1) )
+*
+       enddo
+!$omp end single 
+*
+!$omp do 
+       do j= 1, l_nj
+       do k=G_nk,1,-1
+       do i= 1, l_ni
+*
+        pr1m = (uvm(i,j,k,1)+uvm(i,j,k,2))*inv_Geomg_cy2_8(j)
+*
+        F_ss(i,j)    = - (Geomg_dpib(k)*( expfm_8(i,j) *F_td(i,j,k))) *
+     $                   (F_tdm(i,j,k)*inv2m_8(i,j,k)) + F_ss(i,j)
+*
+        F_td(i,j,k)  = F_td (i,j,k)* inv1m_8(i,j,k)
+*
+        dvi(i,j,1)   = Geomg_dpib(k)*(         prsc *F_td(i,j,k))               + dvi(i,j,1)
+*
+        F_ss(i,j)    = Geomg_dpib(k)*(-expfm_8(i,j) *F_td(i,j,k)*pr1m)          + F_ss(i,j) 
+*
+        w1(i,j,k)    = Geomg_dpib(k)*(-expfm_8(i,j) *F_td(i,j,k))               + w1(i,j,k)  
+*
+        F_psd(i,j,k) = -F_td  (i,j,k)* expfm1m_8(i,j)*Geomg_dpia(k)             + F_psd(i,j,k)
+*
+        F_ss(i,j)    = -F_psdm(i,j,k)*(expfm_8(i,j) *F_td(i,j,k))*Geomg_dpia(k) + F_ss(i,j)
+*
+        F_td(i,j,k)  = ZERO_8 
+*
+       enddo
+       enddo
+       enddo
+!$omp enddo 
+*
+*                   .*
+*                dpi
+*  Compute   D + ----  integrated vertically
+*  -------          *
+*                dpi
+*
+*
+*  a) compute  V . \/ (dpi/dpi )
+*
+!$omp do 
+      do k=1,G_nk
+       do j= 1, l_nj
+       do i= 1, l_ni
+            uv(i,j,k,1)= (w1(i,j,k))*inv_Geomg_cy2_8(j) + uv(i,j,k,1)
+            uv(i,j,k,2)= (w1(i,j,k))*inv_Geomg_cy2_8(j) + uv(i,j,k,2)
+            w1(i,j,k)= ZERO_8
+       end do
+       end do
+      end do
+!$omp end do 
+*
+!$omp end parallel 
+*
+      call itf_phy_uvgridscal0_ad ( uv(minx,miny,1,1), uv(minx,miny,1,2),
+     $                       LDIST_DIM, l_nk, .true.)
+*
+!$omp parallel do
+      do i = 1, l_ni  
+      do k=1,G_nk
+      do j = l_njv,1,-1
+*
+         F_ss(i,j+1) = ( uv(i,j,k,2)*gratio_8(j))*F_vvm(i,j,k) + F_ss (i,j+1)
+*
+         F_ss(i,j  ) = (-uv(i,j,k,2)*gratio_8(j))*F_vvm(i,j,k) + F_ss (i,j) 
+*
+         F_vv(i,j,k) =   uv(i,j,k,2)*gratio_8(j) *(F_ssm(i,j+1)-F_ssm(i,j)) + F_vv (i,j,k)
+*
+         uv(i,j,k,2) = ZERO_8
+*
+      end do
+      end do
+      end do
+!$omp end parallel do 
+*
+!$omp parallel do 
+      do j = 1, l_nj 
+      do k=1,G_nk
+      do i = l_niu, 1,-1
+         F_ss(i+1,j) = ( uv(i,j,k,1)*inv_Geomg_hx_8(i))*F_uum(i,j,k)+ F_ss (i+1,j)
+*
+         F_ss(i,j)   = (-uv(i,j,k,1)*inv_Geomg_hx_8(i))*F_uum(i,j,k)+ F_ss (i,j)
+*
+         F_uu(i,j,k) =  uv(i,j,k,1)*((F_ssm(i+1,j)-F_ssm(i,j))*inv_Geomg_hx_8(i)) + F_uu (i,j,k) 
+*
+         uv(i,j,k,1) = ZERO_8 
+*
+      end do
+      end do
+      end do
+!$omp end parallel do 
+*
+*                .*
+*  d)  compute pi
+*                k
+*
+!$omp parallel do private (pr1m,pr1) 
+      do j=1,l_nj
+      do k=G_nk,1,-1
+      do i=1,l_ni
+*
+         pr1m         =  1.0 + Geomg_dpib(k) * expfm1m_8(i,j)
+*
+         dvi(i,j,k)   =  F_psd(i,j,k)/pr1m   + dvi(i,j,k)
+*
+         dvi(i,j,1)   =  (((Geomg_pib(k)/Geomg_pib(G_nk))-1)*F_psd(i,j,k))/pr1m  + dvi(i,j,1)
+*
+C        pr1          =  - F_psd(i,j,k)*((dvim(i,j,k) + ((Geomg_pib(k)/Geomg_pib(G_nk))-1)*dvim(i,j,1))/pr1m**2) + pr1
+*
+         pr1          =  - F_psd(i,j,k)*((dvim(i,j,k) + ((Geomg_pib(k)/Geomg_pib(G_nk))-1)*dvim(i,j,1))/pr1m**2) 
+*
+         F_psd(i,j,k) = ZERO_8
+*
+         F_ss(i,j)    = Geomg_dpib(k) * (expfm_8(i,j)*pr1)  + F_ss(i,j)
+*
+C        pr1          = ZERO_8
+*
+      end do
+      end do
+      end do
+!$omp end parallel do 
+*
+*                   *
+*                 pi
+*                /  gnk
+*                |   __             *      *
+*  c) compute    |   \/ . ( V dpi/dpi ) dpi
+*                |
+*                /  *
+*                 pi
+*                   k
+*
+*
+      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      call hatoprg0_ad (dvi,F_td,1.0,Geomg_hz_8,ng,G_nk)
+*
+*     Zero temporary Work adjoint array
+*     ---------------------------------
+*
+*  b) compute  \/ . ( V dpi/dpi )
+*
+*
+!$omp parallel do
+      do k=1,G_nk
+         if (k.eq.1) uv(:,:,k,:) = 0.
+         call caldiv_2_ad ( F_td(minx,miny,k), uv(minx,miny,k,1),
+     $                      uv(minx,miny,k,2), LDIST_DIM, 1 )
+      end do
+!$omp end parallel do 
+*
+      call rpn_comm_adj_halo (uv(minx,miny,1,2), LDIST_DIM, l_ni,l_njv,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_adj_halo (uv,                LDIST_DIM, l_niu,l_nj,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+*     Zero u,v halo
+*     -------------
+      call v4d_zerohalo ( uv(minx,miny,1,2), l_ni, l_njv,LDIST_DIM, l_nk)
+      call v4d_zerohalo ( uv,                l_niu,l_nj, LDIST_DIM, l_nk)
+*
+*  b) compute  \/ . ( V dpi/dpi )
+
+!$omp parallel do 
+      do i = 1, l_ni
+      do k=1,G_nk
+      do j = l_njv,1,-1
+*
+         F_ss(i,j)   = F_ss(i,j)   +
+     $     (1.-intuv_c0yyv_8(j))*(Geomg_dpib(k)*( expfm_8(i,j)  *uv(i,j,k,2)))*F_vvm(i,j,k)
+         F_ss(i,j+1) = F_ss(i,j+1) +
+     $         intuv_c0yyv_8(j) *(Geomg_dpib(k)*( expfm_8(i,j+1)*uv(i,j,k,2)))*F_vvm(i,j,k)
+         F_vv(i,j,k) = F_vv(i,j,k) +
+     $                       ((1.-intuv_c0yyv_8(j))*(1.+Geomg_dpib(k)*expfm1m_8(i,j) )
+     $                      +     intuv_c0yyv_8(j) *(1.+Geomg_dpib(k)*expfm1m_8(i,j+1)))*uv(i,j,k,2)
+         uv(i,j,k,2) = ZERO_8
+
+      end do
+      end do
+      end do
+!$omp end parallel do 
+*
+!$omp parallel do 
+      do j = 1, l_nj
+      do k=1,G_nk
+      do i = l_niu,1,-1
+*
+         F_ss(i,j)   = F_ss(i,j)   +
+     $     (1.-intuv_c0xxu_8(i))*(Geomg_dpib(k)*( expfm_8(i,j)  *uv(i,j,k,1)))*F_uum(i,j,k)
+         F_ss(i+1,j) = F_ss(i+1,j) +
+     $         intuv_c0xxu_8(i) *(Geomg_dpib(k)*( expfm_8(i+1,j)*uv(i,j,k,1)))*F_uum(i,j,k)
+         F_uu(i,j,k) = F_uu(i,j,k) +
+     $                       ((1.-intuv_c0xxu_8(i))*(1.+Geomg_dpib(k)* expfm1m_8(i,j))
+     $                      +     intuv_c0xxu_8(i) *(1.+Geomg_dpib(k)* expfm1m_8(i+1,j)))*uv(i,j,k,1)
+         uv(i,j,k,1) = ZERO_8
+
+      end do
+      end do
+      end do
+!$omp end parallel do 
+*
+      call rpn_comm_adj_halo( F_ss, LDIST_DIM, l_ni, l_nj , 1,
+     $                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+*     Zero F_ss halo
+*     --------------
+      call v4d_zerohalo ( F_ss, l_ni, l_nj, LDIST_DIM, 1) 
+*
+*     ADJ 
+*     ---
+!$omp parallel do 
+      do k=1,Nk
+*
+      F_td (:,:,k  ) = 0.
+      uv   (:,:,k,:) = 0.
+*
+      enddo
+!$omp end parallel do 
+*
+      return
+      end

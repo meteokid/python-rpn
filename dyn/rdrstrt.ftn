@@ -4,7 +4,7 @@
 *
       subroutine rdrstrt ()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne - Mars 2000
@@ -18,6 +18,8 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Valcke, S.        - Oasis coupling: Removed waread of c_cplg_step
 * v3_21 - Lee V.            - Remove Tr2d tracers
+* v3_30 - Desgagne M.       - restart for coupling
+* v3_30 - Desgagne & Winger - Read one global binary restart file if existing
 *
 *object
 *	
@@ -30,57 +32,108 @@
 #include "rstr.cdk"
 #include "lctl.cdk"
 #include "schm.cdk"
-#include "mem.cdk"
-#include "p_bus.cdk"
-#include "c_cplg.cdk"
-#include "ptopo.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_cpl_cplg.cdk"
 #include "glb_ld.cdk"
 #include "pres.cdk"
-#include "pilot.cdk"
-#include "ens_param.cdk"
-#include "ens_stochphy.cdk"
+#include "lam.cdk"
+#include "itf_chm_bus.cdk"
+#include "bcsmem.cdk"
 *
 **
       integer adr,ier,dim,current_nest
-      integer vmmckmx,fclos,ouvrstrt
-      external vmmckmx,fclos,ouvrstrt
+      integer fclos,ouvrstrt,wkoffit
+      external fclos,ouvrstrt,wkoffit
 *
 *     ---------------------------------------------------------------
 *
       Rstri_sdon = 0
-*
-      if (Lun_rstrt .le. 0) Lun_rstrt = ouvrstrt( )
+      Lctl_step  = 0
+      current_nest = 0
 *
       if (Rstri_rstn_L) then
-         call waopen (Lun_rstrt)
-         call waread (Lun_rstrt,Lctl_step   ,1,1)
-         call waread (Lun_rstrt,Rstri_idon_L,2,1)
-         adr = 3
-         if (Schm_phyms_L.and.Mem_phyncore_L) then
-            call waread (Lun_rstrt,Phy_busper3D,adr,p_bper_siz*p_nj)
-            adr = adr + p_bper_siz*p_nj
-            dim=36*(MAX2DC+MAX3DC)
-            call waread (Lun_rstrt,dumdum,adr,dim)
-            adr = adr + dim
-            call waread (Lun_rstrt,Rstri_half_L,adr,1)
-            adr = adr + 1
-            if (Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L)
-     $      then
-            call hpalloc(Phy_busper3D_digf_,p_bper_siz*p_nj,ier,1)
-            call waread (Lun_rstrt,Phy_busper3D_digf,adr,
-     $                                 p_bper_siz*p_nj)
-            adr = adr + p_bper_siz*p_nj
-            endif
-         endif 
-         call waread (Lun_rstrt, pres_surf ,adr, 1)
-         adr = adr + 1
-         call waread (Lun_rstrt, pres_top  ,adr, 1)
-         adr = adr + 1
-         call waread (Lun_rstrt, current_nest  ,adr, 1)
-         call datf2p (Pil_current_S,current_nest)
 *
-         call waclos(Lun_rstrt)
-         ier = fclos(Lun_rstrt)  
+         if (wkoffit('../restart_glbphy.bin').eq.10 .or.
+     &       wkoffit('../restart_glbchm.bin').eq.10 .or.
+     &       wkoffit('../restart_glbcpl.bin').eq.10) then
+*
+*           Read one set of binary files for the whole domain
+*
+            call rd1rstrt ()
+*
+         else
+*
+*           Read one wa-file per tile
+*
+            if (Lun_rstrt .le. 0) Lun_rstrt = ouvrstrt( )
+*
+            call waopen (Lun_rstrt)
+            call waread (Lun_rstrt,Lctl_step   ,1,1)
+            call waread (Lun_rstrt,Rstri_idon_L,2,1)
+            call waread (Lun_rstrt,dim         ,3,1)
+            adr = 4
+*
+            if (dim.gt.0) then
+               if ( .not. associated ( Phy_busper3D ) ) 
+     $                    allocate   ( Phy_busper3D (dim) )
+               call waread (Lun_rstrt,Phy_busper3D,adr,dim)
+               adr = adr + dim
+               call waread (Lun_rstrt,Rstri_half_L,adr,1)
+               adr = adr + 1
+*
+               if (Init_balgm_L .and.
+     $        .not.Rstri_idon_L .and.
+     $             Rstri_half_L) then
+                  if ( .not. associated ( Phy_busper3D_digf ) ) 
+     $                       allocate   ( Phy_busper3D_digf (dim))
+                  call waread (Lun_rstrt,Phy_busper3D_digf,adr,dim)
+                  adr = adr + dim
+               endif
+* 
+           endif
+*
+            call waread (Lun_rstrt,dim,adr,1)
+            adr = adr + 1
+            if (dim.gt.0) then
+               if ( .not. associated ( Chm_busper3D ) ) 
+     $                    allocate   ( Chm_busper3D (dim) )
+               call waread (Lun_rstrt, Chm_busper3D,adr,dim)
+               adr = adr + dim
+            endif
+*
+            if (G_lam) then 
+               call waread (Lun_rstrt,BCS_values,adr,BCS_siz_tot)
+               adr = adr + bcs_siz_tot         
+            endif
+*
+            call waread (Lun_rstrt, pres_surf ,adr, 1)
+            adr = adr + 1
+            call waread (Lun_rstrt, pres_top  ,adr, 1)
+            adr = adr + 1
+            call waread (Lun_rstrt, current_nest  ,adr, 1)
+            adr = adr + 1 
+*
+!           Read global coupling information
+!           found in rla_msk and rga_cpl2phy
+*
+            if (C_coupling_L) then
+               dim = dim * ig_max_inout_dim
+               allocate (rga_msk(G_ni*G_nj),rla_msk(l_ni*l_nj))
+               allocate (rga_cpl2phy(dim))
+               call waread (Lun_rstrt, rla_msk ,adr, l_ni*l_nj)
+               adr = adr + l_ni*l_nj
+               call waread (Lun_rstrt, rga_cpl2phy ,adr, dim)
+               adr = adr + dim
+               lg_get      = .true.
+               lg_getfirst = .true.
+            endif
+*
+            call waclos(Lun_rstrt)
+            ier = fclos(Lun_rstrt)  
+         endif
+*
+         call datf2p (Lam_current_S,current_nest)
+*
       endif
 *
 *     ---------------------------------------------------------------

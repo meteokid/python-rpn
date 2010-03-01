@@ -53,29 +53,23 @@
 *
 #endif
 *
+      real*8, dimension(:), pointer ::  xdx,xdy,xdxu,xdyv,
+     $                                  xdcy,xdcyv,xdhx,xdhy,xdhxu,xdhyv
       real*8
-     %        xdx(1),  xdy(1),  xdxu(1), xdyv(1),
      %        xdsx(pni), xdcx(pni), xdsy(pnj),
-     %        xdcy(1), xdcyv(pnjv),xdsyv(pnjv),
-     %        xdcy2(pnj),xdcyv2(pnjv),
-     %        xdhx(pni), xdhy(pnj),
-     %        xdhxu(0:pniu), xdhyv(0:pnjv), xdhsy(pnj),
-     %        xdhsyv(0:pnjv), xdwxs(pni), xdys (-1:pnjv+2)
+     %        xdsyv(pnjv), xdcy2(pnj),xdcyv2(pnjv),
+     %        xdhsy(pnj), xdhsyv(0:pnjv), xdwxs(pni), xdys (-1:pnjv+2)
 *
-      pointer (p_xdx,   xdx),   (p_xdy,   xdy),   (p_xdxu, xdxu),
-     %        (p_xdyv,  xdyv),
+      pointer 
      %        (p_xdsx,  xdsx),  (p_xdcx,  xdcx),  (p_xdsy, xdsy),
-     %        (p_xdcy,  xdcy),  (p_xdcyv, xdcyv), (p_xdsyv,xdsyv),
-     %        (p_xdcy2, xdcy2), (p_xdcyv2,xdcyv2),
-     %        (p_xdhx,  xdhx),  (p_xdhy,  xdhy),
-     %        (p_xdhxu, xdhxu), (p_xdhyv, xdhyv), (p_xdhsy,xdhsy),
+     %        (p_xdsyv,xdsyv),  (p_xdcy2, xdcy2), (p_xdcyv2,xdcyv2),
+     %        (p_xdhsy,xdhsy),
      %        (p_xdhsyv,xdhsyv),(p_xdwxs, xdwxs), (p_xdys, xdys)
 
+      common / e_geomg_8 / xdx,xdy,xdxu,xdyv,xdcy,xdcyv,xdhx,
+     $                     xdhy,xdhxu,xdhyv
       common / cdgeomg8 /
-     %                   p_xdx   , p_xdy  , p_xdxu  , p_xdyv  ,
      %                   p_xdsx  , p_xdcx , p_xdsy  ,
-     %                   p_xdcy  , p_xdcyv, p_xdsyv ,
-     %                   p_xdcy2 , p_xdcyv2,
-     %                   p_xdhx  , p_xdhy ,
-     %                   p_xdhxu , p_xdhyv, p_xdhsy ,
+     %                   p_xdsyv , p_xdcy2 , p_xdcyv2,
+     %                   p_xdhsy ,
      %                   p_xdhsyv, p_xdwxs, p_xdys

@@ -2,51 +2,22 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine mtn_cfg ( pass_L )
+      integer function mtn_cfg (unf)
       implicit none
-*
-      logical pass_L
+      integer unf
 *
 *author 
 *     sylvie gravel   -  Apr 2003
 *
 *revision
-* v3_20 - gravel s          - initial version 
+* v3_20 - gravel s        - initial version 
+* v3_30 - Lee V.          - New control parameters added
 *
 *object
 *     See above id
 *	
 *arguments - none
 *
-#include "dcst.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "hgc.cdk"
-#include "grd.cdk"
-#include "out1.cdk"
-#include "pilot.cdk"
-#include "hblen.cdk"
-#include "ptopo.cdk"
-#include "tr3d.cdk"
-#include "lun.cdk"
-#include "p_geol.cdk"
-#include "step.cdk"
-#include "pres.cdk"
-#include "schm.cdk"
-#include "adw.cdk"
-#include "cstv.cdk"
-#include "hzd.cdk"
-#include "eigv.cdk"
-#include "vspng.cdk"
-#include "theo.cdk"
-#include "geomg.cdk"
-#include "init.cdk"
-#include "offc.cdk"
-#include "lctl.cdk"
-#include "zblen.cdk"
-#include "vtopo.cdk"
-#include "mtn.cdk"
-#include "bubble.cdk"
 #include "theonml.cdk"
 *
       integer i, j, k, idatx, longueur
@@ -59,29 +30,24 @@
 **
 *     ---------------------------------------------------------------
 
+      mtn_cfg = -1
       my_rad2deg_8 = CLXXX_8/my_pi_8
 
-      pass_L = .false. 
-*
       do k = 1, maxhlev
          hyb(k) = -1.
       end do
 
-      do j=1,3
-      do i=1,3
-         Grd_rot_8(i,j) = 0.0
-      enddo
-      enddo
-         Grd_rot_8(1,1) = 1.
-         Grd_rot_8(2,2) = 1.
-         Grd_rot_8(3,3) = 1.
+      Grd_rot_8 = 0.0
+      Grd_rot_8(1,1) = 1.
+      Grd_rot_8(2,2) = 1.
+      Grd_rot_8(3,3) = 1.
+      Grd_roule=.false.
 *
       G_lam=.true.
       Grd_xlat1=0.
       Grd_xlon1=180.
       Grd_xlat2=0.
       Grd_xlon2=270.
-      Grd_roule=.false.
 *
 c     Offc_a0_8 =  1.0
 c     Offc_a1_8 = -1.0
@@ -90,28 +56,27 @@ c     Offc_b1_8 =  0.5
       	  
       Tr3d_userntr=1
 
-      Pil_nesdt=0
-      Pil_ctebcs_L=.true.
+      Lam_nesdt=0
+      Lam_ctebcs_L=.true.
       
-      P_geol_tourn_L = .false.
-
       Hzd_lnr = 0.
 
       Schm_phyms_L = .false.
-      Schm_maxcfl_lam = 1
       Schm_hydro_L=.false.
+      Adw_halox  = 3
+      Adw_haloy  = 2
 
       G_halox=3
  
       Zblen_L = .true.
       Zblen_spngtt_L=.false.
 
-      Adw_lag3d_L = .true.
+      Adw_interp_type_S = 'LAG3D'
 
       if ( Theo_case_S.eq.'MTN_SCHAR') then
 
-         Out1_etik_s='SCHAR'
-	  
+         Out3_etik_s='SCHAR'
+
          Pres_ptop = 40.78743336652039
 
          mtn_tzero=288.
@@ -127,14 +92,8 @@ c     Offc_b1_8 =  0.5
 
          Grd_dx =  0.0045
 	  
-         Hblen_momentx=15
-         Hblen_tx=15
-         Hblen_massx=15
-         Hblen_trx=15
-         Hblen_momenty=0
-         Hblen_ty=0
-         Hblen_massy=0
-         Hblen_try=0
+         Hblen_x = 15
+         Hblen_y = 0
 
          Zblen_spngthick=7.e+03
 
@@ -155,7 +114,7 @@ c        Offc_b1_8 = 0.4
 
       else if ( Theo_case_S.eq.'MTN_SCHAR2') then
 
-         Out1_etik_s='SCHAR2'
+         Out3_etik_s='SCHAR2'
 	  
          Pres_ptop = 40.78743336652039
 
@@ -172,15 +131,9 @@ c        Offc_b1_8 = 0.4
 
          Grd_dx =  0.009
 	  
-         Hblen_momentx=15
-         Hblen_tx=15
-         Hblen_massx=15
-         Hblen_trx=15
-         Hblen_momenty=0
-         Hblen_ty=0
-         Hblen_massy=0
-         Hblen_try=0
-      
+         Hblen_x = 15
+         Hblen_y = 0 
+
          Zblen_spngthick=1.00531e+04
       
          Step_total = 2400
@@ -199,7 +152,7 @@ c        Offc_b1_8 = 0.4
 
       else if ( Theo_case_S.eq.'MTN_PINTY') then
 
-         Out1_etik_s='PINTY'
+         Out3_etik_s='PINTY'
 
          Pres_ptop = 81.98377202734126
 	  
@@ -212,17 +165,11 @@ c        Offc_b1_8 = 0.4
          Grd_nj = 1
          G_nk   = 81
 
-	 Grd_dx = 0.0287773
+         Grd_dx = 0.0287773
 	  
-         Hblen_momentx=15
-         Hblen_tx=15
-         Hblen_massx=15
-         Hblen_trx=15
-         Hblen_momenty=0
-         Hblen_ty=0
-         Hblen_massy=0
-         Hblen_try=0
-      
+         Hblen_x = 15
+         Hblen_y = 0
+
          Zblen_spngthick=1.005309649148734e+04
       
          Step_total = 800
@@ -241,7 +188,7 @@ c        Offc_b1_8 = 0.4
 
       else if ( Theo_case_S.eq.'MTN_PINTY2') then
 
-         Out1_etik_s='PINTY2'
+         Out3_etik_s='PINTY2'
 
          Pres_ptop = 81.98377202734126
 	  
@@ -254,17 +201,11 @@ c        Offc_b1_8 = 0.4
          Grd_nj = 1
          G_nk   = 81
 
-	 Grd_dx = 0.0287773
+         Grd_dx = 0.0287773
 	  
-         Hblen_momentx=15
-         Hblen_tx=15
-         Hblen_massx=15
-         Hblen_trx=15
-         Hblen_momenty=0
-         Hblen_ty=0
-         Hblen_massy=0
-         Hblen_try=0
-      
+         Hblen_x = 15
+         Hblen_y = 0
+
          Zblen_spngthick=2.513274122871835e+03
       
          Step_total = 1600
@@ -283,7 +224,7 @@ c        Offc_b1_8 = 0.4
 
       else    ! PINTYNL
 
-         Out1_etik_s='PINTYNL'
+         Out3_etik_s='PINTYNL'
 	  
          Pres_ptop = 95.75000118766453
 
@@ -297,17 +238,11 @@ c        Offc_b1_8 = 0.4
          Grd_nj = 1
          G_nk   = 81
 
-	 Grd_dx = 0.0287773
+         Grd_dx = 0.0287773
 
-         Hblen_momentx=15
-         Hblen_tx=15
-         Hblen_massx=15
-         Hblen_trx=15
-         Hblen_momenty=0
-         Hblen_ty=0
-         Hblen_massy=0
-         Hblen_try=0
-      
+         Hblen_x = 15
+         Hblen_y = 0
+
          Zblen_Spngthick=1.005309649148734e+04
       
          Step_total = 1000
@@ -329,12 +264,12 @@ c        Offc_b1_8 = 0.4
       call cxgaig ( Hgc_gxtyp_S,Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,
      $                        Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )
 
-      rewind ( Lun_in )
-      read ( Lun_in, nml=mtn_cfgs, end = 9220, err=9000)
+      rewind (unf)
+      read ( unf, nml=mtn_cfgs, end = 9220, err=9000)
       go to 9221
  9220 write( Lun_out,9230) Theo_case_S
  9221 continue
- 
+
       Step_rsti = Step_total+100
 
       Pres_pref = Cstv_pisrf_8
@@ -371,8 +306,8 @@ c        Offc_b1_8 = 0.4
        endif
       Grd_dxmax=Grd_xl
       Grd_dymax=Grd_yl
-      call datp2f( idatx, Pil_runstrt_S)
-      Out1_date= idatx
+      call datp2f( idatx, Lam_runstrt_S)
+      Out3_date= idatx
 	  
       G_halox = min(G_halox,Grd_ni-1)
       G_haloy = G_halox
@@ -386,7 +321,7 @@ c        Offc_b1_8 = 0.4
         Geomg_hyb(k) = hyb(k)
       enddo
 *
-      pass_L = .true. 
+      mtn_cfg = 1
       return   
 *
  9000 write (Lun_out, 9100)

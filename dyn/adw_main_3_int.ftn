@@ -25,6 +25,7 @@
 * v3_20 - Tanguay M.          - Improve alarm when points outside advection grid
 * v3_20 - Dugas B.            - correct calculation for LAM when Glb_pil gt 7
 * v3_21 - Desgagne M.         - if  Lagrange 3D, call adw_main_3_intlag
+* v3_30 - McTaggart-Cowan R.  - replace lag3d_L by Adw_interp_type_S
 *
 *language
 *     fortran 77
@@ -63,10 +64,8 @@
 #include "vt0.cdk"
 *
 *modules
-      integer  vmmlod, vmmget, vmmuld,
-     $         read_db_file,write_db_file,rewind_db_file
-      external vmmlod, vmmget, vmmuld,
-     $         read_db_file,write_db_file,rewind_db_file
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
 ************************************************************************
       integer i0,in,j0,jn
       integer pnerr, pnlkey1(30), key1(Tr3d_ntr), key0(Tr3d_ntr), 
@@ -81,7 +80,7 @@
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
 *
-      if ( Adw_lag3d_L ) then
+      if ( Adw_interp_type_S(1:5).eq.'LAG3D' ) then
          call adw_main_3_intlag ( F_u, F_v, F_w )
          return
       endif
@@ -155,7 +154,7 @@
 *
       endif
 *
-      if( .not. Adw_lag3d_L ) then
+      if( Adw_interp_type_S(1:5) .eq. 'CUBIC' ) then
       call adw_setint ( Adw_n1,Adw_capx1,Adw_xgg1,Adw_xdd1,Adw_capy1,Adw_ygg1,
      %                  Adw_ydd1, Adw_capz1, Adw_cz1, F_u, F_v, F_w,
      %                 .true., .true., .false., nijk,i0,in,j0,jn,l_nk)
@@ -181,7 +180,7 @@
 *
          if ( Adw_ckbd_L ) call adw_ckbd ( Adw_capy2 )
 *
-         if( .not. Adw_lag3d_L ) then
+         if( Adw_interp_type_S(1:5) .eq. 'CUBIC' ) then
          call adw_setint(Adw_n2,Adw_capx2,Adw_xgg2,Adw_xdd2,Adw_capy2,Adw_ygg2,
      %                 Adw_ydd2,Adw_capz2,Adw_cz2,Adw_capx2,Adw_capy2,Adw_capz2,
      %                   .true., .true., .false., Adw_fro_a,1,Adw_fro_a,1,1,1)
@@ -228,12 +227,25 @@
          pnerr = VMM_GET_VAR(rvv)
       endif
 *
+c     if (Acid_test_L)then
+c        if (Lun_debug_L) write (Lun_out,*)'Before adw_interp'
+c     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,4+acid_i0,G_ni-3-acid_in,
+c    %                                         4+acid_j0,G_nj-3-acid_jn,1,G_nk)
+c     endif rvw1,rcn,rth
+*
       call adw_interp (ruw2, ruw1, F_u, F_v,
      %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
 *
       call adw_interp (rvw2, rvw1, F_u, F_v,
      %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
 *
+c     if (Acid_test_L)then
+c        if (Lun_debug_L) write (Lun_out,*)'After adw_interp'
+c     call glbstat (ruw2,'RUW2',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
+c    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
+c     call glbstat (rvw2,'RVW2',LDIST_DIM,G_nk,5+acid_i0,G_ni-4-acid_in,
+c    %                                         6+acid_j0,G_nj-5-acid_jn,1,G_nk)
+c     endif
       call adw_interp (rcn, rcn, F_u, F_v,
      %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
 *
@@ -267,8 +279,7 @@
       if (Tr3d_ntr.gt.0) then
          err = vmmlod(key1,Tr3d_ntr)  
          err = vmmlod(key0,Tr3d_ntr)  
-!!$omp parallel
-!!$omp do
+
          do n=1,Tr3d_ntr
             err = vmmget(key1(n),patr,tr)
             err = vmmget(key0(n),patr0,tr0)
@@ -289,8 +300,7 @@
             end do
             end do
          end do
-!!$omp enddo
-!!$omp end parallel
+
          err = vmmuld(key1,Tr3d_ntr)
          err = vmmuld(key0,Tr3d_ntr)
       endif
@@ -313,16 +323,16 @@
       call hpdeallc(Adw_wrkb_    ,err,1)
       call hpdeallc(Adw_wrkc_    ,err,1)
       if (.not.G_lam) then
-      call hpdeallc(Adw_capx2_   ,err)
-      call hpdeallc(Adw_capy2_   ,err)
-      call hpdeallc(Adw_capz2_   ,err)
-      call hpdeallc(Adw_n2_      ,err)
-      call hpdeallc(Adw_xdd2_    ,err)
-      call hpdeallc(Adw_xgg2_    ,err)
-      call hpdeallc(Adw_ydd2_    ,err)
-      call hpdeallc(Adw_ygg2_    ,err)
-      call hpdeallc(Adw_cz2_     ,err)
-      call hpdeallc(Adw_wrka_    ,err)
+      call hpdeallc(Adw_capx2_   ,err,1)
+      call hpdeallc(Adw_capy2_   ,err,1)
+      call hpdeallc(Adw_capz2_   ,err,1)
+      call hpdeallc(Adw_n2_      ,err,1)
+      call hpdeallc(Adw_xdd2_    ,err,1)
+      call hpdeallc(Adw_xgg2_    ,err,1)
+      call hpdeallc(Adw_ydd2_    ,err,1)
+      call hpdeallc(Adw_ygg2_    ,err,1)
+      call hpdeallc(Adw_cz2_     ,err,1)
+      call hpdeallc(Adw_wrka_    ,err,1)
       endif
 *
       pnerr = vmmuld(-1,0)

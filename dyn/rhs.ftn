@@ -5,7 +5,7 @@
 *
       subroutine rhs()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Alain Patoine - Gabriel Lemay
@@ -262,6 +262,21 @@
 *
       endif
 *
+c     if (Acid_test_L) then
+c     If (Lun_out.gt.0) write(Lun_out,*) 'After rhsp_2, computed area'
+c     call glbstat (ru,'RU0',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
+c    %                                      8+acid_j0,G_nj-7-acid_jn,1,G_nk)
+c     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
+c    %                                      5+acid_j0,G_nj-4-acid_jn,1,G_nk)
+c     call glbstat (rth,'RTH',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
+c    %                                      8+acid_j0,G_nj-7-acid_jn,1,G_nk)
+*     Rcn0 will not match to the piloting run because it includes new Ru,Rv
+c     If (Lun_out.gt.0) 
+c    %  write(Lun_out,*) 'Rcn0 includes nesting area and new Ru,Rv, will not match'
+c     call glbstat (rcn,'Rcn0',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
+c    %                                        1+acid_j0,G_nj-acid_jn,1,G_nk)
+c     endif
+      pnerr = vmmuld(-1,0)
       pnerr = vmmuld(-1,0)
 *
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS)')

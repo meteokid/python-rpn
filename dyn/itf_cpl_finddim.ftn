@@ -1,0 +1,46 @@
+***S/R itf_cpl_finddim
+C
+#include "model_macros_f.h"
+C
+      SUBROUTINE itf_cpl_finddim (cda_array, id_indim, id_effectivedim)
+*
+      implicit none
+*
+C     Character array (input)
+      CHARACTER(len=3), dimension(id_indim)   :: cda_array
+C     Array dimension (input)
+      INTEGER                                 :: id_indim
+C     Array effective DIMENSION (output)
+      INTEGER                                 :: id_effectivedim
+*
+*author:
+C 
+C   Sophie Valcke -RPN/CERFACS - March 2005
+C
+*revision
+* v3_30 - Faucher & Chamberland   - final adjustment-debugging
+*
+*object:
+C  Change array to uppercase and find its effective dimension
+C
+*implicits
+C Local variables
+C 
+      INTEGER                                 :: il_bou
+C
+C===================================================================
+C
+      id_effectivedim = 0
+*
+      DO il_bou = 1, id_indim
+         IF (cda_array(il_bou) .NE. '') THEN
+            CALL low2up (cda_array(il_bou), cda_array(il_bou))
+            id_effectivedim = id_effectivedim + 1
+         ENDIF
+      END DO
+*
+*     __________________________________________________________________
+*
+      END SUBROUTINE itf_cpl_finddim
+
+ 

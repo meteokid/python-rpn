@@ -1,0 +1,30 @@
+      character*2 Grd_typ_S
+      character*1 Grd_proj_S
+      logical Grd_roule, Grd_uniform_L, Grd_gauss_L
+      integer Grd_ni, Grd_nj, Grd_nila, Grd_njla, Grd_left, Grd_belo,
+     $        Grd_iref, Grd_jref
+      real Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax, 
+     $     Grd_latr, Grd_lonr, Grd_x0, Grd_xl, Grd_y0, Grd_yl,
+     $     Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2, Grd_rot, Grd_rcoef
+      real*8 Grd_rot_8
+*   
+      MARK_COMMON_BEG (Grd_c)
+      common / Grd_c / Grd_typ_S,Grd_proj_S
+      MARK_COMMON_END (Grd_c)
+      MARK_COMMON_BEG (Grd_l)
+      common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L
+      MARK_COMMON_END (Grd_l)
+      MARK_COMMON_BEG (Grd_i)
+      common / Grd_i / Grd_ni  , Grd_nj  , Grd_nila, Grd_njla, 
+     $                 Grd_left, Grd_belo, Grd_iref, Grd_jref
+      MARK_COMMON_END (Grd_i)
+      MARK_COMMON_BEG (Grd_r)
+      common / Grd_r / Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax, 
+     $                  Grd_latr, Grd_lonr, 
+     $                  Grd_x0, Grd_xl, Grd_y0, Grd_yl,
+     $                  Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2,
+     $                  Grd_rot(3,3),Grd_rcoef
+      MARK_COMMON_END (Grd_r)
+      MARK_COMMON_BEG (Grd_r8)
+      common / Grd_r8 / Grd_rot_8(3,3)
+      MARK_COMMON_END (Grd_r8)

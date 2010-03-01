@@ -1,43 +1,45 @@
+#if defined (DOC)
+*revisions (e_nml)
+* v3.30 - Desgagne             - remove references to namelist /ptopo/
+#endif
 *
-      namelist /ptopo/
-     $     Ptopo_npex, Ptopo_npey, Ptopo_nblocx, Ptopo_nblocy
+#include "e_topo.cdk"
+#include "e_schm.cdk"
+#include "e_geol.cdk"
+#include "e_tr.cdk"
+#include "e_anal.cdk"
 *
-      namelist /grid/ Grd_typ_S, Grd_roule, Grd_ni, Grd_nj, 
-     $     Grd_nila, Grd_njla, Grd_iref, Grd_jref,
-     $     Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax, 
-     $     Grd_latr, Grd_lonr, 
-     $     Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2, Grd_gauss_L
+#include "offline.cdk"
+#include "modconst.cdk"
+#include "pilot.cdk"
+#include "schm.cdk"
 *
       namelist /gement/
-     $     Out1_etik_s,
-     $     Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L,
-     $     anal_perturb, e_schm_stlag, e_schm_adcub,
+     $     Anal_cond, Anal_perturb, E_schm_adcub, E_schm_stlag,
      $     E_geol_glanl_L, E_geol_glreg_L,
-     $     E_geol_hsanl_L, E_geol_hscon_L, E_geol_hsreg_L,
-     $     E_geol_gls    , E_geol_gln    , E_geol_gle    , E_geol_glw  ,
-     $     E_geol_hss    , E_geol_hsn    , E_geol_hse    , E_geol_hsw  ,
-     $     E_geol_hsea   , E_geol_poin   , E_geol_modex_L,
-     $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L,
-     $     P_pbl_schurb_s,
-     $     E_tr3d_list_S,
-     $     E_schm_offline_L,Offline_ip1a, Offline_int_accu_S,
-     $     Pil_runstrt_S, Pil_nesdt,Pil_datacvrg, Pil_ctebcs_L,
-     $     Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx,
-     $     Hblen_wfct_S
+     $     E_geol_gle    , E_geol_gln    , E_geol_gls    , E_geol_glw  ,
+     $     E_geol_hsanl_L, E_geol_hscon_L, E_geol_hse    , E_geol_hsea ,
+     $     E_geol_hsn    , E_geol_hsreg_L, E_geol_hss    , E_geol_hsw  ,
+     $     E_geol_modex_L, E_geol_poin   , E_geol_z0cst  ,
+     $     E_tr3d_list_S ,
+     $     Mod_runstrt_S , Offline_ip1a  , Offline_int_accu_S,
+     $     Pil_3df_L     , Pil_bcs_hollow_L, Pil_bmf_L, Pil_hblen,
+     $     Pil_jobend_S  , Pil_jobstrt_S   , Pil_nesdt,
+     $     Pil_pil       , Pil_sfc2d_L,
+     $     Schm_offline_L,
+     $     Topo_dgfmx_L  ,Topo_dgfms_L, Topo_filmx_L,Topo_init_L
 *
       namelist /gement_p/
-     $     Out1_etik_s,
-     $     Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L,
-     $     anal_perturb, e_schm_stlag, e_schm_adcub,
+     $     Anal_cond, Anal_perturb, E_schm_adcub, E_schm_stlag,
      $     E_geol_glanl_L, E_geol_glreg_L,
-     $     E_geol_hsanl_L, E_geol_hscon_L, E_geol_hsreg_L,
-     $     E_geol_gls    , E_geol_gln    , E_geol_gle    , E_geol_glw  ,
-     $     E_geol_hss    , E_geol_hsn    , E_geol_hse    , E_geol_hsw  ,
-     $     E_geol_hsea   , E_geol_poin   , E_geol_modex_L,
-     $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L, 
-     $     P_pbl_schurb_s,
-     $     E_schm_offline_L,Offline_ip1a, Offline_int_accu_S,
-     $     Pil_runstrt_S, Pil_nesdt,Pil_datacvrg, Pil_ctebcs_L,
-     $     Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx,
-     $     Hblen_wfct_S
+     $     E_geol_gle    , E_geol_gln    , E_geol_gls    , E_geol_glw  ,
+     $     E_geol_hsanl_L, E_geol_hscon_L, E_geol_hse    , E_geol_hsea ,
+     $     E_geol_hsn    , E_geol_hsreg_L, E_geol_hss    , E_geol_hsw  ,
+     $     E_geol_modex_L, E_geol_poin   , E_geol_z0cst  ,
+     $     Mod_runstrt_S , Offline_ip1a  , Offline_int_accu_S,
+     $     Pil_3df_L     , Pil_bcs_hollow_L, Pil_bmf_L, Pil_hblen,
+     $     Pil_jobend_S  , Pil_jobstrt_S   , Pil_nesdt,
+     $     Pil_pil       , Pil_sfc2d_L,
+     $     Schm_offline_L,
+     $     Topo_dgfmx_L  ,Topo_dgfms_L, Topo_filmx_L,Topo_init_L
 *

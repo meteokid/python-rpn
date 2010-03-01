@@ -1,0 +1,197 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***s/r Out_sfile - to open new output file
+*
+#include "model_macros_f.h"
+*
+      subroutine out_sfile (clostep_int,stepno,F_ip3,F_ext_S)
+      implicit none
+*
+      character*(*) F_ext_S
+      integer clostep_int,stepno,F_ip3
+*
+*AUTHOR   Michel Desgagne     September   2003 (MC2)
+*
+*REVISION
+* v3_20 - Lee V.            - Adapted for GEMDM
+* v3_30 - Dugas B.          - 1) Climate mode dm,dp and pm files are sent to directory
+*                             ../../output/current_last_step/Out_myblocx-Out_myblocy
+*                             2) Do not use Out_endstepno in climate mode
+* v3_30 - McTaggart-Cowan R.- Use existing Out_etik_S string instead of namelist value
+* v3_31 - Winger K.         - correction to size in ypq(Out_nisg) to Out_njsg
+* v3_31 - Lee V.            - modification of Out_etik_S in out_sgrid only
+*
+*ARGUMENTS
+*    NAMES       I/O  TYPE  DESCRIPTION
+*
+#include "clim.cdk"
+#include "out.cdk"
+#include "glb_ld.cdk"
+*
+
+      integer  prog_filename,fnom,fstouv,fstinl,fstecr,longueur,fstopc
+      external prog_filename,fnom,fstouv,fstinl,fstecr,longueur,fstopc
+*
+      character*5 blocxy_S
+      character*3 ros 
+      character*15 datev,startindx
+      integer nlis,prognum,err,nrec,n1,n2,n3,lislon,i,
+     $        indx,glb1,glb2,glb3,glb4
+      integer clostep,date,hour
+      parameter (nlis = 1024)
+      integer liste (nlis)
+      real xpos(Out_nisg), ypos(Out_njsg),xpq(Out_nisg),ypq(Out_njsg)
+      real*8 sec_clostep,ONE, OV_day, OV_hour, OV_min, dayfrac, sec_in_day
+      parameter ( ONE = 1.0d0, OV_day = ONE/86400.0d0,
+     $            OV_hour = ONE/3600.0d0, OV_min = ONE/60.0d0,
+     $            sec_in_day=86400.0d0 )
+      data ros /'RND'/
+**
+*----------------------------------------------------------------------
+*
+*     Note that fstopc will set the warning level for FST calls. The
+*     false value means to set the Message Level to the type indicated
+*     whereas the true value means to obtain the message level - ask Mario.
+*     MSGLVL INFORM will inform the write and read messages
+*     MSGLVL SYSTEM will indicate if there are errors only.
+
+      if (Out_debug_L) then
+          err = fstopc('MSGLVL','INFORM',.false.)
+      else
+          err = fstopc('MSGLVL','SYSTEM',.false.)
+      endif
+
+      if (Clim_climat_L)
+     $    write(blocxy_S,'(I2.2,"-",I2.2)') Out_myblocx,Out_myblocy
+
+      Out_npas = stepno
+*
+      if ((Out_blocme.eq.0).and.(Out_nisl.gt.0).and.(Out_njsl.gt.0)) then
+*
+         if (clostep_int.le.0) then
+            clostep = stepno
+         else
+            if (mod(stepno,clostep_int).eq.0) then
+               clostep = stepno
+               if (stepno.eq.0) clostep = clostep_int
+            else
+               clostep = (stepno/clostep_int + 1) * clostep_int
+            endif
+         endif
+         if (.not.Clim_climat_L) clostep = min(clostep,Out_endstepno)
+         sec_clostep  = dble(clostep)*dble(Out_deet)
+         Out_ip2 = int (dble(stepno) * Out_deet / 3600. + 1.e-12)
+         Out_ip3 = F_ip3
+         call newdate (Out_dateo, date, hour,-3)
+         hour=hour/1000000
+*        Out_unit_S=H or blank:
+         prognum = nint(sec_clostep *OV_hour)
+         if (Out_unit_S.eq.'P') prognum = clostep
+         if (Out_unit_S.eq.'D') prognum = nint(sec_clostep * OV_day )
+         if (Out_unit_S.eq.'M') prognum = nint(sec_clostep * OV_min )
+         if (Out_unit_S.eq.'S') prognum = nint(sec_clostep)
+         if (Out_prefix_S.eq.'cm') then
+            dayfrac = dble(stepno) * dble(Out_deet) / sec_in_day
+            call incdatsd (datev,Out_runstrt_S,dayfrac)
+            write (startindx,'((i7.7),a1,(i7.7))') Out_idg,'-',Out_jdg
+            Out_filename_S='ic'//datev//'_'//startindx
+            Out_filenamep_S = '../../output/casc/'//
+     $                     Out_filename_S(1:longueur(Out_filename_S))
+         else
+            err = prog_filename (Out_filename_S,Out_prefix_S,date,hour,-1,-1,
+     $                           Out_myblocx,Out_myblocy,prognum,Out_ndigits,
+     $                           Out_unit_S)
+            Out_filenamep_S = Out_filename_S(1:longueur(Out_filename_S))
+     $                        //F_ext_S(1:longueur(F_ext_S))
+            if (Clim_climat_L .and.
+     $         (Out_prefix_S.eq.'dm' .or.
+     $          Out_prefix_S.eq.'dp' .or.
+     $          Out_prefix_S.eq.'pm' )) then
+                Out_filenamep_S =
+     $          '../../output/current_last_step/' // blocxy_S //
+     $          '/' // Out_filenamep_S(1:longueur(Out_filenamep_S))
+            endif
+         endif
+
+         if (Out_unf.eq.0) then
+             err = fnom (Out_unf ,Out_filenamep_S(1:longueur(Out_filenamep_S)),'STD+'//ros,0)
+             err = fstouv(Out_unf ,ros)
+             if (Out_debug_L)
+     $       write (6,101) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
+         endif
+         nrec= fstinl (Out_unf,n1,n2,n3,' ',' ',Out_ig1,Out_ig2,0,
+     $                                 ' ','>>',liste,lislon,nlis)
+         if ((lislon.lt.1).and.(.not.Out_flipit_L)) then
+            glb1 = Out_bloci0 -Out_hx*Out_blocwest
+            glb2 = Out_blocin +Out_hx*Out_bloceast
+            glb3 = Out_blocj0 -Out_hy*Out_blocsouth
+            glb4 = Out_blocjn +Out_hy*Out_blocnorth
+            if ( Out_reduc .le. 1 ) then
+               Out_rgridi0 = max(glb1,Out_gridi0)
+               Out_rgridj0 = max(glb3,Out_gridj0)
+               err=fstecr(Out_xpos(Out_gridi0+Out_hx),xpq,-32,Out_unf,Out_dateo,0,0,
+     $                    Out_nisg,1,
+     $                    1,Out_ig1,Out_ig2,0,'X', '>>',Out_etik_S,Out_gridtyp_S,
+     $                    Out_ixg(1), Out_ixg(2), Out_ixg(3), Out_ixg(4), 
+     $                    5, .true.)
+               err=fstecr(Out_ypos(Out_gridj0+Out_hy),ypq,-32,Out_unf,Out_dateo,0,0,
+     $                    1, Out_njsg,
+     $                    1,Out_ig1,Out_ig2,0,'X', '^^',Out_etik_S,Out_gridtyp_S,
+     $                    Out_ixg(1), Out_ixg(2), Out_ixg(3), Out_ixg(4),
+     $                    5, .true.)
+            else
+               Out_rgridi0=glb2
+               do i=1,Out_nisg
+                  indx = Out_gridi0+(i-1)*Out_reduc
+                  xpos(i) = Out_xpos(indx+Out_hx)
+                  if (indx.ge.glb1) Out_rgridi0= min(Out_rgridi0,max(glb1,indx))
+               end do
+               Out_rgridj0=glb4
+               do i=1,Out_njsg
+                  indx = Out_gridj0+(i-1)*Out_reduc
+                  ypos(i) = Out_ypos(indx+Out_hy)
+                  if (indx.ge.glb3) Out_rgridj0= min(Out_rgridj0,max(glb3,indx))
+               end do
+               err= fstecr (xpos,xpq,-32,Out_unf,Out_dateo,0,0,Out_nisg,1,1,
+     $                      Out_ig1,Out_ig2,0,'X', '>>','POS_X',Out_gridtyp_S,
+     $                      Out_ixg(1), Out_ixg(2), Out_ixg(3), Out_ixg(4), 
+     $                      5, .true.)
+               err= fstecr (ypos,ypq,-32,Out_unf,Out_dateo,0,0,1,Out_njsg,1,
+     $                      Out_ig1,Out_ig2,0,'X', '^^','POS_Y',Out_gridtyp_S,
+     $                      Out_ixg(1), Out_ixg(2), Out_ixg(3), Out_ixg(4),
+     $                      5, .true.)
+            endif
+            Out_nisl = (min(Out_gridin,glb2)-Out_rgridi0) / Out_reduc + 1
+            Out_njsl = (min(Out_gridjn,glb4)-Out_rgridj0) / Out_reduc + 1
+         endif
+         if (Out_levtyp_S.eq.'M') call wrvref ( Out_unf )
+*
+      endif
+*
+ 101  format (' FST FILE UNIT=',i3,' FILE = ',a,' IS OPENED')
+*----------------------------------------------------------------------
+      return
+      end
+*
+      subroutine out_cfile
+      implicit none
+*
+#include "out.cdk"
+*
+      integer  fstfrm,longueur
+      external fstfrm,longueur
+*
+      integer err
+*----------------------------------------------------------------------
+*
+      if ((Out_blocme.eq.0).and.(Out_unf.gt.0)) then
+         err = fstfrm(Out_unf)
+         call fclos(Out_unf)
+         if (Out_debug_L)
+     $      write (6,102) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
+         Out_unf = 0
+      endif
+*
+ 102  format (' FST FILE UNIT=',i3,' FILE = ',a,' IS CLOSED')
+*----------------------------------------------------------------------
+      return
+      end

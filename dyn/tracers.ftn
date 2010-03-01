@@ -1,4 +1,4 @@
-***s/r tracers - Initializes liste of tracers
+***s/r tracers - Initializes list of tracers
 *
 #include "model_macros_f.h"
 *
@@ -11,21 +11,35 @@
 *revision
 * v2_31 - Desgagne M.       - initial version
 * v3_21 - Lee V.            - remove Tr2d
+* v3_30 - Desgagne M.       - memory calculation for tracers
 *
 *object
 *
 *arguments
+*        Tr3d_name_S acquires the list of tracers from itf_phy_inikey
+*        In this subroutine, it will acquire what is introduced from
+*        Tr3d_username_S (constructed from the entry routine)
+*        ie: QC can be filled with either QC or QCT1 or QCT0 from the
+*            given analysis (accessed by E_tr3dname_S of gement nml)
+*            but this is converted via BMF/BCS/3DF as QC
+*        Tracers requested under auto cascade requires only the first
+*        2 letters
 *
 *implicits
 #include "lun.cdk"
 #include "tr3d.cdk"
-#include "busind.cdk"
+#include "itf_phy_busind.cdk"
+#include "mem.cdk"
+#include "schm.cdk"
 *
       logical hu_L
-      integer i,k
+      integer i,k,memvmm,longueur
+      external longueur
+      character*4 username_S(MAXTR3D)
 **
 *     __________________________________________________________________
 *
+
       do 10 i=1,Tr3d_userntr
 *
 * Is user tracers already in Tr3d stack?
@@ -59,7 +73,6 @@
          hucond = tr3d_ntr
       endif
 *
-
       if (Lun_out.gt.0) then
          write (Lun_out,1001) 'TRACERS (3D storage):'
          do i=1,tr3d_ntr
@@ -67,8 +80,18 @@
          end do
       endif
 *
+      if (.not.Schm_phyms_L) Mem_minmem=Mem_minmem-24
+      memvmm = Mem_minmem + 4*max((tr3d_ntr-5),0)
+      if (Mem_mx3db.lt.memvmm) then
+        if (Lun_out.gt.0) write (Lun_out,1003) Mem_mx3db,memvmm
+        call gem_stop('tracers',-1)
+      endif
+*
  1001 format (/a)
  1002 format (2x,a4,d12.7,i4)
+ 1003 format (/'  ##### Mem_mx3db NOT large enough #####'/
+     $         'Current value for Mem_mx3db is: ',i5,/
+     $         'Must be set manually in &gem_cfgs to Mem_mx3db=',i5)
 *
 *     __________________________________________________________________
 *

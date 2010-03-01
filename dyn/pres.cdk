@@ -22,5 +22,6 @@
       common / pres / Pres_top, Pres_surf, Pres_ptop, Pres_pref
       MARK_COMMON_END (pres)
       MARK_COMMON_BEG (pres_l)
-      common / presl/ Pres_vtap_L
+      common / pres_l/ Pres_vtap_L
       MARK_COMMON_END (pres_l)
+

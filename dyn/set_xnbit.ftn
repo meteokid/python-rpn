@@ -4,7 +4,7 @@
 *
       integer function set_xnbit (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_argc,F_v1,F_v2
       character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
@@ -47,7 +47,6 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "dimout.cdk"
 #include "out3.cdk"
 *
 **

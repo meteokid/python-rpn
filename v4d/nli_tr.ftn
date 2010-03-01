@@ -1,0 +1,111 @@
+***s/r nli_tr - Equivalent to nli for TRAJECTORY 
+*
+#include "model_macros_f.h"
+*
+      subroutine nli_tr()
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - reduce standard output as in model 
+* v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+*
+*object
+*    see id section
+*
+*arguments
+*    none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "p_geof.cdk"
+#include "rhscm.cdk"
+#include "nlm.cdk"
+#include "cori.cdk"
+#include "vt0m.cdk" 
+#include "vtxm.cdk" 
+#include "ptopo.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*    
+      integer  pnerr, pnlod, pnlkey1(14), i, j 
+      real wijk1(LDIST_SHAPE,l_nk), wijk2(LDIST_SHAPE,l_nk)
+      real wk1(LDIST_SIZ*l_nk)
+*
+*     ______________________________________________________
+*
+      if (Lun_debug_L)  write(Lun_out,1000)
+*
+      pnlkey1(1) = VMM_KEY(rhelnm)
+      pnlkey1(2) = VMM_KEY(rhellm)
+      pnlkey1(3) = VMM_KEY(tpt0m)
+      pnlkey1(4) = VMM_KEY(tplt0m)
+      pnlkey1(5) = VMM_KEY(pipt0m)
+      pnlkey1(6) = VMM_KEY(st0m)
+      pnlkey1(7) = VMM_KEY(qt0m)
+      pnlod = 7 
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(fipt0m)
+         pnlkey1(pnlod+2) = VMM_KEY(topo)
+         pnlkey1(pnlod+3) = VMM_KEY(mut0m)
+         pnlkey1(pnlod+4) = VMM_KEY(multxm)
+         pnlod = pnlod+4
+      endif
+      if (Cori_cornl_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(ut0m)
+         pnlkey1(pnlod+2) = VMM_KEY(vt0m)
+         pnlod = pnlod+2
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*     - - - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(rhelnm)
+      pnerr = VMM_GET_VAR(rhellm)
+      pnerr = VMM_GET_VAR(tpt0m)
+      pnerr = VMM_GET_VAR(tplt0m)
+      pnerr = VMM_GET_VAR(pipt0m)
+      pnerr = VMM_GET_VAR(st0m)
+      pnerr = VMM_GET_VAR(qt0m)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(fipt0m)
+         pnerr = VMM_GET_VAR(topo)
+         pnerr = VMM_GET_VAR(mut0m)
+         pnerr = VMM_GET_VAR(multxm)
+      else
+         fipt0m_ = 0
+         topo_   = 0
+         mut0m_  = 0
+         multxm_ = 0
+      endif
+      if (Cori_cornl_L) then
+         pnerr = VMM_GET_VAR(ut0m)
+         pnerr = VMM_GET_VAR(vt0m)
+      else
+         ut0m_ = 0
+         vt0m_ = 0
+      endif
+*
+      call nlip_2 ( nlm_num, nlm_nvm, wk1   , nlm_nthm, nlm_n3m, nlm_n3pm, 
+     $              rhelnm , rhellm , tpt0m , tplt0m  , pipt0m , nlm_ncnm,  
+     $              st0m   , qt0m   , fipt0m, topo    , ut0m   , vt0m    , mut0m, multxm, 
+     $              wijk1  , wijk2  , LDIST_DIM,l_nk )
+*
+      pnerr = vmmuld(-1,0)
+*
+ 1000 format(5X,'TRAJ of COMPUTE NON-LINEAR RHS: (S/R NLI_TR)')
+*
+*     __________________________________________________________________
+*
+      return
+      end

@@ -18,13 +18,13 @@
 *
 #endif
       logical Mem_phyncore_L
-      integer Mem_mx3db,Mem_pslic
+      integer Mem_minmem,Mem_mx3db,Mem_pslic
 *
       MARK_COMMON_BEG (Meml)
       common / Meml/ Mem_phyncore_L
       MARK_COMMON_END (Meml)
       MARK_COMMON_BEG (Memi)
-      common / Memi/ Mem_mx3db,Mem_pslic
+      common / Memi/ Mem_minmem,Mem_mx3db,Mem_pslic
       MARK_COMMON_END (Memi)
 *
 

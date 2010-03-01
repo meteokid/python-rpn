@@ -1,0 +1,26 @@
+#if defined (DOC)
+*
+*revision
+* v2_20 - Desgagne M.       - add debug logical Lctl_debug_L
+*
+***comdeck lctl.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  TIME LOOP CONTROL VARIABLES                                         |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Lctl_step          | current time step of the integration            |
+*----------------------------------------------------------------------
+*
+*
+#endif
+      logical Lctl_r8stat_L, Lctl_debug_L
+      integer Lctl_step
+*
+      common / Lctl / Lctl_step
+      MARK_COMMON_BEG(lctl_l)
+      common / Lctl_l / Lctl_r8stat_L, Lctl_debug_L
+      MARK_COMMON_END(lctl_l)

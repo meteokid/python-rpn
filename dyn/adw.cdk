@@ -8,6 +8,7 @@
 * revision                                                             |
 * v3_20 - Gravel & Valin & Tanguay - Lagrange 3D                       | 
 *                                    and Optimized SETINT/TRILIN       |
+* v3_30 - McTaggart-Cowan R.	   - Add Adw_interp_type options       |
 *______________________________________________________________________|
 *                                                                      |
 * 3 different grids are refered to throughout the advection process:   |
@@ -39,7 +40,10 @@
 *              |                  lation is requested are inside own   |
 *              |                  advection source grid                |
 * Adw_mono_L   | switch: .true. : advection of tracers is monotonic    |
-* Adw_lag3d_L  | switch: .true. : cubic Lagrange in 3D                 |
+* Adw_interp_type interpolation scheme for back-trajectories ("cubic"):|
+*	       |  "cubic"         Lagrangian(h)/cubic(v) interpolation |
+*	       |  "lag3d"         tri-Lagrangian 3D interpolation      |
+*	       |  "lag3d_trunc "  truncated Lagrangian 3D interpolation|
 * Adw_nosetint_L switch: .true. : no setint for TRILIN (done inside)   |
 * Adw_hor_L    | switch: .true. : update horizontal positions          |
 *              |                  for Optimized SETINT/TRILIN          |
@@ -163,7 +167,7 @@
 #endif
 *
       logical            Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L,
-     %                   Adw_mono_L,Adw_lag3d_L,Adw_nosetint_L,Adw_hor_L,Adw_ver_L
+     %                   Adw_mono_L,Adw_nosetint_L,Adw_hor_L,Adw_ver_L
 *
       integer            Adw_halox, Adw_haloy,
      %                   Adw_nic, Adw_nit, Adw_njc, Adw_njt,
@@ -175,9 +179,16 @@
       real*8             Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8, 
      %                   Adw_x00_8,  Adw_y00_8,  Adw_z00_8, Adw_cfl_8(3)
 *
+      character(len=64) :: Adw_interp_type_S
+*
+      MARK_COMMON_BEG (adw_c)
+      common / adw_c  /  Adw_interp_type_S
+      MARK_COMMON_END (adw_c)
+*
       MARK_COMMON_BEG (adw_l)
-      common / adw_l  /  Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L,
-     %                   Adw_mono_L,Adw_lag3d_L,Adw_nosetint_L,Adw_hor_L,Adw_ver_L
+      common / adw_l  /  Adw_nkbz_L,Adw_exdg_L,Adw_nosetint_L,
+     %                   Adw_ckbd_L,Adw_mono_L,Adw_trunc_traj_L,
+     %                   Adw_hor_L, Adw_ver_L
       MARK_COMMON_END (adw_l)
 *
       MARK_COMMON_BEG (adw_ia)

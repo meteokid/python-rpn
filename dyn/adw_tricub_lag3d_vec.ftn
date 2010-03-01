@@ -1,0 +1,323 @@
+***s/r adw_tricub_lag3d_vec - Tri-cubic interpolation: Lagrange 3d 
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_tricub_lag3d_vec ( F_out, F_in, F_x, F_y, F_z,
+     %                              F_num, F_mono_L, i0, in, j0, jn, kn )
+*
+      implicit none
+*
+      logical F_mono_L
+*
+      integer F_num, i0, in, j0, jn, kn
+*
+      real F_in(*)
+*
+      real F_out (F_num), F_x(F_num), F_y(F_num), F_z(F_num)
+*
+*authors
+*     Ron  McTaggart-Cowan
+*      
+*revision
+* v3_30 - McTaggart-Cowan   - Initial version
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+* F_out        | result of interpolation                         |  o  |
+* F_in         | field to interpolate                            |  i  |
+*              |                                                 |     |
+* F_x          | interpolation target X coordinate               |  i  |
+* F_y          | interpolation target Y coordinate               |  i  |
+* F_z          | interpolation target Z coordinate               |  i  |
+*              |                                                 |     |
+* F_num        | number of points to interpolate                 |  i  |
+*              |                                                 |     |
+* F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "adw.cdk"
+#include "adw_comp.cdk"
+* *******************************************************************
+*     Internal declarations
+* *******************************************************************
+* Statement functions
+      real za
+      real *8 triprd,zb,zc,zd
+      triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
+* Standard declarations
+      integer :: nijk,err,m,cnt,nijag,i,j,k,nij,iimax,jjmax,kkmax
+      integer, dimension(3) :: timer0,timer
+      integer, dimension(:), allocatable, save :: ii,jj,kk,n
+      integer, dimension(:,:), allocatable, save :: o1,o2,o3,o4
+      real, dimension(:), allocatable :: prmax, prmin
+      real(kind=8), dimension(:,:), allocatable :: a,b,c,d,p
+      real(kind=8), dimension(:,:), allocatable, save :: ra,rb,rc,rd
+      logical :: init=.true.
+      logical, dimension(:), allocatable, save :: zcubic_L
+*
+*     ----------------------------------------------------
+*
+#if defined (TIMER)
+* Initialize system clock (-DTIMER)
+      call system_clock(count=timer0(1),count_rate=timer0(2),count_max=timer0(3))
+#endif
+*
+* *******************************************************************
+*	Local grid sizing
+* *******************************************************************
+      nij   = l_ni*l_nj
+      nijag = Adw_nit * Adw_njt
+      nijk  = (kn-1)*nij + ((jn-1)*l_ni) + in
+      cnt   = kn * (jn-j0+1) * (in-i0+1)
+*
+      iimax = G_ni+2*Adw_halox-2
+      jjmax = G_nj+Adw_haloy
+      kkmax = l_nk-1
+*
+* *******************************************************************
+*	Initialize local positional arrays on startup
+* *******************************************************************
+      if (init) then
+*
+	allocate(ra(cnt,3),rb(cnt,3),rc(cnt,3),rd(cnt,3),stat=err)
+	if (err /= 0) write(6,*) "ADW_TRICUB_LAG3D_VEC: Allocation error (D,S)"
+	allocate(ii(cnt),jj(cnt),kk(cnt),o1(cnt,4),o2(cnt,4),o3(cnt,4),o4(cnt,4),stat=err)
+	if (err /= 0) write(6,*) "ADW_TRICUB_LAG3D_VEC: Allocation error (I,S)"
+	allocate(zcubic_L(cnt),stat=err)
+	if (err /= 0) write(6,*) "ADW_TRICUB_LAG3D_VEC: Allocation error (L,S)"
+	allocate(n(cnt),stat=err)
+	if (err /= 0) write(6,*) "ADW_TRICUB_LAG3D_VEC: Allocation error (I,S)"
+	m = 1
+	do k=1,kn
+	  do j=j0,jn
+	    do i=i0,in
+	      n(m) = (k-1)*nij + ((j-1)*l_ni) + i
+	      m = m+1
+	    enddo
+	  enddo
+	enddo
+*
+	init = .false.			!execute on startup only
+	adw_comp_cub_L = .true.		!need to initialize values (below)
+*
+      endif
+*
+* *******************************************************************
+*	Set local array sizes and allocate
+* *******************************************************************
+      allocate(prmax(cnt),prmin(cnt),stat=err)
+      if (err /= 0) write(6,*) "ADW_TRICUB_LAG3D_VEC: Allocation error (R,L)"
+      allocate(a(cnt,4),b(cnt,4),c(cnt,4),d(cnt,4),p(cnt,4),stat=err)
+      if (err /= 0) write(6,*) "ADW_TRICUB_LAG3D_VEC: Allocation error (D,L)"
+*
+* *******************************************************************
+* 	Set positional parameters if required
+* *******************************************************************
+      if (adw_comp_cub_L) then
+	do m=1,cnt
+* Prepare x points
+          ii(m) = ( F_x(n(m)) - Adw_x00_8 ) * Adw_ovdx_8
+          ii(m) = Adw_lcx( ii(m)+1 ) + 1
+	  if (F_x(n(m)) < Adw_bsx_8(ii(m))) ii(m) = ii(m) - 1
+	  ii(m) = max(2,min(ii(m),iimax))
+* Prepare y points
+	  jj(m) = ( F_y(n(m)) - Adw_y00_8 ) * Adw_ovdy_8
+	  jj(m) = Adw_lcy( jj(m)+1 ) + 1
+	  if (F_y(n(m)) < Adw_bsy_8(jj(m))) jj(m) = jj(m) - 1
+	  jj(m) = max(Adw_haloy,min(jj(m),jjmax))
+* Prepare z points
+	  kk(m) = ( F_z(n(m)) - Adw_z00_8 ) * Adw_ovdz_8
+	  kk(m) = Adw_lcz( kk(m)+1 )
+	  if (F_z(n(m)) < Adw_bsz_8(kk(m))) kk(m) = kk(m) - 1
+	  kk(m) = min(kkmax-1,max(0,kk(m)))
+*
+	  zcubic_L(m) = (kk(m) > 0) .and. (kk(m) < kkmax-1)
+*
+      	  o2(m,1) = (kk(m)-1)*nijag + (jj(m)-Adw_int_j_off-1)*Adw_nit + (ii(m)-Adw_int_i_off)
+      	  o1(m,1) = o2(m,1)-Adw_nit	
+      	  o3(m,1) = o2(m,1)+Adw_nit	
+      	  o4(m,1) = o3(m,1)+Adw_nit
+	  o1(m,2) = o1(m,1)+nijag  !unroll loop for vectorization
+	  o2(m,2) = o2(m,1)+nijag
+	  o3(m,2) = o3(m,1)+nijag
+	  o4(m,2) = o4(m,1)+nijag
+	  o1(m,3) = o1(m,2)+nijag
+	  o2(m,3) = o2(m,2)+nijag
+	  o3(m,3) = o3(m,2)+nijag
+	  o4(m,3) = o4(m,2)+nijag
+	  o1(m,4) = o1(m,3)+nijag
+	  o2(m,4) = o2(m,3)+nijag
+	  o3(m,4) = o3(m,3)+nijag
+	  o4(m,4) = o4(m,3)+nijag
+*
+      	  ra(m,1) = Adw_bsx_8(ii(m)-1)
+      	  rb(m,1) = Adw_bsx_8(ii(m)  )
+      	  rc(m,1) = Adw_bsx_8(ii(m)+1)
+      	  rd(m,1) = Adw_bsx_8(ii(m)+2)
+      	  ra(m,2) = Adw_bsy_8(jj(m)-1)
+	  rb(m,2) = Adw_bsy_8(jj(m)  )
+      	  rc(m,2) = Adw_bsy_8(jj(m)+1)
+      	  rd(m,2) = Adw_bsy_8(jj(m)+2)
+	  if (zcubic_L(m)) then
+	    ra(m,3) = Adw_bsz_8(kk(m)-1)
+      	    rb(m,3) = Adw_bsz_8(kk(m)  )
+      	    rc(m,3) = Adw_bsz_8(kk(m)+1)
+      	    rd(m,3) = Adw_bsz_8(kk(m)+2)
+	  endif
+	enddo
+*
+        adw_comp_cub_L = .false.	!save position until next request
+*
+      endif
+*
+* *********************************************************************
+*	Begin main interpolation loops
+* *********************************************************************
+*
+#if defined (TIMER)
+* System timing function (-DTIMER)
+      call system_clock(count=timer(1),count_rate=timer(2),count_max=timer(3))
+      write(6,*) 'PRE-X time (ms): ',timer(1)-timer0(1)
+#endif
+*
+      do m=1,cnt
+*
+* *********************************************************************
+*     x interpolation
+* *********************************************************************
+      	p(m,1) = triprd(F_x(n(m)),rb(m,1),rc(m,1),rd(m,1))*Adw_xabcd_8(ii(m))
+      	p(m,2) = triprd(F_x(n(m)),ra(m,1),rc(m,1),rd(m,1))*Adw_xbacd_8(ii(m))
+      	p(m,3) = triprd(F_x(n(m)),ra(m,1),rb(m,1),rd(m,1))*Adw_xcabd_8(ii(m))
+      	p(m,4) = triprd(F_x(n(m)),ra(m,1),rb(m,1),rc(m,1))*Adw_xdabc_8(ii(m))
+*
+        if (zcubic_L(m)) then
+    	  a(m,1) = p(m,1) * F_in  (o1(m,1)-1) + p(m,2) * F_in  (o1(m,1)) + p(m,3) * F_in  (o1(m,1)+1) + p(m,4) * F_in  (o1(m,1)+2)
+      	  a(m,2) = p(m,1) * F_in  (o2(m,1)-1) + p(m,2) * F_in  (o2(m,1)) + p(m,3) * F_in  (o2(m,1)+1) + p(m,4) * F_in  (o2(m,1)+2)
+      	  a(m,3) = p(m,1) * F_in  (o3(m,1)-1) + p(m,2) * F_in  (o3(m,1)) + p(m,3) * F_in  (o3(m,1)+1) + p(m,4) * F_in  (o3(m,1)+2)
+      	  a(m,4) = p(m,1) * F_in  (o4(m,1)-1) + p(m,2) * F_in  (o4(m,1)) + p(m,3) * F_in  (o4(m,1)+1) + p(m,4) * F_in  (o4(m,1)+2)
+*
+      	  d(m,1) = p(m,1) * F_in  (o1(m,4)-1) + p(m,2) * F_in  (o1(m,4)) + p(m,3) * F_in  (o1(m,4)+1) + p(m,4) * F_in  (o1(m,4)+2)
+      	  d(m,2) = p(m,1) * F_in  (o2(m,4)-1) + p(m,2) * F_in  (o2(m,4)) + p(m,3) * F_in  (o2(m,4)+1) + p(m,4) * F_in  (o2(m,4)+2)
+      	  d(m,3) = p(m,1) * F_in  (o3(m,4)-1) + p(m,2) * F_in  (o3(m,4)) + p(m,3) * F_in  (o3(m,4)+1) + p(m,4) * F_in  (o3(m,4)+2)
+      	  d(m,4) = p(m,1) * F_in  (o4(m,4)-1) + p(m,2) * F_in  (o4(m,4)) + p(m,3) * F_in  (o4(m,4)+1) + p(m,4) * F_in  (o4(m,4)+2)
+        endif
+*
+      	b(m,1) = p(m,1) * F_in  (o1(m,2)-1) + p(m,2) * F_in  (o1(m,2)) + p(m,3) * F_in  (o1(m,2)+1) + p(m,4) * F_in  (o1(m,2)+2)
+      	b(m,2) = p(m,1) * F_in  (o2(m,2)-1) + p(m,2) * F_in  (o2(m,2)) + p(m,3) * F_in  (o2(m,2)+1) + p(m,4) * F_in  (o2(m,2)+2)
+      	b(m,3) = p(m,1) * F_in  (o3(m,2)-1) + p(m,2) * F_in  (o3(m,2)) + p(m,3) * F_in  (o3(m,2)+1) + p(m,4) * F_in  (o3(m,2)+2)
+      	b(m,4) = p(m,1) * F_in  (o4(m,2)-1) + p(m,2) * F_in  (o4(m,2)) + p(m,3) * F_in  (o4(m,2)+1) + p(m,4) * F_in  (o4(m,2)+2)
+*
+     	c(m,1) = p(m,1) * F_in  (o1(m,3)-1) + p(m,2) * F_in  (o1(m,3)) + p(m,3) * F_in  (o1(m,3)+1) + p(m,4) * F_in  (o1(m,3)+2)
+      	c(m,2) = p(m,1) * F_in  (o2(m,3)-1) + p(m,2) * F_in  (o2(m,3)) + p(m,3) * F_in  (o2(m,3)+1) + p(m,4) * F_in  (o2(m,3)+2)
+     	c(m,3) = p(m,1) * F_in  (o3(m,3)-1) + p(m,2) * F_in  (o3(m,3)) + p(m,3) * F_in  (o3(m,3)+1) + p(m,4) * F_in  (o3(m,3)+2)
+      	c(m,4) = p(m,1) * F_in  (o4(m,3)-1) + p(m,2) * F_in  (o4(m,3)) + p(m,3) * F_in  (o4(m,3)+1) + p(m,4) * F_in  (o4(m,3)+2)
+*
+      enddo
+*
+#if defined (TIMER)
+* System timing function (-DTIMER)
+      call system_clock(count=timer(1),count_rate=timer(2),count_max=timer(3))
+      print*, 'PRE-Y time (ms): ',timer(1)-timer0(1)
+#endif
+*
+* *********************************************************************
+*     y interpolation
+* *********************************************************************
+      do m=1,cnt
+      	p(m,1) = triprd(F_y(n(m)),rb(m,2),rc(m,2),rd(m,2))*Adw_yabcd_8(jj(m))
+      	p(m,2) = triprd(F_y(n(m)),ra(m,2),rc(m,2),rd(m,2))*Adw_ybacd_8(jj(m))
+      	p(m,3) = triprd(F_y(n(m)),ra(m,2),rb(m,2),rd(m,2))*Adw_ycabd_8(jj(m))
+      	p(m,4) = triprd(F_y(n(m)),ra(m,2),rb(m,2),rc(m,2))*Adw_ydabc_8(jj(m))
+*
+    	if (zcubic_L(m)) then
+	  a(m,1) = p(m,1) * a(m,1) + p(m,2) * a(m,2) + p(m,3) * a(m,3) + p(m,4) * a(m,4)
+	  d(m,1) = p(m,1) * d(m,1) + p(m,2) * d(m,2) + p(m,3) * d(m,3) + p(m,4) * d(m,4)
+	endif
+*
+      	b(m,1) = p(m,1) * b(m,1) + p(m,2) * b(m,2) + p(m,3) * b(m,3) + p(m,4) * b(m,4)
+      	c(m,1) = p(m,1) * c(m,1) + p(m,2) * c(m,2) + p(m,3) * c(m,3) + p(m,4) * c(m,4)
+      enddo
+*
+#if defined (TIMER)
+* System timing function (-DTIMER)
+      call system_clock(count=timer(1),count_rate=timer(2),count_max=timer(3))
+      print*, 'PRE-Z time (ms): ',timer(1)-timer0(1)
+#endif
+*
+* *********************************************************************
+*     z interpolation
+* *********************************************************************
+      do m=1,cnt
+	if (zcubic_L(m)) then
+	  p(m,1) = triprd(F_z(n(m)),rb(m,3),rc(m,3),rd(m,3))*Adw_zabcd_8(kk(m)+1)
+	  p(m,2) = triprd(F_z(n(m)),ra(m,3),rc(m,3),rd(m,3))*Adw_zbacd_8(kk(m)+1)
+          p(m,3) = triprd(F_z(n(m)),ra(m,3),rb(m,3),rd(m,3))*Adw_zcabd_8(kk(m)+1)
+	  p(m,4) = triprd(F_z(n(m)),ra(m,3),rb(m,3),rc(m,3))*Adw_zdabc_8(kk(m)+1)
+*
+	  p(m,1) = p(m,1) * a(m,1) + p(m,2) * b(m,1) + p(m,3) * c(m,1) + p(m,4) * d(m,1) 	!recycle p1
+*
+	else
+	  p(m,3) = (F_z(n(m))-Adw_bsz_8(kk(m)))*Adw_zbc_8(kk(m)+1)
+          p(m,2) = 1. - p(m,3)
+*
+          p(m,1) = p(m,2) * b(m,1) + p(m,3) * c(m,1)					!recycle p1
+	endif
+*
+* *********************************************************************
+*	End of main loops
+* *********************************************************************
+      enddo
+*
+#if defined (TIMER)
+* System timing function (-DTIMER)
+      call system_clock(count=timer(1),count_rate=timer(2),count_max=timer(3))
+      print*, 'PRE-ASSIGNMENT time (ms): ',timer(1)-timer0(1)
+#endif
+*
+* *********************************************************************
+* 	Final data assignment
+* *********************************************************************
+      if (.not.F_mono_L) then
+	do m=1,cnt
+	  F_out(n(m)) = p(m,1)
+	enddo
+      else
+	do m=1,cnt
+      	  prmax(m) = max(F_in(o2(m,2)),F_in(o2(m,2)+1),F_in(o3(m,2)),F_in(o3(m,2)+1))
+      	  prmin(m) = min(F_in(o2(m,2)),F_in(o2(m,2)+1),F_in(o3(m,2)),F_in(o3(m,2)+1))
+	  prmax(m) = max(prmax(m),F_in(o2(m,3)),F_in(o2(m,3)+1),F_in(o3(m,3)),F_in(o3(m,3)+1))
+      	  prmin(m) = min(prmin(m),F_in(o2(m,3)),F_in(o2(m,3)+1),F_in(o3(m,3)),F_in(o3(m,3)+1))
+	  F_out(n(m)) = max (dble(prmin(m)),min(dble(prmax(m)),p(m,1)))
+	enddo
+      endif
+*
+#if defined (TIMER)
+* System timing function (-DTIMER)
+      call system_clock(count=timer(1),count_rate=timer(2),count_max=timer(3))
+      print*, 'POST-ASSIGNMENT time (ms): ',timer(1)-timer0(1)
+#endif
+*
+* *********************************************************************
+* 	Clear stack
+* *********************************************************************
+      deallocate(prmin,prmax)
+      if (err /= 0) write(6,*) "ADW_TRICUB_LAG3D_VEC: Deallocation error (R,L)"
+      deallocate(a,b,c,d,p,stat=err)
+      if (err /= 0) write(6,*) "ADW_TRICUB_LAG3D_VEC: Deallocation error (D,L)"
+*
+#if defined (TIMER)
+* System timing function (-DTIMER)
+      call system_clock(count=timer(1),count_rate=timer(2),count_max=timer(3))
+      print*, 'FINAL WALL-CLOCK time (ms): ',timer(1)-timer0(1)
+#endif
+*
+      return
+      end

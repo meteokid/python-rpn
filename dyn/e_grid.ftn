@@ -11,28 +11,41 @@
 * v2_30                       cartesian coordinates
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
+* v3_30 - Desgagne M.       - Check that LAM grid does not extend to
+*                             global coverage and eliminated Grd_roule
 *
 *implicits
 #include "e_grids.cdk"
+#include "e_geomg.cdk"
+#include "dcst.cdk"
 #include "hgc.cdk"
 #include "grd.cdk"
 *
       integer  stretch_axis2, ezgdef_fmem
       external stretch_axis2, ezgdef_fmem
 *
+      logical global_extend
       integer i,j,nleft,nbelo,nimax,njmax,ier,ni,nila,ng
-      real*8 y_8(Grd_nj+2),pt5,x2_8(2000),y2_8(2000),
-     $       a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3)
-      real*8, dimension (:), allocatable :: x_8
-      parameter (pt5 = 0.5)
       real r1,s1,x0,y0,xl,yl
-*
+      real*8 y_8(Grd_nj+2), x2_8(2000), y2_8(2000)
+      real*8, dimension (:), allocatable :: x_8
+      real*8 pt5,epsilon,deg2rad_8,ONE_8,CLXXX_8
+      parameter ( pt5    = 0.5d0, epsilon = 1.0d-5)
+      parameter ( ONE_8  = 1.0  , CLXXX_8 = 180.0 )
+**
 *----------------------------------------------------------------------
 *
-      call hpalloc (paxfi, nifi, ier, 1)
-      call hpalloc (payfi, njfi, ier, 1)
-      call hpalloc (paxu , niu , ier, 1)
-      call hpalloc (payv , njv , ier, 1)
+      write(6,1001)
+*
+      global_extend = (abs(1.0d0-abs(Grd_xl-Grd_x0)/360.d0).lt.epsilon)
+     $           .or. (abs(1.0d0-abs(Grd_yl-Grd_y0)/180.d0).lt.epsilon)
+*
+      if (LAM .and. global_extend) then
+         write (6,2005) 
+         stop
+      endif
+*
+      allocate (xfi(nifi),yfi(njfi),xu(niu),yv(njv))
 *
       ni   = Grd_ni
       nila = Grd_nila
@@ -42,36 +55,11 @@
       endif
 *
       allocate (x_8(ni+2))
-      Hgc_gxtyp_s = 'E'
-      write(6,1001)
-*
-*     reset Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2 
-*     if grid is not rotated
-*
-      if (.not. Grd_roule) then
-         Grd_xlon1=180.
-         Grd_xlat1=0.
-         Grd_xlon2=270.
-         Grd_xlat2=0.
-      endif
-*      
-      LAM = .false.
-      if (abs(1.0-abs(Grd_xl-Grd_x0)/360.).gt.1.0e-5) LAM = .true.
-      if (abs(1.0-abs(Grd_yl-Grd_y0)/180.).gt.1.0e-5) LAM = .true.
-*
-*     compute RPN/FST grid descriptors
-*
-      call cxgaig ( Hgc_gxtyp_S,Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,
-     $                        Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )
-      call cigaxg ( Hgc_gxtyp_S,Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2,
-     $                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro )
-*
-      write(6,1005) Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2
 *
 *     compute x and y positions of the PHI grid
 *
       ier=stretch_axis2 ( x_8, Grd_dx, Grd_x0, Grd_xl, nleft, ni, nila,
-     $                    r1, .false., .false., Grd_dxmax, nimax, Grd_gauss_L )
+     $             r1, .false., .false., Grd_dxmax, nimax, Grd_gauss_L )
 *
       if (ier.ne.0) then
           write(6,*)'ERROR in generating X axis!!! ABORT!!!!'
@@ -80,10 +68,10 @@
 *
       if (LAM) then
          ier=stretch_axis2 ( y_8, Grd_dy, Grd_y0, Grd_yl, nbelo, Grd_nj,
-     $                   Grd_njla, s1, .false.,.false.,Grd_dymax,njmax, Grd_gauss_L )
+     $      Grd_njla, s1, .false.,.false.,Grd_dymax,njmax, Grd_gauss_L )
       else
          ier=stretch_axis2 ( y_8, Grd_dy, Grd_y0, Grd_yl, nbelo, Grd_nj,
-     $                   Grd_njla, s1, .true. ,.false.,Grd_dymax,njmax, Grd_gauss_L )
+     $      Grd_njla, s1, .true. ,.false.,Grd_dymax,njmax, Grd_gauss_L )
       endif 
 *
       if (ier.ne.0) then
@@ -137,59 +125,6 @@
       if ( njmax .gt. 0 ) write(6,1035) Grd_dymax, njmax, 'Y','Y'
       write(6,1031)
 *
-*     Compute rotated coordinates if Grd_roule = .true.
-*
-      if (Grd_roule) then
-*
-*     Compute the rotation matrix (r_8) that allows transformation
-*     from the none-rotated to the rotated spherical coordinate system.
-*
-*     Compute transform matrices xyz1_8 and xyz2_8
-*
-         call llacar ( xyz1_8, Grd_xlon1, Grd_xlat1, 1, 1 )
-         call llacar ( xyz2_8, Grd_xlon2, Grd_xlat2, 1, 1 )
-*
-*     Compute a = cos(alpha) & b = sin(alpha)
-*
-         a_8 = (xyz1_8(1)*xyz2_8(1)) + (xyz1_8(2)*xyz2_8(2)) 
-     $                               + (xyz1_8(3)*xyz2_8(3))
-         b_8 = sqrt (((xyz1_8(2)*xyz2_8(3)) - (xyz2_8(2)*xyz1_8(3)))**2
-     $            +  ((xyz2_8(1)*xyz1_8(3)) - (xyz1_8(1)*xyz2_8(3)))**2 
-     $            +  ((xyz1_8(1)*xyz2_8(2)) - (xyz2_8(1)*xyz1_8(2)))**2)
-*
-*     Compute c = norm(-r1) & d = norm(r4)
-*
-         c_8 = sqrt ( xyz1_8(1)**2 + xyz1_8(2)**2 + xyz1_8(3)**2 )
-         d_8 = sqrt ( ( ( (a_8*xyz1_8(1)) - xyz2_8(1) ) / b_8 )**2 +
-     $                ( ( (a_8*xyz1_8(2)) - xyz2_8(2) ) / b_8 )**2 +
-     $                ( ( (a_8*xyz1_8(3)) - xyz2_8(3) ) / b_8 )**2  )
-*
-         Grd_rot_8(1,1)=  -xyz1_8(1)/c_8
-         Grd_rot_8(1,2)=  -xyz1_8(2)/c_8
-         Grd_rot_8(1,3)=  -xyz1_8(3)/c_8
-         Grd_rot_8(2,1)=  ( ((a_8*xyz1_8(1)) - xyz2_8(1)) / b_8)/d_8
-         Grd_rot_8(2,2)=  ( ((a_8*xyz1_8(2)) - xyz2_8(2)) / b_8)/d_8
-         Grd_rot_8(2,3)=  ( ((a_8*xyz1_8(3)) - xyz2_8(3)) / b_8)/d_8
-         Grd_rot_8(3,1)=  
-     $        ( (xyz1_8(2)*xyz2_8(3)) - (xyz2_8(2)*xyz1_8(3)))/b_8
-         Grd_rot_8(3,2)=  
-     $        ( (xyz2_8(1)*xyz1_8(3)) - (xyz1_8(1)*xyz2_8(3)))/b_8
-         Grd_rot_8(3,3)=  
-     $        ( (xyz1_8(1)*xyz2_8(2)) - (xyz2_8(1)*xyz1_8(2)))/b_8
-*
-      else
-*
-         do j=1,3
-         do i=1,3
-            Grd_rot_8(i,j) = 0.0
-         enddo
-         enddo
-         Grd_rot_8(1,1) = 1.
-         Grd_rot_8(2,2) = 1.
-         Grd_rot_8(3,3) = 1.
-*
-      endif
-*
       dstf_gid = ezgdef_fmem (ni , Grd_nj , 'Z', 'E', Hgc_ig1ro,
      $               Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
       dstu_gid = ezgdef_fmem (niu, Grd_nj , 'Z', 'E', Hgc_ig1ro,
@@ -197,20 +132,81 @@
       dstv_gid = ezgdef_fmem (ni , njv    , 'Z', 'E', Hgc_ig1ro,
      $               Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yv  )
 *
+      allocate (xdx(nifi),xdy(njfi),xdxu(nifi),xdyv(njfi))
+      allocate (xdcy(pnj),xdcyv(pnjv),xdhx(pni),xdhy(pnj),
+     $          xdhxu(0:pniu), xdhyv(0:pnjv) )
+*
+      deg2rad_8 = acos( -ONE_8 )/CLXXX_8
+*
+      if (LAM) then
+         do i = 1, nifi
+            xdx(i)   = xfi(i) * deg2rad_8
+         enddo
+         do i = 1,niu
+            xdxu (i) = xu (i) * deg2rad_8
+         enddo
+      else
+         do i = 1,nifi-1
+            xdx(i)   = xfi(i) * deg2rad_8
+            xdxu (i) = xu (i) * deg2rad_8
+         enddo
+      endif
+      do j = 1,njfi
+         xdy(j)   = yfi(j) * deg2rad_8
+      enddo
+      do j = 1,njv
+         xdyv (j) = yv (j) * deg2rad_8
+      enddo
+*
+      do j=1,pnj
+         xdcy(j)  = cos( xdy (j) )
+      enddo
+      do j=1,pnjv
+         xdcyv(j) = cos( xdyv(j) )
+      enddo
+      do i=1,pni-1
+         xdhx(i) = xdx(i+1) - xdx(i)
+      enddo
+      do j=1,pnj-1
+         xdhy(j) = xdy(j+1) - xdy(j)
+      enddo
+      do i=1,pniu-1
+         xdhxu(i) = xdxu(i+1) - xdxu(i)
+      enddo
+      do j=1,pnjv-1
+         xdhyv(j) = xdyv(j+1) - xdyv(j)
+      enddo
+      xdhy(pnj) = xdhy(pnj-1)
+*
+      if (lam) then
+         xdhx (pni ) = xdhx (pni- 1)
+         xdhxu(  0 ) = xdhxu(     1)
+         xdhxu(pniu) = xdhxu(pniu-1)
+         xdhyv(   0) = xdhyv(1     )
+         xdhyv(pnjv) = xdhyv(pnjv-1)
+      else
+         xdhx (pni ) = xdx  (1) + 2.0 * Dcst_pi_8 - xdx (pni )
+         xdhxu(  0 ) = xdxu (1) + 2.0 * Dcst_pi_8 - xdxu(pniu)
+         xdhxu(pniu) = xdhxu(0)
+         xdhyv(0   ) = xdyv (1) + ( Dcst_pi_8 / 2.0 )
+         xdhyv(pnjv) = ( Dcst_pi_8 / 2.0 ) - xdyv(pnjv)
+      endif
+*     
+*----------------------------------------------------------------------
+*
+ 2005 format (/' LAM grid extends to global coverage on at least ',
+     $        /' one axis ---- ABORT -----'/)
  1001 format (/1x,'COMPUTE MODEL GRID (S/R E_GRIDGEF)',
      $        /1x,34('='))
- 1005 format (/1x,'AJUSTED RPN/FST grid descriptors Grd_xlat1,',
-     $            'Grd_xlon1,Grd_xlat2,Grd_xlon2:'
-     $        /4f12.6/1x,73('='))
  1020 FORMAT (/1X,'FINAL HORIZONTAL GRID CONFIGURATION:'
      $  /1X,' NI=',I4,' FROM Grd_x0=',F9.3,' TO Grd_xl=',F9.3,' DEGREES'
      $  /1X,' NJ=',I4,' FROM Grd_y0=',F9.3,' TO Grd_yl=',F9.3,' DEGREES'
      $  /1X,' CENTRAL POINT OF THE GRID  Grd_xlon1,Grd_xlat1=',
      $  2F9.3,' DEGREES'/1x,74('='))
- 1025  FORMAT(/1X,'THE CONSTANT RESOLUTION AREA HAS:'
-     $        /1X,' NILA=',I4,' OF GRID-LENGTH=',F9.4,' DEGREES'
+ 1025  FORMAT(/1X,'THE CONSTANT RESOLUTION AREA HAS:',
+     $        /1X,' NILA=',I4,' OF GRID-LENGTH=',F9.4,' DEGREES',
      $         1x,'(',i4,',',i4,' )',
-     $        /1X,' NJLA=',I4,' OF GRID-LENGTH=',F9.4,' DEGREES'
+     $        /1X,' NJLA=',I4,' OF GRID-LENGTH=',F9.4,' DEGREES',
      $         1x,'(',i4,',',i4,' )',
      $        /1x,56('='))
  1030  FORMAT(/1X,'THE VARIABLE RESOLUTION AREA HAS:'

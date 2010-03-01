@@ -1,0 +1,80 @@
+***s/r v4d_irgdint_1_nw_ad - ADJ of ez_irgdint_1_nw 
+*
+      subroutine v4d_irgdint_1_nw_ad (zo,px,py,npts,ax,ay,zi,i1,i2,j1,j2,nk,jmin,jmax)
+*
+      implicit none
+*
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax
+      real zo(nk,npts),zi(i1:i2,j1:j2,nk),
+     %     px(npts),py(npts),ax(i1:i2),ay(j1:j2)
+*
+*author Tanguay M. 
+*
+*revision
+* v3_00 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - correction for px or py negative
+*
+*object
+*  see id section
+*
+*Adjoint of
+*arguments
+* Name         I/O        Description
+*----------------------------------------------------------------
+* zo            O         Interpolated field at positions px,py
+* px            I         Position x in INPUT grid
+* py            I         Position y in INPUT grid
+* npts          I         Number of positions in zo
+* zi            I         Field on INPUT grid
+* ax            I         X axe of INPUT grid
+* ay            I         Y axe of INPUT grid
+* i1-i2         I         Dimension x in INPUT grid
+* j1-j2         I         Dimension y in INPUT grid
+* nk            I         Dimension z in INPUT grid
+* jmin          I         Lower  limit j
+* jmax          I         Higher limit j
+*----------------------------------------------------------------
+*
+      integer i,j,n,k
+      real*8 x_8,y_8,x1_8,x2_8,y1_8,y2_8,dx_8,dy_8
+*
+      real*8, parameter :: ZERO_8 = 0.0
+      real*8, parameter :: ONE_8  = 1.0
+*
+      do n=npts,1,-1
+      do k=nk,1,-1
+*
+*        FIXED
+*        -----
+         i = min(i2-1,  max(i1,  ifix(px(n))))
+         j = min(jmax-1,max(jmin,ifix(py(n))))
+*
+         if (px(n).lt.0.) i = i-1 
+*
+         if (py(n).lt.0.) j = j-1 
+*
+         x1_8=ax(i)
+         x2_8=ax(i+1)
+*
+         x_8 = x1_8 + (x2_8-x1_8)*(px(n)-i)
+         y_8 = ay(j) + (ay(j+1)-ay(j))*(py(n)-j)
+*
+         dx_8 = (x_8 - x1_8)/(x2_8-x1_8)
+         dy_8 = (y_8 - ay(j))/(ay(j+1)-ay(j))
+*
+*        ADJOINT
+*        -------
+         y1_8       = dble(zo(k,n)) * (ONE_8-dy_8)
+         y2_8       = dble(zo(k,n)) *        dy_8
+         zo(k,n)    = ZERO_8
+*
+         zi(i,  j+1,k) = y2_8 * (ONE_8 - dx_8) + zi(i,  j+1,k)
+         zi(i+1,j+1,k) = y2_8 *          dx_8  + zi(i+1,j+1,k)
+         zi(i,  j  ,k) = y1_8 * (ONE_8 - dx_8) + zi(i,  j  ,k)
+         zi(i+1,j  ,k) = y1_8 *          dx_8  + zi(i+1,j  ,k)
+*
+      enddo
+      enddo
+*
+      return
+      end

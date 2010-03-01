@@ -3,7 +3,7 @@
 #include "model_macros_f.h"
 *
       subroutine ta2t1tx
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Alain Patoine - april 94
@@ -30,16 +30,11 @@
 #include "vtx.cdk"
 #include "nest.cdk"
 #include "tr3d.cdk"
-#include "p_bus.cdk"
-#include "mem.cdk"
+#include "itf_phy_buses.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
-      integer open_db_file,close_db_file,rewind_db_file,
-     $        read_db_file,write_db_file
-      external open_db_file,close_db_file,rewind_db_file,
-     $         read_db_file,write_db_file
 *
       integer err, key(26), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
      $        keya(Tr3d_ntr), nvar
@@ -204,25 +199,8 @@
 *******************************************************************
 *
       if ( Schm_phyms_L ) then
-         if (Mem_phyncore_L) then
-            do i=1,p_bper_siz*p_nj
-               Phy_busper3D(i) = Phy_busper3D_digf(i)
-            end do
-            call hpdeallc (Phy_busper3D_digf_ , err, 1)
-         else
-            err = open_db_file   (Lun_waphy)
-            err = rewind_db_file (Lun_waphy)
-            err = open_db_file   (Lun_wapta)
-            err = rewind_db_file (Lun_wapta)
-            do k = 1,p_nj
-               err = read_db_file  (Lun_wapta,j,1)
-               err = read_db_file  (Lun_wapta,busper,p_bper_siz)
-               err = write_db_file (Lun_waphy,j,1)
-               err = write_db_file (Lun_waphy,busper,p_bper_siz)
-            end do
-            err = close_db_file (Lun_waphy)
-            err = close_db_file (Lun_wapta)
-         endif
+         Phy_busper3D = Phy_busper3D_digf
+         deallocate (Phy_busper3D_digf)
       endif
 *
       if (G_lam ) then

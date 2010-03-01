@@ -31,7 +31,6 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "p_geol.cdk"
 #include "grd.cdk"
 #include "geomn.cdk"
 #include "dcst.cdk"
@@ -95,7 +94,7 @@
 *     2- Compute latitudes and longitudes of the original grid
 *        on the earth
 *
-      if (P_geol_tourn_L) then
+      if (Grd_roule) then
 *         ( rotated coordinate system...)
           do i=1,ni
              x(i) = Geomn_longs(i) 

@@ -1,0 +1,108 @@
+***s/r vtopo_predat - Adjusts boundary conditions to varying orography
+*
+#include "model_macros_f.h"
+*
+      subroutine vtopo_predat(nest_q,nest_fi,nest_t,nest_pip,nest_s,
+     $  		      DIST_DIM,xi,xa,yi,ya,nk)
+*
+      implicit none
+      integer :: DIST_DIM,nk,xi,xa,yi,ya
+      real, dimension(DIST_SHAPE) :: nest_s
+      real, dimension(DIST_SHAPE,nk) :: nest_q,nest_fi,nest_t,nest_pip
+*
+*author
+*     Ron McTaggart-Cowan - RPN - March 2007
+*
+*revision
+* v3_30 - McTaggart-Cowan R.	- initial MPI version
+*
+*object
+*     Use the model's current orography field (topo) to re-interpolate
+*     the boundary conditions in the vertical.  This is required whenever
+*     the orography changes in the model, otherwise the analysis conditions
+*     in the blending zone will be invalid.  The current version (v3_30)
+*     re-interpolates only the mass field - adjustments to the wind field
+*     are assumed to be small since vertical wind shear tends to be locally
+*     small.  An extension of this routine would provide full treatment of
+*     both the mass and flow fields on appropriately staggered grids.  For
+*     additional information, see also 'predat.ftn'.
+*
+*arguments
+*  Name		I/O		Description
+*--------------------------------------------------------------------------
+* nk		 I	Global z-dimension (G_nk)
+* xi		 I	X-dimension computation domain m(i)nimum
+* xa		 I	X-dimension computation domain m(a)ximum
+* yi		 I	Y-dimension computation domain m(i)nimum
+* ya		 I	Y-dimension computation domain m(a)ximum
+* nest_q	I/O	Boundary conditions for log pressure (q=ln(p))
+* nest_fi	I/O	Boundary conditions for phi (geopotential)
+* nest_t	I/O	Boundary conditions for temperature
+* nest_pip	 O	Boundary conditions for perturbation pi
+* nest_s	 O	Boundary conditions for surface pi (ln (pi_s/z_s))
+*--------------------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+#include "ind.cdk"
+#include "geomg.cdk"
+#include "hblen.cdk"
+#include "p_geof.cdk"
+*
+      integer :: vmmlod,vmmuld,vmmget
+**
+      integer :: k,len_x,len_y,err
+      integer, dimension(1) :: key
+      real, dimension(l_ni,l_nj) :: ps,temp_ps
+      real, dimension(l_ni,l_nj,nk) :: temp_nest_t,temp_nest_fi
+*
+*     ---------------------------------------------------------------------
+*
+* Subdomain setup
+      len_x = xa - xi + 1; len_y = ya - yi + 1
+*
+* Retrieve current orography from VMM
+      key(1) = VMM_KEY(topo)
+      err = vmmlod(key,size(key))
+      err = VMM_GET_VAR(topo)
+*
+* Compute analysis surface pressure for current orography
+      ps(xi:xa,yi:ya) = exp(nest_q(xi:xa,yi:ya,nk))
+      call getp0(temp_ps(xi:xa,yi:ya),topo(xi:xa,yi:ya),Geomg_pia,
+     $  Geomg_pibb,ps(xi:xa,yi:ya),nest_fi(xi:xa,yi:ya,:),
+     $  nest_t(xi:xa,yi:ya,:),len_x*len_y,nk,.false.)
+*
+* Compute temperature profiles for modified orography
+      call vte_hyb2hyb(temp_nest_t(xi:xa,yi:ya,:),Geomg_pia,Geomg_pibb,
+     $  temp_ps(xi:xa,yi:ya),nk,nest_t(xi:xa,yi:ya,:),Geomg_pia,
+     $  Geomg_pibb,ps(xi:xa,yi:ya),nk,len_x*len_y,'VT',.false.)
+*
+* Compute geopotential hydrostatically
+      temp_nest_fi(xi:xa,yi:ya,nk) = topo(xi:xa,yi:ya)
+      call p0vt2gz_hyb(temp_nest_fi(xi:xa,yi:ya,:),Geomg_pia,Geomg_pibb,
+     $  temp_ps(xi:xa,yi:ya),temp_nest_t(xi:xa,yi:ya,:),len_x*len_y,nk,
+     $  .false.,.false.)
+*
+* Update nesting values
+      nest_q(xi:xa,yi:ya,nk) = alog(temp_ps(xi:xa,yi:ya))
+      nest_s(xi:xa,yi:ya) = dlog(exp(nest_q(xi:xa,yi:ya,nk))/Cstv_pisrf_8)
+      do k=1,nk-1
+	nest_q(xi:xa,yi:ya,k) = 
+     $    alog(Geomg_pia(k)+Geomg_pib(k)*exp(nest_s(xi:xa,yi:ya)))
+      enddo
+      nest_t(xi:xa,yi:ya,:) = temp_nest_t(xi:xa,yi:ya,:)
+      nest_fi(xi:xa,yi:ya,:) = temp_nest_fi(xi:xa,yi:ya,:)
+      nest_pip(xi:xa,yi:ya,nk) = 
+     $  exp(nest_q(xi:xa,yi:ya,nk)) - Geomg_z_8(nk)
+      do k=1,nk-1
+	nest_pip(xi:xa,yi:ya,k) = Geomg_pia(k) + 
+     $    Geomg_pib(k)*exp(nest_s(xi:xa,yi:ya)) - Geomg_z_8(k)
+      enddo
+*
+* Release VMM variables
+      err = vmmuld(key,size(key))
+*
+* End of subprogram
+      return
+      end subroutine vtopo_predat

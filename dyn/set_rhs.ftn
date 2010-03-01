@@ -1,11 +1,12 @@
 ***s/r set_rhs - initialization of the VMM common for right-hand side of
 *               equations
 *
+#define SPY_VMM_CREATE spy_vmm_create
 #include "model_macros_f.h"
 *
       subroutine set_rhs
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Gravel/Roch   - rpn - august 1993

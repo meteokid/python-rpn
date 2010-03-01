@@ -5,6 +5,7 @@
 *revision
 * v2_30 - V. Lee                 - moved definition of MAXGRID1 to dimout.cdk
 * v2_30                          - Added Grid_phi_ig2
+* v3_30 - R. McTaggart-Cowan     - Added user defined tag extension
 *______________________________________________________________________
 *                                                                      |
 *  VARIABLES FOR DEFINITION OF THE OUTPUT GRIDS (set_grid)             |
@@ -12,7 +13,7 @@
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* MAXGRID1            | maximum number of grids that can be defined     |
+* MAXGRID1           | maximum number of grids that can be defined     |
 * Grid_sets          | total number of sets of defined output grids    |
 *  The following variables carry values for each defined output grid   |
 * Grid_id            | Grid_id(i) are the id of each defined grid      |
@@ -31,6 +32,7 @@
 * Grid_x1            | x at outermost corner of output grid            |
 * Grid_y1            | y at outermost corner of output grid            |
 * Grid_stride        | every ith point to be outputted                 |
+* Grid_etikext_s     | tag extension for specific grid		       |
 *----------------------------------------------------------------------
 * 
 *
@@ -43,7 +45,8 @@
       integer Grid_id(MAXGRID1), Grid_stride(MAXGRID1)
       integer Grid_ig1(MAXGRID1), Grid_ig2(MAXGRID1)
       integer Grid_ig3(MAXGRID1), Grid_ig4(MAXGRID1)
-      character*1 Grid_gxtyp_s
+      character*4 Grid_gxtyp_s
+      character*12 Grid_etikext_s(MAXGRID1)
       integer Grid_ip2,
      $        Grid_xmin,Grid_xmax,Grid_ymin,Grid_ymax,Grid_reduc,
      $        Grid_ixg(4), Grid_sets,Grid_niout,Grid_njout
@@ -60,7 +63,7 @@
       MARK_COMMON_END (Grid_i)
 
       MARK_COMMON_BEG (Grid_c)
-      COMMON /Grid_c/ Grid_gxtyp_s
+      COMMON /Grid_c/ Grid_gxtyp_s,Grid_etikext_s
       MARK_COMMON_END (Grid_c)
 
       MARK_COMMON_BEG (Grid_p)

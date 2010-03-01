@@ -7,10 +7,13 @@
       implicit none
 *
 *author   
-*     Katja Winger -- summer 2003
+*     Katja Winger
 *
 *revision
 * v3_11 - Winger K.         - initial version, Dec. 2002
+* v3_12 - Winger K.         - Use GETENVC
+* v3.20 - Winger K.         - Different behavior following P_clim_clima_L
+* v3.30 - Winger K.         - Verify the length of the environement variables
 *
 *implicits
 #include "ptopo.cdk"
@@ -18,26 +21,39 @@
 #include "step.cdk"
 #include "lctl.cdk"
 #include "rstr.cdk"
+#include "glb_ld.cdk"
+#include "clim.cdk"
 *
 *modules
-      INTEGER      longueur, fnom
-      EXTERNAL     longueur, fnom
 **
+*
+      integer slen_exp, slen_exec, slen_rep, slen_jobn, slen_mod
+      integer len_exp, len_exec, len_rep, len_jobn, len_job
+      parameter (len_exp=128, len_exec=512, len_rep=128)
+      parameter (len_jobn=256, len_job=4096)
+      character(len=len_exp)  exper
+      character(len=len_exec) execdir
+      character(len=len_rep)  reprun
+      character(len=len_jobn) jobname
+      character(len=len_job)  job
 *
       integer i, j, err, unit
       integer steps, rest, cpus
-      character exp*20, job*256, jobname*30
-      character Lctl_step_S*9, Rstri_sdon_S*9, cpus_S*2, Step_total_S*9
-      character home*256, config*256
-      character model*10, dummy*20
+      character Lctl_step_S*9, Rstri_sdon_S*9, cpus_S*3, Step_total_S*9
+      character model*10
 *
 *     ---------------------------------------------------------------
 *
+* If Step_cleanup equal 0 don't do anything
       if (Step_cleanup.eq.0) return
 *
       steps = Step_cleanup
-      rest = mod(Rstri_sdon,steps)
-      if (Rstri_sdon.ne.0 .and. rest.eq.0) then
+      if (Clim_climat_L) then
+        rest = mod(Rstri_sdon,steps)
+      else
+        rest = mod(Lctl_step,steps)
+      end if
+      if (rest.eq.0) then
 *
 * wait for all processors to be here
          call rpn_comm_Barrier("grid", err)
@@ -46,67 +62,68 @@
          if (Ptopo_myproc .eq. 0) then
 
 * get experiment name
-            do i=longueur(Path_dfwmil_S),1,-1
-               if (Path_dfwmil_S(i:i) .eq. "/") goto 100
-            end do
-            i=0
-100         continue
-            exp=Path_dfwmil_S(i+1:longueur(Path_dfwmil_S))
-*
-* get home directory
-            j=0
-            do i=longueur(Path_dfwmil_S),1,-1
-               if (Path_dfwmil_S(i:i) .eq. "/") j=j+1
-               if (j .eq. 3) goto 200
-            end do
-200         continue
-            home=Path_dfwmil_S(1:i)
-*
-* open ".config_file.dot.cfg"
-            config=home(1:longueur(home)) // 
-     &             'exper_configs/' // 
-     &             exp(1:longueur(exp)) //
-     &             '.generic/.config_file.dot.cfg'
-            unit=0
-            err=fnom(unit,config,'FTN+FNT',0)
+            call getenvc('exp',exper)
 *
 * get model 
-301         read (unit,'(a20)',end=300) dummy
-              if (dummy(1:5) .eq. 'model') then
-                 do i=longueur(dummy),1,-1
-                    if (dummy(i:i) .eq. "'") goto 302
-                 end do
-302              continue
-                 model=dummy(8:i-1)
-              end if
-            goto 301
-300         continue
-*
-            call fclos(unit)
+            call getenvc('MODEL',model)
 *
 * get number of cpus
-            cpus=Ptopo_npex*Ptopo_npey
+            cpus = Ptopo_npex*Ptopo_npey
+*
+* get directory names
+            call getenvc('REPRUN',reprun)
+            call getenvc('EXECDIR',execdir)
 *
 * convert integer to character
-            write (Lctl_step_S,*) Lctl_step
-            write (cpus_S,*) cpus
-            write (Step_total_S,*) Step_total
-            Step_total_S=adjustl(Step_total_S)
+            write (Lctl_step_S  ,'(I8)') Lctl_step
+            write (cpus_S       ,'(I3)') cpus
+            write (Step_total_S ,'(I8)') Step_total
+            Step_total_S = adjustl( Step_total_S )
+*
+* get real string lengths
+            slen_exp  = len_trim( exper   )
+            slen_exec = len_trim( execdir )
+            slen_mod  = len_trim( model   )
+            slen_rep  = len_trim( reprun  )
 *
 * create jobname
-            jobname=model(1:longueur(model)) // '_' //
-     &              exp(1:longueur(exp))
+            jobname   = trim( model ) // '_' //
+     &                  trim( exper )
+            slen_jobn = slen_mod+slen_exp+1
+*
+* check if names are longer than string lenghs
+            if ( slen_exp .ge. len_exp ) then
+              print *,' ERROR in trans_clean.f !!!'
+              print *,' Your experiment name is longer than its string lengh.'
+              print *,' Raise value for parameter len_exp in trans_clean.ftn. '
+              call qqexit(1)
+            end if
+            if ( slen_exec .ge. len_exec ) then
+              print *,' ERROR in trans_clean.f !!!'
+              print *,' The name of your EXECDIR is longer than its string lengh.'
+              print *,' Raise value for parameter len_exec in trans_clean.ftn. '
+              call qqexit(1)
+            end if
+            if ( slen_rep .ge. len_rep ) then
+              print *,' ERROR in trans_clean.f !!!'
+              print *,' The name of your REPRUN directory is longer than its string lengh.'
+              print *,' Raise value for parameter len_rep in trans_clean.ftn. '
+              call qqexit(1)
+            end if
 *
 * call Um_xfer.sh         
             job=
-     &    ' echo " cd '  // Path_dfwmil_S(1:longueur(Path_dfwmil_S))
-     &                   // ';' //
-     &    ' Um_xfer.sh ' // exp(1:longueur(exp))  // 
-     &    ' -job ' // jobname(1:longueur(jobname)) //
-     &    ' -endstepno ' // Lctl_step_S(1:longueur(Lctl_step_S)) // 
-     &    ' -npe ' // cpus_S //
-     &    ' -status CL  " | /bin/ksh  '
-CCC     &    ' -status CL  " | /bin/ksh -x 1> Um_xfer_job_output 2>&1 & '
+     &    ' echo " cd '      // trim( execdir ) // ' ;' //
+     &    ' export REPRUN='  // trim( reprun  ) // ' ;' //
+     &    ' export EXECDIR=' // trim( execdir ) // ' ;' //
+     &    ' export TMPDIR='  // trim( execdir ) // '/xfer_tmpdir ;' //
+     &    ' mkdir '          // trim( execdir ) // '/xfer_tmpdir ;' //
+     &    ' Um_xfer.sh '     // trim( exper   ) // 
+     &    ' -job '           // trim( jobname ) //
+     &    ' -endstepno '     // trim( Lctl_step_S ) // 
+     &    ' -npe '           // cpus_S  //
+     &    ' -status CL  " | /bin/ksh ;' //
+     &    ' /bin/rmdir '     // trim( execdir ) // '/xfer_tmpdir'
 *
             write (6,*) '!!!!!! job: ', job
             call system(job)

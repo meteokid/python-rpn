@@ -14,6 +14,7 @@
 *
 *revision
 * v3_20 - Lee V.            - initial MPI version (from blocqc0 v3_12)
+* v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
 *
 *object
 *     the output of the QC at timestep 0
@@ -24,7 +25,6 @@
 *implicits
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "dimout.cdk"
 #include "lun.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
@@ -144,7 +144,9 @@
      $                   Grid_y0(outd_grid(kk)),Grid_y1(outd_grid(kk)),
      $                   periodx_L,
      $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
-     $                   Grid_stride(outd_grid(kk)),Geomn_longs,Geomn_latgs)
+     $                   Grid_stride(outd_grid(kk)),
+     $                   Grid_etikext_s(outd_grid(kk)),
+     $                   Geomn_longs,Geomn_latgs)
 
           levset = Outd_lev(kk)
 

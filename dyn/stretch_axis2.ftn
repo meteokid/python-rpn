@@ -258,10 +258,12 @@ C                                                  of uniform resolution
 
 C                               computed grid points in the stretched sector
 C                                       to the right or top of central area
-      do i=F_nimax+F_margin+F_nxla,NX-F_nimax
+      do i=F_nimax+F_margin+F_nxla,NX-F_nimax-1
+c        print *,'i=',i,'F_nxla=',F_nxla,'NX=',NX
          hx     = amp_8 * hx
          x2     = x2 + hx
          F_x_8(i+1) = x2
+c        print *,'F_x_8(',i+1,')=', F_x_8(i+1),'F_nxla=',F_nxla,'NX=',NX
       enddo
 
       if ( hxmax/hx .gt. amp_8 .and. F_nimax .ne. 0 ) then

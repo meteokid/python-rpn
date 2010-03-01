@@ -5,7 +5,7 @@
 *
       subroutine sergset
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Andre Methot - cmc - mai 1994 - v0_14
@@ -14,7 +14,9 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_11 - Lee V.            - add logic for memory allocation
 * v2_31 - Desgagne M.       - bugfixe to call to sersetm
-* v3_11 - A. Plante       - Adjust code for LAM time-series
+* v3_11 - A. Plante         - Adjust code for LAM time-series
+* v3_30 - K. Winger         - Add time series version 'TSVER'
+*                             and output intervals 'TSMOYHR','SRWRI'
 *
 *object
 *               This routine initializes the physics variables
@@ -38,9 +40,11 @@
 #include "rstr.cdk"
 #include "xst.cdk"
 #include "xstb.cdk"
-#include "p_geol.cdk"
 #include "ptopo.cdk"
-#include "p_bus.cdk"
+#include "itf_phy_buses.cdk"
+#include "clim.cdk"
+#include "itf_phy_config.cdk"
+#include "cstv.cdk"
 *
       integer serdim
       external serdim
@@ -110,6 +114,18 @@
 *     initializes output unit number
 *
       call serset('NOUTSER', Lun_tsrs, 1, pnerr)
+*
+*     initializes model and time series output time step
+*     and time series version
+*
+      if ( Clim_climat_L ) then
+        call serset('TSMOYHR', P_out_moyhr, 1, pnerr)
+        call serset('SRWRI', int(P_serg_srwri*Cstv_dt_8), 1, pnerr)
+        P_serg_ver=200
+      else
+        P_serg_ver=100
+      end if
+      call serset('TSVER', P_serg_ver, 1, pnerr)
 *
 *     initializes buffers to zero
 *

@@ -1,0 +1,149 @@
+***s/r itf_phy_vlsp - allocate and compute latitudinal modulation of 
+*               vertical diffusion coefficient on momentum
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_phy_vlsp (F_lunout)
+*
+      implicit none
+*
+      integer F_lunout
+*Author
+*     michel roch - rpn - nov 97
+*
+*revision
+* v2_00 - Patoine A.       - initial MPI version 
+* v3_00 - Desgagne & Lee   - Lam configuration
+* v3_30 - Desgagne M.      - new itf_phy interface
+*
+*object
+*     see id section
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "grd.cdk"
+#include "itf_phy_config.cdk"
+*
+**
+*
+      integer pnerr
+*
+      real*8 zero, one, two
+      parameter( zero = 0.0d0 )
+      parameter( one  = 1.0d0 )
+      parameter( two  = 2.0d0 )
+*
+      integer i, j, i_glob, j_glob
+*
+      real*8  pdc0,   pdsa,   pdca, pds0, pdang,
+     %        pdmllm, pdeqlm, pda,  pdb,  pdc,   pdtmp
+*
+*     ---------------------------------------------------------------
+*
+      if (F_lunout.gt.0) write(F_lunout,1000)
+*
+***********************************************************************
+* allocate memory for 2D amplification factor field
+***********************************************************************
+*	
+      call hpalloc(P_lmvd_vlsp_, l_ni * l_nj, pnerr, 1)
+*
+***********************************************************************
+* set rotation parameters
+***********************************************************************
+*
+      pds0 = Grd_rot_8(3,3)
+*
+      if ( abs( (abs(pds0)-one) ).gt.1.0e-10 ) then
+*
+         pdang = atan2( Grd_rot_8(2,3), Grd_rot_8(1,3) )
+*
+      else
+*
+         pds0  = sign( one, pds0 )
+         pdang = zero
+*
+      endif
+*
+      pdc0 = sqrt( max( zero, one - 1.0d0*pds0 ** 2 ) )
+***********************************************************************
+* use position l_nj of field P_lmvd_vlsp as temporary storage space
+***********************************************************************
+      do i=1,l_ni
+         i_glob=l_i0+i-1
+         P_lmvd_vlsp(i,l_nj) = cos( G_xg_8(i_glob) - pdang )
+      enddo
+***********************************************************************
+* generate amplification factor on phi grid
+***********************************************************************
+      pdmllm = - P_lmvd_mllat_8
+      pdeqlm = - P_lmvd_eqlat_8
+      pdb    = pdeqlm - pdmllm
+*
+      do j=1,l_nj
+*
+         j_glob=l_j0+j-1
+*
+         pdsa = pds0 * sin( G_yg_8(j_glob) )
+         pdca = pdc0 * cos( G_yg_8(j_glob) )
+*
+         do i=1,l_ni
+            pdtmp = asin(max(-1.d0,min(1.d0,pdca*1.0d0*(P_lmvd_vlsp(i,l_nj))+pdsa)))
+            P_lmvd_vlsp(i,j) = P_lmvd_valml_8
+*
+***********************************************************************
+* fit a cubic between values P_lmvd_valml_8 and P_lmvd_valeq_8
+*               at latitudes P_lmvd_mllat_8 and P_lmvd_eqlat_8
+***********************************************************************
+* southern hemisphere + tropics
+***********************************************************************
+*
+            if((pdtmp .gt. pdmllm).and.(pdtmp .lt. pdeqlm))then
+*
+              pda = (pdtmp-pdmllm)/pdb
+              pdc = (3.-2.*pda)*pda*pda
+*
+              P_lmvd_vlsp(i,j) = P_lmvd_valeq_8 * pdc + ( 1. - pdc) 
+     $                                        * P_lmvd_valml_8
+*
+            elseif(pdtmp .ge. pdeqlm) then
+*
+              P_lmvd_vlsp(i,j) = P_lmvd_valeq_8
+*
+            endif
+*
+***********************************************************************
+* northern hemisphere: north of P_lmvd_eqlat_8
+***********************************************************************
+*
+            if ((pdtmp .gt. P_lmvd_eqlat_8) .and.
+     $          (pdtmp .lt. P_lmvd_mllat_8))then
+*
+              pda = (pdtmp-P_lmvd_eqlat_8)/pdb
+              pdc = (3.-2.*pda)*pda*pda
+*
+              P_lmvd_vlsp(i,j) = P_lmvd_valml_8 * pdc + (1. - pdc) 
+     $                                        * P_lmvd_valeq_8
+*
+            elseif(pdtmp .ge. P_lmvd_mllat_8) then
+*
+              P_lmvd_vlsp(i,j) = P_lmvd_valml_8
+*
+            endif
+         enddo
+
+      enddo
+*
+      return
+*
+ 1000 format(
+     $  /,'ALLOCATE AND COMPUTE LATITUDINAL MODULATION OF VERTICAL', 
+     %  /,'DIFFUSION COEFFICIENT ON MOMENTUM    (S/R itf_phy_vlsp)',
+     %  /,'=======================================================')
+*
+*     ---------------------------------------------------------------
+*
+      end

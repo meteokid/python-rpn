@@ -3,7 +3,7 @@
 #include "model_macros_f.h"
 *
       subroutine zongini
-#include "impnone.cdk"
+      implicit none
 *
 *author andre methot - cmc - aug 1994 - v0_14
 *
@@ -13,6 +13,15 @@
 * v2_31 -                 for rotated or variable grids
 * v2_31 - Dugas B.      - account for MPI geometry
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_30 - Desgagne M.   - new physics interface
+* v3_30 - Winger K.     - call inzono3 instead of inzono2
+*                         with variable names as 
+*                         characters instead of r4a
+*                       - initialize theta and poid
+*                       - allow LAM grids, therefore
+*                         - make fielda allocatable
+*                         - change G_ni,G_nj to PG_ni,PG_nj
+*                         - pass nbin to inzono3
 *
 *object
 *               This routine initializes the variables used by
@@ -35,6 +44,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "glb_pil.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "p_zong.cdk"
@@ -44,40 +54,68 @@
 #include "geomn.cdk"
 *
 #include "lun.cdk"
-#include "out1.cdk"
+#include "out3.cdk"
 #include "rstr.cdk"
 *
-#include "p_pbl.cdk"
-#include "p_geol.cdk"
+#include "itf_phy_config.cdk"
 *
 #include "ptopo.cdk"
 *
 **
-*     INZONO2 arguments pour which will be calculated here
+*     INZONO3 arguments pour which will be calculated here
 *
-      integer rang(G_ni,G_nj), ndelt,nlatmn
-      real    poid(G_ni,G_nj), theta(G_ni,G_nj)
-      integer znsrf(cnznsfm), znprf(cnznpfm)
+      integer,  dimension (:,:), allocatable :: rang
+      real,     dimension (:,:), allocatable :: poid, theta
+      integer   ndelt,nlatmn
       character noutzon_S*256
 *
 *     Work space for coordinate calculations
 *
-      integer boxlat(G_nj),irot
-      real*8 hxu(0:G_ni+1), hyv(0:G_nj)
-      real   lon((G_ni+1)*G_nj), lat((G_ni+1)*G_nj)
-      real*8 lonr((G_ni+1)*G_nj),latr((G_ni+1)*G_nj)
-      real*8 cosy(G_nj),siny(G_nj),cosx(G_ni+1),sinx(G_ni+1)
-      real*8 cart(3*(G_ni+1)*G_nj),carot(3*(G_ni+1)*G_nj),ri_8(3,3)
-      real   polon,polat,rot
+      integer,  dimension (:), allocatable :: boxlat
+      real*8,   dimension (:), allocatable :: hxu, hyv
+      real,     dimension (:), allocatable :: lon, lat
+      real*8,   dimension (:), allocatable :: lonr, latr
+      real*8,   dimension (:), allocatable :: cosy, siny, cosx, sinx
+      real*8,   dimension (:), allocatable :: cart, carot
+      integer   irot
+      real*8    ri_8(3,3)
+      real      polon,polat,rot
 *
       logical debug_L
       character*6 dummy_S,mype_S
-      integer i,j,k,l, ij,jj, ni,nj, nbin, nvar, longueur,cnt
+      integer i,j,k,l, ij,jj, ni,nj, nbin, nvar,cnt
+      integer PG_ni,PG_nj, PG_ni0,PG_nj0
       real*8  mp(3,2),mt(2,3), sinteta,costeta, thetaz
       real*8  dlat,latmn, norm, pis2, rmp
 *
       integer fnom,ierr
       external fnom
+*
+*     ---------------------------------------------------------------
+*
+*     Allocate variables
+*
+      if (G_lam) then
+        PG_ni0 = Glb_pil_w - 3
+        PG_nj0 = Glb_pil_s - 3
+        PG_ni  = G_ni  - Glb_pil_e - Glb_pil_w + 6
+        PG_nj  = G_nj  - Glb_pil_n - Glb_pil_s + 6
+      else
+        PG_ni0 = 0
+        PG_nj0 = 0
+        PG_ni  = G_ni
+        PG_nj  = G_nj
+      endif
+*
+      allocate (rang(PG_ni,PG_nj))
+      allocate (poid(PG_ni,PG_nj), theta(PG_ni,PG_nj))
+*
+      allocate (boxlat(PG_nj))
+      allocate (hxu(0:PG_ni+1), hyv(0:PG_nj+1))
+      allocate (lon((PG_ni+1)*PG_nj), lat((PG_ni+1)*PG_nj))
+      allocate (lonr((PG_ni+1)*PG_nj),latr((PG_ni+1)*PG_nj))
+      allocate (cosy(PG_nj),siny(PG_nj),cosx(PG_ni+1),sinx(PG_ni+1))
+      allocate (cart(3*(PG_ni+1)*PG_nj),carot(3*(PG_ni+1)*PG_nj))
 *
 *     ---------------------------------------------------------------
 *
@@ -98,7 +136,7 @@
          endif
       end do
 *
-      noutzon_S =  'zonaux_' // mype_S(1:longueur(mype_S))
+      noutzon_S =  'zonaux_' // mype_S
 *
       if ( P_zong_znli  .le. 0 .or.
      &   ( P_zong_znprf .le. 0 .and.
@@ -123,8 +161,7 @@
             Lun_zonl    = -1
             P_zong_znli =  0
 *
-            if (Lun_out.gt.0) write(Lun_out,1300)
-     &      noutzon_S(1:longueur(noutzon_S))
+            if (Lun_out.gt.0) write(Lun_out,1300) trim( noutzon_S )
 *
             goto 700
 *
@@ -146,26 +183,27 @@
 *
  100  continue
 *
-      ni    = G_ni+1
+      ni    = PG_ni+1
       if (G_lam)
-     &ni    = G_ni
-      nj    = G_nj
+     &ni    = PG_ni
+      nj    = PG_nj
 *
       nbin  = P_zong_nbin
       dlat  = 180./nbin           
       latmn = -90.0
 *
-      if ( .not. P_geol_tourn_L ) then
+      if ( .not. Grd_roule ) then
 *
-         nbin = min( nbin, G_nj )
+         if (.not. G_lam) nbin = min( nbin, PG_nj )
+         dlat = 180./nbin
          irot = 0
 *
          ij = 0
          do j=1,nj
          do i=1,ni
             ij = ij+1
-            lat(ij) = Geomn_latgs(j)
-            lon(ij) = Geomn_longs(i)
+            lat(ij) = Geomn_latgs(j+PG_nj0)
+            lon(ij) = Geomn_longs(i+PG_ni0)
          end do
          end do
 *     
@@ -174,7 +212,8 @@
 *        Calcul des latitudes et longitudes de la
 *        grille tournee dans le cadre non-tourne
 *
-         call llacar( cart, Geomn_longs,Geomn_latgs, ni,nj )
+         call llacar( cart, Geomn_longs(PG_ni0+1:PG_ni0+ni),
+     +                      Geomn_latgs(PG_nj0+1:PG_nj0+nj), ni,nj )
 *
          do i=1,3
          do j=1,3
@@ -204,27 +243,27 @@
 *
 *     Pre-calcul de certains autres facteurs trigonometriques globaux
 *
-      hyv(0) = (G_yg_8(2)- G_yg_8(0)) * 0.5
-      hxu(0) = (G_xg_8(2)- G_xg_8(0)) * 0.5
+      hyv(0) = (G_yg_8(2+PG_nj0)- G_yg_8(PG_nj0)) * 0.5
+      hxu(0) = (G_xg_8(2+PG_ni0)- G_xg_8(PG_ni0)) * 0.5
 *
       do j=1,nj
-         cosy(j) = cos( G_yg_8(j) )
-         siny(j) = sin( G_yg_8(j) )
-         hyv(j)  = (G_yg_8(j+2)- G_yg_8(j)) * 0.5
+         cosy(j) = cos( G_yg_8(j+PG_nj0) )
+         siny(j) = sin( G_yg_8(j+PG_nj0) )
+         hyv(j)  = (G_yg_8(j+2+PG_nj0)- G_yg_8(j+PG_nj0)) * 0.5
       end do
 
       do i=1,ni
-         cosx(i) = cos( G_xg_8(i) )
-         sinx(i) = sin( G_xg_8(i) )
-         hxu(i)  = (G_xg_8(i+2)- G_xg_8(i)) * 0.5
+         cosx(i) = cos( G_xg_8(i+PG_ni0) )
+         sinx(i) = sin( G_xg_8(i+PG_ni0) )
+         hxu(i)  = (G_xg_8(i+2+PG_ni0)- G_xg_8(i+PG_ni0)) * 0.5
       end do
-*
-      if ( P_pbl_truew_L ) irot = 0
 *
       if ( irot.ne.0 .and. Lun_out.gt.0) write(Lun_out,1200)
 *
 *     Boucle sur les nbin bandes de latitudes geographiques
 *
+      theta = 0.
+      poid  = 0.
       do 105 jj=1,nbin
 *
          boxlat(jj) = 0
@@ -237,8 +276,8 @@
 *         Boucle sur le domaine complet pour l'identification
 *         de tous les points pour UNE BANDE jj DONNEE 
 
-         do 102 j=1,G_nj 
-         do 102 i=1,G_ni
+         do 102 j=1,PG_nj 
+         do 102 i=1,PG_ni
 *
             ij = (j-1)*ni+i
 *
@@ -255,7 +294,7 @@
 *C             2. Calcul de la matrice de rotation des vents
 *                 ------------------------------------------
 *
-               if ( irot.ne.0 .and. .not. P_pbl_truew_L ) then
+               if ( irot.ne.0 ) then
 *
 *                 Definir les composantes requises de M' 
 *                 [ ou M':(u,v)geo --> (dx/dt,dy/dt,dz/dt)geo ]
@@ -316,8 +355,8 @@ CCC               mp(3,2) =  cos( latr(ij) )
  102     continue
 *
 *         Deuxieme boucle sur le domaine complet pour la normalisation
-         do 104 j=1,G_nj
-         do 104 i=1,G_ni
+         do 104 j=1,PG_nj
+         do 104 i=1,PG_ni
             if (  rang(i,j) .eq. jj ) then
                poid(i,j)=poid(i,j) / norm
             endif
@@ -333,12 +372,6 @@ CCC               mp(3,2) =  cos( latr(ij) )
 *
       ndelt  = nint( Cstv_dt_8 )
       nlatmn = nint( latmn )
-*
-      do 210 nvar=1,P_zong_znprf
- 210        read(P_zong_znprf_s(nvar),'(a4)') znprf(nvar)
-*
-      do 220 nvar=1,P_zong_znsrf
- 220        read(P_zong_znsrf_s(nvar),'(a4)') znsrf(nvar)
 *
 *
 *     Print debug-mode information (1)
@@ -358,11 +391,11 @@ CCC               mp(3,2) =  cos( latr(ij) )
 *C     4. writes information records on zonal standard file
 *         -------------------------------------------------
 *
-      call inzono2(poid, rang, theta, P_zong_znli, ndelt,
-     %            P_zong_znmod, P_zong_znsrf, znsrf, P_zong_znprf,
-     %            znprf, nlatmn, irot, Lun_zonl, Geomg_hyb, Out1_etik_s,
-     %            Out1_date, G_ni, G_nj, G_nk,Lun_out,
-     %            noutzon_S(1:longueur(noutzon_S)))
+      call inzono3(poid, rang, theta, P_zong_znli, ndelt,
+     %       P_zong_znmod, P_zong_znsrf, P_zong_znsrf_s, P_zong_znprf,
+     %       P_zong_znprf_s, nlatmn, irot, Lun_zonl, Geomg_hyb, Out3_etik_s,
+     %       Out3_date, PG_ni, PG_nj, G_nk, nbin, Lun_out,
+     %       trim( noutzon_S ))
 *
 *
  600  continue
@@ -370,7 +403,7 @@ CCC               mp(3,2) =  cos( latr(ij) )
 *     Print debug-mode information (2)
 *
       if (  debug_L .and. Lun_out.gt.0 ) then
-         write(Lun_out,*) 'noutzon_S ', noutzon_S(1:longueur(noutzon_S))
+         write(Lun_out,*) 'noutzon_S ', trim( noutzon_S )
          write(Lun_out,*) 'Lun_zonl ', Lun_zonl
       endif
 *
@@ -385,7 +418,7 @@ CCC               mp(3,2) =  cos( latr(ij) )
  1100 format(/,'NO ZONAL DIAGNOSTICS REQUESTED (S/R ZONGINI)',
      +       /,'============================================')
  1200 format(' Note that the local rotation angles will',
-     +       ' be passed on to INZONO2')
+     +       ' be passed on to INZONO3')
  1300 format(/,'UNABLE TO OPEN ZONAL DIAGNOSTICS FILE ',A,
      +       /,'DISABLING FURTHER PROCESSING BY PACKAGE ')
 *

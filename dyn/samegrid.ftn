@@ -1,0 +1,104 @@
+***function samegrid - 
+*
+#include "model_macros_f.h"
+*
+      logical function samegrid (unf, ni,nj, p1,p2,p3,g1,g2,g3,g4,xp,yp)
+      implicit none
+*
+      integer unf, ni,nj, p1,p2,p3, g1,g2,g3,g4
+      real xp(*), yp(*)
+*
+*author
+*
+*revision
+* v3_30 - Desgagne          - Initial version
+*
+*object
+*     Compare positional parameters
+*
+*arguments
+*
+*implicites
+*
+*modules
+      integer  fstinf,fstluk,fstprm
+      external fstinf,fstluk,fstprm
+**
+      character*1    typ, grd
+      character*2    var
+      character*8    lab
+      integer  dte, det, ipas, ip1, ip2, ip3, ig1, ig2, ig3, ig4, bit,
+     $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, err, key,
+     $         ni1, nj1, nk1, i, cnt
+      real r1, r2, xps(ni), yps(nj)
+*
+* ---------------------------------------------------------------------
+*
+      samegrid = .false.
+      key = fstinf(unf,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','>>')
+      if (key.lt.0) then
+         write(6,4000) '>>'
+         stop
+      endif
+      if (ni1.ne.ni) goto 999
+*
+      err = fstprm ( key, dte, det, ipas, ni1, nj1, nk1, bit, dty, 
+     $            ip1, ip2, ip3, typ, var, lab, grd, ig1, ig2, ig3, ig4,
+     $            swa, lng, dlf, ubc, ex1, ex2, ex3 )
+      if ( (ig1.ne.g1).or.(ig2.ne.g2).or.(ig3.ne.g3)
+     $                .or.(ig4.ne.g4)) goto 999
+*
+      err = fstluk( xps, key, ni1,nj1,nk1)
+      key = fstinf(unf,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','^^')
+      if (key.lt.0) then
+         write (6,4000) '^^'
+         stop
+      endif  
+      if (nj1.ne.nj) goto 999
+      err = fstluk( yps, key, ni1,nj1,nk1)
+*
+      samegrid = .true.
+      cnt = 0
+      do i=1,ni
+         r1 = xps(i)+5.
+         r2 = xp (i)+5.
+         if (abs((r1-r2)/r1).gt.1.e-5) then
+            samegrid = .false.
+            cnt = cnt + 1
+         endif
+      end do
+      if (.not.samegrid.and.(real(cnt)/real(ni).le.0.2)) then
+         samegrid = .true.
+         do i=1,ni
+            r1 = xps(i)+5.
+            r2 = xp (i)+5.
+            if (abs((r1-r2)/r1).gt.1.e-4) samegrid = .false.
+         end do
+      endif
+      if (.not.samegrid) goto 999
+      cnt = 0
+      do i=1,nj
+         r1 = yps(i)+91.
+         r2 = yp (i)+91.
+         if (abs((r1-r2)/r1).gt.1.e-5) then
+            samegrid = .false.
+            cnt = cnt + 1
+         endif
+      end do
+      if (.not.samegrid.and.(real(cnt)/real(nj).le.0.2)) then
+         samegrid = .true.
+         do i=1,nj
+            r1 = yps(i)+91.
+            r2 = yp (i)+91.
+            if (abs((r1-r2)/r1).gt.1.e-4)
+     $           samegrid = .false.
+         end do                  
+      endif
+* 
+ 4000 format (/' Can t find ',a2,' record describing ',a2, 
+     $         ' grid -- ABORT --'/)
+* ---------------------------------------------------------------------
+*     
+ 999  return
+      end
+

@@ -46,70 +46,12 @@
 * v3_02 - Edouard S.        - correct non-hydrostatic version (F_mut0,F_tpt0,bbb3)
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_21 - Desgagne M.       - Revision Openmp
+* v3_30 - Desgagne M.       - Revision Openmp II
 *
 *object
 *     see documentation in s/r bac.
 *
 *arguments: see documentation of appropriate comdecks 
-*
-*implicits
-#include "glb_ld.cdk"
-*
-      integer i, j, k, i0, j0, in, jn, nij
-
-      i0 = 1+pil_w
-      in = l_ni-pil_e
-      j0 = 1+pil_s
-      jn = l_nj-pil_n
-
-
-      call  bacp_2_2 ( F_itr , F_itnlh, F_st0  , F_pipt0,
-     $                    F_qt0 , F_fit0 , F_fipt0, F_fis   , F_tt0  ,
-     $                    F_tpt0, F_tplt0, F_ut0  , F_vt0   , F_psdt0,
-     $                    F_tdt0, F_qpt0 , F_wt0  ,
-     $                    F_mut0, F_multx, F_gptx , F_gxtx  , 
-     $                    F_ru  , F_rv   , F_rth  , F_r3    , F_r3p  ,
-     $                    F_rvv , F_rcn  , F_nu   , F_nv    ,
-     $                    F_nth , F_n3   , F_n3p  , F_ncn,
-     $                    F_wijk0,F_wijk1, DIST_DIM, Nk, i0,j0,in,jn )
-      return
-      end
-!
-! 2e etage pour OpenMP
-!
-
-      subroutine bacp_2_2 ( F_itr , F_itnlh, F_st0  , F_pipt0,
-     $                    F_qt0 , F_fit0 , F_fipt0, F_fis   , F_tt0  ,
-     $                    F_tpt0, F_tplt0, F_ut0  , F_vt0   , F_psdt0,
-     $                    F_tdt0, F_qpt0 , F_wt0  ,
-     $                    F_mut0, F_multx, F_gptx , F_gxtx  , 
-     $                    F_ru  , F_rv   , F_rth  , F_r3    , F_r3p  ,
-     $                    F_rvv , F_rcn  , F_nu   , F_nv    ,
-     $                    F_nth , F_n3   , F_n3p  , F_ncn,
-     $                    F_wijk0,F_wijk1, DIST_DIM, Nk, i0,j0,in,jn )
-*
-      implicit none
-*
-      integer  F_itr, F_itnlh, DIST_DIM, Nk 
-      real     F_st0  (DIST_SHAPE)    ,
-     %         F_pipt0(DIST_SHAPE,Nk) ,  F_qt0  (DIST_SHAPE,Nk) , 
-     %         F_fit0 (DIST_SHAPE,Nk) ,  F_fipt0(DIST_SHAPE,Nk) , 
-     %         F_fis  (DIST_SHAPE)    ,  F_tt0  (DIST_SHAPE,Nk) ,
-     %         F_tpt0 (DIST_SHAPE,Nk) ,  F_tplt0(DIST_SHAPE,Nk) , 
-     %         F_ut0  (DIST_SHAPE,Nk) ,  F_vt0  (DIST_SHAPE,Nk) , 
-     %         F_psdt0(DIST_SHAPE,Nk) ,  F_tdt0 (DIST_SHAPE,Nk) , 
-     %         F_qpt0 (DIST_SHAPE,Nk) ,  F_wt0  (DIST_SHAPE,Nk) , 
-     %         F_mut0 (DIST_SHAPE,Nk) ,  F_multx(DIST_SHAPE,Nk) , 
-     %         F_gptx (DIST_SHAPE,Nk) ,  F_gxtx (DIST_SHAPE,Nk) , 
-     %         F_ru   (DIST_SHAPE,Nk) ,  F_rv   (DIST_SHAPE,Nk) , 
-     %         F_rcn  (DIST_SHAPE,Nk) ,  F_rth  (DIST_SHAPE,Nk) , 
-     %         F_rvv  (DIST_SHAPE,Nk) ,  F_nth  (DIST_SHAPE,Nk) , 
-     %         F_r3   (DIST_SHAPE,Nk) ,  F_r3p  (DIST_SHAPE,Nk) , 
-     %         F_nu   (DIST_SHAPE,Nk) ,  F_nv   (DIST_SHAPE,Nk) , 
-     %         F_n3   (DIST_SHAPE,Nk) ,  F_n3p  (DIST_SHAPE,Nk) ,
-     %         F_ncn  (DIST_SHAPE,Nk) ,
-     %         F_wijk0(DIST_SHAPE,Nk) ,  F_wijk1(DIST_SHAPE,Nk)
-*
 *
 *implicits
 #include "glb_ld.cdk"
@@ -121,15 +63,27 @@
 #include "schm.cdk"
 *
       integer i, j, k, i0, j0, in, jn, nij
-      real*8  zero, one, two, half, quarter, gamma, eps,
-     $        aaa, bbb, ccc, ddd, a1, b1, b2, xxx, yyy , zzz, pd2,
-     $        aaa1,aaa2,bbb1,bbb2,bbb3,ccc1,ccc2,ddd1
+      real*8  gamma, eps, aaa, bbb, ccc, ddd, a1, b1, b2, xxx, yyy , 
+     $        zzz, pd2, aaa1, aaa2, bbb1, bbb2, bbb3, ccc1, ccc2, ddd1,
+     $        tmp_8, c1_8, c2_8, c3_8, xlog_8(l_ni,l_nj),
+     $        ylog_8(l_ni,l_nj), yexp_8(l_ni,l_nj),
+     $        xrec_8(l_ni,l_nj), yrec_8(l_ni,l_nj)
+      real*8 zero, one, two, half, quarter
       parameter( zero=0.0, one=1.0, two=2.0, half=.5, quarter=.25 )
-      real*8 tmp_8, c1_8,c2_8,c3_8
-      real*8, dimension(i0:in,j0:jn):: xexp_8, yexp_8, xlog_8, 
-     $                                 ylog_8, xrec_8, yrec_8
 **
 *     __________________________________________________________________
+*
+!$omp parallel private( i, j, k, i0, j0, in, jn, nij,
+!$omp%                  gamma, eps, aaa, bbb, ccc, ddd, a1, b1, b2, xxx,
+!$omp%                  yyy, zzz, pd2, aaa1, aaa2, bbb1, bbb2, bbb3, 
+!$omp%                  ccc1, ccc2, ddd1, tmp_8, c1_8, c2_8, c3_8,
+!$omp%                  xlog_8, ylog_8, xrec_8, yrec_8 )
+!$omp%         shared ( yexp_8 )
+*
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
 *
 *     Constants for nonhydro distortion 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -140,11 +94,14 @@
          gamma =  one/( one + eps )
       endif
 *
-      nij = (in - i0 + 1)*(jn - j0 + 1)
-
-      if ( (Cori_cornl_L) .or. (F_itr .lt. F_itnlh) )
-     $   call rpn_comm_xch_halo( F_gptx, LDIST_DIM,l_ni,l_nj,G_nk,
+      nij = l_ni * l_nj
+*
+      if ( (Cori_cornl_L) .or. (F_itr .lt. F_itnlh) ) then
+!$omp single
+         call rpn_comm_xch_halo( F_gptx, LDIST_DIM,l_ni,l_nj,G_nk,
      $                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+!$omp end single
+      endif
 *
 **********************************************************
 *  1. Retrieve the nonhydro deviation q' of log pressure *
@@ -166,9 +123,6 @@
       ddd  = Schm_nonhy_8 * gamma
      %      /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**3 )
       ddd1 = Cstv_tau_8*Cstv_tstr_8
-*
-!$omp parallel private(a1,b1,b2,tmp_8,xxx,yyy,zzz,
-!$omp%                 xlog_8,ylog_8,yrec_8,xrec_8,pd2)
 *
       if (.not. Schm_hydro_L) then
 *
@@ -224,15 +178,18 @@
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *
 !$omp do
-      do j= j0, jn 
+      do j= j0, jn
+         yexp_8(:,j) = 1.
          do i= i0, in 
             yexp_8(i,j) = F_st0(i,j)
          end do
-         call vexp ( yexp_8(i0,j), yexp_8(i0,j), (in-i0+1) )
+         call vexp ( yexp_8(1,j), yexp_8(1,j), l_ni )
       end do
 !$omp enddo 
 *
-!$omp do 
+      xlog_8 = 0.
+      xrec_8 = 1.
+!$omp do
       do 100 k=1,l_nk 
 *
          if (k.eq.1) then
@@ -301,13 +258,13 @@
          end do
 *
          if (.not. Schm_hydro_L) then
-         do j= j0, jn 
-         do i= i0, in 
-            F_wijk1(i,j,k) = F_wijk1(i,j,k) +
+            do j= j0, jn 
+            do i= i0, in 
+               F_wijk1(i,j,k) = F_wijk1(i,j,k) +
      $                       xxx*( F_n3(i,j,k) - F_r3(i,j,k) )
      $                       -b1*F_qpt0(i,j,k) + b2*F_gptx(i,j,k)
-         end do
-         end do
+            end do
+            end do
          endif
 *
  100  continue
@@ -387,32 +344,27 @@
          end do
          call vrec ( yrec_8, xrec_8, nij )
 *
+         if (Schm_hydro_L) then
          do j= j0, jn 
          do i= i0, in 
-            F_wijk0(i,j,k)= yrec_8(i,j)
-            F_wijk1(i,j,k)= F_st0(i,j) * geomg_dpib(k)
-            pd2 = geomg_pib(k) * F_st0(i,j) * geomg_invz_8(k)
-            xxx = (1. + F_pipt0(i,j,k)*geomg_invz_8(k)) * F_wijk0(i,j,k)
-            yyy = F_tplt0(i,j,k)-Cstv_tstr_8*((pd2-F_wijk1(i,j,k)) -1.)
-            F_tpt0(i,j,k) =  xxx*yyy - Cstv_tstr_8
+            xrec_8(i,j) = (1.+F_pipt0(i,j,k)*geomg_invz_8(k)) * yrec_8(i,j)
+            yrec_8(i,j) = F_tplt0(i,j,k)-Cstv_tstr_8* ( F_st0(i,j)*(geomg_pib(k) * geomg_invz_8(k) - geomg_dpib(k))                 -1. )
          end do
          end do
-*
-         if (.not. Schm_hydro_L) then
-            do j= j0, jn
-            do i= i0, in
-               F_wijk0(i,j,k)=
-     $           1.0 / ( 1.0 + geomg_dpib(k) * (exp(F_st0(i,j))-1.) )
-               F_wijk1(i,j,k)= F_st0(i,j) * geomg_dpib(k)
-               pd2 = geomg_pib(k) * F_st0(i,j) * geomg_invz_8(k)
-               xxx = (1. + F_pipt0(i,j,k)/Geomg_z_8(k)) * F_wijk0(i,j,k)
-               xxx = xxx * exp(F_qpt0(i,j,k))
-               yyy = F_tplt0(i,j,k)-Cstv_tstr_8*((pd2-F_wijk1(i,j,k)+
-     $                    F_qpt0(i,j,k))-1.)
-               F_tpt0(i,j,k) =  xxx*yyy - Cstv_tstr_8
-            enddo
-            enddo
+         else
+         do j= j0, jn 
+         do i= i0, in 
+            xrec_8(i,j) = (1.+F_pipt0(i,j,k)*geomg_invz_8(k)) * yrec_8(i,j) * exp(F_qpt0(i,j,k))
+            yrec_8(i,j) = F_tplt0(i,j,k)-Cstv_tstr_8* ( F_st0(i,j)*(geomg_pib(k) * geomg_invz_8(k) - geomg_dpib(k)) + F_qpt0(i,j,k) -1. )
+         end do
+         end do
          endif
+*
+         do j= j0, jn 
+         do i= i0, in 
+            F_tpt0(i,j,k) = xrec_8(i,j)*yrec_8(i,j) - Cstv_tstr_8
+         end do
+         end do
 *
  300  continue
 !$omp enddo
@@ -424,20 +376,20 @@
 *
 *     Compute gradient of P and hence U & V 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      do j= j0, jn 
-      do i= i0, l_niu-pil_e
-         F_ut0(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) - aaa2*
+         do j= j0, jn 
+         do i= i0, l_niu-pil_e
+            F_ut0(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) - aaa2*
      $                 (F_gptx(i+1,j,k)-F_gptx(i,j,k)) / geomg_hx_8(i) )
-      end do
-      end do
+         end do
+         end do
 *
-      do j= j0, l_njv-pil_n
-      do i= i0, in 
-         F_vt0(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - aaa2*
+         do j= j0, l_njv-pil_n
+         do i= i0, in 
+            F_vt0(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - aaa2*
      $                 (F_gptx(i,j+1,k) - F_gptx(i,j,k)) 
-     $                  *geomg_cyv2_8(j)/geomg_hsy_8(j) )
-      end do
-      end do
+     $                  *geomg_cyv2_8(j)*geomg_invhsy_8(j) )
+         end do
+         end do
  600  continue
 !$omp enddo
 *
@@ -452,51 +404,49 @@
       do 700 k=1,l_nk
 
          if (.not.Cori_cornl_L) then
-*     Compute gradient of P and hence U & V 
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      do j= j0, jn 
-      do i= i0, l_niu-pil_e
-         F_ut0(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) - aaa2*
+            do j= j0, jn 
+            do i= i0, l_niu-pil_e
+               F_ut0(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) - aaa2*
      $                 (F_gptx(i+1,j,k)-F_gptx(i,j,k)) / geomg_hx_8(i) )
-      end do
-      end do
+            end do
+            end do
 *
-      do j= j0, l_njv-pil_n
-      do i= i0, in 
-         F_vt0(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - aaa2*
+            do j= j0, l_njv-pil_n
+            do i= i0, in 
+               F_vt0(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - aaa2*
      $                 (F_gptx(i,j+1,k) - F_gptx(i,j,k)) 
-     $                  *geomg_cyv2_8(j)/geomg_hsy_8(j) )
-      end do
-      end do
+     $                  *geomg_cyv2_8(j)*geomg_invhsy_8(j) )
+            end do
+            end do
          endif
 *
 *     Compute pi*-dot 
 *     ~~~~~~~~~~~~~~~
-      if ( (k.eq.1) .or. (k.eq.l_nk) ) then
-         do j= j0, jn 
-         do i= i0, in 
-            F_psdt0(i,j,k) = 0.
-         end do
-         end do
-      else
-         tmp_8 = geomg_pib(k)/Cstv_tau_8
-         do j= j0, jn 
-         do i= i0, in 
-            F_psdt0(i,j,k) = F_gxtx(i,j,k) - tmp_8*F_st0(i,j)
-         end do
-         end do
-      endif
+         if ( (k.eq.1) .or. (k.eq.l_nk) ) then
+            do j= j0, jn 
+            do i= i0, in 
+               F_psdt0(i,j,k) = 0.
+            end do
+            end do
+         else
+            tmp_8 = geomg_pib(k)/Cstv_tau_8
+            do j= j0, jn 
+            do i= i0, in 
+               F_psdt0(i,j,k) = F_gxtx(i,j,k) - tmp_8*F_st0(i,j)
+            end do
+            end do
+         endif
 *
 *     Compute total divergence, phi and T
 *     ~~~~~~~~~~~~~~~~~~~~~~~~
-      tmp_8 = geomg_dpib(k)/Cstv_tau_8
-      do j= j0, jn 
-      do i= i0, in 
-         F_tdt0(i,j,k) = F_rcn(i,j,k) - F_ncn(i,j,k) - tmp_8*F_st0(i,j)
-         F_fit0(i,j,k) = F_fipt0(i,j,k) + Cstvr_fistr_8(k) + F_fis(i,j)
-         F_tt0 (i,j,k) = F_tpt0 (i,j,k) + Cstv_tstr_8
-      end do
-      end do
+         tmp_8 = geomg_dpib(k)/Cstv_tau_8
+         do j= j0, jn 
+         do i= i0, in 
+            F_tdt0(i,j,k) = F_rcn  (i,j,k) - F_ncn(i,j,k) - tmp_8*F_st0(i,j)
+            F_fit0(i,j,k) = F_fipt0(i,j,k) + Cstvr_fistr_8(k) + F_fis(i,j)
+            F_tt0 (i,j,k) = F_tpt0 (i,j,k) + Cstv_tstr_8
+         end do
+         end do
 *
  700  continue
 !$omp enddo

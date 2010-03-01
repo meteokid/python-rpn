@@ -1,0 +1,18 @@
+*revision
+* v2_21 - Desgagne M.        - add control for sponge on momentum only
+* v3_01 - Lee V.             - for LAM vertical sponge
+*
+      logical Vspng_uvwdt_L, Vspng_rwnd_L
+      integer Vspng_nk, Vspng_niter, Vspng_maxn, Vspng_njpole
+      parameter (Vspng_maxn = 1000)
+      real Vspng_mf, Vspng_nu, Vspng_nutop
+      MARK_COMMON_BEG(vspngl)
+      common /vspngl/ Vspng_uvwdt_L, Vspng_rwnd_L
+      MARK_COMMON_END(vspngl)
+      MARK_COMMON_BEG(vspngi)
+      common /vspngi/ Vspng_nk, Vspng_niter, Vspng_njpole
+      MARK_COMMON_END(vspngi)
+      MARK_COMMON_BEG(vspngr)
+      common /vspngr/ Vspng_mf(Vspng_maxn), Vspng_nu(Vspng_maxn),
+     $                Vspng_nutop
+      MARK_COMMON_END(vspngr)

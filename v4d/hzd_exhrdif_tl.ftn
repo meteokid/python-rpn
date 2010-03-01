@@ -1,0 +1,122 @@
+***s/r hzd_exhrdif_tl - TLM of hzd_exhrdif 
+*
+#include "model_macros_f.h"
+      subroutine hzd_exhrdif_tl ( F_u, F_v, F_psd, F_td, 
+     %                            F_um,F_vm,F_psdm,F_tdm,DIST_DIM, Nk )
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+*
+      real     F_u(DIST_SHAPE,Nk),  F_v(DIST_SHAPE,Nk),
+     %       F_psd(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk)
+*
+      real     F_um(DIST_SHAPE,Nk),  F_vm(DIST_SHAPE,Nk),
+     %       F_psdm(DIST_SHAPE,Nk), F_tdm(DIST_SHAPE,Nk)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_30 - Tanguay M.  - initial MPI version 
+*
+*arguments
+*  Name        I/O        Description
+*----------------------------------------------------------------
+*----------------------------------------------------------------
+* 
+*implicits
+#include "glb_ld.cdk"
+#include "hzd.cdk"
+*
+      integer nn, mm
+      real*8 pt25,nu_dif,epsilon,khdim,lnr,visco
+      parameter (epsilon = 1.0d-12, pt25=0.25d0)
+      real smu  (LDIST_SHAPE,Nk),smv (LDIST_SHAPE,Nk),
+     $     smpsd(LDIST_SHAPE,Nk),smtd(LDIST_SHAPE,Nk)
+      real smu_m  (LDIST_SHAPE,Nk),smv_m (LDIST_SHAPE,Nk),
+     $     smpsd_m(LDIST_SHAPE,Nk),smtd_m(LDIST_SHAPE,Nk)
+**
+*     __________________________________________________________________
+*
+      nu_dif = 0.d0
+      lnr    = 1.0d0 - exp(Hzd_lnr)
+      if (Hzd_pwr.gt.0) nu_dif = pt25*lnr**(2.d0/Hzd_pwr)
+      nu_dif = min(nu_dif,pt25-epsilon)
+      if (nu_dif.lt.1.0e-10) return
+*
+      visco = min ( nu_dif, pt25 )
+*
+*     TRAJECTORY
+*     ----------
+      call rpn_comm_xch_halo ( F_um  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_vm  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_psdm, LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_tdm , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+*     TLM
+*     ---
+      call rpn_comm_xch_halo ( F_u  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_v  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_psd, LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_td , LDIST_DIM, l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+      nn=Hzd_pwr/2
+*
+!$omp parallel shared( visco,nn ) 
+      do mm=1,nn
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_nudeln (F_um  ,smu_m  ,LDIST_DIM,Nk,visco,1,0,mm,nn)
+         call hzd_nudeln (F_vm  ,smv_m  ,LDIST_DIM,Nk,visco,0,1,mm,nn)
+         call hzd_nudeln (F_psdm,smpsd_m,LDIST_DIM,Nk,visco,0,0,mm,nn)
+         call hzd_nudeln (F_tdm ,smtd_m ,LDIST_DIM,Nk,visco,0,0,mm,nn)
+*
+*        TLM 
+*        ---
+         call hzd_nudeln (F_u  ,smu  ,LDIST_DIM,Nk,visco,1,0,mm,nn)
+         call hzd_nudeln (F_v  ,smv  ,LDIST_DIM,Nk,visco,0,1,mm,nn)
+         call hzd_nudeln (F_psd,smpsd,LDIST_DIM,Nk,visco,0,0,mm,nn)
+         call hzd_nudeln (F_td ,smtd ,LDIST_DIM,Nk,visco,0,0,mm,nn)
+*
+         if(mm.ne.nn) then
+!$omp single
+*           TRAJECTORY
+*           ----------
+            call rpn_comm_xch_halo( smu_m  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smv_m  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smpsd_m, LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smtd_m , LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+*           TLM 
+*           ---
+            call rpn_comm_xch_halo( smu  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smv  , LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smpsd, LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( smtd , LDIST_DIM, l_ni,l_nj,G_nk,
+     $                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
+         endif
+*
+      end do
+!$omp end parallel
+*     __________________________________________________________________
+*
+      return
+      end

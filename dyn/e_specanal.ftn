@@ -11,45 +11,65 @@
 *revision
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 * v3_02 - Lee V.            - correction to storage of ip1 in NA, in-lined sort
+* v3_12 - Winger K.         - add TD and HR as possible humidity variables
 * v3_20 - Pellerin P.       - MEC option (off-line mode)
+* v3_30 - Lee V.            - new LAM I/O  (BCS and 3DF pilot files)
 *
 #include "e_anal.cdk"
 #include "e_fu.cdk"
 #include "e_option.cdk"
 #include "e_grids.cdk"
+#include "e_topo.cdk"
 #include "bmf.cdk"
-#include "out1.cdk"
 #include "ptopo.cdk"
 #include "e_cdate.cdk"
 #include "e_schm.cdk"
+#include "pilot.cdk"
+#include "hgc.cdk"
+#include "e_grdc.cdk"
 *
       integer   fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv,
-     $          read_decode_hyb, newdate, e_pilotf
+     $          read_decode_hyb, newdate, e_pilotf, 
+     $          e_ac_posi, ezgdef_fmem, gdll
       external  fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv,
-     $          read_decode_hyb, newdate, e_pilotf
+     $          read_decode_hyb, newdate, e_pilotf, 
+     $          e_ac_posi, ezgdef_fmem, gdll
 *
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
      $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
+      integer  ip1x,ip2x,ip3x
       character*1   typ, grd, blk_S
       character*4   var
       character*12  lab
-      real      difsig,x1
-      real, allocatable, dimension(:) :: topp
-      real*8    pdip2
+      character*15  datec,pdate
+      real      x1,lev,difsig,dx,dy
+      real coin_lat(4),coin_lon(4),difmin,c
+      real, dimension(:,:), allocatable :: latd,lond,lats,lons
+      real, dimension(:),   allocatable :: topp,xpx,xpxu,ypx,ypxv,levm
+      real*8    Cstv_pisrf_8, Cstv_tstr_8,xyz1(3),xyz2(3)
       parameter (difsig = 1.e-5)
-      integer list(2000), i, j, k, nib, l, m, n, ier
+      integer list(2000), i, j, k, l, m, n, ier,numi,numj,sgid,dgid
+      integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,dimgx,dimgy
+      logical done,hollow
+      data done,hollow /.false.,.true./
+      save done,hollow
 *
-      real*8  one,sid,rsid,dayfrac
-      parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
-      real lev
-      integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum
+      real*8 ONE_8, CLXXX_8
+      real*8 orr, deg2rad_8
+      parameter( ONE_8   = 1.0 )
+      parameter( CLXXX_8 = 180.0 )
+      parameter(Cstv_pisrf_8=100000.0,Cstv_tstr_8=200.0)
+      integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum,nvar
 * ---------------------------------------------------------------------
 *
       write (6, 1001)
+      deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 *
       if (LAM) then
+         call datf2p (pdate,datev)
          ier = e_pilotf (datev,'UU',' ',' ',-1,-1,-1)
          if (ier.lt.0) ier = e_pilotf (datev,'UT1',' ',' ',-1,-1,-1)
+         nvar=5
       else
          e_fu_anal = 0
          if (fnom (e_fu_anal ,'process/analysis','RND+OLD',0).lt.0) stop
@@ -57,20 +77,35 @@
       endif
       ip1mode = +1
 *
-*                     Check moisture variable and find out
-*                     if it is given by 'ES' or 'HU'
+*                     Check moisture variable and find out if it is
+*                     given by 'HU' (for sigma/eta/hybrid levels) or
+*                     'ES', 'HR', 'HU' or 'TD' for pressure levels
+*
       vh = 'HU'
       key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vh)
 *
       if ( key .lt. 0 ) then
-         vh = 'ES'
-         key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vh)
-         if ( key .lt. 0 ) then
-            write(6,*) 'No moisture variables are found in analysis'
-            write(6,*) 'Either HU or ES must be in the analysis file.'
-            call e_arret('e_specanal')
-         endif
+        vh = 'ES'
+        key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vh)
+*
+        if ( key .lt. 0 ) then
+          vh = 'TD'
+          key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vh)
+*
+          if ( key .lt. 0 ) then
+            vh = 'HR'
+            key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vh)
+*
+            if ( key .lt. 0 ) then
+              write(6,*) 'No moisture variables are found in analysis'
+              write(6,*) 'Either ES, HR, HU or TD must be in the analysis file.'
+              call e_arret('e_specanal')
+            endif
+*
+          endif
+        endif
       endif
+*
 *                      Check temperature variable and find
 *                      out if it is given by 'TT' or 'VT'
       vt = 'VT'
@@ -113,7 +148,7 @@
       endif
       if (kind .eq. 5) then
          ip1mode=2
-         key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',datev,
+         key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',-1,
      $                                          ptopa,prefa,rcoefa)
          if (key .lt. 0) then
             stop
@@ -123,7 +158,7 @@
          anal_hav(2) = 1
       endif
       if (kind .eq. 1) then      
-         key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',datev,
+         key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',-1,
      $                                          ptopa,prefa,rcoefa)
          if (key .lt. 0) then
             key = fstinf ( e_fu_anal, ni1,nj1,nk1,datev,' ',-1,-1,-1, 
@@ -159,7 +194,7 @@
       endif
 *
       if (( anal_sigma .or. anal_eta .or. anal_hyb .or. anal_ecmwf) .and. 
-     $     ( VH .eq. 'ES' )) then
+     $     ( VH .ne. 'HU' )) then
          write(6,*) 'ERROR: Moisture variable(VH) must be HU '
          write(6,*) 'when analysis is on sigma/eta/hybrid.'
          call e_arret('e_specanal')
@@ -177,6 +212,7 @@
      $                           ip2a, ip3a, tva, var, list, nka, lvmax)
          endif
       else
+         ip1a=11950
          key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, ip1a,
      $                     ip2a, ip3a, tva, var, list, nka, lvmax)
          write (6,130)
@@ -184,7 +220,7 @@
          write (6,201) var
       endif
 *
-      lv = nka
+      LV = nka
       do k = 1, nka
          ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty,
      x              ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3,
@@ -214,6 +250,16 @@
             na(k)  = ip1a
          endif
       enddo
+*
+      if ( .not. (anal_hyb.or.anal_eta) ) Pil_bmf_L = .true.
+*
+      if (Pil_bmf_L) then
+         call bmf_splitstart (Ptopo_npex,Ptopo_npey,'./process/','BM',
+     $                                Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
+         call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
+      endif
 *
       if ( (anal_pres) ) then
            if ( (lv.lt.16) ) then
@@ -294,17 +340,198 @@
               write(6,*)'**************************************'
           endif
       endif
-      call bmf_splitwrall ('RNA ',LV,1,1,Bmf_time1,Bmf_time2, 
-     $                                    0,0,bmf_dtyp,0,RNA)
-      if (anal_hyb.or.anal_eta) then
-         call bmf_splitwrall ('PTOP',1,1,1,Bmf_time1,Bmf_time2
-     $                                  ,0,0,bmf_dtyp,0,ptopa)
-         call bmf_splitwrall ('PREF',1,1,1,Bmf_time1,Bmf_time2
-     $                                  ,0,0,bmf_dtyp,0,prefa)
-         call bmf_splitwrall ('RCOF',1,1,1,Bmf_time1,Bmf_time2
-     $                                 ,0,0,bmf_dtyp,0,rcoefa)
-      endif
 *
+      if (LAM .and. (.not.Pil_bmf_L) .and. .not.done) then
+          p1=ig1a
+          p2=ig2a
+          p3=ig3a
+          key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','>>')
+          if (key.lt.0) then
+              write(6,4000) '>>'
+              stop
+          endif
+          if (nia.ne.ni1) stop
+          allocate(xpx(nia))
+          ier = fstprm (key, dte, det, ipas, ni1, nj1, nk1, bit, dty,
+     x              ip1x, ip2x, ip3x, typ, var, labanl, grd, g1, g2, g3,
+     x                           g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
+*         g1,g2,g3,g4 are the grid descriptors from the analysis file
+          err = fstluk( xpx, key, ni1,nj1,nk1)
+          key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','^^')
+          if (key.lt.0) then
+              write(6,4000) '^^'
+              stop
+          endif
+          if (nja.ne.nj1) stop
+          allocate(ypx(nja))
+          allocate(levm(nka))
+          do k=1,nka
+             levm(k) = rna(k) + (1.-rna(k))*ptopa/prefa
+          enddo
+          err = fstluk( ypx, key, ni1,nj1,nk1)
+
+* Check if the analysis grid is not global. 
+* If LAM, create LAM grid with same resolution as the analysis grid on
+* the same rotation as the target grid
+*
+*    xpx,ypx are in degrees from tic tacs.
+          if ( (xpx(1)-(xpx(2)-xpx(1))*.6).gt.0.0 .or. 
+     %         (xpx(nia)+(xpx(nia)-xpx(nia-1))*.6).lt.360. .or.
+     %         (ypx(1)-(ypx(2)-ypx(1))*.6).gt.-90.0 .or. 
+     %         (ypx(nja)+(ypx(nja)-ypx(nja-1))*.6).lt.90.) then
+              if (Hgc_ig1ro.ne.g1.or.Hgc_ig2ro.ne.g2.or.
+     %            Hgc_ig3ro.ne.g3.or.Hgc_ig4ro.ne.g4) then
+                  sgid = ezgdef_fmem(nia,nja, 'Z','E',g1,g2,g3,g4,xpx,ypx)
+                  allocate(lats(nia,nja),lons(nia,nja))
+                  err = gdll (sgid,lats,lons)
+                  print *,'Analysis is a LAM grid, rotation is different to model grid'
+* Obtain grid rotation from analysis and calculate geographical lat lons
+c                 call cigaxg ( 'E',xlat1,xlon1,xlat2,xlon2,g1,g2,g3,g4)
+c                 call xllrot (xlat1,xlon1,xlat2,xlon2,rot_8)
+c                 call llacar(cart,xpx,ypx,dimgx,dimgy)
+c                 call mxma8(rot_8,1,3,cart,1,3,carot,1,3,3,3,dimgx*dimgy)
+c                 call cartall(lons,lats,carot,dimgx*dimgy)
+                  do j=1,nja
+                  do i=1,nia
+                     lons(i,j)=amod(lons(i,j) + 360.,360.0)
+                  enddo
+                  enddo
+                  dimgx=nia
+                  dimgy=nja
+                  print *,'Recalc new xpx,ypx:'
+* Create new xpx,ypx parameters in the same resolution as the analysis
+* but on the target grid:
+                  dx = xpx(2)-xpx(1)
+                  nia = (xfi(nifi) - xfi(1))/dx + 9
+                  dy = ypx(2)-ypx(1)
+                  nja = (yfi(njfi) - yfi(1))/dy + 9
+* Create new xpx
+                  deallocate (xpx)
+                  allocate(xpx(nia))
+                  xpx(1)= xfi(1)- dx*4.0
+                  do i=1,nia-1
+                     xpx(i+1)= xpx(i) + dx
+                  enddo
+* Create new ypx
+                  deallocate (ypx)
+                  allocate(ypx(nja))
+                  ypx(1)= yfi(1)-dy*4.0
+                  do i=1,nja-1
+                     ypx(i+1)= ypx(i) + dy
+                  enddo
+                  print *,'xpx(1),xpx(',nia,')=',xpx(1),xpx(nia)
+                  print *,'ypx(1),ypx(',nja,')=',ypx(1),ypx(nja)
+                  print *,'xfi(1),xfi(',nifi,')=',xfi(1),xfi(nifi)
+                  print *,'yfi(1),yfi(',njfi,')=',yfi(1),yfi(njfi)
+* Now check to see if the target domain is within the source domain
+* by comparing geographical coordinates
+                  dgid = ezgdef_fmem(nia,nja,'Z','E',Hgc_ig1ro,Hgc_ig2ro,
+     $                   Hgc_ig3ro, Hgc_ig4ro,xpx,ypx)
+                  allocate(latd(nia,nja),lond(nia,nja))
+                  err  = gdll (dgid,latd,lond)
+* Verify if the four corners of the destination grid is in the source grid
+*
+                  coin_lat(1)=latd(1,1)
+                  coin_lon(1)=lond(1,1)
+                  coin_lat(2)=latd(nia,1)
+                  coin_lon(2)=lond(nia,1)
+                  coin_lat(3)=latd(nia,nja)
+                  coin_lon(3)=lond(nia,nja)
+                  coin_lat(4)=latd(1,nja)
+                  coin_lon(4)=lond(1,nja)
+                  do k=1,4
+                     coin_lon(k)=amod(coin_lon(k) + 360.,360.0)
+                     call llacar(xyz1,coin_lon(k),coin_lat(k),1,1)
+                     difmin=9999999.
+                     numi=1
+                     numj=1
+                     do j=1,dimgy
+                     do i=1,dimgx
+                        call llacar (xyz2,lons(i,j),lats(i,j),1,1)
+                        xyz2(1) = xyz1(1)-xyz2(1)
+                        xyz2(2) = xyz1(2)-xyz2(2)
+                        xyz2(3) = xyz1(3)-xyz2(3)
+                        c = sqrt( xyz2(1)**2 + xyz2(2)**2 + xyz2(3)**2 )
+                        if ( c .lt. difmin ) then
+                             difmin= c
+                             numi = i
+                             numj = j
+                        endif
+                     enddo
+                     enddo
+                     if (numi.eq.1.or.numj.eq.1) then
+                     write(6,*)'Abort: Insufficient coverage from LAM Analysis'
+                        call e_arret('e_specanal')
+                     else 
+                        print *,'numi=',numi,' numj=',numj
+                     endif
+                  enddo
+              endif
+          endif
+* create U,V target grid
+          allocate(xpxu(nia-1))
+          do i=1,nia-2
+             xpxu(i)= 0.5 * ( xpx(i) + xpx(i+1) )
+          enddo
+          xpxu(nia-1) = ( xpx(nia-1) + xpx(nia) )
+          allocate(ypxv(nja-1))
+          do i=1,nja-2
+             ypxv(i)= 0.5 * ( ypx(i) + ypx(i+1) )
+          enddo
+          ypxv(nja-1) = ( ypx(nja-1) + ypx(nja) )
+
+
+          if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil,hollow).eq.0) then
+
+              call hpalloc(paygv_8   ,  (nja-1)*2, err,1)
+              do j=1,nja-1
+                 ygv_8(j)  = ypxv(j) * deg2rad_8
+              enddo
+              call genab ( pia, pibb, levm, ptopa, rcoefa, LV)
+              do i=1,LV
+                 pib(i) = pibb(i)*Cstv_pisrf_8
+                 z_8(i) = pia(i) + pib(i)
+              enddo
+              dstf_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro,
+     $        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypx(e_grdc_gjd) )
+              dstu_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro,
+     $        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpxu(e_grdc_gid), ypx(e_grdc_gjd) )
+              dstv_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro,
+     $        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypxv(e_grdc_gjd) )
+          else
+            write(6,*)' Abort: Insufficient coverage in Analysis'
+            call e_arret('e_specanal')
+          endif
+          deallocate(levm,xpx,ypx)
+          done = .true.
+      endif
+      if (Pil_bcs_hollow_L) Pil_bcs_hollow_L = hollow
+      if (Pil_bmf_L) then
+         call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
+         call bmf_splitwrall ('RNA ',LV,1,1,Bmf_time1,Bmf_time2, 
+     $                                    0,0,bmf_dtyp,0,RNA)
+         if (anal_hyb.or.anal_eta) then
+             call bmf_splitwrall ('PTOP',1,1,1,Bmf_time1,Bmf_time2
+     $                                  ,0,0,bmf_dtyp,0,ptopa)
+             call bmf_splitwrall ('PREF',1,1,1,Bmf_time1,Bmf_time2
+     $                                  ,0,0,bmf_dtyp,0,prefa)
+             call bmf_splitwrall ('RCOF',1,1,1,Bmf_time1,Bmf_time2
+     $                                 ,0,0,bmf_dtyp,0,rcoefa)
+         endif
+      else
+         if (Pil_bcs_hollow_L) then
+            call bcs_hollow(e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,
+     $          e_grdc_gjdi,e_grdc_hbsn,e_grdc_hbwe,is,nis,js,njs,
+     $          jn,iw,niw,ie,jw,njw)
+            call e_sfile_bcs (pdate,is,nis,js,jn,njs,
+     $              iw,ie,niw,jw,njw,'DYNAMICS',nvar)
+         else
+            call e_sfile_3df (pdate,'DYNAMICS',
+     $             e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf, nvar)
+         endif
+      endif
 *
  101  format ('|',2x,'   Off-line Mode: Only One Level Used:',1x,I5,10x,'|')
  130  format ('|',9('-'),'+',5('-'),'+',8('-'),'+',8('-'),'+',5('-'),
@@ -314,6 +541,7 @@
  900  format (a/a,i5,a,e14.7,a,e14.7,a/'   >>>>> ABORT <<<<<')
  1001 format(/,'EXTRACTION OF ANALYSIS LEVELS (S/R E_SPECANAL)',/40('-'))
  1002 format(' DATE = ', 6i5 , 7a4 , i10 )
+ 4000 format(/,'CANNOT FIND TIC TACS in ANALYSIS (S/R E_SPECANAL)',/40('-'))
 *
 * ---------------------------------------------------------------------
 *

@@ -1,11 +1,12 @@
 ***s/r set_vta - Initialization of the commons for digital filter
 *		 variables. Virtual Memory manager initialisation.
 *
+#define SPY_VMM_CREATE spy_vmm_create
 #include "model_macros_f.h"
 *
       subroutine set_vta
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     alain patoine - march 1994

@@ -1,0 +1,71 @@
+#if defined (DOC)
+*
+***comdeck vtam.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  TRAJ VMM variables that are digital filtered                        |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* utam               | x component of velocity                         |
+* vtam               | y component of velocity                         |
+* wtam               | z component of velocity                         |
+* ttam               | T (temperature)                                 |
+* tdtam              | total divergence (dpi* dot / dpi* + D )         |
+* fitam              | phi (geopotential)                              |
+* qtam               | q = ln p                                        |
+*--------------------|-------------------------------------------------|
+* tptam              | T'       \                                      |
+* fiptam             | phi'      \  perturbations                      |
+* qptam              | q'        /                                     |
+* piptam             | pi'      /                                      |
+*--------------------|-------------------------------------------------|
+* tpltam             | T'  linear                                      |
+*--------------------|-------------------------------------------------|
+* mutam              | nonhydro index mu=dp/dpi-1 [= 0 if hydro]       |
+* psdtam             | pi* dot (vert. vel. in pi* coord.)              |
+* stam               | ln (pi_s/z_s)                                   |
+*--------------------|-------------------------------------------------|
+* gptam              | P                                               |
+* multam             | (mu)lin = (1+D)q' -- the linear part of (mu)    |
+*--------------------|-------------------------------------------------|
+* hutam              | specific humidity                               |
+* qctam              | mixing ratio of cloud water/ice                 |
+* trtam              | passive tracer(s)                               |
+*----------------------------------------------------------------------
+*
+#endif
+*
+*NOTE: the equivalence statement below MUST mark the
+*FIRST element of the common block or the OUTPUTS will be wrong.
+*If you introduce an element in the beginning of this block, make
+*changes to assure the equivalence statement below MARKS it.
+*
+      MARK_COMMON_BEG(vtam)
+      DCL_VMMVAR( vtam,   utam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,   vtam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,   wtam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,   ttam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,  tdtam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,  fitam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,   qtam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,  tptam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam, fiptam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,  qptam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam, piptam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam, tpltam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,  mutam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam, psdtam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,   stam, real, (LDIST_SHAPE)      )
+      DCL_VMMVAR( vtam,  gptam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam, multam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,  hutam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,  qctam, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtam,  trtam, real, (LDIST_SHAPE,l_nk,*) )
+      MARK_COMMON_END(vtam)
+
+      character*8 vtam_n_first(1)
+      equivalence (vtam_n_first,VMM_NAM(utam))
+

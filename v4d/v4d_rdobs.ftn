@@ -1,0 +1,153 @@
+***s/r v4d_rdobs - Read from OBSERVATIONS STD file at required time step
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_rdobs
+*
+#include "impnone.cdk"
+*
+*author 
+*     Michel Roch - rpn - jan 1994
+*
+*revision
+* v3_02 - Morneau J.        - initial MPI version (from readdyn v2_21)
+*                             read obs from file for sensitivity analysis
+*
+*object
+*	
+*arguments
+*	none
+*
+*constants
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "v4d_vmm.cdk"
+#include "ptopo.cdk"
+#include "geomg.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer  fstouv,fstlir,fstfrm,v4d_rdfld,longueur
+      external fstouv,fstlir,fstfrm,v4d_rdfld,longueur
+*
+      integer nvar,i,j,k, iip1(G_nk),iip2
+      integer nerr, err, pnlkey1(4),  error(16), dum1
+      character*5 blank_S,var_S
+
+      real wk1(G_ni,G_nj,G_nk)
+**
+*     ---------------------------------------------------------------
+*
+      if (Lun_out > 0) then
+         write(lun_out,9000)
+         write (Lun_out,*)'Opening file: ',
+     $        V4dg_lun_obs_s(1:longueur(V4dg_lun_obs_s))
+      endif
+      if (Ptopo_myproc.eq.0) then
+         err = fstouv(V4dg_lun_obs,'RND')
+      endif
+*
+      pnlkey1( 1)=VMM_KEY( ut1r)
+      pnlkey1( 2)=VMM_KEY( vt1r)
+      pnlkey1( 3)=VMM_KEY(tpt1r)
+      pnlkey1( 4)=VMM_KEY( st1r)
+      nvar=4
+*
+      err = vmmlod(pnlkey1,nvar)
+      err = VMM_GET_VAR( ut1r)
+      err = VMM_GET_VAR( vt1r)
+      err = VMM_GET_VAR(tpt1r)
+      err = VMM_GET_VAR( st1r)
+*
+*     ----------------------------------------------
+*     Compute IP1, IP2 of OBSERVATION to be read
+*     ----------------------------------------------
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          call convip(iip1(k),geomg_hyb(k),1,+1,blank_S,.false.)
+        enddo
+        iip2 = nint(float(Lctl_step)*Cstv_dt_8/3600.0)
+        write(*,*) 'iip2 ',iip2
+      endif
+*     ----------------------------------------------
+*
+      if (Ptopo_myproc.eq.0) then
+        nerr = 0
+        do i=1,nvar
+          error(i)=0
+          nerr = nerr + 1
+        enddo
+      endif
+*
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          err = v4d_rdfld(wk1(1,1,k),V4dg_lun_obs,G_ni,G_nj,
+     $                    iip1(k),iip2,0,'P','UU',G_ni+1,G_nj)
+          error(1) = error(1)+err
+        enddo
+      endif
+      call glbdist(wk1,G_ni,G_nj,ut1r,LDIST_DIM,G_nk,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          err = v4d_rdfld(wk1(1,1,k),V4dg_lun_obs,G_ni,G_nj,
+     $                    iip1(k),iip2,0,'P','VV',G_ni+1,G_nj)
+          error(2) = error(2)+err
+        enddo
+      endif
+      call glbdist(wk1,G_ni,G_nj,vt1r,LDIST_DIM,G_nk,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+        do k=1,G_nk
+          err = v4d_rdfld(wk1(1,1,k),V4dg_lun_obs,G_ni,G_nj,
+     $                    iip1(k),iip2,0,'P','TPT1',G_ni+1,G_nj)
+          error(3) = error(3)+err
+        enddo
+      endif
+      call glbdist(wk1,G_ni,G_nj,tpt1r,LDIST_DIM,G_nk,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+          err = v4d_rdfld(wk1(1,1,1),V4dg_lun_obs,G_ni,G_nj,
+     $                    iip1(G_nk),iip2,0,'P','PIP1',G_ni+1,G_nj)
+          error(4) = error(4)+err
+      endif
+      call glbdist(wk1,G_ni,G_nj,st1r,LDIST_DIM,1,G_halox,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+         err = 0
+         do i=1,nerr
+            err = err + error(i)
+         end do
+      endif
+*
+      call RPN_COMM_bcast (err,1,"MPI_INTEGER",0,"grid",dum1)
+      if (err.ne.0) call gefstop('v4d_rdobs')
+*
+      err = vmmuld(-1,0)
+*   
+      if (Lun_out > 0) write(Lun_out,9900)
+*
+      if (Ptopo_myproc.eq.0) then
+         err = fstfrm (V4dg_lun_obs)
+      endif
+*
+ 9000 format(
+     +/,'BEGIN READING OBSERVATION FILES       (V4D_RDOBS)',
+     +/,'===================================================')
+ 9900 format(
+     +/,'END READING OBSERVATION FILES         (V4D_RDOBS)',
+     +/,'===================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

@@ -1,0 +1,8 @@
+mv coupling.cdk remove/
+mv e_decal.ftn remove/
+mv e_geoma.cdk remove/
+mv e_premoy.ftn remove/
+mv e_screen.ftn remove/
+mv e_sortr.ftn remove/
+mv itf_cpl_bloccplg.ftn remove/
+mv itf_cpl_screen.ftn remove/

@@ -1,0 +1,51 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+*** e_sfile_bcs - to open a new BCS file
+*
+#include "model_macros_f.h"
+*
+      subroutine e_sfile_bcs (datev,is,nis,js,jn,njs,
+     $                          iw,ie,niw,jw,njw,msg,nvar)
+      implicit none
+*
+      character* (*) msg,datev
+      integer stepno, nvar,is,nis,js,jn,njs,iw,ie,niw,jw,njw
+*
+*author  M. Desgagne 2001 (MC2 out_sfile_bcs)
+*
+*revision
+* v3_30 - Lee. V - modified to open a BCS file for data extracted
+*                  from analysis input
+*
+#include "e_anal.cdk"
+#include "e_grids.cdk"
+#include "e_tr.cdk"
+*
+      integer nvar, ntr, mode
+      integer  longueur
+      external longueur
+      character*2  md
+      character*512 filen
+*
+*------------------------------------------------------------------
+*
+          unf_casc = 202
+          mode=2
+          ntr=1+E_tr3d_ntr ! for HU
+*
+          write (md,'(i2.2)') mode
+          print *,'e_sfile_bcs: datev=',datev
+          print *,'is,nis,js,jn,njs,iw,ie,niw,jw,njw=',is,nis,js,jn,njs,iw,ie,niw,jw,njw
+          filen= 'bcs'//md//'_'//datev
+          filen= './process/casc/'//filen(1:longueur(filen))
+      print *,'e_sfile_bcs: opening ',filen(1:longueur(filen))
+          open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
+     $                                          position='APPEND')
+          call wrgeo_bcs (xg_8(is),nis+1,yg_8(js),yg_8(jn),njs+1,
+     $                xg_8(iw),xg_8(ie),niw+1,yg_8(jw),njw+1,
+     $                z_8,pia,pibb,lv,unf_casc)
+          write (unf_casc) msg,nvar,ntr,mode
+*
+*------------------------------------------------------------------
+      return
+      end
+*

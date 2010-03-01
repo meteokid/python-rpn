@@ -1,0 +1,63 @@
+#if defined (DOC)
+*
+***comdeck rhscm.cdk
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+*
+*object
+*     Equivalent to comdeck rhsc for TRAJECTORY
+*______________________________________________________________________
+*                                                                      |
+*  TRAJ VMM VARIABLES ASSOCIATED WITH RHS (right-hand side equation)   |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* rum                | momentum equation along x                       |
+* rvm                | momentum equation along y                       |
+* rwm                | momentum equation along z                       |
+* rvvm               | vertical velocity equation                      |
+* rcnm               | continuity equation                             |
+* rthm               | thermodynamic equation                          |
+*--------------------|-------------------------------------------------|
+* rdm                | rhs of horizontal divergence equations          |
+* r1m                | combined divergence and continuity equations    |
+* r3m                | combined vertical motion equations              |
+* r3pm               | combined vertical motion equations              |
+*--------------------|-------------------------------------------------|
+* rhellm             | linear component of rhs of Helmholtz equation   |
+* rhelnm             | non-linear component of rhs of Helmholtz eqn    |
+*--------------------|-------------------------------------------------|
+* ruw1m              | Ru interpolated from U_grid to G_grid           |
+* ruw2m              | advective contributions for U                   |
+* rvw1m              | Rv interpolated from V_grid to G_grid           |
+* rvw2m              | advective contributions for V                   |
+*----------------------------------------------------------------------
+#endif
+*
+      MARK_COMMON_BEG (rhscm)
+      DCL_VMMVAR (rhscm,rum    ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rvm    ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rwm    ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rvvm   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rcnm   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rthm   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rdm    ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,r3m    ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rhellm ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,ruw1m  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rvw1m  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,r1m    ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,r3pm   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rhelnm ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,ruw2m  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (rhscm,rvw2m  ,real,(LDIST_SHAPE,l_nk))
+      MARK_COMMON_END (rhscm)
+      character*8 rhscm_n_first(1)
+      equivalence (rhscm_n_first,VMM_NAM(rum))

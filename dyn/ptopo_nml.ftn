@@ -1,0 +1,78 @@
+***s/r ptopo_nml - Read namelist ptopo
+*
+#include "model_macros_f.h"
+*
+      integer function ptopo_nml (F_namelistf_S)
+      implicit none
+*
+      character* (*) F_namelistf_S
+*
+*author
+*     Michel Desgagne - Summer 2006
+*
+*revision
+* v3_30 - Desgagne M.       - initial version
+*
+*object
+*  Default configuration and reading namelist ptopo
+*
+*implicits
+#include "ptopo.cdk"
+*
+      integer  fnom
+      external fnom
+*
+      integer nrec,unf
+*
+*-------------------------------------------------------------------
+*
+      ptopo_nml = -1
+*
+      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+         ptopo_nml = 0
+         write (6  ,nml=ptopo)
+         return
+      endif
+*
+* Defaults values for ptopo namelist variables
+*
+      Ptopo_npex   =  1
+      Ptopo_npey   =  1
+      Ptopo_nblocx = -1
+      Ptopo_nblocy = -1
+      Ptopo_smtphy = 0
+      Ptopo_smtglb = 0
+      Ptopo_npeOpenMP = 1
+      Ptopo_bind_L = .false.
+*
+      unf=0
+      if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
+         rewind(unf)
+         read (unf, nml=ptopo, end=7110, err=9110)
+ 7110    if (Ptopo_nblocx.le.0 .or. Ptopo_nblocy.le.0) then
+            Ptopo_nblocx = Ptopo_npex
+            Ptopo_nblocy = Ptopo_npey
+         endif
+         if (Ptopo_smtglb.le.0) Ptopo_smtglb = Ptopo_npeOpenMP
+         if (Ptopo_smtphy.le.0) Ptopo_smtphy = Ptopo_smtglb
+         call fclos (unf)
+         ptopo_nml = 1
+         goto 7777
+      else
+         goto 9220
+      endif
+*
+ 9110 write (6, 8150) trim( F_namelistf_S )
+      call fclos (unf)
+      goto 7777
+*
+ 9220 write (6, 8155) trim( F_namelistf_S )
+*
+ 8150 format (/,' NAMELIST ptopo    INVALID IN FILE: ',a)
+ 8155 format (/,' FILE: ',a,' NOT AVAILABLE')
+*
+*
+*-------------------------------------------------------------------
+*
+ 7777 return
+      end

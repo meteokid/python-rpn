@@ -17,6 +17,8 @@
 *  GRDA     - gridtyp found in the analyse file for data records
 *  TVA      - type of variable in the analyse file for data records
 *  LABANL   - label of the data records in the analyse file
+*  ANAL_COND - ice phase considered in humidity field of analysis?
+*  xg_8,yg_8,ygv_8- grid points in radians
 #endif
       INTEGER  LVMAX
       PARAMETER (LVMAX   = 201)
@@ -26,6 +28,9 @@
      %               ig1a, ig2a, ig3a, ig4a
       INTEGER        NA(LVMAX)
       REAL           LNA(LVMAX), RNA(LVMAX),RCOEFA,PTOPA,PREFA
+      real           pia(LVMAX),pibb(LVMAX),pib(LVMAX)
+      REAL*8         xg_8,yg_8,ygv_8,z_8(LVMAX)
+      pointer        (paxg_8, xg_8(*)),(payg_8, yg_8(*)),(paygv_8, ygv_8(*))
       CHARACTER*2    VH,VT
       CHARACTER*1    GRDA, TVA
       CHARACTER*12   LABANL
@@ -33,12 +38,14 @@
       COMMON/anali/  nia, nja, NK, LV, NA,
      %               ip1a, ip2a, ip3a,
      %               ig1a, ig2a, ig3a, ig4a
-      COMMON/analr/  LNA, RNA, RCOEFA,PTOPA,PREFA
+      COMMON/analr/  LNA, RNA, RCOEFA,PTOPA,PREFA,pia,pibb,pib
+      COMMON/analr8/ z_8
+      COMMON/analpos/ paxg_8,payg_8,paygv_8
       COMMON/anals/  VH,VT,GRDA,TVA,LABANL
       logical anal_sigma, anal_eta, anal_hyb, anal_pres,anal_perturb
-      logical anal_ecmwf	
+      logical anal_ecmwf, anal_cond
       integer anal_hav
       common /e_anal_l/ 
      $     anal_sigma, anal_eta, anal_hyb, anal_pres, anal_perturb,
-     $     anal_ecmwf
+     $     anal_ecmwf, anal_cond
       common /e_anal_i/ anal_hav(2)

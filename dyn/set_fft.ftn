@@ -5,7 +5,7 @@
 *
       subroutine set_fft
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     michel roch - rpn - june 1993
@@ -14,6 +14,7 @@
 * v2_00 - Lee V.            - initial MPI version (from setfft v1_03)
 * v2_40 - Qaddouri A.       - adjust for LAM version
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_30 - Tanguay M.        - Abort if LAM adjoint not FFT 
 *
 *object
 *     See above id.
@@ -26,27 +27,33 @@
 #include "glb_pil.cdk"
 #include "dcst.cdk"
 #include "fft.cdk"
+#include "sol.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
-*
+#include "v4dg.cdk"
 *
 **
       real*8 two
-      parameter( two  = 2.0 )
+      parameter ( two  = 2.0 )
 *
       integer i
 *     ---------------------------------------------------------------
 *
       if (Lun_out.gt.0) write(Lun_out,1000)
+      Fft_fast_L = .false.
 *
 *C       1.    test if grid is uniform in x
 *              ----------------------------
-      if ( Grd_ni .ne. Grd_nila ) then
-*  Note (G_ni=Grd_ni)
-         Fft_fast_L = .false.
+      if ( .not. sol_fft_L ) then
          if (Lun_out.gt.0) 
-     $   write(Lun_out,*)'Fft_fast_L = ',Fft_fast_L,' non-uniform grid'
-         return
+     $   write(Lun_out,*)'Fft_fast_L = .false. ====> sol_fft_L=.f.'
+         goto 999
+      endif
+*
+      if ( Grd_ni .ne. Grd_nila ) then
+         if (Lun_out.gt.0) 
+     $   write(Lun_out,*)'Fft_fast_L = .false. ====> non-uniform grid'
+         goto 999
       endif
 *
 *C       2.    test grid factorization
@@ -54,35 +61,37 @@
       i = G_ni-Lam_pil_w-Lam_pil_e
       call ngfft ( i )
       if ( i.ne.G_ni-Lam_pil_w-Lam_pil_e ) then
-         Fft_fast_L = .false.
          if (Lun_out.gt.0) 
-     $   write(Lun_out,*) 'NGFFT Fft_fast_L = ',Fft_fast_L,
-     $                    ' NI = ',G_ni-Lam_pil_w-Lam_pil_e,' I = ',i
-         return
+     $   write(Lun_out,3001) G_ni-Lam_pil_w-Lam_pil_e,i
+         goto 999
       endif
+*
       Fft_fast_L = .true.
       if (Lun_out.gt.0) write(Lun_out,*) 'Fft_fast_L = ',Fft_fast_L
 *
-*
 *C       3.    calculate inverse projector in Fourier space 'Fft_pri_8'
 *              --------------------------------------------------------
-*
       if (G_lam) then
-
-          call setscqr(i, 'QCOS' )
-          i=G_ni-Lam_pil_w-Lam_pil_e
-          Fft_pri_8 =  dble(i) / (G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w) )
-
+         call setscqr(i, 'QCOS' )
+         i=G_ni-Lam_pil_w-Lam_pil_e
+         Fft_pri_8 = dble(i)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w))
       else
-          call setfft8 ( Grd_ni )
-          Fft_pri_8 = dble(Grd_ni) / (  two * Dcst_pi_8 )
+         call setfft8 ( Grd_ni )
+         Fft_pri_8 = dble(Grd_ni) / (  two * Dcst_pi_8 )
       endif
 *
       if (Lun_out.gt.0) write(Lun_out,*) 'Fft_pri_8 = ',Fft_pri_8
 *
+ 999  if (V4dg_conf.ne.0.and.G_lam.and..not.Fft_fast_L) then
+         if (Lun_out.gt.0) write(Lun_out,*) 'ABORT: LAM adjoint not FFT'
+         call gem_stop ('LAM adjoint non FFT',-1)
+      endif
+*
  1000 format(
      %/,'COMMON INITIALIZATION AND PREPARATION FOR FFT (S/R SET_FFT)',
      %/,'===========================================================')
+ 3001 format ('Fft_fast_L = .false. ====> NI = ',i6,' NOT FACTORIZABLE'
+     $        /'NEXT FACTORIZABLE G_NI = ',i6)
 *
 *     ---------------------------------------------------------------
 *

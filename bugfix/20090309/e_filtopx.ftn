@@ -1,0 +1,172 @@
+***s/r e_filtopx - filters topographic fields
+*
+#include "model_macros_f.h"
+*
+      subroutine e_filtopx ( F_topof, F_topo, fnio, fnjo, ftgrd )
+*
+#include "impnone.cdk"
+*
+      integer fnio,fnjo
+      real F_topof(fnio,fnjo),F_topo(fnio,fnjo)
+      character*1 ftgrd
+*
+*auteur 
+*     andre methot - sept 95
+*
+*revision
+* v3_30 - Lee V    - return filtered topography equivalent to original
+*                    if no filtering is required
+*
+*object
+*         This subroutine filters the topographic field using xy filter
+*         and/or digital filter and/or model diffusion operator.
+*
+*arguments
+*
+*______________________________________________________________________
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+*                    |                                                 |
+* F_topof            | topographic field                               |
+*                    |                                                 |
+* fnio               | number of grid point along x axis               |
+*                    |                                                 |
+* fnjo               | number of grid point along y axis               |
+*                    |                                                 |
+* ftgrd              | 'G' : topography is on geopotential grid        |
+*                    | 'U' : topography is on U wind component grid    |
+*                    | 'V' : topography is on V wind component grid    |
+* ---------------------------------------------------------------------
+*
+*notes
+*
+*     The dimensions of the field F_topof are defined in the entrance
+*  context. Those dimensions are not equivalent to the model's
+*  conventions.  For a given grid:
+*
+*        fnio = pni + 1  ....where F_topof(fnio,j)=F_topof(1,j) j=1,fnjo
+*        fnjo = pnj  if ftgrd is 'G' or 'U'
+*        fnjo = pnjv if ftgrd is 'V'
+*
+*  In order to use properly GEMDM model's filtering operators, the
+*  topographic field has to be tranfered into a work field having
+*  consistent dimensions with the model's dimensions
+*
+*implicits
+*
+#include "e_grids.cdk"
+#include "e_geomg.cdk"
+#include "e_topo.cdk"
+*
+      integer i, j, nio, gnis, gnjs
+      real, dimension(:,:), allocatable :: w1
+*
+*----------------------------------------------------------------------
+*
+      if (.not.(Topo_dgfmx_L.or.Topo_filmx_L)) then
+         F_topof = F_topo
+         write(6,9900)
+         return
+      endif
+*
+      write(6,1001) ftgrd
+*
+      gnis = pni + 1
+      gnjs = pnj + 2
+*
+*     1- Transfering unfiltered topog of size fnio x fnjo into
+*        work field of size                   gnis x gnjs
+*        -----------------------------------------------------
+*
+      allocate (w1(gnis,gnjs))
+      nio = fnio
+      if (.not.LAM) nio =fnio-1
+      do j=1,fnjo
+      do i=1,nio
+         w1(i,j)=F_topo(i,j)
+      enddo
+      enddo
+*
+*     2- apply digital filter on topographic field.
+*        -----------------------------------------------------
+*
+      if ( Topo_dgfmx_L ) then
+         write(6, 9400 )
+         do j=1,fnjo
+         do i=1,nio
+            w1(i,j)=max( 0.0, w1(i,j) )
+         enddo
+         enddo
+         if ( ftgrd .eq. 'G' ) then
+            call e_setdgf (w1,gnis,gnjs, pni, pnj, xdhx    ,xdhy ,xdcy )
+         else if ( ftgrd .eq. 'U' ) then
+            call e_setdgf (w1,gnis,gnjs, pniu,pnj, xdhxu(1),xdhy ,xdcy )
+         else if ( ftgrd .eq. 'V' ) then
+            call e_setdgf (w1,gnis,gnjs, pni, pnjv,xdhx ,xdhyv(1),xdcyv)
+         else
+            write(6,9325) ftgrd
+            call e_arret('e_filtopx')
+         endif
+      endif
+*
+*     3- apply x-y filter on topographic field.
+*        -----------------------------------------------------
+*
+      if ( Topo_filmx_L ) then
+         write(6,9500 )
+         do j=1,fnjo
+         do i=1,nio
+            w1(i,j)=max( 0.0, w1(i,j) )
+         enddo
+         enddo
+         if ( ftgrd .eq. 'G' ) then
+            call e_ntrxyfil( w1, w1, 0.5, xdhx, xdhy,
+     %                      pni, pnj, 1, gnis, gnjs, 1)   
+         else if ( ftgrd .eq. 'U' ) then
+            call e_ntrxyfil( w1, w1, 0.5, xdhxu, xdhy,
+     %                      pniu, pnj, 1, gnis, gnjs, 1)
+         else if ( ftgrd .eq. 'V' ) then
+            call e_ntrxyfil( w1, w1, 0.5, xdhx, xdhyv,
+     %                      pni, pnjv,1, gnis, gnjs, 1)
+         else
+            write (6, 1000)
+            call e_arret('E_NTRXYFIL')
+         endif
+      endif
+*
+*     5- Update of the topography with the filtered field
+*        ------------------------------------------------
+      do j=1, fnjo
+      do i=1, nio
+         F_topof(i,j) = w1(i,j)
+      enddo
+      enddo
+      if (.not.LAM) then
+         do j=1, fnjo
+            F_topof(fnio,j) = F_topof(1,j)
+         enddo
+      endif
+*
+      deallocate (w1)
+*     
+ 1000 format(
+     +//,' UNKNOWN GRID ID... INCORRECT CALL TO E_NTRXYFIL ',
+     + /,' ===============================================',
+     +//)
+ 1001 format(/'TOPOGRAPHY FILTERING (S/R e_filtopx) on GRID',A1/
+     %        '====================================')
+ 9300 format(
+     +'---> Diffusion will be applied with basic coefficient:', e12.4)
+ 9301 format('---> Diffusion on topography not available')
+ 9325 format(
+     +/,'---> WRONG C-GRID: ',a1,' in S/R e_filtopx -- ABORT --',/)
+ 9400 format('---> Digital filter will be applied')
+ 9500 format('---> Two delta-x filter will be applied')
+ 9900 format(/'NO TOPOGRAPHY FILTERING (S/R e_filtopx)'/
+     +        '========================================')
+*
+*----------------------------------------------------------------------
+*
+      return
+      end

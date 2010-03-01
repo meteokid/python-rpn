@@ -1,0 +1,245 @@
+***s/r itf_phy_inikey
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_phy_inikey
+      implicit none
+*
+*author
+*     Michel Desgagne  - Sept 2001
+*
+*revision
+* v2_31 - Desgagne M.       - optiial version (adapted from MC2 v4.9.1
+*                             physics interface)
+* v2_32 - Desgagne M.       - connection to physics 3.72
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Laroche S.        - new conditional when P_cond_stcon_s(1:3).eq.' NIL'
+* v3_03 - Mailhot J.        - change name of physical tendency (for other physics tracers)
+* v3_03 - Leduc A-M         - Add gzmoins6
+* v3_12 - Bilodeau B.       - change length of vn_S from 8 to 16 characters
+* v3_13 - Pellerin P.       - Add the off-line mode
+* V3_20 - Lee V.            - Simplify phyopt calls for dun bus and add loop
+*                             for chem. tracers.
+* v3_21 - Valcke, S.        - Add fccpl, fvcpl, mccpl if coupling
+*                           - Add tdiag,udiag,vdiag,qdiag,tmice,pr,rt,fc,fv
+* v3_30 - Spacek, L.        - New total tendecies uphytd,vphytd,tphytd,
+*                             huphytd,qcphytd,qrphytd,qgphytd,qiphytd
+*                             Eliminations of processus specific physics
+*                             tendencies.
+* v3_30 - Faucher M.        - Add TDEW
+
+* v3_30 - Milbrandt J.      - Exclude water-loading of QR from multimoment scheme
+* v3_30 - Tanguay M.        - adapt TL/AD to pvptr
+* v3_30 - Bilodeau-Desgagne - Define PMOINS for offline mode
+*
+*object
+*
+*implicites
+#include "glb_ld.cdk"
+#include "tr3d.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "itf_phy_busind.cdk"
+#include "itf_phy_vmm.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_cpl_cplg.cdk"
+#include "v4dg.cdk"
+*
+**
+      character*16 vn_S
+      integer soit,opti,i,k,deb,deb2,lght,cnt,err
+*     soit=must be found, opti=optional
+      data soit,opti/0,-1/
+*
+*-------------------------------------------------------------------
+*
+      if (Lun_debug_L) write (Lun_out,*) 'INIKEY',COMMON_SIZE(p_phy),'vmmvar'
+      do k=1,COMMON_SIZE(p_phy)
+         call getindx(P_phy_n_first(k),'D',p_phy_addr(k), lght, soit)
+      enddo
+      if (Lun_debug_L) then
+         do k=1,COMMON_SIZE(p_phy)
+         write(Lun_out,*)'fill p_phy_n_first=',k,p_phy_n_first(k),p_phy_addr(k)
+         enddo
+      endif
+*
+      if (V4dg_conf.ne.0) then
+      call getindx ('UMOINS',  'D',umoins,   lght, soit)
+      call getindx ('VMOINS',  'D',vmoins,   lght, soit)
+      call getindx ('TMOINS',  'D',tmoins,   lght, soit)
+      call getindx ('GZMOINS6','D',gzmoins6, lght, soit)
+      call getindx ('PMOINS',  'D',pmoins,   lght, soit)
+      call getindx ('UPLUS',   'D',uplus,    lght, soit)
+      call getindx ('VPLUS',   'D',vplus,    lght, soit)
+      call getindx ('TPLUS',   'D',tplus,    lght, soit)
+      call getindx ('PPLUS',   'D',pplus,    lght, soit)
+      call getindx ('OMEGAP',  'D',omegap,   lght, soit)
+      call getindx ('SIGM',    'D',sigm,     lght, soit)
+      call getindx ('DXDY',    'D',dxdy,     lght, soit)
+      call getindx ('EPONMOD', 'D',eponmod,  lght, soit)
+      call getindx ('FCPMSK',  'D',fcpf,     lght, soit)
+      call getindx ('FCPOID',  'D',fcpw,     lght, soit)
+      endif
+*
+      IF (C_coupling_L) THEN
+          call getindx ('FCCPL',   'D',fccpl,    lght, soit)
+          call getindx ('FVCPL',   'D',fvcpl,    lght, soit)
+          call getindx ('MCCPL',   'D',mccpl,    lght, soit)
+          CALL getindx ('TDEW',    'V',tdew,     lght, soit)
+      ENDIF
+*
+      call getindx ('DLAT',      'P',dlat,     lght, soit)
+      call getindx ('DLON',      'P',dlon,     lght, soit)
+      call getindx ('MG',        'P',mg,       lght, soit)
+      call getindx ('ML',        'P',ml,       lght, soit)
+      call getindx ('Z0',        'P',z0,       lght, soit)
+      call getindx ('LHTG',      'P',lhtg,     lght, soit)
+      call getindx ('ALVIS',     'P',alvis,    lght, soit)
+      call getindx ('TWATER',    'P',twater,   lght, soit)
+      call getindx ('TGLACIER',  'P',tglacier, lght, soit)
+      call getindx ('TSOIL',     'P',tsoil,    lght, soit)
+      call getindx ('WSOIL',     'P',wsoil,    lght, soit)
+      call getindx ('SNODP',     'P',snodp,    lght, soit)
+      call getindx ('ICEDP',     'P',icedp,    lght, soit)
+      call getindx ('GLSEA',     'P',glsea,    lght, soit)
+      call getindx ('GLSEA0',    'P',glsea0,   lght, soit)
+      call getindx ('INCRNE',    'P',incrne,   lght, soit)
+      call getindx ('INCRHS',    'P',incrhs,   lght, soit)
+      call getindx ('INCRICD',   'P',incricd,  lght, soit)
+      call getindx ('INCRGL',    'P',incrgl,   lght, soit)
+      call getindx ('INCRTS',    'P',incrts,   lght, soit)
+      call getindx ('INCRTG',    'P',incrtg,   lght, soit)
+      call getindx ('INCRTP',    'P',incrtp,   lght, soit)
+      call getindx ('UFCP',      'P',ufcp,     lght, soit)
+      call getindx ('VFCP',      'P',vfcp,     lght, soit)
+      call getindx ('FDSI',      'P',fdsi,     lght, soit)
+      call getindx ('TDIAG',     'P',tdiag,    lght, soit)
+      call getindx ('UDIAG',     'P',udiag,    lght, soit)
+      call getindx ('VDIAG',     'P',vdiag,    lght, soit)
+      call getindx ('QDIAG',     'P',qdiag,    lght, soit)
+      call getindx ('TMICE',     'P',tmice,    lght, soit)
+      if (Schm_offline_L .or. C_coupling_L) then
+          call getindx ('FLUSOLIS',  'P',flusolis, lght, soit)
+      endif
+      call getindx ('TSS',       'P',tss,      lght, soit)
+      call getindx ('COSZ',      'P',cosz,     lght, soit)
+*
+*
+      call getindx ('UPHYTD',  'V',uphytd,   lght, soit)
+      call getindx ('VPHYTD',  'V',vphytd,   lght, soit)
+      call getindx ('TPHYTD',  'V',tphytd,   lght, soit)
+*
+      call getindx ('KM',      'V',km,       lght, soit)
+      call getindx ('KT',      'V',kt,       lght, soit)
+      call getindx ('BM',      'V',bm,       lght, soit)
+      call getindx ('BT',      'V',bt,       lght, soit)
+      call getindx ('PR',      'V',pr,       lght, soit)
+      call getindx ('RT',      'V',rt,       lght, soit)
+      call getindx ('FC',      'V',fc,       lght, soit)
+      call getindx ('FV',      'V',fv,       lght, soit)
+*
+* H2O tracers
+*
+      do i=1,h2o_maxn
+         vn_S=h2o_liste_S(i)(1:2)//'PLUS'
+         call getindx (vn_S, 'D', deb, lght, opti)
+         if ( (h2o_liste_S(i)(1:2).eq.'QC').and.
+     $        (P_cond_stcon_s(1:3).eq.'NIL' ) ) deb = -1
+         if ( (h2o_liste_S(i)(1:2).eq.'QR'  ).and.
+     $        (P_cond_stcon_s(1:4).ne.'EXCR').and.
+     $        (P_cond_stcon_s(1:4).ne.'MULT') ) deb = -1
+
+         if (deb.gt.0) then
+            h2o_ntr = h2o_ntr + 1
+            h2o_name_S(h2o_ntr) = h2o_liste_S(i)(1:2)
+            h2o_ind(1,h2o_ntr)  = deb
+            vn_S=h2o_liste_S(i)(1:2)//'MOINS'
+            call getindx (vn_S, 'D',h2o_ind(2,h2o_ntr), lght, opti)
+            vn_S=h2o_liste_S(i)(1:2)//'PHYTD'
+            call getindx (vn_S, 'V',h2o_ind(3,h2o_ntr), lght, opti)
+            phyt_name_S(h2o_ntr) = h2o_name_S(h2o_ntr)
+            phyt_ind (1,h2o_ntr) = h2o_ind (1,h2o_ntr)
+            phyt_ind (2,h2o_ntr) = h2o_ind (2,h2o_ntr)
+            phyt_ind (3,h2o_ntr) = h2o_ind (3,h2o_ntr)
+         endif
+      end do
+*
+      phyt_ntr = h2o_ntr
+*
+* Other physics tracers to be advected
+*
+      do i=1,phyt_maxn
+         vn_S=phyt_liste_S(i)(1:2)//'PLUS'
+         call getindx (vn_S, 'D', deb, lght, opti)
+*
+         if (deb.gt.0) then
+            phyt_ntr = phyt_ntr + 1
+            phyt_name_S(phyt_ntr) = phyt_liste_S(i)(1:2)
+            phyt_ind(1,phyt_ntr)  = deb
+            vn_S=phyt_liste_S(i)(1:2)//'MOINS'
+            call getindx (vn_S, 'D',phyt_ind(2,phyt_ntr), lght, opti)
+            vn_S=phyt_liste_S(i)(1:2)//'PHYTD'
+            call getindx (vn_S, 'V',phyt_ind(3,phyt_ntr), lght, opti)
+         endif
+      end do
+*
+*Build list of tracers in Tr3d_name_S
+      do 20 i=1,phyt_ntr
+         do k=1,tr3d_ntr
+            if (Tr3d_name_S(k).eq.phyt_name_S(i)) goto 20
+         end do
+         tr3d_ntr = tr3d_ntr + 1
+         Tr3d_name_S(tr3d_ntr) = phyt_name_S(i)
+         Tr3d_sval(tr3d_ntr) = 0.
+ 20   continue
+
+*
+*     For the offline mode:
+*
+      if (Schm_offline_L) then
+*
+          do i=1,Tr3d_userntr
+             deb=-1
+             vn_S=Tr3d_username_S(i)
+*
+             if (vn_S.eq.'FI') call getindx ('FDSI',    'P',deb, lght, opti)
+             if (vn_S.eq.'PR') call getindx ('TSS',     'P',deb, lght, opti)
+             if (vn_S.eq.'PR0')call getindx ('TSS',     'P',deb, lght, opti)
+             if (vn_S.eq.'P0') then
+                call getindx ('PPLUS',   'D',deb, lght, opti)
+                call getindx ('PMOINS',  'D',deb2,lght, opti)
+             endif
+             if (vn_S.eq.'FB') call getindx ('FLUSOLIS','P',deb, lght, opti)
+             if (vn_S.eq.'N4') call getindx ('FLUSOLIS','P',deb, lght, opti)
+             if (vn_S.eq.'N40')call getindx ('FLUSOLIS','P',deb, lght, opti)
+             if (vn_S.eq.'AD') call getindx ('FDSI',    'P',deb, lght, opti)
+             if (vn_S.eq.'AD0')call getindx ('FDSI',    'P',deb, lght, opti)
+             if (vn_S.eq.'RT') call getindx ('TSS',     'P',deb, lght, opti)
+             if (vn_S.eq.'M4') call getindx ('COSZ',    'P',deb, lght, opti)
+*
+             if (deb.gt.0) then
+                 phyt_ntr = phyt_ntr + 1
+                 phyt_name_S(phyt_ntr) = Tr3d_username_S(i)(1:3)
+                 phyt_ind(1,phyt_ntr)  = deb
+                 if (phyt_name_S(phyt_ntr).eq.'P0') then
+                    phyt_ind(2,phyt_ntr)  = deb2
+                 endif
+             endif
+*
+          end do
+*
+          do 30 i=1,phyt_ntr
+            do k=1,tr3d_ntr
+               if (Tr3d_name_S(k).eq.phyt_name_S(i)) goto 30
+            end do
+            tr3d_ntr = tr3d_ntr + 1
+            Tr3d_name_S(tr3d_ntr) = phyt_name_S(i)
+            Tr3d_sval(tr3d_ntr) = 0.
+  30      continue
+*
+      endif
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

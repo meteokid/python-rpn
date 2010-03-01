@@ -4,7 +4,7 @@
 *
       subroutine gem_ctrl
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Michel Roch - rpn - june 1993
@@ -19,6 +19,7 @@
 *                             remove call to adv_set
 * v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
 * v3_21 - valcke, S.        - add oasis coupling initialization
+* v3_30 - Desgagne M.       - moved calls set_adw,set_opr to set_dync
 *
 *object
 *     Beginning of the integration. This subroutine
@@ -35,6 +36,7 @@
 #include "step.cdk"
 #include "rstr.cdk"
 #include "v4dg.cdk"
+#include "vtopo.cdk"
 *
       integer pnerr
       logical rstrt_L
@@ -53,31 +55,26 @@
 *C             e) write message on cmclog file for analysis cycle.
 *
 *
+*     Evaluate logical key for Variable Topography
+*
+      Vtopo_L = ((Vtopo_start .ge. 0)
+     %           .and. (Lctl_step-Vtopo_start .le. Vtopo_ndt))
+
       if ( V4dg_conf.eq.0 ) then
 *
         if ( .not. Rstri_rstn_L ) then
 *
-         call indata()
-*
-         call out_dyn ()
-*
-         call wlog('CSTR')
+           call indata()
 *
         else
 *
-         call set_dync()
+           call set_dync()
 *
-*C       Initialize model and SL operators
-*        ---------------------------------
-         call set_opr()
-         call adw_set()
+        endif
 *
 *C       Initialize coupling (nothing is done if no coupling)
 *         -------------------
-*
-         call c_set_coupling()
-*
-        endif
+        call itf_cpl_set_coupling()
 *
       endif
 *

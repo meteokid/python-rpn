@@ -18,6 +18,8 @@
 * v3_01 - Tanguay M.        - add V4dg_sgvc_L 
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_21 - Valcke, S.        - add oasis coupling termination
+* v3_22 - Dugas, B.         - add gemclimdm entry point
+* v3_30 - Desgagne M.       - new physics, coupling interface
 *
 *object
 *	
@@ -33,47 +35,54 @@
 *
 *     ---------------------------------------------------------------
 *
+*     ===============
+      entry gemclimdm
+*     ===============
+*
+*C              Establish processor topology and model configuration
+*               ----------------------------------------------------
       call set_world_view ()
-*
-*C             Initialize geometry of the model
-*              --------------------------------
-*
-      call set_geom()
-*
-*C              Computes coriolis factor
-*		------------------------
-*
-      call set_cori()
-*
-*C              Computes (u,v) interpolation coefficients for coriolis
-*		and right hand side computations
-*		------------------------------------------------------
-*
-      call set_intuv()
 *
 *C              Allocate a bloc of central memory
 *               ---------------------------------
+      call set_mem ()
 *
-      call set_mem()
+*C             Initialize geometry of the model
+*              --------------------------------
+      call set_geom()
 *
-*C              Setup commons level 1: VMM tables
-*               ---------------------------------
+*C             Initialize the physics parameterization package
+*              ----------------------------------
+      call itf_phy_init ()
 *
+*C             Initialize the chemistry package
+*              --------------------------------
+      call itf_chm_init ()
+*
+*C             Initialize tracers
+*              ---------------
+      call tracers ( )
+*
+      call bcs_sto ( )
+*
+*C             Read restart if present
+*              --------------------------------
+      call rdrstrt( )
+*
+*C             Setup commons level 1: VMM tables
+*              ---------------------------------
       call set_cn1()
 *
 *C              Additional settings for 4D-Var 
 *               ------------------------------
-*
       if (V4dg_conf.ne.0) call v4d_setting()
 *
-*C       3.    Initialize commons for output control
+*C             Initialize commons for output control
 *              -------------------------------------
-*
       call set_sor()
 *
 *     Code branching according to V4dg_conf
 *     -------------------------------------
-*
       if (V4dg_conf.eq.0) then
 *
          call gem_ctrl()     ! Regular forward gem
@@ -84,16 +93,14 @@
 *
       endif
 *
-*C       3.    Job termination
-*              ---------------
-*
 *C    Finalize coupling (nothing is done if no coupling)
 *     -----------------
-      call c_stop_coupling()
+      call itf_cpl_stop_coupling()
 *
       call set_term()
 *
       if (V4dg_conf.ne.0) Lctl_step = Step_total
+*
       call stop_world_view (Lctl_step.lt.Step_total)
 *
 *     ---------------------------------------------------------------

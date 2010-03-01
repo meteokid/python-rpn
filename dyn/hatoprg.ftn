@@ -4,7 +4,7 @@
 *
       subroutine hatoprg ( F_gg, F_ff, F_con, F_hz_8, ng, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer ng, Nk
       real F_gg(ng,Nk),F_ff(ng,Nk),F_con
@@ -17,6 +17,7 @@
 * v2_00 - Desgagne M.       - initial MPI version (from hatoprg v1_03)
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Desgagne M.       - Revision OpenMP
+* v3_30 - Tanguay M.        - Revision Openmp LAM 
 *
 *object  DOWNWARD vertical integration 
 *
@@ -44,17 +45,7 @@
 *
       wk(:  ) = .5*F_con*F_hz_8(:)
 *
-*mdmdmdmd real r,rtmp
-c      do i= 1, ng
-c         r = 0.0
-c         do k=G_nk-1,1,-1
-c            F_gg(i,k+1) = r
-c            rtmp = wk(k) * ( F_ff(i,k+1) + F_ff(i,k) )
-c            r = r + rtmp
-c         end do
-c         F_gg(i,1) = r
-c      end do
-*
+!$omp parallel private(r,k)
 !$omp do
       do i= 1, ng
 *
@@ -69,6 +60,7 @@ c      end do
 *
       end do
 !$omp enddo
+!$omp end parallel
 *
 *     __________________________________________________________________
 *

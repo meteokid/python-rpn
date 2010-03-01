@@ -12,7 +12,7 @@
 *
       subroutine pre
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Alain Patoine - Gabriel Lemay
@@ -144,6 +144,7 @@
 #include "p_geof.cdk"
 #include "schm.cdk"
 #include "lctl.cdk"
+
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -209,9 +210,36 @@
          r3p_ = 0
       endif
 *
+c     if (Acid_test_L)then
+c     if (Lun_out.gt.0) write(Lun_out,*) 'Before prep_2'
+c     call glbstat (xct1,'Xct1',1,l_ni,1,l_nj,G_nk,6+acid_i0,G_ni-5-acid_in,
+c    %                                             6+acid_j0,G_nj-5-acid_jn,1,1)
+c     call glbstat (topo,'FIS',LDIST_DIM,1,1+acid_i0,G_ni-acid_in,
+c    %                                     1+acid_j0,G_nj-acid_jn,1,1)
+c     call glbstat (ru,'RU0',LDIST_DIM,G_nk,7+acid_i0,G_ni-7-acid_in,
+c    %                                      7+acid_j0,G_nj-7-acid_jn,1,G_nk)
+c     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
+c    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
+c     call glbstat (ruw2,'RUW2',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
+c    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
+c     call glbstat (rcn,'RCN',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
+c    %                                       8+acid_j0,G_nj-7-acid_jn,1,G_nk)
+c     endif
+*
       call prep_2 ( ru,rv, ruw1,ruw2,rvw1,rvw2,xct1,yct1,zct1,topo, 
      %              rd,rcn,r1,rth, rw,rvv,r3,r3p, rhell,
      %              wijk1,wijk2,LDIST_DIM,l_ni,l_nj,l_nk )
+*
+* The following 5 glbstats will not match piloting run because they
+* contain the future Ru,Rv inserted in RHS, Ru,Rv,Rd,R1,Rhell
+* But glbstats should match for Rcn,Rth
+c     if (Acid_test_L)then
+c     if (Lun_out.gt.0) then
+c         write(Lun_out,*) 'After prep_2'
+c         write(Lun_out,*) 'STATS will not match, contains future RU,RV'
+c     endif
+c     call glbstat (ru,'RU',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
+c    %                                     8+acid_j0,G_nj-7-acid_jn,1,G_nk)
 *
       pnerr = vmmuld(-1,0)
 *

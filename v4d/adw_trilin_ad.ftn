@@ -1,0 +1,187 @@
+***s/p adw_trilin_ad - ADJ of adw_trilin_tl
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_trilin_ad ( F_out,  F_in, F_dt, 
+     %                           F_capx, F_capy, F_capz,
+     %                                   F_inm,      F_nm,
+     %                           F_capxm,F_capym,F_capzm,F_num,i0,in,j0,jn,kn)
+*
+      implicit none
+*
+      integer F_num, F_nm(F_num), i0, in, j0, jn, kn
+*
+      real F_dt, F_in(*), F_inm(*)
+*
+      real F_out (F_num),F_capx (F_num),F_capy (F_num),F_capz (F_num)
+      real               F_capxm(F_num),F_capym(F_num),F_capzm(F_num)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
+* v3_11 - Tanguay M.        - Remove restoration of vectorization in adjoint of semi-Lag
+* v3_11 - Lee V.            - OpenMP for ADW_TRILIN_AD
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_out        | F_dt * result of interpolation                  |  o  |
+* F_in         | field to interpolate                            |  i  |
+*              |                                                 |     |
+* F_dt         | multiplicative constant (1.0 or timestep lenght)|  i  |
+*              |                                                 |     |
+* F_n          | positions in the 3D volume of interpolation     |  i  |
+*              | boxes                                           |     |
+*              |                                                 |     |
+* F_capx       | \                                               |  i  |
+* F_capy       |   precomputed displacements                     |  i  |
+* F_capz       | / along the x,y,z directions                    |  i  |
+*              |                                                 |     |
+* F_num        | number of points to interpolate                 |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "adw.cdk"
+************************************************************************
+      integer n,nn, nijag, o1, o2, i,j,k,nij,kilon,kk,ki0,kin
+*
+      real psum(Adw_nit*Adw_njt*l_nk,4)
+      real*8 prf1_8, prf2_8, prf3_8, prf4_8, prf1_y_8, prf2_y_8
+      real*8 prf1m_8,prf2m_8,prf3m_8,prf4m_8,prf1m_y_8,prf2m_y_8
+*
+      real*8 ZERO_8
+      parameter (ZERO_8 = 0.0)
+*
+      nij   = l_ni*l_nj
+      nijag = Adw_nit * Adw_njt
+*
+*     Initialize local adjoint variables
+*     ----------------------------------
+      prf1_8 = ZERO_8
+      prf2_8 = ZERO_8
+      prf3_8 = ZERO_8
+      prf4_8 = ZERO_8
+      prf1_y_8 = ZERO_8
+      prf2_y_8 = ZERO_8
+*
+      kilon = (kn+4)/4
+
+!$omp parallel private(n,nn,o1,o2,i,j,k,kk,ki0,kin,
+!$omp& prf1_8,prf2_8,prf3_8,prf4_8,prf1_y_8,prf2_y_8,
+!$omp& prf1m_8,prf2m_8,prf3m_8,prf4m_8,
+!$omp& prf1m_y_8,prf2m_y_8)  shared(psum)
+
+!$omp do
+      do 200 kk=1,4
+         do n=1,Adw_nit*Adw_njt*l_nk
+            psum(n,kk) = 0.0
+         enddo
+         ki0 = 1 + kilon*(kk-1)
+         kin = min(ki0+kilon-1,kn)
+      do 100 k=ki0,kin
+      do  90 j=j0,jn
+      do  80 i=i0,in
+*
+      n  = nij*(k-1) + ((j-1)*l_ni) + i 
+*
+      o1 = F_nm(n)
+      o2 = F_nm(n) + Adw_nit
+*
+*     TRAJECTORY
+*     ----------
+************************************************************************
+*     x interpolation
+************************************************************************
+      prf1m_8 = (1.0 - F_capxm(n)) * F_inm(o1) + F_capxm(n) * F_inm(o1+1)
+      prf2m_8 = (1.0 - F_capxm(n)) * F_inm(o2) + F_capxm(n) * F_inm(o2+1)
+*
+      o1 = o1 + nijag
+      o2 = o2 + nijag
+*
+      prf3m_8 = (1.0 - F_capxm(n)) * F_inm(o1) + F_capxm(n) * F_inm(o1+1)
+      prf4m_8 = (1.0 - F_capxm(n)) * F_inm(o2) + F_capxm(n) * F_inm(o2+1)
+************************************************************************
+*     y interpolation
+************************************************************************
+      prf1m_y_8= (1.0 - F_capym(n)) * prf1m_8 + F_capym(n)  * prf2m_8
+      prf2m_y_8= (1.0 - F_capym(n)) * prf3m_8 + F_capym(n)  * prf4m_8
+*
+************************************************************************
+*     ADJ of
+*     z interpolation
+************************************************************************
+      prf2_y_8  =      F_capzm(n)  * F_out(n) * F_dt
+      prf1_y_8  = (1.0-F_capzm(n)) * F_out(n) * F_dt
+      F_capz(n) = F_capz(n) + (prf2m_y_8 - prf1m_y_8) * F_out(n) * F_dt
+      F_out (n) = ZERO_8
+*
+************************************************************************
+*     ADJ of
+*     y interpolation
+************************************************************************
+      prf4_8    =      F_capym(n)     * prf2_y_8 
+      prf3_8    = (1.0-F_capym(n))    * prf2_y_8 
+*
+      prf2_8    =      F_capym(n)     * prf1_y_8 
+      prf1_8    = (1.0-F_capym(n))    * prf1_y_8 
+*
+      F_capy(n) = F_capy(n) + (prf4m_8 - prf3m_8) * prf2_y_8
+     %                      + (prf2m_8 - prf1m_8) * prf1_y_8 
+*
+************************************************************************
+*     x interpolation
+************************************************************************
+      psum(o2+1,kk) = psum(o2+1,kk)  +      F_capxm(n)  * prf4_8
+      psum(o2  ,kk) = psum(o2  ,kk)  + (1.0-F_capxm(n)) * prf4_8
+*
+      psum(o1+1,kk) = psum(o1+1,kk)  +      F_capxm(n)  * prf3_8
+      psum(o1  ,kk) = psum(o1  ,kk)  + (1.0-F_capxm(n)) * prf3_8
+*
+      F_capx(n)  = F_capx(n) + (F_inm(o2+1) - F_inm(o2)) * prf4_8
+     %                       + (F_inm(o1+1) - F_inm(o1)) * prf3_8
+*
+      o1 = F_nm(n)
+      o2 = F_nm(n) + Adw_nit
+*
+      psum(o2+1,kk) = psum(o2+1,kk)  +      F_capxm(n)  * prf2_8
+      psum(o2  ,kk) = psum(o2  ,kk)  + (1.0-F_capxm(n)) * prf2_8
+*
+      psum(o1+1,kk) = psum(o1+1,kk)  +      F_capxm(n)  * prf1_8
+      psum(o1  ,kk) = psum(o1  ,kk)  + (1.0-F_capxm(n)) * prf1_8
+*
+      F_capx(n)  = F_capx(n) + (F_inm(o2+1) - F_inm(o2)) * prf2_8
+     %                       + (F_inm(o1+1) - F_inm(o1)) * prf1_8
+*
+   80 continue
+   90 continue
+  100 continue
+  200 continue
+!$omp enddo
+
+!$omp do
+      do nn=1,Adw_nit*Adw_njt*l_nk
+      do k=1,4
+         F_in(nn)= F_in(nn)+psum(nn,k)
+      enddo
+      enddo
+!$omp enddo
+
+!$omp end parallel
+*
+      return
+      end

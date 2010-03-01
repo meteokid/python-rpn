@@ -2,50 +2,23 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine bubble_cfg ( pass_L )
+      integer function bubble_cfg ( unf)
       implicit none
 *
-      logical pass_L
+      integer unf
 *
 *author 
 *     sylvie gravel   -  Apr 2003
 *
 *revision
 * v3_11 - gravel s          - initial version 
+* v3_30 - desgagne m        - moved comdecks into theonml.cdk
 *
 *object
 *     See above id
 *	
 *arguments - none
 *
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "hgc.cdk"
-#include "grd.cdk"
-#include "out1.cdk"
-#include "pilot.cdk"
-#include "hblen.cdk"
-#include "tr3d.cdk"
-#include "lun.cdk"
-#include "p_geol.cdk"
-#include "step.cdk"
-#include "pres.cdk"
-#include "schm.cdk"
-#include "adw.cdk"
-#include "cstv.cdk"
-#include "hzd.cdk"
-#include "eigv.cdk"
-#include "vspng.cdk"
-#include "theo.cdk"
-#include "geomg.cdk"
-#include "init.cdk"
-#include "offc.cdk"
-#include "lctl.cdk"
-#include "ptopo.cdk"
-#include "bubble.cdk"
-#include "mtn.cdk"
-#include "vtopo.cdk"
-#include "zblen.cdk"
 #include "theonml.cdk"
 *
       integer i, j, k, idatx
@@ -54,7 +27,7 @@
       parameter( ONE_8   = 1.0 )
 **
 *     ---------------------------------------------------------------
-      pass_L = .false. 
+      bubble_cfg = -1
 *
       G_halox=3
 
@@ -83,21 +56,17 @@
       Grd_nj = 1
 
       Grd_dx = 0.0001
-      do j=1,3
-      do i=1,3
-         Grd_rot_8(i,j) = 0.0
-      enddo
-      enddo     
-         Grd_rot_8(1,1) = 1.
-         Grd_rot_8(2,2) = 1.
-         Grd_rot_8(3,3) = 1.
+      Grd_rot_8 = 0.0
+      Grd_rot_8(1,1) = 1.
+      Grd_rot_8(2,2) = 1.
+      Grd_rot_8(3,3) = 1.
+      Grd_roule=.false.
 *
       G_lam=.true.
       Grd_xlat1=0.
       Grd_xlon1=180.
       Grd_xlat2=0.
       Grd_xlon2=270.
-      Grd_roule=.false.
 *
       Offc_a0_8 =  1.0
       Offc_a1_8 = -1.0
@@ -106,21 +75,13 @@
 
       Tr3d_userntr=1
 
-      Hblen_momentx=0
-      Hblen_momenty=0
-      Hblen_tx=0
-      Hblen_ty=0
-      Hblen_massx=0
-      Hblen_massy=0
-      Hblen_trx=0
-      Hblen_try=0
+      Hblen_x=0
+      Hblen_y=0
 
-      Pil_nesdt=0
-      Pil_ctebcs_L=.true.
+      Lam_nesdt=0
+      Lam_ctebcs_L=.true.
 
-      P_geol_tourn_L = .false.
-
-      Out1_etik_s='bubble'
+      Out3_etik_s='bubble'
 
       Step_total = 120
       Step_gstat = 12
@@ -136,10 +97,11 @@
      $                        Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )
 
       Schm_phyms_L = .false.
-      Schm_maxcfl_lam = 1
+      Adw_halox  = 3
+      Adw_haloy  = 2
 *
-      rewind ( Lun_in )
-      read ( Lun_in, nml=bubble_cfgs, end = 9220, err=9000)
+      rewind ( unf )
+      read ( unf, nml=bubble_cfgs, end = 9220, err=9000)
       go to 9221
  9220 write( Lun_out,9230) Theo_case_S
  9221 continue
@@ -184,8 +146,8 @@
        endif
       Grd_dxmax=Grd_xl
       Grd_dymax=Grd_yl
-      call datp2f( idatx, Pil_runstrt_S)
-      Out1_date= idatx
+      call datp2f( idatx, Lam_runstrt_S)
+      Out3_date= idatx
 
       G_halox = min(G_halox,Grd_ni-1)
       G_haloy = G_halox
@@ -209,7 +171,7 @@
          bb_radius2 = bb_radius2/Grd_dx
       endif
 
-      pass_L = .true. 
+      bubble_cfg = 1
       return   
 *
  9000 write (Lun_out, 9100)

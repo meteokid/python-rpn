@@ -1,15 +1,17 @@
 ***s/r e_setdgf  - sets comdeck for horizontal digital filtering
 *
-      subroutine e_setdgf (frchmp,nis,njs, fni,fnj, F_HX,F_HY,map_fact)
-#include "impnone.cdk"
+      subroutine e_setdgf (frchmp,fnis,fnjs, fni,fnj, F_HX,F_HY,map_fact)
+      implicit none
 *
-       integer fni, fnj, nis, njs
+       integer fni, fnj, fnis, fnjs
        real*8 F_HX(*), F_HY(*), map_fact(*)
-       real frwrk(nis,njs), frchmp(nis,njs)
+       real frwrk(fnis,fnjs), frchmp(fnis,fnjs)
 *
 *author andre methot  - cmc - mai 95
 *
 *revision
+* v3_30 - Dugas B.          - Rename nis,njs arguments to fnis,fnjs to remove
+*                             conflicts with skip-mode variables in e_grid_i
 *
 *object 
 *
@@ -52,8 +54,8 @@
 *
 **
       integer i, j, n, im, ip
-      real l,crit_len,hy,hx,fact,meshlenR,cobuf(cndgfmx),wrk(nis,njs),
-     $     factor
+      real l,crit_len,hy,hx,fact,meshlenR,cobuf(cndgfmx),
+     $     wrk(fnis,fnjs),factor
       integer, dimension (:,:  ), allocatable :: ptx, pty
       real*8 , dimension (:,:,:), allocatable :: coeff,dgf
 *

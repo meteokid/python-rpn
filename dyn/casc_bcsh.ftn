@@ -1,0 +1,569 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***s/r casc_bcsh - For reading cascade BCS pilot files where
+*                 BCS01 files were written after advection and
+*                 BCS02 files were written after physics
+#include "model_macros_f.h"
+*
+      integer function casc_bcsh ( datev, unf, wowp, errp )
+      implicit none
+*
+      character*15 datev
+      integer unf,wowp,errp
+*
+*author
+*     M. Desgagne  April 2006 (MC2 casc_bcsh)
+*
+*revision
+* v3_30 - Lee V.         - initial version for GEMDM
+*
+*
+#include "glb_ld.cdk"
+#include "bcsdim.cdk"
+#include "bcsmem.cdk"
+#include "bcsgrds.cdk"
+#include "ptopo.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+#include "nest.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "ind.cdk"
+#include "acid.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld,longueur
+      external vmmlod,vmmget,vmmuld,longueur
+      character*2 md
+      character*4 nomvar
+      character*8 dynophy
+      character*8, dimension (:), pointer :: trname_a
+      real, dimension (:,:,:), pointer :: trns,trnw
+      character*256 fn
+      logical fb_w,fb_e,fb_s,fb_n,data2treat
+      integer i,j,k,nka,ntra,n,err,ngas,ngaw,ofi,ofj,id,
+     $   mode,nit,njt,d1,nis,njs,niw,njw,iscal(2),errcode
+      real htop
+      real*8 epsilon
+      parameter (epsilon=1.0e-6)
+      real trp
+      pointer (patrp,trp(LDIST_SHAPE,*))
+      integer key1(17),keyp_,keyp(Tr3d_ntr),nvar
+      real*8, dimension (:  ), pointer :: xpsn,ypsn,xpwe,ypwe,
+     $        xpaqs,ypaqs,xpaus,ypavs,xpaqw,ypaqw,xpauw,ypavw
+      real  , dimension (:  ), allocatable :: pia,pib
+      real*8, dimension (:  ), allocatable :: xp1,yp1,zt1
+      real  , dimension (:,:), pointer :: 
+     $ uuns,vvns,psdns,ttns,tpns,tdns,fins,qqns,ssns,fipns,pipns,wwns,muns,
+     $ uunw,vvnw,psdnw,ttnw,tpnw,tdnw,finw,qqnw,ssnw,fipnw,pipnw,wwnw,munw
+      real topo(bcs_sz),topu(bcs_sz),topv(bcs_sz)
+*-----------------------------------------------------------------------
+*
+*
+      if (Lun_debug_L) write(Lun_out,3000) Lctl_step,wowp
+*
+*
+      nullify ( xpsn,ypsn,xpwe,ypwe,xpaqs,ypaqs,xpaus,ypavs,xpaqw,
+     $       ypaqw,xpauw,ypavw,uuns,vvns,psdns,ttns,tpns,tdns,fins,qqns,
+     $       ssns,fipns,pipns,wwns,muns,uunw,vvnw,psdnw,ttnw,tpnw,tdnw,
+     $       finw,qqnw,ssnw,fipnw,pipnw,wwnw,munw,trname_a )
+*
+      casc_bcsh = -1
+*
+      data2treat = (l_south.or.l_north.or.l_west.or.l_east)
+*
+      if (data2treat) then
+*
+         write (md,'(i2.2)') wowp
+         fn = '../casc/bcs'//md//'_'//datev
+         open (unf,file=fn,access='SEQUENTIAL',status='OLD',
+     $                        iostat=err,form='UNFORMATTED')
+c        print *,'opening ',fn(1:longueur(fn)),'err=',err
+*
+         if (err.ne.0) goto 33
+*
+         if (pazta.gt.0) call hpdeallc (pazta, err, 1)
+         if (papia.gt.0) call hpdeallc (papia, err, 1)
+         if (papib.gt.0) call hpdeallc (papib, err, 1)
+         pazta = 0
+         papia = 0
+         papib = 0
+*
+         read (unf,end=33) nomvar,nis,njs,niw,njw
+         allocate (xpsn (nis),ypsn (njs*2),xpwe (niw*2),ypwe (njw))
+         read (unf,end=33) xpsn,ypsn,xpwe,ypwe
+         nis = nis - 1 
+         njs = njs - 1 
+         niw = niw - 1
+         njw = njw - 1
+         allocate (xpaqs(nis),ypaqs(njs*2),xpaus(nis),ypavs(njs*2),
+     $             xpaqw(niw*2),ypaqw(njw),xpauw(niw*2),ypavw(njw))
+         read (unf,end=33) nomvar,nka
+         call hpalloc (pazta  ,nka*2, err,1)
+         call hpalloc (papia  ,nka  , err,1)
+         call hpalloc (papib  ,nka  , err,1)
+         allocate (zt1(nka),pia(nka),pib(nka))
+         read (unf,end=33) zt1,pia,pib
+*
+         do k=1,nka
+            ana_z  (k) = zt1(k)
+            ana_pia(k) = pia(k)
+            ana_pibb(k) = pib(k)
+         end do
+         deallocate (zt1,pia,pib)
+*
+         do i=1,nis
+            xpaqs(i) = xpsn(i)
+            xpaus(i) = 0.5 * (xpsn(i) + xpsn(i+1))
+         end do
+         do j=1,njs
+            ypaqs(j) = ypsn(j)
+            ypavs(j) = 0.5 * (ypsn(j) + ypsn(j+1))
+         end do
+         do j=njs+1,njs*2
+            ypaqs(j) = ypsn(j+1)
+            ypavs(j) = 0.5 * (ypsn(j+1) + ypsn(j+2))
+         end do
+*     
+         do i=1,niw
+            xpaqw(i) = xpwe(i)
+            xpauw(i) = 0.5 * (xpwe(i) + xpwe(i+1))
+         end do
+         do i=niw+1,niw*2
+            xpaqw(i) = xpwe(i+1)
+            xpauw(i) = 0.5 * (xpwe(i+1) + xpwe(i+2))
+         end do
+         do j=1,njw
+            ypaqw(j) = ypwe(j)
+            ypavw(j) = 0.5 * (ypwe(j) + ypwe(j+1))
+         end do
+*
+         ngas = nis*njs*2
+         ngaw = niw*njw*2
+
+         allocate (uuns(ngas,nka),vvns(ngas,nka),psdns(ngas,nka),
+     $             ttns(ngas,nka),tpns(ngas,nka),tdns(ngas,nka),
+     $             fins(ngas,nka),qqns(ngas,nka),ssns(ngas,1),
+     $             fipns(ngas,nka),pipns(ngas,nka),wwns(ngas,nka),
+     $             muns(ngas,nka) )
+         allocate (uunw(ngaw,nka),vvnw(ngaw,nka),psdnw(ngaw,nka),
+     $             ttnw(ngaw,nka),tpnw(ngaw,nka),tdnw(ngaw,nka),
+     $             finw(ngaw,nka),qqnw(ngaw,nka),ssnw(ngaw,1),
+     $             fipnw(ngaw,nka),pipnw(ngaw,nka),wwnw(ngaw,nka),
+     $             munw(ngaw,nka) )
+         
+*
+         read (unf,end=33) dynophy,nvar,ntra,mode
+         
+         allocate (trns(ngas,nka,ntra),
+     $             trnw(ngaw,nka,ntra),
+     $             trname_a(ntra) )
+         if (nvar.eq.5) then
+            call rdbcs ( ttns, ttnw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs ( fins(1,nka), finw(1,nka), nis,njs,niw,njw,1, unf)
+            call rdbcs (pipns(1,nka),pipnw(1,nka), nis,njs,niw,njw,1, unf)
+         else
+            call rdbcs ( ttns, ttnw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs ( fins, finw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs ( qqns, qqnw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs (pipns,pipnw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs ( tpns, tpnw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs ( ssns, ssnw, nis,njs,niw,njw, 1   , unf)
+            call rdbcs (fipns,fipnw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs (psdns,psdnw, nis,njs,niw,njw,nka  , unf)
+            call rdbcs ( tdns, tdnw, nis,njs,niw,njw,nka  , unf)
+            if (nvar.gt.11) then
+               call rdbcs ( wwns, wwnw, nis,njs,niw,njw,nka  , unf)
+               call rdbcs ( muns, munw, nis,njs,niw,njw,nka  , unf)
+            endif
+         endif
+         if (ntra.gt.0) then
+            call rdbcs_tr ( trns,trnw,nis,njs,niw,njw,nka,unf,
+     $                           Tr3d_name_S,Tr3d_ntr,trname_a,ntra )
+         endif
+         call rdbcs ( uuns, uunw, nis,njs,niw,njw,nka  , unf)
+         call rdbcs ( vvns, vvnw, nis,njs,niw,njw,nka  , unf)
+         casc_bcsh = 0
+      else
+         casc_bcsh = 0
+      endif
+*
+ 33   data2treat = data2treat .and. (casc_bcsh.eq.0)
+*
+* Perform horizontal and vertical interpolations for S-N 
+* and W-E boundaries
+*
+      nit = max(dimxs,dimxn)
+      njt = 0
+      if (l_south) njt = njt + dimys
+      if (l_north) njt = njt + dimyn
+      d1  = dimys*north
+*
+      if ( data2treat .and. (nit*njt.gt.0) ) then
+         errcode = -1
+         fb_w = (xpn  (1).gt.xpaqs    (2)-epsilon)
+         fb_e = (xpn(nit).lt.xpaqs(nis-1)+epsilon)
+         fb_s = .not.l_south
+         fb_n = .not.l_north
+         if ((.not.fb_s).and.(.not.fb_n)) then
+            fb_s = (ypn(      1).gt.ypaqs(      2)-epsilon).and.
+     $             (ypn(njt/2+1).gt.ypaqs(  njs+2)-epsilon)
+            if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(2)',ypn(1),ypaqs(2),'ypn(njt/2+1)< ypaqs(njs+2)',ypn(njt/2+1),ypaqs(  njs+2) 
+            fb_n = (ypn(njt/2  ).lt.ypaqs(  njs-1)+epsilon).and.
+     $             (ypn(njt    ).lt.ypaqs(2*njs-1)+epsilon)
+            if ( .not.fb_n ) write (6,*) 'ypn(njt/2)>ypaqs(njs-1)',ypn(njt/2),ypaqs(njs-1),'ypn(njt)>ypaqs( 2*njs-1)',ypn(njt),ypaqs( 2*njs-1) 
+         else if (.not.fb_s) then
+            fb_s = (ypn(  1).gt.ypaqs    (2)-epsilon)
+            if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(2)',ypn(1),ypaqs(2)
+            fb_n = (ypn(njt).lt.ypaqs(njs-1)+epsilon)
+            if ( .not.fb_n ) write (6,*) 'ypn(njt)>ypaqs(njs-1)',ypn(njt),ypaqs(njs-1)
+         else if (.not.fb_n) then
+            fb_s = (ypn(  1).gt.ypaqs(  njs+2)-epsilon)
+            if ( .not.fb_s ) write (6,*) 'ypn(1)<ypaqs(njs+2)',ypn(1),ypaqs(njs+2)
+            fb_n = (ypn(njt).lt.ypaqs(2*njs-1)+epsilon)
+            if ( .not.fb_n ) write (6,*) 'ypn(njt)>ypaqs(2*njs-1)',ypn(njt),ypaqs(2*njs-1)
+         endif
+         if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
+         if ( .not.fb_w ) write (6,201) 'W','NS',Ptopo_myproc
+         if ( .not.fb_e ) write (6,201) 'E','NS',Ptopo_myproc
+         if ( .not.fb_s ) write (6,201) 'S','NS',Ptopo_myproc
+         if ( .not.fb_n ) write (6,201) 'N','NS',Ptopo_myproc
+      else
+         errcode = 0
+      endif
+*
+      call gem_stop('CASC_BCSH',errcode)
+*	
+      if (data2treat)then
+      call trnes (Ind_topo,topo(bcs_is),topo(bcs_in),topo(bcs_iw),
+     $            topo(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+      call trnes (Ind_topu,topu(bcs_is),topu(bcs_in),topu(bcs_iw),
+     $            topu(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+      call trnes (Ind_topv,topv(bcs_is),topv(bcs_in),topv(bcs_iw),
+     $            topv(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+      endif
+
+*       PUT DATA into BCS_UF
+      if (data2treat) then
+      call casc_hvi (trname_a,
+     $  xpn,ypn,xpun,ypvn,xpaqs,ypaqs,xpaus,ypavs,
+     $  bcs_uf,bcs_uf(bcs_in),bcs_vf,bcs_vf(bcs_in),
+     $  bcs_tf,bcs_tf(bcs_in),bcs_psdf,bcs_psdf(bcs_in),
+     $  bcs_pipf,bcs_pipf(bcs_in),bcs_fipf,bcs_fipf(bcs_in),
+     $  bcs_tdf,bcs_tdf(bcs_in),bcs_fif,bcs_fif(bcs_in),
+     $  bcs_qf,bcs_qf(bcs_in),bcs_tpf,bcs_tpf(bcs_in),
+     $  bcs_trf,bcs_wf,bcs_wf(bcs_in),
+     $  bcs_muf,bcs_muf(bcs_in),bcs_sf,bcs_sf(bcs_in),
+     $  bcs_is-1,bcs_in-1,
+     $  topo,topo(bcs_in),topu,topu(bcs_in),topv,topv(bcs_in),
+     $  uuns,vvns,psdns,ttns,tpns,tdns,fins,qqns,ssns,
+     $  fipns,pipns,wwns,muns,trns,
+     $               minxs,maxxs,minys,maxys,0,d1,G_nk,nit,njt,
+     $               nis,njs*2,nka,nvar,ntra,l_south,l_north)
+        endif
+*
+      nit = 0
+      njt = max(dimyw,dimye)
+      if (l_west) nit = nit + dimxw
+      if (l_east) nit = nit + dimxe
+      d1  = dimxw*east
+*
+      if ( data2treat .and. (nit*njt.gt.0) ) then
+         errcode = -1
+         fb_s = (ypw  (1).gt.ypaqw    (2)-epsilon)
+         if ( .not.fb_s ) write (6,*) 'ypw(1)<ypaqw(2)',ypw(1),ypaqw(2)
+         fb_n = (ypw(njt).lt.ypaqw(njw-1)+epsilon)
+         if ( .not.fb_n ) write (6,*) 'ypw(njt)>ypaqw(njw-1)',ypw(njt),ypaqw(njw-1)
+         fb_w = .not.l_west
+         fb_e = .not.l_east
+         if ((.not.fb_w).and.(.not.fb_e)) then
+            fb_w = (xpw(      1).gt.xpaqw(      2)-epsilon).and.
+     $             (xpw(nit/2+1).gt.xpaqw(  niw+2)-epsilon)
+            if ( .not.fb_w ) write (6,*) 'xpw(1)<xpaqw(2)',ypn(1),ypaqs(2),'xpw(nit/2+1)< xpaqw(niw+2)',xpw(nit/2+1),xpaqw(  niw+2) 
+            fb_e = (xpw(nit/2  ).lt.xpaqw(  niw-1)+epsilon).and.
+     $             (xpw(nit    ).lt.xpaqw(2*niw-1)+epsilon)
+            if ( .not.fb_e ) write (6,*) 'xpw(nit/2)>ypaqw(niw-1)',xpw(nit/2),xpaqw(niw-1),'xpw(nit)>xpaqw( 2*niw-1)',xpw(nit),xpaqw( 2*niw-1) 
+         else if (.not.fb_w) then
+            fb_w = (xpw(  1).gt.xpaqw    (2)-epsilon)
+            if (.not.fb_w) write(6,*)'xpw(  1)<xpaqw(2)',xpw(  1),xpaqw(2)
+            fb_e = (xpw(nit).lt.xpaqw(niw-1)+epsilon)
+            if (.not.fb_e) write(6,*)'xpw(nit)>xpaqw(niw-1)',xpw(nit),xpaqw(niw-1)
+         else if (.not.fb_e) then
+            fb_w = (xpw(  1).gt.xpaqw(  niw+2)-epsilon)
+            if (.not.fb_w) write(6,*)'xpw(  1)<xpaqw(niw+2)',xpw(  1),xpaqw(niw+2)
+            fb_e = (xpw(nit).lt.xpaqw(2*niw-1)+epsilon)
+            if (.not.fb_e) write(6,*)'xpw(nit)>xpaqw(2*niw-1)',xpw(nit),xpaqw(2*niw-1)
+         endif
+         if ( fb_w .and. fb_e .and. fb_s .and. fb_n ) errcode = 0
+         if ( .not.fb_w ) write (6,201) 'W','WE',Ptopo_myproc
+         if ( .not.fb_e ) write (6,201) 'E','WE',Ptopo_myproc
+         if ( .not.fb_s ) write (6,201) 'S','WE',Ptopo_myproc
+         if ( .not.fb_n ) write (6,201) 'N','WE',Ptopo_myproc
+      else
+         errcode = 0
+      endif
+*
+
+      call gem_stop('casc_bcsh',errcode)
+*
+      if (data2treat) then
+*       WE - put data into bcs_uf'
+      call casc_hvi (trname_a, 
+     $               xpw,ypw,xpuw,ypvw,xpaqw,ypaqw,xpauw,ypavw,
+     $  bcs_uf(bcs_iw),bcs_uf(bcs_ie),bcs_vf(bcs_iw),bcs_vf(bcs_ie),
+     $  bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),
+     $  bcs_pipf(bcs_iw),bcs_pipf(bcs_ie),bcs_fipf(bcs_iw),bcs_fipf(bcs_ie),
+     $  bcs_tdf(bcs_iw),bcs_tdf(bcs_ie),bcs_fif(bcs_iw),bcs_fif(bcs_ie),
+     $  bcs_qf(bcs_iw),bcs_qf(bcs_ie),bcs_tpf(bcs_iw),bcs_tpf(bcs_ie),
+     $  bcs_trf,bcs_wf(bcs_iw),bcs_wf(bcs_ie),
+     $  bcs_muf(bcs_iw),bcs_muf(bcs_ie),bcs_sf(bcs_iw),bcs_sf(bcs_ie),
+     $  bcs_iw-1,bcs_ie-1,
+     $  topo(bcs_iw),topo(bcs_ie),topu(bcs_iw),topu(bcs_ie),topv(bcs_iw),topv(bcs_ie),
+     $  uunw,vvnw,psdnw,ttnw,tpnw,tdnw,finw,qqnw,ssnw,fipnw,pipnw,wwnw,munw,
+     $         trnw,minxw,maxxw,minyw,maxyw,d1,0,G_nk,nit,njt,
+     $               niw*2,njw,nka,nvar,ntra,l_west,l_east)
+      endif
+*
+      if (associated(xpsn)) deallocate(xpsn)
+      if (associated(ypsn)) deallocate(ypsn)
+      if (associated(xpwe)) deallocate(xpwe)
+      if (associated(ypwe)) deallocate(ypwe)
+*
+      if (associated(xpaqs)) deallocate(xpaqs)
+      if (associated(ypaqs)) deallocate(ypaqs)
+      if (associated(xpaus)) deallocate(xpaus)
+      if (associated(ypavs)) deallocate(ypavs)
+      if (associated(xpaqw)) deallocate(xpaqw)
+      if (associated(ypaqw)) deallocate(ypaqw)
+      if (associated(xpauw)) deallocate(xpauw)
+      if (associated(ypavw)) deallocate(ypavw)
+      if (associated(trname_a)) deallocate(trname_a)
+*
+      if (associated(uuns)) deallocate(uuns)
+      if (associated(vvns))  deallocate(vvns)
+      if (associated(psdns)) deallocate(psdns)
+      if (associated(ttns)) deallocate(ttns)
+      if (associated(tpns)) deallocate(tpns)
+      if (associated(tdns)) deallocate(tdns)
+      if (associated(fins)) deallocate(fins)
+      if (associated(qqns)) deallocate(qqns)
+      if (associated(ssns)) deallocate(ssns)
+      if (associated(fipns)) deallocate(fipns)
+      if (associated(pipns)) deallocate(pipns)
+      if (associated(wwns)) deallocate(wwns)
+      if (associated(muns)) deallocate(muns)
+      if (associated(trns)) deallocate(trns)
+*
+      if (associated(uunw)) deallocate(uunw)
+      if (associated(vvnw))  deallocate(vvnw)
+      if (associated(psdnw)) deallocate(psdnw)
+      if (associated(ttnw)) deallocate(ttnw)
+      if (associated(tpnw)) deallocate(tpnw)
+      if (associated(tdnw)) deallocate(tdnw)
+      if (associated(finw)) deallocate(finw)
+      if (associated(qqnw)) deallocate(qqnw)
+      if (associated(ssnw)) deallocate(ssnw)
+      if (associated(fipnw)) deallocate(fipnw)
+      if (associated(pipnw)) deallocate(pipnw)
+      if (associated(wwnw)) deallocate(wwnw)
+      if (associated(munw)) deallocate(munw)
+      if (associated(trnw)) deallocate(trnw)
+*
+      if (Ptopo_myproc.eq.0) then
+         write(6,100)
+         write(6,101) datev,wowp
+         write(6,100)
+      endif
+*
+      if ( data2treat .and. (wowp.eq.1.or.errp.lt.0) ) then
+*
+*        transfer data from bcs_uf to Ind_u
+         call trnes (Ind_u,bcs_uf(bcs_is),bcs_uf(bcs_in),
+     $       bcs_uf(bcs_iw),bcs_uf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         call trnes (Ind_v,bcs_vf(bcs_is),bcs_vf(bcs_in),
+     $       bcs_vf(bcs_iw),bcs_vf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         call trnes (Ind_t,bcs_tf(bcs_is),bcs_tf(bcs_in),
+     $       bcs_tf(bcs_iw),bcs_tf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         call trnes (Ind_pip,bcs_pipf(bcs_is),bcs_pipf(bcs_in),
+     $       bcs_pipf(bcs_iw),bcs_pipf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         call trnes (Ind_fip,bcs_fipf(bcs_is),bcs_fipf(bcs_in),
+     $       bcs_fipf(bcs_iw),bcs_fipf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         call trnes (Ind_fi,bcs_fif(bcs_is),bcs_fif(bcs_in),
+     $       bcs_fif(bcs_iw),bcs_fif(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         call trnes (Ind_q,bcs_qf(bcs_is),bcs_qf(bcs_in),
+     $       bcs_qf(bcs_iw),bcs_qf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         call trnes (Ind_s,bcs_sf(bcs_is),bcs_sf(bcs_in),
+     $       bcs_sf(bcs_iw),bcs_sf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
+         call trnes (Ind_tp,bcs_tpf(bcs_is),bcs_tpf(bcs_in),
+     $       bcs_tpf(bcs_iw),bcs_tpf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         if (Acid_test_L) then
+             call trnes (Ind_psd,bcs_psdf(bcs_is),bcs_psdf(bcs_in),
+     $       bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+             call trnes (Ind_td,bcs_tdf(bcs_is),bcs_tdf(bcs_in),
+     $       bcs_tdf(bcs_iw),bcs_tdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+             if (.not. Schm_hydro_L) then
+             call trnes (Ind_w,bcs_wf(bcs_is),bcs_wf(bcs_in),
+     $         bcs_wf(bcs_iw),bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $         minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+               call trnes (Ind_mu,bcs_muf(bcs_is),bcs_muf(bcs_in),
+     $         bcs_muf(bcs_iw),bcs_muf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $         minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+             endif
+         endif
+         keyp_ = VMM_KEY (nest_trf)
+         do n=1,Tr3d_ntr
+            keyp(n) = keyp_ + n
+         end do
+         err = vmmlod(keyp,Tr3d_ntr)
+         do n = 1, Tr3d_ntr
+            err = vmmget(keyp(n),patrp,trp)
+            id = (n-1)*bcs_sz+1
+            call trnes(trp,bcs_trf(id),
+     $                 bcs_trf(id+bcs_in-1),bcs_trf(id+bcs_iw-1),
+     $                 bcs_trf(id+bcs_ie-1),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         end do
+      endif
+*
+*
+ 100  format (' ',61('*'))
+ 101  format (' (CASC_BCSH) JUST READ LBCS DATA FOR DATE: ',a15,x,i3)
+ 201  format (' Insufficient input data coverage ',a1,' in ',a2,
+     $        ' interpolation (casc_bcsh) - ABORT - myproc=',i4)
+ 3000 format (/' CASC_BCSH AT TIMESTEP', I8,' WOWP=',I3)
+*-----------------------------------------------------------------------
+      return
+      end
+*
+      subroutine rdbcs ( fs, fw, nis, njs, niw, njw, nk, unf )
+      implicit none
+*
+      integer nis,njs,niw,njw,nk,unf
+      real fs (nis,njs*2,nk), fw (niw*2,njw,nk)
+*
+      character*4 nomvar
+      integer k,ni1,nj1,ni2,nj2,nka,nbits,nb,ns,nw
+      real, dimension (:), pointer :: wkc,wkd
+*
+*-----------------------------------------------------------------------
+*
+      nb = 0
+      read (unf) nomvar,ni1,nj1,ni2,nj2,nka,nbits
+      if ((ni1.ne.nis).or.(nj1.ne.njs).or.
+     $    (ni2.ne.niw).or.(nj2.ne.njw).or.(nka.ne.nk)) then
+         write (6,1001) ni1,nj1,ni2,nj2,nka,nis,njs,niw,njw,nk
+         stop
+      endif
+*
+      if (nbits.ge.32) then
+         read (unf) fs,fw
+      else
+         ns = (nis*njs*2*nbits+120+32-1)/32
+         allocate (wkc(ns))
+         nw = (niw*njw*2*nbits+120+32-1)/32
+         allocate (wkd(nw))
+         do k=1,nk
+            read (unf) wkc,wkd
+            call xxpak (fs(1,1,k), wkc, nis, njs*2, -nbits, nb, 2)
+            call xxpak (fw(1,1,k), wkd, niw*2, njw, -nbits, nb, 2)
+         end do
+         deallocate (wkc,wkd)
+      endif
+*
+*-----------------------------------------------------------------------
+ 1001 format (/' PROBLEM WITH DIMENSIONS IN CASC_BCSH: ',10i6)
+      return
+      end
+*
+      subroutine rdbcs_tr ( fs, fw, nis, njs, niw, njw, nk, unf,
+     $                                 trname,ntr,trname_a,ntra )
+      implicit none
+*     
+      integer nis,njs,niw,njw,nk,unf,ntr,ntra
+      character* (*) trname(ntr),trname_a(ntra)
+      real fs (nis,njs*2,nk,ntra), fw (niw*2,njw,nk,ntra)
+*
+      character*4 nomvar
+      integer i,j,k,n,m,ni1,nj1,ni2,nj2,nka,takeit,nbits,nb,ns,nw
+      real, dimension (:), pointer :: wkc,wkd
+      real, dimension (:,:,:), pointer :: tr1,tr2
+*
+*-----------------------------------------------------------------------
+*
+      nullify (tr1, tr2)
+      nb = 0
+*
+      do n=1,ntra
+*
+         read (unf) nomvar,ni1,nj1,ni2,nj2,nka,nbits
+         if (.not.associated(tr1)) allocate (tr1(nis,njs*2,nk))
+         if (.not.associated(tr2)) allocate (tr2(niw*2,njw,nk))
+         takeit=-1
+         do m=1,ntr
+            if (trname(m)(1:4).eq.nomvar) takeit=m
+         end do
+*
+         if (takeit.gt.0) then
+*
+            trname_a(n) = trname(takeit)
+            if ((ni1.ne.nis).or.(nj1.ne.njs).or.
+     $          (ni2.ne.niw).or.(nj2.ne.njw).or.(nka.ne.nk)) then
+               write (6,1001) ni1,nj1,ni2,nj2,nka,nis,njs,niw,njw,nk
+               stop
+            endif
+*
+            if (nbits.ge.32) then
+               read (unf) tr1,tr2
+               do k=1,nk
+                  do j=1,njs*2
+                  do i=1,nis
+                     fs(i,j,k,n) = tr1(i,j,k)
+                  end do
+                  end do
+                  do j=1,njw
+                  do i=1,niw*2
+                     fw(i,j,k,n) = tr2(i,j,k)
+                  end do
+                  end do
+               end do
+            else
+               ns = (nis*njs*2*nbits+120+32-1)/32
+               allocate (wkc(ns))
+               nw = (niw*njw*2*nbits+120+32-1)/32
+               allocate (wkd(nw))
+               do k=1,nk
+                  read (unf) wkc,wkd
+                  call xxpak (fs(1,1,k,n),wkc,nis, njs*2, -nbits, nb, 2)
+                  call xxpak (fw(1,1,k,n),wkd,niw*2, njw, -nbits, nb, 2)
+               end do
+               deallocate (wkc,wkd)
+            endif
+*
+         else
+*
+            trname_a(n) = '!@@NOT@@'
+            read (unf)
+*
+         endif
+*
+      end do
+*
+      if (associated(tr1)) deallocate (tr1)
+      if (associated(tr2)) deallocate (tr2)
+*
+*-----------------------------------------------------------------------
+ 1001 format (/' PROBLEM WITH DIMENSIONS IN CASC_BCSH: ',10i6)
+      return
+      end

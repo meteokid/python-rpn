@@ -1,0 +1,54 @@
+***s/r  pre_jacobi -      Jcobi additive-Schwarz preconditioning
+*
+      subroutine pre_jacobi ( Sol,Rhs,evec_local,Fdg,Ni,Nj,Nk,ai,bi,ci )
+      implicit none
+*
+      integer Ni,Nj,Nk
+      real*8 Rhs(Ni,Nj,Nk),Sol(Ni,Nj,Nk),Fdg(Ni,Nj,Nk)
+      real*8  ai(Ni,Nj,Nk), bi(Ni,Nj,Nk), ci(Ni,Nj,Nk)
+      real*8 evec_local(Ni,Ni) 
+*
+*author
+*       Abdessamad Qaddouri - December  2006
+*
+*revision
+* v3_30 - Qaddouri A.       - initial version
+*
+      integer i,j,k,jr
+*
+*     ---------------------------------------------------------------
+*
+      do k=1,Nk
+         call dgemm('T','N',Ni,Nj,Ni,1.0d0,evec_local,Ni,
+     $                 Rhs(1,1,k),Ni,0.0d0,Fdg(1,1,k),Ni)
+      enddo
+*
+      Do k=1,Nk
+         Do j =2, Nj
+            jr =  j - 1
+            Do i=1,Ni
+               Fdg(i,j,k) = Fdg(i,j,k) - ai(i,j,k)*Fdg(i,jr,k)
+            Enddo
+         Enddo
+         j = Nj
+         Do i=1,Ni
+            Fdg(i,j,k) = Fdg(i,j,k)/bi(i,j,k)
+         Enddo
+         Do j = Nj-1, 1, -1
+            jr =  j + 1
+            Do i=1 , Ni
+            Fdg(i,j,k)=(Fdg(i,j,k)-ci(i,j,k)*Fdg(i,jr,k))/bi(i,j,k)
+            Enddo
+         Enddo
+      Enddo
+*
+      Do k=1,Nk
+         call dgemm('N','N',Ni,Nj,Ni,1.0d0,evec_local,Ni,
+     $                  Fdg(1,1,k),Ni,0.d0,Sol(1,1,k),Ni)
+      Enddo
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

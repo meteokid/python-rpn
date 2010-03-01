@@ -1,0 +1,433 @@
+***s/r itf_phy_exe - Computes the physical tendencies
+*
+#include "model_macros_f.h"
+*
+      subroutine  itf_phy_exe
+     $           (F_busent ,F_busdyn ,F_busper ,F_busvol ,
+     $            F_bent_siz, F_bdyn_siz, F_bper_siz, F_bvol_siz,
+     $            F_dt, F_j, F_step, F_cpu, F_ni, Nk)
+*
+      implicit none
+*
+      integer F_bent_siz, F_bdyn_siz
+      integer F_bper_siz, F_bvol_siz
+      integer F_j,F_step,F_cpu,F_ni,NK
+      real    F_busent(F_bent_siz) , F_busdyn(F_bdyn_siz)
+      real    F_busper(F_bper_siz) , F_busvol(F_bvol_siz)
+      real    F_dt
+*
+*author 
+*     Bernard Dugas - RPN - November 2002
+*
+*revision
+* v3_02 - Dugas B.        - initial version
+* v3_30 - Dugas B.        - new itf_phy interface
+*
+*object
+*     Computes the physical tendencies associated with two
+*     different physics sets of parametres. Typically, the
+*     first one will be associated with a high resolution
+*     domain and the second one will be appropriate for a
+*     lower resolution area. The two areas can overlap
+*     
+*	
+*----------------------------------------------------------------
+*Arguments
+*
+*            - Input -
+* F_busent   entry    input field
+* F_busdyn   dynamics input field
+*
+*            - Input/Output -
+* F_busper   historic variables for the physics
+*
+*            - Output -
+* F_busvol   physics tendencies and other output fields from the physics
+*
+*            - Input -
+* F_bent_siz dimension of F_busent
+* F_bdyn_siz dimension of F_busdyn
+* F_bper_siz dimension of F_busper
+* F_bvol_siz dimension of F_bvol_siz
+* F_dt       timestep (sec.)
+* F_j        slice number
+* F_step     timestep number
+* F_cpu      cpu number executing slice "F_j"
+* F_ni       horizontal running length
+* NK         vertical dimension
+*
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "itf_phy_config.cdk"
+#include "ptopo.cdk"
+*
+*modules
+*
+      real busdyn1(max(1,F_bdyn_siz)), busvol1(max(1,F_bvol_siz)),
+     $     busent1(max(1,F_bent_siz)), busper1(max(1,F_bper_siz))
+      real busdyn2(max(1,F_bdyn_siz)), busvol2(max(1,F_bvol_siz)),
+     $     busent2(max(1,F_bent_siz)), busper2(max(1,F_bper_siz))
+*
+      integer p_ni1, p_ni2
+      integer p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz
+      integer i,j, i11,i12,i21,i22,i23,i24, ijo,iji,ij1,ij2
+      integer nld,nlv,nle,nlp
+**
+*     ---------------------------------------------------------------
+*
+      nld = F_bdyn_siz / F_ni
+      nlv = F_bvol_siz / F_ni
+      nle = F_bent_siz / F_ni
+      nlp = F_bper_siz / F_ni
+*
+*C    print *,'F_j,nld,nlv,nle,nlp=',
+*C   $         Ptopo_myproc,F_j,nld,nlv,nle,nlp
+*
+      do i=1,max(1,F_bvol_siz)
+         busvol1(i) = 0.0
+         busvol2(i) = 0.0
+      enddo
+*
+      if ( (P_pset_secondi(1,F_j) .lt. P_pset_secondi(4,F_j)) .and.
+     $      P_pset_secondi(4,F_j) .gt. 0                      .and.
+     $      P_pset_secondi(1,F_j) .le. F_ni ) then
+*
+*     ---------------------------------------------------------------
+*C    Gather all of the points where the first parametre set applies
+*     ---------------------------------------------------------------
+*
+         i11  = max( 1,    P_pset_secondi(1,F_j) )
+         i12  = min( F_ni, P_pset_secondi(4,F_j) )
+*
+*C       print *,'F_j,F_ni,i11,i12=',Ptopo_myproc,F_j,F_ni,i11,i12
+*
+         p_ni1 = i12-i11+1
+*
+         if (p_ni1 .lt. F_ni) then
+*
+*C          Start with the dynamics bus
+*
+            do i=i11,i12
+               ij1 = i-i11+1
+               iji = i
+               do j=1,nld
+                  busdyn1(ij1) = F_busdyn(iji)
+                  ij1          = ij1+p_ni1
+                  iji          = iji+F_ni
+               enddo
+            enddo
+*
+*C          Gather the permanent bus
+*
+            do i=i11,i12
+               ij1 = i-i11+1
+               iji = i
+               do j=1,nlp
+                  busper1(ij1) = F_busper(iji)
+                  ij1          = ij1+p_ni1
+                  iji          = iji+F_ni
+               enddo
+            enddo
+*
+*C          Gather the entry bus
+*
+            do i=i11,i12
+               ij1 = i-i11+1
+               iji = i
+               do j=1,nle
+                  busent1(ij1) = F_busent(iji)
+                  ij1          = ij1+p_ni1
+                  iji          = iji+F_ni
+               enddo
+            enddo
+*
+*     ---------------------------------------------------------------
+*C    The physics does its work on the first set of gathered grid points
+*     ---------------------------------------------------------------
+*
+            p_bent_siz = max( p_ni1*nle, 1 )
+            p_bdyn_siz =      p_ni1*nld
+            p_bper_siz =      p_ni1*nlp
+            p_bvol_siz =      p_ni1*nlv
+*
+            call restore_options( 1 )
+            call modpbus( F_ni, p_ni1 )
+*
+            call phy_exe
+     $          (busent1 ,busdyn1 ,busper1 ,busvol1,
+     $           p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
+     $           F_dt, F_j, F_step, F_cpu, p_ni1, Nk)
+*
+            call modpbus( p_ni1, F_ni )
+*
+         else
+*
+*     ---------------------------------------------------------------
+*C    The first set of parametres applies at all points in this row
+*     ---------------------------------------------------------------
+*
+            call restore_options( 1 )
+*
+            call phy_exe
+     $          (F_busent,F_busdyn,F_busper,F_busvol,
+     $           F_bent_siz, F_bdyn_siz, F_bper_siz, F_bvol_siz,
+     $           F_dt, F_j, F_step, F_cpu, F_ni, Nk)
+*
+            return
+*
+         endif
+*
+      else
+*
+*     ---------------------------------------------------------------
+*C    The second set of parametres applies at all points in this row
+*     ---------------------------------------------------------------
+*
+         call restore_options( 2 )
+*
+         call phy_exe
+     $       (F_busent,F_busdyn,F_busper,F_busvol,
+     $        F_bent_siz, F_bdyn_siz, F_bper_siz, F_bvol_siz,
+     $        F_dt, F_j, F_step, F_cpu, F_ni, Nk)
+*
+         call restore_options( 1 )
+*
+         return
+*
+      endif
+*
+*     ---------------------------------------------------------------
+*C    Gather all of the points where the second parametre set applies
+*     ---------------------------------------------------------------
+*
+      i21   =      1
+      i22   = min( F_ni  , P_pset_secondi(2,F_j)-1 )
+      i23   = max( 1     , P_pset_secondi(3,F_j)+1 )
+      i24   =      F_ni
+*
+      p_ni2 = max( 0, i22 )
+     $      + max( 0, F_ni-P_pset_secondi(3,F_j)   )
+*
+*C    print *,'F_j,F_ni,i21,i22,i23,i24,p_ni2=',
+*C   $         Ptopo_myproc,F_j,F_ni,i21,i22,i23,i24,p_ni2
+*
+*C    Start with the dynamics bus
+*
+      do i=i21,i22
+         ij2 = i
+         iji = i
+         do j=1,nld
+            busdyn2(ij2) = F_busdyn(iji)
+            iji          = iji+F_ni
+            ij2          = ij2+p_ni2
+         enddo
+      enddo
+*
+      do i=i23,i24
+         ij2 = i-max( 1, i23  - max( 0, i22 ) )+1
+         iji = i
+         do j=1,nld
+            busdyn2(ij2) = F_busdyn(iji)
+            iji          = iji+F_ni
+            ij2          = ij2+p_ni2
+         enddo
+      enddo
+*
+*C    Gather the permanent bus
+*
+      do i=i21,i22
+         ij2 = i
+         iji = i
+         do j=1,nlp
+            busper2(ij2) = F_busper(iji)
+            iji          = iji+F_ni
+            ij2          = ij2+p_ni2
+         enddo
+      enddo
+*
+      do i=i23,i24
+         ij2 = i-max( 1, i23 - max( 0, i22 ) )+1
+         iji = i
+         do j=1,nlp
+            busper2(ij2) = F_busper(iji)
+            iji          = iji+F_ni
+            ij2          = ij2+p_ni2
+         enddo
+      enddo
+*         
+*C    Gather the entry bus
+*
+      do i=i21,i22
+         ij2 = i
+         iji = i
+         do j=1,nle
+            busent2(ij2) = F_busent(iji)
+            iji          = iji+F_ni
+            ij2          = ij2+p_ni2
+         enddo
+      enddo
+*
+      do i=i23,i24
+         ij2 = i-max( 1, i23 - max( 0, i22 ) )+1
+         iji = i
+         do j=1,nle
+            busent2(ij2) = F_busent(iji)
+            iji          = iji+F_ni
+            ij2          = ij2+p_ni2
+         enddo
+      enddo
+*
+*     ---------------------------------------------------------------
+*C    The physics now does its work on this
+*C    set of gathered grid points as well
+*     ---------------------------------------------------------------
+      p_bent_siz = max( p_ni2*nle, 1 )
+      p_bdyn_siz =      p_ni2*nld
+      p_bper_siz =      p_ni2*nlp
+      p_bvol_siz =      p_ni2*nlv
+*         
+      call restore_options( 2 )
+      call modpbus( F_ni, p_ni2 )
+*
+      call phy_exe
+     $    (busent2 ,busdyn2 ,busper2 ,busvol2 ,
+     $     p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
+     $     F_dt, F_j, F_step, F_cpu, p_ni2, Nk)
+*
+      call modpbus( p_ni2, F_ni )
+      call restore_options( 1 )
+*
+*     ---------------------------------------------------------------
+*     ---------------------------------------------------------------
+*C    Both physics have now been called.  Fill the complete permanent
+*C    and volatile physics buses from the two parts we now have, using
+*C    the appropriate weighing values
+*     ---------------------------------------------------------------
+*     ---------------------------------------------------------------
+*
+*C    Start by scatering the volatile bus
+*
+      do i=i21,i11-1
+         ij2 = i
+         ijo = i
+         do j=1,nlv
+            F_busvol(ijo) = busvol2(ij2)
+            ij2           = ij2+p_ni2
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+      do i=i11,i22
+         ij1 = i-i11+1
+         ij2 = i
+         ijo = i
+         do j=1,nlv
+            F_busvol(ijo) = (1.0-P_pset_secondw(i,F_j))*busvol2(ij2)
+     $                    +      P_pset_secondw(i,F_j) *busvol1(ij1)
+            ij1           = ij1+p_ni1
+            ij2           = ij2+p_ni2
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+      do i=max( 1, i22+1 ),min( F_ni, i23-1 )
+         ij1 = i-i11+1
+         ijo = i
+         do j=1,nlv
+            F_busvol(ijo) = busvol1(ij1)
+            ij1           = ij1+p_ni1
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+      do i=i23,i12
+         ij1 = i-i11+1
+         ij2 = i-max( 1, i23 - max( 0, i22 ) )+1
+         ijo = i
+         do j=1,nlv
+            F_busvol(ijo) = (1.0-P_pset_secondw(i,F_j))*busvol2(ij2)
+     $                    +      P_pset_secondw(i,F_j) *busvol1(ij1)
+            ij1           = ij1+p_ni1
+            ij2           = ij2+p_ni2
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+      do i=i12+1,i24
+         ij2 = i-max( 1, i23 - max( 0, i22 ) )+1
+         ijo = i
+         do j=1,nlv
+            F_busvol(ijo) = busvol2(ij2)
+            ij2           = ij2+p_ni2
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+*     ---------------------------------------------------------------
+*C    Finish by scatering the permanent bus
+*     ---------------------------------------------------------------
+*
+      do i=i21,i11-1
+         ij2 = i
+         ijo = i
+         do j=1,nlp
+            F_busper(ijo) = busper2(ij2)
+            ij2           = ij2+p_ni2
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+      do i=i11,i22
+         ij1 = i-i11+1
+         ij2 = i
+         ijo = i
+         do j=1,nlp
+            F_busper(ijo) = (1.0-P_pset_secondw(i,F_j))*busper2(ij2)
+     $                    +      P_pset_secondw(i,F_j) *busper1(ij1)
+            ij1           = ij1+p_ni1
+            ij2           = ij2+p_ni2
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+      do i=max( 1, i22+1 ),min( F_ni, i23-1 )
+         ij1 = i-i11+1
+         ijo = i
+         do j=1,nlp
+            F_busper(ijo) = busper1(ij1)
+            ij1           = ij1+p_ni1
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+      do i=i23,i12
+         ij1 = i-i11+1
+         ij2 = i-max( 1, i23 - max( 0, i22 ) )+1
+         ijo = i
+         do j=1,nlp
+            F_busper(ijo) = (1.0-P_pset_secondw(i,F_j))*busper2(ij2)
+     $                    +      P_pset_secondw(i,F_j) *busper1(ij1)
+            ij1           = ij1+p_ni1
+            ij2           = ij2+p_ni2
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+      do i=i12+1,i24
+         ij2 = i-max( 1, i23 - max( 0, i22 ) )+1
+         ijo = i
+         do j=1,nlp
+            F_busper(ijo) = busper2(ij2)
+            ij2           = ij2+p_ni2
+            ijo           = ijo+F_ni
+         enddo
+      enddo
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

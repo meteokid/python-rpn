@@ -1,0 +1,71 @@
+***s/r v4d_zerobcs -- Zero BCS data
+*
+#include "model_macros_f.h"
+
+      subroutine v4d_zerobcs
+*
+      implicit none
+*
+*author
+*     Monique Tanguay
+*
+*revision
+* v3_03 - Tanguay M.       - initial MPI version
+* v3_30 - Tanguay M.       - Validation for LAM version 
+*
+*object
+*     see id section
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "tr3d.cdk"
+#include "bcsdim.cdk"
+#include "bcsmem.cdk"
+#include "schm.cdk"
+*
+*modules
+*
+      integer i,n,id
+      real*8, parameter :: ZERO_8 = 0.0
+*     ---------------------------------------------------------------
+*
+      do i=1,bcs_sz
+         bcs_u  (i) = 0. 
+         bcs_v  (i) = 0. 
+         bcs_t  (i) = 0.
+         bcs_td (i) = 0. 
+         bcs_fi (i) = 0. 
+         bcs_q  (i) = 0. 
+         bcs_tp (i) = 0. 
+         bcs_fip(i) = 0. 
+         bcs_pip(i) = 0. 
+         bcs_psd(i) = 0. 
+      end do
+*
+      if (.not. Schm_hydro_L) then
+      do i=1,bcs_sz
+         bcs_w  (i) = 0. 
+         bcs_mu (i) = 0.
+      end do
+      end if
+*
+      do i=1,bcs_sz
+         bcs_s(i) = 0. 
+      end do
+*
+      if (Tr3d_ntr.gt.0) then
+         do n=1,Tr3d_ntr
+            id = (n-1)*bcs_sz+1
+*
+            do i=1,bcs_sz
+               bcs_tr (id+i-1) = 0. 
+            end do
+         end do
+      endif
+*
+*     ---------------------------------------------------------------
+      return
+      end
+

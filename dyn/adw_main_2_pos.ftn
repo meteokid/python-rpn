@@ -122,6 +122,12 @@
           if (l_south) j0=4      + (Glb_pil_s - 7)
           if (l_north) jn=l_njv-2- (Glb_pil_n - 7)
       endif
+c     if (Acid_test_L)
+c    %    call glbstat (xth,'Xth',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
+c    %                                            4+acid_j0,G_nj-3-acid_jn,1,1)
+c         call glbstat (xcth,'Xcth',1,l_ni,1,l_nj,G_nk,5+acid_i0,G_ni-4-acid_in,
+c    %                                           5+acid_j0,G_nj-4-acid_jn,1,1)
+c     endif
 ************************************************************************
       do it=1,F_it
 ************************************************************************
@@ -187,6 +193,9 @@
      %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
 *
       endif
+c     if (Acid_test_L)
+c    %call glbstat (wrkx1,'wrkX',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
+c    %                                    4+acid_j0,G_nj-3-acid_jn,1,G_nk)
 *
       if (.not.G_lam) then
 
@@ -223,6 +232,11 @@
       do n = 1,nijk
       wrk_yth(n) = yth(n)
       enddo
+c     if (Acid_test_L)
+c     call glbstat (xth,'Xth',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
+c    %                                           4+acid_in,G_nj-3-acid_jn,1,1)
+c     call glbstat (xcth,'Xcth',1,l_ni,1,l_nj,G_nk,5+acid_i0,G_ni-4-acid_in,
+c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
 *
       if (G_lam) then
 *

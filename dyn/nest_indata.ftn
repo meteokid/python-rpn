@@ -10,8 +10,9 @@
 *     Michel Desgagne   - Spring 2002
 *
 *revision
-* v3_01 - Desgagne M.       - initial version
-* v3_03 - Tanguay M.        - Adjoint Lam configuration
+* v3_01 - Desgagne M.     - initial version
+* v3_03 - Tanguay M.      - Adjoint Lam configuration
+* v3_30 - Lee V.          - Hollow cubes and acid test for LAM
 *
 *object
 *	
@@ -22,18 +23,34 @@
 #include "schm.cdk"
 #include "glb_ld.cdk"
 #include "ind.cdk"
+#include "lam.cdk"
 #include "nest.cdk"
+#include "p_geof.cdk"
+#include "tr3d.cdk"
+#include "ifd.cdk"
 #include "v4dg.cdk"
+#include "ptopo.cdk"
+#include "bcsmem.cdk"
+#include "bcsdim.cdk"
+#include "adw.cdk"
+#include "lun.cdk"
+#include "acid.cdk"
 *
-      integer  vmmlod,vmmget
-      external vmmlod,vmmget
+      integer  vmmlod,vmmget,vmmuld,bcs_ftype,casc_bcs,casc_bcsh
+      external vmmlod,vmmget,vmmuld,bcs_ftype,casc_bcs,casc_bcsh
 *
-      integer key1(13),nvar,err,ng
-      real t1,t2,t3,t4
-      pointer (pat1, t1(*)), (pat2, t2(*)), (pat3, t3(*)), (pat4, t4(*))
+      integer key1(16),nvar,err,ng, keyp(Tr3d_ntr), keyp_
+      integer errbcs1,errbcs2,n,id,k,unf,errft(3)
+      logical nav_L
+      real t1,t2,t3,t4,t5,t6
+      pointer (pat1, t1(*)), (pat2, t2(*)), (pat3, t3(*))
+      real trp
+      pointer (patrp, trp(LDIST_SHAPE,*))
 **
 *     ---------------------------------------------------------------
 *
+      if (Lun_debug_L) write (Lun_out,1000)
+
       ng = LDIST_SIZ
       key1(1)  = VMM_KEY(nest_uf)
       key1(2)  = VMM_KEY(nest_vf)
@@ -46,13 +63,16 @@
       key1(9)  = VMM_KEY(nest_qf)
       key1(10) = VMM_KEY(nest_sf)
       key1(11) = VMM_KEY(nest_tpf)
+      key1(12) = VMM_KEY(topo)
+      key1(13) = VMM_KEY(topu)
+      key1(14) = VMM_KEY(topv)
 *
-      nvar = 11
+      nvar = 14
 *
       if (.not. Schm_hydro_L) then
-         key1(12) = VMM_KEY(nest_wf)
-         key1(13) = VMM_KEY(nest_muf)
-         nvar = 13
+         key1(nvar+1) = VMM_KEY(nest_wf)
+         key1(nvar+2) = VMM_KEY(nest_muf)
+         nvar = nvar+2
       endif
       err = vmmlod(key1,nvar)
 *
@@ -67,10 +87,20 @@
       err = VMM_GET_VAR(nest_qf)
       err = VMM_GET_VAR(nest_sf)
       err = VMM_GET_VAR(nest_tpf)
+      err = VMM_GET_VAR(topo)
+      err = VMM_GET_VAR(topu)
+      err = VMM_GET_VAR(topv)
+*
+      if (.not. Schm_hydro_L) then
+         err = VMM_GET_VAR(  nest_wf)
+         err = VMM_GET_VAR( nest_muf)
+      endif
+*
       call hpalloc (pat1, ng*l_nk, err, 1)
       call hpalloc (pat2, ng*l_nk, err, 1)
       call hpalloc (pat3, ng*l_nk, err, 1)
-      call hpalloc (pat4, ng     , err, 1)
+*
+*     Equivalencing Ind_u = nest_uf
 *
       Ind_u_   = nest_uf_
       Ind_v_   = nest_vf_
@@ -83,47 +113,158 @@
       Ind_q_   = nest_qf_
       Ind_s_   = nest_sf_
       Ind_tp_  = nest_tpf_
+      Ind_topo_= topo_
+      Ind_topu_= topu_
+      Ind_topv_= topv_
       Ind_gp_  = pat1
       Ind_tpl_ = pat2
       Ind_mul_ = pat3
-      Ind_topo_= pat4
 *
       if (.not. Schm_hydro_L) then
-         err = VMM_GET_VAR(  nest_wf)
-         err = VMM_GET_VAR( nest_muf)
          Ind_w_   = nest_wf_
          Ind_mu_  = nest_muf_
       endif
 *
-      call readdyn()
+      errft = 0
+      unf = 76
+      nav_L = .false.
+      err = bcs_ftype (ifd_ftype,errft,Lam_current_S, nav_L, unf)
+      if ((ifd_ftype.eq.'BCS').or.(ifd_ftype.eq.'3DF')) then
 *
-*     Regular forward gem
-*     -------------------
-      if(V4dg_conf.eq.0) then
-*
-         call predat()
-*
-*     4D-Var
-*     ------
+         if (ifd_ftype.eq.'3DF') then
+             errbcs1 = casc_bcs (Lam_current_S,unf,1,0)
+             errbcs2 = casc_bcs (Lam_current_S,unf,2,errbcs1)
+             errbcs1 = min(0,errbcs1+errbcs2+1)
+             if(errbcs1.lt.0) write(6,205) Lam_current_S,Ptopo_myproc
+             call stopmpi (errbcs1)
+         else if (ifd_ftype.eq.'BCS') then
+             errbcs1 = casc_bcsh (Lam_current_S,unf,1,0)
+             errbcs2 = casc_bcsh (Lam_current_S,unf,2,errbcs1)
+             errbcs1 = min(0,errbcs1+errbcs2+1)
+             if(errbcs1.lt.0) write(6,205) Lam_current_S,Ptopo_myproc
+             call stopmpi (errbcs1)
+         else
+             write (6,1001)
+             call stopmpi(-1)
+         endif
+         if (.not.Acid_test_L) then
+             call uv2tdpsd (nest_tdf,nest_psdf,nest_uf,nest_vf,nest_sf,
+     $         LDIST_DIM,l_nk )
+*            Stuff values from nest_tdf,nest_psdf to bcs_tdf,bcs_psdf
+             call trnes (nest_tdf,bcs_tdf(bcs_is),bcs_tdf(bcs_in),bcs_tdf(bcs_iw),
+     $            bcs_tdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+             call trnes (nest_psdf,bcs_psdf(bcs_is),bcs_psdf(bcs_in),bcs_psdf(bcs_iw),
+     $            bcs_psdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+             if (.not. Schm_hydro_L) then
+                call initw2(nest_wf,Ind_mul,nest_muf,nest_uf,nest_vf,nest_psdf,
+     $               nest_fif,nest_tf,nest_sf,LDIST_DIM)
+             call trnes (nest_wf,bcs_wf(bcs_is),bcs_wf(bcs_in),bcs_wf(bcs_iw),
+     $            bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+             call trnes (nest_muf,bcs_muf(bcs_is),bcs_muf(bcs_in),bcs_muf(bcs_iw),
+     $            bcs_muf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+             endif
+         endif
+*     Functions above will be filling values into bcs_uf
       else
+         call readdyn()
+*
+*        Regular forward gem
+*        -------------------
+         if(V4dg_conf.eq.0) then
+*
+            call predat()
+*
+*        4D-Var
+*        ------
+         else
 *
 *        Preprocessing of Control   variables only if ipart=2
 *        ----------------------------------------------------
-         call v4d_predat(2)
+            call v4d_predat(2)
 *
 *        Preprocessing of Dependent variables only if ipart=3
 *        ----------------------------------------------------
-         call v4d_predat(3)
+            call v4d_predat(3)
 *
+         endif
+
+*        Stuff values from nest_uf to bcs_uf
+
+         if (l_south.or.l_north.or.l_east.or.l_west) then
+         call trnes (nest_uf,bcs_uf(bcs_is),bcs_uf(bcs_in),bcs_uf(bcs_iw),
+     $            bcs_uf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_vf,bcs_vf(bcs_is),bcs_vf(bcs_in),bcs_vf(bcs_iw),
+     $            bcs_vf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_tf,bcs_tf(bcs_is),bcs_tf(bcs_in),bcs_tf(bcs_iw),
+     $            bcs_tf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_psdf,bcs_psdf(bcs_is),bcs_psdf(bcs_in),bcs_psdf(bcs_iw),
+     $            bcs_psdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_pipf,bcs_pipf(bcs_is),bcs_pipf(bcs_in),bcs_pipf(bcs_iw),
+     $            bcs_pipf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_fipf,bcs_fipf(bcs_is),bcs_fipf(bcs_in),bcs_fipf(bcs_iw),
+     $            bcs_fipf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_tdf,bcs_tdf(bcs_is),bcs_tdf(bcs_in),bcs_tdf(bcs_iw),
+     $            bcs_tdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_fif,bcs_fif(bcs_is),bcs_fif(bcs_in),bcs_fif(bcs_iw),
+     $            bcs_fif(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_qf,bcs_qf(bcs_is),bcs_qf(bcs_in),bcs_qf(bcs_iw),
+     $            bcs_qf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         call trnes (nest_sf,bcs_sf(bcs_is),bcs_sf(bcs_in),bcs_sf(bcs_iw),
+     $            bcs_sf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+         call trnes (nest_tpf,bcs_tpf(bcs_is),bcs_tpf(bcs_in),bcs_tpf(bcs_iw),
+     $            bcs_tpf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         if (.not. Schm_hydro_L) then
+             call trnes (nest_wf,bcs_wf(bcs_is),bcs_wf(bcs_in),bcs_wf(bcs_iw),
+     $            bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+             call trnes (nest_muf,bcs_muf(bcs_is),bcs_muf(bcs_in),bcs_muf(bcs_iw),
+     $            bcs_muf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         endif
+         keyp_ = VMM_KEY (nest_trf)
+         do n=1,Tr3d_ntr
+            keyp(n) = keyp_ + n
+         end do
+         err = vmmlod(keyp,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(keyp(n),patrp,trp)
+            id = (n-1)*bcs_sz+1
+             call trnes (trp,bcs_trf(id),bcs_trf(id+bcs_in-1),
+     $               bcs_trf(id+bcs_iw-1),bcs_trf(id+bcs_ie-1),
+     $               l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $               minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+         end do
+         err = vmmuld(keyp,Tr3d_ntr)
+         endif
+
       endif
+
+      err=vmmuld(key1,nvar)
 *
       call hpdeallc (pat1 ,err,1)
       call hpdeallc (pat2 ,err,1)
       call hpdeallc (pat3 ,err,1)
-      call hpdeallc (pat4 ,err,1)
 *
 *     ---------------------------------------------------------------
 *
+ 205  format (/' PROBLEM WITH LBCS AT: ',a,', PROC#:',i4,' --ABORT--'/)
+ 1000 format(3X,'GETTING DATA FROM NEST TO BCS: (S/R NEST_INDATA)')
+ 1001 format (/' WRONG ifd_ftype in nest_indata: --- ABORT ---'/)
       return
       end
 

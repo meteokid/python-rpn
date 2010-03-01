@@ -1,0 +1,270 @@
+***s/r v4d_predat - Same as predat but with partition for 4D-Var 
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_predat (ipart)
+*
+      implicit none
+*
+      integer ipart
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - Correction: do not call uv2img for 4dvar/SV job
+*                           - modify evaluation of Ind_pip
+* v3_21 - Tanguay M.        - Revision Openmp 
+*                           - do filtering at t=0 in v4d_predat
+* v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
+* v3_30 - Tanguay M.        - Change parameters of initw2 
+*
+*object
+*     Preprocessing of Control   variables only if ipart=2
+*     Preprocessing of Dependent variables only if ipart=3
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "schm.cdk"
+#include "ind.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+#include "hzd.cdk"
+*
+      integer i, j, k
+      real pr1, pr2
+*
+*     __________________________________________________________________
+*
+      if( Schm_theoc_L ) call gem_stop ('ABORT V4D_PREDAT: Schm_theoc_L not done',-1) 
+*
+      if( Lun_out.gt.0 ) then
+         if(ipart.eq.2) write(Lun_out,1002)
+         if(ipart.eq.3) write(Lun_out,1003)
+      endif
+*
+*     -------------------------------------------------------------
+*     Set dependent variables phi',phi from T',s' when Schm_hydro_L
+*     -------------------------------------------------------------
+      if(ipart.eq.3.and.Schm_hydro_L) call vtap () 
+*
+!$omp parallel private (pr1,pr2)
+*
+      if(.not.Schm_hydro_L) then
+*
+*        -------------------------------------
+*        Set control variables when ipart.eq.2
+*        -------------------------------------
+         if(ipart.eq.2) then
+*
+*           Compute phi' from phi 
+*           ---------------------
+!$omp do
+            do k= 1, G_nk
+            do j= 1, l_nj
+            do i= 1, l_ni
+               Ind_fip(i,j,k) =  Ind_fi(i,j,k) - Cstvr_fistr_8(k)
+     $                                         - Ind_topo(i,j)
+            end do
+            end do
+            end do
+!$omp end do
+*
+         endif
+*
+*        ---------------------------------------
+*        Set dependent variables when ipart.eq.3
+*        ---------------------------------------
+         if(ipart.eq.3) then 
+*
+*           Compute phi from phi' 
+*           ---------------------
+!$omp do
+            do k= 1, G_nk
+            do j= 1, l_nj
+            do i= 1, l_ni
+               Ind_fi(i,j,k) =  Ind_fip(i,j,k) + Cstvr_fistr_8(k)
+     $                                         + Ind_topo(i,j)
+            end do
+            end do
+            end do
+!$omp end do
+*
+         endif
+*
+      endif
+*
+*     -------------------------------------
+*     Set control variables when ipart.eq.2
+*     -------------------------------------
+      if(ipart.eq.2) then
+*
+*     Compute T' from T
+*     ------------------
+!$omp do
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_tp(i,j,k)  = Ind_t(i,j,k) - Cstv_tstr_8
+      end do
+      end do
+      end do
+!$omp end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then
+*
+*     Compute T from T'
+*     -----------------
+!$omp do
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_t(i,j,k)  = Ind_tp(i,j,k) + Cstv_tstr_8
+      end do
+      end do
+      end do
+!$omp end do
+*
+      endif
+*
+*     -------------------------------------
+*     Set control variables when ipart.eq.2
+*     -------------------------------------
+      if(ipart.eq.2) then
+*
+*     Compute s
+*     ---------
+!$omp do
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_s(i,j) = dlog( exp(Ind_q(i,j,G_nk)) / Cstv_pisrf_8 )
+      end do
+      end do
+!$omp end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then
+*
+*     Compute q
+*     ---------
+!$omp do
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_q(i,j,k) = alog( Geomg_pia(k) + Geomg_pib(k)*exp(Ind_s(i,j)))
+      end do
+      end do
+      end do
+!$omp end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then
+*
+*     Compute pi'
+*     -----------
+!$omp do
+      do k= 1, G_nk
+*
+      if (k.eq.1) then
+        do j= 1, l_nj
+        do i= 1, l_ni
+          Ind_pip(i,j,1) = 0.
+        end do
+        end do
+      else
+* 
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_pip(i,j,k)= Geomg_pia(k)+Geomg_pib(k)*exp(Ind_s(i,j))
+     $                 - Geomg_z_8(k)
+      end do
+      end do
+*
+      endif
+*
+      end do
+!$omp end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then
+*
+*     Compute P and T'
+*                    lin
+*     ------------------
+!$omp do
+      do k= 1, G_nk
+         pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * Geomg_pib(k) / Geomg_z_8(k)
+         pr2 = Cstv_tstr_8*(Geomg_pib(k)/Geomg_z_8(k) - Geomg_dpib(k))
+         do j= 1, l_nj
+         do i= 1, l_ni
+             Ind_gp(i,j,k) = Ind_fip(i,j,k) + pr1 * Ind_s(i,j)
+            Ind_tpl(i,j,k) = (Cstv_tstr_8+Ind_tp(i,j,k))*
+     $           (1.0+Geomg_dpib(k)*(exp(Ind_s(i,j))-1.))*
+     $           Geomg_z_8(k)/(Geomg_z_8(k)+Ind_pip(i,j,k))-Cstv_tstr_8
+            Ind_tpl(i,j,k) = Ind_tpl(i,j,k) + pr2 * Ind_s(i,j)
+         end do
+         end do
+      end do
+!$omp end do
+*
+      endif
+*
+!$omp end parallel 
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then 
+*
+      if (Hzd_t1_0_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
+      if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
+*
+      if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img 
+*
+*     Compute total divergence and vertical velocity
+*     ----------------------------------------------
+      call uv2tdpsd ( Ind_td,Ind_psd,Ind_u,Ind_v,Ind_s,LDIST_DIM,l_nk )
+*
+      if (Hzd_t1_0_L) call hzd_hoffld (Ind_psd, LDIST_DIM, G_nk, 3)
+*
+      if ( .not. Schm_hydro_L ) then
+         if ( Schm_theoc_L ) then
+            Ind_w = 0.
+         else
+         call initw2 ( Ind_w, Ind_mul, Ind_mu, Ind_u, Ind_v, Ind_psd,
+     $                 Ind_fi, Ind_t, Ind_s, LDIST_DIM )
+         endif
+      endif
+*
+      endif
+*
+1002  format(//,'PREPROCESSING DATA: (S/R V4D_PREDAT PART 2)',
+     %        /,'===========================================',//)
+1003  format(//,'PREPROCESSING DATA: (S/R V4D_PREDAT PART 3)',
+     %        /,'===========================================',//)
+*
+*     __________________________________________________________________
+      return
+      end

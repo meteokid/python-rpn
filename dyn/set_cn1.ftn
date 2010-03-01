@@ -14,6 +14,7 @@
 * v2_31 - Desgagne/Lee      - introduce tracers, output of sliced tracers
 * v3_11 - Gravel S.         - modify for theoretical cases
 * v3_21 - Lee V.            - remove Tr2d
+* v3_30 - Desgagne & Winger - call glb_restart
 *
 *object
 *	This subroutine initializes the commons containing the
@@ -24,7 +25,6 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "dimout.cdk"
 #include "init.cdk"
 #include "lun.cdk"
 #include "rstr.cdk"
@@ -37,21 +37,10 @@
 *
       if (Lun_out.gt.0) write(Lun_out,2000)
 *
-*C             Initialize the RPN physics package
-*              ----------------------------------
-      call p_init   ( )
-*
-*C             Initialize the chemistry package
-*              --------------------------------
-CC    call chem_init( )
-*
-*C             Initialize tracers Part 1:
-*              --------------------------
-      call tracers ()
-*
 *C             Initialize the time-dependent variables comdecks
 *              -------------------------------------------------
       call set_vt( )
+*
       if (G_lam) call set_nest( )
 *
 *C             Initialize right hand sides comdeck
@@ -61,12 +50,6 @@ CC    call chem_init( )
 *C             Initialize the geophysical field comdeck
 *              ----------------------------------------
       call set_geof( )
-*
-*
-*C             Is this a restart?
-*              ------------------
-      call rdrstrt( )
-*
 *
 *C             Initialize digital filter variables comdecks
 *              --------------------------------------------
@@ -82,6 +65,10 @@ CC    call chem_init( )
 *C	       and pointers
 *              ------------------------------------------
       call set_list( )
+*
+*C             Read global dynamic binary restart file
+*              ---------------------------------------
+      if (Rstri_rstn_L) call glb_restart ('R')
 *
  2000 format(
      +/,'INITIALIZATION OF VIRTUAL MEMORY MANAGER S/R SET_CN1',

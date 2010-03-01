@@ -3,9 +3,10 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine sol_main
+      subroutine sol_main (iln)
+      implicit none
 *
-#include "impnone.cdk"
+      integer iln
 *
 *author 
 *     Michel Roch - rpn - nov 1993
@@ -64,7 +65,7 @@
 *
 * Computing elliptic problem solution (sol)
       call tmg_start0 (40, 'SOL_0    ' )
-      call sol_hcr  (sol,rhs,wk1,wk2,fdg1,fdg2,fdwfft,
+      call sol_hcr  (sol,rhs,wk1,wk2,fdg1,fdg2,fdwfft,iln,
      $                ldnh_minx,ldnh_maxx,
      $                ldnh_miny,ldnh_maxy,ldnh_ni,ldnh_nj,l_nk)
       call tmg_stop0(40)

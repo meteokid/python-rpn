@@ -1,0 +1,159 @@
+***s/r v4d_rdmask - read observation location from observation random file
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_rdmask
+*
+#include "impnone.cdk"
+*
+*author
+*      Michel Roch - rpn - jan 1994
+*
+*revision
+* v3_01 - Morneau J.        - Initial MPI version (from readdyn v2_21)
+*                           - read mask file for sensitivity analysis
+*
+*object
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "v4d_vmm.cdk"
+#include "ptopo.cdk"
+*
+*modules
+      external vmmlod,vmmget,vmmuld
+      integer  vmmlod,vmmget,vmmuld
+*
+      external fstouv,fstfrm,longueur,v4d_rdfld
+      integer  fstouv,fstfrm,longueur,v4d_rdfld
+*
+      real wk1(G_ni,G_nj,G_nk)
+*
+      integer pnerr,pnlkey1(4),i,j,k,iip1(G_nk),err,error(4)
+      integer nvar,nerr,dum1
+      character*5 blank_S,var_S
+*     ______________________________________________________
+*
+      if ( .not. V4dg_sensib_L) call gefstop('v4d_rdmask')
+*     ______________________________________________________
+*
+*C    -------------------------------------
+*C    Read OBSERVATIONS locations FROM FILE
+*C    -------------------------------------
+* 
+*        Get fields in memory
+*        --------------------
+         pnlkey1(1) = VMM_KEY(locu)
+         pnlkey1(2) = VMM_KEY(locv)
+         pnlkey1(3) = VMM_KEY(locg)
+         pnlkey1(4) = VMM_KEY(locs)
+         nvar=4
+*
+         pnerr = vmmlod(pnlkey1,4)
+*
+         pnerr = VMM_GET_VAR(locu) 
+         pnerr = VMM_GET_VAR(locv)
+         pnerr = VMM_GET_VAR(locg)
+         pnerr = VMM_GET_VAR(locs)
+*
+*     ----------------------------------------------
+*     Compute IP1 of OBSERVATION loc to be read
+*     ----------------------------------------------
+      if (Ptopo_myproc.eq.0) then
+         do k=1,G_nk
+           call convip(iip1(k),geomg_hyb(k),1,+1,blank_S,.false.)
+         enddo
+      endif
+*
+      if (Ptopo_myproc.eq.0) then
+        nerr = 0
+        do i=1,nvar
+          error(i)=0
+          nerr = nerr + 1
+        enddo
+      endif
+**
+*     ----------------------------------------------
+*     Open observation file containing obs location
+*     ----------------------------------------------
+         if ( lun_out > 0) then
+           write(lun_out,9000)
+           write (Lun_out,*)'Opening file: '
+     &          ,V4dg_lun_obs_s(1:longueur(V4dg_lun_obs_s))
+         endif
+         if (Ptopo_myproc.eq.0 ) then
+           err = fstouv(v4dg_lun_obs,'RND')
+         endif
+*
+         if (Ptopo_myproc.eq.0) then
+           do k=1,G_nk
+             err = v4d_rdfld(wk1(1,1,k),v4dg_lun_obs,G_ni,G_nj,
+     $            iip1(k),0,0,'A','MU',G_ni+1,G_nj)
+             error(1) = error(1)+err
+           enddo
+         endif
+         call glbdist(wk1,G_ni,G_nj,locu,LDIST_DIM,G_nk,G_halox
+     &        ,G_haloy)
+*
+         if (Ptopo_myproc.eq.0) then
+           do k=1,G_nk
+             err = v4d_rdfld(wk1(1,1,k),v4dg_lun_obs,G_ni,G_nj,
+     $            iip1(k),0,0,'A','MV',G_ni+1,G_nj)
+             error(1) = error(1)+err
+           enddo
+         endif
+         call glbdist(wk1,G_ni,G_nj,locv,LDIST_DIM,G_nk,G_halox
+     &        ,G_haloy)
+*
+         if (Ptopo_myproc.eq.0) then
+           do k=1,G_nk
+             err = v4d_rdfld(wk1(1,1,k),v4dg_lun_obs,G_ni,G_nj,
+     $            iip1(k),0,0,'A','MG',G_ni+1,G_nj)
+             error(1) = error(1)+err
+           enddo
+         endif
+         call glbdist(wk1,G_ni,G_nj,locg,LDIST_DIM,G_nk,G_halox
+     &        ,G_haloy)
+*
+         if (Ptopo_myproc.eq.0) then
+           err = v4d_rdfld(wk1(1,1,1),v4dg_lun_obs,G_ni,G_nj,
+     $          iip1(G_nk),0,0,'A','MS',G_ni+1,G_nj)
+           error(1) = error(1)+err
+         endif
+         call glbdist(wk1,G_ni,G_nj,locs,LDIST_DIM,1,G_halox
+     &        ,G_haloy)
+*
+      if (Ptopo_myproc.eq.0) then
+         err = 0
+         do i=1,nerr
+            err = err + error(i)
+         end do
+      endif
+*
+      call RPN_COMM_bcast (err,1,"MPI_INTEGER",0,"grid",dum1)
+      if (err.ne.0) call gefstop('v4d_rdmask')
+*
+      err = vmmuld(-1,0)
+*   
+      if (Ptopo_myproc.eq.0) then
+        err = fstfrm (v4dg_lun_obs)
+      endif
+
+      if (lun_out > 0)  write(Lun_out,9900)
+
+*
+ 9000 format(
+     +/,'BEGIN READING MASK IN OBSERVATION FILES (V4D_RDMASK)',
+     +/,'====================================================')
+ 9900 format(
+     +/,'END READING MASK IN OBSERVATION FILES   (V4D_RDMASK)',
+     +/,'====================================================')
+*
+      return
+      end

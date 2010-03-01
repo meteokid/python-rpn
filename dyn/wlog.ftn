@@ -4,7 +4,7 @@
 *
       subroutine wlog (F_code_S)
 *
-#include "impnone.cdk"
+      implicit none
 *
        character*4 F_code_S
 *
@@ -39,24 +39,24 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lctl.cdk"
-#include "dimout.cdk"
-#include "cstv.cdk"
-#include "out1.cdk"
 #include "out3.cdk"
+#include "cstv.cdk"
 #include "ptopo.cdk"
 *
 *modules
-      integer  cmcwlog,longueur
-      external cmcwlog,longueur
+      integer  cmcwlog,longueur,newdate
+      external cmcwlog,longueur,newdate
 *
       character ptmesg_S*80, ptcy_S*8, ptwcy_S*10, ptzcy_S*10
       character*20 string_S
       character*10 unit_S,ptip2_S
       character*6  format_S
-      character*1  dumc_S
-      integer err, ip2, m, cy, i,ndigits
+      character*4  dumc_S
+      integer err, ip2, m, cy, i,ndigits,dat1,dat2
 **
 *     ---------------------------------------------------------------
+*
+      err = newdate ( Out3_date, dat1, dat2, -3 )
 *
       call rpn_comm_Barrier("grid", err)
       if (Ptopo_myproc.ne.0) return
@@ -100,45 +100,45 @@
 
       if ( F_code_S .eq. 'IOUT' ) then
          ptmesg_S=' '//string_S(1:longueur(string_S))//' completed during initialization'
-         err = cmcwlog('OU',ip2,Out1_etik_s,ptmesg_S)
+         err = cmcwlog('OU',ip2,Out3_etik_S,ptmesg_S)
       else if ( F_code_S .eq. 'FOUT' ) then
          ptmesg_S = ' '//string_S(1:longueur(string_S))//' completed during forecast'
-         err = cmcwlog('OU',ip2,Out1_etik_s,ptmesg_S)
+         err = cmcwlog('OU',ip2,Out3_etik_S,ptmesg_S)
       else if ( F_code_S .eq. 'IEND' ) then
          ptmesg_S = ' END OF INITIALIZATION at '//string_S(1:longueur(string_s))
-         err = cmcwlog('EN',ip2,Out1_etik_s,ptmesg_S)
+         err = cmcwlog('EN',ip2,Out3_etik_S,ptmesg_S)
       else if ( F_code_S .eq. 'FEND' ) then
          ptmesg_S = ' END OF INTEGRATION at '//string_S(1:longueur(string_s))
-         err = cmcwlog('EN',ip2,Out1_etik_s,ptmesg_S)
+         err = cmcwlog('EN',ip2,Out3_etik_S,ptmesg_S)
       else if ( F_code_S .eq. 'BKUP' ) then
          ptmesg_S = ' BACKUP FOR RESTART at '//string_S(1:longueur(string_s))
-         err = cmcwlog('BU',ip2,Out1_etik_s,ptmesg_S)
+         err = cmcwlog('BU',ip2,Out3_etik_S,ptmesg_S)
       else if ( F_code_S .eq. 'STOP' ) then
          ptmesg_S = ' PREMATURED STOP: END OF INTEGRATION'
-         err = cmcwlog('AB',ip2,Out1_etik_s,ptmesg_S)
+         err = cmcwlog('AB',ip2,Out3_etik_S,ptmesg_S)
       else if ( F_code_S .eq. 'CSTR' ) then
-         write(ptzcy_S,'(i8.8)') Out1_dato(1)
+         write(ptzcy_S,'(i8.8)') dat1
          write(ptwcy_S,'(''01'')')
          ptwcy_S(3:4)=ptzcy_S(1:2)
          read(ptwcy_S,'(i4.4)') cy
-         write(ptwcy_S,'(i8.8)') Out1_dato(2)
+         write(ptwcy_S,'(i8.8)') dat2
          ptcy_S(1:6)=ptzcy_S(3:8)
          ptcy_S(7:8)=ptwcy_S(1:2)
          ptmesg_S = ' MODEL START: MESSAGE FOR ANALYSIS CYCLE'
          err = cmcwlog('MO',cy,ptcy_S,ptmesg_S)
       else if ( F_code_S .eq. 'CEND' ) then
-         write(ptzcy_S,'(i8.8)') Out1_dato(1)
+         write(ptzcy_S,'(i8.8)') dat1
          write(ptwcy_S,'(''02'')')
          ptwcy_S(3:4)=ptzcy_S(1:2)
          read(ptwcy_S,'(i4.4)') cy
-         write(ptwcy_S,'(i8.8)') Out1_dato(2)
+         write(ptwcy_S,'(i8.8)') dat2
          ptcy_S(1:6)=ptzcy_S(3:8)
          ptcy_S(7:8)=ptwcy_S(1:2)
          ptmesg_S = ' MODEL END: MESSAGE FOR ANALYSIS CYCLE'
          err = cmcwlog('MO',cy,ptcy_S,ptmesg_S)
       else
          ptmesg_S = ' wrong usage of subroutine wlog'
-         err = cmcwlog('BB',ip2,Out1_etik_s,ptmesg_S)
+         err = cmcwlog('BB',ip2,Out3_etik_S,ptmesg_S)
       endif
 *     
 *     ---------------------------------------------------------------

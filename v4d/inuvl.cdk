@@ -1,0 +1,27 @@
+#if defined (DOC)
+*
+***comdeck inuvl.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  CUBIC LAGRANGE INTERPOLATION COEFFICIENTS from AND to U and V grids |
+*                                                  (set_intuv)         |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* inuvl_wxxu3_8      | coefficients for PHI-grid to   U-grid           |
+* inuvl_wxux3_8      | coefficients for   U-grid to PHI-grid           |
+* inuvl_wyyv3_8      | coefficients for PHI-grid to   V-grid           |
+* inuvl_wyvy3_8      | coefficients for   V-grid to PHI-grid           |
+*----------------------------------------------------------------------
+*
+*
+#endif
+*
+      MARK_COMMON_BEG(inuvl)
+      DCL_DYNVAR(inuvl, wxxu3_8, real*8,(XDIST_SHAPE,4))
+      DCL_DYNVAR(inuvl, wxux3_8, real*8,(XDIST_SHAPE,4))
+      DCL_DYNVAR(inuvl, wyyv3_8, real*8,(YDIST_SHAPE,4))
+      DCL_DYNVAR(inuvl, wyvy3_8, real*8,(YDIST_SHAPE,4))
+      MARK_COMMON_END(inuvl)

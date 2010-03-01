@@ -1,217 +1,116 @@
-***s/r e_gemnml
+***s/r e_gemnml - to read 3 namelists for the e_gemntr program,
+*                 namelists: gemnml, grid, ptopo
+*
 *
 #include "model_macros_f.h"
 *
-      subroutine e_gemnml 
+      subroutine e_gemnml (err_rstrt)
       implicit none
 *
+      integer err_rstrt
 *revision
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
 * v3_21 - Desgagne M.       - Revision on Dcst read
 * v3_21 - Lemonsu A.        - add P_pbl_schurb_s
 * v3_22 - Lee V.            - removed Trvs tracers
+* v3_30 - Desgagne M.       - rewritten for the new physics
+*                             interface and new LAM I/O piloting
 *
       integer ni, nila
       integer l_ni,l_nj
       parameter (l_ni=1,l_nj=1)
 *implicits
-#include "e_topo.cdk"
 #include "e_schm.cdk"
-#include "e_geol.cdk"
 #include "e_grids.cdk"
-#include "e_tr.cdk"
-#include "e_anal.cdk"
 *
 #include "cst_lis.cdk"
 #include "dcst.cdk"
-#include "out1.cdk"
 #include "grd.cdk"
-#include "p_pbl.cdk"
-#include "ptopo.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_cpl_cplg.cdk"
 #include "pilot.cdk"
+#include "modconst.cdk"
 #include "hblen.cdk"
-#include "offline.cdk"
-#include "e_nml.cdk"
 *
-      logical set_dcst_8
-      integer  fnom
-      external fnom, set_dcst_8
+      logical  set_dcst, set_dcst_8
+      external set_dcst, set_dcst_8
+      integer  grid_nml, ptopo_nml, e_gement_nml, phy_init, itf_cpl_nml
+      external grid_nml, ptopo_nml, e_gement_nml, phy_init, itf_cpl_nml
+      integer  wkoffit
+      external wkoffit
 *
-      character*120 fn,dumc
-      integer i,err,unf
+      integer  fnom,fclos
+      external fnom,fclos
+*
+      logical phy_L
+      character*120 dumc
+      integer err,unf
 *
 *--------------------------------------------------------------------
 *
-      Grd_typ_S = 'GU'
-      Grd_ni    = 0
-      Grd_nj    = 0 
-      Grd_nila  = 0
-      Grd_njla  = 0
-      Grd_dx    = 0.
-      Grd_dy    = 0.
-      Grd_dxmax = 360.
-      Grd_dymax = 180.
-      Grd_iref  = 1
-      Grd_jref  = 1
-      Grd_latr  = 0.
-      Grd_lonr  = 0.
-      Grd_roule = .false.
-      Grd_xlon1 = 0.
-      Grd_xlat1 = 0.
-      Grd_xlon2 = 0.
-      Grd_xlat2 = 0.
-      Grd_gauss_L = .false.
+      if (grid_nml  ('process/model_settings') .ne. 1)
+     +        stop   'In e_gemnml: After grid_nml'
+      if (ptopo_nml ('process/model_settings') .ne. 1)
+     +        stop   'In e_gemnml: After ptopo_nml'
+      if (e_gement_nml('process/model_settings') .ne. 1)
+     +        stop   'In e_gemnml: After e_gement_nml '
 *
-      Pil_runstrt_S =' '
-      Pil_ctebcs_L  = .false.
-      Pil_nesdt     = 0
-      Pil_datacvrg  = 0
+      if (phy_init  ('process/model_settings',set_dcst,phy_L,6) .ne. 1)
+     +        stop   'In e_gemnml: After phy_init'
 *
-      Hblen_wfct_S  = 'COS2'
-      Hblen_momentx = 10
-      Hblen_tx      = 10
-      Hblen_massx   = 10
-      Hblen_trx     = 10
-      Hblen_momenty = -1
-      Hblen_ty      = -1
-      Hblen_massy   = -1
-      Hblen_try     = -1
-*
-      Topo_filmx_L= .true.
-      Topo_init_L = .true.
-      Topo_dgfmx_L= .false.
-      Topo_dgfms_L= .true.
-*
-      anal_perturb= .false.
-      E_schm_stlag   = .true.
-      E_schm_adcub   = .true.
-      E_schm_offline_L=.false.
-      E_geol_glanl_L = .true.
-      E_geol_glreg_L = .false.
-      E_geol_hsanl_L = .true.
-      E_geol_hscon_L = .false.
-      E_geol_hsreg_L = .true.
-      E_geol_gls  = 30.
-      E_geol_gln  = 80.
-      E_geol_glw  = 220.
-      E_geol_gle  = 320.
-      E_geol_hss  = 30.
-      E_geol_hsn  = 80.
-      E_geol_hsw  = 220.
-      E_geol_hse  = 320.
-      E_geol_hsea = 3000
-      E_geol_poin = 3
-      E_geol_modex_L = .false.
-      E_geol_z0cst   = -1.
-*
-      Offline_int_accu_S = 'LINEAR'
-      Offline_ip1a = 11950   
-      P_pbl_schsl_S  = 'FCREST'
-      P_pbl_schurb_S = 'NIL'
-      P_pbl_snoalb_L = .true.
-*
-      do i=1, MAXTR
-         E_tr3d_list_S(i) = ''
-      enddo
-*
-      unf = 0
-      fn  = 'process/model_settings'
-*      
-      write(6,*) 'Opening file: ',fn
-      if (fnom(unf, fn,'SEQ+FTN+FMT+OLD',0).ne.0) then
-         write(6,*) 'FILE ',fn,' NOT AVAILABLE - ABORT'
-         goto 998
-      endif
-*
-      rewind(unf)
-      read  (unf,nml=ptopo,  END=930, ERR=930)
-      rewind(unf)
-      read  (unf,nml=grid,   END=910, ERR=910)
-      rewind(unf)
-      read  (unf,nml=gement, END=920, ERR=920)
-      call fclos (unf)
+      call phy_optc ('SCHMSOL'   , P_pbl_schsl_s ,1, 'GET',.True.,err)
+      call phy_optc ('SCHMURB'   , P_pbl_schurb_s,1, 'GET',.True.,err)
+      call phy_optl ('SNOALB_ANL', P_pbl_snoalb_L,1, 'GET',.True.,err)
+      call phy_optl ('CHAUF'     , P_pbl_ocean_L ,1, 'GET',.True.,err)
 *
       call low2up (P_pbl_schsl_S,dumc)
       P_pbl_schsl_S = dumc
       call low2up (P_pbl_schurb_S,dumc)
       P_pbl_schurb_S = dumc
-      call low2up (Grd_typ_S,dumc)
-      Grd_typ_S = dumc
+*
+      if (itf_cpl_nml('process/model_settings') .ne. 1)
+     +        stop    'In e_gemnml: After itf_cpl_nml'
+*
       LAM = Grd_typ_S(1:1).eq.'L'
-      call low2up (Hblen_wfct_S,dumc)
-      Hblen_wfct_S = dumc
-      call low2up (Offline_int_accu_S,dumc)
-      Offline_int_accu_S = dumc
 *
-*     CONSTANT BOUNDARY CONDITIONS APPLIED in offline mode
-      if (E_schm_offline_L) Hblen_wfct_S  = 'CONST'
-*
-      Hblen_momentx = max(Hblen_momentx, 0)
-      Hblen_tx      = max(Hblen_tx     , 0)
-      Hblen_massx   = max(Hblen_massx  , 0)
-      Hblen_trx     = max(Hblen_trx    , 0)
-      if (Hblen_momenty.lt.0) Hblen_momenty = Hblen_momentx
-      if (Hblen_ty     .lt.0) Hblen_ty      = Hblen_tx
-      if (Hblen_massy  .lt.0) Hblen_massy   = Hblen_massx
-      if (Hblen_try    .lt.0) Hblen_try     = Hblen_trx
-*
-      if ((LAM).and.((Pil_runstrt_S.eq." ").or.(Pil_nesdt.le.0)
-     $           .or.(Pil_datacvrg.le.0))) then
-         write(6,1000) 
-         call e_arret ('GEMNML')
-      endif
-*
-      if (Grd_ni*Grd_nj.eq.0) then
-         write(6,*) 'VERIFY Grd_NI & Grd_NJ IN NAMELIST grid'
-         call e_arret ('GEMNML')
-      endif
-      if (Grd_typ_S(1:1).eq.'G') then
-         if (Grd_typ_S(2:2).eq.'U') then
-            Grd_nila = Grd_ni
-            Grd_njla = Grd_nj
-         else
-            if (Grd_nila*Grd_njla*Grd_dx*Grd_dy.eq.0) then
-               write(6,*) 'VERIFY Grd_NILA, Grd_NJLA, Grd_DX & ',
-     $                    'Grd_DY IN NAMELIST grid'
-               call e_arret ('GEMNML')
+      if ( .not. LAM ) then
+         Pil_bmf_L   = .true.
+         Pil_sfc2d_L = .true.
+         Pil_3df_L   = .true.
+         Pil_nesdt   = 1000
+      else
+         if ( Pil_sfc2d_L .or. Pil_3df_L ) then
+            if ( Mod_runstrt_S.eq.'@#$%' ) then
+               if (wkoffit('process/labfl.bin').gt.-1) then
+               unf = 0
+               if (fnom(unf,'process/labfl.bin','SEQ/UNF+OLD',0).ge.0) 
+     $         then
+                  read(unf,err=999,end=999) Mod_runstrt_S
+                  err = fclos( unf )
+               endif
+               endif
+            endif
+            if ( Pil_3df_L ) then
+               if ( Pil_jobstrt_S.eq.'@#$%' .or. 
+     $              Pil_jobend_S .eq.'@#$%' ) then
+                  write (6,1005) 
+                  call e_arret('e_gemnml')
+               endif
+               if ( (Pil_jobstrt_S.ne.Pil_jobend_S).and.
+     $              (Pil_nesdt.le.0) ) then
+                  write (6,1006) 
+                  call e_arret('e_gemnml')
+               endif                  
             endif
          endif
-         Grd_x0=  0.0 
-         Grd_xl=360.0
-         Grd_y0=-90.0
-         Grd_yl= 90.0
-      else
-         if (Grd_dx*Grd_dy.eq.0) then
-            write(6,*) 'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
-            call e_arret ('GEMNML')
-         endif
-         Grd_nila = Grd_ni
-         Grd_njla = Grd_nj
-         Grd_x0   = Grd_lonr - (Grd_iref-1) * Grd_dx
-         Grd_y0   = Grd_latr - (Grd_jref-1) * Grd_dy
-         Grd_xl   = Grd_x0   + (Grd_ni  -1) * Grd_dx
-         Grd_yl   = Grd_y0   + (Grd_nj  -1) * Grd_dy
-         if (Grd_x0.lt.0.) Grd_x0=Grd_x0+360.
-         if (Grd_xl.lt.0.) Grd_xl=Grd_xl+360.
-         if ( (Grd_x0.lt.  0.).or.(Grd_y0.lt.-90.).or.
-     $        (Grd_xl.gt.360.).or.(Grd_yl.gt. 90.) ) then
-            write (6,1001) Grd_x0,Grd_y0,Grd_xl,Grd_yl
-            stop
-         endif
-      endif
-*     
-      if (nint( 360./Grd_dxmax ) .gt. Grd_ni+1 .or.
-     +    nint( 180./Grd_dymax ) .gt. Grd_nj+1 ) then
-         write(6,*) ' INCONSISTENT Grd_NI, Grd_NJ, ',
-     $              ' Grd_DXMAX & Grd_DYMAX values in namelist grid'
-         call e_arret ('GEMNML')
       endif
 *
-      write (6  ,nml=grid)
-      write (6  ,nml=gement_p)
+      err = grid_nml    ('print')
+      err = ptopo_nml   ('print')
+      err = e_gement_nml  ('print')
+      if (C_coupling_L) err = itf_cpl_nml ('print')
 *
-      unf = 44
-      if (.not.set_dcst_8 (Dcst_cpd_8,liste_S,cnbre,0,1))
+      if (.not.set_dcst_8 (Dcst_cpd_8,liste_S,cnbre,6,1))
      $     call e_arret ('SET_DCST_8')
 *
       call e_trinit
@@ -246,24 +145,26 @@
       pnj   = njfi
       pnjv  = njv
 *
-      goto 999
- 910  write(6,801)
-      goto 998
- 920  write(6,802)
-      goto 998
- 930  write(6,803)
- 998  call e_arret ('GEMNML')
+      if (.not.LAM) then
+         open (41,file='process/00-00/restart',access='SEQUENTIAL',
+     $            iostat=err_rstrt,status='OLD',form='UNFORMATTED')
+      else
+         err_rstrt = -1
+      endif
 *
- 801  format(/,' ERROR in NAMELIST GRID: STOP IN GEMNTR',/)
- 802  format(/,' ERROR in NAMELIST GEMENT: STOP IN GEMNTR',/)
- 803  format(/,' ERROR in NAMELIST PTOPO:  STOP IN GEMNTR',/)
- 1000 format(/,' Pil_runstrt_S, Pil_nesdt and Pil_datacvrg must'/
-     $         ' all be defined in LAM configuration',/)
- 1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/,
-     $         ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
+      return
+*
+ 999  write(6,1004)
+      call e_arret('e_gemnml')
 *
 *--------------------------------------------------------------------
+ 1004 format(/' Mod_runstrt_S must be specified in LAM configuration ',
+     $       /' when Pil_sfc2d_L or Pil_3df_L is .T. - ABORT -'/)
+ 1005 format(/' Pil_jobstrt_S and Pil_jobend_S must both',
+     $       /' be specified in LAM configuration - ABORT -'/)
+ 1006 format(/' To treat Pil_3df_L data, Pil_nesdt must ',
+     $       /' be specified in LAM configuration - ABORT -'/)
 *
- 999  return
+      return
       end
-*
+

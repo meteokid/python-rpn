@@ -1,0 +1,255 @@
+***s/r itf_phy_init - Initializes physics parameterization package
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_phy_init
+*
+      implicit none
+*
+*author
+*     Michel Desgagne    -   Summer 2006
+*
+*revision
+* v3_30 - Desgagne M.        - Initial version
+* v3_30 - Tanguay M.         - adapt TL/AD to itf
+* v3_30 - Bilodeau B.        - add call to phy_opt for offline mode
+* v3_30 - Dugas B.           - correction to P_out_moyhr, add Out3_satues_L
+*
+*object
+*	See above ID.
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "out3.cdk"
+#include "xst.cdk"
+#include "cstv.cdk"
+#include "v4dg.cdk"
+#include "p4d_simp.cdk"
+#include "pres.cdk"
+#include "clim.cdk"
+#include "p_serg.cdk"
+*
+#include "itf_phy_buses.cdk"
+#include "itf_phy_busind.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_cpl_cplg.cdk"
+*
+**
+      integer  phy_init,phy_debu,fnom
+      external phy_init,phy_debu,set_dcst,itf_phy_radiaf,fnom
+*
+      logical prout
+      integer DIM_ERR,nrec
+      parameter (DIM_ERR = 14) 
+      integer err(DIM_ERR),idate(14),bidon,i
+      real dt_4
+*
+*     ---------------------------------------------------------------
+*
+*   General rules:
+*    1) .ftn.cdk with prefix itf_phy_ in their name belong to GEMDM 
+*    2) Those with prefix phy_ belong to the physics package
+*    3) The init part of the package consists of 4 entry points:
+*            phy_init, phy_opt, phy_debu and phy_getbus
+*
+      h2o_ntr  = 0
+      phyt_ntr = 0
+      p_nj       = 0
+      p_bper_siz = 0
+      prout  = Lun_out.gt.0
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+      call newdate (Out3_date,idate,bidon,-4)
+      dt_4 = Cstv_dt_8 
+*
+      call itf_cpl_init_cplfld (G_ni, G_nj)
+*
+* Start physics initialization with mandatory parameters
+      call phy_opti('DATE'    , idate         ,  14,'SET',prout,err(1))
+      call phy_optr('DELT'    , dt_4          ,   1,'SET',prout,err(2))
+      call phy_optr('PTOP_NML', Pres_ptop     ,   1,'SET',prout,err(3))
+
+* Continue physics initialization with optional parameters
+      call phy_optl('WET'        , Schm_moist_L  ,1,'SET',prout,err(4))
+      call phy_optl('CLIMAT'     , Clim_climat_L ,1,'SET',prout,err(5))
+      call phy_optl('COUPLING'   , C_coupling_L  ,1,'SET',prout,err(6))
+      call phy_optl('OFFLINE'    , Schm_offline_L,1,'SET',prout,err(7))
+*
+* Continue physics initialization with simplified physics parameter
+      call phy_opti('LIN_V4D'   , V4dg_conf      ,1,'SET',prout,err(8))
+*
+* Initialize physics configuration with default values and read 
+* user configuration in namelist from file 'model_settings'
+*
+      err = phy_init ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
+      call gem_stop('itf_phy_init',err)
+*
+      if ( Schm_theoc_L .and. Schm_phyms_L ) then
+         if (Lun_out.gt.0) write(Lun_out,9500)
+         Schm_phyms_L=.false.
+      endif
+      if (P_serg_srsus_L) then
+         if (Lun_out.gt.0) then
+            err = fnom (lun_tsrs, '../time_series.bin',
+     $                            'SEQ+FTN+UNF', nrec)
+ 600        read(lun_tsrs,end=700)
+            goto 600
+ 700        backspace(lun_tsrs)
+         endif
+         call set_xst ()
+      else
+         Xst_nstat = 0
+      endif
+*
+      if (.not.Schm_phyms_L) return
+*
+      err = 0
+*
+* Continue physics initialization with TL/AD physics 
+*
+*     Simplified physics parameter
+* 
+      P4d_sigma_wrt  = .true.
+*
+      do i=1,DIM_ERR
+         err(1) = err(1) + err(i)
+      end do
+      call gem_stop('itf_phy_init (set)',err)
+* 
+* The current physics interface operate on an arbitrary number of
+* columns p_ni containing G_nk levels. Here p_ni is defined as a
+* whole row of points 'j' and there will be p_nj rows to compute.
+*
+      p_nmp = 0
+      if (G_lam) p_nmp = 3
+      p_ni   = l_ni - pil_e - pil_w + p_nmp*west  + p_nmp*east
+      p_nj   = l_nj - pil_s - pil_n + p_nmp*south + p_nmp*north
+      p_offi = 1 + pil_w - p_nmp*west  - 1
+      p_offj = 1 + pil_s - p_nmp*south - 1
+*
+* Complete physics initialization (bus descriptions become available)
+*
+      err = phy_debu ( p_ni, G_nk, p_bent_top ,p_bdyn_top, p_bper_top, 
+     $                 p_bvol_top, prout, itf_phy_radiaf )
+      call gem_stop('itf_phy_init (debu)',err)
+*
+* Fetch a few physics configuration parameters needed for dynamics
+*
+      err = 0
+      call phy_optl('ICEMELT'   ,P_pbl_iceme_L  , 1, 'GET',prout,err(1))
+      call phy_optl('CHAUF'     ,P_pbl_ocean_L  , 1, 'GET',prout,err(2))
+      call phy_optc('SCHMSOL'   ,P_pbl_schsl_S  , 1, 'GET',prout,err(3))
+      call phy_optl('SNOALB_ANL',P_pbl_snoalb_L , 1, 'GET',prout,err(4))
+      call phy_optc('STCOND'    ,P_cond_stcon_S , 1, 'GET',prout,err(5))
+      call phy_optl('SATUCO'    ,P_cond_satu_L  , 1, 'GET',prout,err(6))
+      call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(7))
+*     Re-define P_out_moyhr in units of hours, rather than in timesteps
+      P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
+      if (C_coupling_L) then
+          call phy_opti('INDX_SOIL'   ,ig_indx_soil    ,1,'GET',prout,err(8))
+          call phy_opti('INDX_GLACIER',ig_indx_glacier ,1,'GET',prout,err(9))
+          call phy_opti('INDX_WATER'  ,ig_indx_water   ,1,'GET',prout,err(10))
+          call phy_opti('INDX_ICE'    ,ig_indx_ice     ,1,'GET',prout,err(11))
+          call phy_opti('INDX_AGREGE' ,ig_indx_agrege  ,1,'GET',prout,err(12))
+      endif
+      call phy_opti('LIN_PBL'   , P4d_pbl        ,1,'GET',prout,err(13))
+*
+*     Consistency check for output saturation calculations
+      if (Out3_satues_L .and. .not.P_cond_satu_L) then
+          Out3_satues_L = .false.
+          if (Lun_out.gt.0) write(Lun_out,9600)
+      endif
+*
+      do i=1,DIM_ERR
+         err(1) = err(1) + err(i)
+      end do
+      call gem_stop('itf_phy_init (get)',err)
+*
+      if (.not.G_lam) then
+*
+*C       computes FCPKUO flags and weights
+*        ---------------------------------
+         call itf_phy_fcpfw (Lun_out)
+*
+*C       computes weights and indices for (optional) second physics
+*        ----------------------------------------------------------
+         if ( P_pset_second_L) then
+*
+            call itf_phy_psetiw (Lun_out)
+*
+            call restore_options ( 2 ) 
+            call phy_optc('SCHMSOL',P_pbl2_schsl_S,1,'GET',prout,err(1))
+            call phy_optl('ICEMELT',P_pbl2_iceme_L,1,'GET',prout,err(2))
+            call restore_options ( 1 )
+*
+            err(1) = err(1) + err(2)
+            call gem_stop('itf_phy_init (pset)',err)
+*
+         endif
+*
+*C       computes vertical diffusion amplification factor
+*        ------------------------------------------------
+         call itf_phy_vlsp (Lun_out)
+*
+      endif
+*
+      call itf_phy_setvmm
+*
+*C      Initialize zonal, grid points and dynamic diagnostics
+*       -----------------------------------------------------
+*
+      call set_dia()
+* 
+* Obtain buses description from the physics package
+*
+      if ( (p_bent_top.le.maxbus).and.(p_bdyn_top.le.maxbus).and.
+     $     (p_bper_top.le.maxbus).and.(p_bvol_top.le.maxbus)) then
+         call phy_getbus (entnm,enton,entdc,entpar,p_bent_siz,maxbus,
+     $                                                     'E',prout)
+         call phy_getbus (dynnm,dynon,dyndc,dynpar,p_bdyn_siz,maxbus,
+     $                                                     'D',prout)
+         call phy_getbus (pernm,peron,perdc,perpar,p_bper_siz,maxbus,
+     $                                                     'P',prout)
+         call phy_getbus (volnm,volon,voldc,volpar,p_bvol_siz,maxbus,
+     $                                                     'V',prout)
+         call itf_phy_inikey
+         if (V4dg_conf.gt.0) call inikey_tr
+      else
+         if (Lun_out.gt.0) write (Lun_out,9000) 
+     $        max(p_bent_top,p_bdyn_top,p_bper_top,p_bvol_top)
+         call gem_stop('itf_phy_init',-1)
+      endif
+*
+      P_bphy_top  = p_bper_top+p_bdyn_top+p_bvol_top+p_bent_top
+*
+      if (Lun_out.gt.0) then
+         write(Lun_out,*) 'p_bper_top=',p_bper_top
+         write(Lun_out,*) 'p_bdyn_top=',p_bdyn_top
+         write(Lun_out,*) 'p_bvol_top=',p_bvol_top
+         write(Lun_out,*) 'p_bent_top=',p_bent_top
+      endif
+*
+* Allocate heap memory for history carrying physics quantities in BUSPER
+*
+      if ( .not. associated ( Phy_busper3D ) ) 
+     $             allocate ( Phy_busper3D (p_bper_siz*p_nj) )
+*
+ 1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)',
+     +       /,'====================================================')
+ 1001 format(/,'NO PHYSICS PACKAGE INITIALIZATION (S/R itf_phy_init)',
+     +       /,'====================================================')
+ 9000 format (/'==> STOP IN P_INIT: MAXBUS TOO SMALL IN BUSESD.CDK'/
+     $         '==> REQUIRED: ',i10/)
+ 9500 format(/,' PHYSICS NOT SUPPORTED FOR NOW IN THEORETICAL CASE')
+ 9600 format(/ 'Out3_satues_L reset to .false. as SATUCO eq false')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

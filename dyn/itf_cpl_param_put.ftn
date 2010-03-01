@@ -1,0 +1,78 @@
+*** s/r itf_cpl_param_put
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_cpl_param_put (errcode)
+      implicit none
+*
+      integer errcode
+*author
+*     S Chamberland [RPN] Mar 2006
+*
+*revision
+* v3_30 - Chamberland           - Initial version
+*
+*object
+*  Temporary fix to provide coupled oceam model with 
+*  some initial GEM model values
+*  Provides:
+*     date0 : integration start date YYYYMMDD
+*     time0 : integration start time hhmmss
+*     dstep : time step in sec
+*     step1 : 1st step of the integration slice
+*     step2 : last step of the integration slice
+*     step_total : total number of step of the model integration
+*
+*arguments
+*
+*implicits
+#include "step.cdk"
+#include "cstv.cdk"
+#include "lctl.cdk"
+*
+**
+      integer write_chan
+      integer ier,data_size
+      integer date0,time0,dstep,step1,step2
+
+      integer mgi_init,mgi_open,mgi_write
+      external mgi_init,mgi_open,mgi_write
+
+      data write_chan /-1/
+      save write_chan
+*
+*     ---------------------------------------------------------------
+*
+      if (write_chan<0) then
+         write_chan = mgi_init('gem2ocean_param')
+         if (write_chan > 0) then
+            ier = mgi_open(write_chan, 'W')
+            if (ier < 0) write_chan=0
+         endif
+      endif
+
+      if (write_chan > 0) then
+         date0 = 0
+         time0 = 0
+         dstep = NINT(Cstv_dt_8)
+         step1 = MIN(Lctl_step,Step_total)
+         step2 = MIN(step1 + Step_rsti,Step_total)
+
+         data_size = 1
+         ier = mgi_write(write_chan, date0, data_size, 'I')
+         ier = mgi_write(write_chan, time0, data_size, 'I')
+         ier = mgi_write(write_chan, dstep, data_size, 'I')
+         ier = mgi_write(write_chan, step1, data_size, 'I')
+         ier = mgi_write(write_chan, step2, data_size, 'I')
+         ier = mgi_write(write_chan, Step_total, data_size, 'I')
+      else
+         ier = -1
+      endif
+*
+      errcode = ier
+      if (errcode < 0) print *,' Error in itf_cpl_param_put'
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end subroutine itf_cpl_param_put

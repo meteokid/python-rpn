@@ -35,7 +35,7 @@
 #include "geomg.cdk"
 #include "grd.cdk"
 #include "pres.cdk" 
-#include "out1.cdk"
+#include "out3.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "ind.cdk"
@@ -51,7 +51,7 @@
       real psmin, psmax, hmin, hmin_glob
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
-      integer l, key0, key(Tr3d_ntr), longueur
+      integer key0, key(Tr3d_ntr), longueur
       real, allocatable, dimension(:,:,:) :: work
       real, allocatable, dimension(:,:,:) :: wrk3d
       real tr,hauteur

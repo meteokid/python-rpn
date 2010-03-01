@@ -41,6 +41,7 @@
 * v3_02 - Edouard S.        - correct non-hydrostatic version (F_mut0,F_tpt0,b2)
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_21 - Desgagne M.       - Revision OpenMP
+* v3_30 - Desgagne M.       - Revision OpenMP
 *
 *object
 *
@@ -165,7 +166,8 @@
       q1 = one / Cstv_tau_8
 *
 !$omp parallel shared (yexp2) private(xlog, ylog, xlog2, ylog2, wk2,
-!$omp$                 i0,in,j0,jn,nij,i00,j00,inn,jnn,w1,w2,w3,t1)
+!$omp$                 i0,in,j0,jn,nij,i00,j00,inn,jnn,w1,w2,w3,t1,
+!$omp$                 t2,t3,t4)
       i0=i01
       j0=j01
       in=in1

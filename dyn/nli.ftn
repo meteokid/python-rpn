@@ -4,7 +4,7 @@
 *
       subroutine nli()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *authors
 *      Alain Patoine & Gabriel Lemay
@@ -196,6 +196,12 @@
          vt0_ = 0
       endif
 *
+c     if (Acid_test_L) then tpt0,tplt0,pipt0,st0
+c     call glbstat (tpt0,'tpt0',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
+c    %                                         8+acid_j0,G_nj-8-acid_jn,1,G_nk)
+c     call glbstat (st0,'st0',LDIST_DIM,1,8+acid_i0,G_ni-8-acid_in,
+c    %                                    8+acid_j0,G_nj-8-acid_jn,1,1)
+c     endif
 *
       call nlip_2 ( nl_nu, nl_nv,  wk1, nl_nth, nl_n3, nl_n3p, 
      $              rheln, rhell, tpt0,  tplt0, pipt0, nl_ncn, 
@@ -203,6 +209,15 @@
      $              wijk1, wijk2, LDIST_DIM,l_nk )
 *
 *
+c     if (Acid_test_L) then nu,nv,nth,ncn
+c     call glbstat (nl_nu,'NU',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
+c    %                                        8+acid_j0,G_nj-8-acid_jn,1,G_nk)
+*     The rheln sees future Ru,Rv so it will not match to the piloting run
+c     if (Lun_out.gt.0) 
+c    % write(Lun_out,*)'Rheln has future Ru,Rv so no match to pilot run'
+c     call glbstat (rheln,'Rhln',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
+c    %                                        8+acid_j0,G_nj-8-acid_jn,1,G_nk)
+c     endif
       pnerr = vmmuld(-1,0)
 *
  1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')

@@ -16,12 +16,10 @@
 
       logical lam
       integer nifi, niu, niv, njfi, nju, njv, npfi, npu, npv,
-     $        pni, pnj, pniu, pnjv
-      real    xfi, yfi, xu, yv
-      pointer (paxfi, xfi(*)), (payfi, yfi(*)), 
-     $        (paxu , xu (*)), (payv , yv (*))
+     $        pni, pnj, pniu, pnjv, unf_casc
+      real, dimension(:), pointer :: xfi, yfi, xu, yv
 *
       common /e_grid_l  /  lam
-      common /e_grid_pos/  paxfi,payfi,paxu,payv
       common /e_grid_i  /  npfi, npu, npv, nifi, niu, niv, njfi, 
-     $                     nju, njv, pni, pnj, pniu, pnjv
+     $                     nju, njv, pni, pnj, pniu, pnjv,unf_casc
+      common /e_grid_p  /  xfi, yfi, xu, yv

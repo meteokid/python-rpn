@@ -15,6 +15,7 @@
 * v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
 * v3_00 - Desgagne & Lee     - Lam configuration
 * v3_21 - Desgagne M.        - Optimization
+* v3_30 - Desgagne M.        - Add calls to: set_opr and adw_set
 *
 *object
 *
@@ -40,6 +41,11 @@
       parameter( HUNDRED_8 = 100.0 )
 *
 *     ---------------------------------------------------------------
+
+      if (lun_out.gt.0) then
+          write(Lun_out,*)'SETTING up OPR,ADW,...(S/R SET_DYNC)'
+          write(Lun_out,*)'===================================='
+      endif
       if (Cstv_pitop_8.ne.-ONE_8) Cstv_pitop_8=HUNDRED_8*Cstv_pitop_8
       if (Cstv_pisrf_8.ne.-ONE_8) Cstv_pisrf_8=HUNDRED_8*Cstv_pisrf_8
 *     
@@ -109,6 +115,8 @@
      $                       log( Geomg_z_8(k)/Cstv_pisrf_8 )
       end do
       Cstvr_fistr_8(G_nk) = ZERO_8
+      call set_opr()
+      call adw_set()
 *
 *     ---------------------------------------------------------------
 *

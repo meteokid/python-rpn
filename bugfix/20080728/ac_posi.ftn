@@ -1,0 +1,218 @@
+***s/r ac_posi - find the positional points to extract cascade grid
+*                from the current model grid configuration
+#include "model_macros_f.h"
+*     
+      subroutine ac_posi (xp,yp,dimgx,dimgy,prout)
+      implicit none
+*     
+      logical prout
+      integer dimgx,dimgy
+      real*8 xp(dimgx), yp(dimgy)
+*
+*author
+*        Michel Desgagne - 2001 (from MC2)
+*revision
+* v3_30 - Lee V.       - initial version for GEMDM
+* v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+* v3_31 - Lee V.            - modification of Out_etik_S in out_sgrid only
+*
+**
+**
+#include "dcst.cdk"
+#include "grd.cdk"
+#include "grdc.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "geomn.cdk"
+#include "out.cdk"
+#include "rstr.cdk"
+#include "ptopo.cdk"
+#include "tr3d.cdk"
+#include "lun.cdk"
+*
+      integer  stretch_axis2
+      external stretch_axis2
+      character* 512 filen
+      integer i,j,k,cnt,ierx,dum1,dum2,ofi,ofj,
+     $        outindx(4),outindx_g(4,Ptopo_numproc)
+      integer is,nis,js,njs,iw,ie,niw,jw,jn,njw
+      integer gidi,gifi,gjfi
+      real x0, xl, y0, yl, dum, n1, n2, b1, b2
+      real*8  ac_xp(max(1,Grdc_ni)), ac_yp(max(1,Grdc_nj)),
+     $       xpx(dimgx), ypx(dimgy), rad2deg_8,xgi_8(G_ni),ygi_8(G_ni)
+*
+*---------------------------------------------------------------------
+*
+      rad2deg_8 = 180.0d0/Dcst_pi_8
+      xpx = xp * rad2deg_8
+      ypx = yp * rad2deg_8
+*
+      Grdc_gid = 0
+      Grdc_gjd = 0
+      Grdc_gif = 0
+      Grdc_gjf = 0
+*
+      if ((Grdc_proj_S.eq.'@').or.(Grdc_ndt.lt.0).or.
+     $     Grdc_ni.eq.0.or.Grdc_nj.eq.0) then
+         Grdc_proj_S = '@'
+         Grdc_ndt    = -1
+         return
+      endif
+*
+*     *** Positional parameters for f and q points
+*
+*
+      x0   = Grdc_lonr - (Grdc_iref-1) * Grdc_dx
+      y0   = Grdc_latr - (Grdc_jref-1) * Grdc_dx
+      xl   = x0 + (Grdc_ni  -1) * Grdc_dx
+      yl   = y0 + (Grdc_nj  -1) * Grdc_dx
+*
+      ierx = stretch_axis2 ( ac_xp, Grdc_dx, x0, xl, dum1, Grdc_ni,
+     $           Grdc_ni, dum, .false.,Lun_debug_L,360., dum2, .false.)
+      ierx = stretch_axis2 ( ac_yp, Grdc_dx, y0, yl, dum1, Grdc_nj,
+     $           Grdc_nj, dum, .false.,Lun_debug_L,180., dum2, .false.)
+*
+      Grdc_xp1 = ac_xp(1)
+      Grdc_yp1 = ac_yp(1)
+*
+      do i=1,dimgx
+         if (xpx(i).le.ac_xp(1)) Grdc_gid=i
+         if (xpx(i).le.ac_xp(Grdc_hblen+Grdc_pil+1)) gidi=i
+         if (xpx(i).le.ac_xp(Grdc_ni)) Grdc_gif=i
+         if (xpx(i).le.ac_xp(Grdc_ni-Grdc_hblen-Grdc_pil)) gifi=i
+      enddo
+      if (Grdc_gid.ge.Grdc_gif) Grdc_gid = 0
+*
+      do i=1,dimgy
+         if (ypx(i).le.ac_yp(1)) Grdc_gjd=i
+         if (ypx(i).le.ac_yp(Grdc_hblen+Grdc_pil+1)) Grdc_gjdi=i
+         if (ypx(i).le.ac_yp(Grdc_nj)) Grdc_gjf=i
+         if (ypx(i).le.ac_yp(Grdc_nj-Grdc_hblen-Grdc_pil)) gjfi=i
+      enddo
+      if (Grdc_gjd.ge.Grdc_gjf) Grdc_gjd = 0
+*
+* 
+c     if (Acid_test_L.and.Acid_pilot_L) 
+c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
+
+      if ((Grdc_gid.gt.0).and.(Grdc_gjd.gt.0)) then
+
+         if ( (Grdc_gid-2.gt.0) .and. (Grdc_gif+3.lt.dimgx) .and.
+     $        (Grdc_gjd-2.gt.0) .and. (Grdc_gjf+3.lt.dimgy) ) then
+            Grdc_gid = Grdc_gid - 2
+            Grdc_gjd = Grdc_gjd - 2
+            Grdc_gif = Grdc_gif + 3
+            Grdc_gjf = Grdc_gjf + 3
+         else
+            Grdc_gid = 0
+            Grdc_gjd = 0
+         endif
+      else
+         Grdc_gid = 0
+         Grdc_gjd = 0
+      endif
+*
+      Grdc_hbwe = -1
+      Grdc_hbsn = -1
+      Grdc_hbwe = max (gidi-Grdc_gid+1,Grdc_gif-gifi+1)
+      Grdc_hbsn = max (Grdc_gjdi-Grdc_gjd+1,Grdc_gjf-gjfi+1)
+
+      if (prout) write (6,1006) Grdc_hbwe, Grdc_hbsn
+ 999  if ((Grdc_gid.gt.Glb_pil_w).and.(Grdc_gjd.gt.Glb_pil_s)) then
+         n1 = Grdc_gif-Grdc_gid+1
+         n2 = Grdc_gjf-Grdc_gjd+1
+         b1 = Grdc_hbwe + 1
+         b2 = Grdc_hbsn + 1
+         if (4.*b1*(n1-b1)/n1/n1.gt.0.95) Grdc_hbwe = -1
+         if (4.*b2*(n2-b2)/n2/n2.gt.0.95) Grdc_hbsn = -1
+         if (prout) write (6,1003) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf
+      else
+         if (prout) write (6,1004)
+         Grdc_proj_S = '@'
+         Grdc_ndt    = -1
+      endif
+      if ((Grdc_hbsn.le.0).or.(Grdc_hbwe.le.0)) then
+          if (prout) write(6,1005)
+          Grdc_bcs_hollow_L = .false.
+      else
+            call bcs_hollow(Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,
+     $      Grdc_gjdi,Grdc_hbsn,Grdc_hbwe,is,nis,js,njs,jn,iw,niw,ie,jw,njw)
+
+            if (prout) write(6,1007) is,nis,js,njs,iw,ie,niw,jw,jn,njw
+      endif
+*
+      if ((Grdc_proj_S.ne.'@').and.(.not.Rstri_rstn_L))  then
+*
+         call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,.false.,
+     $                               -1,-1,1,'','',Geomn_longs,Geomn_latgs)
+         outindx = 0
+         if (Ptopo_blocme.eq.0) then
+            outindx(1) = out_idg
+            outindx(2) = out_jdg
+            outindx(3) = out_nisl
+            outindx(4) = out_njsl
+         endif
+         call RPN_COMM_gather (outindx  , 4,"MPI_INTEGER"  ,outindx_g,
+     $                              4, "MPI_INTEGER"  ,0,"GRID", ierx)
+*
+         if (prout) then
+         filen='../../output/casc/3df_filemap.txt'
+         open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
+         do i=1,Ptopo_numproc
+            if ( (outindx_g(3,i).gt.0).and.(outindx_g(4,i).gt.0) ) then
+               ofi=Grdc_gid+outindx_g(1,i)-1
+               ofj=Grdc_gjd+outindx_g(2,i)-1
+               write (9,'(2i8,4e15.7,2i10)') 
+     $               outindx_g(1,i),outindx_g(2,i),
+     $               xp(ofi),xp(ofi+outindx_g(3,i)-1),
+     $               yp(ofj),yp(ofj+outindx_g(4,i)-1),
+     $               outindx_g(3,i),outindx_g(4,i)
+            endif
+         end do
+         close (9)
+         endif
+*
+      endif
+*
+      if (Grdc_trnm_S(1).eq.'@#$%') then
+         do i=1,Tr3d_ntr
+            Grdc_trnm_S(i) = Tr3d_name_S(i)
+	 end do
+         Grdc_ntr = Tr3d_ntr
+      else
+         cnt = 0
+         do k=1,max_trnm
+            if (Grdc_trnm_S(k).eq.'@#$%') goto 89
+            do i=1,Tr3d_ntr
+               if (Grdc_trnm_S(k).eq.Tr3d_name_S(i)) then
+                  cnt=cnt+1
+                  Grdc_trnm_S(cnt) = Tr3d_name_S(i)
+               endif
+            end do
+         end do
+ 89      Grdc_trnm_S(cnt+2) = '@#$%'
+* And add humidity
+         cnt=cnt+1
+         do i=cnt,2,-1
+            Grdc_trnm_s(i) = Grdc_trnm_s(i-1)
+         enddo
+         Grdc_trnm_s(1) = 'HU  '
+         Grdc_ntr = cnt
+      endif
+      if (prout) then
+          write (6,1001)
+          do i=1,Grdc_ntr
+             write(6,*) Grdc_trnm_S(i)
+          enddo
+      endif
+*
+ 1001 format (' Tracers to be written for cascade run are ')
+ 1003 format (' Cascade grid: ',4i6)
+ 1004 format (' Cascade grid: NO grid will be output')
+ 1005 format (' Cascade grid: Only 3DF files will be output')
+ 1006 format (' Cascade grid: Width of W/E band=',I6, ' N/S band=',I6)
+ 1007 format (' Cascade grid: is,nis,js,njs,iw,ie,niw,jw,jn,njw'//4x,10I6)
+*--------------------------------------------------------------------
+      return
+      end
+

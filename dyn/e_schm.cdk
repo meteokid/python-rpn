@@ -1,4 +1,4 @@
       logical  e_schm_stlag, e_schm_cocub, e_schm_adcub, 
-     $         e_schm_fgcub, e_Schm_offline_L, e_schm_phym_L
+     $         e_schm_fgcub, e_Schm_offline_L
       common /e_schm/ e_schm_stlag, e_schm_cocub, e_schm_adcub, 
-     $                e_schm_fgcub, e_Schm_offline_L, e_schm_phym_L
+     $                e_schm_fgcub, e_Schm_offline_L

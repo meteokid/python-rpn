@@ -1,0 +1,152 @@
+***s/r nest_blen -
+*
+#include "model_macros_f.h"
+*
+      subroutine nest_blen ()
+      implicit none
+*
+*author 
+*     Michel Desgagne   - Spring 2006
+*
+*revision
+* v3_30 - Lee V.          - initial version
+*
+*object
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "hblen.cdk"
+#include "lun.cdk"
+#include "vtopo.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer err,key(26),i,j,k,nvar
+      integer key1(Tr3d_ntr),key1_,key2(Tr3d_ntr),key2_, n
+      real tr,tr1
+      pointer (patr, tr(LDIST_SHAPE,*)),(patr1,tr1(LDIST_SHAPE,*))
+*----------------------------------------------------------------------
+*
+      if ( (north+south+west+east.lt.1) .or.
+     $    ((Hblen_x.le.0).and.(Hblen_y.le.0)) ) return
+*
+      if (Lun_debug_L) write(Lun_out,1001)
+      key(1 )=VMM_KEY(nest_u)
+      key(2 )=VMM_KEY(nest_v)
+      key(3 )=VMM_KEY(nest_t)
+      key(4 )=VMM_KEY(nest_psd)
+      key(5 )=VMM_KEY(nest_pip)
+      key(6 )=VMM_KEY(nest_fip)
+      key(7 )=VMM_KEY(nest_td)
+      key(8 )=VMM_KEY(nest_fi)
+      key(9 )=VMM_KEY(nest_q)
+      key(10)=VMM_KEY(nest_s)
+      key(11)=VMM_KEY(nest_tp)
+      key(12)=VMM_KEY(ut1)
+      key(13)=VMM_KEY(vt1)
+      key(14)=VMM_KEY(tt1)
+      key(15)=VMM_KEY(psdt1)
+      key(16)=VMM_KEY(pipt1)
+      key(17)=VMM_KEY(fipt1)
+      key(18)=VMM_KEY(tdt1)
+      key(19)=VMM_KEY(fit1)
+      key(20)=VMM_KEY(qt1)
+      key(21)=VMM_KEY(st1)
+      key(22)=VMM_KEY(tpt1)
+      nvar = 22
+*
+      if (.not.Schm_hydro_L) then
+         key(23)=VMM_KEY(nest_w)
+         key(24)=VMM_KEY(nest_mu)
+         key(25)=VMM_KEY(wt1)
+         key(26)=VMM_KEY(mut1)
+         nvar = 26
+      endif
+*
+      err = vmmlod(key,nvar)
+      err = VMM_GET_VAR(nest_u)
+      err = VMM_GET_VAR(nest_v)
+      err = VMM_GET_VAR(nest_t)
+      err = VMM_GET_VAR(nest_psd)
+      err = VMM_GET_VAR(nest_pip)
+      err = VMM_GET_VAR(nest_fip)
+      err = VMM_GET_VAR(nest_td)
+      err = VMM_GET_VAR(nest_fi)
+      err = VMM_GET_VAR(nest_q)
+      err = VMM_GET_VAR(nest_s)
+      err = VMM_GET_VAR(nest_tp)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(tdt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(qt1)
+      err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(tpt1)
+      if (.not.Schm_hydro_L) then
+         err = VMM_GET_VAR(nest_w)
+         err = VMM_GET_VAR(nest_mu)
+         err = VMM_GET_VAR(wt1)
+         err = VMM_GET_VAR(mut1)
+      endif
+*
+* Update the nesting values in the blending zone before blending
+* if the orography is growing
+      if (Vtopo_L) then
+	call vtopo_bnd_update(nest_q,nest_fi,nest_t,nest_pip,
+     $    nest_s,LDIST_DIM,G_nk,Hblen_x,Hblen_y)
+      endif
+*
+* Set up blending zones
+      call nesajr (ut1  ,nest_u  ,LDIST_DIM,G_nk ,1,0,Hblen_x,Hblen_y)
+      call nesajr (vt1  ,nest_v  ,LDIST_DIM,G_nk ,0,1,Hblen_x,Hblen_y)
+      call nesajr (tdt1 ,nest_td ,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (psdt1,nest_psd,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (tt1  ,nest_t  ,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (tpt1 ,nest_tp ,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (fit1 ,nest_fi ,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (fipt1,nest_fip,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (qt1  ,nest_q  ,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (pipt1,nest_pip,LDIST_DIM,G_nk ,0,0,Hblen_x,Hblen_y)
+      call nesajr (st1  ,nest_s  ,LDIST_DIM,   1 ,0,0,Hblen_x,Hblen_y)
+*
+      if (.not. Schm_hydro_L) then
+         call nesajr (wt1  ,nest_w  ,LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
+         call nesajr (mut1 ,nest_mu ,LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
+      endif
+      err = vmmuld(key,nvar)
+*
+      key2_ = VMM_KEY (nest_tr)
+      key1_ = VMM_KEY (trt1)
+      do n=1,Tr3d_ntr
+         key2(n) = key2_ + n
+         key1(n) = key1_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key2,Tr3d_ntr)
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key2(n),patr,tr)
+            err = vmmget(key1(n),patr1,tr1)
+            call nesajr (tr1, tr, LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
+         enddo
+         err = vmmuld(key1,Tr3d_ntr)
+         err = vmmuld(key2,Tr3d_ntr)
+      endif
+*
+*
+ 1001 format(/,'BLENDING TO PILOT AREA(S/R NEST_BLEN):',/,60('='))
+*----------------------------------------------------------------------
+      return
+      end

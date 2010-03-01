@@ -1,0 +1,416 @@
+***s/r hzd_fact_ad - ADJ of hzd_fact_tl 
+*
+#include "model_macros_f.h"
+*
+      subroutine hzd_fact_ad (  F_u   , F_v   , F_psd , F_tp , F_ip ,
+     %                          F_td  , F_t   , F_it  , F_plt, F_q  ,
+     %                          F_pip , F_w   , F_qp  , F_mu , F_mul, F_s, 
+     %                          F_pipm, F_qpm , DIST_DIM,Nk)
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+      real   F_u  (DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
+     %       F_psd(DIST_SHAPE,Nk), F_tp(DIST_SHAPE,Nk),
+     %       F_ip (DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
+     %       F_t  (DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
+     %       F_plt(DIST_SHAPE,Nk), F_q (DIST_SHAPE,Nk),
+     %       F_pip(DIST_SHAPE,Nk), F_w (DIST_SHAPE,Nk),
+     %       F_qp (DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
+     %       F_mul(DIST_SHAPE,Nk), F_s (DIST_SHAPE)
+*
+      real  F_pipm(DIST_SHAPE,Nk), F_qpm(DIST_SHAPE,Nk)
+*
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - remove vertical modulation 
+*                           - ADJ of diff. on phi instead of phi' at model lid 
+*                           - replace xfis by topo 
+* v2_31 - Tanguay M.        - ADJ of control for diffusion on momentum only
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+*                           - Remove F_xfis
+* v3_20 - Tanguay M.        - Adjoint of variable higher order diffusion operator
+*
+*object
+*     see id section
+*
+*arguments
+* 
+*implicits
+#include "glb_ld.cdk"
+#include "ldnh.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "trp.cdk"
+#include "hzd.cdk"
+#include "opr.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+*
+      integer i, j, k, dim
+      real*8 c_8
+      real work(LDIST_SHAPE,Nk), work_m(LDIST_SHAPE,Nk)
+      real*8 wk1_8
+      real*8 g1_8(LYDIST_SIZ*(Trp_12dmax-Trp_12dmin+1)*(G_ni+Ptopo_npex))
+      real*8 g2_8((Trp_12dmax-Trp_12dmin+1)*(Trp_22max-Trp_22min+1)*(G_nj+Ptopo_npey))
+      real*8, dimension (Ldnh_maxy*G_ni) :: aix_8,bix_8,cix_8,dix_8
+      real*8, dimension (Trp_22max *G_nj) :: aiy_8,biy_8,ciy_8
+*
+      real*8 ZERO_8
+      parameter (ZERO_8=0.0)
+*     ______________________________________________________
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+*     Zero adjoint variables
+*     ----------------------
+      wk1_8 = ZERO_8
+*
+!$omp parallel 
+*
+      dim= LYDIST_SIZ*(Trp_12dmax-Trp_12dmin+1)*(G_ni+Ptopo_npex)
+!$omp do
+      do i = 1,dim
+      g1_8(i) = ZERO_8
+      enddo
+!$omp enddo
+*
+      dim= (Trp_12dmax-Trp_12dmin+1)*(Trp_22max-Trp_22min+1)
+     $                              *(G_nj+Ptopo_npey)
+!$omp do
+      do i = 1,dim
+      g2_8(i) = ZERO_8
+      enddo
+!$omp enddo
+*
+!$omp do
+      do k=1,Nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+      work(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+!$omp enddo
+*
+!$omp end parallel 
+*
+*     Geopotential & total divergence (Cstv_phidf_8*Cstv_dt_8)
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      if ( Cstv_phidf_8 .gt. 0.0) then
+*
+         c_8 = Cstv_phidf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+         if (Hzd_difva_L) then
+           call hzd_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $       Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $       Hzd_yp2su_8,G_ni,G_nj,Ldnh_maxy,l_nj,
+     $       Trp_22max,Trp_22n,LYDIST_DIM,G_nj,l_nj)
+         else
+           call hzd_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $       Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $       Opr_opsyp2_8,G_ni,G_nj,Ldnh_maxy,l_nj,
+     $       Trp_22max,Trp_22n,LYDIST_DIM,G_nj,l_nj)
+         endif
+*
+      if (Hzd_uvwdt_L) goto 9988
+*
+*     TRAJECTORY
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+*
+!$omp parallel 
+*
+!$omp do 
+            do k = 1, Nk
+            do j = 1,l_nj
+            do i = 1,l_ni
+*
+               work_m(i,j,k) = F_pipm(i,j,k)
+*
+            end do
+            end do
+            end do
+!$omp enddo 
+*
+*****************************
+*  ADJ of                   *
+*  3. Nonyhydrostatic model * 
+*****************************
+*
+*        ----------------
+*        START TRAJECTORY
+*        ----------------
+*
+*        Indirect diffusion of q'
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp do 
+         do k=1, Nk  !
+         do j=1,l_nj ! p = (pi)exp(q')
+         do i=1,l_ni ! ~~~~~~~~~~~~~~~
+*
+            work_m(i,j,k) = ( Geomg_z_8(k) + dble(work_m(i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) )
+*
+         end do
+         end do
+         end do
+!$omp enddo 
+*
+!$omp end parallel 
+*
+         call hzd_del2  (work_m, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        --------------
+*        END TRAJECTORY
+*        --------------
+*
+*        START ADJOINT CALCULATIONS
+*        --------------------------
+!$omp do 
+         do k=1, Nk  !
+         do j=1,l_nj ! q' = log(p/pi)
+         do i=1,l_ni ! ~~~~~~~~~~~~~~
+*
+            work  (i,j,k) = ( dble(F_qp(i,j,k)  )*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) )
+     %                     /( dble(work_m(i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) ) + work  (i,j,k)
+            F_pip (i,j,k) = (-dble(work_m(i,j,k))*(                dble(F_qp  (i,j,k))) )  
+     %                     /( dble(work_m(i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) ) + F_pip (i,j,k) 
+            F_qp  (i,j,k) = ZERO_8
+*
+         end do
+         end do
+         end do
+!$omp enddo 
+*
+         call hzd_del2_ad  (work, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        Indirect diffusion of q'
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp parallel do 
+         do k=1, Nk  !
+         do j=1,l_nj ! p = (pi)exp(q')
+         do i=1,l_ni ! ~~~~~~~~~~~~~~~
+*
+            F_qp(i,j,k) = ( Geomg_z_8(k) + dble(work_m(i,j,k)) ) 
+     %                       *exp( dble(F_qpm(i,j,k)) ) * dble(work(i,j,k)) + F_qp(i,j,k)
+*
+            work(i,j,k) = (                dble(work  (i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) )           
+*
+         end do
+         end do
+         end do
+!$omp end parallel do 
+*
+         call hzd_del2_ad  (F_mul, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         call hzd_del2_ad  (F_mu, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        END ADJOINT CALCULATIONS
+*        ------------------------
+*
+         endif
+*
+         if ( .not. Schm_hydro_L ) then
+*
+*     ADJ of
+*     Vertical wind (physical)
+*     ~~~~~~~~~~~~~~~~~~~~~~~~
+         call hzd_del2_ad  (F_w, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         endif
+*
+*     ADJ of
+*     The hydrostatic pressure: pi'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+         call hzd_del2_ad(F_pip, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+!$omp parallel 
+*
+*     ADJ of
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+!$omp do 
+            do k = 1, Nk
+            do j = 1,l_nj
+            do i = 1,l_ni
+*
+               F_pip(i,j,k) = work(i,j,k) + F_pip(i,j,k)
+                work(i,j,k) = ZERO_8
+*
+            end do
+            end do
+            end do
+!$omp enddo 
+         endif
+*
+*     ADJ of
+*     The temperature: T', T'lin & hence T
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp do 
+         do k=1, Nk
+         do j=1,l_nj
+         do i=1,l_ni
+            F_tp(i,j,k) = F_t(i,j,k) + F_tp(i,j,k)
+             F_t(i,j,k) = ZERO_8
+         end do
+         end do
+         end do
+!$omp enddo 
+*
+!$omp end parallel 
+*
+         call hzd_del2_ad(F_plt, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         call hzd_del2_ad(F_tp, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*     ADJ of
+*     Mass related fields
+*     ~~~~~~~~~~~~~~~~~~~
+*
+* ADJ of
+* updating phi' at the top
+*
+!$omp parallel 
+*
+!$omp do 
+         do j = 1,l_nj
+         do i = 1,l_ni
+            F_it(i,j,1) = F_ip(i,j,1) + F_it(i,j,1)
+            F_ip(i,j,1) = ZERO_8
+         end do
+         end do
+!$omp enddo 
+*
+!$omp do 
+         do k = Nk,2,-1
+         do j = 1,l_nj
+         do i = 1,l_ni
+            F_ip(i,j,k) = F_it(i,j,k) + F_ip(i,j,k)
+            F_it(i,j,k) = ZERO_8
+         end do
+         end do
+         end do
+!$omp enddo 
+*
+!$omp end parallel 
+*
+         call hzd_del2_ad(F_it, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         call hzd_del2_ad(F_ip, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+ 9988 continue
+*
+*        ADJ of
+*        Total divergence
+*        ~~~~~~~~~~~~~~~~
+         call hzd_del2_ad(F_td, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        ADJ of 
+*        Vertical motion in pressure coord.
+*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         call hzd_del2_ad(F_psd, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+      endif
+*
+*     ADJ of
+*     Momentum
+*     ~~~~~~~~
+      if ( Cstv_uvdf_8 .gt. 0.0 ) then
+*
+         c_8 = Cstv_uvdf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+         call hzd_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $       Geomg_cyv2_8,Opr_opsxp0_8,Opr_opsxp2_8,Hzd_yp0_8,Hzd_yp2_8,
+     $       G_ni,G_nj,Ldnh_maxy,l_nj,
+     $       Trp_22max,Trp_22n,LYDIST_DIM,G_njv,l_njv)
+*
+         call hzd_del2_ad(F_v, wk1_8, Opr_opsxp0_8(G_ni+1), Hzd_opsyp0_8,
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_njv)
+*
+         if (Hzd_difva_L) then
+           call hzd_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $       Geomg_cy2_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Hzd_yp2su_8,
+     $       G_ni,G_nj,Ldnh_maxy,l_nj,
+     $       Trp_22max,Trp_22n,LYDIST_DIM,G_nj,l_nj)
+         else
+           call hzd_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $       Geomg_cy2_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Opr_opsyp2_8,
+     $       G_ni,G_nj,Ldnh_maxy,l_nj,
+     $       Trp_22max,Trp_22n,LYDIST_DIM,G_nj,l_nj)
+         endif
+*
+         call hzd_del2_ad(F_u, wk1_8, Hzd_opsxp0_8, Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+      endif
+*
+*     __________________________________________________________________
+ 1000 format(/,
+     + 3X,'ADJ of PERFORM FACTORIZED HORIZONTAL DIFFUSION: (S/R HZD_FACT_AD)',
+     +/3X,'=================================================================',/)
+*
+      return
+      end

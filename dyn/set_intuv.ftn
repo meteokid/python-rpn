@@ -4,7 +4,7 @@
 *
       subroutine set_intuv
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *       jean cote/andre methot - rpn/cmc - sept 96
@@ -12,6 +12,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version (from setinuvl v1_03)
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_30 - Dugas B.          - Corriger l'allocation avec hpalloc
 *
 *object
 *	See above id.
@@ -60,22 +61,22 @@
 *
       COMMON_INIT(intuv,0)
 *
-      call hpalloc(intuv_c0xxu_8_  ,LARRAY1DX*2,err,1)
-      call hpalloc(intuv_c1xxu_8_  ,LARRAY1DX*2,err,1)
-      call hpalloc(intuv_c2xxu_8_  ,LARRAY1DX*2,err,1)
-      call hpalloc(intuv_c0xux_8_  ,LARRAY1DX*2,err,1)
-      call hpalloc(intuv_c1xux_8_  ,LARRAY1DX*2,err,1)
-      call hpalloc(intuv_c2xux_8_  ,LARRAY1DX*2,err,1)
-      call hpalloc(intuv_c0yyv_8_  ,LARRAY1DY*2,err,1)
-      call hpalloc(intuv_c1yyv_8_  ,LARRAY1DY*2,err,1)
-      call hpalloc(intuv_c2yyv_8_  ,LARRAY1DY*2,err,1)
-      call hpalloc(intuv_c0yvy_8_  ,LARRAY1DY*2,err,1)
-      call hpalloc(intuv_c1yvy_8_  ,LARRAY1DY*2,err,1)
-      call hpalloc(intuv_c2yvy_8_  ,LARRAY1DY*2,err,1)
-      call hpalloc(inuvl_wxxu3_8_  ,LARRAY1DX*4*2,err,1)
-      call hpalloc(inuvl_wxux3_8_  ,LARRAY1DX*4*2,err,1)
-      call hpalloc(inuvl_wyyv3_8_  ,LARRAY1DY*4*2,err,1)
-      call hpalloc(inuvl_wyvy3_8_  ,LARRAY1DY*4*2,err,1)
+      call hpalloc(intuv_c0xxu_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c1xxu_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c2xxu_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c0xux_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c1xux_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c2xux_8_  ,LARRAY1DX,err,8)
+      call hpalloc(intuv_c0yyv_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c1yyv_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c2yyv_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c0yvy_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c1yvy_8_  ,LARRAY1DY,err,8)
+      call hpalloc(intuv_c2yvy_8_  ,LARRAY1DY,err,8)
+      call hpalloc(inuvl_wxxu3_8_  ,LARRAY1DX*4,err,8)
+      call hpalloc(inuvl_wxux3_8_  ,LARRAY1DX*4,err,8)
+      call hpalloc(inuvl_wyyv3_8_  ,LARRAY1DY*4,err,8)
+      call hpalloc(inuvl_wyvy3_8_  ,LARRAY1DY*4,err,8)
 *
       do i = 1-G_halox,l_ni+G_halox
          indx = offi + i

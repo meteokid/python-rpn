@@ -11,7 +11,7 @@
      $                          F_npex1, F_npey1, ai, bi, ci,
      $                          fdg1,fdg2,fdwfft,fdg12,NSTOR,nev)
 *
-#include "impnone.cdk"
+      implicit none
 #include "ptopo.cdk"
 *
 *author    Abdessamad Qaddouri
@@ -64,7 +64,7 @@ C     call tmg_start(88,'sol_parite total')
      %                                   Minz, Maxz, Nk, fdg1, 1,2 )
 
 !$omp parallel private(ki0,kin,kkii,jr,nevi,gnii)
-!$omp%          shared(kitotal,kilon,ai,bi,ci)
+!$omp%          shared(kitotal,kilon,ai,bi,ci,nev,nstor)
 !$omp do
       do i= 1,Gni
           do k= Minz,Maxz

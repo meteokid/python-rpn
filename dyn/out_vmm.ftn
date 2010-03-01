@@ -18,6 +18,7 @@
 *
 *revision
 * v3_20 - Lee V.            - initial MPI version
+* v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
 *
 *object
 *     output all the VMM fields
@@ -33,7 +34,6 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "dimout.cdk"
 #include "out3.cdk"
 #include "out.cdk"
 #include "grid.cdk"
@@ -357,6 +357,7 @@
      $        Grid_y0(outd_grid(F_set)),Grid_y1(outd_grid(F_set)),
      $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+1,
      $        Grid_stride(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),
      $        Geomn_longu,Geomn_latgs )
          do ii=1,windidx
             pnerr = vmmget(windkey(ii),patr,tr)
@@ -376,6 +377,7 @@
      $        Grid_y0(outd_grid(F_set)),min(Grid_y1(outd_grid(F_set)),G_njv),
      $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+2,
      $        Grid_stride(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),
      $        Geomn_longs,Geomn_latgv)
          do ii=1,windidx
             pnerr = vmmget(windkey(ii),patr,tr)
@@ -401,6 +403,7 @@
      $        Grid_y0(outd_grid(F_set)),Grid_y1(outd_grid(F_set)),
      $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+1,
      $        Grid_stride(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),
      $        Geomn_longu,Geomn_latgs )
          do ii=1,windidx
             pnerr = vmmget(windkey(ii),patr,tr)
@@ -428,6 +431,7 @@
      $        Grid_y0(outd_grid(F_set)),min(Grid_y1(outd_grid(F_set)),G_njv),
      $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+2,
      $        Grid_stride(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),
      $        Geomn_longs,Geomn_latgv)
          do ii=1,windidx
             pnerr = vmmget(windkey(ii),patr,tr)

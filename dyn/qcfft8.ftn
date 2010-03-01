@@ -4,7 +4,12 @@
 *     implementation inspired by Numerical Recipes pp. 513
 *     but with a different normalization
 
-*     created: Sept 99 by j.cote, rpn
+*author 
+*     j.cote, rpn     - Sept 1999
+
+*revision
+* v3_30 - McTaggart-Cowan   - call qcfft8_vec if defined (NEC)
+* v3_30 - Qaddouri/Lee      - initialize work vector to zero (LAM bug)
 
 *     a     is the array containing input and output data
 *     inc   is the increment within each data 'vector'
@@ -61,6 +66,14 @@
       ija(i,j) = 1 + (j0+j-1)*jump + i*inc
       ijw(i,j) = j + i*511
 *
+#if defined (NEC)
+      call qcfft8_vec ( a, inc, jump, lot, isign )
+      return 
+#endif
+*
+      w(:)=0.0
+
+*      
 *VDIR NODEP
       do 100 j0=0,lot-1,511
       jlot  = min( 511, lot - j0 )

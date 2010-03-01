@@ -1,0 +1,53 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+*** e_sfile_3df - to open a new 3DF file 
+*
+#include "model_macros_f.h"
+*
+      subroutine e_sfile_3df (datev,msg,gid, gif, gjd, gjf,
+     $                                             nvar)
+      implicit none
+*
+      character* (*) datev, msg
+      integer  gid, gif, gjd, gjf, nvar
+
+*author  M. Desgagne 2001 (MC2 out_sfile_3df)
+*
+*revision
+* v3_30 - Lee. V - modified to open a 3DF file for data extracted
+*                  from analysis input
+*
+#include "e_anal.cdk"
+#include "e_grids.cdk"
+#include "grdc.cdk"
+#include "e_tr.cdk"
+*
+      integer  longueur
+      external longueur
+      integer idg,jdg,mode,ntr
+      character*2  md
+      character*15 startindx
+      character*512 filen
+*
+*------------------------------------------------------------------
+*
+*     Set the unit for cascade output
+      unf_casc = 201
+      idg=1
+      jdg=1
+      mode=2
+      ntr=1+E_tr3d_ntr ! for HU
+*
+      write (md,'(i2.2)') mode
+      write (startindx,'((i7.7),a1,(i7.7))') idg,'-',jdg
+      filen= '3df'//md//'_'//datev//'_'//startindx
+      filen= './process/casc/'//filen(1:longueur(filen))
+      open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
+     $                                          position='APPEND')
+c     print *,'e_sfile_3df: opened ',filen(1:longueur(filen))
+      call wrgeo_3df (xg_8(gid),gif-gid+1,yg_8(gjd),gjf-gjd+1,
+     $                z_8,pia,pibb,lv,nvar,ntr,unf_casc)
+      write (unf_casc) msg,nvar+ntr,mode
+*
+*------------------------------------------------------------------
+      return
+      end

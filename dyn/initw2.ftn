@@ -18,6 +18,8 @@
 * v2_31 - Edouard S.        - initial version
 * v3_02 - Edouard S.        - correct a bug
 * v3_21 - Desgagne M.       - OpenMP optimization
+* v3_30 - Lee V.            - use of geomg_invhsy_8, moved j0,jn,ng before
+*                             parallel region
 *
 *object 
 *     compute the vertical wind diagonostically in the hybrid coordinate 
@@ -87,6 +89,12 @@
       in2= l_niu
       jn1= l_nj
       jn2= l_njv
+      j0 = 1
+      jn = l_njv
+      if (l_south) j0 = 3
+      if (l_north) jn = l_njv - 1      
+*     ng is used in hatoprg
+      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
 *
 ****************************************************
 * TERM1: HORIZONTAL ADVECTION OF GEOGRAPHIC HEIGHT *
@@ -113,7 +121,7 @@
          do j = 1, jn2
          do i = 1, in1
             wk2(i,j,k) = ( F_fi(i,j+1,k)-F_fi(i,j,k) ) * geomg_cyv2_8(j)
-     $                    / geomg_hsy_8(j) * F_vv(i,j,k) / Dcst_grav_8
+     $                    * geomg_invhsy_8(j) * F_vv(i,j,k) / Dcst_grav_8
          end do
          end do
       end do
@@ -141,10 +149,6 @@
       end do
 !$omp enddo
 *
-      j0 = 1
-      jn = l_njv
-      if (l_south) j0 = 3
-      if (l_north) jn = l_njv - 1      
 !$omp do
       do k=1,G_nk
          do j = j0, jn
@@ -223,12 +227,13 @@
      $                   wk4(minx,miny,k), LDIST_DIM, 1 )
       end do
 !$omp enddo
+!$omp end parallel
 *
 *     Vertical integration over pi*
 *
-      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
       call hatoprg (wk4,wk2,1.0,geomg_hz_8,ng,G_nk)
 *
+!$omp parallel
 !$omp do
       do k = 1, G_nk
       do j = 1, jn1

@@ -2,19 +2,23 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine out_dyn ()
-*
-*implicits
+      subroutine out_dyn (reg_out,casc_out)
       use v4d_prof, only: Pr_nsim4d
-*
       implicit none
 *
+      logical reg_out
+      integer casc_out
 *
-*author 
+*author
 *     V. Lee    - rpn - July  2004 (from dynout2 v3_12)
 *
 *revision
-* v3_20 - Lee V.            - initial MPI version (from dynout2 v3_11)
+* v3_20 - Lee V.            - Initial MPI version (from dynout2 v3_11)
+
+* v3_30 - Milbrandt J.      - Added extra hydrometeor variables (snow and hail)
+*                             for Milbrandt-Yau scheme for water-loading
+* v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
+
 *
 *object
 *     Subroutine to control the production of
@@ -26,7 +30,7 @@
 *implicits
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "dimout.cdk"
+#include "out3.cdk"
 #include "lun.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
@@ -36,17 +40,19 @@
 #include "rstr.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
-#include "out3.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 #include "ptopo.cdk"
 #include "tr3d.cdk"
 #include "grd.cdk"
+#include "grdc.cdk"
 #include "grid.cdk"
 #include "v4dg.cdk"
 #include "lctl.cdk"
 #include "vt1m.cdk"
 #include "cstv.cdk"
+#include "out.cdk"
+#include "acid.cdk"
 *
 **
       integer doout, longueur,
@@ -58,24 +64,36 @@
      $        pnlkey(15),i,j,k,trkey0(Tr3d_ntr),trkey1(Tr3d_ntr),keytotal
       character*4 ext_S
       character*6 etikadd_S
+      character*15 datev,pdate
       integer i0,in,j0,jn,ii,jj,kk,levset,n,ip3,pnerr,nk_o
+      integer is,nis,js,njs,iw,ie,niw,jw,njw
       integer,   dimension(:), allocatable :: ind_o
       real deg2rad
       real ptop(LDIST_SHAPE), wlao(LDIST_SHAPE)
-      real qh(LDIST_SHAPE,G_nk),
+      real qx(LDIST_SHAPE,G_nk),
      $     wlnph(LDIST_SHAPE,G_nk),
      $     vtm(LDIST_SHAPE,G_nk)
       integer keym(Tr3d_ntr),key0m
-      logical periodx_L,v4dgconf_L
+      logical periodx_L,v4dgconf_L,doneonce,ontimec
       real hut1,qct1,hum1,qjt1
       pointer (patrm, hum1(LDIST_SHAPE,*))
       pointer (patr, hut1(LDIST_SHAPE,*)),(patr2, qjt1(LDIST_SHAPE,*)),
      $        (patr1, qct1(LDIST_SHAPE,*))
-
+      real*8 dayfrac,sec_in_day
+      parameter ( sec_in_day=86400.0d0 )
+      data doneonce/.false./
+      save doneonce
 **
 *
 *     check if output is required and initialize control tables
 *     ---------------------------------------------------------------
+*
+      if (Rstri_rstn_L.and..not.doneonce) goto 998
+*
+*
+*########## REGULAR OUTPUT #######################################
+*
+      if (reg_out) then
 *
       i0 = 1
       in = l_ni
@@ -92,7 +110,7 @@
 *
          if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
          return
-*     
+*
       endif
       call tmg_start( 66, 'OUT_DYN')
 *
@@ -148,7 +166,7 @@
          pnlkey(10) = VMM_KEY(tpt1m)
          pnlkey(11) = VMM_KEY(st1m)
 *
-         keytotal  =11 
+         keytotal  =11
          pnerr = vmmlod(pnlkey,11)
          pnerr = VMM_GET_VAR(tpt1)
          pnerr = VMM_GET_VAR(tpt1m)
@@ -170,7 +188,7 @@
       do k=1,l_nk
       do j=j0,jn
       do i=i0,in
-         qh (i,j,k) = 0.0
+         qx (i,j,k) = 0.0
       enddo
       enddo
       enddo
@@ -195,16 +213,18 @@
                if (Tr3d_name_S(n).eq.'QC'.or.
      $             Tr3d_name_S(n).eq.'QR'.or.
      $             Tr3d_name_S(n).eq.'QI'.or.
-     $             Tr3d_name_S(n).eq.'QG'    ) then
+     $             Tr3d_name_S(n).eq.'QN'.or.
+     $             Tr3d_name_S(n).eq.'QG'.or.
+     $             Tr3d_name_S(n).eq.'QH'    ) then
                    pnerr = vmmget(trkey1(n),patr2,qjt1)
                    do k=1,l_nk
                    do j=j0,jn
                    do i=i0,in
-                      qh (i,j,k) = qh (i,j,k) + max(0.0,qjt1(i,j,k))
+                      qx (i,j,k) = qx (i,j,k) + max(0.0,qjt1(i,j,k))
                    enddo
                    enddo
                    enddo
-               endif  
+               endif
              endif
          endif
       enddo
@@ -228,7 +248,7 @@
             endif
          enddo
       endif
-      
+
 *
 *     setup of ip3 and modifs to label
 *
@@ -252,7 +272,7 @@
           if (V4dg_ad_L) ext_S = '_ad'
           write(etikadd_S,'(a3,i3.3)')ext_S,ip3
       endif
-      
+
 *
 *     setup of filename extension if needed
       if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
@@ -275,6 +295,7 @@
      $                   periodx_L,
      $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
      $                   Grid_stride(outd_grid(kk)),
+     $                   Grid_etikext_s(outd_grid(kk)),
      $                   Geomn_longs,Geomn_latgs)
                levset = Outd_lev(kk)
                nk_o   = Level_max(levset)
@@ -282,7 +303,8 @@
                call out_slev(Level_typ(levset),Level(1,levset),
      $                       ind_o,nk_o,G_nk,Level_kind_ip1,'d')
                call out_sfile(Out3_closestep,Lctl_step,etikadd_S,ip3,ext_S)
- 
+
+
 *
 *     output of 3-D tracers
 *
@@ -292,7 +314,7 @@
 *
 *     output of temperature, humidity and mass fields,omega
 *
-               call out_thm(fit1,tt1,st1,qct1,qh,hut1,tpt1,psdt1,tdt1,zz1,
+               call out_thm(fit1,tt1,st1,qct1,qx,hut1,tpt1,psdt1,tdt1,zz1,
      $                      vtm,hum1,st1m,
      $                      wlnph,ptop,wlao,
      $                      (l_maxx-l_minx+1)*(l_maxy-l_miny+1),G_nk,
@@ -332,14 +354,16 @@
             if ( Outd_step(kk).eq.dostep(jj) ) then
 *           (if the timestep set of this sortie set is to output now)
                  periodx_L=.false.
-                 if (.not.G_lam .and. 
-     $               (Grid_x1(Outd_grid(kk))-Grid_x0(Outd_grid(kk))+1).eq. 
+                 if (.not.G_lam .and.
+     $               (Grid_x1(Outd_grid(kk))-Grid_x0(Outd_grid(kk))+1).eq.
      $                G_ni ) periodx_L=.true.
                  call out_sgrid(Grid_x0(outd_grid(kk)),Grid_x1(outd_grid(kk)),
      $                   Grid_y0(outd_grid(kk)),Grid_y1(outd_grid(kk)),
      $                   periodx_L,
      $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
-     $                   Grid_stride(outd_grid(kk)),Geomn_longs,Geomn_latgs)
+     $                   Grid_stride(outd_grid(kk)),
+     $                   Grid_etikext_s(outd_grid(kk)),
+     $                   Geomn_longs,Geomn_latgs)
                  levset = Outd_lev(kk)
                  nk_o   = Level_max(levset)
                  allocate (ind_o(nk_o+1))
@@ -356,7 +380,7 @@
  150     continue
  200  continue
       endif
- 
+
 *
 *     Delay closure of files, de-allocation, wlog write out if...
       if ( .not. (Lctl_step .eq. 0 .and. Schm_phyms_L).or.v4dgconf_L) then
@@ -369,6 +393,69 @@
          endif
       endif
       call tmg_stop(66, 'OUT_DYN')
+*     end of regular output
+      endif
+*
+*#################################################################
+*
+*########## SPECIAL OUTPUT FOR CASCADE ###########################
+*
+      if ((casc_out.gt.0).and.(Grdc_proj_S.ne.'@').and.(Grdc_ndt.ge.0))
+     $then
+*
+      ontimec = .false.
+      if ( Lctl_step.ge.Grdc_start.and.Lctl_step.le.Grdc_end) then
+      if ( Grdc_ndt.eq.0 ) then
+         ontimec = Lctl_step.eq.0
+      else
+         ontimec = (mod(Lctl_step+Grdc_start,Grdc_ndt).eq.0)
+      endif
+      endif
+*
+      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
+     $     ((Lctl_step.gt.(Init_dfnp-1)/2)) ) ontimec = .false.
+
+      if ( ontimec ) then
+*
+         if ((Lctl_step.eq.Grdc_start).or.(.not.Grdc_bcs_hollow_L)) then
+*
+             call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,
+     $                   .false.,-1,-1,1,'',Geomn_longs,Geomn_latgs)
+
+             call datf2p (pdate,Out3_date)
+             dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
+             call incdatsd (datev,pdate,dayfrac)
+             if (Acid_test_L) then
+               call acid_outdyn_3df (datev,casc_out,Grdc_gid,Grdc_gif,
+     $                                              Grdc_gjd,Grdc_gjf)
+             else
+               call out_dyn_3df (datev,casc_out,Grdc_gid,Grdc_gif,
+     $                                          Grdc_gjd,Grdc_gjf)
+             endif
+*
+         else
+*
+            call bcs_hollow(Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,
+     $      Grdc_gjdi,Grdc_hbsn,Grdc_hbwe,is,nis,js,njs,jn,iw,niw,ie,jw,njw)
+            call datf2p (pdate,Out3_date)
+            dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
+            call incdatsd (datev,pdate,dayfrac)
+            if (Acid_test_L) then
+                call acid_outdyn_bcs (datev,is,nis,js,jn,njs,iw,ie,
+     $                                   niw,jw,njw,casc_out)
+            else
+                call out_dyn_bcs (datev,is,nis,js,jn,njs,iw,ie,
+     $                                   niw,jw,njw,casc_out)
+            endif
+         endif
+*
+      endif
+*
+      ontimec = .false.
+*
+      endif
+*
+ 998  doneonce = .true.
 *
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,')')
  7002 format(/,' OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (',I8,')')

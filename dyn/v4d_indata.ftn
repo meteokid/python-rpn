@@ -1,0 +1,61 @@
+***s/r v4d_indata
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_indata1 (F_vtopo_L)
+      implicit none
+*
+      logical F_vtopo_L
+*
+#include "v4dg.cdk"
+*
+*-------------------------------------------------------------------
+*
+      if ( V4dg_conf.ne.0) then
+           if ( F_vtopo_L) 
+     %     call gem_stop ('v4d_INDATA: V4dg_conf.ne.0.and.Vtopo_L NOT VALID', -1)
+           if (V4dg_part.eq.3.and.V4dg_oktr_L ) call v4d_rwtraj (1) 
+*
+      endif
+*
+*-------------------------------------------------------------------
+*
+      return
+      end
+*
+      subroutine v4d_indata2(skipcode)
+      implicit none
+      integer skipcode
+*
+*
+#include "v4dg.cdk"
+*
+*-------------------------------------------------------------------
+*
+      if ( V4dg_conf.ne.0 .and. V4dg_part.ne.2 ) then 
+           call predat ()
+           skipcode=1
+      endif
+*
+*-------------------------------------------------------------------
+*
+      return
+      end
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_indata3 ()
+      implicit none
+*
+*
+#include "v4dg.cdk"
+*
+*-------------------------------------------------------------------
+*
+      if (V4dg_conf.ne.0.and..not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) 
+     $      call v4d_img2uv ()
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

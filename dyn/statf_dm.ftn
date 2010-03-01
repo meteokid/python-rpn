@@ -20,6 +20,7 @@
 * v2_00 - Desgagne M.       - initial MPI version (from MC2)
 * v3_20 - Desgagne & Lee    - to statfld on each tile, then MPI reduce
 * v3_20                       to obtain global stats
+* v3_30 - Tanguay M.        - Add if(Lun_out.gt.0) 
 *
 *object
 *
@@ -42,7 +43,7 @@
 #include "lun.cdk"
 #include "ptopo.cdk"
 *
-      integer i,j,k,imin,jmin,kmin,imax,jmax,kmax,err,
+      integer i,j,k,imin,jmin,kmin,imax,jmax,kmax,err,no,
      $        nijk(8,Ptopo_numproc),tnijk(8,Ptopo_numproc),nw,i0,in,j0,jn
       real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8,
      $       minmax(3,max(2,Ptopo_numproc)),tminmax(3,max(2,Ptopo_numproc))
@@ -176,11 +177,17 @@ c    $                          MPI_SUM, 0, MPI_COMM_WORLD, err )
          var   = max(0.d0,(sumd2 + moy*moy*npt_8 - 2*moy*sum) / npt_8)
          var   = sqrt(var)
 *
-         if (F_r8stat_L) then
-            write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+         no=F_no
+c        if (Acid_test_L.and.Acid_pilot_L) no=F_no+acid_npas
+c        imin = imin-acid_i0
+c        imax = imax-acid_i0
+c        jmin = jmin-acid_j0
+c        jmax = jmax-acid_j0
+         if (F_r8stat_L.and.Lun_out.gt.0) then
+            write(Lun_out,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind,
      $                  imax,jmax,kmax,maxd,F_from_S
-         else
-            write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+         elseif (Lun_out.gt.0) then
+            write(Lun_out,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind,
      $                  imax,jmax,kmax,maxd,F_from_S
          endif
 *

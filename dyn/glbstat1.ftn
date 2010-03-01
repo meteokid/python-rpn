@@ -1,0 +1,76 @@
+***s/r glbstat1 - glbstat with F_from_S character string
+*
+#include "model_macros_f.h"
+*
+      subroutine glbstat1(F_field, F_var_S, F_from_S,DIST_DIM, nk,
+     $                    F_i0,F_in,F_j0,F_jn,F_k0,F_kn)
+*
+      implicit none
+*
+      character * (*) F_var_S,F_from_S
+      integer DIST_DIM,nk,F_i0,F_in,F_j0,F_jn,F_k0,F_kn
+      real F_field(DIST_SHAPE,nk)
+*
+*author
+*     M. Desgagne
+*
+*revision
+* v3_30 - Lee V. - glbstat with an extra argument to comment the statfld
+*
+*object
+*     see rhs
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_field       I         Field to be operated on
+* F_var_S       I         User provided string to define F_field
+* F_from_S      I         User provided string to comment the statfld
+* F_i0,F_j0     I         Global lower-left indexes of the sub-domain
+*                            on which to perform statistics
+* F_in,F_jn     I         Global upper-right indexes of the sub-domain
+*                            on which to perform statistics
+* F_k0,F_kn     I         Range of levels on which to perform statistics
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "lctl.cdk"
+*
+      integer  err
+      real wk1
+      pointer (pawk1, wk1(G_ni,G_nj,*))
+*
+*----------------------------------------------------------------------
+*
+      if (Lctl_r8stat_L) then
+*     double precision will give by default, a globally collected data
+*     before the mean and variance is calculated
+
+         if (Ptopo_myproc.eq.0) then
+             call hpalloc (pawk1, G_ni*G_nj*nk, err, 1)
+         endif
+*
+         call glbcolc (wk1,G_ni,G_nj,F_field,DIST_DIM,nk)
+*
+         if (Ptopo_myproc.eq.0) then
+             call statfld (wk1 ,F_var_S,Lctl_step,F_from_S,1,G_ni,1,G_nj,nk,
+     $                              F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+             call hpdeallc (pawk1  ,err, 1)
+         endif
+      else
+*     single precision will give by default, sums are collected per processor
+*     and then re-summed afterwards for the mean and variance calculations
+*     This is a more efficient process but will not necessarily give the same
+*     answers in different topology.
+*     
+         call statf_dm (F_field,F_var_S,Lctl_step,F_from_S, .false.,
+     $                  Minx,Maxx,Miny,Maxy,Nk,
+     $                  F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+      endif
+*
+*----------------------------------------------------------------------
+*
+      return
+      end

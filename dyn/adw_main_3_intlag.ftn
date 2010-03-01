@@ -24,6 +24,8 @@
 * v3_20 - Gravel & Valin & Tanguay - Lagrange 3D
 * v3_20 - Tanguay M.          - Improve alarm when points outside advection grid
 * v3_20 - Dugas B.            - correct calculation for LAM when Glb_pil gt 7
+* v3_30 - McTaggart-Cowan R.  - add adw_comp_cub_L 
+* v3_30 - Tanguay M.          - Validation for LAM version 
 *
 *language
 *     fortran 77
@@ -60,12 +62,11 @@
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
+#include "adw_comp.cdk"
 *
 *modules
-      integer  vmmlod, vmmget, vmmuld,
-     $         read_db_file,write_db_file,rewind_db_file
-      external vmmlod, vmmget, vmmuld,
-     $         read_db_file,write_db_file,rewind_db_file
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
       integer i0,in,j0,jn
       integer pnerr, pnlkey1(30), key1(Tr3d_ntr), key0(Tr3d_ntr), 
      $        key1_, key0_, pnlod, err, dim
@@ -112,6 +113,22 @@
      $         (mod(Lctl_step,Step_gstat).eq.0) )
      $         call adw_cfl_lam ( F_u, F_v, F_w, i0, in, j0, jn )
           call adw_ckbd_lam( F_u, F_v, F_w, i0, in, j0, jn )
+*
+         if ( V4dg_conf.ne.0.0 ) then
+*
+            outside = 0
+            if ( Adw_trunc(1) + Adw_trunc(2) +
+     $           Adw_trunc(3) + Adw_trunc(4) .gt. 0 ) outside = 1
+*
+            sum_outside = 0
+            call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
+     $                                             "MPI_SUM","grid",ier)
+*
+            if(sum_outside.ne.0) call gem_stop
+     $           ('ADW_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
+*
+         endif
+*
       endif
 *
       if (.not.G_lam) then
@@ -224,6 +241,8 @@
 * Perform interpolation
 ***********************************************************************
 *
+      adw_comp_cub_L = .true.	!force recomputation of position
+*
       call adw_interp2 (ruw2, ruw1, F_u, F_v,
      %                  .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
 *
@@ -297,16 +316,16 @@
       call hpdeallc(Adw_wrkb_    ,err,1)
       call hpdeallc(Adw_wrkc_    ,err,1)
       if (.not.G_lam) then
-      call hpdeallc(Adw_capx2_   ,err)
-      call hpdeallc(Adw_capy2_   ,err)
-      call hpdeallc(Adw_capz2_   ,err)
-      call hpdeallc(Adw_n2_      ,err)
-      call hpdeallc(Adw_xdd2_    ,err)
-      call hpdeallc(Adw_xgg2_    ,err)
-      call hpdeallc(Adw_ydd2_    ,err)
-      call hpdeallc(Adw_ygg2_    ,err)
-      call hpdeallc(Adw_cz2_     ,err)
-      call hpdeallc(Adw_wrka_    ,err)
+      call hpdeallc(Adw_capx2_   ,err,1)
+      call hpdeallc(Adw_capy2_   ,err,1)
+      call hpdeallc(Adw_capz2_   ,err,1)
+      call hpdeallc(Adw_n2_      ,err,1)
+      call hpdeallc(Adw_xdd2_    ,err,1)
+      call hpdeallc(Adw_xgg2_    ,err,1)
+      call hpdeallc(Adw_ydd2_    ,err,1)
+      call hpdeallc(Adw_ygg2_    ,err,1)
+      call hpdeallc(Adw_cz2_     ,err,1)
+      call hpdeallc(Adw_wrka_    ,err,1)
       endif
 *
  1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INT)')

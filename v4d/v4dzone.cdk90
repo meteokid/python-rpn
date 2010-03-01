@@ -1,0 +1,35 @@
+module v4dzone
+!
+!author M.Tanguay
+!
+!revision
+! v0_06 - Tanguay M.        - initial MPI version
+!
+!
+!______________________________________________________________________
+!                                                                      |
+! VARIABLES ASSOCIATED to 4D-Var: ZONES in EZSCINT                     |
+!______________________________________________________________________|
+! izon               | Indice of px,py near poles (1=north,2=south)    |
+! xzon               | Px near poles                                   |
+! yzon               | Py near poles                                   |
+! nzon               | Dimension of izon                               |
+! linepoln           | Scalar field  on  last latitude circle          |
+! linepols           | Scalar field  on first latitude circle          |
+! linepol u-v n      | Wind   fields on  last latitude circle          |
+! linepol u-v s      | Wind   fields on first latitude circle          |
+!______________________________________________________________________|
+!
+ save
+!
+!     ----------------
+!     ZONES in EZSCINT
+!     ----------------
+      integer V4dz_nzon(2)
+      integer, pointer,     dimension(:)   :: V4dz_izon1,V4dz_izon2 
+      real,    pointer,     dimension(:)   :: V4dz_xzon1,V4dz_xzon2,V4dz_yzon1,V4dz_yzon2
+      real,    allocatable, dimension(:,:) :: V4dz_linepoln, V4dz_linepols,  &
+                                              V4dz_linepolun,V4dz_linepolus, &
+                                              V4dz_linepolvn,V4dz_linepolvs 
+!
+end module v4dzone

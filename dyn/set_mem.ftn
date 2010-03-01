@@ -5,7 +5,7 @@
 *
       subroutine set_mem
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     michel roch - rpn - june 1993
@@ -26,6 +26,7 @@
 #include "lun.cdk"
 #include "mem.cdk"
 #include "schm.cdk"
+#include "vmmlist.cdk"
 *
 *modules
       integer  vmmallc
@@ -52,7 +53,8 @@
       space = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
       space = max(nw_min,Mem_mx3db) * space
 *
-      err   = vmmallc ( space )
+      err       = vmmallc ( space )
+      vmm2rstrt = 0
 *
  1000 format(
      %/,'ALLOCATION OF CENTRAL MEMORY FOR VMM MANAGER (S/R SET_MEM)',

@@ -1,0 +1,280 @@
+***s/r adw_main_2_pos_noset_tl - TLM of adw_main_2_pos when Adw_nosetint_L=.TRUE. 
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_main_2_pos_noset_tl ( F_it, F_u, F_v, F_w, F_um, F_vm, F_wm )
+*
+      implicit none
+*
+      integer F_it
+      real F_u (*),F_v (*),F_w (*)
+      real F_um(*),F_vm(*),F_wm(*)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_20 - Tanguay M.        - Optimized SETINT/TRILIN
+*                           - TLM of Change test a lower and upper boundaries
+* v3_21 - Tanguay M.        - Call adw_main_2_pos_noset_tl based on Adw_nosetint_L
+* v3_30 - Tanguay M.        - correct calculation for LAM when Glb_pil gt 7 
+*                           - correct parameters adw_trilin_turbo_tl
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectory             |  i  |
+*        |                                                       |     |
+* F_u,F_v| input:  3 components of wind on advection grid        |  io |
+* F_w    | output: 3 components of upstream positions at t1      |     |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+#include "vthm.cdk"
+#include "vt1m.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+************************************************************************
+      logical doh_L
+*
+      integer pnerr, pnlkey1(30), pnlod
+*
+      integer i, j, k, n, ij, ijk, nij, nijk, it
+      integer i1,j1,k1,nn
+*
+      integer, dimension(l_ni*l_nj*l_nk) :: n1
+      real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1
+*
+      integer, dimension(l_ni*l_nj*l_nk) :: n1m
+      real,    dimension(l_ni*l_nj*l_nk) :: capx1m,capy1m,capz1m
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1m,wrky1m,wrkz1m,wrkc1m
+*
+*
+      real dummy, dth
+      real*8 r2pi_8,TWO_8,HALF_8,pdp_8,pdm_8
+      parameter (TWO_8 = 2.0,HALF_8=0.5)
+
+      integer i0,in,j0,jn
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *l_nk
+*
+      r2pi_8 = TWO_8 * Dcst_pi_8
+      dth    = Cstv_dt_8/2.
+      pdp_8  = 1.d0 + 1.d-6
+      pdm_8  = 1.d0 - 1.d-6
+************************************************************************
+*
+      pnlkey1(1) = VMM_KEY(xth)
+      pnlkey1(2) = VMM_KEY(yth)
+      pnlkey1(3) = VMM_KEY(zth)
+      pnlkey1(4) = VMM_KEY(xcth)
+      pnlkey1(5) = VMM_KEY(ycth)
+      pnlkey1(6) = VMM_KEY(zcth)
+      pnlkey1(7) = VMM_KEY(xct1)
+      pnlkey1(8) = VMM_KEY(yct1)
+      pnlkey1(9) = VMM_KEY(zct1)
+      pnlod = 9
+*
+      pnlkey1(1+pnlod) = VMM_KEY(xthm)
+      pnlkey1(2+pnlod) = VMM_KEY(ythm)
+      pnlkey1(3+pnlod) = VMM_KEY(zthm)
+      pnlkey1(4+pnlod) = VMM_KEY(xcthm)
+      pnlkey1(5+pnlod) = VMM_KEY(ycthm)
+      pnlkey1(6+pnlod) = VMM_KEY(zcthm)
+      pnlkey1(7+pnlod) = VMM_KEY(xct1m)
+      pnlkey1(8+pnlod) = VMM_KEY(yct1m)
+      pnlkey1(9+pnlod) = VMM_KEY(zct1m)
+      pnlod = 9+pnlod
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(xth)
+      pnerr = VMM_GET_VAR(yth)
+      pnerr = VMM_GET_VAR(zth)
+      pnerr = VMM_GET_VAR(xcth)
+      pnerr = VMM_GET_VAR(ycth)
+      pnerr = VMM_GET_VAR(zcth)
+      pnerr = VMM_GET_VAR(xct1)
+      pnerr = VMM_GET_VAR(yct1)
+      pnerr = VMM_GET_VAR(zct1)
+*
+      pnerr = VMM_GET_VAR(xthm)
+      pnerr = VMM_GET_VAR(ythm)
+      pnerr = VMM_GET_VAR(zthm)
+      pnerr = VMM_GET_VAR(xcthm)
+      pnerr = VMM_GET_VAR(ycthm)
+      pnerr = VMM_GET_VAR(zcthm)
+      pnerr = VMM_GET_VAR(xct1m)
+      pnerr = VMM_GET_VAR(yct1m)
+      pnerr = VMM_GET_VAR(zct1m)
+
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4       + (Glb_pil_w - 7)
+          if (l_east) in=l_niu-2 - (Glb_pil_e - 7)
+          if (l_south) j0=4      + (Glb_pil_s - 7)
+          if (l_north) jn=l_njv-2- (Glb_pil_n - 7)
+      endif
+************************************************************************
+      do it=1,F_it
+************************************************************************
+                     doh_L = .false.
+      if (it .eq. 1) doh_L = .true.
+*
+      Adw_hor_L = doh_L
+      Adw_ver_L = .true.
+      call adw_trilin_turbo_tl (wrkx1, F_u, 1.0,xth, yth, zth,
+     %                          wrkx1m,F_um,    xthm,ythm,zthm,
+c    %                          Adw_Fn_I,capx1m,capy1m,capz1m, 
+     %                          capx1m,capy1m,capz1m,Adw_Fn_I,
+     %                          nijk,i0,in,j0,jn,l_nk)
+      call adw_trilin_turbo_tl (wrky1, F_v, 1.0,xth, yth, zth,
+     %                          wrky1m,F_vm,    xthm,ythm,zthm,
+c    %                          Adw_Fn_I,capx1m,capy1m,capz1m,
+     %                          capx1m,capy1m,capz1m,Adw_Fn_I,
+     %                          nijk,i0,in,j0,jn,l_nk)
+*
+************************************************************************
+      call adw_trajsp_tl ( xth,  yth,  xcth,  ycth,  zcth,  wrkx1,  wrky1, 
+     %                     xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
+     %                     i0,in,j0,jn)
+************************************************************************
+*
+      Adw_hor_L = .true.
+      Adw_ver_L = .false.
+      call adw_trilin_turbo_tl (wrkx1, F_w, -dth,xth, yth, zth, 
+     %                          wrkx1m,F_wm,     xthm,ythm,zthm,
+c    %                          Adw_Fn_I,capx1m,capy1m,capz1m,
+     %                          capx1m,capy1m,capz1m,Adw_Fn_I,
+     %                          nijk,i0,in,j0,jn,l_nk)
+*
+************************************************************************
+!$omp parallel private(n)
+!$omp do
+      do k = 2,l_nk-1
+      do j = j0,jn
+      do i = i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*        TRAJECTORY
+*        ----------
+         zthm(n) = Geomg_z_8(k) + TWO_8*wrkx1m(n)
+*
+*        TLM
+*        ---
+         zth(n) = TWO_8*wrkx1(n)
+*
+*        TRAJECTORY and TLM
+*        ------------------
+*        The following min statement is expanded as two IF blocks:
+*        zthm(n) = min( pdm_8*Geomg_z_8(l_nk), max( 1.0d0*zthm(n), pdp_8*Geomg_z_8(1) ) 
+*
+         if (1.0d0*zthm(n).lt.pdp_8*Geomg_z_8(1)) then
+             zthm(n) = pdp_8*Geomg_z_8(1)
+             zth (n) = 0.
+         elseif (1.0d0*zthm(n).gt.pdm_8*Geomg_z_8(l_nk)) then
+             zthm(n) = pdm_8*Geomg_z_8(l_nk)
+             zth (n) = 0.
+         endif
+*
+*        TRAJECTORY and TLM
+*        ------------------
+         zthm(n) = HALF_8*(zthm(n) + Geomg_z_8(k)) 
+         zth (n) = HALF_8*(zth (n)               ) 
+*
+      enddo
+      enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+      call adw_trajex_tl (F_u, F_v, xct1, yct1, zct1, xcth, ycth, zcth,
+     %                    F_um,F_vm,xct1m,yct1m,zct1m,xcthm,ycthm,zcthm,
+     %                    i0,in,j0,jn)
+*
+!$omp parallel private(n)
+!$omp do
+      do j = j0,jn
+      do i = i0,in
+         n = ((j-1)*l_ni) + i   !for k=1
+*
+*        TRAJECTORY
+*        ----------
+         F_wm(n) = Geomg_z_8(1)
+*
+*        TLM 
+*        ---
+         F_w(n) = 0. 
+*
+         n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
+*
+*        TRAJECTORY
+*        ----------
+         F_wm(n) = Geomg_z_8(l_nk)
+*
+*        TLM 
+*        ---
+         F_w(n) = 0. 
+*
+      enddo
+      enddo
+!$omp enddo
+!$omp do
+      do k = 2,l_nk-1
+         do j = j0,jn
+         do i = i0,in
+            n=(k-1)*nij+((j-1)*l_ni) + i
+*
+*           TRAJECTORY
+*           ----------
+            F_wm(n) = zthm(n) - Geomg_z_8(k)
+            F_wm(n) = Geomg_z_8(k) + 2.0 * F_wm(n)
+*
+*           TLM
+*           ---
+            F_w(n) = zth(n) 
+            F_w(n) = 2.0 * F_w(n)
+*
+         enddo
+         enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+*
+      pnerr = vmmuld(-1,0)
+*
+ 1000  format(3X,'TLM of CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS_NOSET_TL)')
+      return
+      end

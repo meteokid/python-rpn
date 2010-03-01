@@ -1,11 +1,11 @@
 ***s/r uv_acg2g - Arakawa-C grid to grid interpolator for wind 
-*                  like quantities 
+*                 like quantities 
 *
 #include "model_macros_f.h"
 *
       subroutine uv_acg2g (F_dst,F_src,F_gridi,F_grido,DIST_DIM, 
      $                                  Nk, F_i0,F_in,F_j0,F_jn)
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM,Nk,F_i0,F_in,F_j0,F_jn
       integer F_gridi, F_grido
@@ -21,7 +21,8 @@
 *                         and linear interpolation are not yet
 *                         implemented in these options.
 * v3_20 - Tanguay M.    - replace grido by gridi in exchange halo
-* v3_21 - Desgagne M.   - Revision OpenMP
+* v3_22 - Desgagne M.   - Revision OpenMP
+* v3_30 - Tanguay M.    - Revision Openmp LAM 
 *
 *object
 *     Subroutine to move a given field to a specified target grid
@@ -67,7 +68,8 @@
          F_in = l_ni
          F_j0 = 1
          F_jn = l_nj
-!$omp do
+*
+!$omp parallel do
          do k =  1, Nk
          do j = F_j0, F_jn
          do i = F_i0, F_in
@@ -75,18 +77,17 @@
          end do
          end do
          end do
-!$omp enddo
+!$omp end parallel do
 *
       else 
-!$omp single
+*
          nie = l_ni
          nje = l_nj
          if (F_gridi.eq.1) nie = l_niu
          if (F_gridi.eq.2) nje = l_njv
          call rpn_comm_xch_halo (F_src,LDIST_DIM,nie,nje,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-
-!$omp end single
+*
       endif
 
       if ( F_gridi .eq. 1 .and. F_grido .eq. 0) then
@@ -100,7 +101,8 @@
             if (cubic) F_i0 = 3
          endif
          if ((G_lam).and.(l_east).and.(cubic)) F_in = l_niu-1
-!$omp do
+*
+!$omp parallel do
          do k = 1,Nk
             if ( .not. cubic ) then ! Linear interpolation 
 *
@@ -124,7 +126,7 @@
 *
             endif
          end do
-!$omp enddo
+!$omp end parallel do
 *
       endif
 
@@ -140,7 +142,8 @@
          else
             if (l_south) F_j0 = 2
          endif
-!$omp do
+*
+!$omp parallel do
          do k = 1,Nk
             if ( .not. cubic ) then ! Linear interpolation
 *
@@ -200,7 +203,8 @@
             endif
             endif
          enddo
-!$omp enddo
+!$omp end parallel do
+*
          if (.not.G_lam) then
             F_j0 = 1
             F_jn = l_nj
@@ -219,7 +223,8 @@ cstl            Linear interpolation not coded yet
          F_jn = l_nj
          if ((G_lam).and.(l_west)) F_i0 = 2
          if ((G_lam).and.(l_east)) F_in = l_niu-1
-!$omp do
+*
+!$omp parallel do
          do k = 1,Nk
             do j = F_j0, F_jn
             do i = F_i0, F_in
@@ -230,8 +235,8 @@ cstl            Linear interpolation not coded yet
             end do
             end do
          end do
-!$omp enddo
-
+!$omp end parallel do
+*
       endif
 
       if ( F_gridi .eq. 0 .and. F_grido .eq. 2) then
@@ -242,8 +247,8 @@ cstl            Linear interpolation not coded yet
          F_jn = l_njv
          if (l_south) F_j0 = 2
          if (l_north) F_jn = l_njv - 1
-
-!$omp do
+*
+!$omp parallel do
          do k = 1,Nk
             do j = F_j0, F_jn
             do i = F_i0, F_in
@@ -272,7 +277,8 @@ cstl            Linear interpolation not coded yet
                endif
             endif
          enddo
-!$omp enddo
+!$omp end parallel do
+*
          if (.not.G_lam) then
             F_j0 = 1
             F_jn = l_njv

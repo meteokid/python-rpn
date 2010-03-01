@@ -1,0 +1,134 @@
+***s/r hspng_drv_tr - Equivalent to hspng_drv for TRAJECTORY 
+*                    (F_pip, F_qp (No Hyd) ONLY)
+*
+#include "model_macros_f.h"
+*
+      subroutine hspng_drv_tr (F_pip,F_qp,DIST_DIM,Nk) 
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk
+      real   F_pip(DIST_SHAPE,Nk), F_qp(DIST_SHAPE,Nk)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_02 - Tanguay M.        - initial MPI version
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+* v3_20 - Tanguay M.        - Adjoint of variable higher order diffusion operator
+*
+*object
+*    see id section
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "trp.cdk"
+#include "hspng.cdk"
+#include "hzd.cdk"
+#include "ldnh.cdk"
+#include "opr.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+*
+      integer i, j, k
+      real*8 HALF_8,TWO_8,c_8
+      parameter( HALF_8  = 0.5 )
+      parameter(  TWO_8  = 2.0 )
+*
+      real work(LDIST_SHAPE,Nk)
+      real*8 wk1_8(LDIST_SIZ*Nk)
+      real*8 g1_8(LYDIST_SIZ*(Trp_12dmax-Trp_12dmin+1)*(G_ni+Ptopo_npex))
+      real*8 g2_8((Trp_12dmax-Trp_12dmin+1)*(Trp_22max-Trp_22min+1)*(G_nj+Ptopo_npey))
+      real*8, dimension (Ldnh_maxy*G_ni) :: aix_8,bix_8,cix_8,dix_8
+      real*8, dimension (Trp_22max*G_nj) :: aiy_8,biy_8,ciy_8
+*     __________________________________________________________________
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+      if ( Cstv_phidf_8 .gt. 0.0) then
+*
+         if (Hspng_uvwdt_L) goto 9988
+*
+         c_8 = Cstv_phidf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+*
+         if (Hzd_difva_L) then
+            call hspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $                     Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $                     Hzd_yp2su_8,G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
+         else
+            call hspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $                     Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $                     Opr_opsyp2_8,G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
+         endif
+*
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+            do k = 1, Nk
+            do j = 1, l_nj
+            do i = 1, l_ni
+               work(i,j,k) = F_pip(i,j,k)
+            end do
+            end do
+            end do
+         endif
+*
+*     The hydrostatic pressure: pi'  
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         call hzd_del2  (F_pip, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*****************************
+*  3. Nonyhydrostatic model *
+*****************************
+*
+         if ( .not. Schm_hydro_L ) then
+*
+         if ( Schm_difqp_L ) then ! q' & related variables
+*
+*        Indirect diffusion of q'
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+         do k=1, Nk
+         do j=1, l_nj
+         do i=1, l_ni
+            work(i,j,k) = ( Geomg_z_8(k) + dble(work(i,j,k)) )
+     %                       *exp( dble(F_qp(i,j,k)) )
+         end do
+         end do
+         end do
+*
+         call hzd_del2  (work, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         do k=1, Nk
+         do j=1, l_nj
+         do i=1, l_ni
+            F_qp(i,j,k) = log(             dble(work(i,j,k))
+     %                       /( Geomg_z_8(k) + dble(F_pip(i,j,k)) )  )
+         end do
+         end do
+         end do
+*
+         endif
+         endif
+*
+      endif
+*
+ 9988 continue
+*     __________________________________________________________________
+ 1000 format(/,3X,
+     + 'TRAJ of PERFORM FACTORIZED DEL-2 HORIZONTAL DIFFUSION: (S/R HSPNG_DRV_TR)')
+*
+      return
+      end

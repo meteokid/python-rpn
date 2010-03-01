@@ -8,6 +8,13 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       integer lminx,lmaxx,lminy,lmaxy,nkfa,nbit,ind_o(*),nk_o,kind
       real fa(lminx:lmaxx,lminy:lmaxy,*),rf(*),mul,add
 *
+*
+*author  M. Desgagne 2001 (MC2)
+*
+*revision
+* v3_30 - Desgagne/Lee - Out_datyp is defined for data compression by default
+* v3_30 - Girard C.    - inverse output levels for option in Out_Flipit
+*
 **
 #include "out.cdk"
 *
@@ -40,7 +47,7 @@ c    %                       lminx,lmaxx,lminy,lmaxy, nkfa)
 c     endif
 c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridin,Out_gridj0,out_gridjn    ,1,nkfa)
 *
-      datyp = 1
+      datyp = Out_datyp
 
       if (Out_blocme.eq.0) then
 
@@ -107,12 +114,12 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
          do j=1,Out_njsl
             do k=1,nk_o
             do i=1,Out_nisl
-               wk2(i,k) = tr2(i,j,k)
+               wk2(i,nk_o-k+1) = tr2(i,j,k)
             end do
             end do
             ier= fstecr(wk2,wk2,-nbit,Out_unf,Out_dateo,int(Out_deet),Out_npas,
      $                   Out_nisl,nk_o,1,0,Out_ip2,pnip3,Out_typvar_S,nomvar,
-     $                   Out_etik_S,'X',0,0,0,0,datyp,.false.)
+     $                   Out_etik_S,'X',0,0,0,0,datyp,Out_rewrit_L)
          end do
          deallocate (wk2)
 *
@@ -131,7 +138,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
             ier = fstecr (wk2,tr1,-nbit,Out_unf,Out_dateo,int(Out_deet),
      $                    Out_npas,Out_nisg,Out_njsl,1,pnip1,Out_ip2,pnip3,
      $                    Out_typvar_S,nomvar,Out_etik_S,gridtyp,
-     $                    Out_ig1,Out_ig2,g3,g4,datyp,.false.)
+     $                    Out_ig1,Out_ig2,g3,g4,datyp,Out_rewrit_L)
          end do
          deallocate (wk2)
       else
@@ -142,7 +149,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
             ier = fstecr (tr2(1,1,k),tr1,-nbit,Out_unf,Out_dateo,int(Out_deet),
      $                    Out_npas,Out_nisl,Out_njsl,1,pnip1,Out_ip2,pnip3,
      $                    Out_typvar_S,nomvar,Out_etik_S,gridtyp,
-     $                    Out_ig1,Out_ig2,g3,g4,datyp,.false.)
+     $                    Out_ig1,Out_ig2,g3,g4,datyp,Out_rewrit_L)
          end do
 *     
       endif

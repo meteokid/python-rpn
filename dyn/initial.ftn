@@ -4,7 +4,7 @@
 *
       subroutine initial (F_rstrt_L)
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_rstrt_L
 *
@@ -14,6 +14,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_10 - Lee V.            - call to p_outphyinit
+* v3_30 - Desgagne M.       - moved bkup_L to gem_run
 *
 *object
 *	
@@ -38,7 +39,6 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      logical bkup_L
       integer n, pndfnph, pnerr, pnlkey1(2), pnfirst, pnlast
       real    prn, promegc, prsum, prwin1, prwin2
 *
@@ -46,7 +46,7 @@
 *
       if ( mod(Init_dfnp,2) .ne. 1 ) then
          if (Lun_out.gt.0) write(Lun_out,2010) Init_dfnp
-         call gefstop('INITIAL')
+         call gem_stop ('INITIAL',-1)
       endif
 *
       if (Lun_out.gt.0) write(Lun_out,2020) Init_dfnp
@@ -59,7 +59,6 @@
 
       promegc = (2.0 * Dcst_pi_8) / Init_dfpl_8
       prwin1  = Dcst_pi_8 / real(pndfnph + 1)
-
 *
 *********************************************************************
 *
@@ -105,28 +104,22 @@
 *
       if ( .not. Rstri_rstn_L ) call digflt()
 *
-      if (Lun_out.gt.0) write(Lun_out,1000)
+      if (Lun_out.gt.0) write(Lun_out,1000) Lctl_step,Init_dfnp-1
 *
       call gem_run (.true., F_rstrt_L)
 *
-      bkup_L = .false.
       if (Lctl_step.eq.Init_dfnp-1) then
-         if (mod(Lctl_step,Step_bkup).eq.0) bkup_L = .true.
          Rstri_idon_L = .true.
          call ta2t1tx()
          Lctl_step = (Init_dfnp-1)/2
-         if (Lun_out.gt.0) write(Lun_out,1010) Lctl_step
-         if (Lun_out.gt.0) write(Lun_out,1020) Lctl_step
-         call out_dyn ()
+         if (Lun_out.gt.0) write(Lun_out,1050) Lctl_step
       endif
-      if (bkup_L.and..not.F_rstrt_L) call wrrstrt ()
 *
- 1000 format(/,'DIGITAL FILTER INITIALIZATION: (S/R INITIAL)',
-     + /,'============================================')
- 1010 format(/,'INITIALIZATION COMPLETED       (S/R INITIAL)',
-     + /,'LAST TIMESTEP COMPLETED RESET TO:', I5,'    ',
-     + /,'============================================')
- 1020 format(/,'THE TIMESTEP ',i5,' IS COMPLETED',/)
+ 1000 format(/,' =====> DIGITAL FILTER INITIALIZATION SCHEME: ',
+     $         'TIMESTEP ',i3,' to TIMESTEP ',i3,/' ',73('='))
+ 1050 format(/,' =====> DIGITAL FILTER INITIALIZATION SCHEME: ',
+     $         'COMPLETED',/8x,'LAST TIMESTEP COMPLETED RESET TO:',
+     $         I5,/' ',55('='))
  2010 format(/,'PROBLEM: THE VARIABLE Init_dfnp = ',i4,'  IS EVEN',
      %/,'==============================================')
  2020 format(/,'PREPARATION OF DIGITAL FILTER PARAMETERS',

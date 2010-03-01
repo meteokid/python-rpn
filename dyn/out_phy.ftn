@@ -15,6 +15,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *REVISION
 * v3_20 - Lee V.            -  initial GEMDM version
 * v3_21 - Lee V.            -  bugfix for LAM output
+* v3_30 - McTaggart-Cowan R.-  allow for user-defined domain tag extensions
 *
 *
 *OBJECT
@@ -36,15 +37,14 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "dcst.cdk"
-#include "dimout.cdk"
+#include "out3.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
 #include "grid.cdk"
 #include "out.cdk"
-#include "out3.cdk"
-#include "p_bus.cdk"
+#include "itf_phy_buses.cdk"
 #include "obus.cdk"
 #include "grd.cdk"
 #include "level.cdk"
@@ -116,6 +116,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                   periodx_L,
      $                   ig1,Grid_ig2(outp_grid(kk)),
      $                   Grid_stride(outp_grid(kk)),
+     $                   Grid_etikext_s(outp_grid(kk)),
      $                   Geomn_longs, Geomn_latgs          )
          levset= Outp_lev(kk)
          nk_o =  Level_max(levset)

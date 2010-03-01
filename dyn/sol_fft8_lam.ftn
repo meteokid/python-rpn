@@ -10,7 +10,7 @@
      $                       minx1, maxx1, minx2, maxx2,nx3,
      $                       F_npex1, F_npey1, ai, bi, ci,
      $                       fdg2,fdwfft)
-#include "impnone.cdk"
+      implicit none
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -95,7 +95,7 @@ c     call tmg_start(89,'sol_fft_lam')
      %                         Minz, Maxz, Nk, fdwfft, 1, 2 )
 
 *     projection ( wfft = x transposed * g )
-!$omp parallel private(jr,p0,pn)
+!$omp parallel private(jr,p0,pn,piece) shared(plon,ptotal)
 !$omp do
          do i= 1,Gni
             do k= Minz, nkl
@@ -116,7 +116,7 @@ c     call tmg_start(89,'sol_fft_lam')
          
             do k= Minz, 0
                do j= Miny,Maxy
-                  fdwfft(j,k,k)=zero
+                  fdwfft(j,k,i)=zero
                enddo
             enddo
          enddo

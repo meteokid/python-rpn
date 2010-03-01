@@ -1,5 +1,6 @@
 ***s/r set_geof - initialization of the VMM commons for geophysical fields
 *
+#define SPY_VMM_CREATE spy_vmm_create
 #include "model_macros_f.h"
 *
       subroutine set_geof
@@ -51,11 +52,15 @@
 *	Assign and create the geophysical variables
 *
       VMM_NAM(topo )= 'TOPO'
+      VMM_NAM(topu )= 'TOPU'
+      VMM_NAM(topv )= 'TOPV'
       VMM_NAM(dtopo)= 'DTOP'
 *
       attr_S='SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
 *
       VMM_CREATE(topo  , LARRAY2D     , 1, attr_S)
+      VMM_CREATE(topu  , LARRAY2D     , 1, attr_S)
+      VMM_CREATE(topv  , LARRAY2D     , 1, attr_S)
       if ( Vtopo_start .ge. 0 ) then
          VMM_CREATE(dtopo , LARRAY2D     , 1, attr_S)
       endif

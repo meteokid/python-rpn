@@ -9,22 +9,28 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *AUTHOR  M. Desgagne    November 2001
 *
+*revision
+* v3_30 - Desgagne M - to search the list again if a record is not found
+*
 *IMPLICIT
 #include "e_fu.cdk"
 #include "filename.cdk"
 *
-      integer longueur,fnom,fstouv,fstinf,fstfrm,fclos
+      integer  longueur,fnom,fstouv,fstinf,fstfrm,fclos
       external longueur,fnom,fstouv,fstinf,fstfrm,fclos
       character*16 date
       character*512 fn
+      logical done
       integer i,ier,ni1,nj1,nk1
+      data done /.false./
+      save done
 *
 *---------------------------------------------------------------------
 *
       e_pilotf = -1
       e_fu_anal = 0
 *
-      do i = max(1,ipilf), npilf
+ 55   do i = max(1,ipilf), npilf
          fn= "process/pilot/"//pilot_f(i)(1:longueur(pilot_f(i)))
          ier = fnom   (e_fu_anal,fn,'RND+OLD+R/O',0)
          ier = fstouv (e_fu_anal,'RND')
@@ -37,6 +43,11 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          ier = fstfrm (e_fu_anal)
          ier = fclos  (e_fu_anal)
       end do
+      if (e_pilotf.lt.0 .and. .not.done) then
+         ipilf = 1
+         done  = .true.
+         goto 55
+      endif
 *
  879  call datf2p (date,datev)
       if (e_pilotf.ge.0) then

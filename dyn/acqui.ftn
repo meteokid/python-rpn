@@ -14,6 +14,10 @@
 * v3_01 - Corbeil L.           - initial version
 * v3_10 - Lee V.               - unique bmfscraps...
 * v3_11 - Gravel S.            - provide for variable topography
+* v3_12 - Dugas B. & Winger K. - read TD in pressure-mode rather than HU
+* v3_21 - Dugas B.             - replace TD by ES in pressure mode
+* v3_30 - Tanguay M.           - Modify Check topo when no interpolation 
+* v3_30 - McTaggart-Cowan R.   - update implementation of variable orography
 *
 *object
 *	
@@ -35,6 +39,7 @@
 #include "acq.cdk"
 #include "vtopo.cdk"
 #include "schm.cdk"
+#include "lctl.cdk"
 *modules
       integer  bmf_gobe,bmf_get
       external bmf_gobe,bmf_get
@@ -50,6 +55,7 @@
      $                  bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9
       character*4, allocatable, dimension(:) :: bmfnom
       real      difsig,prdfsgz,prdf
+      real(kind=8), dimension(l_ni,l_nj) :: current_topo
       parameter (difsig = 1.e-5)
 **
 *     ---------------------------------------------------------------
@@ -125,6 +131,9 @@
      $         bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5,
      $         bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9)
 *
+* Save current model topography for "growing" mode
+      current_topo = Ind_topo(1:l_ni,1:l_nj)
+*
       error(1) = bmf_get ('RNA ',bmf_time1,bmf_time2,-1,rna,-1.,1,
      $                                           Acqi_vterplv,1,1,1,1)
       error(2) = bmf_get ('ME  ',bmf_time1,bmf_time2,-1,Ind_topo,-1.,
@@ -155,9 +164,6 @@
       nerr = nerr + 1
       error(nerr) = bmf_get('VV  ',bmf_time1,bmf_time2,-1,v_temp,-1,
      $                               1,Acqi_niv,1,Acqi_njv,1,Acqi_nktmp)
-      nerr = nerr + 1
-      error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1.,
-     $                                   1,l_ni,1,l_nj,1,Acqi_nktmp)
 *
       if (.not.Schm_offline_L) then
       if (.not.Acql_horzint .or. Acql_prsanl) then
@@ -171,6 +177,11 @@
       endif
       endif
 *
+* Set first level heights to current for "growing" mode
+      if (Vtopo_L .and. Lctl_step > Vtopo_start) then
+          gz_temp(1:l_ni,1:l_nj,nk_anal) = current_topo
+      endif
+*
       if (Acql_prsanl) then
 *        Convert millibar to pascal unit - Pressure Analysis
          do k=1,Acqi_vterplv
@@ -180,6 +191,9 @@
          do k=1,Acqi_vterplv-1
             sdd(k) = 1./(lna(k+1)-lna(k))
          enddo
+         nerr = nerr + 1
+         error(nerr) = bmf_get('ES  ',bmf_time1,bmf_time2,-1,hu_temp,-1.,
+     $                                   1,l_ni,1,l_nj,1,Acqi_nktmp)
       else
          if (Acql_siganl) Acqr_ptopa = 0.
          nerr = nerr + 1
@@ -188,6 +202,10 @@
          nerr = nerr + 1
          error(nerr) = bmf_get('VT  ',bmf_time1,bmf_time2,-1,tt_temp,
      $                                 -1.,1,l_ni,1,l_nj,1,Acqi_nktmp)
+         nerr = nerr + 1
+         error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1.,
+     $                                   1,l_ni,1,l_nj,1,Acqi_nktmp)
+
       endif
 *             
       if (Acql_hybanl .or. Acql_etaanl) then
@@ -240,8 +258,10 @@
       if (.not. Acql_vertint) then
          prdfsgz = 25.
          errprdf = 0
-         do j=1,l_nj
-         do i=1,l_ni
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+C        do j=1,l_nj
+C        do i=1,l_ni
             prdf= abs( gz_temp(i,j,Acqi_vterplv) - Ind_topo(i,j))
             if ( prdf .gt. prdfsgz ) errprdf = 1
          enddo
@@ -395,7 +415,7 @@
       end do
 *
       call nesajr (topo_temp, gz_temp (1,1,nk_anal), 1,l_ni,1,l_nj,
-     $                               1,0,0,Hblen_momentx,Hblen_momenty)
+     $                               1,0,0,Hblen_x,Hblen_y)
 *
       if( .not. Vtopo_L ) then
         do j=1,pil_s
@@ -441,9 +461,9 @@
         end do
 *
         call nesajr (topu_temp, gzu_temp(1,1,nk_anal), 1,Acqi_niu,
-     $                    1,Acqi_nju,1,0,0,Hblen_momentx,Hblen_momenty)
+     $                    1,Acqi_nju,1,0,0,Hblen_x,Hblen_y)
         call nesajr (topv_temp, gzv_temp(1,1,nk_anal), 1,Acqi_niv,
-     $                    1,Acqi_njv,1,0,0,Hblen_momentx,Hblen_momenty)
+     $                    1,Acqi_njv,1,0,0,Hblen_x,Hblen_y)
 *
       endif
 

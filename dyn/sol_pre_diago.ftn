@@ -1,0 +1,37 @@
+***s/r  sol_pre_diago -  call diagonal Preconditionner  
+*
+#include "model_macros_f.h"
+*
+*
+      subroutine  sol_pre_diago ( wk22, wk11, Minx,Maxx,Miny,Maxy,
+     $                            nil,njl, minx1,maxx1,minx2,maxx2 )
+      implicit none
+*
+      integer Minx,Maxx,Miny,Maxy,nil,njl, minx1,maxx1,minx2,maxx2
+      real*8  wk11(*),wk22(*)
+*
+* author    Abdessamad Qaddouri -  December 2006
+*
+*revision
+* v3_30 - Qaddouri A.       - initial version
+*
+#include "schm.cdk"
+#include "sol.cdk"
+
+      real*8 wint_8 (Minx:Maxx,Miny:Maxy,Schm_nith)
+*
+*     ---------------------------------------------------------------
+*
+      call  tab_vec  ( wint_8 , Minx,Maxx,Miny,Maxy,Schm_nith,
+     $                 wk11   , sol_i0,sol_in,sol_j0,sol_jn, -1 )
+*
+      call pre_diago ( wint_8 , wint_8, Minx, Maxx, Miny, Maxy,nil,
+     $                    njl,minx1, maxx1, minx2, maxx2,Schm_nith )
+*
+      call  tab_vec  ( wint_8 , Minx,Maxx,Miny,Maxy,Schm_nith,
+     $                 wk22   , sol_i0,sol_in,sol_j0,sol_jn, +1 )
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

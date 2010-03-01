@@ -1,0 +1,21 @@
+#if defined (DOC)
+*
+***comdeck Anal.cdk
+*
+*
+*revision
+* v3_12 - Winger K.              - initial version
+* v3_30 - Dugas B.               - rename to anal.cdk
+*______________________________________________________________________
+*                                                                      |
+*   ICE PHASE TREATMENT IN READDYN                                     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+*  ANAL_COND_L       | ice phase considered in analysis humidity field |
+*----------------------------------------------------------------------
+#endif
+
+      LOGICAL          Anal_cond_L
+      COMMON  /Anal_L/ Anal_cond_L

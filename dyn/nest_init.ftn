@@ -2,22 +2,28 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine nest_init
+      subroutine nest_init ()
       implicit none
+*
+      integer nesd
 *
 *author   M. Desgagne - April 2002
 *
 *revision
 * v3_00 - Desgagne M.          - initial version
 * v3_03 - Tanguay M.           - Adjoint Lam configuration
+* v3_30 - Tanguay M.           - adapt to bcs
 *
 *implicits
 #include "glb_ld.cdk"
+#include "bcsdim.cdk"
+#include "bcsmem.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
 #include "nest.cdk"
 #include "schm.cdk"
 #include "v4dg.cdk"
+#include "lun.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -26,7 +32,8 @@
       real tr1,trf
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
       integer i,j,k,err,pnlkey1(26),nvar,key1(Tr3d_ntr),key1_, 
-     $        key2(Tr3d_ntr),key2_,n
+     $        key2(Tr3d_ntr),key2_,n,id
+      integer*8 pnt_tr1(Tr3d_ntr),pnt_trf(Tr3d_ntr)
 *
       logical done_init_L
       data done_init_L /.false./
@@ -39,8 +46,12 @@
 *     When 4D-Var, done_init_L = .T. if not first forward run 
 *     -------------------------------------------------------
 *     
-      if ( V4dg_conf.eq.0.or..not.done_init_L ) then
+      if (V4dg_conf.ne.0 .and. V4dg_part.ne.3) return
+
+      if ( .not.done_init_L ) then
 *
+      if (Lun_debug_L) write(Lun_out,1000)
+
       pnlkey1(1)  = VMM_KEY(ut1)
       pnlkey1(2)  = VMM_KEY(vt1)
       pnlkey1(3)  = VMM_KEY(qt1)
@@ -103,6 +114,77 @@
          err = VMM_GET_VAR(nest_w)
       endif
 *
+      key1_ = VMM_KEY (trt1)
+      key2_ = VMM_KEY (nest_tr)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+         key2(n) = key2_ + n
+      end do
+      err = vmmlod(key1,Tr3d_ntr)
+      err = vmmlod(key2,Tr3d_ntr)
+      do n=1,Tr3d_ntr
+         err = vmmget(key1(n),patr1,tr1)
+         err = vmmget(key2(n),patrf,trf)
+         pnt_tr1(n) = patr1
+         pnt_trf(n) = patrf
+      end do
+*
+*     copying values from UT1 to BCS_U boundary condition boxes
+*
+      call trnes (ut1,bcs_u(bcs_is),bcs_u(bcs_in),bcs_u(bcs_iw),
+     $            bcs_u(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (vt1,bcs_v(bcs_is),bcs_v(bcs_in),bcs_v(bcs_iw),
+     $            bcs_v(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (tt1,bcs_t(bcs_is),bcs_t(bcs_in),bcs_t(bcs_iw),
+     $            bcs_t(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (psdt1,bcs_psd(bcs_is),bcs_psd(bcs_in),bcs_psd(bcs_iw),
+     $          bcs_psd(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (pipt1,bcs_pip(bcs_is),bcs_pip(bcs_in),bcs_pip(bcs_iw),
+     $          bcs_pip(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (fipt1,bcs_fip(bcs_is),bcs_fip(bcs_in),bcs_fip(bcs_iw),
+     $          bcs_fip(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (tdt1,bcs_td(bcs_is),bcs_td(bcs_in),bcs_td(bcs_iw),
+     $           bcs_td(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (fit1,bcs_fi(bcs_is),bcs_fi(bcs_in),bcs_fi(bcs_iw),
+     $           bcs_fi(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (qt1,bcs_q(bcs_is),bcs_q(bcs_in),bcs_q(bcs_iw),
+     $            bcs_q(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (st1,bcs_s(bcs_is),bcs_s(bcs_in),bcs_s(bcs_iw),
+     $            bcs_s(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+      call trnes (tpt1,bcs_tp(bcs_is),bcs_tp(bcs_in),bcs_tp(bcs_iw),
+     $           bcs_tp(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+*
+      if (.not. Schm_hydro_L) then
+      call trnes (wt1,bcs_w(bcs_is),bcs_w(bcs_in),bcs_w(bcs_iw),
+     $           bcs_w(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      call trnes (mut1,bcs_mu(bcs_is),bcs_mu(bcs_in),bcs_mu(bcs_iw),
+     $           bcs_mu(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $                         minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      endif
+*
+      do n=1,Tr3d_ntr
+         id = (n-1)*bcs_sz+1
+         patr1 = pnt_tr1(n)
+         call trnes (tr1,bcs_tr(id),bcs_tr(id+bcs_in-1),
+     $               bcs_tr(id+bcs_iw-1),bcs_tr(id+bcs_ie-1),
+     $               l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
+     $               minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,0)
+      end do
+*
+*     copying values from UT1 to nest_u variables
+*
       do k= 1, G_nk
       do j= 1, l_nj 
       do i= 1, l_ni
@@ -136,57 +218,38 @@
           end do
       endif
 *
+c     if (Acid_test_L) then u,fi,t,psd,td,tp,pip,s
+c         if (Lun_out.gt.0) write(Lun_out,*)'Nest variables'
+c     call glbstat (nest_u,'u',LDIST_DIM,G_nk,1+acid_i0,G_ni-1-acid_in,
+c    %                                        1+acid_j0,G_nj-acid_jn,1,G_nk)
+c     call glbstat (nest_tp,'tp',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
+c    %                                        8+acid_j0,G_nj-7-acid_jn,1,G_nk)
+*
       err = vmmuld(pnlkey1,nvar)
 *
-      key1_ = VMM_KEY (trt1)
-      key2_ = VMM_KEY (nest_tr)
       do n=1,Tr3d_ntr
-         key1(n) = key1_ + n
-         key2(n) = key2_ + n
-      end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1,Tr3d_ntr)
-         err = vmmlod(key2,Tr3d_ntr)
-         do n=1,Tr3d_ntr
-            err = vmmget(key1(n),patr1,tr1)
-            err = vmmget(key2(n),patrf,trf)
-            do k= 1, G_nk
+         patr1 = pnt_tr1(n)
+         patrf = pnt_trf(n)
+         do k= 1, G_nk
             do j= 1, l_nj 
             do i= 1, l_ni
                trf (i,j,k) = tr1 (i,j,k)
             end do
             end do
-            end do
          end do
-         err = vmmuld(key1,Tr3d_ntr)
-         err = vmmuld(key2,Tr3d_ntr)
-      endif
+      end do
 *
       if(V4dg_conf.ne.0) then
 *
-*       -----------------------------------------------
-*       Store FIXED NESTING fields at initial time step
-*       -----------------------------------------------
-        V4dg_rwnest = 1
-        call v4d_rwnest ()
-*
         done_init_L = .true.
 *
-      endif
-*
-*     -----------------------
-*     4D-Var when done_init_L
-*     -----------------------
-      else
-*
-*       -------------------------------------------------
-*       Recover FIXED NESTING fields at initial time step
-*       -------------------------------------------------
-        V4dg_rwnest = 0
-        call v4d_rwnest ()
+*       DO NOTHING 
 *
       endif
+* done_init loop
+      endif
 *
+ 1000 format(3X,'NESTING INITIALIZATION (NEST_INIT)')
 *     ---------------------------------------------------------------
       return
       end

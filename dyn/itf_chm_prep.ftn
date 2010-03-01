@@ -1,0 +1,59 @@
+***s/r itf_chm_prep - load all fields required by the chemistry, as well: read
+*                  (if need be) emission field from file.
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_chm_prep(P_trp,P_trm)
+*
+      implicit none
+*
+      integer*8  P_trp(*), P_trm(*)
+*
+*author 
+*     A. Kallaur - arqi - june 2005
+*
+*revision
+* v3_30 - Kallaur A.       - initial version
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* P_trp         O                  Pointers to tracer fields at time t+
+* P_trm         O                  Pointers to tracer fields at time t-
+* Nk            I                  Number of vertical levels to consider
+*----------------------------------------------------------------
+*
+*implicits
+*
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "itf_chm_bus.cdk"
+#include "schm.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "out3.cdk"
+*
+*     ---------------------------------------------------------------
+*
+!     No business being here if chemistry scheme 
+!     flag is off (Schm_chems_L=.false.)
+!
+      if (.not. Schm_chems_L) return
+!
+!     Load the DYN fields (tracers) from VMM
+!
+      call itf_chm_vmmprep(P_trp,P_trm,LDIST_DIM,l_nk)
+!
+!     Load emission field from file (if need be).
+
+      call chm_load_emissions(chm_busper3D,
+     *                        chm_bper_siz,chm_bper_siz*chm_nj,
+     *                        Out3_date,Cstv_dt_8,Lctl_step)
+*
+*     ---------------------------------------------------------------
+*      
+      return
+      end
+

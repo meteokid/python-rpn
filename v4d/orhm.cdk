@@ -1,0 +1,48 @@
+#if defined (DOC)
+*
+*** comdeck orhm.cdk
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+*
+*object
+*
+*     Equivalent to comdeck orh for TRAJECTORY + Extra work fields
+*
+*______________________________________________________________________
+*                                                                      |
+* TRAJ VMM variables associated with the Crank-Nicholson procedure     |
+* and used to compute the RHS equation (set_crni)                      |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+*  orum              | momentum equation along x                       |
+*  orvm              | momentum equation along y                       |
+*  orwm              | momentum equation along z                       |
+*  orvvm             | vertical velocity equation                      |
+*  orcnm             | continuity equation                             |
+*  orthm             | thermodynamic equation                          |
+*----------------------------------------------------------------------
+*  oruw2m            | work advective contributions for U              |
+*  orvw2m            | work advective contributions for V              |
+*  ortrm             | work tracer 3D equation                         |  
+*----------------------------------------------------------------------
+#endif
+*
+      MARK_COMMON_BEG (orhm)
+      DCL_VMMVAR (orhm,orum   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,orvm   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,orwm   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,orvvm  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,orcnm  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,orthm  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,oruw2m ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,orvw2m ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,ortrm  ,real,(LDIST_SHAPE,l_nk,*) )
+      MARK_COMMON_END (orhm)

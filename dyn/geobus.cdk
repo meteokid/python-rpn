@@ -1,0 +1,39 @@
+*
+*revision
+* v2_20 - Pellerin P.       - initial version
+*
+      integer maxel
+      parameter (maxel = 60)
+*
+      integer
+     $        glsea,glseac,hs,hsc,mg,mcpl,mh,mq,snodp,al,vegindx,
+     $        twater,i0,z0,lhtg,dlat,dlon,la,lo,mt,ml,fis,
+     $        mi,ga,gi8,gice,gmice,vegf,urbf,dhdx,dhdy,dhdxdy,
+*
+* for both ISBA and CLASS
+     $        sand, clay, snoag, snoro, snoal, tsoil, wsoil,  
+*
+* for ISBA
+     $        icedp, wveg, tice, isoil, wsnow,
+*
+* for CLASS
+     $        tveg,iveg,tsno,
+     $        gc,laimax,laimin,vegma,
+     $        drain,snoden,veggro,zpond,tpond,tbase,snoma
+
+      common /p_geobusid/
+*
+     $        glsea,glseac,hs,hsc,mg,mcpl,mh,mq,snodp,al,vegindx,
+     $        twater,i0,z0,lhtg,dlat,dlon,la,lo,mt,ml,fis,
+     $        mi,ga,gi8,gice,gmice,vegf,urbf,dhdx,dhdy,dhdxdy,
+*
+* for both ISBA and CLASS
+     $        sand, clay, snoag, snoro, snoal, tsoil, wsoil,  
+*
+* for ISBA
+     $        icedp, wveg, tice, isoil, wsnow,
+*
+* for CLASS
+     $        tveg,iveg,tsno,
+     $        gc,laimax,laimin,vegma,
+     $        drain,snoden,veggro,zpond,tpond,tbase,snoma

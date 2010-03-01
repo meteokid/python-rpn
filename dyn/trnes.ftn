@@ -1,0 +1,109 @@
+***s/r trnes -  transfer data to/from fd to/from bc*
+*
+#include "model_macros_f.h"
+*
+      subroutine trnes (fd,bcs,bcn,bcw,bce,lminx,lmaxx,lminy,lmaxy,
+     $ lminxs,lmaxxs,lminys,lmaxys,lminxw,lmaxxw,lminyw,lmaxyw,lnk,code)
+      implicit none
+*
+      integer lminx,lmaxx,lminy,lmaxy,lminxs,lmaxxs,lminys,lmaxys,
+     $        lminxw,lmaxxw,lminyw,lmaxyw,lnk,code
+      real fd(lminx:lmaxx,lminy:lmaxy,*),
+     $     bcs(lminxs:lmaxxs,lminys:lmaxys,*),
+     $     bcn(lminxs:lmaxxs,lminys:lmaxys,*),
+     $     bcw(lminxw:lmaxxw,lminyw:lmaxyw,*),
+     $     bce(lminxw:lmaxxw,lminyw:lmaxyw,*)
+*
+*author
+*     Michel Desgagne  - Summer 2006
+*
+*revision
+* v3_30 - Lee V.       - initial MPI version
+*
+*object - see above
+*
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "hblen.cdk"
+#include "bcsdim.cdk"
+*
+**
+      integer i,j,k,ofi,ofj
+*----------------------------------------------------------------------
+*
+      ofi = l_ni - Glb_pil_e - Hblen_x - 1
+      ofj = l_nj - Glb_pil_n - Hblen_y - 1
+*
+      if (code.eq.0) then
+      do k=1,lnk
+         if (south.gt.0) then
+         do j=minys,maxys
+         do i=minxs,maxxs
+            bcs(i,j,k) = fd(i,j,k)
+         end do
+         end do
+         endif
+         if (north.gt.0) then
+         do j=minyn,maxyn
+         do i=minxn,maxxn
+            bcn(i,j-ofj,k) = fd(i,j,k)
+         end do
+         end do
+         endif
+         if (west.gt.0) then
+         do j=minyw,maxyw
+         do i=minxw,maxxw
+            bcw(i,j,k) = fd(i,j,k)
+         end do
+         end do
+         endif
+         if (east.gt.0) then
+         do j=minye,maxye
+         do i=minxe,maxxe
+            bce(i-ofi,j,k) = fd(i,j,k)
+         end do
+         end do         
+         endif
+      end do
+      endif
+*
+      if (code.eq.1) then 
+      do k=1,lnk
+         if (south.gt.0) then
+         do j=minys,maxys
+         do i=minxs,maxxs
+            fd(i,j,k)=bcs(i,j,k)
+         end do
+         end do
+         endif
+         if (north.gt.0) then
+         do j=minyn,maxyn
+         do i=minxn,maxxn
+            fd(i,j,k)=bcn(i,j-ofj,k)
+         end do
+         end do
+         endif
+         if (west.gt.0) then
+         do j=minyw,maxyw
+         do i=minxw,maxxw
+            fd(i,j,k)=bcw(i,j,k)
+         end do
+         end do
+         endif
+         if (east.gt.0) then
+         do j=minye,maxye
+         do i=minxe,maxxe
+            fd(i,j,k)=bce(i-ofi,j,k)
+         end do
+         end do         
+         endif
+      end do
+      endif
+*
+*----------------------------------------------------------------------
+*
+      return
+      end
+
+
+

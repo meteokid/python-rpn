@@ -11,6 +11,7 @@
 *--------------------|-------------------------------------------------|
 * Out_flipit_L       | .true. to flip field from ni*nj*nk to ni*nk*nj  |
 * Out_debug_L        | .true. to print stdout from FST functions       |
+* Out_datyp          | 1 - real datyp, 134 - compressed real (RPN FST) |
 * Out_etik_S         | label, etiket                                   |
 * Out_etiket_S       | original label                                  |
 * Out_runstrt_S      | date and time of start of pilot run             |
@@ -56,6 +57,7 @@
 * Out_rgridin        | ending   I of reduced grid (Grid_x1)            |
 * Out_rgridj0        | starting J of reduced grid (Grid_y0)            |
 * Out_rgridjn        | ending   J of reduced grid (Grid_y1)            |
+* Out_rewrit_L       | .true. to overwrite, .false. to not overwrite   |
 * ---------------------------------------------------------------------
 #endif
       character*256 Out_filename_S
@@ -65,7 +67,7 @@
       character*1  Out_gridtyp_S,Out_levtyp_S, Out_proj_S,Out_unit_S
       character*2  Out_typvar_S,Out_prefix_S
       character*3  Out_ext_S
-      logical      Out_flipit_L, Out_debug_L
+      logical      Out_flipit_L, Out_debug_L, Out_rewrit_L
       real         Out_xpos(*), Out_ypos(*)
       pointer      (Out_xpos_,Out_xpos), (Out_ypos_,Out_ypos)
 
@@ -77,6 +79,7 @@
      $        Out_blocni, Out_blocnj,Out_myblocx, Out_myblocy, Out_nk,
      $        Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn, Out_mybloc,
      $        Out_rgridi0,Out_rgridj0, Out_reduc,Out_ndigits,
+     $        Out_datyp,
      $        Out_hx,Out_hy,
      $        Out_idg, Out_ifg, Out_jdg, Out_jfg,
      $        Out_idl, Out_ifl, Out_jdl, Out_jfl,
@@ -96,6 +99,7 @@
      $        Out_blocni, Out_blocnj,Out_myblocx, Out_myblocy, Out_nk,
      $        Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn, Out_mybloc,
      $        Out_rgridi0,Out_rgridj0, Out_reduc,Out_ndigits,
+     $        Out_datyp,
      $        Out_hx,Out_hy,
      $        Out_idg, Out_ifg, Out_jdg, Out_jfg,
      $        Out_idl, Out_ifl, Out_jdl, Out_jfl,
@@ -111,6 +115,6 @@
      $        Out_gridtyp_S,Out_levtyp_S, Out_proj_S,Out_unit_S,
      $        Out_typvar_S,Out_prefix_S, Out_ext_s
 
-      common /out_l/  Out_flipit_L, Out_debug_L
+      common /out_l/  Out_flipit_L, Out_debug_L,Out_rewrit_L
       common /out_p/  Out_xpos_, Out_ypos_
 

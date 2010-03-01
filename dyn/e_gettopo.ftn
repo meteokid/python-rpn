@@ -1,0 +1,73 @@
+***s/r e_gettopo
+*
+#include "model_macros_f.h"
+*
+      subroutine e_gettopo
+      implicit none
+*
+*author M. Desgagne
+*
+*revision
+* v3_30 - M. Desgagne          - initial version
+*
+#include "e_topo.cdk"
+#include "e_fu.cdk"
+#include "e_grids.cdk"
+#include "hgc.cdk"
+#include "e_cdate.cdk"
+**
+      integer  e_rdhint3,fnom,fstouv,fstfrm,fclos
+      external e_rdhint3,fnom,fstouv,fstfrm,fclos
+      integer n,nu,nv,codp1,err
+*
+*----------------------------------------------------------------------
+*
+      n  = nifi*njfi
+      nu = niu *nju
+      nv = niv *njv
+      allocate (topo (n), topou (nu), topov (nv),
+     $          topof(n), topouf(nu), topovf(nv))
+*
+      if ( .not. Topo_init_L ) then
+         topo  = 0.0 ;  topou  = 0.0 ;  topov  = 0.0
+         topof = 0.0 ;  topouf = 0.0 ;  topovf = 0.0
+         return
+      endif
+*
+      e_fu_geophy = 0
+      if (fnom  (e_fu_geophy,'process/geophy' ,'RND+OLD',0).lt.0) stop
+      if (fstouv(e_fu_geophy,'RND').lt.0) stop
+*
+      datev = -1
+
+      call convip ( codp1, 0., 3, 1, ' ', .false. )
+      err = e_rdhint3 (topo,dstf_gid,nifi,njfi,'ME',codp1,-1,-1,
+     $             ' ','C',.true.,.false.,'CUBIC',e_fu_geophy,6)
+      if (err.lt.0) goto 55
+      call convip ( codp1, 1., 3, 1, ' ', .false. )
+      if (e_rdhint3(topou,dstu_gid,niu,nju,'ME',codp1,-1,-1,' ','C',
+     $          .true.,.false.,'CUBIC',e_fu_geophy,6).lt.0) goto 55
+      call convip ( codp1, 2., 3, 1, ' ', .false. )
+      if (e_rdhint3(topov,dstv_gid,niv,njv,'ME',codp1,-1,-1,' ','C',
+     $          .true.,.false.,'CUBIC',e_fu_geophy,6).lt.0) goto 55
+*
+      topo  (:) = max ( 0.0, topo (:) )
+      topou (:) = max ( 0.0, topou(:) )
+      topov (:) = max ( 0.0, topov(:) )
+*
+      call e_filtopx (topof , topo , nifi, njfi, 'G')
+      call e_filtopx (topouf, topou, niu , nju , 'U')
+      call e_filtopx (topovf, topov, niv , njv , 'V')
+*
+      err = fstfrm (e_fu_geophy)
+      err = fclos  (e_fu_geophy)
+*
+      return
+ 55   call e_arret( 'e_gettopo' )
+*----------------------------------------------------------------------
+*
+      return
+      end
+
+
+

@@ -1,0 +1,111 @@
+***s/r e_gement_nml - Read namelist gement
+*
+#include "model_macros_f.h"
+*
+      integer function e_gement_nml (F_namelistf_S)
+      implicit none
+*
+      character* (*) F_namelistf_S
+*
+*author
+*     Michel Desgagne - Summer 2006
+*
+*revision
+* v3_30 - Desgagne M.       - initial version
+*
+*object
+*  Default configuration and reading namelist gement
+*
+*implicits
+#include "e_nml.cdk"
+*
+      integer  fnom
+      external fnom
+*
+      character*120 dumc
+      integer nrec,unf
+*
+*-------------------------------------------------------------------
+*
+      e_gement_nml = -1
+*
+      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+         e_gement_nml = 0
+         write (6  ,nml=gement_p)
+         return
+      endif
+*
+* Defaults values for gement namelist variables
+*
+      Mod_runstrt_S ='@#$%'
+      Pil_jobstrt_S ='@#$%'
+      Pil_jobend_S  ='@#$%'
+      Pil_sfc2d_L      = .true.
+      Pil_3df_L        = .true.
+      Pil_bcs_hollow_L = .true.
+      Pil_bmf_L        = .false.
+      Pil_nesdt     = 0
+      Pil_pil       = 7
+      Pil_hblen     = 10
+*
+      Topo_filmx_L= .true.
+      Topo_init_L = .true.
+      Topo_dgfmx_L= .false.
+      Topo_dgfms_L= .true.
+*
+      Anal_cond       = .false.
+      anal_perturb    = .false.
+      E_schm_stlag    = .true.
+      E_schm_adcub    = .true.
+      Schm_offline_L  = .false.
+      E_geol_glanl_L  = .true.
+      E_geol_glreg_L  = .false.
+      E_geol_hsanl_L  = .true.
+      E_geol_hscon_L  = .false.
+      E_geol_hsreg_L  = .true.
+      E_geol_gls  = 30.
+      E_geol_gln  = 80.
+      E_geol_glw  = 220.
+      E_geol_gle  = 320.
+      E_geol_hss  = 30.
+      E_geol_hsn  = 80.
+      E_geol_hsw  = 220.
+      E_geol_hse  = 320.
+      E_geol_hsea = 3000
+      E_geol_poin = 3
+      E_geol_modex_L = .false.
+      E_geol_z0cst   = -1.
+*
+      Offline_int_accu_S = 'LINEAR'
+      Offline_ip1a = 11950   
+*
+      E_tr3d_list_S = ''
+*
+      unf=0
+      if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
+         rewind(unf)
+         read (unf, nml=gement, end=9110, err=9110)
+         call fclos (unf)
+         e_gement_nml = 1
+         call low2up (Offline_int_accu_S,dumc)
+         Offline_int_accu_S = dumc
+         E_schm_offline_L=Schm_offline_L
+         if (Schm_offline_L) Pil_bmf_L =.true.
+         goto 7777
+      else
+         goto 9220
+      endif
+*
+ 9110 write (6, 8150) trim( F_namelistf_S )
+      call fclos (unf)
+      goto 7777
+*
+ 9220 write (6, 8155) trim( F_namelistf_S )
+*
+ 8150 format (/,' NAMELIST gement    INVALID IN FILE: ',a)
+ 8155 format (/,' FILE: ',a,' NOT AVAILABLE')
+*
+*-------------------------------------------------------------------
+*
+ 7777 return
+      end

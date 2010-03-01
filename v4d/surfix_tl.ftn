@@ -1,0 +1,19 @@
+***s/r surfix_tl - TLM of surfix 
+*
+      subroutine surfix_tl 
+*
+      implicit none
+*
+*author M.Tanguay
+*
+*revision
+* v3_20 - Tanguay M.       - initial MPI version
+*
+****************************************************************
+*     REMARK: Subroutine surfix is linear and we don't need TRAJ  
+****************************************************************
+*
+      call surfix
+*	
+      return 
+      end

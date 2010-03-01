@@ -1,3 +1,4 @@
       integer maxhlev
       parameter (maxhlev=1024)
       real hyb (maxhlev)
+      common /hyb_r/ hyb

@@ -1,0 +1,418 @@
+***s/r rd1rstrt - Read one binary restart file for all tiles
+*
+#include "model_macros_f.h"
+*
+      subroutine rd1rstrt ()
+*
+      implicit none
+*
+*author
+*     K. Winger - November 2006
+*
+*revision
+* v3_30 - Desgagne, Winger & Dugas - initial version
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "lun.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_cpl_cplg.cdk"
+#include "glb_ld.cdk"
+#include "pres.cdk"
+#include "lam.cdk"
+#include "itf_chm_bus.cdk"
+#include "ptopo.cdk"
+#include "bcsmem.cdk"
+*
+*modules
+      integer  fnom, fclos, wkoffit
+      external fnom, fclos, wkoffit
+*
+      integer      r,j,v,err, check_flag, current_nest
+      integer      pos_3D,   pos_cube, cpl_step, chm_step
+      integer      ni,nj ,   nir,njr , rowsr, nbr_cpl
+      integer      pperpar(   maxbus), prows,   p_bper_topr
+      integer      cperpar(chmmaxbus), crows, chm_bper_topr
+      character*16 ppernm (   maxbus), cpernm(chmmaxbus)
+*
+      real, dimension (:), allocatable :: Phy_busper_cube
+      real, dimension (:), allocatable :: Phy_busper_cube_digf
+      real, dimension (:), allocatable :: Phy_busper_glb
+      real, dimension (:), allocatable :: Phy_busper_glb_digf
+*
+      real, dimension (:), allocatable :: Cpl_rga_cpl2phy
+      real, dimension (:), allocatable :: Cpl_rla_msk
+
+      real, dimension (:), allocatable :: Chm_busper_cube
+      real, dimension (:), allocatable :: Chm_busper_glb
+*
+CCC   real, dimension (:), allocatable :: BCS_glb
+*
+*     ---------------------------------------------------------------
+*
+      if (G_lam) then
+         if (Lun_out.gt.0) write(6,1000)
+         call gem_stop("rd1rstrt",-111)
+      end if
+*
+      prows   = 0
+      crows   = 0
+      nbr_cpl = 0
+*
+      if (  p_ni.gt.0) prows =   p_bper_siz /   p_ni
+      if (chm_ni.gt.0) crows = chm_bper_siz / chm_ni
+*
+C     Read global cubes of size ni * nj * (c/p)rows
+*
+      if (G_lam) then
+        ni = G_ni - pil_e - pil_w + 6
+        nj = G_nj - pil_n - pil_s + 6
+      else
+        ni = G_ni
+        nj = G_nj
+      endif
+*
+C     Always read the physic restart file ('../restart_glbphy.bin')
+*
+      check_flag = 0
+*
+      if (Ptopo_myproc.eq.0) then
+*
+         read (Lun_rstrt,err=901,end=901) Lctl_step
+         read (Lun_rstrt,err=902,end=902) Rstri_idon_L
+         read (Lun_rstrt,err=903,end=903) rowsr
+*
+C        rowsr should now stand for prows
+         if (rowsr.gt.0) then
+*
+C           Read physics permanent bus
+*
+            backspace (Lun_rstrt)
+            read (Lun_rstrt,err=904,end=904) rowsr, nir, njr, p_bper_topr
+            read (Lun_rstrt,err=905,end=905) ppernm (1:p_bper_topr)
+            read (Lun_rstrt,err=906,end=906) pperpar(1:p_bper_topr)
+*
+C           Check if the fields to read have the right size
+*
+            if (p_bper_topr .ne. p_bper_top .or.
+     &          rowsr       .ne. prows      .or.
+     &          nir         .ne. ni         .or.
+     &          njr         .ne. nj        ) then
+               write (6,1001) nir, njr, rowsr, ni, nj, prows
+               check_flag = -7
+            end if
+*
+C           Check if the fields to read have the right
+C           name and the right number of levels
+*
+            do v=1,p_bper_top
+               if (ppernm(v).ne.pernm(v)) then
+                   write (6,1002) 'PHYSICS'
+                   check_flag = -8
+               endif
+               if (pperpar(v).ne.perpar(v,1)/p_ni) then
+                   write (6,1003)
+                   check_flag = -9
+               endif
+            enddo
+*
+            if (check_flag.lt.0) goto 100
+*
+            allocate ( Phy_busper_glb (prows*ni*nj) )
+            read (Lun_rstrt,err=910,end=910) Phy_busper_glb
+            read (Lun_rstrt,err=911,end=911) Rstri_half_L
+*
+            if ( Init_balgm_L .and.
+     &      .not.Rstri_idon_L .and.
+     &           Rstri_half_L) then
+               allocate (Phy_busper_glb_digf (prows*ni*nj) )
+               read (Lun_rstrt,err=912,end=912) Phy_busper_glb_digf
+            endif
+*
+         endif
+*
+         read (Lun_rstrt,err=913,end=913) pres_surf
+         read (Lun_rstrt,err=914,end=914) pres_top
+         read (Lun_rstrt,err=915,end=915) current_nest
+         call datf2p (Lam_current_S, current_nest)
+*
+         err = fclos( Lun_rstrt )
+*
+         goto 100
+ 901     check_flag = -1
+         goto 100
+ 902     check_flag = -2
+         goto 100
+ 903     check_flag = -3
+         goto 100
+ 904     check_flag = -4
+         goto 100
+ 905     check_flag = -5
+         goto 100
+ 906     check_flag = -6
+         goto 100
+ 910     check_flag = -10
+         goto 100
+ 911     check_flag = -11
+         goto 100
+ 912     check_flag = -12
+         goto 100
+ 913     check_flag = -13
+         goto 100
+ 914     check_flag = -14
+         goto 100
+ 915     check_flag = -15
+*
+      endif
+*
+ 100  call RPN_COMM_bcast (check_flag,1,"MPI_INTEGER",0,"grid",err)
+      call gem_stop ('RD1RSTRT- ABORT -',check_flag)
+*
+      if (Schm_phyms_L) then
+*
+         allocate     (Phy_busper_cube (p_bper_siz*p_nj) )
+         call glbdist (Phy_busper_glb, ni,nj,
+     &                 Phy_busper_cube,1,p_ni,1,p_nj,prows,0,0)
+*
+         if (Ptopo_myproc.eq.0) deallocate (Phy_busper_glb)
+*
+C        Regroup variables in Phy_busper_cube from cubes per variable to slabs
+*     
+         if ( .not. associated ( Phy_busper3D ) ) 
+     $              allocate   ( Phy_busper3D (p_bper_siz*p_nj) )
+*
+         pos_cube = 1
+         do r=1,prows
+            do j=1,p_nj
+               pos_3D   = (j-1)*p_bper_siz + (r-1)*p_ni + 1
+               Phy_busper3D    (pos_3D  :pos_3D  +p_ni-1) = 
+     &         Phy_busper_cube (pos_cube:pos_cube+p_ni-1)
+               pos_cube = pos_cube + p_ni
+            enddo
+         enddo
+*
+         deallocate (Phy_busper_cube)
+*
+         call RPN_COMM_bcast (Rstri_half_L,1,"MPI_LOGICAL",0,"grid",err)
+*
+         if (Init_balgm_L .and.
+     &  .not.Rstri_idon_L .and.
+     &       Rstri_half_L) then
+*
+            allocate ( Phy_busper_cube_digf (p_bper_siz*p_nj) )
+*
+            call glbdist (Phy_busper_glb_digf,ni,nj,
+     &                    Phy_busper_cube_digf,1,p_ni,1,p_nj,prows,0,0)
+            if (Ptopo_myproc.eq.0) deallocate (Phy_busper_glb_digf)
+*
+C           Regroup variables in Phy_busper_glb_digf
+C           from cubes per variable to slabs
+*
+            if ( .not.associated ( Phy_busper3D_digf ) ) 
+     $                allocate   ( Phy_busper3D_digf (p_bper_siz*p_nj) )
+*
+            pos_cube = 1
+            do r=1,prows
+               do j=1,p_nj
+                  pos_3D   = (j-1)*p_bper_siz + (r-1)*p_ni + 1
+                  Phy_busper3D_digf    (pos_3D  :pos_3D  +p_ni-1) =
+     &            Phy_busper_cube_digf (pos_cube:pos_cube+p_ni-1)
+                  pos_cube            = pos_cube         +p_ni
+               enddo
+            enddo
+*
+            deallocate (Phy_busper_cube_digf)
+*
+         end if
+*
+      end if
+*
+C     Check for a possible chemistry restart
+*
+      check_flag = 0
+*
+      if (Schm_chems_L      .and.
+     &    Ptopo_myproc.eq.0 .and.
+     &    wkoffit('../restart_glbchm.bin').eq. 10) then
+*
+         Lun_rstrt = 0
+         err = fnom( Lun_rstrt,'../restart_glbchm.bin','SEQ+UNF+OLD',0)
+*
+         read (Lun_rstrt,err=916,end=916) chm_step
+         if (chm_step.ne.Lctl_step)
+     &      write(6,1004) 'chemistry',chm_step,Lctl_step
+*
+C        Read chemistry permanent bus
+*
+         read (Lun_rstrt,err=917,end=917) rowsr, nir, njr, chm_bper_topr
+         read (Lun_rstrt,err=918,end=918) cpernm (1:chm_bper_topr)
+         read (Lun_rstrt,err=919,end=919) cperpar(1:chm_bper_topr)
+*
+C        Check if the fields to read have the right size
+*
+         if (chm_bper_topr .ne. chm_bper_top .or.
+     &       rowsr         .ne. crows        .or.
+     &       nir           .ne. ni           .or.
+     &       njr           .ne. nj          ) then
+            write (6,1001) nir, njr, rowsr, ni, nj, crows
+            check_flag = -20
+         end if
+*
+C        Check if the fields to read have the right name
+C        and the right number of levels
+*
+         do v=1,chm_bper_top
+            if (cpernm(v).ne.chmpernm(v)) then
+               write (6,1002) 'CHEMISTRY'
+               check_flag = -21
+            end if
+            if (cperpar(v).ne.chmperpar(v,1)/chm_ni) then
+               write (6,1003)
+               check_flag = -22
+            end if
+         enddo
+*
+         if (check_flag.lt.0) goto 200
+*
+         allocate ( Chm_busper_glb (crows*ni*nj) )
+         read (Lun_rstrt,err=923,end=923) Chm_busper_glb
+*
+         err = fclos( Lun_rstrt )
+*
+         goto 200
+ 916     check_flag = -16
+         goto 200
+ 917     check_flag = -17
+         goto 200
+ 918     check_flag = -18
+         goto 200
+ 919     check_flag = -19
+         goto 200
+ 923     check_flag = -23
+*
+      end if
+*
+ 200  call RPN_COMM_bcast (check_flag,1,"MPI_INTEGER",0,"grid",err)
+      call gem_stop ('RD1RSTRT- ABORT -',check_flag)
+*
+      if (Schm_chems_L) then
+*
+         allocate ( Chm_busper_cube (Chm_bper_siz*chm_nj) )
+         call glbdist (Chm_busper_glb,ni,nj,
+     &                 Chm_busper_cube,1,Chm_ni,1,Chm_nj,crows,0,0)
+*
+         if (Ptopo_myproc.eq.0) deallocate (Chm_busper_glb)
+*
+C        Regroup variables in Chm_busper_cube from cubes per variable to slabs
+*     
+         if ( .not. associated ( Chm_busper3D ) ) 
+     $              allocate   ( Chm_busper3D (Chm_bper_siz*chm_nj) )
+*
+         pos_cube = 1
+         do r=1,crows
+            do j=1,chm_nj
+               pos_3D   = (j-1)*chm_bper_siz + (r-1)*chm_ni + 1
+               Chm_busper3D    (pos_3D  :pos_3D  +chm_ni-1) = 
+     &         Chm_busper_cube (pos_cube:pos_cube+chm_ni-1)
+               pos_cube       = pos_cube         +chm_ni
+            enddo
+         enddo
+*
+         deallocate (Chm_busper_cube)
+*
+      end if
+*
+C     Check for possible coupling information
+*
+      check_flag = 0
+*
+      if (C_coupling_L      .and.
+     &    Ptopo_myproc.eq.0 .and.
+     &    wkoffit('../restart_glbcpl.bin').eq. 10) then
+*
+         Lun_rstrt = 0
+         err = fnom( Lun_rstrt,'../restart_glbcpl.bin','SEQ+UNF+OLD',0)
+
+         read (Lun_rstrt,err=924,end=924) cpl_step
+         if (cpl_step.ne.Lctl_step)
+     &      write(6,1004) 'coupling',cpl_step,Lctl_step
+*
+C        Read coupling fields dimensions
+*
+         read (Lun_rstrt,err=925,end=925) nbr_cpl, nir, njr
+*
+C        Check if the fields to read have the right size
+*
+         if (nbr_cpl .ne. ig_max_inout_dim .or.
+     &       nir     .ne. ni               .or.
+     &       njr     .ne. nj               ) then
+            write (6,1001) nir, njr, nbr_cpl,
+     &                     ni,  nj,  ig_max_inout_dim
+            check_flag = -26
+            goto 300
+         end if
+*
+         allocate ( Cpl_rla_msk     (ni*nj),
+     &              Cpl_rga_cpl2phy (ni*nj*nbr_cpl) )
+*
+         read (Lun_rstrt,err=927,end=927) Cpl_rla_msk 
+         read (Lun_rstrt,err=928,end=928) Cpl_rga_cpl2phy
+*
+         err = fclos( Lun_rstrt )
+*
+         goto 300
+ 924     check_flag = -24
+         goto 300
+ 925     check_flag = -25
+         goto 300
+ 927     check_flag = -27
+         goto 300
+ 928     check_flag = -28
+*
+      end if
+*
+ 300  call RPN_COMM_bcast (check_flag,1,"MPI_INTEGER",0,"grid",err)
+      call gem_stop ('RD1RSTRT- ABORT -',check_flag)
+*
+      if (C_coupling_L) then
+*
+         call glbdist (Cpl_rla_msk,ni,nj,
+     &                     rla_msk,1,l_ni,1,l_nj,1,0,0)
+         call glbdist (Cpl_rga_cpl2phy,ni,nj,
+     &                     rga_cpl2phy,1,l_ni,1,l_nj,ig_max_inout_dim,0,0)
+
+         if (Ptopo_myproc.eq.0) deallocate (Cpl_rla_msk,Cpl_rga_cpl2phy)
+*
+      end if
+*
+C     Distribute other scalar variables to all processors
+*
+      call RPN_COMM_bcast (Lctl_step,1,"MPI_INTEGER",0,"grid",err)
+      call RPN_COMM_bcast (Rstri_idon_L,1,"MPI_LOGICAL",0,"grid",err)
+*
+      call RPN_COMM_bcast (pres_surf,1,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (pres_top,1,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Lam_current_S,16,"MPI_CHARACTER",0,"grid",err)
+*
+ 1000 format (/' LAM MODE NOT SUPPORTED BY RD1RSTRT...'/)
+ 1001 format (/' THE GRID SIZE READ     (',i4,'x',i4,'x',i4,') IS DIFFERENT FROM \n',
+     $         ' THE GRID SIZE EXPECTED (',i4,'x',i4,'x',i4,') '/)
+ 1002 format (/' THE VARIABLES IN THE ',A,' RESTART FILE ARE DIFFERENT FROM',
+     $         ' THE ONES EXPECTED'/)
+ 1003 format (/' THE NUMBER OF LEVELS READ FOR SOME VARIABLES ARE NOT',
+     $         ' THE ONES EXPECTED'/)
+ 1004 format (/' Reading ',A10,' restart for time step no. ',I6,
+     $         ' while expecting time step no.',I6/)
+*
+*     ---------------------------------------------------------------
+*      
+      return
+      end

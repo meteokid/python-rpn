@@ -1,0 +1,37 @@
+      integer max_trnm
+      parameter (max_trnm=1000)
+      character*4 Grdc_proj_S
+      character*4 Grdc_trnm_S(max_trnm)
+      character*12 Grdc_nfe
+      character*16 Grdc_runstrt_S,Grdc_runend_S
+      logical Grdc_bcs_hollow_L,Grdc_initphy_L
+      integer Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id,
+     $        Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_gjdi,
+     $        Grd_ig1c,Grd_ig2c,Grd_ig3c,Grd_ig4c,
+     $        Grdc_Hblen,Grdc_pil,Grdc_end,
+     $        Grdc_hbwe,Grdc_hbsn,Grdc_start,Grdc_nbits,Grdc_ntr
+      real Grdc_latr,Grdc_lonr,Grdc_dx,
+     $     Grdc_xlat1,Grdc_xlon1,Grdc_xlat2,Grdc_xlon2
+      real*8 Grdc_xp1,Grdc_yp1
+*
+      MARK_COMMON_BEG (Grdc_c)
+      common / Grdc_c / Grdc_proj_S,Grdc_trnm_S,Grdc_nfe,
+     $                  Grdc_runstrt_S,Grdc_runend_S
+      MARK_COMMON_END (Grdc_c)
+      MARK_COMMON_BEG (Grdc_l)
+      common / Grdc_l / Grdc_bcs_hollow_L,Grdc_initphy_L
+      MARK_COMMON_END (Grdc_l)
+      MARK_COMMON_BEG (Grdc_i)
+      common / Grdc_i / Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id,
+     $        Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_gjdi,
+     $        Grd_ig1c,Grd_ig2c,Grd_ig3c,Grd_ig4c,
+     $        Grdc_Hblen,Grdc_pil,Grdc_end,
+     $        Grdc_hbwe,Grdc_hbsn,Grdc_start,Grdc_nbits,Grdc_ntr
+      MARK_COMMON_END (Grdc_i)
+      MARK_COMMON_BEG (Grdc_r)
+      common / Grdc_r / Grdc_latr,Grdc_lonr,Grdc_dx,
+     $     Grdc_xlat1,Grdc_xlon1,Grdc_xlat2,Grdc_xlon2
+      MARK_COMMON_END (Grdc_r)
+      MARK_COMMON_BEG (Grdc_r8)
+      common / Grdc_r8 / Grdc_xp1,Grdc_yp1
+      MARK_COMMON_END (Grdc_r8)

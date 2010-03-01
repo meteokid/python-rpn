@@ -1,10 +1,14 @@
 ***s/r e_modmg - Modification of land-water mask
 *
       subroutine e_modmg
-#include "impnone.cdk"
+      implicit none
 *
 *Author
 *       andre methot - cmc - may 1994
+*
+*revision
+* v3_30 - Desgagne M.            - renamed comdecks for new PHYSICS interface
+*
 *arguments
 *         none
 *
@@ -14,8 +18,8 @@
 * comdecks used also in GEMPP
 #include "model_macros_f.h"
 #include "dcst.cdk"
-#include "p_bus.cdk"
-#include "p_geobus.cdk"
+#include "itf_phy_buses.cdk"
+#include "geobus.cdk"
 **
 *
       logical pltrouv

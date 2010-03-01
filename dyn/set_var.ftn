@@ -4,7 +4,7 @@
 *
       integer function set_var (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_argc,F_v1,F_v2
       character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
@@ -18,6 +18,7 @@
 * v2_31 - Lee V.            - add chemistry output list
 * v2_32 - Lee V.            - gridset,levset,stepset are now IDs defined by the
 * v2_32                       user so, they are matched to the SORTIE command
+* v3_30 - Lee/Bilodeau      - bug fix to allow lower and upper case var names
 *
 *object
 *       initialization of the common blocks OUTD,OUTP. This function is
@@ -66,12 +67,12 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "dimout.cdk"
-#include "setsor.cdk"
-#include "p_bus.cdk"
 #include "out3.cdk"
+#include "setsor.cdk"
+#include "itf_phy_buses.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
+#include "outc.cdk"
 #include "grid.cdk"
 #include "level.cdk"
 #include "timestep.cdk"
@@ -80,6 +81,7 @@
 *
       character*5 stuff_S
       character*8 varname_S
+      character string4*4, string16*16
       integer levset,stepset,gridset,varmax
       integer i, j, k, m, pndx, ii, jj, kk
 *
@@ -188,7 +190,8 @@
           jj=0
           do ii=1,varmax
              jj = jj + 1
-             Outd_var_S(jj,j) =F_argv_S(ii+1)
+             call low2up  (F_argv_S(ii+1),string4)
+             Outd_var_S(jj,j) =string4
              Outd_nbit(jj,j)  = Out3_nbitg
           enddo
           if (jj.gt.0) then
@@ -208,11 +211,12 @@
           set_var=1
           return
           endif
-*
+*                  
           jj=0
           do ii=1,varmax
              jj = jj + 1
-             Outp_varnm_S(jj,j)=F_argv_S(ii+1)
+             call low2up  (F_argv_S(ii+1),string16)
+             Outp_varnm_S(jj,j)=string16
              Outp_nbit(jj,j)  = Out3_nbitg
           enddo
           if (jj.gt.0) then
@@ -229,6 +233,39 @@
                  write(Lun_out,*) 'Outp_grid=',Outp_grid(j)
                  write(Lun_out,*) 'Outp_lev=',Outp_lev(j)
                  write(Lun_out,*) 'Outp_step=',Outp_step(j)
+              endif
+          else
+              if (Lun_out.gt.0) write(Lun_out,1400)
+          endif
+      else if (F_argv_S(0).eq.'sortie_c') then
+          j = Outc_sets + 1
+          if (j.gt.MAXSET) then
+          if (Lun_out.gt.0) write(Lun_out,*)
+     $                      'SET_VAR WARNING: too many OUTC sets'
+          set_var=1
+          return
+          endif
+*                  
+          jj=0
+          do ii=1,varmax
+             jj = jj + 1
+             Outc_varnm_S(jj,j)= F_argv_S(ii+1)
+             Outc_nbit(jj,j)   = Out3_nbitg
+          enddo
+          if (jj.gt.0) then
+              Outc_sets       = j
+              Outc_var_max(j) = jj
+              Outc_grid(j)    = gridset
+              Outc_lev(j)     = levset
+              Outc_step(j)    = stepset
+              if (Lun_out.gt.0) then
+                 write(Lun_out,*) '***CHM***Outc_sets=',Outc_sets
+                 write(Lun_out,*) 'Outc_var_max=',Outc_var_max(j)
+                 write(Lun_out,*) 'Outc_varnm_S=',
+     $                        (Outc_varnm_S(jj,j),jj=1,Outc_var_max(j))
+                 write(Lun_out,*) 'Outc_grid=',Outc_grid(j)
+                 write(Lun_out,*) 'Outc_lev=',Outc_lev(j)
+                 write(Lun_out,*) 'Outc_step=',Outc_step(j)
               endif
           else
               if (Lun_out.gt.0) write(Lun_out,1400)

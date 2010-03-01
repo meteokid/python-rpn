@@ -1,4 +1,4 @@
-***s/r e_dynfld
+***s/r e_dynfld - to write out dynamic fields
 *
 #include "model_macros_f.h"
       subroutine e_dynfld 
@@ -8,87 +8,71 @@
 *
 *revision 
 * v3_21 - Desgagne M. - dayfrac calc displaced
+* v3_30 - Desgagne/Lee - new LAM I/O interface
 *
 *IMPLICIT
 #include "e_fu.cdk"
-#include "e_grids.cdk"
-#include "ptopo.cdk"
-#include "e_anal.cdk"
 #include "e_cdate.cdk"
-#include "bmf.cdk"
 #include "e_topo.cdk"
+#include "bmf.cdk"
 #include "pilot.cdk"
-#include "out1.cdk"
-#include "hblen.cdk"
-#include "e_schm.cdk"
+#include "filename.cdk"
+#include "modconst.cdk"
 *
+*object
+*  Dynamic fields will be written from dates Pil_jobstrt to Pil_jobend
+*  Full 3DF file is written for initialization at date in Mod_runstrt
+*  Pil_bmf_L= TRUE forces BMF files to be written
+*  Pil_bcs_hollow_L =TRUE means hollow pilot file cubes will be written
 **
       integer  fstfrm,newdate,fclos
       external fstfrm,newdate,fclos
 *
-      character*16 date1,date2,date3
+      character*16 date1,date2
+      logical save_Pil_bmf_L,save_Pil_bcs_hollow_L
       integer err,yy,dd,dum
       real*8 dayfrac,sec_in_day
       parameter (sec_in_day=86400.0d0)
-      integer i,j
 *
 *---------------------------------------------------------------------
 *
-      if (.not.LAM) then
-         Pil_datacvrg = 0
-         Pil_nesdt    = 1000
-      endif
+      save_Pil_bmf_L        = Pil_bmf_L
+      save_Pil_bcs_hollow_L = Pil_bcs_hollow_L
 *
-      date1   = Pil_runstrt_S
-      dayfrac = dble(Pil_datacvrg) / sec_in_day
-      call incdatsd (Pil_runend_S,Pil_runstrt_S,dayfrac)
-      dayfrac = dble(Pil_nesdt) / sec_in_day
-      call incdatsd(date3,Pil_runstrt_S,dayfrac)
+      bmf_dtyp = 41
+      date1    = Pil_jobstrt_S
+      dayfrac  = dble(Pil_nesdt) / sec_in_day
 *
-      do while ( date1 .le. Pil_runend_S )
+      topo  = topof
+      topou = topouf
+      topov = topovf
 *
-         write (6,105) date1
-         call datp2f ( datev , date1 )
-         err   = newdate (datev,bmf_time1,bmf_time2,-3)
-         call prsdate (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,date1)
-         call bmf_splitstart (Ptopo_npex,Ptopo_npey,'./process/','BM',
-     $                                Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
-         call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
-         call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
-         call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
-*     
+      ipilf = 1
+      do while ( date1 .le. Pil_jobend_S )
+*
+         if (date1.eq.Mod_runstrt_S) Pil_bcs_hollow_L = .false.
+         call datp2f   ( datev, date1 )
+         err = newdate ( datev, bmf_time1, bmf_time2, -3 )
+         write (6,105) date1,bmf_time1,bmf_time2
+         call prsdate  (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,date1)
          call e_specanal
 *
-         if (e_schm_offline_L) then
-            write (6,130)
-            write (6,101) date1
-         endif
+         call e_intthm
 *
-            call e_intthm
-*
-            call e_intwind 
+         call e_intwind 
 *     
-         call bmf_splitwrall ('AHAV',2,1,1,Bmf_time1,Bmf_time2, 
-     $                                       0,0,40,0,anal_hav)
-         call bmf_splitend
          err = fstfrm ( e_fu_anal )
          err = fclos  ( e_fu_anal )
 *
-         if (Pil_ctebcs_L) goto 999
-c         if (date1.eq.date3)
-c     $      call system ('if [ -s soumet_la_job ] ; then . soumet_la_job ; /bin/rm -f soumet_la_job ; fi')
-*
          call incdatsd (date2,date1,dayfrac)
          date1 = date2
+         Pil_bcs_hollow_L = save_Pil_bcs_hollow_L 
+         Pil_bmf_L        = save_Pil_bmf_L 
 *
       end do
 *     
- 105  format (/80('#'),/,1X,'PROCESSING DATASET VALID: ',a16/80('#')/)
-*
- 101  format ('|',2x,'   ATMOSPHERIC FIELDS.    VALID FOR:',1x,a16,1x,'|')
- 130  format ('|',9('-'),'+',5('-'),'+',8('-'),'+',8('-'),'+',5('-'),
-     $        '+',5('-'),'+',10('-'),'|')
+ 105  format (/80('#'),/,1X,'PROCESSING DATASET VALID: ',a16,'=',i8.8,'.',i8.8/80('#')/)
 *
 *---------------------------------------------------------------------
- 999  return
+      return
       end

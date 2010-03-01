@@ -1,0 +1,77 @@
+***   fillup tracers with data from the 3DF pilot files
+#include "model_macros_f.h"
+      subroutine filuptr ( f,n1,n2,n3,n4,nk,unf,ofi,ofj,trname,ntr,
+     $                                        trname_a,ntra,cumerr )
+      implicit none
+*
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "ptopo.cdk"
+
+      integer n1,n2,n3,n4,nk,unf,ofi,ofj,ntr,ntra,cumerr
+      character* (*) trname(ntr),trname_a(ntra)
+      real f(n1:n2,n3:n4,nk,*)
+*
+      character*4 nomvar
+      integer i,j,k,n,m,ni1,nj1,nk1,takeit,err,nw,nbits,nb
+      real, dimension (:), allocatable :: wkc
+      real, dimension (:,:,:), pointer :: tr1
+
+*-----------------------------------------------------------------------
+      nullify (tr1)
+      nb = 0
+*
+      do n=1,ntra
+*
+         err = -1
+         read (unf,end=54,err=54) nomvar,ni1,nj1,nk1,nbits
+         if (Lun_debug_L)  write(Lun_out,1000) nomvar,ni1,nj1,nk1,nbits
+         if (.not.associated(tr1)) allocate (tr1(ni1,nj1,nk1))
+         takeit=-1
+         do m=1,ntr
+            if (trname(m)(1:4).eq.nomvar) takeit=m
+         end do
+*
+         if (takeit.gt.0) then
+*
+            trname_a(n) = trname(takeit)
+            if (nbits.ge.32) then
+               read (unf,end=55,err=55) tr1
+            else
+               nw = (ni1*nj1*nbits+120+32-1)/32
+               allocate (wkc(nw))
+               do k=1,nk1
+                  read (unf,end=55,err=55) wkc
+                  call xxpak (tr1(1,1,k), wkc, ni1, nj1, -nbits, nb, 2)
+               end do
+               deallocate (wkc)
+            endif
+            do k=1,nk1
+            do j=1,nj1
+            do i=1,ni1
+               f(ofi+i,ofj+j,k,n) = tr1(i,j,k)
+            end do
+            end do
+            end do
+            if (Lun_debug_L.and.Ptopo_numproc.eq.1)
+     $          call statfld(f(n1,n3,1,n),nomvar(1:4),Lctl_step,"filuptr",
+     $                    n1,n2,n3,n4,nk1,n1,n3,1,n2,n4,nk1)
+            err = 0
+*
+         else
+*
+            trname_a(n) = '!@@NOT@@'
+            read (unf,end=55,err=55)
+            err = 0
+*
+         endif
+*
+      end do
+*
+ 55   if (associated(tr1)) deallocate (tr1)
+ 54   cumerr = cumerr + err
+*
+ 1000 format("filuptr",a6," ni1=",i4," nj1=",i4," nk1=",i4," nbits=",i4)
+*-----------------------------------------------------------------------
+      return
+      end

@@ -3,7 +3,7 @@
 #include "model_macros_f.h"
 *
       integer function set_grid (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
-#include "impnone.cdk"
+      implicit none
         integer F_argc,F_v1,F_v2
         character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
         character*5 stuff_S
@@ -21,6 +21,7 @@
 * v2_32 - Lee V.            - gridset is now an ID defined by the user, not the
 * v2_32                       actual "set" number forced to be in sequence
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_30 - McTaggart-Cowan R.- parse optional tag extension from string
 *
 *object
 *	initialization of the common block GRID. This function is
@@ -50,36 +51,39 @@
 *
 *Notes:
 *
-*   ie: grid=2,core;
-*       grid=3,model,2,-2,1,-1;
+* examples:
+* grid=4,model;
+* grid=2,core;
+* grid=1,reduc,4,10,4,10,2
+* grid=3,reduc,4,10,4,10
+* grid=5,reduc,"NEW",2,11,2,15
+* grid=7,core,"CO";
 *
-*    grid=gridset#,model/core,[gridx0,gridx1,gridy0,gridy1];
-*                              gridx0 to gridy1 is optional
+* general syntax
+* grid=gridid,[model/core/reduc],["etik"],[gridx0,gridx1,gridy0,gridy1];
 *
-*      Should label the gridset# sequentially: 1,2,3,....(max of 4)
-*       model       - total grid of the model
-*       core        - only the uniform part of the grid
-*       gridx0      - value to add/subtract from X origin of
-*                     core or model grid
-*       gridx1      - value to add/subtract from X upper corner
-*                     of core or model grid
-*       gridy0      - value to add/subtract from Y origin of
-*                     core or model grid
-*       gridy1      - value to add/subtract from Y upper corner
-*                     of core or model grid
-*HINT: normally you have positive values to add to the origins
-*      and negative values to subtract from the upper corners
+*      gridid  - number to identify gridset to relate to sortie statement
+*       model  - total grid of the model,in LAM, this includes pilot area
+*       core   - only the uniform part of the grid, in LAM, excludes pilot are
+*      reduc   - reduced grid from the model defined as follows
+*       gridx0 - starting I value along X
+*       gridx1 - ending   I value along X
+*       gridy0 - starting J value along X
+*       gridy1 - ending   J value along X
+*
+* IMPORTANT NOTE:
+*     Limit the number of definitions for "grid" to improve the efficiency
+*     in the output routines. The maximum number of definitions is 4.
 *
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
-#include "p_geol.cdk"
 #include "grd.cdk"
-#include "dimout.cdk"
 #include "grid.cdk"
 *
 **
-      integer i, j, k, gridset,gridout(5),niout,njout
+      integer i, j, k, gridset,gridout(5),niout,njout,longueur
+      external longueur
       character*8 grdtyp_S
 *
 *-------------------------------------------------------------------
@@ -101,10 +105,15 @@
 
       j = Grid_sets
       Grid_id(j)=gridset
+      Grid_etikext_S(j) = ''
       if(index(F_argv_S(2),'model') .ne. 0) then
           grdtyp_S='model'
+          if (index(F_argv_S(3),'"').gt.0) 
+     %        Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'core') .ne. 0) then
           grdtyp_S='core'
+          if (index(F_argv_S(3),'"').gt.0) 
+     %        Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'reduc') .ne. 0) then
           grdtyp_S='reduc'
                gridout(1)=0
@@ -116,7 +125,11 @@
                read(F_argv_S(4),*)gridout(2)
                read(F_argv_S(5),*)gridout(3)
                read(F_argv_S(6),*)gridout(4)
-               if (F_argc.eq.7) read(F_argv_S(7),*)gridout(5)
+               if (F_argc.gt.6) then
+                  if (index(F_argv_S(7),'"').eq.0) read(F_argv_S(7),*)gridout(5)
+                  if (index(F_argv_S(F_argc),'"').gt.0) 
+     %     Grid_etikext_S(j) = F_argv_S(F_argc)(2:longueur(F_argv_S(F_argc))-1)
+	       endif
       else
           if (Lun_out.gt.0)
      $    write(Lun_out,*)'SET_GRID WARNING: Grid Type Undefined'
@@ -131,7 +144,7 @@
 *        by dieseig34
          call ipig(Grid_ig1(j), Grid_ig2(j), Grid_ig3(j),
      %        Grd_dx, Grd_dy, Grd_nila, Grd_njla, G_ni, G_nj,
-     %        Grd_rot_8, P_geol_tourn_L)
+     %        Grd_rot_8, Grd_roule)
          Grid_ig1(j) = Grid_ig1(j) + j-1
          if (G_lam) Grid_ig1(j)=Grid_ig1(j)+10
          if (grdtyp_S.eq.'reduc') Grid_ig1(j)=Grid_ig1(j)+10

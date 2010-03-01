@@ -1,0 +1,439 @@
+***s/p v4d_gem2gauss - Interpole GEM scalar Z grid to 3D-Var Gaussian grid  
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_gem2gauss( ut1, vt1, tpt1, hut1, st1, DIST_DIM,  
+     %                          gut1,gvt1,gtpt1,ghut1,gst1,nigauss,njgauss,Nk)
+*
+      use v4dz
+      use v4d_interint0
+*
+      implicit none
+*
+      integer nigauss,njgauss,DIST_DIM,Nk
+      real gut1 (nigauss,njgauss,Nk), gvt1 (nigauss,njgauss,Nk),
+     %     gtpt1(nigauss,njgauss,Nk), ghut1(nigauss,njgauss,Nk),
+     %     gst1 (nigauss,njgauss)
+*
+      real ut1  (DIST_SHAPE,Nk), vt1 (DIST_SHAPE,Nk),
+     %     tpt1 (DIST_SHAPE,Nk), hut1(DIST_SHAPE,Nk),
+     %     st1  (DIST_SHAPE)
+*
+*author M.Tanguay
+*
+*revision
+* v3_01 - Tanguay M.        - initial MPI version
+*                           - introduce GAUSS=GEM option
+* v3_01 - Buehner M.        - external already_done
+* v3_02 - Tanguay M.        - V4dzge_degree in namelist var4d
+* v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
+*                           - Remove V4dg_ga_eq_ge_L
+* v3_30 - Fillion L.        - Same grid when LAM 
+*
+*object
+*  see id section
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "grd.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "dcst.cdk"
+#include "lun.cdk"
+#include "hgc.cdk"
+#include "ptopo.cdk"
+#include "v4dg.cdk"
+*
+      integer  ezqkdef,gdxyfll,gdrls,gdll,ezgdef 
+      external ezqkdef,gdxyfll,gdrls,gdll,ezgdef
+*
+      integer gdin,gdout,i,j,k,n,i1,i2,j1,j2,ni,nj,ier,status
+*
+      real,   allocatable, dimension(:,:) :: zo,wo
+      real,   allocatable, dimension(:)   :: lat,lon
+      real*8, allocatable, dimension(:)   :: x_8,y_8
+*
+      real,   pointer, dimension(:,:) :: fldscint,flduint,fldvint,fld2d 
+*
+      real*8, parameter :: ZERO_8 = 0.0
+      real*8, parameter :: HALF_8 = 0.5  
+      real*8, parameter ::  ONE_8 = 1.0  
+      real*8, parameter ::  TWO_8 = 2.0  
+      real*8, parameter ::CLXXX_8 = 180.0  
+      real*8  rad2deg_8,deg2rad_8
+*
+      logical same_grid_L
+*
+      if(G_lam) then
+        same_grid_L = .true.
+      else
+        same_grid_L = V4dzgauss_ni.eq.G_ni.and.V4dzgauss_nj.eq.G_nj.and.Grd_gauss_L
+      endif
+*
+*     Set parameters of interpolation 
+*     -------------------------------
+      if(Ptopo_myproc.eq.0.and..not.V4dzge_already_done_L) then
+*
+*        --------------------------------------------------------- 
+*        Type of interpolation V4dzge_degree now in namelist var4d  
+*        --------------------------------------------------------- 
+*        NOTE: 1= Linear and 3=Cubic Lagrange
+*        --------------------------------------------------------- 
+*
+*        ------------------
+*        Type of input grid
+*        -----------------------------------------------
+*        NOTE: Defined as G grid since the interpolation 
+*              uses periodicity as Gaussian input grid   
+*        -----------------------------------------------
+         V4dzge_grtypi = 'G' 
+*
+*        ----------------------------------------------------------
+*        Convert output grid from lat-lon to grid input index px-py
+*        ----------------------------------------------------------
+*
+*        Define output grid = Gaussian grid 
+*        ----------------------------------
+         gdout = ezqkdef (nigauss,njgauss,'G',0,0,0,0,0)
+*
+         V4dzge_npts = nigauss*njgauss
+*
+*        Define lat-lon of OUTPUT grid as 2D-field
+*        -----------------------------------------
+         allocate ( lon(V4dzge_npts), STAT=status )
+         allocate ( lat(V4dzge_npts), STAT=status )
+*
+         ier = gdll (gdout,lat,lon)
+*
+*        Allocations OUTPUT grid parameters
+*        ----------------------------------
+         allocate ( V4dzge_px(V4dzge_npts), STAT=status )
+         allocate ( V4dzge_py(V4dzge_npts), STAT=status )
+*
+*        Define input grid = global GEM scalar Z grid
+*        --------------------------------------------
+         gdin = ezgdef(G_ni,G_nj,'Z',Hgc_gxtyp_s,
+     %          Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,
+     %          Geomn_longs, Geomn_latgs)
+*
+*        Index in INPUT grid of each lat lon point in OUTPUT grid
+*        --------------------------------------------------------
+         ier = gdxyfll(gdin,V4dzge_px,V4dzge_py,lat,lon,V4dzge_npts)
+*
+         deallocate( lat, STAT=status )
+         deallocate( lon, STAT=status )
+*
+         ier = gdrls(gdin )
+         ier = gdrls(gdout)
+*
+*        ---------------------------------------------------------
+*        Initialize dimensions I1,I2,J1,J2,NI,NJ,NK, axes AX,AY
+*        and differences CX,CY of input grid used in interpolation
+*        ---------------------------------------------------------
+         V4dzge_i1 = 1 
+         V4dzge_i2 = G_ni 
+         V4dzge_j1 = 1 
+         V4dzge_j2 = G_nj 
+*
+*        Keep horizontal dimensions of input grid used in interpolation
+*        --------------------------------------------------------------
+         i1 = V4dzge_i1
+         i2 = V4dzge_i2
+         j1 = V4dzge_j1
+         j2 = V4dzge_j2
+*
+*        ni = Period if grid='G'
+*        -----------------------
+         ni = i2-i1+1
+*
+*        Maximal dimension in Y
+*        ----------------------
+         nj = j2-j1+1
+*
+*        Vertical dimension Nk is known 
+*        ------------------------------
+*
+*        Define axes of input grid 
+*        -------------------------
+         allocate ( V4dzge_ax(ni), STAT=status )
+         allocate ( V4dzge_ay(nj), STAT=status )
+*
+*        Prescribe global GEM scalar Z grid axes 
+*        ---------------------------------------
+         rad2deg_8 = CLXXX_8/Dcst_pi_8
+         do i=1,ni
+            V4dzge_ax(i) = G_xg_8(i) * rad2deg_8
+         enddo
+         do j=1,nj
+            V4dzge_ay(j) = G_yg_8(j) * rad2deg_8
+         enddo
+*
+*        Evaluate AX,AY differences in CX,CY for cubic interpolation
+*        -----------------------------------------------------------
+         if(V4dzge_degree.eq.3) then
+*
+            allocate ( V4dzge_cx(6*(ni)), STAT=status )
+            allocate ( V4dzge_cy(6*(nj)), STAT=status )
+*
+            call v4d_nwtncof (V4dzge_cx,V4dzge_cy,V4dzge_ax,V4dzge_ay,
+     %                        i1,i2,j1,j2,ni,V4dzge_grtypi)
+*
+         endif
+*
+*        Define grid quantities to evaluate model fields at poles
+*        --------------------------------------------------------
+         allocate ( x_8(0:ni+1),     STAT=status )
+         allocate ( y_8(nj),         STAT=status )
+*
+         allocate ( V4dzge_wx_8 (ni), STAT=status )
+         allocate ( V4dzge_cox_8(ni), STAT=status )
+         allocate ( V4dzge_six_8(ni), STAT=status )
+         allocate ( V4dzge_siy_8(nj), STAT=status )
+*
+         deg2rad_8 = acos( -ONE_8 )/CLXXX_8
+*
+         do i=1,ni
+            x_8(i) =  V4dzge_ax(i) * deg2rad_8
+         enddo
+         x_8(   0) = (V4dzge_ax(ni)-360.0)*deg2rad_8
+         x_8(ni+1) = (V4dzge_ax( 1)+360.0)*deg2rad_8
+*
+         do j=1,nj
+            y_8(j) =  V4dzge_ay(j) * deg2rad_8
+         enddo
+*
+         do i=1,ni
+            V4dzge_wx_8 (i) = (x_8(i+1) - x_8(i-1))*HALF_8 / (TWO_8*Dcst_pi_8)
+            V4dzge_cox_8(i) = cos ( x_8(i) )
+            V4dzge_six_8(i) = sin ( x_8(i) )
+         enddo
+*
+         do j=1,nj
+           V4dzge_siy_8(j) = sin ( y_8(j) )
+         enddo
+*
+         deallocate( x_8, STAT=status )
+         deallocate( y_8, STAT=status )
+*
+         V4dzge_already_done_L = .true.
+*
+      elseif(Ptopo_myproc.eq.0) then
+*
+         i1 = V4dzge_i1
+         i2 = V4dzge_i2
+         j1 = V4dzge_j1
+         j2 = V4dzge_j2
+*
+      endif
+*
+*     Interpolate 3D-Var Gaussian grid to GEM scalar Z grid
+*     -----------------------------------------------------
+*
+      if(Ptopo_myproc.eq.0) then
+*       ------------------------------------------------
+*       Allocate fields on output grid in reverse format 
+*       with V4dzge_npts = nigauss*njgauss
+*       ------------------------------------------------
+        allocate ( fldscint(Nk,V4dzge_npts), STAT=status )
+        allocate ( flduint (Nk,V4dzge_npts), STAT=status )
+        allocate ( fldvint (Nk,V4dzge_npts), STAT=status )
+        allocate ( fld2d   ( 1,V4dzge_npts), STAT=status )
+*
+*       -----------------------------
+*       Allocate fields on input grid 
+*       -----------------------------
+        allocate ( zo      (G_ni*G_nj,G_nk), STAT=status )
+        allocate ( wo      (G_ni*G_nj,G_nk), STAT=status )
+      endif
+*
+*     Global collect 
+*     --------------
+      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1,
+     %                   tpt1,LDIST_DIM,G_halox,G_haloy,ier)
+*
+*     -----------------------------------
+*     Scalar interpolation of temperature
+*     -----------------------------------
+      if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
+*
+*       -----------------------------------------------------
+*       Preparation for polar correction and interpolation of
+*       scalar field FLDSC at positions px,py
+*       -----------------------------------------------------
+        call v4d_scint0 (fldscint,V4dzge_px,V4dzge_py,V4dzge_npts,
+     %                   zo,V4dzge_ax,V4dzge_ay,V4dzge_cx,V4dzge_cy,V4dzge_wx_8,
+     %                   i1,i2,j1,j2,Nk,V4dzge_grtypi,V4dzge_degree,'4T')
+*
+*       Reserve order of indices
+*       ------------------------
+        do k = 1,Nk
+        do n = 1,V4dzge_npts 
+           gtpt1(n,1,k) = fldscint(k,n)
+        end do
+        end do
+*
+      else
+*
+*       Reserve order of indices
+*       ------------------------
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gtpt1(n,1,k) = zo(n,k) 
+        end do
+        end do
+        end do
+*
+      endif
+*
+      endif
+*
+*     Global collect 
+*     --------------
+      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1,
+     %                   hut1,LDIST_DIM,G_halox,G_haloy,ier)
+*
+*     --------------------------------
+*     Scalar interpolation of humidity 
+*     --------------------------------
+      if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
+*
+*       -----------------------------------------------------
+*       Preparation for polar correction and interpolation of
+*       scalar field FLDSC at positions px,py
+*       -----------------------------------------------------
+        call v4d_scint0 (fldscint,V4dzge_px,V4dzge_py,V4dzge_npts,
+     %                   zo,V4dzge_ax,V4dzge_ay,V4dzge_cx,V4dzge_cy,V4dzge_wx_8,
+     %                   i1,i2,j1,j2,Nk,V4dzge_grtypi,V4dzge_degree,'HU')
+*
+*       Reserve order of indices
+*       ------------------------
+        do k = 1,Nk
+        do n = 1,V4dzge_npts
+           ghut1(n,1,k) = fldscint(k,n)
+        end do
+        end do
+*
+      else
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           ghut1(i,j,k) = zo(n,k)
+        end do
+        end do
+        end do
+*
+      endif
+*
+      endif
+*
+*     Global collect 
+*     --------------
+      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,1,0,0,1,
+     %                   st1, LDIST_DIM,G_halox,G_haloy,ier)
+*
+*     ----------------------------------------
+*     Scalar interpolation of surface pressure
+*     ----------------------------------------
+      if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
+*
+*       -----------------------------------------------------
+*       Preparation for polar correction and interpolation of
+*       scalar field FLDSC at positions px,py
+*       -----------------------------------------------------
+        call v4d_scint0 (fld2d,V4dzge_px,V4dzge_py,V4dzge_npts,
+     %                   zo,V4dzge_ax,V4dzge_ay,V4dzge_cx,V4dzge_cy,V4dzge_wx_8,
+     %                   i1,i2,j1,j2,1,V4dzge_grtypi,V4dzge_degree,'4S')
+*
+*       Reserve order of indices
+*       ------------------------
+        do n = 1,V4dzge_npts
+           gst1(n,1) = fld2d(1,n)
+        end do
+*
+      else
+*
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gst1(i,j) = zo(n,1)
+        end do
+        end do
+*
+      endif
+*
+      endif
+*
+*     Global collect 
+*     --------------
+      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1,
+     %                   ut1,LDIST_DIM,G_halox,G_haloy,ier)
+      call rpn_comm_coll(wo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1,
+     %                   vt1,LDIST_DIM,G_halox,G_haloy,ier)
+*
+*     --------------------
+*     Vector interpolation
+*     --------------------
+      if(Ptopo_myproc.eq.0) then
+*
+      if(.not.same_grid_L) then
+*
+*       -----------------------------------------------------
+*       Preparation for polar correction and interpolation of
+*       wind fields FLDU,FLDV at positions px,py
+*       -----------------------------------------------------
+        call v4d_uvint0 (flduint,fldvint,V4dzge_px,V4dzge_py,V4dzge_npts,
+     %                   zo,wo,V4dzge_ax,V4dzge_ay,V4dzge_cx,V4dzge_cy,
+     %                   V4dzge_wx_8,V4dzge_cox_8,V4dzge_six_8,V4dzge_siy_8,
+     %                   i1,i2,j1,j2,Nk,V4dzge_grtypi,V4dzge_degree,'UV')
+*
+*       Reserve order of indices
+*       ------------------------
+        do k = 1,Nk
+        do n = 1,V4dzge_npts 
+           gut1(n,1,k) = flduint(k,n)
+           gvt1(n,1,k) = fldvint(k,n)
+        end do
+        end do
+*
+      else
+*
+        do k = 1,Nk
+        do j = 1,njgauss
+        do i = 1,nigauss
+           n = nigauss*(j-1) + i
+           gut1(i,j,k) = zo(n,k) 
+           gvt1(i,j,k) = wo(n,k)
+        end do
+        end do
+        end do
+*
+      endif
+*
+      endif
+*
+*     ------------
+*     Deallocation
+*     ------------
+      if(Ptopo_myproc.eq.0) then
+         deallocate( zo,      STAT=status )
+         deallocate( wo,      STAT=status )
+         deallocate( fldscint,STAT=status )
+         deallocate( flduint, STAT=status )
+         deallocate( fldvint, STAT=status )
+         deallocate( fld2d,   STAT=status )
+      endif
+*
+      return
+      end

@@ -1,19 +1,21 @@
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
-***s/r out_sgrid
+***s/r out_sgrid - to setup output grid
 *
-      subroutine out_sgrid(F_x0,F_x1,F_y0,F_y1,F_periodx_L,
-     $ F_ig1,F_ig2,F_reduc, F_xpos,F_ypos)
+      subroutine out_sgrid ( F_x0,F_x1,F_y0,F_y1,F_periodx_L,
+     $                       F_ig1,F_ig2,F_reduc,F_etikext_s,F_xpos,F_ypos)
 
       implicit none
 *
       integer F_x0, F_x1,F_y0,F_y1,F_ig1,F_ig2,F_reduc,NI,NJ
       real F_xpos(*),F_ypos(*)
       logical F_periodx_L
+      character*(*) F_etikext_s
 *
 *AUTHOR   Michel Desgagne     July 2004
 *
 *REVISION
 * v3_20 - Lee V.            - Adapted for GEMDM
+* v3_30 - McTaggart-Cowan R.- Append user defined grid tag to namelist value
 *
 *
 *ARGUMENTS
@@ -28,6 +30,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *    F_ig1       I    int   given by model
 *    F_ig2       I    int   given by model
 *    F_periodx   I    logic periodicity on X
+*    F_etikext_s I    char  grid-specific tag extension
 *
 #include "out.cdk"
 *
@@ -77,6 +80,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
           Out_xpos_ = loc(F_xpos(1))
           Out_ypos_ = loc(F_ypos(1))
       endif
+*
+      Out_etik_S = Out_etiket_S(1:min(len_trim(Out_etiket_S),
+     $   len(Out_etiket_S)-len_trim(F_etikext_s))) //trim(F_etikext_s)
 *
 *----------------------------------------------------------------------
       return

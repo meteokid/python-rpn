@@ -1,0 +1,142 @@
+***s/r nest_update_ad - ADJ of nest_update
+*
+#include "model_macros_f.h"
+*
+      subroutine nest_update_ad ()
+*
+      implicit none
+*
+*author 
+*     M. Tanguay - rpn - december 2006
+*
+*revision
+* v3_30 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "acid.cdk"
+#include "glb_ld.cdk"
+#include "bcsdim.cdk"
+#include "bcsgrds.cdk"
+#include "bcsmem.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer err,key(13),nvar,id
+      integer key1(Tr3d_ntr),key1_,n
+      real tr,mul(LDIST_SHAPE,G_nk)
+      pointer (patr, tr(LDIST_SHAPE,*))
+*----------------------------------------------------------------------
+*
+      if (north+south+west+east.lt.1) return
+*
+      key1_ = VMM_KEY (nest_tr)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            id = (n-1)*bcs_sz+1
+            err = vmmget(key1(n),patr,tr)
+            call trnes_ad(tr,bcs_tr(id),
+     $                 bcs_tr(id+bcs_in-1),bcs_tr(id+bcs_iw-1),
+     $                 bcs_tr(id+bcs_ie-1),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+         enddo
+         err = vmmuld(key1,Tr3d_ntr)
+      endif
+*
+      key(1 )=VMM_KEY(nest_u)
+      key(2 )=VMM_KEY(nest_v)
+      key(3 )=VMM_KEY(nest_t)
+      key(4 )=VMM_KEY(nest_psd)
+      key(5 )=VMM_KEY(nest_pip)
+      key(6 )=VMM_KEY(nest_fip)
+      key(7 )=VMM_KEY(nest_td)
+      key(8 )=VMM_KEY(nest_fi)
+      key(9 )=VMM_KEY(nest_q)
+      key(10)=VMM_KEY(nest_s)
+      key(11)=VMM_KEY(nest_tp)
+      nvar = 11
+*
+      if (.not.Schm_hydro_L) then
+         key(12)=VMM_KEY(nest_w)
+         key(13)=VMM_KEY(nest_mu)
+         nvar = 13
+      endif
+*
+      err = vmmlod(key,nvar)
+      err = VMM_GET_VAR(nest_u)
+      err = VMM_GET_VAR(nest_v)
+      err = VMM_GET_VAR(nest_t)
+      err = VMM_GET_VAR(nest_psd)
+      err = VMM_GET_VAR(nest_pip)
+      err = VMM_GET_VAR(nest_fip)
+      err = VMM_GET_VAR(nest_td)
+      err = VMM_GET_VAR(nest_fi)
+      err = VMM_GET_VAR(nest_q)
+      err = VMM_GET_VAR(nest_s)
+      err = VMM_GET_VAR(nest_tp)
+      if (.not.Schm_hydro_L) then
+         err = VMM_GET_VAR(nest_w)
+         err = VMM_GET_VAR(nest_mu)
+      endif
+*
+      if (.not.Schm_hydro_L) then
+          call trnes_ad (nest_mu,bcs_mu(bcs_is),bcs_mu(bcs_in),
+     $       bcs_mu(bcs_iw),bcs_mu(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+          call trnes_ad (nest_w,bcs_w(bcs_is),bcs_w(bcs_in),
+     $       bcs_w(bcs_iw),bcs_w(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      endif
+*
+      call trnes_ad (nest_td,bcs_td(bcs_is),bcs_td(bcs_in),
+     $       bcs_td(bcs_iw),bcs_td(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_psd,bcs_psd(bcs_is),bcs_psd(bcs_in),
+     $     bcs_psd(bcs_iw),bcs_psd(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_tp,bcs_tp(bcs_is),bcs_tp(bcs_in),
+     $       bcs_tp(bcs_iw),bcs_tp(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_s,bcs_s(bcs_is),bcs_s(bcs_in),
+     $       bcs_s(bcs_iw),bcs_s(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,1)
+      call trnes_ad (nest_q,bcs_q(bcs_is),bcs_q(bcs_in),
+     $       bcs_q(bcs_iw),bcs_q(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_fi,bcs_fi(bcs_is),bcs_fi(bcs_in),
+     $       bcs_fi(bcs_iw),bcs_fi(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_fip,bcs_fip(bcs_is),bcs_fip(bcs_in),
+     $      bcs_fip(bcs_iw),bcs_fip(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_pip,bcs_pip(bcs_is),bcs_pip(bcs_in),
+     $      bcs_pip(bcs_iw),bcs_pip(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_t,bcs_t(bcs_is),bcs_t(bcs_in),
+     $       bcs_t(bcs_iw),bcs_t(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_v,bcs_v(bcs_is),bcs_v(bcs_in),
+     $       bcs_v(bcs_iw),bcs_v(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes_ad (nest_u,bcs_u(bcs_is),bcs_u(bcs_in),
+     $       bcs_u(bcs_iw),bcs_u(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+*
+      err = vmmuld(key,nvar)
+*
+*----------------------------------------------------------------------
+      return
+      end

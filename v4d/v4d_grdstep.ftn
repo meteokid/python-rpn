@@ -1,0 +1,216 @@
+***s/r v4d_grdstep - Extract fields and evaluate gradient forcing
+*                    at a specific time step
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_grdstep 
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
+* v3_01 - Morneau J.        - change call to bongril_ad by p_uvgridscal_ad
+*                           - read forcings stored in v4d_cststep with 
+*                             v4d_rwobfr
+* v3_30 - Tanguay M.        - adapt TL/AD to itf
+*
+*object
+*     see id section
+*
+*     -------
+*     CAUTION
+*     -------------------------------------------------------------
+*     V4D_RWOBFR,V4D_CSTSTEP AND V4D_GRDSTEP SHOULD BE SYNCHRONIZED
+*     FOR THE STORING AND RETRIEVING OF OBSERVATIONS AND FORCINGS
+*     -------------------------------------------------------------
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "geomn.cdk"
+#include "geomg.cdk"
+#include "v4dg.cdk"
+#include "tr3d.cdk"
+#include "v4dj.cdk"
+#include "v4d_vmm.cdk"
+#include "vt1.cdk"
+#include "dcst.cdk"
+*
+*modules
+*
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*
+      integer pnerr,pnlkey1(16),i,j,k
+*
+      real pr1
+*
+      real*8, parameter :: ZERO_8 =0.0
+*
+*
+      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk)
+*
+      if ( V4dj_kdcst.ne.2 ) call gefstop('v4d_grdstep')
+      if ( V4dj_jb   .ne.1 ) call gefstop('v4d_grdstep')
+*     ______________________________________________________
+*
+      if( V4dj_jb.eq.1 ) then
+*       Read FORCINGS from WA file 
+*       ------------------------------
+        V4dg_rwfr = 0
+        call v4d_rwobfr(2)
+      endif
+*
+*     ----------------------------
+*     JB with Energy inner product
+*     ----------------------------
+      if( V4dj_kdcst.eq.2.and.V4dj_jb.eq.1 ) then
+*
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1) = VMM_KEY(ut1  )
+      pnlkey1(2) = VMM_KEY(vt1  )
+      pnlkey1(3) = VMM_KEY(tpt1 )
+      pnlkey1(4) = VMM_KEY(st1  )
+*
+      pnlkey1(5) = VMM_KEY(ut1c )
+      pnlkey1(6) = VMM_KEY(vt1c )
+      pnlkey1(7) = VMM_KEY(tpt1c)
+      pnlkey1(8) = VMM_KEY(st1c )
+*
+*     - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,8)
+*     - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1  )
+      pnerr = VMM_GET_VAR(vt1  )
+      pnerr = VMM_GET_VAR(tpt1 )
+      pnerr = VMM_GET_VAR(st1  )
+*
+      pnerr = VMM_GET_VAR(ut1c )
+      pnerr = VMM_GET_VAR(vt1c )
+      pnerr = VMM_GET_VAR(tpt1c)
+      pnerr = VMM_GET_VAR(st1c )
+*
+*     ADJOINT of
+*     ----------------------------------
+*     Contribution from surface pressure
+*     ----------------------------------
+      do j = 1,l_nj
+      do i = 1,l_ni
+      st1(i,j) = st1c(i,j) + st1(i,j) 
+      end do
+      end do
+*
+*     ADJOINT of
+*     -----------------------------
+*     Contribution from temperature
+*     -----------------------------
+      do k = 1,l_nk
+      do j = 1,l_nj
+      do i = 1,l_ni
+      tpt1(i,j,k) = tpt1c(i,j,k) + tpt1(i,j,k) 
+      end do
+      end do
+      end do
+*
+*
+*     ADJOINT of
+*     -----------------------
+*     Contribution from winds
+*     -----------------------
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k = 1,l_nk 
+      do j = l_miny,l_maxy 
+      do i = l_minx,l_maxx 
+      wijk1(i,j,k) = ZERO_8
+      wijk2(i,j,k) = ZERO_8
+      end do
+      end do
+      end do
+*
+*     ADJOINT of
+*     Calculate VV true wind from 4V image wind (scalar grid)
+*     -------------------------------------------------------
+      do j=1,l_nj
+         pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+         do k=1,l_nk
+            do i=1,l_ni
+            wijk2(i,j,k) = pr1 * vt1c(i,j,k) 
+            end do
+         end do
+      end do
+*
+*     ADJOINT of
+*     Calculate UU true wind from 4U image wind (scalar grid)
+*     -------------------------------------------------------
+      do j=1,l_nj
+         pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+         do k=1,l_nk
+            do i=1,l_ni
+            wijk1(i,j,k) = pr1 * ut1c(i,j,k) 
+            end do
+         end do
+      end do
+*
+*     ADJOINT of
+*     Transfer from 4V and 4U staggered grid to scalar grid
+*     -----------------------------------------------------
+      call itf_phy_uvgridscal_ad(wijk1,wijk2,LDIST_DIM,l_nk,.true.)
+*
+*     ADJOINT of
+*     Prepare 4V image wind contribution
+*     ----------------------------------
+      do k=1,l_nk
+         do j=1,l_njv
+            do i=1,l_ni
+                 vt1(i,j,k) = wijk2(i,j,k) + vt1(i,j,k)
+               wijk2(i,j,k) = ZERO_8
+            end do
+         end do
+      end do
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k = 1,l_nk 
+      do j = l_miny,l_maxy 
+      do i = l_minx,l_maxx 
+      wijk2(i,j,k) = ZERO_8
+      end do
+      end do
+      end do
+*
+*     Prepare 4U image wind contribution
+*     ----------------------------------
+      do k=1,l_nk
+         do j=1,l_nj
+            do i=1,l_niu
+                 ut1(i,j,k) = wijk1(i,j,k) + ut1(i,j,k)
+               wijk1(i,j,k) = ZERO_8
+            end do
+         end do
+      end do
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k = 1,l_nk 
+      do j = l_miny,l_maxy 
+      do i = l_minx,l_maxx 
+      wijk1(i,j,k) = ZERO_8
+      end do
+      end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+      endif
+*
+      return
+      end

@@ -132,7 +132,7 @@
          call tmg_stop0 (6)
 *
          call tmg_start0 ( 7, 'SOL      ' )
-         call sol_main ()
+         call sol_main (iln)
          call tmg_stop0 (7)
 *
          if ( V4dg_conf.ne.0 .and. V4dg_oktr_L .and. .not.V4dr_redotr_L  ) then

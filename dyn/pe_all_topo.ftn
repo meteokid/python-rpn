@@ -1,0 +1,108 @@
+***s/r pe_all_topo - First initialization steps
+*
+#include "model_macros_f.h"
+*
+      subroutine pe_all_topo
+      implicit none
+*
+*author
+*     Michel Desgagne - Summer 2006
+*
+*revision
+* v3_30 - Desgagne M.       - initial version
+*
+*implicits
+#include "ptopo.cdk"
+#include "path.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+*
+      integer  rpn_comm_bloc,ouvrstrt,wkoffit
+      external rpn_comm_bloc,ouvrstrt,wkoffit
+*
+      character*12 dumc1_S
+      character*500 fn
+      integer err,n1,n2,n3,n4,n5,n6,n7,bufnml(10000),unf
+*
+*-------------------------------------------------------------------
+*
+      call tmg_init0  ( Ptopo_myproc, 'GEMDM' )
+      call tmg_start0 ( 1, 'GEMDM' ) 
+*
+* Initializes I/O Fortran units
+*
+      lun_out  = -1
+      lun_in   =  5
+      lun_lab  = -1
+      Lun_zonl = -1
+      Lun_cte  = -1
+      lun_tsrs = 61
+      lun_pilot= 62
+      lun_waphy= 65
+      lun_wapta= 66
+      Lun_rstrt= -1
+      Lun_debug_L=.false.
+*
+* Broadcasts processor topology
+*
+      COMMON_BROADCAST (Ptopo_b)
+      COMMON_BROADCAST (Ptopo_l)
+*
+* Initializes Path_dfwmil_S and Path_nml_S
+*
+      call getenvc ('rep_from_which_model_is_launched',Path_dfwmil_S)
+      Path_nml_S = trim(Path_dfwmil_S)//'/process/model_settings'
+*
+* Initializes PEs block partitions for the PEs (grouping PEs)
+*
+      Ptopo_numpe_perb = Ptopo_npex/Ptopo_nblocx*Ptopo_npey/Ptopo_nblocy
+      call rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
+      err = RPN_COMM_bloc ( Ptopo_nblocx, Ptopo_nblocy )
+      call gem_stop ('rpn_comm_bloc',err)
+*
+      call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc,
+     $                      n1,n2,n3,n4,n5,n6,n7 ,Ptopo_mybloc,
+     $        Ptopo_myblocx,Ptopo_myblocy,Ptopo_blocme,dumc1_S )
+*
+* Initializes OpenMP
+*
+      call omp_set_num_threads(Ptopo_npeOpenMP)
+      if (Ptopo_myproc.eq.0) print *, 'OpenMP will use ',
+     $     Ptopo_npeOpenMP,' thread(s)'
+      call pe_rebind(0)
+* Reading namelist file Path_nml_S (blind read)
+*
+      if (Ptopo_myproc.eq.0) then
+         call array_from_file(bufnml,size(bufnml),Path_nml_S)
+         lun_out  =  6
+      endif
+* 
+* Changing directory to local Ptopo_mycol_Ptopo_myrow 
+*
+      call set_run_dir_xy (Ptopo_mycol, Ptopo_myrow)
+*
+* Writing local namelist file Path_nml_S (blind write)
+*
+      call RPN_COMM_bcast(bufnml,size(bufnml),"MPI_INTEGER",0,
+     $                                           "grid",err )
+      call array_to_file (bufnml,size(bufnml),'model_settings')
+*
+      Lun_rstrt = ouvrstrt( )
+*
+* Determine theoretical mode with presence of file process/theoc
+*
+      unf=0
+      Schm_theoc_L = .false.
+      fn=trim(Path_dfwmil_S)//'/process/theoc'
+      if (wkoffit(fn).gt.-3) then
+         if (Ptopo_myproc.eq.0) write (Lun_out,*)
+     $                          'Assume Theoretical case'
+         Schm_theoc_L = .true.
+      else
+         call fclos (unf)
+      endif
+*
+*-------------------------------------------------------------------
+*      
+      return
+      end

@@ -1,0 +1,142 @@
+***s/r gemtim2 - Print out date and cpu statistics
+*
+#include "model_macros_f.h"
+*
+      subroutine gemtim2( unf, ModStep_L, Step_Done,Step_rsti )
+*
+      implicit none
+*
+      logical ModStep_L
+      integer unf, Step_Done,Step_rsti
+*
+*author
+*     B. Dugas
+*
+*revision
+* v2_30 - Dugas B.       - initial version
+* v3_11 - Dugas B.       - Adapt to AIX envvironment
+* v3_12 - Dugas B.       - Call f_get_my_resident_time under AIX and
+*                          return modified Step_Restar
+* v3_20 - Dugas B.       - Only change Step_rsti when Used is greater than 0. 
+* v3_22 - Lee V.         - add max residual memory 
+* v3_30 - Dugas B.       - Rename Step_Restart to Step_rsti
+*                          and broadcast its value
+*
+*object
+*     
+*     1) Provide for run-time accounting information.
+*     2) (Only Under AIX and if ModStep_L is TRUE) Step_rsti
+*        will be modified so as to use the maximum amount of
+*        allocated cpu time. This re-calculation is done
+*        once per simulated day
+*
+*arguments
+* unf           I  - standard out unit number
+* ModStep_L     I  - Do we want to modify Step_rsti
+* Step_Done     I  - Number of timesteps done in current job
+* Step_rsti I/O - maximum number of timesteps to be done in one job
+**
+      logical, save :: timini_L
+      data timini_L / .false. /
+*
+#if defined (NEC)
+      character*24 temp_S,fdate
+      real totals,users,systs,ra(2),dtime
+      equivalence (ra(1),users),(ra(2),systs)
+*----------------------------------------------------------------
+*
+      if (unf.le.0) return
+*
+      totals = dtime( ra )
+      temp_S = fdate( )
+*
+      if (timini_L) write(unf,1000) temp_S, users, systs
+#endif
+#if defined (AIX)
+#include "cstv.cdk"
+      integer get_max_rss
+      external get_max_rss
+      real    spJour,Jour
+      integer Used0,Used,SoftLim,HardLim,ppjour
+      integer maxJour,Hold_Rsti,ierr
+      save    Used0,ppJour,Jour
+*
+      character date_S*8 ,time_S*10
+      character jour_S*11,heure_S*10
+      real          users,systs
+      real, save :: user0,syst0
+      data          user0,syst0 / 0.0, 0.0 /
+*----------------------------------------------------------------
+*
+      if (ModStep_L .and. unf.gt.0) then
+*
+        if (Step_Done.eq.1) then
+*
+*           Determine the amount of time spent at startup (Used0)
+*           as well as the number of timesteps per days (ppJour)
+*           and finally initialise a number of days counter
+*
+            call f_get_my_resident_time( Used0,HardLim,SoftLim )
+            ppJour  = nint( 86400. / Cstv_dt_8 )
+            Used0   = max( Used0, 10 )
+            Jour    = 0.
+*
+         else if (mod( Step_Done,ppJour ).eq.1) then
+*
+            call f_get_my_resident_time( Used,HardLim,SoftLim )
+*
+*           HardLim is to hold the time allocated to the current
+*           job, assuming we spend the same number of seconds before
+*           and after it. Then Used becomes the time used since the
+*           first call to f_get_my_resident_time, spJour is the number
+*           of CPU seconds per simulated days in the current job and
+*           maxJour is the maximum number of days we can do in it
+            HardLim = HardLim - 2*Used0
+            Used    = max( 0, Used    -   Used0 )
+            Jour    = Jour    +   1.
+            spJour  = Used    /   Jour 
+*
+            if (spJour.ne.0) then
+               maxJour = HardLim / spJour
+*
+*              Re-define Step_rsti to reflect maxJour
+               Hold_Rsti = Step_rsti
+               Step_rsti = maxJour*ppJour
+*
+               if (Hold_Rsti.ne.Step_rsti) write(unf,1001) Step_rsti
+*
+            endif
+*
+         endif
+*
+      endif
+*
+      call RPN_COMM_bcast( Step_rsti,1,"MPI_INTEGER",0,"grid",ierr )
+      if (unf.le.0) return
+*
+      call date_and_time( date_S,time_S )
+      jour_S  = date_S(1:4)//'/'//date_S(5:6)//'/'//date_S(7:8)//' '
+      heure_S = time_S(1:2)//'h'//time_S(3:4)//'m'//time_S(5:6)//'s,'
+*
+      call setrteopts('cpu_time_type=total_usertime')
+      call cpu_time( users )
+*
+      call setrteopts('cpu_time_type=total_systime')
+      call cpu_time( systs )
+*
+      if (timini_L)  write(unf,1000)
+     +    ' At '//jour_S//heure_S, users-user0, systs-syst0,get_max_rss()
+*
+      user0 = users
+      syst0 = systs
+#endif
+      timini_L = .true.
+*
+*----------------------------------------------------------------
+ 1000    format(/A,' User Time (sec) : ',f10.6,
+     +             ' Sys  Time (sec) : ',f10.6,
+     +            ', Mem (Kbytes/PE) : ',i10)
+ 1001    format(/  ' In GEMTIM2, Step_rsti reset to ',I4) 
+*
+      return
+      end

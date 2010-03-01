@@ -45,11 +45,13 @@
 * v3_03                       if Schm_phyms_L is false.
 * v3_11 - Tanguay M.        - Add TLM and ADJ increments TT and P0
 *                           - Extend TRAJ for conversion for DYNOUT2
+* v3_12 - Dugas B.          - Consider Out3_satues_L in humidity calculations
 * v3_20 - Lee V.            - Output in blocks, standard files
 * v3_21 - Lee V.            - Output Optimization
 * v3_22 - Tanguay M.        - pad fit1 (undefined values when Out3_vt2gz is F)
 * v3_22 - Lee V.            - reduced args in calling sequence for calzz
-
+* v3_30 - Bilodeau/Tanguay  - Output pair (TT,HU) for the adjoint 
+* v3_30 - Plante A.         - Correction for THETA (TH) output
 *
 *object
 *     See above id.
@@ -65,12 +67,11 @@
 
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "dimout.cdk"
+#include "out3.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
 #include "schm.cdk"
 #include "out.cdk"
-#include "out3.cdk"
 #include "grd.cdk"
 #include "level.cdk"
 #include "outd.cdk"
@@ -81,6 +82,10 @@
 *modules
 *
 **
+      real theta_p0
+
+      parameter (theta_p0=100000.)
+
       integer i,j,k,kl,ii
       real wk1(G_ni,G_nj),wk2(G_ni,G_nj)
       real wk3(G_ni,G_nj+2),wk4(G_ni,G_nj+2)
@@ -96,7 +101,7 @@
       real vt_pres(F_ninj,F_nko)
       real px(F_ninj,F_nk), th(F_ninj,F_nk)
       real tt(F_ninj,F_nk), t8(F_ninj,F_nk),
-     $     vt(F_ninj,F_nk)
+     $     vt(F_ninj,F_nk), hu(F_ninj,F_nk)
       real gz_temp(F_ninj,F_nk),tt_temp(F_ninj,F_nk)
       real ps_temp(F_ninj)
       integer :: lastdt = -1
@@ -430,7 +435,7 @@
          if (pnth.ne.0) then
           do k= 1,F_nk
             do i= 1, F_ninj
-              th(i,k)= F_tt1(i,k)*(exp(F_wlnph(i,l_nk))/
+              th(i,k)= F_tt1(i,k)*(theta_p0/
      $                            exp(F_wlnph(i,k)))**Dcst_cappa_8 
             enddo
           enddo
@@ -438,7 +443,20 @@
      $        'TH  ',1.0,      0.0,  Out_kind,F_nk, F_indo, F_nko, nbit(pnth) )
          endif
          if (pnhu.ne.0) then
-            if (Out3_cliph_L) then
+             if (V4dgconf_L.and.V4dg_ad_L) then
+*               See remark below about the pair (TT,HU) for the adjoint.
+                do k=1,F_nk
+                   do i= 1, F_ninj
+                      hu(i,k) = F_hut1(i,k) + Dcst_delta_8* dble(F_tpt1(i,k)) *
+     $                          dble(F_vtm(i,k))/(1.0D0 + Dcst_delta_8*dble(F_hum1(i,k)))
+                   end do
+                end do
+*
+                call ecris_fst2(hu,l_minx,l_maxx,l_miny,l_maxy,
+     $            Geomg_hyb, 'HU  ',1.0,      0.0,  Out_kind,F_nk,
+     $            F_indo, F_nko, nbit(pnhu) )
+*
+            else if (Out3_cliph_L) then
                 do k= 1,F_nk
                  do i= 1, F_ninj
                     t8(i,k) = amax1( F_hut1(i,k), 0. )
@@ -490,6 +508,12 @@
 *
               do k=  1, F_nk
               do i=1,F_ninj
+*
+*                We calculate the pair (TT,HU), where TT is the true temperature,
+*                according to subroutine mfotvt_ad from the physics.
+*                The pair (TPT1,HUT1), where TPT1 is the virtual temperature,
+*                is already taken care of.
+*
                  tt(i,k) = dble(vt(i,k)) * 
      $                     (1.d0 + Dcst_delta_8*dble(F_hum1(i,k)))
               enddo
@@ -518,7 +542,7 @@
 
          if (pntw.ne.0) then
 *        Calculate THETAW TW (t8=TW) (px=PX)
-             call mthtaw2 (t8,F_hut1,vt, px,px,3, .false., .false.,
+             call mthtaw2 (t8,F_hut1,vt, px,px,3, .false., Out3_satues_L,
      $                     .true.,Dcst_trpl_8,F_ninj,F_nk,F_ninj)
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
      $        'TW  ',1.0,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pntw) )
@@ -526,7 +550,7 @@
 
          if (pnes.ne.0 .or. pntd.ne.0) then
 *        Calculate ES (t8=ES) (px=PX)
-             call mhuaes(t8,F_hut1,vt,px,px,3, .false., .false.,
+             call mhuaes(t8,F_hut1,vt,px,px,3, .false., Out3_satues_L,
      $                      F_ninj,F_nk,F_ninj)
 
              if (Out3_cliph_L) then
@@ -557,8 +581,13 @@
 
          if (pnhr.ne.0) then
 *        Calculate HR (t8=HR,tt=TT,px=PX)
-             call mfohra(t8,F_hut1,tt,
-     $                   px,px,3,F_ninj,F_nk,F_ninj)
+             if (Out3_satues_L) then
+                call mfohr(t8,F_hut1,tt,
+     $                      px,px,3,F_ninj,F_nk,F_ninj)
+             else
+                call mfohra(t8,F_hut1,tt,
+     $                      px,px,3,F_ninj,F_nk,F_ninj)
+             endif
              if ( Out3_cliph_L ) then
                 do k= 1,F_nk
                   do i= 1, F_ninj
@@ -572,12 +601,12 @@
          endif
 
          if (pnww.ne.0) then
-!$omp parallel
+!$omp parallel shared( l_minx,l_maxx,l_miny,l_maxy, G_nk, l_ni,l_nj )
              call calomeg(t8, F_psdt1, F_tdt1, F_st1, 
-     $                 l_minx,l_maxx,l_miny,l_maxy, G_nk, 1,l_ni,1,l_nj)
+     $                   l_minx,l_maxx,l_miny,l_maxy, G_nk, 1,l_ni,1,l_nj)
 !$omp end parallel
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
-     $        'WW  ',1.0,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pnww) )
+     $           'WW  ',1.0,0.0, Out_kind,F_nk, F_indo, F_nko, nbit(pnww) )
 
          endif
          if (pnzz.ne.0) then
@@ -652,7 +681,7 @@
         if (pntw.ne.0) then
 *           Calculate THETAW TW (w5=TW_pres) (px_pres=PX)
             call mthtaw2 (w5,hu_pres,vt_pres,
-     $                     px_pres,px_pres,3,.false.,.false.,
+     $                     px_pres,px_pres,3,.false.,Out3_satues_L,
      $                     .true.,Dcst_trpl_8,F_ninj,F_nko,F_ninj)
             if (filt(pntw).gt.0)
      $          call filter(w5,filt(pntw),coef(pntw),'G', .false.,
@@ -664,7 +693,7 @@
         if (pnes.ne.0.or.pntd.ne.0) then
 *           Calculate ES (w5=ES_pres,hu_pres=HU,w2=VT,px_pres=PX)
             call mhuaes (w5, hu_pres, vt_pres,
-     $                    px_pres,px_pres,3,.false.,.false.,
+     $                    px_pres,px_pres,3,.false.,Out3_satues_L,
      $                    F_ninj, F_nko, F_ninj)
             if ( Out3_cliph_L ) then
                do k=1,F_nko
@@ -699,8 +728,13 @@
 
         if (pnhr.ne.0) then
 *           Calculate HR (w5=HR_pres:hu_pres=HU,tt_pres=TT,px_pres=PX)
-            call mfohra (w5,hu_pres,tt_pres,px_pres, 
-     $                    px_pres,3,F_ninj,F_nko,F_ninj)
+            if (Out3_satues_L) then
+               call mfohr (w5,hu_pres,tt_pres,px_pres,
+     $                       px_pres,3,F_ninj,F_nko,F_ninj)
+            else
+               call mfohra (w5,hu_pres,tt_pres,px_pres,
+     $                       px_pres,3,F_ninj,F_nko,F_ninj)
+            endif
             if ( Out3_cliph_L ) then
                do k=1,F_nko
                   do i= 1, F_ninj
@@ -727,7 +761,7 @@
          if (pnth.ne.0) then
           do k= 1,F_nk
             do i= 1, F_ninj
-              th(i,k)= F_tt1(i,k)*(exp(F_wlnph(i,l_nk))/
+              th(i,k)= F_tt1(i,k)*(theta_p0/
      $                            exp(F_wlnph(i,k)))**Dcst_cappa_8 
             enddo
           enddo
@@ -762,7 +796,7 @@
      $                                        F_nk,1,l_ni,1,l_nj)
 *         Calculate QC (qc_pres=w5,px=vert.der)
           call prgen( w5, F_qct1, px, F_wlnph, prprlvl,F_nko, 
-     $                      Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy, F_nk)
+     $                   Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy, F_nk)
           if ( Out3_cliph_L ) then
                do k= 1, F_nko
                do i= 1, F_ninj
@@ -774,25 +808,26 @@
      $      call filter(w5,filt(pnqc),coef(pnqc),'G', .false.,
      $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
              call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,F_rf,
-     $        'QC  ',1.0,       0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnqc) )
+     $       'QC  ',1.0,0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnqc) )
         endif
 
         if (pnww.ne.0) then
-!$omp parallel
+!$omp parallel shared( l_minx,l_maxx,l_miny,l_maxy, G_nk, l_ni,l_nj )
             call calomeg(t8, F_psdt1, F_tdt1, F_st1, 
-     $                 l_minx,l_maxx,l_miny,l_maxy, G_nk, 1,l_ni,1,l_nj)
+     $                   l_minx,l_maxx,l_miny,l_maxy,
+     $                   G_nk, 1,l_ni,1,l_nj)
 !$omp end parallel
-            call verder (w3,t8,F_wlnph,2.0,2.0,l_minx,l_maxx,
-     $                     l_miny,l_maxy,G_nk, 1,l_ni,1,l_nj)
+            call verder (w3,t8,F_wlnph,2.0,2.0,
+     $                   l_minx,l_maxx,l_miny,l_maxy,
+     $                   G_nk, 1,l_ni,1,l_nj)
             call prgen( w5, t8, w3, F_wlnph, prprlvl,F_nko, 
      $                  Out3_cubww_L,l_minx,l_maxx,l_miny,l_maxy, F_nk)
             if (filt(pnww).gt.0)
      $          call filter(w5,filt(pnww),coef(pnww),'G', .false.,
      $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
              call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,F_rf,
-     $           'WW  ',1.0,0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnww) )
+     $       'WW  ',1.0,0.0, Out_kind,F_nko, F_indo, F_nko, nbit(pnww) )
         endif
-
 
       endif
 

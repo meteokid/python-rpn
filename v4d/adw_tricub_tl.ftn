@@ -1,0 +1,834 @@
+***s/r adw_tricub_tl - TLM of adw_tricub 
+*
+#include "model_macros_f.h"
+*
+      subroutine adw_tricub_tl ( F_out,  F_in,  F_inzz, F_n,
+     %                           F_capx, F_xgg, F_xdd,
+     %                           F_capy, F_ygg, F_ydd,
+     %                           F_capz, F_cz, 
+     %                           F_outm, F_inm, F_inzzm,F_nm,
+     %                           F_capxm,F_xggm,F_xddm,
+     %                           F_capym,F_yggm,F_yddm,
+     %                           F_capzm,F_czm, F_num, F_mono_L,i0,in,j0,jn,kn )
+*
+      implicit none
+*
+      logical F_mono_L
+*
+      integer F_num, F_n(F_num),i0,in,j0,jn,kn
+*
+      real F_in(*), F_inzz(*)
+*
+      real F_out (F_num),
+     %     F_capx(F_num), F_capy(F_num), F_capz(F_num), F_cz  (F_num),
+     %     F_xgg (F_num), F_xdd (F_num), F_ygg (F_num), F_ydd (F_num)
+*
+      integer F_nm(F_num)
+*
+      real F_inm(*), F_inzzm(*)
+*
+      real F_outm (F_num),
+     %     F_capxm(F_num), F_capym(F_num), F_capzm(F_num), F_czm  (F_num),
+     %     F_xggm (F_num), F_xddm (F_num), F_yggm (F_num), F_yddm (F_num)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_out        | result of interpolation                         |  o  |
+* F_in         | field to interpolate                            |  i  |
+* F_inzz       | precomputed 2nd vertical derivatives            |  i  |
+*              |                                                 |     |
+* F_n          | positions in the 3D volume of interpolation     |  i  |
+*              | boxes                                           |     |
+*              |                                                 |     |
+* F_capx       | \                                               |  i  |
+* F_xgg        |   precomputed displacements and interpolation   |  i  |
+* F_xdd        | / terms along the x-direction                   |  i  |
+*              |                                                 |     |
+* F_capy       | \                                               |  i  |
+* F_ygg        |   precomputed displacements and interpolation   |  i  |
+* F_ydd        | / terms along the y-direction                   |  i  |
+*              |                                                 |     |
+* F_capz       | \ precomputed displacements and interpolation   |  i  |
+* F_cz         | / terms along the z-direction                   |  i  |
+*              |                                                 |     |
+* F_num        | number of points to interpolate                 |  i  |
+*              |                                                 |     |
+* F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "adw.cdk"
+************************************************************************
+      integer n, nijag,i,j,k,nij
+*
+      real prmin,  prmax,  prmin0, prmax0,
+     %     prmin1, prmax1, prmin2, prmax2, work
+*
+      integer o1, o2, o3, o4
+      real*8  xx_8, xm_8
+      real*8  p1_8, p2_8, p3_8, p4_8
+      real*8  t1_8, t2_8
+*
+      real*8  a1_x_8, a2_x_8, a3_x_8, a4_x_8
+      real*8  b1_x_8, b2_x_8, b3_x_8, b4_x_8
+      real*8  c1_x_8, c2_x_8, c3_x_8, c4_x_8
+      real*8  d1_x_8, d2_x_8, d3_x_8, d4_x_8
+*
+      real*8  a1_y_8, b1_y_8, c1_y_8, d1_y_8
+*
+      real*8  p20_8, p30_8, p31_8
+*
+      real prminm,  prmaxm,  prmin0m, prmax0m, 
+     %     prmin1m, prmax1m, prmin2m, prmax2m, work_m
+*
+      real*8  ggm_8, ddm_8, xxm_8, xmm_8
+      real*8  p1m_8, p2m_8, p3m_8, p4m_8
+      real*8  t1m_8, t2m_8, t3m_8
+*
+      real*8  p10m_8, p20m_8, p30m_8, p40m_8
+      real*8  p11m_8, p31m_8
+      real*8  t10m_8, t20m_8
+*
+      real*8  a1m_x_8, a2m_8, a3m_8, a4m_8
+      real*8  b1m_x_8, b2m_8, b3m_8, b4m_8
+      real*8  c1m_x_8, c2m_8, c3m_8, c4m_8
+      real*8  d1m_x_8, d2m_8, d3m_8, d4m_8
+*
+      real*8  a1m_y_8, b1m_y_8, c1m_y_8, d1m_y_8
+*     ______________________________________________________
+*
+      nij   = l_ni*l_nj
+      nijag = Adw_nit * Adw_njt
+*
+!$omp parallel private(n,o1,o2,o3,o4,
+!$omp&                 xxm_8,xmm_8,ggm_8,ddm_8,work_m,
+!$omp&                 t1m_8,t2m_8,t3m_8,t10m_8,t20m_8,
+!$omp&                 p1m_8,p2m_8,p3m_8,p4m_8,
+!$omp&                 p10m_8,p11m_8,p20m_8,p30m_8,p31m_8,p40m_8,
+!$omp&                 prmax0m,prmin0m,prmax1m,prmin1m,
+!$omp&                 prmax2m,prmin2m,prmaxm, prminm,
+!$omp&                 a1m_x_8,a1m_y_8,a2m_8,a3m_8,a4m_8,
+!$omp&                 b1m_x_8,b1m_y_8,b2m_8,b3m_8,b4m_8,
+!$omp&                 c1m_x_8,c1m_y_8,c2m_8,c3m_8,c4m_8,
+!$omp&                 d1m_x_8,d1m_y_8,d2m_8,d3m_8,d4m_8,
+!$omp&                 xx_8,xm_8,work,t1_8,t2_8,
+!$omp&                 p1_8,p2_8,p3_8,p4_8,p20_8,p30_8,p31_8,
+!$omp&                 prmax0,prmin0,prmax1,prmin1,
+!$omp&                 prmax2,prmin2,prmax, prmin,
+!$omp&                 a1_x_8,a2_x_8,a3_x_8,a4_x_8,
+!$omp&                 a1_y_8,b1_y_8,c1_y_8,d1_y_8,
+!$omp&                 b1_x_8,b2_x_8,b3_x_8,b4_x_8,
+!$omp&                 c1_x_8,c2_x_8,c3_x_8,c4_x_8,
+!$omp&                 d1_x_8,d2_x_8,d3_x_8,d4_x_8)
+*
+      if ( F_mono_L ) then
+*
+!$omp do
+      do 100 k=1,kn
+      do  90 j=j0,jn
+      do  80 i=i0,in
+      n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+***********************************************************************
+*     x interpolation
+***********************************************************************
+*
+*     TRAJECTORY
+*     ----------
+      xxm_8 = F_capxm(n)
+      xmm_8 = 1 - xxm_8
+*
+*     TLM
+*     ---
+      xx_8 = F_capx(n)
+      xm_8 = - xx_8
+*
+*     TRAJ (constant)
+*     ---------------
+      ggm_8 = F_xggm(n)
+      ddm_8 = F_xddm(n)
+*
+*     TRAJ (constant)
+*     ---------------
+      t10m_8 = 1      + ggm_8
+      t20m_8 = 1      + ddm_8
+      p10m_8 = ggm_8  + t20m_8
+      p40m_8 = ddm_8  * t20m_8 * p10m_8
+*
+      p11m_8 = ggm_8  * t10m_8 * p10m_8
+      t3m_8  = ggm_8  * t20m_8
+      t1m_8  = t10m_8 * ddm_8
+*
+*     TRAJECTORY
+*     ----------
+      p20m_8 = t20m_8 - xxm_8
+      p30m_8 = ggm_8  + xxm_8
+*
+      t2m_8  =-xxm_8  * xmm_8
+      p4m_8  = t2m_8  * p30m_8 / p40m_8
+*
+      p1m_8  = t2m_8  * p20m_8 / p11m_8
+*
+      p31m_8 = p20m_8 * p30m_8
+*
+      p2m_8  = xmm_8  * p31m_8 / t3m_8
+*
+      p3m_8  = xxm_8  * p31m_8 / t1m_8
+*
+*     TLM
+*     ---
+      p20_8 = -xx_8 
+      p30_8 =  xx_8
+*
+      t2_8   = -xx_8 * xmm_8   - xxm_8   * xm_8
+      p4_8   =  t2_8 * p30m_8  / p40m_8  + t2m_8 * p30_8 / p40m_8
+*
+      p1_8   =  t2_8 * p20m_8  / p11m_8  + t2m_8 * p20_8 / p11m_8 
+*
+      p31_8 =  p20_8 * p30m_8  + p20m_8  * p30_8
+*
+      p2_8   =  xm_8 * p31m_8  / t3m_8   + xmm_8 * p31_8 / t3m_8  
+*
+      p3_8   =  xx_8 * p31m_8  / t1m_8   + xxm_8 * p31_8 / t1m_8  
+*
+*     TRAJECTORY
+*     ----------
+      o1 = F_nm(n)-Adw_nit
+      o2 = F_nm(n)
+      o3 = F_nm(n)+Adw_nit
+      o4 = F_nm(n)+Adw_nit+Adw_nit
+*
+*     TRAJECTORY
+*     ----------
+      a1m_x_8 = p1m_8 * F_inm(o1-1) + p2m_8 * F_inm(o1) + p3m_8 * F_inm(o1+1) + p4m_8 * F_inm(o1+2)
+*
+      a2m_8   = p1m_8 * F_inm(o2-1) + p2m_8 * F_inm(o2) + p3m_8 * F_inm(o2+1) + p4m_8 * F_inm(o2+2)
+*
+      a3m_8   = p1m_8 * F_inm(o3-1) + p2m_8 * F_inm(o3) + p3m_8 * F_inm(o3+1) + p4m_8 * F_inm(o3+2)
+      a4m_8   = p1m_8 * F_inm(o4-1) + p2m_8 * F_inm(o4) + p3m_8 * F_inm(o4+1) + p4m_8 * F_inm(o4+2)
+*
+*     TLM
+*     ---
+      a1_x_8 = p1_8  * F_inm(o1-1) + p2_8  * F_inm(o1) + p3_8  * F_inm(o1+1) + p4_8  * F_inm(o1+2) +
+     %         p1m_8 * F_in (o1-1) + p2m_8 * F_in (o1) + p3m_8 * F_in (o1+1) + p4m_8 * F_in (o1+2)
+*
+*        TRAJECTORY and TLM
+*        ------------------
+*        The following max statement is expanded as one IF block
+*        prmax0m = max(F_inm(o2),F_inm(o2+1))
+         prmax0m = F_inm(o2)
+         prmax0  = F_in (o2)
+         if(F_inm(o2+1).gt.F_inm(o2)) then
+            prmax0m = F_inm(o2+1)
+            prmax0  = F_in (o2+1)
+         endif
+*
+*        The following min statement is expanded as one IF block
+*        prmin0m = min(F_inm(o2),F_inm(o2+1))
+         prmin0m = F_inm(o2)
+         prmin0  = F_in (o2)
+         if(F_inm(o2+1).lt.F_inm(o2)) then
+            prmin0m = F_inm(o2+1)
+            prmin0  = F_in (o2+1)
+         endif
+*
+      a2_x_8 = p1_8  * F_inm(o2-1) + p2_8  * F_inm(o2) + p3_8  * F_inm(o2+1) + p4_8  * F_inm(o2+2) +
+     %         p1m_8 * F_in (o2-1) + p2m_8 * F_in (o2) + p3m_8 * F_in (o2+1) + p4m_8 * F_in (o2+2)
+*
+*        TRAJECTORY and TLM
+*        ------------------
+*        The following max statement is expanded as two IF block
+*        prmax1m = max(prmax0m,F_inm(o3),F_inm(o3+1))
+         work_m  = F_inm(o3)
+         work    = F_in (o3)
+         if(F_inm(o3+1).gt.F_inm(o3)) then
+            work_m = F_inm(o3+1)
+            work   = F_in (o3+1)
+         endif
+         if(prmax0m.gt.work_m) then
+            prmax1m = prmax0m
+            prmax1  = prmax0
+         else
+            prmax1m = work_m
+            prmax1  = work
+         endif
+*
+*        The following min statement is expanded as two IF block
+*        prmin1m = min(prmin0m,F_inm(o3),F_inm(o3+1))
+         work_m  = F_inm(o3)
+         work    = F_in (o3)
+         if(F_inm(o3+1).lt.F_inm(o3)) then
+            work_m = F_inm(o3+1)
+            work   = F_in (o3+1)
+         endif
+         if(prmin0m.lt.work_m) then
+            prmin1m = prmin0m
+            prmin1  = prmin0
+         else
+            prmin1m = work_m
+            prmin1  = work
+         endif
+*
+      a3_x_8 = p1_8  * F_inm(o3-1) + p2_8  * F_inm(o3) + p3_8  * F_inm(o3+1) + p4_8  * F_inm(o3+2) +
+     %         p1m_8 * F_in (o3-1) + p2m_8 * F_in (o3) + p3m_8 * F_in (o3+1) + p4m_8 * F_in (o3+2)
+      a4_x_8 = p1_8  * F_inm(o4-1) + p2_8  * F_inm(o4) + p3_8  * F_inm(o4+1) + p4_8  * F_inm(o4+2) +
+     %         p1m_8 * F_in (o4-1) + p2m_8 * F_in (o4) + p3m_8 * F_in (o4+1) + p4m_8 * F_in (o4+2)
+*
+*     TRAJECTORY
+*     ----------
+      b1m_x_8 = p1m_8 * F_inzzm(o1-1) + p2m_8 * F_inzzm(o1) + p3m_8 * F_inzzm(o1+1) + p4m_8 * F_inzzm(o1+2)
+      b2m_8   = p1m_8 * F_inzzm(o2-1) + p2m_8 * F_inzzm(o2) + p3m_8 * F_inzzm(o2+1) + p4m_8 * F_inzzm(o2+2)
+      b3m_8   = p1m_8 * F_inzzm(o3-1) + p2m_8 * F_inzzm(o3) + p3m_8 * F_inzzm(o3+1) + p4m_8 * F_inzzm(o3+2)
+      b4m_8   = p1m_8 * F_inzzm(o4-1) + p2m_8 * F_inzzm(o4) + p3m_8 * F_inzzm(o4+1) + p4m_8 * F_inzzm(o4+2)
+*
+*     TLM 
+*     ---
+      b1_x_8 = p1_8  * F_inzzm(o1-1) + p2_8  * F_inzzm(o1) + p3_8  * F_inzzm(o1+1) + p4_8  * F_inzzm(o1+2) +
+     %         p1m_8 * F_inzz (o1-1) + p2m_8 * F_inzz (o1) + p3m_8 * F_inzz (o1+1) + p4m_8 * F_inzz (o1+2)
+      b2_x_8 = p1_8  * F_inzzm(o2-1) + p2_8  * F_inzzm(o2) + p3_8  * F_inzzm(o2+1) + p4_8  * F_inzzm(o2+2) +
+     %         p1m_8 * F_inzz (o2-1) + p2m_8 * F_inzz (o2) + p3m_8 * F_inzz (o2+1) + p4m_8 * F_inzz (o2+2)
+      b3_x_8 = p1_8  * F_inzzm(o3-1) + p2_8  * F_inzzm(o3) + p3_8  * F_inzzm(o3+1) + p4_8  * F_inzzm(o3+2) + 
+     %         p1m_8 * F_inzz (o3-1) + p2m_8 * F_inzz (o3) + p3m_8 * F_inzz (o3+1) + p4m_8 * F_inzz (o3+2)
+      b4_x_8 = p1_8  * F_inzzm(o4-1) + p2_8  * F_inzzm(o4) + p3_8  * F_inzzm(o4+1) + p4_8  * F_inzzm(o4+2) +
+     &         p1m_8 * F_inzz (o4-1) + p2m_8 * F_inzz (o4) + p3m_8 * F_inzz (o4+1) + p4m_8 * F_inzz (o4+2)
+*
+*     TRAJECTORY
+*     ----------
+      o1 = o1 + nijag
+      o2 = o2 + nijag
+      o3 = o3 + nijag
+      o4 = o4 + nijag
+*
+*     TRAJECTORY
+*     ----------
+      c1m_x_8 = p1m_8 * F_inm(o1-1) + p2m_8 * F_inm(o1) + p3m_8 * F_inm(o1+1) + p4m_8 * F_inm(o1+2)
+*
+      c2m_8   = p1m_8 * F_inm(o2-1) + p2m_8 * F_inm(o2) + p3m_8 * F_inm(o2+1) + p4m_8 * F_inm(o2+2)
+*
+      c3m_8   = p1m_8 * F_inm(o3-1) + p2m_8 * F_inm(o3) + p3m_8 * F_inm(o3+1) + p4m_8 * F_inm(o3+2)
+      c4m_8   = p1m_8 * F_inm(o4-1) + p2m_8 * F_inm(o4) + p3m_8 * F_inm(o4+1) + p4m_8 * F_inm(o4+2)
+*
+*     TLM 
+*     ---
+      c1_x_8 = p1_8  * F_inm(o1-1) + p2_8  * F_inm(o1) + p3_8  * F_inm(o1+1) + p4_8  * F_inm(o1+2) +
+     %         p1m_8 * F_in (o1-1) + p2m_8 * F_in (o1) + p3m_8 * F_in (o1+1) + p4m_8 * F_in (o1+2)
+*
+*        TRAJECTORY and TLM
+*        ------------------
+*        The following max statement is expanded as two IF block
+*        prmax2m = max(prmax1m,F_inm(o2),F_inm(o2+1))
+         work_m = F_inm(o2)
+         work   = F_in (o2)
+         if(F_inm(o2+1).gt.F_inm(o2)) then
+            work_m = F_inm(o2+1)
+            work   = F_in (o2+1)
+         endif
+         if(prmax1m.gt.work_m) then
+            prmax2m = prmax1m
+            prmax2  = prmax1
+         else
+            prmax2m = work_m
+            prmax2  = work
+         endif
+*
+*        The following min statement is expanded as two IF block
+*        prmin2m = min(prmin1m,F_inm(o2),F_inm(o2+1))
+         work_m = F_inm(o2)
+         work   = F_in (o2)
+         if(F_inm(o2+1).lt.F_inm(o2)) then
+            work_m = F_inm(o2+1)
+            work   = F_in (o2+1)
+         endif
+         if(prmin1m.lt.work_m) then
+            prmin2m = prmin1m
+            prmin2  = prmin1
+         else
+            prmin2m = work_m
+            prmin2  = work
+         endif
+*
+      c2_x_8 = p1_8  * F_inm(o2-1) + p2_8  * F_inm(o2) + p3_8  * F_inm(o2+1) + p4_8  * F_inm(o2+2) +
+     %         p1m_8 * F_in (o2-1) + p2m_8 * F_in (o2) + p3m_8 * F_in (o2+1) + p4m_8 * F_in (o2+2)
+*
+*        TRAJECTORY and TLM
+*        ------------------
+*        The following max statement is expanded as two IF block
+*        prmaxm = max(prmax2m,F_inm(o3),F_inm(o3+1))
+         work_m = F_inm(o3)
+         work   = F_in (o3)
+         if(F_inm(o3+1).gt.F_inm(o3)) then
+            work_m = F_inm(o3+1)
+            work   = F_in (o3+1)
+         endif
+         if(prmax2m.gt.work_m) then
+            prmaxm = prmax2m
+            prmax  = prmax2
+         else
+            prmaxm = work_m
+            prmax  = work
+         endif
+*
+*        The following min statement is expanded as two IF block
+*        prminm = min(prmin2m,F_inm(o3),F_inm(o3+1))
+         work_m = F_inm(o3)
+         work   = F_in (o3)
+         if(F_inm(o3+1).lt.F_inm(o3)) then
+            work_m = F_inm(o3+1)
+            work   = F_in (o3+1)
+         endif
+         if(prmin2m.lt.work_m) then
+            prminm = prmin2m
+            prmin  = prmin2
+         else
+            prminm = work_m
+            prmin  = work
+         endif
+*
+      c3_x_8 = p1_8  * F_inm(o3-1) + p2_8  * F_inm(o3) + p3_8  * F_inm(o3+1) + p4_8  * F_inm(o3+2) +
+     %         p1m_8 * F_in (o3-1) + p2m_8 * F_in (o3) + p3m_8 * F_in (o3+1) + p4m_8 * F_in (o3+2)
+      c4_x_8 = p1_8  * F_inm(o4-1) + p2_8  * F_inm(o4) + p3_8  * F_inm(o4+1) + p4_8  * F_inm(o4+2) +
+     %         p1m_8 * F_in (o4-1) + p2m_8 * F_in (o4) + p3m_8 * F_in (o4+1) + p4m_8 * F_in (o4+2)
+*
+*     TRAJECTORY
+*     ----------
+      d1m_x_8 = p1m_8 * F_inzzm(o1-1) + p2m_8 * F_inzzm(o1) + p3m_8 * F_inzzm(o1+1) + p4m_8 * F_inzzm(o1+2)
+      d2m_8   = p1m_8 * F_inzzm(o2-1) + p2m_8 * F_inzzm(o2) + p3m_8 * F_inzzm(o2+1) + p4m_8 * F_inzzm(o2+2)
+      d3m_8   = p1m_8 * F_inzzm(o3-1) + p2m_8 * F_inzzm(o3) + p3m_8 * F_inzzm(o3+1) + p4m_8 * F_inzzm(o3+2)
+      d4m_8   = p1m_8 * F_inzzm(o4-1) + p2m_8 * F_inzzm(o4) + p3m_8 * F_inzzm(o4+1) + p4m_8 * F_inzzm(o4+2)
+*
+*     TLM 
+*     ---
+      d1_x_8 = p1_8  * F_inzzm(o1-1) + p2_8  * F_inzzm(o1) + p3_8  * F_inzzm(o1+1) + p4_8  * F_inzzm(o1+2) +
+     %         p1m_8 * F_inzz (o1-1) + p2m_8 * F_inzz (o1) + p3m_8 * F_inzz (o1+1) + p4m_8 * F_inzz (o1+2)
+      d2_x_8 = p1_8  * F_inzzm(o2-1) + p2_8  * F_inzzm(o2) + p3_8  * F_inzzm(o2+1) + p4_8  * F_inzzm(o2+2) +
+     %         p1m_8 * F_inzz (o2-1) + p2m_8 * F_inzz (o2) + p3m_8 * F_inzz (o2+1) + p4m_8 * F_inzz (o2+2)
+      d3_x_8 = p1_8  * F_inzzm(o3-1) + p2_8  * F_inzzm(o3) + p3_8  * F_inzzm(o3+1) + p4_8  * F_inzzm(o3+2) +
+     %         p1m_8 * F_inzz (o3-1) + p2m_8 * F_inzz (o3) + p3m_8 * F_inzz (o3+1) + p4m_8 * F_inzz (o3+2)
+      d4_x_8 = p1_8  * F_inzzm(o4-1) + p2_8  * F_inzzm(o4) + p3_8  * F_inzzm(o4+1) + p4_8  * F_inzzm(o4+2) +
+     %         p1m_8 * F_inzz (o4-1) + p2m_8 * F_inzz (o4) + p3m_8 * F_inzz (o4+1) + p4m_8 * F_inzz (o4+2)
+*
+***********************************************************************
+*     y interpolation
+***********************************************************************
+*
+*     TRAJECTORY
+*     ----------
+      xxm_8 = F_capym(n)
+      xmm_8 = 1 - xxm_8
+*
+*     TLM
+*     ---
+      xx_8 = F_capy(n)
+      xm_8 = - xx_8
+*
+*     TRAJ (constant)
+*     ---------------
+      ggm_8 = F_yggm(n)
+      ddm_8 = F_yddm(n)
+*
+*     TRAJ (constant)
+*     ---------------
+      t10m_8 = 1     + ggm_8
+      t20m_8 = 1     + ddm_8
+      p10m_8 = ggm_8   + t20m_8
+      p40m_8 = ddm_8   * t20m_8 * p10m_8
+*
+      p11m_8 = ggm_8  * t10m_8 * p10m_8
+      t3m_8  = ggm_8  * t20m_8
+      t1m_8  = t10m_8 * ddm_8
+*
+*     TRAJECTORY
+*     ----------
+      p20m_8 = t20m_8 - xxm_8
+      p30m_8 = ggm_8  + xxm_8
+*
+      t2m_8  =-xxm_8  * xmm_8
+      p4m_8  = t2m_8  * p30m_8 / p40m_8
+*
+      p1m_8  = t2m_8  * p20m_8 / p11m_8
+*
+      p31m_8 = p20m_8 * p30m_8
+*
+      p2m_8  = xmm_8  * p31m_8 / t3m_8
+*
+      p3m_8  = xxm_8  * p31m_8 / t1m_8
+*
+*     TLM 
+*     ---
+      p20_8  = - xx_8
+      p30_8  =   xx_8
+*
+      t2_8   = - xx_8  * xmm_8   - xxm_8   * xm_8
+      p4_8   =   t2_8  * p30m_8  / p40m_8  + t2m_8  * p30_8 / p40m_8 
+*
+      p1_8   =   t2_8  * p20m_8  / p11m_8  + t2m_8  * p20_8 / p11m_8 
+*
+      p31_8  =   p20_8 * p30m_8  + p20m_8  * p30_8
+*
+      p2_8   =   xm_8  * p31m_8  / t3m_8   + xmm_8  * p31_8 / t3m_8  
+*
+      p3_8   =   xx_8  * p31m_8  / t1m_8   + xxm_8  * p31_8 / t1m_8  
+*
+*     TRAJECTORY
+*     ----------
+      a1m_y_8 = p1m_8 * a1m_x_8 + p2m_8 * a2m_8 + p3m_8 * a3m_8 + p4m_8 * a4m_8
+      b1m_y_8 = p1m_8 * b1m_x_8 + p2m_8 * b2m_8 + p3m_8 * b3m_8 + p4m_8 * b4m_8
+      c1m_y_8 = p1m_8 * c1m_x_8 + p2m_8 * c2m_8 + p3m_8 * c3m_8 + p4m_8 * c4m_8
+      d1m_y_8 = p1m_8 * d1m_x_8 + p2m_8 * d2m_8 + p3m_8 * d3m_8 + p4m_8 * d4m_8
+*
+*     TLM 
+*     ---
+      a1_y_8  = p1_8  * a1m_x_8 + p2_8  * a2m_8  + p3_8  * a3m_8  + p4_8  * a4m_8
+     %         +p1m_8 * a1_x_8  + p2m_8 * a2_x_8 + p3m_8 * a3_x_8 + p4m_8 * a4_x_8
+      b1_y_8  = p1_8  * b1m_x_8 + p2_8  * b2m_8  + p3_8  * b3m_8  + p4_8  * b4m_8
+     %         +p1m_8 * b1_x_8  + p2m_8 * b2_x_8 + p3m_8 * b3_x_8 + p4m_8 * b4_x_8
+      c1_y_8  = p1_8  * c1m_x_8 + p2_8  * c2m_8  + p3_8  * c3m_8  + p4_8  * c4m_8
+     %         +p1m_8 * c1_x_8  + p2m_8 * c2_x_8 + p3m_8 * c3_x_8 + p4m_8 * c4_x_8
+      d1_y_8  = p1_8  * d1m_x_8 + p2_8  * d2m_8  + p3_8  * d3m_8  + p4_8  * d4m_8
+     %         +p1m_8 * d1_x_8  + p2m_8 * d2_x_8 + p3m_8 * d3_x_8 + p4m_8 * d4_x_8
+*
+***********************************************************************
+*     z interpolation
+***********************************************************************
+*
+*     TRAJECTORY
+*     ----------
+      xxm_8 = F_capzm(n)
+      xmm_8 = 1.0 - xxm_8
+      t1m_8 = F_czm(n) * ( xmm_8 + 1.0 )
+      t2m_8 = F_czm(n) * ( xxm_8 + 1.0 )
+*
+*     TLM 
+*     ---
+      xx_8 = F_capz(n)
+      xm_8 =  - xx_8
+      t1_8 = F_cz(n) * ( xmm_8 + 1.0 ) + F_czm(n) * ( xm_8 )
+      t2_8 = F_cz(n) * ( xxm_8 + 1.0 ) + F_czm(n) * ( xx_8 )
+*
+*     TRAJECTORY
+*     ----------
+      F_outm(n)= xmm_8 * a1m_y_8 + t1m_8 * b1m_y_8 + xxm_8 * c1m_y_8 + t2m_8 * d1m_y_8
+*
+*     TLM
+*     ---
+      F_out(n) = xm_8  * a1m_y_8 + t1_8  * b1m_y_8 + xx_8  * c1m_y_8 + t2_8  * d1m_y_8
+     %          +xmm_8 * a1_y_8  + t1m_8 * b1_y_8  + xxm_8 * c1_y_8  + t2m_8 * d1_y_8
+*
+*     The following min - max statement is expanded as two IF blocks
+*     F_out(n) = max ( 1.0d0*prmin , ( min ( 1.0d0*prmax, xm * a1 + t1 * b1 + xx * c1 + t2 * d1 )))
+*
+*     TRAJECTORY and TLM
+*     ------------------
+      if(prmaxm.lt.F_outm(n)) then
+         F_outm(n) = prmaxm
+         F_out (n) = prmax
+      endif
+      if(prminm.gt.F_outm(n)) then
+         F_outm(n) = prminm
+         F_out (n) = prmin
+      endif
+*
+   80 continue
+   90 continue
+  100 continue
+!$omp enddo
+*
+***********************************************************************
+***********************************************************************
+      else
+***********************************************************************
+***********************************************************************
+*
+!$omp do
+      do 200 k=1,kn
+      do 190 j=j0,jn
+      do 180 i=i0,in
+*
+      n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+***********************************************************************
+*     x interpolation
+***********************************************************************
+*
+*     TRAJECTORY
+*     ----------
+      xxm_8 = F_capxm(n)
+      xmm_8 = 1 - xxm_8
+*
+*     TLM
+*     ---
+      xx_8 = F_capx(n)
+      xm_8 = - xx_8
+*
+*     TRAJ (constant)
+*     ---------------
+      ggm_8 = F_xggm(n)
+      ddm_8 = F_xddm(n)
+*
+*     TRAJ (constant)
+*     ---------------
+      t10m_8 = 1      + ggm_8
+      t20m_8 = 1      + ddm_8
+      p10m_8 = ggm_8  + t20m_8
+      p40m_8 = ddm_8  * t20m_8 * p10m_8
+*
+      p11m_8 = ggm_8  * t10m_8 * p10m_8
+      t3m_8  = ggm_8  * t20m_8
+      t1m_8  = t10m_8 * ddm_8
+*
+*     TRAJECTORY
+*     ----------
+      p20m_8 = t20m_8 - xxm_8
+      p30m_8 = ggm_8  + xxm_8
+*
+      t2m_8  =-xxm_8  * xmm_8
+      p4m_8  = t2m_8  * p30m_8 / p40m_8
+*
+      p1m_8  = t2m_8  * p20m_8 / p11m_8
+*
+      p31m_8 = p20m_8 * p30m_8
+*
+      p2m_8  = xmm_8  * p31m_8 / t3m_8
+*
+      p3m_8  = xxm_8  * p31m_8 / t1m_8
+*
+*     TLM
+*     ---
+      p20_8 = -xx_8 
+      p30_8 =  xx_8
+*
+      t2_8   = -xx_8 * xmm_8   - xxm_8   * xm_8
+      p4_8   =  t2_8 * p30m_8  / p40m_8  + t2m_8 * p30_8 / p40m_8
+*
+      p1_8   =  t2_8 * p20m_8  / p11m_8  + t2m_8 * p20_8 / p11m_8 
+*
+      p31_8 =  p20_8 * p30m_8  + p20m_8  * p30_8
+*
+      p2_8   =  xm_8 * p31m_8  / t3m_8   + xmm_8 * p31_8 / t3m_8  
+*
+      p3_8   =  xx_8 * p31m_8  / t1m_8   + xxm_8 * p31_8 / t1m_8  
+*
+*     TRAJECTORY
+*     ----------
+      o1 = F_nm(n)-Adw_nit
+      o2 = F_nm(n)
+      o3 = F_nm(n)+Adw_nit
+      o4 = F_nm(n)+Adw_nit+Adw_nit
+*
+*     TRAJECTORY
+*     ----------
+      a1m_x_8 = p1m_8 * F_inm(o1-1) + p2m_8 * F_inm(o1) + p3m_8 * F_inm(o1+1) + p4m_8 * F_inm(o1+2)
+      a2m_8   = p1m_8 * F_inm(o2-1) + p2m_8 * F_inm(o2) + p3m_8 * F_inm(o2+1) + p4m_8 * F_inm(o2+2)
+      a3m_8   = p1m_8 * F_inm(o3-1) + p2m_8 * F_inm(o3) + p3m_8 * F_inm(o3+1) + p4m_8 * F_inm(o3+2)
+      a4m_8   = p1m_8 * F_inm(o4-1) + p2m_8 * F_inm(o4) + p3m_8 * F_inm(o4+1) + p4m_8 * F_inm(o4+2)
+*
+*     TLM
+*     ---
+      a1_x_8 = p1_8  * F_inm(o1-1) + p2_8  * F_inm(o1) + p3_8  * F_inm(o1+1) + p4_8  * F_inm(o1+2) +
+     %         p1m_8 * F_in (o1-1) + p2m_8 * F_in (o1) + p3m_8 * F_in (o1+1) + p4m_8 * F_in (o1+2)
+      a2_x_8 = p1_8  * F_inm(o2-1) + p2_8  * F_inm(o2) + p3_8  * F_inm(o2+1) + p4_8  * F_inm(o2+2) +
+     %         p1m_8 * F_in (o2-1) + p2m_8 * F_in (o2) + p3m_8 * F_in (o2+1) + p4m_8 * F_in (o2+2)
+      a3_x_8 = p1_8  * F_inm(o3-1) + p2_8  * F_inm(o3) + p3_8  * F_inm(o3+1) + p4_8  * F_inm(o3+2) + 
+     %         p1m_8 * F_in (o3-1) + p2m_8 * F_in (o3) + p3m_8 * F_in (o3+1) + p4m_8 * F_in (o3+2)
+      a4_x_8 = p1_8  * F_inm(o4-1) + p2_8  * F_inm(o4) + p3_8  * F_inm(o4+1) + p4_8  * F_inm(o4+2) +
+     %         p1m_8 * F_in (o4-1) + p2m_8 * F_in (o4) + p3m_8 * F_in (o4+1) + p4m_8 * F_in (o4+2)
+*
+*     TRAJECTORY
+*     ----------
+      b1m_x_8 = p1m_8 * F_inzzm(o1-1) + p2m_8 * F_inzzm(o1) + p3m_8 * F_inzzm(o1+1) + p4m_8 * F_inzzm(o1+2)
+      b2m_8   = p1m_8 * F_inzzm(o2-1) + p2m_8 * F_inzzm(o2) + p3m_8 * F_inzzm(o2+1) + p4m_8 * F_inzzm(o2+2)
+      b3m_8   = p1m_8 * F_inzzm(o3-1) + p2m_8 * F_inzzm(o3) + p3m_8 * F_inzzm(o3+1) + p4m_8 * F_inzzm(o3+2)
+      b4m_8   = p1m_8 * F_inzzm(o4-1) + p2m_8 * F_inzzm(o4) + p3m_8 * F_inzzm(o4+1) + p4m_8 * F_inzzm(o4+2)
+*
+*     TLM 
+*     ---
+      b1_x_8 = p1_8  * F_inzzm(o1-1) + p2_8  * F_inzzm(o1) + p3_8  * F_inzzm(o1+1) + p4_8  * F_inzzm(o1+2) +
+     %         p1m_8 * F_inzz (o1-1) + p2m_8 * F_inzz (o1) + p3m_8 * F_inzz (o1+1) + p4m_8 * F_inzz (o1+2)
+      b2_x_8 = p1_8  * F_inzzm(o2-1) + p2_8  * F_inzzm(o2) + p3_8  * F_inzzm(o2+1) + p4_8  * F_inzzm(o2+2) +
+     %         p1m_8 * F_inzz (o2-1) + p2m_8 * F_inzz (o2) + p3m_8 * F_inzz (o2+1) + p4m_8 * F_inzz (o2+2)
+      b3_x_8 = p1_8  * F_inzzm(o3-1) + p2_8  * F_inzzm(o3) + p3_8  * F_inzzm(o3+1) + p4_8  * F_inzzm(o3+2) + 
+     %         p1m_8 * F_inzz (o3-1) + p2m_8 * F_inzz (o3) + p3m_8 * F_inzz (o3+1) + p4m_8 * F_inzz (o3+2)
+      b4_x_8 = p1_8  * F_inzzm(o4-1) + p2_8  * F_inzzm(o4) + p3_8  * F_inzzm(o4+1) + p4_8  * F_inzzm(o4+2) +
+     &         p1m_8 * F_inzz (o4-1) + p2m_8 * F_inzz (o4) + p3m_8 * F_inzz (o4+1) + p4m_8 * F_inzz (o4+2)
+*
+*     TRAJECTORY
+*     ----------
+      o1 = o1 + nijag
+      o2 = o2 + nijag
+      o3 = o3 + nijag
+      o4 = o4 + nijag
+*
+*     TRAJECTORY
+*     ----------
+      c1m_x_8 = p1m_8 * F_inm(o1-1) + p2m_8 * F_inm(o1) + p3m_8 * F_inm(o1+1) + p4m_8 * F_inm(o1+2)
+      c2m_8   = p1m_8 * F_inm(o2-1) + p2m_8 * F_inm(o2) + p3m_8 * F_inm(o2+1) + p4m_8 * F_inm(o2+2)
+      c3m_8   = p1m_8 * F_inm(o3-1) + p2m_8 * F_inm(o3) + p3m_8 * F_inm(o3+1) + p4m_8 * F_inm(o3+2)
+      c4m_8   = p1m_8 * F_inm(o4-1) + p2m_8 * F_inm(o4) + p3m_8 * F_inm(o4+1) + p4m_8 * F_inm(o4+2)
+*
+*     TLM 
+*     ---
+      c1_x_8 = p1_8  * F_inm(o1-1) + p2_8  * F_inm(o1) + p3_8  * F_inm(o1+1) + p4_8  * F_inm(o1+2) +
+     %         p1m_8 * F_in (o1-1) + p2m_8 * F_in (o1) + p3m_8 * F_in (o1+1) + p4m_8 * F_in (o1+2)
+      c2_x_8 = p1_8  * F_inm(o2-1) + p2_8  * F_inm(o2) + p3_8  * F_inm(o2+1) + p4_8  * F_inm(o2+2) + 
+     %         p1m_8 * F_in (o2-1) + p2m_8 * F_in (o2) + p3m_8 * F_in (o2+1) + p4m_8 * F_in (o2+2)
+      c3_x_8 = p1_8  * F_inm(o3-1) + p2_8  * F_inm(o3) + p3_8  * F_inm(o3+1) + p4_8  * F_inm(o3+2) +
+     %         p1m_8 * F_in (o3-1) + p2m_8 * F_in (o3) + p3m_8 * F_in (o3+1) + p4m_8 * F_in (o3+2)
+      c4_x_8 = p1_8  * F_inm(o4-1) + p2_8  * F_inm(o4) + p3_8  * F_inm(o4+1) + p4_8  * F_inm(o4+2) +
+     %         p1m_8 * F_in (o4-1) + p2m_8 * F_in (o4) + p3m_8 * F_in (o4+1) + p4m_8 * F_in (o4+2)
+*
+*     TRAJECTORY
+*     ----------
+      d1m_x_8 = p1m_8 * F_inzzm(o1-1) + p2m_8 * F_inzzm(o1) + p3m_8 * F_inzzm(o1+1) + p4m_8 * F_inzzm(o1+2)
+      d2m_8   = p1m_8 * F_inzzm(o2-1) + p2m_8 * F_inzzm(o2) + p3m_8 * F_inzzm(o2+1) + p4m_8 * F_inzzm(o2+2)
+      d3m_8   = p1m_8 * F_inzzm(o3-1) + p2m_8 * F_inzzm(o3) + p3m_8 * F_inzzm(o3+1) + p4m_8 * F_inzzm(o3+2)
+      d4m_8   = p1m_8 * F_inzzm(o4-1) + p2m_8 * F_inzzm(o4) + p3m_8 * F_inzzm(o4+1) + p4m_8 * F_inzzm(o4+2)
+*
+*     TLM 
+*     ---
+      d1_x_8 = p1_8  * F_inzzm(o1-1) + p2_8  * F_inzzm(o1) + p3_8  * F_inzzm(o1+1) + p4_8  * F_inzzm(o1+2) +
+     %         p1m_8 * F_inzz (o1-1) + p2m_8 * F_inzz (o1) + p3m_8 * F_inzz (o1+1) + p4m_8 * F_inzz (o1+2)
+      d2_x_8 = p1_8  * F_inzzm(o2-1) + p2_8  * F_inzzm(o2) + p3_8  * F_inzzm(o2+1) + p4_8  * F_inzzm(o2+2) +
+     %         p1m_8 * F_inzz (o2-1) + p2m_8 * F_inzz (o2) + p3m_8 * F_inzz (o2+1) + p4m_8 * F_inzz (o2+2)
+      d3_x_8 = p1_8  * F_inzzm(o3-1) + p2_8  * F_inzzm(o3) + p3_8  * F_inzzm(o3+1) + p4_8  * F_inzzm(o3+2) +
+     %         p1m_8 * F_inzz (o3-1) + p2m_8 * F_inzz (o3) + p3m_8 * F_inzz (o3+1) + p4m_8 * F_inzz (o3+2)
+      d4_x_8 = p1_8  * F_inzzm(o4-1) + p2_8  * F_inzzm(o4) + p3_8  * F_inzzm(o4+1) + p4_8  * F_inzzm(o4+2) +
+     %         p1m_8 * F_inzz (o4-1) + p2m_8 * F_inzz (o4) + p3m_8 * F_inzz (o4+1) + p4m_8 * F_inzz (o4+2)
+*
+***********************************************************************
+*     y interpolation
+***********************************************************************
+*
+*     TRAJECTORY
+*     ----------
+      xxm_8 = F_capym(n)
+      xmm_8 = 1 - xxm_8
+*
+*     TLM
+*     ---
+      xx_8 = F_capy(n)
+      xm_8 = - xx_8
+*
+*     TRAJ (constant)
+*     ---------------
+      ggm_8 = F_yggm(n)
+      ddm_8 = F_yddm(n)
+*
+*     TRAJ (constant)
+*     ---------------
+      t10m_8 = 1     + ggm_8
+      t20m_8 = 1     + ddm_8
+      p10m_8 = ggm_8   + t20m_8
+      p40m_8 = ddm_8   * t20m_8 * p10m_8
+*
+      p11m_8 = ggm_8  * t10m_8 * p10m_8
+      t3m_8  = ggm_8  * t20m_8
+      t1m_8  = t10m_8 * ddm_8
+*
+*     TRAJECTORY
+*     ----------
+      p20m_8 = t20m_8 - xxm_8
+      p30m_8 = ggm_8  + xxm_8
+*
+      t2m_8  =-xxm_8  * xmm_8
+      p4m_8  = t2m_8  * p30m_8 / p40m_8
+*
+      p1m_8  = t2m_8  * p20m_8 / p11m_8
+*
+      p31m_8 = p20m_8 * p30m_8
+*
+      p2m_8  = xmm_8  * p31m_8 / t3m_8
+*
+      p3m_8  = xxm_8  * p31m_8 / t1m_8
+*
+*     TLM 
+*     ---
+      p20_8  = - xx_8
+      p30_8  =   xx_8
+*
+      t2_8   = - xx_8  * xmm_8   - xxm_8   * xm_8
+      p4_8   =   t2_8  * p30m_8  / p40m_8  + t2m_8  * p30_8 / p40m_8 
+*
+      p1_8   =   t2_8  * p20m_8  / p11m_8  + t2m_8  * p20_8 / p11m_8 
+*
+      p31_8  =   p20_8 * p30m_8  + p20m_8  * p30_8
+*
+      p2_8   =   xm_8  * p31m_8  / t3m_8   + xmm_8  * p31_8 / t3m_8  
+*
+      p3_8   =   xx_8  * p31m_8  / t1m_8   + xxm_8  * p31_8 / t1m_8  
+*
+*     TRAJECTORY
+*     ----------
+      a1m_y_8 = p1m_8 * a1m_x_8 + p2m_8 * a2m_8 + p3m_8 * a3m_8 + p4m_8 * a4m_8
+      b1m_y_8 = p1m_8 * b1m_x_8 + p2m_8 * b2m_8 + p3m_8 * b3m_8 + p4m_8 * b4m_8
+      c1m_y_8 = p1m_8 * c1m_x_8 + p2m_8 * c2m_8 + p3m_8 * c3m_8 + p4m_8 * c4m_8
+      d1m_y_8 = p1m_8 * d1m_x_8 + p2m_8 * d2m_8 + p3m_8 * d3m_8 + p4m_8 * d4m_8
+*
+*     TLM 
+*     ---
+      a1_y_8  = p1_8  * a1m_x_8 + p2_8  * a2m_8  + p3_8  * a3m_8  + p4_8  * a4m_8
+     %         +p1m_8 * a1_x_8  + p2m_8 * a2_x_8 + p3m_8 * a3_x_8 + p4m_8 * a4_x_8
+      b1_y_8  = p1_8  * b1m_x_8 + p2_8  * b2m_8  + p3_8  * b3m_8  + p4_8  * b4m_8
+     %         +p1m_8 * b1_x_8  + p2m_8 * b2_x_8 + p3m_8 * b3_x_8 + p4m_8 * b4_x_8
+      c1_y_8  = p1_8  * c1m_x_8 + p2_8  * c2m_8  + p3_8  * c3m_8  + p4_8  * c4m_8
+     %         +p1m_8 * c1_x_8  + p2m_8 * c2_x_8 + p3m_8 * c3_x_8 + p4m_8 * c4_x_8
+      d1_y_8  = p1_8  * d1m_x_8 + p2_8  * d2m_8  + p3_8  * d3m_8  + p4_8  * d4m_8
+     %         +p1m_8 * d1_x_8  + p2m_8 * d2_x_8 + p3m_8 * d3_x_8 + p4m_8 * d4_x_8
+*
+***********************************************************************
+*     z interpolation
+***********************************************************************
+*
+*     TRAJECTORY
+*     ----------
+      xxm_8 = F_capzm(n)
+      xmm_8 = 1.0 - xxm_8
+      t1m_8 = F_czm(n) * ( xmm_8 + 1.0 )
+      t2m_8 = F_czm(n) * ( xxm_8 + 1.0 )
+*
+*     TLM 
+*     ---
+      xx_8 = F_capz(n)
+      xm_8 =  - xx_8
+      t1_8 = F_cz(n) * ( xmm_8 + 1.0 ) + F_czm(n) * ( xm_8 )
+      t2_8 = F_cz(n) * ( xxm_8 + 1.0 ) + F_czm(n) * ( xx_8 )
+*
+*     TRAJECTORY
+*     ----------
+      F_outm(n)= xmm_8 * a1m_y_8 + t1m_8 * b1m_y_8 + xxm_8 * c1m_y_8 + t2m_8 * d1m_y_8
+*
+*     TLM
+*     ---
+      F_out(n) = xm_8  * a1m_y_8 + t1_8  * b1m_y_8 + xx_8  * c1m_y_8 + t2_8  * d1m_y_8
+     %          +xmm_8 * a1_y_8  + t1m_8 * b1_y_8  + xxm_8 * c1_y_8  + t2m_8 * d1_y_8
+
+*
+  180 continue
+  190 continue
+  200 continue
+!$omp enddo
+*
+      endif
+!$omp end parallel
+*
+      return
+      end

@@ -18,7 +18,7 @@
 *implicits
 #include "glb_ld.cdk"
 #include "bmf.cdk"
-#include "pilot.cdk"
+#include "lam.cdk"
 #include "nest.cdk"
 #include "tr3d.cdk"
 #include "offline.cdk"
@@ -27,13 +27,16 @@
 #include "lctl.cdk"
 #include "cstv.cdk"
 #include "v4dg.cdk"
+#include "bcsmem.cdk"
+#include "bcsdim.cdk"
+#include "lun.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld,newdate
       external vmmlod,vmmget,vmmuld,newdate
       logical done
       character*16 datev
-      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat,np,ip
+      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat,np,ip,id
       real tr1,trf,a2,b2
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
       integer err, key1(26+Tr3d_ntr), nvar, nstepno, key1_, 
@@ -45,7 +48,6 @@
       save done,tf_nest
       if(Offline_int_accu_S.eq.'CONST')  int_temp=1
       if(Offline_int_accu_S.eq.'LINEAR') int_temp=2
-c     print*,'nest_intt int_temp = ',int_temp
 *
 *     ---------------------------------------------------------------
 *
@@ -56,12 +58,13 @@ c     print*,'nest_intt int_temp = ',int_temp
 *
       if ( V4dg_conf.eq.0.or..not.F_done ) then
 *
-      if (Lctl_step.eq.1) Pil_current_S = Pil_runstrt_S
+      if (Lctl_step.eq.1) Lam_current_S = Lam_runstrt_S
       if (.not.done) then
-         call prsdate   (yy,mo,dd,hh,mm,ss,dum,Pil_current_S)
+         call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
          call pdfjdate2 (tf_nest,yy,mo,dd,hh,mm,ss)
       endif
 *
+      if (Lun_debug_L) write(Lun_out,1000)
       key1(1)  = VMM_KEY(nest_u)
       key1(2)  = VMM_KEY(nest_v)
       key1(3)  = VMM_KEY(nest_t)
@@ -125,18 +128,49 @@ c     print*,'nest_intt int_temp = ',int_temp
       endif
 *
       dayfrac = dble(Lctl_step)*Cstv_dt_8*rsid
-      call incdatsd (datev,Pil_runstrt_S,dayfrac)
+      call incdatsd (datev,Lam_runstrt_S,dayfrac)
       call prsdate (yy,mo,dd,hh,mm,ss,dum,datev)
       call pdfjdate2 (tx,yy,mo,dd,hh,mm,ss)
 *
-      if (datev.gt.Pil_current_S) then
+      if (datev.gt.Lam_current_S) then
          dtf = (tx-tf_nest) * sid / Cstv_dt_8
-         dayfrac = dble(Pil_nesdt)*rsid
-         call incdatsd(datev,Pil_current_S,dayfrac)
-         Pil_current_S = datev
-         call prsdate (yy,mo,dd,hh,mm,ss,dum,Pil_current_S)
+         dayfrac = dble(Lam_nesdt)*rsid
+         call incdatsd(datev,Lam_current_S,dayfrac)
+         Lam_current_S = datev
+         call prsdate (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
          call pdfjdate2 (tf_nest,yy,mo,dd,hh,mm,ss)
          if (Lctl_step.gt.1) then
+*
+*           Copy contents from BCS_UF to BCS_U
+*
+            do i=1,bcs_sz
+               bcs_u(i) = bcs_uf(i)
+               bcs_v(i) = bcs_vf(i)
+               bcs_t(i) = bcs_tf(i)
+               bcs_psd(i) = bcs_psdf(i)
+               bcs_pip(i) = bcs_pipf(i)
+               bcs_fip(i) = bcs_fipf(i)
+               bcs_td(i) = bcs_tdf(i)
+               bcs_fi(i) = bcs_fif(i)
+               bcs_q(i) = bcs_qf(i)
+               bcs_s(i) = bcs_sf(i)
+               bcs_tp(i) = bcs_tpf(i)
+            enddo
+            if (.not. Schm_hydro_L) then
+               do i=1,bcs_sz
+                  bcs_w(i) = bcs_wf(i)
+                  bcs_mu(i) = bcs_muf(i)
+               enddo
+            endif
+            do n=1,Tr3d_ntr
+               id = (n-1)*bcs_sz+1
+               do i=1,bcs_sz
+                  bcs_tr(id+i-1) = bcs_trf(id+i-1)
+               enddo
+            enddo
+*
+*           Copy contents from NEST_UF to NEST_U
+*
             do k= 1, G_nk
             do j= 1, l_nj 
             do i= 1, l_ni
@@ -194,7 +228,7 @@ c     print*,'nest_intt int_temp = ',int_temp
 *
          endif
 *
-         call datp2f   ( dat, Pil_current_S )
+         call datp2f   ( dat, Lam_current_S )
          err = newdate ( dat, bmf_time1,bmf_time2,-3 )
          call nest_indata
 *
@@ -208,6 +242,31 @@ c     print*,'nest_intt int_temp = ',int_temp
 *
       a = (tf_nest-tx)/ (tf_nest - tx + (dtf*Cstv_dt_8 * rsid) )
       b = one - a
+      do i=1,bcs_sz
+         bcs_u(i) = a*bcs_u(i) + b*bcs_uf(i)
+         bcs_v(i) = a*bcs_v(i) + b*bcs_vf(i)
+         bcs_t(i) = a*bcs_t(i) + b*bcs_tf(i)
+         bcs_psd(i) = a*bcs_psd(i) + b*bcs_psdf(i)
+         bcs_pip(i) = a*bcs_pip(i) + b*bcs_pipf(i)
+         bcs_fip(i) = a*bcs_fip(i) + b*bcs_fipf(i)
+         bcs_td(i) = a*bcs_td(i) + b*bcs_tdf(i)
+         bcs_fi(i) = a*bcs_fi(i) + b*bcs_fif(i)
+         bcs_q(i) = a*bcs_q(i) + b*bcs_qf(i)
+         bcs_s(i) = a*bcs_s(i) + b*bcs_sf(i)
+         bcs_tp(i) = a*bcs_tp(i) + b*bcs_tpf(i)
+      enddo
+      if (.not. Schm_hydro_L) then
+         do i=1,bcs_sz
+            bcs_w(i) = a*bcs_w(i) + b*bcs_wf(i)
+            bcs_mu(i) = a*bcs_mu(i) + b*bcs_muf(i)
+         enddo
+      endif
+      do n=1,Tr3d_ntr
+         id = (n-1)*bcs_sz+1
+         do i=1,bcs_sz
+            bcs_tr(id+i-1) = a*bcs_tr(id+i-1) + b*bcs_trf(id+i-1)
+         enddo
+      enddo
 *
       do k= 1, G_nk
       do j= 1, l_nj 
@@ -248,13 +307,27 @@ c     print*,'nest_intt int_temp = ',int_temp
          key1(n) = key1_ + n
          key2(n) = key2_ + n
       end do
-      if (Tr3d_ntr.gt.0) then
-         err = vmmlod(key1,Tr3d_ntr)
-         err = vmmlod(key2,Tr3d_ntr)
 
-         if ( Schm_offline_L) then
+      if (Tr3d_ntr.gt.0) then
+         if ( .not.Schm_offline_L) then
+             err = vmmlod(key1,Tr3d_ntr)
+             err = vmmlod(key2,Tr3d_ntr)
+             do n=1,Tr3d_ntr
+                err = vmmget(key1(n),patr1,tr1)
+                err = vmmget(key2(n),patrf,trf)
+                do k= 1, G_nk
+                do j= 1, l_nj 
+                do i= 1, l_ni
+                   tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
+                end do
+                end do
+                end do
+             end do
+         else
+
+*           ( Schm_offline_L)     
 * special interpolation for tracers during offline/MEC mode
-             np = nint(Pil_nesdt/Cstv_dt_8)
+             np = nint(Lam_nesdt/Cstv_dt_8)
              ip = np - nint((tf_nest-tx)*sid/Cstv_dt_8)
              if(ip.eq.1) then
                b2 = 0.5 * b
@@ -310,19 +383,6 @@ c     print*,'nest_intt int_temp = ',int_temp
                     enddo
                 endif
              end do
-         else
-* Normal mode
-             do n=1,Tr3d_ntr
-                err = vmmget(key1(n),patr1,tr1)
-                err = vmmget(key2(n),patrf,trf)
-                do k= 1, G_nk
-                do j= 1, l_nj 
-                do i= 1, l_ni
-                   tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
-                end do
-                end do
-                end do
-             end do
          endif
 *
          err = vmmuld(key1,Tr3d_ntr)
@@ -354,6 +414,7 @@ c     print*,'nest_intt int_temp = ',int_temp
 *
       endif
 *
+ 1000 format(3X,'LINEAR INTERP IN TIME FOR NEST DATA (NEST_INTT)')
 *     ---------------------------------------------------------------
       return
       end

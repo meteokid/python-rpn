@@ -1,0 +1,143 @@
+***s/r bcs_sto - Dimensions for the storage of boundary conditions (BCS)
+*
+#include "model_macros_f.h"
+*
+      subroutine bcs_sto
+*
+      implicit none
+*
+*author
+*     M. Desgagne  April 2006 (MC2 setpnt2)
+*
+*revision
+* v3_30 - Desgagne M.        - initial version
+*
+*object
+*
+*arguments
+*     None
+*
+*implicits
+#include "bcsdim.cdk"
+#include "bcsmem.cdk"
+#include "hblen.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+*
+      integer err, bcs_sz1,nvar
+*
+*----------------------------------------------------------------------
+*
+      dimxs = 0
+      dimys = 0
+      dimxn = 0
+      dimyn = 0
+      dimxw = 0
+      dimyw = 0
+      dimxe = 0
+      dimye = 0
+*
+      minxs = 1
+      maxxs = l_ni
+      minys = 1
+      maxys = Glb_pil_s + Hblen_y + 1
+      if (l_south) then
+         dimxs = maxxs - minxs + 1
+         dimys = maxys - minys + 1
+      endif
+      minxn = minxs
+      maxxn = maxxs
+      minyn = l_nj - Glb_pil_n - Hblen_y
+      maxyn = l_nj
+      if (l_north) then
+         dimxn = maxxn - minxn + 1
+         dimyn = maxyn - minyn + 1
+      endif
+*
+      minxw = 1
+      maxxw = Glb_pil_w + Hblen_x + 1
+      minyw = 1 + pil_s + south*(Hblen_y)
+      maxyw = l_nj - pil_n -north*(Hblen_y)
+      if (l_west ) then
+         dimxw = maxxw - minxw + 1
+         dimyw = maxyw - minyw + 1
+      endif
+      minxe = l_ni - Glb_pil_e - Hblen_x
+      maxxe = l_ni
+      minye = 1 + pil_s + south*(Hblen_y)
+      maxye = l_nj - pil_n - north*(Hblen_y)
+      if (l_east ) then
+         dimxe = maxxe - minxe + 1
+         dimye = maxye - minye + 1
+      endif
+c     print *,'bcs_sto: west X ',minxw,maxxw,'west Y ',minyw,maxyw
+c     print *,'bcs_sto: east X ',minxe,maxxe,'east Y ',minye,maxye
+c     print *,'bcs_sto: north X ',minxn,maxxn,'north Y ',minyn,maxyn
+c     print *,'bcs_sto: south X ',minxs,maxxs,'south Y ',minys,maxys
+c     print *,'bcs_sto: trnes ofi=',l_ni - Glb_pil_e - Hblen_x - 1
+c     print *,'bcs_sto: trnes ofj=',l_nj - Glb_pil_n - Hblen_y - 1
+*
+      bcs_is = 1
+      bcs_in = bcs_is + dimxs*dimys*G_nk
+      bcs_iw = bcs_in + dimxn*dimyn*G_nk
+      bcs_ie = bcs_iw + dimxw*dimyw*G_nk
+      bcs_sz = bcs_ie + dimxe*dimye*G_nk - 1
+c     print *,'dimxs=',dimxs,' dimys=',dimys
+c     print *,'dimxn=',dimxn,' dimyn=',dimyn
+c     print *,'dimxw=',dimxw,' dimyw=',dimyw
+c     print *,'dimxe=',dimxe,' dimye=',dimye
+*
+      bcs_sz1 = max(bcs_sz,1)
+      nvar = 22
+      if (.not. Schm_hydro_L) nvar=nvar+4
+      if (Tr3d_ntr.gt.0) nvar = nvar + Tr3d_ntr*2
+
+      BCS_siz_tot = nvar*bcs_sz1
+
+      allocate (BCS_values(BCS_siz_tot))
+
+      pbcsu    = loc (BCS_values(             1))
+      pbcsv    = loc (BCS_values( bcs_sz1   + 1))
+      pbcst    = loc (BCS_values( bcs_sz1*2 + 1))
+      pbcspsd  = loc (BCS_values( bcs_sz1*3 + 1))
+      pbcspip  = loc (BCS_values( bcs_sz1*4 + 1))
+      pbcsfip  = loc (BCS_values( bcs_sz1*5 + 1))
+      pbcstd   = loc (BCS_values( bcs_sz1*6 + 1))
+      pbcsfi   = loc (BCS_values( bcs_sz1*7 + 1))
+      pbcsq    = loc (BCS_values( bcs_sz1*8 + 1))
+      pbcss    = loc (BCS_values( bcs_sz1*9 + 1))
+      pbcstp   = loc (BCS_values( bcs_sz1*10+ 1))
+      pbcsuf   = loc (BCS_values( bcs_sz1*11+ 1))
+      pbcsvf   = loc (BCS_values( bcs_sz1*12+ 1))
+      pbcstf   = loc (BCS_values( bcs_sz1*13+ 1))
+      pbcspsdf = loc (BCS_values( bcs_sz1*14+ 1))
+      pbcspipf = loc (BCS_values( bcs_sz1*15+ 1))
+      pbcsfipf = loc (BCS_values( bcs_sz1*16+ 1))
+      pbcstdf  = loc (BCS_values( bcs_sz1*17+ 1))
+      pbcsfif  = loc (BCS_values( bcs_sz1*18+ 1))
+      pbcsqf   = loc (BCS_values( bcs_sz1*19+ 1))
+      pbcssf   = loc (BCS_values( bcs_sz1*20+ 1))
+      pbcstpf  = loc (BCS_values( bcs_sz1*21+ 1))
+      nvar=21
+*
+      if (.not. Schm_hydro_L) then
+         pbcsw = loc (BCS_values( bcs_sz1*(nvar+1) +   1))
+         pbcsmu= loc (BCS_values( bcs_sz1*(nvar+2) +   1))
+         pbcswf= loc (BCS_values( bcs_sz1*(nvar+3) +   1))
+         pbcsmuf= loc (BCS_values( bcs_sz1*(nvar+4) +   1))
+         nvar=25
+      endif
+*
+      if (Tr3d_ntr.gt.0) then
+         pbcstr = loc( BCS_values( bcs_sz1*(nvar+1)    + 1))
+         pbcstrf =loc( BCS_values( bcs_sz1*(nvar+1+Tr3d_ntr) + 1))
+      endif
+*
+      call bcs_did (G_ni,G_nj)
+*
+*----------------------------------------------------------------------
+      return
+      end
+

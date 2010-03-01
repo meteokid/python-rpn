@@ -1,5 +1,7 @@
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
-***s/r Out_sfile
+***s/r Out_sfile - to open new output file
+*
+#include "model_macros_f.h"
 *
       subroutine out_sfile (clostep_int,stepno,F_etikadd_S,F_ip3,F_ext_S)
       implicit none
@@ -11,16 +13,23 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *REVISION
 * v3_20 - Lee V.            - Adapted for GEMDM
+* v3_30 - Dugas B.          - 1) Climate mode dm,dp and pm files are sent to directory
+*                             ../../output/current_last_step/Out_myblocx-Out_myblocy
+*                             2) Do not use Out_endstepno in climate mode
+* v3_30 - McTaggart-Cowan R.- Use existing Out_etik_S string instead of namelist value
 *
 *ARGUMENTS
 *    NAMES       I/O  TYPE  DESCRIPTION
 *
+#include "clim.cdk"
 #include "out.cdk"
+#include "glb_ld.cdk"
 *
 
       integer  prog_filename,fnom,fstouv,fstinl,fstecr,longueur,fstopc
       external prog_filename,fnom,fstouv,fstinl,fstecr,longueur,fstopc
 *
+      character*5 blocxy_S
       character*3 ros 
       character*15 datev,startindx
       integer nlis,prognum,err,nrec,n1,n2,n3,lislon,i,
@@ -37,11 +46,21 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 **
 *----------------------------------------------------------------------
 *
+*     Note that fstopc will set the warning level for FST calls. The
+*     false value means to set the Message Level to the type indicated
+*     whereas the true value means to obtain the message level - ask Mario.
+*     MSGLVL INFORM will inform the write and read messages
+*     MSGLVL SYSTEM will indicate if there are errors only.
+
       if (Out_debug_L) then
-          if (Out_mybloc.ne.0) err = fstopc('MSGLVL','SYSTEM',.false.)
+          err = fstopc('MSGLVL','INFORM',.false.)
       else
-          err = fstopc('MSGLVL','SYSTEM',0)
+          err = fstopc('MSGLVL','SYSTEM',.false.)
       endif
+
+      if (Clim_climat_L)
+     $    write(blocxy_S,'(I2.2,"-",I2.2)') Out_myblocx,Out_myblocy
+
       Out_npas = stepno
 *
       if ((Out_blocme.eq.0).and.(Out_nisl.gt.0).and.(Out_njsl.gt.0)) then
@@ -56,7 +75,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
                clostep = (stepno/clostep_int + 1) * clostep_int
             endif
          endif
-         clostep = min(clostep,Out_endstepno)
+         if (.not.Clim_climat_L) clostep = min(clostep,Out_endstepno)
          sec_clostep  = dble(clostep)*dble(Out_deet)
          Out_ip2 = int (dble(stepno) * Out_deet / 3600. + 1.e-12)
          Out_ip3 = F_ip3
@@ -81,10 +100,17 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                           Out_unit_S)
             Out_filenamep_S = Out_filename_S(1:longueur(Out_filename_S))
      $                        //F_ext_S(1:longueur(F_ext_S))
+            if (Clim_climat_L .and.
+     $         (Out_prefix_S.eq.'dm' .or.
+     $          Out_prefix_S.eq.'dp' .or.
+     $          Out_prefix_S.eq.'pm' )) then
+                Out_filenamep_S =
+     $          '../../output/current_last_step/' // blocxy_S //
+     $          '/' // Out_filenamep_S(1:longueur(Out_filenamep_S))
+            endif
          endif
-         Out_etik_S = Out_etiket_S
          if (F_etikadd_S.ne.' ') Out_etik_S =
-     $        Out_etiket_S(1:min(longueur(Out_etiket_S),6))//F_etikadd_S
+     $        Out_etik_S(1:min(longueur(Out_etik_S),6))//F_etikadd_S
         
 
          if (Out_unf.eq.0) then
@@ -152,8 +178,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 #include "out.cdk"
 *
-      integer  fstfrm,longueur,fstopc
-      external fstfrm,longueur,fstopc
+      integer  fstfrm,longueur
+      external fstfrm,longueur
 *
       integer err
 *----------------------------------------------------------------------
@@ -161,21 +187,12 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       if ((Out_blocme.eq.0).and.(Out_unf.gt.0)) then
          err = fstfrm(Out_unf)
          call fclos(Out_unf)
-         if (Out_debug_L.and.Out_mybloc.eq.0)
+         if (Out_debug_L)
      $      write (6,102) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
          Out_unf = 0
-      endif
-      if (Out_debug_L) then
-          if (Out_mybloc.ne.0) err = fstopc('MSGLVL','INFORM',.false.)
-      else
-          err = fstopc('MSGLVL','INFORM',0)
       endif
 *
  102  format (' FST FILE UNIT=',i3,' FILE = ',a,' IS CLOSED')
 *----------------------------------------------------------------------
       return
       end
-*
-
-
-

@@ -1,0 +1,278 @@
+***s/r v4d_phydro_tl - TLM of v4d_phydro  
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_phydro_tl (Ndim,F)  
+*
+#include "impnone.cdk"
+*
+      integer Ndim
+      real F(Ndim)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "ind.cdk"
+#include "indm.cdk"
+#include "vt1m.cdk"
+#include "p_geof.cdk"
+#include "tr3d.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer key1(5),err,nvar,i,j,k,m,n
+*
+      real fipt1_w,fit1_w,tpt1_w,st1_w 
+      pointer (fipt1_w_,fipt1_w(LDIST_SHAPE,l_nk)),(fit1_w_,fit1_w (LDIST_SHAPE,l_nk)),
+     %        ( tpt1_w_, tpt1_w(LDIST_SHAPE,l_nk)),( st1_w_, st1_w (LDIST_SHAPE     ))
+*     ______________________________________________________
+* 
+*     ----------------------------------------
+*     Recover TRAJ initial state
+*     for Preprocessing of Dependent variables
+*     NOTE: The fields were written in INDATA
+*     ----------------------------------------
+      Lctl_step  = 0
+      V4dg_rwtr  = 0
+*
+*     Set linear direct run
+*     ---------------------
+      V4dg_ds_L = .true.
+      V4dg_nl_L = .false.
+      V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+      V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+      V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+      call v4d_rwtraj (1)
+*
+*     Re-Set default non-linear direct run
+*     ------------------------------------
+      V4dg_ds_L = .true.
+      V4dg_nl_L = .true.
+      V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+      V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+      V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+*     Field Allocations 
+*     -----------------
+      call hpalloc (fipt1_w_,(l_maxy-l_miny+1)*(l_maxx-l_minx+1)*l_nk,err,1)
+      call hpalloc ( fit1_w_,(l_maxy-l_miny+1)*(l_maxx-l_minx+1)*l_nk,err,1)
+      call hpalloc ( tpt1_w_,(l_maxy-l_miny+1)*(l_maxx-l_minx+1)*l_nk,err,1)
+      call hpalloc (  st1_w_,(l_maxy-l_miny+1)*(l_maxx-l_minx+1)     ,err,1)
+*
+*     Get TOPO and TRAJ in memory
+*     ---------------------------
+      key1(1) = VMM_KEY(topo  )
+      key1(2) = VMM_KEY( fit1m)
+      key1(3) = VMM_KEY(fipt1m)
+      key1(4) = VMM_KEY(  st1m)
+      key1(5) = VMM_KEY( tpt1m)
+      nvar=5 
+*
+      err = vmmlod(key1,nvar)
+*
+      err = VMM_GET_VAR(topo)
+      err = VMM_GET_VAR( fit1m)
+      err = VMM_GET_VAR(fipt1m)
+      err = VMM_GET_VAR(  st1m)
+      err = VMM_GET_VAR( tpt1m)
+*
+*     -----------------------------------------
+*     Recall tpt1 and st1 in control variable F
+*     -----------------------------------------
+*
+      m = 0
+*
+*     Do nothing with u wind
+*     ----------------------
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_niu
+         m = m+1
+      end do
+      end do
+      enddo
+*
+*     Do nothing with v wind
+*     ----------------------
+      do k=1,l_nk
+      do j=1,l_njv
+      do i=1,l_ni
+         m = m+1
+      end do
+      end do
+      end do
+*
+*     Recall tp
+*     ---------
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         tpt1_w(i,j,k) = F(m)
+      end do
+      end do
+      end do
+*
+*     Recall s 
+*     --------
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         st1_w(i,j) = F(m)
+      end do
+      end do
+*
+*     Do nothing with fip 
+*     -------------------
+      if (.not. Schm_hydro_L) then
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+      end do
+      end do
+      end do
+*
+      endif
+*
+*     Do nothing with 3D Tracers
+*     --------------------------
+      if (Tr3d_ntr.gt.0) then
+         do n=1,Tr3d_ntr
+            do k=1,l_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               m = m+1
+            end do
+            end do
+            end do
+         end do
+      endif
+*     ______________________________________________________
+*
+      if(m.ne.Ndim) call gem_stop('v4d_phydro_tl 1',-1)
+*     ______________________________________________________
+*
+*     Associate with Ind and Indm
+*     ---------------------------
+      Ind_fi_  = fit1_w_
+      Ind_fip_ = fipt1_w_
+      Ind_s_   = st1_w_
+      Ind_tp_  = tpt1_w_
+      Ind_topo_= topo_
+*
+*     TRAJECTORY
+*     ----------
+      Indm_fim_  = fit1m_
+      Indm_fipm_ = fipt1m_
+      Indm_sm_   = st1m_
+      Indm_tpm_  = tpt1m_
+*
+*     -------------------------------------------
+*     Set dependent variables phi',phi from T',s'
+*     -------------------------------------------
+      call vtap_tl ()
+*
+      err = vmmuld(-1,0)
+*
+*     ------------------------------------------
+*     Set phi' hydrostatic in control variable F
+*     ------------------------------------------
+*
+      m = 0
+*
+*     Do nothing with u wind
+*     ----------------------
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_niu
+         m = m+1
+      end do
+      end do
+      enddo
+*
+*     Do nothing with v wind
+*     ----------------------
+      do k=1,l_nk
+      do j=1,l_njv
+      do i=1,l_ni
+         m = m+1
+      end do
+      end do
+      end do
+*
+*     Do nothing with tp 
+*     ------------------
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+      end do
+      end do
+      end do
+*
+*     Do nothing with s 
+*     -----------------
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+      end do
+      end do
+*
+*     Replace fip 
+*     -----------
+      if (.not. Schm_hydro_L) then
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         F(m) = fipt1_w(i,j,k)
+      end do
+      end do
+      end do
+*
+      endif
+*
+*     Do nothing with 3D Tracers
+*     --------------------------
+      if (Tr3d_ntr.gt.0) then
+         do n=1,Tr3d_ntr
+            do k=1,l_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               m = m+1
+            end do
+            end do
+            end do
+         end do
+      endif
+*
+      call hpdeallc (fipt1_w_,err,1)
+      call hpdeallc ( fit1_w_,err,1)
+      call hpdeallc ( tpt1_w_,err,1)
+      call hpdeallc (  st1_w_,err,1)
+*     ______________________________________________________
+*
+      if(m.ne.Ndim) call gem_stop('v4d_phydro_tl 2',-1)
+*     ______________________________________________________
+*
+      return
+      end

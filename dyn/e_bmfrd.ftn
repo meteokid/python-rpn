@@ -11,6 +11,8 @@
 *
 *revisions
 * v3_20 -  Spacek L. - corrected passing character argument declaration
+* v3_30 -  Dugas B.  - e_liaccu is now declared as an external function
+*
 *arguments
 *______________________________________________________________________
 *                                                                      |
@@ -35,12 +37,11 @@
 #include "e_fu.cdk"
 #include "e_anal.cdk"
 #include "e_topo.cdk"
-#include "pilot.cdk"
 #include "e_schm.cdk"
 *
 *modules
-      external e_rdhint3
-      integer  e_rdhint3
+      external e_rdhint3,e_liaccu
+      integer  e_rdhint3,e_liaccu
 *
       integer err,i,k
       real w1 (nix*njx), w2 (nix*njx), dtinv
@@ -65,13 +66,14 @@
 *
 *    For the offline mode: accumulation is changed into rate:
 *
-      if (e_schm_offline_L) call e_liaccu (w1,nix,njx,nv)
+         if (e_schm_offline_L) err = e_liaccu (w1,nix,njx,nv)
 *     
          call e_bmfsplitxy2 (w1,nix,njx,nv,k,gnk,pni,0,0,0)
 *
       end do
 *
-      return
+      goto 900
+*
  500  write(6,*) ' Variable = ',NV, ' NOT AVAILABLE'
       if (arret_L) call e_arret( 'e_bmfrd' )
 *

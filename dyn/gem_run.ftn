@@ -32,6 +32,8 @@
 *                           - ADJ of digital filter
 * v3_20 - Gravel S.         - background vertical diffusion
 * v3_20 - Tanguay M.        - Introduce Hzd_hdif0_L
+* v3_20 - Dugas B.          - Replace GEMTIM by GEMTIM2(may re-define Step_rsti)
+* v3_30 - Desgagne M.       - Restructure code, added output for cascade mode
 *
 *object
 *	Performs the integration of the model
@@ -62,33 +64,31 @@
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "v4dg.cdk"
-#include "p_clim.cdk"
+#include "clim.cdk"
 #include "vrtd.cdk"
 #include "hzd.cdk"
-
 *
-      logical bkup_L,carryon_L,identity_4dvar_L
-      integer last_step
+      logical bkup_L,identity_4dvar_L
+      integer last_step,fstep,istep,step0,stepf
 **
 *     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) write (6,900)
+      call blocstat ()
+
+      fstep = Step_total
+
+**** =====> BLOC 4D - debut
       if ( V4dg_conf.ne.0 ) then
-         if ( Schm_chems_L    ) call gem_stop('gem_run Schm_chems_L  ',-1)
-         if ( Vrtd_L          ) call gem_stop('gem_run Vrtd_L        ',-1)
-         if ( Schm_offline_L  ) call gem_stop('gem_run Schm_offline_L',-1)
+         if ( Schm_chems_L  ) call gem_stop('gem_run Schm_chems_L  ',-1)
+         if ( Vrtd_L        ) call gem_stop('gem_run Vrtd_L        ',-1)
+         if ( Schm_offline_L) call gem_stop('gem_run Schm_offline_L',-1)
+         if ( F_dgtflt_L    ) call gem_stop('gem_run F_dgtflt_L'    ,-1)
+         fstep = V4dg_steplast
       endif
 *     ---------------------------------------------------------------
 *
       identity_4dvar_L = V4dg_conf.ne.0 .and. V4dg_identity_L 
-*
-      call blocstat ()
-*
-      if( V4dg_conf.ne.0 ) then
-        last_step = V4dg_steplast
-      else
-        last_step = Step_total
-      endif      
-      if ((F_dgtflt_L).and.(Step_total.ge.(Init_dfnp-1)/2)) 
-     $     last_step = Init_dfnp-1
 *
 *     4D-Var: Write trajectory for conversion if requested
 *     ----------------------------------------------------
@@ -97,108 +97,103 @@
 *C    4D-Var: Control Cost function at INITIAL time
 *     ---------------------------------------------
       if ( V4dg_conf.ne.0 ) call v4d_ctrlcst ()
+**** =====> BLOC 4D - fin
 *
- 500  Lctl_step  = Lctl_step  + 1
-      Rstri_sdon = Rstri_sdon + 1
+      if (F_dgtflt_L) fstep = Init_dfnp-1
+      last_step = min (fstep, Lctl_step + Step_rsti)
+      
 *
-#if defined (NEC) || defined (AIX)
-      if (Lun_out.gt.0) call gemtim (Lun_out)
-#endif
+      if (Lctl_step.eq.0) call out_dyn (.false.,2)
+                          call out_dyn (.true.,-1)
 *
-      bkup_L    = .false.
-      F_rstrt_L = .false.
-      if (Lctl_step.gt.last_step) then
-         Lctl_step=last_step
-         goto 600
-      endif
-      if (mod(Lctl_step,Step_bkup).eq.0)    bkup_L = .true.
-      if (mod(Rstri_sdon,Step_rsti).eq.0) F_rstrt_L = .true.
-*     
-      if (Lctl_step.eq.last_step) then
-                                            bkup_L = .false.
-         if ( P_clim_clima_L ) then
-                                         F_rstrt_L = .true.
-         elseif (.not.F_dgtflt_L) then
-                                         F_rstrt_L = .false.
-         endif
-      endif
-      carryon_L = ((Lctl_step.lt.last_step).and.(.not.F_rstrt_L))
+      bkup_L = .false.
 *
-      if (F_dgtflt_L) then
-         if (Lun_out.gt.0) write(Lun_out,1000) Lctl_step,last_step
-      else
-        if (.not.schm_offline_L) then
-         if (Lun_out.gt.0) write(Lun_out,1001) Lctl_step,last_step
-        else
-         if (Lun_out.gt.0) write(Lun_out,1003) Lctl_step,last_step
-        endif
-      endif
+      step0 = Lctl_step+1
+      stepf = last_step
+*
+      do istep = step0, stepf
+*
+         Lctl_step = istep
+         if ( bkup_L ) call wrrstrt
+*
+*C    Incrementing timestep
+*
+         Rstri_sdon = Rstri_sdon + 1
+*
+         call gemtim2 ( Lun_out, Clim_climat_L, Rstri_sdon,Step_rsti )
+*
+         if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,fstep
 *
 *C    (Re-)initialize physics surface forcing increments
 *     --------------------------------------------------
-      if ( P_clim_ininc_L ) call p_inincr
+         if ( Clim_inincr_L ) call itf_phy_inincr
 *
 *C    Diffusion, Dynamics and Physics
 *     -------------------------------
-      if ( .not.identity_4dvar_L ) then
+         if ( .not.identity_4dvar_L ) then
 *
 *        Horizontal diffusion & Vertical sponge (Initial timestep)
 *        ---------------------------------------------------------
-         if (Lctl_step.eq.1.and.Hzd_hdif0_0_L.and.(.not.schm_offline_l)) 
-     $         call hdif0
+         if ( Lctl_step.eq.1.and.Hzd_hdif0_0_L.and.
+     $                     (.not.schm_offline_l) ) call hdif0
 *
 *        Dynamics timestep
 *        -----------------
          call dynstep
+         call out_dyn (.false.,1)
 *
          if (Vrtd_L) call vrtd
 *
 *        Physics timestep & Horizontal diffusion & Vertical sponge
 *        ---------------------------------------------------------
          call hdif_phy
+         call out_dyn (.false.,2)
 *
-      endif
+         endif
 *
 *C    Digital filter
 *     --------------
-      if ( F_dgtflt_L ) call digflt( )
+         if ( F_dgtflt_L ) call digflt
 *
-      if (Schm_sfix_L.and.V4dg_conf.ne.0) call surfix ( )
+         if (Schm_sfix_L.and.V4dg_conf.ne.0) call surfix
 *
 *     4D-Var: Write trajectory for conversion if requested
 *     ----------------------------------------------------
-      if ( V4dg_oktrcv_L ) call v4d_rwconv0
+         if ( V4dg_oktrcv_L ) call v4d_rwconv0
 *
 *C    4D-Var: Control Cost function at .NOT.INITIAL time
 *     --------------------------------------------------
-      if ( V4dg_conf.ne.0 ) call v4d_ctrlcst ()
+         if ( V4dg_conf.ne.0 ) call v4d_ctrlcst
 *
 *C    Perform output if required
 *     --------------------------
-      call blocstat ()
-      call out_dyn ()
+         if (Schm_sfix_L.and.V4dg_conf.eq.0) call surfix
 *
-      if (Schm_sfix_L.and.V4dg_conf.eq.0) call surfix ( )
+         call out_dyn (.true.,-1)
+         call blocstat
 *
-      if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+         if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 *
-      if (bkup_L.and..not.F_rstrt_L) call wrrstrt ()
+*     * Must we stop the current sequence? If yes, must we write
+*     * a restart file?
 *
-      if (carryon_L)  then
-         call trans_clean ()
-         goto 500
-      end if
+         if (Lctl_step.ne.last_step) call trans_clean
 *
- 600  if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
+         bkup_L = mod( Lctl_step ,Step_bkup ).eq.0
 *
-*     ---------------------------------------------------------------
+      end do
 *
- 1000 format(/,'GEM_RUN: PERFORMING INITIALIZATION TIMESTEP #',I8,
-     $         ' OUT OF ',I8, 
-     +       /,'================================================')
+      if (F_dgtflt_L.and.(last_step.eq.Init_dfnp-1)
+     $              .and.(.not.F_rstrt_L)) call trans_clean
+*
+      call max_rss (' GEMDM',Lun_out.gt.0)
+      F_rstrt_L = .false.
+      if ((Lctl_step.lt.fstep).or.(Clim_climat_L)) F_rstrt_L = .true.
+*
+      if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
+*
+ 900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA:')
  1001 format(/,'GEM_RUN: PERFORMING TIMESTEP #',I8,' OUT OF ',I8,
-     +       /,'================================================')
- 1003 format(/,' MEC:_RUN: PERFORMING TIMESTEP #',I8,' OUT OF ',I8,
      +       /,'================================================')
  3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
  4000 format(/,'END OF THE TIME LOOP (S/R GEM_RUN) AT TIMESTEP',I8,

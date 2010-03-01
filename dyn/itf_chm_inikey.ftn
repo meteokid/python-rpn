@@ -1,0 +1,52 @@
+***s/r itf_chm_inikey
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_chm_inikey()
+      implicit none
+*
+*author 
+*     A. Kallaur - arqi - june 2005
+*
+*revision
+* v3_30 - Kallaur A.       - initial version
+*
+*
+*implicites
+*
+#include "tr3d.cdk"
+#include "itf_chm_bus.cdk"
+#include "itf_chm_busind.cdk"
+!
+!  Local variables
+!
+      integer i,k,deb,lght
+      integer init,init0,init1
+      data    init0,init1 /0,1/
+!
+!-------------------------------------------------------------------
+!
+! Add chemical species to the tracer stack. Note the actual
+! loading is done in "inikey.ftn"
+!
+      do i=1,chm_bdyn_top
+         call itf_chm_getindx(chmdynnm(i),'D',deb,lght,init0)
+         chmt_name_S(i) = chmdynon(i)
+         chmt_ind(1,i)  = deb
+         chmt_ind(2,i)  = deb
+         chmt_ntr       = chmt_ntr + 1
+      enddo
+      do i=1,chmt_ntr
+         do k=1,tr3d_ntr
+            if (Tr3d_name_S(k).eq.chmt_name_S(i)) goto 40
+         end do
+         tr3d_ntr = tr3d_ntr + 1
+         Tr3d_name_S(tr3d_ntr) = chmt_name_S(i)
+         Tr3d_sval(tr3d_ntr) = 0.0
+  40  continue
+      enddo
+!
+!-------------------------------------------------------------------
+!
+      return
+      end

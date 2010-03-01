@@ -1,0 +1,461 @@
+***s/r out_vmm - output VMM fields
+*
+#include "model_macros_f.h"
+*
+      subroutine out_vmm (F_wlnph,F_ip3,F_etikadd_S,F_ext_S,minx,maxx,miny,maxy,
+     %                   F_nk, F_levtyp_S,F_rf,F_indo,F_nko,F_set)
+*
+      implicit none
+*
+      character*1 F_levtyp_S
+      character*6 F_etikadd_S
+      character*4 F_ext_S
+      integer F_nk,minx,maxx,miny,maxy,F_nko,F_indo(*),F_set,F_ip3
+      real F_wlnph(minx:maxx,miny:maxy,F_nk), F_rf(F_nko)
+*
+*author
+*     Lee V.                    - rpn July 2004
+*
+*revision
+* v3_20 - Lee V.            - initial MPI version
+* v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
+* v3_31 - Lee V.            - modification of Out_etik_S in out_sgrid only
+*
+*object
+*     output all the VMM fields
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_dostep     I    - array containing indices corresponding to the
+*                     timestep sets that requires output at this time step.
+* F_dostep_max I    - size of F_dostep array
+*
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "out3.cdk"
+#include "out.cdk"
+#include "grid.cdk"
+#include "outd.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "rhsc.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
+#include "vt0.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "vt2.cdk"
+#include "vta.cdk"
+#include "vtx.cdk"
+#include "orh.cdk"
+#include "p_geof.cdk"
+#include "lctl.cdk"
+
+*
+*
+**
+      integer vmmget,vmmlod,vmmuln,vmmatt
+      external vmmget,vmmlod,vmmuln,vmmatt
+      integer i,j,k, ii, pnerr
+      integer i0,in,j0,jn
+      integer sorkey(400),soridx,sorbit(400),sorfilt(400)
+      integer windkey(12),windidx,windbit(12),windfilt(12)
+      integer sordim(400)
+      integer sorlen(3)
+*     sordim =1: 3d with halo l_minx:l_maxx,l_miny:l_maxy,l_nk
+*     sordim =2: 2d with halo l_minx:l_maxx,l_miny:l_maxy
+*     sordim =3: 3d with no halo l_ni,l_nj,l_nk
+      character*8 sorname_S(400),windname_S(12)
+      character*40 attrib
+      integer lpiece,npiece,ierr
+      logical next_L,periodx_L,uvgrid_L
+*
+*
+      real prprlvl(F_nko)
+      real w4(minx:maxx,miny:maxy,F_nko) 
+      real t4(minx:maxx,miny:maxy,F_nk) 
+      real t3(minx:maxx,miny:maxy,F_nk) 
+      real tr,wk,sorcoef(400),windcoef(12)
+      pointer (patr, tr(LDIST_SHAPE,*))
+      pointer (pawk, wk(l_ni,l_nj,*))
+*
+*_______________________________________________________________________
+*
+
+      soridx = 0
+      windidx = 0
+      periodx_L = .false.
+      if (.not.G_lam .and. (Grid_x1(Outd_grid(F_set))-
+     %      Grid_x0(Outd_grid(F_set))+1).eq. G_ni ) periodx_L=.true.
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+
+      sorkey(1) = VMM_KEY(fit1)
+      sorkey(2) = VMM_KEY(st1)
+      sorkey(3) = VMM_KEY(xct1)
+      ierr = vmmatt('FIT1',lpiece,npiece,attrib)
+      sorlen(1) = lpiece
+      ierr = vmmatt('ST1',lpiece,npiece,attrib)
+      sorlen(2) = lpiece
+      ierr = vmmatt('XCT1',lpiece,npiece,attrib)
+      sorlen(3) = lpiece
+
+      do 100 ii=1,Outd_var_max(F_set)
+         next_L = .true.
+         if (vt0_first(1).ge.0.and.next_L) then
+            do i=1,COMMON_SIZE(vt0)
+               if (Outd_var_S(ii,F_set).eq.vt0_n_first(i)) then
+                   if (Outd_var_S(ii,F_set).eq.'UT0'.or.
+     %                 Outd_var_S(ii,F_set).eq.'VT0') then
+                       windidx=windidx+1
+                       windkey(windidx) = vt0_first(i)
+                       windname_S(windidx) = vt0_n_first(i)
+                       next_L = .false.
+                   else 
+                       soridx = soridx + 1
+                       sorkey(soridx) = vt0_first(i)
+                       sorname_S(soridx) = vt0_n_first(i)
+                       next_L = .false.
+                   endif
+               endif
+            enddo
+         endif
+         if (vth_first(1).ge.0.and.next_L) then
+             do i=1,COMMON_SIZE(vth)
+                if (Outd_var_S(ii,F_set).eq.vth_n_first(i)) then
+                   if (Outd_var_S(ii,F_set).eq.'UTH'.or.
+     %                 Outd_var_S(ii,F_set).eq.'VTH') then
+                       windidx=windidx+1
+                       windkey(windidx) = vth_first(i)
+                       windname_S(windidx) = vth_n_first(i)
+                       next_L = .false.
+                   else 
+                       soridx = soridx + 1
+                       sorkey(soridx) = vth_first(i)
+                       sorname_S(soridx) = vth_n_first(i)
+                       next_L = .false.
+                   endif
+                endif
+             enddo
+         endif
+         if (vt1_first(1).ge.0.and.next_L) then
+             do i=1,COMMON_SIZE(vt1)
+                if (Outd_var_S(ii,F_set).eq.vt1_n_first(i)) then
+                   if (Outd_var_S(ii,F_set).eq.'UT1'.or.
+     %                 Outd_var_S(ii,F_set).eq.'VT1') then
+                       windidx=windidx+1
+                       windkey(windidx) = vt1_first(i)
+                       windname_S(windidx) = vt1_n_first(i)
+                       next_L = .false.
+                   else 
+                       soridx = soridx + 1
+                       sorkey(soridx) = vt1_first(i)
+                       sorname_S(soridx) = vt1_n_first(i)
+                       next_L = .false.
+                   endif
+                endif
+             enddo
+         endif
+         if (vtx_first(1).ge.0.and.next_L) then
+             do i=1,COMMON_SIZE(vtx)
+                if (Outd_var_S(ii,F_set).eq.vtx_n_first(i)) then
+                    soridx = soridx + 1
+                    sorkey(soridx) = vtx_first(i)
+                    sorname_S(soridx) = vtx_n_first(i)
+                    next_L = .false.
+                endif
+             enddo
+         endif
+         if ( Init_balgm_L .and. .not.Rstri_idon_L ) then
+             if (vta_first(1).ge.0.and.next_L) then
+             do i=1,COMMON_SIZE(vta)
+                if (Outd_var_S(ii,F_set).eq.vta_n_first(i)) then
+                    soridx = soridx + 1
+                    sorkey(soridx) = vta_first(i)
+                    sorname_S(soridx) = vta_n_first(i)
+                    next_L = .false.
+                endif
+             enddo
+             endif
+         endif
+         if (rhsc_first(1).ge.0.and.next_L) then
+             do i=1,COMMON_SIZE(rhsc)
+                if (Outd_var_S(ii,F_set).eq.rhsc_n_first(i)(1:4)) then
+                    soridx = soridx + 1
+                    sorkey(soridx) = rhsc_first(i)
+                    sorname_S(soridx) = rhsc_n_first(i)
+                    next_L = .false.
+                endif
+             enddo
+         endif
+         if (orh_first(1).ge.0.and.next_L) then
+             do i=1,COMMON_SIZE(orh)
+                if (Outd_var_S(ii,F_set).eq.orh_n_first(i)(1:4)) then
+                    soridx = soridx + 1
+                    sorkey(soridx) = orh_first(i)
+                    sorname_S(soridx) = orh_n_first(i)
+                    next_L = .false.
+                endif
+             enddo
+         endif
+         if (geof_first(1).ge.0.and.next_L) then
+             do i=1,COMMON_SIZE(geof)
+                if (Outd_var_S(ii,F_set).eq.geof_n_first(i)) then
+                    soridx = soridx + 1
+                    sorkey(soridx) = geof_first(i)
+                    sorname_S(soridx) = geof_n_first(i)
+                    next_L = .false.
+                endif
+             enddo
+         endif
+         if (.not.next_L) then
+             if ( sorname_S(soridx)(1:4).eq.Outd_var_S(ii,F_set) ) then
+                if ( sorkey(soridx).ge.0 ) then
+                  ierr = vmmatt(sorname_S(soridx),lpiece,npiece,attrib)
+                  sordim(soridx) = lpiece
+                  sorbit(soridx) = Outd_nbit(ii,F_set)
+                  sorfilt(soridx) = Outd_filtpass(ii,F_set)
+                  sorcoef(soridx) = Outd_filtcoef(ii,F_set)
+                else
+                  soridx = soridx - 1
+                endif
+             else if ( windkey(windidx).ge.0 ) then
+                windbit(windidx) = Outd_nbit(ii,F_set)
+                windfilt(windidx) = Outd_filtpass(ii,F_set)
+                windcoef(windidx) = Outd_filtcoef(ii,F_set)
+             else
+                  windidx = windidx - 1
+             endif
+         endif
+ 100  continue
+
+      if (soridx+windidx.eq.0) return
+
+      if (soridx.gt.0) then
+         pnerr = vmmlod(sorkey(1),soridx)
+      endif
+      if (windidx.gt.0) then
+         pnerr = vmmlod(windkey(1),windidx)
+      endif
+
+*__________________________________________
+*     1.0    Output of VMM 2-D variables
+*
+*__________________________________________
+
+      do ii=1,soridx
+         if (sordim(ii).eq.sorlen(2)) then
+             pnerr = vmmget(sorkey(ii),patr,tr)
+             if (sorfilt(ii).gt.0) then
+                 do j=1,l_nj
+                 do i=1,l_ni
+                    w4(i,j,1)=tr(i,j,1)
+                 enddo
+                 enddo
+                 call filter(w4,sorfilt(ii),sorcoef(ii),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, 1)
+                 call ecris_fst2(w4,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $             sorname_S(ii)(1:4),1.0,0.0, -1, 1, 1, 1, 
+     $             sorbit(ii) )
+             else
+                 call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $             sorname_S(ii)(1:4),1.0,0.0, -1, 1, 1, 1, 
+     $             sorbit(ii) )
+             endif
+         endif
+      enddo
+
+      if (F_levtyp_S .eq. 'P') then
+          do i = 1, F_nko
+             prprlvl(i) = F_rf(i) * 100.0
+          enddo
+          call out_padbuf(F_wlnph,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+      endif
+
+      if (F_levtyp_S .eq. 'M') then
+*_______________________________________________________________________
+*
+*     2.0    Output of VMM variables on ETA levels
+*_______________________________________________________________________
+*
+         do ii=1,soridx
+            if (sordim(ii).eq.sorlen(1)) then
+                pnerr = vmmget(sorkey(ii),patr,tr)
+                call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $             sorname_S(ii)(1:4),1.0,0.0,Out_kind,F_nk, F_indo, F_nko, 
+     $             sorbit(ii) )
+             else if (sordim(ii).eq.sorlen(3)) then
+                pnerr = vmmget(sorkey(ii),pawk,wk)
+                call ecris_fst2(wk,1,l_ni,1,l_nj,Geomg_hyb,
+     $             sorname_S(ii)(1:4),1.0,0.0,Out_kind,F_nk, F_indo, F_nko, 
+     $             sorbit(ii) )
+             endif
+         enddo
+
+      else
+*_______________________________________________________________________
+*
+*     3.0    Output of VMM variables on PRESSURE levels
+*_______________________________________________________________________
+*
+      do ii=1,soridx
+         if (sordim(ii).eq.sorlen(1)) then
+           pnerr = vmmget(sorkey(ii),patr,tr)
+           call out_padbuf(tr,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+           call verder(t4, tr, F_wlnph, 2.0, 2.0, l_minx,l_maxx,l_miny,l_maxy, 
+     $                                          F_nk, i0,in,j0,jn)
+           call prgen( w4, tr, t4, F_wlnph, prprlvl,F_nko,
+     %                      Out3_cubzt_L, l_minx,l_maxx,l_miny,l_maxy, F_nk)
+           if (sorfilt(ii).gt.0)
+     $       call filter(w4,sorfilt(ii),sorcoef(ii),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+             call ecris_fst2(w4,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $             sorname_S(ii)(1:4),1.0,0.0,Out_kind,F_nko, F_indo, F_nko, 
+     $             sorbit(ii) )
+         else if (sordim(ii).eq.sorlen(3)) then
+           pnerr = vmmget(sorkey(ii),pawk,wk)
+           do k=1,F_nk
+           do j=1,l_nj
+           do i=1,l_ni
+              t3(i,j,k) = wk(i,j,k)
+           enddo
+           enddo
+           enddo
+           call out_padbuf(t3,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+           call verder(t4, t3, F_wlnph, 2.0, 2.0, l_minx,l_maxx,l_miny,l_maxy, 
+     $                                          F_nk, i0,in,j0,jn)
+           call prgen( w4, t3, t4, F_wlnph, prprlvl,F_nko,
+     %                      Out3_cubzt_L, l_minx,l_maxx,l_miny,l_maxy, F_nk)
+           if (sorfilt(ii).gt.0)
+     $       call filter(w4,sorfilt(ii),sorcoef(ii),'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+             call ecris_fst2(w4,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $             sorname_S(ii)(1:4),1.0,0.0,Out_kind,F_nko, F_indo, F_nko, 
+     $             sorbit(ii) )
+
+         endif
+      enddo
+
+      endif
+      pnerr = vmmuln(sorkey,soridx)
+      if (windidx.eq.0) return
+
+*_______________________________________________________________________
+*
+*     4.0    Output of VMM WIND variables on ETA levels     
+*_______________________________________________________________________
+*
+      if (F_levtyp_S .eq. 'M') then
+*        Output on U  grid
+         uvgrid_L = .false.
+         call out_sgrid(
+     $        Grid_x0(outd_grid(F_set)),min(Grid_x1(outd_grid(F_set)),G_niu),
+     $        Grid_y0(outd_grid(F_set)),Grid_y1(outd_grid(F_set)),
+     $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+1,
+     $        Grid_stride(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)), F_etikadd_S,
+     $        Geomn_longu,Geomn_latgs )
+         do ii=1,windidx
+            pnerr = vmmget(windkey(ii),patr,tr)
+            if (windname_S(ii)(1:1).eq.'U') then
+               uvgrid_L = .true.
+               call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $             windname_S(ii)(1:4),1.0,0.0,Out_kind,F_nk, F_indo, F_nko, 
+     $             windbit(ii) )
+            endif
+         enddo
+         if (uvgrid_L) 
+     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
+*        Output on V  grid
+         uvgrid_L = .false.
+         call out_sgrid(
+     $        Grid_x0(outd_grid(F_set)),Grid_x1(outd_grid(F_set)),
+     $        Grid_y0(outd_grid(F_set)),min(Grid_y1(outd_grid(F_set)),G_njv),
+     $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+2,
+     $        Grid_stride(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),F_etikadd_S,
+     $        Geomn_longs,Geomn_latgv)
+         do ii=1,windidx
+            pnerr = vmmget(windkey(ii),patr,tr)
+            if (windname_S(ii)(1:1).eq.'V') then
+               uvgrid_L = .true.
+               call ecris_fst2(tr,l_minx,l_maxx,l_miny,l_maxy,Geomg_hyb,
+     $             windname_S(ii)(1:4),1.0,0.0,Out_kind,F_nk, F_indo, F_nko, 
+     $             windbit(ii) )
+            endif
+         enddo
+         if (uvgrid_L) 
+     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
+
+      else
+*_______________________________________________________________________
+*
+*     5.0    Output of VMM WIND variables on PRESSURE levels     
+*_______________________________________________________________________
+*        Output on U  grid
+         uvgrid_L = .false.
+         call out_sgrid(
+     $        Grid_x0(outd_grid(F_set)),min(Grid_x1(outd_grid(F_set)),G_niu),
+     $        Grid_y0(outd_grid(F_set)),Grid_y1(outd_grid(F_set)),
+     $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+1,
+     $        Grid_stride(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),F_etikadd_S,
+     $        Geomn_longu,Geomn_latgs )
+         do ii=1,windidx
+            pnerr = vmmget(windkey(ii),patr,tr)
+            if (windname_S(ii)(1:1).eq.'U') then
+               uvgrid_L = .true.
+               call out_padbuf(tr,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+               call verder(t4, tr, F_wlnph, 2.0, 2.0, 
+     $                     l_minx,l_maxx,l_miny,l_maxy, F_nk, i0,in,j0,jn)
+               call prgen( w4, tr, t4, F_wlnph, prprlvl,F_nko,
+     %                      Out3_cubzt_L, l_minx,l_maxx,l_miny,l_maxy, F_nk)
+               if (windfilt(ii).gt.0)
+     $             call filter(w4,windfilt(ii),windcoef(ii),'U', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+               call ecris_fst2(w4,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $             windname_S(ii)(1:4),1.0,0.0,Out_kind,F_nko, F_indo, F_nko, 
+     $             windbit(ii) )
+            endif
+         enddo
+         if (uvgrid_L) 
+     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
+*        Output on V  grid
+         uvgrid_L = .false.
+         call out_sgrid(
+     $        Grid_x0(outd_grid(F_set)),Grid_x1(outd_grid(F_set)),
+     $        Grid_y0(outd_grid(F_set)),min(Grid_y1(outd_grid(F_set)),G_njv),
+     $        periodx_L,Grid_ig1(outd_grid(F_set)),Grid_ig2(outd_grid(F_set))+2,
+     $        Grid_stride(outd_grid(F_set)),
+     $        Grid_etikext_s(outd_grid(F_set)),F_etikadd_S,
+     $        Geomn_longs,Geomn_latgv)
+         do ii=1,windidx
+            pnerr = vmmget(windkey(ii),patr,tr)
+            if (windname_S(ii)(1:1).eq.'V') then
+               uvgrid_L = .true.
+               call out_padbuf(tr,l_minx,l_maxx,l_miny,l_maxy,F_nk)
+               call verder(t4, tr, F_wlnph, 2.0, 2.0, 
+     $                     l_minx,l_maxx,l_miny,l_maxy, F_nk, i0,in,j0,jn)
+               call prgen( w4, tr, t4, F_wlnph, prprlvl,F_nko,
+     %                      Out3_cubzt_L, l_minx,l_maxx,l_miny,l_maxy, F_nk)
+               if (windfilt(ii).gt.0)
+     $             call filter(w4,windfilt(ii),windcoef(ii),'V', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, F_nko)
+               call ecris_fst2(w4,l_minx,l_maxx,l_miny,l_maxy,F_rf,
+     $             windname_S(ii)(1:4),1.0,0.0,Out_kind,F_nko, F_indo, F_nko, 
+     $             windbit(ii) )
+            endif
+         enddo
+         if (uvgrid_L) 
+     $       call out_sfile(Out3_closestep,Lctl_step,F_ip3,F_ext_S)
+      endif
+      pnerr = vmmuln(windkey,windidx)
+
+* ___________________________________________________________________
+      return
+      end

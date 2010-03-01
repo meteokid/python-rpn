@@ -1,10 +1,10 @@
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***function set_dcst - initializes geophysical constants
 *
-      logical function set_dcst ( val, liste, nbre, proc )
+      logical function set_dcst ( val, liste, nbre, unout )
       implicit none
 *
-      integer nbre,proc
+      integer nbre,unout
       character * (*) liste(nbre)
       real val(nbre)
 *
@@ -16,7 +16,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *     ---------------------------------------------------------------
 *
-      if (proc.eq.0) write (6,1000)
+      if (unout.gt.0) write (6,1000)
 *
       flag = 0
 *
@@ -31,9 +31,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       do i=1,nbre
          if (flag(i).eq.1) then
-            if (proc.eq.0) write (6,1005) liste(i),val(i)
+            if (unout.gt.0) write (unout,1005) liste(i),val(i)
          else            
-            if (proc.eq.0) write (6,1006) liste(i)
+            if (unout.gt.0) write (unout,1006) liste(i)
             set_dcst  = .false.
          endif
       end do

@@ -22,7 +22,8 @@
 * v3_03 - Tanguay M.        - Adjoint Lam configuration 
 * v3_11 - Gravel S.         - Adapt for theoretical cases and varying topo
 * v3_11 - Tanguay M.        - Abort when V4dg_conf.ne.0 and Vtopo_L  
-* v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
+* v3_30 - Desgagne M.       - re-organize code to eliminate v4d controls
+* v3_30 - Lee V.            - new LAM I/O interface
 *
 *object
 *	
@@ -30,11 +31,12 @@
 *	none
 *
 *implicits
+#include "acid.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
-#include "v4dg.cdk"
+#include "filename.cdk"
 #include "bmf.cdk"
-#include "out1.cdk"
+#include "out3.cdk"
 #include "ind.cdk"
 #include "p_geof.cdk"
 #include "vt1.cdk"
@@ -42,20 +44,23 @@
 #include "theo.cdk"
 #include "vtopo.cdk"
 #include "lctl.cdk"
+#include "lun.cdk"
+#include "modconst.cdk"
+#include "itf_phy_buses.cdk"
 *
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
+      integer  vmmlod,vmmget,vmmuld,nav_3df,newdate,readgeo
+      external vmmlod,vmmget,vmmuld,nav_3df,newdate,readgeo
 *
-      integer key1(19),nvar,err
+      character*16, dimension (:,:), allocatable ::  listgeonm
+      character*256 fn
+      integer key1(25),nvar,err,unf,errop,ungeo,dat,k,
+     $        err_geo,skipcode
 *
 *     ---------------------------------------------------------------
 *
-*     ----------------------------------------
-*     Store TRAJ initial state
-*     for Preprocessing of Dependent variables
-*     ----------------------------------------
-      if ( V4dg_conf.ne.0.and.V4dg_part.eq.3.and.V4dg_oktr_L ) 
-     $     call v4d_rwtraj (1) 
+      if (Lun_out.gt.0) write (Lun_out,1000)
+*
+      call v4d_indata1(Vtopo_L)
 *
       key1( 1) = VMM_KEY( fit1)
       key1( 2) = VMM_KEY(  ut1)
@@ -71,18 +76,13 @@
       key1(12) = VMM_KEY(psdt1)
       key1(13) = VMM_KEY( tdt1)
       key1(14) = VMM_KEY( topo)
-      nvar = 14
+      key1(15) = VMM_KEY( topu)
+      key1(16) = VMM_KEY( topv)
+      nvar = 16
 *
-      Vtopo_L = ((Vtopo_start .ge. 0)
-     %           .and. (Lctl_step-Vtopo_start .le. Vtopo_ndt))
-*
-      if(V4dg_conf.ne.0.and.Vtopo_L) then
-         call gem_stop ('INDATA: V4dg_conf.ne.0.and.Vtopo_L NOT VALID', -1)
-      endif   
-
       if (Vtopo_L) then
-         key1(15) = VMM_KEY(dtopo)
-         nvar=15
+         key1(nvar+1) = VMM_KEY(dtopo)
+         nvar=nvar+1
       endif
 
       if (.not. Schm_hydro_L) then
@@ -109,6 +109,10 @@
       err = VMM_GET_VAR(psdt1)
       err = VMM_GET_VAR( tdt1)
       err = VMM_GET_VAR( topo)
+      err = VMM_GET_VAR( topu)
+      err = VMM_GET_VAR( topv)
+*
+*     Equivalencing Ind_u to ut1
 *
       Ind_fi_  = fit1_
       Ind_u_   = ut1_
@@ -124,6 +128,8 @@
       Ind_psd_ = psdt1_
       Ind_td_  = tdt1_
       Ind_topo_= topo_
+      Ind_topu_= topu_
+      Ind_topv_= topv_
 *
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(  wt1)
@@ -141,68 +147,93 @@
          Ind_dtopo_= dtopo_
       endif
 *
-*C       1.    If theoretical case, generate initial data, 
-*              otherwise read input data
-*              -------------------------------------------
+      skipcode=0
+      call v4d_indata2(skipcode)
+      if (skipcode.eq.1) goto 9999
 *
-*     -----------------------------------------
-      if ( V4dg_conf.eq.0.or.V4dg_part.eq.2 ) then 
-*     -----------------------------------------
+      err_geo = readgeo()
+      allocate (listgeonm(2,p_bgeo_top))
+      listgeonm(1,:) = geonm(:,1)
+      listgeonm(2,:) = 'NIL'
+      if (err_geo.eq.0) listgeonm(2,:) = 'OK'
 *
-      bmf_time1 = Out1_dato(1)
-      bmf_time2 = Out1_dato(2)
-      if ( Schm_phyms_L ) call readgeo()
-      
-      if ( Schm_theoc_L ) then
-         if (      Theo_case_S.eq.'BUBBLE'
-     $        .or. Theo_case_S.eq.'BUBBLE_G'
-     $        .or. Theo_case_S.eq.'2_BUBBLES') then
-            call bubble()
-         else if ( Theo_case_S.eq.'MTN_SCHAR' 
-     $        .or. Theo_case_S.eq.'MTN_SCHAR2'
-     $        .or. Theo_case_S.eq.'MTN_PINTY'
-     $        .or. Theo_case_S.eq.'MTN_PINTY2'
-     $        .or. Theo_case_S.eq.'MTN_PINTYNL') then
-            call mtn_case()
+      if (G_lam) then
+         prefgeo = '!@#$%^&*'
+         ungeo   = 91
+         open(ungeo,FILE='../geophy_fileprefix_for_LAM',
+     $                          status='OLD',iostat=err)
+         if (err.eq.0) then
+            read (ungeo, '(a)', end = 9120) prefgeo
+ 9120       close(ungeo)
+         endif
+         if (prefgeo.ne.'!@#$%^&*') call geodata (G_ni,G_nj,listgeonm)
+      endif
+*
+      errop = -1
+      if (G_lam) then
+         unf = 76
+         fn  = '../casc/3df_filemap.txt'
+         open (unf,file=fn,access='SEQUENTIAL',status='OLD',
+     $                        iostat=errop,form='FORMATTED')
+      endif
+*
+      if ( errop.eq.0 ) then
+         err = nav_3df  (unf,1.2,1.0d0)
+         call gem_stop  ('nav_3df',err)
+         if (Acid_test_L) then
+            call acid_3df_dynp (G_ni,G_nj,unf)
          else
-            call abort
+            call casc_3df_dynp (G_ni,G_nj,unf,listgeonm)
          endif
       else
-         call readdyn()
+         call datp2f   ( dat, Mod_runstrt_S )
+         err = newdate ( dat, bmf_time1, bmf_time2, -3 )
+*
+         if ( Schm_theoc_L ) then
+            call theo_3D ! canonical cases - generate initial data
+         else
+            call readdyn ()
+         endif	  
+*
+         call v4d_indata3()
+         call set_dync ()
+         call predat   ()
       endif
-
-	  
 *
-*     In specific 4D-Var runs, Convert wind images to true winds
-*     ----------------------------------------------------------
-      if ( V4dg_conf.ne.0.and..not.(V4dg_4dvar_L.or.V4dg_sgvc_L) ) 
-     $     call v4d_img2uv () 
+      if (Lun_out.gt.0) write (Lun_out,1001)
 *
-*     Initialize the dynamics model configuration
-*     -------------------------------------------
+      do k=1,P_bgeo_top
+         if ((geonm(k,1).eq.'MT').or.(geonm(k,1).eq.'MF'))
+     $        call glbstat1(geofld(geopar(k,1)),geonm(k,1)(1:8),"geop",
+     $          1,l_ni,1,l_nj,geopar(k,3), 1,G_ni,1,G_nj,1,geopar(k,3))
+      end do
 *
-      call set_dync()
-*
-*     Initialize model and SL operators
-*     ---------------------------------
-      call set_opr()
-      call adw_set()
-*
-*     -----
+      if ( Schm_phyms_L ) then
+         err=0
+         do k=1,P_bgeo_top
+         if ((geonm(k,1).ne.'MT').and.(geonm(k,1).ne.'MF')) then
+            if (listgeonm(2,k).ne.'NIL') then
+               call glbstat1(geofld(geopar(k,1)),geonm(k,1)(1:8),"geop",
+     $          1,l_ni,1,l_nj,geopar(k,3), 1,G_ni,1,G_nj,1,geopar(k,3))
+            endif
+         endif
+         end do
+         do k=1,P_bgeo_top
+            if (listgeonm(2,k).eq.'NIL') then
+               err=-1
+               if (Lun_out.gt.0) 
+     $         write(Lun_out,*) listgeonm(1,k),listgeonm(2,k)
+            endif
+         end do
+         call gem_stop('indata',err)
       endif
-*     -----
 *
-*C       2.    Performs preprocessing of the dynamics input data
-*              -------------------------------------------------
-*
-      call predat() 
-*
-      err = vmmuld(-1,0)
-*
-      if (G_lam.and.(V4dg_conf.eq.0.or.V4dg_part.eq.3)) 
-     $      call nest_init 
+ 9999 if (G_lam) call nest_init ()
 *
 *     ---------------------------------------------------------------
+*
+ 1000 format(/,'TREATING INITIAL CONDITIONS  (S/R INDATA)',/,41('='))
+ 1001 format(/,'GLOBAL STAT OF GEOPHYSICAL FIELDS',/,33('='))
 *
       return
       end

@@ -28,6 +28,8 @@
 * v3_03 - Tanguay M.        - introduce V4dg_imguv_L 
 * v3_20 - Lee V.            - output in block topology, standard file
 * v3_21 - Lee V.            - Output Optimization
+* v3_30 - Bilodeau/Tanguay  - Cancel knots conversion when AD 
+* v3_30 - Tanguay M.        - Remove lastdt .ne. Lctl_step 
 *
 *object
 *     output the wind images or wind components or wind module.
@@ -43,10 +45,9 @@
 *implicits
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "dimout.cdk"
+#include "out3.cdk"
 #include "geomg.cdk"
 #include "out.cdk"
-#include "out3.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 #include "v4dg.cdk"
@@ -86,6 +87,7 @@
       real prmult
 *
       prmult =  1.0 / Dcst_knams_8
+      if (V4dg_ad_L) prmult = 1.0
 *_______________________________________________________________________
 *
       pnuu=0
@@ -126,6 +128,7 @@
 *     -------------------------------------------------
       if (lastdt .ne. Lctl_step) then
       fla = V4dg_ad_L.and.V4dg_imguv_L
+      if (V4dg_ad_L.and..not.V4dg_imguv_L) call gem_stop('STOP IN OUT_UV: ADJOINT not certified',-1)
       flb = ( (V4dg_di_L.or.V4dg_tl_L) .and. .not.V4dg_imguv_L ) 
      $            .or. V4dg_ad_L
       if ( (V4dg_conf.eq.0) .or. (.not.fla.and..not.flb) ) then
@@ -138,6 +141,11 @@
             cu_8(j) = Geomg_cy_8 (j) / Dcst_rayt_8
             cv_8(j) = Geomg_cyv_8(j) / Dcst_rayt_8
          end do
+*        ---------------------------------------------------------------------------------------
+*        When NL-TL: First cu_8 used for conversion from true wind to image wind
+*        When AD   : First cu_8 used for conversion from adjoint image wind to adjoint true wind
+*        When AD   :Second cu_8 used to  compensate for scaling done later on in OUT_UV
+*        ---------------------------------------------------------------------------------------
          if (fla.and.flb) then
             cu_8 = cu_8 * cu_8
             cv_8 = cv_8 * cv_8
@@ -161,7 +169,6 @@
          c1_8(j) = Dcst_rayt_8 / geomg_cy_8(j)
       end do
 *
-!$omp parallel
 *
       call uv_acg2g (uu,uu_temp,1,0,LDIST_DIM,l_nk,i0 ,in ,j0 ,jn )
       call uv_acg2g (vv,vv_temp,2,0,LDIST_DIM,l_nk,i0v,inv,j0v,jnv)
@@ -169,6 +176,7 @@
 *     Borders need to be filled for LAM configuration
 *     Compute real wind components from wind images.
 *
+!$omp parallel
 !$omp do
       do k=1,G_nk
          if (G_lam) then

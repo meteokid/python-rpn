@@ -1,0 +1,71 @@
+***s/r itf_chm_apply - Fill the 3D tracer slice workspace variable 
+*                      for the chemistry.
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_chm_apply ( F_chmbusdyn, F_chmbusper, 
+     $                        F_chmbusent, F_chmbusvol,
+     $                        P_chmtrp, P_chmtrm,
+     $                        F_jdo, F_step,LDIST_DIM,nk)
+*
+      implicit none
+*
+      integer F_step,F_jdo, LDIST_DIM, nk
+*
+      real      F_chmbusdyn(*), F_chmbusper(*)
+      real      F_chmbusent(*), F_chmbusvol(*)
+      integer*8 P_chmtrp(*)
+      integer*8 P_chmtrm(*)
+*
+*author 
+*     A. Kallaur - arqi - june 2005
+*
+*revision
+* v3_30 - Kallaur A.       - initial version
+*
+*object
+*	Fill the slice workspace variable for the chemistry.
+*	Change of units if required	
+*
+*arguments  
+*  Name           I/O        Description
+*----------------------------------------------------------------
+* F_chmbusdyn      O       - dynamic bus
+* F_chmbusper      O       - permanent bus
+* F_chmbusent      O       - entry bus
+* F_chmbusvol      O       - volatile bus
+* P_chmtrp         I       - Pointer to time t+dt chemical state fields
+* P_chmtrm         I       - Pointer to time T-dt chemical state fields
+* F_jdo            I       - slab number index
+* F_step           I       - 
+* nk               I       - NUmber of vertical levels
+*
+*implicits
+#include "itf_chm_bus.cdk"
+#include "itf_chm_busind.cdk"
+*
+* Local variables
+*
+      integer i,ii,j,k,n,indx
+*
+      real tr
+      pointer (patr, tr(LDIST_SHAPE,*))
+**
+*     ---------------------------------------------------------------
+*
+      do n=1,chmt_ntr
+         patr = P_chmtrp(n)
+         do k=1,Nk
+            do i=1,chm_ni
+               indx = (k-1)*chm_ni+i-1
+               ii = i + chm_offi
+               tr(ii,F_jdo,k) = F_chmbusdyn(chmt_ind(2,n)+indx)
+            enddo  ! i=1,chm_ni
+         enddo     ! k=1,Nk
+      enddo        ! n=1,chmt_ntr
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

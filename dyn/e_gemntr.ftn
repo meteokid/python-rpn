@@ -12,65 +12,50 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - M. Desgagne       - change to exdb and exfin
 * v3_21 - Lee V.            - Warning if geophy.bin not written
+* v3_30 - Desgagne/Lee      - modifications for new LAM I/O piloting
 *
 *implicits
+#include "pilot.cdk"
 #include "version.cdk"
-#include "e_schm.cdk"
-#include "p_bus.cdk"
-#include "e_geoerr.cdk"
+#include "itf_phy_buses.cdk"
 *
 *MODULES
       integer  exdb, exfin
       external exdb, exfin
 *
-      integer  err,i
+      integer  err
 *
 * ---------------------------------------------------------------------
+*
+*     ================
+      entry gemclimntr
+*     ================
 *
       call  open_status_file2 ('status_ent.dot')
       call write_status_file2 ('_status=ABORT' )
       err = exdb(Version_ent_S//Version_dstp_S,Version_S,'NON')
 *
-      call e_gemnml 
+      call e_gemnml (err)
 *
-      open (41,file='process/00-00/restart',access='SEQUENTIAL',
-     $               iostat=err,status='OLD',form='UNFORMATTED')
-      if (err.eq.0) goto 800
+      if ((err.eq.0).or.(.not.(Pil_sfc2d_L .or. Pil_3df_L))  ) goto 800
 *
       call e_grid
 *
-      call e_pretopo
-*
       call e_dateo
 *
-      call e_geopfld
+      call e_gettopo
 *
-      call e_dynfld
+      if (Pil_sfc2d_L) call e_geopfld
 *
-*     write namelists on label file
+      if (Pil_3df_L  ) call e_dynfld
 *
-      call e_nml2bin
-
- 800  continue
-      if (.not. e_schm_phym_L) then
-          write(6,1000)
-          do i=1,p_bgeo_top
-             if (e_geoerr(i).lt.0) write(6,1005) geonm(i,2)
-          enddo
-      endif
-
-      err = exfin (Version_ent_S//Version_dstp_S, Version_S, 'OK')
+      if (Pil_sfc2d_L .or. Pil_3df_L) call e_nml2bin 
 *
+ 800  err = exfin (Version_ent_S//Version_dstp_S, Version_S, 'OK')
       call write_status_file2 ('_status=ED' )
       call close_status_file2 ()
 *
 * ---------------------------------------------------------------------
 *
- 1000 format('*************************************************',/
-     %       '* WARNING!!!! No GEOPHY.bin file produced       *',/
-     %       '* GEMDM can run with no PHYSICS only            *',/
-     %       '*************************************************')
- 1005 format (' GEOPHYSICAL FIELD: ',a,' NOT AVAILABLE !!!')
-
       stop
       end

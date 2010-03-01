@@ -1,0 +1,34 @@
+***s/r p_main_ad - Main controller for the adjoint simplified physics interface
+*
+#include "model_macros_f.h"
+*
+      subroutine p_main_ad (F_stepno)
+*
+#include "impnone.cdk"
+*
+      integer F_stepno
+*
+*author
+*     S. Laroche
+*
+*revision
+* v3_00 - Laroche S.        - Initial MPI version
+*
+*      
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_stepno      I           step number
+*----------------------------------------------------------------
+*
+*implicits
+**
+*
+*
+      call p_phystep_ad (F_stepno)
+*  
+* 
+      return
+      end

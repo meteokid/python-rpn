@@ -1,0 +1,101 @@
+***s/r vzpng_zmean_ad - ADJ of vzpng_zmean 
+*
+#include "model_macros_f.h"
+*
+      subroutine vspng_zmean_ad( F_pert,F_field,tsum,DIST_DIM, Nk, lmean)
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+      real F_field(DIST_SHAPE,Nk),F_pert(DIST_SHAPE,Nk),tsum(l_nj,Nk)
+      logical lmean
+*
+*author 
+*     M.Tanguay - rpn - december 2006
+*     
+*revision
+*v3_30 - Tanguay M.      - initial MPI version 
+*     
+*object
+*     see id section
+*     
+*implicits
+#include "glb_ld.cdk"
+*
+      integer i,j,k
+      integer i0,in,j0,jn,k0,kn,njk,err
+      real sum (l_nj,Nk)
+      real*8 fijk
+*
+*--------------------------------------------------------------------
+*
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+      k0 = 1
+      kn = Nk
+      njk= l_nj*Nk
+*
+*     Zero adjoint variables
+*     ----------------------
+      sum  = 0.
+      fijk = 0.
+*
+      if(lmean) then
+*
+!$omp parallel
+!$omp do
+         do k=kn,k0,-1
+            do j=jn,j0,-1
+               do i=in,i0,-1
+                  tsum     (j,k) = - F_pert(i,j,k) + tsum     (j,k)
+                  F_field(i,j,k) =   F_pert(i,j,k) + F_field(i,j,k)
+                  F_pert (i,j,k) = 0.                  
+               end do
+            end do
+         end do
+!$omp enddo
+!$omp end parallel
+*
+         tsum=tsum/real(G_ni)
+*
+         call rpn_comm_ALLREDUCE ( tsum, sum, l_nj*Nk,
+     $        "MPI_REAL","MPI_SUM","EW",err )
+*
+!$omp parallel private(fijk)
+!$omp do
+         do k=kn,k0,-1
+            do j=jn,j0,-1
+               fijk     = dble(sum(j,k)) + fijk
+               sum(j,k) = 0.
+               do i=in,i0,-1
+                  F_field(i,j,k) = real(fijk) + F_field(i,j,k)
+               end do
+               fijk     = 0. 
+            end do
+         end do
+!$omp enddo
+!$omp end parallel
+*
+      else
+*
+!$omp parallel
+!$omp do
+         do k=kn,k0,-1
+            do j=jn,j0,-1
+               do i=in,i0,-1
+                  tsum     (j,k) = F_pert(i,j,k) + tsum     (j,k)
+                  F_field(i,j,k) = F_pert(i,j,k) + F_field(i,j,k)
+                  F_pert (i,j,k) = 0.                  
+               end do
+            end do
+         end do
+!$omp enddo
+!$omp end parallel
+      endif
+*
+*----------------------------------------------------------------
+*
+      return
+      end subroutine vspng_zmean_ad

@@ -4,7 +4,7 @@
 *
       subroutine set_opr
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     michel roch - rpn - june 1993
@@ -13,7 +13,9 @@
 * v2_00 - Desgagne/Lee      - initial MPI version (from setopr v1_03)
 * v2_11 - Desgagne M.       - vertical sponge layer
 * v3_00 - Lee/Qaddouri      - Lam configuration
-* v3_01 - Qaddouri A.       - add eigenmodes with definite parity
+* v3_30 - Dugas B.          - Corriger l'allocation avec hpalloc
+* v3_30 - Qaddouri A.       - add eigenmodes with definite parity
+*       - Qaddouri A.       - add call for setting of preconditioning variables 
 *
 *object
 *	This subroutine initializes the commons containing the
@@ -35,6 +37,8 @@
 #include "sol.cdk"
 #include "cstv.cdk"
 #include "trp.cdk"
+#include "prec.cdk" 
+#include "ptopo.cdk"
 *
 *modules
 **
@@ -54,28 +58,23 @@
 *C    Initialize commons for fast fourier transforms
 *
       call set_fft ()
-C     Uncomment the following line to obtain MXMA
-C     Fft_fast_L = .false.
-      if (Lun_out.gt.0) write(Lun_out,*)'Fft_fast_L = ',Fft_fast_L
 *
-      dim = (trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj*2
-      call hpalloc(Sol_ai_8_, dim, err,1)
-      call hpalloc(Sol_bi_8_, dim, err,1)
-      call hpalloc(Sol_ci_8_, dim, err,1)
-
+      dim = (trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj
+      allocate (Sol_ai_8(dim),Sol_bi_8(dim),Sol_ci_8(dim))
+*
       if (Lun_out.gt.0) write(Lun_out,1000)
 *
 *     Initialize projection operators to ZERO_8
 *
-      dim = 3*G_ni*2
-      call hpalloc(Opr_opsxp0_8_ ,dim, err,1)
-      call hpalloc(Opr_opsxp2_8_ ,dim, err,1)
-      dim = 3*G_nj*2
-      call hpalloc(Opr_opsyp0_8_ ,dim, err,1)
-      call hpalloc(Opr_opsyp2_8_ ,dim, err,1)
-      dim = 3*G_nk*2
-      call hpalloc(Opr_opszp0_8_ ,dim, err,1)
-      call hpalloc(Opr_opszp2_8_ ,dim, err,1)
+      dim = 3*G_ni
+      call hpalloc(Opr_opsxp0_8_ ,dim, err,8)
+      call hpalloc(Opr_opsxp2_8_ ,dim, err,8)
+      dim = 3*G_nj
+      call hpalloc(Opr_opsyp0_8_ ,dim, err,8)
+      call hpalloc(Opr_opsyp2_8_ ,dim, err,8)
+      dim = 3*G_nk
+      call hpalloc(Opr_opszp0_8_ ,dim, err,8)
+      call hpalloc(Opr_opszp2_8_ ,dim, err,8)
       do i = 1, 3*G_ni
          Opr_opsxp0_8 (i) = ZERO_8
          Opr_opsxp2_8 (i) = ZERO_8
@@ -92,11 +91,11 @@ C     Fft_fast_L = .false.
 *C    Allocate memory for eigenvectors
 *
       if ( .not. Fft_fast_L ) then
-         call hpalloc( Opr_xevec_8_, G_ni*G_ni*2, err, 1 )
+         call hpalloc( Opr_xevec_8_, G_ni*G_ni, err, 8 )
       endif
-      call hpalloc( Opr_xeval_8_,      G_ni*2, err, 1 )
-      call hpalloc( Opr_zevec_8_, G_nk*G_nk*2, err, 1 )
-      call hpalloc( Opr_zeval_8_,      G_nk*2, err, 1 )
+      call hpalloc( Opr_xeval_8_,      G_ni, err, 8 )
+      call hpalloc( Opr_zevec_8_, G_nk*G_nk, err, 8 )
+      call hpalloc( Opr_zeval_8_,      G_nk, err, 8 )
 *
 *     Calculate dimension for dimension without pilot region
       Gni = G_ni-Lam_pil_w-Lam_pil_e
@@ -165,9 +164,9 @@ C     Fft_fast_L = .false.
          else
 *         Eigenmodes with definite parity
             NSTOR = (G_ni+2)/2 + ( 1 - mod((G_ni+2)/2,2) )
-            dim = NSTOR*NSTOR*2
-            call hpalloc(Opr_evvec_8_ ,dim, err,1)
-            call hpalloc(Opr_odvec_8_ ,dim, err,1)
+            dim = NSTOR*NSTOR
+            call hpalloc(Opr_evvec_8_ ,dim, err,8)
+            call hpalloc(Opr_odvec_8_ ,dim, err,8)
             call  set_poic_par ( Opr_xeval_8, Opr_evvec_8, Opr_odvec_8,
      $                                         G_xg_8(1), G_ni, NSTOR )
          endif
@@ -202,10 +201,13 @@ C     Fft_fast_L = .false.
 *
       endif
 *
-
       call set_oprz ()
-
-
+*
+      if ( sol_type_S.eq.'ITERATIF' ) then
+         if (Lun_out.gt.0) write (Lun_out,1001) trim(sol_precond_S)
+         if ( (sol_precond_S.eq.'JACOBI') .or. 
+     $        (sol_precond_S.eq.'MULTICOL') ) call set_prec
+      endif
 *   
 *C    Initialize common block for diffusion
 *
@@ -215,9 +217,11 @@ C     Fft_fast_L = .false.
 *
       call vspng_set ()
 *
- 1000 format(
-     %/,'INITIALIZATING MODEL OPERATORS    (S/R SET_OPR)',
-     % /,'=============================================')
+ 1000 format(/,'INITIALIZATING MODEL OPERATORS    (S/R SET_OPR)',
+     %       /,'=============================================')
+ 1001 format(/,'WILL USE FGMRES ITERATIVE SOLVER WITH ',a,
+     $         ' PRECONDITIONNER'
+     %       /,'=============================================')
 *
 *     ---------------------------------------------------------------
 *

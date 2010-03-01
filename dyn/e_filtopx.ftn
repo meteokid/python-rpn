@@ -2,12 +2,12 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine e_filtopx ( frtopo, fnio, fnjo, ftgrd )
+      subroutine e_filtopx ( F_topof, F_topo, fnio, fnjo, ftgrd )
 *
 #include "impnone.cdk"
 *
       integer fnio,fnjo
-      real frtopo(fnio,fnjo)
+      real F_topof(fnio,fnjo),F_topo(fnio,fnjo)
       character*1 ftgrd
 *
 *auteur 
@@ -26,7 +26,7 @@
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
 *                    |                                                 |
-* frtopo             | topographic field                               |
+* F_topof            | topographic field                               |
 *                    |                                                 |
 * fnio               | number of grid point along x axis               |
 *                    |                                                 |
@@ -39,11 +39,11 @@
 *
 *notes
 *
-*     The dimensions of the field frtopo are defined in the entrance
+*     The dimensions of the field F_topof are defined in the entrance
 *  context. Those dimensions are not equivalent to the model's
 *  conventions.  For a given grid:
 *
-*        fnio = pni + 1  ....where frtopo(fnio,j)=frtopo(1,j) j=1,fnjo
+*        fnio = pni + 1  ....where F_topof(fnio,j)=F_topof(1,j) j=1,fnjo
 *        fnjo = pnj  if ftgrd is 'G' or 'U'
 *        fnjo = pnjv if ftgrd is 'V'
 *
@@ -53,13 +53,12 @@
 *
 *implicits
 *
-#include "e_dim.cdk"
 #include "e_grids.cdk"
 #include "e_geomg.cdk"
 #include "e_topo.cdk"
 *
-      integer i, j, nio
-      real w1(gnis,gnjs)
+      integer i, j, nio, gnis, gnjs
+      real, dimension(:,:), allocatable :: w1
 *
 *----------------------------------------------------------------------
 *
@@ -68,17 +67,21 @@
          return
       endif
 *
-      write(6,1001)ftgrd
+      write(6,1001) ftgrd
+*
+      gnis = pni + 1
+      gnjs = pnj + 2
 *
 *     1- Transfering unfiltered topog of size fnio x fnjo into
 *        work field of size                   gnis x gnjs
 *        -----------------------------------------------------
 *
+      allocate (w1(gnis,gnjs))
       nio = fnio
       if (.not.LAM) nio =fnio-1
       do j=1,fnjo
       do i=1,nio
-         w1(i,j)=frtopo(i,j)
+         w1(i,j)=F_topo(i,j)
       enddo
       enddo
 *
@@ -133,14 +136,16 @@
 *        ------------------------------------------------
       do j=1, fnjo
       do i=1, nio
-         frtopo(i,j) = w1(i,j)
+         F_topof(i,j) = w1(i,j)
       enddo
       enddo
       if (.not.LAM) then
          do j=1, fnjo
-            frtopo(fnio,j) = frtopo(1,j)
+            F_topof(fnio,j) = F_topof(1,j)
          enddo
       endif
+*
+      deallocate (w1)
 *     
  1000 format(
      +//,' UNKNOWN GRID ID... INCORRECT CALL TO E_NTRXYFIL ',

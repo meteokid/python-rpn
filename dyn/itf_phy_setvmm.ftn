@@ -1,0 +1,95 @@
+***s/r itf_phy_setvmm - initialization of the commons for input physics 
+*		  variable. Virtual Memory manager initialization
+*
+#define SPY_VMM_CREATE spy_vmm_create
+#include "model_macros_f.h"
+
+      subroutine itf_phy_setvmm
+*
+      implicit none
+*
+*author
+*    sylvie gravel - rpn - august 1993
+*
+*revision
+* v3_21 - Desgagne & Lee    - Phy interface
+* v3_30 - Desgagne M.       - new itf_phy interface
+*
+*object
+*	See above id.
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "itf_phy_vmm.cdk"
+*
+*modules
+      integer vmmcre,vmmlod,vmmkey,vmmuld
+      external vmmcre,vmmlod,vmmkey,vmmuld
+*
+      character*80 attri_S
+      integer i,err,keyd(20)
+*
+*Notes:
+*
+**
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+      COMMON_INIT(p_phy,-100)
+      attri_S  = 'SAVE=Y,CL=1,W=5,INIT=0,MUSTEXIST'
+*
+*C       2.    Initialize comdeck for variables at time t0
+*              -------------------------------------------
+*	Assign the names of the variables
+*
+      VMM_NAM(p_uplus  )= 'UPLUS'
+      VMM_NAM(p_vplus  )= 'VPLUS'
+      VMM_NAM(p_tplus  )= 'TPLUS'
+      VMM_NAM(p_umoins  )= 'UMOINS'
+      VMM_NAM(p_vmoins  )= 'VMOINS'
+      VMM_NAM(p_tmoins  )= 'TMOINS'
+      VMM_NAM(p_gzmoins6  )= 'GZMOINS6'
+      VMM_NAM(p_omegap  )= 'OMEGAP'
+      VMM_NAM(p_sigm  )= 'SIGM'
+      VMM_NAM(p_phis  )= 'PHIS'
+      VMM_NAM(p_pplus  )= 'PPLUS'
+      VMM_NAM(p_pmoins  )= 'PMOINS'
+      VMM_NAM(p_dxdy  )= 'DXDY'
+      VMM_NAM(p_eponmod  )= 'EPONMOD'
+      VMM_NAM(p_fcpf  )= 'FCPMSK'
+      VMM_NAM(p_fcpw  )= 'FCPOID'
+*
+      VMM_CREATE(p_uplus , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_vplus , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_tplus , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_umoins , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_vmoins , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_tmoins , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_gzmoins6 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_omegap , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_sigm , LARRAY3D, 1, attri_S)
+      VMM_CREATE(p_phis , LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_pplus , LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_pmoins, LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_dxdy , LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_eponmod , LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_fcpf , LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_fcpw , LARRAY2D, 1, attri_S)
+      do i=1,COMMON_SIZE(p_phy)
+         keyd(i) = p_phy_first(i)
+      enddo
+      err = vmmlod(keyd,16)
+*
+ 1000 format(
+     +/,'INITIALIZATION OF PHYS-DEP. VARIABLE COMDECKS (S/R itf_phy_setvmm)',
+     +/,'=========================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

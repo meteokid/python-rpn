@@ -17,6 +17,7 @@
 * v2_31 - Desgagne M.       - initial version
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
+* v3_30 - Lee V.           - clip tracers to zero after interpolation
 *
 *object
 *
@@ -28,13 +29,15 @@
 #include "acq.cdk"
 #include "schm.cdk"
 *
-      integer i,j,k,err,bmf_get
+      integer i,j,k,jjj,kk,err,bmf_get
       external bmf_get
       real w1(l_ni,l_nj,nk),w2(l_ni,l_nj,nk)
 *
 *-------------------------------------------------------------------
 *
-      err= bmf_get ( trname,bmf_time1,bmf_time2,-1,w1,
+      err = -1
+      if (trname.ne.'    ')
+     $err= bmf_get ( trname,bmf_time1,bmf_time2,-1,w1,
      $                         -1.,1,l_ni,1,l_nj,1,nk )
 *
       if (err.eq.0) then
@@ -68,15 +71,17 @@
             call vte_hyb2hyb ( w2, Geomg_pia, Geomg_pibb, pps, G_nk,
      $                         w1, rna_pia,pibb, ps, vterp_lv, 
      $                         l_ni*l_nj, '  ',data_spec(2).eq.3)
+* ALWAYS clip tracers to zero after vertical interpolation (Desgagne)
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni
-               tr(i,j,k) = w2(i,j,k)
+               tr(i,j,k) = amax1(w2(i,j,k),0.0)
             enddo
             enddo         
             enddo 
          endif
       else 
+* No data found for this tracer, set to assigned value
          do k=1,G_nk
          do j=1,l_nj
          do i=1,l_ni

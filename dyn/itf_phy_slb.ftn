@@ -1,0 +1,387 @@
+***s/r itf_phy_slb - Computes the physical tendencies
+*
+#include "model_macros_f.h"
+*
+      subroutine  itf_phy_slb( F_cpu,   F_step, F_obusval, F_cobusval,
+     $                      F_pvptr, F_cvptrp,F_cvptrm,
+     $                      NPTR, NCPTR, F_trp, F_trm, 
+     $                      F_tdu, F_tdv,  F_tdt, F_kmm, F_ktm,
+     $                      DIST_DIM, Nk )
+*
+      implicit none
+*
+      integer F_cpu, F_step, nvvv, nvov, DIST_DIM, Nk, NPTR,NCPTR
+      integer*8 F_pvptr(NPTR)
+      integer*8 F_cvptrp(NCPTR),F_cvptrm(NCPTR)
+*
+      real F_tdu     (DIST_SHAPE,Nk)
+      real F_tdv     (DIST_SHAPE,Nk)
+      real F_tdt     (DIST_SHAPE,Nk)
+      real F_trp     (DIST_SHAPE,Nk,*)
+      real F_trm     (DIST_SHAPE,Nk,*)
+      real F_kmm     (DIST_SHAPE,Nk)
+      real F_ktm     (DIST_SHAPE,Nk)
+      real F_obusval (*)
+      real F_cobusval(*)
+
+*
+*author 
+*     Michel Roch - rpn - june 1993
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_20 - Pellerin P.       - adapt to physics 3.66 with entry bus
+* v2_21 - Dugas B.          - activate climate mode
+* v2_21 - J. P. Toviessi    - (#) slab output
+* v2_31 - Dugas B.          - re-activate zonal diagnostics
+* v2_32 - Desgagne M.       - connection to physics 3.72
+* v3_00 - Laroche S.        - adaptation for v4d
+* v3_02 - Dugas B.          - account for a possible second call to the physics
+*                             and add optional call to dump full physics buses
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
+* v3_12 - Leduc A-M.        - Add arguments gzm and topo
+* v3_20 - Lee V             - replace slab Output with FST file output
+* v3_20 - Pellerin P.       - Add busvol in itf_phy_fillbus
+* v3_20 - Desgagne/Pellerin S.- Replaced Mem_pslic with jdo in test for last slice.
+* v3_20 - Lee/Kallaur       - Add coding and data structures to support chemistry.
+* v3_21 - Valcke, S.        - Modified CALL to c_getbus and c_fillbus
+* v3_30 - Spacek, L.        - New total tendecies uphytd,vphytd,tphytd,
+*                             huphytd,qcphytd,qrphytd,qgphytd,qiphytd
+*                             Eliminations of processus specific physics
+*                             tendencies.
+*
+*object
+*     See above id.
+*	
+*arguments
+*  Name       I/O                 Description
+*----------------------------------------------------------------
+* F_cpu        I    - cpu number
+* F_step       I    - current time step number
+* F_obusval    O    - physics output bus
+* F_cobusval   O    - chemistry output bus
+* F_pvptr      I    - dynamic pointers
+* F_cpvptrp    I    - chemistry pointers at time t+
+* F_cpvptrm    I    - chemistry pointers at time t-
+* NPTR,NCPTR   I    - number of dynamic,chemistry pointers
+* F_trp        I    - tracer concentration at time t+ (for each species)
+* F_trm        I    - tracer concentration at time t- (for each species)
+*              O    - total tracer tendency (for each species)
+* F_tdu        O    - total wind image tendency in x direction
+* F_tdv        O    - total wind image tendency in y direction
+* F_tdt        O    - total virtual temperatur tndency
+* F_kmm        O    - momentum vertical diffusion coefficients
+* F_ktm        O    - thermodynamic vertical diffusion coefficients
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+#include "mult.cdk"
+#include "schm.cdk"
+#include "mem.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "itf_phy_buses.cdk"
+#include "itf_chm_bus.cdk"
+#include "obus.cdk"
+#include "clim.cdk"
+#include "itf_chm_obus.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_phy_busind.cdk"
+#include "itf_chm_busind.cdk"
+#include "v4dg.cdk"
+#include "itf_cpl_cplg.cdk"
+*
+*modules
+*
+      integer accum,nnc
+      parameter (accum = 0 )
+      character*2 accum_s
+      data    accum_s / ' ' /
+*
+      logical dumpbus_L
+      integer jdo, i, j, k, n, ii, indx, err
+      integer busaddr,offbo,offbb,mult,cnt
+      real dt,con
+*
+      real busdyn(max(1,p_bdyn_siz)), busdyn_copy(max(1,p_bdyn_siz)),
+     $     busvol(max(1,p_bvol_siz)),
+     $     busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
+      pointer (pabusper,busper(*))
+*
+*     Declarations for chemistry buses.
+*
+      real chmbusdyn(max(1,chm_bdyn_siz))
+      real chmbusvol(max(1,chm_bvol_siz))
+      real chmbusent(max(1,chm_bent_siz))
+      real chmbusper, chmbusper2(max(1,chm_bper_siz))
+      pointer (pachmbusper,chmbusper(*))
+**
+*     ---------------------------------------------------------------
+*
+      if ((Lun_out.gt.0).and.(F_cpu.eq.1)) then
+         write(Lun_out,1000)
+         if (Schm_chems_L) write(Lun_out,1005)
+      endif
+*
+      dumpbus_L = .false.
+      if (P_pbd_dumpbus.gt.0) then
+          dumpbus_L = (mod( F_step,P_pbd_dumpbus ).eq.0)
+!$omp critical (lock_dumpini2)
+          call dumpini2( p_bdyn_siz,p_bper_siz,p_bvol_siz,
+     $                   Ptopo_numproc,p_ni,p_nj, G_ni,G_nj )
+!$omp end critical (lock_dumpini2)
+      endif
+*
+      if (F_step.eq.0) busent = 0.
+*
+      busdyn = 0.0
+*
+      dt  = Cstv_dt_8
+      jdo = 0
+*
+*     Initialize chemical buses
+*
+      if (Schm_chems_L) then
+*         chmbusdyn   = 0.0
+         if (F_step.eq.0) chmbusent = 0.0
+      endif
+*
+ 100  continue
+*
+
+!$omp critical      
+      Mem_pslic = Mem_pslic + 1
+      jdo  = Mem_pslic
+      if ( Mem_pslic .le. p_nj ) then
+*
+         pabusper    = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
+         if (Schm_chems_L) pachmbusper = 
+     *                 loc(chm_busper3D((jdo-1)*chm_bper_siz+1))
+*
+         call zongopr( +3, jdo )
+*
+      endif
+!$omp end critical
+
+*
+*C    Stop if last slice has been completed
+*
+      if ( jdo .gt. p_nj ) goto 650
+*
+*     Fill physics buses with jdo row in subroutine itf_phy_fillbus
+*
+      busvol = 0.0
+      j = jdo + p_offj
+*
+      call itf_phy_fillbus ( busdyn, busper ,busent, busvol,
+     $         F_pvptr, NPTR, F_trm,F_trp, j, F_step, LDIST_DIM, l_nk )
+*
+*     Fill buses with fields produced by coupling
+*
+      if (C_coupling_L .and. lg_get) 
+     $    call itf_cpl_fillbus ( busdyn, busper, busvol, j)
+*
+*     Run physics on row jdo
+*      
+*
+*     If active chemical scheme, fill chemical buses with jdo row.
+*
+      if (Schm_chems_L) then
+         chmbusvol = 0.0
+         call itf_chm_fillbus (chmbusdyn,chmbusper,chmbusent,chmbusvol,
+     $                     F_cvptrp ,F_cvptrm,j,F_step,LDIST_DIM,l_nk)
+      endif
+*
+*     Run physics on row jdo
+*
+      busdyn_copy = busdyn
+*
+      if ( .NOT. P_pset_second_L ) then
+         call phy_exe
+     $             (busent ,busdyn ,busper ,busvol ,
+     $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
+     $              dt, jdo, F_step, F_cpu, p_ni, Nk)
+      else
+        call itf_phy_exe
+     $             (busent ,busdyn ,busper ,busvol ,
+     $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
+     $              dt, jdo, F_step, F_cpu, p_ni, Nk)
+      endif
+
+      if (Schm_chems_L) then
+*
+*     Call chosen chemical solver package on row j 
+*
+         call chm_exe(chmbusent   ,chmbusper    ,chmbusdyn    ,chmbusvol   ,
+     *                chm_bent_siz,chm_bdyn_siz ,chm_bper_siz ,chm_bvol_siz,
+     $                chm_bdyn_top,chm_bper_top  ,chm_bvol_top,chm_bent_top,
+     *                busent      ,busdyn       ,busper       ,busvol      ,
+     *                p_bent_siz  ,p_bdyn_siz   ,p_bper_siz   ,p_bvol_siz  ,
+     *                dt,jdo,F_step,F_cpu,p_ni,chm_ni,Nk)
+*
+*     Put back 2D slabs to 3D tracer space 
+*
+         call itf_chm_apply (chmbusdyn,chmbusper,chmbusent,chmbusvol,
+     $                     F_cvptrp,F_cvptrm,j,F_step,LDIST_DIM,l_nk)
+*
+*     Load the output buses for chemical species (and related fields) that have been
+*     chosen for output.
+* 
+!$omp critical
+         call itf_chm_fillobus(chmbusent   ,chmbusper    ,chmbusdyn    ,chmbusvol   ,
+     *                     chm_bent_siz,chm_bdyn_siz ,chm_bper_siz ,chm_bvol_siz,
+     *                     F_cobusval  ,J)
+!$omp end critical
+      endif
+*
+      busdyn = busdyn_copy
+*
+      if (dumpbus_L) call dumpbus2( busdyn,busper,busvol, jdo )
+*
+*C  Combine tendencies of row jdo and store back in 3D space
+*
+      con = cos(geomg_y_8(j)) / Dcst_rayt_8
+      do k = 1, l_nk
+      do i = 1, p_ni
+         indx = (k-1)*p_ni+i-1
+         ii = i + p_offi
+         F_tdu(ii,j,k) = busvol(uphytd +indx)*con
+         F_tdv(ii,j,k) = busvol(vphytd +indx)*con
+         F_tdt(ii,j,k) = busvol(tphytd +indx)
+      end do
+      end do
+*
+*C  Prepare surface variables for the coupling
+*
+      if (C_coupling_L) call itf_cpl_getbus (busdyn, busper, busvol, j)
+*
+      do n=1,phyt_ntr
+         if (phyt_ind(3,n).gt.0) then
+         do k= 1,Nk
+         do i= 1, p_ni
+            indx = (k-1)*p_ni+i-1
+            ii = i + p_offi
+            F_trm(ii,j,k,n) = busvol(phyt_ind(3,n)+indx)
+         end do
+         end do
+         endif
+      end do
+*
+*     Save vertical diffusion coefficients
+*
+      if ( V4dg_conf.ne.0 ) then 
+        do k = 1, Nk-2
+        do i = 1, p_ni
+           indx = (k-1)*p_ni+i-1
+           ii = i + p_offi
+           F_kmm(ii,j,k) = busvol(km + indx)
+           F_ktm(ii,j,k) = busvol(kt + indx)
+        end do
+        end do
+        do i= 1, p_ni
+           indx = i-1
+           ii = i + p_offi
+           F_kmm(ii,j,Nk-1) = busvol(bm + indx)
+           F_ktm(ii,j,Nk-1) = busvol(bt + indx)
+        end do
+      endif
+* 
+*     Perform physic slices output
+*
+!$omp critical
+
+      do ii=1,Obus_top
+             offbo= (obus_offset(ii)-1)*l_ni*l_nj
+             offbb= obus_addr(ii)
+         if (obus_bus_S(ii).eq.'P'.and.obus_var_S(ii).eq.'LO') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)=
+     $             busper(offbb+(k*mult-1)*p_ni + i - 1)
+                   if (F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                           (j-1)*l_ni + i+ p_offi) .gt. Dcst_pi_8)
+     $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)=
+     $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                           (j-1)*l_ni + i+ p_offi)-2.0*Dcst_pi_8
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'P') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busper(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'D') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busdyn(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'V') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busvol(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'E') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
+     $             busent(offbb+(k*mult-1)*p_ni + i - 1)
+                enddo
+                enddo
+             enddo
+         endif
+      enddo
+*     
+*     In climate mode, zero out the physic accumulators after
+*     saving them, i.e. when output is greater than zero.
+*
+      if ( Clim_climat_L .and. Obus_top.gt.0) then
+         if (P_out_moyhr.eq.0) then
+            call phy_zeracc( busper,accum_s,accum )
+         else if (mod( F_step*(Cstv_dt_8/3600.),P_out_moyhr*1d0 ).eq.0) then
+            call phy_zeracc( busper,accum_s,accum )
+         endif
+      endif
+      call zongopr( -3, jdo )
+*
+!$omp end critical
+*
+*
+      goto 100
+*
+ 650  continue
+*
+ 1000 format(/'PERFORM A PHYSICS STEP: CMC/RPN PHYSICS (S/R itf_phy_SLB)'
+     $       /55('='))
+ 1005 format(/'AS WELL PERFORM CHEMISTRY STEP (S/R itf_phy_SL)'
+     $       /70('='))
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

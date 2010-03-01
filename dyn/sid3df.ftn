@@ -1,0 +1,80 @@
+***s/r sid3df
+*
+#include "model_macros_f.h"
+*
+      integer function sid3df (xpaq,ypaq,xpau,ypav,unf,done,
+     $                                nia,nja,nka,nvar,ntra)
+      implicit none
+*
+      logical done
+      integer unf,nia,nja,nka,nvar,ntra
+      real*8 xpaq(nia), ypaq(nja), xpau(nia), ypav(nja)
+*
+#include "ifd.cdk"
+#include "bcsgrds.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+*
+      character*4 nomvar
+      integer i,j,k,ni1,nj1,nk1,nvar1,ntr1,err
+      real  , dimension (:), allocatable :: pia,pib
+      real*8, dimension (:), allocatable :: xp1,yp1,zt1
+*-----------------------------------------------------------------------
+*
+      sid3df  = -1
+*
+      if (Lun_debug_L) write(Lun_out,*)'sid3df: done=',done
+      if (.not.done) then
+      read (unf,end=33,err=33) nomvar,ni1,nj1,nka,nvar,ntra
+      if (Lun_debug_L) write(Lun_out,*)'sid3df:',nomvar,ni1,nj1,nka,nvar,ntra
+*
+         if (pazta.gt.0) call hpdeallc (pazta, err, 1)
+         if (papia.gt.0) call hpdeallc (papia, err, 1)
+         if (papib.gt.0) call hpdeallc (papib, err, 1)
+         pazta = 0
+         papia = 0
+         papib = 0
+*
+         allocate (xp1(ni1),yp1(nj1))
+         read (unf,end=33,err=33) xp1,yp1
+
+*
+         nk1 = nka
+         if (nk1.gt.0) then
+            read (unf,end=33,err=33) nomvar
+            call hpalloc (pazta  ,nk1*2, err,1)
+            call hpalloc (papia  ,nk1  , err,1)
+            call hpalloc (papib  ,nk1  , err,1)
+            allocate (zt1(nk1),pia(nk1),pib(nk1))
+            read (unf,end=33,err=33) zt1,pia,pib
+            do k=1,nk1
+               ana_z  (k) = zt1(k)
+               ana_pia(k) = pia(k)
+               ana_pibb(k) = pib(k)
+            end do
+            deallocate (zt1,pia,pib)
+         endif
+         do i=1,nia
+            xpaq(i) = xp1(ifd_niad+i-1)
+            xpau(i) = 0.5 * (xp1(ifd_niad+i-1) + xp1(ifd_niad+i))
+         end do
+         do j=1,nja
+            ypaq(j) = yp1(ifd_njad+j-1)
+            ypav(j) = 0.5 * (yp1(ifd_njad+j-1) + yp1(ifd_njad+j))
+         end do
+         deallocate (xp1,yp1)
+      else
+         read (unf,end=33,err=33) nomvar,ni1,nj1,nka,nvar,ntra
+         if (Lun_debug_L) write(Lun_out,*)'sid3df:',nomvar,ni1,nj1,nka,nvar,ntra
+         read (unf,end=33,err=33)
+         if (nka.gt.0) then
+            read (unf,end=33,err=33)
+            read (unf,end=33,err=33)
+         endif
+      endif
+*
+      sid3df = 0
+*
+*-----------------------------------------------------------------------
+ 33   return
+      end

@@ -4,13 +4,14 @@
 *
       subroutine e_modgl ()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Andre methot - cmc - Feb 1996
 *
 *revision
 * v2_20 - P. Pellerin            - transfer subroutine to entry program
+* v3_30 - Desgagne M.            - renamed comdecks for new PHYSICS interface
 *
 *object
 *
@@ -22,8 +23,8 @@
 * comdecks used also in GEMDM
 #include "model_macros_f.h"
 #include "dcst.cdk"
-#include "p_bus.cdk"
-#include "p_geobus.cdk"
+#include "itf_phy_buses.cdk"
+#include "geobus.cdk"
 **
       integer i, j
       real prpoa, prcon, prlat, prlon

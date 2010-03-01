@@ -149,7 +149,7 @@
       return
 *
  1001 format(
-     %//,'COMPUTE (U,V) CUBIC LAGRANGE INTERP. COEFF. (S/R E_SETINUVL)',
+     %/,'COMPUTE (U,V) CUBIC LAGRANGE INTERP. COEFF. (S/R E_SETINUVL)',
      % /,'==========================================================',
-     %//)
+     %/)
       end

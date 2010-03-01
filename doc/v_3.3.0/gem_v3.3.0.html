@@ -1,0 +1,235 @@
+<html>
+<body bgcolor="#FFFFFF">
+<pre class=text>
+<b>
+
+        ############# GEMDM Model -- Version 3.3.0 ###############
+                            May  30 2007
+</b>
+
+        Version 3.3.0 of the GEMDM dynamics is now ready and available 
+        in directories:
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.3.0/RCS"
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.3.0/RCS_4DVAR"
+	It is connected to RPN/CMC physics version 4.5 in directory:
+	      "$ARMNLIB/modeles/PHY/v_4.5/RCS"    
+
+############################################################################
+<b>
+MAIN FEATURES:
+</b>
+
+  There have been many significant changes in this version from the
+  previous version (v_3.2.2, phy v_4.4) but it does not seem to change 
+  the meteorological results dramatically except maybe for LAM
+  configurations since the lateral boundary specification and blending
+  have evolved to meet the requirements of the acid test with full physics. 
+  This version will definitely not bit reproduce results of the v_3.2.2 on
+  any configuration. It is connected to Physics version 4.5 so please refer 
+  to the Physics release notes for details. This release is not targeted to
+  any immediate operational use. Documentation on previous GEMDM releases 
+  can be found in:
+
+  http://notos.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+  or
+
+  http://web-mrb.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+  This note is available in the website under Version Rel. Date at v_3.3.0
+
+  Please note that there are additional files at this GEMDM website
+  which are related to this version:
+  "gem_settings.nml.txt" 
+  "outcfg.out.txt"
+  "configexp.cfg.txt"
+  "namelists_conversion.txt"
+  "phy_namelist"
+  "newlamio.html" - available soon
+
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+  Changes that affect run time computation:
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+1) New physics package (v_4.5)
+   Documentation of its namelist parameters is in phy_namelist
+
+2) NEW LAM I/O 
+
+(a)NEW LAM I/O(Auto-cascade): 
+   This is a more efficient way of providing the lateral boundary conditions
+   for the LAM configuration from a previous run. It has been imported from
+   the latest version of MC2 (4.9.9) and is often referred to as the
+   hollow cubes method. The basic idea is to inform a particular run
+   of a target nested grid configuration in order to save on disk only the
+   lateral boundaries surrounding that nested domain. This data is saved 
+   at the low resolution of the current run to minimize the amount of
+   data prepared to drive the nested run. That prepared data is then 
+   fed back directly to the nested run without going through gemntr.Abs. 
+   The required 3D interpolation will hence be performed in the 
+   distributed memory environment (a lot faster). The hollow cube method
+   is ON by default and it requires the user to choose a single grid
+   rotation for both grids: i.e. no relative grid rotation between the driver
+   run and the nested run. The file format used is simply unformatted Fortran
+   files with names in the form 3df0[1/2]_[date] and/or bcs0[1/2]_[date] 
+   that are written in the local subdirectory output/casc. 
+   The form 3df02_[date] indicates that the data is written in solid (not
+   hollow) cubes and it represents the data values after the physics timestep.
+   The form 3df01_[date] indicates that the data is written in solid (not
+   hollow) cubes and it represents the data values before the physics timestep.
+   The form bcs0[1/2]_[date] indicates that the data is written in hollow cubes
+   which means it can only be used for one pre-defined grid whereas the 3df
+   files can be used for smaller pre-defined grids. 
+   Use the namelist "Grdc" to define the target nested grid.
+   As this data is written at the resolution of the previous run, the
+   fields will be horizontally interpolated (function grid_to_grid_coef)
+   and then vertically interpolated during the main model run.
+
+(b)Old LAM I/O - piloting from analysis files ( writes BMF files).
+   The BMF files from older GEMDM versions are actually 3D solid cubes 
+   fields horizontally interpolated (ez package) from the lo-res analysis 
+   and these were written out slowly for the main model run. These 
+   large cubes are then read in and vertically interpolated by the 
+   main model run.
+
+(c)New LAM I/O - piloting from analysis files (writes 3DF or BCS files).
+   This is taken from the idea of the "auto-cascade" runs. 
+   The entry program GEMNTR has been adjusted to produce these same file
+   formats from any input analysis on hybrid or eta levels. The program 
+   will simply perform a grid rotation of the data (if required) and 
+   will then output the data strictly covering the targeted LAM grid at 
+   the horizontal resolution of the analysis data. The resolution of the 
+   analysis data must be lower or equal to that of the targeted LAM grid.
+   These files can be either "3DF" or "BCS" files depending on the
+   option selected (Pil_bcs_hollow_L = .true. for the latter one).
+   This new implementation does not handle analysis on pressure levels.
+
+   Input analysis on pressure levels would force the entry program to
+   produce BMF files. Setting the key: Pil_bmf_L=.true. would also
+   force BMF files to be written.
+
+   As a side effect of this implementation, the full acid test with physics
+   has been completed with success. In order to fulfill that test, the data from
+   the driver has to be provided in 2 states: i.e. a state immediately after the
+   dynamic timestep (before the physics) and a state after the 
+   physics like the previous implementatons.
+   This need is strictly driven by the fact that the horizontal component of
+   the wind are staggered (Arakawa C) with respect to the mass point where we
+   actually run the physics.
+
+3) New Formal Package Interfaces - itf_[package]_[name].ftn
+   We now introduce the concept of more formal interfaces to different packages
+   through the construction of itf_[package]_[name].ftn routines that will
+   define the formal entry points to a particular package. So far we have
+   identified 4 packages: "phy, chm, cpl, var". Three of them have been
+   implemented: 
+   itf_phy_[name].ftn(s), itf_chm_[name].ftn(s) and itf_cpl_[name].ftn(s).
+
+   In order to connect to an entirely different physics package in the near
+   future (CCCma), we have taken the opportunity to totally revamp the 
+   physics interface by introducing the new routines labelled 
+   itf_phy_[name].ftn. Note that the namelist &physics is now &physics_cfgs
+   and has completely changed as it is read and configured by the physics 
+   itself. This namelist demands the version and name of the physics package
+   in the key PHY_PCK_VERSION='RPN-CMC_4.5'. Read the documentation in
+   the document alphabetized "phy_namelist" for more information.
+   There will be no more need for extensive calls to phyopt in order 
+   to transfer the configuration the physics. Configurations for operational 
+   runs have been translated and they are available in the run_config 
+   directory. A translation table has been provided in the doc directory 
+   in "namelist_conversion.txt" to help convert former "gem_settings.nml"(s).
+   Please note that the document "gem_settings.nml.txt" have been 
+   alphabetized to make the search for variables easier.
+
+   The formal interface to different chemistry package is now available
+   through the itf_chm_[name].ftn routines. 
+
+   The formal interface to the Oasis coupler package is now available
+   through the itf_cpl_[name].ftn routines. 
+
+4) We are now introducing yet another interpolation scheme for the SL
+   scheme. Logical control variable Adw_lag3d_L from namelist $gem has
+   been replaced by the string variable Adw_interp_type_S which defaults
+   to 'LAG3D' (Lagrange cubic in the vertical). Other options are CUBIC
+   (cubic spline in the vertical) and LAG3D_TRUNC (truncated Lagrange
+   cubic interpolation in 3D).
+
+5) An iterative elliptic problem solver based on FGMRES has been introduced
+   as an alternative to the present direct solver. The control parameter is
+   sol_type_S whose default is 'DIRECT'. To activate the iterative solver,
+   just set sol_type_S='ITERATIVE'.
+
+6) Up until now, the restart functionality was supported only on the
+   very same MPI processors topology from one restart to the next.
+   This was due to the fact that every processor was writing its own restart
+   file. It is now possible to tell the model to globally collect the
+   data and write a single restart file. This is of course not the
+   most efficient way of writing a restart but it allows the user to
+   change the MPI processor topology between restarts in the event for
+   example that computer resources would require such a change. The
+   control variable to activate this option is Rstri_glbcol_L.
+
+7) An explicit horizontal diffusion scheme has been implemented for LAM
+   configurations. The control variable is Hzd_type_S (default='NIL')
+   which can be set to 'EXPLICIT'.
+
+8) By default, model output will not be compressed (datyp=1). To enable
+   the new feature of having compressed fields (datyp=134), set the control
+   variable Out3_compress_L to .true.
+
+9) This version is linked to RMNLIB rmn_009
+
+10) Coding of TL/AD of LAM version has now been completed 
+
+11) The feature of having variable topography is now working and available
+    Vtopo_ndt=Number of timesteps to complete, Vtopo_start=starting timestep
+
+12) New controls in the gem_cfgs namelist for optimizing different configs.
+
+==> Note the key "npeOMP" is removed from the file "configexp.dot.cfg" and
+
+    placed in the namelist of "ptopo" in the file "gem_settings.nml". Here 
+    are the new controls in the the namelist of "ptopo":
+    Ptopo_npeOpenMP => number of processors requested for OpenMp
+    Ptopo_smtphy    => number of threads around PHYSICS only
+    Ptopo_smtglb    => number of threads globally 
+    Ptopo_bind_L    => TRUE for binding in OpenMp 
+
+    Reminder to use these scripts to configure the topology before
+    sending the job to MAIA/NAOS:
+
+    checktopo
+    findtopo
+    findfft
+
+13) Miscellaneous:
+    - Re-vectorization of main computing routines for vector processors users
+    - OpenMP correction/optimization of a few routines
+    - More modular way of reading the namelists and configuring default values
+    - Removal of control variable: Mem_phyncore and Schm_alpco_8 (unused)
+    - Removal of control variable: Schm_maxcfl_lam (use Adw_halox,Adw_haloy)
+    - For batch runs, a new key "t_ent" for Um_launch has been added to
+      control the time limit for the entry program. The default is now 1800s
+      instead of 7200s
+    - For theoretical case runs, a new key "theoc" for Um_runmod.sh has been
+      added
+    - Extra output feature added: the "etiket" in the file can be user=defined
+      depending on the grid definition. See outcfg.out.txt
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+   Sample run configurations can be found at $gem/run_configs
+   Sample analysis given in these examples are not guaranteed to exist
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+
+Extra note: This version does not run on POLLUX for certain configurations
+            due to a problem with the length of the namelist writeout 
+            (SGI compiler bug will be submitted)
+
+
+############################################################################
+    
+</pre>
+</body>
+</html>
+

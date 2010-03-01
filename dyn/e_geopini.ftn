@@ -17,6 +17,7 @@
 * v3_00 - Desgagne M.       - Lam configuration
 * v3_11 - Dugas B.          - Always read AL ( NO SNOW )
 * v3_20 - Delage Y.         - For CLASS
+* v3_30 - Desgagne M.       - modifications for new physics interface
 *
 *object
 *          Establishes requirement in terms of geophysical variables 
@@ -35,9 +36,10 @@
 #include "e_geol.cdk"
 #include "e_fu.cdk"
 #include "glb_ld.cdk"
-#include "p_bus.cdk"
-#include "p_geobus.cdk"
-#include "p_pbl.cdk"
+#include "itf_phy_buses.cdk"
+#include "geobus.cdk"
+#include "itf_phy_config.cdk"
+#include "itf_cpl_cplg.cdk"
 *
 *MODULES
 *
@@ -73,6 +75,10 @@
 *
       call mgsdict (ni, nj, mg,    
      $'VN=mgen    ; VS=row  ; EN=mg; INTERP=NEAREST ; SEQ=G' )
+      IF (C_coupling_L) then
+         call mgsdict (ni, nj, mcpl,    
+     $   'VN=mcpl    ; VS=row  ; EN=mcpl; INTERP=NEAREST ; SEQ=G' )
+      endif
       call mgsdict (ni, nj, twater,
      $'VN=twateren; VS=row  ; EN=tm; INTERP=LINEAR; SEQ=AV')
       call mgsdict (ni, nj, lhtg,  
@@ -139,8 +145,12 @@
       if (P_pbl_schsl_s.eq.'FCREST') then
 *
       if (.not. E_geol_hscon_L) then
+         k1 = -1 
+         k2 = -1
+         if (e_fu_anal.gt.0) then
          k1 = fstinf (e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
          k2 = fstinf (e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','MH')
+         endif
          if ((k1.lt.0).or.(k2.lt.0)) then
             if (Lun_out.gt.0) then
             if (k1.lt.0) write (Lun_out,161)

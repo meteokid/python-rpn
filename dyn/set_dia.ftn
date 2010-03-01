@@ -14,6 +14,7 @@
 * v2_00 - Desgagne/Lee    - initial MPI version
 * v2_31 - Dugas B.        - permit rotated and/or multi-PE zonal diagnostics
 * v3_11 - A. Plante       - Activate code for LAM time-series
+* v3_30 - K. Winger       - Activate code for LAM zonaux-files
 *
 *object
 *	
@@ -51,28 +52,25 @@
 *
  225  continue
 
-      if (.not.G_lam) then      
          
-         P_zong_znoff_L=.false.
-         P_zong_znsrf=CNZNSFM
-            do i=1,CNZNSFM
-            if (P_zong_znsrf_s(i) .eq. ' ' ) then
-               P_zong_znsrf=i-1
-               goto 235
-            endif
-         end do
+      P_zong_znoff_L=.false.
+      P_zong_znsrf=CNZNSFM
+      do i=1,CNZNSFM
+         if (P_zong_znsrf_s(i) .eq. ' ' ) then
+            P_zong_znsrf=i-1
+            goto 235
+         endif
+      end do
 *
- 235     P_zong_znprf=CNZNPFM
-         do i=1,CNZNPFM
-            if (P_zong_znprf_s(i) .eq. ' ' ) then
-               P_zong_znprf=i-1
-               goto 300
-            endif
-         end do
+ 235  P_zong_znprf=CNZNPFM
+      do i=1,CNZNPFM
+         if (P_zong_znprf_s(i) .eq. ' ' ) then
+            P_zong_znprf=i-1
+            goto 300
+         endif
+      end do
 *
- 300     continue
-         
-      endif
+ 300  continue
 *
  1000 format(
      %/,'CALCULATE THE NUMBER OF DIAGNOSTIC/SERIES VARIABLES (S/R SET_DIA)',

@@ -1,0 +1,222 @@
+**s/r v4d_calcenergy - Calculate total energy from vt1 state (based on cststep)
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_calcenergy
+*
+      implicit none
+*
+*author
+*     M.Buehner
+*
+*revision
+* v3_02 - Buehner M.        - initial MPI version (based on cststep)
+* v3_30 - Tanguay M.        - adapt TL/AD to itf
+*
+*object
+*     see id section 
+*     -------
+*
+*arguments
+*
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "geomn.cdk"
+#include "geomg.cdk"
+#include "v4dg.cdk"
+#include "tr3d.cdk"
+#include "v4dj.cdk"
+#include "vt1.cdk"
+#include "dcst.cdk"
+#include "ptopo.cdk"
+#include "lctl.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*
+      real penergy,penergy1
+*
+      integer pnerr,pnlkey1(4),i,j,k,ierr
+*
+      real pr1, prpj
+*
+      real weight
+*
+      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk)
+      real wijk3(LDIST_SHAPE,l_nk)
+*     ______________________________________________________
+*
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1) = VMM_KEY(ut1  )
+      pnlkey1(2) = VMM_KEY(vt1  )
+      pnlkey1(3) = VMM_KEY(tpt1 )
+      pnlkey1(4) = VMM_KEY(st1  )
+*
+*     - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,4)
+*     - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1  )
+      pnerr = VMM_GET_VAR(vt1  )
+      pnerr = VMM_GET_VAR(tpt1 )
+      pnerr = VMM_GET_VAR(st1  )
+*
+      prpj = 0.
+*
+*     -----------------------
+*     Contribution from winds  
+*     -----------------------
+*
+*     Prepare 4U image wind contribution
+*     ----------------------------------
+      do k=1,l_nk
+         do j=1,l_nj
+            do i=1,l_niu
+               wijk1(i,j,k) = ut1(i,j,k)
+            end do
+         end do
+      end do
+*
+*     Prepare 4V image wind contribution
+*     ----------------------------------
+      do k=1,l_nk
+         do j=1,l_njv
+            do i=1,l_ni
+               wijk2(i,j,k) = vt1(i,j,k)
+            end do
+         end do
+      end do
+*
+*     Transfer from 4U and 4V staggered grid to scalar grid
+*     -----------------------------------------------------
+      call itf_phy_uvgridscal(wijk1,wijk2,LDIST_DIM,l_nk,.true.)
+*
+*     Calculate UU true wind from 4U image wind (scalar grid)
+*     -------------------------------------------------------
+      do j=1,l_nj
+         pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+         do k=1,l_nk
+            do i=1,l_ni
+               wijk3(i,j,k) = pr1 * wijk1(i,j,k) 
+            end do
+         end do
+      end do
+*
+*     Calculate UU contribution to total energy
+*     -----------------------------------------
+      do k = 1,l_nk
+      do j = 1,l_nj
+      do i = 1,l_ni
+*
+      weight = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) * 
+     %         V4dj_uvwt * V4dj_invarea 
+*
+      prpj   = weight * .5 * wijk3(i,j,k) **2 + prpj
+*
+      wijk3(i,j,k) = weight * wijk3(i,j,k)
+*
+      end do
+      end do
+      end do
+*
+*     Calculate VV true wind from 4V image wind (scalar grid)
+*     -------------------------------------------------------
+      do j=1,l_nj
+         pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+         do k=1,l_nk
+            do i=1,l_ni
+               wijk1(i,j,k) = pr1 * wijk2(i,j,k)
+            end do
+         end do
+      end do
+*
+*     Calculate VV contribution to total energy 
+*     -----------------------------------------
+      do k = 1,l_nk
+      do j = 1,l_nj
+      do i = 1,l_ni
+*
+      weight = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) * 
+     %         V4dj_uvwt * V4dj_invarea 
+*
+      prpj   = weight * .5 * wijk1(i,j,k) **2 + prpj
+*
+      wijk1(i,j,k) = weight * wijk1(i,j,k)
+*
+      end do
+      end do
+      end do
+*
+*     -----------------------------
+*     Contribution from temperature  
+*     -----------------------------
+*
+*     Prepare 4T contribution
+*     -----------------------
+      do j=1,l_nj
+         do k=1,l_nk
+            do i=1,l_ni
+               wijk1(i,j,k) = tpt1(i,j,k)
+            end do
+         end do
+      end do
+*
+*     Calculate 4T contribution to total energy 
+*     -----------------------------------------
+      do k = 1,l_nk
+      do j = 1,l_nj
+      do i = 1,l_ni
+*
+      weight = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) * 
+     %         V4dj_tpwt * V4dj_invarea 
+*
+      prpj   = weight * .5 * wijk1(i,j,k) **2 + prpj
+*
+      wijk1(i,j,k) = weight * wijk1(i,j,k)
+*
+      end do
+      end do
+      end do
+*
+*     ----------------------------------
+*     Contribution from surface pressure 
+*     ----------------------------------
+*
+*     Prepare 4S contribution
+*     -----------------------
+      do j=1,l_nj
+            do i=1,l_ni
+               wijk1(i,j,1) = st1(i,j)
+            end do
+      end do
+*
+*     Calculate 4S contribution to total energy 
+*     -----------------------------------------
+      do j = 1,l_nj
+      do i = 1,l_ni
+*
+      weight = V4dj_thickx(i) * V4dj_thicky(j) * 
+     %         V4dj_spwt * V4dj_invarea 
+*
+      prpj   = weight * .5 * wijk1(i,j,1) **2 + prpj
+*
+      wijk1(i,j,1) = weight * wijk1(i,j,1)
+*
+      end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+      penergy1 = prpj
+      penergy = 0.0
+*
+      call rpn_comm_Allreduce (penergy1,penergy,1,"MPI_REAL","MPI_SUM",
+     %                         "grid",ierr)
+*
+      if(Ptopo_myproc.eq.0) write(V4dg_iunenrgy,*) Lctl_step,penergy
+*
+      return
+      end

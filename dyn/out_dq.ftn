@@ -25,6 +25,7 @@
 * v2_32 - Lee V.            - reduce dynamic allocation size
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Lee V.            - Output optimization
+* v3_30 - Lee V.            - Bug correction for LAM
 *
 *object
 *     output all the fields related to horizontal vorticity
@@ -41,7 +42,6 @@
 *implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "dimout.cdk"
 #include "out3.cdk"
 #include "out.cdk"
 #include "outd.cdk"
@@ -52,7 +52,7 @@
 *
 *
 **
-      integer i,j,k, ii,jj,kk,jjj,pni3d
+      integer i,j,k, ii,j00
       integer levset,i0,in,j0,jn
 * ___________________________________________________________________
 *
@@ -126,9 +126,9 @@
 
       if (lastdt .ne. Lctl_step) then
 
-          call rpn_comm_xch_halo (F_ut1,LDIST_DIM,l_ni,l_nj,G_nk,
+          call rpn_comm_xch_halo (F_ut1,LDIST_DIM,l_niu,l_nj,G_nk,
      $         G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-          call rpn_comm_xch_halo (F_vt1,LDIST_DIM,l_ni,l_nj,G_nk,
+          call rpn_comm_xch_halo (F_vt1,LDIST_DIM,l_ni,l_njv,G_nk,
      $         G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
 *  Calculate horizontal divergence (DS)  in pi* vertical coordinate
@@ -137,10 +137,12 @@
 *  Calculate horizontal relative vorticity (Q3) in pi* vertical coordinate
           call calvor (t2, F_ut1, F_vt1 ,t3, LDIST_DIM, G_nk)
 
+          j00=1
+          if (l_south)j00=2
           if (G_lam) then
           if (l_west) then
             do k=1,G_nk
-             do j=2,l_njv
+             do j=j00,l_njv
                 t1(1,j,k)=t1(2,j,k)
                 t2(1,j,k)=t2(2,j,k)
              enddo
@@ -148,7 +150,7 @@
           endif
           if (l_east) then
             do k=1,G_nk
-             do j=2,l_njv
+             do j=j00,l_njv
                 t1(l_ni,j,k)=t1(l_niu,j,k)
                 t2(l_ni,j,k)=t2(l_niu,j,k)
              enddo
@@ -188,7 +190,6 @@
 *     in pressure vertical coordinate
           call calddqr( t5, t6, F_wlnph, F_ut1, F_vt1,
      $                t3, t4, t7, t8, t9, LDIST_DIM, G_nk)
-
 
 *_______________________________________________________________________
 *

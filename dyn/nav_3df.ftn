@@ -1,0 +1,121 @@
+***s/r nav_3df
+*
+#include "model_macros_f.h"
+*
+      integer function nav_3df (unf,ext,mf)
+      implicit none
+*
+      integer unf
+      real ext
+      real*8 mf
+*
+*author 
+*     Michel Desgagne   - Summer 2006
+*
+*revision
+* v3_30 - Desgagne M.     - initial version
+*
+*
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "ifd.cdk"
+*
+      logical needitx,needity,wb,eb,sb,nb,done
+      integer i,j,nia,nja,i0,j0
+      real xi,xf,yi,yf,resa,xda,xfa,yda,yfa,xir,xfr,yir,yfr,epsilon
+      parameter (epsilon = 1.0e-4)
+*-----------------------------------------------------------------------
+*
+* Compute xi,xf,yi,yf: lower-left/upper-right corners defining required
+*                      input data coverage for hor. interpolation
+*
+      i   = l_i0
+      j   = l_j0
+        
+      xir = G_xg_8(i)+epsilon
+      yir = G_yg_8(j)+epsilon
+      xi  = G_xg_8(i)+ext*(G_xg_8(i)-G_xg_8(i+1))
+      yi  = G_yg_8(j)+ext*(G_yg_8(j)-G_yg_8(j+1))
+*
+      i   = l_i0 + l_ni - 1
+      j   = l_j0 + l_nj - 1
+      xfr = G_xg_8(i)-epsilon
+      yfr = G_yg_8(j)-epsilon
+      xf  = G_xg_8(i)+ext*(G_xg_8(i)-G_xg_8(i-1))
+      yf  = G_yg_8(j)+ext*(G_yg_8(j)-G_yg_8(j-1))
+*
+* Considering data coverage of individual input files, determine
+* which files are needed for local target data coverage of Ptopo_myproc 
+* and verify that input data coverage is sufficient.
+*
+      ifd_nf   = 1
+      ifd_niad = 200000 
+      ifd_njad = 200000
+      ifd_niaf =-200000  
+      ifd_njaf =-200000
+      wb = .false.
+      eb = .false.
+      sb = .false.
+      nb = .false.
+*
+ 1    read (unf,304,end=2) i0,j0,
+     $        ifd_xia(ifd_nf),ifd_xfa(ifd_nf),
+     $        ifd_yia(ifd_nf),ifd_yfa(ifd_nf), nia, nja
+      ifd_xia(ifd_nf) = ifd_xia(ifd_nf)*mf
+      ifd_yia(ifd_nf) = ifd_yia(ifd_nf)*mf
+      ifd_xfa(ifd_nf) = ifd_xfa(ifd_nf)*mf
+      ifd_yfa(ifd_nf) = ifd_yfa(ifd_nf)*mf
+      write (ifd_fnext(ifd_nf),'((i7.7),a1,(i7.7))') i0,'-',j0
+      needitx = .false.
+      needity = .false.
+      resa = (ifd_xfa(ifd_nf)-ifd_xia(ifd_nf))/(nia-1)*1.5
+      xda  = ifd_xia(ifd_nf)-resa
+      xfa  = ifd_xfa(ifd_nf)+resa
+      resa = (ifd_yfa(ifd_nf)-ifd_yia(ifd_nf))/(nja-1)*1.5
+      yda  = ifd_yia(ifd_nf)-resa
+      yfa  = ifd_yfa(ifd_nf)+resa
+*
+      if (xda.lt.xi) then
+         if (xfa.ge.xi) needitx=.true.
+      else
+         if (xda.le.xf) needitx=.true.
+      endif
+      if (yda.lt.yi) then
+         if (yfa.ge.yi) needity=.true.
+      else
+         if (yda.le.yf) needity=.true.
+      endif
+*
+      ifd_needit(ifd_nf) = .false.
+      if (needitx.and.needity) then
+         read(ifd_fnext(ifd_nf)(1:7 ),'(i7)') ifd_minx(ifd_nf)
+         read(ifd_fnext(ifd_nf)(9:15),'(i7)') ifd_miny(ifd_nf)
+         ifd_maxx(ifd_nf) = ifd_minx(ifd_nf) + nia - 1
+         ifd_maxy(ifd_nf) = ifd_miny(ifd_nf) + nja - 1
+         ifd_niad = min(ifd_niad,ifd_minx(ifd_nf))
+         ifd_njad = min(ifd_njad,ifd_miny(ifd_nf))
+         ifd_niaf = max(ifd_niaf,ifd_maxx(ifd_nf))
+         ifd_njaf = max(ifd_njaf,ifd_maxy(ifd_nf))
+         ifd_needit(ifd_nf) = .true.
+         wb = wb .or. (ifd_xia(ifd_nf).le.xir)
+         eb = eb .or. (ifd_xfa(ifd_nf).ge.xfr)
+         sb = sb .or. (ifd_yia(ifd_nf).le.yir)
+         nb = nb .or. (ifd_yfa(ifd_nf).ge.yfr)
+      endif
+      ifd_nf = ifd_nf + 1
+      goto 1
+ 2    ifd_nf = ifd_nf - 1
+      close (unf)
+*
+      nav_3df = 0
+      if (.not.((wb).and.(eb).and.(sb).and.(nb))) then
+         write (6,202) wb,eb,sb,nb,Ptopo_myproc
+         nav_3df = -1
+      endif
+*
+ 202  format (/' INSUFFICIENT INPUT DATA COVERAGE: ',4L4,
+     $         ', PROC#:',i4,' --ABORT--'/)
+ 304  format (2i8,4e15.7,2i10)
+*-----------------------------------------------------------------------
+      return
+      end

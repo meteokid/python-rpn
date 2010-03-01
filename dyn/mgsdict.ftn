@@ -2,7 +2,7 @@
 *
 #include "model_macros_f.h"
       subroutine mgsdict (ni,nj,lindex,lachaine)
-#include "impnone.cdk"
+      implicit none
 *
       character*(*) lachaine
       integer ni,nj,lindex
@@ -48,7 +48,7 @@
 *----------------------------------------------------------------
 *
 *implicit
-#include "p_bus.cdk"
+#include "itf_phy_buses.cdk"
 *
 **
 *
@@ -111,7 +111,7 @@
 *
       subroutine mgsdeco (cvn,csn,cvs,cetk,ctyp,cinterp,cseq,
      $                                     fadd,fmul,string)
-#include "impnone.cdk"
+      implicit none
 *
       character*(*) cvn,csn,cetk,ctyp,cinterp,cseq,string
       character*3 cvs

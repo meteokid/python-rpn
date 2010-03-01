@@ -1,0 +1,100 @@
+***s/r v4d_rwtraj_kmkt - Read (Write) from (on) TRAJ WA file for
+*                        vertical diffusion coefficients
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_rwtraj_kmkt(F_kmm, F_ktm, DIST_DIM, Nk)
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+      real F_kmm (DIST_SHAPE,Nk),F_ktm (DIST_SHAPE,Nk)
+*
+*author
+*     Stephane Laroche
+*
+*revision
+* v3_00 - Laroche S.        - initial MPI version (from v4d_rwtraj)
+* v3_11 - Tanguay M.        - ADJ of digital filter
+* v3_30 - Tanguay M.        - Validation for LAM Nonhyd 
+*
+*object
+*
+*     TRAJ for invariant vertical exchange coefficients
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_kmm        I/O                 km
+* F_ktm        I/O                 kt
+* DIST_DIM     I                   Horizontal dim. of F_?
+* Nk           I                   Vertical   dim. of F_?
+*	
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "v4dg.cdk"
+*
+      logical plpr_L
+*
+*     Work arrays 
+*     -----------
+      real work(l_ni*l_nj*l_nk)
+*
+*     ______________________________________________________
+*
+*     Flag to trace storing and retrieving of trajectory
+*     --------------------------------------------------
+      plpr_L = .false.
+      plpr_L = plpr_L.and.Lun_out.gt.0 
+*
+*     ----------------
+*     Read TRAJ Fields 
+*     ----------------
+      if(V4dg_rwtr.eq.0) then
+*
+*     TANGENT LINEAR MODEL
+*     --------------------
+      if(V4dg_tl_L) then
+*
+*
+         call v4d_rwfld (F_kmm,work,l_ni,l_nj,LDIST_DIM,Nk,
+     %                V4dg_iunph,V4dg_addph,plpr_L,'KM',  V4dg_ad_L,0,-1)
+*
+         call v4d_rwfld (F_ktm,work,l_ni,l_nj,LDIST_DIM,Nk,
+     %                V4dg_iunph,V4dg_addph,plpr_L,'KT',  V4dg_ad_L,0,-1)
+*
+      endif
+*
+*     ADJOINT MODEL 
+*     -------------
+      if(V4dg_ad_L) then
+*
+         call v4d_rwfld (F_ktm,work,l_ni,l_nj,LDIST_DIM,Nk,
+     %                V4dg_iunph,V4dg_addph,plpr_L,'KT',  V4dg_ad_L,
+     %                l_ni*l_nj*l_nk,-1)
+*
+         call v4d_rwfld (F_kmm,work,l_ni,l_nj,LDIST_DIM,Nk,
+     %                V4dg_iunph,V4dg_addph,plpr_L,'KM',  V4dg_ad_L,
+     %                l_ni*l_nj*l_nk,-1)
+*
+      endif
+*
+*     -----------------
+*     Write TRAJ Fields 
+*     -----------------
+      elseif(V4dg_rwtr.eq.1) then
+*
+      call v4d_rwfld (F_kmm,work,l_ni,l_nj,LDIST_DIM,Nk,
+     %                V4dg_iunph,V4dg_addph,plpr_L,'KM',V4dg_ad_L,0,1)
+*
+*
+      call v4d_rwfld (F_ktm,work,l_ni,l_nj,LDIST_DIM,Nk,
+     %                V4dg_iunph,V4dg_addph,plpr_L,'KT',V4dg_ad_L,0,1)
+*
+      endif
+*
+      return
+      end

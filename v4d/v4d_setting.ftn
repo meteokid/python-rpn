@@ -1,0 +1,530 @@
+***s/r v4d_setting - Additional settings for 4D-Var 
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_setting 
+*
+      use v4d_prof, only: Pr_wopen_L, Pr_ropen_L, Pr_read_L, Pr_llfrm_L, Pr_traj0to9_L, 
+     %                    Pr_varindx, Pr_varname, Pr_dsnooze_8, Pr_traj0to9_L, Pr_mode_S
+*
+      use v4dz
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - move v4d_setscalp after set_dync 
+*                           - WA files incore
+*                           - adapt for tracers in tr3d  
+* v3_00 - Ek N.             - initializations for V4dg_4dvar_L and for interp. of profiles 
+* v3_00 - Tanguay M.        - adapt to Simon's exchange
+*                           - incore option for WA file Conversion 
+* v3_00 - Laroche S.        - additions for simplified physics
+* v3_01 - Tanguay M.        - add V4dg_sgvc_L
+*                           - introduce GAUSS=GEM option
+* v3_02 - Buehner M.        - added section for ref state file for NLMX event (SV job)
+*                           - changed call readlalo to readinit
+*                           - no 3hr preliminary integration for SV job
+* v3_02 - Tanguay M.        - V4dz_degree in namelist var4d
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+* v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2
+*                           - Remove V4dg_ga_eq_ge_L
+*                           - Add option for profiles done on U-V grids for winds 
+* v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+* v3_20 - Zadra A.          - Introduce V4dg_sgvc_dt0  
+* v3_30 - Tanguay M.        - Validation for LAM version 
+*
+*object
+*     1) Allocate WA files and VMM space
+*     2) Set control variables 
+*     3) Set inner product in control space variables
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "v4dg.cdk"
+#include "v4dc.cdk"
+#include "step.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+#include <prof_f.h>
+#include "dcst.cdk"
+#include "ptopo.cdk"
+#include "path.cdk"
+#include "init.cdk"
+#include "v4dr.cdk"
+*
+*modules
+      external hpalloc,longueur
+*
+      integer pnerr,timobmax,i,j,i1,i2,j1,j2,lun_4dvar,longueur,
+     %        ierr,fnom,ilun_out,status,offi,offj,indx,itotal
+*
+      real*8 rad2deg_8
+      real*8, parameter :: CLXXX_8 = 180.0
+      real*8, parameter :: ONE_8   = 1.0 
+      real*8, parameter :: TWO_8   = 2.0 
+      real*8, parameter :: HALF_8  = 0.5 
+*
+      real*8, dimension(:),allocatable :: xgu_8, ygv_8
+*
+      character(len=256) cfilename_S
+      character(len=3)  cprocno_S
+*
+*C    -------------------------------
+*C    Allocate WA files and VMM space
+*C    -------------------------------
+*
+*        Allocate WA file and VMM space for TRAJECTORY
+*        ---------------------------------------------
+         call v4d_settraj()
+*
+         if(V4dg_conf/100.eq.1.and.(V4dg_twin_L.or.V4dg_sensib_L)) then
+*
+*           Allocate WA files and VMM space for OBSERVATIONS and FORCINGS
+*           -------------------------------------------------------------
+            call v4d_setobfr ()
+*
+         endif
+*
+*C    ---------------------------------------------------------
+*C    Allocate memory if WA files are replaced by incore arrays 
+*C    ---------------------------------------------------------
+      if(V4dg_incore_L) then
+*
+*         Estimate size of TRINCORE defined in V4d_RWTRAJ
+*         -----------------------------------------------
+             V4dg_trsize = 0 
+*
+             itotal = Step_total  
+             if( Init_balgm_L ) itotal = itotal + (Init_dfnp-1)/2 + 1
+*
+*            numtr.eq.1
+*            ----------
+             V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 1)*l_ni*l_nj 
+*
+*            numtr.eq.2
+*            ----------
+             V4dg_trsize = V4dg_trsize + itotal*(  1          *l_nk + 0)*l_ni*l_nj 
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + itotal*(  1          *l_nk + 0)*l_ni*l_nj 
+*
+*            numtr.eq.3
+*            ----------
+             V4dg_trsize = V4dg_trsize + itotal*((11+Tr3d_ntr)*l_nk + 1)*l_ni*l_nj 
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 0)*l_ni*l_nj 
+*
+*            numtr.eq.4
+*            ----------
+             V4dg_trsize = V4dg_trsize + itotal*(  6          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+*
+*            numtr.eq.5
+*            ----------
+             V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+*
+*            numtr.eq.6
+*            ----------
+             V4dg_trsize = V4dg_trsize + itotal*(  4          *l_nk + 1)*l_ni*l_nj*Schm_itcn 
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+*
+*            numtr.eq.7
+*            ----------
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + itotal*(  1          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+*
+             if ( .not.V4dr_redotr_L ) then
+*
+*            numtr.eq.8
+*            ----------
+             V4dg_trsize = V4dg_trsize + itotal*(  7          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + itotal*(  2          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+*
+*            numtr.eq.9
+*            ----------
+             V4dg_trsize = V4dg_trsize + itotal*(  1          *l_nk + 0)*l_ni*l_nj*Schm_itcn*Schm_itnlh 
+*
+*            numtr.eq.13
+*            -----------
+             V4dg_trsize = V4dg_trsize + itotal*(  3          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
+*
+             endif
+*
+*            Estimate size for the physic interface 
+*            --------------------------------------
+*
+*            numtr.eq.10
+*            -----------
+             V4dg_trsize = V4dg_trsize + itotal*(  5          *l_nk + 0)*l_ni*l_nj 
+*
+*            numtr.eq.11
+*            -----------
+             V4dg_trsize = V4dg_trsize + itotal*(  4          *l_nk + 1)*l_ni*l_nj 
+*
+             call hpalloc (V4dg_trincore_, V4dg_trsize, pnerr, 1)
+*
+*         ----------------------------------
+*         Estimate size for the nesting TRAJ  
+*         ----------------------------------
+*
+             if(G_lam) then
+*
+             V4dg_nssize = 0
+*
+             V4dg_nssize = V4dg_nssize + (itotal+1)*((10+Tr3d_ntr)*l_nk + 1)*l_ni*l_nj
+             if(.not.Schm_hydro_L) V4dg_nssize = V4dg_nssize + (itotal+1)*2*l_nk*l_ni*l_nj
+*
+             call hpalloc (V4dg_nsincore_, V4dg_nssize, pnerr, 1)
+*
+             endif
+*
+*         Estimate size of PHINCORE defined in V4d_RWPHYS
+*         -----------------------------------------------
+             V4dg_phsize = 0
+*
+*            Sigma levels
+*            ------------
+             V4dg_phsize = V4dg_phsize +      1*( 1*l_nk + 0)*l_ni*l_nj
+*
+*            KM and KT
+*            ---------
+             V4dg_phsize = V4dg_phsize + itotal*( 2*l_nk + 0)*l_ni*l_nj
+*
+             call hpalloc (V4dg_phincore_, V4dg_phsize, pnerr, 1)
+*
+          if(V4dg_twin_L.or.V4dg_sensib_L) then
+*
+          if(V4dg_inv.ne.1) timobmax = Step_total/V4dg_stepob + 1
+          if(V4dg_inv.eq.1) timobmax = Step_total/V4dg_stepob
+*
+*         Estimate size of FRINCORE defined in V4d_RWOBFR
+*         -----------------------------------------------
+             V4dg_frsize = 0
+*
+             V4dg_frsize = V4dg_frsize + timobmax *( 3*l_nk + 1)*l_ni*l_nj
+*
+             call hpalloc (V4dg_frincore_, V4dg_frsize, pnerr, 1)
+*
+*         Estimate size of OBINCORE defined in V4d_RWOBFR
+*         -----------------------------------------------
+             V4dg_obsize = 0
+*
+             V4dg_obsize = V4dg_obsize + timobmax *( 3*l_nk + 1)*l_ni*l_nj
+*
+             call hpalloc (V4dg_obincore_, V4dg_obsize, pnerr, 1)
+*
+          endif
+*
+*         Maximal timobmax since V4dg_stepob is still unknown
+*         ---------------------------------------------------
+          timobmax = Step_total + 1 
+*
+*         Estimate size of CVINCORE defined in V4d_RWCONV
+*         NOTE: Used also for conversion in DYNOUT2  
+*         -----------------------------------------------
+             V4dg_cvsize = 0
+*
+             V4dg_cvsize = V4dg_cvsize + (2+timobmax) *( 2*l_nk + 1 )*l_ni*l_nj
+*
+             call hpalloc (V4dg_cvincore_, V4dg_cvsize, pnerr, 1)
+*
+          if(V4dg_sgvc_L) then
+*
+*         Estimate size of NLINCORE defined in V4d_RWNLPERT
+*         -------------------------------------------------
+             V4dg_nlsize = 0
+*
+             V4dg_nlsize = V4dg_nlsize + (1+timobmax) *( (3 + Tr3d_ntr)*l_nk + 1 )*l_ni*l_nj
+*
+             call hpalloc (V4dg_nlincore_, V4dg_nlsize, pnerr, 1)
+*
+          endif
+*
+      endif
+*
+*C    -------------------------------------
+*C    Set control variables for 4D-Var runs
+*C    -------------------------------------
+*
+         if (Lun_out.gt.0) write(Lun_out,1000)
+*
+*        Initialize dimensions
+*        ---------------------
+         V4dc_ncv    = l_ni  * ((1+Tr3d_ntr)*l_nj + l_njv) * l_nk + 
+     %                 l_niu *                      l_nj   * l_nk + l_ni * l_nj 
+         if (.not. Schm_hydro_L) V4dc_ncv = V4dc_ncv + l_ni * l_nj * l_nk 
+*
+*        V4dc_nupd is the number of updates for building Hessian in M1QN3
+*        ----------------------------------------------------------------
+         V4dc_nupd   = 10
+c        if(V4dg_conf/100.eq.1) V4dc_nupd = 1 
+*
+         V4dc_nwkmin = 4 * V4dc_ncv + V4dc_nupd * (2 * V4dc_ncv + 1)
+*
+*        Initialize memory arrays 
+*        ------------------------
+         if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) then
+         call hpalloc(V4dc_xcv_   , V4dc_ncv   , pnerr, 1)
+         call hpalloc(V4dc_gcv_   , V4dc_ncv   , pnerr, 1)
+         call hpalloc(V4dc_scalp_ , V4dc_ncv   , pnerr, 1)
+         call hpalloc(V4dc_ycv_   , V4dc_ncv   , pnerr, 1)
+         call hpalloc(V4dc_wkmin_ , V4dc_nwkmin, pnerr, 1)
+         endif
+*
+*C    ----------------------------------------------
+*C    Move inner product calculations after set_dync
+*C    ----------------------------------------------
+*C    call v4d_setscalp ()
+*
+      if(V4dg_4dvar_L.or.V4dg_sgvc_L) then
+*
+*        Redirect output to allow printings for each proc
+*        ------------------------------------------------
+         lun_4dvar = 0 
+         if(Ptopo_myproc.le.9) then
+         write(cprocno_S,fmt='(i1)') Ptopo_myproc
+         else
+         write(cprocno_S,fmt='(i2)') Ptopo_myproc
+         endif
+         cfilename_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))//
+     $                 '/output/Output_From_Proc_No.'//trim(cprocno_S)
+         ierr = fnom(lun_4dvar,trim(cfilename_S),'SEQ+APPEND',0)
+*
+         ilun_out = Lun_out
+         Lun_out  = lun_4dvar
+*
+*        Define path to the "exchange" directory with 3D-Var 
+*        ---------------------------------------------------
+         Path_xchg_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/xchgdir'
+*
+*        Flag to do 3hr TRAJ run to get to the starting date of the assimilation
+*        -----------------------------------------------------------------------
+         Pr_traj0to9_L = .false.
+*
+*          Do not perform initial 3hr integration for SV job - initial time = synoptic time!!!!
+*          ------------------------------------------------------------------------------------
+           if(V4dg_sgvc_L) Pr_traj0to9_L = .true.       
+*
+         write(Lun_out,*) 'Flag to do 3hr TRAJ run TRAJ0TO9_L = ',Pr_traj0to9_L
+*
+*        Initialization of static information regarding PROF files 
+*        ---------------------------------------------------------
+         Pr_llfrm_L = .true.
+         Pr_dsnooze_8 = 0.01
+         Pr_mode_S = 'FILE'
+         write(Lun_out,*) 'SNOOZE TIME = ',Pr_dsnooze_8,' LLFRM = ',Pr_llfrm_L
+*
+         if(V4dg_sgvc_L) then
+*
+*        Input parameters from 3dvar
+*        ---------------------------
+         call v4d_readinit ()
+*
+         else
+*
+*        Initialize the obs variable indices
+*        -----------------------------------
+         Pr_varindx(1) = V3D_UTRU
+         Pr_varindx(2) = V3D_VTRU
+         Pr_varindx(3) = V3D_TEMP
+         Pr_varindx(4) = V3D_SPHU
+         Pr_varindx(5) = V2D_PSUR
+*
+         Pr_varname = (/'UU', 'VV', 'TT', 'HU', 'SP'/)
+*
+*        Flag to allow model-profile file to be opened 
+*        ---------------------------------------------
+         Pr_wopen_L = .false.     
+*
+*        Flag to allow adjoint model-profile file to be opened 
+*        -----------------------------------------------------
+         Pr_ropen_L = .false.     
+*
+*        Input obs lists if not already done.
+*        -----------------------------------
+         call v4d_readinit ()
+*
+*        ----------------------------------------------------
+*        Initialization for EZSCINT interpolation of profiles  
+*        ----------------------------------------------------
+*
+*        -------------------------------------------------------
+*        Type of interpolation V4dz_degree now in namelist var4d
+*        -------------------------------------------------------
+*        NOTE: 1= Linear and 3=Cubic Lagrange
+*        -------------------------------------------------------
+*
+*        Type of input grid (DEFAULT)
+*        ----------------------------
+         V4dz_grtypi = 'Z'
+*
+*        Initialize dimensions I1,I2,J1,J2, axes AX,AY
+*        and differences CX,CY of input grid used in interpolation
+*        ---------------------------------------------------------
+*
+*        Dimensions with halo
+*        --------------------
+         V4dz_i1 = l_minx
+         V4dz_i2 = l_maxx
+         V4dz_j1 = l_miny
+         V4dz_j2 = l_maxy
+*
+*        Keep horizontal dimensions of input grid used in interpolation
+*        --------------------------------------------------------------
+         i1 = V4dz_i1
+         i2 = V4dz_i2
+         j1 = V4dz_j1
+         j2 = V4dz_j2
+*
+*        Prescribe global GEM scalar Z grid axes 
+*        ---------------------------------------
+         allocate ( V4dz_ax(i2-i1+1), STAT=status )
+         allocate ( V4dz_ay(j2-j1+1), STAT=status )
+*
+         rad2deg_8 = CLXXX_8/Dcst_pi_8
+*
+         offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+         offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+*
+         do i=i1,i2
+            indx = offi + i
+            V4dz_ax(i-i1+1) = G_xg_8(indx) * rad2deg_8
+         enddo
+         do j=j1,j2
+            indx = offj + j
+            V4dz_ay(j-j1+1) = G_yg_8(indx) * rad2deg_8
+         enddo
+*
+*        Prescribe global GEM staggered grid axes
+*        ----------------------------------------
+         if(V4dg_pruv_L) then
+*
+         allocate ( V4dz_axu(i2-i1+1), STAT=status )
+         allocate ( V4dz_ayv(j2-j1+1), STAT=status )
+*
+         do i=i1,i2
+            indx = offi + i
+            V4dz_axu(i-i1+1) = ((G_xg_8(indx+1)+ G_xg_8(indx)) * HALF_8) * rad2deg_8
+         enddo
+         do j=j1,j2
+            indx = offj + j
+            V4dz_ayv(j-j1+1) = ((G_yg_8(indx+1)+ G_yg_8(indx)) * HALF_8) * rad2deg_8
+         enddo
+*
+         endif
+*
+*        Evaluate AX,AY differences in CX,CY for cubic interpolation
+*        -----------------------------------------------------------
+         if(V4dz_degree.eq.3) then
+*
+            allocate ( V4dz_cx(6*(i2-i1+1)), STAT=status )
+            allocate ( V4dz_cy(6*(j2-j1+1)), STAT=status )
+*
+            call v4d_nwtncof (V4dz_cx,V4dz_cy,V4dz_ax,V4dz_ay,i1,i2,j1,j2,
+     %                        l_ni,V4dz_grtypi)
+*
+            if(V4dg_pruv_L) then
+*
+            allocate ( V4dz_cxu(6*(i2-i1+1)), STAT=status )
+            allocate ( V4dz_cyv(6*(j2-j1+1)), STAT=status )
+*
+            call v4d_nwtncof (V4dz_cxu,V4dz_cy, V4dz_axu,V4dz_ay, i1,i2,j1,j2,
+     %                        l_niu,'U')
+*
+            call v4d_nwtncof (V4dz_cx, V4dz_cyv,V4dz_ax, V4dz_ayv,i1,i2,j1,j2,
+     %                        l_ni, 'V')
+            endif
+*
+         endif
+*
+*        Prescribe global Z grid weights proportional grid distances 
+*        -----------------------------------------------------------
+         allocate ( V4dz_wx_8 (G_ni), STAT=status )
+*
+         do i=1,G_ni
+         V4dz_wx_8(i) =( G_xg_8(i+1)
+     %                  -G_xg_8(i-1))*HALF_8/(TWO_8*Dcst_pi_8)
+         enddo
+*
+*        Prescribe local Z grid cos,sin of x and local Z grid sin of y
+*        -------------------------------------------------------------
+         allocate ( V4dz_cox_8(G_ni), STAT=status )
+         allocate ( V4dz_six_8(G_ni), STAT=status )
+         allocate ( V4dz_siy_8(G_nj), STAT=status )
+*
+         do i=1,G_ni
+            V4dz_cox_8(i) = cos ( G_xg_8(i) )
+            V4dz_six_8(i) = sin ( G_xg_8(i) )
+         enddo
+*
+         do j=1,G_nj
+            V4dz_siy_8(j) = sin ( G_yg_8(j) )
+         enddo
+*
+         if(V4dg_pruv_L) then
+*
+*        Prescribe global U grid weights proportional grid distances 
+*        -----------------------------------------------------------
+         allocate (      xgu_8(0:G_niu+1), STAT=status )
+         allocate ( V4dz_wxu_8(G_niu),   STAT=status )
+*
+         do i=0,G_niu+1
+         xgu_8 (i) = (G_xg_8(i+1) + G_xg_8(i)) * HALF_8
+         enddo
+*
+         do i=1,G_niu
+         V4dz_wxu_8(i) =( xgu_8(i+1)
+     %                   -xgu_8(i-1))*HALF_8/(TWO_8*Dcst_pi_8)
+         enddo
+*           
+*        Prescribe local U grid cos,sin of x
+*        -----------------------------------
+         allocate ( V4dz_coxu_8(G_niu),   STAT=status )
+         allocate ( V4dz_sixu_8(G_niu),   STAT=status )
+*
+         do i=1,G_niu
+            V4dz_coxu_8(i) = cos ( xgu_8(i) )
+            V4dz_sixu_8(i) = sin ( xgu_8(i) )
+         enddo
+*
+         deallocate ( xgu_8,    STAT=ierr )     
+*
+*        Prescribe local V grid sin of y
+*        -------------------------------
+         allocate (       ygv_8(G_njv),   STAT=status )
+         allocate ( V4dz_siyv_8(G_njv),   STAT=status )
+*
+         do j=1,G_njv
+         ygv_8 (j) = (G_yg_8(j+1) + G_yg_8(j)) * HALF_8
+         enddo
+*
+         do j=1,G_njv
+            V4dz_siyv_8(j) = sin ( ygv_8(j) )
+         enddo
+*
+         deallocate ( ygv_8,    STAT=ierr )     
+*
+         endif
+*
+         endif
+*
+      endif
+*
+ 1000 format(
+     +//,'Additional settings for 4D-VAR (S/R V4D_SETTING)',
+     + /,'================================================',
+     +//)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

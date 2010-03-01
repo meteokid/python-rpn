@@ -1,0 +1,33 @@
+***s/r e_fill_3df - to fill a K plane of a 3d variable with a 2d variable
+*                   as well as doing a conversion on the field.
+*
+      subroutine e_fill_3df ( fa,tr1,nis,njs,nks,k,con,add)
+      implicit none
+*
+      integer nis,njs,nks,k
+      real tr1(nis,njs,nks),con,add
+      real fa(nis,njs)
+*
+*author V.Lee 2006
+*
+*revision
+* v3_30 - Lee.V - initial version
+*
+**
+*
+      integer i,j,n
+*
+*----------------------------------------------------------------------
+*
+*     fill 2D field from fa to 3D field tr1 binary
+*
+      do j=1,njs
+      do i=1,nis
+         tr1(i,j,k)=(fa(i,j)+add)*con
+      enddo
+      enddo
+*
+*----------------------------------------------------------------------
+      return
+      end
+*

@@ -1,0 +1,90 @@
+      module v4d_interzone
+      interface
+!
+      subroutine v4d_zonesca (px,py,npts,fldsc,wx_8,i1,i2,j1,j2,nk,jmin,jmax,ni, &
+                              nimax,gni,grtypi,degree,var,l_north,l_south,kind)
+!
+#include "impnone.cdk"
+!
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,nimax,gni,degree,kind
+!
+      real,   pointer, dimension(:)   :: px,py
+!
+      real fldsc(i1:i2,j1:j2,nk)
+!
+      character*2 var
+!
+      character*1 grtypi
+!
+      real*8 wx_8(*)
+!
+      logical l_north,l_south
+!
+      end subroutine v4d_zonesca 
+!
+      subroutine v4d_zonewnd (px,py,npts,fldu,fldv,wx_8,cox_8,six_8,siy_8,i1,i2,j1,j2, &
+                              nk,jmin,jmax,ni,nimax,gni,grtypi,degree,var,l_north,l_south,kind)
+!
+#include "impnone.cdk"
+!
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,nimax,gni,degree,kind
+!
+      real,   pointer, dimension(:)   :: px,py
+!
+      real fldu(i1:i2,j1:j2,nk),fldv(i1:i2,j1:j2,nk)
+!
+      character*2 var
+!
+      character*1 grtypi
+!
+      real*8 wx_8(*),cox_8(*),six_8(*),siy_8(*)
+!
+      logical l_north,l_south
+!
+      end subroutine v4d_zonewnd 
+!
+      subroutine v4d_zonesca_ad (px,py,npts,fldsc,wx_8,i1,i2,j1,j2,nk,jmin,jmax,ni, &
+                                 nimax,gni,grtypi,degree,var,l_north,l_south,kind)
+!
+#include "impnone.cdk"
+!
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,nimax,gni,degree,kind
+!
+      real,   pointer, dimension(:)   :: px,py
+!
+      real fldsc(i1:i2,j1:j2,nk)
+!
+      character*2 var
+!
+      character*1 grtypi
+!
+      real*8 wx_8(*)
+!
+      logical l_north,l_south
+!
+      end subroutine v4d_zonesca_ad 
+!
+      subroutine v4d_zonewnd_ad (px,py,npts,fldu,fldv,wx_8,cox_8,six_8,siy_8,i1,i2,j1,j2, &
+                                 nk,jmin,jmax,ni,nimax,gni,grtypi,degree,var,             &
+                                 l_north,l_south,kind)
+!
+#include "impnone.cdk"
+!
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,nimax,gni,degree,kind
+!
+      real,   pointer, dimension(:)   :: px,py
+!
+      real fldu(i1:i2,j1:j2,nk),fldv(i1:i2,j1:j2,nk)
+!
+      character*2 var
+!
+      character*1 grtypi
+!
+      real*8 wx_8(*),cox_8(*),six_8(*),siy_8(*)
+!
+      logical l_north,l_south
+!
+      end subroutine v4d_zonewnd_ad 
+!
+      end interface
+      end module v4d_interzone

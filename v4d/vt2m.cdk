@@ -1,0 +1,66 @@
+#if defined (DOC)
+*
+***comdeck vt2m.cdk
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+*
+*object
+*     Equivalent to comdeck vt2 for TRAJECTORY
+*______________________________________________________________________
+*                                                                      |
+*  TRAJ VMM variables at TIME t2                                       |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* ut2m               | x component of velocity                         |
+* vt2m               | y component of velocity                         |
+* wt2m               | z component of velocity                         |
+* tt2m               | T (temperature)                                 |
+* tdt2               | total divergence (dpi* dot / dpi* + D )         |
+* fit2m              | phi (geopotential)                              |
+* qt2m               | q = ln p                                        |
+*--------------------|-------------------------------------------------|
+* tpt2m              | T'       \                                      |
+* fipt2m             | phi'      \  perturbations                      |
+* qpt2m              | q'        /                                     |
+* pipt2m             | pi'      /                                      |
+*--------------------|-------------------------------------------------|
+* tplt2m             | T'  linear                                      |
+*--------------------|-------------------------------------------------|
+* mut2m              | nonhydro index mu=dp/dpi-1 [= 0 if hydro]       |
+* psdt2m             | pi* dot (vert. vel. in pi* coord.)              |
+* st2m               | ln (pi_s/z_s)                                   |
+*--------------------|-------------------------------------------------|
+* trt2m              | passive tracer(s)                               |
+*--------------------|-------------------------------------------------|
+*
+#endif
+*
+      MARK_COMMON_BEG(vt2m)
+      DCL_VMMVAR( vt2m,   ut2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,   vt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,   wt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,   tt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,  tdt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,  fit2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,   qt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,  tpt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m, fipt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,  qpt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m, pipt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m, tplt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,  mut2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m, psdt2m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt2m,   st2m, real, (LDIST_SHAPE)      )
+      DCL_VMMVAR( vt2m,  trt2m, real, (LDIST_SHAPE,l_nk,*) )
+      MARK_COMMON_END(vt2m)
+
+      character*8 vt2m_n_first(1)
+      equivalence (vt2m_n_first,VMM_NAM(ut2m))

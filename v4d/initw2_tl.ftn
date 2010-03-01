@@ -1,0 +1,416 @@
+***s/r initw2_tl -- TLM of initw2  
+*
+#include "model_macros_f.h"
+*
+      subroutine initw2_tl ( F_wt1, F_mul, F_mu, F_uu, F_vv, F_psd, F_fi, F_tt, F_ss,
+     $                       F_wt1m,F_mulm,F_mum,F_uum,F_vvm,F_psdm,F_fim,F_ttm,F_ssm,
+     $                       DIST_DIM )
+*
+      implicit none
+*
+      integer DIST_DIM
+      real  F_wt1(DIST_SHAPE,*),F_ss (DIST_SHAPE  ),F_uu (DIST_SHAPE,*),
+     $      F_vv (DIST_SHAPE,*),F_psd(DIST_SHAPE,*),F_fi (DIST_SHAPE,*),
+     $      F_tt (DIST_SHAPE,*),F_mul(DIST_SHAPE,*),F_mu (DIST_SHAPE,*)
+*
+      real  F_wt1m(DIST_SHAPE,*),F_ssm (DIST_SHAPE  ),F_uum (DIST_SHAPE,*),
+     $      F_vvm (DIST_SHAPE,*),F_psdm(DIST_SHAPE,*),F_fim (DIST_SHAPE,*),
+     $      F_ttm (DIST_SHAPE,*),F_mulm(DIST_SHAPE,*),F_mum (DIST_SHAPE,*)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+* v3_30 - Tanguay M.        - Change parameters of initw2 
+*                           - use of geomg_invhsy_8, moved j0,jn,ng before
+*                             parallel region as in initw2
+*
+*object
+*     see id section
+*     -------------------------------------------------
+*     REMARK: INPUT TRAJ: ssm, uum, vvm, psdm, fim, ttm 
+*     -------------------------------------------------
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_wt1       O          vertical velocity ( DZ/Dt )
+*  F_uu        I          x component of hor. velocity 
+*  F_vv        I          y component of hor. velocity
+*  F_psd       I          vertical velocity ( pi star dot )
+*  F_fi        I          geopotential
+*  F_tt        I          virtual temperature
+*  F_ss        I          ln (pi / z )
+*                               s   s
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "intuv.cdk"
+#include "inuvl.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+*
+*modules
+      integer i, j, k, j0, jn, in1, in2, jn1, jn2, ng
+      real   wk1 (DIST_SHAPE,G_nk), wk2 (DIST_SHAPE,G_nk),
+     $       wk3 (DIST_SHAPE,G_nk), wk4 (DIST_SHAPE,G_nk)
+      real   wk1m(DIST_SHAPE,G_nk), wk2m(DIST_SHAPE,G_nk),
+     $       wk3m(DIST_SHAPE,G_nk), wk4m(DIST_SHAPE,G_nk)
+*     __________________________________________________________________
+*
+*     TRAJECTORY
+*     ----------
+      call rpn_comm_xch_halo ( F_fim, LDIST_DIM, l_ni, l_nj, G_nk,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+*     TLM
+*     ---
+      call rpn_comm_xch_halo ( F_fi, LDIST_DIM, l_ni, l_nj, G_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+      in1= l_ni
+      in2= l_niu
+      jn1= l_nj
+      jn2= l_njv
+      j0 = 1
+      jn = l_njv
+      if (l_south) j0 = 3
+      if (l_north) jn = l_njv - 1
+*
+****************************************************
+* TERM1: HORIZONTAL ADVECTION OF GEOGRAPHIC HEIGHT *
+****************************************************
+*
+*     Gradient of geopotential 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~
+*
+!$omp parallel
+!$omp do
+      do k = 1, G_nk 
+*
+*        TRAJECTORY
+*        ----------
+         F_mulm(:,:,k) = 0.
+         F_mum (:,:,k) = 0.
+         wk1m  (:,:,k) = 0.
+         wk2m  (:,:,k) = 0.
+         wk3m  (:,:,k) = 0.
+         wk4m  (:,:,k) = 0.
+*
+*        TLM  
+*        ---
+         F_mul(:,:,k) = 0.
+         F_mu (:,:,k) = 0.
+         wk1  (:,:,k) = 0.
+         wk2  (:,:,k) = 0.
+         wk3  (:,:,k) = 0.
+         wk4  (:,:,k) = 0.
+*
+         do j = 1, jn1
+         do i = 1, in2
+*
+*        TRAJECTORY
+*        ----------
+         wk1m(i,j,k) = ( F_fim(i+1,j,k) - F_fim(i,j,k) ) / Geomg_hx_8(i)
+     $                 * F_uum(i,j,k) / Dcst_grav_8
+*
+*        TLM
+*        ---
+         wk1(i,j,k) = ( F_fim(i+1,j,k) - F_fim(i,j,k) ) / Geomg_hx_8(i)
+     $                 * F_uu (i,j,k) / Dcst_grav_8 +
+     $                 ( F_fi (i+1,j,k) - F_fi (i,j,k) ) / Geomg_hx_8(i)
+     $                 * F_uum(i,j,k) / Dcst_grav_8
+*
+         end do
+         end do
+         do j = 1, jn2
+         do i = 1, in1
+*
+*        TRAJECTORY
+*        ----------
+         wk2m(i,j,k) = ( F_fim(i,j+1,k) - F_fim(i,j,k) ) *
+     $                   Geomg_cyv2_8(j) * Geomg_invhsy_8(j)
+     $                 * F_vvm(i,j,k) / Dcst_grav_8
+*
+*        TLM
+*        ---
+         wk2 (i,j,k) = ( F_fim(i,j+1,k) - F_fim(i,j,k) ) *
+     $                   Geomg_cyv2_8(j) * Geomg_invhsy_8(j)
+     $                 * F_vv (i,j,k) / Dcst_grav_8         +
+     $                 ( F_fi (i,j+1,k) - F_fi (i,j,k) ) *
+     $                   Geomg_cyv2_8(j) * Geomg_invhsy_8(j)
+     $                 * F_vvm(i,j,k) / Dcst_grav_8
+*
+         end do
+         end do
+      end do
+!$omp enddo
+*
+*     Interpolate from staggered grids to basic grid
+*
+!$omp single
+*     TRAJECTORY
+*     ----------
+      call rpn_comm_xch_halo ( wk1m, LDIST_DIM, l_niu,l_nj,G_nk,
+     $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( wk2m, LDIST_DIM, l_ni,l_njv,G_nk,
+     $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+*     TLM
+*     ---
+      call rpn_comm_xch_halo ( wk1, LDIST_DIM, l_niu,l_nj,G_nk,
+     $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( wk2, LDIST_DIM, l_ni,l_njv,G_nk,
+     $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
+*
+!$omp do
+      do k = 1, G_nk
+         do j = 1, jn1
+         do i = 1, in2
+*
+*           TRAJECTORY
+*           ----------
+            wk3m(i,j,k) = inuvl_wxux3_8(i,1) * wk1m(i-2,j,k)
+     $                  + inuvl_wxux3_8(i,2) * wk1m(i-1,j,k)
+     $                  + inuvl_wxux3_8(i,3) * wk1m(i  ,j,k)
+     $                  + inuvl_wxux3_8(i,4) * wk1m(i+1,j,k)
+*
+*           TLM
+*           ---
+            wk3(i,j,k) =  inuvl_wxux3_8(i,1) * wk1(i-2,j,k)
+     $                  + inuvl_wxux3_8(i,2) * wk1(i-1,j,k)
+     $                  + inuvl_wxux3_8(i,3) * wk1(i  ,j,k)
+     $                  + inuvl_wxux3_8(i,4) * wk1(i+1,j,k)
+         end do
+         end do
+      end do
+!$omp enddo
+*
+!$omp do
+      do k=1,G_nk
+         do j = j0, jn
+         do i =  1, in1
+*
+*           TRAJECTORY
+*           ----------
+            wk1m(i,j,k) = inuvl_wyvy3_8(j,1) * wk2m(i,j-2,k)
+     %                  + inuvl_wyvy3_8(j,2) * wk2m(i,j-1,k)
+     %                  + inuvl_wyvy3_8(j,3) * wk2m(i,j  ,k)
+     %                  + inuvl_wyvy3_8(j,4) * wk2m(i,j+1,k)         
+*           TLM
+*           ---
+            wk1(i,j,k) =  inuvl_wyvy3_8(j,1) * wk2(i,j-2,k)
+     $                  + inuvl_wyvy3_8(j,2) * wk2(i,j-1,k)
+     $                  + inuvl_wyvy3_8(j,3) * wk2(i,j  ,k)
+     $                  + inuvl_wyvy3_8(j,4) * wk2(i,j+1,k)         
+         end do
+         end do
+         if (l_south) then
+            do i = 1, in1
+*
+*              TRAJECTORY
+*              ----------
+               wk1m(i,j0-2,k)=  inuvl_wyvy3_8(j0-2,3) * wk2m(i,j0-2,k)
+     %                        + inuvl_wyvy3_8(j0-2,4) * wk2m(i,j0-1,k)
+               wk1m(i,j0-1,k)=  inuvl_wyvy3_8(j0-1,2) * wk2m(i,j0-2,k)
+     %                        + inuvl_wyvy3_8(j0-1,3) * wk2m(i,j0-1,k)
+     %                        + inuvl_wyvy3_8(j0-1,4) * wk2m(i,j0,k  )
+*
+*              TLM
+*              ---
+               wk1(i,j0-2,k) =  inuvl_wyvy3_8(j0-2,3) * wk2(i,j0-2,k)
+     $                        + inuvl_wyvy3_8(j0-2,4) * wk2(i,j0-1,k)
+               wk1(i,j0-1,k) =  inuvl_wyvy3_8(j0-1,2) * wk2(i,j0-2,k)
+     $                        + inuvl_wyvy3_8(j0-1,3) * wk2(i,j0-1,k)
+     $                        + inuvl_wyvy3_8(j0-1,4) * wk2(i,j0  ,k)
+            end do
+         endif
+         if (l_north) then
+            do i = 1, in1
+*
+*              TRAJECTORY
+*              ----------
+               wk1m(i,jn+2,k)=  inuvl_wyvy3_8(jn+2,1) * wk2m(i,jn  ,k)
+     %                        + inuvl_wyvy3_8(jn+2,2) * wk2m(i,jn+1,k)
+               wk1m(i,jn+1,k)=  inuvl_wyvy3_8(jn+1,1) * wk2m(i,jn-1,k)
+     %                        + inuvl_wyvy3_8(jn+1,2) * wk2m(i,jn  ,k)
+     %                        + inuvl_wyvy3_8(jn+1,3) * wk2m(i,jn+1,k)
+*
+*              TLM
+*              ---
+               wk1(i,jn+2,k) =  inuvl_wyvy3_8(jn+2,1) * wk2(i,jn  ,k)
+     $                        + inuvl_wyvy3_8(jn+2,2) * wk2(i,jn+1,k)
+               wk1(i,jn+1,k) =  inuvl_wyvy3_8(jn+1,1) * wk2(i,jn-1,k)
+     $                        + inuvl_wyvy3_8(jn+1,2) * wk2(i,jn  ,k)
+     $                        + inuvl_wyvy3_8(jn+1,3) * wk2(i,jn+1,k)
+            end do
+         endif
+         do j = 1, jn1
+         do i = 1, in1
+*
+*           TRAJECTORY
+*           ----------
+            F_wt1m(i,j,k) = ( wk3m(i,j,k) + wk1m(i,j,k) ) / Geomg_cy2_8(j)
+              wk1m(i,j,k) = 1 + Geomg_dpib(k) * (exp(F_ssm(i,j)) - 1.0)
+*
+*           TLM
+*           ---
+            F_wt1(i,j,k) = ( wk3(i,j,k) + wk1(i,j,k) ) / Geomg_cy2_8(j)
+              wk1(i,j,k) = Geomg_dpib(k) * (exp(F_ssm(i,j))*F_ss(i,j))
+            end do
+            end do
+      end do
+!$omp enddo
+*
+*********
+* TERM2 *
+*********
+*
+*     Prepare key factors of TERM2 
+
+!$omp single
+*     TRAJECTORY
+*     ----------
+      call rpn_comm_xch_halo ( wk1m,LDIST_DIM,l_ni,l_nj,G_nk,
+     $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+*     TLM
+*     ---
+      call rpn_comm_xch_halo ( wk1, LDIST_DIM,l_ni,l_nj,G_nk,
+     $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
+*
+!$omp do
+      do k=1,G_nk
+         do j = 1, jn1
+         do i = 1, in1
+*
+*           TRAJECTORY
+*           ----------
+            wk3m(i,j,k) = ((1.-intuv_c0xxu_8(i))*wk1m(i  ,j,k)
+     %           +             intuv_c0xxu_8(i) *wk1m(i+1,j,k))*F_uum(i,j,k)
+
+*
+*           TLM
+*           ---
+            wk3 (i,j,k) = ((1.-intuv_c0xxu_8(i))*wk1m(i  ,j,k)
+     %           +             intuv_c0xxu_8(i) *wk1m(i+1,j,k))*F_uu (i,j,k)
+     %           +        ((1.-intuv_c0xxu_8(i))*wk1 (i  ,j,k)
+     %           +             intuv_c0xxu_8(i) *wk1 (i+1,j,k))*F_uum(i,j,k)
+*
+         end do
+         end do
+         do j = 1, jn2
+         do i = 1, in1
+*
+*           TRAJECTORY
+*           ----------
+            wk4m(i,j,k) = ((1.-intuv_c0yyv_8(j))*wk1m(i,j  ,k)
+     %           +             intuv_c0yyv_8(j) *wk1m(i,j+1,k))*F_vvm(i,j,k)
+*
+*           TLM
+*           ---
+            wk4 (i,j,k) = ((1.-intuv_c0yyv_8(j))*wk1m(i,j  ,k)
+     %           +             intuv_c0yyv_8(j) *wk1m(i,j+1,k))*F_vv (i,j,k)
+     %           +        ((1.-intuv_c0yyv_8(j))*wk1 (i,j  ,k)
+     %           +             intuv_c0yyv_8(j) *wk1 (i,j+1,k))*F_vvm(i,j,k)
+*
+         end do
+         end do
+      end do
+!$omp enddo
+*
+!$omp single
+*     TRAJECTORY
+*     ----------
+      call rpn_comm_xch_halo ( wk3m, LDIST_DIM, l_niu,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( wk4m, LDIST_DIM, l_ni,l_njv,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+*     TLM 
+*     ---
+      call rpn_comm_xch_halo ( wk3, LDIST_DIM, l_niu,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( wk4, LDIST_DIM, l_ni,l_njv,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
+*
+!$omp do
+      do k=1,G_nk
+*
+*     TRAJECTORY
+*     ----------
+      call caldiv_2 ( wk2m(minx,miny,k), wk3m(minx,miny,k), 
+     %                wk4m(minx,miny,k), LDIST_DIM, 1 )
+*
+*     TLM 
+*     ---
+      call caldiv_2 ( wk2(minx,miny,k), wk3(minx,miny,k), 
+     %                wk4(minx,miny,k), LDIST_DIM, 1 )
+*
+      enddo
+!$omp enddo
+!$omp end parallel
+*
+*     Vertical integration over pi*
+*
+*     TRAJECTORY
+*     ----------
+      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      call hatoprg (wk4m,wk2m,1.0,Geomg_hz_8,ng,G_nk)
+*
+*     TLM 
+*     ---
+      call hatoprg (wk4,wk2,1.0,Geomg_hz_8,ng,G_nk)
+*
+!$omp parallel
+!$omp do
+      do k = 1, G_nk
+      do j = 1, jn1
+      do i = 1, in1
+*
+*        TRAJECTORY
+*        ----------
+         F_wt1m(i,j,k) = F_wt1m(i,j,k) +
+     $        Dcst_rgasd_8 * F_ttm(i,j,k) / Dcst_grav_8 /
+     $        ( Geomg_pia(k) + Geomg_pib(k)*exp(F_ssm(i,j)) ) *
+     $        ( wk4m(i,j,1)  * Geomg_pib(k) / Cstv_pisrf_8 -
+     $        F_psdm(i,j,k)  * wk1m(i,j,k) )
+*
+*        TLM 
+*        ---
+         F_wt1(i,j,k) = F_wt1(i,j,k)                                        +
+*
+     $        Dcst_rgasd_8 * F_ttm(i,j,k) / Dcst_grav_8 /
+     $        ( Geomg_pia(k) + Geomg_pib(k)*exp(F_ssm(i,j)) )    *
+     $        ( wk4 (i,j,1)  * Geomg_pib(k) / Cstv_pisrf_8 -
+     $        F_psdm(i,j,k)  * wk1 (i,j,k) + F_psd (i,j,k) * wk1m (i,j,k) ) +
+*
+     $        Dcst_rgasd_8 * F_tt (i,j,k) / Dcst_grav_8 /
+     $        ( Geomg_pia(k) + Geomg_pib(k)*exp(F_ssm(i,j)) )    *
+     $        ( wk4m(i,j,1)  * Geomg_pib(k) / Cstv_pisrf_8 -
+     $        F_psdm(i,j,k)  * wk1m(i,j,k) )                                - 
+*
+     $      ( Dcst_rgasd_8 * F_ttm(i,j,k) / Dcst_grav_8 /
+     $        ( Geomg_pia(k) + Geomg_pib(k)*exp(F_ssm(i,j)) )**2 *
+     $        (                Geomg_pib(k)*exp(F_ssm(i,j))*F_ss(i,j)) 
+     $      )                                                    *
+     $        ( wk4m(i,j,1)  * Geomg_pib(k) / Cstv_pisrf_8 -
+     $        F_psdm(i,j,k)  * wk1m(i,j,k) )                                 
+*
+      end do
+      end do
+      end do
+!$omp enddo
+* 
+!$omp end parallel
+*   __________________________________________________________________
+*
+      return 
+      end

@@ -3,7 +3,7 @@
 #include "model_macros_f.h"
 *
       subroutine getindx ( F_vn_S, F_bus_S, F_deb, F_nm, F_init )
-#include "impnone.cdk"
+      implicit none
 *
       character*(*) F_vn_S
       character*1 F_bus_S
@@ -14,6 +14,7 @@
 *
 *revision
 * v2_31 - Desgagne M.     - initial version (from MC2 v4.9.1)
+* v3_30 - Desgagne M.     - new physics interface
 *
 *object
 *     Obtain starting index "F_deb", length "F_nm" and init requirement
@@ -30,7 +31,7 @@
 *----------------------------------------------------------------
 *
 *implicites
-#include "p_bus.cdk"
+#include "itf_phy_buses.cdk"
 *
 **
       integer i,init

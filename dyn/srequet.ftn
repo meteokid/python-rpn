@@ -5,7 +5,7 @@
 *
       integer function srequet()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     J. Caveen - rpn - decembre 1994
@@ -13,6 +13,8 @@
 *revision
 * v2_00 - Lee V.            - initial MPI version (from srequet2 v1_03)
 * v2_31 - Lee V.            - includes output list for chemistry tracers
+* v3_30 - A. Kallaur        - reinclude call to rpn_fortran_callback for
+*                             chemical flds output.
 *
 *object
 *    This function uses the ARMNLIB RPN functions
@@ -58,13 +60,13 @@
 *
 *implicits
 #include "lun.cdk"
-#include "dimout.cdk"
+#include "out3.cdk"
 #include "grid.cdk"
 #include "timestep.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
-#include "out3.cdk"
+#include "outc.cdk"
 *modules
       integer process_f_callback,longueur
       external process_f_callback,longueur
@@ -80,17 +82,19 @@
       Outd_sets = 0
       Outd_vmm_L = .false.
       Outp_sets = 0
+      Outc_sets = 0
       Out3_filtpass_max = 0
       Out3_xnbits_max = 0
       p1a =  10
       p1b = -10
-      call rpn_fortran_callback('filtre',set_filt ,' ',p1a,p1b)
-      call rpn_fortran_callback('xnbit',set_xnbit  ,' ',p1a,p1b)
-      call rpn_fortran_callback('levels',set_level,' ',p1a,p1b)
-      call rpn_fortran_callback('grid'  ,set_grid ,' ',p1a,p1b)
-      call rpn_fortran_callback('steps' ,set_step ,' ',p1a,p1b)
-      call rpn_fortran_callback('sortie',set_var  ,' ',p1a,p1b)
+      call rpn_fortran_callback('filtre'  ,set_filt ,' ',p1a,p1b)
+      call rpn_fortran_callback('xnbit'   ,set_xnbit,' ',p1a,p1b)
+      call rpn_fortran_callback('levels'  ,set_level,' ',p1a,p1b)
+      call rpn_fortran_callback('grid'    ,set_grid ,' ',p1a,p1b)
+      call rpn_fortran_callback('steps'   ,set_step ,' ',p1a,p1b)
+      call rpn_fortran_callback('sortie'  ,set_var  ,' ',p1a,p1b)
       call rpn_fortran_callback('sortie_p',set_var  ,' ',p1a,p1b)
+      call rpn_fortran_callback('sortie_c',set_var  ,' ',p1a,p1b)
       istat= process_f_callback(Lun_sortie_s(1:longueur(Lun_sortie_s)))
       if (Lun_out.gt.0)
      $     write(Lun_out,*)'SREQUET:Number of warnings =',istat

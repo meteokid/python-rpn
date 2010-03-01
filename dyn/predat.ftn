@@ -22,6 +22,7 @@
 * v3_21 - Desgagne M.       - Revision OpenMP
 * v3_22 - Belanger/Lee      - Introduce vtap 
 * v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
+* v3_30 - Lee V.            - remove call to rpn_comm_xch
 *
 *object
 *	Performs preprocessing of the data: part1. We compute:
@@ -58,14 +59,8 @@
 **
 *     __________________________________________________________________
 *
+      if (Lun_debug_L) write (Lun_out,1000)
       if ( V4dg_conf.eq.0 ) then
-*
-      if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
-          call var_topo( )
-          if ( Schm_phyms_L ) call phycom ('varmtn' ,1 ,1,'set')
-      else
-          if ( Schm_phyms_L ) call phycom ('varmtn' ,0 ,1,'set')
-      endif
 *
 !$omp parallel private (pr1,pr2)
 !$omp do
@@ -127,18 +122,21 @@
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
 *
-      call rpn_comm_xch_halo( Ind_u, LDIST_DIM, l_niu, l_nj , l_nk,
-     $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      call rpn_comm_xch_halo( Ind_v, LDIST_DIM, l_ni , l_njv, l_nk,
-     $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-*
       call uv2tdpsd ( Ind_td,Ind_psd,Ind_u,Ind_v,Ind_s,LDIST_DIM,l_nk )
 *
+c     if (Acid_test_L) then 
+c     call glbstat (Ind_psd,'Ipsd',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
+c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
+c     call glbstat (Ind_td,'I_td',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in,
+c    $                                         1+acid_j0,G_nj-acid_jn,1,G_nk)
+
       if (Hzd_t1_0_L) call hzd_hoffld (Ind_psd, LDIST_DIM, G_nk, 3)
 *
       if ( .not. Schm_hydro_L ) then
          if ( Schm_theoc_L ) then
             Ind_w = 0.
+            Ind_mul = 0. 
+            Ind_mu  = 0. 
          else
          call initw2 ( Ind_w, Ind_mul, Ind_mu, Ind_u, Ind_v, Ind_psd, 
      $                 Ind_fi, Ind_t, Ind_s, LDIST_DIM )
@@ -173,4 +171,5 @@
 *
 *     __________________________________________________________________
       return
+ 1000 format(3X,'PREDAT:      (S/R PREDAT)')
       end

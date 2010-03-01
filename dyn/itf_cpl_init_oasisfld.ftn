@@ -1,0 +1,140 @@
+***S/R itf_cpl_init_oasisfld
+C
+#include "model_macros_f.h"
+C
+      LOGICAL FUNCTION itf_cpl_init_oasisfld (id_ni, id_nj)
+*
+      implicit none
+*
+      INTEGER      :: id_ni, id_nj
+*
+*author:
+C 
+C   Sophie Valcke -RPN/CERFACS - March 2005
+C
+*revision
+* v3_30 - Faucher & Chamberland   - final adjustment-debugging
+*
+*object
+C   Coupling field initialization
+C
+*implicit
+#include "ptopo.cdk"
+#include "itf_cpl_cplg.cdk"   
+#include "lctl.cdk"
+#include "cstv.cdk"
+C
+C Local variables
+C 
+      INTEGER                     :: il_error,il_error2, il_partid, il_ou, il_in
+      INTEGER                     :: ip_dimp, il_frcpl
+      PARAMETER (ip_dimp = 5)
+      INTEGER, DIMENSION(ip_dimp) :: il_paral
+      INTEGER, DIMENSION(2)       :: il_var_nodims
+      INTEGER, DIMENSION(4)       :: il_var_shape
+      CHARACTER(len=8)            :: cl_sfc
+      CHARACTER(len=4)            :: cl_pref
+C
+C===================================================================
+C
+      itf_cpl_init_oasisfld=.true.
+      IF (C_cploasis_L) THEN
+          if (C_timeout > 0) CALL cpl_oasis_set_timeout(C_timeout)
+
+C
+C 1- Partition declaration (CLIM_Box)
+C-----------------------------------------------------------------
+C
+          il_paral (1) = 2
+          il_paral (2) = 0
+          il_paral (3) = id_ni
+          il_paral (4) = id_nj
+          il_paral (5) = id_ni
+          il_error2 = 0
+C 
+          CALL cpl_oasis_partition (il_partid, il_paral, ip_dimp, il_error)
+          il_error2 = min(il_error,il_error2)
+
+C
+C 2- Field declaration
+C-----------------------------------------------------------------
+C
+C         Rank of coupling fields
+          il_var_nodims(1) = 2
+C         Number of bundles in coupling field (always 1)
+          il_var_nodims(2) = 1      
+C         Min and max index for the field 1st and 2nd local dim
+          il_var_shape(1)  = 1      
+          il_var_shape(2)  = id_ni  
+          il_var_shape(3)  = 1      
+          il_var_shape(4)  = id_nj  
+C
+C         Define first 4 characters of field symbolic names
+C
+          IF (lg_atmos) cl_pref = 'MECA'
+          IF (lg_land .and. .not. lg_atmos) cl_pref = 'MECL'
+          IF (lg_ocean .and. .not. lg_atmos .and. .not. lg_land) 
+     $        cl_pref = 'MECW'
+C
+C         Input fields declaration (cpl_oasis_get)
+C
+          CALL hpalloc (p_iga_varidin, ig_sfc_in_dim, il_error, 1)
+          il_error2 = min(il_error,il_error2)
+          DO il_in = 1, ig_sfc_in_dim
+            cl_sfc = TRIM(cl_pref)//TRIM(sfc_in_S(il_in))  
+            CALL cpl_oasis_def_var(iga_varidin(il_in), cl_sfc,
+     $          il_partid, il_var_nodims, 1, il_var_shape, 
+     $          4, il_error)
+            il_error2 = min(il_error,il_error2)
+          END DO
+C
+C         Output fields declaration (cpl_oasis_put)
+C
+          CALL hpalloc (p_iga_varidou, ig_sfc_out_dim, il_error, 1)
+          il_error2 = min(il_error,il_error2)
+          DO il_ou = 1, ig_sfc_out_dim
+            cl_sfc = TRIM(cl_pref)//TRIM(sfc_out_S(il_ou))
+            CALL cpl_oasis_def_var(iga_varidou(il_ou), cl_sfc, 
+     $          il_partid, il_var_nodims, 0, il_var_shape, 4, il_error)
+            il_error2 = min(il_error,il_error2)
+          END DO
+C
+C 3- PSMILe end of declaration phase 
+C-----------------------------------------------------------------
+C
+          CALL cpl_oasis_enddef (il_error)  
+          il_error2 = min(il_error,il_error2)
+C
+C 4- Definition of initial oasis time 
+C-----------------------------------------------------------------
+C
+C          ig_oatime = 0 !TODO: Check this... 
+          ig_oatime = Lctl_step*int(Cstv_dt_8)
+C         Get coupling frequency of first output or input field (we suppose
+C         that all fields are exchanged at that frequency)
+          IF (iga_varidou(1) .gt. 0) then
+              CALL cpl_oasis_get_freq(iga_varidou(1), il_frcpl, il_error)
+              il_error2 = min(il_error,il_error2)
+          ELSE IF (iga_varidin(1) .gt. 0) THEN
+              CALL cpl_oasis_get_freq (iga_varidin(1), il_frcpl, il_error)
+              il_error2 = min(il_error,il_error2)
+          ELSE
+             PRINT *, 'No coupling fields defined'
+             il_error2=-1
+          ENDIF
+C         
+          if (il_error2<0) then
+             PRINT *, 'ERROR in itf_cpl_init_oasisfld'
+             itf_cpl_init_oasisfld=.false.
+          endif
+
+          ig_oatime = ig_oatime - il_frcpl
+C
+      ENDIF
+*
+*     __________________________________________________________________
+*
+      RETURN
+      END FUNCTION itf_cpl_init_oasisfld
+
+ 

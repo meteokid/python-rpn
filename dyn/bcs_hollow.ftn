@@ -1,0 +1,49 @@
+***s/r bcs_hollow - to define the exact points to be extracted from the input
+*                   data grid that would be needed for the cascade grid
+#include "model_macros_f.h"
+*     
+      subroutine bcs_hollow (gid,gif,gjd,gjf,gjdi,hbsn,hbwe,
+     $             is,nis,js,njs,jn,iw,niw,ie,jw,njw)
+      implicit none
+*     
+      logical prout
+      integer gid,gif,gjd,gjf,gjdi,hbsn,hbwe
+      integer is,nis,js,njs,jn,iw,niw,ie,jw,njw
+*
+*author
+*        Vivian Lee - Dec 2006 (from MC2 ac_posi)
+*revision
+* v3_30 - Lee V.       - initial version for GEMDM
+*
+*object
+*    This routine will adjust the points initially found by
+*    ac_posi to accomodate neighboring interpolation points,
+*    the number of points needed for blending and the pilot area
+*
+**
+*
+*---------------------------------------------------------------------
+*
+      prout = .false.
+      if (prout) write(6,1006) gid,gif,gjd,gjf,gjdi,hbsn,hbwe
+      is  = gid
+      nis = gif-gid+1
+      js  = gjd
+      njs = hbsn+2
+      jn  = gjf-njs+1
+*
+      iw  = gid
+      niw = hbwe+2
+      ie  = gif-niw+1
+*
+      jw  = gjdi-2
+      njw = jn-jw +6
+
+      if (prout) write(6,1007) is,nis,js,njs,iw,ie,niw,jw,jn,njw
+*
+ 1006 format (' Cascade grid: gid,gif,gjd,gjf,gjdi,hbsn,hbwe'//4x,7I6)
+ 1007 format (' Cascade grid: is,nis,js,njs,iw,ie,niw,jw,jn,njw'//4x,10I6)
+*--------------------------------------------------------------------
+      return
+      end
+

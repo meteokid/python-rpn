@@ -1,7 +1,7 @@
 ***s/r
 *
       subroutine geophy
-#include "impnone.cdk"
+      implicit none
 *
 *author   M.Desgagne June 2001
 *
@@ -12,11 +12,16 @@
 * v3_21 - Y. Delage -add fields for surface scheme CLASS
 * v3_21 - A. Plante - give to I7(1) and I9(1) TS instead of I0(1) as a
 *                     default
+* v3_30 - M. Desgagne- read I1 field and write in geophy.bin, removed
+*                      the original set value of 0.04
+* v3_30 - C. Charette- use ip1_all
 *
       integer fnom,fstouv,fstinf,fstinl,fstprm,fstluk,fstlir,
-     $        fstecr,fstfrm,fclos,fstopl,fstsel,fstlis,longueur
+     $        fstecr,fstfrm,fclos,fstopl,fstsel,fstlis,longueur,
+     $        ip1_all
       external fnom,fstouv,fstinf,fstinl,fstprm,fstluk,fstlir,
-     $         fstecr,fstfrm,fclos,fstopl,fstsel,fstlis,longueur
+     $         fstecr,fstfrm,fclos,fstopl,fstsel,fstlis,longueur,
+     $        ip1_all
 *
       character*1  typ_S, grd_S
       character*2  var_S, nomvar_S(1000), nvar
@@ -33,6 +38,7 @@
      $        key_tpd,key_zpd,key_tbs,key_is0,key_wvg,key_ivg
       integer, parameter :: nmax=4000
       real, dimension (:), allocatable :: w1
+      real, dimension (:,:,:), allocatable :: i1
       real C2K,TCDK,TI7D
       parameter (TCDK=273.15, TI7D=271.2)
       integer nlis,lislon,header
@@ -46,6 +52,7 @@
       call convip ( p1_1, 1., 3, 1, lab_S, .false. )
       call convip ( p1_2, 2., 3, 1, lab_S, .false. )
       call convip ( p1_3, 3., 3, 1, lab_S, .false. )
+      write(6,*) 'GEOPHY: Version ip1_all'
 *
 * SPECIAL NOTES:
 *              err = fstopl ('IMAGE',.true.,.false.)
@@ -80,7 +87,9 @@
 *
 * TSOIL(1) - tsoil(1), tair_1.5m(0) [K]
 *
-         key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+         key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1,' '
+     &        ,'I0')
+         write(6,*)'geophy:ip1_all(1.0,3)de I0:key_ts1= ',key_ts1
          if (key_ts1.lt.0) then
             ip3_ts  = -1
             key_tsa = fstinf(iun2,ni,nj,nk,-1,' ',0,-1,ip3_ts,' ','TS')
@@ -88,6 +97,7 @@
                print*, 'TS(1) NOT AVAILABLE --ABORT--'
                goto 9876
             else
+
                write (6,210) 'TS',ip3_ts,'I0',p1_1
                err = fstopl ('IMAGE',.false.,.false.)
                err= fstprm (key_tsa, dte, det, ipas, ni, nj, nk, bit, dty,
@@ -109,7 +119,9 @@
 * TSOIL(2) - tsoil(2), tp(0) [K]
 *
          key_tp  = fstinf(iun2,ni,nj,nk,-1,' ',0   ,-1,-1,' ','TP')
-         key_ts2 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I0')
+         key_ts2 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(2.0,3),-1,-1,' '
+     &        ,'I0')
+         write(6,*)'geophy:ip1_all(2.0,3)de I0:key_ts2= ',key_ts2
 *
          if (key_ts2.lt.0) then
             if (key_tp.lt.0) then
@@ -126,6 +138,7 @@
                do i=1,ni*nj
                     w1(i)=w1(i)+TCDK
                enddo
+
                err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
      $                    1, p1_2, p2, 0, typ_S, "I0", lab_S, grd_S,
      $                   g1, g2, g3, g4, dty, .true.)
@@ -137,19 +150,20 @@
 *
 * WSOIL(3) - wsoil(3), minimum value [vol. fraction]
 *
-         key_ws3 = fstinf(iun2,ni,nj,nk,-1,' ',p1_3,-1,-1,' ','I1')
+         key_ws3 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(3.0,3),-1,-1,' '
+     &        ,'I1')
+         write(6,*)'geophy:ip1_all(3.0,3)de I1:key_ws3= ',key_ws3
 *
          if (key_ws3.lt.0 ) then
-            key_ws2= fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I1')
-            if (key_ws2.lt.0) print *,'I1 is not created'
+           key_ws2= fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(2.0,3),-1,-1,' '
+     &          ,'I1')
+         write(6,*)'geophy:ip1_all(2.0,3)de I1:key_ws2= ',key_ws2
             if(key_ws2.lt.0) go to 555
             err= fstprm (key_ws2, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3, 
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
             allocate (w1(ni*nj+header))
-            do i=1,ni*nj
-                 w1(i)=0.04
-            enddo
+            err= fstluk (w1, key_ws2, ni, nj, nk)
             err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
      $                    1, p1_3, p2, 0, typ_S, "I1", lab_S, grd_S,
      $                   g1, g2, g3, g4, dty, .true.)
@@ -159,9 +173,10 @@
 * ISOIL(1) - isoil(1), isoil(0) [vol. fraction]
 *
          key_is0 = fstinf(iun2,ni,nj,nk,-1,' ',-1  ,-1,-1,' ','I2')
-         key_is1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I2')
+         key_is1 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1,' '
+     &        ,'I2')
+         write(6,*)'geophy:ip1_all(1.0,3)de I2:key_is1= ',key_is1
 *
-         if (key_is0.lt.0) print *,'I2 is not created'
          if(key_is0.lt.0) go to 555
          if(key_is1.lt.0 .and. key_is0.ge.0) then
             err= fstprm (key_is0, dte, det, ipas, ni, nj, nk, bit, dty,
@@ -179,8 +194,12 @@
 * ISOIL(2) - isoil(2), isoil(1) [vol. fraction]
 * ISOIL(3) - isoil(3), zero     [vol. fraction]
 *
-         key_is1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I2')
-         key_is2 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I2')
+         key_is1 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1,' '
+     &        ,'I2')
+         write(6,*)'geophy:ip1_all(1.0,3)de I2:key_1s1= ',key_is1
+         key_is2 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(2.0,3),-1,-1,' '
+     &        ,'I2')
+         write(6,*)'geophy:ip1_all(2.0,3)de I2:key_is2= ',key_is2
 *
          if(key_is2.lt.0 .and. key_is1.ge.0) then
             err= fstprm (key_is1, dte, det, ipas, ni, nj, nk, bit, dty,
@@ -261,7 +280,9 @@
             if(key_tsa.ge.0) then
               key_ts = key_tsa
             else
-              key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+              key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1
+     &             ,' ','I0')
+         write(6,*)'geophy:ip1_all(1.0,3)de I0:key_ts1= ',key_ts1
               key_ts = key_ts1
             endif
             err= fstprm (key_ts, dte, det, ipas, ni, nj, nk, bit, dty,
@@ -294,7 +315,9 @@
                w1(i) = w1(i) + TCDK
             enddo
           else
-            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1
+     &           ,' ','I0')
+         write(6,*)'geophy:ip1_all(1.0,3)de I0:key_ts1= ',key_ts1
             err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
@@ -312,7 +335,9 @@
          key_tsn = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','TN')
 *
          if(key_tsn.lt.0) then
-            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1
+     &           ,' ','I0')
+         write(6,*)'geophy:ip1_all(1.0,3)de I0:key_ts1= ',key_ts1
             err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
@@ -332,7 +357,9 @@
          key_zpd = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','M9')
 *
          if(key_zpd.lt.0) then
-            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1
+     &          ,' ','I0')
+         write(6,*)'geophy:ip1_all(1.0,3)de I0:key_ts1= ',key_ts1
             err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
@@ -351,7 +378,9 @@
          key_tpd = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','Q4')
 *
          if(key_tpd.lt.0) then
-            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1
+     &           ,' ','I0')
+         write(6,*)'geophy:ip1_all(1.0,3)de I0:key_ts1= ',key_ts1
             err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
@@ -368,7 +397,10 @@
          key_tbs = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','R2')
 *
          if(key_tbs.lt.0) then
-            key_ts2 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I0')
+c            key_ts2 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I0')
+           key_ts2 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(2.0,3),-1,-1
+     &          ,' ','I0')
+         write(6,*)'geophy:ip1_all(2.0,3)de I0:key_ts2= ',key_ts2
             err= fstprm (key_ts2, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
@@ -384,10 +416,15 @@
   555 continue
 *
           key_tsa = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','TS')
+         write(6,*)'geophy:apres fstinf de TS:key_tsa= ',key_tsa
+
 *
 * I7(1) - i7(1), ts(1) [K]
 *
-         key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',   p1_1,-1,-1,' ','I7')
+         write(6,*)'geophy:avant key_i7:ip1_all(1.0,3)= ',ip1_all(1.0,3)
+         key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1
+     &       ,' ','I7')
+         write(6,*)'geophy:ip1_all(1.0,3)de I7:key_i7= ',key_i7
          if (key_i7.lt.0) then
              key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',  0,-1,-1,' ','I7')
              if (key_i7.lt.0) then
@@ -419,7 +456,9 @@
 *
 * I7(2) - i7(2),tp(0) [K]
 *
-         key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',   p1_2,-1,-1,' ','I7')
+         key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(2.0,3),-1,-1,' '
+     &       ,'I7')
+         write(6,*)'geophy:ip1_all(2.0,3)de I7:key_i7= ',key_i7
          if (key_i7.lt.0) then
              if (key_tp.lt.0) then
                  print*, 'NOR I7(2) NOR TP ARE AVAILABLE --ABORT--'
@@ -445,7 +484,9 @@
 *
 * I7(3) - i7(3),(tp(0)-271.2)/2 [K]
 *
-         key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',   p1_3,-1,-1,' ','I7')
+         key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(3.0,3),-1,-1
+     &       ,' ','I7')
+         write(6,*)'geophy:ip1_all(3.0,3)de I7:key_i7= ',key_i7
          if (key_i7.lt.0) then
              if (key_tp.lt.0) then
                  print*, 'NOR I7(3) NOR TP ARE AVAILABLE --ABORT--'
@@ -453,6 +494,7 @@
              else
                  key_i7=key_tp
              endif
+ 
              write(6,211) 'TP',0,'I7',p1_3
              err = fstopl ('IMAGE',.false.,.false.)
              err= fstprm (key_i7, dte, det, ipas, ni, nj, nk, bit, dty,
@@ -471,7 +513,9 @@
 *
 * I9(1) - i9(1),ts(1) [K]
 *
-         key_i9 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I9')
+         key_i9 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(1.0,3),-1,-1
+     &       ,' ','I9')
+         write(6,*)'geophy:ip1_all(1.0,3)de I9:key_i9= ',key_i9
          if (key_i9.lt.0) then
             nvar='I9'
             ip3  = 1
@@ -505,7 +549,9 @@
 *
 * I9(1) - i9(1),tp(0) [K]
 *
-         key_i9 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I9')
+         key_i9 = fstinf(iun2,ni,nj,nk,-1,' ',ip1_all(2.0,3),-1,-1
+     &       ,' ','I9')
+         write(6,*)'geophy:ip1_all(2.0,3)de I9:key_i9= ',key_i9
          if (key_i9.lt.0) then
             nvar='I9'
             ip3  = 2
@@ -604,7 +650,7 @@
       call qqexit(1)
       return
 *
- 210  format (' ***** Putting ',a2,'(',i3,') into ',a2,'(',i5,')')
+ 210  format (' ***** Putting ',a2,'(',i3,') into ',a2,'(',i10,')')
  211  format (' ***** Putting Avg[',a2,'(',i3,') + 271.2] into ',a2,
      $        '(',i5,')')
  8000 format (/' Unable to fnom: ',a/)

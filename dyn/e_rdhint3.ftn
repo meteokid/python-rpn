@@ -6,7 +6,7 @@
      $            f, dgid, ni, nj, nomvar_S, ip1, ip2, ip3, etik_S,
      $            typvar_S, anyip_L, fhint_L, interp_S, un1, stdo )
 *
-#include "impnone.cdk"
+      implicit none
 *
       character* (*) nomvar_S,interp_S,etik_S,typvar_S
       logical anyip_L,fhint_L
@@ -22,6 +22,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 * v3_02 - Dugas B.          - convip for topography
+* v3_30 - McTaggart & Lee   - grid check, adjusted for LAM
 *
 *implicites
 #include "e_grids.cdk"
@@ -41,13 +42,17 @@
 *                                 is required
 **                  
       integer fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint
-      logical e_sgrid
+      logical samegrid
       external fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint,
-     $         e_sgrid
+     $         samegrid
+      integer  ip1_all
+      external ip1_all
 *
-      character*1  typ, grd
-      character*2  var
-      character*8  lab
+      character*1  grd
+      character*2  typ
+      character*4  var
+      character*12  lab,cdum
+      real    zp1
       logical tr_ip_L,must_interpo_L
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
      $        dty, swa, lng, dlf, ubc, ex1, ex2, ex3
@@ -63,8 +68,16 @@
 *--------------------------------------------------------------------
 *
       e_rdhint3 = -1      
-      key = fstinf (un1,nic,njc,nkc,datev,etik_S,ip1,ip2,ip3,typvar_S,
+      if (ip1 .eq. -1 .or. ip1 .eq. 0 ) then
+        key = fstinf (un1,nic,njc,nkc,datev,etik_S,ip1,ip2,ip3,typvar_S,
      $                                                       nomvar_S)
+      else
+        call convip ( ip1, zp1, kind, -1, cdum, .false. )
+        write(6,*)'e_rdhint3: ip1,zp1,kind= ',ip1,zp1,kind
+        key = fstinf (un1,nic,njc,nkc,datev,etik_S,ip1_all(zp1,kind),ip2
+     &     ,ip3,typvar_S,nomvar_S)
+      endif
+
       tr_ip_L = key.ge.0
 *
       if ( (.not.tr_ip_L) .and. (anyip_L) ) then
@@ -84,10 +97,18 @@
      $              P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA, 
      $              LNG, DLF, UBC, EX1, EX2, EX3)
 *
-      if ( grd .ne. 'A' .and. grd .ne. 'B' .and. grd .ne. 'L' .and.
-     %     grd .ne. 'G' .and. grd .ne. 'Z' ) then
-         call e_rdhint_out(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,p2,ip3)
-         goto 999
+      if ( grd .ne. 'A' .and. grd .ne. 'B' .and. grd .ne. 'E' .and.
+     %     grd .ne. 'G' .and. grd .ne. 'L' .and. grd .ne. 'N' .and.
+     %     grd .ne. 'S' .and. grd .ne. 'Y' .and. grd .ne. 'Z') then
+           call e_rdhint_out(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,p2,ip3)
+           goto 999
+        endif
+      if (.not.LAM) then
+        if ( grd .ne. 'A' .and. grd .ne. 'B' .and. grd .ne. 'L' .and.
+     %       grd .ne. 'G' .and. grd .ne. 'Z' ) then
+           call e_rdhint_out(stdo, "WRONG grid for field: ",nomvar_S,ip1,p2,ip3)
+           goto 999
+        endif
       endif
 *
       must_interpo_L = .false.
@@ -116,7 +137,7 @@
                   paylat = loc(yv(1))
                endif
                must_interpo_L = 
-     $              .not. e_sgrid (un1, nic,njc, g1,g2,g3, Hgc_ig1ro,
+     $              .not. samegrid (un1, nic,njc, g1,g2,g3, Hgc_ig1ro,
      $                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
                un_s = un1
                nic_s= nic
@@ -174,12 +195,12 @@
 
       if (ip1.eq.-1) then
           pformat_S = "(/,'(S/R e_rdhint3) "//string_S(1:longueur(string_S))//
-     %            "',A2,' for ip123=',3i5)"
+     %            "',A4,' for ip123=',3i5)"
           write(stdo,fmt=pformat_S) nomvar_S,ip1,ip2,ip3
       else
           call convip ( ip1 , conv_ip1, kind, -1, dumc_S, .false. )
           pformat_S = "(/,'(S/R e_rdhint3) "//string_S(1:longueur(string_S))//
-     %            "',A2,' for ip123=',F12.5,2i5)"
+     %            "',A4,' for ip123=',F12.5,2i5)"
           write(stdo,fmt=pformat_S) nomvar_S,conv_ip1,ip2,ip3
       endif
 

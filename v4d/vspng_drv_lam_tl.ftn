@@ -1,0 +1,308 @@
+***s/r vspng_drv_lam_tl - TLM of vspng_drv_lam 
+*
+#include "model_macros_f.h"
+*
+      subroutine vspng_drv_lam_tl ( F_u   , F_v , F_psd , F_tp  , F_ip  ,
+     %                              F_td  , F_t , F_it  , F_plt , F_q   ,
+     %                              F_pip , F_w , F_qp  , F_mu  , F_mul , F_s , 
+     %                              F_um  , F_vm, F_psdm, F_tpm , F_ipm ,
+     %                              F_tdm , F_tm, F_itm , F_pltm, F_qm  ,
+     %                              F_pipm, F_wm, F_qpm , F_mum , F_mulm, F_sm, 
+     %                              F_xfis, DIST_DIM,Nk)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk
+      real   F_u  (DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
+     %       F_psd(DIST_SHAPE,Nk), F_tp(DIST_SHAPE,Nk),
+     %       F_ip (DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
+     %       F_t  (DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
+     %       F_plt(DIST_SHAPE,Nk), F_q (DIST_SHAPE,Nk),
+     %       F_pip(DIST_SHAPE,Nk), F_w (DIST_SHAPE,Nk),
+     %       F_qp (DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
+     %       F_mul(DIST_SHAPE,Nk), F_s(DIST_SHAPE), F_xfis(DIST_SHAPE)
+*
+      real     F_um(DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk),
+     %       F_psdm(DIST_SHAPE,Nk), F_tpm(DIST_SHAPE,Nk),
+     %        F_ipm(DIST_SHAPE,Nk), F_tdm(DIST_SHAPE,Nk),
+     %         F_tm(DIST_SHAPE,Nk), F_itm(DIST_SHAPE,Nk),
+     %       F_pltm(DIST_SHAPE,Nk), F_qm (DIST_SHAPE,Nk),
+     %       F_pipm(DIST_SHAPE,Nk), F_wm (DIST_SHAPE,Nk),
+     %        F_qpm(DIST_SHAPE,Nk), F_mum(DIST_SHAPE,Nk),
+     %       F_mulm(DIST_SHAPE,Nk), F_sm(DIST_SHAPE)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+*
+*arguments
+* 
+*implicits
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "vspng.cdk"
+*
+      integer i, j, k, nkspng
+*
+      real work(LDIST_SHAPE,Nk),work_m(LDIST_SHAPE,Nk)
+*     __________________________________________________________________
+*
+*     Momentum
+*     ~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_um, LDIST_DIM, l_niu, l_nj )
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_u, LDIST_DIM, l_niu, l_nj )
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_vm, LDIST_DIM, l_ni , l_njv)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_v, LDIST_DIM, l_ni , l_njv)
+*
+*        Vertical motion
+*        ~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_psdm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_psd, LDIST_DIM, l_ni, l_nj)
+*
+*        Total divergence 
+*        ~~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_tdm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_td, LDIST_DIM, l_ni, l_nj)
+*
+*     The temperature: T', T'lin & hence T 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam (  F_tpm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam (  F_tp, LDIST_DIM, l_ni, l_nj)
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_pltm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_plt, LDIST_DIM, l_ni, l_nj)
+*
+         do k=1, Vspng_nk
+         do j=1+pil_s, l_nj-pil_n
+         do i=1+pil_w, l_ni-pil_e
+*
+*           TRAJECTORY
+*           ----------
+            F_tm(i,j,k) = F_tpm(i,j,k) + Cstv_tstr_8
+*
+*           TLM
+*           ---
+            F_t(i,j,k) = F_tp(i,j,k)
+*
+         end do
+         end do
+         end do
+*
+*     Mass related fields
+*     ~~~~~~~~~~~~~~~~~~~
+         if (Vspng_uvwdt_L) then
+            nkspng   = Vspng_nk
+            Vspng_nk = 1
+         endif
+*         
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_ipm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_ip, LDIST_DIM, l_ni, l_nj)
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_itm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_it, LDIST_DIM, l_ni, l_nj)
+*
+         do k = 2, Vspng_nk
+         do j=1+pil_s, l_nj-pil_n
+         do i=1+pil_w, l_ni-pil_e
+*
+*           TRAJECTORY
+*           ----------
+            F_itm(i,j,k) = F_ipm(i,j,k) + Cstvr_fistr_8(k) + F_xfis(i,j)
+*
+*           TLM
+*           ---
+            F_it(i,j,k) = F_ip(i,j,k) 
+*
+         end do
+         end do
+         end do
+*
+* updating phi' at the top 
+*
+         do j=1+pil_s, l_nj-pil_n
+         do i=1+pil_w, l_ni-pil_e
+*
+*           TRAJECTORY
+*           ----------
+            F_ipm(i,j,1) = F_itm(i,j,1) - Cstvr_fistr_8(1) - F_xfis(i,j)
+*
+*           TLM
+*           ---
+            F_ip(i,j,1) = F_it(i,j,1)
+*
+         end do
+         end do
+*
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+            do k = 1, Vspng_nk
+            do j=1, l_nj
+            do i=1, l_ni
+*
+*              TRAJECTORY
+*              ----------
+               work_m(i,j,k) = F_pipm(i,j,k)
+*
+*              TLM
+*              ---
+               work(i,j,k) = F_pip(i,j,k)
+*
+            end do
+            end do
+            end do
+         endif 
+*
+*     The hydrostatic pressure: pi'  
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_pipm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_pip, LDIST_DIM, l_ni, l_nj)
+*
+*****************************
+*  3. Nonyhydrostatic model * 
+*****************************
+*
+         if ( .not. Schm_hydro_L ) then
+*
+*     Vertical wind (physical) 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_wm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_w, LDIST_DIM, l_ni, l_nj)
+*
+         if ( Schm_difqp_L ) then ! q' & related variables
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam (  F_mum, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam (  F_mu, LDIST_DIM, l_ni, l_nj)
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( F_mulm, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( F_mul, LDIST_DIM, l_ni, l_nj)
+*
+*        Indirect diffusion of q' 
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+         do k=1, Vspng_nk 
+         do j=1, l_nj
+         do i=1, l_ni
+*
+*           TLM
+*           ---
+            work(i,j,k) = (                dble(work  (i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) )           +
+     %                    ( Geomg_z_8(k) + dble(work_m(i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) ) * dble(F_qp(i,j,k))
+*
+*           TRAJECTORY
+*           ----------
+            work_m(i,j,k) = ( Geomg_z_8(k) + dble(work_m(i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) )
+*
+         end do
+         end do
+         end do
+*
+*        TRAJECTORY
+*        ----------
+         call vspng_lam ( work_m, LDIST_DIM, l_ni, l_nj)
+*
+*        TLM
+*        ---
+         call vspng_lam ( work, LDIST_DIM, l_ni, l_nj)
+*
+         do k=1, Vspng_nk
+            do j=1+pil_s, l_nj-pil_n
+            do i=1+pil_w, l_ni-pil_e
+*
+*           TRAJECTORY
+*           ----------
+            F_qpm(i,j,k) = log(             dble(work_m(i,j,k))
+     %                       /( Geomg_z_8(k) + dble(F_pipm(i,j,k)) )  )
+*
+*           TLM
+*           ---
+            F_qp(i,j,k) = (dble(work  (i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) -
+     %                     dble(work_m(i,j,k))*(                dble(F_pip (i,j,k))) )
+     %                   /(dble(work_m(i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) )
+*
+         end do
+         end do
+         end do
+*
+         endif
+         endif         
+*
+         if (Vspng_uvwdt_L) Vspng_nk = nkspng
+*
+*     __________________________________________________________________
+*
+      return
+      end

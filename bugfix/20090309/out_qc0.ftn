@@ -1,0 +1,228 @@
+***s/r out_qc0 - perform qc output at timestep 0
+*
+#include "model_macros_f.h"
+*
+      subroutine out_qc0 ()
+*
+*implicits
+*
+      implicit none
+*
+*
+*author 
+*     V. Lee    - rpn - july 2004
+*
+*revision
+* v3_20 - Lee V.            - initial MPI version (from blocqc0 v3_12)
+* v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
+* v3_31 - Lee V.            - modification of Out_etik_S in out_sgrid only
+*
+*object
+*     the output of the QC at timestep 0
+*
+*arguments
+*  NONE
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "schm.cdk"
+#include "pres.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
+#include "out3.cdk"
+#include "out.cdk"
+#include "level.cdk"
+#include "outd.cdk"
+#include "ptopo.cdk"
+#include "tr3d.cdk"
+#include "grd.cdk"
+#include "grid.cdk"
+#include "lctl.cdk"
+#include "vt1.cdk"
+#include "cstv.cdk"
+*
+**
+      integer doout, longueur,
+     $        vmmlod, vmmuld, vmmget, vmmuln
+      external doout, longueur,
+     $         vmmlod, vmmuld, vmmget, vmmuln
+*
+      integer err,nrec,dostep(MAXSET),dostep_max,step,key0,key1,
+     $        i,j,k,trkey1(Tr3d_ntr),qcset(MAXSET),qcset_max
+      character*4 ext_S
+      integer i0,in,j0,jn,ii,jj,kk,levset,n,ip3,pnerr,nk_o
+      integer qcnbit,qcfilt
+      integer,   dimension(:), allocatable :: ind_o
+      real, dimension(:,:,:), allocatable :: w5
+      real, dimension(:), allocatable :: prprlvl
+      real deg2rad,qccoef,qct1
+      pointer (paqc, qct1(LDIST_SHAPE,*))
+      real wlnph(LDIST_SHAPE,G_nk)
+      real px(LDIST_SHAPE,G_nk),qc(LDIST_SHAPE,G_nk)
+      logical periodx_L
+
+**
+*
+*     check if output is required and initialize control tables
+*     ---------------------------------------------------------------
+*
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+      dostep_max = doout(dostep,1)
+      deg2rad    = acos( -1.0)/180.
+
+      if (dostep_max .le. 0) return
+
+*     CHECK IF QC AT TIMESTEP 0 is requested
+
+      ext_S=""
+      qcset_max = 0
+      do jj=1,dostep_max
+      do kk=1, Outd_sets
+         if ( Outd_step(kk).eq.dostep(jj) ) then
+            do ii =1,Outd_var_max(kk)
+               if (Outd_var_S(ii,kk).eq.'QC') then
+                   qcset_max = qcset_max + 1
+                   qcset(qcset_max) = kk
+                   qcnbit = Outd_nbit(ii,kk)
+                   qcfilt = Outd_filtpass(ii,kk)
+                   qccoef = Outd_filtcoef(ii,kk)
+               endif
+            enddo
+         endif
+      enddo
+      enddo
+
+      if ( qcset_max.le.0 ) return
+
+*     PREPARATION for out_qc0
+*    ---------------------------
+
+      key0 = VMM_KEY(pipt1)
+      err = vmmlod (key0,1)
+      err = VMM_GET_VAR(pipt1)
+
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         wlnph (i,j,k) = log ( geomg_z_8(k) + pipt1(i,j,k) )
+      enddo
+      enddo
+      enddo
+
+*     setup of ip3
+
+      ip3 = 0
+      if (Out3_ip3.eq.-1) ip3 = Lctl_step
+      if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
+      
+      qc = 0.
+      paqc = loc(qc)
+      key1 = VMM_KEY (trt1)
+      do k=1,Tr3d_ntr
+         trkey1(k) = key1 + k
+      enddo
+      pnerr = vmmlod(trkey1,Tr3d_ntr)
+      do n=1, Tr3d_ntr
+         if (Tr3d_name_S(n).eq.'QC') then
+             pnerr = vmmget(trkey1(n),paqc,qct1)
+         endif
+      enddo
+
+*     output loop on the number of "sortie" sets
+
+      do 100 n=1, qcset_max
+          kk = qcset(n)
+          periodx_L=.false.
+          if (.not.G_lam .and. 
+     $         (Grid_x1(Outd_grid(kk))-Grid_x0(Outd_grid(kk))+1)
+     $                                    .eq. G_ni ) periodx_L=.true.
+          call out_sgrid(Grid_x0(outd_grid(kk)),Grid_x1(outd_grid(kk)),
+     $                   Grid_y0(outd_grid(kk)),Grid_y1(outd_grid(kk)),
+     $                   periodx_L,
+     $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
+     $                   Grid_stride(outd_grid(kk)),
+     $                   Grid_etikext_s(outd_grid(kk)),' ',
+     $                   Geomn_longs,Geomn_latgs)
+
+          levset = Outd_lev(kk)
+
+          nk_o   = Level_max(levset)
+          allocate (ind_o(nk_o+1))
+
+          call out_slev(Level_typ(levset),Level(1,levset),
+     $                    ind_o,nk_o,G_nk,Level_kind_ip1,'d')
+          call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
+ 
+          if (Level_typ(levset).eq.'M') then
+              if ( Out3_cliph_L ) then
+                   allocate(w5(LDIST_SHAPE,G_nk))
+                   do k= 1, G_nk
+                   do j= 1, l_nj
+                   do i= 1, l_ni
+                      w5(i,j,k) = amax1( qct1(i,j,k), 0. )
+                   enddo
+                   enddo
+                   enddo
+              call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,
+     $                Geomg_hyb, 'QC  ',1.0,0.0,  Out_kind,G_nk, 
+     $                ind_o, nk_o, qcnbit )
+              deallocate(w5)
+              else
+              call ecris_fst2(qct1,l_minx,l_maxx,l_miny,l_maxy,
+     $                Geomg_hyb, 'QC  ',1.0,0.0,  Out_kind,G_nk, 
+     $                ind_o, nk_o, qcnbit )
+              endif
+          else
+              call verder(px, qct1, wlnph, 2.0,2.0,
+     $                      l_minx,l_maxx,l_miny,l_maxy, G_nk,
+     $                      1,l_ni,1,l_nj)
+
+              allocate(w5(LDIST_SHAPE,nk_o))
+              allocate( prprlvl(nk_o) )
+
+              do i=1,nk_o
+                 prprlvl(i) = Level(i,levset) * 100.0
+              enddo
+
+*             Calculate QC (w5=qc_pres,px=vert.der)
+              call prgen( w5, qct1, px, wlnph, prprlvl,nk_o,
+     $                    Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy, G_nk)
+              if ( Out3_cliph_L ) then
+                   do k= 1, nk_o
+                   do j= 1, l_nj
+                   do i= 1, l_ni
+                      w5(i,j,k) = amax1( w5(i,j,k), 0. )
+                   enddo
+                   enddo
+                   enddo
+              endif
+
+              if (qcfilt.gt.0)
+     $            call filter(w5,qcfilt,qccoef,'G', .false.,
+     $                  l_minx,l_maxx,l_miny,l_maxy, nk_o)
+              call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,Level(1,levset),
+     $              'QC  ',1.0,       0.0, Out_kind,nk_o, ind_o, nk_o, qcnbit )
+
+              deallocate(w5,prprlvl)
+
+          endif
+
+          deallocate(ind_o)
+
+          call out_cfile
+
+ 100  continue
+
+      pnerr = vmmuln(key0,1)
+      pnerr = vmmuln(trkey1,Tr3d_ntr)
+
+      return
+      end
+

@@ -32,7 +32,10 @@
 * Ptopo_numproc      | total number of processors used                 |
 * Ptopo_npex         | number of processors along X                    |
 * Ptopo_npey         | number of processors along Y                    |
-* Ptopo_npeOpenMP    | number of processors for micro-tasking          |
+* Ptopo_npeOpenMP    | number of processors requested for OpenMp       |
+* Ptopo_smtphy       | number of threads around PHYSICS                |
+* Ptopo_smtglb       | number of threads for the global run            |
+* Ptopo_bind_L       | TRUE for binding, FALSE for no binding          |
 * Ptopo_nblocx       | number of blocks along X                        |
 * Ptopo_nblocy       | number of blocks along Y                        |
 *                    | 0,1,2 ... (Ptopo_nblocx * Ptopo_nblocy-1)       |
@@ -52,12 +55,26 @@
      $        Ptopo_myproc , Ptopo_myrow, Ptopo_mycol, 
      $        Ptopo_numproc, Ptopo_npex , Ptopo_npey,
      $        Ptopo_npeOpenMP, Ptopo_nblocx, Ptopo_nblocy,Ptopo_mybloc,
-     $        Ptopo_myblocx, Ptopo_myblocy, Ptopo_blocme,Ptopo_numpe_perb
+     $        Ptopo_myblocx, Ptopo_myblocy, Ptopo_blocme,
+     $        Ptopo_numpe_perb, Ptopo_smtphy, Ptopo_smtglb
+      logical Ptopo_bind_L
       
       DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
-      common  / Ptopo /
+*
+      MARK_COMMON_BEG(Ptopo_b)
+      common  / Ptopo_b /
      $        Ptopo_myproc , Ptopo_myrow, Ptopo_mycol, 
      $        Ptopo_numproc, Ptopo_npex , Ptopo_npey,
      $        Ptopo_npeOpenMP, Ptopo_nblocx, Ptopo_nblocy,Ptopo_mybloc,
-     $        Ptopo_myblocx, Ptopo_myblocy, Ptopo_blocme,Ptopo_numpe_perb
+     $        Ptopo_myblocx, Ptopo_myblocy, Ptopo_blocme,
+     $        Ptopo_numpe_perb, Ptopo_smtphy, Ptopo_smtglb
+      MARK_COMMON_END(Ptopo_b)
+*
+      MARK_COMMON_BEG(Ptopo_l)
+      common  / Ptopo_l / Ptopo_bind_L
+      MARK_COMMON_END(Ptopo_l)
+      namelist /ptopo/
+     $     Ptopo_npex, Ptopo_npey, Ptopo_nblocx, Ptopo_nblocy, 
+     $     Ptopo_npeOpenMP, Ptopo_smtphy, Ptopo_smtglb, Ptopo_bind_L
+
 

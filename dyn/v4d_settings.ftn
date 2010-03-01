@@ -1,0 +1,97 @@
+***s/r v4d_settings
+*
+#include "model_macros_f.h"
+*
+      integer function v4d_settings (mode)
+*
+*implicits
+      use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree 
+*
+      implicit none
+      integer mode
+*
+*author
+*     M. Desgagne    - JanSummer  2006
+*
+*revision
+*
+*object
+*  Default configuration and reading namelist
+*
+#include "lun.cdk"
+#include "step.cdk"
+#include "path.cdk"
+#include "tr3d.cdk"
+#include "v4dg.cdk"
+#include "v4dj.cdk"
+#include "v4dm.cdk"
+#include "v4dr.cdk"
+*
+*modules
+      integer  fnom
+      external fnom
+*
+      integer nrec,unf
+
+#include "v4d_nml.cdk"
+*
+*-------------------------------------------------------------------
+*
+      v4d_settings = -1
+*
+      V4dg_conf     = 0
+      V4dg_output_L = .true.
+      V4dg_sensib_L = .false.
+      V4dg_twin_L   = .false.
+      V4dg_4dvar_L  = .false.
+      V4dg_sgvc_L   = .false.
+      V4dj_mask_L   = .false.     
+      V4dg_sgvc_dt0 = 0
+      V4dg_chum_s   = 'LQ'
+*
+      V4dr_redotr_L = .false.
+*
+      V4dg_stepob   = Step_total
+      V4dg_inv      = 1
+      V4dg_incore_L = .true.
+*
+      V4dg_identity_L = .false.
+*
+      V4dg_pruv_L     = .true.
+*
+      V4dz_degree     = 1
+      V4dzge_degree   = 1
+      V4dzga_degree   = 1
+*
+      V4dg_anincr_L = .false.
+*
+      V4dm_itmax    = 2 
+      V4dm_simax    = 2 
+*
+      if (mode .gt. 0) then
+
+      unf = 0
+      if (fnom (unf, trim(Path_nml_S), 'SEQ' , nrec) .ne. 0) goto 6666
+
+      rewind(unf)
+      read (unf, nml=var4d   , end = 6655, err=9140)
+*
+ 6655 call fclos (unf)
+
+      endif
+
+ 6666 v4d_settings = 1
+      return
+*
+ 9140 if (Lun_out.gt.0) then
+         write (Lun_out, 9350)
+         write (Lun_out, 8000)
+      endif
+      return
+*
+ 8000 format (/,'========= ABORT IN S/R v4d_settings.f ============='/)
+ 9350 format (/,' NAMELIST var4d    INVALID IN FILE: model_settings '/)
+*
+*-------------------------------------------------------------------
+*
+      end

@@ -33,7 +33,6 @@
 #include "geomg.cdk"
 #include "grd.cdk"
 #include "pres.cdk" 
-#include "out1.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "ind.cdk"
@@ -46,7 +45,7 @@
       real psmin, psmax, radius, radius2, sm_rad, pert_t, s
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
-      integer l, key0, key(Tr3d_ntr)
+      integer key0, key(Tr3d_ntr)
       real, allocatable, dimension(:  ) :: work
       real tr
       pointer (patr, tr(LDIST_SHAPE,*))

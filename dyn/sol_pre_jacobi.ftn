@@ -1,0 +1,30 @@
+***s/r  sol_pre_jacobi -  call  Jacobi_block additive_SChwarz  
+*
+#include "model_macros_f.h"
+*
+      subroutine  sol_pre_jacobi ( wk22, wk11, niloc, njloc )
+      implicit none
+*
+      integer niloc, njloc
+      real*8  wk11(*), wk22(*)
+*
+*author
+*       Abdessamad Qaddouri - December  2006
+*
+*revision
+* v3_30 - Qaddouri A.       - initial version
+*
+#include "schm.cdk"
+#include "prec.cdk"
+*
+      real*8 fdg(niloc,njloc,Schm_nith)
+*
+*     ---------------------------------------------------------------
+*
+      call pre_jacobi ( wk22,wk11,Prec_xevec_8,fdg,niloc,njloc,
+     $                 Schm_nith,Prec_ai_8,Prec_bi_8,Prec_ci_8 )
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

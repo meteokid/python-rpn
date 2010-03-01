@@ -7,7 +7,7 @@
      %                     F_pip,    F_w,   F_qp,  F_mu, F_mul, F_s, 
      %                     F_xfis, DIST_DIM,Nk)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real     F_u(DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
@@ -32,6 +32,9 @@
 * v3_01 - Desgagne & Lee    - introduce Vspng_rwnd_L
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Toviessi J. P.    - variable higher order diffusion operator
+* v3_30 - Spacek L.         - Added Vspng_zmean_L. If .true. the zonal
+*                             mean of u component is subtracted before
+*                             the diffusion and added back after it
 *
 *object
 *     The diffusion coefficients are (Cstv_uvdf_8*Cstv_dt_8) for the
@@ -57,13 +60,14 @@
 #include "vspng.cdk"
 #include "hzd.cdk"
 #include "opr.cdk"
+#include "grd.cdk"
 *
       integer i, j, jj, k, nkspng
       real*8 HALF_8,TWO_8,c_8,c1
       parameter( HALF_8  = 0.5 )
       parameter(  TWO_8  = 2.0 )
 *
-      real work(LDIST_SHAPE,Nk)
+      real work(LDIST_SHAPE,Nk), tmean(l_nj,Nk)
       real*8, dimension (trp_12emax*G_ni*Vspng_nk) :: 
      $                                          aix_8,bix_8,cix_8,dix_8
       real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
@@ -104,6 +108,12 @@
 !$omp enddo
 !$omp end parallel
          endif
+*
+*  Substract the mean for the zonal component if wanted
+*
+         if (Vspng_zmean_L)
+     $   call vspng_zmean (F_u,F_u,tmean,DIST_DIM,Nk,.true.)
+*
          do j = 1, l_nj+1
             cy_8(j) = G_yg_8(l_j0+j-1)
          end do
@@ -133,6 +143,12 @@
          call vspng_del2 ( F_v, Opr_opsxp0_8(G_ni+1), yp0_8,
      $                 aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                 LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_njv)
+*
+*  Add back the mean for the zonal component
+*
+         if (Vspng_zmean_L)
+     $   call vspng_zmean (F_u,F_u,tmean,DIST_DIM,Nk,.false.)
+*
          if (Vspng_rwnd_L) then
 !$omp parallel private(c1)
 !$omp do

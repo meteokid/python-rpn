@@ -1,0 +1,62 @@
+#include "model_macros_f.h"
+*
+      subroutine pe_rebind (icode)
+      implicit none
+*
+      integer icode
+*
+#include "bind.cdk"
+#include "ptopo.cdk"
+*author
+*     Lee/Valin     Mar 2007
+*
+*revision
+* v3_30 - Lee/Valin - initial version
+*
+      integer i,j
+      integer  omp_get_max_threads,logical_smt_cpus
+      external omp_get_max_threads,logical_smt_cpus
+
+*
+      if (icode.eq.0) then
+* at the beginning of the integration
+* force global SMT if requested
+          if (Ptopo_smtglb.ne.Ptopo_npeOpenMP) then
+              call omp_set_num_threads(Ptopo_smtglb)
+              Ptopo_npeOpenMP=Ptopo_smtglb
+          endif
+          if (Ptopo_myproc.eq.0) then
+              print *,'pe_rebind(0):threads for glb=',omp_get_max_threads()
+              print *,'pe_rebind(0):bind_L=',Ptopo_bind_L
+              print *,'pe_rebind(0):threads for phy=',Ptopo_smtphy
+          endif
+* force binding
+          if (Ptopo_bind_L) call rebind()
+         
+      endif
+     
+* just before physics loop
+c     call omp_set_num_threads(omp_get_max_threads()*logical_smt_cpus())
+      if (icode.eq.1 .and. Ptopo_smtphy.ne.Ptopo_smtglb) then
+          call omp_set_num_threads(Ptopo_smtphy)
+c         if (Ptopo_myproc.eq.0) then
+c             print *,'pe_rebind(1):threads=',omp_get_max_threads()
+c         endif
+          if (Ptopo_bind_L) call rebind()
+      endif
+*
+* just after  physics loop
+c     call omp_set_num_threads(omp_get_max_threads()/logical_smt_cpus())
+      if (icode.eq.-1 .and. Ptopo_smtphy.ne.Ptopo_smtglb) then
+          call omp_set_num_threads(1)
+          call omp_set_num_threads(Ptopo_smtglb)
+c         if (Ptopo_myproc.eq.0) then
+c             print *,'pe_rebind(-1):threads=',omp_get_max_threads()
+c         endif
+          if (Ptopo_bind_L) call rebind()
+      endif
+         
+c     call reporter()
+*
+      return
+      end

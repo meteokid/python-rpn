@@ -1,0 +1,195 @@
+***s/r itf_phy_fillbus - Fill the slice workspace variable for the physics
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_phy_fillbus 
+     $                      (F_busdyn, F_busper, F_busent, F_busvol,
+     $                       F_pvptr, NPTR, F_trm, F_trp,
+     $                       F_jdo, F_step,DIST_DIM,Nk)
+*
+      implicit none
+*
+      integer F_step,F_jdo, DIST_DIM, Nk, NPTR
+*
+      real F_busdyn(*),F_busper(*),F_busent(*), F_busvol(*)
+      real  F_trp(DIST_SHAPE,Nk,*), F_trm(DIST_SHAPE,Nk,*)
+      integer*8 F_pvptr(NPTR)
+*
+*author 
+*     Michel Roch - rpn - april 1994
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Desgagne M.       - bug correction on rotation of wind 
+* v2_20 - Pellerin P.       - copy contents of geobus into entry bus
+* v2_31 - Desgagne M.       - clean up and introduce h2o tracers
+* v3_00 - Laroche S.        - add sigma levels in the arguments
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_02 - Plante A.         - Further clean up and introduction of
+*                             water loading via virtual temperature.
+* v3_12 - Leduc A-M         - Add arguments gzm and topo
+* v3_20 - Pellerin P.       - To allow the off-line mode
+* v3_30 - Desgagne M.       - new itf_phy interface
+* v3_30 - Bilodeau-Desgagne - debug offline mode
+*
+*object
+*	Fill the slice workspace variable for the physics.
+*	Change of units if required	
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_busdyn      I       - dynamic bus
+* F_busper      I       - permanent bus
+* F_busent      O       - entry bus
+* F_up          I       - wind image in x direction at time t*
+* F_vp          I       - wind image in y direction at time t*
+* F_tp          I       - virtual temperature at time t*
+* F_qp          I       - ln of pressure at time t*
+* F_um          I       - wind image in x direction at time t-
+* F_vm          I       - wind image in y direction at time t-
+* F_tm          I       - virtual temperature at time t-
+* F_gzm         I       - geopotential at time t-
+* F_topo        I       - topography
+* F_lpsm        I       - ln of surface pressure at time t-
+* F_wp          I       - vertical motion at time t*
+* F_sig         I       - sigma levels
+* F_jdo         I       - slice number being processed
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "dcst.cdk"
+#include "itf_phy_buses.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+#include "itf_phy_busind.cdk"
+#include "itf_phy_vmm.cdk"
+*
+*notes
+*
+      integer i, k, n, m, ii, indx, offp, offg, pid, gid, mul
+      integer ntr
+      real tr,wk
+      pointer (patr, tr(LDIST_SHAPE,*))
+      pointer (pawk, wk(l_ni,l_nj,*))
+**
+*     ---------------------------------------------------------------
+*
+*C    3D variables: extract row F_jdo 
+*
+      do n= 1,p_phy3d_max
+         patr = F_pvptr(n)
+      do k= 1,Nk
+      do i= 1, p_ni
+         indx = (k-1)*p_ni+i-1
+         ii = i + p_offi
+         F_busdyn(p_phy_addr(n) + indx) = tr(ii,F_jdo,k)
+      end do
+      end do
+      end do
+*
+*C    2D variables: extract row F_jdo, one level!! 
+      do n= p_phy3d_max+1,p_phy_max
+         patr = F_pvptr(n)
+      do i= 1, p_ni
+         ii = i + p_offi
+         F_busdyn(p_phy_addr(n) + i-1) = tr(ii,F_jdo,1)
+      end do
+      end do
+*
+      if (Schm_offline_L) then
+*     Off-line mode
+
+         do n=1,phyt_ntr
+            if (phyt_name_S(n).eq.'FI'.or.phyt_name_S(n).eq.'AD') then
+               do i= 1, p_ni
+                  indx = i-1
+                  ii = i + p_offi
+                  F_busper(phyt_ind(1,n)+indx) = F_trp(ii,F_jdo,1,n)
+               end do
+               
+            else if (phyt_name_S(n).eq.'P0') then
+               do i= 1, p_ni
+                  indx = i-1
+                  ii = i + p_offi
+                  F_busper(phyt_ind(1,n)+indx) = F_trp(ii,F_jdo,1,n)
+                  F_busper(phyt_ind(2,n)+indx) = F_trp(ii,F_jdo,1,n)
+               end do
+            else if (phyt_name_S(n).eq.'FB'.or.phyt_name_S(n).eq.'N4') then
+               do i= 1, p_ni
+                  indx = i-1
+                  ii = i + p_offi
+                  F_busper(phyt_ind(1,n)+indx) = F_trp(ii,F_jdo,1,n)
+               end do
+            else if (phyt_name_S(n).eq.'RT'.or.phyt_name_S(n).eq.'PR'
+     $               .or.phyt_name_S(n).eq.'PR0') then
+               do i= 1, p_ni
+                  indx = i-1
+                  ii = i + p_offi
+                  F_busper(phyt_ind(1,n)+indx) = F_trp(ii,F_jdo,1,n)
+               end do
+            else if (phyt_name_S(n).eq.'HU') then
+               do k= 1,Nk
+               do i= 1, p_ni
+                  indx = (k-1)*p_ni+i-1
+                  ii = i + p_offi
+                  F_busdyn(phyt_ind(1,n)+indx) = max(0., F_trp(ii,F_jdo,k,n))
+                  F_busdyn(phyt_ind(2,n)+indx) = max(0., F_trp(ii,F_jdo,k,n))
+               end do
+               end do
+            endif
+         end do
+      else
+         do n=1,phyt_ntr
+            do k= 1,Nk
+            do i= 1, p_ni
+               indx = (k-1)*p_ni+i-1
+               ii = i + p_offi
+               F_busdyn(phyt_ind(1,n)+indx) = F_trp(ii,F_jdo,k,n)
+            end do
+            end do
+            if (phyt_ind(2,n).gt.0) then
+            do k= 1,Nk
+            do i= 1, p_ni
+               indx = (k-1)*p_ni+i-1
+               ii = i + p_offi
+               F_busdyn(phyt_ind(2,n)+indx) = F_trm(ii,F_jdo,k,n)
+            end do
+            end do
+            endif
+         end do
+      endif
+*
+      if (F_step.eq.0) then
+*
+      do 20 pid=1,p_bent_top
+         if (entpar(pid,3).gt.0) then
+            do gid=1,p_bgeo_top
+               if (entnm(pid).eq.geonm(gid,1)) then
+                  do mul=1,entpar(pid,6)
+                    offp= entpar(pid,1)+(mul-1)*p_ni
+                    offg= geopar(gid,1)+(mul-1)*l_ni*l_nj
+     $                    +(F_jdo-1)*l_ni+p_offi
+                    do i=1,p_ni
+                       F_busent(offp+i-1)=geofld(offg+i-1)
+                    end do
+                  end do
+                  goto 20
+               endif
+            end do
+            print*, '*********************************************'
+            print *,'Variable: ', entnm(pid), 'not available'
+            print *,'for the ENTRY Bus.'
+            print*, '*********************************************'
+            stop
+         endif
+ 20   continue
+*
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

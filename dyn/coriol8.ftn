@@ -39,7 +39,6 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "p_geol.cdk"
 #include "schm.cdk"
 *
 **

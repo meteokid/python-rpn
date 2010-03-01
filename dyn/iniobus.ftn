@@ -1,4 +1,4 @@
-***s/r iniobus - outlines the physics output bus
+***s/r iniobus - sets up the physics output bus
 *
 #include "model_macros_f.h"
 *
@@ -6,12 +6,13 @@
 *
 *implicits
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Desgagne/Lee
 *
 *revision
+* v3_30 - Desgagne M. - new physics interface
 *
 *object
 *	See above
@@ -26,7 +27,7 @@
 #include "lun.cdk"
 #include "lctl.cdk"
 #include "dcst.cdk"
-#include "p_bus.cdk"
+#include "itf_phy_buses.cdk"
 #include "obus.cdk"
 #include "outp.cdk"
 *
@@ -53,7 +54,6 @@
       endif
 *
 *     Build short list of possible outputs on this timestep only
-      if (Lun_out.gt.0) write(Lun_out,5000) Lctl_step
       cnt = 0
       do k=1, Outp_sets
          Outp_dostep_L(k) = .false.
@@ -71,6 +71,9 @@
             endif
          enddo
       enddo
+c     do k=1,cnt
+c        print *,'iniobus:',k,udolist_S(k)
+c     enddo
 
 *   Determine the number of variables to be outputted from each bus 
 *   bigk counts the number of ni rows in the output bus.
@@ -180,15 +183,13 @@
       endif
       Obus_top=k
       siz = bigk
-      if (Lun_out.gt.0) then
-          if (Obus_top.eq.0) then
-              write(Lun_out,5001) Lctl_step
-              do k=1, Outp_sets
-                 Outp_dostep_L(k) = .false.
-              enddo
-          else
-              write(Lun_out,5000) Lctl_step
-          endif
+      if (Obus_top.eq.0) then
+          do k=1, Outp_sets
+             Outp_dostep_L(k) = .false.
+          enddo
+          if (Lun_out.gt.0) write(Lun_out,5001) Lctl_step
+      else
+          if (Lun_out.gt.0) write(Lun_out,5000) Lctl_step
       endif
 *
  5000 format(/,' iniobus - PHYSICS OUTPUT WILL BE WRITTEN FOR STEP (',

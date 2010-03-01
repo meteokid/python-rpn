@@ -1,0 +1,80 @@
+***s/r msoltri6_ad - ADJ of msoltri6 
+*
+#include "model_macros_f.h"
+*
+      subroutine msoltri6_ad ( F_r, F_rhs,
+     %                         F_bi_8, F_ci_8, F_ai_8,
+     %                         NIDIST, NJDIST, NI, NJ )
+*
+      implicit none
+*
+      integer NIDIST, NJDIST, NI, NJ
+      real    F_r(NIDIST,NI), F_rhs(NIDIST,NI)
+      real*8    F_bi_8(NI), F_ci_8(NI), F_ai_8(NI)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+*
+*object
+*     see id section
+*     ---------------------------------------------------
+*     REMARK: F_r and F_rhs MUST occupy the same location
+*     ---------------------------------------------------
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_r          IO   - solution
+* F_rhs        IO   - right-hand-side
+* F_bi_8       I    - bi of set_trig21
+* F_ci_8       I    - ci of set_trig21
+* F_ai_8       I    - ai of set_trig21
+* NIDIST       I    - dist btwn element of two consecutive indx i
+* NJDIST       I    - dist btwn element of two consecutive indx j
+* NI           I    - x-dimension
+* NJ           I    - y-dimension
+*
+#include "ptopo.cdk"
+*
+      integer i,l, kkii, kilon, kin, ki0
+*
+      kilon = (NJ + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
+*
+!$omp parallel private(ki0,kin,l)
+!$omp do
+      do kkii = 1, Ptopo_npeOpenMP
+*
+         ki0 = 1 + kilon*(kkii-1)*NJDIST
+         kin = NJDIST*min(NJ,kilon*kkii)
+*
+         do i=1,NI-1
+C        do l=1,NJ*NJDIST,NJDIST
+         do l=ki0 ,kin,NJDIST
+         F_r(l,i+1) = F_r(l,i+1) - F_ci_8(i) * F_r(l,i)
+         enddo
+         enddo
+*
+         do i=NI,2,-1
+C        do l=1,NJ*NJDIST,NJDIST
+         do l=ki0 ,kin,NJDIST
+         F_r(l,i-1) = F_r(l,i-1) - F_ai_8(i) * F_r(l,i) 
+         enddo
+         enddo
+*
+         do i=NI,1,-1
+C        do l=1,NJ*NJDIST,NJDIST
+         do l=ki0 ,kin,NJDIST
+         F_rhs(l,i) = F_r(l,i) * F_bi_8(i) 
+         enddo
+         enddo
+*
+      enddo
+!$omp enddo
+!$omp end parallel
+*
+      return
+      end

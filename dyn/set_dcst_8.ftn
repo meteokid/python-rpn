@@ -1,10 +1,10 @@
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***function set_dcst_8 - initializes geophysical constants
 *
-      logical function set_dcst_8 ( val, liste, nbre, proc, numproc )
+      logical function set_dcst_8 ( val, liste, nbre, unout, numproc )
       implicit none
 *
-      integer nbre,proc,numproc
+      integer nbre,unout,numproc
       character * (*) liste(nbre)
       real*8 val(nbre)
 *
@@ -17,20 +17,24 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *     ---------------------------------------------------------------
 *
-      if (proc.eq.0) write (6,1000)
+      if (unout.gt.0) write (unout,1000)
 *
       flag = 0
 *
       i=1
-      if (proc.eq.0) then
+      if (unout.gt.0) then
+         ier = 1
          call constnt (rdval,ier,liste(i),100)
+         if (ier.eq.1) then
          rdval = 0.4d0
+         ier = 1
          call constnt (rdval,ier,'KARMAN',103)
-         write(6,100)
-         write(6,102) 'THE VALUE OF THE CONSTANT KARMAN HAS BEEN'
-         write(6,102) '                          ------         '
-         write(6,103) 'CHANGED TO ', rdval,'   IN S/R set_dcst_8'
-         write(6,100)
+         write(unout,100)
+         write(unout,102) 'THE VALUE OF THE CONSTANT KARMAN HAS BEEN'
+         write(unout,102) '                          ------         '
+         write(unout,103) 'CHANGED TO ', rdval,'   IN S/R set_dcst_8'
+         write(unout,100)
+         endif
       endif
 *
       if (numproc.gt.1) 
@@ -45,9 +49,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       do i=1,nbre
          if (flag(i).eq.1) then
-            if (proc.eq.0) write (6,1005) liste(i),val(i)
+            if (unout.gt.0) write (unout,1005) liste(i),val(i)
          else            
-            if (proc.eq.0) write (6,1006) liste(i)
+            if (unout.gt.0) write (unout,1006) liste(i)
             set_dcst_8  = .false.
          endif
       end do

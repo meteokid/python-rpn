@@ -198,16 +198,13 @@ C    %                   1, 1, pnjv, 1, .false. )
 *
 *
  1001 format(
-     %//,'COMPUTE (U,V) INTERPOLATION COEFFICIENTS (S/R E_SETINTUV)',
-     % /,'=======================================================',
-     %//)
+     %/'COMPUTE (U,V) INTERPOLATION COEFFICIENTS (S/R E_SETINTUV)',
+     % /'======================================================='/)
  1200 format(
-     %//,'CUBIC SPLINES FOR COMPUTATION OF CORIOLIS TERMS OR RHU AND RHV
-     % ARE NOT ALLOWED: ONLY CUBIC OF LAGRANGE ARE ALLOWED',
-     %//)
+     %/'CUBIC SPLINES FOR COMPUTATION OF CORIOLIS TERMS OR RHU AND RHV
+     % ARE NOT ALLOWED: ONLY CUBIC OF LAGRANGE ARE ALLOWED'/)
  1300 format(
-     %//,'ONLY CUBIC OF LAGRANGE ARE ALLOWED',
-     %//)
+     %/'ONLY CUBIC OF LAGRANGE ARE ALLOWED'/)
 *
 *     ---------------------------------------------------------------
 *

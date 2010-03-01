@@ -18,5 +18,7 @@
       DCL_DYNVAR(Ind,   w, real, (LDIST_SHAPE,l_nk))
       DCL_DYNVAR(Ind,  qp, real, (LDIST_SHAPE,l_nk))
 *
-      DCL_DYNVAR(Ind,dtopo, real, (LDIST_SHAPE))
+      DCL_DYNVAR(Ind, dtopo, real, (LDIST_SHAPE))
+      DCL_DYNVAR(Ind,  topu, real, (LDIST_SHAPE))
+      DCL_DYNVAR(Ind,  topv, real, (LDIST_SHAPE))
 *

@@ -70,6 +70,9 @@
       pnerr = VMM_GET_VAR(uth)
       pnerr = VMM_GET_VAR(vth)
       pnerr = VMM_GET_VAR(psdth)
+c     if (Acid_test_L)
+c    %call glbstat (uth,'Uth',LDIST_DIM,G_nk,1+acid_i0,G_ni-acid_in-1,
+c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
 ***********************************************************************
 * Interpolate advection winds to geopotential grid
 * F_u and F_v are used as work space
@@ -183,6 +186,7 @@
       enddo
 !$omp enddo
 
+
 ***********************************************************************
 * Adjust wind fields to advection grid
 ***********************************************************************
@@ -194,6 +198,9 @@
           dest_ni=G_ni
       endif
 *
+c     if (Acid_test_L)
+c     call glbstat (uth,'Uth',LDIST_DIM,G_nk,3+acid_i0,G_ni-acid_in-2,
+c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
 !$omp single          
       call rpn_comm_xch_halox ( uth, LDIST_DIM, l_ni, l_nj, l_nk, 
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, 1-Adw_halox, 

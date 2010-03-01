@@ -1,0 +1,341 @@
+**s/r v4d_cststep - Extract fields and evaluate contribution to
+*                    cost function at a specific time step
+*
+#include "model_macros_f.h"
+*
+      subroutine v4d_cststep 
+*
+      implicit none
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
+* v3_01 - Morneau J.        - change call to bongril by p_uvgridscal
+*                           - store forcing for grdstep
+* v3_30 - Tanguay M.        - adapt TL/AD to itf
+*
+*object
+*     see id section 
+*     -------
+*     CAUTION
+*     -------------------------------------------------------------
+*     V4D_RWOBFR,V4D_CSTSTEP AND V4D_GRDSTEP SHOULD BE SYNCHRONIZED
+*     FOR THE STORING AND RETRIEVING OF OBSERVATIONS AND FORCINGS
+*     -------------------------------------------------------------
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "geomn.cdk"
+#include "geomg.cdk"
+#include "v4dg.cdk"
+#include "tr3d.cdk"
+#include "v4dj.cdk"
+#include "v4d_vmm.cdk"
+#include "vt1.cdk"
+#include "dcst.cdk"
+*#include "lctl.cdk"
+*#include "step.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*
+      integer pnerr,pnlkey1(12),i,j,k
+*
+      real pr1, prpj
+*
+      logical plpr_L
+*
+      integer i0,in,j0,jn
+*
+      real weight
+*
+      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk)
+      real wijk3(LDIST_SHAPE,l_nk)
+*     ______________________________________________________
+*
+*     Flag to trace storing and retrieving of OBSERVATIONS 
+*     ----------------------------------------------------
+      plpr_L = .false.
+      plpr_L = plpr_L.and.Lun_out.gt.0
+
+      if ( V4dj_kdcst.ne.2 ) call gefstop('v4d_cststep')
+      if ( V4dj_jb   .ne.1 ) call gefstop('v4d_cststep')
+*     ______________________________________________________
+*
+      if( V4dj_jb.eq.1 ) then
+*
+*     Read OBSERVATIONS from WA file 
+*     ------------------------------
+        V4dg_rwob = 0
+        call v4d_rwobfr(1)
+      endif
+*
+*     ---------------------------- 
+*     JB with Energy inner product
+*     ---------------------------- 
+      if( V4dj_kdcst.eq.2.and.V4dj_jb.eq.1 ) then
+*
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1) = VMM_KEY(ut1  )
+      pnlkey1(2) = VMM_KEY(vt1  )
+      pnlkey1(3) = VMM_KEY(tpt1 )
+      pnlkey1(4) = VMM_KEY(st1  )
+*
+      pnlkey1(5) = VMM_KEY(ut1r  )
+      pnlkey1(6) = VMM_KEY(vt1r  )
+      pnlkey1(7) = VMM_KEY(tpt1r )
+      pnlkey1(8) = VMM_KEY(st1r  )
+*
+      pnlkey1(9) = VMM_KEY(locu )
+      pnlkey1(10)= VMM_KEY(locv )
+      pnlkey1(11)= VMM_KEY(locg )
+      pnlkey1(12)= VMM_KEY(locs )
+*
+*     - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,12)
+*     - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1  )
+      pnerr = VMM_GET_VAR(vt1  )
+      pnerr = VMM_GET_VAR(tpt1 )
+      pnerr = VMM_GET_VAR(st1  )
+*
+      pnerr = VMM_GET_VAR(ut1r )
+      pnerr = VMM_GET_VAR(vt1r )
+      pnerr = VMM_GET_VAR(tpt1r)
+      pnerr = VMM_GET_VAR(st1r )
+*
+      pnerr = VMM_GET_VAR(locu )
+      pnerr = VMM_GET_VAR(locv )
+      pnerr = VMM_GET_VAR(locg )
+      pnerr = VMM_GET_VAR(locs )
+*
+      prpj = 0.
+*
+*     -----------------------
+*     Contribution from winds  
+*     -----------------------
+*     ----
+*     NOTE
+*     --------------------------------------------------------------
+*     If V4dg_sensib_L: Winds OBS. are  true winds on    scalar grid
+*     Otherwise       : Winds OBS. are image winds on staggered grid
+*     --------------------------------------------------------------
+*
+*     Prepare 4U image wind contribution
+*     ----------------------------------
+      if (V4dg_sensib_L) then
+         do k=1,l_nk
+            do j=1,l_nj
+               do i=1,l_niu
+                  wijk1(i,j,k) = ut1(i,j,k)
+              end do
+            end do
+         end do
+      else
+         do k=1,l_nk
+            do j=1,l_nj
+               do i=1,l_niu
+                  wijk1(i,j,k) = ut1(i,j,k) - ut1r(i,j,k)
+               end do
+            end do
+         end do
+      endif
+*
+*     Prepare 4V image wind contribution
+*     ----------------------------------
+      if (V4dg_sensib_L) then
+         do k=1,l_nk
+            do j=1,l_njv
+               do i=1,l_ni
+                  wijk2(i,j,k) = vt1(i,j,k)
+               end do
+            end do
+         end do
+      else
+         do k=1,l_nk
+            do j=1,l_njv
+               do i=1,l_ni
+                  wijk2(i,j,k) = vt1(i,j,k) - vt1r(i,j,k)
+               end do
+            end do
+         end do
+      endif
+*
+*     Transfer from 4U and 4V staggered grid to scalar grid
+*     -----------------------------------------------------
+      call itf_phy_uvgridscal(wijk1,wijk2,LDIST_DIM,l_nk,.true.)
+*
+*     Calculate UU true wind from 4U image wind (scalar grid)
+*     -------------------------------------------------------
+      if (V4dg_sensib_L) then
+         do j=1,l_nj
+            pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+            do k=1,l_nk
+               do i=1,l_ni
+                  wijk3(i,j,k) = pr1 * wijk1(i,j,k) - ut1r(i,j,k)
+               end do
+            end do
+         end do
+      else
+         do j=1,l_nj
+            pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+            do k=1,l_nk
+               do i=1,l_ni
+                  wijk3(i,j,k) = pr1 * wijk1(i,j,k) 
+               end do
+            end do
+         end do
+      endif
+*
+*     Calculate UU contribution to cost function
+*     ------------------------------------------
+      do k = 1,l_nk
+      do j = 1,l_nj
+      do i = 1,l_ni
+*
+      weight = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) * 
+     %         V4dj_uvwt * V4dj_invarea * locu(i,j,k)
+*
+      prpj   = weight * .5 * wijk3(i,j,k) **2 + prpj
+*
+      wijk3(i,j,k) = weight * wijk3(i,j,k)
+*
+      end do
+      end do
+      end do
+*
+*     Store UU FORCING on WA file
+*     ---------------------------
+      call v4d_rwfld (wijk3, wijk1,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iunfr,V4dg_addfr,plpr_L,'UT1 ',V4dg_ad_L,0,1)
+*
+*     Calculate VV true wind from 4V image wind (scalar grid)
+*     -------------------------------------------------------
+      if (V4dg_sensib_L) then
+         do j=1,l_nj
+            pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+            do k=1,l_nk
+               do i=1,l_ni
+                  wijk1(i,j,k) = pr1 * wijk2(i,j,k) - vt1r(i,j,k)
+               end do
+            end do
+         end do
+      else
+         do j=1,l_nj
+            pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+            do k=1,l_nk
+               do i=1,l_ni
+                  wijk1(i,j,k) = pr1 * wijk2(i,j,k)
+               end do
+            end do
+         end do
+      endif
+*
+*     Calculate VV contribution to cost function
+*     ------------------------------------------
+      do k = 1,l_nk
+      do j = 1,l_nj
+      do i = 1,l_ni
+*
+      weight = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) * 
+     %         V4dj_uvwt * V4dj_invarea * locv(i,j,k)
+*
+      prpj   = weight * .5 * wijk1(i,j,k) **2 + prpj
+*
+      wijk1(i,j,k) = weight * wijk1(i,j,k)
+*
+      end do
+      end do
+      end do
+*
+*     Store VV FORCING on WA file
+*     ---------------------------
+      call v4d_rwfld (wijk1, wijk2,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iunfr,V4dg_addfr,plpr_L,'VT1 ',V4dg_ad_L,0,1)
+*
+*     -----------------------------
+*     Contribution from temperature  
+*     -----------------------------
+*
+*     Prepare 4T contribution
+*     -----------------------
+      do j=1,l_nj
+         do k=1,l_nk
+            do i=1,l_ni
+               wijk1(i,j,k) = tpt1(i,j,k) - tpt1r(i,j,k)
+            end do
+         end do
+      end do
+*
+*     Calculate 4T contribution to cost function
+*     ------------------------------------------
+      do k = 1,l_nk
+      do j = 1,l_nj
+      do i = 1,l_ni
+*
+      weight = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) * 
+     %         V4dj_tpwt * V4dj_invarea * locg(i,j,k)
+*
+      prpj   = weight * .5 * wijk1(i,j,k) **2 + prpj
+*
+      wijk1(i,j,k) = weight * wijk1(i,j,k)
+*
+      end do
+      end do
+      end do
+*
+*     Store 4T FORCING on WA file
+*     ---------------------------
+      call v4d_rwfld (wijk1,wijk2,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                V4dg_iunfr,V4dg_addfr,plpr_L,'TPT1',V4dg_ad_L,0,1)
+*
+*     ----------------------------------
+*     Contribution from surface pressure 
+*     ----------------------------------
+*
+*     Prepare 4S contribution
+*     -----------------------
+      do j=1,l_nj
+            do i=1,l_ni
+               wijk1(i,j,1) = st1(i,j) - st1r(i,j)
+            end do
+      end do
+*
+*     Calculate 4S contribution to cost function
+*     ------------------------------------------
+      do j = 1,l_nj
+      do i = 1,l_ni
+*
+      weight = V4dj_thickx(i) * V4dj_thicky(j) * 
+     %         V4dj_spwt * V4dj_invarea * locs(i,j)
+*
+      prpj   = weight * .5 * wijk1(i,j,1) **2 + prpj
+*
+      wijk1(i,j,1) = weight * wijk1(i,j,1)
+*
+      end do
+      end do
+*
+*     Store 4S FORCING on WA file
+*     ---------------------------
+      call v4d_rwfld (wijk1, wijk2,l_ni,l_nj,LDIST_DIM,1,
+     %                V4dg_iunfr,V4dg_addfr,plpr_L,'ST1 ',V4dg_ad_L,0,1)
+*
+*
+      pnerr = vmmuld(-1,0)
+*
+      endif
+*
+      V4dj_pj = V4dj_pj + prpj 
+*
+      return
+      end

@@ -1,0 +1,137 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***s/r e_write_3df
+*
+      subroutine e_write_3df ( tr1,nis,njs,nks, nomvar,unf )
+      implicit none
+*
+      character* (*) nomvar
+      integer nis,njs,nks, unf
+      real tr1(nis,njs,nks)
+
+*author  M. Desgagne 2001 (MC2)
+*
+*revision
+* v3_30 - Lee. V - modified to write data extracted from analysis input
+*                  into 3DF files
+*
+**
+*
+      integer i,j,k,n,nbits,nb
+      real, dimension (:), allocatable :: wkc
+      logical prout_L
+*
+*----------------------------------------------------------------------
+*
+*     Writing field 'nomvar' if fa to binary fortran file unit=unf
+*
+      prout_L=.false.
+      if (prout_L) call statfld(tr1,nomvar(1:4),0,
+     $              "writ3",1,nis,1,njs,nks,1,1,1,nis,njs,nks)
+*
+      nb = 0
+      nbits = 32
+*
+      write (unf) nomvar(1:4),nis,njs,nks,nbits
+      if (nbits.ge.32) then
+          write (unf) tr1
+      else
+          n = (nis*njs*nbits+120+32-1)/32
+          allocate (wkc(n))
+          do k=1,nks
+             call xxpak (tr1(1,1,k), wkc, nis, njs, -nbits, nb, 1)
+             write (unf) wkc
+          end do
+          deallocate (wkc)
+      endif
+*
+*----------------------------------------------------------------------
+      return
+      end
+*
+***s/r e_write_bcs
+      subroutine e_write_bcs (fa,ni,nj,is,nis,js,jn,njs,
+     $                        iw,ie,niw,jw,njw,nks,nomvar,unf)
+      implicit none
+*
+      character* (*) nomvar
+      integer ni,nj,nks,unf
+      integer is,nis,js,jn,njs,iw,ie,niw,jw,njw
+      real fa(ni,nj,nks)
+*
+
+*author  M. Desgagne 2001 (MC2)
+*
+*revision
+* v3_30 - Lee. V - modified to write data extracted from analysis input
+*                  into BCS files
+**
+*
+      integer i,j,k,ns,nw,nbits,nb
+      real wks(nis*njs*nks,2), wkw(niw*njw*nks,2)
+      real fs (nis,njs*2,nks), fw (niw*2,njw,nks)
+      real, dimension (:), allocatable :: wkc,wkd
+      logical prout_L
+*
+*----------------------------------------------------------------------
+*
+      prout_L=.false.  
+      do k=1,nks
+      do j=1,njs
+      do i=1,nis
+         wks((k-1)*nis*njs+(j-1)*nis+i,1) = fa(i+is-1,j+js-1,k)
+         wks((k-1)*nis*njs+(j-1)*nis+i,2) = fa(i+is-1,j+jn-1,k)
+      enddo
+      enddo
+      enddo
+*
+      do k=1,nks
+      do j=1,njw
+      do i=1,niw
+         wkw((k-1)*niw*njw+(j-1)*niw+i,1) = fa(i+iw-1,j+jw-1,k)
+         wkw((k-1)*niw*njw+(j-1)*niw+i,2) = fa(i+ie-1,j+jw-1,k)
+      enddo
+      enddo
+      enddo
+*
+      do k=1,nks
+         do j=1,njs
+         do i=1,nis
+            fs(i,j,k)     = wks((k-1)*nis*njs+(j-1)*nis+i,1)
+            fs(i,njs+j,k) = wks((k-1)*nis*njs+(j-1)*nis+i,2)
+         end do 
+         end do
+         do j=1,njw
+         do i=1,niw
+            fw(i,j,k)     = wkw((k-1)*niw*njw+(j-1)*niw+i,1)
+            fw(niw+i,j,k) = wkw((k-1)*niw*njw+(j-1)*niw+i,2)
+         end do 
+         end do
+      end do
+*
+      nb = 0
+      nbits = 32
+*
+         if (prout_L) 
+     $       write(6,1000) nomvar(1:4),
+     $       nis,njs,niw,njw,nks,fs(1,1,1),fw(1,1,1)
+         write (unf) nomvar(1:4),nis,njs,niw,njw,nks,nbits
+         if (nbits.ge.32) then
+            write (unf) fs,fw
+         else
+            ns = (nis*njs*2*nbits+120+32-1)/32
+            allocate (wkc(ns))
+            nw = (niw*njw*2*nbits+120+32-1)/32
+            allocate (wkd(nw))
+            do k=1,nks
+               call xxpak (fs(1,1,k), wkc, nis,njs*2,-nbits,nb,1)
+               call xxpak (fw(1,1,k), wkd, niw*2,njw,-nbits,nb,1)
+               write (unf) wkc,wkd
+            end do
+            deallocate (wkc,wkd)
+         endif
+ 1000  format("e_write_bcs:",a4," nis,njs,niw,njw=",i4,i4,i4,i4,"nks=",i4,
+     $                 "fs(1,1,1)=",e14.7,"w(1,1,1)=",e14.7)
+*
+*----------------------------------------------------------------------
+      return
+      end

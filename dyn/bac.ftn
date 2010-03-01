@@ -4,7 +4,7 @@
 *
       subroutine bac( Itr, Itnlh )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer Itr, Itnlh
 *
@@ -184,7 +184,7 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(26)
+      integer pnerr, pnlod, pnlkey1(26),k
       real wijk0(LDIST_SHAPE,l_nk), wijk1(LDIST_SHAPE,l_nk)
 **
 *     __________________________________________________________________
@@ -261,6 +261,10 @@
          r3p_  = 0
       endif
 *
+c     if (Acid_test_L) then topo,gptx,nl_ntrh,rth
+c     call glbstat (st0, 'ST0',LDIST_DIM,1,8+acid_i0,G_ni-7-acid_in,
+c    %                                     8+acid_j0,G_nj-7-acid_jn,1,1)
+c     endif
 
       call  bacp_2 (   Itr, Itnlh,   st0, pipt0,   qt0, 
      %                fit0, fipt0,  topo,   tt0,  tpt0, tplt0,
@@ -269,8 +273,11 @@
      %                 ru, rv, rth, r3, r3p, rvv,  rcn,
      %                 nl_nu, nl_nv, nl_nth,  nl_n3, nl_n3p,
      $                 nl_ncn,wijk0,wijk1,LDIST_DIM, l_nk )
-
 *
+c     if (Acid_test_L) then pipt0,qt0,gxtx,psdt0,tdt0,tplt0
+c         if (Lun_out.gt.0) write(Lun_out,*) 'after bacp_2'
+c         call glbstat (st0,'ST0',LDIST_DIM,1,8+acid_i0,G_ni-7-acid_in,
+c    %                                     8+acid_j0,G_nj-7-acid_jn,1,1)
       pnerr = vmmuld(-1,0)
 
 1000  format (5X,'BACK SUBSTITUTION: (S/R BAC)')

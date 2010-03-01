@@ -1,0 +1,10 @@
+*
+* Control logical for rebinding processors under OpenMP mode
+* And also SMT or no SMT
+*
+      logical bind_on_L,smt_on_L
+*
+      MARK_COMMON_BEG (bind_l)
+      common/bind_l/ bind_on_L,smt_on_L
+      MARK_COMMON_END (bind_l)
+*

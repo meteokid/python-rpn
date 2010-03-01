@@ -163,8 +163,8 @@
 *
 *
  1001 format(
-     %//,'CONVERT TO WIND IMAGES AND INTERPOLATE to U,V GRIDS(S/R E_ARAK)',
+     %/,'CONVERT TO WIND IMAGES AND INTERPOLATE to U,V GRIDS(S/R E_ARAK)',
      % /,'=============================================================',
-     %//)
+     %/)
       return
       end

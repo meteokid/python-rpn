@@ -41,6 +41,7 @@
 * v3_00                       of the LAM grid with values from Nesting data
 * v3_02 - Edouard S.        - correct bug in Ru and Rv in the non hydrostatic version
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_30 - Lee V.            - Optimization
 *
 *object
 *     see rhs
@@ -75,7 +76,6 @@
 *
       real*8 inv_Cstv_tstr_8
       real*8 inv_geomg_hx_8(l_niu)
-      real*8 inv_geomg_hsy_8(l_njv)
       real*8 inv_Geomg_z_8(l_nk)
 **
 *     __________________________________________________________________
@@ -145,17 +145,15 @@
 !$omp enddo
 *
 !$omp do
-      do j = 1, l_njv
-         inv_geomg_hsy_8(j) = 1.0d0 / geomg_hsy_8(j)
-      end do
-!$omp enddo
-*
-!$omp do
       do k = 1, l_nk
          inv_Geomg_z_8(k) = 1.0d0 / Geomg_z_8(k)
       end do
 !$omp enddo
 !$omp end parallel
+*
+c     if (Acid_test_L) then F_u,F_v,F_t,F_q,F_s,F_fi
+c     call glbstat (F_u,'F_u',LDIST_DIM,G_nk,
+c    %           1+acid_i0,G_ni-1-acid_in,1+acid_j0,G_nj-acid_jn,1,G_nk)
 *
 !$omp parallel private(i,j,i0,j0,jn,in,i00,inn,j00,jnn,
 !$omp$               pd1,xmass_8,y1log_8,y2log_8,wk1,wk2)
@@ -287,9 +285,9 @@
             F_rv(i,j,k) = - aaa*F_v(i,j,k)
      %              - c1 *( ( 1. - intuv_c0yyv_8(j) )*F_t(i,j  ,k) 
      %                           + intuv_c0yyv_8(j)  *F_t(i,j+1,k) )
-     %     * (F_q (i,j+1,k)-F_q (i,j,k))*geomg_cyv2_8(j)*inv_geomg_hsy_8(j)
+     %     * (F_q (i,j+1,k)-F_q (i,j,k))*geomg_cyv2_8(j)*geomg_invhsy_8(j)
      %     - c2 * wk1(i,j) * ( F_fi(i,j+1,k) - F_fi(i,j,k) ) 
-     $                     * geomg_cyv2_8(j)*inv_geomg_hsy_8(j)
+     $                     * geomg_cyv2_8(j)*geomg_invhsy_8(j)
             F_orv(i,j,k) = F_rv (i,j,k)
          end do
          end do
@@ -328,9 +326,9 @@
             F_rv(i,j,k) = - aaa*F_v(i,j,k)
      %              - c1 *( ( 1. - intuv_c0yyv_8(j) )*F_t(i,j  ,k) 
      %                           + intuv_c0yyv_8(j)  *F_t(i,j+1,k) )
-     %      * (F_q(i,j+1,k)-F_q (i,j,k))*geomg_cyv2_8(j)*inv_geomg_hsy_8(j)
+     %      * (F_q(i,j+1,k)-F_q (i,j,k))*geomg_cyv2_8(j)*geomg_invhsy_8(j)
      %      - c2 *wk1(i,j)*( F_fi(i,j+1,k) - F_fi(i,j,k) ) 
-     $      * geomg_cyv2_8(j)*inv_geomg_hsy_8(j) - c8 * Cori_fcorv_8(i,j) *
+     $      * geomg_cyv2_8(j)*geomg_invhsy_8(j) - c8 * Cori_fcorv_8(i,j) *
      %     (inuvl_wyyv3_8(j,1)*wk2(i,j-1)+inuvl_wyyv3_8(j,2)*wk2(i,j  )
      %    + inuvl_wyyv3_8(j,3)*wk2(i,j+1)+inuvl_wyyv3_8(j,4)*wk2(i,j+2))
             F_orv(i,j,k) = F_rv (i,j,k)
@@ -343,9 +341,9 @@
                   F_rv(i,1,k) = - aaa*F_v(i,1,k)
      %                 - c1 *( ( 1. - intuv_c0yyv_8(1) )*F_t(i,1  ,k) 
      %                              + intuv_c0yyv_8(1)  *F_t(i,1+1,k) )
-     %       * (F_q (i,1+1,k)-F_q(i,1,k))*geomg_cyv2_8(1)*inv_geomg_hsy_8(1)
+     %       * (F_q (i,1+1,k)-F_q(i,1,k))*geomg_cyv2_8(1)*geomg_invhsy_8(1)
      %       - c2 * wk1(i,1) * ( F_fi(i,1+1,k) - F_fi(i,1,k) ) 
-     $       * geomg_cyv2_8(1)*inv_geomg_hsy_8(1) - c8 * Cori_fcorv_8(i,1)
+     $       * geomg_cyv2_8(1)*geomg_invhsy_8(1) - c8 * Cori_fcorv_8(i,1)
      %       * (inuvl_wyyv3_8(1,2)*wk2(i,1)+inuvl_wyyv3_8(1,3)*wk2(i,2) 
      %                                     +inuvl_wyyv3_8(1,4)*wk2(i,3))
                   F_orv(i,1,k) = F_rv (i,1,k)
@@ -358,9 +356,9 @@
      %         - c1 *(( 1. - intuv_c0yyv_8(l_njv) )*F_t(i,l_njv  ,k) 
      %                     + intuv_c0yyv_8(l_njv)  *F_t(i,l_njv+1,k))
      %         * ( F_q (i,l_njv+1,k) - F_q (i,l_njv,k) ) 
-     $         * geomg_cyv2_8(l_njv)*inv_geomg_hsy_8(l_njv)
+     $         * geomg_cyv2_8(l_njv)*geomg_invhsy_8(l_njv)
      %         - c2 *wk1(i,l_njv)*( F_fi(i,l_njv+1,k)
-     $         - F_fi(i,l_njv,k))*geomg_cyv2_8(l_njv)*inv_geomg_hsy_8(l_njv)
+     $         - F_fi(i,l_njv,k))*geomg_cyv2_8(l_njv)*geomg_invhsy_8(l_njv)
      %         - c8 * Cori_fcorv_8(i,l_njv) *
      %         (   inuvl_wyyv3_8(l_njv,1)*wk2(i,l_njv-1) 
      %           + inuvl_wyyv3_8(l_njv,2)*wk2(i,l_njv  ) 
@@ -429,6 +427,12 @@
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !$omp end single
 *
+c     if (Acid_test_L) then
+c     call glbstat (F_ru,'RU',LDIST_DIM,G_nk,3+acid_i0,G_ni-2-acid_in,
+c    %                                       3+acid_j0,G_nj-2-acid_jn,1,G_nk)
+c     call glbstat (F_rv,'RV',LDIST_DIM,G_nk,3+acid_i0,G_ni-2-acid_in,
+c    %                                       3+acid_j0,G_nj-2-acid_jn,1,G_nk)
+c     endif
 *     set indices for Ruw1
       i0 = 1
       in = l_niu

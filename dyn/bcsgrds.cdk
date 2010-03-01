@@ -1,0 +1,11 @@
+*
+      real*8 xpn,ypn,xpun,ypvn,xpw,ypw,xpuw,ypvw, ana_z
+      real ana_pia, ana_pibb
+      pointer (paxpn ,  xpn(*)),(paypn ,  ypn(*)),(paxpun, xpun(*)),
+     $        (paypvn, ypvn(*)),(paxpw ,  xpw(*)),(paypw ,  ypw(*)),
+     $        (paxpuw, xpuw(*)),(paypvw, ypvw(*)),(pazta, ana_z(*)),
+     $        (papia, ana_pia(*)),(papib, ana_pibb(*))
+*
+      common /bcshdg/ paxpn,paypn,paxpun,paypvn,
+     $                paxpw,paypw,paxpuw,paypvw,pazta,papia,papib
+*

@@ -1,0 +1,76 @@
+***s/r v4d_config
+*
+#include "model_macros_f.h"
+*
+      integer function v4d_config ()
+*
+      use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree 
+*
+      implicit none
+*
+*author
+*     M. Desgagne    - Summer 2006
+*
+*revision
+*
+*object
+*
+#include "out3.cdk"
+#include "lun.cdk"
+#include "step.cdk"
+#include "path.cdk"
+#include "init.cdk"
+#include "schm.cdk"
+#include "v4dg.cdk"
+#include "tr3d.cdk"
+#include "v4dj.cdk"
+#include "v4dm.cdk"
+#include "v4dr.cdk"
+#include "v4d_nml.cdk"
+*
+      integer fnom
+      external fnom
+*
+      integer err
+*
+*-------------------------------------------------------------------
+*
+      v4d_config = -1
+      if ( V4dg_conf.ne.0.and.Step_total.lt.Init_dfnp-1.and.Init_balgm_L ) then
+           if (lun_out.gt.0) write(Lun_out,9400)
+           return
+      endif
+      if ( V4dg_conf.ne.0.and.Schm_theoc_L) then
+           if (lun_out.gt.0) write(Lun_out,9401)
+           return
+      endif
+      if ((V4dg_conf/100.ne.1) .and.
+     $    (V4dg_sensib_L.or.V4dg_twin_L.or.V4dg_4dvar_L.or.V4dg_sgvc_L))
+     $     then
+         if (lun_out.gt.0) write(Lun_out,9300)
+         return
+      endif
+*
+      if (V4dg_conf.ne.0) then
+         call v4d_init()
+         Out3_ndigits = 6
+         Schm_wload_L  = .false.
+      endif
+      if ((V4dg_conf/100.eq.1.and.V4dg_sensib_L).or.
+     $   ((V4dg_conf/100.eq.4.or.V4dg_conf/100.eq.5).and.V4dg_anincr_L)) then
+        V4dg_lun_obs_s=trim(Path_dfwmil_S)//'/v4d_obsfile_std'
+        V4dg_lun_obs = 0
+        err = fnom (V4dg_lun_obs,V4dg_lun_obs_s,'RND+OLD', 0)
+      endif
+*
+      if ((V4dg_conf.ne.0).and.(lun_out.gt.0)) write (lun_out,nml=var4d)
+*
+      v4d_config = 1
+*
+ 9300 format (/,' sensib_L twin_L 4dvar_L sgvc_L when V4dg_conf/100=1 only'/)  
+ 9400 format (/,' Step_total lt Init_dfnp-1 and Init_balgm_L  when V4dg_conf.ne.0 NOT VALID '/)
+ 9401 format (/,' Schm_theoc_L when V4dg_conf.ne.0 NOT VALID '/)
+*
+*-------------------------------------------------------------------
+*
+      end

@@ -4,13 +4,14 @@
 *
       integer function ouvrstrt ()
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     B. Dugas - Mars 2001
 *
 *revision
 * v2_30 - Dugas B.          - initial MPI version (from rdrstrt)
+* v3_30 - Desgagne & Winger - open global binary restart if existing
 *
 *object
 *
@@ -37,9 +38,14 @@
       if (Lun_rstrt .le. 0) then
 *
          Lun_rstrt = 0
-         ier = wkoffit('restart') 
+         ier = wkoffit('../restart_glbphy.bin')
 *
-         if (ier.ge.-1) ier = fnom( Lun_rstrt,'restart','RND+OLD',0 )
+         if (ier.ge.-1) then
+            ier = fnom( Lun_rstrt,'../restart_glbphy.bin','SEQ+UNF+OLD',0)
+         else
+            ier = wkoffit('restart') 
+            if (ier.ge.-1) ier = fnom( Lun_rstrt,'restart','RND+OLD',0 )
+         endif
 *
          if (ier.lt.0) then
             Rstri_rstn_L = .false.

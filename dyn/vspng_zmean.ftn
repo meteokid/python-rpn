@@ -1,0 +1,92 @@
+***   s/r vzpng_zmean - Calculate add/substract mean zonal wind component
+*
+#include "model_macros_f.h"
+*
+      subroutine vspng_zmean( F_pert,F_field,tsum,DIST_DIM, Nk, lmean )
+      implicit none
+*
+      integer DIST_DIM, Nk
+      real F_field(DIST_SHAPE,Nk),F_pert(DIST_SHAPE,Nk),tsum(l_nj,Nk)
+      logical lmean
+*
+*author
+*     Sylvie Gravel  - April 2006
+*
+*revision
+* v3_30 - Spacek L.      - initial MPI version
+*     
+*object
+*     The subroutine calculates the zonal mean of the zonal
+*     of the wind component and adds/substracts it to/from
+*     the corresponding component. It is supposed to be used only for
+*     non rotated grid.
+*     
+*implicits
+#include "glb_ld.cdk"
+*
+      integer i,j,k
+      integer i0,in,j0,jn,k0,kn,njk,err
+      real sum(l_nj,Nk)
+      real*8 fijk
+*
+*--------------------------------------------------------------------
+*
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+      k0 = 1
+      kn = Nk
+      njk= l_nj*Nk
+*
+      if(lmean) then
+*
+!$omp parallel private(fijk)
+!$omp do
+         do k=k0,kn
+            do j=j0,jn
+               fijk = 0.
+               do i=i0,in
+                  fijk = dble(F_field(i,j,k))+fijk
+               end do
+               sum(j,k) = real(fijk)
+            end do
+         end do
+!$omp enddo
+!$omp end parallel
+*
+         call rpn_comm_ALLREDUCE ( sum, tsum, l_nj*Nk,
+     $        "MPI_REAL","MPI_SUM","EW",err )
+*
+         tsum=tsum/real(G_ni)
+*
+!$omp parallel
+!$omp do
+         do k=k0,kn
+            do j=j0,jn
+               do i=i0,in
+                  F_pert(i,j,k) = F_field(i,j,k) - tsum(j,k)
+               end do
+            end do
+         end do
+!$omp enddo
+!$omp end parallel
+*
+      else
+!$omp parallel
+!$omp do
+         do k=k0,kn
+            do j=j0,jn
+               do i=i0,in
+                  F_pert(i,j,k) = F_field(i,j,k) + tsum(j,k)
+               end do
+            end do
+         end do
+!$omp enddo
+!$omp end parallel
+      endif
+*
+*----------------------------------------------------------------
+*
+      return
+      end subroutine vspng_zmean
