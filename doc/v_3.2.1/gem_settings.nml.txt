@@ -128,6 +128,7 @@ The following 4 parameters apply only for LAM grids                    |      |
 * P_pbl_schsl_s      |  SCHMSOL: land surface processes                |FCREST|
 * P_pbl_snoalb_L     |  SNOALB_ANL: true to use "snoalen" (I6)         |true  |
 *                    |              false to use "snoagen"(XA)         |      |
+* P_pbl_schurb_S     |  SCHMURB : urban surface processes              | NIL  |
 * E_tr3d_list_S      |  list of tracers to be read from analyse        |      |
 * E_trvs_list_S      |  list of sliced tracers read from analyse       |      |
 * E_schm_offline_L   |  .true. for GEM offline mode (MEC)              |false |
@@ -294,6 +295,8 @@ The following 4 parameters apply only for LAM grids                    |      |
 * Xst_statll         | stations chosen in lat,lon for time-series      |-9999.|
 * Lctl_debug_L       | .true. to print more information to std output  |false |
 * Lctl_r8stat_L      | .true. to print glbstats with double precistion |false |
+* Lctl_reset         | timestep to start the actual integration        |-1    |
+*                    | This allows a "warmup" integration period       |      | 
 * Out3_etik_S        | 'etiket' used in output fields. Default is taken| ' '  |
 *                    | from the entry run in gemntr run Out1_etik_S    |      |
 * Out3_flipit_L      | .true. to flip output from ni*nj*nk to ni*nk*nj |false |
@@ -322,9 +325,6 @@ The following 4 parameters apply only for LAM grids                    |      |
 * Out3_cubdd_L       | .true. for cubic interpolation for DD           |true  |
 * Out3_cubqq_L       | .true. for cubic interpolation for QQ and QR    |true  |
 * Out3_cubww_L       | .true. for cubic interpolation for WW           |true  |
-* Tr2d_incore_L      | .True. for chemistry tracers to be in core mem  |false |
-*                    | .False. for chemistry tracers to be written     |      |
-* Tr2d_ntpf          | Number of tracers per file written              | 10   |
 * Vtopo_start        | Timestep to start topography which varies in time -1   |
 * Vtopo_ndt          | Number of timesteps for topography to evolve    |  0   |
 * Vrtd_L             | apply background vert. diffusion  on U,V        |      |
@@ -692,15 +692,4 @@ The following 4 parameters apply only for LAM grids                    |      |
 * (There are other variables but pre-defined in the namelists above)          |
 * See the comdeck "theonml.cdk" for the keys active in this scheme            |
 * Default values depend on the theoretical case chosen                        |
-*-----------------------------------------------------------------------------
-*_____________________________________________________________________________
-*                                                                             |
-*     Coupling namelist                                                       |
-*_____________________________________________________________________________|
-*                    |                                                 |      |
-* NAME               | DESCRIPTION                                     |DEFVAL|
-*--------------------|-------------------------------------------------|------|
-* C_coupling         | to initialize for the coupling                  |false |
-* C_wave             | wave model                                      |false |
-* C_ocean_iml        | ocean model                                     |false |
 *-----------------------------------------------------------------------------

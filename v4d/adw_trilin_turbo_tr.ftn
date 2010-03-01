@@ -22,6 +22,7 @@
 *
 *revision
 * v3_20 -Valin & Tanguay -  initial version
+* v3_21 - Tanguay M.     - Revision Openmp
 *
 *object
 *     see id section
@@ -41,7 +42,11 @@
 * F_y          |   x,y,z positions                               |  i  |
 * F_z          | /                                               |  i  |
 *              |                                                 |     |
-* Fn_I         | localisation indices                            |  i  |
+* F_capx       | precomputed displacements along the x-direction |  o  | 
+* F_capy       | precomputed displacements along the y-direction |  o  | 
+* F_capz       | precomputed displacements along the z-direction |  io | 
+*              |                                                 |     |
+* Fn_I         | localisation indices                            |  io |
 *              |                                                 |     |
 * F_num        | number of points to interpolate                 |  i  |
 *______________|_________________________________________________|_____|
@@ -67,7 +72,8 @@
       jjmax = G_nj+Adw_haloy
       kkmax = l_nk-1
 *
-!$omp parallel do private(n,o1,o2,prf1,prf2,prf3,prf4)
+!$omp parallel do private(n,n0,ii,jj,kk,rri,rrj,rrk,
+!$omp&              capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4)
       do 100 k=1,kn
       do  90 j=j0,jn
       n0 = (k-1)*nij + ((j-1)*l_ni)
@@ -159,7 +165,7 @@
    80 continue
    90 continue
   100 continue
-!$omp end parallel do
+!$omp end parallel do 
 *
       Adw_hor_L = .false.
       Adw_ver_L = .false.

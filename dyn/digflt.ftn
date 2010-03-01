@@ -14,6 +14,7 @@
 * v2_30 - Edouard  S.       - remove pi' at the top
 * v2_31 - Desgagne M.       - re-introduce tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Lee V.            - Remove TR2d
 *
 *object
 *	
@@ -31,7 +32,6 @@
 #include "vta.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "p_bus.cdk"
 *
@@ -44,7 +44,7 @@
      $         read_db_file,write_db_file
 *
       integer err, key(26), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
-     $        keya(Tr3d_ntr), unf, unfa, ntr2do, cnt, j2do, m
+     $        keya(Tr3d_ntr)
       real tr1,tra
       pointer (patr1, tr1(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
       real    busper(max(1,p_bper_siz)), buf(l_ni,G_nk), dfcoef 
@@ -203,71 +203,6 @@
             err = vmmuld(key1,Tr3d_ntr)
             err = vmmuld(keya,Tr3d_ntr)
          endif
-         if (Tr2d_incore_L) then
-            do n=1,Tr2d_ntr
-               patr1 = loc(Tr2d_stk3d ((n-1)*LDIST_SIZ*l_nk+1))
-               patra = loc(Tr2d_stk3da((n-1)*LDIST_SIZ*l_nk+1))
-               do k=1,G_nk
-               do j=1,l_nj
-               do i=1,l_ni
-                  tra(i,j,k) = tra(i,j,k) + dfcoef * tr1(i,j,k)
-               end do
-               end do
-               end do
-            end do
-         else
-            allocate (tr2(l_ni,l_nj,G_nk,Tr2d_ntpf))
-            allocate (tr3(l_ni,l_nj,G_nk,Tr2d_ntpf))
-            do n=1,Tr2d_nbf
-               unf   = Tr2d_unf ((n-1)*Tr2d_ntpf+1)
-               unfa  = Tr2d_unfa((n-1)*Tr2d_ntpf+1)
-               err = rewind_db_file (unf)
-               err = read_db_file (unf ,ntr2do,1)
-               err = rewind_db_file (unfa)
-
-c              ntr2do = Tr2d_ntpf
-c               if (n.eq.Tr2d_nbf) ntr2do=Tr2d_ntr-(n-1)*Tr2d_ntpf
-               cnt = l_ni*G_nk
-               do j=1,l_nj
-                  err = read_db_file(unf,j2do,1)
-                  do m=1,ntr2do
-                     err = read_db_file (unf,buf,cnt)
-                     do k=1,G_nk
-                     do i=1,l_ni
-                        tr2(i,j2do,k,m) = buf(i,k)
-                     end do
-                     end do   
-                  end do
-               end do
-               cnt = cnt*l_nj
-               if (Lctl_step.gt.0) then
-                  do m=1,ntr2do
-                     err = read_db_file (unfa,tr3(1,1,1,m),cnt)
-                     do k=1,G_nk
-                     do j=1,l_nj
-                     do i=1,l_ni
-                        tr3(i,j,k,m) = tr3(i,j,k,m) + 
-     $                                    dfcoef * tr2(i,j,k,m)
-                     end do
-                     end do
-                     end do
-                     err = write_db_file (unfa,tr3(1,1,1,m),cnt)
-                  end do
-               else
-                  do m=1,ntr2do
-                     do k=1,G_nk
-                     do j=1,l_nj
-                     do i=1,l_ni
-                        tr3(i,j,k,m) = dfcoef * tr2(i,j,k,m)
-                     end do
-                     end do
-                     end do
-                     err = write_db_file (unfa,tr3(1,1,1,m),cnt)
-                  end do
-               endif
-            end do
-            deallocate (tr2,tr3)
-        endif
 *
       elseif ( Lctl_step .eq. (Init_dfnp-1)/2 ) then
 *
@@ -293,44 +228,6 @@ c               if (n.eq.Tr2d_nbf) ntr2do=Tr2d_ntr-(n-1)*Tr2d_ntpf
             end do
             err = vmmuld(key1,Tr3d_ntr)
             err = vmmuld(keya,Tr3d_ntr)
-         endif
-         if (Tr2d_incore_L) then
-            do n=1,Tr2d_ntr
-               patr1 = loc(Tr2d_stk3d ((n-1)*LDIST_SIZ*l_nk+1))
-               patra = loc(Tr2d_stk3da((n-1)*LDIST_SIZ*l_nk+1))
-               do k=1,G_nk
-               do j=1,l_nj
-               do i=1,l_ni
-                  tra(i,j,k) = tr1(i,j,k)
-               end do
-               end do
-               end do
-            end do
-         else
-            cnt = l_ni*G_nk
-            allocate (tr2(l_ni,l_nj,G_nk,Tr2d_ntpf))
-            do n=1,Tr2d_nbf
-               unf   = Tr2d_unf ((n-1)*Tr2d_ntpf+1)
-               unfa  = Tr2d_unfa((n-1)*Tr2d_ntpf+1)
-               err = rewind_db_file (unf)
-               err = read_db_file (unf ,ntr2do,1)
-               err = rewind_db_file (unfa)
-               do j=1,l_nj
-                  err = read_db_file(unf,j2do,1)
-                  do m=1,ntr2do
-                     err = read_db_file (unf,buf,cnt)
-                     do k=1,G_nk
-                     do i=1,l_ni
-                        tr2(i,j2do,k,m) = buf(i,k)
-                     end do
-                     end do   
-                  end do
-               end do
-               do m=1,ntr2do
-                  err = write_db_file (unfa,tr2(1,1,1,m),cnt*l_nj)
-               end do
-            end do
-            deallocate (tr2)
          endif
 *
       endif

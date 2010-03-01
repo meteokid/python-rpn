@@ -36,6 +36,10 @@
 * v3_20 - Leduc A-M.         - add P_cond_kticefrac_L
 * v3_20 - Leduc/Bilodeau     - add P_pbl_z0tlat
 * v3_20 - Pellerin P.        - off-line mode
+* v3_21 - Talbot D.          - add P_pbl_tdiaglim_L
+* v3_21 - Leduc A-M.         - add P_rad_tsflxir_L
+* v3_21 - Lemonsu A.         - add P_pbl_schurb_s
+* v3_21 - Desgagne M.        - call inctphy3
 *
 *object
 *       See above id
@@ -57,12 +61,13 @@
 #include "p_nml.cdk"
 #include "p_nml2.cdk"
 #include "schm.cdk"
+#include "ptopo.cdk"
 *
 *modules
       character*256 fln1_S,fln2_S
-      logical inctphy2,set_dcst
+      logical inctphy3,set_dcst
       integer fnom,longueur
-      external inctphy2, set_dcst, fnom, longueur
+      external inctphy3, set_dcst, fnom, longueur
 *
       integer i,err,nrec,bidon,status_nml,status_nml2
       real deg_2_rad
@@ -71,7 +76,7 @@
 *
       if (lun_out.gt.0) write(Lun_out,9001)
 *
-      if (.not.inctphy2(set_dcst,lun_cte,lun_out)) then
+      if (.not.inctphy3(set_dcst,Ptopo_myproc)) then
          if (Lun_out.gt.0) write (Lun_out,9003)
          err= -1
          call stopmpi(err)
@@ -85,12 +90,13 @@
       P_pset_xblnd   = 1
       P_pset_yblnd   = 1
 *
-      P_rad_schm_s   = 'oldrad' 
-      P_rad_knt      = 3 
-      P_rad_fomic_L  = .false.
-      P_rad_filter_L = .true.
-      P_rad_ftp_s    = "STD"
-      P_rad_qco2     = 360.
+      P_rad_schm_s     = 'oldrad' 
+      P_rad_knt        = 3 
+      P_rad_fomic_L    = .false.
+      P_rad_filter_L   = .true.
+      P_rad_tsflxir_L  = .false.
+      P_rad_ftp_s      = "STD"
+      P_rad_qco2       = 360.
 *
       do i=1,CNMXRAD+1
          P_rad_nivl(i) = 0
@@ -110,6 +116,7 @@
       P_pbl_stomat_L = .false.
       P_pbl_typsol_L = .false.
       P_pbl_advectke_L = .false.
+      P_pbl_schurb_s = 'NIL'
       P_pbl_bndlr_s  = 'NIL'
       P_pbl_mix_s    = 'BLAC62'
       P_pbl_cst      = 2.3E+06
@@ -139,6 +146,7 @@
       P_pbl_monta_L  = .true.
       P_pbl_iceme_L  = .false.
       P_pbl_impflx_L = .false.
+      P_pbl_tdiaglim_L = .false.
 *
       do 50 i=1,cnmaxad
          P_pbl_spng(i) = 0.0
@@ -423,7 +431,7 @@ c      endif
      +/,'========================================================') 
 *
  9003 format(
-     $/,'PROBLEM INITIALIZATING PHYSICAL CONSTANTS in (S/R inctphy2)',
+     $/,'PROBLEM INITIALIZATING PHYSICAL CONSTANTS in (S/R inctphy3)',
      +/,'====================== ABORT ==============================')
 *
  9004 format(

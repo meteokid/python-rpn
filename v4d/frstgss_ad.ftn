@@ -14,6 +14,7 @@
 * v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
 * v2_31 - Tanguay M.        - introduce Lun_debug_L 
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *object
 *    see id section
@@ -64,6 +65,7 @@
       if ( .not. Schm_hydro_L ) then
          pnerr = VMM_GET_VAR(mut0)
          pnerr = VMM_GET_VAR(mut1)
+!$omp parallel do
          do k=1,l_nk
          do j= 1 , l_nj
          do i= 1 , l_ni
@@ -72,11 +74,13 @@
          end do
          end do
          end do
+!$omp end parallel do
       endif
 *
       if ( .not. Schm_cptop_L .or. .not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(fipt0)
          pnerr = VMM_GET_VAR(fipt1)
+!$omp parallel do
          do k=1,l_nk
          do j= 1 , l_nj
          do i= 1 , l_ni
@@ -85,6 +89,7 @@
          end do
          end do
          end do
+!$omp end parallel do
       endif
 *
       if ( Cori_cornl_L ) then
@@ -92,6 +97,7 @@
          pnerr = VMM_GET_VAR(ut1)
          pnerr = VMM_GET_VAR(vt0)
          pnerr = VMM_GET_VAR(vt1)
+!$omp parallel do
          do k=1,l_nk
          do j= 1 , l_nj
          do i= 1 , l_ni
@@ -102,6 +108,7 @@
          end do
          end do
          end do
+!$omp end parallel do
       endif
 *
       pnerr = vmmuld(-1,0)
@@ -131,13 +138,18 @@
       pnerr = VMM_GET_VAR(tplt1)
       pnerr = VMM_GET_VAR(st1)
 *
+!$omp parallel
+*
+!$omp do 
       do j= 1 , l_nj
       do i= 1 , l_ni
          st1  (i,j) = st0  (i,j) + st1  (i,j)
          st0  (i,j) = ZERO_8 
       end do
       end do
+!$omp end do 
 *
+!$omp do 
       do k=1,l_nk
       do j= 1 , l_nj
       do i= 1 , l_ni
@@ -152,6 +164,9 @@
       end do
       end do
       end do
+!$omp end do 
+*
+!$omp end parallel 
 *
       pnerr = vmmuld(-1,0)
 *

@@ -14,6 +14,7 @@
 * v2_21 - Deagegne M.          - Re-organising local geofld
 * v2_21 - Desgagne M.          - rpn_comm stooge for MPI
 * v3_10 - Lee V.               - RPN_bcastc for bcast on MPI_CHARACTER
+* v3_21 - Valcke, S.           - Read land-sea or coupling mask for coupling
 *
 *object
 **      Reads the entire content of bus "geobus" from file "geophy.bin"
@@ -27,6 +28,7 @@
 #include "ptopo.cdk"
 #include "p_bus.cdk"
 #include "p_geobus.cdk"
+#include "c_cplg.cdk"
 *
 *modules
 *
@@ -48,7 +50,7 @@
 * NEW    '5A' ,'TM' ,'9A' ,'9A' ,'2B' ,'2B','LE' ,     ,'1B'
 *
 **
-      integer i, ierr, err, nfields, osgeo
+      integer i, ierr, err, nfields, osgeo, offg, il_siz
       data osgeo/33/
 *
 *     ---------------------------------------------------------------
@@ -83,6 +85,25 @@
              close (osgeo)
 *
           endif
+*
+          IF (C_coupling_L) THEN
+*         Allocate and save mask in global variable for transfer to Oasis
+              il_siz = G_ni*G_nj
+              CALL hpalloc (p_rga_msk, il_siz, ierr, 1)
+              lg_mcpl = .false.
+              DO i=1,p_bgeo_top
+                IF (trim(geonm(i,1)) .eq. 'MCPL') THEN
+*               IF explicit coupling mask exists in data file, use it
+*               (valid points must be = 1, non valid point = 0)
+                    offg= geopar(i,1)
+                    rga_msk(1:il_siz) = geobus(offg:il_siz+offg-1)
+                    lg_mcpl = .true.
+                ELSE IF (trim(geonm(i,1)).eq.'MGEN' .and. .not. lg_mcpl ) THEN
+                    offg= geopar(i,1)
+                    rga_msk(1:il_siz) = geobus(offg:il_siz+offg-1)
+                ENDIF
+              END DO
+          ENDIF
 *
       endif
       call gem_stop ('READGEO',err)

@@ -1,0 +1,190 @@
+***s/r adw_interp2_tl - TLM of adw_interp2 when Adw_lag3d_L=.TRUE. 
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_interp2_tl( F_out, F_in, F_u, F_v,
+     %                           F_outm,F_inm,F_um,F_vm,
+     %                           F_wind_L, F_mono_L, DIST_DIM, Nk,i0,in,j0,jn )
+*
+      implicit none
+*
+      logical F_wind_L, F_mono_L
+*
+      integer DIST_DIM, Nk, i0,in,j0,jn
+*
+      real F_out (DIST_SHAPE, Nk),
+     %     F_in  (DIST_SHAPE, Nk)
+      real F_u(*), F_v(*)
+*
+      real F_outm(DIST_SHAPE, Nk),
+     %     F_inm (DIST_SHAPE, Nk)
+      real F_um(*), F_vm(*)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured Adw_main 
+* v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_20 - Tanguay M.        - Lagrange 3D
+* v3_21 - Tanguay M.        - Revision Openmp
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_out        | interpolated field                              |  o  |
+* F_in         | field to interpolate                            |  i  |
+* F_wind_L     | switch: .true. : field to interpolate is a wind |  i  |
+*              |                  like quantity                  |  i  |
+* F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "adw.cdk"
+#include "adwm.cdk"
+*
+************************************************************************
+      integer i, j, k, nij, nijk, nijkag, n, dest_ni
+*
+      real dummy
+*
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *l_nk
+      nijkag = Adw_nit*Adw_njt*l_nk
+*
+************************************************************************
+*
+* Adjust field to advection grid
+*
+* Compute extension beyond the pole if appropriate
+*
+************************************************************************
+      if (G_lam) then
+          n=0
+          dest_ni=l_ni
+      else
+          n=999
+          dest_ni=G_ni
+      endif
+*
+*     TRAJECTORY
+*     ----------
+!$omp single
+      call rpn_comm_xch_halox (F_inm, LDIST_DIM, l_ni, l_nj, l_nk,
+     % Adw_halox, Adw_haloy, G_periodx, G_periody, F_um, -Adw_halox+1,
+     % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, n)
+*
+*     TLM
+*     ---
+      call rpn_comm_xch_halox (F_in, LDIST_DIM, l_ni, l_nj, l_nk,
+     % Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, -Adw_halox+1,
+     % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, n)
+!$omp end single
+*
+      if (.not.G_lam) then
+*
+*     TRAJECTORY
+*     ----------
+      if ( l_south ) then
+*
+         if ( F_wind_L ) then
+            call adw_pol0 (F_um, 0, Adw_nic,Adw_halox,Adw_njc,
+     %                     Adw_haloy,l_nk)
+         else
+            call adw_pols (F_um,Adw_wx_8, 0, Adw_nic,Adw_halox,
+     %                     Adw_njc,Adw_haloy,l_nk)
+         endif
+            call adw_polx (F_um,Adw_xg_8,.true.,Adw_nic,Adw_halox,
+     %                     Adw_njc,Adw_haloy,l_nk)
+      endif
+*
+      if ( l_north ) then
+*
+         if ( F_wind_L ) then
+            call adw_pol0 (F_um,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,
+     %                     Adw_haloy,l_nk)
+         else
+            call adw_pols (F_um,Adw_wx_8, Adw_njc+1,Adw_nic,Adw_halox,
+     %                     Adw_njc,Adw_haloy,l_nk)
+         endif
+            call adw_polx (F_um,Adw_xg_8,.false.,Adw_nic,Adw_halox,
+     %                     Adw_njc,Adw_haloy,l_nk)
+      endif
+*
+*     TLM
+*     ---
+      if ( l_south ) then
+*
+         if ( F_wind_L ) then
+            call adw_pol0 (F_u, 0, Adw_nic,Adw_halox,Adw_njc,
+     %                     Adw_haloy,l_nk)
+         else
+            call adw_pols (F_u,Adw_wx_8, 0, Adw_nic,Adw_halox,
+     %                     Adw_njc,Adw_haloy,l_nk)
+         endif
+            call adw_polx (F_u,Adw_xg_8,.true.,Adw_nic,Adw_halox,
+     %                     Adw_njc,Adw_haloy,l_nk)
+      endif
+*
+      if ( l_north ) then
+*
+         if ( F_wind_L ) then
+            call adw_pol0 (F_u,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,
+     %                     Adw_haloy,l_nk)
+         else
+            call adw_pols (F_u,Adw_wx_8, Adw_njc+1,Adw_nic,Adw_halox,
+     %                     Adw_njc,Adw_haloy,l_nk)
+         endif
+            call adw_polx (F_u,Adw_xg_8,.false.,Adw_nic,Adw_halox,
+     %                     Adw_njc,Adw_haloy,l_nk)
+      endif
+*
+      endif
+************************************************************************
+*
+* Compute second derivative for cubic spline in the vertical
+*
+************************************************************************
+*
+************************************************************************
+*
+* Interpolate
+*
+************************************************************************
+      call adw_tricub_lag3d_tl(Adw_wrkc,   F_u,
+     %                         Adw_capx1,  Adw_capy1,  Adw_capz1,
+     %                         Adwm_wrkcm, F_um,
+     %                         Adwm_capx1m,Adwm_capy1m,Adwm_capz1m,
+     %                         nijk, F_mono_L,i0,in,j0,jn,l_nk)
+*
+!$omp do
+      do k = 1, l_nk
+      do j = j0,jn
+      do i = i0,in
+*
+*     TRAJECTORY
+*     ----------
+      F_outm(i,j,k) = Adwm_wrkcm ( (k-1)*nij+(j-1)*l_ni+i )
+*
+*     TLM
+*     ---
+      F_out(i,j,k) = Adw_wrkc ( (k-1)*nij+(j-1)*l_ni+i )
+*
+      enddo
+      enddo
+      enddo
+!$omp enddo
+*
+      return
+      end

@@ -23,6 +23,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Dugas B.          - account for a possible second call to the physics
 * v3_11 - A. Plante         - Add call to set_dia for LAM for time-series
+* v3_21 - Valcke S.         - Initialize coupling fields
 *
 *object
 *	See above ID.
@@ -54,6 +55,11 @@
 *       --------------------------------
 *
       call p_set()
+*
+*C      Initialize coupling fields
+*       --------------------------
+*
+      call c_init_cplfld (G_ni, G_nj)
 *
 *C      Initialize zonal, grid points and dynamic diagnostics
 *       -----------------------------------------------------

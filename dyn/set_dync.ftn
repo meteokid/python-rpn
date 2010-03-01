@@ -13,7 +13,8 @@
 * v2_10 - Lee V.             - correction to call to pstune
 * v2_20 - Desgagne M.        - fnom on Wafiles now in p_set
 * v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
-* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Desgagne & Lee     - Lam configuration
+* v3_21 - Desgagne M.        - Optimization
 *
 *object
 *
@@ -25,6 +26,7 @@
 #include "lun.cdk"
 #include "cstv.cdk"
 #include "geomg.cdk"
+#include "geomg_n1.cdk"
 #include "grd.cdk"
 #include "schm.cdk"
 #include "pres.cdk"
@@ -61,6 +63,7 @@
          Geomg_pib(k) = Geomg_pibb(k) * Cstv_pisrf_8
          Geomg_z_8(k) = Geomg_pia(k) + Geomg_pib(k)
       end do
+      call vrec (geomg_invz_8   , geomg_z_8  , G_nk )
 *
       if (Grd_rcoef.gt.1.0) then
           Geomg_dpib(1) = 0.0

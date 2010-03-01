@@ -24,6 +24,7 @@
 * v2_30 - Lee V.            - reorganize slab output to be more efficient
 * v2_32 - Lee V.            - reduce dynamic allocation size
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Lee V.            - Output optimization
 *
 *object
 *     output all the fields related to horizontal vorticity
@@ -47,6 +48,7 @@
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "level.cdk"
+#include "lctl.cdk"
 *
 *
 **
@@ -60,14 +62,14 @@
       integer pnds, pnq3, pnqs, pndd, pnqq, pnqr, psum
       integer nbit(0:Outd_var_max(F_set)+1),filt(0:Outd_var_max(F_set)+1)
       real    coef(0:Outd_var_max(F_set)+1)
+      integer :: lastdt = -1
+      real, dimension(:,:,:),pointer :: t1,t2,t3,t4,t5,t6,t7,t8
+      real, dimension(:,:),pointer :: w31
+      save lastdt,t1,t2,t3,t4,t5,t6,t7,t8,w31
 *
       real prprlvl(F_nko)
-      real w11(minx:maxx,miny:maxy,F_nk),w31(minx:maxx,miny:maxy) 
+      real w11(minx:maxx,miny:maxy,F_nk)
       real w1(minx:maxx,miny:maxy,F_nko),w2(minx:maxx,miny:maxy,F_nko)
-      real t1(minx:maxx,miny:maxy,F_nk), t2(minx:maxx,miny:maxy,F_nk)
-      real t3(minx:maxx,miny:maxy,F_nk), t4(minx:maxx,miny:maxy,F_nk)
-      real t5(minx:maxx,miny:maxy,F_nk), t6(minx:maxx,miny:maxy,F_nk)
-      real t7(minx:maxx,miny:maxy,F_nk), t8(minx:maxx,miny:maxy,F_nk)
       real t9(minx:maxx,miny:maxy,F_nk)
 *
 *_______________________________________________________________________
@@ -110,17 +112,32 @@
 *     2.0     Calculation  DS, Q3
 *_______________________________________________________________________
 *
-      call rpn_comm_xch_halo (F_ut1,LDIST_DIM,l_ni,l_nj,G_nk,
+      If (lastdt .eq. -1) then
+          allocate ( w31(minx:maxx,miny:maxy) ) 
+          allocate (  t1(minx:maxx,miny:maxy,F_nk) )
+          allocate (  t2(minx:maxx,miny:maxy,F_nk) )
+          allocate (  t3(minx:maxx,miny:maxy,F_nk) )
+          allocate (  t4(minx:maxx,miny:maxy,F_nk) )
+          allocate (  t5(minx:maxx,miny:maxy,F_nk) )
+          allocate (  t6(minx:maxx,miny:maxy,F_nk) )
+          allocate (  t7(minx:maxx,miny:maxy,F_nk) )
+          allocate (  t8(minx:maxx,miny:maxy,F_nk) )
+      endif
+
+      if (lastdt .ne. Lctl_step) then
+
+          call rpn_comm_xch_halo (F_ut1,LDIST_DIM,l_ni,l_nj,G_nk,
      $         G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      call rpn_comm_xch_halo (F_vt1,LDIST_DIM,l_ni,l_nj,G_nk,
+          call rpn_comm_xch_halo (F_vt1,LDIST_DIM,l_ni,l_nj,G_nk,
      $         G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
 *  Calculate horizontal divergence (DS)  in pi* vertical coordinate
-      call caldiv_2 (t1, F_ut1, F_vt1, LDIST_DIM, G_nk)
+          call caldiv_2 (t1, F_ut1, F_vt1, LDIST_DIM, G_nk)
 
 *  Calculate horizontal relative vorticity (Q3) in pi* vertical coordinate
-      call calvor (t2, F_ut1, F_vt1 ,t3, LDIST_DIM, G_nk)
-      if (G_lam) then
+          call calvor (t2, F_ut1, F_vt1 ,t3, LDIST_DIM, G_nk)
+
+          if (G_lam) then
           if (l_west) then
             do k=1,G_nk
              do j=2,l_njv
@@ -153,27 +170,24 @@
              enddo
             enddo
           endif
-      endif
+          endif
 *_______________________________________________________________________
 *
 *     3.0     Calculation  DD, QR and vertical derivatives
 *_______________________________________________________________________
 *
-      if ( pndd.ne.0.or.pnqr.ne.0.or.pnqq.ne.0) then
-
-        do k=1,l_nk
-        do j= j0, jn
-        do i= i0, in
-           t5(i,j,k) = t1(i,j,k)
-           t6(i,j,k) = t2(i,j,k)
-        enddo
-        enddo
-        enddo
+          do k=1,l_nk
+          do j= j0, jn
+          do i= i0, in
+             t5(i,j,k) = t1(i,j,k)
+             t6(i,j,k) = t2(i,j,k)
+          enddo
+          enddo
+          enddo
 * Calculate horizontal divergence (DD) and relative vorticity (QR) 
 *     in pressure vertical coordinate
-        call calddqr( t5, t6, F_wlnph, F_ut1, F_vt1,
+          call calddqr( t5, t6, F_wlnph, F_ut1, F_vt1,
      $                t3, t4, t7, t8, t9, LDIST_DIM, G_nk)
-      endif
 
 
 *_______________________________________________________________________
@@ -182,13 +196,21 @@
 *_______________________________________________________________________
 *
 *  Calculate coriolis parameter
-      if ( pnqs.ne.0 .or. pnqq.ne.0 ) then
-        do j= j0, jn
-        do i= i0, in
-           w31(i,j) = 2.0 * Dcst_omega_8 * sin(F_wlao(i,j))
-        enddo
-        enddo
+          do j= j0, jn
+          do i= i0, in
+             w31(i,j) = 2.0 * Dcst_omega_8 * sin(F_wlao(i,j))
+          enddo
+          enddo
+* Calculate vertical derivative of DD(t5) with respect to F_wlnph
+          call verder (t7,t5,F_wlnph,2.0,2.0,LDIST_DIM,G_nk,i0,in,j0,jn)
+* Calculate vertical derivative of QR(t6) with respect to F_wlnph
+          call verder (t8,t6,F_wlnph,2.0,2.0,LDIST_DIM,G_nk,i0,in,j0,jn)
+* Calculate vertical derivative of DS(t1) with respect to F_wlnph
+          call verder (t3,t1,F_wlnph,2.0,2.0,LDIST_DIM,G_nk,i0,in,j0,jn)
+*       get vertical derivative of Q3(wijk2) with respect to F_wlnph
+          call verder (t4,t2,F_wlnph,2.0,2.0,LDIST_DIM,G_nk,i0,in,j0,jn)
       endif
+      lastdt = Lctl_step
 *
       if (F_levtyp_S .eq. 'M') then
 *_______________________________________________________________________
@@ -237,16 +259,6 @@
 *     5.0B   Output of DS, Q3, QS, DD, QR, and QQ on PRESSURE levels
 *_______________________________________________________________________
 *
-         if ( pndd.ne.0.or.pnqr.ne.0.or.pnqq.ne.0) then
-* Calculate vertical derivative of DD(t5) with respect to F_wlnph
-            call verder (t7,t5,F_wlnph,2.0,2.0,LDIST_DIM,G_nk,i0,in,j0,jn)
-* Calculate vertical derivative of QR(t6) with respect to F_wlnph
-            call verder (t8,t6,F_wlnph,2.0,2.0,LDIST_DIM,G_nk,i0,in,j0,jn)
-         endif
-* Calculate vertical derivative of DS(t1) with respect to F_wlnph
-         call verder (t3,t1,F_wlnph,2.0,2.0,LDIST_DIM,G_nk,i0,in,j0,jn)
-*     get vertical derivative of Q3(wijk2) with respect to F_wlnph
-         call verder (t4,t2,F_wlnph,2.0,2.0,LDIST_DIM,G_nk,i0,in,j0,jn)
 *
          do i = 1, F_nko
             prprlvl(i) = F_rf(i) * 100.0

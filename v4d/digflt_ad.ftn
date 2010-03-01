@@ -11,6 +11,7 @@
 *
 *revision
 * v3_11 - Tanguay M.       - initial MPI version
+* v3_21 - Lee V.            - Remove TR2d
 *
 *object
 *	
@@ -28,7 +29,7 @@
 #include "vta.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
-#include "tr2d.cdk"
+cvl#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "p_bus.cdk"
 *
@@ -49,7 +50,7 @@
       real*8, parameter :: ZERO_8 = 0.0
 *     __________________________________________________________________
 *
-      if ( Tr2d_ntr.ne.0 ) call gem_stop ('digflt_ad',-1) 
+cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop ('digflt_ad',-1) 
 *
       dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Lctl_step ) )
 *

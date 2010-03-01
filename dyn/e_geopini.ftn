@@ -53,6 +53,8 @@
 *
       call low2up (P_pbl_schsl_s,dum_S)
       P_pbl_schsl_s = dum_S
+      call low2up (P_pbl_schurb_s,dum_S)
+      P_pbl_schurb_s = dum_S
 *
 * Initializing all elements of common p_geobusid to -1 (p_geobus.cdk)
 *
@@ -93,8 +95,15 @@
      $'VN=z0en    ; VS=row  ; EN=zp; INTERP=LINEAR; SEQ=G' )
       call mgsdict (ni, nj, snodp, 
      $'VN=snodpen ; VS=row  ; EN=sd; INTERP=NEAREST ; SEQ=AV')
+      call mgsdict (ni, nj, i0,     
+     $'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
       call mgsdict (ni, nj, vegf,  
      $'VN=vegfen ; VS=row*26; EN=vf; INTERP=NEAREST ; SEQ=G' )
+*
+      if (P_pbl_schurb_s.eq.'TEB') then
+       call mgsdict (ni, nj, urbf,  
+     $ 'VN=urbfen ; VS=row*12; EN=uf; INTERP=NEAREST ; SEQ=G' )
+      endif
 *
       if ( E_geol_glreg_L ) then
          k1 = fstinf (e_fu_anal  ,ni1,nj1,nk1,-1,'ANLREG',-1,-1,-1,
@@ -128,8 +137,6 @@
 *  FOR FORCE-RESTORE
 *
       if (P_pbl_schsl_s.eq.'FCREST') then
-         call mgsdict (ni, nj, i0,     
-     $    'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
 *
       if (.not. E_geol_hscon_L) then
          k1 = fstinf (e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
@@ -177,12 +184,11 @@
 *
       call mgsdict (ni, nj, al,    
      $'VN=alen    ; VS=row  ; EN=al; INTERP=NEAREST ; SEQ=GC; etk=NO SNOW')
+
 *
 *  FOR ISBA
 *
       if (P_pbl_schsl_s.eq.'ISBA') then
-        call mgsdict (ni, nj, i0,
-     $   'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
         call mgsdict (ni, nj, wsoil, 
      $  'VN=wsoilen; VS=row*2 ; EN=i1; INTERP=NEAREST  ; SEQ=A' )
         call mgsdict (ni, nj, isoil, 
@@ -207,8 +213,6 @@
       endif
 *
       if (P_pbl_schsl_s.eq.'CLASS') then
-         call mgsdict (ni, nj, i0,
-     $    'VN=tsoilen ; VS=row*3; EN=i0; INTERP=LINEAR; SEQ=AV')
         call mgsdict (ni, nj, wsoil,
      $  'VN=wsoilen; VS=row*3 ; EN=i1; INTERP=NEAREST  ; SEQ=A' )
         call mgsdict (ni, nj, isoil,

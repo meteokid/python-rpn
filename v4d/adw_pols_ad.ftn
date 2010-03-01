@@ -18,6 +18,7 @@
 *
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *language
 *     fortran 77
@@ -72,20 +73,22 @@
 *
 *     ADJ
 *     ---
+!$omp do 
       do k = 1,F_nk
 *
-      do i=F_nic+F_halox,-F_halox+1,-1
-      ww_8             = dble(F_field(i,F_j,k)) + ww_8
-      F_field(i,F_j,k) = ZERO_8
-      enddo
+         do i=F_nic+F_halox,-F_halox+1,-1
+            ww_8             = dble(F_field(i,F_j,k)) + ww_8
+            F_field(i,F_j,k) = ZERO_8
+         enddo
 *
-      do i=F_nic,1,-1
-      F_field(i,j,k) = F_wx_8(i) * ww_8 + F_field(i,j,k)
-      enddo
+         do i=F_nic,1,-1
+            F_field(i,j,k) = F_wx_8(i) * ww_8 + F_field(i,j,k)
+         enddo
 *
-      ww_8 = ZERO_8
+         ww_8 = ZERO_8
 *
       enddo
+!$omp enddo 
 *
       return
       end

@@ -25,7 +25,6 @@
 #include "out1.cdk"
 #include "pilot.cdk"
 #include "hblen.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "lun.cdk"
 #include "p_geol.cdk"
@@ -106,7 +105,6 @@
       Offc_b1_8 =  0.5
 
       Tr3d_userntr=1
-      Tr2d_userntr=0
 
       Hblen_momentx=0
       Hblen_momenty=0

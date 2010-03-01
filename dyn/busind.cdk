@@ -4,24 +4,28 @@
      $        umoins,vmoins,tmoins,gzmoins6,humoins,pmoins,
      $        uplus ,vplus ,tplus ,huplus ,pplus ,
      $        omegap,sigm,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
+     $        fccpl,fvcpl,mccpl,
 *busvol
      $        trad,udifv,vdifv,tdifv,qdifv,ugwd,vgwd,tcond,hucond,
-     $        km,kt,bm,bt,flusolis,rt,
+     $        km,kt,bm,bt,flusolis,rt,pr,fc,fv,
 *busper
      $        dlat,dlon,mg,ml,z0,lhtg,alvis,twater,tglacier,tsoil,
      $        wsoil,snodp,icedp,glsea,glsea0,ufcp,vfcp,
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp,
-     $        fdsi, tss, fiaf, flusolaf, cosz
+     $        fdsi, tss, cosz, tdiag, udiag, vdiag,
+     $        qdiag,tmice
       common /dynbusid/
      $        umoins,vmoins,tmoins,gzmoins6,humoins,pmoins,
      $        uplus ,vplus ,tplus ,huplus ,pplus ,
      $        omegap,sigm,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
+     $        fccpl,fvcpl,mccpl,
      $        trad,udifv,vdifv,tdifv,qdifv,ugwd,vgwd,tcond,hucond,
-     $        km,kt,bm,bt,flusolis,rt,
+     $        km,kt,bm,bt,flusolis,rt,pr,fc,fv,
      $        dlat,dlon,mg,ml,z0,lhtg,alvis,twater,tglacier,tsoil,
      $        wsoil,snodp,icedp,glsea,glsea0,ufcp,vfcp,
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp,
-     $        fdsi, tss
+     $        fdsi, tss, cosz, tdiag, udiag, vdiag,
+     $        qdiag,tmice
 
       integer h2o_maxn,h2o_ntr,h2o_deb
       parameter (h2o_maxn=5)

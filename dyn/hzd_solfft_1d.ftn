@@ -22,6 +22,7 @@
 *
 *revision
 * v3_20 - Tanguay M.        - initial version
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *object
 *    see id section 
@@ -35,12 +36,8 @@
 *
 **
 #include "ptopo.cdk"
-      real*8   fdg1_8 ( miny:maxy, minx1:maxx1, gni+F_npex ),
-     $         fdg2_8 (minx1:maxx1,minx2:maxx2, nx3+F_npey ),
-     $         dn3_8 (minx1:maxx1,minx2:maxx2,F_pwr,nx3),
-     $         sol_8 (minx1:maxx1,minx2:maxx2,F_pwr,nx3),
-     $         fwft_8( miny:maxy ,minx1:maxx1,gni+2+F_npex),
-     $         wrk_8 (njl,nkl,gni)
+      real*8   fdg1_8( miny:maxy, minx1:maxx1,gni+  F_npex),
+     $         fwft_8( miny:maxy ,minx1:maxx1,gni+2+F_npex)
 *
       real*8   ZERO_8, fact_8
       parameter( ZERO_8 = 0.0 )      
@@ -63,11 +60,6 @@
 !$omp do
       do i = 1, Gni
          do k = 1, Nkl
-         do j = 1, njl
-            fdg1_8(j,k,i) = F_opsxp0_8(gni+i)*fdg1_8(j,k,i)
-         enddo
-         enddo
-         do k = 1, Nkl
          do j= njl+1,maxy
             fwft_8(j,k,i) = ZERO_8
          enddo
@@ -84,7 +76,7 @@
                fwft_8(j,k,i) = ZERO_8
             enddo
             do j=1,njl
-               fwft_8(j,k,i) = fdg1_8(j,k,i)
+               fwft_8(j,k,i) = F_opsxp0_8(gni+i)*fdg1_8(j,k,i)
             enddo
          enddo
       enddo
@@ -132,45 +124,15 @@
 *     Scaling only (WE DO NOT RESOLVE A TRIDIAGONAL MATRIX in Y)  
 *     ----------------------------------------------------------
 *
-!$omp do
-      do i = 1,gni
-      do k = 1,nkl
-      do j = 1,njl
-         wrk_8(j,k,i) = ZERO_8
-      enddo
-      enddo
-      enddo
-!$omp enddo
-*
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-*
-!$omp do
-      do i = 1,gni
-      do k = 1,nkl
-      do j = 1,njl
-         indy = offj + j
-         wrk_8(j,k,i) = F_opsyp0_8(nx3+indy)*fwft_8(j,k,i+1)
-      enddo
-      enddo
-      enddo
-!$omp enddo
-*
-!$omp do
-      do i = 1,gni
-      do k = 1,nkl
-      do j = 1,njl
-         indy = offj + j
-         wrk_8(j,k,i)= F_deltai_8(F_pwr,1,i,indy)*wrk_8(j,k,i)
-      enddo
-      enddo
-      enddo
-!$omp enddo
 *
 !$omp do                                                                       
       do i = 1,gni
       do k = 1,nkl
       do j = 1,njl
-         fdg1_8(j,k,i)=wrk_8(j,k,i)
+         indy = offj + j
+         fdg1_8(j,k,i)=F_deltai_8(F_pwr,1,i,indy)*
+     %                (F_opsyp0_8(nx3+indy)*fwft_8(j,k,i+1))
       enddo
       enddo
       enddo

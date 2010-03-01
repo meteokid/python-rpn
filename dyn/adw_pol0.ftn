@@ -15,6 +15,7 @@
 *     alain patoine
 *
 *revision
+* v3_21 - Desgagne M.       - Revision Openmp
 *
 *language
 *     fortran 77
@@ -48,13 +49,15 @@
 ************************************************************************
       integer i,k
 *
+!$omp do
       do k = 1,F_nk
 *
-      do i=-F_halox+1,F_nic+F_halox
-      F_field(i,F_j,k) = 0.0
-      enddo
+         do i=-F_halox+1,F_nic+F_halox
+            F_field(i,F_j,k) = 0.0
+         enddo
 *
       enddo
+!$omp enddo
 *
       return
       end

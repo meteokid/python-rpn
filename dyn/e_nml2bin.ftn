@@ -19,6 +19,7 @@
 * v2_31 - Desgagne M.       - added ptopo.cdk and tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L
+* v3_21 - Lemonsu A.        - add P_pbl_schurb_s
 *
 *language
 *	fortran 77
@@ -63,7 +64,7 @@
      $             (E_trvs_name_S(k),k=1,E_trvs_ntr),
      $             (E_trvs_sval  (k),k=1,E_trvs_ntr)
 *
-      write(labfl) P_pbl_schsl_s, P_pbl_snoalb_L,
+      write(labfl) P_pbl_schsl_s, P_pbl_snoalb_L,P_pbl_schurb_s,
      $             Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
      $             Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try,
      $             Hblen_wfct_S,e_schm_offline_L,Offline_int_accu_S,

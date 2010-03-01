@@ -1,0 +1,2 @@
+      integer  e_geoerr(MAXGEO)
+      common /e_geoerr_i/ e_geoerr

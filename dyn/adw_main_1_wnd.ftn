@@ -19,6 +19,7 @@
 * v2_31 - Desgagne M.       - removed stkmemw
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_21 - Desgagne M.       - Revision OpenMP
 *
 *language
 *     fortran 77
@@ -59,7 +60,6 @@
       real*8 ONE,sc
       parameter( ONE = 1.0 )
 ************************************************************************
-C     call tmg_start ( 20, 'adw_main_1_wnd' )
       if (Lun_debug_L) write (Lun_out,1000)
       pnlkey1(1)  = VMM_KEY(uth)
       pnlkey1(2)  = VMM_KEY(vth)
@@ -182,7 +182,7 @@ C     call tmg_start ( 20, 'adw_main_1_wnd' )
       enddo
       enddo
 !$omp enddo
-!$omp end parallel
+
 ***********************************************************************
 * Adjust wind fields to advection grid
 ***********************************************************************
@@ -193,8 +193,8 @@ C     call tmg_start ( 20, 'adw_main_1_wnd' )
           n=999
           dest_ni=G_ni
       endif
-
-          
+*
+!$omp single          
       call rpn_comm_xch_halox ( uth, LDIST_DIM, l_ni, l_nj, l_nk, 
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, 1-Adw_halox, 
      %  Adw_nic+Adw_halox, 1-Adw_haloy, Adw_njc+Adw_haloy, dest_ni, n)
@@ -206,7 +206,7 @@ C     call tmg_start ( 20, 'adw_main_1_wnd' )
       call rpn_comm_xch_halox ( psdth, LDIST_DIM, l_ni, l_nj, l_nk, 
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_w, 1-Adw_halox, 
      %  Adw_nic+Adw_halox, 1-Adw_haloy, Adw_njc+Adw_haloy, dest_ni, n)
-
+!$omp end single
 *
       if (.not.G_lam) then
 *
@@ -221,15 +221,13 @@ C     call tmg_start ( 20, 'adw_main_1_wnd' )
          if ( l_north ) then
 *
             call adw_polw (F_u,F_v,Adw_cx_8,Adw_sx_8,Adw_wx_8,
-     %        Adw_sy_8,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,Adw_haloy,l_nk)
+     %      Adw_sy_8,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,Adw_haloy,l_nk)
             call adw_pols (F_w,Adw_wx_8,Adw_njc+1,Adw_nic,Adw_halox,
      %        Adw_njc,Adw_haloy,l_nk)
          endif
 
       endif
-*
-      pnerr = vmmuld(-1,0)
-C     call tmg_stop (20)
+!$omp end parallel
 *
  1000  format(3X,'PREPARE WINDS: (S/R ADW_MAIN_1_WND)')
       return

@@ -50,7 +50,7 @@
 #include "v4dg.cdk"
 #include "adw.cdk"
 #include "adwm.cdk"
-#include "tr2d.cdk"
+cvl#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "vt1m.cdk"
 #include "vt0m.cdk"
@@ -64,7 +64,7 @@
       integer pnerr, pnlkey1(30), key1m(Tr3d_ntr), key0m(Tr3d_ntr), keyorm(Tr3d_ntr), 
      $        key1m_, key0m_, keyorm_, pnlod, err, dim
 *
-      integer n, nij, nijk, nijkag, cnt, unf, i,j,k, m, ntr2do, j2do
+      integer n, nij, nijk, nijkag, cnt, unf, i,j,k
 *
       real*8 aaa_8
       real trm,tr0m,orm
@@ -73,7 +73,7 @@
 *
 *     __________________________________________________________
 *
-      if(       Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_tr',-1)
+cvl   if(       Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_tr',-1)
 *     __________________________________________________________
 *
 *

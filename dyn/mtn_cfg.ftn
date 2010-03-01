@@ -27,7 +27,6 @@
 #include "pilot.cdk"
 #include "hblen.cdk"
 #include "ptopo.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "lun.cdk"
 #include "p_geol.cdk"
@@ -90,7 +89,6 @@ c     Offc_b0_8 =  0.5
 c     Offc_b1_8 =  0.5
       	  
       Tr3d_userntr=1
-      Tr2d_userntr=0
 
       Pil_nesdt=0
       Pil_ctebcs_L=.true.

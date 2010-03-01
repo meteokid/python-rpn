@@ -6,6 +6,7 @@
 * v3_02 - Dugas B.               - add P_rad_qco2
 * v3_03 - Leduc A-M.             - add P_rad_filter_L
 * v3_20 - Bilodeau B.            - character*8 to character*16
+* v3_21 - Leduc A-M.             - add P_rad_tsflxir_L
 *
 ***comdeck p_rad.cdk
 *
@@ -27,6 +28,8 @@
 * P_rad_nivl         | RADNIVL: list of levels on which radiation (IR  |
 *                    |          and visible) calculations are performed|
 * P_rad_qco2         | QCO2: CO2 concentration in PPMV (default 360)   |
+* P_rad_tsflxir_L    | TS_IRFLX: .true. to use TT(12000) instead of    |
+*                    |          Tskin in downward IR flux calculation  |
 *----------------------------------------------------------------------
 *
 *
@@ -36,7 +39,7 @@
       parameter (CNMXRAD = 200)
 *
       character*16 P_rad_schm_s, P_rad_ftp_s
-      logical P_rad_fomic_L, P_rad_filter_L
+      logical P_rad_fomic_L, P_rad_filter_L, P_rad_tsflxir_L
       integer P_rad_knt, P_rad_datim(14),  P_rad_nivl(CNMXRAD+1)
       real    P_rad_qco2
 *
@@ -45,7 +48,7 @@
       MARK_COMMON_END (prad_c)
 *
       MARK_COMMON_BEG (prad_l)
-      common /prad_l/ P_rad_fomic_L,P_rad_filter_L
+      common /prad_l/ P_rad_fomic_L,P_rad_filter_L,P_rad_tsflxir_L
       MARK_COMMON_END (prad_l)
 *
       MARK_COMMON_BEG (prad_i)

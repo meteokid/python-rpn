@@ -40,6 +40,7 @@
 * v3_00                       of the LAM grid to zeros.
 * v3_02 - Edouard S.        - correct non-hydrostatic version (F_mut0,F_tpt0,b2)
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_21 - Desgagne M.       - Revision OpenMP
 *
 *object
 *
@@ -116,6 +117,7 @@
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
+#include "geomg_n1.cdk"
 #include "cori.cdk"
 #include "schm.cdk"
 #include "intuv.cdk"
@@ -123,47 +125,65 @@
 #include "ptopo.cdk"
 *
       integer i, j, k, i00, inn, j00, jnn, i0, in, j0, jn, nij
-      real w1, w2, w3, pd1, pd2, pd3, wk2(DIST_SHAPE)
-      real*8  a1, a2, b1, b2, b3, eps, gamma, bb1,bb2,bb3,aa1,aa2,
-     $       one, half, quarter, aaa, bbb, ccc,pd3_8
+      real wk2(DIST_SHAPE), w1, w2, w3, q1
+      real*8 eps, gamma, p1,p2,p3,p4,p5,p6,p7, t1,t2,t3,t4
+*
+      real*8 one, half, quarter
       parameter ( one=1.0, half=.5, quarter=.25 )
-      real*8  tmp_8, inv_hx_8(l_ni), inv_hsy_8(l_nj), inv_hsyv_8(0:l_nj)
+*
       real*8, dimension(i01:in1,j01:jn1) :: xlog, ylog
-      real*8, dimension(1:l_ni) :: yrec
       real*8, dimension(i02:in2,j02:jn2) :: xexp2, yexp2, xlog2, ylog2
-      
-
+*
+* --------------------------------------------------------------------
+      call rpn_comm_xch_halo( F_tpt0 , LDIST_DIM,l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_qt0  , LDIST_DIM,l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      if (.not. Schm_hydro_L) then
+        call rpn_comm_xch_halo( F_mut0 ,LDIST_DIM,l_ni,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      endif
+      if (Cori_cornl_L) then
+        call rpn_comm_xch_halo( F_ut0 ,LDIST_DIM,l_niu,l_nj,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+        call rpn_comm_xch_halo( F_vt0 ,LDIST_DIM,l_ni,l_njv,G_nk,
+     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      endif
+*
+      gamma = one
+      if (.not. Schm_hydro_L) then 
+           eps =  Schm_nonhy_8 * Dcst_rgasd_8   * Cstv_tstr_8
+     %         /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**2 )
+         gamma =  one/( one + eps )
+      endif 
+      p1 = Dcst_rayt_8*Dcst_rayt_8
+      p2 = one / Cstv_tau_8
+      p3 = one / p1
+      p4 = Dcst_rgasd_8 / p1
+      p5 = one / Cstv_tstr_8
+      p6 = gamma / Cstv_tau_8 
+      p7 = p6 / Dcst_cappa_8
+      q1 = one / Cstv_tau_8
+*
+!$omp parallel shared (yexp2) private(xlog, ylog, xlog2, ylog2, wk2,
+!$omp$                 i0,in,j0,jn,nij,i00,j00,inn,jnn,w1,w2,w3,t1)
       i0=i01
       j0=j01
       in=in1
       jn=jn1
-
       nij = (in - i0 + 1)*(jn - j0 + 1)
-
-
-      do i= 1, l_ni
-         inv_hx_8(i) = 1.d0 / geomg_hx_8 (i)
-      end do
-      do j= 1, l_nj
-         inv_hsy_8 (j) = 1.d0 / geomg_hsy_8 (j)
-         inv_hsyv_8(j) = 1.d0 / geomg_hsyv_8(j)
-      end do
-
-      inv_hsyv_8(0) = 1.d0 / geomg_hsyv_8(0)
-*
-!$omp parallel private(xlog, ylog, bbb) 
 !$omp do
       do k=1,l_nk
-         bbb = one/Geomg_z_8(k)
+         t1 = one/Geomg_z_8(k)
          do j= j0, jn
          do i= i0, in
-           xlog(i,j) = one + F_pipt0(i,j,k)*bbb
+           ylog(i,j) = one + F_pipt0(i,j,k)*t1
          end do
          end do
-         call vlog (ylog, xlog, nij)
+         call vlog (ylog, ylog, nij)
          do j= j0, jn
          do i= i0, in
-            F_wijk1(i,j,k) = ylog(i,j) - ( geomg_pib(k)* F_st0(i,j))*bbb
+            F_wijk1(i,j,k) = ylog(i,j) - ( geomg_pib(k)* F_st0(i,j))*t1
          enddo
          enddo
 *
@@ -177,43 +197,23 @@
 *
       enddo
 !$omp enddo
-!$omp end parallel
-
+*
 ************************************************************
 * The nonlinear deviation of horizontal momentum equations *
 ************************************************************
-
-      aaa = one/( Dcst_rayt_8*Dcst_rayt_8 )
-      bbb = Dcst_rgasd_8/( Dcst_rayt_8*Dcst_rayt_8 )
-
-
-      call rpn_comm_xch_halo( F_tpt0 , LDIST_DIM,l_ni,l_nj,G_nk,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_qt0  , LDIST_DIM,l_ni,l_nj,G_nk,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+!$omp single
       call rpn_comm_xch_halo( F_wijk1, LDIST_DIM,l_ni,l_nj,G_nk,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       if (.not. Schm_hydro_L) then
-        call rpn_comm_xch_halo( F_mut0 ,LDIST_DIM,l_ni,l_nj,G_nk,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
         call rpn_comm_xch_halo( F_wijk2,LDIST_DIM,l_ni,l_nj,G_nk,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
-      if (Cori_cornl_L) then
-        call rpn_comm_xch_halo( F_ut0 ,LDIST_DIM,l_niu,l_nj,G_nk,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-        call rpn_comm_xch_halo( F_vt0 ,LDIST_DIM,l_ni,l_njv,G_nk,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      endif
-
-      call vrec ( yrec, geomg_hx_8(1), l_ni )
+!$omp end single
 *
-!$omp parallel private(xlog, ylog, wk2,
-!$omp$                 i0,in,j0,jn,i00,j00,inn,jnn,w1,w2,w3,tmp_8)
 !$omp do
       do 100 k=1,l_nk
-
-
+*
 *     Compute Nu for hydrostatic version 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       i0 = 1
@@ -229,9 +229,9 @@
       do i= i0, in
          w1 = ( 1. - intuv_c0xxu_8(i) ) * F_tpt0(i  ,j,k) 
      %             + intuv_c0xxu_8(i)   * F_tpt0(i+1,j,k)
-         w2 = (   F_qt0(i+1,j,k) -   F_qt0(i,j,k) ) * yrec(i)
-         w3 = ( F_wijk1(i+1,j,k) - F_wijk1(i,j,k) ) * yrec(i)
-         F_nu(i,j,k) = bbb * ( w1*w2 + Cstv_tstr_8*w3 )
+         w2 = (   F_qt0(i+1,j,k) -   F_qt0(i,j,k) ) * Geomg_invhx_8(i)
+         w3 = ( F_wijk1(i+1,j,k) - F_wijk1(i,j,k) ) * Geomg_invhx_8(i)
+         F_nu(i,j,k) = p4 * ( w1*w2 + Cstv_tstr_8*w3 )
       end do
       end do
 *
@@ -244,7 +244,6 @@
          if (G_lam) then
              if (l_west) i00 = 1+pil_w -2
              if (l_east) inn = l_niu-pil_e +3
-c Don't change
              if (l_north)jnn = l_njv-pil_n +1
          else
              if (l_south) j00 = 3
@@ -301,13 +300,13 @@ c Don't change
          if (l_north) jn=l_njv-pil_n
       endif
       do j= j0, jn
-      tmp_8 = geomg_cyv2_8(j) * inv_hsy_8(j)
+      t1 = geomg_cyv2_8(j) * Geomg_invhsy_8(j)
       do i= i0, in
          w1 = ( 1. - intuv_c0yyv_8(j) ) * F_tpt0(i,j  ,k) 
      %             + intuv_c0yyv_8(j)   * F_tpt0(i,j+1,k)
-         w2 = (F_qt0  (i,j+1,k) - F_qt0  (i,j,k)) * tmp_8
-         w3 = (F_wijk1(i,j+1,k) - F_wijk1(i,j,k)) * tmp_8
-         F_nv(i,j,k) = bbb * ( w1*w2 + Cstv_tstr_8*w3 )
+         w2 = (F_qt0  (i,j+1,k) - F_qt0  (i,j,k)) * t1
+         w3 = (F_wijk1(i,j+1,k) - F_wijk1(i,j,k)) * t1
+         F_nv(i,j,k) = p4 * ( w1*w2 + Cstv_tstr_8*w3 )
       end do
       end do
 *
@@ -320,7 +319,6 @@ c Don't change
          if (G_lam) then
             if (l_south) j00=1+pil_s-2
             if (l_north) jnn=l_njv-pil_n+3
-c Don't change
             if (l_east) inn = l_niu-pil_e +1
          endif
 *
@@ -366,24 +364,23 @@ c Don't change
          endif
       endif
 *
-*
-      i0 = 1
-      in = l_niu
-      j0 = 1+pil_s
-      jn = l_nj-pil_n
-      if (G_lam) then
-          if (l_west) i0 = 1+pil_w
-          if (l_east) in = l_niu-pil_e
-      endif
-      i00 = 1+pil_w
-      inn = l_ni-pil_e
-      j00 = 1
-      jnn = l_njv
-      if (G_lam) then
-          if (l_south) j00 = 1+pil_s
-          if (l_north) jnn = l_njv-pil_n
-      endif
       if (.not. Schm_hydro_L) then
+         i0 = 1
+         in = l_niu
+         j0 = 1+pil_s
+         jn = l_nj-pil_n
+         if (G_lam) then
+            if (l_west) i0 = 1+pil_w
+            if (l_east) in = l_niu-pil_e
+         endif
+         i00 = 1+pil_w
+         inn = l_ni-pil_e
+         j00 = 1
+         jnn = l_njv
+         if (G_lam) then
+            if (l_south) j00 = 1+pil_s
+            if (l_north) jnn = l_njv-pil_n
+         endif
 *
 *        Add nonhydrostatic contributions to Nu 
 *        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -391,8 +388,8 @@ c Don't change
          do i= i0, in
             w1 = ( 1. - intuv_c0xxu_8(i) ) * F_mut0(i  ,j,k) 
      %                + intuv_c0xxu_8(i)   * F_mut0(i+1,j,k)
-            w2 = ( F_wijk2(i+1,j,k) -F_wijk2 (i,j,k) ) * inv_hx_8(i)
-            F_nu(i,j,k) = F_nu(i,j,k) + aaa*w1*w2
+            w2 = ( F_wijk2(i+1,j,k)-F_wijk2 (i,j,k) ) * Geomg_invhx_8(i)
+            F_nu(i,j,k) = F_nu(i,j,k) + p3*w1*w2
          end do
          end do
 *
@@ -403,16 +400,36 @@ c Don't change
             w1 = ( 1. - intuv_c0yyv_8(j) ) * F_mut0(i,j  ,k) 
      %                + intuv_c0yyv_8(j)   * F_mut0(i,j+1,k)
             w2 = (F_wijk2 (i,j+1,k) - F_wijk2(i,j,k) ) 
-     %            *geomg_cyv2_8(j) * inv_hsy_8(j)
-            F_nv(i,j,k) = F_nv(i,j,k) + aaa*w1*w2
+     %            *geomg_cyv2_8(j) * Geomg_invhsy_8(j)
+            F_nv(i,j,k) = F_nv(i,j,k) + p3*w1*w2
          end do
          end do
 
       endif
-
- 100   continue
+*
+      if (k.eq.1) then
+         i0=1
+         in=l_ni
+         j0=1
+         jn=l_nj
+         if (G_lam) then
+            if (l_west)  i0 = 1+pil_w
+            if (l_east)  in = l_ni-pil_e
+            if (l_south) j0 = 1+pil_s
+            if (l_north) jn = l_nj-pil_n
+         endif
+         nij = (in - i0 +1)*(jn - j0 +1)
+         do j = j0, jn
+         do i = i0, in
+            yexp2(i,j) = F_st0(i,j)
+         end do
+         end do
+         call vexp ( yexp2, yexp2, nij )
+      endif
+*
+ 100  continue
 !$omp enddo
-
+*
 * For LAM, set  Nu,Nv values on the boundaries of the LAM grid
 *
       if (G_lam) then
@@ -453,7 +470,7 @@ c Don't change
 !$omp enddo
          endif
       endif
-!$omp end parallel
+*
       i0=1
       in=l_ni
       j0=1
@@ -464,71 +481,41 @@ c Don't change
          if (l_south) j0 = 1+pil_s
          if (l_north) jn = l_nj-pil_n
       endif
-
       nij = (in - i0 +1)*(jn - j0 +1)
-
+*
 **************************************
 * Combination of governing equations * 
 **************************************
-
-      gamma = one
-      if (.not. Schm_hydro_L) then 
-           eps =  Schm_nonhy_8 * Dcst_rgasd_8   * Cstv_tstr_8
-     %         /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**2 )
-         gamma =  one/( one + eps )
-      endif 
-      a1 = one/Cstv_tstr_8
-      b1 = gamma/Cstv_tau_8 
-      b2 = gamma/Cstv_tau_8/Dcst_cappa_8
-      pd3_8 = 1.0d0/Cstv_tau_8
-      aaa = Dcst_rayt_8*Dcst_rayt_8
 *
 *     compute Ncn
 *     ~~~~~~~~~~~
-      do j = j0, jn
-      do i = i0, in
-         xexp2(i,j) = F_st0(i,j)
-      end do
-      end do
-
-      call vexp ( yexp2, xexp2, nij )
-
-*
-      pd3 = one/Cstv_tau_8
-!$omp parallel private(xlog2, ylog2, pd1,pd2,ccc,
-!$omp$                 bb1,bb2,bb3,aa1,aa2 )
 !$omp do
       do k =  1, l_nk
          do j = j0, jn
          do i = i0, in
-            xlog2(i,j) = 1. + geomg_dpba(k) * (yexp2(i,j) - 1.0)
+            ylog2(i,j) = 1. + geomg_dpba(k) * (yexp2(i,j) - 1.0)
          end do
          end do
-         call vlog(ylog2, xlog2, nij)
+         call vlog(ylog2, ylog2, nij)
          do j = j0, jn
          do i = i0, in
-            pd1 = ylog2(i,j)
-            pd2 = geomg_dpib(k) * F_st0(i,j)
-            F_ncn(i,j,k) = pd3 * ( pd1 - pd2 )
+            w1 = ylog2(i,j)
+            w2 = geomg_dpib(k) * F_st0(i,j)
+            F_ncn(i,j,k) = q1 * ( w1 - w2 )
          enddo
          enddo
       enddo
 !$omp enddo
-!$omp single
-      
 *
 *     Compute the nonlinear deviation of horizontal divergence 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*
+!$omp single      
       call rpn_comm_xch_halo( F_nu, LDIST_DIM,l_niu,l_nj,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_nv, LDIST_DIM,l_ni,l_njv,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-*
 !$omp end single
-
-
+*
 !$omp do
       do k=1,l_nk
 *
@@ -537,7 +524,7 @@ c Don't change
              do i= i0,in
                 F_n1(i,j,k) =  ( F_nu(i,j,k) - F_nu(i-1,j,k) ) 
      $                        /( geomg_cy2_8(j)*geomg_hxu_8(i-1) )
-     $               + ( F_nv(i,j,k) - F_nv(i,j-1,k) ) * inv_hsyv_8(j-1)
+     $          + ( F_nv(i,j,k) - F_nv(i,j-1,k) ) * Geomg_invhsyv_8(j-1)
              end do
              end do
          else
@@ -547,27 +534,27 @@ c Don't change
 *
          do j= j0, jn
          do i= i0, in
-            xlog2(i,j) = one+F_tpt0(i,j,k)*a1
+            ylog2(i,j) = one+F_tpt0(i,j,k)*p5
          end do
          end do
-         call vlog ( ylog2, xlog2, nij )
+         call vlog ( ylog2, ylog2, nij )
 *
          do j= j0, jn
          do i= i0, in
-            ccc = ylog2(i,j) - F_tplt0(i,j,k)*a1
-            F_nth(i,j,k) = (-Dcst_cappa_8*F_wijk1(i,j,k)+ccc)*pd3_8
-            F_wijk1(i,j,k) = F_n1(i,j,k) - pd3 * F_ncn(i,j,k)
-            F_wijk2(i,j,k) = b2*F_nth(i,j,k) 
+            t1 = ylog2(i,j) - F_tplt0(i,j,k)*p5
+            F_nth(i,j,k) = (-Dcst_cappa_8*F_wijk1(i,j,k)+t1)*p2
+            F_wijk1(i,j,k) = F_n1(i,j,k) - q1 * F_ncn(i,j,k)
+            F_wijk2(i,j,k) = p7*F_nth(i,j,k) 
          end do
          end do
 *
          if (.not. Schm_hydro_L) then
          do j= j0, jn
          do i= i0, in
-            F_n3 (i,j,k) = ( F_multx(i,j,k) - F_mut0(i,j,k) )*pd3_8
+            F_n3 (i,j,k) = ( F_multx(i,j,k) - F_mut0(i,j,k) )*p2
             F_n3p(i,j,k) =  F_n3(i,j,k) - eps*F_nth(i,j,k)
-            F_wijk1(i,j,k) = F_wijk1(i,j,k) +  b1*F_n3p(i,j,k)
-            F_wijk2(i,j,k) = F_wijk2(i,j,k) +  b2*F_n3 (i,j,k)
+            F_wijk1(i,j,k) = F_wijk1(i,j,k) +  p6*F_n3p(i,j,k)
+            F_wijk2(i,j,k) = F_wijk2(i,j,k) +  p7*F_n3 (i,j,k)
          end do
          end do
          endif 
@@ -585,42 +572,42 @@ c Don't change
 *
       if ( k .eq. 1 ) then
 *
-         aa2 = quarter*Geomg_hz_8(k)
-         bb2 = half*Geomg_z_8(k)
-         bb3 = half*Geomg_z_8(k+1)
+         t1 = quarter*Geomg_hz_8(k)
+         t3 = half*Geomg_z_8(k)
+         t4 = half*Geomg_z_8(k+1)
          do j= j0, jn 
          do i= i0, in
-            F_rheln(i,j,k) = aaa * (F_rhell(i,j,k)
-     $                   - aa2*( F_wijk1(i,j,k) + F_wijk1(i,j,k+1) )
-     $                   + bb2*F_wijk2(i,j,k)  + bb3*F_wijk2(i,j,k+1))
+            F_rheln(i,j,k) = p1 * (F_rhell(i,j,k)
+     $                   - t1*( F_wijk1(i,j,k) + F_wijk1(i,j,k+1) )
+     $                   + t3*F_wijk2(i,j,k)  + t4*F_wijk2(i,j,k+1))
          end do
          end do
 *
       elseif ( k .eq. l_nk ) then
 *
-         aa1 = quarter*Geomg_hz_8(k-1)
-         bb1 = half*Geomg_z_8(k-1)
-         bb2 = half*Geomg_z_8(k)
+         t1 = quarter*Geomg_hz_8(k-1)
+         t3 = half*Geomg_z_8(k-1)
+         t4 = half*Geomg_z_8(k)
          do j= j0, jn
          do i= i0, in
-            F_rheln(i,j,k) = aaa * (F_rhell(i,j,k)
-     $                   - aa1*( F_wijk1(i,j,k-1) + F_wijk1(i,j,k) )
-     $                   - bb1*F_wijk2(i,j,k-1)  - bb2*F_wijk2(i,j,k))
+            F_rheln(i,j,k) = p1 * (F_rhell(i,j,k)
+     $                   - t1*( F_wijk1(i,j,k-1) + F_wijk1(i,j,k) )
+     $                   - t3*F_wijk2(i,j,k-1)  - t4*F_wijk2(i,j,k))
          end do
          end do
 *
       else
 *
-         aa1 = quarter*Geomg_hz_8(k-1)
-         aa2 = quarter*Geomg_hz_8(k)
-         bb1 = half*Geomg_z_8(k-1)
-         bb3 = half*Geomg_z_8(k+1)
+         t1 = quarter*Geomg_hz_8(k-1)
+         t2 = quarter*Geomg_hz_8(k)
+         t3 = half*Geomg_z_8(k-1)
+         t4 = half*Geomg_z_8(k+1)
          do j= j0, jn
          do i= i0, in
-            F_rheln(i,j,k) =  aaa * (F_rhell(i,j,k)
-     $                   -  aa1*( F_wijk1(i,j,k-1) + F_wijk1(i,j,k  ) )
-     $                   -  aa2*( F_wijk1(i,j,k  ) + F_wijk1(i,j,k+1) )
-     $                   -  bb1*F_wijk2(i,j,k-1) + bb3*F_wijk2(i,j,k+1))
+            F_rheln(i,j,k) =  p1 * (F_rhell(i,j,k)
+     $                   -  t1*( F_wijk1(i,j,k-1) + F_wijk1(i,j,k  ) )
+     $                   -  t2*( F_wijk1(i,j,k  ) + F_wijk1(i,j,k+1) )
+     $                   -  t3*F_wijk2(i,j,k-1) + t4*F_wijk2(i,j,k+1))
          end do
          end do
 *

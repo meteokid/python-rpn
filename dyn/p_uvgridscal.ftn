@@ -16,6 +16,7 @@
 *revision
 * v2_31 - Laroche S.       - initial MPI version
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Desgagne M.      - Revision Openmp
 *
 *object
 *	Cubic interpolation of the dynamics fields from their own grid
@@ -37,9 +38,9 @@
 #include "inuvl.cdk"
 *
 **
-      integer i,j,k,i0,j0,in,jn
+      integer i,j,k,i0u,j0u,inu,jnu,i0v,j0v,inv,jnv
       integer nsu,ndu,nsv,ndv
-      real wk1(LDIST_SHAPE,l_nk)
+      real wk_u(LDIST_SHAPE,l_nk), wk_v(LDIST_SHAPE,l_nk)
 *
 *     ---------------------------------------------------------------
 *
@@ -57,27 +58,26 @@
 C
 C     x component
 C
-      call uv_acg2g (wk1,F_put,nsu,ndu,LDIST_DIM,l_nk,i0,in,j0,jn)
-
-      do k=1,l_nk
-         do j= j0, jn
-         do i= i0, in
-            F_put(i,j,k) = wk1(i,j,k)
-         end do
-         end do
-      end do
+      call uv_acg2g (wk_u,F_put,nsu,ndu,LDIST_DIM,l_nk,i0u,inu,j0u,jnu)
 C
 C     y component
 C
-      call uv_acg2g (wk1,F_pvt,nsv,ndv,LDIST_DIM,l_nk,i0,in,j0,jn)
-
+      call uv_acg2g (wk_v,F_pvt,nsv,ndv,LDIST_DIM,l_nk,i0v,inv,j0v,jnv)
+*
+!$omp do
       do k=1,l_nk
-         do j= j0, jn
-         do i= i0, in
-            F_pvt(i,j,k) = wk1(i,j,k)
+         do j= j0u, jnu
+         do i= i0u, inu
+            F_put(i,j,k) = wk_u(i,j,k)
+         end do
+         end do
+         do j= j0v, jnv
+         do i= i0v, inv
+            F_pvt(i,j,k) = wk_v(i,j,k)
          end do
          end do
       end do
+!$omp enddo
 *
 *     ---------------------------------------------------------------
 *

@@ -27,7 +27,6 @@
 #include "out1.cdk"
 #include "pilot.cdk"
 #include "hblen.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "lun.cdk"
 #include "p_geol.cdk"

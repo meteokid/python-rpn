@@ -22,6 +22,7 @@
 * v2_32                    actual "set" number forced to be in sequence
 * v3_01 - Lee V.         - new ip1 encoding (kind=5 -- unnormalized)
 * v3_02 - Lee V.         - eliminate levels repeated in one level set
+* v3_21 - Lee V.         - bug correction when kindip1=1
 *
 *
 *object
@@ -176,7 +177,8 @@
                   Level_typ(j)='M'
 
                   if (Level(i,j) .gt. 0) then
-                     idx = max(nint(Level(i,j)),G_nk)
+                     Level(i,j) = min(nint(Level(i,j)),G_nk)
+                     idx = Level(i,j)
                      call convip( Level_ip1(i,j), geomg_hyb(idx),
      $                            Level_kind_ip1,modeip1,blank_S,.false.)
                   else

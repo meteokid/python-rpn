@@ -12,6 +12,7 @@
 * v3_00 - Desgagne & Lee       - Lam configuration
 * v3_02 - Dugas B.             - convip for topography
 * v3_11 - M. Desgagne          - remove call to phy_30900
+* v3_21 - Lee V.               - set e_schm_phym_L TRUE if geophy.bin ok
 *
 #include "e_topo.cdk"
 #include "p_bus.cdk"
@@ -117,9 +118,11 @@
          geobus(fis+i-1)=topo(i) 
       enddo
 *
+      e_schm_phym_L = .false.
       if ( e_intgeo () ) then
          call e_pregeo
          call e_wrgeop
+         e_schm_phym_L = .true.
       endif
 *
       err = fstfrm (e_fu_anal)

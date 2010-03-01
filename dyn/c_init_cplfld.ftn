@@ -1,0 +1,812 @@
+C**S/R c_init_cplfld
+C=======================================================================
+C Author:
+C 
+C   Sophie Valcke -CERFACS - March 2005
+C
+*revision
+* v3_21 - Valcke S.   - initial MPI version
+C
+C Language:
+C
+C   Fortran 77
+C
+C Description:
+C
+C   Coupling field definition and initialization
+C
+C Interface:
+C
+      SUBROUTINE c_init_cplfld (id_ni, id_nj)
+C
+C Includes:
+C
+#include "impnone.cdk"
+#include <model_macros_f.h>
+#include "ptopo.cdk"
+#include "schm.cdk" 
+#include "glb_ld.cdk"
+#include "p_pbl.cdk"  
+#include "c_cplg.cdk"
+#include "lun.cdk"
+#include "c_nml.cdk"
+#include "path.cdk"
+C
+C Input Arguments:
+C
+C     Dimensions of local grid
+      INTEGER      :: id_ni, id_nj
+C
+C Local variables
+C 
+      INTEGER                     :: il_err, il_errnml, err, nrec
+      INTEGER                     :: il_l, il_d, il_n
+      INTEGER                     :: il_ind, il_nij, il_pos
+      INTEGER, DIMENSION(2)       :: il_cnt
+      integer fnom
+      external fnom
+C
+C===================================================================
+C
+      IF (Ptopo_myproc .eq. 0) THEN
+C
+C         By default, definition of logicals based on MEC role
+C         These logicals may be redefined in the namelist
+C        
+          IF (.not. schm_offline_L) lg_atmos = .true.
+          IF (P_pbl_ocean_L) lg_ocean = .true.
+          IF (P_pbl_schsl_S .ne. 'NIL') lg_land = .true.
+C
+C         Reading of coupling namelist
+C
+          il_errnml = -1
+          err = fnom (lun_in, Path_nml_S, 'SEQ' , nrec)
+          rewind (Lun_in)
+          read (Lun_in, nml=coupling, end = 5555, err = 5556)
+ 5555     continue
+          il_errnml = 0
+ 5556     rewind (Lun_in)
+          call fclos (Lun_in)
+C
+      ENDIF
+      call RPN_COMM_bcast (il_errnml,1,"MPI_INTEGER",0,"grid",il_err)
+      IF (il_errnml .ne. 0) THEN
+          write (Lun_out, *) ' NAMELIST coupling invalid in gem_settings '
+          write (Lun_out, *) '====== ABORT IN S/R C_INIT_CPLFLD ========='
+          PRINT *, 'Problem in c_init_cplfl (coupling namelist)-- ABORT --'
+          call stopmpi(il_errnml)
+      ENDIF
+C
+C     Broadcast logicals for coupling
+C
+      call RPN_COMM_bcast(C_coupling_L, 1,"MPI_LOGICAL", 0, "grid", il_err)
+      call RPN_COMM_bcast(C_cploasis_L, 1,"MPI_LOGICAL", 0, "grid", il_err)
+      call RPN_COMM_bcast(C_cpld2ocean_L, 1,"MPI_LOGICAL", 0, "grid", il_err)
+      call RPN_COMM_bcast(C_cpld2atmos_L, 1,"MPI_LOGICAL", 0, "grid", il_err)
+      call RPN_COMM_bcast(C_cpld2land_L, 1,"MPI_LOGICAL", 0, "grid", il_err)
+      call RPN_COMM_bcast(lg_atmos, 1,"MPI_LOGICAL", 0, "grid", il_err)
+      call RPN_COMM_bcast(lg_ocean, 1,"MPI_LOGICAL", 0, "grid", il_err)
+      call RPN_COMM_bcast(lg_land, 1,"MPI_LOGICAL", 0, "grid", il_err)
+C
+C      
+      IF (C_coupling_L) then
+         IF (Ptopo_myproc .eq. 0) THEN
+         PRINT *, 'CPL- In c_init_cplfld: C_coupling_L, C_cploasis_L'
+         PRINT *, C_coupling_L, C_cploasis_L
+         PRINT *, 'CPL- In c_init_cplfld: lg_atmos, lg_ocean, lg_land =' 
+         PRINT *, lg_atmos, lg_ocean, lg_land
+         PRINT *, 
+     $ 'CPL- In c_init_cplfld: C_cpld2ocean_L, C_cpld2atmos_L, C_cpld2land_L'
+         PRINT *, C_cpld2ocean_L, C_cpld2atmos_L, C_cpld2land_L
+         ENDIF
+C
+C         Definition of coupling fields and corresponding indices.
+C         --------------------------------------------------------
+C         They are either defined in namelist, 
+C         either defined with defaults here.
+C         They are contained in 3 vectors, "from_atmos_S","from_ocean_S", 
+C                    "from_land_S", "from_glaciers_S", "from_ice_S"
+C 
+          ig_fromo_dim = 0
+          ig_froma_dim = 0
+          ig_froml_dim = 0
+          ig_sfc_in_dim = 0
+          ig_sfc_out_dim = 0
+          il_cnt(1) = 0 
+          il_cnt(2) = 0 
+          il_nij = id_ni * id_nj
+          iga_tja(:) = 0
+          iga_uda(:) = 0
+          iga_vda(:) = 0
+          iga_t8a(:) = 0
+          iga_u8a(:) = 0
+          iga_v8a(:) = 0
+          iga_dqa(:) = 0
+          iga_p8a(:) = 0
+          iga_h8a(:) = 0
+          iga_fba(:) = 0 
+          iga_fia(:) = 0 
+          iga_rta(:) = 0
+          iga_mca(:) = 0
+          iga_glw(:) = 0
+          iga_i8w(:) = 0
+          iga_i7w(:) = 0
+          iga_tmw(:) = 0
+          iga_fcw(:) = 0 
+          iga_fvw(:) = 0
+          iga_bmw(:) = 0
+          iga_alw(:) = 0 
+          iga_tgw(:) = 0
+          iga_mcw(:) = 0
+          iga_fci(:) = 0 
+          iga_fvi(:) = 0
+          iga_bmi(:) = 0
+          iga_ali(:) = 0 
+          iga_tgi(:) = 0
+          iga_mci(:) = 0
+          iga_fcl(:) = 0 
+          iga_fvl(:) = 0
+          iga_bml(:) = 0
+          iga_all(:) = 0 
+          iga_tgl(:) = 0
+          iga_mcl(:) = 0
+          iga_fcg(:) = 0 
+          iga_fvg(:) = 0
+          iga_bmg(:) = 0
+          iga_alg(:) = 0 
+          iga_tgg(:) = 0
+          iga_mcg(:) = 0
+          iga_n_tja(:) = 0
+          iga_n_uda(:) = 0
+          iga_n_vda(:) = 0
+          iga_n_t8a(:) = 0
+          iga_n_u8a(:) = 0
+          iga_n_v8a(:) = 0
+          iga_n_dqa(:) = 0
+          iga_n_fba(:) = 0 
+          iga_n_fia(:) = 0 
+          iga_n_rta(:) = 0
+          iga_n_mca(:) = 0
+          iga_n_glw(:) = 0
+          iga_n_i8w(:) = 0
+          iga_n_i7w(:) = 0
+          iga_n_tmw(:) = 0
+          iga_n_fcw(:) = 0 
+          iga_n_fvw(:) = 0
+          iga_n_bmw(:) = 0
+          iga_n_alw(:) = 0 
+          iga_n_tgw(:) = 0
+          iga_n_mcw(:) = 0
+          iga_n_fci(:) = 0 
+          iga_n_fvi(:) = 0
+          iga_n_bmi(:) = 0
+          iga_n_ali(:) = 0 
+          iga_n_tgi(:) = 0
+          iga_n_mci(:) = 0
+          iga_n_fcl(:) = 0 
+          iga_n_fvl(:) = 0
+          iga_n_bml(:) = 0
+          iga_n_all(:) = 0 
+          iga_n_tgl(:) = 0
+          iga_n_mcl(:) = 0
+          iga_n_fcg(:) = 0 
+          iga_n_fvg(:) = 0
+          iga_n_bmg(:) = 0
+          iga_n_alg(:) = 0 
+          iga_n_tgg(:) = 0
+          iga_n_mcg(:) = 0
+          lga_cplfld(:,:) = .false.
+C            
+          IF (C_cpld2atmos_L .or. lg_atmos) THEN
+C         MEC is coupled to an atmosphere model or is an atmosphere model
+              IF (C_cpld2atmos_L) THEN
+C             MEC is coupled to an atmos model: these fields will be input
+                  il_n = 1
+              ELSE IF (lg_atmos) THEN
+C             MEC is an atmosphere model: these fields will be output
+                  il_n = 2
+              ENDIF
+C
+              CALL c_finddim (from_atmos_S, ip_from_max, ig_froma_dim)
+C
+              IF (ig_froma_dim .gt. 0) THEN
+C             Coupling fields are defined in namelist 
+                  DO il_l = 1, ig_froma_dim
+C                 Define position and index of field in rga_fldout or rga_fldin
+                    il_pos = il_cnt(il_n) + 1
+                    il_ind = (il_cnt(il_n) * il_nij) + 1
+                    IF (from_atmos_S(il_l) .eq. 'NIL') THEN
+                        ig_froma_dim = 0
+                        il_cnt(il_n) = il_cnt(il_n) - 1
+                    ELSE IF (from_atmos_S(il_l) .eq. 'TJA') THEN
+C                   TJA: (TDIAG - PERBUS) SCREEN LEVEL TEMPERATURE
+                        iga_n_tja(il_n) = il_pos
+                        iga_tja(il_n) = il_ind
+                    ELSE IF (from_atmos_S(il_l) .eq. 'UDA') THEN
+C                   UDA: (UDIAG - PERBUS) SCREEN LEVEL X-COMPONENT OF WIND
+                        iga_n_uda(il_n) = il_pos
+                        iga_uda(il_n) = il_ind 
+                    ELSE IF (from_atmos_S(il_l) .eq. 'VDA') THEN
+C                   VDA: (VDIAG - PERBUS) SCREEN LEVEL Y-COMPONENT OF WIND
+                        iga_n_vda(il_n) = il_pos
+                        iga_vda(il_n) = il_ind
+                    ELSE IF (from_atmos_S(il_l) .eq. 'T8A') THEN
+C                   T8A: (TMOINS - DYNBUS) TEMPERATURE AT T-DT 
+                        iga_n_t8a(il_n) = il_pos
+                        iga_t8a(il_n) = il_ind
+                    ELSE IF (from_atmos_S(il_l) .eq. 'U8A') THEN
+C                   U8A: (UMOINS - DYNBUS) WIND SPEED ALONG-X AT T-DT
+                        iga_n_u8a(il_n) = il_pos
+                        iga_u8a(il_n) = il_ind 
+                    ELSE IF (from_atmos_S(il_l) .eq. 'V8A') THEN
+C                   V8A: (UMOINS - DYNBUS) WIND SPEED ALONG-Y AT T-DT
+                        iga_n_v8a(il_n) = il_pos
+                        iga_v8a(il_n) = il_ind
+                    ELSE IF (from_atmos_S(il_l) .eq. 'DQA') THEN
+C                   DQA: (QDIAG - PERBUS) SCREEN LEVEL SPECIFIC HUMIDITY
+                        iga_n_dqa(il_n) = il_pos
+                        iga_dqa(il_n) = il_ind 
+                    ELSE IF (from_atmos_S(il_l) .eq. 'P8A') THEN
+C                   P8A: (PMOINS - DYNBUS) SURFACE PRESSURE AT T-DT 
+                        iga_n_p8a(il_n) = il_pos
+                        iga_p8a(il_n) = il_ind
+                    ELSE IF (from_atmos_S(il_l) .eq. 'H8A') THEN
+C                   H8A: (HUMOINS - DYNBUS) SPECIFIC HUMIDITY AT T-DT
+                        iga_n_h8a(il_n) = il_pos
+                        iga_h8a(il_n) = il_ind 
+                    ELSE IF (from_atmos_S(il_l) .eq. 'FBA') THEN
+C                   FBA: (FLUSOLIS - PERBUS) VIS (solar-sw) FLUX TOWARDS GROUND
+                        iga_n_fba(il_n) = il_pos
+                        iga_fba(il_n) = il_ind 
+                    ELSE IF (from_atmos_S(il_l) .eq. 'FIA') THEN
+C                   FIA: (FDSI - PERBUS) IR (lw) ENERGY FLUX TOWARDS GROUND
+                        iga_n_fia(il_n) = il_pos
+                        iga_fia(il_n) = il_ind 
+                    ELSE IF (from_atmos_S(il_l) .eq. 'RTA') THEN
+C                   RTA: (RT - VOLBUS) TOTAL PRECIPITATION RATE
+                        iga_n_rta(il_n) = il_pos
+                        iga_rta(il_n) = il_ind
+                    ELSE IF (from_atmos_S(il_l) .eq. 'MCA') THEN
+C                   MCA: (coupling mask see readgeo.ftn and c_set_coupling.ftn)
+                        iga_n_mca(il_n) = il_pos
+                        iga_mca(il_n) = il_ind
+                    ELSE
+                        print *,'CPL- COUPLING VARIABLE NOT SUPPORTED = ', 
+     $                      from_atmos_S(il_l)
+                        call gem_stop
+     $                      ('CPL- COUPLING VARIABLE NOT SUPPORTED',-1) 
+                    ENDIF
+                    il_cnt(il_n) = il_cnt(il_n) + 1
+                  END DO
+              ELSE
+C             Coupling fields are not defined in namelist
+C             Defaults for from_atmos_S are:
+                  ig_froma_dim = 12
+CSV               ig_froma_dim = 13
+                  from_atmos_S(1) = 'TJA'
+                  iga_n_tja(il_n) = il_cnt(il_n) + 1
+                  iga_tja(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(2) = 'UDA'
+                  iga_n_uda(il_n) = il_cnt(il_n) + 1
+                  iga_uda(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(3) = 'VDA'
+                  iga_n_vda(il_n) = il_cnt(il_n) + 1
+                  iga_vda(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(4) = 'T8A'
+                  iga_n_t8a(il_n) = il_cnt(il_n) + 1
+                  iga_t8a(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(5) = 'U8A'
+                  iga_n_u8a(il_n) = il_cnt(il_n) + 1
+                  iga_u8a(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(6) = 'V8A'
+                  iga_n_v8a(il_n) = il_cnt(il_n) + 1
+                  iga_v8a(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(7) = 'DQA'
+                  iga_n_dqa(il_n) = il_cnt(il_n) + 1
+                  iga_dqa(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1 
+C
+                  from_atmos_S(8) = 'P8A'
+                  iga_n_p8a(il_n) = il_cnt(il_n) + 1
+                  iga_p8a(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(9) = 'H8A'
+                  iga_n_h8a(il_n) = il_cnt(il_n) + 1
+                  iga_h8a(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(10) = 'FBA'
+                  iga_n_fba(il_n) = il_cnt(il_n) + 1
+                  iga_fba(il_n) = (il_cnt(il_n) * il_nij) + 1 
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(11) = 'FIA'
+                  iga_n_fia(il_n) = il_cnt(il_n) + 1
+                  iga_fia(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_atmos_S(12) = 'RTA'
+                  iga_n_rta(il_n) = il_cnt(il_n) + 1
+                  iga_rta(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+CSV                  from_atmos_S(13) = 'MCA'
+CSV                  iga_n_mca(il_n) = il_cnt(il_n) + 1
+CSV                  iga_mca(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+              ENDIF
+              IF (C_cpld2atmos_L) ig_sfc_in_dim = ig_sfc_in_dim + ig_froma_dim
+              IF (lg_atmos) ig_sfc_out_dim = ig_sfc_out_dim + ig_froma_dim
+          ENDIF
+C
+          IF (C_cpld2land_L .or. (lg_land .and. .not. lg_atmos)) THEN
+C         MEC is coupled to a land model or is a land model
+              IF (C_cpld2land_L) THEN
+C             MEC is coupled to a land model: these fields will be input
+                  il_n = 1
+              ELSE IF (lg_land .and. .not. lg_atmos) THEN
+C             MEC is a land model: these fields will be output
+                  il_n = 2
+              ENDIF
+C
+              CALL c_finddim (from_land_S,  ip_from_max, ig_froml_dim)
+C
+              IF (ig_froml_dim .gt. 0) THEN
+C             Coupling fields are defined in namelist
+                  DO il_l = 1, ig_froml_dim
+C                 Define position and index of field in rga_fldout or rga_fldin
+                    il_pos = il_cnt(il_n) + 1
+                    il_ind = (il_cnt(il_n) * il_nij) + 1
+                    IF (from_land_S(il_l) .eq. 'NIL') THEN
+                        ig_froml_dim = 0
+                        il_cnt(il_n) = il_cnt(il_n) - 1
+                    ELSE IF (from_land_S(il_l) .eq. 'FCL') THEN
+C                   FCL: (FC) SURFACE SENSIBLE HEAT FLUX
+                        iga_n_fcl(il_n) = il_pos
+                        iga_fcl(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'FVL') THEN
+C                   FVL: (FV) SURFACE LATENT FLUX
+                        iga_n_fvl(il_n) = il_pos
+                        iga_fvl(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'BML') THEN
+C                   BML: (BM) MOMENTUM FLUX COEFFICIENT (?)
+                        iga_n_bml(il_n) = il_pos
+                        iga_bml(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'ALL') THEN
+C                   ALL: (AL) ALBEDO
+                        iga_n_all(il_n) = il_pos
+                        iga_all(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'TGL') THEN
+C                   TGL: RADIATIVE TEMPERATURE
+                        iga_n_tgl(il_n) = il_pos
+                        iga_tgl(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'MCL') THEN
+C                   MCL: coupling mask (see readgeo.ftn and c_set_coupling.ftn)
+                        iga_n_mcl(il_n) = il_pos
+                        iga_mcl(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'FCG') THEN
+C                   FCG: (FC) SURFACE SENSIBLE HEAT FLUX
+                        iga_n_fcg(il_n) = il_pos
+                        iga_fcg(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'FVG') THEN
+C                   FVG: (FV) SURFACE LATENT FLUX
+                        iga_n_fvg(il_n) = il_pos
+                        iga_fvg(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'BMG') THEN
+C                   BMG: (BM) MOMENTUM FLUX COEFFICIENT (?)
+                        iga_n_bmg(il_n) = il_pos
+                        iga_bmg(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'ALG') THEN
+C                   ALG: (AL) ALBEDO
+                        iga_n_alg(il_n) = il_pos
+                        iga_alg(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'TGG') THEN
+C                   TGG: RADIATIVE TEMPERATURE
+                        iga_n_tgg(il_n) = il_pos
+                        iga_tgg(il_n) = il_ind
+                    ELSE IF (from_land_S(il_l) .eq. 'MCG') THEN
+C                   MCG: coupling mask (see readgeo.ftn and c_set_coupling.ftn)
+                        iga_n_mcg(il_n) = il_pos
+                        iga_mcg(il_n) = il_ind
+                    ELSE
+                        print *,'CPL- COUPLING VARIABLE NOT SUPPORTED = ', 
+     $                      from_land_S(il_l)
+                        call gem_stop
+     $                      ('CPL- COUPLING VARIABLE NOT SUPPORTED',-1) 
+                    ENDIF
+                    il_cnt(il_n) = il_cnt(il_n) + 1
+                  END DO
+              ELSE
+C             Coupling fields are not defined in namelist
+C             Defaults for from_land_S are:
+                  ig_froml_dim = 6
+CSV                  ig_froml_dim = 12
+                  from_land_S(1) = 'FCL'
+                  iga_n_fcl(il_n) = il_cnt(il_n) + 1
+                  iga_fcl(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_land_S(2) = 'FVL'
+                  iga_n_fvl(il_n) = il_cnt(il_n) + 1
+                  iga_fvl(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSVC
+CSV                  from_land_S(x) = 'BML'
+CSV                  iga_n_bml(il_n) = il_cnt(il_n) + 1
+CSV                  iga_bml(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSVC
+CSV                  from_land_S(x) = 'ALL'
+CSV                  iga_n_all(il_n) = il_cnt(il_n) + 1
+CSV                  iga_all(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSVC
+CSV                  from_land_S(x) = 'TGL'
+CSV                  iga_n_tgl(il_n) = il_cnt(il_n) + 1
+CSV                  iga_tgl(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_land_S(3) = 'MCL'
+                  iga_n_mcl(il_n) = il_cnt(il_n) + 1
+                  iga_mcl(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_land_S(4) = 'FCG'
+                  iga_n_fcg(il_n) = il_cnt(il_n) + 1
+                  iga_fcg(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_land_S(5) = 'FVG'
+                  iga_n_fvg(il_n) = il_cnt(il_n) + 1
+                  iga_fvg(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSVC
+CSV                  from_land_S(x) = 'BMG'
+CSV                  iga_n_bmg(il_n) = il_cnt(il_n) + 1
+CSV                  iga_bmg(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSVC
+CSV                  from_land_S(x) = 'ALG'
+CSV                  iga_n_alg(il_n) = il_cnt(il_n) + 1
+CSV                  iga_alg(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSVC
+CSV                  from_land_S(x) = 'TGG'
+CSV                  iga_n_tgg(il_n) = il_cnt(il_n) + 1
+CSV                  iga_tgg(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+C
+                  from_land_S(6) = 'MCG'
+                  iga_n_mcg(il_n) = il_cnt(il_n) + 1
+                  iga_mcg(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+              ENDIF        
+              IF (C_cpld2land_L) ig_sfc_in_dim = ig_sfc_in_dim + ig_froml_dim
+              IF (lg_land .and. .not. lg_atmos) 
+     $            ig_sfc_out_dim = ig_sfc_out_dim + ig_froml_dim
+          ENDIF
+C
+          IF (C_cpld2ocean_L .or. (lg_ocean .and. .not. lg_atmos)) THEN
+C         MEC is coupled to an ocean model or is an ocean model
+              IF (C_cpld2ocean_L) THEN
+C             MEC is coupled to an ocean model: these fields will be input
+                  il_n = 1
+              ELSE IF (lg_ocean .and. .not. lg_atmos) THEN
+C             MEC is an ocean model: these fields will be output
+                  il_n = 2
+              ENDIF
+C
+              CALL c_finddim (from_ocean_S, ip_from_max, ig_fromo_dim)
+C
+              IF (ig_fromo_dim .gt. 0) THEN
+C             Coupling fields are defined in namelist 
+                  DO il_l = 1, ig_fromo_dim
+C                 Define position and index of field in rga_fldout or rga_fldin
+                    il_pos = il_cnt(il_n) + 1
+                    il_ind = (il_cnt(il_n) * il_nij) + 1
+                    IF (from_ocean_S(il_l) .eq. 'NIL') THEN
+                        ig_fromo_dim = 0
+                        il_cnt(il_n) = il_cnt(il_n) - 1
+                    ELSE IF (from_ocean_S(il_l) .eq. 'GLW') THEN
+C                   GLW: (GLSEA - PERBUS) SEA ICE FRACTION
+                        iga_n_glw(il_n) = il_pos
+                        iga_glw(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'I8W') THEN
+C                   I8W: (ICEDP - PERBUS) SEA ICE THICKNESS
+                        iga_n_i8w(il_n) = il_pos
+                        iga_i8w(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'I7W') THEN
+C                   I7W: (TMICE - PERBUS) SEA ICE TEMPERATURE
+                        iga_n_i7w(il_n) = il_pos
+                        iga_i7w(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'TMW') THEN
+C                   TMW: (TWATER - PERBUS) SEA SURFACE TEMPERATURE
+                        iga_n_tmw(il_n) = il_pos
+                        iga_tmw(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'FCW') THEN
+C                   FCW: (FC - VOLBUS) SURFACE SENSIBLE HEAT FLUX
+                        iga_n_fcw(il_n) = il_pos
+                        iga_fcw(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'FVW') THEN
+C                   FVW: (FV - VOLBUS) SURFACE LATENT FLUX
+                        iga_n_fvw(il_n) = il_pos
+                        iga_fvw(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'BMW') THEN
+C                   BMW: (BM) MOMENTUM FLUX COEFFICIENT (?)
+                        iga_n_bmw(il_n) = il_pos
+                        iga_bmw(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'ALW') THEN
+C                   ALW: (AL) ALBEDO
+                        iga_n_alw(il_n) = il_pos
+                        iga_alw(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'TGW') THEN
+C                   TGW: RADIATIVE TEMPERATURE
+                        iga_n_tgw(il_n) = il_pos
+                        iga_tgw(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'MCW') THEN
+C                   MCW: coupling mask (see readgeo.ftn and c_set_coupling.ftn)
+                        iga_n_mcw(il_n) = il_pos
+                        iga_mcw(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'FCI') THEN
+C                   FCI: (FC - VOLBUS) SURFACE SENSIBLE HEAT FLUX
+                        iga_n_fci(il_n) = il_pos
+                        iga_fci(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'FVI') THEN
+C                   FVI: (FV - VOLBUS) SURFACE LATENT FLUX
+                        iga_n_fvi(il_n) = il_pos
+                        iga_fvi(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'BMI') THEN
+C                   BMI: (BM) MOMENTUM FLUX COEFFICIENT (?)
+                        iga_n_bmi(il_n) = il_pos
+                        iga_bmi(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'ALI') THEN
+C                   ALI: (AL) ALBEDO
+                        iga_n_ali(il_n) = il_pos
+                        iga_ali(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'TGI') THEN
+C                   TGI: RADIATIVE TEMPERATURE
+                        iga_n_tgi(il_n) = il_pos
+                        iga_tgi(il_n) = il_ind
+                    ELSE IF (from_ocean_S(il_l) .eq. 'MCI') THEN
+C                   MCI: coupling mask (see readgeo.ftn and c_set_coupling.ftn)
+                        iga_n_mci(il_n) = il_pos
+                        iga_mci(il_n) = il_ind
+                    ELSE
+                        print *,'CPL- COUPLING VARIABLE NOT SUPPORTED = ', 
+     $                      from_ocean_S(il_l)
+                        call gem_stop
+     $                      ('CPL- COUPLING VARIABLE NOT SUPPORTED',-1) 
+                    ENDIF
+                    il_cnt(il_n) = il_cnt(il_n) + 1
+                  END DO 
+              ELSE
+C             Coupling fields are not defined in namelist
+C             Defaults for from_ocean_S are:
+                  ig_fromo_dim = 10
+CSV                  ig_fromo_dim = 16
+                  from_ocean_S(1) = 'GLW'
+                  iga_n_glw(il_n) = il_cnt(il_n) + 1
+                  iga_glw(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(2) = 'I8W'
+                  iga_n_i8w(il_n) = il_cnt(il_n) + 1
+                  iga_i8w(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(3) = 'I7W'
+                  iga_n_i7w(il_n) = il_cnt(il_n) + 1
+                  iga_i7w(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(4) = 'TMW'
+                  iga_n_tmw(il_n) = il_cnt(il_n) + 1
+                  iga_tmw(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(5) = 'FCW'
+                  iga_n_fcw(il_n) = il_cnt(il_n) + 1
+                  iga_fcw(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(6) = 'FVW'
+                  iga_n_fvw(il_n) = il_cnt(il_n) + 1
+                  iga_fvw(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSV                  from_ocean_S(x) = 'BMW'
+CSV                  iga_n_bmw(il_n) = il_cnt(il_n) + 1
+CSV                  iga_bmw(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSV                  from_ocean_S(x) = 'ALW'
+CSV                  iga_n_alw(il_n) = il_cnt(il_n) + 1
+CSV                  iga_alw(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSV                  from_ocean_S(x) = 'TGW'
+CSV                  iga_n_tgw(il_n) = il_cnt(il_n) + 1
+CSV                  iga_tgw(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(7) = 'MCW'
+                  iga_n_mcw(il_n) = il_cnt(il_n) + 1
+                  iga_mcw(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(8) = 'FCI'
+                  iga_n_fci(il_n) = il_cnt(il_n) + 1
+                  iga_fci(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(9) = 'FVI'
+                  iga_n_fvi(il_n) = il_cnt(il_n) + 1
+                  iga_fvi(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSV                  from_ocean_S(x) = 'BMI'
+CSV                  iga_n_bmi(il_n) = il_cnt(il_n) + 1
+CSV                  iga_bmi(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSV                  from_ocean_S(x) = 'ALI'
+CSV                  iga_n_ali(il_n) = il_cnt(il_n) + 1
+CSV                  iga_ali(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+CSV                  from_ocean_S(x) = 'TGI'
+CSV                  iga_n_tgi(il_n) = il_cnt(il_n) + 1
+CSV                  iga_tgi(il_n) = (il_cnt(il_n) * il_nij) + 1
+CSV                  il_cnt(il_n) = il_cnt(il_n) + 1
+                  from_ocean_S(10) = 'MCI'
+                  iga_n_mci(il_n) = il_cnt(il_n) + 1
+                  iga_mci(il_n) = (il_cnt(il_n) * il_nij) + 1
+                  il_cnt(il_n) = il_cnt(il_n) + 1
+             ENDIF
+              IF (C_cpld2ocean_L) ig_sfc_in_dim = ig_sfc_in_dim + ig_fromo_dim
+              IF (lg_ocean .and. .not. lg_atmos)
+     $            ig_sfc_out_dim = ig_sfc_out_dim + ig_fromo_dim
+          ENDIF
+C
+          ig_max_inout_dim = max (ig_sfc_in_dim, ig_sfc_out_dim)
+C
+          PRINT *, 'CPL- In c_init_cplfld'
+          PRINT *, 'CPL- ig_froma_dim = ', ig_froma_dim
+          PRINT *, 'CPL- ig_fromo_dim = ', ig_fromo_dim
+          PRINT *, 'CPL- ig_froml_dim = ', ig_froml_dim
+          PRINT *, 'CPL- ig_sfc_in_dim =', ig_sfc_in_dim
+          PRINT *, 'CPL- ig_sfc_out_dim =', ig_sfc_out_dim
+          PRINT *, 'CPL- ig_max_inout_dim=', ig_max_inout_dim
+          PRINT *, 'CPL- iga_n_xxx = '
+          PRINT *, iga_n_tja, iga_n_uda, iga_n_vda 
+          PRINT *, iga_n_t8a, iga_n_u8a, iga_n_v8a
+          PRINT *, iga_n_dqa  
+          PRINT *, iga_n_fba, iga_n_fia, iga_n_rta, iga_mca
+          PRINT *, iga_n_glw, iga_n_i8w, iga_n_i7w, iga_n_tmw 
+          PRINT *, iga_n_fcw, iga_n_fvw, iga_n_bmw, 
+     $        iga_n_alw, iga_n_tgw, iga_n_mcw
+          PRINT *, iga_n_fci, iga_n_fvi, iga_n_bmi, 
+     $        iga_n_ali, iga_n_tgi, iga_n_mci
+          PRINT *, iga_n_fcl, iga_n_fvl, iga_n_bml, 
+     $        iga_n_all, iga_n_tgl, iga_n_mcl
+          PRINT *, iga_n_fcg, iga_n_fvg, iga_n_bmg, 
+     $        iga_n_alg, iga_n_tgg, iga_n_mcg
+          PRINT *, 'CPL- iga_xxx = '
+          PRINT *, iga_tja, iga_uda, iga_vda 
+          PRINT *, iga_t8a, iga_u8a, iga_v8a
+          PRINT *, iga_dqa  
+          PRINT *, iga_fba, iga_fia, iga_rta, iga_mca
+          PRINT *, iga_glw, iga_i8w, iga_i7w, iga_tmw
+          PRINT *, iga_fcw, iga_fvw, iga_bmw, 
+     $        iga_alw, iga_tgw, iga_mcw
+          PRINT *, iga_fci, iga_fvi, iga_bmi, 
+     $        iga_ali, iga_tgi, iga_mci
+          PRINT *, iga_fcl, iga_fvl, iga_bml, 
+     $        iga_all, iga_tgl, iga_mcl
+          PRINT *, iga_fcg, iga_fvg, iga_bmg, 
+     $        iga_alg, iga_tgg, iga_mcg
+C
+C         Define the array of logicals, indicating if field is a coupling
+C         field, that will be transfered to the physics
+C         ---------------------------------------------------------------
+C  
+          IF (iga_n_fcl(1) .gt. 0) lga_cplfld(1,1) = .true.
+          IF (iga_n_fcg(1) .gt. 0) lga_cplfld(1,2) = .true.
+          IF (iga_n_fcw(1) .gt. 0) lga_cplfld(1,3) = .true.
+          IF (iga_n_fci(1) .gt. 0) lga_cplfld(1,4) = .true.
+          IF (iga_n_fvl(1) .gt. 0) lga_cplfld(2,1) = .true.
+          IF (iga_n_fvg(1) .gt. 0) lga_cplfld(2,2) = .true.
+          IF (iga_n_fvw(1) .gt. 0) lga_cplfld(2,3) = .true.
+          IF (iga_n_fvi(1) .gt. 0) lga_cplfld(2,4) = .true.
+C      IF (iga_n_bml(1) .gt. 0) lga_cplfld(3,1) = .true.
+C      IF (iga_n_bmg(1) .gt. 0) lga_cplfld(3,2) = .true.
+C      IF (iga_n_bmw(1) .gt. 0) lga_cplfld(3,3) = .true.
+C      IF (iga_n_bmi(1) .gt. 0) lga_cplfld(3,4) = .true.
+C      IF (iga_n_all(1) .gt. 0) lga_cplfld(4,1) = .true.
+C      IF (iga_n_alg(1) .gt. 0) lga_cplfld(4,2) = .true.
+C      IF (iga_n_alw(1) .gt. 0) lga_cplfld(4,3) = .true.
+C      IF (iga_n_ali(1) .gt. 0) lga_cplfld(4,4) = .true.
+C      IF (iga_n_tgl(1) .gt. 0) lga_cplfld(5,1) = .true.
+C      IF (iga_n_tgg(1) .gt. 0) lga_cplfld(5,2) = .true.
+C      IF (iga_n_tgw(1) .gt. 0) lga_cplfld(5,3) = .true.
+C      IF (iga_n_tgi(1) .gt. 0) lga_cplfld(5,4) = .true.
+          IF (iga_n_mcl(1) .gt. 0) lga_cplfld(6,1) = .true.
+          IF (iga_n_mcg(1) .gt. 0) lga_cplfld(6,2) = .true.
+          IF (iga_n_mcw(1) .gt. 0) lga_cplfld(6,3) = .true.
+          IF (iga_n_mci(1) .gt. 0) lga_cplfld(6,4) = .true.
+C
+C      Create one list containing all input fields (sfc_in_S)
+C      --------------------------------------------------------
+C
+          IF (Ptopo_myproc .eq. 0) THEN
+              IF (ig_sfc_in_dim .gt. 0) THEN
+                  CALL hpalloc (p_sfc_in_S, 2*ig_sfc_in_dim, il_err, 1)
+                  il_n = 1
+                  il_cnt(il_n) = 0
+                  IF (C_cpld2atmos_L) THEN
+                      DO il_l = 1, ig_froma_dim
+                        il_cnt(il_n) = il_cnt(il_n) + 1
+                        sfc_in_S (il_cnt(il_n)) = from_atmos_S(il_l)
+                      END DO
+                  ENDIF
+                  IF (C_cpld2land_L) THEN
+                      DO il_l = 1, ig_froml_dim
+                        il_cnt(il_n) = il_cnt(il_n) + 1
+                        sfc_in_S (il_cnt(il_n)) = from_land_S(il_l)
+                      END DO
+                  ENDIF
+                  IF (C_cpld2ocean_L) THEN
+                      DO il_l = 1, ig_fromo_dim
+                        il_cnt(il_n) = il_cnt(il_n) + 1
+                        sfc_in_S (il_cnt(il_n)) = from_ocean_S(il_l)
+                      END DO
+                  ENDIF
+              ENDIF
+C
+C             Create one list containing all output fields (sfc_out_S)
+C             --------------------------------------------------------
+C
+              IF (ig_sfc_out_dim .gt. 0) THEN
+                  CALL hpalloc (p_sfc_out_S, 2*ig_sfc_out_dim, il_err, 1)
+                  il_n = 2
+                  il_cnt(il_n) = 0
+                  IF (lg_atmos) THEN
+                      DO il_l = 1, ig_froma_dim
+                        il_cnt(il_n) = il_cnt(il_n) + 1
+                        sfc_out_S (il_cnt(il_n)) = from_atmos_S(il_l)
+                      END DO
+                  ENDIF
+                  IF (lg_land .and. .not. lg_atmos) THEN
+                      DO il_l = 1, ig_froml_dim
+                        il_cnt(il_n) = il_cnt(il_n) + 1
+                        sfc_out_S (il_cnt(il_n)) = from_land_S(il_l)
+                      END DO
+                  ENDIF
+                  IF (lg_ocean .and. .not. lg_atmos) THEN
+                      DO il_l = 1, ig_fromo_dim
+                        il_cnt(il_n) = il_cnt(il_n) + 1
+                        sfc_out_S (il_cnt(il_n)) = from_ocean_S(il_l)
+                      END DO
+                  ENDIF
+              ENDIF
+C
+C             Alloc of arrays to send/receive coupling fields to/from coupler 
+C             ---------------------------------------------------------------
+C
+C             Use maximum of ig_sfc_in_dim and ig_sfc_out_dim to match with 
+C             rga_cpl2phy dims for glbcolc and glbdist (see c_cplg_surf.ftn)
+C 
+              il_d = id_ni*id_nj*ig_max_inout_dim
+              IF (il_d .gt. 0) THEN
+                  call hpalloc(p_rga_fldin,  il_d, il_err, 1)
+                  call hpalloc(p_rga_fldout, il_d, il_err, 1)
+                  rga_fldout(1:il_d) = 0.0
+                  rga_fldin (1:il_d) = 0.0
+              ENDIF
+C
+          ENDIF
+      ENDIF
+      RETURN
+C
+      END SUBROUTINE c_init_cplfld
+
+ 

@@ -16,6 +16,7 @@
 *     alain patoine
 *
 *revision
+* v3_21 - Desgagne M.       - Revision Openmp
 *
 *language
 *     fortran 77
@@ -67,31 +68,33 @@
                              coef2 = -1.0
       endif
 *
+!$omp do
       do k = 1,F_nk
 *
-      vx = 0.0
-      vy = 0.0
-      do i=1,F_nic
-      vx = vx + F_wx(i) * (F_sx(i)           * dble(F_u(i,j,k))
-     %                   + F_cx(i) * F_sy(j) * dble(F_v(i,j,k)))
+         vx = 0.0
+         vy = 0.0
+         do i=1,F_nic
+            vx = vx + F_wx(i) * (F_sx(i)           * dble(F_u(i,j,k))
+     %                         + F_cx(i) * F_sy(j) * dble(F_v(i,j,k)))
 *
-      vy = vy + F_wx(i) * (F_cx(i)           * dble(F_u(i,j,k))
-     %                   - F_sx(i) * F_sy(j) * dble(F_v(i,j,k)))
-      enddo
+            vy = vy + F_wx(i) * (F_cx(i)           * dble(F_u(i,j,k))
+     %                         - F_sx(i) * F_sy(j) * dble(F_v(i,j,k)))
+         enddo
 *
-      do i=1,F_nic
-      F_u(i,F_j,k) =         vx * F_sx(i) +         vy * F_cx(i)
-      F_v(i,F_j,k) = coef1 * vx * F_cx(i) + coef2 * vy * F_sx(i)
-      enddo
+         do i=1,F_nic
+            F_u(i,F_j,k) =         vx * F_sx(i) +         vy * F_cx(i)
+            F_v(i,F_j,k) = coef1 * vx * F_cx(i) + coef2 * vy * F_sx(i)
+         enddo
+*   
+         do i = 1, F_halox
+            F_u(F_nic+i,F_j,k) = F_u(i        ,F_j,k)
+            F_v(F_nic+i,F_j,k) = F_v(i        ,F_j,k)
+            F_u(1-i    ,F_j,k) = F_u(F_nic+1-i,F_j,k)
+            F_v(1-i    ,F_j,k) = F_v(F_nic+1-i,F_j,k)
+         enddo
 *
-      do i = 1, F_halox
-      F_u(F_nic+i,F_j,k) = F_u(i        ,F_j,k)
-      F_v(F_nic+i,F_j,k) = F_v(i        ,F_j,k)
-      F_u(1-i    ,F_j,k) = F_u(F_nic+1-i,F_j,k)
-      F_v(1-i    ,F_j,k) = F_v(F_nic+1-i,F_j,k)
       enddo
-*
-      enddo
+!$omp enddo
 *
       return
       end

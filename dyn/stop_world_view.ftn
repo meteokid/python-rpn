@@ -47,8 +47,8 @@
 *
 *-------------------------------------------------------------------
 *
-      call tmg_stop (1)
-      call tmg_terminate ( Ptopo_myproc, 'GEMDM' )
+      call tmg_stop0 (1)
+      call tmg_terminate0 ( Ptopo_myproc, 'GEMDM' ) 
 *
 #if defined (NEC)
       call flush(5)

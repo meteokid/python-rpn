@@ -17,6 +17,7 @@
 * v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
 * v3_00 - Lee v.            - treats 2D plane as 1-D vector no halos
 * v3_02 - Lemay G.          - Vectorisation
+* v3_21 - Lee V.            - Output Optimization
 *
 
 *object
@@ -44,28 +45,47 @@
 #include "geomg.cdk"
 *
 **
-      integer i,k,ik,l
-      real con,q1,q2,q3,x0,xm,xp,aa,bb,cc,dd,det,zak,zbk,zck
-      real pr(n,Nk), vma(n,Nk), vmb(n,Nk), vmc(n,Nk), ex, q(3)
+      integer i,k,ik
+      real*8 invdet
+      real con,q1,q2,q3,x0,xm,xp,aa,bb,cc,dd,zak,zbk,zck
+      real pr(n,Nk), vma(n,Nk), vmb(n,Nk), vmc(n,Nk), ex,expps(n)
 *
 *     ---------------------------------------------------------------
 *
       con = -Dcst_rgasd_8
 *
-      do k=1,Nk
-      do i=1,n
-         if (F_sig_L) then
-            pr(i,k) =  F_pia(k)  *  F_ps(i)
-         else
-            if (F_pib_L) then
-               pr(i,k) = F_pia(k) + F_pib(k)*exp(F_ps(i))
-            else
+      if (F_pib_L) then
+          do i=1,n
+             expps(i)=exp( F_ps(i) )
+          enddo
+      endif
+
+      if (F_sig_L) then
+          do k=1,Nk
+          do i=1,n
+          pr(i,k) =  F_pia(k)  *  F_ps(i)
+          enddo
+          enddo
+      else
+          if (F_pib_L) then
+              do k=1,Nk
+              do i=1,n
+               pr(i,k) = F_pia(k) + F_pib(k)*expps(i)
+              enddo
+              enddo
+          else
+              do k=1,Nk
+              do i=1,n
                pr(i,k) = F_pia(k) + F_pib(k)*F_ps(i)
-            endif
-         endif
-      end do
-      end do
+              enddo
+              enddo
+          endif
+      endif
 *
+!$omp parallel private(q1,q2,q3,x0,xm,xp,aa,bb,
+!$omp$                 cc,dd,invdet,zak,zbk,zck,ex,i)
+!$omp$         shared (vma, vmb, vmc, con,pr)
+!$omp do
       do k=1,Nk            
       do i=1,n
          x0=pr(i,k)
@@ -86,27 +106,24 @@
             bb=xp-x0
          endif
 
-         do l=1,3
-            ex=real(l)-1.
-            if(ex.ne.0.) q(l)=(xp**ex-xm**ex)/ex
-            if(ex.eq.0.) q(l)=alog(xp/xm)
-         enddo
-
-         q1=q(1)
-         q2=q(2)
-         q3=q(3)
+         q1=alog(xp/xm)
+         q2=xp-xm
+         q3=(xp*xp - xm*xm)*0.5
 
          q3=q3-x0*(2.0*q2-x0*q1)
          q2=q2-x0*q1
-         cc=aa**2
-         dd=bb**2
-         det=aa*dd-bb*cc
-         vma(i,k)=(dd*q2-bb*q3)/(2.0*det)
-         vmc(i,k)=(aa*q3-cc*q2)/(2.0*det)
-         vmb(i,k)=q1/2.0-vma(i,k)-vmc(i,k)
+         cc=aa*aa
+         dd=bb*bb
+         invdet=aa*dd-bb*cc
+         invdet = 0.5/invdet
+         vma(i,k)=(dd*q2-bb*q3)*invdet
+         vmc(i,k)=(aa*q3-cc*q2)*invdet
+         vmb(i,k)=q1*0.5-vma(i,k)-vmc(i,k)
       end do
       end do
+!$omp enddo
 *
+!$omp do
       do i=1,n
          zak = -2.0*con*vma(i,nk)
          zbk = -2.0*con*vmb(i,nk)
@@ -114,6 +131,8 @@
          F_gz(i,nk-1) = zak * F_vt(i,nk-1) + zbk * F_vt(i,nk) +
      $                  zck * F_vt(i,nk-2) + F_gz(i,nk)
       end do
+!$omp enddo
+!$omp end parallel
 *
       do k = 1, nk-2
          ik  = nk-1-k

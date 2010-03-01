@@ -18,6 +18,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *language
 *     fortran 77
@@ -78,6 +79,8 @@
       call rpn_comm_xch_halo (vthm,LDIST_DIM,l_ni,l_njv,G_nk,
      %             G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
+!$omp parallel private(i0,in,j0,jn,sc_8)
+!$omp do
       do k=1,l_nk
 *
          i0 = 1
@@ -131,6 +134,7 @@
          endif
          endif
       enddo
+!$omp enddo
 ***********************************************************************
 * Image to component
 ***********************************************************************
@@ -142,6 +146,7 @@
              if (l_south) j0 = 3
              if (l_north) jn = l_njv - 1
       endif
+!$omp do
       do k = 1,l_nk
       do j = j0,jn
 *
@@ -154,6 +159,7 @@
       enddo
       enddo
       enddo
+!$omp enddo
       i0=1
       in=l_ni
       j0=1
@@ -162,6 +168,7 @@
              if (l_west) i0 = 3
              if (l_east) in = l_niu - 1
       endif
+!$omp do 
       do k = 1,l_nk
       do j = j0,jn
 *
@@ -174,6 +181,8 @@
       enddo
       enddo
       enddo
+!$omp enddo
+
 ***********************************************************************
 * Adjust wind fields to advection grid
 ***********************************************************************
@@ -185,7 +194,7 @@
           dest_ni=G_ni
       endif
 
-          
+!$omp single
       call rpn_comm_xch_halox ( uthm, LDIST_DIM, l_ni, l_nj, l_nk, 
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_um, 1-Adw_halox, 
      %  Adw_nic+Adw_halox, 1-Adw_haloy, Adw_njc+Adw_haloy, dest_ni, n)
@@ -197,6 +206,7 @@
       call rpn_comm_xch_halox ( psdthm, LDIST_DIM, l_ni, l_nj, l_nk, 
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_wm, 1-Adw_halox, 
      %  Adw_nic+Adw_halox, 1-Adw_haloy, Adw_njc+Adw_haloy, dest_ni, n)
+!$omp end single
 
 *
       if (.not.G_lam) then
@@ -218,8 +228,7 @@
          endif
 
       endif
-*
-      pnerr = vmmuld(-1,0)
+!$omp end parallel
 *
  1000  format(3X,'TRAJ of PREPARE WINDS: (S/R ADW_MAIN_1_WND_TR)')
       return

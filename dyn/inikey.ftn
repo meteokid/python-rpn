@@ -18,6 +18,8 @@
 * v3_03 - Leduc A-M         - Add gzmoins6
 * v3_12 - Bilodeau B.       - change length of vn_S from 8 to 16 characters
 * v3_13 - Pellerin P.       - Add the off-line mode
+* v3_21 - Valcke, S.        - Add fccpl, fvcpl, mccpl if coupling
+*                           - Add tdiag,udiag,vdiag,qdiag,tmice,pr,rt,fc,fv
 *
 *object
 *
@@ -27,6 +29,7 @@
 #include "tr3d.cdk"
 #include "p_cond.cdk"
 #include "schm.cdk"
+#include "c_cplg.cdk"
 *
 **
       character*16 vn_S
@@ -50,6 +53,11 @@
       call getindx ('EPONMOD', 'D',eponmod,  lght, init0)
       call getindx ('FCPMSK',  'D',fcpf,     lght, init0)
       call getindx ('FCPOID',  'D',fcpw,     lght, init0)
+      IF (C_coupling_L) THEN
+          call getindx ('FCCPL',   'D',fccpl,    lght, init0)
+          call getindx ('FVCPL',   'D',fvcpl,    lght, init0)
+          call getindx ('MCCPL',   'D',mccpl,    lght, init0)
+      ENDIF
 *
       call getindx ('DLAT',      'P',dlat,     lght, init0)
       call getindx ('DLON',      'P',dlon,     lght, init0)
@@ -76,6 +84,12 @@
       call getindx ('UFCP',      'P',ufcp,     lght, init0)
       call getindx ('VFCP',      'P',vfcp,     lght, init0)
       call getindx ('FDSI',      'P',fdsi,     lght, init0)
+      call getindx ('TDIAG',     'P',tdiag,     lght, init0)
+      call getindx ('UDIAG',     'P',udiag,     lght, init0)
+      call getindx ('VDIAG',     'P',vdiag,     lght, init0)
+      call getindx ('QDIAG',     'P',qdiag,     lght, init0)
+      call getindx ('TMICE',     'P',tmice,     lght, init0)
+
       if (Schm_offline_L) then
           call getindx ('FLUSOLIS',  'P',flusolis, lght, init0)
       endif
@@ -94,6 +108,10 @@
       call getindx ('KT',      'V',kt,       lght, init0)
       call getindx ('BM',      'V',bm,       lght, init0)
       call getindx ('BT',      'V',bt,       lght, init0)
+      call getindx ('PR',      'V',pr,       lght, init0)
+      call getindx ('RT',      'V',rt,       lght, init0)
+      call getindx ('FC',      'V',fc,       lght, init0)
+      call getindx ('FV',      'V',fv,       lght, init0)
 *
 * H2O tracers
 *

@@ -22,6 +22,7 @@
 * v3_02 - Tanguay M.        - ADJ of Eigv_parity_L and Hspng_main done
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *object
 *     see id section
@@ -125,6 +126,8 @@
 *
 *     Zero adjoint variables
 *     ----------------------
+!$omp parallel
+!$omp do 
       do k = 1,l_nk
       do j = l_miny,l_maxy 
       do i = l_minx,l_maxx 
@@ -135,7 +138,9 @@
       enddo
       enddo
       enddo
+!$omp enddo 
       if (.not. Schm_hydro_L) then
+!$omp do 
       do k = 1,l_nk
       do j = l_miny,l_maxy 
       do i = l_minx,l_maxx 
@@ -144,7 +149,9 @@
       enddo
       enddo
       enddo
+!$omp enddo 
       endif
+!$omp end parallel 
 *
       do 100 iln=Schm_itnlh,1,-1
 *
@@ -261,6 +268,7 @@
          pnerr = VMM_GET_VAR(oruw2m)
          pnerr = VMM_GET_VAR(orvw2m)
 *
+!$omp parallel do
          do k=1,l_nk
          do j=1,l_nj
          do i=1,l_ni
@@ -269,6 +277,7 @@
          end do
          end do
          end do
+!$omp end parallel do
          pnerr = vmmuld(-1,0)
 *
 *     END TRAJECTORY
@@ -305,6 +314,9 @@
              pnerr = VMM_GET_VAR(orvvm)
          endif
 *
+!$omp parallel
+*
+!$omp do
          do k=1,l_nk
          do j=1,l_nj
          do i=1,l_ni
@@ -313,7 +325,9 @@
          end do
          end do
          end do
+!$omp end do
          if (.not. Schm_hydro_L) then
+!$omp do
             do k=1,l_nk
             do j=1,l_nj
             do i=1,l_ni
@@ -322,7 +336,10 @@
             end do
             end do
             end do
+!$omp end do
          endif
+*
+!$omp end parallel 
 *
          pnerr = vmmuld(-1,0)
 
@@ -342,6 +359,7 @@
             do n=1,Tr3d_ntr
                err = vmmget(key0m (n),patr0m,tr0m)
                err = vmmget(keyorm(n),paorm, orm)
+!$omp parallel do 
                do k=1,l_nk
                do j=1,l_nj
                do i=1,l_ni
@@ -349,6 +367,7 @@
                end do
                end do
                end do
+!$omp end parallel do 
             end do
             err = vmmuld(key0m, Tr3d_ntr)
             err = vmmuld(keyorm,Tr3d_ntr)

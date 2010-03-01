@@ -26,6 +26,7 @@
 * v3_00 - Laroche S.        - cleanup 
 * v3_03 - Tanguay M.        - split call to rpn_comm_xch_halo for uv  
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp 
 *
 *object
 *     see id section 
@@ -57,30 +58,16 @@
 #include "intuv.cdk"
 #include "inuvl.cdk"
 *
-      integer i, j, k
+      integer i, j, k, ng
       real pr1, prsc, pr1m
-      real  uv(DIST_SHAPE,Nk,2), dvi(DIST_SHAPE,Nk), w1(DIST_SHAPE,Nk)
-      real uvm(DIST_SHAPE,Nk,2),dvim(DIST_SHAPE,Nk),w1m(DIST_SHAPE,Nk)
+      real  uv(DIST_SHAPE,Nk,2), dvi(DIST_SHAPE,Nk)
+      real uvm(DIST_SHAPE,Nk,2),dvim(DIST_SHAPE,Nk)
       real*8 expfm_8(l_niu+1,l_njv+1), expfm1m_8(l_niu+1,l_njv+1),
      $       inv_Geomg_hx_8(l_ni), gratio_8(l_nj), inv_Geomg_cy2_8(l_nj),
      $       dpib1m_8(l_niu+1,l_njv+1), inv1m_8(l_niu+1,l_njv+1), 
      $       dpib2m_8(l_niu+1,l_njv+1), inv2m_8(l_niu+1,l_njv+1)
 *     ________________________________________________________________
 *
-*
-*     TRAJECTORY
-*     ----------
-      F_tdm = 0.
-      uvm   = 0.
-      w1m   = 0.
-*
-*     TLM
-*     ---
-      F_td = 0.
-      uv   = 0.
-      w1   = 0.
-*
-*     ________________________________________________________________
 *
 *     ----------------
 *     START TRAJECTORY
@@ -89,16 +76,40 @@
       call rpn_comm_xch_halo( F_ssm, LDIST_DIM, l_ni, l_nj , 1,
      $                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
+!$omp parallel private (pr1,pr1m,dpib1m_8,dpib2m_8,
+!$omp$                  inv1m_8,inv2m_8) shared (ng,l_nk,prsc)
+*
+!$omp do
+      do k=1,G_nk
+*
+*     TRAJECTORY
+*     ----------
+      F_tdm (:,:,k  ) = 0.
+      uvm   (:,:,k,:) = 0.
+*
+      if (k.eq.1) then
       do j = 1,l_njv+1
       do i = 1,l_niu+1
          expfm_8  (i,j) = exp(F_ssm(i,j))
          expfm1m_8(i,j) = expfm_8(i,j) - 1.0d0
       end do
       end do
+      do i = 1, l_niu
+         inv_Geomg_hx_8(i) = 1.0d0 / Geomg_hx_8(i)
+      end do
 *
-*              __              *
+      do j = 1, l_nj
+         gratio_8(j) = Geomg_cyv2_8(j) / Geomg_hsy_8(j)
+         inv_Geomg_cy2_8(j) = 1.0d0 / Geomg_cy2_8(j)
+      end do
+      endif
+*
+      end do
+!$omp enddo
+*
 *  b) compute  \/ . ( V dpi/dpi )
 
+!$omp do
       do k=1,G_nk
          do j = 1, l_nj
          do i = 1, l_niu
@@ -120,14 +131,23 @@
          end do
          end do
       end do
+!$omp enddo
+*
+!$omp single
 *
       call rpn_comm_xch_halo (uvm,               LDIST_DIM, l_niu,l_nj,
      $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo (uvm(minx,miny,1,2),LDIST_DIM, l_ni,l_njv,
      $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
-      call caldiv_2 ( F_tdm, uvm(minx,miny,1,1), uvm(minx,miny,1,2),
-     $                LDIST_DIM, G_nk )
+!$omp end single
+*
+!$omp do
+      do k=1,G_nk
+      call caldiv_2 ( F_tdm(minx,miny,k), uvm(minx,miny,k,1),
+     $                uvm(minx,miny,k,2), LDIST_DIM, 1 )
+      end do
+!$omp enddo
 *
 *                   *
 *                 pi
@@ -139,38 +159,29 @@
 *                 pi
 *                   k
 *
-      call hatoprg (dvim,F_tdm,w1m,1.0,Geomg_hz_8,LDIST_DIM,G_nk)
+      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      call hatoprg (dvim,F_tdm,1.0,Geomg_hz_8,ng,G_nk)
 *
-      do k=1,G_nk
-       do j=1,l_nj
-       do i=1,l_ni
-*
-         pr1m = 1.0 + Geomg_dpib(k) * expfm1m_8(i,j) 
-         F_psdm(i,j,k) = (dvim(i,j,k) + ((Geomg_pib(k)/
-     $                   Geomg_pib(G_nk)) -1) * dvim(i,j,1))/pr1m
-*
-       end do
-       end do
-      end do
 *                   .*
 *                dpi
 *  Compute   D + ----  integrated vertically
 *  -------          *
 *                dpi
 *
-*      
+*
 *   compute  V . \/ (dpi/dpi )
 *
-      do i = 1, l_niu
-         inv_Geomg_hx_8(i) = 1.0d0 / Geomg_hx_8(i)
-      end do
-*
-      do j = 1, l_nj
-         gratio_8(j) = Geomg_cyv2_8(j) / Geomg_hsy_8(j)
-         inv_Geomg_cy2_8(j) = 1.0d0 / Geomg_cy2_8(j)
-      end do
-*
+!$omp do
       do k=1,G_nk
+         do j=1,l_nj
+         do i=1,l_ni
+*
+           pr1m = 1.0 + Geomg_dpib(k) * expfm1m_8(i,j) 
+           F_psdm(i,j,k) = (dvim(i,j,k) + ((Geomg_pib(k)/
+     $                     Geomg_pib(G_nk)) -1) * dvim(i,j,1))/pr1m
+*
+         end do
+         end do
 *
          do j = 1, l_nj
          do i = 1, l_niu
@@ -185,34 +196,29 @@
          end do
 *
       end do
+!$omp enddo
 *
       call p_uvgridscal ( uvm(minx,miny,1,1), uvm(minx,miny,1,2),
      $                    LDIST_DIM, l_nk, .true.)
 *
-      do k=1,G_nk
-       do j= 1, l_nj
-       do i= 1, l_ni
-            w1m(i,j,k)= (uvm(i,j,k,1)+uvm(i,j,k,2))*inv_Geomg_cy2_8(j)
-       end do
-       end do
-      end do
-*
-*
 *   Compute total divergence
 *   ------------------------
+      prsc = 1./Geomg_pib(G_nk)
 *
-       prsc = 1./Geomg_pib(G_nk)
-       do k=1,G_nk
+!$omp do
+      do k=1,G_nk
         do j= 1, l_nj
         do i= 1, l_ni
 *
+         pr1m = (uvm(i,j,k,1)+uvm(i,j,k,2))*inv_Geomg_cy2_8(j)
          F_tdm(i,j,k)= Geomg_dpib(k)* (prsc*dvim(i,j,1) 
-     $                 -expfm_8(i,j) * w1m(i,j,k))
+     $                 -expfm_8(i,j) * pr1m)
      $                 -F_psdm(i,j,k)*expfm1m_8(i,j)*Geomg_dpia(k)
 *
         enddo
         enddo
-       enddo
+      enddo
+!$omp enddo 
 *
 *     --------------
 *     END TRAJECTORY
@@ -223,15 +229,20 @@
 *       START TLM
 *       ---------
 *
-
+!$omp single 
       call rpn_comm_xch_halo( F_ss, LDIST_DIM, l_ni, l_nj , 1,
      $                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-
+!$omp end single 
+*
 *              __              *
 *  b) compute  \/ . ( V dpi/dpi )
-
+*
+!$omp do 
       do k=1,G_nk
-
+*
+         F_td (:,:,k  ) = 0.
+         uv   (:,:,k,:) = 0.
+*
          do j = 1, l_nj
          do i = 1, l_niu
 *
@@ -255,15 +266,21 @@
          end do
 
       end do
+!$omp end do 
 *
+!$omp single 
       call rpn_comm_xch_halo (uv,                LDIST_DIM, l_niu,l_nj,
      $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo (uv(minx,miny,1,2), LDIST_DIM, l_ni,l_njv,
      $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single 
 *
-      call caldiv_2 ( F_td, uv(minx,miny,1,1), uv(minx,miny,1,2),
-     $                LDIST_DIM, G_nk )
-*
+!$omp do 
+      do k=1,G_nk
+      call caldiv_2 ( F_td(minx,miny,k), uv(minx,miny,k,1),
+     $                uv(minx,miny,k,2), LDIST_DIM, 1 )
+      end do
+!$omp end do 
 *                   *
 *                 pi
 *                /  gnk
@@ -274,36 +291,34 @@
 *                 pi
 *                   k
 *
-      call hatoprg (dvi,F_td,w1,1.0,Geomg_hz_8,LDIST_DIM,G_nk)
-*
+      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      call hatoprg (dvi,F_td,1.0,Geomg_hz_8,ng,G_nk)
 *
 *                .*
 *  d)  compute pi
 *                k
 *
-      do k=1,G_nk
-       do j=1,l_nj
-       do i=1,l_ni
-*
-         pr1m = 1.0 + Geomg_dpib(k) * expfm1m_8(i,j)
-         pr1  =       Geomg_dpib(k) *(expfm_8(i,j)*F_ss(i,j))
-         F_psd(i,j,k) =(dvi (i,j,k)+((Geomg_pib(k)/Geomg_pib(G_nk))-1)*dvi (i,j,1))/pr1m
-     $          - pr1*((dvim(i,j,k)+((Geomg_pib(k)/Geomg_pib(G_nk))-1)*dvim(i,j,1))/pr1m**2)
-*
-       end do
-       end do
-      end do
-
 *                   .*
 *                dpi
 *  Compute   D + ----  integrated vertically
 *  -------          *
 *                dpi
 *
-*      
 *   compute  V . \/ (dpi/dpi )
 *
+!$omp do 
       do k=1,G_nk
+         do j=1,l_nj
+         do i=1,l_ni
+*
+           pr1m = 1.0 + Geomg_dpib(k) * expfm1m_8(i,j)
+           pr1  =       Geomg_dpib(k) *(expfm_8(i,j)*F_ss(i,j))
+           F_psd(i,j,k) =(dvi (i,j,k)+((Geomg_pib(k)/Geomg_pib(G_nk))-1)*dvi (i,j,1))/pr1m
+     $            - pr1*((dvim(i,j,k)+((Geomg_pib(k)/Geomg_pib(G_nk))-1)*dvim(i,j,1))/pr1m**2)
+*
+         end do
+         end do
+*
          do j = 1, l_nj
          do i = 1, l_niu
 *
@@ -322,25 +337,17 @@
          end do   
          end do
       end do
-*
+!$omp end do 
 *
       call p_uvgridscal ( uv(minx,miny,1,1), uv(minx,miny,1,2),
      $                    LDIST_DIM, l_nk, .true. )
-
-      do k=1,G_nk
-      do j= 1, l_nj
-      do i= 1, l_ni
-*
-          w1(i,j,k)= (uv(i,j,k,1)+uv(i,j,k,2))*inv_Geomg_cy2_8(j)
-*
-      end do
-      end do
-      end do
 *
 *   Compute total divergence
 *   ------------------------
 *
       prsc = 1./Geomg_pib(G_nk)
+*
+!$omp do 
       do k=1,G_nk
 *
          do j= 1, l_njv+1
@@ -355,9 +362,12 @@
          do j= 1, l_nj
          do i= 1, l_ni
 *
+         pr1  = (uv (i,j,k,1)+uv (i,j,k,2))*inv_Geomg_cy2_8(j)
+         pr1m = (uvm(i,j,k,1)+uvm(i,j,k,2))*inv_Geomg_cy2_8(j)
+*
          F_td(i,j,k)  = Geomg_dpib(k)* (prsc*dvi(i,j,1)           
-     $                          - expfm_8(i,j)*F_ss(i,j)*w1m(i,j,k)  
-     $                          - expfm_8(i,j)          *w1 (i,j,k)) 
+     $                          - expfm_8(i,j)*F_ss(i,j)*pr1m  
+     $                          - expfm_8(i,j)          *pr1) 
      $                 -F_psd (i,j,k)*(expfm_8(i,j)           -1.)*Geomg_dpia(k)
      $                 -F_psdm(i,j,k)*(expfm_8(i,j) *F_ss(i,j)   )*Geomg_dpia(k)
 *
@@ -369,19 +379,27 @@
 *
         enddo
         enddo
-      enddo
 *
 *     Boundary conditions for vertical velocity 
 *
-*     TRAJECTORY
-*     ----------
-      F_psdm(:,:,   1) = 0.
-      F_psdm(:,:,G_nk) = 0.
+        if(k.eq.1) then
 *
-*     TLM 
-*     ---
-      F_psd(:,:,   1) = 0.
-      F_psd(:,:,G_nk) = 0.
+*       TRAJECTORY
+*       ----------
+        F_psdm(:,:,   1) = 0.
+        F_psdm(:,:,G_nk) = 0.
+*
+*       TLM 
+*       ---
+        F_psd(:,:,   1) = 0.
+        F_psd(:,:,G_nk) = 0.
+*
+        endif
+*
+      enddo
+!$omp enddo 
+*
+!$omp end parallel 
 *
 *     ________________________________________________________________
 *

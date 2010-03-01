@@ -22,6 +22,7 @@
 * v3_03 - Tanguay M.        - Adjoint Lam configuration 
 * v3_11 - Gravel S.         - Adapt for theoretical cases and varying topo
 * v3_11 - Tanguay M.        - Abort when V4dg_conf.ne.0 and Vtopo_L  
+* v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
 *
 *object
 *	
@@ -181,6 +182,11 @@
 *     -------------------------------------------
 *
       call set_dync()
+*
+*     Initialize model and SL operators
+*     ---------------------------------
+      call set_opr()
+      call adw_set()
 *
 *     -----
       endif

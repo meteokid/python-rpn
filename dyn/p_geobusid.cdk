@@ -3,10 +3,11 @@
 * v2_20 - Pellerin P.       - initial version
 * v2_21 - Dugas B.          - vegf joins the general category (as it holds ML)
 * v2_31 - Talbot D.         - dhdx,dhdy,dhdxdy for "blocage"
+* v3_21 - Lemonsu A.        - urbf joins the general category
 *
      $        glsea,glseac,hs,hsc,mg,mh,mq,snodp,al,vegindx,
      $        twater,i0,z0,lhtg,dlat,dlon,la,lo,mt,ml,fis,
-     $        mi,ga,gi8,gice,gmice,vegf,dhdx,dhdy,dhdxdy,
+     $        mi,ga,gi8,gice,gmice,vegf,urbf,dhdx,dhdy,dhdxdy,
 *
 * for both ISBA and CLASS
      $        sand, clay, snoag, snoro, snoal, tsoil, wsoil,  

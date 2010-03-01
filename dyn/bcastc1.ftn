@@ -34,6 +34,8 @@
 * v3_20 - Gravel S.         - broadcast common vrtd and zblen
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
 * v3_20 - Buehner & Zadra   - Add broadcast of V4d_gen_c
+* v3_21 - Valcke, S.        - Remove broadcast of C_pipe, C_nml, C_step
+* v3_21 - Lee V.            - Remove broadcast of TR2d..., added Lctl_i
 *
 *object
 *
@@ -70,9 +72,7 @@
 #include "vspng.cdk"
 #include "hspng.cdk"
 #include "cori.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
-#include "c_cplg.cdk"
 #include "v4dg.cdk"
 #include "v4dj.cdk"
 #include "v4dm.cdk"
@@ -120,6 +120,7 @@
       COMMON_BROADCAST(Adw_l)
       COMMON_BROADCAST(Adw_ia)
       COMMON_BROADCAST(Lctl_l)
+      COMMON_BROADCAST(Lctl_i)
       COMMON_BROADCAST(Cori_l)
       COMMON_BROADCAST(Cstv)
       COMMON_BROADCAST(Path1)
@@ -129,10 +130,6 @@
       COMMON_BROADCAST(Hzdr)
       COMMON_BROADCAST(Hzdc)
       COMMON_BROADCAST(Eigvl)
-      COMMON_BROADCAST(Tr2d_c)
-      COMMON_BROADCAST(Tr2d_l)
-      COMMON_BROADCAST(Tr2d_i)
-      COMMON_BROADCAST(Tr2d_r)
       COMMON_BROADCAST(Tr3d_c)
       COMMON_BROADCAST(Tr3d_i)
       COMMON_BROADCAST(Tr3d_r)
@@ -146,9 +143,6 @@
       COMMON_BROADCAST(Out3_c)
       COMMON_BROADCAST(Out3_i)
       COMMON_BROADCAST(Level_l)
-      COMMON_BROADCAST(C_nml)
-      COMMON_BROADCAST(C_pipe)
-      COMMON_BROADCAST(C_step)
       COMMON_BROADCAST(V4d_gen_i)
       COMMON_BROADCAST(V4d_gen_l)
       COMMON_BROADCAST(V4d_gen_r)

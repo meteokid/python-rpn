@@ -29,6 +29,7 @@
 *revision
 * v2_00 - Lee V.            - initial MPI version (from prgzvta v1_03)
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Lee V.            - Output Optimization
 *
 *object
 *     See id section
@@ -76,7 +77,7 @@
 *     none
 *
 **
-      integer i, j, k, kk, pnk, pnkm, pnindex(l_ni,l_nj)
+      integer i, j, k, kk, pnk, pnkm, pnindex(l_ni)
 *
       real    prlprso
       real    prd, pre, prr
@@ -86,27 +87,30 @@
       integer pnund,   pn1
       real    prlptop, prvttop, prfitop
       real    prlpbot, prvtbot, prfibot
+      real*8  invprd,invprl
 *
       prsmall = .001
 
+!$omp parallel private(i,k,kk,pnk,pnkm,pnindex,prlprso,
+!$omp$    prd,pre,prr,prfm0,prfm1,prfm2,prfm3,prfl2,prl,
+!$omp$    pnund,pn1,prlptop,prvttop,prfitop,
+!$omp$    prlpbot,prvtbot,prfibot,invprd,invprl)
+!$omp do
+
+      do 600 j= 1, l_nj
       do 500 kk = 1, Nkout
+      do i= 1, l_ni
+         pnindex(i) = 0
+      enddo
       prlprso = log(F_pres(kk))
 *
-      do j= 1, l_nj
-      do i= 1, l_ni
-         pnindex(i,j) = 0
-      enddo
-      enddo
 *
       do k=1,l_nk
-      do  j= 1, l_nj
       do  i= 1, l_ni
-         if ( prlprso .gt. F_wlnph(i,j,k) ) pnindex(i,j) = k
-      enddo
+         if ( prlprso .gt. F_wlnph(i,j,k) ) pnindex(i) = k
       enddo
       enddo
 *
-      do 300 j= 1, l_nj
       do 300 i= 1, l_ni
 *******************************************************************************
 *                                                                             *
@@ -117,7 +121,7 @@
 *                                                                             *
 *******************************************************************************
 *
-      if ( pnindex(i,j) .eq. 0 ) then
+      if ( pnindex(i) .eq. 0 ) then
 *
          prd = prlprso - F_wlnph(i,j,1)
 *
@@ -207,7 +211,7 @@
 * at top and bottom for next layer calculation and iterate.                   *
 *                                                                             *
 *******************************************************************************
-      else if ( pnindex(i,j) .eq. l_nk ) then
+      else if ( pnindex(i) .eq. l_nk ) then
 *
          do pnund=1,F_nundr
 *
@@ -296,27 +300,29 @@
 *        *                                                                    *
 *        **********************************************************************
 *
-         pnkm = pnindex(i,j)
-         pnk  = pnindex(i,j) + 1
+         pnkm = pnindex(i)
+         pnk  = pnindex(i) + 1
 *
          prd = F_wlnph(i,j,pnk) - F_wlnph(i,j,pnkm)
+         invprd = prd
+         invprd = 1.0/prd
 *
          pre = prlprso - 0.5 * ( F_wlnph(i,j,pnk) + F_wlnph(i,j,pnkm) )
 *
          if ( F_cubzt_L .and. ( pnk .lt. l_nk+1-F_linbot ) ) then
 *
-            prr = 0.125 * prd ** 2 - 0.5 * pre ** 2
+            prr = 0.125 * prd * prd - 0.5 * pre * pre
 *
             prfm0 = 0.5 * ( F_gzin(i,j,pnk) + F_gzin(i,j,pnkm) )
 *
-            prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) / prd
+            prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) * invprd
 *
             prfm2 = - Dcst_rgasd_8
      %              * ( F_vtin(i,j,pnk) - F_vtin(i,j,pnkm) )
-     %              / prd
+     %              * invprd
 *
             prfm3 = - Dcst_rgasd_8 * ( F_vtin(i,j,pnk) + F_vtin(i,j,pnkm) )
-            prfm3 = ( prfm3 - prfm1 - prfm1 ) / ( prd ** 2 )
+            prfm3 = ( prfm3 - prfm1 - prfm1 ) * invprd * invprd
 *
             prfl2 = prfm2 + 2.0 * pre * prfm3
 *
@@ -329,13 +335,13 @@
 *
             prfm0 = 0.5 * ( F_gzin(i,j,pnk) + F_gzin(i,j,pnkm) )
 *
-            prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) / prd
+            prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) * invprd
 *
             F_gzout(i,j,kk)= prfm0 + pre * prfm1
 *
             prfm0 = 0.5 * ( F_vtin(i,j,pnk) + F_vtin(i,j,pnkm) )
 *
-            prfm1 = ( F_vtin(i,j,pnk) - F_vtin(i,j,pnkm) ) / prd
+            prfm1 = ( F_vtin(i,j,pnk) - F_vtin(i,j,pnkm) ) * invprd
 *
             F_vtout(i,j,kk)= prfm0 + pre * prfm1
 *
@@ -346,5 +352,9 @@
  300  continue
 *
  500  continue
+ 600  continue
+!$omp enddo
+!$omp end parallel
+
       return
       end

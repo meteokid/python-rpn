@@ -22,6 +22,7 @@
 * v2_32 - Lee V.            - slab related calls are moved to p_phystep
 * v3_00 - Laroche S.        - remove hpdeallc (pageofld, ier, 1)
 * v3_02 - Lee V.            - output QC at time 0 here
+* v3_21 - Valcke, S.        - Coupling via Oasis (logical C_coupling_L)
 *      
 *object
 *
@@ -67,6 +68,13 @@
          Lctl_step = 1
       endif
 *
+      if (C_coupling_L) then
+          if (F_stepno.eq.1) then 
+*         Additional exchange at beginning of simulation (ig_oatime = 0)
+              CALL c_cplg_surf (ig_oatime)
+          endif
+      endif
+*
       if (boot_L) then
          if (Xst_nstat.gt.0) then
             call sergset ()
@@ -89,11 +97,11 @@
 *     
       if (Xst_nstat.gt.0) call sergout( F_stepno.eq.1 )
 *
-*     Coupling with a second model
+*     Coupling with other surface modules or models via Oasis
 *
       if (C_coupling_L) then
-         if (C_ocean_iml_L) call c_cplg_iml( )
-c         if (C_wave_L) call c_cplg_wave( )
+         ig_oatime = ig_oatime +  int(Cstv_dt_8)
+         call c_cplg_surf(ig_oatime)
       endif
 *   
       return

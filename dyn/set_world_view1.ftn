@@ -53,6 +53,10 @@
 *                           - 1d higher order diffusion operator
 * v3_20 - Zadra A.          - Introduce V4dg_sgvc_dt0
 * v3_20 - Buehner & Zadra   - Introduce V4dg_chum_s
+* v3_21 - Lee V.            - Set Mem_phyncore_L to always TRUE.
+* v3_21 - Valcke, S.        - Init of namelist coupling section
+*                           - Move read of namelist coupling to c_init_cplfdl 
+* v3_21 - Lee V.            - Added Lctl_reset key, remove TR2D
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -95,7 +99,6 @@
 #include "setsor.cdk"
 #include "grid.cdk"
 #include "out1.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "offline.cdk"
 #include "pres.cdk"
@@ -143,7 +146,6 @@
       Step_cleanup = 0
 *
       Mem_mx3db    = -1
-      Mem_phyncore_L = .false.
 *
       Ptopo_npex = 1
       Ptopo_npey = 1
@@ -212,6 +214,7 @@
 *
       Lctl_r8stat_L   = .false.
       Lctl_debug_L    = .false.
+      Lctl_reset      = -1
       Level_ip12000_L = .false.
 *
       Grd_rcoef = 1.0
@@ -259,14 +262,7 @@
       Vtopo_start = -1
       Vtopo_ndt = 0
 *
-      Tr2d_ntr = 0
       Tr3d_ntr = 0
-      Tr2d_incore_L = .true.
-      Tr2d_ntpf     = 10
-      Tr2d_nbf      = 0
-      do i=1,MAXTR2D
-         Tr2d_unf(i) = -1
-      end do
 *
       do i = 1,MAXSTAT
          Xst_statij(1,i) = -9999
@@ -330,9 +326,19 @@
 *
 *    Coupling section
 *    ----------------
-      C_coupling_L  = .false.
-      C_wave_L      = .false.
-      C_ocean_iml_L = .false. 
+*    Namelist initialisation
+      C_coupling_L   = .false.
+      C_cploasis_L   = .false.
+      C_cpld2ocean_L = .false.
+      C_cpld2land_L  = .false.
+      C_cpld2atmos_L = .false.
+
+      do i = 1, ip_from_max
+         from_ocean_S(i) = ''
+         from_land_S(i)  = ''
+         from_atmos_S(i) = ''
+      enddo
+
 *     
       call getenvc('rep_from_which_model_is_launched',Path_dfwmil_S)
 *      
@@ -382,14 +388,19 @@
          endif
          rewind ( Lun_in )
          read (Lun_in, nml=gem_cfgs, end = 9120, err=9120)
-         rewind ( Lun_in )
-         read (Lun_in, nml=coupling, end = 5555, err=9130)
       endif
- 5555 rewind ( Lun_in )
       read (Lun_in, nml=var4d, end = 6666, err = 9140)
  6666 continue
       call fclos (lun_in)
 *        
+*     Set Mem_phyncore_L to true permanently
+      Mem_phyncore_L = .true.
+
+*     Set Lctl_reset to -1 if Init_balgm_L is true and Lctl_reset.lt.Init_dfnp
+      if (Init_balgm_L) then
+          if (Lctl_reset.lt.Init_dfnp) Lctl_reset = -1
+      endif
+
       if ( V4dg_conf.ne.0.and.Step_total.lt.Init_dfnp-1.and.Init_balgm_L ) then
            write(Lun_out,9400)
            return
@@ -430,10 +441,6 @@
         err = fnom (V4dg_lun_obs,V4dg_lun_obs_s,'RND+OLD', 0)
       endif
 *      
-*     Initialization for the coupling
-*
-      if (C_coupling_L)  call c_init()
-*
       if(Out3_nbitg .lt. 0) then
          write (Lun_out, 9154)
          Out3_nbitg=16
@@ -547,11 +554,11 @@
 *     Options used for the Off-line mode (MEC)
 *
       if (Schm_offline_L) then
-      Schm_phyms_L    = .true.
-      Init_balgm_L    = .false.
-      Pres_ptop       = 10.0
-      Hzd_type_s        = 'NIL' 
-      Vspng_nk          = 0 
+          Schm_phyms_L    = .true.
+          Init_balgm_L    = .false.
+          Pres_ptop       = 10.0
+          Hzd_type_s        = 'NIL' 
+          Vspng_nk          = 0 
       endif
 *
       write (lun_out, nml=gem_cfgs_p)
@@ -598,9 +605,6 @@
       write (Lun_out, 8000)
       return
  9120 write (Lun_out, 9150)
-      write (Lun_out, 8000)
-      return
- 9130 write (Lun_out, 9250)
       write (Lun_out, 8000)
       return
  9140 write (Lun_out, 9350)

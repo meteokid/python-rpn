@@ -14,6 +14,7 @@
 * v2_10 - Desgagne M.       - 4D-var statistics control
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Lee V.            - CFL, trajectory stats for LAM
+* v3_21 - Lee V.            - Remove Tr2d
 *
 *object
 *     see above
@@ -28,7 +29,6 @@
 #include "lctl.cdk"
 #include "ptopo.cdk"
 #include "v4dg.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "adw.cdk"
 *
@@ -36,11 +36,10 @@
       integer  vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
       external vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
 
-      integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf,ntr2do,j2do
+      integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf
       integer err, key(max(Tr3d_ntr,5)), key0, trunc(4)
       real tr,buf(l_ni,G_nk),cfl
       pointer (patr, tr(LDIST_SHAPE,*))
-      real, allocatable, dimension(:,:,:,:) :: tr2
 *     ---------------------------------------------------------------
 *
       if ((V4dg_conf.ne.0).and.(V4dg_output_L)) then
@@ -99,38 +98,6 @@
          err = vmmuld(key,Tr3d_ntr)
       endif
 *
-      if (Tr2d_incore_L) then
-         do i=1,Tr2d_ntr
-            patr = loc(Tr2d_stk3d((i-1)*LDIST_SIZ*l_nk+1))
-            call glbstat (tr,Tr2d_name_S(i),LDIST_DIM,G_nk,i0,in,j0,jn,
-     $                                                          1,G_nk)
-         end do
-      else
-         cnt = l_ni*G_nk
-         allocate (tr2(LDIST_SHAPE,G_nk,Tr2d_ntpf))
-         do n=1,Tr2d_nbf
-            unf = Tr2d_unf((n-1)*Tr2d_ntpf+1)
-            err = rewind_db_file (unf)
-            err = read_db_file (unf,ntr2do,1)
-            do j=1,l_nj
-               err = read_db_file(unf,j2do,1)
-               do m=1,ntr2do
-                  err = read_db_file (unf,buf,cnt)
-                  do k=1,G_nk
-                  do i=1,l_ni
-                     tr2(i,j2do,k,m) = buf(i,k)
-                  end do
-                  end do   
-               end do
-            end do
-            do m=1,ntr2do
-               i=(n-1)*Tr2d_ntpf+m
-               call glbstat ( tr2(l_minx,l_miny,1,m),Tr2d_name_S(i),
-     $                        LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk )
-            end do
-         end do
-         deallocate (tr2)
-      endif
 *
       if (Ptopo_myproc.eq.0) write(6,1001)
 *

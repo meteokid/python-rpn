@@ -21,6 +21,7 @@
 *     alain patoine
 *
 *revision
+* v3_21 - Desgagne M.       - Revision Openmp
 *
 *language
 *     fortran 77
@@ -90,6 +91,7 @@
       if ( F_sud ) nd = -1
                    m  = F_nic + 1
 *
+!$omp do
       do k = 1, F_nk
 *
          e(0)   = F_field(F_nic, ns, k)
@@ -112,6 +114,7 @@
          enddo
 *     
       enddo
+!$omp enddo
 *
       return
       end

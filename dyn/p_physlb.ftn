@@ -42,6 +42,7 @@
 * v3_20 - Lee V             - replace slab Output with FST file output
 * v3_20 - Pellerin P.       - Add busvol in p_fillbus
 * v3_20 - Desgagne/Pellerin S.- Replaced Mem_pslic with jdo in test for last slice.
+* v3_21 - Valcke, S.        - Modified CALL to c_getbus and c_fillbus
 *
 *object
 *     See above id.
@@ -94,6 +95,7 @@
 #include "busind.cdk"
 #include "busind_tr.cdk"
 #include "v4dg.cdk"
+#include "c_cplg.cdk"
 *
 *modules
       integer  read_db_file,write_db_file
@@ -112,10 +114,10 @@
       real busdyn(max(1,p_bdyn_siz)), busvol(max(1,p_bvol_siz)),
      $     busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
       pointer (pabusper,busper(*))
+*
 **
 *     ---------------------------------------------------------------
 *
-
       if ((Lun_out.gt.0).and.(F_cpu.eq.1)) write(Lun_out,1000)
 *
       dumpbus_L = .false.
@@ -171,6 +173,10 @@
      %         F_um , F_vm , F_tm , F_gzm, F_topo,F_trm, 
      %         F_lpsm,F_sig, j, F_step, LDIST_DIM, l_nk )
 *
+*     Fill buses with fields produced by coupling
+*
+CSV      if (C_coupling_L) call c_fillbus ( busdyn, busper, busvol, jdo)
+*
 *     Run physics on row jdo
 *      
       if ( .NOT. P_pset_second_L ) then
@@ -205,7 +211,11 @@
          F_vp (ii,j,k) =   busvol(qdifv+indx)
       end do
       end do
-
+*
+*C  Prepare surface variables for the coupling
+*
+      if (C_coupling_L) call c_getbus ( busdyn, busper, busvol, j )
+*
       do n=1,phyt_ntr
          if (phyt_ind(3,n).gt.0) then
          do k= 1,Nk

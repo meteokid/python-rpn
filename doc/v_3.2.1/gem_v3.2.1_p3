@@ -1,0 +1,31 @@
+
+        ############# GEMDM Model -- Version 3.2.1 ###############
+                              Sept 8 2005
+
+Release of patch "p3". 
+
+As usual this patch can be activated by adding the following 
+line to your file .exper_cour:
+
+MyPatches='GEMDM/3.2.1/p3' . patch_exp.dot
+
+Or add this line in .exper_cour (for modifs in p3):
+ExtraOptions=-ignore_conflicts MyPatches='GEMDM/3.2.1/p3' . patch_exp.dot
+
+AND ALSO
+Must add this to file 'mes_recettes':
+COMM = rpn_comm208
+PATCH= p3
+
+and then reload the Makefile with r.make_exp.
+
+#######################################################################
+This patch contains:
+
+1) Patch p2 of v_3.2.1 only, not Patch p1 (see p2 only)
+
+2) Correction of tracer list used in entry program (E_tr3d_?? in gemntr)
+
+NOTE that this patch will use PHY v_4.3 like the original release, P2
+
+#######################################################################

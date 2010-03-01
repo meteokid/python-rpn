@@ -9,10 +9,13 @@
 * v2_31 - V.Lee  -removed ni1,nj1,nk1, placed all fstprm calls to be
 * v2_31           before allocation of memory
 * v3_11 - V.Lee  -added qqexit(1) if program stops/goto 9876(aborts)
+* v3_21 - Y. Delage -add fields for surface scheme CLASS
+* v3_21 - A. Plante - give to I7(1) and I9(1) TS instead of I0(1) as a
+*                     default
 *
-      integer fnom,fstouv,fstinf,fstinl,fstprm,fstluk,
+      integer fnom,fstouv,fstinf,fstinl,fstprm,fstluk,fstlir,
      $        fstecr,fstfrm,fclos,fstopl,fstsel,fstlis,longueur
-      external fnom,fstouv,fstinf,fstinl,fstprm,fstluk,
+      external fnom,fstouv,fstinf,fstinl,fstprm,fstluk,fstlir,
      $         fstecr,fstfrm,fclos,fstopl,fstsel,fstlis,longueur
 *
       character*1  typ_S, grd_S
@@ -23,8 +26,11 @@
       parameter (iun1 = 51, iun2 = 52)
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
      $        dty, swa, lng, dlf, ubc, ex1, ex2, ex3, ip3_ts,ip3
-      integer i,j,key_i9,key_i7,ni,nj,nk,
-     $        err,p1_1,p1_2,p1_3,key_ts1,key_ts2,key_tp
+      integer i,j,key_i9,key_i7,ni,nj,nk,key_ts,
+     $        err,p1_1,p1_2,p1_3,key_ts1,key_ts2,key_ts3,key_tp,
+     $        key_ws2,key_ws3,key_is1,key_is2,key_is3,key_sma,
+     $        key_sdp,key_vgr,key_tsa,key_tvg,key_tsn,
+     $        key_tpd,key_zpd,key_tbs,key_is0,key_wvg,key_ivg
       integer, parameter :: nmax=4000
       real, dimension (:), allocatable :: w1
       real C2K,TCDK,TI7D
@@ -71,27 +77,28 @@
             stop
          endif
 *
-         key_tp  = fstinf(iun2,ni,nj,nk,-1,' ',0   ,-1,-1,' ','TP')
+*
+* TSOIL(1) - tsoil(1), tair_1.5m(0) [K]
+*
          key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
-         key_ts2 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I0')
-*
-* TS(1) - ts(1),ts(0) [C]
-*
          if (key_ts1.lt.0) then
             ip3_ts  = -1
-            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',0,-1,ip3_ts,' ','TS')
-            if (key_ts1.lt.0) then
+            key_tsa = fstinf(iun2,ni,nj,nk,-1,' ',0,-1,ip3_ts,' ','TS')
+            if (key_tsa.lt.0) then
                print*, 'TS(1) NOT AVAILABLE --ABORT--'
                goto 9876
             else
                write (6,210) 'TS',ip3_ts,'I0',p1_1
-               err = fstopl ('IMAGE',.true.,.false.)
-               err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
+               err = fstopl ('IMAGE',.false.,.false.)
+               err= fstprm (key_tsa, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3, 
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
                allocate (w1(ni*nj+header))
-               err= fstluk( w1, key_ts1, ni,nj,nk)      
+               err= fstluk( w1, key_tsa, ni,nj,nk)      
                write(6,210) 'TS',ip3_ts,'TS',p1_1
+               do i=1,ni*nj
+                    w1(i)=w1(i)+TCDK
+               enddo
                err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
      $                       1, p1_1, p2, 0, typ_S, "I0", lab_S, grd_S,
      $                      g1, g2, g3, g4, dty, .true.)
@@ -99,35 +106,290 @@
             endif
          endif
 *
-* TS(2) - ts(2), tp(0) [C]
+* TSOIL(2) - tsoil(2), tp(0) [K]
+*
+         key_tp  = fstinf(iun2,ni,nj,nk,-1,' ',0   ,-1,-1,' ','TP')
+         key_ts2 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I0')
 *
          if (key_ts2.lt.0) then
             if (key_tp.lt.0) then
                print*, 'TP NOT AVAILABLE --ABORT--'
                goto 9876
             else
-               key_ts2=key_tp
                write(6,210) 'TP',0,'I0',p1_2
+               err = fstopl ('IMAGE',.false.,.false.)
+               err= fstprm (key_tp, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3, 
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+               allocate (w1(ni*nj+header))
+               err= fstluk( w1, key_tp, ni,nj,nk)      
+               do i=1,ni*nj
+                    w1(i)=w1(i)+TCDK
+               enddo
+               err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, p1_2, p2, 0, typ_S, "I0", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+               deallocate (w1)
             endif
-            err = fstopl ('IMAGE',.true.,.false.)
-            err= fstprm (key_ts2, dte, det, ipas, ni, nj, nk, bit, dty,
+         endif
+*
+* TSOIL(3) - tsoil(3), tsoil(3) from climatological file (in e_gemntr) [K]
+*
+* WSOIL(3) - wsoil(3), minimum value [vol. fraction]
+*
+         key_ws3 = fstinf(iun2,ni,nj,nk,-1,' ',p1_3,-1,-1,' ','I1')
+*
+         if (key_ws3.lt.0 ) then
+            key_ws2= fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I1')
+            if(key_ws2.lt.0) go to 555
+            err= fstprm (key_ws2, dte, det, ipas, ni, nj, nk, bit, dty,
      $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3, 
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
             allocate (w1(ni*nj+header))
-            err= fstluk( w1, key_ts2, ni,nj,nk)      
+            do i=1,ni*nj
+                 w1(i)=0.04
+            enddo
             err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
-     $                    1, p1_2, p2, 0, typ_S, "I0", lab_S, grd_S,
+     $                    1, p1_3, p2, 0, typ_S, "I1", lab_S, grd_S,
      $                   g1, g2, g3, g4, dty, .true.)
             deallocate (w1)
          endif
 *
-* I7(1) - i7(1), i7(0), ts(1) [K]
+* ISOIL(1) - isoil(1), isoil(0) [vol. fraction]
+*
+         key_is0 = fstinf(iun2,ni,nj,nk,-1,' ',-1  ,-1,-1,' ','I2')
+         key_is1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I2')
+*
+         if(key_is0.lt.0) go to 555
+         if(key_is1.lt.0 .and. key_is0.ge.0) then
+            err= fstprm (key_is0, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            err= fstluk( w1, key_is0, ni,nj,nk)
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, p1_1, p2, 0, typ_S, "I2", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+*
+* ISOIL(2) - isoil(2), isoil(1) [vol. fraction]
+* ISOIL(3) - isoil(3), zero     [vol. fraction]
+*
+         key_is1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I2')
+         key_is2 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I2')
+*
+         if(key_is2.lt.0 .and. key_is1.ge.0) then
+            err= fstprm (key_is1, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            err= fstluk( w1, key_is1, ni,nj,nk)
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, p1_2, p2, 0, typ_S, "I2", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            do i=1,ni*nj
+                 w1(i)=0.
+            enddo
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, p1_3, p2, 0, typ_S, "I2", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+* WVEG(0) - wveg(0), zero [kg/m2]
+*
+         key_wvg = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','I3')
+*
+         if(key_wvg.lt.0) then
+            allocate (w1(ni*nj+header))
+            do i=1,ni*nj
+                 w1(i)=0.
+            enddo
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "I3", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+* IVEG(0) - iveg(0), zero [kg/m2]
+*
+         key_ivg = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','SK')
+*
+         if(key_ivg.lt.0) then
+            allocate (w1(ni*nj+header))
+            do i=1,ni*nj
+                 w1(i)=0.
+            enddo
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "SK", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+* SNOMA(0) - snoma(0), snodp(0)*3.0 [kg/m3]
+*             note: snodp is in cm, which explains the 3.0 (300 * 0.01)
+*
+         key_sma = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','I5')
+         key_sdp = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','SD')
+*
+         if(key_sma.lt.0 .and. key_sdp.ge.0)   then
+            err= fstprm (key_sdp, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            err= fstluk( w1, key_sdp, ni,nj,nk)
+            do i=1,ni*nj
+               w1(i) = w1(i) * 3.0
+            enddo
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "I5", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+* VEGGRO(0) - veggro(0), max(-1.,min(1.,0.1*tair_1.5m))
+*             note: tair_1.5m is in degrees Celsius
+*
+         key_vgr = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','GR')
+*
+         if(key_vgr.lt.0) then
+            key_tsa = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','TS')
+            if(key_tsa.ge.0) then
+              key_ts = key_tsa
+            else
+              key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+              key_ts = key_ts1
+            endif
+            err= fstprm (key_ts, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)    
+            allocate (w1(ni*nj+header))
+            err= fstluk( w1, key_ts, ni,nj,nk)
+            do i=1,ni*nj
+               w1(i) = max(-1.,min(1.,0.1*(w1(i)-TCDK)))
+            enddo
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "GR", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+* TVEG(0) - tveg(0), tair_1.5m(0) [K]
+*
+        key_tvg = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','TE')
+*
+        if(key_tvg.lt.0) then
+          key_tsa = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','TS')
+          if(key_tsa.ge.0) then
+            err= fstprm (key_tsa, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            err= fstluk( w1, key_tsa, ni,nj,nk)
+            do i=1,ni*nj
+               w1(i) = w1(i) + TCDK
+            enddo
+          else
+            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+            err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            err= fstluk( w1, key_ts1, ni,nj,nk)
+          endif
+          err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "TE", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+          deallocate (w1)
+        endif
+*
+* TSNO(0) - tsno(0), min(tsoil(1),0 Celsius) [K]
+*
+         key_tsn = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','TN')
+*
+         if(key_tsn.lt.0) then
+            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+            err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            err= fstluk( w1, key_ts1, ni,nj,nk)
+            do i=1,ni*nj
+               w1(i) = min(w1(i), TCDK)
+            enddo
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "TN", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+* ZPOND(0) - zpond(0), zero [m]
+*
+         key_zpd = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','M9')
+*
+         if(key_zpd.lt.0) then
+            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+            err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            do i=1,ni*nj
+                 w1(i)=0.
+            enddo
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "M9", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+* TPOND(0) - tpond(0), tsoil(1) [K]
+*
+         key_tpd = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','Q4')
+*
+         if(key_tpd.lt.0) then
+            key_ts1 = fstinf(iun2,ni,nj,nk,-1,' ',p1_1,-1,-1,' ','I0')
+            err= fstprm (key_ts1, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            err= fstluk( w1, key_ts1, ni,nj,nk)
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "Q4", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+*
+* TBASE(0) - tbase(0), tsoil(2) [K]
+*
+         key_tbs = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','R2')
+*
+         if(key_tbs.lt.0) then
+            key_ts2 = fstinf(iun2,ni,nj,nk,-1,' ',p1_2,-1,-1,' ','I0')
+            err= fstprm (key_ts2, dte, det, ipas, ni, nj, nk, bit, dty,
+     $              p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, g2, g3,
+     $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
+            allocate (w1(ni*nj+header))
+            do i=1,ni*nj
+                 w1(i)= -1.
+            enddo
+            err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
+     $                    1, 0, p2, 0, typ_S, "R2", lab_S, grd_S,
+     $                   g1, g2, g3, g4, dty, .true.)
+            deallocate (w1)
+         endif
+  555 continue
+*
+          key_tsa = fstinf(iun2,ni,nj,nk,-1,' ',-1,-1,-1,' ','TS')
+*
+* I7(1) - i7(1), ts(1) [K]
 *
          key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',   p1_1,-1,-1,' ','I7')
          if (key_i7.lt.0) then
              key_i7 = fstinf(iun2,ni,nj,nk,-1,' ',  0,-1,-1,' ','I7')
              if (key_i7.lt.0) then
-                 key_i7=key_ts1
+                 key_i7=key_tsa
                  write(6,210) 'TS',ip3_ts,'I7',p1_1
                  err = fstopl ('IMAGE',.false.,.false.)
                  err= fstprm (key_i7, dte, det, ipas, ni, nj, nk, bit, dty,
@@ -135,10 +397,8 @@
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
                  allocate (w1(ni*nj))
                  err= fstluk( w1, key_i7, ni,nj,nk)    
-                 C2K=TCDK
-                 if (w1(1).gt.150.0) C2K=0.0
                  do i=1,ni*nj
-                    w1(i)=w1(i)+C2K
+                    w1(i)=w1(i)+TCDK
                  enddo
              else
                  write(6,210) 'I7',0,'I7',p1_1
@@ -172,10 +432,8 @@
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
              allocate (w1(ni*nj))
              err= fstluk( w1, key_i7, ni,nj,nk)      
-             C2K=TCDK
-             if (w1(1).gt.150.0) C2K=0.0
              do i=1,ni*nj
-                w1(i)=w1(i)+C2K
+                w1(i)=w1(i)+TCDK
              enddo
              err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
      $              1, p1_2, p2, 0, typ_S, "I7", lab_S, grd_S,
@@ -200,10 +458,8 @@
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
              allocate (w1(ni*nj))
              err= fstluk( w1, key_i7, ni,nj,nk)      
-             C2K=TCDK
-             if (w1(1).gt.150.0) C2K=0.0
              do i=1,ni*nj
-                w1(i)=(w1(i)+C2K+TI7D)*0.5
+                w1(i)=(w1(i)+TCDK+TI7D)*0.5
              enddo
              err= fstecr (w1, w1, -bit, iun2, dte, det, ipas, ni, nj,
      $              1, p1_3, p2, 0, typ_S, "I7", lab_S, grd_S,
@@ -219,7 +475,7 @@
             ip3  = 1
             key_i9 = fstinf(iun2,ni,nj,nk,-1,' ',0,-1,ip3,' ',nvar)
             if (key_i9.lt.0) then
-                key_i9=key_ts1
+                key_i9=key_tsa 
                 write(6,210) 'TS',ip3_ts,'I9',p1_1
                 err = fstopl ('IMAGE',.false.,.false.)
                 err= fstprm (key_i9, dte, det, ipas, ni, nj, nk, bit, dty,
@@ -227,10 +483,8 @@
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
                 allocate (w1(ni*nj))
                 err= fstluk( w1, key_i9, ni,nj,nk)      
-                C2K=TCDK
-                if (w1(1).gt.150.0) C2K=0.0
                 do i=1,ni*nj
-                   w1(i)=w1(i)+C2K
+                   w1(i)=w1(i)+TCDK
                 enddo
             else
                 write(6,210) nvar,ip3,'I9',p1_1
@@ -268,10 +522,8 @@
      $              g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
                 allocate (w1(ni*nj))
                 err= fstluk( w1, key_i9, ni,nj,nk)      
-                C2K=TCDK
-                if (w1(1).gt.150.0) C2K=0.0
                 do i=1,ni*nj
-                   w1(i)=w1(i)+C2K
+                   w1(i)=w1(i)+TCDK
                 enddo
             else
                 write(6,210) nvar,ip3,'I9',p1_2

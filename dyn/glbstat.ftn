@@ -18,6 +18,7 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_20 - Desgagne M. & Lee - DM version from MC2 (no glbcolc)
+* v3_21 - Lee V.            - added glbcolc version for double prec stat
 *
 *object
 *     see rhs
@@ -35,15 +36,41 @@
 *----------------------------------------------------------------
 *
 *implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
 #include "lctl.cdk"
 *
       integer  err
+      real wk1
+      pointer (pawk1, wk1(G_ni,G_nj,*))
 *
 *----------------------------------------------------------------------
 *
-         call statf_dm (F_field,F_var_S,Lctl_step,"",Lctl_r8stat_L,
+      if (Lctl_r8stat_L) then
+*     double precision will give by default, a globally collected data
+*     before the mean and variance is calculated
+
+         if (Ptopo_myproc.eq.0) then
+             call hpalloc (pawk1, G_ni*G_nj*nk, err, 1)
+         endif
+*
+         call glbcolc (wk1,G_ni,G_nj,F_field,DIST_DIM,nk)
+*
+         if (Ptopo_myproc.eq.0) then
+             call statfld (wk1 ,F_var_S,Lctl_step,"",1,G_ni,1,G_nj,nk,
+     $                              F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+             call hpdeallc (pawk1  ,err, 1)
+         endif
+      else
+*     single precision will give by default, sums are collected per processor
+*     and then re-summed afterwards for the mean and variance calculations
+*     This is a more efficient process but will not necessarily give the same
+*     answers in different topology.
+*     
+         call statf_dm (F_field,F_var_S,Lctl_step,"", .false.,
      $                  Minx,Maxx,Miny,Maxy,Nk,
      $                  F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+      endif
 *
 *----------------------------------------------------------------------
 *

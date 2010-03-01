@@ -24,6 +24,7 @@
 *
 *revision
 * v3_20 - Tanguay M. - initial version
+* v3_21 - Tanguay M. - Revision Openmp
 *
 *object
 *     see id section
@@ -85,20 +86,8 @@
       jjmax = G_nj+Adw_haloy
       kkmax = l_nk-1
 *
-
-*
       if(F_mono_L) then
 *
-*
-!$omp parallel private(n,i,j,k,zcubic_L,
-!$omp& prmin,  prmax,  prmin2,  prmax2 ,
-!$omp& prminm, prmaxm, prmin2m, prmax2m,
-!$omp& o1, o2, o3, o4,     a1m, a2m, a3m, a4m,
-!$omp& b1m, b2m, b3m, b4m, c1m, c2m, c3m, c4m,
-!$omp& d1m, d2m, d3m, d4m, p1m, p2m, p3m, p4m,
-!$omp& a1, a2, a3, a4, b1, b2, b3, b4,ii,jj,kk,
-!$omp& c1, c2, c3, c4, d1, d2, d3, d4,p1,p2,p3,p4,
-!$omp& rri,rrj,rrk,ra,rb,rc,rd, rrim,rrjm,rrkm)
 !$omp do
       do 100 k=1,kn
       do  90 j=j0,jn
@@ -443,19 +432,9 @@
    90 continue
   100 continue
 !$omp enddo
-!$omp end parallel
 *
       else
 *
-!$omp parallel private(n,i,j,k,zcubic_L,
-!$omp& prmin,  prmax,  prmin2,  prmax2 ,
-!$omp& prminm, prmaxm, prmin2m, prmax2m,
-!$omp& o1, o2, o3, o4,     a1m, a2m, a3m, a4m,
-!$omp& b1m, b2m, b3m, b4m, c1m, c2m, c3m, c4m,
-!$omp& d1m, d2m, d3m, d4m, p1m, p2m, p3m, p4m,
-!$omp& a1, a2, a3, a4, b1, b2, b3, b4,ii,jj,kk,
-!$omp& c1, c2, c3, c4, d1, d2, d3, d4,p1,p2,p3,p4,
-!$omp& rri,rrj,rrk,ra,rb,rc,rd, rrim,rrjm,rrkm)
 !$omp do
       do 101 k=1,kn
       do  91 j=j0,jn
@@ -721,7 +700,7 @@
    91 continue
   101 continue
 !$omp enddo
-!$omp end parallel 
+*
       endif
       return
       end

@@ -25,6 +25,7 @@
 * v3_00 - Laroche S.        - adapted for simplified physics
 * v3_02 - Buehner M.        - added section for ref state file for NLMX event (SV job)
 * v3_11 - Tanguay M.        - Diagnostics 
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *object
 *     see id section
@@ -57,8 +58,11 @@
 *
       if (F_icode.gt.0) then
 *
+      if(.not.V4dg_incore_L) then
+*
 *         Transfer F_field (HEART only) in F_work
 *         ---------------------------------------
+!$omp parallel do 
           do k=1,Nk
           do j=1,Nj
           do i=1,Ni
@@ -67,6 +71,9 @@
           end do
           end do
           end do
+!$omp end parallel do 
+*
+      endif
 *
 *         Write F_work on WA file or incore
 *         ---------------------------------
@@ -77,54 +84,114 @@
                 if(V4dg_trsize.lt.F_addr + Ni*Nj*Nk - 1) then
                    call gem_stop ('v4d_rwfld ARRAY TRINCORE TOO SMALL',-1)
                 endif
-                do ind = 1,Ni*Nj*Nk
-                  V4dg_trincore(F_addr + ind - 1) = F_work(ind)
+*
+!$omp parallel private(ind) 
+!$omp do 
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  V4dg_trincore(F_addr + ind - 1) = F_field(i,j,k) 
                 enddo
+                enddo
+                enddo
+!$omp enddo 
+!$omp end parallel  
 *
              elseif(F_iun.eq.V4dg_iunph) then
 *
                 if(V4dg_phsize.lt.F_addr + Ni*Nj*Nk - 1) then
                    call gem_stop ('v4d_rwfld ARRAY PHINCORE TOO SMALL',-1)
                 endif
-                do ind = 1,Ni*Nj*Nk
-                  V4dg_phincore(F_addr + ind - 1) = F_work(ind)
+*
+!$omp parallel private(ind) 
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  V4dg_phincore(F_addr + ind - 1) = F_field(i,j,k) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel 
 *
              elseif(F_iun.eq.V4dg_iunfr) then
 *
                 if(V4dg_frsize.lt.F_addr + Ni*Nj*Nk - 1) then
                    call gem_stop ('v4d_rwfld ARRAY FRINCORE TOO SMALL',-1)
                 endif
-                do ind = 1,Ni*Nj*Nk
-                  V4dg_frincore(F_addr + ind - 1) = F_work(ind)
+*
+!$omp parallel private(ind) 
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  V4dg_frincore(F_addr + ind - 1) = F_field(i,j,k) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel 
 *
              elseif(F_iun.eq.V4dg_iunob) then
 *
                 if(V4dg_obsize.lt.F_addr + Ni*Nj*Nk -1) then
                    call gem_stop ('v4d_rwfld ARRAY OBINCORE TOO SMALL',-1)
                 endif
-                do ind = 1,Ni*Nj*Nk
-                  V4dg_obincore(F_addr + ind - 1) = F_work(ind)
+*
+!$omp parallel private(ind) 
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  V4dg_obincore(F_addr + ind - 1) = F_field(i,j,k) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel 
 *
              elseif(F_iun.eq.V4dg_iuncv) then
 *
                 if(V4dg_cvsize.lt.F_addr + Ni*Nj*Nk - 1) then
                    call gem_stop ('v4d_rwfld ARRAY CVINCORE TOO SMALL',-1)
                 endif
-                do ind = 1,Ni*Nj*Nk
-                  V4dg_cvincore(F_addr + ind - 1) = F_work(ind)
+*
+!$omp parallel private(ind) 
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  V4dg_cvincore(F_addr + ind - 1) = F_field(i,j,k) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel 
 *
              elseif(F_iun.eq.V4dg_iunnl) then
 *
                 if(V4dg_nlsize.lt.F_addr + Ni*Nj*Nk - 1) then
                    call gem_stop ('v4d_rwfld ARRAY NLINCORE TOO SMALL',-1)
                 endif
-                do ind = 1,Ni*Nj*Nk
-                  V4dg_nlincore(F_addr + ind - 1) = F_work(ind)
+*
+!$omp parallel private(ind) 
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  V4dg_nlincore(F_addr + ind - 1) = F_field(i,j,k) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel 
 *
              endif
 *
@@ -151,39 +218,93 @@
 *
              if(F_iun.eq.V4dg_iuntr) then
 *
-                do ind = 1,Ni*Nj*Nk
-                  F_work(ind) = V4dg_trincore(F_addr + ind - 1)
+!$omp parallel private(ind)
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  F_field(i,j,k) = V4dg_trincore(F_addr + ind - 1)
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel
 *
              elseif(F_iun.eq.V4dg_iunph) then
 *
-                do ind = 1,Ni*Nj*Nk
-                  F_work(ind) = V4dg_phincore(F_addr + ind - 1)
+!$omp parallel private(ind)
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  F_field(i,j,k) = V4dg_phincore(F_addr + ind - 1) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel
 *
              elseif(F_iun.eq.V4dg_iunfr) then
 *
-                do ind = 1,Ni*Nj*Nk
-                  F_work(ind) = V4dg_frincore(F_addr + ind - 1) 
+!$omp parallel private(ind)
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  F_field(i,j,k) = V4dg_frincore(F_addr + ind - 1) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel
 *
              elseif(F_iun.eq.V4dg_iunob) then
 *
-                do ind = 1,Ni*Nj*Nk
-                  F_work(ind) = V4dg_obincore(F_addr + ind - 1) 
+!$omp parallel private(ind)
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  F_field(i,j,k) = V4dg_obincore(F_addr + ind - 1) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel
 *
              elseif(F_iun.eq.V4dg_iuncv) then
-*
-                do ind = 1,Ni*Nj*Nk
-                  F_work(ind) = V4dg_cvincore(F_addr + ind - 1)
+
+!$omp parallel private(ind)
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  F_field(i,j,k) = V4dg_cvincore(F_addr + ind - 1) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel
 *
              elseif(F_iun.eq.V4dg_iunnl) then
 *
-                do ind = 1,Ni*Nj*Nk
-                  F_work(ind) = V4dg_nlincore(F_addr + ind - 1)
+!$omp parallel private(ind)
+!$omp do
+                do k=1,Nk
+                do j=1,Nj
+                do i=1,Ni
+                  ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+                  F_field(i,j,k) = V4dg_nlincore(F_addr + ind - 1) 
                 enddo
+                enddo
+                enddo
+!$omp enddo
+!$omp end parallel
 *
              endif
 *
@@ -195,6 +316,10 @@
 *
 *         Transfer F_work in F_field (HEART only)
 *         ---------------------------------------
+*
+      if(.not.V4dg_incore_L) then
+*
+!$omp parallel do 
           do k=1,Nk
           do j=1,Nj
           do i=1,Ni
@@ -203,6 +328,9 @@
           end do
           end do
           end do
+!$omp end parallel do 
+*
+      endif
 *
 *         Diagnostics
 *         -----------

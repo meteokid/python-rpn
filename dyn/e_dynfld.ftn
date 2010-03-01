@@ -6,6 +6,9 @@
 *
 *AUTHOR  M. Desgagne    April 2002
 *
+*revision 
+* v3_21 - Desgagne M. - dayfrac calc displaced
+*
 *IMPLICIT
 #include "e_fu.cdk"
 #include "e_grids.cdk"
@@ -23,7 +26,7 @@
       integer  fstfrm,newdate,fclos
       external fstfrm,newdate,fclos
 *
-      character*16 date1,date2
+      character*16 date1,date2,date3
       integer err,yy,dd,dum
       real*8 dayfrac,sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -39,6 +42,8 @@
       date1   = Pil_runstrt_S
       dayfrac = dble(Pil_datacvrg) / sec_in_day
       call incdatsd (Pil_runend_S,Pil_runstrt_S,dayfrac)
+      dayfrac = dble(Pil_nesdt) / sec_in_day
+      call incdatsd(date3,Pil_runstrt_S,dayfrac)
 *
       do while ( date1 .le. Pil_runend_S )
 *
@@ -70,7 +75,9 @@
          err = fclos  ( e_fu_anal )
 *
          if (Pil_ctebcs_L) goto 999
-         dayfrac = dble(Pil_nesdt) / sec_in_day
+c         if (date1.eq.date3)
+c     $      call system ('if [ -s soumet_la_job ] ; then . soumet_la_job ; /bin/rm -f soumet_la_job ; fi')
+*
          call incdatsd (date2,date1,dayfrac)
          date1 = date2
 *

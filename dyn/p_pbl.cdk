@@ -8,6 +8,7 @@
 * v3_03 - Bilodeau B.            - add P_pbl_as and P_pbl_beta
 * v3_12 - Leduc/Bilodeau         - add P_pbl_z0tlat and remove P_pbl_z0tcst
 * v3_12 - Bilodeau B.            - character*8 to character*16
+* v3_21 - Talbot D.              - add P_pbl_tdiaglim_L
 *______________________________________________________________________
 *                                                                      |
 *  VARIABLES ASSOCIATED WITH PLANETARY BOUNDARY LAYER                  |
@@ -18,6 +19,7 @@
 * CNMAXAD            | maximum number of coefficients in P_pbl_spng    |
 * P_pbl_bndlr_S      | FLUVERT: name of boundary layer processes       |
 * P_pbl_schsl_S      | SCHMSOL: name of land surface processes         |
+* P_pbl_schurb_S     | SCHMURB: name of urban surface processes        |
 * P_pbl_mix_S        | name of the mixing lenght formulation           |
 *      The following switches are activated if TRUE                    |
 * P_pbl_drag_L       | DRAG: surface friction  (simplified Physics)    |
@@ -55,6 +57,7 @@
 * P_pbl_as           | AS parameter for stability function             |
 *                    | (stable case only)                              |
 * P_pbl_beta         | beta parameter for stability function           |
+* P_pbl_tdiaglim_L   | limit on decrease of tdiag                      |
 * P_pbl_z0tlat       | latitude (2 elements, in degrees) used to       |
 *                    | specify Z0T over water                          |
 *                    | If |lat| <= Z0TLAT(1)  constant Z0T             |
@@ -88,13 +91,14 @@
       parameter (CNMAXAD = 55)
 *
       character*16 P_pbl_bndlr_S, P_pbl_schsl_S, P_pbl_mix_S
+      character*16 P_pbl_schurb_S
       logical P_pbl_drag_L   ,P_pbl_ocean_L  ,
      $        P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
      $        P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L ,
      $        P_pbl_albkg_L  ,P_pbl_cortm_L  ,P_pbl_corts_L  ,
      $        P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L  ,
      $        P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_advectke_L,
-     $        P_pbl_impflx_L
+     $        P_pbl_impflx_L ,P_pbl_tdiaglim_L
       integer P_pbl_nslof    ,P_pbl_dumpbus
       real                 P_pbl_cst        ,P_pbl_csn      ,
      $     P_pbl_csg      ,P_pbl_kst        ,P_pbl_ksn      ,
@@ -106,7 +110,9 @@
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  
 *
       MARK_COMMON_BEG (ppbl_c)
-      common /ppbl_c/ P_pbl_bndlr_S, P_pbl_schsl_S, P_pbl_mix_S
+      common /ppbl_c/ 
+     $     P_pbl_bndlr_S, P_pbl_schsl_S, P_pbl_mix_S,
+     $     P_pbl_schurb_S
       MARK_COMMON_END (ppbl_c)
 
       MARK_COMMON_BEG (ppbl_l)
@@ -116,7 +122,8 @@
      $     P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L  ,
      $     P_pbl_albkg_L  ,P_pbl_cortm_L  ,P_pbl_corts_L   ,
      $     P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L   ,
-     $     P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_impflx_L
+     $     P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_impflx_L  ,
+     $     P_pbl_tdiaglim_L
       MARK_COMMON_END (ppbl_l)
 
       MARK_COMMON_BEG (ppbl_i)

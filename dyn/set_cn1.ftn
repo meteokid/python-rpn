@@ -13,6 +13,7 @@
 * v2_00 - Desgagne/Lee      - initial MPI version (from setcn1 v1_03)
 * v2_31 - Desgagne/Lee      - introduce tracers, output of sliced tracers
 * v3_11 - Gravel S.         - modify for theoretical cases
+* v3_21 - Lee V.            - remove Tr2d
 *
 *object
 *	This subroutine initializes the commons containing the
@@ -28,7 +29,6 @@
 #include "lun.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
-#include "tr2d.cdk"
 *
 **
       integer i,dim,err
@@ -62,32 +62,11 @@ CC    call chem_init( )
 *              ----------------------------------------
       call set_geof( )
 *
+*
 *C             Is this a restart?
 *              ------------------
-      Tr2d_stk3d_ = 0
-      Tr2d_stk3da_= 0
-*
       call rdrstrt( )
 *
-*C             Initialize tracers Part 2:
-*              --------------------------
-      if ((Tr2d_incore_L).and.(Tr2d_ntr.gt.0)) then
-         dim = Tr2d_ntr*LDIST_SIZ*l_nk
-         if (Tr2d_stk3d_.le.0) call hpalloc (Tr2d_stk3d_, dim, err,1)
-         if ( Init_balgm_L .and. .not.Rstri_idon_L .and. 
-     $        Tr2d_stk3da_.le.0 ) then
-            call hpalloc (Tr2d_stk3da_, dim, err,1)
-            do i=1,dim
-               Tr2d_stk3da(i) = 0.
-            end do
-         endif
-      else
-         Tr2d_unf (0) =  99
-         Tr2d_unfa(0) = 199
-         do i=1,Tr2d_ntr
-            if (Tr2d_name_S(i).ne.'0000') call tr2d_file (i)
-         enddo  
-      endif
 *
 *C             Initialize digital filter variables comdecks
 *              --------------------------------------------

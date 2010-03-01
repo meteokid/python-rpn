@@ -14,6 +14,7 @@
 * v2_21 - Tanguay M.        - reduce standard output as in model 
 * v3_00 - Tanguay M.        - adapt to restructured wdpers 
 * v3_20 - Tanguay M.        - 1d higher order diffusion operator 
+* v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
 *
 *object
 *     see id section
@@ -31,6 +32,7 @@
 #include "rhscm.cdk"
 #include "vt1m.cdk"
 #include "hzd.cdk"
+#include "lctl.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -77,6 +79,7 @@
 *
 *     Filtering 
 *     ---------
+      if (Lctl_step.gt.1) then 
       if (Hzd_t1_0_L) call hzd_hoffld (ut1m,  LDIST_DIM, G_nk, 1)
       if (Hzd_t1_0_L) call hzd_hoffld (vt1m,  LDIST_DIM, G_nk, 2)
       if (Hzd_t1_0_L) call hzd_hoffld (psdt1m,LDIST_DIM, G_nk, 3)
@@ -84,6 +87,7 @@
       if (Hzd_t1_1_L) call hzd_hoffld (ut1,   LDIST_DIM, G_nk, 1)
       if (Hzd_t1_1_L) call hzd_hoffld (vt1,   LDIST_DIM, G_nk, 2)
       if (Hzd_t1_1_L) call hzd_hoffld (psdt1, LDIST_DIM, G_nk, 3)
+      endif
 *
 *C	1. Initialise wind, pi* dot and upstream positions at
 *	   time t0-dt/2 (th) for mid trajectory computations

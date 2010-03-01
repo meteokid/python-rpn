@@ -61,6 +61,7 @@
 * v3_00 - Tanguay M.        - adapt to restructured bacp_2 
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *object
 *     see id section 
@@ -159,6 +160,7 @@
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
+#include "geomg_n1.cdk"
 #include "schm.cdk"
 *
       integer i, j, k, nij
@@ -168,7 +170,7 @@
      %        ccc1_8,ccc2_8,ddd1_8
       real*8  xxx_m_8, xx1_m_8, yyy_m_8, zzz_m_8, pd2_m_8
       parameter( ZERO_8=0.0, ONE_8=1.0, TWO_8=2.0, HALF_8=.5,  QUARTER_8=.25 )
-      real*8 tmp_8, c1_8, inv_z_8(G_nk), c2_8, c3_8
+      real*8 tmp_8, c1_8, c2_8, c3_8
       real*8, dimension(i0:in,j0:jn):: xexpm_8, yexpm_8, xlogm_8,
      %                        ylogm_8, xrecm_8, xsqm_8,  qpm_8 
       real*8, dimension(i0:in,j0:jn,l_nk):: yreckm_8,xrsqkm_8,eqpkm_8,rpipkm_8
@@ -202,10 +204,6 @@ C     pd2_8 = ZERO_8
      %         /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**2 )
          gamma_8 =  ONE_8/( ONE_8 + eps_8 )
       endif
-*
-      do k = 1, G_nk
-         inv_z_8(k) = 1.0d0 / Geomg_z_8(k)
-      end do
 *
 **********************************************************
 *  1. Retrieve the nonhydro deviation q' of log pressure *
@@ -241,7 +239,7 @@ C     pd2_8 = ZERO_8
          do k=1,l_nk-1
          xxx_8 = HALF_8*Geomg_hz_8(k)
          yyy_8 = (ccc_8*c1_8)*HALF_8*( Geomg_z_8(k) + Geomg_z_8(k+1) )
-         zzz_8 = Cstv_tau_8*inv_z_8(k)
+         zzz_8 = Cstv_tau_8*Geomg_invz_8(k)
          do i= i0, in
 *
             w_qpt0m(i,j,k+1) = w_qpt0m(i,j,k)
@@ -259,7 +257,7 @@ C     pd2_8 = ZERO_8
       do j= j0, jn
       do i= i0, in
 *
-         w_qpt0m(i,j,l_nk) = Cstv_tau_8*w_qpt0m(i,j,l_nk)*inv_z_8(l_nk)
+         w_qpt0m(i,j,l_nk) = Cstv_tau_8*w_qpt0m(i,j,l_nk)*Geomg_invz_8(l_nk)
 *
       end do
       end do
@@ -300,15 +298,12 @@ C     pd2_8 = ZERO_8
 *
 !$omp do
       do j= j0, jn
-      do i= i0, in
-         xexpm_8(i,j) = w_st0m(i,j)
-      end do
+         do i= i0, in
+            xexpm_8(i,j) = w_st0m(i,j)
+         end do
+         call vexp ( yexpm_8(i0,j), xexpm_8(i0,j), (in-i0+1) )
       end do
 !$omp enddo
-*
-!$omp single 
-      call vexp ( yexpm_8, xexpm_8, nij )
-!$omp end single 
 *
 !$omp do
       do 100 k=1,l_nk 
@@ -338,7 +333,7 @@ C     pd2_8 = ZERO_8
              end do
              end do
          else
-             yyy_8 = Dcst_rgasd_8*Cstv_tstr_8 * inv_z_8(k)
+             yyy_8 = Dcst_rgasd_8*Cstv_tstr_8 * Geomg_invz_8(k)
              do j= j0, jn
              do i= i0, in
 *
@@ -465,7 +460,7 @@ C     pd2_8 = ZERO_8
 **********************************************
 *     Calculate T'lin and prepare {$} (F_wijk1) 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         a1_8 = Dcst_cappa_8*inv_z_8(k) 
+         a1_8 = Dcst_cappa_8*Geomg_invz_8(k) 
          do j= j0, jn
          do i= i0, in
 *
@@ -677,18 +672,6 @@ C     endif
       endif
 *
 !$omp do
-      do j= j0, jn
-      do i= i0, in
-         xexpm_8(i,j) = w_st0m(i,j)
-      end do
-      end do
-!$omp enddo 
-*
-!$omp single 
-      call vexp ( yexpm_8, xexpm_8, nij )
-!$omp end single 
-*
-!$omp do
       do k=l_nk,1,-1
 *
 **********************************************
@@ -724,8 +707,8 @@ C     endif
 *        ----------
          F_wijk0m(i,j,k)= yreckm_8(i,j,k)
          F_wijk1m(i,j,k)= w_st0m(i,j) * Geomg_dpib(k)
-         pd2_m_8 = Geomg_pib(k) * w_st0m(i,j) * inv_z_8(k) 
-         xxx_m_8 = (1. + w_pipt0m(i,j,k)*inv_z_8(k)) * F_wijk0m(i,j,k)
+         pd2_m_8 = Geomg_pib(k) * w_st0m(i,j) * Geomg_invz_8(k) 
+         xxx_m_8 = (1. + w_pipt0m(i,j,k)*Geomg_invz_8(k)) * F_wijk0m(i,j,k)
          yyy_m_8 = w_tplt0m(i,j,k) - Cstv_tstr_8 * (( pd2_m_8 -
      %                  F_wijk1m(i,j,k)) -1. )
 *
@@ -739,12 +722,12 @@ C     endif
          pd2_8          = - Cstv_tstr_8 * ((  yyy_8))
          F_wijk1(i,j,k) = - Cstv_tstr_8 * ((- yyy_8)) + F_wijk1(i,j,k)
 *
-         F_pipt0(i,j,k) = (               xxx_8* inv_z_8(k)) * F_wijk0m(i,j,k)
+         F_pipt0(i,j,k) = (               xxx_8* Geomg_invz_8(k)) * F_wijk0m(i,j,k)
      %                    + F_pipt0 (i,j,k)
-         F_wijk0(i,j,k) = (1. + w_pipt0m(i,j,k)* inv_z_8(k)) * xxx_8
+         F_wijk0(i,j,k) = (1. + w_pipt0m(i,j,k)* Geomg_invz_8(k)) * xxx_8
      %                    + F_wijk0 (i,j,k)
 *
-         F_st0  (i,j)   = Geomg_pib(k) * pd2_8 * inv_z_8(k)  + F_st0(i,j)
+         F_st0  (i,j)   = Geomg_pib(k) * pd2_8 * Geomg_invz_8(k)  + F_st0(i,j)
 *
          F_st0  (i,j)   = F_wijk1(i,j,k) * Geomg_dpib(k)     + F_st0(i,j)
          F_wijk1(i,j,k) = ZERO_8
@@ -784,8 +767,8 @@ C     endif
 *              ----------
                F_wijk0m(i,j,k)= yreckm_8(i,j,k)
                F_wijk1m(i,j,k)= w_st0m(i,j) * Geomg_dpib(k)
-               pd2_m_8 = Geomg_pib(k) * w_st0m(i,j) * inv_z_8(k)
-               xx1_m_8 = (1. + w_pipt0m(i,j,k)* inv_z_8(k)) * F_wijk0m(i,j,k)
+               pd2_m_8 = Geomg_pib(k) * w_st0m(i,j) * Geomg_invz_8(k)
+               xx1_m_8 = (1. + w_pipt0m(i,j,k)* Geomg_invz_8(k)) * F_wijk0m(i,j,k)
                xxx_m_8 = xx1_m_8 * eqpkm_8(i,j,k)
                yyy_m_8 = w_tplt0m(i,j,k)-Cstv_tstr_8*((pd2_m_8-F_wijk1m(i,j,k)+
      $                    w_qpt0m(i,j,k))-1.)
@@ -810,11 +793,11 @@ C              xx1_8          =   xxx_8 * eqpkm_8(i,j,k)       + xx1_8
                xx1_8          =   xxx_8 * eqpkm_8(i,j,k)       
 C              xxx_8          = ZERO_8
 *
-               F_wijk0 (i,j,k)= (1. + w_pipt0m(i,j,k)* inv_z_8(k)) * xx1_8           + F_wijk0 (i,j,k)
-               F_pipt0 (i,j,k)= (              xx1_8 * inv_z_8(k)) * F_wijk0m(i,j,k) + F_pipt0 (i,j,k)
+               F_wijk0 (i,j,k)= (1. + w_pipt0m(i,j,k)* Geomg_invz_8(k)) * xx1_8           + F_wijk0 (i,j,k)
+               F_pipt0 (i,j,k)= (              xx1_8 * Geomg_invz_8(k)) * F_wijk0m(i,j,k) + F_pipt0 (i,j,k)
 C              xx1_8          = ZERO_8
 *
-               F_st0(i,j)     = Geomg_pib(k) * pd2_8 * inv_z_8(k) + F_st0(i,j)
+               F_st0(i,j)     = Geomg_pib(k) * pd2_8 * Geomg_invz_8(k) + F_st0(i,j)
 C              pd2_8          = ZERO_8
 *
                F_st0  (i,j)   = F_wijk1(i,j,k) * Geomg_dpib(k)    + F_st0(i,j)
@@ -841,7 +824,7 @@ C              pd2_8          = ZERO_8
       do j= j0, jn
 *
          do k=l_nk,1,-1
-         a1_8 = Dcst_cappa_8*inv_z_8(k)
+         a1_8 = Dcst_cappa_8*Geomg_invz_8(k)
 *
          do i= i0, in
 *
@@ -885,7 +868,7 @@ C              pd2_8          = ZERO_8
 *
             do k=l_nk,1,-1
 *
-            a1_8 = aaa1_8*Cstv_tau_8*inv_z_8(k)
+            a1_8 = aaa1_8*Cstv_tau_8*Geomg_invz_8(k)
 *
             do i= i0, in
 *
@@ -896,7 +879,7 @@ C              pd2_8          = ZERO_8
 C              w_wt0m  (i,j,k)= - F_rvvm(i,j,k)*c3_8 + bbb2_8*xxx_m_8
                w_multxm(i,j,k)= Cstv_tau_8
      $                        *(F_n3m(i,j,k)-F_r3m(i,j,k))+bbb3_8*xxx_m_8
-               yyy_m_8 = (1.+w_pipt0m(i,j,k)*inv_z_8(k))*
+               yyy_m_8 = (1.+w_pipt0m(i,j,k)*Geomg_invz_8(k))*
      $                            (w_multxm(i,j,k)-w_qpt0m(i,j,k))
 *
 *              ADJ
@@ -909,10 +892,10 @@ C              zzz_8           = eqpkm_8(i,j,k)* F_mut0(i,j,k) * yyy_m_8        
                F_qpt0 (i,j,k)  = eqpkm_8(i,j,k)* F_mut0(i,j,k) * zzz_m_8*yyy_m_8 + F_qpt0(i,j,k)
                F_mut0 (i,j,k)  = ZERO_8
 *
-               F_pipt0(i,j,k) = ( yyy_8*inv_z_8(k))* 
+               F_pipt0(i,j,k) = ( yyy_8*Geomg_invz_8(k))* 
      $                           (w_multxm(i,j,k)-w_qpt0m(i,j,k))       + F_pipt0(i,j,k)
-               F_multx(i,j,k) =  (1.+w_pipt0m(i,j,k)*inv_z_8(k))* yyy_8 + F_multx(i,j,k)
-               F_qpt0 (i,j,k) = -(1.+w_pipt0m(i,j,k)*inv_z_8(k))* yyy_8 + F_qpt0 (i,j,k)
+               F_multx(i,j,k) =  (1.+w_pipt0m(i,j,k)*Geomg_invz_8(k))* yyy_8 + F_multx(i,j,k)
+               F_qpt0 (i,j,k) = -(1.+w_pipt0m(i,j,k)*Geomg_invz_8(k))* yyy_8 + F_qpt0 (i,j,k)
 C              yyy_8          = ZERO_8
 *
                F_n3   (i,j,k) = Cstv_tau_8 * F_multx(i,j,k) + F_n3(i,j,k)
@@ -986,18 +969,6 @@ C              zzz_8          = ZERO_8
 *
       end do
 !$omp enddo
-*
-!$omp do
-      do j= j0, jn
-      do i= i0, in
-         xexpm_8(i,j) = w_st0m(i,j)
-      end do
-      end do
-!$omp enddo
-*
-!$omp single 
-      call vexp ( yexpm_8, xexpm_8, nij )
-!$omp end single 
 *
 !$omp do
       do 101 k=l_nk,1,-1
@@ -1141,7 +1112,7 @@ C              zzz_8          = ZERO_8
                 end do
              endif
 *
-             yyy_8 = Dcst_rgasd_8*Cstv_tstr_8 * inv_z_8(k)
+             yyy_8 = Dcst_rgasd_8*Cstv_tstr_8 * Geomg_invz_8(k)
              do i= i0, in
 *
 *            ADJ
@@ -1215,7 +1186,7 @@ C              zzz_8          = ZERO_8
 *
 *        ADJ 
 *        ---
-         F_qpt0(i,j,l_nk) = Cstv_tau_8*F_qpt0(i,j,l_nk)*inv_z_8(l_nk)
+         F_qpt0(i,j,l_nk) = Cstv_tau_8*F_qpt0(i,j,l_nk)*Geomg_invz_8(l_nk)
 *
       end do
       end do
@@ -1226,7 +1197,7 @@ C              zzz_8          = ZERO_8
          do k=l_nk-1,1,-1
          xxx_8 = HALF_8*Geomg_hz_8(k)
          yyy_8 = (ccc_8*c1_8)*HALF_8*( Geomg_z_8(k) + Geomg_z_8(k+1) )
-         zzz_8 = Cstv_tau_8*inv_z_8(k)
+         zzz_8 = Cstv_tau_8*Geomg_invz_8(k)
          do i= in,i0,-1
 *
 *           ADJ 

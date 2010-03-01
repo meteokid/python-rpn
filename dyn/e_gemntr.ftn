@@ -11,15 +11,19 @@
 * v2_21 - M. Desgagne       - reshaped version
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - M. Desgagne       - change to exdb and exfin
+* v3_21 - Lee V.            - Warning if geophy.bin not written
 *
 *implicits
 #include "version.cdk"
+#include "e_schm.cdk"
+#include "p_bus.cdk"
+#include "e_geoerr.cdk"
 *
 *MODULES
       integer  exdb, exfin
       external exdb, exfin
 *
-      integer  err
+      integer  err,i
 *
 * ---------------------------------------------------------------------
 *
@@ -46,12 +50,27 @@
 *     write namelists on label file
 *
       call e_nml2bin
+
+ 800  continue
+      if (.not. e_schm_phym_L) then
+          write(6,1000)
+          do i=1,p_bgeo_top
+             if (e_geoerr(i).lt.0) write(6,1005) geonm(i,2)
+          enddo
+      endif
+
+      err = exfin (Version_ent_S//Version_dstp_S, Version_S, 'OK')
 *
- 800  err = exfin (Version_ent_S//Version_dstp_S, Version_S, 'OK')
       call write_status_file2 ('_status=ED' )
       call close_status_file2 ()
 *
 * ---------------------------------------------------------------------
 *
+ 1000 format('*************************************************',/
+     %       '* WARNING!!!! No GEOPHY.bin file produced       *',/
+     %       '* GEMDM can run with no PHYSICS only            *',/
+     %       '*************************************************')
+ 1005 format (' GEOPHYSICAL FIELD: 'a,' NOT AVAILABLE !!!')
+
       stop
       end

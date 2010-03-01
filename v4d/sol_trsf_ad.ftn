@@ -16,6 +16,7 @@
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *object
 *     see id section
@@ -50,7 +51,7 @@
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
             F_f2  (i,j,k) = sngl(F_f1_8(i,j,k)) + F_f2(i,j,k)
-            F_f1_8(i,j,k) = ZERO_8
+C           F_f1_8(i,j,k) = ZERO_8
          enddo
          enddo
          enddo

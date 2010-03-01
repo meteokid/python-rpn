@@ -16,6 +16,8 @@
 * v2_30 - Corbeil L.        - Added writing of pres_surf pres_top
 * v2_31 - Desgagne M.       - Add Tr2d tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Valcke, S.        - Oasis coupling: Removed wawrit of c_cplg_step
+* v3_21 - Lee V.            - Remove Tr2d tracers
 *
 *object
 *	
@@ -32,7 +34,6 @@
 #include "p_bus.cdk"
 #include "c_cplg.cdk"
 #include "glb_ld.cdk"
-#include "tr2d.cdk"
 #include "pres.cdk"
 #include "pilot.cdk"
 
@@ -68,9 +69,6 @@
             adr = adr + 1
          endif
       endif
-      call wawrit (Lun_rstrt, c_cplg_step ,adr, 1)
-
-      adr = adr + 1
       call wawrit (Lun_rstrt, pres_surf ,adr, 1)
       adr = adr + 1
       call wawrit (Lun_rstrt, pres_top  ,adr, 1)
@@ -78,29 +76,10 @@
       adr = adr + 1
       call wawrit (Lun_rstrt, current_nest  ,adr, 1)
 *
-      if ((Tr2d_incore_L).and.(Tr2d_ntr.gt.0)) then
-         adr = adr + 1
-         dim = Tr2d_ntr*LDIST_SIZ*l_nk
-         call wawrit (Lun_rstrt,Tr2d_stk3d,adr,dim)
-         if ( Init_balgm_L .and. .not.Rstri_idon_L ) then
-            adr = adr + dim
-            call wawrit (Lun_rstrt,Tr2d_stk3da,adr,dim)
-         endif
-      endif
-*
       ier = vmmckmx()
       call waclos(Lun_rstrt)
       ier = fclos(Lun_rstrt)  
 *
-      if (.not.Tr2d_incore_L) then
-         do n=1,Tr2d_nbf
-            ier = close_db_file   (Tr2d_unf(n))
-            if ( Init_balgm_L .and. .not.Rstri_idon_L ) then
-               ier = close_db_file   (Tr2d_unfa(n))
-            endif
-         end do
-      endif
-*   
  2000 format(/,'WRITING A RESTART FILE AT TIMESTEP #',I8,
      +       /,'=========================================')
 *

@@ -1,19 +1,17 @@
-***S/R C_cplg_iml  - Coupling modulus with the ocean model: iml 
+***S/R c_cplg_iml  - Inititialization for the coupling option
 *
-      subroutine C_cplg_iml 
+#include <model_macros_f.h>
+*
+      subroutine c_cplg_iml
 *
 #include "impnone.cdk"
-#include <model_macros_f.h>
-#include "out1.cdk"
-#include "lctl.cdk"
-#include "glb_ld.cdk"
-#include "vt1.cdk"
-#include "cstv.cdk"
-#include "step.cdk"
-#include "ptopo.cdk"
-#include "c_cplg.cdk"
+#include "lun.cdk"
 *
-*author Pierre Pellerin/Serge Desjardins -AEPRI/RPN - April 2000
+*auteur Pierre Pellerin/Serge Desjardins -AEPRI/RPN - April 2000
+*       Sophie Valcke - RPN/CERFACS - March 2005: 
+*            -> transformed into c_cplg_surf.ftn
+*revision
+* v3_21 - Valcke S. - initial version
 *
 *language
 *       fortran 77
@@ -21,151 +19,10 @@
 *arguments
 *         none
 *
-*object
-*     Communication with the OCEAN model: IML 
-*     To be used with the script:   Coupleur
-*     For more info see the script: Coupleur
+*constants
 *
-*********************************************
-*****         COMMUNICATION PATTERN         *
-*****                                       *
-*****     GEM  <-----  ATMCOM <---- OCEAN   *
-*****      |          (icom=2)       ^      *
-*****      |                         |      *
-*****      V                         |      *
-*****     GEM  ----->  ATMCOM ----> OCEAN   *
-*****                 (icom=1)              * 
-*****                                       *
-*********************************************
-*
-*     Description:
-*        nbrfld_in:   number of fields to receive
-*        nbrfld_out:  number of fields to send
-*        nbinf:       number of variables used for the date-time
-*
-      integer nbinf, nbrfld_in, nbrfld_out
-      parameter (nbinf=3)
-      parameter (nbrfld_in=3, nbrfld_out=3)
-*
-      integer nexttime(nbinf), nowtime(nbinf)
-      real fld_in, fld_out
-      pointer (pa_fldin, fld_in(*))
-      pointer (pa_fldout,fld_out(*))
-*
-*     Local variables:
-*        C_cplg_step: next timestep for the coupling (cplg)
-*        nhrs_8:      number of hours for the next cplg     
-*        thrs_8:      total of hours since the beginning
-*        stmp_now:    "cmc date-time stamp" for now
-*        stmp_next:   "cmc date-time stamp" for the next cplg time
-*        nowtime:     truedate for now
-*        nexttime:    truedate for the next cplg time
-*
-*  
-      integer pnier,i,j,k,err
-      integer stmp_now, stmp_next, nbtimestep
-      integer fstouv,fstfrm,fnom
-      external fstouv,fstfrm,fnom
-      real*8 nhrs_8,thrs_8
-*
-*      
-**
-*modules
-*---------------------------------------------------------------
-*
-*   Coupling
-*
-       if (C_cplg_step.eq.Lctl_step) then
-*
-*   Memory allocation for PE # 0
-*
-         if (Ptopo_myproc.eq.0) then
-            call hpalloc(pa_fldin, G_ni*G_nj*nbrfld_in,err, 1)
-            call hpalloc(pa_fldout,G_ni*G_nj*nbrfld_out,err, 1)
-         endif
-*
-*    Collect the fields to be sent (in fld_out/all PEs).
-*
-         call c_bloccplg (fld_out,G_ni,G_nj,nbrfld_out)
-*
-*---------------------------------------------------------------
-*
-*    Communication only for the PE number 0
-*
-      if (Ptopo_myproc.eq.0) then
-*
-*    Informations received from ATMCOM #2
-*
-          pnier = mgi_open(C_cplg_inpipe,'R')
-          pnier = mgi_read(C_cplg_inpipe,nexttime,nbinf,'I')
-          pnier = mgi_read(C_cplg_inpipe,fld_in,G_ni*G_nj*nbrfld_in,'R')
-          pnier = mgi_clos(C_cplg_inpipe)
-*
-*    Compute the timestep for the next exchange
-*
-          thrs_8=(real(Lctl_step)*cstv_dt_8)/3600.0
-          CALL incdatr(stmp_now,out1_date,thrs_8)
-          CALL newdate(stmp_now,nowtime(1),nowtime(2),-3)
-          CALL newdate(stmp_next,nexttime(1),nexttime(2),3)
-          CALL difdatr(stmp_next,stmp_now,nhrs_8)
-          nbtimestep=int((nhrs_8*3600.)/cstv_dt_8)
-          C_cplg_step=Lctl_step+nbtimestep
-          call c_screen('CURRENT COUPLING    ',Lctl_step,
-     $               nowtime(1),nowtime(2))
-          call c_screen('NEXT    COUPLING    ',C_cplg_step,-1,-1)
-*
-*    Verification if RESTART encountered before the next coupling
-*    if RESTART (nexttime(3)=-2)
-*  
-          do i=Lctl_step,C_cplg_step-1
-          if (i.ne.0) then  
-             if (mod(i,Step_rsti).eq.0) then
-                call c_screen('RESTART AT TIMESTEP ',i,-1,-1)
-                if (nexttime(3).ne.-1) nexttime(3)=-2
-             endif
-          endif
-     
-          enddo
-*
-*    Informations sent to ATMCOM #1
-*
-          if (Lctl_step.eq.0) then
-             call c_screen('INITIALIZATION CPLG ',Lctl_step,-1,-1)
-             do i=1,G_ni*G_nj*nbrfld_out
-                fld_out(i)=fld_in(i)
-             enddo
-          endif
-*
-          pnier = mgi_open (C_cplg_outpipe,'W')
-          pnier = mgi_write(C_cplg_outpipe,nexttime,nbinf,'I')
-          pnier = mgi_write(C_cplg_outpipe,fld_out,G_ni*G_nj*nbrfld_out,'R')
-          pnier = mgi_clos (C_cplg_outpipe)    
-*
-*    Communication closed if: nexttime(3)=-1 : END
-*                           : nexttime(3)=-2 : RESTART
-* 
-          if (nexttime(3).lt.0) then
-             call mgi_term()
-             if (nexttime(3).eq.-1) then
-             call c_screen('COMM. CLOSED END    ',Lctl_step,-1,-1)
-                C_cplg_step=-1
-             endif
-             if (nexttime(3).eq.-2) then
-                call c_screen('COMM. CLOSED RESTART',Lctl_step,-1,-1)
-             endif
-          endif
-*
-          nowtime(1)=nexttime(1)
-          nowtime(2)=nexttime(2)
-          nowtime(3)=nexttime(3)
-*
-          call hpdeallc (pa_fldin ,err,1)
-          call hpdeallc (pa_fldout,err,1)
-*
-       endif
-*
-      endif
-*
+*implicits
+
       return
       end
  

@@ -31,6 +31,10 @@
 * v3_20 - Leduc/Bilodeau    - add P_pbl_z0tlat, delete P_pbl_z0tcst
 * v3_20 - Leduc/Bilodeau    - add P_cond_kticefrac_L
 * v3_20 - Pellerin/Delage   - add P_pbl_zua,zta for Schm_offline_L
+* v3_21 - Talbot D.         - add P_pbl_tdiaglim_L
+* v3_21 - Lemonsu A.        - add P_pbl_schurb_s
+* v3_21 - Leduc A-M.        - add P_rad_tsflxir_L
+* v3_21 - Valcke S.         - add COUPLING and CPL_FLD and indx_xxx
 *
 *object
 *     See above id.
@@ -61,6 +65,7 @@
 #include "p_pset.cdk"
 #include "p_cond2.cdk"
 #include "p_pbl2.cdk"
+#include "c_cplg.cdk"
 *
 *modules
       integer  ouvrstrt
@@ -98,6 +103,7 @@
 *
       call phyoptc('FLUVERT' , P_pbl_bndlr_s  ,       1, 'SET' )
       call phyoptc('SCHMSOL' , P_pbl_schsl_s  ,       1, 'SET' )
+      call phyoptc('SCHMURB' , P_pbl_schurb_s ,       1, 'SET' )
       call phyoptc('LONGMEL' , P_pbl_mix_s    ,       1, 'SET' )
       call phyoptl('DRAG'    , P_pbl_drag_L   ,       1, 'SET' )
       call phyoptl('CHAUF'   , P_pbl_ocean_L  ,       1, 'SET' )
@@ -121,6 +127,7 @@
       call phyoptr('EPONGE'  , P_pbl_spng     , cnmaxad, 'SET' )
       call phyoptr('AS'      , P_pbl_as       ,       1, 'SET' )
       call phyoptr('BETA'    , P_pbl_beta     ,       1, 'SET' )
+      call phyoptl('TDIAGLIM',P_pbl_tdiaglim_L,       1, 'SET' )
       call phyoptr('Z0TLAT'   ,P_pbl_z0tlat   ,       2, 'SET' )
       if (Schm_offline_L) then
       call phyoptr('ZUA'     , P_pbl_zua      ,       1, 'SET' )
@@ -163,6 +170,20 @@
       call phyopti('DATE'    , P_rad_datim    ,      14, 'SET' )
       call phyopti('KNTRAD'  , P_rad_knt      ,       1, 'SET' )
       call phyoptr('QCO2'    , P_rad_qco2     ,       1, 'SET' )
+      call phyoptl('TS_FLXIR', P_rad_tsflxir_L,       1, 'SET' )
+
+      CALL phyoptl('COUPLING', C_coupling_L   ,       1, 'SET' )
+      CALL phyoptl('CPL_FLD' , lga_cplfld     ,      24, 'SET' )
+      IF (C_coupling_L) then
+          CALL phyopti('INDX_SOIL',ig_indx_soil   ,       1, 'GET' )
+          CALL phyopti('INDX_GLACIER',ig_indx_glacier,    1, 'GET' )
+          CALL phyopti('INDX_WATER',ig_indx_water,        1, 'GET' )
+          CALL phyopti('INDX_ICE',ig_indx_ice,            1, 'GET' )
+          CALL phyopti('INDX_AGREGE',ig_indx_agrege,      1, 'GET' )
+          PRINT *, 'CPL- indx_soil, indx_glacier, indx_water,
+     $        indx_ice, indx_agrege = ', ig_indx_soil, ig_indx_glacier,
+     $        ig_indx_water, ig_indx_ice, ig_indx_agrege
+      ENDIF
 *
       NV = 0
       do i=1,CNMXRAD

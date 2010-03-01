@@ -1,0 +1,32 @@
+#include <model_macros_f.h>
+*
+      subroutine tmg_start0 (mynum,myname_S)
+*
+      implicit none
+*
+      integer mynum
+      character* (*) myname_S
+*
+#include "time0.cdk"
+*
+*author
+*     Desgagne/Valin     May 2005
+*
+*revision
+* v3_21 - Desgagne/Valin - initial version
+*
+*
+      external mclock,rtools_wtime
+      integer i,mclock
+      real*8 rtools_wtime 
+*
+      call tmg_start ( mynum, myname_S )
+      if (.not.tmg2_on_L) return
+*
+      nam_subr_S(mynum) = myname_S
+*
+      m0x(mynum,1) = mclock()
+      r0 (mynum,1) = rtools_wtime()
+*
+      return
+      end

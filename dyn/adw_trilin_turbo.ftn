@@ -23,6 +23,7 @@
 *
 *revision
 * v3_20 -Valin & Tanguay -  initial version 
+* v3_21 -Tanguay M.      -  evaluate min-max vertical CFL as function of k 
 *
 *object
 *     see id section
@@ -43,6 +44,8 @@
 * F_y          |   x,y,z positions                               |  i  |
 * F_z          | /                                               |  i  |
 *              |                                                 |     |
+* F_capz       | precomputed displacements along the z-direction |  io |
+*              |                                                 |     |
 * Fn_I         | localisation indices                            |  i  |
 *              |                                                 |     |
 * F_num        | number of points to interpolate                 |  i  |
@@ -51,6 +54,7 @@
 *implicits
 #include "glb_ld.cdk"
 #include "adw.cdk"
+#include "v4dcfl.cdk"
 ************************************************************************
 *
       integer n, n0, nijag, nij, o1, o2, i, j, k, iimax, jjmax, kkmax,
@@ -60,7 +64,24 @@
 *
       real*8 rri, rrj, rrk, prf1, prf2, prf3, prf4
 *
+      integer cfl,err
+      logical done_L
+      data done_L /.false./
+      save done_L
+*
 *     ----------------------------------------------------------------
+*
+*     Initialize min-max vertical CFL as function of k
+*     ------------------------------------------------
+      if(.not.done_L) then
+         call hpalloc(V4dcfl_p_   ,l_nk, err,1)
+         call hpalloc(V4dcfl_n_   ,l_nk, err,1)
+         do k = 1,l_nk
+            V4dcfl_p(k) = 0
+            V4dcfl_n(k) = 0
+         enddo
+         done_L = .true.
+      endif
 *
       nijag = Adw_nit * Adw_njt
       nij = l_ni*l_nj
@@ -69,9 +90,8 @@
       jjmax = G_nj+Adw_haloy
       kkmax = l_nk-1
 *
-!$omp parallel private(n,n0,ii,jj,kk,rri,rrj,rrk,
-!$omp&              capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4)
-!$omp do
+!$omp parallel do private(n,n0,ii,jj,kk,rri,rrj,rrk,
+!$omp&              capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4,cfl)
       do 100 k=1,kn
       do  90 j=j0,jn
       n0 = (k-1)*nij + ((j-1)*l_ni)
@@ -116,6 +136,13 @@
           ii = and( Fn_I(n) , 4095 )
           jj = and( ishft( Fn_I(n) , -12 ) , 4095 )
           Fn_I(n) = ior( ior(ishft(jj,12) , ii) , ishft( kk , 24) )
+*
+*         Evaluate min-max vertical CFL as function of k 
+*         ----------------------------------------------
+          cfl = (kk+1) - k
+          if (cfl.gt.V4dcfl_p(k) ) V4dcfl_p(k) = cfl
+          if (cfl.lt.V4dcfl_n(k) ) V4dcfl_n(k) = cfl
+*
         enddo
       endif
       do  80 i=i0,in
@@ -162,8 +189,7 @@
    80 continue
    90 continue
   100 continue
-!$omp enddo
-!$omp end parallel
+!$omp end parallel do
 *
       Adw_hor_L = .false.
       Adw_ver_L = .false.

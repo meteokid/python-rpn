@@ -22,6 +22,7 @@
 * v3_20 - Gravel S.       - Change test a lower and upper boundaries
 * v3_20 - Tanguay M.      - Improve alarm when points outside advection grid
 * v3_20 - Dugas B.        - correct calculation for LAM when Glb_pil gt 7
+* v3_21 - Lee V.          - bug correction, yth should not be modified.
 *
 *language
 *     fortran 77
@@ -68,7 +69,7 @@
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1
       real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
-      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1,wrk_yth
       integer, dimension(:), allocatable :: n2
       real,    dimension(:), allocatable :: capx2,capy2,capz2
       real,    dimension(:), allocatable :: xpos2,ypos2,zpos2
@@ -127,13 +128,17 @@
                      doh = .false.
       if (it .eq. 1) doh = .true.
 *
+      do n = 1,nijk
+      wrk_yth(n) = yth(n)
+      enddo
+
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, yth, zth, i0, in, j0, jn )
+          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
 *
       else
 *
-          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,yth,zth )
+          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth )
 *
           if ( V4dg_conf.ne.0.0 ) then
 *
@@ -166,7 +171,7 @@
       if( .not. Adw_nosetint_L ) then
 *
       call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
-     %                  dummy, capz1, dummy, xth, yth, zth,
+     %                  dummy, capz1, dummy, xth, wrk_yth, zth,
      %                  doh, .true., .true.,nijk,i0,in,j0,jn,l_nk)
 *
       call adw_trilin (wrkx1,F_u,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
@@ -176,9 +181,9 @@
 *
       Adw_hor_L = doh 
       Adw_ver_L = .true. 
-      call adw_trilin_turbo (wrkx1,F_u,1.0,xth,yth,zth,capz1,
+      call adw_trilin_turbo (wrkx1,F_u,1.0,xth,wrk_yth,zth,capz1,
      %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
-      call adw_trilin_turbo (wrky1,F_v,1.0,xth,yth,zth,capz1,
+      call adw_trilin_turbo (wrky1,F_v,1.0,xth,wrk_yth,zth,capz1,
      %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
 *
       endif
@@ -201,13 +206,13 @@
 *
          endif
 *
-         call adw_exch_2 ( wrkz1, yth, dummy,
+         call adw_exch_2 ( wrkz1, wrk_yth, dummy,
      %                  xpos2, ypos2, dummy,
      %                  Adw_for_n, Adw_for_s, Adw_for_a,
      %                  Adw_fro_n, Adw_fro_s, Adw_fro_a, 2)
 *
          if ( Adw_for_a .gt. 0 )
-     %         call adw_exch_3 ( wrkx1, wrky1, wrkz1, yth, wrkc1, 2 )
+     %         call adw_exch_3 ( wrkx1, wrky1, wrkz1, wrk_yth, wrkc1, 2 )
 *
          deallocate(capx2,capy2,capz2,xpos2,ypos2,zpos2,n2)
       endif
@@ -215,14 +220,17 @@
       call adw_trajsp ( xth, yth, xcth, ycth, zcth, wrkx1, wrky1, dth,
      %                  i0,in,j0,jn)
 ************************************************************************
+      do n = 1,nijk
+      wrk_yth(n) = yth(n)
+      enddo
 *
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, yth, zth, i0, in, j0, jn )
+          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
 *
       else
 *
-          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,yth,zth )
+          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth )
 *
           allocate(capx2(max(1,Adw_fro_a)),
      %             capy2(max(1,Adw_fro_a)),
@@ -242,7 +250,7 @@
       if( .not. Adw_nosetint_L ) then
 *
       call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
-     %                  dummy, capz1, dummy, xth, yth, zth,
+     %                  dummy, capz1, dummy, xth, wrk_yth, zth,
      %                 .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
 *
       call adw_trilin (wrkx1,F_w,-dth,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
@@ -251,7 +259,7 @@
 *
       Adw_hor_L = .true. 
       Adw_ver_L = .false. 
-      call adw_trilin_turbo (wrkx1,F_w,-dth,xth,yth,zth,capz1,
+      call adw_trilin_turbo (wrkx1,F_w,-dth,xth,wrk_yth,zth,capz1,
      %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
 *
       endif

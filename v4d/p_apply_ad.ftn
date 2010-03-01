@@ -23,6 +23,7 @@
 * v3_00 - Laroche S.        - initial MPI version
 * v3_03 - Tanguay M.        - use v4d_zerohalo 
 * v3_20 - Laroche S.        - slight modification to rpn_comm_xch_halo call
+* v3_21 - Tanguay M.        - Revision Openmp 
 *
 *object
 *       TLM of apply consistency of the tendencies on physics variables
@@ -54,7 +55,8 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer i, j, k, n, i0, in, j0, jn, err, key1(6),
+      integer*8 pnt_trp(phyt_ntr),pnt_trm(phyt_ntr)
+      integer i, j, k, n, i0, in, j0, jn, err, key1(10), ng,
      $     keyp(h2o_ntr), keym(h2o_ntr), keyp_, keym_
       real trajexp
       real*8, parameter :: ZERO_8 = 0.0
@@ -64,37 +66,67 @@
      $   F_tdtm(LDIST_SHAPE,Nk), F_trmm(LDIST_SHAPE,Nk),
      $   F_st1m(LDIST_SHAPE)
       pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
-*
-**
 *     __________________________________________________________________
 *
+      keyp_ = VMM_KEY (trt1)
+      if (h2o_ntr.gt.0) then
+         do n=1,h2o_ntr
+            keyp(n) = keyp_ + n
+         end do
+         err = vmmlod(keyp,h2o_ntr)
+         do n=1,h2o_ntr
+            err = vmmget(keyp(n),patrp,trp)
+            pnt_trp(n) = patrp
+         end do
+      endif
 *
+      key1(1) = VMM_KEY(fipt1)
+      key1(2) = VMM_KEY(fit1 )
+      key1(3) = VMM_KEY(tplt1)
+      key1(4) = VMM_KEY(tpt1 )
+      key1(5) = VMM_KEY(tdt1 )
+      key1(6) = VMM_KEY(psdt1)
+      key1(7) = VMM_KEY(ut1)
+      key1(8) = VMM_KEY(vt1)
+      key1(9) = VMM_KEY(tt1)
+      key1(10)= VMM_KEY(st1)
+      err = vmmlod(key1,10)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(fit1 )
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR(tpt1 )
+      err = VMM_GET_VAR(tdt1 )
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(st1)
+*
+!$omp parallel 
+* 
 ******START TRAJECTORY **********************************************
-
-*
 *     Zero adjoint WORK variables
 *     ---------------------------
+!$omp do 
       do k=1,l_nk
-      do j=l_miny,l_maxy
-      do i=l_minx,l_maxx
-       wk3(i,j,k)  = ZERO_8
-       wk4(i,j,k)  = ZERO_8
-       wk5(i,j,k)  = ZERO_8
-       wk6(i,j,k)  = ZERO_8
+       wk3(:,:,k)  = ZERO_8
+       wk4(:,:,k)  = ZERO_8
+       wk5(:,:,k)  = ZERO_8
+       wk6(:,:,k)  = ZERO_8
       end do
-      end do
-      end do
-*
+!$omp end do 
 *
 *     Read TRAJ for the simplified physics
 *     -------------------------------------
+!$omp single 
       call v4d_rwtraj_apply(F_tdum,F_tdvm,F_tdtm,F_trmm,F_st1m,LDIST_DIM,Nk)
-*
+!$omp end single 
 *
 *     Compute VIRTUAL temperature tendency from:  temperature tendency,
 *     specific humidity, virtual temperature & specific humidity tendency
 *     -------------------------------------------------------------------
-
+*
+!$omp do 
       do k=1,l_nk
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
@@ -103,28 +135,14 @@
       end do
       end do
       end do
-*
+!$omp end do 
 *
 ******END TRAJECTORY ************************************************
 *
-*
 *   3. apply tendencies to associated variables
 *      ----------------------------------------
-
-      key1(1) = VMM_KEY(fipt1)
-      key1(2) = VMM_KEY(fit1 )
-      key1(3) = VMM_KEY(tplt1)
-      key1(4) = VMM_KEY(tpt1 )
-      key1(5) = VMM_KEY(tdt1 )
-      key1(6) = VMM_KEY(psdt1)
-      err = vmmlod(key1,6)
-      err = VMM_GET_VAR(fipt1)
-      err = VMM_GET_VAR(fit1 )
-      err = VMM_GET_VAR(tplt1)
-      err = VMM_GET_VAR(tpt1 )
-      err = VMM_GET_VAR(tdt1 )
-      err = VMM_GET_VAR(psdt1)
 *
+!$omp do 
       do k=1,l_nk
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
@@ -137,21 +155,11 @@
       end do
       end do
       end do
-*
-      err = vmmuld(key1,6)
-*
+!$omp end do 
 *
 *   2. apply tendencies to primary variables
 *      -------------------------------------
-*
-      key1(1)  = VMM_KEY(ut1)
-      key1(2)  = VMM_KEY(vt1)
-      key1(3)  = VMM_KEY(tt1)
-      err = vmmlod(key1,3)
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-      err = VMM_GET_VAR(tt1)
-*
+!$omp do 
       do k=1,l_nk
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
@@ -169,17 +177,12 @@
          end do
          end do
       end do
+!$omp end do 
 *
-      err = vmmuld(key1,3)
-*
-      keyp_ = VMM_KEY (trt1)
       if (h2o_ntr.gt.0) then
          do n=1,h2o_ntr
-            keyp(n) = keyp_ + n
-         end do
-         err = vmmlod(keyp,h2o_ntr)  
-         do n=1,h2o_ntr
-            err = vmmget(keyp(n),patrp,trp)
+            patrp = pnt_trp(n) 
+!$omp do 
             do k=1,l_nk
             do j= 1+pil_s, l_nj-pil_n 
             do i= 1+pil_w, l_ni-pil_e
@@ -187,20 +190,15 @@
             end do
             end do
             end do
+!$omp end do 
          end do
-         err = vmmuld(keyp,h2o_ntr)
       endif
-    
 *
+!$omp end parallel 
 *
 *  5. Compute total divergence and vertical motion associated tendencies
 *     d/dt ( total D ) in xrpqt1,  d/dt ( pi*-dot ) in wk3
 *     -------------------------------------------------------------------
-*
-      key1(1) = VMM_KEY(st1)
-      err = vmmlod (key1,1)
-      err = VMM_GET_VAR(st1)
-*
 *
 *     TRAJECTORY
 *     ----------
@@ -215,8 +213,11 @@
      $                            F_tdum, F_tdvm, F_st1m,
      $                  LDIST_DIM, G_nk )
 *
+!$omp parallel 
+*
 *     Zero adjoint WORK variables
 *     ---------------------------
+!$omp do 
       do k=1,l_nk
       do j=l_miny,l_maxy
       do i=l_minx,l_maxx
@@ -226,7 +227,9 @@
       end do
       end do
       end do
-
+!$omp end do 
+*
+!$omp single 
       call rpn_comm_adj_halo( F_tdu, LDIST_DIM, l_niu, l_nj,G_nk,
      $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_adj_halo( F_tdv, LDIST_DIM, l_ni, l_njv,G_nk,
@@ -236,11 +239,13 @@
 *     ------------
       call v4d_zerohalo ( F_tdu,l_niu,l_nj,LDIST_DIM, l_nk)
       call v4d_zerohalo ( F_tdv,l_ni,l_njv,LDIST_DIM, l_nk)
+!$omp end single 
 *
 *  3. Compute d/dt ( T'lin ) = pi* d/dt ( T ) exp(s-q) ; put in xrptt1
 *     Note:   d/dt ( T' ) = d/dt ( T )  i.e. not computed
 *     ----------------------------------------------------------------
 *
+!$omp do 
       do k=1,l_nk
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
@@ -249,9 +254,10 @@
       end do
       end do
       end do
+!$omp end do 
 *
-      call hatoprg_ad ( wk6,wk5,wk4,1.0,geomg_hz_8,LDIST_DIM,G_nk )
-*
+      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      call hatoprg_ad ( wk6,wk5,1.0,geomg_hz_8,ng,G_nk )
 *
 *  2. Compute d/dt ( phi ) from d/dt ( T )
 *     Note:   d/dt ( phi' ) = d/dt ( phi ) i.e. not computed
@@ -259,31 +265,30 @@
 *
 *     ADJ
 *     ---
-      do k=1,l_nk
+!$omp do 
       do j= 1+pil_s, l_nj-pil_n 
+      do k=1,l_nk
       do i= 1+pil_w, l_ni-pil_e 
 
-           F_qp(i,j,k) = F_qp(i,j,k) + wk5(i,j,k)*Dcst_rgasd_8
-           wk5(i,j,k)  = ZERO_8
+      F_qp(i,j,k) = F_qp(i,j,k) + wk5(i,j,k)*Dcst_rgasd_8
+      wk5(i,j,k)  = ZERO_8
 
-           trajexp      = exp(F_st1m(i,j) - F_qpm(i,j,k))
-           F_tdt(i,j,k) = F_tdt(i,j,k) + F_qp(i,j,k)              *trajexp
-           st1(i,j)     = st1(i,j)     + F_qp(i,j,k)*F_tdtm(i,j,k)*trajexp
-           F_qp(i,j,k)  =              - F_qp(i,j,k)*F_tdtm(i,j,k)*trajexp
-
+      trajexp      = exp(F_st1m(i,j) - F_qpm(i,j,k))
+      F_tdt(i,j,k) = F_tdt(i,j,k) + F_qp(i,j,k)              *trajexp
+      st1(i,j)     = st1(i,j)     + F_qp(i,j,k)*F_tdtm(i,j,k)*trajexp
+      F_qp(i,j,k)  =              - F_qp(i,j,k)*F_tdtm(i,j,k)*trajexp
       end do
       end do
       end do
+!$omp end do 
 *
-      err = vmmuld(key1,1)
-
 *   1.1  Compute VIRTUAL temperature tendency from:  temperature tendency,
 *        specific humidity, virtual temperature & specific humidity tendency
 *        -------------------------------------------------------------------
 *
-      keyp(1) = VMM_KEY (trt1) + hucond
-      err = vmmlod(keyp,1)  
-      err = vmmget(keyp,patrp,trp)
+      patrp = pnt_trp(hucond)
+*
+!$omp do  
       do k=1,l_nk
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
@@ -307,12 +312,13 @@
       end do
       end do
       end do
-      err = vmmuld(keyp,1)
+!$omp end do  
 *
 *  1. Add condensation tendencies and other contributions to get 
 *     TOTAL temperature tendency and TOTAL specific humidity tendency.
 *     ----------------------------------------------------------------
 *
+!$omp do 
       do k=1,l_nk
       do j= 1+pil_s, l_nj-pil_n 
       do i= 1+pil_w, l_ni-pil_e 
@@ -321,15 +327,14 @@
       end do
       end do
       end do
-
+!$omp end do 
 *
+!$omp end parallel 
 *
 *  4. Interpolation of the wind associated tendencies
 *     -----------------------------------------------
 *
       call p_uvgridscal_ad ( F_tdu, F_tdv, LDIST_DIM, G_nk, .false. )
-*
-*
 *
       return
       end

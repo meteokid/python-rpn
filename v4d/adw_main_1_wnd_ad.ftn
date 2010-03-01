@@ -19,6 +19,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *language
 *     fortran 77
@@ -74,6 +75,8 @@
       pnerr = VMM_GET_VAR(vth)
       pnerr = VMM_GET_VAR(psdth)
 *
+!$omp parallel private(i0,in,j0,jn,sc_8)
+*
 ***********************************************************************
 * ADJ of
 * Adjust wind fields to advection grid
@@ -110,6 +113,7 @@
           dest_ni=G_ni
       endif
 *
+!$omp single
       call rpn_comm_adj_halox ( psdth, LDIST_DIM, l_ni, l_nj, l_nk,
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_w, 1-Adw_halox,
      %  Adw_nic+Adw_halox, 1-Adw_haloy, Adw_njc+Adw_haloy, dest_ni, n)
@@ -121,8 +125,7 @@
       call rpn_comm_adj_halox ( uth, LDIST_DIM, l_ni, l_nj, l_nk,
      %  Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, 1-Adw_halox,
      %  Adw_nic+Adw_halox, 1-Adw_haloy, Adw_njc+Adw_haloy, dest_ni, n)
-*
-!$omp parallel private(i0,in,j0,jn,sc_8)
+!$omp end single
 *
 *     Zero adjoint variables
 *     ---------------------

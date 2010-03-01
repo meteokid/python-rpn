@@ -7,6 +7,8 @@
 *
 *revision
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
+* v3_21 - Desgagne M.       - Revision on Dcst read
+* v3_21 - Lemonsu A.        - add P_pbl_schurb_s
 *
       integer ni, nila
       integer l_ni,l_nj
@@ -30,8 +32,9 @@
 #include "offline.cdk"
 #include "e_nml.cdk"
 *
-      integer  fnom, set_dcst8
-      external fnom, set_dcst8
+      logical set_dcst_8
+      integer  fnom
+      external fnom, set_dcst_8
 *
       character*120 fn,dumc
       integer i,err,unf
@@ -81,6 +84,7 @@
       anal_perturb= .false.
       E_schm_stlag   = .true.
       E_schm_adcub   = .true.
+      E_schm_offline_L=.false.
       E_geol_glanl_L = .true.
       E_geol_glreg_L = .false.
       E_geol_hsanl_L = .true.
@@ -99,10 +103,10 @@
       E_geol_modex_L = .false.
       E_geol_z0cst   = -1.
 *
-      E_schm_offline_L=.false.
       Offline_int_accu_S = 'LINEAR'
       Offline_ip1a = 11950   
       P_pbl_schsl_S  = 'FCREST'
+      P_pbl_schurb_S = 'NIL'
       P_pbl_snoalb_L = .true.
 *
       do i=1, MAXTR
@@ -129,6 +133,8 @@
 *
       call low2up (P_pbl_schsl_S,dumc)
       P_pbl_schsl_S = dumc
+      call low2up (P_pbl_schurb_S,dumc)
+      P_pbl_schurb_S = dumc
       call low2up (Grd_typ_S,dumc)
       Grd_typ_S = dumc
       LAM = Grd_typ_S(1:1).eq.'L'
@@ -205,8 +211,8 @@
       write (6  ,nml=gement_p)
 *
       unf = 44
-      if (set_dcst8 (Dcst_cpd_8,liste_S,cnbre,unf,6) .ne. 0)
-     $     call e_arret ('SET_DCST8')
+      if (.not.set_dcst_8 (Dcst_cpd_8,liste_S,cnbre,0,1))
+     $     call e_arret ('SET_DCST_8')
 *
       call e_trinit
 *

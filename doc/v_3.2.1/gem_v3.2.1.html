@@ -1,0 +1,86 @@
+<html>
+<body bgcolor="#FFFFFF">
+<pre class=text>
+<b>
+
+         UNRELEASED!!!!!
+        ############# GEMDM Model -- Version 3.2.1 ###############
+                            July    21 2005
+</b>
+
+        Version 3.2.1 of the GEMDM dynamics is almost ready and available 
+        in directories:
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.2.0/RCS_DYN"
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.2.0/RCS_4DVAR"
+	It is connected to RPN/CMC physics version 4.3 in directory:
+	      "$ARMNLIB/modeles/PHY/v_4.3/RCS:4.3"    
+
+############################################################################
+<b>
+MAIN FEATURES:
+</b>
+
+  There has been many significant changes in this version which DO seem
+  to improve the performance and meteorological results. It is connected to
+  Physics version 4.3 so please refer to the Physics 4.3 release 
+  notes for details. Documentation on previous GEMDM releases can be
+  found in:
+
+  http://notos.cmc.ec.gc.ca/mrb/rpn/eng/gemdm/gemdm.html
+
+  This note is available in the website under Version Rel. Date at v 3.2.1
+
+  Please note that there are additional files at this GEMDM website (v3.2.1)
+  which are related to this version:
+  "gem_settings.nml.txt" 
+  "outcfg.out.txt"
+  "configexp.cfg.txt"
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+                          IMPORTANT NOTE (same as V_3.2.0)
+  The source code has been divided in 2 RCS with corresponding libraries.
+  The non-linear forward code is stored in $gem/RCS_DYN whereas the
+  4DVAR code is stored in $gem/RCS_4DVAR. The makefile load target for
+  the non-linear GEMDM is unchanged (make gemdm). An additional target
+  has been added to the Makefile in order to load an executable containing
+  4DVAR capabilities - make gem4d.
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+  Changes that affect run time computation:
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+
+1) New physics package (4.3) (Leduc/Bilodeau), still under verification.
+
+2) New optimized code for OpenMP > 4
+
+3) Entry program e_gemntr will print a bigger warning when it fails to
+   produce the file geophy.bin
+
+4) Values for constants are obtained from RMNLIB functions
+
+5) Lctl_reset key added to start model at Timestep other than 0
+
+6) Memory for PHYSICS is always in core
+
+7) Removed Tr2d tracers
+
+8) Code for Coupling from Sophie (Schm_offline)
+
+9) New keys to control Phy 4.3:
+
+
+Patches:
+p1,p2,p3
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+   Sample run configurations can be found at $gem/run_configs
+   Sample analysis given in these examples are not guaranteed to exist
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+
+############################################################################
+    
+</pre>
+</body>
+</html>
+

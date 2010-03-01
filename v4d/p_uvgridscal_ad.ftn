@@ -15,6 +15,7 @@
 *
 *revision
 * v3_00 - Laroche S.       - initial MPI version
+* v3_21 - Tanguay M.       - Revision Openmp 
 *
 *object
 *	ADJ of Cubic interpolation of the dynamics fields from their own grid
@@ -54,12 +55,12 @@
        nsv = 0
        ndv = 2
       endif
-
 C
 C     y component
 C
       call uv_acg2g_tr(nsv,ndv,i0,in,j0,jn)
 
+!$omp do
       do k=1,l_nk
          do j=l_miny,l_maxy
          do i=l_minx,l_maxx
@@ -73,6 +74,7 @@ C
         end do
         end do
       end do
+!$omp end do
 
       call uv_acg2g_ad(wk1,F_pvt,nsv,ndv,LDIST_DIM,l_nk,i0,in,j0,jn)
 
@@ -82,6 +84,7 @@ C
 
       call uv_acg2g_tr(nsu,ndu,i0,in,j0,jn)
 
+!$omp do
       do k=1,l_nk
          do j=l_miny,l_maxy
          do i=l_minx,l_maxx
@@ -95,6 +98,7 @@ C
         end do
         end do
       end do
+!$omp end do
 
       call uv_acg2g_ad(wk1,F_put,nsu,ndu,LDIST_DIM,l_nk,i0,in,j0,jn)
 *

@@ -1,0 +1,32 @@
+#include <model_macros_f.h>
+*
+      subroutine tmg_stop0 (mynum)
+*
+      implicit none
+*
+      integer mynum
+*
+#include "time0.cdk"
+*
+*author
+*     Desgagne/Valin     May 2005
+*
+*revision
+* v3_21 - Desgagne/Valin - initial version
+*
+*
+      external mclock,rtools_wtime
+      integer i,m0_new,mclock
+      real*8 r0_new,rtools_wtime
+*
+      call tmg_stop (mynum)
+      if (.not.tmg2_on_L) return
+*
+      m0_new = mclock()
+      r0_new = rtools_wtime()
+*
+      sum_m0(mynum,1) =   sum_m0 (mynum,1) + (m0_new - m0x(mynum,1)) 
+      sum_r0(mynum,1) =   sum_r0 (mynum,1) + (r0_new - r0 (mynum,1)) 
+*
+      return
+      end

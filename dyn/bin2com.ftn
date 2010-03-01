@@ -20,6 +20,7 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L
 * v3_20 - Pellerin P.       - Introduce: Hblen_wfct_S, schm_offline_L
+* v3_21 - Lee V.            - Remove Tr2d 
 *
 *object
 *     See above id
@@ -34,7 +35,6 @@
 #include "pilot.cdk"
 #include "hblen.cdk"
 #include "p_pbl.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "offline.cdk"
 #include "lun.cdk"
@@ -50,13 +50,11 @@
      $              Grd_dx  , Grd_dy  , Grd_rot_8 , G_lam    ,
      $              Grd_x0  , Grd_xl  , Grd_y0    , Grd_yl   , 
      $              Grd_dxmax, Grd_dymax, Grd_typ_S, Grd_gauss_L,
-     $              Tr3d_userntr, Tr2d_userntr,
+     $              Tr3d_userntr,
      $              (Tr3d_username_S(k),k=1,Tr3d_userntr),
-     $              (Tr3d_usersval  (k),k=1,Tr3d_userntr),
-     $              (Tr2d_username_S(k),k=1,Tr2d_userntr),
-     $              (Tr2d_usersval  (k),k=1,Tr2d_userntr)
+     $              (Tr3d_usersval  (k),k=1,Tr3d_userntr)
 *
-      read(lun_lab)  P_pbl_schsl_s, P_pbl_snoalb_L,
+      read(lun_lab)  P_pbl_schsl_s, P_pbl_snoalb_L,P_pbl_schurb_s,
      $             Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
      $             Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try,
      $             Hblen_wfct_S,schm_offline_L,Offline_int_accu_S,

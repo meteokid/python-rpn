@@ -14,6 +14,7 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_20 - Tanguay M.        - 1d higher order diffusion operator 
+* v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat 
 *
 *object
 *	
@@ -27,6 +28,7 @@
 #include "rhsc.cdk"
 #include "vt1.cdk"
 #include "hzd.cdk"
+#include "lctl.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -57,9 +59,13 @@
 *
 *     Filtering  
 *     ---------
+      if (Lctl_step.gt.1) then
+      call tmg_start0 ( 12, 'HZD1D    ' )
       if (Hzd_t1_0_L) call hzd_hoffld (ut1,   LDIST_DIM, G_nk, 1)
       if (Hzd_t1_0_L) call hzd_hoffld (vt1,   LDIST_DIM, G_nk, 2)
       if (Hzd_t1_0_L) call hzd_hoffld (psdt1, LDIST_DIM, G_nk, 3)
+      call tmg_stop0 (12)
+      endif
 *
 *C	1. Initialise wind, pi* dot and upstream positions at
 *	   time t0-dt/2 (th) for mid trajectory computations

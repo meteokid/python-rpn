@@ -1,0 +1,51 @@
+#include <model_macros_f.h>
+*
+      subroutine tmg_terminate0 ( npe, msg )
+      implicit none
+*
+      character* (*) msg
+      integer npe
+*
+#include "time0.cdk"
+*
+*author
+*     Desgagne/Valin     May 2005
+*
+*revision
+* v3_21 - Desgagne/Valin - initial version
+*
+*
+      integer i,j,ier
+*
+      integer all_sum_m0(MAX_SUBR,MAX_PROC)
+      real*8  all_sum_r0(MAX_SUBR,MAX_PROC)
+*
+      real value_m0,value_r0
+*
+      call tmg_terminate ( npe, msg )
+      if (.not.tmg2_on_L) return
+*
+      all_sum_m0(:,:) = 0  
+      all_sum_m0 = sum_m0
+      all_sum_r0(:,:) = 0.0  
+      all_sum_r0 = sum_r0
+*
+      print *,' ' 
+      print *,'_______________________________________________________________________' 
+      print *,'_______________________TIMINGS_________________________________________' 
+*
+      do i = 1,MAX_SUBR
+         value_m0 = all_sum_m0(i,1)*0.01 
+         value_r0 = all_sum_r0(i,1) 
+c        if(nam_subr_S(i).ne.'NO NAME  ') write(6,100) nam_subr_S(i),value_m0,value_r0
+         if(nam_subr_S(i).ne.'NO NAME  ') write(6,100) nam_subr_S(i),value_r0
+      enddo
+*
+      print *,'_______________________________________________________________________' 
+      print *,' ' 
+*
+c 100 format (A9,'  ',g10.4,'  ',g10.4)
+  100 format (A9,'  ',g10.4)
+*
+      return
+      end

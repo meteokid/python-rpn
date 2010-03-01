@@ -26,6 +26,7 @@
 * v3_00 - Laroche S.        - adaptation for v4d
 * v3_12 - Leduc A-M.        - Add arguments gzm and topo
 * v3_20 - Lee V.            - Corrected loop i=1,p_nj to i-1,p_ni
+* v3_21 - Desgagne M.       - Revision Openmp
 *
 *object
 *
@@ -53,7 +54,8 @@
       integer  vmmlod,vmmget,vmmuln
       external vmmlod,vmmget,vmmuln
 *
-      integer err, key(12), i, j, k, n, i0, j0, in, jn, nksurf,
+      integer*8 pnt_trp(phyt_ntr),pnt_trm(phyt_ntr)
+      integer err, key(15), i, j, k, n, i0, j0, in, jn, nksurf,
      $        keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
       real dt, dzmin, dzmin_, sigsfc, trp, trm
       real wk1(LDIST_SHAPE),wk2(LDIST_SHAPE),wk3(LDIST_SHAPE),
@@ -71,8 +73,11 @@
       key( 7) = VMM_KEY(fit1)
       key( 8) = VMM_KEY(topo)
       key( 9) = VMM_KEY(qt0)
-      key( 10) = VMM_KEY(qt1)
-      err = vmmlod(key,10)
+      key(10) = VMM_KEY(qt1)
+      key(11) = VMM_KEY(st1)
+      key(12) = VMM_KEY(psdt1)
+      key(13) = VMM_KEY(tdt1)
+      err = vmmlod(key,13)
       err = VMM_GET_VAR(ut0)
       err = VMM_GET_VAR(vt0)
       err = VMM_GET_VAR(tt0)
@@ -83,79 +88,16 @@
       err = VMM_GET_VAR(topo)
       err = VMM_GET_VAR(qt0)
       err = VMM_GET_VAR(qt1)
-*
-****************************************************
-*   Copy variables at time t- and t* in workfields *
-****************************************************
-*
-      do k=1,l_nk
-      do j= 1, l_nj
-      do i= 1, l_ni 
-         F_um(i,j,k) =  ut0(i,j,k)
-         F_vm(i,j,k) =  vt0(i,j,k)
-         F_tm(i,j,k) =  tt0(i,j,k)
-         F_gzm(i,j,k)=  fit1(i,j,k)
-         F_up(i,j,k) =  ut1(i,j,k)
-         F_vp(i,j,k) =  vt1(i,j,k)
-         F_tp(i,j,k) =  tt1(i,j,k)
-      end do
-      end do
-      end do
-*
-
-      do j= 1, l_nj
-      do i= 1, l_ni
-         F_topo(i,j) = topo(i,j)
-      end do
-      end do
-
-
-      if (Schm_hydro_L) then
-         do k= 1,l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni 
-            F_qp(i,j,k) = qt1(i,j,k)
-         end do
-         end do
-         end do
-         do j= 1, l_nj 
-         do i= 1, l_ni
-            F_lnpsm(i,j) = qt0(i,j,l_nk)
-         end do
-         end do
-         err = vmmuln(key,10)
-      else
-         err = vmmuln(key,8)
-         key(11) = VMM_KEY(qpt0)
-         key(12) = VMM_KEY(qpt1)
-         err = vmmlod(key(11),2)
+      err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(tdt1)
+      if (.not.Schm_hydro_L) then
+         key(14) = VMM_KEY(qpt0)
+         key(15) = VMM_KEY(qpt1)
+         err = vmmlod(key(14),2)
          err = VMM_GET_VAR(qpt0)
          err = VMM_GET_VAR(qpt1)
-         do j= 1, l_nj 
-         do i= 1, l_ni 
-            F_lnpsm(i,j) = qt0(i,j,l_nk) - qpt0(i,j,l_nk) 
-         end do
-         end do
-         do k=1,l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni 
-            F_qp(i,j,k) = qt1(i,j,k) - qpt1(i,j,k) 
-         end do
-         end do
-         end do
-         err = vmmuln(key(9),4)
       endif
-*
-*     calculate sigma levels from F_qp
-*     --------------------------------
-*
-      do k=1,l_nk
-      do j=1,l_nj
-      do i=1,l_ni 
-        F_sig(i,j,k) = exp(F_qp(i,j,k)-F_qp(i,j,l_nk))
-      end do
-      end do
-      end do
 *
       keyp_ = VMM_KEY (trt1)
       keym_ = VMM_KEY (trt0)
@@ -164,33 +106,105 @@
             keyp(n) = keyp_ + n
             keym(n) = keym_ + n
          end do
-         err = vmmlod(keyp,phyt_ntr)  
-         err = vmmlod(keym,phyt_ntr)  
+         err   = vmmlod(keyp,phyt_ntr)  
+         err   = vmmlod(keym,phyt_ntr)
          do n=1,phyt_ntr
             err = vmmget(keyp(n),patrp,trp)
-            err = vmmget(keym(n),patrm,trm)
-            do k=1,l_nk
-            do j= 1, l_nj 
-            do i= 1, l_ni 
-               F_trp(i,j,k,n) =  trp(i,j,k)
-               F_trm(i,j,k,n) =  trm(i,j,k)
-            end do
-            end do
-            end do
+            pnt_trp(n) = patrp
+            err = vmmget(keym(n),patrp,trm)
+            pnt_trm(n) = patrp
          end do
-         err = vmmuln(keyp,phyt_ntr)
-         err = vmmuln(keym,phyt_ntr)
-      endif
+      endif  
 *
-      key(1) = VMM_KEY(st1)
-      key(2) = VMM_KEY(psdt1)
-      key(3) = VMM_KEY(tdt1)
-      err = vmmlod (key,3)
-      err = VMM_GET_VAR(st1)
-      err = VMM_GET_VAR(psdt1)
-      err = VMM_GET_VAR(tdt1)
+****************************************************
+*   Copy variables at time t- and t* in workfields *
+****************************************************
+*
+!$omp parallel
+*
+!$omp do
+      do k=1,l_nk
+         do j= 1, l_nj
+         do i= 1, l_ni 
+            F_um(i,j,k) =  ut0(i,j,k)
+            F_vm(i,j,k) =  vt0(i,j,k)
+            F_tm(i,j,k) =  tt0(i,j,k)
+            F_gzm(i,j,k)=  fit1(i,j,k)
+            F_up(i,j,k) =  ut1(i,j,k)
+            F_vp(i,j,k) =  vt1(i,j,k)
+            F_tp(i,j,k) =  tt1(i,j,k)
+         end do
+         end do
+         if (Schm_hydro_L) then
+            do j= 1, l_nj
+            do i= 1, l_ni 
+               F_qp(i,j,k) = qt1(i,j,k)
+            end do
+            end do
+         else
+            do j= 1, l_nj
+            do i= 1, l_ni 
+               F_qp(i,j,k) = qt1(i,j,k) - qpt1(i,j,k) 
+            end do
+            end do
+         endif
+      end do
+!$omp enddo
+*
+!$omp do
+      do j= 1, l_nj
+         do i= 1, l_ni
+            F_topo(i,j) = topo(i,j)
+         end do
+         if (Schm_hydro_L) then
+            do i= 1, l_ni
+               F_lnpsm(i,j) = qt0(i,j,l_nk)
+            end do
+         else
+            do i= 1, l_ni 
+               F_lnpsm(i,j) = qt0(i,j,l_nk) - qpt0(i,j,l_nk) 
+            end do
+         endif
+      end do
+!$omp enddo
+*
+*     compute sigma levels from F_qp
+*     --------------------------------
+*
+!$omp do
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni 
+         F_sig(i,j,k) = exp(F_qp(i,j,k)-F_qp(i,j,l_nk))
+      end do
+      end do
+      end do
+!$omp enddo
+*
       call calomeg (F_wp,psdt1,tdt1,st1,LDIST_DIM,l_nk,1,l_ni,1,l_nj)
-      err = vmmuln(key,3)
+*
+*C    interpolate wind images at time t1 and t2
+*     -----------------------------------------
+*
+      call p_uvgridscal ( F_up, F_vp, LDIST_DIM, l_nk, .true. )
+      call p_uvgridscal ( F_um, F_vm, LDIST_DIM, l_nk, .true. )
+*
+      do n=1,phyt_ntr
+         patrp = pnt_trp(n)
+         patrm = pnt_trm(n)
+!$omp do
+         do k=1,l_nk
+         do j= 1, l_nj 
+         do i= 1, l_ni 
+            F_trp(i,j,k,n) =  trp(i,j,k)
+            F_trm(i,j,k,n) =  trm(i,j,k)
+         end do
+         end do
+         end do
+!$omp enddo
+      end do
+*
+!$omp end parallel
 *
 *C    dzmin determines the micro-physical timestep for sedimentation
 *
@@ -249,12 +263,6 @@
 *     send dzmin and nksurf to the physics
       call phycom ('dzmin' ,dzmin ,1,'set')
       call phycom ('nksurf',nksurf,1,'set')
-*
-*C    interpolate wind images at time t1 and t2
-*     -----------------------------------------
-*
-      call p_uvgridscal ( F_up, F_vp, LDIST_DIM, l_nk, .true. )
-      call p_uvgridscal ( F_um, F_vm, LDIST_DIM, l_nk, .true. )
 *
 *     ________________________________________________________________
 *

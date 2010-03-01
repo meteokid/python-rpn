@@ -23,6 +23,7 @@
 * v3_00 - Desgagne & Lee     - Lam configuration
 * v3_01 - Qaddouri A.        - add call sol_parite_2
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_21 - Desgagne M.        - Optimization
 *
 *object
 *
@@ -49,8 +50,8 @@
       integer i, j, k, k0, offi, offj, Gni, Gnj,NSTOR,nev
       real*8 tsolver, tsolverflop, tsolver1, tsolverflop1,
      $       abpt((maxy-miny+1)*(trp_12smax-trp_12smin+1)*G_ni)
-      real*8 con(G_nk)
       real*8, dimension(:),allocatable :: wk_evec_8
+      real*8 con(G_nk)
 *
 *
 *     ---------------------------------------------------------------
@@ -68,39 +69,36 @@
           enddo
       endif
 *
-!$omp parallel private(offi, offj)
-!$omp do
-      do 100 k=1,G_nk
-         do j=1,Nj
-         do i=1,Ni
-            F_sol_8(i,j,k) = 0.
-            F_w1_8(i,j,k) = 0.
-            F_w2_8(i,j,k) = 0.
-         enddo
-         enddo
-         do k0=1,G_nk
-         do j=1+pil_s,Nj-pil_n
-         do i=1+pil_w,Ni-pil_e
-            F_w1_8(i,j,k) = F_w1_8(i,j,k) +
-     $                      F_rhs_8(i,j,k0)*Opr_zevec_8((k-1)*G_nk+k0)
-         enddo
-         enddo
-         enddo
- 100  continue
-!$omp enddo
+c      F_w2_8=0.
 *
+!$omp parallel
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 !$omp do
-      do k = 1, Schm_nith
-      do j = 1+pil_s, Nj-pil_n
-      do i = 1+pil_w, Ni-pil_e
-         F_w1_8(i,j,k) = Opr_opsxp0_8(G_ni+offi+i) *
-     $                   Opr_opsyp0_8(G_nj+offj+j) * F_w1_8(i,j,k) 
-      enddo
-      enddo
-      enddo
+      do j=1+pil_s,Nj-pil_n
+         call dgemm('N','N', (ni-pil_w-pil_e), G_nk, G_nk, 1.0D0, 
+     $              F_rhs_8(1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1),
+     $              Opr_zevec_8,g_nk,0.0d0,
+     $              F_w1_8 (1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1))
+!         do k=1,G_nk
+!         F_w1_8(1:Ni,j,k)=0.
+!         do k0=1,G_nk
+!         do i=1+pil_w,Ni-pil_e
+!            F_w1_8(i,j,k) = F_w1_8(i,j,k) +
+!     $                      F_rhs_8(i,j,k0)*Opr_zevec_8((k-1)*G_nk+k0)
+!         enddo
+!         enddo
+!         enddo
+*
+         do k=1,Schm_nith
+            do i = 1+pil_w, Ni-pil_e
+               F_w1_8(i,j,k)= Opr_opsxp0_8(G_ni+offi+i) *
+     $                        Opr_opsyp0_8(G_nj+offj+j) * F_w1_8(i,j,k) 
+            enddo
+         end do
+      end do
 !$omp enddo
+*
 !$omp end parallel      
       if (Fft_fast_L) then
          if (G_lam) then
@@ -136,7 +134,7 @@
             nev= (G_ni+2)/2
             NSTOR = nev + ( 1 - mod(nev,2) )
 *
-            call sol_parite_2 ( F_w2_8, F_w1_8, Opr_evvec_8, Opr_odvec_8,
+            call sol_parite_2( F_w2_8, F_w1_8, Opr_evvec_8, Opr_odvec_8,
      $                       Minx, Maxx, Miny, Maxy, l_nj,
      $            trp_12smin, trp_12smax, Schm_nith, trp_12sn ,
      $            G_ni, G_nj, trp_22min , trp_22max, trp_22n  ,
@@ -150,12 +148,6 @@
 *
 *     inverse projection 
 *
-      do j=1+pil_s,Nj-pil_n
-      do i=1+pil_w,Ni-pil_e
-         F_w2_8(i,j,G_nk) = F_w1_8(i,j,G_nk)
-      end do
-      end do
-
       do k=1,G_nk-1
          con(k) = 1.
       enddo
@@ -163,15 +155,27 @@
 *
 !$omp parallel
 !$omp do
-      do k0=1,G_nk
-      do k=1,G_nk
       do j=1+pil_s,Nj-pil_n
-      do i=1+pil_w,Ni-pil_e
-         F_sol_8(i,j,k0)= F_sol_8(i,j,k0)+con(k)*F_w2_8(i,j,k)*
-     $                    Opr_zevec_8((k-1)*G_nk+k0)
-      enddo
-      enddo
-      enddo
+         F_w2_8(1+pil_w:Ni-pil_e,j,G_nk) =  
+     $                  con(G_nk)*F_w1_8(1+pil_w:Ni-pil_e,j,G_nk)
+         call dgemm('N','T', (ni-pil_w-pil_e), G_nk, G_nk, 1.0D0, 
+     $              F_w2_8 (1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1),
+     $              Opr_zevec_8,g_nk,0.0d0,
+     $              F_sol_8(1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1))
+
+!         do i=1+pil_w,Ni-pil_e
+!            F_w2_8(i,j,G_nk) = F_w1_8(i,j,G_nk)
+!         end do
+!         do k0=1,G_nk
+!         F_sol_8(1:Ni,j,k0)=0.
+!         do k=1,G_nk
+!               do i=1+pil_w,Ni-pil_e
+!                  F_sol_8(i,j,k0)= F_sol_8(i,j,k0)+con(k)*F_w2_8(i,j,k)*
+!                  F_sol_8(i,j,k0)= F_sol_8(i,j,k0)+F_w2_8(i,j,k)*
+!     $                    Opr_zevec_8((k-1)*G_nk+k0)
+!               enddo
+!         enddo
+!         enddo
       enddo
 !$omp enddo
 !$omp end parallel

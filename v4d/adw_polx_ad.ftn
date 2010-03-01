@@ -20,6 +20,7 @@
 *
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *language
 *     fortran 77
@@ -104,13 +105,14 @@
          e(i-1)  = 0.0
       enddo
 *
+!$omp do
       do k = F_nk,1,-1
 *
          do i = F_halox,1,-1
-         F_field(F_nic+1-i,nd,k) = F_field(    1-i,nd,k) + F_field(F_nic+1-i,nd,k)
-         F_field(      1-i,nd,k) = ZERO_8 
-         F_field(        i,nd,k) = F_field(F_nic+i,nd,k) + F_field(        i,nd,k)
-         F_field(F_nic+  i,nd,k) = ZERO_8 
+            F_field(F_nic+1-i,nd,k) = F_field(    1-i,nd,k) + F_field(F_nic+1-i,nd,k)
+            F_field(      1-i,nd,k) = ZERO_8 
+            F_field(        i,nd,k) = F_field(F_nic+i,nd,k) + F_field(        i,nd,k)
+            F_field(F_nic+  i,nd,k) = ZERO_8 
          enddo
 *
 *        ADJ of
@@ -122,25 +124,25 @@
 *        enddo
 *        ----------------------------------------------------------------
          do i=F_nic,1,-1
-         j = Adw_iln(i)
+            j = Adw_iln(i)
 *
-         y_8  = Adw_lnr_8(i)
-         y1_8 = F_xg(j-1)
-         y2_8 = F_xg(j)
-         y3_8 = F_xg(j+1)
-         y4_8 = F_xg(j+2)
+            y_8  = Adw_lnr_8(i)
+            y1_8 = F_xg(j-1)
+            y2_8 = F_xg(j)
+            y3_8 = F_xg(j+1)
+            y4_8 = F_xg(j+2)
 *
-         e(j+2)    = F_field(i,nd,k) * delta( y_8, y4_8, y1_8, y2_8, y3_8 ) + e(j+2)
-         e(j+1)    = F_field(i,nd,k) * delta( y_8, y3_8, y1_8, y2_8, y4_8 ) + e(j+1)
-         e(j)      = F_field(i,nd,k) * delta( y_8, y2_8, y1_8, y3_8, y4_8 ) + e(j)
-         e(j-1)    = F_field(i,nd,k) * delta( y_8, y1_8, y2_8, y3_8, y4_8 ) + e(j-1)
-         F_field(i,nd,k) = ZERO_8 
+            e(j+2)    = F_field(i,nd,k) * delta( y_8, y4_8, y1_8, y2_8, y3_8 ) + e(j+2)
+            e(j+1)    = F_field(i,nd,k) * delta( y_8, y3_8, y1_8, y2_8, y4_8 ) + e(j+1)
+            e(j)      = F_field(i,nd,k) * delta( y_8, y2_8, y1_8, y3_8, y4_8 ) + e(j)
+            e(j-1)    = F_field(i,nd,k) * delta( y_8, y1_8, y2_8, y3_8, y4_8 ) + e(j-1)
+            F_field(i,nd,k) = ZERO_8 
 *
          enddo
 *
          do i=F_nic,1,-1
-         F_field(i,ns,k) = e(i) + F_field(i,ns,k)
-               e(i)      = ZERO_8 
+            F_field(i,ns,k) = e(i) + F_field(i,ns,k)
+                  e(i)      = ZERO_8 
          enddo
 *
          F_field(2,     ns, k) = e(m+1) + F_field(2,     ns, k)
@@ -151,6 +153,7 @@
          e(0)                  = ZERO_8 
 *     
       enddo
+!$omp enddo
 *
       return
       end

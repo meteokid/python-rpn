@@ -1,0 +1,44 @@
+C**S/R c_stop_coupling
+C=======================================================================
+C Author:
+C 
+C   Sophie Valcke -CERFACS - March 2005
+C
+*revision
+* v3_21 - Valcke S.   - initial MPI version
+C
+C Language:
+C
+C   Fortran 77
+C
+C Description:
+C
+C   Finalize coupling
+C   
+C Interface:
+C
+      SUBROUTINE c_stop_coupling ()
+C
+C Includes:
+C
+#include "impnone.cdk"
+#include <model_macros_f.h>
+#include "c_cplg.cdk"
+C
+C Input Arguments: NONE
+C
+C Local variables
+      INTEGER :: il_err
+C
+C===================================================================
+C
+*     Finalization the coupling
+*
+      IF ( C_coupling_L .and. C_cploasis_L) THEN
+          CALL prism_terminate_proto (il_err)
+          PRINT *, 'CPL- c_stop_coupling after prism_terminate_proto; error = ', il_err
+      ENDIF
+*
+      END SUBROUTINE c_stop_coupling
+
+ 

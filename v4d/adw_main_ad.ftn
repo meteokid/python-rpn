@@ -15,6 +15,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+* v3_21 - Tanguay M.        - Revision Openmp 
 *
 *language
 *     fortran 77
@@ -62,11 +63,13 @@
 ************************************************************************
 *     Zero adjoint variables
 *     ----------------------
+!$omp parallel do
       do n=1,nijkag
          u(n) = ZERO_8
          v(n) = ZERO_8
          w(n) = ZERO_8
       enddo
+!$omp end parallel do
 *
 *     ------------------
 *     TRAJECTORY (START)
@@ -93,6 +96,9 @@
       pnerr = VMM_GET_VAR(ycthm)
       pnerr = VMM_GET_VAR(zcthm)
 *
+!$omp parallel
+*
+!$omp do 
       do n=1,nijk
         xthm_1 (n) = xthm (n)
         ythm_1 (n) = ythm (n)
@@ -101,12 +107,17 @@
         ycthm_1(n) = ycthm(n)
         zcthm_1(n) = zcthm(n)
       enddo
+!$omp enddo 
 *
+!$omp do 
       do n=1,nijkag
          uwork(n) = um(n)
          vwork(n) = vm(n)
          wwork(n) = wm(n)
       enddo
+!$omp enddo 
+*
+!$omp end parallel
 *
       pnerr = vmmuld(-1,0)
 *
@@ -154,6 +165,9 @@
       pnerr = VMM_GET_VAR(ycthm)
       pnerr = VMM_GET_VAR(zcthm)
 *
+!$omp parallel
+*
+!$omp do
       do n=1,nijk
          xthm (n) = xthm_1 (n)
          ythm (n) = ythm_1 (n)
@@ -162,12 +176,17 @@
          ycthm(n) = ycthm_1(n)
          zcthm(n) = zcthm_1(n)
       enddo
+!$omp enddo
 *
+!$omp do
       do n=1,nijkag
          um(n) = uwork(n)
          vm(n) = vwork(n)
          wm(n) = wwork(n)
       enddo
+!$omp enddo
+*
+!$omp end parallel
 *
       pnerr = vmmuld(-1,0)
 *

@@ -18,6 +18,7 @@
 *revision
 * v2_00 - Lee V.            - initial MPI version (from prgen v1_03)
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Lee V.            - Output Optimization
 *
 *object
 *     see id section
@@ -39,29 +40,29 @@
 #include "glb_ld.cdk"
 *
 **
-      integer i, j, k, kk,pnk, pnkm, pnindex(l_ni,l_nj)
+      integer i, j, k, kk,pnk, pnkm, pnindex(l_ni)
       real    prlprso, prd, pre, prr, prfm0, prfm1, prfm2, prfm3, prfl2
+      real*8  invprd
 *
 *     ---------------------------------------------------------------
 *
+!$omp parallel private(i,k,kk,pnk,pnkm,pnindex,prlprso,
+!$omp$  prd,pre,prr,prfm0,prfm1,prfm2,prfm3,prfl2,invprd)
+!$omp do
+      do 600 j= 1, l_nj
       do 500 kk=1, Nkout
       prlprso = log(F_pres(kk))
 *
-      do j= 1, l_nj
       do i= 1, l_ni
-         pnindex(i,j) = 0
-      enddo
+         pnindex(i) = 0
       enddo
 *
       do k=1,l_nk
-      do j= 1, l_nj
       do i= 1, l_ni
-         if ( prlprso .gt. F_wlnph(i,j,k) ) pnindex(i,j) = k
-      enddo
+         if ( prlprso .gt. F_wlnph(i,j,k) ) pnindex(i) = k
       enddo
       enddo
 *
-      do j= 1, l_nj
       do i= 1, l_ni
 *********************************************************************
 *                                                                   *
@@ -71,7 +72,7 @@
 * Then:  upward extrapolation                                       *
 *                                                                   *
 *********************************************************************
-         if ( pnindex(i,j) .eq. 0 ) then
+         if ( pnindex(i) .eq. 0 ) then
 *
             prd = prlprso - F_wlnph(i,j,1)
 *
@@ -87,7 +88,7 @@
 * We put in F_out the value of F_in on the lowest level of the model*
 *                                                                   *
 *********************************************************************
-         else if (pnindex(i,j) .eq. l_nk ) then
+         else if (pnindex(i) .eq. l_nk ) then
 *
             F_out(i,j,kk)= F_in(i,j,l_nk)
 *********************************************************************
@@ -97,25 +98,27 @@
 *********************************************************************
 *
          else
-            pnk = pnindex(i,j) + 1
-            pnkm= pnindex(i,j)
+            pnk = pnindex(i) + 1
+            pnkm= pnindex(i)
 *
             prd = F_wlnph(i,j,pnk) - F_wlnph(i,j,pnkm)
+            invprd = prd
+            invprd = 1.0/invprd
 *     
             pre = prlprso - 0.5 * (F_wlnph(i,j,pnk) + F_wlnph(i,j,pnkm))
 *     
             prfm0 = 0.5 * ( F_in(i,j,pnk) + F_in(i,j,pnkm) )
 *     
-            prfm1 = ( F_in(i,j,pnk) - F_in(i,j,pnkm) ) / prd
+            prfm1 = ( F_in(i,j,pnk) - F_in(i,j,pnkm) ) * invprd
 *     
             if ( F_cubic_L ) then
 *     
-               prr = 0.125 * prd ** 2 - 0.5 * pre ** 2
+               prr = 0.125 * prd * prd - 0.5 * pre * pre
 *     
-               prfm2 = ( F_deriv(i,j,pnk) - F_deriv(i,j,pnkm) ) / prd
+               prfm2 = ( F_deriv(i,j,pnk) - F_deriv(i,j,pnkm) ) * invprd
 *     
                prfm3 = F_deriv(i,j,pnk) + F_deriv(i,j,pnkm)
-               prfm3 = ( prfm3 - prfm1 - prfm1 ) / ( prd ** 2 )
+               prfm3 = ( prfm3 - prfm1 - prfm1 ) * invprd *invprd
 *     
                prfl2 = prfm2 + 2.0 * pre * prfm3
 *     
@@ -130,11 +133,13 @@
          endif
 *
       end do
-      end do
 *
 *     ---------------------------------------------------------------
 *
  500  enddo
+ 600  enddo
+!$omp enddo
+!$omp end parallel
 
       return
       end

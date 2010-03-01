@@ -18,6 +18,7 @@
 *
 *revision
 * v2_00 - Lee V.            - initial MPI version (from verder v1_03)
+* v3_21 - Lee V.            - Output Optimization
 *
 *object
 *     See above id
@@ -43,14 +44,17 @@
       integer i, j, k
 *
 
-      do k=2,l_nk
+!$omp parallel
+!$omp do
       do j=F_j0,F_jn
+      do k=2,l_nk
       do i=F_i0,F_in
          F_der(i,j,k) =   ( F_infield (i,j,k) - F_infield (i,j,k-1) )
      %                  / ( F_wlnph(i,j,k) - F_wlnph(i,j,k-1) )
       end do
       end do
       end do
+!$omp enddo
 *
       do j=F_j0,F_jn
       do i=F_i0,F_in
@@ -59,8 +63,9 @@
       end do
 
 *
-      do k=2,l_nk-1
+!$omp do
       do j=F_j0,F_jn
+      do k=2,l_nk-1
       do i=F_i0,F_in
          F_der(i,j,k)=((F_wlnph(i,j,k+1)-F_wlnph(i,j,k))   * F_der(i,j,k)
      %                +(F_wlnph(i,j,k)  -F_wlnph(i,j,k-1)) * F_der(i,j,k+1))
@@ -68,7 +73,9 @@
       end do
       end do
       end do
+!$omp enddo
 *
+!$omp do
       do j=F_j0,F_jn
       do i=F_i0,F_in
         F_der(i,j,1)    =   F_con1 * F_der(i,j,1)
@@ -77,6 +84,8 @@
      %                    + (1.0 - F_con2) * F_der(i,j,l_nk-1)
       end do
       end do
+!$omp enddo
+!$omp end parallel
 *
       return
       end

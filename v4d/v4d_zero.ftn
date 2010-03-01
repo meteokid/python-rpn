@@ -15,6 +15,7 @@
 *                           - adapt for tracers in tr3d  
 * v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 * v3_11 - Tanguay M.        - ADJ of digital filter 
+* v3_21 - Lee V.            - removed Tr2d
 *
 *object
 *    see id section
@@ -32,7 +33,7 @@
 #include "vta.cdk"
 #include "rhsc.cdk"
 #include "orh.cdk"
-#include "tr2d.cdk"
+cvl#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "nest.cdk"
 #include "schm.cdk"
@@ -49,7 +50,7 @@
       pointer (patr,  tr (LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*)),
      $        (patrf, trf(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
 *
-      if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
+cvl   if ( Tr2d_ntr.ne.0 ) call gem_stop ('v4d_zero',-1)
 *
       if( Lun_debug_L ) then
          write(Lun_out,fmt='(/,''V4D_ZERO:Zero ALL model variables'')')

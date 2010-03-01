@@ -1,0 +1,12 @@
+***S/R prism_def_var_proto  - "Stub" for prism_def_var_proto
+*
+      subroutine prism_def_var_proto
+*
+*
+*auteur Sophie Valcke - RPN/CERFACS - May 2005: 
+*revision
+* v3_21 - Valcke S. - initial version
+*
+      return
+      end
+ 

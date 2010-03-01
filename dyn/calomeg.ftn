@@ -21,6 +21,7 @@
 * v2_00 - Lee V.            - initial MPI version (from calomeg v1_03)
 * v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
 * v3_20 - Gravel S.         - replaced geomg_pibb with geomg_dpba
+* v3_21 - Lee V.            - Output Optimization
 *
 *object
 *	compute vertical velocity in pressure coordinates
@@ -62,7 +63,15 @@
       real pr1, pr2
 *     __________________________________________________________________
 *
-      do k=2,l_nk
+!$omp do
+      do k=1,l_nk
+         if (k.eq.1) then
+         do j= F_j0, F_jn
+         do i= F_i0, F_in
+            F_omeg (i,j,k) = 0.
+         end do
+         end do
+         else
          pr1 = geomg_dpba(k) - geomg_pib(k)*geomg_dpia(k)/geomg_dpba(k)
          do j= F_j0, F_jn
          do i= F_i0, F_in
@@ -72,13 +81,9 @@
      %                      (1.+geomg_dpba(k)*pr2) / geomg_dpba(k)
         end do
         end do
+        endif
       end do
-*
-      do j= F_j0, F_jn
-      do i= F_i0, F_in
-         F_omeg (i,j,1) = 0.
-      end do
-      end do
+!$omp enddo
 *
 *     __________________________________________________________________
 *

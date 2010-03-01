@@ -23,6 +23,7 @@
 * v3_11 - Lee V.            - OpenMP for ADW_MAIN_3_INT_AD
 * v3_20 - Tanguay M.        - Tracers and basic fields in same OPENMP loop 
 *                           - Lagrange 3D
+* v3_21 - Tanguay M.        - Call adw_main_3_intlag_ad based on Adw_lag3d_L
 *
 *language
 *     fortran 77
@@ -55,7 +56,7 @@
 #include "rhsc.cdk"
 #include "v4dg.cdk"
 #include "adw.cdk"
-#include "tr2d.cdk"
+cvl#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
@@ -107,9 +108,14 @@
       real worx1(LDIST_SHAPE,l_nk),worx
       pointer (paworx,worx(LDIST_SHAPE,*))
 *
+      if ( Adw_lag3d_L ) then
+         call adw_main_3_intlag_ad ( F_u, F_v, F_w, F_um, F_vm, F_wm )
+         return
+      endif
+*
 *     ______________________________________________________
 *
-      if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_ad',-1)
+cvl   if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_ad',-1)
 *     ______________________________________________________
 *
 *

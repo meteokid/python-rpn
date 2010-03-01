@@ -15,6 +15,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *language
 *     fortran 77
@@ -102,6 +103,9 @@
 *     -----------------------
 *     Preserve TRAJ uthm vthm
 *     -----------------------
+!$omp parallel 
+*
+!$omp do
       do k= 1,l_nk
       do j= l_miny,l_maxy
       do i= l_minx,l_maxx
@@ -110,10 +114,12 @@
       enddo
       enddo
       enddo
+!$omp enddo
 *
 *     ----------------------------------------------
 *     Preserve TRAJ xthm ythm zthm xcthm ycthm zcthm
 *     ----------------------------------------------
+!$omp do
       do n= 1,l_ni*l_nj*l_nk
          wxthm (n) = xthm (n)
          wythm (n) = ythm (n)
@@ -122,6 +128,9 @@
          wycthm(n) = ycthm(n)
          wzcthm(n) = zcthm(n)
       enddo
+!$omp enddo
+*
+!$omp end parallel
 *
       pnerr = vmmuld(-1,0)
 *
@@ -160,20 +169,25 @@
             err = vmmget(key1m (n),patrm, trm)
             err = vmmget(key0m (n),patr0m,tr0m)
             err = vmmget(keyorm(n),paorm, orm)
-            do k=1,G_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               tr0m(i,j,k) = - aaa_8*trm(i,j,k)
-            end do
-            end do
-            end do
+*
+!$omp parallel do 
             do k=1,l_nk
-            do j=1,l_nj
-            do i=1,l_ni
-            orm(i,j,k) = tr0m(i,j,k)
+*
+              do j=1,l_nj
+              do i=1,l_ni
+                 tr0m(i,j,k) = - aaa_8*trm(i,j,k)
+              end do
+              end do
+*
+              do j=1,l_nj
+              do i=1,l_ni
+                 orm(i,j,k) = tr0m(i,j,k)
+              end do
+              end do
+*
             end do
-            end do
-            end do
+!$omp end parallel do  
+*
          end do
          err = vmmuld(key1m, Tr3d_ntr)
          err = vmmuld(key0m, Tr3d_ntr)
@@ -233,6 +247,7 @@
 *     --------------------------
 *     Preserve in ORH for PRE_AD
 *     --------------------------
+!$omp parallel do  
       do k=1,l_nk
       do j=l_miny,l_maxy
       do i=l_minx,l_maxx
@@ -241,12 +256,16 @@
       end do
       end do
       end do
+!$omp end parallel do  
 *
       if( V4dr_redotr_L ) then
+*
+!$omp parallel  
 *
 *     --------------------
 *     Reset TRAJ uthm vthm
 *     --------------------
+!$omp do  
       do k= 1,l_nk
       do j= l_miny,l_maxy
       do i= l_minx,l_maxx
@@ -255,10 +274,12 @@
       enddo
       enddo
       enddo
+!$omp enddo  
 *
 *     -------------------------------------------
 *     Reset TRAJ xthm ythm zthm xcthm ycthm zcthm
 *     -------------------------------------------
+!$omp do  
       do n= 1,l_ni*l_nj*l_nk
          xthm (n) = wxthm (n) 
          ythm (n) = wythm (n) 
@@ -267,6 +288,9 @@
          ycthm(n) = wycthm(n) 
          zcthm(n) = wzcthm(n) 
       enddo
+!$omp enddo  
+*
+!$omp end parallel  
 *
       endif
 *

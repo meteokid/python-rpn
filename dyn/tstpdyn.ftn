@@ -19,6 +19,7 @@
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
+* v3_21 - Desgagne M.       - introduce new timing routines
 *
 *object
 *    
@@ -70,9 +71,9 @@
 *
       endif
 *
-      call tmg_start ( 3, 'RHS' )
+      call tmg_start0 ( 3, 'RHS      ' )
       call rhs ()
-      call tmg_stop (3)
+      call tmg_stop0 (3)
 *
       if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
 *
@@ -86,13 +87,13 @@
 *
       endif
 *
-      call tmg_start ( 4, 'ADW' )
+      call tmg_start0 ( 4, 'ADW      ' )
       call adw_main ( F_fnitraj )
-      call tmg_stop (4)
+      call tmg_stop0  (4)
 *
-      call tmg_start ( 5, 'PRE' )
+      call tmg_start0 ( 5, 'PRE      ' )
       call pre ()
-      call tmg_stop (5)
+      call tmg_stop0 (5)
 *
       if ( Orh_icn.eq.1 ) call frstgss( )
 *
@@ -126,13 +127,13 @@
 *
          endif
 *
-         call tmg_start ( 6, 'NLI' )
+         call tmg_start0 ( 6, 'NLI      ' )
          call nli ()
-         call tmg_stop (6)
+         call tmg_stop0 (6)
 *
-         call tmg_start ( 7, 'SOL' )
+         call tmg_start0 ( 7, 'SOL      ' )
          call sol_main ()
-         call tmg_stop (7)
+         call tmg_stop0 (7)
 *
          if ( V4dg_conf.ne.0 .and. V4dg_oktr_L .and. .not.V4dr_redotr_L  ) then
 *
@@ -143,9 +144,9 @@
 *
          endif
 *
-         call tmg_start ( 8, 'BAC' )
+         call tmg_start0 ( 8, 'BAC      ' )
          call bac ( iln, Schm_itnlh )
-         call tmg_stop (8)
+         call tmg_stop0 (8)
 *
  100  continue
 *

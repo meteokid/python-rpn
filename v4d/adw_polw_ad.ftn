@@ -17,6 +17,7 @@
 *
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *language
 *     fortran 77
@@ -81,38 +82,41 @@
 *
 *     ADJ
 *     ---
+!$omp do
       do k = 1,F_nk
 *
-      do i = F_halox,1,-1
-         F_v(F_nic+1-i,F_j,k) = F_v(1-i,    F_j,k) + F_v(F_nic+1-i,F_j,k)
-         F_v(1-i,      F_j,k) = ZERO_8
-         F_u(F_nic+1-i,F_j,k) = F_u(1-i,    F_j,k) + F_u(F_nic+1-i,F_j,k)
-         F_u(1-i,      F_j,k) = ZERO_8
-         F_v(i,        F_j,k) = F_v(F_nic+i,F_j,k) + F_v(i,        F_j,k)
-         F_v(F_nic+i,  F_j,k) = ZERO_8
-         F_u(i,        F_j,k) = F_u(F_nic+i,F_j,k) + F_u(i,        F_j,k)
-         F_u(F_nic+i,  F_j,k) = ZERO_8
-      enddo
+         do i = F_halox,1,-1
+            F_v(F_nic+1-i,F_j,k) = F_v(1-i,    F_j,k) + F_v(F_nic+1-i,F_j,k)
+            F_v(1-i,      F_j,k) = ZERO_8
+            F_u(F_nic+1-i,F_j,k) = F_u(1-i,    F_j,k) + F_u(F_nic+1-i,F_j,k)
+            F_u(1-i,      F_j,k) = ZERO_8
+            F_v(i,        F_j,k) = F_v(F_nic+i,F_j,k) + F_v(i,        F_j,k)
+            F_v(F_nic+i,  F_j,k) = ZERO_8
+            F_u(i,        F_j,k) = F_u(F_nic+i,F_j,k) + F_u(i,        F_j,k)
+            F_u(F_nic+i,  F_j,k) = ZERO_8
+         enddo
 *
-      do i=F_nic,1,-1
-      vx_8        = coef1_8 * dble(F_v(i,F_j,k)) * F_cx_8(i) + vx_8
-      vy_8        = coef2_8 * dble(F_v(i,F_j,k)) * F_sx_8(i) + vy_8
-      F_v(i,F_j,k)= ZERO_8
-      vx_8        =           dble(F_u(i,F_j,k)) * F_sx_8(i) + vx_8
-      vy_8        =           dble(F_u(i,F_j,k)) * F_cx_8(i) + vy_8
-      F_u(i,F_j,k)= ZERO_8
-      enddo
+         do i=F_nic,1,-1
+            vx_8        = coef1_8 * dble(F_v(i,F_j,k)) * F_cx_8(i) + vx_8
+            vy_8        = coef2_8 * dble(F_v(i,F_j,k)) * F_sx_8(i) + vy_8
+            F_v(i,F_j,k)= ZERO_8
+            vx_8        =           dble(F_u(i,F_j,k)) * F_sx_8(i) + vx_8
+            vy_8        =           dble(F_u(i,F_j,k)) * F_cx_8(i) + vy_8
+            F_u(i,F_j,k)= ZERO_8
+         enddo
 *
-      do i=F_nic,1,-1
-        F_u(i,j,k) = F_wx_8(i) * (               F_cx_8(i) * vy_8 ) + F_u(i,j,k)
-        F_v(i,j,k) = F_wx_8(i) * ( - F_sx_8(i) * F_sy_8(j) * vy_8 ) + F_v(i,j,k)
-        F_u(i,j,k) = F_wx_8(i) * (               F_sx_8(i) * vx_8 ) + F_u(i,j,k)
-        F_v(i,j,k) = F_wx_8(i) * (   F_cx_8(i) * F_sy_8(j) * vx_8 ) + F_v(i,j,k)
-      enddo
-      vx_8 = ZERO_8
-      vy_8 = ZERO_8
+         do i=F_nic,1,-1
+            F_u(i,j,k) = F_wx_8(i) * (               F_cx_8(i) * vy_8 ) + F_u(i,j,k)
+            F_v(i,j,k) = F_wx_8(i) * ( - F_sx_8(i) * F_sy_8(j) * vy_8 ) + F_v(i,j,k)
+            F_u(i,j,k) = F_wx_8(i) * (               F_sx_8(i) * vx_8 ) + F_u(i,j,k)
+            F_v(i,j,k) = F_wx_8(i) * (   F_cx_8(i) * F_sy_8(j) * vx_8 ) + F_v(i,j,k)
+         enddo
+*
+         vx_8 = ZERO_8
+         vy_8 = ZERO_8
 *
       enddo
+!$omp enddo
 *
       return
       end

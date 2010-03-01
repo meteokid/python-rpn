@@ -20,6 +20,7 @@
 *
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *object
 *     see id section
@@ -57,9 +58,12 @@
                    if(Lun_debug_L) write (Lun_out,*) 'ARRAY TRINCORE TOO SMALL'
                    call gefstop ('v4d_rwfld')
                 endif
+*
+!$omp parallel do
                 do ind = 1,Ni*Nj*Nk
                   V4dg_trincore(F_addr + ind - 1) = F_field(ind)
                 enddo
+!$omp end parallel do
 *
              elseif(F_iun.eq.V4dg_iunfr) then
 *
@@ -67,9 +71,12 @@
                    if(Lun_debug_L) write (Lun_out,*) 'ARRAY FRINCORE TOO SMALL'
                    call gefstop ('v4d_rwfld')
                 endif
+*
+!$omp parallel do
                 do ind = 1,Ni*Nj*Nk
                   V4dg_frincore(F_addr + ind - 1) = F_field(ind)
                 enddo
+!$omp end parallel do
 *
              elseif(F_iun.eq.V4dg_iunob) then
 *
@@ -77,9 +84,12 @@
                    if(Lun_debug_L) write (Lun_out,*) 'ARRAY OBINCORE TOO SMALL'
                    call gefstop ('v4d_rwfld')
                 endif
+*
+!$omp parallel do
                 do ind = 1,Ni*Nj*Nk
                   V4dg_obincore(F_addr + ind - 1) = F_field(ind)
                 enddo
+!$omp end parallel do
 *
              endif
 *
@@ -107,21 +117,27 @@
 *
              if(F_iun.eq.V4dg_iuntr) then
 *
+!$omp parallel do
                 do ind = 1,Ni*Nj*Nk
                   F_field(ind) = V4dg_trincore(F_addr + ind - 1)
                 enddo
+!$omp end parallel do
 *
              elseif(F_iun.eq.V4dg_iunfr) then
 *
+!$omp parallel do
                 do ind = 1,Ni*Nj*Nk
                   F_field(ind) = V4dg_frincore(F_addr + ind - 1)
                 enddo
+!$omp end parallel do
 *
              elseif(F_iun.eq.V4dg_iunob) then
 *
+!$omp parallel do
                 do ind = 1,Ni*Nj*Nk
                   F_field(ind) = V4dg_obincore(F_addr + ind - 1)
                 enddo
+!$omp end parallel do
 *
              endif
 *

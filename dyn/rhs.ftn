@@ -15,6 +15,7 @@
 * v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
 * v2_31 - Desgagne M.       - remove treatment of hut1 and qct1
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Desgagne M.       - Revision Openmp
 *
 *object
 ***********************************************************************
@@ -232,6 +233,8 @@
 *
       else
 
+!$omp parallel
+!$omp do 
          do k=1,l_nk
          do j= 1, l_nj 
          do i= 1, l_ni
@@ -242,8 +245,9 @@
          end do
          end do
          end do
-
+!$omp enddo
          if (.not. Schm_hydro_L) then
+!$omp do 
             do k=1,l_nk
             do j= 1, l_nj 
             do i= 1, l_ni
@@ -252,7 +256,9 @@
             end do
             end do
             end do
+!$omp enddo
          endif
+!$omp end parallel
 *
       endif
 *

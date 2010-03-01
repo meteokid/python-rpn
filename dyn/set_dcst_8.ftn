@@ -1,0 +1,67 @@
+copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
+***function set_dcst_8 - initializes geophysical constants
+*
+      logical function set_dcst_8 ( val, liste, nbre, proc, numproc )
+      implicit none
+*
+      integer nbre,proc,numproc
+      character * (*) liste(nbre)
+      real*8 val(nbre)
+*
+*author
+*     M. Desgagne July 2005
+*
+      integer i, ier, ierrmpi, flag(nbre)
+      real*8 rdval
+      external RPN_COMM_bcst_x
+*
+*     ---------------------------------------------------------------
+*
+      if (proc.eq.0) write (6,1000)
+*
+      flag = 0
+*
+      i=1
+      if (proc.eq.0) then
+         call constnt (rdval,ier,liste(i),100)
+         rdval = 0.4d0
+         call constnt (rdval,ier,'KARMAN',103)
+         write(6,100)
+         write(6,102) 'THE VALUE OF THE CONSTANT KARMAN HAS BEEN'
+         write(6,102) '                          ------         '
+         write(6,103) 'CHANGED TO ', rdval,'   IN S/R set_dcst_8'
+         write(6,100)
+      endif
+*
+      if (numproc.gt.1) 
+     $   call constnt_x (rdval,ier,liste(i),4,RPN_COMM_bcst_x,
+     $                                          8,0,0,ierrmpi)
+*
+      do i=1,nbre
+         call constnt (val(i),flag(i),liste(i),100)
+      end do
+*
+      set_dcst_8  = .true.
+*
+      do i=1,nbre
+         if (flag(i).eq.1) then
+            if (proc.eq.0) write (6,1005) liste(i),val(i)
+         else            
+            if (proc.eq.0) write (6,1006) liste(i)
+            set_dcst_8  = .false.
+         endif
+      end do
+*
+  100 format (1x,52('*'))
+  102 format (1x,'*',4x,A,5x,'*')
+  103 format (1x,'*',4x,A,F4.2,A,11x,'*')
+ 1000 format (
+     +      /,'INITIALIZATION OF PHYSICAL CONSTANTS: (S/R SET_DCST_8)',
+     +      /,'======================================================')
+ 1005 format (1x,"THE VALUE OF",1x,a10,2x,"=",1x,e21.12)
+ 1006 format (" WARNING ==> THE CONSTANT ",a10," DOES NOT EXIST.")
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

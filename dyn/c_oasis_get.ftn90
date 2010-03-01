@@ -1,0 +1,12 @@
+!**S/R c_oasis_get - "Stub" for c_oasis_get
+!
+     subroutine c_oasis_get
+!
+!
+!auteur Sophie Valcke - RPN/CERFACS - May 2005: 
+!revision
+! v3_21 - Valcke S. - initial version
+!
+     return
+     end
+ 

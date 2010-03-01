@@ -17,6 +17,7 @@
 * v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L 
 * v3_01 - Tanguay M.        - add V4dg_sgvc_L 
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_21 - Valcke, S.        - add oasis coupling termination
 *
 *object
 *	
@@ -85,6 +86,10 @@
 *
 *C       3.    Job termination
 *              ---------------
+*
+*C    Finalize coupling (nothing is done if no coupling)
+*     -----------------
+      call c_stop_coupling()
 *
       call set_term()
 *

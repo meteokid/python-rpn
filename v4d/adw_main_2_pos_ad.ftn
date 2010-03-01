@@ -22,6 +22,7 @@
 *                           - AIXport+Opti+OpenMP for TLM-ADJ
 * v3_20 - Tanguay M.        - Optimized SETINT/TRILIN
 *                           - ADJ of Change test a lower and upper boundaries
+* v3_21 - Tanguay M.        - Call adw_main_2_pos_noset_ad based on Adw_nosetint_L
 *
 *language
 *     fortran 77
@@ -131,6 +132,11 @@
      %     wuthm(Adw_nit*Adw_njt*l_nk),
      %     wvthm(Adw_nit*Adw_njt*l_nk),
      %     wwthm(Adw_nit*Adw_njt*l_nk)
+*
+      if ( Adw_nosetint_L ) then
+         call adw_main_2_pos_noset_ad ( F_it, F_u, F_v, F_w, F_um, F_vm, F_wm )
+         return
+      endif
 *
       if (Lun_debug_L) write (Lun_out,1000)
 *

@@ -14,6 +14,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *REVISION
 * v3_20 - Lee V.            -  initial GEMDM version
+* v3_21 - Lee V.            -  bugfix for LAM output
 *
 *
 *OBJECT
@@ -65,7 +66,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       if (Obus_top.le.0) return
 *     setup of ip3 and modifs to label
 *
-      call tmg_start(67, 'OUT_PHY')
+      call tmg_start0(67, 'OUT_PHY  ')
       ip3=0
       etikadd_S = ' '
       ext_S=""
@@ -88,7 +89,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       endif
 *     setup of filename extension if needed
       if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
-     $     ((stepno.ge.(Init_dfnp-1)/2)) )
+     $     ((stepno.gt.(Init_dfnp-1)/2)) )
      $       ext_S = '_dgf'
 
 *########## REGULAR OUTPUT #######################################
@@ -100,11 +101,17 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          periodx_L=.false.
          if (.not.G_lam .and. (Grid_x1(Outp_grid(kk))-Grid_x0(Outp_grid(kk))+1).eq. G_ni ) periodx_L= .true.
          ig1 = Grid_ig1(outp_grid(kk))
-         if (G_lam) ig1=Grid_ig1(outp_grid(kk))+100
             grille_x0 = max( 1+Lam_pil_w - p_nmp, Grid_x0(outp_grid(kk)) )
             grille_x1 = min( Grid_x1(outp_grid(kk)), G_ni - Lam_pil_e + p_nmp )
             grille_y0 = max( 1+Lam_pil_s - p_nmp,Grid_y0(outp_grid(kk)) )
             grille_y1 = min( Grid_y1(outp_grid(kk)), G_nj - Lam_pil_n + p_nmp )
+            if (G_lam .and. 
+     $                 ( grille_x0.ne.Grid_x0(outp_grid(kk)).or.
+     $                   grille_x1.ne.Grid_x1(outp_grid(kk)).or.
+     $                   grille_y0.ne.Grid_y0(outp_grid(kk)).or.
+     $                   grille_y1.ne.Grid_y1(outp_grid(kk)) ) )
+     $                   ig1=Grid_ig1(outp_grid(kk))+100
+
             call out_sgrid(grille_x0,grille_x1,grille_y0,grille_y1,
      $                   periodx_L,
      $                   ig1,Grid_ig2(outp_grid(kk)),
@@ -171,7 +178,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          endif
 *
   100 continue
-      call tmg_stop (67, 'OUT_PHY')
+      call tmg_stop0(67)
 *
 *----------------------------------------------------------------------
       return

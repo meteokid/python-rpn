@@ -11,6 +11,7 @@
 *revision
 * v2_21 - Desgagne M.       - initial version
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Lee V.            - collect errors while searching geophy fields
 *
 *implicites
 #include "e_fu.cdk"
@@ -19,6 +20,7 @@
 #include "e_cdate.cdk"
 #include "hgc.cdk"
 #include "e_schm.cdk"
+#include "e_geoerr.cdk"
 *
 **
       integer e_rdhint3,e_moclim2
@@ -28,13 +30,11 @@
       character*8 etk,typ,interp,seq,dum
       logical anyip
       integer ivar, im, i, longueur, unf, indx, ip1, ip2, iniv
-      integer, dimension(:),allocatable :: err
 *
 *----------------------------------------------------------------------
 *
-      allocate ( err(p_bgeo_top) )
       do ivar = 1, p_bgeo_top
-         err(ivar) = -1
+         e_geoerr(ivar) = -1
       end do
 *
 *     Loop on variables in geobus 
@@ -64,9 +64,9 @@
                   if (geopar(ivar,3).gt.1) 
      $                 call convip ( ip1, real(im), 3, 1, dum, .false. )
                   indx = geopar(ivar,1) + (im-1)*nifi*njfi
-                  err(ivar) = e_rdhint3(geobus(indx),dstf_gid,nifi,njfi,
+                  e_geoerr(ivar) = e_rdhint3(geobus(indx),dstf_gid,nifi,njfi,
      $                 nv,ip1,ip2,-1,etk,typ,anyip,.false.,interp,unf,6)
-                  if (err(ivar).lt.0) then
+                  if (e_geoerr(ivar).lt.0) then
                      seq = seq(2:longueur(seq))
                      iniv = im 
                      goto 670
@@ -78,25 +78,24 @@
                   if (geopar(ivar,3).gt.1) 
      $                 call convip ( ip1, real(im), 3, 1, dum, .false. )
                   indx = geopar(ivar,1) + (im-1)*nifi*njfi
-                  err(ivar) =  e_moclim2 (geobus(indx),nifi,njfi,nv,
+                  e_geoerr(ivar) =  e_moclim2 (geobus(indx),nifi,njfi,nv,
      $                           ip1,-1,month, day,' ',' ',dstf_gid,
      $                                         interp,e_fu_climat,6)
                end do
             endif
          else
-            err(ivar) = 0
+            e_geoerr(ivar) = 0
          endif
       end do
 *
       e_intgeo = .true.
       do ivar = 1, p_bgeo_top
-         if (err(ivar).lt.0) then
+         if (e_geoerr(ivar).lt.0) then
             if (.not.e_Schm_offline_L) e_intgeo = .false.
             write (6,1005) geonm(ivar,2)
          endif
       end do
 *
-      deallocate (err)
 *
  1000 format (/' PROCESSING EVERY ELEMENT IN GEOBUS:')
  1001 format (/'====>',' Processing ',a4,4a8,' <====')

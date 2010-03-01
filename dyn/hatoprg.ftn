@@ -2,13 +2,12 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine hatoprg (F_gg, F_ff, F_w1, F_con, F_hz_8, DIST_DIM,Nk)
+      subroutine hatoprg ( F_gg, F_ff, F_con, F_hz_8, ng, Nk )
 *
 #include "impnone.cdk"
 *
-      integer DIST_DIM, Nk
-      real F_gg(DIST_SHAPE,Nk),F_ff(DIST_SHAPE,Nk),F_w1(DIST_SHAPE,2), 
-     $     F_con
+      integer ng, Nk
+      real F_gg(ng,Nk),F_ff(ng,Nk),F_con
       real*8  F_hz_8(Nk)
 *
 *author
@@ -17,6 +16,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version (from hatoprg v1_03)
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_21 - Desgagne M.       - Revision OpenMP
 *
 *object  DOWNWARD vertical integration 
 *
@@ -29,7 +29,6 @@
 *----------------------------------------------------------------
 *  F_gg        O          resulting vertical integration
 *  F_ff        I          input field to be integrated  
-*  F_w1                   work field
 *  F_con       I          mutiplication coefficient 
 *  F_hz_8      I          intervals in z-direction
 *----------------------------------------------------------------
@@ -37,38 +36,41 @@
 *implicits 
 #include "glb_ld.cdk"
 *
-      integer i, j, k
-      real*8  ccc 
+      integer i, k
+      real*8 wk(G_nk-1),r
 *
-*notes
-*     The computation is done by horizontal slices 
 **
 *     __________________________________________________________________
 *
-      do j= 1, l_nj
-      do i= 1, l_ni 
-         F_w1(i,j,1) = 0.0
-      end do
-      end do
-
-      do 100 k=G_nk-1,1,-1
-
-         ccc = .5*F_con*F_hz_8(k)
-         do j= 1, l_nj
-         do i= 1, l_ni 
-            F_w1(i,j,2) = ccc*( F_ff(i,j,k+1) + F_ff(i,j,k) )
-            F_gg(i,j,k+1) = F_w1(i,j,1)
-            F_w1(i,j,1) = F_w1(i,j,1) + F_w1(i,j,2)
+      wk(:  ) = .5*F_con*F_hz_8(:)
+*
+*mdmdmdmd real r,rtmp
+c      do i= 1, ng
+c         r = 0.0
+c         do k=G_nk-1,1,-1
+c            F_gg(i,k+1) = r
+c            rtmp = wk(k) * ( F_ff(i,k+1) + F_ff(i,k) )
+c            r = r + rtmp
+c         end do
+c         F_gg(i,1) = r
+c      end do
+*
+!$omp do
+      do i= 1, ng
+*
+         r=0.
+         do k= G_nk-1, 1, -1
+*
+           F_gg(i,k+1) = r
+           r = r + wk(k)*( F_ff(i,k+1) + F_ff(i,k) )
+*
          end do
-         end do
-
-100   continue
-
-      do j= 1, l_nj 
-      do i= 1, l_ni 
-         F_gg(i,j,1) = F_w1(i,j,1)
+         F_gg(i,1) = r
+*
       end do
-      end do
-
+!$omp enddo
+*
+*     __________________________________________________________________
+*
       return
       end

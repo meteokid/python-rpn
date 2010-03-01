@@ -24,6 +24,7 @@
 * v3_02 - Tanguay M.        - ADJ of Eigv_parity_L done
 * v3_03 - Tanguay M.        - Adjoint Lam configuration 
 * v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+* v3_21 - Tanguay M.        - Revision Openmp
 *
 *object
 *     see id section
@@ -57,9 +58,11 @@
 *
 *     Zero adjoint variables
 *     ----------------------
-      do k=1,(maxy-miny+1)*(trp_12smax-trp_12smin+1)*G_ni
-      abpt(k) = ZERO_8
-      enddo
+      if (.not.Fft_fast_L.and.Eigv_parity_L) then
+         do k=1,(maxy-miny+1)*(trp_12smax-trp_12smin+1)*G_ni
+            abpt(k) = ZERO_8
+         enddo
+      endif
 *
 * Calculate length of working vector without pilot region
       Gni=G_ni-Lam_pil_w-Lam_pil_e
@@ -84,29 +87,44 @@
 *     ADJ of
 *     inverse projection
 *
-!$omp parallel 
+!$omp parallel
 !$omp do
-      do k=1,G_nk
-      do k0=1,G_nk
       do j=1+pil_s,Nj-pil_n
-      do i=1+pil_w,Ni-pil_e
-         F_w2_8(i,j,k) = con(k)*F_sol_8(i,j,k0)*Opr_zevec_8((k-1)*G_nk+k0)
-     %                   + F_w2_8(i,j,k)
-      enddo
-      enddo
-      enddo
+         call dgemm('N','N', (ni-pil_w-pil_e), G_nk, G_nk, 1.0D0,
+     $              F_sol_8(1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1),
+     $              Opr_zevec_8,g_nk,0.0d0,
+     $              F_w2_8 (1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1))
+*
+         F_w1_8(1+pil_w:Ni-pil_e,j,G_nk) =
+     $                  con(G_nk)*F_w2_8(1+pil_w:Ni-pil_e,j,G_nk) + F_w1_8(1+pil_w:Ni-pil_e,j,G_nk)
+         F_w2_8(1+pil_w:Ni-pil_e,j,G_nk) = ZERO_8 
       enddo
 !$omp enddo
-*
-!$omp do
-      do j=1+pil_s,Nj-pil_n
-      do i=1+pil_w,Ni-pil_e
-         F_w1_8(i,j,G_nk) = F_w2_8(i,j,G_nk) + F_w1_8(i,j,G_nk)
-         F_w2_8(i,j,G_nk) = ZERO_8 
-      end do
-      end do
-!$omp end do
 !$omp end parallel
+*
+c!$omp parallel 
+c!$omp do
+c      do k=1,G_nk
+c      do k0=1,G_nk
+c      do j=1+pil_s,Nj-pil_n
+c      do i=1+pil_w,Ni-pil_e
+c         F_w2_8(i,j,k) = con(k)*F_sol_8(i,j,k0)*Opr_zevec_8((k-1)*G_nk+k0)
+c     %                   + F_w2_8(i,j,k)
+c      enddo
+c      enddo
+c      enddo
+c      enddo
+c!$omp enddo
+c*
+c!$omp do
+c      do j=1+pil_s,Nj-pil_n
+c      do i=1+pil_w,Ni-pil_e
+c         F_w1_8(i,j,G_nk) = F_w2_8(i,j,G_nk) + F_w1_8(i,j,G_nk)
+c         F_w2_8(i,j,G_nk) = ZERO_8 
+c      end do
+c      end do
+c!$omp end do
+c!$omp end parallel
 *
       if (Fft_fast_L) then
          if (G_lam) then
@@ -155,45 +173,60 @@
 *
       endif
 *
-!$omp parallel private(offi, offj)
+!$omp parallel
 *
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 *
 !$omp do
-      do k = 1, Schm_nith
-      do j = 1+pil_s, Nj-pil_n 
-      do i = 1+pil_w, Ni-pil_e 
-         F_w1_8(i,j,k) = Opr_opsxp0_8(G_ni+offi+i) *
-     $                   Opr_opsyp0_8(G_nj+offj+j) * F_w1_8(i,j,k)
-      enddo
-      enddo
-      enddo
-!$omp enddo
-*    
-!$omp do
-         do k0=1,G_nk
-         do k=1,G_nk
-         do j=1+pil_s,Nj-pil_n
-         do i=1+pil_w,Ni-pil_e
-            F_rhs_8(i,j,k0)=F_w1_8(i,j,k)*Opr_zevec_8((k-1)*G_nk+k0)+F_rhs_8(i,j,k0)
-         enddo
-         enddo
-         enddo
-         enddo
+      do j=1+pil_s,Nj-pil_n
+         do k=1,Schm_nith
+            do i = 1+pil_w, Ni-pil_e
+               F_w1_8(i,j,k)= Opr_opsxp0_8(G_ni+offi+i) *
+     $                        Opr_opsyp0_8(G_nj+offj+j) * F_w1_8(i,j,k)
+            enddo
+         end do
+         call dgemm('N','T', (ni-pil_w-pil_e), G_nk, G_nk, 1.0D0,
+     $              F_w1_8 (1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1),
+     $              Opr_zevec_8,g_nk,0.0d0,
+     $              F_rhs_8(1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1))
+      end do
 !$omp enddo
 *
-!$omp do
-      do 101 k=1,G_nk
-         do j=1,Nj
-         do i=1,Ni
-            F_sol_8(i,j,k) = ZERO_8 
-            F_w1_8 (i,j,k) = ZERO_8 
-            F_w2_8 (i,j,k) = ZERO_8 
-         enddo
-         enddo
-101   continue
-!$omp enddo
+c!$omp do
+c      do k = 1, Schm_nith
+c      do j = 1+pil_s, Nj-pil_n 
+c      do i = 1+pil_w, Ni-pil_e 
+c         F_w1_8(i,j,k) = Opr_opsxp0_8(G_ni+offi+i) *
+c     $                   Opr_opsyp0_8(G_nj+offj+j) * F_w1_8(i,j,k)
+c      enddo
+c      enddo
+c      enddo
+c!$omp enddo
+*    
+c!$omp do
+c         do k0=1,G_nk
+c         do k=1,G_nk
+c         do j=1+pil_s,Nj-pil_n
+c         do i=1+pil_w,Ni-pil_e
+c            F_rhs_8(i,j,k0)=F_w1_8(i,j,k)*Opr_zevec_8((k-1)*G_nk+k0)+F_rhs_8(i,j,k0)
+c         enddo
+c         enddo
+c         enddo
+c         enddo
+c!$omp enddo
+*
+c!$omp do
+c      do 101 k=1,G_nk
+c         do j=1,Nj
+c         do i=1,Ni
+c            F_sol_8(i,j,k) = ZERO_8 
+c            F_w1_8 (i,j,k) = ZERO_8 
+c            F_w2_8 (i,j,k) = ZERO_8 
+c         enddo
+c         enddo
+c101   continue
+c!$omp enddo
 *
 !$omp end parallel
 *

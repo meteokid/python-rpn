@@ -12,6 +12,8 @@
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
 * v3_11 - Tanguay M.        - modify evaluation of Ind_pip
+* v3_21 - Tanguay M.        - Revision Openmp 
+*                           - do filtering at t=0 in v4d_predat
 *
 *object
 *     see id section
@@ -34,6 +36,7 @@
 #include "indm.cdk"
 #include "lctl.cdk"
 #include "v4dg.cdk"
+#include "hzd.cdk"
 *
       integer i, j, k
       real pr1, pr2
@@ -47,10 +50,13 @@
 *     -------------------------------------------------------------
       if(Schm_hydro_L) call v4d_vtap_tl ()
 *
+!$omp parallel
+*
       if(.not.Schm_hydro_L) then
 *
 *           Compute phi from phi'
 *           ---------------------
+!$omp do 
             do k= 1, G_nk
             do j= 1, l_nj
             do i= 1, l_ni
@@ -67,11 +73,13 @@
             end do
             end do
             end do
+!$omp end do 
 *
       endif
 *
 *     Compute T from T'
 *     -----------------
+!$omp do 
       do k= 1, G_nk
       do j= 1, l_nj
       do i= 1, l_ni
@@ -87,9 +95,11 @@
       end do
       end do
       end do
+!$omp end do 
 *
 *     Compute q
 *     ---------
+!$omp do 
       do k= 1, G_nk
       do j= 1, l_nj
       do i= 1, l_ni
@@ -106,26 +116,14 @@
       end do
       end do
       end do
+!$omp end do 
 *
 *     Compute pi'
 *     -----------
-      do k= 2, G_nk
-      do j= 1, l_nj
-      do i= 1, l_ni
+!$omp do 
+      do k= 1, G_nk
 *
-*        TRAJECTORY
-*        ----------
-         Indm_pipm(i,j,k) = Geomg_pia(k)+Geomg_pib(k)*exp(Indm_sm(i,j))
-     %                      - Geomg_z_8(k)
-*
-*        TLM
-*        ---
-         Ind_pip(i,j,k) = Geomg_pib(k)*exp(Indm_sm(i,j))*Ind_s(i,j)
-*
-      end do
-      end do
-      end do
-*
+      if (k.eq.1) then
       do j= 1, l_nj
       do i= 1, l_ni
 *
@@ -140,9 +138,31 @@
       end do
       end do
 *
+      else
+*
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+*        TRAJECTORY
+*        ----------
+         Indm_pipm(i,j,k) = Geomg_pia(k)+Geomg_pib(k)*exp(Indm_sm(i,j))
+     %                      - Geomg_z_8(k)
+*
+*        TLM
+*        ---
+         Ind_pip(i,j,k) = Geomg_pib(k)*exp(Indm_sm(i,j))*Ind_s(i,j)
+*
+      end do
+      end do
+      endif
+*
+      end do
+!$omp end do 
+*
 *     Compute P and T'
 *                    lin
 *     ------------------
+!$omp do 
       do k= 1, G_nk
          pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * Geomg_pib(k) / Geomg_z_8(k)
          pr2 = Cstv_tstr_8*(Geomg_pib(k)/Geomg_z_8(k) - Geomg_dpib(k))
@@ -182,13 +202,26 @@
          end do
          end do
       end do
+!$omp end do 
+*
+!$omp end parallel 
+*
+*     TRAJECTORY
+*     ----------
+      if (Hzd_t1_0_L) call hzd_hoffld (Indm_um,   LDIST_DIM, G_nk, 1)
+      if (Hzd_t1_0_L) call hzd_hoffld (Indm_vm,   LDIST_DIM, G_nk, 2)
+      if (Hzd_t1_0_L) call hzd_hoffld (Indm_psdm, LDIST_DIM, G_nk, 3)
+*
+*     TLM
+*     ---
+      if (Hzd_t1_1_L) call hzd_hoffld (Ind_u,   LDIST_DIM, G_nk, 1)
+      if (Hzd_t1_1_L) call hzd_hoffld (Ind_v,   LDIST_DIM, G_nk, 2)
+      if (Hzd_t1_1_L) call hzd_hoffld (Ind_psd, LDIST_DIM, G_nk, 3)
 *
 *     TRAJECTORY
 *     ----------
       if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_tr
 *
-*     TLM
-*     ---
       if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img
 *
 *     Exchange the haloes for computing derivatives

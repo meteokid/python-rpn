@@ -14,6 +14,8 @@
 * v3_12 _ Plante A.              - added P_cond_pcptype_s
 * v3_12 _ Bilodeau B.            - replaced P_cond_kfctrig by P_cond_kfctrig4
 * v3_20 _ Leduc/Bilodeau         - added P_pbl_z0tlat and removed P_pbl_z0tcst
+* v3_20 _ Talbot D.              - Added P_pbl_tdiaglim_L
+* v3_20 _ Leduc A-M.             - added P_rad_tsflxir_L
 *
 ***comdeck p_nml.cdk
 *
@@ -44,7 +46,7 @@
 *
      $     P_rad_schm_s   ,P_rad_knt      , P_rad_fomic_L ,
      $     P_rad_ftp_s    ,P_rad_nivl     , P_rad_qco2    ,
-     $     P_rad_filter_L,
+     $     P_rad_filter_L, P_rad_tsflxir_L,
 *
      $     P_clim_clima_L ,P_clim_ininc_L , P_str_strato_L,
 *
@@ -61,7 +63,7 @@
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
      $     P_pbl_mix_s    ,P_pbl_dumpbus  ,
      $     P_pbl_as       ,P_pbl_beta     ,P_pbl_z0tlat   ,
-     $     P_pbl_zua      ,P_pbl_zta      ,
+     $     P_pbl_zua      ,P_pbl_zta      ,P_pbl_tdiaglim_L,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
@@ -96,6 +98,7 @@
 *
      $     P_rad_schm_s   ,P_rad_knt      , P_rad_fomic_L ,
      $     P_rad_ftp_s    ,P_rad_qco2     , P_rad_filter_L,
+     $     P_rad_tsflxir_L,
 *
      $     P_clim_clima_L ,P_clim_ininc_L , P_str_strato_L,
 *
@@ -112,6 +115,7 @@
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
      $     P_pbl_mix_s    ,P_pbl_z0tlat   ,P_pbl_zua      ,
      $     P_pbl_as       ,P_pbl_beta     ,P_pbl_zta      ,
+     $     P_pbl_tdiaglim_L,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,

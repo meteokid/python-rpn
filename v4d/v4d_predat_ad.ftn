@@ -12,6 +12,8 @@
 *revision
 * v3_03 - Tanguay M.        - initial MPI version
 * v3_11 - Tanguay M.        - modify evaluation of Ind_pip
+* v3_21 - Tanguay M.        - Revision Openmp 
+*                           - do filtering at t=0 in v4d_predat
 *
 *object
 *     see id section
@@ -34,6 +36,7 @@
 #include "indm.cdk"
 #include "lctl.cdk"
 #include "v4dg.cdk"
+#include "hzd.cdk"
 *
       integer i, j, k
       real pr1, pr2
@@ -54,11 +57,13 @@
 *     -------------------------------------------------------------
       if(Schm_hydro_L) call v4d_vtap_tr ()
 *
+!$omp parallel
 *
       if(.not.Schm_hydro_L) then
 *
 *           Compute phi from phi'
 *           ---------------------
+!$omp do 
             do k= 1, G_nk
             do j= 1, l_nj
             do i= 1, l_ni
@@ -69,11 +74,13 @@
             end do
             end do
             end do
+!$omp end do 
 *
       endif
 *
 *     Compute T from T'
 *     -----------------
+!$omp do 
       do k= 1, G_nk
       do j= 1, l_nj
       do i= 1, l_ni
@@ -83,9 +90,11 @@
       end do
       end do
       end do
+!$omp end do 
 *
 *     Compute q
 *     ---------
+!$omp do 
       do k= 1, G_nk
       do j= 1, l_nj
       do i= 1, l_ni
@@ -95,18 +104,14 @@
       end do
       end do
       end do
+!$omp end do 
 *
 *     Compute pi'
 *     -----------
-      do k= 2, G_nk
-      do j= 1, l_nj
-      do i= 1, l_ni
+!$omp do 
+      do k= 1, G_nk
 *
-         Indm_pipm(i,j,k) = exp(Indm_qm(i,j,k)) - Geomg_z_8(k)
-*
-      end do
-      end do
-      end do
+      if(k.eq.1) then
 *
       do j= 1, l_nj
       do i= 1, l_ni
@@ -116,9 +121,25 @@
       end do
       end do
 *
+      else
+*
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         Indm_pipm(i,j,k) = exp(Indm_qm(i,j,k)) - Geomg_z_8(k)
+*
+      end do
+      end do
+*
+      endif
+*
+      end do
+!$omp end do 
+*  
 *     Compute P and T'
 *                    lin
 *     ------------------
+!$omp do 
       do k= 1, G_nk
          pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * Geomg_pib(k) / Geomg_z_8(k)
          pr2 = Cstv_tstr_8*(Geomg_pib(k)/Geomg_z_8(k) - Geomg_dpib(k))
@@ -136,6 +157,13 @@
          end do
          end do
       end do
+!$omp end do 
+*
+!$omp end parallel 
+*
+      if (Hzd_t1_0_L) call hzd_hoffld (Indm_psdm, LDIST_DIM, G_nk, 3)
+      if (Hzd_t1_0_L) call hzd_hoffld (Indm_vm,   LDIST_DIM, G_nk, 2)
+      if (Hzd_t1_0_L) call hzd_hoffld (Indm_um,   LDIST_DIM, G_nk, 1)
 *
       if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_tr
 *
@@ -171,6 +199,7 @@
          end do
          end do
          end do
+*
       endif
 *
 *     ADJ of
@@ -198,13 +227,31 @@
 *     ---
       if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_ad
 *
+      if (Hzd_t1_1_L) call hzd_hoffld_ad (Ind_psd, LDIST_DIM, G_nk, 3)
+      if (Hzd_t1_1_L) call hzd_hoffld_ad (Ind_v,   LDIST_DIM, G_nk, 2)
+      if (Hzd_t1_1_L) call hzd_hoffld_ad (Ind_u,   LDIST_DIM, G_nk, 1)
+*
 *     ----------------
 *     START TRAJECTORY
 *     ----------------
 *
+!$omp parallel
+*
 *     Recover pipt1m as in V4D_PREDAT_TL
 *     ----------------------------------
-      do k=2,G_nk
+!$omp do 
+      do k=1,G_nk
+*
+      if(k.eq.1) then
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+      wpipt1m(i,j,1) = 0.
+*
+      end do
+      end do
+*
+      else
       do j= 1, l_nj
       do i= 1, l_ni
 *
@@ -213,15 +260,10 @@
 *
       end do
       end do
-      end do
-*
-      do j= 1, l_nj
-      do i= 1, l_ni
-*
-      wpipt1m(i,j,1) = 0.
+      endif
 *
       end do
-      end do
+!$omp end do 
 *
 *     ----------------
 *     END TRAJECTORY
@@ -231,10 +273,11 @@
 *     Compute P and T'
 *                    lin
 *     ------------------
+!$omp do 
+      do j= 1,l_nj
       do k=G_nk,1,-1
          pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * Geomg_pib(k) / Geomg_z_8(k)
          pr2 = Cstv_tstr_8*(Geomg_pib(k)/Geomg_z_8(k) - Geomg_dpib(k))
-      do j= 1,l_nj
       do i= 1,l_ni
 *
 *        ADJ
@@ -264,14 +307,16 @@
          Ind_s  (i,j)   = pr1 * Ind_gp(i,j,k) + Ind_s  (i,j)
          Ind_gp (i,j,k) = ZERO_8
 *
+         end do
+         end do
       end do
-      end do
-      end do
+!$omp end do 
 *
 *     ADJ of
 *     Compute pi'
 *     -----------
 *
+!$omp do 
       do j= 1, l_nj
       do i= 1, l_ni
 *
@@ -279,9 +324,11 @@
 *
       end do
       end do
+!$omp end do 
 *
-      do k=2,G_nk
+!$omp do 
       do j= 1, l_nj
+      do k=2,G_nk
       do i= 1, l_ni
 *
          Ind_s  (i,j)   = Geomg_pib(k)*exp(Indm_sm(i,j))* Ind_pip(i,j,k) + Ind_s(i,j)
@@ -290,12 +337,14 @@
       end do
       end do
       end do
+!$omp end do 
 *
 *     ADJ of
 *     Compute q
 *     ---------
-      do k=G_nk,1,-1
+!$omp do 
       do j= 1, l_nj
+      do k=G_nk,1,-1
       do i= 1, l_ni
 *
          Ind_s(i,j)   = ( Geomg_pib(k)*exp(Indm_sm(i,j))*Ind_q(i,j,k)   )/
@@ -306,10 +355,12 @@
       end do
       end do
       end do
+!$omp end do 
 *
 *     ADJ of
 *     Compute T from T'
 *     -----------------
+!$omp do 
       do k=1,G_nk
       do j= 1, l_nj
       do i= 1, l_ni
@@ -320,13 +371,14 @@
       end do
       end do
       end do
-*
+!$omp end do 
 *
       if(.not.Schm_hydro_L) then
 *
 *           ADJ of
 *           Compute phi from phi'
 *           ---------------------
+!$omp do 
             do k= 1, G_nk
             do j= 1, l_nj
             do i= 1, l_ni
@@ -337,8 +389,11 @@
             end do
             end do
             end do
+!$omp end do 
 *
       endif
+*
+!$omp end parallel 
 *
 *     ADJ of
 *     -------------------------------------------------------------

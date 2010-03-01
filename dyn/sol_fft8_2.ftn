@@ -56,11 +56,13 @@
       parameter( zero = 0.0 )
       parameter( one  = 1.0 )
 *
-c     call tmg_start(88,'sol_fft total')
+      call tmg_start0 (45, 'TRP_1    ' )
       call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                         Minz, Maxz, Nk, fdwfft, 1, 2 )
+      call tmg_stop0(45)
 
 *     projection ( wfft = x transposed * g )
+      call tmg_start0 (46, 'SOL_4    ' )
 !$omp parallel private(ki0,kin,kkii,jr) 
 !$omp%          shared(kitotal,kilon,ai,bi,ci)
 !$omp do
@@ -106,9 +108,11 @@ c    %                                     1, (Maxy-Miny+1) * Nkl, -1 )
 
 *
 !$omp single
+      call tmg_start0 (47, 'TRP_2    ' )
       call rpn_comm_transpose
      $     ( fdwfft(1,1,2), Miny, Maxy, Gnj, (Maxz-Minz+1),
      $                         Minij, Maxij, Gni, fdg2, 2, 2 )
+      call tmg_stop0(47)
 !$omp end single
 *
       kitotal = (Maxz-Minz+1)*L_nij
@@ -142,9 +146,11 @@ c    %                                     1, (Maxy-Miny+1) * Nkl, -1 )
 !$omp enddo
 *
 !$omp single
+      call tmg_start0 (48, 'TRP_3    ' )
       call rpn_comm_transpose
      $     ( fdwfft(1,1,2), Miny, Maxy, Gnj, (Maxz-Minz+1),
      $                        Minij, Maxij, Gni, fdg2,- 2, 2 )
+      call tmg_stop0(48)
 !$omp end single
 
 !$omp do
@@ -166,11 +172,14 @@ c    %                                     1, (Maxy-Miny+1) * Nkl, -1 )
       enddo
 !$omp enddo
 !$omp end parallel
+      call tmg_stop0(46)
 c     call ffft8( fdwfft, (Maxy-Miny+1) * (Maxz-Minz+1), 1,
 c    %                                    (Maxy-Miny+1) * Nkl, +1 )
 *
+      call tmg_start0 (49, 'TRP_4    ' )
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1),
      %                              Minz, Maxz, Nk, fdwfft, -1, 2 )
-c     call tmg_stop(88)
+      call tmg_stop0(49)
+*
       return
       end

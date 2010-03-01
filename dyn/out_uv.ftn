@@ -27,6 +27,7 @@
 * v3_00 - Tanguay M.        - true winds adjoint
 * v3_03 - Tanguay M.        - introduce V4dg_imguv_L 
 * v3_20 - Lee V.            - output in block topology, standard file
+* v3_21 - Lee V.            - Output Optimization
 *
 *object
 *     output the wind images or wind components or wind module.
@@ -49,23 +50,26 @@
 #include "level.cdk"
 #include "outd.cdk"
 #include "v4dg.cdk"
+#include "lctl.cdk"
 *
 *modules
 *
 **
       integer i,j,k,ii,jj,jjj,kk
       integer pnerr, psum
+      integer :: lastdt = -1
       real prprlvl(F_nko)
-      integer i0,in,j0,jn,gridi,grido
+      integer i0,in,j0,jn,i0v,inv,j0v,jnv,gridi,grido
       logical fla,flb
-      real*8 cu_8(l_nj),cv_8(l_nj),c1_8
+      real*8 cu_8(l_nj),cv_8(l_nj),c1_8(l_nj)
       real uv(minx:maxx,miny:maxy,G_nk)
       real uv_pres(minx:maxx,miny:maxy,F_nko)
       real uu_pres(minx:maxx,miny:maxy,F_nko)
       real vv_pres(minx:maxx,miny:maxy,F_nko)
-      real uu(minx:maxx,miny:maxy,G_nk), vv(minx:maxx,miny:maxy,G_nk)
       real t3(minx:maxx,miny:maxy,G_nk), t4(minx:maxx,miny:maxy,G_nk)
       real uu_temp,vv_temp
+      real, dimension(:,:,:), pointer :: uu,vv
+      save lastdt,uu,vv
       pointer (pauu, uu_temp(minx:maxx,miny:maxy,G_nk) )
       pointer (pavv, vv_temp(minx:maxx,miny:maxy,G_nk) ) 
 * ___________________________________________________________________
@@ -105,6 +109,10 @@
       enddo
       psum=pnuu+pnuv+pnvv
       if (psum.eq.0)return
+      If (lastdt .eq. -1) then
+          allocate ( uu(minx:maxx,miny:maxy,G_nk) )
+          allocate ( vv(minx:maxx,miny:maxy,G_nk) )
+      endif
 *_______________________________________________________________________
 *
 *     Output of derived winds on Phi grid
@@ -116,6 +124,7 @@
 *
 *     Transfer u,v in t3,t4 if not specific 4D-Var case   
 *     -------------------------------------------------
+      if (lastdt .ne. Lctl_step) then
       fla = V4dg_ad_L.and.V4dg_imguv_L
       flb = ( (V4dg_di_L.or.V4dg_tl_L) .and. .not.V4dg_imguv_L ) 
      $            .or. V4dg_ad_L
@@ -147,94 +156,82 @@
 *     5.0     Compute real wind from image wind
 *_______________________________________________________________________
 *     Horizontal interpolation of image winds into PHI output grid.
-      grido = 0
-      gridi = 1
-      call uv_acg2g (uu,uu_temp,gridi,grido,LDIST_DIM,l_nk,i0,in,j0,jn)
+*
+      do j= 1, l_nj
+         c1_8(j) = Dcst_rayt_8 / geomg_cy_8(j)
+      end do
+*
+!$omp parallel
+*
+      call uv_acg2g (uu,uu_temp,1,0,LDIST_DIM,l_nk,i0 ,in ,j0 ,jn )
+      call uv_acg2g (vv,vv_temp,2,0,LDIST_DIM,l_nk,i0v,inv,j0v,jnv)
 *
 *     Borders need to be filled for LAM configuration
-*
-      if (G_lam) then
-         do i=1,i0-1
-         do k=1,G_nk
-         do j=1,l_nj
-            uu(i,j,k)=uu(i0,j,k)
-         enddo
-         enddo      
-         enddo     
-         do i=in+1,l_ni
-         do k=1,G_nk
-         do j=1,l_nj
-            uu(i,j,k)=uu(in,j,k)
-         enddo
-         enddo
-         enddo
-         do j=1,j0-1
-         do k=1,G_nk
-         do i=1,l_ni
-            uu(i,j,k)=uu(i,j0,k)
-         enddo
-         enddo      
-         enddo     
-         do j=jn+1,l_nj
-         do k=1,G_nk
-         do i=1,l_ni
-            uu(i,j,k)=uu(i,jn,k)
-         enddo
-         enddo
-         enddo
-      endif
-*
-      gridi = 2
-      call uv_acg2g (vv,vv_temp,gridi,grido,LDIST_DIM,l_nk,i0,in,j0,jn)
-*
-*     Borders need to be filled for LAM configuration
-*
-      if (G_lam) then
-         do i=1,i0-1
-         do k=1,G_nk
-         do j=1,l_nj
-            vv(i,j,k)=vv(i0,j,k)
-         enddo
-         enddo      
-         enddo     
-         do i=in+1,l_ni
-         do k=1,G_nk
-         do j=1,l_nj
-            vv(i,j,k)=vv(in,j,k)
-         enddo
-         enddo
-         enddo
-         do j=1,j0-1
-         do k=1,G_nk
-         do i=1,l_ni
-            vv(i,j,k)=vv(i,j0,k)
-         enddo
-         enddo      
-         enddo     
-         do j=jn+1,l_nj
-         do k=1,G_nk
-         do i=1,l_ni
-            vv(i,j,k)=vv(i,jn,k)
-         enddo
-         enddo
-         enddo
-      endif
-
 *     Compute real wind components from wind images.
+*
+!$omp do
+      do k=1,G_nk
+         if (G_lam) then
+            do i=1,i0-1
+            do j=1,l_nj
+               uu(i,j,k)=uu(i0,j,k)
+            enddo
+            enddo      
+            do i=in+1,l_ni
+            do j=1,l_nj
+               uu(i,j,k)=uu(in,j,k)
+            enddo
+            enddo
+            do j=1,j0-1
+            do i=1,l_ni
+               uu(i,j,k)=uu(i,j0,k)
+            enddo
+            enddo     
+            do j=jn+1,l_nj
+            do i=1,l_ni
+               uu(i,j,k)=uu(i,jn,k)
+            enddo
+            enddo
+            do i=1,i0v-1
+            do j=1,l_nj
+               vv(i,j,k)=vv(i0v,j,k)
+            enddo
+            enddo     
+            do i=inv+1,l_ni
+            do j=1,l_nj
+               vv(i,j,k)=vv(inv,j,k)
+            enddo
+            enddo
+            do j=1,j0v-1
+            do i=1,l_ni
+               vv(i,j,k)=vv(i,j0v,k)
+            enddo
+            enddo      
+            do j=jnv+1,l_nj
+            do i=1,l_ni
+               vv(i,j,k)=vv(i,jnv,k)
+            enddo
+            enddo
+         endif
+         do j= 1, l_nj
+         do i= 1, l_ni
+            uu(i,j,k) = c1_8(j) * uu(i,j,k)
+            vv(i,j,k) = c1_8(j) * vv(i,j,k)
+         end do
+         end do
+      enddo
+!$omp enddo
+*
+!$omp end parallel
+*
+      endif
+*
+      lastdt = Lctl_step
+*
       i0 = 1
       in = l_ni
       j0 = 1
       jn = l_nj
-*
-      do j= j0, jn 
-         c1_8 = Dcst_rayt_8 / geomg_cy_8(j)
-         do k=  1, l_nk
-         do i= i0, in
-            uu(i,j,k) = c1_8 * uu(i,j,k)
-            vv(i,j,k) = c1_8 * vv(i,j,k)
-         end do
-         end do
-      end do
 *
       if (F_levtyp_S .eq. 'M') then
 *_______________________________________________________________________

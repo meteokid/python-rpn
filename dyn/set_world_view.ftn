@@ -23,6 +23,7 @@
 * v3_03 - Desgagne M.       - new procedure for call to set_dcst8
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Lee V.            - place output in local PE directory
+* v3_21 - Desgagne M.       - using RMNLIB to access constants
 *
 *object
 *
@@ -47,10 +48,9 @@
 #include "pilot.cdk"
 *
 *modules
-      logical  check_parti
-      integer  longueur, hybref_to_ig, set_dcst8, gnthread,
-     %         RPN_COMM_bloc
-      external set_world_view1,set_dcst8,check_parti,
+      logical  check_parti,set_dcst_8
+      integer  longueur, hybref_to_ig, gnthread, RPN_COMM_bloc
+      external set_world_view1,set_dcst_8,check_parti,
      %         longueur,hybref_to_ig,gnthread,
      %         RPN_COMM_bloc
 **
@@ -103,8 +103,8 @@ c     These variables are for OpenMp compilation
       call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc,
      $                      n1,n2,n3,n4,n5,n6,n7,Ptopo_mybloc,
      $                      Ptopo_myblocx,Ptopo_myblocy,Ptopo_blocme,dumc1_S )
-      call tmg_init ( Ptopo_myproc, 'GEMDM' )
-      call tmg_start ( 1, 'GEMDM' ) 
+      call tmg_init0  ( Ptopo_myproc, 'GEMDM' )
+      call tmg_start0 ( 1, 'GEMDM' ) 
 *
 *     fst2000 ip1 encoding 
       if ((Level_ip12000_L).and.(Ptopo_myproc.gt.0))
@@ -118,11 +118,10 @@ c     These variables are for OpenMp compilation
 *     Initializing physical constants
 *
       cte_ok = 0
-      if ( Lun_out.gt.0 )
-     $    cte_ok = set_dcst8 (Dcst_cpd_8,liste_S,cnbre,lun_cte,lun_out)
-      call gem_stop ('set_dcst8',cte_ok)
-      call RPN_COMM_bcast ( Dcst_cpd_8,cnbre,"MPI_DOUBLE_PRECISION",
-     $                                                0,"grid",ierr)
+      if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre,
+     $                      Ptopo_myproc,Ptopo_numproc ) ) 
+     $     cte_ok=-1
+      call gem_stop ('set_dcst_8',cte_ok)
 *
 *     Running script Um_hook.sh
 *

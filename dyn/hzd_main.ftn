@@ -19,6 +19,7 @@
 * v3_02 - Desgagne M.       - correction for non-hydrostatic version
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_20 - Tanguay M.        - Introduce Hzd_hzdmain_n_L
+* v3_21 - Desgagne M.       - added explicit horiz diff.
 *
 *object
 *	
@@ -38,18 +39,23 @@
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "p_geof.cdk"
-c#include "nest.cdk"
+#include "grd.cdk"
 #include "lctl.cdk"
 *
 *modules
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
+      character*8 Hzd_type
       integer err, nlod, key1(20), i, j, k
       real*8  ONE_8, bbb_8, eta_8
       parameter( ONE_8 = 1. )
 **
 *     _________________________________________________________________
+*
+c      Hzd_type='EXPLICIT'
+      Hzd_type='IMPLICIT'
+      if(.not.G_lam) Hzd_type='IMPLICIT'
 *
       if ((.not.Hzd_fact_L).and.(.not.Hzd_ho_L).or..not.Hzd_hzdmain_0_L) then
          if (Lun_debug_L) write(Lun_out,1001)
@@ -117,8 +123,10 @@ c#include "nest.cdk"
      %                   LDIST_DIM, G_nk)
       endif
 *
-c     call tmg_start(81,'hzd_ho')
       if (Hzd_ho_L) then
+         if (Hzd_type.eq.'EXPLICIT') then
+            call hzd_exhrdif ( ut1 , vt1 , psdt1, tdt1, LDIST_DIM, G_nk)
+         else
          if (Fft_fast_L) then
 *           use FFT in diffusion-solver
             if (G_lam) then
@@ -146,10 +154,8 @@ c     call tmg_start(81,'hzd_ho')
      %                    LDIST_DIM, G_nk)
             endif
          endif
+         endif
       endif
-c     call tmg_stop(81)
-
-
 
       if ((Hzd_fact_L.and.Cstv_phidf_8.gt.0.).or.(Hzd_ho_L)) then
 *

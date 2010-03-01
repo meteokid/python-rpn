@@ -2,14 +2,14 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine initw2 ( F_wt1, F_uu, F_vv, F_psd, F_fi, F_tt, 
-     $                                          F_ss, DIST_DIM )
+      subroutine initw2 ( F_wt1, F_mul, F_mu, F_uu, F_vv, F_psd, F_fi, 
+     $                                           F_tt, F_ss, DIST_DIM )
       implicit none
 *
       integer DIST_DIM
       real  F_wt1(DIST_SHAPE,*),F_ss (DIST_SHAPE  ),F_uu (DIST_SHAPE,*),
      $      F_vv (DIST_SHAPE,*),F_psd(DIST_SHAPE,*),F_fi (DIST_SHAPE,*),
-     $      F_tt (DIST_SHAPE,*)
+     $      F_tt (DIST_SHAPE,*),F_mul(DIST_SHAPE,*),F_mu (DIST_SHAPE,*)
 *
 *author 
 *     S. Edouard - november 2001 - hybrid version
@@ -17,6 +17,7 @@
 *revisions
 * v2_31 - Edouard S.        - initial version
 * v3_02 - Edouard S.        - correct a bug
+* v3_21 - Desgagne M.       - OpenMP optimization
 *
 *object 
 *     compute the vertical wind diagonostically in the hybrid coordinate 
@@ -73,38 +74,19 @@
 #include "schm.cdk"
 *
 *modules
-      integer i, j, k, j0, jn, in1, in2, jn1, jn2
+      integer i, j, k, j0, jn, in1, in2, jn1, jn2, ng
       real   wk1 (DIST_SHAPE,G_nk), wk2 (DIST_SHAPE,G_nk),
      $       wk3 (DIST_SHAPE,G_nk), wk4 (DIST_SHAPE,G_nk)
 **
 *     __________________________________________________________________
 *
-      do k = 1,G_nk 
-      do j = l_miny, l_maxy
-      do i = l_minx, l_maxx
-         wk1(i,j,k) = 0.
-         wk2(i,j,k) = 0.
-         wk3(i,j,k) = 0.
-         wk4(i,j,k) = 0.
-      end do
-      end do
-      end do
+      call rpn_comm_xch_halo ( F_fi, LDIST_DIM, l_ni, l_nj, G_nk, 
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
       in1= l_ni
       in2= l_niu
       jn1= l_nj
       jn2= l_njv
-*
-      if ( Schm_theoc_L ) then
-         do k = 1, G_nk
-         do j = 1, jn1
-         do i = 1, in1
-            F_wt1(i,j,k) = 0.0
-         end do
-         end do
-         end do
-         return
-      endif
 *
 ****************************************************
 * TERM1: HORIZONTAL ADVECTION OF GEOGRAPHIC HEIGHT *
@@ -112,10 +94,16 @@
 *
 *     Gradient of geopotential 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~
-      call rpn_comm_xch_halo ( F_fi, LDIST_DIM, l_ni, l_nj, G_nk, 
-     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp parallel
 *
-      do k = 1, G_nk 
+!$omp do
+      do k = 1, G_nk
+         F_mul(:,:,k) = 0.
+         F_mu (:,:,k) = 0.
+         wk1  (:,:,k) = 0.
+         wk2  (:,:,k) = 0.
+         wk3  (:,:,k) = 0.
+         wk4  (:,:,k) = 0.
          do j = 1, jn1
          do i = 1, in2
             wk1(i,j,k) = ( F_fi(i+1,j,k) - F_fi(i,j,k) ) / geomg_hx_8(i)
@@ -129,14 +117,18 @@
          end do
          end do
       end do
+!$omp enddo
 *
 *     Interpolate from staggered grids to basic grid
 *
+!$omp single
       call rpn_comm_xch_halo ( wk1, LDIST_DIM, l_niu,l_nj,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo ( wk2, LDIST_DIM, l_ni,l_njv,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
 *
+!$omp do
       do k = 1, G_nk
          do j = 1, jn1
          do i = 1, in2
@@ -147,11 +139,13 @@
          end do
          end do
       end do
+!$omp enddo
 *
       j0 = 1
       jn = l_njv
       if (l_south) j0 = 3
       if (l_north) jn = l_njv - 1      
+!$omp do
       do k=1,G_nk
          do j = j0, jn
          do i =  1, in1
@@ -179,28 +173,27 @@
      $                        + inuvl_wyvy3_8(jn+1,3) * wk2(i,jn+1,k)
             end do
          endif
+         do j = 1, jn1
+         do i = 1, in1
+            F_wt1(i,j,k) = ( wk3(i,j,k) + wk1(i,j,k) ) / geomg_cy2_8(j) 
+              wk1(i,j,k) = 1 + geomg_dpib(k) * (exp(F_ss(i,j)) - 1.0)
+         end do
+         end do
       end do
+!$omp enddo
 *
-*     Metric adjustment for physical advection 
-*
-      do k = 1, G_nk
-      do j = 1, jn1
-      do i = 1, in1
-         F_wt1(i,j,k) = ( wk3(i,j,k) + wk1(i,j,k) ) / geomg_cy2_8(j) 
-           wk1(i,j,k) = 1 + geomg_dpib(k) * (exp(F_ss(i,j)) - 1.0)
-      end do
-      end do
-      end do
-* 
 *********
 * TERM2 *
 *********
 *
 *     Prepare key factors of TERM2 
 *
+!$omp single
       call rpn_comm_xch_halo ( wk1, LDIST_DIM,l_ni,l_nj,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
 *
+!$omp do
       do k=1,G_nk
          do j = 1, jn1
          do i = 1, in1
@@ -215,18 +208,28 @@
          end do
          end do
       end do
+!$omp enddo
 *
+!$omp single
       call rpn_comm_xch_halo ( wk3, LDIST_DIM, l_niu,l_nj,G_nk,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo ( wk4, LDIST_DIM, l_ni,l_njv,G_nk,
      $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
 *
-      call caldiv_2 ( wk2, wk3, wk4, LDIST_DIM, G_nk )
+!$omp do
+      do k=1,G_nk
+         call caldiv_2 ( wk2(minx,miny,k), wk3(minx,miny,k), 
+     $                   wk4(minx,miny,k), LDIST_DIM, 1 )
+      end do
+!$omp enddo
 *
 *     Vertical integration over pi*
 *
-      call hatoprg ( wk4, wk2, wk3, 1.0, geomg_hz_8, LDIST_DIM,G_nk )
+      ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      call hatoprg (wk4,wk2,1.0,geomg_hz_8,ng,G_nk)
 *
+!$omp do
       do k = 1, G_nk
       do j = 1, jn1
       do i = 1, in1
@@ -238,7 +241,10 @@
       end do
       end do
       end do
-*     __________________________________________________________________
+!$omp enddo
+* 
+!$omp end parallel
+*   __________________________________________________________________
 *
       return 
       end

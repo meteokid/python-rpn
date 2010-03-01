@@ -10,6 +10,7 @@
 *
 *revision
 * v2_31 - Desgagne M.       - initial version
+* v3_21 - Lee V.            - remove Tr2d
 *
 *object
 *
@@ -17,7 +18,6 @@
 *
 *implicits
 #include "lun.cdk"
-#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "busind.cdk"
 *
@@ -59,30 +59,11 @@
          hucond = tr3d_ntr
       endif
 *
-      do 20 i=1,Tr2d_userntr
-*
-* Is user tracers already in Tr2d stack?
-         do k=1,tr2d_ntr
-            if (Tr2d_name_S(k).eq.Tr2d_username_S(i)) then
-               Tr2d_sval(k) = Tr2d_usersval(i)
-               goto 20
-            endif
-         end do
-*
-* Otherwise add user tracer to Tr2d stack
-         tr2d_ntr = tr2d_ntr + 1
-         Tr2d_name_S(tr2d_ntr) = Tr2d_username_S(i)
-         Tr2d_sval  (tr2d_ntr) = Tr2d_usersval  (i)
- 20   continue
 
       if (Lun_out.gt.0) then
          write (Lun_out,1001) 'TRACERS (3D storage):'
          do i=1,tr3d_ntr
             write (Lun_out,1002) Tr3d_name_S(i),Tr3d_sval(i),i
-         end do
-         write (Lun_out,1001) 'TRACERS (2D-slice storage):'
-         do i=1,tr2d_ntr
-            write (Lun_out,1002) Tr2d_name_S(i),Tr2d_sval(i),i
          end do
       endif
 *

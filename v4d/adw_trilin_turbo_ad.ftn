@@ -24,6 +24,7 @@
 *
 *revision
 * v3_20 - Tanguay M. -  initial version
+* v3_21 - Tanguay M. -  OPENMP based on min-max vertical CFL 
 *
 *object
 *     see id section
@@ -53,10 +54,11 @@
 *implicits
 #include "glb_ld.cdk"
 #include "adw.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+#include "v4dcfl.cdk"
 ************************************************************************
-      integer n,nn,n0,nijag,o1,o2,i,j,k,nij,kilon,mm,ki0,kin
-*
-      real psum(Adw_nit*Adw_njt*l_nk,4)
+      integer n,nn,n0,nijag,o1,o2,i,j,k,nij,shift
 *
       integer ii,jj,kk
       real*8 rri, rrj, rrk
@@ -67,36 +69,88 @@
       real*8 prf1m_8,prf2m_8,prf3m_8,prf4m_8,prf1m_y_8,prf2m_y_8
 *
       real*8, parameter :: ZERO_8 = 0.0
+*
+      logical done_L
+      data done_L /.false./
+      save done_L
+      integer cflp(Ptopo_numproc),cfln(Ptopo_numproc),iproc,err
+*
 *     ------------------------------------------------------------------ 
 *
+      if(.not.done_L) then
+*
+*        Evaluate min-max vertical CFL
+*        -----------------------------
+         V4dcfl_p0 = V4dcfl_p(1)
+         V4dcfl_n0 = V4dcfl_n(1)
+         do k=2,l_nk
+            if (V4dcfl_p(k).gt.V4dcfl_p0) then
+                V4dcfl_p0 = V4dcfl_p(k)
+            endif
+            if (V4dcfl_n(k).lt.V4dcfl_n0) then
+                V4dcfl_n0 = V4dcfl_n(k)
+            endif
+         enddo
+*
+         call RPN_COMM_gather (V4dcfl_p0,1,"MPI_INTEGER",cflp,1,
+     $                         "MPI_INTEGER",0,"GRID", err)
+         call RPN_COMM_gather (V4dcfl_n0,1,"MPI_INTEGER",cfln,1,
+     $                         "MPI_INTEGER",0,"GRID", err)
+*
+         if (Ptopo_myproc.eq.0) then
+*
+            V4dcfl_p0 = cflp(1)
+            V4dcfl_n0 = cfln(1)
+            do iproc = 2, Ptopo_numproc
+               if (cflp(iproc).gt.V4dcfl_p0) 
+     %             V4dcfl_p0 = cflp(iproc) 
+               if (cfln(iproc).lt.V4dcfl_n0) 
+     %             V4dcfl_n0 = cfln(iproc) 
+            end do
+*
+         endif
+*
+         call RPN_COMM_bcast(V4dcfl_p0,1,"MPI_INTEGER",0,"grid",err )
+         call RPN_COMM_bcast(V4dcfl_n0,1,"MPI_INTEGER",0,"grid",err )
+*
+*        Evaluate admissible distance between threads
+*        --------------------------------------------
+         V4dcfl_dist =  max((kn+Ptopo_npeOpenMP-1)/Ptopo_npeOpenMP,
+     %                      2 + V4dcfl_p0 - V4dcfl_n0) 
+*
+         if (Ptopo_myproc.eq.0.and.Lun_out.gt.0) then
+             write(Lun_out,*) 'ADW_TRILIN_AD: max vertical CFL         =',V4dcfl_p0
+             write(Lun_out,*) 'ADW_TRILIN_AD: min vertical CFL         =',V4dcfl_n0
+             write(Lun_out,*) 'ADW_TRILIN_AD: Distance between threads =',V4dcfl_dist
+         endif
+*
+         done_L = .true.
+      endif
+*
+*     Initializations 
+*     ---------------
       nij   = l_ni*l_nj
       nijag = Adw_nit * Adw_njt
-      kilon = (kn+4)/4
 *
+*     Distribute levels respecting admissible distance between threads 
+*     ----------------------------------------------------------------
+      do shift=1,V4dcfl_dist
 *
-!$omp parallel private(n,nn,n0,o1,o2,i,j,k,
-!$omp&   mm,ki0,kin,ii,jj,kk,rri, rrj, rrk,
+!$omp parallel do private(n,nn,n0,o1,o2,i,j,k,
+!$omp&   ii,jj,kk,rri,rrj,rrk,
 !$omp&   capx, capy, capz, capxm, capym, capzm,
-!$omp&   prf1_8, prf2_8, prf3_8, prf4_8,
-!$omp&   prf1_y_8,prf2_y_8,prf1m_8,prf2m_8,
-!$omp&   prf3m_8,prf4m_8,prf1m_y_8,prf2m_y_8)
-!$omp&   shared(psum)
-
-!$omp do
-      do 200 mm=1,4
+!$omp&   prf1_8,  prf2_8,  prf3_8,   prf4_8,
+!$omp&   prf1_y_8,prf2_y_8,prf1m_8,  prf2m_8,
+!$omp&   prf3m_8, prf4m_8, prf1m_y_8,prf2m_y_8)
+!$omp&   shared(shift)
 *
-      do n=1,Adw_nit*Adw_njt*l_nk
-         psum(n,mm) = 0.0
-      enddo
-      ki0 = 1 + kilon*(mm-1)
-      kin = min(ki0+kilon-1,kn)
+      do k=shift,kn,V4dcfl_dist
 *
-      do 100 k=ki0,kin
-      do  90 j=j0,jn
+      do j=j0,jn
 *
       n0 = (k-1)*nij + ((j-1)*l_ni)
 *
-      do  80 i=i0,in
+      do i=i0,in
 *
       n = n0 + i
 *
@@ -106,7 +160,6 @@
       ii = and( Fn_I(n) , 4095 )
       jj = and( ishft( Fn_I(n) , -12 ) , 4095 )
       kk = ishft(Fn_I(n) , -24)
-*
 *
       o1 = (kk)*nijag + (jj-Adw_int_j_off-1)*Adw_nit + (ii-Adw_int_i_off)
       o2 = o1 + Adw_nit
@@ -170,11 +223,11 @@
 ************************************************************************
 *     x interpolation
 ************************************************************************
-      psum(o2+1,mm) = psum(o2+1,mm) +      capxm  * prf4_8
-      psum(o2  ,mm) = psum(o2  ,mm) + (1.0-capxm) * prf4_8
+      F_in(o2+1) = F_in(o2+1) +      capxm  * prf4_8
+      F_in(o2  ) = F_in(o2  ) + (1.0-capxm) * prf4_8
 *
-      psum(o1+1,mm) = psum(o1+1,mm) +      capxm  * prf3_8
-      psum(o1  ,mm) = psum(o1  ,mm) + (1.0-capxm) * prf3_8
+      F_in(o1+1) = F_in(o1+1) +      capxm  * prf3_8
+      F_in(o1  ) = F_in(o1  ) + (1.0-capxm) * prf3_8
 *
       capx    =   (F_inm(o2+1) - F_inm(o2)) * prf4_8
      %          + (F_inm(o1+1) - F_inm(o1)) * prf3_8
@@ -182,11 +235,11 @@
       o1 = o1 - nijag
       o2 = o2 - nijag
 *
-      psum(o2+1,mm) = psum(o2+1,mm) +      capxm  * prf2_8
-      psum(o2  ,mm) = psum(o2  ,mm) + (1.0-capxm) * prf2_8
+      F_in(o2+1) = F_in(o2+1) +      capxm  * prf2_8
+      F_in(o2  ) = F_in(o2  ) + (1.0-capxm) * prf2_8
 *
-      psum(o1+1,mm) = psum(o1+1,mm) +      capxm  * prf1_8
-      psum(o1  ,mm) = psum(o1  ,mm) + (1.0-capxm) * prf1_8
+      F_in(o1+1) = F_in(o1+1) +      capxm  * prf1_8
+      F_in(o1  ) = F_in(o1  ) + (1.0-capxm) * prf1_8
 *
       capx    =   (F_inm(o2+1) - F_inm(o2)) * prf2_8
      %          + (F_inm(o1+1) - F_inm(o1)) * prf1_8 + capx
@@ -197,21 +250,12 @@
       F_y(n) = rrj + F_y(n) 
       F_z(n) = rrk + F_z(n) 
 *
-   80 continue
-   90 continue
-  100 continue
-  200 continue
-!$omp enddo
-
-!$omp do
-      do nn=1,Adw_nit*Adw_njt*l_nk
-      do k=1,4
-         F_in(nn)= F_in(nn)+psum(nn,k)
       enddo
       enddo
-!$omp enddo
-
-!$omp end parallel
+      enddo
+!$omp end parallel do
+*
+      enddo
 *
       return
       end

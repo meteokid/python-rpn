@@ -20,6 +20,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
 * v3_12 - Leduc A-M         - Add variables gzm and topo
+* v3_21 - Valcke, S.        - Bugfix: no call to p_apply in offline mode
 *   
 *object
 *	Computes the physical processes and apply the resulting
@@ -44,6 +45,7 @@
 #include "p4d_simp.cdk"
 #include "p_bus.cdk"
 #include "p_pbl.cdk"
+#include "schm.cdk"
 *
 *modules
       integer  open_db_file,rewind_db_file,close_db_file
@@ -121,8 +123,10 @@
 *C      and insure consistency with other dynamic variables
 *       ----------------------------------------------------------
 *
-      call p_apply ( up,vp,um,vm,tm,trm, tp,qp,
-     $               LDIST_DIM,l_nk,F_stepno.gt.0 )
+      if (.not. schm_offline_L) then
+          call p_apply ( up,vp,um,vm,tm,trm, tp,qp,
+     $        LDIST_DIM,l_nk,F_stepno.gt.0 )
+      endif
 *
 *
 *       Store TRAJ of vertical exchange coefficients from full-physics

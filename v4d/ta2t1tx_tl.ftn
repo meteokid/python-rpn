@@ -26,7 +26,7 @@
 #include "vt1m.cdk"
 #include "vtxm.cdk"
 #include "nest.cdk"
-#include "tr2d.cdk"
+cvl#include "tr2d.cdk"
 #include "tr3d.cdk"
 #include "p_bus.cdk"
 #include "mem.cdk"
@@ -49,7 +49,7 @@
 *
 *     ---------------------------------------------------------------
 *
-      if ( Tr2d_ntr.ne.0.or.G_lam ) call gem_stop ('ta2t1tx_tl',-1)
+cvl   if ( Tr2d_ntr.ne.0.or.G_lam ) call gem_stop ('ta2t1tx_tl',-1)
 *
 *C       1.    Fetch variables ta into t1 and tx
 *              ---------------------------------
