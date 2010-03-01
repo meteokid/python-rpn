@@ -1,36 +1,55 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 #if defined (DOC)
 *
 ***comdeck cstv.cdk
 *
-* Contains the constant parameters during the integration. They are
-* initialized in "SET_CSTV"
+* Contains some constant parameters during the integration.
 *
 *______________________________________________________________________
 *                                                                      |
-* CONSTANT PARAMETERS DURING THE INTEGRATION (initialized in SET_CSTV) |
+* SOME CONSTANT PARAMETERS DURING THE INTEGRATION                      |
 *______________________________________________________________________|
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
 * Cstv_dt_8          | timestep used by the model                      |
-* Cstv_tstr_8        | t*  (basic state temperature)                   |
+* Cstv_tau_8         | effective timestep parameter on hor. mom. eqns  |
+* Cstv_tauT_8        | effective timestep parameter on thermo. eqn etc |
+* Cstv_tauw_8        | effective timestep parameter on ver. mom. eqn   |
+* Cstv_Tstr_8        | T*  (basic state temperature)                   |
+* Cstv_RTstr_8       | RT*  the gas constant R times T*                |
+* Cstv_iC2str_8      | c2*=(1-cappa)/RT* (star velocity of sound sqr)  |
+* Cstv_pref_8        | a reference pressure : 100000 PASCALS           |
+* Cstv_pitop_8       | hydrostatic pressure at the top                 |
+* Cstv_Ztop_8        | ln(pitop)                                       |
+* Cstv_pisrf_8       | basic state surface pressure : 100000 PASCALS   |
+* Cstv_Zsrf_8        | ln(pisrf)                                       |
 * Cstv_uvdf_8        | horizontal diffusion coeff. for horiz. winds    |
-* Cstv_phidf_8       | horizontal diffusion coeff. for phi, T, etc.    |
-* Cstv_tau_8         | effective timestep parameter on the left        |
-*                    | hand side                                       |
-* Cstv_pitop_8       | basic state pressure at the top                 |
-* Cstv_pisrf_8       | basic state pressure at the surface             |
+* Cstv_Tdf_8         | horizontal diffusion coeff. for T, etc.         |
 * Cstv_hco0_8        | Helmholtz constant                              |
-* Cstv_hco1_8        | Helmholtz constant (nh model only)              |
 *--------------------|--------------------------------------------------
 *
 #endif
-      real*8    Cstv_dt_8, Cstv_tau_8, Cstv_tstr_8,
-     %          Cstv_pitop_8, Cstv_pisrf_8, Cstv_uvdf_8, Cstv_phidf_8, 
-     %          Cstv_hco0_8 , Cstv_hco1_8
+      real*8    Cstv_dt_8   , Cstv_tau_8  , Cstv_tauT_8  , Cstv_tauw_8,
+     %          Cstv_Tstr_8 , Cstv_RTstr_8, Cstv_iC2str_8, Cstv_pref_8,
+     %          Cstv_pitop_8, Cstv_pisrf_8, Cstv_Ztop_8  , Cstv_Zsrf_8,
+     %          Cstv_hco0_8  , Cstv_hco1_8
 *
       MARK_COMMON_BEG (Cstv)
-      common / Cstv / Cstv_dt_8, Cstv_tau_8, Cstv_tstr_8,
-     %                Cstv_pitop_8, Cstv_pisrf_8, Cstv_uvdf_8, 
-     $                Cstv_phidf_8, Cstv_hco0_8 , Cstv_hco1_8
+      common         / Cstv /
+     %          Cstv_dt_8   , Cstv_tau_8  , Cstv_tauT_8  , Cstv_tauw_8,
+     %          Cstv_Tstr_8 , Cstv_RTstr_8, Cstv_iC2str_8, Cstv_pref_8,
+     %          Cstv_pitop_8, Cstv_pisrf_8, Cstv_Ztop_8  , Cstv_Zsrf_8,
+     %          Cstv_hco0_8  , Cstv_hco1_8
       MARK_COMMON_END (Cstv)

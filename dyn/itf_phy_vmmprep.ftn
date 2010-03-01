@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r itf_phy_vmmprep - load all fields required by the physics
 *
 #include "model_macros_f.h"
@@ -35,7 +47,6 @@
 *     treated. T -> temperature                                 *
 *              H -> tracers                                     *
 *              U -> winds                                       *
-*              tdia, udia hdia -> used for output only          *
 *                                                               *
 *----------------------------------------------------------------
 *                                |                              |
@@ -73,7 +84,6 @@
 *                                |                              |
 *       k=G_nk+2                 |                              |
 *  =====T,H,U : diagnostics      |   =====T,H(G_nk+1),U(G_nk)   |
-*  SFC                           |   SFC  tdia(3),udia(3),hdia  |
 *----------------------------------------------------------------
 *
 *arguments
@@ -96,7 +106,6 @@
 #include "cstv.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "func.cdk"
 #include "schm.cdk"
 #include "itf_phy_config.cdk"
 #include "itf_phy_buses.cdk"
@@ -109,10 +118,11 @@
 #include "itf_phy_vmm.cdk"
 #include "ver.cdk"
 #include "itf_vmm.cdk"
+#include "tr3d.cdk"
 
 **
 *
-      integer err, key(12), i, j, k, n, i0, j0, in, jn, nksurf,
+      integer err, key(14), i, j, k, n, i0, j0, in, jn, nksurf,
      $        keyd(17), keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
       integer pnlod, nik, nikp, km1
       real dt, dzsedi, dzmin, dzmin_, sigsfc, trp, trm, con(l_nj)
@@ -167,15 +177,15 @@
       keyd(6) = VMM_KEY(p_tmoins)
       keyd(7) = VMM_KEY(p_gzplus)
       keyd(8) = VMM_KEY(p_omegap)
-      keyd(9)  = VMM_KEY(p_sigm_t)
-      keyd(10) = VMM_KEY(p_phis)
-      keyd(11) = VMM_KEY(p_pplus)
-      keyd(12) = VMM_KEY(p_pmoins)
-      keyd(13) = VMM_KEY(p_dxdy)
-      keyd(14) = VMM_KEY(p_eponmod)
-      keyd(15) = VMM_KEY(p_fcpf)
-      keyd(16) = VMM_KEY(p_fcpw)
-      keyd(17) = VMM_KEY(p_sigm_m)
+      keyd(9) = VMM_KEY(p_sigm_m)
+      keyd(10) = VMM_KEY(p_sigm_t)
+      keyd(11) = VMM_KEY(p_phis)
+      keyd(12) = VMM_KEY(p_pplus)
+      keyd(13) = VMM_KEY(p_pmoins)
+      keyd(14) = VMM_KEY(p_dxdy)
+      keyd(15) = VMM_KEY(p_eponmod)
+      keyd(16) = VMM_KEY(p_fcpf)
+      keyd(17) = VMM_KEY(p_fcpw)
       err = vmmlod(keyd,17)
       err = VMM_GET_VAR(p_uplus)
       err = VMM_GET_VAR(p_vplus)
@@ -185,6 +195,7 @@
       err = VMM_GET_VAR(p_tmoins)
       err = VMM_GET_VAR(p_gzplus)
       err = VMM_GET_VAR(p_omegap)
+      err = VMM_GET_VAR(p_sigm_m)
       err = VMM_GET_VAR(p_sigm_t)
       err = VMM_GET_VAR(p_phis)
       err = VMM_GET_VAR(p_pplus)
@@ -193,15 +204,15 @@
       err = VMM_GET_VAR(p_eponmod)
       err = VMM_GET_VAR(p_fcpf)
       err = VMM_GET_VAR(p_fcpw)
-      err = VMM_GET_VAR(p_sigm_m)
 
       nik  = l_ni*(nkphy-1)
       nikp = l_ni*(nkphy)
 *
 *   Copy variables at time t- and t* in workfields *
+*   AND stagger the winds for the physics
 *     --------------------------------------------
 *
-      do k=1,l_nk+1
+      do k=1,l_nk+2
       km1=max(k-1,1)
       do j= 1, l_nj
       do i= 1, l_ni 
@@ -317,15 +328,13 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
          do i= 1, l_ni
 c$$$ TODO: recheck p_pmoins [i.e. ztmp]
             p_pmoins(i,j)        = ztmp(i,j)*Cstv_pisrf_8
-            p_umoins(i,j,nkphy)  = p_umoins(i,j,nkphy-1) 
-            p_vmoins(i,j,nkphy)  = p_vmoins(i,j,nkphy-1) 
-            F_vtm(i,j,nkphy)     = tt0(i,j,nkphy-1)
+c           p_umoins(i,j,nkphy)  = p_umoins(i,j,nkphy-1) 
+c           p_vmoins(i,j,nkphy)  = p_vmoins(i,j,nkphy-1) 
             p_gzplus(i,j,nkphy)= 0.
 c$$$ p_vmmphy:  p_gzplus(i,j,nkphy)= topo(i,j) 
 c$$$ p_fillbus: F_busdyn(gzmoins6+indx)= F_gzm(ii,F_jdo,k) - F_topo(ii,F_jdo)
-            p_uplus(i,j,nkphy)   = p_uplus(i,j,nkphy-1) 
-            p_vplus(i,j,nkphy)   = p_vplus(i,j,nkphy-1) 
-            F_tp(i,j,nkphy)      = tt1(i,j,nkphy-1)
+c           p_uplus(i,j,nkphy)   = p_uplus(i,j,nkphy-1) 
+c           p_vplus(i,j,nkphy)   = p_vplus(i,j,nkphy-1) 
             p_omegap(i,j,nkphy)  = p_omegap(i,j,nkphy-1) 
          end do
       end do !do j=
@@ -343,10 +352,11 @@ c$$$ p_fillbus: F_busdyn(gzmoins6+indx)= F_gzm(ii,F_jdo,k) - F_topo(ii,F_jdo)
          err = vmmlod(keyp,phyt_ntr)  
          err = vmmlod(keym,phyt_ntr)  
 *No Clipping for tracers, it will be done in the PHYSICS
+
          do n=1,phyt_ntr
             err = vmmget(keyp(n),patrp,trp)
             err = vmmget(keym(n),patrm,trm)
-            do k=1,l_nk+1
+            do k=1,l_nk+2
             do j= 1, l_nj
             do i= 1, l_ni
                F_trp(i,j,k,n) =  trp(i,j,k)
@@ -354,13 +364,15 @@ c$$$ p_fillbus: F_busdyn(gzmoins6+indx)= F_gzm(ii,F_jdo,k) - F_topo(ii,F_jdo)
             end do
             end do
             enddo
-            do j= 1, l_nj 
-            do i= 1, l_ni 
-               F_trp(i,j,nkphy,n) =  trp(i,j,l_nk+1)
-               F_trm(i,j,nkphy,n) =  trm(i,j,l_nk+1)
+*For HU, take NK+2 level for diagnostics, for others,copy NK+1 to Nk+2
+            if (n.ne.1) then
+            do j= 1, l_nj
+            do i= 1, l_ni
+               F_trp(i,j,l_nk+2,n) =  trp(i,j,l_nk+1)
+               F_trm(i,j,l_nk+2,n) =  trm(i,j,l_nk+1)
             end do
             end do
-
+            endif
          enddo
          err = vmmuln(keyp,phyt_ntr)
          err = vmmuln(keym,phyt_ntr)
@@ -531,17 +543,6 @@ c$$$ TODO: check if mfottv can take nkphy
           enddo
       endif
 *
-*   Surface fields:
-*   pointers are stored the same order as the common block p_phy
-*     inside F_pvptr
-*     --------------------------------------------
-      do i=1,COMMON_SIZE(p_phy)
-         keyd(i) = p_phy_first(i)
-         err = vmmget(keyd(i),pavmm,vmm)
-         F_pvptr(i) = pavmm
-      enddo
-
-*
 *     compute thermo and momentum sigma levels
 *     -------------------------------------
 *
@@ -553,34 +554,39 @@ c$$$ TODO: check if mfottv can take nkphy
          end do
          end do
       end do
+*
+*   Surface fields:
+*   pointers are stored the same order as the common block p_phy
+*     inside F_pvptr
+*     --------------------------------------------
+      do i=1,COMMON_SIZE(p_phy)
+         keyd(i) = p_phy_first(i)
+         err = vmmget(keyd(i),pavmm,vmm)
+         F_pvptr(i) = pavmm
+      enddo
 
-c$$$      print *,'---- vmmprep ----'
+
 c$$$
-c$$$      call statfld3d(p_uplus  ,'p_up',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_vplus  ,'p_vp',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_tplus  ,'p_tp',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_umoins ,'p_um',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_vmoins ,'p_vm',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_tmoins ,'p_tm',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_gzplus ,'p_gz',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_omegap ,'p_om',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_sigm_t ,'p_st',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_sigm_m ,'p_sm',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(p_phis ,'p_ph',LDIST_DIM,l_ni,l_nj,1)
-c$$$      call statfld3d(p_pplus ,'p_pp',LDIST_DIM,l_ni,l_nj,1)
-c$$$      call statfld3d(p_pmoins ,'p_pm',LDIST_DIM,l_ni,l_nj,1)
-c$$$      call statfld3d(p_dxdy ,'p_dx',LDIST_DIM,l_ni,l_nj,1)
-c$$$      call statfld3d(p_eponmod ,'p_ep',LDIST_DIM,l_ni,l_nj,1)
-c$$$      call statfld3d(p_fcpf ,'p_ff',LDIST_DIM,l_ni,l_nj,1)
-c$$$      call statfld3d(p_fcpw ,'p_fw',LDIST_DIM,l_ni,l_nj,1)
-c$$$      do n=1,phyt_ntr
-c$$$      call statfld3d(F_trp(1,1,1,n) ,'Ftrp',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(F_trm(1,1,1,n) ,'Ftrm',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      enddo
-c$$$      call statfld3d(F_tp ,'F_tp',LDIST_DIM,l_ni,l_nj,nkphy)
-c$$$      call statfld3d(F_vtm ,'F_vtm',LDIST_DIM,l_ni,l_nj,nkphy)
+c         call statfld3d(p_uplus  ,'p_up',LDIST_DIM,G_ni-1,G_nj,nkphy)
+c         call statfld3d(p_vplus  ,'p_vp',LDIST_DIM,G_ni,G_nj-1,nkphy)
+c         call statfld3d(p_tplus  ,'p_tp',LDIST_DIM,G_ni,G_nj,nkphy)
+c         call statfld3d(p_umoins ,'p_um',LDIST_DIM,G_ni-1,G_nj,nkphy)
+c         call statfld3d(p_vmoins ,'p_vm',LDIST_DIM,G_ni,G_nj-1,nkphy)
+c$$$      call statfld3d(p_tmoins ,'p_tm',LDIST_DIM,G_ni,G_nj,nkphy)
+c$$$      call statfld3d(p_gzplus ,'p_gz',LDIST_DIM,G_ni,G_nj,nkphy)
+c$$$      call statfld3d(p_omegap ,'p_om',LDIST_DIM,G_ni,G_nj,nkphy)
+c$$$      call statfld3d(p_sigm_t ,'p_st',LDIST_DIM,G_ni,G_nj,nkphy)
+c$$$      call statfld3d(p_sigm_m ,'p_sm',LDIST_DIM,G_ni,G_nj,nkphy)
+c$$$      call statfld3d(p_phis ,'p_ph',LDIST_DIM,G_ni,G_nj,1)
+c$$$      call statfld3d(p_pplus ,'p_pp',LDIST_DIM,G_ni,G_nj,1)
+c$$$      call statfld3d(p_pmoins ,'p_pm',LDIST_DIM,G_ni,G_nj,1)
+c$$$      call statfld3d(p_dxdy ,'p_dx',LDIST_DIM,G_ni,G_nj,1)
+c$$$      call statfld3d(p_eponmod ,'p_ep',LDIST_DIM,G_ni,G_nj,1)
+c$$$      call statfld3d(p_fcpf ,'p_ff',LDIST_DIM,G_ni,G_nj,1)
+c$$$      call statfld3d(p_fcpw ,'p_fw',LDIST_DIM,G_ni,G_nj,1)
+c$$$      call statfld3d(F_tp ,'F_tp',LDIST_DIM,G_ni,G_nj,nkphy)
+c$$$      call statfld3d(F_vtm ,'F_vtm',LDIST_DIM,G_ni,G_nj,nkphy)
 c$$$
-c$$$      print *,'---- [end] vmmprep ----'
 *
 *     ________________________________________________________________
 *
@@ -603,10 +609,6 @@ c$$$      print *,'---- [end] vmmprep ----'
       in = ni
       j0 = 1
       jn = nj
-      inn= 0
-      if (G_lam) then
-           inn=1
-      endif
-      call glbstat (fld,name,LDIST_DIM,nk,i0,in-inn,j0,jn ,1,nk)
+      call glbstat (fld,name,LDIST_DIM,nk,i0,in,j0,jn ,nk,nk)
 
       end

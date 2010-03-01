@@ -1,0 +1,93 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r trnes -  transfer data to/from fd to/from bc* *
+#include "model_macros_f.h"
+*
+      subroutine trnes1(fd,bcs,bcn,bcw,bce,lminx,lmaxx,lminy,lmaxy,
+     $ lminxs,lmaxxs,lminys,lmaxys,
+     $ lminxn,lmaxxn,lminyn,lmaxyn,
+     $ lminxw,lmaxxw,lminyw,lmaxyw,
+     $ lminxe,lmaxxe,lminye,lmaxye,lnk)
+      implicit none
+*
+      integer lminx,lmaxx,lminy,lmaxy,
+     $        lminxs,lmaxxs,lminys,lmaxys,
+     $        lminxn,lmaxxn,lminyn,lmaxyn,
+     $        lminxe,lmaxxe,lminye,lmaxye,
+     $        lminxw,lmaxxw,lminyw,lmaxyw,lnk
+      real fd(lminx:lmaxx,lminy:lmaxy,*),
+     $     bcs(lminxs:lmaxxs,lminys:lmaxys,*),
+     $     bcn(lminxn:lmaxxn,lminyn:lmaxyn,*),
+     $     bcw(lminxw:lmaxxw,lminyw:lmaxyw,*),
+     $     bce(lminxe:lmaxxe,lminye:lmaxye,*)
+*
+*author
+*     Michel Desgagne  - Summer 2006
+*
+*revision
+* v3_30 - Lee V.       - initial MPI version
+*
+*object - see above
+*
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "hblen.cdk"
+#include "bcsdim.cdk"
+*
+**
+      integer i,j,k,ofi,ofj
+*----------------------------------------------------------------------
+*
+c     ofi = l_ni - Glb_pil_e - Hblen_x - 1
+c     ofj = l_nj - Glb_pil_n - Hblen_y - 1
+      ofi=0
+      ofj=0
+*
+      do k=1,lnk
+         if (south.gt.0) then
+         do j=lminys,lmaxys
+         do i=lminxs,lmaxxs
+            bcs(i,j,k) = fd(i,j,k)
+         end do
+         end do
+         endif
+         if (north.gt.0) then
+         do j=lminyn,lmaxyn
+         do i=lminxn,lmaxxn
+            bcn(i,j-ofj,k) = fd(i,j,k)
+         end do
+         end do
+         endif
+         if (west.gt.0) then
+         do j=lminyw,lmaxyw
+         do i=lminxw,lmaxxw
+            bcw(i,j,k) = fd(i,j,k)
+         end do
+         end do
+         endif
+         if (east.gt.0) then
+         do j=lminye,lmaxye
+         do i=lminxe,lmaxxe
+            bce(i-ofi,j,k) = fd(i,j,k)
+         end do
+         end do         
+         endif
+      end do
+*
+*----------------------------------------------------------------------
+*
+      return
+      end
+
+
+

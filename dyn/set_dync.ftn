@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***   s/r set_dync - initialize the dynamics model configuration
 *
 #include "model_macros_f.h"
@@ -32,6 +44,7 @@
 #include "dcst.cdk"
 #include "type.cdk"
 #include "ver.cdk"
+#include "offc.cdk"
 #include "ptopo.cdk"
 *
 *modules
@@ -47,17 +60,40 @@
           write(Lun_out,*)'===================================='
       endif
 *     
-      if (Cstv_pitop_8.eq.-one) 
-     $        Cstv_pitop_8 = dble(Pres_top)
-      if (Cstv_pisrf_8.eq.-one) Cstv_pisrf_8 = dble(Pres_surf)
+      if(Schm_zdotlag_L) Schm_zdotMid_L=.true.
 *
-      if (lun_out.gt.0) then
-         write(Lun_out,*) 'POSSIBLE MODIFICATION OF :'
-         write(Lun_out,*) 'Cstv_pitop_8  = ',Cstv_pitop_8,'  PASCALS'
-         write(Lun_out,*) 'Cstv_pisrf_8  = ',Cstv_pisrf_8,'  PASCALS'
+      Cstv_tau_8   = Cstv_dt_8 * Offc_b0_8
+      Cstv_tauT_8  = Cstv_dt_8 * Offc_b0T_8
+      Cstv_tauw_8  = Cstv_dt_8 * Offc_b0w_8
+*
+      if(Schm_etape_S(1:longueur(Schm_etape_S)).eq."ETAPE5")then
+c        Pour etape 5
+         Cstv_iC2str_8 = 0.d0
+      elseif(Schm_etape_S(1:longueur(Schm_etape_S)).eq."ETAPE6A")then
+c        Pour etape 6a
+         Cstv_iC2str_8 = one/Cstv_RTstr_8
+      elseif(Schm_etape_S(1:longueur(Schm_etape_S)).eq."ETAPE6")then
+c        Pour etape 6
+         Cstv_iC2str_8 = (one-Dcst_cappa_8)/Cstv_RTstr_8
+      else
+         call gem_stop('set_dync : wrong string for Schm_etape_S',-1)
       endif
-*     
-      xxx = quarter*(one-Dcst_cappa_8)*Ver_epsilon_8
+*
+      if(Schm_hydro_L)then
+         Ver_epsilon_8=0.d0
+      else
+         Ver_epsilon_8=Cstv_RTstr_8/
+     $        (Dcst_grav_8*Dcst_grav_8*Cstv_tauw_8*Cstv_tauT_8)
+      endif
+      Ver_gamma_8=Dcst_cappa_8/(Dcst_cappa_8+Ver_epsilon_8)
+      Ver_gokt2RT_8= Ver_gamma_8/
+     $        (Dcst_cappa_8*Cstv_tau_8*Cstv_tauT_8*Cstv_RTstr_8)
+*
+      Cstv_hco0_8 = Dcst_rayt_8 * Dcst_rayt_8 * Ver_gokt2RT_8
+      Cstv_hco1_8 = Cstv_RTstr_8*(Dcst_cappa_8+Ver_epsilon_8)*Cstv_iC2str_8
+*
+      xxx = + quarter*((one-Dcst_cappa_8)*Ver_epsilon_8-Cstv_hco1_8)
+*
       Ver_alphat_8 = ( Ver_idz_8%t(1) - half*Ver_epsilon_8 ) /
      $               ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
       Ver_cst_8    = one / Ver_gokt2RT_8 /
@@ -74,6 +110,7 @@
 *
       call set_opr()
       call adw_set()
+      call adx_set()
 *
 *     ---------------------------------------------------------------
 *

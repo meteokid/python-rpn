@@ -1,9 +1,21 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r sid3df
 *
 #include "model_macros_f.h"
 *
       integer function sid3df (xpaq,ypaq,xpau,ypav,unf,done,
-     $                                nia,nja,nka,nvar,ntra)
+     $                          nia,nja,nka,nvar,ntra)
       implicit none
 *
       logical done
@@ -17,62 +29,90 @@
 *
       character*4 nomvar
       integer i,j,k,ni1,nj1,nk1,nvar1,ntr1,err
-      real  , dimension (:), allocatable :: aaa,bbb
-      real*8, dimension (:), allocatable :: xp1,yp1,zt1
+      real*8, dimension (:), allocatable :: xp1,yp1,am_8,bm_8,at_8,bt_8
 *-----------------------------------------------------------------------
 *
       sid3df  = -1
 *
-      if (Lun_debug_L) write(Lun_out,*)'sid3df: done=',done
       if (.not.done) then
-      read (unf,end=33,err=33) nomvar,ni1,nj1,nka,nvar,ntra
-      if (Lun_debug_L) write(Lun_out,*)'sid3df:',nomvar,ni1,nj1,nka,nvar,ntra
 *
-         if (pazta.gt.0) call hpdeallc (pazta, err, 1)
-         if (papia.gt.0) call hpdeallc (papia, err, 1)
-         if (papib.gt.0) call hpdeallc (papib, err, 1)
-         pazta = 0
-         papia = 0
-         papib = 0
+         read (unf,end=33,err=33) nomvar,ni1,nj1,nka,nvar,ntra
+         if (Lun_debug_L) then
+              write(Lun_out,*)'sid3df:'
+              write(Lun_out,*)'nomvar=',nomvar,ni1,nj1,nvar,ntra
+         endif
 *
          allocate (xp1(ni1),yp1(nj1))
          read (unf,end=33,err=33) xp1,yp1
 
-*
-         nk1 = nka
-         if (nk1.gt.0) then
-            read (unf,end=33,err=33) nomvar
-            call hpalloc (pazta  ,nk1*2, err,1)
-            call hpalloc (papia  ,nk1  , err,1)
-            call hpalloc (papib  ,nk1  , err,1)
-            allocate (zt1(nk1),aaa(nk1),bbb(nk1))
-            read (unf,end=33,err=33) zt1,aaa,bbb
-            do k=1,nk1
-               ana_z(k) = zt1(k)
-               ana_a(k) = aaa(k)
-               ana_b(k) = bbb(k)
-            end do
-            deallocate (zt1,aaa,bbb)
-         endif
          do i=1,nia
             xpaq(i) = xp1(ifd_niad+i-1)
             xpau(i) = 0.5 * (xp1(ifd_niad+i-1) + xp1(ifd_niad+i))
          end do
+         xpau(nia) = xpau(nia-1) + (xpau(nia-1) -xpau(nia-2))*0.5
          do j=1,nja
             ypaq(j) = yp1(ifd_njad+j-1)
             ypav(j) = 0.5 * (yp1(ifd_njad+j-1) + yp1(ifd_njad+j))
          end do
+         ypav(nja) = ypav(nja-1) + (ypav(nja-1) -ypav(nja-2))*0.5
          deallocate (xp1,yp1)
+*
+         allocate (am_8(nka),bm_8(nka),at_8(nka+1),bt_8(nka+1))
+         if (associated(ana_am_8)) deallocate(ana_am_8)
+         if (associated(ana_bm_8)) deallocate(ana_bm_8)
+         if (associated(ana_at_8)) deallocate(ana_at_8)
+         if (associated(ana_bt_8)) deallocate(ana_bt_8)
+*
+         read (unf,end=33,err=33) nomvar
+
+         allocate(ana_am_8(nka+1), ana_bm_8(nka+1),
+     $            ana_at_8(nka+1), ana_bt_8(nka+1),
+     $            ana_as_8(nka+2), ana_bs_8(nka+2) )
+*
+         read (unf,end=33,err=33) 
+     $         am_8,bm_8,at_8,bt_8
+         do k=1,nka
+            ana_am_8(k)=am_8(k)
+            ana_bm_8(k)=bm_8(k)
+            ana_at_8(k)=at_8(k)
+            ana_bt_8(k)=bt_8(k)
+            ana_as_8(k)=ana_at_8(k)
+            ana_bs_8(k)=ana_bt_8(k)
+         enddo
+         ana_at_8(nka+1) =0.0d0
+         ana_bt_8(nka+1) =1.0d0
+         ana_as_8(1) = 0.5d0*(ana_am_8(1)+ana_at_8(1))
+         ana_bs_8(1) = 0.5d0*(ana_bm_8(1)+ana_bt_8(1))
+         ana_as_8(nka+1) = 0.5d0*(ana_am_8(nka)+ana_at_8(nka+1))
+         ana_bs_8(nka+1) = 0.5d0*(ana_bm_8(nka)+ana_bt_8(nka+1))
+         ana_as_8(nka+2) =0.0d0
+         ana_bs_8(nka+2) =1.0d0
+         ana_am_8(nka+1) =0.0d0
+         ana_bm_8(nka+1) =1.0d0
+c        if (Lun_debug_L) then
+c            write(Lun_out,*)'sid3df:'
+c            write(Lun_out,*)'ana_am_8=',ana_am_8
+c            write(Lun_out,*)'ana_bm_8=',ana_bm_8
+c            write(Lun_out,*)'ana_at_8=',ana_at_8
+c            write(Lun_out,*)'ana_bt_8=',ana_bt_8
+c            write(Lun_out,*)'ana_as_8=',ana_as_8
+c            write(Lun_out,*)'ana_bs_8=',ana_bs_8
+c        endif
+*
       else
          read (unf,end=33,err=33) nomvar,ni1,nj1,nka,nvar,ntra
-         if (Lun_debug_L) write(Lun_out,*)'sid3df:',nomvar,ni1,nj1,nka,nvar,ntra
          read (unf,end=33,err=33)
+         if (Lun_debug_L) then
+              write(Lun_out,*)'sid3df:'
+              write(Lun_out,*)'nomvar=',nomvar,ni1,nj1,nka,nvar,ntra
+         endif
          if (nka.gt.0) then
             read (unf,end=33,err=33)
             read (unf,end=33,err=33)
          endif
       endif
 *
+c     nka = nka - 1
       sid3df = 0
 *
 *-----------------------------------------------------------------------

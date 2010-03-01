@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 #if defined (DOC)
 *
 ***comdeck e_anal.cdk
@@ -23,29 +35,32 @@
       INTEGER  LVMAX
       PARAMETER (LVMAX   = 201)
 
-      INTEGER        nia, nja, NK, LV,
+      INTEGER        nia, nja, NK, LV,LV_T,
      %               ip1a, ip2a, ip3a,
      %               ig1a, ig2a, ig3a, ig4a
-      INTEGER        NA(LVMAX)
+      INTEGER        NA(LVMAX),NA_T(LVMAX)
       REAL           LNA(LVMAX), RNA(LVMAX),RCOEFA,PTOPA,PREFA
+      REAL           RNA_T(LVMAX)
       real           pia(LVMAX),pibb(LVMAX),pib(LVMAX)
-      REAL*8         xg_8,yg_8,ygv_8,z_8(LVMAX)
+      REAL*8         xg_8,yg_8,ygv_8
+      REAL*8         za_8(LVMAX),zb_8(LVMAX)
+      REAL*8         zat_8(LVMAX),zbt_8(LVMAX)
       pointer        (paxg_8, xg_8(*)),(payg_8, yg_8(*)),(paygv_8, ygv_8(*))
       CHARACTER*2    VH,VT
       CHARACTER*1    GRDA, TVA
       CHARACTER*12   LABANL
 
-      COMMON/anali/  nia, nja, NK, LV, NA,
+      COMMON/anali/  nia, nja, NK, LV, LV_T, NA,NA_T,
      %               ip1a, ip2a, ip3a,
      %               ig1a, ig2a, ig3a, ig4a
-      COMMON/analr/  LNA, RNA, RCOEFA,PTOPA,PREFA,pia,pibb,pib
-      COMMON/analr8/ z_8
+      COMMON/analr/  LNA, RNA, RNA_T,RCOEFA,PTOPA,PREFA,pia,pibb,pib
       COMMON/analpos/ paxg_8,payg_8,paygv_8
+      COMMON/analr8/  za_8,zb_8,zat_8,zbt_8
       COMMON/anals/  VH,VT,GRDA,TVA,LABANL
-      logical anal_sigma, anal_eta, anal_hyb, anal_pres,anal_perturb
-      logical anal_ecmwf, anal_cond
+      logical anal_sigma_L, anal_eta_L, anal_hyb_L, anal_pres_L,anal_perturb_L
+      logical anal_ecmwf_L, anal_cond_L
       integer anal_hav
       common /e_anal_l/ 
-     $     anal_sigma, anal_eta, anal_hyb, anal_pres, anal_perturb,
-     $     anal_ecmwf, anal_cond
+     $     anal_sigma_L, anal_eta_L, anal_hyb_L, anal_pres_L,anal_perturb_L,
+     $     anal_ecmwf_L, anal_cond_L
       common /e_anal_i/ anal_hav(2)

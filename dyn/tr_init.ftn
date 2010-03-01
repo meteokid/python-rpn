@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r tr_init - Initializes tracers
 *
 #include "model_macros_f.h"
@@ -8,7 +20,8 @@
 *
       logical nesd
       integer data_spec(*),nk,bmf_time1,bmf_time2,vterp_lv,ni,nj
-      real hu(ni,nj,*),pps(*),rna_pia(*),ps(*),pibb(*)
+      real hu(ni,nj,*),pps(*),ps(*)
+      real*8 rna_pia(*),pibb(*)
 *
 *author
 *     Michel Desgagne  -  Sept 2001
@@ -27,7 +40,6 @@
 #include "tr3d.cdk"
 #include "nest.cdk"
 #include "vt1.cdk"
-#include "func.cdk"
 #include "schm.cdk"
 #include "itf_phy_busind.cdk"
 *
@@ -35,7 +47,7 @@
       external write_db_file,rewind_db_file,vmmlod,vmmget,vmmuld
 *
       integer i,j,k,kk,jjj,n,err,key0,key(Tr3d_ntr)
-      real w1(l_ni,l_nj,nk),w2(l_ni,l_nj,nk),buf(l_ni,G_nk+1),tr
+      real tr
       pointer (patr, tr(LDIST_SHAPE,*))
 *
 *     ---------------------------------------------------------------
@@ -53,9 +65,9 @@
          do k=1,Tr3d_ntr
             err = vmmget(key(k),patr,tr)
             if (Tr3d_name_S(k).eq.'HU') then
-* Note that HU Schm_moist test, clipping to zero is already done in readdyn
+* Note that HU is calculated and clipped in readdyn
 * So copy HU field from readdyn into the tracer vmm var.
-               do n=1,G_nk+1
+               do n=1,G_nk+2
                do j=1,l_nj
                do i=1,l_ni
                   tr(i,j,n) = hu(i,j,n)
@@ -67,14 +79,14 @@
                call tr_vint (tr,Tr3d_name_S(k),Tr3d_sval(k),data_spec,
      $                       bmf_time1,bmf_time2,nk,pps,
      $                       rna_pia,pibb,ps,vterp_lv,LDIST_DIM)
-* If no moist scheme, put humid tracers to zero
+* If no moist scheme, put other humid tracers to zero
                if (.not.Schm_moist_L) then
                    jjj = -1
                    do kk = 1,h2o_ntr
                       if (Tr3d_name_S(n).eq.h2o_name_S(kk)) jjj=kk
                    enddo
                    if (jjj.gt.0) then
-                       do n=1,G_nk+1
+                       do n=1,G_nk+2
                        do j=1,l_nj
                        do i=1,l_ni
                           tr(i,j,n)=0.0

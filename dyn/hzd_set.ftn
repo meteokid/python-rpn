@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r hzd_set - Compute diffusion operator matrix on G, U and V grids
 *
 #include "model_macros_f.h"
@@ -18,7 +30,7 @@
 * v3_01 - Lee V.            - add setup for horizontal sponge
 * v3_20 - Qaddouri/Toviessi - variable higher order diffusion operator
 * v3_20 - Tanguay M.        - 1d higher order diffusion operator
-* v3_30 - Tanguay M.        - activate Hzd_type_S='EXPLICIT' 
+* v3_30 - Tanguay M.        - activate Hzd_type_S='HO_EXP' 
 *
 *object
 *     see id section
@@ -58,26 +70,31 @@
       Gni = G_ni-Lam_pil_w-Lam_pil_e
       Gnj = G_nj-Lam_pil_s-Lam_pil_n
 *
-      Hzd_fact_L = .false.
       Hzd_ho_L   = .false.
       mess = 'NIL'
 *
-      if ((Hzd_type_S.eq."FACT").and.
-     $   ((Cstv_uvdf_8.gt.0.).or.(Cstv_phidf_8.gt.0)) ) then
-         Hzd_fact_L = .true.
-         mess       = 'FACTORIZED'
-      endif
+      if (Hzd_type_S.eq."FACT")call gem_stop(
+     $     'hzd_set : Hzd_type_S="FACT" not suported anymore',-1)
 *
+      if(.not.(
+     $          (Hzd_type_S.eq."HO_IMP").or.
+     $          (Hzd_type_S.eq."HO_EXP").or.
+     $          (Hzd_type_S.eq."NIL")
+     $        )
+     $     )then
+         call gem_stop(
+     $        'hzd_set : Hzd_type_S not valid, choices: HO_IMP,HO_EXP,NIL',-1)
+      endif
       if ((Hzd_lnr.gt.0.).and. 
-     $    ((Hzd_type_S.eq."HO").or.(Hzd_type_S.eq."EXPLICIT"))) then
+     $    ((Hzd_type_S.eq."HO_IMP").or.(Hzd_type_S.eq."HO_EXP"))) then
          Hzd_ho_L   = .true.
          mess       = 'HIGH ORDER'
       endif
 *
       if (Lun_out.gt.0) write(Lun_out,1001) mess
 *
-      if ((Hzd_fact_L.or.Hzd_ho_L).or.(Vspng_nk.gt.0)
-     $                            .or.(Hspng_nj.gt.0) ) then
+      if (Hzd_ho_L.or.(Vspng_nk.gt.0)
+     $     .or.(Hspng_nj.gt.0) ) then
 *
          dimx = 3*G_ni*2
          dimy = 3*G_nj*2
@@ -225,7 +242,7 @@
          endif
 *______________________________________________________________________
 *
-         if (Hzd_fact_L.or.Hspng_nj.gt.0) then
+         if (Hspng_nj.gt.0) then
 *
             if (Lun_out.gt.0.and.Hspng_nj.gt.0) write(Lun_out,1004)
 *

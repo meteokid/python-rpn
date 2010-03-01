@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r out_phy
 #include "model_macros_f.h"
@@ -56,7 +68,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 **
       character*4 ext_S
       character*6 etikadd_S
-      integer i,j,k,mult,nk_o,levset,ii,jj,kk,ip3,ig1
+      integer i,j,k,mult,nk_o,nk_ot,levset,ii,jj,kk,ip3,ig1
       integer, dimension (:), allocatable :: ind_o
       integer irff(100)
       integer grille_x0,grille_x1,grille_y0,grille_y1
@@ -120,9 +132,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                   Geomn_longs, Geomn_latgs          )
          levset= Outp_lev(kk)
          nk_o =  Level_max(levset)
-         allocate (ind_o(nk_o+1))
+         allocate (ind_o(nk_o+2))
          call out_slev(Level_typ(levset),Level(1,levset),
-     $                 ind_o,nk_o,G_nk+2,Level_kind_ip1,'p')
+     $                 ind_o,nk_o,nk_ot,G_nk,Level_kind_ip1,'p')
          call out_sfile(Out3_closestep,stepno,etikadd_S,ip3,ext_S)
          if (Level_typ(levset).eq.'M') then
          do ii=1, Outp_var_max(kk)
@@ -131,30 +143,35 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
                     if (obus_shp(j).gt.1) then
 *                   3D field
-                       rff(1)= (Ver_hyb%t(1)+Ver_hyb%m(1))/2.
-                       do i=2,G_nk
-                          rff(i)= Ver_hyb%t(i)
-                       enddo
-                       rff(G_nk+1)= (Ver_hyb%t(G_nk+1)+Ver_hyb%m(G_nk))/2.
-                       rff(G_nk+2)= Ver_hyb%t(G_nk+1)
+c                      rff(1)= (Ver_hyb%t(1)+Ver_hyb%m(1))/2.
+c                      do i=2,G_nk
+c                         rff(i)= Ver_hyb%t(i)
+c                      enddo
+c                      rff(G_nk+1)= (Ver_hyb%t(G_nk+1)+Ver_hyb%m(G_nk))/2.
+c                      rff(G_nk+2)= Ver_hyb%t(G_nk+1)
                        if (obus_stag(j).eq.0) then
                            call ecris_fst2(bus_o(1,obus_offset(j)),
-     $                       1,l_ni,1,l_nj,rff,obus_var_s(j),
-     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk+2,ind_o,nk_o,
+     $                       1,l_ni,1,l_nj,Ver_hyb%t,obus_var_s(j),
+     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk+2,ind_o,nk_ot,
      $                       Outp_nbit(ii,kk) )
                        else
 *                   3D field staggerred
-                        rff(1)=
-     $                     (Ver_hyb%t(1)+Ver_hyb%m(1))/4.+Ver_hyb%t(2)/2.
-                        do i=2,G_nk
-                           rff(i)= (Ver_hyb%t(i+1)+Ver_hyb%d(i))/2.
+c                       rff(1)=
+c    $                     (Ver_hyb%t(1)+Ver_hyb%m(1))/4.+Ver_hyb%t(2)/2.
+c                       do i=1,G_nk
+c                          rff(i)= (Ver_hyb%t(i+1)+Ver_hyb%d(i))/2.
+c                       enddo
+c                       rff(G_nk+1)=(Ver_hyb%t(G_nk+1)+Ver_hyb%m(G_nk))/2.
+c                       rff(G_nk+2)=Ver_hyb%t(G_nk+1)
+                        do i=1,G_nk
+                           rff(i)= Ver_hyb%m(i)
                         enddo
-                        rff(G_nk+1)=(Ver_hyb%t(G_nk+1)+Ver_hyb%m(G_nk))/2.
-                        rff(G_nk+2)=Ver_hyb%t(G_nk+1)
-                           call ecris_fst2(bus_o(1,obus_offset(j)),
-     $                       1,l_ni,1,l_nj,rff,obus_var_s(j),
-     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk+2,ind_o,nk_o,
-     $                       Outp_nbit(ii,kk) )
+                        rff(G_nk+1)=Ver_hyb%t(G_nk+1)
+                        rff(G_nk+2)=Ver_hyb%t(G_nk+2)
+                        call ecris_fst2(bus_o(1,obus_offset(j)),
+     $                      1,l_ni,1,l_nj,rff,obus_var_s(j),
+     $                      Obus_mul(j),Obus_add(j),Out_kind,G_nk+2,ind_o,nk_ot,
+     $                      Outp_nbit(ii,kk) )
                        endif
                     else
 *                      2D field-multiple

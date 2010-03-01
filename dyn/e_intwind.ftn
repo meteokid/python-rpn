@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r e_intwind - Wind components horizontal interpolation
 *
 #include "model_macros_f.h"
@@ -59,8 +71,6 @@
      $     uvw(niu*nju),p0u(niu*nju),p0v(niv*njv),c1
       real, dimension (:), allocatable :: w1,w2
       real, dimension (:,:,:), allocatable :: uun,vvn
-      real*8 Cstv_pisrf_8
-      parameter (Cstv_pisrf_8=100000.0)
 *
 * ---------------------------------------------------------------------
 *
@@ -201,8 +211,8 @@
 *
       ip2 = ip2a
       ip3 = ip3a
-      if (glecmanl) ip2 = -1
-      if (glecmanl) ip3 = int(rna(1))
+      if (Anal_ecmwf_L) ip2 = -1
+      if (Anal_ecmwf_L) ip3 = int(rna(1))
 *
          key1=fstinf(e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,
      $                                                     ' ','UU')
@@ -216,8 +226,8 @@
 *
             ip2 = ip2a
             ip3 = ip3a
-            if (glecmanl) ip2 = -1
-            if (glecmanl) ip3 = int(rna(k))
+            if (Anal_ecmwf_L) ip2 = -1
+            if (Anal_ecmwf_L) ip3 = int(rna(k))
             key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ', 
      $                               na(k), ip2, ip3, ' ', 'UU')
             key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ', 
@@ -280,7 +290,7 @@
          return
          endif
 *
-        if (glecmanl) then
+        if (Anal_ecmwf_L) then
 *
 *       also treat 2m winds (to be used as surface values)
 *       store as US and VS
@@ -315,7 +325,7 @@
       endif
 *---------------------------------------------------------------------
 *
-      if ( gletaanl .or. glsiganl .or. glhybanl ) then
+      if ( Anal_eta_L .or. Anal_sigma_L .or. Anal_hyb_L ) then
          write(6,*)'PREPARATION FOR SIGMA/ETA/HYB to HYBRID'
          c1 = 10. * Dcst_grav_8
          if (.not.e_schm_offline_l) then
@@ -344,10 +354,10 @@
 *
          var=vt//'  '
          c1 = Dcst_tcdk_8
-         do k=1,lv
-            if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,var,na(k),ip2a,ip3a,
+         do k=1,lv_t
+            if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,var,na_t(k),ip2a,ip3a,
      $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
-            if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,var,na(k),ip2a,ip3a,
+            if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,var,na_t(k),ip2a,ip3a,
      $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
             do i=1,nu
                ttu(i) = ttu(i) + c1
@@ -356,20 +366,20 @@
                ttv(i) = ttv(i) + c1
             enddo
             if (vt.eq.'TT') then
-               if (e_rdhint3 (huu,dstu_gid,nisu,njsu,'HU  ',na(k),ip2a,
+               if (e_rdhint3 (huu,dstu_gid,nisu,njsu,'HU  ',na_t(k),ip2a,
      $            ip3a,' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
      $             goto 55
-               if (e_rdhint3 (huv,dstv_gid,nisv,njsv,'HU  ',na(k),ip2a,
+               if (e_rdhint3 (huv,dstv_gid,nisv,njsv,'HU  ',na_t(k),ip2a,
      $            ip3a,' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0)
      $             goto 55
                call mfotvt (ttu,ttu,huu,nisu*njsu,1,nisu*njsu)
                call mfotvt (ttv,ttv,huv,nisv*njsv,1,nisv*njv)
             endif
-            call e_bmfsplitxy2 (ttu,nisu,njsu,'VTU ',k,lv,pniu,0,0,0)
-            call e_bmfsplitxy2 (ttv,nisv,njsv,'VTV ',k,lv,pni ,0,0,0)
+            call e_bmfsplitxy2 (ttu,nisu,njsu,'VTU ',k,lv_t,pniu,0,0,0)
+            call e_bmfsplitxy2 (ttv,nisv,njsv,'VTV ',k,lv_t,pni ,0,0,0)
          end do
 *
-      elseif ( glecmanl ) then
+      elseif ( Anal_ecmwf_L ) then
 
          write(6,*)'PREPARATION FOR ECMWF to HYBRID'
          c1 = 10. * Dcst_grav_8
@@ -419,8 +429,8 @@
      $          goto 55
             call mfotvt (ttu,ttu,huu,nisu*njsu,1,nisu*njsu)
             call mfotvt (ttv,ttv,huv,nisv*njsv,1,nisv*njv)
-            call e_bmfsplitxy2 (ttu,nisu,njsu,'VTU ',k,lv,pniu,0,0,0)
-            call e_bmfsplitxy2 (ttv,nisv,njsv,'VTV ',k,lv,pni ,0,0,0)
+            call e_bmfsplitxy2 (ttu,nisu,njsu,'VTU ',k,lv_t,pniu,0,0,0)
+            call e_bmfsplitxy2 (ttv,nisv,njsv,'VTV ',k,lv_t,pni ,0,0,0)
          end do
 *
 *     add treatment at the surface, read temperature and dew point,

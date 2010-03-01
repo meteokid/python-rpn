@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r wndth - Compute an average wind valid at time t0-dt/2 (th)
 *
 #include "model_macros_f.h"
@@ -27,14 +39,18 @@
 #include "vt1.cdk"
 #include "hzd.cdk"
 #include "lctl.cdk"
+#include "schm.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer pnerr, pnlkey1(12), i, j, k
+      integer pnerr, pnlkey1(9), nlkey
+*
+      integer i, j, k
 **
 *     ---------------------------------------------------------------
+      if (Lun_debug_L) write (Lun_out,1000)
 *
       pnlkey1(1) = VMM_KEY(uth)
       pnlkey1(2) = VMM_KEY(ut1)
@@ -45,17 +61,18 @@
       pnlkey1(7) = VMM_KEY(zdth)
       pnlkey1(8) = VMM_KEY(zdt1)
       pnlkey1(9) = VMM_KEY(zdt0)
+      nlkey=9
 *
-      pnerr = vmmlod(pnlkey1,9)
+      pnerr = vmmlod(pnlkey1,nlkey)
+      pnerr = VMM_GET_VAR(uth)
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(ut0)
+      pnerr = VMM_GET_VAR(vth)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(vt0)
       pnerr = VMM_GET_VAR(zdth)
       pnerr = VMM_GET_VAR(zdt1)
       pnerr = VMM_GET_VAR(zdt0)
-      pnerr = VMM_GET_VAR(uth)
-      pnerr = VMM_GET_VAR(vth)
-      pnerr = VMM_GET_VAR(ut1)
-      pnerr = VMM_GET_VAR(vt1)
-      pnerr = VMM_GET_VAR(ut0)
-      pnerr = VMM_GET_VAR(vt0)
 *
 *     Filtering
 *     ---------
@@ -70,25 +87,34 @@
 *C       1.    Perform the averaging
 *              ---------------------
 *
+!$omp parallel
+*
+!$omp do
       do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n 
-         do i= 1+pil_w, l_ni-pil_e 
-              uth(i,j,k) = 0.5 *   ut0(i,j,k) + 0.5 *   ut1(i,j,k)
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+              uth(i,j,k) = 0.5*ut0(i,j,k)+0.5*ut1(i,j,k)
          end do
          end do
-         do j= 1+pil_s, l_njv-pil_n 
-         do i= 1+pil_w, l_ni-pil_e 
-            vth(i,j,k)   = 0.5 * vt0(i,j,k) + 0.5 * vt1(i,j,k)
-         end do
-         end do
-      end do
-      do k=1,l_nk+1
-         do j= 1+pil_s, l_nj-pil_n 
-         do i= 1+pil_w, l_ni-pil_e 
-            zdth(i,j,k) = 0.5 * zdt0(i,j,k) + 0.5 * zdt1(i,j,k)
+         do j= 1+pil_s, l_njv-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            vth(i,j,k)   = 0.5*vt0(i,j,k)+0.5*vt1(i,j,k)
          end do
          end do
       end do
+!$omp enddo
+      if(.not.Schm_zdotMid_L) then
+!$omp do
+         do k=1,l_nk+1
+            do j= 1+pil_s, l_nj-pil_n 
+            do i= 1+pil_w, l_ni-pil_e 
+               zdth(i,j,k) = 0.5 * zdt0(i,j,k) + 0.5 * zdt1(i,j,k)
+            end do
+            end do
+         end do      
+!$omp enddo
+      endif
+!$omp end parallel
 *
       pnerr = vmmuld(-1,0)
 *

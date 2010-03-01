@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r nest_blen -
 *
 #include "model_macros_f.h"
@@ -41,20 +53,20 @@
       if (Lun_debug_L) write(Lun_out,1001)
       key(1 )=VMM_KEY(nest_u)
       key(2 )=VMM_KEY(nest_v)
-      key(3 )=VMM_KEY(nest_t)
-      key(4 )=VMM_KEY(nest_zd)
-      key(5 )=VMM_KEY(nest_s)
-      key(6 )=VMM_KEY(ut1)
-      key(7 )=VMM_KEY(vt1)
-      key(8 )=VMM_KEY(tt1)
-      key(9 )=VMM_KEY(zdt1)
-      key(10)=VMM_KEY(st1)
-      nvar = 10
+      key(3 )=VMM_KEY(nest_w)
+      key(4 )=VMM_KEY(nest_t)
+      key(5 )=VMM_KEY(nest_zd)
+      key(6 )=VMM_KEY(nest_s)
+      key(7 )=VMM_KEY(ut1)
+      key(8 )=VMM_KEY(vt1)
+      key(9 )=VMM_KEY(wt1)
+      key(10)=VMM_KEY(tt1)
+      key(11)=VMM_KEY(zdt1)
+      key(12)=VMM_KEY(st1)
+      nvar = 12
 *
       if (.not.Schm_hydro_L) then
-         key(11)=VMM_KEY(nest_w)
-         key(12)=VMM_KEY(nest_q)
-         key(13)=VMM_KEY(wt1)
+         key(13)=VMM_KEY(nest_q)
          key(14)=VMM_KEY(qt1)
          nvar = 14
       endif
@@ -62,25 +74,25 @@
       err = vmmlod(key,nvar)
       err = VMM_GET_VAR(nest_u)
       err = VMM_GET_VAR(nest_v)
+      err = VMM_GET_VAR(nest_w)
       err = VMM_GET_VAR(nest_t)
       err = VMM_GET_VAR(nest_zd)
       err = VMM_GET_VAR(nest_s)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(wt1)
       err = VMM_GET_VAR(tt1)
       err = VMM_GET_VAR(zdt1)
       err = VMM_GET_VAR(st1)
       if (.not.Schm_hydro_L) then
-         err = VMM_GET_VAR(nest_w)
          err = VMM_GET_VAR(nest_q)
-         err = VMM_GET_VAR(wt1)
          err = VMM_GET_VAR(qt1)
       endif
 *
 * Update the nesting values in the blending zone before blending
 * if the orography is growing
       if (Vtopo_L) then
-         print*,' nest_blen.ftn : travail a faire if Vtopo_L=.true. '
+         print*,' nest_blen.ftn : a revoir pour Vtopo_L=.true. '
          if(.not.Schm_theoc_L)then
             call gem_stop('nest_blen.ftn : a faire',-1)
          endif
@@ -91,12 +103,12 @@ c     $    nest_s,LDIST_DIM,G_nk,Hblen_x,Hblen_y)
 * Set up blending zones
       call nesajr (ut1  ,nest_u  ,LDIST_DIM,G_nk  ,1,0,Hblen_x,Hblen_y)
       call nesajr (vt1  ,nest_v  ,LDIST_DIM,G_nk  ,0,1,Hblen_x,Hblen_y)
+      call nesajr (wt1  ,nest_w  ,LDIST_DIM,G_nk+1,0,0,Hblen_x,Hblen_y)
       call nesajr (zdt1 ,nest_zd ,LDIST_DIM,G_nk+1,0,0,Hblen_x,Hblen_y)
       call nesajr (tt1  ,nest_t  ,LDIST_DIM,G_nk+1,0,0,Hblen_x,Hblen_y)
       call nesajr (st1  ,nest_s  ,LDIST_DIM,1     ,0,0,Hblen_x,Hblen_y)
 *
       if (.not. Schm_hydro_L) then
-         call nesajr (wt1,nest_w,LDIST_DIM,G_nk+1,0,0,Hblen_x,Hblen_y)
          call nesajr (qt1,nest_q,LDIST_DIM,G_nk+2,0,0,Hblen_x,Hblen_y)
       endif
       err = vmmuld(key,nvar)

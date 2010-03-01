@@ -1,0 +1,89 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r get_lnpress3d - get 3D log pressure using A,B, and incoming p0
+*
+      subroutine get_lnpress3d(F_pr, F_ps, n, F_pia_8, F_pib_8, 
+     $                         F_pisrf_8, NK, F_datatype)
+      implicit none
+*
+      integer n, NK,F_datatype
+      real F_pr(n,NK),F_ps(n)
+      real*8 F_pia_8(Nk), F_pib_8(Nk), F_pisrf_8
+*
+*author  V.Lee   Nov, 2007 - (p0vtgz v1_03+ Desgagne+ Plante)
+*
+*revision
+* v4_02 - Lee V.            - initial MPI version 
+*
+
+*object
+*       to create a 3D field of the log pressure (st1)
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_pr           O    - 3D pressure field
+* F_ps           I    - incoming 2D surface pressure
+* N              I    - number of points in the 2D field of F_ps
+* F_pia_8        I    - A
+* F_pib_8        I    - B
+* NK             I    - Number of levels to the 3D pressure field
+* F_datatype     I    - code for the type of pressure in F_ps 
+*                       0 => same as st1 in current model
+*                       1 => p0 (A and B are for stag using log p0)
+*                       2 => p0 (A and B are for hyb/eta)
+*                       3 => p0 (A and B are for sigma)
+*
+*implicits
+*
+**
+      integer i,k
+      real*8 lnpref_8
+*
+*     ---------------------------------------------------------------
+*
+      lnpref_8 = log(F_pisrf_8)
+
+      if (F_datatype.eq.0) then
+*                       0 => same as st1 in current model
+          do k=1,Nk
+          do i=1,n
+             F_pr(i,k) = F_pia_8(k) + F_pib_8(k)*(F_ps(i)+lnpref_8)
+          enddo
+          enddo
+      else if (F_datatype.eq.6) then
+*                        => p0 (A and B are for stag using log p0)
+          do k=1,Nk
+          do i=1,n
+             F_pr(i,k) = F_pia_8(k) + F_pib_8(k)*log(F_ps(i))
+          enddo
+          enddo
+      else if (F_datatype.eq.5.or.F_datatype.eq.2.or.F_datatype.eq.1) then
+*                        => p0 (A and B are for hyb/eta/ecm)
+          do k=1,Nk
+          do i=1,n
+             F_pr(i,k) = log(F_pia_8(k) + F_pib_8(k)*F_ps(i))
+          enddo
+          enddo
+      else if (F_datatype.eq.3) then
+*                        => p0 (A and B are for sigma)
+          do k=1,Nk
+          do i=1,n
+             F_pr(i,k) =  log(F_pia_8(k)  *  F_ps(i))
+          enddo
+          enddo
+      else 
+          print *,'ERROR in get_lnpress3d: Datatype not recognized'
+      endif
+      return
+      end

@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/p calomeg_adv - compute vertical velocity in pressure coordinates
 *                    from advection
 *
@@ -37,9 +49,6 @@
 *
 **
       integer i,j,k,i0,in,j0,jn
-      real*8 phi
-      real ytmp(DIST_SHAPE),xtmp(DIST_SHAPE)
-      
 *     __________________________________________________________________
 *
       i0=1
@@ -65,18 +74,11 @@
 *
 !$omp parallel
 !$omp do
-         do j=j0,jn
-            do i=i0,in
-               xtmp(i,j)=F_st1(i,j)
-            end do
-            call vsexp (ytmp(i0,j),xtmp(i0,j),(in-i0+1))
-         end do
-!$omp enddo
-!$omp do
          do k=1,l_nk+1
             do j=j0,jn
             do i=i0,in
-               F_ww (i,j,k) = (Ver_a_8%t(k) + Ver_b_8%t(k)*ytmp(i,j)
+c  a revoir pour exp
+               F_ww (i,j,k) = (exp(Ver_z_8%t(k) + Ver_b_8%t(k)*F_st1(i,j))
      $              - F_piup(i,j,k) )/Cstv_dt_8            
             end do
             end do

@@ -1,0 +1,316 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adx_tricub - tri-cubic interpolation: lagrange in the 
+*                   horizontal and spline cubic in the vertical
+*
+#include "model_macros_f.h"
+*
+      subroutine adx_tricub ( F_out, F_in, F_inzz, F_n,
+     %                        F_capx, F_xgg, F_xdd,
+     %                        F_capy, F_ygg, F_ydd,
+     %                        F_capz, F_cz, F_num, F_mono_L,i0,in,j0,jn,kn )
+*
+#include "impnone.cdk"
+*
+      logical F_mono_L
+*
+      integer F_num, F_n(F_num),i0,in,j0,jn,kn
+*
+      real F_in(*), F_inzz(*)
+*
+      real F_out (F_num),
+     %     F_capx(F_num), F_capy(F_num), F_capz(F_num), F_cz  (F_num),
+     %     F_xgg (F_num), F_xdd (F_num), F_ygg (F_num), F_ydd (F_num)
+*
+*author
+*     alain patoine
+*
+*revision
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_out        | result of interpolation                         |  o  |
+* F_in         | field to interpolate                            |  i  |
+* F_inzz       | precomputed 2nd vertical derivatives            |  i  |
+*              |                                                 |     |
+* F_n          | positions in the 3D volume of interpolation     |  i  |
+*              | boxes                                           |     |
+*              |                                                 |     |
+* F_capx       | \                                               |  i  |
+* F_xgg        |   precomputed displacements and interpolation   |  i  |
+* F_xdd        | / terms along the x-direction                   |  i  |
+*              |                                                 |     |
+* F_capy       | \                                               |  i  |
+* F_ygg        |   precomputed displacements and interpolation   |  i  |
+* F_ydd        | / terms along the y-direction                   |  i  |
+*              |                                                 |     |
+* F_capz       | \ precomputed displacements and interpolation   |  i  |
+* F_cz         | / terms along the z-direction                   |  i  |
+*              |                                                 |     |
+* F_num        | number of points to interpolate                 |  i  |
+*              |                                                 |     |
+* F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "type.cdk"
+#include "adx.cdk"
+************************************************************************
+      integer n, nijag,i,j,k,nij
+*
+      real prmin, prmax
+*
+      integer o1, o2, o3, o4
+      real*8  gg, dd, xx, xm
+      real*8  a1, a2, a3, a4
+      real*8  b1, b2, b3, b4
+      real*8  c1, c2, c3, c4
+      real*8  d1, d2, d3, d4
+      real*8  p1, p2, p3, p4
+      real*8  t1, t2, t3
+*
+      nij   = l_ni*l_nj
+      nijag = adx_nit * adx_njt
+*
+!$omp parallel private(gg, dd, xx, xm, a1, a2, a3, a4, b1, b2, b3, b4,
+!$omp& c1, c2, c3, c4,d1, d2, d3, d4 ,p1, p2, p3, p4,t1, t2, t3, prmin
+!$omp& , prmax, n, o1, o2, o3, o4)
+      if ( F_mono_L ) then
+*
+!$omp do
+      do 100 k=1,kn
+      do  90 j=j0,jn
+      do  80 i=i0,in
+      n = (k-1)*nij + ((j-1)*l_ni) + i
+***********************************************************************
+*     x interpolation
+***********************************************************************
+      xx = F_capx(n)
+      xm = 1 - xx
+      gg = F_xgg(n)
+      dd = F_xdd(n)
+*
+      t1 = 1  + gg
+      t2 = 1  + dd
+      p1 = gg + t2
+      p4 = dd * t2 * p1
+      p1 = gg * t1 * p1
+      t3 = gg * t2
+      t1 = t1 * dd
+      p2 = t2 - xx
+      p3 = gg + xx
+      t2 =-xx * xm
+      p4 = t2 * p3 / p4
+      p1 = t2 * p2 / p1
+      p3 = p2 * p3
+      p2 = xm * p3 / t3
+      p3 = xx * p3 / t1
+*
+      o1 = F_n(n)-adx_nit
+      o2 = F_n(n)
+      o3 = F_n(n)+adx_nit
+      o4 = F_n(n)+adx_nit+adx_nit
+*
+      a1 = p1 * F_in  (o1-1) + p2 * F_in  (o1) + p3 * F_in  (o1+1) + p4 * F_in  (o1+2)
+         prmax = max(F_in(o2),F_in(o2+1))
+         prmin = min(F_in(o2),F_in(o2+1))
+      a2 = p1 * F_in  (o2-1) + p2 * F_in  (o2) + p3 * F_in  (o2+1) + p4 * F_in  (o2+2)
+         prmax = max(prmax,F_in(o3),F_in(o3+1))
+         prmin = min(prmin,F_in(o3),F_in(o3+1))
+      a3 = p1 * F_in  (o3-1) + p2 * F_in  (o3) + p3 * F_in  (o3+1) + p4 * F_in  (o3+2)
+      a4 = p1 * F_in  (o4-1) + p2 * F_in  (o4) + p3 * F_in  (o4+1) + p4 * F_in  (o4+2)
+      b1 = p1 * F_inzz(o1-1) + p2 * F_inzz(o1) + p3 * F_inzz(o1+1) + p4 * F_inzz(o1+2)
+      b2 = p1 * F_inzz(o2-1) + p2 * F_inzz(o2) + p3 * F_inzz(o2+1) + p4 * F_inzz(o2+2)
+      b3 = p1 * F_inzz(o3-1) + p2 * F_inzz(o3) + p3 * F_inzz(o3+1) + p4 * F_inzz(o3+2)
+      b4 = p1 * F_inzz(o4-1) + p2 * F_inzz(o4) + p3 * F_inzz(o4+1) + p4 * F_inzz(o4+2)
+*
+      o1 = o1 + nijag
+      o2 = o2 + nijag
+      o3 = o3 + nijag
+      o4 = o4 + nijag
+*
+      c1 = p1 * F_in  (o1-1) + p2 * F_in  (o1) + p3 * F_in  (o1+1) + p4 * F_in  (o1+2)
+         prmax = max(prmax,F_in(o2),F_in(o2+1))
+         prmin = min(prmin,F_in(o2),F_in(o2+1))
+      c2 = p1 * F_in  (o2-1) + p2 * F_in  (o2) + p3 * F_in  (o2+1) + p4 * F_in  (o2+2)
+         prmax = max(prmax,F_in(o3),F_in(o3+1))
+         prmin = min(prmin,F_in(o3),F_in(o3+1))
+      c3 = p1 * F_in  (o3-1) + p2 * F_in  (o3) + p3 * F_in  (o3+1) + p4 * F_in  (o3+2)
+      c4 = p1 * F_in  (o4-1) + p2 * F_in  (o4) + p3 * F_in  (o4+1) + p4 * F_in  (o4+2)
+      d1 = p1 * F_inzz(o1-1) + p2 * F_inzz(o1) + p3 * F_inzz(o1+1) + p4 * F_inzz(o1+2)
+      d2 = p1 * F_inzz(o2-1) + p2 * F_inzz(o2) + p3 * F_inzz(o2+1) + p4 * F_inzz(o2+2)
+      d3 = p1 * F_inzz(o3-1) + p2 * F_inzz(o3) + p3 * F_inzz(o3+1) + p4 * F_inzz(o3+2)
+      d4 = p1 * F_inzz(o4-1) + p2 * F_inzz(o4) + p3 * F_inzz(o4+1) + p4 * F_inzz(o4+2)
+***********************************************************************
+*     y interpolation
+***********************************************************************
+      xx = F_capy(n)
+      xm = 1 - xx
+      gg = F_ygg(n)
+      dd = F_ydd(n)
+*
+      t1 = 1  + gg
+      t2 = 1  + dd
+      p1 = gg + t2
+      p4 = dd * t2 * p1
+      p1 = gg * t1 * p1
+      t3 = gg * t2
+      t1 = t1 * dd
+      p2 = t2 - xx
+      p3 = gg + xx
+      t2 =-xx * xm
+      p4 = t2 * p3 / p4
+      p1 = t2 * p2 / p1
+      p3 = p2 * p3
+      p2 = xm * p3 / t3
+      p3 = xx * p3 / t1
+*
+      a1 = p1 * a1 + p2 * a2 + p3 * a3 + p4 * a4
+      b1 = p1 * b1 + p2 * b2 + p3 * b3 + p4 * b4
+      c1 = p1 * c1 + p2 * c2 + p3 * c3 + p4 * c4
+      d1 = p1 * d1 + p2 * d2 + p3 * d3 + p4 * d4
+***********************************************************************
+*     z interpolation
+***********************************************************************
+      xx = F_capz(n)
+      xm = 1.0 - xx
+      t1 = F_cz(n) * ( xm + 1.0 )
+      t2 = F_cz(n) * ( xx + 1.0 )
+*
+      F_out(n) = max ( 1.0d0*prmin , ( min ( 1.0d0*prmax, xm * a1 + t1 * b1 + xx * c1 + t2 * d1 )))
+*
+   80 continue
+   90 continue
+  100 continue
+!$omp enddo
+*
+***********************************************************************
+***********************************************************************
+      else
+***********************************************************************
+***********************************************************************
+*
+!$omp do
+      do 200 k=1,kn
+      do 190 j=j0,jn
+      do 180 i=i0,in
+      n = (k-1)*nij + ((j-1)*l_ni) + i
+***********************************************************************
+*     x interpolation
+***********************************************************************
+      xx = F_capx(n)
+      xm = 1 - xx
+      gg = F_xgg(n)
+      dd = F_xdd(n)
+*
+      t1 = 1  + gg
+      t2 = 1  + dd
+      p1 = gg + t2
+      p4 = dd * t2 * p1
+      p1 = gg * t1 * p1
+      t3 = gg * t2
+      t1 = t1 * dd
+      p2 = t2 - xx
+      p3 = gg + xx
+      t2 =-xx * xm
+      p4 = t2 * p3 / p4
+      p1 = t2 * p2 / p1
+      p3 = p2 * p3
+      p2 = xm * p3 / t3
+      p3 = xx * p3 / t1
+*
+      o1 = F_n(n)-adx_nit
+      o2 = F_n(n)
+      o3 = F_n(n)+adx_nit
+      o4 = F_n(n)+adx_nit+adx_nit
+*
+      a1 = p1 * F_in  (o1-1) + p2 * F_in  (o1) + p3 * F_in  (o1+1) + p4 * F_in  (o1+2)
+      a2 = p1 * F_in  (o2-1) + p2 * F_in  (o2) + p3 * F_in  (o2+1) + p4 * F_in  (o2+2)
+      a3 = p1 * F_in  (o3-1) + p2 * F_in  (o3) + p3 * F_in  (o3+1) + p4 * F_in  (o3+2)
+      a4 = p1 * F_in  (o4-1) + p2 * F_in  (o4) + p3 * F_in  (o4+1) + p4 * F_in  (o4+2)
+      b1 = p1 * F_inzz(o1-1) + p2 * F_inzz(o1) + p3 * F_inzz(o1+1) + p4 * F_inzz(o1+2)
+      b2 = p1 * F_inzz(o2-1) + p2 * F_inzz(o2) + p3 * F_inzz(o2+1) + p4 * F_inzz(o2+2)
+      b3 = p1 * F_inzz(o3-1) + p2 * F_inzz(o3) + p3 * F_inzz(o3+1) + p4 * F_inzz(o3+2)
+      b4 = p1 * F_inzz(o4-1) + p2 * F_inzz(o4) + p3 * F_inzz(o4+1) + p4 * F_inzz(o4+2)
+*
+      o1 = o1 + nijag
+      o2 = o2 + nijag
+      o3 = o3 + nijag
+      o4 = o4 + nijag
+*
+      c1 = p1 * F_in  (o1-1) + p2 * F_in  (o1) + p3 * F_in  (o1+1) + p4 * F_in  (o1+2)
+      c2 = p1 * F_in  (o2-1) + p2 * F_in  (o2) + p3 * F_in  (o2+1) + p4 * F_in  (o2+2)
+      c3 = p1 * F_in  (o3-1) + p2 * F_in  (o3) + p3 * F_in  (o3+1) + p4 * F_in  (o3+2)
+      c4 = p1 * F_in  (o4-1) + p2 * F_in  (o4) + p3 * F_in  (o4+1) + p4 * F_in  (o4+2)
+      d1 = p1 * F_inzz(o1-1) + p2 * F_inzz(o1) + p3 * F_inzz(o1+1) + p4 * F_inzz(o1+2)
+      d2 = p1 * F_inzz(o2-1) + p2 * F_inzz(o2) + p3 * F_inzz(o2+1) + p4 * F_inzz(o2+2)
+      d3 = p1 * F_inzz(o3-1) + p2 * F_inzz(o3) + p3 * F_inzz(o3+1) + p4 * F_inzz(o3+2)
+      d4 = p1 * F_inzz(o4-1) + p2 * F_inzz(o4) + p3 * F_inzz(o4+1) + p4 * F_inzz(o4+2)
+***********************************************************************
+*     y interpolation
+***********************************************************************
+      xx = F_capy(n)
+      xm = 1 - xx
+      gg = F_ygg(n)
+      dd = F_ydd(n)
+*
+      t1 = 1  + gg
+      t2 = 1  + dd
+      p1 = gg + t2
+      p4 = dd * t2 * p1
+      p1 = gg * t1 * p1
+      t3 = gg * t2
+      t1 = t1 * dd
+      p2 = t2 - xx
+      p3 = gg + xx
+      t2 =-xx * xm
+      p4 = t2 * p3 / p4
+      p1 = t2 * p2 / p1
+      p3 = p2 * p3
+      p2 = xm * p3 / t3
+      p3 = xx * p3 / t1
+*
+      a1 = p1 * a1 + p2 * a2 + p3 * a3 + p4 * a4
+      b1 = p1 * b1 + p2 * b2 + p3 * b3 + p4 * b4
+      c1 = p1 * c1 + p2 * c2 + p3 * c3 + p4 * c4
+      d1 = p1 * d1 + p2 * d2 + p3 * d3 + p4 * d4
+***********************************************************************
+*     z interpolation
+***********************************************************************
+      xx = F_capz(n)
+      xm = 1.0 - xx
+      t1 = F_cz(n) * ( xm + 1.0 )
+      t2 = F_cz(n) * ( xx + 1.0 )
+*
+      F_out(n) = xm * a1 + t1 * b1 + xx * c1 + t2 * d1
+*
+  180 continue
+  190 continue
+  200 continue
+!$omp enddo
+*
+      endif
+!$omp end parallel
+*
+      return
+      end

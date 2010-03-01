@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *** s/r out_sfile_bcs - open BCS file for cascade mode
 *
@@ -10,28 +22,39 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       character* (*) msg,datev
       integer stepno, unf, is,nis,js,jn,njs,iw,ie,niw,jw,njw
       integer nvar, ntr, mode
-
-      call gem_stop('out_sfile_bcs',-1)
+*
+*author Michel Desgagne (MC2 2001)
+*
+*revision
+* v3_30 - Lee V. - initial version for GEM LAM
+*
+#include "glb_ld.cdk"
+#include "ver.cdk"
+#include "ptopo.cdk"
+*
+      integer  longueur
+      external longueur
+      character*2  md
+      character*512 filen
+*
+*------------------------------------------------------------------
+*
+      if (Ptopo_myproc.eq.0) then
+          unf = 202
+*
+          write (md,'(i2.2)') mode
+          filen= 'bcs'//md//'_'//datev
+          filen= '../../output/casc/'//filen(1:longueur(filen))
+          open (unf,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
+     $                                          position='APPEND')
+          call wrgeo_bcs (G_xg_8(is),nis+1,G_yg_8(js),G_yg_8(jn),njs+1,
+     $                G_xg_8(iw),G_xg_8(ie),niw+1,G_yg_8(jw),njw+1,
+     $                Ver_a_8%m(1),Ver_b_8%m(1),Ver_a_8%t,Ver_b_8%t,
+     $                G_nk,unf)
+          write (unf) msg,nvar,ntr,mode
+      endif
+*
+*------------------------------------------------------------------
       return
       end
 *
-      subroutine wrgeo_bcs ( xps,nis,yps,ypn,njs,
-     $                       xpw,xpe,niw,ypw,njw,
-     $                       z,pia,pib,nk,unf )
-      implicit none
-*
-      integer nis,njs,niw,njw
-      integer ni,nj,nk,nvar,unf
-      real pia(nk), pib(nk)
-      real*8 xps(nis), yps(njs), ypn(njs), xpw(niw), xpe(niw), ypw(njw)
-      real*8 z(nk)
-*
-*------------------------------------------------------------------
-      write (unf) '>>^^',nis,njs,niw,njw
-      write (unf) xps,yps,ypn,xpw,xpe,ypw
-      write (unf) 'ZAB ',nk
-      write (unf) z,pia,pib
-*------------------------------------------------------------------
-*
-      return
-      end

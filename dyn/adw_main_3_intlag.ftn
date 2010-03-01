@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r adw_main_3_intlag - Interpolation of rhs
 *
 #include "model_macros_f.h"
@@ -62,7 +74,6 @@
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
-#include "vtx.cdk"
 #include "ver.cdk"
 *
 *modules
@@ -81,10 +92,8 @@
 *      integer m, ntr2do, j2do
       integer DIST_DIM
 *
-      real*8 aaa
-      real tr,tr0,buf(l_ni,G_nk+1), half
-      real work(LDIST_SHAPE,G_nk+1),work2(LDIST_SHAPE,G_nk+1)
-      parameter( half = 0.5 )
+      real*8 aaa,xxa,xxb
+      real tr,tr0,buf(l_ni,G_nk+1)
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:) :: pos_x, pos_y, pos_z
 *
@@ -127,7 +136,7 @@
 * Prepare for advection on momentum levels
 ***********************************************************************
 !
-!$omp parallel do private(n)
+!$omp parallel do private(n,xxa,xxb)
       do k=1,l_nk
       do j=j0,jn
       do i=i0,in
@@ -147,7 +156,7 @@
      $                            i0, in, j0, jn, l_nk,'m' )
           call adw_ckbd_lam( pos_x, pos_y, pos_z, i0, in, j0, jn, l_nk )
           if ( V4dg_conf.ne.0.0 ) then
-             call gem_stop('adw_main_3_intlag : ajouter code')            
+             call gem_stop('adw_main_3_intlag : ajouter code',-1)            
           endif
       endif
 *
@@ -194,19 +203,21 @@
       endif
 *
 ***********************************************************************
-* Perform interpolation
+* Perform interpolation on momentum levels
 ***********************************************************************
       pnlkey1(1) = VMM_KEY(ruw1)
       pnlkey1(2) = VMM_KEY(rvw1)
       pnlkey1(3) = VMM_KEY(ruw2)
       pnlkey1(4) = VMM_KEY(rvw2)
       pnlkey1(5) = VMM_KEY(rhsc)
-      pnlkey1(6) = VMM_KEY(fiptx)
-      pnlkey1(7) = VMM_KEY(zz1)
-      pnlkey1(8) = VMM_KEY(piup)
-      pnlkey1(9) = VMM_KEY(st1)
-      pnlkey1(10) = VMM_KEY(orhsc)
-      pnlod = 10
+      pnlkey1(6) = VMM_KEY(orhsc)
+      pnlkey1(7) = VMM_KEY(wup)
+      pnlkey1(8) = VMM_KEY(wt1)
+      pnlkey1(9) = VMM_KEY(zdup)
+      pnlkey1(10)= VMM_KEY(zdt1)
+      pnlkey1(11)= VMM_KEY(zz1)
+      pnlkey1(12)= VMM_KEY(fipt1)
+      pnlod = 12
 *
       pnerr = vmmlod(pnlkey1,pnlod)
 *
@@ -215,15 +226,17 @@
       pnerr =  VMM_GET_VAR(ruw2)
       pnerr =  VMM_GET_VAR(rvw2)
       pnerr =  VMM_GET_VAR(rhsc)
-      pnerr =  VMM_GET_VAR(fiptx)
-      pnerr =  VMM_GET_VAR(zz1)
-      pnerr =  VMM_GET_VAR(piup)
-      pnerr =  VMM_GET_VAR(st1)
       pnerr =  VMM_GET_VAR(orhsc)
+      pnerr =  VMM_GET_VAR(wup)
+      pnerr =  VMM_GET_VAR(wt1)
+      pnerr =  VMM_GET_VAR(zdup)
+      pnerr =  VMM_GET_VAR(zdt1)
+      pnerr =  VMM_GET_VAR(zz1)
+      pnerr =  VMM_GET_VAR(fipt1)
 *     ----------------------------
 *     Keep positions in CAP fields
 *     ----------------------------
-!$omp parallel private(n)
+!$omp parallel private(n,xxa,xxb)
 !$omp do
       do k=1,l_nk
       do j=j0,jn
@@ -239,7 +252,6 @@
 *
       call adw_interp2 (ruw2, ruw1, pos_x, pos_y,
      %                 .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
- 
 *
       call adw_interp2 (rvw2, rvw1, pos_x, pos_y,
      %                 .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
@@ -247,20 +259,82 @@
       call adw_interp2 (rhsc , orhsc , pos_x, pos_y,
      %                 .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
 *
+      if(Schm_zdotlag_L) then
+!$omp do
+         do k=1,l_nk+1
+            do j=j0,jn
+            do i=i0,in
+               zz1(i,j,k)=.5d0*(fipt1(i,j,k)+fipt1(i,j,k-1))
+            enddo
+            enddo
+         enddo
+!$omp enddo
+*
+*     Note : optimizing on j due to dependency on k
+!$omp do
+         do j=j0,jn
+            do k=1,l_nk
+            do i=i0,in
+               zz1(i,j,k)=(zz1(i,j,k+1)-zz1(i,j,k))*Ver_idz_8%m(k)
+            end do
+            end do
+         end do
+!$omp enddo
+*
+*        applying the best averaging
+!$omp do
+         do k=1,l_nk
+            xxa=0.5d0*Ver_idz_8%m(k)*Ver_dz_8%t(k)
+            xxb=0.5d0*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
+            do j=j0,jn
+            do i=i0,in
+               wup(i,j,k) = xxa* wt1(i,j,k+1)+xxb* wt1(i,j,k)
+            enddo
+            enddo
+         enddo
+!$omp enddo
+*
+         call adw_interp2 (wup,wup, pos_x, pos_y, 
+     %        .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')         
+*
+         call adw_interp2 (zz1,zz1, pos_x, pos_y, 
+     %        .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')         
+*
+      else if(Schm_zdotmid_L) then
+*
+!$omp do
+         do k=1,l_nk
+            xxa=0.5d0*Ver_idz_8%m(k)*Ver_dz_8%t(k)
+            xxb=0.5d0*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
+            do j=j0,jn
+            do i=i0,in
+               zdup(i,j,k) = xxa*zdt1(i,j,k+1)+xxb*zdt1(i,j,k)
+               enddo
+            enddo
+         enddo
+!$omp enddo
+*
+         call adw_interp2 (zdup,zdup, pos_x, pos_y, 
+     %        .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')         
+*
+      endif
+*
 !$omp end parallel
 
       if (.not.G_lam) then
-      call hpdeallc(Adw_capx2_   ,err)
-      call hpdeallc(Adw_capy2_   ,err)
-      call hpdeallc(Adw_capz2_   ,err)
-      call hpdeallc(Adw_n2_      ,err)
-      call hpdeallc(Adw_xdd2_    ,err)
-      call hpdeallc(Adw_xgg2_    ,err)
-      call hpdeallc(Adw_ydd2_    ,err)
-      call hpdeallc(Adw_ygg2_    ,err)
-      call hpdeallc(Adw_cz2_     ,err)
-      call hpdeallc(Adw_wrka_    ,err)
+      call hpdeallc(Adw_capx2_   ,err,1)
+      call hpdeallc(Adw_capy2_   ,err,1)
+      call hpdeallc(Adw_capz2_   ,err,1)
+      call hpdeallc(Adw_n2_      ,err,1)
+      call hpdeallc(Adw_xdd2_    ,err,1)
+      call hpdeallc(Adw_xgg2_    ,err,1)
+      call hpdeallc(Adw_ydd2_    ,err,1)
+      call hpdeallc(Adw_ygg2_    ,err,1)
+      call hpdeallc(Adw_cz2_     ,err,1)
+      call hpdeallc(Adw_wrka_    ,err,1)
       endif
+*
+      pnerr = vmmuld(pnlkey1,pnlod)
 *
 ***********************************************************************
 * Prepare for advection on thermodynamic levels
@@ -324,27 +398,31 @@
 * Perform interpolation for equations on thermodynamic levels
 ***********************************************************************
       pnlkey1(1) = VMM_KEY(rhst)
-      pnlkey1(2) = VMM_KEY(orhst)
-      pnlod = 2
+      pnlkey1(2) = VMM_KEY(rhsf)
+      pnlkey1(3) = VMM_KEY(orhst)
+      pnlkey1(4) = VMM_KEY(orhsf)
+      pnlkey1(5) = VMM_KEY(st1)
+      pnlkey1(6) = VMM_KEY(piup)
+      pnlod = 6
 *
       if (.not. Schm_hydro_L) then
-         pnlkey1(3) = VMM_KEY(rhsw)
-         pnlkey1(4) = VMM_KEY(orhsw)
-         pnlkey1(5) = VMM_KEY(rhsf)
-         pnlkey1(6) = VMM_KEY(orhsf)
-         pnlod = 6 
+         pnlkey1(pnlod+1) = VMM_KEY(rhsw)
+         pnlkey1(pnlod+2) = VMM_KEY(orhsw)
+         pnlod = pnlod+2 
       endif
 *
       pnerr = vmmlod(pnlkey1,pnlod)
 *
-      pnerr =  VMM_GET_VAR(rhst)
-      pnerr =  VMM_GET_VAR(orhst)
+      pnerr = VMM_GET_VAR(rhst)
+      pnerr = VMM_GET_VAR(rhsf)
+      pnerr = VMM_GET_VAR(orhst)
+      pnerr = VMM_GET_VAR(orhsf)
+      pnerr = VMM_GET_VAR(st1)
+      pnerr = VMM_GET_VAR(piup)
 *
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(rhsw)
          pnerr = VMM_GET_VAR(orhsw)
-         pnerr = VMM_GET_VAR(rhsf)
-         pnerr = VMM_GET_VAR(orhsf)
       endif
 *
       if (Tr3d_ntr.gt.0) then
@@ -380,43 +458,45 @@
       end do
       end do
 !$omp enddo
+*
       call adw_interp2 (rhst, orhst, pos_x, pos_y, 
      %                 .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
-
-      if (.not. Schm_hydro_L) then
-          call adw_interp2 (rhsw, orhsw, pos_x, pos_y, 
+*
+      call adw_interp2 (rhsf, orhsf, pos_x, pos_y, 
      %                 .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
 *
-          call adw_interp2 (rhsf, orhsf, pos_x, pos_y, 
+      if (.not. Schm_hydro_L) then
+         call adw_interp2 (rhsw, orhsw, pos_x, pos_y, 
      %                 .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
-      else         
-         if(Orh_icn.eq.Schm_itcn)then
-!$omp parallel do
-            do k=1,l_nk+1
-               do j=j0,jn
-               do i=i0,in
-                  work(i,j,k)=.5d0*(fiptx(i,j,k)+fiptx(i,j,k-1))
-     $                 +Ver_fistr_8%t(k)
-                  work2(i,j,k)=exp(Ver_a_8%t(k) + Ver_b_8%t(k)*
-     $                 (st1(i,j)+Ver_z_8%t(G_nk+1)))
-               enddo
-               enddo
-            enddo
-!$omp end parallel do
-            call adw_interp2 (zz1, work, pos_x, pos_y, 
-     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')         
-            call adw_interp2 (piup,work2, pos_x, pos_y, 
-     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')         
-         endif
       endif
+*
+      if(Orh_icn.eq.Schm_itcn)then
+*
+!$omp do
+         do k=1,l_nk+1
+            do j=j0,jn
+            do i=i0,in
+               piup(i,j,k)=exp(Ver_z_8%t(k) + Ver_b_8%t(k)*st1(i,j))
+            enddo
+            enddo
+         enddo
+!$omp enddo
+*
+         call adw_interp2 (piup,piup, pos_x, pos_y, 
+     %     .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')         
+*
+      endif
+*
+!$omp end parallel
 *
       if ( (Orh_icn .eq. Schm_itcn) .and. (Tr3d_ntr.gt.0) ) then
 *
 * tr3d advection
 *
 *
-         aaa = ( Offc_a1_8 / Offc_b0_8 )/ Cstv_dt_8 
+         aaa = -1.d0 / Cstv_tau_8
 *
+!$omp parallel
          do n=1,Tr3d_ntr
             patr = pnt_trt1(n)
             patr0= pnt_trt0(n)
@@ -442,8 +522,8 @@
 !$omp enddo
          end do
 *
-      endif
 !$omp end parallel
+      endif
 
 ***********************************************************************
 * Deallocate
@@ -474,6 +554,11 @@
       endif
 *
       deallocate (pos_x,pos_y,pos_z)
+*
+      pnerr = vmmuld(pnlkey1,pnlod)
+      pnerr = vmmuld(key1,Tr3d_ntr)
+      pnerr = vmmuld(key0,Tr3d_ntr)
+      
 *
  1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INTLAG)')
 *

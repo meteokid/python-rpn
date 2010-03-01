@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r nest_update -
 *
 #include "model_macros_f.h"
@@ -39,13 +51,13 @@
 *
       key(1)=VMM_KEY(nest_u)
       key(2)=VMM_KEY(nest_v)
-      key(3)=VMM_KEY(nest_t)
-      key(4)=VMM_KEY(nest_zd)
-      key(5)=VMM_KEY(nest_s)
-      nvar = 5
+      key(3)=VMM_KEY(nest_w)
+      key(4)=VMM_KEY(nest_t)
+      key(5)=VMM_KEY(nest_zd)
+      key(6)=VMM_KEY(nest_s)
+      nvar = 6
 *
       if (.not.Schm_hydro_L) then
-         key(6)=VMM_KEY(nest_w)
          key(7)=VMM_KEY(nest_q)
          nvar = 7
       endif
@@ -53,11 +65,11 @@
       err = vmmlod(key,nvar)
       err = VMM_GET_VAR(nest_u)
       err = VMM_GET_VAR(nest_v)
+      err = VMM_GET_VAR(nest_w)
       err = VMM_GET_VAR(nest_t)
       err = VMM_GET_VAR(nest_zd)
       err = VMM_GET_VAR(nest_s)
       if (.not.Schm_hydro_L) then
-         err = VMM_GET_VAR(nest_w)
          err = VMM_GET_VAR(nest_q)
       endif
 *
@@ -67,6 +79,9 @@
       call trnes (nest_v,bcs_v(bcs_is),bcs_v(bcs_in),
      $       bcs_v(bcs_iw),bcs_v(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+      call trnes (nest_w,bcs_w(bcs_is),bcs_w(bcs_in),
+     $       bcs_w(bcs_iw),bcs_w(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
       call trnes (nest_t,bcs_t(bcs_is),bcs_t(bcs_in),
      $       bcs_t(bcs_iw),bcs_t(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
@@ -77,9 +92,6 @@
      $     bcs_zd(bcs_iw),bcs_zd(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
       if (.not.Schm_hydro_L) then
-          call trnes (nest_w,bcs_w(bcs_is),bcs_w(bcs_in),
-     $       bcs_w(bcs_iw),bcs_w(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
           call trnes (nest_q,bcs_q(bcs_is),bcs_q(bcs_in),
      $       bcs_q(bcs_iw),bcs_q(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)

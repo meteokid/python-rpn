@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r ta2t1tx -  Fetch variables ta into t1 and tx
 *
 #include "model_macros_f.h"
@@ -52,18 +64,22 @@
       key(2)  = VMM_KEY(ut1  )
       key(3)  = VMM_KEY(vta  )
       key(4)  = VMM_KEY(vt1  )
-      key(5)  = VMM_KEY(tta  )
-      key(6)  = VMM_KEY(tt1  )
-      key(7)  = VMM_KEY(zdta)
-      key(8)  = VMM_KEY(zdt1)
-      key(9)  = VMM_KEY(sta  )
-      key(10) = VMM_KEY(st1  )
+      key(5)  = VMM_KEY(wt1  )
+      key(6)  = VMM_KEY(wta  )
+      key(7)  = VMM_KEY(tta  )
+      key(8)  = VMM_KEY(tt1  )
+      key(9)  = VMM_KEY(zdta)
+      key(10) = VMM_KEY(zdt1)
+      key(11) = VMM_KEY(sta  )
+      key(12) = VMM_KEY(st1  )
 *
-      err = vmmlod(key,10)
+      err = vmmlod(key,12)
       err = VMM_GET_VAR(uta  )
       err = VMM_GET_VAR(ut1  )
       err = VMM_GET_VAR(vta  )
       err = VMM_GET_VAR(vt1  )
+      err = VMM_GET_VAR(wta  )
+      err = VMM_GET_VAR(wt1  )
       err = VMM_GET_VAR(tta  )
       err = VMM_GET_VAR(tt1  )
       err = VMM_GET_VAR(zdta)
@@ -83,7 +99,8 @@
       do k=1,l_nk+1
       do j= 1, l_nj
       do i= 1, l_ni
-         tt1  (i,j,k) = tta  (i,j,k)
+         wt1 (i,j,k) = wta (i,j,k)
+         tt1 (i,j,k) = tta (i,j,k)
          zdt1(i,j,k) = zdta(i,j,k)
       enddo
       enddo
@@ -103,25 +120,15 @@
 *
       if ( .not. Schm_hydro_L ) then
 *
-         key(1) = VMM_KEY(wta  )
-         key(2) = VMM_KEY(wt1  )
-         key(3) = VMM_KEY(qta )
-         key(4) = VMM_KEY(qt1 )
-         err = vmmlod(key,4)
-         err = VMM_GET_VAR(wta  )
-         err = VMM_GET_VAR(wt1  )
+         key(1) = VMM_KEY(qta )
+         key(2) = VMM_KEY(qt1 )
+         err = vmmlod(key,2)
          err = VMM_GET_VAR(qta )
          err = VMM_GET_VAR(qt1 )
 *
+         do k=0,l_nk+1
          do j= 1, l_nj 
          do i= 1, l_ni 
-            qt1(i,j,0) = qta(i,j,0)
-         enddo
-         enddo
-         do k=1,l_nk+1
-         do j= 1, l_nj 
-         do i= 1, l_ni 
-            wt1   (i,j,k) = wta   (i,j,k)
             qt1(i,j,k) = qta(i,j,k)
          enddo
          enddo
@@ -171,20 +178,20 @@
 *     
          key(1 )=VMM_KEY(nest_u)
          key(2 )=VMM_KEY(nest_v)
-         key(3 )=VMM_KEY(nest_t)
-         key(4 )=VMM_KEY(nest_zd)
-         key(5 )=VMM_KEY(nest_s)
-         key(6 )=VMM_KEY(uta)
-         key(7 )=VMM_KEY(vta)
-         key(8 )=VMM_KEY(tta)
-         key(9 )=VMM_KEY(zdta)
-         key(10)=VMM_KEY(sta)
-         nvar = 10
+         key(3 )=VMM_KEY(nest_w)
+         key(4 )=VMM_KEY(nest_t)
+         key(5 )=VMM_KEY(nest_zd)
+         key(6 )=VMM_KEY(nest_s)
+         key(7 )=VMM_KEY(uta)
+         key(8 )=VMM_KEY(vta)
+         key(9 )=VMM_KEY(wta)
+         key(10)=VMM_KEY(tta)
+         key(11)=VMM_KEY(zdta)
+         key(12)=VMM_KEY(sta)
+         nvar = 12
 *     
          if (.not.Schm_hydro_L) then
-            key(11)=VMM_KEY(nest_w)
-            key(12)=VMM_KEY(nest_q)
-            key(13)=VMM_KEY(wta)
+            key(13)=VMM_KEY(nest_q)
             key(14)=VMM_KEY(qta)
             nvar = 14
          endif
@@ -192,18 +199,18 @@
          err = vmmlod(key,nvar)
          err = VMM_GET_VAR(nest_u)
          err = VMM_GET_VAR(nest_v)
+         err = VMM_GET_VAR(nest_w)
          err = VMM_GET_VAR(nest_t)
          err = VMM_GET_VAR(nest_zd)
          err = VMM_GET_VAR(nest_s)
          err = VMM_GET_VAR(uta)
          err = VMM_GET_VAR(vta)
+         err = VMM_GET_VAR(wta)
          err = VMM_GET_VAR(tta)
          err = VMM_GET_VAR(zdta)
          err = VMM_GET_VAR(sta)
          if (.not.Schm_hydro_L) then
-            err = VMM_GET_VAR(nest_w)
             err = VMM_GET_VAR(nest_q)
-            err = VMM_GET_VAR(wta)
             err = VMM_GET_VAR(qta)
          endif
 *
@@ -223,8 +230,9 @@
             do k=1,G_nk+1
                do j=l_nj-pil_n+1,l_nj
                do i=1,l_ni
+                  nest_w  (i,j,k) = wta  (i,j,k)
                   nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_zd(i,j,k) = zdta(i,j,k)
+                  nest_zd (i,j,k) = zdta (i,j,k)
                end do
                end do
             end do
@@ -234,15 +242,9 @@
             end do
             end do
             if (.not. Schm_hydro_L) then
+               do k=0,G_nk+1
                do j=l_nj-pil_n+1,l_nj
                do i=1,l_ni
-                  nest_q(i,j,0) = qta(i,j,0)
-               end do
-               end do
-               do k=1,G_nk+1
-               do j=l_nj-pil_n+1,l_nj
-               do i=1,l_ni
-                  nest_w   (i,j,k) = wta   (i,j,k)
                   nest_q(i,j,k) = qta(i,j,k)
                end do
                end do
@@ -266,8 +268,9 @@
             do k=1,G_nk+1
                do j=1,l_nj
                do i=l_ni-pil_e+1,l_ni
+                  nest_w  (i,j,k) = wta  (i,j,k)
                   nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_zd(i,j,k) = zdta(i,j,k)
+                  nest_zd (i,j,k) = zdta (i,j,k)
                end do
                end do
             end do
@@ -278,15 +281,9 @@
             end do
             end do
             if (.not. Schm_hydro_L) then
+               do k=0,G_nk+1
                do j=1,l_nj
                do i=l_ni-pil_e+1,l_ni
-                  nest_q(i,j,0) = qta(i,j,0)
-               end do
-               end do
-               do k=1,G_nk+1
-               do j=1,l_nj
-               do i=l_ni-pil_e+1,l_ni
-                  nest_w   (i,j,k) = wta   (i,j,k)
                   nest_q(i,j,k) = qta(i,j,k)
                end do
                end do
@@ -310,8 +307,9 @@
             do k=1,G_nk+1
                do j=1,pil_s
                do i=1,l_ni
+                  nest_w  (i,j,k) = wta  (i,j,k)
                   nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_zd(i,j,k) = zdta(i,j,k)
+                  nest_zd (i,j,k) = zdta (i,j,k)
                end do
                end do
             end do
@@ -321,15 +319,9 @@
             end do
             end do
             if (.not. Schm_hydro_L) then
+               do k=0,G_nk+1
                do j=1,pil_s
                do i=1,l_ni
-                  nest_q(i,j,0) = qta(i,j,0)
-               end do
-               end do
-               do k=1,G_nk+1
-               do j=1,pil_s
-               do i=1,l_ni
-                  nest_w   (i,j,k) = wta   (i,j,k)
                   nest_q(i,j,k) = qta(i,j,k)
                end do
                end do
@@ -353,8 +345,9 @@
             do k=1,G_nk+1
                do j=1,l_nj
                do i=1,pil_w
+                  nest_w  (i,j,k) = wta  (i,j,k)
                   nest_t  (i,j,k) = tta  (i,j,k)
-                  nest_zd(i,j,k) = zdta(i,j,k)
+                  nest_zd (i,j,k) = zdta (i,j,k)
                end do
                end do
             end do
@@ -364,15 +357,9 @@
             end do
             end do
             if (.not. Schm_hydro_L) then
+               do k=0,G_nk+1
                do j=1,l_nj
                do i=1,pil_w
-                  nest_q(i,j,0) = qta(i,j,0)
-               end do
-               end do
-               do k=1,G_nk+1
-               do j=1,l_nj
-               do i=1,pil_w
-                  nest_w   (i,j,k) = wta   (i,j,k)
                   nest_q(i,j,k) = qta(i,j,k)
                end do
                end do

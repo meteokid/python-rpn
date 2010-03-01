@@ -1,18 +1,30 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r diag_fip - Builds model (non-) hydrostatic perturbation and 
 *     total geopotential from temperature and "surface pressure" for
 *     vertically staggered variables as in Girard formulation 1.
 *
 #include "model_macros_f.h"
 *
-      subroutine diag_fip(F_fip,F_s,F_t,F_q,F_fis,
+      subroutine diag_fip(F_fip,F_s,F_t,F_fis,
      $                                  i0,in,j0,jn,nk)
 *     
       implicit none
 *     
       integer i0,in,j0,jn,nk
       real F_fip(LDIST_SHAPE,0:Nk+1)
-      real F_s(LDIST_SHAPE), F_t(LDIST_SHAPE,Nk+1)
-      real F_q(LDIST_SHAPE,0:Nk+1), F_fis(LDIST_SHAPE)
+      real F_s(LDIST_SHAPE), F_t(LDIST_SHAPE,Nk+2)
+      real F_fis(LDIST_SHAPE)
 *
 *author
 *
@@ -30,7 +42,6 @@
 *                     Note the virtual levels!
 * F_s          I    - log(pis/pistars)
 * F_t          I    - temperature
-* F_q          I    - non-hydro perturbation of log(p)
 * F_fis        I    - surface geopotential height
 * i0,in,j0,jn  I    - index over which computation will be made.
 *
@@ -47,7 +58,6 @@
 **
       integer i,j,k,nij
       real*8  one,half,pr1_8,yyy
-      real*8 piop(i0:in,j0:jn,nk+1)
       real*8 xtmp_8 (i0:in,j0:jn)
 *
       parameter( one = 1.d0, half = .5d0 )
@@ -66,34 +76,11 @@
 
 !$omp parallel private (pr1_8,yyy,xtmp_8)
 *
-      if(Schm_hydro_L)then
-!$omp do
-         do k=1,G_nk+1
-            do j=j0,jn
-            do i=i0,in
-               piop(i,j,k)=one
-            end do
-            end do
-         end do
-!$omp enddo
-      else
-!$omp do         
-         do k=1,G_nk+1
-            do j=j0,jn
-            do i=i0,in
-               xtmp_8(i,j)=-half*(F_q(i,j,k)+F_q(i,j,k-1))
-            end do
-            end do   
-            call vexp(piop(i0,j0,k),xtmp_8,nij)
-         end do
-!$omp enddo
-      endif
-*      
-      yyy=half*Dcst_rgasd_8*Cstv_tstr_8*Ver_dz_8%t(G_nk+1)
+      yyy=half*Cstv_RTstr_8*Ver_dz_8%t(G_nk+1)
 !$omp do 
       do j=j0,jn
       do i=i0,in
-         pr1_8=piop(i,j,G_nk+1)/Cstv_tstr_8*
+         pr1_8=one/Cstv_Tstr_8*
      $        (one+Ver_dbdz_8%t(G_nk+1)*F_s(i,j))
          F_fip(i,j,G_nk+1)=F_fis(i,j)-yyy*(F_t(i,j,G_nk+1)*pr1_8-one)
       end do
@@ -104,9 +91,9 @@
 *     Note that index on F_fip goes to zero.
       do j=j0,jn
          do k= G_nk+1,1,-1
-         yyy=Dcst_rgasd_8*Cstv_tstr_8*Ver_dz_8%t(k)
+         yyy=Cstv_RTstr_8*Ver_dz_8%t(k)
          do i=i0,in
-            pr1_8=piop(i,j,k)/Cstv_tstr_8*
+            pr1_8=one/Cstv_Tstr_8*
      $            (one+Ver_dbdz_8%t(k)*F_s(i,j))
             F_fip(i,j,k-1)=F_fip(i,j,k)+yyy*(F_t(i,j,k)*pr1_8-one)
          end do

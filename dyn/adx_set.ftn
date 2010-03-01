@@ -1,0 +1,578 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adx_set - sets different advection parameters
+*
+#include "model_macros_f.h"
+*
+      subroutine adx_set
+*
+#include "impnone.cdk"
+*
+*author
+*     alain patoine
+*
+*revision
+* v3_20 - Gravel & Valin & Tanguay - Lagrange 3D and optimized SETINT/TRILIN
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "type.cdk"
+#include "adx.cdk"
+#include "schm.cdk"
+#include "ver.cdk"
+************************************************************************
+      integer i, j, k, ij, pnerr, trj_i_off, nij, n, istat
+      integer i0, j0, k0, pnx, pny, pnzt, pnzm, ii1, ii2
+*
+      real*8 ZERO, HALF, ONE, TWO
+      parameter( ZERO  = 0.0 )
+      parameter( HALF  = 0.5 )
+      parameter( ONE   = 1.0 )
+      parameter( TWO   = 2.0 )
+*
+      real*8  prhxmn, prhymn, prhzmn, large, dummy, pdfi, pdov6
+      real*8 whx(G_ni+2*adx_halox),why(G_nj+2*adx_haloy),
+     $       whzt(0:G_nk+2),whzm(0:G_nk+1),w2(G_nk+1,6)
+*
+      real *8 triprd,za,zb,zc,zd,ra,rb,rc,rd
+      triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
+*
+
+      large = 1.0e20
+      pdov6 = 1.0d0/6.0d0
+************************************************************************
+* Validation of halo sizes                                             *
+************************************************************************
+      if (( adx_halox .lt. 3 ) .or. ( adx_haloy .lt. 2 )) then
+         print *,'*************************************************'
+         print *,'*                                               *'
+         print *,'* PROBLEM:  adx_halox and adx_haloy cannot be   *'
+         print *,'*           less than 2.                        *'
+         print *,'*                                               *'
+         print *,'*************************************************'
+         call flush(6)
+         call gem_stop('adx_set',-1)
+      endif
+************************************************************************
+* In the general situation where only the tiles adjacent to the poles  *
+* would have an advection source grid periodic in x, we would have the *
+* following decision tree:                                             *
+************************************************************************
+*     if ( l_south .or. l_north ) then                                 *
+*        adx_nic       = G_ni                                          *
+*        adx_int_i_off = 0          <--- offset global-advection grids *
+*            trj_i_off = l_i0 - 1   <--- offset advection-local  grids *
+*     else                                                             *
+*        adx_nic       = l_ni                                          *
+*        adx_int_i_off = l_i0 - 1   <--- offset global-advection grids *
+*            trj_i_off = 0          <--- offset advection-local  grids *
+*     endif                                                            *
+************************************************************************
+* However, in the present situation where all the tiles have an        *
+* advection source grid periodic in x, we have this:                   *
+************************************************************************
+      if (G_lam) then
+      adx_nic       = l_ni
+      adx_int_i_off = l_i0 - 1
+          trj_i_off = 0
+      else
+      adx_nic       = G_ni
+      adx_int_i_off = 0
+          trj_i_off = l_i0 - 1
+      endif
+*
+      adx_njc       = l_nj
+      adx_int_j_off = l_j0 - 1
+*
+      adx_nit       = adx_nic + 2 * adx_halox
+      adx_njt       = adx_njc + 2 * adx_haloy
+************************************************************************
+      call hpalloc ( adx_xg_8_,   G_ni+2*adx_halox, pnerr, 8 )
+      call hpalloc ( adx_yg_8_,   G_nj+2*adx_haloy, pnerr, 8 )
+      call hpalloc ( adx_xx_8_,   adx_nit,          pnerr, 8 )
+      call hpalloc ( adx_cx_8_,   adx_nic,          pnerr, 8 )
+      call hpalloc ( adx_sx_8_,   adx_nic,          pnerr, 8 )
+      call hpalloc ( adx_wx_8_,   adx_nic,          pnerr, 8 )
+      call hpalloc ( adx_yy_8_,   adx_njt,          pnerr, 8 )
+      call hpalloc ( adx_cy_8_,   adx_njc,          pnerr, 8 )
+      call hpalloc ( adx_sy_8_,   adx_njc,          pnerr, 8 )
+      call hpalloc ( adx_cx2d_8_, l_ni*l_nj,        pnerr, 8 )
+      call hpalloc ( adx_sx2d_8_, l_ni*l_nj,        pnerr, 8 )
+      call hpalloc ( adx_cy2d_8_, l_ni*l_nj,        pnerr, 8 )
+      call hpalloc ( adx_sy2d_8_, l_ni*l_nj,        pnerr, 8 )
+************************************************************************
+* set global grid                                                      *
+************************************************************************
+      do i=1,G_ni
+      adx_xg_8(adx_halox+i)      = G_xg_8(i)
+      enddo
+*
+      if (.not.G_lam) then
+      do i=1,adx_halox
+      adx_xg_8(i)                = adx_xg_8(G_ni+i)
+     %                           - TWO*Dcst_pi_8
+      adx_xg_8(adx_halox+G_ni+i) = adx_xg_8(adx_halox+i)
+     %                           + TWO*Dcst_pi_8
+      enddo
+      else
+      prhxmn =  G_xg_8(2)-G_xg_8(1)
+      do i=adx_halox,1,-1
+      adx_xg_8(i)                = adx_xg_8(i+1)-prhxmn
+      enddo
+      do i=1,adx_halox
+      adx_xg_8(adx_halox+G_ni+i) = adx_xg_8(adx_halox+G_ni+i-1)+prhxmn
+      enddo
+      endif
+*
+*     Allocation and Initialization for linear interpolation and Lagrange 3D in x  
+*     ---------------------------------------------------------------------------
+      call hpalloc( adx_xbc_8_,   G_ni+2*adx_halox , pnerr, 8 ) ! (xc-xb)     along x
+*
+      call hpalloc( adx_xabcd_8_, G_ni+2*adx_halox , pnerr, 8 ) ! triproducts along x
+      call hpalloc( adx_xbacd_8_, G_ni+2*adx_halox , pnerr, 8 )
+      call hpalloc( adx_xcabd_8_, G_ni+2*adx_halox , pnerr, 8 )
+      call hpalloc( adx_xdabc_8_, G_ni+2*adx_halox , pnerr, 8 )
+*
+      adx_xabcd_8(1:G_ni+2*adx_halox) = transfer(-1,1.0)
+      adx_xbacd_8(1:G_ni+2*adx_halox) = transfer(-1,1.0)
+      adx_xcabd_8(1:G_ni+2*adx_halox) = transfer(-1,1.0)
+      adx_xdabc_8(1:G_ni+2*adx_halox) = transfer(-1,1.0)
+      do i=2,G_ni+2*adx_halox-2
+        ra=adx_xg_8(i-1)
+        rb=adx_xg_8(i)
+        rc=adx_xg_8(i+1)
+        rd=adx_xg_8(i+2)
+*
+        adx_xabcd_8(i) = 1.0/triprd(ra,rb,rc,rd)
+        adx_xbacd_8(i) = 1.0/triprd(rb,ra,rc,rd)
+        adx_xcabd_8(i) = 1.0/triprd(rc,ra,rb,rd)
+        adx_xdabc_8(i) = 1.0/triprd(rd,ra,rb,rc)
+      enddo
+*
+      adx_xbc_8(1:G_ni+2*adx_halox) = transfer(-1,1.0)
+      do i=1,G_ni+2*adx_halox-1
+        rb=adx_xg_8(i)
+        rc=adx_xg_8(i+1)
+        adx_xbc_8  (i) = 1.0/(rc-rb)
+      enddo
+***
+      do j=1,G_nj
+      adx_yg_8 (adx_haloy+j)     = G_yg_8(j)
+      enddo
+*
+      if (.not.G_lam) then
+      adx_yg_8(adx_haloy-1)      = -(Dcst_pi_8+adx_yg_8(adx_haloy+1) )
+      adx_yg_8(adx_haloy)        = - Dcst_pi_8*HALF
+      adx_yg_8(adx_haloy+G_nj+1) =   Dcst_pi_8*HALF
+      adx_yg_8(adx_haloy+G_nj+2) =  (Dcst_pi_8-adx_yg_8(adx_haloy+G_nj))
+*
+      do j=3,adx_haloy
+      adx_yg_8(adx_haloy+1-j)    = TWO*adx_yg_8(adx_haloy+1   -j+1)
+     %                           -     adx_yg_8(adx_haloy+1   -j+2)
+      adx_yg_8(adx_haloy+G_nj+j) = TWO*adx_yg_8(adx_haloy+G_nj+j-1)
+     %                           -     adx_yg_8(adx_haloy+G_nj+j-2)
+      enddo
+      else
+      prhymn =  G_yg_8(2)-G_yg_8(1)
+      do j=adx_haloy,1,-1
+      adx_yg_8(j)                = adx_yg_8(j+1)-prhymn
+      enddo
+      do j=1,adx_haloy
+      adx_yg_8(adx_haloy+G_nj+j) = adx_yg_8(adx_haloy+G_nj+j-1)+prhymn
+      enddo
+      endif
+*
+*     Allocation and Initialization for linear interpolation and Lagrange 3D in y  
+*     ---------------------------------------------------------------------------
+      call hpalloc( adx_ybc_8_,   G_nj+2*adx_haloy , pnerr, 8 ) ! (yc-yb)     along y 
+*
+      call hpalloc( adx_yabcd_8_, G_nj+2*adx_haloy , pnerr, 8 ) ! triproducts along y
+      call hpalloc( adx_ybacd_8_, G_nj+2*adx_haloy , pnerr, 8 )
+      call hpalloc( adx_ycabd_8_, G_nj+2*adx_haloy , pnerr, 8 )
+      call hpalloc( adx_ydabc_8_, G_nj+2*adx_haloy , pnerr, 8 )
+*
+      adx_yabcd_8(1:G_nj+2*adx_haloy) = transfer(-1,1.0)
+      adx_ybacd_8(1:G_nj+2*adx_haloy) = transfer(-1,1.0)
+      adx_ycabd_8(1:G_nj+2*adx_haloy) = transfer(-1,1.0)
+      adx_ydabc_8(1:G_nj+2*adx_haloy) = transfer(-1,1.0)
+      do j=2,G_nj+2*adx_haloy-2
+        ra=adx_yg_8(j-1)
+        rb=adx_yg_8(j)
+        rc=adx_yg_8(j+1)
+        rd=adx_yg_8(j+2)
+*
+        adx_yabcd_8(j) = 1.0/triprd(ra,rb,rc,rd)
+        adx_ybacd_8(j) = 1.0/triprd(rb,ra,rc,rd)
+        adx_ycabd_8(j) = 1.0/triprd(rc,ra,rb,rd)
+        adx_ydabc_8(j) = 1.0/triprd(rd,ra,rb,rc)
+      enddo
+*
+      adx_ybc_8(1:G_nj+2*adx_haloy) = transfer(-1,1.0)
+      do j=1,G_nj+2*adx_haloy-1
+        rb=adx_yg_8(j)
+        rc=adx_yg_8(j+1)
+        adx_ybc_8  (j) = 1.0/(rc-rb)
+      enddo
+*
+************************************************************************
+* set advection grid                                                   *
+************************************************************************
+      do i=1,adx_nit
+         adx_xx_8 (i) = adx_xg_8(adx_int_i_off+i)
+      enddo
+*
+      if (.not.G_lam) then
+      do i=1,adx_nic
+         adx_wx_8(i) =( adx_xx_8(adx_halox+i+1)
+     %                 -adx_xx_8(adx_halox+i-1))*HALF/(TWO*Dcst_pi_8)
+      enddo
+      endif
+      do i=1,adx_nic
+         adx_cx_8(i) = cos ( adx_xx_8(adx_halox+i) )
+         adx_sx_8(i) = sin ( adx_xx_8(adx_halox+i) )
+      enddo
+*
+      do j=1,adx_njt
+         adx_yy_8 (j) = adx_yg_8(adx_int_j_off+j)
+      enddo
+*
+      do j=1,adx_njc
+         adx_cy_8(j) = cos ( adx_yy_8(adx_haloy+j) )
+         adx_sy_8(j) = sin ( adx_yy_8(adx_haloy+j) )
+      enddo
+
+************************************************************************
+* fill 2D fields for use in adx_trajsp and adx_trajex                  *
+************************************************************************
+      do j= 1, l_nj 
+      do i= 1, l_ni 
+         ij = i + ( j-1 ) * l_ni
+         adx_cy2d_8(ij) = adx_cy_8 ( j )
+         adx_sy2d_8(ij) = adx_sy_8 ( j )
+         adx_cx2d_8(ij) = adx_cx_8 ( trj_i_off + i )
+         adx_sx2d_8(ij) = adx_sx_8 ( trj_i_off + i )
+      enddo
+      enddo
+************************************************************************
+* precompute localisation and interpolation parameters                 *
+************************************************************************
+*
+      adx_x00_8 = adx_xg_8(1)
+      adx_y00_8 = adx_yg_8(1)
+*
+      prhxmn = large
+      prhymn = large
+      prhzmn = large
+*
+      do i=1,G_ni+2*adx_halox-1
+      whx(i) = adx_xg_8(i+1) - adx_xg_8(i)
+      prhxmn = min( whx(i), prhxmn )
+      enddo
+*
+      do j=1,G_nj+2*adx_haloy-1
+      why(j) = adx_yg_8(j+1) - adx_yg_8(j)
+      prhymn = min( why(j), prhymn )
+      enddo
+*
+      whzt(0     ) = 1.0
+      whzt(G_nk+1) = 1.0
+      whzt(G_nk+2) = 1.0
+      do k=1,G_nk
+      whzt(k) = Ver_z_8%t(k+1) - Ver_z_8%t(k)
+      prhzmn = min( whzt(k), prhzmn )
+      enddo
+
+      whzm(0     ) = 1.0
+      whzm(G_nk  ) = 1.0
+      whzm(G_nk+1) = 1.0
+      do k=1,G_nk-1
+      whzm(k) = Ver_z_8%m(k+1) - Ver_z_8%m(k)
+      prhzmn = min( whzm(k), prhzmn )
+      enddo
+*
+      adx_ovdx_8 = 1.0d0/prhxmn
+      adx_ovdy_8 = 1.0d0/prhymn
+      adx_ovdz_8 = 1.0d0/prhzmn
+*
+      pnx = int(1.0+(adx_xg_8(G_ni+2*adx_halox)-adx_x00_8 )   *adx_ovdx_8)
+      pny = int(1.0+(adx_yg_8(G_nj+2*adx_haloy)-adx_y00_8 )   *adx_ovdy_8)
+      pnzt= int(1.0+(Ver_z_8%t(G_nk+1)         -Ver_z_8%t(1) )*adx_ovdz_8)
+      pnzm= int(1.0+(Ver_z_8%m(G_nk)           -Ver_z_8%m(1) )*adx_ovdz_8)
+*
+      call hpalloc( adx_lcx_, pnx, pnerr, 0 )
+      call hpalloc( adx_lcy_, pny, pnerr, 0 )
+*
+      call hpalloc( adx_bsx_8_, G_ni+2*adx_halox , pnerr, 8 )
+      call hpalloc( adx_dlx_8_, G_ni+2*adx_halox , pnerr, 8 )
+      call hpalloc( adx_dix_8_, G_ni+2*adx_halox , pnerr, 8 )
+*
+      call hpalloc( adx_bsy_8_, G_nj+2*adx_haloy , pnerr, 8 )
+      call hpalloc( adx_dly_8_, G_nj+2*adx_haloy , pnerr, 8 )
+      call hpalloc( adx_diy_8_, G_nj+2*adx_haloy , pnerr, 8 )
+*
+!     call hpalloc( adx_lcz_,   pnz              , pnerr, 0 )
+!     call hpalloc( adx_bsz_8_, G_nk             , pnerr, 8 )
+!     call hpalloc( adx_dlz_8_, G_nk+2           , pnerr, 8 )
+!     call hpalloc( adx_diz_8_, G_nk+2           , pnerr, 8 )
+!     call hpalloc( adx_dbz_8_, G_nk             , pnerr, 8 )
+
+      allocate(  adx_lcz%t(pnzt),        adx_lcz%m(pnzm), 
+     $           adx_bsz_8%t(0:G_nk),    adx_bsz_8%m(0:G_nk-1),
+     $           adx_dlz_8%t(-1:G_nk+1), adx_dlz_8%m(-1:G_nk),
+     $           adx_diz_8%t(-1:G_nk+1), adx_diz_8%m(-1:G_nk),
+     $           adx_dbz_8%t(0:G_nk),    adx_dbz_8%m(0:G_nk-1),
+     $           stat=istat)
+*
+      call hpalloc( adx_iln_  , G_ni                 , pnerr, 0 )
+      call hpalloc( adx_lnr_8_, 2*(G_ni+2*adx_halox) , pnerr, 8 )
+*
+!     call hpalloc( adx_qzz_8_, 3 * G_nk , pnerr, 8 )
+!     call hpalloc( adx_qzi_8_, 4 * G_nk , pnerr, 8 )
+
+      allocate(  adx_qzz_8%t(3*(G_nk+1)), adx_qzz_8%m(3*G_nk),
+     $           adx_qzi_8%t(4*(G_nk+1)), adx_qzi_8%m(4*G_nk),
+     $           stat=istat)
+*
+      i0 = 1
+      do i=1,pnx
+      pdfi = adx_xg_8(1) + (i-1) * prhxmn
+      if ( pdfi .gt. adx_xg_8(i0+1) ) i0 = min(G_ni+2*adx_halox-1,i0+1)
+      adx_lcx(i) = i0
+      enddo
+      do i=1,G_ni+2*adx_halox-1
+      adx_dlx_8(i) =       whx(i)
+      adx_dix_8(i) = 1.0d0/whx(i)
+      enddo
+      do i=1,G_ni+2*adx_halox
+      adx_bsx_8(i) = adx_xg_8(i)
+      enddo
+*
+      j0 = 1
+      do j=1,pny
+      pdfi = adx_yg_8(1) + (j-1) * prhymn
+      if ( pdfi .gt. adx_yg_8(j0+1) ) j0 = min(G_nj+2*adx_haloy-1,j0+1)
+      adx_lcy(j) = j0
+      enddo
+      do j=1,G_nj+2*adx_haloy-1
+      adx_dly_8(j) =       why(j)
+      adx_diy_8(j) = 1.0d0/why(j)
+      enddo
+      do j=1,G_nj+2*adx_haloy
+      adx_bsy_8(j) = adx_yg_8(j)
+      enddo
+*
+      k0 = 1
+      do k=1,pnzt
+      pdfi = Ver_z_8%t(1) + (k-1) * prhzmn
+      if ( pdfi .gt. Ver_z_8%t(k0+1) ) k0 = min( G_nk-1, k0+1)
+      adx_lcz%t(k) = k0
+      enddo
+      do k=0,G_nk+2                    !! warning note the shift in k !!
+      adx_dlz_8%t(k-1) =       whzt(k)
+      adx_diz_8%t(k-1) = 1.0d0/whzt(k)
+      enddo
+      do k=1,G_nk+1
+      adx_bsz_8%t(k-1) = Ver_z_8%t(k)
+      adx_dbz_8%t(k-1) = ( whzt(k) * whzt(k) ) * pdov6
+      enddo
+
+      k0 = 1
+      do k=1,pnzm
+      pdfi = Ver_z_8%m(1) + (k-1) * prhzmn
+      if ( pdfi .gt. Ver_z_8%m(k0+1) ) k0 = min( G_nk-2, k0+1)
+      adx_lcz%m(k) = k0
+      enddo
+      do k=0,G_nk+1                    !! warning note the shift in k !!
+      adx_dlz_8%m(k-1) =       whzm(k)
+      adx_diz_8%m(k-1) = 1.0d0/whzm(k)
+      enddo
+      do k=1,G_nk
+      adx_bsz_8%m(k-1) = Ver_z_8%m(k)
+      adx_dbz_8%m(k-1) = ( whzm(k) * whzm(k) ) * pdov6
+      enddo
+*
+*     Allocation and Initialization for linear interpolation and Lagrange 3D in z  
+*     ---------------------------------------------------------------------------
+!     call hpalloc( adx_zbc_8_,   G_nk             , pnerr, 8 ) ! (zc-zb)     along z 
+*
+!     call hpalloc( adx_zabcd_8_, G_nk             , pnerr, 8 ) ! triproducts along z
+!     call hpalloc( adx_zbacd_8_, G_nk             , pnerr, 8 )
+!     call hpalloc( adx_zcabd_8_, G_nk             , pnerr, 8 )
+!     call hpalloc( adx_zdabc_8_, G_nk             , pnerr, 8 )
+!
+      allocate(  adx_zbc_8%t(G_nk+1),   adx_zbc_8%m(G_nk), 
+     $           adx_zabcd_8%t(G_nk+1), adx_zabcd_8%m(G_nk),
+     $           adx_zbacd_8%t(G_nk+1), adx_zbacd_8%m(G_nk),
+     $           adx_zcabd_8%t(G_nk+1), adx_zcabd_8%m(G_nk),
+     $           adx_zdabc_8%t(G_nk+1), adx_zdabc_8%m(G_nk),
+     $           stat=istat)
+     
+*
+      adx_zabcd_8%m(1:G_nk) = transfer(-1,1.0)
+      adx_zbacd_8%m(1:G_nk) = transfer(-1,1.0)
+      adx_zcabd_8%m(1:G_nk) = transfer(-1,1.0)
+      adx_zdabc_8%m(1:G_nk) = transfer(-1,1.0)
+*
+      adx_zabcd_8%t(1:G_nk+1) = transfer(-1,1.0)
+      adx_zbacd_8%t(1:G_nk+1) = transfer(-1,1.0)
+      adx_zcabd_8%t(1:G_nk+1) = transfer(-1,1.0)
+      adx_zdabc_8%t(1:G_nk+1) = transfer(-1,1.0)
+      do k=2,G_nk-2
+        ra=Ver_z_8%m(k-1)
+        rb=Ver_z_8%m(k)
+        rc=Ver_z_8%m(k+1)
+        rd=Ver_z_8%m(k+2)
+*
+        adx_zabcd_8%m(k) = 1.0/triprd(ra,rb,rc,rd)
+        adx_zbacd_8%m(k) = 1.0/triprd(rb,ra,rc,rd)
+        adx_zcabd_8%m(k) = 1.0/triprd(rc,ra,rb,rd)
+        adx_zdabc_8%m(k) = 1.0/triprd(rd,ra,rb,rc)
+*
+        ra=Ver_z_8%t(k-1)
+        rb=Ver_z_8%t(k)
+        rc=Ver_z_8%t(k+1)
+        rd=Ver_z_8%t(k+2)
+*
+        adx_zabcd_8%t(k) = 1.0/triprd(ra,rb,rc,rd)
+        adx_zbacd_8%t(k) = 1.0/triprd(rb,ra,rc,rd)
+        adx_zcabd_8%t(k) = 1.0/triprd(rc,ra,rb,rd)
+        adx_zdabc_8%t(k) = 1.0/triprd(rd,ra,rb,rc)
+      enddo
+*
+        k=G_nk-1
+        ra=Ver_z_8%t(k-1)
+        rb=Ver_z_8%t(k)
+        rc=Ver_z_8%t(k+1)
+        rd=Ver_z_8%t(k+2)
+*
+        adx_zabcd_8%t(k) = 1.0/triprd(ra,rb,rc,rd)
+        adx_zbacd_8%t(k) = 1.0/triprd(rb,ra,rc,rd)
+        adx_zcabd_8%t(k) = 1.0/triprd(rc,ra,rb,rd)
+        adx_zdabc_8%t(k) = 1.0/triprd(rd,ra,rb,rc)
+*
+      adx_zbc_8%m(1:G_nk) = transfer(-1,1.0)
+      adx_zbc_8%t(1:G_nk+1) = transfer(-1,1.0)
+      do k=1,G_nk-1
+        rb=Ver_z_8%m(k)
+        rc=Ver_z_8%m(k+1)
+        adx_zbc_8%m(k) = 1.0/(rc-rb)
+*
+        rb=Ver_z_8%t(k)
+        rc=Ver_z_8%t(k+1)
+        adx_zbc_8%t(k) = 1.0/(rc-rb)
+      enddo
+        k=G_nk
+        rb=Ver_z_8%t(k)
+        rc=Ver_z_8%t(k+1)
+        adx_zbc_8%t(k) = 1.0/(rc-rb)
+*
+      call set_ops8 ( adx_qzz_8%m, whzm(1), two, .false., G_nk, G_nk, 1 )
+      call set_ops8 ( w2       , whzm(1), two, .false., G_nk, G_nk+1, 2 )
+*
+      w2(1,2) = 1.0
+      w2(1,3) = 0.0
+      if ( adx_nkbz_L ) then
+         k = G_nk - 1
+         w2(2,1) = 0.0
+         if ( G_nk. gt. 3 ) then
+            w2(2,2) = (whzm(1)+whzm(2  ))*(1.0+whzm(1)/(2.0*whzm(2  )))/3.0
+            w2(2,3) = (whzm(1)+whzm(2  ))*(1.0-whzm(1)/     whzm(2  )) /6.0
+            w2(k,1) = (whzm(k)+whzm(k-1))*(1.0-whzm(k)/     whzm(k-1)) /6.0
+            w2(k,2) = (whzm(k)+whzm(k-1))*(1.0+whzm(k)/(2.0*whzm(k-1)))/3.0
+         else
+            w2(2,2) = ( whzm(1)+whzm(2) )/2.0
+         endif
+         w2(k,3) = 0.0
+      endif
+      w2(G_nk,1) = 0.0
+      w2(G_nk,2) = 1.0
+*
+      call set_trig21 (adx_qzi_8%m,adx_qzi_8%m(G_nk+1),adx_qzi_8%m(2*G_nk+1), 
+     %                 dummy,w2(1,1),w2(1,2),w2(1,3),
+     %                 1, 1, G_nk, 1, .false.)
+*
+      call set_ops8 ( adx_qzz_8%t, whzt(1), two, .false., G_nk+1, G_nk+1, 1 )
+      call set_ops8 ( w2       , whzt(1), two, .false., G_nk+1, G_nk+1, 2 )
+*
+      w2(1,2) = 1.0
+      w2(1,3) = 0.0
+      if ( adx_nkbz_L ) then
+         k = G_nk
+         w2(2,1) = 0.0
+         if ( G_nk. gt. 3 ) then
+            w2(2,2) = (whzt(1)+whzt(2  ))*(1.0+whzt(1)/(2.0*whzt(2  )))/3.0
+            w2(2,3) = (whzt(1)+whzt(2  ))*(1.0-whzt(1)/     whzt(2  )) /6.0
+            w2(k,1) = (whzt(k)+whzt(k-1))*(1.0-whzt(k)/     whzt(k-1)) /6.0
+            w2(k,2) = (whzt(k)+whzt(k-1))*(1.0+whzt(k)/(2.0*whzt(k-1)))/3.0
+         else
+            w2(2,2) = ( whzt(1)+whzt(2) )/2.0
+         endif
+         w2(k,3) = 0.0
+      endif
+      w2(G_nk+1,1) = 0.0
+      w2(G_nk+1,2) = 1.0
+*
+      call set_trig21 (adx_qzi_8%t,adx_qzi_8%t(G_nk+2),adx_qzi_8%t(2*G_nk+3), 
+     %                 dummy,w2(1,1),w2(1,2),w2(1,3),
+     %                 1, 1, G_nk+1, 1, .false.)
+*
+*     Initialization for localisation indices (used in optimized SETINT/TRILIN) 
+*     ------------------------------------------------------------------------- 
+      call hpalloc( adx_Fn_I_   , l_ni*l_nj*l_nk   , pnerr, 0 )
+*
+      adx_hor_L = .true.
+      adx_ver_L = .true.
+*
+      nij = l_ni*l_nj
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+         adx_Fn_I (n) = transfer(-1,1.0) 
+*
+      enddo
+      enddo
+      enddo
+*
+************************************************************************
+* set 1-D interpolation of grid reflexion across the pole
+************************************************************************
+      do 10 i=1,G_ni
+         ii1 = i+adx_halox
+         if ( adx_xg_8(ii1) .lt. adx_xg_8(adx_halox+1) + Dcst_pi_8 ) then
+            adx_lnr_8(i) = adx_xg_8(ii1) + Dcst_pi_8
+         else
+            adx_lnr_8(i) = adx_xg_8(ii1) - Dcst_pi_8
+         endif
+         do j=1,G_ni     
+            ii2 = j+adx_halox
+            adx_iln(i) = j
+            if ( adx_lnr_8(i).ge.adx_xg_8(ii2) .and. 
+     %           adx_lnr_8(i).lt.adx_xg_8(ii2+1) ) go to 10
+         enddo
+ 10   continue
+*
+      return
+      end
+

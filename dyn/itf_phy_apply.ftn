@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r itf_phy_apply - apply tendencies to dynamical variables
 *
 #include "model_macros_f.h"
@@ -66,14 +78,13 @@
 #include "v4dg.cdk"
 #include "tr3d.cdk"
 #include "p_geof.cdk"
-#include "func.cdk"
 #include "itf_phy_vmm.cdk"
 #include "ver.cdk"
 #include "itf_vmm.cdk"
 *
 *
       integer*8 pnt_trp(phyt_ntr),pnt_trm(phyt_ntr)
-      integer i, j, k, n, err, key1(11), key_p(2), ng, keyh, kk,
+      integer i, j, k, n, err, key1(11), key_p(2), ng, kk,
      $     keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
       integer i0,in,j0,jn,inu,jnv, pnload
       real,dimension(LDIST_SHAPE,nkphy) :: wk1, wk2, wk3, wk4
@@ -112,7 +123,6 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
 
       keyp_ = VMM_KEY (trt1)
       keym_ = VMM_KEY (trt0)
-      keyh  = VMM_KEY (hdia)
       if (phyt_ntr.gt.0) then
          do n=1,phyt_ntr
             keyp(n) = keyp_ + n
@@ -120,8 +130,6 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
          end do
          err   = vmmlod(keyp,phyt_ntr)
          err   = vmmlod(keym,phyt_ntr)
-         err   = vmmlod(keyh,1)
-         err   = VMM_GET_VAR(hdia)
          do n=1,phyt_ntr
             err = vmmget(keyp(n),patrp,trp)
             pnt_trp(n) = patrp
@@ -138,7 +146,7 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
             patrp = pnt_trp(n)
             patrm = pnt_trm(n)
 !$omp do
-            do k= 1, l_nk+1
+            do k= 1, l_nk+2
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
                trp(i,j,k) = trp(i,j,k) + Cstv_dt_8*F_trm(i,j,k,n)
@@ -159,11 +167,8 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
       key1(1) = VMM_KEY(tt1  )
       key1(2) = VMM_KEY(ut1  )
       key1(3) = VMM_KEY(vt1  )
-      key1(4) = VMM_KEY(tdia )
-      key1(5) = VMM_KEY(udia )
-      key1(6) = VMM_KEY(vdia )
-      key1(7) = VMM_KEY(st1 )
-      pnload = 7
+      key1(4) = VMM_KEY(st1 )
+      pnload = 4
       if (.not. Schm_hydro_L ) then
          key1(pnload+1) = VMM_KEY(qt1)
          pnload = pnload+1
@@ -181,9 +186,6 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
       err = VMM_GET_VAR(tt1  )
       err = VMM_GET_VAR(ut1  )
       err = VMM_GET_VAR(vt1  )
-      err = VMM_GET_VAR(tdia )
-      err = VMM_GET_VAR(udia )
-      err = VMM_GET_VAR(vdia )
       err = VMM_GET_VAR(st1)
       if(.not. Schm_hydro_L) err = VMM_GET_VAR(qt1)
       if (Schm_pheat_L ) then
@@ -209,22 +211,17 @@ c$$$ fit1,fipt1,tpt1,tplt1,tdt1,zdt1,tt1,ut1,vt1,trp,trm
          call nesajr (F_tdv, wk2, LDIST_DIM,nkphy,0,1,Hblen_x,Hblen_y)
          call nesajr (F_tp, wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
          do n=1,phyt_ntr
-            call nesajr (F_trm(1,1,1,n), wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
-            call nesajr (F_trp(1,1,1,n), wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
+            call nesajr (F_trm(minx,miny,1,n), wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
+            call nesajr (F_trp(minx,miny,1,n), wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
          enddo
       endif
 
-c$$$      print *,'---- apply ----'
 c$$$
-c$$$      call statfld3d(p_uplus  ,'p_up',LDIST_DIM,l_nj,l_nj,p_nk)
-c$$$      call statfld3d(p_vplus  ,'p_vp',LDIST_DIM,l_nj,l_nj,p_nk)
-c$$$      call statfld3d(F_tdu  ,'Ftdu',LDIST_DIM,l_nj,l_nj,p_nk)
-c$$$      call statfld3d(F_tdv  ,'Ftdv',LDIST_DIM,l_nj,l_nj,p_nk)
-c$$$      call statfld3d(F_tp  ,'F_tp',LDIST_DIM,l_nj,l_nj,p_nk)
-c$$$      do n=1,phyt_ntr
-c$$$         call statfld3d(F_trp(1,1,1,n)  ,Tr3d_name_S(n),LDIST_DIM,l_nj,l_nj,p_nk)
-c$$$         call statfld3d(F_trm(1,1,1,n)  ,Tr3d_name_S(n),LDIST_DIM,l_nj,l_nj,p_nk)
-c$$$      enddo
+c$$$      call statfld3d(p_uplus  ,'p_up',LDIST_DIM,G_ni,G_nj,p_nk)
+c$$$      call statfld3d(p_vplus  ,'p_vp',LDIST_DIM,G_ni,G_nj,p_nk)
+c$$$      call statfld3d(F_tdu  ,'Ftdu',LDIST_DIM,G_ni,G_nj,p_nk)
+c$$$      call statfld3d(F_tdv  ,'Ftdv',LDIST_DIM,G_ni,G_nj,p_nk)
+c$$$      call statfld3d(F_tp  ,'F_tp',LDIST_DIM,G_ni,G_nj,p_nk)
 c$$$
 c$$$      print *,'---- [end] apply ----'
 
@@ -258,6 +255,8 @@ c$$$      print *,'---- [end] apply ----'
       if (Schm_wload_L) then
 *       Retrieve sp mass of hydrometeors at t+ and sum them in wk3, also
 *       sum their tendencies in wk4.
+*       Copy the nkphy-1 level down to nkphy level for all tracers but
+*       HU
 *
          do n=hucond+1,h2o_ntr
             patrp = pnt_trp(n)
@@ -269,7 +268,7 @@ c$$$      print *,'---- [end] apply ----'
                wk4(i,j,k) = wk4(i,j,k) + F_trm(i,j,k,n)
             end do
                wk3(i,j,nkphy) = wk3(i,j,nkphy-1)
-               wk4(i,j,nkphy) = wk4(i,j,nkphy) + F_trm(i,j,nkphy,n)
+               wk4(i,j,nkphy) = wk4(i,j,nkphy-1) + F_trm(i,j,nkphy,n)
             end do
             end do
 !$omp enddo
@@ -280,18 +279,14 @@ c$$$      print *,'---- [end] apply ----'
 *    Compute VIRTUAL temperature tendency from:  temperature tendency,
 *    specific humidity, virtual temperature & specific humidity tendency
 *
-*
-
-c$$$ TODO: ? nesajr(F_tp..) ?
-
+*    For HU tendency, obtain all nk+2 levels
       patrp = pnt_trp(1)
 !$omp do
       do k=1,nkphy
-         kk=min(k,nkphy-1)
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
             F_tdt(i,j,k) =   F_tdt(i,j,k)
-     $               * (1.+Dcst_delta_8*trp  (i,j,kk)       -wk3(i,j,k))
+     $               * (1.+Dcst_delta_8*trp  (i,j,k)       -wk3(i,j,k))
      $               + F_tp(i,j,k)*
      $                    (Dcst_delta_8*F_trm(i,j,k,hucond)-wk4(i,j,k))
             wk1(i,j,k) = F_tdt(i,j,k)
@@ -313,42 +308,13 @@ c$$$ TODO: ? nesajr(F_tp..) ?
 !$omp end single
 
 *
-*     temperature and wind tendencies for special levels
-*     ---------------------------------------------------
-
-!$omp do
-      do j=j0,jn
-      do i=i0,in
-         tdia(i,j,1) = F_tp(i,j,1) + Cstv_dt_8*wk1(i,j,1)
-         tdia(i,j,2) = F_tp(i,j,nkphy-1) + Cstv_dt_8*wk1(i,j,nkphy-1)
-         tdia(i,j,3) = F_tp(i,j,nkphy) + Cstv_dt_8*wk1(i,j,nkphy)
-      enddo
-      con_8 = cos(geomg_y_8(j)) / Dcst_rayt_8
-      do i=i0,inu
-         udia(i,j,1) = con_8*p_uplus(i,j,1) + Cstv_dt_8*F_tdu(i,j,1)
-         udia(i,j,2) = con_8*p_uplus(i,j,nkphy-1) + Cstv_dt_8*F_tdu(i,j,nkphy-1)
-         udia(i,j,3) = con_8*p_uplus(i,j,nkphy) + Cstv_dt_8*F_tdu(i,j,nkphy)
-      enddo
-      enddo
-!$omp enddo
-!$omp do
-      do j=j0,jnv
-      con_8 = cos(geomg_y_8(j)) / Dcst_rayt_8
-      do i=i0,in
-         vdia(i,j,1) = con_8*p_vplus(i,j,1) + Cstv_dt_8*F_tdv(i,j,1)
-         vdia(i,j,2) = con_8*p_vplus(i,j,nkphy-1) + Cstv_dt_8*F_tdv(i,j,nkphy-1)
-         vdia(i,j,3) = con_8*p_vplus(i,j,nkphy) + Cstv_dt_8*F_tdv(i,j,nkphy)
-      enddo
-      enddo
-!$omp enddo
-
 *
 *     de-stagger wind tendancies in the vertical
 *     ------------------------------------------
 *
 !$omp do
       do j=j0,jn
-      do k=1,l_nk
+      do k=1,l_nk+1
       do i=i0,inu
          F_tdu(i,j,k) =F_tdu(i,j,k+1)
       end do
@@ -357,7 +323,7 @@ c$$$ TODO: ? nesajr(F_tp..) ?
 !$omp enddo
 !$omp do
       do j=j0,jnv
-      do k=1,l_nk
+      do k=1,l_nk+1
       do i=i0,in
          F_tdv(i,j,k) =F_tdv(i,j,k+1)
       end do
@@ -389,7 +355,7 @@ c         call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,1+acid_i0,G_ni-1-acid_in,
 c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
 
 !$omp do
-      do k=1,l_nk+1
+      do k=1,l_nk+2
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
             tt1 (i,j,k) =  tt1(i,j,k) + Cstv_dt_8*wk1(i,j,k)
@@ -398,7 +364,7 @@ c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
       end do
 !$omp enddo
 !$omp do
-      do k=1,l_nk
+      do k=1,l_nk+1
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_niu-pil_e
             ut1 (i,j,k) =  ut1(i,j,k) + Cstv_dt_8*F_tdu(i,j,k)
@@ -419,7 +385,7 @@ c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
 *        ----------------------------------------
 *
       if (Schm_pheat_L) then
-        call diag_fip(fiptx,st1,tt1,qt1,topo,
+        call diag_fip(fiptx,st1,tt1,topo,
      $                         i0,in,j0,jn,l_nk)
       endif
 
@@ -439,32 +405,30 @@ c     if (Acid_test_L.and.Lun_out.gt.0)print 'Statfld for tracers'
          patrp = pnt_trp(n)
          if ( Lam_0ptend_L .and. G_lam .and.
      $      ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
-            call nesajr (F_trp(minx,miny,1,n), wk2, LDIST_DIM,nkphy,
-     $                                          0,0,Hblen_x,Hblen_y)
             call nesajr (F_trm(minx,miny,1,n), wk2, LDIST_DIM,nkphy,
+     $                                          0,0,Hblen_x,Hblen_y)
+            call nesajr (F_trp(minx,miny,1,n), wk2, LDIST_DIM,nkphy,
      $                                          0,0,Hblen_x,Hblen_y)
          endif
 
 *        humidity tendencies for diagnostic (surface) level
 !$omp parallel
-         if (Tr3d_name_S(n).eq.'HU') then
 !$omp do
-         do j= j0, jn
-         do i= i0, in
-            hdia(i,j) = F_trp(i,j,nkphy,n) + Cstv_dt_8*F_trm(i,j,nkphy,n)
-         end do
-         end do
+            do k=1,l_nk+2
+               do j= 1+pil_s, l_nj-pil_n
+               do i= 1+pil_w, l_ni-pil_e
+                  trp(i,j,k) = trp(i,j,k) + Cstv_dt_8*F_trm(i,j,k,n)
+               end do
+               end do
+            end do
 !$omp enddo
+         if (n.ne.1) then
+             do j= 1+pil_s, l_nj-pil_n
+             do i= 1+pil_w, l_ni-pil_e
+               trp(i,j,l_nk+2) = trp(i,j,l_nk+1)
+             end do
+             end do
          endif
-!$omp do
-         do k=1,l_nk+1
-            do j= 1+pil_s, l_nj-pil_n
-            do i= 1+pil_w, l_ni-pil_e
-                trp(i,j,k) = trp(i,j,k) + Cstv_dt_8*F_trm(i,j,k,n)
-            end do
-            end do
-         end do
-!$omp enddo
 !$omp end parallel
 
 c        if (Acid_test_L)

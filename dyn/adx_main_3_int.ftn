@@ -1,0 +1,483 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adx_main_3_int - Interpolation of rhs
+*
+#include "model_macros_f.h"
+*
+      subroutine adx_main_3_int ( F_u, F_v, F_w )
+*
+      implicit none
+      real F_u(*), F_v(*), F_w(*)
+*
+*author
+*     alain patoine
+*
+*revision
+* v2_31 - Desgagne & Tanguay  - removed stkmemw, introduce tracers
+* v2_31                       - tracers not monotone if V4dg_conf.ne.0
+* v2_31 - R.Moffet            - do precalc (zz1) for ZZ in blomega
+* v3_00 - Desgagne & Lee      - Lam configuration
+* v3_02 - Tanguay             - Restore tracers monotone if V4dg_conf.ne.0 
+* v3_02 - Lee V.              - revert adx_exch_1 for GLB only, 
+* v3_02                         added adx_ckbd_lam,adx_cfl_lam for LAM only
+* v3_03 - Tanguay M.          - stop if adx_exch_1 is activated when 4D-Var
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_11 - Gravel S.           - introduce key adx_mono_L 
+* v3_20 - Gravel & Valin & Tanguay - Lagrange 3D
+* v3_20 - Tanguay M.          - Improve alarm when points outside advection grid
+* v3_20 - Dugas B.            - correct calculation for LAM when Glb_pil gt 7
+* v3_21 - Desgagne M.         - if  Lagrange 3D, call adx_main_3_intlag
+* v3_30 - McTaggart-Cowan R.  - replace lag3d_L by adx_interp_type_S
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+*        |                                                       |     |
+*        |                                                       |     |
+* F_u,F_v| 3 components of upstream positions at t1 at input     |  iw |
+* F_w    | used as work field afterward                          |     |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "ptopo.cdk"
+#include "geomg.cdk"
+#include "orh.cdk"
+#include "lctl.cdk"
+#include "step.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "offc.cdk"
+#include "cstv.cdk"
+#include "rhsc.cdk"
+#include "v4dg.cdk"
+#include "type.cdk"
+#include "adx.cdk"
+#include "tr3d.cdk"
+#include "vt1.cdk"
+#include "vt0.cdk"
+#include "vtx.cdk"
+#include "ver.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld,longueur
+      external vmmlod, vmmget, vmmuld
+************************************************************************
+      integer i0,in,j0,jn
+      integer pnerr, pnlkey1(30), key1(Tr3d_ntr), key0(Tr3d_ntr), 
+     $        key1_, key0_, pnlod, err, dim
+*
+      integer outside,sum_outside,ier
+*
+      integer n, nij, nijkt, nijkm, nijkad, cnt, unf
+      integer i,j,k, n1,n2,np 
+      integer DIST_DIM
+*
+      real tr,tr0,buf(l_ni,G_nk+1), half
+      real work(LDIST_SHAPE,G_nk+1),work2(LDIST_SHAPE,G_nk+1)
+      parameter( half = 0.5 )
+      pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
+      real, allocatable, dimension(:,:,:,:) :: tr2
+      real, allocatable, dimension(:) :: pos_x, pos_y, pos_z
+*
+      if ( adx_interp_type_S(1:5).eq.'LAG3D' ) then
+         call adx_main_3_intlag ( F_u, F_v, F_w )
+         return
+      endif
+      call gem_stop('adx_main_3_int : not suported for 2d advection of fip')
+      call gem_stop('adx_main_3_int : review merge 3.2.5 3.3.0',-1)
+
+
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+      nij    = l_ni   *l_nj
+      nijkt  = l_ni   *l_nj   *(l_nk+1)
+      nijkm  = l_ni   *l_nj   * l_nk
+      nijkad = adx_nit*adx_njt*(l_nk+1)
+      call hpalloc(adx_capx1_   ,nijkt,      err,1)
+      call hpalloc(adx_capy1_   ,nijkt,      err,1)
+      call hpalloc(adx_capz1_   ,nijkt,      err,1)
+      call hpalloc(adx_n1_      ,nijkt,      err,1)
+      call hpalloc(adx_xdd1_    ,nijkt,      err,1)
+      call hpalloc(adx_xgg1_    ,nijkt,      err,1)
+      call hpalloc(adx_ydd1_    ,nijkt,      err,1)
+      call hpalloc(adx_ygg1_    ,nijkt,      err,1)
+      call hpalloc(adx_cz1_     ,nijkt,      err,1)
+      call hpalloc(adx_c1_      ,nijkt,      err,1)
+      call hpalloc(adx_wrkb_    ,nijkt,      err,1)
+      call hpalloc(adx_wrkc_    ,nijkt,      err,1)
+*
+      allocate ( pos_x(nijkad) )
+      allocate ( pos_y(nijkad) )
+      allocate ( pos_z(nijkad) )
+*
+************************************************************************
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west)  i0=4       + (Glb_pil_w - 7)
+          if (l_east)  in=l_niu-2 - (Glb_pil_e - 7)
+          if (l_south) j0=4       + (Glb_pil_s - 7)
+          if (l_north) jn=l_njv-2 - (Glb_pil_n - 7)
+      endif
+
+***********************************************************************
+* Prepare for advection on momentum levels
+***********************************************************************
+!
+!$omp parallel do private(n)
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         pos_x(n) =  F_u(n)
+         pos_y(n) =  F_v(n)
+         pos_z(n) =  F_w(n)
+      enddo
+      enddo
+      enddo
+!$omp end parallel do
+
+      if (G_lam) then
+          if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
+     $         (mod(Lctl_step,Step_gstat).eq.0) )
+     $         call adx_cfl_lam ( pos_x, pos_y, pos_z, 
+     $                            i0, in, j0, jn, l_nk,'m' )
+          call adx_ckbd_lam( pos_x, pos_y, pos_z, i0, in, j0, jn, l_nk )
+      endif
+*
+      if (.not.G_lam) then
+      call adx_exch_1 ( adx_n1, adx_xgg1, adx_xdd1, adx_c1,
+     $                  pos_x, pos_y, pos_z, l_nk )
+*
+          if ( V4dg_conf.ne.0.0 ) then
+*
+               outside = 0
+*
+               if ( adx_fro_a .gt. 0 ) outside = 1
+*
+               sum_outside = 0
+               call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
+     $                                 "MPI_SUM","grid",ier)
+*
+               if(sum_outside.ne.0) call gem_stop ('adx_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
+*
+          endif
+*
+      dim = max(1,adx_fro_a)
+      call hpalloc(adx_capx2_   ,dim,      err,1)
+      call hpalloc(adx_capy2_   ,dim,      err,1)
+      call hpalloc(adx_capz2_   ,dim,      err,1)
+      call hpalloc(adx_n2_      ,dim,      err,1)
+      call hpalloc(adx_xdd2_    ,dim,      err,1)
+      call hpalloc(adx_xgg2_    ,dim,      err,1)
+      call hpalloc(adx_ydd2_    ,dim,      err,1)
+      call hpalloc(adx_ygg2_    ,dim,      err,1)
+      call hpalloc(adx_cz2_     ,dim,      err,1)
+      call hpalloc(adx_wrka_    ,dim,      err,1)
+*
+      call adx_exch_2 ( adx_capx2, adx_capy2, adx_capz2,
+     %                  adx_n1, adx_xgg1, adx_xdd1,
+     %                  adx_fro_n, adx_fro_s, adx_fro_a,
+     %                  adx_for_n, adx_for_s, adx_for_a, 3 )
+*
+      endif
+*
+      call adx_setint ( adx_n1,adx_capx1,adx_xgg1,adx_xdd1,adx_capy1,adx_ygg1,
+     %                  adx_ydd1,adx_capz1,adx_cz1,pos_x,pos_y,pos_z,
+     %                  .true., .true., .false., nijkm,i0,in,j0,jn,l_nk,'m')
+*
+      if ( adx_fro_a .gt. 0 .and. .not. G_lam) then
+*
+         if ( adx_ckbd_L ) call adx_ckbd ( adx_capy2 )
+*
+         call adx_setint(adx_n2,adx_capx2,adx_xgg2,adx_xdd2,adx_capy2,adx_ygg2,
+     %                 adx_ydd2,adx_capz2,adx_cz2,adx_capx2,adx_capy2,adx_capz2,
+     %                 .true., .true., .false., adx_fro_a,1,adx_fro_a,1,1,1,'m')
+*
+      endif
+*
+***********************************************************************
+* Perform interpolation
+***********************************************************************
+      pnlkey1(1) = VMM_KEY(ruw1)
+      pnlkey1(2) = VMM_KEY(rvw1)
+      pnlkey1(3) = VMM_KEY(ruw2)
+      pnlkey1(4) = VMM_KEY(rvw2)
+      pnlkey1(5) = VMM_KEY(rhsc)
+      pnlkey1(6) = VMM_KEY(fiptx)
+      pnlkey1(7) = VMM_KEY(zz1)
+      pnlkey1(8) = VMM_KEY(piup)
+      pnlkey1(9) = VMM_KEY(st1)
+      pnlkey1(10)= VMM_KEY(orhsc)
+      pnlod = 10
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr =  VMM_GET_VAR(ruw1)
+      pnerr =  VMM_GET_VAR(rvw1)
+      pnerr =  VMM_GET_VAR(ruw2)
+      pnerr =  VMM_GET_VAR(rvw2)
+      pnerr =  VMM_GET_VAR(rhsc)
+      pnerr =  VMM_GET_VAR(fiptx)
+      pnerr =  VMM_GET_VAR(zz1)
+      pnerr =  VMM_GET_VAR(piup)
+      pnerr =  VMM_GET_VAR(st1)
+      pnerr =  VMM_GET_VAR(orhsc)
+*
+c     if (Acid_test_L)then
+c        if (Lun_debug_L) write (Lun_out,*)'Before adx_interp'
+c     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,4+acid_i0,G_ni-3-acid_in,
+c    %                                         4+acid_j0,G_nj-3-acid_jn,1,G_nk)
+c     endif rvw1,rc,rt
+*
+      call adx_interp (ruw2, ruw1, pos_x, pos_y,
+     %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
+*
+      call adx_interp (rvw2, rvw1, pos_x, pos_y,
+     %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
+c     if (Acid_test_L)then
+c        if (Lun_debug_L) write (Lun_out,*)'After adx_interp'
+c     call glbstat (ruw2,'RUW2',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
+c    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
+c     call glbstat (rvw2,'RVW2',LDIST_DIM,G_nk,5+acid_i0,G_ni-4-acid_in,
+c    %                                         6+acid_j0,G_nj-5-acid_jn,1,G_nk)
+c     endif
+      call adx_interp (rhsc , orhsc , pos_x, pos_y,
+     %                .false.,.false., LDIST_DIM, l_nk,i0,in,j0,jn,'m')
+*
+      pnerr = vmmuld(pnlkey1,pnlod)
+
+      if (.not.G_lam) then
+      call hpdeallc(adx_capx2_   ,err)
+      call hpdeallc(adx_capy2_   ,err)
+      call hpdeallc(adx_capz2_   ,err)
+      call hpdeallc(adx_n2_      ,err)
+      call hpdeallc(adx_xdd2_    ,err)
+      call hpdeallc(adx_xgg2_    ,err)
+      call hpdeallc(adx_ydd2_    ,err)
+      call hpdeallc(adx_ygg2_    ,err)
+      call hpdeallc(adx_cz2_     ,err)
+      call hpdeallc(adx_wrka_    ,err)
+      endif
+*
+***********************************************************************
+* Prepare for advection on thermodynamic levels
+***********************************************************************
+!     from upstream position for momentum levels to upstream
+!     position for thermodynamic levels
+!
+      call adx_meanpos (pos_x, pos_y, pos_z, F_u, F_v, F_w, i0, in,
+     %                  j0, jn)
+
+      if (G_lam) then
+          if ( ((.not.Orh_crank_L).or.(Orh_icn.eq.Schm_itcn)) .and.
+     $         (mod(Lctl_step,Step_gstat).eq.0) )
+     $         call adx_cfl_lam ( pos_x, pos_y, pos_z, 
+     $                            i0, in, j0, jn, l_nk+1, 't')
+          call adx_ckbd_lam( pos_x, pos_y, pos_z, i0, in, j0, jn, l_nk+1 )
+      endif
+*
+      if (.not.G_lam) then
+      call adx_exch_1 ( adx_n1, adx_xgg1, adx_xdd1, adx_c1,
+     $                  pos_x, pos_y, pos_z, l_nk+1 )
+*
+          if ( V4dg_conf.ne.0.0 ) then
+*
+               outside = 0
+*
+               if ( adx_fro_a .gt. 0 ) outside = 1
+*
+               sum_outside = 0
+               call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER",
+     $                                 "MPI_SUM","grid",ier)
+*
+               if(sum_outside.ne.0) call gem_stop ('adx_MAIN_3_INT: TLM-ADJ NOT done: INCREASE HALO',-1)
+*
+          endif
+*
+      dim = max(1,adx_fro_a)
+      call hpalloc(adx_capx2_   ,dim,      err,1)
+      call hpalloc(adx_capy2_   ,dim,      err,1)
+      call hpalloc(adx_capz2_   ,dim,      err,1)
+      call hpalloc(adx_n2_      ,dim,      err,1)
+      call hpalloc(adx_xdd2_    ,dim,      err,1)
+      call hpalloc(adx_xgg2_    ,dim,      err,1)
+      call hpalloc(adx_ydd2_    ,dim,      err,1)
+      call hpalloc(adx_ygg2_    ,dim,      err,1)
+      call hpalloc(adx_cz2_     ,dim,      err,1)
+      call hpalloc(adx_wrka_    ,dim,      err,1)
+*
+      call adx_exch_2 ( adx_capx2, adx_capy2, adx_capz2,
+     %                  adx_n1, adx_xgg1, adx_xdd1,
+     %                  adx_fro_n, adx_fro_s, adx_fro_a,
+     %                  adx_for_n, adx_for_s, adx_for_a, 3 )
+*
+      endif
+*
+
+      call adx_setint ( adx_n1,adx_capx1,adx_xgg1,adx_xdd1,adx_capy1,adx_ygg1,
+     %                  adx_ydd1,adx_capz1,adx_cz1,pos_x,pos_y,pos_z,
+     %                  .true., .true., .false., nijkt,i0,in,j0,jn,l_nk+1,'t')
+*
+      if ( adx_fro_a .gt. 0 .and. .not. G_lam) then
+*
+         if ( adx_ckbd_L ) call adx_ckbd ( adx_capy2 )
+*
+         call adx_setint(adx_n2,adx_capx2,adx_xgg2,adx_xdd2,adx_capy2,adx_ygg2,
+     %                 adx_ydd2,adx_capz2,adx_cz2,adx_capx2,adx_capy2,adx_capz2,
+     %                 .true., .true., .false., adx_fro_a,1,adx_fro_a,1,1,1,'t')
+*
+      endif
+*
+***********************************************************************
+* Perform interpolation for equations on thermodynamic levels
+***********************************************************************
+      pnlkey1(1) = VMM_KEY(rhst)
+      pnlkey1(2) = VMM_KEY(orhst)
+      pnlod = 2
+*
+      if (.not. Schm_hydro_L) then
+         pnlkey1(3) = VMM_KEY(rhsw)
+         pnlkey1(4) = VMM_KEY(orhsw)
+         pnlkey1(5) = VMM_KEY(rhsf)
+         pnlkey1(6) = VMM_KEY(orhsf)
+         pnlod = 6 
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr =  VMM_GET_VAR(rhst)
+      pnerr =  VMM_GET_VAR(orhst)
+*
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(rhsw)
+         pnerr = VMM_GET_VAR(orhsw)
+         pnerr = VMM_GET_VAR(rhsf)
+         pnerr = VMM_GET_VAR(orhsf)
+      endif
+*
+      call adx_interp (rhst, orhst, pos_x, pos_y, 
+     %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
+
+      if (.not. Schm_hydro_L) then
+          call adx_interp (rhsw, orhsw, pos_x, pos_y, 
+     %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
+*
+          call adx_interp (rhsf, orhsf, pos_x, pos_y, 
+     %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
+       else
+         if(Orh_icn.eq.Schm_itcn)then
+*
+!$omp parallel do
+            do k=1,l_nk+1
+               do j=j0,jn
+               do i=i0,in
+                  work(i,j,k)=0.5d0*(fiptx(i,j,k)+fiptx(i,j,k-1))
+     $                 +Ver_fistr_8%t(k)
+                  work2(i,j,k)=exp(Ver_a_8%t(k) + Ver_b_8%t(k)*
+     $                 (st1(i,j)+Ver_z_8%t(G_nk+1)))
+               enddo
+               enddo
+            enddo
+!$omp end parallel do
+          
+            call adx_interp (zz1, work, pos_x, pos_y, 
+     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
+            call adx_interp (piup,work2, pos_x, pos_y, 
+     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
+
+       endif
+
+      endif
+*
+      if ( Orh_icn .eq. Schm_itcn ) then
+*
+* tr3d advection
+*
+      key1_ = VMM_KEY (trt1)
+      key0_ = VMM_KEY (trt0)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+         key0(n) = key0_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)  
+         err = vmmlod(key0,Tr3d_ntr)  
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr,tr)
+            err = vmmget(key0(n),patr0,tr0)
+            do k=1,l_nk+1
+            do j=1,l_nj
+            do i=1,l_ni
+               tr0(i,j,k) = tr(i,j,k)
+            end do
+            end do
+            end do
+            call adx_interp ( tr0, tr0, pos_x, pos_y,
+     %               .false. , adx_mono_L, LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+         err = vmmuld(key0,Tr3d_ntr)
+      endif
+*
+*
+      endif
+
+***********************************************************************
+* Deallocate
+***********************************************************************
+      call hpdeallc(adx_capx1_   ,err,1)
+      call hpdeallc(adx_capy1_   ,err,1)
+      call hpdeallc(adx_capz1_   ,err,1)
+      call hpdeallc(adx_n1_      ,err,1)
+      call hpdeallc(adx_xdd1_    ,err,1)
+      call hpdeallc(adx_xgg1_    ,err,1)
+      call hpdeallc(adx_ydd1_    ,err,1)
+      call hpdeallc(adx_ygg1_    ,err,1)
+      call hpdeallc(adx_cz1_     ,err,1)
+      call hpdeallc(adx_c1_      ,err,1)
+      call hpdeallc(adx_wrkb_    ,err,1)
+      call hpdeallc(adx_wrkc_    ,err,1)
+      if (.not.G_lam) then
+      call hpdeallc(adx_capx2_   ,err,1)
+      call hpdeallc(adx_capy2_   ,err,1)
+      call hpdeallc(adx_capz2_   ,err,1)
+      call hpdeallc(adx_n2_      ,err,1)
+      call hpdeallc(adx_xdd2_    ,err,1)
+      call hpdeallc(adx_xgg2_    ,err,1)
+      call hpdeallc(adx_ydd2_    ,err,1)
+      call hpdeallc(adx_ygg2_    ,err,1)
+      call hpdeallc(adx_cz2_     ,err,1)
+      call hpdeallc(adx_wrka_    ,err,1)
+      endif
+*
+      deallocate (pos_x,pos_y,pos_z)
+*
+      pnerr = vmmuld(-1,0)
+*
+ 1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R adx_MAIN_3_INT)')
+*
+      return
+      end

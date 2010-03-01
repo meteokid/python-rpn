@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r set_crni - initialization of the common for right-hand side of
 *                 equations when using a Crank-Nicholson procedure
 *
@@ -45,12 +57,12 @@
 *
 *     Assign the name of the variables
 *
-      VMM_NAM(orhsu) = 'ORHSU'
-      VMM_NAM(orhsv) = 'ORHSV'
-      VMM_NAM(orhst) = 'ORHST'
-      VMM_NAM(orhsc) = 'ORHSC'
-      VMM_NAM(orhsw) = 'ORHSW'
-      VMM_NAM(orhsf) = 'ORHSF'
+      VMM_NAM(orhsu) = 'ORHU'
+      VMM_NAM(orhsv) = 'ORHV'
+      VMM_NAM(orhst) = 'ORHT'
+      VMM_NAM(orhsc) = 'ORHC'
+      VMM_NAM(orhsw) = 'ORHW'
+      VMM_NAM(orhsf) = 'ORHF'
 *
 *     Create the virtual memory for the variables 
 *

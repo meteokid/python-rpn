@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r adw_main_3_int - Interpolation of rhs
 *
 #include "model_macros_f.h"
@@ -82,7 +94,6 @@
 *
       real*8 aaa
       real tr,tr0,buf(l_ni,G_nk+1), half
-      real work(LDIST_SHAPE,G_nk+1),work2(LDIST_SHAPE,G_nk+1)
       parameter( half = 0.5 )
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
@@ -343,37 +354,37 @@ c     endif
 * Perform interpolation for equations on thermodynamic levels
 ***********************************************************************
       pnlkey1(1) = VMM_KEY(rhst)
-      pnlkey1(2) = VMM_KEY(orhst)
-      pnlod = 2
+      pnlkey1(2) = VMM_KEY(rhsf)
+      pnlkey1(3) = VMM_KEY(orhst)
+      pnlkey1(4) = VMM_KEY(orhsf)
+      pnlod = 4
 *
       if (.not. Schm_hydro_L) then
-         pnlkey1(3) = VMM_KEY(rhsw)
-         pnlkey1(4) = VMM_KEY(orhsw)
-         pnlkey1(5) = VMM_KEY(rhsf)
-         pnlkey1(6) = VMM_KEY(orhsf)
+         pnlkey1(5) = VMM_KEY(rhsw)
+         pnlkey1(6) = VMM_KEY(orhsw)
          pnlod = 6 
       endif
 *
       pnerr = vmmlod(pnlkey1,pnlod)
 *
       pnerr =  VMM_GET_VAR(rhst)
+      pnerr = VMM_GET_VAR(rhsf)
       pnerr =  VMM_GET_VAR(orhst)
+      pnerr = VMM_GET_VAR(orhsf)
 *
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(rhsw)
          pnerr = VMM_GET_VAR(orhsw)
-         pnerr = VMM_GET_VAR(rhsf)
-         pnerr = VMM_GET_VAR(orhsf)
       endif
 *
       call adw_interp (rhst, orhst, pos_x, pos_y, 
      %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
 
-      if (.not. Schm_hydro_L) then
-          call adw_interp (rhsw, orhsw, pos_x, pos_y, 
-     %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
 *
-          call adw_interp (rhsf, orhsf, pos_x, pos_y, 
+      call adw_interp (rhsf, orhsf, pos_x, pos_y, 
+     %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
+      if (.not. Schm_hydro_L) then
+         call adw_interp (rhsw, orhsw, pos_x, pos_y, 
      %                .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
        else
          if(Orh_icn.eq.Schm_itcn)then
@@ -382,18 +393,17 @@ c     endif
             do k=1,l_nk+1
                do j=j0,jn
                do i=i0,in
-                  work(i,j,k)=0.5d0*(fiptx(i,j,k)+fiptx(i,j,k-1))
+                  zz1(i,j,k)=0.5d0*(fiptx(i,j,k)+fiptx(i,j,k-1))
      $                 +Ver_fistr_8%t(k)
-                  work2(i,j,k)=exp(Ver_a_8%t(k) + Ver_b_8%t(k)*
-     $                 (st1(i,j)+Ver_z_8%t(G_nk+1)))
+                  piup(i,j,k)=exp(Ver_z_8%t(k) + Ver_b_8%t(k)*st1(i,j))
                enddo
                enddo
             enddo
 !$omp end parallel do
           
-            call adw_interp (zz1, work, pos_x, pos_y, 
+            call adw_interp (zz1, zz1, pos_x, pos_y, 
      %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
-            call adw_interp (piup,work2, pos_x, pos_y, 
+            call adw_interp (piup,piup, pos_x, pos_y, 
      %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
 
        endif
@@ -404,7 +414,7 @@ c     endif
 *
 * tr3d advection
 *
-      aaa = ( Offc_a1_8 / Offc_b0_8 )/ Cstv_dt_8 
+      aaa = - 1.d0 / Cstv_tau_8 
 *
       key1_ = VMM_KEY (trt1)
       key0_ = VMM_KEY (trt0)

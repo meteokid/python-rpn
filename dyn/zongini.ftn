@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r zongini - initialization of the zonal diagnostics package
 *
 #include "model_macros_f.h"
@@ -393,11 +405,14 @@ CCC               mp(3,2) =  cos( latr(ij) )
 *C     4. writes information records on zonal standard file
 *         -------------------------------------------------
 *
-      call inzono3(poid, rang, theta, P_zong_znli, ndelt,
-     %       P_zong_znmod, P_zong_znsrf, P_zong_znsrf_s, P_zong_znprf,
-     %       P_zong_znprf_s, nlatmn, irot, Lun_zonl, Ver_hyb%d, Out3_etik_s,
-     %       Out3_date, PG_ni, PG_nj, G_nk, nbin, Lun_out,
-     %       trim( noutzon_S ))
+      print *,' Abort: stop in zongini: to be reviewed'
+      stop
+c     To be reviewed
+c     call inzono3(poid, rang, theta, P_zong_znli, ndelt,
+c    %       P_zong_znmod, P_zong_znsrf, P_zong_znsrf_s, P_zong_znprf,
+c    %       P_zong_znprf_s, nlatmn, irot, Lun_zonl, Ver_hyb%d, Out3_etik_s,
+c    %       Out3_date, PG_ni, PG_nj, G_nk, nbin, Lun_out,
+c    %       trim( noutzon_S ))
 *
 *
  600  continue

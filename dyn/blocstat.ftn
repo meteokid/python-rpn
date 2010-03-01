@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r blocstat  - Performs 3D statistics on model fields for LAM vs GLB
 *
 #include "model_macros_f.h"
@@ -27,6 +39,7 @@
 #include "step.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
+#include "vth.cdk"
 #include "lctl.cdk"
 #include "ptopo.cdk"
 #include "v4dg.cdk"
@@ -34,13 +47,14 @@
 #include "type.cdk"
 #include "adw.cdk"
 #include "schm.cdk"
+#include "glb_pil.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 
       integer i,j,k,i0,in,j0,jn,inn,cnt,n,m,unf
-      integer err, key(max(Tr3d_ntr,6)), key0, trunc(4), nkeys
+      integer err, key(max(Tr3d_ntr,9)), key0, trunc(4), nkeys
       real tr,buf(l_ni,G_nk+1),cfl
       pointer (patr, tr(LDIST_SHAPE,*))
 *     ---------------------------------------------------------------
@@ -53,10 +67,13 @@
 *
       key(1)  = VMM_KEY(ut1)
       key(2)  = VMM_KEY(vt1)
-      key(3)  = VMM_KEY(tt1)
-      key(4)  = VMM_KEY(fiptx)
-      key(5)  = VMM_KEY(zdt1)
-       nkeys=5
+      key(3)  = VMM_KEY(wt1)
+      key(4)  = VMM_KEY(tt1)
+      key(5)  = VMM_KEY(fiptx)
+      key(6)  = VMM_KEY(zdt1)
+      key(7)  = VMM_KEY(zdth)
+      key(8)  = VMM_KEY(st1)
+      nkeys=8
       if(.not.Schm_hydro_L)then
          nkeys=nkeys+1
          key(nkeys)  = VMM_KEY(qt1)
@@ -66,9 +83,12 @@
 *
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(wt1)
       err = VMM_GET_VAR(tt1)
       err = VMM_GET_VAR(fiptx)
       err = VMM_GET_VAR(zdt1)
+      err = VMM_GET_VAR(zdth)
+      err = VMM_GET_VAR(st1)
       if(.not.Schm_hydro_L) err = VMM_GET_VAR(qt1)
 *
       if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
@@ -81,13 +101,19 @@
       if (G_lam) then
            inn=1
       endif
-      call glbstat (ut1  ,'UU',LDIST_DIM,G_nk  ,i0,in-inn,j0,jn  ,1,G_nk  )
-      call glbstat (vt1  ,'VV',LDIST_DIM,G_nk  ,i0,in    ,j0,jn-1,1,G_nk  )
-      call glbstat (zdt1 ,'WW',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
-      call glbstat (tt1  ,'TT',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
+      call glbstat (ut1  ,' U',LDIST_DIM,G_nk+1,i0,in-inn,j0,jn  ,1,G_nk+1)
+      call glbstat (vt1  ,' V',LDIST_DIM,G_nk+1,i0,in    ,j0,jn-1,1,G_nk+1)
+      call glbstat (wt1  ,' W',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
+      if(Schm_zdotMid_L) then
+         call glbstat (zdth ,'ZD',LDIST_DIM,G_nk,i0,in ,j0,jn  ,1,G_nk)
+      else
+         call glbstat (zdt1 ,'ZD',LDIST_DIM,G_nk+1,i0,in ,j0,jn  ,1,G_nk+1)
+      endif
+      call glbstat (tt1  ,' T',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
       call glbstat (fiptx,'GZ',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
+      call glbstat (st1,' S',LDIST_DIM,1,i0,in    ,j0,jn  ,1,1)
       if(.not.Schm_hydro_L)
-     $call glbstat(qt1,'QQ',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
+     $   call glbstat (qt1  ,' Q',LDIST_DIM,G_nk+2,i0,in ,j0,jn  ,1,G_nk+2)
 *
 *    Comment the above glbstats and uncomment the following lines for
 *    GLBSTAT for LAM versus GLB acid test
@@ -103,19 +129,24 @@
          err = vmmlod(key,Tr3d_ntr)  
          if(Schm_moist_L) then
             err = vmmget(key(1),patr,tr)
-            call glbstat (tr,Tr3d_name_S(1),LDIST_DIM,G_nk+1,i0,in,j0,jn,
-     $                                                          1,G_nk+1)
+            call glbstat (tr,Tr3d_name_S(1),LDIST_DIM,G_nk+2,i0,in,j0,jn,
+     $                                                          1,G_nk+2)
          endif
          do k=2,Tr3d_ntr
             err = vmmget(key(k),patr,tr)
-            call glbstat (tr,Tr3d_name_S(k),LDIST_DIM,G_nk+1,i0,in,j0,jn,
+            call glbstat (tr,Tr3d_name_S(k),LDIST_DIM,G_nk+2,i0,in,j0,jn,
      $                                                          1,G_nk+1)
          end do
          err = vmmuld(key,Tr3d_ntr)
       endif
 *
-      if(Schm_theoc_L)
-     $   call lipschitz(ut1, vt1, zdt1, LDIST_DIM, G_Nk, i0,in,j0,jn)
+      if(Schm_theoc_L) then
+         if(Schm_zdotMid_L) then
+            call lipschitz(ut1, vt1, zdth, LDIST_DIM, G_Nk, i0,in,j0,jn)
+         else
+            call lipschitz(ut1, vt1, zdt1, LDIST_DIM, G_Nk, i0,in,j0,jn)
+         endif
+      endif
 *
 *
       if (Ptopo_myproc.eq.0) write(6,1001)

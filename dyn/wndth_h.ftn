@@ -1,0 +1,114 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r wndth - Compute an average wind valid at time t0-dt/2 (th)
+*
+#include "model_macros_f.h"
+*
+      subroutine wndth_h
+*
+#include "impnone.cdk"
+*
+*author 
+*     Michel Roch - rpn - oct 1993
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version 
+* v3_20 - Tanguay M.        - 1d higher order diffusion operator 
+* v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "vt0.cdk"
+#include "vthh.cdk"
+#include "vt1.cdk"
+#include "hzd.cdk"
+#include "lctl.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnerr, pnlkey1(12), i, j, k
+**
+*     ---------------------------------------------------------------
+*
+      pnlkey1(1) = VMM_KEY(uthh)
+      pnlkey1(2) = VMM_KEY(ut1)
+      pnlkey1(3) = VMM_KEY(ut0)
+      pnlkey1(4) = VMM_KEY(vthh)
+      pnlkey1(5) = VMM_KEY(vt1)
+      pnlkey1(6) = VMM_KEY(vt0)
+      pnlkey1(7) = VMM_KEY(zdthh)
+      pnlkey1(8) = VMM_KEY(zdt1)
+      pnlkey1(9) = VMM_KEY(zdt0)
+*
+      pnerr = vmmlod(pnlkey1,9)
+      pnerr = VMM_GET_VAR(zdthh)
+      pnerr = VMM_GET_VAR(zdt1)
+      pnerr = VMM_GET_VAR(zdt0)
+      pnerr = VMM_GET_VAR(uthh)
+      pnerr = VMM_GET_VAR(vthh)
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(ut0)
+      pnerr = VMM_GET_VAR(vt0)
+*
+*     Filtering
+*     ---------
+      if (Lctl_step.gt.1) then
+      call tmg_start0 ( 12, 'HZD1D    ' )
+      if (Hzd_t0_0_L) call hzd_hoffld (ut0,   LDIST_DIM, G_nk, 1)
+      if (Hzd_t0_0_L) call hzd_hoffld (vt0,   LDIST_DIM, G_nk, 2)
+      if (Hzd_t0_0_L) call hzd_hoffld (zdt0, LDIST_DIM, G_nk+1, 3)
+      call tmg_stop0 (12)
+      endif
+*
+*C       1.    Perform the averaging
+*              ---------------------
+*
+      do k=1,l_nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+              uthh(i,j,k) = 0.5 *   ut0(i,j,k) + 0.5 *   ut1(i,j,k)
+         end do
+         end do
+         do j= 1+pil_s, l_njv-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            vthh(i,j,k)   = 0.5 * vt0(i,j,k) + 0.5 * vt1(i,j,k)
+         end do
+         end do
+      end do
+      do k=1,l_nk+1
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            zdthh(i,j,k) = 0.0
+         end do
+         end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+*     ---------------------------------------------------------------
+*
+ 1000 format(
+     +/ /,'AVERAGE WINDS t0-dt/2 (thh): (S/R WNDTH_H)',
+     + /,'========================================',
+     +/ /)
+      return
+      end

@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 #if defined (DOC)
 *
 *
@@ -29,9 +41,6 @@
 * Schm_adcub_L       | .true.-> cubic interpolation for                |
 *                    |                 advection (RU,RV) -> (PHI)      |
 *                    | .false.  linear interpolotion used instead      |
-* Schm_difqp_L       | .false.=> no diffusion on q'                    |
-*                    | .true. => indirect diffusion on q' & direct     |
-*                    |           diffusion on (dp/dpi-1) & (1+d)q'     |
 * Schm_psadj_L       | .true.->  ps adjust is activated (at every time |
 *                    |         step, the integral of ps over the domain|
 *                    |         is restored to the value of the previous|
@@ -55,30 +64,36 @@
 * Schm_nith          | number of vertical modes treated implicitely    |
 * Schm_offline_L     | run without the dynamical kernel (GEM)          |
 * Schm_chems_S       | Chemical scheme to use ('NIL' if none)          |
-* Schm_eulmtemp_L    | Eulerian treatment of mean temperature          |
+* Schm_zdotlag_L     | Zdot computed in a Lagrangian way               |
+* Schm_zdotMid_L     | Zdot computed in the middle of the trajectory   |
 *----------------------------------------------------------------------
 *
 #endif
       logical Schm_hydro_L, Schm_moist_L, Schm_nkbz_L , 
-     $        Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
+     $        Schm_phyms_L, Schm_adcub_L, Schm_psadj_L,
      $        Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L,
      $        Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L,
-     $        Schm_eulmtemp_L
-
+     $        Schm_zdotlag_L,Schm_zdotMid_L
+*
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, 
      %        Schm_itnlh, Schm_itraj, Schm_nith
-
+*
+      character*12 Schm_etape_S
+*
       MARK_COMMON_BEG (schm_l)
       common / schm_l / 
      $         Schm_hydro_L, Schm_moist_L, Schm_nkbz_L , 
-     $         Schm_phyms_L, Schm_adcub_L, Schm_difqp_L, Schm_psadj_L,
+     $         Schm_phyms_L, Schm_adcub_L, Schm_psadj_L,
      $         Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L, 
      $         Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L,
-     $         Schm_eulmtemp_L
+     $         Schm_zdotlag_L,Schm_zdotMid_L
       MARK_COMMON_END (schm_l)
 *
       MARK_COMMON_BEG (schm_i)
       common / schm_i / Schm_itcn , Schm_modcn, Schm_xwvt3, 
      %                  Schm_itnlh, Schm_itraj, Schm_nith
       MARK_COMMON_END (schm_i)
+      MARK_COMMON_BEG (schm_s)
+      common / schm_s / Schm_etape_S
+      MARK_COMMON_END (schm_s)
 *

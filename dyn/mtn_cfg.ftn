@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r mtn_cfg - reads parameters from namelist mtn_cfgs
 *
 #include "model_macros_f.h"
@@ -43,8 +55,9 @@
       Grd_xlat2=0.
       Grd_xlon2=270.
 *
-      Offc_b0_8 =  0.5
-      Offc_b1_8 =  0.5
+      Offc_b0_8  =  0.5
+      Offc_b0T_8 =  0.5
+      Offc_b0w_8 =  0.5
 *      	  
       Grd_rcoef = 1.0
 *
@@ -55,34 +68,34 @@
       
       Hzd_lnr = 0.
 
+      SCHM_MOIST_L=.false.
       Schm_phyms_L = .false.
-      Schm_hydro_L=.false.
       Adw_halox  = 3
       Adw_haloy  = 2
 
       G_halox=3
  
-      Zblen_L = .true.
-      Zblen_spngtt_L=.true.
-      Out3_flipit_L=.true.
+      Zblen_L        = .true.
+      Zblen_spngtt_L = .true.
+      Out3_flipit_L  = .true.
 
       Adw_interp_type_S = 'LAG3D'
 
       if ( Theo_case_S.eq.'MTN_SCHAR') then
 
          Out3_etik_s='SCHAR'
+         Schm_hydro_L = .false.
 
          Height_top_8 = 19500.d0
 
          mtn_tzero=288.
          mtn_nstar= 0.01
          mtn_flo  = 10.
-         mtn_hwx  =10
+         mtn_hwx  = 10
          mtn_hwx1 = 8
          mtn_hght = 250.
 
          Grd_ni = 401
-CAP         Grd_ni = 101
          Grd_nj = 1
          G_nk   = 65
 
@@ -102,15 +115,16 @@ CAP         Grd_ni = 101
          Cstv_tstr_8 = 2.144760293471223e+02
 
          Vtopo_start = -1
-         Vtopo_ndt = 0
+         Vtopo_ndt   = 0
 
       else if ( Theo_case_S.eq.'MTN_SCHAR2') then
 
          Out3_etik_s='SCHAR2'
+         Schm_hydro_L = .false.
 	  
          Height_top_8 = 19500.d0
 
-         mtn_tzero=273.16
+         mtn_tzero= 273.16
          mtn_nstar= 0.01871
          mtn_flo  = 18.71
          mtn_hwx  = 10
@@ -133,23 +147,25 @@ c        Zblen_spngthick=1.00531e+04
       
          Step_total = 2400
          Out3_closestep=2400
+
          Cstv_dt_8 = 5.34         !   CFL=0.2
 c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Cstv_tstr_8 = mtn_tzero
 
          Vtopo_start = -1
-         Vtopo_ndt = 0
+         Vtopo_ndt   = 0
 
       else if ( Theo_case_S.eq.'MTN_PINTY') then
 
          Out3_etik_s='PINTY'
+         Schm_hydro_L = .true.
 
          Height_top_8 = 20000.d0
 	  
-         mtn_tzero=273.16
-         mtn_nstar=-1
+         mtn_tzero= 273.16
+         mtn_nstar= -1
          mtn_flo  = 32.
-         mtn_hwx  =5
+         mtn_hwx  = 5
          mtn_hght = 100.
 
          Grd_ni = 161
@@ -168,14 +184,15 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Step_total = 800
          Out3_closestep=800
 
-         Cstv_dt_8 = 50.
+         Cstv_dt_8   = 50.
          Cstv_tstr_8 = mtn_tzero
          Vtopo_start = -1
-         Vtopo_ndt = -1
+         Vtopo_ndt   = 0
 
       else if ( Theo_case_S.eq.'MTN_PINTY2') then
 
          Out3_etik_s='PINTY2'
+         Schm_hydro_L = .true.
 
          Height_top_8 = 20000.d0
 	  
@@ -201,23 +218,23 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
          Step_total = 1600
          Out3_closestep=1600
 
-         Cstv_dt_8 = 200.
+         Cstv_dt_8   = 200.
          Cstv_tstr_8 = mtn_tzero
          Vtopo_start = -1
-         Vtopo_ndt = -1
+         Vtopo_ndt   = 0
 
       else    ! PINTYNL
 
          Out3_etik_s='PINTYNL'
+         Schm_hydro_L = .true.
 
          Height_top_8 = 20000.d0
-         Pres_ptop_8 = 95.75000118766453d0
-         print*,'Pres_ptop_8=',Pres_ptop_8
+         Pres_ptop_8  = 95.75000118766453d0
 
-         mtn_tzero=273.16
+         mtn_tzero= 273.16
          mtn_nstar= 0.02
          mtn_flo  = 32.
-         mtn_hwx  =5
+         mtn_hwx  = 5
          mtn_hght = 800.
 
          Grd_ni = 161
@@ -235,10 +252,11 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
       
          Step_total = 1000
          Out3_closestep=1000
-         Cstv_dt_8 = 50.
+*
+         Cstv_dt_8   = 50.
          Cstv_tstr_8 = 2.946394714296820e+02
-         Vtopo_start = -1
-         Vtopo_ndt = 60
+         Vtopo_start = 0
+         Vtopo_ndt   = 60
 
       endif
       
@@ -254,9 +272,8 @@ c        Cstv_dt_8 = 26.7         !   CFL=1.0
  9220 write( Lun_out,9230) Theo_case_S
  9221 continue
 
-cap      Step_rsti = Step_total+100
-
-      Pres_pref = Cstv_pisrf_8
+c     Here we deal with Cstv_pisrf_8 in mbs
+      Cstv_pisrf_8 = 1000.d0
 
 *   adjust dimensions to include piloted area (pil_n, s, w, e)
 

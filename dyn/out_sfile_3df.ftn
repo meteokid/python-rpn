@@ -1,32 +1,56 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r out_sfile_3df - to open 3DF format file for cascade mode
 *
 #include "model_macros_f.h"
 *
-      subroutine out_sfile_3df (datev,unf,msg,gid, gif, gjd, gjf,
-     $                                             nvar,ntr,mode)
+      subroutine out_sfile_3df (datev,unf,msg, gid, gif, gjd, gjf,
+     $                                              nvar,ntr,mode)
       implicit none
 *
       character* (*) datev, msg
       integer unf, gid, gif, gjd, gjf, nvar, ntr, mode
 *
-      call gem_stop('out_sfile_3df',-1)
-      return
-      end
-      subroutine wrgeo_3df ( xp,ni,yp,nj,z,pia,pib,nk,nvar,ntr,unf )
-      implicit none
+*author Michel Desgagne (MC2 2001)
 *
-      integer ni,nj,nk,nvar,ntr,unf
-      real pia(nk), pib(nk)
-      real*8 xp(ni),yp(nj),z(nk)
+*revision
+* v3_30 - Lee V. - initial version for GEM LAM 
+*
+#include "glb_ld.cdk"
+#include "ver.cdk"
+#include "out.cdk"
+*
+      character*2  md
+      character*15 startindx
+      character*512 filen
 *
 *------------------------------------------------------------------
-      write (unf) '>>^^',ni,nj,nk,nvar,ntr
-c     print *,'wrgeo_3df:',xp(1)
-      write (unf) xp,yp
-      write (unf) 'ZAB '
-      write (unf) z,pia,pib
-*------------------------------------------------------------------
 *
+      unf = 201
+*
+      write (md,'(i2.2)') mode
+      write (startindx,'((i7.7),a1,(i7.7))') out_idg,'-',out_jdg
+      filen= '3df'//md//'_'//datev//'_'//startindx
+      filen= '../../output/casc/'//trim(filen)
+      open (unf,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
+     $                                          position='APPEND')
+*
+      call wrgeo_3df (G_xg_8(gid),out_nisg,G_yg_8(gjd),out_njsg,
+     $                Ver_a_8%m(1),Ver_b_8%m(1),Ver_a_8%t,Ver_b_8%t,
+     $                G_nk,nvar,ntr,unf)
+      write (unf) msg,mode
+*
+*------------------------------------------------------------------
       return
       end

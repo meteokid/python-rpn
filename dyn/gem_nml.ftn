@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r gem_nml
 *
 #include "model_macros_f.h"
@@ -61,10 +73,9 @@
       Init_dfpl_8  = 21600.0
       Init_dftr_L  = .false.
 *
-      Offc_a0_8 =  1.0
-      Offc_a1_8 = -1.0
       Offc_b0_8 =  0.6
-      Offc_b1_8 =  0.4
+      Offc_b0T_8 =  0.6
+      Offc_b0w_8 =  0.6
 *
       Schm_hydro_L    = .false.
       Schm_moist_L    = .true.
@@ -76,12 +87,13 @@
       Schm_itraj    = 2
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
-      Schm_difqp_L    = .true.
       Schm_wload_L    = .false.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_sfix_L     = .false.
-      Schm_eulmtemp_L = .false.
+      Schm_zdotlag_L  = .false.
+      Schm_zdotMid_L  = .false.
+      Schm_etape_S    = 'ETAPE6'
 *
       Schm_phyms_L    = .false.
       Schm_chems_L    = .false.
@@ -122,10 +134,7 @@
       Cori_cornl_L = .true.
 *
       Cstv_dt_8    = 900
-      Cstv_uvdf_8  = 20000.
-      Cstv_phidf_8 = 20000.
       Cstv_pitop_8 = -1.0
-      Cstv_pisrf_8 = 1000.0
       Cstv_tstr_8  =  200.0
 *
       Lctl_r8stat_L   = .false.
@@ -149,7 +158,6 @@
       Grd_proj_S = 'E'
       Pres_ptop = -1.
       Pres_pref = 1000.0
-      Pres_vtap_L = .false.
       do k = 1, maxhlev
          hyb(k) = -1.
       end do
@@ -162,23 +170,20 @@
       sol_maxits    = 200
 *
       Eigv_parity_L = .false.
-      Hzd_type_S = "HO"
+      Hzd_type_S = "HO_IMP"
       Hzd_difva_L= .false.
       Hzd_pwr    = 6
       Hzd_lnr    = 0.2
-      Hzd_uvwdt_L= .false.
       Hspng_nj = 0
-      Hspng_mf = 800.
-      Hspng_uvwdt_L  = .false.
-      Hspng_rwnd_L   = .false.
+      Hspng_coef=20000.
+      Hspng_mf  =800.
       Vspng_nk = 0
+      Vspng_coef    =20000.
       do i = 1, Vspng_maxn
          Vspng_mf(i) = -1.
          Vspng_nu(i) = -1.
       end do
       Vspng_nutop = -1.
-      Vspng_uvwdt_L  = .false.
-      Vspng_rwnd_L   = .false.
       Vspng_njpole   = 3
       Vspng_zmean_L  = .false.
 *

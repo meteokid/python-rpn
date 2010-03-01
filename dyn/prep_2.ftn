@@ -1,13 +1,22 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r prep_2 - Add metric corrections to r.h.s. of momentum equations.
 *               Compute advective contributions on geopotential grid.
 *               Interpolate advection contribution from geopotential 
 *               grid to wind grids. Update r.h.s with advective 
-*               contributions. Add contribution of topography to rhs 
-*               of momentum equations.
-*               compute rhs of divergence equation
-*               compute rhs of combined horizontal equations
-*               compute the linear rhs of Helmholtz equation
-*               ( computation and microtasking )
+*               contributions.
+*               Combine some rhs obtaining Rt", Rf" and Rc", the linear
+*               contributions to the rhs of Helmholtz equation
 *
 #include "model_macros_f.h"
 *
@@ -65,9 +74,9 @@
 *
 *modules
       integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, longueur
-      real*8  x, y, z, cx, cy, cz, rx, ry, rz, b1ob0, mumu, tot,
-     $        a1, a2, a3, b1, b2, b3, zero, half, one, four, xxx, yyy
-      real    rdiv(DIST_SHAPE), w_rt(DIST_SHAPE)
+      real*8  x, y, z, cx, cy, cz, rx, ry, rz, bbb, mumu, tot,
+     $        a1,a2,a3, b1,b2,b3, zero, half, one, four, xxx, yyy, ww1
+      real    rdiv(DIST_SHAPE), w_rt
 *
       parameter( zero=0.d0, half=.5d0, one=1.d0, four=4.d0 )
 **
@@ -81,7 +90,7 @@
 *     Coriolis term is zero for theoretical cases
 *
       if( Schm_theoc_L ) tot = zero
-      b1ob0 = Offc_b1_8/Offc_b0_8
+      bbb = ( one - Offc_b0_8 ) / Offc_b0_8
 *
       i0 = 1
       in = l_ni
@@ -94,7 +103,8 @@
          if (l_north) jn= l_nj-pil_n +2
       endif
 
-!$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,mumu,rdiv,xxx,yyy)
+!$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,
+!$omp$                   mumu,rdiv,xxx,yyy,w_rt,ww1)
 !$omp do
       do 100 k=1,l_nk
       do 100 j= j0, jn
@@ -141,9 +151,9 @@
 
 *     Compute components of c and put in cx, cy, cz 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         cx = x + b1ob0*F_xct1(i,j,k)
-         cy = y + b1ob0*F_yct1(i,j,k)
-         cz = z + b1ob0*F_zct1(i,j,k)
+         cx = x + bbb*F_xct1(i,j,k)
+         cy = y + bbb*F_yct1(i,j,k)
+         cz = z + bbb*F_zct1(i,j,k)
 
 *     Compute mu and modify (Rx,Ry,Rz)
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -163,8 +173,6 @@
 **********************************************************
 * Final form of the RHS of horizontal momentum equations *
 **********************************************************
-*     Prepare the gradient of topography 
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !$omp single
       call rpn_comm_xch_halo( F_fis , LDIST_DIM, l_ni,l_nj,  1 ,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -247,9 +255,9 @@
 **************************************
 *
 !$omp single
-      a1 = one / ( Dcst_grav_8 * Cstv_tau_8 )
-      a2 = Ver_epsilon_8 / ( Dcst_rgasd_8 * Cstv_tstr_8 )
-      a3 = one / ( Cstv_tau_8**2 * Dcst_rgasd_8 * Cstv_tstr_8 )
+      a1 = one / ( Dcst_grav_8 * Cstv_tauT_8 )
+      a2 = Ver_epsilon_8 / Cstv_RTstr_8
+      a3 = one / ( Cstv_tau_8*Cstv_tauT_8 * Cstv_RTstr_8 )
 *
       b1 = Ver_gamma_8 / Cstv_tau_8 
       b2 = Ver_gamma_8 / ( Dcst_cappa_8 * Cstv_tau_8 )
@@ -260,11 +268,12 @@
       call rpn_comm_xch_halo( F_rv, LDIST_DIM,l_ni,l_njv,G_nk,
      $             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !$omp end single
+*
 !$omp do
       do k=1,l_nk
 *
-*        Computing the RHS of divergence equation 
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*        Computing the divergence of the RHS of momentum equations
+*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          if (G_lam) then
              do j= 1+pil_s, l_nj-pil_n
              do i= 1+pil_w, l_ni-pil_e
@@ -275,53 +284,89 @@
              end do
              end do
          else
-             call caldiv_2 ( rdiv, F_ru(minx,miny,k), 
+             call caldiv_2 ( rdiv, F_ru(minx,miny,k),
      $                             F_rv(minx,miny,k), LDIST_DIM, 1)
          endif
 *
-*        Combining divergence & continuity equations 
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            F_rc(i,j,k) = rdiv(i,j) - F_rc(i,j,k) / Cstv_tau_8
-         end do
-         end do
+*        Combining divergence & continuity equations : Rc'
+*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if(Cstv_iC2str_8.eq.0.d0) then
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               F_rc(i,j,k) = rdiv(i,j) - F_rc(i,j,k) / Cstv_tau_8
+            end do
+            end do
+         else if(Cstv_iC2str_8.gt.(1.1-Dcst_cappa_8)/Cstv_RTstr_8) then
+            xxx=half*Cstv_iC2str_8*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
+            yyy=half*Cstv_iC2str_8*Ver_idz_8%m(k)*Ver_dz_8%t(k)
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               ww1=xxx*F_rf(i,j,k+1)+yyy*F_rf(i,j,k)
+               F_rc(i,j,k) = rdiv(i,j) - (F_rc(i,j,k)-ww1) / Cstv_tau_8
+            end do
+            end do
+         else
+            xxx=half*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
+            yyy=half*Ver_idz_8%m(k)*Ver_dz_8%t(k)
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               ww1=xxx*(Cstv_iC2str_8*F_rf(i,j,k+1)+F_rt(i,j,k+1))
+     $            +yyy*(Cstv_iC2str_8*F_rf(i,j,k  )+F_rt(i,j,k  ))
+               F_rc(i,j,k) = rdiv(i,j) - (F_rc(i,j,k)-ww1) / Cstv_tau_8
+            end do
+            end do
+         endif
 *
       end do
 !$omp enddo
 *
 !$omp do
       do k=1,l_nk+1
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*        Computing RX stored in Rt & RQ(non-hydro) stored in rq
-*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            w_rt(i,j)    =      F_rt(i,j,k)
-            F_rt (i,j,k) = b2 * F_rt(i,j,k)
-*                                At this stage, F_rt=RX (hydro)
-         end do
-         end do
-         if (.not. Schm_hydro_L) then
-*           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*           non-hydrostatic contributions
-*           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+*        Computing Rt" & Rf"
+*        ~~~~~~~~~~~~~~~~~~~
+*        combining Rw and Rf with Rt in two different ways
+*
+         if (Schm_hydro_L) then
+*           ~~~~~~~~~~~
+*           hydrostatic
+*           ~~~~~~~~~~~
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
+               F_rf(i,j,k) =      F_rt(i,j,k)
+     $                          - Dcst_cappa_8/Cstv_RTstr_8*F_rf(i,j,k)
+               F_rt(i,j,k) = b2 * F_rt(i,j,k)
+            end do
+            end do
+         else
+*           ~~~~~~~~~~~~~~~
+*           non-hydrostatic
+*           ~~~~~~~~~~~~~~~
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               w_rt        = F_rt(i,j,k)
+*              Computing Rf'
+*              ~~~~~~~~~~~~~
                F_rf(i,j,k) = a1 *   F_rw(i,j,k) +  a2 * F_rf(i,j,k) 
-               F_rt(i,j,k) =        F_rt(i,j,k) +  b2 * F_rf(i,j,k)
-               F_rf(i,j,k) = b1 * ( F_rf(i,j,k) -  b3 * w_rt(i,j) )
-*                                At this stage, F_rt = RX (non-hydro)
-*                                At this stage, F_rf = RQ
+*              Computing Rt"
+*              ~~~~~~~~~~~~~
+               F_rt(i,j,k) = b2 *   F_rt(i,j,k) +  b2 * F_rf(i,j,k)
+*              Computing Rf"
+*              ~~~~~~~~~~~~~
+               F_rf(i,j,k) = b1 * ( F_rf(i,j,k) -  b3 * w_rt      )
             end do
             end do
          endif 
       enddo
 !$omp enddo
 *
-****************************************
-* The linear RHS of Helmholtz equation *
-****************************************
+*************************************************************
+* The linear contributions to the RHS of Helmholtz equation *
+*************************************************************
+*
+*     Finish computations of RP(Rc"), combining Rc', Rt", Rf" 
+*     and applying boundary conditions
+*
 !$omp do
       do k=1,l_nk
          xxx=one + half * Ver_dz_8%t(k+1)

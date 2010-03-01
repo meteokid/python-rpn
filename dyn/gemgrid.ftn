@@ -1,0 +1,191 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r gemgrid - grille program
+#include "model_macros_f.h"
+      subroutine gemgrid
+      implicit none
+*
+*author V.Lee - October 11, 2007
+*
+*object
+*     to create a file containing all 3 pairs of tic tacs for the
+*     GEM grid using functions from GEM
+*     to create gfilemap txt file to go with file created by autogenesis
+*     code derived originally from gengeo (S. Chamberlain/A. Zadra)
+*
+* In order for function geodata to read geophy file, there must be
+* the same prefix for both files:
+*
+* blabla_0000001-0000001 (RPN standard file for geophysical fields)
+* blabla_gfilemap.txt    (Text file with coverage info)
+*
+*     Computes positional parameters (>>=lat ^^=lon)
+*
+      integer  stretch_axis2,fnom,fstouv,fstecr,fstfrm,fclos,grid_nml
+      external stretch_axis2,fnom,fstouv,fstecr,fstfrm,fclos,grid_nml
+      integer  wkoffit 
+      external wkoffit
+      character*120 outfile,gfile
+      logical debug
+      integer ni,nila,oun,uout,err,npack,i,j
+      integer itile,jtile,i0,j0,i1,j1,overlap
+      integer Grd_ip1,Grd_ip2,Grd_ip3
+      character*10 gni_s,gnj_s,string
+*
+#include "lun.cdk"
+#include "grd.cdk"
+#include "schm.cdk"
+#include "e_grids.cdk"
+#include "hgc.cdk"
+*
+      data oun,uout /51, 21/
+      data npack /-32/
+*
+*
+*----------------------------------------------------------------------
+*
+*
+      print *
+      print *,'------------------------------------------'
+      print *,'------------------------------------------'
+      print *
+      print *,'GEMGRID - to write out ^^ >> for Phi,U,V grids in tape1'
+      print *,'        - to write out ^^ >> endpoints in gfilemap.txt '
+      print *
+      print *,'------------------------------------------'
+      print *,'------------------------------------------'
+      outfile     = 'tape1'
+      gfile       = 'gfilemap.txt' 
+
+c     write(string,'(i8)')grd_ni
+c     read(string,*) gni_s
+c     write(string,'(i8)')grd_nj
+c     read(string,*)gnj_s
+c     gfile       = 'gem'//trim(gni_s)//'X'//trim(gnj_s)//'_gfilemap.txt'
+
+      if (wkoffit(outfile).ne.-3.or.wkoffit(gfile).ne.-3) then
+          print *,trim(outfile), ' and/or ', trim(gfile),' already exist'
+          stop
+      endif
+
+      Lun_out = 6
+      Schm_offline_L = .false.
+      if (grid_nml  ('gem_settings.nml') .ne. 1)
+     +        stop   'In e_gemnml: After grid_nml'
+      LAM = Grd_typ_S(1:1).eq.'L'
+      ni   = Grd_ni
+      nila = Grd_nila
+*
+      if (lam) then
+          niu = ni-1
+      else
+          ni=ni+1
+          if ( ni .eq. nila+1) nila=nila+1
+          niu=ni
+      endif
+*
+      nifi = ni
+      niv  = ni
+      njfi = Grd_nj
+      nju  = Grd_nj
+      njv  = Grd_nj-1
+      npfi = nifi*njfi
+      npu  = niu *nju
+      npv  = niv *njv
+*
+      if (LAM) then
+         pni   = nifi
+         pniu  = niu
+      else
+         pni   = nifi-1
+         pniu  = pni
+      endif
+      pnj   = njfi
+      pnjv  = njv
+
+
+      call e_grid
+c     do i=1,niu
+c        print *,'xu(',i,')=',xu(i)
+c     enddo
+c     do j=1,njv
+c        print *,'yv(',j,')=',yv(j)
+c     enddo
+*     Grid_ip3 is not used, must set to 0
+      Grd_ip3 = 0
+      call ipig(Grd_ip1, Grd_ip2, Grd_ip3,
+     %        Grd_dx, Grd_dy, Grd_nila, Grd_njla, Grd_ni, Grd_nj,
+     %        Grd_rot_8, Grd_roule)
+
+
+c     if (lam) Grd_ip1=Grd_ip1+10
+
+      uout=0
+      if (fnom(uout,outfile,'RND',0).ge.0) then
+          err= fstouv (uout, 'RND')
+      else
+          print *,'problem opening', trim(outfile)
+          stop
+      endif  
+
+      open(oun,file=gfile,access='SEQUENTIAL',form='FORMATTED',iostat=err)
+      i0=1
+      j0=1
+      overlap=0
+      i1=grd_ni
+      j1=grd_nj
+      itile=1
+      jtile=1
+
+      write(oun,777) i0,j0,xfi(i0),xfi(i1),yfi(j0),yfi(j1),i1,j1,overlap,
+     $              itile,jtile
+
+ 777  format(2i8,4e15.7,2i10,x,3I5)
+*
+     
+***   Write positional parameters in FST file
+*
+*  For PHI grid
+      err= fstecr ( xfi,xfi, npack, uout, 0, 0, 0, niv, 1, 1,
+     $              Grd_ip1,Grd_ip2,Grd_ip3,'X','>>','POSX',Hgc_gxtyp_s,
+     $              Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      err= fstecr ( yfi,yfi, npack, uout, 0, 0, 0, 1, nju, 1,
+     $              Grd_ip1,Grd_ip2,Grd_ip3,'X','^^','POSY',Hgc_gxtyp_s,
+     $              Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+*  For U grid
+      err= fstecr ( xu,xu, npack, uout, 0, 0, 0, niu, 1, 1,
+     $              Grd_ip1,Grd_ip2+1,Grd_ip3,'X','>>','POSX',Hgc_gxtyp_s,
+     $              Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      err= fstecr ( yfi,yfi, npack, uout, 0, 0, 0, 1, nju, 1,
+     $              Grd_ip1,Grd_ip2+1,Grd_ip3,'X','^^','POSY',Hgc_gxtyp_s,
+     $              Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+*  For V grid
+      err= fstecr ( xfi,xfi, npack, uout, 0, 0, 0, niv, 1, 1,
+     $              Grd_ip1,Grd_ip2+2,Grd_ip3,'X','>>','POSX',Hgc_gxtyp_s,
+     $              Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      err= fstecr ( yv ,yv , npack, uout, 0, 0, 0, 1, njv, 1,
+     $              Grd_ip1,Grd_ip2+2,Grd_ip3,'X','^^','POSY',Hgc_gxtyp_s,
+     $              Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+*     
+      print*, 'Updated grid configuration'
+      write (6,nml=grid)
+      err= fstfrm(uout)
+      err= fclos (uout)
+      print *,'tictacs are in file: ',trim(outfile)
+      print *,trim(gfile),' is created'
+*
+      return
+*      
+*-------------------------------------------------------------------
+      end
+*

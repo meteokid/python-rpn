@@ -1,0 +1,91 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r get_press3d - get 3D pressure using A,B, and p0 for
+*                    the purpose of obtaining the hydrostatic surface
+*                    pressure over model topography (adj_ss2topo)
+*
+#include "model_macros_f.h"
+*
+      subroutine get_press3d(F_pr, F_ps, n, F_pia, F_pib, NK, F_datatype)
+      implicit none
+*
+      integer n, NK,F_datatype
+      real F_pr(n,NK),F_ps(n)
+      real*8 F_pia(Nk), F_pib(Nk)
+*
+*author
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from p0vt2gz v1_03)
+* v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
+* v3_00 - Lee v.            - treats 2D plane as 1-D vector no halos
+* v3_02 - Lemay G.          - Vectorisation
+* v3_21 - Lee V.            - Output Optimization
+*
+
+*object
+*       see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_gz         O    - geopotential height
+* F_pia        I    - actually RNA if F_sig_L=T
+*                   - pia          if F_sig_L=F
+* F_pib        I    - unused       if F_sig_L=T
+*                   - pib          if F_sig_L=F and F_pib_L=T
+*                   - pibb         if F_sig_L=F and F_pib_L=F
+* F_ps         I    - ln(pi_s/z_s) if F_pib_L=T
+*                   - pi_S         if F_pib_L=F or F_sig_L=T
+* F_vt         I    - virtual temperature
+* F_pib_L      I    - TRUE or FALSE
+* F_sig_L      I    - TRUE or FALSE
+*
+*implicits
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+*
+**
+      integer i,k
+*
+*     ---------------------------------------------------------------
+*
+*     Acql_hybanl  = (Acqi_datasp(2).eq.1)
+*     Acql_etaanl  = (Acqi_datasp(2).eq.2)
+*     Acql_siganl  = (Acqi_datasp(2).eq.3)
+*     Acql_prsanl  = (Acqi_datasp(2).eq.4)
+*     Acql_ecmanl  = (Acqi_datasp(2).eq.5)
+*     Acql_stganl  = (Acqi_datasp(2).eq.6)
+
+      if (F_datatype.eq.3) then
+* Sigma levels (F_ps = p0)
+          do k=1,Nk
+          do i=1,n
+             F_pr(i,k) =  F_pia(k)  *  F_ps(i)
+          enddo
+          enddo
+      else if (F_datatype.eq.6.or.F_datatype.eq.5.or.
+     %         F_datatype.eq.2.or.F_datatype.eq.1) then
+* Hybrid levels (stag or non-stag) (F_ps = p0)
+          do k=1,Nk
+          do i=1,n
+             F_pr(i,k) = F_pia(k) + F_pib(k)*F_ps(i)
+          enddo
+          enddo
+      else 
+          print *,'Error in get_press3d: unrecognizable datatype: F_datatype=',F_datatype
+          call gem_stop('get_press3d',-1)
+      endif
+      return
+      end

@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r  bac - backsubstitution ( memory management and call to bacp_2 )
 *
 #include "model_macros_f.h"
@@ -41,7 +53,6 @@
 #include "vt0.cdk" 
 #include "vtx.cdk" 
 #include "lctl.cdk"
-#include "func.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -55,18 +66,18 @@
       pnlkey1( 1) = VMM_KEY(topo)
       pnlkey1( 2) = VMM_KEY(ut0)
       pnlkey1( 3) = VMM_KEY(vt0)
-      pnlkey1( 4) = VMM_KEY(tt0)
-      pnlkey1( 5) = VMM_KEY(zdt0)
+      pnlkey1( 4) = VMM_KEY(wt0)
+      pnlkey1( 5) = VMM_KEY(tt0)
       pnlkey1( 6) = VMM_KEY(st0)
-      pnlkey1( 7) = VMM_KEY(fiptx)
-      pnlkey1( 8) = VMM_KEY(rhsu)
-      pnlkey1( 9) = VMM_KEY(rhsv)
-      pnlkey1(10) = VMM_KEY(rhst)
-      pnlod = 10
+      pnlkey1( 7) = VMM_KEY(zdt0)
+      pnlkey1( 8) = VMM_KEY(fiptx)
+      pnlkey1( 9) = VMM_KEY(rhsu)
+      pnlkey1(10) = VMM_KEY(rhsv)
+      pnlkey1(11) = VMM_KEY(rhst)
+      pnlkey1(12) = VMM_KEY(rhsf)
+      pnlod = 12
       if (.not. Schm_hydro_L) then
-         pnlkey1(11) = VMM_KEY(wt0)
-         pnlkey1(12) = VMM_KEY(qt0)
-         pnlkey1(13) = VMM_KEY(rhsf)
+         pnlkey1(13) = VMM_KEY(qt0)
          pnlkey1(14) = VMM_KEY(rhsw)
          pnlod = 14
       endif
@@ -76,22 +87,20 @@
       pnerr = VMM_GET_VAR(topo)
       pnerr = VMM_GET_VAR(ut0)
       pnerr = VMM_GET_VAR(vt0)
+      pnerr = VMM_GET_VAR(wt0)
       pnerr = VMM_GET_VAR(tt0)
-      pnerr = VMM_GET_VAR(zdt0)
       pnerr = VMM_GET_VAR(st0)
+      pnerr = VMM_GET_VAR(zdt0)
       pnerr = VMM_GET_VAR(fiptx)
       pnerr = VMM_GET_VAR(rhsu)
       pnerr = VMM_GET_VAR(rhsv)
       pnerr = VMM_GET_VAR(rhst)
+      pnerr = VMM_GET_VAR(rhsf)
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(wt0)
          pnerr = VMM_GET_VAR(qt0)
-         pnerr = VMM_GET_VAR(rhsf)
          pnerr = VMM_GET_VAR(rhsw)
       else
          qt0_ = 0
-         wt0_    = 0
-         rhsf_    = 0
          rhsw_    = 0
       endif
 *
@@ -100,12 +109,11 @@ c     call glbstat (st0, 'ST0',LDIST_DIM,1,8+acid_i0,G_ni-7-acid_in,
 c    %                                     8+acid_j0,G_nj-7-acid_jn,1,1)
 c     endif
 
-      call  bacp_2 (   Itr   , Itnlh,   st0,
-     %                 fiptx ,  topo,   tt0,
-     %                 ut0   ,   vt0,  zdt0,
-     %                 qt0   ,   wt0, fiptx,
-     %                 rhsu  ,  rhsv,  rhst,  rhsw,  rhsf,
-     %                 nl_u  ,  nl_v,  nl_t,  nl_w,  nl_f,
+      call  bacp_2 (   Itr   , Itnlh , fiptx ,  topo ,
+     %                 ut0   ,   vt0 ,   wt0 ,   tt0 ,
+     %                 st0   ,  zdt0 ,   qt0 , fiptx ,
+     %                 rhsu  ,  rhsv ,  rhst ,  rhsw , rhsf ,
+     %                 nl_u  ,  nl_v ,  nl_t ,  nl_w , nl_f ,
      $                 LDIST_DIM, l_nk )
 *
 c     if (Acid_test_L) then pipt0,qt0,gxtx,zdt0,tdt0,tplt0

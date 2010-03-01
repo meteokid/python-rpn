@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 #include "hybdim.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -42,19 +54,20 @@
      $     Step_total, Step_rsti, Step_gstat,
      $     Hyb, Grd_rcoef, Pres_ptop,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
-     $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,
+     $     Init_dftr_L, Offc_b0_8, Offc_b0T_8, Offc_b0w_8,
      %     Schm_hydro_L,
      %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,
      %     Schm_itnlh, Schm_itraj, Schm_hdlast_L,
-     %     Schm_adcub_L, Schm_psadj_L,  Schm_difqp_L, Schm_sfix_L,
+     %     Schm_adcub_L, Schm_psadj_L, Schm_sfix_L,
      %     Adw_nkbz_L, Adw_exdg_L, Adw_mono_L, Adw_interp_type_S,
      $     Adw_ckbd_L, Adw_halox, Adw_haloy, Adw_trunc_traj_L,
      $     Adw_nosetint_L,
-     $     Cstv_dt_8, Cstv_uvdf_8, Cstv_phidf_8, 
-     $     Cstv_pitop_8, Cstv_pisrf_8, Cstv_tstr_8,
-     $     Hzd_type_S, Hzd_pwr, Hzd_lnr, Hzd_uvwdt_L,
+     $     Cstv_dt_8,
+     $     Cstv_pitop_8, Cstv_tstr_8,
+     $     Hzd_type_S, Hzd_pwr, Hzd_lnr,
      $     Eigv_parity_L,
-     $     Vspng_nk,Vspng_mf,Vspng_nutop,Vspng_uvwdt_L,Vspng_rwnd_L,
+     $     Vspng_coef,
+     $     Vspng_nk,Vspng_mf,Vspng_nutop,
      $     bb_dpth,  bb_radius,  bb_xcntr,  bb_zcntr,
      $     bb_dpth2, bb_radius2, bb_xcntr2, bb_zcntr2,
      $     bb_isoth, Zblen_L, Zblen_spngthick, Zblen_spngtt_L,
@@ -69,20 +82,21 @@
      $     Step_total, Step_rsti, Step_gstat,
      $     Hyb, Grd_rcoef, Pres_ptop,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
-     $     Init_dftr_L, Offc_a0_8, Offc_a1_8, Offc_b0_8, Offc_b1_8,
+     $     Init_dftr_L, Offc_b0_8, Offc_b0T_8, Offc_b0w_8,
      %     Schm_hydro_L,
      %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,
      %     Schm_itnlh, Schm_itraj, Schm_hdlast_L,
-     %     Schm_adcub_L, Schm_psadj_L,  Schm_difqp_L, Schm_sfix_L,
-     %     Schm_eulmtemp_L, Schm_moist_L,
+     %     Schm_adcub_L, Schm_psadj_L, Schm_sfix_L,
+     %     Schm_moist_L, Schm_zdotlag_L, Schm_zdotMid_L,
      %     Adw_nkbz_L, Adw_exdg_L, Adw_mono_L, Adw_interp_type_S,
      $     Adw_ckbd_L, Adw_halox, Adw_haloy, Adw_trunc_traj_L,
      $     Adw_nosetint_L,
-     $     Cstv_dt_8, Cstv_uvdf_8, Cstv_phidf_8, 
-     $     Cstv_pitop_8, Cstv_pisrf_8, Cstv_tstr_8,
-     $     Hzd_type_S, Hzd_pwr, Hzd_lnr, Hzd_uvwdt_L,
+     $     Cstv_dt_8,
+     $     Cstv_pitop_8, Cstv_tstr_8,
+     $     Hzd_type_S, Hzd_pwr, Hzd_lnr,
      $     Eigv_parity_L,
-     $     Vspng_nk,Vspng_mf,Vspng_nutop,Vspng_uvwdt_L,Vspng_rwnd_L,
+     $     Vspng_coef,
+     $     Vspng_nk,Vspng_mf,Vspng_nutop,
      $     mtn_tzero,mtn_nstar,mtn_flo,mtn_hwx,
      $     mtn_hwx1, mtn_hght, Zblen_L, Zblen_spngthick, Zblen_spngtt_L,
      $     Vtopo_start, Vtopo_ndt, Out3_etik_s,Lctl_r8stat_L,

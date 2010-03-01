@@ -1,0 +1,80 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adx_exch_3 - fetch back interpolated values after being 
+*                   obtained from neighbor processors for 1 or 2 fields
+*
+#include "model_macros_f.h"
+*
+      subroutine adx_exch_3 ( F_1_out, F_2_out,
+     %                        F_1_in,  F_2_in,  F_c_in, F_n_treat )
+*
+#include "impnone.cdk"
+*
+      integer F_n_treat, F_c_in (*)
+*
+      real F_1_out (*), F_2_out (*),
+     %     F_1_in  (*), F_2_in  (*)
+*
+*author
+*     alain patoine
+*
+*revision
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_1_out      | \ interpolated fields for which some values     |  io |
+* F_2_out      | / obtained from neighbors have to be fetched    |  io |
+*              |   back in the appropriate positions             |     |
+*              |                                                 |     |
+* F_1_in       | \ interpolated values obtained from neighbors   |  i  |
+* F_2_in       | /                                               |  i  |
+*              |                                                 |     |
+* F_c_in       | 3D coordinates of points for which upstream     |  i  |
+*              | positions were outside advection source grid and|     |
+*              | interpolated values were obtained from neighbors|  i  |
+*              |                                                 |     |
+* F_n_treat    | number of vectors to treat                      |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "type.cdk"
+#include "adx.cdk"
+***********************************************************************
+      integer n
+***********************************************************************
+      if ( F_n_treat .eq. 1 ) then
+*
+         do n = 1, adx_for_a
+         F_1_out(F_c_in(n)) = F_1_in(n)
+         enddo
+*
+      elseif ( F_n_treat .eq. 2 ) then
+*
+         do n = 1, adx_for_a
+         F_1_out(F_c_in(n)) = F_1_in(n)
+         F_2_out(F_c_in(n)) = F_2_in(n)
+         enddo
+      endif
+*
+      return
+      end

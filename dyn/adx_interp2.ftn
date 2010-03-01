@@ -1,0 +1,182 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adx_interp2 - Interpolation of one rhs
+*
+#include "model_macros_f.h"
+#if defined (NEC)
+#define adx_TRITRUNC_LAG3D adx_tritrunc_lag3d_vec
+#define adx_TRICUB_LAG3D   adx_tricub_lag3d_vec
+#endif
+*
+      subroutine adx_interp2( F_out, F_in, F_u, F_v, 
+     %                        F_wind_L, F_mono_L, DIST_DIM, F_nk,
+     %                        i0,in,j0,jn, F_lev_S )
+*
+      implicit none
+*
+      character*1 F_lev_S
+*
+      logical F_wind_L, F_mono_L
+*
+      integer DIST_DIM, F_nk, i0,in,j0,jn
+*
+      real F_out (DIST_SHAPE, F_nk),
+     %     F_in  (DIST_SHAPE, F_nk)
+      real F_u(*), F_v(*)
+*
+*author
+*     alain patoine
+*
+*revision
+* v2_31 - Tanguay M.        - correction parameters adx_vder 
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_20 - Gravel & Valin & Tanguay - Lagrange 3D   
+* v3_21 - Desgagne M.       - Revision Openmp
+* v3_30 - McTaggart-Cowan   - Add truncated lag3d interpolator
+* v3_30 - McTaggart-Cowan   - Vectorization subroutines *_vec
+* v3_30 - Tanguay M.        - adjust OPENMP for LAM 
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_out        | interpolated field                              |  o  |
+* F_in         | field to interpolate                            |  i  |
+* F_wind_L     | switch: .true. : field to interpolate is a wind |  i  |
+*              |                  like quantity                  |  i  |
+* F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "type.cdk"
+#include "adx.cdk"
+*
+************************************************************************
+      integer i, j, k, nij, nijk, nijkag, n, dest_ni
+*
+      real dummy
+*
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *F_nk
+      nijkag = adx_nit*adx_njt*F_nk
+*
+*
+************************************************************************
+*
+* Adjust field to advection grid
+*
+* Compute extension beyond the pole if appropriate
+*
+************************************************************************
+!$omp single
+      if (G_lam) then
+          n=0
+          dest_ni=l_ni
+      else
+          n=999
+          dest_ni=G_ni
+      endif
+      call rpn_comm_xch_halox (F_in, LDIST_DIM, l_ni, l_nj, F_nk,
+     % adx_halox, adx_haloy, G_periodx, G_periody, F_u, -adx_halox+1,
+     % adx_nic+adx_halox, -adx_haloy+1, adx_njc+adx_haloy, dest_ni, n)
+!$omp end single
+*
+      if (.not.G_lam) then
+      if ( l_south ) then
+*     
+         if ( F_wind_L ) then
+            call adx_pol0 (F_u, 0, adx_nic,adx_halox,adx_njc,
+     %                     adx_haloy,F_nk)
+         else
+            call adx_pols (F_u,adx_wx_8, 0, adx_nic,adx_halox,
+     %                     adx_njc,adx_haloy,F_nk)
+         endif
+            call adx_polx (F_u,adx_xg_8,.true.,adx_nic,adx_halox,
+     %                     adx_njc,adx_haloy,F_nk)
+      endif
+*     
+      if ( l_north ) then
+*
+         if ( F_wind_L ) then
+            call adx_pol0 (F_u,adx_njc+1,adx_nic,adx_halox,adx_njc,
+     %                     adx_haloy,F_nk)
+         else
+            call adx_pols (F_u,adx_wx_8, adx_njc+1,adx_nic,adx_halox,
+     %                     adx_njc,adx_haloy,F_nk)
+         endif
+            call adx_polx (F_u,adx_xg_8,.false.,adx_nic,adx_halox,
+     %                     adx_njc,adx_haloy,F_nk)
+      endif
+      endif
+
+************************************************************************
+*
+* Interpolate
+*
+************************************************************************
+
+      select case (trim(adx_interp_type_S))
+         case ('LAG3D_TRUNC')
+         call adx_TRITRUNC_LAG3D ( adx_wrkc, F_u,
+     %                             adx_capx1, adx_capy1, adx_capz1,
+     %                             nijk, F_mono_L,i0,in,j0,jn,F_nk,F_lev_S)
+         case DEFAULT	
+         call adx_TRICUB_LAG3D   ( adx_wrkc, F_u,
+     %                             adx_capx1, adx_capy1, adx_capz1,
+     %                             nijk, F_mono_L,i0,in,j0,jn,F_nk,F_lev_S)
+      end select
+*
+      if (.not.G_lam) then
+      if ( adx_fro_a .gt. 0 ) then
+	   select case (trim(adx_interp_type_S))
+	      case ('LAG3D_TRUNC')
+              call adx_TRITRUNC_LAG3D ( adx_wrka, F_u,
+     %                                  adx_capx2, adx_capy2, adx_capz2,
+     %                           adx_fro_a, F_mono_L,1,adx_fro_a,1,1,1,F_lev_S)
+	      case DEFAULT
+              call adx_TRICUB_LAG3D ( adx_wrka, F_u,
+     %                                adx_capx2, adx_capy2, adx_capz2, 
+     %                           adx_fro_a, F_mono_L,1,adx_fro_a,1,1,1,F_lev_S)
+ 	   end select
+      endif
+*
+!$omp single
+      call adx_exch_2 ( adx_wrkb, dummy, dummy,
+     %                  adx_wrka, dummy, dummy,
+     %                  adx_for_n, adx_for_s, adx_for_a,
+     %                  adx_fro_n, adx_fro_s, adx_fro_a, 1)
+*
+      if ( adx_for_a .gt. 0 )
+     %   call adx_exch_3 ( adx_wrkc, dummy, adx_wrkb, dummy, adx_c1, 1 )
+!$omp end single
+*
+      endif
+!$omp do
+      do k = 1, F_nk
+      do j = j0,jn
+      do i = i0,in
+      F_out(i,j,k) = adx_wrkc ( (k-1)*nij+(j-1)*l_ni+i )
+      enddo
+      enddo
+      enddo
+!$omp enddo
+*
+      return
+      end

@@ -1,11 +1,39 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 *
-      real*8 xpn,ypn,xpun,ypvn,xpw,ypw,xpuw,ypvw, ana_z
+      real*8 xpn,ypn,xpun,ypvn,xpw,ypw,xpuw,ypvw
+      real*8 xps,yps,xpus,ypvs,xpe,ype,xpue,ypve
+      real*8 ana_z
       real ana_a, ana_b
-      pointer (paxpn ,  xpn(*)),(paypn ,  ypn(*)),(paxpun, xpun(*)),
-     $        (paypvn, ypvn(*)),(paxpw ,  xpw(*)),(paypw ,  ypw(*)),
-     $        (paxpuw, xpuw(*)),(paypvw, ypvw(*)),(pazta, ana_z(*)),
-     $        (papia, ana_a(*)),(papib, ana_b(*))
+      integer ana_presstyp
+      pointer 
+     $  (paxpn ,  xpn(*)),(paypn ,  ypn(*)),(paxpun, xpun(*)),(paypvn, ypvn(*)),
+     $  (paxps ,  xps(*)),(payps ,  yps(*)),(paxpus, xpus(*)),(paypvs, ypvs(*)),
+     $  (paxpw ,  xpw(*)),(paypw ,  ypw(*)),(paxpuw, xpuw(*)),(paypvw, ypvw(*)),
+     $  (paxpe ,  xpe(*)),(paype ,  ype(*)),(paxpue, xpue(*)),(paypve, ypve(*)),
+     $  (pazta, ana_z(*)),
+     $  (papia, ana_a(*)),(papib, ana_b(*))
+
 *
-      common /bcshdg/ paxpn,paypn,paxpun,paypvn,
-     $                paxpw,paypw,paxpuw,paypvw,pazta,papia,papib
+      common /bcshdg_1/ paxpn,paypn,paxpun,paypvn,
+     $                  paxps,payps,paxpus,paypvs,
+     $                  paxpe,paype,paxpue,paypve,
+     $                  paxpw,paypw,paxpuw,paypvw,pazta,papia,papib
 *
+      Real*8, dimension (:), pointer :: ana_am_8,ana_bm_8,
+     $                                  ana_at_8,ana_bt_8,ana_as_8,ana_bs_8
+      
+      common /bcshdg_2/ ana_am_8,ana_bm_8,ana_at_8,ana_bt_8,ana_as_8,ana_bs_8
+      common /bcshdg_3/ ana_presstyp
+*
+  

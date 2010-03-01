@@ -1,0 +1,75 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+#include "model_macros_f.h"
+
+      subroutine set_betav(betav_m,betav_t,F_s, DIST_DIM, Nk)
+
+      implicit none
+
+      integer  DIST_DIM, Nk
+
+#include "glb_pil.cdk"
+#include "cstv.cdk"
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "schm.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "zblen.cdk"
+
+      real betav_m(DIST_SHAPE,Nk),betav_t(DIST_SHAPE,Nk+1)
+      real F_s(DIST_SHAPE)
+*
+      real Zblen_max,Zblen_top
+
+      real*8 work1,work2
+
+      integer i,j,k,i0,in,j0,jn
+
+      zblen_max=Ver_z_8%t(l_nk+1)*(1.-Zblen_hmin/(287.*290.))
+      zblen_top=ver_z_8%t(1)
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+      if (l_west ) i0 = 1+pil_w
+      if (l_east ) in = l_ni-pil_e
+      if (l_south) j0 = 1+pil_s
+      if (l_north) jn = l_nj-pil_n
+
+      do k=1,l_nk
+         do j=j0,jn
+            do i=i0,in
+               work1=zblen_max-(Ver_z_8%m(k)+Ver_b_8%m(k)*F_s(i,j))
+               work2=zblen_max-zblen_top
+               work1=min(1.d0,max(0.d0,work1/work2))
+               betav_m(i,j,k)=work1*work1
+               work1=zblen_max-(Ver_z_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
+               work1=min(1.d0,max(0.d0,work1/work2))
+               betav_t(i,j,k)=work1*work1
+            enddo
+         enddo
+      enddo
+
+c     Set betav_ to zero at surface.
+      k=l_nk+1
+      do j=j0,jn
+         do i=i0,in
+            betav_t(i,j,k)=0.
+         enddo
+      enddo
+
+      return
+
+      end
+

@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r vte_vrtical -  Vertical interpolation from pressure to hyb levels
 *
 #include "model_macros_f.h"
@@ -41,6 +53,7 @@
 *
 *     ---------------------------------------------------------------
 *
+      call gem_stop('vte_vrtical, a revoir pour staggering les %d',-1)
       xlapse = 0.0
       if ( F_lapse_L ) xlapse = 1.0
       conv_8 = 100.
@@ -70,10 +83,10 @@
          flapse(i)  = (fdcol(i,lv)-fdcol(i,lv-1))*hr_8(lv-1)*xlapse
       end do           ! flapse is column lapse rate for extrapolation
 *
-      call gem_stop('vte_vrtical, a revoir pour staggering les %d',-1)
+c     REVIEW FOR VSTAG
       do l=1,nk      ! compute vertical coordinate of each target point
       do i=1,np
-         target(i,l) =  Ver_pia%d(l)+ Ver_pib%d(l)*F_ps(i) - conv_8
+c        target(i,l) =  Ver_pia%d(l)+ Ver_pib%d(l)*F_ps(i) - conv_8
       end do
       end do
 *

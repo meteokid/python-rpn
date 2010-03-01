@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r geodata - FROM MC2 - read in geophy file created by gengeo
 *                ?_gfilemap.txt must accompany this ?geophy file
 #include "model_macros_f.h"
@@ -42,7 +54,7 @@
      $        g1o,g2o,g3o,g4o,nvar,errtot,unf,location
       logical interpo_L,samegrid
 *
-      integer dgid,ezgdef_fmem,gdll,gdrls
+      integer dgid,ezgdef_fmem,gdll,gdrls,dummy
       integer unf2,err,ier,ni1,nj1,nk1,key,ni,nj,n,nia,nja,last,
      $        i,j,mgi,z0i,lhi,y7i,y8i,y9i,gai,vgi,vfi,id,gid,ic,
      $        lai,loi,mti,nti,mfi,errrot,cnt,offg,mul,i0,j0,in,jn
@@ -59,8 +71,8 @@
 
 *-----------------------------------------------------------------------
 *
-      nvar = 10
-      if (P_pbl_schsl_S.eq.'ISBA') nvar = 12
+      nvar = 11
+      if (P_pbl_schsl_S.eq.'ISBA') nvar = 13
       allocate (geop_name(nvar))
 *
       geop_name (1) = 'MGEN'
@@ -72,13 +84,13 @@
       geop_name (7) = 'GLACEN'
       geop_name (8) = 'VEGINDEN'
       geop_name (9) = 'VEGFEN'
-      geop_name(10) = 'MT'
+      geop_name(10) = 'MF'
+      geop_name(11) = 'MT'
       if (P_pbl_schsl_S.eq.'ISBA') then
-         geop_name (11) = 'SANDEN'
-         geop_name (12) = 'CLAYEN'
+         geop_name (12) = 'SANDEN'
+         geop_name (13) = 'CLAYEN'
       endif
 *
-      if (Lun_out.gt.0) write (Lun_out,1000)
 *
       do id =1,nvar
       do gid=1,P_bgeo_top
@@ -87,6 +99,7 @@
       end do
 *
       fn  = '../geophy/'//trim(prefgeo)//'_gfilemap.txt'
+      if (Lun_out.gt.0) write (Lun_out,1000) trim(fn)
       unf = 91
       open (unf,file=fn,access='SEQUENTIAL',
      $      status='OLD',iostat=err,form='FORMATTED')
@@ -116,6 +129,11 @@
       nja = ifd_njaf - ifd_njad + 1
       close (unf)
 *
+      do gid=1,P_bgeo_top
+         if (geonm(gid,1).eq.'MT') geonm(gid,2)='ME      '
+         if (geonm(gid,1).eq.'MF') geonm(gid,2)='MF      '
+      end do
+
       do n=1,ifd_nf
       if (ifd_needit(n)) then
          fn = 
@@ -152,7 +170,13 @@
      $                    'p2=',p2,'p3=',p3
          endif
          if (g1.ne.g1o.or.g2.ne.g2o.or.g3.ne.g3o.or.g4.ne.g4o) then
-            errtot=-1
+            if (Lun_out.gt.0) then
+               write(Lun_out,*) 'Grid rotation from',trim(fn),' is not the same as target grid' 
+               write(Lun_out,*)
+     $         'geodata: g1,g2,g3,g4',g1,g2,g3,g4, 'should be:',g1o,g2o,g3o,g4o
+            endif
+           
+            call gem_stop  ('geodata',-1)
          else
             if (nia.eq.dimgx.and.nja.eq.dimgy) then
                 interpo_L = samegrid(unf2,nia,nja,p1,p2,p3,
@@ -204,7 +228,13 @@
       call grid_to_grid_coef
      $    (ypxext(l_j0),nj1,ypaq,nja,idyn,cyan,cybn,cycn,cydn,'NEAREST')
 *
+         if (Lun_debug_L) then
+         do gid=1,P_bgeo_top
+            write(Lun_out,*)'geodata: geonm 1,2',geonm(gid,1),geonm(gid,2),geopar(gid,3)
+         enddo
+         endif
       do 101 id=1,nvar
+         if (Lun_debug_L) write(Lun_out,*) 'geodata: cherche',geop_name(id)
          location = -1
          do gid=1,P_bgeo_top
             if (geonm(gid,1).eq.geop_name(id)) location = gid
@@ -244,7 +274,7 @@
          if (geonm(gid,1).eq.'GLACEN') gai = geopar(gid,1)
          if (geonm(gid,1).eq.'MT'    ) mti = geopar(gid,1)
          if (geonm(gid,1).eq.'MF'    ) mfi = geopar(gid,1)
-         if (geonm(gid,1).eq.'MF'    ) listgeonm(2,gid) = 'OK'
+c        if (geonm(gid,1).eq.'MF'    ) listgeonm(2,gid) = 'OK'
       end do
 *
       call cxgaig ('E',g1,g2,g3,g4,Grd_xlat1,Grd_xlon1,
@@ -255,8 +285,8 @@
       err = gdrls (gid)
 *
       do i=1,ni1*nj1
-         geofld(mti +i-1) = max(0.,geofld(mti+i-1))
-         geofld(mfi +i-1) = geofld(mti+i-1)
+         geofld(mfi +i-1) = max(0.,geofld(mfi+i-1))
+         geofld(mti +i-1) = geofld(mti+i-1)
          geofld(mgi +i-1) = min(max(0.,geofld(mgi +i-1)),1.)
          geofld(gai +i-1) = min(max(0.,geofld(gai +i-1)),1.)
          geofld(lhi +i-1) = max(0.,geofld(lhi+i-1))
@@ -271,7 +301,7 @@
 *
       if (Ptopo_myproc.ne.0) ier = fstopc('MSGLVL','INFORM',.false.)
 *
- 1000 format (4X,'GEODATA: reading fields from geophy file'/)
+ 1000 format (4X,'GEODATA: reading geophy file description from ',A/)
  1001 format (/' INPUT DATA NOT ON SAME GRID ROTATION AS MODEL ',
      $         '- ABORT IN geodata -'/)
 *
@@ -335,13 +365,14 @@
 *
       integer function filsfc ( f,nv,n1,n2,n3,n4,ki,nk,unf,ofi,ofj )
       implicit none
+#include "lun.cdk"
 *
       character* (*) nv
       integer n1,n2,n3,n4,ki,nk,unf,ofi,ofj
       real f(n1:n2,n3:n4)
 *
-      integer  fstinf,fstluk
-      external fstinf,fstluk
+      integer  fstinf,fstluk,ip1_all
+      external fstinf,fstluk,ip1_all
 *
       character*8 dum
       integer key,ni1,nj1,nk1,ip1,ier,i,j
@@ -352,8 +383,15 @@
       filsfc = -1
 *
       ip1 = 0
-      if (nk.gt.1) call convip ( ip1, real(ki), 3, 1, dum, .false.)
-      key = fstinf(unf,ni1,nj1,nk1,-1,' ',ip1,-1,-1,' ',nv)
+      if (nk.gt.1) then
+          key = fstinf(unf,ni1,nj1,nk1,-1,' ',ip1_all(real(ki),3),-1,-1,' ',nv)
+      else
+          key = fstinf(unf,ni1,nj1,nk1,-1,' ',ip1,-1,-1,' ',nv)
+          if (key.lt.0) 
+     $    key = fstinf(unf,ni1,nj1,nk1,-1,' ',ip1_all(0.0,3),-1,-1,' ',nv)
+      endif
+      
+      if (Lun_debug_L) write(Lun_out,*) 'filsfc: ',nv,' ki=',ki,' key=',key
 *
       if (key.ge.0) then
 *

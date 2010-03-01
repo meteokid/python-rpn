@@ -1,0 +1,145 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adx_exch_1 - Establish list and number of points for 
+*                   which upstream positions are outside 
+*                   advection source grid.
+*
+*                   Fill output vectors with coordinates of these 
+*                   upstream positions in preparation for exchange 
+*                   with other processors.
+*
+*                   Take note 3D coordinates of points for which
+*                   upstream positions are outside advection source
+*                   grid.
+*
+*                   Exchange number of points to be exchanged to 
+*                   allow temporary space allocation.
+*
+#include "model_macros_f.h"
+*
+      subroutine adx_exch_1 ( F_x_out, F_y_out, F_z_out, F_c_out,
+     %                        F_x_in,  F_y_in,  F_z_in , F_nk)
+*
+#include "impnone.cdk"
+*
+      integer F_c_out ( * ), F_nk
+      real    F_x_out ( * ), F_y_out ( * ), F_z_out ( * ),
+     %        F_x_in  ( * ), F_y_in  ( * ), F_z_in  ( * )
+*
+*author
+*     alain patoine
+*
+*revision
+* v2_31 - Corbeil L.         - replaced MPI calls by rpn_comm
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+* F_x_out      | \ coordinates of upstream                       |  o  |
+* F_y_out      |   positions outside advection                   |  o  |
+* F_z_out      | / source grid                                   |  o  |
+*              |                                                 |     |
+* F_c_out      | 3D coordinates of points for which upstream     |  o  |
+*              | positions are outside advection source grid     |     |
+*              |                                                 |     |
+* F_x_in       | \                                               |  i  |
+* F_y_in       |   upstream positions                            |  i  |
+* F_z_in       | /                                               |  i  |
+*______________|_________________________________________________|_____|
+*
+*notes
+*______________________________________________________________________
+*                                                                      |
+* The positions are stored  in the following manner:                   |
+*                                                                      |
+* adx_for_n values followed by adx_for_s values = adx_for_a values     |
+* ---------                    ---------          ---------            |
+*______________________________________________________________________|
+*
+*implicits
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "type.cdk"
+#include "adx.cdk"
+************************************************************************
+*
+      integer nwrn,nwrs,status
+*
+      integer n, nijk,i,j,k,npts
+*
+      nijk = l_ni*l_nj*F_nk
+*
+      adx_for_n = 0
+      adx_for_s = 0
+      adx_fro_n = 0
+      adx_fro_s = 0
+************************************************************************
+      if (.not. l_north) then
+*
+         do n = 1, nijk
+*
+         if ( F_y_in(n).ge.adx_yy_8(adx_njt-1) ) then
+*
+            adx_for_n = adx_for_n + 1
+*
+            F_x_out ( adx_for_n ) = F_x_in (n)
+            F_y_out ( adx_for_n ) = F_y_in (n)
+            F_z_out ( adx_for_n ) = F_z_in (n)
+            F_c_out ( adx_for_n ) = n
+*
+            F_y_in ( n ) = Geomg_y_8(1)
+         endif
+         enddo
+      endif
+************************************************************************
+      if (.not. l_south) then
+*
+         do n = 1, nijk
+*
+         if ( F_y_in(n).le.adx_yy_8(2) ) then
+*
+            adx_for_s = adx_for_s + 1
+*
+            F_x_out ( adx_for_n+adx_for_s ) = F_x_in (n)
+            F_y_out ( adx_for_n+adx_for_s ) = F_y_in (n)
+            F_z_out ( adx_for_n+adx_for_s ) = F_z_in (n)
+            F_c_out ( adx_for_n+adx_for_s ) = n
+*
+            F_y_in ( n ) = Geomg_y_8(1)
+         endif
+         enddo
+      endif
+      call RPN_COMM_swapns(1,adx_for_n,1,adx_for_s,
+     %          1,nwrn,adx_fro_n,1,nwrs,adx_fro_s,G_periody,
+     %          status)
+
+************************************************************************
+      adx_for_a = adx_for_n + adx_for_s
+      adx_fro_a = adx_fro_n + adx_fro_s
+************************************************************************
+      if ( adx_exdg_L ) print *,'EXDG',Ptopo_myproc,
+     %                           adx_for_n, adx_for_s, adx_for_a,
+     %                           adx_fro_n, adx_fro_s, adx_fro_a
+*
+      return
+      end

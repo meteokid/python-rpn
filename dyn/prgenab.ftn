@@ -1,0 +1,85 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+c  s/r prgenab- To print out all the values set in set_hybv
+c               printout of values in genab_8 or set_hybv will
+c               alternate the values slightly due to optimization
+c               Only active under Out_DEBUG_L mode
+c
+#include "model_macros_f.h"
+c
+      subroutine prgenab ()
+      implicit none
+c
+c author 
+c     Lee V - December 2007
+c
+c revision
+c
+c object
+c    See above
+c arguments
+c none
+c
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "pres.cdk"
+#include "cstv.cdk"
+#include "grd.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "schm.cdk"
+c
+
+      integer k,istat,ind
+      real*8 pref_8, ptop_8, pr1_8, etatop_8, rcoef_8, ztop_8, zsurf_8
+      real*8 tempo_8(G_nk),tmp_8,eta_old,eta_new,log_z
+c     __________________________________________________________________
+c
+c
+      if (Lun_debug_L) then
+      print *,'prgenab Ver_a_8%m(k),Ver_b_8%m(k),Ver_z_8%m(k)'
+      do k=0,G_nk+1
+         print *,k,Ver_a_8%m(k),Ver_b_8%m(k),Ver_z_8%m(k)
+      enddo
+      print *,'prgenab Ver_dz_8%m(k),Ver_idz_8%m(k)'
+      do k=1,G_nk
+         print *,k,Ver_dz_8%m(k),Ver_idz_8%m(k)
+      enddo
+      print *,'prgenab Ver_dbdz_8%m(k),Ver_fistr_8%m(k)'
+      do k=1,G_nk
+         print *,k,Ver_dbdz_8%m(k),Ver_fistr_8%m(k) 
+      enddo 
+      print *,'prgenab Ver_a_8%t(k),Ver_b_8%t(k),Ver_z_8%t(k)'
+      do k=1,G_nk+1
+         print *,k,Ver_a_8%t(k),Ver_b_8%t(k),Ver_z_8%t(k)
+      enddo 
+      print *,'prgenab Ver_dz_8%t(k),Ver_idz_8%t(k)'
+      do k=1,G_nk+1
+         print *,k,Ver_dz_8%t(k),Ver_idz_8%t(k)
+      enddo 
+      print *,'prgenab Ver_dbdz_8%t(k),Ver_fistr_8%t(k)'
+      do k=1,G_nk+1
+         print *,k,Ver_dbdz_8%t(k),Ver_fistr_8%t(k) 
+      enddo 
+      print *,'prgenab Ver_a_spcl_8%t(k),Ver_b_spcl_8%t(k)'
+      do k=1,G_nk+2
+         print *,k,Ver_a_spcl_8%t(k),Ver_b_spcl_8%t(k)
+      enddo 
+      print *,'prgenab Ver_a_spcl_8%m(k),Ver_b_spcl_8%m(k)'
+      do k=1,G_nk+1
+         print *,k,Ver_a_spcl_8%m(k),Ver_b_spcl_8%m(k)
+      enddo 
+      endif
+      return
+      end

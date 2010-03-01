@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r nli - compute nonlinear portion of governing & derived equations
 *
 #include "model_macros_f.h"
@@ -33,13 +45,12 @@
 #include "vtx.cdk" 
 #include "ptopo.cdk"
 #include "lctl.cdk"
-#include "func.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *    
-      integer  pnerr, pnlod, pnlkey1(14), i, j 
+      integer  pnerr, pnlod, pnlkey1(11), i, j 
 **
 *     __________________________________________________________________
 *
@@ -53,10 +64,7 @@
       pnlkey1(5) = VMM_KEY(bspqtx)
       pnlkey1(6) = VMM_KEY(fiptx)
       pnlkey1(7) = VMM_KEY(topo)
-      pnlkey1(8) = VMM_KEY(zdt0)
-      pnlkey1(9) = VMM_KEY(that_8)
-      pnlkey1(10) = VMM_KEY(dlnth_8)
-      pnlod =10 
+      pnlod =7 
       if (.not. Schm_hydro_L) then
          pnlkey1(pnlod+1) = VMM_KEY(qt0)
          pnlkey1(pnlod+2) = VMM_KEY(mutx)
@@ -77,9 +85,6 @@
       pnerr = VMM_GET_VAR(bspqtx)
       pnerr = VMM_GET_VAR(fiptx)
       pnerr = VMM_GET_VAR(topo)
-      pnerr = VMM_GET_VAR(zdt0)
-      pnerr = VMM_GET_VAR(that_8)
-      pnerr = VMM_GET_VAR(dlnth_8)
       if (.not. Schm_hydro_L) then
          pnerr = VMM_GET_VAR(qt0)
          pnerr = VMM_GET_VAR(mutx)
@@ -102,20 +107,13 @@ c     call glbstat (st0,'st0',LDIST_DIM,1,8+acid_i0,G_ni-8-acid_in,
 c    %                                    8+acid_j0,G_nj-8-acid_jn,1,1)
 c     endif
 *
-      call diag_var( bspqtx, mutx, st0, qt0,
-     $     1,l_ni,1,l_nj,l_nk)
+      call diag_var( bspqtx, mutx, st0, qt0, 1,l_ni,1,l_nj,l_nk)
 *
-      if (.not. Schm_hydro_L) 
-     $     call glbstat (qt0,'qt0',LDIST_DIM,l_nk+2,1,l_ni,1,l_nj,1,l_nk+2)      
-
-      call diag_fip( fiptx, st0, tt0, qt0, topo,
-     $     1,l_ni,1,l_nj,l_nk)
+      call diag_fip( fiptx, st0, tt0, topo, 1,l_ni,1,l_nj,l_nk)
 *
       call nlip_2 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , 
-     $              rhsp  , rhsc  ,
-     $              tt0   , st0   , bspqtx , qt0 , fiptx ,
-     $              zdt0 , ut0   , vt0    , mutx   ,
-     $              that_8, dlnth_8,
+     $              ut0  , vt0  , tt0  , st0  , qt0  , fiptx,
+     $              rhsp , rhsc ,bspqtx, mutx ,
      $              LDIST_DIM, l_nk )
 *
 *
@@ -128,6 +126,11 @@ c    % write(Lun_out,*)'Rhsp has future Ru,Rv so no match to pilot run'
 c     call glbstat (rhsp,'Rhsp',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
 c    %                                        8+acid_j0,G_nj-8-acid_jn,1,G_nk)
 c     endif
+
+c     Pour debug
+c      call glbstat (rhsp,'rhsp',LDIST_DIM,G_nk,1,l_ni,1,L_nj,1,G_nk)
+c      call gem_stop('nli',-1)
+
       pnerr = vmmuld(-1,0)
 *
  1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')

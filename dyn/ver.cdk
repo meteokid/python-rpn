@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 #include "type.cdk"
 
 #if defined (DOC)
@@ -47,30 +59,23 @@
       type (vertical_8) Ver_hyb_8
       type (vertical_8) Ver_hybm_8
       type (vertical_8) Ver_fistr_8
-      type (vertical_8) Ver_nz_8 
 *
       type (vertical)   Ver_hyb
       type (vertical)   Ver_hybm
-      type (vertical)   Ver_pia
-      type (vertical)   Ver_pib
 *
 *
-      MARK_COMMON_BEG (ver_v8)
       common /ver_v8/ Ver_a_8,Ver_b_8,Ver_z_8,Ver_dz_8,Ver_idz_8,Ver_dbdz_8,
      $     Ver_a_spcl_8,Ver_b_spcl_8,Ver_hyb_8,
-     $     Ver_hybm_8,Ver_fistr_8,Ver_nz_8
-      MARK_COMMON_END (ver_v8)
+     $     Ver_hybm_8,Ver_fistr_8
 *
-      MARK_COMMON_BEG (ver_v)
-      common /ver_v/ Ver_hyb,Ver_hybm,Ver_pia,Ver_pib
-      MARK_COMMON_END (ver_v)
+      common /ver_v/ Ver_hyb,Ver_hybm
 *
       real*8 Ver_alphas_8,Ver_css_8,Ver_cssp_8
       real*8 Ver_alphat_8,Ver_cst_8,Ver_cstp_8
       real*8 Ver_epsilon_8,Ver_gamma_8,Ver_gokt2RT_8
-      MARK_COMMON_BEG (alphast)      
       common / alphast / Ver_alphas_8,Ver_css_8,Ver_cssp_8,
      $                   Ver_alphat_8,Ver_cst_8,Ver_cstp_8,
      $                   Ver_epsilon_8,Ver_gamma_8,Ver_gokt2RT_8
-      MARK_COMMON_END (alphast)
 *
+      integer Ver_kcode
+      common /ver_i/ Ver_kcode

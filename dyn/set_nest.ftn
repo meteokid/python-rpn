@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r set_nest - initialization of the commons for nesting variables
 *		  within the Virtual Memory manager (VMM)
 *
@@ -69,21 +81,21 @@
 *
       VMM_CREATE(nest_u   , LARRAY3D, 1, ptath)
       VMM_CREATE(nest_v   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_w, LARRAY2D*(l_nk+1), 1, ptath)
       VMM_CREATE(nest_t   , LARRAY2D*(l_nk+1), 1, ptath)
       VMM_CREATE(nest_zd  , LARRAY2D*(l_nk+1), 1, ptath)
       VMM_CREATE(nest_s   , LARRAY2D, 1, ptath)
       if (.not. Lam_ctebcs_L) then
          VMM_CREATE(nest_uf   , LARRAY3D, 1, ptath)
          VMM_CREATE(nest_vf   , LARRAY3D, 1, ptath)
+         VMM_CREATE(nest_wf, LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_tf   , LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_zdf  , LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_sf   , LARRAY2D, 1, ptath)
       endif
       if (.not. Schm_hydro_L) then
-         VMM_CREATE(nest_w, LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_q, LARRAY2D*(l_nk+2), 1, ptath)
          if (.not. Lam_ctebcs_L) then
-            VMM_CREATE(nest_wf, LARRAY2D*(l_nk+1), 1, ptath)
             VMM_CREATE(nest_qf, LARRAY2D*(l_nk+2), 1, ptath)
          endif
       endif

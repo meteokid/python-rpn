@@ -1,9 +1,0 @@
-**s/r prever - prepares projection matrix for the vertical
-*               exclusively for pseudo-staggered model.
-*               no computational mode
-*
-      subroutine prever( )
-*     
-      call gem_stop('prever is obsolete',-1)
-      return
-      end

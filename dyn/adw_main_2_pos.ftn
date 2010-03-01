@@ -1,4 +1,16 @@
-***s/r adw_main_2_pos - calculate upstream positions at th and t1
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***   s/r adw_main_2_pos - calculate upstream positions at th and t1
 *
 #include "model_macros_f.h"
 *
@@ -55,7 +67,7 @@
 #include "lctl.cdk"
 #include "ver.cdk"
 #include "geomg.cdk"
-c#include "ptopo.cdk"
+#include "schm.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
@@ -75,6 +87,7 @@ c#include "ptopo.cdk"
       integer, dimension(:), allocatable :: n2
       real,    dimension(:), allocatable :: capx2,capy2,capz2
       real,    dimension(:), allocatable :: xpos2,ypos2,zpos2
+      real,    dimension(l_ni*l_nj*l_nk):: xgrid,ygrid,zgrid
 *
       real dummy, dth
       real*8 r2pi_8,two,half,pdp,pdm
@@ -174,8 +187,7 @@ c     endif
      %                  Adw_for_n, Adw_for_s, Adw_for_a, 3 )
 *
       endif
-*
-
+*      
       if( .not. Adw_nosetint_L ) then
 *
       call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
@@ -190,6 +202,7 @@ c     endif
 *
       Adw_hor_L = .true.
       Adw_ver_L = .true. 
+
       call adw_trilin_turbo (wrkx1,F_u,1.0,xth,wrk_yth,zth,capz1,
      %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
       call adw_trilin_turbo (wrky1,F_v,1.0,xth,wrk_yth,zth,capz1,
@@ -241,14 +254,31 @@ c     call glbstat (xth,'Xth',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
 c    %                                           4+acid_in,G_nj-3-acid_jn,1,1)
 c     call glbstat (xcth,'Xcth',1,l_ni,1,l_nj,G_nk,5+acid_i0,G_ni-4-acid_in,
 c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
-*
+*     
+      if(Schm_zdotMid_L)then
+         do k = 1, l_nk
+         do j = 1, l_nj 
+         do i = 1, l_ni
+            ijk=(k-1)*nij+(j-1)*l_ni+i
+            xgrid(ijk)  = Geomg_x_8(i)
+            ygrid(ijk)  = Geomg_y_8(j)
+            zgrid(ijk)  = Ver_z_8%m(k)
+         enddo         
+         enddo         
+         enddo         
+      endif
+
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn, G_nk )
+          if(.not.Schm_zdotMid_L)call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn, G_nk )
 *
       else
 *
-          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth,G_nk )
+         if(Schm_zdotMid_L)then
+            call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xgrid,ygrid,zgrid,G_nk )
+         else
+            call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth,G_nk )
+         endif
 *
           allocate(capx2(max(1,Adw_fro_a)),
      %             capy2(max(1,Adw_fro_a)),
@@ -266,35 +296,56 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
       endif
 *
       if( .not. Adw_nosetint_L ) then
+*
+         if(Schm_zdotMid_L)then
+            call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
+     %           dummy, capz1, dummy, xgrid, ygrid, zgrid,
+     %           .true., .true., .true., nijk,i0,in,j0,jn,l_nk,'m')
+         else
+            call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
+     %           dummy, capz1, dummy, xth, wrk_yth, zth,
+     %           .true., .true., .true., nijk,i0,in,j0,jn,l_nk,'t')
+         endif
 
-*
-      call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
-     %                  dummy, capz1, dummy, xth, wrk_yth, zth,
-     %                 .true., .true., .true., nijk,i0,in,j0,jn,l_nk,'t')
-*
-      call adw_trilin (wrkx1,F_w,-dth,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
-*
+         call adw_trilin (wrkx1,F_w,-dth,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
+*     
+c       call glbstat (wrkx1 ,'x1',1,l_ni,1,l_nj,l_nk,i0,in,j0,jn,1,l_nk)
+
       else
+*         
+         Adw_hor_L = .true. 
+         Adw_ver_L = .true. 
+         if(Schm_zdotMid_L)then
+            call adw_trilin_turbo (wrkx1,F_w,-dth,xgrid,ygrid,zgrid,capz1,
+     %           Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
 *
-      Adw_hor_L = .true. 
-      Adw_ver_L = .true. 
-      call adw_trilin_turbo (wrkx1,F_w,-dth,xth,wrk_yth,zth,capz1,
-     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'t')
+         else      
+            call adw_trilin_turbo (wrkx1,F_w,-dth,xth,wrk_yth,zth,capz1,
+     %           Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'t')
+*
+         endif
 *
       endif
 *
       if (.not.G_lam) then
+
+         if ( Adw_fro_a .gt. 0 .and. Schm_zdotMid_L ) then
+            print*,'The code should not pass in this branch.'
+            print*,'Please report the problem to the developer'
+            call gem_stop('adw_main_2_pos: zdotMid_L',-1)
+         endif
+
          if ( Adw_fro_a .gt. 0 ) then
-*
+*     
               if ( Adw_ckbd_L ) call adw_ckbd ( ypos2 )
-*
+*     
               call adw_setint ( n2, capx2, dummy, dummy, capy2, dummy,
-     %                     dummy, capz2, dummy, xpos2, ypos2, zpos2,
-     %                    .true., .true., .true., Adw_fro_a,1,Adw_fro_a,
-     %                    1,1,1,'t')
-*
+     %           dummy, capz2, dummy, xpos2, ypos2, zpos2,
+     %           .true., .true., .true., Adw_fro_a,1,Adw_fro_a,
+     %           1,1,1,'t')
+*     
               call adw_trilin ( xpos2, F_w, -dth, n2, capx2,capy2,capz2,
-     %                     Adw_fro_a,1,Adw_fro_a,1,1,1)
+     %           Adw_fro_a,1,Adw_fro_a,1,1,1)
 *
          endif
 *
@@ -317,6 +368,7 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
       do i = i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
          zth(n) = Ver_z_8%m(k) + two*wrkx1(n)
+c        Make sure zth is below Ver_z_8%m(1) and above Ver_z_8%m(l_nk)
          zth(n) = min( pdm*Ver_z_8%m(l_nk), 
      %                max( 1.0d0*zth(n), pdp*Ver_z_8%m(1) ) )
          zth(n) = half*(zth(n) + Ver_z_8%m(k))
@@ -356,8 +408,11 @@ c    %                                           5+acid_in,G_nj-4-acid_jn,1,1)
 !$omp enddo
 !$omp end parallel
 *
+c      call glbstat (F_u,'POSX',1,l_ni,1,l_nj,l_nk,i0,in,j0,jn,1,l_nk)
+c      call glbstat (F_v,'POSY',1,l_ni,1,l_nj,l_nk,i0,in,j0,jn,1,l_nk)
+c      call glbstat (F_w,'POSZ',1,l_ni,1,l_nj,l_nk,i0,in,j0,jn,1,l_nk)
       pnerr = vmmuld(-1,0)
 *
- 1000  format(3X,'CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS)')
+ 1000 format(3X,'CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS)')
       return
       end

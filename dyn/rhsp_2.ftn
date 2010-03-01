@@ -1,13 +1,25 @@
-**s/r rhsp_2 - compute rhs of the prognostic equations 
-*               ( computation and microtasking )
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+**s/r rhsp_2 - compute the right-hand sides: Ru, Rv, Rc, Rt, Rw, Rf,
+*              save the results for next iteration in the o's
 *
 #include "model_macros_f.h"
 *
-      subroutine rhsp_2 ( F_ru,  F_rv,  F_rp, F_rt,   F_rw,    F_rq,
-     $                    F_oru, F_orv, F_orc,F_ort,  F_orw,   F_orq,
-     $                    F_ruw1,F_rvw1,F_u,  F_v,    F_t,     F_BsPq,  
-     $                    F_s,   F_zd, F_nest_u,F_nest_v,F_w,
-     $                    F_fip, F_mu,F_that_8,F_dlnth_8,
+      subroutine rhsp_2 ( F_ru,  F_rv,  F_rc,    F_rt,    F_rw,  F_rf,
+     $                    F_oru, F_orv, F_orc,   F_ort,   F_orw, F_orf,
+     $                    F_ruw1,F_rvw1,F_nest_u,F_nest_v,
+     $                    F_u,   F_v,   F_w,     F_t,     F_s,   F_zd,
+     $                    F_BsPq,F_fip, F_mu,
      $                    DIST_DIM, Nk )
 *
       implicit none
@@ -15,19 +27,18 @@
       integer DIST_DIM, Nk
 *
       real F_ru    (DIST_SHAPE,  Nk)  ,F_rv    (DIST_SHAPE,  Nk)  ,
-     $     F_rp    (DIST_SHAPE,  Nk)  ,F_rt    (DIST_SHAPE,  Nk+1),
-     $     F_rw    (DIST_SHAPE,  Nk+1),F_rq    (DIST_SHAPE,  Nk+1),
+     $     F_rc    (DIST_SHAPE,  Nk)  ,F_rt    (DIST_SHAPE,  Nk+1),
+     $     F_rw    (DIST_SHAPE,  Nk+1),F_rf    (DIST_SHAPE,  Nk+1),
      $     F_oru   (DIST_SHAPE,  Nk)  ,F_orv   (DIST_SHAPE,  Nk)  ,
      $     F_orc   (DIST_SHAPE,  Nk)  ,F_ort   (DIST_SHAPE,  Nk+1),
-     $     F_orw   (DIST_SHAPE,  Nk+1),F_orq   (DIST_SHAPE,  Nk+1),
+     $     F_orw   (DIST_SHAPE,  Nk+1),F_orf   (DIST_SHAPE,  Nk+1),
      $     F_ruw1  (DIST_SHAPE,  Nk)  ,F_rvw1  (DIST_SHAPE,  Nk)  ,
+     $     F_nest_u(DIST_SHAPE,  Nk)  ,F_nest_v(DIST_SHAPE,  Nk)  ,
      $     F_u     (DIST_SHAPE,  Nk)  ,F_v     (DIST_SHAPE,  Nk)  ,
-     $     F_t     (DIST_SHAPE,  Nk+1),F_BsPq  (DIST_SHAPE,0:Nk+1),
-     $     F_s     (DIST_SHAPE)       ,
-     $     F_zd   (DIST_SHAPE,  Nk+1),F_nest_u(DIST_SHAPE,  Nk)  ,
-     $     F_nest_v(DIST_SHAPE,  Nk)  ,F_w     (DIST_SHAPE,  Nk+1),
-     $     F_fip   (DIST_SHAPE,0:Nk+1),F_mu    (DIST_SHAPE,  Nk+1)
-      real*8  F_that_8(Nk+1), F_dlnth_8(Nk+1)
+     $     F_w     (DIST_SHAPE,  Nk+1),F_t     (DIST_SHAPE,  Nk+1),
+     $     F_s     (DIST_SHAPE)       ,F_zd    (DIST_SHAPE,  Nk+1),
+     $     F_BsPq  (DIST_SHAPE,0:Nk+1),F_fip   (DIST_SHAPE,0:Nk+1),
+     $     F_mu    (DIST_SHAPE,  Nk+1)
 *
 *author
 *     Alain Patoine
@@ -48,10 +59,6 @@
 *     see rhs
 *
 *arguments
-*  Name        I/O                 Description
-*----------------------------------------------------------------
-* F_ru          O     
-*----------------------------------------------------------------
 *
 *implicits
 #include "glb_ld.cdk"
@@ -69,9 +76,10 @@
 *
       integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, nij
       real    tdiv(DIST_SHAPE)
-      real*8  aaa, bbb, one, half, c1,c2,c3,c4,c6,c7,c8,c9,
-     $        wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, ww1,
-     $        xxx,yyy,xlog_8(l_ni,l_nj), ylog_8(l_ni,l_nj)
+      real*8  aaa,aaT,aaw, bbb,bbT,bbw, one, half, c1,c2,c3,c4,
+     $        wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, ww1,ww2,
+     $        xxx,yyy,xlog_8(l_ni,l_nj), ylog_8(l_ni,l_nj),
+     $        wk3(DIST_SHAPE,Nk+1)
 
       parameter( one=1.d0, half=.5d0 )
 *     - - - - - - - - - - - - - - - - 
@@ -81,23 +89,28 @@
 *
 *     Common coefficients 
 
-      aaa = ( Offc_a1_8 / Offc_b0_8 )/ Cstv_dt_8 
-      bbb = ( Offc_b1_8 / Offc_b0_8 )
+      aaa = one / Cstv_tau_8 
+      aaT = one / Cstv_tauT_8 
+      aaw = one / Cstv_tauw_8 
+      bbb = ( one - Offc_b0_8  ) / Offc_b0_8
+      bbT = ( one - Offc_b0T_8 ) / Offc_b0T_8
+      bbw = ( one - Offc_b0w_8 ) / Offc_b0w_8
 
       c1  = bbb * Dcst_rgasd_8 / ( Dcst_rayt_8 * Dcst_rayt_8 )
       c2  = bbb / ( Dcst_rayt_8 * Dcst_rayt_8 )
-      c3  = aaa * Dcst_cappa_8 * half
-      c4  = bbb * Dcst_cappa_8 
-      c6  = bbb * Dcst_grav_8 
-      c7  = bbb * Dcst_rgasd_8 * Cstv_tstr_8
-      c8  = aaa * half
 *
       if (Cori_cornl_L) then
-         c9 = Offc_b1_8 / Offc_b0_8
+         c3 = bbb
       else
-         c9 = ( Offc_b1_8 - Offc_b0_8 ) / Offc_b0_8
+         c3 = bbb - one
       endif
 
+      if (Cstv_iC2str_8.gt.(1.1-Dcst_cappa_8)/Cstv_RTstr_8) then
+         c4 = 0.d0
+      else
+         c4 = one
+      endif
+*
 *     Exchanging halos for derivatives & interpolation 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       call rpn_comm_xch_halo( F_u , LDIST_DIM,l_niu,l_nj,G_nk,
@@ -119,7 +132,7 @@
 *
 *
 !$omp parallel private(i,j,i0,j0,jn,in,i00,inn,j00,jnn,
-!$omp$          tdiv,xlog_8,ylog_8,wk1,wk2,ww1,xxx,yyy,barz,barzp)
+!$omp$          tdiv,xlog_8,ylog_8,wk1,wk2,ww1,ww2,xxx,yyy,barz,barzp)
 *
 !$omp do 
       do 1000 k = 1,l_nk 
@@ -152,13 +165,13 @@
          end do
       endif
 *
-      if ( abs(c9) .lt. 1.0e-6 ) then
+      if ( abs(c3) .lt. 1.0e-6 ) then
 *        Computing Ru without the Coriolis factor
          do j= j0, jn
          do i= i0, in
             barz  = half * ( F_t(i  ,j,k+1) + F_t(i  ,j,k) )
             barzp = half * ( F_t(i+1,j,k+1) + F_t(i+1,j,k) )
-            F_ru(i,j,k) = - aaa * F_u(i,j,k)
+            F_ru(i,j,k) = aaa * F_u(i,j,k)
      $               - c1 * ( ( one - intuv_c0xxu_8(i) ) * barz
      $                              + intuv_c0xxu_8(i)   * barzp )
      $                    * ( F_BsPq(i+1,j,k) - F_BsPq(i,j,k) ) 
@@ -223,14 +236,14 @@
          do i= i0, in
             barz  = half * ( F_t(i  ,j,k+1) + F_t(i  ,j,k) )
             barzp = half * ( F_t(i+1,j,k+1) + F_t(i+1,j,k) )            
-            F_ru(i,j,k) = - aaa * F_u(i,j,k)
+            F_ru(i,j,k) = aaa * F_u(i,j,k)
      $               - c1 * ( ( one - intuv_c0xxu_8(i) )* barz
      $                              + intuv_c0xxu_8(i)  * barzp )
      $                    * ( F_BsPq(i+1,j,k) - F_BsPq(i,j,k) )
      $                    * geomg_invhx_8(i)
      $               - c2 * wk1(i,j) * ( F_fip(i+1,j,k) - F_fip(i,j,k) )
      $                    * geomg_invhx_8(i)
-     $               + c9 * Cori_fcoru_8(i,j)
+     $               + c3 * Cori_fcoru_8(i,j)
      $                    * ( inuvl_wxxu3_8(i,1)*wk2(i-1,j)
      $                      + inuvl_wxxu3_8(i,2)*wk2(i  ,j)
      $                      + inuvl_wxxu3_8(i,3)*wk2(i+1,j)
@@ -263,13 +276,13 @@
          end do
       endif
 *
-      if ( abs(c9) .lt. 1.0e-6 ) then
+      if ( abs(c3) .lt. 1.0e-6 ) then
 *        Computing Rv without the Coriolis factor
          do j= j0, jn
          do i= i0, in
             barz  = half * ( F_t(i,j  ,k+1) + F_t(i,j  ,k) )
             barzp = half * ( F_t(i,j+1,k+1) + F_t(i,j+1,k) )
-            F_rv(i,j,k) = - aaa * F_v(i,j,k)
+            F_rv(i,j,k) = aaa * F_v(i,j,k)
      $               - c1 *( ( one - intuv_c0yyv_8(j) ) * barz
      $                             + intuv_c0yyv_8(j)   * barzp )
      $                    * ( F_BsPq (i,j+1,k) - F_BsPq (i,j,k) )
@@ -314,14 +327,14 @@
          do i = i0, in
             barz  = half * ( F_t(i,j  ,k+1) + F_t(i,j  ,k) )
             barzp = half * ( F_t(i,j+1,k+1) + F_t(i,j+1,k) )            
-            F_rv(i,j,k) = - aaa * F_v(i,j,k)
+            F_rv(i,j,k) = aaa * F_v(i,j,k)
      $               - c1 *( ( one - intuv_c0yyv_8(j) ) * barz
      $                             + intuv_c0yyv_8(j)   * barzp )
      $                    * ( F_BsPq(i,j+1,k) - F_BsPq (i,j,k) )
      $                    * geomg_cyv2_8(j) * geomg_invhsy_8(j)
      $               - c2 * wk1(i,j) * ( F_fip(i,j+1,k) - F_fip(i,j,k) )
      $                    * geomg_cyv2_8(j) * geomg_invhsy_8(j)
-     $               - c9 * Cori_fcorv_8(i,j)
+     $               - c3 * Cori_fcorv_8(i,j)
      $                    * ( inuvl_wyyv3_8(j,1)*wk2(i,j-1)
      $                      + inuvl_wyyv3_8(j,2)*wk2(i,j  )
      $                      + inuvl_wyyv3_8(j,3)*wk2(i,j+1)
@@ -336,14 +349,14 @@
                do i = i0, in
                   barz  = half * ( F_t(i,1  ,k+1) + F_t(i,1  ,k) )
                   barzp = half * ( F_t(i,1+1,k+1) + F_t(i,1+1,k) )
-                  F_rv(i,1,k) = - aaa * F_v(i,1,k)
+                  F_rv(i,1,k) = aaa * F_v(i,1,k)
      $               - c1 * ( ( one - intuv_c0yyv_8(1) ) * barz 
      $                              + intuv_c0yyv_8(1)   * barzp )
      $                    * ( F_BsPq(i,1+1,k) - F_BsPq(i,1,k) )
      $                    * geomg_cyv2_8(1)*geomg_invhsy_8(1)
      $               - c2 * wk1(i,1) * ( F_fip(i,1+1,k) - F_fip(i,1,k) )
      $                    * geomg_cyv2_8(1)*geomg_invhsy_8(1)
-     $               - c9 * Cori_fcorv_8(i,1)
+     $               - c3 * Cori_fcorv_8(i,1)
      $                    * ( inuvl_wyyv3_8(1,2)*wk2(i,1)
      $                      + inuvl_wyyv3_8(1,3)*wk2(i,2) 
      $                      + inuvl_wyyv3_8(1,4)*wk2(i,3) )
@@ -355,7 +368,7 @@
                do i = i0, in                  
                   barz  = half * (F_t(i,l_njv  ,k+1)+F_t(i,l_njv  ,k))
                   barzp = half * (F_t(i,l_njv+1,k+1)+F_t(i,l_njv+1,k))
-                  F_rv(i,l_njv,k) = - aaa * F_v(i,l_njv,k)
+                  F_rv(i,l_njv,k) = aaa * F_v(i,l_njv,k)
      $               - c1 * ( ( one - intuv_c0yyv_8(l_njv) ) * barz 
      $                              + intuv_c0yyv_8(l_njv)   * barzp )
      $                    * ( F_BsPq (i,l_njv+1,k) - F_BsPq (i,l_njv,k) ) 
@@ -363,7 +376,7 @@
      $               - c2 * wk1(i,l_njv)
      $                    * ( F_fip(i,l_njv+1,k) - F_fip(i,l_njv,k) )
      $                    * geomg_cyv2_8(l_njv) * geomg_invhsy_8(l_njv)
-     $               - c9 * Cori_fcorv_8(i,l_njv)
+     $               - c3 * Cori_fcorv_8(i,l_njv)
      $                    * ( inuvl_wyyv3_8(l_njv,1)*wk2(i,l_njv-1) 
      $                      + inuvl_wyyv3_8(l_njv,2)*wk2(i,l_njv  ) 
      $                      + inuvl_wyyv3_8(l_njv,3)*wk2(i,l_njv+1) )
@@ -374,15 +387,67 @@
          endif
       endif
 *
-*********************************************
-* computing Rcn: RHS of Continuity equation *
-*********************************************
+ 1000 continue
+!$omp enddo
 *
       i0 = 1
       j0 = 1
       in = l_ni
       jn = l_nj
 *
+!$omp do 
+      do 2000 k = 1,l_nk+1 
+*
+***********************************************
+* computing Rt: RHS of thermodynamic equation *         
+* computing Rf: RHS of FI equation            *
+***********************************************
+*
+      ww1 = one / Cstv_tstr_8
+      do j = j0, jn
+      do i = i0, in
+         xlog_8(i,j) = F_t(i,j,k) * ww1
+      end do
+      end do
+      call vlog( ylog_8, xlog_8, nij )
+*
+      do j= j0, jn
+      do i= i0, in
+         wk3(i,j,k) = ylog_8(i,j)
+         F_rt (i,j,k) = aaT * ( ylog_8(i,j)
+     $              - Dcst_cappa_8*half*(F_BsPq(i,j,k)+F_BsPq(i,j,k-1)))
+     $                + bbT* Dcst_cappa_8 * F_zd(i,j,k)
+         F_rf (i,j,k) = aaT* half * ( F_fip(i,j,k) + F_fip(i,j,k-1) )
+     $                + bbT* Cstv_RTstr_8 * F_zd(i,j,k)
+     $                + bbT* Dcst_grav_8 * F_w(i,j,k)
+         F_ort(i,j,k) = F_rt(i,j,k)
+         F_orf(i,j,k) = F_rf(i,j,k)
+      end do
+      end do         
+*
+************************************
+* computing Rw: RHS of  w equation *
+************************************
+*
+      if (.not. Schm_hydro_L) then
+         do j= j0, jn
+         do i= i0, in
+            F_rw (i,j,k) = aaw * F_w(i,j,k)
+     $                   + bbw * Dcst_grav_8 * F_mu(i,j,k)
+            F_orw(i,j,k) = F_rw (i,j,k)
+         end do
+         end do
+      endif 
+*
+ 2000 continue
+!$omp enddo
+*
+********************************************
+* computing Rc: RHS of Continuity equation *
+********************************************
+*
+!$omp do
+      do 3000 k = 1,l_nk
 *     Compute total divergence.
       if (G_lam) then
          do j= 1, l_njv
@@ -394,19 +459,24 @@
          end do
          end do
       else
-         call caldiv_2 ( tdiv, F_u(minx,miny,k), 
+         call caldiv_2 ( tdiv, F_u(minx,miny,k),
      $                         F_v(minx,miny,k), LDIST_DIM, 1)
       endif
 *
-      xxx=one + half*Ver_dz_8%t(k+1)
-      yyy=one - half*Ver_dz_8%t(k)
+      if(Cstv_iC2str_8.eq.0.d0) then
+         xxx=one + half*Ver_dz_8%t(k+1)
+         yyy=one - half*Ver_dz_8%t(k)
+      else
+         xxx=one
+         yyy=one
+      endif
       do j= 1, l_njv
       do i= 1, l_niu
          tdiv(i,j) = tdiv(i,j)
-     $             + ( xxx*F_zd(i,j,k+1) - yyy*F_zd(i,j,k) ) * Ver_idz_8%m(k)
+     $        + ( xxx*F_zd(i,j,k+1) - yyy*F_zd(i,j,k) ) * Ver_idz_8%m(k)
       end do
-      end do      
-*     
+      end do
+*
       do j = j0, jn
       do i = i0, in
          xlog_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
@@ -414,59 +484,30 @@
       end do
       call vlog( ylog_8, xlog_8, nij)
 *
-      do j= j0, jn
-      do i= i0, in
-         F_rp (i,j,k) = -aaa * (Ver_b_8%m(k)*F_s(i,j)+ylog_8(i,j)) - bbb * tdiv(i,j)
-         F_orc(i,j,k) = F_rp(i,j,k)
-      end do
-      end do
- 1000 continue
-!$omp enddo
-*
-!$omp do 
-      do 2000 k = 1,l_nk+1 
-*
-*******************************************
-* computing RHS of thermodynamic equation *         
-*******************************************
-*
-      ww1 = one / ( F_that_8(k) + Cstv_tstr_8 )
-      do j = j0, jn
-      do i = i0, in
-         xlog_8(i,j) = F_t(i,j,k) * ww1
-      end do
-      end do
-      call vlog( ylog_8, xlog_8, nij )
-*
-      do j= j0, jn
-      do i= i0, in
-         F_rt (i,j,k) = - aaa * ylog_8(i,j)
-     $                   + c3  * ( F_BsPq(i,j,k) + F_BsPq(i,j,k-1) )
-     $                   + c4  *   F_zd(i,j,k)
-     $                   - bbb *   F_zd(i,j,k) * F_dlnth_8 (k)
-         F_ort(i,j,k) = F_rt(i,j,k)
-      end do
-      end do         
-*
-********************************
-* computing RHS of  w equation *
-* computing RHS of FI equation *
-********************************
-*
-      if (.not. Schm_hydro_L) then
+      if(Cstv_iC2str_8.eq.0.d0) then
          do j= j0, jn
          do i= i0, in
-            F_rw (i,j,k) = - aaa * F_w(i,j,k) + c6 * F_mu(i,j,k)
-            F_rq (i,j,k) = - c8  * ( F_fip(i,j,k) + F_fip(i,j,k-1) )
-     $                     + c7  * F_zd(i,j,k)
-     $                     + c6  * F_w(i,j,k)
-            F_orw(i,j,k) = F_rw (i,j,k)
-            F_orq(i,j,k) = F_rq(i,j,k)
+            F_rc (i,j,k) = aaT * ( F_BsPq(i,j,k) + ylog_8(i,j) )
+     $                   - bbT * tdiv(i,j)
+            F_orc(i,j,k) = F_rc(i,j,k)
          end do
          end do
-      endif 
-*
- 2000 continue
+      else
+         xxx=half*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
+         yyy=half*Ver_idz_8%m(k)*Ver_dz_8%t(k)
+         do j= j0, jn
+         do i= i0, in
+            ww1=(F_fip(i,j,k)+Cstv_RTstr_8*F_BsPq(i,j,k))*Cstv_iC2str_8
+     $                      +c4*(xxx*wk3(i,j,k+1)+yyy*wk3(i,j,k))
+            ww2=Dcst_grav_8*Cstv_iC2str_8*
+     $                      (xxx*F_w(i,j,k+1)+yyy*F_w(i,j,k))
+            F_rc (i,j,k) = aaT * ( ww1 + ylog_8(i,j) )
+     $                   - bbT * ( tdiv(i,j) - ww2 )
+            F_orc(i,j,k) = F_rc(i,j,k)
+         end do
+         end do
+      endif
+ 3000 continue
 !$omp enddo
 *
 !$omp single
@@ -560,8 +601,8 @@
 !$omp do
              do k=1,l_nk
              do j= 1+pil_s, l_nj-pil_n
-                F_ru (pil_w,j,k) = - aaa * F_nest_u(pil_w,j,k)
-                F_oru(pil_w,j,k) =             F_ru(pil_w,j,k)
+                F_ru (pil_w,j,k) = aaa * F_nest_u(pil_w,j,k)
+                F_oru(pil_w,j,k) =           F_ru(pil_w,j,k)
              enddo
              enddo
 !$omp enddo
@@ -570,8 +611,8 @@
 !$omp do
              do k=1,l_nk
              do j= 1+pil_s, l_nj-pil_n
-                F_ru (l_ni-pil_e,j,k) = - aaa * F_nest_u(l_ni-pil_e,j,k)
-                F_oru(l_ni-pil_e,j,k) =         F_ru    (l_ni-pil_e,j,k)
+                F_ru (l_ni-pil_e,j,k) = aaa * F_nest_u(l_ni-pil_e,j,k)
+                F_oru(l_ni-pil_e,j,k) =       F_ru    (l_ni-pil_e,j,k)
              enddo
              enddo
 !$omp enddo
@@ -580,8 +621,8 @@
 !$omp do
              do k=1,l_nk
              do i= 1+pil_w, l_ni-pil_e
-                F_rv (i,pil_s,k) = - aaa * F_nest_v(i,pil_s,k)
-                F_orv(i,pil_s,k) =         F_rv    (i,pil_s,k)
+                F_rv (i,pil_s,k) = aaa * F_nest_v(i,pil_s,k)
+                F_orv(i,pil_s,k) =       F_rv    (i,pil_s,k)
              enddo
              enddo
 !$omp enddo
@@ -590,8 +631,8 @@
 !$omp do
              do k=1,l_nk
              do i= 1+pil_w, l_ni-pil_e
-                F_rv (i,l_nj-pil_n,k) = - aaa * F_nest_v(i,l_nj-pil_n,k)
-                F_orv(i,l_nj-pil_n,k) =         F_rv    (i,l_nj-pil_n,k)
+                F_rv (i,l_nj-pil_n,k) = aaa * F_nest_v(i,l_nj-pil_n,k)
+                F_orv(i,l_nj-pil_n,k) =       F_rv    (i,l_nj-pil_n,k)
              enddo
              enddo
 !$omp enddo

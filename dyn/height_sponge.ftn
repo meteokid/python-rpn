@@ -1,5 +1,17 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 
-***s/r  height_sponge -  Performs vertical blending
+***s/r  pressure_sponge -  Performs vertical blending
 *
 #include "model_macros_f.h"
 *
@@ -19,8 +31,6 @@
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
-#include "vtx.cdk"
-#include "func.cdk"
 #include "schm.cdk"
 #include "nest.cdk"
 #include "lun.cdk"
@@ -34,66 +44,55 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer err,key(9),i,j,k,nvar, longueur
+      integer err,key(7),i,j,k,nvar, longueur
       integer n
 
-      real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk+1),work
+      real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk+1),ubar
       real fi_t(LDIST_SHAPE,l_nk+1)
 
 *----------------------------------------------------------------------
 *
       key(1)=VMM_KEY(ut1)
       key(2)=VMM_KEY(vt1)
-      key(3)=VMM_KEY(tt1)
-      key(4)=VMM_KEY(zdt1)
-      key(5)=VMM_KEY(fiptx)
-      key(6)=VMM_KEY(topo)
-      key(7)=VMM_KEY(st1)
-      nvar = 7
+      key(3)=VMM_KEY(wt1)
+      key(4)=VMM_KEY(tt1)
+      key(5)=VMM_KEY(st1)
+      nvar = 5
 *
       if (.not.Schm_hydro_L) then
-         key(8)=VMM_KEY(wt1)
-         key(9)=VMM_KEY(qt1)
-         nvar = 9
+         key(6)=VMM_KEY(qt1)
+         nvar = 6
       endif
 *
       err = vmmlod(key,nvar)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(wt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(zdt1)
-      err = VMM_GET_VAR(fiptx)
-      err = VMM_GET_VAR(topo)
       err = VMM_GET_VAR(st1)
       if (.not.Schm_hydro_L) then
-         err = VMM_GET_VAR(wt1)
          err = VMM_GET_VAR(qt1)
       else
-         wt1_ = 0
          qt1_= 0
       endif
 *
-      call set_betav(betav_m,betav_t,fi_t,fiptx,tt1,
-     $     LDIST_DIM,l_nk)
+      call set_betav(betav_m,betav_t,st1,LDIST_DIM,l_nk)
 
-      work=mtn_flo/Dcst_rayt_8
+      ubar=mtn_flo/Dcst_rayt_8
 
-      call applique(ut1  ,work,betav_m,LDIST_DIM, l_nk)
-      call applique(vt1  ,0.  ,betav_m,LDIST_DIM, l_nk)
-      call applique(zdt1 ,0.  ,betav_t,LDIST_DIM, l_nk+1)
-      if (.not.Schm_hydro_L) then
-         call applique(wt1,0.    ,betav_t,LDIST_DIM, l_nk+1)
-c        Note : qt1 has l_nk+2 level but sponge is on top so
-c               we drop the las level. Also, the weights could be
-c               adjusted since these are momentum levels but betav_m
-c               is only of lengh l_nk
-         call applique(qt1,0. ,betav_t,LDIST_DIM, l_nk+1)
+      call apply(ut1  ,ubar,betav_m,LDIST_DIM, l_nk)
+      call apply(vt1  ,0.  ,betav_m,LDIST_DIM, l_nk)
+      call apply(wt1  ,0.  ,betav_t,LDIST_DIM, l_nk+1)
+      if(.not.Schm_hydro_L) then
+         call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM, l_nk)
+         do j=1,l_nj
+         do i=1,l_ni
+            qt1(i,j,0)=-qt1(i,j,1)
+         enddo
+         enddo
       endif
       if(Zblen_spngtt_L)then
-         call applique_tt(tt1,fi_t,betav_t,LDIST_DIM, l_nk)
-*        Recomputing the geopotential from new t      
-         call diag_fip(fiptx,st1,tt1,qt1,topo,
-     $                            LDIST_DIM,l_nk)         
+         call apply_tt(tt1,betav_t,st1,LDIST_DIM, l_nk)
       endif
 *
       err = vmmuld(key,nvar)
@@ -105,7 +104,7 @@ c               is only of lengh l_nk
 c=======================================================================
 #include "model_macros_f.h"
 
-      subroutine applique(ff,value,betav, DIST_DIM, Nk)
+      subroutine apply(ff,value,betav, DIST_DIM, Nk)
 
       implicit none
 
@@ -141,7 +140,7 @@ c=======================================================================
 c=======================================================================
 #include "model_macros_f.h"
 
-      subroutine applique_tt(tt,fi_t,betav_t, DIST_DIM, Nk)
+      subroutine apply_tt(tt,betav_t, F_s,DIST_DIM, Nk)
 
       implicit none
 
@@ -151,11 +150,14 @@ c=======================================================================
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "mtn.cdk"
+#include "cstv.cdk"
+#include "type.cdk"
+#include "ver.cdk"
 
-      real tt(DIST_SHAPE,Nk+1),fi_t(DIST_SHAPE,Nk+1)
+      real tt(DIST_SHAPE,Nk+1),F_s(DIST_SHAPE)
       real betav_t(DIST_SHAPE,Nk+1)
 
-      real capc1,my_tt,a00
+      real capc1,my_tt,a00,a02,tempo,hauteur
 
       integer i,j,k,i0,in,j0,jn 
 
@@ -174,8 +176,10 @@ c=======================================================================
       do k=1,Nk
          do j=j0,jn
             do i=i0,in
-               my_tt=mtn_tzero*((1.-capc1)*
-     $              exp(a00*fi_t(i,j,k)/Dcst_grav_8)+capc1)
+               tempo = exp(Ver_z_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
+               a02 = (tempo/Cstv_pisrf_8)**Dcst_cappa_8
+               hauteur=-log((capc1-1.+a02)/capc1)/a00
+               my_tt=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
                tt(i,j,k)=(1.-betav_t(i,j,k))*tt(i,j,k)+
      $              betav_t(i,j,k)*my_tt
             enddo
@@ -186,79 +190,3 @@ c=======================================================================
 
       end
 c=======================================================================
-#include "model_macros_f.h"
-
-      subroutine set_betav(betav_m,betav_t,fi_t,fip,tt, DIST_DIM, Nk)
-
-      implicit none
-
-      integer  DIST_DIM, Nk 
-
-#include "glb_pil.cdk"
-#include "cstv.cdk"
-#include "glb_ld.cdk"
-#include "dcst.cdk"
-#include "schm.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "zblen.cdk"
-
-      real betav_m(DIST_SHAPE,Nk),betav_t(DIST_SHAPE,Nk+1)
-      real fip(DIST_SHAPE,0:Nk+1),tt(DIST_SHAPE,Nk)
-      real fi_t(DIST_SHAPE,Nk+1)
-
-      real*8 work1,work2
-
-      integer i,j,k,i0,in,j0,jn 
-
-      i0 = 1
-      in = l_ni
-      j0 = 1
-      jn = l_nj     
-      if (l_west ) i0 = 1+pil_w
-      if (l_east ) in = l_ni-pil_e
-      if (l_south) j0 = 1+pil_s
-      if (l_north) jn = l_nj-pil_n
-
-c     Compute PHI on thermo level
-      do k=2,l_nk
-         do j=j0,jn
-            do i=i0,in
-               fi_t(i,j,k) = .5d0*(fip(i,j,k)+Ver_fistr_8%m(k)
-     $                       +fip(i,j,k-1)+Ver_fistr_8%m(k-1))
-            enddo
-         enddo
-      enddo
-      do j=j0,jn
-         do i=i0,in
-c           fi_t(i,j,1)=fi(i,j,1)
-            fi_t(i,j,1)=.5d0*(fip(i,j,1)+fip(i,j,0))
-     $                    +Ver_fistr_8%m(1)
-            fi_t(i,j,Nk+1)=.5d0*(fip(i,j,Nk+1)+fip(i,j,Nk))
-         enddo
-      enddo
-      do k=1,l_nk
-         do j=j0,jn
-            do i=i0,in
-               work1=(fip(i,j,k)+Ver_fistr_8%m(k))/Dcst_grav_8-Zblen_hmin
-               work2=(fip(i,j,1)+Ver_fistr_8%m(1))/Dcst_grav_8-Zblen_hmin
-               work1=min(1.d0,max(0.d0,work1/work2))
-               betav_m(i,j,k)=work1*work1
-               work1=fi_t(i,j,k)/Dcst_grav_8-Zblen_hmin
-               work1=min(1.d0,max(0.d0,work1/work2))
-               betav_t(i,j,k)=work1*work1
-            enddo
-         enddo
-      enddo
-
-c     Set betav_ to zero at surface.
-      k=l_nk+1
-      do j=j0,jn
-         do i=i0,in
-            betav_t(i,j,k)=0.
-         enddo
-      enddo
-
-      return
-
-      end

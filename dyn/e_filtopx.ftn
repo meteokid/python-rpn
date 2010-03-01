@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r e_filtopx - filters topographic fields
 *
 #include "model_macros_f.h"
@@ -14,6 +26,8 @@
 *     andre methot - sept 95
 *
 *revision
+* v3_30 - Lee V    - return filtered topography equivalent to original
+*                    if no filtering is required
 *
 *object
 *         This subroutine filters the topographic field using xy filter
@@ -63,6 +77,7 @@
 *----------------------------------------------------------------------
 *
       if (.not.(Topo_dgfmx_L.or.Topo_filmx_L)) then
+         F_topof = F_topo
          write(6,9900)
          return
       endif

@@ -1,14 +1,26 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r vspng_drv_lam - Top sponge layer driver for LAM
 *
 #include "model_macros_f.h"
 *
-      subroutine vspng_drv_lam ( F_u, F_v, F_t, F_w, DIST_DIM, Nk)
+      subroutine vspng_drv_lam ( F_u, F_v, F_w, F_t, DIST_DIM, Nk)
 *
 #include "impnone.cdk"
 *
       integer DIST_DIM, Nk
       real     F_u(DIST_SHAPE,Nk  ), F_v(DIST_SHAPE,Nk),
-     %         F_t(DIST_SHAPE,Nk+1), F_w(DIST_SHAPE,Nk+1)
+     %         F_w(DIST_SHAPE,Nk+1), F_t(DIST_SHAPE,Nk+1)
 *
 *author
 *     Michel Desgagne  - October 2000
@@ -17,11 +29,8 @@
 * v3_02   Lee V.    - initial version for LAM from vspng_drv
 *
 *object
-*     Variable Vspng_uvwdt_L controls a mode in which 
 *     vertical sponge is applied:
-*              on Vspng_nk   levels      for momentum and
-*              on top        level only  for all other variables
-*
+*              on Vspng_nk   levels      for momentum only
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
@@ -30,43 +39,24 @@
 * 
 *implicits
 #include "glb_ld.cdk"
-#include "cstv.cdk"
 #include "schm.cdk"
 #include "vspng.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 *
       integer i, j, k, nkspng
 *
-      real work(LDIST_SHAPE,Nk)
-**
 *     __________________________________________________________________
 *
-*
-*        Momentum
-*        ~~~~~~~~
-         call vspng_lam ( F_u, LDIST_DIM, l_niu, l_nj )
-         call vspng_lam ( F_v, LDIST_DIM, l_ni , l_njv)
-*
-*        The temperature
-*        ~~~~~~~~~~~~~~~
-         call vspng_lam (  F_t, LDIST_DIM, l_ni, l_nj)
-*
-         call gem_stop("vspng_drv_lam: recompute FI",-1)
-*
-*****************************
-*    Nonyhydrostatic model  * 
-*****************************
-*
-         if ( .not. Schm_hydro_L ) then
-*
-*           Vertical motion (physical) 
-*           ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            call vspng_lam ( F_w, LDIST_DIM, l_ni, l_nj)
-*
-         endif
-*
-         if (Vspng_uvwdt_L) Vspng_nk = nkspng
+*     Momentum
+*     ~~~~~~~~
+      call vspng_lam ( F_u, LDIST_DIM, l_niu, l_nj )
+      call vspng_lam ( F_v, LDIST_DIM, l_ni , l_njv)
+      call vspng_lam ( F_w, LDIST_DIM, l_ni , l_nj)
+
+*     Temperature, last level only
+      nkspng   = Vspng_nk
+      Vspng_nk = 1
+      call vspng_lam ( F_t, LDIST_DIM, l_ni , l_nj)
+      Vspng_nk = nkspng
 *     __________________________________________________________________
 *
       return

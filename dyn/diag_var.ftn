@@ -1,3 +1,15 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
 ***s/r diag_var calculate model diagnostic variables
 *
 #include "model_macros_f.h"
@@ -42,7 +54,7 @@
       integer i,j,k,i0,in,j0,jn,nij
       real*8 one, half, xxx
       parameter(one=1.d0, half=.5d0 )
-      real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8, xrec_8, yrec_8
+      real*8, dimension(i0:in,j0:jn):: xrec_8, yrec_8
 *
 *     ---------------------------------------------------------------
 *
@@ -57,7 +69,7 @@
 *
       nij = (in - i0 + 1)*(jn - j0 + 1)
 *
-!$omp parallel private (xxx,xtmp_8,ytmp_8,xrec_8,yrec_8)
+!$omp parallel private (xxx,xrec_8,yrec_8)
 *
 !$omp do
        do k=0,l_nk+1
@@ -83,15 +95,12 @@
             do j= j0, jn
             do i= i0, in
                xrec_8(i,j) =one+ver_dbdz_8%t(k)*F_s(i,j)
-               xtmp_8(i,j) = half*( F_q(i,j,k)+F_q(i,j,k-1))
             enddo
             enddo
             call vrec ( yrec_8, xrec_8, nij )
-            call vexp ( ytmp_8, xtmp_8, nij )
             do j= j0, jn
             do i= i0, in
-               F_mu(i,j,k)= -one + ytmp_8(i,j)*
-     $         (one+xxx*(F_q(i,j,k)-F_q(i,j,k-1))*yrec_8(i,j))
+               F_mu(i,j,k)= xxx*(F_q(i,j,k)-F_q(i,j,k-1))*yrec_8(i,j)
             enddo
             enddo
          endif
