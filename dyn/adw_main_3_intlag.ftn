@@ -92,7 +92,7 @@
 *      integer m, ntr2do, j2do
       integer DIST_DIM
 *
-      real*8 aaa,xxa,xxb
+      real*8 aaa
       real tr,tr0,buf(l_ni,G_nk+1)
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:) :: pos_x, pos_y, pos_z
@@ -136,7 +136,7 @@
 * Prepare for advection on momentum levels
 ***********************************************************************
 !
-!$omp parallel do private(n,xxa,xxb)
+!$omp parallel do private(n)
       do k=1,l_nk
       do j=j0,jn
       do i=i0,in
@@ -236,7 +236,7 @@
 *     ----------------------------
 *     Keep positions in CAP fields
 *     ----------------------------
-!$omp parallel private(n,xxa,xxb)
+!$omp parallel private(n)
 !$omp do
       do k=1,l_nk
       do j=j0,jn
@@ -281,14 +281,13 @@
          end do
 !$omp enddo
 *
-*        applying the best averaging
+*        applying the standard averaging
 !$omp do
          do k=1,l_nk
-            xxa=0.5d0*Ver_idz_8%m(k)*Ver_dz_8%t(k)
-            xxb=0.5d0*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
             do j=j0,jn
             do i=i0,in
-               wup(i,j,k) = xxa* wt1(i,j,k+1)+xxb* wt1(i,j,k)
+               wup(i,j,k) = Ver_wp_8_m(k) * wt1(i,j,k+1)
+     %                     +Ver_wm_8_m(k) * wt1(i,j,k)
             enddo
             enddo
          enddo
@@ -304,11 +303,10 @@
 *
 !$omp do
          do k=1,l_nk
-            xxa=0.5d0*Ver_idz_8%m(k)*Ver_dz_8%t(k)
-            xxb=0.5d0*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
             do j=j0,jn
             do i=i0,in
-               zdup(i,j,k) = xxa*zdt1(i,j,k+1)+xxb*zdt1(i,j,k)
+               zdup(i,j,k) = Ver_wp_8_m(k)*zdt1(i,j,k+1)
+     %                      +Ver_wm_8_m(k)*zdt1(i,j,k)
                enddo
             enddo
          enddo
@@ -470,21 +468,23 @@
      %                 .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')
       endif
 *
-      if(Orh_icn.eq.Schm_itcn)then
+      if(.not.G_lam)then
+         if(Orh_icn.eq.Schm_itcn)then
 *
 !$omp do
-         do k=1,l_nk+1
-            do j=j0,jn
-            do i=i0,in
-               piup(i,j,k)=exp(Ver_z_8%t(k) + Ver_b_8%t(k)*st1(i,j))
+            do k=1,l_nk+1
+               do j=j0,jn
+               do i=i0,in
+                  piup(i,j,k)=exp(Ver_z_8%t(k) + Ver_b_8%t(k)*st1(i,j))
+               enddo
+               enddo
             enddo
-            enddo
-         enddo
 !$omp enddo
 *
-         call adw_interp2 (piup,piup, pos_x, pos_y, 
-     %     .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')         
+            call adw_interp2 (piup,piup, pos_x, pos_y, 
+     %           .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t')         
 *
+         endif
       endif
 *
 !$omp end parallel

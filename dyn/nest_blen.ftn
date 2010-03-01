@@ -91,13 +91,9 @@
 *
 * Update the nesting values in the blending zone before blending
 * if the orography is growing
-      if (Vtopo_L) then
-         print*,' nest_blen.ftn : a revoir pour Vtopo_L=.true. '
-         if(.not.Schm_theoc_L)then
-            call gem_stop('nest_blen.ftn : a faire',-1)
-         endif
-c	call vtopo_bnd_update(nest_q,nest_fi,nest_t,nest_pip,
-c     $    nest_s,LDIST_DIM,G_nk,Hblen_x,Hblen_y)
+      if (Vtopo_L.and.(.not.Schm_theoc_L)) then
+         call vtopo_bnd_update(nest_t,nest_s,
+     $        LDIST_DIM,G_nk,Hblen_x,Hblen_y)
       endif
 *
 * Set up blending zones

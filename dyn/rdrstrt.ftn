@@ -25,13 +25,13 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_10 - Desgagne M.       - introduce WA files
 * v2_30 - Dugas B.          - call ouvrstrt to open restrart file
-* v2_30 - Corbeil L.        - Added reading of pres_surf and pres_top
 * v2_31 - Desgagne M.       - Add Tr2d tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Valcke, S.        - Oasis coupling: Removed waread of c_cplg_step
 * v3_21 - Lee V.            - Remove Tr2d tracers
 * v3_30 - Desgagne M.       - restart for coupling
 * v3_30 - Desgagne & Winger - Read one global binary restart file if existing
+* v4_02 - Lee V.            - bugfix for restart for LAM BCS
 *
 *object
 *	
@@ -45,18 +45,20 @@
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 #include "glb_ld.cdk"
-#include "pres.cdk"
 #include "lam.cdk"
 #include "itf_chm_bus.cdk"
 #include "bcsmem.cdk"
+#include "ifd.cdk"
 #include "zblen.cdk"
+#include "cstv.cdk"
 *
 **
-      integer adr,ier,dim,current_nest
-      integer fclos,ouvrstrt,wkoffit
-      external fclos,ouvrstrt,wkoffit
+      integer adr,ier,dim,current_nest,errft(3),unf
+      integer fclos,ouvrstrt,wkoffit,bcs_ftype
+      external fclos,ouvrstrt,wkoffit,bcs_ftype
+      logical nav_L
 *
 *     ---------------------------------------------------------------
 *
@@ -119,9 +121,7 @@
                adr = adr + bcs_siz_tot         
             endif
 *
-            call waread (Lun_rstrt, pres_surf ,adr, 1)
-            adr = adr + 1
-            call waread (Lun_rstrt, pres_top  ,adr, 1)
+            call waread (Lun_rstrt, Cstv_ptop_8, adr, 2)
             adr = adr + 1
             call waread (Lun_rstrt, current_nest  ,adr, 1)
             adr = adr + 1 
@@ -130,26 +130,15 @@
                call waread (Lun_rstrt,Zblen_hmin,adr, 1)
             endif
 *
-!           Read global coupling information
-!           found in rla_msk and rga_cpl2phy
-*
-            if (C_coupling_L) then
-               dim = dim * ig_max_inout_dim
-               allocate (rga_msk(G_ni*G_nj),rla_msk(l_ni*l_nj))
-               allocate (rga_cpl2phy(dim))
-               call waread (Lun_rstrt, rla_msk ,adr, l_ni*l_nj)
-               adr = adr + l_ni*l_nj
-               call waread (Lun_rstrt, rga_cpl2phy ,adr, dim)
-               adr = adr + dim
-               lg_get      = .true.
-               lg_getfirst = .true.
-            endif
-*
             call waclos(Lun_rstrt)
             ier = fclos(Lun_rstrt)  
          endif
 *
          call datf2p (Lam_current_S,current_nest)
+         errft = 0
+         unf = 76
+         nav_L = .false.
+         ier = bcs_ftype (ifd_ftype,errft,Lam_current_S, nav_L, unf)
 *
       endif
 *

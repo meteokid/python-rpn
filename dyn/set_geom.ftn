@@ -110,7 +110,7 @@
          write(Lun_out, nml=dyngrid)
          write (Lun_out,1005) G_nk,Grd_rcoef
          do k=1,G_nk
-            write (Lun_out,1006) k,Ver_hyb_8%m(k),Ver_hybm_8%m(k)
+            write (Lun_out,1006) k,Ver_hyb%m(k)
          end do
       endif
 *
@@ -295,8 +295,8 @@
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)',
      %       /'===============================================')
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ',
-     $         'Grd_rcoef= ',f10.7,':'/5x,'level #',4x,'HYB',10x,'HYBM')
- 1006 format (1x,i4,2(3x,f16.14))
+     $         'Grd_rcoef= ',2f7.2,':'/1x,'level',12x,'HYB',15x,'HYBM')
+ 1006 format (1x,i4,3x,es16.4)
 *
 *     ---------------------------------------------------------------
 *

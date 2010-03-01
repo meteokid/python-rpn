@@ -31,11 +31,11 @@
 *	none
 *
 *interfaces
-      INTERFACE
-         subroutine acqui
-#include "acq_int.cdk"
-         end subroutine acqui
-      END INTERFACE
+c     INTERFACE
+c        subroutine acqui
+c#include "acq_int.cdk"
+c        end subroutine acqui
+c     END INTERFACE
 *
 *implicits
 

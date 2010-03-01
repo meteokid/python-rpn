@@ -1,0 +1,170 @@
+*** s/r itf_cpl_init
+*
+#include "model_macros_f.h"
+*
+      subroutine itf_cpl_init
+      implicit none
+*
+*authors    Michel Desgagne - Spring 2008
+* 
+*revision
+* v3_31 - Desgagne M.       - initial MPI version
+**
+*implicits
+#include "glb_ld.cdk"
+#include "hgc.cdk"
+#include "geomn.cdk"
+#include "modconst.cdk"
+#include "step.cdk"
+#include "cstv.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+#include "itf_cpl.cdk"
+#include "rstr.cdk"
+#include "path.cdk"
+*
+**
+      integer  mgi_init,mgi_open,mgi_write,mgi_read,itf_cpl_nml
+      external mgi_init,mgi_open,mgi_write,mgi_read,itf_cpl_nml
+*
+      character*15 ccom(2)
+      character*20 othermodelname(2),mymodelname
+      logical cpl_status_l
+      integer datstp,i,j,ier,nsend,nrecv,icpl
+      integer ila_mask(G_ni,G_nj),oc_dt,errcode
+      parameter (nsend = 6, nrecv = 2)
+      integer isend(nsend), irecv(nrecv)
+      real longitudes(G_ni,G_nj),latitudes(G_ni,G_nj)
+      integer dgid,ezgdef_fmem,gdll
+*
+*     ---------------------------------------------------------------
+*
+      if (.not.C_coupling_L) return
+*
+      if (Ptopo_myproc.eq.0) then
+*
+      errcode = -1
+*
+      write (6,1001)
+      write_chan = mgi_init('gem2ocean_param')
+      read_chan  = mgi_init('ocean2gem_param')
+*
+      if ((write_chan > 0) .and. (read_chan > 0)) then
+         if ((mgi_open (write_chan, 'W').lt.0) .or.
+     $       (mgi_open (read_chan , 'R').lt.0)) then
+            write (6,9001)
+            goto 999
+         endif
+         write (6,1002) 'READ',read_chan,'WRITE',write_chan
+      endif
+*
+      call datp2f (datstp,Mod_runstrt_S)
+      isend(1) = datstp
+      isend(2) = Step_total
+      isend(3) = nint(Cstv_dt_8)
+      isend(4) = Lctl_step
+      isend(5) = min (Step_total, Lctl_step + Step_rsti)
+      isend(6) = 0
+      if (Rstri_rstn_L) isend(6) = 1
+      mymodelname = CPL_NAME(1:20)
+      ccom(1) = mymodelname( 1:10)
+      ccom(2) = mymodelname(11:20)
+*
+      write (6,1003) isend,trim(mymodelname)
+      errcode = mgi_write (write_chan,         isend, nsend, 'I')
+      errcode = mgi_write (write_chan, trim(ccom(1)),    10, 'C')
+      errcode = mgi_write (write_chan, trim(ccom(2)),    10, 'C')
+      write (6,1004)
+
+      write (6,1005)
+      ier = mgi_read (read_chan,      irecv, nrecv, 'I')
+      ier = mgi_read (read_chan,    ccom(1),    10, 'C')
+      ier = mgi_read (read_chan,    ccom(2),    10, 'C')
+      othermodelname(1)( 1:10) = ccom(1)(1:10)
+      othermodelname(1)(11:20) = ccom(2)(1:10)
+      write (6,1006) irecv,trim(othermodelname(1))
+
+      oc_dt = irecv(1)
+      oce_hotstart = irecv(2).eq.1
+      othermodelname(2) = CPL_NAME(27:48)
+*
+      errcode = min(ier,errcode)
+      if (errcode .lt. 0) goto 999
+*
+      ila_mask = 0
+*
+      call itf_cpl_namcpl(CPL_NAME,trim(Path_input_S)//'/namcouple.cfg',
+     $            cg_writ,cg_read,ip_fldou,ip_fldin,cpl_maxnvar,errcode)
+*
+ 999  if (errcode .lt. 0) C_coupling_L = .false.
+*
+      if (othermodelname(1).ne.othermodelname(2)) C_coupling_L = .false.
+*
+      icpl=0
+      if (C_coupling_L) icpl=1
+      errcode = mgi_write (write_chan, icpl, 1, 'I')
+      ier     = mgi_read  (read_chan , icpl, 1, 'I')
+      cpl_status_L = icpl.eq.1
+*
+      write (6,8800) trim(mymodelname), C_coupling_L, Rstri_rstn_L,
+     $               trim(othermodelname(1)), cpl_status_L, oce_hotstart
+*
+      errcode = min(ier,errcode)
+      if ((errcode .lt. 0) .or.
+     $ .not.(cpl_status_L.and.C_coupling_L) ) C_coupling_L=.false.
+*
+      if (.not.C_coupling_L) then
+         write (6,9900)
+         goto 995
+      endif
+*
+      nbusou = ip_fldou*G_nj ; nbusin = ip_fldin*G_nj
+      allocate ( atm_busou(G_ni,nbusou) ) ; atm_busou = 0.
+      if ( .not. associated ( atm_busin ) )
+     $allocate ( atm_busin(G_ni,nbusin) ) ; atm_busin = 0.
+*
+      dgid = ezgdef_fmem (G_ni , G_nj , 'Z', 'E', Hgc_ig1ro,
+     $        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, Geomn_longs,Geomn_latgs)
+      ier = gdll (dgid,latitudes,longitudes)
+      do j=1,G_nj
+      do i=1,G_ni
+         if (longitudes(i,j).ge.180.0) 
+     $       longitudes(i,j)=longitudes(i,j)-360.0
+      enddo 
+      enddo 
+*
+      ig_varidou=0 ; ig_varidin=0
+      call itf_cpl_oasis_init (CPL_NAME,G_ni,G_nj,ila_mask,
+     $                longitudes,latitudes,cg_writ,cg_read,
+     $     ig_varidou,ig_varidin,ip_fldou,ip_fldin,errcode)
+*
+      endif
+*
+ 995  call RPN_COMM_bcast (C_coupling_L, 1, "MPI_LOGICAL", 0,"grid",ier)
+*
+      if (C_coupling_L) then
+         call RPN_COMM_bcast (ip_fldou, 2, "MPI_INTEGER", 0,"grid",ier)
+         allocate ( atm_local_busou(l_ni,l_nj,ip_fldou) , 
+     $              atm_local_busin(l_ni,l_nj,ip_fldin) ) 
+         atm_local_busou = 0. ; atm_local_busin = 0.
+      endif
+*
+ 1001 format (/'##### GOSSIPSERVER INIT #####')
+ 1002 format ( '##### GOSSIPSERVER READY:  ',a,'_channel= ',i3,' #####'/
+     $         '##### GOSSIPSERVER READY: ' ,a,'_channel= ',i3,' #####')
+ 1003 format (/'====> SENDING INIT INFO TO OC MODEL: '/6x,'SENT:',
+     $                                                  6i10,2x,a)
+ 1004 format ( '====> SENDING INIT INFO ... DONE')
+ 1005 format (/'====> RECEIVING INIT INFO FROM OC MODEL:')
+ 1006 format ( '====> RECEIVING INIT INFO FROM OC MODEL ... DONE: ',/
+     $                                      6x,'RECEIVED:',2i10,2x,a)
+ 8800 format (/'##### COUPLING STATUS==> myMODEL= ',a,', COUPLING= ',L,', HOTSTART= ',L,/
+     $         22x,'otherMODEL= ',a,', COUPLING= ',L,', HOTSTART= ',L)
+ 9001 format ('##### GOSSIPSERVER NOT AVAILABLE: COUPLING DE-ACTIVATED #####'/)
+ 9900 format (/' UNABLE TO INITIALIZE COUPLER - WILL CONTINUE WITHOUT')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end subroutine itf_cpl_init
+

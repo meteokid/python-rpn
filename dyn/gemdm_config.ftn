@@ -43,12 +43,11 @@
       character*16 dumc_S
       character*256 fln_S
       logical wronghyb
-      integer i, k, nrec, err, pnk, kind, ipcode, ipkind,ntr
+      integer i, k, nrec, err, ipcode, ipkind,ntr
       real pcode,deg_2_rad
 *
       real*8 dayfrac,sec_in_day
       parameter ( sec_in_day=86400.0d0 )
-      real*8 hyb_top_8
 *
 *-------------------------------------------------------------------
 *
@@ -104,97 +103,81 @@
           if ( bin2com ().lt.0) return
       endif
 *
+      Cstv_pref_8=100000.d0
+*     
+      if(hyb(1).ne.-1)then
+         Ver_hyb_top=Cstv_ptop_8/Cstv_pref_8
+      else
+         write(Lun_out,9100)
+         return
+      endif
+*         
 *     Checking vertical layering
 *
       wronghyb = .false.
-      if (schm_offline_l) then
-         pnk=4
+      if (schm_offline_l) then         
+         call gem_stop('gemdm_config : review for staggering')
+         G_nk=4
          hyb(1)=0.
          hyb(2)=0.05
          hyb(3)=(Offline_ip1a-2000)*0.0001
          hyb(4)=1.0
-         print*,'Ajouter les niveaux momentum'
          return
       else
-         pnk = 0
+*        Counting vertical levels
+         G_nk = 0
          do k = 1, maxhlev
             if (hyb(k) .lt. 0.) exit
-            pnk = k
+            G_nk = k
          enddo
+         if (Lun_out.gt.0) write(Lun_out,*) (hyb(k),k=1,G_nk)         
 *
-         if (Lun_out.gt.0) write(Lun_out,*) (hyb(k),k=1,pnk)
-         if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
-     $        (hyb(pnk).ne.1.) ) wronghyb = .true.
-         do k=2, pnk
-            if (hyb(k).le.hyb(k-1)) wronghyb = .true.
-         end do
-         if (wronghyb) then
-            write(Lun_out,9200)
-            write(Lun_out,*)'MOMENTUM LEVELS'
-            do k=1, pnk
-               write (Lun_out,*) hyb(k),k
-            end do
+         if (Cstv_ptop_8.le.0.d0)then
+             write(Lun_out,9400)
             return
          endif
-*        Do not count hyb 0.0 and 1.0 as momentum level and
-*        remove them from the list.
-         hyb_top_8=hyb(1)
-         pnk=pnk-2
-         do k = 1,pnk
-            hyb(k)=hyb(k+1)
-         enddo
+*
+*        Check range
+         if (hyb(G_nk).ge.1..or.hyb(1).le.Ver_hyb_top)then
+             write(Lun_out,9550)Ver_hyb_top
+             return
+         endif
+*
+*        Check monotonicity
+            do k=2, G_nk
+               if (hyb(k).le.hyb(k-1)) wronghyb = .true.
+            enddo
+         if (wronghyb)then
+             write(Lun_out,9250)
+             write(Lun_out,*)'MOMENTUM LEVELS'
+             do k=1, G_nk
+                write (Lun_out,*) hyb(k),k
+             end do               
+             return            
+         endif
       endif
 *
-      G_nk=pnk
-
 *     Ver_hyb%m is allocated a bit larger for output diagnostics
-      allocate(Ver_hyb%m(G_nk+1) ,Ver_hyb_8%m(G_nk) ,stat=istat)
-      allocate(Ver_hybm%m(G_nk),Ver_hybm_8%m(G_nk),stat=istat)
+      allocate(Ver_hyb%m(G_nk+1),Ver_hyb%t(G_nk+2),stat=istat)
+      
       if(istat.ne.0)then
          write (Lun_out,*)
-     $        'Allocation problem in gemdm_config, #2, stat=',istat
+     $        'Allocation problem in gemdm_config, #2, stat=',istat         
          return
       endif
 *     
 *     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
       Level_mode_ip1 = 1
-      if ( Schm_theoc_L ) then
-         do k=1,G_nk
-            Ver_hyb_8%m(k)= hyb(k)
-            Ver_hybm_8%m(k) = hyb(k)
-     $           + (1.-hyb(k))*Pres_ptop/Pres_pref
-            Ver_hyb%m(k)=Ver_hyb_8%m(k)
-            Ver_hybm%m(k)=Ver_hybm_8%m(k)
-         end do
-         kind=5
-      else
-         kind=5
-         if (Pres_ptop .lt. 0.) then
-            do k=1,G_nk
-               call convip ( i , hyb(k)      , kind,1, dumc_S, .false. )
-               call convip ( i , Ver_hyb%m(k), kind, -1, dumc_S, .false. )
-               Ver_hybm%m(k) = Ver_hyb%m(k)
-            end do
-            Pres_ptop = hyb_top_8*Pres_pref
-         else
-            do k=1,G_nk
-               call convip ( i , hyb(k)      , kind,1, dumc_S, .false. )
-               call convip ( i , Ver_hyb%m(k), kind, -1, dumc_S, .false. )
-               Ver_hybm%m(k) = Ver_hyb%m(k)
-     $              + (1.-Ver_hyb%m(k))*Pres_ptop/Pres_pref
-            end do
-         endif
-         do k=1,G_nk
-            Ver_hyb_8%m(k)=Ver_hyb%m(k)
-            Ver_hybm_8%m(k)=Ver_hybm%m(k)
-         end do
-      endif
-      Level_kind_ip1 = kind
-*     
-      if (Cstv_pitop_8.ne.-1.d0) Cstv_pitop_8=100.d0*Cstv_pitop_8
-*            
-      call set_hybv ()
+*
+      Level_kind_ip1=5
+      do k=1,G_nk
+         call convip ( i , hyb(k)      , Level_kind_ip1,  1, dumc_S, .false. )
+         call convip ( i , Ver_hyb%m(k), Level_kind_ip1, -1, dumc_S, .false. )
+      end do
+*
+      call set_zeta ()
+*
       call prgenab()
 *
       if (V4dg_conf.ne.0.and.Sol_type_S.eq.'ITERATIF') then
@@ -225,7 +208,7 @@
       if (Schm_offline_L) then
           Schm_phyms_L    = .true.
           Init_balgm_L    = .false.
-          Pres_ptop       = 10.0
+          Cstv_ptop_8     = 1000.d0
           Hzd_type_s        = 'NIL' 
           Vspng_nk          = 0 
           Hblen_wfct_S  = 'CONST'
@@ -328,13 +311,16 @@ c        if (Acid_pilot_L) acid_npas = - Grdc_start
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
+ 9100 format (/'ABORT: you must supply levels in hyb'/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
- 9200 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
-     $         '      HYB(1) MUST BE 0.0 AND HYB(NK) MUST BE 1.0'/
-     $         '      OTHER LEVELS MUST BE MONOTONICALLY INCREASING'/
+ 9250 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
+     $         '      LEVELS MUST BE MONOTONICALLY INCREASING'/
      $         '      FROM HYB(1) ---- ABORT ----'//
      $         '      Current choice:')
  9300 format (/,'ABORT: ADJOINT not done for Sol_type_S = ITERATIF',/)
+ 9400 format (/,'ABORT: Cstv_ptop_8 must be > 0',/)
+ 9550 format (/,'ABORT: hyb must be < 1.0 and > ',es10.4,/)
+
 *
 *-------------------------------------------------------------------
 *

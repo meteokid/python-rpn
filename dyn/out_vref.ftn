@@ -1,0 +1,122 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+**s/r out_vref - output vertical coordinate tags
+*
+#include "model_macros_f.h"
+*
+      subroutine out_vref(F_st1,minx,maxx,miny,maxy)
+*
+      implicit none
+*
+      integer minx,maxx,miny,maxy
+      real F_st1(minx:maxx,miny:maxy)
+*
+*author
+*     v.lee - rpn march 2008
+*
+*revision
+* v4_03 - Lee V.            - initial MPI version (from wrvref MC2)
+*
+*object
+*     See above id.
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_st1        I    - array containing log pressure on the surface
+* 
+*implicits
+
+#include "glb_ld.cdk"
+#include "out.cdk"
+#include "grd.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "cstv.cdk"
+*
+* Number of items to lookup is:
+*          G_nk momentum levels, G_nk thermo levels,
+*          Diagnostic level at momentum(G_nk+1), same as thermo(G_nk+2)
+*          Special level at thermo(1) and at thermo(G_nk+1)
+*  Field '||  ' ;g1=code,g2=ptop(mb),g3=rcoef(1)*1000,g4=rcoef(2)*1000
+*     -----------------------------------------
+*   | ip1(1)       | a(1)        | b(1)        |
+*   | ip1(2)       | a(2)        | b(2)        |
+*   |     .        |   .         |   .         |
+*   | ip1(2*G_nk+3)| a(2*G_nk+3) | b(2*G_nk+3) |
+*     -----------------------------------------
+      real*8  wke_8(3,G_nk*2+3)
+      real*8 work_8(3,G_nk*2+3),work1_8
+      real hyb
+      integer ig1,ig2,ig3,ig4,ip1,k
+      integer  fstecr,fst_data_length
+      external fstecr,fst_data_length
+*
+      integer err
+      if ((Out_blocme.eq.0).and.(Out_nisl.gt.0).and.(Out_njsl.gt.0)) then
+*        The momentum levels
+         do k=1,G_nk
+            call convip(ip1,Ver_hyb%m(k),Out_kind,+1,' ',.false.)
+            work_8(1,k)=ip1
+            work_8(2,k)=Ver_a_8%m(k)
+            work_8(3,k)=Ver_b_8%m(k)
+         enddo
+
+*        The very top level
+         call convip(ip1,0.0,Out_kind,+1,' ',.false.)
+         work_8(1,G_nk+1)=ip1
+         work_8(2,G_nk+1)=Ver_a_8%t(1)
+         work_8(3,G_nk+1)=Ver_b_8%t(1)
+         do k=1,G_nk+1
+            call convip(ip1,Ver_hyb%t(k),Out_kind,+1,' ',.false.)
+            work_8(1,k+G_nk+1)=ip1
+            work_8(2,k+G_nk+1)=Ver_a_spcl_8%t(k)
+            work_8(3,k+G_nk+1)=Ver_b_spcl_8%t(k)
+         enddo
+
+*        The very bottom level
+         call convip(ip1,1.0,Out_kind,+1,' ',.false.)
+         work_8(1,G_nk*2+3)=ip1
+         work_8(2,G_nk*2+3)=Ver_a_8%t(G_nk+1)
+         work_8(3,G_nk*2+3)=Ver_b_8%t(G_nk+1)
+
+*        For printout
+*        do k=1,G_nk
+*           ip1 = nint(work_8(k,1))
+*           call convip(ip1,hyb,Out_kind,-1,' ',.false.)
+*        enddo
+*        do k=G_nk+1,G_nk*2+3
+*           ip1 = nint(work_8(1,k))
+*           call convip(ip1,hyb,Out_kind,-1,' ',.false.)
+*        enddo
+*
+*        Parameters are described in Pascals
+         ig4 = nint(Grd_rcoef(2)*1000)
+         ig3 = nint(Grd_rcoef(1)*1000)
+         ig2 = nint(Cstv_ptop_8)
+*        Code for this type of staggered hybrid
+         ig1 = Ver_code
+
+
+         err = fstecr (work_8,wke_8,-64,Out_unf,Out_dateo,
+     $          int(Out_deet),Out_npas,3,G_nk*2+3,1,Out_ig1,Out_ig2,0,
+     $          'X',"!!  ",Out_etik_S,'X',ig1,ig2,ig3,ig4,
+     $           5,.true.)
+      endif
+
+*     Write out the ST1 (log of surface pressure)
+      call ecris_fst2(F_st1,l_minx,l_maxx,l_miny,l_maxy,0.0,
+     $'!!SF',1.0,0.0,-1,1,1,1,32) 
+
+      return
+      end

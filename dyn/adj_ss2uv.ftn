@@ -1,0 +1,92 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r adj_ss2uv- Returns U,V surface pressures using the incoming
+*                 pressure, will return in the same incoming unit
+*
+      subroutine adj_ss2uv(F_ssq0,NI,NJ,F_ssu0,NIU,NJU,F_ssv0,NIV,NJV,
+     $                     vcoord)
+      implicit none
+*
+      integer ni,nj,niu,nju,niv,njv,vcoord
+      real F_ssq0(ni,nj),F_ssu0(niu,nju),F_ssv0(niv,njv)
+*
+*author V.Lee
+*
+*revision
+* v4_03 - Lee V- initial version
+*
+*object
+*       computes hydrostatic surface pressure for U, V grid
+*implicits
+#include "model_macros_f.h"
+#include "glb_ld.cdk"
+**
+      integer i,j
+      real p0_temp(LDIST_SHAPE)
+*
+*     ---------------------------------------------------------------
+*
+*Pressure coordinate
+      if (vcoord.eq.4) then
+          F_ssu0 = 0.0
+          F_ssv0 = 0.0
+          return
+      endif
+*     ---------------------------------------------------------------
+*V stag   coordinate
+      if (vcoord.eq.0.or.vcoord.eq.6) then
+*         F_ssq0 is log of p0
+*         Transfer to vector with halos
+          do j=1,l_nj
+          do i=1,l_ni
+             p0_temp(i,j) = F_ssq0(i,j)
+          enddo
+          enddo
+          call rpn_comm_xch_halo ( p0_temp, LDIST_DIM,l_ni,l_nj,1,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+          do j=1,nju
+          do i=1,niu
+             F_ssu0(i,j) = (p0_temp(i,j) + p0_temp(i+1,j)) *.5
+          enddo
+          enddo
+          do j=1,njv
+          do i=1,niv
+             F_ssv0(i,j) = (p0_temp(i,j) + p0_temp(i,j+1)) *.5
+          enddo
+          enddo
+      else
+*     ---------------------------------------------------------------
+*Assume p0 is in Pascals
+          do j=1,l_nj
+          do i=1,l_ni
+             p0_temp(i,j) = log(F_ssq0(i,j))
+          enddo
+          enddo
+          call rpn_comm_xch_halo ( p0_temp, LDIST_DIM,l_ni,l_nj,1,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+          do j=1,nju
+          do i=1,niu
+             F_ssu0(i,j) = exp((p0_temp(i,j) + p0_temp(i+1,j)) *.5)
+          enddo
+          enddo
+          do j=1,njv
+          do i=1,niv
+             F_ssv0(i,j) = exp((p0_temp(i,j) + p0_temp(i,j+1)) *.5)
+          enddo
+          enddo
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

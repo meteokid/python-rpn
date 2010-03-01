@@ -85,11 +85,13 @@
       call apply(wt1  ,0.  ,betav_t,LDIST_DIM, l_nk+1)
       if(.not.Schm_hydro_L) then
          call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM, l_nk)
-         do j=1,l_nj
-         do i=1,l_ni
-            qt1(i,j,0)=-qt1(i,j,1)
-         enddo
-         enddo
+         if(Schm_virlev_L) then
+            do j=1,l_nj
+            do i=1,l_ni
+               qt1(i,j,0)=-qt1(i,j,1)
+            enddo
+            enddo
+         endif
       endif
       if(Zblen_spngtt_L)then
          call apply_tt(tt1,betav_t,st1,LDIST_DIM, l_nk)
@@ -177,7 +179,7 @@ c=======================================================================
          do j=j0,jn
             do i=i0,in
                tempo = exp(Ver_z_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
-               a02 = (tempo/Cstv_pisrf_8)**Dcst_cappa_8
+               a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                my_tt=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
                tt(i,j,k)=(1.-betav_t(i,j,k))*tt(i,j,k)+

@@ -41,7 +41,7 @@
 #include "dimout.cdk"
 #include "xst.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl_cplg.cdk"
+
 #include "rstr.cdk"
 #include "init.cdk"
 #include "out2.cdk"
@@ -99,7 +99,5 @@
 *
 *     Coupling with other surface modules or models via Oasis
 *
-      if (C_coupling_L) call itf_cpl_cplg_surf()
-*   
       return
       end

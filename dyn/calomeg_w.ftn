@@ -1,0 +1,77 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/p calomeg_adv - compute vertical velocity in pressure coordinates
+*                    from advection
+*
+#include "model_macros_f.h"
+
+*
+      subroutine calomeg_w (F_ww,F_st1,F_wt1,F_tt1,DIST_DIM,Nk)
+*
+      implicit none
+*
+      integer DIST_DIM, Nk
+      real F_ww(DIST_SHAPE,Nk+1),F_st1(DIST_SHAPE)
+      real F_wt1(DIST_SHAPE,Nk+1),F_tt1(DIST_SHAPE,Nk+1)
+*
+*author
+*     Claude Girard et Andre Plante avril 2008.
+*
+*revision
+*
+*object
+*	compute vertical velocity in hydrostatic pressure coordinates
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_ww           O                 dpi/dt (Pa/s)
+* F_st1        I                   s at time t1 = exp(PIt1/Zsruf)
+* F_piup       I                   Hydrostatic pressure at upstream location
+*                                  obtaned from lagragian advection.
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "lctl.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+*
+**
+      integer i,j,k,i0,in,j0,jn
+*     __________________________________________________________________
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+*
+!$omp parallel
+!$omp do
+      do k=1,l_nk+1
+!         do j=j0,jn
+!            do i=i0,in
+         do j=LYDIST_DIM
+            do i=LXDIST_DIM
+               F_ww (i,j,k) = -Dcst_grav_8*F_wt1(i,j,k)*
+     $              (exp(Ver_z_8%t(k) + Ver_b_8%t(k)*F_st1(i,j)))/
+     $              (Dcst_rgasd_8*F_tt1(i,j,k))
+            end do
+         end do
+      end do
+!$omp enddo
+!$omp end parallel
+*     __________________________________________________________________
+*
+      return
+      end 

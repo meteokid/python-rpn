@@ -35,7 +35,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       integer  longueur
       external longueur
-      integer idg,jdg,mode,ntr
+      integer idg,jdg,mode,ntr,k
       character*2  md
       character*15 startindx
       character*512 filen
@@ -55,8 +55,16 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       filen= './process/casc/'//filen(1:longueur(filen))
       open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
      $                                          position='APPEND')
+      print *,'e_sfile_3df anal_hav(2)=',anal_hav(2)
+      do k=1,lv
+         print *,'za_8=',za_8(k),zb_8(k)
+      enddo
+      do k=1,lv_t
+         print *,'zat_8=',zat_8(k),zbt_8(k)
+      enddo
       call wrgeo_3df (xg_8(gid),gif-gid+1,yg_8(gjd),gjf-gjd+1,
-     $                za_8,zb_8,zat_8,zbt_8,lv,nvar,ntr,unf_casc)
+     $                za_8,zb_8,zat_8,zbt_8,zat_8,zbt_8,lv,lv_t,lv_t,
+     $                Anal_hav(2),nvar,ntr,unf_casc)
       write (unf_casc) msg,mode
 *
 *------------------------------------------------------------------

@@ -76,7 +76,7 @@
 *
       integer pnerr, pnlkey1(30), pnlod
 *
-      integer i, j, k, n, ij, ijk, nij, nijk, it
+      integer i, j, k, n, ij, ijk, nij, nijk, it, kmin, kmax
       integer i1,j1,k1,nn
 *
       integer outside,sum_outside,ier
@@ -104,6 +104,12 @@
       pdp    = 1.d0 + 1.d-6
       pdm    = 1.d0 - 1.d-6
 
+      kmin   =1
+      kmax   =l_nk
+      if(Schm_virlev_L) then
+         kmin=2
+         kmax=l_nk-1
+      endif
 ************************************************************************
 *
       pnlkey1(1) = VMM_KEY(xth)
@@ -145,9 +151,13 @@ c         call glbstat (xcth,'Xcth',1,l_ni,1,l_nj,G_nk,5+acid_i0,G_ni-4-acid_in,
 c    %                                           5+acid_j0,G_nj-4-acid_jn,1,1)
 c     endif
 ************************************************************************
-      do it=1,F_it
+      do it=1,F_it ! begin iterations loop
 ************************************************************************
-*
+c
+c        ==================================================================
+c        3d interpolation of u and v winds
+c        ==================================================================
+c
       do n = 1,nijk
       wrk_yth(n) = yth(n)
       enddo
@@ -190,29 +200,32 @@ c     endif
 *      
       if( .not. Adw_nosetint_L ) then
 *
-      call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
-     %                  dummy, capz1, dummy, xth, wrk_yth, zth,
-     %                 .true., .true., .true.,nijk,i0,in,j0,jn,l_nk,'m')
+         call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
+     %                     dummy, capz1, dummy, xth, wrk_yth, zth,
+     %                    .true., .true., .true.,nijk,i0,in,j0,jn,l_nk,'m')
 *
       
-      call adw_trilin (wrkx1,F_u,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
-      call adw_trilin (wrky1,F_v,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
+         call adw_trilin (wrkx1,F_u,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
+         call adw_trilin (wrky1,F_v,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
 *
       else
 *
-      Adw_hor_L = .true.
-      Adw_ver_L = .true. 
+         Adw_hor_L = .true.
+         Adw_ver_L = .true. 
 
-      call adw_trilin_turbo (wrkx1,F_u,1.0,xth,wrk_yth,zth,capz1,
-     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
-      call adw_trilin_turbo (wrky1,F_v,1.0,xth,wrk_yth,zth,capz1,
-     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
+         call adw_trilin_turbo (wrkx1,F_u,1.0,xth,wrk_yth,zth,capz1,
+     %                          Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
+         call adw_trilin_turbo (wrky1,F_v,1.0,xth,wrk_yth,zth,capz1,
+     %                          Adw_Fn_I,nijk,i0,in,j0,jn,l_nk,'m')
 *
       endif
 c     if (Acid_test_L)
 c    %call glbstat (wrkx1,'wrkX',1,l_ni,1,l_nj,G_nk,4+acid_i0,G_ni-3-acid_in,
 c    %                                    4+acid_j0,G_nj-3-acid_jn,1,G_nk)
-*
+c        ==================================================================
+c        Compute new upstream postions along x and y
+c        ==================================================================
+c
       if (.not.G_lam) then
 
          if ( Adw_fro_a .gt. 0 ) then
@@ -246,6 +259,11 @@ c    %                                    4+acid_j0,G_nj-3-acid_jn,1,G_nk)
       call adw_trajsp ( xth, yth, xcth, ycth, zcth, wrkx1, wrky1, dth,
      %                  i0,in,j0,jn)
 ************************************************************************
+c     
+c        ==================================================================
+c        3D interpolation of zeta dot
+c        ==================================================================
+c
       do n = 1,nijk
       wrk_yth(n) = yth(n)
       enddo
@@ -361,9 +379,14 @@ c       call glbstat (wrkx1 ,'x1',1,l_ni,1,l_nj,l_nk,i0,in,j0,jn,1,l_nk)
       endif
 
 ************************************************************************
+c
+c        ==================================================================
+c        Compute new upstream position along zeta
+c        ==================================================================
+c
 !$omp parallel private(n)
 !$omp do
-      do k = 2,l_nk-1
+      do k = kmin,kmax
       do j = j0,jn
       do i = i0,in
          n = (k-1)*nij + ((j-1)*l_ni) + i
@@ -384,23 +407,25 @@ c        Make sure zth is below Ver_z_8%m(1) and above Ver_z_8%m(l_nk)
      %                  i0,in,j0,jn)
 *
 !$omp parallel private(n)
+      if(Schm_virlev_L) then
 !$omp do
-      do j = j0,jn
-      do i = i0,in
-         n = ((j-1)*l_ni) + i   !for k=1
-         F_w(n) = Ver_z_8%m(1)
-         n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
-         F_w(n) = Ver_z_8%m(l_nk)
-      enddo
-      enddo
+         do j = j0,jn
+         do i = i0,in
+            n = ((j-1)*l_ni) + i   !for k=1
+            F_w(n) = Ver_z_8%m(1)
+            n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
+            F_w(n) = Ver_z_8%m(l_nk)
+         enddo
+         enddo
 !$omp enddo
+      endif
 
 !$omp do
-      do k = 2,l_nk-1
+      do k = kmin,kmax
          do j = j0,jn
          do i = i0,in
             n=(k-1)*nij+((j-1)*l_ni) + i
-            F_w(n) = zth(n) - Adw_bsz_8%m(k-1)
+            F_w(n) = zth(n) - Ver_z_8%m(k)
             F_w(n) = Ver_z_8%m(k) + 2.0 * F_w(n)
          enddo
          enddo

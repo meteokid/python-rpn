@@ -38,7 +38,6 @@
 #include "geomg.cdk"
 #include "ifd.cdk"
 #include "ind.cdk"
-#include "pres.cdk"
 #include "lam.cdk"
 #include "ptopo.cdk"
 #include "schm.cdk"
@@ -68,15 +67,15 @@
       logical done,dyn_done,phy_done,same_topo_L,temp_same_L,flag
       logical dyn_init,phy_init
       integer*8 pnt_trp(Tr3d_ntr)
-      integer i,j,k,jj,jjj,kk,nia,nja,nk0,nka,ntra,ntra1,
-     $        ni1,nj1,nk1,n,err,
+      integer i,j,k,jj,jjj,kk,nia,nja,nk0,nka_m,nka_s,nka_t,ntra,ntra1,
+     $        ni1,nj1,nk1,n,err,presstype,nbits,
      $        errop,ofi,ofj,l_in,l_jn,mode,nvar, vmmnvar,ungeo,
      $        cnt,nkphy,errdyn,errphy,cumerr,pid,gid,nfphy,
      $        wowp,nij,ijk
 
       integer i0,in,j0,jn,keyp_,keyp(Tr3d_ntr),ni2,nj2,nvargeo
       integer idd,jdo,mult,shp,bigk,offbb,offbo,offg,ng,nga
-      real topo_temp(l_ni,l_nj)
+      real topo_temp(l_ni,l_nj),dtopo_temp(l_ni,l_nj),zero(l_ni,l_nj)
 
       integer, dimension (:  ), pointer :: idx,idu,idy,nks
       real xi,xf,yi,yf,htopa,maxtopo(2),maxtopo_g(2),
@@ -109,6 +108,7 @@
 *-----------------------------------------------------------------------
 *
       nvargeo = 9
+      Lam_busper_init_L=.false.
       if (P_pbl_schsl_S.eq.'ISBA') nvargeo = 14
       allocate (geop_name(nvargeo))
 *
@@ -204,7 +204,6 @@
       done     = .false.
       dyn_init = .false.
       phy_init = .false.
-      Lam_busper_init_L=.false.
 *
       do n=1,ifd_nf
 *
@@ -228,7 +227,14 @@
 *
  55         if (dyn_done.and.phy_done) goto 33
             err = sid3df (xpaq,ypaq,xpau,ypav,unf,done,nia,nja,
-     $                                    nka,nvar,ntra1)
+     $                         nka_m,nka_s,nka_t,presstype,nvar,ntra1)
+*presstype:
+* 1=hyb
+* 2=eta
+* 3=sig
+* 4=press
+* 5=ecmwf
+* 6=stag 
             if (err.lt.0) then
                 if (dyn_done) then
 *               Assumes no physics data are available
@@ -243,6 +249,7 @@
             read (unf,end=1010,err=1010) dynophy,mode
 *
             if (dynophy.eq.'PHYSICSS') then
+c              print *,'casc_3df_dynp: PHYSICSS'
 *
                nfphy=nvar+ntra1
                if (.not.phy_init) then
@@ -255,20 +262,21 @@
                nkphy=0
                do i=1,nfphy
                   nkphy=nkphy+nks(i)
+                  print *,'phy ',phynm(i),nks(i)
                enddo
                if (.not.phy_init) allocate(phybn(nga,nkphy))
                phy_init = .true.
                cumerr = 0
+*              use nkphy as the pointer in phybn
                nkphy=1
                do i=1,nfphy
-                 k = nks(i)
-                 call filmup (phybn(1,nkphy),ifd_niad,ifd_niaf,ifd_njad,
-     $                                    ifd_njaf,k,unf,ofi,ofj,cumerr)
-                 nkphy = nkphy + k
+                 read (unf,end=1010,err=1010) nomvar,ni1,nj1,nk1,nbits
+                 call filmup (nomvar,phybn(1,nkphy),ifd_niad,ifd_niaf,ifd_njad,
+     $                    ifd_njaf,nks(i),unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits)
+                 nkphy=nkphy+nks(i)
                enddo
                errphy=cumerr
                phy_done = .true.
-               nkphy = nkphy - 1
                if (.not. dyn_done) goto 55
 *
             else if (dynophy.eq.'DYNAMICS') then
@@ -287,49 +295,23 @@
                   if (associated( trn)) deallocate( trn)
                   if (associated( topo_temp1)) deallocate( topo_temp1)
                   if (associated(trname_a)) deallocate(trname_a)
-                  allocate (  uun(nga,nka+1), vvn (nga,nka+1),
-     $                        zdn(nga,nka+1), ttn (nga,nka+2),
-     $                       ssqn(nga,1  )  , meqn(nga,1  ),
+                  allocate (  uun(nga,nka_m), vvn (nga,nka_m),
+     $                        zdn(nga,nka_t), ttn (nga,nka_s),
+     $                       ssqn(nga,1  )  ,
      $                       topo_temp1(l_ni+1-(east*1),l_nj+1-(north*1)),
-     $                        qqn(nga,nka+2), wwn(nga,nka+1),
-     $                       trn (nga,nka+2,ntra), trname_a(ntra) )
+     $                        qqn(nga,nka_m+1), wwn(nga,nka_t),
+     $                       trn (nga,nka_s,ntra), trname_a(ntra) )
+                  if (presstype.eq.4) then 
+                      allocate (meqn(nga,nka_m))
+                  else
+                      allocate (meqn(nga,1))
+                  endif
                   dyn_init = .true.
                endif
 *
                cumerr=0
-* read tt1,st1, ME
-               call filmup ( ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+2,unf,ofi,ofj,cumerr )
-               call filmup (ssqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                          1,unf,ofi,ofj,cumerr )
-               call filmup (meqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                          1,unf,ofi,ofj,cumerr )
-               if (nvar.eq.7.or.nvar.eq.8) then 
-* read wt1,zdt1
-               call filmup ( wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+1,unf,ofi,ofj,cumerr )
-               call filmup ( zdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+1,unf,ofi,ofj,cumerr )
-               endif
-*
-               if (nvar.eq.8) then
-* read qt1
-               call filmup ( qqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+2,unf,ofi,ofj,cumerr )
-               endif
-
-               if (ntra.gt.0) then
-* read tracers
-                 call filuptr ( trn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                           nka+2,unf,ofi,ofj,Tr3d_name_S,Tr3d_ntr,
-     $                                            trname_a,ntra,cumerr )
-               endif
-* read winds
-               call filmup ( uun,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+1,unf,ofi,ofj,cumerr )
-               call filmup ( vvn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+1,unf,ofi,ofj,cumerr )
-*
+               call read_3df(unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn,
+     $                  trname_a,nvar,ntra,nga,nka_m,nka_s,nka_t,ofi,ofj,cumerr)
                errdyn   = cumerr
                dyn_done = .true.
                if ((.not.phy_done).and.(Schm_phyms_L)) goto 55
@@ -415,9 +397,46 @@
          if (Lctl_step > Vtopo_start) then
             topo_temp = Ind_topo(1:l_ni,1:l_nj)
          else
-            topo_temp = meqr
+cap          topo_temp = meqr
+            do gid=1,P_bgeo_top
+               if (geonm(gid,1).eq.'MF') then
+                  offg = geopar(gid,1)
+                  cnt = 0
+                  do j=1,l_nj
+                  do i=1,l_ni
+                     cnt=cnt+1
+                     topo_temp(i,j)=dble(geofld(offg +cnt-1))*Dcst_grav_8
+                  enddo
+                  enddo
+               endif
+            enddo
          endif
-         Ind_dtopo(1:l_ni,1:l_nj) = topo_temp - meqr
+         dtopo_temp = topo_temp - meqr
+         topo_temp = meqr         
+         do j=1,pil_s
+            do i=1,l_ni
+               dtopo_temp(i,j) = 0.
+            end do
+         end do
+         do j=l_nj-pil_n+1,l_nj
+            do i=1,l_ni
+               dtopo_temp(i,j) = 0.
+            end do
+         end do
+         do i=1,pil_w
+            do j=pil_s+1,l_nj-pil_n
+               dtopo_temp(i,j) = 0.
+            end do
+         end do
+         do i=l_ni-pil_e+1,l_ni
+            do j=pil_s+1,l_nj-pil_n
+               dtopo_temp(i,j) = 0.
+            end do
+         end do
+         zero = 0.
+         call nesajr (dtopo_temp, zero(1,1), 1,l_ni,1,l_nj,
+     $        1,0,0,Hblen_x,Hblen_y)
+         Ind_dtopo(1:l_ni,1:l_nj) = dtopo_temp
       else
          do gid=1,P_bgeo_top
            if (geonm(gid,1).eq.'MF') then
@@ -431,6 +450,7 @@
              enddo
            endif
          enddo
+         if (presstype.ne.4) then
          do j=1,pil_s
          do i=1,l_ni
             topo_temp(i,j) = meqr(i,j)
@@ -453,9 +473,11 @@
          end do
          call nesajr (topo_temp, meqr, 1,l_ni,1,l_nj,
      $                         1,0,0,Hblen_x,Hblen_y)
+         endif
       endif
 *
       Ind_topo(1:l_ni,1:l_nj) = topo_temp
+
 * topo is inflated!
       call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -473,7 +495,7 @@
      $         ss1(l_ni,l_nj),
      $         qq1(l_ni,l_nj,0:G_nk+1),
      $         ww1(l_ni,l_nj,G_nk+1),
-     $         tr1(l_ni,l_nj,G_nk+2,ntra) )
+     $         tr1(l_ni,l_nj,G_nk+2,Tr3d_ntr) )
 
       call casc_hvi (trname_a,
      $  xpxext(l_i0),ypxext(l_j0),xpuu,ypvv,xpaq,ypaq,xpau,ypav,
@@ -482,14 +504,14 @@
      $  0, topo_temp1,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  1,l_ni,1,l_nj,l_ni+1-(east*1),l_nj+1-(north*1), G_nk,
-     $  nia,nja,nka,nvar,ntra)
+     $  nia,nja,nka_m,nka_s,nka_t,presstype,ntra)
 
-        Ind_u(1:l_ni+1-(east*1),1:l_nj,1:G_nk+1) = uu1
-        Ind_v(1:l_ni,1:l_nj+1-(north*1),1:G_nk+1) = vv1
-        Ind_t(1:l_ni,1:l_nj,1:G_nk+2) = ttt1
-        Ind_zd(1:l_ni,1:l_nj,1:G_nk+1)=zd1
-        Ind_s(1:l_ni,1:l_nj) = ss1
-        Ind_w(1:l_ni,1:l_nj,1:G_nk+1)   = ww1
+      Ind_u(1:l_ni+1-(east*1),1:l_nj,1:G_nk+1) = uu1
+      Ind_v(1:l_ni,1:l_nj+1-(north*1),1:G_nk+1) = vv1
+      Ind_t(1:l_ni,1:l_nj,1:G_nk+2) = ttt1
+      Ind_zd(1:l_ni,1:l_nj,1:G_nk+1)=zd1
+      Ind_s(1:l_ni,1:l_nj) = ss1
+      Ind_w(1:l_ni,1:l_nj,1:G_nk+1)   = ww1
       if (.not. Schm_hydro_L) then
         Ind_q(1:l_ni,1:l_nj,0:G_nk+1) = qq1
       endif
@@ -503,16 +525,17 @@
          end do
          if ( jj.gt.0 ) then
             trp(1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2,jj)
+         else 
+            trp(1:l_ni,1:l_nj,1:G_nk+2) = Tr3d_sval(n)
          endif
       end do
 *
 *
-      deallocate ( uu1,vv1,ttt1,zd1,qq1,ww1,meqr,trname_a)
 *
+      deallocate (uu1,vv1,ttt1,zd1,qq1,ww1,tr1,meqr,trname_a)
       do j=1,l_nj
       do i=1,l_ni
-         lnpis_8 = ss1(i,j) + log(Cstv_pisrf_8)
-         ss1(i,j) = exp(Ver_a_8%t(G_nk+1) + Ver_b_8%t(G_nk+1)*lnpis_8)
+         ss1(i,j) = Cstv_pref_8*exp(ss1(i,j))
       enddo
       enddo
 
@@ -539,9 +562,6 @@
            write(6,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX,
      $                     ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
       endif
-*
-      Pres_surf = dble(0.5*(psmin+psmax))
-      Pres_top  = dble(Pres_ptop*100.)
 *
       call v4d_indata3 ()
       call set_dync

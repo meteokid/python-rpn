@@ -26,10 +26,10 @@
 * v3_12 - Winger K.         - add TD and HR as possible humidity variables
 * v3_20 - Pellerin P.       - MEC option (off-line mode)
 * v3_30 - Lee V.            - new LAM I/O  (BCS and 3DF pilot files)
+* v3_31 - Lee V.            - eliminated using topoU, topoV, added press anal
 *
 #include "e_anal.cdk"
 #include "e_fu.cdk"
-#include "e_option.cdk"
 #include "e_grids.cdk"
 #include "e_topo.cdk"
 #include "bmf.cdk"
@@ -42,26 +42,32 @@
 *
       integer   fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv,
      $          read_decode_hyb, newdate, e_pilotf, 
-     $          e_ac_posi, ezgdef_fmem, gdll
+     $          e_ac_posi, ezgdef_fmem, gdll,e_bmfrd,e_rdhint3
       external  fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv,
      $          read_decode_hyb, newdate, e_pilotf, 
-     $          e_ac_posi, ezgdef_fmem, gdll
+     $          e_ac_posi, ezgdef_fmem, gdll,e_bmfrd,e_rdhint3
 *
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
      $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
-      integer  ip1x,ip2x,ip3x,kcode
+      integer  ip1x,ip2x,ip3x,vcode
       character*1   typ, grd, blk_S
-      character*4   var,varx
+      character*4   var,varx,var_t
       character*12  lab
       character*15  datec,pdate
       real      x1,lev,difsig,dx,dy
       real coin_lat(4),coin_lon(4),difmin,c
+      integer, dimension(:), allocatable :: lookup_ip1
       real, dimension(:,:), allocatable :: latd,lond,lats,lons
       real, dimension(:),   allocatable :: topp,xpx,xpxu,ypx,ypxv,levm
-      real*8, dimension(:), allocatable :: levm_8
-      real*8    Cstv_pisrf_8, Cstv_tstr_8,xyz1(3),xyz2(3)
+      real, dimension (:), allocatable:: wk2,p0
+      real*8, dimension(:), allocatable :: lookup_a_8,lookup_b_8
+      real*8, dimension(:,:), allocatable :: work_8
+      real*8    xyz1(3),xyz2(3)
+      real*8 Cstv_pref_8
+      parameter (Cstv_pref_8=100000.0)
       parameter (difsig = 1.e-5)
       integer list(2000), i, j, k, l, m, n, ier,numi,numj,sgid,dgid
+      integer list_t(2000),lookup_max
       integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,dimgx,dimgy
       logical done,hollow
       data done,hollow /.false.,.true./
@@ -71,7 +77,6 @@
       real*8 orr, deg2rad_8
       parameter( ONE_8   = 1.0 )
       parameter( CLXXX_8 = 180.0 )
-      parameter(Cstv_pisrf_8=100000.0,Cstv_tstr_8=200.0)
       integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum,nvar
 * ---------------------------------------------------------------------
 *
@@ -132,8 +137,8 @@
         endif
       endif
 *
-*                      Check temperature variable and find
-*                      out if it is given by 'TT' or 'VT'
+*                      Check wind variable and find
+*                      out if it is given by 'UU' or 'UT1'
       var = 'UU  '
       key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',var)
       print *,'key for UU found is ',key
@@ -176,20 +181,42 @@
       if (kind .eq. 5) then
          ip1mode=2
          key = fstinf ( e_fu_anal, ni1,nj1,nk1,datev,' ',-1,-1,-1, 
-     $                                                    ' ', '+HY+' )
+     $                                                    ' ', '!!  ' )
          if (key.gt.0) then
+*         Staggered Analysis
              ier = fstprm (key, dte, det, ipas, ni1, nj1, nk1, bit, dty,
      x              ip1x, ip2x, ip3x, typ, varx, labanl, grd, g1, g2, g3,
      x                           g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
-             kcode = g1
-             ptopa = g2/100
-             prefa = g3/100
-             rcoefa= g4/1000.0
-             print *,'+HY+ found: ptopa=',ptopa,' prefa=',prefa,' rcoefa=',rcoefa
+             print *,'e_spec: g1,g2,g3,g4=',g1,g2,g3,g4
+             vcode = g1
+             ptopa = g2/100.
+             prefa = 1000.0 ! fixed for STAG
+             rcoefa(1)= g3/1000.0
+             rcoefa(2)= g4/1000.0
+             print *,'!!   found: ptopa=',ptopa,' rcoefa(1)=',rcoefa(1),' rcoefa(2)=',rcoefa(2)
              print*,' ===> Analysis on staggered HYBRID vertical coordinates.'
              anal_hav(2) = 6
              Anal_hyb_L = .true.
+             allocate(work_8(ni1,nj1))
+             err = fstlir (work_8,e_fu_anal,ni1,nj1,nk1,datev,
+     $               ' ',ip1x,ip2x,ip3x,typ,'!!  ')
+             allocate(lookup_a_8(nj1),lookup_b_8(nj1),lookup_ip1(nj1))
+             do j=1,nj1
+                lookup_ip1(j)=nint(work_8(1,j))
+                lookup_a_8(j)=work_8(2,j)
+                lookup_b_8(j)=work_8(3,j)
+                print *,'lookup',j,lookup_ip1(j),lookup_a_8(j),lookup_b_8(j)
+             enddo
+             lookup_max=nj1
+             key = fstinf ( e_fu_anal, ni1,nj1,nk1,datev,' ',-1,-1,-1, 
+     $                                                    ' ', '!!SF' )
+             if (key.lt.0) then
+                 print *,'No !!SF found but !! is found'
+                 stop
+             endif
+             print*,' ===> Analysis on STAGGERED HYBRID vertical coordinates.'
          else 
+* Hybrid Analysis
              key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',-1,
      $                  ptopa,prefa,rcoefa)
              if (key.lt.0) then 
@@ -242,17 +269,16 @@
          endif
       endif
 *
-      if (( Anal_sigma_L .or. Anal_eta_L .or. Anal_hyb_L .or. Anal_ecmwf_L) .and. 
+      if (( Anal_sigma_L.or.Anal_eta_L.or.Anal_hyb_L.or.Anal_ecmwf_L).and. 
      $     ( VH .ne. 'HU' )) then
          write(6,*) 'ERROR: Moisture variable(VH) must be HU '
          write(6,*) 'when analysis is on sigma/eta/hybrid.'
          call e_arret('e_specanal')
       endif
 *
-
-      if (.not.e_Schm_offline_L) then
-         print *,'Levels searched: fstinl on var=',var
+      print *,'Levels searched: fstinl on var=',var
 *
+      if (.not.e_Schm_offline_L) then
          if (Anal_ecmwf_L) then
             key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl,ip1a, 
      $                           ip2a, -1, tva, var, list, nka, lvmax)
@@ -268,7 +294,7 @@
          write (6,101) ip1a
          write (6,201) var
       endif
-*
+* (for UU)
       print *,'Found this many levels, nka=',nka,'for ',var
       LV = nka
       do k = 1, nka
@@ -277,7 +303,8 @@
      x                           g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
 
          if (nia.ne.ni1 .or. nja.ne.nj1) then
-            write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH','nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
+            write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH',
+     x                'nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
             call e_arret( 'e_specanal')
          elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or.
      x         ig3a .ne.g3  .or. ig4a .ne.g4) then
@@ -323,90 +350,181 @@
      $     ip1a,ip2a,ip3a, tva, var, labanl, grda, ig1a,ig2a,ig3a,ig4a,
      $     swa,lng, dlf, ubc, ex1, ex2, ex3 )
 
-      if ( .not. (Anal_hyb_L.or.Anal_eta_L) ) Pil_bmf_L = .true.
+      print *,'Levels searched: fstinl on var=',var
 *
-      if (Pil_bmf_L) then
-         call bmf_splitstart (Ptopo_npex,Ptopo_npey,'./process/','BM',
-     $                                Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
-         call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
-         call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
-         call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
-      endif
-*
-      if ( (Anal_pres_L) ) then
-           if ( (lv.lt.16) ) then
-                 write(6,*)': NEED 16 OR MORE PRESSURE LEVELS. ',
-     x                        lv, ' levels found'
-                 call e_arret('e_specanal')
-           endif
-           if ( (lv.gt.35) ) then
-                 write(6,*)': GREATER THAN 35 PRESSURE LEVELS: ',
-     x                        lv, ' levels found'
-                 write(6,*)': WARNING, TT on pressure levels are NOT USED '
-                 write(6,*)': WARNING, TT on pressure levels are DERIVED  '
-                 write(6,*)': and maybe WRONG if too many pressure levels '
-           endif
-      endif
-*
-*     Sort levels in ascending order (originally done in e_sortr)
-
-      if (lv.ne.1) then
-         n = lv
-         do i = 1, n-1
-         k = i
-         do j = i+1, n
-            if (rna(k) .gt. rna(j))  k=j
-         enddo
-         if (k .ne. i) then
-            x1     = rna(k)
-            m      = na(k)
-            rna(k) = rna(i)
-            na(k)  = na(i)
-            rna(i) = x1
-            na(i)  = m
+      if (.not.e_Schm_offline_L) then
+         if (Anal_ecmwf_L) then
+            key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl,ip1a, 
+     $                           ip2a, -1, tva, var, list, nka, lvmax)
+         else
+            key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, 
+     $                           ip2a, ip3a, tva, var, list, nka, lvmax)
          endif
-         enddo
-
-*        eliminate levels that are redundant in LISTE
-         i = 1
-         do j=2,n
-            if (rna(i) .ne. rna(j)) then
-                i = i+1
-                if (i .ne. j) then
-                    rna(i) = rna(j)
-                     na(i) =  na(j)
-                endif
-            endif
-         enddo
-         lv = i
-
+      else
+         ip1a=11950
+         key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, ip1a,
+     $                     ip2a, ip3a, tva, var, list, nka, lvmax)
+         write (6,130)
+         write (6,101) ip1a
+         write (6,201) var
       endif
 *
-      print*, ' ANALYSIS LEVELS FOUND ARE:'
-      do k=1,lv
-         write(6,801) rna(k),k,na(k)
-      end do 
-      if (Anal_hyb_L.or.Anal_eta_L.or.Anal_sigma_L) then
+      print *,'Found this many levels, nka=',nka,'for ',var
+      LV_T = nka
+      do k = 1, nka
+         ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty,
+     x              ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3,
+     x                           g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
+
+         if (nia.ne.ni1 .or. nja.ne.nj1) then
+            write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH',
+     x                'nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
+            call e_arret( 'e_specanal')
+         elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or.
+     x         ig3a .ne.g3  .or. ig4a .ne.g4) then
+            write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH'
+            call e_arret( 'e_specanal')
+         endif
+         call convip (ip1a, lev, kind, -1, blk_S, .false.)
+         if ( (((Anal_sigma_L).or.(Anal_eta_L)).and. (kind.ne.1)) .or.
+     $        (( Anal_ecmwf_L               ).and. (kind.ne.3)) .or.
+     $        (( Anal_pres_L                ).and. (kind.ne.2)) .or.
+     $        (( Anal_hyb_L                 ).and.((kind.ne.1)
+     $                                      .and.(kind.ne.5)))) then
+            write(6,*)':  LEVEL ',ip1a,' LEVEL INCONSISTENCY'
+            call e_arret( 'e_specanal')
+         elseif (Anal_ecmwf_L) then
+            rna_t(k) = ip3a
+            na_t(k)  = ip1a
+         else
+            rna_t(k) = lev
+            na_t(k)  = ip1a
+         endif
+      enddo
+
+*     Sort levels in ascending order for momentum levels
+      call e_sortlev(rna,na,lv,m)
+      LV=m
+*     Sort levels in ascending order for thermo
+      call e_sortlev(rna_t,na_t,lv_t,m)
+      LV_T=m
+*
+      if (anal_hav(2).lt.6) then
+          print *,'Check for non-staggered analysis:'
+          if (lv.ne.lv_t) then
+              print *,'Levels found for TT/VT is',LV_t,': should be ',LV
+              call abort()
+          endif
+          do k=1,lv
+             if (rna(k).ne.rna_t(k)) then
+              print *,'Level',k,'for UU is',rna(k),' which is not the same for TT/VT ',rna_t(k)
+              call abort()
+             endif
+          enddo
+          print *,'Check is OK'
+      endif
+
+*     Find the A,B values corresponding to the IP1s
+      if (anal_hav(2).eq.4) then
+*     Pressure Analysis
+          print*, ' UU ANALYSIS LEVELS FOUND ARE:'
+          do k=1,lv
+             write(6,801) rna(k),k,na(k)
+          end do 
+          do k=1,lv
+             za_8(k)=rna(k)
+             zb_8(k)=0.0
+             zat_8(k)=rna(k)
+             zbt_8(k)=0.0
+          enddo 
+          if ( (lv.lt.16) ) then
+                write(6,*)': NEED 16 OR MORE PRESSURE LEVELS. ',
+     x                        lv, ' levels found'
+                call e_arret('e_specanal')
+          endif
+      else if (anal_hav(2).le.3.or.anal_hav(2).eq.5) then
+*Eta/HYB/SIG/ECMWF
+          print*, ' UU ANALYSIS LEVELS FOUND ARE:'
+          do k=1,lv
+             write(6,801) rna(k),k,na(k)
+          end do 
           if (rna(lv).ne.1.0) then
               write(6,*)'**************************************'
+              write(6,*)'rna(',lv,') is not equal to 1.0'
               write(6,*)'WARNING: NO topography level found!!!!'
               write(6,*)'**************************************'
           endif
+          if (Anal_sigma_L) then
+              do i=1,LV
+                 za_8(i) = 0.0
+                 zb_8(i) = rna(i)
+                 zat_8(i) = 0.0
+                 zbt_8(i) = rna(i)
+              enddo
+           else if (Anal_ecmwf_L) then
+                call ecmwf_ab( pia, pibb, LV)
+                do i=1,LV
+                   za_8(i) = pia(i)
+                   zb_8(i) = pibb(i)
+                   zat_8(i) = pia(i)
+                   zbt_8(i) = pibb(i)
+                enddo
+           else if (Anal_eta_L.or. Anal_hyb_L) then
+                allocate(levm(lv))
+                if (rna(1).eq.0.0) then
+*  HYBRID analysis normalized
+                   do k=1,lv
+                      levm(k) = rna(k) + (1.-rna(k))*ptopa/prefa
+                   enddo
+                else
+*  HYBRID analysis unnormalized
+                   do k=1,lv
+                      levm(k) = rna(k)
+                   enddo
+                endif 
+                call genab ( pia, pibb, levm, ptopa, rcoefa(1), LV)
+                do i=1,LV
+                   za_8(i) = pia(i)
+                   zb_8(i) = pibb(i)
+                   zat_8(i) = pia(i)
+                   zbt_8(i) = pibb(i)
+                enddo
+                deallocate(levm) 
+           endif
+      else if (anal_hav(2).eq.6) then
+*STAGGERED
+           print*, ' UU ANALYSIS LEVELS FOUND ARE:'
+           do k=1,lv
+           do i=1,lookup_max
+              if (na(k).eq.lookup_ip1(i)) then 
+                za_8(k)=lookup_a_8(i)
+                zb_8(k)=lookup_b_8(i)
+              endif
+           enddo
+           write(6,801) rna(k),k,na(k)
+           end do 
+           print*, ' TT ANALYSIS LEVELS FOUND ARE:'
+           do k=1,lv_t
+           do i=1,lookup_max
+              if (na_t(k).eq.lookup_ip1(i)) then 
+                zat_8(k)=lookup_a_8(i)
+                zbt_8(k)=lookup_b_8(i)
+              endif
+           enddo
+           write(6,801) rna_t(k),k,na_t(k)
+           end do 
+           deallocate(lookup_a_8,lookup_b_8,lookup_ip1)
       endif
+* Construct A, B vectors with corresponding IP1 vectors
+
+c     if ( .not. (Anal_hyb_L.or.Anal_eta_L) ) Pil_bmf_L = .true.
 *
       write(6,*) 'nia     =',nia,'  nja =',nja
       write(6,*) 'Anal_hyb_L=', Anal_hyb_L
       write(6,*) 'Anal_eta_L=', Anal_eta_L
       write(6,*) 'Anal_sigma_L=', Anal_sigma_L
       write(6,*) 'Anal_ecmwf_L=', Anal_ecmwf_L
-*
-      if (Anal_hyb_L.or.Anal_eta_L.or.Anal_sigma_L) then
-          if (rna(lv).ne.1.0) then
-              write(6,*)'**************************************'
-              write(6,*)'WARNING: NO topography level found!!!!'
-              write(6,*)'**************************************'
-          endif
-      endif
+      write(6,*) 'Anal_pres_L=', Anal_pres_L
 *
       if (LAM .and. (.not.Pil_bmf_L) .and. .not.done) then
           p1=ig1a
@@ -431,10 +549,6 @@
           endif
           if (nja.ne.nj1) stop
           allocate(ypx(nja))
-          allocate(levm(nka))
-          do k=1,nka
-             levm(k) = rna(k) + (1.-rna(k))*ptopa/prefa
-          enddo
           err = fstluk( ypx, key, ni1,nj1,nk1)
 
 * Check if the analysis grid is not global. 
@@ -550,34 +664,10 @@ c                 call cartall(lons,lats,carot,dimgx*dimgy)
 
           if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil,hollow).eq.0) then
 
-              print *,'e_specanal: hpalloc nja=',nja,'lv=',lv
               call hpalloc(paygv_8   ,  (nja-1)*2, err,1)
               do j=1,nja-1
                  ygv_8(j)  = ypxv(j) * deg2rad_8
               enddo
-              if (anal_hav(2).eq.1.or.anal_hav(2).eq.2) then 
-                 print *,'cannot treat eta/hyb analysis for bcs'
-                 stop
-                 call genab ( pia, pibb, levm, ptopa, rcoefa, LV)
-                 do i=1,LV
-                    pib(i) = pibb(i)*Cstv_pisrf_8
-                 enddo
-              else if (anal_hav(2).eq.6) then
-                   allocate(levm_8(lv))
-                   do i=1,lv
-                      levm_8(i) = levm(i) 
-                   enddo
-c
-c       Get special levels for momentum, thermo
-                   call genab_8 (kcode,za_8,zb_8,zat_8,zbt_8,levm_8,
-     $                  100.0d0*ptopa, 100.0d0*prefa,rcoefa,lv)
-c       Compute the real momentum and thermo levels
-                   zat_8(1) = log(100.0d0*ptopa)
-                   zbt_8(1) = 0.0d0
-                   zat_8(lv+1) = 0.0d0
-                   zbt_8(lv+1) = 1.0d0
-                   deallocate(levm_8)
-              endif
               dstf_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro,
      $        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypx(e_grdc_gjd) )
               dstu_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro,
@@ -588,40 +678,73 @@ c       Compute the real momentum and thermo levels
             write(6,*)' Abort: Insufficient coverage in Analysis'
             call e_arret('e_specanal')
           endif
-          deallocate(levm)
           deallocate(xpx)
           deallocate(ypx)
           done = .true.
       endif
       if (Pil_bcs_hollow_L) Pil_bcs_hollow_L = hollow
       if (Pil_bmf_L) then
+         call bmf_splitstart (Ptopo_npex,Ptopo_npey,'./process/','BM',
+     $                                Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
          call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
-         call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
-         call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
          call bmf_splitwrall ('RNA ',LV,1,1,Bmf_time1,Bmf_time2, 
      $                                    0,0,bmf_dtyp,0,RNA)
-         if (Anal_hyb_L.or.Anal_eta_L) then
-             call bmf_splitwrall ('PTOP',1,1,1,Bmf_time1,Bmf_time2
-     $                                  ,0,0,bmf_dtyp,0,ptopa)
-             call bmf_splitwrall ('PREF',1,1,1,Bmf_time1,Bmf_time2
-     $                                  ,0,0,bmf_dtyp,0,prefa)
-             call bmf_splitwrall ('RCOF',1,1,1,Bmf_time1,Bmf_time2
-     $                                 ,0,0,bmf_dtyp,0,rcoefa)
-             if (anal_hav(2).eq.6) 
-     $       call bmf_splitwrall ('KCOD',1,1,1,Bmf_time1,Bmf_time2
-     $                                  ,0,0,40,0,kcode)
+         call bmf_splitwrall ('ZA  ',LV,1,1,Bmf_time1,Bmf_time2, 
+     $                                    0,0,81,0,ZA_8)
+         call bmf_splitwrall ('ZB  ',LV,1,1,Bmf_time1,Bmf_time2, 
+     $                                    0,0,81,0,ZB_8)
+         call bmf_splitwrall ('ZAT ',LV_T,1,1,Bmf_time1,Bmf_time2, 
+     $                                    0,0,81,0,ZAT_8)
+         call bmf_splitwrall ('ZBT ',LV_T,1,1,Bmf_time1,Bmf_time2, 
+     $                                    0,0,81,0,ZBT_8)
+         if (anal_hav(2).eq.6) then
+*        Read, interpolate, scale and write SurF
+         allocate(p0(nifi*njfi)) 
+         if (e_rdhint3 (p0,dstf_gid,nifi,njfi,'!!SF',-1,
+     $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $         call e_arret('e_specanal')
+         call e_bmfsplitxy2 (p0 ,nifi,njfi,'P0  ',1,1,pni ,0,0,0)
+         deallocate(p0)
+         else if (anal_hav(2).eq.5.or.anal_hav(2).le.3) then
+*        Read, interpolate, scale and write P0.
+              if (e_bmfrd (dstf_gid, nifi, njfi, 'P0  ',   0.,100., -1,
+     $         1, .false.,.true.,'CUBIC').lt.0) call e_arret('e_specanal')
          endif
+
+     
       else
+*        Read and interpolate P0.
+         nis=e_Grdc_ni
+         njs=e_Grdc_nj
+         allocate(wk2(nis*njs),p0(nis*njs)) 
+         if (anal_hav(2).eq.6) then
+*        Read, interpolate, scale and write SurF
+           if (e_rdhint3 (p0,dstf_gid,nis,njs,'!!SF',-1,
+     $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $         call e_arret('e_specanal')
+         else if (anal_hav(2).eq.5.or.anal_hav(2).le.3) then
+           if (e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1,
+     $         ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $         call e_arret('e_specanal')
+*              Scale P0.
+               p0 (:) = wk2(:)*100.
+         endif 
          if (Pil_bcs_hollow_L) then
             call bcs_hollow(e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,
      $          e_grdc_gjdi,e_grdc_hbsn,e_grdc_hbwe,is,nis,js,njs,
      $          jn,iw,niw,ie,jw,njw)
             call e_sfile_bcs (pdate,is,nis,js,jn,njs,
      $              iw,ie,niw,jw,njw,'DYNAMICS',nvar)
+            call e_write_bcs (p0 ,nis,njs,
+     $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $            1 , 'S   ',unf_casc)
          else
             call e_sfile_3df (pdate,'DYNAMICS',
      $             e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf, nvar)
+            call e_write_3df ( p0 ,nis,njs,1 ,'S   ',unf_casc)
          endif
+         deallocate(p0,wk2)
       endif
 *
  101  format ('|',2x,'   Off-line Mode: Only One Level Used:',1x,I5,10x,'|')

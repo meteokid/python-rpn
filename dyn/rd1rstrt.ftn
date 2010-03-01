@@ -36,13 +36,13 @@
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 #include "glb_ld.cdk"
-#include "pres.cdk"
 #include "lam.cdk"
 #include "itf_chm_bus.cdk"
 #include "ptopo.cdk"
 #include "bcsmem.cdk"
+#include "cstv.cdk"
 *
 *modules
       integer  fnom, fclos, wkoffit
@@ -151,8 +151,7 @@ C           name and the right number of levels
 *
          endif
 *
-         read (Lun_rstrt,err=913,end=913) pres_surf
-         read (Lun_rstrt,err=914,end=914) pres_top
+         read (Lun_rstrt,err=914,end=914) Cstv_ptop_8
          read (Lun_rstrt,err=915,end=915) current_nest
          call datf2p (Lam_current_S, current_nest)
 *
@@ -342,76 +341,12 @@ C        Regroup variables in Chm_busper_cube from cubes per variable to slabs
 *
       end if
 *
-C     Check for possible coupling information
-*
-      check_flag = 0
-*
-      if (C_coupling_L      .and.
-     &    Ptopo_myproc.eq.0 .and.
-     &    wkoffit('../restart_glbcpl.bin').eq. 10) then
-*
-         Lun_rstrt = 0
-         err = fnom( Lun_rstrt,'../restart_glbcpl.bin','SEQ+UNF+OLD',0)
-
-         read (Lun_rstrt,err=924,end=924) cpl_step
-         if (cpl_step.ne.Lctl_step)
-     &      write(6,1004) 'coupling',cpl_step,Lctl_step
-*
-C        Read coupling fields dimensions
-*
-         read (Lun_rstrt,err=925,end=925) nbr_cpl, nir, njr
-*
-C        Check if the fields to read have the right size
-*
-         if (nbr_cpl .ne. ig_max_inout_dim .or.
-     &       nir     .ne. ni               .or.
-     &       njr     .ne. nj               ) then
-            write (6,1001) nir, njr, nbr_cpl,
-     &                     ni,  nj,  ig_max_inout_dim
-            check_flag = -26
-            goto 300
-         end if
-*
-         allocate ( Cpl_rla_msk     (ni*nj),
-     &              Cpl_rga_cpl2phy (ni*nj*nbr_cpl) )
-*
-         read (Lun_rstrt,err=927,end=927) Cpl_rla_msk 
-         read (Lun_rstrt,err=928,end=928) Cpl_rga_cpl2phy
-*
-         err = fclos( Lun_rstrt )
-*
-         goto 300
- 924     check_flag = -24
-         goto 300
- 925     check_flag = -25
-         goto 300
- 927     check_flag = -27
-         goto 300
- 928     check_flag = -28
-*
-      end if
-*
- 300  call RPN_COMM_bcast (check_flag,1,"MPI_INTEGER",0,"grid",err)
-      call gem_stop ('RD1RSTRT- ABORT -',check_flag)
-*
-      if (C_coupling_L) then
-*
-         call glbdist (Cpl_rla_msk,ni,nj,
-     &                     rla_msk,1,l_ni,1,l_nj,1,0,0)
-         call glbdist (Cpl_rga_cpl2phy,ni,nj,
-     &                     rga_cpl2phy,1,l_ni,1,l_nj,ig_max_inout_dim,0,0)
-
-         if (Ptopo_myproc.eq.0) deallocate (Cpl_rla_msk,Cpl_rga_cpl2phy)
-*
-      end if
-*
 C     Distribute other scalar variables to all processors
 *
       call RPN_COMM_bcast (Lctl_step,1,"MPI_INTEGER",0,"grid",err)
       call RPN_COMM_bcast (Rstri_idon_L,1,"MPI_LOGICAL",0,"grid",err)
 *
-      call RPN_COMM_bcast (pres_surf,1,"MPI_REAL",0,"grid",err)
-      call RPN_COMM_bcast (pres_top,1,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Cstv_ptop_8,1,"MPI_DOUBLE_PRECISION",0,"grid",err)
       call RPN_COMM_bcast (Lam_current_S,16,"MPI_CHARACTER",0,"grid",err)
 *
  1000 format (/' LAM MODE NOT SUPPORTED BY RD1RSTRT...'/)

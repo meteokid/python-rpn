@@ -84,10 +84,6 @@
 *
         endif
 *
-*C       Initialize coupling (nothing is done if no coupling)
-*         -------------------
-        call itf_cpl_set_coupling()
-*
       endif
 *
       Rstri_sdon = 0

@@ -1,316 +1,49 @@
-! ------------------------------------------------------------------------------------------------------------------------------
-! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
-! 
-! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
-! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-! 
-! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
-! 
-! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
-! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
-! ------------------------------------------------------------------------------------------------------------------------------
-***s/r itf_cpl_fillbus - Fill the slice workspace variable for the physics
+***s/r itf_cpl_fillbus -
 *
 #include "model_macros_f.h"
 *
-      SUBROUTINE itf_cpl_fillbus( F_busdyn, F_busper, F_busvol, F_jdo)
+      subroutine itf_cpl_fillbus ( f_busdyn, f_busper, f_busvol, f_jdo)
+      implicit none
 *
-      IMPLICIT NONE
+      integer f_jdo
+      real f_busdyn(*), f_busper(*), f_busvol(*)
 *
-      INTEGER F_jdo
-      REAL F_busdyn(*),F_busper(*), F_busvol(*)
-*
-*author 
-*     Pierre Pellerin - rpn - December 2004
-*
+*authors    Michel Desgagne - Spring 2008
+* 
 *revision
-*     Sophie Valcke - rpn/cerfacs - June 2005
-*     Stephane Chamberland - rpn - Feb 2006 - wind rotation
-* v3_30 - Faucher & Chamberland   - final adjustment-debugging
-*
-*object
-*     Inject surface fields from coupling to affect the physics
-*
-*arguments
-*  Name        I/O                 Description
-*----------------------------------------------------------------
-* F_busdyn      I       - dynamic bus
-* F_busper      I       - permanent bus
-* F_busvol      I       - volatile bus
-* F_jdo         I       - slice number being processed
-*----------------------------------------------------------------
+* v3_31 - Desgagne M.       - initial MPI version
+**
 *
 *implicits
 #include "glb_ld.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_phy_busind.cdk"
-#include "itf_cpl_cplg.cdk"
-#include "lctl.cdk"
+#include "itf_cpl.cdk"
 *
-      INTEGER i, n, ii, indx, idep, il_cnt, il_deb, l_ninj, l_niFjm1
-      INTEGER il_n, il_nkm1
-      INTEGER offpw, offgw, offpi, offgi, gid
-      integer il_deb_u,il_deb_v
-      real uurot,vvrot,uull,vvll,lat,lon
-*
-**    GOMSST=.T. ===> utilise les SST(gom) dans GEM au lieu des analyses;
-*     On utilise aussi la fraction de glace, epaisseur et masque de gom;
+      integer soit,lght, cpl_mcp,cpl_i7,cpl_tm,cpl_gl,cpl_i8
+**
 *     ---------------------------------------------------------------
 *
-      il_cnt   = 0
-      il_n     = 1
-      l_ninj   = l_ni*l_nj
-      il_nkm1  = l_ninj*(l_nk-2)
-      l_niFjm1 = l_ni*(F_jdo-1)
+      call getindx ('MCCPL'     ,  'D', cpl_mcp, lght, soit)
+      call getindx ('TMICECPL'  ,  'D', cpl_i7 , lght, soit)
+      call getindx ('TWATERCPL' ,  'D', cpl_tm , lght, soit)
+      call getindx ('GLCPL'     ,  'D', cpl_gl , lght, soit)
+      call getindx ('ICEDPCPL'  ,  'D', cpl_i8 , lght, soit)
 *
-      IF (C_cpld2atmos_L) THEN
+      f_busdyn(cpl_mcp:cpl_mcp+p_ni-1) = 
+     $         atm_local_busin(1+p_offi:p_ni+p_offi,f_jdo,1)
+      f_busdyn(cpl_i7 :cpl_i7 +p_ni-1) = 
+     $         atm_local_busin(1+p_offi:p_ni+p_offi,f_jdo,2)
+      f_busdyn(cpl_tm :cpl_tm +p_ni-1) = 
+     $         atm_local_busin(1+p_offi:p_ni+p_offi,f_jdo,3)
+      f_busdyn(cpl_gl :cpl_gl +p_ni-1) = 
+     $         atm_local_busin(1+p_offi:p_ni+p_offi,f_jdo,4)
+      f_busdyn(cpl_i8 :cpl_i8 +p_ni-1) = 
+     $         atm_local_busin(1+p_offi:p_ni+p_offi,f_jdo,5)
 *
-         IF (iga_n_t8a(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_t8a(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(tmoins+il_nkm1+indx) = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
+*     ---------------------------------------------------------------
+*
+      return
+      end
 
-!SC   is it a good idea to allow coupling of only one of the wind component?
-!     might be better to call wind_ on the whole slice, not a every points
-         IF ((iga_n_u8a(il_n).gt.0).and.(iga_n_v8a(il_n).gt.0)) then
-            il_deb_u  = l_ninj*(iga_n_u8a(il_n)-1) + l_niFjm1
-            il_deb_v  = l_ninj*(iga_n_v8a(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 2
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               call wind_ll2rot(F_busdyn(umoins+il_nkm1+indx),
-     $                          F_busdyn(vmoins+il_nkm1+indx),
-     $               rga_cpl2phy(il_deb_u+ii),rga_cpl2phy(il_deb_v+ii),
-     $               F_busper(dlon+indx),F_busper(dlat+indx),1)
-            enddo
-         endif
-*
-         IF (iga_n_h8a(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_h8a(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(humoins+il_nkm1+indx) = rga_cpl2phy(il_deb+ii)
-             END DO
-         ENDIF
-         IF (iga_n_p8a(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_p8a(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(pmoins+indx) = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_fba(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fba(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busper(flusolis+indx) = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_fia(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fia(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busper(fdsi+indx) = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_rta(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_rta(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busvol(rt+indx) = rga_cpl2phy(il_deb+ii)
-             END DO
-         ENDIF
-*
-      ENDIF
-*
-      IF (C_cpld2land_L) THEN
-*
-         IF (iga_n_fcl(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fcl(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(fccpl+(ig_indx_soil-1)*p_ni+indx) 
-     $             = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_fcg(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fcg(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(fccpl+(ig_indx_glacier-1)*p_ni+indx) 
-     $              = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_fvl(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fvl(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(fvcpl+(ig_indx_soil-1)*p_ni+indx) 
-     $              = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_fvg(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fvg(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(fvcpl+(ig_indx_glacier-1)*p_ni+indx) 
-     $              = rga_cpl2phy(il_deb+ii)
-             END DO
-         ENDIF
-         IF (iga_n_mcl(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_mcl(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(mccpl+(ig_indx_soil-1)*p_ni+indx) 
-     $              = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_mcg(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_mcg(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(mccpl+(ig_indx_glacier-1)*p_ni+indx) 
-     $              = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-*
-      ENDIF
-*
-      IF (C_cpld2ocean_L) THEN 
-*
-         IF (GOMSST .and. (Lctl_step .gt. 3)) then
-            IF (iga_n_glw(il_n) .gt. 0) THEN
-               il_deb  = l_ninj*(iga_n_glw(il_n)-1) + l_niFjm1
-               il_cnt  = il_cnt + 1
-               DO i = 1, p_ni
-                  indx = i-1
-                  ii = i + p_offi
-                  IF ((rga_cpl2phy(l_ninj*(iga_n_mcw(il_n)-1) + l_niFjm1+ii).gt.0.5) 
-     $                .and. (rla_msk(l_niFjm1+ii).gt.0.5))
-     $            F_busper(glsea+indx) = min(1.,max(0.,rga_cpl2phy(il_deb+ii)))
-               END DO
-            ENDIF
-            IF (iga_n_i8w(il_n) .gt. 0) THEN
-               il_deb  = l_ninj*(iga_n_i8w(il_n)-1) + l_niFjm1
-               il_cnt  = il_cnt + 1
-               DO i = 1, p_ni
-                  indx = i-1
-                  ii = i + p_offi
-                  IF ((rga_cpl2phy(l_ninj*(iga_n_mcw(il_n)-1) + l_niFjm1+ii).gt.0.5) 
-     $                .and. (rla_msk(l_niFjm1+ii).gt.0.5))
-     $            F_busper(icedp+indx) = rga_cpl2phy(il_deb+ii)
-               END DO
-            ENDIF
-            IF (iga_n_i7w(il_n) .gt. 0) THEN
-               il_deb  = l_ninj*(iga_n_i7w(il_n)-1) + l_niFjm1
-               il_cnt  = il_cnt + 1
-               DO i = 1, p_ni
-                  indx = i-1
-                  ii = i + p_offi
-                  IF ((rga_cpl2phy(l_ninj*(iga_n_mcw(il_n)-1) + l_niFjm1+ii).gt.0.5) 
-     $                .and. (rla_msk(l_niFjm1+ii).gt.0.5))
-     $            F_busper(tmice+indx) = rga_cpl2phy(il_deb+ii)
-               END DO
-            ENDIF
-            IF (iga_n_tmw(il_n) .gt. 0) THEN
-               il_deb  = l_ninj*(iga_n_tmw(il_n)-1) + l_niFjm1
-               il_cnt  = il_cnt + 1
-               DO i = 1, p_ni
-                  indx = i-1
-                  ii = i + p_offi
-                  IF ((rga_cpl2phy(l_ninj*(iga_n_mcw(il_n)-1) + l_niFjm1+ii).gt.0.5) 
-     $                .and. (rla_msk(l_niFjm1+ii).gt.0.5))
-     $            F_busper(twater+indx) = rga_cpl2phy(il_deb+ii)
-               END DO
-            ENDIF
-         ENDIF
-*
-         IF (iga_n_fcw(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fcw(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(fccpl+(ig_indx_water-1)*p_ni+indx) = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_fci(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fci(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(fccpl+(ig_indx_ice-1)*p_ni+indx) = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_fvw(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fvw(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(fvcpl+(ig_indx_water-1)*p_ni+indx) = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-         IF (iga_n_fvi(il_n) .gt. 0) THEN
-            il_deb  = l_ninj*(iga_n_fvi(il_n)-1) + l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(fvcpl+(ig_indx_ice-1)*p_ni+indx) = rga_cpl2phy(il_deb+ii)
-            END DO
-         ENDIF
-*
-         il_deb  = l_niFjm1
-         il_cnt  = il_cnt + 1
-         DO i = 1, p_ni
-            indx = i-1
-            ii = i + p_offi
-            F_busdyn(mccpl+(ig_indx_water-1)*p_ni+indx) = rla_msk(il_deb+ii)
-         END DO
-         IF (iga_n_mci(il_n) .gt. 0) THEN
-            il_deb  = l_niFjm1
-            il_cnt  = il_cnt + 1
-            DO i = 1, p_ni
-               indx = i-1
-               ii = i + p_offi
-               F_busdyn(mccpl+(ig_indx_ice-1)*p_ni+indx) = rla_msk(il_deb+ii)
-            END DO
-         ENDIF
-*
-      ENDIF
-*
-*     ---------------------------------------------------------------
-*
-      RETURN
-      END
+      
+      

@@ -66,7 +66,7 @@
 *
       character*16, dimension (:,:), allocatable ::  listgeonm
       character*256 fn
-      integer key1(12),nvar,err,unf,errop,ungeo,dat,k,
+      integer key1(10),nvar,err,unf,errop,ungeo,dat,k,
      $        err_geo,skipcode
 *
 *     ---------------------------------------------------------------
@@ -83,9 +83,7 @@
       key1( 6) = VMM_KEY(  st1)
       key1( 7) = VMM_KEY(fiptx)
       key1( 8) = VMM_KEY( topo)
-      key1( 9) = VMM_KEY( topu)
-      key1(10) = VMM_KEY( topv)
-      nvar = 10
+      nvar = 8
 *
       if (Vtopo_L) then
          key1(nvar+1) = VMM_KEY(dtopo)
@@ -107,8 +105,6 @@
       err = VMM_GET_VAR(  st1)
       err = VMM_GET_VAR(fiptx)
       err = VMM_GET_VAR( topo)
-      err = VMM_GET_VAR( topu)
-      err = VMM_GET_VAR( topv)
 *
 *     Equivalencing Ind_u to ut1
 *
@@ -120,8 +116,6 @@
       Ind_s_   = st1_
       Ind_fip_ = fiptx_
       Ind_topo_= topo_
-      Ind_topu_= topu_
-      Ind_topv_= topv_
 *
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(qt1)
@@ -137,6 +131,7 @@
       if (skipcode.eq.1) goto 9999
 *
       err_geo = readgeo()
+      if (.not.Schm_phyms_L) err_geo = 0
       allocate (listgeonm(2,p_bgeo_top))
       listgeonm(1,:) = geonm(:,1)
       listgeonm(2,:) = 'NIL'

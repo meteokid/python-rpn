@@ -60,7 +60,6 @@
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
 #include "itf_phy_vmm.cdk" 
-#include "itf_cpl_cplg.cdk"
 #include "grdc.cdk"
 #include "geomn.cdk"
 #include "out3.cdk"
@@ -141,10 +140,6 @@ c$$$     $                                           LDIST_DIM,p_nk)
 *
       Mem_pslic = 0
 *
-!SC TODO: must parameterize the numbers 6*4 to CPL_NBFLDS*CPL_NBTYPE
-      if (C_coupling_L .and. lg_getfirst) 
-     $    call phycom ('CPL_FLD' ,iga_cplfld ,6*4,'set')
-*
       tdu=0. ; tdv=0.
 *
       call pe_rebind(1)
@@ -181,7 +176,7 @@ c$$$         if (cobussiz>0) deallocate (cobusval)
             cobussiz=p_bper_siz/(p_ni)
             allocate (cobusval(l_ni*l_nj,cobussiz))
             call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,
-     $                   .false.,-1,-1,1,'',Geomn_longs,Geomn_latgs)
+     $                   .false.,1,'','')
 
             call datf2p (pdate,Out3_date)
             dayfrac = dble(F_stepno) * Cstv_dt_8 / sec_in_day

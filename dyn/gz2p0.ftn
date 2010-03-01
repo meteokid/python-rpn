@@ -14,19 +14,18 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine gz2p0 (F_ps, F_gz, F_topo, F_zcol, F_tcol, F_sdd, F_lna, 
-     $                             NN, Nk)
+      subroutine gz2p0(F_ps, F_gz, F_topo,F_rna,NN, Nk)
 *
 #include "impnone.cdk"
 *
       integer NN,Nk
-      real F_gz(NN,Nk), F_zcol(NN,Nk),  F_tcol(NN,Nk),
-     $     F_ps(NN), F_lna(Nk), F_sdd(Nk),F_topo(NN)
+      real F_gz(NN,Nk), F_ps(NN), F_rna(Nk),F_topo(NN)
 *
 *author - Vivian Lee     - Feb   2002 - v0_06 (taken from e_intscl - M.Roch)
 *
 *revision
 * v3_00 - Lee V.               - Initial version
+* v4_03 - Lee V.               - converted to bring back only log p0.
 *
 *
 *object
@@ -35,17 +34,12 @@
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
-* F_gz         O    - geopotential height
-* F_pia        I    - actually RNA if F_sig_L=T
-*                   - pia          if F_sig_L=F
-* F_pib        I    - unused       if F_sig_L=T
-*                   - pib          if F_sig_L=F and F_pib_L=T
-*                   - pibb         if F_sig_L=F and F_pib_L=F
-* F_ps         I    - ln(pi_s/z_s) if F_pib_L=T
-*                   - pi_S         if F_pib_L=F or F_sig_L=T
-* F_vt         I    - virtual temperature
-* F_pib_L      I    - TRUE or FALSE
-* F_sig_L      I    - TRUE or FALSE
+* F_ps         O    - ln(pi_s/z_s)
+* F_gz         I    - geopotential height
+* F_topo       I    - topography
+* F_rna        I    - pressure levels from pressure analyse
+* NN           I    - number of points on the plane
+* Nk           I    - number of levels from the pressure analyse
 *
 *implicits
 #include "lun.cdk"
@@ -55,28 +49,63 @@
 *
 **
       integer i,k
-      real conv,acc,guess(NN)
+      real conv,acc,guess(NN),lna(Nk),sdd(Nk)
+      real zcol(NN,Nk), a(NN),tcol(NN,Nk)
 *
 *     ---------------------------------------------------------------
 *
       acc = .1 * Dcst_grav_8
       conv = alog(100.)
-      do k=1,NK
+*     Convert millibar to log of pascal unit - Pressure Analysis
+      do k=1,Nk
+         lna(k) = alog(F_rna(k))
+      enddo
+      do k=1,Nk-1
+         sdd(k) = 1./(lna(k+1)-lna(k))
+      enddo
+      do k=1,Nk
          do i=1,NN
-            F_zcol(i,k) = Dcst_grav_8*F_gz(i,k)
+            zcol(i,k) = Dcst_grav_8*F_gz(i,k)
          enddo
       enddo
 *
-*     Compute derivative of geopotential
+*     Compute derivative of geopotential (from vdfds)
 *
-      call vdfds (F_tcol, F_zcol, F_sdd, NN, NK, 1., 1.)
+      do k=1,Nk-1
+      do i=1,NN
+         tcol(i,k+1) = sdd(k)*(zcol(i,k+1)-zcol(i,k))
+      enddo
+      enddo
+*
+      do i=1,NN
+        a(i) = tcol(i,2)
+      enddo
+*
+      do k=2,Nk-1
+      do i=1,NN
+         tcol(i,k) = (sdd(k)*tcol(i,k+1)+sdd(k-1)*tcol(i,k))
+     $               /(sdd(k)+sdd(k-1))
+      enddo
+      enddo
+*
+*     BOUNDARIES
+      do i=1,NN
+         tcol(i,1) = a(i)
+         tcol(i,Nk) = tcol(i,Nk)
+      enddo
+*     Derived VT can be used here for input if non-existent in the analysis
+*     do k=1,Nk
+*     do i=1,NN
+*        Ind_t(i,k) = -tcol(i,k)/Dcst_rgasd_8
+*     enddo
+*     enddo
 *
 *     Compute pressure at the surface (PS)
       do i=1,NN
-         guess(i) = F_lna(NK)-F_topo(i)/(Dcst_rgasd_8*250.)
+         guess(i) = lna(Nk)-F_topo(i)/(Dcst_rgasd_8*250.)
       enddo
 *
-      call vterp1 (guess,F_topo,F_zcol,F_tcol,F_lna,acc,NN,NK)
+      call vterp1 (guess,F_topo,zcol,tcol,lna,acc,NN,Nk)
       do i=1,NN
          F_ps(i) = guess(i) + conv
       enddo

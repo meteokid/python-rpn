@@ -130,7 +130,6 @@
       real wtmp(l_ni,nkphy-1),wtmp2(l_ni,nkphy-1),ztmp(l_ni,l_nj)
       real*8 r0
       real, dimension(LDIST_SHAPE,nkphy) :: summqj, sumpqj, vmm   
-      real*8, dimension(LDIST_SHAPE) :: lnpis_8
       pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
       pointer (pavmm, vmm)
 *
@@ -146,7 +145,11 @@
       key( 8) = VMM_KEY(st1)
       key( 9) = VMM_KEY(fiptx)
       key(10) = VMM_KEY(topo)
-      key(11) = VMM_KEY(piup)
+      if(G_lam)then
+         key(11) = VMM_KEY(wt1)
+      else
+         key(11) = VMM_KEY(piup)
+      endif         
       pnlod = 11
       if (.not. Schm_hydro_L ) then
         key(12) = VMM_KEY(qt1)
@@ -157,16 +160,20 @@
       err = VMM_GET_VAR(ut0)
       err = VMM_GET_VAR(vt0)
       err = VMM_GET_VAR(tt0)
-      err = VMM_GET_VAR(st0)   !ln (pi_s/z_s)
+      err = VMM_GET_VAR(st0)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(st1)   !ln (pi_s/z_s)
-      err = VMM_GET_VAR(fiptx) !phi
-      err = VMM_GET_VAR(topo)  !Phi at the surface (xfis) with halos on it
-      err = VMM_GET_VAR(piup)  !Upstream hydrostatic pressure at t-dt for omega
+      err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(fiptx)
+      err = VMM_GET_VAR(topo)
+      if(G_lam)then
+         err = VMM_GET_VAR(wt1)
+      else
+         err = VMM_GET_VAR(piup)
+      endif
       if (.not. Schm_hydro_L ) then
-         err = VMM_GET_VAR(qt1) !q''
+         err = VMM_GET_VAR(qt1)
       endif
 *
       keyd(1) = VMM_KEY(p_uplus)
@@ -231,47 +238,38 @@
 *     -----------------------
 
 c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is computed at the end
-      do j=1,l_nj
-         do i=1,l_ni 
-            lnpis_8(i,j)=st1(i,j)+Ver_z_8%t(G_nk+1)
-            p_pplus(i,j) = exp(lnpis_8(i,j))
-            p_sigm_m(i,j,nkphy) = p_pplus(i,j)
-            p_sigm_t(i,j,nkphy) = p_pplus(i,j)
-         end do
-      end do
 
       do j=1,l_nj
          do i=1,l_ni
-            p_sigm_m(i,j,1) = exp(Ver_a_8%t(1))
+            p_sigm_m(i,j,1) = Cstv_ptop_8
          enddo
       enddo
 *
-      do k=2,l_nk+1
-         do j=1,l_nj
-            do i=1,l_ni
-               p_sigm_m(i,j,k) = exp(Ver_a_8%m(k-1) 
-     $                           + Ver_b_8%m(k-1)*lnpis_8(i,j))
-            enddo
-         enddo
-      enddo         
-*
-      do k=1,nkphy-2
+      do k=1,nkphy-1
          do j=1,l_nj
          do i=1,l_ni
+            p_sigm_m(i,j,k+1) = exp( Ver_a_spcl_8%m(k) 
+     $                             + Ver_b_spcl_8%m(k)*st1(i,j) )
             p_sigm_t(i,j,k)  = sqrt(p_sigm_m(i,j,k+1)*p_sigm_m(i,j,k))
          enddo
          enddo
-      enddo
-      do j=1,l_nj
-      do i=1,l_ni
-         p_sigm_t(i,j,nkphy-1) = sqrt(p_pplus(i,j)*p_sigm_m(i,j,nkphy-1))
-      enddo
-      enddo
+      enddo         
 *
+      do j=1,l_nj
+         do i=1,l_ni
+            p_pplus(i,j) = p_sigm_m(i,j,nkphy)
+            p_sigm_t(i,j,nkphy) = p_sigm_m(i,j,nkphy)
+         end do
+      end do
+
 *     compute vertical omega
 *     -----------------------
 *
-      call calomeg_adv (p_omegap,st1,piup,LDIST_DIM,l_nk,.false.)
+      if(G_lam)then
+         call calomeg_w (p_omegap,st1,wt1,tt1,LDIST_DIM,l_nk)            
+      else
+         call calomeg_adv (p_omegap,st1,piup,LDIST_DIM,l_nk,.false.)
+      endif
 !     calomeg_adv compute p_omegap up to nkphy-2+1 
 !     p_omegap(nkphy)=p_omegap(nkphy-1)  below
 
@@ -282,22 +280,29 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
 *
       do j=1,l_nj
 
-         do i= 1, l_ni
-            p_omegap(i,j,nkphy-1) = 0.25*(p_omegap(i,j,nkphy-2) + 3.*p_omegap(i,j,nkphy-1))
-         enddo
+         if(Schm_virlev_L)then
+            do i= 1, l_ni
+               p_omegap(i,j,nkphy-1) = 0.25d0*p_omegap(i,j,nkphy-2) 
+     $                               + 0.75d0*p_omegap(i,j,nkphy-1)
+            enddo
+         endif
          call vsexp (ztmp(1,j),st0(1,j),l_ni)
 *
          do i= 1, l_ni
             xtmp(i,1)     = log(p_sigm_t(i,j,1))
-            xtmp(i,nkphy) = lnpis_8(i,j)
+            xtmp(i,nkphy) = st1(i,j)+Cstv_Zsrf_8
             wtmp2(i,1)      = p_sigm_t(i,j,1)
-            p_gzplus(i,j,1) = 0.5*(fiptx(i,j,0)+fiptx(i,j,1))+Ver_fistr_8%t(1)
+            if(Schm_virlev_L)then
+               p_gzplus(i,j,1) = 0.5*(fiptx(i,j,0)+fiptx(i,j,1))+Ver_fistr_8%t(1)
+            else
+               p_gzplus(i,j,1) = fiptx(i,j,0)+Ver_fistr_8%m(0)
+            endif
             p_gzplus(i,j,nkphy) =  topo(i,j)
          enddo
          do k= 2, nkphy-1
          do i= 1, l_ni
-            xtmp(i,k) = Ver_a_8%m(k-1) + 
-     $           Ver_b_8%m(k-1)*lnpis_8(i,j)
+            xtmp(i,k) = Ver_a_spcl_8%m(k-1) + 
+     $                  Ver_b_spcl_8%m(k-1)*st1(i,j)
             wtmp2(i,k) = p_sigm_t(i,j,k)
             p_gzplus(i,j,k) = fiptx(i,j,k-1)+Ver_fistr_8%m(k-1)
          enddo
@@ -327,7 +332,7 @@ c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is c
 *        -----------------------------------------------------------
          do i= 1, l_ni
 c$$$ TODO: recheck p_pmoins [i.e. ztmp]
-            p_pmoins(i,j)        = ztmp(i,j)*Cstv_pisrf_8
+            p_pmoins(i,j)        = ztmp(i,j)*Cstv_pref_8
 c           p_umoins(i,j,nkphy)  = p_umoins(i,j,nkphy-1) 
 c           p_vmoins(i,j,nkphy)  = p_vmoins(i,j,nkphy-1) 
             p_gzplus(i,j,nkphy)= 0.
@@ -400,7 +405,7 @@ c           p_vplus(i,j,nkphy)   = p_vplus(i,j,nkphy-1)
       sigsfc=1.-(min(dt,dzsedi))/10000.
 
       do k=G_nk+1,1,-1     
-         if (Ver_hybm%t(k).lt.sigsfc) go to 100
+         if (exp(Ver_z_8%t(k))/100000.0.lt.sigsfc) go to 100
       end do
  100  nksurf = min(G_nk+1,k+1)
 *
@@ -413,7 +418,7 @@ c           p_vplus(i,j,nkphy)   = p_vplus(i,j,nkphy-1)
 c$$$ TODO: optimize with vslog
          dzmin_= min(1.0d0*(dzmin_),
      $   Dcst_rgasd_8*(0.5d0*(F_tp(i,j,G_nk+1)+ F_tp(i,j,G_nk)))/
-     $   Dcst_grav_8*dlog(1.0d0*(Ver_hybm%t(G_nk+1)/Ver_hybm%t(G_nk))))
+     $   Dcst_grav_8*(Ver_z_8%t(G_nk+1)-Ver_z_8%t(G_nk)))
         end do
         end do
 *
@@ -425,11 +430,11 @@ c$$$ TODO: optimize with vslog
 c$$$ TODO: optimize with vslog
          dzmin_= min(1.0d0*(dzmin_),
      $      Dcst_rgasd_8*(0.5d0*(F_tp(i,j,nksurf-1)+F_tp(i,j,nksurf-2)))/
-     $      Dcst_grav_8 *dlog(1.0d0*(Ver_hybm%t(nksurf-1)/Ver_hybm%t(nksurf-2))))
+     $      Dcst_grav_8*(Ver_z_8%t(nksurf-1)-Ver_z_8%t(nksurf-2)))
 c$$$ TODO: optimize with vslog
          dzmin_= min(1.0d0*(dzmin_),
      $      Dcst_rgasd_8*(0.5d0*(F_tp(i,j,G_nk+1)+F_tp(i,j,nksurf-1)))/
-     $      Dcst_grav_8 *dlog(1.0d0*(Ver_hybm%t(G_nk+1)/Ver_hybm%t(nksurf-1))))
+     $      Dcst_grav_8*(Ver_z_8%t(G_nk+1)-Ver_z_8%t(nksurf-1)))
         end do
         end do
 *

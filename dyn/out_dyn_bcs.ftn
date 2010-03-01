@@ -99,7 +99,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       call write_bcs (  st1,l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
      $                  njs,iw,ie,niw,jw,njw,     1,'S   ',1.0,ind_o,unf)
       call write_bcs ( topo,l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
-     $                  njs,iw,ie,niw,jw,njw,     1,'ME  ',1.0,ind_o,unf)
+     $                  njs,iw,ie,niw,jw,njw,     1,'GZ  ',1.0,ind_o,unf)
       call write_bcs (  wt1,l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,
      $                  njs,iw,ie,niw,jw,njw,G_nk+1,'W   ',1.0,ind_o,unf)
       call write_bcs ( zdt1,l_minx,l_maxx,l_miny,l_maxy,is,nis,js,jn,

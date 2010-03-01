@@ -51,7 +51,6 @@
 #include "itf_phy_buses.cdk"
 #include "geobus.cdk"
 #include "itf_phy_config.cdk"
-#include "itf_cpl_cplg.cdk"
 *
 *MODULES
 *
@@ -87,10 +86,6 @@
 *
       call mgsdict (ni, nj, mg,    
      $'VN=mgen    ; VS=row  ; EN=mg; INTERP=NEAREST ; SEQ=G' )
-      IF (C_coupling_L) then
-         call mgsdict (ni, nj, mcpl,    
-     $   'VN=mcpl    ; VS=row  ; EN=mcpl; INTERP=NEAREST ; SEQ=G' )
-      endif
       call mgsdict (ni, nj, twater,
      $'VN=twateren; VS=row  ; EN=tm; INTERP=LINEAR; SEQ=AV')
       call mgsdict (ni, nj, lhtg,  

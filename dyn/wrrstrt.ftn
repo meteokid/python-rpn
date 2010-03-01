@@ -25,7 +25,6 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_10 - Desgagne M.       - introduce WA files
 * v2_21 - Dugas B.          - adapt to climate mode
-* v2_30 - Corbeil L.        - Added writing of pres_surf pres_top
 * v2_31 - Desgagne M.       - Add Tr2d tracers
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_21 - Valcke, S.        - Oasis coupling: Removed wawrit of c_cplg_step
@@ -45,13 +44,13 @@
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 #include "glb_ld.cdk"
-#include "pres.cdk"
 #include "lam.cdk"
 #include "itf_chm_bus.cdk"
 #include "bcsmem.cdk"
 #include "zblen.cdk"
+#include "cstv.cdk"
 *
 *
 *modules
@@ -115,9 +114,7 @@ C        Write one wa-file per tile
             adr = adr + bcs_siz_tot
          endif
 *
-         call wawrit (Lun_rstrt, pres_surf ,adr, 1)
-         adr = adr + 1
-         call wawrit (Lun_rstrt, pres_top  ,adr, 1)
+         call wawrit (Lun_rstrt, Cstv_ptop_8,adr, 2)
          call datp2f (current_nest,Lam_current_S )
          adr = adr + 1
          call wawrit (Lun_rstrt, current_nest  ,adr, 1)
@@ -127,17 +124,15 @@ C        Write one wa-file per tile
             call wawrit (Lun_rstrt,Zblen_hmin,adr, 1)
          endif
 *
-!        Write global coupling information
-!        found in rla_msk and rga_cpl2phy
-*
-         if (C_coupling_L) then
-            call wawrit (Lun_rstrt, rla_msk ,adr, l_ni*l_nj)
-            adr = adr + l_ni*l_nj
-            dim = l_ni*l_nj*ig_max_inout_dim
-            call wawrit (Lun_rstrt, rga_cpl2phy ,adr, dim)
-            adr = adr + dim
+         dim = 0
+         if (C_coupling_L) dim = nbusin
+         call wawrit (Lun_rstrt,dim           ,adr, 1)
+         adr = adr + 1
+         if (dim>0) then
+            call wawrit (Lun_rstrt, atm_busin ,adr, G_ni*dim)
+            adr = adr + G_ni*dim
          endif
-*     
+*
 C        Write Vmm-files
          ier = vmmckmx()
          call waclos(Lun_rstrt)

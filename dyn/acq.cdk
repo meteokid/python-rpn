@@ -19,16 +19,16 @@
 *
 *
 #endif
-      integer  Acqi_datasp(2), Acqi_vterplv, Acqi_kcode,
+      integer  Acqi_datasp(2), Acqi_vterplv(2), Acqi_vcode,
      $         Acqi_niu, Acqi_nju  , Acqi_niv, Acqi_njv, Acqi_nim,
      $         Acqi_njm, Acqi_nktmp, Acqi_nbpts
-      real     Acqr_prefa, Acqr_ptopa, Acqr_rcoefa
+      real     Acqr_prefa, Acqr_ptopa, Acqr_rcoefa(2)
 *      
       logical  Acql_etaanl , Acql_siganl , Acql_hybanl, Acql_prsanl,
      $         Acql_vertint, Acql_horzint, Acql_nesd, Acql_ecmanl,
      $         Acql_staganl
 *
-      common / acqi / Acqi_datasp,Acqi_vterplv, Acqi_kcode,
+      common / acqi / Acqi_datasp,Acqi_vterplv, Acqi_vcode,
      $                Acqi_niu,Acqi_nju,Acqi_niv,Acqi_njv,Acqi_nim,
      $                Acqi_njm,Acqi_nktmp,Acqi_nbpts
 *

@@ -39,11 +39,12 @@
 *----------------------------------------------------------------------|
 * Ver_dbdz_8%(t,m)   | vertical derivative of B                        |
 *----------------------------------------------------------------------|
-* Ver_hyb_8%(t,m)    | hybrid level as defined by user                 |
-*----------------------------------------------------------------------|
-* Ver_hybm_8%(t,m)   | hybrid level calculated by model                |
-*----------------------------------------------------------------------|
-* Ver_fistr_8        | fistar: geopotential basic state                |
+* Ver_fistr_8%(t,m)  | fistar: geopotential basic state                |
+* Ver_dBdZa_8_m      | dB/dZ calculated analytically                   |
+* Ver_wp_8_m         | first  weights for averaging at momentum levels |
+* Ver_wm_8_m         | first  weights for averaging at momentum levels |
+* Ver_w2p_8_m        | second weights for averaging at momentum levels |
+* Ver_w2m_8_m        | second weights for averaging at momentum levels |
 *-----------------------------------------------------------------------
 *
 #endif
@@ -56,26 +57,30 @@
       type (vertical_8) Ver_dbdz_8  
       type (vertical_8) Ver_a_spcl_8
       type (vertical_8) Ver_b_spcl_8
-      type (vertical_8) Ver_hyb_8
-      type (vertical_8) Ver_hybm_8
       type (vertical_8) Ver_fistr_8
 *
       type (vertical)   Ver_hyb
-      type (vertical)   Ver_hybm
+*
+      real*8, dimension(:),pointer :: Ver_dBdZa_8_m,Ver_wp_8_m,Ver_wm_8_m 
+     $                                           ,Ver_w2p_8_m,Ver_w2m_8_m
+     $                                           ,Ver_w3p_8_m,Ver_w3m_8_m
+      real :: Ver_hyb_top
 *
 *
       common /ver_v8/ Ver_a_8,Ver_b_8,Ver_z_8,Ver_dz_8,Ver_idz_8,Ver_dbdz_8,
-     $     Ver_a_spcl_8,Ver_b_spcl_8,Ver_hyb_8,
-     $     Ver_hybm_8,Ver_fistr_8
+     $                Ver_a_spcl_8,Ver_b_spcl_8,Ver_fistr_8,Ver_dBdZa_8_m,
+     $                Ver_wp_8_m,Ver_wm_8_m,
+     $                Ver_w2p_8_m,Ver_w2m_8_m,Ver_w3p_8_m,Ver_w3m_8_m
 *
-      common /ver_v/ Ver_hyb,Ver_hybm
+      common /ver_v/ Ver_hyb,Ver_hyb_top
 *
-      real*8 Ver_alphas_8,Ver_css_8,Ver_cssp_8
-      real*8 Ver_alphat_8,Ver_cst_8,Ver_cstp_8
-      real*8 Ver_epsilon_8,Ver_gamma_8,Ver_gokt2RT_8
-      common / alphast / Ver_alphas_8,Ver_css_8,Ver_cssp_8,
-     $                   Ver_alphat_8,Ver_cst_8,Ver_cstp_8,
-     $                   Ver_epsilon_8,Ver_gamma_8,Ver_gokt2RT_8
+      real*8 Ver_alfas_8,Ver_betas_8,Ver_css_8,Ver_cssp_8,Ver_chis_8,
+     $       Ver_alfat_8,Ver_betat_8,Ver_cst_8,Ver_cstp_8,Ver_chit_8,
+     $       Ver_epsilon_8,Ver_gamma_8,Ver_gokt2RT_8
+      common / alphast / 
+     $       Ver_alfas_8,Ver_betas_8,Ver_css_8,Ver_cssp_8,Ver_chis_8,
+     $       Ver_alfat_8,Ver_betat_8,Ver_cst_8,Ver_cstp_8,Ver_chit_8,
+     $       Ver_epsilon_8,Ver_gamma_8,Ver_gokt2RT_8
 *
-      integer Ver_kcode
-      common /ver_i/ Ver_kcode
+      integer Ver_code
+      common /ver_i/ Ver_code

@@ -103,7 +103,7 @@
          call adw_main_3_intlag ( F_u, F_v, F_w )
          return
       endif
-      call gem_stop('adw_main_3_int : review merge 3.2.5 3.3.0',-1)
+      call gem_stop('adw_main_3_int : spline not supported',-1)
 
 
 *

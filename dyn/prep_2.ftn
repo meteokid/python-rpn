@@ -75,7 +75,7 @@
 *modules
       integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn, longueur
       real*8  x, y, z, cx, cy, cz, rx, ry, rz, bbb, mumu, tot,
-     $        a1,a2,a3, b1,b2,b3, zero, half, one, four, xxx, yyy, ww1
+     $        a1,a2,a3, b1,b2,b3,zero,half,one,four,xxx,yyy,aaa,ww1
       real    rdiv(DIST_SHAPE), w_rt
 *
       parameter( zero=0.d0, half=.5d0, one=1.d0, four=4.d0 )
@@ -104,7 +104,7 @@
       endif
 
 !$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,
-!$omp$                   mumu,rdiv,xxx,yyy,w_rt,ww1)
+!$omp$                   mumu,rdiv,xxx,yyy,aaa,w_rt,ww1)
 !$omp do
       do 100 k=1,l_nk
       do 100 j= j0, jn
@@ -257,7 +257,7 @@
 !$omp single
       a1 = one / ( Dcst_grav_8 * Cstv_tauT_8 )
       a2 = Ver_epsilon_8 / Cstv_RTstr_8
-      a3 = one / ( Cstv_tau_8*Cstv_tauT_8 * Cstv_RTstr_8 )
+      a3 = (one-Ver_chis_8) / ( Cstv_tau_8*Cstv_tauT_8 * Cstv_RTstr_8 )
 *
       b1 = Ver_gamma_8 / Cstv_tau_8 
       b2 = Ver_gamma_8 / ( Dcst_cappa_8 * Cstv_tau_8 )
@@ -297,8 +297,8 @@
             end do
             end do
          else if(Cstv_iC2str_8.gt.(1.1-Dcst_cappa_8)/Cstv_RTstr_8) then
-            xxx=half*Cstv_iC2str_8*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
-            yyy=half*Cstv_iC2str_8*Ver_idz_8%m(k)*Ver_dz_8%t(k)
+            xxx=Cstv_iC2str_8*Ver_wp_8_m(k)
+            yyy=Cstv_iC2str_8*Ver_wm_8_m(k)
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
                ww1=xxx*F_rf(i,j,k+1)+yyy*F_rf(i,j,k)
@@ -306,8 +306,8 @@
             end do
             end do
          else
-            xxx=half*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
-            yyy=half*Ver_idz_8%m(k)*Ver_dz_8%t(k)
+            xxx=Ver_wp_8_m(k)
+            yyy=Ver_wm_8_m(k)
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
                ww1=xxx*(Cstv_iC2str_8*F_rf(i,j,k+1)+F_rt(i,j,k+1))
@@ -369,8 +369,11 @@
 *
 !$omp do
       do k=1,l_nk
-         xxx=one + half * Ver_dz_8%t(k+1)
-         yyy=one - half * Ver_dz_8%t(k)
+         aaa=one
+         if(k.eq.1)    aaa=one/(one-Ver_chit_8)
+         if(k.eq.l_nk) aaa=one/(one-Ver_chis_8)
+         xxx=aaa + Ver_dz_8%m(k) * Ver_wp_8_m(k)
+         yyy=aaa - Ver_dz_8%m(k) * Ver_wm_8_m(k)
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
             F_rc(i,j,k) = Ver_dz_8%m(k) * F_rc(i,j,k) 
@@ -380,9 +383,9 @@
          if (.not. Schm_hydro_L) then    
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
-               F_rc(i,j,k) = F_rc(i,j,k) + half *
-     $                          ( Ver_dz_8%t(k  ) * F_rf(i,j,k  )
-     $                          + Ver_dz_8%t(k+1) * F_rf(i,j,k+1) )
+               F_rc(i,j,k) = F_rc(i,j,k) + Ver_dz_8%m(k) *
+     $                          ( Ver_w2p_8_m(k) * F_rf(i,j,k+1)
+     $                          + Ver_w2m_8_m(k) * F_rf(i,j,k  ) )
             end do
             end do
          endif
@@ -392,7 +395,11 @@
 *     Applying boundary conditions.
       do j= 1+pil_s, l_nj-pil_n
       do i= 1+pil_w, l_ni-pil_e
-         F_rt  (i,j,l_nk+1) = F_rt  (i,j,l_nk+1) - a3 * F_fis(i,j)
+         F_rt(i,j,1)      = F_rt(i,j,1)
+     $                                 - F_rt(i,j,2)    * Ver_chit_8
+         F_rt(i,j,l_nk+1) = F_rt(i,j,l_nk+1)
+     $                                 - F_rt(i,j,l_nk) * Ver_chis_8 
+     $                                 - a3 * F_fis(i,j)
          F_rc(i,j,1)      = F_rc(i,j,1)
      $                                - Ver_cstp_8 * F_rt(i,j,1)
          F_rc(i,j,l_nk)   = F_rc(i,j,l_nk)

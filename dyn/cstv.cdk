@@ -29,27 +29,25 @@
 * Cstv_tauw_8        | effective timestep parameter on ver. mom. eqn   |
 * Cstv_Tstr_8        | T*  (basic state temperature)                   |
 * Cstv_RTstr_8       | RT*  the gas constant R times T*                |
-* Cstv_iC2str_8      | c2*=(1-cappa)/RT* (star velocity of sound sqr)  |
+* Cstv_iC2str_8      | ic2*=RT*/(1-cappa) (inv. sqr. vel. of sound str)|
 * Cstv_pref_8        | a reference pressure : 100000 PASCALS           |
-* Cstv_pitop_8       | hydrostatic pressure at the top                 |
-* Cstv_Ztop_8        | ln(pitop)                                       |
-* Cstv_pisrf_8       | basic state surface pressure : 100000 PASCALS   |
-* Cstv_Zsrf_8        | ln(pisrf)                                       |
-* Cstv_uvdf_8        | horizontal diffusion coeff. for horiz. winds    |
-* Cstv_Tdf_8         | horizontal diffusion coeff. for T, etc.         |
+* Cstv_ptop_8        | pressure at the top                             |
+* Cstv_Ztop_8        | ln(ptop)                                        |
+* Cstv_Zsrf_8        | ln(pref)                                        |
 * Cstv_hco0_8        | Helmholtz constant                              |
+* Cstv_hco1_8        | Helmholtz constant                              |
 *--------------------|--------------------------------------------------
 *
 #endif
-      real*8    Cstv_dt_8   , Cstv_tau_8  , Cstv_tauT_8  , Cstv_tauw_8,
+      real*8    Cstv_dt_8   , Cstv_tau_8  , Cstv_tauT_8  , Cstv_tauw_8 ,
      %          Cstv_Tstr_8 , Cstv_RTstr_8, Cstv_iC2str_8, Cstv_pref_8,
-     %          Cstv_pitop_8, Cstv_pisrf_8, Cstv_Ztop_8  , Cstv_Zsrf_8,
-     %          Cstv_hco0_8  , Cstv_hco1_8
+     %          Cstv_ptop_8 , Cstv_Ztop_8 , Cstv_Zsrf_8  ,
+     %          Cstv_hco0_8 , Cstv_hco1_8
 *
       MARK_COMMON_BEG (Cstv)
       common         / Cstv /
-     %          Cstv_dt_8   , Cstv_tau_8  , Cstv_tauT_8  , Cstv_tauw_8,
+     %          Cstv_dt_8   , Cstv_tau_8  , Cstv_tauT_8  , Cstv_tauw_8 ,
      %          Cstv_Tstr_8 , Cstv_RTstr_8, Cstv_iC2str_8, Cstv_pref_8,
-     %          Cstv_pitop_8, Cstv_pisrf_8, Cstv_Ztop_8  , Cstv_Zsrf_8,
-     %          Cstv_hco0_8  , Cstv_hco1_8
+     %          Cstv_ptop_8 , Cstv_Ztop_8 , Cstv_Zsrf_8  ,
+     %          Cstv_hco0_8 , Cstv_hco1_8
       MARK_COMMON_END (Cstv)

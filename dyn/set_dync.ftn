@@ -50,8 +50,8 @@
 *modules
 *
       integer k,err,istat, longueur
-      real*8 one, half, quarter, xxx
-      parameter( one = 1.d0, half = .5d0, quarter = .25d0 )
+      real*8 one, half, aaa, bbb, ccc, xxx, yyy
+      parameter( one = 1.d0, half = .5d0 )
 *
 *     ---------------------------------------------------------------
 
@@ -91,22 +91,60 @@ c        Pour etape 6
 *
       Cstv_hco0_8 = Dcst_rayt_8 * Dcst_rayt_8 * Ver_gokt2RT_8
       Cstv_hco1_8 = Cstv_RTstr_8*(Dcst_cappa_8+Ver_epsilon_8)*Cstv_iC2str_8
+      aaa = (one-Dcst_cappa_8)*Ver_epsilon_8-Cstv_hco1_8
+      bbb = Ver_epsilon_8-Cstv_hco1_8
+      ccc = Ver_epsilon_8*Dcst_cappa_8
 *
-      xxx = + quarter*((one-Dcst_cappa_8)*Ver_epsilon_8-Cstv_hco1_8)
+      if(Schm_virlev_L) then
+         Ver_chit_8 = 0.d0
+         Ver_chis_8 = 0.d0
+         xxx = half*aaa*Ver_dz_8%m(1)*Ver_wm_8_m(1)
+         yyy = half*aaa*Ver_dz_8%m(G_nk)*Ver_wp_8_m(G_nk)
 *
-      Ver_alphat_8 = ( Ver_idz_8%t(1) - half*Ver_epsilon_8 ) /
-     $               ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
-      Ver_cst_8    = one / Ver_gokt2RT_8 /
-     $               ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
-      Ver_cstp_8   = ( Ver_idz_8%t(1) - half - xxx*Ver_dz_8%t(1) ) /
-     $               ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
+         Ver_betat_8 = 0.d0
+         Ver_alfat_8 = ( Ver_idz_8%t(1) - half*Ver_epsilon_8 )
+     $               / ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
+         Ver_cst_8   = one / Ver_gokt2RT_8
+     $               / ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
+         Ver_cstp_8  = ( Ver_idz_8%t(1) - half - xxx )
+     $               / ( Ver_idz_8%t(1) + half*Ver_epsilon_8 )
 *
-      Ver_alphas_8 = ( Ver_idz_8%t(G_nk+1) - half*Dcst_cappa_8 ) /
-     $               ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
-      Ver_css_8    = one / Ver_gokt2RT_8 /
-     $               ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
-      Ver_cssp_8   = ( Ver_idz_8%t(G_nk+1) + half - xxx*Ver_dz_8%t(G_nk+1) ) /
-     $               ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
+         Ver_betas_8 = 0.d0
+         Ver_alfas_8 = ( Ver_idz_8%t(G_nk+1) - half*Dcst_cappa_8 )
+     $               / ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
+         Ver_css_8   = one / Ver_gokt2RT_8
+     $               / ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
+         Ver_cssp_8  = ( Ver_idz_8%t(G_nk+1) + half - yyy )
+     $               / ( Ver_idz_8%t(G_nk+1) + half*Dcst_cappa_8 )
+      else
+         if(Schm_nullchi_L) then
+            Ver_chit_8 = 0.d0
+            Ver_chis_8 = 0.d0
+         else
+            Ver_chit_8 = (Ver_z_8%t(1)-Ver_z_8%m(0))
+     $                 / (Ver_z_8%t(2)-Ver_z_8%m(0))
+            Ver_chis_8 = (Ver_z_8%m(G_nk+1)-Ver_z_8%t(G_nk+1))
+     $                 / (Ver_z_8%m(G_nk+1)-Ver_z_8%t(G_nk))
+         endif
+*
+         xxx = Ver_dz_8%m(1)*
+     $         ( Ver_wm_8_m(1)*Ver_idz_8%t(1)+(one-Ver_chit_8)
+     $          *( bbb*Ver_wm_8_m(1) -  ccc*Ver_w2m_8_m(1) ) )
+         yyy = one / (Ver_idz_8%t(1) + Ver_epsilon_8*(one-Ver_chit_8))
+         Ver_betat_8 =               Ver_chit_8 * Ver_idz_8%t(2) * yyy
+         Ver_alfat_8 =              Ver_betat_8 + Ver_idz_8%t(1) * yyy
+         Ver_cst_8   =                       one / Ver_gokt2RT_8 * yyy
+         Ver_cstp_8  = ( Ver_idz_8%t(1)/(one-Ver_chit_8) - xxx ) * yyy
+*
+         xxx = Ver_dz_8%m(G_nk)*
+     $         ( Ver_wp_8_m(G_nk)*Ver_idz_8%t(G_nk+1)-(one-Ver_chis_8)
+     $          *( bbb*Ver_wp_8_m(G_nk) - ccc*Ver_w2p_8_m(G_nk) ) )
+         yyy = one / (Ver_idz_8%t(G_nk+1) + Dcst_cappa_8*(one-Ver_chis_8))
+         Ver_betas_8 =         Ver_chis_8 * Ver_idz_8%t(G_nk)   * yyy
+         Ver_alfas_8 =        Ver_betas_8 + Ver_idz_8%t(G_nk+1) * yyy
+         Ver_css_8   =                      one / Ver_gokt2RT_8 * yyy
+         Ver_cssp_8  = (Ver_idz_8%t(G_nk+1)/(one-Ver_chis_8)+xxx)*yyy
+      endif
 *
       call set_opr()
       call adw_set()

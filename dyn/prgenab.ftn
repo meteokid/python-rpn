@@ -10,9 +10,7 @@
 ! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
 ! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
 ! ------------------------------------------------------------------------------------------------------------------------------
-c  s/r prgenab- To print out all the values set in set_hybv
-c               printout of values in genab_8 or set_hybv will
-c               alternate the values slightly due to optimization
+c  s/r prgenab- To print out all the values set in set_zeta
 c               Only active under Out_DEBUG_L mode
 c
 #include "model_macros_f.h"
@@ -41,45 +39,64 @@ c
 #include "schm.cdk"
 c
 
-      integer k,istat,ind
-      real*8 pref_8, ptop_8, pr1_8, etatop_8, rcoef_8, ztop_8, zsurf_8
-      real*8 tempo_8(G_nk),tmp_8,eta_old,eta_new,log_z
+      integer k
 c     __________________________________________________________________
 c
 c
       if (Lun_debug_L) then
-      print *,'prgenab Ver_a_8%m(k),Ver_b_8%m(k),Ver_z_8%m(k)'
+      print *,'prgenab Ver_a_8%m(k),Ver_b_8%m(k),k=0,G_nk+1'
       do k=0,G_nk+1
-         print *,k,Ver_a_8%m(k),Ver_b_8%m(k),Ver_z_8%m(k)
+         print *,k,Ver_a_8%m(k),Ver_b_8%m(k)
       enddo
-      print *,'prgenab Ver_dz_8%m(k),Ver_idz_8%m(k)'
+      print *,'prgenab Ver_z_8%m(k),Ver_fistr_8%m(k),k=0,G_nk+1'
+      do k=0,G_nk+1
+         print *,k,Ver_z_8%m(k),Ver_fistr_8%m(k)
+      enddo
+      print *,'prgenab Ver_dz_8%m(k),Ver_idz_8%m(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_dz_8%m(k),Ver_idz_8%m(k)
       enddo
-      print *,'prgenab Ver_dbdz_8%m(k),Ver_fistr_8%m(k)'
+      print *,'prgenab Ver_dbdz_8%m(k),Ver_dbdza_8_m(k),k=1,G_nk'
       do k=1,G_nk
-         print *,k,Ver_dbdz_8%m(k),Ver_fistr_8%m(k) 
+         print *,k,Ver_dbdz_8%m(k),Ver_dbdza_8_m(k) 
       enddo 
-      print *,'prgenab Ver_a_8%t(k),Ver_b_8%t(k),Ver_z_8%t(k)'
-      do k=1,G_nk+1
-         print *,k,Ver_a_8%t(k),Ver_b_8%t(k),Ver_z_8%t(k)
+      print *,'prgenab Ver_wp_8%m(k),Ver_w2p_8_m(k),k=1,G_nk'
+      do k=1,G_nk
+         print *,k,Ver_wp_8_m(k),Ver_w2p_8_m(k) 
       enddo 
-      print *,'prgenab Ver_dz_8%t(k),Ver_idz_8%t(k)'
-      do k=1,G_nk+1
-         print *,k,Ver_dz_8%t(k),Ver_idz_8%t(k)
+      print *,'prgenab Ver_wm_8_m(k),Ver_w2m_8_m(k),k=1,G_nk'
+      do k=1,G_nk
+         print *,k,Ver_wm_8_m(k),Ver_w2m_8_m(k) 
       enddo 
-      print *,'prgenab Ver_dbdz_8%t(k),Ver_fistr_8%t(k)'
-      do k=1,G_nk+1
-         print *,k,Ver_dbdz_8%t(k),Ver_fistr_8%t(k) 
-      enddo 
-      print *,'prgenab Ver_a_spcl_8%t(k),Ver_b_spcl_8%t(k)'
-      do k=1,G_nk+2
-         print *,k,Ver_a_spcl_8%t(k),Ver_b_spcl_8%t(k)
-      enddo 
-      print *,'prgenab Ver_a_spcl_8%m(k),Ver_b_spcl_8%m(k)'
+      print *,'prgenab Ver_a_spcl_8%m(k),Ver_b_spcl_8%m(k),k=1,G_nk+1'
       do k=1,G_nk+1
          print *,k,Ver_a_spcl_8%m(k),Ver_b_spcl_8%m(k)
       enddo 
+      print *,'prgenab Ver_a_8%t(k),Ver_b_8%t(k),k=1,G_nk+1'
+      do k=1,G_nk+1
+         print *,k,Ver_a_8%t(k),Ver_b_8%t(k)
+      enddo 
+      print *,'prgenab Ver_z_8%t(k),Ver_fistr_8%t(k),k=1,G_nk+1'
+      do k=1,G_nk+1
+         print *,k,Ver_z_8%t(k),Ver_fistr_8%t(k)
+      enddo 
+      print *,'prgenab Ver_dz_8%t(k),Ver_idz_8%t(k),k=1,G_nk+1'
+      do k=1,G_nk+1
+         print *,k,Ver_dz_8%t(k),Ver_idz_8%t(k)
+      enddo 
+      print *,'prgenab Ver_dbdz_8%t(k),k=1,G_nk+1'
+      do k=1,G_nk+1
+         print *,k,Ver_dbdz_8%t(k)
+      enddo 
+      print *,'prgenab Ver_a_spcl_8%t(k),Ver_b_spcl_8%t(k),k=1,G_nk+2'
+      do k=1,G_nk+2
+         print *,k,Ver_a_spcl_8%t(k),Ver_b_spcl_8%t(k)
+      enddo 
+      print *,'prgenab Ver_hyb%m(k),Ver_hyb_%t(k),k=1,G_nk+2 for Output Levels'
+      do k=1,G_nk+2
+         print *,k,Ver_hyb%m(k),Ver_hyb%t(k)
+      enddo 
       endif
+
       return
       end

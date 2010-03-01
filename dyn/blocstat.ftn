@@ -101,15 +101,15 @@
       if (G_lam) then
            inn=1
       endif
-      call glbstat (ut1  ,' U',LDIST_DIM,G_nk+1,i0,in-inn,j0,jn  ,1,G_nk+1)
-      call glbstat (vt1  ,' V',LDIST_DIM,G_nk+1,i0,in    ,j0,jn-1,1,G_nk+1)
+      call glbstat (ut1  ,' U',LDIST_DIM,G_nk+1,i0,in-inn,j0,jn  ,1,G_nk)
+      call glbstat (vt1  ,' V',LDIST_DIM,G_nk+1,i0,in    ,j0,jn-1,1,G_nk)
       call glbstat (wt1  ,' W',LDIST_DIM,G_nk+1,i0,in    ,j0,jn  ,1,G_nk+1)
       if(Schm_zdotMid_L) then
          call glbstat (zdth ,'ZD',LDIST_DIM,G_nk,i0,in ,j0,jn  ,1,G_nk)
       else
          call glbstat (zdt1 ,'ZD',LDIST_DIM,G_nk+1,i0,in ,j0,jn  ,1,G_nk+1)
       endif
-      call glbstat (tt1  ,' T',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
+      call glbstat (tt1  ,' T',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+1)
       call glbstat (fiptx,'GZ',LDIST_DIM,G_nk+2,i0,in    ,j0,jn  ,1,G_nk+2)
       call glbstat (st1,' S',LDIST_DIM,1,i0,in    ,j0,jn  ,1,1)
       if(.not.Schm_hydro_L)
@@ -130,7 +130,7 @@
          if(Schm_moist_L) then
             err = vmmget(key(1),patr,tr)
             call glbstat (tr,Tr3d_name_S(1),LDIST_DIM,G_nk+2,i0,in,j0,jn,
-     $                                                          1,G_nk+2)
+     $                                                          1,G_nk+1)
          endif
          do k=2,Tr3d_ntr
             err = vmmget(key(k),patr,tr)

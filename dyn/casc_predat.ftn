@@ -62,12 +62,9 @@
       external vmmlod, vmmget, vmmuld
 *
       real dummy
-      real*8 zsurf_8            
 **
 *     __________________________________________________________________
 *
-      zsurf_8 = log(Cstv_pisrf_8)
-
       if (Lun_debug_L) write (Lun_out,1000)
       if ( V4dg_conf.eq.0 ) then
 *

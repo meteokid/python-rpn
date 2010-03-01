@@ -42,7 +42,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       character*8 dumc
       integer i,j,k,n,ier,pnip1,pnip3,cnt,nis,njs,nrd,
      $        ii,jj,im,jm,g3,g4,oi,oj,datyp
-      logical reduc_L
+      logical stride_L
       real*8 sum_8
       real wkf1(lminx:lmaxx,lminy:lmaxy,nkfa)
       real wkf2(lminx:lmaxx,lminy:lmaxy,nkfa)
@@ -82,16 +82,16 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
          pnip1 = 0
          pnip3 = Out_ip3
          if (pnip3.lt.0) pnip3 = Out_npas
-         reduc_L = Out_reduc .gt. 1
+         stride_L = Out_stride .gt. 1
          nis = Out_ifg - Out_idg + 1
          njs = Out_jfg - Out_jdg + 1
          allocate (tr1(nis,njs,nk_o))
          patr2 = loc(tr1(1,1,1))
-         if (reduc_L) then
+         if (stride_L) then
             call hpalloc (patr2,Out_nisl*Out_njsl*nk_o,ier,1)
             if (Out_nblocx*Out_nblocy.gt.1) then
-               g3 = (out_rgridi0-Out_gridi0)/Out_reduc+1
-               g4 = (out_rgridj0-Out_gridj0)/Out_reduc+1
+               g3 = (out_rgridi0-Out_gridi0)/Out_stride+1
+               g4 = (out_rgridj0-Out_gridj0)/Out_stride+1
             endif
          endif 
 *
@@ -102,17 +102,17 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
 *
       if (Out_blocme.eq.0) then
 *
-      if (reduc_L) then
-         nrd = Out_reduc-1
-         oi  = out_rgridi0-max(Out_bloci0-Out_hx*Out_blocwest ,Out_gridi0)+1
-         oj  = out_rgridj0-max(Out_blocj0-Out_hy*Out_blocsouth,Out_gridj0)+1
+      if (stride_L) then
+         nrd = Out_stride-1
+         oi  = out_rgridi0-max(Out_bloci0 ,Out_gridi0)+1
+         oj  = out_rgridj0-max(Out_blocj0 ,Out_gridj0)+1
          do k=1,nk_o
          do j=1,Out_njsl
          do i=1,Out_nisl
             cnt=0
             sum_8=0.0d0
-            im = (i-1)*Out_reduc + oi
-            jm = (j-1)*Out_reduc + oj
+            im = (i-1)*Out_stride + oi
+            jm = (j-1)*Out_stride + oj
             do jj=max(1,jm-nrd),min(jm+nrd,njs)
             do ii=max(1,im-nrd),min(im+nrd,nis)
                cnt=cnt+1
@@ -173,7 +173,7 @@ c      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridi
       endif
 *
       deallocate (tr1)
-      if (reduc_L) call hpdeallc (patr2 , ier, 1)
+      if (stride_L) call hpdeallc (patr2 , ier, 1)
 *
       endif
 *

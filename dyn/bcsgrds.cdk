@@ -13,27 +13,23 @@
 *
       real*8 xpn,ypn,xpun,ypvn,xpw,ypw,xpuw,ypvw
       real*8 xps,yps,xpus,ypvs,xpe,ype,xpue,ypve
-      real*8 ana_z
-      real ana_a, ana_b
-      integer ana_presstyp
+      logical ana_zdw_L,ana_q_L
       pointer 
      $  (paxpn ,  xpn(*)),(paypn ,  ypn(*)),(paxpun, xpun(*)),(paypvn, ypvn(*)),
      $  (paxps ,  xps(*)),(payps ,  yps(*)),(paxpus, xpus(*)),(paypvs, ypvs(*)),
      $  (paxpw ,  xpw(*)),(paypw ,  ypw(*)),(paxpuw, xpuw(*)),(paypvw, ypvw(*)),
-     $  (paxpe ,  xpe(*)),(paype ,  ype(*)),(paxpue, xpue(*)),(paypve, ypve(*)),
-     $  (pazta, ana_z(*)),
-     $  (papia, ana_a(*)),(papib, ana_b(*))
+     $  (paxpe ,  xpe(*)),(paype ,  ype(*)),(paxpue, xpue(*)),(paypve, ypve(*))
 
 *
       common /bcshdg_1/ paxpn,paypn,paxpun,paypvn,
      $                  paxps,payps,paxpus,paypvs,
      $                  paxpe,paype,paxpue,paypve,
-     $                  paxpw,paypw,paxpuw,paypvw,pazta,papia,papib
+     $                  paxpw,paypw,paxpuw,paypvw
 *
       Real*8, dimension (:), pointer :: ana_am_8,ana_bm_8,
      $                                  ana_at_8,ana_bt_8,ana_as_8,ana_bs_8
       
       common /bcshdg_2/ ana_am_8,ana_bm_8,ana_at_8,ana_bt_8,ana_as_8,ana_bs_8
-      common /bcshdg_3/ ana_presstyp
+      common /bcshdg_3/ ana_zdw_L,ana_q_L
 *
   

@@ -32,7 +32,7 @@
 #endif
 !
       logical Path_swv1_L
-      character*256 Path_dfwmil_S,Path_nml_S,Path_xchg_S
+      character*256 Path_dfwmil_S,Path_nml_S,Path_xchg_S,Path_input_S
 !
       MARK_COMMON_BEG (Path1)
       common / Path1 / Path_swv1_L

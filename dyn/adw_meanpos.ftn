@@ -50,6 +50,8 @@
 #include "type.cdk"
 #include "adw.cdk"
 #include "dcst.cdk"
+#include "schm.cdk"
+#include "ver.cdk"
 ************************************************************************
       integer n, nt, nm, nij,vnik, vnikm, i,j,k
 *
@@ -85,36 +87,56 @@ C     call tmg_start ( 33, 'adw_meanpos' )
          call vsin(ysin, ycos, vnik)
          call vcos(xcos, xcos, vnik)
          call vcos(ycos, ycos, vnik)
-
+*
+         if(Schm_virlev_L) then
 ************************************************************************
 * For 1st and last thermodynamic levels positions in the horizontal are*
 * those of the momentum levels; no displacement allowed in the vertical*
 ************************************************************************
-         do i=i0,in
-            n = ((j-1)*l_ni) + i
-            F_xt(n) = F_xm(n)
-            F_yt(n) = F_ym(n)
-            F_zt(n) = Adw_bsz_8%t(0)
-            nm = (l_nk-1)*nij + ((j-1)*l_ni) + i
-            nt = (l_nk  )*nij + ((j-1)*l_ni) + i
-            F_xt(nt) = F_xm(nm)
-            F_yt(nt) = F_ym(nm)
-            F_zt(nt) = Adw_bsz_8%t(l_nk)
-         enddo
+            do i=i0,in
+               n = ((j-1)*l_ni) + i
+               F_xt(n) = F_xm(n)
+               F_yt(n) = F_ym(n)
+               F_zt(n) = Ver_z_8%t(1)
+               nm = (l_nk-1)*nij + ((j-1)*l_ni) + i
+               nt = (l_nk  )*nij + ((j-1)*l_ni) + i
+               F_xt(nt) = F_xm(nm)
+               F_yt(nt) = F_ym(nm)
+               F_zt(nt) = Ver_z_8%t(l_nk+1)
+            enddo
+         else
 *
+************************************************************************
+* For the first and last thermodynamic levels,                         *
+* positions in the horizontal are those of the momentum levels         *
+************************************************************************
+            do i=i0,in
+               n = ((j-1)*l_ni) + i
+               F_xt(n) = F_xm(n)
+               F_yt(n) = F_ym(n)
+               F_zt(n) = half*(Ver_z_8%m(0)+F_zm(n))
+               nm = (l_nk-1)*nij + ((j-1)*l_ni) + i
+               nt = (l_nk  )*nij + ((j-1)*l_ni) + i
+               F_xt(nt) = F_xm(nm)
+               F_yt(nt) = F_ym(nm)
+               F_zt(nt) = half*(Ver_z_8%m(l_nk+1)+F_zm(nm))
+            enddo
+         endif
+*
+************************************************************************
+* cartesian coordinates of each momemtum levels                        *
+************************************************************************
          do k=1,l_nk
          do i=i0,in
-************************************************************************
-* cartesian coordinates of each momemtum level                         *
-************************************************************************
              cx(i,k) = xcos(i,k)*ycos(i,k)
              cy(i,k) = xsin(i,k)*ycos(i,k)
              cz(i,k) = ysin(i,k)
           enddo
           enddo
+*
 ************************************************************************
-* mid position between cartesian coordinate of top and bottom momentum *
-* level surrounding the thermodynamic level                            *
+* cartesian coordinates of intermediate thermodynamic levels: mid point*
+* between cartesian coordinates of upper and lower momentum levels     *
 ************************************************************************
          do k=2,l_nk
          do i=i0,in
@@ -137,11 +159,11 @@ c            cz(i,k-1) = max(-1.d0,min(1.d0,(cz(i,k)+cz(i,k-1))*alpha))
           call vatan2(zatan,cy,cx,vnikm)
           call vasin (yasin,cz,vnikm)
 
+************************************************************************
+* polar coordinates of upstream position for intermediate thermo levels*
+************************************************************************
           do k=1,l_nk-1
           do i=i0,in
-************************************************************************
-* polar coordinates of upstream position for thermodynamic level       *
-************************************************************************
              n = k*nij + ((j-1)*l_ni) + i
              nm= (k-1)*nij + ((j-1)*l_ni) + i
              F_yt(n) = yasin(i,k)

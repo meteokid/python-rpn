@@ -87,40 +87,34 @@
      $        Out_kind, Out_unf, Out_nisl,Out_njsl,Out_nisg, Out_njsg,
      $        Out_nblocx,Out_nblocy,Out_blocme,Out_numpe_perb,
      $        Out_bloci0,Out_blocin,Out_blocj0,Out_blocjn,
-     $        Out_blocwest,Out_bloceast,Out_blocnorth,Out_blocsouth,
-     $        Out_blocni, Out_blocnj,Out_myblocx, Out_myblocy, Out_nk,
+     $        Out_blocni, Out_blocnj,Out_myblocx, Out_myblocy,
      $        Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn, Out_mybloc,
-     $        Out_rgridi0,Out_rgridj0, Out_reduc,Out_ndigits,
+     $        Out_rgridi0,Out_rgridj0, Out_stride,Out_ndigits,
      $        Out_datyp,
-     $        Out_hx,Out_hy,
      $        Out_idg, Out_ifg, Out_jdg, Out_jfg,
      $        Out_idl, Out_ifl, Out_jdl, Out_jfl,
      $        Out_ig1, Out_ig2, Out_ig3, Out_ig4,
      $        Out_ixg(4), Out_ip2, Out_ip3,
      $        Out_myproc,Out_myrow,Out_mycol,
      $        Out_myproci0, Out_myprocj0, Out_myprocni, Out_myprocnj,
-     $        Out_halox,Out_haloy,Out_periodx,Out_periody,
-     $        Out_mywest,Out_myeast,Out_mynorth,Out_mysouth
+     $        Out_halox,Out_haloy,Out_periodx,Out_periody
 
       common /out_i/
      $        Out_date,Out_hour,Out_dateo,Out_deet,Out_npas,Out_endstepno,
      $        Out_kind, Out_unf, Out_nisl,Out_njsl,Out_nisg, Out_njsg,
      $        Out_nblocx,Out_nblocy,Out_blocme,Out_numpe_perb,
      $        Out_bloci0,Out_blocin,Out_blocj0,Out_blocjn,
-     $        Out_blocwest,Out_bloceast,Out_blocnorth,Out_blocsouth,
-     $        Out_blocni, Out_blocnj,Out_myblocx, Out_myblocy, Out_nk,
+     $        Out_blocni, Out_blocnj,Out_myblocx, Out_myblocy,
      $        Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn, Out_mybloc,
-     $        Out_rgridi0,Out_rgridj0, Out_reduc,Out_ndigits,
+     $        Out_rgridi0,Out_rgridj0, Out_stride,Out_ndigits,
      $        Out_datyp,
-     $        Out_hx,Out_hy,
      $        Out_idg, Out_ifg, Out_jdg, Out_jfg,
      $        Out_idl, Out_ifl, Out_jdl, Out_jfl,
      $        Out_ig1, Out_ig2, Out_ig3, Out_ig4,
      $        Out_ixg, Out_ip2, Out_ip3,
      $        Out_myproc,Out_myrow,Out_mycol,
      $        Out_myproci0, Out_myprocj0, Out_myprocni, Out_myprocnj,
-     $        Out_halox,Out_haloy,Out_periodx,Out_periody,
-     $        Out_mywest,Out_myeast,Out_mynorth,Out_mysouth
+     $        Out_halox,Out_haloy,Out_periodx,Out_periody
 
       common /out_c/
      $        Out_filename_S, Out_runstrt_S, Out_etik_S, Out_etiket_S,

@@ -15,6 +15,7 @@
 *revision
 * v2_20 - Pellerin P.            - adaptation to physics 3.6.6
 * v3_11 - Gravel S.              - add new field for varying topo
+* v4_03 - Plante A.              - time level on topo for varying topo.
 *
 ***comdeck p_geof.cdk
 *
@@ -25,11 +26,10 @@
 *                    |                                                 |
 * NAME               | DESCRIPTION                                     |
 *--------------------|-------------------------------------------------|
-* topo               | Phi at the surface (xfis) with halos on it      |
-* topu               | U   at the surface (xfis) with halos on it      |
-* topv               | V   at the surface (xfis) with halos on it      |
-* dtopo              | difference between analysis and model topo      |
-*----------------------------------------------------------------------
+* topo               | Phi srf at tine t0 with halos on it             |
+* topo1              | Phi srf at time t1 with halos on it             |
+* dtopo              | difference between analysis and model fis       |
+*-----------------------------------------------------------------------
 *
 *
 #endif
@@ -41,9 +41,8 @@
 *
       MARK_COMMON_BEG(geof)
       DCL_VMMVAR(geof,topo ,real,(LDIST_SHAPE))
-      DCL_VMMVAR(geof,topu ,real,(LDIST_SHAPE))
-      DCL_VMMVAR(geof,topv ,real,(LDIST_SHAPE))
-      DCL_VMMVAR(geof,dtopo,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,topo1 ,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,dtopo ,real,(LDIST_SHAPE))
       MARK_COMMON_END(geof)
 
       character*8 geof_n_first(1)

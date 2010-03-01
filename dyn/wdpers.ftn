@@ -42,6 +42,7 @@
 #include "hzd.cdk"
 #include "lctl.cdk"
 #include "schm.cdk"
+#include "ver.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -82,7 +83,7 @@
       call tmg_stop0 (12)
       endif
 *
-*C	1. Initialise wind, pi* dot and upstream positions at
+*C	1. Initialise wind, zdot and upstream positions at
 *	   time t0-dt/2 (th) for mid trajectory computations
 *	   --------------------------------------------------
 *
@@ -105,11 +106,25 @@
       if(.not.Schm_zdotMid_L) then
 !$omp do
       do k=1,l_nk+1
-         do j= 1, l_nj
-         do i= 1, l_ni
-            zdth(i,j,k) = zdt1(i,j,k)
-         end do
-         end do
+         if(k.eq.1) then
+            do j= 1, l_nj
+            do i= 1, l_ni
+               zdth(i,j,k) = Ver_chit_8*zdt1(i,j,k+1)
+            end do
+            end do
+         elseif(k.eq.l_nk+1) then
+            do j= 1, l_nj
+            do i= 1, l_ni
+               zdth(i,j,k) = Ver_chis_8*zdt1(i,j,k-1)
+            end do
+            end do
+         else
+            do j= 1, l_nj
+            do i= 1, l_ni
+               zdth(i,j,k) = zdt1(i,j,k)
+            end do
+            end do
+         endif
       end do
 !$omp enddo
       endif

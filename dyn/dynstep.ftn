@@ -52,6 +52,7 @@
 #include "type.cdk"
 #include "adw.cdk"
 #include "acid.cdk"
+#include "vtopo.cdk"
 *
       integer itraj
       logical first_L, secon_L
@@ -170,6 +171,7 @@
 *     END OF ONE TIMESTEP
 *     ===================
 *
+      if ( Lctl_step-Vtopo_start .eq. Vtopo_ndt) Vtopo_L = .false.
       if ( G_lam.and.(Lctl_step.eq.Step_total) ) done_intt_L = .true.
 *
  1000 format(

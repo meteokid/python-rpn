@@ -36,15 +36,13 @@
 *                    | 'MTN_PINTY': linear isothermal with U=32m/s     | 
 *                    | 'MTN_PINTY2': linear isothermal with U=8m/s     | 
 *                    | 'MTN_PINTYNL': nonlinear regime                 | 
-* Theo_nivdist_S     | 'UNI' generates equally spaced hyb levels       |
-*                    |  in pressure for bubble, and log of p for mtn   |
 *----------------------------------------------------------------------
 *
 #endif
 
-      character*16 Theo_case_S, Theo_nivdist_S
+      character*16 Theo_case_S
 
       MARK_COMMON_BEG (theo_s)
-      common / theo_s / Theo_case_S, Theo_nivdist_S
+      common / theo_s / Theo_case_S
       MARK_COMMON_END (theo_s)
 *

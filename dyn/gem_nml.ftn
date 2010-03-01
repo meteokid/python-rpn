@@ -73,15 +73,15 @@
       Init_dfpl_8  = 21600.0
       Init_dftr_L  = .false.
 *
-      Offc_b0_8 =  0.6
+      Offc_b0_8  =  0.6
       Offc_b0T_8 =  0.6
       Offc_b0w_8 =  0.6
 *
       Schm_hydro_L    = .false.
       Schm_moist_L    = .true.
-      Schm_hdlast_L  = .false.
-      Schm_itcn     =   2
-      Schm_modcn    =   1
+      Schm_hdlast_L   = .false.
+      Schm_itcn     = 2
+      Schm_modcn    = 1
       Schm_xwvt3    = 0
       Schm_itnlh    = 2
       Schm_itraj    = 2
@@ -93,6 +93,8 @@
       Schm_sfix_L     = .false.
       Schm_zdotlag_L  = .false.
       Schm_zdotMid_L  = .false.
+      Schm_virlev_L   = .true.
+      Schm_nullchi_L  = .true.
       Schm_etape_S    = 'ETAPE6'
 *
       Schm_phyms_L    = .false.
@@ -134,8 +136,8 @@
       Cori_cornl_L = .true.
 *
       Cstv_dt_8    = 900
-      Cstv_pitop_8 = -1.0
-      Cstv_tstr_8  =  200.0
+      Cstv_ptop_8  = -1.d0
+      Cstv_tstr_8  =  240.0
 *
       Lctl_r8stat_L   = .false.
       Lctl_debug_L    = .false.
@@ -154,12 +156,13 @@
 *
       Level_ip12000_L = .false.
 *
-      Grd_rcoef = 1.0
+      Grd_rcoef(1) = 1.0
+      Grd_rcoef(2) = 1.0
+*
       Grd_proj_S = 'E'
-      Pres_ptop = -1.
-      Pres_pref = 1000.0
       do k = 1, maxhlev
          hyb(k) = -1.
+         hgt(k) = -1.
       end do
 *
       sol_fft_L     = .true.

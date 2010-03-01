@@ -66,6 +66,10 @@
 * Schm_chems_S       | Chemical scheme to use ('NIL' if none)          |
 * Schm_zdotlag_L     | Zdot computed in a Lagrangian way               |
 * Schm_zdotMid_L     | Zdot computed in the middle of the trajectory   |
+* Schm_etape_S       | 3 choices: "ETAPE5", "ETAPE6", "ETAPE6A"        |
+*                    | ## see relevant documentation ##                |
+* Schm_virlev_L      | virtual levels for phi & q at top and bottom    |
+* Schm_nullchi_L     | nullify the parameters chit & chis              |
 *----------------------------------------------------------------------
 *
 #endif
@@ -73,7 +77,7 @@
      $        Schm_phyms_L, Schm_adcub_L, Schm_psadj_L,
      $        Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L,
      $        Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L,
-     $        Schm_zdotlag_L,Schm_zdotMid_L
+     $        Schm_zdotlag_L,Schm_zdotMid_L,Schm_virlev_L,Schm_nullchi_L
 *
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, 
      %        Schm_itnlh, Schm_itraj, Schm_nith
@@ -86,7 +90,7 @@
      $         Schm_phyms_L, Schm_adcub_L, Schm_psadj_L,
      $         Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L, 
      $         Schm_pheat_L, Schm_theoc_L ,Schm_sfix_L,  Schm_offline_L,
-     $         Schm_zdotlag_L,Schm_zdotMid_L
+     $         Schm_zdotlag_L,Schm_zdotMid_L,Schm_virlev_L,Schm_nullchi_L
       MARK_COMMON_END (schm_l)
 *
       MARK_COMMON_BEG (schm_i)

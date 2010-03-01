@@ -90,11 +90,13 @@
          geobus(fis+i-1) = topof (i) 
       enddo
 *
-      status = .false.
       if ( e_intgeo () ) then
          call e_pregeo
-         call e_wrgeop
+         call e_wrgeop(.false.)
          status = .true.
+      else
+         call e_wrgeop(.true.)
+         status = .false.
       endif
 *
       err = fstfrm (e_fu_anal)
@@ -115,7 +117,7 @@
      $         ' Climatology file is unit: ',i4/
      $         ' Geophysical file is unit: ',i4)
  1002 format('*************************************************',/
-     %       '* WARNING!!!! File GEOPHY.bin NOT produced      *',/
+     %       '* WARNING!!!! File GEOPHY.bin has TOPO only     *',/
      %       '* GEMDM can run with no PHYSICS only            *',/
      %       '*************************************************')
 *

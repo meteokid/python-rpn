@@ -12,20 +12,26 @@
 ! ------------------------------------------------------------------------------------------------------------------------------
       subroutine wrgeo_bcs ( xps,nis,yps,ypn,njs,
      $                       xpw,xpe,niw,ypw,njw,
-     $                       am,bm,at,bt,nk,unf )
+     $                       am,bm,as,bs,at,bt,
+     $                       nkm,nks,nkt,presstype,nvar,ntr,unf )
       implicit none
 *
-      integer nis,njs,niw,njw
+      integer nis,njs,niw,njw,nkm,nks,nkt,presstype,ntr
       integer ni,nj,nk,nvar,unf
       real*8 xps(nis), yps(njs), ypn(njs), xpw(niw), xpe(niw), ypw(njw)
-      real*8 am(nk),bm(nk),at(nk+1),bt(nk+1)
+      real*8 am(nkm),bm(nkm),at(nkt),bt(nkt),as(nks),bs(nks)
 *     note: xps=xpsn, yps+ypn=ypsn, xpw+xpe=xpwe, ypw=ypwe in Casc_bcsh
 *
 *------------------------------------------------------------------
-      write (unf) '>>^^',nis,njs,niw,njw
+      write (unf) '>>^^',nis,njs,niw,njw,nkm,nks,nkt,presstype,nvar,ntr
       write (unf) xps,yps,ypn,xpw,xpe,ypw
-      write (unf) '+HY+',nk
-      write (unf) am,bm,at,bt
+      write (unf) am,bm,as,bs,at,bt
+c     write (6,*) 'am=',am
+c     write (6,*) 'bm=',bm
+c     write (6,*) 'as=',as
+c     write (6,*) 'bs=',bs
+c     write (6,*) 'at=',at
+c     write (6,*) 'bt=',bt
 *------------------------------------------------------------------
 *
       return

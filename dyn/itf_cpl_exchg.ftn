@@ -1,0 +1,85 @@
+***s/r itf_cpl_exchg - Perform fields exchange with OASIS
+*
+      subroutine itf_cpl_exchg (date_ou, date_in, ni, nj, send, recv)
+      implicit none
+*
+      character*(*) date_ou, date_in
+      integer ni, nj, send, recv
+*
+*authors    Michel Desgagne - Spring 2008
+* 
+*revision
+* v3_31 - Desgagne M.       - initial MPI version
+**
+#include "itf_cpl.cdk"
+*
+      integer  mgi_write,mgi_read
+      external mgi_write,mgi_read
+*
+      character*16 datev
+      integer i,err,datstp
+      real*8 bidon(ni,nj)
+*
+*---------------------------------------------------------------
+*
+      send = -1
+      recv = -1
+*
+      if ( (date_ou.eq.'00000000.000000').and.
+     $     (date_in.eq.'00000000.000000') ) then
+         send = 0
+         recv = 0
+         return
+      endif
+*
+* SENDING
+*
+      call datp2f (datstp,date_ou)
+      write (6,1003) 'SENDING',date_ou
+      err = mgi_write (write_chan, datstp, 1, 'I')
+*
+      if (date_ou.eq.'00000000.000000') then
+         do i=1,ip_fldou
+            call itf_cpl_oasis_put (ni, nj, bidon, ig_varidou(i),
+     $                                          'BIDON', 0, err)
+            send = min(send,err)
+         end do
+         if (send.ge.0) send = 3001
+      else
+         do i=1,ip_fldou
+            call itf_cpl_oasis_put (ni, nj, atm_busou(1,(i-1)*nj+1),
+     $                           ig_varidou(i), cg_writ(i), 0, err)
+            send = min(send,err)
+         end do
+         if (send.ge.0) send = 5001
+      endif
+*
+* RECEIVING
+*
+      err = mgi_read(read_chan, datstp, 1, 'I')
+      call datf2p (datev,datstp)
+      write (6,1003) 'RECEIVING',datev
+*
+      if (datev.eq.date_in) then
+         do i=1,ip_fldin
+            call itf_cpl_oasis_get (ni, nj, atm_busin(1,(i-1)*nj+1), 
+     $                           ig_varidin(i), cg_read(i), 0, err)
+            recv = min(recv,err)
+         end do
+         if (recv.ge.0) recv = 5001
+      else
+         do i=1,ip_fldin
+            call itf_cpl_oasis_get (ni, nj, bidon, ig_varidin(i),
+     $                                          'BIDON', 0, err)
+            recv = min(recv,err)
+         end do
+         if (recv.ge.0) recv = 3001
+      endif
+*
+ 1003 format (/'====> ITF_CPL_EXCHG: ',a,' DATA valid: ',a)
+*
+*---------------------------------------------------------------
+*
+      return
+      end
+ 

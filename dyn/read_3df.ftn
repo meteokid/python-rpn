@@ -1,0 +1,152 @@
+! ------------------------------------------------------------------------------------------------------------------------------
+! EC-RPN COMM Group License/Disclaimer, version 2, Last Modified: Jan 08th, 2008 , Environment Canada
+! 
+! This is free software, you can use/redistribute/modify it under the terms of the EC-RPN COMM Group License/Disclaimer version 2 
+! or (at your option) any later version that should be found at http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+! 
+! This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the EC-RPN COMM Group License/Disclaimer for more details.
+! 
+! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
+! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
+! ------------------------------------------------------------------------------------------------------------------------------
+***s/r read_3df - Reads self-nested 3DF pilot files where
+*
+#include "model_macros_f.h"
+*
+      subroutine read_3df (unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn,
+     $                     trname_a,nvar,ntra,nga,nka_m,nka_s,nka_t,
+     $                     ofi,ofj,cumerr)
+      implicit none
+*
+      integer unf,nvar,ntra,nga,nka_m,nka_t,nka_s,ofi,ofj,cumerr
+      character*4 trname_a(ntra)
+      
+      real  uun(nga,nka_m), vvn (nga,nka_m),
+     $      zdn(nga,nka_t), ttn (nga,nka_s),
+     $      ssqn(nga,1  )  , meqn(nga,*  ),
+     $      qqn(nga,nka_m+1), wwn(nga,nka_t),
+     $      trn (nga,nka_s,ntra)
+*
+*author
+*     M. Desgagne  April 2006 (MC2 read_3df)
+*
+*revision
+* v3_30 - Lee V.         - initial version for GEMDM
+* v3_30 - McTaggart-Cowan R. - implement variable orography
+*
+#include "glb_ld.cdk"
+#include "ifd.cdk"
+#include "tr3d.cdk"
+#include "lun.cdk"
+#include "bcsgrds.cdk"
+*
+      character*4  nomvar
+      integer i,j,k,ntr,n,err,ni1,nj1,nk1,nbits,takeit
+      logical s_L,gz_L,tt_L,uu_L,vv_L,w_L,zd_L,q_L
+*
+*-----------------------------------------------------------------------
+*
+c     print *,'read_3df ntra=',ntra, 'nvar=',nvar
+      if (ntra.le.0) then
+          if (Lun_out.gt.0) write(Lun_out,*)'No tracers are available including HU'
+          call gem_stop('read_3df',-1)
+      endif
+      cumerr=0
+      uun = 0.0 
+      vvn = 0.0
+      zdn = 0.0
+      ttn = 0.0
+      ssqn= 0.0
+      qqn = 0.0
+      wwn = 0.0
+      trn = 0.0
+      ntr=0
+      s_L=.false.
+      gz_L=.false.
+      tt_L=.false.
+      uu_L=.false.
+      vv_L=.false.
+      w_L=.false.
+      zd_L=.false.
+      q_L=.false.
+      ana_zdw_L=.false.
+      ana_q_L=.false.
+* read tt1,st1, ME
+      do k=1,nvar+ntra
+          read (unf,end=44,err=44) nomvar,ni1,nj1,nk1,nbits
+c         print*, nomvar,ni1,nj1,nk1,nbits
+          if (nomvar.eq.'S   ') then
+              s_L=.true.
+              call filmup (nomvar,ssqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                          1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+          endif
+          if (nomvar.eq.'GZ  ') then
+              gz_L=.true.
+              call filmup (nomvar,meqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                          nk1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+          endif
+          if (nomvar.eq.'TT  ') then
+              tt_L=.true.
+              call filmup (nomvar,ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                          nka_s,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+          endif
+          if (nomvar.eq.'UU  ') then
+              uu_L=.true.
+              call filmup (nomvar,uun,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                          nka_m,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+          endif
+          if (nomvar.eq.'VV  ') then
+              vv_L=.true.
+              call filmup (nomvar,vvn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                          nka_m,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+          endif
+          if (nomvar.eq.'W   ') then
+              w_L=.true.
+              call filmup (nomvar,wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                          nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+          endif
+          if (nomvar.eq.'ZD  ') then
+              zd_L=.true.
+              call filmup (nomvar,zdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                          nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+          endif
+          if (nomvar.eq.'Q   ') then
+              q_L=.true.
+              call filmup (nomvar,qqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                          nka_m+1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+          endif
+          if (ntra.gt.0) then
+* check for tracers
+              takeit=-1 
+              do n=1,Tr3d_ntr
+                 if (nomvar.eq.Tr3d_name_S(n)) takeit=n
+              enddo
+              if (takeit.gt.0) then
+                  ntr=ntr+1
+                  trname_a(ntr)=Tr3d_name_S(takeit)
+                  call filmup (trname_a(ntr),trn(1,1,ntr),ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+     $                           nka_s,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+              endif
+          endif
+      enddo
+      if (.not.(s_L.and.tt_L.and.uu_L.and.vv_L.and.gz_L)) then
+          if (Lun_out.gt.0) then
+              write(Lun_out,*) 'ESSENTIAL variables are missing in 3df file:'
+              write(Lun_out,*) 'S =',s_L
+              write(Lun_out,*) 'TT=',tt_L
+              write(Lun_out,*) 'UU=',uu_L
+              write(Lun_out,*) 'VV=',vv_L
+              write(Lun_out,*) 'GZ=',GZ_L
+          endif
+          call gem_stop('read_3df',-1)
+      endif
+      ana_zdw_L = (zd_L.and.w_L)
+      ana_q_L   =  q_L
+      
+      return
+ 44   call gem_stop('read_3df',-1)
+ 1000 format(
+     +3X,'READING DATA IN (S/R READ_3DF)')
+      end
+*

@@ -43,40 +43,41 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer  pnerr, pnlod, pnlkey1(2), i,j,k
-      integer, save :: doneStep=-1
+      integer  pnerr, pnlod, pnlkey1(3), i,j,k
 **
       real*8 lt, pio2, f, atime, two
       parameter (two = 2.0d0)
 *     __________________________________________________________________
 *
-* Check to see if this step has already been completed
-      if (doneStep >= Lctl_step) return
-
       pnlkey1( 1) = VMM_KEY(topo)
-      pnlkey1( 2) = VMM_KEY(dtopo)
-      pnlod = 2
+      pnlkey1( 2) = VMM_KEY(topo1)
+      pnlkey1( 3) = VMM_KEY(dtopo)
+      pnlod = 3
 *     - - - - - - - - - - - - - 
       pnerr = vmmlod(pnlkey1,pnlod)
 *     - - - - - - - - - - - - - 
       pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(topo1)
       pnerr = VMM_GET_VAR(dtopo)
 *
+      if(Vtopo_ndt.eq.0)then
+         call gem_stop('var_topo : Vtopo_ndt must be > 0',-1)
+      endif
       lt = Vtopo_ndt
       pio2 = Dcst_pi_8 / two
 
       f = min(Lctl_step-Vtopo_start+1,Vtopo_ndt)
-      atime  = (cos(pio2 * (f-1.)/ lt))**two
-     %       - (cos(pio2 * f    / lt))**two
+      atime  = (cos(pio2 * (f-1.)/ lt))**2
+     %       - (cos(pio2 *  f    / lt))**2
+
       do j= 1, l_nj 
       do i= 1, l_ni
+         topo1 (i,j)  = topo(i,j)
          topo (i,j)   = topo(i,j)  + atime * dtopo(i,j)
       end do
       end do
 *
       pnerr = vmmuld(-1,0)
-*
-      doneStep = Lctl_step
 *
 *     __________________________________________________________________
 *

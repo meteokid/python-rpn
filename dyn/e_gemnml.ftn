@@ -39,7 +39,7 @@
 #include "dcst.cdk"
 #include "grd.cdk"
 #include "itf_phy_config.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 #include "pilot.cdk"
 #include "modconst.cdk"
 #include "hblen.cdk"
@@ -81,7 +81,7 @@
       P_pbl_schurb_S = dumc
 *
       if (itf_cpl_nml('process/model_settings') .ne. 1)
-     +        stop    'In e_gemnml: After itf_cpl_nml'
+     +                      stop    'In e_gemnml: After itf_cpl_nml'
 *
       LAM = Grd_typ_S(1:1).eq.'L'
 *

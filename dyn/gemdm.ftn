@@ -81,6 +81,10 @@
 *              --------------------------------
       call rdrstrt( )
 *
+*C             Initialize coupling
+*              -------------------
+      call itf_cpl_init ()
+*
 *C             Setup commons level 1: VMM tables
 *              ---------------------------------
       call set_cn1()
@@ -104,10 +108,6 @@
          call v4d_options
 *
       endif
-*
-*C    Finalize coupling (nothing is done if no coupling)
-*     -----------------
-      call itf_cpl_stop_coupling()
 *
       call set_term()
 *

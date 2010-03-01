@@ -10,7 +10,6 @@
 ! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
 ! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
 ! ------------------------------------------------------------------------------------------------------------------------------
-      integer maxhlev
-      parameter (maxhlev=1024)
-      real hyb (maxhlev)
-      common /hyb_r/ hyb
+      integer, parameter :: maxhlev=1024
+      real, dimension(maxhlev) :: hyb,hgt
+      common /hyb_r/ hyb,hgt

@@ -45,6 +45,7 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "opr.cdk"
+#include "schm.cdk"
 *
       integer i, j,k
       real*8 pdordr, zero, one, xxx, yyy
@@ -63,7 +64,11 @@
          enddo
       enddo
 *      
-      xxx = - Ver_epsilon_8*(one-Dcst_cappa_8) + Cstv_hco1_8
+      if(Schm_virlev_L) then
+         xxx = - Ver_epsilon_8*(one-Dcst_cappa_8) + Cstv_hco1_8
+      else
+         xxx = - one
+      endif
       yyy = - Cstv_hco1_8
 *
       do j=1,F_nk

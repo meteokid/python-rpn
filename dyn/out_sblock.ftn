@@ -15,7 +15,7 @@
 #include "model_macros_f.h"
 *
       subroutine out_sblock(F_numpe_perb,F_nblocx,F_nblocy,F_myblocx,F_myblocy,
-     $           F_mycol,F_myrow,F_hx,F_hy,F_ni,F_nj, F_blocme, F_mybloc,
+     $           F_mycol,F_myrow,F_ni,F_nj, F_blocme, F_mybloc,
      $           F_gindx,F_numproc,F_myproc,F_ixg,F_grtyp_S,F_unit_S,
      $           F_deet, F_dateo, F_etik_S, F_ndigits,F_runstrt_S,
      $           F_endstepno, F_flipit_L, F_debug_L)
@@ -28,7 +28,7 @@
       integer F_numpe_perb,F_nblocx,F_nblocy,F_myblocx,F_myblocy,
      $        F_myrow,F_mycol, F_mybloc,
      $        F_blocme,F_numproc,F_myproc, F_dateo,F_deet,F_endstepno
-      integer F_gindx(6,F_numproc),F_ni,F_nj,F_ixg(4),F_hx,F_hy
+      integer F_gindx(6,F_numproc),F_ni,F_nj,F_ixg(4)
       integer F_ndigits
       logical F_flipit_L, F_debug_L
 *author
@@ -54,8 +54,6 @@
 *----------------------------------------------------------------------
 *
       Out_unf        = 0
-      Out_hx         = F_hx
-      Out_hy         = F_hy
       Out_flipit_L   = F_flipit_L
       Out_debug_L    = F_debug_L
       Out_gridtyp_S  = F_grtyp_S
@@ -123,18 +121,10 @@
       Out_blocnj   = Out_blocjn - Out_blocj0 + 1
 
 *
-      Out_blocwest  = 0
-      Out_bloceast  = 0
-      Out_blocsouth = 0
-      Out_blocnorth = 0
       west_L  = Out_myblocx .eq. 0
       south_L = Out_myblocy .eq. 0
       east_L  = Out_myblocx .eq. Out_nblocx-1
       north_L = Out_myblocy .eq. Out_nblocy-1
-      if (west_L ) Out_blocwest  = 1
-      if (east_L ) Out_bloceast  = 1
-      if (south_L) Out_blocsouth = 1
-      if (north_L) Out_blocnorth = 1
 *
 *----------------------------------------------------------------------
       return

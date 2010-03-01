@@ -27,6 +27,7 @@
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_10 - Lee V.            - call to p_outphyinit
 * v3_30 - Desgagne M.       - moved bkup_L to gem_run
+* v3_31 - McTaggart-Cowan R.- correction for Vtopo mode in digflt
 *
 *object
 *	
@@ -43,6 +44,7 @@
 #include "init.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
+#include "vtopo.cdk"
 #include "step.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
@@ -124,6 +126,7 @@
          Rstri_idon_L = .true.
          call ta2t1tx()
          Lctl_step = (Init_dfnp-1)/2
+         if (Vtopo_start >= 0 .and. Lctl_step-Vtopo_start+1 <= Vtopo_ndt) Vtopo_L = .true.
          if (Lun_out.gt.0) write(Lun_out,1050) Lctl_step
       endif
 *

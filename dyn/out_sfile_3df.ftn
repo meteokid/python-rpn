@@ -34,10 +34,12 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       character*2  md
       character*15 startindx
       character*512 filen
+      integer presstype
 *
 *------------------------------------------------------------------
 *
       unf = 201
+      presstype = 6
 *
       write (md,'(i2.2)') mode
       write (startindx,'((i7.7),a1,(i7.7))') out_idg,'-',out_jdg
@@ -47,8 +49,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                                          position='APPEND')
 *
       call wrgeo_3df (G_xg_8(gid),out_nisg,G_yg_8(gjd),out_njsg,
-     $                Ver_a_8%m(1),Ver_b_8%m(1),Ver_a_8%t,Ver_b_8%t,
-     $                G_nk,nvar,ntr,unf)
+     $                Ver_a_8%m(1),Ver_b_8%m(1),
+     $                Ver_a_spcl_8%t,Ver_b_spcl_8%t,
+     $                Ver_a_8%t,Ver_b_8%t,
+     $                G_nk+1,G_nk+2,G_nk+1,presstype,nvar,ntr,unf)
       write (unf) msg,mode
 *
 *------------------------------------------------------------------

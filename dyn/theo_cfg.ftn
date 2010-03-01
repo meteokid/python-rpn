@@ -54,7 +54,6 @@
 *
       err = gem_nml ('')
       err = var4d_nml ('')
-      Theo_nivdist_S='UNI'
       Theo_case_S='xxx'
 
       Lam_runstrt_S="19980101.000000"

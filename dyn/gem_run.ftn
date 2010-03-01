@@ -123,6 +123,8 @@
       step0 = Lctl_step+1
       stepf = last_step
 *
+      call itf_cpl_fillatm
+*
       do istep = step0, stepf
 *
          Lctl_step = istep
@@ -183,6 +185,8 @@
 *
          call out_dyn (.true.,-1)
          call blocstat
+*
+         call itf_cpl_fillatm
 *
          if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 *

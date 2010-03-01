@@ -39,13 +39,12 @@
 *
 #endif
       logical Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L
-      real, dimension(:), pointer ::  topo ,topou ,topov,
-     $                                topof,topouf,topovf,
+      real, dimension(:), pointer ::  topo,topof,
      $          a_pr_m,i_pr_m,a_ir_m,i_ir_m,a_so_m,i_so_m
 *
       common / topo_l / Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,
      $                  Topo_dgfms_L
-      common / topo_r / topo,topou,topov,topof,topouf,topovf,
+      common / topo_r / topo,topof,
      $         a_pr_m,i_pr_m,a_ir_m,i_ir_m,a_so_m,i_so_m
 *
 

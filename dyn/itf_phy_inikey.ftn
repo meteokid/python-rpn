@@ -54,7 +54,7 @@
 #include "itf_phy_busind.cdk"
 #include "itf_phy_vmm.cdk"
 #include "itf_phy_config.cdk"
-#include "itf_cpl_cplg.cdk"
+#include "itf_cpl.cdk"
 #include "v4dg.cdk"
 *
 **

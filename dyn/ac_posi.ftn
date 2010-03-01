@@ -155,7 +155,7 @@ c    $call acid_rewritepos(xpx,dimgx,ac_xp,Grdc_ni,ypx,dimgy,ac_yp,Grdc_nj)
       if ((Grdc_proj_S.ne.'@').and.(.not.Rstri_rstn_L))  then
 *
          call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,.false.,
-     $                               -1,-1,1,'',Geomn_longs,Geomn_latgs)
+     $                               1,'','')
          outindx = 0
          if (Ptopo_blocme.eq.0) then
             outindx(1) = out_idg

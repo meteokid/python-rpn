@@ -35,7 +35,7 @@
      $                  Grd_latr, Grd_lonr, 
      $                  Grd_x0, Grd_xl, Grd_y0, Grd_yl,
      $                  Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2,
-     $                  Grd_rot(3,3),Grd_rcoef
+     $                  Grd_rot(3,3),Grd_rcoef(2)
       MARK_COMMON_END (Grd_r)
       MARK_COMMON_BEG (Grd_r8)
       common / Grd_r8 / Grd_rot_8(3,3)

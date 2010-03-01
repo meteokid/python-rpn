@@ -38,6 +38,8 @@
 * v3_30 - Spacek L.         - Added Vspng_zmean_L. If .true. the zonal
 *                             mean of u component is subtracted before
 *                             the diffusion and added back after it
+* v4_02 - Plante  A.        - Revision for vertical stag version
+* v4_03 - Tanguay M.        - Bugfix for calculation of cy_8 for vert wind
 *
 *object
 *     The diffusion coefficients are (Vspng_coef*Cstv_dt_8) for the
@@ -165,6 +167,10 @@
          end do
 !$omp enddo
 !$omp end parallel
+*
+         do j = 1, l_nj+1
+            cy_8(j) = G_yg_8(l_j0+j-1)
+         end do
 *     
          if (Hzd_difva_L) then
             call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,

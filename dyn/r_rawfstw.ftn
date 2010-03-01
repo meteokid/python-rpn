@@ -1,0 +1,25 @@
+      subroutine r_rawfstw (rs,nx,ny,varname,stepno,dt,date0,out_file)
+      implicit none
+*
+      integer nx,ny,stepno,dt,date0
+      real rs(nx,ny)
+      character* (*) varname,out_file
+*
+      integer fnom,fclos
+      integer id_unit,err,ip2
+*
+      id_unit=0
+      err = fnom (id_unit, out_file, 'rnd', 0)
+      call fstouv (id_unit,'rnd')
+*
+      ip2 =(stepno*dt)/3600
+      call fstecr (rs,rs,-32,id_unit, date0, int(dt), stepno, nx,ny,1,
+     $              0,ip2,0,'P',varname,'rslt2','X',1,1,1,1,1,.false.)
+c      call fstecr (rs,rs,-32,id_unit, dateo, int(dt), stepno, nx,ny,1,
+c     $              0,ip2,0,'P',varname,'rslt2','Y',1001,1002,1003,0,
+c     $                                                     1,.false.)
+      call fstfrm (id_unit)
+      err = fclos (id_unit)
+*
+      return
+      end

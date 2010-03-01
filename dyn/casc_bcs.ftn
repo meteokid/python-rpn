@@ -57,8 +57,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       real trp
       pointer (patrp, trp(LDIST_SHAPE,*))
       real, dimension (:,:,:), pointer :: trn
-      integer i,j,k,nka,ntra,n,err,ngd,nga,errop,ofi,ofj,mode,ioerr,
-     $   errdyn,cumerr,cnt,nit,njt,d1,ni1,nj1,nk1,nbits,id,nvar
+      integer i,j,k,ntra,n,err,ngd,nga,errop,ofi,ofj,mode,ioerr,
+     $   errdyn,cumerr,cnt,nit,njt,d1,ni1,nj1,nk1,nbits,id,nvar,
+     $   nka_m,nka_s,nka_t,presstype
       integer key1(17),keyp_,keyp(Tr3d_ntr)
       real*8  , dimension (:  ), pointer :: xpaq,ypaq,xpau,ypav
       real, dimension (:,:), pointer :: 
@@ -82,7 +83,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 
       nga  = bcs_nia * bcs_nja
-      nka  = 0
+      nka_m=0
+      nka_t=0
+      nka_s=0
       ntra = 0
       err  = 0
       done = .false.
@@ -97,7 +100,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          fn ='../casc/3df'//md//'_'//datev//'_'//ifd_fnext(n)
          open (unf,file=fn(1:longueur(fn)),access='SEQUENTIAL',
      $            form='UNFORMATTED',status='OLD',iostat=errop)
-         if (Lun_debug_L) write(Lun_out,*)'opening ',fn(1:longueur(fn)),'errop=',errop
+c        print *,'opening ',fn(1:longueur(fn)),'errop=',errop
          if (errop.ne.0) goto 33
 *
 * Use first file to establish 3D grid dimensions and geo-references
@@ -106,48 +109,29 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          if (.not.done) allocate (xpaq(bcs_nia), ypaq(bcs_nja), 
      $                            xpau(bcs_nia), ypav(bcs_nja))
          err = sid3df (xpaq,ypaq,xpau,ypav,unf,done,
-     $                     bcs_nia,bcs_nja,nka,nvar,ntra)
+     $                 bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,nvar,ntra)
          read (unf,end=33) dynophy,mode
 *
          if (.not.done) then
-            allocate (uun(nga,nka+1),vvn(nga,nka+1),
-     $                zdn(nga,nka+1),ttn(nga,nka+2),
-     $                meqn(nga,1),ssqn(nga,1),
-     $                qqn(nga,nka+2), wwn(nga,nka+1),
-     $                trn(nga,nka+2,ntra),
+            allocate (uun(nga,nka_m),vvn(nga,nka_m),
+     $                zdn(nga,nka_t),ttn(nga,nka_s),
+     $                ssqn(nga,1),
+     $                qqn(nga,nka_m+1), wwn(nga,nka_t),
+     $                trn(nga,nka_s,ntra),
      $                trname_a(ntra) )
+            if (presstype.eq.4) then
+                allocate (meqn(nga,nka_m))
+            else
+                allocate (meqn(nga,1))
+            endif
 	    uun=0.; vvn=0.; zdn=0.; ttn=0.; ssqn=0.; trn=0.; 
             wwn=0.; qqn=0.; meqn=0.;
          endif
          ofi = ifd_minx(n)-1
          ofj = ifd_miny(n)-1
          cumerr=0
-         call filmup ( ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+2,unf,ofi,ofj,cumerr )
-         call filmup (ssqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                          1,unf,ofi,ofj,cumerr )
-         call filmup (meqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                          1,unf,ofi,ofj,cumerr )
-         if (nvar.eq.7.or.nvar.eq.8) then
-         call filmup ( wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+1,unf,ofi,ofj,cumerr )
-         call filmup ( zdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+1,unf,ofi,ofj,cumerr )
-         endif
-         if (nvar.eq.8) then
-         call filmup ( qqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+2,unf,ofi,ofj,cumerr )
-         endif
-
-         if (ntra.gt.0) then
-             call filuptr ( trn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                      nka+2, unf,ofi,ofj,Tr3d_name_S,Tr3d_ntr,
-     $                                          trname_a,ntra,cumerr )
-         endif
-         call filmup ( uun,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+1,unf,ofi,ofj,cumerr )
-         call filmup ( vvn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                        nka+1,unf,ofi,ofj,cumerr )
+         call read_3df(unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn,
+     $             trname_a,nvar,ntra,nga,nka_m,nka_s,nka_t,ofi,ofj,cumerr)
          errdyn = cumerr
  33      continue
 *
@@ -191,7 +175,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $  bcs_is-1, topo_s,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  minxs,maxxs,minys,maxys,maxxs+1-(east*1),maxys+1, G_nk, 
-     $  bcs_nia,bcs_nja,nka,nvar,ntra)
+     $  bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for North boundary
 c     print *,Ptopo_myproc,'casc_hvi N:',minxn,maxxn,minyn,maxyn
@@ -203,7 +187,7 @@ c     print *,Ptopo_myproc,'casc_hvi N:',minxn,maxxn,minyn,maxyn
      $  bcs_in-1, topo_n,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  minxn,maxxn,minyn,maxyn,maxxn+1-(east*1),maxyn+1-(north*1), G_nk,
-     $  bcs_nia,bcs_nja,nka,nvar,ntra)
+     $  bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for West boundary
 c     print *,Ptopo_myproc,'casc_hvi W:'
@@ -215,7 +199,7 @@ c     print *,Ptopo_myproc,'casc_hvi W:'
      $  bcs_iw-1, topo_w,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  minxw,maxxw,minyw,maxyw,maxxw+1,maxyw+1, G_nk,
-     $  bcs_nia,bcs_nja,nka,nvar,ntra)
+     $  bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,ntra)
 
 * Perform horizontal and vertical interpolations for East boundary
 c     print *,Ptopo_myproc,'casc_hvi E:'
@@ -227,7 +211,7 @@ c     print *,Ptopo_myproc,'casc_hvi E:'
      $  bcs_ie-1, topo_e,
      $  uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,
      $  minxe,maxxe,minye,maxye,maxxe+1-(east*1),maxye+1, G_nk,
-     $  bcs_nia,bcs_nja,nka,nvar,ntra)
+     $  bcs_nia,bcs_nja,nka_m,nka_s,nka_t,presstype,ntra)
 *
       if (associated(xpaq)) deallocate (xpaq)
          if (associated(ypaq)) deallocate (ypaq)

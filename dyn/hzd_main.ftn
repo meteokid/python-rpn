@@ -105,7 +105,7 @@
 *              use FFT in diffusion-solver
                if (G_lam) then
                   print*,'S.V.P. verifier la diffusion de wt1'
-                  call gem_stop('hzd_main 1',-1)
+cap                  call gem_stop('hzd_main 1',-1)
                   call hzd_hof_lam ( ut1, vt1, wt1, tt1, st1, LDIST_DIM, G_nk)
                else
                   call hzd_hof ( ut1, vt1, wt1, tt1, st1, LDIST_DIM, G_nk)
@@ -134,8 +134,8 @@
                call vsexp (wk0(1+pil_w,j),wk0(1+pil_w,j),(l_ni-pil_e-pil_w))
                call vsexp (wk1(1+pil_w,j),wk1(1+pil_w,j),(l_ni-pil_e-pil_w))
                do i= 1+pil_w, l_ni-pil_e 
-                  wk0(i,j) = (wk0(i,j)-1.)*Cstv_pisrf_8
-                  wk1(i,j) = (wk1(i,j)-1.)*Cstv_pisrf_8
+                  wk0(i,j) = (wk0(i,j)-1.)*Cstv_pref_8
+                  wk1(i,j) = (wk1(i,j)-1.)*Cstv_pref_8
                end do
             end do
 !$omp enddo
@@ -152,7 +152,7 @@
                   wk1(i,j) = wk1(i,j) + bbb_8
                end do
                do i= 1+pil_w, l_ni-pil_e
-                  st1(i,j)= log(ONE_8+dble(wk1(i,j)/Cstv_pisrf_8))
+                  st1(i,j)= log(ONE_8+dble(wk1(i,j)/Cstv_pref_8))
                end do
             end do
 !$omp enddo

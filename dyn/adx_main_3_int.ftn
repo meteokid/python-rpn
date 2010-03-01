@@ -396,8 +396,7 @@ c     endif
                do i=i0,in
                   work(i,j,k)=0.5d0*(fiptx(i,j,k)+fiptx(i,j,k-1))
      $                 +Ver_fistr_8%t(k)
-                  work2(i,j,k)=exp(Ver_a_8%t(k) + Ver_b_8%t(k)*
-     $                 (st1(i,j)+Ver_z_8%t(G_nk+1)))
+                  work2(i,j,k)=exp(Ver_z_8%t(k) + Ver_b_8%t(k)*st1(i,j))
                enddo
                enddo
             enddo

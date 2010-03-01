@@ -47,80 +47,184 @@
 *
 *modules
 **
-      real*8 one, half, quarter
-      parameter( one  = 1.d0, half = .5d0, quarter = .25d0 )
+      real*8 one, half
+      parameter( one  = 1.d0, half = .5d0 )
 *
-      integer k, k0,longueur
-      real*8  pdsc, wk(G_nk)
+      integer k, k0,longueur, AA, BB, CC
+      real*8  pdsc, aaa,bbb,ccc,ddd_t,ddd_s,eee_t,eee_s,xxt,xxs,wk(G_nk)
       real*8, dimension 
      $((trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj) :: a,b,c
 
 *
 *     ---------------------------------------------------------------
 *
-*     Compute the vertical operators
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     Compute the vertical operators: tri-diagnonal matrices
+*                  O(AA+k): lower diagonal
+*                  O(BB+k):       diagonal
+*                  O(CC+k): upper diagonal
+*           O(AA+k)*P(k-1)+O(BB+k)*P(k)+O(CC+k)*P(k+1)
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *
+      AA=0
+      BB=G_nk
+      CC=G_nk*2
+*
+*     ~~~~~~~~~~~~~~~~~
 *     Diagonal Operator
 *     ~~~~~~~~~~~~~~~~~
+*
       do k = 1, G_nk
-         Opr_opszp0_8(       k)=0.d0
-         Opr_opszp0_8(G_nk  +k)=Ver_dz_8%m(k)
-         Opr_opszp0_8(G_nk*2+k)=0.d0
+         Opr_opszp0_8(AA+k) = 0.d0
+         Opr_opszp0_8(BB+k) = Ver_dz_8%m(k)
+         Opr_opszp0_8(CC+k) = 0.d0
       end do
+*
+      if(Schm_virlev_L) then
 *                                          
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 *     Second Derivative Operator
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~
-      Opr_opszp2_8(     1)=0.d0
-      Opr_opszp2_8(G_nk*3)=0.d0
-      do k = 1, G_nk-1
-         Opr_opszp2_8(       k+1)= Ver_idz_8%t(k+1)
-         Opr_opszp2_8(G_nk*2+k  )=+ Opr_opszp2_8(k+1)
-         Opr_opszp2_8(G_nk  +k  )=-(Opr_opszp2_8(G_nk*2+k)+Opr_opszp2_8(k))
-      end do
-      Opr_opszp2_8(G_nk*2       )=-Opr_opszp2_8(G_nk)
-*      
-*     Adjusted for vertical boundary conditions
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      Opr_opszp2_8(2*G_nk) = Opr_opszp2_8(2*G_nk)
-     $                     + (ver_alphas_8-one)*Ver_idz_8%t(G_nk+1)
-      Opr_opszp2_8(G_nk+1) = Opr_opszp2_8(G_nk+1)
-     $                     - (one-Ver_alphat_8)*Ver_idz_8%t(1)
 *
+      Opr_opszp2_8(AA+1)    = 0.d0
+      Opr_opszp2_8(BB+1)    =-Ver_idz_8%t(1)*(one-Ver_alfat_8)
+     $                       -Ver_idz_8%t(2)
+      Opr_opszp2_8(CC+1)    = Ver_idz_8%t(2)
+      do k = 2, G_nk-1
+         Opr_opszp2_8(AA+k) = Ver_idz_8%t(k)
+         Opr_opszp2_8(BB+k) =-Ver_idz_8%t(k)-Ver_idz_8%t(k+1)
+         Opr_opszp2_8(CC+k) = Ver_idz_8%t(k+1)
+      end do
+      Opr_opszp2_8(AA+G_nk) = Ver_idz_8%t(G_nk)
+      Opr_opszp2_8(BB+G_nk) =-Ver_idz_8%t(G_nk)
+     $                       -Ver_idz_8%t(G_nk+1)*(one-ver_alfas_8)
+      Opr_opszp2_8(CC+G_nk) = 0.d0
+*
+*     ~~~~~~~~~~~~~~~~~~~~~~~
 *     Double average operator
 *     ~~~~~~~~~~~~~~~~~~~~~~~
-      Opr_opszpm_8(     1)=0.d0
-      Opr_opszpm_8(G_nk*3)=0.d0
-      do k = 1, G_nk-1
-         Opr_opszpm_8(       k+1)= quarter*Ver_dz_8%t(k+1)
-         Opr_opszpm_8(G_nk*2+k  )=+ Opr_opszpm_8(k+1)
-         Opr_opszpm_8(G_nk  +k  )=+(Opr_opszpm_8(G_nk*2+k)+Opr_opszpm_8(k))
-      end do
-      Opr_opszpm_8(G_nk*2       )=+Opr_opszpm_8(G_nk)
-*        
-*     Adjusted for vertical boundary conditions
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      Opr_opszpm_8(2*G_nk)=Opr_opszpm_8(2*G_nk)
-     $                    +(one+ver_alphas_8)*quarter*Ver_dz_8%t(G_nk+1)
-      Opr_opszpm_8(G_nk+1)=Opr_opszpm_8(G_nk+1)
-     $                    +(one+ver_alphat_8)*quarter*Ver_dz_8%t(1)
 *
+      Opr_opszpm_8(AA+1)    = 0.d0
+      Opr_opszpm_8(BB+1)    = half*Ver_dz_8%m(1)*(Ver_wp_8_m(1)
+     $                       +(one+ver_alfat_8) * Ver_wm_8_m(1) )
+      Opr_opszpm_8(CC+1)    = half*Ver_dz_8%m(1)* Ver_wp_8_m(1)
+      do k = 2, G_nk-1
+         Opr_opszpm_8(AA+k) = half*Ver_dz_8%m(k)* Ver_wm_8_m(k)
+         Opr_opszpm_8(BB+k) = half*Ver_dz_8%m(k)* Ver_wm_8_m(k)
+     $                       +half*Ver_dz_8%m(k)* Ver_wp_8_m(k)
+         Opr_opszpm_8(CC+k) = half*Ver_dz_8%m(k)* Ver_wp_8_m(k)
+      end do
+      Opr_opszpm_8(AA+G_nk) = half*Ver_dz_8%m(G_nk)* Ver_wm_8_m(G_nk)
+      Opr_opszpm_8(BB+G_nk) = half*Ver_dz_8%m(G_nk)*(Ver_wm_8_m(G_nk)
+     $                          +(one+ver_alfas_8) * Ver_wp_8_m(G_nk) )
+      Opr_opszpm_8(CC+G_nk) = 0.d0
+*        
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *     First Derivative Operator (non symetric)
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      Opr_opszpl_8(     1)=0.d0
-      Opr_opszpl_8(G_nk*3)=0.d0
-      do k = 1, G_nk-1
-         Opr_opszpl_8(       k+1)= -half
-         Opr_opszpl_8(G_nk*2+k  )= -Opr_opszpl_8(k+1)
-         Opr_opszpl_8(G_nk  +k  )=  .0d0
+*
+      Opr_opszpl_8(AA+1)    = 0.d0
+      Opr_opszpl_8(BB+1)    =-half*ver_alfat_8
+      Opr_opszpl_8(CC+1)    = half
+      do k = 2, G_nk-1
+         Opr_opszpl_8(AA+k) =-half
+         Opr_opszpl_8(BB+k) = 0.d0
+         Opr_opszpl_8(CC+k) = half
       end do
-      Opr_opszpl_8(G_nk*2       )=  .0d0
+      Opr_opszpl_8(AA+G_nk) =-half
+      Opr_opszpl_8(BB+G_nk) = half*ver_alfas_8
+      Opr_opszpl_8(CC+G_nk) = 0.d0
 *
-*     Adjusted for vertical boundary conditions
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      Opr_opszpl_8(2*G_nk)=Opr_opszpl_8(2*G_nk)+ver_alphas_8*half
-      Opr_opszpl_8(G_nk+1)=Opr_opszpl_8(G_nk+1)-ver_alphat_8*half
+      else
 *
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     Second Derivative Operator
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~
+      xxt=one/(one-Ver_chit_8)
+      xxs=one/(one-Ver_chis_8)
+*
+      Opr_opszp2_8(AA+1)    = 0.d0
+      Opr_opszp2_8(BB+1)    =-xxt*(Ver_idz_8%t(2)
+     $                            +Ver_idz_8%t(1)*(one-Ver_alfat_8))
+      Opr_opszp2_8(CC+1)    = xxt*(Ver_idz_8%t(2)
+     $                            -Ver_idz_8%t(1)*Ver_betat_8)
+      do k = 2, G_nk-1
+         Opr_opszp2_8(AA+k) = Ver_idz_8%t(k)
+         Opr_opszp2_8(BB+k) =-Ver_idz_8%t(k)-Ver_idz_8%t(k+1)
+         Opr_opszp2_8(CC+k) = Ver_idz_8%t(k+1)
+      end do
+      Opr_opszp2_8(AA+G_nk) = xxs*(Ver_idz_8%t(G_nk  )
+     $                            -Ver_idz_8%t(G_nk+1)*Ver_betas_8)
+      Opr_opszp2_8(BB+G_nk) =-xxs*(Ver_idz_8%t(G_nk  )
+     $                            +Ver_idz_8%t(G_nk+1)*(one-ver_alfas_8))
+      Opr_opszp2_8(CC+G_nk) = 0.d0
+*
+*
+*     ~~~~~~~~~~~~~~~~~~~~~~~
+*     Double average operator
+*     ~~~~~~~~~~~~~~~~~~~~~~~
+*
+      aaa = Ver_epsilon_8-Cstv_hco1_8
+      bbb = Ver_epsilon_8*Dcst_cappa_8
+      ccc = aaa - bbb
+      ddd_t = Ver_alfat_8+Ver_chit_8*(half-Ver_alfat_8)
+      ddd_s = Ver_alfas_8+Ver_chis_8*(half-Ver_alfas_8)
+      eee_t = Ver_betat_8-Ver_chit_8*(half+Ver_betat_8)
+      eee_s = Ver_betas_8-Ver_chis_8*(half+Ver_betas_8)
+      Opr_opszpm_8(AA+1)    = 0.d0
+      Opr_opszpm_8(BB+1)    = (aaa*( Ver_wp_8_m(1)*half
+     $                             + Ver_wm_8_m(1)*ddd_t)
+     $                       - bbb*(Ver_w2p_8_m(1)*half
+     $                             +Ver_w2m_8_m(1)*ddd_t))*Ver_dz_8%m(1)
+      Opr_opszpm_8(CC+1)    = (aaa*( Ver_wp_8_m(1)*half
+     $                             - Ver_wm_8_m(1)*eee_t)
+     $                       - bbb*(Ver_w2p_8_m(1)*half
+     $                             -Ver_w2m_8_m(1)*eee_t))*Ver_dz_8%m(1)
+      do k = 2, G_nk-1
+         Opr_opszpm_8(AA+k) = half*Ver_dz_8%m(k)*
+     $                       (aaa*Ver_wm_8_m(k)-bbb*Ver_w2m_8_m(k))
+         Opr_opszpm_8(BB+k) = half*Ver_dz_8%m(k)*ccc
+         Opr_opszpm_8(CC+k) = half*Ver_dz_8%m(k)*
+     $                       (aaa*Ver_wp_8_m(k)-bbb*Ver_w2p_8_m(k))
+      end do
+      Opr_opszpm_8(AA+G_nk) = (aaa*( Ver_wm_8_m(G_nk)*half
+     $                             - Ver_wp_8_m(G_nk)*eee_s)
+     $                       - bbb*(Ver_w2m_8_m(G_nk)*half
+     $                             -Ver_w2p_8_m(G_nk)*eee_s))*Ver_dz_8%m(G_nk)
+      Opr_opszpm_8(BB+G_nk) = (aaa*( Ver_wm_8_m(G_nk)*half
+     $                             + Ver_wp_8_m(G_nk)*ddd_s)
+     $                       - bbb*(Ver_w2m_8_m(G_nk)*half
+     $                             +Ver_w2p_8_m(G_nk)*ddd_s))*Ver_dz_8%m(G_nk)
+      Opr_opszpm_8(CC+G_nk) = 0.d0
+*
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     First Derivative Operator (non symetric)
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+      Opr_opszpl_8(AA+1)    = 0.d0
+      Opr_opszpl_8(BB+1)    =-Ver_dz_8%m(1)*
+     $                       (Ver_wp_8_m(1)/Ver_dz_8%t(2)
+     $                       -Ver_wm_8_m(1)/Ver_dz_8%t(1)*(one-Ver_alfat_8))
+      Opr_opszpl_8(CC+1)    = Ver_dz_8%m(1)*
+     $                       (Ver_wp_8_m(1)/Ver_dz_8%t(2)
+     $                       +Ver_wm_8_m(1)/Ver_dz_8%t(1)*Ver_betat_8)
+      do k = 2, G_nk-1
+         Opr_opszpl_8(AA+k) =-Ver_dz_8%m(k)*Ver_wm_8_m(k)/Ver_dz_8%t(k)
+         Opr_opszpl_8(BB+k) = Ver_dz_8%m(k)*Ver_wm_8_m(k)/Ver_dz_8%t(k)
+     $                       -Ver_dz_8%m(k)*Ver_wp_8_m(k)/Ver_dz_8%t(k+1)
+         Opr_opszpl_8(CC+k) = Ver_dz_8%m(k)*Ver_wp_8_m(k)/Ver_dz_8%t(k+1)
+      end do
+      k=G_nk
+      Opr_opszpl_8(AA+G_nk) =-Ver_dz_8%m(k)*
+     $                       (Ver_wm_8_m(k)/Ver_dz_8%t(k)
+     $                       +Ver_wp_8_m(k)/Ver_dz_8%t(k+1)*Ver_betas_8)
+      Opr_opszpl_8(BB+G_nk) = Ver_dz_8%m(k)*
+     $                       (Ver_wm_8_m(k)/Ver_dz_8%t(k)
+     $                       -Ver_wp_8_m(k)/Ver_dz_8%t(k+1)*(one-Ver_alfas_8))
+      Opr_opszpl_8(CC+G_nk) = 0.d0
+*
+      endif
+*     ---------------------------------------------------
 *     Compute eigenvalues and eigenvector in the vertical
 *     ---------------------------------------------------
 *

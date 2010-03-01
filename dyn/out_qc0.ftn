@@ -27,6 +27,7 @@
 *revision
 * v3_20 - Lee V.            - initial MPI version (from blocqc0 v3_12)
 * v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
+* v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
 *
 *object
 *     the output of the QC at timestep 0
@@ -69,7 +70,6 @@
       integer i0,in,j0,jn,ii,jj,kk,levset,n,ip3,pnerr,nk_o,nk_ot
       integer qcnbit,qcfilt
       integer,   dimension(:), allocatable :: ind_o
-      real ptop(LDIST_SHAPE), p0(LDIST_SHAPE),ptopval
       real, dimension(:,:,:), allocatable :: w5
       real, dimension(:), allocatable :: prprlvl
       real wlnpi_m(LDIST_SHAPE,0:G_nk+1), wlnpi_t(LDIST_SHAPE,G_nk+2)
@@ -121,32 +121,21 @@
       err = vmmlod (key0,1)
       err = VMM_GET_VAR(st1)
 *
-      ptopval    = exp(Ver_a_8%t(1))
-      do j=1,l_nj
-      do i=1,l_ni
-         p0   (i,j) = exp(st1(i,j))*Cstv_pisrf_8
-      end do
-      end do
-
-*        Pressure on momentum levels, with extra levels at top (k=0) and
-*        surface (k=G_nk+1)
-         wlnpi_m(:,:,0) = ptopval
-         wlnpi_m(:,:,G_nk+1) = p0(:,:)
-         do k=1,l_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               wlnpi_m(i,j,k) = Ver_a_8%m(k) + Ver_b_8%m(k)*wlnpi_m(i,j,G_nk+1)
-            enddo
-            enddo
-         enddo
-*        Pressure on thermo levels.
+*        Log-pressure on momentum and thermo levels,
+*        with extra momentum levels at top (k=0) and surface (k=G_nk+1)
+*        and with an extra thermo level at surface (k=G_nk+2)
+*
+         wlnpi_m(:,:,0)= Cstv_Ztop_8
          do k=1,G_nk+1
             do j=1,l_nj
             do i=1,l_ni
+               wlnpi_m(i,j,k) = Ver_a_spcl_8%m(k)
+     %                        + Ver_b_spcl_8%m(k)*st1(i,j)
                wlnpi_t(i,j,k)=.5d0*(wlnpi_m(i,j,k)+wlnpi_m(i,j,k-1))
             enddo
             enddo
          enddo
+
          do j=1,l_nj
          do i=1,l_ni
             wlnpi_t(i,j,G_nk+2)=wlnpi_m(i,j,G_nk+1)
@@ -185,11 +174,8 @@
      $                                    .eq. G_ni ) periodx_L=.true.
           call out_sgrid(Grid_x0(outd_grid(kk)),Grid_x1(outd_grid(kk)),
      $                   Grid_y0(outd_grid(kk)),Grid_y1(outd_grid(kk)),
-     $                   periodx_L,
-     $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
-     $                   Grid_stride(outd_grid(kk)),
-     $                   Grid_etikext_s(outd_grid(kk)),
-     $                   Geomn_longs,Geomn_latgs)
+     $                   periodx_L, Grid_stride(outd_grid(kk)),
+     $                   Grid_etikext_s(outd_grid(kk)),' ' )
 
           levset = Outd_lev(kk)
 
@@ -198,9 +184,12 @@
 
           call out_slev(Level_typ(levset),Level(1,levset),
      $                    ind_o,nk_o,nk_ot,G_nk,Level_kind_ip1,'d')
-          call out_sfile(Out3_closestep,Lctl_step,' ',ip3,ext_S)
+          call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
+          call out_href(Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
+     $                  Geomn_longs,Geomn_latgs)
  
-          if (Level_typ(levset).eq.'M') then
+          if (Out_levtyp_S.eq.'M') then
+              call out_vref(st1,l_minx,l_maxx,l_miny,l_maxy)
               if ( Out3_cliph_L ) then
                    allocate(w5(LDIST_SHAPE,G_nk+2))
                    do k= 1, G_nk+2

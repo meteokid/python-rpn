@@ -34,10 +34,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
       integer i,j,k,iff,id,jd,jf
 *----------------------------------------------------------------------
-       id   = 1            - Out_hx
-       jd   = 1            - Out_hy
-       iff  = Out_myprocni + Out_hx 
-       jf   = Out_myprocnj + Out_hy
+       id   = 1
+       jd   = 1
+       iff  = Out_myprocni
+       jf   = Out_myprocnj
 *
       do k=1,lnk
       do j=jf+1,maxy

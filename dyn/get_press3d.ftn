@@ -16,12 +16,12 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine get_press3d(F_pr, F_ps, n, F_pia, F_pib, NK, F_datatype)
+      subroutine get_press3d(F_pr, F_p0, NN, F_a_8, F_b_8, F_pref_8, NK, F_datatype)
       implicit none
 *
-      integer n, NK,F_datatype
-      real F_pr(n,NK),F_ps(n)
-      real*8 F_pia(Nk), F_pib(Nk)
+      integer NN, NK, F_datatype
+      real F_pr(NN,NK), F_p0(NN)
+      real*8 F_a_8(NK), F_b_8(NK), F_pref_8
 *
 *author
 *
@@ -39,25 +39,29 @@
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
-* F_gz         O    - geopotential height
-* F_pia        I    - actually RNA if F_sig_L=T
-*                   - pia          if F_sig_L=F
-* F_pib        I    - unused       if F_sig_L=T
-*                   - pib          if F_sig_L=F and F_pib_L=T
-*                   - pibb         if F_sig_L=F and F_pib_L=F
-* F_ps         I    - ln(pi_s/z_s) if F_pib_L=T
-*                   - pi_S         if F_pib_L=F or F_sig_L=T
-* F_vt         I    - virtual temperature
-* F_pib_L      I    - TRUE or FALSE
-* F_sig_L      I    - TRUE or FALSE
+* F_pr           O    - 3D pressure field
+* F_p0           I    - incoming 2D surface pressure
+* NN             I    - number of points in the 2D field of F_p0
+* F_a_8          I    - A 
+* F_b_8          I    - B
+* F_pref_8       I    - a reference pressure
+* NK             I    - Number of levels to the 3D pressure field
+* F_datatype     I    - code for:
+*
+*                     2 formulae             p0             6 anal
+*
+*            1 => p =    A+B*   ps       , F_p0=ps      ,  hyb-anal
+*            2 => p =    A+B*   ps       , F_p0=ps      ,  eta-anal
+*            3 => p =    A+B*   ps       , F_p0=ps (A=0),  sig-anal
+*            4 => p =    A                         (B=0),  prs-anal
+*            5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
+*            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
 *
 *implicits
-#include "lun.cdk"
-#include "glb_ld.cdk"
-#include "cstv.cdk"
 *
 **
       integer i,k
+      real*8 lnpref_8
 *
 *     ---------------------------------------------------------------
 *
@@ -68,19 +72,30 @@
 *     Acql_ecmanl  = (Acqi_datasp(2).eq.5)
 *     Acql_stganl  = (Acqi_datasp(2).eq.6)
 
+      lnpref_8 = log(F_pref_8)
+
       if (F_datatype.eq.3) then
-* Sigma levels (F_ps = p0)
-          do k=1,Nk
-          do i=1,n
-             F_pr(i,k) =  F_pia(k)  *  F_ps(i)
+* Sigma levels
+          do k=1,NK
+          do i=1,NN
+             F_pr(i,k) =            F_b_8(k)*F_p0(i)
           enddo
           enddo
-      else if (F_datatype.eq.6.or.F_datatype.eq.5.or.
-     %         F_datatype.eq.2.or.F_datatype.eq.1) then
-* Hybrid levels (stag or non-stag) (F_ps = p0)
-          do k=1,Nk
-          do i=1,n
-             F_pr(i,k) = F_pia(k) + F_pib(k)*F_ps(i)
+      else if (F_datatype.eq.5.or.
+     %         F_datatype.eq.2.or.
+     %         F_datatype.eq.1) then
+* Hybrid levels (p-type)
+          do k=1,NK
+          do i=1,NN
+             F_pr(i,k) = F_a_8(k) + F_b_8(k)*F_p0(i)
+          enddo
+          enddo
+      else if (F_datatype.eq.6.or.F_datatype.eq.0) then
+* Hybrid levels (lnp-type)
+          do k=1,NK
+          do i=1,NN
+c            F_pr(i,k) = exp(F_a_8(k) + F_b_8(k)*(log(F_p0(i))-lnpref_8))
+             F_pr(i,k) = exp(F_a_8(k) + F_b_8(k)*F_p0(i))
           enddo
           enddo
       else 

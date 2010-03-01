@@ -55,7 +55,6 @@
 #include "e_fu.cdk"
 #include "e_grids.cdk"
 #include "e_anal.cdk"
-#include "e_option.cdk"
 #include "e_cdate.cdk"
 #include "dcst.cdk"
 #include "pilot.cdk"
@@ -79,23 +78,22 @@
       real      x1,lev,difsig,dx,dy
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit,
      $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
-      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2
-      real, dimension (:,:), allocatable :: ttn,hun
+      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2,hr
+      real, dimension (:,:), allocatable :: ttn,hun,gzn
       integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum,nvar
-      real*8 Cstv_pisrf_8
-      parameter (Cstv_pisrf_8=100000.0)
 *
 *---------------------------------------------------------------------
 *
+      write(6,1001)
       c1 = Dcst_tcdk_8
       c2 = 10. * Dcst_grav_8
       vtt=vt//'  '
       vhh=vh//'  '
 *
-c
+*
       if(e_schm_offline_l.and.(.not.Pil_bmf_L))
      $     call gem_stop("e_intthm : bmf file only in offline mode",-1)
-c
+*
 
       if (Pil_bmf_L) then
           nis=nifi
@@ -106,119 +104,18 @@ c
       endif
       ng = nis*njs
 *
-      allocate(tt(ng),td(ng),es(ng),hu(ng),p0(ng),wk2(ng))
-*
-      write(6,1001)
-*     First, get the IP1 targets for temperature and humidity records
-      if (.not.e_Schm_offline_L) then
-         print *,'Levels searched: fstinl on vtt=',vtt
-*
-         if (Anal_ecmwf_L) then
-            key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl,ip1a,
-     $                           ip2a, -1, tva, vtt, list, nka, lvmax)
-         else
-            key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1,
-     $                           ip2a, ip3a, tva, vtt, list, nka, lvmax)
-         endif
-      else
-         ip1a=11950
-         key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, ip1a,
-     $                     ip2a, ip3a, tva, vtt, list, nka, lvmax)
-         write (6,130)
-         write (6,102) ip1a
-         write (6,201) vtt
-      endif
-
-      print *,'nka=',nka,' ni1,nj1=',ni1,nj1
-
-      do k = 1, nka
-         err = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty,
-     x              ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3,
-     x                           g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
-
-         if (nia.ne.ni1 .or. nja.ne.nj1) then
-            write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH'
-            call e_arret( 'e_intthm')
-         elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or.
-     x         ig3a .ne.g3  .or. ig4a .ne.g4) then
-            write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH'
-            call e_arret( 'e_intthm')
-         endif
-         call convip (ip1a, lev, kind, -1, blk_S, .false.)
-         if ( (((Anal_sigma_L).or.(Anal_eta_L)).and. (kind.ne.1)) .or.
-     $        (( Anal_ecmwf_L               ).and. (kind.ne.3)) .or.
-     $        (( Anal_pres_L                ).and. (kind.ne.2)) .or.
-     $        (( Anal_hyb_L                 ).and.((kind.ne.1)
-     $                                      .and.(kind.ne.5)))) then
-            write(6,*)':  LEVEL ',ip1a,' LEVEL INCONSISTENCY'
-            call e_arret( 'e_intthm')
-         elseif (Anal_ecmwf_L) then
-            rna_t(k) = ip3a
-            na_t(k)  = ip1a
-         else
-            rna_t(k) = lev
-            na_t(k)  = ip1a
-         endif
-      enddo
-      LV_t = nka
-*
-*     Sort levels in ascending order (originally done in e_sortr)
-
-      if (lv_t.ne.1) then
-         n = lv_t
-         do i = 1, n-1
-         k = i
-         do j = i+1, n
-            if (rna_t(k) .gt. rna_t(j))  k=j
-         enddo
-         if (k .ne. i) then
-            x1     = rna_t(k)
-            m      = na_t(k)
-            rna_t(k) = rna_t(i)
-            na_t(k)  = na_t(i)
-            rna_t(i) = x1
-            na_t(i)  = m
-         endif
-         enddo
-
-*        eliminate levels that are redundant in LISTE
-         i = 1
-         do j=2,n
-            if (rna_t(i) .ne. rna_t(j)) then
-                i = i+1
-                if (i .ne. j) then
-                    rna_t(i) = rna_t(j)
-                     na_t(i) =  na_t(j)
-                endif
-            endif
-         enddo
-         lv_t = i
-
-      endif
-*
-      print*, ' TT ANALYSIS LEVELS FOUND ARE:'
-      do k=1,lv_t
-         write(6,801) rna_t(k),k,na_t(k)
-      end do
-
-      if ( anal_hav(2).eq.6.and. LV_t.ne.LV+1) then
-          print *,'Levels found for TT/VT is',LV_t,': should be ',LV+1
-      endif
-
-
+      allocate(tt(ng),td(ng),es(ng),hr(ng),hu(ng),p0(ng),wk2(ng))
 *
 *     For searching the GZ(at surface),HU,TT,VT,P0 records, 
 *     correct IP1 targets must be found
 *
       anyip_L = .false.
       arret_L = .true.
+      if (.not.Pil_bmf_L)  allocate(ttn(ng,lv_t),hun(ng,lv_t),gzn(ng,lv_t))
 
       if ( Anal_eta_L .or. Anal_sigma_L .or. Anal_hyb_L ) then
          write(6,*)
      $      'ANALYSIS IS IN SIGMA OR ETA OR HYBRID COORDINATES'
-*
-         if (.not.Pil_bmf_L)
-     $   allocate(ttn(ng,lv_t),hun(ng,lv_t))
 *
          do k=1,lv_t
             if (e_rdhint3 (hu,dstf_gid,nis,njs,'HU  ',na_t(k),ip2a,
@@ -241,36 +138,21 @@ c
             endif
          end do
 *
-         if (Pil_bmf_L) then
-c           Read, interpolate, scale and write P0.
-            err = e_bmfrd (dstf_gid, nis, njs, 'P0  ',   0.,100., -1,
-     $                                   1, anyip_L,arret_L,'CUBIC')
-         else
-c           Read and interpolate P0.
-            err = e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',na_t(k),
-     $             ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
-            if (err.lt.0) goto 55 
-c           Scale P0.
-            p0 (:) = wk2(:)*100.
-            p0 (:) = log (p0(:)/Cstv_pisrf_8)
-c           P0 is written below.
-         endif
-c
          if (.not.e_schm_offline_l) then
             if (.not.Pil_bmf_L) then
-c              Read and interpolate surface GZ.
+*              Read and interpolate surface GZ.
                err = e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na_t(lv_t),
      $              ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
                if (err.lt.0) goto 55
-c              Scale
+*              Scale
                wk2(:)=wk2(:)*c2
-c              Surface GZ is written below.
+*              Surface GZ is written below.
             else if (anal_hav(1).eq.0) then
-c              No interpolation : read, scale and write surface GZ.
+*              No interpolation : read, scale and write surface GZ.
                err = e_bmfrd (dstf_gid,nis,njs,'GZ  ',0.,c2,na_t(lv_t),
      $              1,.false.,.true.,'CUBIC')
             else
-c              Read, interpolate, scale and write surface GZ.
+*              Read, interpolate, scale and write surface GZ.
                err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ',   0., c2,na_t(lv_t),
      $              1, anyip_L,arret_L,'CUBIC')               
             endif               
@@ -284,14 +166,10 @@ c              Read, interpolate, scale and write surface GZ.
      $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
      $            lv_t, 'TT  ',unf_casc)
-                call e_write_bcs (p0 ,nis,njs,
-     $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
-     $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
-     $            1 , 'S  ',unf_casc)
                 call e_write_bcs (wk2,nis,njs,
      $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
-     $            1 , 'ME  ',unf_casc)
+     $            1 , 'GZ  ',unf_casc)
                 call e_write_bcs (hun,nis,njs,
      $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
@@ -300,8 +178,7 @@ c              Read, interpolate, scale and write surface GZ.
              else
 *
                 call e_write_3df ( ttn,nis,njs,lv_t,'TT  ',unf_casc)
-                call e_write_3df ( p0 ,nis,njs,1 ,'S   ',unf_casc)
-                call e_write_3df ( wk2,nis,njs,1 ,'ME  ',unf_casc)
+                call e_write_3df ( wk2,nis,njs,1 ,'GZ  ',unf_casc)
                 call e_write_3df ( hun,nis,njs,lv_t,'HU  ',unf_casc)
 *
              endif
@@ -365,60 +242,92 @@ c              Read, interpolate, scale and write surface GZ.
 *
       else
 *
-         print*,"e_intthm : Review code for staggering"
-         stop
-
          write(6,*)'ANALYSIS IS IN PRESSURE COORDINATES' 
-         anal_hav(1) = e_bmfrd ( dstf_gid, nis, njs, 'GZ  ', 0., 10.,
-     $                                  na_t,lv_t, anyip_L,arret_L,'CUBIC' )
-         if (vh.eq.'ES') then
-            err = e_bmfrd ( dstf_gid, nifi, njfi, vhh   , 0., 1. ,
-     $                                  na_t,lv_t, anyip_L,arret_L,'CUBIC' )
-         elseif (vh.eq.'TD' .or.
-     $           vh.eq.'HU' .or.
-     $           vh.eq.'HR') then
-            do k=1,lv_t
-*
-               if (vh.eq.'HU' .or.
-     $             vh.eq.'HR') then
-                  if (e_rdhint3 (hu,dstf_gid,nifi,njfi,vhh,na_t(k),ip2a,
+         anal_hav(1)=1
+         do 100 k=1,lv_t
+*              Read and interpolate surface GZ.
+*              Surface GZ is written below.
+               if (e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na_t(k),ip2a,
+     $              ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $              goto 55
+*              Scale
+               wk2(:)=wk2(:)*10.0
+               if (e_rdhint3 (tt,dstf_gid,nis,njs,vtt,na_t(k),ip2a,
+     $             ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $              goto 55
+               if (vh.eq.'HU') then
+                  if (e_rdhint3 (hu,dstf_gid,nis,njs,vhh,na_t(k),ip2a,
+     $            ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $              goto 55
+               elseif (vh.eq.'HR') then
+                  if (e_rdhint3 (hr,dstf_gid,nis,njs,vhh,na_t(k),ip2a,
+     $            ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
+     $              goto 55
+               elseif (vh.eq.'ES') then
+                  if (e_rdhint3 (es,dstf_gid,nis,njs,vhh,na_t(k),ip2a,
      $            ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
      $              goto 55
                elseif (vh.eq.'TD') then
-                  if (e_rdhint3 (es,dstf_gid,nifi,njfi,vhh,na_t(k),ip2a,
+                  if (e_rdhint3 (td,dstf_gid,nis,njs,vhh,na_t(k),ip2a,
      $            ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
      $              goto 55
                endif
 *
-               if (e_rdhint3 (tt,dstf_gid,nifi,njfi,vtt,na_t(k),ip2a,
-     $            ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0)
-     $              goto 55
-*
                do i=1,ng
                   tt(i) = tt(i) + c1
                enddo
-               rna_t(k)=rna_t(k)*100.
 *
-               if (vh.eq.'HU') then
-                  call mhuaes( es, hu, tt, rna_t(k), dummy, 0,
+*              RNA_T is in millibars!
+               if (vh.eq.'HR') then
+                  call mhrahu( hu, hr, tt, rna_t(k)*100., dummy, 0,
      $                         vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
-               elseif (vh.eq.'HR') then
-                  call mhraes( es, hu, tt, rna_t(k), dummy, 0,
+               elseif (vh.eq.'ES') then
+                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0,
      $                         vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
                elseif (vh.eq.'TD') then
                   do i=1,ng
                      es(i) = max( tt(i)-td(i),0.0 )
                   enddo
+                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0,
+     $                         vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
                endif
 *
-               call e_bmfsplitxy2 (es,nifi,njfi,'ES  ',k,lv_t,pni,0,0,0)
-*
-            end do
+               if (Pil_bmf_L) then
+                   call e_bmfsplitxy2 (wk2,nis,njs,'GZ  ',k,lv_t,pni,0,0,0)
+                   call e_bmfsplitxy2 (hu,nis,njs,'HU  ',k,lv_t,pni,0,0,0)
+                   if (vt.eq.'TT') call mfotvt (tt,tt,hu,ng,1,ng)
+                   call e_bmfsplitxy2 (tt,nis,njs,'VT  ',k,lv_t,pni,0,0,0)
+               else
+                   call e_fill_3df (wk2,gzn,nis,njs,lv_t,k,1.0,0.0)
+                   call e_fill_3df ( tt,ttn,nis,njs,lv_t,k,1.0,0.0) 
+                   call e_fill_3df ( hu,hun,nis,njs,lv_t,k,1.0,0.0) 
+               endif
+  100    continue
+         if (.not.Pil_bmf_L) then
+             if (Pil_bcs_hollow_L) then
+                call e_write_bcs (ttn,nis,njs,
+     $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $            lv_t, 'TT  ',unf_casc)
+                call e_write_bcs (gzn,nis,njs,
+     $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $            lv_t, 'GZ  ',unf_casc)
+                call e_write_bcs (hun,nis,njs,
+     $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $            lv_t, 'HU  ',unf_casc)
+             else
+                call e_write_3df ( ttn,nis,njs,lv_t,'TT  ',unf_casc)
+                call e_write_3df ( gzn,nis,njs,lv_t,'GZ  ',unf_casc)
+                call e_write_3df ( hun,nis,njs,lv_t,'HU  ',unf_casc)
+             endif
          endif
 *
       endif
 *
 *     For tracer variables, search does not have to be successful
+*     They can be assigned a constant value.
       anyip_L = .true.
       arret_L = .false.
       do i=1,E_tr3d_ntr
@@ -428,42 +337,8 @@ c              Read, interpolate, scale and write surface GZ.
      %        E_trname_S(i) = E_Tr3d_name_S(i)(1:2)//'  '
       enddo
 *
-      do i=1,E_tr3d_ntr
-         if (.not.E_Schm_offline_L) then
-            if (Pil_bmf_L) then
-               do k=1,lv_t
-                 if (e_rdhint3 (hu,dstf_gid,nis,njs,
-     $               E_tr3d_name_S(i),na_t(k),ip2a,ip3a,' ',tva,
-     $               .true.,.false.,'CUBIC',e_fu_anal,6).ge.0) then
-
-                     call e_bmfsplitxy2 (hu,nis,njs,E_trname_S(i),
-     $                                                k,lv_t,pni,0,0,0)
-                 endif
-               enddo
-            else
-* BCS or 3DF files
-               do k=1,lv_t
-                  if (e_rdhint3 (wk2,dstf_gid,nis,njs,
-     $               E_tr3d_name_S(i),na_t(k),ip2a,ip3a,' ',tva,
-     $               .true.,.false.,'CUBIC',e_fu_anal,6).ge.0) then
-                     call e_fill_3df ( wk2,hun,nis,njs,lv_t,k,1.0,0.0)
-                  else
-                     wk2(:)=E_tr3d_sval(i)
-                     call e_fill_3df ( wk2,hun,nis,njs,lv_t,k,1.0,0.0)
-                  endif
-               enddo
-
-               if (Pil_bcs_hollow_L) then
-                  call e_write_bcs (hun,nis,njs,
-     $               e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
-     $               e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
-     $               lv_t, E_trname_S(i),unf_casc)
-               else
-                  call e_write_3df ( hun,nis,njs,lv_t,E_trname_S(i),unf_casc)
-               endif
-            endif
-*
-         else
+      if (E_Schm_offline_L) then
+          do 200 i=1,E_tr3d_ntr
             mul=1.
             if      (E_tr3d_name_S(i).eq.'FI') then
                desc='IR FLUX '
@@ -505,11 +380,37 @@ c              Read, interpolate, scale and write surface GZ.
 *
             err = e_bmfrd    (dstf_gid, nis, njs,E_tr3d_name_S(i), 
      $                         0., mul, na_t, lv_t, anyip_L,arret_L,inter)
-         endif
+ 200      continue
+          return
+      endif
+
+      do i=1,E_tr3d_ntr
+         do k=1,lv_t
+            if (e_rdhint3 (wk2,dstf_gid,nis,njs, E_tr3d_name_S(i),
+     $                     na_t(k),ip2a,ip3a,' ',tva, .true.,.false.,
+     $                     'CUBIC',e_fu_anal,6).lt.0) wk2(:)=E_tr3d_sval(i)
+             if (Pil_bmf_L) then
+                 call e_bmfsplitxy2 (wk2,nis,njs,E_trname_S(i),k,lv_t,pni,0,0,0)
+             else
+                 call e_fill_3df ( wk2,hun,nis,njs,lv_t,k,1.0,0.0)
+             endif
+         enddo
       end do
+      if (.not.Pil_bmf_L) then
+         do i=1,E_tr3d_ntr
+            if (Pil_bcs_hollow_L) then
+                call e_write_bcs (hun,nis,njs,
+     $                    e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
+     $                    e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
+     $                    lv_t, E_trname_S(i),unf_casc)
+            else
+                call e_write_3df ( hun,nis,njs,lv_t,E_trname_S(i),unf_casc)
+            endif
+         end do
+      endif 
 *
       deallocate(tt,td,es,hu,wk2,p0)
-      if (.not.Pil_bmf_L) deallocate(ttn,hun)
+      if (.not.Pil_bmf_L) deallocate(ttn,hun,gzn)
 *     
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
 *

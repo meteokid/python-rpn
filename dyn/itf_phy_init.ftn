@@ -46,10 +46,10 @@
 #include "clim.cdk"
 #include "p_serg.cdk"
 *
+#include "itf_cpl.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_phy_busind.cdk"
 #include "itf_phy_config.cdk"
-#include "itf_cpl_cplg.cdk"
 #include "itf_phy.cdk"
 *
 **
@@ -61,7 +61,7 @@
       integer DIM_ERR,nrec
       parameter (DIM_ERR = 14) 
       integer err(DIM_ERR),idate(14),bidon,i
-      real dt_4
+      real dt_4, my_real
 *
 *     ---------------------------------------------------------------
 *
@@ -84,12 +84,11 @@
       call newdate (Out3_date,idate,bidon,-4)
       dt_4 = Cstv_dt_8 
 *
-      call itf_cpl_init_cplfld (G_ni, G_nj)
-*
 * Start physics initialization with mandatory parameters
       call phy_opti('DATE'    , idate         ,  14,'SET',prout,err(1))
       call phy_optr('DELT'    , dt_4          ,   1,'SET',prout,err(2))
-      call phy_optr('PTOP_NML', Pres_ptop     ,   1,'SET',prout,err(3))
+      my_real=Cstv_ptop_8/100.
+      call phy_optr('PTOP_NML', my_real,   1,'SET',prout,err(3))
 
 * Continue physics initialization with optional parameters
       call phy_optl('WET'        , Schm_moist_L  ,1,'SET',prout,err(4))
@@ -105,7 +104,6 @@
 *
       err = phy_init ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
       call gem_stop('itf_phy_init',err)
-!viv      call itf_cpl_init_cplfld (G_ni, G_nj)
 *
       if ( Schm_theoc_L .and. Schm_phyms_L ) then
          if (Lun_out.gt.0) write(Lun_out,9500)
@@ -168,13 +166,6 @@
       call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(7))
 *     Re-define P_out_moyhr in units of hours, rather than in timesteps
       P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
-      if (C_coupling_L) then
-          call phy_opti('INDX_SOIL'   ,ig_indx_soil    ,1,'GET',prout,err(8))
-          call phy_opti('INDX_GLACIER',ig_indx_glacier ,1,'GET',prout,err(9))
-          call phy_opti('INDX_WATER'  ,ig_indx_water   ,1,'GET',prout,err(10))
-          call phy_opti('INDX_ICE'    ,ig_indx_ice     ,1,'GET',prout,err(11))
-          call phy_opti('INDX_AGREGE' ,ig_indx_agrege  ,1,'GET',prout,err(12))
-      endif
       call phy_opti('LIN_PBL'   , P4d_pbl        ,1,'GET',prout,err(13))
 *
 *     Consistency check for output saturation calculations
@@ -236,7 +227,7 @@
          call phy_getbus (volnm,volon,voldc,volpar,p_bvol_siz,maxbus,
      $                                                     'V',prout)
          call itf_phy_inikey
-         if (V4dg_conf.gt.0) call inikey_tr
+         if (V4dg_conf.gt.0) call v4d_inikey_tr
       else
          if (Lun_out.gt.0) write (Lun_out,9000) 
      $        max(p_bent_top,p_bdyn_top,p_bper_top,p_bvol_top)

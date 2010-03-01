@@ -63,18 +63,16 @@
 *
 *	Assign and create the geophysical variables
 *
-      VMM_NAM(topo )= 'TOPO'
-      VMM_NAM(topu )= 'TOPU'
-      VMM_NAM(topv )= 'TOPV'
-      VMM_NAM(dtopo)= 'DTOP'
+      VMM_NAM(topo)= 'FIS0'
+      VMM_NAM(topo1)= 'FIS1'
+      VMM_NAM(dtopo)= 'DFIS'
 *
       attr_S='SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
 *
-      VMM_CREATE(topo  , LARRAY2D     , 1, attr_S)
-      VMM_CREATE(topu  , LARRAY2D     , 1, attr_S)
-      VMM_CREATE(topv  , LARRAY2D     , 1, attr_S)
+      VMM_CREATE(topo, LARRAY2D     , 1, attr_S)
       if ( Vtopo_start .ge. 0 ) then
-         VMM_CREATE(dtopo , LARRAY2D     , 1, attr_S)
+         VMM_CREATE(topo1, LARRAY2D     , 1, attr_S)
+         VMM_CREATE(dtopo, LARRAY2D     , 1, attr_S)
       endif
 *
  1000 format(

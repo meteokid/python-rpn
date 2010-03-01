@@ -108,7 +108,6 @@
 #include "itf_phy_busind.cdk"
 #include "itf_chm_busind.cdk"
 #include "v4dg.cdk"
-#include "itf_cpl_cplg.cdk"
 *
 *modules
 *
@@ -196,11 +195,6 @@ c$$$ todo:
       call itf_phy_fillbus ( busdyn, busper ,busent, busvol,
      $         F_pvptr, NPTR, F_trm,F_trp, j, F_step, LDIST_DIM, nkphy )
 *
-*     Fill buses with fields produced by coupling
-*
-      if (C_coupling_L .and. lg_get) 
-     $    call itf_cpl_fillbus ( busdyn, busper, busvol, j)
-*
 *     Run physics on row jdo
 *      
 *
@@ -284,10 +278,6 @@ c$$$ todo:
          F_tdt(ii,j,k) = busvol(tphytd +indx)
       end do
       end do
-*
-*C  Prepare surface variables for the coupling
-*
-      if (C_coupling_L) call itf_cpl_getbus (busdyn, busper, busvol, j)
 *
       do n=1,phyt_ntr
          if (phyt_ind(3,n).gt.0) then

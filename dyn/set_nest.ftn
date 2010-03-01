@@ -79,17 +79,17 @@
 *
       ptath='SAVE=Y,CL=1,W=5,INIT=0,MUSTEXIST'
 *
-      VMM_CREATE(nest_u   , LARRAY3D, 1, ptath)
-      VMM_CREATE(nest_v   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_u   , LARRAY2D*(l_nk+1), 1, ptath)
+      VMM_CREATE(nest_v   , LARRAY2D*(l_nk+1), 1, ptath)
       VMM_CREATE(nest_w, LARRAY2D*(l_nk+1), 1, ptath)
-      VMM_CREATE(nest_t   , LARRAY2D*(l_nk+1), 1, ptath)
+      VMM_CREATE(nest_t   , LARRAY2D*(l_nk+2), 1, ptath)
       VMM_CREATE(nest_zd  , LARRAY2D*(l_nk+1), 1, ptath)
       VMM_CREATE(nest_s   , LARRAY2D, 1, ptath)
       if (.not. Lam_ctebcs_L) then
-         VMM_CREATE(nest_uf   , LARRAY3D, 1, ptath)
-         VMM_CREATE(nest_vf   , LARRAY3D, 1, ptath)
+         VMM_CREATE(nest_uf   , LARRAY2D*(l_nk+1), 1, ptath)
+         VMM_CREATE(nest_vf   , LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_wf, LARRAY2D*(l_nk+1), 1, ptath)
-         VMM_CREATE(nest_tf   , LARRAY2D*(l_nk+1), 1, ptath)
+         VMM_CREATE(nest_tf   , LARRAY2D*(l_nk+2), 1, ptath)
          VMM_CREATE(nest_zdf  , LARRAY2D*(l_nk+1), 1, ptath)
          VMM_CREATE(nest_sf   , LARRAY2D, 1, ptath)
       endif
@@ -100,9 +100,9 @@
          endif
       endif
       if ( Tr3d_ntr .gt. 0 ) then
-         VMM_CREATE(nest_tr  , LARRAY2D*(l_nk+1), Tr3d_ntr, ptath)
+         VMM_CREATE(nest_tr  , LARRAY2D*(l_nk+2), Tr3d_ntr, ptath)
          if (.not. Lam_ctebcs_L)
-     %   VMM_CREATE(nest_trf  , LARRAY2D*(l_nk+1), Tr3d_ntr, ptath)
+     %   VMM_CREATE(nest_trf  , LARRAY2D*(l_nk+2), Tr3d_ntr, ptath)
       endif
 *
  1000 format(

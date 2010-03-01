@@ -52,10 +52,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       print *,'e_sfile_bcs: opening ',filen(1:longueur(filen))
           open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED',
      $                                          position='APPEND')
+          write (unf_casc) msg,mode
           call wrgeo_bcs (xg_8(is),nis+1,yg_8(js),yg_8(jn),njs+1,
      $                xg_8(iw),xg_8(ie),niw+1,yg_8(jw),njw+1,
-     $                za_8,zb_8,zat_8,zbt_8,lv,unf_casc)
-          write (unf_casc) msg,nvar,ntr,mode
+     $       za_8,zb_8,zat_8,zbt_8,zat_8,zbt_8,lv,lv_t,lv_t,Anal_hav(2),nvar,ntr,unf_casc)
 *
 *------------------------------------------------------------------
       return

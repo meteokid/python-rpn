@@ -401,13 +401,7 @@
       enddo
       p_bvol_out = kk
 
-      call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy,
-     $     Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow,
-     $     0,0,l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,
-     $     Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S,
-     $     int(Cstv_dt_8),Out3_date,Out3_etik_S, Out3_ndigits,
-     $     Mod_runstrt_S,
-     $     min(Step_total, Lctl_step+Step_rsti),Out3_flipit_L,Out3_debug_L)
+      if (.not. Schm_chems_L) goto 9988
 *
 *     FOR CHEMICAL SCHEMES:
 *     =====================
@@ -422,8 +416,6 @@
 *     print *,'chm_bdyn_top=',chm_bdyn_top
 *     print *,'chm_bvol_top=',chm_bvol_top
 *
-*     No need to proceed, if Chemistry switch is "off".
-      if (.not. Schm_chems_L) goto 9988
       kk = 0
       if (Lun_out.gt.0)  then
           write(Lun_out,1001)
@@ -522,7 +514,7 @@
 *
       call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy,
      $     Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow,
-     $     0,0,l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,
+     $     l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,
      $     Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S,
      $     int(Cstv_dt_8),Out3_date,Out3_etik_S, Out3_ndigits,
      $     Mod_runstrt_S,

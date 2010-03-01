@@ -28,6 +28,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 * v3_20 - Lee V.            -  initial GEMDM version
 * v3_21 - Lee V.            -  bugfix for LAM output
 * v3_30 - McTaggart-Cowan R.-  allow for user-defined domain tag extensions
+* v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
 *
 *
 *OBJECT
@@ -64,16 +65,19 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "v4dg.cdk"
 #include "type.cdk"
 #include "ver.cdk"
+#include "vt1.cdk"
+#include "itf_vmm.cdk"
 *
 **
       character*4 ext_S
       character*6 etikadd_S
       integer i,j,k,mult,nk_o,nk_ot,levset,ii,jj,kk,ip3,ig1
       integer, dimension (:), allocatable :: ind_o
-      integer irff(100)
+      integer irff(100),key,err
       integer grille_x0,grille_x1,grille_y0,grille_y1
       logical periodx_L
       real rff(100)
+
 *----------------------------------------------------------------------
 *
       if (Obus_top.le.0) return
@@ -105,11 +109,16 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $     ((stepno.gt.(Init_dfnp-1)/2)) )
      $       ext_S = '_dgf'
 
+*     get st1 for !!sf output
+      key = VMM_KEY(st1)
+      err = vmmlod(key,1)
+      err = VMM_GET_VAR(st1)
+
 *########## REGULAR OUTPUT #######################################
 *
 *     ON sortie_p sets
 *
-      do 100 kk=1,Outp_sets
+      do 120 kk=1,Outp_sets
          if ( Outp_dostep_L(kk) )then
          periodx_L=.false.
          if (.not.G_lam .and. (Grid_x1(Outp_grid(kk))-Grid_x0(Outp_grid(kk))+1).eq. G_ni ) periodx_L= .true.
@@ -125,30 +134,23 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
      $                   grille_y1.ne.Grid_y1(outp_grid(kk)) ) )
      $                   ig1=Grid_ig1(outp_grid(kk))+100
             call out_sgrid(grille_x0,grille_x1,grille_y0,grille_y1,
-     $                   periodx_L,
-     $                   ig1,Grid_ig2(outp_grid(kk)),
-     $                   Grid_stride(outp_grid(kk)),
-     $                   Grid_etikext_s(outp_grid(kk)),
-     $                   Geomn_longs, Geomn_latgs          )
+     $                   periodx_L, Grid_stride(outp_grid(kk)),
+     $                   Grid_etikext_s(outp_grid(kk)),etikadd_S )
          levset= Outp_lev(kk)
          nk_o =  Level_max(levset)
          allocate (ind_o(nk_o+2))
          call out_slev(Level_typ(levset),Level(1,levset),
      $                 ind_o,nk_o,nk_ot,G_nk,Level_kind_ip1,'p')
-         call out_sfile(Out3_closestep,stepno,etikadd_S,ip3,ext_S)
-         if (Level_typ(levset).eq.'M') then
+         call out_sfile(Out3_closestep,stepno,ip3,ext_S)
+         call out_href(Grid_ig1(outp_grid(kk)),Grid_ig2(outp_grid(kk)),
+     $                 Geomn_longs,Geomn_latgs)
+         call out_vref(st1,l_minx,l_maxx,l_miny,l_maxy)
          do ii=1, Outp_var_max(kk)
             do j=1,Obus_top
                if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
 *
                     if (obus_shp(j).gt.1) then
 *                   3D field
-c                      rff(1)= (Ver_hyb%t(1)+Ver_hyb%m(1))/2.
-c                      do i=2,G_nk
-c                         rff(i)= Ver_hyb%t(i)
-c                      enddo
-c                      rff(G_nk+1)= (Ver_hyb%t(G_nk+1)+Ver_hyb%m(G_nk))/2.
-c                      rff(G_nk+2)= Ver_hyb%t(G_nk+1)
                        if (obus_stag(j).eq.0) then
                            call ecris_fst2(bus_o(1,obus_offset(j)),
      $                       1,l_ni,1,l_nj,Ver_hyb%t,obus_var_s(j),
@@ -156,13 +158,6 @@ c                      rff(G_nk+2)= Ver_hyb%t(G_nk+1)
      $                       Outp_nbit(ii,kk) )
                        else
 *                   3D field staggerred
-c                       rff(1)=
-c    $                     (Ver_hyb%t(1)+Ver_hyb%m(1))/4.+Ver_hyb%t(2)/2.
-c                       do i=1,G_nk
-c                          rff(i)= (Ver_hyb%t(i+1)+Ver_hyb%d(i))/2.
-c                       enddo
-c                       rff(G_nk+1)=(Ver_hyb%t(G_nk+1)+Ver_hyb%m(G_nk))/2.
-c                       rff(G_nk+2)=Ver_hyb%t(G_nk+1)
                         do i=1,G_nk
                            rff(i)= Ver_hyb%m(i)
                         enddo
@@ -195,14 +190,14 @@ c                       rff(G_nk+2)=Ver_hyb%t(G_nk+1)
                endif
             enddo
          enddo
-         endif
 *
          deallocate (ind_o)
 *
          call out_cfile
          endif
 *
-  100 continue
+  120 continue
+      err = vmmuln(key,1)
       call tmg_stop0(67)
 *
 *----------------------------------------------------------------------

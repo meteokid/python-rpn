@@ -52,15 +52,17 @@
 #include "path.cdk"
 #include "vmmlist.cdk"
 #include "itf_phy_config.cdk"
+#include "itf_cpl.cdk"
 #include "adw.cdk"
 #include "adx.cdk"
 *
       logical  set_dcst_8
-      integer  gem_nml,var4d_nml,v4d_config,gemdm_config,grid_nml
+      integer  gem_nml,var4d_nml,v4d_config,gemdm_config,grid_nml,
+     $         itf_cpl_nml
       external pe_zero_topo, set_dcst_8, gem_nml, var4d_nml,
-     $         v4d_config, gemdm_config, grid_nml
+     $         v4d_config, gemdm_config, grid_nml, itf_cpl_nml
 **
-      integer ierr,cte_ok,f1,f2,f3
+      integer ierr,cte_ok,f1,f2,f3,f4
 *
 *-------------------------------------------------------------------
 *
@@ -91,8 +93,9 @@
          f1 = grid_nml  (Path_nml_S)
          G_lam = Grd_typ_S(1:1).eq.'L'
          f2 = gem_nml   (Path_nml_S)
-         f3 = var4d_nml (Path_nml_S)
-         call gem_stop  ('SET_WORLD_VIEW_SET',min(f1,f2,f3))
+         f3 = itf_cpl_nml (Path_nml_S)
+         f4 = var4d_nml (Path_nml_S)
+         call gem_stop  ('SET_WORLD_VIEW_SET',min(f1,f2,f3,f4))
       endif
 *
 *
@@ -102,9 +105,10 @@
       f2 = v4d_config   ( )
       call gem_stop ('SET_WORLD_VIEW',min(f1,f2))
 *
-      ierr = grid_nml  ('print')
-      ierr = gem_nml   ('print')
-      ierr = var4d_nml ('print')
+      ierr = grid_nml    ('print')
+      ierr = gem_nml     ('print')
+      ierr = itf_cpl_nml ('print') 
+      ierr = var4d_nml   ('print')
 
       Adx_nkbz_L=Adw_nkbz_L
       Adx_exdg_L=Adw_exdg_L

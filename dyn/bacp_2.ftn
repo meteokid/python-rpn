@@ -147,9 +147,11 @@
 !$omp do
       do j= j0, jn
          do i= i0, in
-            F_p(i,j,0)      = Ver_alphat_8 * F_p(i,j,1)
+            F_p(i,j,0)      = Ver_alfat_8 * F_p(i,j,1)
+     $                      - Ver_betat_8 * F_p(i,j,2)
      $                   + Ver_cst_8*(F_rt(i,j,     1)-F_nt(i,j,     1)) 
-            F_p(i,j,l_nk+1) = Ver_alphas_8 * F_p(i,j,l_nk) 
+            F_p(i,j,l_nk+1) = Ver_alfas_8 * F_p(i,j,l_nk) 
+     $                      - Ver_betas_8 * F_p(i,j,l_nk-1) 
      $                   - Ver_css_8*(F_rt(i,j,l_nk+1)-F_nt(i,j,l_nk+1)) 
          end do
       end do
@@ -193,13 +195,33 @@
       if (Schm_hydro_L) then
 !$omp do
          do k=1,l_nk+1
-            xxx = p1 * ( Ver_idz_8%t(k) + Dcst_cappa_8*half )
-            yyy = p1 * ( Ver_idz_8%t(k) - Dcst_cappa_8*half )
+            if(.not.Schm_virlev_L.and.k.eq.1) then
+               do j= j0, jn
+               do i= i0, in
+                  xtmp_8(i,j) = Ver_chit_8*half*(F_p(i,j,1)+F_p(i,j,2))
+     $                        + (one-Ver_chit_8)*F_p(i,j,0)
+               end do
+               end do
+            elseif(.not.Schm_virlev_L.and.k.eq.G_nk+1) then
+               do j= j0, jn
+               do i= i0, in
+                  xtmp_8(i,j) = Ver_chis_8*half*(F_p(i,j,G_nk)+F_p(i,j,G_nk-1))
+     $                        + (one-Ver_chis_8)*F_p(i,j,G_nk+1)
+               end do
+               end do
+            else
+               do j= j0, jn
+               do i= i0, in
+                  xtmp_8(i,j) = half*(F_p(i,j,k)+F_p(i,j,k-1))
+               end do
+               end do
+            endif
             do j= j0, jn
             do i= i0, in
                F_w(i,j,k) = Cstv_RTstr_8/(Dcst_cappa_8*Dcst_grav_8)
-     $                     *( F_rf(i,j,k) - F_nf(i,j,k)
-     $                     + xxx * F_p(i,j,k) - yyy * F_p(i,j,k-1) )
+     $               * ( F_rf(i,j,k) - F_nf(i,j,k)
+     $                 + p1 * ( (F_p(i,j,k)-F_p(i,j,k-1))*Ver_idz_8%t(k)
+     $                         + Dcst_cappa_8 * xtmp_8(i,j) ) )
             end do
             end do
          end do
@@ -210,6 +232,7 @@
          xxx = p5 * ( Ver_idz_8%t(1) + Dcst_cappa_8*half )
          yyy = p5 * ( Ver_idz_8%t(1) - Dcst_cappa_8*half )
          zzz = p3 * half*Ver_dz_8%t(1)
+         if(.not.Schm_virlev_L) zzz=0.d0
 !$omp do
          do j= j0, jn 
          do i= i0, in 
@@ -222,41 +245,67 @@ c           Top virtual level using boundary condition at true top
 *        Note : we cannot use omp on loop k 
 *               due to vertical dependency F_q(i,j,k-1)
          do k=1,l_nk+1
-            xxx = p5 * ( Ver_idz_8%t(k) + Dcst_cappa_8*half )
-            yyy = p5 * ( Ver_idz_8%t(k) - Dcst_cappa_8*half )
-            zzz = p3/Ver_idz_8%t(k)
-            xx1 = Dcst_grav_8 * Ver_idz_8%t(k)
+            if(.not.Schm_virlev_L.and.k.eq.1) then
+               do j= j0, jn
+               do i= i0, in
+                  xtmp_8(i,j) = Ver_chit_8*half*(F_p(i,j,1)+F_p(i,j,2))
+     $                        + (one-Ver_chit_8)*F_p(i,j,0)
+               end do
+               end do
+            elseif(.not.Schm_virlev_L.and.k.eq.G_nk+1) then
+               do j= j0, jn
+               do i= i0, in
+                  xtmp_8(i,j) = Ver_chis_8*half*(F_p(i,j,G_nk)+F_p(i,j,G_nk-1))
+     $                        + (one-Ver_chis_8)*F_p(i,j,G_nk+1)
+               end do
+               end do
+            else
+               do j= j0, jn
+               do i= i0, in
+                  xtmp_8(i,j) = half*(F_p(i,j,k)+F_p(i,j,k-1))
+               end do
+               end do
+            endif
+            zzz = p3*Ver_dz_8%t(k)
 !$omp do
-            do j= j0, jn 
-            do i= i0, in 
+            do j= j0, jn
+            do i= i0, in
                F_q(i,j,k) = F_q(i,j,k-1)
      $                    - zzz *( F_rf(i,j,k) - F_nf(i,j,k)
-     $                       - xxx * F_p(i,j,k) + yyy * F_p(i,j,k-1) )
-*
+     $                    - p5*( (F_p(i,j,k)-F_p(i,j,k-1))*Ver_idz_8%t(k)
+     $                          + Dcst_cappa_8*xtmp_8(i,j) ) )
+            end do
+            end do
+!$omp enddo
+         end do
+!$omp do
+         do k=1,l_nk+1
+            xx1 = Dcst_grav_8 * Ver_idz_8%t(k)
+            do j= j0, jn 
+            do i= i0, in 
                F_w(i,j,k) = Cstv_tauw_8 * ( F_rw(i,j,k) - F_nw(i,j,k)
      $                  + xx1 * (F_q(i,j,k) - F_q(i,j,k-1)) )
             end do
             end do
-!$omp enddo     
          end do
+!$omp enddo     
 *
-
-c         call glbstat (F_q ,'F_q' ,DIST_DIM,G_nk+2,i0,in,j0,jn,1,G_nk+2)
-c         call glbstat (F_p ,'F_p' ,DIST_DIM,G_nk+2,i0,in,j0,jn,1,G_nk+2)
-c         call glbstat (F_rf,'F_rf',DIST_DIM,G_nk+1,i0,in,j0,jn,1,G_nk+1)
-c         call glbstat (F_nf,'F_nf',DIST_DIM,G_nk+1,i0,in,j0,jn,1,G_nk+1)
-c         call glbstat (F_w ,'F_w ',DIST_DIM,G_nk+1,i0,in,j0,jn,1,G_nk+1)            
-         
-
       endif
 *
 *     Compute s
 *     ~~~~~~~~~
 *
+      if(Schm_virlev_L) then
+         xxx=half
+         yyy=half
+      else
+         xxx=one
+         yyy=0.d0
+      endif
 !$omp do
       do j= j0, jn 
       do i= i0, in 
-         F_s(i,j) = p2*(half*(F_p(i,j,l_nk+1)+F_p(i,j,l_nk))-F_fis(i,j))
+         F_s(i,j) = p2*(xxx*F_p(i,j,l_nk+1)+yyy*F_p(i,j,l_nk)-F_fis(i,j))
       end do
       end do
 !$omp enddo
@@ -265,7 +314,7 @@ c         call glbstat (F_w ,'F_w ',DIST_DIM,G_nk+1,i0,in,j0,jn,1,G_nk+1)
 !$omp do
          do j= j0, jn 
          do i= i0, in 
-            F_s(i,j) = F_s(i,j) - half*(F_q(i,j,l_nk+1)+F_q(i,j,l_nk))
+            F_s(i,j) = F_s(i,j) - (xxx*F_q(i,j,l_nk+1)+yyy*F_q(i,j,l_nk))
          end do
          end do
 !$omp enddo
@@ -330,6 +379,14 @@ c         call glbstat (F_w ,'F_w ',DIST_DIM,G_nk+1,i0,in,j0,jn,1,G_nk+1)
          enddo
 !$omp enddo
       endif    
+*
+      if(.not.Schm_virlev_L) then
+         do j= j0, jn 
+         do i= i0, in          
+            F_fip(i,j,l_nk+1)=F_fis(i,j)
+         enddo
+         enddo
+      endif
 *
 *     Compute T
 *     ~~~~~~~~~

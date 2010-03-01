@@ -31,11 +31,11 @@
 *	none
 *
 *interfaces
-      INTERFACE
-         subroutine acqui
-#include "acq_int.cdk"
-         end subroutine acqui
-      END INTERFACE
+c     INTERFACE
+c        subroutine acqui
+CCC#include "acq_int.cdk"
+c         end subroutine acqui
+c      END INTERFACE
 *
 *implicits
 #include "glb_pil.cdk"
@@ -46,12 +46,11 @@
 #include "cstv.cdk" 
 #include "geomg.cdk"
 #include "grd.cdk"
-#include "pres.cdk" 
 #include "out3.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "ind.cdk"
-#include "acq.cdk"
+ccc#include "acq.cdk"
 #include "theo.cdk"
 #include "vtopo.cdk"
 #include "mtn.cdk"
@@ -128,10 +127,9 @@
       do j=1,l_nj
       pdsc1 = geomg_cy_8(j) / Dcst_rayt_8
       do i=1,l_ni
-         psurf(i,j)=Cstv_pisrf_8*(1.-capc1
+         psurf(i,j)=Cstv_pref_8*(1.-capc1
      $         +capc1*exp(-a00*Ind_topo(i,j)))**(1./Dcst_cappa_8)
-c        Note : s will be computed in predat
-         Ind_s   (i,j)   = psurf(i,j)
+         Ind_s   (i,j)   = log(psurf(i,j)/Cstv_pref_8)
          Ind_u   (i,j,1) = mtn_flo * pdsc1
       enddo
       enddo
@@ -152,8 +150,8 @@ c        Note : s will be computed in predat
        do k=1,g_nk+1
          do j=1,l_nj
             do i=1,l_ni
-               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*log(psurf(i,j)))
-               a02 = (tempo/Cstv_pisrf_8)**Dcst_cappa_8
+               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*Ind_s(i,j))
+               a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                Ind_t(i,j,k)=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
             enddo
@@ -162,7 +160,7 @@ c        Note : s will be computed in predat
 
       else   ! MTN_PINTY or MTN_PINTY2
 *-----------------------------------------------------------------------
-*     Generate pressure from Pres_ptop, Cstv_pisrf_8, and coordinate
+*     Generate pressure from Cstv_ptop_8, Cstv_pref_8, and coordinate
 *     Generate corresponding geopotential for isothermal atmosphere
 *     Set wind images and temperature
 *-----------------------------------------------------------------------
@@ -188,11 +186,10 @@ c        Note : s will be computed in predat
 
       do j=1,l_nj
       do i=1,l_ni
-         psurf(i,j) = Cstv_pisrf_8 * 
+         psurf(i,j) = Cstv_pref_8 * 
      $                exp( -Dcst_grav_8 * Ind_topo(i,j)/
      $                     (Dcst_cpd_8 * Cstv_tstr_8) )	
-c        Note : s will be computed in predat
-         Ind_s(i,j) = psurf(i,j)
+         Ind_s(i,j) = log(psurf(i,j)/Cstv_pref_8)
       enddo
       enddo         
 
@@ -221,9 +218,6 @@ c        Note : s will be computed in predat
          enddo
       endif
 *
-      Pres_surf = Cstv_pisrf_8
-      Pres_top  = dble(Pres_ptop*100.)
-*     
       call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 

@@ -56,8 +56,6 @@
       dayfrac  = dble(Pil_nesdt) / sec_in_day
 *
       topo  = topof
-      topou = topouf
-      topov = topovf
 *
       ipilf = 1
       do while ( date1 .le. Pil_jobend_S )

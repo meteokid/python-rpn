@@ -14,13 +14,13 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine vtopo_bnd_update(nest_q,nest_fi,nest_t,nest_pip,
-     $  nest_s,DIST_DIM,nk,F_ndavx,F_ndavy)
+      subroutine vtopo_bnd_update(nest_t,nest_s,
+     $     DIST_DIM,nk,F_ndavx,F_ndavy)
 *
       implicit none
       integer :: DIST_DIM,nk,F_ndavx,F_ndavy
       real, dimension(DIST_SHAPE) :: nest_s
-      real, dimension(DIST_SHAPE,nk) :: nest_q,nest_fi,nest_t,nest_pip
+      real, dimension(DIST_SHAPE,nk+1) :: nest_t
 *
 *author
 *     Ron McTaggart-Cowan - RPN - March 2007
@@ -39,10 +39,7 @@
 * nk             I      Global z-dimension (G_nk)
 * F_ndavx	 I	Thichness of sponge layer along x
 * F_ndavy	 I	Thickness of sponge layer along y
-* nest_q        I/O     Boundary conditions for log pressure (q=ln(p))
-* nest_fi       I/O     Boundary conditions for phi (geopotential)
 * nest_t        I/O     Boundary conditions for temperature
-* nest_pip      I/O     Boundary conditions for perturbation pi
 * nest_s        I/O     Boundary conditions for surface pi (ln (pi_s/z_s))
 *--------------------------------------------------------------------------
 *
@@ -219,7 +216,7 @@
 *
 * Process regions
       do r=1,nRegions
-	call vtopo_predat(nest_q,nest_fi,nest_t,nest_pip,nest_s,LDIST_DIM,
+	call vtopo_predat(nest_t,nest_s,LDIST_DIM,
      $    zone(r)%xmin,zone(r)%xmax,zone(r)%ymin,zone(r)%ymax,nk)
       enddo
 *

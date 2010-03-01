@@ -10,7 +10,7 @@
 ! You should have received a copy of the EC-RPN COMM Group License/Disclaimer along with this software; if not, write to the
 ! EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3 ; or send e-mail to service.rpn@ec.gc.ca
 ! ------------------------------------------------------------------------------------------------------------------------------
-***s/r zdot_lag - compute lagrangian model velocity (zdot) for advection
+***s/r zdot_mid - compute lagrangian model velocity (zdot) for advection
 *
 #include "model_macros_f.h"
 *
@@ -52,7 +52,7 @@
 *----------------------------------------------------------------
 *
       real    zz(LDIST_SHAPE,G_nk+1)
-      real*8  one,half,www,zdd,xxa,xxb
+      real*8  one,half,www,zdd
 **
       parameter( one = 1.d0, half = 0.5d0 )
 *     __________________________________________________________________
@@ -93,7 +93,7 @@
 *
       endif
 *
-!$omp parallel private(zz,zdd,www,xxa,xxb)
+!$omp parallel private(zdd,www)
 *
       if(Schm_zdotlag_L) then
 *
@@ -123,13 +123,11 @@
 *     
 !$omp do         
       do k=1,G_nk
-         xxa=0.5*Ver_idz_8%m(k)*Ver_dz_8%t(k)
-         xxb=0.5*Ver_idz_8%m(k)*Ver_dz_8%t(k+1)
          do j=j0,jn
          do i=i0,in
-            www=xxa*wt0(i,j,k+1)+xxb*wt0(i,j,k)
-            www      =Offc_b0T_8*www       +(one-Offc_b0T_8)*wup(i,j,k)
-            zz(i,j,k)=Offc_b0T_8*zz(i,j,k)+(one-Offc_b0T_8)*zz1(i,j,k)
+            www=Ver_wp_8_m(k)*wt0(i,j,k+1)+Ver_wm_8_m(k)*wt0(i,j,k)
+            www      =      half*(www       + wup(i,j,k))
+            zz(i,j,k)=      half*(zz(i,j,k) + zz1(i,j,k))
             zdth(i,j,k) = ( (zzh1(i,j,k)-fiptx(i,j,k))/Cstv_dt_8
      $                  + Dcst_grav_8*www ) / ( zz(i,j,k) - Cstv_RTstr_8 )
          end do
@@ -143,8 +141,8 @@
       do k=1,G_nk
          do j=j0,jn 
          do i=i0,in
-            zdd=half*(zdt0(i,j,k)+zdt0(i,j,k+1))
-            zdth(i,j,k) = Offc_b0T_8*zdd+(one-Offc_b0T_8)*zdup(i,j,k)
+            zdd=Ver_wp_8_m(k)*zdt0(i,j,k+1)+Ver_wm_8_m(k)*zdt0(i,j,k)
+            zdth(i,j,k) = half*(zdd+zdup(i,j,k))
          end do
          end do
       end do
@@ -156,7 +154,7 @@
 *
 *     __________________________________________________________________ 
 *
-1000  format(3X,'COMPUTE LAGRANGIAN ZDOT: (S/R ZDOT_LAG)')
+1000  format(3X,'COMPUTE LAGRANGIAN ZDOT: (S/R ZDOT_MID)')
 *
 *     __________________________________________________________________
 *

@@ -43,7 +43,7 @@
 #include "ptopo.cdk"
 *
       namelist /theo_cfgs/
-     $     Theo_case_S, Theo_nivdist_S, 
+     $     Theo_case_S,
      $     Out3_etik_S, Lctl_debug_L, Lam_runstrt_S
 
       namelist /bubble_cfgs/
@@ -55,15 +55,15 @@
      $     Hyb, Grd_rcoef, Pres_ptop,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
      $     Init_dftr_L, Offc_b0_8, Offc_b0T_8, Offc_b0w_8,
-     %     Schm_hydro_L,
+     %     Schm_hydro_L,Schm_virlev_L,Schm_nullchi_L,
      %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,
      %     Schm_itnlh, Schm_itraj, Schm_hdlast_L,
      %     Schm_adcub_L, Schm_psadj_L, Schm_sfix_L,
      %     Adw_nkbz_L, Adw_exdg_L, Adw_mono_L, Adw_interp_type_S,
      $     Adw_ckbd_L, Adw_halox, Adw_haloy, Adw_trunc_traj_L,
-     $     Adw_nosetint_L,
+     $     Adw_nosetint_L,Schm_etape_S,
      $     Cstv_dt_8,
-     $     Cstv_pitop_8, Cstv_tstr_8,
+     $     Cstv_ptop_8, Cstv_tstr_8,
      $     Hzd_type_S, Hzd_pwr, Hzd_lnr,
      $     Eigv_parity_L,
      $     Vspng_coef,
@@ -83,16 +83,16 @@
      $     Hyb, Grd_rcoef, Pres_ptop,
      $     Init_balgm_L, Init_dfwin_L, Init_dfnp, Init_dfpl_8, 
      $     Init_dftr_L, Offc_b0_8, Offc_b0T_8, Offc_b0w_8,
-     %     Schm_hydro_L,
+     %     Schm_hydro_L,Schm_virlev_L,Schm_nullchi_L,
      %     Schm_phyms_L, Schm_itcn, Schm_modcn, Schm_xwvt3,
      %     Schm_itnlh, Schm_itraj, Schm_hdlast_L,
      %     Schm_adcub_L, Schm_psadj_L, Schm_sfix_L,
      %     Schm_moist_L, Schm_zdotlag_L, Schm_zdotMid_L,
      %     Adw_nkbz_L, Adw_exdg_L, Adw_mono_L, Adw_interp_type_S,
      $     Adw_ckbd_L, Adw_halox, Adw_haloy, Adw_trunc_traj_L,
-     $     Adw_nosetint_L,
+     $     Adw_nosetint_L,Schm_etape_S,
      $     Cstv_dt_8,
-     $     Cstv_pitop_8, Cstv_tstr_8,
+     $     Cstv_ptop_8, Cstv_tstr_8,
      $     Hzd_type_S, Hzd_pwr, Hzd_lnr,
      $     Eigv_parity_L,
      $     Vspng_coef,
