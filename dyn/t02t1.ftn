@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r t02t1 -  Rename time level t0 -> t1
 *
 #include "model_macros_f.h"
@@ -47,24 +32,16 @@
       integer i
 **
 *     ---------------------------------------------------------------
-*
+*      
       call shuffle(vmmk_ut1   ,vmmk_ut0   ,vmmk_ut1_s)
       call shuffle(vmmk_vt1   ,vmmk_vt0   ,vmmk_vt1_s)
       call shuffle(vmmk_wt1   ,vmmk_wt0   ,vmmk_wt1_s)
-      call shuffle(vmmk_tdt1  ,vmmk_tdt0  ,vmmk_tdt1_s)
       call shuffle(vmmk_tt1   ,vmmk_tt0   ,vmmk_tt1_s)
-      call shuffle(vmmk_fit1  ,vmmk_fit0  ,vmmk_fit1_s)
-      call shuffle(vmmk_qt1   ,vmmk_qt0   ,vmmk_qt1_s)
-      call shuffle(vmmk_tpt1  ,vmmk_tpt0  ,vmmk_tpt1_s)
-      call shuffle(vmmk_fipt1 ,vmmk_fipt0 ,vmmk_fipt1_s)
-      call shuffle(vmmk_qpt1  ,vmmk_qpt0  ,vmmk_qpt1_s)
-      call shuffle(vmmk_pipt1 ,vmmk_pipt0 ,vmmk_pipt1_s)
-      call shuffle(vmmk_tplt1 ,vmmk_tplt0 ,vmmk_tplt1_s)
       call shuffle(vmmk_psdt1 ,vmmk_psdt0 ,vmmk_psdt1_s)
       call shuffle(vmmk_st1   ,vmmk_st0   ,vmmk_st1_s)
 *
       if (.not. Schm_hydro_L) then
-         call shuffle(vmmk_mut1 ,vmmk_mut0 ,vmmk_mut1_s)
+         call shuffle(vmmk_qsect1,vmmk_qsect0,vmmk_qsect1_s)
       endif
       if ( Tr3d_ntr .gt. 0 ) then
          call shuffle(vmmk_trt1  ,vmmk_trt0  ,vmmk_trt1_s)

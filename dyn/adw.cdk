@@ -1,18 +1,5 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+#include "type.cdk"
+
 #if defined (DOC)
 *
 ***comdeck adw.cdk
@@ -111,8 +98,7 @@
 * Adw_ovdz_8   | /                                                     |
 *              |                                                       |
 * Adw_x00_8    | \                                                     |
-* Adw_y00_8    |   reference coordinate for localisation in x,y,z      |
-* Adw_z00_8    | /                                                     |
+* Adw_y00_8    | / reference coordinate for localisation in x,y,z      |
 *              |                                                       |
 * Adw_lcx      | \                                                     |
 * Adw_lcy      |   fine grid to variable grid equivalence used for     |
@@ -170,11 +156,18 @@
 *                    |PE = the number of the PE (processor)            |
 *                    |     The overall maximum cfl value of the entire |
 *                    |     grid will be placed in PE 1 before printing |
+* Adw_trunc(i)       | i = the boundary where the trajectories were    |
+*                    |     truncated and a count is placed here        |
+*                    |     truncated and a count is placed here        |
+*                    |     1: north                                    |
+*                    |     2: south                                    |
+*                    |     3: east                                     |
+*                    |     4: west                                     |
 *______________________________________________________________________|
 *
 #endif
 *
-      logical            Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, 
+      logical            Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L,
      %                   Adw_mono_L,Adw_nosetint_L,Adw_hor_L,Adw_ver_L
 *
       integer            Adw_halox, Adw_haloy,
@@ -182,10 +175,10 @@
      %                   Adw_int_i_off, Adw_int_j_off,
      %                   Adw_for_n, Adw_for_s, Adw_for_a,
      %                   Adw_fro_n, Adw_fro_s, Adw_fro_a,
-     %                   Adw_cfl_i(3,3)
+     %                   Adw_trunc(4), Adw_cfl_i(3,3)
 *
       real*8             Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8, 
-     %                   Adw_x00_8,  Adw_y00_8,  Adw_z00_8, Adw_cfl_8(3)
+     %                   Adw_x00_8,  Adw_y00_8,  Adw_cfl_8(3)
 *
       character(len=64) :: Adw_interp_type_S
 *
@@ -195,7 +188,7 @@
 *
       MARK_COMMON_BEG (adw_l)
       common / adw_l  /  Adw_nkbz_L,Adw_exdg_L,Adw_nosetint_L,
-     %                   Adw_ckbd_L,Adw_mono_L,
+     %                   Adw_ckbd_L,Adw_mono_L,Adw_trunc_traj_L,
      %                   Adw_hor_L, Adw_ver_L
       MARK_COMMON_END (adw_l)
 *
@@ -203,14 +196,33 @@
       common / adw_ia /  Adw_halox, Adw_haloy
       MARK_COMMON_END (adw_ia)
 *
+      type (vertical_i)  Adw_lcz
+
       common / adw_ib /  Adw_nic, Adw_nit, Adw_njc, Adw_njt,
      %                   Adw_int_i_off, Adw_int_j_off,
      %                   Adw_for_n, Adw_for_s, Adw_for_a,
      %                   Adw_fro_n, Adw_fro_s, Adw_fro_a,
-     %                   Adw_cfl_i
+     %                   Adw_trunc, Adw_cfl_i, Adw_lcz
 *
+      type (vertical_8)  Adw_bsz_8
+      type (vertical_8)  Adw_dlz_8
+      type (vertical_8)  Adw_diz_8
+      type (vertical_8)  Adw_dbz_8
+      type (vertical_8)  Adw_qzz_8
+      type (vertical_8)  Adw_qzi_8
+
+      type (vertical_8)  Adw_zbc_8
+      type (vertical_8)  Adw_zabcd_8
+      type (vertical_8)  Adw_zbacd_8
+      type (vertical_8)  Adw_zcabd_8
+      type (vertical_8)  Adw_zdabc_8
+!
       common / adw_r8 /  Adw_ovdx_8, Adw_ovdy_8, Adw_ovdz_8, 
-     %                   Adw_x00_8,  Adw_y00_8,  Adw_z00_8, Adw_cfl_8
+     %                   Adw_x00_8,  Adw_y00_8,  Adw_cfl_8,
+     %                   Adw_bsz_8,  Adw_dlz_8,  Adw_diz_8,
+     %                   Adw_dbz_8,  Adw_qzz_8,  Adw_qzi_8,
+     %                   Adw_zbc_8,  Adw_zabcd_8,Adw_zbacd_8,
+     %                   Adw_zcabd_8,Adw_zdabc_8
 *
       DCL_DYNVAR(Adw,   xg_8,    real*8 , (*))
       DCL_DYNVAR(Adw,   yg_8,    real*8 , (*))
@@ -227,7 +239,6 @@
       DCL_DYNVAR(Adw, sy2d_8,    real*8 , (*))
       DCL_DYNVAR(Adw,    lcx,    integer, (*))
       DCL_DYNVAR(Adw,    lcy,    integer, (*))
-      DCL_DYNVAR(Adw,    lcz,    integer, (*))
 *
       DCL_DYNVAR(Adw,  fn_I ,    integer, (*))
 *
@@ -237,20 +248,13 @@
       DCL_DYNVAR(Adw,  bsy_8,    real*8 , (*))
       DCL_DYNVAR(Adw,  dly_8,    real*8 , (*))
       DCL_DYNVAR(Adw,  diy_8,    real*8 , (*))
-      DCL_DYNVAR(Adw,  bsz_8,    real*8 , ( 0:*))
-      DCL_DYNVAR(Adw,  dlz_8,    real*8 , (-1:*))
-      DCL_DYNVAR(Adw,  diz_8,    real*8 , (-1:*))
-      DCL_DYNVAR(Adw,  dbz_8,    real*8 , ( 0:*))
 *
       DCL_DYNVAR(Adw,  iln  ,    integer, (*))
       DCL_DYNVAR(Adw,  lnr_8,    real*8 , (*))
 *
-      DCL_DYNVAR(Adw,  qzz_8,    real*8 , (*))
-      DCL_DYNVAR(Adw,  qzi_8,    real*8 , (*))
 *
       DCL_DYNVAR(Adw,  xbc_8,    real*8 , (*))
       DCL_DYNVAR(Adw,  ybc_8,    real*8 , (*))
-      DCL_DYNVAR(Adw,  zbc_8,    real*8 , (*))
 *
       DCL_DYNVAR(Adw,xabcd_8,    real*8 , (*))
       DCL_DYNVAR(Adw,xbacd_8,    real*8 , (*))
@@ -260,10 +264,6 @@
       DCL_DYNVAR(Adw,ybacd_8,    real*8 , (*))
       DCL_DYNVAR(Adw,ycabd_8,    real*8 , (*))
       DCL_DYNVAR(Adw,ydabc_8,    real*8 , (*))
-      DCL_DYNVAR(Adw,zabcd_8,    real*8 , (*))
-      DCL_DYNVAR(Adw,zbacd_8,    real*8 , (*))
-      DCL_DYNVAR(Adw,zcabd_8,    real*8 , (*))
-      DCL_DYNVAR(Adw,zdabc_8,    real*8 , (*))
 *
       DCL_DYNVAR(Adw,  capx1,    real   , (*))
       DCL_DYNVAR(Adw,  capy1,    real   , (*))

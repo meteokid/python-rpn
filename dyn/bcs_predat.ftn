@@ -1,31 +1,12 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r bcs_predat - Performs preprocessing of the data: part1
 *
 #include "model_macros_f.h"
 *
-      subroutine bcs_predat(F_s,F_q,F_pip,F_fi,F_fip,F_t,F_tp,
-     %                      NI1,NJ1, Nk)
+      subroutine bcs_predat(F_s,F_ps,NI1,NJ1,Nk)
 *
       implicit none
       integer ni1,nj1,DIST_DIM,Nk
-      real F_s  (NI1,NJ1), F_q  (NI1,NJ1,Nk)
-      real F_pip(NI1,NJ1,Nk), F_fi (NI1,NJ1,Nk)
-      real F_fip(NI1,NJ1,Nk) 
-      real F_t  (NI1,NJ1,Nk), F_tp (NI1,NJ1,Nk) 
+      real F_s  (NI1,NJ1), F_ps(NI1,NJ1)
 *
 *author 
 *     Michel Roch - rpn - oct 1993 
@@ -44,36 +25,17 @@
 * v3_22 - Belanger/Lee      - Introduce vtap 
 * v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
 * v3_30 - Lee V.            - adapted for nesting
+* v4_00 - Plante A.         - Staggered version
 *
 *object
-*	Performs preprocessing of the data: part1. We compute:
-*                                             dp
-* s, pi', q, phi, T staggered, T', phi', pi', ---, (1+d)q', P and T'
-*      t                                      dpi                  lin
+*	Performs preprocessing of the data: part1. We compute s
 *
-*     The model is initialized from an "hydrostatic state".
-*     For that reason, the computations found in that routine are
-*     performed considering that:
-*             dp
-*     q' = 0, --- = 1 and p = pi.
-*             dpi
 *arguments
 *	none
 *
 *implicits
-#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
-#include "dcst.cdk"
-#include "geomg.cdk"
-#include "schm.cdk"
-#include "ind.cdk"
-#include "lctl.cdk"
-#include "vt1.cdk"
-#include "v4dg.cdk"
-#include "vtopo.cdk"
-#include "pres.cdk"
-#include "hzd.cdk"
 *
       integer i, j, k
       real pr1, pr2
@@ -94,55 +56,11 @@ c     endif
 !$omp do
       do j= 1, nj1
       do i= 1, ni1
-        F_s(i,j) = dlog( exp(F_q(i,j,nk)) / Cstv_pisrf_8 )
+        F_s(i,j) = dlog( F_ps(i,j) / Cstv_pisrf_8 )
       end do
       end do
 !$omp enddo
-*
-!$omp do
-      do k= 1, nk
-         if (k.eq.1) then
-            do j= 1, nj1
-            do i= 1, ni1
-               F_pip(i,j, 1) = 0.
-            end do
-            end do
-         else if (k.eq.nk) then
-            do j= 1, nj1
-            do i= 1, ni1
-               F_pip(i,j,nk) = exp(F_q(i,j,nk)) - geomg_z_8(G_nk)
-            end do
-            end do
-         else
-            do j= 1, nj1
-            do i= 1, ni1
-               F_q  (i,j,k)= alog(geomg_pia(k)+geomg_pib(k)*exp(F_s(i,j)))
-               F_pip(i,j,k)= geomg_pia(k)+geomg_pib(k)*exp(F_s(i,j))
-     $                 - geomg_z_8(k)
-            end do
-            end do
-         endif
-         pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * geomg_pib(k) / geomg_z_8(k)
-         pr2 = Cstv_tstr_8*(geomg_pib(k)/geomg_z_8(k) - geomg_dpib(k))
-         do j= 1, nj1
-         do i= 1, ni1
-             F_fip(i,j,k) =  F_fi(i,j,k) - Cstvr_fistr_8(k) 
-     $                                      - F_fi(i,j,nk)
-             F_tp(i,j,k) =  F_t(i,j,k) - Cstv_tstr_8
-         end do
-         end do
-      end do
-!$omp enddo
-*
 !$omp end parallel
-*
-*     We recalculate the geopotential using vtap
-*     ------------------------------------------
-c     if (Pres_vtap_L) then
-c         call vtap
-c     endif
-*
-*
 *     __________________________________________________________________
       return
  1000 format(3X,'BCS_PREDAT:      (S/R BCS_PREDAT)')

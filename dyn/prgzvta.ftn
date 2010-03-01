@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r prgzvta - interpolation of geopotential and virtual temperature on
 *                given pressure levels
 *
@@ -22,17 +7,17 @@
      %                   F_gzin,  F_vtin,   F_wlnph,  F_la,
      %                   F_vtund, F_gzund,  F_nundr,
      %                   F_cubzt_L, F_linbot,
-     %                   DIST_DIM, Nk)
+     %                   DIST_DIM, F_Nk)
 *
 #include "impnone.cdk"
 *
       logical F_cubzt_L
       integer F_nundr, F_linbot
-      integer DIST_DIM,Nk,Nkout
+      integer DIST_DIM,F_Nk,Nkout
       real    F_pres(Nkout)
       real    F_gzout(DIST_SHAPE,Nkout),F_vtout(DIST_SHAPE,Nkout)
-      real    F_gzin (DIST_SHAPE,Nk), F_vtin (DIST_SHAPE,Nk)
-      real    F_wlnph (DIST_SHAPE,Nk), F_la   (DIST_SHAPE)
+      real    F_gzin (DIST_SHAPE,F_Nk), F_vtin (DIST_SHAPE,F_Nk)
+      real    F_wlnph (DIST_SHAPE,F_Nk), F_la   (DIST_SHAPE)
       real    F_vtund(DIST_SHAPE,F_nundr), F_gzund(DIST_SHAPE,F_nundr)
 *
 *author
@@ -120,7 +105,7 @@
       prlprso = log(F_pres(kk))
 *
 *
-      do k=1,l_nk
+      do k=1,F_nk
       do  i= 1, l_ni
          if ( prlprso .gt. F_wlnph(i,j,k) ) pnindex(i) = k
       enddo
@@ -226,19 +211,19 @@
 * at top and bottom for next layer calculation and iterate.                   *
 *                                                                             *
 *******************************************************************************
-      else if ( pnindex(i) .eq. l_nk ) then
+      else if ( pnindex(i) .eq. F_nk ) then
 *
          do pnund=1,F_nundr
 *
-         if ( F_gzin(i,j,l_nk) .gt. F_gzund(i,j,pnund) ) go to 30
+         if ( F_gzin(i,j,F_nk) .gt. F_gzund(i,j,pnund) ) go to 30
 *
          enddo
 *
  30      continue
 *
-         prlptop = F_wlnph(i,j,l_nk)
-         prvttop = F_vtin(i,j,l_nk)
-         prfitop = F_gzin(i,j,l_nk)
+         prlptop = F_wlnph(i,j,F_nk)
+         prvttop = F_vtin(i,j,F_nk)
+         prfitop = F_gzin(i,j,F_nk)
 *
          do 40 pn1=pnund,F_nundr
 *
@@ -324,7 +309,7 @@
 *
          pre = prlprso - 0.5 * ( F_wlnph(i,j,pnk) + F_wlnph(i,j,pnkm) )
 *
-         if ( F_cubzt_L .and. ( pnk .lt. l_nk+1-F_linbot ) ) then
+         if ( F_cubzt_L .and. ( pnk .lt. F_nk+1-F_linbot ) ) then
 *
             prr = 0.125 * prd * prd - 0.5 * pre * pre
 *

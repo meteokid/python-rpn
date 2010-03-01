@@ -1,27 +1,13 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_gemnml - to read 3 namelists for the e_gemntr program,
 *                 namelists: gemnml, grid, ptopo
 *
 *
 #include "model_macros_f.h"
 *
-      subroutine e_gemnml
+      subroutine e_gemnml (err_rstrt)
       implicit none
 *
+      integer err_rstrt
 *revision
 * v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
 * v3_21 - Desgagne M.       - Revision on Dcst read
@@ -29,8 +15,6 @@
 * v3_22 - Lee V.            - removed Trvs tracers
 * v3_30 - Desgagne M.       - rewritten for the new physics
 *                             interface and new LAM I/O piloting
-* v3_31 - Lee, V.           - offline mode : use full phi grid for winds
-* v3_31 - Lee V.            - add P_pbl_icelac_L for ICELAC
 *
       integer ni, nila
       integer l_ni,l_nj
@@ -43,13 +27,10 @@
 #include "dcst.cdk"
 #include "grd.cdk"
 #include "itf_phy_config.cdk"
-#include "itf_cpl.cdk"
+#include "itf_cpl_cplg.cdk"
 #include "pilot.cdk"
 #include "modconst.cdk"
 #include "hblen.cdk"
-#include "path.cdk"
-#include "lun.cdk"
-#include <clib_interface.cdk>
 *
       logical  set_dcst, set_dcst_8
       external set_dcst, set_dcst_8
@@ -62,33 +43,24 @@
       external fnom,fclos
 *
       logical phy_L
-      character*120  dumc
-      integer err,unf,bufcte(10000)
+      character*120 dumc
+      integer err,unf
 *
 *--------------------------------------------------------------------
 *
-      if (clib_isdir(Path_input_S).lt.0) call e_arret('e_gemnml')
-
-      call array_from_file (bufcte,size(bufcte),
-     $                      trim(Path_input_S)//'/constantes')
-      call array_to_file   (bufcte,size(bufcte),'constantes' )
-
-      Lun_out = 6
-
-      if (grid_nml    (trim(Path_work_S)//'/model_settings.nml') .ne. 1)
+      if (grid_nml  ('process/model_settings') .ne. 1)
      +        stop   'In e_gemnml: After grid_nml'
-      if (ptopo_nml   (trim(Path_work_S)//'/model_settings.nml') .ne. 1)
+      if (ptopo_nml ('process/model_settings') .ne. 1)
      +        stop   'In e_gemnml: After ptopo_nml'
-      if (e_gement_nml(trim(Path_work_S)//'/model_settings.nml') .ne. 1)
+      if (e_gement_nml('process/model_settings') .ne. 1)
      +        stop   'In e_gemnml: After e_gement_nml '
 *
-      if (phy_init  (trim(Path_work_S)//'/model_settings.nml',set_dcst,
-     $         phy_L,6) .ne. 1) stop   'In e_gemnml: After phy_init'
+      if (phy_init  ('process/model_settings',set_dcst,phy_L,6) .ne. 1)
+     +        stop   'In e_gemnml: After phy_init'
 *
       call phy_optc ('SCHMSOL'   , P_pbl_schsl_s ,1, 'GET',.True.,err)
       call phy_optc ('SCHMURB'   , P_pbl_schurb_s,1, 'GET',.True.,err)
       call phy_optl ('SNOALB_ANL', P_pbl_snoalb_L,1, 'GET',.True.,err)
-      call phy_optl ('ICELAC'    , P_pbl_icelac_L, 1, 'GET',.True.,err)
       call phy_optl ('CHAUF'     , P_pbl_ocean_L ,1, 'GET',.True.,err)
 *
       call low2up (P_pbl_schsl_S,dumc)
@@ -96,8 +68,8 @@
       call low2up (P_pbl_schurb_S,dumc)
       P_pbl_schurb_S = dumc
 *
-      if (itf_cpl_nml(trim(Path_work_S)//'/model_settings.nml') .ne. 1)
-     +                      stop    'In e_gemnml: After itf_cpl_nml'
+      if (itf_cpl_nml('process/model_settings') .ne. 1)
+     +        stop    'In e_gemnml: After itf_cpl_nml'
 *
       LAM = Grd_typ_S(1:1).eq.'L'
 *
@@ -109,9 +81,9 @@
       else
          if ( Pil_sfc2d_L .or. Pil_3df_L ) then
             if ( Mod_runstrt_S.eq.'@#$%' ) then
-               if (wkoffit(trim(Path_output_S)//'/labfl.bin').gt.-1) then
+               if (wkoffit('process/labfl.bin').gt.-1) then
                unf = 0
-               if (fnom(unf,trim(Path_output_S)//'/labfl.bin','SEQ/UNF+OLD',0).ge.0) 
+               if (fnom(unf,'process/labfl.bin','SEQ/UNF+OLD',0).ge.0) 
      $         then
                   read(unf,err=999,end=999) Mod_runstrt_S
                   err = fclos( unf )
@@ -133,9 +105,9 @@
          endif
       endif
 *
-      err = grid_nml     ('print')
-      err = ptopo_nml    ('print')
-      err = e_gement_nml ('print')
+      err = grid_nml    ('print')
+      err = ptopo_nml   ('print')
+      err = e_gement_nml  ('print')
       if (C_coupling_L) err = itf_cpl_nml ('print')
 *
       if (.not.set_dcst_8 (Dcst_cpd_8,liste_S,cnbre,6,1))
@@ -163,11 +135,6 @@
       npu  = niu *nju
       npv  = niv *njv
 *     
-      if (e_schm_offline_L) then
-         niu = Grd_ni
-         njv = Grd_nj
-      endif
-*
       if (LAM) then
          pni   = nifi
          pniu  = niu
@@ -177,6 +144,13 @@
       endif
       pnj   = njfi
       pnjv  = njv
+*
+      if (.not.LAM) then
+         open (41,file='process/00-00/restart',access='SEQUENTIAL',
+     $            iostat=err_rstrt,status='OLD',form='UNFORMATTED')
+      else
+         err_rstrt = -1
+      endif
 *
       return
 *

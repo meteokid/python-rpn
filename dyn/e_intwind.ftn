@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_intwind - Wind components horizontal interpolation
 *
 #include "model_macros_f.h"
@@ -32,7 +17,6 @@
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 * v3_30 - Lee/Desgagne      - new LAM IO , read from analysis files to
 *                             produce BCS or 3DF files
-* v3_31 - Bilodeau B.       - Debug offline mode
 *
 *object
 *        see above ID
@@ -53,7 +37,6 @@
 #include "pilot.cdk"
 #include "e_grdc.cdk"
 #include "hgc.cdk"
-#include "e_mta.cdk"
 *
       integer  ezqkdef,ezdefset,ezsetopt,ezuvint,
      $         fstinf,fstlir,fstprm,e_rdhint3
@@ -80,16 +63,6 @@
       parameter (Cstv_pisrf_8=100000.0)
 *
 * ---------------------------------------------------------------------
-*
-      if (e_schm_offline_l) then
-         call e_intwind_offline( )
-         return
-      endif
-*
-      if (e_intwind_mta_l) then
-         call e_intwind_mta( )
-         return
-      endif
 *
       if (.not.Pil_bmf_L) then
          nisu = E_Grdc_ni
@@ -119,6 +92,7 @@
 *        
          if (LAM) then
 *
+            if (e_schm_offline_l) write (6,199)
             do k=1,lv               
                key1 = fstlir(uu,e_fu_anal,iu,ju,nkc,datev,' ',na(k),
      $                                         ip2a,ip3a,tva,'UT1')
@@ -138,6 +112,10 @@
                do i=1,nisv*njsv
                   vv(i) = vv(i) / dcst_knams_8
                end do
+               if (e_schm_offline_l) then
+                  write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
+                  write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
+               endif
                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
                call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
             end do
@@ -189,6 +167,11 @@
                if (key1.lt.0 .or. i.ne.iv  .or. j.ne.jv) then
                   write(6,*)'ERROR: VV NOT AVAILABLE,'
                   call e_arret( 'e_intwind' )
+               endif
+*
+               if (e_schm_offline_l) then
+                  write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
+                  write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
                endif
 *
                if (.not. flag_ut1) then
@@ -255,6 +238,11 @@
             err = ezdefset ( dstv_gid, src_gid )
             err = ezuvint  ( uw,vv,w1,w2 )
 *
+            if (e_schm_offline_l) then
+               write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
+               write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
+            endif
+*
             if (Pil_bmf_L) then
                 call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
                 call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
@@ -283,7 +271,7 @@
              call e_write_bcs (vvn,nisv,njsv,
      $        e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $        e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
-     $        lv, 'VV  ',unf_casc)
+     $        lv, 'VV  ',unf_casc)             
          else
              call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
              call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
@@ -330,10 +318,12 @@
       if ( gletaanl .or. glsiganl .or. glhybanl ) then
          write(6,*)'PREPARATION FOR SIGMA/ETA/HYB to HYBRID'
          c1 = 10. * Dcst_grav_8
+         if (.not.e_schm_offline_l) then
          if (e_rdhint3 (ttu,dstu_gid,nisu,njsu,'GZ  ',na(lv),ip2a,ip3a,
      $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
          if (e_rdhint3 (ttv,dstv_gid,nisv,njsv,'GZ  ',na(lv),ip2a,ip3a,
      $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         endif
          if (e_rdhint3 (p0u,dstu_gid,nisu,njsu,'P0  ',   0 ,ip2a,ip3a,
      $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
          if (e_rdhint3 (p0v,dstv_gid,nisv,njsv,'P0  ',   0 ,ip2a,ip3a,

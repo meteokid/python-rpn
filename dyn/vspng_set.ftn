@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r vspng_set - Vertical sponge using a vertical modulation of 
 *                  the factorized del-2 horizontal diffusion for non-LAM
 *                  and 9 point filter for LAM.
@@ -40,12 +25,13 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
 #include "vspng.cdk"
 #include "grd.cdk"
+#include "type.cdk"
+#include "ver.cdk"
 *      
       integer k
       real*8 pis2_8,wh_8,delp_8,TWO_8
@@ -65,11 +51,11 @@
      $        Vspng_nutop,Vspng_nk,Vspng_niter
          wh_8  = Vspng_nutop/max(1.,float(Vspng_niter))
          pis2_8= Dcst_pi_8/TWO_8
-         delp_8= dble(Geomg_hybm(Vspng_nk))-dble(Geomg_hybm(1))
+         delp_8= dble(Ver_hybm%m(Vspng_nk))-dble(Ver_hybm%m(1))
          do k=1,Vspng_nk
             Vspng_nu(k) = 
-     $           wh_8*( sin(pis2_8*(dble(Geomg_hybm(Vspng_nk))-
-     $           dble(Geomg_hybm(k)) ) / (delp_8)))**TWO_8
+     $           wh_8*( sin(pis2_8*(dble(Ver_hybm%m(Vspng_nk))-
+     $           dble(Ver_hybm%m(k)) ) / (delp_8)))**TWO_8
             if (Lun_out.gt.0) write (Lun_out,2005) Vspng_nu(k),k
          end do
 *
@@ -84,10 +70,10 @@
          else
             if (Lun_out.gt.0) write (Lun_out,2002) Vspng_mf(1),Vspng_nk
             pis2_8= Dcst_pi_8/TWO_8
-            delp_8= dble(Geomg_hybm(Vspng_nk))-dble(Geomg_hybm(1))
+            delp_8= dble(Ver_hybm%m(Vspng_nk))-dble(Ver_hybm%m(1))
             do k=2,Vspng_nk
-               wh_8= ( sin(pis2_8*(dble(Geomg_hybm(Vspng_nk))-
-     $                 dble(Geomg_hybm(k)) ) / (delp_8)))**TWO_8
+               wh_8= ( sin(pis2_8*(dble(Ver_hybm%m(Vspng_nk))-
+     $                 dble(Ver_hybm%m(k)) ) / (delp_8)))**TWO_8
                Vspng_mf(k) = 1.+(Vspng_mf(1)-1.)*wh_8
             end do
          endif

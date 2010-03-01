@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_inikey
 *
 #include "model_macros_f.h"
@@ -39,14 +24,13 @@
 *                           - Add tdiag,udiag,vdiag,qdiag,tmice,pr,rt,fc,fv
 * v3_30 - Spacek, L.        - New total tendecies uphytd,vphytd,tphytd,
 *                             huphytd,qcphytd,qrphytd,qgphytd,qiphytd
-*                             Eliminations of processus specific physics tendencies.
+*                             Eliminations of processus specific physics
+*                             tendencies.
 * v3_30 - Faucher M.        - Add TDEW
+
 * v3_30 - Milbrandt J.      - Exclude water-loading of QR from multimoment scheme
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - Bilodeau-Desgagne - Define PMOINS for offline mode
-* v3_31 - Milbrandt J./     - Changed dyn. variable output names for QR to QL (rain),
-*         Desgagne M.         QG to QJ (graupel), and QC to QB (cloud; Kong-Yau and
-*                             Milbrandt-Yau only) to avoid conflicts with existing variables
 *
 *object
 *
@@ -58,7 +42,7 @@
 #include "itf_phy_busind.cdk"
 #include "itf_phy_vmm.cdk"
 #include "itf_phy_config.cdk"
-#include "itf_cpl.cdk"
+#include "itf_cpl_cplg.cdk"
 #include "v4dg.cdk"
 *
 **
@@ -91,12 +75,18 @@
       call getindx ('PPLUS',   'D',pplus,    lght, soit)
       call getindx ('OMEGAP',  'D',omegap,   lght, soit)
       call getindx ('SIGM',    'D',sigm,     lght, soit)
-      call getindx ('SIGT',    'D',sigt,     lght, soit)
       call getindx ('DXDY',    'D',dxdy,     lght, soit)
       call getindx ('EPONMOD', 'D',eponmod,  lght, soit)
       call getindx ('FCPMSK',  'D',fcpf,     lght, soit)
       call getindx ('FCPOID',  'D',fcpw,     lght, soit)
       endif
+*
+      IF (C_coupling_L) THEN
+          call getindx ('FCCPL',   'D',fccpl,    lght, soit)
+          call getindx ('FVCPL',   'D',fvcpl,    lght, soit)
+          call getindx ('MCCPL',   'D',mccpl,    lght, soit)
+          CALL getindx ('TDEW',    'V',tdew,     lght, soit)
+      ENDIF
 *
       call getindx ('DLAT',      'P',dlat,     lght, soit)
       call getindx ('DLON',      'P',dlon,     lght, soit)
@@ -128,7 +118,7 @@
       call getindx ('VDIAG',     'P',vdiag,    lght, soit)
       call getindx ('QDIAG',     'P',qdiag,    lght, soit)
       call getindx ('TMICE',     'P',tmice,    lght, soit)
-      if (Schm_offline_L) then
+      if (Schm_offline_L .or. C_coupling_L) then
           call getindx ('FLUSOLIS',  'P',flusolis, lght, soit)
       endif
       call getindx ('TSS',       'P',tss,      lght, soit)
@@ -153,11 +143,11 @@
       do i=1,h2o_maxn
          vn_S=h2o_liste_S(i)(1:2)//'PLUS'
          call getindx (vn_S, 'D', deb, lght, opti)
-         if ( (h2o_liste_S(i)(1:2).eq.'QC'.or.h2o_liste_S(i)(1:2).eq.'QB').and.
+         if ( (h2o_liste_S(i)(1:2).eq.'QC').and.
      $        (P_cond_stcon_s(1:3).eq.'NIL' ) ) deb = -1
-         if ( (h2o_liste_S(i)(1:2).eq.'QL'  ).and.
+         if ( (h2o_liste_S(i)(1:2).eq.'QR'  ).and.
      $        (P_cond_stcon_s(1:4).ne.'EXCR').and.
-     $        (P_cond_stcon_s(1:4).ne.'MY  ') ) deb = -1
+     $        (P_cond_stcon_s(1:4).ne.'MULT') ) deb = -1
 
          if (deb.gt.0) then
             h2o_ntr = h2o_ntr + 1

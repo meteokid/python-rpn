@@ -1,0 +1,9 @@
+#include "itf_cpl_cplg.cdk"
+      namelist /coupling/ C_coupling_L, C_cplflds2file_L, 
+     $         C_isautonomus_L, C_cpld2ocean_L, C_cpld2land_L, 
+     $         C_cpld2atmos_L, from_atmos_S, from_ocean_S, from_land_S,
+     $         lg_atmos, lg_ocean, lg_land, C_timeout, GOMSST
+      namelist /coupling_p/ C_coupling_L, C_cplflds2file_L, 
+     $         C_isautonomus_L, C_cpld2ocean_L, C_cpld2land_L, 
+     $         C_cpld2atmos_L, lg_atmos, lg_ocean, lg_land, C_timeout,
+     $         GOMSST

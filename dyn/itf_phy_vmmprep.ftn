@@ -1,31 +1,15 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_vmmprep - load all fields required by the physics
 *
 #include "model_macros_f.h"
 *
-      subroutine itf_phy_vmmprep
-     $   (F_pvptr,NPTR, F_trp, F_trm, F_tp, F_qp, F_vtm, DIST_DIM,Nk )
-*
+      subroutine itf_phy_vmmprep(F_pvptr,NPTR, F_trp, F_trm, 
+     $                           F_tp, F_vtm, DIST_DIM,nkphy )
       implicit none
 *
-      integer NPTR,DIST_DIM,Nk
-      integer*8 F_pvptr(NPTR)
-      real F_trp(DIST_SHAPE,Nk,*), F_trm(DIST_SHAPE,Nk,*)
-      real F_tp(DIST_SHAPE,Nk),F_qp(DIST_SHAPE,Nk),F_vtm(LDIST_SHAPE,Nk)
+      integer,   INTENT(IN) :: NPTR, DIST_DIM, nkphy
+      integer*8, INTENT(OUT):: F_pvptr(NPTR)
+      real, INTENT(OUT),dimension(DIST_SHAPE,nkphy,*) :: F_trp, F_trm
+      real, INTENT(OUT),dimension(DIST_SHAPE,nkphy)   :: F_tp,  F_vtm
 *
 *author
 *     Michel Roch - rpn - april 1994
@@ -39,15 +23,71 @@
 * v3_21 - Dugas B.          - Add F_busdyn(p_phis) = topo
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - Lee V.            - removed clipping from tracers
-* v3_31 - Bilodeau B.       - offline mode: TT (and not VT) from entry
-*                                           no interpolation of winds
 *
 *object
+*----------------------------------------------------------------
+*   Copy variables at time t- and t* in workfields              *
+*                                                               *
+*     Physics is called for nkphy levels, where nkphy= G_nk+2   *
+*     Level are staggered (see drawing below)                   *
+*                                                               *
+*     The following figure explains how the variables are       *
+*     treated. T -> temperature                                 *
+*              H -> tracers                                     *
+*              U -> winds                                       *
+*              tdia, udia hdia -> used for output only          *
+*                                                               *
+*----------------------------------------------------------------
+*                                |                              |
+*       PHYSICS                  |            DYNAMIC           |
+*                                |                              |
+*--------------------------------|------------------------------|
+*                                |                              |
+* TOP  k=1                       |   TOP                        |
+* =====T,H(1): copied from k=1   |   =====T(1),H(1)             |
+*      U(1): copy of DYN U(1)    |                              |
+*                                |                              |
+*                                |                              |
+*                                |                              |
+*                                |                              |
+* - - -U(2): copy of DYN(1)      |   - - -U(1)                  |
+*                                |                              |
+*                                |                              |
+*                                |                              |
+*   ...                          |   ...                        |
+*                                |                              |
+*                                |                              |
+*                                |                              |
+*      k=2..G_nk+1               |                              |
+* =====T,H(k) : copied from k    |   =====T(k),H(k)             |
+*                                |                              |
+*                                |                              |
+*                                |                              |
+*      k=2..G_nk+1               |                              |
+* - - -U(k): copied form k-1     |   - - -U(k-1)                |
+*                                |                              |
+*                                |                              |
+*                                |                              |
+*   ...                          |   ...                        |
+*                                |                              |
+*                                |                              |
+*       k=G_nk+2                 |                              |
+*  =====T,H,U : diagnostics      |   =====T,H(G_nk+1),U(G_nk)   |
+*  SFC                           |   SFC  tdia(3),udia(3),hdia  |
+*----------------------------------------------------------------
 *
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
-* F_up     
+*     TODO: Document
+* F_pvptr     O
+* NPTR        I    ?number of VMM p_  pointers?
+* F_trp       O
+* F_trm       O
+* F_tp        O
+* F_vtm       O
+* DIST_DIM    I
+* nkphy       I    number of phys level, p_nk=G_nk+2
 *----------------------------------------------------------------
 *
 *implicits
@@ -56,25 +96,30 @@
 #include "cstv.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
+#include "func.cdk"
 #include "schm.cdk"
 #include "itf_phy_config.cdk"
 #include "itf_phy_buses.cdk"
 #include "inuvl.cdk"
 #include "vt1.cdk"
 #include "vt0.cdk"
+#include "vtx.cdk"
 #include "itf_phy_busind.cdk"
 #include "p_geof.cdk"
 #include "itf_phy_vmm.cdk"
-*
+#include "ver.cdk"
+#include "itf_vmm.cdk"
+
 **
-      integer  vmmlod,vmmget,vmmuln
-      external vmmlod,vmmget,vmmuln
 *
-      integer err, key(12), i, j, k, n, i0, j0, in, jn, nksurf,
-     $        keyd(NPTR), keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
+      integer err, key(13), i, j, k, n, i0, j0, in, jn, nksurf,
+     $        keyd(17), keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
+      integer pnlod, nik, nikp, km1
       real dt, dzsedi, dzmin, dzmin_, sigsfc, trp, trm, con(l_nj)
-      real summqj(LDIST_SHAPE,Nk), sumpqj(LDIST_SHAPE,Nk),
-     $     vmm   (LDIST_SHAPE,Nk)
+      real xtmp(l_ni,nkphy),xtmp2(l_ni,nkphy)
+      real wtmp(l_ni,nkphy-1),wtmp2(l_ni,nkphy-1),ztmp(l_ni,l_nj)
+      real*8 r0
+      real, dimension(LDIST_SHAPE,nkphy) :: summqj, sumpqj, vmm   
       pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
       pointer (pavmm, vmm)
 *
@@ -83,24 +128,37 @@
       key( 1) = VMM_KEY(ut0)
       key( 2) = VMM_KEY(vt0)
       key( 3) = VMM_KEY(tt0)
-      key( 4) = VMM_KEY(ut1)
-      key( 5) = VMM_KEY(vt1)
-      key( 6) = VMM_KEY(tt1)
-      key( 7) = VMM_KEY(fit1)
-      key( 8) = VMM_KEY(topo)
-      key( 9) = VMM_KEY(qt0)
-      key( 10) = VMM_KEY(qt1)
-      err = vmmlod(key,10)
+      key( 4) = VMM_KEY(st0)
+      key( 5) = VMM_KEY(ut1)
+      key( 6) = VMM_KEY(vt1)
+      key( 7) = VMM_KEY(tt1)
+      key( 8) = VMM_KEY(st1)
+      key( 9) = VMM_KEY(fiptx)
+      key(10) = VMM_KEY(topo)
+      key(11) = VMM_KEY(csh)
+      key(12) = VMM_KEY(piup)
+      pnlod = 12
+      if (.not. Schm_hydro_L ) then
+        key(13) = VMM_KEY(qsect1)
+        pnlod = 13
+      endif
+
+      err = vmmlod(key,pnlod)
       err = VMM_GET_VAR(ut0)
       err = VMM_GET_VAR(vt0)
       err = VMM_GET_VAR(tt0)
+      err = VMM_GET_VAR(st0)   !ln (pi_s/z_s)
       err = VMM_GET_VAR(ut1)
       err = VMM_GET_VAR(vt1)
       err = VMM_GET_VAR(tt1)
-      err = VMM_GET_VAR(fit1)
-      err = VMM_GET_VAR(topo)
-      err = VMM_GET_VAR(qt0)
-      err = VMM_GET_VAR(qt1)
+      err = VMM_GET_VAR(st1)   !ln (pi_s/z_s)
+      err = VMM_GET_VAR(fiptx) !phi
+      err = VMM_GET_VAR(topo)  !Phi at the surface (xfis) with halos on it
+      err = VMM_GET_VAR(csh)   !csh = 2*exp(s/2)*sinh(s/2)
+      err = VMM_GET_VAR(piup)  !Upstream hydrostatic pressure at t-dt for omega
+      if (.not. Schm_hydro_L ) then
+         err = VMM_GET_VAR(qsect1) !q''
+      endif
 *
       keyd(1) = VMM_KEY(p_uplus)
       keyd(2) = VMM_KEY(p_vplus)
@@ -108,9 +166,9 @@
       keyd(4) = VMM_KEY(p_umoins)
       keyd(5) = VMM_KEY(p_vmoins)
       keyd(6) = VMM_KEY(p_tmoins)
-      keyd(7) = VMM_KEY(p_gzmoins6)
+      keyd(7) = VMM_KEY(p_gzplus)
       keyd(8) = VMM_KEY(p_omegap)
-      keyd(9) = VMM_KEY(p_sigm)
+      keyd(9)  = VMM_KEY(p_sigm_t)
       keyd(10) = VMM_KEY(p_phis)
       keyd(11) = VMM_KEY(p_pplus)
       keyd(12) = VMM_KEY(p_pmoins)
@@ -118,7 +176,7 @@
       keyd(14) = VMM_KEY(p_eponmod)
       keyd(15) = VMM_KEY(p_fcpf)
       keyd(16) = VMM_KEY(p_fcpw)
-      keyd(17) = VMM_KEY(p_sigt)
+      keyd(17) = VMM_KEY(p_sigm_m)
       err = vmmlod(keyd,17)
       err = VMM_GET_VAR(p_uplus)
       err = VMM_GET_VAR(p_vplus)
@@ -126,9 +184,9 @@
       err = VMM_GET_VAR(p_umoins)
       err = VMM_GET_VAR(p_vmoins)
       err = VMM_GET_VAR(p_tmoins)
-      err = VMM_GET_VAR(p_gzmoins6)
+      err = VMM_GET_VAR(p_gzplus)
       err = VMM_GET_VAR(p_omegap)
-      err = VMM_GET_VAR(p_sigm)
+      err = VMM_GET_VAR(p_sigm_t)
       err = VMM_GET_VAR(p_phis)
       err = VMM_GET_VAR(p_pplus)
       err = VMM_GET_VAR(p_pmoins)
@@ -136,73 +194,156 @@
       err = VMM_GET_VAR(p_eponmod)
       err = VMM_GET_VAR(p_fcpf)
       err = VMM_GET_VAR(p_fcpw)
-      err = VMM_GET_VAR(p_sigt)
+      err = VMM_GET_VAR(p_sigm_m)
+
+      nik  = l_ni*(nkphy-1)
+      nikp = l_ni*(nkphy)
 *
-****************************************************
 *   Copy variables at time t- and t* in workfields *
-****************************************************
+*     --------------------------------------------
 *
-      do k=1,l_nk
+      do k=1,l_nk+1
+      km1=max(k-1,1)
       do j= 1, l_nj
       do i= 1, l_ni 
-         p_umoins  (i,j,k) =  ut0 (i,j,k)
-         p_vmoins  (i,j,k) =  vt0 (i,j,k)
+         p_umoins  (i,j,k) =  ut0 (i,j,km1)
+         p_vmoins  (i,j,k) =  vt0 (i,j,km1)
          F_vtm     (i,j,k) =  tt0 (i,j,k)
-         p_gzmoins6(i,j,k) =  fit1(i,j,k) - topo(i,j)
-         p_uplus   (i,j,k) =  ut1 (i,j,k)
-         p_vplus   (i,j,k) =  vt1 (i,j,k)
+         p_uplus   (i,j,k) =  ut1 (i,j,km1)
+         p_vplus   (i,j,k) =  vt1 (i,j,km1)
          F_tp      (i,j,k) =  tt1 (i,j,k)
       end do
       end do
       end do
+
 *
-      if (Schm_hydro_L) then
-         do k= 1, l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni 
-            F_qp(i,j,k) = qt1(i,j,k)
-         enddo
-         enddo
-         enddo
-         do j= 1, l_nj
-         do i= 1, l_ni 
-            p_pplus (i,j) = exp(qt1(i,j,l_nk))
-            p_pmoins(i,j) = exp(qt0(i,j,l_nk))
+*     Computing pressure.
+*     -----------------------
+
+c$$$ p_sigm_* are used as tmp var for the pressure on t/m levels until sigm is computed at the end
+      do j=1,l_nj
+         do i=1,l_ni 
+            p_pplus(i,j) = Ver_z_8%t(l_nk+1)*(1.0d0 + csh(i,j))
+            p_sigm_m(i,j,nkphy) = p_pplus(i,j)
+            p_sigm_t(i,j,nkphy) = p_pplus(i,j)
          end do
-         end do
-         err = vmmuln(key,10)
+      end do
+
+      do j=1,l_nj
+         do i=1,l_ni
+            p_sigm_m(i,j,1) = Ver_pia_8%t(1)
+         enddo
+      enddo
+
+      do k=2,l_nk+1
+         do j=1,l_nj
+            do i=1,l_ni
+               p_sigm_m(i,j,k) = Ver_pia_8%m(k-1) 
+     $                           + Ver_pibb_8%m(k-1)*p_pplus(i,j)
+            enddo
+         enddo
+      enddo         
+
+
+      if(Schm_dPdlogZ_L)then   
+         do k=1,nkphy-2
+            do j=1,l_nj
+            do i=1,l_ni
+               p_sigm_t(i,j,k)  = sqrt(p_sigm_m(i,j,k+1)*p_sigm_m(i,j,k))
+            enddo
+            enddo
+         enddo
+         do j=1,l_nj
+         do i=1,l_ni
+            p_sigm_t(i,j,nkphy-1) = sqrt(p_pplus(i,j)*p_sigm_m(i,j,nkphy-1))
+         enddo
+         enddo
       else
-         err = vmmuln(key,8)
-         key(11) = VMM_KEY(qpt0)
-         key(12) = VMM_KEY(qpt1)
-         err = vmmlod(key(11),2)
-         err = VMM_GET_VAR(qpt0)
-         err = VMM_GET_VAR(qpt1)
-         do k= 1, l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni 
-            F_qp(i,j,k) = qt1(i,j,k) - qpt1(i,j,k)
+         do k= 1,l_nk+1
+            do j=1,l_nj
+            do i= 1, l_ni
+               p_sigm_t(i,j,k) = Ver_pia_spcl_8%t(k) 
+     $                           + Ver_pibb_spcl_8%t(k)*p_pplus(i,j)
+            enddo
+            enddo
          enddo
-         enddo
-         enddo
-         do j= 1, l_nj 
-         do i= 1, l_ni 
-            p_pmoins(i,j) = exp( qt0(i,j,l_nk) - qpt0(i,j,l_nk) )
-            p_pplus(i,j) = exp( qt1(i,j,l_nk) - qpt1(i,j,l_nk) ) 
-         end do
-         end do
-         err = vmmuln(key(9),4)
       endif
 *
-*     Compute sigma levels from F_qp
-*     --------------------------------
-      do k=1,l_nk
+*     compute vertical omega
+*     -----------------------
+*
+      call calomeg_adv (p_omegap,st1,piup,LDIST_DIM,l_nk,.false.)
+!     calomeg_adv compute p_omegap up to nkphy-2+1 
+!     p_omegap(nkphy)=p_omegap(nkphy-1)  below
+
+*
+*     correct for vertical motion at bottom
+*     Interpolat gz from momentum to thermo levels in ln(p)
+*     -----------------------------------------------------------------
+*
       do j=1,l_nj
-      do i=1,l_ni 
-        p_sigm(i,j,k) = exp(F_qp(i,j,k)-F_qp(i,j,l_nk))
-      end do
-      end do
-      end do
+
+         do i= 1, l_ni
+            p_omegap(i,j,nkphy-1) = 0.25*(p_omegap(i,j,nkphy-2) + 3.*p_omegap(i,j,nkphy-1))
+         enddo
+         call vsexp (ztmp(1,j),st0(1,j),l_ni)
+*
+         do i= 1, l_ni
+            xtmp2(i,1)     = p_sigm_t(i,j,1)
+            xtmp2(i,nkphy) = p_pplus(i,j)
+            wtmp2(i,1)      = p_sigm_t(i,j,1)
+            p_gzplus(i,j,1) = 0.5*(fiptx(i,j,0)+fiptx(i,j,1))+Ver_fistr_8%t(1)
+            p_gzplus(i,j,nkphy) =  topo(i,j)
+         enddo
+         do k= 2, nkphy-1
+         do i= 1, l_ni
+            xtmp2(i,k) = Ver_pia_8%m(k-1) + Ver_pibb_8%m(k-1)*p_pplus(i,j)
+            wtmp2(i,k) = p_sigm_t(i,j,k)
+            p_gzplus(i,j,k) = fiptx(i,j,k-1)+Ver_fistr_8%m(k-1)
+         enddo
+         enddo
+*
+         call vslog(xtmp,xtmp2,nikp)
+         call vslog(wtmp,wtmp2,nik)
+*
+         do k= 1, nkphy-1
+         do i= 1, l_ni
+            wtmp2(i,k) = xtmp(i,k+1)-xtmp(i,k)
+            xtmp(i,k)  = xtmp(i,k+1)-wtmp(i,k)
+         enddo
+         enddo
+         call vsrec(wtmp,wtmp2,nik)
+*
+         do k= 1, nkphy-1
+         do i= 1, l_ni
+            r0 = wtmp(i,k)*xtmp(i,k)
+            p_gzplus(i,j,k) = r0*p_gzplus(i,j,k) 
+     $                          + (1.D0-r0)*p_gzplus(i,j,k+1)
+     $                          - topo(i,j)
+         end do
+         end do
+*
+*        put information in surface level (only pressure is relevant
+*        other values will be ignored by the physics
+*        -----------------------------------------------------------
+         do i= 1, l_ni
+c$$$ TODO: recheck p_pmoins [i.e. ztmp]
+            p_pmoins(i,j)        = ztmp(i,j)*Cstv_pisrf_8
+            p_umoins(i,j,nkphy)  = p_umoins(i,j,nkphy-1) 
+            p_vmoins(i,j,nkphy)  = p_vmoins(i,j,nkphy-1) 
+            F_vtm(i,j,nkphy)     = tt0(i,j,nkphy-1)
+            p_gzplus(i,j,nkphy)= 0.
+c$$$ p_vmmphy:  p_gzplus(i,j,nkphy)= topo(i,j) 
+c$$$ p_fillbus: F_busdyn(gzmoins6+indx)= F_gzm(ii,F_jdo,k) - F_topo(ii,F_jdo)
+            p_uplus(i,j,nkphy)   = p_uplus(i,j,nkphy-1) 
+            p_vplus(i,j,nkphy)   = p_vplus(i,j,nkphy-1) 
+            F_tp(i,j,nkphy)      = tt1(i,j,nkphy-1)
+            p_omegap(i,j,nkphy)  = p_omegap(i,j,nkphy-1) 
+         end do
+      end do !do j=
+*    
+*     TODO: Document
+*     -----------------------------------------
 *
       keyp_ = VMM_KEY (trt1)
       keym_ = VMM_KEY (trt0)
@@ -217,7 +358,7 @@
          do n=1,phyt_ntr
             err = vmmget(keyp(n),patrp,trp)
             err = vmmget(keym(n),patrm,trm)
-            do k=1,l_nk
+            do k=1,l_nk+1
             do j= 1, l_nj
             do i= 1, l_ni
                F_trp(i,j,k,n) =  trp(i,j,k)
@@ -225,22 +366,22 @@
             end do
             end do
             enddo
+            do j= 1, l_nj 
+            do i= 1, l_ni 
+               F_trp(i,j,nkphy,n) =  trp(i,j,l_nk+1)
+               F_trm(i,j,nkphy,n) =  trm(i,j,l_nk+1)
+            end do
+            end do
+
          enddo
          err = vmmuln(keyp,phyt_ntr)
          err = vmmuln(keym,phyt_ntr)
       endif
+
+
 *
-      key(1) = VMM_KEY(st1)
-      key(2) = VMM_KEY(psdt1)
-      key(3) = VMM_KEY(tdt1)
-      err = vmmlod (key,3)
-      err = VMM_GET_VAR(st1)
-      err = VMM_GET_VAR(psdt1)
-      err = VMM_GET_VAR(tdt1)
-*
-      call calomeg(p_omegap,psdt1,tdt1,st1,LDIST_DIM,l_nk,1,l_ni,1,l_nj)
-*
-*C    dzmin determines the micro-physical timestep for sedimentation
+*     dzmin determines the micro-physical timestep for sedimentation
+*     --------------------------------------------
 *
 *     dzsedi is the minimal thickness of the sedimentation layer.
 *     Get default value from the physics package.
@@ -257,20 +398,22 @@
 *
       dt = Cstv_dt_8
       sigsfc=1.-(min(dt,dzsedi))/10000.
-      do k=G_nk-1,1,-1     
-         if (geomg_hybm(k).lt.sigsfc) go to 100
+
+      do k=G_nk+1,1,-1     
+         if (Ver_hybm%t(k).lt.sigsfc) go to 100
       end do
- 100  nksurf = min(G_nk-1,k+1)
+ 100  nksurf = min(G_nk+1,k+1)
 *
       dzmin_=1.e+5
-      if ( nksurf .eq. G_nk-1 ) then
+      if ( nksurf .eq. G_nk+1 ) then
 *C                                     The sedimentation is made
 *C                                     over all model levels
         do j= 1, l_nj
         do i= 1, l_ni 
+c$$$ TODO: optimize with vslog
          dzmin_= min(1.0d0*(dzmin_),
-     $   Dcst_rgasd_8*(1.0d0*(F_tp(i,j,G_nk-1)+ F_tp(i,j,G_nk-2)))/2.d0/
-     $   Dcst_grav_8*log(1.0d0*(geomg_hybm(G_nk-1)/geomg_hybm(G_nk-2))))
+     $   Dcst_rgasd_8*(0.5d0*(F_tp(i,j,G_nk+1)+ F_tp(i,j,G_nk)))/
+     $   Dcst_grav_8*dlog(1.0d0*(Ver_hybm%t(G_nk+1)/Ver_hybm%t(G_nk))))
         end do
         end do
 *
@@ -279,12 +422,14 @@
 *C                                     over a reduced set of levels
         do j= 1, l_nj 
         do i= 1, l_ni
+c$$$ TODO: optimize with vslog
          dzmin_= min(1.0d0*(dzmin_),
-     $      Dcst_rgasd_8*(1.0d0*(F_tp(i,j,nksurf-1)+F_tp(i,j,nksurf-2)))/2.d0/
-     $      Dcst_grav_8 *log(1.0d0*(geomg_hybm(nksurf-1)/geomg_hybm(nksurf-2))))
+     $      Dcst_rgasd_8*(0.5d0*(F_tp(i,j,nksurf-1)+F_tp(i,j,nksurf-2)))/
+     $      Dcst_grav_8 *dlog(1.0d0*(Ver_hybm%t(nksurf-1)/Ver_hybm%t(nksurf-2))))
+c$$$ TODO: optimize with vslog
          dzmin_= min(1.0d0*(dzmin_),
-     $      Dcst_rgasd_8*(1.0d0*(F_tp(i,j,G_nk-1)+F_tp(i,j,nksurf-1)))/2.d0/
-     $      Dcst_grav_8 *log(1.0d0*(geomg_hybm(G_nk-1)/geomg_hybm(nksurf-1))))
+     $      Dcst_rgasd_8*(0.5d0*(F_tp(i,j,G_nk+1)+F_tp(i,j,nksurf-1)))/
+     $      Dcst_grav_8 *dlog(1.0d0*(Ver_hybm%t(G_nk+1)/Ver_hybm%t(nksurf-1))))
         end do
         end do
 *
@@ -293,21 +438,25 @@
       call rpn_comm_ALLREDUCE (dzmin_,dzmin,1,"MPI_REAL",
      $                         "MPI_MIN","grid",err)
 *
+
 *     send dzmin and nksurf to the physics
       call phycom ('dzmin' ,dzmin ,1,'set')
       call phycom ('nksurf',nksurf,1,'set')
-*
-*C    interpolate wind images at time t1 and t2
+
+*     interpolate wind images at time t1 and t2
 *     -----------------------------------------
 *
-      if (.not.schm_offline_L) then
-      call itf_phy_uvgridscal (p_uplus ,p_vplus ,LDIST_DIM,l_nk,.true.)
-      call itf_phy_uvgridscal (p_umoins,p_vmoins,LDIST_DIM,l_nk,.true.)
+      call itf_phy_uvgridscal (p_uplus ,p_vplus ,LDIST_DIM,nkphy,.true.)
+      call itf_phy_uvgridscal (p_umoins,p_vmoins,LDIST_DIM,nkphy,.true.)
+
+*
+*     TODO: Document, this was done in p_fillbus
+*     --------------------------------------------
 *
       do j=1,l_nj
          con(j) = ( 1.0/cos(geomg_y_8(j))) * Dcst_rayt_8
       enddo
-      do k=1,l_nk
+      do k=1,nkphy
       do j= 1, l_nj
       do i= 1, l_ni 
          p_uplus(i,j,k) = p_uplus(i,j,k)*con(j)
@@ -317,15 +466,15 @@
       enddo
       enddo
       enddo
-      endif
+
 *
-*C    Compute temperature from virtual temperature
+*     Compute temperature from virtual temperature
 *     --------------------------------------------
 *
-      call itf_phy_padbuf(F_tp,l_minx,l_maxx,l_miny,l_maxy,Nk)
-      call itf_phy_padbuf(F_trp,l_minx,l_maxx,l_miny,l_maxy,Nk)
-      call itf_phy_padbuf(F_trm,l_minx,l_maxx,l_miny,l_maxy,Nk)
-      call itf_phy_padbuf(F_vtm,l_minx,l_maxx,l_miny,l_maxy,Nk)
+      call itf_phy_padbuf(F_tp,l_minx,l_maxx,l_miny,l_maxy,nkphy)
+      call itf_phy_padbuf(F_trp,l_minx,l_maxx,l_miny,l_maxy,nkphy)
+      call itf_phy_padbuf(F_trm,l_minx,l_maxx,l_miny,l_maxy,nkphy)
+      call itf_phy_padbuf(F_vtm,l_minx,l_maxx,l_miny,l_maxy,nkphy)
 *
       if(Schm_wload_L)then
 *
@@ -333,7 +482,7 @@
          sumpqj = 0.
 *        Sum over Hydrometeors, note: 'HU' is in position 1
          do n = 2, h2o_ntr
-         do k = 1, Nk
+         do k = 1, nkphy
          do j= 1, l_nj
          do i = 1, l_ni
             summqj(i,j,k)=summqj(i,j,k)+F_trm(i,j,k,n)
@@ -342,46 +491,37 @@
          end do
          end do
          end do
-         call itf_phy_padbuf(summqj,l_minx,l_maxx,l_miny,l_maxy,Nk)
-         call itf_phy_padbuf(sumpqj,l_minx,l_maxx,l_miny,l_maxy,Nk)
+         call itf_phy_padbuf(summqj,l_minx,l_maxx,l_miny,l_maxy,nkphy)
+         call itf_phy_padbuf(sumpqj,l_minx,l_maxx,l_miny,l_maxy,nkphy)
+c$$$ TODO: check if mfottvh can take nkphy
          call mfottvh ( p_tplus ,F_tp,
      $            F_trp(l_minx,l_miny,1,1),sumpqj,
-     $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),Nk,
+     $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),nkphy,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
          call mfottvh ( p_tmoins,F_vtm,
      $            F_trm(l_minx,l_miny,1,1),summqj,
-     $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),Nk,
+     $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),nkphy,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
 *
       else
 *
-         if (.not.schm_offline_L) then
+c$$$ TODO: check if mfottv can take nkphy
          call mfottv ( p_tplus ,F_tp,
      $            F_trp(l_minx,l_miny,1,1),
-     $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),Nk,
+     $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),nkphy,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
          call mfottv ( p_tmoins,F_vtm,
      $            F_trm(l_minx,l_miny,1,1),
-     $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),Nk,
+     $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1),nkphy,
      $            (l_maxx-l_minx+1)*(l_maxy-l_miny+1) )
-*
-         else
-*
-*           Copy TPLUS and TMOINS directly (no virtual temperature)
-            do k=1,Nk
-               do j=1,l_nj
-                  do i=1,l_ni
-                     p_tplus (i,j,k) = F_tp (i,j,k)
-                     p_tmoins(i,j,k) = F_vtm(i,j,k)
-                  end do
-               end do
-            end do
-         endif
-*
+
       endif
+
 *
 *      The following hardcoding of fcpf, fcpw and eponmod will be
 *      a source of difference for future acide test with physics
+*     --------------------------------------------
+*
       do j=1,l_nj
       do i=1,l_ni
          p_phis(i,j)= topo(i,j)
@@ -406,14 +546,78 @@
 *   Surface fields:
 *   pointers are stored the same order as the common block p_phy
 *     inside F_pvptr
+*     --------------------------------------------
       do i=1,COMMON_SIZE(p_phy)
          keyd(i) = p_phy_first(i)
          err = vmmget(keyd(i),pavmm,vmm)
          F_pvptr(i) = pavmm
       enddo
+
+*
+*     compute thermo and momentum sigma levels
+*     -------------------------------------
+*
+      do k=1,nkphy
+         do j=1,l_nj
+         do i=1,l_ni 
+            p_sigm_t(i,j,k) = p_sigm_t(i,j,k)/p_pplus(i,j)
+            p_sigm_m(i,j,k) = p_sigm_m(i,j,k)/p_pplus(i,j)
+         end do
+         end do
+      end do
+c$$$      print *,'---- vmmprep ----'
+c$$$
+c$$$      call statfld3d(p_uplus  ,'p_up',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_vplus  ,'p_vp',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_tplus  ,'p_tp',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_umoins ,'p_um',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_vmoins ,'p_vm',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_tmoins ,'p_tm',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_gzplus ,'p_gz',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_omegap ,'p_om',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_sigm_t ,'p_st',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_sigm_m ,'p_sm',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(p_phis ,'p_ph',LDIST_DIM,l_ni,l_nj,1)
+c$$$      call statfld3d(p_pplus ,'p_pp',LDIST_DIM,l_ni,l_nj,1)
+c$$$      call statfld3d(p_pmoins ,'p_pm',LDIST_DIM,l_ni,l_nj,1)
+c$$$      call statfld3d(p_dxdy ,'p_dx',LDIST_DIM,l_ni,l_nj,1)
+c$$$      call statfld3d(p_eponmod ,'p_ep',LDIST_DIM,l_ni,l_nj,1)
+c$$$      call statfld3d(p_fcpf ,'p_ff',LDIST_DIM,l_ni,l_nj,1)
+c$$$      call statfld3d(p_fcpw ,'p_fw',LDIST_DIM,l_ni,l_nj,1)
+c$$$      do n=1,phyt_ntr
+c$$$      call statfld3d(F_trp(1,1,1,n) ,'Ftrp',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(F_trm(1,1,1,n) ,'Ftrm',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      enddo
+c$$$      call statfld3d(F_tp ,'F_tp',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$      call statfld3d(F_vtm ,'F_vtm',LDIST_DIM,l_ni,l_nj,nkphy)
+c$$$
+c$$$      print *,'---- [end] vmmprep ----'
 *
 *     ________________________________________________________________
 *
       return
       end
 
+      subroutine statfld3d(fld,name,DIST_DIM,ni,nj,nk)
+      implicit none
+      integer, INTENT(IN) :: DIST_DIM, ni,nj,nk
+      character*(*) name
+      real, INTENT(IN),dimension(DIST_SHAPE,nk) :: fld
+      
+#include "glb_ld.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+
+      integer :: i0,in,j0,jn,inn
+
+      i0 = 1
+      in = ni
+      j0 = 1
+      jn = nj
+      inn= 0
+      if (G_lam) then
+           inn=1
+      endif
+      call glbstat (fld,name,LDIST_DIM,nk,i0,in-inn,j0,jn ,1,nk)
+
+      end

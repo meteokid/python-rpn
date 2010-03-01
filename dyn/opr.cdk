@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 #if defined (DOC)
 *
 ***comdeck opr.cdk
@@ -31,8 +16,10 @@
 * Opr_opsxp2_8       | east-west   projection operators                |
 * Opr_opsyp0_8       | north-south projection operators                |
 * Opr_opsyp2_8       | north-south projection operators                |
-* Opr_opszp0_8       | vertical    projection operators                |
-* Opr_opszp2_8       | vertical    projection operators                |
+* Opr_opszp0_8       | vertical    projection operator                 |
+* Opr_opszpm_8       | vertical          mean operator                 |
+* Opr_opszpl_8       | vertical    towards ln operator                 |
+* Opr_opszp2_8       | vertical    second der operator                 |
 * Opr_xevec_8        | horizontal eigenvectors                         |
 * Opr_xeval_8        | horizontal eigenvalues                          |
 * Opr_zevec_8        | vertical   eigenvectors                         |
@@ -49,6 +36,8 @@
       DCL_DYNVAR(Opr, opsyp0_8,    real*8, (*))
       DCL_DYNVAR(Opr, opsyp2_8,    real*8, (*))
       DCL_DYNVAR(Opr, opszp0_8,    real*8, (*))
+      DCL_DYNVAR(Opr, opszpm_8,    real*8, (*))
+      DCL_DYNVAR(Opr, opszpl_8,    real*8, (*))
       DCL_DYNVAR(Opr, opszp2_8,    real*8, (*))
       DCL_DYNVAR(Opr, xevec_8 ,    real*8, (*))
       DCL_DYNVAR(Opr, xeval_8 ,    real*8, (*))

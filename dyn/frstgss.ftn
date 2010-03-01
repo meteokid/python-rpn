@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r frstgss - Copy data from time level t1 that will be used as a
 *                first guess at time level t0
 *
@@ -49,48 +34,38 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer pnerr, pnlkey1(10),pnlod
+      integer pnerr, pnlkey1(12),pnlod
       integer i, j, k
 **
 *     ---------------------------------------------------------------
 *
       if (Lun_debug_L) write (Lun_out,1000)
 *
-      pnlkey1(1) = VMM_KEY(qt0)
-      pnlkey1(2) = VMM_KEY(tpt0)
-      pnlkey1(3) = VMM_KEY(pipt0)
-      pnlkey1(4) = VMM_KEY(tplt0)
-      pnlkey1(5) = VMM_KEY(st0)
-      pnlkey1(6) = VMM_KEY(qt1)
-      pnlkey1(7) = VMM_KEY(tpt1)
-      pnlkey1(8) = VMM_KEY(pipt1)
-      pnlkey1(9) = VMM_KEY(tplt1)
-      pnlkey1(10) = VMM_KEY(st1)
+      pnlkey1(1) = VMM_KEY(tt0)
+      pnlkey1(2) = VMM_KEY(st0)
+      pnlkey1(3) = VMM_KEY(psdt0)
+      pnlkey1(4) = VMM_KEY(tt1)
+      pnlkey1(5) = VMM_KEY(st1)
+      pnlkey1(6) = VMM_KEY(psdt1)
 *
-      pnlod=10
+      pnlod=6
       pnerr = vmmlod(pnlkey1,pnlod)
 
-      pnerr = VMM_GET_VAR(qt0)
-      pnerr = VMM_GET_VAR(tpt0)
-      pnerr = VMM_GET_VAR(pipt0)
-      pnerr = VMM_GET_VAR(tplt0)
+      pnerr = VMM_GET_VAR(tt0)
       pnerr = VMM_GET_VAR(st0)
-      pnerr = VMM_GET_VAR(qt1)
-      pnerr = VMM_GET_VAR(tpt1)
-      pnerr = VMM_GET_VAR(pipt1)
-      pnerr = VMM_GET_VAR(tplt1)
+      pnerr = VMM_GET_VAR(psdt0)
+      pnerr = VMM_GET_VAR(tt1)
       pnerr = VMM_GET_VAR(st1)
+      pnerr = VMM_GET_VAR(psdt1)
 
-!$omp parallel 
+!$omp parallel
 *
-!$omp do 
-      do k=1,l_nk
+!$omp do
+      do k=1,l_nk+1
       do j= 1, l_nj
       do i= 1, l_ni
-         qt0(i,j,k)  =  qt1(i,j,k)
-         tpt0(i,j,k) =  tpt1(i,j,k)
-         pipt0(i,j,k) =  pipt1(i,j,k)
-         tplt0(i,j,k) =  tplt1(i,j,k)
+         tt0(i,j,k) =  tt1(i,j,k)
+         psdt0(i,j,k) =  psdt1(i,j,k)
       end do
       end do
       end do
@@ -104,7 +79,7 @@
       end do
 !$omp end do
 *
-!$omp end parallel 
+!$omp end parallel
 
       pnerr = vmmuld(-1,0)
 *
@@ -117,13 +92,8 @@
          pnlod=pnlod+4
       endif
       if ( .not. Schm_cptop_L .or. .not. Schm_hydro_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(fipt0)
-         pnlkey1(pnlod+2) = VMM_KEY(fipt1)
-         pnlod = pnlod+2
-      endif
-      if ( .not. Schm_hydro_L ) then
-         pnlkey1(pnlod+1) = VMM_KEY(mut0)
-         pnlkey1(pnlod+2) = VMM_KEY(mut1)
+         pnlkey1(pnlod+1) = VMM_KEY(qsect0)
+         pnlkey1(pnlod+2) = VMM_KEY(qsect1)
          pnlod = pnlod+2
       endif
       pnerr = vmmlod(pnlkey1,pnlod)
@@ -133,7 +103,7 @@
          pnerr = VMM_GET_VAR(ut1)
          pnerr = VMM_GET_VAR(vt0)
          pnerr = VMM_GET_VAR(vt1)
-!$omp parallel do 
+!$omp parallel do
          do k=1,l_nk
          do j= 1 , l_nj
          do i= 1 , l_ni
@@ -142,35 +112,21 @@
          end do
          end do
          end do
-!$omp end parallel do 
+!$omp end parallel do
       endif
 *
       if ( .not. Schm_cptop_L .or. .not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(fipt0)
-         pnerr = VMM_GET_VAR(fipt1)
-!$omp parallel do 
-         do k=1,l_nk
+         pnerr = VMM_GET_VAR(qsect0)
+         pnerr = VMM_GET_VAR(qsect1)
+!$omp parallel do
+         do k=0,l_nk+1
          do j= 1 , l_nj
          do i= 1 , l_ni
-            fipt0(i,j,k) = fipt1(i,j,k)
+            qsect0(i,j,k) = qsect1(i,j,k)
          end do
          end do
          end do
-!$omp end parallel do 
-      endif
-*
-      if ( .not. Schm_hydro_L ) then
-         pnerr = VMM_GET_VAR(mut0)
-         pnerr = VMM_GET_VAR(mut1)
-!$omp parallel do 
-         do k=1,l_nk
-         do j= 1 , l_nj
-         do i= 1 , l_ni
-            mut0(i,j,k) =  mut1(i,j,k)
-         end do
-         end do
-         end do
-!$omp end parallel do 
+!$omp end parallel do
       endif
 *
 c     if (Acid_test_L) tplt0

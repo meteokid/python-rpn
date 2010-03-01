@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r set_level - initialization of common block LEVEL
 *
 #include "model_macros_f.h"
@@ -32,12 +17,12 @@
 * v2_10                    outputted when a "-1" is indicated
 * v2_21 - Dugas B.       - use convip
 * v2_30 - Lee V.         - reduced dimension of Level_typ to 1
-* v2_31 - Lee V.         - output on Geomg_hyb coordinates
+* v2_31 - Lee V.         - output on Ver_hyb coordinates
 * v2_32 - Lee V.         - levset is now an ID defined by user, not the 
 * v2_32                    actual "set" number forced to be in sequence
 * v3_01 - Lee V.         - new ip1 encoding (kind=5 -- unnormalized)
 * v3_02 - Lee V.         - eliminate levels repeated in one level set
-* v3_21 - Lee V.         - bug correction when kindip1=1
+* V3_22 - Plante A.      - staggered version
 *
 *
 *object
@@ -84,21 +69,26 @@
 *
 *implicits
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
 #include "lun.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "schm.cdk"
 *
 **
       logical press_L,eta_L,found_L
       character*5 stuff_S,blank_S
-      integer i,j,k,ii,idx,levset,num,kindip1,modeip1,ilevel
+      integer i,j,k,ii,idx,levset,num,kindip1,modeip1,ilevel,nk_t
+      real current,hyb_val(MAXLEV,MAXSET),hyb_val_m(MAXLEV,MAXSET)
 *
 *     ---------------------------------------------------------------
 *
+      nk_t=G_nk+2
+      
       if (Lun_out.gt.0) then
           write(Lun_out,*)
-          write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
+          write(Lun_out,*) ' ',F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
       endif
       set_level = 0
       read( F_argv_S(1), * ) levset
@@ -140,11 +130,11 @@
                 return
             endif
 
+*           kindip1 = 1 => hybrid
             kindip1 = 1
             modeip1 = +1
             if (Level_kind_ip1.eq.5) modeip1 = +2
             eta_L = .true.
-
          else if (F_argv_S(ii).eq.'pres') then
             if (eta_L) then
                 if (Lun_out.gt.0) write(Lun_out,*)
@@ -160,53 +150,66 @@
          else if (kindip1.ge.1) then
 
             i = i+1
-            read( F_argv_S(ii), * ) Level(i,j)
+            read( F_argv_S(ii), * ) current
 
-            if (Level(i,j).eq.-1) then
+            if (current.eq.-1) then
 
-*              request for all model eta levels
+               if (eta_L) then
 
+*                 Request for all model levels but 
+*                 all variables on thermo levels (eta).
+*                 This means that momentum variables will be interpolated
+*                 on thermo levels.
+                  
                   Level_typ(j)='M'
 
                   i = i-1
-                  do idx=1,G_nk
+                  
+                  do idx=1,nk_t
+*                    Thermo levels
                      i = i+1
-                     call convip( Level_ip1(i,j), geomg_hyb(idx),
-     $                            Level_kind_ip1,modeip1,blank_S,.false.)
+                     Hyb_Val(i,j) = ver_hyb_8%t( idx )
+c                    Pour valeur de ptop/pref 'a 1.0 utiliser la ligne suivante :
+c                     Hyb_Val(i,j) = ver_hybm_8%t( idx )
                      Level(i,j) = float( idx )
                   end do
 
-            else if (Level(i,j).eq.0) then
+               endif
+
+            else if (current.eq.0) then
 *
-*              request ground level (equivalent to G_nk)
+*              request diagnostic level
 
                  Level_typ(j)='M'
-                 Level(i,j) = G_nk
-                 call convip( Level_ip1(i,j), geomg_hyb(G_nk),
-     $                            Level_kind_ip1,modeip1,blank_S,.false.)
+                 Hyb_Val(i,j) = 0.
+                 Level(i,j) = 12000.
 
             else 
 
                if (kindip1.eq.1) then
 
-                  Level_typ(j)='M'
-
-                  if (Level(i,j) .gt. 0) then
-                     Level(i,j) = min(nint(Level(i,j)),G_nk)
-                     idx = Level(i,j)
-                     call convip( Level_ip1(i,j), geomg_hyb(idx),
-     $                            Level_kind_ip1,modeip1,blank_S,.false.)
-                  else
-                     if (Lun_out.gt.0) write(Lun_out,*)
-     $                   'SET_LEVEL WARNING: Level index out of range'
-                         i = i - 1
+                  if (eta_L) then
+                                       
+                     Level_typ(j)='M'
+                     
+                     if (current .lt. 0 .or. current.gt.nk_t) then
+                        if (Lun_out.gt.0) write(Lun_out,*)
+     $                       'SET_LEVEL WARNING: Level index out of range'
+                        i = i - 1
+                     else
+                        idx = nint(current)
+                        Hyb_Val(i,j) = ver_hybm_8%t( idx )
+                        Level(i,j) = float( idx )
+                     endif
+                     
                   endif
+                  
                else if (kindip1.eq.2) then
 
                   Level_typ(j)='P'
-
-                  call convip( Level_ip1(i,j), Level(i,j),
-     $                         kindip1,+1,blank_S,.false.)
+                  hyb_val(i,j)=current
+                  level(i,j) = current
+                  level_m(i,j) = current
 
                else
 
@@ -243,32 +246,44 @@
          return
 
       endif
-
 *     Eliminate repeated levels in one Level set
       ilevel = 1
       do ii = 2, i
          found_L = .false.
          do k = 1, ii-1
-            if ( Level_ip1(ii,j).eq.Level_ip1(k,j) ) found_L = .true.
+            if ( Hyb_Val(ii,j).eq.Hyb_Val(k,j) ) found_L = .true.
          enddo
          if (.not. found_L) then
              ilevel = ilevel + 1
-             Level_ip1(ilevel,j) = Level_ip1(ii,j)
-             Level(ilevel,j)     = Level(ii,j)
+             Hyb_Val(ilevel,j) = Hyb_Val(ii,j)
+             Level(ilevel,j)    = Level(ii,j)
+             Hyb_Val_m(ilevel,j) = Hyb_Val_m(ii,j)
+             Level_m(ilevel,j)    = Level_m(ii,j)
          endif
       enddo
 
       Level_max(Level_sets)=ilevel
+      Level_max_m(Level_sets)=ilevel
+      if(Level_max(Level_sets).gt.G_nk)Level_max_m(Level_sets)=G_nk
 
       if (Lun_out.gt.0) then
 
-      write(Lun_out,*) ' Level_set(',j,') : Level_id=',Level_id(j)
-      write(Lun_out,*) ' Level_typ=',Level_typ(j)
-c      write(Lun_out,*) ' Level_ip1=',(Level_ip1(i,j),i=1,Level_max(j))
-c      write(Lun_out,*) ' Level=',(Level(i,j),i=1,Level_max(j))
-
+         write(Lun_out,*) ' Level_set(',j,') : Level_id=',Level_id(j)
+         write(Lun_out,*) ' Level_typ=',Level_typ(j)
+         if(eta_L)then
+            write(Lun_out,*) ' Thermo levels (Variables on momentum levels will be interpolated)'
+            write(Lun_out,*) ' Hybrid values for thermo levels:'
+            write(Lun_out,'(8f11.7)') (Hyb_Val(i,j),i=1,Level_max(j))
+            write(Lun_out,*) ' Thermo level index:'
+            write(Lun_out,'(8i11)') (nint(Level(i,j)),i=1,Level_max(j))
+         endif
+         if(press_L)then
+            write(Lun_out,*) ' Pressure Levels'
+            write(Lun_out,'(8i7)') (nint(Hyb_Val(i,j)),i=1,Level_max(j))
+         endif
+         
       endif
-*
+*     
  6002 format(' SET_LEVEL WARNING: pressure level out of range =',e10.5)
 *
 *     ---------------------------------------------------------------

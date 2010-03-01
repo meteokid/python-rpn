@@ -1,0 +1,373 @@
+c  s/r e_genab2_8  - Using Laprise & Girard, generates de A and B of the
+c                    hybrid coordinate and the analytical derivative of 
+c                    d(psurf*B)/d(A + psurf*B), Also sets Z and other
+c                    related vertical parameters.
+c
+#include "model_macros_f.h"
+c
+      subroutine genab2_8 ()
+      implicit none
+c
+c author 
+c      A. Plante  - CMC - mai 2006
+c
+c revision
+c
+c object
+c    Using Laprise & Girard, generates de A and B of the hybrid coordinate
+c    see: Laprise & Girard, 1990, J. of Climate, eq. 5.1
+c    Based on subroutine genab and genab2 genab2_8 also includes the evaluation
+c    of the analytical derivative of zsurf*B with respect to Z and other
+c    parameters related to the vertical discretazation.
+c
+c               vvvvvvvvvvvvvvvvv Ver_z_8%m(0) Virtual level
+c
+c    model top  ================= Ver_z_8%t(1) = Ztop
+c
+c               - - - - - - - - - Ver_z_8%m(1)
+c
+c               ================= Ver_z_8%t(2) = ( Ver_z_8%m(2) + Ver_z_8%m(1) ) / 2
+c
+c               - - - - - - - - - Ver_z_8%m(2)
+c
+c                      ...
+c
+c               - - - - - - - - - Ver_z_8%m(G_nk-1)
+c
+c               ================= Ver_z_8%t(G_nk) = ( Ver_z_8%m(nk) + Ver_z_8%m(nk-1) ) / 2
+c
+c               - - - - - - - - - Ver_z_8%m(G_nk)
+c               o o o o o o o o o Special level 
+c model surface ================= Ver_z_8%t(G_nk+1) = Zsurf
+c
+c               vvvvvvvvvvvvvvvvv Ver_z_8%m(G_nk+1) Virtual level
+c
+c arguments
+c none
+c
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "pres.cdk"
+#include "cstv.cdk"
+#include "grd.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "schm.cdk"
+c
+      integer ne
+      parameter(ne=6)
+
+      integer k,istat,ind
+      real*8 pref_8, ptop_8, pr1_8, etatop_8, rcoef_8, zsurf_8
+      real*8 tempo_8(G_nk),tmp_8
+c     __________________________________________________________________
+c
+c     BEWARE
+c     if F_coef is greater than 1., pref is subject to restriction for
+c     stability reasons.
+c
+      allocate(Ver_pia_8%t(  G_nk+1),Ver_pibb_8%t(  G_nk+1), Ver_pib_8%t(  G_nk+1),
+     $         Ver_pia_8%m(0:G_nk+1),Ver_pibb_8%m(0:G_nk+1), Ver_pib_8%m(0:G_nk+1),
+     $           Ver_z_8%t(  G_nk+1),  Ver_hz_8%t(  G_nk+1),
+     $           Ver_z_8%m(0:G_nk+1),  Ver_hz_8%m(  G_nk  ),
+     $        Ver_dpib_8%t(  G_nk+1),Ver_dpia_8%t(  G_nk+1), Ver_boz_8%t(  G_nk+1),
+     $        Ver_dpib_8%m(  G_nk  ),Ver_dpia_8%m(  G_nk  ), Ver_boz_8%m(0:G_nk+1),
+     $    Ver_pia_spcl_8%t(  G_nk+2),Ver_pibb_spcl_8%t(G_nk+2),
+     $       Ver_fistr_8%t(  G_nk+1),
+     $       Ver_fistr_8%m(  G_nk  ),
+     $     stat=istat)
+      call check_alloc(istat,'genab2_8 ',1)
+c
+      call hpalloc (  Ver_dpba_,    G_nk+1 ,istat,1)
+      call hpalloc (Ver_dpba_8_, 2*(G_nk+1),istat,1)
+c
+      pref_8  = 100.0d0*Pres_pref    ! convert to pascal
+      ptop_8  = 100.0d0*Pres_ptop    ! convert to pascal
+      zsurf_8 = Cstv_pisrf_8
+      rcoef_8 = Grd_rcoef
+c
+      etatop_8=ptop_8/pref_8
+c
+c     ---------------------------
+c     Set A, B, b and Z for %m %t
+c     Z = A + b
+c     b = B*zsurf
+c     ---------------------------
+c
+       Ver_pia_8%t(1)     =ptop_8
+      Ver_pibb_8%t(1)     =0.d0
+       Ver_pia_8%t(G_nk+1)=0.d0
+      Ver_pibb_8%t(G_nk+1)=1.d0
+c
+      pr1_8 = 1.0d0/(1.0d0 - etatop_8)
+c
+      do k = 1, G_nk
+         Ver_pibb_8%m(k) = ((Ver_hybm_8%m(k) - etatop_8)*pr1_8 ) ** Grd_rcoef
+          Ver_pia_8%m(k) = pref_8 * ( Ver_hybm_8%m(k) - Ver_pibb_8%m(k) )
+          Ver_pib_8%m(k) = Ver_pibb_8%m(k) * zsurf_8
+            Ver_z_8%m(k) = Ver_pia_8%m(k) + Ver_pib_8%m(k)
+          Ver_boz_8%m(k) = Ver_pib_8%m(k)/Ver_z_8%m(k)
+      enddo
+c
+c     Top virtual level
+      if(Schm_dPdlogZ_L)then
+         Ver_z_8%m(0)=ptop_8**2/Ver_z_8%m(1)
+      else
+         Ver_z_8%m(0)=2*ptop_8-Ver_z_8%m(1)
+      endif
+
+      Ver_boz_8%m(0)=-Ver_boz_8%m(1)
+      Ver_pib_8%m(0)=Ver_z_8%m(0)*Ver_boz_8%m(0)
+      Ver_pia_8%m(0)=Ver_z_8%m(0)-Ver_pib_8%m(0)
+c
+c     Bottum virtual level
+      if(Schm_dPdlogZ_L)then
+         Ver_z_8%m  (G_nk+1)=zsurf_8**2/Ver_z_8%m(G_nk)
+      else
+         Ver_z_8%m  (G_nk+1)=2*zsurf_8-Ver_z_8%m(G_nk)
+      endif
+      Ver_boz_8%m(G_nk+1)=2.d0-Ver_boz_8%m(G_nk)
+      Ver_pib_8%m(G_nk+1)=Ver_z_8%m(G_nk+1)*Ver_boz_8%m(G_nk+1)
+      Ver_pia_8%m(G_nk+1)=Ver_z_8%m(G_nk+1)-Ver_pib_8%m(G_nk+1)
+c     
+      do k = 2, G_nk
+         Ver_pibb_8%t(k) = 0.5d0*(Ver_pibb_8%m(k)+Ver_pibb_8%m(k-1))
+         Ver_pia_8%t(k)  = 0.5d0*(Ver_pia_8%m(k)+Ver_pia_8%m(k-1))
+         Ver_pibb_spcl_8%t(k) = Ver_pibb_8%t(k)
+         Ver_pia_spcl_8%t(k) = Ver_pia_8%t(k)
+         Ver_boz_8%t(k) = 0.5d0*( Ver_boz_8%m(k) + Ver_boz_8%m(k-1) )
+      enddo
+      Ver_boz_8%t(1)=0.d0
+      Ver_boz_8%t(G_nk+1)=1.d0
+
+      if(Schm_dPdlogZ_L)then
+         Ver_pibb_spcl_8%t(1)      =  0.5d0*(Ver_pibb_8%m(1)+Ver_pibb_8%t(1))
+         Ver_pia_spcl_8%t(1)       = 0.5d0*(Ver_pia_8%m(1) +Ver_pia_8%t(1) )
+      else
+         Ver_pibb_spcl_8%t(1)      = Ver_pibb_8%t(1)
+         Ver_pia_spcl_8%t(1)       = Ver_pia_8%t(1)
+      endif
+c
+      Ver_pibb_spcl_8%t(G_nk+1) = 0.5d0*(Ver_pibb_8%m(G_nk)+Ver_pibb_8%t(G_nk+1))
+      Ver_pibb_spcl_8%t(G_nk+2) = Ver_pibb_8%t(G_nk+1)
+c
+      Ver_pia_spcl_8%t(G_nk+1)  = 0.5d0*(Ver_pia_8%m(G_nk) +Ver_pia_8%t(G_nk+1) )
+      Ver_pia_spcl_8%t(G_nk+2)  = Ver_pia_8%t(G_nk+1)
+c
+      do k = 1, G_nk+1
+         Ver_pib_8%t(k) = Ver_pibb_8%t(k) * zsurf_8
+           Ver_z_8%t(k) = Ver_pia_8%t(k) + Ver_pib_8%t(k)
+      enddo
+      Ver_z_8%t(1)=ptop_8
+      Ver_z_8%t(G_nk+1)=zsurf_8
+
+c     --------------
+c     Compute fistar
+c     --------------
+c     
+      pr1_8=-Dcst_rgasd_8*Cstv_tstr_8
+      do k = 1, G_nk
+         Ver_fistr_8%m(k)=pr1_8*dlog(Ver_z_8%m(k)/zsurf_8)
+      enddo
+c
+      do k = 1, G_nk+1
+         Ver_fistr_8%t(k)=pr1_8*dlog(Ver_z_8%t(k)/zsurf_8)
+      enddo
+      Ver_fistr_8%t(G_nk+1)=0.d0
+c
+c     -------------------------------------------------------------------
+c     Compute weights to interpole from physics levels to momentum levels
+c     -------------------------------------------------------------------
+c
+      call hpalloc (Ver_wphy2m_8_ , 4*G_nk    ,istat,1)
+      call hpalloc (Ver_wm2phy_8_ , 4*(G_nk+1),istat,1)
+c      
+      do k=1,G_nk-1
+         pr1_8 = Ver_z_8%t(k+1) - Ver_z_8%t(k)
+         Ver_wphy2m_8(1,k) = ( Ver_z_8%t(k+1)-Ver_z_8%m(k) ) / pr1_8
+         Ver_wphy2m_8(2,k) = (1.0d0-Ver_wphy2m_8(1,k))
+      enddo      
+      tmp_8 = Ver_pia_spcl_8%t(G_nk+1)+Ver_pibb_spcl_8%t(G_nk+1)*Cstv_pisrf_8
+      Ver_wphy2m_8(2,G_nk) = (Ver_z_8%m(G_nk)-Ver_z_8%t(G_nk))/(tmp_8-Ver_z_8%t(G_nk))
+      Ver_wphy2m_8(1,G_nk) = (1.0d0-Ver_wphy2m_8(2,G_nk))
+c
+c     -------------------------------------------------------------------
+c     Compute weights to interpole from momentum levels to physics levels
+c     -------------------------------------------------------------------
+c
+      Ver_wm2phy_8(2,1) = (Ver_z_8%t(1)-Ver_z_8%m(2))
+     %                   /(Ver_z_8%m(1)-Ver_z_8%m(2))
+      Ver_wm2phy_8(1,1) = (1.0d0 - Ver_wm2phy_8(2,1))
+      tmp_8=Ver_pia_spcl_8%t(G_nk+1) + Ver_pibb_spcl_8%t(G_nk+1)*Cstv_pisrf_8
+      Ver_wm2phy_8(1,G_nk+1) = (tmp_8        -Ver_z_8%m(G_nk-1))
+     %                        /(Ver_z_8%m(G_nk)-Ver_z_8%m(G_nk-1))
+      Ver_wm2phy_8(2,G_nk+1) = (1.0d0 - Ver_wm2phy_8(1,G_nk+1))
+      do k=2,G_nk
+         Ver_wm2phy_8(1,k) = 0.5d0
+         Ver_wm2phy_8(2,k) = 0.5d0
+      enddo
+c     
+c     -----------------------------------------
+c     Compute delta Z and delrond b / delrond Z
+c     -----------------------------------------
+c
+      call hpalloc ( Ver_ztild_8_ , 2*(G_nk+1),istat,1)
+      call hpalloc (  Ver_zodz_8_ , 2*(G_nk+1),istat,1)
+*
+      do k=1,G_nk
+           Ver_hz_8%m(k) = Ver_z_8%t(k+1) -Ver_z_8%t(k)
+         Ver_dpib_8%m(k) = ( Ver_z_8%t(k+1)*Ver_boz_8%t(k+1) - Ver_z_8%t(k)*Ver_boz_8%t(k)  ) /
+     $                     Ver_hz_8%m(k)
+      enddo      
+*     
+      do k=1,G_nk+1
+           Ver_hz_8%t(k) = Ver_z_8%m(k) - Ver_z_8%m(k-1)
+         Ver_dpib_8%t(k) = ( Ver_pib_8%m(k) - Ver_pib_8%m(k-1)  ) /
+     $                     Ver_hz_8%t(k)
+      enddo
+c     
+c     -------------------------------------------------------------
+c     Compute Z tilde and Z tilde / delta Z without/with LOG option
+c     -------------------------------------------------------------
+c
+      do k=1,G_nk+1
+         Ver_ztild_8(k) = Ver_z_8%t(k)
+         if(Schm_dPdlogZ_L)
+     %   Ver_ztild_8(k) = Ver_hz_8%t(k)/dlog(Ver_z_8%m(k)/Ver_z_8%m(k-1))
+          Ver_zodz_8(k) = Ver_ztild_8(k)/Ver_hz_8%t(k)
+      enddo
+*
+c     Compute analytic derivative of b on thermo level only.
+c     ------------------------------------------------------
+c
+      if (Grd_rcoef .ne. 1.0) then
+         Ver_dpba_8(1)=0.0d0
+         Ver_dpba_8(G_nk+1)=zsurf_8*rcoef_8/( pref_8*(1.0d0-etatop_8) +
+     $                     rcoef_8*(zsurf_8-pref_8) )
+c        Compute analytic derivative of b on mometum level since hybm
+c        are not available on thermo levels. Then analytic derivatives
+c        of b for the thermo levels inside the domain are obtained by
+c        averaging the mometum ones.
+         do k = 1,G_nk
+            pr1_8 = rcoef_8*(Ver_hybm_8%m(k) - etatop_8)**(rcoef_8-1.0d0)
+            tempo_8(k) = zsurf_8*pr1_8/ 
+     $           (pref_8*(1.0d0 - etatop_8)**rcoef_8 +
+     $           (zsurf_8-pref_8)*pr1_8)
+         enddo
+         do k = 2,G_nk
+            Ver_dpba_8(k) = 0.5d0*(tempo_8(k) + tempo_8(k-1))
+            Ver_dpba(k) = Ver_dpba(k)
+         enddo
+      else 
+         do k = 1,G_nk+1
+            Ver_dpba_8(k) = zsurf_8/(zsurf_8 - ptop_8)
+            Ver_dpba(k) = Ver_dpba_8(k)
+         enddo
+      endif
+c     
+c     ---------------------------------
+c     Compute delrond^2 b / delrond Z^2
+c     ---------------------------------
+c
+      do k=1,G_nk
+         Ver_dpia_8%m(k) = ( Ver_dpib_8%t(k+1) - Ver_dpib_8%t(k)  ) /
+     $                     (   Ver_z_8%t(k+1) -   Ver_z_8%t(k)  )
+      enddo      
+c     
+      do k=2,G_nk
+         Ver_dpia_8%t(k) = ( Ver_dpib_8%m(k) - Ver_dpib_8%m(k-1)  ) /
+     $                     (    Ver_z_8%m(k) -    Ver_z_8%m(k-1)  )
+      enddo
+c
+      Ver_dpia_8%t(1) = ( Ver_dpib_8%m(1) - Ver_dpib_8%t(1)  ) /
+     $                  (    Ver_z_8%m(1) -    Ver_z_8%t(1)  )
+c
+      Ver_dpia_8%t(G_nk+1) = ( Ver_dpib_8%t(G_nk+1) - Ver_dpib_8%m(G_nk)  ) /
+     $                       (    Ver_z_8%t(G_nk+1) -    Ver_z_8%m(G_nk)  )
+
+c=======================================================================
+c section a enlever eventuellement
+c=======================================================================
+c
+      allocate( Ver_hyb_8%t(G_nk+2), Ver_hyb_8%d(G_nk+1),
+     $          Ver_hybm_8%t(G_nk+2),Ver_hybm_8%d(G_nk+1),
+     $          stat=istat)
+      call check_alloc(istat,'genab2_8',2)
+c
+      allocate( Ver_hyb%t(G_nk+1), Ver_hyb%d(G_nk+1),
+     $         Ver_hybm%t(G_nk+2),Ver_hybm%d(G_nk+1),
+     $         stat=istat)
+      call check_alloc(istat,'genab2_8',3)
+c
+      allocate( Ver_pia_8%d(G_nk+1), Ver_pia%d(G_nk+1),
+     $         Ver_pibb_8%d(G_nk+1),Ver_pibb%d(G_nk+1),
+     $          Ver_pib_8%d(G_nk+1), Ver_pib%d(G_nk+1),
+     $          Ver_z_8%d(G_nk+1)  ,
+     $     stat=istat)
+      call check_alloc(istat,'genab2_8',3)
+c
+      allocate(  Ver_pia%t(G_nk+1),  Ver_pibb%t(G_nk+1),  Ver_pib%t(G_nk+1),
+     $           Ver_pia%m(G_nk)  ,  Ver_pibb%m(G_nk)  ,  Ver_pib%m(G_nk)  ,
+     $     stat=istat)
+      call check_alloc(istat,'genab2_8',3)
+c
+c     Note : Ver_hyb_8%t is not defined for rcoef!=1 (except at top and sfc) but 
+c            we put some resonable value in it for the time beeing since
+c            some process like the Vertical sponge may use this.
+c            Also the output need it for IP1 encoding
+c
+c     Top level
+      if(Schm_dPdlogZ_L)then
+         Ver_hyb_8%t(1     )=0.5d0*Ver_hyb_8%m(1)
+      else
+         Ver_hyb_8%t(1     )=0.0d0
+      endif
+c     No Top special level
+c     Bot special level
+      Ver_hyb_8%t(G_nk+1)=0.5d0*(Ver_hyb_8%m(G_nk)+1.0d0)
+c     Diag level
+      Ver_hyb_8%t(G_nk+2)=1.d0
+C     Top and surface
+      Ver_hybm_8%t(1)=etatop_8
+      Ver_hybm_8%t(G_nk+2)=1.d0
+C     Special levels      
+      Ver_hybm_8%t(G_nk+1)=.5d0*(Ver_hybm_8%m(G_nk)+1.d0)
+      do k = 2, G_nk
+         Ver_hybm_8%t(k)=0.5d0*(Ver_hybm_8%m(k)+Ver_hybm_8%m(k-1))
+         Ver_hyb_8%t(k)=0.5d0*(Ver_hyb_8%m(k)+Ver_hyb_8%m(k-1))        
+      enddo
+c
+      do k = 1, G_nk
+         Ver_pia%m(k)  = Ver_pia_8%m(k)
+         Ver_pibb%m(k) = Ver_pibb_8%m(k)
+         Ver_pib%m(k)  = Ver_pib_8%m(k)
+      enddo
+c
+      Ver_hybm%t(1) = Ver_hybm_8%t(1)
+      Ver_hybm%t(G_nk+2) = Ver_hybm_8%t(G_nk+2)
+      do k = 1, G_nk+1
+         Ver_hyb%t(k)  = Ver_hyb_8%t(k)
+         Ver_hybm%t(k) = Ver_hybm_8%t(k)
+         Ver_pia%t(k)  = Ver_pia_8%t(k)
+         Ver_pibb%t(k) = Ver_pibb_8%t(k)
+         Ver_pib%t(k)  = Ver_pib_8%t(k)
+
+         Ver_pia_8%d(k)= Ver_pia_8%t(k)
+         Ver_pia%d(k)  = Ver_pia_8%t(k)
+         Ver_pibb_8%d(k)= Ver_pibb_8%t(k)
+         Ver_pibb%d(k) = Ver_pibb_8%t(k)
+         Ver_pib_8%d(k)= Ver_pib_8%t(k)
+         Ver_pib%d(k)  = Ver_pib_8%t(k)
+         Ver_hyb_8%d(k)= Ver_hyb_8%t(k)
+         Ver_hyb%d(k)  = Ver_hyb_8%t(k)
+         Ver_hybm_8%d(k)=Ver_hybm_8%t(k)
+         Ver_hybm%d(k)  =Ver_hybm_8%t(k)
+
+         Ver_z_8%d(k) =  Ver_z_8%t(k)
+
+      enddo
+c     __________________________________________________________________
+c
+      return
+      end

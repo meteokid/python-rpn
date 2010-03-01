@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r hdif_phy - Execute horizontal diffusions and physics 
 *
 #include "model_macros_f.h"
@@ -27,9 +12,6 @@
 * v3_03 - Tanguay M.        - initial MPI version
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_30 - Desgagne/Lee      - new physics interface + extra nesting 
-* v3_31 - Desgagne M.       - remove hspng_main 
-* v3_31 - Tanguay M.        - Control BC 
-* v3_31 - Lee V.            - add 3DF piloting for Schm_offline_L
 *
 *object
 *     see id section
@@ -65,6 +47,8 @@
             call vspng_main () 
             call tmg_stop0(11)
 *
+            if (.not.G_lam) call hspng_main ()
+*
          else
 *
 *           Store TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
@@ -79,23 +63,19 @@
             call vspng_main () 
             call tmg_stop0(11)
 *
+            if (.not.G_lam) call hspng_main ()
+*
             call tmg_start0( 9, 'PHY      ' )
             if ( Schm_phyms_L ) call itf_phy_main    (Lctl_step)
             call tmg_stop0(9)
 *
          endif
 *
-      if (Schm_offline_L) return
-
       if (G_lam .and. ifd_ftype.ne.'BMF') then
 * Update Lateral BCs with data that has seen physics
           call nest_update
 * Impose Lateral BCs within Pil regions
-          if (V4dg_conf.eq.0) then
-             call nest_bcs
-          else
-             call v4d_nest_bcs
-          endif
+          call nest_bcs
       endif
 *
       return

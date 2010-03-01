@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r casc_bcs - For reading cascade 3DF pilot files where
 *                 3DF01 files were written after advection,
@@ -33,8 +18,6 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *revision
 * v3_30 - Lee V.         - initial version for GEMDM
-* v3_31 - Lee V.         - add for Schm_offline_L 
-* v3_31 - Tanguay M.     - Mix PILOT and ANAL mountains when BCS/3DF  
 *
 *
 #include "glb_ld.cdk"
@@ -50,11 +33,9 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 #include "ind.cdk"
 #include "nest.cdk"
 #include "acid.cdk"
-#include "path.cdk"
-#include "hblen.cdk"
 *
-      integer  vmmlod,vmmget,vmmuld,longueur,sid3df,casc_bcs_offline
-      external vmmlod,vmmget,vmmuld,longueur,sid3df,casc_bcs_offline
+      integer  vmmlod,vmmget,vmmuld,longueur,sid3df
+      external vmmlod,vmmget,vmmuld,longueur,sid3df
       character*2 md
       character*4 nomvar
       character*8 dynophy
@@ -64,289 +45,121 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       real trp
       pointer (patrp, trp(LDIST_SHAPE,*))
       real, dimension (:,:,:), pointer :: trn
-      integer i,j,k,nka,ntra,n,err,ngd,nga,errop,ofi,ofj,mode,
-     $   cumerr,cnt,nit,njt,d1,ni1,nj1,nk1,nbits,id,nvar
-      integer keyp_,keyp(Tr3d_ntr)
+      integer i,j,k,nka,ntra,n,err,ngd,nga,errop,ofi,ofj,mode,ioerr,
+     $   errdyn,cumerr,cnt,nit,njt,d1,ni1,nj1,nk1,nbits,id,nvar
+      integer key1(17),keyp_,keyp(Tr3d_ntr)
       real*8  , dimension (:  ), pointer :: xpaq,ypaq,xpau,ypav
       real, dimension (:,:), pointer :: 
-     $       uun,vvn,psdn,ttn,tpn,tdn,fin,qqn,ssn,fipn,pipn,wwn,mun
+     $       uun,vvn,psdn,ttn,ssn,wwn,qsecn,p0n,fisn
       real topo(bcs_sz),topu(bcs_sz),topv(bcs_sz)
-*
-      real pil_topo(LDIST_SHAPE),pil_topu(LDIST_SHAPE),pil_topv(LDIST_SHAPE)
-      real mix_topo(LDIST_SHAPE),mix_topu(LDIST_SHAPE),mix_topv(LDIST_SHAPE)
 *-----------------------------------------------------------------------
 *
-      if (Schm_offline_L) then
-          casc_bcs= casc_bcs_offline(datev, G_ni,G_nj, unf, wowp, errp)
-          return 
-      endif
       if (Lun_debug_L) write (Lun_out,1000) Lctl_step,wowp
 *
 
       casc_bcs = -1
       nullify(xpaq,ypaq,xpau,ypav,
-     $        uun,vvn,psdn,ttn,tpn,tdn,fin,qqn,ssn,fipn,
-     $        pipn,wwn,mun,trn,trname_a)
+     $     uun,vvn,psdn,ttn,ssn,wwn,qsecn,p0n,fisn,trn,trname_a)
 *
       data2treat = l_south.or.l_north.or.l_west.or.l_east
 *
-      err  = 0
-      if(data2treat) then
+      if (data2treat) then
 *
-         nga  = bcs_nia * bcs_nja
-         nka  = 0
-         ntra = 0
-         done = .false.
-         write (md,'(i2.2)') wowp
+
+      nga  = bcs_nia * bcs_nja
+      nka  = 0
+      ntra = 0
+      err  = 0
+      done = .false.
+      write (md,'(i2.2)') wowp
 *
 * Read all needed files and construct the source domain for
-* the horizontal interpolation
+* the horozontal interpolation
 *
-         do 50 n=1,ifd_nf
-            if (ifd_needit(n)) then
-                fn= trim(Path_ind_S)//'/3df'//md//'_'//datev//'_'//ifd_fnext(n)
-                open (unf,file=fn(1:longueur(fn)),access='SEQUENTIAL',
-     $           form='UNFORMATTED',status='OLD',iostat=errop)
-                if (Lun_debug_L) write(Lun_out,*)'opening ',fn(1:longueur(fn)),'errop=',errop
-                if (errop.ne.0) goto 50
-                err  = -1
+      do 50 n=1,ifd_nf
+      if (ifd_needit(n)) then
+         errdyn = -1
+         fn ='../casc/3df'//md//'_'//datev//'_'//ifd_fnext(n)
+         open (unf,file=fn(1:longueur(fn)),access='SEQUENTIAL',
+     $            form='UNFORMATTED',status='OLD',iostat=errop)
+         if (Lun_debug_L) write(Lun_out,*)'opening ',fn(1:longueur(fn)),'errop=',errop
+         if (errop.ne.0) goto 33
 *
 * Use first file to establish 3D grid dimensions and geo-references
 * of all input stagerred grids (xpaq, ypaq, xpau and ypva).
 *
-                if (.not.done) allocate (xpaq(bcs_nia), ypaq(bcs_nja), 
+         if (.not.done) allocate (xpaq(bcs_nia), ypaq(bcs_nja), 
      $                            xpau(bcs_nia), ypav(bcs_nja))
-                err = sid3df (xpaq,ypaq,xpau,ypav,unf,done,
+         err = sid3df (xpaq,ypaq,xpau,ypav,unf,done,
      $                     bcs_nia,bcs_nja,nka,nvar,ntra)
-                if (err.ne.0) goto 33
-                read (unf,end=33) dynophy,cnt,mode
+c        print*,'casc_bcs: nia,nja=',bcs_nia,bcs_nja,'nvar,ntra=',nvar,ntra
+         read (unf,end=33) dynophy,cnt,mode
 *
-                if (.not.done) then
-                    allocate (uun(nga,nka),vvn(nga,nka),psdn(nga,nka),
-     $                ttn(nga,nka),tpn(nga,nka),tdn(nga,nka),
-     $                fin(nga,nka),qqn(nga,nka),ssn(nga,1),
-     $                fipn(nga,nka),pipn(nga,nka),
-     $                wwn(nga,nka),mun(nga,nka),trn(nga,nka,ntra),
-     $                trname_a(ntra) )
-	            uun=0.; vvn=0.; psdn=0.; ttn=0.; tpn=0.; tdn=0.; fin=0.
-	            qqn=0.; ssn=0.; fipn=0.; pipn=0.; wwn=0.; mun=0.; trn=0.
-                endif
-                ofi = ifd_minx(n)-1
-                ofj = ifd_miny(n)-1
-                cumerr=0
+         if (.not.done) then
+            allocate (uun(nga,nka),vvn(nga,nka),psdn(nga,nka),
+     $           ttn(nga,nka),ssn(nga,1),wwn(nga,nka),qsecn(nga,nka),
+     $           p0n(nga,1),fisn(nga,1),trn(nga,nka,ntra),
+     $           trname_a(ntra) )
+	    uun=0.  ; vvn=0.; psdn=0. ; ttn=0.; ssn=0.; wwn=0.;
+            qsecn=0.; p0n=0.; fisn=0. ; trn=0.
+         endif
+         ofi = ifd_minx(n)-1
+         ofj = ifd_miny(n)-1
+         cumerr=0
 
 *        filling uun buffer by reading from unit unf
-            
-                if (nvar.eq.5) then
-                    call filmup ( ttn,ifd_niad,ifd_niaf,ifd_njad,
-     $                            ifd_njaf, nka,unf,ofi,ofj,cumerr )
-                    call filmup ( fin(1,nka),ifd_niad,ifd_niaf,ifd_njad,
-     $                            ifd_njaf,       1,unf,ofi,ofj,cumerr )
-                    call filmup (pipn(1,nka),ifd_niad,ifd_niaf,ifd_njad,
-     $                          ifd_njaf,       1,unf,ofi,ofj,cumerr )
-                else
-                    call filmup ( ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+              
+              if (nvar.eq.5) then
+                  call filmup ( ttn,ifd_niad,ifd_niaf,ifd_njad,
+     $                              ifd_njaf, nka,unf,ofi,ofj,cumerr )
+                  call filmup ( p0n,ifd_niad,ifd_niaf,ifd_njad,
+     $                              ifd_njaf,   1,unf,ofi,ofj,cumerr )
+                  call filmup (fisn,ifd_niad,ifd_niaf,ifd_njad,
+     $                              ifd_njaf,   1,unf,ofi,ofj,cumerr )
+              else
+                 call gem_stop("casc_bcs : a revoir",-1)
+                  call filmup ( ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
      $                                   nka,unf,ofi,ofj,cumerr )
-                    call filmup ( fin,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                   nka,unf,ofi,ofj,cumerr )
-                    call filmup ( qqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                   nka,unf,ofi,ofj,cumerr )
-                    call filmup (pipn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                   nka,unf,ofi,ofj,cumerr )
-                    call filmup ( tpn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                   nka,unf,ofi,ofj,cumerr )
-                    call filmup ( ssn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+                  call filmup ( ssn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
      $                                   1      ,unf,ofi,ofj,cumerr )
-                    call filmup (fipn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+                  call filmup (psdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
      $                                   nka,unf,ofi,ofj,cumerr )
-                    call filmup (psdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+                  if (nvar.gt.11) then
+                     call filmup ( wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
      $                                   nka,unf,ofi,ofj,cumerr )
-                    call filmup ( tdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+                     call filmup ( qsecn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
      $                                   nka,unf,ofi,ofj,cumerr )
-                    if (nvar.gt.11) then
-                        call filmup ( wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+                  endif
+              endif
+              if (ntra.gt.0) then
+                  call filuptr ( trn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,nka,
+     $              unf,ofi,ofj,Tr3d_name_S,Tr3d_ntr,trname_a,ntra,cumerr )
+              endif
+              call filmup ( uun,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
      $                                   nka,unf,ofi,ofj,cumerr )
-                        call filmup ( mun,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
+              call filmup ( vvn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
      $                                   nka,unf,ofi,ofj,cumerr )
-                    endif
-                endif
-                if (ntra.gt.0) then
-                    call filuptr ( trn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,nka,
-     $                  unf,ofi,ofj,Tr3d_name_S,Tr3d_ntr,trname_a,ntra,cumerr )
-                endif
-                call filmup ( uun,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                   nka,unf,ofi,ofj,cumerr )
-                call filmup ( vvn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf,
-     $                                   nka,unf,ofi,ofj,cumerr )
+         errdyn = cumerr
+ 33      continue
 *
-*             finish filmup for dynamic variables
+*        finish filmup for dynamic variables
+         err = err + errdyn
+         if (err.lt.0) then
+            if (Ptopo_myproc.eq.0) write (6,203) fn(1:longueur(fn))
+            goto 999
+         endif
+         done = .true.
+         close (unf)
+      endif
+  50  continue
+      casc_bcs = 0
+ 999  continue
 *
-                err = cumerr
-                if (err.lt.0) then
-                    if (Ptopo_myproc.eq.0) write (6,203) fn(1:longueur(fn))
-                    goto 33
-                endif
-                done = .true.
-                close (unf)
-            endif !if needit
-         casc_bcs = 0 
-  50     CONTINUE 
-*     
-      else  ! no data2treat
-
+      else
          casc_bcs = 0
-
       endif
- 33   data2treat = data2treat .and. (casc_bcs.eq.0)
-
-      call gem_stop('casc_bcs',err)
 *
-*     Recall ANAL mountains BEFORE blending
-*     -------------------------------------
-      mix_topo = Ind_topa
-      mix_topu = Ind_toua
-      mix_topv = Ind_tova
-*
-      if (data2treat) then
-*
-*        Transfert PILOT mountains in BCS file (N-S)  
-*        -------------------------------------------
-         nit = max(dimxs,dimxn)
-         njt = 0
-         if (l_south) njt = njt + dimys
-         if (l_north) njt = njt + dimyn
-         d1  = dimys*north
-         ngd = nit * njt
-*
-         if (Lun_debug_L) write (Lun_out,*) 'CALL casc_hvi_topo N-S'
-*
-         call casc_hvi_topo (xpn,ypn,xpun,ypvn,xpaq,ypaq,xpau,ypav,
-     $       topo,topo(bcs_in),topu,topu(bcs_in),topv,topv(bcs_in),
-     $       fin(1,nka),minxs,maxxs,minys,maxys,0,d1,nit,njt,
-     $       bcs_nia,bcs_nja,l_south,l_north)
-*
-*        Transfert PILOT mountains in BCS file (W-E)  
-*        -------------------------------------------
-         nit = 0
-         njt = max(dimyw,dimye)
-         if (l_west) nit = nit + dimxw
-         if (l_east) nit = nit + dimxe
-         d1  = dimxw*east
-         ngd = nit * njt
-*
-         if (Lun_debug_L) write (Lun_out,*) 'CALL casc_hvi_topo W-E'
-*
-         call casc_hvi_topo (xpw,ypw,xpuw,ypvw,xpaq,ypaq,xpau,ypav,
-     $        topo(bcs_iw),topo(bcs_ie),topu(bcs_iw),topu(bcs_ie),
-     $        topv(bcs_iw),topv(bcs_ie), fin(1,nka),
-     $        minxw,maxxw,minyw,maxyw,d1,0,nit,njt,
-     $        bcs_nia,bcs_nja,l_west,l_east)
-*
-         if (Lun_debug_L) write (Lun_out,*) 'Copying BCS_TOPO to PIL_TOPO'
-*
-*        Copying BCS_TOPO to PIL_TOPO
-*        ---------------------------- 
-         pil_topo = 0. 
-         pil_topu = 0. 
-         pil_topv = 0. 
-         call trnes (pil_topo,topo(bcs_is),topo(bcs_in),topo(bcs_iw),
-     $               topo(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                       minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
-         call trnes (pil_topu,topu(bcs_is),topu(bcs_in),topu(bcs_iw),
-     $               topu(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                       minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
-         call trnes (pil_topv,topv(bcs_is),topv(bcs_in),topv(bcs_iw),
-     $               topv(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
-     $                       minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
-*
-      endif
-
-*     ------------------------------------------------------------------------- 
-*     Mix PILOT mountains and ANAL mountains and do blending as in CASC_3DF_DYNP
-*     ------------------------------------------------------------------------- 
-      if (Lun_debug_L) write (Lun_out,*) 
-     %    'Mix PILOT mountains and ANAL mountains and do blending in CASC_BCS'
-*
-*     ------------------------------
-      do j=1,pil_s
-      do i=1,l_ni
-         mix_topo(i,j) = pil_topo(i,j)
-      end do
-      end do
-      do j=l_nj-pil_n+1,l_nj
-      do i=1,l_ni
-         mix_topo(i,j) = pil_topo(i,j)
-      end do
-      end do
-      do i=1,pil_w
-      do j=pil_s+1,l_nj-pil_n
-         mix_topo(i,j) = pil_topo(i,j)
-      end do
-      end do
-      do i=l_ni-pil_e+1,l_ni
-      do j=pil_s+1,l_nj-pil_n
-         mix_topo(i,j) = pil_topo(i,j)
-      end do
-      end do
-*     ------------------------------
-      do j=1,pil_s
-      do i=1,l_niu
-         mix_topu(i,j) = pil_topu(i,j)
-      end do
-      end do
-      do j=l_nj-pil_n+1,l_nj
-      do i=1,l_niu
-         mix_topu(i,j) = pil_topu(i,j)
-      end do
-      end do
-      do i=1,pil_w
-      do j=pil_s+1,l_nj-pil_n
-         mix_topu(i,j) = pil_topu(i,j)
-      end do
-      end do
-      do i=l_niu-pil_e+1,l_niu
-      do j=pil_s+1,l_nj-pil_n
-         mix_topu(i,j) = pil_topu(i,j)
-      end do
-      end do
-*     ------------------------------
-      do j=1,pil_s
-      do i=1,l_ni
-         mix_topv(i,j) = pil_topv(i,j)
-      end do
-      end do
-      do j=l_njv-pil_n+1,l_njv
-      do i=1,l_ni
-         mix_topv(i,j) = pil_topv(i,j)
-      end do
-      end do
-      do i=1,pil_w
-      do j=pil_s+1,l_njv-pil_n
-         mix_topv(i,j) = pil_topv(i,j)
-      end do
-      end do
-      do i=l_ni-pil_e+1,l_ni
-      do j=pil_s+1,l_njv-pil_n
-         mix_topv(i,j) = pil_topv(i,j)
-      end do
-      end do
-*     ------------------------------
-*
-* Blending routines require the shape of LDIST_DIM but the actual
-* calculations and values changed are in the blending region only
-*
-      call nesajr (mix_topo,pil_topo,LDIST_DIM,1,0,0,Hblen_x,Hblen_y)
-      call nesajr (mix_topu,pil_topu,LDIST_DIM,1,1,0,Hblen_x,Hblen_y)
-      call nesajr (mix_topv,pil_topv,LDIST_DIM,1,0,1,Hblen_x,Hblen_y)
-*
-* Copy the new topo
-*
-      Ind_topo = mix_topo
-      Ind_topu = mix_topu
-      Ind_topv = mix_topv
-
-*     No longer need all processors to be present
-      if (.not.data2treat) return
+      if (.not.data2treat .or. casc_bcs.lt.0) return
 *
 * Perform horizontal and vertical interpolations for S-N 
 * and W-E boundaries
@@ -359,6 +172,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       ngd = nit * njt
 *
 c     print *,'CASC_BCS: call casc_hvi NS - put data into bcs_uf'
+      if (data2treat) then
       call trnes (Ind_topo,topo(bcs_is),topo(bcs_in),topo(bcs_iw),
      $            topo(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
@@ -368,20 +182,25 @@ c     print *,'CASC_BCS: call casc_hvi NS - put data into bcs_uf'
       call trnes (Ind_topv,topv(bcs_is),topv(bcs_in),topv(bcs_iw),
      $            topv(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,minxs,maxxs,
      $                         minys,maxys,minxw,maxxw,minyw,maxyw,1,0)
+      endif
+      if (data2treat) then
+
+c      call glbstat (uun ,'uun' ,1,nga,1,1,nka,1,nga,1,1,1,nka)
+c      call glbstat (p0n ,'p0n' ,1,nga,1,1,  1,1,nga,1,1,1,  1)
+c      call glbstat (fisn,'fisn',1,nga,1,1,  1,1,nga,1,1,1,  1)
+
       call casc_hvi (trname_a,
-     $     xpn,ypn,xpun,ypvn,xpaq,ypaq,xpau,ypav,
-     $     bcs_uf,bcs_uf(bcs_in),bcs_vf,bcs_vf(bcs_in),
-     $     bcs_tf,bcs_tf(bcs_in),bcs_psdf,bcs_psdf(bcs_in),
-     $     bcs_pipf,bcs_pipf(bcs_in),bcs_fipf,bcs_fipf(bcs_in),
-     $     bcs_tdf,bcs_tdf(bcs_in),bcs_fif,bcs_fif(bcs_in),
-     $     bcs_qf,bcs_qf(bcs_in),bcs_tpf,bcs_tpf(bcs_in),
-     $     bcs_trf,bcs_wf,bcs_wf(bcs_in),
-     $     bcs_muf,bcs_muf(bcs_in),bcs_sf,bcs_sf(bcs_in),
-     $     bcs_is-1,bcs_in-1,
-     $     topo,topo(bcs_in),topu,topu(bcs_in),topv,topv(bcs_in),
-     $     uun,vvn,psdn,ttn,tpn,tdn,fin,qqn,ssn,fipn,pipn,wwn,mun,trn,
-     $     minxs,maxxs,minys,maxys,0,d1,G_nk,nit,njt,
-     $     bcs_nia,bcs_nja,nka,nvar,ntra,l_south,l_north)
+     $  xpn,ypn,xpun,ypvn,xpaq,ypaq,xpau,ypav,
+     $  bcs_uf,bcs_uf(bcs_in),bcs_vf,bcs_vf(bcs_in),
+     $  bcs_tf,bcs_tf(bcs_in),bcs_psdf,bcs_psdf(bcs_in),
+     $  bcs_trf,bcs_wf,bcs_wf(bcs_in),
+     $  bcs_qsecf,bcs_qsecf(bcs_in),bcs_sf,bcs_sf(bcs_in),
+     $  bcs_is-1,bcs_in-1,
+     $  topo,topo(bcs_in),topu,topu(bcs_in),topv,topv(bcs_in),
+     $  uun,vvn,psdn,ttn,fisn,p0n,ssn,wwn,qsecn,trn,
+     $               minxs,maxxs,minys,maxys,0,d1,G_nk,nit,njt,
+     $               bcs_nia,bcs_nja,nka,nvar,ntra,l_south,l_north)
+        endif
 *
       nit = 0
       njt = max(dimyw,dimye)
@@ -391,40 +210,35 @@ c     print *,'CASC_BCS: call casc_hvi NS - put data into bcs_uf'
       ngd = nit * njt
 *
 c     print *,'CASC_BCS: call casc_hvi WE - put data into bcs_uf'
+      if ( data2treat ) then
       call casc_hvi (trname_a, 
-     $     xpw,ypw,xpuw,ypvw,xpaq,ypaq,xpau,ypav,
-     $     bcs_uf(bcs_iw),bcs_uf(bcs_ie),bcs_vf(bcs_iw),bcs_vf(bcs_ie),
-     $     bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),
-     $     bcs_pipf(bcs_iw),bcs_pipf(bcs_ie),bcs_fipf(bcs_iw),bcs_fipf(bcs_ie),
-     $     bcs_tdf(bcs_iw),bcs_tdf(bcs_ie),bcs_fif(bcs_iw),bcs_fif(bcs_ie),
-     $     bcs_qf(bcs_iw),bcs_qf(bcs_ie),bcs_tpf(bcs_iw),bcs_tpf(bcs_ie),
-     $     bcs_trf,bcs_wf(bcs_iw),bcs_wf(bcs_ie),
-     $     bcs_muf(bcs_iw),bcs_muf(bcs_ie),bcs_sf(bcs_iw),bcs_sf(bcs_ie),
-     $     bcs_iw-1,bcs_ie-1,
-     $     topo(bcs_iw),topo(bcs_ie),topu(bcs_iw),topu(bcs_ie),topv(bcs_iw),topv(bcs_ie),
-     $     uun,vvn,psdn,ttn,tpn,tdn,fin,qqn,ssn,fipn,pipn,wwn,mun,trn,
-     $     minxw,maxxw,minyw,maxyw,d1,0,G_nk,nit,njt,
-     $     bcs_nia,bcs_nja,nka,nvar,ntra,l_west,l_east)
+     $               xpw,ypw,xpuw,ypvw,xpaq,ypaq,xpau,ypav,
+     $  bcs_uf(bcs_iw),bcs_uf(bcs_ie),bcs_vf(bcs_iw),bcs_vf(bcs_ie),
+     $  bcs_tf(bcs_iw),bcs_tf(bcs_ie),bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),
+     $  bcs_trf,bcs_wf(bcs_iw),bcs_wf(bcs_ie),
+     $  bcs_qsecf(bcs_iw),bcs_qsecf(bcs_ie),bcs_sf(bcs_iw),bcs_sf(bcs_ie),
+     $  bcs_iw-1,bcs_ie-1,
+     $  topo(bcs_iw),topo(bcs_ie),topu(bcs_iw),topu(bcs_ie),topv(bcs_iw),topv(bcs_ie),
+     $  uun,vvn,psdn,ttn,fisn,p0n,ssn,wwn,qsecn,trn,
+     $               minxw,maxxw,minyw,maxyw,d1,0,G_nk,nit,njt,
+     $               bcs_nia,bcs_nja,nka,nvar,ntra,l_west,l_east)
+      endif
 *
-      if (associated(xpaq)) deallocate (xpaq)
-      if (associated(ypaq)) deallocate (ypaq)
-      if (associated(xpau)) deallocate (xpau)
-      if (associated(ypav)) deallocate (ypav)
-      if (associated(uun)) deallocate (uun)
-      if (associated(vvn)) deallocate (vvn)
-      if (associated(psdn)) deallocate (psdn)
-      if (associated(ttn)) deallocate (ttn)
-      if (associated(tpn)) deallocate (tpn)
-      if (associated(tdn)) deallocate (tdn)
-      if (associated(fin)) deallocate (fin)
-      if (associated(qqn)) deallocate (qqn)
-      if (associated(ssn)) deallocate (ssn)
-      if (associated(fipn)) deallocate (fipn)
-      if (associated(pipn)) deallocate (pipn)
-      if (associated(wwn)) deallocate (wwn)
-      if (associated(mun)) deallocate (mun)
-      if (associated(trn)) deallocate (trn)
-      if (associated(trname_a)) deallocate (trname_a)
+         if (associated(xpaq)) deallocate (xpaq)
+         if (associated(ypaq)) deallocate (ypaq)
+         if (associated(xpau)) deallocate (xpau)
+         if (associated(ypav)) deallocate (ypav)
+         if (associated(uun)) deallocate (uun)
+         if (associated(vvn)) deallocate (vvn)
+         if (associated(psdn)) deallocate (psdn)
+         if (associated(ttn)) deallocate (ttn)
+         if (associated(ssn)) deallocate (ssn)
+         if (associated(wwn)) deallocate (wwn)
+         if (associated(qsecn))deallocate (qsecn)
+         if (associated(p0n))  deallocate (p0n)
+         if (associated(fisn)) deallocate (fisn)
+         if (associated(trn)) deallocate (trn)
+         if (associated(trname_a)) deallocate (trname_a)
 *
       if (Ptopo_myproc.eq.0) then
          write(6,100)
@@ -432,7 +246,7 @@ c     print *,'CASC_BCS: call casc_hvi WE - put data into bcs_uf'
          write(6,100)
       endif
 *
-      if ( wowp.eq.1.or.errp.lt.0) then
+      if ( data2treat.and. (wowp.eq.1.or.errp.lt.0) ) then
 *
 c        print *,'CASC_BCS wowp=',wowp, ' copying bcs_uf to Ind_u'
          call trnes (Ind_u,bcs_uf(bcs_is),bcs_uf(bcs_in),
@@ -443,39 +257,21 @@ c        print *,'CASC_BCS wowp=',wowp, ' copying bcs_uf to Ind_u'
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
          call trnes (Ind_t,bcs_tf(bcs_is),bcs_tf(bcs_in),
      $       bcs_tf(bcs_iw),bcs_tf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
-         call trnes (Ind_pip,bcs_pipf(bcs_is),bcs_pipf(bcs_in),
-     $       bcs_pipf(bcs_iw),bcs_pipf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
-         call trnes (Ind_fip,bcs_fipf(bcs_is),bcs_fipf(bcs_in),
-     $       bcs_fipf(bcs_iw),bcs_fipf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
-         call trnes (Ind_fi,bcs_fif(bcs_is),bcs_fif(bcs_in),
-     $       bcs_fif(bcs_iw),bcs_fif(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
-         call trnes (Ind_q,bcs_qf(bcs_is),bcs_qf(bcs_in),
-     $       bcs_qf(bcs_iw),bcs_qf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
          call trnes (Ind_s,bcs_sf(bcs_is),bcs_sf(bcs_in),
      $       bcs_sf(bcs_iw),bcs_sf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
      $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,1,1)
-         call trnes (Ind_tp,bcs_tpf(bcs_is),bcs_tpf(bcs_in),
-     $       bcs_tpf(bcs_iw),bcs_tpf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
          if (Acid_test_L) then
              call trnes (Ind_psd,bcs_psdf(bcs_is),bcs_psdf(bcs_in),
      $         bcs_psdf(bcs_iw),bcs_psdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
-             call trnes (Ind_td,bcs_tdf(bcs_is),bcs_tdf(bcs_in),
-     $         bcs_tdf(bcs_iw),bcs_tdf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+     $       minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
              if (.not.Schm_hydro_L) then
              call trnes (Ind_w,bcs_wf(bcs_is),bcs_wf(bcs_in),
      $          bcs_wf(bcs_iw),bcs_wf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $          minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
-             call trnes (Ind_mu,bcs_muf(bcs_is),bcs_muf(bcs_in),
-     $          bcs_muf(bcs_iw),bcs_muf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
-     $          minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk,1)
+     $          minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+1,1)
+             call trnes (Ind_qsec,bcs_qsecf(bcs_is),bcs_qsecf(bcs_in),
+     $          bcs_qsecf(bcs_iw),bcs_qsecf(bcs_ie),l_minx,l_maxx,l_miny,l_maxy,
+     $          minxs,maxxs,minys,maxys,minxw,maxxw,minyw,maxyw,G_nk+2,1)
              endif
          endif
          keyp_ = VMM_KEY (nest_trf)

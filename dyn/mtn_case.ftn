@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r mtn_case - generates initial condition for mountain wave
 *                 experiment (Schar et al. 2002 or Pinty et al. 1995)
 *
@@ -59,30 +44,40 @@
 #include "vtopo.cdk"
 #include "mtn.cdk"
 #include "zblen.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "schm.cdk"
+#include "matlab.cdk"
 *
-      integer i,j,k,l,err
-      integer i00
-      real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1, psurf
-      real psmin, psmax, hmin, hmin_glob
+      integer i,j,k,l,i00,err
+      real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
       integer key0, key(Tr3d_ntr), longueur
-      real, allocatable, dimension(:,:,:) :: work
-      real, allocatable, dimension(:,:,:) :: wrk3d
-      real tr,hauteur
+      real, allocatable, dimension(:,:)   :: psurf
+      real tr,hauteur, tempo
       real*8 pdsc1
       pointer (patr, tr(LDIST_SHAPE,*))
 **
 *     ---------------------------------------------------------------
 *
 *
+*
+      call flush(6)
+      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
+         open(unit=62,file=
+     $        matlab_dir_S(1:longueur(matlab_dir_S))//'from_fortran_mtn_case.bin',
+     $        status='replace',form='unformatted')
+         write(62)G_ni-lam_pil_w-lam_pil_e
+         write(62)G_nk
+      endif
+
       if (Ptopo_myproc.eq.0) then
          write(lun_out,9000)
       endif
 * 
 *
-      allocate(work  (LDIST_SHAPE,g_nk))
-      allocate(wrk3d (LDIST_SHAPE,G_nk))
+      allocate(psurf (LDIST_SHAPE))
 
 *---------------------------------------------------------------------
 *     Initialize orography
@@ -121,51 +116,46 @@
      $     .or. Theo_case_S .eq. 'MTN_PINTYNL') then
 
 *---------------------------------------------------------------------
-*     Generate pressure field from Pres_ptop, Cstv_pisrf_8, and coordinate
-*     Generate corresponding geopotential height for atmosphere with
-*     constant Brunt-Vaisala frequency mtn_nstar       
-*     Set wind imags
+*     Generate surface pressure field and its logarithm (s)
+*     Set wind imags (u,v)
+*     Transform orography from geometric to geopotential height
+*     Set non-hydrostatic perturbation pressure (qsec)
 *---------------------------------------------------------------------
-      a00 = mtn_nstar * mtn_nstar/Dcst_grav_8
+*
+      a00 = mtn_nstar**2/Dcst_grav_8
       a01 = (Dcst_cpd_8*mtn_tzero*a00)/Dcst_grav_8
-      capc1 = Dcst_grav_8*Dcst_grav_8/(mtn_nstar*mtn_nstar*Dcst_cpd_8*mtn_tzero)
-
-      do k=1,g_nk
+      capc1 = Dcst_grav_8**2/(mtn_nstar**2*Dcst_cpd_8*mtn_tzero)
+*
       do j=1,l_nj
       pdsc1 = geomg_cy_8(j) / Dcst_rayt_8
       do i=1,l_ni
-         psurf=Cstv_pisrf_8*(1.-capc1
+         psurf(i,j)=Cstv_pisrf_8*(1.-capc1
      $         +capc1*exp(-a00*Ind_topo(i,j)))**(1./Dcst_cappa_8)
-         work(i,j,k) = Geomg_pia(k) + Geomg_pibb(k)*psurf*100.
-         a02 = (work(i,j,k)/(Cstv_pisrf_8*100.))**Dcst_cappa_8
-         Ind_fi(i,j,k) = - Dcst_grav_8 / a00 *
-     $               ( alog(a01*(a02-1.) + 1 ) )
-         Ind_u (i,j,k) = mtn_flo * pdsc1
-         Ind_v (i,j,k) = 0.
+c        Note : s will be computed in predat
+         Ind_s   (i,j)   = psurf(i,j)
+         Ind_u   (i,j,1) = mtn_flo * pdsc1
+         Ind_topo(i,j)   = Dcst_grav_8 * Ind_topo(i,j)
       enddo
       enddo
-      enddo
-
-*---------------------------------------------------------------------
-*     Initialize 2D fields
-*     Transform orography from geometric to geopotential height
-*---------------------------------------------------------------------
+*
+      do k=1,g_nk
       do j=1,l_nj
       do i=1,l_ni
-         Ind_q(i,j,g_nk) = alog(work(i,j,g_nk))
-         Ind_q(i,j,1   ) = alog(work(i,j,1))
-         Ind_topo(i,j)   = Dcst_grav_8 * Ind_topo(i,j)
-      end do
-      end do
+         Ind_u   (i,j,k) = Ind_u (i,j,1)
+         Ind_v   (i,j,k) = 0.
+      enddo
+      enddo
+      enddo
 *
 *---------------------------------------------------------------------
 *     Initialize temperature field
 *---------------------------------------------------------------------
-
-       do k=1,g_nk
+*
+       do k=1,g_nk+1
          do j=1,l_nj
             do i=1,l_ni
-               a02 = (work(i,j,k)/(Cstv_pisrf_8*100.))**Dcst_cappa_8
+               tempo = Ver_pia_8%t(k) + Ver_pibb_8%t(k)*psurf(i,j)
+               a02 = (tempo/Cstv_pisrf_8)**Dcst_cappa_8
                hauteur=-alog((capc1-1.+a02)/capc1)/a00
                Ind_t(i,j,k)=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
             enddo
@@ -173,59 +163,80 @@
       enddo        
 
       else   ! MTN_PINTY or MTN_PINTY2
-*---------------------------------------------------------------------
-*     Generate pressure field from Pres_ptop, Cstv_pisrf_8, and coordinate
-*     Generate corresponding geopotential height for isothermal atmosphere
+*-----------------------------------------------------------------------
+*     Generate pressure from Pres_ptop, Cstv_pisrf_8, and coordinate
+*     Generate corresponding geopotential for isothermal atmosphere
 *     Set wind images and temperature
-*---------------------------------------------------------------------
+*-----------------------------------------------------------------------
+
+      do k=1,g_nk+1
+      do j=1,l_nj
+      do i=1,l_ni
+         Ind_t (i,j,k) = Cstv_tstr_8
+      enddo
+      enddo
+      enddo
 
       do k=1,g_nk
       do j=1,l_nj
       pdsc1 = geomg_cy_8(j) / Dcst_rayt_8
       do i=1,l_ni
-         work(i,j,k) = Geomg_pia(k) + Geomg_pibb(k)*Cstv_pisrf_8*100.
-         a02 = log(work(i,j,k)/(Cstv_pisrf_8*100.))
-         Ind_t (i,j,k) = Cstv_tstr_8
-         Ind_fi(i,j,k) = Dcst_grav_8 * Ind_topo(i,j)
-     %                       -  Dcst_rgasd_8 * Cstv_tstr_8 * a02
          Ind_u (i,j,k) = mtn_flo * pdsc1
          Ind_v (i,j,k) = 0.
       enddo
       enddo
       enddo
 
-*---------------------------------------------------------------------
-*     Initialize 2D fields
-*     Transform orography from geometric to geopotential height
-*---------------------------------------------------------------------
       do j=1,l_nj
       do i=1,l_ni
-         Ind_q(i,j,g_nk) = alog(work(i,j,g_nk))
-         Ind_q(i,j,1   ) = alog(work(i,j,1))
+         psurf(i,j) = Cstv_pisrf_8 * 
+     $                exp( -Dcst_grav_8 * Ind_topo(i,j)/
+     $                     (Dcst_cpd_8 * Cstv_tstr_8) )	
+c        Note : s will be computed in predat
+         Ind_s(i,j) = psurf(i,j)
+      enddo
+      enddo         
+
+*-----------------------------------------------------------------------
+*     Transform orography from geometric to geopotential height
+*-----------------------------------------------------------------------
+      do j=1,l_nj
+      do i=1,l_ni
          Ind_topo(i,j)   = Dcst_grav_8 * Ind_topo(i,j)
       end do
       end do
 *
       endif
-
-      psmin=Cstv_pisrf_8*100.
-      psmax=Cstv_pisrf_8*100.
-*     
-      if ( Ptopo_myproc.eq.0 ) then
-           write(lun_out,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX,
-     $                     ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
-      endif
-
 *
-      Pres_surf = Cstv_pisrf_8*100.
+*-----------------------------------------------------------------------
+*     if non-hydrostatic, initialize pres. perturb. and vert. motion
+*-----------------------------------------------------------------------
+*
+      if(.not.Schm_hydro_L) then
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_qsec(i,j,0) = 0.
+         enddo
+         enddo
+         do k=1,g_nk+1
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_w   (i,j,k) = 0.
+            Ind_qsec(i,j,k) = 0.
+         enddo
+         enddo
+         enddo
+      endif
+*
+      Pres_surf = Cstv_pisrf_8
       Pres_top  = dble(Pres_ptop*100.)
 *     
       call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
-*---------------------------------------------------------------------
+*-----------------------------------------------------------------------
 *     create tracers (humidity and MTN)
-*---------------------------------------------------------------------
+*-----------------------------------------------------------------------
       key0 = VMM_KEY (trt1)
       do k=1,Tr3d_ntr
          key(k) = key0 + k
@@ -235,7 +246,7 @@
          do k=1,Tr3d_ntr
             err = vmmget(key(k),patr,tr)
             if (Tr3d_name_S(k).eq.'HU') then
-               do l=1,G_nk
+               do l=1,G_nk+1
                do j=1,l_nj
                do i=1,l_ni
                   tr(i,j,l) = 0.
@@ -243,7 +254,7 @@
                end do
                end do
             elseif (Tr3d_name_S(k).eq.'MTN') then
-               do l=1,G_nk
+               do l=1,G_nk+1
                do j=1,l_nj
                do i=1,l_ni
                   tr(i,j,l) = Ind_t(i,j,l)
@@ -254,18 +265,27 @@
          end do
          err = vmmuld(key,Tr3d_ntr)
       endif
-*---------------------------------------------------------------------
-*     estimate minimal height for vertical sponge
-*---------------------------------------------------------------------
-      hmin = Ind_fi(1,1,1)
-      call rpn_comm_allreduce(hmin,hmin_glob,1,"MPI_REAL","MPI_MIN",
-     $                                                    "grid",err)
-      Zblen_hmin = hmin_glob/Dcst_grav_8 - Zblen_spngthick
 
- 9000 format(/,' CREATING INPUT DATA FOR MOUNTAIN WAVE THEORETICAL CASE  '
-     +       /,' =======================================================')
+      do j=1,l_nj
+      do i=1,l_ni
+c        Note : s will be computed in predat
+         Ind_s (i,j) = psurf(i,j)
+      enddo
+      enddo
 *
-*     ---------------------------------------------------------------
+      if(matlab_write_L)then  
+         call write_matlab_2d(62,Ind_topo)
+         call write_matlab_2d(62,Ind_s)
+         call write_matlab_3d_th(62,Ind_t)
+         call rpn_comm_Barrier("grid", err)
+      endif
+      
+      if(matlab_write_L.and.Ptopo_myproc.eq.0)close(62)
+
+ 9000 format(/,'CREATING INPUT DATA FOR MOUNTAIN WAVE THEORETICAL CASE'
+     +      /,'======================================================')
+*
+*     -----------------------------------------------------------------
 *
       return
       end

@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r dynstep -  Control of the dynamical timestep of the model
 *
 #include "model_macros_f.h"
@@ -36,8 +21,6 @@
 * v3_20 - Pellerin P.       - schm_offline_l: allow to run 
 * v3_30 - Lee V.            - new Lam I/O with acid test
 *                             without the dynamical kernel
-* v3_31 - Tanguay M.        - Control BC
-* v3_31 - Tanguay M.        - Introduce time extrapolation
 *
 *object
 *
@@ -54,10 +37,9 @@
 #include "schm.cdk"
 #include "lam.cdk"
 #include "step.cdk"
-#include "vtopo.cdk"
+#include "type.cdk"
 #include "adw.cdk"
 #include "acid.cdk"
-#include "v4dg.cdk"
 *
       integer itraj
       logical first_L, secon_L
@@ -130,15 +112,7 @@
          Orh_icn=Schm_itcn
 *     
       else
-*
-*        ------------------
-*        WIND EXTRAPOLATION
-*        ------------------
-*
-*        Perform extrapolation
-*        ---------------------
-         call extrwnd( )
-*
+*     
          Orh_icn = 1
 *
       endif
@@ -160,41 +134,13 @@
       call t12t2( )
       call t02t1( )
       call t22t0( )
-      if (Schm_modcn.eq.Step_total) call t02tw( )
-*
-*         ------------------------------------------------------------
-*C        If necessary vary topogragphy according to Vtopo_start and 
-*C        Vtopo_ndt
-*         ------------------------------------------------------------
-      if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
-          call var_topo( )
-          if ( Schm_phyms_L ) call phycom ('varmtn' ,1 ,1,'set')
-      else
-          if ( Schm_phyms_L ) call phycom ('varmtn' ,0 ,1,'set')
-      endif
 *
 *         ------------------------------------------------------------
 *C	  Impose Lateral BCs within Pil regions and blend within Hblen
 *         ------------------------------------------------------------
       if (G_lam.and. .not. Schm_theoc_L) then
-*
-         if (V4dg_conf.eq.0) then 
-
-            call nest_bcs
-            call nest_blen
-*
-         else
-
-            call v4d_nest_bcs
-            call v4d_nest_blen
-
-*           Store TRAJ predictives variables AFTER nesting and blending
-*           -----------------------------------------------------------
-            if ( V4dg_oktr_L ) call v4d_rwtraj (14)
-            call v4d_set_vmm_dep
-*
-         endif
-*
+         call nest_bcs
+         call nest_blen
       endif
 *
 *         ------------------------------------------------------------
@@ -206,7 +152,6 @@
 *     END OF ONE TIMESTEP
 *     ===================
 *
-      if ( Lctl_step-Vtopo_start+1 .eq. Vtopo_ndt) Vtopo_L = .false.
       if ( G_lam.and.(Lctl_step.eq.Step_total) ) done_intt_L = .true.
 *
  1000 format(

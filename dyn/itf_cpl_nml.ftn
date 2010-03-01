@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_cpl_nml - Read namelist coupling
 *
 #include "model_macros_f.h"
@@ -22,20 +7,21 @@
 *
       character* (*) F_namelistf_S
 *
-*authors    Michel Desgagne - Spring 2008
-* 
+*author
+*     Michel Desgagne - Fall 2006
+*
 *revision
-* v3_31 - Desgagne M.       - initial MPI version
+* v3_30 - Desgagne M.       - initial version
 *
 *object
 *  Default configuration and reading namelist coupling
 *
 *implicits
+#include "glb_ld.cdk"
+#include "itf_cpl_nml.cdk"
+#include "itf_phy_config.cdk"
+#include "schm.cdk"
 #include "lun.cdk"
-#include "step.cdk"
-#include "itf_cpl.cdk"
-*
-      namelist /coupling/ CPL_NAME ,cpl_debut, cpl_fin
 *
       integer  fnom,wkoffit
       external fnom,wkoffit
@@ -48,15 +34,26 @@
 *
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          itf_cpl_nml = 0
-         if (Lun_out.gt.0) write (6  ,nml=coupling)
+         if (Lun_out.gt.0) write (6  ,nml=coupling_p)
          return
       endif
 *
 * Defaults values for ptopo namelist variables
 *
-      CPL_NAME = 'NIL'
-      cpl_debut= 0
-      cpl_fin  = Step_total
+      C_coupling_L     = .false.
+      C_cpld2ocean_L   = .false.
+      C_cpld2land_L    = .false.
+      C_cpld2atmos_L   = .false.
+      C_cplflds2file_L = .true.
+      C_isautonomus_L  = .true.
+      GOMSST           = .false.
+      C_timeout        = -1
+      from_ocean_S     = ''
+      from_land_S      = ''
+      from_atmos_S     = ''
+      IF (.not. Schm_offline_L    ) lg_atmos = .true.
+      IF (P_pbl_ocean_L           ) lg_ocean = .true.
+      IF (P_pbl_schsl_S .ne. 'NIL') lg_land  = .true.
 *
       unf = 0
       err = wkoffit(F_namelistf_S)
@@ -68,7 +65,8 @@
       endif
       endif
 *
-      itf_cpl_nml = 1
+      C_cploasis_L = C_coupling_L
+      itf_cpl_nml  = 1
       goto 7777
 *
  9110 write (6, 8150) trim( F_namelistf_S )
@@ -79,7 +77,5 @@
 *
 *-------------------------------------------------------------------
 *
- 7777 C_coupling_L = (CPL_NAME.ne.'NIL')
-*
-      return
+ 7777 return
       end

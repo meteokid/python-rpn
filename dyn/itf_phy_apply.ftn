@@ -1,32 +1,16 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_apply - apply tendencies to dynamical variables
 *
 #include "model_macros_f.h"
 *
-      subroutine itf_phy_apply ( F_tdu,F_tdv,F_tdt,F_trm,
-     $                             F_tp,F_qp, DIST_DIM,Nk,F_apply_L )
+      subroutine itf_phy_apply(F_tdu,F_tdv,F_tdt,F_trp,F_trm,
+     $                         F_tp,DIST_DIM,nkphy,F_apply_L )
 *
       implicit none
 *
-      logical F_apply_L
-      integer DIST_DIM,Nk
-      real F_tdu   (DIST_SHAPE,Nk), F_tdv   (DIST_SHAPE,Nk),
-     $     F_tdt   (DIST_SHAPE,Nk), F_trm   (DIST_SHAPE,Nk,*),
-     $     F_tp    (DIST_SHAPE,Nk), F_qp    (DIST_SHAPE,Nk)
+      logical,intent(IN) :: F_apply_L
+      integer,intent(IN) :: DIST_DIM,nkphy
+      real,dimension(DIST_SHAPE,nkphy),intent(INOUT) :: F_tdu, F_tdv, F_tdt, F_tp
+      real,dimension(DIST_SHAPE,nkphy,*),intent(INOUT) :: F_trp, F_trm
 *
 *author
 *     Michel Roch - rpn - april 1994
@@ -53,6 +37,16 @@
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
+* TODO: Document
+* F_tdu        I    - total wind image tendency in x direction
+* F_tdv        I    - total wind image tendency in y direction
+* F_tdt        I    - total virtual temperatur tendency
+* F_trm        I    - tracer concentration at time t- (for each species)
+* F_tp              - ?virtual? temperature at time t*
+* DIST_DIM,
+* nkphy,
+* F_apply_L
+*----------------------------------------------------------------
 *
 *implicits
 #include "glb_ld.cdk"
@@ -67,19 +61,24 @@
 #include "inuvl.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
+#include "vtx.cdk"
 #include "itf_phy_busind.cdk"
 #include "v4dg.cdk"
+#include "tr3d.cdk"
+#include "p_geof.cdk"
+#include "func.cdk"
+#include "itf_phy_vmm.cdk"
+#include "ver.cdk"
+#include "itf_vmm.cdk"
 *
-*modules
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
 *
       integer*8 pnt_trp(phyt_ntr),pnt_trm(phyt_ntr)
-      integer i, j, k, n, err, key1(7), ng,
+      integer i, j, k, n, err, key1(11), key_p(2), ng, keyh, kk,
      $     keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
-      real wk1(LDIST_SHAPE,Nk), wk2(LDIST_SHAPE,Nk),
-     $     wk3(LDIST_SHAPE,Nk), wk4(LDIST_SHAPE,Nk),
-     $     wk5(LDIST_SHAPE,Nk), wk6(LDIST_SHAPE,Nk), trp, trm
+      integer i0,in,j0,jn,inu,jnv, pnload
+      real,dimension(LDIST_SHAPE,nkphy) :: wk1, wk2, wk3, wk4
+      real trp, trm
+      real*8 con_8
       pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
 *
 *notes
@@ -90,8 +89,30 @@
 **
 *     __________________________________________________________________
 *
+
+c$$$ What is computed?
+c$$$ 
+c$$$ in 2.2.2
+c$$$ fit1,fipt1,tpt1,tplt1,tdt1,psdt1,tt1,ut1,vt1,trp,trm
+c$$$ 
+c$$$ in 2.2.5xis:
+c$$$ tdia,udia,vdia,tt1,ut1,vt1,
+c$$$ fiptx [diag_fip(fiptx,csh,tt1,qsect1,topo)],
+c$$$ hdia,trp,trm
+c$$$ 
+c$$$ in 3.3.0
+c$$$ fit1,fipt1,tpt1,tplt1,tdt1,psdt1,tt1,ut1,vt1,trp,trm
+
+      i0 =1+pil_w
+      in =l_ni-pil_e 
+      inu=l_niu-pil_e 
+      j0 =1+pil_s
+      jn =l_nj-pil_n 
+      jnv=l_njv-pil_n 
+
       keyp_ = VMM_KEY (trt1)
       keym_ = VMM_KEY (trt0)
+      keyh  = VMM_KEY (hdia)
       if (phyt_ntr.gt.0) then
          do n=1,phyt_ntr
             keyp(n) = keyp_ + n
@@ -99,6 +120,8 @@
          end do
          err   = vmmlod(keyp,phyt_ntr)
          err   = vmmlod(keym,phyt_ntr)
+         err   = vmmlod(keyh,1)
+         err   = VMM_GET_VAR(hdia)
          do n=1,phyt_ntr
             err = vmmget(keyp(n),patrp,trp)
             pnt_trp(n) = patrp
@@ -107,271 +130,7 @@
          end do
       endif
 *
-      if (F_apply_L) then
-*
-      key1(1) = VMM_KEY(st1  )
-      key1(2) = VMM_KEY(fipt1)
-      key1(3) = VMM_KEY(fit1 )
-      key1(4) = VMM_KEY(tplt1)
-      key1(5) = VMM_KEY(tpt1 )
-      key1(6) = VMM_KEY(tdt1 )
-      key1(7) = VMM_KEY(psdt1)
-      err = vmmlod (key1,7)
-      err = VMM_GET_VAR(st1  )
-      err = VMM_GET_VAR(fipt1)
-      err = VMM_GET_VAR(fit1 )
-      err = VMM_GET_VAR(tplt1)
-      err = VMM_GET_VAR(tpt1 )
-      err = VMM_GET_VAR(tdt1 )
-      err = VMM_GET_VAR(psdt1)
-*
-*  4. Interpolation of the wind associated tendencies
-*
-*
-*     Zero wk5 for hatoprg
-*     --------------------
-      wk5 = 0.
-*
-      call itf_phy_uvgridscal ( F_tdu, F_tdv, LDIST_DIM, G_nk, .false. )
-*
-* 1. Add condensation tendencies and other contributions to get
-*    TOTAL temperature tendency and TOTAL specific humidity tendency
-*    Compute VIRTUAL temperature tendency from:  temperature tendency,
-*    specific humidity, temperature & specific humidity tendency :
-*
-*               /                            \        /                         \
-*               |            +        /  + \ |      + |                 /     \ |
-*     dT   = dT | 1 + delta*q   - sum | q  | |  +  T  | delta*dq  - sum | dq  | |
-*       v       |            v        \  j / |        |         v       \   j / |
-*               \                            /        \                         /
-*
-!$omp parallel
-!$omp do
-      do k=1,l_nk
-         if ( G_lam .and. ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) )
-     $      wk2(:,:,k) = 0.
-         wk3(:,:,k) = 0.
-         wk4(:,:,k) = 0.
-      end do
-!$omp enddo
-*
-      if (Schm_wload_L) then
-*       Retrieve sp mass of hydrometeors at t+ and sum them in wk3, also
-*       sum their tendencies in wk4.
-*
-         do n=hucond+1,h2o_ntr
-            patrp = pnt_trp(n)
-!$omp do
-            do k=1,l_nk
-            do j= 1+pil_s, l_nj-pil_n
-            do i= 1+pil_w, l_ni-pil_e
-               wk3(i,j,k) = wk3(i,j,k) + trp(i,j,k)
-               wk4(i,j,k) = wk4(i,j,k) + F_trm(i,j,k,n)
-            end do
-            end do
-            end do
-!$omp enddo
-         enddo
-      endif
-*
-!$omp end parallel
-*
-*     Store TRAJ for the simplified physics
-*     -------------------------------------
-      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L) then
-        call v4d_rwtraj_apply(F_tdu,F_tdv,F_tdt,F_trm,wk4,LDIST_DIM,Nk)
-      endif
-*
-*   1.1  Compute VIRTUAL temperature tendency from:  temperature tendency,
-*        specific humidity, virtual temperature & specific humidity tendency
-*
-!$omp parallel
-*
-      patrp = pnt_trp(1)
-!$omp do
-      do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            F_tdt(i,j,k) =   F_tdt(i,j,k)
-     $               * (1.+Dcst_delta_8*trp  (i,j,k)       -wk3(i,j,k))
-     $               + F_tp(i,j,k)*
-     $                    (Dcst_delta_8*F_trm(i,j,k,hucond)-wk4(i,j,k))
-            wk1(i,j,k) = F_tdt(i,j,k)
-         end do
-         end do
-      end do
-!$omp enddo
-*
-!$omp single
-      if ( Lam_0ptend_L .and. G_lam .and.
-     $   ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) )
-     $     call nesajr (wk1,wk2,LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
-!$omp end single
-*
-*C       apply tendencies to associated variables
-*        ----------------------------------------
-*
-      if (Schm_pcsty_L.or.Schm_pheat_L) then
-*
-!$omp do
-         do k= 1,l_nk
-            wk5(:,:,k) = 0.
-            do j= 1+pil_s, l_nj-pil_n
-            do i= 1+pil_w, l_ni-pil_e
-               F_qp(i,j,k) = exp(st1(i,j) - F_qp(i,j,k))*F_tdt(i,j,k)
-                wk5(i,j,k) = F_qp(i,j,k)*Dcst_rgasd_8
-            end do
-            end do
-         end do
-!$omp enddo
-*
-      endif
-!$omp end parallel
-*
-*
-      if (Schm_pheat_L) then
-         ng = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
-         call hatoprg (wk6,wk5,1.0,geomg_hz_8,ng,G_nk)
-         if ( Lam_0ptend_L .and. G_lam .and.
-     $      ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) )
-     $     call nesajr (wk6,wk2,LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
-      endif
-*
-!$omp parallel
-!$omp do
-      do k= 1,l_nk
-         if (Schm_pheat_L) then
-            do j= 1+pil_s, l_nj-pil_n
-            do i= 1+pil_w, l_ni-pil_e
-               fit1 (i,j,k) =  fit1 (i,j,k) + Cstv_dt_8*wk6(i,j,k)
-               fipt1(i,j,k) =  fipt1(i,j,k) + Cstv_dt_8*wk6(i,j,k)
-            end do
-            end do
-         endif
-         if (Schm_pcsty_L) then
-            do j= 1+pil_s, l_nj-pil_n
-            do i= 1+pil_w, l_ni-pil_e
-               F_tp(i,j,k) = geomg_z_8(k)*F_qp(i,j,k)
-            end do
-            end do
-         endif
-      end do
-!$omp enddo
-*
-!$omp end parallel
-*
-      if (Schm_pcsty_L) then
-         call uv2tdpsd ( F_qp, wk3, F_tdu, F_tdv, st1, LDIST_DIM,G_nk )
-         if ( Lam_0ptend_L .and. G_lam .and.
-     $      ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
-            call nesajr (wk3 ,wk2,LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
-            call nesajr (F_tp,wk2,LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
-            call nesajr (F_qp,wk2,LDIST_DIM,G_nk,0,0,Hblen_x,Hblen_y)
-         endif
-      endif
-*
-!$omp parallel
-*
-      if (Schm_pcsty_L) then
-!$omp do
-         do k= 1,l_nk
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            tpt1 (i,j,k) =  tpt1 (i,j,k) + Cstv_dt_8*wk1 (i,j,k)
-            tplt1(i,j,k) =  tplt1(i,j,k) + Cstv_dt_8*F_tp(i,j,k)
-            tdt1 (i,j,k) =  tdt1 (i,j,k) + Cstv_dt_8*F_qp(i,j,k)
-            psdt1(i,j,k) =  psdt1(i,j,k) + Cstv_dt_8*wk3 (i,j,k)
-         end do
-         end do
-         end do
-!$omp enddo
-      endif
-*
-*C       apply tendencies to primary variables
-*        -------------------------------------
-!$omp single
-      if ( Lam_0ptend_L .and. G_lam .and.
-     $   ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
-         call nesajr (F_tdu, wk2, LDIST_DIM,G_nk,1,0,Hblen_x,Hblen_y)
-         call nesajr (F_tdv, wk2, LDIST_DIM,G_nk,0,1,Hblen_x,Hblen_y)
-      endif
-*
-      key1(1)  = VMM_KEY(ut1)
-      key1(2)  = VMM_KEY(vt1)
-      key1(3)  = VMM_KEY(tt1)
-      err = vmmlod(key1,3)
-      err = VMM_GET_VAR(ut1)
-      err = VMM_GET_VAR(vt1)
-      err = VMM_GET_VAR(tt1)
-!$omp end single
-*
-c     if (Acid_test_L) then
-c         if (Lun_out.gt.0) write(Lun_out,*)
-c    % 'Variables on FULL grid before applying tendencies'
-c         call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,1+acid_i0,G_ni-1-acid_in,
-c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
-*
-!$omp do
-      do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            tt1 (i,j,k) =  tt1(i,j,k) + Cstv_dt_8*wk1(i,j,k)
-         end do
-         end do
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_niu-pil_e
-            ut1 (i,j,k) =  ut1(i,j,k) + Cstv_dt_8*F_tdu(i,j,k)
-         end do
-         end do
-         do j= 1+pil_s, l_njv-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-            vt1 (i,j,k) =  vt1(i,j,k) + Cstv_dt_8*F_tdv(i,j,k)
-         end do
-         end do
-      end do
-!$omp enddo
-c     if (Acid_test_L) then
-c         if (Lun_out.gt.0) write(Lun_out,*)
-c    % 'Variables with tendencies added on core grid only'
-c         call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
-c    %                                      8+acid_j0,G_nj-7-acid_jn,1,G_nk)
-c         call glbstat (vt1  ,'VV',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
-c    %                                      8+acid_j0,G_nj-8-acid_jn,1,G_nk)
-
-*
-c     if (Acid_test_L.and.Lun_out.gt.0)print 'Statfld for tracers'
-      do n=1,phyt_ntr
-         if (phyt_ind(3,n).gt.0) then
-         patrp = pnt_trp(n)
-!$omp single
-         if ( Lam_0ptend_L .and. G_lam .and.
-     $      ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
-            call nesajr (F_trm(minx,miny,1,n), wk2, LDIST_DIM,G_nk,
-     $                                          0,0,Hblen_x,Hblen_y)
-         endif
-!$omp end single
-!$omp do
-         do k=1,l_nk
-            do j= 1+pil_s, l_nj-pil_n
-            do i= 1+pil_w, l_ni-pil_e
-               trp(i,j,k) = trp(i,j,k) + Cstv_dt_8*F_trm(i,j,k,n)
-            end do
-            end do
-         end do
-c        if (Acid_test_L)
-c        core grid
-c    %   call glbstat (trp,phyt_name_S(n)(1:2)//'T1',LDIST_DIM,G_nk,5+acid_i0,
-c    %        G_ni-4-acid_in,5+acid_j0,G_nj-4-acid_jn,1,G_nk)
-c        physics grid
-c        call glbstat (trp,phyt_name_S(n)(1:2)//'T1',LDIST_DIM,G_nk,
-c    %    8+acid_i0,G_ni-7-acid_in,8+acid_j0,G_nj-7-acid_jn,1,G_nk)
-!$omp enddo
-         endif
-      end do
-*
-!$omp end parallel
-*
-      else
+      if (.not.F_apply_L) then
 *
 !$omp parallel
          do 10 n=1,h2o_ntr
@@ -379,7 +138,7 @@ c    %    8+acid_i0,G_ni-7-acid_in,8+acid_j0,G_nj-7-acid_jn,1,G_nk)
             patrp = pnt_trp(n)
             patrm = pnt_trm(n)
 !$omp do
-            do k= 1, l_nk
+            do k= 1, l_nk+1
             do j= 1+pil_s, l_nj-pil_n
             do i= 1+pil_w, l_ni-pil_e
                trp(i,j,k) = trp(i,j,k) + Cstv_dt_8*F_trm(i,j,k,n)
@@ -392,8 +151,334 @@ c    %    8+acid_i0,G_ni-7-acid_in,8+acid_j0,G_nj-7-acid_jn,1,G_nk)
  10      continue
 *
 !$omp end parallel
+         return
 *
+      endif 
+
+*
+      key1(1) = VMM_KEY(tt1  )
+      key1(2) = VMM_KEY(ut1  )
+      key1(3) = VMM_KEY(vt1  )
+      key1(4) = VMM_KEY(tdia )
+      key1(5) = VMM_KEY(udia )
+      key1(6) = VMM_KEY(vdia )
+      key1(7) = VMM_KEY(csh )
+      pnload = 7
+      if (.not. Schm_hydro_L ) then
+         key1(pnload+1) = VMM_KEY(qsect1)
+         pnload = pnload+1
       endif
+      if (Schm_pheat_L ) then
+         key1(pnload+1) = VMM_KEY(fiptx )
+         key1(pnload+2) = VMM_KEY(topo )
+         pnload = pnload+2
+      endif
+      if (Schm_pcsty_L) then
+         key1(pnload+1) = VMM_KEY(psdt1 )
+         pnload = pnload+1
+      endif
+      err = vmmlod (key1,pnload)
+      err = VMM_GET_VAR(tt1  )
+      err = VMM_GET_VAR(ut1  )
+      err = VMM_GET_VAR(vt1  )
+      err = VMM_GET_VAR(tdia )
+      err = VMM_GET_VAR(udia )
+      err = VMM_GET_VAR(vdia )
+      err = VMM_GET_VAR(csh)
+      if(.not. Schm_hydro_L) err = VMM_GET_VAR(qsect1)
+      if (Schm_pheat_L ) then
+         err = VMM_GET_VAR(fiptx)
+         err = VMM_GET_VAR(topo )
+      endif
+      if (Schm_pcsty_L ) then
+         err = VMM_GET_VAR(psdt1)
+      endif
+
+
+      key_p(1) = VMM_KEY(p_uplus)
+      key_p(2) = VMM_KEY(p_vplus)
+      err = vmmlod(key_p,2)
+      err = VMM_GET_VAR(p_uplus)
+      err = VMM_GET_VAR(p_vplus)
+
+
+      if ( Lam_0ptend_L .and. G_lam .and.
+     $   ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
+         wk2 = 0.
+         call nesajr (F_tdu, wk2, LDIST_DIM,nkphy,1,0,Hblen_x,Hblen_y)
+         call nesajr (F_tdv, wk2, LDIST_DIM,nkphy,0,1,Hblen_x,Hblen_y)
+         call nesajr (F_tp, wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
+         do n=1,phyt_ntr
+            call nesajr (F_trm(1,1,1,n), wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
+            call nesajr (F_trp(1,1,1,n), wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
+         enddo
+      endif
+
+c$$$      print *,'---- apply ----'
+c$$$
+c$$$      call statfld3d(p_uplus  ,'p_up',LDIST_DIM,l_nj,l_nj,p_nk)
+c$$$      call statfld3d(p_vplus  ,'p_vp',LDIST_DIM,l_nj,l_nj,p_nk)
+c$$$      call statfld3d(F_tdu  ,'Ftdu',LDIST_DIM,l_nj,l_nj,p_nk)
+c$$$      call statfld3d(F_tdv  ,'Ftdv',LDIST_DIM,l_nj,l_nj,p_nk)
+c$$$      call statfld3d(F_tp  ,'F_tp',LDIST_DIM,l_nj,l_nj,p_nk)
+c$$$      do n=1,phyt_ntr
+c$$$         call statfld3d(F_trp(1,1,1,n)  ,Tr3d_name_S(n),LDIST_DIM,l_nj,l_nj,p_nk)
+c$$$         call statfld3d(F_trm(1,1,1,n)  ,Tr3d_name_S(n),LDIST_DIM,l_nj,l_nj,p_nk)
+c$$$      enddo
+c$$$
+c$$$      print *,'---- [end] apply ----'
+
+
+
+
+*  .  Interpolation of the wind associated tendencies
+*     ---------------------------------------------------
+
+      call itf_phy_uvgridscal(F_tdu,   F_tdv,   LDIST_DIM, nkphy, .false. )
+      call itf_phy_uvgridscal(p_uplus, p_vplus, LDIST_DIM, nkphy, .false. )
+
+*    Add condensation tendencies and other contributions to get
+*    TOTAL temperature tendency and TOTAL specific humidity tendency
+*    Compute VIRTUAL temperature tendency from:  temperature tendency,
+*    specific humidity, temperature & specific humidity tendency :
+*     ---------------------------------------------------
+*
+*               /                            \        /                         \
+*               |            +        /  + \ |      + |                 /     \ |
+*     dT   = dT | 1 + delta*q   - sum | q  | |  +  T  | delta*dq  - sum | dq  | |
+*       v       |            v        \  j / |        |         v       \   j / |
+*               \                            /        \                         /
+*
+
+!$omp parallel
+
+      wk3 = 0.
+      wk4 = 0.
+*
+      if (Schm_wload_L) then
+*       Retrieve sp mass of hydrometeors at t+ and sum them in wk3, also
+*       sum their tendencies in wk4.
+*
+         do n=hucond+1,h2o_ntr
+            patrp = pnt_trp(n)
+!$omp do
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+            do k=1,nkphy-1
+               wk3(i,j,k) = wk3(i,j,k) + trp(i,j,k)
+               wk4(i,j,k) = wk4(i,j,k) + F_trm(i,j,k,n)
+            end do
+               wk3(i,j,nkphy) = wk3(i,j,nkphy-1)
+               wk4(i,j,nkphy) = wk4(i,j,nkphy) + F_trm(i,j,nkphy,n)
+            end do
+            end do
+!$omp enddo
+         enddo
+      endif
+
+*
+*    Compute VIRTUAL temperature tendency from:  temperature tendency,
+*    specific humidity, virtual temperature & specific humidity tendency
+*
+*
+
+c$$$ TODO: ? nesajr(F_tp..) ?
+
+      patrp = pnt_trp(1)
+!$omp do
+      do k=1,nkphy
+         kk=min(k,nkphy-1)
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            F_tdt(i,j,k) =   F_tdt(i,j,k)
+     $               * (1.+Dcst_delta_8*trp  (i,j,kk)       -wk3(i,j,k))
+     $               + F_tp(i,j,k)*
+     $                    (Dcst_delta_8*F_trm(i,j,k,hucond)-wk4(i,j,k))
+            wk1(i,j,k) = F_tdt(i,j,k)
+         end do
+         end do
+      end do
+!$omp enddo
+
+*
+*     ---------------------------------------------------
+
+!$omp single
+      if ( Lam_0ptend_L .and. G_lam .and.
+     $   ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
+         call nesajr (wk1  , wk2, LDIST_DIM,nkphy,0,0,Hblen_x,Hblen_y)
+         call nesajr (F_tdu, wk2, LDIST_DIM,nkphy,1,0,Hblen_x,Hblen_y)
+         call nesajr (F_tdv, wk2, LDIST_DIM,nkphy,0,1,Hblen_x,Hblen_y)
+      endif
+!$omp end single
+
+*
+*     temperature and wind tendencies for special levels
+*     ---------------------------------------------------
+
+!$omp do
+      do j=j0,jn
+      do i=i0,in
+         tdia(i,j,1) = F_tp(i,j,1) + Cstv_dt_8*wk1(i,j,1)
+         tdia(i,j,2) = F_tp(i,j,nkphy-1) + Cstv_dt_8*wk1(i,j,nkphy-1)
+         tdia(i,j,3) = F_tp(i,j,nkphy) + Cstv_dt_8*wk1(i,j,nkphy)
+      enddo
+      con_8 = cos(geomg_y_8(j)) / Dcst_rayt_8
+      do i=i0,inu
+         udia(i,j,1) = con_8*p_uplus(i,j,1) + Cstv_dt_8*F_tdu(i,j,1)
+         udia(i,j,2) = con_8*p_uplus(i,j,nkphy-1) + Cstv_dt_8*F_tdu(i,j,nkphy-1)
+         udia(i,j,3) = con_8*p_uplus(i,j,nkphy) + Cstv_dt_8*F_tdu(i,j,nkphy)
+      enddo
+      enddo
+!$omp enddo
+!$omp do
+      do j=j0,jnv
+      con_8 = cos(geomg_y_8(j)) / Dcst_rayt_8
+      do i=i0,in
+         vdia(i,j,1) = con_8*p_vplus(i,j,1) + Cstv_dt_8*F_tdv(i,j,1)
+         vdia(i,j,2) = con_8*p_vplus(i,j,nkphy-1) + Cstv_dt_8*F_tdv(i,j,nkphy-1)
+         vdia(i,j,3) = con_8*p_vplus(i,j,nkphy) + Cstv_dt_8*F_tdv(i,j,nkphy)
+      enddo
+      enddo
+!$omp enddo
+
+*
+*     de-stagger wind tendancies in the vertical
+*     ------------------------------------------
+*
+!$omp do
+      do j=j0,jn
+      do k=1,l_nk
+      do i=i0,inu
+         F_tdu(i,j,k) =F_tdu(i,j,k+1)
+      end do
+      end do
+      end do
+!$omp enddo
+!$omp do
+      do j=j0,jnv
+      do k=1,l_nk
+      do i=i0,in
+         F_tdv(i,j,k) =F_tdv(i,j,k+1)
+      end do
+      end do
+      end do
+!$omp enddo
+
+*
+!$omp end parallel
+*
+*     Store TRAJ for the simplified physics
+*     -------------------------------------
+      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L) then
+c$$$ TODO: fix v4d
+         call gem_stop('itf_phy_apply -- v4d_rwtraj_apply',-1)
+c$$$         call v4d_rwtraj_apply(F_tdu,F_tdv,F_tdt,F_trm,wk4,LDIST_DIM,nkphy)
+      endif
+
+!$omp parallel
+
+
+*C       apply tendencies to primary variables
+*        -------------------------------------
+
+c     if (Acid_test_L) then
+c         if (Lun_out.gt.0) write(Lun_out,*)
+c    % 'Variables on FULL grid before applying tendencies'
+c         call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,1+acid_i0,G_ni-1-acid_in,
+c    %                                       1+acid_j0,G_nj-acid_jn,1,G_nk)
+
+!$omp do
+      do k=1,l_nk+1
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            tt1 (i,j,k) =  tt1(i,j,k) + Cstv_dt_8*wk1(i,j,k)
+         end do
+         end do
+      end do
+!$omp enddo
+!$omp do
+      do k=1,l_nk
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_niu-pil_e
+            ut1 (i,j,k) =  ut1(i,j,k) + Cstv_dt_8*F_tdu(i,j,k)
+         end do
+         end do
+         do j= 1+pil_s, l_njv-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            vt1 (i,j,k) =  vt1(i,j,k) + Cstv_dt_8*F_tdv(i,j,k)
+         end do
+         end do
+      end do
+!$omp enddo
+
+!$omp end parallel
+
+*
+*C       apply tendencies to associated variables
+*        ----------------------------------------
+*
+      if (Schm_pheat_L) then
+        call diag_fip(fiptx,csh,tt1,qsect1,topo,
+     $                         i0,in,j0,jn,l_nk)
+      endif
+
+c     if (Acid_test_L) then
+c         if (Lun_out.gt.0) write(Lun_out,*)
+c    % 'Variables with tendencies added on core grid only'
+c         call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,8+acid_i0,G_ni-8-acid_in,
+c    %                                      8+acid_j0,G_nj-7-acid_jn,1,G_nk)
+c         call glbstat (vt1  ,'VV',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
+c    %                                      8+acid_j0,G_nj-8-acid_jn,1,G_nk)
+
+*
+c     if (Acid_test_L.and.Lun_out.gt.0)print 'Statfld for tracers'
+
+      do n=1,phyt_ntr
+         if (phyt_ind(3,n).gt.0) then
+         patrp = pnt_trp(n)
+         if ( Lam_0ptend_L .and. G_lam .and.
+     $      ((Hblen_x.gt.0).or.(Hblen_y.gt.0)) ) then
+            call nesajr (F_trp(minx,miny,1,n), wk2, LDIST_DIM,nkphy,
+     $                                          0,0,Hblen_x,Hblen_y)
+            call nesajr (F_trm(minx,miny,1,n), wk2, LDIST_DIM,nkphy,
+     $                                          0,0,Hblen_x,Hblen_y)
+         endif
+
+*        humidity tendencies for diagnostic (surface) level
+!$omp parallel
+         if (Tr3d_name_S(n).eq.'HU') then
+!$omp do
+         do j= j0, jn
+         do i= i0, in
+            hdia(i,j) = F_trp(i,j,nkphy,n) + Cstv_dt_8*F_trm(i,j,nkphy,n)
+         end do
+         end do
+!$omp enddo
+         endif
+!$omp do
+         do k=1,l_nk+1
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+                trp(i,j,k) = trp(i,j,k) + Cstv_dt_8*F_trm(i,j,k,n)
+            end do
+            end do
+         end do
+!$omp enddo
+!$omp end parallel
+
+c        if (Acid_test_L)
+c        core grid
+c    %   call glbstat (trp,phyt_name_S(n)(1:2)//'T1',LDIST_DIM,G_nk,5+acid_i0,
+c    %        G_ni-4-acid_in,5+acid_j0,G_nj-4-acid_jn,1,G_nk)
+c        physics grid
+c        call glbstat (trp,phyt_name_S(n)(1:2)//'T1',LDIST_DIM,G_nk,
+c    %    8+acid_i0,G_ni-7-acid_in,8+acid_j0,G_nj-7-acid_jn,1,G_nk)
+
+         endif
+      end do
+*
+*
 *
 *     __________________________________________________________________
 *

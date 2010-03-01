@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r zongini - initialization of the zonal diagnostics package
 *
 #include "model_macros_f.h"
@@ -65,7 +50,6 @@
 #include "p_zong.cdk"
 *
 #include "grd.cdk"
-#include "geomg.cdk"
 #include "geomn.cdk"
 *
 #include "lun.cdk"
@@ -75,6 +59,9 @@
 #include "itf_phy_config.cdk"
 *
 #include "ptopo.cdk"
+*
+#include "type.cdk"
+#include "ver.cdk"
 *
 **
 *     INZONO3 arguments pour which will be calculated here
@@ -408,7 +395,7 @@ CCC               mp(3,2) =  cos( latr(ij) )
 *
       call inzono3(poid, rang, theta, P_zong_znli, ndelt,
      %       P_zong_znmod, P_zong_znsrf, P_zong_znsrf_s, P_zong_znprf,
-     %       P_zong_znprf_s, nlatmn, irot, Lun_zonl, Geomg_hyb, Out3_etik_s,
+     %       P_zong_znprf_s, nlatmn, irot, Lun_zonl, Ver_hyb%d, Out3_etik_s,
      %       Out3_date, PG_ni, PG_nj, G_nk, nbin, Lun_out,
      %       trim( noutzon_S ))
 *

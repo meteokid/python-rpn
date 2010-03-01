@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r nest_intt -- Linear interpolation in time of nesting data
 *
 #include "model_macros_f.h"
@@ -29,8 +14,6 @@
 * v3_01 - Desgagne M.               - initial version (after MC2 v_4.9.3)
 * v3_03 - Tanguay M.                - Adjoint Lam configuration
 * v3_20 - Pellerin P. and Y. Delage - Special interpolations for MEC 
-* v3_31 - Bilodeau B.               - Debug offline mode
-* v3_31 - Lee V.                    - add 3DF for Schm_offline_L
 *
 *implicits
 #include "glb_ld.cdk"
@@ -53,16 +36,17 @@
       external vmmlod,vmmget,vmmuld,newdate
       logical done
       character*16 datev
-      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat,np,ip,id
+      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,kk,dat,np,ip,id
       real tr1,trf,a2,b2
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
-      integer err, key1(26+Tr3d_ntr), nvar, nstepno, key1_, 
+      integer err, key1(14+Tr3d_ntr), nvar, nstepno, key1_, 
      $        key2(Tr3d_ntr),key2_,n
       real*8  one,sid,rsid,dayfrac,tx,tf_nest,dtf,a,b,ax,bx
       integer int_temp
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
       data done /.false./
       save done,tf_nest
+
       if(Offline_int_accu_S.eq.'CONST')  int_temp=1
       if(Offline_int_accu_S.eq.'LINEAR') int_temp=2
 *
@@ -86,32 +70,20 @@
       key1(2)  = VMM_KEY(nest_v)
       key1(3)  = VMM_KEY(nest_t)
       key1(4)  = VMM_KEY(nest_psd)
-      key1(5)  = VMM_KEY(nest_pip)
-      key1(6)  = VMM_KEY(nest_fip)
-      key1(7)  = VMM_KEY(nest_td)
-      key1(8)  = VMM_KEY(nest_fi)
-      key1(9)  = VMM_KEY(nest_q)
-      key1(10) = VMM_KEY(nest_s)
-      key1(11) = VMM_KEY(nest_tp)
-      key1(12) = VMM_KEY(nest_uf)
-      key1(13) = VMM_KEY(nest_vf)
-      key1(14) = VMM_KEY(nest_tf)
-      key1(15) = VMM_KEY(nest_psdf)
-      key1(16) = VMM_KEY(nest_pipf)
-      key1(17) = VMM_KEY(nest_fipf)
-      key1(18) = VMM_KEY(nest_tdf)
-      key1(19) = VMM_KEY(nest_fif)
-      key1(20) = VMM_KEY(nest_qf)
-      key1(21) = VMM_KEY(nest_sf)
-      key1(22) = VMM_KEY(nest_tpf)
-      nvar = 22
+      key1(5)  = VMM_KEY(nest_s)
+      key1(6)  = VMM_KEY(nest_uf)
+      key1(7)  = VMM_KEY(nest_vf)
+      key1(8)  = VMM_KEY(nest_tf)
+      key1(9)  = VMM_KEY(nest_psdf)
+      key1(10) = VMM_KEY(nest_sf)
+      nvar = 10
 *
       if (.not. Schm_hydro_L) then
-         key1(23) = VMM_KEY(nest_w)
-         key1(24) = VMM_KEY(nest_mu)
-         key1(25) = VMM_KEY(nest_wf)
-         key1(26) = VMM_KEY(nest_muf)
-         nvar = 26
+         key1(11) = VMM_KEY(nest_w)
+         key1(12) = VMM_KEY(nest_qsec)
+         key1(13) = VMM_KEY(nest_wf)
+         key1(14) = VMM_KEY(nest_qsecf)
+         nvar = 14
       endif
 *
       err = vmmlod(key1,nvar)
@@ -119,29 +91,17 @@
       err = VMM_GET_VAR(nest_v)
       err = VMM_GET_VAR(nest_t)
       err = VMM_GET_VAR(nest_psd)
-      err = VMM_GET_VAR(nest_pip)
-      err = VMM_GET_VAR(nest_fip)
-      err = VMM_GET_VAR(nest_td)
-      err = VMM_GET_VAR(nest_fi)
-      err = VMM_GET_VAR(nest_q)
       err = VMM_GET_VAR(nest_s)
-      err = VMM_GET_VAR(nest_tp)
       err = VMM_GET_VAR(nest_uf)
       err = VMM_GET_VAR(nest_vf)
       err = VMM_GET_VAR(nest_tf)
       err = VMM_GET_VAR(nest_psdf)
-      err = VMM_GET_VAR(nest_pipf)
-      err = VMM_GET_VAR(nest_fipf)
-      err = VMM_GET_VAR(nest_tdf)
-      err = VMM_GET_VAR(nest_fif)
-      err = VMM_GET_VAR(nest_qf)
       err = VMM_GET_VAR(nest_sf)
-      err = VMM_GET_VAR(nest_tpf)
       if (.not. Schm_hydro_L) then
          err = VMM_GET_VAR(nest_w)
-         err = VMM_GET_VAR(nest_mu)
+         err = VMM_GET_VAR(nest_qsec)
          err = VMM_GET_VAR(nest_wf)
-         err = VMM_GET_VAR(nest_muf)
+         err = VMM_GET_VAR(nest_qsecf)
       endif
 *
       dayfrac = dble(Lctl_step)*Cstv_dt_8*rsid
@@ -149,7 +109,6 @@
       call prsdate (yy,mo,dd,hh,mm,ss,dum,datev)
       call pdfjdate2 (tx,yy,mo,dd,hh,mm,ss)
 *
-
       if (datev.gt.Lam_current_S) then
          dtf = (tx-tf_nest) * sid / Cstv_dt_8
          dayfrac = dble(Lam_nesdt)*rsid
@@ -159,51 +118,37 @@
          call pdfjdate2 (tf_nest,yy,mo,dd,hh,mm,ss)
          if (Lctl_step.gt.1) then
 *
-            if (.not.Schm_offline_L) then
-*               Copy contents from BCS_UF to BCS_U
+*           Copy contents from BCS_UF to BCS_U
 *
-                do i=1,bcs_sz
-                   bcs_u(i) = bcs_uf(i)
-                   bcs_v(i) = bcs_vf(i)
-                   bcs_t(i) = bcs_tf(i)
-                   bcs_psd(i) = bcs_psdf(i)
-                   bcs_pip(i) = bcs_pipf(i)
-                   bcs_fip(i) = bcs_fipf(i)
-                   bcs_td(i) = bcs_tdf(i)
-                   bcs_fi(i) = bcs_fif(i)
-                   bcs_q(i) = bcs_qf(i)
-                   bcs_s(i) = bcs_sf(i)
-                   bcs_tp(i) = bcs_tpf(i)
-                enddo
-                if (.not. Schm_hydro_L) then
-                   do i=1,bcs_sz
-                      bcs_w(i) = bcs_wf(i)
-                      bcs_mu(i) = bcs_muf(i)
-                   enddo
-                endif
-                do n=1,Tr3d_ntr
-                   id = (n-1)*bcs_sz+1
-                   do i=1,bcs_sz
-                      bcs_tr(id+i-1) = bcs_trf(id+i-1)
-                   enddo
-                enddo
+            do i=1,bcs_sz
+               bcs_u(i) = bcs_uf(i)
+               bcs_v(i) = bcs_vf(i)
+               bcs_t(i) = bcs_tf(i)
+               bcs_psd(i) = bcs_psdf(i)
+               bcs_s(i) = bcs_sf(i)
+            enddo
+            if (.not. Schm_hydro_L) then
+               do i=1,bcs_sz
+                  bcs_w(i) = bcs_wf(i)
+               enddo
             endif
+            do n=1,Tr3d_ntr
+               id = (n-1)*bcs_sz+1
+               do i=1,bcs_sz
+                  bcs_tr(id+i-1) = bcs_trf(id+i-1)
+               enddo
+            enddo
 *
 *           Copy contents from NEST_UF to NEST_U
 *
-            do k= 1, G_nk
+            do k= 1, G_nk+1
+            kk=min(k,G_nk)
             do j= 1, l_nj 
             do i= 1, l_ni
-               nest_u  (i,j,k) = nest_uf  (i,j,k)
-               nest_v  (i,j,k) = nest_vf  (i,j,k)
+               nest_u  (i,j,kk)= nest_uf  (i,j,kk)
+               nest_v  (i,j,kk)= nest_vf  (i,j,kk)
                nest_t  (i,j,k) = nest_tf  (i,j,k)
                nest_psd(i,j,k) = nest_psdf(i,j,k)
-               nest_pip(i,j,k) = nest_pipf(i,j,k)
-               nest_fip(i,j,k) = nest_fipf(i,j,k)
-               nest_td (i,j,k) = nest_tdf (i,j,k)
-               nest_fi (i,j,k) = nest_fif (i,j,k)
-               nest_q  (i,j,k) = nest_qf  (i,j,k)
-               nest_tp (i,j,k) = nest_tpf (i,j,k)
             end do
             end do
             end do
@@ -213,11 +158,12 @@
             end do
             end do
             if (.not. Schm_hydro_L) then
-               do k= 1, G_nk
+               do k= 0, G_nk+1
+               kk=max(k,1)
                do j= 1, l_nj 
                do i= 1, l_ni
-                  nest_w  (i,j,k) = nest_wf  (i,j,k)
-                  nest_mu (i,j,k) = nest_muf (i,j,k)
+                  nest_w    (i,j,kk)= nest_wf    (i,j,kk)
+                  nest_qsec (i,j,k) = nest_qsecf (i,j,k)
                end do
                end do
                end do
@@ -234,7 +180,7 @@
                do n=1,Tr3d_ntr
                   err = vmmget(key1(n),patr1,tr1)
                   err = vmmget(key2(n),patrf,trf)
-                  do k= 1, G_nk
+                  do k= 1, G_nk+1
                   do j= 1, l_nj 
                   do i= 1, l_ni
                      tr1 (i,j,k) = trf (i,j,k)
@@ -258,53 +204,37 @@
 *
       endif
 *
-
 *     Temporal linear interpolation
 *
       a = (tf_nest-tx)/ (tf_nest - tx + (dtf*Cstv_dt_8 * rsid) )
       b = one - a
-*
-      if (.not.Schm_offline_L) then
-          do i=1,bcs_sz
-             bcs_u(i) = a*bcs_u(i) + b*bcs_uf(i)
-             bcs_v(i) = a*bcs_v(i) + b*bcs_vf(i)
-             bcs_t(i) = a*bcs_t(i) + b*bcs_tf(i)
-             bcs_psd(i) = a*bcs_psd(i) + b*bcs_psdf(i)
-             bcs_pip(i) = a*bcs_pip(i) + b*bcs_pipf(i)
-             bcs_fip(i) = a*bcs_fip(i) + b*bcs_fipf(i)
-             bcs_td(i) = a*bcs_td(i) + b*bcs_tdf(i)
-             bcs_fi(i) = a*bcs_fi(i) + b*bcs_fif(i)
-             bcs_q(i) = a*bcs_q(i) + b*bcs_qf(i)
-             bcs_s(i) = a*bcs_s(i) + b*bcs_sf(i)
-             bcs_tp(i) = a*bcs_tp(i) + b*bcs_tpf(i)
-          enddo
-          if (.not. Schm_hydro_L) then
-              do i=1,bcs_sz
-                 bcs_w(i) = a*bcs_w(i) + b*bcs_wf(i)
-                 bcs_mu(i) = a*bcs_mu(i) + b*bcs_muf(i)
-              enddo
-          endif
-          do n=1,Tr3d_ntr
-             id = (n-1)*bcs_sz+1
-             do i=1,bcs_sz
-                bcs_tr(id+i-1) = a*bcs_tr(id+i-1) + b*bcs_trf(id+i-1)
-             enddo
-          enddo
+      do i=1,bcs_sz
+         bcs_u(i) = a*bcs_u(i) + b*bcs_uf(i)
+         bcs_v(i) = a*bcs_v(i) + b*bcs_vf(i)
+         bcs_t(i) = a*bcs_t(i) + b*bcs_tf(i)
+         bcs_psd(i) = a*bcs_psd(i) + b*bcs_psdf(i)
+         bcs_s(i) = a*bcs_s(i) + b*bcs_sf(i)
+      enddo
+      if (.not. Schm_hydro_L) then
+         do i=1,bcs_sz
+            bcs_w(i) = a*bcs_w(i) + b*bcs_wf(i)
+         enddo
       endif
+      do n=1,Tr3d_ntr
+         id = (n-1)*bcs_sz+1
+         do i=1,bcs_sz
+            bcs_tr(id+i-1) = a*bcs_tr(id+i-1) + b*bcs_trf(id+i-1)
+         enddo
+      enddo
 *
-      do k= 1, G_nk
+      do k= 1, G_nk+1
+      kk=min(k,G_nk)
       do j= 1, l_nj 
       do i= 1, l_ni
-         nest_u  (i,j,k) = a*nest_u  (i,j,k) + b*nest_uf  (i,j,k)
-         nest_v  (i,j,k) = a*nest_v  (i,j,k) + b*nest_vf  (i,j,k)
+         nest_u  (i,j,kk)= a*nest_u  (i,j,kk)+ b*nest_uf  (i,j,kk)
+         nest_v  (i,j,kk)= a*nest_v  (i,j,kk)+ b*nest_vf  (i,j,kk)
          nest_t  (i,j,k) = a*nest_t  (i,j,k) + b*nest_tf  (i,j,k)
          nest_psd(i,j,k) = a*nest_psd(i,j,k) + b*nest_psdf(i,j,k)
-         nest_pip(i,j,k) = a*nest_pip(i,j,k) + b*nest_pipf(i,j,k)
-         nest_fip(i,j,k) = a*nest_fip(i,j,k) + b*nest_fipf(i,j,k)
-         nest_td (i,j,k) = a*nest_td (i,j,k) + b*nest_tdf (i,j,k)
-         nest_fi (i,j,k) = a*nest_fi (i,j,k) + b*nest_fif (i,j,k)
-         nest_q  (i,j,k) = a*nest_q  (i,j,k) + b*nest_qf  (i,j,k)
-         nest_tp (i,j,k) = a*nest_tp (i,j,k) + b*nest_tpf (i,j,k)
       end do
       end do
       end do
@@ -315,32 +245,32 @@
       end do
       end do
       if (.not. Schm_hydro_L) then
-         do k= 1, G_nk
+         do k= 0, G_nk+1
+         kk=max(k,1)
          do j= 1, l_nj 
          do i= 1, l_ni
-            nest_w  (i,j,k) = a*nest_w (i,j,k) + b*nest_wf (i,j,k)
-            nest_mu (i,j,k) = a*nest_mu(i,j,k) + b*nest_muf(i,j,k)
+            nest_w   (i,j,kk)= a*nest_w   (i,j,kk)+ b*nest_wf   (i,j,kk)
+            nest_qsec(i,j,k) = a*nest_qsec(i,j,k) + b*nest_qsecf(i,j,k)
          end do
          end do
          end do
       end if
       err = vmmuld(key1,nvar)
-
+      key1_ = VMM_KEY (nest_tr)
+      key2_ = VMM_KEY (nest_trf)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+         key2(n) = key2_ + n
+      end do
 
       if (Tr3d_ntr.gt.0) then
-         key1_ = VMM_KEY (nest_tr)
-         key2_ = VMM_KEY (nest_trf)
-         do n=1,Tr3d_ntr
-            key1(n) = key1_ + n
-            key2(n) = key2_ + n
-         end do
-         err = vmmlod(key1,Tr3d_ntr)
-         err = vmmlod(key2,Tr3d_ntr)
          if ( .not.Schm_offline_L) then
+             err = vmmlod(key1,Tr3d_ntr)
+             err = vmmlod(key2,Tr3d_ntr)
              do n=1,Tr3d_ntr
                 err = vmmget(key1(n),patr1,tr1)
                 err = vmmget(key2(n),patrf,trf)
-                do k= 1, G_nk
+                do k= 1, G_nk+1
                 do j= 1, l_nj 
                 do i= 1, l_ni
                    tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
@@ -378,7 +308,7 @@
                              bx = b
                 endif
 *
-                do k= 1, G_nk
+                do k= 1, G_nk+1
                 do j= 1, l_nj 
                 do i= 1, l_ni
                    tr1 (i,j,k) = ax*tr1(i,j,k) + bx*trf(i,j,k)
@@ -399,7 +329,7 @@
                        endif
                     enddo
                     enddo
-                    do k=2, G_nk
+                    do k=2, G_nk+1
                     do j= 1, l_nj
                     do i= 1, l_ni
                        tr1 (i,j,k)=tr1 (i,j,1)

@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r vrtd - vertical diffusion on u and v and theta
 *
 #include "model_macros_f.h"
@@ -43,6 +28,7 @@
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "vt1.cdk"
+#include "vtx.cdk"
 #include "schm.cdk"
 #include "intuv.cdk"
 #include "vrtd.cdk"
@@ -64,35 +50,37 @@
       real aa(LDIST_SIZ,l_nk),bb(LDIST_SIZ,l_nk),cc(LDIST_SIZ,l_nk),
      $     dd(LDIST_SIZ,l_nk)
 
-      key( 1) = VMM_KEY(qt1)
+      call gem_stop('vrtd : A revoir pour staggering',-1)
+
+      key( 1) = VMM_KEY(qptx)
       key( 2) = VMM_KEY(tt1)
       key( 3) = VMM_KEY(ut1)
       key( 4) = VMM_KEY(vt1)
       if (Schm_hydro_L) then
          err = VMMLOD(key,4)
-         err = VMM_GET_VAR(qt1)
+         err = VMM_GET_VAR(qptx)
          err = VMM_GET_VAR(tt1)
          err = VMM_GET_VAR(ut1)
          err = VMM_GET_VAR(vt1)
          do k= 1,l_nk
          do j= 1, l_nj
          do i= 1, l_ni
-            pres(i,j,k) = qt1(i,j,k)
+            pres(i,j,k) = qptx(i,j,k)
          end do
          end do
          end do
       else
-         key(5) = VMM_KEY(qpt1)
+         key(5) = VMM_KEY(qsect1)
          err = vmmlod(key,5)
-         err = VMM_GET_VAR(qt1)
+         err = VMM_GET_VAR(qptx)
          err = VMM_GET_VAR(tt1)
          err = VMM_GET_VAR(ut1)
          err = VMM_GET_VAR(vt1)
-         err = VMM_GET_VAR(qpt1)
+         err = VMM_GET_VAR(qsect1)
          do k=1,l_nk
          do j= 1, l_nj
          do i= 1, l_ni
-            pres(i,j,k) = qt1(i,j,k) - qpt1(i,j,k)
+            pres(i,j,k) = qptx(i,j,k) - qsect1(i,j,k)
          end do
          end do
          end do

@@ -1,0 +1,126 @@
+***s/r diag_fip1 - Builds model (non-) hydrostatic perturbation and 
+*     total geopotential from temperature and "surface pressure" for
+*     vertically staggered variables as in Girard formulation 1.
+*
+#include "model_macros_f.h"
+*
+      subroutine diag_fip1(F_fip,F_t,F_qp,F_qsec,F_fis,
+     $                                  i0,in,j0,jn,nk)
+*     
+      implicit none
+*     
+      integer i0,in,j0,jn,nk
+      real F_fip(LDIST_SHAPE,0:Nk+1)
+      real F_t(LDIST_SHAPE,Nk+1), F_qp(LDIST_SHAPE,0:Nk+1)
+      real F_qsec(LDIST_SHAPE,0:Nk+1), F_fis(LDIST_SHAPE)
+*
+*author
+*
+* Andre Plante july 2006.
+*
+*revision
+*
+*object
+*       see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_fip        O    - perturbation hydrostatic geopotential height
+*                     Note the virtual levels!
+* F_csh        I    - hydrostatic pressure at surface from 
+*                     csh=2*sinh(s/2)*exp(s/2), s=ln(pis/Zs)
+* F_t          I    - temperature
+* F_qsec       I    - non-hydro perturbation of log(p)
+* F_fis        I    - surface geopotential height
+* i0,in,j0,jn  I    - index over which computation will be made.
+*
+*implicits
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "cstv.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "schm.cdk"
+*     
+**
+      integer i,j,k,nij
+      real*8 one,half,pr1_8,xxx,yyy,
+     $       piop(i0:in,j0:jn,nk+1),dqpmqs(i0:in,j0:jn,nk+1),
+     $       xtmp_8 (i0:in,j0:jn)
+*
+      parameter( one = 1.d0, half = .5d0 )
+*     ---------------------------------------------------------------
+*
+      if(
+     $     i0.lt.1-G_halox   .or.
+     $     in.gt.l_ni+G_halox.or.
+     $     j0.lt.1-G_haloy   .or.
+     $     jn.gt.l_nj+G_haloy
+     $     )then
+         call gem_stop('diag_fit1 : dimension error',-1)
+      endif
+
+      nij=(in - i0 + 1)*(jn - j0 + 1)
+
+!$omp parallel private (pr1_8,xtmp_8,xxx,yyy)
+*
+      if(Schm_hydro_L)then
+!$omp do
+         do k=1,G_nk+1
+            do j=j0,jn
+            do i=i0,in
+               piop(i,j,k) = one
+               dqpmqs(i,j,k) = F_qp(i,j,k) - F_qp(i,j,k-1)
+            end do
+            end do
+         end do
+!$omp enddo
+      else
+!$omp do         
+         do k=1,G_nk+1
+            do j=j0,jn
+            do i=i0,in
+               xtmp_8(i,j)=-half*(F_qsec(i,j,k)+F_qsec(i,j,k-1))
+               dqpmqs(i,j,k) =    F_qp(i,j,k) -   F_qp(i,j,k-1)
+     $                        - F_qsec(i,j,k) + F_qsec(i,j,k-1)
+            end do
+            end do   
+            call vexp(piop(i0,j0,k),xtmp_8,nij)
+         end do
+!$omp enddo
+      endif
+*      
+      xxx=Ver_zodz_8(G_nk+1)
+      yyy=half*Dcst_rgasd_8*Cstv_tstr_8/xxx
+!$omp do 
+      do j=j0,jn
+      do i=i0,in
+         pr1_8=piop(i,j,G_nk+1)/Cstv_tstr_8*(one+xxx*dqpmqs(i,j,G_nk+1))
+         F_fip(i,j,G_nk+1)=F_fis(i,j)-yyy*(F_t(i,j,G_nk+1)*pr1_8-one)
+      end do
+      end do
+!$omp enddo
+*
+!$omp do
+*     Note that index on F_fip goes to zero.
+      do j=j0,jn
+         do k= G_nk+1,1,-1
+         xxx=Ver_zodz_8(k)
+         yyy=Dcst_rgasd_8*Cstv_tstr_8/xxx
+         do i=i0,in
+            pr1_8=piop(i,j,k)/Cstv_tstr_8*(one+xxx*dqpmqs(i,j,k))
+            F_fip(i,j,k-1)=F_fip(i,j,k)+yyy*(F_t(i,j,k)*pr1_8-one)
+         end do
+         end do
+      end do
+!$omp enddo
+*
+!$omp end parallel
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 #if defined (DOC)
 *
 *revision
@@ -110,18 +95,25 @@
        DCL_DYNVAR(Hz1d,deltas_8, real*8, (*))
 *
        character*12 Hzd_type_S
-       logical Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L,Hzd_rwnd_L,
+       logical Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L,
      %         Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L,
      %         Hzd_1d_L,Hzd_hdif0_0_L,Hzd_hdif0_1_L,
      %         Hzd_hzdmain_0_L,Hzd_hzdmain_1_L
        integer Hzd_pwr
        real Hzd_lnR,Hzd_cdiff
-*
+       MARK_COMMON_BEG(hzdi)
        common /hzdi/ Hzd_pwr
+       MARK_COMMON_END(hzdi)
+       MARK_COMMON_BEG(hzdr)
        common /hzdr/ Hzd_lnR,Hzd_cdiff
+       MARK_COMMON_END(hzdr)
+       MARK_COMMON_BEG(hzdc)
        common /hzdc/ Hzd_type_S
+       MARK_COMMON_END(hzdc)
+       MARK_COMMON_BEG(hzdl)
        common /hzdl/ Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L,
      %               Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L,
      %               Hzd_1d_L,Hzd_hdif0_0_L,Hzd_hdif0_1_L,
-     %               Hzd_hzdmain_0_L,Hzd_hzdmain_1_L,Hzd_rwnd_L
+     %               Hzd_hzdmain_0_L,Hzd_hzdmain_1_L
+       MARK_COMMON_END(hzdl)
 *

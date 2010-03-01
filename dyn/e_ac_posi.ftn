@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_ac_posi -  find the positional points to extract cascade
 *                   grid given the analyse files
 #include "model_macros_f.h"
@@ -29,17 +14,13 @@
 *        Vivian Lee      - 2006 (from MC2 ac_posi)
 *revision
 * v3_30 - Lee V.       - initial version for GEMDM
-* v3_31 - Tanguay M.   - Allow same grid in analysis and in model (BCS mode)
-* v3_33 - Tanguay M.   - Add epsilon_8 
-*
+**
 #include "e_grids.cdk"
 #include "e_anal.cdk"
 #include "e_grdc.cdk"
-#include "path.cdk"
-#include <clib_interface.cdk>
-#include "e_mta.cdk"
 *
-      character*1024 rootfn
+      integer  stretch_axis2
+      external stretch_axis2
       character* 512 filen
       integer i,j,k,cnt,err,dum1,dum2,gidi,gifi,gjfi
       integer is,nis,js,njs,jn,iw,niw,ie,jw,njw
@@ -50,11 +31,7 @@
       parameter( ONE_8   = 1.0 )
       parameter( CLXXX_8 = 180.0 )
 *
-      real*8, parameter :: EPSILON_8 = 1.0e-5 
-*
 *---------------------------------------------------------------------
-*
-      e_same_size_L = .FALSE. 
 *
       e_ac_posi = -1
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
@@ -91,7 +68,7 @@
       if (e_grdc_gid.ge.e_grdc_gif) e_grdc_gid = 0
 *
       do i=1,dimgy
-         if (ypx(i)-EPSILON_8.le.yfi(1)) e_grdc_gjd=i
+         if (ypx(i).le.yfi(1)) e_grdc_gjd=i
          if (ypx(i).le.yfi(F_width+1)) e_grdc_gjdi=i
          if (ypx(i).le.yfi(njfi)) e_grdc_gjf=i
          if (ypx(i).le.yfi(njfi-F_width)) gjfi=i
@@ -107,18 +84,8 @@
             e_grdc_gif = e_grdc_gif + 3
             e_grdc_gjf = e_grdc_gjf + 3
          else
-*
-         if ( (e_grdc_gid.eq.1) .and. (e_grdc_gif.eq.dimgx) .and.
-     $        (e_grdc_gjd.eq.1) .and. (e_grdc_gjf.eq.dimgy) ) then
-*
-         print *,'E_AC_POSI: same_size grid as analysis'
-         e_same_size_L = .TRUE. 
-*
-         else
-         e_grdc_gid = 0
-         e_grdc_gjd = 0
-         endif
-*
+            e_grdc_gid = 0
+            e_grdc_gjd = 0
          endif
       else
          e_grdc_gid = 0
@@ -139,40 +106,48 @@
       if (4.*b2*(n2-b2)/n2/n2.gt.0.95) e_grdc_hbsn = -1
       write (6,1003) e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf
       if ((e_grdc_hbsn.le.0).or.(e_grdc_hbwe.le.0)) then
-         If (F_bcs_hollow_L) write(6,1005)
+         write(6,1005)
          F_bcs_hollow_L = .false.
-         e_grdc_ni = e_grdc_gif-e_grdc_gid+1
-         e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
-      else
+      endif
+*
+* Write out the 3df_filemap.txt
+*
+      filen='process/casc/3df_filemap.txt'
+      open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
+      write (9,'(2i8,4e15.7,2i10)') 
+     $               idg,jdg,
+     $               xg_8(e_grdc_gid),xg_8(e_grdc_gif),
+     $               yg_8(e_grdc_gjd),yg_8(e_grdc_gjf),
+     $               e_grdc_gif-e_grdc_gid+1,e_grdc_gjf-e_grdc_gjd+1
+      e_ac_posi = 0
+      close (9)
+*
 * Calculate indices for BCS output
-         call bcs_hollow(e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,
+      call bcs_hollow(e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,
      $                e_grdc_gjdi,e_grdc_hbsn,e_grdc_hbwe,is,nis,j
      $                s,njs,jn,iw,niw,ie,jw,njw)
-         e_grdc_is  = is - e_grdc_gid+1 !Grdc_gid
-         e_grdc_nis = nis
-         e_grdc_js  = js - e_grdc_gjd+1 !grdc_gjd
-         e_grdc_njs = njs
-         e_grdc_jn  = jn - e_grdc_gjd+1 !Grdc_gjf-njs
+      e_grdc_is  = is - e_grdc_gid+1 !Grdc_gid
+      e_grdc_nis = nis
+      e_grdc_js  = js - e_grdc_gjd+1 !grdc_gjd
+      e_grdc_njs = njs
+      e_grdc_jn  = jn - e_grdc_gjd+1 !Grdc_gjf-njs
 *
-         e_grdc_iw  = iw - e_grdc_gid+1 !Grdc_gid
-         e_grdc_niw = niw
-         e_grdc_ie  = ie - e_grdc_gid+1 !Grdc_gif-niw
+      e_grdc_iw  = iw - e_grdc_gid+1 !Grdc_gid
+      e_grdc_niw = niw
+      e_grdc_ie  = ie - e_grdc_gid+1 !Grdc_gif-niw
 *
-         e_grdc_jw  = jw - e_grdc_gjd+1 !Grdc_gjdi-2
-         e_grdc_njw = njw
+      e_grdc_jw  = jw - e_grdc_gjd+1 !Grdc_gjdi-2
+      e_grdc_njw = njw
 *
-         e_grdc_ni = e_grdc_gif-e_grdc_gid+1
-         e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
-         write(6,1006)
-         print *,'is,nis,js,njs,jn,iw,niw,ie,jw,njw=',
-     $        e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_njs,e_grdc_jn,
-     $        e_grdc_iw,e_grdc_niw,e_grdc_ie,e_grdc_jw,e_grdc_njw
-      endif
-
-      e_ac_posi = 0
+      e_grdc_ni = e_grdc_gif-e_grdc_gid+1
+      e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
+      write(6,1006)
+      print *,'is,nis,js,njs,jn,iw,niw,ie,jw,njw=',
+     $   e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_njs,e_grdc_jn,
+     $   e_grdc_iw,e_grdc_niw,e_grdc_ie,e_grdc_jw,e_grdc_njw
 *
  1003 format (' Cascade grid:gid,gif,gjd,gjf ',4i6)
- 1005 format (' BCS HOLLOW chosen but grid is too small: 3DF Cascade grid output only')
+ 1005 format (' 3DF Cascade grid output')
  1006 format (' For HOLLOW BCS Cascade grid output')
 *--------------------------------------------------------------------
       return

@@ -1,24 +1,9 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 *
       integer
 *busdyn
      $        umoins,vmoins,tmoins,gzmoins6,humoins,pmoins,
      $        uplus ,vplus ,tplus ,huplus ,pplus ,phis,
-     $        omegap,sigm,sigt,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
+     $        omegap,sigm,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
      $        fccpl,fvcpl,mccpl,
 *busvol
      $        km,kt,bm,bt,flusolis,rt,pr,fc,fv,tdew,uphytd,
@@ -29,11 +14,11 @@
      $        wsoil,snodp,icedp,glsea,glsea0,ufcp,vfcp,
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp,
      $        fdsi, tss, cosz, tdiag, udiag, vdiag,
-     $        qdiag,tmice,icel
+     $        qdiag,tmice
       common /dynbusid/
      $        umoins,vmoins,tmoins,gzmoins6,humoins,pmoins,
      $        uplus ,vplus ,tplus ,huplus ,pplus ,phis,
-     $        omegap,sigm,sigt,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
+     $        omegap,sigm,dxdy,dz,eponmod,fcpf,fcpw,vlsp,
      $        fccpl,fvcpl,mccpl,
      $        km,kt,bm,bt,flusolis,rt,pr,fc,fv,tdew,
      $        uphytd,vphytd,tphytd,hucond,
@@ -42,18 +27,18 @@
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp,
      $        fdsi, tss, cosz, tdiag, udiag, vdiag,
      $        qdiag,tmice,dm_c,dm_r,dm_i,dm_s,dm_g,dm_h,slw,vis,
-     &        zet,ze_r,ze_i,ze_s,ze_g,ze_h,icel
+     &        zet,ze_r,ze_i,ze_s,ze_g,ze_h
 
 
       integer tr3d_maxn
       parameter (tr3d_maxn=25)
       integer h2o_maxn,h2o_ntr
-      parameter (h2o_maxn=8)
+      parameter (h2o_maxn=7)
       character*8 h2o_liste_S(h2o_maxn),h2o_name_S(h2o_maxn)
       integer h2o_ind(3,h2o_maxn)
       common /h2otr_i/ h2o_ntr,h2o_ind
       common /h2otr_s/ h2o_name_S
-      data h2o_liste_S / 'HU','QB','QC','QL','QI','QN','QJ','QH' /
+      data h2o_liste_S / 'HU','QC','QR','QI','QN','QG','QH' /
 *
       integer phyt_maxn,phyt_ntr
       parameter (phyt_maxn=12)

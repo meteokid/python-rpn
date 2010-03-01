@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_slb - Computes the physical tendencies
 *
 #include "model_macros_f.h"
@@ -21,21 +6,21 @@
      $                      F_pvptr, F_cvptrp,F_cvptrm,
      $                      NPTR, NCPTR, F_trp, F_trm, 
      $                      F_tdu, F_tdv,  F_tdt, F_kmm, F_ktm,
-     $                      DIST_DIM, Nk )
+     $                      DIST_DIM, nkphy )
 *
       implicit none
 *
-      integer F_cpu, F_step, nvvv, nvov, DIST_DIM, Nk, NPTR,NCPTR
+      integer F_cpu, F_step, nvvv, nvov, DIST_DIM, nkphy, NPTR,NCPTR
       integer*8 F_pvptr(NPTR)
       integer*8 F_cvptrp(NCPTR),F_cvptrm(NCPTR)
 *
-      real F_tdu     (DIST_SHAPE,Nk)
-      real F_tdv     (DIST_SHAPE,Nk)
-      real F_tdt     (DIST_SHAPE,Nk)
-      real F_trp     (DIST_SHAPE,Nk,*)
-      real F_trm     (DIST_SHAPE,Nk,*)
-      real F_kmm     (DIST_SHAPE,Nk)
-      real F_ktm     (DIST_SHAPE,Nk)
+      real F_tdu     (DIST_SHAPE,nkphy)
+      real F_tdv     (DIST_SHAPE,nkphy)
+      real F_tdt     (DIST_SHAPE,nkphy)
+      real F_trp     (DIST_SHAPE,nkphy,*)
+      real F_trm     (DIST_SHAPE,nkphy,*)
+      real F_kmm     (DIST_SHAPE,nkphy)
+      real F_ktm     (DIST_SHAPE,nkphy)
       real F_obusval (*)
       real F_cobusval(*)
 
@@ -65,8 +50,6 @@
 *                             huphytd,qcphytd,qrphytd,qgphytd,qiphytd
 *                             Eliminations of processus specific physics
 *                             tendencies.
-* v3_31 - Desgagne M.       - new coupling interface to OASIS
-* v3_31 - Desgagne M.       - restart with physics BUSPER
 *
 *object
 *     See above id.
@@ -90,6 +73,8 @@
 * F_tdt        O    - total virtual temperatur tndency
 * F_kmm        O    - momentum vertical diffusion coefficients
 * F_ktm        O    - thermodynamic vertical diffusion coefficients
+* DIST_DIM
+* nkphy
 *----------------------------------------------------------------
 *
 *implicits
@@ -111,7 +96,7 @@
 #include "itf_phy_busind.cdk"
 #include "itf_chm_busind.cdk"
 #include "v4dg.cdk"
-#include "itf_cpl.cdk"
+#include "itf_cpl_cplg.cdk"
 *
 *modules
 *
@@ -125,7 +110,8 @@
       integer busaddr,offbo,offbb,mult,cnt
       real dt,con
 *
-      real busdyn(max(1,p_bdyn_siz)), busvol(max(1,p_bvol_siz)),
+      real busdyn(max(1,p_bdyn_siz)), busdyn_copy(max(1,p_bdyn_siz)),
+     $     busvol(max(1,p_bvol_siz)),
      $     busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
       pointer (pabusper,busper(*))
 *
@@ -140,8 +126,8 @@
 *     ---------------------------------------------------------------
 *
       if ((Lun_out.gt.0).and.(F_cpu.eq.1)) then
-         write(Lun_out,1000) 'PHYSICS STEP: CMC/RPN PHYSICS',F_step
-         if (Schm_chems_L) write(Lun_out,1000) 'CHEMISTRY STEP',F_step
+         write(Lun_out,1000)
+         if (Schm_chems_L) write(Lun_out,1005)
       endif
 *
       dumpbus_L = .false.
@@ -194,36 +180,54 @@
       busvol = 0.0
       j = jdo + p_offj
 *
+c$$$ todo: 
       call itf_phy_fillbus ( busdyn, busper ,busent, busvol,
-     $         F_pvptr, NPTR, F_trm,F_trp, j, F_step, LDIST_DIM, l_nk )
+     $         F_pvptr, NPTR, F_trm,F_trp, j, F_step, LDIST_DIM, nkphy )
 *
 *     Fill buses with fields produced by coupling
 *
-      if (C_coupling_L) call itf_cpl_fillbus ( busdyn,busper,busvol,j)
+      if (C_coupling_L .and. lg_get) 
+     $    call itf_cpl_fillbus ( busdyn, busper, busvol, j)
 *
 *     Run physics on row jdo
 *      
+*
 *     If active chemical scheme, fill chemical buses with jdo row.
 *
       if (Schm_chems_L) then
          chmbusvol = 0.0
+c$$$ todo: 
          call itf_chm_fillbus (chmbusdyn,chmbusper,chmbusent,chmbusvol,
-     $                     F_cvptrp ,F_cvptrm,j,F_step,LDIST_DIM,l_nk)
+     $                     F_cvptrp ,F_cvptrm,j,F_step,LDIST_DIM,nkphy)
       endif
 *
 *     Run physics on row jdo
+*
+      busdyn_copy = busdyn
 *
       if ( .NOT. P_pset_second_L ) then
          call phy_exe
      $             (busent ,busdyn ,busper ,busvol ,
      $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
-     $              dt, jdo, F_step, F_cpu, p_ni, Nk)
+     $              dt, jdo, F_step, F_cpu, p_ni, nkphy)
       else
         call itf_phy_exe
      $             (busent ,busdyn ,busper ,busvol ,
      $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
-     $              dt, jdo, F_step, F_cpu, p_ni, Nk)
+     $              dt, jdo, F_step, F_cpu, p_ni, nkphy)
       endif
+
+c$$$      print *,'---- phy_slb ----',j,p_nj/2
+c$$$      if (j.eq.p_nj/2) then
+c$$$         call statfldslb(busvol(uphytd)  ,'uphytd',p_ni,nkphy)
+c$$$         call statfldslb(busvol(vphytd)  ,'vphytd',p_ni,nkphy)
+c$$$         call statfldslb(busvol(tphytd)  ,'tphytd',p_ni,nkphy)
+c$$$         do n=1,phyt_ntr
+c$$$            call statfldslb(busvol(phyt_ind(3,n))  ,'phyt',p_ni,nkphy)
+c$$$         enddo
+c$$$         call statfldslb(busvol(km)  ,'km',p_ni,nkphy)
+c$$$         call statfldslb(busvol(kt)  ,'kt',p_ni,nkphy)
+c$$$      endif
 
       if (Schm_chems_L) then
 *
@@ -234,12 +238,13 @@
      $                chm_bdyn_top,chm_bper_top  ,chm_bvol_top,chm_bent_top,
      *                busent      ,busdyn       ,busper       ,busvol      ,
      *                p_bent_siz  ,p_bdyn_siz   ,p_bper_siz   ,p_bvol_siz  ,
-     *                dt,jdo,F_step,F_cpu,p_ni,chm_ni,Nk)
+     *                dt,jdo,F_step,F_cpu,p_ni,chm_ni,nkphy)
 *
 *     Put back 2D slabs to 3D tracer space 
 *
+c$$$ todo: 
          call itf_chm_apply (chmbusdyn,chmbusper,chmbusent,chmbusvol,
-     $                     F_cvptrp,F_cvptrm,j,F_step,LDIST_DIM,l_nk)
+     $                     F_cvptrp,F_cvptrm,j,F_step,LDIST_DIM,nkphy)
 *
 *     Load the output buses for chemical species (and related fields) that have been
 *     chosen for output.
@@ -251,12 +256,14 @@
 !$omp end critical
       endif
 *
+      busdyn = busdyn_copy
+*
       if (dumpbus_L) call dumpbus2( busdyn,busper,busvol, jdo )
 *
 *C  Combine tendencies of row jdo and store back in 3D space
 *
       con = cos(geomg_y_8(j)) / Dcst_rayt_8
-      do k = 1, l_nk
+      do k = 1, nkphy
       do i = 1, p_ni
          indx = (k-1)*p_ni+i-1
          ii = i + p_offi
@@ -272,7 +279,7 @@
 *
       do n=1,phyt_ntr
          if (phyt_ind(3,n).gt.0) then
-         do k= 1,Nk
+         do k= 1,nkphy
          do i= 1, p_ni
             indx = (k-1)*p_ni+i-1
             ii = i + p_offi
@@ -285,7 +292,8 @@
 *     Save vertical diffusion coefficients
 *
       if ( V4dg_conf.ne.0 ) then 
-        do k = 1, Nk-2
+c$$$ todo: Level diag [nkphy]?
+        do k = 1, nkphy-2
         do i = 1, p_ni
            indx = (k-1)*p_ni+i-1
            ii = i + p_offi
@@ -296,8 +304,8 @@
         do i= 1, p_ni
            indx = i-1
            ii = i + p_offi
-           F_kmm(ii,j,Nk-1) = busvol(bm + indx)
-           F_ktm(ii,j,Nk-1) = busvol(bt + indx)
+           F_kmm(ii,j,nkphy-1) = busvol(bm + indx)
+           F_ktm(ii,j,nkphy-1) = busvol(bt + indx)
         end do
       endif
 * 
@@ -385,8 +393,23 @@
       goto 100
 *
  650  continue
+      
+c$$$      call statfld3d(F_tdu  ,'Ftdu',LDIST_DIM,l_nj,l_nj,nkphy)
+c$$$      call statfld3d(F_tdv  ,'Ftdv',LDIST_DIM,l_nj,l_nj,nkphy)
+c$$$      call statfld3d(F_ktm  ,'Fkmm',LDIST_DIM,l_nj,l_nj,nkphy)
+c$$$      call statfld3d(F_ktm  ,'Fktm',LDIST_DIM,l_nj,l_nj,nkphy)
+c$$$      do n=1,phyt_ntr
+c$$$         call statfld3d(F_trp(1,1,1,n)  ,'Ftrp',LDIST_DIM,l_nj,l_nj,nkphy)
+c$$$         call statfld3d(F_trm(1,1,1,n)  ,'Ftrm',LDIST_DIM,l_nj,l_nj,nkphy)
+c$$$      enddo
+c$$$
+c$$$      print *,'---- [end] phy_slb ----'
+
 *
- 1000 format(/'PERFORM A ',a,' (step= ',i6,')'/52('='))
+ 1000 format(/'PERFORM A PHYSICS STEP: CMC/RPN PHYSICS (S/R itf_phy_SLB)'
+     $       /55('='))
+ 1005 format(/'AS WELL PERFORM CHEMISTRY STEP (S/R itf_phy_SL)'
+     $       /70('='))
 *
 *     ---------------------------------------------------------------
 *

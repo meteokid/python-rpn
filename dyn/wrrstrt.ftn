@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 *s/r wrrstrt - Write the restart file
 *
 #include "model_macros_f.h"
@@ -35,8 +20,6 @@
 * v3_21 - Lee V.            - Remove Tr2d tracers
 * v3_30 - Desgagne & Winger - Write one global binary restart file if required
 * v3_30 - Desgagne M.       - restart for coupling
-* v3_31 - Desgagne M.       - new coupling interface to OASIS
-* v3_31 - Desgagne M.       - restart with physics BUSPER
 *
 *object
 *	
@@ -50,12 +33,13 @@
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl.cdk"
+#include "itf_cpl_cplg.cdk"
 #include "glb_ld.cdk"
 #include "pres.cdk"
 #include "lam.cdk"
 #include "itf_chm_bus.cdk"
 #include "bcsmem.cdk"
+#include "zblen.cdk"
 *
 *
 *modules
@@ -81,10 +65,30 @@ C        Write one wa-file per tile
          Lun_rstrt = 0
          ier = fnom (Lun_rstrt,'restart','RND',0)
          call waopen (Lun_rstrt)
+         dim = p_bper_siz*p_nj
 *
          call wawrit (Lun_rstrt,Lctl_step      ,1,1)
          call wawrit (Lun_rstrt,Rstri_idon_L   ,2,1)
-         adr = 3
+         call wawrit (Lun_rstrt,dim            ,3,1)
+         adr = 4
+*
+         if (dim.gt.0) then
+            call wawrit (Lun_rstrt,Phy_busper3D,adr,p_bper_siz*p_nj)
+            adr = adr + p_bper_siz*p_nj
+*
+            if ( Init_balgm_L .and.
+     $      .not.Rstri_idon_L .and.
+     $           Rstri_half_L) then
+               call wawrit (Lun_rstrt,Rstri_half_L     ,adr,1)
+               adr = adr + 1
+               call wawrit (Lun_rstrt,Phy_busper3D_digf,adr,
+     $                                p_bper_siz*p_nj)
+               adr = adr + p_bper_siz*p_nj              
+            else
+               call wawrit (Lun_rstrt, .false. ,adr, 1)
+               adr = adr + 1
+            endif
+         endif
 *
          dim = chm_bper_siz*chm_nj
          call wawrit (Lun_rstrt,dim            ,adr,1)
@@ -106,16 +110,22 @@ C        Write one wa-file per tile
          adr = adr + 1
          call wawrit (Lun_rstrt, current_nest  ,adr, 1)
          adr = adr + 1 
-*
-         dim = 0
-         if (C_coupling_L) dim = nbusin
-         call wawrit (Lun_rstrt,dim           ,adr, 1)
-         adr = adr + 1
-         if (dim>0) then
-            call wawrit (Lun_rstrt, atm_busin ,adr, G_ni*dim)
-            adr = adr + G_ni*dim
+         if(Schm_theoc_L)then
+            adr = adr + 1
+            call wawrit (Lun_rstrt,Zblen_hmin,adr, 1)
          endif
 *
+!        Write global coupling information
+!        found in rla_msk and rga_cpl2phy
+*
+         if (C_coupling_L) then
+            call wawrit (Lun_rstrt, rla_msk ,adr, l_ni*l_nj)
+            adr = adr + l_ni*l_nj
+            dim = l_ni*l_nj*ig_max_inout_dim
+            call wawrit (Lun_rstrt, rga_cpl2phy ,adr, dim)
+            adr = adr + dim
+         endif
+*     
 C        Write Vmm-files
          ier = vmmckmx()
          call waclos(Lun_rstrt)
@@ -123,10 +133,8 @@ C        Write Vmm-files
 *
       endif
 *
-      call wrrstrt_phy (.false.)
-*
  2000 format(/,'WRITING A RESTART FILE AT TIMESTEP #',I8,
-     +       /,'====================================')
+     +       /,'=========================================')
 *
 *     ---------------------------------------------------------------
 *      

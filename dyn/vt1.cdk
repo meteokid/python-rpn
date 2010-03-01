@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 #if defined (DOC)
 *
 ***comdeck vt1.cdk
@@ -28,27 +13,16 @@
 * vt1                | y component of velocity                         |
 * wt1                | z component of velocity                         |
 * tt1                | T (temperature)                                 |
-* tdt1               | total divergence (dpi* dot / dpi* + D )         |
-* fit1               | phi (geopotential)                              |
-* qt1                | q = ln p                                        |
 * zz1                | vertical velocity dz/dt                         |
+* piup               | Upstream hydrostatic pressure at t-dt for omega |
 *--------------------|-------------------------------------------------|
-* tpt1               | T'       \                                      |
-* fipt1              | phi'      \  perturbations                      |
-* qpt1               | q'        /                                     |
-* pipt1              | pi'      /                                      |
+* qsect1             | q''       /                                     |
 *--------------------|-------------------------------------------------|
-* tplt1              | T'  linear                                      |
-*--------------------|-------------------------------------------------|
-* mut1               | nonhydro index mu=dp/dpi-1 [= 0 if hydro]       |
 * psdt1              | pi* dot (vert. vel. in pi* coord.)              |
 * st1                | ln (pi_s/z_s)                                   |
 *--------------------|-------------------------------------------------|
 * trt1               | passive tracer(s)                               |
 *--------------------|-------------------------------------------------|
-* xt1                | upstream x position                             |
-* yt1                | upstream y position                             |
-* zt1                | upstream z position                             |
 * xct1               | upstream x position in cartesian coordinate     |
 * yct1               | upstream y position in cartesian coordinate     |
 * zct1               | upstream z position in cartesian coordinate     |
@@ -62,26 +36,16 @@
 *changes to assure the equivalence statement below MARKS it.
 *
       MARK_COMMON_BEG (vt1)
-      DCL_VMMVAR( vt1,   ut1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,   vt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,   wt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,   tt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,  tdt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,  fit1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,   qt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,   zz1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,  tpt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1, fipt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,  qpt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1, pipt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1, tplt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,  mut1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1, psdt1, real, (LDIST_SHAPE,l_nk) )
-      DCL_VMMVAR( vt1,   st1, real, (LDIST_SHAPE)      )
-      DCL_VMMVAR( vt1,  trt1, real, (LDIST_SHAPE,l_nk,*) )
-      DCL_VMMVAR( vt1,   xt1, real, (l_ni*l_nj*l_nk) )
-      DCL_VMMVAR( vt1,   yt1, real, (l_ni*l_nj*l_nk) )
-      DCL_VMMVAR( vt1,   zt1, real, (l_ni*l_nj*l_nk) )
+      DCL_VMMVAR( vt1,   ut1, real, (LDIST_SHAPE,l_nk    ) )
+      DCL_VMMVAR( vt1,   vt1, real, (LDIST_SHAPE,l_nk    ) )
+      DCL_VMMVAR( vt1,   wt1, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt1,   tt1, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt1,   zz1, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt1,  piup, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt1,qsect1, real, (LDIST_SHAPE,0:l_nk+1) )
+      DCL_VMMVAR( vt1, psdt1, real, (LDIST_SHAPE,l_nk+1  ) )
+      DCL_VMMVAR( vt1,   st1, real, (LDIST_SHAPE)        )
+      DCL_VMMVAR( vt1,  trt1, real, (LDIST_SHAPE,l_nk+1,*) )
       DCL_VMMVAR( vt1,  xct1, real, (l_ni*l_nj*l_nk) )
       DCL_VMMVAR( vt1,  yct1, real, (l_ni*l_nj*l_nk) )
       DCL_VMMVAR( vt1,  zct1, real, (l_ni*l_nj*l_nk) )

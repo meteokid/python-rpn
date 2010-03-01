@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r readdyn - read the dynamics fields from entrance programs
 *
 #include "model_macros_f.h"
@@ -49,7 +34,6 @@
 * v3_20 - Gravel S.        - allow for initialization with ECMWF analyses
 * v3_21 - Dugas B.         - replace TD by ES in pressure mode
 * v3_30 - McTaggart-Cowan R. - update implementation of variable orography
-* v3_31 - Bilodeau B.      - do not interpolate winds in offline mode
 *
 *object
 *	
@@ -80,10 +64,16 @@
 #include "acq.cdk"
 #include "vtopo.cdk"
 #include "anal.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "func.cdk"
 *
 *modules
-      integer  bmf_gobe,bmf_get
+      integer  bmf_gobe,bmf_get, my_ii, my_jj,pnerr,key(4),nkey
       external bmf_gobe,bmf_get
+*
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
 *
       integer nvar,i,j,k,err, nk_anal
       real, pointer, dimension(:  ) :: lna,rna,sdd
@@ -95,14 +85,30 @@
       real, allocatable, dimension(:  ) :: pia, pibb, hyba,vlapse
       real, allocatable, dimension(:,:) ::zcol,tcol,vlna
       real, allocatable, dimension(:,:,:) ::  u_temp2,v_temp2,
-     $     xlnp, dz, dt, work
+     $     xlnp, dz, dt, work, p_t_geo
       real, dimension(l_ni,l_nj) :: pps, ps , topo_temp,ps_temp
       real dummy, conv,
      $     psmin, psmax, psmin_glob, psmax_glob
       integer errprdf,prdfsum
       logical NESD
+      real pia_special_t(l_nk+2),pibb_special_t(l_nk+2)
+      real pia_special_m(0:l_nk+2),pibb_special_m(0:l_nk+2)
+
+      real fact
+
 **
 *     ---------------------------------------------------------------
+*
+      key(1)=VMM_KEY(tdia)
+      key(2)=VMM_KEY(hdia)
+      key(3)=VMM_KEY(udia)
+      key(4)=VMM_KEY(vdia)
+      nkey=4
+      pnerr=vmmlod(key,nkey)
+      pnerr=VMM_GET_VAR(tdia)
+      pnerr=VMM_GET_VAR(hdia)
+      pnerr=VMM_GET_VAR(udia)
+      pnerr=VMM_GET_VAR(vdia)
 *
       if (Ptopo_myproc.eq.0) write(lun_out,9000) bmf_time1,bmf_time2
 *
@@ -112,7 +118,7 @@
      $        apsu_temp,apsv_temp,topu_temp,topv_temp, u_temp,v_temp,
      $        hu_temp,tt_temp,gz_temp, 
      $        ttu_temp,ttv_temp,gzu_temp,gzv_temp)
-
+*
       call acqui ( lna, rna, sdd, psu_temp, psv_temp, apsu_temp,
      $             apsv_temp, topu_temp,topv_temp, u_temp,v_temp,
      $             hu_temp,tt_temp, gz_temp, ttu_temp, ttv_temp, 
@@ -136,27 +142,30 @@
       endif
       endif
 *
-      allocate(work(l_ni,l_nj,Acqi_nktmp))
+      allocate(work(l_ni,l_nj,Acqi_nktmp+2))
+
       if(.not. Acql_vertint) then
 *---------------------------------------------------------------------
 *     INTERPOLATION IS NOT REQUIRED
 *---------------------------------------------------------------------
+                  
        if (.not.schm_offline_L) then
-         do k=1,g_nk
+         do k=1,g_nk+1
          do j=1,l_nj
          do i=1,l_ni
             Ind_t (i,j,k) = tt_temp(i,j,k) 
-            Ind_fi(i,j,k) = gz_temp(i,j,k)
             work  (i,j,k) = hu_temp(i,j,k)
          end do
          end do
          end do
        else
-         do k=1,g_nk
+         print*,'Please review for staggering'
+         call flush(6)
+         call gem_stop('readdyn',-1)
+         do k=1,g_nk+1
          do j=1,l_nj
          do i=1,l_ni
             Ind_t (i,j,k) = tt_temp(i,j,1)
-            Ind_fi(i,j,k) = gz_temp(i,j,1)
             work  (i,j,k) = hu_temp(i,j,1)
          end do
          end do
@@ -212,34 +221,96 @@
          enddo
          enddo
 *        Interpolate VT
-         call vte_hyb2hyb (work, Geomg_pia, Geomg_pibb,pps,G_nk,tt_temp,
-     $         pia,pibb, ps, nk_anal, Acqi_nbpts, 'VT',Acql_siganl)
-*
-*        Compute hydrostatic GZ on model's levels
-         do j=1,l_nj
-         do i=1,l_ni
-            gz_temp(i,j,g_nk)=topo_temp(i,j)
-         enddo
-         enddo
-*
-         call p0vt2gz_hyb ( gz_temp,Geomg_pia,Geomg_pibb,pps,
-     $                      work, Acqi_nbpts, g_nk,.false.,.false. )
-*
+         do k=1,g_nk+2
+            pia_special_t(k)=Ver_pia_spcl_8%t(k)
+            pibb_special_t(k)=Ver_pibb_spcl_8%t(k)
+         end do
+
          do k=1,g_nk
+            pia_special_m(k)=Ver_pia%m(k)
+            pibb_special_m(k)=Ver_pibb%m(k)
+         end do
+c        Top wind for diag wind
+         pia_special_m(0)=1.
+         pibb_special_m(0)=0.
+c        Special level near surface and surface
+         do k=g_nk+1,g_nk+2
+            pia_special_m(k)=Ver_pia_spcl_8%t(k)
+            pibb_special_m(k)=Ver_pibb_spcl_8%t(k)
+         end do
+
+         if(Schm_dPdlogZ_L)then
+            allocate(p_t_geo(l_ni,l_nj,Acqi_nktmp+2))
+            do k=2,g_nk
+               do j=1,l_nj
+               do i=1,l_ni
+                  p_t_geo(i,j,k)=sqrt(
+     $                 (Ver_pia%m(k  )+Ver_pibb%m(k  )*pps(i,j))*
+     $                 (Ver_pia%m(k-1)+Ver_pibb%m(k-1)*pps(i,j)))
+               end do
+               end do
+               do j=1,l_nj
+               do i=1,l_ni
+                  p_t_geo(i,j,1)=sqrt(
+     $                 (Ver_pia%t(1)+Ver_pibb%t(1)*pps(i,j))*
+     $                 (Ver_pia%m(1)+Ver_pibb%m(1)*pps(i,j)))
+c                  p_t_geo(i,j,1)=Ver_pia%t(1)+Ver_pibb%t(1)*pps(i,j)
+                  p_t_geo(i,j,g_nk+1)=sqrt(pps(i,j)*
+     $                 (Ver_pia%m(g_nk)+Ver_pibb%m(g_nk)*pps(i,j)))
+                  p_t_geo(i,j,g_nk+2)=pps(i,j)
+               end do
+               end do               
+            end do            
+            call vte_hyb2hyb_pres (work,p_t_geo,
+     $           G_nk+2,tt_temp,pia,pibb, ps, nk_anal, Acqi_nbpts,
+     $           'VT',Acql_siganl)
+         else
+            call vte_hyb2hyb (work,pia_special_t,pibb_special_t,pps,
+     $           G_nk+2,tt_temp,pia,pibb, ps, nk_anal, Acqi_nbpts,
+     $           'VT',Acql_siganl)
+            
+         endif
+*
+         if(Schm_phyms_L)then
+            do j=1,l_nj
+            do i=1,l_ni
+               tdia(i,j,3)  = work(i,j,g_nk+2) 
+            end do
+            end do         
+c         else
+c            do j=1,l_nj
+c            do i=1,l_ni
+cc              Put TT 12000 in special level with no physics.
+c               work(i,j,g_nk+1) = work(i,j,g_nk+2) 
+c            end do
+c            end do
+         endif
+
+         do k=1,g_nk+1
          do j=1,l_nj
          do i=1,l_ni
-            Ind_fi(i,j,k) = gz_temp(i,j,k)
             Ind_t(i,j,k)  = work(i,j,k) 
          end do
-         end do         
-         end do   
+         end do
+         end do
 *
          if ( Schm_moist_L ) then
-            call vte_hyb2hyb ( work, Geomg_pia, Geomg_pibb,pps,G_nk,
-     $                         hu_temp,pia,pibb, ps, nk_anal, 
-     $                         Acqi_nbpts, 'HU',Acql_siganl )
+            if(Schm_dPdlogZ_L)then
+               call vte_hyb2hyb_pres ( work,p_t_geo,
+     $              G_nk+2,hu_temp,pia,pibb, ps, nk_anal, Acqi_nbpts,
+     $              'HU',Acql_siganl )
+            else
+               call vte_hyb2hyb ( work, pia_special_t, pibb_special_t,pps,G_nk+2,
+     $              hu_temp,pia,pibb, ps, nk_anal, 
+     $              Acqi_nbpts, 'HU',Acql_siganl )
+            endif
+            do j=1,l_nj
+            do i=1,l_ni
+               hdia(i,j)  = work(i,j,G_nk+2) 
+            end do
+            end do
          else
-            do k= 1, G_nk
+            do k= 1, G_nk+2
             do j= 1, l_nj 
             do i= 1, l_ni 
                work(i,j,k)  = 0.0
@@ -265,14 +336,14 @@
      $                gzv_temp,ttv_temp, Acqi_niv*Acqi_njv, 
      $                nk_anal,Acql_siganl)
 *
-         allocate ( u_temp2(Acqi_niu,Acqi_nju,Acqi_nktmp), 
-     $              v_temp2(Acqi_niv,Acqi_njv,Acqi_nktmp) )
+         allocate ( u_temp2(Acqi_niu,Acqi_nju,0:Acqi_nktmp+2), 
+     $              v_temp2(Acqi_niv,Acqi_njv,0:Acqi_nktmp+2) )
 *
-         call vte_hyb2hyb ( u_temp2, Geomg_pia, Geomg_pibb, psu_temp,
-     $                  G_nk,u_temp, pia,pibb, apsu_temp, nk_anal, 
+         call vte_hyb2hyb ( u_temp2,pia_special_m,pibb_special_m, psu_temp,
+     $                  G_nk+3,u_temp, pia,pibb, apsu_temp, nk_anal, 
      $                  Acqi_niu*Acqi_nju, 'UU',Acql_siganl )
-         call vte_hyb2hyb ( v_temp2, Geomg_pia, Geomg_pibb, psv_temp,
-     $                  G_nk,v_temp, pia,pibb, apsv_temp, nk_anal, 
+         call vte_hyb2hyb ( v_temp2,pia_special_m,pibb_special_m, psv_temp,
+     $                  G_nk+3,v_temp, pia,pibb, apsv_temp, nk_anal, 
      $                  Acqi_niv*Acqi_njv, 'VV',Acql_siganl )
 *
          do k=1,g_nk
@@ -287,6 +358,22 @@
             enddo
             enddo
          enddo
+         do j=1,Acqi_nju
+            fact=dcst_knams_8*Geomg_cy_8 (j)/Dcst_rayt_8
+            do i=1,Acqi_niu
+               udia(i,j,1)=u_temp2(i,j,0)*fact
+               udia(i,j,2)=u_temp2(i,j,g_nk+1)*fact
+               udia(i,j,3)=u_temp2(i,j,g_nk+2)*fact
+            enddo
+         enddo
+         do j=1,Acqi_njv
+            fact=dcst_knams_8*Geomg_cyv_8(j)/Dcst_rayt_8
+            do i=1,Acqi_niv
+               vdia(i,j,1)=v_temp2(i,j,0)*fact
+               vdia(i,j,2)=v_temp2(i,j,g_nk+1)*fact
+               vdia(i,j,3)=v_temp2(i,j,g_nk+2)*fact
+            enddo
+         enddo              
 *
          deallocate ( u_temp2,v_temp2,apsu_temp,ttu_temp,ttv_temp,
      $                                             apsv_temp,hyba )
@@ -298,6 +385,10 @@
 *     ANALYSIS IS ON PRESSURE COORDINATES
 *---------------------------------------------------------------------
 *
+         print*,'Review for staggering'
+         call flush(6)
+         call gem_stop('readdyn',-2)
+
          allocate ( pia(Acqi_vterplv),
      $    zcol(Acqi_nim*Acqi_njm,Acqi_nktmp),vlapse(Acqi_nim*Acqi_njm),
      $    tcol(Acqi_nim*Acqi_njm,Acqi_nktmp),xlnp(l_ni,l_nj,Acqi_nktmp),
@@ -328,8 +419,8 @@
          do k=1,g_nk
          do j=1,l_nj
          do i=1,l_ni
-            xlnp(i,j,k) =  alog( Geomg_pia(k)
-     %                   + Geomg_pibb(k) * exp( ps(i,j) )) - conv
+            xlnp(i,j,k) =  dlog( Ver_pia_8%d(k)
+     %                   + Ver_pibb_8%d(k) * exp( ps(i,j) )) - conv
          enddo
          enddo
          enddo
@@ -346,18 +437,8 @@
             do j=1,l_nj
             do i=1,l_ni
                Ind_t (i,j,k) = -dt(i,j,k)/Dcst_rgasd_8
-               Ind_fi(i,j,k) =  dz(i,j,k)
             enddo
             enddo
-         enddo
-*
-*        reset GZ(i,1) top and GZ(i,nk) surface geopotential values
-*                to exact values
-*
-         do j=1,l_nj
-         do i=1,l_ni
-            Ind_fi(i,j,g_nk) = Ind_topo(i,j)
-         enddo
          enddo
 *
          call gz2p0 ( psu_temp,gzu_temp,topu_temp,zcol,tcol,
@@ -370,10 +451,9 @@
      $                                       lna, Acqi_vterplv, .true. )
 *
          if ( Schm_moist_L ) then
-            call vte_vrtical ( hu_temp, ps, Acqi_nbpts, g_nk, lna, 
+            call vte_vrtical ( hu_temp, ps, Acqi_nbpts, g_nk+1, lna, 
      $                                        Acqi_vterplv,.false. )
-*
-            do k= 1, G_nk
+            do k= 1, G_nk+1
             do j= 1, l_nj 
             do i= 1, l_ni 
                dz(i,j,k) = exp(xlnp(i,j,k))*100.
@@ -384,10 +464,10 @@
 *
 *           convert ES to HU
             call mesahu (work,hu_temp,dt,dummy,dz,
-     $                   3,.false.,Anal_cond_L,Acqi_nbpts,g_nk,
+     $                   3,.false.,Anal_cond_L,Acqi_nbpts,g_nk+1,
      $                   Acqi_nbpts)
          else
-            do k= 1, G_nk
+            do k= 1, G_nk+1
             do j= 1, l_nj 
             do i= 1, l_ni 
                work(i,j,k)  = 0.0
@@ -411,11 +491,9 @@
       call tr_init ( work,Acqi_datasp,bmf_time1,bmf_time2,Acqi_nktmp,
      $               pps,pia,pibb,ps_temp,Acqi_vterplv,l_ni,l_nj,NESD )
 *
-      if (.not.Schm_offline_L) then
       if (Acql_horzint) 
      $     call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju,
      $            Acqi_niv, Acqi_njv, g_nk, geomg_y_8(1), geomg_yv_8(1))
-      endif
 
 *     Convert wind from KNOTS TO M/S
       if ((.not.schm_offline_L).or.(Acqi_vterplv.gt.1)) then
@@ -454,6 +532,12 @@
         endif
         Ind_topo(1:l_ni,1:l_nj) = topo_temp
       endif
+CAP<
+CAP   Ecrire les champs interpoles pour debug
+c      call ecrir_entrees_stg(63,'mode',my_ii,my_jj,work,pps,
+c     $     psu_temp,psv_temp,Acqi_niu,Acqi_nju,Acqi_niv,Acqi_njv,G_nk)c
+c
+CAP>
 *
       deallocate ( u_temp,v_temp,gz_temp,tt_temp,hu_temp,work,lna,rna,
      $             sdd )
@@ -473,11 +557,11 @@
       do i=1,l_ni
          psmin = min( psmin, ps(i,j) )
          psmax = max( psmax, ps(i,j) )
-         Ind_q(i,j,g_nk) = alog(ps(i,j))
-         Ind_q(i,j,1   ) = alog(Pres_ptop*100.)
+c        NOTE : s wil be computed in predat
+         Ind_s(i,j)=ps(i,j)
       enddo
       enddo
-*      
+*     
       call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN",
      $                                                     "grid",err)
       call rpn_comm_allreduce(psmax,psmax_glob,1,"MPI_REAL","MPI_MAX",
@@ -498,10 +582,12 @@
      $          gz_temp, ttu_temp,ttv_temp,gzu_temp,gzv_temp)
 *
       call bmf_clear
-*
+*     
       call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
      $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
+      pnerr = vmmuld(key,nkey)
+*     
  9000 format(/,' TREATING INPUT DATA VALID AT: ',i8.6,'.',i8.8,
      +       /,' ===============================================')
 *

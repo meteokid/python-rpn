@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/p calF_omeg - compute vertical velocity in pressure coordinates
 *
 #include "model_macros_f.h"
@@ -27,82 +12,8 @@
       real F_omeg(DIST_SHAPE,Nk)
       real F_psd(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk)
       real F_s(DIST_SHAPE)
-*
-*author
-*     Andre Methot - cmc - nov 1995 - v0_16
-*                  adapted from sort5 v0_15, A. Patoine
-*
-*revision
-* v2_00 - Lee V.         - initial MPI version (from calomeg v1_03)
-* v2_30 - Edouard S.     - adapt for vertical hybrid coordinate
-* v3_20 - Gravel S.      - replaced geomg_pibb with geomg_dpba
-* v3_21 - Lee V.         - Output Optimization
-* v3_31 - Bilodeau & Lee - Correction for offline mode
-*
-*object
-*	compute vertical velocity in pressure coordinates
-*
-****************************************************************************
-*                                                                          
-*
-*           dp    . /                 db \       .             d /db\   db
-* F_omega = -- =  z | 1 + (exp(s) -1) -- | - b * z (exp(s) -1) --|--| / -- 
-*           dt      \                 dz /                     dz\dz/   dz
-*                                .
-*                       /      dpz \ /                 db \
-*                 - b * | D + ---- | | 1 + (exp(s) -1) -- |
-*                       \      dpz / \                 dz /
-*                                                                            
-*
-* where dp/dpz means partial derivative w.r.t  z
-*
-*****************************************************************************
-*
-*arguments
-*  Name        I/O                 Description
-*----------------------------------------------------------------
-* F_omeg       O    - omega
-* F_psd        I    - model s vertical velocity (pi* coordinates)
-* F_td         I    - model s total divergence
-* F_s          I    - ln ( dpi/dpi* )
-* F_i0         I    - starting point of calculation on W-E axis
-* F_in         I    - ending point of calculation on W-E axis
-* F_j0         I    - starting point of calculation on N-S axis
-* F_jn         I    - ending point of calculation on N-S axis
-*
-*implicits
-#include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "schm.cdk"
-*
-**
-      integer i,j,k
-      real pr1, pr2
-*     __________________________________________________________________
-*
-!$omp do
-      do k=1,l_nk
-         if ((k.eq.1).or.Schm_offline_L) then
-         do j= F_j0, F_jn
-         do i= F_i0, F_in
-            F_omeg (i,j,k) = 0.
-         end do
-         end do
-         else
-         pr1 = geomg_dpba(k) - geomg_pib(k)*geomg_dpia(k)/geomg_dpba(k)
-         do j= F_j0, F_jn
-         do i= F_i0, F_in
-           pr2 = exp(F_s(i,j)) - 1.0
-           F_omeg (i,j,k) = F_psd(i,j,k) + F_psd(i,j,k) * pr2 * pr1 -
-     %                      F_td(i,j,k) * geomg_pib(k)*
-     %                      (1.+geomg_dpba(k)*pr2) / geomg_dpba(k)
-        end do
-        end do
-        endif
-      end do
-!$omp enddo
-*
-*     __________________________________________________________________
-*
+
+      call gem_stop('calomeg is obsolete',-1)
+
       return
       end 

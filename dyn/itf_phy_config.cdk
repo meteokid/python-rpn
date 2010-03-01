@@ -1,23 +1,8 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
       character*16  P_pbl_schsl_S,P_pbl_schurb_S,
      $              P_pbl2_schsl_S,P_cond_stcon_s
 *
       logical P_cond_satu_L, P_pbl_snoalb_L, P_pbl_iceme_L,
-     $        P_pbl_icelac_L,P_pbl_ocean_L , P_pbl2_iceme_L
+     $        P_anal_cond_L, P_pbl_ocean_L , P_pbl2_iceme_L
 *
       integer P_fcpkuo_xofset, P_fcpkuo_xblnd, P_out_moyhr,
      $        P_fcpkuo_yofset, P_fcpkuo_yblnd, P_pbd_dumpbus
@@ -28,7 +13,7 @@
       common /phy_s/ P_pbl_schsl_S,P_pbl_schurb_S,
      $               P_pbl2_schsl_S,P_cond_stcon_s
       common /phy_l/ P_cond_satu_L, P_pbl_snoalb_L, P_pbl_iceme_L,
-     $               P_pbl_icelac_L,P_pbl_ocean_L , P_pbl2_iceme_L
+     $               P_anal_cond_L, P_pbl_ocean_L , P_pbl2_iceme_L
       common /phy_i/ P_fcpkuo_xofset, P_fcpkuo_xblnd, P_out_moyhr,
      $               P_fcpkuo_yofset, P_fcpkuo_yblnd, P_pbd_dumpbus
       common /phy_r8/ p_lmvd_valml_8  ,p_lmvd_mllat_8,

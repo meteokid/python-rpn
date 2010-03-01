@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r theo_cfg - reads parameters from namelist theo_cfgs
 *
 #include "model_macros_f.h"
@@ -31,9 +16,12 @@
 *	
 *arguments - none
 *
-#include "ptopo.cdk"
 #include "theonml.cdk"
+#include "cst_lis.cdk"
 * 
+      integer cte_ok,istat
+      logical set_dcst_8
+      external set_dcst_8
       integer  fnom,gem_nml,var4d_nml,bubble_cfg,mtn_cfg
       external fnom,gem_nml,var4d_nml,bubble_cfg,mtn_cfg
 *
@@ -41,6 +29,9 @@
       character*16  dumc_S
 **
 *     ---------------------------------------------------------------
+      cte_ok = 0
+      if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre, 0,1 ) )
+     $     cte_ok=-1
 *
       status = -1
 *
@@ -58,8 +49,6 @@
       Out3_etik_S='THEOC'
       Out3_ip3 = -1
       Lctl_debug_L=.false.
-*
-      call hpalloc (Geomg_hyb_ , maxhlev, err,1)
 *
       unf = 0
       if (fnom (unf, 'model_settings', 'SEQ+OLD' , nrec) .ne. 0) goto 9110
@@ -94,11 +83,6 @@
       Adw_interp_type_S = dumc_S
       call low2up  (Hzd_type_S,dumc_S)
       Hzd_type_S = dumc_S
-
-      do k=1,maxhlev
-         hyb(k)=Geomg_hyb(k)
-      enddo
-      call hpdeallc (Geomg_hyb_ , err,1)
 
       if (Lun_out.gt.0) write (Lun_out, 7050) Theo_case_S
       status=1

@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_nml2bin - writes parameters to labfl
 *
 #include "model_macros_f.h"
@@ -48,23 +33,17 @@
 #include "e_tr.cdk"
 #include "offline.cdk"
 #include "modconst.cdk"
-#include "path.cdk"
-#include <clib_interface.cdk>
 *
 **
       integer  fnom
       external fnom
-      integer k,labfl,err
-      character*1024 rootfn
+      integer k,labfl
 *
 *     ---------------------------------------------------------------
 *
       labfl=0
-
-      rootfn = trim(Path_output_S)//'/INIT_SFC/'
-      err    = clib_mkdir (trim(rootfn))
-      if (fnom(labfl,trim(rootfn)//'/labfl.bin','SEQ/UNF',0).lt.0)
-     $    stop 'In e_nm2bin: Trying to open file labfl.bin'
+      if (fnom(labfl,'process/labfl.bin','SEQ/UNF',0).lt.0)
+     $    stop 'In e_nm2bin: Trying to open file process/labfl.bin'
 *
       write(labfl) Mod_runstrt_S
 *

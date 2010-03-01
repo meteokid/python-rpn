@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r nli - compute nonlinear portion of governing & derived equations
 *
 #include "model_macros_f.h"
@@ -32,106 +17,6 @@
 *
 *object
 *******************************************************************************
-*                                                                             *
-* Define the nonlinear perturbation of the logarithmic hydrostatic pressure   *
-*                                                                             *
-*           /     pi' \   pi'lin                                              *
-*   q" = ln | 1 + --- | - ------   where  pi'lin = b * s                      *
-*           \      z  /     z                                                 *
-*                                                    _____________________    *
-*                                                   |                     |   *
-* the nonlinear deviation of the horizontal         | NONHYDROSTATIC ONLY |   *
-* momentum equations are then written as            |_____________________|   *
-*                                                                             *
-*                                               |                             *
-*               R   /                   \       |         1                   *
-*                d  |     dq        dq" |       |                  dphi       *
-*       N   =  ---- | T' ---- + T* ---- |       +        ---- (mu) ----       *
-*        U       2  |     dx        dx  |       |          2        dx        *
-*               a   \                   /       |         a                   *
-*                                               |                             *
-*                                               |                             *
-*               R   /                   \       |         1                   *
-*                d  |      dq        dq"|       |                    dphi     *
-*       N   =  ---- | T' C -- + T* C -- |       +        ---- (mu) C ----     *
-*        V       2  |      dy        dy |       |          2          dy      *
-*               a   \                   /       |         a                   *
-*                                               |                             *
-*                                                                             *
-*******************************************************************************
-*                                                                             *
-*           /                                                    \            *
-*           |                                                    |            *
-*        1  |    /                           \                   |            *
-*           |    |       /\b * ( exp(s)-1 )  |   /   /\b * s   \ |            *
-* N   = --- | ln | 1 +  -------------------  | - | ----------- | |            *
-*  cn   tau |    |          /\A + /\b        |   \  /\A + /\b  / |            *
-*           |    \                           /                   |            *
-*           \                                                    /            *
-*                                                                             *
-*                                                                             *
-*  where :  /\ = d/d(eta)                                                     *
-*******************************************************************************
-*                                                                             *
-* Nonlinear deviation of horizontal divergence:                               *
-*                                                                             *
-*             1  /  dN       dN  \                                            *
-*                |    U        V |     1                                      *
-*       N  = --- | ---- + C ---- | -  ---  N                                  *
-*        1     2 |               |    tau   cn                                *
-*             C  \  dx       dy  /                                            *
-*                                                                             *
-*******************************************************************************
-*                                                                             *
-* Nonlinear deviation of thermodynamic equation (also recognized as N2):      *
-*                                                                             *
-*              1  /                   \                  /      T' \   T'lin  *
-*       N   = --- | - cappa q"  +  T" |   where  T" = ln | 1 + --- | - -----  *
-*        th   tau \                   /                  \      T* /     T*   *
-*                                                                             *
-*******************************************************************************
-*                                                                             *
-* Nonlinear deviation for vertical motion:                                    *
-*                                                    _____________________    *
-*             1  /             \                    |                     |   *
-*       N  = --- | mu    -  mu |                    | NONHYDROSTATIC ONLY |   *
-*        3   tau \   lin       /                    |_____________________|   *
-*                                                                             *
-*******************************************************************************
-*                                                    _____________________    *
-* We are now ready to calculate the                 |                     |   *
-* NONLINEAR RESIDUE of Helmholtz eqn:               | NONHYDROSTATIC ONLY |   *
-*                                                   |_____________________|   *
-*                                      |                                      *
-*                                      |                                      *
-*       / _z \+     gamma   / ___z  \- |   gamma   / ___z \-   gamma / __z \+ *
-* N  =  | N  |  + --------- | z N   |  + --------- | z N  |  + ----- | N'  |  *
-*  h    \  1 /    cappa tau \    th /  | cappa tau \    3 /     tau  \  3  /  *
-*                                      |                                      *
-*                                      |   where                              *
-*                                      |                       R  T*          *
-*                                      |                        d             *
-* The involved operators are defined   |   N'  =  N   -  &  ------------ N    *
-* as in Cote et al., 1990, M.W.R. 118, |    3      3      H        2   2  th  *
-* 2707-2717:                           |                    cappa g tau       *
-*                                                                             *
-*                                                                             *
-* / _z \+     P(k-1) + P(k) dz(k-1)     P(k) + P(k+1) dz(k)                   *
-* | P  |   =  ------------- -------  +  ------------- -----                   *
-* \    /k           2          2              2         2                     *
-*                                                                             *
-* / _z \-     M(k-1) + M(k)     M(k) + M(k+1)     M(k-1) - M(k+1)             *
-* | M  |   =  -------------  -  -------------  =  ---------------             *
-* \    /k           2                 2                  2                    *
-*                                                                             *
-*                                                                             *
-*******************************************************************************
-*                                                                             *
-*                  2                                                          *
-* (TOTAL RHS)  =  a  ( R  - N  )                                              *
-*                       h    h                                                *
-*                                                                             *
-*******************************************************************************
 *
 *arguments
 *       none
@@ -148,14 +33,13 @@
 #include "vtx.cdk" 
 #include "ptopo.cdk"
 #include "lctl.cdk"
+#include "func.cdk"
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *    
-      integer  pnerr, pnlod, pnlkey1(14), i, j 
-      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk)
-      real wk1(LDIST_SIZ*l_nk)
+      integer  pnerr, pnlod, pnlkey1(15), i, j 
 **
 *     __________________________________________________________________
 *
@@ -164,18 +48,20 @@
 *
       pnlkey1(1) = VMM_KEY(rheln)
       pnlkey1(2) = VMM_KEY(rhell)
-      pnlkey1(3) = VMM_KEY(tpt0)
-      pnlkey1(4) = VMM_KEY(tplt0)
-      pnlkey1(5) = VMM_KEY(pipt0)
-      pnlkey1(6) = VMM_KEY(st0)
-      pnlkey1(7) = VMM_KEY(qt0)
-      pnlod =7 
+      pnlkey1(3) = VMM_KEY(tt0)
+      pnlkey1(4) = VMM_KEY(st0)
+      pnlkey1(5) = VMM_KEY(qptx)
+      pnlkey1(6) = VMM_KEY(csh)
+      pnlkey1(7) = VMM_KEY(fiptx)
+      pnlkey1(8) = VMM_KEY(topo)
+      pnlkey1(9) = VMM_KEY(psdt0)
+      pnlkey1(10) = VMM_KEY(that_8)
+      pnlkey1(11) = VMM_KEY(dlnth_8)
+      pnlod =11 
       if (.not. Schm_hydro_L) then
-         pnlkey1(pnlod+1) = VMM_KEY(fipt0)
-         pnlkey1(pnlod+2) = VMM_KEY(topo)
-         pnlkey1(pnlod+3) = VMM_KEY(mut0)
-         pnlkey1(pnlod+4) = VMM_KEY(multx)
-         pnlod = pnlod+4
+         pnlkey1(pnlod+1) = VMM_KEY(qsect0)
+         pnlkey1(pnlod+2) = VMM_KEY(mutx)
+         pnlod = pnlod+2
       endif
       if (Cori_cornl_L) then
          pnlkey1(pnlod+1) = VMM_KEY(ut0)
@@ -187,21 +73,21 @@
 *     - - - - - - - - - - - - - - -
       pnerr = VMM_GET_VAR(rheln)
       pnerr = VMM_GET_VAR(rhell)
-      pnerr = VMM_GET_VAR(tpt0)
-      pnerr = VMM_GET_VAR(tplt0)
-      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(tt0)
       pnerr = VMM_GET_VAR(st0)
-      pnerr = VMM_GET_VAR(qt0)
+      pnerr = VMM_GET_VAR(qptx)
+      pnerr = VMM_GET_VAR(csh)
+      pnerr = VMM_GET_VAR(fiptx)
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(psdt0)
+      pnerr = VMM_GET_VAR(that_8)
+      pnerr = VMM_GET_VAR(dlnth_8)
       if (.not. Schm_hydro_L) then
-         pnerr = VMM_GET_VAR(fipt0)
-         pnerr = VMM_GET_VAR(topo)
-         pnerr = VMM_GET_VAR(mut0)
-         pnerr = VMM_GET_VAR(multx)
+         pnerr = VMM_GET_VAR(qsect0)
+         pnerr = VMM_GET_VAR(mutx)
       else
-         fipt0_ = 0
-         topo_  = 0
-         mut0_  = 0
-         multx_ = 0
+         qsect0_= 0
+         mutx_  = 0
       endif
       if (Cori_cornl_L) then
          pnerr = VMM_GET_VAR(ut0)
@@ -218,10 +104,18 @@ c     call glbstat (st0,'st0',LDIST_DIM,1,8+acid_i0,G_ni-8-acid_in,
 c    %                                    8+acid_j0,G_nj-8-acid_jn,1,1)
 c     endif
 *
-      call nlip_2 ( nl_nu, nl_nv,  wk1, nl_nth, nl_n3, nl_n3p, 
-     $              rheln, rhell, tpt0,  tplt0, pipt0, nl_ncn, 
-     $              st0, qt0, fipt0, topo, ut0, vt0, mut0, multx, 
-     $              wijk1, wijk2, LDIST_DIM,l_nk )
+      call diag_var( csh, qptx, mutx, st0, qsect0,
+     $     1-G_halox,l_ni+G_halox,1-G_haloy,l_nj+G_haloy,l_nk)
+*
+      call diag_fip1( fiptx, tt0, qptx, qsect0, topo,
+     $     1-G_halox,l_ni+G_halox,1-G_haloy,l_nj+G_haloy,l_nk)
+*
+      call nlip_2 ( nl_nu , nl_nv , nl_nth , nl_ncn , nl_nw , nl_nvv , 
+     $              rheln , rhell ,
+     $              tt0   , st0   , qptx   , qsect0 , fiptx ,
+     $              psdt0 , ut0   , vt0    , mutx   , csh   ,
+     $              that_8, dlnth_8,
+     $              LDIST_DIM, l_nk )
 *
 *
 c     if (Acid_test_L) then nu,nv,nth,ncn

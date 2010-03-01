@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/p adw_trilin_turbo - Optimized tri-linear interpolation
 *                         with SETINT inside 
 *
@@ -20,9 +5,12 @@
 *
       subroutine adw_trilin_turbo ( F_out, F_in, F_dt, 
      %                              F_x, F_y, F_z, F_capz,
-     %                              Fn_I, F_num, i0, in, j0, jn, kn)
+     %                              Fn_I, F_num, i0, in, j0, jn, kn,
+     %                              F_lev_S)
 *
       implicit none
+*
+      character*1 F_lev_S
 *
       integer F_num, Fn_I(F_num), i0, in, j0, jn, kn
 *
@@ -68,7 +56,9 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "type.cdk"
 #include "adw.cdk"
+#include "ver.cdk"
 #include "v4dcfl.cdk"
 ************************************************************************
 *
@@ -77,13 +67,30 @@
 *
       real capx, capy, capz
 *
-      real*8 rri, rrj, rrk, prf1, prf2, prf3, prf4
+      real*8 rri, rrj, rrk, prf1, prf2, prf3, prf4, p_z00_8
+*
+!
+      integer,dimension(:),pointer :: p_lcz
+      real*8, dimension(:),pointer :: p_bsz_8, p_diz_8
 *
       integer cfl,err
       logical done_L
       data done_L /.false./
       save done_L
 *
+!
+      if ( F_lev_S .eq. 'm') then
+         p_z00_8 = Ver_z_8%m(1)
+         p_lcz =>Adw_lcz%m
+         p_bsz_8 =>Adw_bsz_8%m
+         p_diz_8 =>Adw_diz_8%m
+      else
+         p_z00_8 = Ver_z_8%t(1)
+         p_lcz =>Adw_lcz%t
+         p_bsz_8 =>Adw_bsz_8%t
+         p_diz_8 =>Adw_diz_8%t
+      endif
+!
 *     ----------------------------------------------------------------
 *
 *     Initialize min-max vertical CFL as function of k
@@ -136,12 +143,12 @@
           n = n0 + i
 *
           rrk= F_z(n)
-          kk = ( rrk - Adw_z00_8 ) * Adw_ovdz_8
-          kk = Adw_lcz( kk+1 )
-          rrk = rrk - Adw_bsz_8(kk)
+          kk = ( rrk - p_z00_8 ) * Adw_ovdz_8
+          kk = p_lcz( kk+1 )
+          rrk = rrk - p_bsz_8(kk)
           if ( rrk .lt. 0.0 ) kk = kk - 1
 *
-          capz = rrk * Adw_diz_8(kk)
+          capz = rrk * p_diz_8(kk)
           if ( rrk .lt. 0.0 ) capz = 1.0 + capz
 *
 *         We keep F_capz, otherwise we would need rrk  

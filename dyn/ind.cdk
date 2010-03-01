@@ -1,40 +1,16 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
       DCL_DYNVAR(Ind, topo, real, (LDIST_SHAPE))
       DCL_DYNVAR(Ind,    u, real, (LDIST_SHAPE,l_nk))
       DCL_DYNVAR(Ind,    v, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,    t, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,    q, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,   fi, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,  pip, real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(Ind,    t, real, (LDIST_SHAPE,l_nk+1))
       DCL_DYNVAR(Ind,    s, real, (LDIST_SHAPE))
-      DCL_DYNVAR(Ind,  fip, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,   tp, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,   gp, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,  tpl, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,  psd, real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(Ind,  fip, real, (LDIST_SHAPE,0:l_nk+1))
+      DCL_DYNVAR(Ind,   tp, real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(Ind,   gp, real, (LDIST_SHAPE,0:l_nk+1))
+      DCL_DYNVAR(Ind,  psd, real, (LDIST_SHAPE,l_nk+1))
       DCL_DYNVAR(Ind,   td, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind, topa, real, (LDIST_SHAPE))
-      DCL_DYNVAR(Ind, toua, real, (LDIST_SHAPE))
-      DCL_DYNVAR(Ind, tova, real, (LDIST_SHAPE))
 *
-      DCL_DYNVAR(Ind, mul, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,  mu, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,   w, real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(Ind,  qp, real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(Ind,   w, real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(Ind,qsec, real, (LDIST_SHAPE,0:l_nk+1))
 *
       DCL_DYNVAR(Ind, dtopo, real, (LDIST_SHAPE))
       DCL_DYNVAR(Ind,  topu, real, (LDIST_SHAPE))

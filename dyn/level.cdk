@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 #if defined (DOC)
 *
 ***comdeck level.cdk
@@ -32,16 +17,19 @@
 * Level_id           | Level_id(i) are the id of each defined level set|
 * Level              | contains the values of the defined output levels|
 *                    | in mb and/or eta, ie: Level(i,j)=1000           |
+* Level_m            | contains the values of the defined output levels|
+*                    | eta for momentum level variables                |
 * Level_max          | Level_max(i) contains the number of output      |
 *                    | levels defined in each set                      |
+* Level_max_m        | Level_max_m(i) contains the number of output    |
+*                    | momentum levels defined in each set             |
 * Level_typ          | level type: "P" for pressure in mb, "E" for eta |
 *                    | which corresponds to each defined Level set     |
-* Level_ip1          | IP1 value corresponding to the level value for  |
-*                    | the output records.                             |
 * Level_stag_ip1     | IP1 value corresponding to the staggered values |
 *                    | for the output records.                         |
-* Level_ip12000_L    | TRUE to use fst2000 IP1 encoding                |
 * Level_kind_ip1     | value of KIND to be used in CONVIP function     |
+* Level_mode_ip1     | Value of mode to be used in CONVIP function     |
+* Level_ip12000_L    | TRUE to use fst2000 IP1 encoding                |
 *----------------------------------------------------------------------
 *
 *
@@ -49,19 +37,21 @@
 
       integer MAXLEV
       PARAMETER (MAXLEV = 201)
-      real Level(MAXLEV,MAXSET)
-      integer Level_id(MAXSET),Level_ip1(MAXLEV,MAXSET),Level_sets,
-     $        Level_stag_ip1(MAXLEV),Level_max(MAXSET),Level_kind_ip1
+      real Level(MAXLEV,MAXSET),Level_m(MAXLEV,MAXSET)
+      integer Level_id(MAXSET),Level_sets,
+     $        Level_stag_ip1(MAXLEV),Level_max(MAXSET),
+     $        Level_max_m(MAXSET),Level_kind_ip1,Level_mode_ip1
       logical Level_ip12000_L
       character*1 Level_typ(MAXSET)
 
       MARK_COMMON_BEG (Level_r)
-      COMMON /Level_r/ Level
+      COMMON /Level_r/ Level,Level_m
       MARK_COMMON_END (Level_r)
 
       MARK_COMMON_BEG (Level_i)
-      COMMON /Level_i/ Level_id,Level_ip1,Level_stag_ip1,Level_max,
-     $                 Level_sets,Level_kind_ip1
+      COMMON /Level_i/ Level_id,Level_stag_ip1,Level_max,
+     $                 Level_max_m,Level_sets,Level_kind_ip1,
+     $                 Level_mode_ip1
       MARK_COMMON_END (Level_i)
 
       MARK_COMMON_BEG (Level_l)

@@ -1,33 +1,21 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r adw_interp - Interpolation of one rhs
 *
 #include "model_macros_f.h"
 *
-      subroutine adw_interp ( F_out, F_in, F_u, F_v,
-     %                        F_wind_L, F_mono_L, DIST_DIM, Nk,i0,in,j0,jn )
+      subroutine adw_interp ( F_out, F_in, F_u, F_v, 
+     %                        F_wind_L, F_mono_L, DIST_DIM, F_nk,
+     %                        i0,in,j0,jn, F_lev_S )
 *
       implicit none
 *
+      character*1 F_lev_S
+*
       logical F_wind_L, F_mono_L
 *
-      integer DIST_DIM, Nk, i0,in,j0,jn
+      integer DIST_DIM, F_nk, i0,in,j0,jn
 *
-      real F_out (DIST_SHAPE, Nk),
-     %     F_in  (DIST_SHAPE, Nk)
+      real F_out (DIST_SHAPE, F_nk),
+     %     F_in  (DIST_SHAPE, F_nk)
       real F_u(*), F_v(*)
 *
 *author
@@ -62,6 +50,7 @@
 *
 *implicits
 #include "glb_ld.cdk"
+#include "type.cdk"
 #include "adw.cdk"
 *
 ************************************************************************
@@ -70,8 +59,9 @@
       real dummy
 *
       nij    = l_ni   *l_nj
-      nijk   = l_ni   *l_nj   *l_nk
-      nijkag = Adw_nit*Adw_njt*l_nk
+      nijk   = l_ni   *l_nj   *F_nk
+      nijkag = Adw_nit*Adw_njt*F_nk
+*
 *
 ************************************************************************
 *
@@ -87,7 +77,7 @@
           n=999
           dest_ni=G_ni
       endif
-      call rpn_comm_xch_halox (F_in, LDIST_DIM, l_ni, l_nj, l_nk,
+      call rpn_comm_xch_halox (F_in, LDIST_DIM, l_ni, l_nj, F_nk,
      % Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, -Adw_halox+1,
      % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, n)
 *
@@ -96,26 +86,26 @@
 *     
          if ( F_wind_L ) then
             call adw_pol0 (F_u, 0, Adw_nic,Adw_halox,Adw_njc,
-     %                     Adw_haloy,l_nk)
+     %                     Adw_haloy,F_nk)
          else
             call adw_pols (F_u,Adw_wx_8, 0, Adw_nic,Adw_halox,
-     %                     Adw_njc,Adw_haloy,l_nk)
+     %                     Adw_njc,Adw_haloy,F_nk)
          endif
             call adw_polx (F_u,Adw_xg_8,.true.,Adw_nic,Adw_halox,
-     %                     Adw_njc,Adw_haloy,l_nk)
+     %                     Adw_njc,Adw_haloy,F_nk)
       endif
 *     
       if ( l_north ) then
 *
          if ( F_wind_L ) then
             call adw_pol0 (F_u,Adw_njc+1,Adw_nic,Adw_halox,Adw_njc,
-     %                     Adw_haloy,l_nk)
+     %                     Adw_haloy,F_nk)
          else
             call adw_pols (F_u,Adw_wx_8, Adw_njc+1,Adw_nic,Adw_halox,
-     %                     Adw_njc,Adw_haloy,l_nk)
+     %                     Adw_njc,Adw_haloy,F_nk)
          endif
             call adw_polx (F_u,Adw_xg_8,.false.,Adw_nic,Adw_halox,
-     %                     Adw_njc,Adw_haloy,l_nk)
+     %                     Adw_njc,Adw_haloy,F_nk)
       endif
       endif
 ************************************************************************
@@ -123,12 +113,12 @@
 * Interpolate
 *
 ************************************************************************
-      call adw_vder ( F_v, F_u, Adw_nit, Adw_njt, l_nk ) !2nd deriv for spline
+      call adw_vder ( F_v, F_u, Adw_nit, Adw_njt, F_nk, F_lev_S ) !2nd deriv for spline
       call adw_tricub ( Adw_wrkc, F_u, F_v,
      %                  Adw_n1, Adw_capx1, Adw_xgg1,
      %                  Adw_xdd1, Adw_capy1, Adw_ygg1,
      %                  Adw_ydd1, Adw_capz1,Adw_cz1,
-     %                  nijk, F_mono_L,i0,in,j0,jn,l_nk)
+     %                  nijk, F_mono_L,i0,in,j0,jn,F_nk)
 *
       if (.not.G_lam) then
       if ( Adw_fro_a .gt. 0 ) then
@@ -150,7 +140,7 @@
       endif
 !$omp parallel
 !$omp do
-      do k = 1, l_nk
+      do k = 1, F_nk
       do j = j0,jn
       do i = i0,in
       F_out(i,j,k) = Adw_wrkc ( (k-1)*nij+(j-1)*l_ni+i )

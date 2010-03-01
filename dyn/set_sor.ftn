@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r set_sor - initialization of all control parameters for output
 *
 #include "model_macros_f.h"
@@ -44,7 +29,6 @@
 * v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 * v3_20 - Lee V.            - request of physics output via long/short name
 * v3_20 - A. Kallaur        - request chemical var. output (05/2005)
-* v3_33 - Lee V.            - output files set to frequency requested
 *
 *object
 *     See above id
@@ -90,6 +74,7 @@
       character*256 fn
       logical iela
       integer pnerror,i,idx,k,j,levset,kk
+      real seconds,min_seconds
       integer ixg(4), sorvmm
 *
       if (Lun_out.gt.0) write(Lun_out,5200)
@@ -116,23 +101,31 @@
           endif
 
           if (Out3_unit_s .eq. ' '.or. Out3_unit_s .eq. 'H') then
+              min_seconds = 3600.0
               unit_S = 'HOURS'
           endif
           if (Out3_unit_s .eq. 'D') then
+              min_seconds = 3600.0*24.0
               unit_S = 'DAYS'
           endif
           if (Out3_unit_s .eq. 'M') then
+              min_seconds = 60.0
               unit_S = 'MINUTES'
           endif
-          if (Out3_unit_s .eq. 'S') then
-              unit_S = 'SECONDS'
-              Out3_ndigits = 6
+          if (Out3_unit_s .ne. 'S'.and. Out3_unit_s .ne. 'P') then
+              seconds=min_seconds
+              do j=1,Timestep_sets
+              do i=2,Timestep_max(j)
+                 seconds = min ( 1.0d0*(seconds),
+     $                Cstv_dt_8*1.0d0*(Timestep(i,j)-Timestep(i-1,j)))
+              enddo
+              enddo
+              if (seconds.lt.min_seconds) then
+                  Out3_unit_s = 'P'
+                  Out3_ndigits = 6
+                  write(Lun_out,3000)unit_S
+              endif
           endif
-          if (Out3_unit_s .eq. 'P') then
-              unit_S = 'TIMESTEPS'
-              Out3_ndigits = 6
-          endif
-          write(6,3000)unit_S
 * Transfer filter and xnbit info to requested variables
           do k=1, Outd_sets
              do j=1,Outd_var_max(k)
@@ -396,8 +389,13 @@
       enddo
       p_bvol_out = kk
 
-*     No need to proceed, if Chemistry switch is "off".
-      if (.not. Schm_chems_L) goto 9988
+      call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy,
+     $     Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow,
+     $     0,0,l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,
+     $     Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S,
+     $     int(Cstv_dt_8),Out3_date,Out3_etik_S, Out3_ndigits,
+     $     Mod_runstrt_S,
+     $     min(Step_total, Lctl_step+Step_rsti),Out3_flipit_L,Out3_debug_L)
 *
 *     FOR CHEMICAL SCHEMES:
 *     =====================
@@ -412,6 +410,8 @@
 *     print *,'chm_bdyn_top=',chm_bdyn_top
 *     print *,'chm_bvol_top=',chm_bvol_top
 *
+*     No need to proceed, if Chemistry switch is "off".
+      if (.not. Schm_chems_L) goto 9988
       kk = 0
       if (Lun_out.gt.0)  then
           write(Lun_out,1001)
@@ -533,7 +533,10 @@
  1007 format('|',2x,a4,2x,'|',a16,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
  1008 format('|',2x,a4,2x,'|',a4,12x,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
  2001 format('* Note: NO filter is applied to 3D fields on M levels')
- 3000 format(/,'SET_SOR - OUTPUT FILES will be in ',A8)
+ 3000 format(
+     $    /,'SET_SOR - WARNING: OUTPUT REQUEST IS MORE FREQUENT THAN ',A8
+     $    /,' *** Directive Out3_unit_S *** will be set to "P" ',
+     $    /,' *** Output files will be in TIMESTEPS')
  5000 format(
      $     ' TOTAL NUMBER OF WARNINGS ENCOUNTERED IN',
      $     ' DIRECTIVE SETS: ', I5)

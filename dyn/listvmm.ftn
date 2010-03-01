@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r listvmm -
 #include "model_macros_f.h"
 *
@@ -62,6 +47,20 @@
             maxy = l_maxy
             mink = 1
             maxk = G_nk
+         elseif (size.eq.LARRAY3D+LARRAY2D) then
+            minx = l_minx
+            maxx = l_maxx
+            miny = l_miny
+            maxy = l_maxy
+            mink = 1
+            maxk = G_nk + 1
+         elseif (size.eq.LARRAY3D+2*LARRAY2D) then
+            minx = l_minx
+            maxx = l_maxx
+            miny = l_miny
+            maxy = l_maxy
+            mink = 1
+            maxk = G_nk + 2
          elseif (size.eq.LARRAY2D) then
             minx = l_minx
             maxx = l_maxx
@@ -76,6 +75,13 @@
             maxy = l_nj
             mink = 1
             maxk = G_nk
+         elseif (size.eq.2*(l_nk+1)) then
+            minx = 1
+            maxx = 1
+            miny = 1
+            maxy = 1
+            mink = 1
+            maxk = 2*(l_nk+1)
          else
             if (Ptopo_myproc.eq.0) write (6,1001) size,vmmname
             call gem_stop ('LISTVMM - ABORT -',-1)

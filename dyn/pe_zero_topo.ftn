@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r pe_zero_topo - Initialize processor topology
 *
 #include "model_macros_f.h"
@@ -31,30 +16,21 @@
 *implicits
 #include "ptopo.cdk"
 #include "version.cdk"
-#include "path.cdk"
-#include <clib_interface.cdk>
 *
-      integer  exdb,ptopo_nml,gnthread
-      external exdb,ptopo_nml,gnthread
+      integer  exdb,ptopo_nml
+      external exdb,ptopo_nml
 *
       integer err
 *
 *-------------------------------------------------------------------
 *
-      call base_dir_env
-
-      err= clib_mkdir (Path_output_S)
-      err= clib_mkdir (Path_work_S  )
-      err= clib_mkdir (trim(Path_output_S)//'/casc')
-
-      call  open_status_file2 (trim(Path_output_S)//'/status_mod.dot')
+      call  open_status_file2 ('status_mod.dot')
       call write_status_file2 ('_status=ABORT' )
       err = exdb(Version_mod_S//Version_dstp_S,Version_S, 'NON')
 *
-* Read namelist ptopo from file model_settings.nml
+* Read namelist ptopo from file model_settings
 *
-      if (ptopo_nml (trim(Path_work_S)//'/model_settings.nml') .eq. 1 )
-     $then
+      if (ptopo_nml ('process/model_settings') .eq. 1 ) then
          F_npx = Ptopo_npex
          F_npy = Ptopo_npey
          err = ptopo_nml ('print')
@@ -64,17 +40,7 @@
          F_npy = 0
       endif
 *
-      Ptopo_npeOpenMP_resv = gnthread()
-      Ptopo_npeOpenMP_resv = max(1,Ptopo_npeOpenMP_resv)
-      Ptopo_npeOpenMP      = Ptopo_npeOpenMP_resv
-
-      if (Ptopo_smtdyn.lt.1) Ptopo_smtdyn=Ptopo_npeOpenMP
-      if (Ptopo_smtphy.lt.1) Ptopo_smtphy=Ptopo_npeOpenMP
-
-      write (6, 8255) Ptopo_npeOpenMP,Ptopo_smtdyn,Ptopo_smtphy
-*
  8000 format (/,'========= ABORT IN S/R PE_TOPO ============='/)
- 8255 format (/,' THREAD CONFIG: npeOpenMP, smtdyn, smtphy:'/10x,3i10/)
 *
 *-------------------------------------------------------------------
 *

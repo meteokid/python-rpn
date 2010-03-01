@@ -1,17 +1,30 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+#if defined (DOC)
+*
+***comdeck path.cdk
+*
+* v3_00 - Tanguay M.        - add Path_xchg_S 
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH THE PATHs/DIRECTORIES (set_world_view1)   |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Path_swv1_L        | .true. if all the paths are found               |
+* Path_dfwmil_S      | path to the "process" directory                 |
+* Path_nml_S         | path and name of the file "model_settings"      |
+* Path_xchg_S        | path to the "exchange" directory with 3D-Var    |
+*----------------------------------------------------------------------
+*
+#endif
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-      character*1024    Path_nml_S,Path_basedir_S,Path_input_S,Path_ind_S,Path_output_S,Path_work_S,Path_xchg_S
-      common / Path_s / Path_nml_S,Path_basedir_S,Path_input_S,Path_ind_S,Path_output_S,Path_work_S,Path_xchg_S
+      logical Path_swv1_L
+      character*256 Path_dfwmil_S,Path_nml_S,Path_xchg_S
+!
+      MARK_COMMON_BEG (Path1)
+      common / Path1 / Path_swv1_L
+      MARK_COMMON_END (Path1)
+      MARK_COMMON_BEG (Path2)
+      common / Path2 / Path_dfwmil_S,Path_nml_S,Path_xchg_S
+      MARK_COMMON_END (Path2)

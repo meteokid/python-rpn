@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r mtn_cfg - reads parameters from namelist mtn_cfgs
 *
 #include "model_macros_f.h"
@@ -36,18 +21,11 @@
 #include "theonml.cdk"
 *
       integer i, j, k, idatx, longueur
-      real deta, z
-      real*8 ONE_8, CLXXX_8, my_rad2deg_8, my_pi_8, my_rayt_8
-      parameter( ONE_8   = 1.0 )
-      parameter( CLXXX_8 = 180.0 )
-      parameter( my_pi_8 = 0.3141592653590E+01 )
-      parameter( my_rayt_8 = .637122e+7 )
+      real*8 delta_8, zmt_8(maxhlev)
+      real*8 c1_8,Exner_8,Pres_ptop_8,height_8,pres_8,height_top_8
 **
 *     ---------------------------------------------------------------
-
       mtn_cfg = -1
-      my_rad2deg_8 = CLXXX_8/my_pi_8
-
       do k = 1, maxhlev
          hyb(k) = -1.
       end do
@@ -64,12 +42,12 @@
       Grd_xlat2=0.
       Grd_xlon2=270.
 *
-c     Offc_a0_8 =  1.0
-c     Offc_a1_8 = -1.0
-c     Offc_b0_8 =  0.5
-c     Offc_b1_8 =  0.5
-      	  
-      Tr3d_userntr=1
+      Offc_b0_8 =  0.5
+      Offc_b1_8 =  0.5
+*      	  
+      Grd_rcoef = 1.0
+*
+      Tr3d_userntr=0
 
       Lam_nesdt=0
       Lam_ctebcs_L=.true.
@@ -84,7 +62,7 @@ c     Offc_b1_8 =  0.5
       G_halox=3
  
       Zblen_L = .true.
-      Zblen_spngtt_L=.false.
+      Zblen_spngtt_L=.true.
 
       Adw_interp_type_S = 'LAG3D'
 
@@ -92,7 +70,7 @@ c     Offc_b1_8 =  0.5
 
          Out3_etik_s='SCHAR'
 
-         Pres_ptop = 40.78743336652039
+         Height_top_8 = 19500.d0
 
          mtn_tzero=288.
          mtn_nstar= 0.01
@@ -101,113 +79,109 @@ c     Offc_b1_8 =  0.5
          mtn_hwx1 = 8
          mtn_hght = 250.
 
-         Grd_ni = 402
+         Grd_ni = 401
+CAP         Grd_ni = 101
          Grd_nj = 1
-         G_nk   = 66
+         G_nk   = 65
 
-         Grd_dx =  0.0045
-	  
-         Hblen_x = 15
-         Hblen_y = 0
+         Grd_dx = 500.                                   !  in meters
+         Grd_dx = (Grd_dx/Dcst_rayt_8)*(180./Dcst_pi_8)  ! in degrees
 
-         Zblen_spngthick=7.e+03
+         Hblen_x=15
+         Hblen_y=0
+
+         Zblen_spngthick=9000.
+         Zblen_hmin = Height_top_8 - Zblen_spngthick
 
          Step_total = 1600
          Step_gstat = 80
 
          Cstv_dt_8 = 8.
-         Cstv_tstr_8 = 214.48
+         Cstv_tstr_8 = 2.144760293471223e+02
          Cstv_pisrf_8 = 1000.
 
          Vtopo_start = -1
          Vtopo_ndt = 0
-
-c        Offc_b0_8 = 0.6 
-c        Offc_b1_8 = 0.4 
-
-         Grd_rcoef = 2.0
 
       else if ( Theo_case_S.eq.'MTN_SCHAR2') then
 
          Out3_etik_s='SCHAR2'
 	  
-         Pres_ptop = 40.78743336652039
+         Height_top_8 = 19500.d0
 
          mtn_tzero=273.16
          mtn_nstar= 0.01871
          mtn_flo  = 18.71
-         mtn_hwx  = 5
-         mtn_hwx1 = 4
+         mtn_hwx  = 10
+         mtn_hwx1 = 8
          mtn_hght = 250.
 
-         Grd_ni = 202
+         Grd_ni = 401
          Grd_nj = 1
-         G_nk   = 66
+         G_nk   = 65
 
-         Grd_dx =  0.009
+         Grd_dx = 500.                                   !  in meters
+         Grd_dx = (Grd_dx/Dcst_rayt_8)*(180./Dcst_pi_8)  ! in degrees
 	  
-         Hblen_x = 15
-         Hblen_y = 0 
+         Hblen_x =15
+         Hblen_y =0 
 
-         Zblen_spngthick=1.00531e+04
+c        Zblen_spngthick=1.00531e+04
+         Zblen_spngthick=9000.
+         Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 2400
          Step_gstat = 100
-         Cstv_dt_8 = 5.34
-         Cstv_tstr_8 = 273.16
+         Cstv_dt_8 = 5.34         !   CFL=0.2
+c        Cstv_dt_8 = 26.7         !   CFL=1.0
+         Cstv_tstr_8 = mtn_tzero
          Cstv_pisrf_8 = 1000.
 
          Vtopo_start = -1
          Vtopo_ndt = 0
 
-c        Offc_b0_8 = 0.6 
-c        Offc_b1_8 = 0.4 
-
-         Grd_rcoef = 2.0
-
       else if ( Theo_case_S.eq.'MTN_PINTY') then
 
          Out3_etik_s='PINTY'
 
-         Pres_ptop = 81.98377202734126
+         Height_top_8 = 20000.d0
 	  
          mtn_tzero=273.16
+         mtn_nstar=-1
          mtn_flo  = 32.
          mtn_hwx  =5
          mtn_hght = 100.
 
          Grd_ni = 161
          Grd_nj = 1
-         G_nk   = 81
+         G_nk   = 80
 
-         Grd_dx = 0.0287773
+         Grd_dx = 3200.                                  ! in meters
+         Grd_dx = (Grd_dx/Dcst_rayt_8)*(180./Dcst_pi_8)  ! in degrees
 	  
          Hblen_x = 15
          Hblen_y = 0
 
-         Zblen_spngthick=1.005309649148734e+04
+         Zblen_spngthick=10000.
+         Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 800
          Step_gstat = 100
 
          Cstv_dt_8 = 50.
-         Cstv_tstr_8 = 273.16
+         Cstv_tstr_8 = mtn_tzero
          Cstv_pisrf_8 = 1000.
          Vtopo_start = -1
          Vtopo_ndt = -1
-
-c        Offc_b0_8 = 0.6 
-c        Offc_b1_8 = 0.4 
-
-         Grd_rcoef = 2.0
 
       else if ( Theo_case_S.eq.'MTN_PINTY2') then
 
          Out3_etik_s='PINTY2'
 
-         Pres_ptop = 81.98377202734126
+         Height_top_8 = 20000.d0
 	  
          mtn_tzero=273.16
+         mtn_nstar=-1
          mtn_flo  = 8.
          mtn_hwx  =5
          mtn_hght = 100.
@@ -216,32 +190,31 @@ c        Offc_b1_8 = 0.4
          Grd_nj = 1
          G_nk   = 81
 
-         Grd_dx = 0.0287773
+         Grd_dx = 3200.                                  ! in meters
+         Grd_dx = (Grd_dx/Dcst_rayt_8)*(180./Dcst_pi_8)  ! in degrees
 	  
          Hblen_x = 15
          Hblen_y = 0
 
-         Zblen_spngthick=2.513274122871835e+03
+         Zblen_spngthick=2500.
+         Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 1600
          Step_gstat = 100
 
          Cstv_dt_8 = 200.
-         Cstv_tstr_8 = 273.16
+         Cstv_tstr_8 = mtn_tzero
          Cstv_pisrf_8 = 1000.
          Vtopo_start = -1
          Vtopo_ndt = -1
 
-c        Offc_b0_8 = 0.6 
-c        Offc_b1_8 = 0.4 
-
-         Grd_rcoef = 2.0
-
       else    ! PINTYNL
 
          Out3_etik_s='PINTYNL'
-	  
-         Pres_ptop = 95.75000118766453
+
+         Height_top_8 = 20000.d0
+         Pres_ptop_8 = 95.75000118766453d0
+         print*,'Pres_ptop_8=',Pres_ptop_8
 
          mtn_tzero=273.16
          mtn_nstar= 0.02
@@ -251,14 +224,16 @@ c        Offc_b1_8 = 0.4
 
          Grd_ni = 161
          Grd_nj = 1
-         G_nk   = 81
+         G_nk   = 80
 
-         Grd_dx = 0.0287773
+         Grd_dx = 3200.                                  ! in meters
+         Grd_dx = (Grd_dx/Dcst_rayt_8)*(180./Dcst_pi_8)  ! in degrees
 
          Hblen_x = 15
          Hblen_y = 0
 
-         Zblen_Spngthick=1.005309649148734e+04
+         Zblen_spngthick=10000.
+         Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 1000
          Step_gstat = 100
@@ -268,13 +243,10 @@ c        Offc_b1_8 = 0.4
          Vtopo_start = -1
          Vtopo_ndt = 60
 
-c        Offc_b0_8 = 0.6 
-c        Offc_b1_8 = 0.4 
-
-         Grd_rcoef = 2.0
-
       endif
       
+      Pres_ptop=Pres_ptop_8
+
       Hgc_gxtyp_s='E'
       call cxgaig ( Hgc_gxtyp_S,Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,
      $                        Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )
@@ -285,7 +257,7 @@ c        Offc_b1_8 = 0.4
  9220 write( Lun_out,9230) Theo_case_S
  9221 continue
 
-      Step_rsti = Step_total+100
+cap      Step_rsti = Step_total+100
 
       Pres_pref = Cstv_pisrf_8
 
@@ -295,18 +267,47 @@ c        Offc_b1_8 = 0.4
       Grd_nj = Grd_nj + Glb_pil_n + Glb_pil_s
       Grd_nila = Grd_ni
       Grd_njla = Grd_nj
-      Grd_jref = (Grd_nj-1 )/2
-	  
+      Grd_jref = (Grd_nj+1 )/2
+
+      if(mtn_nstar.lt.0.)           !  isothermal case
+     $   mtn_nstar=Dcst_grav_8/sqrt(Dcst_cpd_8*Cstv_tstr_8)
+      if(mtn_nstar.eq.0.0) then     !  isentropic case
+         c1_8=Dcst_grav_8/(Dcst_cpd_8*Cstv_tstr_8)
+         Exner_8=1.d0-c1_8*Height_top_8
+      else
+         c1_8=Dcst_grav_8**2/(Dcst_cpd_8*mtn_tzero*mtn_nstar**2)
+         Exner_8=1.d0-c1_8+c1_8
+     $              *exp(-mtn_nstar**2/Dcst_grav_8*Height_top_8)
+      endif
+      Pres_ptop_8 = Exner_8**(1.d0/Dcst_cappa_8)*Cstv_pisrf_8
+      Pres_ptop=Pres_ptop_8
+      print*,'pres_ptop=',pres_ptop
       if ( Theo_nivdist_S .eq. 'UNI') then
          write( Lun_out, 9400)
-         deta = 1./(G_nk-1)
-         do k=2,G_nk-1
-            z = Pres_ptop * (Cstv_pisrf_8/Pres_ptop)**((k-1)*deta)
-            hyb(k) = (z - Pres_ptop)/(Cstv_pisrf_8 - Pres_ptop)
+         delta_8 = (Cstv_pisrf_8/Pres_ptop_8)**(1.d0/G_nk)
+         zmt_8(1)=2.d0*Pres_ptop_8*delta_8/(delta_8+1.d0)
+         do k=2,G_nk
+            zmt_8(k)=zmt_8(1)*delta_8**(k-1);
          enddo
-            hyb(1) = 0.
-            hyb(G_nk) = 1.
-         write( Lun_out, *) (hyb(k), k=1,G_nk)
+         hyb(1)=0.0         
+         do k=1,G_nk
+            hyb(k+1) = (zmt_8(k) - Pres_ptop_8)/(Cstv_pisrf_8 - Pres_ptop_8)
+            write( Lun_out, *) hyb(k+1),hyb(k+1)-hyb(k)
+         enddo
+         hyb(G_nk+2)=1.0
+c        write( Lun_out, *) (hyb(k), k=1,G_nk+2)
+      else if ( Theo_nivdist_S .eq. 'UNIFORMINHEIGHT') then
+         write( Lun_out, 9401)
+         hyb(1)=0.0
+         do k=2,G_nk+1
+            height_8=Height_top_8*(1.d0-(dble(k-1)-.5d0)/G_nk)
+            Exner_8=1.d0-c1_8+c1_8*exp(-mtn_nstar**2/Dcst_grav_8*height_8)
+            pres_8=Exner_8**(1.d0/Dcst_cappa_8)*Cstv_pisrf_8
+            hyb(k)=(pres_8-Pres_ptop_8)/(Cstv_pisrf_8-Pres_ptop_8)
+            write( Lun_out, *) hyb(k),hyb(k)-hyb(k-1)
+         enddo
+         hyb(G_nk+2)=1.0
+c        write( Lun_out, *) (hyb(k),hyb(k)-hyb(k-1), k=1,G_nk+2)
       endif
 *
       Grd_dy = Grd_dx
@@ -332,11 +333,19 @@ c        Offc_b1_8 = 0.4
        Tr3d_usersval(i)= 0.
       enddo
 *
-      do k=1,maxhlev
-        Geomg_hyb(k) = hyb(k)
-      enddo
-*
       mtn_cfg = 1
+*
+      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
+
+         open(unit=62,file=
+     $        matlab_dir_S(1:longueur(matlab_dir_S))//
+     $        'from_fortran_mtn_cfg.bin',
+     $        status='replace',form='unformatted')
+         write(62)G_nk
+c a modifer         write(62)(Ver_hyb_8%m(k),k=2,G_nk)
+         close(62)
+      endif
+*
       return   
 *
  9000 write (Lun_out, 9100)
@@ -346,6 +355,10 @@ c        Offc_b1_8 = 0.4
  9400 format (/1x,'From subroutine mtn_cfg:',
      $        /1x,'Uniform distribution of level is requested',
      $        /1x,'Values for hyb calculated by s/r mtn_cfg')
+ 9401 format (/1x,'From subroutine mtn_cfg:',
+     $        /1x,'Uniform distribution of levels is requested',
+     $        /1x,'Uniform distribution in terms of height',
+     $        /1x,'Values for hyb recalculated by s/r mtn_cfg')
  9500 format (/1x,'From subroutine mtn_cfg:',
      $        /1x,'wrong value for model top')
  9600 format (/1x,'From subroutine mtn_cfg:',

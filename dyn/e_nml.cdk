@@ -1,23 +1,6 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 #if defined (DOC)
 *revisions (e_nml)
 * v3.30 - Desgagne             - remove references to namelist /ptopo/
-* v3.31 - Tanguay              - keys for wind interpolation
-* v3.31 - Lee V.               - eliminate Pil_pil, added Pil_maxcfl
 #endif
 *
 #include "e_topo.cdk"
@@ -25,7 +8,6 @@
 #include "e_geol.cdk"
 #include "e_tr.cdk"
 #include "e_anal.cdk"
-#include "e_mta.cdk"
 *
 #include "offline.cdk"
 #include "modconst.cdk"
@@ -33,33 +15,31 @@
 #include "schm.cdk"
 *
       namelist /gement/
-     $     Anal_cond, Anal_perturb, E_force_read_image_L ,
+     $     Anal_cond, Anal_perturb, E_schm_adcub, E_schm_stlag,
      $     E_geol_glanl_L, E_geol_glreg_L,
      $     E_geol_gle    , E_geol_gln    , E_geol_gls    , E_geol_glw  ,
      $     E_geol_hsanl_L, E_geol_hscon_L, E_geol_hse    , E_geol_hsea ,
      $     E_geol_hsn    , E_geol_hsreg_L, E_geol_hss    , E_geol_hsw  ,
      $     E_geol_modex_L, E_geol_poin   , E_geol_z0cst  ,
-     $     E_intwind_mta_L,E_schm_adcub  , E_schm_stlag,
      $     E_tr3d_list_S ,
      $     Mod_runstrt_S , Offline_ip1a  , Offline_int_accu_S,
-     $     Pil_3df_L     , Pil_bcs_hollow_L, Pil_bmf_L    , Pil_dx     ,
-     $     Pil_hblen     , Pil_jobend_S    , Pil_jobstrt_S, 
-     $     Pil_maxcfl    , Pil_lancemodel  , Pil_nesdt    , Pil_sfc2d_L,
+     $     Pil_3df_L     , Pil_bcs_hollow_L, Pil_bmf_L, Pil_hblen,
+     $     Pil_jobend_S  , Pil_jobstrt_S   , Pil_nesdt,
+     $     Pil_pil       , Pil_sfc2d_L,
      $     Schm_offline_L,
-     $     Topo_dgfms_L  ,Topo_dgfmx_L, Topo_filmx_L, Topo_init_L, Topo_clip_L
+     $     Topo_dgfmx_L  ,Topo_dgfms_L, Topo_filmx_L,Topo_init_L
 *
       namelist /gement_p/
-     $     Anal_cond, Anal_perturb, E_force_read_image_L ,
+     $     Anal_cond, Anal_perturb, E_schm_adcub, E_schm_stlag,
      $     E_geol_glanl_L, E_geol_glreg_L,
      $     E_geol_gle    , E_geol_gln    , E_geol_gls    , E_geol_glw  ,
      $     E_geol_hsanl_L, E_geol_hscon_L, E_geol_hse    , E_geol_hsea ,
      $     E_geol_hsn    , E_geol_hsreg_L, E_geol_hss    , E_geol_hsw  ,
      $     E_geol_modex_L, E_geol_poin   , E_geol_z0cst  ,
-     $     E_intwind_mta_L,E_schm_adcub  , E_schm_stlag,
      $     Mod_runstrt_S , Offline_ip1a  , Offline_int_accu_S,
-     $     Pil_3df_L     , Pil_bcs_hollow_L, Pil_bmf_L    , Pil_dx     ,
-     $     Pil_hblen     , Pil_jobend_S    , Pil_jobstrt_S, 
-     $     Pil_maxcfl    , Pil_lancemodel  , Pil_nesdt    , Pil_sfc2d_L,
+     $     Pil_3df_L     , Pil_bcs_hollow_L, Pil_bmf_L, Pil_hblen,
+     $     Pil_jobend_S  , Pil_jobstrt_S   , Pil_nesdt,
+     $     Pil_pil       , Pil_sfc2d_L,
      $     Schm_offline_L,
-     $     Topo_dgfms_L  ,Topo_dgfmx_L, Topo_filmx_L, Topo_init_L, Topo_clip_L
+     $     Topo_dgfmx_L  ,Topo_dgfms_L, Topo_filmx_L,Topo_init_L
 *

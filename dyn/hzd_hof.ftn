@@ -1,38 +1,15 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r hzd_hof - applies horizontal diffusion on a given set of fields
 *
 #include "model_macros_f.h"
-      subroutine hzd_hof (   F_u,    F_v,  F_psd,  F_tp, F_ip,
-     %                      F_td,    F_t,   F_it, F_plt,   
-     %                     F_pip,    F_w,   F_qp,  F_mu, F_mul,  
-     %                     F_xfis, DIST_DIM,Nk)
+      subroutine hzd_hof ( F_u, F_v, F_psd, F_t, F_w, DIST_DIM, Nk)
 *
       implicit none
 *
       integer DIST_DIM, Nk
 *
-      real     F_u(DIST_SHAPE,Nk),  F_v(DIST_SHAPE,Nk),
-     %       F_psd(DIST_SHAPE,Nk), F_tp(DIST_SHAPE,Nk),
-     %        F_ip(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
-     %         F_t(DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
-     %       F_plt(DIST_SHAPE,Nk),  
-     %       F_pip(DIST_SHAPE,Nk),  F_w(DIST_SHAPE,Nk),
-     %        F_qp(DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
-     %       F_mul(DIST_SHAPE,Nk),  F_xfis(DIST_SHAPE)
+      real     F_u(DIST_SHAPE,Nk  ), F_v(DIST_SHAPE,Nk  ),
+     %         F_t(DIST_SHAPE,Nk+1), F_psd(DIST_SHAPE,Nk+1),
+     %         F_w(DIST_SHAPE,Nk+1)
 *
 *author
 *     Abdessamad Qaddouri
@@ -53,17 +30,8 @@
 *----------------------------------------------------------------
 *  F_u         I/0        see subroutine
 *  F_v         I/0            "
-*  F_ip       I/0            "
-*  F_td        I/0            "
-*  F_tp        I/0            "
-*  F_plt       I/0            "
 *  F_t         I/0            "
-*  F_pip       I/0            "
-*  F_psd       I/0            "
 *  F_w         I/0            "
-*  F_mu        I/0            "
-*  F_mul       I/0            "
-*  F_qp        I/0            "
 *----------------------------------------------------------------
 * 
 *implicits
@@ -76,13 +44,14 @@
 #include "hzd.cdk"
 #include "opr.cdk"
 #include "schm.cdk"
-#include "geomg.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
+#include "type.cdk"
+#include "ver.cdk"
 *
       integer i, j, k, dpwr
       real*8 wk1_8
-      real   wk2(LDIST_SHAPE,Nk)
+      real   wk2(DIST_SHAPE,Nk)
 **
 *     __________________________________________________________________
 *
@@ -91,8 +60,8 @@
 *
       if ( Hzd_cdiff .gt. 0.0 ) then
 *
-*     Momentum
-*     ~~~~~~~~
+*        Momentum
+*        ~~~~~~~~
          call hzd_solfft(F_u, wk1_8, Fft_pri_8, 
      %                   Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,
      %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
@@ -111,153 +80,19 @@
 *
 *     Vertical motion in pressure coord. 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         call hzd_solfft(F_psd, wk1_8, Fft_pri_8 ,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-*     Total divergence 
-*     ~~~~~~~~~~~~~~~~
-         call hzd_solfft(F_td, wk1_8, Fft_pri_8 ,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-         if (Hzd_uvwdt_L) goto 9988
-*
-*     Mass related fields
-*     ~~~~~~~~~~~~~~~~~~~
-         call hzd_solfft(F_ip, wk1_8, Fft_pri_8,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx,l_miny,l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-         call hzd_solfft(F_it, wk1_8, Fft_pri_8,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx,l_miny,l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-         do k = 2, Nk
-         do j = 1,l_nj
-         do i = 1,l_ni
-            F_it(i,j,k) = F_ip(i,j,k) + Cstvr_fistr_8(k) + F_xfis(i,j)
+*        store first NK level of F_psd in wk2 to make use of the
+*        already prepared operators -- since F_psd(Nk+1) is identically
+*        zero, there is no need to diffuse that level
+
+         if(.false.)then
+
+         do k = 1, Nk
+         do j = 1,l_nj 
+         do i = 1,l_ni 
+            wk2(i,j,k) = F_psd(i,j,k)
          end do
          end do
          end do
-*
-* updating phi' at the top 
-*
-         do j = 1,l_nj
-         do i = 1,l_ni
-            F_ip(i,j,1) = F_it(i,j,1) - Cstvr_fistr_8(1) - F_xfis(i,j)
-         end do
-         end do
-*
-*     The temperature: T', T'lin & hence T 
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         call hzd_solfft(F_tp, wk1_8, Fft_pri_8 ,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-         call hzd_solfft(F_plt, wk1_8, Fft_pri_8 ,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-         do k=1, Nk
-         do j=1,l_nj
-         do i=1,l_ni 
-            F_t(i,j,k) = F_tp(i,j,k) + Cstv_tstr_8
-         end do
-         end do
-         end do
-*
-*     Save pi' for the diffusion of q'
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
-            do k = 1, Nk
-            do j = 1,l_nj 
-            do i = 1,l_ni 
-               wk2(i,j,k) = F_pip(i,j,k)
-            end do
-            end do
-            end do
-         endif 
-*
-*     The hydrostatic pressure: pi'  
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         call hzd_solfft(F_pip, wk1_8, Fft_pri_8 ,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-*****************************
-*  3. Nonyhydrostatic model * 
-*****************************
-*
-         if ( .not. Schm_hydro_L ) then
-*
-*     Vertical wind (physical) 
-*     ~~~~~~~~~~~~~~~~~~~~~~~~
-         call hzd_solfft(F_w, wk1_8, Fft_pri_8 ,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-         if ( Schm_difqp_L ) then ! q' & related variables
-*
-         call hzd_solfft(F_mu, wk1_8, Fft_pri_8 ,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-         call hzd_solfft(F_mul, wk1_8, Fft_pri_8 ,
-     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
-     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
-     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
-     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
-     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
-     %                   Ptopo_npex,Ptopo_npey)
-*
-*        Indirect diffusion of q' 
-*        ~~~~~~~~~~~~~~~~~~~~~~~~
-         do k=1, Nk  ! 
-         do j=1,l_nj ! p = (pi)exp(q') 
-         do i=1,l_ni ! ~~~~~~~~~~~~~~~ 
-            wk2(i,j,k) = ( geomg_z_8(k) + dble(wk2(i,j,k)) )
-     %                       *exp( dble(F_qp(i,j,k)) )
-         end do
-         end do
-         end do
-*
          call hzd_solfft(wk2, wk1_8, Fft_pri_8 ,
      %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
      %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
@@ -265,24 +100,36 @@
      %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
      %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                   Ptopo_npex,Ptopo_npey)
+         do k = 1, Nk
+         do j = 1,l_nj 
+         do i = 1,l_ni 
+            F_psd(i,j,k) = wk2(i,j,k)
+         end do
+         end do
+         end do
 
-*
-         do k=1, Nk  ! 
-         do j=1,l_nj ! q' = log(p/pi) 
-         do i=1,l_ni ! ~~~~~~~~~~~~~~
-            F_qp(i,j,k) = log(             dble(wk2(i,j,k))
-     %                       /( geomg_z_8(k) + dble(F_pip(i,j,k)) )  )
-         end do
-         end do
-         end do
-*
          endif
+*
+*        ************************
+*        *Nonyhydrostatic model *
+*        ************************
+*
+         if ( .not. Schm_hydro_L ) then
+*
+*           Vertical momentum (physical)
+*           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            call hzd_solfft(F_w, wk1_8, Fft_pri_8 ,
+     %                   Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
+     %                   trp_12dmin,trp_12dmax,trp_22min,trp_22max,
+     %                   trp_12dn,trp_22n,G_nj, dpwr,l_minx,
+     %                   l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
+     %                   trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
+     %                   Ptopo_npex,Ptopo_npey)
+*
          endif
 *
       endif
-*
- 9988 continue
-*
+*     
  1000 format(/,
      $  3X,'PERFORM DEL-',i1,' FFT HORIZONTAL DIFFUSION: (S/R HZD_HOF)')
 *     __________________________________________________________________

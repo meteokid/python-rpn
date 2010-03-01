@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_specanal - extraction of analysis levels
 *
 #include "model_macros_f.h"
@@ -29,24 +14,19 @@
 * v3_12 - Winger K.         - add TD and HR as possible humidity variables
 * v3_20 - Pellerin P.       - MEC option (off-line mode)
 * v3_30 - Lee V.            - new LAM I/O  (BCS and 3DF pilot files)
-* v3_31 - Lee V.            - check for invalid HY field
-* v3_31 - Lee V.            - correction for LAM, BMF and BCS switches
-* v3_31 - Lee V.            - add for Schm_offline_L, correction of resolution
-*                      in creation of low res grid  (pick centre pt for dx)
-* v3_32 - Lee V.            - correction for new LAM i/o using unnormalized Hyb.
 *
 #include "e_anal.cdk"
 #include "e_fu.cdk"
 #include "e_option.cdk"
 #include "e_grids.cdk"
+#include "e_topo.cdk"
+#include "bmf.cdk"
+#include "ptopo.cdk"
 #include "e_cdate.cdk"
 #include "e_schm.cdk"
 #include "pilot.cdk"
 #include "hgc.cdk"
 #include "e_grdc.cdk"
-#include "grd.cdk"
-#include "offline.cdk"
-#include "path.cdk"
 *
       integer   fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv,
      $          read_decode_hyb, newdate, e_pilotf, 
@@ -59,19 +39,20 @@
      $         dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
       integer  ip1x,ip2x,ip3x
       character*1   typ, grd, blk_S
-      character*4   var, search_S(10)
+      character*4   var
       character*12  lab
-      character*15  datec
+      character*15  datec,pdate
       real      x1,lev,difsig,dx,dy
       real coin_lat(4),coin_lon(4),difmin,c
       real, dimension(:,:), allocatable :: latd,lond,lats,lons
       real, dimension(:),   allocatable :: topp,xpx,xpxu,ypx,ypxv,levm
       real*8    Cstv_pisrf_8, Cstv_tstr_8,xyz1(3),xyz2(3)
       parameter (difsig = 1.e-5)
-      integer list(2000), i, j, k, l, m, n, ier,numi,numj,sgid,dgid,dimgx,dimgy
-      logical done
-      data done /.false./
-      save done
+      integer list(2000), i, j, k, l, m, n, ier,numi,numj,sgid,dgid
+      integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,dimgx,dimgy
+      logical done,hollow
+      data done,hollow /.false.,.true./
+      save done,hollow
 *
       real*8 ONE_8, CLXXX_8
       real*8 orr, deg2rad_8
@@ -79,20 +60,19 @@
       parameter( CLXXX_8 = 180.0 )
       parameter(Cstv_pisrf_8=100000.0,Cstv_tstr_8=200.0)
       integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum,nvar
-*
 * ---------------------------------------------------------------------
 *
       write (6, 1001)
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 *
       if (LAM) then
+         call datf2p (pdate,datev)
          ier = e_pilotf (datev,'UU',' ',' ',-1,-1,-1)
          if (ier.lt.0) ier = e_pilotf (datev,'UT1',' ',' ',-1,-1,-1)
          nvar=5
-         if (E_Schm_offline_L) nvar=3
       else
          e_fu_anal = 0
-         if (fnom (e_fu_anal ,trim(Path_input_S)//'/ANALYSIS','RND+OLD',0).lt.0) stop
+         if (fnom (e_fu_anal ,'process/analysis','RND+OLD',0).lt.0) stop
          if (fstouv(e_fu_anal ,'RND').lt.0) stop
       endif
       ip1mode = +1
@@ -128,15 +108,17 @@
 *
 *                      Check temperature variable and find
 *                      out if it is given by 'TT' or 'VT'
-
-      search_S(1) = 'VT'
-      search_S(2) = 'TT'
-      call check_FST_fld (vt,key,search_S,2,e_fu_anal,datev)
+      vt = 'VT'
+      key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vt)
 *
       if ( key .lt. 0 ) then
+         vt = 'TT'
+         key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vt)
+         if ( key .lt. 0 ) then
             write(6,*) 'No temperature variables are found in analysis'
             write(6,*) 'Either TT or VT must be in the analysis file.'
             call e_arret('e_specanal')
+         endif
       endif
 *
 *     Get the information on the temperature field from the analysis
@@ -176,8 +158,8 @@
          anal_hav(2) = 1
       endif
       if (kind .eq. 1) then      
-         key = fstinf ( e_fu_anal, ni1,nj1,nk1,datev,' ',-1,-1,-1, 
-     $                                                    ' ', 'HY' )
+         key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',-1,
+     $                                          ptopa,prefa,rcoefa)
          if (key .lt. 0) then
             key = fstinf ( e_fu_anal, ni1,nj1,nk1,datev,' ',-1,-1,-1, 
      $                                                    ' ', 'PT' )
@@ -205,9 +187,6 @@
                anal_hav(2) = 3
             endif
          else
-            key = read_decode_hyb (e_fu_anal, 'HY', -1, -1, ' ',-1,
-     $                                          ptopa,prefa,rcoefa)
-            if (key.lt.0) stop
             print*,' ===> Analysis on HYBRID vertical coordinates.'
             anal_hyb = .true.
             anal_hav(2) = 1
@@ -233,13 +212,12 @@
      $                           ip2a, ip3a, tva, var, list, nka, lvmax)
          endif
       else
-         ip1a=Offline_ip1a
+         ip1a=11950
          key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, ip1a,
      $                     ip2a, ip3a, tva, var, list, nka, lvmax)
          write (6,130)
          write (6,101) ip1a
          write (6,201) var
-         write (6,130)
       endif
 *
       LV = nka
@@ -273,10 +251,14 @@
          endif
       enddo
 *
-      if ( .not. (anal_hyb.or.anal_eta).and.(.not.E_Schm_offline_L) ) then
-            if (.not.Pil_bmf_L) 
-     $ print *, 'WARNING: Pil_BMF_L set to TRUE if analysis is NOT HYB or ETA'
-            Pil_bmf_L = .true.
+      if ( .not. (anal_hyb.or.anal_eta) ) Pil_bmf_L = .true.
+*
+      if (Pil_bmf_L) then
+         call bmf_splitstart (Ptopo_npex,Ptopo_npey,'./process/','BM',
+     $                                Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
+         call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
       endif
 *
       if ( (anal_pres) ) then
@@ -383,31 +365,32 @@
           if (nja.ne.nj1) stop
           allocate(ypx(nja))
           allocate(levm(nka))
-          if (E_Schm_offline_L.or.rna(1).ne.0.0) then
-              do k=1,nka
-                 levm(k) = rna(k)
-              enddo
-          else
-              do k=1,nka
-                 levm(k) = rna(k) + (1.-rna(k))*ptopa/prefa
-              enddo
-          endif
+          do k=1,nka
+             levm(k) = rna(k) + (1.-rna(k))*ptopa/prefa
+          enddo
           err = fstluk( ypx, key, ni1,nj1,nk1)
 
-* For LAM using 3df/bcs mode: 
-* Create LAM grid with same resolution as the finest resolution area
-* of the analysis grid using the same rotation as the target grid
-* TOO bad if the user chooses a grid that lands on a lower resolution area 
-* of a variable grid! Use program grille to check
+* Check if the analysis grid is not global. 
+* If LAM, create LAM grid with same resolution as the analysis grid on
+* the same rotation as the target grid
 *
 *    xpx,ypx are in degrees from tic tacs.
-          if (Hgc_ig1ro.ne.g1.or.Hgc_ig2ro.ne.g2.or.
+          if ( (xpx(1)-(xpx(2)-xpx(1))*.6).gt.0.0 .or. 
+     %         (xpx(nia)+(xpx(nia)-xpx(nia-1))*.6).lt.360. .or.
+     %         (ypx(1)-(ypx(2)-ypx(1))*.6).gt.-90.0 .or. 
+     %         (ypx(nja)+(ypx(nja)-ypx(nja-1))*.6).lt.90.) then
+              if (Hgc_ig1ro.ne.g1.or.Hgc_ig2ro.ne.g2.or.
      %            Hgc_ig3ro.ne.g3.or.Hgc_ig4ro.ne.g4) then
                   sgid = ezgdef_fmem(nia,nja, 'Z','E',g1,g2,g3,g4,xpx,ypx)
                   allocate(lats(nia,nja),lons(nia,nja))
                   err = gdll (sgid,lats,lons)
-                  print *,'Analysis has a rotation different to model grid'
+                  print *,'Analysis is a LAM grid, rotation is different to model grid'
 * Obtain grid rotation from analysis and calculate geographical lat lons
+c                 call cigaxg ( 'E',xlat1,xlon1,xlat2,xlon2,g1,g2,g3,g4)
+c                 call xllrot (xlat1,xlon1,xlat2,xlon2,rot_8)
+c                 call llacar(cart,xpx,ypx,dimgx,dimgy)
+c                 call mxma8(rot_8,1,3,cart,1,3,carot,1,3,3,3,dimgx*dimgy)
+c                 call cartall(lons,lats,carot,dimgx*dimgy)
                   do j=1,nja
                   do i=1,nia
                      lons(i,j)=amod(lons(i,j) + 360.,360.0)
@@ -415,45 +398,31 @@
                   enddo
                   dimgx=nia
                   dimgy=nja
-                  dx = xpx(nia/2)-xpx(nia/2-1)
-                  dy = ypx(nja/2)-ypx(nja/2-1)
-                  print *,'Chosen Pil_dx=',Pil_dx
-                  print *,'DX found:', dx,' DX target:', Grd_dx
-                  print *,'DY found:', dy,' DY target:', Grd_dy
-                  print *,'Now to create new low res grid'
                   print *,'Recalc new xpx,ypx:'
-                  print *,'orig: xpx(1),xpx(',nia,')=',xpx(1),xpx(nia)
-                  print *,'orig: ypx(1),ypx(',nja,')=',ypx(1),ypx(nja)
-                  if (Pil_dx.gt.0.0) then
 * Create new xpx,ypx parameters in the same resolution as the analysis
 * but on the target grid:
-                      if (Pil_dx.le.dx) dx=Pil_dx
-                      if (Pil_dx.le.Grd_dx) dx=Grd_dx
-                      if (Pil_dx.le.dy) dy=Pil_dx
-                      if (Pil_dx.le.Grd_dy) dy=Grd_dy
-                  endif
-                  nia = (xfi(nifi) - xfi(1))/dx + 13
-                  nja = (yfi(njfi) - yfi(1))/dy + 13
+                  dx = xpx(2)-xpx(1)
+                  nia = (xfi(nifi) - xfi(1))/dx + 9
+                  dy = ypx(2)-ypx(1)
+                  nja = (yfi(njfi) - yfi(1))/dy + 9
 * Create new xpx
                   deallocate (xpx)
                   allocate(xpx(nia))
-                  xpx(1)= xfi(1)- dx*5.0
+                  xpx(1)= xfi(1)- dx*4.0
                   do i=1,nia-1
                      xpx(i+1)= xpx(i) + dx
                   enddo
 * Create new ypx
                   deallocate (ypx)
                   allocate(ypx(nja))
-                  ypx(1)= yfi(1)-dy*5.0
+                  ypx(1)= yfi(1)-dy*4.0
                   do i=1,nja-1
                      ypx(i+1)= ypx(i) + dy
                   enddo
-                  print *,'DX to be used:', dx
-                  print *,'DY to be used:', dy
-                  print *,'xfi(1),xfi(',nifi,')=',xfi(1),xfi(nifi)
                   print *,'xpx(1),xpx(',nia,')=',xpx(1),xpx(nia)
-                  print *,'yfi(1),yfi(',njfi,')=',yfi(1),yfi(njfi)
                   print *,'ypx(1),ypx(',nja,')=',ypx(1),ypx(nja)
+                  print *,'xfi(1),xfi(',nifi,')=',xfi(1),xfi(nifi)
+                  print *,'yfi(1),yfi(',njfi,')=',yfi(1),yfi(njfi)
 * Now check to see if the target domain is within the source domain
 * by comparing geographical coordinates
                   dgid = ezgdef_fmem(nia,nja,'Z','E',Hgc_ig1ro,Hgc_ig2ro,
@@ -491,12 +460,13 @@
                      enddo
                      enddo
                      if (numi.eq.1.or.numj.eq.1) then
-                     write(6,*)'E_specanal: Insufficient coverage from ANALYSIS'
+                     write(6,*)'Abort: Insufficient coverage from LAM Analysis'
                         call e_arret('e_specanal')
                      else 
                         print *,'numi=',numi,' numj=',numj
                      endif
                   enddo
+              endif
           endif
 * create U,V target grid
           allocate(xpxu(nia-1))
@@ -510,7 +480,8 @@
           enddo
           ypxv(nja-1) = ( ypx(nja-1) + ypx(nja) )
 
-          if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil,Pil_bcs_hollow_L).eq.0) then
+
+          if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil,hollow).eq.0) then
 
               call hpalloc(paygv_8   ,  (nja-1)*2, err,1)
               do j=1,nja-1
@@ -528,11 +499,38 @@
               dstv_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro,
      $        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypxv(e_grdc_gjd) )
           else
-            write(6,*)' E_ac_posi: Insufficient coverage in Analysis'
+            write(6,*)' Abort: Insufficient coverage in Analysis'
             call e_arret('e_specanal')
           endif
           deallocate(levm,xpx,ypx)
           done = .true.
+      endif
+      if (Pil_bcs_hollow_L) Pil_bcs_hollow_L = hollow
+      if (Pil_bmf_L) then
+         call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (topou,niu ,nju ,'TOPU',1,1,pniu,0,0,0)
+         call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
+         call bmf_splitwrall ('RNA ',LV,1,1,Bmf_time1,Bmf_time2, 
+     $                                    0,0,bmf_dtyp,0,RNA)
+         if (anal_hyb.or.anal_eta) then
+             call bmf_splitwrall ('PTOP',1,1,1,Bmf_time1,Bmf_time2
+     $                                  ,0,0,bmf_dtyp,0,ptopa)
+             call bmf_splitwrall ('PREF',1,1,1,Bmf_time1,Bmf_time2
+     $                                  ,0,0,bmf_dtyp,0,prefa)
+             call bmf_splitwrall ('RCOF',1,1,1,Bmf_time1,Bmf_time2
+     $                                 ,0,0,bmf_dtyp,0,rcoefa)
+         endif
+      else
+         if (Pil_bcs_hollow_L) then
+            call bcs_hollow(e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,
+     $          e_grdc_gjdi,e_grdc_hbsn,e_grdc_hbwe,is,nis,js,njs,
+     $          jn,iw,niw,ie,jw,njw)
+            call e_sfile_bcs (pdate,is,nis,js,jn,njs,
+     $              iw,ie,niw,jw,njw,'DYNAMICS',nvar)
+         else
+            call e_sfile_3df (pdate,'DYNAMICS',
+     $             e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf, nvar)
+         endif
       endif
 *
  101  format ('|',2x,'   Off-line Mode: Only One Level Used:',1x,I5,10x,'|')
@@ -548,39 +546,4 @@
 * ---------------------------------------------------------------------
 *
       return
-      end
-
-      subroutine check_FST_fld (vh,key,search_S,n,unf,datev)
-      implicit none
-      integer key,n,unf,datev
-      character*(*) vh,search_S(n)
-*
-      integer maxl
-      parameter (maxl=5000)
-      integer i, liste(maxl), ni1, nj1, nk1, nka, dkey
-
-      integer fstinl
-
-      key = -1
-      do i=1,n
-         vh   = search_S(i)
-         dkey = fstinl ( unf, ni1, nj1, nk1, datev, ' ', -1, -1, -1, 
-     $                                    ' ', vh, liste, nka, maxl)
-         if (nka.gt.1) then
-            key = liste(nka/2)
-            goto 555
-         endif
-      end do
-
-      do i=1,n
-         vh   = search_S(i)
-         dkey = fstinl ( unf, ni1, nj1, nk1, datev, ' ', -1, -1, -1, 
-     $                                    ' ', vh, liste, nka, maxl)
-         if (nka.gt.0) then
-            key = liste(1)
-            goto 555
-         endif
-      end do
-*
- 555  return
       end

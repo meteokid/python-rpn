@@ -1,26 +1,14 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r liebman_2 - modifiy a portion of input field by overrelaxation
 *
-      subroutine liebman_2 ( F_field,  F_mask, F_max, F_ni, F_nj)
+      subroutine liebman_2 ( F_field,  F_mask,
+     %                       F_fielde, F_maske, F_max, F_ni, F_nj)
 *
 #include "impnone.cdk"
 *
       integer F_ni, F_nj
-      real    F_field(F_ni,F_nj), F_mask(F_ni,F_nj), F_max
+      real    F_max
+      real    F_field  (F_ni,F_nj  ), F_mask  (F_ni,F_nj  )
+      real    F_fielde (F_ni,F_nj+2), F_maske (F_ni,F_nj+2)
 *
 *author
 *     Alain Patoine - after version v1_03 of liebman.ftn
@@ -45,6 +33,12 @@
 * F_mask  | mask: 0 -> don't modify                     | F_ni, F_nj| i|
 *         |       1 ->       modify                     |           |  |
 * --------|---------------------------------------------|-----------|--|
+* F_fielde| field to be treated with poles extensions   | F_ni,     | w|
+*         | (work field)                                |     Fnj+2 |  |
+* --------|---------------------------------------------|-----------|--|
+* F_maskde| mask with poles extensions                  | F_ni,     | w|
+*         | (work field)                                |     Fnj+2 |  |
+* --------|---------------------------------------------|-----------|--|
 * F_max   | convergence criteria                        | scalar    | i|
 * --------|---------------------------------------------|-----------|--|
 * F_ni    | number of points in x-direction             | scalar    | i|
@@ -55,7 +49,6 @@
       integer i, j, pnj, n, pnitmax, pnl, pnr
 *
       real prfact, prmod, prmax, prvals, prvaln, prmass, prmasn
-      real wk1 (F_ni,F_nj+2), wk2 (F_ni,F_nj+2)
 **
 **********************************************************************
 *
@@ -103,16 +96,16 @@
       prvaln = prvaln / F_ni
 
       do i=1,F_ni
-         wk1 (i,1     ) = prvals
-         wk2 (i,1     ) = prmass
-         wk1 (i,F_nj+2) = prvaln
-         wk2 (i,F_nj+2) = prmasn
+         F_fielde (i,1     ) = prvals
+         F_maske  (i,1     ) = prmass
+         F_fielde (i,F_nj+2) = prvaln
+         F_maske  (i,F_nj+2) = prmasn
       enddo
 *
       do j=1,F_nj
       do i=1,F_ni
-         wk1(i,j+1) = F_field(i,j)
-         wk2(i,j+1) = F_mask (i,j)
+         F_fielde(i,j+1) = F_field(i,j)
+         F_maske (i,j+1) = F_mask (i,j)
       enddo
       enddo
 **********************************************************************
@@ -124,21 +117,21 @@
 *     ****************************************************************
 *     * South pole                                                   *
 *     ****************************************************************
-         if ( wk2(1,1) .gt. 0.5 ) then
+         if ( F_maske(1,1) .gt. 0.5 ) then
 *     
             prmod = 0.0
 *
             do i=1,F_ni
-               prmod = prmod + wk1(i,2)
+               prmod = prmod + F_fielde(i,2)
             enddo
 *
-            prmod =  prfact * ( prmod - F_ni * wk1(1,1) )
-            prmod =  prmod  * 4.0 / F_ni
+            prmod =  prfact * ( prmod - F_ni * F_fielde(1,1) )
+            prmod =  prmod * 4.0 / F_ni
 *     
             prmax = amax1 ( prmax, abs(prmod) )
 *     
             do i=1,F_ni
-               wk1(i,1) = wk1(i,1) + prmod
+               F_fielde(i,1) = F_fielde(i,1) + prmod
             enddo
 *
          endif
@@ -153,35 +146,35 @@
             if ( i .eq. 1    ) pnl = F_ni
             if ( i .eq. F_ni ) pnr = 1
 *
-            if ( wk2(i,j) .gt. 0.5 ) then
-               prmod = prfact * (wk1(pnl,j) + wk1(pnr,j) +
-     %                           wk1(i,j-1) + wk1(i,j+1) -
-     %                        4.*wk1(i,j))
+            if ( F_maske(i,j) .gt. 0.5 ) then
+               prmod = prfact * (F_fielde(pnl,j) + F_fielde(pnr,j) +
+     %                           F_fielde(i,j-1) + F_fielde(i,j+1) -
+     %                        4.*F_fielde(i,j))
 *
                prmax = amax1 ( prmax, abs(prmod) )
 *     
-               wk1(i,j) = wk1(i,j) + prmod
+               F_fielde(i,j) = F_fielde(i,j) + prmod
             endif
          enddo
          enddo
 *     ****************************************************************
 *     * North pole                                                   *
 *     ****************************************************************
-         if ( wk2(1,pnj) .gt. 0.5 ) then
+         if ( F_maske(1,pnj) .gt. 0.5 ) then
 *
             prmod = 0.0
 *
             do i=1,F_ni
-               prmod = prmod + wk1(i,pnj-1)
+               prmod = prmod + F_fielde(i,pnj-1)
             enddo
 *
-            prmod =  prfact * ( prmod - F_ni * wk1(1,pnj) )
+            prmod =  prfact * ( prmod - F_ni * F_fielde(1,pnj) )
             prmod =  prmod * 4.0 / F_ni
 *
             prmax = amax1 ( prmax, abs(prmod) )
 *
             do i=1,F_ni
-               wk1(i,pnj) = wk1(i,pnj) + prmod
+               F_fielde(i,pnj) = F_fielde(i,pnj) + prmod
             enddo
 *     
          endif
@@ -193,7 +186,7 @@
 *
       do j=1,F_nj
       do i=1,F_ni
-         F_field (i,j) = wk1 (i,j+1)
+         F_field (i,j) = F_fielde (i,j+1)
       enddo
       enddo
 *

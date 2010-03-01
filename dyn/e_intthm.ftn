@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_intthm  - Interpolate GZ,VT,HU on model grid.
 *
 #include "model_macros_f.h"
@@ -35,8 +20,8 @@
 * v3_22 - Lee V.            - removed Trvs tracers
 * v3_30 - Lee/Desgagne      - new LAM IO, read from analysis files to
 *                             produce BCS or 3DF files
-* v3_31 - Bilodeau B.       - offline mode
-* v3_31 - Lee V             - offline mode using 3DF files
+* v4_00 - A. Plante         - Adapt for staggering
+*                             NOTE : un-staggered input data only
 *
 *object
 *    Computes  the ln of surface and top pressure given the topo 
@@ -66,8 +51,8 @@
 #include "e_grdc.cdk"
 #include "hgc.cdk"
 *
-      integer  e_rdhint3,e_bmfrd,e_liaccu
-      external e_rdhint3,e_bmfrd,e_liaccu
+      integer  e_rdhint3,e_bmfrd
+      external e_rdhint3,e_bmfrd
 *
       character*4 vtt,vhh
       character*8 desc
@@ -77,20 +62,21 @@
       integer is,js,jn,iw,ie,jw,njw,niw,nisc,njsc
       real pr1,pr2, dummy
       real c1, c2, mul
-      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2,qqn,pipn,fin
+      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2
       real, dimension (:,:), allocatable :: ttn,hun
 *
 *---------------------------------------------------------------------
 *
-      if (e_schm_offline_l) then
-         call e_intthm_offline( )
-         return
-      endif
       c1 = Dcst_tcdk_8
       c2 = 10. * Dcst_grav_8
       vtt=vt//'  '
       vhh=vh//'  '
 *
+c
+      if(e_schm_offline_l.and.(.not.Pil_bmf_L))
+     $     call gem_stop("e_intthm : bmf file only in offline mode",-1)
+c
+
       if (Pil_bmf_L) then
           nis=nifi
           njs=njfi
@@ -104,17 +90,18 @@
 *
       write(6,1001)
 *
-*     For searching the GZ,HU,TT,VT records, 
+*     For searching the GZ(at surface),HU,TT,VT,P0 records, 
 *     correct IP1 targets must be found
 *
       anyip_L = .false.
       arret_L = .true.
+
       if ( gletaanl .or. glsiganl .or. glhybanl ) then
          write(6,*)
      $      'ANALYSIS IS IN SIGMA OR ETA OR HYBRID COORDINATES'
 *
          if (.not.Pil_bmf_L)
-     $   allocate(ttn(ng,lv),hun(ng,lv),fin(ng),qqn(ng),pipn(ng))
+     $   allocate(ttn(ng,lv),hun(ng,lv))
 *
          do k=1,lv
             if (e_rdhint3 (hu,dstf_gid,nis,njs,'HU  ',na(k),ip2a,
@@ -128,7 +115,7 @@
             tt(:) = tt(:) + c1
 *            
             if (vt.eq.'TT') call mfotvt (tt,tt,hu,ng,1,ng)
-            if (Pil_bmf_L) then
+            if (Pil_bmf_L) then               
                 call e_bmfsplitxy2 (hu,nis,njs,'HU  ',k,lv,pni,0,0,0)
                 call e_bmfsplitxy2 (tt,nis,njs,'VT  ',k,lv,pni,0,0,0)
             else
@@ -138,36 +125,40 @@
          end do
 *
          if (Pil_bmf_L) then
-             err = e_bmfrd (dstf_gid, nis, njs, 'P0  ', 0., 100., -1, 
+c           Read, interpolate, scale and write P0.
+            err = e_bmfrd (dstf_gid, nis, njs, 'P0  ',   0.,100., -1,
      $                                   1, anyip_L,arret_L,'CUBIC')
          else
-             err = e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',na(k),
+c           Read and interpolate P0.
+            err = e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',na(k),
      $             ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
-             if (err.lt.0) goto 55 
-             p0 (:) = wk2(:)*100.
-             qqn(:) = alog(p0(:))
+            if (err.lt.0) goto 55 
+c           Scale P0.
+            p0 (:) = wk2(:)*100.
+c           P0 is written below.
+         endif
+c
+         if (.not.e_schm_offline_l) then
+            if (.not.Pil_bmf_L) then
+c              Read and interpolate surface GZ.
+               err = e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na(lv),
+     $              ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+               if (err.lt.0) goto 55
+c              Scale
+               wk2(:)=wk2(:)*c2
+c              Surface GZ is written below.
+            else if (anal_hav(1).eq.0) then
+c              No interpolation : read, scale and write surface GZ.
+               err = e_bmfrd (dstf_gid,nis,njs,'GZ  ',0.,c2,na(lv),
+     $              1,.false.,.true.,'CUBIC')
+            else
+c              Read, interpolate, scale and write surface GZ.
+               err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ',   0., c2,na(lv),
+     $              1, anyip_L,arret_L,'CUBIC')               
+            endif               
          endif
 *
          if (.not.Pil_bmf_L) then
-             err = e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na(lv),
-     $            ip2a,ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
-         if (err.lt.0) goto 55
-* fill the bottom level for fin
-             call e_fill_3df ( wk2,fin,nis,njs,1,1,c2,0.0)
-         else if (anal_hav(1).eq.0) then
-             err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ', 0., c2,na,
-     $                                  lv, anyip_L,arret_L,'CUBIC' )
-         else
-             err = e_bmfrd (dstf_gid, nis, njs, 'GZ  ', 0., c2,na(lv), 
-     $                                     1, anyip_L,arret_L,'CUBIC' )
-             err = e_rdhint3 (wk2,dstf_gid,nis,njs,'GZ  ',na(lv),
-     $           ip2a,ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
-             wk2(:)=wk2(:)*c2
-         endif
-*
-         if (.not.Pil_bmf_L) then
-
-             pipn(:)=exp(qqn(:)) - z_8(lv)
 
              if (Pil_bcs_hollow_L) then
 *
@@ -175,14 +166,14 @@
      $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
      $            lv, 'TT  ',unf_casc)
-                call e_write_bcs (fin,nis,njs,
+                call e_write_bcs (p0 ,nis,njs,
      $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
-     $            1 , 'PHI ',unf_casc)
-                call e_write_bcs (pipn,nis,njs,
+     $            1 , 'P0 ',unf_casc)
+                call e_write_bcs (wk2,nis,njs,
      $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
-     $            1 , 'PIPT',unf_casc)
+     $            1 , 'GZS ',unf_casc)
                 call e_write_bcs (hun,nis,njs,
      $            e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs,
      $            e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw,
@@ -191,8 +182,8 @@
              else
 *
                 call e_write_3df ( ttn,nis,njs,lv,'TT  ',unf_casc)
-                call e_write_3df ( fin,nis,njs,1,'PHI ',unf_casc)
-                call e_write_3df ( pipn,nis,njs,1,'PIPT',unf_casc)
+                call e_write_3df ( p0 ,nis,njs,1 ,'P0  ',unf_casc)
+                call e_write_3df ( wk2,nis,njs,1 ,'GZS ',unf_casc)
                 call e_write_3df ( hun,nis,njs,lv,'HU  ',unf_casc)
 *
              endif
@@ -200,6 +191,8 @@
 *     
       elseif ( glecmanl ) then
          write(6,*) 'ANALYSIS IS ECMWF COORDINATES'
+         print*,'e_intthm : never tested for ECMWF ANAL'
+         stop
 *
          anal_hav(1)=1
 *
@@ -254,6 +247,9 @@
 *
       else
 *
+         print*,"e_intthm : Review code for staggering"
+         stop
+
          write(6,*)'ANALYSIS IS IN PRESSURE COORDINATES' 
          anal_hav(1) = e_bmfrd ( dstf_gid, nis, njs, 'GZ  ', 0., 10.,
      $                                  na,lv, anyip_L,arret_L,'CUBIC' )
@@ -304,7 +300,9 @@
 *
       endif
 *
+*     For tracer variables, search does not have to be successful
       anyip_L = .true.
+      arret_L = .false.
       do i=1,E_tr3d_ntr
          E_trname_S(i)=E_tr3d_name_S(i)
          if ( E_tr3d_name_S(i)(3:4).eq.'T1'.or.
@@ -312,10 +310,9 @@
      %        E_trname_S(i) = E_Tr3d_name_S(i)(1:2)//'  '
       enddo
 *
-      do 80 i=1,E_tr3d_ntr
-*        For tracer variables, search does not have to be successful
-         arret_L = .false.
-         if (Pil_bmf_L) then
+      do i=1,E_tr3d_ntr
+         if (.not.E_Schm_offline_L) then
+            if (Pil_bmf_L) then
                do k=1,lv
                  if (e_rdhint3 (hu,dstf_gid,nis,njs,
      $               E_tr3d_name_S(i),na(k),ip2a,ip3a,' ',tva,
@@ -325,7 +322,7 @@
      $                                                k,lv,pni,0,0,0)
                  endif
                enddo
-         else
+            else
 * BCS or 3DF files
                do k=1,lv
                   if (e_rdhint3 (wk2,dstf_gid,nis,njs,
@@ -346,12 +343,55 @@
                else
                   call e_write_3df ( hun,nis,njs,lv,E_trname_S(i),unf_casc)
                endif
+            endif
+*
+         else
+            mul=1.
+            if      (E_tr3d_name_S(i).eq.'FI') then
+               desc='IR FLUX '
+               inter='LINEAR'
+               mul=1.
+            else if (E_tr3d_name_S(i).eq.'FB') then
+               desc='SOLAR FL'
+               inter='LINEAR'
+               mul=1.
+	    else if ((E_tr3d_name_S(i).eq.'PR').or.(E_tr3d_name_S(i).eq.'PR0')) then
+               desc='PRECIP T'
+               inter='LINEAR'
+               mul=1. 
+            else if (E_tr3d_name_S(i).eq.'RT') then
+               desc='PCP RATE'
+               inter='LINEAR'
+               mul=1.
+            else if ((E_tr3d_name_S(i).eq.'N4').or.(E_tr3d_name_S(i).eq.'N40')) then
+               desc='AC SOL F'
+               inter='LINEAR'
+               mul=1.
+            else if ((E_tr3d_name_S(i).eq.'AD').or.(E_tr3d_name_S(i).eq.'AD0')) then
+               desc='ACC IR F'
+               inter='LINEAR'
+               mul=1.
+            else if (E_tr3d_name_S(i).eq.'PC') then
+               desc='PRECIP C'
+               inter='LINEAR'
+               mul=1.
+            else if (E_tr3d_name_S(i).eq.'P0') then
+               desc='SRFPRES '
+               inter='LINEAR'
+               mul=100.
+            else if (E_tr3d_name_S(i).eq.'M4') then
+               desc='COS_ZANG'
+               inter='LINEAR'
+               mul=1.
+            endif
+*
+            err = e_bmfrd    (dstf_gid, nis, njs,E_tr3d_name_S(i), 
+     $                         0., mul, na, lv, anyip_L,arret_L,inter)
          endif
- 80   continue
+      end do
 *
       deallocate(tt,td,es,hu,wk2,p0)
-      if (.not.Pil_bmf_L) deallocate(ttn,hun,fin,qqn,pipn)
-
+      if (.not.Pil_bmf_L) deallocate(ttn,hun)
 *     
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
 *

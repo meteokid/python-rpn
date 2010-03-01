@@ -1,30 +1,14 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r set_pois - 64 bits interface for preparation of projection matrix
 *                in the east-west or vertical direction
 *
 #include "model_macros_f.h"
 *
-      subroutine set_pois ( F_eval_8,F_evec_8,F_x_8,F_xdist_8,F_npts,
-     $                                                        F_dim )
+      subroutine set_pois ( F_eval_8,F_evec_8,F_npts,F_dim )
 *
 #include "impnone.cdk"
 *
       integer F_npts, F_dim
-      real*8  F_eval_8(*), F_evec_8(*), F_x_8(*), F_xdist_8(*)
+      real*8  F_eval_8(*), F_evec_8(*)
 *
 *author
 *     michel roch - aug 1992
@@ -32,33 +16,32 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version (from setpois v1_03)
 * v2_31 - Desgagne M.       - remove stkmemw
+* stg   - Plante A.         - Staggered version
 *
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
 * F_eval_8     O    - eigenvalue vector
 * F_evec_8     O    - eigenvector matrix
-* F_x_8        I    - grid point values
-* F_xdist_8    I    - distance between grid points
 * F_npts       I    - number of points
 * F_dim        I    - field dimension
 
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+#include "ptopo.cdk"
+#include "matlab.cdk"
+*
 *implicits
 *
-      integer i, j, pnhperr
+      integer i, j, pnhperr, longueur
       real*8, dimension (F_dim*F_dim) :: a_8,b_8
-      real*8 d_8(3*F_npts-1),x_8(F_dim),h_8(F_dim),r_8(F_dim)
+      real*8 d_8(3*F_npts-1),r_8(F_dim)
 *
 * --------------------------------------------------------------------
 *
-*     transfer in real*8 arrays
-*
-      do i=1,F_dim
-         x_8(i)=F_x_8(i)
-         h_8(i)=F_xdist_8(i)
-      end do
-*
-      call prever ( r_8, b_8, a_8, d_8, x_8, h_8, F_npts, F_dim )
+      call prever ( r_8, b_8, a_8, d_8, F_npts, F_dim )
 *
 *     transfer results back in input/output arrays
 *
@@ -69,6 +52,17 @@
       do i=1,F_dim
          F_eval_8(i)=r_8(i)
       end do
+      
+      if(matlab_write_L.and.Ptopo_myproc.eq.0)then
+         open(unit=62,file=
+     $        matlab_dir_S(1:longueur(matlab_dir_S))
+     $        //'from_fortran_set_pois.bin',
+     $        status='replace',form='unformatted')
+         write(62)F_dim
+         write(62)(F_evec_8(i),i=1,F_dim*F_dim)
+         write(62)(F_eval_8(i),i=1,F_dim)
+         close(62)
+      endif
 *
 * --------------------------------------------------------------------
 *

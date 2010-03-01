@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r set_opr - initialize the commons containing model operators
 *
 #include "model_macros_f.h"
@@ -45,7 +30,6 @@
 #include "dcst.cdk"
 #include "fft.cdk"
 #include "lun.cdk"
-#include "geomg.cdk"
 #include "schm.cdk"
 #include "opr.cdk"
 #include "eigv.cdk"
@@ -54,6 +38,8 @@
 #include "trp.cdk"
 #include "prec.cdk" 
 #include "ptopo.cdk"
+#include "type.cdk"
+#include "ver.cdk"
 *
 *modules
 **
@@ -89,6 +75,8 @@
       call hpalloc(Opr_opsyp2_8_ ,dim, err,8)
       dim = 3*G_nk
       call hpalloc(Opr_opszp0_8_ ,dim, err,8)
+      call hpalloc(Opr_opszpm_8_ ,dim, err,8)
+      call hpalloc(Opr_opszpl_8_ ,dim, err,8)
       call hpalloc(Opr_opszp2_8_ ,dim, err,8)
       do i = 1, 3*G_ni
          Opr_opsxp0_8 (i) = ZERO_8
@@ -100,6 +88,8 @@
       end do    
       do k = 1, 3*G_nk
          Opr_opszp0_8 (k) = ZERO_8
+         Opr_opszpm_8 (k) = ZERO_8
+         Opr_opszpl_8 (k) = ZERO_8
          Opr_opszp2_8 (k) = ZERO_8
       end do
 *
@@ -163,7 +153,6 @@
       deallocate ( wk2_8 )
 *
       deallocate ( wk_8 )
-      call set_ops8 (Opr_opszp0_8,geomg_hz_8,ONE_8,.false.,G_nk,G_nk,2)
 *
 *C    Compute eigenvalues and eigenvector for the generalized
 *     eigenvalue problem in East-West direction

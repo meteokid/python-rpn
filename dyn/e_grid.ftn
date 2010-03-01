@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_grid - compute the grid of the model
 #include "model_macros_f.h"
 *
@@ -74,8 +59,7 @@
 *     compute x and y positions of the PHI grid
 *
       ier=stretch_axis2 ( x_8, Grd_dx, Grd_x0, Grd_xl, nleft, ni, nila,
-     $                     r1, .false., .false., Grd_dxmax, nimax, 
-     $                                     Grd_gauss_L, Dcst_pi_8 )
+     $             r1, .false., .false., Grd_dxmax, nimax, Grd_gauss_L )
 *
       if (ier.ne.0) then
           write(6,*)'ERROR in generating X axis!!! ABORT!!!!'
@@ -84,15 +68,11 @@
 *
       if (LAM) then
          ier=stretch_axis2 ( y_8, Grd_dy, Grd_y0, Grd_yl, nbelo, Grd_nj,
-     $                       Grd_njla, s1, .false., .false., Grd_dymax,
-     $                                   njmax, Grd_gauss_L, Dcst_pi_8 )
+     $      Grd_njla, s1, .false.,.false.,Grd_dymax,njmax, Grd_gauss_L )
       else
          ier=stretch_axis2 ( y_8, Grd_dy, Grd_y0, Grd_yl, nbelo, Grd_nj,
-     $                       Grd_njla, s1, .true., .false., Grd_dymax,
-     $                                   njmax, Grd_gauss_L, Dcst_pi_8 )
+     $      Grd_njla, s1, .true. ,.false.,Grd_dymax,njmax, Grd_gauss_L )
       endif 
-*
-      call readgrid (x_8,y_8,Grd_ni,Grd_nj)
 *
       if (ier.ne.0) then
           write(6,*)'ERROR in generating Y axis!!! ABORT!!!!'

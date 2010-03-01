@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r gem_run - Performs the integration of the model
 *
 #include "model_macros_f.h"
@@ -49,8 +34,6 @@
 * v3_20 - Tanguay M.        - Introduce Hzd_hdif0_L
 * v3_20 - Dugas B.          - Replace GEMTIM by GEMTIM2(may re-define Step_rsti)
 * v3_30 - Desgagne M.       - Restructure code, added output for cascade mode
-* v3_31 - Desgagne M.       - new coupling interface to OASIS
-* v3_31 - Desgagne M.       - restart with physics BUSPER
 *
 *object
 *	Performs the integration of the model
@@ -91,7 +74,7 @@
 *     ---------------------------------------------------------------
 *
       if (Lun_out.gt.0) write (6,900)
-      call blocstat (.true.)
+      call blocstat ()
 
       fstep = Step_total
 
@@ -128,11 +111,10 @@
       step0 = Lctl_step+1
       stepf = last_step
 *
-      call itf_cpl_fillatm
-*
       do istep = step0, stepf
 *
          Lctl_step = istep
+         if ( bkup_L ) call wrrstrt
 *
 *C    Incrementing timestep
 *
@@ -188,9 +170,7 @@
          if (Schm_sfix_L.and.V4dg_conf.eq.0) call surfix
 *
          call out_dyn (.true.,-1)
-         call blocstat (Lctl_step.eq.last_step)
-*
-         call itf_cpl_fillatm
+         call blocstat
 *
          if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 *
@@ -199,10 +179,7 @@
 *
          if (Lctl_step.ne.last_step) call trans_clean
 *
-         bkup_L = (mod( Lctl_step ,Step_bkup ).eq.0) . and.
-     $            (Lctl_step.lt.stepf)
-         if ( bkup_L ) call wrrstrt
-         if ( Lctl_step.eq.Step_spinphy ) call wrrstrt_phy (.true.)
+         bkup_L = mod( Lctl_step ,Step_bkup ).eq.0
 *
       end do
 *

@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_setvmm - initialization of the commons for input physics 
 *		  variable. Virtual Memory manager initialization
 *
@@ -40,10 +25,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "itf_phy_vmm.cdk"
-*
-*modules
-      integer vmmcre,vmmlod,vmmkey,vmmuld
-      external vmmcre,vmmlod,vmmkey,vmmuld
+#include "itf_vmm.cdk"
 *
       character*80 attri_S
       integer i,err,keyd(20)
@@ -68,10 +50,10 @@
       VMM_NAM(p_umoins  )= 'UMOINS'
       VMM_NAM(p_vmoins  )= 'VMOINS'
       VMM_NAM(p_tmoins  )= 'TMOINS'
-      VMM_NAM(p_gzmoins6  )= 'GZMOINS6'
+!sch TODO: sync name in physic side [phy_ini?]
+      VMM_NAM(p_gzplus  )= 'GZMOINS6'
       VMM_NAM(p_omegap  )= 'OMEGAP'
-      VMM_NAM(p_sigm  )= 'SIGM'
-      VMM_NAM(p_sigt  )= 'SIGT'
+      VMM_NAM(p_sigm_t  )= 'SIGM'
       VMM_NAM(p_phis  )= 'PHIS'
       VMM_NAM(p_pplus  )= 'PPLUS'
       VMM_NAM(p_pmoins  )= 'PMOINS'
@@ -79,28 +61,33 @@
       VMM_NAM(p_eponmod  )= 'EPONMOD'
       VMM_NAM(p_fcpf  )= 'FCPMSK'
       VMM_NAM(p_fcpw  )= 'FCPOID'
+
+      VMM_NAM(p_sigm_m  )= 'SIGM_M'
 *
-      VMM_CREATE(p_uplus , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_vplus , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_tplus , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_umoins , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_vmoins , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_tmoins , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_gzmoins6 , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_omegap , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_sigm , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_sigt , LARRAY3D, 1, attri_S)
-      VMM_CREATE(p_phis , LARRAY2D, 1, attri_S)
-      VMM_CREATE(p_pplus , LARRAY2D, 1, attri_S)
-      VMM_CREATE(p_pmoins, LARRAY2D, 1, attri_S)
-      VMM_CREATE(p_dxdy , LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_uplus ,   LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_vplus ,   LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_tplus ,   LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_umoins ,  LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_vmoins ,  LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_tmoins ,  LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_gzplus, LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_omegap ,  LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_sigm_t ,  LARRAY2D * p_nk, 1, attri_S)
+      VMM_CREATE(p_phis ,    LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_pplus ,   LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_pmoins,   LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_dxdy ,    LARRAY2D, 1, attri_S)
       VMM_CREATE(p_eponmod , LARRAY2D, 1, attri_S)
-      VMM_CREATE(p_fcpf , LARRAY2D, 1, attri_S)
-      VMM_CREATE(p_fcpw , LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_fcpf ,    LARRAY2D, 1, attri_S)
+      VMM_CREATE(p_fcpw ,    LARRAY2D, 1, attri_S)
       do i=1,COMMON_SIZE(p_phy)
          keyd(i) = p_phy_first(i)
       enddo
-      err = vmmlod(keyd,17)
+      VMM_CREATE(p_sigm_m ,  LARRAY2D * p_nk, 1, attri_S)
+      keyd(i) = VMM_KEY(p_sigm_m)
+
+      err = vmmlod(keyd,i)
+      
 *
  1000 format(
      +/,'INITIALIZATION OF PHYS-DEP. VARIABLE COMDECKS (S/R itf_phy_setvmm)',

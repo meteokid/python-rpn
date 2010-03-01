@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r readgeo - read the geophysical fields from entry program
 *
 #include "model_macros_f.h"
@@ -30,7 +15,6 @@
 * v2_21 - Desgagne M.          - rpn_comm stooge for MPI
 * v3_10 - Lee V.               - RPN_bcastc for bcast on MPI_CHARACTER
 * v3_30 - Valcke, S.           - Read land-sea or coupling mask for coupling
-* v3_31 - Desgagne M.          - new coupling interface to OASIS
 *
 *object
 **      Reads the entire content of bus "geobus" from file "geophy.bin"
@@ -46,8 +30,7 @@
 #include "e_fu.cdk"
 #include "ptopo.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_cpl.cdk"
-#include "path.cdk"
+#include "itf_cpl_cplg.cdk"
 *
 *modules
 *
@@ -69,7 +52,6 @@
 * NEW    '5A' ,'TM' ,'9A' ,'9A' ,'2B' ,'2B','LE' ,     ,'1B'
 *
 **
-      character*512 fn
       integer i, ierr, err, err_read, nfields, osgeo, offg, il_siz, gid
       real, dimension(:), allocatable :: busgeo
       data osgeo/33/
@@ -81,12 +63,11 @@
 *
       if (Ptopo_myproc.eq.0) then
 *
-          fn  = trim(Path_input_S)//'/INIT_SFC/geophy.bin'
-          open (osgeo,file=fn,access='SEQUENTIAL',
+          open (osgeo,file='../geophy.bin',access='SEQUENTIAL',
      $          status='OLD',iostat=err_read,form='UNFORMATTED')
 *
           if (err_read.ne.0) then
-             if ((G_lam).and.(.not.C_coupling_L)) then
+             if (G_lam) then
                 write (Lun_out,8080) 'geophy.bin'
                 e_fu_anal = -1 ; e_fu_climat = -1
                 E_geol_glreg_L = .false.
@@ -112,6 +93,26 @@
              allocate    (busgeo       (p_bgeo_siz))
              read(osgeo) (busgeo(i),i=1,p_bgeo_siz)
              close (osgeo)
+          endif
+*
+          if (C_coupling_L) then
+*         Allocate and save mask in global variable for xfer to Oasis
+              il_siz = G_ni*G_nj
+              allocate (rga_msk(il_siz))
+              lg_mcpl = .false.
+              do i=1,p_bgeo_top
+                 if (trim(geonm(i,1)) .eq. 'MCPL') then
+*                if explicit coupling mask exists in data file, use it
+*                (valid points must be = 1, non valid point = 0)
+                    offg= geopar(i,1)
+                    rga_msk(1:il_siz) = busgeo(offg:il_siz+offg-1)
+                    lg_mcpl = .true.
+                 else if 
+     $              (trim(geonm(i,1)).eq.'MGEN' .and. .not.lg_mcpl) then
+                    offg= geopar(i,1)
+                    rga_msk(1:il_siz) = busgeo(offg:il_siz+offg-1)
+                 endif
+              end do
           endif
 *
       endif
@@ -142,6 +143,8 @@
 *     allocation of the local geophysical bus (geofld)
 *
       allocate (geofld(p_bgeo_siz))
+*
+      if (C_coupling_L) allocate (rla_msk(l_ni*l_nj))
 *
 *     Distributing global geophysical bus (geobus)
 *      

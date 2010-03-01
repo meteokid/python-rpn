@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r tr_init - Initializes tracers
 *
 #include "model_macros_f.h"
@@ -42,6 +27,7 @@
 #include "tr3d.cdk"
 #include "nest.cdk"
 #include "vt1.cdk"
+#include "func.cdk"
 #include "schm.cdk"
 #include "itf_phy_busind.cdk"
 *
@@ -49,7 +35,7 @@
       external write_db_file,rewind_db_file,vmmlod,vmmget,vmmuld
 *
       integer i,j,k,kk,jjj,n,err,key0,key(Tr3d_ntr)
-      real w1(l_ni,l_nj,nk),w2(l_ni,l_nj,nk),buf(l_ni,G_nk),tr
+      real w1(l_ni,l_nj,nk),w2(l_ni,l_nj,nk),buf(l_ni,G_nk+1),tr
       pointer (patr, tr(LDIST_SHAPE,*))
 *
 *     ---------------------------------------------------------------
@@ -69,7 +55,7 @@
             if (Tr3d_name_S(k).eq.'HU') then
 * Note that HU Schm_moist test, clipping to zero is already done in readdyn
 * So copy HU field from readdyn into the tracer vmm var.
-               do n=1,G_nk
+               do n=1,G_nk+1
                do j=1,l_nj
                do i=1,l_ni
                   tr(i,j,n) = hu(i,j,n)
@@ -88,7 +74,7 @@
                       if (Tr3d_name_S(n).eq.h2o_name_S(kk)) jjj=kk
                    enddo
                    if (jjj.gt.0) then
-                       do n=1,G_nk
+                       do n=1,G_nk+1
                        do j=1,l_nj
                        do i=1,l_ni
                           tr(i,j,n)=0.0
@@ -101,7 +87,6 @@
          end do
          err = vmmuld(key,Tr3d_ntr)
       endif
-*
 *
 *     ---------------------------------------------------------------
 *

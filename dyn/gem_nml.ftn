@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r gem_nml
 *
 #include "model_macros_f.h"
@@ -27,11 +12,6 @@
 *
 *revision
 * v3_30 - Desgagne M.       - initial version
-* v3_31 - Desgagne M.       - restart with physics BUSPER + clipping 
-*                             of SL trajectories
-* v3_31 - Tanguay           - Added Schm_settls_L switch
-* v3_31 - Lee V.            - Replaced Glb_pil_? with Step_maxcfl switch
-*                             AND replaced Grdc_pil with Grdc_maxcfl 
 *
 *object
 *  Default configuration and reading namelists gem_cfgs and grdc
@@ -62,10 +42,7 @@
       Step_rsti  = 9999999
       Step_bkup  = 9999999
       Step_gstat = 9999999
-      Step_spinphy=9999999
       Step_cleanup = 0
-      Step_maxcfl  = 1
-      Step_cliptraj_L = .false.
 *
       Rstri_glbcol_L = .false.
 *
@@ -105,7 +82,9 @@
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_sfix_L     = .false.
-      Schm_settls_L   = .false.
+      Schm_dPdlogZ_L  = .false.
+      Schm_eulmtemp_L = .false.
+
 *
       Schm_phyms_L    = .false.
       Schm_chems_L    = .false.
@@ -116,21 +95,29 @@
       Lam_ctebcs_L  = .false.
       Lam_toptt_L   = .false.
       Lam_0ptend_L  = .true.
-      Lam_blendoro_L= .true.
-      Lam_cascsfc_L = .true.
       Lam_busper_init_L  = .false.
       Lam_current_S = '20000101.000000'
 *
       Zblen_L   = .false.
 *
+      Glb_pil_n = 7
+      Glb_pil_s = 7
+      Glb_pil_w = 7
+      Glb_pil_e = 7
       Adw_nkbz_L = .true.
       Adw_exdg_L = .false.
       Adw_ckbd_L = .false.
       Adw_mono_L = .true.
       Adw_interp_type_S = 'lag3d'
       Adw_nosetint_L   = .false.
+      Adw_trunc_traj_L = .false.
       Adw_halox  = 3
       Adw_haloy  = 2
+      if (G_lam) then
+          Adw_halox  = 7
+          Adw_haloy  = 7
+ 	  if (Lun_out.ge.0) write (Lun_out, 9000)
+      endif
 *
       Clim_climat_L  = .false.
       Clim_inincr_L  = .false.
@@ -182,18 +169,18 @@
       Hzd_difva_L= .false.
       Hzd_pwr    = 6
       Hzd_lnr    = 0.2
-      Hzd_uvwdt_L= .true.
-      Hzd_rwnd_L = .false.
+      Hzd_uvwdt_L= .false.
       Hspng_nj = 0
       Hspng_mf = 800.
-      Hspng_uvwdt_L  = .true.
+      Hspng_uvwdt_L  = .false.
+      Hspng_rwnd_L   = .false.
       Vspng_nk = 0
       do i = 1, Vspng_maxn
          Vspng_mf(i) = -1.
          Vspng_nu(i) = -1.
       end do
       Vspng_nutop = -1.
-      Vspng_uvwdt_L  = .true.
+      Vspng_uvwdt_L  = .false.
       Vspng_rwnd_L   = .false.
       Vspng_njpole   = 3
       Vspng_zmean_L  = .false.
@@ -287,7 +274,7 @@
       Grdc_ni     = 0
       Grdc_nj     = 0
       Grdc_Hblen  = 10
-      Grdc_maxcfl = 1
+      Grdc_pil    = 7
       Grdc_nfe    = ''
       Grdc_initphy_L = .false.
       Grdc_runstrt_S = Lam_runstrt_S
@@ -350,6 +337,8 @@
       endif
 *
  8000 format (/,'========= ABORT IN S/R gem_nml.f ============='/)
+ 9000 format (/,' LAM MODE: default values for ADW_HALOX,ADW_HALOY=7,7'/,
+     $          '           unless otherwise specified in gem_cfgs'/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
  9500 format (/,' INVALID back-trajectory interpolator'/

@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 #if defined (DOC)
 *
 ***comdeck nl.cdk
@@ -26,10 +11,10 @@
 *--------------------|-------------------------------------------------|
 * Nl_nu              | non-linear deviation of U                       |
 * Nl_nv              | non-linear deviation of V                       |
-* Nl_nth             | non-linear deviation of T                       |
+* Nl_nth             | non-linear deviation of T -> X                  |
 * Nl_ncn             | non-linear portion of continuity equation       |
-* Nl_n3              | non-linear deviation of vertical motion         |
-* Nl_n3p             | ???                                             |
+* Nl_nw              | non-linear deviation of vertical motion         |
+* Nl_vv              | non-linear deviation of FI -> WFI -> Q          |
 *----------------------------------------------------------------------
 *
 *
@@ -37,8 +22,8 @@
       MARK_COMMON_BEG(nl)
       DCL_DYNVAR(nl,   nu ,  real, (LDIST_SHAPE,l_nk))
       DCL_DYNVAR(nl,   nv ,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   nth,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nl,   nth,  real, (LDIST_SHAPE,l_nk+1))
       DCL_DYNVAR(nl,   ncn,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   n3 ,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   n3p,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nl,   nw ,  real, (LDIST_SHAPE,l_nk+1))
+      DCL_DYNVAR(nl,   nvv,  real, (LDIST_SHAPE,l_nk+1))
       MARK_COMMON_END(nl)

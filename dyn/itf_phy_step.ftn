@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r itf_phy_step - Apply the physical processes: CMC/RPN package
 *
 #include "model_macros_f.h"
@@ -20,7 +5,7 @@
       subroutine itf_phy_step (F_stepno)
       implicit none
 *
-      integer F_stepno
+      integer, INTENT(IN) :: F_stepno
 *
 *author 
 *     Michel roch - rpn - april 1994
@@ -39,8 +24,6 @@
 * v3_21 - Valcke, S.        - Bugfix: no call to itf_phy_apply in offline mode
 * v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 * v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
-* v3_31 - Desgagne M.       - new coupling interface to OASIS
-* v3_31 - Lee V.            - modification of Out_etik_S in out_sgrid only
 *   
 *object
 *	Computes the physical processes and apply the resulting
@@ -65,7 +48,7 @@
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
 #include "itf_phy_vmm.cdk" 
-#include "itf_cpl.cdk"
+#include "itf_cpl_cplg.cdk"
 #include "grdc.cdk"
 #include "geomn.cdk"
 #include "out3.cdk"
@@ -74,6 +57,8 @@
 #include "lctl.cdk"
 *
 *modules
+      integer  open_db_file,rewind_db_file,close_db_file
+      external open_db_file,rewind_db_file,close_db_file
       integer  omp_get_max_threads
       external omp_get_max_threads
 **
@@ -81,9 +66,9 @@
       character*15 datev,pdate
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
-      real  vtmoins(LDIST_SHAPE,l_nk)
-      real, dimension(:,:   ), allocatable :: obusval,cobusval
-      real, dimension(:)     , allocatable :: trm,trp,kmm,ktm,tp,qp
+      real  vtmoins(LDIST_SHAPE,p_nk)
+      real, dimension(:,:)   , allocatable :: obusval,cobusval
+      real, dimension(:)     , allocatable :: trm,trp,kmm,ktm,tp
       real, dimension(:)     , allocatable :: tdu,tdv,tdt
       integer*8, dimension(:), allocatable :: pvptr
 *
@@ -96,9 +81,9 @@
 *
       call iniobus(obussiz)
       allocate(obusval(l_ni*l_nj,obussiz))
-      dim  = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      dim  = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*p_nk
       ndim = COMMON_SIZE(p_phy)
-      allocate (pvptr(ndim),kmm(dim),ktm(dim),tp(dim),qp(dim),
+      allocate (pvptr(ndim),kmm(dim),ktm(dim),tp(dim),
      $          tdu(dim),tdv(dim),tdt(dim),
      $          trp(dim*phyt_ntr),trm(dim*phyt_ntr))
 *
@@ -106,31 +91,37 @@
 *     fields for chemistry for chemistry also.
 *
       if (Schm_chems_L) then
-         call itf_chm_iniobus(cobussiz)
-         if (cobussiz>0) allocate(cobusval(l_ni*l_nj,cobussiz))
-         if (chmt_ntr>0) then
-            allocate (cvptrp(chmt_ntr),cvptrm(chmt_ntr))
-         else
-            call gem_stop ('chmt_ntr in itf_phy_step',-1)
-         endif
+c$$$ TODO: fix itf_chm
+         call gem_stop('itf_phy_step -- itf_chm_iniobus',-1)
+c$$$         call itf_chm_iniobus(cobussiz)
+c$$$         if (cobussiz>0) allocate(cobusval(l_ni*l_nj,cobussiz))
+c$$$         if (chmt_ntr>0) then
+c$$$            allocate (cvptrp(chmt_ntr),cvptrm(chmt_ntr))
+c$$$         else
+c$$$            call gem_stop ('chmt_ntr in itf_phy_step',-1)
+c$$$         endif
       endif
 *
 *C              load all fields required by the physic in memory
 *	        ------------------------------------------------
-      call itf_phy_vmmprep (pvptr, ndim, trp, trm, tp, qp, vtmoins,LDIST_DIM,l_nk)
+      call itf_phy_vmmprep (pvptr, ndim, trp, trm, tp, vtmoins,LDIST_DIM,p_nk)
 *
 *C              load all fields required by the chemistry in memory. This
 *               includes reading emissions (forcing) fields from file.
 *	        ------------------------------------------------
 *
-      call itf_chm_prep(cvptrp,cvptrm)
+c$$$ TODO: fix itf_chm
+c$$$      call itf_chm_prep(cvptrp,cvptrm)
 *
 *
 *               Store TRAJ for the simplified physics
 *               -------------------------------------
-      if ( V4dg_conf.ne.0 .and. F_stepno.gt.0) 
-     $     call v4d_rwtraj_sigma_phystep (tp,qp,trp,vtmoins,trm,
-     $                                           LDIST_DIM,l_nk)
+      if ( V4dg_conf.ne.0 .and. F_stepno.gt.0) then
+         call gem_stop('itf_phy_step -- v4d_rwtraj_sigma_phystep',-1)
+c$$$ TODO: fix v4d for new staggered dyn
+c$$$         call v4d_rwtraj_sigma_phystep (tp,qp,trp,vtmoins,trm,
+c$$$     $                                           LDIST_DIM,p_nk)
+      endif
 *
 *C       4.	compute physics tendencies
 *		--------------------------
@@ -138,30 +129,35 @@
 *
       Mem_pslic = 0
 *
+!SC TODO: must parameterize the numbers 6*4 to CPL_NBFLDS*CPL_NBTYPE
+      if (C_coupling_L .and. lg_getfirst) 
+     $    call phycom ('CPL_FLD' ,iga_cplfld ,6*4,'set')
+*
       tdu=0. ; tdv=0.
 *
-      call pe_rebind (Ptopo_smtphy,(Ptopo_myproc.eq.0).and.
-     $                                 (F_stepno.eq.0))
+      call pe_rebind(1)
 !$omp parallel
 !$omp do
       do j=1,omp_get_max_threads()
       call itf_phy_slb ( j , F_stepno,obusval, cobusval, 
      $                   pvptr, cvptrp,cvptrm, ndim, chmt_ntr,
      $                   trp,trm, tdu,tdv,tdt,kmm,ktm,
-     $                   LDIST_DIM, l_nk)
+     $                   LDIST_DIM, p_nk)
       enddo
 !$omp enddo
 !$omp end parallel
-      call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and.
-     $                                 (F_stepno.eq.0))
+      call pe_rebind(-1)
 *
+c$$$ TODO: check this
       call out_phy (obusval,l_ni,l_nj,F_stepno)
 *
 *      If chemistry flag set, output desired chemical species as well
 *
       if (Schm_chems_L) then
-         call itf_chm_out(cobusval,l_ni,l_nj,F_stepno)
-         if (cobussiz>0) deallocate (cobusval)
+c$$$ TODO: fix itf_chm
+         call gem_stop('itf_phy_step -- itf_chm_out',-1)
+c$$$         call itf_chm_out(cobusval,l_ni,l_nj,F_stepno)
+c$$$         if (cobussiz>0) deallocate (cobusval)
       endif
 *
       deallocate (obusval)
@@ -173,7 +169,7 @@
             cobussiz=p_bper_siz/(p_ni)
             allocate (cobusval(l_ni*l_nj,cobussiz))
             call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,
-     $                   .false.,-1,-1,1,'','',Geomn_longs,Geomn_latgs)
+     $                   .false.,-1,-1,1,'',Geomn_longs,Geomn_latgs)
 
             call datf2p (pdate,Out3_date)
             dayfrac = dble(F_stepno) * Cstv_dt_8 / sec_in_day
@@ -182,6 +178,7 @@
 !$omp parallel
 !$omp do
             do j=1,Ptopo_npeOpenMP
+c$$$ TODO: check this
                call out_phycasc ( j , F_stepno, cobusval )
             enddo
 !$omp enddo
@@ -189,11 +186,13 @@
 
             if (Grdc_initphy_L) then
 *             Dump permanent bus out
+c$$$ TODO: check this
                call out_perbus_3df(cobusval,l_ni,l_nj,datev,
      $                   Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf)
                deallocate (cobusval)
             else
 *             Dump only minimum physics fields out for cascade grid
+c$$$ TODO: check this
               call out_phy_3df(cobusval,l_ni,l_nj,datev,
      $                   Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf)
               deallocate (cobusval)
@@ -210,6 +209,7 @@ c         enddo
 c     endif
 *
       if (P_pbd_dumpbus.gt.0) then
+c$$$ TODO: check this
         if (mod( F_stepno,P_pbd_dumpbus ).eq.0)
      $    call dumpwrit2( Lun_out, F_stepno, Ptopo_myproc )
       endif
@@ -219,18 +219,26 @@ c     endif
 *       ----------------------------------------------------------
 *
       if (.not. schm_offline_L) then
-         call itf_phy_apply ( tdu,tdv,tdt,trm,
-     $                        tp,qp,LDIST_DIM,l_nk,F_stepno.gt.0 )
+         call itf_phy_apply( tdu,tdv,tdt,trp,trm,
+     $                        tp,LDIST_DIM,p_nk,F_stepno.gt.0 )
       endif
 *
 *
 *       Store TRAJ of vertical exchange coefficients from full-physics
 *       --------------------------------------------------------------
       if ( V4dg_conf.ne.0 .and. P4d_pbl.eq.2 .and. F_stepno.gt.0 .and.
-     $     V4dg_oktr_L ) call v4d_rwtraj_kmkt(kmm,ktm,LDIST_DIM,l_nk) 
+     $     V4dg_oktr_L ) then
+         call gem_stop('itf_phy_step -- v4d_rwtraj_kmkt',-1)
+c$$$ TODO: fix v4d for new staggered dyn
+c$$$         call v4d_rwtraj_kmkt(kmm,ktm,LDIST_DIM,p_nk) 
+      endif
 
-      deallocate (pvptr,tdu,tdv,tdt,trp,trm,tp,qp,kmm,ktm)
-      if (Schm_chems_L) deallocate (cvptrp,cvptrm)
+      deallocate (pvptr,tdu,tdv,tdt,trp,trm,tp,kmm,ktm)
+      if (Schm_chems_L) then
+c$$$ TODO: fix itf_chm
+         call gem_stop('itf_phy_step -- deallocate (cvptrp,cvptrm)',-1)
+c$$$         deallocate (cvptrp,cvptrm)
+      endif
 *
 *     ---------------------------------------------------------------
 *

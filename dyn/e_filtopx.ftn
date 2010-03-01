@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
 ***s/r e_filtopx - filters topographic fields
 *
 #include "model_macros_f.h"
@@ -29,8 +14,6 @@
 *     andre methot - sept 95
 *
 *revision
-* v3_31 - Lee V    - return filtered topography equivalent to original
-*                    if no filtering is required
 *
 *object
 *         This subroutine filters the topographic field using xy filter
@@ -80,7 +63,6 @@
 *----------------------------------------------------------------------
 *
       if (.not.(Topo_dgfmx_L.or.Topo_filmx_L)) then
-         F_topof = F_topo
          write(6,9900)
          return
       endif
@@ -108,7 +90,11 @@
 *
       if ( Topo_dgfmx_L ) then
          write(6, 9400 )
-         if ( Topo_clip_L ) w1(1:nio,1:fnjo) = max( 0.0, w1(1:nio,1:fnjo) )
+         do j=1,fnjo
+         do i=1,nio
+            w1(i,j)=max( 0.0, w1(i,j) )
+         enddo
+         enddo
          if ( ftgrd .eq. 'G' ) then
             call e_setdgf (w1,gnis,gnjs, pni, pnj, xdhx    ,xdhy ,xdcy )
          else if ( ftgrd .eq. 'U' ) then
@@ -126,7 +112,11 @@
 *
       if ( Topo_filmx_L ) then
          write(6,9500 )
-         if ( Topo_clip_L ) w1(1:nio,1:fnjo) = max( 0.0, w1(1:nio,1:fnjo) )
+         do j=1,fnjo
+         do i=1,nio
+            w1(i,j)=max( 0.0, w1(i,j) )
+         enddo
+         enddo
          if ( ftgrd .eq. 'G' ) then
             call e_ntrxyfil( w1, w1, 0.5, xdhx, xdhy,
      %                      pni, pnj, 1, gnis, gnjs, 1)   
