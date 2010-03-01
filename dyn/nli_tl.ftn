@@ -14,10 +14,17 @@
 * v2_21 - Tanguay M.        - reduce standard output as in model 
 * v2_30 - Edouard S.        - remove pi' at the top
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *
 *object
 *     see id section
+*     --------------------------------------------------------
+*     REMARK: INPUT TRAJ:F_tpt0m,  F_pipt0m, F_qt0m, F_st0m
+*                        F_tplt0m, F_ut0m,   F_vt0m, F_rhellm
+*                        F_fipt0m, F_mut0m,  F_multxm (NoHyd)
+*     --------------------------------------------------------
+
 *
 *arguments
 *     none
@@ -36,22 +43,19 @@
 #include "rhscm.cdk"
 #include "nlm.cdk"
 #include "vt0m.cdk"
+#include "vtxm.cdk" 
 *
 *modules
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *    
-      integer  pnerr, pnlod, pnlkey1(20), i, j 
+      integer  pnerr, pnlod, pnlkey1(40), i, j 
       real wijk1(LDIST_SHAPE,l_nk), wijk2(LDIST_SHAPE,l_nk)
       real wk1(LDIST_SIZ*l_nk)
 *
       real wijk1m(LDIST_SHAPE,l_nk),wijk2m(LDIST_SHAPE,l_nk)
       real wk1m(LDIST_SIZ*l_nk)
 *     ______________________________________________________
-*
-      if(.not. Schm_hydro_L) call gefstop('nli_tl')
-*     ______________________________________________________
-*
 *
       if (Lun_debug_L)  write(Lun_out,1000)
 *
@@ -63,12 +67,21 @@
       pnlkey1(6) = VMM_KEY(st0)
       pnlkey1(7) = VMM_KEY(qt0)
       pnlod = 7 
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(fipt0)
+         pnlkey1(pnlod+2) = VMM_KEY(topo)
+         pnlkey1(pnlod+3) = VMM_KEY(mut0)
+         pnlkey1(pnlod+4) = VMM_KEY(multx)
+         pnlod = pnlod+4
+      endif
       if (Cori_cornl_L) then
          pnlkey1(pnlod+1) = VMM_KEY(ut0)
          pnlkey1(pnlod+2) = VMM_KEY(vt0)
          pnlod = pnlod+2
       endif
 *
+*     TRAJECTORY
+*     ----------
       pnlkey1(pnlod+1) = VMM_KEY(rhelnm)
       pnlkey1(pnlod+2) = VMM_KEY(rhellm)
       pnlkey1(pnlod+3) = VMM_KEY(tpt0m)
@@ -77,6 +90,12 @@
       pnlkey1(pnlod+6) = VMM_KEY(st0m)
       pnlkey1(pnlod+7) = VMM_KEY(qt0m)
       pnlod = pnlod+7
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(fipt0m)
+         pnlkey1(pnlod+2) = VMM_KEY(mut0m)
+         pnlkey1(pnlod+3) = VMM_KEY(multxm)
+         pnlod = pnlod+3
+      endif
       if (Cori_cornl_L) then
          pnlkey1(pnlod+1) = VMM_KEY(ut0m)
          pnlkey1(pnlod+2) = VMM_KEY(vt0m)
@@ -92,11 +111,17 @@
       pnerr = VMM_GET_VAR(pipt0)
       pnerr = VMM_GET_VAR(st0)
       pnerr = VMM_GET_VAR(qt0)
-*
-      fipt0_ = 0
-      topo_  = 0
-      mut0_  = 0
-      multx_ = 0
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(fipt0)
+         pnerr = VMM_GET_VAR(topo)
+         pnerr = VMM_GET_VAR(mut0)
+         pnerr = VMM_GET_VAR(multx)
+      else
+         fipt0_ = 0
+         topo_  = 0
+         mut0_  = 0
+         multx_ = 0
+      endif
 *
       if (Cori_cornl_L) then
          pnerr = VMM_GET_VAR(ut0)
@@ -106,6 +131,8 @@
          vt0_ = 0
       endif
 *
+*     TRAJECTORY
+*     ----------
       pnerr = VMM_GET_VAR(rhelnm)
       pnerr = VMM_GET_VAR(rhellm)
       pnerr = VMM_GET_VAR(tpt0m)
@@ -113,6 +140,15 @@
       pnerr = VMM_GET_VAR(pipt0m)
       pnerr = VMM_GET_VAR(st0m)
       pnerr = VMM_GET_VAR(qt0m)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(fipt0m)
+         pnerr = VMM_GET_VAR(mut0m)
+         pnerr = VMM_GET_VAR(multxm)
+      else
+         fipt0m_ = 0
+         mut0m_  = 0
+         multxm_ = 0
+      endif
 *
       if (Cori_cornl_L) then
          pnerr = VMM_GET_VAR(ut0m)
@@ -122,18 +158,17 @@
          vt0m_ = 0
       endif
 *
-*
 *PDIR RESERVE=Ptopo_npeOpenMP
 *
-      call nlip_2_tl ( nl_nu,  nl_nv,  wk1,  nl_nth, nl_n3, nl_n3p, 
-     $                 rheln,  rhell,  tpt0, tplt0,  pipt0, nl_ncn, 
-     $                 st0,    qt0,    fipt0,topo,   ut0,   vt0,    mut0, multx, 
-     $                 wijk1,  wijk2,
+      call nlip_2_tl ( nl_nu  ,nl_nv  ,wk1   ,nl_nth  ,nl_n3   ,nl_n3p  , 
+     $                 rheln  ,rhell  ,tpt0  ,tplt0   ,pipt0   ,nl_ncn  , 
+     $                 st0    ,qt0    ,fipt0 ,topo    ,ut0     ,vt0     ,mut0 ,multx , 
+     $                 wijk1  ,wijk2  ,
 *
-     $                 nlm_num,nlm_nvm,wk1m, nlm_nthm,
-     $                 rhelnm, rhellm, tpt0m,tplt0m, pipt0m,nlm_ncnm,
-     $                 st0m,   qt0m,                 ut0m,  vt0m,
-     $                 wijk1m, wijk2m,
+     $                 nlm_num,nlm_nvm,wk1m  ,nlm_nthm,nlm_n3m ,nlm_n3pm,
+     $                 rhelnm ,rhellm ,tpt0m ,tplt0m  ,pipt0m  ,nlm_ncnm,
+     $                 st0m   ,qt0m   ,fipt0m,         ut0m    ,vt0m    ,mut0m,multxm,
+     $                 wijk1m, wijk2m ,
 *
      $                 LDIST_DIM,l_nk )
 *

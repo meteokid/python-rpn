@@ -10,13 +10,14 @@
      %                           F_capxm,F_xggm,F_xddm,
      %                           F_capym,F_yggm,F_yddm,
      %                           F_capzm,F_czm, F_num, F_mono_L,
-     %                           F_inca, F_zinc,F_kdim,F_nij,F_nijplus,F_nk,F_ksep)
+     %                           F_inca, F_zinc,F_kdim,F_nij,F_nijplus,F_nk,F_ksep,
+     %                           i0,in,j0,jn,kn)
 *
 #include "impnone.cdk"
 *
       logical F_mono_L
 *
-      integer F_num
+      integer F_num,i0,in,j0,jn,kn
 *
       real F_out (F_num),
      %     F_capx(F_num), F_capy(F_num), F_capz(F_num), F_cz  (F_num)
@@ -38,6 +39,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - restore  vectorization in adjoint of semi-Lag.
 * v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *language
 *     fortran 77
@@ -90,7 +92,7 @@
 #include "glb_ld.cdk"
 #include "adw.cdk"
 ************************************************************************
-      integer n, nijag, k, ij, ib, ib, klev, ilev, ijk
+      integer n, nijag, k, ij, ib, klev, ilev, ijk, i, j
 *
       real prmin (F_nij*F_nk), prmax (F_nij*F_nk),
      %     prmin0(F_nij*F_nk), prmax0(F_nij*F_nk),
@@ -120,9 +122,6 @@
       real*8, parameter :: ZERO_8 = 0.0
 *     ______________________________________________________
 *
-      if ( G_lam    ) call gem_stop('adw_tricub_ad',-1)
-*     ______________________________________________________
-*
       nijag = Adw_nit * Adw_njt
 *
 *     ZERO adjoint variables
@@ -148,7 +147,10 @@
 *
       ib = (ilev-1)*F_kdim + F_inca
 *
-      do ij=1,F_nij
+      do j=j0,jn
+      do i=i0,in
+*
+      ij = ((j-1)*l_ni) + i
 *
       n  = F_nij*(k-1) + ij
 *
@@ -910,6 +912,7 @@
       F_capx(n) =   xx_8 + F_capx(n)
 *
       enddo
+      enddo
 *
       ilev = ilev + 1
 *
@@ -925,7 +928,10 @@
 *
       ib = (ilev-1)*F_kdim + F_inca
 *
-      do ij=1,F_nij
+      do j=j0,jn
+      do i=i0,in
+*
+      ij = ((j-1)*l_ni) + i
 *
       n  = F_nij*(k-1) + ij
 *
@@ -1409,6 +1415,7 @@
       xx_8      = - xm_8 + xx_8
       F_capx(n) =   xx_8 + F_capx(n)
 *
+      enddo
       enddo
 *
       ilev = ilev + 1

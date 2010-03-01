@@ -6,7 +6,7 @@
      $                                    F_uum,F_vvm,F_ssm,
      $                                    DIST_DIM, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *
@@ -24,6 +24,8 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate
 * v3_00 - Laroche S.        - cleanup 
 * v3_02 - Tanguay M.        - correct zeroing of winds halo 
+* v3_03 - Tanguay M.        - use v4d_zerohalo 
+*                           - split call to rpn_comm_xch_halo for uv
 *
 *object
 *     see id section
@@ -116,12 +118,14 @@
          end do
          end do
       end do
-
-      call rpn_comm_xch_halo ( uvm, LDIST_DIM, l_niu,l_nj,G_nk*2,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-      call caldiv_2 ( F_tdm, uvm(minx,miny,1,1), uvm(minx,miny,1,2), LDIST_DIM, G_nk )
 *
+      call rpn_comm_xch_halo (uvm,               LDIST_DIM, l_niu,l_nj,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo (uvm(minx,miny,1,2),LDIST_DIM, l_ni,l_njv,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+      call caldiv_2 ( F_tdm, uvm(minx,miny,1,1), uvm(minx,miny,1,2),
+     $                LDIST_DIM, G_nk )
 *
 *                   *
 *                 pi
@@ -173,7 +177,8 @@
 *
       end do
 *
-      call p_uvgridscal(uvm(minx,miny,1,1),uvm(minx,miny,1,2),LDIST_DIM,l_nk,.true.)
+      call p_uvgridscal ( uvm(minx,miny,1,1), uvm(minx,miny,1,2),
+     $                    LDIST_DIM, l_nk, .true.)
 *
       do k=1,G_nk
        do j= 1, l_nj
@@ -272,7 +277,8 @@
 *
 *
 
-      call p_uvgridscal_ad(uv(minx,miny,1,1),uv(minx,miny,1,2),LDIST_DIM,l_nk,.true.)
+      call p_uvgridscal_ad ( uv(minx,miny,1,1), uv(minx,miny,1,2),
+     $                       LDIST_DIM, l_nk, .true.)
 
 *
 *
@@ -363,62 +369,19 @@
 *  b) compute  \/ . ( V dpi/dpi )
 *
 *
-      call caldiv_2_ad ( F_td, uv(minx,miny,1,1), uv(minx,miny,1,2), LDIST_DIM, G_nk )
+      call caldiv_2_ad ( F_td, uv(minx,miny,1,1), uv(minx,miny,1,2), 
+     $                   LDIST_DIM, G_nk )
 *
-      call rpn_comm_adj_halo( uv, LDIST_DIM, l_niu, l_nj, G_nk*2,
-     $                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_adj_halo (uv(minx,miny,1,2), LDIST_DIM, l_ni,l_njv,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_adj_halo (uv,                LDIST_DIM, l_niu,l_nj,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
-*     Zero u halo
-*     -----------
-      do k=1,G_nk
-         do j=l_miny,0
-         do i=l_minx,l_maxx
-            uv(i,j,k,1) = ZERO_8
-         end do
-         end do
-         do j=l_nj+1,l_maxy
-         do i=l_minx, l_maxx
-            uv(i,j,k,1) = ZERO_8
-         end do
-         end do
-         do i=l_minx,0
-         do j=l_miny,l_maxy
-            uv(i,j,k,1) = ZERO_8
-         end do
-         end do
-         do i=l_niu+1,l_maxx
-         do j=l_miny,l_maxy
-            uv(i,j,k,1) = ZERO_8
-         end do
-         end do
-      end do
+*     Zero u,v halo
+*     -------------
+      call v4d_zerohalo ( uv(minx,miny,1,2), l_ni, l_njv,LDIST_DIM, l_nk)
+      call v4d_zerohalo ( uv,                l_niu,l_nj, LDIST_DIM, l_nk)
 *
-*     Zero v halo
-*     -----------
-      do k=1,G_nk
-         do j=l_miny,0
-         do i=l_minx,l_maxx
-            uv(i,j,k,2) = ZERO_8
-         end do
-         end do
-         do j=l_njv+1,l_maxy
-         do i=l_minx, l_maxx
-            uv(i,j,k,2) = ZERO_8
-         end do
-         end do
-         do i=l_minx,0
-         do j=l_miny,l_maxy
-            uv(i,j,k,2) = ZERO_8
-         end do
-         end do
-         do i=l_ni+1,l_maxx
-         do j=l_miny,l_maxy
-            uv(i,j,k,2) = ZERO_8
-         end do
-         end do
-      end do
-*
-*              __              *
 *  b) compute  \/ . ( V dpi/dpi )
 
       do k=1,G_nk
@@ -458,29 +421,9 @@
       call rpn_comm_adj_halo( F_ss, LDIST_DIM, l_ni, l_nj , 1,
      $                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
-*
 *     Zero F_ss halo
 *     --------------
-      do j=l_miny,0
-      do i=l_minx,l_maxx
-         F_ss(i,j) = ZERO_8
-      end do
-      end do
-      do j=l_nj+1,l_maxy
-      do i=l_minx,l_maxx
-         F_ss(i,j) = ZERO_8
-      end do
-      end do
-      do i=l_minx,0
-      do j=l_miny,l_maxy
-         F_ss(i,j) = ZERO_8
-      end do
-      end do
-      do i=l_ni+1,l_maxx
-      do j=l_miny,l_maxy
-         F_ss(i,j) = ZERO_8
-      end do
-      end do
-
+      call v4d_zerohalo ( F_ss, l_ni, l_nj, LDIST_DIM, 1) 
+*
       return
       end

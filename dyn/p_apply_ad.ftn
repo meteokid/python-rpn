@@ -21,6 +21,7 @@
 *
 *revision
 * v3_00 - Laroche S.        - initial MPI version
+* v3_03 - Tanguay M.        - use v4d_zerohalo 
 *
 *object
 *       TLM of apply consistency of the tendencies on physics variables
@@ -232,33 +233,8 @@
 *
 *     Zeroing halo
 *     ------------
-      do k=1,G_nk
-         do j=l_miny,0
-         do i=l_minx,l_maxx
-            F_tdv(i,j,k) = ZERO_8 
-            F_tdu(i,j,k) = ZERO_8 
-         end do
-         end do
-         do j=l_nj+1,l_maxy
-         do i=l_minx ,l_maxx
-            F_tdv(i,j,k) = ZERO_8 
-            F_tdu(i,j,k) = ZERO_8 
-         end do
-         end do
-         do i=l_minx,0
-         do j=l_miny,l_maxy
-            F_tdv(i,j,k) = ZERO_8 
-            F_tdu(i,j,k) = ZERO_8 
-         end do
-         end do
-         do i=l_ni+1,l_maxx
-         do j=l_miny,l_maxy
-            F_tdv(i,j,k) = ZERO_8 
-            F_tdu(i,j,k) = ZERO_8 
-         end do
-         end do
-      end do
-
+      call v4d_zerohalo ( F_tdu,l_ni,l_nj,LDIST_DIM, l_nk)
+      call v4d_zerohalo ( F_tdv,l_ni,l_nj,LDIST_DIM, l_nk)
 *
 *  3. Compute d/dt ( T'lin ) = pi* d/dt ( T ) exp(s-q) ; put in xrptt1
 *     Note:   d/dt ( T' ) = d/dt ( T )  i.e. not computed

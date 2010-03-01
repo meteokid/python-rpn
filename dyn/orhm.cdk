@@ -8,10 +8,11 @@
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *object
-*     Equivalent to comdeck orh for TRAJECTORY
-*     + extra work fields
+*
+*     Equivalent to comdeck orh for TRAJECTORY + Extra work fields
 *
 *______________________________________________________________________
 *                                                                      |
@@ -23,10 +24,11 @@
 *--------------------|-------------------------------------------------|
 *  orum              | momentum equation along x                       |
 *  orvm              | momentum equation along y                       |
+*  orwm              | momentum equation along z                       |
+*  orvvm             | vertical velocity equation                      |
 *  orcnm             | continuity equation                             |
 *  orthm             | thermodynamic equation                          |
 *----------------------------------------------------------------------
-*  oruw2m            | work advective contributions for U              |
 *  oruw2m            | work advective contributions for U              |
 *  orvw2m            | work advective contributions for V              |
 *  ortrm             | work tracer 3D equation                         |  
@@ -36,6 +38,8 @@
       MARK_COMMON_BEG (orhm)
       DCL_VMMVAR (orhm,orum   ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (orhm,orvm   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,orwm   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (orhm,orvvm  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (orhm,orcnm  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (orhm,orthm  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (orhm,oruw2m ,real,(LDIST_SHAPE,l_nk))

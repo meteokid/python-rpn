@@ -75,10 +75,8 @@
 *implicits
 #include "glb_ld.cdk"
 ************************************************************************
-      include 'mpif.h'
 *
       integer tag, imsg, iproc, nwrn,nwrs,status
-      integer MPI_status(MPI_status_size)
       data    tag /10/
 *
       integer n

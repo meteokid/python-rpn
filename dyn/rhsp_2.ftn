@@ -9,7 +9,7 @@
      $                    F_fi,   F_s,    F_td,   F_psd,F_nest_u,F_nest_v,
      %                    F_w,    F_fis,  F_fip,  F_mu,   DIST_DIM, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *
@@ -330,7 +330,7 @@
       pd1 = log(Geomg_z_8(k))
       do j= j0, jn
       do i= i0, in
-         F_rcn(i,j,k)= -aaa*log(1+geomg_dpib(k)*(exp(F_s(i,j))- 1.))-
+         F_rcn(i,j,k)= -aaa*log(1+geomg_dpba(k)*(exp(F_s(i,j))- 1.))-
      %                 bbb*F_td(i,j,k)
          F_rth(i,j,k)= -aaa*log( F_t(i,j,k)/Cstv_tstr_8 ) 
      %                 -c3*(pd1-F_q(i,j,k))+c4*F_psd(i,j,k)/Geomg_z_8(k)

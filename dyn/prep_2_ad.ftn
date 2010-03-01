@@ -2,13 +2,13 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine prep_2_ad ( F_ru, F_rv, F_ruw1, F_ruw2, F_rvw1, F_rvw2,
-     $                       F_xct1, F_yct1, F_zct1, F_fis, F_rd, F_rcn,
-     $                       F_r1, F_rth, F_rw, F_rvv, F_r3, F_r3p,
+      subroutine prep_2_ad ( F_ru,    F_rv,    F_ruw1,  F_ruw2, F_rvw1, F_rvw2,
+     $                       F_xct1,  F_yct1,  F_zct1,  F_fis,  F_rd,   F_rcn,
+     $                       F_r1,    F_rth,   F_rw,    F_rvv,  F_r3,   F_r3p,
      $                       F_rhell, F_wijk1, F_wijk2,
 *
-     $                       F_ruw2m,F_rvw2m,
-     $                       F_xct1m, F_yct1m, F_zct1m,
+     $                                                  F_ruw2m,        F_rvw2m,
+     $                       F_xct1m, F_yct1m, F_zct1m,    
 *
      $                       DIST_DIM,ni,nj,Nk )
 *
@@ -36,6 +36,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - adapt ADJ for new advection code and LAM version
 * v3_00 - Tanguay M.        - adapt to restructured prep_2 
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 *
 *object
 *     see id section 
@@ -64,7 +65,7 @@
       integer i, j, k, i0, j0, in, jn, i00, inn, j00, jnn
       real*8  x_8, y_8, z_8, cx_8, cy_8, cz_8, rx_8, ry_8, rz_8
       real*8  b1ob0_8, mumu_8, tot_8
-      real*8  a1_8, a2_8, b1_8, b2_8, b3_8, gamma_8 
+      real*8  a1_8, a2_8, b1_8, b2_8, b3_8, eps_8, gamma_8 
 *
       real*8  ZERO_8, ONE_8, TWO_8, FOUR_8, HALF_8, QUARTER_8
       parameter( ZERO_8=0.0, ONE_8=1.0, TWO_8=2.0, FOUR_8=4.0,
@@ -73,10 +74,6 @@
       real*8 cxm_8, cym_8, czm_8, rxm_8, rym_8, rzm_8, mumum_8
       real*8 cxm2_8,cym2_8,czm2_8,rxm2_8,rym2_8,rzm2_8,mumum2_8,mumum3_8
       real*8 rxm3_8,rym3_8,rzm3_8
-*     ______________________________________________________
-*
-      if(.not. Schm_hydro_L) call gefstop('prep_2_ad')
-      if(G_lam             ) call gefstop('prep_2_ad')
 *     ______________________________________________________
 *
 *     ----------------------------
@@ -184,6 +181,11 @@
 **************************************
 *
       gamma_8 = ONE_8 
+      if (.not. Schm_hydro_L) then
+           eps_8 =  Schm_nonhy_8 * Dcst_rgasd_8   * Cstv_tstr_8
+     %           /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**2 )
+         gamma_8 =  ONE_8/( ONE_8 + eps_8 )
+      endif
       a1_8 = ONE_8/( Dcst_grav_8 * Cstv_tau_8 )
       a2_8 = Schm_nonhy_8/( Dcst_grav_8**2 * Cstv_tau_8**2 )
       b1_8 = gamma_8/Cstv_tau_8 
@@ -195,6 +197,34 @@
 *     ADJ of
 *     Combination of divergence & continuity equations
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+         if (.not. Schm_hydro_L) then
+
+*        Combination of equations for vertical motion
+*        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+*
+*              ADJ
+*              ---
+               F_r3 (i,j,k) =    b2_8* F_wijk2(i,j,k) + F_r3 (i,j,k)
+*
+               F_r3p(i,j,k) =    b1_8* F_wijk1(i,j,k) + F_r3p(i,j,k)
+*
+               F_r3 (i,j,k) =          F_r3p  (i,j,k) + F_r3 (i,j,k)
+               F_rth(i,j,k) = - eps_8* F_r3p  (i,j,k) + F_rth(i,j,k)
+               F_r3p(i,j,k) = ZERO_8
+*
+               F_rw (i,j,k) =    a1_8* F_r3   (i,j,k) + F_rw (i,j,k)
+               F_rvv(i,j,k) =    a2_8* F_r3   (i,j,k) + F_rvv(i,j,k)
+               F_r3 (i,j,k) = ZERO_8
+*
+C              F_rvv(i,j,k) = F_rvv(i,j,k)
+*
+            end do
+            end do
+         endif
+*
          do j= 1+pil_s, l_nj-pil_n
          do i= 1+pil_w, l_ni-pil_e
 *
@@ -215,14 +245,13 @@
 *
 
          if (G_lam) then
-*            ------------
-*            ADJ NOT DONE
-*            ------------
-             do j= 1+pil_s, l_nj-pil_n
-             do i= 1+pil_w, l_ni-pil_e
-                F_rd(i,j,k) =  ( F_ru(i,j,k) - F_ru(i-1,j,k) )
-     $               /( geomg_cy2_8(j)*geomg_hxu_8(i-1) )
-     $               + ( F_rv(i,j,k) - F_rv(i,j-1,k) )/geomg_hsyv_8(j-1)
+             do j= l_nj-pil_n,1+pil_s,-1
+             do i= l_ni-pil_e,1+pil_w,-1
+                F_ru(i,  j,  k) =(  F_rd(i,j,k) )/( Geomg_cy2_8(j)*Geomg_hxu_8(i-1) ) + F_ru(i,  j,  k)
+                F_ru(i-1,j,  k) =(- F_rd(i,j,k) )/( Geomg_cy2_8(j)*Geomg_hxu_8(i-1) ) + F_ru(i-1,j,  k)
+                F_rv(i,  j,  k) =(  F_rd(i,j,k) )/  Geomg_hsyv_8(j-1)                 + F_rv(i,  j,  k)
+                F_rv(i,  j-1,k) =(- F_rd(i,j,k) )/  Geomg_hsyv_8(j-1)                 + F_rv(i,  j-1,k)
+                F_rd(i,  j,  k) = ZERO_8
              end do
              end do
          else
@@ -248,55 +277,11 @@
 *
 *     Zero F_rv halo
 *     -------------
-*PDIR PARDO FOR=Ptopo_npeOpenMP
-      do k=1,G_nk
-         do j=l_miny,0
-         do i=l_minx,l_maxx
-            F_rv(i,j,k) = ZERO_8
-         end do
-         end do
-         do j=l_njv+1,l_maxy
-         do i=l_minx ,l_maxx
-            F_rv(i,j,k) = ZERO_8
-         end do
-         end do
-         do i=l_minx,0
-         do j=l_miny,l_maxy
-            F_rv(i,j,k) = ZERO_8
-         end do
-         end do
-         do i=l_ni+1,l_maxx
-         do j=l_miny,l_maxy
-            F_rv(i,j,k) = ZERO_8
-         end do
-         end do
-      end do
+      call v4d_zerohalo ( F_rv,l_ni,l_njv,LDIST_DIM, l_nk)
 *
 *     Zero F_ru halo
 *     --------------
-*PDIR PARDO FOR=Ptopo_npeOpenMP
-      do k=1,G_nk
-         do j=l_miny,0
-         do i=l_minx,l_maxx
-            F_ru(i,j,k) = ZERO_8
-         end do
-         end do
-         do j=l_nj+1,l_maxy
-         do i=l_minx,l_maxx
-            F_ru(i,j,k) = ZERO_8
-         end do
-         end do
-         do i=l_minx,0
-         do j=l_miny,l_maxy
-            F_ru(i,j,k) = ZERO_8
-         end do
-         end do
-         do i=l_niu+1,l_maxx
-         do j=l_miny ,l_maxy
-            F_ru(i,j,k) = ZERO_8
-         end do
-         end do
-      end do
+      call v4d_zerohalo ( F_ru,l_niu,l_nj,LDIST_DIM, l_nk)
 *
 **********************************************************
 * ADJ of
@@ -403,33 +388,8 @@
 *
 *     Zero F_rvw2,F_ruw2 halo
 *     -----------------------
-*PDIR PARDO FOR=Ptopo_npeOpenMP
-      do k=1,G_nk
-         do j=l_miny,0
-         do i=l_minx,l_maxx
-            F_rvw2(i,j,k) = ZERO_8
-            F_ruw2(i,j,k) = ZERO_8
-         end do
-         end do
-         do j=l_nj+1,l_maxy
-         do i=l_minx,l_maxx
-            F_rvw2(i,j,k) = ZERO_8
-            F_ruw2(i,j,k) = ZERO_8
-         end do
-         end do
-         do i=l_minx,0
-         do j=l_miny,l_maxy
-            F_rvw2(i,j,k) = ZERO_8
-            F_ruw2(i,j,k) = ZERO_8
-         end do
-         end do
-         do i=l_ni+1,l_maxx
-         do j=l_miny,l_maxy
-            F_rvw2(i,j,k) = ZERO_8
-            F_ruw2(i,j,k) = ZERO_8
-         end do
-         end do
-      end do
+      call v4d_zerohalo ( F_rvw2,l_ni,l_nj,LDIST_DIM, l_nk)
+      call v4d_zerohalo ( F_ruw2,l_ni,l_nj,LDIST_DIM, l_nk)
 *
 ******************************************************************
 * ADJ of

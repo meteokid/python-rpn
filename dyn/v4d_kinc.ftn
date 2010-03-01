@@ -5,15 +5,13 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine v4d_kinc ( F_nm, F_num, F_mono_L,   
+      subroutine v4d_kinc ( F_nm, F_num,   
      %                      F_ibase1,F_ibase2,F_inca,F_kinc,F_kdim,
-     %                      F_nij,F_nijplus,F_nk,F_ksep)
+     %                      F_nij,F_nijplus,F_nk,F_ksep,i0,in,j0,jn)
 *
 #include "impnone.cdk"
 *
-      logical F_mono_L
-*
-      integer F_num, F_nm(F_num)
+      integer F_num, F_nm(F_num),i0,in,j0,jn
 *
       integer F_ibase1,F_ibase2,F_inca,F_kdim,F_nij,F_nijplus,F_nk,F_ksep,
      %        F_kinc(F_nijplus,F_kdim*F_nk)
@@ -22,6 +20,7 @@
 *
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *language
 *     fortran 77
@@ -37,7 +36,6 @@
 * F_nm         | TRAJ positions in the 3D volume of interpolation|  i  |
 *              | boxes                                           |     |
 * F_num        | number of points to interpolate                 |  i  |
-* F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
 *--------------|-------------------------------------------------|-----|
 *              | PARAMETERS TO RESTAURE VECTORIZATION            |     |
 *--------------|-------------------------------------------------|-----|
@@ -52,25 +50,15 @@
 *______________|_________________________________________________|_____|
 *
 *implicits
+#include "glb_ld.cdk"
 #include "adw.cdk"
 ************************************************************************
-      integer n, nijag, k, ij, ib, ib, klev, ilev
+      integer n, nijag, k, ij, ib, klev, ilev, i, j
 *
       integer o1, o2, o3, o4
 *     ______________________________________________________
 *
-      if ( F_mono_L ) call gefstop('adw_kinc')
-*     ______________________________________________________
-*
       nijag = Adw_nit * Adw_njt
-*
-      if ( F_mono_L ) then
-*
-*     ------------
-*     ADJ not done
-*     ------------
-*
-      else
 *
       ilev = 1
 *
@@ -79,7 +67,10 @@
 *
       ib = (ilev-1)*F_kdim + F_inca
 *
-      do ij=1,F_nij
+      do j=j0,jn
+      do i=i0,in
+*
+      ij = ((j-1)*l_ni) + i
 *
       n  = F_nij*(k-1) + ij
 *
@@ -179,13 +170,12 @@
       F_kinc(ij,ib+ 4) = F_ibase1 + o1 + 2
 *
       enddo
+      enddo
 *
       ilev = ilev + 1
 *
       enddo
       enddo
-*
-      endif
 *
       return
       end

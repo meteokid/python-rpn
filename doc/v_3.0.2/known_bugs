@@ -1,5 +1,0 @@
-RECENT BUGS FOUND:
-
-  1) For those running without PHYSICS, there is a bug if any
-     water tracers are demanded for output or if SCHM_wload_L=.true.
-

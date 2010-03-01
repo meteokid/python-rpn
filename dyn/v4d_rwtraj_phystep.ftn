@@ -21,6 +21,7 @@
 *revision
 * v3_00 - Laroche S.        - initial version (from v4d_rwtraj)
 * v3_01 - Laroche S.        - check if hucond.ne.1
+* v3_03 - Tanguay M.        - adapt to changes in v4d_rwtraj 
 *
 *object
 *     see id section
@@ -50,7 +51,6 @@
 *     ______________________________________________________
 *
       if(.not. Schm_hydro_L) call gefstop('v4d_rwtraj_phystep')
-      if(.not. Schm_cptop_L) call gefstop('v4d_rwtraj_phystep')
       if(Init_balgm_L      ) call gefstop('v4d_rwtraj_phystep')
       if(Lctl_step .gt.100 ) call gefstop('v4d_rwtraj_phystep')
       if(hucond.ne.1) then
@@ -97,13 +97,13 @@
             iadd = iaddold 
 *
             iaddold = iadd
-            iadd = V4dg_addtab_tl(3,istep,1) + 2*l_ni*l_nj*l_nk 
+            iadd = V4dg_addtab_tl(3,istep,1) + 5*l_ni*l_nj*l_nk 
             call v4d_rwfld (F_tm,work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iuntr,iadd,plpr_L,'TM',  V4dg_ad_L,0,-1)
             iadd = iaddold 
 *
             iaddold = iadd
-            iadd = V4dg_addtab_tl(3,istep,1) + 7*l_ni*l_nj*l_nk 
+            iadd = V4dg_addtab_tl(3,istep,1) + 9*l_ni*l_nj*l_nk  
             call v4d_rwfld (F_trm,work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iuntr,iadd,plpr_L,'TRM', V4dg_ad_L,0,-1)
             iadd = iaddold 
@@ -155,14 +155,14 @@
      %                   l_ni*l_nj*l_nk,-1)
 *
             iaddold = iadd
-            iadd = V4dg_addtab_tl(3,istep,1) + 7*l_ni*l_nj*l_nk 
+            iadd = V4dg_addtab_tl(3,istep,1) + 9*l_ni*l_nj*l_nk  
             call v4d_rwfld (F_trm,work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iuntr,iadd,plpr_L,'TRM',  V4dg_ad_L,
      %                   l_ni*l_nj*l_nk,-1)
             iadd = iaddold 
 *
             iaddold = iadd
-            iadd = V4dg_addtab_tl(3,istep,1) + 2*l_ni*l_nj*l_nk 
+            iadd = V4dg_addtab_tl(3,istep,1) + 5*l_ni*l_nj*l_nk 
             call v4d_rwfld (F_tm,work,l_ni,l_nj,LDIST_DIM,l_nk,
      %                   V4dg_iuntr,iadd,plpr_L,'TM',  V4dg_ad_L,
      %                   l_ni*l_nj*l_nk,-1)

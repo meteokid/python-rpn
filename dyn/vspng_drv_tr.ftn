@@ -1,14 +1,14 @@
 ***s/r vspng_drv_tr - Equivalent to vspng_drv for TRAJECTORY 
-*                     (F_pip ONLY)
+*                    (F_pip, F_qp (No Hyd) ONLY)
 *
 #include <model_macros_f.h>
 *
-      subroutine vspng_drv_tr (F_pip,DIST_DIM,Nk)
+      subroutine vspng_drv_tr (F_pip,F_qp,DIST_DIM,Nk)
 *
 #include "impnone.cdk"
 *
       integer DIST_DIM, Nk
-      real   F_pip(DIST_SHAPE,Nk)
+      real   F_pip(DIST_SHAPE,Nk), F_qp(DIST_SHAPE,Nk)
 *
 *author
 *     M.Tanguay
@@ -20,15 +20,12 @@
 *                             sponge on top level only on all other variables
 * v3_00 - Tanguay M.        - correction as in vspng_drv 
 * v3_01 - Laroche/Tanguay   - correction nj as in vspng_drv
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *
 *object
 *     see id section
 *
 *arguments
-*  Name        I/O                 Description
-*----------------------------------------------------------------
-*  F_u
-*----------------------------------------------------------------
 * 
 *implicits
 #include "glb_ld.cdk"
@@ -41,15 +38,15 @@
 #include "hzd.cdk"
 #include "opr.cdk"
 *
-      integer j, nkspng
+      integer i, j, k, nkspng
       real*8 HALF_8,TWO_8,c_8
       parameter( HALF_8  = 0.5 )
       parameter(  TWO_8  = 2.0 )
 *
+      real work(LDIST_SHAPE,Nk)
       real*8, dimension (trp_12emax*G_ni*Vspng_nk) :: aix_8,bix_8,cix_8,dix_8
       real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
       real*8 cy_8(l_nj+1), xp0_8(G_ni), yp0_8(G_nj)
-**
 *     __________________________________________________________________
 *
       if ( Cstv_phidf_8 .gt. 0.0) then
@@ -75,12 +72,60 @@
      $                     Opr_opsyp0_8,Opr_opsyp2_8,G_ni,G_nj,G_nj)
          endif
 *
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+            do k = 1, Vspng_nk
+            do j = 1, l_nj
+            do i = 1, l_ni
+               work(i,j,k) = F_pip(i,j,k)
+            end do
+            end do
+            end do
+         endif
+*
 *     The hydrostatic pressure: pi'  
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          call vspng_del2 (F_pip,
      $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
      $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*****************************
+*  3. Nonyhydrostatic model *
+*****************************
+*
+         if ( .not. Schm_hydro_L ) then
+*
+         if ( Schm_difqp_L ) then ! q' & related variables
+*
+*        Indirect diffusion of q'
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+         do k=1, Vspng_nk
+         do j=1, l_nj
+         do i=1, l_ni
+            work(i,j,k) = ( Geomg_z_8(k) + dble(work(i,j,k)) )
+     %                       *exp( dble(F_qp(i,j,k)) )
+         end do
+         end do
+         end do
+*
+         call vspng_del2 (work,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+         do k=1, Vspng_nk
+         do j=1, l_nj
+         do i=1, l_ni
+            F_qp(i,j,k) = log(             dble(work(i,j,k))
+     %                       /( Geomg_z_8(k) + dble(F_pip(i,j,k)) )  )
+         end do
+         end do
+         end do
+*
+         endif
+         endif
 *
          if (Vspng_uvwdt_L) Vspng_nk = nkspng
 *

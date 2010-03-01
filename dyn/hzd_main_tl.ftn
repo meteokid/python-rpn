@@ -18,6 +18,7 @@
 *                           - change name 
 * v3_01 - Tanguay M.        - TLM of Eigv_parity_L not done yet 
 * v3_02 - Tanguay M.        - TLM of Eigv_parity_L done 
+* v3-03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 *
 *object
 *     see id section
@@ -38,111 +39,122 @@
 #include "vtx.cdk"
 #include "p_geof.cdk"
 #include "vt1m.cdk"
+#include "vtxm.cdk"
 *
 *modules
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      integer pnerr, pnlod, pnlkey1(23), i, j, k
-      real    pradj, preta
+      integer err, nlod, key1(50), i, j, k
       real*8  ONE_8
       parameter( ONE_8 = 1. )
 *
-      real wtt1m(LDIST_SHAPE,l_nk), wfit1m(LDIST_SHAPE,l_nk)
-*     _________________________________________________________________
-*
+*     ______________________________________________________
 *
       if ((.not.Hzd_fact_L).and.(.not.Hzd_ho_L)) then
-         if (Lun_out.gt.0) write(Lun_out,1001)
+         if (Lun_debug_L) write(Lun_out,1001)
          return
       endif
+*
+      if ( Schm_psadj_L ) call gem_stop('hzd_main_tl',-1)
 *     ______________________________________________________
 *
-      if( .not. Schm_hydro_L ) call gem_stop('hzd_main_tl',-1)
-      if(       Schm_psadj_L ) call gem_stop('hzd_main_tl',-1)
-      if( .not. Schm_cptop_L ) call gem_stop('hzd_main_tl',-1)
-*     ______________________________________________________
-*
-*
-      pnlkey1(1)  = VMM_KEY(ut1)
-      pnlkey1(2)  = VMM_KEY(vt1)
-      pnlkey1(3)  = VMM_KEY(psdt1)
-      pnlkey1(4)  = VMM_KEY(tpt1)
-      pnlkey1(5)  = VMM_KEY(fipt1)
-      pnlkey1(6)  = VMM_KEY(tdt1)
-      pnlkey1(7)  = VMM_KEY(tt1)
-      pnlkey1(8)  = VMM_KEY(fit1)
-      pnlkey1(9)  = VMM_KEY(topo)
-      pnlkey1(10) = VMM_KEY(tplt1)
-      pnlkey1(11) = VMM_KEY(qt1)
-      pnlkey1(12) = VMM_KEY(pipt1)
-      pnlkey1(13) = VMM_KEY(st1)
-*
-      pnlod = 13
-*
-      pnlkey1(pnlod+1) = VMM_KEY(ut1m)
-      pnlkey1(pnlod+2) = VMM_KEY(vt1m)
-      pnlkey1(pnlod+3) = VMM_KEY(psdt1m)
-      pnlkey1(pnlod+4) = VMM_KEY(tpt1m)
-      pnlkey1(pnlod+5) = VMM_KEY(fipt1m)
-      pnlkey1(pnlod+6) = VMM_KEY(tdt1m)
-      pnlkey1(pnlod+7) = VMM_KEY(tplt1m)
-      pnlkey1(pnlod+8) = VMM_KEY(qt1m)
-      pnlkey1(pnlod+9) = VMM_KEY(pipt1m)
-      pnlkey1(pnlod+10)= VMM_KEY(st1m)
-      pnlod = pnlod+10
-*
-*     - - - - - - - - - - - - - - -
-      pnerr = vmmlod(pnlkey1,pnlod)
-*     - - - - - - - - - - - - - - -
-      pnerr = VMM_GET_VAR(ut1)
-      pnerr = VMM_GET_VAR(vt1)
-      pnerr = VMM_GET_VAR(psdt1)
-      pnerr = VMM_GET_VAR(tpt1)
-      pnerr = VMM_GET_VAR(fipt1)
-      pnerr = VMM_GET_VAR(tdt1)
-      pnerr = VMM_GET_VAR(tt1)
-      pnerr = VMM_GET_VAR(fit1)
-      pnerr = VMM_GET_VAR(topo)
-      pnerr = VMM_GET_VAR(tplt1)
-      pnerr = VMM_GET_VAR(qt1)
-      pnerr = VMM_GET_VAR(pipt1)
-      pnerr = VMM_GET_VAR(st1)
-*
-      pnerr = VMM_GET_VAR(ut1m)
-      pnerr = VMM_GET_VAR(vt1m)
-      pnerr = VMM_GET_VAR(psdt1m)
-      pnerr = VMM_GET_VAR(tpt1m)
-      pnerr = VMM_GET_VAR(fipt1m)
-      pnerr = VMM_GET_VAR(tdt1m)
-      pnerr = VMM_GET_VAR(tplt1m)
-      pnerr = VMM_GET_VAR(qt1m)
-      pnerr = VMM_GET_VAR(pipt1m)
-      pnerr = VMM_GET_VAR(st1m)
-*
+      key1(1)  = VMM_KEY(ut1)
+      key1(2)  = VMM_KEY(vt1)
+      key1(3)  = VMM_KEY(psdt1)
+      key1(4)  = VMM_KEY(tpt1)
+      key1(5)  = VMM_KEY(fipt1)
+      key1(6)  = VMM_KEY(tdt1)
+      key1(7)  = VMM_KEY(tt1)
+      key1(8)  = VMM_KEY(fit1)
+      key1(9)  = VMM_KEY(topo)
+      key1(10) = VMM_KEY(tplt1)
+      key1(11) = VMM_KEY(qt1)
+      key1(12) = VMM_KEY(pipt1)
+      key1(13) = VMM_KEY(st1)
+      nlod=13
       if (.not. Schm_hydro_L) then
-*
-*        --------------------
-*        HZD_MAIN_TL not done
-*        --------------------
-*
-      else
-         wt1_  = 0
-         qpt1_ = 0
-         mut1_ = 0
-         multx_= 0
+         key1(nlod+1) = VMM_KEY(wt1)
+         key1(nlod+2) = VMM_KEY(qpt1)
+         key1(nlod+3) = VMM_KEY(mut1)
+         key1(nlod+4) = VMM_KEY(multx)
+         nlod = nlod+4
       endif
 *
-*     Restore TRAJECTORY
-*     ------------------
-      do k=1,l_nk
-      do j=1,l_nj
-      do i=1,l_ni
-      wfit1m(i,j,k) = fipt1m(i,j,k) + Cstvr_fistr_8(k) + topo(i,j)
-      wtt1m (i,j,k) =  tpt1m(i,j,k) + Cstv_tstr_8
-      end do
-      end do
-      end do
+*     TRAJECTORY
+*     ----------
+      key1(nlod+1) = VMM_KEY(ut1m)
+      key1(nlod+2) = VMM_KEY(vt1m)
+      key1(nlod+3) = VMM_KEY(psdt1m)
+      key1(nlod+4) = VMM_KEY(tpt1m)
+      key1(nlod+5) = VMM_KEY(fipt1m)
+      key1(nlod+6) = VMM_KEY(tdt1m)
+      key1(nlod+7) = VMM_KEY(tt1m)
+      key1(nlod+8) = VMM_KEY(fit1m)
+      key1(nlod+9) = VMM_KEY(tplt1m)
+      key1(nlod+10)= VMM_KEY(qt1m)
+      key1(nlod+11)= VMM_KEY(pipt1m)
+      key1(nlod+12)= VMM_KEY(st1m)
+      nlod=nlod+12
+      if (.not. Schm_hydro_L) then
+         key1(nlod+1) = VMM_KEY(wt1m)
+         key1(nlod+2) = VMM_KEY(qpt1m)
+         key1(nlod+3) = VMM_KEY(mut1m)
+         key1(nlod+4) = VMM_KEY(multxm)
+         nlod = nlod+4
+      endif
+*
+*     - - - - - - - - - - - - - - -
+      err = vmmlod(key1,nlod)
+*     - - - - - - - - - - - - - - -
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(tpt1)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(tdt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(topo)
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR(qt1)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(st1)
+      wt1_  = 0
+      qpt1_ = 0
+      mut1_ = 0
+      multx_= 0
+      if (.not. Schm_hydro_L) then
+         err = VMM_GET_VAR(wt1)
+         err = VMM_GET_VAR(qpt1)
+         err = VMM_GET_VAR(mut1)
+         err = VMM_GET_VAR(multx)
+      endif
+*
+*     TRAJECTORY
+*     ----------
+      err = VMM_GET_VAR(ut1m)
+      err = VMM_GET_VAR(vt1m)
+      err = VMM_GET_VAR(psdt1m)
+      err = VMM_GET_VAR(tpt1m)
+      err = VMM_GET_VAR(fipt1m)
+      err = VMM_GET_VAR(tdt1m)
+      err = VMM_GET_VAR(tt1m)
+      err = VMM_GET_VAR(fit1m)
+      err = VMM_GET_VAR(tplt1m)
+      err = VMM_GET_VAR(qt1m)
+      err = VMM_GET_VAR(pipt1m)
+      err = VMM_GET_VAR(st1m)
+      wt1m_  = 0
+      qpt1m_ = 0
+      mut1m_ = 0
+      multxm_= 0
+      if (.not. Schm_hydro_L) then
+         err = VMM_GET_VAR(wt1m)
+         err = VMM_GET_VAR(qpt1m)
+         err = VMM_GET_VAR(mut1m)
+         err = VMM_GET_VAR(multxm)
+      endif
 *
 *************************************
 *  1. Implicit horizontal diffusion *
@@ -152,68 +164,70 @@ c*PDIR RESERVE=Macr_cpud
 
       if (Hzd_fact_L) then
 *
-*        TLM
-*        ---
-         call hzd_fact_tl ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
-     %                      tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
-     %                      qpt1, mut1, multx, st1 , topo ,
+         call hzd_fact_tl ( ut1  , vt1  , psdt1 , tpt1 , fipt1 , tdt1 ,
+     %                      tt1  , fit1 , tplt1 , qt1  , pipt1 , wt1  ,
+     %                      qpt1 , mut1 , multx , st1  , 
+     %                      ut1m , vt1m , psdt1m, tpt1m, fipt1m, tdt1m,
+     %                      tt1m , fit1m, tplt1m, qt1m , pipt1m, wt1m ,
+     %                      qpt1m, mut1m, multxm, st1m , topo  ,
      %                      LDIST_DIM, G_nk)
 *
-*        TRAJECTORY
-*        ----------
-         call hzd_fact ( ut1m , vt1m  , psdt1m, tpt1m, fipt1m, tdt1m,
-     %                   wtt1m, wfit1m, tplt1m, qt1m , pipt1m, wt1  ,
-     %                   qpt1 , mut1  , multx , st1  , topo  ,
-     %                   LDIST_DIM, G_nk)
       endif
 *
       if (Hzd_ho_L) then
 *
-*        TLM
-*        ---
          if(Fft_fast_L) then
-*           use FFT in diffusion-solver
-            call hzd_hof_tl ( ut1 , vt1 , psdt1, tpt1 , fipt1, tdt1,
-     %                        tt1 , fit1, tplt1, pipt1, wt1  ,
-     %                        qpt1, mut1, multx, topo ,
-     %                        LDIST_DIM, G_nk)
-         else
-*           use MXMA in diffusion-solver
-            if ( .not. Eigv_parity_L) then
-            call hzd_ho_tl  ( ut1 , vt1 , psdt1, tpt1 , fipt1, tdt1,
-     %                        tt1 , fit1, tplt1, pipt1, wt1  ,
-     %                        qpt1, mut1, multx, topo ,
-     %                        LDIST_DIM, G_nk)
+*
+*        use FFT in diffusion-solver
+*
+            if (G_lam) then
+*
+            call hzd_hof_lam_tl ( ut1  , vt1  , psdt1 , tpt1  , fipt1 , tdt1 ,
+     %                            tt1  , fit1 , tplt1 , pipt1 , wt1   ,
+     %                            qpt1 , mut1 , multx , 
+     %                            ut1m , vt1m , psdt1m, tpt1m , fipt1m, tdt1m,
+     %                            tt1m , fit1m, tplt1m, pipt1m, wt1m  ,
+     %                            qpt1m, mut1m, multxm, topo  ,
+     %                            LDIST_DIM, G_nk)
+*
             else
-            call hzd_ho_parite_tl( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
-     %                             tt1 , fit1, tplt1,  pipt1, wt1 ,
-     %                             qpt1, mut1, multx,  topo ,
+*
+            call hzd_hof_tl ( ut1  , vt1  , psdt1 , tpt1  , fipt1 , tdt1 ,
+     %                        tt1  , fit1 , tplt1 , pipt1 , wt1   ,
+     %                        qpt1 , mut1 , multx , 
+     %                        ut1m , vt1m , psdt1m, tpt1m , fipt1m, tdt1m,
+     %                        tt1m , fit1m, tplt1m, pipt1m, wt1m  ,
+     %                        qpt1m, mut1m, multxm, topo  ,
+     %                        LDIST_DIM, G_nk)
+            endif
+*
+         else
+*
+*        use MXMA in diffusion-solver
+*
+            if ( .not. Eigv_parity_L) then
+*
+            call hzd_ho_tl  ( ut1  , vt1  , psdt1 , tpt1  , fipt1 , tdt1 ,
+     %                        tt1  , fit1 , tplt1 , pipt1 , wt1   ,
+     %                        qpt1 , mut1 , multx , 
+     %                        ut1m , vt1m , psdt1m, tpt1m , fipt1m, tdt1m,
+     %                        tt1m , fit1m, tplt1m, pipt1m, wt1m  ,
+     %                        qpt1m, mut1m, multxm, topo  , 
+     %                        LDIST_DIM, G_nk)
+*
+            else
+*
+            call hzd_ho_parite_tl( ut1  , vt1  , psdt1 , tpt1  , fipt1 , tdt1 ,
+     %                             tt1  , fit1 , tplt1 , pipt1 , wt1   ,
+     %                             qpt1 , mut1 , multx , 
+     %                             ut1m , vt1m , psdt1m, tpt1m , fipt1m, tdt1m,
+     %                             tt1m , fit1m, tplt1m, pipt1m, wt1m  ,
+     %                             qpt1m, mut1m, multxm, topo  ,
      %                             LDIST_DIM, G_nk)
             endif
+*
          endif
 *
-*        TRAJECTORY
-*        ----------
-         if(Fft_fast_L) then
-*           use FFT in diffusion-solver
-            call hzd_hof ( ut1m , vt1m  , psdt1m, tpt1m , fipt1m, tdt1m,
-     %                     wtt1m, wfit1m, tplt1m, pipt1m, wt1   ,
-     %                     qpt1 , mut1  , multx , topo  ,
-     %                     LDIST_DIM, G_nk)
-         else
-*           use MXMA in diffusion-solver
-            if ( .not. Eigv_parity_L) then
-                call hzd_ho ( ut1m , vt1m , psdt1m, tpt1m, fipt1m, tdt1m,
-     %                    wtt1m , wfit1m, tplt1m,  pipt1m, wt1 ,
-     %                    qpt1, mut1, multx,  topo ,
-     %                    LDIST_DIM, G_nk)
-            else
-                call hzd_ho_parite( ut1m , vt1m , psdt1m, tpt1m, fipt1m, tdt1m,
-     %                    wtt1m , wfit1m, tplt1m,  pipt1m, wt1 ,
-     %                    qpt1, mut1, multx,  topo ,
-     %                    LDIST_DIM, G_nk)
-            endif
-         endif
       endif
 *
 c*PDIR RELEASE
@@ -256,9 +270,27 @@ c*PDIR RELEASE
       end do
       end do
 *
+      if ( .not. Schm_hydro_L ) then
+         do k=1,G_nk
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+*
+*           TRAJECTORY
+*           ----------
+            qt1m(i,j,k) = qt1m(i,j,k) + qpt1m(i,j,k)
+*
+*           TLM 
+*           ---
+            qt1(i,j,k) = qt1(i,j,k) + qpt1(i,j,k)
+*
+         end do
+         end do
+         end do
       endif
 *
-      pnerr = vmmuld(-1,0)
+      endif
+*
+      err = vmmuld(-1,0)
 *
  1001 format(/,
      + 3X,'NO TLM HORIZONTAL DIFFUSION REQUIRED',

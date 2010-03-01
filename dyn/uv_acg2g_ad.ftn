@@ -18,6 +18,7 @@
 *revision
 * v3_00 - Laroche S.    - initial MPI version
 * v3_02 - Tanguay M.    - introduce nie,nje as in uv_acg2g 
+* v3_03 - Tanguay M.    - Adjoint Lam configuration 
 *
 *object
 *     see id section
@@ -47,24 +48,15 @@
       logical cubic
       integer i,j,k,nie,nje
 *
-      real*8 ZERO_8
-      parameter (ZERO_8=0.0)
+      real*8, parameter :: ZERO_8 = 0.0
 *
 *-----------------------------------------------------------------
 *
-*     ______________________________________________________
-*
-      if (G_lam) call gefstop('uv_acg2g_ad')
-*     ______________________________________________________
-*
       cubic = Schm_adcub_L
 *
-      if (.not.cubic) call gefstop('uv_acg2g_ad')
+      if (.not.cubic) call gem_stop('uv_acg2g_ad',-1)
 *
 *     check input grid
-*
-*
-*     ---------------------------- NEW OPTIONS------------------------------------
 *
       if ( F_gridi .eq. 0 .and. F_grido .eq. 1) then
 
@@ -131,11 +123,7 @@
          enddo
 
       endif
-
 *
-*     ---------------------------- NEW OPTIONS------------------------------------
-*
-
       if ( F_gridi .eq. 1 .and. F_grido .eq. 0) then
 *
          F_i0 = 1
@@ -178,7 +166,6 @@
          end do
 *
       endif
-*
 *
       if ( F_gridi .eq. 2 .and. F_grido .eq. 0) then
 
@@ -291,31 +278,9 @@
 *
 *        Zero F_src halo
 *        ---------------
-         do k=1,G_nk
-            do j=l_miny,0
-            do i=l_minx,l_maxx
-               F_src(i,j,k) = ZERO_8
-            end do
-            end do
-            do j=nje+1,l_maxy
-            do i=l_minx ,l_maxx
-               F_src(i,j,k) = ZERO_8
-            end do
-            end do
-            do i=l_minx,0
-            do j=l_miny,l_maxy
-               F_src(i,j,k) = ZERO_8
-            end do
-            end do
-            do i=nie+1,l_maxx
-            do j=l_miny,l_maxy
-               F_src(i,j,k) = ZERO_8
-            end do
-            end do
-         end do
-
+         call v4d_zerohalo ( F_src,nie,nje,LDIST_DIM, l_nk)
+*
       endif
-
 *
 *-----------------------------------------------------------------
       return

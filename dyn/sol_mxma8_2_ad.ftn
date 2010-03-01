@@ -35,6 +35,7 @@
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured sol_mxma8_2 
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *object
 *     see id section 
@@ -83,9 +84,6 @@
       integer  j, jr, i, k, l_pil_w, l_pil_e
       real*8   ZERO_8
       parameter( ZERO_8 = 0.0 )
-*     ______________________________________________________
-*
-      if(G_lam) call gefstop('sol_mxma8_2_ad')
 *     ______________________________________________________
 *
       l_pil_w=0

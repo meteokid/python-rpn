@@ -7,7 +7,7 @@
 *implicits
       use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree 
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_npx, F_npy
 *
@@ -91,7 +91,7 @@
 *
 *modules
       integer fnom,longueur,exdb
-      external fnom,longueur,set_dcst8,exdb
+      external fnom,longueur,exdb
 *
       character*12 dumc_S
       character*256 fln_S
@@ -157,6 +157,8 @@
       Schm_psadj_L    = .false.
       Schm_difqp_L    = .true.
       Schm_wload_L    = .false.
+      Schm_pcsty_L    = .true.
+      Schm_pheat_L    = .true.
 *
       Schm_maxcfl_lam = 2
       Adw_nkbz_L = .true.
@@ -395,9 +397,10 @@
 *
       call hpalloc (Geomg_pia_ , pnk ,err,1)
       call hpalloc (Geomg_pibb_, pnk ,err,1)
+      call hpalloc (Geomg_dpba_, pnk ,err,1)
 *
-      call genab ( Geomg_pia, Geomg_pibb, Geomg_hybm, Pres_ptop,
-     $             Grd_rcoef, pnk )
+      call genab2 ( Geomg_pia, Geomg_pibb, Geomg_dpba, Geomg_hybm, 
+     $              Pres_ptop,  Grd_rcoef, Cstv_pisrf_8, pnk )
 *
       call fclos (lun_lab)
 *

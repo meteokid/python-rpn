@@ -1,0 +1,736 @@
+***s/r glb_bound_tl - TLM of glb_bound 
+*
+#include <model_macros_f.h>
+*
+      subroutine glb_bound_tl ()
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "vt0.cdk"
+#include "vt0m.cdk"
+#include "nest.cdk"
+#include "nestm.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+#include "hblen.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer err,key(60),i,j,k,nvar
+      integer key0 (Tr3d_ntr),key0_, key1 (Tr3d_ntr),key1_,
+     %        key0m(Tr3d_ntr),key0m_,key1m(Tr3d_ntr),key1m_,n
+      real tr,tr0,trm,tr0m
+      pointer (patr,  tr (LDIST_SHAPE,*)),(patr0, tr0 (LDIST_SHAPE,*)),
+     %        (patrm, trm(LDIST_SHAPE,*)),(patr0m,tr0m(LDIST_SHAPE,*))
+*
+*----------------------------------------------------------------------
+*
+      if (north+south+west+east.lt.1) return
+*
+      key(1 )=VMM_KEY(nest_u)
+      key(2 )=VMM_KEY(nest_v)
+      key(3 )=VMM_KEY(nest_t)
+      key(4 )=VMM_KEY(nest_psd)
+      key(5 )=VMM_KEY(nest_pip)
+      key(6 )=VMM_KEY(nest_fip)
+      key(7 )=VMM_KEY(nest_td)
+      key(8 )=VMM_KEY(nest_fi)
+      key(9 )=VMM_KEY(nest_q)
+      key(10)=VMM_KEY(nest_s)
+      key(11)=VMM_KEY(nest_tp)
+      key(12)=VMM_KEY(ut0)
+      key(13)=VMM_KEY(vt0)
+      key(14)=VMM_KEY(tt0)
+      key(15)=VMM_KEY(psdt0)
+      key(16)=VMM_KEY(pipt0)
+      key(17)=VMM_KEY(fipt0)
+      key(18)=VMM_KEY(tdt0)
+      key(19)=VMM_KEY(fit0)
+      key(20)=VMM_KEY(qt0)
+      key(21)=VMM_KEY(st0)
+      key(22)=VMM_KEY(tpt0)
+      nvar = 22
+*
+      if (.not.Schm_hydro_L) then
+         key(23)=VMM_KEY(nest_w)
+         key(24)=VMM_KEY(nest_mu)
+         key(25)=VMM_KEY(wt0)
+         key(26)=VMM_KEY(mut0)
+         nvar = 26
+      endif
+*
+*     TRAJECTORY
+*     ---------- 
+      key(nvar+1 )=VMM_KEY(nestm_um)
+      key(nvar+2 )=VMM_KEY(nestm_vm)
+      key(nvar+3 )=VMM_KEY(nestm_tm)
+      key(nvar+4 )=VMM_KEY(nestm_psdm)
+      key(nvar+5 )=VMM_KEY(nestm_pipm)
+      key(nvar+6 )=VMM_KEY(nestm_fipm)
+      key(nvar+7 )=VMM_KEY(nestm_tdm)
+      key(nvar+8 )=VMM_KEY(nestm_fim)
+      key(nvar+9 )=VMM_KEY(nestm_qm)
+      key(nvar+10)=VMM_KEY(nestm_sm)
+      key(nvar+11)=VMM_KEY(nestm_tpm)
+      key(nvar+12)=VMM_KEY(ut0m)
+      key(nvar+13)=VMM_KEY(vt0m)
+      key(nvar+14)=VMM_KEY(tt0m)
+      key(nvar+15)=VMM_KEY(psdt0m)
+      key(nvar+16)=VMM_KEY(pipt0m)
+      key(nvar+17)=VMM_KEY(fipt0m)
+      key(nvar+18)=VMM_KEY(tdt0m)
+      key(nvar+19)=VMM_KEY(fit0m)
+      key(nvar+20)=VMM_KEY(qt0m)
+      key(nvar+21)=VMM_KEY(st0m)
+      key(nvar+22)=VMM_KEY(tpt0m)
+      nvar = nvar+22
+*
+      if (.not.Schm_hydro_L) then
+         key( nvar+1)=VMM_KEY(nestm_wm)
+         key( nvar+2)=VMM_KEY(nestm_mum)
+         key( nvar+3)=VMM_KEY(wt0m)
+         key( nvar+4)=VMM_KEY(mut0m)
+         nvar=nvar+4 
+      endif
+*
+      err = vmmlod(key,nvar)
+*
+      err = VMM_GET_VAR(nest_u)
+      err = VMM_GET_VAR(nest_v)
+      err = VMM_GET_VAR(nest_t)
+      err = VMM_GET_VAR(nest_psd)
+      err = VMM_GET_VAR(nest_pip)
+      err = VMM_GET_VAR(nest_fip)
+      err = VMM_GET_VAR(nest_td)
+      err = VMM_GET_VAR(nest_fi)
+      err = VMM_GET_VAR(nest_q)
+      err = VMM_GET_VAR(nest_s)
+      err = VMM_GET_VAR(nest_tp)
+      err = VMM_GET_VAR(ut0)
+      err = VMM_GET_VAR(vt0)
+      err = VMM_GET_VAR(tt0)
+      err = VMM_GET_VAR(psdt0)
+      err = VMM_GET_VAR(pipt0)
+      err = VMM_GET_VAR(fipt0)
+      err = VMM_GET_VAR(tdt0)
+      err = VMM_GET_VAR(fit0)
+      err = VMM_GET_VAR(qt0)
+      err = VMM_GET_VAR(st0)
+      err = VMM_GET_VAR(tpt0)
+      if (.not.Schm_hydro_L) then
+         err = VMM_GET_VAR(nest_w)
+         err = VMM_GET_VAR(nest_mu)
+         err = VMM_GET_VAR(wt0)
+         err = VMM_GET_VAR(mut0)
+      endif
+*
+*     TRAJECTORY
+*     ---------- 
+      err = VMM_GET_VAR(nestm_um)
+      err = VMM_GET_VAR(nestm_vm)
+      err = VMM_GET_VAR(nestm_tm)
+      err = VMM_GET_VAR(nestm_psdm)
+      err = VMM_GET_VAR(nestm_pipm)
+      err = VMM_GET_VAR(nestm_fipm)
+      err = VMM_GET_VAR(nestm_tdm)
+      err = VMM_GET_VAR(nestm_fim)
+      err = VMM_GET_VAR(nestm_qm)
+      err = VMM_GET_VAR(nestm_sm)
+      err = VMM_GET_VAR(nestm_tpm)
+      err = VMM_GET_VAR(ut0m)
+      err = VMM_GET_VAR(vt0m)
+      err = VMM_GET_VAR(tt0m)
+      err = VMM_GET_VAR(psdt0m)
+      err = VMM_GET_VAR(pipt0m)
+      err = VMM_GET_VAR(fipt0m)
+      err = VMM_GET_VAR(tdt0m)
+      err = VMM_GET_VAR(fit0m)
+      err = VMM_GET_VAR(qt0m)
+      err = VMM_GET_VAR(st0m)
+      err = VMM_GET_VAR(tpt0m)
+      if (.not.Schm_hydro_L) then
+         err = VMM_GET_VAR(nestm_wm)
+         err = VMM_GET_VAR(nestm_mum)
+         err = VMM_GET_VAR(wt0m)
+         err = VMM_GET_VAR(mut0m)
+      endif
+*
+      if (l_north) then
+         do k=1,G_nk
+*
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_ni
+*
+*              TRAJECTORY
+*              ----------
+               tt0m  (i,j,k) = nestm_tm  (i,j,k)
+               psdt0m(i,j,k) = nestm_psdm(i,j,k)
+               pipt0m(i,j,k) = nestm_pipm(i,j,k)
+               fipt0m(i,j,k) = nestm_fipm(i,j,k)
+               tdt0m (i,j,k) = nestm_tdm (i,j,k)
+               fit0m (i,j,k) = nestm_fim (i,j,k)
+               qt0m  (i,j,k) = nestm_qm  (i,j,k)            
+               tpt0m (i,j,k) = nestm_tpm (i,j,k)            
+*
+*              TLM
+*              ---
+               tt0  (i,j,k) = nest_t  (i,j,k)
+               psdt0(i,j,k) = nest_psd(i,j,k)
+               pipt0(i,j,k) = nest_pip(i,j,k)
+               fipt0(i,j,k) = nest_fip(i,j,k)
+               tdt0 (i,j,k) = nest_td (i,j,k)
+               fit0 (i,j,k) = nest_fi (i,j,k)
+               qt0  (i,j,k) = nest_q  (i,j,k)
+               tpt0 (i,j,k) = nest_tp (i,j,k)
+*
+            end do
+            end do
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_niu
+*
+*              TRAJECTORY
+*              ----------
+               ut0m(i,j,k) = nestm_um(i,j,k)
+*
+*              TLM
+*              ---
+               ut0 (i,j,k) = nest_u  (i,j,k)
+*
+            end do
+            end do
+            do j=l_nj-pil_n,l_njv
+            do i=1,l_ni
+*
+*              TRAJECTORY
+*              ----------
+               vt0m(i,j,k) = nestm_vm(i,j,k)
+*              TLM
+*              ---
+               vt0 (i,j,k) = nest_v  (i,j,k)
+*
+            end do
+            end do
+*
+         end do
+*
+         do j=l_nj-pil_n+1,l_nj
+         do i=1,l_ni
+*
+*           TRAJECTORY 
+*           ----------
+            st0m(i,j) = nestm_sm(i,j)
+*
+*           TLM
+*           ---
+            st0 (i,j) = nest_s  (i,j)
+*
+         end do
+         end do
+*
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_ni
+*
+*              TRAJECTORY 
+*              ----------
+               wt0m (i,j,k) = nestm_wm (i,j,k)
+               mut0m(i,j,k) = nestm_mum(i,j,k)
+*
+*              TLM
+*              ---
+               wt0 (i,j,k) = nest_w (i,j,k)
+               mut0(i,j,k) = nest_mu(i,j,k)
+*
+            end do
+            end do
+            end do
+         endif
+*
+      endif
+*
+      if (l_east) then
+         do k=1,G_nk
+*
+            do j=1,l_nj
+            do i=l_ni-pil_e+1,l_ni
+*
+*              TRAJECTORY 
+*              ----------
+               tt0m  (i,j,k) = nestm_tm  (i,j,k)
+               psdt0m(i,j,k) = nestm_psdm(i,j,k)
+               pipt0m(i,j,k) = nestm_pipm(i,j,k)
+               fipt0m(i,j,k) = nestm_fipm(i,j,k)
+               tdt0m (i,j,k) = nestm_tdm (i,j,k)
+               fit0m (i,j,k) = nestm_fim (i,j,k)
+               qt0m  (i,j,k) = nestm_qm  (i,j,k)            
+               tpt0m (i,j,k) = nestm_tpm (i,j,k)            
+*
+*              TLM
+*              ---
+               tt0  (i,j,k) = nest_t  (i,j,k)
+               psdt0(i,j,k) = nest_psd(i,j,k)
+               pipt0(i,j,k) = nest_pip(i,j,k)
+               fipt0(i,j,k) = nest_fip(i,j,k)
+               tdt0 (i,j,k) = nest_td (i,j,k)
+               fit0 (i,j,k) = nest_fi (i,j,k)
+               qt0  (i,j,k) = nest_q  (i,j,k)
+               tpt0 (i,j,k) = nest_tp (i,j,k)
+
+            end do
+            end do
+            do j=1,l_nj
+            do i=l_ni-pil_e,l_niu
+*
+*              TRAJECTORY 
+*              ----------
+               ut0m(i,j,k) = nestm_um(i,j,k)
+*
+*              TLM
+*              ---
+               ut0 (i,j,k) = nest_u  (i,j,k)
+*
+            end do
+            end do
+            do j=1,l_njv
+            do i=l_ni-pil_e+1,l_ni
+*
+*              TRAJECTORY 
+*              ----------
+               vt0m(i,j,k) = nestm_vm(i,j,k)
+*
+*              TLM
+*              ---
+               vt0 (i,j,k) = nest_v  (i,j,k)
+*
+            end do
+            end do
+*
+         end do
+*
+         do j=1,l_nj
+         do i=l_ni-pil_e+1,l_ni
+*
+*           TRAJECTORY 
+*           ----------
+            st0m(i,j) = nestm_sm(i,j)
+*
+*           TLM 
+*           ---
+            st0 (i,j) = nest_s  (i,j)
+*
+         end do
+         end do
+*
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=l_ni-pil_e+1,l_ni
+*
+*              TRAJECTORY 
+*              ----------
+               wt0m (i,j,k) = nestm_wm (i,j,k)
+               mut0m(i,j,k) = nestm_mum(i,j,k)
+*
+*              TLM
+*              ---
+               wt0 (i,j,k) = nest_w (i,j,k)
+               mut0(i,j,k) = nest_mu(i,j,k)
+*
+            end do
+            end do
+            end do
+         endif
+*
+      endif
+*
+      if (l_south) then
+         do k=1,G_nk
+*
+            do j=1,pil_s
+            do i=1,l_ni
+*
+*              TRAJECTORY
+*              ----------
+               vt0m  (i,j,k) = nestm_vm  (i,j,k)
+               tt0m  (i,j,k) = nestm_tm  (i,j,k)
+               psdt0m(i,j,k) = nestm_psdm(i,j,k)
+               pipt0m(i,j,k) = nestm_pipm(i,j,k)
+               fipt0m(i,j,k) = nestm_fipm(i,j,k)
+               tdt0m (i,j,k) = nestm_tdm (i,j,k)
+               fit0m (i,j,k) = nestm_fim (i,j,k)
+               qt0m  (i,j,k) = nestm_qm  (i,j,k)            
+               tpt0m (i,j,k) = nestm_tpm (i,j,k)            
+*
+*              TLM
+*              ---
+               vt0  (i,j,k) = nest_v  (i,j,k)
+               tt0  (i,j,k) = nest_t  (i,j,k)
+               psdt0(i,j,k) = nest_psd(i,j,k)
+               pipt0(i,j,k) = nest_pip(i,j,k)
+               fipt0(i,j,k) = nest_fip(i,j,k)
+               tdt0 (i,j,k) = nest_td (i,j,k)
+               fit0 (i,j,k) = nest_fi (i,j,k)
+               qt0  (i,j,k) = nest_q  (i,j,k)
+               tpt0 (i,j,k) = nest_tp (i,j,k)
+
+            end do
+            end do
+            do j=1,pil_s
+            do i=1,l_niu
+*
+*              TRAJECTORY
+*              ----------
+               ut0m(i,j,k) = nestm_um(i,j,k)
+*
+*              TLM
+*              ---
+               ut0 (i,j,k) = nest_u  (i,j,k)
+*
+            end do
+            end do
+*
+         end do
+*
+         do j=1,pil_s
+         do i=1,l_ni
+*
+*           TRAJECTORY
+*           ----------
+            st0m(i,j) = nestm_sm(i,j)
+*
+*           TLM
+*           ---
+            st0 (i,j) = nest_s  (i,j)
+*
+         end do
+         end do
+*
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            do j=1,pil_s
+            do i=1,l_ni
+*
+*              TRAJECTORY 
+*              ----------
+               wt0m (i,j,k) = nestm_wm (i,j,k)
+               mut0m(i,j,k) = nestm_mum(i,j,k)
+*
+*              TLM
+*              ---
+               wt0 (i,j,k) = nest_w (i,j,k)
+               mut0(i,j,k) = nest_mu(i,j,k)
+*
+            end do
+            end do
+            end do
+         endif
+*
+      endif
+*
+      if (l_west) then
+         do k=1,G_nk
+*
+            do j=1,l_nj
+            do i=1,pil_w
+*
+*              TRAJECTORY
+*              ----------
+               ut0m  (i,j,k) = nestm_um  (i,j,k)
+               tt0m  (i,j,k) = nestm_tm  (i,j,k)
+               psdt0m(i,j,k) = nestm_psdm(i,j,k)
+               pipt0m(i,j,k) = nestm_pipm(i,j,k)
+               fipt0m(i,j,k) = nestm_fipm(i,j,k)
+               tdt0m (i,j,k) = nestm_tdm (i,j,k)
+               fit0m (i,j,k) = nestm_fim (i,j,k)
+               qt0m  (i,j,k) = nestm_qm  (i,j,k)            
+               tpt0m (i,j,k) = nestm_tpm (i,j,k)            
+*
+*              TLM
+*              ---
+               ut0  (i,j,k) = nest_u  (i,j,k)
+               tt0  (i,j,k) = nest_t  (i,j,k)
+               psdt0(i,j,k) = nest_psd(i,j,k)
+               pipt0(i,j,k) = nest_pip(i,j,k)
+               fipt0(i,j,k) = nest_fip(i,j,k)
+               tdt0 (i,j,k) = nest_td (i,j,k)
+               fit0 (i,j,k) = nest_fi (i,j,k)
+               qt0  (i,j,k) = nest_q  (i,j,k)
+               tpt0 (i,j,k) = nest_tp (i,j,k)
+*
+            end do
+            end do
+*
+*           TRAJECTORY 
+*           ----------
+            do j=1,l_njv
+            do i=1,pil_w
+*
+*              TRAJECTORY
+*              ----------
+               vt0m(i,j,k) = nestm_vm(i,j,k)
+*
+*              TLM
+*              ---
+               vt0 (i,j,k) = nest_v  (i,j,k)
+*
+            end do
+            end do
+*
+         end do
+*
+*        TRAJECTORY 
+*        ----------
+         do j=1,l_nj
+         do i=1,pil_w
+*
+*           TRAJECTORY
+*           ----------
+            st0m(i,j) = nestm_sm(i,j)
+*
+*           TLM
+*           ---
+            st0 (i,j) = nest_s  (i,j)
+*
+         end do
+         end do
+*
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,pil_w
+*
+*              TRAJECTORY 
+*              ----------
+               wt0m (i,j,k) = nestm_wm (i,j,k)
+               mut0m(i,j,k) = nestm_mum(i,j,k)
+*
+*              TLM
+*              ---
+               wt0 (i,j,k) = nest_w (i,j,k)
+               mut0(i,j,k) = nest_mu(i,j,k)
+*
+            end do
+            end do
+            end do
+         endif
+*
+      endif
+*
+      if ((Hblen_momentx.gt.0).or.(Hblen_momenty.gt.0)) then
+*
+*        TRAJECTORY
+*        ----------
+         call nesajr (ut0m  ,nestm_um  ,LDIST_DIM,G_nk,1,0,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (vt0m  ,nestm_vm  ,LDIST_DIM,G_nk,0,1,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (tdt0m ,nestm_tdm ,LDIST_DIM,G_nk,0,0,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (psdt0m,nestm_psdm,LDIST_DIM,G_nk,0,0,
+     $                     Hblen_momentx,Hblen_momenty)
+*
+         if (.not. Schm_hydro_L) then
+            call nesajr (wt0m  ,nestm_wm  ,LDIST_DIM,G_nk,0,0,
+     $                        Hblen_momentx,Hblen_momenty)
+            call nesajr (mut0m ,nestm_mum ,LDIST_DIM,G_nk,0,0,
+     $                        Hblen_momentx,Hblen_momenty)
+         endif
+*
+*        TLM 
+*        ---
+         call nesajr (ut0  ,nest_u  ,LDIST_DIM,G_nk,1,0,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (vt0  ,nest_v  ,LDIST_DIM,G_nk,0,1,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (tdt0 ,nest_td ,LDIST_DIM,G_nk,0,0,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (psdt0,nest_psd,LDIST_DIM,G_nk,0,0,
+     $                     Hblen_momentx,Hblen_momenty)
+*
+         if (.not. Schm_hydro_L) then
+            call nesajr (wt0  ,nest_w  ,LDIST_DIM,G_nk,0,0,
+     $                        Hblen_momentx,Hblen_momenty)
+            call nesajr (mut0 ,nest_mu ,LDIST_DIM,G_nk,0,0,
+     $                        Hblen_momentx,Hblen_momenty)
+         endif
+*
+      endif
+*
+      if ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) then
+*
+*        TRAJECTORY
+*        ----------
+         call nesajr (tt0m ,nestm_tm ,LDIST_DIM,G_nk  ,0,0,
+     $                               Hblen_tx,Hblen_ty)
+         call nesajr (tpt0m,nestm_tpm,LDIST_DIM,G_nk  ,0,0,
+     $                               Hblen_tx,Hblen_ty)
+*
+*        TLM 
+*        ---
+         call nesajr (tt0 ,nest_t ,LDIST_DIM,G_nk  ,0,0,
+     $                               Hblen_tx,Hblen_ty)
+         call nesajr (tpt0,nest_tp,LDIST_DIM,G_nk  ,0,0,
+     $                               Hblen_tx,Hblen_ty)
+*
+      endif
+*      
+      if ((Hblen_massx.gt.0).or.(Hblen_massy.gt.0)) then
+*
+*        TRAJECTORY
+*        ----------
+         call nesajr (fit0m ,nestm_fim ,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (fipt0m,nestm_fipm,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (qt0m  ,nestm_qm  ,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (pipt0m,nestm_pipm,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (st0m  ,nestm_sm  ,LDIST_DIM,   1  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+*
+*        TLM
+*        ---
+         call nesajr (fit0 ,nest_fi ,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (fipt0,nest_fip,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (qt0  ,nest_q  ,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (pipt0,nest_pip,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (st0  ,nest_s  ,LDIST_DIM,   1  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+*
+      endif
+*
+      err = vmmuld(key,nvar)
+*
+      key1_ = VMM_KEY (nest_tr)
+      key0_ = VMM_KEY (trt0)
+      key1m_= VMM_KEY (nestm_trm)
+      key0m_= VMM_KEY (trt0m)
+      do n=1,Tr3d_ntr
+         key1 (n) = key1_ + n
+         key0 (n) = key0_ + n
+         key1m(n) = key1m_+ n
+         key0m(n) = key0m_+ n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1, Tr3d_ntr)
+         err = vmmlod(key0, Tr3d_ntr)
+         err = vmmlod(key1m,Tr3d_ntr)
+         err = vmmlod(key0m,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1 (n),patr,  tr)
+            err = vmmget(key0 (n),patr0, tr0)
+            err = vmmget(key1m(n),patrm, trm)
+            err = vmmget(key0m(n),patr0m,tr0m)
+            if (l_north) then
+                do k=1,G_nk
+                   do j=l_nj-pil_n+1,l_nj
+                   do i=1,l_ni
+*
+*                     TRAJECTORY
+*                     ----------
+                      tr0m (i,j,k) = trm (i,j,k)
+*
+*                     TLM 
+*                     ---
+                      tr0  (i,j,k) = tr  (i,j,k)
+*
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_east) then
+                do k=1,G_nk
+                   do j=1,l_nj
+                   do i=l_ni-pil_e+1,l_ni
+*
+*                     TRAJECTORY
+*                     ----------
+                      tr0m (i,j,k) = trm (i,j,k)
+*
+*                     TLM 
+*                     ---
+                      tr0  (i,j,k) = tr  (i,j,k)
+*
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_south) then
+                do k=1,G_nk
+                   do j=1,pil_s
+                   do i=1,l_ni
+*
+*                     TRAJECTORY
+*                     ----------
+                      tr0m (i,j,k) = trm (i,j,k)
+*
+*                     TLM 
+*                     ---
+                      tr0  (i,j,k) = tr  (i,j,k)
+*
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_west) then
+                do k=1,G_nk
+                   do j=1,l_nj
+                   do i=1,pil_w
+*
+*                     TRAJECTORY
+*                     ----------
+                      tr0m (i,j,k) = trm (i,j,k)
+*
+*                     TLM 
+*                     ---
+                      tr0  (i,j,k) = tr  (i,j,k)
+*
+                   enddo
+                   enddo
+                enddo
+            endif
+         if ((Hblen_trx.gt.0).or.(Hblen_try.gt.0)) then
+*
+*           TRAJECTORY
+*           ----------
+            call nesajr (tr0m,trm,LDIST_DIM,G_nk  ,0,0,
+     $                            Hblen_trx,Hblen_try)
+*
+*           TLM 
+*           ---
+            call nesajr (tr0 ,tr ,LDIST_DIM,G_nk  ,0,0,
+     $                            Hblen_trx,Hblen_try)
+*
+         endif
+         enddo
+         err = vmmuld(key1, Tr3d_ntr)
+         err = vmmuld(key0, Tr3d_ntr)
+         err = vmmuld(key1m,Tr3d_ntr)
+         err = vmmuld(key0m,Tr3d_ntr)
+      endif
+*
+*----------------------------------------------------------------------
+      return
+      end

@@ -13,6 +13,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *object
 *    see id section
@@ -36,10 +37,6 @@
       integer i, j, k
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('frstgss_tr')
-      if(.not. Schm_cptop_L) call gefstop('frstgss_tr')
-*     ______________________________________________________
-
       if (Lun_debug_L) write (Lun_out,1000)
 *
       pnlkey1(1) = VMM_KEY(qt0m)
@@ -92,7 +89,17 @@
          pnlkey1(pnlod+2) = VMM_KEY(vt0m)
          pnlkey1(pnlod+3) = VMM_KEY(ut1m)
          pnlkey1(pnlod+4) = VMM_KEY(vt1m)
-         pnlod=pnlod+4
+         pnlod=  pnlod+4
+      endif
+      if ( .not. Schm_cptop_L .or. .not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(fipt0m)
+         pnlkey1(pnlod+2) = VMM_KEY(fipt1m)
+         pnlod = pnlod+2
+      endif
+      if ( .not. Schm_hydro_L ) then
+         pnlkey1(pnlod+1) = VMM_KEY(mut0m)
+         pnlkey1(pnlod+2) = VMM_KEY(mut1m)
+         pnlod = pnlod+2
       endif
       pnerr = vmmlod(pnlkey1,pnlod)
 
@@ -106,6 +113,30 @@
          do i= 1 , l_ni
             ut0m(i,j,k)  =  ut1m(i,j,k)
             vt0m(i,j,k)  =  vt1m(i,j,k)
+         end do
+         end do
+         end do
+      endif
+*
+      if ( .not. Schm_cptop_L .or. .not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(fipt0m)
+         pnerr = VMM_GET_VAR(fipt1m)
+         do k=1,l_nk
+         do j= 1 , l_nj
+         do i= 1 , l_ni
+            fipt0m(i,j,k) = fipt1m(i,j,k)
+         end do
+         end do
+         end do
+      endif
+*
+      if ( .not. Schm_hydro_L ) then
+         pnerr = VMM_GET_VAR(mut0m)
+         pnerr = VMM_GET_VAR(mut1m)
+         do k=1,l_nk
+         do j= 1 , l_nj
+         do i= 1 , l_ni
+            mut0m(i,j,k) =  mut1m(i,j,k)
          end do
          end do
          end do

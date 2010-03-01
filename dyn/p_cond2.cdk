@@ -37,7 +37,7 @@
 *----------------------------------------------------------------------
 #endif
 
-      character*8 P_cond2_conv_S , P_cond2_stcon_S, P_cond2_shlct_S
+      character*8 P_cond2_conv_S , P_cond2_stcon_S, P_cond2_shlct_S(2)
       logical P_cond2_satu_L   ,P_cond2_ilwc_L, P_cond2_kfcmom_L
       real P_cond2_kfctrig, P_cond2_kfcrad, P_cond2_kfcdepth, 
      $     P_cond2_kfcdlev, P_cond2_kfcdet, P_cond2_kfctimec,

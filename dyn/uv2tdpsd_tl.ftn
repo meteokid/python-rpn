@@ -6,7 +6,7 @@
      %                        F_tdm,F_psdm,F_uum,F_vvm,F_ssm,
      %                        DIST_DIM, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
 *
@@ -24,6 +24,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate
 * v3_00 - Laroche S.        - cleanup 
+* v3_03 - Tanguay M.        - split call to rpn_comm_xch_halo for uv  
 *
 *object
 *     see id section 
@@ -111,12 +112,14 @@
          end do
          end do
       end do
-
-      call rpn_comm_xch_halo ( uvm, LDIST_DIM, l_niu,l_nj,G_nk*2,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-      call caldiv_2 ( F_tdm, uvm(minx,miny,1,1), uvm(minx,miny,1,2), LDIST_DIM, G_nk )
 *
+      call rpn_comm_xch_halo (uvm,               LDIST_DIM, l_niu,l_nj,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo (uvm(minx,miny,1,2),LDIST_DIM, l_ni,l_njv,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+      call caldiv_2 ( F_tdm, uvm(minx,miny,1,1), uvm(minx,miny,1,2),
+     $                LDIST_DIM, G_nk )
 *
 *                   *
 *                 pi
@@ -168,7 +171,8 @@
 *
       end do
 *
-      call p_uvgridscal(uvm(minx,miny,1,1),uvm(minx,miny,1,2),LDIST_DIM,l_nk,.true.)
+      call p_uvgridscal ( uvm(minx,miny,1,1), uvm(minx,miny,1,2),
+     $                    LDIST_DIM, l_nk, .true.)
 *
       do k=1,G_nk
        do j= 1, l_nj
@@ -237,10 +241,13 @@
 
       end do
 *
-      call rpn_comm_xch_halo ( uv, LDIST_DIM, l_niu,l_nj,G_nk*2,
-     $               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo (uv,                LDIST_DIM, l_niu,l_nj,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo (uv(minx,miny,1,2), LDIST_DIM, l_ni,l_njv,
+     $                 G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
-      call caldiv_2 ( F_td, uv(minx,miny,1,1), uv(minx,miny,1,2), LDIST_DIM, G_nk )
+      call caldiv_2 ( F_td, uv(minx,miny,1,1), uv(minx,miny,1,2),
+     $                LDIST_DIM, G_nk )
 *
 *                   *
 *                 pi
@@ -302,7 +309,8 @@
       end do
 *
 *
-      call p_uvgridscal(uv(minx,miny,1,1),uv(minx,miny,1,2),LDIST_DIM,l_nk,.true.)
+      call p_uvgridscal ( uv(minx,miny,1,1), uv(minx,miny,1,2),
+     $                    LDIST_DIM, l_nk, .true. )
 
       do k=1,G_nk
       do j= 1, l_nj

@@ -11,6 +11,7 @@
 *
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
+* v3_03 - Tanguay M.        - use Ind comdeck
 *
 *object
 *    see id section
@@ -23,50 +24,33 @@
 #include "geomg.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "vt1.cdk"
+#include "ind.cdk"
 *
-*modules
-      integer  vmmlod, vmmget, vmmuld
-      external vmmlod, vmmget, vmmuld
-*
-      integer i,j,k,pnerr,pnlkey1(2)
+      integer i,j,k
       real*8 pdsc1_8
 *
-*     -----------------------------------------
-*
       if (Lun_out.gt.0) write(Lun_out,1000)
-*
-*     Get fields in memory
-*     --------------------
-      pnlkey1(1) = VMM_KEY(ut1)
-      pnlkey1(2) = VMM_KEY(vt1)
-*
-      pnerr = vmmlod(pnlkey1,2)
-      pnerr = VMM_GET_VAR(ut1)
-      pnerr = VMM_GET_VAR(vt1)
 *
 *     ADJ of
 *     Calculation of wind images from components 
 *     ------------------------------------------
       do j= 1, l_njv
-         pdsc1_8 = geomg_cyv_8(j) / Dcst_rayt_8
+         pdsc1_8 = Geomg_cyv_8(j) / Dcst_rayt_8
          do k=1,G_nk
             do i= 1, l_ni
-               vt1(i,j,k) = pdsc1_8 * vt1(i,j,k)
+               Ind_v(i,j,k) = pdsc1_8 * Ind_v(i,j,k)
             end do
          end do
       end do
 *
       do j= 1, l_nj
-         pdsc1_8 = geomg_cy_8(j) / Dcst_rayt_8 
+         pdsc1_8 = Geomg_cy_8(j) / Dcst_rayt_8 
          do k=1,G_nk
             do i= 1, l_niu
-               ut1(i,j,k) = pdsc1_8 * ut1(i,j,k)
+               Ind_u(i,j,k) = pdsc1_8 * Ind_u(i,j,k)
             end do
          end do
       end do
-*
-      pnerr = vmmuld(-1,0)
 *
  1000 format(
      +  'ADJ of CONVERT COMPONENTS TO WIND IMAGES: (S/R V4D_UV2IMG_AD)',

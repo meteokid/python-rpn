@@ -18,12 +18,14 @@
 *                           - change name 
 * v3_01 - Tanguay M.        - ADJ of Eigv_parity_L not done yet
 * v3_02 - Tanguay M.        - ADJ of Eigv_parity_L done
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 *
 *object
 *     see id section
-*     ------------------------
-*     REMARK:INPUT TRAJ:pipt1m
-*     ------------------------
+*     -----------------------------------------------------------
+*     REMARK:INPUT TRAJ:pipt1m after HZD diffusion
+*                       pipt1m,qpt1m before HZD diffusion (NoHyd)
+*     -----------------------------------------------------------
 *	
 *arguments
 *     none
@@ -46,63 +48,139 @@
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      integer pnerr, pnlod, pnlkey1(20), i, j, k
+      integer err, nlod, nlod_m, key1(30),key1_m(2), i, j, k
       real*8  ONE_8,ZERO_8
       parameter( ONE_8 = 1. )
       parameter( ZERO_8= 0. )
+      real zpipt1m(LDIST_SHAPE,l_nk),zqpt1m(LDIST_SHAPE,l_nk)
 *
-*     _________________________________________________________________
+*     ______________________________________________________
 *
       if ((.not.Hzd_fact_L).and.(.not.Hzd_ho_L)) then
          if (Lun_out.gt.0) write(Lun_out,1001)
          return
       endif
+*
+      if ( Schm_psadj_L ) call gem_stop('hzd_main_ad',-1)
 *     ______________________________________________________
 *
-      if( .not. Schm_hydro_L ) call gem_stop('hzd_main_ad',-1)
-      if(       Schm_psadj_L ) call gem_stop('hzd_main_ad',-1)
-      if( .not. Schm_cptop_L ) call gem_stop('hzd_main_ad',-1)
-*     ______________________________________________________
+*     Get fields in memory
+*     --------------------
+      key1(1)  = VMM_KEY(ut1)
+      key1(2)  = VMM_KEY(vt1)
+      key1(3)  = VMM_KEY(psdt1)
+      key1(4)  = VMM_KEY(tpt1)
+      key1(5)  = VMM_KEY(fipt1)
+      key1(6)  = VMM_KEY(tdt1)
+      key1(7)  = VMM_KEY(tt1)
+      key1(8)  = VMM_KEY(fit1)
+      key1(9)  = VMM_KEY(topo)
+      key1(10) = VMM_KEY(tplt1)
+      key1(11) = VMM_KEY(qt1)
+      key1(12) = VMM_KEY(pipt1)
+      key1(13) = VMM_KEY(st1)
+      nlod=13
+      if (.not. Schm_hydro_L) then
+         key1(nlod+1) = VMM_KEY(wt1)
+         key1(nlod+2) = VMM_KEY(qpt1)
+         key1(nlod+3) = VMM_KEY(mut1)
+         key1(nlod+4) = VMM_KEY(multx)
+         nlod = nlod+4
+      endif
+*
+      err = vmmlod(key1,nlod)
+*
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(tpt1)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(tdt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(topo)
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR(qt1)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(st1)
+      wt1_  = 0
+      qpt1_ = 0
+      mut1_ = 0
+      multx_= 0
+      if (.not. Schm_hydro_L) then
+         err = VMM_GET_VAR(wt1)
+         err = VMM_GET_VAR(qpt1)
+         err = VMM_GET_VAR(mut1)
+         err = VMM_GET_VAR(multx)
+      endif
+*
+*     -----------------------------------------------------
+*     WHEN .not.Schm_hydro_L
+*          Preserve TRAJ PIPT1,QPT1M before HZD diffusion
+*          Diffuse  TRAJ PIPT1,QPT1M
+*     -----------------------------------------------------
+*     WHEN Schm_hydro_L, TRAJ PIPT1 after HZD diffusion 
+*                        is already available in V4D_RWTRAJ
+*     -----------------------------------------------------
+      if(.not.Schm_hydro_L) then
+*
+         key1_m(1)= VMM_KEY(pipt1m)
+         key1_m(2)= VMM_KEY(qpt1m )
+         nlod_m=2
+*
+         err = vmmlod(key1_m,nlod_m)
+*
+         err = VMM_GET_VAR(pipt1m)
+         err = VMM_GET_VAR(qpt1m )
+*
+*        Preserve TRAJ PIPT1,QPT1M before HZD diffusion
+*        ----------------------------------------------
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            zpipt1m(i,j,k) = pipt1m(i,j,k)
+            zqpt1m (i,j,k) = qpt1m (i,j,k)
+         enddo
+         enddo
+         enddo
+*
+         err = vmmuld(key1_m,2)
+*
+*        Diffuse TRAJ PIPT1,QPT1M
+*        ------------------------
+         call hzd_main_tr()
+*
+      endif
+*
+*     Recall TRAJ PIPT1 after HZD diffusion
+*     -------------------------------------
+      key1_m(1)= VMM_KEY(pipt1m)
+      nlod_m=1
+*
+      err = vmmlod(key1_m,nlod_m)
+*
+      err = VMM_GET_VAR(pipt1m)
 *
 *     ADJ of
 ***********************************************
 *  $. Indirect diffusion of s & q through pi' *
 ***********************************************
 *
-      pnlkey1(1)  = VMM_KEY(pipt1 )
-      pnlkey1(2)  = VMM_KEY(qt1   )
-      pnlkey1(3)  = VMM_KEY(st1   )
-      pnlkey1(4)  = VMM_KEY(ut1   )
-      pnlkey1(5)  = VMM_KEY(vt1   )
-      pnlkey1(6)  = VMM_KEY(psdt1 )
-      pnlkey1(7)  = VMM_KEY(tpt1  )
-      pnlkey1(8)  = VMM_KEY(fipt1 )
-      pnlkey1(9)  = VMM_KEY(tdt1  )
-      pnlkey1(10) = VMM_KEY(tt1   )
-      pnlkey1(11) = VMM_KEY(fit1  )
-      pnlkey1(12) = VMM_KEY(topo  )
-      pnlkey1(13) = VMM_KEY(tplt1 )
-      pnlkey1(14) = VMM_KEY(pipt1m)
-      pnlod = 14
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr = VMM_GET_VAR(pipt1 )
-      pnerr = VMM_GET_VAR(qt1   )
-      pnerr = VMM_GET_VAR(st1   )
-      pnerr = VMM_GET_VAR(ut1   )
-      pnerr = VMM_GET_VAR(vt1   )
-      pnerr = VMM_GET_VAR(psdt1 )
-      pnerr = VMM_GET_VAR(tpt1  )
-      pnerr = VMM_GET_VAR(fipt1 )
-      pnerr = VMM_GET_VAR(tdt1  )
-      pnerr = VMM_GET_VAR(tt1   )
-      pnerr = VMM_GET_VAR(fit1  )
-      pnerr = VMM_GET_VAR(topo  )
-      pnerr = VMM_GET_VAR(tplt1 )
-      pnerr = VMM_GET_VAR(pipt1m)
-*
       if ((Hzd_fact_L.and.Cstv_phidf_8.gt.0.).or.(Hzd_ho_L)) then
+*
+      if ( .not. Schm_hydro_L ) then
+         do k=1,G_nk
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+*
+*           ADJ 
+*           ---
+            qpt1(i,j,k) = qt1(i,j,k) + qpt1(i,j,k)
+*
+         end do
+         end do
+         end do
+      endif
 *
       do k=1,G_nk
       do j= 1+pil_s, l_nj-pil_n
@@ -133,11 +211,41 @@
 *
       endif
 *
-      wt1_  = 0
-      qpt1_ = 0
-      mut1_ = 0
-      multx_= 0
-
+      err = vmmuld(key1_m,1)
+*
+*     -------------------------------------------------------
+*     WHEN .not.Schm_hydro_L
+*          Recall TRAJ PIPT1,QPT1 before HZD diffusion
+*     -------------------------------------------------------
+*     WHEN Schm_hydro_L, TRAJ PIPT1,QPT1 before HZD diffusion
+*                        are not requested
+*     -------------------------------------------------------
+*
+      if (.not. Schm_hydro_L) then
+*
+          key1_m(1)= VMM_KEY(pipt1m)
+          key1_m(2)= VMM_KEY(qpt1m)
+          nlod_m=2
+*
+          err = vmmlod(key1_m,nlod_m)
+*
+          err = VMM_GET_VAR(pipt1m)
+          err = VMM_GET_VAR(qpt1m )
+*
+          do k=1,l_nk
+          do j=1,l_nj
+          do i=1,l_ni
+             pipt1m(i,j,k) = zpipt1m(i,j,k)
+             qpt1m (i,j,k) = zqpt1m (i,j,k)
+          enddo
+          enddo
+          enddo
+*
+      else
+          pipt1m_= 0
+          qpt1m_ = 0
+      endif
+*
 *     ADJ of
 *************************************
 *  1. Implicit horizontal diffusion *
@@ -148,40 +256,65 @@ c*PDIR RESERVE=Macr_cpud
       if (Hzd_ho_L) then
 *
          if(Fft_fast_L) then
-*           use FFT in diffusion-solver
-            call hzd_hof_ad ( ut1 , vt1 , psdt1, tpt1 , fipt1, tdt1,
-     %                        tt1 , fit1, tplt1, pipt1, wt1  ,
-     %                        qpt1, mut1, multx, topo ,
-     %                        LDIST_DIM, G_nk)
-         else
-*           use MXMA in diffusion-solver
-            if ( .not. Eigv_parity_L) then
-            call hzd_ho_ad  ( ut1 , vt1 , psdt1, tpt1 , fipt1, tdt1,
-     %                        tt1 , fit1, tplt1, pipt1, wt1  ,
-     %                        qpt1, mut1, multx, topo ,
-     %                        LDIST_DIM, G_nk)
+*
+*        use FFT in diffusion-solver
+*
+            if (G_lam) then
+*
+            call hzd_hof_lam_ad ( ut1   , vt1  , psdt1 , tpt1  , fipt1 , tdt1 ,
+     %                            tt1   , fit1 , tplt1 , pipt1 , wt1   ,
+     %                            qpt1  , mut1 , multx ,
+     %                            pipt1m, qpt1m, 
+     %                            LDIST_DIM, G_nk)
+*
             else
-            call hzd_ho_parite_ad( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
-     %                             tt1 , fit1, tplt1,  pipt1, wt1 ,
-     %                             qpt1, mut1, multx,  topo ,
+*
+            call hzd_hof_ad ( ut1   , vt1  , psdt1, tpt1 , fipt1, tdt1,
+     %                        tt1   , fit1 , tplt1, pipt1, wt1  ,
+     %                        qpt1  , mut1 , multx, topo ,
+     %                        pipt1m, qpt1m, 
+     %                        LDIST_DIM, G_nk)
+*
+            endif
+*
+         else
+*
+*        use MXMA in diffusion-solver
+*
+            if ( .not. Eigv_parity_L) then
+*
+            call hzd_ho_ad  ( ut1   , vt1  , psdt1, tpt1 , fipt1, tdt1,
+     %                        tt1   , fit1 , tplt1, pipt1, wt1  ,
+     %                        qpt1  , mut1 , multx, 
+     %                        pipt1m, qpt1m, topo ,
+     %                        LDIST_DIM, G_nk)
+*
+            else
+*
+            call hzd_ho_parite_ad( ut1   , vt1  , psdt1, tpt1 , fipt1, tdt1,
+     %                             tt1   , fit1 , tplt1, pipt1, wt1  ,
+     %                             qpt1  , mut1 , multx, 
+     %                             pipt1m, qpt1m, topo ,
      %                             LDIST_DIM, G_nk)
             endif
+*
          endif
 *
       endif
 *
       if (Hzd_fact_L) then
 *
-      call hzd_fact_ad ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
-     %                   tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
-     %                   qpt1, mut1, multx, st1 , topo ,
+      call hzd_fact_ad ( ut1   , vt1  , psdt1, tpt1, fipt1, tdt1,
+     %                   tt1   , fit1 , tplt1, qt1 , pipt1, wt1 ,
+     %                   qpt1  , mut1 , multx, st1 , 
+     %                   pipt1m, qpt1m, topo ,
      %                   LDIST_DIM, G_nk)
 *
       endif
 *
 c*PDIR RELEASE
 *
-      pnerr = vmmuld(-1,0)
+      err = vmmuld(-1,0)
 *
  1001 format(/,
      + 3X,'NO ADJ HORIZONTAL DIFFUSION REQUIRED',

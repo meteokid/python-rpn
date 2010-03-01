@@ -55,6 +55,6 @@
       MARK_COMMON_END (C_pipe)
 *
       integer c_cplg_step
-      MARK_COMMON_BEG (C_time)
-      common /C_time/ c_cplg_step
-      MARK_COMMON_END (C_time)
+      MARK_COMMON_BEG (C_step)
+      common /C_step/ c_cplg_step
+      MARK_COMMON_END (C_step)

@@ -13,6 +13,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_21 - Tanguay M.        - add V4dg_conf= 401 and 402 
 * v2_31 - Tanguay M.        - Move v4d_setscalp after set_dync 
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 *
 *object
 *     see id section
@@ -32,6 +33,7 @@
 *     none
 * 
 *implicits
+#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "v4dg.cdk"
 #include "v4dc.cdk"
@@ -39,8 +41,13 @@
 #include "schm.cdk"
 #include "ptopo.cdk"
 #include "step.cdk"
+#include "vt1.cdk"
+#include "ind.cdk"
 *
-      integer n,indic
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer i,j,k,n,indic,key1(3),err
 *
       real*8 ps01_8,ps02_8
 *
@@ -59,6 +66,7 @@
          write(Lun_out, fmt='(  ''-------------------'')')
       endif
 *
+      V4dg_part = 2
       call indata()
 *
 *     ------------------------------------------------------------------
@@ -77,8 +85,13 @@
 *        -----------------------------------------------------------
          call v4d_cainin (V4dc_ncv,V4dc_ycv)
 *
-*        Initialize TLM initial control var. in V4dc_xcv
-*        -----------------------------------------------
+*        Use a hydrostatic phi' when .not.Schm_hydro_L
+*        ---------------------------------------------
+         if(.not.Schm_hydro_L) call v4d_phydro (V4dc_ncv,V4dc_ycv)
+*
+*        Keep NLM initial control var. in V4dc_xcv
+*        NOTE: Used later to define TLM initial control var.
+*        ---------------------------------------------------
          do n = 1,V4dc_ncv
             V4dc_xcv(n) = V4dc_ycv(n)
          end do
@@ -115,6 +128,33 @@
          indic = 99
          call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
 *
+*        Initialize V4dc_ycv (Image winds) from NLM final model var.
+*        -----------------------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*        Get fields in memory
+*        --------------------
+         key1(1) = VMM_KEY(ut1)
+         key1(2) = VMM_KEY(vt1)
+         err = vmmlod(key1,2)
+         err = VMM_GET_VAR(ut1)
+         err = VMM_GET_VAR(vt1)
+*
+*        Associate with Ind
+*        ------------------
+         Ind_u_   = ut1_
+         Ind_v_   = vt1_
+*
+*        Convert wind images to true winds
+*        ---------------------------------
+         call v4d_img2uv()
+*
+         err = vmmuld(-1,0)
+*
+*        Initialize V4dc_ycv (True winds)) from NLM final model var.
+*        -----------------------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
 *     ------------------------------
 *     Run TANGENT LINEAR integration 
 *     ------------------------------
@@ -123,6 +163,28 @@
             write(unit=Lun_out, fmt='(  ''TANGENT LINEAR INTEGRATION'')')
             write(unit=Lun_out, fmt='(  ''--------------------------'')')
          endif
+*
+*        Define TLM control var. with realistic size of perturbations
+*        ------------------------------------------------------------
+*
+*        -----------------------------------------
+*        SHOULD BE TRUE TO VALIDATE GEM-DM v_3.0.2
+*        -----------------------------------------
+         IF(.TRUE.) THEN
+*        DO NOTHING
+         ELSE
+         do n = 1,V4dc_ncv
+            V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
+         end do
+         ENDIF
+*
+*        Use a TLM hydrostatic phi' when .not.Schm_hydro_L
+*        -------------------------------------------------
+         if(.not.Schm_hydro_L) call v4d_phydro_tl (V4dc_ncv,V4dc_xcv)
+*
+*        Zero pilot region of perturbation fields when G_lam
+*        ---------------------------------------------------
+         if(G_lam) call v4d_zeropilot(V4dc_ncv,V4dc_xcv)
 *
 *        Set status of the integration (TLM integration)
 *        -----------------------------------------------
@@ -162,12 +224,39 @@
          if( V4dg_conf.eq.402) then
 *        ----------------------------------------------------
 *        Initialize ADJ final control var. (V4dg_conf.eq.402) 
+*        as TLM final model var.
 *        ----------------------------------------------------
 *
-*          ---------------------------------------------
-*          Initialize ADJ final control var. in V4dc_gcv
-*          as TLM final model var.
-*          ---------------------------------------------
+*          Get fields in memory 
+*          --------------------
+           key1(1) = VMM_KEY(ut1)
+           key1(2) = VMM_KEY(vt1)
+           if(.not.Schm_hydro_L) then
+               key1(3) = VMM_KEY(fipt1)
+               err = vmmlod(key1,3)
+               err = VMM_GET_VAR(fipt1)
+           else
+           err = vmmlod(key1,2)
+           err = VMM_GET_VAR(ut1)
+           err = VMM_GET_VAR(vt1)
+           endif
+*
+*          Zero adjoint phi' when .not.Schm_hydro_L
+*          ----------------------------------------
+           if(.not.Schm_hydro_L) then
+              do k=1,l_nk
+              do j=l_miny,l_maxy
+              do i=l_minx,l_maxx
+                 fipt1(i,j,k) = 0.
+              enddo
+              enddo
+              enddo
+           endif
+*
+*          Associate with Ind
+*          ------------------
+           Ind_u_   = ut1_
+           Ind_v_   = vt1_
 *
 *          Convert wind images to true winds (#1)
 *          --------------------------------------
@@ -176,6 +265,8 @@
 *          Convert wind images to true winds (#2)
 *          --------------------------------------
            call v4d_img2uv()
+*
+           err = vmmuld(-1,0)
 *
 *          Initialize V4dc_gcv from TLM final model var.
 *          ---------------------------------------------

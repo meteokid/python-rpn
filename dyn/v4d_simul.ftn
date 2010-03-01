@@ -20,6 +20,8 @@
 * v3_01 - Morneau J.        - run NLM trajectory when V4dg_sensib_L
 *                             and v4dg_status=5
 * v3_02 - M.Tanguay         - integration stops at Lctl_steplast
+* v3_03 - M.Tanguay         - introduce V4dg_imguv_L  
+*                           - replace v4d_procdyn by indata  
 *
 *object
 *     Simulator 4D (in minimization language).
@@ -54,6 +56,7 @@
 #include "schm.cdk"
 #include "init.cdk"
 *
+*
 *modules
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
@@ -62,8 +65,8 @@
       real plocal
 *     ______________________________________________________
 *
-      if ( Rstri_rstn_L ) call gefstop('v4d_simul')
-      if ( Init_balgm_L ) call gefstop('v4d_simul')
+      if ( Rstri_rstn_L ) call gem_stop('v4d_simul',-1)
+      if ( Init_balgm_L ) call gem_stop('v4d_simul',-1)
 *     ______________________________________________________
 *
 *     ----------------
@@ -128,7 +131,7 @@
 *        Complete preprocessing
 *        ----------------------
          V4dg_part = 3
-         call v4d_procdyn()
+         call indata()
 *
          call dynout2()
 *
@@ -163,7 +166,7 @@
 *        Complete preprocessing
 *        ----------------------
          V4dg_part = 3
-         call v4d_procdyn_tl()
+         call indata_tl()
 *
          call dynout2()
 *
@@ -188,7 +191,7 @@
 *
       if(F_indic.eq.99) return
 *
-      if(F_indic.ne. 4) call gefstop('v4d_simul') 
+      if(F_indic.ne. 4) call gem_stop('v4d_simul',-1) 
 *
 *     ----------------------------------------------------------------
 *     Evaluate gradient of cost function with respect to initial state
@@ -242,13 +245,24 @@
 *        -------------
          call gem_ctrl_ad()
 *
-         if( V4dg_output_L ) call v4d_dynout()
-*
 *        ADJOINT of
 *        Complete preprocessing
 *        ----------------------
          V4dg_part = 3
-         call v4d_procdyn_ad()
+         call indata_ad()
+*
+*        Output adjoint fields knowing that u,v are true winds
+*        -----------------------------------------------------         
+         if (V4dg_output_L) then
+*
+             V4dg_imguv_L = .false.
+*
+             call v4d_blocstat ()
+             call v4d_dynout()
+*
+             V4dg_imguv_L = .true.
+*
+         endif
 *
 *        Initialise control F_pgraj from ADJ variables
 *        ---------------------------------------------

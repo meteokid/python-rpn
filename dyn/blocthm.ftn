@@ -4,7 +4,7 @@
 *
       subroutine blocthm(F_dostep,F_dostep_max)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_dostep(*)
       integer F_dostep_max
@@ -28,6 +28,8 @@
 * v3_01 - Morneau J.        - remove conversion to Celcius for TL or AD output
 * v3_02 - Plante A.         - Water loading
 * v3_02 - Lee V.            - LA and LO output (not physics), add QC output
+* v3_03 - Lee V.            - correct bug for illegal access to all h2o tracers
+* v3_03                       if Schm_phyms_L is false.
 *
 *object
 *     See above id.
@@ -71,7 +73,7 @@
 *
 **
       integer cnmvar, cn3dvar, cnnkey, cn2dvar
-      parameter (cnmvar=14, cn3dvar=10, cn2dvar=6, cnnkey=5)
+      parameter (cnmvar=14, cn3dvar=10, cn2dvar=7, cnnkey=5)
       integer i,j,k,kl,jj,kk,jjj,kkk,ii,iii,i0,in,j0,jn,n
       integer pnlkey (cnnkey),key(Tr3d_ntr),key0
       integer pnerr,pnkey,levset,pnindex,pni2d,pni3d
@@ -114,14 +116,14 @@
 *     list of derived 3-D variables that may be produced by blocthm
 *     NOTE: This routine also outputs ME, PN, P0 and PT
       data pt3dvar /'GZ','VT','TT','ES','TD','HR','PX','HU','TW','QC'/
-      data pt2dvar /'ME','PN','PT','P0','LA','LO'/
+      data pt2dvar /'ME','MX','PN','PT','P0','LA','LO'/
       integer pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu,pntw,pnqc
-      integer pnme,pnpn,pnpt,pnp0,pnla,pnlo
+      integer pnme,pnmx,pnpn,pnpt,pnp0,pnla,pnlo
 *     index of each symbol in the list
       data pngz,pnvt,pntt,pnes,pntd,pnhr,pnpx,pnhu,pntw,pnqc
      $     /  1,   2,   3,   4,   5,   6,   7,   8,   9,  10/
-      data pnme,pnpn,pnpt,pnp0,pnla,pnlo
-     $     /  1,   2,   3,   4,   5,   6/
+      data pnme,pnmx,pnpn,pnpt,pnp0,pnla,pnlo
+     $     /  1,   2,   3,   4,   5,   6,  7/
 *     initialize conversion of units
       data prmult  / cn3dvar*1.0/
       data pradd   / cn3dvar*0.0/
@@ -253,23 +255,25 @@
          if (Tr3d_name_S(n).eq.'HU') then
             pnerr = vmmget(key(n),patr,hu)
          endif
-         if (Tr3d_name_S(n).eq.'QC') then
-            pnerr = vmmget(key(n),patr1,qc)
-         endif
-         if(Schm_wload_L)then
-            if (Tr3d_name_S(n).eq.'QC'.or.
-     $          Tr3d_name_S(n).eq.'QR'.or.
-     $          Tr3d_name_S(n).eq.'QI'.or.
-     $          Tr3d_name_S(n).eq.'QG'    ) then
-               pnerr = vmmget(key(n),patr2,qj)
-               do k=1,l_nk
-               do j=j0,jn
-               do i=i0,in
-                  t5 (i,j,k) = t5 (i,j,k) + max(0.0,qj(i,j,k))
-               enddo
-               enddo
-               enddo
-            endif         
+         if (Schm_phyms_L) then
+             if (Tr3d_name_S(n).eq.'QC') then
+                 pnerr = vmmget(key(n),patr1,qc)
+             endif
+             if(Schm_wload_L)then
+               if (Tr3d_name_S(n).eq.'QC'.or.
+     $             Tr3d_name_S(n).eq.'QR'.or.
+     $             Tr3d_name_S(n).eq.'QI'.or.
+     $             Tr3d_name_S(n).eq.'QG'    ) then
+                   pnerr = vmmget(key(n),patr2,qj)
+                   do k=1,l_nk
+                   do j=j0,jn
+                   do i=i0,in
+                      t5 (i,j,k) = t5 (i,j,k) + max(0.0,qj(i,j,k))
+                   enddo
+                   enddo
+                   enddo
+               endif         
+             endif
          endif
       enddo
 *     Compute Virtual temperature without water loading t5
@@ -442,6 +446,13 @@
      $                  var_e_S,typvar_e_S,ip1_e,bit_e,mtval_e,
      $                  LDIST_SIZ,mxout_e,Grid_sets)
                   endif
+*            if MX requested for output...
+                  if (Outd_var(ii,kk).eq.pni2dx(pnmx)) then
+                     call insrtslab_d(t4,w2,LDIST_DIM,G_nk,G_nk,
+     $                  kk,1.0,0.0,pni2dx(pnmx),0,mtout_e,
+     $                  var_e_S,typvar_e_S,ip1_e,bit_e,mtval_e,
+     $                  LDIST_SIZ,mxout_e,Grid_sets)
+                  endif
 *            if LA requested for output...
                   if (Outd_var(ii,kk).eq.pni2dx(pnla)) then
                      do j=j0,jn
@@ -557,7 +568,7 @@
      $                    typvar_e_S,ip1_e,bit_e,mtval_e,
      $                    LDIST_SIZ,mxout_e,Grid_sets)
                      endif
-                     if ( .not. (Lctl_step .eq. 0 .and. Schm_phyms_L)
+                     if ( .not.(Lctl_step .eq. 0) .and. Schm_phyms_L
      $                    .and.  pl3dvar(pnqc) ) then
                           call insrtslab_d(qc,w2,LDIST_DIM,G_nk,k,
      $                    kk,prmult(pnqc),pradd(pnqc),pni3dx(pnqc),

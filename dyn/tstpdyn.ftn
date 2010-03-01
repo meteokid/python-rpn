@@ -4,7 +4,7 @@
 *
       subroutine tstpdyn ( F_fnitraj )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_fnitraj
 *
@@ -16,6 +16,7 @@
 * v2_10 - Tanguay M.        - store TRAJ for 4D-Var 
 * v2_30 - Edouard S.        - introduce Ncn 
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *
 *object
 *    
@@ -58,32 +59,25 @@
 *
 *     ---------------------------------------------------------------
 *
-      if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) then
+      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
 *
-*        Store TRAJ predictive variables except PIPT1
-*        --------------------------------------------
-         if ( Orh_crank_L .and. Orh_icn .eq. 1 ) then
-*
-            V4dg_numtr = 3
-            call v4d_rwtraj ()
-*
-         endif
+*        Store TRAJ predictive variables
+*        -------------------------------
+         if ( Orh_crank_L .and. Orh_icn.eq.1 ) call v4d_rwtraj (3) 
 *
       endif
 *
       call rhs ()
 *
-      if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) then
+      if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) then
 *
 *        Store TRAJ Positions TH
 *        -----------------------
-         V4dg_numtr = 4
-         call v4d_rwtraj ()
+         call v4d_rwtraj (4)
 *
 *        Store TRAJ Winds TH
 *        -------------------
-         V4dg_numtr = 5
-         call v4d_rwtraj ()
+         call v4d_rwtraj (5)
 *
       endif
 *
@@ -91,9 +85,9 @@
 *
       call pre () 
 *
-      if ( Orh_icn .eq. 1) call frstgss( )
+      if ( Orh_icn.eq.1 ) call frstgss( )
 *
-      if (Lun_debug_L) write (Lun_out,1005) Schm_itnlh
+      if ( Lun_debug_L ) write (Lun_out,1005) Schm_itnlh
 *
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       call hpalloc (nl_nu_  , dim, err,1)
@@ -102,7 +96,7 @@
       call hpalloc (nl_ncn_ , dim, err,1)
       nl_n3_  = 0
       nl_n3p_ = 0
-      if (.not. Schm_hydro_L) then
+      if ( .not. Schm_hydro_L ) then
          call hpalloc (nl_n3_  , dim, err,1)
          call hpalloc (nl_n3p_ , dim, err,1)
       endif
@@ -111,15 +105,15 @@
 *
          if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) then
 *
-            if(.not.( (Orh_icn.eq.1.and.iln.eq.1).or.
-     %              (                 iln.gt.1))    ) then
+*           Store fields at T0 and TX used as INPUT but changed by updating (subr. BAC)
+*           ---------------------------------------------------------------------------
+            if ( Orh_icn.ne.1 .and. iln.eq.1 ) call v4d_rwtraj (6) 
 *
-*        Store TRAJ TPLT0,ST0
-*        --------------------
-               V4dg_numtr = 6
-               call v4d_rwtraj ()
 *
-            endif
+*           Store fields at TX used as INPUT but changed by updating (subr. BAC)
+*           -------------------------------------------------------------------
+            if ( .not.Schm_hydro_L .and. Orh_icn.eq.1 .and. iln.eq.1 ) 
+     $           call v4d_rwtraj (7) 
 *
          endif
 *
@@ -135,7 +129,7 @@
       call hpdeallc(nl_nv_ , err)
       call hpdeallc(nl_nth_, err)
       call hpdeallc(nl_ncn_, err)
-      if (.not. Schm_hydro_L) then
+      if ( .not. Schm_hydro_L ) then
          call hpdeallc(nl_n3_ , err)
          call hpdeallc(nl_n3p_, err)
       endif

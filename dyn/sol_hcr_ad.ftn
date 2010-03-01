@@ -22,6 +22,7 @@
 * v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
 * v3_00 - Tanguay M.        - adapt to restructured sol_hcr 
 * v3_02 - Tanguay M.        - ADJ of Eigv_parity_L done
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *object
 *     see id section
@@ -53,10 +54,6 @@
       real*8 ZERO_8
       parameter( ZERO_8 = 0.0 )
 *
-*     ______________________________________________________
-*
-      if(G_lam) call gem_stop('sol_hcr_ad',-1)
-*     ______________________________________________________
 *
 *     Zero adjoint variables
 *     ----------------------
@@ -108,6 +105,17 @@
 *
 *
       if (Fft_fast_L) then
+         if (G_lam) then
+*
+         call sol_fft8_lam_ad ( F_w2_8, F_w1_8, Fft_pri_8,
+     $                     Minx, Maxx, Miny, Maxy, ldnh_nj,
+     $            trp_12smin, trp_12smax, Schm_nith, trp_12sn ,
+     $            G_ni, G_nj, trp_22min , trp_22max, trp_22n  ,
+     $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
+     $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
+     $            F_dg2_8,F_dwfft_8)
+         else
+*
          call sol_fft8_2_ad ( F_w2_8, F_w1_8, Fft_pri_8,
      $                        Minx, Maxx, Miny, Maxy, ldnh_nj,
      $            trp_12smin, trp_12smax, Schm_nith, trp_12sn ,
@@ -115,6 +123,8 @@
      $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
      $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
      $            F_dg2_8,F_dwfft_8)
+*
+         endif
       else
          if(.not. Eigv_parity_L) then
 *

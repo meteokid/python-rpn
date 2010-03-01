@@ -7,11 +7,11 @@
      %                                   F_inm,      F_nm,
      %                           F_capxm,F_capym,F_capzm, F_num, 
      %                           F_ibase,F_inca,F_kinc,F_zinc,F_kdim,
-     %                           F_nij,F_nijplus,F_nk,F_ksep)
+     %                           F_nij,F_nijplus,F_nk,F_ksep,i0,in,j0,jn,kn)
 *
 #include "impnone.cdk"
 *
-      integer F_num, F_nm(F_num)
+      integer F_num, F_nm(F_num),i0,in,j0,jn,kn
 *
       real F_dt, F_inm(*)
 *
@@ -27,6 +27,7 @@
 *revision
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *language
 *     fortran 77
@@ -72,15 +73,12 @@
 #include "glb_ld.cdk"
 #include "adw.cdk"
 ************************************************************************
-      integer n, nijag, o1, o2, k, ij, ib, klev, ilev, ip11, ip12, ip21, ip22
+      integer n, nijag, o1, o2, k, ij, ib, klev, ilev, ip11, ip12, ip21, ip22, i, j
 *
       real*8 prf1_8, prf2_8, prf3_8, prf4_8, prf1_y_8, prf2_y_8
       real*8 prf1m_8,prf2m_8,prf3m_8,prf4m_8,prf1m_y_8,prf2m_y_8
 *
       real*8, parameter :: ZERO_8 = 0.0
-*     ___________________________________________________________________
-*
-      if(G_lam) call gem_stop ('adw_trilin_ad',-1)
 *     ___________________________________________________________________
 *
       nijag = Adw_nit * Adw_njt
@@ -99,7 +97,10 @@
 *
       ib = (ilev-1)*F_kdim + F_inca
 *
-      do ij=1,F_nij
+      do j=j0,jn
+      do i=i0,in
+*
+      ij = ((j-1)*l_ni) + i
 *
       n  = F_nij*(k-1) + ij
 *
@@ -187,6 +188,7 @@
       F_capx(n)  = F_capx(n) + (F_inm(o2+1) - F_inm(o2)) * prf2_8
      %                       + (F_inm(o1+1) - F_inm(o1)) * prf1_8
 *
+      enddo
       enddo
 *
       ilev = ilev + 1

@@ -3,8 +3,7 @@
 #include <model_macros_f.h>
 *
       subroutine set_dync
-*
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne - V. Lee ( after version v1_03 of setdync )
@@ -66,13 +65,18 @@
       if (Grd_rcoef.gt.1.0) then
           Geomg_dpib(1) = 0.0
       else
-          Geomg_dpib(1) = 1.0
+          Geomg_dpib(1) = Geomg_pib(G_nk)/(Geomg_pib(G_nk) - Geomg_pia(1))
       endif
 *
       do k=2,G_nk
          Geomg_dpib(k) =  (Geomg_pib(k) - Geomg_pib(k-1)) 
      $                  / (Geomg_z_8(k) - Geomg_z_8(k-1))
       end do
+
+      if (lun_out.gt.0) then
+         write(Lun_out,*) 'VALUES OF pib '
+         write(Lun_out,*) (Geomg_pib(k),k=1,G_nk)
+      endif
       do k=2,G_nk
          Geomg_dpib(k) = 2.0 * Geomg_dpib(k) - Geomg_dpib(k-1)
       enddo
@@ -84,6 +88,14 @@
       enddo
       Geomg_dpia(G_nk) =  (Geomg_dpib(G_nk)- Geomg_dpib(G_nk-1))
      $                  / (Geomg_z_8 (G_nk)- Geomg_z_8 (G_nk-1))
+      if (lun_out.gt.0) then
+         write(Lun_out,*) 'VALUES OF dpib '
+         write(Lun_out,*) (Geomg_dpib(k),k=1,G_nk)
+         write(Lun_out,*) 'VALUES OF dpia '
+         write(Lun_out,*) (Geomg_dpia(k),k=1,G_nk)
+         write(Lun_out,*) 'VALUES OF dpba '
+         write(Lun_out,*) (Geomg_dpba(k),k=1,G_nk)
+      endif
 *     
 *C       Geomg_hz_8 is the pi star grid spacing (z)
 *        ------------------------------------------

@@ -3,7 +3,7 @@
 #include <model_macros_f.h>
 *
       subroutine inikey
-#include "impnone.cdk"
+      implicit none
 *
 *author   
 *     Michel Desgagne  - Sept 2001 
@@ -14,6 +14,7 @@
 * v2_32 - Desgagne M.       - connection to physics 3.72
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Laroche S.        - new conditional when P_cond_stcon_s(1:3).eq.' NIL'
+* v3_03 - Mailhot J.        - change name of physical tendency (for other physics tracers)
 *
 *object
 *
@@ -106,16 +107,13 @@ cstl
             call getindx (vn_S, 'D',h2o_ind(2,h2o_ntr), lght, init)
             vn_S=h2o_liste_S(i)(1:2)//'COND'
             call getindx (vn_S, 'V',h2o_ind(3,h2o_ntr), lght, init)
+            phyt_name_S(h2o_ntr) = h2o_name_S(h2o_ntr)
+            phyt_ind (1,h2o_ntr) = h2o_ind (1,h2o_ntr)
+            phyt_ind (2,h2o_ntr) = h2o_ind (2,h2o_ntr)
+            phyt_ind (3,h2o_ntr) = h2o_ind (3,h2o_ntr)
          endif
       end do
-      do 10 i=1,h2o_ntr
-         do k=1,tr3d_ntr
-            if (Tr3d_name_S(k).eq.h2o_name_S(i)) goto 10
-         end do
-         tr3d_ntr = tr3d_ntr + 1
-         Tr3d_name_S(tr3d_ntr) = h2o_name_S(i)
-         Tr3d_sval(tr3d_ntr) = 0.
- 10   continue    
+      phyt_ntr = h2o_ntr
 *
 * Other physics tracers to be advected
 *
@@ -128,7 +126,7 @@ cstl
             phyt_ind(1,phyt_ntr)  = deb
             vn_S=phyt_liste_S(i)(1:2)//'MOINS'
             call getindx (vn_S, 'D',phyt_ind(2,phyt_ntr), lght, init)
-            vn_S=phyt_liste_S(i)(1:2)//'COND'
+            vn_S=phyt_liste_S(i)(1:2)//'PHYTD'
             call getindx (vn_S, 'V',phyt_ind(3,phyt_ntr), lght, init)
          endif
       end do

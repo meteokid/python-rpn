@@ -43,7 +43,7 @@
       xlapse = 0.0
       if ( F_lapse_L ) xlapse = 1.0
       conv_8 = 100.
-      conv_8 = alog(conv_8)
+      conv_8 = dlog(conv_8)
 *
       do l=1,lv-1                       ! interval between source levels
            hr_8(l) = 1.0/(F_lna(l+1)-F_lna(l))

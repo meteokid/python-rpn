@@ -5,7 +5,7 @@
       subroutine p_apply ( F_tcond,F_qdifv,F_tdu,F_tdv,F_tdt,F_trm,
      $                             F_tp,F_qp, DIST_DIM,Nk,F_apply_L )
 *
-#include "impnone.cdk"
+      implicit none
 *
       logical F_apply_L
       integer DIST_DIM,Nk
@@ -23,13 +23,13 @@
 * v2_31 - Desgagne M.       - clean up and introduce h2o tracers
 * v3_00 - Laroche S.        - adaptation to include simplified physics
 * v3_02 - Plante A.         - water loading
+* v3_03 - Desgagne M.       - new switches for secondary tendencies
 *
 *object
 *	apply consistency of the tendencies on physics variables
 *	with related dynamical variables. Interpolate wind
 *       tendancies toward theirs respective grids.
 *
-*arguments
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
@@ -56,8 +56,9 @@
       external vmmlod,vmmget,vmmuld
 *
       integer i, j, k, n, err, key1(6),
-     $     keyp(h2o_ntr), keym(h2o_ntr), keyp_, keym_
-      real wk3(LDIST_SHAPE,Nk), wk4(LDIST_SHAPE,Nk),
+     $     keyp(phyt_ntr), keym(h2o_ntr), keyp_, keym_
+      real wk1(LDIST_SHAPE,Nk), wk2(LDIST_SHAPE,Nk), 
+     $     wk3(LDIST_SHAPE,Nk), wk4(LDIST_SHAPE,Nk), 
      $     wk5(LDIST_SHAPE,Nk), wk6(LDIST_SHAPE,Nk), trp, trm
       pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
 *
@@ -75,10 +76,11 @@
      $              P_cond_filco, 'G', .false., LDIST_DIM, l_nk)
       call filter ( F_trm(l_minx,l_miny,1,hucond), wk3, wk4, 
      $         P_cond_filtend,P_cond_filco,'G',.false.,LDIST_DIM, l_nk)
-
+*
 *  4. Interpolation of the wind associated tendencies
-
+*
       call p_uvgridscal ( F_tdu, F_tdv, LDIST_DIM, G_nk, .false. )
+*
 * 1. Add condensation tendencies and other contributions to get 
 *    TOTAL temperature tendency and TOTAL specific humidity tendency
 *    Compute VIRTUAL temperature tendency from:  temperature tendency,
@@ -95,50 +97,24 @@
          keyp(n) = keyp_ + n
       end do
       err = vmmlod(keyp,h2o_ntr)
-
-      do k=1,l_nk
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e
-         wk3(i,j,k) = 0.0
-         wk4(i,j,k) = 0.0
-      end do
-      end do
-      end do
-
-      if(Schm_wload_L)then
+*
+      if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) ) wk2 = 0.
+      wk3 = 0.
+      wk4 = 0.
+*
+      if (Schm_wload_L) then
 *       Retrieve sp mass of hydrometeors at t+ and sum them in wk3, also
 *       sum their tendencies in wk4.
-         do n=1,hucond-1
-            if(h2o_liste_S(n).eq.'QC'.or.
-     $           h2o_liste_S(n).eq.'QR'.or.
-     $           h2o_liste_S(n).eq.'QI'.or.
-     $           h2o_liste_S(n).eq.'QG'    )then
-               err = vmmget(keyp(n),patrp,trp)
-               do k=1,l_nk
-               do j= 1+pil_s, l_nj-pil_n 
-               do i= 1+pil_w, l_ni-pil_e
-                  wk3(i,j,k) = wk3(i,j,k) + trp(i,j,k)
-                  wk4(i,j,k) = wk4(i,j,k) + F_trm(i,j,k,n)
-               end do
-               end do
-               end do
-            endif
-         end do
          do n=hucond+1,h2o_ntr
-            if(h2o_liste_S(n).eq.'QC'.or.
-     $           h2o_liste_S(n).eq.'QR'.or.
-     $           h2o_liste_S(n).eq.'QI'.or.
-     $           h2o_liste_S(n).eq.'QG'    )then
-               err = vmmget(keyp(n),patrp,trp)
-               do k=1,l_nk
-               do j= 1+pil_s, l_nj-pil_n 
-               do i= 1+pil_w, l_ni-pil_e
-                  wk3(i,j,k) = wk3(i,j,k) + trp(i,j,k)
-                  wk4(i,j,k) = wk4(i,j,k) + F_trm(i,j,k,n)
-               end do
-               end do
-               end do
-            endif
+            err = vmmget(keyp(n),patrp,trp)
+            do k=1,l_nk
+            do j= 1+pil_s, l_nj-pil_n 
+            do i= 1+pil_w, l_ni-pil_e
+               wk3(i,j,k) = wk3(i,j,k) + trp(i,j,k)
+               wk4(i,j,k) = wk4(i,j,k) + F_trm(i,j,k,n)
+            end do
+            end do
+            end do
          enddo
       endif
 *
@@ -156,82 +132,115 @@
       if ( V4dg_conf.ne.0 .and. V4dg_oktr_L) then 
         call v4d_rwtraj_apply(F_tdu,F_tdv,F_tdt,F_trm,wk4,LDIST_DIM,Nk)
       endif
-
+*
 *   1.1  Compute VIRTUAL temperature tendency from:  temperature tendency,
 *        specific humidity, virtual temperature & specific humidity tendency
-
+*
       keyp(1) = VMM_KEY (trt1) + hucond
       err = vmmlod(keyp,1)  
       err = vmmget(keyp,patrp,trp)
       do k=1,l_nk
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e 
-         F_tdt(i,j,k) =   F_tdt(i,j,k)
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            F_tdt(i,j,k) =   F_tdt(i,j,k)
      $               * (1.+Dcst_delta_8*trp  (i,j,k)       -wk3(i,j,k))
      $               + F_tp(i,j,k)*
      $                    (Dcst_delta_8*F_trm(i,j,k,hucond)-wk4(i,j,k))
-      end do
-      end do
+            wk1(i,j,k) = F_tdt(i,j,k)
+         end do
+         end do
       end do
       err = vmmuld(keyp,h2o_ntr)
+      if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) )
+     $     call nesajr (wk1,wk2,LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
 *
-*  2. Compute d/dt ( phi ) from d/dt ( T )
-*     Note:   d/dt ( phi' ) = d/dt ( phi ) i.e. not computed
-
-      key1(1) = VMM_KEY(st1)
-      err = vmmlod (key1,1)
-      err = VMM_GET_VAR(st1)
-
-      do k=1,l_nk
-      do j=1,l_nj
-      do i=1,l_ni
-         wk5(i,j,k)  = 0.
-      end do
-      end do
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e 
-         F_qp(i,j,k) = exp(st1(i,j) - F_qp(i,j,k))*F_tdt(i,j,k)
-         wk5(i,j,k)  = F_qp(i,j,k)*Dcst_rgasd_8
-      end do
-      end do
-      end do
+*C       apply tendencies to associated variables
+*        ----------------------------------------
 *
-      call hatoprg ( wk6,wk5,wk4,1.0,geomg_hz_8,LDIST_DIM,G_nk )
-
-*  3. Compute d/dt ( T'lin ) = pi* d/dt ( T ) exp(s-q) ; put in F_tp
-*     Note:   d/dt ( T' ) = d/dt ( T )  i.e. not computed
-
-      do k=1,l_nk
+      if (Schm_pcsty_L.or.Schm_pheat_L) then
+*
+         key1(1) = VMM_KEY(st1)
+         err = vmmlod (key1,1)
+         err = VMM_GET_VAR(st1)
+*
+         wk5 = 0.
+         do k= 1,l_nk	 
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
-            F_tp(i,j,k) = geomg_z_8(k)*F_qp(i,j,k)
+            F_qp(i,j,k) = exp(st1(i,j) - F_qp(i,j,k))*F_tdt(i,j,k)
+             wk5(i,j,k) = F_qp(i,j,k)*Dcst_rgasd_8
          end do
          end do
-         do j=1,l_nj
-         do i=1,l_ni
-            wk5(i,j,k)  = 0.
          end do
-         end do
-      end do
-
-*  5. Compute total divergence and vertical motion associated tendencies
-*     d/dt ( total D ) in xrpqt1,  d/dt ( pi*-dot ) in wk3
-
-      call rpn_comm_xch_halo( F_tdu, LDIST_DIM, l_ni, l_nj,G_nk,
-     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_tdv, LDIST_DIM, l_ni, l_nj,G_nk,
-     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 ) 
 *
-      call uv2tdpsd ( F_qp, wk3, F_tdu, F_tdv, st1, LDIST_DIM, G_nk )
+         if (Schm_pheat_L) then
+            call hatoprg ( wk6,wk5,wk4,1.0,geomg_hz_8,LDIST_DIM,G_nk )
+            key1(2) = VMM_KEY(fipt1)
+            key1(3) = VMM_KEY(fit1 )
+            err = vmmlod(key1(2),2)
+            err = VMM_GET_VAR(fipt1)
+            err = VMM_GET_VAR(fit1 )
+            if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) )
+     $        call nesajr (wk6,wk2,LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+            do k= 1,l_nk
+            do j= 1+pil_s, l_nj-pil_n 
+            do i= 1+pil_w, l_ni-pil_e 
+               fit1 (i,j,k) =  fit1 (i,j,k) + Cstv_dt_8*wk6(i,j,k)
+               fipt1(i,j,k) =  fipt1(i,j,k) + Cstv_dt_8*wk6(i,j,k)
+            end do
+            end do
+            end do
+         endif
 *
-      err = vmmuld(key1,1)
+         if (Schm_pcsty_L) then
+            do k= 1,l_nk
+            do j= 1+pil_s, l_nj-pil_n 
+            do i= 1+pil_w, l_ni-pil_e 
+               F_tp(i,j,k) = geomg_z_8(k)*F_qp(i,j,k)
+            end do
+            end do
+            end do
+            call rpn_comm_xch_halo( F_tdu, LDIST_DIM, l_ni, l_nj,G_nk,
+     $                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call rpn_comm_xch_halo( F_tdv, LDIST_DIM, l_ni, l_nj,G_nk,
+     $                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 *
-*C       2.     apply tendencies to primary variables
-*               -------------------------------------
+            call uv2tdpsd ( F_qp, wk3, F_tdu, F_tdv,st1,LDIST_DIM,G_nk )
+*
+            key1(4) = VMM_KEY(tplt1)
+            key1(5) = VMM_KEY(tpt1 )
+            key1(6) = VMM_KEY(tdt1 )
+            key1(7) = VMM_KEY(psdt1)
+            err = vmmlod(key1(4),4)
+            err = VMM_GET_VAR(tplt1)
+            err = VMM_GET_VAR(tpt1 )
+            err = VMM_GET_VAR(tdt1 )
+            err = VMM_GET_VAR(psdt1)
+            if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) ) then
+             call nesajr (wk3 ,wk2,LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+             call nesajr (F_tp,wk2,LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+             call nesajr (F_qp,wk2,LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
+            endif
+            do k= 1,l_nk
+            do j= 1+pil_s, l_nj-pil_n 
+            do i= 1+pil_w, l_ni-pil_e 
+               tpt1 (i,j,k) =  tpt1 (i,j,k) + Cstv_dt_8*wk1 (i,j,k)
+               tplt1(i,j,k) =  tplt1(i,j,k) + Cstv_dt_8*F_tp(i,j,k)
+               tdt1 (i,j,k) =  tdt1 (i,j,k) + Cstv_dt_8*F_qp(i,j,k)
+               psdt1(i,j,k) =  psdt1(i,j,k) + Cstv_dt_8*wk3 (i,j,k)
+            end do
+            end do
+            end do
+         endif
+         err = vmmuld(-1,0)
+*
+      endif
+*
+*C       apply tendencies to primary variables
+*        -------------------------------------
       if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) ) then
-         call nesajr (F_tdt, wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
-         call nesajr (F_tdu, wk5, LDIST_DIM,G_nk,1,0,Hblen_tx,Hblen_ty)
-         call nesajr (F_tdv, wk5, LDIST_DIM,G_nk,0,1,Hblen_tx,Hblen_ty)
+         call nesajr (F_tdu, wk2, LDIST_DIM,G_nk,1,0,Hblen_tx,Hblen_ty)
+         call nesajr (F_tdv, wk2, LDIST_DIM,G_nk,0,1,Hblen_tx,Hblen_ty)
       endif
 *
       key1(1)  = VMM_KEY(ut1)
@@ -245,17 +254,17 @@
       do k=1,l_nk
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
-            tt1 (i,j,k) =  tt1 (i,j,k) + Cstv_dt_8*F_tdt (i,j,k)
+            tt1 (i,j,k) =  tt1(i,j,k) + Cstv_dt_8*wk1(i,j,k)
          end do
          end do
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_niu-pil_e 
-            ut1 (i,j,k) =  ut1 (i,j,k) + Cstv_dt_8*F_tdu (i,j,k)
+            ut1 (i,j,k) =  ut1(i,j,k) + Cstv_dt_8*F_tdu(i,j,k)
          end do
          end do
          do j= 1+pil_s, l_njv-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
-            vt1 (i,j,k) =  vt1 (i,j,k) + Cstv_dt_8*F_tdv (i,j,k)
+            vt1 (i,j,k) =  vt1(i,j,k) + Cstv_dt_8*F_tdv(i,j,k)
          end do
          end do
       end do
@@ -263,15 +272,16 @@
       err = vmmuld(key1,3)
 *
       keyp_ = VMM_KEY (trt1)
-      if (h2o_ntr.gt.0) then
-         do n=1,h2o_ntr
+      if (phyt_ntr.gt.0) then
+         do n=1,phyt_ntr
             keyp(n) = keyp_ + n
          end do
-         err = vmmlod(keyp,h2o_ntr)  
-         do n=1,h2o_ntr
+         err = vmmlod(keyp,phyt_ntr)  
+         do n=1,phyt_ntr
+            if (phyt_ind(3,n).gt.0) then
             err = vmmget(keyp(n),patrp,trp)
             if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) ) then
-               call nesajr (F_trm(minx,miny,1,n), wk5, LDIST_DIM,G_nk,
+               call nesajr (F_trm(minx,miny,1,n), wk2, LDIST_DIM,G_nk,
      $                                          0,0,Hblen_tx,Hblen_ty)
             endif
             do k=1,l_nk
@@ -281,47 +291,10 @@
             end do
             end do
             end do
+            endif
          end do
-         err = vmmuld(keyp,h2o_ntr)
+         err = vmmuld(keyp,phyt_ntr)
       endif
-*
-*C       3.     apply tendencies to associated variables
-*               ----------------------------------------
-      key1(1) = VMM_KEY(fipt1)
-      key1(2) = VMM_KEY(fit1 )
-      key1(3) = VMM_KEY(tplt1)
-      key1(4) = VMM_KEY(tpt1 )
-      key1(5) = VMM_KEY(tdt1 )
-      key1(6) = VMM_KEY(psdt1)
-      err = vmmlod(key1,6)
-      err = VMM_GET_VAR(fipt1)
-      err = VMM_GET_VAR(fit1 )
-      err = VMM_GET_VAR(tplt1)
-      err = VMM_GET_VAR(tpt1 )
-      err = VMM_GET_VAR(tdt1 )
-      err = VMM_GET_VAR(psdt1)
-*
-      if ( G_lam .and. ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) ) then
-         call nesajr (wk3 , wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
-         call nesajr (wk6 , wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
-         call nesajr (F_tp, wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
-         call nesajr (F_qp, wk5, LDIST_DIM,G_nk,0,0,Hblen_tx,Hblen_ty)
-      endif
-*
-      do k=1,l_nk
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e 
-         fit1 (i,j,k) =  fit1 (i,j,k) + Cstv_dt_8*wk6   (i,j,k)
-         fipt1(i,j,k) =  fipt1(i,j,k) + Cstv_dt_8*wk6   (i,j,k)
-         tpt1 (i,j,k) =  tpt1 (i,j,k) + Cstv_dt_8*F_tdt (i,j,k)
-         tplt1(i,j,k) =  tplt1(i,j,k) + Cstv_dt_8*F_tp  (i,j,k)
-         tdt1 (i,j,k) =  tdt1 (i,j,k) + Cstv_dt_8*F_qp  (i,j,k)
-         psdt1(i,j,k) =  psdt1(i,j,k) + Cstv_dt_8*wk3   (i,j,k)
-      end do
-      end do
-      end do
-*
-      err = vmmuld(key1,6)
 *
       else
 *

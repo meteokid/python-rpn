@@ -5,6 +5,7 @@
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *______________________________________________________________________
 *                                                                      |
 * VARIABLES ASSOCIATED to 4D-Var: COST FUNCTION section                |
@@ -18,7 +19,8 @@
 * V4dj_uvwt          | Weight for winds in cost J                      |
 * V4dj_tpwt          | Weight for temp. in cost J                      |
 * V4dj_spwt          | Weight for surf. press. in cost J               |
-* V4dj_trwt          | Weight for tracer 3D    in cost J                      |
+* V4dj_fipwt         | Weight for phi' in cost J                       |
+* V4dj_trwt          | Weight for tracer 3D    in cost J               |
 * V4dj_invarea       | Inverse of total area                           |
 * V4dj_pj            | Intermediate value of cost J                    |
 * V4dj_thickx        | Linked to integral over x scalar grid           |
@@ -41,7 +43,7 @@
       common / V4d_jcst_i / V4dj_jb, V4dj_kdcst, V4dj_locob
       MARK_COMMON_END (V4d_jcst_i)
 *
-      real V4dj_uvwt,V4dj_tpwt,V4dj_spwt,V4dj_trwt(MAXTR3D),
+      real V4dj_uvwt,V4dj_tpwt,V4dj_spwt,V4dj_trwt(MAXTR3D),V4dj_fipwt,
      %     V4dj_invarea,V4dj_pj
       real V4dj_thickx (*),V4dj_thickxu(*),V4dj_thicky (*),V4dj_thickyv(*),
      %     V4dj_thickz (*)
@@ -52,7 +54,7 @@
      %        (V4dj_thickz_  , V4dj_thickz  )
 *
       MARK_COMMON_BEG (V4d_jcst_r)
-      common / V4d_jcst_r / V4dj_uvwt,V4dj_tpwt,V4dj_spwt,V4dj_trwt, 
+      common / V4d_jcst_r / V4dj_uvwt,V4dj_tpwt,V4dj_spwt,V4dj_trwt,V4dj_fipwt, 
      %                      V4dj_invarea,V4dj_pj,
      %                      V4dj_thickx_,V4dj_thickxu_,V4dj_thicky_,
      %                      V4dj_thickyv_,V4dj_thickz_

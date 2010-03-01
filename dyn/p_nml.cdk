@@ -6,8 +6,10 @@
 * v2_21 - Dugas B.               - added climate mode flags
 * v2.31 - Dugas B.               - added P_zong_znoff_L and P_zong_nbin
 * v2.32 - Dugas B.               - added P_rad_nivl
+* v3_01 - Leduc A.-M.            - added p_cond_kfcpcp_s
 * v3_02 - Dugas B.               - account for a possible second call to the physics,
 *                                  add P_pbl_dumpbus and P_rad_qco2 to the physics namelist
+* v3_03 - Bilodeau B.            - added P_pbl_as, P_pbl_beta and P_cond_kkl
 *
 ***comdeck p_nml.cdk
 *
@@ -21,6 +23,7 @@
 #endif
 #include "p_rad.cdk"
 #include "p_clim.cdk"
+#include "p_str.cdk"
 #include "p_pbl.cdk"
 #include "p_gwd.cdk"
 #include "p_cond.cdk"
@@ -30,7 +33,7 @@
 #include "p_pset.cdk"
 *
       namelist /physics/
-     $     P_pset_second_L,
+     $     P_pset_second_L, P_pbl_advectke_L,
      $     P_pset_xofset  ,P_pset_xofsetr ,
      $     P_pset_yofset  ,P_pset_yofsett ,
      $     P_pset_xblnd   ,P_pset_yblnd   ,
@@ -39,6 +42,8 @@
      $     P_rad_ftp_s    ,P_rad_nivl     , P_rad_qco2    ,
 *
      $     P_clim_clima_L ,P_clim_ininc_L ,
+*
+     $     P_str_strato_L ,
 *
      $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
      $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
@@ -51,16 +56,18 @@
      $     P_pbl_ksg      ,P_pbl_valml_8  ,P_pbl_mllat_8  ,
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
      $     P_pbl_mix_s    ,P_pbl_z0tcst_L ,P_pbl_dumpbus  ,
+     $     P_pbl_as       ,P_pbl_beta     ,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
      $     P_cond_yofset   ,P_cond_yblnd    ,P_cond_conv_s   ,
      $     P_cond_stcon_s  ,P_cond_shlct_s  ,P_cond_hc       ,
      $     P_cond_hf       ,P_cond_hm       ,P_cond_filco    ,
+     $     P_cond_kkl      ,
 *
      $     P_cond_kfcmom_L ,P_cond_kfctrig  , P_cond_kfcrad  ,
      $     P_cond_kfcdepth ,P_cond_kfcdlev  , P_cond_kfcdet  ,
-     $     P_cond_kfctimec ,P_cond_kfctimea ,
+     $     P_cond_kfctimec ,P_cond_kfctimea , P_cond_kfcpcp_s,
 
      $     P_gwd_s ,
 *
@@ -75,7 +82,7 @@
      $     P_zong_nbin
 *
       namelist /physics_p/
-     $     P_pset_second_L,
+     $     P_pset_second_L, P_pbl_advectke_L,
      $     P_pset_xofset  ,P_pset_xofsetr ,
      $     P_pset_yofset  ,P_pset_yofsett ,
      $     P_pset_xblnd   ,P_pset_yblnd   ,
@@ -84,6 +91,8 @@
      $     P_rad_ftp_s    ,P_rad_qco2     ,
 *
      $     P_clim_clima_L ,P_clim_ininc_L ,
+*
+     $     P_str_strato_L ,
 *
      $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
      $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
@@ -96,16 +105,18 @@
      $     P_pbl_ksg      ,P_pbl_valml_8  ,P_pbl_mllat_8  ,
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
      $     P_pbl_mix_s    ,P_pbl_z0tcst_L ,
+     $     P_pbl_as       ,P_pbl_beta     ,
 *
      $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
      $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
      $     P_cond_yofset   ,P_cond_yblnd    ,P_cond_conv_s   ,
      $     P_cond_stcon_s  ,P_cond_shlct_s  ,P_cond_hc       ,
      $     P_cond_hf       ,P_cond_hm       ,P_cond_filco    ,
+     $     P_cond_kkl      ,
 
      $     P_cond_kfcmom_L ,P_cond_kfctrig  , P_cond_kfcrad  ,
      $     P_cond_kfcdepth ,P_cond_kfcdlev  , P_cond_kfcdet  ,
-     $     P_cond_kfctimec ,P_cond_kfctimea ,
+     $     P_cond_kfctimec ,P_cond_kfctimea , P_cond_kfcpcp_s,
 
      $     P_gwd_s ,
 *

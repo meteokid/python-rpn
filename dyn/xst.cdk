@@ -29,7 +29,7 @@
 *
 #endif
       integer MAXSTAT
-      parameter (MAXSTAT=256)
+      parameter (MAXSTAT=999)
       integer Xst_nstat,Xst_dimsers,Xst_dimserp,xst_nstatl 
       integer Xst_statij(2,MAXSTAT),Xst_istat (MAXSTAT),
      $        Xst_jstat   (MAXSTAT),Xst_lclsta(MAXSTAT),

@@ -16,6 +16,7 @@
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
 * v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
+* v3_03 - Tanguay M.        - Adjoint Lam and Nohyd configuration 
 *
 *language
 *     fortran 77
@@ -64,15 +65,15 @@
       integer i0,in,j0,jn
       integer pnerr, pnlkey1(30), key1(Tr3d_ntr), key0(Tr3d_ntr), 
      $        key1_, key0_, pnlod, err
-      integer key1m(Tr3d_ntr), key0m(Tr3d_ntr), key1m_, key0m_ 
+      integer key0m(Tr3d_ntr), key0m_ 
 *
       integer n, nij, nijk, nijkag, i,j,k
 *
       real*8 aaa_8
       real tr,tr0
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
-      real trm,tr0m
-      pointer (patrm, trm(LDIST_SHAPE,*)),(patr0m, tr0m(LDIST_SHAPE,*))
+      real tr0m
+      pointer (patr0m, tr0m(LDIST_SHAPE,*))
 *
 *     ---------------------------------------------------
 *     Allocate extra space TRAJ (x y z upstream position)
@@ -95,7 +96,7 @@
 *     (Based on Clive Temperton ECMWF method)
 *     ------------------------------------------
       integer inca,ibase1,ibase2,count,stencil,nfld,kdim,ksep,klev,ilevels,
-     %        istart,istop,ij,jinc,indice,nijplus,iscrap,group,
+     %        istart,istop,ij,jinc,nijplus,iscrap,group,
      %        myint1,myint2,plus1,plus2,minus1,minus2,ijk
       real scrap,tempo
       logical lscrap_L
@@ -104,9 +105,7 @@
       real   , dimension(:)  ,allocatable :: buff
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gem_stop('adw_main_3_int_ad',-1)
-      if(     Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_ad',-1)
-      if(     G_lam        ) call gem_stop('adw_main_3_int_ad',-1)
+      if (Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_ad',-1)
 *     ______________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
@@ -143,6 +142,17 @@
       call hpalloc(Adwm_c1m_    ,nijk,      err,1)
       call hpalloc(Adwm_wrkbm_  ,nijk,      err,1)
       call hpalloc(Adwm_wrkcm_  ,nijk,      err,1)
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
+      endif
 *
 *     Zero adjoint variables 
 *     ----------------------
@@ -193,8 +203,8 @@
           plus2 = 0
          minus2 = 0
          do k =1,l_nk
-         do j =1,l_nj
-         do i =1,l_ni
+         do j =j0,jn
+         do i =i0,in
             ijk = nij*(k-1) + l_ni*(j-1) + i
             tempo  =         l_nk*(      F_wm(ijk)-Geomg_z_8(k))/
      %                            (Geomg_z_8(l_nk)-Geomg_z_8(1))
@@ -224,17 +234,6 @@
          F_vm_1(n)  = F_vm(n)
          F_wm_1(n)  = F_wm(n)
       enddo
-*
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-          if (l_west) i0=4
-          if (l_east) in=l_niu-2
-          if (l_south) j0=4
-          if (l_north) jn=l_njv-2
-      endif
 *
 *     ----------
 *     TRAJECTORY
@@ -267,13 +266,21 @@
 *        -------------------------
          if(group.eq.1) then
 *
-            nfld = 4
-            if(Orh_icn.eq.Schm_itcn) nfld = nfld +  Tr3d_ntr
+            nfld = 4 
+            if(.not. Schm_hydro_L  ) nfld = 6
 *
-         elseif(group.eq.2.or.group.eq.29) then
+            if(Orh_icn.eq.Schm_itcn) nfld = nfld + Tr3d_ntr
+*
+         elseif(group.eq.2) then
 *
             nfld = 2
-            if(Orh_icn.eq.Schm_itcn.and.group.eq.2) nfld = 2 +  Tr3d_ntr
+            if(.not. Schm_hydro_L  ) nfld = 4 
+*
+            if(Orh_icn.eq.Schm_itcn) nfld = nfld + Tr3d_ntr
+*
+         elseif(group.eq.29) then
+*
+            nfld = 2 
 *
          else
             call gem_stop('adw_main_3_int_ad',-1)
@@ -288,7 +295,7 @@
 *        Allocation
 *        ----------
          allocate (kinc(nijplus,kdim*l_nk),zinc(nijplus,kdim*l_nk),
-     %             buff(nijkag*nfld*2))
+     %             buff(0:nijkag*nfld*2))
 *
 *        Zero adjoint variables
 *        ----------------------
@@ -300,7 +307,7 @@
             zinc(i,1) = 0
          enddo
 *
-         do i = 1,nijkag*nfld*2
+         do i = 0,nijkag*nfld*2
             buff(i) = ZERO_8
          enddo
 *
@@ -374,17 +381,101 @@
             call adw_interp_ad (work,scrap,scrap,scrap,
      %                               tr0m, F_um, F_vm,
      %                          .false.,.true.,LDIST_DIM,l_nk,
-     %                          1,inca,zinc,kdim,nij,nijplus,l_nk,ksep)
+     %                          1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
 *           Set kinc separately from adw_interp_ad
 *           --------------------------------------
-            call v4d_kinc ( Adwm_n1m,nijk,.false.,ibase1,ibase2,inca,kinc,kdim,
-     %                      nij,nijplus,l_nk,ksep)
+            call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
+     %                      nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
          end do
          err = vmmuld(key0, Tr3d_ntr)
          err = vmmuld(key0m,Tr3d_ntr)
       endif
+*
+      endif
+*
+      if (.not. Schm_hydro_L) then
+*
+         pnlod = 0
+*
+         pnlkey1(1+pnlod) = VMM_KEY(rw)
+         pnlkey1(2+pnlod) = VMM_KEY(rvv)
+         pnlod = 2+pnlod
+*
+         pnlkey1(1+pnlod) = VMM_KEY(rwm)
+         pnlkey1(2+pnlod) = VMM_KEY(rvvm)
+         pnlod = 2+pnlod
+*
+         pnerr = vmmlod(pnlkey1,pnlod)
+
+         pnerr = VMM_GET_VAR(rw)
+         pnerr = VMM_GET_VAR(rvv)
+*
+         pnerr = VMM_GET_VAR(rwm)
+         pnerr = VMM_GET_VAR(rvvm)
+*
+*     Transfer field in extra work space
+*     ----------------------------------
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         work(i,j,k) = rvv(i,j,k)
+          rvv(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*     Fix localization parameters
+*     ---------------------------
+      count  =    count+1
+      inca   =   (count-1) * stencil
+      ibase1 = 2*(count-1) * nijkag
+      ibase2 = ibase1      + nijkag
+*
+*     Adjoint of interpolation (IPART=1)
+*     ----------------------------------
+      call adw_interp_ad (work,scrap,scrap,scrap,
+     %                         rvvm, F_um, F_vm,
+     %                    .false.,.false.,LDIST_DIM,l_nk,
+     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
+*
+*     Set kinc separately from adw_interp_ad
+*     --------------------------------------
+      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
+     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
+*
+*     Transfer field in extra work space
+*     ----------------------------------
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         work(i,j,k) = rw(i,j,k)
+          rw (i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*     Fix localization parameters
+*     ---------------------------
+      count  =    count+1
+      inca   =   (count-1) * stencil
+      ibase1 = 2*(count-1) * nijkag
+      ibase2 = ibase1      + nijkag
+*
+*     Adjoint of interpolation (IPART=1)
+*     ----------------------------------
+      call adw_interp_ad (work,scrap,scrap,scrap,
+     %                         rwm, F_um, F_vm,
+     %                    .false.,.false.,LDIST_DIM,l_nk,
+     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
+*
+*     Set kinc separately from adw_interp_ad
+*     --------------------------------------
+      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
+     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
+*
+      pnerr = vmmuld(-1,0)
 *
       endif
 *
@@ -433,12 +524,12 @@
       call adw_interp_ad (work,scrap,scrap,scrap,
      %                         rthm, F_um, F_vm,
      %                    .false.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep)
+     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
 *     Set kinc separately from adw_interp_ad
 *     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,.false.,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep)
+      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
+     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
 *     Transfer field in extra work space
 *     ----------------------------------
@@ -461,12 +552,12 @@
       call adw_interp_ad (work,scrap,scrap,scrap,
      %                         rcnm, F_um, F_vm,
      %                    .false.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep)
+     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
 *     Set kinc separately from adw_interp_ad
 *     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,.false.,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep)
+      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
+     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
       pnerr = vmmuld(-1,0)
 *
@@ -508,12 +599,12 @@
       call adw_interp_ad (rvw2,scrap,scrap,scrap,
      %                         rvw1m,F_um, F_vm,
      %                    .true.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep)
+     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
 *     Set kinc separately from adw_interp_ad
 *     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,.false.,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep)
+      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
+     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
 *     Fix localization parameters
 *     ---------------------------
@@ -527,12 +618,12 @@
       call adw_interp_ad (ruw2,scrap,scrap,scrap,
      %                         ruw1m,F_um, F_vm,
      %                    .true.,.false.,LDIST_DIM,l_nk,
-     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep)
+     %                    1,inca,zinc,kdim,nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
 *     Set kinc separately from adw_interp_ad
 *     --------------------------------------
-      call v4d_kinc ( Adwm_n1m,nijk,.false.,ibase1,ibase2,inca,kinc,kdim,
-     %                nij,nijplus,l_nk,ksep)
+      call v4d_kinc ( Adwm_n1m,nijk,ibase1,ibase2,inca,kinc,kdim,
+     %                nij,nijplus,l_nk,ksep,i0,in,j0,jn)
 *
       pnerr = vmmuld(-1,0)
 *
@@ -548,7 +639,11 @@
 *     2) The chopping is done to guarantee safety
 *        of the vectorization
 *     ----------------------------------------------------
-      do ij = 1,nij
+      do j=j0,jn
+      do i=i0,in
+*
+      ij = ((j-1)*l_ni) + i
+*
          istop  = 0
 *
          do klev=1,ksep
@@ -563,6 +658,8 @@
             enddo
 *
          enddo
+*
+      enddo
       enddo
 *
 *     -------------------------------------
@@ -610,7 +707,7 @@
             call adw_interp_ad (scrap, tr0,buff(ibase1+1),buff(ibase2+1),
      %                               scrap,scrap,         scrap,
      %                          .false.,lscrap_L,LDIST_DIM,l_nk,
-     %                          2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap)
+     %                          2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
 *
             do k=1,G_nk
             do j=1,l_nj
@@ -626,6 +723,49 @@
          err = vmmuld(key1, Tr3d_ntr)
          err = vmmuld(key0, Tr3d_ntr)
       endif
+*
+      endif
+*
+      if (.not. Schm_hydro_L) then
+*
+         pnlod = 0
+*
+         pnlkey1(1+pnlod) = VMM_KEY(rw)
+         pnlkey1(2+pnlod) = VMM_KEY(rvv)
+         pnlod = 2+pnlod
+*
+         pnerr = vmmlod(pnlkey1,pnlod)
+
+         pnerr = VMM_GET_VAR(rw)
+         pnerr = VMM_GET_VAR(rvv)
+*
+*        Fix localization parameters
+*        ---------------------------
+         count  =    count+1
+         ibase1 = 2*(count-1) * nijkag
+         ibase2 = ibase1      + nijkag
+*
+*        Adjoint of interpolation (IPART=2)
+*        ----------------------------------
+         call adw_interp_ad (scrap,  rvv,buff(ibase1+1),buff(ibase2+1),
+     %                             scrap,scrap,         scrap,
+     %                       .false.,lscrap_L,LDIST_DIM,l_nk,
+     %                       2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
+*
+*        Fix localization parameters
+*        ---------------------------
+         count  =    count+1
+         ibase1 = 2*(count-1) * nijkag
+         ibase2 = ibase1      + nijkag
+*
+*        Adjoint of interpolation (IPART=2)
+*        ----------------------------------
+         call adw_interp_ad (scrap,  rw,buff(ibase1+1),buff(ibase2+1),
+     %                             scrap,scrap,         scrap,
+     %                       .false.,lscrap_L,LDIST_DIM,l_nk,
+     %                       2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
+*
+         pnerr = vmmuld(-1,0)
 *
       endif
 *
@@ -655,7 +795,7 @@
       call adw_interp_ad (scrap,  rth,buff(ibase1+1),buff(ibase2+1),
      %                          scrap,scrap,         scrap,
      %                    .false.,lscrap_L,LDIST_DIM,l_nk,
-     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap)
+     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
 *
 *     Fix localization parameters   
 *     ---------------------------
@@ -668,7 +808,7 @@
       call adw_interp_ad (scrap,  rcn,buff(ibase1+1),buff(ibase2+1),
      %                          scrap,scrap,         scrap,
      %                    .false.,lscrap_L,LDIST_DIM,l_nk,
-     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap)
+     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
 *
       pnerr = vmmuld(-1,0)
 *
@@ -705,7 +845,7 @@
       call adw_interp_ad (scrap, rvw1,buff(ibase1+1),buff(ibase2+1),
      %                          scrap,scrap,         scrap,
      %                     .true.,lscrap_L,LDIST_DIM,l_nk,
-     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap)
+     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
 *
 *     Fix localization parameters   
 *     ---------------------------
@@ -718,7 +858,7 @@
       call adw_interp_ad (scrap, ruw1,buff(ibase1+1),buff(ibase2+1),
      %                          scrap,scrap,         scrap,
      %                     .true.,lscrap_L,LDIST_DIM,l_nk,
-     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap)
+     %                    2,iscrap,scrap,iscrap,iscrap,iscrap,iscrap,iscrap,i0,in,j0,jn)
 *
       pnerr = vmmuld(-1,0)
 *

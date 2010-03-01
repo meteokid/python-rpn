@@ -19,6 +19,7 @@
 *                            - leave winds as images after 3hr integration
 *                            - do not initialize Pr_nsim4d (read from init.prof)
 *                            - introduce ESRS event for restart of 4dvar/SV job
+* v3_03   M. Tanguay         - replace v4d_procdyn by indata  
 *
 *object
 *     Initialize the TLM/Adjoint and set-up an externally controlled Event Loop
@@ -129,7 +130,7 @@
 *       Complete the preprocessing (derived fields)
 *       -------------------------------------------
         V4dg_part = 3
-        call v4d_procdyn
+        call indata 
 *
 *       Run NLM model
 *       -------------
@@ -195,10 +196,9 @@
 *       -------------------------------------------
         if(isv_step.eq.1) then
           V4dg_part = 3
-          call v4d_procdyn
+          call indata
         else
-          V4dg_numtr = 1 
-          call v4d_rwtraj ()
+          call v4d_rwtraj (1)
         endif
 *
 *       Prepare and Write trajectory for conversion in v4d_getdx or v4d_putdx at initial time 
@@ -311,7 +311,7 @@
 *           Complete the preprocessing (derived fields)
 *           -------------------------------------------
             V4dg_part = 3
-            call v4d_procdyn_tl()
+            call indata_tl()
 *     
 *           Set over-riding switch for dynout and blocstat
 *           ----------------------------------------------
@@ -414,7 +414,7 @@
 *           Complete the preprocessing (derived fields)
 *           -------------------------------------------
             V4dg_part = 3
-            call v4d_procdyn_ad()
+            call indata_ad()
 *
             if( V4dg_output_L ) call v4d_dynout
 *     
@@ -534,7 +534,7 @@
 *             Complete the preprocessing (derived fields)
 *             -------------------------------------------
               V4dg_part = 3
-              call v4d_procdyn_tl()
+              call indata_tl()
 *
               call dynout2( )
 *     
@@ -650,7 +650,7 @@
 *             Complete the preprocessing (derived fields)
 *             -------------------------------------------
               V4dg_part = 3
-              call v4d_procdyn_ad()
+              call indata_ad()
 *
               if( V4dg_output_L ) call v4d_dynout
 *     
@@ -768,7 +768,7 @@
 *               Complete the preprocessing (derived fields) only at initial timestep
 *               --------------------------------------------------------------------
                 V4dg_part = 3
-                call v4d_procdyn
+                call indata
 *
               endif
 *

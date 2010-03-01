@@ -6,7 +6,7 @@
      $                     F_um, F_vm,       F_tm,       F_trm,
      $                     F_lnpsm, F_sig, DIST_DIM, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM,Nk
       real F_up (DIST_SHAPE,Nk), F_vp (DIST_SHAPE,Nk)  ,
@@ -50,7 +50,7 @@
       external vmmlod,vmmget,vmmuln
 *
       integer err, key(10), i, j, k, n, i0, j0, in, jn, nksurf,
-     $        keyp(h2o_ntr), keym(h2o_ntr), keyp_, keym_
+     $        keyp(phyt_ntr), keym(phyt_ntr), keyp_, keym_
       real dt, dzmin, dzmin_, sigsfc, trp, trm
       real wk1(LDIST_SHAPE),wk2(LDIST_SHAPE),wk3(LDIST_SHAPE),
      $     wk4(LDIST_SHAPE)
@@ -142,14 +142,14 @@
 *
       keyp_ = VMM_KEY (trt1)
       keym_ = VMM_KEY (trt0)
-      if (h2o_ntr.gt.0) then
-         do n=1,h2o_ntr
+      if (phyt_ntr.gt.0) then
+         do n=1,phyt_ntr
             keyp(n) = keyp_ + n
             keym(n) = keym_ + n
          end do
-         err = vmmlod(keyp,h2o_ntr)  
-         err = vmmlod(keym,h2o_ntr)  
-         do n=1,h2o_ntr
+         err = vmmlod(keyp,phyt_ntr)  
+         err = vmmlod(keym,phyt_ntr)  
+         do n=1,phyt_ntr
             err = vmmget(keyp(n),patrp,trp)
             err = vmmget(keym(n),patrm,trm)
             do k=1,l_nk
@@ -161,8 +161,8 @@
             end do
             end do
          end do
-         err = vmmuln(keyp,h2o_ntr)
-         err = vmmuln(keym,h2o_ntr)
+         err = vmmuln(keyp,phyt_ntr)
+         err = vmmuln(keym,phyt_ntr)
       endif
 *
       key(1) = VMM_KEY(st1)

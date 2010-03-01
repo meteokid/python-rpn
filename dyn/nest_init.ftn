@@ -9,6 +9,7 @@
 *
 *revision
 * v3_00 - Desgagne M.          - initial version
+* v3_03 - Tanguay M.           - Adjoint Lam configuration
 *
 *implicits
 #include "glb_ld.cdk"
@@ -16,6 +17,7 @@
 #include "tr3d.cdk"
 #include "nest.cdk"
 #include "schm.cdk"
+#include "v4dg.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
@@ -25,7 +27,19 @@
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
       integer i,j,k,err,pnlkey1(26),nvar,key1(Tr3d_ntr),key1_, 
      $        key2(Tr3d_ntr),key2_,n
+*
+      logical done_init_L
+      data done_init_L /.false./
+      save done_init_L
+
 *     ---------------------------------------------------------------
+*
+*     -------------------------------------------------------
+*     When Regular forward GEM, done_init_L = .F.
+*     When 4D-Var, done_init_L = .T. if not first forward run 
+*     -------------------------------------------------------
+*     
+      if ( V4dg_conf.eq.0.or..not.done_init_L ) then
 *
       pnlkey1(1)  = VMM_KEY(ut1)
       pnlkey1(2)  = VMM_KEY(vt1)
@@ -148,7 +162,31 @@
          err = vmmuld(key2,Tr3d_ntr)
       endif
 *
+      if(V4dg_conf.ne.0) then
+*
+*       -----------------------------------------------
+*       Store FIXED NESTING fields at initial time step
+*       -----------------------------------------------
+        V4dg_rwnest = 1
+        call v4d_rwnest ()
+*
+        done_init_L = .true.
+*
+      endif
+*
+*     -----------------------
+*     4D-Var when done_init_L
+*     -----------------------
+      else
+*
+*       -------------------------------------------------
+*       Recover FIXED NESTING fields at initial time step
+*       -------------------------------------------------
+        V4dg_rwnest = 0
+        call v4d_rwnest ()
+*
+      endif
+*
 *     ---------------------------------------------------------------
       return
       end
-

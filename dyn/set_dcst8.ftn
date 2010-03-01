@@ -1,10 +1,8 @@
 ***function set_dcst8 - initializes geophysical constants (real*8)
 *
-#include <model_macros_f.h>
-*
-      logical function set_dcst8 (F_val_8,F_liste_S,NOMBRE,F_iun,F_lun_out)
-*
-#include "impnone.cdk"
+      integer function set_dcst8 
+     $                   (F_val_8, F_liste_S, NOMBRE, F_iun, F_lun_out)
+      implicit none
 *
       integer NOMBRE,F_iun,F_lun_out
       character * (*) F_liste_S(NOMBRE)
@@ -16,6 +14,7 @@
 *revision
 * v2_00 - Desgagne M.       - initial MPI version
 * v2_21 - Desgagne M.       - rpn_comm stooge for MPI
+* v3_03 - Desgagne M.       - becomes an integer function
 *
 *object
 *	This subroutine reads the file containing the unified
@@ -25,27 +24,24 @@
 *arguments
 *  Name        I/O                 Description
 *----------------------------------------------------------------
-* F_val_8      O    - array of values for the list of constants in F_liste_S
+* F_val_8      O    - values for the list of constants in F_liste_S
 * F_liste_S    I    - list of the names of constants to be read
 * NOMBRE       I    - number of constants to be read
-* F_iun        I    - unit attached to the file where constants are read from
+* F_iun        I    - unit where constants are read from
 * F_lun_out    I    - unit for standard output
 *
 *implicits
-#include "ptopo.cdk"
 *
 **
       character*10  rdname_S
       character*42  text_S
       character*256 chemin_S,varenv_S,fname_S
-      logical flag_L(NOMBRE),cte_ok_L
-      integer i, ier, longueur
+      logical flag_L(NOMBRE)
+      integer i, ier, cte_ok, longueur
       real*8 rdval_8
       external longueur
 *
 *     ---------------------------------------------------------------
-*
-      if (F_lun_out.gt.0) then
 *
       write (F_lun_out,1000)
       do i=1,NOMBRE
@@ -55,26 +51,25 @@
       fname_S  = 'constantes'
       chemin_S = ' '
 *
-#if ! defined (T3E)
       varenv_S = 'AFSISIO'
       call getenvc (varenv_S,chemin_S)
       chemin_S(longueur(chemin_S)+1:len(chemin_S)) = '/datafiles/constants/'
       chemin_S(longueur(chemin_S)+1:len(chemin_S)) = 'thermoconsts'
-#endif
 *
       open(F_iun,file=fname_S,iostat=ier,form='FORMATTED',status='OLD',
      $                                         access='SEQUENTIAL')
 *
       if (ier.ne.0) then
-         write (F_lun_out,2000) chemin_S(1:longueur(chemin_S)),' (AFSISIO)'
-         open(F_iun,file=chemin_S,iostat=ier,form='FORMATTED',status='OLD',
+      write (F_lun_out,2000) chemin_S(1:longueur(chemin_S)),' (AFSISIO)'
+      open(F_iun,file=chemin_S,iostat=ier,form='FORMATTED',status='OLD',
      $                                             access='SEQUENTIAL')
       else
          write (F_lun_out,2000) fname_S(1:longueur(fname_S)),' (local)'
       endif
 *
       if (ier.eq.0) then
- 100     read (F_iun,'(2x,a10,2x,e20.13,2x,a42)',end=2) rdname_S,rdval_8,text_S
+ 100     read (F_iun,'(2x,a10,2x,e20.13,2x,a42)',end=2) 
+     $         rdname_S,rdval_8,text_S
          do i=1,NOMBRE
             if (F_liste_S(i).eq.rdname_S) then
                F_val_8(i) = rdval_8
@@ -87,29 +82,20 @@
  2       close (F_iun)
       endif
 *
-      cte_ok_L = .true.
+      cte_ok = 0
 *
       do i=1,NOMBRE
          if (flag_L(i)) then
             write (F_lun_out,1005) F_liste_S(i),F_val_8(i)
          else            
             write (F_lun_out,1006) F_liste_S(i)
-            cte_ok_L = .false.
+            cte_ok = -1
          endif
       end do
 *
       write (F_lun_out,*)
 *
-      endif
-*
-      if (Ptopo_numproc.gt.1) then
-         call RPN_COMM_bcast (cte_ok_L,1,"MPI_LOGICAL",0,"grid",ier)
-         if (cte_ok_L) 
-     $        call RPN_COMM_bcast(F_val_8,NOMBRE,"MPI_DOUBLE_PRECISION",
-     $                            0,"grid",ier)
-      endif
-*
-      set_dcst8 = cte_ok_L
+      set_dcst8 = cte_ok
 *
  1000 format(
      +/,'INITIALIZATION OF PHYSICAL CONSTANTS: (S/R SET_DCST8)',

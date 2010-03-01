@@ -13,7 +13,7 @@
      $                    F_ut0, F_vt0, F_mut0 , F_multx, 
      $                    F_wijk1, F_wijk2, DIST_DIM, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real    F_nu   (DIST_SHAPE,Nk), F_nv   (DIST_SHAPE,Nk),
@@ -398,7 +398,7 @@ c Don't change
       do k =  1, l_nk
       do j = j0, jn
       do i = i0, in
-         pd1 = alog( 1. + geomg_dpib(k) * (exp(F_st0(i,j)) - 1. ))
+         pd1 = alog( 1. + geomg_dpba(k) * (exp(F_st0(i,j)) - 1. ))
          pd2 = geomg_dpib(k) * F_st0(i,j)
          F_ncn(i,j,k) = pd3 * ( pd1 - pd2 )
       enddo

@@ -1,0 +1,62 @@
+***s/r hspng_main_tr - Equivalent to hspng_main for TRAJECTORY
+*                      (F_pip, F_qp (No Hyd) ONLY)
+*
+#include <model_macros_f.h>
+*
+      subroutine hspng_main_tr
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "hspng.cdk"
+#include "vt1m.cdk"
+#include "schm.cdk"
+*
+*modules
+      integer  vmmlod,vmmuld,vmmget
+      external vmmlod,vmmuld,vmmget
+*
+      integer pnerr, pnlod, pnlkey1(2)
+*     _________________________________________________________________
+*
+      if (Hspng_nj.lt.1) return
+*
+      pnlkey1(1) = VMM_KEY(pipt1m)
+      pnlod=1
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(qpt1m)
+         pnlod=pnlod+1
+      endif
+*
+*     - - - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,pnlod)
+*     - - - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(pipt1m)
+      qpt1m_ = 0
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(qpt1m)
+      endif
+*
+c*PDIR RESERVE=Macr_cpud
+*
+      call hspng_drv_tr (pipt1m,qpt1m,LDIST_DIM,G_nk)
+*
+c*PDIR RELEASE
+*
+      pnerr = vmmuld(-1,0)
+*    
+      return
+      end

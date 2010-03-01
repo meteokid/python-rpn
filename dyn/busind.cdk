@@ -32,8 +32,9 @@
 *
       integer phyt_maxn,phyt_ntr,phyt_deb
       parameter (phyt_maxn=2)
-      character*8 phyt_liste_S(phyt_maxn),phyt_name_S(phyt_maxn)
-      integer phyt_ind(3,phyt_maxn)
+      character*8 phyt_liste_S(phyt_maxn),
+     $            phyt_name_S(h2o_maxn+phyt_maxn)
+      integer phyt_ind(3,h2o_maxn+phyt_maxn)
       common /phytr_i/ phyt_ntr,phyt_ind,phyt_deb
       common /phytr_s/ phyt_name_S
       data phyt_liste_S / 'EN','KM' /

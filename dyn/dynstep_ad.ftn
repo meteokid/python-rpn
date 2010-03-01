@@ -14,6 +14,7 @@
 * v2_21 - Tanguay M.        - ADJ of HO option 
 *                           - ADJ of vertical sponge layer 
 * v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *object
 *     ADJ of dynstep_tl 
@@ -29,8 +30,10 @@
 #include "lctl.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
+#include "pilot.cdk"
+#include "v4dg.cdk"
 *
-      integer pnitraj
+      integer itraj
       logical first_L, secon_L
 **
 *     ---------------------------------------------------------------
@@ -58,6 +61,22 @@
 *     ----------------
       Orh_icn = Schm_itcn
 *
+      if ( G_lam .and. .not.Pil_ctebcs_L ) then
+*
+*        ----------------------------------------
+*        ADJ of
+*        Zero NESTING fields at current time step
+*        ----------------------------------------
+         call v4d_zeronest
+*
+*        --------------------------------------------
+*        Recover NESTING fields at current time step
+*        --------------------------------------------
+         V4dg_rwnest = 0
+         call v4d_rwnest ()
+*
+      endif
+*
 *     --------------
 *     END TRAJECTORY
 *     --------------
@@ -77,6 +96,7 @@
 *C      3.  Perform the timestep
 *          ------------------------------------------------------------
 *
+      if (G_lam) call glb_bound_ad ()
       call tstpdyn_ad( Schm_itraj )
 *
 *          ADJ of
@@ -98,10 +118,10 @@
 *           ADJ of
 *C          Perform dummy timestep
 *
-            pnitraj = Schm_itraj
-            if( Orh_icn.eq.1 .and. first_L ) pnitraj = max( 5, Schm_itraj )
+            itraj = Schm_itraj
+            if( Orh_icn.eq.1 .and. first_L ) itraj = max( 5, Schm_itraj )
 *
-            call tstpdyn_ad( pnitraj)
+            call tstpdyn_ad( itraj)
 *
          end do
          if (Lun_debug_L) write(Lun_out,1006)

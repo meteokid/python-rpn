@@ -14,12 +14,14 @@
 * v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 *                           - change name 
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
 *
 *object
 *     see id section
-*     ------------------------
-*     REMARK:INPUT TRAJ:pipt1m
-*     ------------------------
+*     -------------------------------------------------------------
+*     REMARK:INPUT TRAJ:pipt1m after VSPNG diffusion
+*                       pipt1m,qpt1m before VSPNG diffusion (NoHyd)
+*     -------------------------------------------------------------
 *	
 *arguments
 *     none
@@ -40,62 +42,139 @@
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      integer pnerr, pnlod, pnlkey1(25), i, j, k
+      integer pnerr, pnlod, pnlod_m, pnlkey1(30), pnlkey1_m(2), i, j, k
+      real zpipt1m(LDIST_SHAPE,l_nk),zqpt1m(LDIST_SHAPE,l_nk)
       real*8  ONE_8,ZERO_8
       parameter( ONE_8 = 1. )
       parameter( ZERO_8= 0. )
 *
-*     _________________________________________________________________
+*     ______________________________________________________
 *
       if (Vspng_nk.lt.1) return
+*
+      if (Schm_psadj_L ) call gem_stop('vspng_main_ad',-1)
 *     ______________________________________________________
 *
-      if( .not. Schm_hydro_L ) call gefstop('vspng_main_ad')
-      if(       Schm_psadj_L ) call gefstop('vspng_main_ad')
-      if( .not. Schm_cptop_L ) call gefstop('vspng_main_ad')
-*     ______________________________________________________
 *
-      if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1)  = VMM_KEY(ut1)
+      pnlkey1(2)  = VMM_KEY(vt1)
+      pnlkey1(3)  = VMM_KEY(psdt1)
+      pnlkey1(4)  = VMM_KEY(tpt1)
+      pnlkey1(5)  = VMM_KEY(fipt1)
+      pnlkey1(6)  = VMM_KEY(tdt1)
+      pnlkey1(7)  = VMM_KEY(tt1)
+      pnlkey1(8)  = VMM_KEY(fit1)
+      pnlkey1(9)  = VMM_KEY(topo)
+      pnlkey1(10) = VMM_KEY(tplt1)
+      pnlkey1(11) = VMM_KEY(qt1)
+      pnlkey1(12) = VMM_KEY(pipt1)
+      pnlkey1(13) = VMM_KEY(st1)
+      pnlod = 13
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(wt1)
+         pnlkey1(pnlod+2) = VMM_KEY(qpt1)
+         pnlkey1(pnlod+3) = VMM_KEY(mut1)
+         pnlkey1(pnlod+4) = VMM_KEY(multx)
+         pnlod = pnlod+4
+      endif
+*
+*     - - - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,pnlod)
+*     - - - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(psdt1)
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(fipt1)
+      pnerr = VMM_GET_VAR(tdt1)
+      pnerr = VMM_GET_VAR(tt1)
+      pnerr = VMM_GET_VAR(fit1)
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(tplt1)
+      pnerr = VMM_GET_VAR(qt1)
+      pnerr = VMM_GET_VAR(pipt1)
+      pnerr = VMM_GET_VAR(st1)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(wt1)
+         pnerr = VMM_GET_VAR(qpt1)
+         pnerr = VMM_GET_VAR(mut1)
+         pnerr = VMM_GET_VAR(multx)
+      else
+         wt1_  = 0
+         qpt1_ = 0
+         mut1_ = 0
+         multx_= 0
+      endif
+*
+*     -----------------------------------------------------
+*     WHEN .not.Schm_hydro_L
+*          Preserve TRAJ PIPT1,QPT1M before VSPNG diffusion
+*          Diffuse  TRAJ PIPT1,QPT1M
+*     -----------------------------------------------------
+*     WHEN Schm_hydro_L, TRAJ PIPT1 after VSPNG diffusion
+*                        is already available in V4D_RWTRAJ
+*     -----------------------------------------------------
+      if(.not.Schm_hydro_L) then
+*
+         pnlkey1_m(1)= VMM_KEY(pipt1m)
+         pnlkey1_m(2)= VMM_KEY(qpt1m )
+         pnlod_m=2
+*
+         pnerr = vmmlod(pnlkey1_m,pnlod_m)
+*
+         pnerr = VMM_GET_VAR(pipt1m)
+         pnerr = VMM_GET_VAR(qpt1m )
+*
+*        Preserve TRAJ PIPT1,QPT1M before VSPNG diffusion
+*        ------------------------------------------------
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            zpipt1m(i,j,k) = pipt1m(i,j,k)
+            zqpt1m (i,j,k) = qpt1m (i,j,k)
+         enddo
+         enddo
+         enddo
+*
+         pnerr = vmmuld(pnlkey1_m,2)
+*
+*        Diffuse TRAJ PIPT1,QPT1M
+*        ------------------------
+         call vspng_main_tr()
+*
+      endif
+*
+*     Recall TRAJ PIPT1 after VSPNG diffusion
+*     ---------------------------------------
+      pnlkey1_m(1)= VMM_KEY(pipt1m)
+      pnlod_m=1
+*
+      pnerr = vmmlod(pnlkey1_m,pnlod_m)
+*
+      pnerr = VMM_GET_VAR(pipt1m)
 *
 *     ADJ of
 ***********************************************
 *  $. Indirect diffusion of s & q through pi' *
 ***********************************************
 *
-      pnlkey1(1)  = VMM_KEY(pipt1 )
-      pnlkey1(2)  = VMM_KEY(qt1   )
-      pnlkey1(3)  = VMM_KEY(st1   )
-      pnlkey1(4)  = VMM_KEY(ut1   )
-      pnlkey1(5)  = VMM_KEY(vt1   )
-      pnlkey1(6)  = VMM_KEY(psdt1 )
-      pnlkey1(7)  = VMM_KEY(tpt1  )
-      pnlkey1(8)  = VMM_KEY(fipt1 )
-      pnlkey1(9)  = VMM_KEY(tdt1  )
-      pnlkey1(10) = VMM_KEY(tt1   )
-      pnlkey1(11) = VMM_KEY(fit1  )
-      pnlkey1(12) = VMM_KEY(topo  )
-      pnlkey1(13) = VMM_KEY(tplt1 )
-      pnlkey1(14) = VMM_KEY(pipt1m)
-      pnlod = 14
-*
-      pnerr = vmmlod(pnlkey1,pnlod)
-*
-      pnerr = VMM_GET_VAR(pipt1 )
-      pnerr = VMM_GET_VAR(qt1   )
-      pnerr = VMM_GET_VAR(st1   )
-      pnerr = VMM_GET_VAR(ut1   )
-      pnerr = VMM_GET_VAR(vt1   )
-      pnerr = VMM_GET_VAR(psdt1 )
-      pnerr = VMM_GET_VAR(tpt1  )
-      pnerr = VMM_GET_VAR(fipt1 )
-      pnerr = VMM_GET_VAR(tdt1  )
-      pnerr = VMM_GET_VAR(tt1   )
-      pnerr = VMM_GET_VAR(fit1  )
-      pnerr = VMM_GET_VAR(topo  )
-      pnerr = VMM_GET_VAR(tplt1 )
-      pnerr = VMM_GET_VAR(pipt1m)
-*
       if (Cstv_phidf_8.gt.0.) then
+*
+      if ( .not. Schm_hydro_L ) then
+         do k=1,G_nk
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+*
+*           ADJ
+*           ---
+            qpt1(i,j,k) = qt1(i,j,k) + qpt1(i,j,k)
+*
+         end do
+         end do
+         end do
+      endif
 *
       do k=1,G_nk
       do j= 1+pil_s, l_nj-pil_n
@@ -128,26 +207,65 @@
 *
       endif
 *
-      wt1_  = 0
-      qpt1_ = 0
-      mut1_ = 0
-      multx_= 0
+      pnerr = vmmuld(pnlkey1_m,1)
 *
-c*PDIR RESERVE=Macr_cpud
-
+*     ---------------------------------------------------------
+*     WHEN .not.Schm_hydro_L
+*          Recall TRAJ PIPT1,QPT1 before VSPNG diffusion
+*     ---------------------------------------------------------
+*     WHEN Schm_hydro_L, TRAJ PIPT1,QPT1 before VSPNG diffusion
+*                        are not requested
+*     ---------------------------------------------------------
+*
+      if (.not. Schm_hydro_L) then
+*
+          pnlkey1_m(1)= VMM_KEY(pipt1m)
+          pnlkey1_m(2)= VMM_KEY(qpt1m)
+          pnlod_m=2
+*
+          pnerr = vmmlod(pnlkey1_m,pnlod_m)
+*
+          pnerr = VMM_GET_VAR(pipt1m)
+          pnerr = VMM_GET_VAR(qpt1m )
+*
+          do k=1,l_nk
+          do j=1,l_nj
+          do i=1,l_ni
+             pipt1m(i,j,k) = zpipt1m(i,j,k)
+             qpt1m (i,j,k) = zqpt1m (i,j,k)
+          enddo
+          enddo
+          enddo
+*
+      else
+          pipt1m_= 0
+          qpt1m_ = 0
+      endif
+*
 *     ADJ 
 *     ---
-      call vspng_drv_ad ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
-     %                    tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
-     %                    qpt1, mut1, multx, st1 , topo ,
-     %                    LDIST_DIM, G_nk)
-*
-c*PDIR RELEASE
+      if (G_lam) then
+         if (Lun_debug_L) write (Lun_out,1001) Vspng_nk
+         call vspng_drv_lam_ad ( ut1   , vt1  , psdt1 , tpt1 , fipt1 , tdt1 ,
+     %                           tt1   , fit1 , tplt1 , qt1  , pipt1 , wt1  ,
+     %                           qpt1  , mut1 , multx , st1  ,
+     %                           pipt1m, qpt1m, topo  ,
+     %                           LDIST_DIM, G_nk )
+      else
+         if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
+         call vspng_drv_ad ( ut1   , vt1  , psdt1 , tpt1 , fipt1 , tdt1 ,
+     %                       tt1   , fit1 , tplt1 , qt1  , pipt1 , wt1  ,
+     %                       qpt1  , mut1 , multx , st1  ,
+     %                       pipt1m, qpt1m, topo  ,
+     %                       LDIST_DIM, G_nk )
+      endif
 *
       pnerr = vmmuld(-1,0)
 *    
  1000 format(/,3X,
-     $ 'DEL-2 SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_MAIN_AD)')
+     $ 'ADJ of DEL-2 SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV_AD)')
+ 1001 format(/,3X,
+     $ 'ADJ of 9PT FILT SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV_LAM_AD)')
 *
       return
       end

@@ -1,0 +1,4 @@
+OPTIL  = 2
+DEFINE = -DCVMG=cvmg
+ABI    = 
+

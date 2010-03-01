@@ -3,8 +3,7 @@
 #include <model_macros_f.h>
 *
       subroutine p_phystep (F_stepno)
-*
-#include "impnone.cdk"
+      implicit none
 *
       integer F_stepno
 *
@@ -58,7 +57,7 @@
       allocate (up(dim),vp(dim),wp(dim),tp(dim),qp(dim),
      $          um(dim),vm(dim),tm(dim),lnpsm(dim),
      $          sig(dim),kmm(dim),ktm(dim),
-     $          trp(dim*h2o_ntr),trm(dim*h2o_ntr))
+     $          trp(dim*phyt_ntr),trm(dim*phyt_ntr))
 *
 *C       2.	load all fields required by the physic in memory
 *		------------------------------------------------

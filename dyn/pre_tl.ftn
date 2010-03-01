@@ -13,9 +13,15 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_21 - Tanguay M.        - reduce standard output as in model 
 * v2_31 - Tanguay M.        - adapt ADJ for new advection code 
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *object
 *     see id section
+*     --------------------------------------------------------------
+*     REMARK:INPUT TRAJ: F_ruw2m, F_rvw2m, F_xct1m, F_yct1m, F_zct1m
+*                        F_ruw1m, F_rvw1m, F_rum,   F_rvm,   F_rcnm
+*                        F_rthm
+*     --------------------------------------------------------------
 *
 *arguments
 *     none
@@ -36,13 +42,10 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(29), i, j 
+      integer pnerr, pnlod, pnlkey1(60), i, j 
 *
       real wijk1 (LDIST_SHAPE,l_nk),wijk2 (LDIST_SHAPE,l_nk)
       real wijk1m(LDIST_SHAPE,l_nk),wijk2m(LDIST_SHAPE,l_nk)
-*     ______________________________________________________
-*
-      if(.not. Schm_hydro_L) call gefstop('pre_tl')
 *     ______________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000)
@@ -63,7 +66,16 @@
       pnlkey1(14) = VMM_KEY(rth)
       pnlkey1(15) = VMM_KEY(rhell)
       pnlod = 15
+      if (.not. Schm_hydro_L) then
+         pnlkey1(16) = VMM_KEY(rw)
+         pnlkey1(17) = VMM_KEY(rvv)
+         pnlkey1(18) = VMM_KEY(r3)
+         pnlkey1(19) = VMM_KEY(r3p)
+         pnlod = 19
+      endif
 *
+*     TRAJECTORY
+*     ----------
       pnlkey1(pnlod+ 1) = VMM_KEY(rum)
       pnlkey1(pnlod+ 2) = VMM_KEY(rvm)
       pnlkey1(pnlod+ 3) = VMM_KEY(ruw1m)
@@ -79,13 +91,14 @@
       pnlkey1(pnlod+13) = VMM_KEY(rthm)
       pnlkey1(pnlod+14) = VMM_KEY(rhellm)
       pnlod = pnlod+14
-
       if (.not. Schm_hydro_L) then
-*
-*        TLM not done in PRE_TL
-*        ---------------------- 
-*
+         pnlkey1(pnlod+1) = VMM_KEY(rwm)
+         pnlkey1(pnlod+2) = VMM_KEY(rvvm)
+         pnlkey1(pnlod+3) = VMM_KEY(r3m)
+         pnlkey1(pnlod+4) = VMM_KEY(r3pm)
+         pnlod = pnlod+4
       endif
+*
 *     - - - - - - - - - - - - - - -
       pnerr = vmmlod(pnlkey1,pnlod)
 *     - - - - - - - - - - - - - - -
@@ -104,7 +117,20 @@
       pnerr = VMM_GET_VAR(r1)
       pnerr = VMM_GET_VAR(rth)
       pnerr = VMM_GET_VAR(rhell)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(rw)
+         pnerr = VMM_GET_VAR(rvv)
+         pnerr = VMM_GET_VAR(r3)
+         pnerr = VMM_GET_VAR(r3p)
+      else
+         rw_  = 0
+         rvv_ = 0
+         r3_  = 0
+         r3p_ = 0
+      endif
 *
+*     TRAJECTORY
+*     ----------
       pnerr = VMM_GET_VAR(rum)
       pnerr = VMM_GET_VAR(rvm)
       pnerr = VMM_GET_VAR(ruw1m)
@@ -119,31 +145,30 @@
       pnerr = VMM_GET_VAR(r1m)
       pnerr = VMM_GET_VAR(rthm)
       pnerr = VMM_GET_VAR(rhellm)
-*
       if (.not. Schm_hydro_L) then
-*
-*        TLM not done in PRE_TL
-*        ---------------------- 
-*
+         pnerr = VMM_GET_VAR(rwm)
+         pnerr = VMM_GET_VAR(rvvm)
+         pnerr = VMM_GET_VAR(r3m)
+         pnerr = VMM_GET_VAR(r3pm)
       else
-         rw_  = 0
-         rvv_ = 0
-         r3_  = 0
-         r3p_ = 0
+         rwm_  = 0
+         rvvm_ = 0
+         r3m_  = 0
+         r3pm_ = 0
       endif
 *
 *PDIR RESERVE=Ptopo_npeOpenMP
-
-      call prep_2_tl ( ru,rv, ruw1,ruw2,rvw1,rvw2, xct1,yct1,zct1,topo,
-     %                 rd,rcn,r1,rth, rw,rvv,r3,r3p, rhell,
-     %                 wijk1,wijk2,
 *
-     %                 rum,  rvm,  ruw1m,ruw2m,rvw1m,rvw2m,
-     %                 xct1m,yct1m,zct1m,
-     %                 rdm,  rcnm, r1m,  rthm, rhellm,
+      call prep_2_tl ( ru    ,rv    ,ruw1 ,ruw2 ,rvw1 ,rvw2 ,xct1 ,yct1 ,zct1  , topo,
+     %                 rd    ,rcn   ,r1   ,rth  ,rw   ,rvv  ,r3   ,r3p  ,rhell ,
+     %                 wijk1 ,wijk2 ,
+*
+     %                 rum   ,rvm   ,ruw1m,ruw2m,rvw1m,rvw2m,xct1m,yct1m,zct1m ,
+     %                 rdm   ,rcnm  ,r1m  ,rthm ,rwm  ,rvvm ,r3m  ,r3pm ,rhellm,
      %                 wijk1m,wijk2m,
 *
      %                 LDIST_DIM,l_ni,l_nj,l_nk )
+*
 *PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)

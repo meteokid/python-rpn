@@ -12,6 +12,7 @@
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
 * v3_02 - Mahfouf J.-F.     - add V4dg_anincr_L
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 *
 *object
 *     see id section
@@ -27,25 +28,29 @@
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "ptopo.cdk"
+#include "vt1.cdk"
+#include "ind.cdk"
+*
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer n,nn,lambda,lima,limb,wrt_out,indic,i0,j0,in,jn,key1(2),err
+      real pj
 *
 *     -----------------------------------------------------------------
 *     Parameters for list of stations and variables where TLM is tested
 *     -----------------------------------------------------------------
-      integer NSTAT,NVAR 
-      parameter ( NSTAT = 10 )
-      parameter ( NVAR  = 4  )
+      integer NSTA_H,NVAR_H,NSTA_NH,NVAR_NH,NSTA_TOT,NVAR_TOT 
 *
 *     --------------------------------------
 *     Range of exponents used in TLM testing
 *     --------------------------------------
       integer RANGMAX 
-      parameter ( RANGMAX = 5 )
 *
-      real tab(8,RANGMAX+1,NSTAT),pj
-      integer ni(NVAR),nj(NVAR),nk(NVAR),nprev(NVAR )
-      integer npos(NSTAT),ix(NSTAT),jx(NSTAT),kx(NSTAT),lx(NSTAT)
-*
-      integer n,nn,lambda,lima,limb,wrt_out,indic
+      real,    dimension (:,:,:), allocatable:: tab
+      integer, dimension (:)    , allocatable:: ni,nj,nk,nprev,npos,ix,jx,kx,lx
+*     _________________________________________________________________________
 *
       if (Lun_out.gt.0) then
           write(Lun_out,fmt=
@@ -54,10 +59,67 @@
      $    '('' --------------------------------------'')')
       endif
 *
+*     Initializations
+*     ---------------
+      RANGMAX = 5 
+*
+      NSTA_H = 10
+      NVAR_H =  4 
+*
+      if(.not.Schm_hydro_L) then
+         NSTA_NH = 2 
+         NVAR_NH = 1 
+      else
+         NSTA_NH = 0 
+         NVAR_NH = 0 
+      endif
+*
+      NSTA_TOT= NSTA_H + NSTA_NH
+      NVAR_TOT= NVAR_H + NVAR_NH
+*
+*     Table Allocations
+*     -----------------
+      allocate (tab(8,RANGMAX+1,NSTA_TOT),
+     %            ni(NVAR_TOT),nj(NVAR_TOT),nk(NVAR_TOT),nprev(NVAR_TOT),
+     %          npos(NSTA_TOT),ix(NSTA_TOT),jx(NSTA_TOT),kx(NSTA_TOT),lx(NSTA_TOT))
+*
+*     Select array without pilot region when G_lam 
+*     NOTE: SHould be valid for all variables   
+*     --------------------------------------------
+      i0 = 1+pil_w
+      in = l_niu-pil_e
+      j0 = 1+pil_s
+      jn = l_njv-pil_n
+*
 *     ------------------------------------------------------
 *     Set list of stations and variables where TLM is tested
 *     ------------------------------------------------------
-      do nn = 1, NSTAT 
+*
+*      ---------------------------------------------------- 
+*      Predictives variables available for hydrostatic runs
+*      (1=UU,2=VV,3=4T,4=4S)
+*      ---------------------------------------------------- 
+*
+*      Dimensions
+*      ----------
+       ni(1) = l_niu
+       ni(2) = l_ni
+       ni(3) = l_ni
+       ni(4) = l_ni
+*
+       nj(1) = l_nj
+       nj(2) = l_njv
+       nj(3) = l_nj
+       nj(4) = l_nj
+*
+       nk(1) = l_nk
+       nk(2) = l_nk
+       nk(3) = l_nk
+       nk(4) = 1
+*
+*      Set positions
+*      -------------
+       do nn = 1, NSTA_H 
 *
 *        -------------------------------------
 *        LX=    Range of a predictive variable
@@ -65,42 +127,54 @@
 *        JX= J indice of a predictive variable
 *        KX= K indice of a predictive variable
 *        -------------------------------------
-         lx(nn) = mod(nn,NVAR) + 1 
-         ix(nn) = (float(nn-1)/NSTAT)*l_ni  + 1 
-         jx(nn) = (float(nn-1)/NSTAT)*l_njv + 1 
-         kx(nn) = (float(nn-1)/NSTAT)*l_nk  + 1 
+         lx(nn) = mod(nn,NVAR_H) + 1 
+         ix(nn) = (float(nn-1)/NSTA_H)*(in-i0+1) + i0 
+         jx(nn) = (float(nn-1)/NSTA_H)*(jn-j0+1) + j0 
+         kx(nn) = (float(nn-1)/NSTA_H)*l_nk  + 1 
 *
 *        LX=4 (4S) is Surface Variable 
 *        -----------------------------
          if(lx(nn).eq.4) kx(nn)=1
 *
+       end do
+*
+*      -------------------------------------------------------- 
+*      Predictives variables available for non hydrostatic runs
+*      (5=FIP)
+*      -------------------------------------------------------- 
+*
+       if(.not.Schm_hydro_L) then
+*
+*      Dimensions
+*      ----------
+       ni(5) = l_ni 
+       nj(5) = l_nj 
+       nk(5) = l_nk 
+*
+       do nn = NSTA_H+1, NSTA_TOT
+*
+*        -------------------------------------
+*        LX=    Range of a predictive variable
+*        IX= I indice of a predictive variable
+*        JX= J indice of a predictive variable
+*        KX= K indice of a predictive variable
+*        -------------------------------------
+         lx(nn) = mod(nn,NVAR_NH) + 1
+         lx(nn) = lx(nn) + NSTA_H 
+         ix(nn) = (float(nn-1)/NSTA_NH)*(in-i0+1) + i0
+         jx(nn) = (float(nn-1)/NSTA_NH)*(jn-j0+1) + j0
+         kx(nn) = (float(nn-1)/NSTA_NH)*l_nk  + 1
+*
+       end do
+*
+      endif
+*
+*     Block Position of previous predictive variable  
+*     ----------------------------------------------
+      nprev(1) = 0
+      do nn = 2,NVAR_TOT
+         nprev(nn) = nprev(nn-1) + ni(nn-1) * nj(nn-1) * nk(nn-1) 
       end do
-*
-*        Dimensions of predictive variables  
-*        ----------------------------------
-*        (1=UU,2=VV,3=4T,4=4S)
-*        ----------------------------------
-         ni(1) = l_niu 
-         ni(2) = l_ni 
-         ni(3) = l_ni 
-         ni(4) = l_ni 
-*
-         nj(1) = l_nj 
-         nj(2) = l_njv 
-         nj(3) = l_nj 
-         nj(4) = l_nj 
-*
-         nk(1) = l_nk 
-         nk(2) = l_nk 
-         nk(3) = l_nk 
-         nk(4) = 1 
-*
-*        Block Position of previous predictive variable  
-*        ----------------------------------------------
-         nprev(1) = 0
-         do nn = 2,NVAR
-            nprev(nn) = nprev(nn-1) + ni(nn-1) * nj(nn-1) * nk(nn-1) 
-         end do
 *
 *     --------------------------------------
 *     Read given analysis of model variables
@@ -111,6 +185,7 @@
          write(Lun_out, fmt='(  ''-------------------'')')
       endif
 *
+      V4dg_part = 2
       call indata()
 *
 *     ------------------------------------------------------------
@@ -121,7 +196,11 @@
 *        from model var. 
 *        -----------------------------------------------------------
          call v4d_cainin (V4dc_ncv,V4dc_ycv)
-
+*
+*        Use a hydrostatic phi' when .not.Schm_hydro_L
+*        ---------------------------------------------
+         if(.not.Schm_hydro_L) call v4d_phydro (V4dc_ncv,V4dc_ycv) 
+*
          if ( V4dg_anincr_L ) then
 *
 *          Read perturbed (NLM) initial conditions for trial field
@@ -135,9 +214,24 @@
 *
            call v4d_rdtrial()
 *
+*          Get fields in memory
+*          --------------------
+           key1(1) = VMM_KEY(ut1)
+           key1(2) = VMM_KEY(vt1)
+           err = vmmlod(key1,2)
+           err = VMM_GET_VAR(ut1)
+           err = VMM_GET_VAR(vt1)
+*
+*          Associate with Ind
+*          ------------------
+           Ind_u_   = ut1_
+           Ind_v_   = vt1_
+*
 *          Convert wind images to true winds
 *          ---------------------------------
            call v4d_img2uv()
+*
+           err = vmmuld(-1,0)
 *
 *          Initialize V4dc_xcv from trial field
 *          ------------------------------------
@@ -151,8 +245,9 @@
 *         
          else
 *
-*          Keep TLM initial control var. in V4dc_xcv
-*          -----------------------------------------
+*          Keep NLM initial control var. in V4dc_xcv
+*          NOTE: Used later to define TLM initial control var. 
+*          ---------------------------------------------------
            do n = 1,V4dc_ncv
               V4dc_xcv(n) = V4dc_ycv(n)
            end do
@@ -205,50 +300,73 @@
 *        -----------------------------------------------------------
          call v4d_cainin (V4dc_ncv,V4dc_ycv)
 *
+*        -----------------------------------------
+*        Keep NLM final control var. in V4dc_wkmin
+*        -----------------------------------------
+         if( V4dg_conf.ne.510 ) then
+*
+           do n = 1,V4dc_ncv
+              V4dc_wkmin(n) = V4dc_ycv(n)
+           end do
+*
+         endif
+*
+*        Get fields in memory
+*        --------------------
+         key1(1) = VMM_KEY(ut1)
+         key1(2) = VMM_KEY(vt1)
+         err = vmmlod(key1,2)
+         err = VMM_GET_VAR(ut1)
+         err = VMM_GET_VAR(vt1)
+*
+*        Associate with Ind
+*        ------------------
+         Ind_u_   = ut1_
+         Ind_v_   = vt1_
+*
 *        Convert wind images to true winds
 *        ---------------------------------
          call v4d_img2uv()
 *
-*        Initialize V4dc_gcv (True winds)) from NLM final model var.
+         err = vmmuld(-1,0)
+*
+*        Initialize V4dc_ycv (True winds)) from NLM final model var.
 *        -----------------------------------------------------------
-         call v4d_cainin (V4dc_ncv,V4dc_gcv)
-*
-      if ( .not.V4dg_anincr_L ) then
-* 
-*       Define TLM control var. with realistic size of perturbations
-*       ------------------------------------------------------------     
-        do n = 1,V4dc_ncv
-           V4dc_xcv(n) = V4dc_gcv(n) - V4dc_xcv(n)
-        end do
-*
-      endif 
-*
-*     -----------------------------------------
-*     Keep NLM final control var. in V4dc_wkmin 
-*     -----------------------------------------
-      if( V4dg_conf.ne.510 ) then
-*
-         do n = 1,V4dc_ncv
-            V4dc_wkmin(n) = V4dc_ycv(n)
-         end do
-*
-      endif
-*
-*     --------------------------------------------
-*     Keep TLM initial control var. in  V4dc_wkmin  
-*     --------------------------------------------
-      do n = 1,V4dc_ncv
-         V4dc_wkmin(V4dc_ncv+n) = V4dc_xcv(n)
-      end do
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
 *
 *     ------------------------------
-*     Run TANGENT LINEAR integration 
+*     Run TANGENT LINEAR integration
 *     ------------------------------
         if( Lun_out.gt.0 .and. Ptopo_myproc.eq.0 ) then
            write(Lun_out, fmt='(//''--------------------------'')')
            write(Lun_out, fmt='(  ''TANGENT LINEAR INTEGRATION'')')
            write(Lun_out, fmt='(  ''--------------------------'')')
         endif
+*
+*       Define TLM control var. with realistic size of perturbations
+*       ------------------------------------------------------------     
+        if ( .not.V4dg_anincr_L ) then
+* 
+           do n = 1,V4dc_ncv
+              V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
+           end do
+*
+        endif 
+*
+*       Use a TLM hydrostatic phi' when .not.Schm_hydro_L
+*       -------------------------------------------------
+        if(.not.Schm_hydro_L) call v4d_phydro_tl (V4dc_ncv,V4dc_xcv) 
+*
+*       Zero pilot region of perturbation fields when G_lam
+*       ---------------------------------------------------
+        if(G_lam) call v4d_zeropilot(V4dc_ncv,V4dc_xcv) 
+*
+*       --------------------------------------------
+*       Keep TLM initial control var. in  V4dc_wkmin  
+*       --------------------------------------------
+        do n = 1,V4dc_ncv
+           V4dc_wkmin(V4dc_ncv+n) = V4dc_xcv(n)
+        end do
 *
 *       Set status of the integration (TLM integration)
 *       -----------------------------------------------
@@ -393,7 +511,7 @@
 *        Computation of CURRENT (NLM) - REFERENCE (NLM) divided by TLM 
 *        at final state for prescribed locations
 *        -------------------------------------------------------------
-         do nn = 1, NSTAT
+         do nn = 1, NSTA_TOT
 *
 *           Set location according to station and variable
 *           ----------------------------------------------
@@ -432,7 +550,7 @@
 *        ------------
          end do
 *
-         do nn = 1, NSTAT 
+         do nn = 1, NSTA_TOT 
 *
 *           Recall location according to station and variable
 *           -------------------------------------------------

@@ -2,23 +2,25 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine hzd_ho_ad (  F_u,   F_v,  F_psd, F_tp, F_ip,
-     %                        F_td,  F_t,  F_it,  F_plt,   
-     %                        F_pip, F_w,  F_qp,  F_mu, F_mul,  
-     %                        F_xfis, DIST_DIM,Nk)
+      subroutine hzd_ho_ad (  F_u   , F_v  , F_psd , F_tp , F_ip ,
+     %                        F_td  , F_t  , F_it  , F_plt,   
+     %                        F_pip , F_w  , F_qp  , F_mu , F_mul,  
+     %                        F_pipm, F_qpm, F_xfis, DIST_DIM,Nk)
 *
 #include "impnone.cdk"
 *
       integer DIST_DIM, Nk
 *
-      real     F_u(DIST_SHAPE,Nk),  F_v(DIST_SHAPE,Nk),
+      real   F_u  (DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
      %       F_psd(DIST_SHAPE,Nk), F_tp(DIST_SHAPE,Nk),
-     %        F_ip(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
-     %         F_t(DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
+     %       F_ip (DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
+     %       F_t  (DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
      %       F_plt(DIST_SHAPE,Nk),  
-     %       F_pip(DIST_SHAPE,Nk),  F_w(DIST_SHAPE,Nk),
-     %        F_qp(DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
-     %       F_mul(DIST_SHAPE,Nk),  F_xfis(DIST_SHAPE)
+     %       F_pip(DIST_SHAPE,Nk), F_w (DIST_SHAPE,Nk),
+     %       F_qp (DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
+     %       F_mul(DIST_SHAPE,Nk), F_s (DIST_SHAPE), F_xfis(DIST_SHAPE)
+*
+      real  F_pipm(DIST_SHAPE,Nk), F_qpm(DIST_SHAPE,Nk)
 *
 *author
 *     M.Tanguay
@@ -27,27 +29,12 @@
 * v2_21 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - ADJ of control for diffusion on momentum only
 * v3_00 - Tanguay M.        - adapt to restructured hzd_ho 
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *
 *object
 *     see id section
 *
 *arguments
-*  Name        I/O        Description
-*----------------------------------------------------------------
-*  F_u         I/0        see subroutine  
-*  F_v         I/0            " 
-*  F_ip        I/0            " 
-*  F_td        I/0            "
-*  F_tp        I/0            "
-*  F_plt       I/0            "
-*  F_t         I/0            "
-*  F_pip       I/0            "
-*  F_psd       I/0            "
-*  F_w         I/0            "
-*  F_mu        I/0            "
-*  F_mul       I/0            "
-*  F_qp        I/0            "
-*----------------------------------------------------------------
 * 
 *implicits
 #include "glb_ld.cdk"
@@ -65,14 +52,12 @@
 *
       integer i, j, k, dpwr, i0,in,j0,jn,Gni
       real*8 wk1_8 (LDIST_SHAPE,Nk)
+      real   wk2(LDIST_SHAPE,Nk), wk2_m(LDIST_SHAPE,Nk)
       real*8, dimension(:)  , allocatable :: wkh_evec_8,wk_evec_8
 *
       real*8 ZERO_8
       parameter (ZERO_8=0.0)
 *
-*     ______________________________________________________
-*
-      if(.not. Schm_hydro_L) call gefstop('hzd_ho_ad')
 *     ______________________________________________________
 *
       Gni = G_ni-Lam_pil_w-Lam_pil_e
@@ -85,6 +70,7 @@
       do j=l_miny,l_maxy
       do i=l_minx,l_maxx
       wk1_8(i,j,k) = ZERO_8
+      wk2  (i,j,k) = ZERO_8
       enddo
       enddo
       enddo
@@ -101,6 +87,135 @@
 *
       if (Hzd_uvwdt_L) goto 9988
 *
+*     TRAJECTORY
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+            do k = 1, Nk
+            do j = 1,l_nj
+            do i = 1,l_ni
+*
+               wk2_m(i,j,k) = F_pipm(i,j,k)
+*
+            end do
+            end do
+            end do
+         endif
+*
+*****************************
+*  ADJ of                   *
+*  3. Nonyhydrostatic model * 
+*****************************
+*
+         if ( .not. Schm_hydro_L ) then
+*
+         if ( Schm_difqp_L ) then ! q' & related variables
+*
+*        ----------------
+*        START TRAJECTORY
+*        ----------------
+*
+*        Indirect diffusion of q'
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+         do k=1, Nk  !
+         do j=1+pil_s,l_nj-pil_n ! p = (pi)exp(q')
+         do i=1+pil_w,l_ni-pil_e ! ~~~~~~~~~~~~~~~
+*
+            wk2_m(i,j,k) = ( Geomg_z_8(k) + dble(wk2_m(i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) )
+*
+         end do
+         end do
+         end do
+*
+         call hzd_solmxma(wk2_m, wk1_8, wk_evec_8 ,
+     %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
+     %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
+     %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
+     %                    l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
+     %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
+     %                    Ptopo_npex,Ptopo_npey)
+*
+*        --------------
+*        END TRAJECTORY
+*        --------------
+*
+*        START ADJOINT CALCULATIONS
+*        --------------------------
+         do k=1, Nk  !
+         do j=1+pil_s,l_nj-pil_n ! q' = log(p/pi)
+         do i=1+pil_w,l_ni-pil_e ! ~~~~~~~~~~~~~~
+*
+            wk2   (i,j,k) = ( dble(F_qp (i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) )
+     %                     /( dble(wk2_m(i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) ) + wk2   (i,j,k)
+            F_pip (i,j,k) = (-dble(wk2_m(i,j,k))*(                dble(F_qp  (i,j,k))) )
+     %                     /( dble(wk2_m(i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) ) + F_pip (i,j,k)
+            F_qp  (i,j,k) = ZERO_8
+*
+         end do
+         end do
+         end do
+*
+         call hzd_solmxma_ad(wk2, wk1_8, wk_evec_8 ,
+     %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
+     %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
+     %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
+     %                    l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
+     %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
+     %                    Ptopo_npex,Ptopo_npey)
+*
+*        Indirect diffusion of q'
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+         do k=1, Nk  !
+         do j=1+pil_s,l_nj-pil_n ! p = (pi)exp(q')
+         do i=1+pil_w,l_ni-pil_e ! ~~~~~~~~~~~~~~~
+*
+            F_qp(i,j,k) = ( Geomg_z_8(k) + dble(wk2_m (i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) ) * dble(wk2(i,j,k)) + F_qp(i,j,k)
+*
+            wk2 (i,j,k) = (                dble(wk2   (i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) )
+*
+         end do
+         end do
+         end do
+*
+         call hzd_solmxma_ad(F_mul, wk1_8, wk_evec_8 ,
+     %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
+     %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
+     %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
+     %                    l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
+     %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
+     %                    Ptopo_npex,Ptopo_npey)
+
+         call hzd_solmxma_ad(F_mu, wk1_8, wk_evec_8 ,
+     %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
+     %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
+     %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
+     %                    l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
+     %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
+     %                    Ptopo_npex,Ptopo_npey)
+*
+*        END ADJOINT CALCULATIONS
+*        ------------------------
+*
+         endif
+*
+*     ADJ of
+*     Vertical wind (physical)
+*     ~~~~~~~~~~~~~~~~~~~~~~~~
+*
+         call hzd_solmxma_ad(F_w, wk1_8, wk_evec_8 ,
+     %                    Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,
+     %                    trp_12dmin,trp_12dmax,trp_22min,trp_22max,
+     %                    trp_12dn,trp_22n,G_nj, dpwr,l_minx,
+     %                    l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
+     %                    trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
+     %                    Ptopo_npex,Ptopo_npey)
+*
+         endif
+*
 *     ADJ of
 *     The hydrostatic pressure: pi'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,6 +226,22 @@
      %                       l_maxx, l_miny, l_maxy,Nk,G_ni,l_ni,l_nj,
      %                       trp_12dn,Opr_opsxp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                       Ptopo_npex,Ptopo_npey)
+*
+*     ADJ of
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+            do k = 1, Nk
+            do j = 1+pil_s,l_nj-pil_n
+            do i = 1+pil_w,l_ni-pil_e
+*
+               F_pip(i,j,k) = wk2(i,j,k) + F_pip(i,j,k)
+                wk2 (i,j,k) = ZERO_8
+*
+            end do
+            end do
+            end do
+         endif
 *
 *     ADJ of
 *     The temperature: T', T'lin & hence T
@@ -221,8 +352,9 @@
      %                       trp_12dn, Hzd_xp0_8,Opr_opsyp0_8, Hzd_cdiff,
      %                       Ptopo_npex,Ptopo_npey)
 *
-         deallocate( wkh_evec_8,wk_evec_8 )
       endif
+*
+      if ( Hzd_cdiff .gt. 0.0 ) deallocate( wkh_evec_8,wk_evec_8 )
 *
  1000 format(/,
      $     3X,'ADJ of PERFORM DEL-',i1,' HORIZONTAL DIFFUSION: (S/R HZD_HO_AD)')

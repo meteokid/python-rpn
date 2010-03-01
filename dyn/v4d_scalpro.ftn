@@ -17,6 +17,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_21 - Desgagne M.       - rpn_comm stooge for MPI
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *
 *object
 *     see id section
@@ -35,6 +36,7 @@
 #include "lun.cdk"
 #include "v4dc.cdk"
 #include "tr3d.cdk"
+#include "schm.cdk"
 *
       integer m,ierr,i,j,k,n
       real*8 plocal_8, ZERO_8
@@ -80,6 +82,19 @@
       end do
       end do
 *
+      if(.not. Schm_hydro_L) then
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         F_psc_8  = F_psc_8  + F_px(m)*F_py(m)*V4dc_scalp(m)
+      end do
+      end do
+      end do
+*
+      endif
+*
       if (Tr3d_ntr.gt.0) then
          do n=1,Tr3d_ntr
             do k=1,l_nk
@@ -94,7 +109,7 @@
       endif
 *     ______________________________________________________
 *
-      if(m.ne.Ndim) call gefstop('v4d_scalpro')
+      if(m.ne.Ndim) call gem_stop('v4d_scalpro',-1)
 *     ______________________________________________________
 *
       plocal_8 = F_psc_8

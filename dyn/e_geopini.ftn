@@ -69,8 +69,6 @@
 *
       call mgsdict (ni, nj, mg,    
      $'VN=mgen    ; VS=row  ; EN=mg; INTERP=NEAREST ; SEQ=G' )
-      call mgsdict (ni, nj, al,    
-     $'VN=alen    ; VS=row  ; EN=al; INTERP=NEAREST ; SEQ=AC')
       call mgsdict (ni, nj, twater,
      $'VN=twateren; VS=row  ; EN=tm; INTERP=LINEAR; SEQ=AV')
       call mgsdict (ni, nj, lhtg,  
@@ -173,6 +171,14 @@
       call mgsdict (ni, nj, vegindx,
      $'VN=veginden ; VS=row  ; EN=vg; INTERP=NEAREST ; SEQ=G' )
 *
+      call mgsdict (ni, nj, al,    
+     $'VN=alen    ; VS=row  ; EN=al; INTERP=NEAREST ; SEQ=C; etk=NO SNOW')
+
+      else
+
+      call mgsdict (ni, nj, al,    
+     $'VN=alen    ; VS=row  ; EN=al; INTERP=NEAREST ; SEQ=AC;')
+
       endif
 *
 *  FOR ISBA

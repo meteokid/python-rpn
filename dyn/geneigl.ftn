@@ -9,7 +9,7 @@
       subroutine geneigl( F_eval_8, F_evec_8, F_b_8, F_work_8, F_ordr_8,
      %                    F_ifaz, NN, NMAX, NWORK )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_ifaz, NN, NMAX, NWORK
       real*8 F_eval_8(NMAX), F_evec_8(NMAX,NN), F_b_8(NMAX,NN)
@@ -20,6 +20,7 @@
 *
 *revision
 * v2_00 - Desgagne M.       - initial MPI version (from geneigl v1_03)
+* v3_03 - Lee V.            - SYGV calling sequence for AIX architecture
 *
 *object
 *    To solve a generalised symmetric eigenproblem
@@ -48,31 +49,46 @@
 *      for more information [LAPACK Users' Guide (SIAM),1992]
 *      Only upper triangular parts of A and B need to be specified
 *      A and  B are overwritten
-*
 **
+      integer i, j, k, info
+      real*8 sav_8, faz_8, one_8, a_8(NMAX,NN), b_8(NMAX,NN)
+      data one_8 /1.0d0/
 *
-      integer i, j, k, pninfo
-      real*8 pdsav, pdfaz, one
-      data one /1.0/
+*--------------------------------------------------------------------
+      info = -1
 *
-      pninfo = -1
-*
+#if defined (AIX)
+      do j= 1, NN
+      do i= 1, NMAX
+         a_8(j,i) = F_evec_8(i,j)
+         b_8(j,i) = F_b_8(i,j)
+      enddo
+      enddo
+      call SYGV( 1, a_8, NMAX, b_8, NMAX, F_eval_8,
+     $              a_8, NMAX, NN, F_work_8, NWORK)
+      do j= 1, NN
+      do i= 1, NMAX
+         F_evec_8(i,j)=a_8(i,j)
+      enddo
+      enddo
+      info = 0
+#else
       call SYGV( 1, 'V', 'U', NN, F_evec_8, NMAX, F_b_8, NMAX, F_eval_8,
-     %                            F_work_8, NWORK, pninfo )
+     $                                           F_work_8, NWORK, info )
+#endif
 *
-      if ( pninfo.ne.0 ) then
-         if (Lun_out.gt.0)
-     %   write(Lun_out,*)
-     $        'ERROR IN ?SYGV INFO = ',pninfo,' STOP IN GENEIGL'
+      if ( info.ne.0 ) then
+         if (Lun_out.gt.0) write(Lun_out,*)
+     $        'ERROR IN ?SYGV INFO = ',info,' STOP IN GENEIGL'
          call gefstop('geneigl')
       endif
 *
 *     phase of eigenvectors
 *
       do j=1,NN
-         pdfaz = sign( one, F_evec_8(F_ifaz,j) )
-         do i=1,NN
-            F_evec_8(i,j) = pdfaz * F_evec_8(i,j)
+         faz_8 = sign( one_8, F_evec_8(F_ifaz,j) )
+         do i= 1, NN
+            F_evec_8(i,j) = faz_8 * F_evec_8(i,j)
          enddo
       enddo
 *
@@ -80,19 +96,20 @@
 *
       if ( F_ordr_8.lt.0.0 ) then
 *
-         do j=1,NN/2
+         do j= 1, NN/2
             k = NN - j + 1
-            pdsav = F_eval_8(j)
+            sav_8 = F_eval_8(j)
             F_eval_8(j) = F_eval_8(k)
-            F_eval_8(k) = pdsav
-            do i=1,NN
-               pdsav = F_evec_8(i,j)
+            F_eval_8(k) = sav_8
+            do i= 1, NN
+               sav_8 = F_evec_8(i,j)
                F_evec_8(i,j) = F_evec_8(i,k)
-               F_evec_8(i,k) = pdsav
+               F_evec_8(i,k) = sav_8
             enddo
          enddo
 *
       endif
 *
+*--------------------------------------------------------------------
       return
       end

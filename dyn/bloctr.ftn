@@ -4,7 +4,7 @@
 *
       subroutine bloctr(F_dostep,F_dostep_max)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_dostep(*)
       integer F_dostep_max
@@ -139,11 +139,7 @@
            pnlkey(pnkey) = key0 + idx
            pnikey(pnkey) = pnindex
            pnckey(pnkey) = 0
-           if (Out_cliph_L) then
-               do j=1,h2o_ntr
-                  if ( Tr3d_name_S(idx).eq.h2o_name_S(j) ) pnckey(pnkey)=1
-               enddo
-           endif
+           if (Out_cliph_L) pnckey(pnkey) = 1
          endif
 *      When pnkey reaches MAXKEY....
        if (pnkey.gt.MAXKEY-1.or.pni3d.gt.MAXKEY) then

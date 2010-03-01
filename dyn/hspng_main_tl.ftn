@@ -11,6 +11,7 @@
 *
 *revision
 * v3_02 - Tanguay M.        - initial MPI version
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
 *
 *object
 *	
@@ -24,29 +25,25 @@
 #include "geomg.cdk"
 #include "cstv.cdk"
 #include "hspng.cdk"
-#include "vt0.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "p_geof.cdk"
 #include "vt1m.cdk"
+#include "vtxm.cdk"
 *
 *modules
       integer  vmmlod,vmmuld,vmmget
       external vmmlod,vmmuld,vmmget
 *
-      integer pnerr, pnlod, pnlkey1(25), i, j, k
-      real*8  ONE_8, bbb_8, eta_8
+      integer pnerr, pnlod, pnlkey1(40), i, j, k
+      real*8  ONE_8
       parameter( ONE_8 = 1. )
 *
-      real wtt1m(LDIST_SHAPE,l_nk), wfit1m(LDIST_SHAPE,l_nk)
 *     _________________________________________________________________
 *
       if (Hspng_nj.lt.1) return
-*     _________________________________________________________________
 *
-      if( .not. Schm_hydro_L ) call gem_stop('hspng_main_tl',-1)
       if(       Schm_psadj_L ) call gem_stop('hspng_main_tl',-1)
-      if( .not. Schm_cptop_L ) call gem_stop('hspng_main_tl',-1)
 *     ______________________________________________________
 *
       if (Lun_debug_L) write (Lun_out,1000) Hspng_nj
@@ -65,18 +62,36 @@
       pnlkey1(12) = VMM_KEY(pipt1)
       pnlkey1(13) = VMM_KEY(st1)
       pnlod = 13
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(wt1)
+         pnlkey1(pnlod+2) = VMM_KEY(qpt1)
+         pnlkey1(pnlod+3) = VMM_KEY(mut1)
+         pnlkey1(pnlod+4) = VMM_KEY(multx)
+         pnlod = pnlod+4
+      endif
 *
+*     TRAJECTORY
+*     ----------
       pnlkey1(pnlod+1)  = VMM_KEY(ut1m)
       pnlkey1(pnlod+2)  = VMM_KEY(vt1m)
       pnlkey1(pnlod+3)  = VMM_KEY(psdt1m)
       pnlkey1(pnlod+4)  = VMM_KEY(tpt1m)
       pnlkey1(pnlod+5)  = VMM_KEY(fipt1m)
       pnlkey1(pnlod+6)  = VMM_KEY(tdt1m)
-      pnlkey1(pnlod+7)  = VMM_KEY(tplt1m)
-      pnlkey1(pnlod+8)  = VMM_KEY(qt1m)
-      pnlkey1(pnlod+9)  = VMM_KEY(pipt1m)
-      pnlkey1(pnlod+10) = VMM_KEY(st1m)
-      pnlod = pnlod+10
+      pnlkey1(pnlod+7)  = VMM_KEY(tt1m)
+      pnlkey1(pnlod+8)  = VMM_KEY(fit1m)
+      pnlkey1(pnlod+9)  = VMM_KEY(tplt1m)
+      pnlkey1(pnlod+10) = VMM_KEY(qt1m)
+      pnlkey1(pnlod+11) = VMM_KEY(pipt1m)
+      pnlkey1(pnlod+12) = VMM_KEY(st1m)
+      pnlod = pnlod+12
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(wt1m)
+         pnlkey1(pnlod+2) = VMM_KEY(qpt1m)
+         pnlkey1(pnlod+3) = VMM_KEY(mut1m)
+         pnlkey1(pnlod+4) = VMM_KEY(multxm)
+         pnlod = pnlod+4
+      endif
 *
 *     - - - - - - - - - - - - - - -
       pnerr = vmmlod(pnlkey1,pnlod)
@@ -94,24 +109,11 @@
       pnerr = VMM_GET_VAR(qt1)
       pnerr = VMM_GET_VAR(pipt1)
       pnerr = VMM_GET_VAR(st1)
-*
-      pnerr = VMM_GET_VAR(ut1m)
-      pnerr = VMM_GET_VAR(vt1m)
-      pnerr = VMM_GET_VAR(psdt1m)
-      pnerr = VMM_GET_VAR(tpt1m)
-      pnerr = VMM_GET_VAR(fipt1m)
-      pnerr = VMM_GET_VAR(tdt1m)
-      pnerr = VMM_GET_VAR(tplt1m)
-      pnerr = VMM_GET_VAR(qt1m)
-      pnerr = VMM_GET_VAR(pipt1m)
-      pnerr = VMM_GET_VAR(st1m)
-*
       if (.not. Schm_hydro_L) then
-*
-*        ----------------------
-*        HSPNG_MAIN_TL not done
-*        ----------------------
-*
+         pnerr = VMM_GET_VAR(wt1)
+         pnerr = VMM_GET_VAR(qpt1)
+         pnerr = VMM_GET_VAR(mut1)
+         pnerr = VMM_GET_VAR(multx)
       else
          wt1_  = 0
          qpt1_ = 0
@@ -119,32 +121,41 @@
          multx_= 0
       endif
 *
-*     Restore TRAJECTORY
-*     ------------------
-      do k=1,l_nk
-      do j=1,l_nj
-      do i=1,l_ni
-      wfit1m(i,j,k) = fipt1m(i,j,k) + Cstvr_fistr_8(k) + topo(i,j)
-      wtt1m (i,j,k) =  tpt1m(i,j,k) + Cstv_tstr_8
-      end do
-      end do
-      end do
+*     TRAJECTORY
+*     ----------
+      pnerr = VMM_GET_VAR(ut1m)
+      pnerr = VMM_GET_VAR(vt1m)
+      pnerr = VMM_GET_VAR(psdt1m)
+      pnerr = VMM_GET_VAR(tpt1m)
+      pnerr = VMM_GET_VAR(fipt1m)
+      pnerr = VMM_GET_VAR(tdt1m)
+      pnerr = VMM_GET_VAR(tt1m)
+      pnerr = VMM_GET_VAR(fit1m)
+      pnerr = VMM_GET_VAR(tplt1m)
+      pnerr = VMM_GET_VAR(qt1m)
+      pnerr = VMM_GET_VAR(pipt1m)
+      pnerr = VMM_GET_VAR(st1m)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(wt1m)
+         pnerr = VMM_GET_VAR(qpt1m)
+         pnerr = VMM_GET_VAR(mut1m)
+         pnerr = VMM_GET_VAR(multxm)
+      else
+         wt1m_  = 0
+         qpt1m_ = 0
+         mut1m_ = 0
+         multxm_= 0
+      endif
 *
 c*PDIR RESERVE=Macr_cpud
 *
-*     TLM
-*     ---
-      call hspng_drv_tl ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
-     %                    tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
-     %                    qpt1, mut1, multx, st1 , topo ,
-     %                     LDIST_DIM, G_nk)
-*
-*     TRAJECTORY 
-*     ----------
-      call hspng_drv ( ut1m , vt1m , psdt1m, tpt1m, fipt1m, tdt1m,
-     %                 wtt1m ,wfit1m,tplt1m, qt1m , pipt1m, wt1 ,
-     %                 qpt1, mut1, multx, st1 , topo ,
-     %                 LDIST_DIM, G_nk)
+      call hspng_drv_tl ( ut1  , vt1  , psdt1 , tpt1 , fipt1 , tdt1 ,
+     %                    tt1  , fit1 , tplt1 , qt1  , pipt1 , wt1  ,
+     %                    qpt1 , mut1 , multx , st1  , 
+     %                    ut1m , vt1m , psdt1m, tpt1m, fipt1m, tdt1m,
+     %                    tt1m , fit1m, tplt1m, qt1m , pipt1m, wt1m ,
+     %                    qpt1m, mut1m, multxm, st1m , topo  ,
+     %                    LDIST_DIM, G_nk)
 *
 c*PDIR RELEASE
 *
@@ -189,6 +200,25 @@ c*PDIR RELEASE
       end do
       end do
       end do
+*
+*
+      if ( .not. Schm_hydro_L ) then
+         do k=1,G_nk
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+*
+*           TRAJECTORY
+*           ----------
+            qt1m(i,j,k) = qt1m(i,j,k) + qpt1m(i,j,k)
+*
+*           TLM
+*           ---
+            qt1(i,j,k) = qt1(i,j,k) + qpt1(i,j,k)
+*
+         end do
+         end do
+         end do
+      endif
 *
       endif
 *

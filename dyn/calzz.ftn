@@ -5,7 +5,7 @@
       subroutine calzz(F_zz, F_fit1, F_fit2,  DIST_DIM, Nk,
      $                                       F_i0,F_in,F_j0,F_jn)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       integer F_i0,F_in,F_j0,F_jn
@@ -15,6 +15,8 @@
 *author
 *     Richard Moffet - cmc - nov 2001 - 
 *
+*revision
+* v3_03 - Moffet R.        - add ZZ calc at step=0
 *
 *object
 *	compute vertical velocity in z coordinates
@@ -27,11 +29,14 @@
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
+#include "lctl.cdk"
 *
 **
       integer i,j,k
 *     __________________________________________________________________
 *
+      if ( Lctl_step .ne. 0 )then
+
       do k=2,l_nk
          do j= F_j0, F_jn
          do i= F_i0, F_in
@@ -40,13 +45,25 @@
         end do
         end do
       end do
+
 *
       do j= F_j0, F_jn
       do i= F_i0, F_in
          F_zz (i,j,1) = 0.
       end do
       end do
+
+      else
+
+      do k=1,l_nk
+         do j= F_j0, F_jn
+         do i= F_i0, F_in
+           F_zz (i,j,k) = 0.0
+        end do
+        end do
+      end do
 *
+      endif
 *     __________________________________________________________________
 *
       return

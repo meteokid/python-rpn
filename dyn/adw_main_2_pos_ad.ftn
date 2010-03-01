@@ -17,6 +17,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *language
 *     fortran 77
@@ -115,7 +116,7 @@
 *     (Based on Clive Temperton ECMWF method)
 *     ------------------------------------------
       integer inca,ibase,itx,count,fldu,fldv,fldw,stencil,nfld,kdim,ksep(F_it),
-     %        klev,ilevels,istart,istop,ij,jinc,indice,nijplus,
+     %        klev,ilevels,istart,istop,jinc,indice,nijplus,
      %        myint1,myint2,plus1,plus2,minus1,minus2
       real tempo
 *
@@ -183,11 +184,11 @@
 *
          allocate ( kinc(nijplus,kdim*l_nk),
      %              zinc(nijplus,kdim*l_nk),
-     %              buff(nijkag*nfld))
+     %              buff(0:nijkag*nfld))
 *
 *        Zero adjoint variables
 *        ----------------------
-         do i = 1,nijkag*nfld
+         do i = 0,nijkag*nfld
             buff(i) = ZERO_8
          enddo
 *
@@ -284,8 +285,8 @@
            plus2 = 0
           minus2 = 0
         do k =1,l_nk
-        do j =1,l_nj
-        do i =1,l_ni
+        do j =j0,jn
+        do i =i0,in
            ijk = nij*(k-1) + l_ni*(j-1) + i
            tempo  =         l_nk*(      zthm(ijk)-Geomg_z_8(k))/
      %                           (Geomg_z_8(l_nk)-Geomg_z_8(1))
@@ -547,7 +548,8 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
       call adw_trilin_ad (wrkx1,        -dth, capx1, capy1, capz1,
      %                           wwthm, n1m_7   (ind(it)),capx1m_7(ind(it)),
      %                                  capy1m_7(ind(it)),capz1m_7(ind(it)),nijk,
-     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it))
+     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it),
+     %                    i0,in,j0,jn,l_nk)
 *
 *
 *     ---------------------------------------
@@ -600,7 +602,8 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
       call adw_trilin_ad (wrky1,        1.0, capx1, capy1, capz1,
      %                           wvthm, n1m_3   (ind(it)),capx1m_3(ind(it)),
      %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),nijk,
-     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it))
+     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it),
+     %                    i0,in,j0,jn,l_nk)
 *
       count =  count + 1
       inca  = (count - 1) * stencil
@@ -608,7 +611,8 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
       call adw_trilin_ad (wrkx1,        1.0, capx1, capy1, capz1,
      %                           wuthm, n1m_3   (ind(it)),capx1m_3(ind(it)),
      %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),nijk,
-     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it))
+     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it),
+     %                    i0,in,j0,jn,l_nk)
 *
 *     ---------------------------------------
 *     Reset xthm wrk_ythm zthm for ADJOINT #2
@@ -638,7 +642,11 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
 *              2) The chopping is done to guarantee safety
 *                 of the vectorization
 *     -----------------------------------------------------------
-      do ij = 1,nij
+      do j=j0,jn
+      do i=i0,in
+*
+      ij = ((j-1)*l_ni) + i
+*
         istop = 0
 *
         do klev=1,ksep(it)
@@ -653,6 +661,8 @@ C           F_wm(n) = min( Geomg_z_8(l_nk), max( 1.0d0*F_wm(n), Geomg_z_8(1) ))
           enddo
 *
         enddo
+*
+      enddo
       enddo
 *
 ************************************************************************

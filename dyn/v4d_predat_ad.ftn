@@ -1,0 +1,366 @@
+***s/r v4d_predat_ad - ADJ of v4d_predat_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_predat_ad
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*
+*#############################################
+*  REMARK: INPUT TRAJECTORY:  tpt1m,st1m,um,vm
+*#############################################
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "schm.cdk"
+#include "ind.cdk"
+#include "indm.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+*
+      integer i, j, k
+      real pr1, pr2
+*
+      real wpipt1m(LDIST_SHAPE,l_nk),wqt1m(LDIST_SHAPE,l_nk)
+*
+      real*8, parameter :: ZERO_8 = 0.0
+*     __________________________________________________________________
+*
+      if( Lun_out.gt.0 ) write(Lun_out,1003) 
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+*     -------------------------------------------------------------
+*     Set dependent variables phi',phi from T',s' when Schm_hydro_L
+*     -------------------------------------------------------------
+      if(Schm_hydro_L) call v4d_vtap_tr ()
+*
+*
+      if(.not.Schm_hydro_L) then
+*
+*           Compute phi from phi'
+*           ---------------------
+            do k= 1, G_nk
+            do j= 1, l_nj
+            do i= 1, l_ni
+*
+               Indm_fim(i,j,k) =  Indm_fipm(i,j,k) + Cstvr_fistr_8(k)
+     $                                             + Ind_topo(i,j)
+*
+            end do
+            end do
+            end do
+*
+      endif
+*
+*     Compute T from T'
+*     -----------------
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         Indm_tm(i,j,k)  = Indm_tpm(i,j,k) + Cstv_tstr_8
+*
+      end do
+      end do
+      end do
+*
+*     Compute q
+*     ---------
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         Indm_qm(i,j,k) = alog( Geomg_pia(k) + Geomg_pib(k)*exp(Indm_sm(i,j)))
+*
+      end do
+      end do
+      end do
+*
+*     Compute pi'
+*     -----------
+      do k= 2, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         Indm_pipm(i,j,k) = exp(Indm_qm(i,j,k)) - Geomg_z_8(k)
+*
+      end do
+      end do
+      end do
+*
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         Indm_pipm(i,j,1) = 0.
+*
+      end do
+      end do
+*
+*     Compute P and T'
+*                    lin
+*     ------------------
+      do k= 1, G_nk
+         pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * Geomg_pib(k) / Geomg_z_8(k)
+         pr2 = Cstv_tstr_8*(Geomg_pib(k)/Geomg_z_8(k) - Geomg_dpib(k))
+         do j= 1, l_nj
+         do i= 1, l_ni
+*
+            Indm_gpm (i,j,k) = Indm_fipm(i,j,k) + pr1 * Indm_sm(i,j)
+            Indm_tplm(i,j,k) = (Cstv_tstr_8+Indm_tpm(i,j,k))*
+     %            (1.0+Geomg_dpib(k)*(exp(Indm_sm(i,j))-1.))*
+     %      Geomg_z_8(k) / (Geomg_z_8(k) + Indm_pipm(i,j,k)) - Cstv_tstr_8
+*
+            Indm_tplm(i,j,k) = Indm_tplm(i,j,k) + pr2 * Indm_sm(i,j)
+
+*
+         end do
+         end do
+      end do
+*
+      if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_tr
+*
+*     Exchange the haloes for computing derivatives
+*     ---------------------------------------------
+*
+      call rpn_comm_xch_halo( Indm_um, LDIST_DIM, l_niu, l_nj , l_nk,
+     $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo( Indm_vm, LDIST_DIM, l_ni , l_njv, l_nk,
+     $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+*     Compute total divergence and vertical velocity
+*     ----------------------------------------------
+      call uv2tdpsd ( Indm_tdm,Indm_psdm,Indm_um,Indm_vm,Indm_sm,LDIST_DIM,l_nk )
+*
+*     ----------------
+*     END TRAJECTORY
+*     ----------------
+*
+      if ( .not. Schm_hydro_L ) then
+*
+         call initw2_ad( Ind_w,  Ind_u,  Ind_v,  Ind_psd,  Ind_fi,  Ind_t,  Ind_s,
+     $                           Indm_um,Indm_vm,Indm_psdm,Indm_fim,Indm_tm,Indm_sm,
+     $                   LDIST_DIM )
+*
+         do k= 1, G_nk
+         do j= 1, l_nj
+         do i= 1, l_ni
+*
+            Ind_mul(i,j,k) = 0.
+            Ind_mu (i,j,k) = 0.
+*
+         end do
+         end do
+         end do
+      endif
+*
+*     ADJ of
+*     Compute total divergence and vertical velocity
+*     ----------------------------------------------
+      call uv2tdpsd_ad( Ind_td,  Ind_psd,  Ind_u,  Ind_v,  Ind_s, 
+     $                                     Indm_um,Indm_vm,Indm_sm,
+     $                  LDIST_DIM, l_nk)
+*
+*
+*     ADJ of
+*     Exchange the haloes for computing derivatives
+*     ---------------------------------------------
+      call rpn_comm_adj_halo( Ind_v, LDIST_DIM, l_ni , l_njv, l_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+*
+      call rpn_comm_adj_halo( Ind_u, LDIST_DIM, l_niu, l_nj , l_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+      call v4d_zerohalo ( Ind_v,  l_ni,  l_njv,LDIST_DIM, l_nk)
+      call v4d_zerohalo ( Ind_u,  l_niu, l_nj, LDIST_DIM, l_nk)
+*
+*     ADJ 
+*     ---
+      if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_uv2img_ad
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+*     Recover qt1m as in V4D_PREDAT_TL
+*     --------------------------------
+      do k=1,G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+      wqt1m(i,j,k) = alog( Geomg_pia(k) + Geomg_pib(k)*exp(Indm_sm(i,j)) )
+*
+      end do
+      end do
+      end do
+*
+C     endif
+*
+*     Recover pipt1m from exp(qt1m) as in V4D_PREDAT_TL
+*     -------------------------------------------------
+      do k=2,G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+      wpipt1m(i,j,k) = exp(wqt1m(i,j,k)) - Geomg_z_8(k)
+*
+      end do
+      end do
+      end do
+*
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+      wpipt1m(i,j,1) = 0.
+*
+      end do
+      end do
+*
+*     ----------------
+*     END TRAJECTORY
+*     ----------------
+*
+*     ADJ of
+*     Compute P and T'
+*                    lin
+*     ------------------
+      do k=G_nk,1,-1
+         pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * Geomg_pib(k) / Geomg_z_8(k)
+         pr2 = Cstv_tstr_8*(Geomg_pib(k)/Geomg_z_8(k) - Geomg_dpib(k))
+      do j= 1,l_nj
+      do i= 1,l_ni
+*
+*        ADJ
+*        ---
+         Ind_s(i,j) = pr2 * Ind_tpl(i,j,k) + Ind_s(i,j)
+*
+*        ADJ
+*        ---
+         Ind_pip(i,j,k) =
+     %                  (-1)*(
+     %                  (Cstv_tstr_8+Indm_tpm(i,j,k) )*
+     %               (1.0+Geomg_dpib(k)*(exp(Indm_sm(i,j))-1.)           )*
+     %      Geomg_z_8(k) / (Geomg_z_8(k) + wpipt1m(i,j,k))**2
+     %                       )*Ind_tpl(i,j,k)              + Ind_pip(i,j,k)
+         Ind_s(i,j)     =
+     %                  (Cstv_tstr_8+Indm_tpm(i,j,k) )*
+     %               (    Geomg_dpib(k)* exp(Indm_sm(i,j))*Ind_tpl(i,j,k) )*
+     %      Geomg_z_8(k) / (Geomg_z_8(k) + wpipt1m(i,j,k)) + Ind_s(i,j)
+         Ind_tp(i,j,k)  =
+     %                  (            Ind_tpl(i,j,k) )*
+     %               (1.0+Geomg_dpib(k)*(exp(Indm_sm(i,j))-1.)            )*
+     %      Geomg_z_8(k) / (Geomg_z_8(k) + wpipt1m(i,j,k)) + Ind_tp(i,j,k)
+*
+         Ind_tpl(i,j,k) = ZERO_8
+*
+         Ind_fip(i,j,k) =       Ind_gp(i,j,k) + Ind_fip(i,j,k)
+         Ind_s  (i,j)   = pr1 * Ind_gp(i,j,k) + Ind_s  (i,j)
+         Ind_gp (i,j,k) = ZERO_8
+*
+      end do
+      end do
+      end do
+*
+*     ADJ of
+*     Compute pi'
+*     -----------
+*
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+      Ind_pip(i,j,1) = ZERO_8
+*
+      end do
+      end do
+*
+      do k=2,G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         Ind_q  (i,j,k) = exp(wqt1m(i,j,k)) * Ind_pip(i,j,k) + Ind_q(i,j,k)
+         Ind_pip(i,j,k) = ZERO_8
+*
+      end do
+      end do
+      end do
+*
+*     ADJ of
+*     Compute q
+*     ---------
+      do k=G_nk,1,-1
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         Ind_s(i,j)   = ( Geomg_pib(k)*exp(Indm_sm(i,j))*Ind_q(i,j,k)   )/
+     %                  ( Geomg_pia(k) + Geomg_pib(k)*exp(Indm_sm(i,j)) )
+     %                  + Ind_s(i,j)
+         Ind_q(i,j,k) = ZERO_8
+
+      end do
+      end do
+      end do
+*
+*     ADJ of
+*     Compute T from T'
+*     -----------------
+      do k=1,G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+*
+         Ind_tp(i,j,k) = Ind_t(i,j,k) + Ind_tp(i,j,k)
+         Ind_t (i,j,k) = ZERO_8
+*
+      end do
+      end do
+      end do
+*
+*
+      if(.not.Schm_hydro_L) then
+*
+*           ADJ of
+*           Compute phi from phi'
+*           ---------------------
+            do k= 1, G_nk
+            do j= 1, l_nj
+            do i= 1, l_ni
+*
+               Ind_fip(i,j,k) = Ind_fi(i,j,k) + Ind_fip(i,j,k)
+               Ind_fi (i,j,k) = ZERO_8
+*
+            end do
+            end do
+            end do
+*
+      endif
+*
+*     ADJ of
+*     -------------------------------------------------------------
+*     Set dependent variables phi',phi from T',s' when Schm_hydro_L
+*     -------------------------------------------------------------
+      if(Schm_hydro_L) call v4d_vtap_ad ()
+*
+1003  format(//,'ADJ of PREPROCESSING DATA: (S/R V4D_PREDAT_AD PART 3)',
+     %        /,'=====================================================',//)
+*
+*     __________________________________________________________________
+      return
+      end

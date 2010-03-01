@@ -4,7 +4,7 @@
 *
       subroutine dynstep
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Michel Roch - rpn - nov 1993
@@ -16,6 +16,7 @@
 * v2_21 - Tanguay M.        - ADJ of vertical sponge layer
 * v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_03 - Tanguay M.        - Adjoint Lam configuration
 *
 *object
 *
@@ -31,9 +32,14 @@
 #include "rstr.cdk"
 #include "schm.cdk"
 #include "pilot.cdk"
+#include "step.cdk"
 *
       integer itraj
       logical first_L, secon_L
+*
+      logical done_intt_L
+      data done_intt_L /.false./
+      save done_intt_L
 **
 *     ---------------------------------------------------------------
       if (Lun_debug_L) write(Lun_out,1000)
@@ -74,7 +80,7 @@
 *C       Compute 3D winds at time t0-dt/2 (th)
 *        ------------------------------------------------------------
 *
-      if ( G_lam .and. .not.Pil_ctebcs_L ) call nest_intt( )
+      if ( G_lam .and. .not.Pil_ctebcs_L ) call nest_intt (done_intt_L) 
 *
       if ( Orh_crank_L ) then
 *
@@ -128,6 +134,8 @@
 *     ===================
 *     END OF ONE TIMESTEP
 *     ===================
+*
+      if ( G_lam.and.(Lctl_step.eq.Step_total) ) done_intt_L = .true.
 *
  1000 format(
      +/,'CONTROL OF DYNAMICAL STEP: (S/R DYNSTEP)',

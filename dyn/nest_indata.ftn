@@ -11,6 +11,7 @@
 *
 *revision
 * v3_01 - Desgagne M.       - initial version
+* v3_03 - Tanguay M.        - Adjoint Lam configuration
 *
 *object
 *	
@@ -22,6 +23,7 @@
 #include "glb_ld.cdk"
 #include "ind.cdk"
 #include "nest.cdk"
+#include "v4dg.cdk"
 *
       integer  vmmlod,vmmget
       external vmmlod,vmmget
@@ -95,7 +97,25 @@
 *
       call readdyn()
 *
-      call predat ()
+*     Regular forward gem
+*     -------------------
+      if(V4dg_conf.eq.0) then
+*
+         call predat()
+*
+*     4D-Var
+*     ------
+      else
+*
+*        Preprocessing of Control   variables only if ipart=2
+*        ----------------------------------------------------
+         call v4d_predat(2)
+*
+*        Preprocessing of Dependent variables only if ipart=3
+*        ----------------------------------------------------
+         call v4d_predat(3)
+*
+      endif
 *
       call hpdeallc (pat1 ,err,1)
       call hpdeallc (pat2 ,err,1)

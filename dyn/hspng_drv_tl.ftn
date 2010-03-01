@@ -2,40 +2,46 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine hspng_drv_tl ( F_u,    F_v,  F_psd, F_tp,  F_ip,
-     %                          F_td,   F_t,  F_it,  F_plt, F_q,
-     %                          F_pip,  F_w,  F_qp,  F_mu, F_mul, F_s, 
+      subroutine hspng_drv_tl ( F_u   , F_v , F_psd , F_tp  , F_ip  ,
+     %                          F_td  , F_t , F_it  , F_plt , F_q   ,
+     %                          F_pip , F_w , F_qp  , F_mu  , F_mul , F_s , 
+     %                          F_um  , F_vm, F_psdm, F_tpm , F_ipm ,
+     %                          F_tdm , F_tm, F_itm , F_pltm, F_qm  ,
+     %                          F_pipm, F_wm, F_qpm , F_mum , F_mulm, F_sm, 
      %                          F_xfis, DIST_DIM,Nk)
 *
 #include "impnone.cdk"
 *
       integer DIST_DIM, Nk
-      real     F_u(DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
+      real   F_u  (DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
      %       F_psd(DIST_SHAPE,Nk), F_tp(DIST_SHAPE,Nk),
-     %        F_ip(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
-     %         F_t(DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
+     %       F_ip (DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
+     %       F_t  (DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
      %       F_plt(DIST_SHAPE,Nk), F_q (DIST_SHAPE,Nk),
      %       F_pip(DIST_SHAPE,Nk), F_w (DIST_SHAPE,Nk),
-     %        F_qp(DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
+     %       F_qp (DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
      %       F_mul(DIST_SHAPE,Nk), F_s(DIST_SHAPE), F_xfis(DIST_SHAPE)
+*
+      real   F_um  (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk),
+     %       F_psdm(DIST_SHAPE,Nk), F_tpm(DIST_SHAPE,Nk),
+     %       F_ipm (DIST_SHAPE,Nk), F_tdm(DIST_SHAPE,Nk),
+     %       F_tm  (DIST_SHAPE,Nk), F_itm(DIST_SHAPE,Nk),
+     %       F_pltm(DIST_SHAPE,Nk), F_qm (DIST_SHAPE,Nk),
+     %       F_pipm(DIST_SHAPE,Nk), F_wm (DIST_SHAPE,Nk),
+     %       F_qpm (DIST_SHAPE,Nk), F_mum(DIST_SHAPE,Nk),
+     %       F_mulm(DIST_SHAPE,Nk), F_sm(DIST_SHAPE)
 *
 *author
 *     M.Tanguay
 *
 *revision
 * v3_02 - Tanguay M.        - initial MPI version
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *
 *object
 *     see id section
-*     ----------------------------------
-*     REMARK: TRAJECTORY done separately
-*     ----------------------------------
 *
 *arguments
-*  Name        I/O                 Description
-*----------------------------------------------------------------
-*  F_u
-*----------------------------------------------------------------
 * 
 *implicits
 #include "glb_ld.cdk"
@@ -57,6 +63,7 @@
       parameter(  TWO_8  = 2.0 )
       parameter (ZERO_8  = 0.0)
 *
+      real work(LDIST_SHAPE,Nk), work_m(LDIST_SHAPE,Nk)
       real*8 wk1_8(LDIST_SIZ*Nk)
       real*8 g1_8(LYDIST_SIZ*(Trp_12dmax-Trp_12dmin+1)*(G_ni+Ptopo_npex))
       real*8 g2_8((Trp_12dmax-Trp_12dmin+1)*(Trp_22max-Trp_22min+1)*(G_nj+Ptopo_npey))
@@ -64,17 +71,12 @@
       real*8, dimension (Trp_22max*G_nj) :: aiy_8,biy_8,ciy_8
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gem_stop('hspng_drv_tl',-1)
-*     ______________________________________________________
-*
       if (Lun_debug_L) write(Lun_out,1000)
 *
-*     TLM of
 *     Momentum
 *     ~~~~~~~~
       if ( Cstv_uvdf_8 .gt. 0.0 ) then
 *
-*        TLM of
 *        Horizontal Momentum
 *        ~~~~~~~~~~~~~~~~~~~       
          if (Hspng_rwnd_L) then
@@ -83,13 +85,29 @@
                do j=1,l_nj
                   c1 = Dcst_rayt_8 / geomg_cy_8(j)
                   do i=1,l_ni
+*
+*                    TRAJECTORY
+*                    ----------
+                     f_um(i,j,k) = f_um(i,j,k) * c1
+*
+*                    TLM
+*                    ---
                      f_u(i,j,k) = f_u(i,j,k) * c1
+*
                   end do
                end do
                do j=1,l_njv
                   c1 = Dcst_rayt_8 / geomg_cy_8(j)
                   do i=1,l_ni
+*
+*                    TRAJECTORY
+*                    ----------
+                     f_vm(i,j,k) = f_vm(i,j,k) * c1
+*
+*                    TLM
+*                    ---
                      f_v(i,j,k) = f_v(i,j,k) * c1
+*
                   end do
                end do
             end do
@@ -99,6 +117,15 @@
      $               Geomg_cy2_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Opr_opsyp2_8,
      $               G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
 *
+*        TRAJECTORY
+*        ----------
+         call hzd_del2 (F_um, wk1_8, Hzd_opsxp0_8, Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM
+*        ---
          call hzd_del2 (F_u, wk1_8, Hzd_opsxp0_8, Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
@@ -108,6 +135,15 @@
      $               Geomg_cyv2_8,Opr_opsxp0_8,Opr_opsxp2_8,Hzd_yp0_8,Hzd_yp2_8,
      $               G_ni,G_nj,LYDIST_DIM,G_njv,l_njv)
 *
+*        TRAJECTORY
+*        ----------
+         call hzd_del2 (F_vm, wk1_8, Opr_opsxp0_8(G_ni+1), Hzd_opsyp0_8,
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_njv)
+*
+*        TLM
+*        ---
          call hzd_del2 (F_v, wk1_8, Opr_opsxp0_8(G_ni+1), Hzd_opsyp0_8,
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
@@ -119,13 +155,29 @@
                do j=1,l_nj
                   c1 = geomg_cy_8(j) / Dcst_rayt_8
                   do i=1,l_ni
+*
+*                    TRAJECTORY
+*                    ----------
+                     f_um(i,j,k) = f_um(i,j,k) * c1
+*
+*                    TLM
+*                    ---
                      f_u(i,j,k) = f_u(i,j,k) * c1
+*
                   end do
                end do
                do j=1,l_nj
                   c1 = geomg_cy_8(j) / Dcst_rayt_8
                   do i=1,l_ni
+*
+*                    TRAJECTORY
+*                    ----------
+                     f_vm(i,j,k) = f_vm(i,j,k) * c1
+*
+*                    TLM
+*                    ---
                      f_v(i,j,k) = f_v(i,j,k) * c1
+*
                   end do
                end do
             end do
@@ -141,18 +193,38 @@
      $                     Geomg_cy2_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
      $                     Opr_opsyp2_8,G_ni,G_nj,LYDIST_DIM,G_nj,l_nj)
 *
-*        TLM of
 *        Vertical motion
 *        ~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_psdm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM
+*        ---
          call hzd_del2  (F_psd, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
-*        TLM of
 *        Total divergence 
 *        ~~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_tdm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM
+*        ---
          call hzd_del2  (F_td, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
@@ -161,10 +233,19 @@
 *
          if (Hspng_uvwdt_L) goto 9988
 *
-*     TLM of
 *     Mass related fields
 *     ~~~~~~~~~~~~~~~~~~~
 *         
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_ipm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM
+*        ---
          call hzd_del2  (F_ip, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
@@ -172,6 +253,16 @@
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
 *
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_itm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM
+*        ---
          call hzd_del2  (F_it, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
@@ -181,50 +272,243 @@
          do k = 2, Nk
          do j = 1, l_nj
          do i = 1, l_ni
+*
+*           TRAJECTORY
+*           ----------
+            F_itm(i,j,k) = F_ipm(i,j,k) + Cstvr_fistr_8(k) + F_xfis(i,j)
+*
+*           TLM 
+*           ---
             F_it(i,j,k) = F_ip(i,j,k) 
+*
          end do
          end do
          end do
 *
-* TLM of 
 * updating phi' at the top 
 *
          do j = 1, l_nj
          do i = 1, l_ni
+*
+*           TRAJECTORY
+*           ----------
+            F_ipm(i,j,1) = F_itm(i,j,1) - Cstvr_fistr_8(1) - F_xfis(i,j)
+
+*           TLM 
+*           ---
             F_ip(i,j,1) = F_it(i,j,1)
+*
          end do
          end do
 *
-*     TLM of
 *     The temperature: T', T'lin & hence T 
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_tpm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM
+*        ---
          call hzd_del2  (F_tp, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
 *
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_pltm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM
+*        ---
          call hzd_del2  (F_plt, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
          do k=1, Nk
          do j=1, l_nj
-         do i=1, l_ni 
+         do i=1, l_ni
+*
+*           TRAJECTORY
+*           ----------
+            F_tm(i,j,k) = F_tpm(i,j,k) + Cstv_tstr_8
+*
+*           TLM 
+*           ---
             F_t(i,j,k) = F_tp(i,j,k) 
+*
          end do
          end do
          end do
 *
-*     TLM of
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+            do k = 1, Nk
+            do j = 1, l_nj
+            do i = 1, l_ni
+*
+*              TRAJECTORY
+*              ----------
+               work_m(i,j,k) = F_pipm(i,j,k)
+*
+*              TLM 
+*              ---
+               work(i,j,k) = F_pip(i,j,k)
+*
+            end do
+            end do
+            end do
+         endif
+*
 *     The hydrostatic pressure: pi'  
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_pipm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM 
+*        ---
          call hzd_del2  (F_pip, wk1_8,
      $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
      $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
      $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
      $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*****************************
+*  3. Nonyhydrostatic model * 
+*****************************
+*
+         if ( .not. Schm_hydro_L ) then
+*
+*     Vertical wind (physical) 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_wm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM 
+*        ---
+         call hzd_del2  (F_w, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         if ( Schm_difqp_L ) then ! q' & related variables
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_mum, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM 
+*        ---
+         call hzd_del2  (F_mu, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (F_mulm, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM 
+*        ---
+         call hzd_del2  (F_mul, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        Indirect diffusion of q' 
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+         do k=1, Nk 
+         do j=1, l_nj
+         do i=1, l_ni
+*
+*           TLM
+*           ---
+            work(i,j,k) = (                dble(work  (i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) )           +
+     %                    ( Geomg_z_8(k) + dble(work_m(i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) ) * dble(F_qp(i,j,k))
+*
+*           TRAJECTORY
+*           ----------
+            work_m(i,j,k) = ( Geomg_z_8(k) + dble(work_m(i,j,k)) )
+     %                       *exp( dble(F_qpm(i,j,k)) )
+*
+         end do
+         end do
+         end do
+*
+*        TRAJECTORY
+*        ----------
+         call hzd_del2  (work_m, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+*        TLM
+*        ---
+         call hzd_del2  (work, wk1_8,
+     $              Opr_opsxp0_8(G_ni+1), Opr_opsyp0_8(G_nj+1),
+     $              aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,g1_8,g2_8,
+     $              LDIST_DIM,Nk, G_ni,G_nj, Ldnh_maxy,
+     $              Trp_12dmax,Trp_12dn, Trp_22max ,Trp_22n ,G_nj)
+*
+         do k=1, Nk
+         do j=1, l_nj
+         do i=1, l_ni
+*
+*           TRAJECTORY
+*           ----------
+            F_qpm(i,j,k) = log(             dble(work_m(i,j,k))
+     %                       /( Geomg_z_8(k) + dble(F_pipm(i,j,k)) )  )
+*
+*           TLM
+*           ---
+            F_qp(i,j,k) = (dble(work  (i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) -
+     %                     dble(work_m(i,j,k))*(                dble(F_pip (i,j,k))) )
+     %                   /(dble(work_m(i,j,k))*( Geomg_z_8(k) + dble(F_pipm(i,j,k))) )
+*
+         end do
+         end do
+         end do
+*
+         endif
+         endif         
 *
       endif
 *

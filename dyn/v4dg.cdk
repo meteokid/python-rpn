@@ -16,6 +16,7 @@
 *                           - add steplast for final time step of integration
 * v3_02 - Mahfouf J.-F.     - add V4dg_anincr_L
 * v3_02 - Lee V.            - replaced V4dg_out with V4dg_output_L
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration
 *
 *______________________________________________________________________
 *                                                                      |
@@ -36,6 +37,7 @@
 *--------------------|-------------------------------------------------|
 * V4dg_status        | Identification of the job running               |
 * V4dg_output_L      | Output control during V4d mode (dynout/blocstat)| 
+* V4dg_imguv_L       | .T.= u,v image winds   (used in dynout/blocstat)| 
 * V4dg_stepob        | Observations available at each stepob           |
 * V4dg_inv           | Time 0 NOT in cost J if set to 1                |
 * V4dg_range         | Range of exponents used in TESTGRD              |
@@ -47,6 +49,7 @@
 *                    | at all time steps                               |
 * V4dg_addtr         | Current address of TRAJECTORY on WA file        |
 * V4dg_rwtr          | =0 (Read from) =1 (Write on) TRAJ. WA file      | 
+* V4dg_rwnest        | =0 (Read from) =1 (Write on) NEST TRAJ. WA file | 
 * V4dg_numtr         | Portion of TRAJECTORY to Read-Write             | 
 * V4dg_iunph         | Unity of the WA file containing PHYSICS         |
 *                    | PARAMETERS i.e.INVAR. SIGMA and INVAR. KM KT    |
@@ -125,7 +128,7 @@
      %        V4dg_addtab_tl(12,0:100,2), V4dg_addtab_ad(12,0:100,2),
      %        V4dg_trsize,V4dg_phsize,V4dg_frsize,V4dg_obsize,V4dg_cvsize,
      %        V4dg_nlsize,
-     %        V4dg_numseg,V4dg_iunenrgy,V4dg_steplast
+     %        V4dg_numseg,V4dg_iunenrgy,V4dg_steplast,V4dg_rwnest
 *
       MARK_COMMON_BEG (V4d_gen_i)
       common / V4d_gen_i / 
@@ -141,7 +144,7 @@
      %        V4dg_addtab_tl, V4dg_addtab_ad,
      %        V4dg_trsize,V4dg_phsize,V4dg_frsize,V4dg_obsize,V4dg_cvsize,
      %        V4dg_nlsize,
-     %        V4dg_numseg,V4dg_iunenrgy,V4dg_steplast
+     %        V4dg_numseg,V4dg_iunenrgy,V4dg_steplast,V4dg_rwnest
       MARK_COMMON_END (V4d_gen_i)
 *
       logical 
@@ -149,7 +152,7 @@
      %        V4dg_oktr_L,V4dg_oktrtl_L,V4dg_tlm_L,V4dg_grd_L,
      %        V4dg_ds_L,V4dg_nl_L,V4dg_di_L,V4dg_tl_L,V4dg_ad_L,
      %        V4dg_incore_L,V4dg_identity_L,V4dg_ga_eq_ge_L,
-     %        V4dg_anincr_L,V4dg_output_L
+     %        V4dg_anincr_L,V4dg_output_L,V4dg_imguv_L
 *
       MARK_COMMON_BEG (V4d_gen_l)
       common / V4d_gen_l / 
@@ -157,7 +160,7 @@
      %        V4dg_oktr_L,V4dg_oktrtl_L,V4dg_tlm_L,V4dg_grd_L,
      %        V4dg_ds_L,V4dg_nl_L,V4dg_di_L,V4dg_tl_L,V4dg_ad_L,
      %        V4dg_incore_L,V4dg_identity_L,V4dg_ga_eq_ge_L,
-     %        V4dg_anincr_L,V4dg_output_L
+     %        V4dg_anincr_L,V4dg_output_L,V4dg_imguv_L
       MARK_COMMON_END (V4d_gen_l)
 *
       real V4dg_start

@@ -1,0 +1,55 @@
+***s/r hdif_phy_tl - TLM of hdif_phy 
+*
+#include <model_macros_f.h>
+*
+      subroutine hdif_phy_tl ()
+*
+#include "impnone.cdk"
+*
+*author M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+*
+*        Physics timestep & Horizontal diffusion & Vertical sponge
+*        ---------------------------------------------------------
+*
+         if (Schm_hdlast_L) then
+*
+            if ( Schm_phyms_L ) call p_main_tl (Lctl_step)
+*
+*           Recover TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
+*           ------------------------------------------------------
+            if ( V4dg_oktrtl_L ) call v4d_rwtraj (2) 
+*
+            call   hzd_main_tl ()
+            call vspng_main_tl ()
+            if (.not.G_lam) call hspng_main_tl ()
+*
+         else
+*
+*           Recover TRAJ PIPT1,QPT1M (No Hyd) before HZD diffusion
+*           ------------------------------------------------------
+            if ( V4dg_oktrtl_L ) call v4d_rwtraj (2) 
+*
+            call   hzd_main_tl ()
+            call vspng_main_tl ()
+            if (.not.G_lam) call hspng_main_tl ()
+*
+            if ( Schm_phyms_L ) call p_main_tl (Lctl_step)
+*
+         endif
+*
+      return
+      end

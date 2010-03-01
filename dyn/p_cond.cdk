@@ -11,7 +11,7 @@
 *--------------------|-------------------------------------------------|
 * P_cond_conv_s      | CONVEC: convection scheme name                  |
 * P_cond_stcon_s     | STCOND: condensation scheme name                |
-* P_cond_shlct_s     | SCHLCVT: shallow convection name                |
+* P_cond_shlct_s     | SCHLCVT: shallow convection names               |
 * P_cond_satu_L      | SATUCO: .true. water/ice phase for saturation   |
 *                    |         .false. water phase only for saturation |
 * P_cond_ilwc_L      | INILWC: to initialize water content and cloud   |
@@ -57,20 +57,26 @@
 *                    |                                                 |
 * P_cond_kfctimea    | convective time adjustment in KF                |
 *                    |                                                 |
+* P_cond_kfcpcp_s    | conservation of precipitation in kfcp           |
+*                    |                                                 |
+* P_cond_kkl         | sedimentation threshold in mixphase
+*                    |                                                 |
 *----------------------------------------------------------------------
 #endif
 
-      character*8 P_cond_conv_s , P_cond_stcon_s, P_cond_shlct_s
+      character*8 P_cond_conv_s , P_cond_stcon_s, P_cond_shlct_s(2),
+     $            p_cond_kfcpcp_s
       logical P_cond_satu_L   ,P_cond_ilwc_L, P_cond_kfcmom_L
       integer P_cond_filtend, P_cond_xofset,
      $        P_cond_xblnd  , P_cond_yofset, P_cond_yblnd
       real P_cond_hc, P_cond_hf, P_cond_hm, P_cond_filco, P_cond_dzsedi,
      $     P_cond_kfctrig, P_cond_kfcrad, P_cond_kfcdepth, 
      $     P_cond_kfcdlev, P_cond_kfcdet, P_cond_kfctimec,
-     $     P_cond_kfctimea
+     $     P_cond_kfctimea,P_cond_kkl
 *
       MARK_COMMON_BEG (pcond_c)
-      common /pcond_c/ P_cond_conv_s, P_cond_stcon_s, P_cond_shlct_s
+      common /pcond_c/ P_cond_conv_s, P_cond_stcon_s, 
+     $                 P_cond_shlct_s,P_cond_kfcpcp_s
       MARK_COMMON_END (pcond_c)
 
       MARK_COMMON_BEG (pcond_l)
@@ -86,7 +92,7 @@
       common /pcond_r/ P_cond_hc, P_cond_hf, P_cond_hm, P_cond_filco, 
      $                 P_cond_dzsedi,   P_cond_kfctrig, P_cond_kfcrad, 
      $                 P_cond_kfcdepth, P_cond_kfcdlev, P_cond_kfcdet, 
-     $                 P_cond_kfctimec, P_cond_kfctimea
+     $                 P_cond_kfctimec, P_cond_kfctimea,P_cond_kkl
       MARK_COMMON_END (pcond_r)
 *
       DCL_DYNVAR(P_cond, fcpf ,  real, (l_ni,l_nj))

@@ -25,6 +25,7 @@
 *
 *revision
 * v2_10 - Qaddouri A.        - initial version
+* v3_02 - J. P. Toviessi     - remove data overflow bug
 *
 *object
 *
@@ -55,6 +56,8 @@
       enddo
       enddo
       enddo
+*
+***          F_Rhs_8(minx:maxx,miny:maxy,gnk)
 *       
 * Resolution
 *
@@ -94,6 +97,14 @@
          enddo
          enddo
       enddo
+
+      do k=minx1,0
+       do j= miny,maxy
+         do i= 1,gni+2
+           fwft_8(j,k,i) = ZERO_8
+         enddo
+       enddo
+      enddo
 *
 *     projection ( wfft = x transposed * g )
 *
@@ -103,11 +114,14 @@
       do k = 1, Nkl
          do i = 0, (Gni)/2
             b_8 = F_pri_8
-            do jw = 1, (Maxy-Miny+1)
+*JJ         do jw = 1, (Maxy-Miny+1)
+            do jw = 1, njl
                fwft_8(jw,k,2*i+1) = b_8 * fwft_8(jw,k,2*i+1)
                fwft_8(jw,k,2*i+2) = b_8 * fwft_8(jw,k,2*i+2)
             enddo
          enddo
+      enddo
+      do k = 1, Nkl
          do j = 1, (Maxy-Miny+1)
             fwft_8(j,k,Gni+2) = ZERO_8
             fwft_8(j,k,2)     = fwft_8(j,k,1)

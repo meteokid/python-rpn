@@ -16,6 +16,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 *                             (based on CAIN of IFS/ARPEGE)
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *
 *object
 *     see id section
@@ -32,11 +33,12 @@
 #include "lun.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
+#include "schm.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
-      integer pnerr, pnlkey1(4), key1(Tr3d_ntr),
+      integer pnerr, pnlkey1(5), key1(Tr3d_ntr),
      $        key1_, err, i, j, k, m, n
       real tr
       pointer (patr, tr(LDIST_SHAPE,*))
@@ -47,14 +49,22 @@
       pnlkey1(2) = VMM_KEY(vt1 )
       pnlkey1(3) = VMM_KEY(tpt1)
       pnlkey1(4) = VMM_KEY(st1 )
+      if (.not. Schm_hydro_L) then
+          pnlkey1(5) = VMM_KEY(fipt1 )
+          pnerr = vmmlod(pnlkey1,5)
+      else
+          pnerr = vmmlod(pnlkey1,4)
+      endif
 *
-*     - - - - - - - - - - - - -
-      pnerr = vmmlod(pnlkey1,4)
 *     - - - - - - - - - - - - -
       pnerr = VMM_GET_VAR(ut1 )
       pnerr = VMM_GET_VAR(vt1 )
       pnerr = VMM_GET_VAR(tpt1)
       pnerr = VMM_GET_VAR(st1 )
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(fipt1 )
+      endif
+*     - - - - - - - - - - - - -
 *
       m = 0
       do k=1,l_nk
@@ -91,6 +101,19 @@
       end do
       end do
 *
+      if (.not. Schm_hydro_L) then
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         fipt1(i,j,k) = F_px(m)
+      end do
+      end do
+      end do
+*
+      endif
+*
       pnerr = vmmuld(-1,0)
 *
       key1_ = VMM_KEY (trt1)
@@ -116,7 +139,7 @@
 *
 *     ______________________________________________________
 *
-      if(m.ne.Ndim) call gefstop('v4d_cain')  
+      if(m.ne.Ndim) call gem_stop('v4d_cain',-1)  
 *     ______________________________________________________
 *
       return

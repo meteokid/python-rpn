@@ -7,7 +7,7 @@
      $                       F_um, F_vm, F_tm, F_trm, F_lpsm, F_sig,
      $                       F_jdo, F_step, DIST_DIM, Nk )
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_step,F_jdo, DIST_DIM, Nk
 *
@@ -69,7 +69,7 @@
 *notes
 *
       integer i, k, n, m, ii, indx, offp, offg, pid, gid, mul, tlevel
-      real con, sumqj(p_ni,Nk),tpm(p_ni*Nk,2)
+      real con, sumqj(p_ni,Nk,2), tpm(p_ni*Nk,2)
 **
 *     ---------------------------------------------------------------
 *
@@ -93,15 +93,23 @@
       end do
       end do
 *
-      do n=1,h2o_ntr
+      do n=1,phyt_ntr
          do k= 1,Nk
          do i= 1, p_ni
             indx = (k-1)*p_ni+i-1
             ii = i + p_offi
-            F_busdyn(h2o_ind(1,n)+indx) = max(0., F_trp(ii,F_jdo,k,n))
-            F_busdyn(h2o_ind(2,n)+indx) = max(0., F_trm(ii,F_jdo,k,n))
+            F_busdyn(phyt_ind(1,n)+indx) = max(0., F_trp(ii,F_jdo,k,n))
          end do
          end do
+         if (phyt_ind(2,n).gt.0) then
+         do k= 1,Nk
+         do i= 1, p_ni
+            indx = (k-1)*p_ni+i-1
+            ii = i + p_offi
+            F_busdyn(phyt_ind(2,n)+indx) = max(0., F_trm(ii,F_jdo,k,n))
+         end do
+         end do
+         endif
       end do
 *
 *C    Surface fields: extract row F_jdo
@@ -135,55 +143,24 @@
 *
       if(Schm_wload_L)then
 
-*         print*,'Water loading on p_fillbus'
-
-*        Loop over the two time levels.
-         do m=1,2
-
-            if(m.eq.1)tlevel=tplus
-            if(m.eq.2)tlevel=tmoins
-
-            do k= 1, Nk
-               do i= 1, p_ni
-                  sumqj(i,k)=0.0
-               end do
-            end do
-            
-*           Sum over Hydrometeors, note that vapor 'HU' is in position hucond
-            do n=1,hucond-1
-               if(h2o_liste_S(n).eq.'QC'.or.
-     $              h2o_liste_S(n).eq.'QR'.or.
-     $              h2o_liste_S(n).eq.'QI'.or.
-     $              h2o_liste_S(n).eq.'QG'    )then
-                  do k= 1, Nk
-                  do i = 1, p_ni
-                     indx = (k-1)*p_ni+i-1
-                     sumqj(i,k)=sumqj(i,k)+F_busdyn(h2o_ind(m,n)+indx)
-                  end do
-                  end do
-               endif
-            end do
-            do n=hucond+1,h2o_ntr
-               if(h2o_liste_S(n).eq.'QC'.or.
-     $              h2o_liste_S(n).eq.'QR'.or.
-     $              h2o_liste_S(n).eq.'QI'.or.
-     $              h2o_liste_S(n).eq.'QG'    )then
-                  do k= 1, Nk
-                  do i = 1, p_ni
-                     indx = (k-1)*p_ni+i-1
-                     sumqj(i,k)=sumqj(i,k)+F_busdyn(h2o_ind(m,n)+indx)
-                  end do
-                  end do
-               endif
-            end do
-
-            call mfottvh ( F_busdyn(tlevel),tpm(1,m),
-     $                   F_busdyn(h2o_ind(m,hucond)),sumqj,p_ni,Nk,p_ni)
-
+         sumqj = 0.            
+*        Sum over Hydrometeors, note: 'HU' is in position hucond=1
+         do n = hucond+1, h2o_ntr
+         do k = 1, Nk
+         do i = 1, p_ni
+            indx = (k-1)*p_ni+i-1
+            sumqj(i,k,1)=sumqj(i,k,1)+F_busdyn(h2o_ind(1,n)+indx)
+            sumqj(i,k,2)=sumqj(i,k,2)+F_busdyn(h2o_ind(2,n)+indx)
          end do
-
+         end do
+         end do
+         call mfottvh ( F_busdyn(tplus ),tpm(1,1),
+     $            F_busdyn(h2o_ind(1,hucond)),sumqj,p_ni,Nk,p_ni )
+         call mfottvh ( F_busdyn(tmoins),tpm(1,2),
+     $            F_busdyn(h2o_ind(2,hucond)),sumqj(1,1,2),p_ni,Nk,p_ni)
+*
       else
-
+*
          call mfottv ( F_busdyn(tplus  ) , tpm(1,1) , 
      $        F_busdyn(h2o_ind(1,hucond)) , p_ni, Nk, p_ni )
          call mfottv ( F_busdyn(tmoins ) , tpm(1,2) , 

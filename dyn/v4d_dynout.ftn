@@ -16,6 +16,7 @@
 * v3_00 - Tanguay M.        - move true winds adjoint to blocuv 
 *                           - No preconditioning if V4dg_4dvar_L (done in 3D-Var)
 * v3_01 - Tanguay M.        - add V4dg_sgvc_L
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *
 *object
 *     see id section
@@ -38,24 +39,21 @@
 #include "dimout.cdk" 
 #include "tr3d.cdk" 
 #include "v4dg.cdk" 
+#include "schm.cdk" 
 *
 *modules
       integer  doout, vmmlod, vmmget, vmmuld
       external doout, vmmlod, vmmget, vmmuld
-      integer pnerr, pnlkey1(4), key1(Tr3d_ntr),
-     $        key1_, err, i, j, k, m, n, wrt_out
+      integer pnerr, pnlkey1(5), key1(Tr3d_ntr),
+     $        key1_, err, i, j, k, m, n
       real tr,z
       pointer (patr, tr(LDIST_SHAPE,*))
 *
-      real*8 pdsc1_8
-*
       integer dostep(MAXSET), dostep_max
-      logical done_once
-      data done_once /.false./
-      save done_once
 *
       real wijk1 (LDIST_SHAPE,l_nk),wijk2 (LDIST_SHAPE,l_nk)
       real wijk3 (LDIST_SHAPE,l_nk),wijktr(LDIST_SHAPE,l_nk,Tr3d_ntr)
+      real wijk4 (LDIST_SHAPE,l_nk)
       real wij1  (LDIST_SHAPE)
 *
 *     Check if output is required
@@ -72,14 +70,22 @@
       pnlkey1(2) = VMM_KEY(vt1 )
       pnlkey1(3) = VMM_KEY(tpt1)
       pnlkey1(4) = VMM_KEY(st1)
+      if (.not. Schm_hydro_L) then
+          pnlkey1(5) = VMM_KEY(fipt1 )
+          pnerr = vmmlod(pnlkey1,5)
+      else
+          pnerr = vmmlod(pnlkey1,4)
+      endif
 *
-*     - - - - - - - - - - - - -
-      pnerr = vmmlod(pnlkey1,4)
 *     - - - - - - - - - - - - -
       pnerr = VMM_GET_VAR(ut1 )
       pnerr = VMM_GET_VAR(vt1 )
       pnerr = VMM_GET_VAR(tpt1)
       pnerr = VMM_GET_VAR(st1)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(fipt1 )
+      endif
+*     - - - - - - - - - - - - -
 *
 *     Keep original fields (PART1)
 *     ----------------------------
@@ -98,6 +104,18 @@
       wij1(i,j) = st1(i,j)
       end do
       end do
+*
+      if (.not. Schm_hydro_L) then
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         wijk4(i,j,k) = fipt1 (i,j,k)
+      end do
+      end do
+      end do
+*
+      endif
 *
       if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) then
 *
@@ -157,6 +175,24 @@
          st1(i,j) = st1(i,j)*z
       end do
       end do
+*
+      if (.not. Schm_hydro_L) then
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         if(V4dc_scalp(m).eq.0.) then
+            z = 0.
+         else
+            z = 1./V4dc_scalp(m)
+         endif
+         fipt1(i,j,k) = fipt1(i,j,k)*z
+      end do
+      end do
+      end do
+*
+      endif
 *
       endif
 *
@@ -220,14 +256,22 @@
       pnlkey1(2) = VMM_KEY(vt1 )
       pnlkey1(3) = VMM_KEY(tpt1)
       pnlkey1(4) = VMM_KEY(st1)
+      if (.not. Schm_hydro_L) then
+          pnlkey1(5) = VMM_KEY(fipt1 )
+          pnerr = vmmlod(pnlkey1,5)
+      else
+          pnerr = vmmlod(pnlkey1,4)
+      endif
 *
-*     - - - - - - - - - - - - -
-      pnerr = vmmlod(pnlkey1,4)
 *     - - - - - - - - - - - - -
       pnerr = VMM_GET_VAR(ut1 )
       pnerr = VMM_GET_VAR(vt1 )
       pnerr = VMM_GET_VAR(tpt1)
       pnerr = VMM_GET_VAR(st1)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(fipt1 )
+      endif
+*     - - - - - - - - - - - - -
 *
       do k=1,l_nk
       do j=l_miny,l_maxy
@@ -244,6 +288,18 @@
          st1(i,j) = wij1(i,j)
       end do
       end do
+*
+      if (.not. Schm_hydro_L) then
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         fipt1 (i,j,k) = wijk4(i,j,k)
+      end do
+      end do
+      end do
+*
+      endif
 *
       pnerr = vmmuld(-1,0)
 *

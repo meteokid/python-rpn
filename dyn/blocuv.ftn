@@ -2,9 +2,9 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine blocuv(F_dostep,F_dostep_max)
+      subroutine blocuv (F_dostep,F_dostep_max)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer F_dostep(*)
       integer F_dostep_max
@@ -21,6 +21,7 @@
 * v2_32 - Lee V.            - reduce dynamic allocation size
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_00 - Tanguay M.        - true winds adjoint
+* v3_03 - Tanguay M.        - introduce V4dg_imguv_L 
 *
 *object
 *     output the wind images or wind components or wind module.
@@ -62,12 +63,15 @@
       character*8 ptmuvar(cnmuvar), ptmvvar(cnmvvar), pt3dvar(cn3dvar)
       real prprlvl
       integer i0,in,j0,jn,gridi,grido
-      logical pl3dvar(cn3dvar)
+      logical pl3dvar(cn3dvar),fla,flb
+      real*8 cu_8(l_nj),cv_8(l_nj),c1_8
       real prmult(cn3dvar), pradd(cn3dvar), pr1
       real w1(LDIST_SHAPE), w2(LDIST_SHAPE), w3(LDIST_SHAPE)
       real w4(LDIST_SHAPE), w5(LDIST_SHAPE), w6(LDIST_SHAPE)
       real t1(LDIST_SHAPE,G_nk), t2(LDIST_SHAPE,G_nk)
       real t3(LDIST_SHAPE,G_nk), t4(LDIST_SHAPE,G_nk)
+      real t5,t6
+      pointer (pat5, t5(LDIST_SHAPE,*)), (pat6, t6(LDIST_SHAPE,*))
 
 *     Declarations for slab output
       integer mxout_e
@@ -183,6 +187,39 @@
       pnerr = vmmlod(pnlkey,2)
       pnerr = VMM_GET_VAR(ut1)
       pnerr = VMM_GET_VAR(vt1)
+*
+*     Transfer u,v in t3,t4 if not specific 4D-Var case   
+*     -------------------------------------------------
+      fla = V4dg_ad_L.and.V4dg_imguv_L
+      flb = ( (V4dg_di_L.or.V4dg_tl_L) .and. .not.V4dg_imguv_L ) 
+     $            .or. V4dg_ad_L
+      if ( (V4dg_conf.eq.0) .or. (.not.fla.and..not.flb) ) then
+         pat5 = ut1_
+         pat6 = vt1_
+      else
+         do j= 1, l_nj
+            cu_8(j) = Geomg_cy_8 (j) / Dcst_rayt_8
+            cv_8(j) = Geomg_cyv_8(j) / Dcst_rayt_8
+         end do
+         call hpalloc (pat5, LDIST_SIZ*G_nk, pnerr, 1)
+         call hpalloc (pat6, LDIST_SIZ*G_nk, pnerr, 1)
+         if (fla.and.flb) then
+            cu_8 = cu_8 * cu_8
+            cv_8 = cv_8 * cv_8
+         endif
+         do k =1, G_nk
+            do j= 1, l_nj
+            do i= 1, l_niu
+               t5(i,j,k) = cu_8(j) * ut1(i,j,k)
+            end do
+            end do
+            do j= 1, l_njv
+            do i= 1, l_ni
+               t6(i,j,k) = cv_8(j) * vt1(i,j,k)
+            end do
+            end do
+         end do
+      endif
 *_______________________________________________________________________
 *
 *     5.0     Compute real wind from image wind
@@ -190,110 +227,99 @@
 *     Horizontal interpolation of image winds into PHI output grid.
       grido = 0
       gridi = 1
-      call uv_acg2g (t1,ut1,gridi,grido,LDIST_DIM,l_nk,i0,in,j0,jn)
+      call uv_acg2g (t1,t5,gridi,grido,LDIST_DIM,l_nk,i0,in,j0,jn)
 *
 *     Borders need to be filled for LAM configuration
 *
       if (G_lam) then
-      do i=1,i0-1
-      do k=1,G_nk
+         do i=1,i0-1
+         do k=1,G_nk
          do j=1,l_nj
             t1(i,j,k)=t1(i0,j,k)
          enddo
-      enddo      
-      enddo     
-      do i=in+1,l_ni
-      do k=1,G_nk
+         enddo      
+         enddo     
+         do i=in+1,l_ni
+         do k=1,G_nk
          do j=1,l_nj
             t1(i,j,k)=t1(in,j,k)
          enddo
-      enddo
-      enddo
-      do j=1,j0-1
-      do k=1,G_nk
+         enddo
+         enddo
+         do j=1,j0-1
+         do k=1,G_nk
          do i=1,l_ni
             t1(i,j,k)=t1(i,j0,k)
          enddo
-      enddo      
-      enddo     
-      do j=jn+1,l_nj
-      do k=1,G_nk
+         enddo      
+         enddo     
+         do j=jn+1,l_nj
+         do k=1,G_nk
          do i=1,l_ni
             t1(i,j,k)=t1(i,jn,k)
          enddo
-      enddo
-      enddo
+         enddo
+         enddo
       endif
-
+*
       gridi = 2
-      call uv_acg2g (t2,vt1,gridi,grido,LDIST_DIM,l_nk,i0,in,j0,jn)
+      call uv_acg2g (t2,t6,gridi,grido,LDIST_DIM,l_nk,i0,in,j0,jn)
 *
 *     Borders need to be filled for LAM configuration
 *
       if (G_lam) then
-      do i=1,i0-1
-      do k=1,G_nk
+         do i=1,i0-1
+         do k=1,G_nk
          do j=1,l_nj
             t2(i,j,k)=t2(i0,j,k)
          enddo
-      enddo      
-      enddo     
-      do i=in+1,l_ni
-      do k=1,G_nk
+         enddo      
+         enddo     
+         do i=in+1,l_ni
+         do k=1,G_nk
          do j=1,l_nj
             t2(i,j,k)=t2(in,j,k)
          enddo
-      enddo
-      enddo
-      do j=1,j0-1
-      do k=1,G_nk
+         enddo
+         enddo
+         do j=1,j0-1
+         do k=1,G_nk
          do i=1,l_ni
             t2(i,j,k)=t2(i,j0,k)
          enddo
-      enddo      
-      enddo     
-      do j=jn+1,l_nj
-      do k=1,G_nk
+         enddo      
+         enddo     
+         do j=jn+1,l_nj
+         do k=1,G_nk
          do i=1,l_ni
             t2(i,j,k)=t2(i,jn,k)
          enddo
-      enddo
-      enddo
+         enddo
+         enddo
       endif
 
-*     Calculation of real wind components from images.
+*     Compute real wind components from wind images.
       i0 = 1
       in = l_ni
       j0 = 1
       jn = l_nj
-
-      if(V4dg_conf.eq.0.or.(V4dg_di_L.or.V4dg_tl_L)) then
+*
       do j= j0, jn 
-         pr1 = Dcst_rayt_8 / geomg_cy_8(j)
-         do k=1,l_nk
+         c1_8 = Dcst_rayt_8 / geomg_cy_8(j)
+         do k=  1, l_nk
          do i= i0, in
-            t1(i,j,k) = pr1 * t1(i,j,k)
-            t2(i,j,k) = pr1 * t2(i,j,k)
+            t1(i,j,k) = c1_8 * t1(i,j,k)
+            t2(i,j,k) = c1_8 * t2(i,j,k)
          end do
          end do
       end do
-      elseif(V4dg_ad_L) then
-      do j= j0, jn
-         pr1 = geomg_cy_8(j) / Dcst_rayt_8
-         do k=1,l_nk
-         do i= i0, in
-            t1(i,j,k) = pr1 * t1(i,j,k)
-            t2(i,j,k) = pr1 * t2(i,j,k)
-         end do
-         end do
-      end do
-      endif
-*     Calculate vertical derivative of UU,VV with respect to Out2_wlnph
+*
+*     Compute vertical derivative of UU,VV with respect to Out2_wlnph
 *
       call verder (t3, t1, Out2_wlnph, 2.0,  2.0, LDIST_DIM, G_nk,
-     %                                          i0,in,j0,jn)
+     %                                                i0,in,j0,jn)
       call verder (t4, t2, Out2_wlnph, 2.0,  2.0, LDIST_DIM, G_nk,
-     %                                          i0,in,j0,jn)
+     %                                                i0,in,j0,jn)
 *_______________________________________________________________________
 *
 *     6.0a    Output of (UU,VV,UV) Variables on ETA levels
@@ -405,7 +431,7 @@
 *
                      prprlvl = Level(jjj,levset) * 100.0
 
-*       Calculate UU
+*       Compute UU
                      call prgen( w4,  t1, t3, Out2_wlnph,
      %                    prprlvl, Out_cubuv_L, LDIST_DIM,G_nk)
                      if(pl3dvar(pnuu)) then
@@ -416,7 +442,7 @@
      $                    LDIST_SIZ,mxout_e,Grid_sets)
                      endif
 
-*       Calculate VV
+*       Compute VV
                      call prgen( w5,  t2, t4, Out2_wlnph,
      %                    prprlvl, Out_cubuv_L, LDIST_DIM,G_nk)
                      if(pl3dvar(pnvv)) then
@@ -428,7 +454,7 @@
                      endif
                      
                      if(pl3dvar(pnuv)) then
-*     Calculate UV
+*     Compute UV
                         do j = j0, jn
                         do i = i0, in
                            w1(i,j) = sqrt(w4(i,j)*w4(i,j)+
@@ -449,12 +475,18 @@
  700     continue
  800  continue
       call writslab_d(Dslab_fhand_p,Dslab_slab_p,Dslab_nnio,'dp',
-     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
-     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+     %              Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %              mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
 *
 *     unload work fields and unlock global output fields
-      deallocate ( var_e_S, ip1_e, bit_e, mtval_e,typvar_e_S,mtout_e, xnio )
+      deallocate ( var_e_S, ip1_e, bit_e, mtval_e, typvar_e_S,
+     $             mtout_e, xnio )
 *
+      if ( .not.((V4dg_conf.eq.0).or.(.not.fla.and..not.flb)) ) then
+         call hpdeallc(pat5 , pnerr)
+         call hpdeallc(pat6 , pnerr)
+      endif 
+*     
       pnerr = vmmuln(pnlkey,2)
 *
       return

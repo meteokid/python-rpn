@@ -7,7 +7,7 @@
 *implicits
       use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Michel Desgagne
@@ -29,6 +29,7 @@
 * v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
 * v3_01 - Lee V.            - broadcast common hspng for horizontal sponge
 * v3_02 - Tanguay M.        - Broadcast V4dz_degree,V4dzge_degree,V4dzga_degree
+* v3_03 - Desgagne M.       - replace stop by stopmpi
 *
 *object
 *
@@ -135,7 +136,7 @@
       COMMON_BROADCAST(Level_l)
       COMMON_BROADCAST(C_nml)
       COMMON_BROADCAST(C_pipe)
-      COMMON_BROADCAST(C_time)
+      COMMON_BROADCAST(C_step)
       COMMON_BROADCAST(V4d_gen_i)
       COMMON_BROADCAST(V4d_gen_l)
       COMMON_BROADCAST(V4d_gen_r)
@@ -149,19 +150,26 @@
       call RPN_COMM_bcast(V4dzge_degree,1,"MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast(V4dzga_degree,1,"MPI_INTEGER",0,"grid",err )
 *
-      if (.not.Path_swv1_L) stop
+      err = 0
+      if (.not.Path_swv1_L) then
+         print*, 'Problem in set_world_view1 -- ABORT --'
+         err = -1
+      endif
+      call stopmpi(err)
 *
       if (Ptopo_myproc.gt.0) then
           call hpalloc (Geomg_hyb_ , G_nk, err, 1)
           call hpalloc (Geomg_hybm_, G_nk, err, 1)
           call hpalloc (Geomg_pia_ , G_nk, err, 1)
           call hpalloc (Geomg_pibb_, G_nk, err, 1)
+          call hpalloc (Geomg_dpba_, G_nk, err, 1)
       endif
 *
       call RPN_COMM_bcast (Geomg_hyb ,G_nk,"MPI_REAL",0,"grid",err)
       call RPN_COMM_bcast (Geomg_hybm,G_nk,"MPI_REAL",0,"grid",err)
       call RPN_COMM_bcast (Geomg_pia ,G_nk,"MPI_REAL",0,"grid",err)
       call RPN_COMM_bcast (Geomg_pibb,G_nk,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_dpba,G_nk,"MPI_REAL",0,"grid",err)
 *
 *------------------------------------------------------------------
       return

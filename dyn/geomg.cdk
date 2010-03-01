@@ -19,8 +19,9 @@
 * geomg_pia          | variable for the hybrid vertical coordinate     |
 * geomg_pib          | variable for the hybrid vertical coordinate     |
 * geomg_pibb         | variable for the hybrid vertical coordinate     |
-* geomg_dpia         | grad(geomg_pia)                                 |
 * geomg_dpib         | grad(geomg_pib)                                 |
+* geomg_dpia         | grad(geomg_dpib)                                |
+* geomg_dpba         | analytical grad(geomg_pib)                      |
 *--------------------|-------------------------------------------------|
 *                    | 2 variables for diffusion operators             |
 * geomg_wxs_8        | weight for zonal averaging (x direction)        |
@@ -76,5 +77,6 @@
       DCL_DYNVAR(Geomg, pibb   ,  real  , (*))
       DCL_DYNVAR(Geomg, dpia   ,  real  , (*))
       DCL_DYNVAR(Geomg, dpib   ,  real  , (*))
+      DCL_DYNVAR(Geomg, dpba   ,  real  , (*))
       MARK_COMMON_END(Geomg)
 *

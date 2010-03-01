@@ -26,6 +26,7 @@
 *
 *revision
 * v3_00 - Tanguay M.        - initial MPI version
+* v3_03 - Tanguay M.        - use v4d_zerohalo 
 *
 *object
 *     see id section
@@ -104,28 +105,9 @@
          call rpn_comm_adj_halo( fldsc, LDIST_DIM,l_ni,l_nj,nk,
      %                        G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 *
-         do k=1,nk
-            do j=l_miny,0
-            do i=l_minx,l_maxx
-               fldsc(i,j,k) = ZERO_8
-            end do
-            end do
-            do j=l_nj+1,l_maxy
-            do i=l_minx,l_maxx
-               fldsc(i,j,k) = ZERO_8
-            end do
-            end do
-            do i=l_minx,0
-            do j=l_miny,l_maxy
-               fldsc(i,j,k) = ZERO_8
-            end do
-            end do
-            do i=l_ni+1,l_maxx
-            do j=l_miny,l_maxy
-               fldsc(i,j,k) = ZERO_8
-            end do
-            end do
-         end do
+*        Zero fldsc halo
+*        ---------------
+         call v4d_zerohalo ( fldsc,l_ni,l_nj,LDIST_DIM,l_nk)
 *
       endif
 *

@@ -93,18 +93,18 @@
       if (Lctl_r8stat_L) then
          if (G_lam) then
          write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
-     $                     imax,jmax,kmax,maxd,F_from_S 
+     $                                imax,jmax,kmax,maxd,F_from_S 
          else
-         write(Lun_out,99) F_no,F_nv_S,moy,var,imin-5,jmin-4,kmin,mind,
-     $                     imax-5,jmax-4,kmax,maxd,F_from_S 
+         write(Lun_out,99) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+     $                                imax,jmax,kmax,maxd,F_from_S 
          endif
       else
          if (G_lam) then
          write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
-     $                     imax,jmax,kmax,maxd,F_from_S 
+     $                                imax,jmax,kmax,maxd,F_from_S 
          else
-         write(Lun_out,98) F_no,F_nv_S,moy,var,imin-5,jmin-4,kmin,mind,
-     $                     imax-5,jmax-4,kmax,maxd,F_from_S 
+         write(Lun_out,98) F_no,F_nv_S,moy,var,imin,jmin,kmin,mind,
+     $                                imax,jmax,kmax,maxd,F_from_S 
          endif
       endif
 *

@@ -19,6 +19,7 @@
 *                             V4dg_sensib_L = .T.
 * v3_01 - Tanguay M.        - introduce identity option
 * v3_02 - Tanguay M.        - V4dg_identity_L,V4dg_ga_eq_ge_L in namelist 
+* v3_03 - Tanguay M.        - introduce V4dg_imguv_L
 *
 *object
 *     see id section
@@ -75,8 +76,14 @@
          V4dg_range = 5 
          V4dg_start = 0.1 
 *
+*        Set default V4dg_imguv_L
+*        ----------------------------------------------------
+*        NOTE: .T.= u,v image winds (used in dynout/blocstat)  
+*        ----------------------------------------------------
+         V4dg_imguv_L = .true.
+*
          if (Lun_out.gt.0) write(Lun_out,4000) V4dg_tlm_L,V4dg_oktr_L,V4dg_oktrtl_L, 
-     %                                         V4dg_grd_L,V4dg_range,V4dg_start
+     %                                         V4dg_grd_L,V4dg_range,V4dg_start,V4dg_imguv_L 
 *
 *     -----------------------------------
 *     Variables for COST FUNCTION section 
@@ -129,6 +136,7 @@
      % /,'  TESTGRD    = ',L2,
      % /,'  RANGE      = ',I6,
      % /,'  XRSTART    = ',E13.7,
+     % /,'  IMGUV_L    = ',L2,
      % /)
 *
 4001  format(

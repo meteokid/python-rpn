@@ -15,6 +15,7 @@
 *                           - preserve model fields content
 *                           - adapt for tracers in tr3d  
 * v3_02 - Laroche S.        - modified weight for hu (V4dj_trwt(n))
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 *
 *object
 *     see id section
@@ -33,11 +34,12 @@
 #include "tr3d.cdk"
 #include "v4dj.cdk"
 #include "v4dc.cdk"
+#include "schm.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
-      integer pnerr, pnlkey1(4), key1(Tr3d_ntr),
+      integer pnerr, pnlkey1(5), key1(Tr3d_ntr),
      $        key1_, err, i, j, k, m, n
       real tr
       pointer (patr, tr(LDIST_SHAPE,*))
@@ -47,9 +49,9 @@
       real*8 ZERO_8
       parameter (ZERO_8=0.0)
 *
-      real wu (LDIST_SHAPE,l_nk),wv (LDIST_SHAPE,l_nk)
-      real wtp(LDIST_SHAPE,l_nk),ws (LDIST_SHAPE)
-      real wtr(LDIST_SHAPE,l_nk,Tr3d_ntr)
+      real wu  (LDIST_SHAPE,l_nk),wv (LDIST_SHAPE,l_nk)
+      real wtp (LDIST_SHAPE,l_nk),ws (LDIST_SHAPE)
+      real wfip(LDIST_SHAPE,l_nk),wtr(LDIST_SHAPE,l_nk,Tr3d_ntr)
 *
 *     -----------------------------------------------------------------
 *
@@ -68,6 +70,7 @@
 *     -------------------------------------------
       V4dj_uvwt = 1.
       V4dj_tpwt = Dcst_cpd_8/Cstv_tstr_8 
+      if(.not. Schm_hydro_L) V4dj_fipwt = 1. 
 *
 *     ----------------------------------------------------
 *     NOTE: Weight for surf.pres. is given with respect to
@@ -135,12 +138,20 @@
       pnlkey1(2) = vmmk_vt1   
       pnlkey1(3) = vmmk_tpt1  
       pnlkey1(4) = vmmk_st1   
+      if (.not. Schm_hydro_L) then
+          pnlkey1(5) = vmmk_fipt1 
+          pnerr = vmmlod(pnlkey1,5)
+      else
+          pnerr = vmmlod(pnlkey1,4)
+      endif
 *
-      pnerr = vmmlod(pnlkey1,4)
-      pnerr = vmmget(vmmk_ut1    ,  ut1_ , ut1  ) 
-      pnerr = vmmget(vmmk_vt1    ,  vt1_ , vt1  ) 
+      pnerr = vmmget(vmmk_ut1    ,  ut1_  , ut1  ) 
+      pnerr = vmmget(vmmk_vt1    ,  vt1_  , vt1  ) 
       pnerr = vmmget(vmmk_tpt1   ,  tpt1_ , tpt1 ) 
-      pnerr = vmmget(vmmk_st1    ,  st1_ , st1  ) 
+      pnerr = vmmget(vmmk_st1    ,  st1_  , st1  ) 
+      if (.not. Schm_hydro_L) then
+      pnerr = vmmget(vmmk_fipt1  ,  fipt1_, fipt1) 
+      endif
 *
 *     -----------------------
 *     Keep original variables 
@@ -160,6 +171,16 @@
       end do
       end do
 *
+      if (.not. Schm_hydro_L) then  
+      do k=1,l_nk
+      do j=l_miny,l_maxy 
+      do i=l_minx,l_maxx 
+         wfip(i,j,k)= fipt1(i,j,k)
+      end do
+      end do
+      end do
+      endif
+*
 *     ----------------------
 *     Reinitialize variables
 *     ----------------------
@@ -177,6 +198,16 @@
          st1(i,j) = ZERO_8 
       end do
       end do
+*
+      if (.not. Schm_hydro_L) then 
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         fipt1(i,j,k) = ZERO_8
+      end do
+      end do
+      end do
+      endif
 *
       do k = 1,l_nk
       do j = 1,l_nj
@@ -211,6 +242,17 @@
      %           V4dj_spwt * V4dj_invarea
       end do
       end do
+*
+      if (.not. Schm_hydro_L) then 
+      do k = 1,l_nk
+      do j = 1,l_nj
+      do i = 1,l_ni
+      fipt1(i,j,k) = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) *
+     %               V4dj_tpwt * V4dj_invarea
+      end do
+      end do
+      end do
+      endif
 *
       pnerr = vmmuld(-1,0)
 *
@@ -268,12 +310,20 @@
       pnlkey1(2) = vmmk_vt1   
       pnlkey1(3) = vmmk_tpt1  
       pnlkey1(4) = vmmk_st1   
+      if (.not. Schm_hydro_L) then
+          pnlkey1(5) = vmmk_fipt1
+          pnerr = vmmlod(pnlkey1,5)
+      else
+          pnerr = vmmlod(pnlkey1,4)
+      endif
 *
-      pnerr = vmmlod(pnlkey1,4)
-      pnerr = vmmget(vmmk_ut1    ,  ut1_ , ut1  ) 
-      pnerr = vmmget(vmmk_vt1    ,  vt1_ , vt1  ) 
+      pnerr = vmmget(vmmk_ut1    ,  ut1_  , ut1  ) 
+      pnerr = vmmget(vmmk_vt1    ,  vt1_  , vt1  ) 
       pnerr = vmmget(vmmk_tpt1   ,  tpt1_ , tpt1 ) 
-      pnerr = vmmget(vmmk_st1    ,  st1_ , st1  ) 
+      pnerr = vmmget(vmmk_st1    ,  st1_  , st1  ) 
+      if (.not. Schm_hydro_L) then
+      pnerr = vmmget(vmmk_fipt1  ,  fipt1_, fipt1)
+      endif
 *
 *     ------------------------
 *     Reset original variables
@@ -292,6 +342,18 @@
          st1(i,j) = ws(i,j)  
       end do
       end do
+*
+      if (.not. Schm_hydro_L) then
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         fipt1 (i,j,k) = wfip (i,j,k)
+      end do
+      end do
+      end do
+*
+      endif
 *
       pnerr = vmmuld(-1,0)
 *

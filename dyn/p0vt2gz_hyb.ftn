@@ -44,9 +44,9 @@
 #include "geomg.cdk"
 *
 **
-      integer i,k,ik
+      integer i,k,ik,l
       real con,q1,q2,q3,x0,xm,xp,aa,bb,cc,dd,det,zak,zbk,zck
-      real pr(n,Nk), vma(n,Nk), vmb(n,Nk), vmc(n,Nk)
+      real pr(n,Nk), vma(n,Nk), vmb(n,Nk), vmc(n,Nk), ex, q(3)
 *
 *     ---------------------------------------------------------------
 *
@@ -85,9 +85,17 @@
             aa=xm-x0
             bb=xp-x0
          endif
-         q1=alog(xp/xm)
-         q2=(xp-xm)
-         q3=(xp**2.-xm**2.)/2.
+
+         do l=1,3
+            ex=real(l)-1.
+            if(ex.ne.0.) q(l)=(xp**ex-xm**ex)/ex
+            if(ex.eq.0.) q(l)=alog(xp/xm)
+         enddo
+
+         q1=q(1)
+         q2=q(2)
+         q3=q(3)
+
          q3=q3-x0*(2.0*q2-x0*q1)
          q2=q2-x0*q1
          cc=aa**2

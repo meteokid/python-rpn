@@ -4,7 +4,7 @@
 *
       subroutine p_set
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     M. Desgagne 
@@ -22,9 +22,13 @@
 * v2_32 - Dugas B.           - add p_rad_nivl
 * v3_00 - Laroche S.         - initialize simplified physics variable
 *                              add namelist simplified physics
+* v3.01 - Leduc A-M.         - add P_cond_kfcpcp_s and change P_cond_shlct_s
+*                              to P_cond_shlct_s(1) and P_cond_shlct_s(2)
 * v3_02 - Dugas B.           - account for a possible second call to the physics
 *                              and add P_rad_qco2, P_pbl_dumpbus initializations
-*
+* v3_03 - Desgagne M.        - re-activate P_cond_filco for LAM
+* v3_03 - Bilodeau B.        - add P_pbl_as, P_pbl_beta and P_cond_kkl
+* v3_03 - Dugas B.           - add P_str_strato_L
 *object
 *       See above id
 *	
@@ -85,6 +89,8 @@
       P_clim_clima_L = .false.
       P_clim_ininc_L = .false.
 *
+      P_str_strato_L = .false.
+*
       P_pbl_z0tcst_L = .true.
       P_pbl_drag_L   = .false.
       P_pbl_ocean_L  = .false.
@@ -94,6 +100,7 @@
       P_pbl_snwmlt_L = .false.
       P_pbl_stomat_L = .false.
       P_pbl_typsol_L = .false.
+      P_pbl_advectke_L = .false.
       P_pbl_bndlr_s  = 'NIL'
       P_pbl_mix_s    = 'BLAC62'
       P_pbl_cst      = 2.3E+06
@@ -108,6 +115,8 @@
       P_pbl_eqlat_8  = 5.0
       P_pbl_nslof    = 0
       P_pbl_dumpbus  = 0
+      P_pbl_as       = 12.0
+      P_pbl_beta     =  1.0
 
       P_pbl_albkg_L  = .false. 
       P_pbl_agreg_L  = .false.
@@ -130,7 +139,8 @@
       P_cond_yblnd   = 1
       P_cond_conv_s  = 'NIL'
       P_cond_stcon_s = 'NIL'
-      P_cond_shlct_s = 'NIL'
+      P_cond_shlct_s(1) = ' '
+      P_cond_shlct_s(2) = ' '
       P_cond_dzsedi  = -1.
       P_cond_hc      = 0.0
       P_cond_hf      = 0.0
@@ -144,6 +154,8 @@
       P_cond_kfcdet  = 0.
       P_cond_kfctimec= 3600.
       P_cond_kfctimea= 3600.
+      P_cond_kfcpcp_s= 'ORI'
+      P_cond_kkl     = 0.1
 *
       P_gwd_s        = 'GWD86'
 *
@@ -210,7 +222,8 @@
 *
          P_cond2_conv_S   = P_cond_conv_S
          P_cond2_stcon_S  = P_cond_stcon_S
-         P_cond2_shlct_S  = P_cond_shlct_S
+         P_cond2_shlct_S(1)= P_cond_shlct_S(1)
+         P_cond2_shlct_S(2)= P_cond_shlct_S(2)
          P_cond2_satu_L   = P_cond_satu_L
          P_cond2_ilwc_L   = P_cond_ilwc_L
          P_cond2_kfcmom_L = P_cond_kfcmom_L
@@ -261,6 +274,7 @@
       COMMON_BROADCAST(prad_i)
       COMMON_BROADCAST(prad_r)
       COMMON_BROADCAST(pclim_l)
+      COMMON_BROADCAST(pstr_l)
       COMMON_BROADCAST(ppbl_c)
       COMMON_BROADCAST(ppbl_l)
       COMMON_BROADCAST(ppbl_i)
@@ -334,10 +348,10 @@
          if (lun_out.gt.0) write(lun_out,7000)
       endif
 *
-      if ((G_lam).and.(P_cond_filco.ne.0.)) then
-         P_cond_filco = 0.
-         if (lun_out.gt.0) write(lun_out,7100)
-      endif
+c      if ((G_lam).and.(P_cond_filco.ne.0.)) then
+c         P_cond_filco = 0.
+c         if (lun_out.gt.0) write(lun_out,7100)
+c      endif
 *
 #if defined (MULTI)
 #if defined (NEC)

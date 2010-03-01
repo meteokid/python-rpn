@@ -14,6 +14,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *language
 *     fortran 77
@@ -69,7 +70,7 @@
       pointer (paorm, orm(LDIST_SHAPE,*))
 *
 *     __________________________________________________________
-      if( .not. Schm_hydro_L ) call gem_stop('adw_main_3_int_tr',-1)
+*
       if(       Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_tr',-1)
 *     __________________________________________________________
 *
@@ -117,6 +118,12 @@
       pnlkey1(6) = VMM_KEY(rthm)
       pnlod = 6
 *
+      if (.not. Schm_hydro_L) then
+         pnlkey1(7) = VMM_KEY(rwm)
+         pnlkey1(8) = VMM_KEY(rvvm)
+         pnlod = 8 
+      endif
+*
       pnerr = vmmlod(pnlkey1,pnlod)
 *
       pnerr =  VMM_GET_VAR(ruw1m)
@@ -125,6 +132,11 @@
       pnerr =  VMM_GET_VAR(rvw2m)
       pnerr =  VMM_GET_VAR(rcnm)
       pnerr =  VMM_GET_VAR(rthm)
+*
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(rwm)
+         pnerr = VMM_GET_VAR(rvvm)
+      endif
 *
       call adw_interp_tr (ruw2m, ruw1m, F_um, F_vm,
      %                    .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
@@ -137,6 +149,15 @@
 *
       call adw_interp_tr (rthm, rthm, F_um, F_vm,
      %                   .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      if (.not. Schm_hydro_L) then
+
+          call adw_interp_tr (rwm, rwm, F_um, F_vm,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+          call adw_interp_tr (rvvm, rvvm, F_um, F_vm,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+      endif
 *
       if ( Orh_icn .eq. Schm_itcn ) then
 *

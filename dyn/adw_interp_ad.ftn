@@ -6,13 +6,13 @@
      %                                  F_inm,F_um,F_vm,
      %                           F_wind_L,F_mono_L,DIST_DIM,Nk,
      %                           ipart,F_inca,F_zinc,F_kdim,F_nij,F_nijplus,
-     %                           F_nk,F_ksep)
+     %                           F_nk,F_ksep,i0,in,j0,jn)
 *
 #include "impnone.cdk"
 *
       logical F_wind_L, F_mono_L
 *
-      integer DIST_DIM, Nk
+      integer DIST_DIM, Nk,i0,in,j0,jn
 *
       real F_out (DIST_SHAPE, Nk),
      %     F_in  (DIST_SHAPE, Nk)
@@ -31,6 +31,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured Adw_main 
 * v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *language
 *     fortran 77
@@ -73,14 +74,13 @@
 ************************************************************************
       integer i, j, k, nijk, nijkag, n, dest_ni
 *
-      real dummy
+      real F_in0(LDIST_SHAPE,l_nk)
 *
       real*8, parameter :: ZERO_8 = 0.0
 *
 *     ____________________________________________________________
 *
       if (ipart.ne.1.and.ipart.ne.2) call gem_stop('adw_interp_ad',-1)
-      if (G_lam)                     call gem_stop('adw_interp_ad',-1)
 *     ____________________________________________________________
 *
       nijk   = F_nij*l_nk
@@ -157,8 +157,8 @@
 *
 ************************************************************************
       do k = l_nk,1,-1
-      do j = l_nj,1,-1
-      do i = l_ni,1,-1
+      do j = jn,j0,-1
+      do i = in,i0,-1
 *
       Adw_wrkc ( (k-1)*F_nij+(j-1)*l_ni+i ) = F_out(i,j,k) + Adw_wrkc ( (k-1)*F_nij+(j-1)*l_ni+i )
       F_out(i,j,k)                          = ZERO_8
@@ -174,7 +174,7 @@
      %                     Adwm_xdd1m,Adwm_capy1m,Adwm_ygg1m,
      %                     Adwm_ydd1m,Adwm_capz1m,Adwm_cz1m,
      %                     nijk, F_mono_L,
-     %                     F_inca,F_zinc,F_kdim,F_nij,F_nijplus,F_nk,F_ksep)
+     %                     F_inca,F_zinc,F_kdim,F_nij,F_nijplus,F_nk,F_ksep,i0,in,j0,jn,l_nk)
 *
 *     -------------------------------------------------------------
 *     IPART=2 does the adjoint of 2nd derivate and addition to F_in
@@ -237,9 +237,30 @@
           dest_ni=G_ni
       endif
 *
+      if (G_lam) then
+          do k=1,l_nk
+          do j=l_miny,l_maxy
+          do i=l_minx,l_maxx
+          F_in0(i,j,k) = F_in(i,j,k) 
+          end do
+          end do
+          end do
+      endif
+*
       call rpn_comm_adj_halox (F_in, LDIST_DIM, l_ni, l_nj, l_nk,
      % Adw_halox, Adw_haloy, G_periodx, G_periody, F_u, -Adw_halox+1,
      % Adw_nic+Adw_halox, -Adw_haloy+1, Adw_njc+Adw_haloy, dest_ni, n)
+*
+      if (G_lam) then
+          do k=1,l_nk
+          do j=l_miny,l_maxy
+          do i=l_minx,l_maxx
+          F_in (i,j,k) = F_in0(i,j,k) + F_in(i,j,k)
+          F_in0(i,j,k) = ZERO_8 
+          end do
+          end do
+          end do
+      endif
 *
 *     Zero adjoint variable
 *     ---------------------

@@ -13,6 +13,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_30 - Edouard S.        - remove pi' at the top
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *object
 *     see id section
@@ -29,26 +30,28 @@
 *
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('t22t0_ad')
-*     ______________________________________________________
-*
 *
 *C       1.    Change all variable names and exchange their keys
 *              -------------------------------------------------
 *
       call shuffle(vmmk_ut2   ,vmmk_ut0   ,vmmk_ut2_s)
       call shuffle(vmmk_vt2   ,vmmk_vt0   ,vmmk_vt2_s)
+      call shuffle(vmmk_wt2   ,vmmk_wt0   ,vmmk_wt2_s)
       call shuffle(vmmk_tdt2  ,vmmk_tdt0  ,vmmk_tdt2_s)
       call shuffle(vmmk_tt2   ,vmmk_tt0   ,vmmk_tt2_s)
       call shuffle(vmmk_fit2  ,vmmk_fit0  ,vmmk_fit2_s)
       call shuffle(vmmk_qt2   ,vmmk_qt0   ,vmmk_qt2_s)
       call shuffle(vmmk_tpt2  ,vmmk_tpt0  ,vmmk_tpt2_s)
       call shuffle(vmmk_fipt2 ,vmmk_fipt0 ,vmmk_fipt2_s)
+      call shuffle(vmmk_qpt2  ,vmmk_qpt0  ,vmmk_qpt2_s)
       call shuffle(vmmk_pipt2 ,vmmk_pipt0 ,vmmk_pipt2_s)
       call shuffle(vmmk_tplt2 ,vmmk_tplt0 ,vmmk_tplt2_s)
       call shuffle(vmmk_psdt2 ,vmmk_psdt0 ,vmmk_psdt2_s)
       call shuffle(vmmk_st2   ,vmmk_st0   ,vmmk_st2_s)
 *
+      if (.not. Schm_hydro_L) then
+         call shuffle(vmmk_mut2 ,vmmk_mut0 ,vmmk_mut2_s)
+      endif
       if ( Tr3d_ntr .gt. 0 ) then
          call shuffle(vmmk_trt2  ,vmmk_trt0  ,vmmk_trt2_s)
       endif

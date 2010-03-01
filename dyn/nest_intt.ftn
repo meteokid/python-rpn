@@ -2,13 +2,17 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine nest_intt
+      subroutine nest_intt (F_done)
+*
       implicit none
+*
+      logical F_done
 *
 *author   M. Desgagne - April 2002
 *
 *revision
 * v3_01 - Desgagne M.       - initial version (after MC2 v_4.9.3)
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *implicits
 #include "glb_ld.cdk"
@@ -20,6 +24,7 @@
 #include "ptopo.cdk"
 #include "lctl.cdk"
 #include "cstv.cdk"
+#include "v4dg.cdk"
 *
 *modules
       integer  vmmlod,vmmget,vmmuld,newdate
@@ -35,7 +40,15 @@
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
       data done /.false./
       save done,tf_nest
+*
 *     ---------------------------------------------------------------
+*
+*     -------------------------------------------------------
+*     When Regular forward GEM, F_done = .F.
+*     When 4D-Var, F_done = .T. if not first forward run
+*     -------------------------------------------------------
+*
+      if ( V4dg_conf.eq.0.or..not.F_done ) then
 *
       if (Lctl_step.eq.1) Pil_current_S = Pil_runstrt_S
       if (.not.done) then
@@ -248,6 +261,29 @@
       endif
 *
       done = .true.
+*
+      if ( V4dg_conf.ne.0 ) then
+*
+*        ----------------------------------------------
+*        Store TRAJ NESTING fields at current time step
+*        ----------------------------------------------
+         V4dg_rwnest = 1
+         call v4d_rwnest ()
+*
+      endif
+*
+*     -----------------------
+*     4D-Var when F_done
+*     -----------------------
+      else
+*
+*        ------------------------------------------------
+*        Recover TRAJ NESTING fields at current time step
+*        ------------------------------------------------
+         V4dg_rwnest = 0
+         call v4d_rwnest ()
+*
+      endif
 *
 *     ---------------------------------------------------------------
       return

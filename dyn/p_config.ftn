@@ -4,8 +4,7 @@
 #include <model_macros_f.h>
 *
       subroutine p_config
-*
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     m. roch - a. methot - april 1994
@@ -23,6 +22,8 @@
 *                             trajectory and options
 * v3_02 - Dugas B.          - account for a possible second call to the physics
 *                             and add qco2 initialization
+* v3_03 - Bilodeau B.       - add P_pbl_as, P_pbl_beta and P_cond_kkl
+* v3_03 - Dugas B.          - add P_str_strato
 *
 *object
 *     See above id.
@@ -39,6 +40,7 @@
 #include "cstv.cdk"
 #include "p_pbl.cdk"
 #include "p_clim.cdk"
+#include "p_str.cdk"
 #include "p_rad.cdk"
 #include "p_gwd.cdk"
 #include "p_cond.cdk"
@@ -97,9 +99,6 @@
       call phyoptl('SNOWMELT', P_pbl_snwmlt_L ,       1, 'SET' )
       call phyoptl('STOMATE' , P_pbl_stomat_L ,       1, 'SET' )
       call phyoptl('TYPSOL'  , P_pbl_typsol_L ,       1, 'SET' )
-      call phyoptr('PARSOL'  , P_pbl_prsol    ,       6, 'SET' )
-      call phyoptr('EPONGE'  , P_pbl_spng     , cnmaxad, 'SET' )
-*
       call phyoptl('AGREGAT'  ,P_pbl_agreg_L  ,       1, 'SET' )
       call phyoptl('CORTM'  ,  P_pbl_cortm_L  ,       1, 'SET' )
       call phyoptl('CORTS'  ,  P_pbl_corts_L  ,       1, 'SET' )
@@ -109,7 +108,12 @@
       call phyoptl('ICEMELT'  ,P_pbl_iceme_L  ,       1, 'SET' )
       call phyoptl('SNOALB_ANL',P_pbl_snoalb_L,       1, 'SET' )
       call phyoptl('Z0TCST'   ,P_pbl_z0tcst_L ,       1, 'SET' )
+      call phyoptl('ADVECTKE', P_pbl_advectke_L,      1, 'SET' )
       call phyopti('NSLOFLUX' ,P_pbl_nslof    ,       1, 'SET' )
+      call phyoptr('PARSOL'  , P_pbl_prsol    ,       6, 'SET' )
+      call phyoptr('EPONGE'  , P_pbl_spng     , cnmaxad, 'SET' )
+      call phyoptr('AS'      , P_pbl_as       ,       1, 'SET' )
+      call phyoptr('BETA'    , P_pbl_beta     ,       1, 'SET' )
 *
       call phyoptc('GWDRAG'  , p_gwd_s        ,       1, 'SET' )
 *
@@ -119,7 +123,7 @@
       call phyoptc('STCOND'  , P_cond_stcon_s ,       1, 'SET' )
       call phyoptl('INILWC'  , P_cond_ilwc_L  ,       1, 'SET' )
       call phyoptl('SATUCO'  , P_cond_satu_L  ,       1, 'SET' )
-      call phyoptc('SHLCVT'  , P_cond_shlct_s ,       1, 'SET' )
+      call phyoptc('SHLCVT'  , P_cond_shlct_s ,       2, 'SET' )
       call phyoptr('HC'      , P_cond_hc      ,       1, 'SET' )
       call phyoptr('HF'      , P_cond_hf      ,       1, 'SET' )
       call phyoptr('HM'      , P_cond_hm      ,       1, 'SET' )
@@ -132,8 +136,10 @@
       call phyoptr('KFCDET'  , P_cond_kfcdet  ,       1, 'SET' )
       call phyoptr('KFCTIMEC', P_cond_kfctimec,       1, 'SET' )
       call phyoptr('KFCTIMEA', P_cond_kfctimea,       1, 'SET' )
+      call phyoptc('KFCPCP'  , P_cond_kfcpcp_s,       1, 'SET' )
 *
       call phyoptr('DZSEDI'  , P_cond_dzsedi  ,       1, 'SET' )
+      call phyoptr('KKL'     , P_cond_kkl     ,       1, 'SET' )
 *
       call phyoptc('RADIA'   , P_rad_schm_s   ,       1, 'SET' )
       call phyoptc('RADFILES', P_rad_ftp_s    ,       1, 'SET' )
@@ -165,7 +171,7 @@
       call phyopti('MOYHR'   , P_out_moyhr    ,       1, 'SET' )
 *
       call phyoptl('CLIMAT'  , P_clim_clima_L ,       1, 'SET' )
-*
+      call phyoptl('STRATOS' , P_str_strato_L ,       1, 'SET' )
 *
       call phyopti('LIN_V4D'   , V4dg_conf    ,       1, 'SET' )
       call phyopti('LIN_KPH'   , P4d_kdphys   ,       1, 'SET' )
@@ -219,7 +225,7 @@
 *
          call phyoptc('CONVEC'  , P_cond2_conv_s  ,   1, 'SET' )
          call phyoptc('STCOND'  , P_cond2_stcon_s ,   1, 'SET' )
-         call phyoptc('SHLCVT'  , P_cond2_shlct_s ,   1, 'SET' )
+         call phyoptc('SHLCVT'  , P_cond2_shlct_s ,   2, 'SET' )
 *
          call phyoptl('SATUCO'  , P_cond2_satu_L  ,   1, 'SET' )
          call phyoptl('INILWC'  , P_cond2_ilwc_L  ,   1, 'SET' )

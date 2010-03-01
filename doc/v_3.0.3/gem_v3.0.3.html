@@ -1,0 +1,53 @@
+<html>
+<body bgcolor="#FFFFFF">
+<pre class=text>
+<b>
+
+        ############# GEMDM Model -- Version 3.0.3 ###############
+                               May 6 2003
+</b>
+
+        Version 3.0.3 of the GEMDM dynamics is now ready and available 
+        in directory:
+              "$ARMNLIB/modeles/GEMDM_shared/v_3.0.3/RCS_DYN"
+	It is connected to RPN/CMC physics version 3.8 in directory:
+	      "$ARMNLIB/modeles/PHY/v_3.8/RCS:3.8"
+
+############################################################################
+<b>
+MAIN FEATURES:
+</b>
+
+  This version is the first one to be tagged as Operational.
+  With respect to the previous version 3.0.2, the main features
+  of this version are:
+
+1) modification to the physics interface to run physics v_3.8;
+
+2) generalization of the physics tracers to include non-water
+   related quantities such as turbulent kinetic energy (EN). It
+   is now possible to have the dynamics advect EN when setting
+   control parameter P_pbl_advectke_L to .true. in namelist
+   &physics
+
+3) important correction to the vertical hybrid formulation
+   in order to remove a vertical decoupling of the vertical 
+   motion (ref: Sylvie Gravel);
+
+4) synchronization with V4D routines (Tanguay et al.);
+
+5) minor corrections allowing a full compilation and load
+   on the new IBM system;
+
+8) miscellaneous and bugfixes:
+
+  - blocthm.ftn: illegal access to h20 tracers when running 
+                 without physics
+  - calzz.ftn: add computation of ZZ at step=0
+  - vspng_abc.ftn: adjust horizontal scope of operators
+
+############################################################################
+    
+</pre>
+</body>
+</html>

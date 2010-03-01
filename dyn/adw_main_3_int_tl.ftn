@@ -15,6 +15,7 @@
 * v2_31 - Tanguay M.        - initial MPI version
 * v3_00 - Tanguay M.        - adapt to restructured adw_main 
 * v3_02 - Tanguay M.        - restore tracers monotone if V4dg_conf.ne.0
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *language
 *     fortran 77
@@ -74,7 +75,6 @@
 *
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gem_stop('adw_main_3_int_tl',-1)
       if(     Tr2d_ntr.ne.0) call gem_stop('adw_main_3_int_tl',-1)
 *     ______________________________________________________
 *
@@ -137,6 +137,12 @@
       pnlkey1(6) = VMM_KEY(rth)
       pnlod = 6
 *
+      if (.not. Schm_hydro_L) then
+         pnlkey1(1+pnlod) = VMM_KEY(rw)
+         pnlkey1(2+pnlod) = VMM_KEY(rvv)
+         pnlod = 2+pnlod 
+      endif
+*
       pnlkey1(1+pnlod) = VMM_KEY(ruw1m)
       pnlkey1(2+pnlod) = VMM_KEY(rvw1m)
       pnlkey1(3+pnlod) = VMM_KEY(ruw2m)
@@ -144,6 +150,12 @@
       pnlkey1(5+pnlod) = VMM_KEY(rcnm)
       pnlkey1(6+pnlod) = VMM_KEY(rthm)
       pnlod = 6+pnlod
+*
+      if (.not. Schm_hydro_L) then
+         pnlkey1(1+pnlod) = VMM_KEY(rwm)
+         pnlkey1(2+pnlod) = VMM_KEY(rvvm)
+         pnlod = 2+pnlod 
+      endif
 *
       pnerr = vmmlod(pnlkey1,pnlod)
 *
@@ -154,12 +166,22 @@
       pnerr =  VMM_GET_VAR(rcn)
       pnerr =  VMM_GET_VAR(rth)
 *
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(rw)
+         pnerr = VMM_GET_VAR(rvv)
+      endif
+*
       pnerr =  VMM_GET_VAR(ruw1m)
       pnerr =  VMM_GET_VAR(rvw1m)
       pnerr =  VMM_GET_VAR(ruw2m)
       pnerr =  VMM_GET_VAR(rvw2m)
       pnerr =  VMM_GET_VAR(rcnm)
       pnerr =  VMM_GET_VAR(rthm)
+*
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(rwm)
+         pnerr = VMM_GET_VAR(rvvm)
+      endif
 *
       call adw_interp_tl (ruw2, ruw1, F_u, F_v,
      %                    ruw2m,ruw1m,F_um,F_vm,
@@ -176,6 +198,17 @@
       call adw_interp_tl (rth, rth, F_u, F_v,
      %                    rthm,rthm,F_um,F_vm,
      %                    .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      if (.not. Schm_hydro_L) then
+
+          call adw_interp_tl (rw, rw, F_u, F_v,
+     %                        rwm,rwm,F_um,F_vm,
+     %                        .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+          call adw_interp_tl (rvv, rvv, F_u, F_v,
+     %                        rvvm,rvvm,F_um,F_vm,
+     %                        .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+      endif
 *
       if ( Orh_icn .eq. Schm_itcn ) then
 *

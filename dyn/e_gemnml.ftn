@@ -15,6 +15,7 @@
 #include "e_grids.cdk"
 #include "e_tr.cdk"
 *
+#include "cst_lis.cdk"
 #include "dcst.cdk"
 #include "out1.cdk"
 #include "grd.cdk"
@@ -24,22 +25,11 @@
 #include "hblen.cdk"
 #include "e_nml.cdk"
 *
-      logical set_dcst8
-      integer fnom
+      integer  fnom, set_dcst8
       external fnom, set_dcst8
 *
       character*120 fn,dumc
       integer i,err,unf
-      integer cnbre
-      parameter(cnbre=31)
-      character*10 liste(cnbre)
-      data liste/  'CPD'   , 'CPV' , 'RGASD' , 'RGASV', 'TRPL' ,
-     +             'TCDK'  , 'RAUW', 'EPS1'  , 'EPS2' , 'DELTA',
-     +             'CAPPA' , 'TGL' , 'CONSOL', 'GRAV' , 'RAYT' ,
-     +             'STEFAN', 'PI'  , 'OMEGA' , 'KNAMS', 'STLO' ,
-     +             'KARMAN', 'RIC' , 'CHLC'  , 'CHLF' , 'T1S'  ,
-     +             'T2S'   , 'AW'  , 'BW'    , 'AI'   , 'BI'   ,
-     +             'SLP' /
 *
 *--------------------------------------------------------------------
 *
@@ -194,9 +184,8 @@
       write (6  ,nml=grid)
       write (6  ,nml=gement_p)
 *
-      Ptopo_numproc = 1
       unf = 44
-      if (.not. set_dcst8 (Dcst_cpd_8,liste,cnbre,unf,6))
+      if (set_dcst8 (Dcst_cpd_8,liste_S,cnbre,unf,6) .ne. 0)
      $     call e_arret ('SET_DCST8')
 *
       call e_trinit

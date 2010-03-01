@@ -16,6 +16,7 @@
 * v3_00 - Tanguay M         - open WA file Conversion  
 * v3_00 - Laroche S.        - additions for simplified physics
 * v3_02 - Buehner M.        - added section for ref state file for NLMX event (SV job)
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 *
 *object
 *     Open WA file for TRAJECTORY (all timesteps)
@@ -37,6 +38,7 @@
 #include "orhm.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
+#include "nestm.cdk"
 *
 *modules
       external fnom, vmmcre
@@ -45,10 +47,7 @@
       integer i,pnerr
 *
       character*80 attrib_S,attrit_S
-*     ______________________________________________________
-*
-      if(.not. Schm_hydro_L) call gem_stop('v4d_settraj',-1)
-*     ______________________________________________________
+**
 *
 *C    -------------------------------------------
 *C    Open WA file for TRAJECTORY (all timesteps)
@@ -136,82 +135,64 @@
          COMMON_INIT(vt2m,-100)
          COMMON_INIT(vtxm,-100)
 *
-*        Assign the names of the variables
-*        ---------------------------------
-         VMM_NAM(ut0m   )= '4UUT0M'
-         VMM_NAM(vt0m   )= '4VVT0M'
-         VMM_NAM(tdt0m  )= '4DTDT0M'
-         VMM_NAM(qt0m   )= '4QQT0M'
-         VMM_NAM(tpt0m  )= '4TTPT0M'
-         VMM_NAM(fipt0m )= '4GFIPT0M'
-         VMM_NAM(pipt0m )= '4PPIPT0M'
-         VMM_NAM(tplt0m )= '4TTPLT0M'
-         VMM_NAM(psdt0m )= '4KPSDT0M'
-         VMM_NAM(st0m   )= '4SST0M'
-         VMM_NAM(trt0m  )= 'TRT0M'
-*
-         VMM_NAM(uthm   )= '4UUTHM'
-         VMM_NAM(vthm   )= '4VVTHM'
-         VMM_NAM(psdthm )= '4KPSDTHM'
-         VMM_NAM(xthm   )= '4YXTHM'
-         VMM_NAM(ythm   )= '4YYTHM'
-         VMM_NAM(zthm   )= '4ZZTHM'
-         VMM_NAM(xcthm  )= '4YXCTHM'
-         VMM_NAM(ycthm  )= '4YYCTHM'
-         VMM_NAM(zcthm  )= '4ZZCTHM'
-*
-         VMM_NAM(ut1m   )= '4UUT1M'
-         VMM_NAM(vt1m   )= '4VVT1M'
-         VMM_NAM(tdt1m  )= '4DTDT1M'
-         VMM_NAM(qt1m   )= '4QQT1M'
-         VMM_NAM(tpt1m  )= '4TTPT1M'
-         VMM_NAM(fipt1m )= '4GFIPT1M'
-         VMM_NAM(pipt1m )= '4PPIPT1M'
-         VMM_NAM(tplt1m )= '4TTPLT1M'
-         VMM_NAM(psdt1m )= '4KPSDT1M'
-         VMM_NAM(st1m   )= '4SST1M'
-         VMM_NAM(trt1m  )= 'TRT1M'
-*
-         VMM_NAM(xct1m  )= '4YXCT1M'
-         VMM_NAM(yct1m  )= '4YYCT1M'
-         VMM_NAM(zct1m  )= '4ZZCT1M'
-*
-         VMM_NAM(ut2m   )= '4UUT2M'
-         VMM_NAM(vt2m   )= '4VVT2M'
-         VMM_NAM(tdt2m  )= '4DTDT2M'
-         VMM_NAM(qt2m   )= '4QQT2M'
-         VMM_NAM(tpt2m  )= '4TTPT2M'
-         VMM_NAM(fipt2m )= '4GFIPT2M'
-         VMM_NAM(pipt2m )= '4PPIPT2M'
-         VMM_NAM(tplt2m )= '4TTPLT2M'
-         VMM_NAM(psdt2m )= '4KPSDT2M'
-         VMM_NAM(st2m   )= '4SST2M'
-         VMM_NAM(trt2m  )= 'TRT2M'
-*
-         VMM_NAM(gptxm  )= '4GGPTXM'
-         VMM_NAM(gxtxm  )= '4XGXTXM'
-*
 *        Set the attributes of the variables
 *        -----------------------------------
          attrib_S = 'SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
          attrit_S = 'SAVE=Y,CL=3,W=5,INIT=R,MUSTEXIST'
 *
-*        Create the virtual memory for the variables 
-*        -------------------------------------------
+*        Initialize comdeck for TRAJ variables at time t0
+*        ------------------------------------------------
+         VMM_NAM(ut0m   )= 'UT0M'
+         VMM_NAM(vt0m   )= 'VT0M'
+         VMM_NAM(wt0m   )= 'WT0M'
+         VMM_NAM(tdt0m  )= 'TDT0M'
+         VMM_NAM(tt0m   )= 'TT0M'
+         VMM_NAM(fit0m  )= 'FIT0M'
+         VMM_NAM(qt0m   )= 'QT0M'
+         VMM_NAM(tpt0m  )= 'TPT0M'
+         VMM_NAM(fipt0m )= 'FIP0M'
+         VMM_NAM(qpt0m  )= 'QPT0M'
+         VMM_NAM(pipt0m )= 'PIP0M'
+         VMM_NAM(tplt0m )= 'TPL0M'
+         VMM_NAM(mut0m  )= 'MUT0M'
+         VMM_NAM(psdt0m )= 'PSD0M'
+         VMM_NAM(st0m   )= 'ST0M'
+         VMM_NAM(trt0m  )= 'TRT0M'
+*
          VMM_CREATE(ut0m  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(vt0m  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(wt0m  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(tdt0m , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(tt0m  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(fit0m , LARRAY3D, 1, attrib_S)
          VMM_CREATE(qt0m  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(tpt0m , LARRAY3D, 1, attrib_S)
          VMM_CREATE(fipt0m, LARRAY3D, 1, attrib_S)
+         VMM_CREATE(qpt0m , LARRAY3D, 1, attrib_S)
          VMM_CREATE(pipt0m, LARRAY3D, 1, attrib_S)
          VMM_CREATE(tplt0m, LARRAY3D, 1, attrib_S)
          VMM_CREATE(psdt0m, LARRAY3D, 1, attrib_S)
          VMM_CREATE(st0m  , LARRAY2D, 1, attrib_S)
 *
-         if ( Tr3d_ntr .gt. 0 ) then
-            VMM_CREATE(trt0m, LARRAY3D, Tr3d_ntr, attrit_S)
+         if (.not. Schm_hydro_L) then
+         VMM_CREATE(mut0m , LARRAY3D, 1, attrib_S)
          endif
+*
+         if ( Tr3d_ntr .gt. 0 ) then
+         VMM_CREATE(trt0m, LARRAY3D, Tr3d_ntr, attrit_S)
+         endif
+*
+*        Initialize comdeck for TRAJ variables at time t0-dt/2 (th) 
+*        ----------------------------------------------------------
+         VMM_NAM(uthm   )= 'UTHM'
+         VMM_NAM(vthm   )= 'VTHM'
+         VMM_NAM(psdthm )= 'PSDHM'
+         VMM_NAM(xthm   )= 'XTHM'
+         VMM_NAM(ythm   )= 'YTHM'
+         VMM_NAM(zthm   )= 'ZTHM'
+         VMM_NAM(xcthm  )= 'XCTHM'
+         VMM_NAM(ycthm  )= 'YCTHM'
+         VMM_NAM(zcthm  )= 'ZCTHM'
 *
          VMM_CREATE(uthm  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(vthm  , LARRAY3D, 1, attrib_S)
@@ -223,27 +204,88 @@
          VMM_CREATE(ycthm , l_ni*l_nj*l_nk, 1, attrib_S)
          VMM_CREATE(zcthm , l_ni*l_nj*l_nk, 1, attrib_S)
 *
+*        Initialize comdeck for TRAJ variables at time t1
+*        ------------------------------------------------
+         VMM_NAM(ut1m   )= 'UT1M'
+         VMM_NAM(vt1m   )= 'VT1M'
+         VMM_NAM(wt1m   )= 'WT1M'
+         VMM_NAM(tdt1m  )= 'TDT1M'
+         VMM_NAM(tt1m   )= 'TT1M'
+         VMM_NAM(fit1m  )= 'FIT1M'
+         VMM_NAM(qt1m   )= 'QT1M'
+         VMM_NAM(tpt1m  )= 'TPT1M'
+         VMM_NAM(fipt1m )= 'FIP1M'
+         VMM_NAM(qpt1m  )= 'QPT1M'
+         VMM_NAM(pipt1m )= 'PIP1M'
+         VMM_NAM(tplt1m )= 'TPL1M'
+         VMM_NAM(mut1m  )= 'MUT1M'
+         VMM_NAM(psdt1m )= 'PSD1M'
+         VMM_NAM(st1m   )= 'ST1M'
+         VMM_NAM(trt1m  )= 'TRT1M'
+*
+         VMM_NAM(xct1m  )= 'XCT1M'
+         VMM_NAM(yct1m  )= 'YCT1M'
+         VMM_NAM(zct1m  )= 'ZCT1M'
+*
          VMM_CREATE(ut1m  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(vt1m  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(wt1m  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(tdt1m , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(tt1m  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(fit1m , LARRAY3D, 1, attrib_S)
          VMM_CREATE(qt1m  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(tpt1m , LARRAY3D, 1, attrib_S)
          VMM_CREATE(fipt1m, LARRAY3D, 1, attrib_S)
+         VMM_CREATE(qpt1m , LARRAY3D, 1, attrib_S)
          VMM_CREATE(pipt1m, LARRAY3D, 1, attrib_S)
          VMM_CREATE(tplt1m, LARRAY3D, 1, attrib_S)
          VMM_CREATE(psdt1m, LARRAY3D, 1, attrib_S)
          VMM_CREATE(st1m,   LARRAY2D, 1, attrib_S)
 *
+         if (.not. Schm_hydro_L) then
+         VMM_CREATE(mut1m , LARRAY3D, 1, attrib_S)
+         endif
+*
          if ( Tr3d_ntr .gt. 0 ) then
-            VMM_CREATE(trt1m, LARRAY3D, Tr3d_ntr, attrit_S)
+         VMM_CREATE(trt1m, LARRAY3D, Tr3d_ntr, attrit_S)
          endif
 *
          VMM_CREATE(xct1m , l_ni*l_nj*l_nk, 1, attrib_S)
          VMM_CREATE(yct1m , l_ni*l_nj*l_nk, 1, attrib_S)
          VMM_CREATE(zct1m , l_ni*l_nj*l_nk, 1, attrib_S)
 *
+*        --------------------------------------------------------------
+*C       Initialize comdeck for TRAJ variables at time t2 (No creation)
+*        --------------------------------------------------------------
+         VMM_NAM(ut2m   )= 'UT2M'
+         VMM_NAM(vt2m   )= 'VT2M'
+         VMM_NAM(wt2m   )= 'WT2M'
+         VMM_NAM(tdt2m  )= 'TDT2M'
+         VMM_NAM(tt2m   )= 'TT2M'
+         VMM_NAM(fit2m  )= 'FIT2M'
+         VMM_NAM(qt2m   )= 'QT2M'
+         VMM_NAM(tpt2m  )= 'TPT2M'
+         VMM_NAM(fipt2m )= 'FIP2M'
+         VMM_NAM(qpt2m  )= 'QPT2M'
+         VMM_NAM(pipt2m )= 'PIP2M'
+         VMM_NAM(tplt2m )= 'TPL2M'
+         VMM_NAM(mut2m  )= 'MUT2M'
+         VMM_NAM(psdt2m )= 'PSD2M'
+         VMM_NAM(st2m   )= 'ST2M'
+         VMM_NAM(trt2m  )= 'TRT2M'
+*
+*        ---------------------------------------------------------------
+*C       Initialize comdeck for TRAJ variables with no specific time tag  
+*        ---------------------------------------------------------------
+         VMM_NAM(gptxm  )= 'GPTXM'
+         VMM_NAM(gxtxm  )= 'GXTXM'
+         VMM_NAM(multxm )= 'MULXM'
+*
          VMM_CREATE(gptxm , LARRAY3D, 1, attrib_S)
          VMM_CREATE(gxtxm , LARRAY3D, 1, attrib_S)
+         if (.not. Schm_hydro_L) then
+         VMM_CREATE(multxm, LARRAY3D, 1, attrib_S)
+         endif
 *
 *        ----------------------------------------
 *        Initialize TRAJ right hand sides comdeck
@@ -255,24 +297,24 @@
 *
 *        Assign the names of the variables
 *        ---------------------------------
-         VMM_NAM(rum  )= '4MRUM'
-         VMM_NAM(rvm  )= '4MRVM'
-C        VMM_NAM(rw   )= '4MRW'
-         VMM_NAM(rcnm )= '4CRCNM'
-         VMM_NAM(rthm )= '4ERTHM'
-C        VMM_NAM(rvv  )= '4RRVV'
+         VMM_NAM(rum  )= 'MRUM'
+         VMM_NAM(rvm  )= 'MRVM'
+         VMM_NAM(rwm  )= 'MRWM'
+         VMM_NAM(rcnm )= 'RCNM'
+         VMM_NAM(rthm )= 'RTHM'
+         VMM_NAM(rvvm )= 'RVVM'
 *
-         VMM_NAM(rdm  )= '4RRDM'
-         VMM_NAM(r1m  )= '41R1M'
-C        VMM_NAM(r3   )= '43R3'
-C        VMM_NAM(r3p  )= '43R3P'
-         VMM_NAM(rhellm)= '4HRHELLM'
-         VMM_NAM(rhelnm)= '4HRHELNM'
+         VMM_NAM(rdm   )= 'MRRDM'
+         VMM_NAM(r1m   )= 'MR1M'
+         VMM_NAM(r3m   )= 'MR3M'
+         VMM_NAM(r3pm  )= 'MR3PM'
+         VMM_NAM(rhellm)= 'RHLLM'
+         VMM_NAM(rhelnm)= 'RHLNM'
 *
-         VMM_NAM(ruw1m )= '4MRUW1M'
-         VMM_NAM(ruw2m )= '4MRUW2M'
-         VMM_NAM(rvw1m )= '4MRVW1M'
-         VMM_NAM(rvw2m )= '4MRVW2M'
+         VMM_NAM(ruw1m )= 'RUW1M'
+         VMM_NAM(ruw2m )= 'RUW2M'
+         VMM_NAM(rvw1m )= 'RVW1M'
+         VMM_NAM(rvw2m )= 'RVW2M'
 *
 *        Set the attributes of the variables
 *        -----------------------------------
@@ -282,15 +324,15 @@ C        VMM_NAM(r3p  )= '43R3P'
 *        -------------------------------------------
          VMM_CREATE(rum  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(rvm  , LARRAY3D, 1, attrib_S)
-C        VMM_CREATE(rw   , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(rwm  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(rcnm , LARRAY3D, 1, attrib_S)
          VMM_CREATE(rthm , LARRAY3D, 1, attrib_S)
-C        VMM_CREATE(rvv  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(rvvm , LARRAY3D, 1, attrib_S)
 *
          VMM_CREATE(rdm  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(r1m  , LARRAY3D, 1, attrib_S)
-C        VMM_CREATE(r3   , LARRAY3D, 1, attrib_S)
-C        VMM_CREATE(r3p  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(r3m  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(r3pm , LARRAY3D, 1, attrib_S)
          VMM_CREATE(rhellm,LARRAY3D, 1, attrib_S)
          VMM_CREATE(rhelnm,LARRAY3D, 1, attrib_S)
 *
@@ -311,6 +353,8 @@ C        VMM_CREATE(r3p  , LARRAY3D, 1, attrib_S)
 *        --------------------------------
          VMM_NAM(orum  ) = 'RUORUM'
          VMM_NAM(orvm  ) = 'RVORVM'
+         VMM_NAM(orwm  ) = 'RORWM'
+         VMM_NAM(orvvm ) = 'RORVVM'
          VMM_NAM(orcnm ) = 'RORCNM'
          VMM_NAM(orthm ) = 'RORTHM'
          VMM_NAM(oruw2m) = 'RORUW2M'
@@ -330,9 +374,70 @@ C        VMM_CREATE(r3p  , LARRAY3D, 1, attrib_S)
          VMM_CREATE(oruw2m, LARRAY3D, 1, attrib_S)
          VMM_CREATE(orvw2m, LARRAY3D, 1, attrib_S)
 *
+         if (.not. Schm_hydro_L) then
+            VMM_CREATE(orwm  , LARRAY3D, 1, attrib_S)
+            VMM_CREATE(orvvm , LARRAY3D, 1, attrib_S)
+         endif
+*
          if ( Tr3d_ntr .gt. 0 ) then
             VMM_CREATE(ortrm, LARRAY3D, Tr3d_ntr, attrit_S)
          endif
+*
+*C    ---------------------------------------------------------------------------
+*C    Allocate VMM space for NESTING variable TRAJECTORY comdecks (one time step)
+*C    ---------------------------------------------------------------------------
+*
+         if (G_lam) then
+*
+         if (Lun_out.gt.0) write(Lun_out,2001)
+*
+*        Assign the names of the variables
+*        ---------------------------------
+         VMM_NAM(nestm_um   ) = 'NM_UM'
+         VMM_NAM(nestm_vm   ) = 'NM_VM'
+         VMM_NAM(nestm_tm   ) = 'NM_TM'
+         VMM_NAM(nestm_tpm  ) = 'NM_TPM'
+         VMM_NAM(nestm_psdm ) = 'NM_PSDM'
+         VMM_NAM(nestm_pipm ) = 'NM_PIPM'
+         VMM_NAM(nestm_fipm ) = 'NM_FIPM'
+         VMM_NAM(nestm_wm   ) = 'NM_WM'
+         VMM_NAM(nestm_tdm  ) = 'NM_TDM'
+         VMM_NAM(nestm_fim  ) = 'NM_FIM'
+         VMM_NAM(nestm_qm   ) = 'NM_QM'
+         VMM_NAM(nestm_sm   ) = 'NM_SM'
+         VMM_NAM(nestm_mum  ) = 'NM_MUM'
+*
+         VMM_NAM(nestm_trm  ) = 'NM_TRM'
+*
+*        Set the attributes of the variables
+*        -----------------------------------
+*
+         attrib_S='SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
+*
+         VMM_CREATE(nestm_um   , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_vm   , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_tm   , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_tpm  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_psdm , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_pipm , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_fipm , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_wm   , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_tdm  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_fim  , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_qm   , LARRAY3D, 1, attrib_S)
+         VMM_CREATE(nestm_sm   , LARRAY2D, 1, attrib_S)
+*
+         if (.not. Schm_hydro_L) then
+         VMM_CREATE(nestm_mum  , LARRAY3D, 1, attrib_S)
+         endif
+*
+         if ( Tr3d_ntr .gt. 0 ) then
+         VMM_CREATE(nestm_trm  , LARRAY3D, Tr3d_ntr, attrib_S)
+         endif
+*
+         endif
+*
+*     ---------------------------------------------------------------
 *
  1000 format(
      +//,'Open WA file for TRAJ (S/R V4D_SET_TRAJ)',
@@ -358,6 +463,14 @@ C        VMM_CREATE(r3p  , LARRAY3D, 1, attrib_S)
      +//,'ALLOCATE VMM SPACE FOR TRAJ COMDECKS USED FOR ONE TIME-STEP (S/R V4D_SETTRAJ)',
      + /,'=============================================================================',
      +//)
+*
+ 2001 format(
+     +/,'ALLOCATE VMM SPACE FOR NESTING VARIABLE TRAJECTORY COMDECKS (S/R V4D_SETTRAJ)',
+     +/,'=============================================================================')
+*
+ 2002 format(
+     +/,'ALLOCATE VMM SPACE FOR NESTING VARIABLE FIXED COMDECKS (S/R V4D_SETTRAJ)',
+     +/,'========================================================================')
 *
       return
       end

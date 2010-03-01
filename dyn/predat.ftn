@@ -4,7 +4,7 @@
 *
       subroutine predat
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Michel Roch - rpn - oct 1993 
@@ -15,6 +15,7 @@
 * v2_31 - Desgagne M.       - remove treatment of HUT1 and QCT1
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_02 - Desgagne M.       - correction for non-hydrostatic version
+* v3_03 - Tanguay M.        - put v4d_predat inside 
 *
 *object
 *	Performs preprocessing of the data: part1. We compute:
@@ -40,15 +41,19 @@
 #include "schm.cdk"
 #include "ind.cdk"
 #include "lctl.cdk"
+#include "vt1.cdk"
+#include "v4dg.cdk"
 *
       integer i, j, k
       real pr1, pr2
 **
 *     __________________________________________________________________
 *
+      if ( V4dg_conf.eq.0 ) then
+*
       do j= 1, l_nj
       do i= 1, l_ni 
-           Ind_s(i,j)      = alog( exp(Ind_q(i,j,G_nk)) / Cstv_pisrf_8 )
+           Ind_s(i,j)      = dlog( exp(Ind_q(i,j,G_nk)) / Cstv_pisrf_8 )
          Ind_pip(i,j,   1) = 0.
          Ind_pip(i,j,G_nk) = exp(Ind_q(i,j,G_nk)) - geomg_z_8(G_nk)
       end do
@@ -98,6 +103,32 @@
          end do
          call initw2 ( Ind_w, Ind_u, Ind_v, Ind_psd, Ind_fi, Ind_t, 
      $                                            Ind_s, LDIST_DIM ) 
+      endif
+*
+*     ------
+*     4D-Var
+*     ------
+      else
+*
+*        Preprocessing of Control   variables only if V4dg_part=2
+*        Preprocessing of Dependent variables only if V4dg_part=3
+*        --------------------------------------------------------
+         call v4d_predat (V4dg_part)
+*
+*        Set qp=0 explicitly when .not.Schm_hydro_L and 4D-Var
+*        -----------------------------------------------------
+         if ( V4dg_part.eq.3.and..not.Schm_hydro_L ) then
+*
+           do k=1,G_nk
+           do j=1,l_nj
+           do i=1,l_ni
+              Ind_qp(i,j,k) = 0.0
+           end do
+           end do
+           end do
+*
+         endif
+*
       endif
 *
 *     __________________________________________________________________

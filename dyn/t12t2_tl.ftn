@@ -14,6 +14,7 @@
 * v2_30 - Edouard S.        - remove pi' at the top (pptt1,pptt2)
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate
 *                           - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *object
 *     see id section
@@ -31,9 +32,6 @@
 #include "vt2m.cdk"
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('t12t2_tl')
-*     ______________________________________________________
-*
 *C       1.    Change all variable names and exchange their keys
 *              -------------------------------------------------
 *
@@ -41,15 +39,22 @@
 *     ----------
       call shuffle(vmmk_ut2m   ,vmmk_ut1m   ,vmmk_ut2m_s)
       call shuffle(vmmk_vt2m   ,vmmk_vt1m   ,vmmk_vt2m_s)
+      call shuffle(vmmk_wt2m   ,vmmk_wt1m   ,vmmk_wt2m_s)
       call shuffle(vmmk_tdt2m  ,vmmk_tdt1m  ,vmmk_tdt2m_s)
+      call shuffle(vmmk_tt2m   ,vmmk_tt1m   ,vmmk_tt2m_s)
+      call shuffle(vmmk_fit2m  ,vmmk_fit1m  ,vmmk_fit2m_s)
       call shuffle(vmmk_qt2m   ,vmmk_qt1m   ,vmmk_qt2m_s)
       call shuffle(vmmk_tpt2m  ,vmmk_tpt1m  ,vmmk_tpt2m_s)
       call shuffle(vmmk_fipt2m ,vmmk_fipt1m ,vmmk_fipt2m_s)
+      call shuffle(vmmk_qpt2m  ,vmmk_qpt1m  ,vmmk_qpt2m_s)
       call shuffle(vmmk_pipt2m ,vmmk_pipt1m ,vmmk_pipt2m_s)
       call shuffle(vmmk_tplt2m ,vmmk_tplt1m ,vmmk_tplt2m_s)
       call shuffle(vmmk_psdt2m ,vmmk_psdt1m ,vmmk_psdt2m_s)
       call shuffle(vmmk_st2m   ,vmmk_st1m   ,vmmk_st2m_s)
 *
+      if (.not. Schm_hydro_L) then
+         call shuffle(vmmk_mut2m ,vmmk_mut1m ,vmmk_mut2m_s)
+      endif
       if ( Tr3d_ntr .gt. 0 ) then
          call shuffle(vmmk_trt2m  ,vmmk_trt1m  ,vmmk_trt2m_s)
       endif
@@ -71,6 +76,9 @@
       call shuffle(vmmk_psdt2 ,vmmk_psdt1 ,vmmk_psdt2_s)
       call shuffle(vmmk_st2   ,vmmk_st1   ,vmmk_st2_s)
 *
+      if (.not. Schm_hydro_L) then
+         call shuffle(vmmk_mut2 ,vmmk_mut1 ,vmmk_mut2_s)
+      endif
       if ( Tr3d_ntr .gt. 0 ) then
          call shuffle(vmmk_trt2  ,vmmk_trt1  ,vmmk_trt2_s)
       endif

@@ -4,7 +4,7 @@
 *
       subroutine set_world_view
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author
 *     Michel Desgagne
@@ -20,6 +20,7 @@
 * v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
 * v2_32 - Desgagne M.       - option for FST2000 encoding of ip1
 * v3_00 - Desgagne & Lee    - Lam configuration
+* v3_03 - Desgagne M.       - new procedure for call to set_dcst8
 *
 *object
 *
@@ -29,6 +30,7 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
+#include "cst_lis.cdk"
 #include "dcst.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
@@ -41,23 +43,23 @@
 #include "pilot.cdk"
 *
 *modules
-      logical  set_dcst8,check_parti
-      integer  slabopt, longueur,hybref_to_ig
+      logical  check_parti
+      integer  slabopt, longueur, hybref_to_ig, set_dcst8
       external set_world_view1,set_dcst8,check_parti,
      %         slabopt,longueur,hybref_to_ig
 **
-      integer cnbre,ipcode,ipmode,pncpu,ierr,mindimx,mindimy,
-     $        maxblenx,maxbleny 
-      parameter(cnbre=31)
+      integer ipcode,ipmode,pncpu,ierr,mindimx,mindimy,
+     $        maxblenx,maxbleny,cte_ok
+c      parameter(cnbre=31)
       character*256 prejob_S
-      character*10 liste_S(cnbre)
-      data liste_S/ 'CPD'   , 'CPV' , 'RGASD' , 'RGASV', 'TRPL' ,
-     +              'TCDK'  , 'RAUW', 'EPS1'  , 'EPS2' , 'DELTA',
-     +              'CAPPA' , 'TGL' , 'CONSOL', 'GRAV' , 'RAYT' ,
-     +              'STEFAN', 'PI'  , 'OMEGA' , 'KNAMS', 'STLO' ,
-     +              'KARMAN', 'RIC' , 'CHLC'  , 'CHLF' , 'T1S'  ,
-     +              'T2S'   , 'AW'  , 'BW'    , 'AI'   , 'BI'   ,
-     +              'SLP' /
+c      character*10 liste_S(cnbre)
+c      data liste_S/ 'CPD'   , 'CPV' , 'RGASD' , 'RGASV', 'TRPL' ,
+c     +              'TCDK'  , 'RAUW', 'EPS1'  , 'EPS2' , 'DELTA',
+c     +              'CAPPA' , 'TGL' , 'CONSOL', 'GRAV' , 'RAYT' ,
+c     +              'STEFAN', 'PI'  , 'OMEGA' , 'KNAMS', 'STLO' ,
+c     +              'KARMAN', 'RIC' , 'CHLC'  , 'CHLF' , 'T1S'  ,
+c     +              'T2S'   , 'AW'  , 'BW'    , 'AI'   , 'BI'   ,
+c     +              'SLP' /
       real pcode,x1,x2
 *
       integer pni, pnj, pniu, pnjv, pnk, lam
@@ -105,10 +107,12 @@
 *
 *     Initializing physical constants
 *
-      if (.not.set_dcst8(Dcst_cpd_8,liste_S,cnbre,lun_cte,lun_out)) then
-         if (Lun_out.gt.0) write (Lun_out,9115)
-         stop
-      endif
+      cte_ok = 0
+      if ( Lun_out.gt.0 )
+     $    cte_ok = set_dcst8 (Dcst_cpd_8,liste_S,cnbre,lun_cte,lun_out)
+      call gem_stop ('set_dcst8',cte_ok)
+      call RPN_COMM_bcast ( Dcst_cpd_8,cnbre,"MPI_DOUBLE_PRECISION",
+     $                                                0,"grid",ierr)
 *
 *     Running script Um_hook.sh
 *

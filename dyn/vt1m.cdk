@@ -8,6 +8,7 @@
 *revision
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *object
 *     Equivalent to comdeck vt1 for TRAJECTORY
@@ -20,15 +21,20 @@
 *--------------------|-------------------------------------------------|
 * ut1m               | x component of velocity                         |
 * vt1m               | y component of velocity                         |
+* wt1m               | z component of velocity                         |
+* tt1m               | T (temperature)                                 |
 * tdt1m              | total divergence (dpi* dot / dpi* + D )         |
+* fit1m              | phi (geopotential)                              |
 * qt1m               | q = ln p                                        |
 *--------------------|-------------------------------------------------|
 * tpt1m              | T'       \                                      |
 * fipt1m             | phi'      \  perturbations                      |
+* qpt1m              | q'        /                                     |
 * pipt1m             | pi'      /                                      |
 *--------------------|-------------------------------------------------|
 * tplt1m             | T'  linear                                      |
 *--------------------|-------------------------------------------------|
+* mut1m              | nonhydro index mu=dp/dpi-1 [= 0 if hydro]       |
 * psdt1m             | pi* dot (vert. vel. in pi* coord.)              |
 * st1m               | ln (pi_s/z_s)                                   |
 *--------------------|-------------------------------------------------|
@@ -43,15 +49,20 @@
       MARK_COMMON_BEG (vt1m)
       DCL_VMMVAR (vt1m,ut1m   ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (vt1m,vt1m   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (vt1m,wt1m   ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (vt1m,tt1m   ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (vt1m,tdt1m  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (vt1m,fit1m  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (vt1m,qt1m   ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (vt1m,tpt1m  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (vt1m,fipt1m ,real,(LDIST_SHAPE,l_nk))
-      DCL_VMMVAR (vt1m,pipt1m, real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR( vt1m,qpt1m  ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR (vt1m,pipt1m ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (vt1m,tplt1m ,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR( vt1m,mut1m  ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (vt1m,psdt1m ,real,(LDIST_SHAPE,l_nk))
       DCL_VMMVAR (vt1m,st1m   ,real,(LDIST_SHAPE)     )
-      DCL_VMMVAR (vt1m,trt1m  ,real,(LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR (vt1m,trt1m  ,real,(LDIST_SHAPE,l_nk,*))
       DCL_VMMVAR (vt1m,xct1m  ,real,(l_ni*l_nj*l_nk)  )
       DCL_VMMVAR (vt1m,yct1m  ,real,(l_ni*l_nj*l_nk)  )
       DCL_VMMVAR (vt1m,zct1m  ,real,(l_ni*l_nj*l_nk)  )

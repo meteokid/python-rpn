@@ -3,23 +3,21 @@
 #include <model_macros_f.h>
 *
       subroutine bacp_2_ad
-     $                  ( F_itr , F_itnlh, F_st0  ,  F_pipt0,
-     $                    F_qt0 , F_fit0 , F_fipt0, F_fis   , F_tt0  ,
-     $                    F_tpt0, F_tplt0, F_ut0  , F_vt0   , F_psdt0,
-     $                    F_tdt0, F_qpt0 , F_wt0  ,
-     $                    F_mut0, F_multx, F_gptx , F_gxtx  , 
-     $                    F_ru  , F_rv   , F_rth  , F_r3    , F_r3p  ,
-     $                    F_rvv , F_rcn  , F_nu   , F_nv    ,
-     $                    F_nth , F_n3   , F_n3p  ,
-     $                    F_ncn , F_wijk0,F_wijk1 ,
+     $                  ( F_itr  ,F_itnlh, F_st0   ,F_pipt0 ,
+     $                    F_qt0  ,F_fit0 , F_fipt0 ,F_fis   ,F_tt0   ,
+     $                    F_tpt0 ,F_tplt0, F_ut0   ,F_vt0   ,F_psdt0 ,
+     $                    F_tdt0 ,F_qpt0 , F_wt0   ,
+     $                    F_mut0 ,F_multx, F_gptx  ,F_gxtx  ,
+     $                    F_ru   ,F_rv   , F_rth   ,F_r3    ,F_r3p   ,
+     $                    F_rvv  ,F_rcn  , F_nu    ,F_nv    ,
+     $                    F_nth  ,F_n3   , F_n3p   ,
+     $                    F_ncn  ,F_wijk0, F_wijk1 ,
 *
-     $                                     F_st0m , F_pipt0m,
-     $                    F_qt0m,          F_fipt0m,
-     $                            F_tplt0m,
-     $                                     F_gptxm, F_gxtxm ,
-     $                                     F_rthm ,
-     $                    F_nthm,
-     $                    F_wijk0m,F_wijk1m,
+     $                                     F_gptxm ,
+     $                                     F_rthm  ,F_r3m   ,F_r3pm  ,
+     $                    F_rvvm ,         
+     $                    F_nthm ,F_n3m   ,F_n3pm  ,
+     $                            F_wijk0m,F_wijk1m,
 *
      $                                     DIST_DIM, Nk )
 *
@@ -45,15 +43,12 @@
      %         F_ncn  (DIST_SHAPE,Nk) ,
      %         F_wijk0(DIST_SHAPE,Nk) ,  F_wijk1(DIST_SHAPE,Nk)
 *
-      real     F_st0m  (DIST_SHAPE)   , 
-     %         F_pipt0m(DIST_SHAPE,Nk),  F_qt0m  (DIST_SHAPE,Nk) ,
-     %                                   F_fipt0m(DIST_SHAPE,Nk) ,
-     %                                   F_tplt0m(DIST_SHAPE,Nk) , 
-     %                                   F_rthm  (DIST_SHAPE,Nk) , 
-     %                                   F_nthm  (DIST_SHAPE,Nk) , 
-     %         F_gptxm (DIST_SHAPE,Nk),  F_gxtxm (DIST_SHAPE,Nk) , 
+      real     F_gptxm (DIST_SHAPE,Nk),  
+     %                                   F_rthm  (DIST_SHAPE,Nk),
+     %         F_rvvm  (DIST_SHAPE,Nk),  F_nthm  (DIST_SHAPE,Nk),
+     %         F_r3m   (DIST_SHAPE,Nk),  F_r3pm  (DIST_SHAPE,Nk),
+     %         F_n3m   (DIST_SHAPE,Nk),  F_n3pm  (DIST_SHAPE,Nk),
      %         F_wijk0m(DIST_SHAPE,Nk),  F_wijk1m(DIST_SHAPE,Nk)
-*
 *
 *author
 *     M.Tanguay
@@ -64,19 +59,20 @@
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate and LAM version 
 *                           - adapt for tracers in tr3d  
 * v3_00 - Tanguay M.        - adapt to restructured bacp_2 
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 *
 *object
 *     see id section 
-*     -------------------------------------------
-*     REMARK: INPUT TRAJ: F_gptxm, F_rthm, F_nthm  
-*     -------------------------------------------
+*     ------------------------------------------------------------------------
+*     REMARK: INPUT TRAJ: F_gptxm, F_rthm, F_nthm,
+*                         F_r3m, F_r3pm, F_rvvm, F_n3m, F_n3pm (NoHyd)
+*     ------------------------------------------------------------------------
 *
 *arguments
 *     see documentation of appropriate comdecks 
 *
 *implicits
 #include "glb_ld.cdk"
-#include "orh.cdk"
 #include "cori.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
@@ -85,22 +81,25 @@
 #include "ptopo.cdk"
 *
       integer i, j, k, i0, j0, in, jn
-      real*8  ZERO_8, ONE_8, TWO_8, HALF_8, QUARTER_8, gamma_8 
-      real*8  aaa_8, bbb_8, ddd_8, a1_8, xxx_8, yyy_8, pd2_8
-      real*8  xxx_m_8, yyy_m_8, pd2_m_8
-      parameter( ZERO_8=0.0, ONE_8=1.0, TWO_8=2.0, HALF_8=.5, QUARTER_8=.25 )
+      real*8  ZERO_8, ONE_8, TWO_8, HALF_8, QUARTER_8, gamma_8, eps_8
+      real*8  aaa_8, bbb_8, ccc_8, ddd_8, a1_8, b1_8, b2_8, xxx_8, xx1_8, yyy_8, zzz_8, pd2_8
+      real*8  xxx_m_8, xx1_m_8, yyy_m_8, zzz_m_8, pd2_m_8
+      parameter( ZERO_8=0.0, ONE_8=1.0, TWO_8=2.0, HALF_8=.5,  QUARTER_8=.25 )
 *
-*     ______________________________________________________
+      real w_pipt0m(DIST_SHAPE,Nk),w_multxm(DIST_SHAPE,Nk),w_qt0m (DIST_SHAPE,Nk),
+     %     w_fipt0m(DIST_SHAPE,Nk),w_qpt0m (DIST_SHAPE,Nk),w_gxtxm(DIST_SHAPE,Nk),
+     %     w_tplt0m(DIST_SHAPE,Nk),w_st0m  (DIST_SHAPE)
 *
-      if(.not. Schm_hydro_L) call gefstop('bacp_2_ad')
-      if(      G_lam       ) call gefstop('bacp_2_ad')
 *     ______________________________________________________
 *
 *     ----------------------------
 *     Zero adjoint local variables
 *     ----------------------------
-      xxx_8 = ZERO_8 
-      yyy_8 = ZERO_8 
+C     xxx_8 = ZERO_8 
+C     xx1_8 = ZERO_8 
+C     yyy_8 = ZERO_8 
+C     zzz_8 = ZERO_8 
+C     pd2_8 = ZERO_8 
 *
 *     ---------------------------
 *     START TRAJECTORY EVALUATION
@@ -108,12 +107,63 @@
 *
 *     Constants for nonhydro distortion
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      gamma_8 = ONE_8 
+      gamma_8 = ONE_8
+      if (.not. Schm_hydro_L) then
+           eps_8 =  Schm_nonhy_8 * Dcst_rgasd_8   * Cstv_tstr_8
+     %         /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**2 )
+         gamma_8 =  ONE_8/( ONE_8 + eps_8 )
+      endif
 *
       i0 = 1+pil_w
       in = l_ni-pil_e
       j0 = 1+pil_s
       jn = l_nj-pil_n
+*
+**********************************************************
+*  1. Retrieve the nonhydro deviation q' of log pressure *
+**********************************************************
+      ccc_8 = Schm_nonhy_8*gamma_8/( Dcst_grav_8**2 * Cstv_tau_8**3 )
+*
+      if (.not. Schm_hydro_L) then
+ 
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do j= j0, jn
+      do i= i0, in
+*
+         w_qpt0m(i,j,1) = ZERO_8 
+*
+      end do
+      end do
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do j= j0, jn
+         do k=1,l_nk-1
+         aaa_8 = HALF_8*Geomg_hz_8(k)
+         bbb_8 = (ccc_8/Dcst_cappa_8)*HALF_8*( Geomg_z_8(k) + Geomg_z_8(k+1) )
+         ddd_8 = Cstv_tau_8/Geomg_z_8(k)
+         do i= i0, in
+*
+            w_qpt0m(i,j,k+1) = w_qpt0m(i,j,k)
+     %       + aaa_8*( gamma_8*(F_n3pm(i,j,k+1)-F_r3pm(i,j,k+1))
+     %       + ccc_8*F_gptxm(i,j,k+1) + gamma_8*(F_n3pm(i,j,k)-F_r3pm(i,j,k))
+     %       + ccc_8*F_gptxm(i,j,k) ) + bbb_8*(F_gptxm(i,j,k+1)-F_gptxm(i,j,k))
+            w_qpt0m(i,j,k) = ddd_8*w_qpt0m(i,j,k)
+*
+         end do
+         end do
+      end do
+
+      ddd_8 = Cstv_tau_8/Geomg_z_8(l_nk)
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do j= j0, jn
+      do i= i0, in
+*
+         w_qpt0m(i,j,l_nk) = ddd_8*w_qpt0m(i,j,l_nk)
+*
+      end do
+      end do
+
+      endif
 *
 ********************************************
 *  2. Calculate s, pi'lin, pi', q and phi' *
@@ -122,20 +172,33 @@
 *     Calculate s 
 *     ~~~~~~~~~~~
       bbb_8 = Geomg_z_8(l_nk)/( Dcst_rgasd_8*Cstv_tstr_8 )
-
+      ccc_8 = Geomg_z_8(l_nk)/( Geomg_pib(l_nk) )
+*
 *PDIR PARDO FOR=Ptopo_npeOpenMP
       do j= j0, jn
       do i= i0, in
 *
-*        TRAJECTORY
-*        ----------
-         F_st0m(i,j)= bbb_8*F_gptxm(i,j,l_nk)/Geomg_pib(l_nk)
+         w_st0m(i,j)= bbb_8*F_gptxm(i,j,l_nk)/Geomg_pib(l_nk)
 *
       end do
       end do
+*
+      if (.not. Schm_hydro_L) then
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+         do j= j0, jn
+         do i= i0, in
+*
+            w_st0m(i,j) = w_st0m(i,j) - ccc_8*w_qpt0m(i,j,l_nk)
+*
+         end do
+         end do
+      endif
 *
 *     Compute pi'lin (F_wijk0), pi', q and phi'
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ccc_8 = Dcst_rgasd_8*Cstv_tstr_8
+      ddd_8 = Schm_nonhy_8 * gamma_8
+     %      /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**3 )
 *
 *PDIR PARDO FOR=Ptopo_npeOpenMP
       do 100 k=1,l_nk 
@@ -147,12 +210,10 @@
              do j= j0, jn
              do i= i0, in
 *
-*               TRAJECTORY
-*               ----------
-                F_pipt0m(i,j,1) = Geomg_pib(1) *(exp(F_st0m(i,j))-ONE_8)
-                F_qt0m  (i,j,1) = log( Geomg_z_8(1) + F_pipt0m(i,j,1) )
-                F_fipt0m(i,j,1) = F_gptxm (i,j,1)
-                F_gxtxm (i,j,1) = 0.
+                w_pipt0m(i,j,1) = Geomg_pib(1) *(exp(w_st0m(i,j))-ONE_8)
+                w_qt0m  (i,j,1) = log( Geomg_z_8(1) + w_pipt0m(i,j,1) )
+                w_fipt0m(i,j,1) = F_gptxm (i,j,1)
+                w_gxtxm (i,j,1) = 0.
 *
              end do
              end do
@@ -161,24 +222,31 @@
              do j= j0, jn
              do i= i0, in
 *
-*               TRAJECTORY
-*               ----------
-                F_wijk0m(i,j,k)= Geomg_pib(k) * F_st0m(i,j)
-                F_pipt0m(i,j,k)= Geomg_pib(k)*(exp(F_st0m(i,j))-ONE_8)
-                  F_qt0m(i,j,k)= log( Geomg_z_8(k) + F_pipt0m(i,j,k) )
-                F_fipt0m(i,j,k)= F_gptxm(i,j,k) - bbb_8*F_wijk0m(i,j,k)
+                F_wijk0m(i,j,k)= Geomg_pib(k) * w_st0m(i,j)
+                w_pipt0m(i,j,k)= Geomg_pib(k)*(exp(w_st0m(i,j))-ONE_8)
+                  w_qt0m(i,j,k)= log( Geomg_z_8(k) + w_pipt0m(i,j,k) )
+                w_fipt0m(i,j,k)= F_gptxm(i,j,k) - bbb_8*F_wijk0m(i,j,k)
 *
              end do
              end do
+*
+             if (.not. Schm_hydro_L) then
+                do j= j0, jn
+                do i= i0, in
+*
+                   w_qt0m  (i,j,k) =   w_qt0m(i,j,k) +       w_qpt0m(i,j,k)
+                   w_fipt0m(i,j,k) = w_fipt0m(i,j,k) - ccc_8*w_qpt0m(i,j,k)
+*
+                end do
+                end do
+             endif
 *
          endif
          if (k.eq.l_nk) then
              do j= j0, jn
              do i= i0, in
 *
-*               TRAJECTORY
-*               ----------
-                F_fipt0m(i,j,l_nk) = ZERO_8 
+                w_fipt0m(i,j,l_nk) = ZERO_8 
 *               
              end do
              end do
@@ -193,24 +261,46 @@
          do j= j0, jn
          do i= i0, in
 *
-*           TRAJECTORY
-*           ----------
             F_wijk1m(i,j,k) = F_nthm(i,j,k) - F_rthm(i,j,k) 
 *
          end do
          end do
-
+*
+         if (.not. Schm_hydro_L) then
+         do j= j0, jn
+         do i= i0, in
+*
+            F_wijk1m(i,j,k) = F_wijk1m(i,j,k) + F_n3m(i,j,k) - F_r3m(i,j,k)
+*
+         end do
+         end do
+         endif
+*
          aaa_8 = gamma_8/Dcst_cappa_8*Geomg_z_8(k) 
          do j= j0, jn
          do i= i0, in
 *
-*           TRAJECTORY
-*           ----------
             F_wijk1m(i,j,k) = aaa_8*F_wijk1m(i,j,k) 
 *
          end do
          end do
+*
+*     Compute {1} - {2} (F_wijk1)
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+         if (.not. Schm_hydro_L) then
+            b1_8 = Geomg_z_8(k)/Cstv_tau_8
+            b2_8 = ddd_8*Geomg_z_8(k)
+            do j= j0, jn
+            do i= i0, in
+*
+               F_wijk1m(i,j,k)= F_wijk1m(i,j,k)-b1_8*w_qpt0m(i,j,k)
+     $                                         +b2_8*F_gptxm(i,j,k)
+*
+            end do
+            end do
+         endif
+*
  100  continue
 
       aaa_8 =  gamma_8/( Dcst_cappa_8*Cstv_tau_8*Dcst_rgasd_8*Cstv_tstr_8 )
@@ -222,8 +312,6 @@
          a1_8=aaa_8*QUARTER_8*(Geomg_z_8(k)+Geomg_z_8(k+1))**2/Geomg_hz_8(k) 
          do i= i0, in
 *
-*           TRAJECTORY
-*           ----------
             F_wijk1m(i,j,k) = HALF_8*( F_wijk1m(i,j,k+1) + F_wijk1m(i,j,k) )
      %                        - a1_8*( F_gptxm (i,j,k+1) - F_gptxm (i,j,k) )
 *
@@ -235,9 +323,7 @@
          do k=1,l_nk-1 
          do i= i0, in
 *
-*           TRAJECTORY
-*           ----------
-            F_gxtxm(i,j,k+1) = - F_gxtxm(i,j,k) + TWO_8*F_wijk1m(i,j,k) 
+            w_gxtxm(i,j,k+1) = - w_gxtxm(i,j,k) + TWO_8*F_wijk1m(i,j,k) 
 *
          end do
          end do
@@ -246,11 +332,15 @@
 **********************************************************
 *  4. Calculate vertical velocity & nonhydrostatic index * 
 **********************************************************
+      aaa_8 = Dcst_rgasd_8*Cstv_tstr_8
+      b1_8  = ONE_8/(Dcst_grav_8*Cstv_tau_8)
+      b2_8  = Schm_nonhy_8/((Dcst_grav_8**2)*(Cstv_tau_8**2))
+      bbb_8 = Dcst_cappa_8*Cstv_tstr_8
       ddd_8 = Cstv_tau_8*Cstv_tstr_8
-
+*
 *PDIR PARDO FOR=Ptopo_npeOpenMP
       do 300 k=1,l_nk 
-
+*
 **********************************************
 *  5. Calculate the temperature perturbation * 
 **********************************************
@@ -262,38 +352,28 @@
 *
 *           TRAJECTORY 
 *           ----------
-            F_tplt0m(i,j,k) = ddd_8*(F_rthm(i,j,k) - F_nthm(i,j,k) +
-     $                        a1_8*F_gxtxm(i,j,k))
-            F_wijk1m(i,j,k) = - F_st0m(i,j)
+            w_tplt0m(i,j,k) = ddd_8*(F_rthm(i,j,k) - F_nthm(i,j,k) +
+     $                        a1_8*w_gxtxm(i,j,k))
 *
          end do
          end do
-
-
-*     Calculate T'
-*     ~~~~~~~~~~~~
-C        do j= j0, jn
-C        do i= i0, in
 *
-*        TRAJECTORY
-*        ----------
-C        F_wijk0m(i,j,k)=1.0 / ( 1.0 +
-C    %              Geomg_dpib(k) * (exp(F_st0m(i,j))-1.) )
-C        F_wijk1m(i,j,k)= F_st0m(i,j) * Geomg_dpib(k)
-C        pd2_m_8 = Geomg_pib(k) * F_st0m(i,j) / Geomg_z_8(k)
-C        xxx_m_8 = (1. + F_pipt0m(i,j,k)/Geomg_z_8(k)) * F_wijk0m(i,j,k)
-C        yyy_m_8 = F_tplt0m(i,j,k) - Cstv_tstr_8 * (( pd2_m_8 -
-C    %                  F_wijk1m(i,j,k)) -1. )
-C        F_tpt0m(i,j,k) =  xxx_m_8*yyy_m_8 - Cstv_tstr_8
+         if (.not. Schm_hydro_L) then
+             do j= j0, jn
+             do i= i0, in
 *
-C        end do
-C        end do
+                w_tplt0m(i,j,k) = w_tplt0m(i,j,k) + bbb_8*w_qpt0m(i,j,k)
+*
+             end do
+             end do
+         endif
+*
  300  continue
-
+*
 *************************************************************
 *  $. Final back substitution after the nonlinear iteration * 
 *************************************************************
-
+*
 C     if ( F_itr .lt. F_itnlh ) then
 C        return 
 C     endif
@@ -407,29 +487,7 @@ C     endif
 *
 *     Zero F_gptx halo
 *     ----------------
-*PDIR PARDO FOR=Ptopo_npeOpenMP
-      do k=1,G_nk
-         do j=l_miny,0
-         do i=l_minx,l_maxx
-            F_gptx(i,j,k) = ZERO_8 
-         end do
-         end do
-         do j=l_nj+1,l_maxy
-         do i=l_minx,l_maxx
-            F_gptx(i,j,k) = ZERO_8 
-         end do
-         end do
-         do i=l_minx,0
-         do j=l_miny,l_maxy
-            F_gptx(i,j,k) = ZERO_8 
-         end do
-         end do
-         do i=l_ni+1,l_maxx
-         do j=l_miny,l_maxy
-            F_gptx(i,j,k) = ZERO_8 
-         end do
-         end do
-      end do
+      call v4d_zerohalo ( F_gptx,l_ni,l_nj,LDIST_DIM, l_nk)
 *
       endif
 *
@@ -483,32 +541,14 @@ C     endif
 *
 *     Zero F_gptx halo
 *     ----------------
-*PDIR PARDO FOR=Ptopo_npeOpenMP
-      do k=1,G_nk
-         do j=l_miny,0
-         do i=l_minx,l_maxx
-            F_gptx(i,j,k) = ZERO_8 
-         end do
-         end do
-         do j=l_nj+1,l_maxy
-         do i=l_minx,l_maxx
-            F_gptx(i,j,k) = ZERO_8 
-         end do
-         end do
-         do i=l_minx,0
-         do j=l_miny,l_maxy
-            F_gptx(i,j,k) = ZERO_8 
-         end do
-         end do
-         do i=l_ni+1,l_maxx
-         do j=l_miny,l_maxy
-            F_gptx(i,j,k) = ZERO_8 
-         end do
-         end do
-      end do
+      call v4d_zerohalo ( F_gptx,l_ni,l_nj,LDIST_DIM, l_nk)
 *
       endif
 *
+      aaa_8 = Dcst_rgasd_8*Cstv_tstr_8
+      b1_8  = ONE_8/(Dcst_grav_8*Cstv_tau_8)
+      b2_8  = Schm_nonhy_8/((Dcst_grav_8**2)*(Cstv_tau_8**2))
+      bbb_8 = Dcst_cappa_8*Cstv_tstr_8
       ddd_8 = Cstv_tau_8*Cstv_tstr_8
 *
 *PDIR PARDO FOR=Ptopo_npeOpenMP
@@ -522,35 +562,38 @@ C     endif
 *     ADJ of
 *     Calculate T'
 *     ~~~~~~~~~~~~
+*
+         if (Schm_hydro_L) then
+*
          do j= j0, jn
 *        ----------------------------------------
-*        DO LOOP ADAPTED TO RESTORE VECTORIZATION 
+*        DO LOOP ADAPTED TO RESTORE VECTORIZATION
 *        ----------------------------------------
          do i= i0, in
 *
 *        TRAJECTORY
 *        ----------
          F_wijk0m(i,j,k)=1.0 / ( 1.0 +
-     %              Geomg_dpib(k) * (exp(F_st0m(i,j))-1.) )
-         F_wijk1m(i,j,k)= F_st0m(i,j) * Geomg_dpib(k)
-         pd2_m_8 = Geomg_pib(k) * F_st0m(i,j) / Geomg_z_8(k)
-         xxx_m_8 = (1. + F_pipt0m(i,j,k)/Geomg_z_8(k)) * F_wijk0m(i,j,k)
-         yyy_m_8 = F_tplt0m(i,j,k) - Cstv_tstr_8 * (( pd2_m_8 -
+     %              Geomg_dpib(k) * (exp(w_st0m(i,j))-1.) )
+         F_wijk1m(i,j,k)= w_st0m(i,j) * Geomg_dpib(k)
+         pd2_m_8 = Geomg_pib(k) * w_st0m(i,j) / Geomg_z_8(k)
+         xxx_m_8 = (1. + w_pipt0m(i,j,k)/Geomg_z_8(k)) * F_wijk0m(i,j,k)
+         yyy_m_8 = w_tplt0m(i,j,k) - Cstv_tstr_8 * (( pd2_m_8 -
      %                  F_wijk1m(i,j,k)) -1. )
 *
-*        ADJ 
+*        ADJ
 *        ---
-         yyy_8          =        xxx_m_8 * F_tpt0(i,j,k)  
-         xxx_8          =  F_tpt0(i,j,k) * yyy_m_8        
-         F_tpt0 (i,j,k) = ZERO_8  
+         yyy_8          =        xxx_m_8 * F_tpt0(i,j,k)
+         xxx_8          =  F_tpt0(i,j,k) * yyy_m_8
+         F_tpt0 (i,j,k) = ZERO_8
 *
          F_tplt0(i,j,k) =                     yyy_8   + F_tplt0(i,j,k)
-         pd2_8          = - Cstv_tstr_8 * ((  yyy_8))  
+         pd2_8          = - Cstv_tstr_8 * ((  yyy_8))
          F_wijk1(i,j,k) = - Cstv_tstr_8 * ((- yyy_8)) + F_wijk1(i,j,k)
 *
          F_pipt0(i,j,k) = (               xxx_8/Geomg_z_8(k)) * F_wijk0m(i,j,k)
      %                    + F_pipt0 (i,j,k)
-         F_wijk0(i,j,k) = (1. + F_pipt0m(i,j,k)/Geomg_z_8(k)) * xxx_8
+         F_wijk0(i,j,k) = (1. + w_pipt0m(i,j,k)/Geomg_z_8(k)) * xxx_8
      %                    + F_wijk0 (i,j,k)
 *
          F_st0  (i,j)   = Geomg_pib(k) * pd2_8 / Geomg_z_8(k) + F_st0(i,j)
@@ -558,16 +601,86 @@ C     endif
          F_st0  (i,j)   = F_wijk1(i,j,k) * Geomg_dpib(k)      + F_st0(i,j)
          F_wijk1(i,j,k) = ZERO_8
 *
-         F_st0(i,j)     = -(Geomg_dpib(k) *(F_wijk0(i,j,k)*exp(F_st0m(i,j)))) / ( 1.0 +
-     %                      Geomg_dpib(k) *(exp(F_st0m(i,j))-1.) )**2 + F_st0(i,j)
+         F_st0(i,j)     = -(Geomg_dpib(k) *(F_wijk0(i,j,k)*exp(w_st0m(i,j)))) / ( 1.0 +
+     %                      Geomg_dpib(k) *(exp(w_st0m(i,j))-1.) )**2 + F_st0(i,j)
          F_wijk0(i,j,k) = ZERO_8
 *
          end do
          end do
 *
+         else
+*
+            do j= j0, jn
+*           ----------------------------------------
+*           DO LOOP ADAPTED TO RESTORE VECTORIZATION
+*           ----------------------------------------
+            do i= i0, in
+*
+*              TRAJECTORY
+*              ----------
+               F_wijk0m(i,j,k)=
+     $           1.0 / ( 1.0 + Geomg_dpib(k) * (exp(w_st0m(i,j))-1.) )
+               F_wijk1m(i,j,k)= w_st0m(i,j) * Geomg_dpib(k)
+               pd2_m_8 = Geomg_pib(k) * w_st0m(i,j) / Geomg_z_8(k)
+               xx1_m_8 = (1. + w_pipt0m(i,j,k)/Geomg_z_8(k)) * F_wijk0m(i,j,k)
+               xxx_m_8 = xx1_m_8 * exp(w_qpt0m(i,j,k))
+               yyy_m_8 = w_tplt0m(i,j,k)-Cstv_tstr_8*((pd2_m_8-F_wijk1m(i,j,k)+
+     $                    w_qpt0m(i,j,k))-1.)
+*
+*              ADJ
+*              ---
+C              yyy_8          =       xxx_m_8 * F_tpt0(i,j,k) + yyy_8
+               yyy_8          =       xxx_m_8 * F_tpt0(i,j,k) 
+C              xxx_8          = F_tpt0(i,j,k) * yyy_m_8       + xxx_8
+               xxx_8          = F_tpt0(i,j,k) * yyy_m_8       
+               F_tpt0(i,j,k)  = ZERO_8
+*
+               F_tplt0(i,j,k) =                 yyy_8 + F_tplt0(i,j,k)
+C              pd2_8          = -Cstv_tstr_8 *  yyy_8 + pd2_8
+               pd2_8          = -Cstv_tstr_8 *  yyy_8 
+               F_wijk1(i,j,k) =  Cstv_tstr_8 *  yyy_8 + F_wijk1(i,j,k)
+               F_qpt0 (i,j,k) = -Cstv_tstr_8 *  yyy_8 + F_qpt0 (i,j,k)
+C              yyy_8          =  ZERO_8
+*
+               F_qpt0(i,j,k)  = xx1_m_8 * exp(w_qpt0m(i,j,k))*xxx_8 + F_qpt0(i,j,k)
+C              xx1_8          =   xxx_8 * exp(w_qpt0m(i,j,k))       + xx1_8
+               xx1_8          =   xxx_8 * exp(w_qpt0m(i,j,k))       
+C              xxx_8          = ZERO_8
+*
+               F_wijk0 (i,j,k)= (1. + w_pipt0m(i,j,k)/Geomg_z_8(k)) * xx1_8           + F_wijk0 (i,j,k)
+               F_pipt0 (i,j,k)= (              xx1_8 /Geomg_z_8(k)) * F_wijk0m(i,j,k) + F_pipt0 (i,j,k)
+C              xx1_8          = ZERO_8
+*
+               F_st0(i,j)     = Geomg_pib(k) * pd2_8  / Geomg_z_8(k) + F_st0(i,j)
+C              pd2_8          = ZERO_8
+*
+               F_st0  (i,j)   = F_wijk1(i,j,k) * Geomg_dpib(k) + F_st0(i,j)
+               F_wijk1(i,j,k) = ZERO_8
+*
+               F_st0  (i,j)   = - (       Geomg_dpib(k) * (exp(w_st0m(i,j))*F_wijk0(i,j,k))) /
+     $                            ( 1.0 + Geomg_dpib(k) * (exp(w_st0m(i,j))-1.        )) **2
+     $                          + F_st0  (i,j)
+               F_wijk0(i,j,k) = ZERO_8
+*
+            enddo
+            enddo
+*
+         endif
+*
 *     ADJ of
 *     Calculate T'lin and prepare {$} (F_wijk1)
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+         if (.not. Schm_hydro_L) then
+             do j= j0, jn
+             do i= i0, in
+*
+                F_qpt0(i,j,k) =  bbb_8* F_tplt0(i,j,k) + F_qpt0(i,j,k) 
+*
+             end do
+             end do
+         endif
+*
          a1_8 = Dcst_cappa_8/Geomg_z_8(k)
          do j= j0, jn
          do i= i0, in
@@ -584,9 +697,67 @@ C     endif
 *
          end do
          end do
+*
+**********************************************************
+*  4. Calculate vertical velocity & nonhydrostatic index *
+**********************************************************
+         if (.not. Schm_hydro_L) then
+            a1_8 = aaa_8*Cstv_tau_8/Geomg_z_8(k)
+            do j= j0, jn
+            do i= i0, in
+*
+*              TRAJECTORY
+*              ----------
+               zzz_m_8 =  1.0 / (1.0 + Geomg_dpib(k)*(exp(w_st0m(i,j)) -1.0))
+               xxx_m_8 = F_gptxm(i,j,k)-aaa_8*w_qpt0m(i,j,k)-a1_8*w_gxtxm(i,j,k)
+C              w_wt0m  (i,j,k)= - F_rvvm(i,j,k)/Dcst_grav_8 + b1_8*xxx_m_8
+               w_multxm(i,j,k)= Cstv_tau_8
+     $                        *(F_n3m(i,j,k)-F_r3m(i,j,k))+b2_8*xxx_m_8
+               yyy_m_8 = (1.+w_pipt0m(i,j,k)/Geomg_z_8(k))*
+     $                            (w_multxm(i,j,k)-w_qpt0m(i,j,k))
+*
+*              ADJ
+*              ---
+               F_qpt0 (i,j,k)  = exp(w_qpt0m(i,j,k))                * F_mut0(i,j,k)   + F_qpt0(i,j,k)
+C              yyy_8           = exp(w_qpt0m(i,j,k))* zzz_m_8       * F_mut0(i,j,k)   + yyy_8    
+               yyy_8           = exp(w_qpt0m(i,j,k))* zzz_m_8       * F_mut0(i,j,k)       
+C              zzz_8           = exp(w_qpt0m(i,j,k))* F_mut0(i,j,k) * yyy_m_8         + zzz_8
+               zzz_8           = exp(w_qpt0m(i,j,k))* F_mut0(i,j,k) * yyy_m_8        
+               F_qpt0 (i,j,k)  = exp(w_qpt0m(i,j,k))* F_mut0(i,j,k) * zzz_m_8*yyy_m_8 + F_qpt0(i,j,k)
+               F_mut0 (i,j,k)  = ZERO_8
+*
+               F_pipt0(i,j,k) = ( yyy_8/Geomg_z_8(k))* 
+     $                           (w_multxm(i,j,k)-w_qpt0m(i,j,k))         + F_pipt0(i,j,k)
+               F_multx(i,j,k) =  (1.+w_pipt0m(i,j,k)/Geomg_z_8(k))* yyy_8 + F_multx(i,j,k)
+               F_qpt0 (i,j,k) = -(1.+w_pipt0m(i,j,k)/Geomg_z_8(k))* yyy_8 + F_qpt0 (i,j,k)
+C              yyy_8          = ZERO_8
+*
+               F_n3   (i,j,k) = Cstv_tau_8 * F_multx(i,j,k) + F_n3(i,j,k)
+               F_r3   (i,j,k) =-Cstv_tau_8 * F_multx(i,j,k) + F_r3(i,j,k)
+C              xxx_8          =       b2_8 * F_multx(i,j,k) + xxx_8
+               xxx_8          =       b2_8 * F_multx(i,j,k) 
+               F_multx(i,j,k) = ZERO_8
+*
+               F_rvv (i,j,k)  = - F_wt0(i,j,k)/Dcst_grav_8  + F_rvv(i,j,k)
+               xxx_8          =   b1_8* F_wt0(i,j,k)        + xxx_8
+               F_wt0 (i,j,k)  = ZERO_8
+*
+               F_gptx(i,j,k)  =         xxx_8 + F_gptx(i,j,k)
+               F_qpt0(i,j,k)  = -aaa_8* xxx_8 + F_qpt0(i,j,k)
+               F_gxtx(i,j,k)  =  -a1_8* xxx_8 + F_gxtx(i,j,k)
+C              xxx_8          = ZERO_8
+*
+               F_st0 (i,j)    =  - (      Geomg_dpib(k)*(exp(w_st0m(i,j))*zzz_8 )) /
+     $                             (1.0 + Geomg_dpib(k)*(exp(w_st0m(i,j))      -1.0)) **2 + F_st0(i,j)
+C              zzz_8          = ZERO_8
+*
+            end do
+            end do
+*
+         endif
+*
  301  continue
 *
-
 **********************************************************
 *     ADJ of                                             *
 *  4. Calculate vertical velocity & nonhydrostatic index *
@@ -596,7 +767,7 @@ C     endif
 *     ADJ of
 *  3. Retrieve the variable X * 
 *******************************
-
+*
       aaa_8 =  gamma_8/( Dcst_cappa_8*Cstv_tau_8*Dcst_rgasd_8*Cstv_tstr_8 )
 
 *PDIR PARDO FOR=Ptopo_npeOpenMP
@@ -632,7 +803,11 @@ C     endif
          end do
 *
       end do
-
+*
+      ccc_8 = Dcst_rgasd_8*Cstv_tstr_8
+      ddd_8 = Schm_nonhy_8 * gamma_8
+     %      /( Dcst_cappa_8 * Dcst_grav_8**2 * Cstv_tau_8**3 )
+*
 *PDIR PARDO FOR=Ptopo_npeOpenMP
       do 101 k=l_nk,1,-1
 *
@@ -640,7 +815,25 @@ C     endif
 *     ADJ of                  *
 *  3. Retrieve the variable X *
 *******************************
-
+*
+*     Compute {1} - {2} (F_wijk1)
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+         if (.not. Schm_hydro_L) then
+            b1_8 = Geomg_z_8(k)/Cstv_tau_8
+            b2_8 = ddd_8*Geomg_z_8(k)
+            do j= j0, jn
+            do i= i0, in
+*
+*              ADJ 
+*              ---
+               F_qpt0 (i,j,k) = -b1_8* F_wijk1(i,j,k) + F_qpt0(i,j,k)
+               F_gptx (i,j,k) =  b2_8* F_wijk1(i,j,k) + F_gptx(i,j,k)
+*
+            end do
+            end do
+         endif
+*
 *     ADJ of
 *     Compute term {1} (F_wijk1) without vertical staggering
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -655,6 +848,19 @@ C     endif
          end do
          end do
 *
+         if (.not. Schm_hydro_L) then
+         do j= j0, jn
+         do i= i0, in
+*
+*           ADJ 
+*           ---
+            F_n3(i,j,k) =   F_wijk1(i,j,k) + F_n3(i,j,k) 
+            F_r3(i,j,k) = - F_wijk1(i,j,k) + F_r3(i,j,k)
+*
+         end do
+         end do
+         endif
+*
          do j= j0, jn
          do i= i0, in
 *
@@ -667,6 +873,10 @@ C     endif
          end do
          end do
 *
+*     ADJ of
+*     Compute pi'lin (F_wijk0), pi', q and phi'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
          if (k.eq.l_nk) then
              do j= j0, jn
              do i= i0, in
@@ -678,10 +888,6 @@ C     endif
              end do
              end do
          endif
-*
-*     ADJ of
-*     Compute pi'lin (F_wijk0), pi', q and phi'
-*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *
          if (k.eq.1) then
 
@@ -698,35 +904,50 @@ C     endif
          F_gptx (i,j,1) = F_fipt0(i,j,1)            + F_gptx (i,j,1)
          F_fipt0(i,j,1) = ZERO_8 
 *
-         F_pipt0(i,j,1) = F_qt0  (i,j,1) / ( Geomg_z_8(1) + F_pipt0m(i,j,1) )
+         F_pipt0(i,j,1) = F_qt0  (i,j,1) / ( Geomg_z_8(1) + w_pipt0m(i,j,1) )
      %                                    + F_pipt0(i,j,1)
          F_qt0  (i,j,1) = ZERO_8 
 *
-         F_st0(i,j)     = Geomg_pib(1) *(F_pipt0(i,j,1)*exp(F_st0m(i,j))) + F_st0(i,j)
+         F_st0(i,j)     = Geomg_pib(1) *(F_pipt0(i,j,1)*exp(w_st0m(i,j))) + F_st0(i,j)
          F_pipt0(i,j,1) = ZERO_8
 *
              end do
              end do
          else
+*
+             if (.not. Schm_hydro_L) then
+                do j= j0, jn
+                do i= i0, in
+*
+*                  ADJ 
+*                  ---
+                   F_qpt0(i,j,k) = - ccc_8* F_fipt0(i,j,k) + F_qpt0(i,j,k)
+*
+                   F_qpt0(i,j,k) = F_qt0(i,j,k)            + F_qpt0(i,j,k)
+*
+                end do
+                end do
+             endif
+*
              bbb_8 = Dcst_rgasd_8*Cstv_tstr_8/Geomg_z_8(k)
              do j= j0, jn
              do i= i0, in
 *
-*        ADJ
-*        ---
-         F_gptx (i,j,k) =         F_fipt0(i,j,k) + F_gptx (i,j,k)
-         F_wijk0(i,j,k) = - bbb_8*F_fipt0(i,j,k) + F_wijk0(i,j,k)
-         F_fipt0(i,j,k) = ZERO_8 
+*            ADJ
+*            ---
+             F_gptx (i,j,k) =         F_fipt0(i,j,k) + F_gptx (i,j,k)
+             F_wijk0(i,j,k) = - bbb_8*F_fipt0(i,j,k) + F_wijk0(i,j,k)
+             F_fipt0(i,j,k) = ZERO_8 
 *
-         F_pipt0(i,j,k) = F_qt0(i,j,k) / ( Geomg_z_8(k) + F_pipt0m(i,j,k) )
+             F_pipt0(i,j,k) = F_qt0(i,j,k) / ( Geomg_z_8(k) + w_pipt0m(i,j,k) )
      %                                           + F_pipt0(i,j,k)
-         F_qt0  (i,j,k) = ZERO_8 
+             F_qt0  (i,j,k) = ZERO_8 
 *
-         F_st0(i,j)     = Geomg_pib(k)*(F_pipt0(i,j,k)*exp(F_st0m(i,j))) + F_st0(i,j) 
-         F_pipt0(i,j,k) = ZERO_8
+             F_st0(i,j)     = Geomg_pib(k)*(F_pipt0(i,j,k)*exp(w_st0m(i,j))) + F_st0(i,j) 
+             F_pipt0(i,j,k) = ZERO_8
 *
-         F_st0(i,j)     = Geomg_pib(k) * F_wijk0(i,j,k)                  + F_st0(i,j)
-         F_wijk0(i,j,k) = ZERO_8
+             F_st0(i,j)     = Geomg_pib(k) * F_wijk0(i,j,k)                  + F_st0(i,j)
+             F_wijk0(i,j,k) = ZERO_8
 *
              end do
              end do
@@ -744,7 +965,21 @@ C     endif
 *     Calculate s
 *     ~~~~~~~~~~~
       bbb_8 = Geomg_z_8(l_nk)/( Dcst_rgasd_8*Cstv_tstr_8 )
-
+      ccc_8 = Geomg_z_8(l_nk)/( Geomg_pib(l_nk) )
+*
+      if (.not. Schm_hydro_L) then
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+         do j= j0, jn
+         do i= i0, in
+*
+*           ADJ 
+*           ---
+            F_qpt0(i,j,l_nk) = - ccc_8*F_st0(i,j) + F_qpt0(i,j,l_nk)
+*
+         end do
+         end do
+      endif
+*
 *PDIR PARDO FOR=Ptopo_npeOpenMP
       do j= j0, jn
       do i= i0, in
@@ -757,6 +992,65 @@ C     endif
       end do
       end do
 *
+**********************************************************
+*     ADJ of                                             *
+*  1. Retrieve the nonhydro deviation q' of log pressure *
+**********************************************************
+      ccc_8 = Schm_nonhy_8*gamma_8/( Dcst_grav_8**2 * Cstv_tau_8**3 )
+
+      if (.not. Schm_hydro_L) then
+*
+      ddd_8 = Cstv_tau_8/Geomg_z_8(l_nk)
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do j= j0, jn
+      do i= i0, in
+*
+*        ADJ 
+*        ---
+         F_qpt0(i,j,l_nk) = ddd_8*F_qpt0(i,j,l_nk)
+*
+      end do
+      end do
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do j= jn,j0,-1
+         do k=l_nk-1,1,-1
+         aaa_8 = HALF_8*Geomg_hz_8(k)
+         bbb_8 = (ccc_8/Dcst_cappa_8)*HALF_8*( Geomg_z_8(k) + Geomg_z_8(k+1) )
+         ddd_8 = Cstv_tau_8/Geomg_z_8(k)
+         do i= in,i0,-1
+*
+*           ADJ 
+*           ---
+            F_qpt0(i,j,k) = ddd_8*F_qpt0(i,j,k)
+*
+            F_qpt0(i,j,k  ) =                 F_qpt0(i,j,k+1)  + F_qpt0(i,j,k  )
+            F_n3p (i,j,k+1) = aaa_8*( gamma_8*F_qpt0(i,j,k+1)) + F_n3p (i,j,k+1)
+            F_r3p (i,j,k+1) =-aaa_8*( gamma_8*F_qpt0(i,j,k+1)) + F_r3p (i,j,k+1)
+            F_gptx(i,j,k+1) = aaa_8*(   ccc_8*F_qpt0(i,j,k+1)) + F_gptx(i,j,k+1)
+            F_n3p (i,j,k  ) = aaa_8*( gamma_8*F_qpt0(i,j,k+1)) + F_n3p (i,j,k  )
+            F_r3p (i,j,k  ) =-aaa_8*( gamma_8*F_qpt0(i,j,k+1)) + F_r3p (i,j,k  )
+            F_gptx(i,j,k  ) = aaa_8*(   ccc_8*F_qpt0(i,j,k+1)) + F_gptx(i,j,k  )
+            F_gptx(i,j,k+1) = bbb_8*(         F_qpt0(i,j,k+1)) + F_gptx(i,j,k+1)
+            F_gptx(i,j,k  ) =-bbb_8*(         F_qpt0(i,j,k+1)) + F_gptx(i,j,k  )  
+            F_qpt0(i,j,k+1) = ZERO_8
+*
+         end do
+         end do
+      end do
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do j= j0, jn
+      do i= i0, in
+*
+*        ADJ 
+*        ---
+         F_qpt0(i,j,1) = ZERO_8
+*
+      end do
+      end do
+*
+      endif
 *     -----------------------
 *     END ADJOINT CALCULATION 
 *     -----------------------

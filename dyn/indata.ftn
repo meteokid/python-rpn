@@ -5,7 +5,7 @@
 *
       subroutine indata
 *
-#include "impnone.cdk"
+      implicit none
 *
 *author 
 *     Michel Roch - rpn - apr 1994
@@ -19,6 +19,7 @@
 * v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
 * v3_02 - Buehner M.        - leave winds as images for 4dvar or SV jobs
+* v3_03 - Tanguay M.        - Adjoint Lam configuration 
 *
 *object
 *	
@@ -39,9 +40,16 @@
       integer  vmmlod,vmmget,vmmuld
       external vmmlod,vmmget,vmmuld
 *
-      integer key1(17),nvar,err
-**
+      integer key1(18),nvar,err
+*
 *     ---------------------------------------------------------------
+*
+*     ----------------------------------------
+*     Store TRAJ initial state
+*     for Preprocessing of Dependent variables
+*     ----------------------------------------
+      if ( V4dg_conf.ne.0.and.V4dg_part.eq.3.and.V4dg_oktr_L ) 
+     $     call v4d_rwtraj (1) 
 *
       key1( 1) = VMM_KEY( fit1)
       key1( 2) = VMM_KEY(  ut1)
@@ -63,8 +71,10 @@
          key1(15) = VMM_KEY(wt1)
          key1(16) = VMM_KEY(mut1)
          key1(17) = VMM_KEY(multx)
-         nvar = 17
+         key1(18) = VMM_KEY(qpt1)
+         nvar = 18
       endif
+*
       err = vmmlod(key1,nvar)
 *
       err = VMM_GET_VAR( fit1)
@@ -101,49 +111,49 @@
          err = VMM_GET_VAR(  wt1)
          err = VMM_GET_VAR( mut1)
          err = VMM_GET_VAR(multx)
+         err = VMM_GET_VAR(qpt1)
          Ind_w_   = wt1_
          Ind_mu_  = mut1_
          Ind_mul_ = multx_
+         Ind_qp_  = qpt1_
       endif
 *
 *C       1.    Read input data
 *              ---------------
+*
+*     -----------------------------------------
+      if ( V4dg_conf.eq.0.or.V4dg_part.eq.2 ) then 
+*     -----------------------------------------
 *
       bmf_time1 = Out1_dato(1)
       bmf_time2 = Out1_dato(2)
       if ( Schm_phyms_L ) call readgeo()
       call readdyn()
 *
-*     --------------------------------------------
-*     In 4D-Var, Convert wind images to true winds
-*     --------------------------------------------
-      if(V4dg_conf.ne.0) then
-         if(.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) call v4d_img2uv() 
-      endif
+*     In specific 4D-Var runs, Convert wind images to true winds
+*     ----------------------------------------------------------
+      if ( V4dg_conf.ne.0.and..not.(V4dg_4dvar_L.or.V4dg_sgvc_L) ) 
+     $     call v4d_img2uv () 
 *
-*C       2.    performs preprocessing of the dynamics input data
-*              -------------------------------------------------
+*     Initialize the dynamics model configuration
+*     -------------------------------------------
 *
       call set_dync()
 *
-      if(V4dg_conf.eq.0) then
-*
-         call predat ()
-         if (G_lam) call nest_init
-*
-      else
-*     --------------------------------------------------
-*     In 4D-Var, Preprocessing of Control variables only
-*     --------------------------------------------------
-         V4dg_part = 2
-         call v4d_procdyn( )
-*
+*     -----
       endif
+*     -----
+*
+*C       2.    Performs preprocessing of the dynamics input data
+*              -------------------------------------------------
+*
+      call predat() 
 *
       err = vmmuld(-1,0)
+*
+      if (G_lam.and.(V4dg_conf.eq.0.or.V4dg_part.eq.3)) call nest_init 
 *
 *     ---------------------------------------------------------------
 *
       return
       end
-

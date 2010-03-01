@@ -1,0 +1,239 @@
+***s/r v4d_predat - Same as predat but with partition for 4D-Var 
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_predat (ipart)
+*
+#include "impnone.cdk"
+*
+      integer ipart
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v3_03 - Tanguay M.        - initial MPI version
+*
+*object
+*     Preprocessing of Control   variables only if ipart=2
+*     Preprocessing of Dependent variables only if ipart=3
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "schm.cdk"
+#include "ind.cdk"
+#include "lctl.cdk"
+*
+      integer i, j, k
+      real pr1, pr2
+*
+*     __________________________________________________________________
+*
+      if( Lun_out.gt.0 ) then
+         if(ipart.eq.2) write(Lun_out,1002)
+         if(ipart.eq.3) write(Lun_out,1003)
+      endif
+*
+*     -------------------------------------------------------------
+*     Set dependent variables phi',phi from T',s' when Schm_hydro_L
+*     -------------------------------------------------------------
+      if(ipart.eq.3.and.Schm_hydro_L) call v4d_vtap () 
+*
+      if(.not.Schm_hydro_L) then
+*
+*        -------------------------------------
+*        Set control variables when ipart.eq.2
+*        -------------------------------------
+         if(ipart.eq.2) then
+*
+*           Compute phi' from phi 
+*           ---------------------
+            do k= 1, G_nk
+            do j= 1, l_nj
+            do i= 1, l_ni
+               Ind_fip(i,j,k) =  Ind_fi(i,j,k) - Cstvr_fistr_8(k)
+     $                                         - Ind_topo(i,j)
+            end do
+            end do
+            end do
+*
+         endif
+*
+*        ---------------------------------------
+*        Set dependent variables when ipart.eq.3
+*        ---------------------------------------
+         if(ipart.eq.3) then 
+*
+*           Compute phi from phi' 
+*           ---------------------
+            do k= 1, G_nk
+            do j= 1, l_nj
+            do i= 1, l_ni
+               Ind_fi(i,j,k) =  Ind_fip(i,j,k) + Cstvr_fistr_8(k)
+     $                                         + Ind_topo(i,j)
+            end do
+            end do
+            end do
+*
+         endif
+*
+      endif
+*
+*     -------------------------------------
+*     Set control variables when ipart.eq.2
+*     -------------------------------------
+      if(ipart.eq.2) then
+*
+*     Compute T' from T
+*     ------------------
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_tp(i,j,k)  = Ind_t(i,j,k) - Cstv_tstr_8
+      end do
+      end do
+      end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then
+*
+*     Compute T from T'
+*     -----------------
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_t(i,j,k)  = Ind_tp(i,j,k) + Cstv_tstr_8
+      end do
+      end do
+      end do
+*
+      endif
+*
+*     -------------------------------------
+*     Set control variables when ipart.eq.2
+*     -------------------------------------
+      if(ipart.eq.2) then
+*
+*     Compute s
+*     ---------
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_s(i,j) = dlog( exp(Ind_q(i,j,G_nk)) / Cstv_pisrf_8 )
+      end do
+      end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then
+*
+*     Compute q
+*     ---------
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_q(i,j,k) = alog( Geomg_pia(k) + Geomg_pib(k)*exp(Ind_s(i,j)))
+      end do
+      end do
+      end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then
+*
+*     Compute pi'
+*     -----------
+      do k= 2, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_pip(i,j,k)= exp(Ind_q(i,j,k)) - Geomg_z_8(k)
+      end do
+      end do
+      end do
+*
+      do j= 1, l_nj
+      do i= 1, l_ni
+         Ind_pip(i,j,1) = 0.
+      end do
+      end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then
+*
+*     Compute P and T'
+*                    lin
+*     ------------------
+      do k= 1, G_nk
+         pr1 = Dcst_rgasd_8 * Cstv_tstr_8 * Geomg_pib(k) / Geomg_z_8(k)
+         pr2 = Cstv_tstr_8*(Geomg_pib(k)/Geomg_z_8(k) - Geomg_dpib(k))
+         do j= 1, l_nj
+         do i= 1, l_ni
+             Ind_gp(i,j,k) = Ind_fip(i,j,k) + pr1 * Ind_s(i,j)
+            Ind_tpl(i,j,k) = (Cstv_tstr_8+Ind_tp(i,j,k))*
+     $           (1.0+Geomg_dpib(k)*(exp(Ind_s(i,j))-1.))*
+     $           Geomg_z_8(k)/(Geomg_z_8(k)+Ind_pip(i,j,k))-Cstv_tstr_8
+            Ind_tpl(i,j,k) = Ind_tpl(i,j,k) + pr2 * Ind_s(i,j)
+         end do
+         end do
+      end do
+*
+      endif
+*
+*     ---------------------------------------
+*     Set dependent variables when ipart.eq.3
+*     ---------------------------------------
+      if(ipart.eq.3) then 
+*
+      call v4d_uv2img 
+*
+*     Exchange the haloes for computing derivatives
+*     ---------------------------------------------
+      call rpn_comm_xch_halo( Ind_u, LDIST_DIM, l_niu, l_nj , l_nk,
+     $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo( Ind_v, LDIST_DIM, l_ni , l_njv, l_nk,
+     $                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+*     Compute total divergence and vertical velocity
+*     ----------------------------------------------
+      call uv2tdpsd ( Ind_td,Ind_psd,Ind_u,Ind_v,Ind_s,LDIST_DIM,l_nk )
+*
+      if ( .not. Schm_hydro_L ) then
+         do k= 1, G_nk
+         do j= 1, l_nj
+         do i= 1, l_ni
+            Ind_mul(i,j,k) = 0.
+            Ind_mu (i,j,k) = 0.
+         end do
+         end do
+         end do
+         call initw2 ( Ind_w, Ind_u, Ind_v, Ind_psd, Ind_fi, Ind_t,
+     $                                            Ind_s, LDIST_DIM )
+      endif
+*
+      endif
+*
+1002  format(//,'PREPROCESSING DATA: (S/R V4D_PREDAT PART 2)',
+     %        /,'===========================================',//)
+1003  format(//,'PREPROCESSING DATA: (S/R V4D_PREDAT PART 3)',
+     %        /,'===========================================',//)
+*
+*     __________________________________________________________________
+      return
+      end

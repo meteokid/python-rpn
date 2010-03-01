@@ -13,6 +13,7 @@
 * v2_10 - Tanguay M.        - initial MPI version
 * v2_21 - Tanguay M.        - reduce standard output as in model 
 * v2_31 - Tanguay M.        - adapt ADJ for new advection code
+* v3_03 - Tanguay M.        - Adjoint NoHyd configuration 
 *
 *object
 *     see id section
@@ -39,16 +40,13 @@
       integer  vmmlod, vmmget, vmmuld
       external vmmlod, vmmget, vmmuld
 *
-      integer pnerr, pnlod, pnlkey1(20), i, j 
+      integer pnerr, pnlod, pnlkey1(60), i, j 
 *
       real wijk1 (LDIST_SHAPE,l_nk),wijk2 (LDIST_SHAPE,l_nk)
 *     ______________________________________________________
 *
-      if(.not. Schm_hydro_L) call gefstop('pre_ad')
-*     ______________________________________________________
-*
       if (Lun_debug_L) write (Lun_out,1000)
-
+*
       pnlkey1(1)  = VMM_KEY(ru)
       pnlkey1(2)  = VMM_KEY(rv)
       pnlkey1(3)  = VMM_KEY(ruw1)
@@ -65,20 +63,23 @@
       pnlkey1(14) = VMM_KEY(rth)
       pnlkey1(15) = VMM_KEY(rhell)
       pnlod = 15
+      if (.not. Schm_hydro_L) then
+         pnlkey1(16) = VMM_KEY(rw)
+         pnlkey1(17) = VMM_KEY(rvv)
+         pnlkey1(18) = VMM_KEY(r3)
+         pnlkey1(19) = VMM_KEY(r3p)
+         pnlod = 19
+      endif
 *
+*     TRAJECTORY
+*     ----------
       pnlkey1(pnlod+ 1) = VMM_KEY(ruw2m)
       pnlkey1(pnlod+ 2) = VMM_KEY(rvw2m)
       pnlkey1(pnlod+ 3) = VMM_KEY(xct1m)
       pnlkey1(pnlod+ 4) = VMM_KEY(yct1m)
       pnlkey1(pnlod+ 5) = VMM_KEY(zct1m)
       pnlod = pnlod+ 5
-
-      if (.not. Schm_hydro_L) then
 *
-*        ADJ not done in PRE_AD
-*        ----------------------
-*
-      endif
 *     - - - - - - - - - - - - - - -
       pnerr = vmmlod(pnlkey1,pnlod)
 *     - - - - - - - - - - - - - - -
@@ -97,18 +98,11 @@
       pnerr = VMM_GET_VAR(r1)
       pnerr = VMM_GET_VAR(rth)
       pnerr = VMM_GET_VAR(rhell)
-*
-      pnerr = VMM_GET_VAR(ruw2m)
-      pnerr = VMM_GET_VAR(rvw2m)
-      pnerr = VMM_GET_VAR(xct1m)
-      pnerr = VMM_GET_VAR(yct1m)
-      pnerr = VMM_GET_VAR(zct1m)
-*
       if (.not. Schm_hydro_L) then
-*
-*        ADJ not done in PRE_AD
-*        ----------------------
-*
+         pnerr = VMM_GET_VAR(rw)
+         pnerr = VMM_GET_VAR(rvv)
+         pnerr = VMM_GET_VAR(r3)
+         pnerr = VMM_GET_VAR(r3p)
       else
          rw_  = 0
          rvv_ = 0
@@ -116,16 +110,22 @@
          r3p_ = 0
       endif
 *
+*     TRAJECTORY
+*     ----------
+      pnerr = VMM_GET_VAR(ruw2m)
+      pnerr = VMM_GET_VAR(rvw2m)
+      pnerr = VMM_GET_VAR(xct1m)
+      pnerr = VMM_GET_VAR(yct1m)
+      pnerr = VMM_GET_VAR(zct1m)
+*
 *PDIR RESERVE=Ptopo_npeOpenMP
-
-      call prep_2_ad ( ru,rv, ruw1,ruw2,rvw1,rvw2, xct1,yct1,zct1,topo,
-     %                 rd,rcn,r1,rth, rw,rvv,r3,r3p, rhell,
-     %                 wijk1,wijk2,
 *
-     %                 ruw2m,rvw2m,
-     %                 xct1m,yct1m,zct1m,
-*
+      call prep_2_ad ( ru    ,rv    ,ruw1 ,ruw2 ,rvw1 ,rvw2 ,xct1 ,yct1 ,zct1  , topo,
+     %                 rd    ,rcn   ,r1   ,rth  ,rw   ,rvv  ,r3   ,r3p  ,rhell ,
+     %                 wijk1 ,wijk2 ,
+     %                                     ruw2m,      rvw2m,xct1m,yct1m,zct1m,
      %                 LDIST_DIM,l_ni,l_nj,l_nk )
+*
 *PDIR RELEASE
 *
       pnerr = vmmuld(-1,0)

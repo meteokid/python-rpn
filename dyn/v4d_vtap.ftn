@@ -15,6 +15,7 @@
 * v2_21 - Tanguay M.        - replace xfis by topo 
 * v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
 * v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+* v3_03 - Tanguay M.        - use Ind comdeck
 *
 *object
 *     see id section
@@ -29,19 +30,14 @@
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "schm.cdk"
-#include "p_geof.cdk"
-#include "vt1.cdk"
+#include "ind.cdk"
 *
 *modules
-      integer  vmmlod,vmmget,vmmuld
-      external vmmlod,vmmget,vmmuld
-*
-      integer i,j,k,ik,jk,pnerr,pnlkey1(5)
+      integer i,j,k,ik,jk
 *
       real pcon,pr1
 *
-      real*8  ZERO_8
-      parameter( ZERO_8 = 0.0 )
+      real*8, parameter :: ZERO_8 = 0.0
 *
 *     -----------------
 *     Define work space
@@ -50,35 +46,15 @@
       real work1(LDIST_SHAPE,l_nk), work2(LDIST_SHAPE,l_nk)
 *     ______________________________________________________
 *
-      if (.not. Schm_cptop_L) call gefstop('v4d_vtap')
-*     ______________________________________________________
-*
-*
-*     Allocate and load fields
-*     ------------------------
-      pnlkey1(1) = VMM_KEY(fit1 )
-      pnlkey1(2) = VMM_KEY(fipt1)
-      pnlkey1(3) = VMM_KEY(topo )
-      pnlkey1(4) = VMM_KEY(tpt1 )
-      pnlkey1(5) = VMM_KEY(st1  )
-*
-      pnerr = vmmlod(pnlkey1,5)
-*
-      pnerr = VMM_GET_VAR(fit1)
-      pnerr = VMM_GET_VAR(fipt1)
-      pnerr = VMM_GET_VAR(topo)
-      pnerr = VMM_GET_VAR(tpt1)
-      pnerr = VMM_GET_VAR(st1)
-*
 *     Zero variables
 *     --------------
       do k=1,l_nk
       do j=l_miny,l_maxy
       do i=l_minx,l_maxx
-         fit1 (i,j,k) = ZERO_8
-         fipt1(i,j,k) = ZERO_8
-         work1(i,j,k) = ZERO_8
-         work2(i,j,k) = ZERO_8
+         Ind_fi (i,j,k) = ZERO_8
+         Ind_fip(i,j,k) = ZERO_8
+         work1  (i,j,k) = ZERO_8
+         work2  (i,j,k) = ZERO_8
       end do
       end do
       end do
@@ -92,12 +68,12 @@
 *
 *        Evaluate exp(qt1)
 *        -----------------
-         work2(i,j,k) = Geomg_pia(k) + Geomg_pib(k)*exp(st1(i,j))
+         work2(i,j,k) = Geomg_pia(k) + Geomg_pib(k)*exp(Ind_s(i,j))
 *
 *        Evaluate special T 
 *        ------------------
-         work2(i,j,k)= (Cstv_tstr_8+tpt1(i,j,k))*
-     %                 (1.0+Geomg_dpib(k)*(exp(st1(i,j))-1.))*
+         work2(i,j,k)= (Cstv_tstr_8+Ind_tp(i,j,k))*
+     %                 (1.0+Geomg_dpib(k)*(exp(Ind_s(i,j))-1.))*
      %                 (Geomg_z_8(k) / work2(i,j,k)) -  Cstv_tstr_8
 *
       end do
@@ -109,7 +85,7 @@
       do j=1,l_nj
       do i=1,l_ni
 *
-         work1(i,j,l_nk) = topo(i,j)
+         work1(i,j,l_nk) = Ind_topo(i,j)
 *
       end do
       end do
@@ -134,14 +110,12 @@
       do j=1,l_nj
       do i=1,l_ni
 *
-         fit1(i,j,k)  = Cstvr_fistr_8(k) + work1(i,j,k)
-         fipt1(i,j,k) = fit1(i,j,k) - Cstvr_fistr_8(k) - topo(i,j)
+         Ind_fi (i,j,k) = Cstvr_fistr_8(k) + work1(i,j,k)
+         Ind_fip(i,j,k) = Ind_fi(i,j,k) - Cstvr_fistr_8(k) - Ind_topo(i,j)
 *
       end do
       end do
       end do
-*
-      pnerr = vmmuld(-1,0)
 *
       return
       end

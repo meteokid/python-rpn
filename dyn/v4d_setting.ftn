@@ -29,6 +29,7 @@
 *                           - changed call readlalo to readinit
 *                           - no 3hr preliminary integration for SV job
 * v3_02 - Tanguay M.        - V4dz_degree in namelist var4d
+* v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
 *
 *object
 *     1) Allocate WA files and VMM space
@@ -97,41 +98,57 @@
 *         -----------------------------------------------
              V4dg_trsize = 0 
 *
-*            V4dg_numtr.eq.1
-*            ---------------
-             V4dg_trsize = V4dg_trsize + Step_total*(5*l_ni*l_nj*l_nk + 1*l_ni*l_nj) 
+*            numtr.eq.1
+*            ----------
+             V4dg_trsize = V4dg_trsize + Step_total*( (3+Tr3d_ntr)*l_nk + 1)*l_ni*l_nj 
 *
-*            V4dg_numtr.eq.2
-*            ---------------
-             V4dg_trsize = V4dg_trsize + Step_total*(1*l_ni*l_nj*l_nk + 0*l_ni*l_nj) 
+*            numtr.eq.2
+*            ----------
+             V4dg_trsize = V4dg_trsize + Step_total*(  1          *l_nk + 0)*l_ni*l_nj 
 *
-*            V4dg_numtr.eq.3
-*            ---------------
-             V4dg_trsize = V4dg_trsize + Step_total*(9*l_ni*l_nj*l_nk + 1*l_ni*l_nj) 
+*            numtr.eq.3
+*            ----------
+             V4dg_trsize = V4dg_trsize + Step_total*((12+Tr3d_ntr)*l_nk + 1)*l_ni*l_nj 
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + Step_total*(  3          *l_nk + 0)*l_ni*l_nj 
 *
-*            V4dg_numtr.eq.4
-*            ---------------
-             V4dg_trsize = V4dg_trsize + Step_total*(4*l_ni*l_nj*l_nk + 0*l_ni*l_nj)*Schm_itcn 
+*            numtr.eq.4
+*            ----------
+             V4dg_trsize = V4dg_trsize + Step_total*(  6          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
 *
-*            V4dg_numtr.eq.5
-*            ---------------
-             V4dg_trsize = V4dg_trsize + Step_total*(3*l_ni*l_nj*l_nk + 0*l_ni*l_nj)*Schm_itcn 
+*            numtr.eq.5
+*            ----------
+             V4dg_trsize = V4dg_trsize + Step_total*(  3          *l_nk + 0)*l_ni*l_nj*Schm_itcn 
 *
-*            V4dg_numtr.eq.6
-*            ---------------
-             V4dg_trsize = V4dg_trsize + Step_total*(3*l_ni*l_nj*l_nk + 1*l_ni*l_nj)*Schm_itcn 
+*            numtr.eq.6
+*            ----------
+             V4dg_trsize = V4dg_trsize + Step_total*(  6          *l_nk + 1)*l_ni*l_nj*Schm_itcn 
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + Step_total*(  3          *l_nk + 0)*l_ni*l_nj 
 *
+*            numtr.eq.7
+*            ----------
+             if(.not.Schm_hydro_L)
+     %       V4dg_trsize = V4dg_trsize + Step_total*(  1          *l_nk + 0)*l_ni*l_nj 
 *
 *            Estimate size for the physic interface 
 *            --------------------------------------
 *
-*            V4dg_numtr.eq.10
-*            ----------------
-             V4dg_trsize = V4dg_trsize + Step_total*(5*l_ni*l_nj*l_nk + 0*l_ni*l_nj) 
+*            numtr.eq.10
+*            -----------
+             V4dg_trsize = V4dg_trsize + Step_total*(  5          *l_nk + 0)*l_ni*l_nj 
 *
-*            V4dg_numtr.eq.11
-*            ----------------
-             V4dg_trsize = V4dg_trsize + Step_total*(4*l_ni*l_nj*l_nk + 1*l_ni*l_nj) 
+*            numtr.eq.11
+*            -----------
+             V4dg_trsize = V4dg_trsize + Step_total*(  4          *l_nk + 1)*l_ni*l_nj 
+*
+*         ----------------------------------
+*         Estimate size for the nesting TRAJ  
+*         ----------------------------------
+*
+*            numtr.eq.12
+*            -----------
+             V4dg_trsize = V4dg_trsize + Step_total*((10+Tr3d_ntr)*l_nk + 1)*l_ni*l_nj
 *
              call hpalloc (V4dg_trincore_, V4dg_trsize, pnerr, 1)
 *
@@ -142,11 +159,11 @@
 *
 *            Sigma levels
 *            ------------
-             V4dg_phsize = V4dg_phsize +          1*(1*l_ni*l_nj*l_nk + 0*l_ni*l_nj)
+             V4dg_phsize = V4dg_phsize +          1*( 1*l_nk + 0)*l_ni*l_nj
 *
 *            KM and KT
 *            ---------
-             V4dg_phsize = V4dg_phsize + Step_total*(2*l_ni*l_nj*l_nk + 0*l_ni*l_nj)
+             V4dg_phsize = V4dg_phsize + Step_total*( 2*l_nk + 0)*l_ni*l_nj
 *
              call hpalloc (V4dg_phincore_, V4dg_phsize, pnerr, 1)
 *
@@ -160,7 +177,7 @@
 *         -----------------------------------------------
              V4dg_frsize = 0
 *
-             V4dg_frsize = V4dg_frsize + timobmax *(3*l_ni*l_nj*l_nk + 1*l_ni*l_nj)
+             V4dg_frsize = V4dg_frsize + timobmax *( 3*l_nk + 1)*l_ni*l_nj
 *
              call hpalloc (V4dg_frincore_, V4dg_frsize, pnerr, 1)
 *
@@ -168,7 +185,7 @@
 *         -----------------------------------------------
              V4dg_obsize = 0
 *
-             V4dg_obsize = V4dg_obsize + timobmax *(3*l_ni*l_nj*l_nk + 1*l_ni*l_nj)
+             V4dg_obsize = V4dg_obsize + timobmax *( 3*l_nk + 1)*l_ni*l_nj
 *
              call hpalloc (V4dg_obincore_, V4dg_obsize, pnerr, 1)
 *
@@ -208,7 +225,9 @@
 *
 *        Initialize dimensions
 *        ---------------------
-         V4dc_ncv    = l_ni * ((2+Tr3d_ntr)*l_nj + l_njv) * l_nk + l_ni * l_nj 
+         V4dc_ncv    = l_ni  * ((1+Tr3d_ntr)*l_nj + l_njv) * l_nk + 
+     %                 l_niu *                      l_nj   * l_nk + l_ni * l_nj 
+         if (.not. Schm_hydro_L) V4dc_ncv = V4dc_ncv + l_ni * l_nj * l_nk 
 *
 *        V4dc_nupd is the number of updates for building Hessian in M1QN3
 *        ----------------------------------------------------------------
