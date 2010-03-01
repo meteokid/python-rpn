@@ -13,7 +13,7 @@
      $        wsoil,snodp,icedp,glsea,glsea0,ufcp,vfcp,
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp,
      $        fdsi, tss, cosz, tdiag, udiag, vdiag,
-     $        qdiag,tmice, mrkv, mrk2
+     $        qdiag,tmice
       common /dynbusid/
      $        umoins,vmoins,tmoins,gzmoins6,humoins,pmoins,
      $        uplus ,vplus ,tplus ,huplus ,pplus ,
@@ -25,7 +25,7 @@
      $        wsoil,snodp,icedp,glsea,glsea0,ufcp,vfcp,
      $        incrne,incrhs,incricd,incrgl,incrts,incrtg,incrtp,
      $        fdsi, tss, cosz, tdiag, udiag, vdiag,
-     $        qdiag,tmice, mrkv, mrk2
+     $        qdiag,tmice
 
       integer h2o_maxn,h2o_ntr,h2o_deb
       parameter (h2o_maxn=5)

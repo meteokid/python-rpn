@@ -104,10 +104,6 @@
      $         write (6,120) 'SRFPRES ','P0',0,0,1,'A',' CUBIC '
 *
          if (.not.e_schm_offline_l) then
-
-*LUBOS - pour forcer le recalcul de GZ pour le filtre de kalman
-          anal_hav(1)=1
-
          if (anal_hav(1).eq.0) then
             err = e_bmfrd (dstf_gid, nifi, njfi, 'GZ  ', 0., c2,na,
      $                                 lv, anyip_L,arret_L,'CUBIC' )
@@ -207,10 +203,21 @@
       anyip_L = .true.
       arret_L = .false.
       do i=1,E_tr3d_ntr
-c         print*, E_tr3d_name_S(i),i
          if (.not.E_Schm_offline_L) then
-         err = e_bmfrd ( dstf_gid, nifi, njfi, E_tr3d_name_S(i), 
-     $                           0., 1., na, lv, anyip_L,arret_L,'CUBIC' )
+         do k=1,lv
+          if (e_rdhint3 (hu,dstf_gid,nifi,njfi,E_tr3d_name_S(i),
+     $      na(k),ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).ge.0) then
+             call e_bmfsplitxy2 (hu,nifi,njfi,E_tr3d_name_S(i),k,lv,pni,0,0,0)
+          else if (e_rdhint3 (hu,dstf_gid,nifi,njfi,E_tr3d_name_S(i)(1:2)//'T1',
+     $      na(k),ip2a, ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).ge.0) then
+             call e_bmfsplitxy2 (hu,nifi,njfi,E_tr3d_name_S(i)(1:2),k,lv,pni,0,0,0)
+          else if (e_rdhint3 (hu,dstf_gid,nifi,njfi,E_tr3d_name_S(i)(1:2)//'T0',
+     $      na(k),ip2a, ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).ge.0) then
+             call e_bmfsplitxy2 (hu,nifi,njfi,E_tr3d_name_S(i)(1:2),k,lv,pni,0,0,0)
+          endif
+         enddo
+c           err = e_bmfrd ( dstf_gid, nifi, njfi, E_tr3d_name_S(i), 
+c    $                           0., 1., na, lv, anyip_L,arret_L,'CUBIC' )
          else
             mul=1.
             if      (E_tr3d_name_S(i).eq.'FI') then

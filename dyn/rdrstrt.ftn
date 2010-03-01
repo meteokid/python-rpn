@@ -33,12 +33,9 @@
 #include "mem.cdk"
 #include "p_bus.cdk"
 #include "c_cplg.cdk"
-#include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "pres.cdk"
 #include "pilot.cdk"
-#include "ens_param.cdk"
-#include "ens_stochphy.cdk"
 *
 **
       integer adr,ier,dim,current_nest
@@ -59,9 +56,6 @@
          if (Schm_phyms_L.and.Mem_phyncore_L) then
             call waread (Lun_rstrt,Phy_busper3D,adr,p_bper_siz*p_nj)
             adr = adr + p_bper_siz*p_nj
-            dim=36*(MAX2DC+MAX3DC)
-            call waread (Lun_rstrt,dumdum,adr,dim)
-            adr = adr + dim
             call waread (Lun_rstrt,Rstri_half_L,adr,1)
             adr = adr + 1
             if (Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L)

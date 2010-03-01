@@ -42,7 +42,6 @@
 * v3_21 - Desgagne M.        - call inctphy3
 * v3_22 - Leduc A-M.         - add P_pbl_limsnodp_L
 * v3_22 - Dugas B.           - add kfctriga support
-* v3_22 - Pellerin G.        - add P_gwd_taufac
 *
 *object
 *       See above id
@@ -190,8 +189,6 @@
       P_cond_kkl     = 0.1
       P_cond_pcptype_s='NIL'
 *
-      P_gwd_taufac   = 8.0e-06
-      P_gwd_cdblk    = 1.0
       P_gwd_s        = 'GWD86'
 *
       P_serg_srsus_L = .false.
@@ -354,7 +351,6 @@
       COMMON_BROADCAST(ppbl_r)
       COMMON_BROADCAST(ppbl_r8)
       COMMON_BROADCAST(pgwd_c)
-      COMMON_BROADCAST(pgwd_r)
       COMMON_BROADCAST(pcond_c)
       COMMON_BROADCAST(pcond_l)
       COMMON_BROADCAST(pcond_i)

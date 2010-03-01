@@ -59,6 +59,8 @@
 * v3_21 - Lee V.            - Added Lctl_reset key, remove TR2D
 * v3_22 - Lee V.            - Add Pres_vtap_L key for vtap
 *
+* v3_23 - Gravel & Erfani   - Increased the advection halo number of points of lam by 1
+*
 *object
 *  To initialize model by reading namelist and return the 
 *  configuration of the number of PE's
@@ -393,11 +395,6 @@
       endif
       read (Lun_in, nml=var4d, end = 6666, err = 9140)
  6666 continue
-*
-*     Read the namelist for the ensembles
-*
-      call ens_nml(lun_in)
-
       call fclos (lun_in)
 *        
 *     Set Mem_phyncore_L to true permanently
@@ -599,8 +596,8 @@
             write (Lun_out, 8000)
             return
          endif
-	 Adw_halox  = Schm_maxcfl_lam * 3
-         Adw_haloy  = Adw_halox-1
+	 Adw_halox  = Schm_maxcfl_lam * 3 + 1 
+         Adw_haloy  = Adw_halox
       endif
 *
       Lun_debug_L = Lctl_debug_L

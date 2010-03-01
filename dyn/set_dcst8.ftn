@@ -1,4 +1,0 @@
-      integer function set_dcst8 ()
-      set_dcst8=-1
-      return
-      end

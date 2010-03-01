@@ -6,7 +6,7 @@
       subroutine calddqr( F_diver, F_relv, F_wlnph, F_ui , F_vi, F_dpdx,
      $                    F_dpdy , F_dudp, F_dvdp, F_wrk, DIST_DIM, Nk)
 
-#include "impnone.cdk"
+      implicit none
 *
       integer DIST_DIM, Nk
       real F_diver(DIST_SHAPE, Nk), F_relv(DIST_SHAPE, Nk)
@@ -69,9 +69,8 @@
 #include "inuvl.cdk"
 *
 **
-      integer i, j, k, i0, in, j0, jn
+      integer i, j, k, i0, in, j0, jn,i00
       real*8 fact1
-      real*8 inv_geomg_hsy_8(l_miny:l_maxy)
       real*8 inv_geomg_cyv_8(l_miny:l_maxy)
 *
 *     ---------------------------------------------------------------
@@ -90,12 +89,11 @@
       call verder(F_dvdp , F_ui, F_wlnph, 2.0,  2.0, LDIST_DIM,
      $                                          G_nk,i0,in,j0,jn)
       do j=1-G_haloy,l_nj+G_haloy
-         inv_geomg_hsy_8(j) = 1.0/geomg_hsy_8(j)
          inv_geomg_cyv_8(j) = 1.0/geomg_cyv_8(j)
       enddo
 *
-!$omp parallel private (fact1)
-!$omp&         shared  (inv_geomg_cyv_8,inv_geomg_hsy_8)
+!$omp parallel private (fact1,i00)
+!$omp&         shared  (inv_geomg_cyv_8)
 !$omp do
       do k=1,l_nk
          do j=j0,jn
@@ -117,12 +115,13 @@
       call rpn_comm_xch_halo (F_dvdp,LDIST_DIM,l_ni,l_nj,G_nk,
      $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !$omp end single
-      if ((G_lam).and.(l_west)) i0 = 2
+      i00=i0
+      if ((G_lam).and.(l_west)) i00 = 2
 *
 !$omp do
       do k=1,l_nk
          do j = j0, jn
-         do i = i0, in
+         do i = i00, in
             F_dpdx(i,j,k)= (1.0-intuv_c0xux_8(i-1)) * F_dpdy(i-1,j,k) +
      $                          intuv_c0xux_8(i-1)  * F_dpdy(i  ,j,k)
             F_dudp(i,j,k)= (1.0-intuv_c0xux_8(i-1)) * F_dvdp(i-1,j,k) +
@@ -131,6 +130,7 @@
          end do
       end do
 !$omp enddo
+!$omp end parallel
 *
 *      Compute dP/dY and dV/dP and put on phi grid 
 *      -------------------------------------------
@@ -141,16 +141,17 @@
       jn = l_njv
       if (l_south) j0 = 2
 *
+!$omp parallel shared  (inv_geomg_cyv_8)
 !$omp do
       do k=1,l_nk
          do j = j0, jn
          do i = i0, in
             F_dpdy(i,j,k)= (1.0 - intuv_c0yvy_8(j-1)) * 
      $           (F_wlnph(i,j,k)-F_wlnph(i,j-1,k))*
-     $           geomg_cyv2_8(j-1)*inv_geomg_hsy_8(j-1) * inv_geomg_cyv_8(j-1) +
+     $           geomg_cyv2_8(j-1)*geomg_invhsy_8(j-1) * inv_geomg_cyv_8(j-1) +
      $                          intuv_c0yvy_8(j-1)  * 
      $           (F_wlnph(i,j+1,k)-F_wlnph(i,j,k))*
-     $           geomg_cyv2_8(j)*inv_geomg_hsy_8(j) * inv_geomg_cyv_8(j)
+     $           geomg_cyv2_8(j)*geomg_invhsy_8(j) * inv_geomg_cyv_8(j)
          end do
          end do
          if (.not.G_lam) then
@@ -158,27 +159,28 @@
             do i = i0, in
                F_dpdy(i,1,k) = intuv_c0yvy_8(0)
      $                   *(F_wlnph(i,2,k)-F_wlnph(i,1,k))*
-     $                   geomg_cyv2_8(1)*inv_geomg_hsy_8(1)* inv_geomg_cyv_8(1)
+     $                   geomg_cyv2_8(1)*geomg_invhsy_8(1)* inv_geomg_cyv_8(1)
             end do
             endif
             if (l_north) then
             do i = i0, in
                F_dpdy(i,l_nj,k)=(1.-intuv_c0yvy_8(l_nj-1))*
      $                 (F_wlnph(i,l_nj,k)-F_wlnph(i,l_nj-1,k))*
-     $      geomg_cyv2_8(l_nj-1)*inv_geomg_hsy_8(l_nj-1)*inv_geomg_cyv_8(l_nj-1)
+     $      geomg_cyv2_8(l_nj-1)*geomg_invhsy_8(l_nj-1)*inv_geomg_cyv_8(l_nj-1)
             end do
             endif
          endif
       end do
 !$omp enddo
-!$omp end parallel
 *
+!$omp single
       call verder(F_wrk ,F_vi, F_wlnph, 2.0,  2.0, LDIST_DIM,G_nk,
      $                                                  i0,in,1,jn)
 *
       call rpn_comm_xch_halo (F_wrk,LDIST_DIM,l_ni,l_nj,G_nk,
      $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-!$omp parallel shared  (inv_geomg_cyv_8,inv_geomg_hsy_8)
+!$omp end single
+*
 !$omp do
       do k=1,l_nk
          do j = j0, jn
@@ -204,6 +206,7 @@
          endif
       end do
 !$omp enddo
+!$omp end parallel
 *
 *      Combine terms
 *      ----------------------------------------------
@@ -218,6 +221,8 @@
           jn = l_njv
           in = l_niu
       endif
+*
+!$omp parallel  shared (inv_geomg_cyv_8)
 !$omp do
       do k=1,l_nk
       do j= j0, jn
@@ -234,7 +239,7 @@
           if (l_west) then
 !$omp do
             do k=1,G_nk
-             do j=2,l_njv
+             do j=j0,l_njv
                 F_diver(1,j,k)=F_diver(2,j,k)
                 F_relv(1,j,k)=F_relv(2,j,k)
              enddo
@@ -244,7 +249,7 @@
           if (l_east) then
 !$omp do
             do k=1,G_nk
-             do j=2,l_njv
+             do j=j0,l_njv
                 F_diver(l_ni,j,k)=F_diver(l_niu,j,k)
                 F_relv(l_ni,j,k)=F_relv(l_niu,j,k)
              enddo

@@ -8,7 +8,7 @@
      %             minx,maxx,miny,maxy,gnk,Gni,nil,njl,nkl,
      %             F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
 *
-#include "impnone.cdk"
+      implicit none
 *
       integer  minx1, maxx1, minx2, maxx2 , nx1, nx2, nx3, F_pwr,
      $         minx , maxx , miny , maxy  , gnk, Gni,
@@ -50,7 +50,8 @@
       real*8   sol_8(minx1:maxx1,minx2:maxx2,F_pwr,nx3   )
       real*8   ZERO_8
       parameter( ZERO_8 = 0.0 )      
-      integer dim, o1,o2,i,j,k,l_pil_w,l_pil_e
+      integer o1,o2,i,j,k,l_pil_w,l_pil_e
+      integer ki,kkii,ki0,kin,kilon,kitotal,pi0,pin
 **
 *     __________________________________________________________________
 *
@@ -60,7 +61,11 @@
       l_pil_e=0
       if (l_south) l_pil_w= Lam_pil_w
       if (l_north) l_pil_e= Lam_pil_e
-!$omp parallel
+
+      kilon = (maxx2-l_pil_e-minx2-l_pil_w +1 +Ptopo_npeOpenMP)/Ptopo_npeOpenMP
+
+!$omp parallel private(ki0,kin,pi0,pin)
+!$&            shared (kilon)
 !$omp do
       do k = 1, gnk
       do j = 1+pil_s, njl-pil_n
@@ -197,27 +202,33 @@ c    %                     1, (Maxy-Miny+1) * Nkl, -1 )
       enddo
 !$omp enddo
 *
-!$omp single
-      do j = 2+Lam_pil_s, nx3-Lam_pil_n
-         do o1= 1, F_pwr
-         do o2= 1, F_pwr
-         do i = minx2+l_pil_w, maxx2-l_pil_e
-         do k = 1, nx1
-            sol_8(k,i,o1,j)= sol_8(k,i,o1,j)
+!$omp do
+      do kkii = 1, Ptopo_npeOpenMP
+         ki0 = minx2+l_pil_w + kilon*(kkii-1)
+         kin = min(ki0+kilon-1, maxx2-l_pil_e)
+         pi0 = 1+l_pil_w + kilon*(kkii-1)
+         pin = min(pi0+kilon-1, nx2-l_pil_e)
+         do j = 2+Lam_pil_s, nx3-Lam_pil_n
+            do o1= 1, F_pwr
+            do o2= 1, F_pwr
+            do i = ki0,kin
+            do k = 1, nx1
+               sol_8(k,i,o1,j)= sol_8(k,i,o1,j)
      $                       + F_a_8(o1,o2,i,j)*sol_8(k,i,o2,j-1)
-         enddo
-         enddo
-         enddo
-         enddo
-         do o1= 1,F_pwr
-         do i = 1+l_pil_w, nx2-l_pil_e
-         do k= 1, nx1
-           sol_8(k,i,o1,j) = dn3_8(k,i,o1,j) - sol_8(k,i,o1,j)
-         enddo
-         enddo
+            enddo
+            enddo
+            enddo
+            enddo
+            do o1= 1,F_pwr
+            do i = pi0,pin
+            do k= 1, nx1
+               sol_8(k,i,o1,j) = dn3_8(k,i,o1,j) - sol_8(k,i,o1,j)
+            enddo
+            enddo
+            enddo
          enddo
       enddo
-!$omp end single
+!$omp enddo
 *
 * scale le cote droit pour retour
 *
@@ -262,11 +273,11 @@ c    %                     1, (Maxy-Miny+1) * Nkl, -1 )
 !$omp enddo
 
 !
-! Maybe better if OpenMP on i (LC)
+! Maybe better if OpenMP on i (LC), done (VL)
 !
 !$omp do
-      do o1= 1, F_pwr
       do i = 1+l_pil_w, nx2-l_pil_e
+      do o1= 1, F_pwr
       do k = 1, nx1
          sol_8(k,i,o1,nx3-Lam_pil_n)=dn3_8(k,i,o1,nx3-Lam_pil_n)
       enddo
@@ -274,28 +285,34 @@ c    %                     1, (Maxy-Miny+1) * Nkl, -1 )
       enddo
 !$omp enddo
 *
-!$omp single
-      do j = nx3-1-Lam_pil_n, 1+Lam_pil_s, -1
-      do o1= 1, F_pwr
-      do o2= 1, F_pwr
-      do k = minx1, maxx1
-      do i = minx2+l_pil_w, maxx2-l_pil_e
-         sol_8(k,i,o1,j)= sol_8(k,i,o1,j)
+!$omp do
+      do kkii = 1, Ptopo_npeOpenMP
+         ki0 = minx2+l_pil_w + kilon*(kkii-1)
+         kin = min(ki0+kilon-1, maxx2-l_pil_e)
+         pi0 = 1+l_pil_w + kilon*(kkii-1)
+         pin = min(pi0+kilon-1, nx2-l_pil_e)
+         do j = nx3-1-Lam_pil_n, 1+Lam_pil_s, -1
+            do o1= 1, F_pwr
+            do o2= 1, F_pwr
+            do k = minx1, maxx1
+            do i = ki0, kin
+               sol_8(k,i,o1,j)= sol_8(k,i,o1,j)
      $                    + F_c_8(o1,o2,i,j)*sol_8(k,i,o2,j+1)
-      enddo
-      enddo
-      enddo
-      enddo
+            enddo
+            enddo
+            enddo
+            enddo
 *
-      do o1= 1, F_pwr
-      do i = 1+l_pil_w, nx2-l_pil_e
-      do k = 1, nx1
-         sol_8(k,i,o1,j)=dn3_8(k,i,o1,j)-sol_8(k,i,o1,j)
+            do o1= 1, F_pwr
+            do i = pi0,pin
+            do k = 1, nx1
+               sol_8(k,i,o1,j)=dn3_8(k,i,o1,j)-sol_8(k,i,o1,j)
+            enddo
+            enddo
+            enddo
+         enddo
       enddo
-      enddo
-      enddo
-      enddo
-!$omp end single
+!$omp enddo
 *
 !$omp do
       do j = 1+Lam_pil_s, nx3-Lam_pil_n
