@@ -1,0 +1,112 @@
+***s/r nest_out
+*
+      subroutine nest_out ()
+#include "impnone.cdk"
+*
+*author   V. Lee  Dec 2000 for LAM
+*
+*revision
+* v3_00 - Desgagne & Lee       - initial version
+*
+*implicits
+#include <model_macros_f.h>
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "vt1.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+#include "ptopo.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+
+      integer i,j,k,i0,in,j0,jn
+      parameter( i0 =glb_i0-glb_pil_w )
+      parameter( in =glb_in+glb_pil_e )
+      parameter( j0 =glb_j0-glb_pil_s )
+      parameter( jn =glb_jn+glb_pil_n )
+      real  tr
+      pointer (patr, tr(LDIST_SHAPE,*))
+      integer pnerr, pnlkey1(13), nvar, key1(Tr3d_ntr),key1_, n
+*     ---------------------------------------------------------------
+*
+      if (Ptopo_myproc.eq.0) then
+         print*, 'Nest_out: WRITE_FUTURE in future_bin.l ',Lctl_step
+         write (60) Lctl_step
+      endif
+*
+      pnlkey1(1)  = VMM_KEY(ut1)
+      pnlkey1(2)  = VMM_KEY(vt1)
+      pnlkey1(3)  = VMM_KEY(qt1)
+      pnlkey1(4)  = VMM_KEY(tt1)
+      pnlkey1(5)  = VMM_KEY(fit1)
+      pnlkey1(6)  = VMM_KEY(tdt1)
+      pnlkey1(7)  = VMM_KEY(psdt1)
+      pnlkey1(8)  = VMM_KEY(pipt1)
+      pnlkey1(9)  = VMM_KEY(fipt1)
+      pnlkey1(10) = VMM_KEY(st1)
+      pnlkey1(11) = VMM_KEY(tpt1)
+      nvar = 11
+*
+      if (.not. Schm_hydro_L) then
+         nvar = 13
+         pnlkey1(12) = VMM_KEY(wt1)
+         pnlkey1(13) = VMM_KEY(mut1)
+      endif
+*
+      pnerr = vmmlod(pnlkey1,nvar)
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(qt1)
+      pnerr = VMM_GET_VAR(tt1)
+      pnerr = VMM_GET_VAR(fit1)
+      pnerr = VMM_GET_VAR(tdt1)
+      pnerr = VMM_GET_VAR(psdt1)
+      pnerr = VMM_GET_VAR(pipt1)
+      pnerr = VMM_GET_VAR(fipt1)
+      pnerr = VMM_GET_VAR(st1)
+      pnerr = VMM_GET_VAR(tpt1)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(mut1)
+         pnerr = VMM_GET_VAR(wt1)
+      endif
+*
+      call writlam(ut1  ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(vt1  ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(tt1  ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(psdt1,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(pipt1,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(tdt1 ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(fit1 ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(qt1  ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(tpt1 ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(fipt1,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      call writlam(st1  ,LDIST_DIM,1,i0,in,j0,jn,1,1,60)
+*
+      if (.not. Schm_hydro_L) then
+         call writlam(wt1  ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+         call writlam(mut1 ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+      endif
+*
+      pnerr = vmmuld(pnlkey1,nvar)
+*
+      key1_ = VMM_KEY (trt1)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         pnerr = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            pnerr = vmmget(key1(n),patr,tr)
+            call writlam(tr  ,LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk,60)
+         enddo
+         pnerr = vmmuld(key1,Tr3d_ntr)
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

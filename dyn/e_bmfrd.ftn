@@ -1,0 +1,78 @@
+*** s/r e_bmfrd      - Read nv levels of variable nv, perform
+*                      Horizontal interpolation if needed, then apply 
+*                      ad and mp and write it to bmf files.
+*
+      subroutine e_bmfrd ( lat, lon, nix, njx, nv, ad, mp, ip1, gnk,
+     $                                                        sinf )
+#include "impnone.cdk"
+*
+      character*4 nv
+      logical sinf
+      integer nix, njx, gnk, ip1(*)
+      real    lat(*), lon(*), ad, mp
+*
+*arguments
+*______________________________________________________________________
+*                                                                      |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* nix*njx            | horizontal I*J dimension for F, LAT, LON        |
+* NV                 | name of the field to read                       |
+* AD                 | constant to add to field                        |
+* MP                 | constant to multiply to field                   |
+* LAT                | latitudes                                       |
+* LON                | longitudes                                      |
+* NNIV               | number of levels to read                        |
+*----------------------------------------------------------------------
+*
+*implicits
+#include "e_maxprms.cdk"
+#include "e_locdim.cdk"
+#include "e_times.cdk"
+#include "e_files.cdk"
+#include "e_anal.cdk"
+#include "e_zgrids.cdk"
+#include "e_option.cdk"
+#include "e_grids.cdk"
+*
+*modules
+      external fstinf,e_rdhint2
+      integer  fstinf,e_rdhint2
+*
+      integer key,err,i,k,nic,njc,nkc
+      real w1(nix*njx)
+*
+*     ---------------------------------------------------------------
+*
+*   
+      key = fstinf(anal,nic,njc,nkc,iday,' ',ip1(1),ip2a,ip3a,tva,nv)
+      if (key.lt.0) goto 500
+      if ((nic.ne.nix.or.njc.ne.njx.or.nkc.ne.1).and. .not.GLHORINT) 
+     $     goto 500
+*
+      do k=1,gnk
+*
+         err = e_rdhint2(w1,lat,lon,nix,njx,nv,ip1(k),ip2a,ip3a,' ',tva,
+     $                                    .true.,.true.,'CUBIC',anal,6)
+         if (err.lt.0 .and. sinf) goto 500
+*     
+*        SCALING
+*
+         if(ad.ne.0.0 .or. mp.ne.1.0) then
+            do i=1,nix*njx
+               w1(i) = mp * (w1(i)+ad)
+            enddo
+         endif
+*     
+         call e_bmfsplitxy2 (w1,nix,njx,nv,k,gnk,pni,0,0,0)
+*
+      end do
+*
+      goto 900
+ 500  write(6,*) ' Variable = ',NV, ' NOT AVAILABLE'
+      if (sinf) call e_arret( 'e_bmfrd' )
+*
+*     ---------------------------------------------------------------
+*
+ 900  return
+      end

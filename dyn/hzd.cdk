@@ -1,0 +1,82 @@
+#if defined (DOC)
+*
+*revision
+* v2_10 - Qaddouri A.        - adding high order diffusion operator
+* v2_11 - Desgagne M.        - remove vertical modulation
+* v2_21 - Desgagne M.        - add control for diffu. on momentum only
+*
+***comdeck hzd.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  PROJECTION OPERATORS FOR HOR. DIFFUSION  (initialized in hzd_set))  |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Hzd_xp0_8          | east-west   projection operators                |
+* Hzd_yp0_8          | north-south projection operators                |
+* Hzd_xp2_8          | east-west   projection operators                |
+* Hzd_yp2_8          | north-south projection operators                |
+* Hzd_opsxp0_8       |                                                 |
+* Hzd_opsyp0_8       |                                                 |
+* Hzd_xevec_8        |                                                 |
+* Hzd_xeval_8        |                                                 |
+* Hzd_au_8           |                                                 |
+* Hzd_cu_8           |                                                 |
+* Hzd_deltau_8       |                                                 |
+* Hzd_av_8           |                                                 |
+* Hzd_cv_8           |                                                 |
+* Hzd_deltav_8       |                                                 |
+* Hzd_as_8           |                                                 |
+* Hzd_cs_8           |                                                 |
+* Hzd_deltas_8       |                                                 |
+* Hzd_type_S         | Hor. diffusion type: Factorized or High Order   |
+* Hzd_fact_L         | Logical control for Factorized hor. diffusion   |
+* Hzd_ho_L           | Logical control for Higher Order hor. diffu.    |
+* Hzd_difva_L        | Logical control for latitudinal modulation      |
+*                    |  of the horizontal diffusion coefficient        |
+* Hzd_pwr            | Hor. diffusion order when using HO del-n        |
+*                    |  available: 2, 4, 6, 8                          |
+* Hzd_lnR            | 2 delta-x removal ratio when using HO           |
+*                    |  range (0. - 1.0)                               |
+* Hzd_cdiff          |                                                 |
+*----------------------------------------------------------------------
+*
+*
+#endif
+       DCL_DYNVAR(Hzd,    xp0_8, real*8, (*))
+       DCL_DYNVAR(Hzd,    yp0_8, real*8, (*))
+       DCL_DYNVAR(Hzd,    xp2_8, real*8, (*))
+       DCL_DYNVAR(Hzd,    yp2_8, real*8, (*))
+       DCL_DYNVAR(Hzd, opsxp0_8, real*8, (*))
+       DCL_DYNVAR(Hzd, opsyp0_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  xevec_8, real*8, (*))
+       DCL_DYNVAR(Hzd,  xeval_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     au_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     cu_8, real*8, (*))
+       DCL_DYNVAR(Hzd, deltau_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     av_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     cv_8, real*8, (*))
+       DCL_DYNVAR(Hzd, deltav_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     as_8, real*8, (*))
+       DCL_DYNVAR(Hzd,     cs_8, real*8, (*))
+       DCL_DYNVAR(Hzd, deltas_8, real*8, (*))
+*
+       character*12 Hzd_type_S
+       logical Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L
+       integer Hzd_pwr
+       real Hzd_lnR,Hzd_cdiff
+       MARK_COMMON_BEG(hzdi)
+       common /hzdi/ Hzd_pwr
+       MARK_COMMON_END(hzdi)
+       MARK_COMMON_BEG(hzdr)
+       common /hzdr/ Hzd_lnR,Hzd_cdiff
+       MARK_COMMON_END(hzdr)
+       MARK_COMMON_BEG(hzdc)
+       common /hzdc/ Hzd_type_S
+       MARK_COMMON_END(hzdc)
+       MARK_COMMON_BEG(hzdl)
+       common /hzdl/ Hzd_fact_L,Hzd_ho_L,Hzd_difva_L,Hzd_uvwdt_L
+       MARK_COMMON_END(hzdl)
+*

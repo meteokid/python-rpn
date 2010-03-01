@@ -1,0 +1,87 @@
+***s/r chem_step - 
+*
+#include <model_macros_f.h>
+*
+      subroutine chem_step (F_stepno)
+      implicit none
+*
+      integer F_stepno
+*
+*author 
+*     Michel Desgagne - September 2001
+*
+*revision
+* v2_31 - Desgagne M.       - initial version
+* v2_32 - Lee V.            - add "HY" record in chem slabs
+*   
+*object
+*       Computes the chemistry processes.
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_stepno      O           step number
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "macro.cdk"
+#include "ptopo.cdk"
+#include "tr2d.cdk"
+#include "dimout.cdk"
+#include "chem.cdk"
+#include "pslab.cdk"
+*
+*modules
+      integer  open_db_file,rewind_db_file,close_db_file,
+     $         read_db_file,write_db_file
+      external open_db_file,rewind_db_file,close_db_file,
+     $         read_db_file,write_db_file
+**
+      integer n,unf,ntr2do,err
+*
+*     ---------------------------------------------------------------
+*
+       call genslabc()
+*
+*	initialize the number of slices previously done
+*
+      Chem_nslice = 0
+*
+      if (.not.Tr2d_incore_L) then
+         do n=1,Tr2d_nbf
+            unf = Tr2d_unf((n-1)*Tr2d_ntpf+1)
+            err = rewind_db_file (unf)
+            err = read_db_file  (unf,ntr2do,1)
+            err = write_db_file (unf,ntr2do,1)
+         end do
+      endif
+*
+#if defined (MULTI)
+#if defined (NEC)
+      do 410 icpu = 2, Ptopo_npeMacro
+*
+        ptparm(icpu) = icpu
+        ptcpu(icpu) = icpu
+        call ptfork ( pnid(icpu), ptparm(icpu),
+     $     chem_slb, ptcpu(icpu)   , F_stepno )
+*
+ 410  continue
+#endif
+#endif
+*
+      call chem_slb ( 1, F_stepno )
+*
+#if defined (MULTI)
+#if defined (NEC)
+      do 420 icpu = 2,Ptopo_npeMacro
+         call ptjoin ( pnid(icpu) )
+ 420  continue
+#endif
+#endif
+*
+       call frmslabfhand(Pslab_fhand,Pslab_slab,.true.)
+*     ---------------------------------------------------------------
+*
+      return
+      end

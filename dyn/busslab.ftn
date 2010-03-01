@@ -1,0 +1,259 @@
+***s/r busslab - generate slab descriptors
+*
+#include <model_macros_f.h>
+*
+      subroutine busslab(F_busptr, F_busshp, F_busmult , F_busvar_S,
+     %                   F_busadd, F_busmul, F_busstag, F_bustyp_S, F_bustop,
+     %                   F_var,F_maxelem,F_lev,F_grid,F_step,F_var_max,F_sets,
+     %                   F_typvar_S,F_xnbits,F_ip2,F_idx,F_dostep,F_dostep_max)
+*
+#include "impnone.cdk"
+*
+      integer     F_bustop,F_idx,F_dostep(*),F_dostep_max,F_ip2,F_xnbits(*)
+      integer     F_busptr(*), F_busshp(*),F_busmult(*),F_busstag(*)
+      integer     F_maxelem,F_var(F_maxelem,*)
+      integer     F_lev(*),F_grid(*),F_step(*),F_var_max(*),F_sets
+      real        F_busadd(*),F_busmul(*)
+      character*8 F_busvar_S(*)
+      character*1 F_bustyp_S,F_typvar_S(*)
+*
+*author 
+*     Joseph Pierre  Toviessi cmc/cmdn - april 1996
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from genslab v1_03)
+* v2_10 - Lee V.            - output any variable from the physics
+* v2_21 - Dugas B.          - modify descriptors for multiple valued 2D arrays
+* v2_21 - J. P. Toviessi    - set dieze (#) slab output
+* v2_30 - Lee V.            - adjust for LAM output, add dynamically allocated
+* v2_30                       local variables, not common variables
+* v2_30                     - flag for staggered output levels are passed
+* v2_31 - Lee V.            - to generate any sliced slab output
+* v2_32 - Lee V.            - correction of output (bug in filling temp arrays)
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*	This subroutine generates slab descriptors
+*       and prepares for the output of sliced physics/chemistry slabs
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_busptr     I    - pointer for the variables in the bus
+* F_busshp     I    - shape of variable:l_ni=row,l_ni*l_nk=slab 
+* F_busmult    I    - multiplicity of variable (on shape or row)
+* F_busvar_S   I    - output names used for the physics/chem variables
+* F_busadd     I    - value to add to data field for output
+* F_busmul     I    - value to multiply to data field for output
+* F_busstag    I    - value to determine if output levels are staggered
+* F_bustyp_S   I    - type of bus (E-entry,V-volatile,D-dynamic,P-perm
+* F_bustop     I    - number of variables in the bus
+* F_var        I    - F_var(*,j) has list of output variables requested
+* F_maxelem    I    - 1st dimension of F_var (max number of variables/set)
+* F_lev        I    - F_lev(j) is the value of the Level set used for Output j
+* F_grid       I    - F_grid(j) is the value of the Grid set used for Output j
+* F_step       I    - F_step(j) is the value of the Step set used for Output j
+* F_var_max    I    - F_var_max(j) is the total number of output variables
+*                     requested in F_var(*,j)
+* F_sets       I    - Total number of Output sets requested
+* F_xnbits     I    - Array to define the compaction requested for each variable
+*                     in the bus
+* F_ip2        I    - value of ip2 to be written in RPN std file
+* F_idx        I    - value to add to find the correct index on global
+*                     array of all physics/chem variables
+* F_dostep     I    - array containing indices corresponding to the
+*                     timestep sets that requires output at this time step.
+* F_dostep_max I    - number of indices in F_dostep.
+
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dimout.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "geomn.cdk"
+#include "grid.cdk"
+#include "slab.cdk"
+#include "pslab.cdk"
+#include "level.cdk"
+*
+*modules
+      integer  slabdsc
+      external slabdsc
+**
+*
+      integer pnerr,i_idx
+      integer levset,mtout,gridset,mt
+      character*4, dimension(:),allocatable :: nomvar_S
+      character,   dimension(:),allocatable :: typvar_S
+      integer,     dimension(:),allocatable :: ip1
+      integer,     dimension(:),allocatable :: ip2
+      integer,     dimension(:),allocatable :: ip3
+      integer,     dimension(:),allocatable :: nbits
+      integer,     dimension(:),allocatable :: iflt
+      integer,     dimension(:),allocatable :: datyp
+      real,        dimension(:),allocatable :: xp
+      integer,     dimension(:),allocatable :: xnio
+* 
+*     Cannot allocate character variables dynamically: 
+      character*4 blank_S
+      integer i,j,k,ii,jj,kk,jjj,mult
+*
+*------------------------------------------------------------------ 
+*
+*     Allocate local variables 
+*
+      allocate ( nomvar_S(Pslab_mxout),
+     %           typvar_S(Pslab_mxout),
+     %           ip1  (Pslab_mxout),
+     %           ip2  (Pslab_mxout),
+     %           ip3  (Pslab_mxout),
+     %           nbits(Pslab_mxout),
+     %           datyp(Pslab_mxout),
+     %           iflt (Pslab_mxout),
+     %           xp   (Pslab_mxout))
+*
+      Pslab_slab = Pslab_slab + 1
+      do i=1,Pslab_mxout
+         Pslab_mtas(i,Pslab_slab)=0
+      enddo
+
+      do 260 j=1,Grid_sets
+*
+      if (Pslab_niout(j).gt.0.and.Pslab_njout(j).gt.0) then
+         mtout = 0
+         Pslab_grid(Pslab_slab) = j
+*
+         do 250 i=1, F_bustop
+         i_idx=i+F_idx
+*
+         do 240 jj=1,F_dostep_max
+*        For every Timestep set that outputs at the current timestep
+*
+         do 230 kk=1,F_sets
+*
+         if (F_step(kk).eq.F_dostep(jj).and.F_grid(kk).eq.j)then
+*
+*     if the Timestep set for this request set Outp(kk) outputs
+*     at the current timestep (Lctl_step) and the gridset matches...
+*
+            levset = F_lev(kk)
+*
+            do 220 ii=1,F_var_max(kk)
+*
+               if (F_var(ii,kk).eq.i_idx) then                 
+                  mt = (F_Busptr(i)-1)/Pslab_ni
+
+                  do 210 mult=1,F_busmult(i)
+
+                     if (F_busshp(i).gt.Pslab_ni) then
+*                    (3-D (slab) variable to be outputted)
+                       do jjj = 1, Level_max(levset) 
+                        if (Level_typ(levset) .eq. 'E') then
+                         k = nint(Level(jjj,levset))
+                         if (Pslab_mtas(mt+k*mult,Pslab_slab).ne.1) then
+                           Pslab_mtas(mt+k*mult,Pslab_slab) = 1
+                           Pslab_mtmul(mt+k*mult,Pslab_slab) = F_busmul(i)
+                           Pslab_mtadd(mt+k*mult,Pslab_slab) = F_busadd(i)
+                           mtout = mtout + 1
+                           nomvar_S(mt+k*mult) = F_busvar_S(i)(1:4)
+                           typvar_S(mt+k*mult) = F_typvar_S(kk)
+                           if (F_busstag(i).ne.0) then
+                           ip1(mt+k*mult) = Level_stag_ip1(k)
+                           else
+                           ip1(mt+k*mult) = Level_ip1(jjj,levset)
+                           endif
+                           ip2(mt+k*mult) = Slab_ip2
+                           ip3(mt+k*mult) = Slab_ip3
+                           datyp(mt+k*mult) = 1
+                           nbits(mt+k*mult) = F_xnbits(i_idx)
+                           iflt(mt+k*mult) = 0
+                           xp(mt+k*mult) = 0.0
+                         endif
+                        endif
+                       end do
+                     else
+*                    (2-D (row) variable to be outputted)
+                        if (Pslab_mtas(mt+1*mult,Pslab_slab).ne.1) then
+                           Pslab_mtas(mt+1*mult,Pslab_slab) = 1
+                           Pslab_mtmul(mt+1*mult,Pslab_slab) = F_busmul(i)
+                           Pslab_mtadd(mt+1*mult,Pslab_slab) = F_busadd(i)
+                           mtout = mtout + 1
+                           nomvar_S(mt+1*mult) = F_busvar_S(i)(1:4)
+                           typvar_S(mt+1*mult) = F_typvar_S(kk)
+                           if (F_busmult(i).gt.1) then
+                              call convip( ip1(mt+1*mult), float( mult ),
+     $                                     3,+1,blank_S,.false. )
+                           else
+                              ip1(mt+1*mult) = 0
+                           endif
+                           ip2(mt+1*mult) = Slab_ip2
+                           ip3(mt+1*mult) = Slab_ip3
+                           datyp(mt+1*mult) = 1
+                           nbits(mt+1*mult) = F_xnbits(i_idx)
+                           iflt(mt+1*mult) = 0
+                           xp(mt+1*mult) = 0.0
+                        endif
+                     endif
+ 210              continue
+               endif
+ 220        continue
+         endif
+ 230     continue
+ 240     continue
+ 250     continue
+*
+      if (mtout.gt.0) then
+         mtout = 0
+         do i=1,Pslab_mxout
+            if (Pslab_mtas(i,Pslab_slab).gt.0) then
+                mtout = mtout+1
+                nomvar_S(mtout) = nomvar_S(i)
+                typvar_S(mtout) = typvar_S(i)
+                ip1(mtout)      = ip1(i)
+                ip2(mtout)      = ip2(i)
+                ip3(mtout)      = ip3(i)
+                nbits(mtout)    = nbits(i)
+                if (nbits(mtout).eq.32) then
+                    datyp(mtout)    = 5
+                else
+                    datyp(mtout)    = datyp(i)
+                endif
+                iflt(mtout)     = iflt(i)
+                xp(mtout)       = xp(i)
+            endif
+         enddo
+      endif
+
+      if (mtout.gt.0) then
+         pnerr = slabdsc(Pslab_fhand,Pslab_slab,Grid_gxtyp_S(j),
+     %    Grid_ixg1(j),Grid_ixg2(j),Grid_ixg3(j),Grid_ixg4(j),
+     %    Grid_niout(j),Grid_njout(j),Grid_nxgrid(j),Grid_nygrid(j),
+     %    Geomn_longs(Pslab_x0(j)),Geomn_latgs(Pslab_y0(j)),Grid_typ_s(j),
+     %    Pslab_ig1(j),Grid_ig2(j),Grid_ig3(j),Grid_ig4(j),mtout,0,
+     %    typvar_S,nomvar_S,ip1,ip2,ip3,datyp,nbits,iflt,xp)
+
+          Pslab_bus_S(Pslab_slab) = F_bustyp_S
+          Pslab_slab = Pslab_slab+1
+      endif
+*
+      endif
+ 260  continue
+*
+      Pslab_slab = Pslab_slab - 1
+      if (Pslab_slab.ge.PSLAB_SLAB_MAX) then
+         if (Lun_out.gt.0) write(Lun_out,5005)
+         call gem_stop('BUSSLAB',-1)
+      endif
+
+*     Deallocate local memory
+      deallocate (nomvar_S,typvar_S,ip1,ip2,ip3,nbits,datyp,iflt,xp)
+*
+ 5005 format(/,
+     $     ' BUSSLAB - PSLAB_SLAB_MAX NOT LARGE ENOUGH, MODIFY in PSLAB.CDK ')
+*
+*------------------------------------------------------------------ 
+*
+      return
+      end
+

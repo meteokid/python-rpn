@@ -1,0 +1,46 @@
+***function chem_getdx - obtain index from chemistry tracers 
+*
+#include <model_macros_f.h>
+*
+      integer function chem_getdx(F_varname_S)
+*
+#include "impnone.cdk"
+*
+      character* (*) F_varname_S
+*
+*author: Vivian Lee - 2001 - rpn (from p_getphydx)
+*
+*revision
+*
+*object
+*     to obtain the index of the chemistry variable from the chemistry tracers
+*
+*argument
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_varname_S    I    - name of variable for which the index is sought
+*----------------------------------------------------------------
+*
+*implicits
+*
+#include "glb_ld.cdk"
+#include "chem.cdk"
+**
+      integer i
+      character*4 ptvar_S
+      chem_getdx = -1
+*
+*     transfer F_varname_S to fixed length string
+*
+      ptvar_S = F_varname_S
+*
+*     looking in the chemical tracers
+      do i = 1, Chem_ntr
+         if(Chem_name_S(i)(1:4) .eq. ptvar_S) then
+            chem_getdx = i
+            return
+         endif
+      enddo
+*
+      return
+      end

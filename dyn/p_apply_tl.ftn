@@ -1,0 +1,276 @@
+***s/r p_apply_tl - TLM of apply consistency with related dynamical variables
+*
+#include <model_macros_f.h>
+*
+      subroutine p_apply_tl ( F_tcond,F_qdifv,F_tdu,F_tdv,F_tdt,F_trm,F_tp,F_qp,
+     $                        F_tpm,F_trpm,F_qpm,
+     $                        DIST_DIM, Nk)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM,Nk
+      real F_tcond (DIST_SHAPE,Nk), F_qdifv (DIST_SHAPE,Nk), 
+     $     F_tdu   (DIST_SHAPE,Nk), F_tdv   (DIST_SHAPE,Nk),
+     $     F_tdt   (DIST_SHAPE,Nk), F_trm   (DIST_SHAPE,Nk,*),
+     $     F_tp    (DIST_SHAPE,Nk), F_qp    (DIST_SHAPE,Nk),
+     $     F_tpm   (DIST_SHAPE,Nk), F_trpm  (DIST_SHAPE,Nk),
+     $     F_qpm   (DIST_SHAPE,Nk)
+*
+*author 
+*     Stephane Laroche        Janvier 2001
+*
+*revision
+* v3_00 - Laroche S.        - initial MPI version
+*
+*object
+*       TLM of apply consistency of the tendencies on physics variables
+*       with related dynamical variables. Interpolate wind
+*       tendancies toward theirs respective grids.
+*
+*arguments
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_tcond       I    -
+*	
+*implicits
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "p_cond.cdk"
+#include "intuv.cdk"
+#include "inuvl.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "busind.cdk"
+#include "v4dg.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer i, j, k, n, i0, in, j0, jn, err, key1(6),
+     $     keyp(h2o_ntr), keym(h2o_ntr), keyp_, keym_
+      real trajexp
+      real  wk1(LDIST_SHAPE,Nk) ,   wk2(LDIST_SHAPE,Nk),
+     $      wk3(LDIST_SHAPE,Nk) ,   wk4(LDIST_SHAPE,Nk), 
+     $      wk5(LDIST_SHAPE,Nk) ,   wk6(LDIST_SHAPE,Nk), trp, trm,
+     $   F_tdum(LDIST_SHAPE,Nk), F_tdvm(LDIST_SHAPE,Nk),
+     $   F_tdtm(LDIST_SHAPE,Nk), F_trmm(LDIST_SHAPE,Nk),
+     $   F_st1m(LDIST_SHAPE)
+      pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
+*
+*notes
+*	Consistency is applied according to diagnostic relationships
+*	used at initial time in predat1 and predat2. If changes are
+*	made to the relations used in these two modules, they should
+*	be made accordingly here. (xrp**t1 are used as workfields)
+**
+*     __________________________________________________________________
+*
+*
+*  4. Interpolation of the wind associated tendencies
+
+      call p_uvgridscal ( F_tdu, F_tdv, LDIST_DIM, G_nk, .false. )
+
+*
+*  1. Add condensation tendencies and other contributions to get 
+*     TOTAL temperature tendency and TOTAL specific humidity tendency.
+
+      do k=1,l_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         F_trm(i,j,k,hucond) = F_trm(i,j,k,hucond) + F_qdifv(i,j,k)
+         F_tdt(i,j,k)        = F_tdt(i,j,k)        + F_tcond(i,j,k)
+      end do
+      end do
+      end do
+*
+*     Read TRAJ for the simplified physics
+*     -------------------------------------
+      call v4d_rwtraj_apply(F_tdum,F_tdvm,F_tdtm,F_trmm,F_st1m,LDIST_DIM,Nk)
+*
+*
+*   1.1  Compute VIRTUAL temperature tendency from:  temperature tendency,
+*        specific humidity, virtual temperature & specific humidity tendency
+
+
+      keyp(1) = VMM_KEY (trt1) + hucond
+      err = vmmlod(keyp,1)  
+      err = vmmget(keyp,patrp,trp)
+      do k=1,l_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+*
+*       TLM
+*       ---
+        F_tdt(i,j,k) =  F_tdt(i,j,k)*( 1. + Dcst_delta_8*F_trpm(i,j,k) )
+     $                +          trp(i,j,k)*Dcst_delta_8*F_tdtm(i,j,k)
+     $                +         F_tp(i,j,k)*Dcst_delta_8*F_trmm(i,j,k)
+     $                + F_trm(i,j,k,hucond)*Dcst_delta_8*F_tpm(i,j,k)
+
+*
+*       TRAJECTORY
+*       ----------
+        F_tdtm(i,j,k) = F_tdtm(i,j,k)*( 1. + Dcst_delta_8*F_trpm(i,j,k) )
+     $                + Dcst_delta_8*F_tpm(i,j,k)*F_trmm(i,j,k)
+
+      end do
+      end do
+      end do
+      err = vmmuld(keyp,1)
+*
+*
+*  2. Compute d/dt ( phi ) from d/dt ( T )
+*     Note:   d/dt ( phi' ) = d/dt ( phi ) i.e. not computed
+
+      key1(1) = VMM_KEY(st1)
+      err = vmmlod (key1,1)
+      err = VMM_GET_VAR(st1)
+*
+*     TLM
+*     ---
+      do k=1,l_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+            trajexp      = exp(F_st1m(i,j) - F_qpm(i,j,k))
+           F_qp(i,j,k)   = F_tdt(i,j,k)                *trajexp
+     $                   + st1(i,j)     * F_tdtm(i,j,k)*trajexp
+     $                   - F_qp(i,j,k)  * F_tdtm(i,j,k)*trajexp
+
+           wk5(i,j,k)    = F_qp(i,j,k)*Dcst_rgasd_8
+      end do
+      end do
+      end do
+*
+      call hatoprg ( wk6,wk5,wk4,1.0,geomg_hz_8,LDIST_DIM,G_nk )
+
+*  3. Compute d/dt ( T'lin ) = pi* d/dt ( T ) exp(s-q) ; put in  F_tp
+*     Note:   d/dt ( T' ) = d/dt ( T )  i.e. not computed
+
+      do k=1,l_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         F_tp(i,j,k) = geomg_z_8(k)*F_qp(i,j,k)
+      end do
+      end do
+      end do
+
+*  5. Compute total divergence and vertical motion associated tendencies
+*     d/dt ( total D ) in xrpqt1,  d/dt ( pi*-dot ) in wk3
+
+      call rpn_comm_xch_halo( F_tdu, LDIST_DIM, l_ni, l_nj,G_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_tdv, LDIST_DIM, l_ni, l_nj,G_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 ) 
+*
+*
+*     TRAJECTORY
+*     ----------
+      call rpn_comm_xch_halo( F_tdum, LDIST_DIM, l_ni, l_nj,G_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_tdvm, LDIST_DIM, l_ni, l_nj,G_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 ) 
+*
+      call uv2tdpsd_tl ( F_qp, wk3,  F_tdu,  F_tdv,  st1, 
+     $                   wk1,  wk2,  F_tdum, F_tdvm, F_st1m,
+     $                   LDIST_DIM, G_nk )
+*
+      err = vmmuld(key1,1)
+*
+*C       2.     apply tendencies to primary variables
+*               -------------------------------------
+      key1(1)  = VMM_KEY(ut1)
+      key1(2)  = VMM_KEY(vt1)
+      key1(3)  = VMM_KEY(tt1)
+      err = vmmlod(key1,3)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+*
+      do k=1,l_nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            tt1 (i,j,k) =  tt1 (i,j,k) + Cstv_dt_8*F_tdt (i,j,k)
+         end do
+         end do
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_niu-pil_e 
+            ut1 (i,j,k) =  ut1 (i,j,k) + Cstv_dt_8*F_tdu (i,j,k)
+         end do
+         end do
+         do j= 1+pil_s, l_njv-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            vt1 (i,j,k) =  vt1 (i,j,k) + Cstv_dt_8*F_tdv (i,j,k)
+         end do
+         end do
+      end do
+*
+      err = vmmuld(key1,3)
+*
+      keyp_ = VMM_KEY (trt1)
+      if (h2o_ntr.gt.0) then
+         do n=1,h2o_ntr
+            keyp(n) = keyp_ + n
+         end do
+         err = vmmlod(keyp,h2o_ntr)  
+         do n=1,h2o_ntr
+            err = vmmget(keyp(n),patrp,trp)
+            do k=1,l_nk
+            do j= 1+pil_s, l_nj-pil_n 
+            do i= 1+pil_w, l_ni-pil_e
+               trp(i,j,k) = trp(i,j,k) + Cstv_dt_8*F_trm(i,j,k,n)
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(keyp,h2o_ntr)
+      endif
+*
+*C       3.     apply tendencies to associated variables
+*               ----------------------------------------
+      key1(1) = VMM_KEY(fipt1)
+      key1(2) = VMM_KEY(fit1 )
+      key1(3) = VMM_KEY(tplt1)
+      key1(4) = VMM_KEY(tpt1 )
+      key1(5) = VMM_KEY(tdt1 )
+      key1(6) = VMM_KEY(psdt1)
+      err = vmmlod(key1,6)
+      err = VMM_GET_VAR(fipt1)
+      err = VMM_GET_VAR(fit1 )
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR(tpt1 )
+      err = VMM_GET_VAR(tdt1 )
+      err = VMM_GET_VAR(psdt1)
+*
+      do k=1,l_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         fit1 (i,j,k) =  fit1 (i,j,k) + Cstv_dt_8*wk6   (i,j,k)
+         fipt1(i,j,k) =  fipt1(i,j,k) + Cstv_dt_8*wk6   (i,j,k)
+         tpt1 (i,j,k) =  tpt1 (i,j,k) + Cstv_dt_8*F_tdt (i,j,k)
+         tplt1(i,j,k) =  tplt1(i,j,k) + Cstv_dt_8*F_tp  (i,j,k)
+         tdt1 (i,j,k) =  tdt1 (i,j,k) + Cstv_dt_8*F_qp  (i,j,k)
+         psdt1(i,j,k) =  psdt1(i,j,k) + Cstv_dt_8*wk3   (i,j,k)
+      end do
+      end do
+      end do
+*
+      err = vmmuld(key1,6)
+*
+cstl      else
+cstl*
+cstl*     NO INTIALIZATION FOR THE TLM AT F_stepno.gt.0 --> F_apply_L=.true.
+cstl*
+cstl      endif
+*
+*     __________________________________________________________________
+*
+      return
+      end
+
+
+

@@ -1,0 +1,32 @@
+#if defined (DOC)
+*
+***comdeck vtx.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VMM variables at no specific time                                   |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* gptx               | P                                               |
+* gptx               | X                                               |
+* multx              | (mu)lin = (1+D)q' -- the linear part of (mu)    |
+*----------------------------------------------------------------------
+*
+#endif
+*
+*NOTE: the equivalence statement below MUST mark the
+*FIRST element of the common block or the OUTPUTS will be wrong.
+*If you introduce an element in the beginning of this block, make
+*changes to assure the equivalence statement below MARKS it.
+*
+      MARK_COMMON_BEG(vtx)
+      DCL_VMMVAR( vtx,  gptx, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtx,  gxtx, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vtx, multx, real, (LDIST_SHAPE,l_nk) )
+      MARK_COMMON_END(vtx)
+
+      character*8 vtx_n_first(1)
+      equivalence (vtx_n_first,VMM_NAM(gptx))
+

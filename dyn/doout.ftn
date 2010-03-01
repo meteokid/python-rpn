@@ -1,0 +1,130 @@
+***s/p doout - Check if current timestep requires output
+*
+#include <model_macros_f.h>
+*
+      integer function doout(F_dostep,F_set)
+*
+#include "impnone.cdk"
+*
+*author 
+*     J. Caveen - rpn - december 1994
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from doout v1_03)
+* v2_30 - Lee V.            - corrected output logic to have physics output
+* v2_30                       during (Init_dfnp-1)/2
+* v2_31 - Lee V.            - added another set of output, chem (=3)
+*
+*object
+*     This function returns the indices of each timestep set
+*     that requires output for the current time step (Lctl_step)
+*     in the array "F_dostep" and the number of indices found
+*     in "doout". Thus if doout equals to "0" no output is required.
+*     "F_set" indicates for either dynamics (=1) or physics (=2)
+*     or chemistry (=3) output
+*     If F_set to any other value it will not affect the outcome of the
+*     run but it will do less checking within "dynout" and "genslab". 
+*     (more efficient)
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* doout        O    - number of indices found for F_dostep.
+* F_dostep     I    - array containing indices corresponding to the
+*                     timestep sets that requires output at this time step.
+* F_set        I    - 1 for dynamics, 2 for physics, 3 for chemistry
+*
+*implicits
+#include "lctl.cdk"
+#include "rstr.cdk"
+#include "init.cdk"
+#include "dimout.cdk"
+#include "outd.cdk"
+#include "outp.cdk"
+#include "outc.cdk"
+#include "timestep.cdk"
+**
+      integer i,j,k,kk,F_set
+      integer F_dostep(MAXSET)
+      logical ok2output,keep
+
+      doout = 0
+
+*     Accumulate all the indices valid for outputting in F_dostep
+      do 200 j=1,Timestep_sets
+         ok2output = .false.
+
+         if (Timestep_init_L(j)) then
+            if (Init_balgm_L .and. (.not. Rstri_idon_L) .and.
+     $          (Lctl_step .le. (Init_dfnp-1))) then
+              ok2output = .true.
+            endif
+         else
+            if (.not.Init_balgm_L) then
+                ok2output = .true.
+            else if ((F_set.eq.1.or.F_set.eq.3) .and.
+     $                  (Rstri_idon_L.or.Lctl_step.lt.(Init_dfnp-1)/2)) then
+                ok2output = .true.
+            else if (F_set.eq.2.and.
+     $                  (Rstri_idon_L.or.Lctl_step.le.(Init_dfnp-1)/2)) then
+                ok2output = .true.
+            endif
+         endif
+
+
+         if (ok2output) then
+          do 100 i=1,Timestep_max(j)
+            if (Lctl_step .eq. Timestep(i,j)) then
+            doout = doout + 1
+            F_dostep(doout) = j
+            endif
+ 100      continue
+         endif
+ 200  continue
+
+*     Reduce the number of indices in F_dostep depending whether it
+*     if for dynamics output or physics or chemistry output.
+      k = 0
+      if (F_set.eq.1) then
+*    (if dynamics output)
+          do i=1,doout
+             keep = .false.
+             do j=1,Outd_sets
+                if (Outd_step(j).eq.F_dostep(i)) keep = .true.
+             enddo
+             if (keep) then
+                 k = k+1
+                 F_dostep(k) = F_dostep(i)
+             endif
+          enddo
+      else if (F_set.eq.2) then
+*     (F_set.eq.2 physics output)
+          do i=1,doout
+             keep = .false.
+             do j=1,Outp_sets
+                if (Outp_step(j).eq.F_dostep(i)) keep = .true.
+             enddo
+             if (keep) then
+                 k = k+1
+                 F_dostep(k) = F_dostep(i)
+             endif
+          enddo
+      else if (F_set.eq.3) then
+*     (F_set.eq.3 chemistry output)
+          do i=1,doout
+             keep = .false.
+             do j=1,Outc_sets
+                if (Outc_step(j).eq.F_dostep(i)) keep = .true.
+             enddo
+             if (keep) then
+                 k = k+1
+                 F_dostep(k) = F_dostep(i)
+             endif
+          enddo
+      else
+*     (if the "F_set" was incorrectly specified, it will return 0
+          k=0
+      endif
+      doout=k
+      return
+      end

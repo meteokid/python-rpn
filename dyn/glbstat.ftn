@@ -1,0 +1,61 @@
+***s/r glbstat
+*
+#include <model_macros_f.h>
+*
+      subroutine glbstat (F_field, F_var_S, DIST_DIM, nk,
+     $                    F_i0,F_in,F_j0,F_jn,F_k0,F_kn)
+*
+#include "impnone.cdk"
+*
+      character * (*) F_var_S
+      integer DIST_DIM,nk,F_i0,F_in,F_j0,F_jn,F_k0,F_kn
+      real F_field(DIST_SHAPE,nk)
+*
+*author
+*     M. Desgagne
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+*
+*object
+*     see rhs
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_field       I         Field to be operated on
+* F_var_S       I         User provided string to define F_field
+* F_i0,F_j0     I         Global lower-left indexes of the sub-domain
+*                            on which to perform statistics
+* F_in,F_jn     I         Global upper-right indexes of the sub-domain
+*                            on which to perform statistics
+* F_k0,F_kn     I         Range of levels on which to perform statistics
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "lctl.cdk"
+*
+      integer  err
+      real wk1
+      pointer (pawk1, wk1(G_ni,G_nj,*))
+*
+*----------------------------------------------------------------------
+*
+      if (Ptopo_myproc.eq.0) then
+         call hpalloc (pawk1, G_ni*G_nj*nk, err, 1)
+      endif
+*
+      call glbcolc (wk1,G_ni,G_nj,F_field,DIST_DIM,nk)
+*
+      if (Ptopo_myproc.eq.0) then
+         call statfld (wk1 ,F_var_S,Lctl_step,"",1,G_ni,1,G_nj,nk,
+     $                              F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+         call hpdeallc (pawk1  ,err, 1)
+      endif
+*
+*----------------------------------------------------------------------
+*
+      return
+      end

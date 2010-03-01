@@ -1,0 +1,85 @@
+***s/r tr_vint - Perform vertical interpolation on 3D tracers
+*
+#include <model_macros_f.h>
+*
+      subroutine tr_vint (tr,trname,trval,sigma_L,sigoeta_L,no_interp_L,
+     $                    bmf_time1, bmf_time2,nk,pps,rna_pia,pibb,ps,
+     $                    vterp_lv,DIST_DIM)
+      implicit none
+*
+      logical sigoeta_L,sigma_L,no_interp_L
+      character* (*) trname
+      integer nk,bmf_time1,bmf_time2,vterp_lv,DIST_DIM
+      real tr(DIST_SHAPE,*),trval,pps(*),rna_pia(*),ps(*),
+     $     pibb(*)
+*
+*author
+*     Michel Desgagne  -  Sept 2001
+*
+*revision
+* v2_31 - Desgagne M.       - initial version
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+*
+      integer i,j,k,err,bmf_get
+      external bmf_get
+      real w1(l_ni,l_nj,nk),w2(l_ni,l_nj,nk)
+*
+*-------------------------------------------------------------------
+*
+      err= bmf_get (trname,bmf_time1,bmf_time2,-1,w1,
+     $              -1.,1,l_ni,1,l_nj,1,nk)
+*
+      if (err.eq.0) then
+         if (no_interp_L) then
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr(i,j,k) = w1(i,j,k)
+            enddo
+            enddo         
+            enddo 
+         else if (sigoeta_L) then
+            call vte_hyb2hyb( w2, Geomg_pia, Geomg_pibb, pps,
+     $             G_nk,w1, rna_pia,pibb, ps, vterp_lv, l_ni*l_nj, '  ',sigma_L)
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr(i,j,k) = w2(i,j,k)
+            enddo
+            enddo         
+            enddo 
+         else
+            call vte_vrtical ( w1, pps, l_ni*l_nj, G_nk, rna_pia, vterp_lv, 
+     $                                                        .false.)
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr(i,j,k) = w1(i,j,k)
+            enddo
+            enddo         
+            enddo 
+         endif
+      else 
+         do k=1,G_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            tr(i,j,k) = trval
+         enddo
+         enddo         
+         enddo 
+      endif
+*
+*-------------------------------------------------------------------
+*
+      return
+      end
+
+

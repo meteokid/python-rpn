@@ -1,0 +1,221 @@
+***s/r nes2s -- Horizontal nesting on 2 faces
+*
+#include <model_macros_f.h>
+*
+      subroutine nes2s (F_fn, F_fd, DIST_DIM, Nk, F_is, F_js, 
+     $                                      F_ndavx, F_ndavy)
+      implicit none
+*
+      integer DIST_DIM, NK, F_is, F_js, F_ndavx, F_ndavy
+      real F_fn(DIST_SHAPE,Nk), F_fd(DIST_SHAPE,Nk)
+*
+*author 
+*     Andre Robert
+*
+*revision
+* v3_00 - Desgagne             - initial version
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_fn         O           field to be blended
+*  F_fd         I           blending field
+*  F_is         I           staggering parameter along x
+*  F_js         I           staggering parameter along y
+*  F_ndavx      I           thichness of sponge layer along x
+*  F_ndavy      I           thichness of sponge layer along y
+*----------------------------------------------------------------
+*
+*implicit
+#include "glb_ld.cdk"
+*
+**
+      integer i,j,k,nit,njt,il,ih,jl,jh
+      real*8 zero,one,pt5,lx,ly,p,pis2
+      parameter (zero=1.d0, one=1.d0, pt5=0.5d0)
+*----------------------------------------------------------------------
+*100
+*     * ndavx et ndavy: nombre de points de grille dans la bande de 
+*     *                 pilotage (eponge) excluant les frontieres.
+*
+      nit  = l_ni-F_is-pil_e
+      njt  = l_nj-F_js-pil_n
+*
+      il   = 1   + F_ndavx + pil_w
+      ih   = nit - F_ndavx
+      jl   = 1   + F_ndavy + pil_s
+      jh   = njt - F_ndavy
+*
+      lx   = dble(F_ndavx) - pt5
+      ly   = dble(F_ndavy) - pt5
+
+      pis2 = acos(zero)
+*
+* If we are in a corner of the global domain ...
+*
+      if (((north+west).eq.2).or.((north+east).eq.2).or.
+     $    ((south+west).eq.2).or.((south+east).eq.2)) then
+
+      if ((north+west).eq.2) then
+      do k=1,Nk
+*west
+         do i=1+pil_w,il-1
+         do j=1,jh
+            p       = (cos(pis2*(i-1)/lx))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+*north
+         do j=jh+1,njt
+         do i=il,l_ni
+            p       = (cos(pis2*(njt-j)/ly))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+*north-west
+         do i=1+pil_w,il-1
+         do j=jh+1,njt
+            p = (cos(pis2*(one-min(one,
+     $           sqrt(((lx-i+1)/lx)**2+((j-njt+ly)/ly)**2)))))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+      end do
+      endif
+*
+      if ((north+east).eq.2) then
+      do k=1,Nk
+*east
+         do i=ih+1,nit
+         do j=1,jh
+            p       = (cos(pis2*(nit-i)/lx))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+*north
+         do j=jh+1,njt
+         do i=1,ih
+            p       = (cos(pis2*(njt-j)/ly))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+*north-east
+         do i=ih+1,nit
+         do j=jh+1,njt
+            p = (cos(pis2*(one-min(one,
+     $           sqrt(((i-nit+lx)/lx)**2+((j-njt+ly)/ly)**2)))))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+      end do
+      endif
+
+      if ((south+west).eq.2) then
+      do k=1,Nk
+*west
+         do i=1+pil_w,il-1
+         do j=jl,l_nj
+            p       = (cos(pis2*(i-1)/lx))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+*south
+         do j=1+pil_s,jl-1
+         do i=il,l_ni
+            p       = (cos(pis2*(j-1)/ly))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+*south-west
+         do i=1+pil_w,il-1
+         do j=1+pil_s,jl-1
+            p = (cos(pis2*(one-min(one,
+     $           sqrt(((lx-i+1)/lx)**2+((ly-j+1)/ly)**2)))))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+      end do
+      endif
+
+      if ((south+east).eq.2) then
+      do k=1,Nk
+*east
+         do i=ih+1,nit
+         do j=jl,l_nj
+            p       = (cos(pis2*(nit-i)/lx))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+*south
+         do j=1+pil_s,jl-1
+         do i=1,ih
+            p       = (cos(pis2*(j-1)/ly))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+*south-east
+         do i=ih+1,nit
+         do j=1+pil_s,jl-1
+            p = (cos(pis2*(one-min(one,
+     $           sqrt(((i-nit+lx)/lx)**2+((ly-j+1)/ly)**2)))))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+      end do
+      endif
+
+      else
+*
+* If we are NOT in a corner of the global domain ...
+*
+      if (l_north) then
+         do k=1,Nk
+         do j=jh+1,njt
+         do i=1,l_ni
+            p       = (cos(pis2*(njt-j)/ly))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+         end do
+      endif
+      if (l_south) then
+         do k=1,Nk
+         do j=1+pil_s,jl-1
+         do i=1,l_ni
+            p       = (cos(pis2*(j-1)/ly))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+         end do
+      endif
+      if (l_west) then
+         do k=1,Nk
+         do i=1+pil_w,il-1
+         do j=1,l_nj
+            p       = (cos(pis2*(i-1)/lx))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+         end do
+      endif
+      if (l_east) then
+         do k=1,Nk
+         do i=ih+1,nit
+         do j=1,l_nj
+            p       = (cos(pis2*(nit-i)/lx))**2
+            F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
+         end do
+         end do
+         end do
+      endif
+
+      endif
+*
+*----------------------------------------------------------------------
+      return
+      end
+
+
+

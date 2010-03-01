@@ -1,0 +1,147 @@
+***s/r v4d_vtap - Build geopotential from temperature
+*                 based on VTAP relationship
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_vtap
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - replace xfis by topo 
+* v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "schm.cdk"
+#include "p_geof.cdk"
+#include "vt1.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer i,j,k,ik,jk,pnerr,pnlkey1(5)
+*
+      real pcon,pr1
+*
+      real*8  ZERO_8
+      parameter( ZERO_8 = 0.0 )
+*
+*     -----------------
+*     Define work space
+*     -----------------
+
+      real work1(LDIST_SHAPE,l_nk), work2(LDIST_SHAPE,l_nk)
+*     ______________________________________________________
+*
+      if (.not. Schm_cptop_L) call gefstop('v4d_vtap')
+*     ______________________________________________________
+*
+*
+*     Allocate and load fields
+*     ------------------------
+      pnlkey1(1) = VMM_KEY(fit1 )
+      pnlkey1(2) = VMM_KEY(fipt1)
+      pnlkey1(3) = VMM_KEY(topo )
+      pnlkey1(4) = VMM_KEY(tpt1 )
+      pnlkey1(5) = VMM_KEY(st1  )
+*
+      pnerr = vmmlod(pnlkey1,5)
+*
+      pnerr = VMM_GET_VAR(fit1)
+      pnerr = VMM_GET_VAR(fipt1)
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(st1)
+*
+*     Zero variables
+*     --------------
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         fit1 (i,j,k) = ZERO_8
+         fipt1(i,j,k) = ZERO_8
+         work1(i,j,k) = ZERO_8
+         work2(i,j,k) = ZERO_8
+      end do
+      end do
+      end do
+*
+*     --------------------------------------------------
+*     Initialize special T such as d(fit1)/dZ = -(R T/Z)
+*     --------------------------------------------------
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+*
+*        Evaluate exp(qt1)
+*        -----------------
+         work2(i,j,k) = Geomg_pia(k) + Geomg_pib(k)*exp(st1(i,j))
+*
+*        Evaluate special T 
+*        ------------------
+         work2(i,j,k)= (Cstv_tstr_8+tpt1(i,j,k))*
+     %                 (1.0+Geomg_dpib(k)*(exp(st1(i,j))-1.))*
+     %                 (Geomg_z_8(k) / work2(i,j,k)) -  Cstv_tstr_8
+*
+      end do
+      end do
+      end do
+*
+*     Initialize GEO bottom boundary condition
+*     ----------------------------------------
+      do j=1,l_nj
+      do i=1,l_ni
+*
+         work1(i,j,l_nk) = topo(i,j)
+*
+      end do
+      end do
+*
+*     Build GEO from T based on VTAP relationship
+*     -------------------------------------------
+      pcon = - Dcst_rgasd_8 
+      do jk = 0,l_nk-2
+*
+         ik  = l_nk-1-jk
+         pr1 = - pcon*(Geomg_z_8(ik+1)-Geomg_z_8(ik))/(Geomg_z_8(ik+1)+Geomg_z_8(ik))
+*
+         do j = 1, l_nj 
+         do i = 1, l_ni 
+         work1(i,j,ik) = pr1*( work2(i,j,ik+1) + work2(i,j,ik) ) + work1(i,j,ik+1)
+         end do
+         end do
+*
+      end do
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+*
+         fit1(i,j,k)  = Cstvr_fistr_8(k) + work1(i,j,k)
+         fipt1(i,j,k) = fit1(i,j,k) - Cstvr_fistr_8(k) - topo(i,j)
+*
+      end do
+      end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+      return
+      end

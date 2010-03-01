@@ -1,0 +1,222 @@
+***s/r opinv6_ad - ADJ of opinv6 
+*
+      subroutine opinv6_ad ( F_r,    F_ni,   F_nj,   F_nk,
+     %                       F_axis, F_a_8,  F_b_8,  F_c_8,
+     %                       F_ai_8, F_bi_8, F_ci_8, F_di_8,
+     %                       F_prep_L,  F_case, NIS,   NJS,  NKS, SKIP )
+*
+#include "impnone.cdk"
+*
+      integer F_ni, F_nj, F_nk, NIS, NJS, NKS, SKIP
+      real    F_r(SKIP,NIS,NJS,NKS)
+      real*8  F_a_8(*), F_b_8(*), F_c_8(*)
+      real*8  F_ai_8(*), F_bi_8(*), F_ci_8(*), F_di_8(*)
+      logical F_prep_L
+      character*1 F_case, F_axis
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section 
+*     Based on opinvad (v1_02 - s polavarapu)
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_r          O    - result in an array
+* F_ni         I    - number of points in x-direction
+* F_nj         I    - number of points in y-direction
+* F_nk         I    - number of levels in z-direction
+* F_axis       I    - along the x-, y- or z-axis
+* F_a_8        I    - lower  diagonal of inverse operator
+* F_b_8        I    - middle diagonal of inverse operator
+* F_c_8        I    - upper  diagonal of inverse operator
+* F_ai_8       I/O  - auxiliary vector for inverse
+* F_bi_8       I/O  - auxiliary vector for inverse
+* F_ci_8       I/O  - auxiliary vector for inverse
+* F_di_8       I/O  - auxiliary vector for inverse
+* F_prep_L     I    - .true. to prepare F_ai_8, ..., F_di_8
+* F_case       I    - 'N'eumann, 'D'irichlet or 'P'eriodic boundary condition
+* NIS          I    - field dimension in x-direction
+* NJS          I    - field dimension in y-direction
+* NKS          I    - field dimension in z-direction
+* SKIP         I    - distance between elements of F_r
+*
+      logical plbnd_L, plper_L, plalonx_L, plalony_L, plalonz_L
+      integer pnm
+      integer i, j, k
+*
+      real*8 ZERO_8 
+      parameter( ZERO_8 = 0.0 )
+*
+*     TRAJECTORY (START)
+*     ------------------
+      if ( F_case.eq.'D' ) then
+         plbnd_L = .true.
+         plper_L = .false.
+      elseif ( F_case.eq.'N' ) then
+         plbnd_L = .false.
+         plper_L = .false.
+      elseif ( F_case.eq.'P' ) then
+         plbnd_L = .false.
+         plper_L = .true.
+      endif
+*
+      plalonx_L = F_axis.eq.'X'
+      plalony_L = F_axis.eq.'Y'
+      plalonz_L = F_axis.eq.'Z'
+*
+      if ( plalonx_L ) pnm = F_ni 
+      if ( plalony_L ) pnm = F_nj 
+      if ( plalonz_L ) pnm = F_nk 
+*
+*     TRAJECTORY (END)
+*     ----------------
+      if(.not.F_prep_L.and.plalonx_L.and. F_case.eq.'P') goto 999
+      if(.not.F_prep_L.and.plalony_L.and. F_case.eq.'D') goto 999
+      if(.not.F_prep_L.and.plalonz_L.and. F_case.eq.'D') goto 999
+      call gefstop('opinv6_ad')
+*
+  999 continue
+*
+      if ( plper_L ) pnm = pnm - 1
+*
+*******************************************************************************
+*   ADJ of                                                                    *
+*   for solving along x direction                                             *
+*                                                                             *
+*******************************************************************************
+      if ( plalonx_L ) then
+*
+         if ( plper_L ) then
+            do i=pnm,1,-1
+            do k=1,F_nk
+            do j=1,NJS
+               F_r(1,F_ni,j,k) = F_r(1,F_ni,j,k) + F_di_8(i) * F_r(1,i,j,k)
+            enddo
+            enddo
+            enddo
+            do k=1,F_nk
+            do j=1,NJS
+               F_r(1,pnm, j,k) = F_r(1,pnm,j,k) + F_ai_8(1)   *F_r(1,F_ni,j,k)
+               F_r(1,1,   j,k) = F_r(1,1,  j,k) + F_ci_8(F_ni)*F_r(1,F_ni,j,k)
+               F_r(1,F_ni,j,k) =                  F_bi_8(F_ni)*F_r(1,F_ni,j,k)
+            enddo
+            enddo
+         endif
+*
+         call msoltri6_ad  
+     %               ( F_r(1,1,1,1), F_r(1,1,1,1), F_bi_8, F_ci_8, F_ai_8,
+     %                 SKIP, NIS*SKIP, pnm, NJS*F_nk)
+*
+         if ( plbnd_L ) then
+            do k=1,F_nk
+               do j=1,NJS
+                  F_r(1,1,   j,k) = ZERO_8 
+                  F_r(1,F_ni,j,k) = ZERO_8 
+               enddo
+            enddo
+         endif
+*
+         do j=F_nj+1,NJS
+            do k=1,F_nk
+               do i=1,NIS
+                  F_r(1,i,j,k) = ZERO_8 
+               enddo
+            enddo
+         enddo
+*
+*******************************************************************************
+*   ADJ of                                                                    *
+*   for solving along y direction                                             *
+*                                                                             *
+*******************************************************************************
+      elseif ( plalony_L ) then
+*
+         do 100 k=1,F_nk
+*
+         if ( plper_L ) then
+            do j=pnm,1,-1
+            do i=1,NIS
+               F_r(1,i,F_nj,k) = F_r(1,i,F_nj,k) + F_di_8(j) * F_r(1,i,j,k)
+            enddo
+            enddo
+            do i=1,NIS
+               F_r(1,i,pnm, k) = F_r(1,i,pnm,k) + F_ai_8(1)   *F_r(1,i,F_nj,k)
+               F_r(1,i,1,   k) = F_r(1,i,1,  k) + F_ci_8(F_nj)*F_r(1,i,F_nj,k)
+               F_r(1,i,F_nj,k) =                  F_bi_8(F_nj)*F_r(1,i,F_nj,k)
+            enddo
+         endif
+*
+         call msoltri6_ad
+     %               ( F_r(1,1,1,k), F_r(1,1,1,k), F_bi_8, F_ci_8, F_ai_8,
+     %                 NIS*SKIP, SKIP, pnm, F_ni)
+*
+         if ( plbnd_L ) then
+            do i=1,NIS
+               F_r(1,i,1,   k) = ZERO_8 
+               F_r(1,i,F_nj,k) = ZERO_8 
+               enddo
+         endif
+*
+         do i=F_ni+1,NIS
+            do j=1,F_nj
+               F_r(1,i,j,k) = ZERO_8 
+            enddo
+         enddo
+*
+  100    continue
+*
+*******************************************************************************
+*   ADJ of                                                                    *
+*   for solving along z direction                                             *
+*                                                                             *
+*******************************************************************************
+      elseif ( plalonz_L ) then
+*
+         if ( plper_L ) then
+            do k=pnm,1,-1
+            do j=1,F_nj
+            do i=1,NIS
+               F_r(1,i,j,F_nk) = F_r(1,i,j,F_nk) + F_di_8(k) * F_r(1,i,j,k)
+            enddo
+            enddo
+            enddo
+            do j=1,F_nj
+            do i=1,NIS
+               F_r(1,i,j, pnm) = F_r(1,i,j,pnm) + F_ai_8(1)   *F_r(1,i,j,F_nk)
+               F_r(1,i,j,   1) = F_r(1,i,j,  1) + F_ci_8(F_nk)*F_r(1,i,j,F_nk)
+               F_r(1,i,j,F_nk) =                  F_bi_8(F_nk)*F_r(1,i,j,F_nk)
+            enddo
+            enddo
+         endif
+*
+         call msoltri6_ad
+     %               ( F_r(1,1,1,1), F_r(1,1,1,1), F_bi_8, F_ci_8, F_ai_8,
+     %                 NIS*NJS*SKIP, SKIP, pnm, NIS*F_nj)
+*
+         if ( plbnd_L ) then
+            do j=1,F_nj
+               do i=1,NIS
+                  F_r(1,i,j,   1) = ZERO_8 
+                  F_r(1,i,j,F_nk) = ZERO_8 
+               enddo
+            enddo
+         endif
+*
+         do i=F_ni+1,NIS
+            do k=1,F_nk
+               do j=1,F_nj
+                  F_r(1,i,j,k) = ZERO_8 
+               enddo
+            enddo
+         enddo
+*
+      endif
+*
+      return
+      end

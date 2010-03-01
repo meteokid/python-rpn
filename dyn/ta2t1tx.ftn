@@ -1,0 +1,280 @@
+***s/r ta2t1tx -  Fetch variables ta into t1 and tx
+*
+#include <model_macros_f.h>
+*
+      subroutine ta2t1tx
+#include "impnone.cdk"
+*
+*author
+*     Alain Patoine - april 94
+*
+*revision
+*
+*object
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_30 - Edouard  S.       - remove pi' at the top
+* v2_31 - Desgagne M.       - remove treatment of HU and QC and 
+*                             re-introduce tracers
+*	
+*arguments
+*	none
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vta.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "p_bus.cdk"
+#include "mem.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+      integer open_db_file,close_db_file,rewind_db_file,
+     $        read_db_file,write_db_file
+      external open_db_file,close_db_file,rewind_db_file,
+     $         read_db_file,write_db_file
+*
+      integer err, key(20), i, j, k, n, key1_, keya_, key1(Tr3d_ntr), 
+     $        keya(Tr3d_ntr), unf, unfa, ntr2do, cnt, j2do, m
+      real tr1,tra
+      pointer (patr1, tr1(LDIST_SHAPE,*)),(patra, tra(LDIST_SHAPE,*))
+      real    busper(max(1,p_bper_siz)), buf(l_ni,G_nk)
+      real, allocatable, dimension(:,:,:,:) :: tr2,tr3
+**
+*     ---------------------------------------------------------------
+*
+*C       1.    Fetch variables ta into t1 and tx
+*              ---------------------------------
+*
+      key(1)  = VMM_KEY(uta  )
+      key(2)  = VMM_KEY(ut1  )
+      key(3)  = VMM_KEY(vta  )
+      key(4)  = VMM_KEY(vt1  )
+      key(5)  = VMM_KEY(tdta )
+      key(6)  = VMM_KEY(tdt1 )
+      key(7)  = VMM_KEY(fita )
+      key(8)  = VMM_KEY(fit1 )
+      key(9)  = VMM_KEY(fipta)
+      key(10) = VMM_KEY(fipt1)
+      err = vmmlod(key,10)
+      err = VMM_GET_VAR(uta  )
+      err = VMM_GET_VAR(ut1  )
+      err = VMM_GET_VAR(vta  )
+      err = VMM_GET_VAR(vt1  )
+      err = VMM_GET_VAR(tdta )
+      err = VMM_GET_VAR(tdt1 )
+      err = VMM_GET_VAR(fita )
+      err = VMM_GET_VAR(fit1 )
+      err = VMM_GET_VAR(fipta)
+      err = VMM_GET_VAR(fipt1)
+*
+      do k=1,l_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         ut1  (i,j,k) = uta  (i,j,k)
+         vt1  (i,j,k) = vta  (i,j,k)
+         tdt1 (i,j,k) = tdta (i,j,k)
+         fit1 (i,j,k) = fita (i,j,k)
+         fipt1(i,j,k) = fipta(i,j,k)
+      enddo
+      enddo
+      enddo
+*
+      err = vmmuld(-1,0)
+*
+      key(1)  = VMM_KEY(tta  )
+      key(2)  = VMM_KEY(tt1  )
+      key(3)  = VMM_KEY(qta  )
+      key(4)  = VMM_KEY(qt1  )
+      key(5)  = VMM_KEY(tpta )
+      key(6)  = VMM_KEY(tpt1 )
+      key(7)  = VMM_KEY(pipta)
+      key(8)  = VMM_KEY(pipt1)
+      key(9)  = VMM_KEY(tplta)
+      key(10) = VMM_KEY(tplt1)
+      key(11) = VMM_KEY(psdta)
+      key(12) = VMM_KEY(psdt1)
+      key(13) = VMM_KEY(sta  )
+      key(14) = VMM_KEY(st1  )
+      key(15) = VMM_KEY(gpta )
+      key(16) = VMM_KEY(gptx )
+      err = vmmlod(key,16)
+      err = VMM_GET_VAR(tta  )
+      err = VMM_GET_VAR(tt1  )
+      err = VMM_GET_VAR(qta  )
+      err = VMM_GET_VAR(qt1  )
+      err = VMM_GET_VAR(tpta )
+      err = VMM_GET_VAR(tpt1 )
+      err = VMM_GET_VAR(pipta)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(tplta)
+      err = VMM_GET_VAR(tplt1)
+      err = VMM_GET_VAR(psdta)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(sta  )
+      err = VMM_GET_VAR(st1  )
+      err = VMM_GET_VAR(gpta )
+      err = VMM_GET_VAR(gptx )
+*
+      do k=1,l_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         tt1  (i,j,k) = tta  (i,j,k)
+         qt1  (i,j,k) = qta  (i,j,k)
+         tpt1 (i,j,k) = tpta (i,j,k)
+         pipt1(i,j,k) = pipta(i,j,k)
+         tplt1(i,j,k) = tplta(i,j,k)
+         psdt1(i,j,k) = psdta(i,j,k)
+         gptx (i,j,k) = gpta (i,j,k)
+      enddo
+      enddo
+      enddo
+*
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         st1  (i,j) = sta  (i,j)
+      enddo
+      enddo
+*
+      err = vmmuld(-1,0)
+*
+********************************************************************
+*     Non-hydrostatic model fields
+********************************************************************
+*
+      if ( .not. Schm_hydro_L ) then
+*
+         key(1) = VMM_KEY(wta  )
+         key(2) = VMM_KEY(wt1  )
+         key(3) = VMM_KEY(qpta )
+         key(4) = VMM_KEY(qpt1 )
+         key(5) = VMM_KEY(multa)
+         key(6) = VMM_KEY(multx)
+         key(7) = VMM_KEY(muta )
+         key(8) = VMM_KEY(mut1 )
+         err = vmmlod(key,8)
+         err = VMM_GET_VAR(wta  )
+         err = VMM_GET_VAR(wt1  )
+         err = VMM_GET_VAR(qpta )
+         err = VMM_GET_VAR(qpt1 )
+         err = VMM_GET_VAR(multa)
+         err = VMM_GET_VAR(multx)
+         err = VMM_GET_VAR(muta )
+         err = VMM_GET_VAR(mut1 ) 
+*
+         do k=1,l_nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            wt1  (i,j,k) = wta  (i,j,k)
+            qpt1 (i,j,k) = qpta (i,j,k)
+            multx(i,j,k) = multa(i,j,k)
+            mut1 (i,j,k) = muta (i,j,k)
+         enddo
+         enddo
+         enddo
+*
+         err = vmmuld(-1,0)
+*
+      endif
+*
+      key1_ = VMM_KEY (trt1)
+      keya_ = VMM_KEY (trta)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+         keya(n) = keya_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)  
+         err = vmmlod(keya,Tr3d_ntr)  
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr1,tr1)
+            err = vmmget(keya(n),patra,tra)
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr1(i,j,k) = tra(i,j,k)
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+         err = vmmuld(keya,Tr3d_ntr)
+      endif
+*   
+      if (Tr2d_incore_L) then
+         do n=1,Tr2d_ntr
+            patr1 = loc(Tr2d_stk3d ((n-1)*LDIST_SIZ*l_nk+1))
+            patra = loc(Tr2d_stk3da((n-1)*LDIST_SIZ*l_nk+1))
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr1(i,j,k) = tra(i,j,k)
+            end do
+            end do
+            end do
+         end do
+         if (Tr2d_ntr.gt.0) call hpdeallc (Tr2d_stk3da_, err,0)
+      else
+         cnt = l_ni*G_nk
+         allocate (tr2(l_ni,l_nj,G_nk,Tr2d_ntpf))
+         do n=1,Tr2d_nbf
+            unf   = Tr2d_unf ((n-1)*Tr2d_ntpf+1)
+            unfa  = Tr2d_unfa((n-1)*Tr2d_ntpf+1)
+            err = rewind_db_file (unf)
+            err = read_db_file  (unf, ntr2do, 1)
+            err = write_db_file (unf, ntr2do, 1)
+            err = rewind_db_file (unfa)
+            do m=1,ntr2do               
+               err = read_db_file (unfa,tr2(1,1,1,m),cnt*l_nj)
+            end do
+            do j=1,l_nj
+               err = read_db_file  (unf,j,1)
+               err = write_db_file (unf,j,1)
+               do m=1,ntr2do
+                  err = read_db_file (unf,buf,cnt)
+                  do k=1,G_nk
+                  do i=1,l_ni
+                     buf(i,k) = tr2(i,j,k,m)
+                  end do
+                  end do 
+                  err = write_db_file (unf,buf,cnt)
+               end do
+            end do
+         end do
+         deallocate (tr2)
+      endif
+*
+*******************************************************************
+*     Physics fields
+*******************************************************************
+*
+      if ( Schm_phyms_L ) then
+         if (Mem_phyncore_L) then
+            do i=1,p_bper_siz*p_nj
+               Phy_busper3D(i) = Phy_busper3D_digf(i)
+            end do
+            call hpdeallc (Phy_busper3D_digf_ , err, 1)
+         else
+            err = open_db_file   (Lun_waphy)
+            err = rewind_db_file (Lun_waphy)
+            err = open_db_file   (Lun_wapta)
+            err = rewind_db_file (Lun_wapta)
+            do k = 1,p_nj
+               err = read_db_file  (Lun_wapta,j,1)
+               err = read_db_file  (Lun_wapta,busper,p_bper_siz)
+               err = write_db_file (Lun_waphy,j,1)
+               err = write_db_file (Lun_waphy,busper,p_bper_siz)
+            end do
+            err = close_db_file (Lun_waphy)
+            err = close_db_file (Lun_wapta)
+         endif
+      endif
+*
+      return
+      end

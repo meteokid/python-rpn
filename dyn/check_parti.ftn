@@ -1,0 +1,46 @@
+***s/r check_parti - Checks domain partitioning
+*
+      logical function check_parti (F_si,F_n,F_npe)
+*
+#include "impnone.cdk"
+*
+      integer F_si,F_n,F_npe
+*
+*author
+*     Michel Desgagne
+*
+*revision
+* v2_10 - Desgagne M.       - initial version
+* v2_21 - Desgagne M.       - rpn_comm stooge for MPI
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_si         I         Starting global index of local sub-domain     
+*  F_n          I         Global dimension
+*  F_npe        I         Number of PEs
+*----------------------------------------------------------------
+*implicits
+#include "lun.cdk"
+*
+      integer part_ok,part_ok_,err
+*
+*-------------------------------------------------------------------
+*
+      check_parti = .true.
+      part_ok = 0
+      if (F_si.gt.F_n) part_ok=1
+      call rpn_comm_ALLREDUCE (part_ok,part_ok_,1,"MPI_INTEGER",
+     $                                    "MPI_BOR","grid",err)
+      if (part_ok_.gt.0) check_parti = .false.
+      if ((.not.check_parti).and.(Lun_out.gt.0)) 
+     $     write (Lun_out,900) F_n,F_npe
+ 900  format (/' ILLEGAL DOMAIN PARTITIONING:'/
+     $         ' CANNOT PARTITION ',I5,' POINTS IN ',I5,' SUBDOMAINS'/)
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

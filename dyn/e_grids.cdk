@@ -1,0 +1,35 @@
+#if defined (DOC)
+*
+***comdeck e_grids.cdk
+*
+*revision
+* v1_97 - V.Lee                  - moved file unit number variables such as OSDYN, OSPHY,
+* v1_97                            CLIMA,...  to comdeck e_files.cdk
+* v1_97                          - moved variables related to analysis to e_anal.cdk
+*
+*  nifi,njfi- X dimension, Y dimension of the PHI grid
+*  niv,njv  - X dimension, Y dimension of the V grid
+*  niu,nju  - X dimension, Y dimension of the U grid
+*  npfi     - X dimension * Y dimension (NIFI*NJFI) of the PHI grid
+*  npu      - X dimension * Y dimension (NIU*NJU) of the U grid
+*  npv      - X dimension * Y dimension (NIV*NJV) of the V grid
+*  ip1fi,ip2fi,ip3fi - IP1,IP2,IP3 descriptors for the PHI grid
+*  ip1u, ip2u, ip3u  - IP1,IP2,IP3 descriptors for the U grid
+*  ip1v, ip2v, ip3v  - IP1,IP2,IP3 descriptors for the V grid
+*  RO       - 3 by 3 array of the rotation matrix
+*  LAM      - true for a Limited Area Grid
+#endif
+
+      INTEGER        nifi, niu, niv, njfi, nju, njv,
+     %               npfi, npu, npv,
+     %               ip1fi, ip2fi, ip3fi,
+     %               ip1u, ip2u, ip3u,
+     %               ip1v, ip2v, ip3v 
+      LOGICAL        LAM
+
+      COMMON/gridi/  npfi, npu, npv,
+     %               nifi, niu, niv, njfi, nju, njv,
+     %               ip1fi, ip2fi, ip3fi,
+     %               ip1u, ip2u, ip3u,
+     %               ip1v, ip2v, ip3v
+      COMMON/gridl/  LAM

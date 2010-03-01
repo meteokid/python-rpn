@@ -1,0 +1,37 @@
+***s/r gemtim - Print out date and cpu statistics
+*
+#include <model_macros_f.h>
+*
+      subroutine gemtim (unf)
+*
+#include "impnone.cdk"
+*
+      integer unf
+*
+*author
+*     B. Dugas
+*
+*revision
+* v2_30 - Dugas B.       - initial version
+*
+*object
+*     
+**
+      logical, save :: timini_L
+      character*24 temp_S,fdate
+      real totals,users,systs,ra(2),dtime
+      equivalence (ra(1),users),(ra(2),systs)
+*
+      data timini_L / .false. /
+*----------------------------------------------------------------
+*
+      totals = dtime( ra )
+      temp_S = fdate( )
+      if (timini_L) write(unf,1000) temp_S, users, systs
+      timini_L = .true.
+*
+ 1000    format(/A,' User Time (sec) : ',f10.6,
+     +             ' Sys  Time (sec) : ',f10.6)
+*----------------------------------------------------------------
+      return
+      end

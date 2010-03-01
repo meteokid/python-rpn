@@ -1,0 +1,34 @@
+#if defined (DOC)
+*
+***comdeck hgc.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES FOR HORIZONTAL DESCRIPTORS OF OUTPUT GRIDS (set_hgc)      |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Hgc_gxtyp_s        | grid type for positional records (>> and ^^)    |
+*----------------------------------------------------------------------|
+* The following four grid descriptors are used when                    |
+* generating >> and ^^ records. They convey grid rotation information. |
+* They are the same for phi, U and V grids.                            |
+*----------------------------------------------------------------------|
+* Hgc_ig1ro          | first grid descriptor grid                      |
+* Hgc_ig2ro          | second grid descriptor grid                     |
+* Hgc_ig3ro          | third grid descriptor grid                      |
+* Hgc_ig4ro          | fourth grid descriptor grid                     |
+*----------------------------------------------------------------------
+*
+*
+#endif
+      integer Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
+      character*1 Hgc_gxtyp_s
+*
+      MARK_COMMON_BEG (Hgc)
+      common /Hgc/ Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
+      MARK_COMMON_END (Hgc)
+      MARK_COMMON_BEG (Hgc_s)
+      common /Hgc_s/ Hgc_gxtyp_s
+      MARK_COMMON_END (Hgc_s)

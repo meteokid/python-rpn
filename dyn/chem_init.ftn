@@ -1,0 +1,72 @@
+***s/r chem_init - 
+*
+#include <model_macros_f.h>
+*
+      subroutine chem_init ()
+      implicit none
+*
+*author
+*     Michel Desgagne - September 2001
+*
+*revision
+* v2_31 - Desgagne M.       - initial version
+*
+*object
+*     Establishes chemistry tracers requirement from Chem_liste_S and
+*     put those tracers onto Tr2d for dynamics sub-processes.
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "dimout.cdk"
+#include "chem.cdk"
+#include "tr2d.cdk"
+#include "schm.cdk"
+#include "pslab.cdk"
+*
+      integer i,k,err
+*
+*     __________________________________________________________________
+*   
+      Chem_ntr = 0
+      if (.not.Schm_chems_L) return
+*
+      if (lun_out.gt.0) write(Lun_out,1000)
+*
+      do i=1,chem_maxn
+         Chem_ntr = Chem_ntr+1
+         Chem_name_S (Chem_ntr) = Chem_liste_S(i)
+         Chem_sval (Chem_ntr) = 0.
+      end do
+*
+*     Assume that all chemistry tracers are 3D but not multiple fields
+      Pslab_mxout = max(Pslab_mxout,Chem_ntr*G_nk)
+*
+      if (lun_out.gt.0) then
+         write(Lun_out,*) 'Pslab_mxout=',Pslab_mxout
+      endif
+      call hpalloc(Chem_useit_    ,Chem_ntr,         err,1)
+      call hpalloc(Chem_xnbits_   ,Chem_ntr,         err,1)
+*
+      do 10 i=1,Chem_ntr
+         do k=1,tr2d_ntr
+            if (Tr2d_name_S(k).eq.Chem_name_S(i)) goto 10
+         end do
+         tr2d_ntr = tr2d_ntr + 1
+         Tr2d_name_S(tr2d_ntr) = Chem_name_S(i)
+         Tr2d_sval(tr2d_ntr) = Chem_sval(i)
+ 10   continue 
+*   
+*     __________________________________________________________________
+*
+*
+ 1000 format(/,'INITIALIZATION OF ARQ CHEMISTRY PACKAGE (S/R CHEM_INIT)',
+     +       /,'======================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,177 @@
+***s/r sergini - Prepares "first record" output for time series.
+*
+#include <model_macros_f.h>
+*
+      subroutine sergini
+*
+#include "impnone.cdk"
+*
+*author 
+*     Andre Methot - cmc - june 1994 v0_14
+*
+*revision
+* v2_00 - Desgagne M.     - initial MPI version
+* v2_20 - Lee V.          - extract geophysical fields for time-series 
+* v2_20                     from physics permanent bus,not VMM variables
+*
+*object
+*               This subroutine is part of time serie's package
+*      initialisation. It extracts and produce output of constant
+*      fields to be used by the unwrapper.
+*	
+*arguments
+*	none
+*
+*notes
+*     This code is done once per model's run.
+*
+*     The method used here is similar to SEF or RFE equivalent.
+*     The constraint here is to perform extractions and output
+*     of header and a hardcoded list of geophysical variables
+*     using the same calls as a real time serie's variable.
+*
+*     The user's given list of time serie's variables is then
+*     temporarly overwritten by the list of constant fields.
+*
+*     The constant fields are then loaded, and extracted.
+*
+*     Finally, the user's given list of time serie's variables is
+*     re-initialised.
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "p_serg.cdk"
+#include "lun.cdk"
+#include "rstr.cdk"
+#include "xst.cdk"
+#include "p_bus.cdk"
+#include "busind.cdk"
+#include "mem.cdk"
+*
+*modules
+      integer read_db_file,write_db_file
+      external read_db_file,write_db_file
+      integer rewind_db_file,open_db_file,close_db_file
+      external rewind_db_file,open_db_file,close_db_file
+*
+      character *8 ptgeonm(CNSRGEO), ptbidon
+      integer pnsurf, i, j, m, pnerr
+      real prcon
+      real w1(l_ni),w2(l_ni),w3(l_ni),busper,busper2(max(1,p_bper_siz))
+      pointer (pabusper,busper(*))
+**
+*     ---------------------------------------------------------------
+*
+*        -----------------------------------------------------------
+*C    1- skip this subroutine if in restart mode or 
+*        if no time series are requested
+*        -----------------------------------------------------------
+*
+      if ( Rstri_rstn_L .or. Xst_nstat .le. 0 ) goto 500
+*
+      if (lun_out.gt.0) write(Lun_out,1001)
+*
+      if (.not.Mem_phyncore_L) then
+         pnerr = open_db_file   (Lun_waphy)
+         pnerr = rewind_db_file (Lun_waphy)
+         pabusper = loc(busper2(1))
+      endif
+*
+*        ---------------------------------------------------------------
+*C   3- Building of a list of variable names for geophysical fields
+*        ---------------------------------------------------------------
+*
+      ptgeonm(1) = 'MA'
+      ptgeonm(2) = 'LA'
+      ptgeonm(3) = 'LO'
+      ptgeonm(4) = 'ZP'
+      ptgeonm(5) = 'MG'
+      ptgeonm(6) = 'LH'
+      ptgeonm(7) = 'AL'
+      ptgeonm(8) = 'SD'
+      ptgeonm(9) = 'TM'
+      ptgeonm(10) = 'TP'
+      ptgeonm(11) = 'GL'
+      ptgeonm(12) = 'HS'
+      pnsurf =  12
+      if (pnsurf.gt.CNSRGEO) then
+          write(Lun_out,*)
+     $        'Dimension for ptgeonm TOO SMALL, CNSRGEO= ', CNSRGEO
+          write(Lun_out,*)'Change CNSRGEO in p_serg.cdk > ',pnsurf
+          call gefstop('SERGINI')
+      endif
+*
+*        ---------------------------------------------------------------
+*C    4- Temporarily over-writing the user time serie's variable list
+*        with a list of geophysical variables
+*        ---------------------------------------------------------------
+*
+      call sersetc('SURFACE', ptgeonm, pnsurf, pnerr)
+      call sersetc('PROFILS', ptbidon,      0, pnerr)
+      call serset('KOUNT', 0,  1, pnerr)
+      call serset('HEURE', 0, 1, pnerr)
+      call serdbu
+*
+*        ---------------------------------------------------------------
+*C    5- Extract time-series values for geophysical variables
+*        ---------------------------------------------------------------
+*
+      prcon = 180./Dcst_pi_8
+*
+      do 35 j= 1+pil_s, l_nj-pil_n 
+*
+         if (Mem_phyncore_L) then
+            pabusper = loc (Phy_busper3D((j-1)*p_bper_siz+1))
+         else
+            pnerr = read_db_file (Lun_waphy,j,1)
+            pnerr = read_db_file (Lun_waphy,busper,p_bper_siz)
+         endif
+         do i= 1+pil_w, l_ni-pil_e
+            w1(i) = 1.0
+            w2(i) = busper(dlat+i-1) * prcon
+            w3(i) = busper(dlon+i-1) * prcon
+            if (w3(i).lt.0) w3(i)=360.+w3(i)
+         end do
+*
+         call serxst(        w1(1), 'MA',j, l_ni, 0.0, 1.0, -1)
+         call serxst(        w2(1), 'LA',j, l_ni, 0.0, 1.0, -1)
+         call serxst(        w3(1), 'LO',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper   (z0), 'ZP',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper   (mg), 'MG',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper (lhtg), 'LH',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper(alvis), 'AL',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper(snodp), 'SD',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper(twater),'TM',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper(tsoil), 'TP',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper(glsea), 'GL',j, l_ni, 0.0, 1.0, -1)
+         call serxst(busper(wsoil), 'HS',j, l_ni, 0.0, 1.0, -1)
+ 35   continue
+
+      call sergout(.true.)
+*
+*        ---------------------------------------------------------------
+*C    6- De-allocate temporary memory
+*        ---------------------------------------------------------------
+*
+      if (.not.Mem_phyncore_L) pnerr = close_db_file (Lun_waphy)
+*
+*
+*        ---------------------------------------------------------------
+*C    7- Reset to extracting fields for the user time serie's variable list
+*        ---------------------------------------------------------------
+*
+      call sersetc('SURFACE', P_serg_srsrf_s, P_serg_srsrf, pnerr)
+      call sersetc('PROFILS', P_serg_srprf_s, P_serg_srprf, pnerr)
+      call serdbu
+*
+ 1001 format(
+     +/,'INITIALISATION OF TIME SERIES PACKAGE (S/R SERGINI)',
+     +/,'===================================================')
+*
+ 500  continue
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

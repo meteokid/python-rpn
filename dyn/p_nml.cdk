@@ -1,0 +1,109 @@
+#if defined (DOC)
+*
+*revisions
+* v2_20 - Pellerin P.            - added some boundary layer flags and
+* v2_20                            removed the geophysical flags
+* v2_21 - Dugas B.               - added climate mode flags
+* v2.31 - Dugas B.               - added P_zong_znoff_L and P_zong_nbin
+* v2.32 - Dugas B.               - added P_rad_nivl
+*
+***comdeck p_nml.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES IN THE 'PHYSICS' NAMELIST                                 |
+*  descriptions of each variable are found in each individual comdeck  |
+*______________________________________________________________________|
+*
+*
+#endif
+#include "p_rad.cdk"
+#include "p_clim.cdk"
+#include "p_pbl.cdk"
+#include "p_gwd.cdk"
+#include "p_cond.cdk"
+#include "p_serg.cdk"
+#include "p_zong.cdk"
+#include "p4d_simp.cdk"
+*
+      namelist /physics/
+     $     P_rad_schm_s, P_rad_knt, P_rad_fomic_L,
+     $     P_rad_ftp_s,  P_rad_nivl,
+*
+     $     P_clim_clima_L ,P_clim_ininc_L,
+*
+     $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
+     $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
+     $     P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L ,
+     $     P_pbl_cortm_L  ,P_pbl_corts_L  ,
+     $     P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L  ,
+     $     P_pbl_agreg_L  ,P_pbl_bndlr_s  ,P_pbl_nslof    ,
+     $     P_pbl_cst      ,P_pbl_csn      ,P_pbl_albkg_L  ,
+     $     P_pbl_csg      ,P_pbl_kst      ,P_pbl_ksn      ,
+     $     P_pbl_ksg      ,P_pbl_valml_8  ,P_pbl_mllat_8  ,
+     $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
+     $     P_pbl_mix_s    ,P_pbl_z0tcst_L ,
+*
+     $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
+     $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
+     $     P_cond_yofset   ,P_cond_yblnd    ,P_cond_conv_s   ,
+     $     P_cond_stcon_s  ,P_cond_shlct_s  ,P_cond_hc       ,
+     $     P_cond_hf       ,P_cond_hm       ,P_cond_filco    ,
+*
+     $     P_cond_kfcmom_L ,P_cond_kfctrig  , P_cond_kfcrad  ,
+     $     P_cond_kfcdepth ,P_cond_kfcdlev  , P_cond_kfcdet  ,
+     $     P_cond_kfctimec ,P_cond_kfctimea ,
+
+     $     P_gwd_s ,
+*
+     $     P_serg_srsus_L, P_serg_srsrf_s, 
+     $     P_serg_srprf_s, P_serg_srwri, P_serg_serstp,
+*
+     $     P_out_moyhr,
+*
+     $     P_zong_znli,    P_zong_znmod,
+     $     P_zong_znoff_L, P_zong_znsus_L,
+     $     P_zong_znsrf_s, P_zong_znprf_s,
+     $     P_zong_nbin
+*
+      namelist /physics_p/
+     $     P_rad_schm_s, P_rad_knt, P_rad_fomic_L,
+     $     P_rad_ftp_s,
+*
+     $     P_clim_clima_L ,P_clim_ininc_L,
+*
+     $     P_pbl_drag_L   ,P_pbl_ocean_L  ,
+     $     P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
+     $     P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L ,
+     $     P_pbl_cortm_L  ,P_pbl_corts_L  ,
+     $     P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L  ,
+     $     P_pbl_agreg_L  ,P_pbl_bndlr_s  ,P_pbl_nslof    ,
+     $     P_pbl_cst      ,P_pbl_csn      ,
+     $     P_pbl_csg      ,P_pbl_kst      ,P_pbl_ksn      ,
+     $     P_pbl_ksg      ,P_pbl_valml_8  ,P_pbl_mllat_8  ,
+     $     P_pbl_valeq_8  ,P_pbl_eqlat_8  ,P_pbl_spng     ,
+     $     P_pbl_mix_s    ,P_pbl_z0tcst_L ,
+*
+     $     P_cond_satu_L   ,P_cond_ilwc_L   ,P_cond_filtend  ,
+     $     P_cond_xofset   ,P_cond_xblnd    ,P_cond_dzsedi   ,
+     $     P_cond_yofset   ,P_cond_yblnd    ,P_cond_conv_s   ,
+     $     P_cond_stcon_s  ,P_cond_shlct_s  ,P_cond_hc       ,
+     $     P_cond_hf       ,P_cond_hm       ,P_cond_filco    ,
+
+     $     P_cond_kfcmom_L ,P_cond_kfctrig  , P_cond_kfcrad  ,
+     $     P_cond_kfcdepth ,P_cond_kfcdlev  , P_cond_kfcdet  ,
+     $     P_cond_kfctimec ,P_cond_kfctimea ,
+
+     $     P_gwd_s ,
+*
+     $     P_serg_srsus_L, P_serg_srwri, P_serg_serstp,
+*
+     $     P_out_moyhr,
+*
+     $     P_zong_znli,    P_zong_znmod,
+     $     P_zong_znoff_L, P_zong_znsus_L,
+     $     P_zong_nbin
+*
+      namelist /simplified_physics/ P4d_kdphys, P4d_pbl, P4d_lsc, P4d_sgo
+      namelist /simplified_physics_p/ P4d_kdphys, P4d_pbl, P4d_lsc, P4d_sgo
+*

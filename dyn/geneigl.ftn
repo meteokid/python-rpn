@@ -1,0 +1,98 @@
+#if defined(NEC) && defined(BIT64) || defined(CRAY)
+      #define SYGV ssygv
+#else
+      #define SYGV dsygv
+#endif
+
+***s/r geneigl - solves a generalised symmetric eigenproblem
+*
+      subroutine geneigl( F_eval_8, F_evec_8, F_b_8, F_work_8, F_ordr_8,
+     %                    F_ifaz, NN, NMAX, NWORK )
+*
+#include "impnone.cdk"
+*
+      integer F_ifaz, NN, NMAX, NWORK
+      real*8 F_eval_8(NMAX), F_evec_8(NMAX,NN), F_b_8(NMAX,NN)
+      real*8 F_work_8(NWORK), F_ordr_8
+*
+*author 
+*     j. cote  March 1993, from geneig
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from geneigl v1_03)
+*
+*object
+*    To solve a generalised symmetric eigenproblem
+*
+*            a * x = lambda * b * x
+*
+*arguments:
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_eval_8    O     - eigenvalues (lambda)
+*  F_evec_8    I/O   - input: matrix A 
+*                     output: eigenvectors (x)
+*  F_b_8       I/O   - input: matrix B 
+*                     output:
+*  F_work_8    I/O   - work vector
+*  F_ordr_8    I     - < 0 if eigenvalues in decreasing order
+*  F_ifaz      I     - componant of eigenvectors used to fix the phase
+*  NN          I     - order of problem
+*  NMAX        I     - leading dimension of matrices in calling programm
+*  NWORK       I     - size of F_work_8 >= max(1,3*n-1)
+*
+*implicits
+#include "lun.cdk"
+*
+*note: LAPACK public domain library is required. See reference manual
+*      for more information [LAPACK Users' Guide (SIAM),1992]
+*      Only upper triangular parts of A and B need to be specified
+*      A and  B are overwritten
+*
+**
+*
+      integer i, j, k, pninfo
+      real*8 pdsav, pdfaz, one
+      data one /1.0/
+*
+      pninfo = -1
+*
+      call SYGV( 1, 'V', 'U', NN, F_evec_8, NMAX, F_b_8, NMAX, F_eval_8,
+     %                            F_work_8, NWORK, pninfo )
+*
+      if ( pninfo.ne.0 ) then
+         if (Lun_out.gt.0)
+     %   write(Lun_out,*)
+     $        'ERROR IN ?SYGV INFO = ',pninfo,' STOP IN GENEIGL'
+         call gefstop('geneigl')
+      endif
+*
+*     phase of eigenvectors
+*
+      do j=1,NN
+         pdfaz = sign( one, F_evec_8(F_ifaz,j) )
+         do i=1,NN
+            F_evec_8(i,j) = pdfaz * F_evec_8(i,j)
+         enddo
+      enddo
+*
+*     descending order if desired
+*
+      if ( F_ordr_8.lt.0.0 ) then
+*
+         do j=1,NN/2
+            k = NN - j + 1
+            pdsav = F_eval_8(j)
+            F_eval_8(j) = F_eval_8(k)
+            F_eval_8(k) = pdsav
+            do i=1,NN
+               pdsav = F_evec_8(i,j)
+               F_evec_8(i,j) = F_evec_8(i,k)
+               F_evec_8(i,k) = pdsav
+            enddo
+         enddo
+*
+      endif
+*
+      return
+      end

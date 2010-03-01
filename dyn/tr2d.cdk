@@ -1,0 +1,60 @@
+#if defined (DOC)
+*
+***comdeck tr2d.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  SLICED TRACER VARIABLES STORED IN MEMORY CORE OR TRACER FILES       |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* MAXTR2D            | maximum number of sliced tracers allowed        |
+* Tr2d_name_S        | sliced tracer names                             |
+* Tr2d_username_S    | user-defined sliced tracer names                |
+* Tr2d_ntr           | total number of sliced tracers                  |
+* Tr2d_userntr       | number of user-defined sliced tracer names      |
+* Tr2d_sval          | values for each sliced tracer                   |
+* Tr2d_usersval      | user-defined values for user-defined 2D  tracers|
+* Tr2d_incore_L      | .true. tracers stored in memory core            |
+* Tr2d_nslice        |                                                 |
+* Tr2d_unf           | array of unit numbers corresponding to each     |
+*                    | tracer file used                                |
+* Tr2d_unfa          | array of unit numbers corresponding to each     |
+*                    | tracer file used during initialization period   |
+* Tr2d_ntpf          | number of tracers stored per file               |
+* Tr2d_nbf           | number of tracer files                          |
+* Tr2d_stk3d         | pointer to data storage of tracers              |
+* Tr2d_stk3da        | pointer to data storage of tracers during INIT  |
+*----------------------------------------------------------------------
+*
+#endif
+      integer MAXTR2D
+      parameter ( MAXTR2D = 25 )
+*
+      character*4  Tr2d_name_S,Tr2d_username_S
+      logical Tr2d_incore_L
+      integer Tr2d_ntr,Tr2d_nslice,Tr2d_unf,Tr2d_unfa,
+     $        Tr2d_ntpf,Tr2d_nbf,Tr2d_userntr
+      real Tr2d_sval,Tr2d_usersval
+      real Tr2d_stk3d,Tr2d_stk3da
+      pointer (Tr2d_stk3d_, Tr2d_stk3d(*)),
+     $        (Tr2d_stk3da_, Tr2d_stk3da(*))
+      common /Tr2d_pnt/ Tr2d_stk3d_,Tr2d_stk3da_
+
+      MARK_COMMON_BEG (Tr2d_c)
+      common /Tr2d_c/ Tr2d_name_S(MAXTR2D),Tr2d_username_S(MAXTR2D)
+      MARK_COMMON_END (Tr2d_c)
+
+      MARK_COMMON_BEG (Tr2d_l)
+      common /Tr2d_l/ Tr2d_incore_L
+      MARK_COMMON_END (Tr2d_l)
+
+      MARK_COMMON_BEG (Tr2d_i)
+      common /Tr2d_i/Tr2d_ntr,Tr2d_nslice,Tr2d_ntpf,Tr2d_unf(0:MAXTR2D),
+     $               Tr2d_unfa(0:MAXTR2D),Tr2d_nbf,Tr2d_userntr
+      MARK_COMMON_END (Tr2d_i)
+
+      MARK_COMMON_BEG (Tr2d_r)
+      common /Tr2d_r/ Tr2d_sval(MAXTR2D),Tr2d_usersval(MAXTR2D)
+      MARK_COMMON_END (Tr2d_r)

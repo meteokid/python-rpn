@@ -1,0 +1,61 @@
+***s/r set_pois - 64 bits interface for preparation of projection matrix
+*                in the east-west or vertical direction
+*
+#include <model_macros_f.h>
+*
+      subroutine set_pois ( F_eval_8,F_evec_8,F_x_8,F_xdist_8,F_npts,
+     $                                                        F_dim )
+*
+#include "impnone.cdk"
+*
+      integer F_npts, F_dim
+      real*8  F_eval_8(*), F_evec_8(*), F_x_8(*), F_xdist_8(*)
+*
+*author
+*     michel roch - aug 1992
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from setpois v1_03)
+* v2_31 - Desgagne M.       - remove stkmemw
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_eval_8     O    - eigenvalue vector
+* F_evec_8     O    - eigenvector matrix
+* F_x_8        I    - grid point values
+* F_xdist_8    I    - distance between grid points
+* F_npts       I    - number of points
+* F_dim        I    - field dimension
+
+*implicits
+*
+      integer i, j, pnhperr
+      real*8, dimension (F_dim*F_dim) :: a_8,b_8
+      real*8 d_8(3*F_npts-1),x_8(F_dim),h_8(F_dim),r_8(F_dim)
+*
+* --------------------------------------------------------------------
+*
+*     transfer in real*8 arrays
+*
+      do i=1,F_dim
+         x_8(i)=F_x_8(i)
+         h_8(i)=F_xdist_8(i)
+      end do
+*
+      call prever ( r_8, b_8, a_8, d_8, x_8, h_8, F_npts, F_dim )
+*
+*     transfer results back in input/output arrays
+*
+      do i=1,F_dim*F_dim
+         F_evec_8(i)=b_8(i)
+      end do
+*
+      do i=1,F_dim
+         F_eval_8(i)=r_8(i)
+      end do
+*
+* --------------------------------------------------------------------
+*
+      return
+      end

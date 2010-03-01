@@ -1,0 +1,106 @@
+***s/r wrrstrt - Write the restart file
+*
+#include <model_macros_f.h>
+*
+      subroutine wrrstrt ()
+*
+#include "impnone.cdk"
+*
+*author
+*     M. Desgagne - Mars 2000
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Desgagne M.       - introduce WA files
+* v2_21 - Dugas B.          - adapt to climate mode
+* v2_30 - Corbeil L.        - Added writing of pres_surf pres_top
+* v2_31 - Desgagne M.       - Add Tr2d tracers
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "lun.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "mem.cdk"
+#include "p_bus.cdk"
+#include "c_cplg.cdk"
+#include "glb_ld.cdk"
+#include "tr2d.cdk"
+#include "pres.cdk"
+
+*
+*modules
+      integer vmmckmx,fnom,fclos,close_db_file
+      external vmmckmx,fnom,fclos,close_db_file
+*
+      integer i,ier,adr,dim,n
+*
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step
+*
+      ier = fnom (Lun_rstrt,'restart','RND',0)
+      call waopen (Lun_rstrt)
+*
+      call wawrit (Lun_rstrt,Lctl_step   ,1,1)
+      call wawrit (Lun_rstrt,Rstri_idon_L,2,1)
+      adr = 3
+      if (Schm_phyms_L.and.Mem_phyncore_L) then
+         call wawrit (Lun_rstrt,Phy_busper3D,adr,p_bper_siz*p_nj)
+         adr = adr + p_bper_siz*p_nj
+         if ( Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L )
+     $        then
+            call wawrit (Lun_rstrt,Rstri_half_L     ,adr,1)
+            adr = adr + 1
+            call wawrit (Lun_rstrt,Phy_busper3D_digf,adr,
+     $                                 p_bper_siz*p_nj)
+            adr = adr + p_bper_siz*p_nj
+         else
+            call wawrit (Lun_rstrt, .false. ,adr, 1)
+            adr = adr + 1
+         endif
+      endif
+      call wawrit (Lun_rstrt, c_cplg_step ,adr, 1)
+
+      adr = adr + 1
+      call wawrit (Lun_rstrt, pres_surf ,adr, 1)
+      adr = adr + 1
+      call wawrit (Lun_rstrt, pres_top  ,adr, 1)
+*
+      if ((Tr2d_incore_L).and.(Tr2d_ntr.gt.0)) then
+         adr = adr + 1
+         dim = Tr2d_ntr*LDIST_SIZ*l_nk
+         call wawrit (Lun_rstrt,Tr2d_stk3d,adr,dim)
+         if ( Init_balgm_L .and. .not.Rstri_idon_L ) then
+            adr = adr + dim
+            call wawrit (Lun_rstrt,Tr2d_stk3da,adr,dim)
+         endif
+      endif
+*
+      ier = vmmckmx()
+      call waclos(Lun_rstrt)
+      ier = fclos(Lun_rstrt)  
+*
+      if (.not.Tr2d_incore_L) then
+         do n=1,Tr2d_nbf
+            ier = close_db_file   (Tr2d_unf(n))
+            if ( Init_balgm_L .and. .not.Rstri_idon_L ) then
+               ier = close_db_file   (Tr2d_unfa(n))
+            endif
+         end do
+      endif
+*   
+ 2000 format(/,'WRITING A RESTART FILE AT TIMESTEP #',I8,
+     +       /,'=========================================')
+*
+*     ---------------------------------------------------------------
+*      
+      return
+      end

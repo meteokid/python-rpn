@@ -1,0 +1,170 @@
+***s/r p_fillbus - Fill the slice workspace variable for the physics
+*
+#include <model_macros_f.h>
+*
+      subroutine p_fillbus ( F_busdyn, F_busper, F_busent,
+     $                       F_up, F_vp, F_wp, F_tp , F_qp, F_trp, 
+     $                       F_um, F_vm, F_tm, F_trm, F_lpsm, F_sig,
+     $                       F_jdo, F_step, DIST_DIM, Nk )
+*
+#include "impnone.cdk"
+*
+      integer F_step,F_jdo, DIST_DIM, Nk
+*
+      real F_busdyn(*),F_busper(*),F_busent(*)
+      real F_up (DIST_SHAPE,Nk), F_vp (DIST_SHAPE,Nk),
+     $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk), 
+     $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
+     $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk),
+     $     F_tm (DIST_SHAPE,Nk), F_trm(DIST_SHAPE,Nk,*),
+     $     F_lpsm (DIST_SHAPE),  F_sig(DIST_SHAPE,Nk)
+*
+*author 
+*     Michel Roch - rpn - april 1994
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Desgagne M.       - bug correction on rotation of wind 
+* v2_20 - Pellerin P.       - copy contents of geobus into entry bus
+* v2_31 - Desgagne M.       - clean up and introduce h2o tracers
+* v3_00 - Laroche S.        - add sigma levels in the arguments
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*	Fill the slice workspace variable for the physics.
+*	Change of units if required	
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_busdyn      I       - dynamic bus
+* F_busper      I       - permanent bus
+* F_busent      O       - entry bus
+* F_up          I       - wind image in x direction at time t*
+* F_vp          I       - wind image in y direction at time t*
+* F_tp          I       - virtual temperature at time t*
+* F_hup         I       - specific humidity tendency at time t*
+* F_qcp         I       - mixing ratio of cloud water/ice at time t*
+* F_qp          I       - ln of pressure at time t*
+* F_um          I       - wind image in x direction at time t-
+* F_vm          I       - wind image in y direction at time t-
+* F_tm          I       - virtual temperature at time t-
+* F_hum         I       - specific humidity at time t-
+* F_qcm         I       - mixing ratio of cloud water/ice at time t-
+* F_lpsm        I       - ln of surface pressure at time t-
+* F_wp          I       - vertical motion at time t*
+* F_sig         I       - sigma levels
+* F_jdo         I       - slice number being processed
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "dcst.cdk"
+#include "p_pbl.cdk"
+#include "p_cond.cdk"
+#include "p_geol.cdk"
+#include "p_bus.cdk"
+#include "busind.cdk"
+*
+*notes
+*
+      integer i, k, n, ii, indx, offp, offg, pid, gid, mul
+      real con
+**
+*     ---------------------------------------------------------------
+*
+*C    3D variables: extract row F_jdo 
+*
+      con = ( 1.0/cos(geomg_y_8(F_jdo))) * Dcst_rayt_8
+      do k= 1,Nk
+      do i= 1, p_ni
+         indx = (k-1)*p_ni+i-1
+         ii = i + p_offi
+         F_busdyn(uplus +indx) = F_up (ii,F_jdo,k) * con
+         F_busdyn(vplus +indx) = F_vp (ii,F_jdo,k) * con
+         F_busdyn(tplus +indx) = F_tp (ii,F_jdo,k)
+         F_busdyn(umoins+indx) = F_um (ii,F_jdo,k) * con
+         F_busdyn(vmoins+indx) = F_vm (ii,F_jdo,k) * con
+         F_busdyn(tmoins+indx) = F_tm (ii,F_jdo,k)
+         F_busdyn(omegap+indx) = F_wp (ii,F_jdo,k)
+         F_busdyn(sigm  +indx) = F_sig(ii,F_jdo,k)
+      end do
+      end do
+*
+      do n=1,h2o_ntr
+         do k= 1,Nk
+         do i= 1, p_ni
+            indx = (k-1)*p_ni+i-1
+            ii = i + p_offi
+            F_busdyn(h2o_ind(1,n)+indx) = max(0., F_trp(ii,F_jdo,k,n))
+            F_busdyn(h2o_ind(2,n)+indx) = max(0., F_trm(ii,F_jdo,k,n))
+         end do
+         end do
+      end do
+*
+*C    Surface fields: extract row F_jdo
+*
+      do i= 1, p_ni
+         indx = i-1
+         ii = i + p_offi
+         F_busdyn(pplus  + indx) = exp( F_qp (ii,F_jdo,Nk) )
+         F_busdyn(pmoins + indx) = exp( F_lpsm (ii,F_jdo)  )
+         F_busdyn(dxdy   + indx) = 
+     $                geomg_hxu_8(ii-1)*geomg_hyv_8(F_jdo-1)*
+     $                Dcst_rayt_8*Dcst_rayt_8*geomg_cy_8(F_jdo)
+*      The following harcoding of fcpf, fcpw and eponmod will be
+*      a source of difference for future acide test with physics
+         F_busdyn(fcpf    + indx) = 2.
+         F_busdyn(fcpw    + indx) = 1.
+         F_busdyn(eponmod + indx) = 1.
+      end do
+      if (.not.G_LAM) then
+      do i= 1, p_ni
+         indx = i-1
+         ii = i + p_offi
+         F_busdyn(fcpf    + indx) = P_cond_fcpf(ii,F_jdo)
+         F_busdyn(fcpw    + indx) = P_cond_fcpw(ii,F_jdo)
+         F_busdyn(eponmod + indx) = P_pbl_vlsp (ii,F_jdo)
+      end do
+      endif
+*
+*C    Compute temperature from virtual temperature
+*     --------------------------------------------
+*
+      call mfottv ( F_busdyn(tplus  ) , F_busdyn(tplus) , 
+     $              F_busdyn(h2o_ind(1,hucond)) , p_ni, Nk, p_ni )
+      call mfottv ( F_busdyn(tmoins ) , F_busdyn(tmoins), 
+     $              F_busdyn(h2o_ind(2,hucond)) , p_ni, Nk, p_ni )
+*
+      if (F_step.eq.0) then
+*
+      do 20 pid=1,p_bent_top
+         if (entpar(pid,3).gt.0) then
+            do gid=1,p_bgeo_top
+               if (entnm(pid).eq.geonm(gid,1)) then
+                  do mul=1,entpar(pid,6)
+                    offp= entpar(pid,1)+(mul-1)*p_ni
+                    offg= geopar(gid,1)+(mul-1)*l_ni*l_nj
+     $                    +(F_jdo-1)*l_ni+p_offi
+                    do i=1,p_ni
+                       F_busent(offp+i-1)=geofld(offg+i-1)
+                    end do
+                  end do
+                  goto 20
+               endif
+            end do
+            print*, '*********************************************'
+            print *,'Variable: ', entnm(pid), 'not available'
+            print *,'for the ENTRY Bus.'
+            print*, '*********************************************'
+            stop
+         endif
+ 20   continue
+*
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

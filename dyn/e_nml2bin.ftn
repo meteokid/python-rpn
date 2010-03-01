@@ -1,0 +1,75 @@
+***s/r e_nml2bin - writes parameters to labfl
+*
+#include <model_macros_f.h>
+*
+      subroutine e_nml2bin
+#include "impnone.cdk"
+*
+      integer l_ni, l_nj
+      parameter (l_ni=1, l_nj=1)
+*
+*author michel desgagne - Jan 2000
+*
+*revision
+* v2_20 - Pellerin P.       - modified for physics 3.66
+* v2_30 - A. Methot         - introduction of a new stretch grid design
+* v2_30                       with upper limits on grid point spacing
+* v2_30 - Corbeil L.        - removed the part for pres_surf and top
+* v2_31 - Desgagne M.       - added did.cdk,ptopo.cdk and tracers
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*language
+*	fortran 77
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "e_maxprms.cdk"
+#include "e_grids.cdk"
+#include "e_tr.cdk"
+#include "e_files.cdk"
+* comdecks used also in GEMPP
+#include "dimout.cdk"
+#include "out1.cdk"
+#include "did.cdk"
+#include "hgc.cdk"
+#include "grd.cdk"
+#include "p_pbl.cdk"
+#include "ptopo.cdk"
+*
+**
+      integer  fnom
+      external fnom
+      integer k
+*
+*     ---------------------------------------------------------------
+*
+      labfl=0
+      if (fnom(labfl,'process/labfl.bin','SEQ/UNF',0).lt.0) stop
+*
+      write(labfl) Grd_ni  , Grd_nj  , Grd_nila  , Grd_njla ,
+     $             Grd_dx  , Grd_dy  , Grd_rot_8 , lam      ,
+     $             Grd_x0  , Grd_xl  , Grd_y0    , Grd_yl   , 
+     $             Grd_dxmax, Grd_dymax,
+     $             Ptopo_npex, Ptopo_npey, e_tr3d_ntr, e_trvs_ntr,
+     $             (E_tr3d_name_S(k),k=1,E_tr3d_ntr),
+     $             (E_tr3d_sval  (k),k=1,E_tr3d_ntr),
+     $             (E_trvs_name_S(k),k=1,E_trvs_ntr),
+     $             (E_trvs_sval  (k),k=1,E_trvs_ntr)
+*
+      write(labfl) Did_es,Did_vt,Did_horint,Did_vrtc
+      write(labfl) P_pbl_schsl_s, P_pbl_snoalb_L
+*
+      write(labfl) Out1_date, Out1_etik_s, Out1_anlv, 
+     $   Hgc_gxtyp_s, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
+*
+      close (labfl)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+*

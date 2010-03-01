@@ -1,0 +1,83 @@
+***s/r optriss6_ad - ADJ of optriss6
+*
+#include <model_macros_f.h>
+*
+      subroutine optriss6_ad ( F_r,    F_rhs, F_ni,  F_nj, F_nk,
+     %                         F_axis, F_a_8,   F_b_8,  F_c_8, F_period_L,
+     %                         NIS,   NJS,  NKS, SKIP )
+*
+#include "impnone.cdk"
+*
+      integer F_ni, F_nj, F_nk, NIS, NJS, NKS, SKIP
+      real  F_r(SKIP,NIS,NJS,NKS), F_rhs(SKIP,NIS,NJS,NKS)
+      real*8  F_a_8(*), F_b_8(*), F_c_8(*)
+      character*1 F_axis
+      logical     F_period_L
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
+*
+*object
+*     see id section
+*     Based on optrsad (v1_02 - s polavarapu)
+*     ----------------------------------------------------
+*     REMARK:F_r and F_rhs can NOT share same memory space
+*     ----------------------------------------------------
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_r          IO   - result
+* F_rhs        IO   - right-hand-side
+* F_ni         I    - number of points in x-direction
+* F_nj         I    - number of points in y-direction
+* F_nk         I    - number of levels in z-direction
+* F_axis       I    - along the x-, y- or z-axis
+* F_a_8        I    - lower  diagonal of operator
+* F_b_8        I    - middle diagonal of operator
+* F_c_8        I    - upper  diagonal of operator
+* F_period_L   I    - .true. if periodic in x direction
+* NIS          I    - field dimension in x-direction
+* NJS          I    - field dimension in y-direction
+* NKS          I    - field dimension in z-direction
+* SKIP         I    - distance between elements of F_rhs (and F_r)
+*
+*implicits
+#include "glb_ld.cdk"
+*
+      integer i, n
+*
+      real*8 ZERO_8 
+      parameter( ZERO_8 = 0.0 )
+*
+      real*8 pra_8 (max(F_ni,F_nj,F_nk))
+      real*8 prc_8 (max(F_ni,F_nj,F_nk))
+*
+      if ( F_axis.eq.'X' ) n = F_ni 
+      if ( F_axis.eq.'Y' ) n = F_nj 
+      if ( F_axis.eq.'Z' ) n = F_nk 
+*
+      do i = 1,n-1
+         pra_8(i+1) = F_c_8(i)
+      enddo
+      pra_8(1) = ZERO_8 
+      do i = 2,n
+         prc_8(i-1) = F_a_8(i)
+      enddo
+      prc_8(n) = ZERO_8 
+      if ( F_period_L ) then
+         pra_8(1) = F_c_8(n)
+         prc_8(n) = F_a_8(1)
+      endif
+
+      call optriss6
+     %            (F_rhs , F_r  ,F_ni ,F_nj ,F_nk        ,
+     %             F_axis, pra_8,F_b_8,prc_8,F_period_L  ,
+     %             NIS ,NJS ,NKS ,SKIP )
+*
+      return
+      end

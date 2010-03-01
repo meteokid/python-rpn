@@ -1,0 +1,64 @@
+***s/r e_decal - computation of the staggered positions for wind and/or
+*              divergence
+*
+      subroutine e_decal(F_x_8,F_y_8,F_xdec_8,F_ydec_8, fni, fnj, fniu, fnjv )
+*
+#include "impnone.cdk"
+*
+      integer fni, fnj, fniu, fnjv
+      real*8 F_x_8(fni), F_y_8(fnj), F_xdec_8(fniu), F_ydec_8(fnjv)
+*
+*auteur jean cote - 1991 (decal)
+*
+*revision
+* v0_11 - michel roch            - monotonous distribution of the staggered grid
+* v1_96 - Lee V.                 - added fniu,fnjv in the calling sequence
+* v2_20 - Lee V.                 - x,y,xdec,ydec converted to real*8
+*
+*object
+*     see above id
+*
+*arguments
+*
+*______________________________________________________________________
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* F_x_8              | position of grid points in x direction (deg)    |
+* F_y_8              | position of grid points in y direction (deg)    |
+* F_xdec_8           | staggered position of grid points in x direction|
+*                    | in degrees                                      |
+* F_ydec_8           | staggered position of grid points in y direction|
+*                    | in degrees                                      |
+* fni                | # of grid points in x direction for Phi grid    |
+* fnj                | # of grid points in y direction for Phi grid    |
+* fniu               | # of grid points in x direction for U grid      |
+* fnjv               | # of grid points in y direction for V grid      |
+*----------------------------------------------------------------------
+*
+*note: the list of points in the x direction must be in degree 
+*
+**
+      real*8 dum
+      integer i
+*
+      if (fni.eq.fniu) then
+      dum = 360.
+      endif
+*
+      do i=1,fni-2
+         F_xdec_8(i) = 0.5 * ( F_x_8(i) + F_x_8(i+1) )
+      enddo
+      if (fni.eq.fniu) then
+      F_xdec_8(fni-1) = 0.5 * ( F_x_8(fni-1) + F_x_8(1) + dum )
+      F_xdec_8(fni) = F_xdec_8(1) + dum 
+      else
+      F_xdec_8(fni-1) = 0.5 * ( F_x_8(fni-1) + F_x_8(fni))
+      endif
+*
+       do i=1,fnj-1
+         F_ydec_8(i) = 0.5 * ( F_y_8(i) + F_y_8(i+1) )
+       enddo
+*
+      return
+      end

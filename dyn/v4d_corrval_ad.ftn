@@ -1,0 +1,67 @@
+***s/r v4d_corrval_ad - ADJ of v4d_corrval  
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_corrval_ad (zo,npts,zi,ax,ay,cx,cy,i1,i2,j1,j2,nk,
+     %                           jmin,jmax,ni,grtypi,degree)
+*
+      use v4dzone
+*
+#include "impnone.cdk"
+*
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,degree
+*
+      real zo(nk,npts),zi(i1:i2,j1:j2,nk),
+     %     ax(i1:i2),ay(j1:j2),cx(i1:i2,6),cy(j1:j2,6)
+*
+      character*1 grtypi
+*
+*author Tanguay M. 
+*
+*revision
+* v3_00 - Tanguay M.        - initial MPI version
+*
+*object
+*  see id section
+*
+*Adjoint of
+*arguments
+* Name         I/O        Description
+*----------------------------------------------------------------
+* zo            O         Interpolated scalar field corrected near poles
+* npts          I         Number of positions in zo
+* zi            I         Scalar field on INPUT grid
+* ax            I         X axe of INPUT grid
+* ay            I         Y axe of INPUT grid
+* cx            I         AX difference on INPUT grid
+* cy            I         AY difference on INPUT grid
+* i1-i2         I         Dimension x in INPUT grid
+* j1-j2         I         Dimension y in INPUT grid
+* nk            I         Dimension z in INPUT grid
+* jmin          I         Lower  limit j
+* jmax          I         Higher limit j
+* ni            I         Period if grid='G', Heart if grid = 'Z'
+* grtypi        I         Type of INPUT grid
+* degree        I         Degree of interpolation
+*----------------------------------------------------------------
+*
+*implicits
+*
+*     Adjoint of
+*     Zone near south pole
+*     --------------------
+      if(V4dz_nzon(2).gt.0) 
+     %   call v4d_corrval_south_ad (zo,npts,zi,V4dz_linepols,ax,ay,cx,cy,i1,i2,j1,j2,
+     %                              nk,jmin,jmax,ni,V4dz_xzon2,V4dz_yzon2,V4dz_izon2,V4dz_nzon(2),
+     %                              grtypi,degree)
+*
+*     Adjoint of
+*     Zone near north pole
+*     --------------------
+      if(V4dz_nzon(1).gt.0) 
+     %   call v4d_corrval_north_ad (zo,npts,zi,V4dz_linepoln,ax,ay,cx,cy,i1,i2,j1,j2,
+     %                              nk,jmin,jmax,ni,V4dz_xzon1,V4dz_yzon1,V4dz_izon1,V4dz_nzon(1),
+     %                              grtypi,degree)
+*
+      return
+      end

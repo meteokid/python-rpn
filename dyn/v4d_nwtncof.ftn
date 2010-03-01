@@ -1,0 +1,119 @@
+***s/r v4d_nwtncof - Evaluate coefficients in Newton form for
+*                    Lagrangian interpolation based on EZ_NWTNCOF 
+*                    (Y.Chartier EZSCINT 2001)
+*
+      subroutine v4d_nwtncof (cx,cy,ax,ay,i1,i2,j1,j2,ni,grtypi)
+*
+#include "impnone.cdk"
+*
+      integer i1,i2,j1,j2,ni
+      real ax(i1:i1),ay(j1:j2),cx(i1:i2,6),cy(j1:j2,6)
+*
+      character*1 grtypi
+*
+*author Tanguay M. 
+*
+*revision
+* v3_00 - Tanguay M.        - initial MPI version
+*
+*object
+*
+**************************************************************
+*   -----*-------------*------#------*----------*------->
+*        x1            x2     x      x3         x4
+**************************************************************
+*
+*     cx(i,1) = 1.0 / (x2-x1)
+*     cx(i,2) = 1.0 / (x3-x1)
+*     cx(i,3) = 1.0 / (x3-x2)
+*     cx(i,4) = 1.0 / (x4-x1)
+*     cx(i,5) = 1.0 / (x4-x2)
+*     cx(i,6) = 1.0 / (x4-x3)
+*     
+*     with identical structure for cy
+*
+*arguments
+* Name         I/O        Description
+*----------------------------------------------------------------
+* ax            I         X axe of INPUT grid
+* ay            I         Y axe of INPUT grid
+* cx            I         AX difference on INPUT grid
+* cy            I         AY difference on INPUT grid
+* i1-i2         I         Dimension x in INPUT grid
+* j1-j2         I         Dimension y in INPUT grid
+* ni            I         Period if grid='G', Heart if grid = 'Z'
+* grtypi        I         Type of INPUT grid
+*----------------------------------------------------------------
+*
+      integer i,j,imin,imax
+*
+      real x1,x2,x3,x4
+*
+      imin = i1
+      imax = i2
+      if(grtypi.eq.'G') then
+         imin = 1 
+         imax = ni 
+      endif
+*
+      do 10 i=imin+1,imax-2
+         cx(i,1) = 1. / (ax(i  ) - ax(i-1))
+         cx(i,2) = 1. / (ax(i+1) - ax(i-1))
+         cx(i,3) = 1. / (ax(i+1) - ax(i  ))
+         cx(i,4) = 1. / (ax(i+2) - ax(i-1))
+         cx(i,5) = 1. / (ax(i+2) - ax(i  ))
+         cx(i,6) = 1. / (ax(i+2) - ax(i+1))
+ 10   continue
+      
+      do 20 j=j1+1,j2-2
+         cy(j,1) = 1. / (ay(j  ) - ay(j-1))
+         cy(j,2) = 1. / (ay(j+1) - ay(j-1))
+         cy(j,3) = 1. / (ay(j+1) - ay(j  ))
+         cy(j,4) = 1. / (ay(j+2) - ay(j-1))
+         cy(j,5) = 1. / (ay(j+2) - ay(j  ))
+         cy(j,6) = 1. / (ay(j+2) - ay(j+1))
+ 20   continue
+*
+*     Complete using periodicity
+*     --------------------------
+      if(grtypi.eq.'G') then
+         x1 = ax(ni)-360.0
+         x2 = ax(1)
+         x3 = ax(2)
+         x4 = ax(3)
+*
+         cx(1,1) = 1. / (x2-x1)
+         cx(1,2) = 1. / (x3-x1)
+         cx(1,3) = 1. / (x3-x2)
+         cx(1,4) = 1. / (x4-x1)
+         cx(1,5) = 1. / (x4-x2)
+         cx(1,6) = 1. / (x4-x3)
+*
+         x1 = ax(ni-2)
+         x2 = ax(ni-1)
+         x3 = ax(ni)
+         x4 = ax(1)+360.0
+*
+         cx(ni-1,1) = 1. / (x2-x1)
+         cx(ni-1,2) = 1. / (x3-x1)
+         cx(ni-1,3) = 1. / (x3-x2)
+         cx(ni-1,4) = 1. / (x4-x1)
+         cx(ni-1,5) = 1. / (x4-x2)
+         cx(ni-1,6) = 1. / (x4-x3)
+*
+         x1 = ax(ni-1)
+         x2 = ax(ni)
+         x3 = ax(1)+360.0
+         x4 = ax(2)+360.0
+*
+         cx(ni,1) = 1. / (x2-x1)
+         cx(ni,2) = 1. / (x3-x1)
+         cx(ni,3) = 1. / (x3-x2)
+         cx(ni,4) = 1. / (x4-x1)
+         cx(ni,5) = 1. / (x4-x2)
+         cx(ni,6) = 1. / (x4-x3)
+*
+      endif
+*
+      return
+      end

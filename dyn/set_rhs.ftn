@@ -1,0 +1,99 @@
+***s/r set_rhs - initialization of the VMM common for right-hand side of
+*               equations
+*
+#include <model_macros_f.h>
+*
+      subroutine set_rhs
+*
+#include "impnone.cdk"
+*
+*author
+*     Gravel/Roch   - rpn - august 1993
+*
+*revision
+* v2_00 - Desgagne/Lee   - initial MPI version (from setrhs v1_03)
+* v2_21 - J. P. Toviessi - rename some model output variable
+*
+*object
+*     See above id.
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "rhsc.cdk"
+*
+*modules
+      integer vmmcre
+      external vmmcre
+**
+      character*80 attri_S
+*
+*     ---------------------------------------------------------------
+*
+      integer i
+*     integer pnerr
+*
+       if (Lun_out.gt.0) write(Lun_out,1000)
+*
+*       names and keys commons initialization
+*
+      COMMON_INIT(rhsc,-100)
+*
+*C       1.    Create right hand sides of the equations
+*              ----------------------------------------
+*
+*	Assign the names of the variables
+* 
+      VMM_NAM(ru   )= 'MRU'
+      VMM_NAM(rv   )= 'MRV'
+      VMM_NAM(rw   )= 'MRW'
+      VMM_NAM(rcn  )= 'RCN'
+      VMM_NAM(rth  )= 'RTH'
+      VMM_NAM(rvv  )= 'RVV'
+*
+      VMM_NAM(rd   )= 'MRRD'
+      VMM_NAM(r1   )= 'MR1'
+      VMM_NAM(r3   )= 'MR3'
+      VMM_NAM(r3p  )= 'MR3P'
+      VMM_NAM(rhell)= 'RHLL'
+      VMM_NAM(rheln)= 'RHLN'
+*
+      VMM_NAM(ruw1 )= 'RUW1'
+      VMM_NAM(ruw2 )= 'RUW2'
+      VMM_NAM(rvw1 )= 'RVW1'
+      VMM_NAM(rvw2 )= 'RVW2'
+*
+*       Set the attributes of the variables
+*
+      attri_S='SAVE=Y,CL=5,W=5,INIT=R'
+*
+      VMM_CREATE(ru   , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rv   , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rw   , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rcn  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rth  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rvv  , LARRAY3D, 1, attri_S)
+*
+      VMM_CREATE(rd   , LARRAY3D, 1, attri_S)
+      VMM_CREATE(r1   , LARRAY3D, 1, attri_S)
+      VMM_CREATE(r3   , LARRAY3D, 1, attri_S)
+      VMM_CREATE(r3p  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rhell, LARRAY3D, 1, attri_S)
+      VMM_CREATE(rheln, LARRAY3D, 1, attri_S)
+*
+      VMM_CREATE(ruw1 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(ruw2 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rvw1 , LARRAY3D, 1, attri_S)
+      VMM_CREATE(rvw2 , LARRAY3D, 1, attri_S)
+*
+ 1000 format(
+     +/,'INITIALIZATION OF RIGHT-HAND SIDE COMDECK (S/R SET_RHS)',
+     +/,'=======================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

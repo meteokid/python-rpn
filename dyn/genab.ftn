@@ -1,0 +1,42 @@
+***s/r E_GENAB   - Using Laprise & Girard, generates de A and B of the
+*                hybrid coordinate
+*
+      subroutine genab(frpia, frpib,  
+     +                 freta, frptop, frcoef, fnk)
+#include "impnone.cdk"
+*
+*author s gravel  - rpn - nov 1998
+*
+*revision
+* v1_03 - s edouard    -  correction d'une erreur ds la def de PIB
+*
+*language
+*     fortran 77
+*
+*object(genab)
+*    Using Laprise & Girard, generates de A and B of the hybrid coordinate
+*    see: Laprise & Girard, 1990, J. of Climate, eq. 5.1
+*
+*arguments
+      integer fnk    
+      real    frpia(fnk), frpib(fnk), freta(fnk), frptop, frcoef
+*
+      integer k
+*
+      real prpref, pr1
+*
+*     BEWARE
+*     if frcoef is greater than 1., prpref is subject to restriction for
+*     stability reasons.
+*
+      prpref = 100.*frptop/freta(1)   ! convert to pascal
+*
+
+      pr1 = 1./(1. - freta(1))
+      do k = 1,fnk
+        frpib(k)  = ((freta(k) - freta(1))*pr1 ) ** frcoef
+        frpia(k)  = prpref * ( freta(k) - frpib(k) )
+      enddo
+*
+      return
+      end

@@ -1,0 +1,57 @@
+***s/r tr2d_file - Establish Fortran units and open files for 2d tracers
+*
+#include <model_macros_f.h>
+*
+      subroutine tr2d_file (itr)
+      implicit none
+*
+      integer itr
+*
+*author
+*     Michel Desgagne  -  Sept 2001
+*
+*revision
+* v2_31 - Desgagne M.       - initial version
+*
+*object
+*
+*arguments
+*
+*implicits
+#include "init.cdk"
+#include "rstr.cdk"
+#include "tr2d.cdk"
+*
+      character*3 fn_number
+      character*11 fn
+      integer err,fnom,open_db_file,rewind_db_file
+**
+*     __________________________________________________________________
+*
+      if (mod( itr-1, Tr2d_ntpf ).eq.0) then
+         Tr2d_unf(itr) = Tr2d_unf(itr-1) + 1
+         write (fn_number,'(i3)') Tr2d_unf(itr)
+         fn  = 'tracers_'//fn_number
+         err = fnom(Tr2d_unf(itr), fn, 'RND', 0)
+         err = open_db_file   (Tr2d_unf(itr))
+         err = rewind_db_file (Tr2d_unf(itr))
+         Tr2d_nbf = Tr2d_nbf + 1
+         if ( Init_balgm_L .and. .not.Rstri_idon_L ) then
+            Tr2d_unfa(itr) = Tr2d_unfa(itr-1) + 1
+            write (fn_number,'(i3)') Tr2d_unfa(itr)
+            fn  = 'tracdgf_'//fn_number
+            err = fnom(Tr2d_unfa(itr), fn, 'RND', 0)
+            err = open_db_file   (Tr2d_unfa(itr))
+            err = rewind_db_file (Tr2d_unfa(itr))
+         endif
+      else
+         Tr2d_unf  (itr) = Tr2d_unf  (itr-1)
+         Tr2d_unfa (itr) = Tr2d_unfa (itr-1)
+      endif
+*
+*     __________________________________________________________________
+*
+      return
+      end
+
+

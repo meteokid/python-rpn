@@ -1,0 +1,226 @@
+***s/r rhs_tl - TLM of rhs 
+*
+#include <model_macros_f.h>
+*
+      subroutine rhs_tl()
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - replace xfis by topo
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+*
+*object
+*     see id section
+*     --------------------------------------------------------------
+*     REMARK: INPUT TRAJ:um, vm,  tpm (pour tm), qm, fipm (pour fim)
+*                        sm, tdm, psdm
+*     --------------------------------------------------------------
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+#include "orh.cdk"
+#include "p_geof.cdk" 
+#include "rhsc.cdk"
+#include "vt1.cdk" 
+#include "ptopo.cdk"
+#include "cstv.cdk" 
+#include "rhscm.cdk"
+#include "vt1m.cdk" 
+#include "orhm.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+      integer  pnerr, pnlod, pnlkey1(45), i, j, k 
+*
+      real wtt1m(LDIST_SHAPE,l_nk),wfit1m(LDIST_SHAPE,l_nk)
+*     ______________________________________________________
+*
+      if(.not. Schm_hydro_L) call gefstop('rhs_tl')
+*     ______________________________________________________
+*
+      if(Lun_debug_L) write (Lun_out,1000)
+*
+      pnlkey1( 1) = VMM_KEY(ru)
+      pnlkey1( 2) = VMM_KEY(rv)
+      pnlkey1( 3) = VMM_KEY(rcn)
+      pnlkey1( 4) = VMM_KEY(rth)
+      pnlkey1( 5) = VMM_KEY(oru)
+      pnlkey1( 6) = VMM_KEY(orv)
+      pnlkey1( 7) = VMM_KEY(orcn)
+      pnlkey1( 8) = VMM_KEY(orth)
+      pnlkey1( 9) = VMM_KEY(ruw1)
+      pnlkey1(10) = VMM_KEY(rvw1)
+      pnlkey1(11) = VMM_KEY(ut1)
+      pnlkey1(12) = VMM_KEY(vt1)
+      pnlkey1(13) = VMM_KEY(tt1)
+      pnlkey1(14) = VMM_KEY(qt1)
+      pnlkey1(15) = VMM_KEY(fit1)
+      pnlkey1(16) = VMM_KEY(st1)
+      pnlkey1(17) = VMM_KEY(tdt1)
+      pnlkey1(18) = VMM_KEY(psdt1)
+      pnlod = 18 
+*
+      pnlkey1(pnlod +  1) = VMM_KEY(rum)
+      pnlkey1(pnlod +  2) = VMM_KEY(rvm)
+      pnlkey1(pnlod +  3) = VMM_KEY(rcnm)
+      pnlkey1(pnlod +  4) = VMM_KEY(rthm)
+      pnlkey1(pnlod +  5) = VMM_KEY(orum)
+      pnlkey1(pnlod +  6) = VMM_KEY(orvm)
+      pnlkey1(pnlod +  7) = VMM_KEY(orcnm)
+      pnlkey1(pnlod +  8) = VMM_KEY(orthm)
+      pnlkey1(pnlod +  9) = VMM_KEY(ruw1m)
+      pnlkey1(pnlod + 10) = VMM_KEY(rvw1m)
+      pnlkey1(pnlod + 11) = VMM_KEY(ut1m)
+      pnlkey1(pnlod + 12) = VMM_KEY(vt1m)
+      pnlkey1(pnlod + 13) = VMM_KEY(tpt1m)
+      pnlkey1(pnlod + 14) = VMM_KEY(qt1m)
+      pnlkey1(pnlod + 15) = VMM_KEY(fipt1m)
+      pnlkey1(pnlod + 16) = VMM_KEY(st1m)
+      pnlkey1(pnlod + 17) = VMM_KEY(tdt1m)
+      pnlkey1(pnlod + 18) = VMM_KEY(psdt1m)
+      pnlkey1(pnlod + 19) = VMM_KEY(topo)
+      pnlod = pnlod + 19 
+
+*     - - - - - - - - - - - - - 
+      pnerr = vmmlod(pnlkey1,pnlod)
+*     - - - - - - - - - - - - - 
+      pnerr = VMM_GET_VAR(ru)
+      pnerr = VMM_GET_VAR(rv)
+      pnerr = VMM_GET_VAR(rcn)
+      pnerr = VMM_GET_VAR(rth)
+      pnerr = VMM_GET_VAR(oru)
+      pnerr = VMM_GET_VAR(orv)
+      pnerr = VMM_GET_VAR(orcn)
+      pnerr = VMM_GET_VAR(orth)
+      pnerr = VMM_GET_VAR(ruw1)
+      pnerr = VMM_GET_VAR(rvw1)
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(tt1)
+      pnerr = VMM_GET_VAR(qt1)
+      pnerr = VMM_GET_VAR(fit1)
+      pnerr = VMM_GET_VAR(st1)
+      pnerr = VMM_GET_VAR(tdt1)
+      pnerr = VMM_GET_VAR(psdt1)
+*
+      pnerr = VMM_GET_VAR(rum)
+      pnerr = VMM_GET_VAR(rvm)
+      pnerr = VMM_GET_VAR(rcnm)
+      pnerr = VMM_GET_VAR(rthm)
+      pnerr = VMM_GET_VAR(orum)
+      pnerr = VMM_GET_VAR(orvm)
+      pnerr = VMM_GET_VAR(orcnm)
+      pnerr = VMM_GET_VAR(orthm)
+      pnerr = VMM_GET_VAR(ruw1m)
+      pnerr = VMM_GET_VAR(rvw1m)
+      pnerr = VMM_GET_VAR(ut1m)
+      pnerr = VMM_GET_VAR(vt1m)
+      pnerr = VMM_GET_VAR(tpt1m)
+      pnerr = VMM_GET_VAR(qt1m)
+      pnerr = VMM_GET_VAR(fipt1m)
+      pnerr = VMM_GET_VAR(st1m)
+      pnerr = VMM_GET_VAR(tdt1m)
+      pnerr = VMM_GET_VAR(psdt1m)
+      pnerr = VMM_GET_VAR(topo)
+*
+      if (.not. Schm_hydro_L) then
+*
+*        **********************
+*        TLM not done in RHS_TL
+*        **********************
+*
+      else
+         rw_   = 0
+         rvv_  = 0
+         orw_  = 0
+         orvv_ = 0
+         wt1_  = 0
+         fipt1_= 0
+         mut1_ = 0
+      endif
+*
+      if (.not. Schm_hydro_L) then
+*
+*        **********************
+*        TLM not done in RHS_TL
+*        **********************
+*
+      endif
+*
+*     Restore TRAJECTORY
+*     ------------------
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+      wfit1m(i,j,k) = fipt1m(i,j,k) + Cstvr_fistr_8(k) + topo(i,j)
+      wtt1m (i,j,k) =  tpt1m(i,j,k) + Cstv_tstr_8
+      end do
+      end do
+      end do
+*
+*     Perform the computation in the first 
+*     cycle of Crank-Nicholson procedure only
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      if ( Orh_icn .eq. 1 ) then
+
+*PDIR RESERVE=Ptopo_npeOpenMP
+
+         call rhsp_2_tl  (    ru,    rv,   rcn,   rth,   rw,  rvv,
+     %                       oru,   orv,  orcn,  orth,  orw, orvv,
+     %                      ruw1,  rvw1,   ut1,   vt1,  tt1,  qt1,    
+     %                      fit1,   st1,  tdt1, psdt1,  
+     %                       wt1,  topo, fipt1,  mut1,
+*
+     %                        rum,  rvm,  rcnm,  rthm,
+     %                       orum, orvm, orcnm, orthm,
+     %                      ruw1m,rvw1m,  ut1m,  vt1m,wtt1m, qt1m,    
+     %                     wfit1m, st1m, tdt1m,psdt1m, 
+*
+     %                       LDIST_DIM,l_nk  )
+
+
+*PDIR RELEASE
+         
+      else
+
+         do k=1,l_nk
+         do j=1,l_nj 
+         do i=1,l_ni
+*
+*           TRAJECTORY
+*           ----------
+            rum (i,j,k) = orum (i,j,k)
+            rvm (i,j,k) = orvm (i,j,k)
+            rcnm(i,j,k) = orcnm(i,j,k)
+            rthm(i,j,k) = orthm(i,j,k)
+*
+*           TLM 
+*           ---
+            ru (i,j,k) = oru (i,j,k)
+            rv (i,j,k) = orv (i,j,k)
+            rcn(i,j,k) = orcn(i,j,k)
+            rth(i,j,k) = orth(i,j,k)
+*
+         end do
+         end do
+         end do
+
+      endif
+
+      pnerr = vmmuld(-1,0)
+*
+1000  format(3X,'TLM of COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS_TL)')
+*
+      return
+      end

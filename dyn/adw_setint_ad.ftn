@@ -1,0 +1,472 @@
+***s/r adw_setint_ad - ADJ of adw_setint_tl
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_setint_ad ( F_n,
+     %                           F_capx, F_xgg, F_xdd,
+     %                           F_capy, F_ygg, F_ydd,
+     %                           F_capz, F_cz,
+     %                           F_x,    F_y,   F_z,
+     %                           F_xm,   F_ym,  F_zm,
+     %                           F_h_L,  F_z_L, F_lin_L, F_num,i0,in,j0,jn,kn)
+*
+#include "impnone.cdk"
+*
+      integer F_num, F_n(F_num),i0,in,j0,jn,kn
+*
+      real    F_capx(F_num), F_xgg(F_num), F_xdd(F_num)
+      real    F_capy(F_num), F_ygg(F_num), F_ydd(F_num)
+      real    F_capz(F_num), F_cz (F_num)
+      real    F_x   (F_num), F_y  (F_num), F_z  (F_num)
+*
+      logical F_h_L, F_z_L, F_lin_L
+*
+      real    F_xm  (F_num), F_ym (F_num), F_zm (F_num)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*
+*ADJ of
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_n          | positions in the 3D volume of interpolation     |  o  |
+*              | boxes                                           |     |
+*              |                                                 |     |
+* F_capx       | \                                               |  o  |
+* F_xgg        |   precomputed displacements and interpolation   |  o  |
+* F_xdd        | / terms along the x-direction                   |  o  |
+*              |                                                 |     |
+* F_capy       | \                                               |  o  |
+* F_ygg        |   precomputed displacements and interpolation   |  o  |
+* F_ydd        | / terms along the y-direction                   |  o  |
+*              |                                                 |     |
+* F_capz       | \ precomputed displacements and interpolation   |  o  |
+* F_cz         | / terms along the z-direction                   |  o  |
+*              |                                                 |     |
+* F_x          | x coordinate of upstream position               |  i  |
+* F_y          | y coordinate of upstream position               |  i  |
+* F_z          | z coordinate of upstream position               |  i  |
+*              |                                                 |     |
+* F_h_L        | switch: .true. :compute horizontal parameters   |  i  |
+* F_z_L        | switch: .true. :compute vertical parameters     |  i  |
+* F_lin_L      | switch: .true. :compute interpolation parameters|  i  |
+*              |                 only for linear interpolation   |     |
+*              |                                                 |     |
+* F_num        | number of points to treat                       |  i  |
+*______________|_________________________________________________|_____|
+*implicits
+#include "glb_ld.cdk"
+#include "adw.cdk"
+************************************************************************
+      integer n, ii, jj, kk, ij, nijag, nij,i, j, k
+      real*8  prd_8, prdt_8
+      real*8  prdm_8,prdtm_8
+*
+      real F_capzm1
+*
+      real *8 ZERO_8
+      parameter (ZERO_8 = 0.0)
+*
+      nij   = l_ni * l_nj
+      nijag = Adw_nit * Adw_njt
+************************************************************************
+      if ( F_h_L .and. F_z_L ) then
+************************************************************************
+         if ( F_lin_L ) then
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*           TRAJECTORY
+*           ----------
+            prdm_8 = dble(F_zm(n))
+            kk = ( prdm_8 - Adw_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz( kk+1 )
+            prdm_8 = prdm_8 - Adw_bsz_8(kk)
+            if ( prdm_8 .lt. 0.0 ) kk = kk - 1
+*
+*           ADJ 
+*           ---
+            F_n   (n) = ZERO_8 
+            F_z   (n) =  F_capz(n) * Adw_diz_8(kk) + F_z(n) 
+C           F_capz(n) = ZERO_8
+*
+*           TRAJECTORY
+*           ----------
+            prdm_8 = dble(F_ym(n))
+            jj = ( prdm_8 - Adw_y00_8 ) * Adw_ovdy_8
+            jj = Adw_lcy( jj+1 ) + 1
+            prdtm_8 = prdm_8 - Adw_bsy_8(jj)
+            if ( prdtm_8 .lt. 0.0 ) then
+               jj = jj - 1
+C              prdtm_8 = prdm_8 - Adw_bsy_8(jj)
+            endif
+*
+*           ADJ 
+*           ---
+            F_y(n)   = F_capy(n) * Adw_diy_8(jj) + F_y(n) 
+C           F_capy(n)= ZERO_8
+*
+*           TRAJECTORY
+*           ----------
+            prdm_8 = dble(F_xm(n))
+            ii = ( prdm_8 - Adw_x00_8 ) * Adw_ovdx_8
+            ii = Adw_lcx( ii+1 ) + 1
+            prdtm_8 = prdm_8 - Adw_bsx_8(ii)
+            if ( prdtm_8 .lt. 0.0 ) then
+               ii = ii - 1
+C              prdtm_8 = prdm_8 - Adw_bsx_8(ii)
+            endif
+*
+*           ADJ 
+*           ---
+            F_x(n)   = F_capx(n) * Adw_dix_8(ii) + F_x(n)
+C           F_capx(n)= ZERO_8
+*
+            enddo
+            enddo
+            enddo
+*
+*           Zero adjoint variables
+*           (Put after because f90 compilation)
+*           -----------------------------------
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            F_capz(n)= ZERO_8
+            F_capy(n)= ZERO_8
+            F_capx(n)= ZERO_8
+            enddo
+            enddo
+            enddo
+*
+         else
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*           TRAJECTORY
+*           ----------
+            prdm_8 = dble(F_zm(n))
+            kk = ( prdm_8 - Adw_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz( kk+1 )
+            prdm_8 = prdm_8 - Adw_bsz_8(kk)
+            if ( prdm_8 .lt. 0.0 ) kk = kk - 1
+C           F_capzm(n) = prdm_8 * Adw_diz_8(kk)
+C           if ( prdm_8 .lt. 0.0 ) F_capzm(n) = 1.0 + F_capzm(n)
+            F_capzm1 = prdm_8 * Adw_diz_8(kk)
+            if ( prdm_8 .lt. 0.0 ) F_capzm1 = 1.0 + F_capzm1
+*
+*           ADJ
+*           ---
+            F_n(n) =  ZERO_8 
+*
+            F_capz(n) =         F_cz(n)*F_capzm1 * Adw_dbz_8(kk) + F_capz(n)
+            F_capz(n) =  (F_capzm1-1.0)*F_cz(n)  * Adw_dbz_8(kk) + F_capz(n)
+C           F_cz  (n) = ZERO_8
+C           F_ydd(n)  = ZERO_8 
+C           F_ygg(n)  = ZERO_8 
+C           F_xdd(n)  = ZERO_8 
+C           F_xgg(n)  = ZERO_8 
+*
+            F_z(n)    = F_capz(n) * Adw_diz_8(kk) + F_z(n)
+C           F_capz(n) = ZERO_8 
+*
+*           TRAJECTORY
+*           ----------
+            prdm_8 = dble(F_ym(n))
+            jj = ( prdm_8 - Adw_y00_8 ) * Adw_ovdy_8
+            jj = Adw_lcy( jj+1 ) + 1
+            prdtm_8 = prdm_8 - Adw_bsy_8(jj)
+            if ( prdtm_8 .lt. 0.0 ) then
+               jj = jj - 1
+C              prdtm_8 = prdm_8 - Adw_bsy_8(jj)
+            endif
+*
+*           ADJ
+*           ---
+            F_y(n)    = F_capy(n) * Adw_diy_8(jj) + F_y(n)
+C           F_capy(n) = ZERO_8 
+*
+*           TRAJECTORY
+*           ----------
+            prdm_8 = dble(F_xm(n))
+            ii = ( prdm_8 - Adw_x00_8 ) * Adw_ovdx_8
+            ii = Adw_lcx( ii+1 ) + 1
+            prdtm_8 = prdm_8 - Adw_bsx_8(ii)
+            if ( prdtm_8 .lt. 0.0 ) then
+               ii = ii - 1
+C              prdtm_8 = prdm_8 - Adw_bsx_8(ii)
+            endif
+*
+*           ADJ
+*           ---
+            F_x(n)    = F_capx(n) * Adw_dix_8(ii) + F_x(n)
+C           F_capx(n) = ZERO_8 
+*
+            enddo
+            enddo
+            enddo
+*
+*           Zero adjoint variables
+*           (Put after because f90 compilation)
+*           -----------------------------------
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            F_capz(n)= ZERO_8
+            F_capy(n)= ZERO_8
+            F_capx(n)= ZERO_8
+*
+            F_cz  (n)= ZERO_8
+            F_ydd (n)= ZERO_8 
+            F_ygg (n)= ZERO_8 
+            F_xdd (n)= ZERO_8 
+            F_xgg (n)= ZERO_8 
+            enddo
+            enddo
+            enddo
+*
+         endif
+************************************************************************
+      elseif (F_h_L) then
+************************************************************************
+         if ( F_lin_L ) then
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*           TRAJECTORY
+*           ----------
+            prdm_8 = dble(F_ym(n))
+            jj = ( prdm_8 - Adw_y00_8 ) * Adw_ovdy_8
+            jj = Adw_lcy( jj+1 ) + 1
+            prdtm_8 = prdm_8 - Adw_bsy_8(jj)
+            if ( prdtm_8 .lt. 0.0 ) then
+               jj = jj - 1
+C              prdtm_8 = prdm_8 - Adw_bsy_8(jj)
+            endif
+*
+*           ADJ
+*           ---
+            F_n(n)   = ZERO_8 
+            F_y(n)   = F_capy(n) * Adw_diy_8(jj) + F_y(n)
+C           F_capy(n)= ZERO_8
+*
+*           TRAJECTORY
+*           ----------
+C           kk = ( F_nm(n) - (mod ( F_nm(n), nijag ))) / nijag
+            prdm_8 = dble(F_xm(n))
+            ii = ( prdm_8 - Adw_x00_8 ) * Adw_ovdx_8
+            ii = Adw_lcx( ii+1 ) + 1
+            prdtm_8 = prdm_8 - Adw_bsx_8(ii)
+            if ( prdtm_8 .lt. 0.0 ) then
+               ii = ii - 1
+C              prdtm_8 = prdm_8 - Adw_bsx_8(ii)
+            endif
+*
+*           ADJ
+*           ---
+            F_x(n)   = F_capx(n) * Adw_dix_8(ii) + F_x(n)
+C           F_capx(n)= ZERO_8
+*
+            enddo
+            enddo
+            enddo
+*
+*           Zero adjoint variables
+*           (Put after because f90 compilation)
+*           -----------------------------------
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            F_capy(n)= ZERO_8
+            F_capx(n)= ZERO_8
+            enddo
+            enddo
+            enddo
+*
+         else
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*           TRAJECTORY
+*           ----------
+            prdm_8 = dble(F_ym(n))
+            jj = ( prdm_8 - Adw_y00_8 ) * Adw_ovdy_8
+            jj = Adw_lcy( jj+1 ) + 1
+            prdtm_8 = prdm_8 - Adw_bsy_8(jj)
+            if ( prdtm_8 .lt. 0.0 ) then
+               jj = jj - 1
+C              prdtm_8 = prdm_8 - Adw_bsy_8(jj)
+            endif
+*
+*           ADJ
+*           ---
+C           F_n(n)   = ZERO_8 
+C           F_ydd(n) = ZERO_8 
+C           F_ygg(n) = ZERO_8 
+C           F_xdd(n) = ZERO_8 
+C           F_xgg(n) = ZERO_8 
+*
+            F_y(n)    = F_capy(n) * Adw_diy_8(jj) + F_y(n)
+C           F_capy(n) = ZERO_8 
+*
+*           TRAJECTORY
+*           ----------
+C           kk = ( F_nm(n) - (mod ( F_nm(n), nijag ))) / nijag
+            prdm_8 = dble(F_xm(n))
+            ii = ( prdm_8 - Adw_x00_8 ) * Adw_ovdx_8
+            ii = Adw_lcx( ii+1 ) + 1
+            prdtm_8 = prdm_8 - Adw_bsx_8(ii)
+            if ( prdtm_8 .lt. 0.0 ) then
+               ii = ii - 1
+C              prdtm_8 = prdm_8 - Adw_bsx_8(ii)
+            endif
+*
+*           ADJ
+*           ---
+            F_x(n)    = F_capx(n) * Adw_dix_8(ii) + F_x(n)
+C           F_capx(n) = ZERO_8 
+*
+            enddo
+            enddo
+            enddo
+*
+*           Zero adjoint variables
+*           (Put after because f90 compilation)
+*           -----------------------------------
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            F_capy(n)= ZERO_8
+            F_capx(n)= ZERO_8
+            F_n   (n)= ZERO_8 
+            F_ydd (n)= ZERO_8 
+            F_ygg (n)= ZERO_8 
+            F_xdd (n)= ZERO_8 
+            F_xgg (n)= ZERO_8 
+            enddo
+            enddo
+            enddo
+*
+         endif
+************************************************************************
+      elseif (F_z_L) then
+************************************************************************
+         if ( F_lin_L ) then
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*           TRAJECTORY
+*           ----------
+C           ij = mod ( F_nm(n), nijag )
+            prdm_8 = dble(F_zm(n))
+            kk = ( prdm_8 - Adw_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz( kk+1 )
+            prdm_8 = prdm_8 - Adw_bsz_8(kk)
+            if ( prdm_8 .lt. 0.0 ) kk = kk - 1
+*
+*           ADJ
+*           ---
+            F_n(n)    = ZERO_8 
+            F_z(n)    = F_capz(n) * Adw_diz_8(kk) + F_z(n)
+C           F_capz(n) = ZERO_8 
+*
+            enddo
+            enddo
+            enddo
+*
+*           Zero adjoint variables
+*           (Put after because f90 compilation)
+*           -----------------------------------
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            F_capz(n)= ZERO_8
+            enddo
+            enddo
+            enddo
+*
+         else
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*           TRAJECTORY
+*           ----------
+C           ij = mod ( F_nm(n), nijag )
+            prdm_8 = dble(F_zm(n))
+            kk = ( prdm_8 - Adw_z00_8 ) * Adw_ovdz_8
+            kk = Adw_lcz( kk+1 )
+            prdm_8 = prdm_8 - Adw_bsz_8(kk)
+            if ( prdm_8 .lt. 0.0 ) kk = kk - 1
+C           F_capzm(n) = prdm_8 * Adw_diz_8(kk)
+C           if ( prdm_8 .lt. 0.0 ) F_capzm(n) = 1.0 + F_capzm(n)
+            F_capzm1   = prdm_8 * Adw_diz_8(kk)
+            if ( prdm_8 .lt. 0.0 ) F_capzm1 = 1.0 + F_capzm1
+*
+*           ADJ 
+*           ---
+            F_n(n) = ZERO_8 
+*
+            F_capz(n) =         F_cz(n)*F_capzm1 * Adw_dbz_8(kk) + F_capz(n)
+            F_capz(n) =  (F_capzm1-1.0)*F_cz(n)  * Adw_dbz_8(kk) + F_capz(n)
+C           F_cz  (n) = ZERO_8
+*
+*           ADJ 
+*           ---
+            F_z(n)    = F_capz(n) * Adw_diz_8(kk)  + F_z(n)
+C           F_capz(n) = ZERO_8 
+*
+            enddo
+            enddo
+            enddo
+*
+*           Zero adjoint variables
+*           (Put after because f90 compilation)
+*           -----------------------------------
+            do k=1,kn
+            do j=j0,jn
+            do i=i0,in
+            n = (k-1)*nij + ((j-1)*l_ni) + i
+            F_capz(n)= ZERO_8
+            F_cz  (n)= ZERO_8
+            enddo
+            enddo
+            enddo
+*
+         endif
+************************************************************************
+      endif
+************************************************************************
+      return
+      end

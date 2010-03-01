@@ -1,0 +1,372 @@
+***s/r tstpdyn_ad -  ADJ of tstpdyn_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine tstpdyn_ad ( F_fnitraj )
+*
+#include "impnone.cdk"
+*
+      integer F_fnitraj
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - ADJ of HO option
+*                           - ADJ of vertical sponge layer
+* v2_31 - Tanguay M.        - adapt ADJ to new advection code,
+*                             hybrid coord., tracer tr3d and
+*                             diffusion in gem_run 
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+*
+*object
+*     see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_fnitraj     I         number of iterations to compute upstream
+*                         positions
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "orh.cdk"
+#include "sol.cdk"
+#include "nl.cdk"
+#include "v4dg.cdk"
+#include "nlm.cdk"
+#include "vt1m.cdk"
+#include "vt0m.cdk"
+#include "rhscm.cdk"
+#include "orhm.cdk"
+#include "hzd.cdk"
+#include "fft.cdk"
+#include "vspng.cdk"
+#include "tr3d.cdk"
+#include "lctl.cdk"
+*
+*modules
+      integer  vmmlod,vmmuld,vmmget
+      external vmmlod,vmmuld,vmmget
+*
+      integer pnerr, pnlkey1(4), key0m(Tr3d_ntr), keyorm(Tr3d_ntr),
+     $        key0m_, keyorm_, err, iln, dim, ilntrj, i, j, k, n
+*
+      real tr0m,orm
+      pointer (patr0m, tr0m(LDIST_SHAPE,*)),(paorm, orm(LDIST_SHAPE,*))
+*
+      real prdth
+*
+      real*8 ZERO_8
+      parameter (ZERO_8=0.0)
+*     ______________________________________________________
+*
+      if(.not. Schm_hydro_L) call gefstop('tstpdyn_ad')
+      if(.not. Orh_crank_L ) call gefstop('tstpdyn_ad')
+*     ______________________________________________________
+*
+      prdth =  Cstv_dt_8/2.
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+*     ---------------------------------------------------------------
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+      if(Orh_crank_L .and. Orh_icn .eq. Schm_itcn) then
+*
+*        Recover TRAJ PIPT1 before diffusion
+*        -----------------------------------
+         V4dg_numtr = 2 
+         Lctl_step  = Lctl_step - 1
+         call v4d_rwtraj ()
+         Lctl_step  = Lctl_step + 1
+*
+*        HZD Diffusion of TRAJ PIPT1
+*        ---------------------------
+         if ( Hzd_fact_L.or.Hzd_ho_L ) then
+*
+            pnlkey1(1) = VMM_KEY(pipt1m)
+            pnerr = vmmlod(pnlkey1,1)
+            pnerr = VMM_GET_VAR(pipt1m)
+            if( Hzd_fact_L ) call hzd_fact_tr (pipt1m,LDIST_DIM,G_nk)
+            if( Hzd_ho_L   ) then
+              if( Fft_fast_L ) then
+               call hzd_hof_tr(pipt1m,LDIST_DIM,G_nk)
+              else
+               call hzd_ho_tr (pipt1m,LDIST_DIM,G_nk)
+              endif
+            endif
+            pnerr = vmmuld(-1,0)
+*
+         endif
+*
+*        VSNPG Diffusion of TRAJ PIPT1
+*        -----------------------------
+         if ( Vspng_nk.gt.0 ) then
+*
+            pnlkey1(1) = VMM_KEY(pipt1m)
+            pnerr = vmmlod(pnlkey1,1)
+            pnerr = VMM_GET_VAR(pipt1m)
+            call vspng_drv_tr(pipt1m,LDIST_DIM,G_nk)
+            pnerr = vmmuld(-1,0)
+*
+         endif
+*
+*        Recover TRAJ predictive variables except PIPT1M 
+*        -----------------------------------------------
+         V4dg_numtr = 3
+         call v4d_rwtraj ()
+*
+      endif
+*
+      call rhs_tr
+*
+*        Recover TRAJ Positions TH
+*        -------------------------
+         V4dg_numtr = 4
+         call v4d_rwtraj ()
+*
+*        Recover TRAJ Winds TH
+*        ---------------------
+         V4dg_numtr = 5 
+         call v4d_rwtraj ()
+*
+      call adw_main_tr ( F_fnitraj )
+*
+      call pre_tr ()
+*
+      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      call hpalloc (nlm_num_  , dim, err,1)
+      call hpalloc (nlm_nvm_  , dim, err,1)
+      call hpalloc (nlm_nthm_ , dim, err,1)
+      call hpalloc (nlm_ncnm_ , dim, err,1)
+      nlm_n3m_  = 0
+      nlm_n3pm_ = 0
+      if (.not. Schm_hydro_L) then
+         call hpalloc (nlm_n3m_  , dim, err,1)
+         call hpalloc (nlm_n3pm_ , dim, err,1)
+      endif
+*
+*     --------------
+*     END TRAJECTORY
+*     --------------
+      if (Lun_debug_L) write (Lun_out,1005) Schm_itnlh
+*
+*     ADJ
+*     ---
+*
+      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      call hpalloc (nl_nu_  , dim, err,1)
+      call hpalloc (nl_nv_  , dim, err,1)
+      call hpalloc (nl_nth_ , dim, err,1)
+      call hpalloc (nl_ncn_ , dim, err,1)
+      nl_n3_  = 0
+      nl_n3p_ = 0
+      if (.not. Schm_hydro_L) then
+         call hpalloc (nl_n3_  , dim, err,1)
+         call hpalloc (nl_n3p_ , dim, err,1)
+      endif
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k = 1,l_nk
+      do j = l_miny,l_maxy 
+      do i = l_minx,l_maxx 
+      nl_nu (i,j,k) = ZERO_8
+      nl_nv (i,j,k) = ZERO_8
+      nl_nth(i,j,k) = ZERO_8
+      nl_ncn(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+      if (.not. Schm_hydro_L) then
+      do k = 1,l_nk
+      do j = l_miny,l_maxy 
+      do i = l_minx,l_maxx 
+      nl_n3  (i,j,k) = ZERO_8
+      nl_n3p (i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+      endif
+*
+      do 100 iln=Schm_itnlh,1,-1
+*
+*        ----------------
+*        START TRAJECTORY
+*        ----------------
+         ilntrj = 1
+*
+         if(.not.(Orh_icn.eq.1)) then
+*
+*           Recover TRAJ TPLT0,ST0 and relatives
+*           ------------------------------------
+            V4dg_numtr = 6 
+            call v4d_rwtraj ()
+*
+         else
+            call frstgss_tr
+         endif
+*
+         if(iln.gt.1) then
+*
+            do ilntrj=1,iln-1
+*
+               call nli_tr ()
+*
+               call sol_main_tr ()
+*
+               call bac_tr ( ilntrj, Schm_itnlh )
+*
+            enddo
+*
+         endif
+*
+         call nli_tr ()
+*
+         call sol_main_tr ()
+*
+*        --------------
+*        END TRAJECTORY
+*        --------------
+*
+         call bac_ad ( iln, Schm_itnlh )
+*
+         call sol_main_ad ()
+*
+         call nli_ad ()
+*
+ 100  continue
+*
+*     TRAJECTORY
+*     ----------
+      call hpdeallc(nlm_num_ , err)
+      call hpdeallc(nlm_nvm_ , err)
+      call hpdeallc(nlm_nthm_, err)
+      call hpdeallc(nlm_ncnm_, err)
+      if (.not. Schm_hydro_L) then
+         call hpdeallc(nlm_n3m_ , err)
+         call hpdeallc(nlm_n3pm_, err)
+      endif
+*
+*     ADJ 
+*     ---
+      call hpdeallc(nl_nu_ , err)
+      call hpdeallc(nl_nv_ , err)
+      call hpdeallc(nl_nth_, err)
+      call hpdeallc(nl_ncn_, err)
+      if (.not. Schm_hydro_L) then
+         call hpdeallc(nl_n3_ , err)
+         call hpdeallc(nl_n3p_, err)
+      endif
+*
+      if ( Orh_icn .eq. 1) call frstgss_ad( )
+*
+*     START TRAJECTORY
+*     ----------------
+*        Recover TRAJ RHS (RUMW2,RVMW2) before PRE 
+*        -----------------------------------------
+         pnlkey1(1) = VMM_KEY(ruw2m)
+         pnlkey1(2) = VMM_KEY(rvw2m)
+         pnlkey1(3) = VMM_KEY(oruw2m)
+         pnlkey1(4) = VMM_KEY(orvw2m)
+         pnerr = vmmlod(pnlkey1,4)
+         pnerr = VMM_GET_VAR(ruw2m)
+         pnerr = VMM_GET_VAR(rvw2m)
+         pnerr = VMM_GET_VAR(oruw2m)
+         pnerr = VMM_GET_VAR(orvw2m)
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+         ruw2m(i,j,k) = oruw2m(i,j,k)
+         rvw2m(i,j,k) = orvw2m(i,j,k)
+         end do
+         end do
+         end do
+         pnerr = vmmuld(-1,0)
+*
+*     END TRAJECTORY
+*     --------------
+*
+      call pre_ad ()
+*
+*     START TRAJECTORY
+*     ----------------
+*        Recover TRAJ RHS (RCNM,RTHM) before ADW_MAIN_AD
+*        -----------------------------------------------
+         pnlkey1(1) = VMM_KEY(rcnm)
+         pnlkey1(2) = VMM_KEY(rthm)
+         pnlkey1(3) = VMM_KEY(orcnm)
+         pnlkey1(4) = VMM_KEY(orthm)
+         pnerr = vmmlod(pnlkey1,4)
+         pnerr = VMM_GET_VAR(rcnm)
+         pnerr = VMM_GET_VAR(rthm)
+         pnerr = VMM_GET_VAR(orcnm)
+         pnerr = VMM_GET_VAR(orthm)
+*
+         do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+         rcnm(i,j,k) = orcnm(i,j,k)
+         rthm(i,j,k) = orthm(i,j,k)
+         end do
+         end do
+         end do
+         pnerr = vmmuld(-1,0)
+
+*        Recover TRAJ ORTR before ADW_MAIN_AD
+*        ------------------------------------
+         if(Orh_icn .eq. Schm_itcn) then
+*
+         key0m_ = VMM_KEY (trt0m)
+         keyorm_= VMM_KEY (ortrm)
+         do n=1,Tr3d_ntr
+            key0m (n) = key0m_  + n
+            keyorm(n) = keyorm_ + n
+         end do
+         if (Tr3d_ntr.gt.0) then
+            err = vmmlod(key0m, Tr3d_ntr)
+            err = vmmlod(keyorm,Tr3d_ntr)
+            do n=1,Tr3d_ntr
+               err = vmmget(key0m (n),patr0m,tr0m)
+               err = vmmget(keyorm(n),paorm, orm)
+               do k=1,l_nk
+               do j=1,l_nj
+               do i=1,l_ni
+                  tr0m(i,j,k) = orm(i,j,k)
+               end do
+               end do
+               end do
+            end do
+            err = vmmuld(key0m, Tr3d_ntr)
+            err = vmmuld(keyorm,Tr3d_ntr)
+         endif
+*
+         endif
+*
+*     END TRAJECTORY
+*     --------------
+*
+      call adw_main_ad ( F_fnitraj )
+*
+      call rhs_ad ()
+*
+*     ---------------------------------------------------------------
+*
+ 1000 format(
+     + 3X,'ADJ of PERFORM A DYNAMICAL STEP: (S/R TSTPDYN_AD)',
+     +/3X,'=================================================',/)
+ 1005 format(
+     $3X,'ADJ of ITERATING SCHM_ITNLH=',I3,' TIMES TO SOLVE NON-LINEAR '
+     $   'HELMHOLTZ PROBLEM',/)
+      return
+      end

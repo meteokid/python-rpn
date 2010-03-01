@@ -1,0 +1,361 @@
+***s/r v4d_zero - Zero ALL model variables 
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_zero 
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt ADJ for new advection code
+*                           - adapt for tracers in tr3d  
+*
+*object
+*    see id section
+*
+*arguments
+*    none
+*
+*implicits
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "vth.cdk"
+#include "vtx.cdk"
+#include "rhsc.cdk"
+#include "orh.cdk"
+#include "tr3d.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+      integer pnerr, pnlkey1(15), key1(Tr3d_ntr), key0(Tr3d_ntr),
+     $        key1_, key0_, pnlod, err, i, j, k, n
+*
+      real tr,tr0
+      pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
+*
+      if( Lun_debug_L ) then
+         write(Lun_out,fmt='(/,''V4D_ZERO:Zero ALL model variables'')')
+         write(Lun_out,fmt='(  ''================================='')')
+      endif
+*
+*     ---------------------------
+*     Zero comdeck vt0
+*     ---------------------------
+      pnlkey1( 1)= VMM_KEY(st0  )
+      pnlkey1( 2)= VMM_KEY(pipt0)
+      pnlkey1( 3)= VMM_KEY(qt0  )
+      pnlkey1( 4)= VMM_KEY(fit0 )
+      pnlkey1( 5)= VMM_KEY(fipt0)
+      pnlkey1( 6)= VMM_KEY(tt0  )
+      pnlkey1( 7)= VMM_KEY(tpt0 )
+      pnlkey1( 8)= VMM_KEY(tplt0)
+      pnlkey1( 9)= VMM_KEY(ut0  )
+      pnlkey1(10)= VMM_KEY(vt0  )
+      pnlkey1(11)= VMM_KEY(psdt0)
+      pnlkey1(12)= VMM_KEY(tdt0 )
+      pnlod = 12 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(st0  )
+      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(qt0  )
+      pnerr = VMM_GET_VAR(fit0 )
+      pnerr = VMM_GET_VAR(fipt0)
+      pnerr = VMM_GET_VAR(tt0  )
+      pnerr = VMM_GET_VAR(tpt0 )
+      pnerr = VMM_GET_VAR(tplt0)
+      pnerr = VMM_GET_VAR(ut0  )
+      pnerr = VMM_GET_VAR(vt0  )
+      pnerr = VMM_GET_VAR(psdt0)
+      pnerr = VMM_GET_VAR(tdt0 )
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         pipt0(i,j,k) = 0.
+         qt0  (i,j,k) = 0.
+         fit0 (i,j,k) = 0.
+         fipt0(i,j,k) = 0.
+         tt0  (i,j,k) = 0.
+         tpt0 (i,j,k) = 0.
+         tplt0(i,j,k) = 0.
+         ut0  (i,j,k) = 0.
+         vt0  (i,j,k) = 0.
+         psdt0(i,j,k) = 0.
+         tdt0 (i,j,k) = 0.
+      end do
+      end do
+      end do
+*
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         st0  (i,j) = 0.
+      end do
+      end do
+*
+      pnerr = vmmuld( -1, 0 )
+*
+      key0_ = VMM_KEY (trt0)
+      do n=1,Tr3d_ntr
+         key0(n) = key0_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key0,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key0(n),patr0,tr0)
+            do k=1,l_nk
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               tr0(i,j,k) = 0. 
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key0,Tr3d_ntr)
+      endif
+*
+*     ---------------------------
+*     Zero comdeck vt1
+*     ---------------------------
+      pnlkey1( 1)= VMM_KEY(ut1  )
+      pnlkey1( 2)= VMM_KEY(vt1  )
+      pnlkey1( 3)= VMM_KEY(tt1  )
+      pnlkey1( 4)= VMM_KEY(qt1  )
+      pnlkey1( 5)= VMM_KEY(fit1 )
+      pnlkey1( 6)= VMM_KEY(fipt1)
+      pnlkey1( 7)= VMM_KEY(tdt1 )
+      pnlkey1( 8)= VMM_KEY(psdt1)
+      pnlkey1( 9)= VMM_KEY(tpt1 )
+      pnlkey1(10)= VMM_KEY(tplt1)
+      pnlkey1(11)= VMM_KEY(pipt1)
+      pnlkey1(12)= VMM_KEY(st1  )
+      pnlkey1(13)= VMM_KEY(xct1 )
+      pnlkey1(14)= VMM_KEY(yct1 )
+      pnlkey1(15)= VMM_KEY(zct1 )
+      pnlod = 15 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(ut1  )
+      pnerr = VMM_GET_VAR(vt1  )
+      pnerr = VMM_GET_VAR(tt1  )
+      pnerr = VMM_GET_VAR(qt1  )
+      pnerr = VMM_GET_VAR(fit1 )
+      pnerr = VMM_GET_VAR(fipt1)
+      pnerr = VMM_GET_VAR(tdt1 )
+      pnerr = VMM_GET_VAR(psdt1)
+      pnerr = VMM_GET_VAR(tpt1 )
+      pnerr = VMM_GET_VAR(tplt1)
+      pnerr = VMM_GET_VAR(pipt1)
+      pnerr = VMM_GET_VAR(st1  )
+      pnerr = VMM_GET_VAR(xct1 )
+      pnerr = VMM_GET_VAR(yct1 )
+      pnerr = VMM_GET_VAR(zct1 )
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         ut1  (i,j,k) = 0.
+         vt1  (i,j,k) = 0.
+         tt1  (i,j,k) = 0.
+         qt1  (i,j,k) = 0.
+         fit1 (i,j,k) = 0.
+         fipt1(i,j,k) = 0.
+         tdt1 (i,j,k) = 0.
+         psdt1(i,j,k) = 0.
+         tpt1 (i,j,k) = 0.
+         tplt1(i,j,k) = 0.
+         pipt1(i,j,k) = 0.
+      end do
+      end do
+      end do
+*
+      do i=1,l_ni*l_nj*l_nk
+         xct1 (i) = 0.
+         yct1 (i) = 0.
+         zct1 (i) = 0.
+      end do
+*
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         st1  (i,j) = 0.
+      end do
+      end do
+*
+      pnerr = vmmuld( -1, 0 )
+*
+      key1_ = VMM_KEY (trt1)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr,tr)
+            do k=1,l_nk
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               tr(i,j,k) = 0. 
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+      endif
+*
+*     ---------------------------
+*     Zero comdeck vth
+*     ---------------------------
+      pnlkey1(1) = VMM_KEY(uth  )
+      pnlkey1(2) = VMM_KEY(vth  )
+      pnlkey1(3) = VMM_KEY(psdth)
+      pnlkey1(4) = VMM_KEY(xth  )
+      pnlkey1(5) = VMM_KEY(yth  )
+      pnlkey1(6) = VMM_KEY(zth  )
+      pnlkey1(7) = VMM_KEY(xcth )
+      pnlkey1(8) = VMM_KEY(ycth )
+      pnlkey1(9) = VMM_KEY(zcth )
+      pnlod = 9 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(uth  )
+      pnerr = VMM_GET_VAR(vth  )
+      pnerr = VMM_GET_VAR(psdth)
+      pnerr = VMM_GET_VAR(xth  )
+      pnerr = VMM_GET_VAR(yth  )
+      pnerr = VMM_GET_VAR(zth  )
+      pnerr = VMM_GET_VAR(xcth )
+      pnerr = VMM_GET_VAR(ycth )
+      pnerr = VMM_GET_VAR(zcth )
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         uth  (i,j,k) = 0.
+         vth  (i,j,k) = 0.
+         psdth(i,j,k) = 0.
+      end do
+      end do
+      end do
+*
+      do i=1,l_ni*l_nj*l_nk
+         xth  (i) = 0.
+         yth  (i) = 0.
+         zth  (i) = 0.
+         xcth (i) = 0.
+         ycth (i) = 0.
+         zcth (i) = 0.
+      end do
+*
+      pnerr = vmmuld( -1, 0 )
+*
+*     ---------------------------
+*     Zero comdeck vtx
+*     ---------------------------
+      pnlkey1(1) = VMM_KEY(gptx)
+      pnlkey1(2) = VMM_KEY(gxtx)
+      pnlod = 2 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(gptx)
+      pnerr = VMM_GET_VAR(gxtx)
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         gptx(i,j,k) = 0.
+         gxtx(i,j,k) = 0.
+      end do
+      end do
+      end do
+*
+      pnerr = vmmuld( -1, 0 )
+*
+*     ---------------------------
+*     Zero comdeck rhsc 
+*     ---------------------------
+      pnlkey1( 1)= VMM_KEY(ruw1 )
+      pnlkey1( 2)= VMM_KEY(rvw1 )
+      pnlkey1( 3)= VMM_KEY(rcn  )
+      pnlkey1( 4)= VMM_KEY(rth  )
+      pnlkey1( 5)= VMM_KEY(rheln)
+      pnlkey1( 6)= VMM_KEY(rhell)
+      pnlkey1( 7)= VMM_KEY(ruw2 )
+      pnlkey1( 8)= VMM_KEY(rvw2 )
+      pnlkey1( 9)= VMM_KEY(ru   )
+      pnlkey1(10)= VMM_KEY(rv   )
+      pnlkey1(11)= VMM_KEY(rd   )
+      pnlkey1(12)= VMM_KEY(r1   )
+      pnlod = 12 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(ruw1 )
+      pnerr = VMM_GET_VAR(rvw1 )
+      pnerr = VMM_GET_VAR(rcn  )
+      pnerr = VMM_GET_VAR(rth  )
+      pnerr = VMM_GET_VAR(rheln)
+      pnerr = VMM_GET_VAR(rhell)
+      pnerr = VMM_GET_VAR(ruw2 )
+      pnerr = VMM_GET_VAR(rvw2 )
+      pnerr = VMM_GET_VAR(ru   )
+      pnerr = VMM_GET_VAR(rv   )
+      pnerr = VMM_GET_VAR(rd   )
+      pnerr = VMM_GET_VAR(r1   )
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         ruw1 (i,j,k) = 0.
+         rvw1 (i,j,k) = 0.
+         rcn  (i,j,k) = 0.
+         rth  (i,j,k) = 0.
+         rheln(i,j,k) = 0.
+         rhell(i,j,k) = 0.
+         ruw2 (i,j,k) = 0.
+         rvw2 (i,j,k) = 0.
+         ru   (i,j,k) = 0.
+         rv   (i,j,k) = 0.
+         rd   (i,j,k) = 0.
+         r1   (i,j,k) = 0.
+      end do
+      end do
+      end do
+*
+      pnerr = vmmuld( -1, 0 )
+*
+*     ---------------------------
+*     Zero comdeck orh 
+*     ---------------------------
+      pnlkey1(1)= VMM_KEY(oru )
+      pnlkey1(2)= VMM_KEY(orv )
+      pnlkey1(3)= VMM_KEY(orcn)
+      pnlkey1(4)= VMM_KEY(orth)
+      pnlod = 4 
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+      pnerr = VMM_GET_VAR(oru )
+      pnerr = VMM_GET_VAR(orv )
+      pnerr = VMM_GET_VAR(orcn)
+      pnerr = VMM_GET_VAR(orth)
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         oru (i,j,k) = 0.
+         orv (i,j,k) = 0.
+         orcn(i,j,k) = 0.
+         orth(i,j,k) = 0.
+      end do
+      end do
+      end do
+*
+      pnerr = vmmuld( -1, 0 )
+*
+      return
+      end

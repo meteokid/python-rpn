@@ -1,0 +1,396 @@
+***s/r zongini - initialization of the zonal diagnostics package
+*
+#include <model_macros_f.h>
+*
+      subroutine zongini
+#include "impnone.cdk"
+*
+*author andre methot - cmc - aug 1994 - v0_14
+*
+*revision
+* v2_31 - Methot A. and Dugas B.
+* v2_31 -               - generalized weight and bin calculation
+* v2_31 -                 for rotated or variable grids
+* v2_31 - Dugas B.      - account for MPI geometry
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*               This routine initializes the variables used by
+*      the zonal diagnostic package: number of timesteps between
+*      saves (P_zong_znli), the mode (P_zong_znmod), the lenght of
+*      the time steps, the list of nomvar names to extract,
+*      informations about the grid,...etc...etc.
+*	
+*arguments
+*	none
+*
+*notes
+*       the code takes into account all grid rotations.
+*  Each grid point is placed in the appropriate latitude
+*  band according to its real geographical latitude.
+*
+*  Within each latitude band, grid points are weighted
+*  according to their actual horizontal area coverage
+*  on the sphere.
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "p_zong.cdk"
+*
+#include "grd.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+*
+#include "lun.cdk"
+#include "out1.cdk"
+#include "rstr.cdk"
+*
+#include "p_pbl.cdk"
+#include "p_geol.cdk"
+*
+#include "ptopo.cdk"
+*
+**
+*     INZONO2 arguments pour which will be calculated here
+*
+      integer rang(G_ni,G_nj), ndelt,nlatmn
+      real    poid(G_ni,G_nj), theta(G_ni,G_nj)
+      integer znsrf(cnznsfm), znprf(cnznpfm)
+      character noutzon_S*256
+*
+*     Work space for coordinate calculations
+*
+      integer boxlat(G_nj),irot
+      real*8 hxu(0:G_ni+1), hyv(0:G_nj)
+      real   lon((G_ni+1)*G_nj), lat((G_ni+1)*G_nj)
+      real*8 lonr((G_ni+1)*G_nj),latr((G_ni+1)*G_nj)
+      real*8 cosy(G_nj),siny(G_nj),cosx(G_ni+1),sinx(G_ni+1)
+      real*8 cart(3*(G_ni+1)*G_nj),carot(3*(G_ni+1)*G_nj),ri_8(3,3)
+      real   polon,polat,rot
+*
+      logical debug_L
+      character*6 dummy_S,mype_S
+      integer i,j,k,l, ij,jj, ni,nj, nbin, nvar, longueur,cnt
+      real*8  mp(3,2),mt(2,3), sinteta,costeta, thetaz
+      real*8  dlat,latmn, norm, pis2, rmp
+*
+      integer fnom,ierr
+      external fnom
+*
+*     ---------------------------------------------------------------
+*
+      debug_L = .false. 
+**
+      irot = 999
+      pis2 = Dcst_pi_8/2.0
+*
+*     Build the name of the zonal diagnostic output file
+*
+      write (dummy_S,'(i2.2,"_",i2.2)') Ptopo_myrow,Ptopo_mycol
+      cnt=0
+      mype_S=""
+      do i=1,6
+         if (dummy_S(i:i).ne." ") then
+            cnt=cnt+1
+            mype_S(cnt:cnt) = dummy_S(i:i)
+         endif
+      end do
+*
+      noutzon_S =  'zonaux_' // mype_S(1:longueur(mype_S))
+*
+      if ( P_zong_znli  .le. 0 .or.
+     &   ( P_zong_znprf .le. 0 .and.
+     &     P_zong_znsrf .le. 0 )) then
+*
+*        Nothing to do
+*
+         if (Lun_out.gt.0) write(Lun_out,1100)
+         goto 700
+*
+      else if ( Rstri_rstn_L ) then
+*
+*        Initializing Lun_zonl for MZONOPR
+*
+         Lun_zonl = 0
+         ierr = fnom( Lun_zonl, noutzon_S, 'STD+RND',0 )
+*
+         if (ierr.ne.0) then
+*
+*           Cannot open noutzon_S, disabling zonal diagnostics
+*
+            Lun_zonl    = -1
+            P_zong_znli =  0
+*
+            if (Lun_out.gt.0) write(Lun_out,1300)
+     &      noutzon_S(1:longueur(noutzon_S))
+*
+            goto 700
+*
+         endif
+*
+         call fclos( Lun_zonl )
+*
+         if (Lun_out.gt.0) write(Lun_out,1001)
+         goto 600
+*
+      endif
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+      if (Lun_out.gt.0) write(Lun_out,1001)
+*
+*
+*C     1. Calculates weights, row indicies, and angles
+*         --------------------------------------------
+*
+ 100  continue
+*
+      ni    = G_ni+1
+      if (G_lam)
+     &ni    = G_ni
+      nj    = G_nj
+*
+      nbin  = P_zong_nbin
+      dlat  = 180./nbin           
+      latmn = -90.0
+*
+      if ( .not. P_geol_tourn_L ) then
+*
+         nbin = min( nbin, G_nj )
+         irot = 0
+*
+         ij = 0
+         do j=1,nj
+         do i=1,ni
+            ij = ij+1
+            lat(ij) = Geomn_latgs(j)
+            lon(ij) = Geomn_longs(i)
+         end do
+         end do
+*     
+      else
+*
+*        Calcul des latitudes et longitudes de la
+*        grille tournee dans le cadre non-tourne
+*
+         call llacar( cart, Geomn_longs,Geomn_latgs, ni,nj )
+*
+         do i=1,3
+         do j=1,3
+            ri_8(i,j) = Grd_rot_8(j,i)
+         end do
+         end do
+*
+         call mxma8( ri_8,1,3,cart,1,3,carot,1,3, 3,3, ni*nj )
+         call cartall( lon, lat, carot, ni*nj)
+*
+*        Calcul de l'angle entre les poles des deux grilles
+*
+         call llacar( cart, 90.,90., 1,1 )
+         call mxma8 (ri_8,1,3,cart,1,3,carot,1,3, 3,3,1)
+         call cartall( polon, polat, carot, 1 )
+*
+         rot  = 90. - polat
+         irot = nint( rot )
+*
+         do i=1,ni*nj
+            lon(i)  = mod(lon(i) + 360.0,360.0)
+            lonr(i) = lon(i)*Dcst_pi_8/180.
+            latr(i) = lat(i)*Dcst_pi_8/180.
+         end do
+*
+      endif
+*
+*     Pre-calcul de certains autres facteurs trigonometriques globaux
+*
+      hyv(0) = (G_yg_8(2)- G_yg_8(0)) * 0.5
+      hxu(0) = (G_xg_8(2)- G_xg_8(0)) * 0.5
+*
+      do j=1,nj
+         cosy(j) = cos( G_yg_8(j) )
+         siny(j) = sin( G_yg_8(j) )
+         hyv(j)  = (G_yg_8(j+2)- G_yg_8(j)) * 0.5
+      end do
+
+      do i=1,ni
+         cosx(i) = cos( G_xg_8(i) )
+         sinx(i) = sin( G_xg_8(i) )
+         hxu(i)  = (G_xg_8(i+2)- G_xg_8(i)) * 0.5
+      end do
+*
+      if ( P_pbl_truew_L ) irot = 0
+*
+      if ( irot.ne.0 .and. Lun_out.gt.0) write(Lun_out,1200)
+*
+*     Boucle sur les nbin bandes de latitudes geographiques
+*
+      do 105 jj=1,nbin
+*
+         boxlat(jj) = 0
+         thetaz     = latmn + (jj-1)*dlat
+         norm       = 0.
+*
+         if ( irot .eq. 0 )
+     &      theta(jj,1) = thetaz
+*
+*         Boucle sur le domaine complet pour l'identification
+*         de tous les points pour UNE BANDE jj DONNEE 
+
+         do 102 j=1,G_nj 
+         do 102 i=1,G_ni
+*
+            ij = (j-1)*ni+i
+*
+            if (  ( lat(ij) .ge. thetaz ) .and.
+     &            ( lat(ij) .lt. thetaz+dlat ) ) then
+*
+               poid(i,j) = hxu(i-1)*hyv(j-1)*cosy(j)
+*                          delta X  delta Y  map scale
+*
+               norm       = norm + poid(i,j)
+               boxlat(jj) = boxlat(jj)+1
+               rang(i,j)  = jj
+*
+*C             2. Calcul de la matrice de rotation des vents
+*                 ------------------------------------------
+*
+               if ( irot.ne.0 .and. .not. P_pbl_truew_L ) then
+*
+*                 Definir les composantes requises de M' 
+*                 [ ou M':(u,v)geo --> (dx/dt,dy/dt,dz/dt)geo ]
+                  mp(1,1) = -sin( lonr(ij) )
+                  mp(2,1) =  cos( lonr(ij) )
+                  mp(3,1) =  0.0
+CCC               mp(1,2) = -sin( latr(ij) )*cos( lonr(ij) )
+CCC               mp(2,2) = -sin( latr(ij) )*sin( lonr(ij) )
+CCC               mp(3,2) =  cos( latr(ij) )
+*
+*                 Definir les composantes de MT, la transposee de M
+*                 [ ou M:(u,v)mod --> (dx/dt,dy/dt,dz/dt)mod ]
+                  mt(1,1) = -sinx(i)
+                  mt(1,2) =  cosx(i)
+                  mt(1,3) =  0.0
+                  mt(2,1) = -siny(j)*cosx(i)
+                  mt(2,2) = -siny(j)*sinx(i)
+                  mt(2,3) =  cosy(j)
+*
+*                 Calculer la premiere colonne du produit MT RT M' = TT
+*                 [ ou R:(repere modele) --> (repere geographique) ] 
+                  sinteta = 0.0
+                  costeta = 0.0
+*
+*                 On ne calcule donc que -TT(1,1) (= sin(theta)) et
+*                 TT(2,1) (= cos(theta) dans la routine mvznxst)
+*
+                  do k=1,3
+                     rmp       = 0.0
+                     do l=1,3
+                        rmp    = rmp+Grd_rot_8(k,l)*mp(l,1)
+                     enddo
+                     sinteta   = sinteta - mt(1,k)*rmp
+                     costeta   = costeta + mt(2,k)*rmp
+                  enddo
+*
+*                 Trouver theta a partir de sin(theta) et cos(theta)
+                  if ( costeta .ne. 0.0 ) then
+                     theta(i,j) = atan( sinteta/costeta )
+                  else if ( sinteta .gt. 0.0 ) then
+                     theta(i,j) = pis2
+                  else if ( sinteta .lt. 0.0 ) then
+                     theta(i,j) = -pis2
+                  endif
+*
+*                 theta est defini dans l'interval [ -pi , +pi ]
+                  if ( costeta .lt. 0.0 ) then
+                     if ( sinteta .ge. 0.0 ) then
+                        theta(i,j) = theta(i,j) + Dcst_pi_8
+                     else
+                        theta(i,j) = theta(i,j) - Dcst_pi_8
+                     endif
+                  endif
+*
+               endif
+*
+            endif
+ 102     continue
+*
+*         Deuxieme boucle sur le domaine complet pour la normalisation
+         do 104 j=1,G_nj
+         do 104 i=1,G_ni
+            if (  rang(i,j) .eq. jj ) then
+               poid(i,j)=poid(i,j) / norm
+            endif
+ 104     continue 
+*
+ 105  continue
+*
+*C     3. Variable types conversion for compatibility with package
+*         --------------------------------------------------------
+*
+*     The zonal diagnostic package should be revised ( inzono )
+*     such that those conversions become un-necessary.
+*
+      ndelt  = nint( Cstv_dt_8 )
+      nlatmn = nint( latmn )
+*
+      do 210 nvar=1,P_zong_znprf
+ 210        read(P_zong_znprf_s(nvar),'(a4)') znprf(nvar)
+*
+      do 220 nvar=1,P_zong_znsrf
+ 220        read(P_zong_znsrf_s(nvar),'(a4)') znsrf(nvar)
+*
+*
+*     Print debug-mode information (1)
+*
+      if (  debug_L .and. Lun_out.gt.0 ) then
+         write(Lun_out,*) 'znprf: ', (P_zong_znprf_s(nvar),
+     +                         nvar=1,P_zong_znprf)
+         write(Lun_out,*) 'znsrf: ', (P_zong_znsrf_s(nvar),
+     +                         nvar=1,P_zong_znsrf)
+         write(Lun_out,*) 'rot:   ', irot
+         write(Lun_out,*) 'Poids: ', poid
+         write(Lun_out,*) 'Rangs: ', rang
+         write(Lun_out,*) 'Theta: ', theta
+         write(Lun_out,*) 'P_zong_znli' , P_zong_znli
+      endif
+*
+*C     4. writes information records on zonal standard file
+*         -------------------------------------------------
+*
+      call inzono2(poid, rang, theta, P_zong_znli, ndelt,
+     %            P_zong_znmod, P_zong_znsrf, znsrf, P_zong_znprf,
+     %            znprf, nlatmn, irot, Lun_zonl, Geomg_hyb, Out1_etik_s,
+     %            Out1_date, G_ni, G_nj, G_nk,Lun_out,
+     %            noutzon_S(1:longueur(noutzon_S)))
+*
+*
+ 600  continue
+*
+*     Print debug-mode information (2)
+*
+      if (  debug_L .and. Lun_out.gt.0 ) then
+         write(Lun_out,*) 'noutzon_S ', noutzon_S(1:longueur(noutzon_S))
+         write(Lun_out,*) 'Lun_zonl ', Lun_zonl
+      endif
+*
+      call mzonfil( noutzon_S )
+*
+ 700  continue
+*
+ 1000 format(/,'INIT OF ZONAL DIAGNOSTICS PACKAGE (S/R ZONGINI)',
+     +       /,'===============================================')
+ 1001 format(/,'INIT OF EXTRACTORS FOR ZONAL DIAGNOSTICS (S/R ZONGINI)',
+     +       /,'======================================================')
+ 1100 format(/,'NO ZONAL DIAGNOSTICS REQUESTED (S/R ZONGINI)',
+     +       /,'============================================')
+ 1200 format(' Note that the local rotation angles will',
+     +       ' be passed on to INZONO2')
+ 1300 format(/,'UNABLE TO OPEN ZONAL DIAGNOSTICS FILE ',A,
+     +       /,'DISABLING FURTHER PROCESSING BY PACKAGE ')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

@@ -1,0 +1,65 @@
+***s/r set_mem - allocate a block of central memory with the Virtual
+*                Memory Manager
+*
+#include <model_macros_f.h>
+*
+      subroutine set_mem
+*
+#include "impnone.cdk"
+*
+*author
+*     michel roch - rpn - june 1993
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from setmem v1_03)
+*
+*object
+*	This subroutine allocates a block of central memory
+*	with the Virtual Memory Manager. This block will be used
+*	by the model for the slice of integration required.
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "mem.cdk"
+#include "schm.cdk"
+*
+*modules
+      integer  vmmallc
+      external vmmallc
+*
+**
+      integer err, space, nw_min
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+*
+*C       1.    Allocate the bloc of memory managed by VMM
+*              ------------------------------------------
+*
+      nw_min = 25
+*
+*     For the model to remain totally incore (with 2 3D tracers):
+*        Mem_mx3db = 52    if hydrostatic without initialization scheme
+*        Mem_mx3db = 66    if hydrostatic with    initialization scheme
+*        Mem_mx3db = 65    if NH          without initialization scheme
+*        Mem_mx3db = 83    if NH          with    initialization scheme
+*
+      space = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
+      space = max(nw_min,Mem_mx3db) * space
+*
+      err   = vmmallc ( space )
+*
+ 1000 format(
+     %/,'ALLOCATION OF CENTRAL MEMORY FOR VMM MANAGER (S/R SET_MEM)',
+     %/,'==========================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

@@ -1,0 +1,59 @@
+***S/P E_SORTR  Put real numbers in increasing order
+*
+      SUBROUTINE E_SORTR(F, N)
+
+#include "impnone.cdk"
+      INTEGER  N
+      REAL     F(N)
+*
+*author M. VALIN, RPN DORVAL P. Q. CANADA
+*
+*revision
+* v0_01 - Yvon Bourassa          - RATFOR @ FTN 77
+*
+*LANGAGE 
+*       FTN 77
+*
+*object
+*         see above ID
+*
+*ARGUMENTS
+*______________________________________________________________________
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* F  (input/output)  | The real numbers to be sorted in increasing ord.|
+* N                  | The number of real numbers in F                 |
+*----------------------------------------------------------------------
+*
+*
+**
+      INTEGER I, J, K
+      REAL    X
+
+      IF(N .lt. 2) RETURN
+
+      DO I = 1, N-1
+         K = I
+         DO J = I+1, N
+            IF(F(K) .GT. F(J))  K=J
+         ENDDO
+         IF(K .NE. I) THEN
+            X    = F(K)
+            F(K) = F(I)
+            F(I) = X
+         ENDIF
+         ENDDO
+
+*     ELIMINATION DES NOMBRES EGAUX DE LA LISTE
+      I = 1
+      DO J=2,N
+         IF(F(I) .NE. F(J)) THEN
+            I = I+1
+            IF(I .NE. J) F(I) = F(J)
+         ENDIF
+      ENDDO
+      N = I
+
+      RETURN
+      END

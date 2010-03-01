@@ -1,0 +1,85 @@
+***s/p calF_omeg - compute vertical velocity in pressure coordinates
+*
+#include <model_macros_f.h>
+*
+      subroutine calomeg(F_omeg, F_psd, F_td, F_s, DIST_DIM, Nk,
+     $                                       F_i0,F_in,F_j0,F_jn)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk
+      integer F_i0,F_in,F_j0,F_jn
+      real F_omeg(DIST_SHAPE,Nk)
+      real F_psd(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk)
+      real F_s(DIST_SHAPE)
+*
+*author
+*     Andre Methot - cmc - nov 1995 - v0_16
+*                  adapted from sort5 v0_15, A. Patoine
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from calomeg v1_03)
+* v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
+*
+*object
+*	compute vertical velocity in pressure coordinates
+*
+****************************************************************************
+*                                                                          
+*
+*           dp    . /                 db \       .             d /db\   db
+* F_omega = -- =  z | 1 + (exp(s) -1) -- | - b * z (exp(s) -1) --|--| / -- 
+*           dt      \                 dz /                     dz\dz/   dz
+*                                .
+*                       /      dpz \ /                 db \
+*                 - b * | D + ---- | | 1 + (exp(s) -1) -- |
+*                       \      dpz / \                 dz /
+*                                                                            
+*
+* where dp/dpz means partial derivative w.r.t  z
+*
+*****************************************************************************
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_omeg       O    - omega
+* F_psd        I    - model s vertical velocity (pi* coordinates)
+* F_td         I    - model s total divergence
+* F_s          I    - ln ( dpi/dpi* )
+* F_i0         I    - starting point of calculation on W-E axis
+* F_in         I    - ending point of calculation on W-E axis
+* F_j0         I    - starting point of calculation on N-S axis
+* F_jn         I    - ending point of calculation on N-S axis
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+*
+**
+      integer i,j,k
+      real pr1, pr2
+*     __________________________________________________________________
+*
+      do k=2,l_nk
+         pr1 = geomg_dpib(k) - geomg_pib(k)*geomg_dpia(k)/geomg_dpib(k)
+         do j= F_j0, F_jn
+         do i= F_i0, F_in
+           pr2 = exp(F_s(i,j)) - 1.0
+           F_omeg (i,j,k) = F_psd(i,j,k) + F_psd(i,j,k) * pr2 * pr1 -
+     %                      F_td(i,j,k) * geomg_pib(k)*
+     %                      (1.+geomg_dpib(k)*pr2) / geomg_dpib(k)
+        end do
+        end do
+      end do
+*
+      do j= F_j0, F_jn
+      do i= F_i0, F_in
+         F_omeg (i,j,1) = 0.
+      end do
+      end do
+*
+*     __________________________________________________________________
+*
+      return
+      end 

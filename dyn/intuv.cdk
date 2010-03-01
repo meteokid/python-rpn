@@ -1,0 +1,43 @@
+#if defined (DOC)
+*
+***comdeck intuv.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  INTERPOLATION COEFFICIENTS from AND to U and V GRIDS (set_intuv)    |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* intuv_c0xxu_8      | relative x-coord of u-grid in phi-grid          |
+* intuv_c1xxu_8      |                                                 |
+* intuv_c2xxu_8      |                                                 |
+* intuv_c0xux_8      | relative x-coord of phi-grid in u-grid          |
+* intuv_c1xux_8      |                                                 |
+* intuv_c2xux_8      |                                                 |
+* intuv_c0yyv_8      | relative y-coord of v-grid in phi-grid          |
+* intuv_c1yyv_8      |                                                 |
+* intuv_c2yyv_8      |                                                 |
+* intuv_c0yvy_8      | relative y-coord of phi-grid in v-grid          |
+* intuv_c1yvy_8      |                                                 |
+* intuv_c2yvy_8      |                                                 |
+*----------------------------------------------------------------------
+*
+*
+#endif
+*
+      MARK_COMMON_BEG(intuv)
+      DCL_DYNVAR(intuv, c0xxu_8, real*8,(XDIST_SHAPE))
+      DCL_DYNVAR(intuv, c1xxu_8, real*8,(XDIST_SHAPE))
+      DCL_DYNVAR(intuv, c2xxu_8, real*8,(XDIST_SHAPE))
+      DCL_DYNVAR(intuv, c0xux_8, real*8,(XDIST_SHAPE))
+      DCL_DYNVAR(intuv, c1xux_8, real*8,(XDIST_SHAPE))
+      DCL_DYNVAR(intuv, c2xux_8, real*8,(XDIST_SHAPE))
+      DCL_DYNVAR(intuv, c0yyv_8, real*8,(YDIST_SHAPE))
+      DCL_DYNVAR(intuv, c1yyv_8, real*8,(YDIST_SHAPE))
+      DCL_DYNVAR(intuv, c2yyv_8, real*8,(YDIST_SHAPE))
+      DCL_DYNVAR(intuv, c0yvy_8, real*8,(YDIST_SHAPE))
+      DCL_DYNVAR(intuv, c1yvy_8, real*8,(YDIST_SHAPE))
+      DCL_DYNVAR(intuv, c2yvy_8, real*8,(YDIST_SHAPE))
+      MARK_COMMON_END(intuv)
+*

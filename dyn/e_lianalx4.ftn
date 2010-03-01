@@ -1,0 +1,76 @@
+*** s/r e_lianalx4 - calls rdhint1 and scales the vector as well
+*
+      subroutine e_lianalx4 (f, lat, lon, nix, njx, nv, ad, mp, ip1, 
+     $                                            gnk,phigrid,sinf)
+#include "impnone.cdk"
+*
+      character*4 nv
+      logical     sinf,phigrid
+      integer     nix, njx, gnk, ip1(gnk)
+      real        f(nix*njx,*), lat(*), lon(*), ad, mp
+*
+*author   
+*
+*revision
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*arguments
+*______________________________________________________________________
+*                                                                      |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* nix*njx            | horizontal I*J dimension for F, LAT, LON        |
+* NV                 | name of the field to read                       |
+* AD                 | constant to add to field                        |
+* MP                 | constant to multiply to field                   |
+* LAT                | latitudes                                       |
+* LON                | longitudes                                      |
+* GNK                | number of levels to read                        |
+* PHIGRID            | TRUE if phigrid destination                     |
+* SINF               | TRUE to stop if not found                       |
+*----------------------------------------------------------------------
+*
+*implicits
+#include "e_maxprms.cdk"
+#include "e_times.cdk"
+#include "e_files.cdk"
+#include "e_anal.cdk"
+#include "e_zgrids.cdk"
+#include "e_option.cdk"
+*
+*modules
+      external fstinf,e_rdhint2
+      integer  fstinf,e_rdhint2
+*
+      integer i, k, key, nic, njc, nkc, err
+*
+*     ---------------------------------------------------------------
+*
+      key = fstinf (anal,nic,njc,nkc,iday,' ',ip1(1),ip2a,ip3a,tva,nv)
+      if (key.lt.0) goto 500
+
+      do k=1,gnk
+
+           err = e_rdhint2 (f(1,k),lat,lon,nix,njx,nv,ip1(k),ip2a,ip3a,
+     $                          ' ',tva,.true.,phigrid,'CUBIC',anal,6)
+           if (err.lt.0 .and. sinf) goto 500
+*
+*        SCALING
+*
+         if (ad.ne.0.0 .or. mp.ne.1.0) then
+            do i=1,nix*njx
+               f(i,k) = mp * (f(i,k)+ad)
+            end do
+         endif
+*
+      end do
+*
+      goto 900
+ 500  write(6,*) ' Variable = ',NV, ' NOT AVAILABLE'
+      if (sinf) call e_arret( 'e_lianalx4' )
+*
+*     ---------------------------------------------------------------
+*
+ 900  return
+      end
+*

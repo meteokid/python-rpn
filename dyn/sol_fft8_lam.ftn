@@ -1,0 +1,213 @@
+***s/r sol_fft8_lam - parallel direct solution of horizontal Helmholtz
+*                   problem. With ffft8  for LAM
+*
+#include <model_macros_f.h>
+*
+      subroutine sol_fft8_lam( sol, Rhs, pri,
+     $                       Minx, Maxx, Miny, Maxy, njl,
+     $                       Minz, Maxz, Nk, Nkl, Gni, Gnj,
+     $                                 Minij, Maxij, L_nij,
+     $                       minx1, maxx1, minx2, maxx2,nx3,
+     $                       F_npex1, F_npey1, ai, bi, ci,
+     $                       fdg2,fdwfft)
+#include "impnone.cdk"
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+*
+*
+*
+*author    Abdessamad Qaddouri- JULY 1999
+*
+*revision
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* Sol          O    - result of solver
+* Rhs          I    - r.h.s. of elliptic equation
+* Pri          I    - inverse projector in Fourier space
+* Minx         I    - minimum index on X for Rhs,Sol
+* Maxx         I    - maximum index on X for Rhs,Sol
+* Miny         I    - minimum index on Y for Rhs,Sol
+* Maxy         I    - maximum index on Y for Rhs,Sol
+* Njl          I    - number of points on local PEy for J (ldnh_nj)
+* Minz         I    - minimum index on local PEx for K (trp_12smin)
+* Maxz         I    - maximum index on local PEx for K (trp_12smax)
+* Nk           I    - G_nk-1 points in z direction globally (Schm_nith)
+* Nkl          I    - number of points on local PEx for K (trp_12sn)
+* Gni          I    - number of points in x direction globally (G_ni)
+* Gnj          I    - number of points in y direction globally (G_nj)
+* Minij        I    - minimum index on local PEy for I (trp_22min)
+* Maxij        I    - maximum index on local PEy for I (trp_22max)
+* L_nij        I    - number of points on local PEy for I (trp_22n)
+* Minx1        I    - minimum index on local PEx for K (trp_12smin)
+* Maxx1        I    - maximum index on local PEx for K (trp_12smax)
+* Minx2        I    - minimum index on local PEy for I (trp_22min)
+* Maxx2        I    - maximum index on local PEy for I (trp_22max)
+* Nx3          I    - number of points along J globally (G_nj)
+* F_npex1      I    - number of processors on X
+* F_npey1      I    - number of processors on Y
+* ai           I    - sub   diagonal of LU factorization
+* bi           I    -       diagonal of LU factorization
+* ci           I    - super diagonal of LU factorization
+* fdg2         I    - work field
+* fdwfft       I    - work field
+*
+*modules
+      external ffft8, rpn_comm_transpose
+
+      integer  F_npex1, F_npey1
+
+      integer  minx1, maxx1, minx2, maxx2,nx3
+
+      Real*8   ai(minx1:maxx1,minx2:maxx2,nx3),
+     $         bi(minx1:maxx1,minx2:maxx2,nx3),
+     $         ci(minx1:maxx1,minx2:maxx2,nx3)
+
+
+      integer Minx, Maxx, Miny, Maxy, njl
+      integer Minz, Maxz, Nk, Nkl
+      integer Gni, Gnj
+      integer Minij, Maxij, L_nij
+      real*8  Sol(Minx:Maxx,Miny:Maxy,Nk), Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      real*8  pri
+
+**
+      real*8 fdwfft(Miny:Maxy,Minz:Maxz,Gni+2+F_npex1)
+      real*8   fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
+*
+      integer i,  j, k, ki, jr, err,l_pil_w,l_pil_e
+      real*8 zero, one
+      parameter( zero = 0.0 )
+      parameter( one  = 1.0 )
+*
+*  The I vector lies on the Y processor so, l_pil_w and l_pil_e will
+*  represent the pilot region along I
+      l_pil_w=0
+      l_pil_e=0
+      if (l_south) l_pil_w= Lam_pil_w
+      if (l_north) l_pil_e= Lam_pil_e
+*PDIR SERIAL
+      call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                         Minz, Maxz, Nk, fdwfft, 1, 2 )
+
+*     projection ( wfft = x transposed * g )
+
+         do k= Minz, nkl
+            do j= njl+1-pil_n,Maxy
+               do i= 1,Gni
+                  fdwfft(j,k,i)=zero
+               enddo
+            enddo
+            do j= Miny, pil_s
+               do i= 1,Gni
+                  fdwfft(j,k,i)=zero
+               enddo
+            enddo
+         enddo
+
+         do k= Nkl+1,Maxz
+            do j= Miny,Maxy
+               do i= 1,Gni
+                  fdwfft(j,k,i)=zero
+               enddo
+            enddo
+         enddo
+         do k= Minz, 0
+            do j= Miny,Maxy
+               do i= 1,Gni
+                  fdwfft(j,k,k)=zero
+               enddo
+            enddo
+         enddo
+*PDIR ENDSERIAL
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k=1,Nkl
+      call qcfft8(fdwfft(1+pil_s,k,1+Lam_pil_w),
+     %                  (Maxy-Miny+1)*(Maxz-Minz+1),1,
+     %                  (Maxy-Miny+1-pil_s-pil_n), -1 )
+      enddo
+c     call qcfft8 ( fdwfft,(Maxy-Miny+1)*(Maxz-Minz+1), 1,
+c    %                     (Maxy-Miny+1) * Nkl, -1 )
+
+      do k = 1, Nkl
+         do i = 0+Lam_pil_w, Gni-1-Lam_pil_e
+            do j = 1+pil_s, (Maxy-Miny+1)-pil_n
+               fdwfft(j,k,i+1) = pri * fdwfft(j,k,i+1)
+            enddo
+         enddo
+      enddo
+
+*
+*PDIR SERIAL
+      call rpn_comm_transpose
+     $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
+     $                         Minij, Maxij, Gni, fdg2, 2, 2 )
+*
+      j =1+Lam_pil_s
+
+c     do ki= 1, (Maxz-Minz+1) *L_nij
+c        fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
+c     enddo
+       do i=1+l_pil_w,L_nij-l_pil_e
+       do k=1,(Maxz-Minz+1)
+          fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j)
+       enddo
+       enddo
+
+c     do j =2, Gnj
+c           jr =  j - 1
+c           do ki= 1, (Maxz-Minz+1)*L_nij
+c              fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j) - ai(ki,1,j)
+c    $                                          * fdg2(ki,1,jr)
+c           enddo
+c     enddo
+      do j =2+Lam_pil_s, Gnj-Lam_pil_n
+            jr =  j - 1
+       do i=1+l_pil_w,L_nij-l_pil_e
+       do k=1,(Maxz-Minz+1)
+          fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j) - ai(k,i,j)
+     $                                          * fdg2(k,i,jr)
+       enddo
+       enddo
+      enddo
+
+c        do j = Gnj-1, 1, -1
+c           jr =  j + 1
+c           do ki= 1, (Maxz-Minz+1)*L_nij
+c             fdg2(ki,1,j) = fdg2(ki,1,j) - ci(ki,1,j) * fdg2(ki,1,jr)
+c           enddo
+c        enddo
+         do j = Gnj-1-Lam_pil_n, 1+Lam_pil_s, -1
+            jr =  j + 1
+            do i=1+l_pil_w,L_nij-l_pil_e
+            do k=1,(Maxz-Minz+1)
+              fdg2(k,i,j) = fdg2(k,i,j) - ci(k,i,j) * fdg2(k,i,jr)
+            enddo
+            enddo
+         enddo
+*
+      call rpn_comm_transpose
+     $     ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1),
+     $                        Minij, Maxij, Gni, fdg2,- 2, 2 )
+*PDIR ENDSERIAL
+
+*     inverse projection ( r = x * w )
+
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k=1, Nkl
+      call qcfft8 ( fdwfft(1+pil_s,k,1+Lam_pil_w),
+     %                    (Maxy-Miny+1)*(Maxz-Minz+1),1,
+     %                    (Maxy-Miny+1-pil_s-pil_n), +1 )
+      enddo
+c     call qcfft8 ( fdwfft,(Maxy-Miny+1)*(Maxz-Minz+1), 1,
+c    %                     (Maxy-Miny+1) * Nkl, +1 )
+*
+*PDIR SERIAL
+      call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                              Minz, Maxz, Nk, fdwfft, -1, 2 )
+*PDIR ENDSERIAL
+      return
+      end

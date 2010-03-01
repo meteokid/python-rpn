@@ -1,0 +1,102 @@
+***s/r set_dync - initialize the dynamics model configuration
+*
+#include <model_macros_f.h>
+*
+      subroutine set_dync
+*
+#include "impnone.cdk"
+*
+*author
+*     M. Desgagne - V. Lee ( after version v1_03 of setdync )
+*
+*revision
+* v2_00 - Desgagne/Lee       - initial MPI version
+* v2_10 - Lee V.             - correction to call to pstune
+* v2_20 - Desgagne M.        - fnom on Wafiles now in p_set
+* v2_30 - Desgagne M.        - entry vertical interpolator in gemdm
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "geomg.cdk"
+#include "grd.cdk"
+#include "schm.cdk"
+#include "pres.cdk"
+#include "dcst.cdk"
+*
+*modules
+*
+      integer k,err
+      real*8 ZERO_8, ONE_8, HUNDRED_8
+      parameter( ZERO_8    = 0.0 )
+      parameter( ONE_8     = 1.0 )
+      parameter( HUNDRED_8 = 100.0 )
+*
+*     ---------------------------------------------------------------
+      if (Cstv_pitop_8.ne.-ONE_8) Cstv_pitop_8=HUNDRED_8*Cstv_pitop_8
+      if (Cstv_pisrf_8.ne.-ONE_8) Cstv_pisrf_8=HUNDRED_8*Cstv_pisrf_8
+*     
+      if (Schm_cptop_L.or.Cstv_pitop_8.eq.-ONE_8) 
+     $        Cstv_pitop_8 = dble(Pres_top)
+      if (Cstv_pisrf_8.eq.-ONE_8) Cstv_pisrf_8 = dble(Pres_surf)
+*
+      if (lun_out.gt.0) then
+         write(Lun_out,*) 'POSSIBLE MODIFICATION OF :'
+         write(Lun_out,*) 'Cstv_pitop_8  = ',Cstv_pitop_8,'  PASCALS'
+         write(Lun_out,*) 'Cstv_pisrf_8  = ',Cstv_pisrf_8,'  PASCALS'
+      endif
+*
+*        Geomg_z_8 is identical to pi star
+*        ---------------------------------
+*
+      call hpalloc (Geomg_pib_ , G_nk ,err,1)
+*
+      do k=1,G_nk
+         Geomg_pib(k) = Geomg_pibb(k) * Cstv_pisrf_8
+         Geomg_z_8(k) = Geomg_pia(k) + Geomg_pib(k)
+      end do
+*
+      if (Grd_rcoef.gt.1.0) then
+          Geomg_dpib(1) = 0.0
+      else
+          Geomg_dpib(1) = 1.0
+      endif
+*
+      do k=2,G_nk
+         Geomg_dpib(k) =  (Geomg_pib(k) - Geomg_pib(k-1)) 
+     $                  / (Geomg_z_8(k) - Geomg_z_8(k-1))
+      end do
+      do k=2,G_nk
+         Geomg_dpib(k) = 2.0 * Geomg_dpib(k) - Geomg_dpib(k-1)
+      enddo
+*
+      Geomg_dpia(1) = 0.0
+      do k=2,G_nk-1
+         Geomg_dpia(k) =  (Geomg_dpib(k+1) - Geomg_dpib(k-1))
+     $                  / (Geomg_z_8 (k+1) - Geomg_z_8 (k-1))
+      enddo
+      Geomg_dpia(G_nk) =  (Geomg_dpib(G_nk)- Geomg_dpib(G_nk-1))
+     $                  / (Geomg_z_8 (G_nk)- Geomg_z_8 (G_nk-1))
+*     
+*C       Geomg_hz_8 is the pi star grid spacing (z)
+*        ------------------------------------------
+*
+      call hpalloc(Cstvr_fistr_8_, G_nk*2, err, 1)
+      do k=1,G_nk-1
+         Geomg_hz_8(k) = Geomg_z_8(k+1) -Geomg_z_8(k)
+         Cstvr_fistr_8(k) = - Dcst_rgasd_8 * Cstv_tstr_8 * 
+     $                       log( Geomg_z_8(k)/Cstv_pisrf_8 )
+      end do
+      Cstvr_fistr_8(G_nk) = ZERO_8
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

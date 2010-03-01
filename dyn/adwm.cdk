@@ -1,0 +1,40 @@
+#if defined (DOC)
+*
+***comdeck adwm.cdk
+*______________________________________________________________________|
+*                                                                      |
+* VARIABLES FOR ADVECTION (TRAJECTORY)                                 |
+*______________________________________________________________________|
+*              |                                                       |
+* NAME         | DESCRIPTION                                           |
+*--------------|-------------------------------------------------------|
+* Adwm_capx1m  | switch: .true. : no knot boundary condition for       |
+*              |                  vertical interpolation               |
+*--------------|-------------------------------------------------------|
+*
+#endif
+*
+*
+      DCL_DYNVAR(Adwm,  capx1m,    real   , (*))
+      DCL_DYNVAR(Adwm,  capy1m,    real   , (*))
+      DCL_DYNVAR(Adwm,  capz1m,    real   , (*))
+      DCL_DYNVAR(Adwm,   xdd1m,    real   , (*))
+      DCL_DYNVAR(Adwm,   ydd1m,    real   , (*))
+      DCL_DYNVAR(Adwm,   xgg1m,    real   , (*))
+      DCL_DYNVAR(Adwm,   ygg1m,    real   , (*))
+      DCL_DYNVAR(Adwm,    cz1m,    real   , (*))
+      DCL_DYNVAR(Adwm,     n1m,    real   , (*))
+      DCL_DYNVAR(Adwm,     c1m,    real   , (*))
+      DCL_DYNVAR(Adwm,   wrkbm,    real   , (*))
+      DCL_DYNVAR(Adwm,   wrkcm,    real   , (*))
+      DCL_DYNVAR(Adwm,  capx2m,    real   , (*))
+      DCL_DYNVAR(Adwm,  capy2m,    real   , (*))
+      DCL_DYNVAR(Adwm,  capz2m,    real   , (*))
+      DCL_DYNVAR(Adwm,   xdd2m,    real   , (*))
+      DCL_DYNVAR(Adwm,   ydd2m,    real   , (*))
+      DCL_DYNVAR(Adwm,   xgg2m,    real   , (*))
+      DCL_DYNVAR(Adwm,   ygg2m,    real   , (*))
+      DCL_DYNVAR(Adwm,    cz2m,    real   , (*))
+      DCL_DYNVAR(Adwm,     n2m,    real   , (*))
+      DCL_DYNVAR(Adwm,   wrkam,    real   , (*))
+*

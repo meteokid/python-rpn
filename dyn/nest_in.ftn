@@ -1,0 +1,112 @@
+***s/r nest_in
+*
+      subroutine nest_in
+#include "impnone.cdk"
+*
+*author   V. Lee  Dec 2000 for LAM
+*
+*revision
+* v3_00 - Desgagne & Lee       - initial version
+*
+*implicits
+#include <model_macros_f.h>
+#include "glb_ld.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld,readlam
+
+      integer i,j,k,ierr
+      real mu(1),tr
+      pointer (p_mu,mu),(patr, tr(LDIST_SHAPE,*))
+      integer pnerr, pnlkey1(13), nvar, nstepno,key1(Tr3d_ntr),key1_, n
+*     ---------------------------------------------------------------
+*
+      if (Ptopo_myproc.eq.0) then
+          read (60) nstepno
+          print*, 'Nest_in: READ_FUTURE in future_bin.l ',nstepno
+      endif
+
+      if (Schm_hydro_L) then
+          call hpalloc (p_mu, G_ni*G_nj*G_nk,ierr,1)
+      endif
+      pnlkey1(1 )=VMM_KEY(nest_u)
+      pnlkey1(2 )=VMM_KEY(nest_v)
+      pnlkey1(3 )=VMM_KEY(nest_t)
+      pnlkey1(4 )=VMM_KEY(nest_psd)
+      pnlkey1(5 )=VMM_KEY(nest_pip)
+      pnlkey1(6 )=VMM_KEY(nest_fip)
+      pnlkey1(7 )=VMM_KEY(nest_w)
+      pnlkey1(8 )=VMM_KEY(nest_td)
+      pnlkey1(9 )=VMM_KEY(nest_fi)
+      pnlkey1(10)=VMM_KEY(nest_q)
+      pnlkey1(11)=VMM_KEY(nest_s)
+      pnlkey1(12)=VMM_KEY(nest_tp)
+      nvar = 12
+      if (.not.Schm_hydro_L) then
+         nvar = 13
+         pnlkey1(13)=VMM_KEY(nest_mu)
+      endif
+*
+      pnerr = vmmlod(pnlkey1,nvar)
+      pnerr = VMM_GET_VAR(nest_u)
+      pnerr = VMM_GET_VAR(nest_v)
+      pnerr = VMM_GET_VAR(nest_t)
+      pnerr = VMM_GET_VAR(nest_psd)
+      pnerr = VMM_GET_VAR(nest_pip)
+      pnerr = VMM_GET_VAR(nest_fip)
+      pnerr = VMM_GET_VAR(nest_w)
+      pnerr = VMM_GET_VAR(nest_td)
+      pnerr = VMM_GET_VAR(nest_fi)
+      pnerr = VMM_GET_VAR(nest_q)
+      pnerr = VMM_GET_VAR(nest_s)
+      pnerr = VMM_GET_VAR(nest_tp)
+      if (.not.Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(nest_mu)
+      endif
+*
+*
+*
+      call readlam(nest_u  ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_v  ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_t  ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_psd,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_pip,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_w  ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_td ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_fi ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_q  ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_tp ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_fip,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      call readlam(nest_s  ,LDIST_DIM,1,1,G_ni,1,G_nj,1,1,60)
+      
+      if (.not. Schm_hydro_L) then
+         call readlam(nest_mu,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+      else
+      if (Ptopo_myproc.eq.0) read (60) mu
+      call hpdeallc (p_mu,ierr,1)
+      endif
+*
+      pnerr = vmmuld(pnlkey1,nvar)
+      key1_ = VMM_KEY (nest_tr)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         pnerr = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            pnerr = vmmget(key1(n),patr,tr)
+            call readlam(tr  ,LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk,60)
+         enddo
+         pnerr = vmmuld(key1,Tr3d_ntr)
+      endif
+*
+*
+      return
+      end
+

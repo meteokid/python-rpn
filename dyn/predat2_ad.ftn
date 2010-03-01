@@ -1,0 +1,166 @@
+***s/r predat2_ad - ADJ of predat2_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine predat2_ad
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate
+* v3_00 - Laroche S.        - cleanup in uv2tdpsd_ad
+*
+*object
+*     ADJ of predat2_tl
+*     ---------------------------------
+*     REMARK:INPUT TRAJ: ut1m,vt1m,st1m
+*     ---------------------------------
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "init.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "vt1.cdk"
+#include "vt1m.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld,vmmuln
+      external vmmlod,vmmget,vmmuld,vmmuln
+*
+      integer pnerr, pnlkey1(8), pnlod, i, j, k
+*
+      real *8 ZERO_8 
+      parameter (ZERO_8 = 0.0)
+*     ______________________________________________________
+*
+      if(.not. Schm_hydro_L) call gefstop('predat2_ad')
+*     ______________________________________________________
+*
+      if (Lun_out.gt.0)  write (Lun_out,1000)
+*
+*     Allocate and load fields
+*     ~~~~~~~~~~~~~~~~~~~~~~~~
+      pnlkey1(1) = VMM_KEY(ut1)
+      pnlkey1(2) = VMM_KEY(vt1)
+      pnlkey1(3) = VMM_KEY(tdt1)
+      pnlkey1(4) = VMM_KEY(st1)
+      pnlkey1(5) = VMM_KEY(psdt1)
+      pnlod = 5 
+*
+      pnlkey1(pnlod+1) = VMM_KEY(ut1m)
+      pnlkey1(pnlod+2) = VMM_KEY(vt1m)
+      pnlkey1(pnlod+3) = VMM_KEY(st1m)
+      pnlod = pnlod+3
+*
+*     - - - - - - - - - - - - - - - - 
+      pnerr = vmmlod( pnlkey1, pnlod )
+*     - - - - - - - - - - - - - - - - 
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(tdt1)
+      pnerr = VMM_GET_VAR(st1)
+      pnerr = VMM_GET_VAR(psdt1)
+*
+      pnerr = VMM_GET_VAR(ut1m)
+      pnerr = VMM_GET_VAR(vt1m)
+      pnerr = VMM_GET_VAR(st1m)
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+*     Exchange the haloes for computing derivatives 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      call rpn_comm_xch_halo( ut1m,LDIST_DIM, l_niu, l_nj , l_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo( vt1m,LDIST_DIM, l_ni , l_njv, l_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+*     ----------------
+*     END TRAJECTORY
+*     ----------------
+*
+*     ADJ of
+******************************************************
+*  2. Compute total divergence and vertical velocity *
+******************************************************
+      call uv2tdpsd_ad( tdt1, psdt1, ut1,  vt1, st1,
+     $                              ut1m, vt1m, st1m,
+     $                  LDIST_DIM, l_nk )
+*
+*     ADJ of
+*     Exchange the haloes for computing derivatives 
+*
+      call rpn_comm_adj_halo( vt1, LDIST_DIM, l_ni , l_njv, l_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+
+*     Zero vt1 halo
+*     -------------
+      do k=1,G_nk
+         do j=l_miny,0
+         do i=l_minx,l_maxx
+            vt1(i,j,k) = ZERO_8 
+         end do
+         end do
+         do j=l_njv+1,l_maxy
+         do i=l_minx ,l_maxx
+            vt1(i,j,k) = ZERO_8 
+         end do
+         end do
+         do i=l_minx,0
+         do j=l_miny,l_maxy
+            vt1(i,j,k) = ZERO_8 
+         end do
+         end do
+         do i=l_ni+1,l_maxx
+         do j=l_miny,l_maxy
+            vt1(i,j,k) = ZERO_8 
+         end do
+         end do
+      end do
+*
+      call rpn_comm_adj_halo( ut1, LDIST_DIM, l_niu, l_nj , l_nk,
+     $                G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+*     Zero ut1 halo
+*     -------------
+      do k=1,G_nk
+         do j=l_miny,0
+         do i=l_minx,l_maxx
+            ut1(i,j,k) = ZERO_8 
+         end do
+         end do
+         do j=l_nj+1,l_maxy
+         do i=l_minx,l_maxx
+            ut1(i,j,k) = ZERO_8 
+         end do
+         end do
+         do i=l_minx,0
+         do j=l_miny,l_maxy
+            ut1(i,j,k) = ZERO_8 
+         end do
+         end do
+         do i=l_niu+1,l_maxx
+         do j=l_miny ,l_maxy
+            ut1(i,j,k) = ZERO_8 
+         end do
+         end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+1000  format(  'ADJ of PREPROCESSING DATA: PART 2 (S/R PREDAT2_AD)',
+     %       /,'==================================================',/)
+*
+      return
+      end

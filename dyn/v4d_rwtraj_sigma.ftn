@@ -1,0 +1,82 @@
+***s/r v4d_rwtraj_sigma - Read (Write) from (on) TRAJ WA file for sigma levels
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_rwtraj_sigma(F_sig, DIST_DIM, Nk)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk
+      real F_sig (DIST_SHAPE,Nk)
+*
+*author
+*     Stephane Laroche
+*
+*revision
+* v3_00 - Laroche S.        - initial MPI version (from v4d_rwtraj)
+*
+*object
+*
+*     TRAJ for invariant sigma field in simplified physics
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_sig        I/O                 Sigma field with HALO
+* DIST_DIM     I                   Horizontal dim. of F_sig
+* Nk           I                   Vertical   dim. of F_sig
+*	
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "init.cdk"
+#include "schm.cdk"
+#include "v4dg.cdk"
+#include "p4d_simp.cdk"
+*
+      integer iadd
+*
+      logical plpr_L
+*
+*     Work arrays 
+*     -----------
+      real work(l_ni*l_nj*l_nk)
+*
+*     ______________________________________________________
+*
+      if(.not. Schm_hydro_L) call gefstop('v4d_rwtraj_sigma')
+      if(.not. Schm_cptop_L) call gefstop('v4d_rwtraj_sigma')
+      if(Init_balgm_L      ) call gefstop('v4d_rwtraj_sigma')
+*     ______________________________________________________
+*
+*
+*     Flag to trace storing and retrieving of trajectory
+*     --------------------------------------------------
+      plpr_L = .false.
+      plpr_L = plpr_L.and.Lun_out.gt.0 
+*
+      iadd = 1
+
+      if(P4d_sigma_wrt) then
+
+*         -----------------
+*         Write SIGM Fields (note: this field is written only once)
+*         -----------------
+          call v4d_rwfld (F_sig,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                    V4dg_iunph,iadd,plpr_L,'SIGM',V4dg_ad_L,0,1)
+*
+          P4d_sigma_wrt  = .false.
+
+      else
+
+*         ----------------
+*         Read SIGM Fields 
+*         ----------------
+          call v4d_rwfld (F_sig,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                    V4dg_iunph,iadd,plpr_L,'SIGM',V4dg_ad_L,0,-1)
+*
+      endif
+*
+      return
+      end

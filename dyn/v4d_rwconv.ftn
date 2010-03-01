@@ -1,0 +1,158 @@
+***s/r v4d_rwconv - Read (Write) from (on) TRAJ Conversion WA file 
+*                   at each observation time (needed in v4d_varconv)
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_rwconv ()
+*
+#include "impnone.cdk"
+*
+*author
+*     Stephane Laroche
+*
+*revision
+* v3_00 - Laroche S.     - initial MPI version (from v4d_rwtraj)
+* v3_00 - N. Ek          - update for humidity
+* v3_00 - Tanguay M.     - parameters v4d_rwfld/initialize addcv in v4d_4dvar 
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*	
+*implicits
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+#include "vt1m.cdk"
+#include "tr3d.cdk"
+#include "v4dg.cdk"
+#include "lun.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnerr,pnlod,pnlkey1(3), key1_, key1(max(Tr3d_ntr,4)),
+     &   key1m_, key1m(max(Tr3d_ntr,4)),k
+*
+      real pr1,hut1,hut1m
+      pointer (pahu1,hut1(LDIST_SHAPE,*)),(pahu1m,hut1m(LDIST_SHAPE,*))
+*
+      logical plpr_L
+*
+*     Work arrays 
+*     -----------
+      real work(l_ni*l_nj*l_nk)
+*     ______________________________________________________
+*
+      if( Tr3d_ntr.gt.1    ) call gefstop('v4d_rwconv')
+*     ______________________________________________________
+*
+*     Flag to trace storing and retrieving of trajectory
+*     --------------------------------------------------
+      plpr_L = .false.
+      plpr_L = plpr_L.and.Lun_out.gt.0 
+*
+*     ----------------
+*     Read TRAJ Fields 
+*     ----------------
+      if(V4dg_rwcv.eq.0) then
+*
+         pnlkey1(1) = VMM_KEY(tpt1m)
+         pnlkey1(2) = VMM_KEY(st1m)
+         pnlod = 2  
+*        - - - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,pnlod)
+*        - - - - - - - - - - - - - - -
+         pnerr = VMM_GET_VAR(tpt1m)
+         pnerr = VMM_GET_VAR(st1m)
+*
+*        Load TRAJ humidity field assuming Tr3d_ntr=1
+*        --------------------------------------------
+         key1m_ = VMM_KEY (trt1m)
+         do k=1,Tr3d_ntr
+           key1m(k) = key1m_ + k
+         end do
+         if (Tr3d_ntr.gt.0) then
+           pnerr = vmmlod(key1m,Tr3d_ntr)
+           do k=1,Tr3d_ntr
+             pnerr = vmmget(key1m(k),pahu1m,hut1m)
+           end do
+         endif
+*
+*        TANGENT LINEAR MODEL
+*        --------------------
+         if(V4dg_tl_L) then
+*
+            call v4d_rwfld (tpt1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'TPT1M', V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (hut1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'HUT1M', V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (st1m,work,l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'ST1M',  V4dg_ad_L,0,-1)
+*
+         endif
+*
+*        ADJOINT MODEL
+*        -------------
+         if(V4dg_ad_L) then
+*
+            call v4d_rwfld (st1m,work,l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'ST1M',  V4dg_ad_L,
+     %                   l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (hut1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'HUT1M', V4dg_ad_L,
+     %                   l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (tpt1m,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'TPT1M', V4dg_ad_L,
+     %                   l_ni*l_nj,-1)
+
+         endif
+*
+*     -----------------
+*     Write TRAJ Fields 
+*     -----------------
+      elseif(V4dg_rwcv.eq.1) then
+*
+         pnlkey1(1) = VMM_KEY(tpt1)
+         pnlkey1(2) = VMM_KEY(st1)
+         pnlod = 2
+*        - - - - - - - - - - - - - - -
+         pnerr = vmmlod(pnlkey1,pnlod)
+*        - - - - - - - - - - - - - - -
+         pnerr = VMM_GET_VAR(tpt1)
+         pnerr = VMM_GET_VAR(st1)
+*
+*        Load humidity field assuming Tr3d_ntr=1
+*        ---------------------------------------
+         key1_ = VMM_KEY (trt1)
+         do k=1,Tr3d_ntr
+            key1(k) = key1_ + k
+         end do
+         if (Tr3d_ntr.gt.0) then
+            pnerr = vmmlod(key1,Tr3d_ntr)
+            do k=1,Tr3d_ntr
+               pnerr = vmmget(key1(k),pahu1,hut1)
+            end do
+         endif
+*
+            call v4d_rwfld (tpt1,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'TPT1', V4dg_ad_L,0,1)
+*
+            call v4d_rwfld (hut1,work,l_ni,l_nj,LDIST_DIM,l_nk,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'HUT1', V4dg_ad_L,0,1)
+*
+            call v4d_rwfld (st1,work,l_ni,l_nj,LDIST_DIM,1,
+     %                   V4dg_iuncv,V4dg_addcv,plpr_L,'ST1',  V4dg_ad_L,0,1)
+*
+      endif
+*
+      pnerr = vmmuld(-1,0)
+*
+      return
+      end

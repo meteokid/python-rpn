@@ -1,0 +1,83 @@
+***s/r writslabp - write output slab slice
+*
+#include <model_macros_f.h>
+*
+      subroutine writslabp(F_valout,F_siz,F_pndo,F_slabnum)
+*
+#include "impnone.cdk"
+*
+      integer F_pndo,F_siz,F_slabnum
+      real    F_valout(F_siz)
+*
+*author 
+*     J-P. Toviessi CMC - June 2000
+*
+*revision
+* v2_00 - Toviessi J. P.      - initial version
+* v2_31 - Lee V.              - writes any sliced slabs
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*   This subroutine writes out a sliced slab given the "F_slabnum" id
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_valout     I            array containing values to output
+* F_siz        I            size of the array F_valout
+* F_pndo       I            slice number of the memory of the bus
+* F_slabnum    I            slab number id
+*----------------------------------------------------------------
+*
+**
+#include "glb_ld.cdk"
+#include "dimout.cdk"
+#include "schm.cdk"
+#include "pslab.cdk"
+**
+      integer slabxtrf,mtout,gridset
+      integer ij,i,j,k,ii,i2,ier,mxout
+
+      real, dimension(:),allocatable :: mtval
+*
+*
+*
+*     ---------------------------------------------------------------
+*
+*     
+      mxout = nint(float(F_siz)/float(Pslab_ni))
+*
+      gridset = Pslab_grid(F_slabnum)
+
+      j = F_pndo
+
+      if (j.ge.Pslab_ymin(gridset).and.j.le.Pslab_ymax(gridset)
+     %                            .and. Pslab_niout(gridset).gt.0) then
+*
+         allocate (mtval(F_siz))
+         mtout = 0
+         i2 = 0
+         do k = 1, mxout
+           if (Pslab_mtas(k,F_slabnum).eq.1) then
+              mtout = mtout + 1
+              do i = Pslab_xmin(gridset),Pslab_xmax(gridset)
+                 ii = i + (k-1)*Pslab_ni
+                 i2 = i2 + 1
+                 mtval(i2) = F_valout(ii)*Pslab_mtmul(k,F_slabnum)
+     %                       + Pslab_mtadd(k,F_slabnum)
+              enddo
+           endif
+         enddo
+*
+         if (mtout.gt.0) then
+            ij = 1 + (j-Pslab_ymin(gridset))*Pslab_niout(gridset)
+            ier = slabxtrf(Pslab_fhand,F_slabnum,Pslab_niout(gridset),
+     %                     Pslab_xnio(ij,gridset), mtout, mtval)
+         endif
+         deallocate (mtval)
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

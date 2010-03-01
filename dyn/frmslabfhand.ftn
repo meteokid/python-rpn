@@ -1,0 +1,51 @@
+***s/r frmslabfhand - to close slab file handler
+*
+#include <model_macros_f.h>
+*
+      subroutine frmslabfhand(F_slab_fhand, F_slab_slab, F_hyout_L)
+*
+#include "impnone.cdk"
+*
+      integer F_slab_fhand,F_slab_slab
+      logical F_hyout_L
+*
+*author 
+*     Vivian Lee (for version v2_32)
+*
+*revision
+* v2_32 - Lee V.            - initial version
+*
+*object(frmslabfhand)
+*	to close slab file handler and write HY record if needed
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_slab_fhand  I           slab file handler
+* F_slab_slab   I           Number of slabs written to this slab file
+* F_hyout_L     I           TRUE to write out HY record
+*
+*implicits
+#include "slab.cdk"
+#include "pres.cdk"
+*
+*modules
+      integer  slabdsc,slabxtrf,slabend
+      external slabdsc,slabxtrf,slabend
+      integer pnerr
+**
+*     
+         if (F_slab_slab.gt.0) then
+             if (F_hyout_L) then
+                 F_slab_slab = F_slab_slab + 1
+                 pnerr = slabdsc(F_slab_fhand,F_slab_slab,' ',
+     %               0,0,0,0,1,1,0,0,0,0,'X',Slab_ig1,
+     %               Slab_ig2,Slab_ig3,Slab_ig4,1,0,'X','HY',
+     %               Slab_ip1,0,0,5,32,0,0)
+                 pnerr = slabxtrf(F_slab_fhand,F_slab_slab,1,1,1,Pres_ptop)
+             endif
+             pnerr = slabend (F_slab_fhand,Slab_send_S)
+         endif
+*
+      return
+      end

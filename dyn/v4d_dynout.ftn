@@ -1,0 +1,281 @@
+***s/r v4d_dynout - Prepare adjoint fields as seen by MODULOPT
+*                   and call DYNOUT2 
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_dynout
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+* v3_00 - Tanguay M.        - move true winds adjoint to blocuv 
+*                           - No preconditioning if V4dg_4dvar_L (done in 3D-Var)
+*
+*object
+*     see id section
+*
+*     NOTE: DYNOUT2 may need to fill the halos.
+*           It is why V4D_DYNOUT keeps track of the
+*           original fields
+*
+*arguments 
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "dcst.cdk"
+#include "p_geof.cdk" 
+#include "vt1.cdk" 
+#include "v4dc.cdk" 
+#include "dimout.cdk" 
+#include "tr3d.cdk" 
+#include "v4dg.cdk" 
+*
+*modules
+      integer  doout, vmmlod, vmmget, vmmuld
+      external doout, vmmlod, vmmget, vmmuld
+      integer pnerr, pnlkey1(4), key1(Tr3d_ntr),
+     $        key1_, err, i, j, k, m, n, wrt_out
+      real tr,z
+      pointer (patr, tr(LDIST_SHAPE,*))
+*
+      real*8 pdsc1_8
+*
+      integer dostep(MAXSET), dostep_max
+      logical done_once
+      data done_once /.false./
+      save done_once
+*
+      real wijk1 (LDIST_SHAPE,l_nk),wijk2 (LDIST_SHAPE,l_nk)
+      real wijk3 (LDIST_SHAPE,l_nk),wijktr(LDIST_SHAPE,l_nk,Tr3d_ntr)
+      real wij1  (LDIST_SHAPE)
+*
+*     Check if output is required
+*     ---------------------------
+      dostep_max = doout(dostep,1)
+*
+      if (dostep_max .le. 0) goto 999 
+*
+      if(Lun_out.gt.0) write (Lun_out,1000)
+*
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1) = VMM_KEY(ut1 )
+      pnlkey1(2) = VMM_KEY(vt1 )
+      pnlkey1(3) = VMM_KEY(tpt1)
+      pnlkey1(4) = VMM_KEY(st1)
+*
+*     - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,4)
+*     - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1 )
+      pnerr = VMM_GET_VAR(vt1 )
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(st1)
+*
+*     Keep original fields (PART1)
+*     ----------------------------
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         wijk1(i,j,k) = ut1 (i,j,k)
+         wijk2(i,j,k) = vt1 (i,j,k)
+         wijk3(i,j,k) = tpt1(i,j,k)
+      end do
+      end do
+      end do
+*
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+      wij1(i,j) = st1(i,j)
+      end do
+      end do
+*
+      if(.not.V4dg_4dvar_L) then
+*
+*     SIMULATE V4D_CAIN_AD (PART1)
+*     ----------------------------
+      m = 0  
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_niu
+         m = m+1
+         if(V4dc_scalp(m).eq.0.) then
+            z = 0.
+         else
+            z = 1./V4dc_scalp(m)
+         endif
+         ut1(i,j,k) = ut1(i,j,k)*z
+      end do
+      end do
+      end do
+*
+      do k=1,l_nk
+      do j=1,l_njv
+      do i=1,l_ni
+         m = m+1
+         if(V4dc_scalp(m).eq.0.) then
+            z = 0.
+         else
+            z = 1./V4dc_scalp(m)
+         endif
+         vt1(i,j,k) = vt1(i,j,k)*z
+      end do
+      end do
+      end do
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         if(V4dc_scalp(m).eq.0.) then
+            z = 0.
+         else
+            z = 1./V4dc_scalp(m)
+         endif
+         tpt1(i,j,k) = tpt1(i,j,k)*z
+      end do
+      end do
+      end do
+*
+      do j=1,l_nj
+      do i=1,l_ni
+         m = m+1
+         if(V4dc_scalp(m).eq.0.) then
+            z = 0.
+         else
+            z = 1./V4dc_scalp(m)
+         endif
+         st1(i,j) = st1(i,j)*z
+      end do
+      end do
+*
+      endif
+*
+      pnerr = vmmuld(-1,0)
+*
+      key1_ = VMM_KEY (trt1)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+*
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr,tr)
+*
+*           Keep original fields (PART2)
+*           ----------------------------
+            do k=1,l_nk
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               wijktr(i,j,k,n) = tr(i,j,k)
+            end do
+            end do
+            end do
+*
+            if(.not.V4dg_4dvar_L) then
+*
+*           SIMULATE V4D_CAIN_AD (PART2)
+*           ----------------------------
+            do k=1,l_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               m = m+1
+               if(V4dc_scalp(m).eq.0.) then
+                  z = 0.
+               else
+                  z = 1./V4dc_scalp(m)
+               endif
+               tr(i,j,k) = tr(i,j,k)*z
+            end do
+            end do
+            end do
+*
+            endif
+*
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+      endif
+*     ______________________________________________________
+*
+      if(m.ne.V4dc_ncv.and..not.V4dg_4dvar_L) call gefstop('v4d_dynout')
+*     ______________________________________________________
+*
+*     Perform output if required
+*     --------------------------
+      call dynout2 (.true.)
+*
+*     Reset original fields 
+*     ---------------------
+      pnlkey1(1) = VMM_KEY(ut1 )
+      pnlkey1(2) = VMM_KEY(vt1 )
+      pnlkey1(3) = VMM_KEY(tpt1)
+      pnlkey1(4) = VMM_KEY(st1)
+*
+*     - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,4)
+*     - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1 )
+      pnerr = VMM_GET_VAR(vt1 )
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(st1)
+*
+      do k=1,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         ut1 (i,j,k) = wijk1(i,j,k)
+         vt1 (i,j,k) = wijk2(i,j,k)
+         tpt1(i,j,k) = wijk3(i,j,k) 
+      end do
+      end do
+      end do
+*
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         st1(i,j) = wij1(i,j)
+      end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+      key1_ = VMM_KEY (trt1)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+      end do
+*
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr,tr)
+            do k=1,l_nk
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               tr(i,j,k) = wijktr(i,j,k,n)
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+      endif
+*
+*     __________________________________________________________________
+*
+      return
+*
+  999 continue
+*
+      if(Lun_out.gt.0) write (Lun_out,1001)
+*
+1000  format(' V4D_DYNOUT - PERFORMING REQUIRED OUTPUT')
+1001  format(' V4D_DYNOUT - NO OUTPUT REQUIRED')
+*
+      return
+      end

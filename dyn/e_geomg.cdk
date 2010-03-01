@@ -1,0 +1,81 @@
+#if defined (DOC)
+*
+***comdeck e_geomg.cdk
+*
+*	Contains geometry dependant variables distributed in the
+*	common cdgeomg and inititalised in "SETGEOM"
+*	This comdeck contains the grid information part
+*
+*NOTE:	The U, V and PHI grids mentionned in the documentation
+*	refer to the positioning of the variables in the Arakawa "C" grid
+*	having PHI and U at the poles
+*
+*	grid identification:	0: PHI grid
+*				1:   U grid
+*				2:   V grid
+*__________________________________________________________________________
+*                                         /                                \
+*                                        /               GRID (s)           \
+*  CONSTANT IN TIME                     /______________________________      |
+*                                      /                               \     |
+*                                     / NON-HYDROSTATIC MODEL ONLY (nh) \    |
+*____________________________________/_____________________________      |   |
+*         |                                             |          \     |   |
+*  NAME   |             DESCRIPTION                     |DIMENSIONS |    |   |
+*         |                                             |           |    |   |
+*---------|---------------------------------------------|-----------|----|---|
+* xdx     | longitude                                   | gni       |    | 0 |
+* xdy     | latitude                                    | gnj       |    | 0 |
+* xdxu    | longitude                                   | gni       |    | 1 |
+* xdyv    | latitude                                    | gnj-1     |    | 2 |
+*---------|---------------------------------------------|-----------|----|---|
+*              2 variables for diffusion operators
+* xdwxs   | weight for zonal averaging (x direction)    | 1      |    | 1 |
+* xdys    | extended staggered grid in y direction      | 1+3    |    | 2 |
+*---------|---------------------------------------------|-----------|----|---|
+* xdsx    | sine of longitude                           | gni       |    | 0 |
+* xdcx    | cosine of longitude                         | gni       |    | 0 |
+* xdsy    | sine of latitude                            | gnj       |    | 0 |
+* xdcy    | cosine of latitude                          | gnj       |    | 0 |
+* xdcy2   | cosine squared of latitude                  | gnj       |    | 0 |
+* xdsyv   | sine of latitude                            | gnj-1     |    | 2 |
+* xdcyv   | cosine of latitude                          | gnjv      |    | 2 |
+* xdcyv2  | cosine squared of latitude                  | gnj-1     |    | 2 |
+*---------|---------------------------------------------|-----------|----|---|
+* xdhx    | distance between grid points in x direction | gni       |    | 0 |
+* xdhy    | distance between grid points in y direction | gnj-1     |    | 0 |
+* xdhz    | distance between grid points in z direction | gnk-1     |    |   |
+* xdhxu   | distance btwn pts in x direction            | 0:gni-1   |    | 1 |
+* xdhyv   | distance btwn pts in y direction            | 0:gnj-1   |    | 2 |
+* xdhsy   | delta sin(latitude)                         | gnj-1     |    | 0 |
+* xdhsyv  | delta sin(latitude)                         | 0:gnj-1   |    | 2 |
+*-----------------------------------------------------------------------------
+*
+#endif
+*
+      real*8
+     %        xdx(1),  xdy(1),  xdxu(1), xdyv(1),
+     %        xdsx(pni), xdcx(pni), xdsy(pnj),
+     %        xdcy(1), xdcyv(pnjv),xdsyv(pnjv),
+     %        xdcy2(pnj),xdcyv2(pnjv),
+     %        xdhx(pni), xdhy(pnj), xdhz(pnk),
+     %        xdhxu(0:pniu), xdhyv(0:pnjv), xdhsy(pnj),
+     %        xdhsyv(0:pnjv), xdwxs(pni), xdys (-1:pnjv+2)
+*
+      pointer (p_xdx,   xdx),   (p_xdy,   xdy),   (p_xdxu, xdxu),
+     %        (p_xdyv,  xdyv),
+     %        (p_xdsx,  xdsx),  (p_xdcx,  xdcx),  (p_xdsy, xdsy),
+     %        (p_xdcy,  xdcy),  (p_xdcyv, xdcyv), (p_xdsyv,xdsyv),
+     %        (p_xdcy2, xdcy2), (p_xdcyv2,xdcyv2),
+     %        (p_xdhx,  xdhx),  (p_xdhy,  xdhy),  (p_xdhz, xdhz),
+     %        (p_xdhxu, xdhxu), (p_xdhyv, xdhyv), (p_xdhsy,xdhsy),
+     %        (p_xdhsyv,xdhsyv),(p_xdwxs, xdwxs), (p_xdys, xdys)
+
+      common / cdgeomg8 /
+     %                   p_xdx   , p_xdy  , p_xdxu  , p_xdyv  ,
+     %                   p_xdsx  , p_xdcx , p_xdsy  ,
+     %                   p_xdcy  , p_xdcyv, p_xdsyv ,
+     %                   p_xdcy2 , p_xdcyv2,
+     %                   p_xdhx  , p_xdhy , p_xdhz  ,
+     %                   p_xdhxu , p_xdhyv, p_xdhsy ,
+     %                   p_xdhsyv, p_xdwxs, p_xdys

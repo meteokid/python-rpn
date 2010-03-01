@@ -1,0 +1,447 @@
+***s/r v4d_testtlm - Verify the tangent linear model / direct model
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_testtlm 
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "v4dc.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "ptopo.cdk"
+*
+*     -----------------------------------------------------------------
+*     Parameters for list of stations and variables where TLM is tested
+*     -----------------------------------------------------------------
+      integer NSTAT,NVAR 
+      parameter ( NSTAT = 10 )
+      parameter ( NVAR  = 4  )
+*
+*     --------------------------------------
+*     Range of exponents used in TLM testing
+*     --------------------------------------
+      integer RANGMAX 
+      parameter ( RANGMAX = 5 )
+*
+      real tab(8,RANGMAX+1,NSTAT),pj
+      integer ni(NVAR),nj(NVAR),nk(NVAR),nprev(NVAR )
+      integer npos(NSTAT),ix(NSTAT),jx(NSTAT),kx(NSTAT),lx(NSTAT)
+*
+      integer n,nn,lambda,lima,limb,wrt_out,indic
+*
+      if (Lun_out.gt.0) then
+          write(Lun_out,fmt=
+     $    '('' TEST OF TANGENT LINEAR with CONF = '',I6)')V4dg_conf
+          write(Lun_out,fmt=
+     $    '('' --------------------------------------'')')
+      endif
+*
+*     ------------------------------------------------------
+*     Set list of stations and variables where TLM is tested
+*     ------------------------------------------------------
+      do nn = 1, NSTAT 
+*
+*        -------------------------------------
+*        LX=    Range of a predictive variable
+*        IX= I indice of a predictive variable
+*        JX= J indice of a predictive variable
+*        KX= K indice of a predictive variable
+*        -------------------------------------
+         lx(nn) = mod(nn,NVAR) + 1 
+         ix(nn) = (float(nn-1)/NSTAT)*l_ni  + 1 
+         jx(nn) = (float(nn-1)/NSTAT)*l_njv + 1 
+         kx(nn) = (float(nn-1)/NSTAT)*l_nk  + 1 
+*
+*        LX=4 (4S) is Surface Variable 
+*        -----------------------------
+         if(lx(nn).eq.4) kx(nn)=1
+*
+      end do
+*
+*        Dimensions of predictive variables  
+*        ----------------------------------
+*        (1=UU,2=VV,3=4T,4=4S)
+*        ----------------------------------
+         ni(1) = l_niu 
+         ni(2) = l_ni 
+         ni(3) = l_ni 
+         ni(4) = l_ni 
+*
+         nj(1) = l_nj 
+         nj(2) = l_njv 
+         nj(3) = l_nj 
+         nj(4) = l_nj 
+*
+         nk(1) = l_nk 
+         nk(2) = l_nk 
+         nk(3) = l_nk 
+         nk(4) = 1 
+*
+*        Block Position of previous predictive variable  
+*        ----------------------------------------------
+         nprev(1) = 0
+         do nn = 2,NVAR
+            nprev(nn) = nprev(nn-1) + ni(nn-1) * nj(nn-1) * nk(nn-1) 
+         end do
+*
+*     --------------------------------------
+*     Read given analysis of model variables
+*     --------------------------------------
+      if( Lun_out.gt.0 ) then
+         write(Lun_out, fmt='(//''-------------------'')')
+         write(Lun_out, fmt='(  ''READ GIVEN ANALYSIS'')')
+         write(Lun_out, fmt='(  ''-------------------'')')
+      endif
+*
+      call indata()
+*
+*     ------------------------------------------------------------
+*     Initialize starting control var. for REFERENCE (NLM) and TLM
+*     ------------------------------------------------------------
+*
+*        Initialize REFERENCE (NLM) initial control var. in V4dc_ycv
+*        from model var. 
+*        -----------------------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*        Initialize TLM initial control var. in V4dc_xcv
+*        -----------------------------------------------
+         do n = 1,V4dc_ncv
+            V4dc_xcv(n) = V4dc_ycv(n)
+         end do
+*
+      if( V4dg_conf.ne.510 ) then
+*     -------------------------------------------
+*     Keep NLM initial control var. in V4dc_wkmin 
+*     -------------------------------------------
+*
+         do n = 1,V4dc_ncv
+            V4dc_wkmin( 4*V4dc_ncv + n ) = V4dc_ycv(n)
+         end do
+*
+      else
+*     -----------------------------------------
+*     Keep NLM initial control var. in V4dc_gcv  
+*     -----------------------------------------
+*
+         do n = 1,V4dc_ncv
+            V4dc_gcv(n)= V4dc_ycv(n)
+         end do
+*
+      endif
+*
+*     -------------------------------
+*     Run REFERENCE (NLM) integration 
+*     -------------------------------
+         if( Lun_out.gt.0 .and. Ptopo_myproc.eq.0 ) then
+            write(Lun_out, fmt='(//''---------------------'')')
+            write(Lun_out, fmt='(  ''REFERENCE INTEGRATION'')')
+            write(Lun_out, fmt='(  ''---------------------'')')
+         endif
+*
+*        Set status of the integration (REFERENCE integration)
+*        -----------------------------------------------------
+         V4dg_status = 5
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_out = 1
+*
+*        Call 4D-Var simulator with NLM integration without gradient
+*        -----------------------------------------------------------
+         indic = 99
+         call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
+*
+*        Initialize V4dc_ycv from NLM final model var.
+*        ---------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*     -----------------------------------------
+*     Keep NLM final control var. in V4dc_wkmin 
+*     -----------------------------------------
+      if( V4dg_conf.ne.510 ) then
+*
+         do n = 1,V4dc_ncv
+            V4dc_wkmin(n) = V4dc_ycv(n)
+         end do
+*
+      endif
+*
+*     --------------------------------------------
+*     Keep TLM initial control var. in  V4dc_wkmin  
+*     --------------------------------------------
+      if( V4dg_conf.ne.510 ) then
+*
+         do n = 1,V4dc_ncv
+            V4dc_wkmin(V4dc_ncv+n) = V4dc_xcv(n)
+         end do
+*
+      else
+*
+         do n = 1,V4dc_ncv
+            V4dc_wkmin(n) = V4dc_xcv(n)
+         end do
+*
+      endif
+*
+*     ------------------------------
+*     Run TANGENT LINEAR integration 
+*     ------------------------------
+        if( Lun_out.gt.0 .and. Ptopo_myproc.eq.0 ) then
+           write(Lun_out, fmt='(//''--------------------------'')')
+           write(Lun_out, fmt='(  ''TANGENT LINEAR INTEGRATION'')')
+           write(Lun_out, fmt='(  ''--------------------------'')')
+        endif
+*
+*       Set status of the integration (TLM integration)
+*       -----------------------------------------------
+        V4dg_status = 10
+*
+*       Set over-riding switch for dynout and blocstat 
+*       ----------------------------------------------
+        V4dg_out = 1
+*
+*       Call 4D-Var simulator with TLM model without gradient
+*       -----------------------------------------------------
+        V4dg_tlm_L = .true.
+        indic      = 99
+        call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
+*
+*       Reset 4D-Var simulator with NLM model
+*       -------------------------------------
+        V4dg_tlm_L = .false.
+*
+*       Initialize V4dc_ycv from TLM final model variables
+*       --------------------------------------------------
+        call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*     -----------------------------------------
+*     Keep TLM final control var. in V4dc_wkmin 
+*     -----------------------------------------
+      if( V4dg_conf.ne.510 ) then
+*
+         do n = 1,V4dc_ncv
+            V4dc_wkmin( 2*V4dc_ncv+n ) = V4dc_ycv(n)
+         end do
+*
+      endif
+*
+*     Deactivate writing on TRAJECTORY
+*     --------------------------------
+      V4dg_oktr_L = .false. 
+*
+      if( V4dg_conf.eq.510 ) then
+*     --------------------------------------------
+*     Do only CURRENT (NLM) integration and RETURN 
+*     --------------------------------------------
+*
+         if( Lun_out.gt.0 .and. Ptopo_myproc.eq.0 ) then
+            write(Lun_out, fmt='(//''-------------------'')')
+            write(Lun_out, fmt='(  ''CURRENT INTEGRATION'')')
+            write(Lun_out, fmt='(  ''-------------------'')')
+         endif
+*
+*        Set CURRENT initial control var. as REFERENCE + TLM  
+*        ---------------------------------------------------
+         do n = 1,V4dc_ncv
+            V4dc_ycv(n) = V4dc_gcv(n) + V4dc_wkmin(n)
+         end do
+*
+*        Set status of the integration (CURRENT integration)
+*        ---------------------------------------------------
+         V4dg_status = 0
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_out = 1
+*
+*        Call 4D-Var simulator with NLM integration without gradient
+*        -----------------------------------------------------------
+         indic = 99
+         call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
+*
+      else
+*     ------------------------------------------------
+*     Ratio TLM test as in Thepaut and Courtier (1991)
+*     ------------------------------------------------
+*
+         if( Lun_out.gt.0 .and. Ptopo_myproc.eq.0 ) then
+            write(Lun_out, fmt='(/''-------------------------------------'')')
+            write(Lun_out, fmt='( ''Ratio TLM test (THEPAUT AND COURTIER)'')')
+            write(Lun_out, fmt='( ''-------------------------------------''/)')
+         endif
+*
+         lima =  0
+         limb =  RANGMAX 
+*
+*        Loop over lambda ( pert. = 10**(-lambda) * TLM pert. )
+*        ------------------------------------------------------
+         do lambda = limb,lima,-1
+*
+         if( Lun_out.gt.0 ) then
+            write(Lun_out, fmt='(/''--------------------------------------'')')
+            write(Lun_out, fmt='( ''CURRENT INTEGRATION FOR LAMBDA ='',I6)') lambda 
+            write(Lun_out, fmt='( ''--------------------------------------''/)')
+         endif
+*
+*        Set CURRENT initial control var. as REFERENCE + 10**(-lambda)*TLM  
+*        -----------------------------------------------------------------
+         do n = 1,V4dc_ncv
+            V4dc_ycv(n) = V4dc_wkmin( 4*V4dc_ncv+n) +
+     %                    V4dc_wkmin(   V4dc_ncv+n) * 10.**(-lambda)
+         end do
+*
+*        -----------------------------------------------
+*        Keep CURRENT initial control var. in V4dc_wkmin 
+*        -----------------------------------------------
+         do n = 1,V4dc_ncv
+            V4dc_wkmin(3*V4dc_ncv+n) = V4dc_ycv(n)
+         end do
+*
+*        Set status of the integration (CURRENT integration)
+*        ---------------------------------------------------
+         V4dg_status = 0
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_out = 0
+         if(lambda.eq.lima) V4dg_out = 1
+*
+*        Cancel write(Lun_out)
+*        ---------------------
+         wrt_out = Lun_out
+         if(lambda.ne.lima) Lun_out = -99
+*
+*        Call 4D-Var simulator with NLM integration without gradient
+*        -----------------------------------------------------------
+         indic = 99
+         call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
+*
+*        Reset write(Lun_out)
+*        --------------------
+         Lun_out = wrt_out
+*
+*        Initialize V4dc_ycv from NLM final model var.
+*        ---------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*        ----------------------------------------------
+*        Keep CURRENT final control var. in  V4dc_wkmin
+*        ----------------------------------------------
+         do n = 1,V4dc_ncv
+            V4dc_wkmin(5*V4dc_ncv + n) = V4dc_ycv(n)
+         end do
+*
+*        -------------------------------------------------------------
+*        Computation of CURRENT (NLM) - REFERENCE (NLM) divided by TLM 
+*        at final state for prescribed locations
+*        -------------------------------------------------------------
+         do nn = 1, NSTAT
+*
+*           Set location according to station and variable
+*           ----------------------------------------------
+            npos(nn)= nprev(lx(nn)) + (kx(nn)-1) * nj(lx(nn)) * ni(lx(nn)) +
+     %                                (jx(nn)-1) * ni(lx(nn)) + ix(nn)
+*
+            n = npos(nn)
+*
+*           Do computations 
+*           ---------------
+            V4dc_wkmin(6*V4dc_ncv+n) = V4dc_wkmin(5*V4dc_ncv+n)-V4dc_wkmin(n)
+*
+            if(V4dc_wkmin(2*V4dc_ncv+n).ne.0.) then
+            V4dc_wkmin(7*V4dc_ncv+n) = V4dc_wkmin(6*V4dc_ncv+n)/ 
+     %                                (V4dc_wkmin(2*V4dc_ncv+n)*10.**(-lambda))
+            else
+            V4dc_wkmin(7*V4dc_ncv+n) =-5555555
+            endif
+*
+*           Store results
+*           -------------
+            tab(1,lambda+1,nn) = V4dc_wkmin(7*V4dc_ncv+n)
+            tab(2,lambda+1,nn) = V4dc_wkmin(6*V4dc_ncv+n)
+            tab(3,lambda+1,nn) = V4dc_wkmin(2*V4dc_ncv+n)
+            tab(4,lambda+1,nn) = V4dc_wkmin(5*V4dc_ncv+n)
+            tab(5,lambda+1,nn) = V4dc_wkmin(3*V4dc_ncv+n)
+            tab(6,lambda+1,nn) = V4dc_wkmin(0*V4dc_ncv+n)
+            tab(7,lambda+1,nn) = V4dc_wkmin(4*V4dc_ncv+n)
+            tab(8,lambda+1,nn) = V4dc_wkmin(1*V4dc_ncv+n)
+*
+*        ENDDO NN
+*        --------
+         end do
+*
+*        ENDDO LAMBDA
+*        ------------
+         end do
+*
+         do nn = 1, NSTAT 
+*
+*           Recall location according to station and variable
+*           -------------------------------------------------
+            n = npos(nn)
+*
+*           Print results 
+*           -------------
+            if( Lun_out.gt.0  ) then
+*
+               write(Lun_out,3000) n,Ptopo_myproc
+               if(lx(nn).eq.1) write(Lun_out,3001) ix(nn),jx(nn),kx(nn)
+               if(lx(nn).eq.2) write(Lun_out,3002) ix(nn),jx(nn),kx(nn)
+               if(lx(nn).eq.3) write(Lun_out,3003) ix(nn),jx(nn),kx(nn)
+               if(lx(nn).eq.4) write(Lun_out,3004) ix(nn),jx(nn)
+*
+               do lambda = lima,limb
+                  write(Lun_out,4000) -lambda,(tab(indic,lambda+1,nn),indic=1,8)
+               end do
+*
+            endif
+*
+*        ENDDO NN
+*        --------
+         end do
+*
+      endif
+*
+ 3000 format(
+     +//,'TEST OF THE TANGENT LINEAR AT POINT = ',I6,' PROCESS = ',I4,
+     + /,'==========================================================')
+ 3001 format(
+     +'U WIND AT (I,J,K) = (',I5,',',I5,',',I5,')',
+     + /,'==========================================================',
+     +//)
+ 3002 format(
+     +'V WIND AT (I,J,K) = (',I5,',',I5,',',I5,')',
+     + /,'==========================================================',
+     +//)
+ 3003 format(
+     +'T PRIME AT (I,J,K) = (',I5,',',I5,',',I5,')'
+     + /,'==========================================================',
+     +//)
+ 3004 format(
+     +'S AT (I,J) = (',I5,',',I5,')',
+     + /,'==========================================================',
+     +//)
+*
+ 4000 format(
+     +'LAMBDA =',I3,' RATIO = ',E14.8,2X, 7(e11.5,1x))
+*
+      return
+      end

@@ -1,0 +1,26 @@
+#if defined (DOC)
+*
+*revisions
+* v2_30 - Desgagne M.            - initial version
+*
+***comdeck p_rad.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH RADIATION                                 |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* P_out_moyhr        | Time lenght (in hours) for time average of a set|
+*                    | of specific physics variables for output...     |
+*----------------------------------------------------------------------
+*
+#endif
+*
+      integer P_out_moyhr
+*
+      MARK_COMMON_BEG (pout_i)
+      common /pout_i/ P_out_moyhr
+      MARK_COMMON_END (pout_i)
+*

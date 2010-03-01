@@ -1,0 +1,96 @@
+***s/r c_bloccplg To obtain the dynamical fields used for the coupling
+*
+#include <model_macros_f.h>
+*
+      subroutine c_bloccplg(F_fields,CNI,CNJ,FLDNUM)
+*
+#include "impnone.cdk"
+*
+*
+      integer CNI,CNJ,FLDNUM
+      real F_fields(CNI,CNJ,FLDNUM)
+*
+*author 
+*     Pierre Pellerin -AEPRI/RPN - April 2000
+*      
+*revision
+* v2_00 - Pellerin P.       - initial MPI version
+* 
+*object
+*     Based on blocstat
+*     To obtain the dynamical fields used for the coupling
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_fields     O    - dynamical fields to obtain
+*
+*
+*implicits
+#include "glb_ld.cdk"
+#include "step.cdk"
+#include "vt1.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+
+      integer i,j,k,i0,in,j0,jn,inn
+      integer pnerr, pnlkey1(7)
+*
+*     ---------------------------------------------------------------
+*
+*
+      print*, 'to be evaluated - abort in c_bloccplg'
+      stop
+      pnlkey1(1)  = VMM_KEY(ut1)
+      pnlkey1(2)  = VMM_KEY(vt1)
+      pnlkey1(3)  = VMM_KEY(tt1)
+ccc MD      pnlkey1(4)  = VMM_KEY(hut1)
+      pnlkey1(5)  = VMM_KEY(fit1)
+      pnlkey1(6)  = VMM_KEY(tdt1)
+      pnlkey1(7)  = VMM_KEY(psdt1)
+*
+      pnerr = vmmlod(pnlkey1,7)
+*
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(tt1)
+ccc MD      pnerr = VMM_GET_VAR(hut1)
+      pnerr = VMM_GET_VAR(fit1)
+      pnerr = VMM_GET_VAR(tdt1)
+      pnerr = VMM_GET_VAR(psdt1)
+*
+      if (Lun_out.gt.0) then
+         write(Lun_out,*) '################### BLOCCPLG ',Lctl_step,
+     $        ' ###################'
+      endif
+*
+      i0=1
+      in=G_ni
+      j0= 1
+      jn = G_nj
+      inn = 0
+      if (G_lam) then
+           inn=1
+      endif
+*
+*     Add a call glbcolc (F_fields(1,1,X),G_ni,G_nj,hut1,LDIST_DIM,1)
+*
+      call glbcolc (F_fields(1,1,1),G_ni,G_nj,tt1,LDIST_DIM,1)
+ccc MD      call glbcolc (F_fields(1,1,2),G_ni,G_nj,hut1,LDIST_DIM,1)
+      call glbcolc (F_fields(1,1,3),G_ni,G_nj,ut1,LDIST_DIM,1)
+*
+      if (Lun_out.gt.0) then
+         write(Lun_out,*) '################### BLOCCPLG ...done'
+      endif
+*
+      pnerr = vmmuld(pnlkey1,7)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

@@ -1,0 +1,112 @@
+***s/r vspng_abc -- Prepares matrices aix,bix,cix,dix,aiy,biy,ciy
+*
+#include <model_macros_f.h>
+*
+      subroutine vspng_abc(F_aix_8, F_bix_8, F_cix_8, F_dix_8 ,
+     $                     F_aiy_8, F_biy_8, F_ciy_8, F_coef_8,
+     $                     F_cy2_8, F_xp0_8, F_xp2_8, F_yp0_8 ,
+     $                     F_yp2_8, Gni, Gnj,F_gnjv)
+*
+#include "impnone.cdk"
+*
+      integer Gni,Gnj,F_gnjv
+      real*8 F_aix_8(*), F_bix_8(*), F_cix_8(*), F_dix_8(*), 
+     $       F_aiy_8(*), F_biy_8(*), F_ciy_8(*), F_coef_8,
+     $       F_cy2_8(*), F_xp0_8(Gni,3), F_xp2_8(Gni,3), 
+     $                   F_yp0_8(Gnj,3), F_yp2_8(Gnj,3)
+*
+*author    
+*     Michel Desgagne  October 2000
+*
+*revision
+* v2_11 - Desgagne M.       - initial version 
+*
+*object
+*       
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_aix_8
+*----------------------------------------------------------------
+* 
+*implicit
+#include "glb_ld.cdk"
+#include "vspng.cdk"
+#include "trp.cdk"
+*     
+      integer i, j, k, ii, jj
+      real*8 ax_8(Vspng_nk,trp_12emax,G_ni), 
+     $       bx_8(Vspng_nk,trp_12emax,G_ni), 
+     $       cx_8(Vspng_nk,trp_12emax,G_ni), 
+     $       ay_8(Vspng_nk,trp_22emax,G_nj),
+     $       by_8(Vspng_nk,trp_22emax,G_nj), 
+     $       cy_8(Vspng_nk,trp_22emax,G_nj),diy_8
+      real*8 ZERO_8,ONE_8,HALF_8
+      parameter ( ZERO_8 = 0.0 , ONE_8 = 1.0 , HALF_8 = 0.5 )
+**
+*     ---------------------------------------------------------------
+*
+*     Calcul le long de X
+*
+      do k = 1, Vspng_nk
+         do j = 1, trp_12en
+            jj = Trp_12en0 + j - 1
+            do i = 1, G_ni
+            ax_8(k,j,i) = F_xp0_8(i,1) - F_xp2_8(i,1)
+     $                   *F_coef_8*Vspng_mf(k) / cos(F_cy2_8(jj))**2
+            bx_8(k,j,i) = F_xp0_8(i,2) - F_xp2_8(i,2)
+     $                   *F_coef_8*Vspng_mf(k) / cos(F_cy2_8(jj))**2
+            cx_8(k,j,i) = F_xp0_8(i,3) - F_xp2_8(i,3)
+     $                   *F_coef_8*Vspng_mf(k) / cos(F_cy2_8(jj))**2
+            enddo
+         enddo
+      enddo
+*
+      do k = 1, Vspng_nk
+      do j = trp_12en+1,trp_12emax
+      do i = 1, G_ni
+         bx_8(k,j,i)=  ONE_8
+         cx_8(k,j,i)= ZERO_8
+         ax_8(k,j,i)= ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      call set_trig21 (F_aix_8,F_bix_8,F_cix_8,F_dix_8, ax_8,bx_8,cx_8, 
+     $                 Vspng_nk*trp_12emax, 1, G_ni, 
+     $                 Vspng_nk*trp_12en, .true.)
+*
+*     Calcul le long de Y
+*
+      do k= 1, Vspng_nk
+         do i= 1, trp_22en
+         do j= 1, F_gnjv
+            ay_8(k,i,j) =  F_yp0_8(j,1) - F_yp2_8(j,1) 
+     $                   * F_coef_8 * Vspng_mf(k)
+            by_8(k,i,j) =  F_yp0_8(j,2) - F_yp2_8(j,2) 
+     $                   * F_coef_8 * Vspng_mf(k)
+            cy_8(k,i,j) =  F_yp0_8(j,3) - F_yp2_8(j,3) 
+     $                   * F_coef_8 * Vspng_mf(k)
+         enddo
+         ay_8(k,i,1) = ZERO_8
+         enddo
+      enddo
+*
+      do k = 1, Vspng_nk
+      do i = trp_22en+1,trp_22emax
+      do j = 1, F_gnjv
+         by_8(k,i,j)=  ONE_8
+         cy_8(k,i,j)= ZERO_8
+         ay_8(k,i,j)= ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      call set_trig21 (F_aiy_8,F_biy_8,F_ciy_8,diy_8, ay_8,by_8,cy_8, 
+     $                 Vspng_nk*trp_22emax, 1, F_gnjv, 
+     $                 Vspng_nk*trp_22en, .false.)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

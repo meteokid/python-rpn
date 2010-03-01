@@ -1,0 +1,46 @@
+***S/R E_ARRET   To prematurely abort program GEMNTR and close files
+*
+      SUBROUTINE E_ARRET( FTNAME )
+#include "impnone.cdk"
+*
+      character FTNAME(8)
+*
+*
+*AUTEUR YVON R BOURASSA JAN 1987 (arrete)
+*
+*revision
+* v1_97 - vivian lee             - changed argument STATUS to FTNAME so 
+* v1_97                            that it prints where it aborts
+* v1_97                            ELIMINATED efrabrt,stopgdntr in GEFNTR
+*
+*object
+*       see above ID
+*
+*arguments
+* FTNAME   name of routine that is aborting program
+*
+*implicits
+#include "e_files.cdk"
+
+*
+*modules
+      INTEGER  exfin, fstfrm, fstvoi
+      EXTERNAL exfin, fstfrm, fstvoi
+
+      integer i
+
+      write(stdout,*)' *****************************************'
+      write(stdout,*)' *****************************************'
+      write(stdout,*)' **    ABORT       ABORT       ABORT    **'
+      write(stdout,*)' **           ',FTNAME,     '           **'
+      write(stdout,*)' *****************************************'
+      write(stdout,*)' *****************************************'
+      call e_wlogntr('STOP','XX')
+
+      I = fstfrm( ANAL )
+      I = fstfrm( CLIMAT )
+
+      call abort
+      I = EXFIN('GEMNTR', 'ERREUR', 'NON')
+      STOP
+      END

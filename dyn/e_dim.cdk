@@ -1,0 +1,21 @@
+#if defined (DOC)
+*
+***comdeck e_dim.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  DIMENSIONS determined in e_pretopo for dynamic allocation           |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* gnis               | field dimension in x-direction >= pni+1         |
+* gnjs               | field dimension in y-direction >= pnj+1         |
+* gnks               | field dimension in z-direction >= pnk           |
+* gnijs              | max(pni,pnj) + 2                                |
+* gnijks             | max(pni,pnj,pnk) + 2                            |
+*----------------------------------------------------------------------
+*
+#endif
+      integer gnis, gnjs, gnks, gnijs,gnijks
+      common / cddim / gnis, gnjs, gnks, gnijs, gnijks

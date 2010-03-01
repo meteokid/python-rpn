@@ -1,0 +1,35 @@
+***s/p - readlam
+#include <model_macros_f.h>
+*
+      subroutine readlam(f,DIST_DIM,nk,i0,in,j0,jn,k0,kn,unit)
+#include "impnone.cdk"
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+      integer DIST_DIM,nk,unit
+      real f(DIST_SHAPE,nk)
+      integer i,j,k,i0,in,j0,jn,k0,kn,err
+      real flam
+      pointer (p_flam,flam(in-i0+1,jn-j0+1,kn-k0+1))
+      real wk1
+      pointer (p_wk1, wk1(G_ni,G_nj,*))
+
+      if (Ptopo_myproc.eq.0) then
+         call hpalloc (p_wk1, G_ni*G_nj*nk, err, 1)
+         call hpalloc (p_flam,(in-i0+1)*(jn-j0+1)*(kn-k0+1),err,1)
+         read (unit) flam
+         do k=k0,kn
+         do j=j0,jn
+         do i=i0,in
+            wk1(i,j,k) = flam(i-i0+1,j-j0+1,k-k0+1)
+         enddo
+         enddo
+         enddo
+      endif
+      call glbdist(wk1,G_ni,G_nj,f,LDIST_DIM,nk,G_halox,G_haloy)
+      if (Ptopo_myproc.eq.0) then
+      call hpdeallc (p_wk1,err,1)
+      call hpdeallc (p_flam,err,1)
+      endif
+
+      return
+      end

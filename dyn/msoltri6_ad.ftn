@@ -1,0 +1,59 @@
+***s/r msoltri6_ad - ADJ of msoltri6 
+*
+      subroutine msoltri6_ad ( F_r, F_rhs,
+     %                         F_bi_8, F_ci_8, F_ai_8,
+     %                         NIDIST, NJDIST, NI, NJ )
+*
+#include "impnone.cdk"
+*
+      integer NIDIST, NJDIST, NI, NJ
+      real    F_r(NIDIST,NI), F_rhs(NIDIST,NI)
+      real*8    F_bi_8(NI), F_ci_8(NI), F_ai_8(NI)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*     ---------------------------------------------------
+*     REMARK: F_r and F_rhs MUST occupy the same location
+*     ---------------------------------------------------
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_r          IO   - solution
+* F_rhs        IO   - right-hand-side
+* F_bi_8       I    - bi of set_trig21
+* F_ci_8       I    - ci of set_trig21
+* F_ai_8       I    - ai of set_trig21
+* NIDIST       I    - dist btwn element of two consecutive indx i
+* NJDIST       I    - dist btwn element of two consecutive indx j
+* NI           I    - x-dimension
+* NJ           I    - y-dimension
+*
+      integer i,l
+*
+      do i=1,NI-1
+      do l=1,NJ*NJDIST,NJDIST
+      F_r(l,i+1) = F_r(l,i+1) - F_ci_8(i) * F_r(l,i)
+      enddo
+      enddo
+*
+      do i=NI,2,-1
+      do l=1,NJ*NJDIST,NJDIST
+      F_r(l,i-1) = F_r(l,i-1) - F_ai_8(i) * F_r(l,i) 
+      enddo
+      enddo
+*
+      do i=NI,1,-1
+      do l=1,NJ*NJDIST,NJDIST
+      F_rhs(l,i) = F_r(l,i) * F_bi_8(i) 
+      enddo
+      enddo
+*
+      return
+      end

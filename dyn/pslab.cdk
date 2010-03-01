@@ -1,0 +1,64 @@
+#if defined (DOC)
+*
+***comdeck pslab.cdk
+*
+*revision
+* v2_10 - Lee V.                 - modified so that some variables can
+* v2_10                            be dynamically allocated to the #
+* v2_10                            of physics variables found in buses
+* v2_21 - J. P. Toviessi         - change slab to pslab for physics slabs
+* v2_30 - V. Lee                 - moved the common variables to local
+* v2_30                            variables that need to be dynamically 
+* v2_30                            allocated
+* v3_00 - V. Lee                 - special output size for physics
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH SLAB FILES (Output for physics variables) |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* PSLAB_SLAB_MAX     | maximum number of physics slabs to output       |
+* Pslab_mxout        | maximum number of elements  in one physics bus  |
+* Pslab_slab         | number of slabs to generate                     |
+* Pslab_fhand        | slab file handler                               |
+* Pslab_bus_s        | "bus" indicator (P-perm,V-vol,D-dyn)            |
+* Pslab_grid         | grid set # to be used for given slab (set_grid) |
+* Pslab_mtas         | output indicators for each record               |
+* Pslab_mtmul        | value to multiply to data field                 |
+* Pslab_mtadd        | value to add to data field (see SLAB DOCUMENTATI|
+* Pslab_x0           | x origin of output grid                         |
+* Pslab_y0           | y origin of output grid                         |
+* Pslab_x1           | x at outermost corner of output grid            |
+* Pslab_y1           | y at outermost corner of output grid            |
+* Pslab_ni           | l_ni                                            |
+*----------------------------------------------------------------------
+*
+#endif
+*
+      integer PSLAB_SLAB_MAX
+      PARAMETER (PSLAB_SLAB_MAX=60)
+      integer Pslab_slab,Pslab_fhand,Pslab_mxout,Pslab_pntop
+      character*1 Pslab_bus_s(PSLAB_SLAB_MAX)
+      MARK_COMMON_BEG(pslabi)
+      common / pslabi / Pslab_slab,Pslab_fhand,Pslab_mxout,Pslab_pntop
+      MARK_COMMON_END(pslabi)
+      MARK_COMMON_BEG(pslabs)
+      common / pslabs / Pslab_bus_s
+      MARK_COMMON_END(pslabs)
+*
+      integer Pslab_xmin(MAXGRID),Pslab_xmax(MAXGRID),
+     %        Pslab_ymin(MAXGRID),Pslab_ymax(MAXGRID),
+     %        Pslab_niout(MAXGRID),Pslab_njout(MAXGRID),
+     %        Pslab_x0(MAXGRID),Pslab_x1(MAXGRID),
+     %        Pslab_y0(MAXGRID),Pslab_y1(MAXGRID),Pslab_ig1(MAXGRID),Pslab_ni
+      common /pslabii/Pslab_xmin,Pslab_xmax,
+     %                Pslab_ymin,Pslab_ymax,
+     %                Pslab_niout,Pslab_njout,
+     %                Pslab_x0,Pslab_x1,Pslab_y0,Pslab_y1,Pslab_ig1,Pslab_ni
+      DCL_DYNVAR(Pslab, xnio,  integer   ,(LDIST_SIZ,MAXGRID))
+      DCL_DYNVAR(Pslab, grid , integer  ,           ( PSLAB_SLAB_MAX))
+      DCL_DYNVAR(Pslab, mtas , integer  ,(Pslab_mxout,PSLAB_SLAB_MAX))
+      DCL_DYNVAR(Pslab, mtmul, real     ,(Pslab_mxout,PSLAB_SLAB_MAX))
+      DCL_DYNVAR(Pslab, mtadd, real     ,(Pslab_mxout,PSLAB_SLAB_MAX))
+

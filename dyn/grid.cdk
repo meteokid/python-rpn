@@ -1,0 +1,70 @@
+#if defined (DOC)
+*
+***comdeck grid.cdk
+*
+*revision
+* v2_30 - V. Lee                 - moved definition of MAXGRID to dimout.cdk
+* v2_30                          - Added Grid_phi_ig2
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES FOR DEFINITION OF THE OUTPUT GRIDS (set_grid)             |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Grid_sets          | total number of sets of defined output grids    |
+*  The following variables carry values for each defined output grid   |
+* Grid_id            | Grid_id(i) are the id of each defined grid      |
+* Grid_niout         | X dimension                                     |
+* Grid_njout         | Y dimension                                     |
+* Grid_typ_s         | grid type for the data records                  |
+* Grid_gxtyp_s       | grid type for the positional record             |
+* Grid_ig1           | ig1 descriptor (or ip1 of positional record)    |
+* Grid_ig2           | ig2 descriptor (or ip2 of positional record)    |
+* Grid_ig3           | ig3 descriptor (or ip3 of positional record)    |
+* Grid_ig4           | ig4 descriptor                                  |
+* Grid_phi_ig2       | ig2 descriptor for the PHI output grid          |
+* Grid_ixg1          | ig1 descriptor for positional record            |
+* Grid_ixg2          | ig2 descriptor for positional record            |
+* Grid_ixg3          | ig3 descriptor for positional record            |
+* Grid_ixg4          | ig4 descriptor for positional record            |
+* Grid_nxgrid        | dimension of ">>" positional record             |
+* Grid_nygrid        | dimension of "^^" positional record             |
+* Grid_x0            | x origin of output grid                         |
+* Grid_y0            | y origin of output grid                         |
+* Grid_x1            | x at outermost corner of output grid            |
+* Grid_y1            | y at outermost corner of output grid            |
+*----------------------------------------------------------------------
+* 
+*
+#endif
+
+      character*1 Grid_typ_s(MAXGRID), Grid_gxtyp_s(MAXGRID)
+      integer Grid_ig1(MAXGRID),Grid_ig2(MAXGRID),Grid_phi_ig2(MAXGRID)
+      integer Grid_ig3(MAXGRID),Grid_ig4(MAXGRID)
+      integer Grid_ixg1(MAXGRID),Grid_ixg2(MAXGRID)
+      integer Grid_ixg3(MAXGRID),Grid_ixg4(MAXGRID)
+      integer Grid_nxgrid(MAXGRID),Grid_nygrid(MAXGRID),Grid_id(MAXGRID)
+      integer Grid_sets,Grid_niout(MAXGRID),Grid_njout(MAXGRID)
+      integer Grid_x0(MAXGRID),Grid_x1(MAXGRID)
+      integer Grid_y0(MAXGRID),Grid_y1(MAXGRID)
+      real    Grid_long(*), Grid_latg(*)
+      pointer (Grid_long_, Grid_long), (Grid_latg_,Grid_latg)
+
+      MARK_COMMON_BEG (Grid_i)
+      COMMON /Grid_i/ Grid_ig1,Grid_ig2,Grid_ig3,Grid_ig4,
+     $                Grid_ixg1,Grid_ixg2,Grid_ixg3,Grid_ixg4,
+     $                Grid_nxgrid,Grid_nygrid,Grid_phi_ig2,
+     $                Grid_sets,Grid_niout,Grid_njout,
+     $                Grid_x0,Grid_x1,Grid_y0,Grid_y1,Grid_id
+      MARK_COMMON_END (Grid_i)
+
+      MARK_COMMON_BEG (Grid_c)
+      COMMON /Grid_c/ Grid_typ_s,Grid_gxtyp_s
+      MARK_COMMON_END (Grid_c)
+
+      MARK_COMMON_BEG (Grid_p)
+      COMMON /Grid_p/ Grid_long_,Grid_latg_
+      MARK_COMMON_END (Grid_p)
+
+

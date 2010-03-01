@@ -1,0 +1,110 @@
+***s/r vterp2
+      subroutine vterp2 ( F_fx, F_gx, F_x, F_f, F_g, F_y, np,
+     $                               ni, nks, nkd, F_vlapse)
+      implicit none
+      integer np, nks, nkd, ni
+      real    F_fx(np,nkd), F_gx(np,nkd), F_x(np,nkd), F_f(np,nks), 
+     $        F_g (np,nks), F_y (np,nks), F_vlapse(np)
+*
+*AUTHOR
+*     M. Valin DRPN SEPT 2000 vectorized version of older code TERP2
+*
+*REVISION
+* v2_30   Valin M.            - Initial version
+*
+*OBJECT
+*        Given a function F and its first derivative G at a set of NN
+*        unevenly spaced points Y, this routine calculates FX and GX,
+*        the values of F and G at the specified point X.
+*
+*ARGUMENTS
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_fx          O            value of F at the specified point X 
+* F_gx          O            value of G at the specified point X 
+* F_x           I            point where FX and GX values are desired
+* F_f           I            function                              
+* F_g           I            1st derivative                        
+* F_y           I            coordinates at which F is available   
+* F_vlapse      I            the lapse rate used for extrapolating 
+*----------------------------------------------------------------------
+*
+**
+      integer n, iter, niter, k, i0, top(512), bot(512), ref(512)
+      real target(512)
+      real*8 fa_8, ga_8 , a_8 , fm0_8, fm1_8, fm2_8, fm3_8, d_8, e_8,
+     $        r_8, ovd_8, fb_8, gb_8 , b_8  , fl0_8, fl1_8, fl2_8,
+     $      ffx_8, ggx_8
+*
+*     ---------------------------------------------------------------
+*
+      n=nks
+      niter=0
+      do while(n.gt.0)  ! determine required number of iterations
+         niter = niter + 1
+         n = n / 2
+      end do
+*
+      do i0=0,ni-1,512
+      do k=1,nkd
+*
+! comment !VDIR VREG (top,bot,ref,target)
+         do n=1,min(512,ni-i0)
+            top(n) = nks
+            bot(n) = 1
+            ref(n) = ishft(top(n)+bot(n),-1)
+            target(n) = F_x(i0+n,k)
+         end do
+*
+         do iter=1,niter        ! find position of target 
+! comment !VDIR VREG (top,bot,ref,target)
+            do n=1,min(512,ni-i0)
+               if(target(n).gt.F_y(i0+n,ref(n))) then
+                  bot(n) = ref(n)
+               else
+                  top(n) = ref(n)
+               endif
+               ref(n) = ishft(top(n)+bot(n),-1)
+            end do
+         end do
+*
+! comment !VDIR VREG (target)
+         do n=1,min(512,ni-i0)  ! cubic interpolation
+            a_8   = F_y(i0+n,ref(n))
+            b_8   = F_y(i0+n,ref(n)+1)
+            fa_8  = F_f(i0+n,ref(n))
+            fb_8  = F_f(i0+n,ref(n)+1)
+            ga_8  = F_g(i0+n,ref(n))
+            gb_8  = F_g(i0+n,ref(n)+1)
+            d_8   = b_8-a_8
+            ovd_8 = 1.0/d_8
+            e_8   = target(n)-.5*(a_8+b_8)
+            r_8   = .125*d_8*d_8-.5*e_8*e_8
+            fm0_8 = .5*(fa_8+fb_8)
+            fm1_8 = (fb_8-fa_8)*ovd_8
+            fm2_8 = (gb_8-ga_8)*ovd_8
+            fm3_8 = (gb_8+ga_8-fm1_8-fm1_8)*ovd_8*ovd_8
+            fl2_8 = fm2_8+2.*e_8*fm3_8
+            fl1_8 = fm1_8+e_8*fl2_8 
+            fl0_8 = fm0_8+e_8*fm1_8 
+            ffx_8 = fl0_8-r_8*fl2_8
+            ggx_8 = fl1_8-2.*r_8*fm3_8
+            if(target(n) .lt. a_8) then ! extrapolate below first level
+               ggx_8 = ga_8
+               ffx_8 = fa_8 + (target(n)-a_8)*ga_8
+            endif
+            if(target(n) .gt. b_8) then ! extrapolate above last level
+               ggx_8 = gb_8 + F_vlapse(i0+n)*(target(n)-b_8)
+               ffx_8 = fb_8 + .5*(target(n)-b_8)*(ggx_8 + gb_8)
+            endif
+            F_fx(i0+n,k) = ffx_8
+            F_gx(i0+n,k) = ggx_8
+         end do                 ! n=1,min(512,ni-i0)
+*
+      end do                    ! k=1,nkd
+      end do                    ! i0=0,ni-1,512
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end 

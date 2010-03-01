@@ -1,0 +1,99 @@
+***s/r e_geopfld
+*
+#include <model_macros_f.h>
+*
+      subroutine e_geopfld ( yfi, xfi, latfi, lonfi,ni, nj )
+*
+#include "impnone.cdk"
+      integer ni, nj
+      real yfi(*), xfi(*), latfi(ni,nj), lonfi(ni,nj)
+*
+*author M. Desgagne
+*
+*revision
+* v2_21 - M. Desgagne            - initial version
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+#include "e_locdim.cdk"
+#include "e_topo.cdk"
+#include "e_option.cdk"
+#include "bmf.cdk"
+#include "p_bus.cdk"
+#include "p_geobus.cdk"
+#include "e_files.cdk"
+#include "e_grids.cdk"
+**
+      integer  fnom,fstouv,fstfrm,e_rdhint2
+      external fnom,fstouv,fstfrm,e_rdhint2
+      integer i,j,offj,err
+      real topo(ni,nj)
+*
+*----------------------------------------------------------------------
+*
+      call phy_30702 ()
+      climat = 0
+      if (fnom  (climat,'process/climato','RND+OLD',0).lt.0) stop
+      if (fstouv(climat,'RND').lt.0) stop
+*
+      p_bgeo_top=0
+      call e_geopini (ni,nj,6)
+      call hpalloc   (pageobus, p_bgeo_siz, err,1)
+      do i=1,p_bgeo_siz
+         geobus(i) = 0.
+      end do
+*
+      if ( Topo_init_L ) then
+         err = e_rdhint2 (topo,yfi,xfi,ni,nj,'ME',0,-1,-1,' ','C',
+     $                           .true.,.true.,'CUBIC',geophy,stdout)
+         if (err.lt.0) stop
+         if (err.eq.2) then
+            write(stdout,9000)
+            stop
+         endif
+         do j=1,nj
+         do i=1,ni
+            topo(i, j) = max ( 0.0, topo(i, j) )
+         enddo
+         enddo
+      else
+         do j=1,nj
+         do i=1,ni
+            topo(i, j) = 0.
+         enddo
+         enddo
+      endif
+*
+      do j=1,nj
+         offj=ni*(j-1)    
+         do i=1, ni
+            geobus(mt+offj+i-1)=topo(i,j)
+         end do
+      end do
+*
+      if ( Topo_init_L ) call e_filtopx (topo, ni, nj, 'G')
+      call e_bmfsplitxy2 (topo,ni,nj,'ME  ',1,1,pni,0,0,0)
+**
+      do j=1,nj
+         offj=ni*(j-1)    
+         do i=1, ni
+            geobus(fis+offj+i-1)=topo(i,j)
+         end do
+      end do
+*
+      call e_intgeo (yfi, xfi, ni, nj)
+      call e_pregeo (latfi, lonfi, ni, nj)
+      call e_wrgeop ()
+*
+      err = fstfrm (climat)
+*
+ 9000 format (/' Problem with ME field',/,
+     $         ' ME is given on the model grid but has wrong ip1',/,
+     $         '      ----- ABORT -----'/)
+*
+*----------------------------------------------------------------------
+*
+      return
+      end
+
+
+

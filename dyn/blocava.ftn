@@ -1,0 +1,193 @@
+***s/r blocava - output model variables related to initialization period
+*
+#include <model_macros_f.h>
+*
+      subroutine blocava(F_dostep,F_dostep_max)
+*
+#include "impnone.cdk"
+*
+      integer F_dostep(*)
+      integer F_dostep_max
+*
+*author
+*     james caveen - rpn july 1995
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from blocavm v1_03)
+* v2_21 - Lee V.            - correction to the shape of prwork
+* v2_21 - J. P. Toviessi    - set dieze (#) slab output and rename 
+* v2_21                       truncate model output names to 4 characters
+* v2_30 - Edouard S.        - remove pi' at the top
+* v2_30 - Lee V.            - reorganize slab output to be more efficient
+* v2_32 - Lee V.            - reduce dynamic allocation size
+*
+*object
+*     output all the model variables that are related to if
+*     Init_balgm_L is true (initialization is performed)
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_dostep     I    - array containing indices corresponding to the
+*                     timestep sets that requires output at this time step.
+* F_dostep_max I    - size of F_dostep array
+*     
+*implicits
+#include "glb_ld.cdk"
+#include "dimout.cdk"
+#include "lun.cdk"
+#include "setsor.cdk"
+#include "outd.cdk"
+#include "dslab.cdk"
+#include "grid.cdk"
+*
+*modules
+      integer getvndx,vmmlod,vmmget,vmmuln
+      external getvndx,vmmlod,vmmget,vmmuln
+
+      integer cnmvar, cn2dvar
+      parameter (cnmvar = 16, cn2dvar=1)
+
+      character*8 ptmvar(cnmvar), pt2dvar(cn2dvar)
+      integer pnlkey(cn2dvar+4),pnikey(cn2dvar)
+      integer i,j,k,l,ii,jj,kk,pnkey,pnerr,pnindex,pni2d,pni3d
+      real w1(LDIST_SHAPE)
+      real prwork
+      pointer (pawork,prwork(*))
+*
+*     Declarations for slab output
+      integer mxout_e
+      character*4, dimension(:,:),allocatable :: var_e_S
+      character*1, dimension(:,:),allocatable :: typvar_e_S
+      integer,     dimension(:,:),allocatable :: ip1_e
+      integer,     dimension(:,:),allocatable :: bit_e
+      real,        dimension(:,:),allocatable :: mtval_e
+      integer,     dimension(:,:),allocatable :: xnio
+      integer,     dimension(:),allocatable :: mtout_e
+*
+*     lists of model variables that can be output by blocava
+*
+      data ptmvar / 
+     $     'UTA',  'VTA',  'WTA',  'TDTA',  'TTA',
+     $     'FITA', 'QTA',  'TPTA', 'FIPA', 'QPTA',
+     $     'PIPA', 'TPLA', 'MUTA', 'PSDA', 'GPTA',
+     $     'MULA'/
+
+      data pt2dvar / 'STA'/
+
+*_______________________________________________________________________
+*
+*     2.0 Determine if any 3-D MODEL variables are to be outputted
+* ___________________________________________________________________
+*
+*   check if output is required for the 3-D model variables
+      pni3d = 0
+      do i=1,cnmvar
+         pnerr=getvndx(ptmvar(i))
+         if (pnerr.gt.0) then
+             pni3d = pni3d + Setsor_useit(pnerr)
+         else
+            if (Lun_out.gt.0) write(Lun_out,*)
+     $          'Error in BLOCAVA:INDEX not found for ',ptmvar(i)
+            stop
+         endif
+      enddo
+*_______________________________________________________________________
+*
+*     3.0 Output 3-D MODEL variables
+* ___________________________________________________________________
+
+      if (pni3d.gt.0) then
+          call slab3dvar(ptmvar,cnmvar,F_dostep,F_dostep_max,0)
+      endif
+*_______________________________________________________________________
+*
+*     4.0     Determine if any 2-D MODEL variables are to be outputted.
+*_______________________________________________________________________
+*
+*   check if output is required for the 2-D MODEL variables
+      pnkey = 0
+      pni2d = 0
+      do 40 i=1,cn2dvar
+
+         pnindex=getvndx(pt2dvar(i))
+         if(pnindex .le. 0) then
+            if (Lun_out.gt.0) write(Lun_out,*)
+     $          'Error in BLOCAVA:index not found for ',pt2dvar(i)
+            stop
+         else
+            pni2d=pni2d+Setsor_useit(pnindex)
+            pnkey = pnkey + 1
+            pnlkey(pnkey) = Setsor_key(pnindex)
+            pnikey(pnkey) = pnindex
+         endif
+  40  continue
+
+      if(pni2d .le. 0) then
+*        no more output required
+            return
+      endif
+
+      mxout_e = 1 + pni2d
+      allocate ( var_e_S(mxout_e,Grid_sets),
+     %           typvar_e_S(mxout_e,Grid_sets),
+     %           ip1_e(mxout_e,Grid_sets),
+     %           bit_e(mxout_e,Grid_sets),
+     %           mtval_e(LDIST_SIZ*mxout_e,Grid_sets),
+     %           mtout_e(Grid_sets),
+     %           xnio(LDIST_SIZ,Grid_sets) )
+      call set_dslab(0,xnio,LDIST_SIZ,Grid_sets)
+      do i=1,Grid_sets
+         mtout_e(i)=0
+      enddo
+*_______________________________________________________________________
+*
+*     5.0 Output 2-D MODEL variables
+* ___________________________________________________________________
+*
+*     Load all the 2-D model fields required for output
+      pnerr = vmmlod(pnlkey,pnkey)
+*
+      do 100 jj = 1, F_dostep_max
+*        For every Timestep set that outputs at the current timestep
+
+         do 80 kk = 1, Outd_sets
+
+            if (Outd_step(kk) .eq. F_dostep(jj)) then
+*           if the Timestep set for this request set Outd(kk) outputs
+*           at the current timestep (Lctl_step)
+
+             do 70 i = 1, pnkey
+*               For all the variables to be treated in this routine
+
+               do 50 ii = 1,Outd_var_max(kk)
+
+                  if (pnikey(i).eq.Outd_var(ii,kk)) then
+*                  if variable is in this request set
+
+*                   get address of the data for the model variable
+                      pnerr = vmmget(pnlkey(i),pawork,prwork)
+                      call insrtslab_d(prwork,w1,LDIST_DIM,1,1,
+     $                kk,1.0,0.0,pnikey(i),0.0,mtout_e,var_e_S,
+     $                typvar_e_S, ip1_e,bit_e,mtval_e,
+     $                LDIST_SIZ,mxout_e,Grid_sets)
+                  endif
+  50           continue
+  70         continue
+            endif
+  80     continue
+ 100  continue
+
+*
+*     unload all fields and work space
+*
+      pnerr = vmmuln(pnlkey,pnkey)
+* ___________________________________________________________________
+      call writslab_d(Dslab_fhand_e,Dslab_slab_e,Dslab_nnio,'dm',
+     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+      deallocate ( var_e_S, ip1_e, bit_e, mtval_e,typvar_e_S,mtout_e,xnio)
+* ___________________________________________________________________
+
+      return
+      end

@@ -1,0 +1,203 @@
+***s/r dynout2 - perform dynamic output
+*
+#include <model_macros_f.h>
+*
+      subroutine dynout2 (F_output_L)
+*
+#include "impnone.cdk"
+*
+      logical F_output_L
+*
+*author 
+*     J. Caveen - rpn - decembre 1994
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from dynout v1_03)
+* v2_10 - Desgagne M.       - adapted from dynout; 4D-var controls,
+* v2_10                       output file name convention to suite 
+* v2_10                       assimilation cycle
+* v2_11 - Desgagne M.       - ptop reproducibility
+* v2_20 - Lee V.            - eliminate call to BLOCGEO (physics 3.66)
+* v2_21 - J. P. Toviessi    - set diez (#) slab output,rename model varnames
+* v2_30 - Lee V.            - setup ip2,ip3 here, grid output is assumed on
+* v2_30                       PHI (scalar) unless specified elsewhere (BLOCUV),
+* v2_30                       add control of filename extension here
+* v2_31 - Lee V.            - introduce a call to bloctr
+* v2_32 - Lee V.            - add "HY" record in dynamic slabs
+*
+*object
+*     Subroutine to control the production of
+*     the output of the dynamic variables
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_output_L      I     output wanted if TRUE
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dimout.cdk"
+#include "rstr.cdk"
+#include "init.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "lctl.cdk"
+#include "vt1.cdk"
+#include "p_geof.cdk"
+#include "out2.cdk"
+#include "geomg.cdk"
+#include "slab.cdk"
+#include "dslab.cdk"
+#include "v4dg.cdk"
+*
+**
+      integer doout, fstouv, fstfrm, fnom, longueur,
+     $        vmmlod, vmmuld, vmmget, vmmulk, getvndx
+      external doout, fstouv, fstfrm, fnom, longueur,
+     $         vmmlod, vmmuld, vmmget, vmmulk, getvndx
+*
+      integer  pnerr
+*
+      integer err,nrec,dostep(MAXSET), dostep_max, step,
+     $        i,j,k,pnlkey(2), pnindex
+      real deg2rad, w1(LDIST_SHAPE)
+**
+*
+*     check if output is required and initialize control tables
+*     ---------------------------------------------------------------
+*
+      dostep_max = doout(dostep,1)
+*
+      if ((dostep_max .gt. 0) .and. (F_output_L)) then
+
+         if (Lun_out.gt.0) write(Lun_out,7001) Lctl_step
+         Dslab_fhand_p = -1
+         Dslab_fhand_e = -1
+         Dslab_slab_p = 0
+         Dslab_slab_e = 0
+      else
+*
+         if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
+         return
+*     
+      endif
+*
+      pnlkey(1) = VMM_KEY(pipt1)
+      pnlkey(2) = VMM_KEY(xla)
+      call hpalloc (Out2_wlnph_ , LDIST_SIZ*G_nk, err,1)
+      call hpalloc (Out2_ptop_  , LDIST_SIZ     , err,1)
+      call hpalloc (Out2_wlao_  , LDIST_SIZ     , err,1)
+*
+*     obtain output grid
+*     NOTE: all derived variables are output on the same grid
+*           we may then only check the grid required for TT
+*           for instance
+*
+*
+      err = vmmlod(pnlkey,2)
+      err = VMM_GET_VAR(pipt1)
+      err = VMM_GET_VAR(xla)
+*
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         Out2_wlnph(i,j,k) = pipt1(i,j,k)
+      enddo
+      enddo
+      enddo
+      do j=1,l_nj
+      do i=1,l_ni
+         Out2_ptop (i,j) =  geomg_z_8(1) + Out2_wlnph(i,j,1)
+      end do
+      end do
+*
+*     compute log of hydrostatic pressure
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+         Out2_wlnph (i,j,k) = log ( geomg_z_8(k) + Out2_wlnph(i,j,k) )
+      end do
+      end do
+      end do   
+*
+      deg2rad = acos( -1.0)/180.
+      do j= 1,l_nj
+      do i= 1,l_ni
+         w1(i,j) = xla(i,j) * deg2rad 
+      end do
+      end do
+
+      do j=1,l_nj
+      do i=1,l_ni
+      Out2_wlao(i,j)=w1(i,j)
+      enddo
+      enddo
+*     
+      err = vmmuld(pnlkey,2)
+*
+*     setup of ip2 and ip3
+*
+      Slab_ip2 = nint(float(Lctl_step)*Cstv_dt_8/3600.0)
+      Slab_ip3 = 0
+      if (V4dg_conf.ne.0) then
+          Slab_ip3 =  V4dg_status
+          if (V4dg_conf/100.eq.1.and.V4dg_ad_L)
+     %        Slab_ip3 = 20 + V4dg_status
+      endif
+
+*
+*     setup of filename extension if needed
+      Dslab_ext_S=""
+      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
+     $     ((Lctl_step.ge.(Init_dfnp-1)/2)) )
+     $     Dslab_ext_S = '_dgf'
+*
+*     output of 3-D tracers
+*
+      call bloctr(dostep,dostep_max)
+*
+*     output of temperature, humidity and mass fields
+*
+      call blocthm(dostep,dostep_max)
+*
+*     output of winds
+*
+      call blocuv(dostep,dostep_max)
+*
+*     output of divergence and vorticity
+*
+      call blocdq(dostep,dostep_max)
+*
+*     output of omega
+*
+      call blomega(dostep,dostep_max)
+*
+*     output of all the other model variables not treated so far
+*
+      call blocavm(dostep,dostep_max)
+*
+      if ( Init_balgm_L .and. .not.Rstri_idon_L ) then
+         call blocava(dostep,dostep_max)
+      endif
+*
+      call frmslabfhand(Dslab_fhand_p,Dslab_slab_p,.false.)
+      call frmslabfhand(Dslab_fhand_e,Dslab_slab_e,.true.)
+*
+      call hpdeallc(Out2_wlnph_, err, 0)  
+      call hpdeallc(Out2_wlao_ , err, 0) 
+      call hpdeallc(Out2_ptop_ , err, 0) 
+*
+      if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
+           call wlog('IOUT')
+      else
+           call wlog('FOUT')
+      endif
+*
+ 7001 format(/,' DYNOUT - WRITING DYNAMIC SLABS FOR STEP (',I8,')')
+ 7002 format(/,' DYNOUT - NO DYNAMIC OUTPUT FOR STEP (',I8,')')
+*
+      return
+      end
+

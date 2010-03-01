@@ -1,0 +1,175 @@
+***s/r e_gemnml
+*
+#include <model_macros_f.h>
+*
+      subroutine e_gemnml
+      implicit none
+*
+      integer l_ni,l_nj
+      parameter (l_ni=1,l_nj=1)
+*implicits
+#include "e_topo.cdk"
+#include "e_schm.cdk"
+#include "e_geol.cdk"
+#include "e_tr.cdk"
+#include "dcst.cdk"
+#include "out1.cdk"
+#include "grd.cdk"
+#include "e_grids.cdk"
+#include "p_pbl.cdk"
+#include "ptopo.cdk"
+#include "e_nml.cdk"
+*
+      logical set_dcst8
+      integer fnom
+      external fnom, set_dcst8
+*
+      character*120 fn,dumc
+      integer i,err,unf
+      integer cnbre
+      parameter(cnbre=31)
+      character*10 liste(cnbre)
+      data liste/  'CPD'   , 'CPV' , 'RGASD' , 'RGASV', 'TRPL' ,
+     +             'TCDK'  , 'RAUW', 'EPS1'  , 'EPS2' , 'DELTA',
+     +             'CAPPA' , 'TGL' , 'CONSOL', 'GRAV' , 'RAYT' ,
+     +             'STEFAN', 'PI'  , 'OMEGA' , 'KNAMS', 'STLO' ,
+     +             'KARMAN', 'RIC' , 'CHLC'  , 'CHLF' , 'T1S'  ,
+     +             'T2S'   , 'AW'  , 'BW'    , 'AI'   , 'BI'   ,
+     +             'SLP' /
+*
+*--------------------------------------------------------------------
+*
+      Grd_typ_S = 'GU'
+      Grd_ni    = 0
+      Grd_nj    = 0 
+      Grd_nila  = 0
+      Grd_njla  = 0
+      Grd_dx    = 0.
+      Grd_dy    = 0.
+      Grd_dxmax = 360.
+      Grd_dymax = 180.
+      Grd_iref  = 1
+      Grd_jref  = 1
+      Grd_latr  = 0.
+      Grd_lonr  = 0.
+      Grd_roule = .false.
+      Grd_xlon1 = 0.
+      Grd_xlat1 = 0.
+      Grd_xlon2 = 0.
+      Grd_xlat2 = 0.
+*
+      Topo_filmx_L= .true.
+      Topo_init_L = .true.
+      Topo_dgfmx_L= .false.
+      Topo_dgfms_L= .true.
+*
+      E_schm_stlag   = .true.
+      E_schm_adcub   = .true.
+      E_geol_glanl_L = .true.
+      E_geol_glreg_L = .false.
+      E_geol_hsanl_L = .true.
+      E_geol_hscon_L = .false.
+      E_geol_hsreg_L = .true.
+      E_geol_gls  = 30.
+      E_geol_gln  = 80.
+      E_geol_glw  = 220.
+      E_geol_gle  = 320.
+      E_geol_hss  = 30.
+      E_geol_hsn  = 80.
+      E_geol_hsw  = 220.
+      E_geol_hse  = 320.
+      E_geol_hsea = 3000
+      E_geol_poin = 3
+      E_geol_modex_L = .false.
+      E_geol_z0cst   = -1.
+*
+      P_pbl_schsl_S  = 'FCREST'
+      P_pbl_snoalb_L = .true.
+*
+      do i=1, MAXTR
+         E_tr3d_list_S(i) = ''
+         E_trvs_list_S(i) = ''
+      enddo
+*
+      unf = 0
+      fn  = 'process/model_settings'
+*      
+      write(6,*) 'Opening file: ',fn
+      if (fnom(unf, fn,'SEQ+FTN+FMT+OLD',0).ne.0) then
+         write(6,*) 'FILE ',fn,' NOT AVAILABLE - ABORT'
+         goto 998
+      endif
+*
+      rewind(unf)
+      read  (unf,nml=grid,   END=910)
+      write (6  ,nml=grid)
+      rewind(unf)
+      read  (unf,nml=gement, END=920)
+      write (6  ,nml=gement_p)
+      call fclos (unf)
+*
+      call low2up (P_pbl_schsl_S,dumc)
+      P_pbl_schsl_S = dumc
+      call low2up (Grd_typ_S,dumc)
+      Grd_typ_S = dumc
+      LAM = Grd_typ_S(1:1).eq.'L'
+*
+      if (Grd_ni*Grd_nj.eq.0) then
+         write(6,*) 'VERIFY Grd_NI & Grd_NJ IN NAMELIST grid'
+         call e_arret ('GEMNML')
+      endif
+      if (Grd_typ_S(1:1).eq.'G') then
+         if (Grd_typ_S(2:2).eq.'U') then
+            Grd_nila = Grd_ni
+            Grd_njla = Grd_nj
+         else
+            if (Grd_nila*Grd_njla*Grd_dx*Grd_dy.eq.0) then
+               write(6,*) 'VERIFY Grd_NILA, Grd_NJLA, Grd_DX & ',
+     $                    'Grd_DY IN NAMELIST grid'
+               call e_arret ('GEMNML')
+            endif
+         endif
+         Grd_x0=  0.0 
+         Grd_xl=360.0
+         Grd_y0=-90.0
+         Grd_yl= 90.0
+      else
+         if (Grd_dx*Grd_dy.eq.0) then
+            write(6,*) 'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
+            call e_arret ('GEMNML')
+            
+         endif
+            Grd_nila = Grd_ni
+            Grd_njla = Grd_nj
+            Grd_x0 = Grd_lonr - (Grd_iref-1) * Grd_dx
+            Grd_y0 = Grd_latr - (Grd_jref-1) * Grd_dy
+            Grd_xl = Grd_x0   + (Grd_ni  -1) * Grd_dx
+            Grd_yl = Grd_y0   + (Grd_nj  -1) * Grd_dy
+         endif
+*
+      if (nint( 360./Grd_dxmax ) .gt. Grd_ni+1 .or.
+     +    nint( 180./Grd_dymax ) .gt. Grd_nj+1 ) then
+         write(6,*) ' INCONSISTENT Grd_NI, Grd_NJ, ',
+     $              ' Grd_DXMAX & Grd_DYMAX values in namelist grid'
+         call e_arret ('GEMNML')
+      endif
+*
+      Ptopo_numproc = 1
+      unf = 44
+      if (.not. set_dcst8 (Dcst_cpd_8,liste,cnbre,unf,6))
+     $     call e_arret ('SET_DCST8')
+*
+      goto 999
+ 910  write(6,801)
+      goto 998
+ 920  write(6,802)
+ 998  call e_arret ('GEMNML')
+*
+ 801  format(//,'ERROR in NAMELIST GRID: STOP IN GEMNTR',//)
+ 802  format(//,'ERROR in NAMELIST GEMENT: STOP IN GEMNTR',//)
+*
+*--------------------------------------------------------------------
+*
+ 999  return
+      end
+*

@@ -1,0 +1,189 @@
+***s/r vspng_main - applies del-2 horizontal diffusion with vertical
+*                   modulation of the diffusion coefficient on
+*                   Vspng_nk top levels. 
+*
+#include <model_macros_f.h>
+*
+      subroutine vspng_main
+*
+#include "impnone.cdk"
+*
+*author
+*     Michel Desgagne  - October 2000
+*
+*revision
+* v2_11 - Desgagne M.       - initial version 
+* v2_21 - Desgagne M.       - new call to horwavg
+* v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
+*
+*object
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "cstv.cdk"
+#include "vspng.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "p_geof.cdk"
+*
+*modules
+      integer  vmmlod,vmmuld,vmmget
+      external vmmlod,vmmuld,vmmget
+*
+      integer pnerr, pnlod, pnlkey1(20), i, j, k
+      real*8  ONE_8, bbb_8, eta_8
+      parameter( ONE_8 = 1. )
+**
+*     _________________________________________________________________
+*
+      if (Vspng_nk.lt.1) return
+      if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
+*
+      pnlkey1(1)  = VMM_KEY(ut1)
+      pnlkey1(2)  = VMM_KEY(vt1)
+      pnlkey1(3)  = VMM_KEY(psdt1)
+      pnlkey1(4)  = VMM_KEY(tpt1)
+      pnlkey1(5)  = VMM_KEY(fipt1)
+      pnlkey1(6)  = VMM_KEY(tdt1)
+      pnlkey1(7)  = VMM_KEY(tt1)
+      pnlkey1(8)  = VMM_KEY(fit1)
+      pnlkey1(9)  = VMM_KEY(topo)
+      pnlkey1(10) = VMM_KEY(tplt1)
+      pnlkey1(11) = VMM_KEY(qt1)
+      pnlkey1(12) = VMM_KEY(pipt0)
+      pnlkey1(13) = VMM_KEY(pipt1)
+      pnlkey1(14) = VMM_KEY(st1)
+      pnlod = 14
+      if (.not. Schm_hydro_L) then
+         pnlkey1(15) = VMM_KEY(wt1)
+         pnlkey1(16) = VMM_KEY(qpt1)
+         pnlkey1(17) = VMM_KEY(mut1)
+         pnlkey1(18) = VMM_KEY(multx)
+         pnlod = 18
+      endif
+*     - - - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,pnlod)
+*     - - - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(psdt1)
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(fipt1)
+      pnerr = VMM_GET_VAR(tdt1)
+      pnerr = VMM_GET_VAR(tt1)
+      pnerr = VMM_GET_VAR(fit1)
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(tplt1)
+      pnerr = VMM_GET_VAR(qt1)
+      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(pipt1)
+      pnerr = VMM_GET_VAR(st1)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(wt1)
+         pnerr = VMM_GET_VAR(qpt1)
+         pnerr = VMM_GET_VAR(mut1)
+         pnerr = VMM_GET_VAR(multx)
+      else
+         wt1_  = 0
+         qpt1_ = 0
+         mut1_ = 0
+         multx_= 0
+      endif
+*
+c*PDIR RESERVE=Macr_cpud
+
+      call vspng_drv ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                 tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
+     %                 qpt1, mut1, multx, st1 , topo ,
+     %                 LDIST_DIM, G_nk)
+
+c*PDIR RELEASE
+*
+      if (Cstv_phidf_8.gt.0.) then
+*
+*     Adjust surface pressure and hence pi' (FOR CLIMATE APPLICATIONS) 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      if (Schm_psadj_L) then
+*
+         call horwavg ( bbb_8, pipt0(l_minx,l_miny,G_nk),
+     $                         pipt1(l_minx,l_miny,G_nk),LDIST_DIM )
+*
+*        Redistribute the average mass loss at the surface, ...
+*
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            pipt1(i,j,G_nk) = pipt1(i,j,G_nk) + bbb_8
+         end do
+         end do
+*
+*        ... correct s immediately and ...
+*
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            st1(i,j)= log(ONE_8+dble(pipt1(i,j,G_nk)/geomg_pib(G_nk)))
+         end do
+         end do
+*
+*        ... refine pi' everywhere else accordingly.
+*
+         do k=1,G_nk-1
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               pipt1(i,j,k) = geomg_pib(k) *( exp(st1(i,j)) - 1 )
+            end do
+            end do
+         end do
+*
+      else
+*
+*******************************************
+*  $. Indirect diffusion of s through pi' *
+*******************************************
+*
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         st1(i,j)= log(ONE_8+dble(pipt1(i,j,G_nk)/geomg_pib(G_nk)))
+      end do
+      end do
+*
+      endif
+
+*
+*******************************************
+*  $. Indirect diffusion of q through pi' *
+*******************************************
+*
+      do k=1,G_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         qt1(i,j,k) = log( Geomg_z_8(k) + dble(pipt1(i,j,k)) )
+      end do
+      end do
+      end do
+*
+      if ( .not. Schm_hydro_L ) then
+         do k=1,G_nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            qt1(i,j,k) = qt1(i,j,k) + qpt1(i,j,k) 
+         end do
+         end do
+         end do
+      endif 
+*
+      endif
+*
+      pnerr = vmmuld(-1,0)
+*    
+ 1000 format(/,3X,
+     $ 'DEL-2 SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV)')
+*
+      return
+      end

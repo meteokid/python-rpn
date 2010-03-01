@@ -1,0 +1,191 @@
+***s/r v4d_kinc - Keeps the indices of upstream positions in F_kinc
+*                 for the increments in F_zinc causing unvectorization
+*                 in ADW_TRICUB_AD. This is extracted from that  
+*                 subroutine in order to reduce its complexity. 
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_kinc ( F_nm, F_num, F_mono_L,   
+     %                      F_ibase1,F_ibase2,F_inca,F_kinc,F_kdim,
+     %                      F_nij,F_nijplus,F_nk,F_ksep)
+*
+#include "impnone.cdk"
+*
+      logical F_mono_L
+*
+      integer F_num, F_nm(F_num)
+*
+      integer F_ibase1,F_ibase2,F_inca,F_kdim,F_nij,F_nijplus,F_nk,F_ksep,
+     %        F_kinc(F_nijplus,F_kdim*F_nk)
+*
+*author Tanguay M.
+*
+*revision
+* v3_00 - Tanguay M.        - initial MPI version
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+* F_nm         | TRAJ positions in the 3D volume of interpolation|  i  |
+*              | boxes                                           |     |
+* F_num        | number of points to interpolate                 |  i  |
+* F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
+*--------------|-------------------------------------------------|-----|
+*              | PARAMETERS TO RESTAURE VECTORIZATION            |     |
+*--------------|-------------------------------------------------|-----|
+* F_ibase      | starting loc. in buffer of field to interp.     |  i  |
+* F_inca       | starting loc. in F_kinc and F_zinc              |  i  |
+* F_kdim       | number of independent positions at a given level|  i  |
+* F_nij        | horizontal dimension of field to interp.        |  i  |
+* F_nijplus    | horizontal dimension modified for efficiency    |  i  |
+* F_nk         | vertical   dimension of field to interp.        |  i  |
+* F_ksep       | coloring of vertical levels                     |  i  |
+* F_kinc       | indices  of upstream positions                  |  o  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "adw.cdk"
+************************************************************************
+      integer n, nijag, k, ij, ib, ib, klev, ilev
+*
+      integer o1, o2, o3, o4
+*     ______________________________________________________
+*
+      if ( F_mono_L ) call gefstop('adw_kinc')
+*     ______________________________________________________
+*
+      nijag = Adw_nit * Adw_njt
+*
+      if ( F_mono_L ) then
+*
+*     ------------
+*     ADJ not done
+*     ------------
+*
+      else
+*
+      ilev = 1
+*
+      do  klev=1,F_ksep
+      do  k=klev,F_nk,F_ksep
+*
+      ib = (ilev-1)*F_kdim + F_inca
+*
+      do ij=1,F_nij
+*
+      n  = F_nij*(k-1) + ij
+*
+      o1 = F_nm(n)-Adw_nit
+      o2 = F_nm(n) 
+      o3 = F_nm(n)+Adw_nit
+      o4 = F_nm(n)+Adw_nit+Adw_nit
+*
+      o1 = o1 + nijag
+      o2 = o2 + nijag
+      o3 = o3 + nijag
+      o4 = o4 + nijag
+*
+      F_kinc(ij,ib+61) = F_ibase2 + o4 - 1
+      F_kinc(ij,ib+62) = F_ibase2 + o4
+      F_kinc(ij,ib+63) = F_ibase2 + o4 + 1
+      F_kinc(ij,ib+64) = F_ibase2 + o4 + 2
+*
+      F_kinc(ij,ib+57) = F_ibase2 + o3 - 1
+      F_kinc(ij,ib+58) = F_ibase2 + o3
+      F_kinc(ij,ib+59) = F_ibase2 + o3 + 1
+      F_kinc(ij,ib+60) = F_ibase2 + o3 + 2
+*
+      F_kinc(ij,ib+53) = F_ibase2 + o2 - 1
+      F_kinc(ij,ib+54) = F_ibase2 + o2
+      F_kinc(ij,ib+55) = F_ibase2 + o2 + 1
+      F_kinc(ij,ib+56) = F_ibase2 + o2 + 2
+*
+      F_kinc(ij,ib+49) = F_ibase2 + o1 - 1
+      F_kinc(ij,ib+50) = F_ibase2 + o1
+      F_kinc(ij,ib+51) = F_ibase2 + o1 + 1
+      F_kinc(ij,ib+52) = F_ibase2 + o1 + 2
+*
+      F_kinc(ij,ib+29) = F_ibase1 + o4 - 1
+      F_kinc(ij,ib+30) = F_ibase1 + o4
+      F_kinc(ij,ib+31) = F_ibase1 + o4 + 1
+      F_kinc(ij,ib+32) = F_ibase1 + o4 + 2
+*
+      F_kinc(ij,ib+25) = F_ibase1 + o3 - 1
+      F_kinc(ij,ib+26) = F_ibase1 + o3
+      F_kinc(ij,ib+27) = F_ibase1 + o3 + 1
+      F_kinc(ij,ib+28) = F_ibase1 + o3 + 2
+*
+      F_kinc(ij,ib+21) = F_ibase1 + o2 - 1
+      F_kinc(ij,ib+22) = F_ibase1 + o2
+      F_kinc(ij,ib+23) = F_ibase1 + o2 + 1
+      F_kinc(ij,ib+24) = F_ibase1 + o2 + 2
+*
+      F_kinc(ij,ib+17) = F_ibase1 + o1 - 1
+      F_kinc(ij,ib+18) = F_ibase1 + o1
+      F_kinc(ij,ib+19) = F_ibase1 + o1 + 1
+      F_kinc(ij,ib+20) = F_ibase1 + o1 + 2
+*
+      o1 = F_nm(n)-Adw_nit
+      o2 = F_nm(n) 
+      o3 = F_nm(n)+Adw_nit
+      o4 = F_nm(n)+Adw_nit+Adw_nit
+*
+      F_kinc(ij,ib+45) = F_ibase2 + o4 - 1
+      F_kinc(ij,ib+46) = F_ibase2 + o4
+      F_kinc(ij,ib+47) = F_ibase2 + o4 + 1
+      F_kinc(ij,ib+48) = F_ibase2 + o4 + 2
+*
+      F_kinc(ij,ib+41) = F_ibase2 + o3 - 1
+      F_kinc(ij,ib+42) = F_ibase2 + o3
+      F_kinc(ij,ib+43) = F_ibase2 + o3 + 1
+      F_kinc(ij,ib+44) = F_ibase2 + o3 + 2
+*
+      F_kinc(ij,ib+37) = F_ibase2 + o2 - 1
+      F_kinc(ij,ib+38) = F_ibase2 + o2
+      F_kinc(ij,ib+39) = F_ibase2 + o2 + 1
+      F_kinc(ij,ib+40) = F_ibase2 + o2 + 2
+*
+      F_kinc(ij,ib+33) = F_ibase2 + o1 - 1
+      F_kinc(ij,ib+34) = F_ibase2 + o1
+      F_kinc(ij,ib+35) = F_ibase2 + o1 + 1
+      F_kinc(ij,ib+36) = F_ibase2 + o1 + 2
+*
+      F_kinc(ij,ib+13) = F_ibase1 + o4 - 1
+      F_kinc(ij,ib+14) = F_ibase1 + o4
+      F_kinc(ij,ib+15) = F_ibase1 + o4 + 1
+      F_kinc(ij,ib+16) = F_ibase1 + o4 + 2
+*
+      F_kinc(ij,ib+ 9) = F_ibase1 + o3 - 1
+      F_kinc(ij,ib+10) = F_ibase1 + o3
+      F_kinc(ij,ib+11) = F_ibase1 + o3 + 1
+      F_kinc(ij,ib+12) = F_ibase1 + o3 + 2
+*
+      F_kinc(ij,ib+ 5) = F_ibase1 + o2 - 1
+      F_kinc(ij,ib+ 6) = F_ibase1 + o2
+      F_kinc(ij,ib+ 7) = F_ibase1 + o2 + 1
+      F_kinc(ij,ib+ 8) = F_ibase1 + o2 + 2
+*
+      F_kinc(ij,ib+ 1) = F_ibase1 + o1 - 1
+      F_kinc(ij,ib+ 2) = F_ibase1 + o1 
+      F_kinc(ij,ib+ 3) = F_ibase1 + o1 + 1
+      F_kinc(ij,ib+ 4) = F_ibase1 + o1 + 2
+*
+      enddo
+*
+      ilev = ilev + 1
+*
+      enddo
+      enddo
+*
+      endif
+*
+      return
+      end

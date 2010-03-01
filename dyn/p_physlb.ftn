@@ -1,0 +1,266 @@
+***s/r p_physlb - Computes the physical tendencies
+*
+#include <model_macros_f.h>
+*
+      subroutine  p_physlb( F_cpu,   F_step, 
+     $             F_up, F_vp, F_wp, F_tp, F_qp, F_trp,
+     $             F_um, F_vm,       F_tm,       F_trm,
+     $             F_lpsm, F_sig, F_kmm, F_ktm, DIST_DIM, Nk )
+*
+#include "impnone.cdk"
+*
+      integer F_cpu, F_step, nvvv, nvov, DIST_DIM, Nk
+*
+      real F_up (DIST_SHAPE,Nk), F_vp (DIST_SHAPE,Nk),
+     $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk), 
+     $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
+     $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk),
+     $     F_tm (DIST_SHAPE,Nk), F_trm(DIST_SHAPE,Nk,*),
+     $     F_lpsm (DIST_SHAPE) , F_sig(DIST_SHAPE,Nk),
+     $     F_kmm(DIST_SHAPE,Nk), F_ktm(DIST_SHAPE,Nk)
+*
+*author 
+*     Michel Roch - rpn - june 1993
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_20 - Pellerin P.       - adapt to physics 3.66 with entry bus
+* v2_21 - Dugas B.          - activate climate mode
+* v2_21 - J. P. Toviessi    - (#) slab output
+* v2_31 - Dugas B.          - re-activate zonal diagnostics
+* v2_32 - Desgagne M.       - connection to physics 3.72
+* v3_00 - Laroche S.        - adaptation for v4d
+*
+*object
+*     See above id.
+*	
+*arguments
+*  Name       I/O                 Description
+*----------------------------------------------------------------
+* F_cpu        I    - cpu number
+* F_step       I    - current time step number
+* F_up         I    - wind image in x direction at time t*
+*              O    - temperature tendency from convection/condensation
+* F_vp         I    - wind image in y direction at time t*
+*              O    - specific hum tendency from convection/condensation
+* F_tp         I    - virtual temperature at time t*
+* F_hup        I    - specific humidity tendency at time t*
+* F_qcp        I    - mixing ratio of cloud water/ice at time t*
+* F_qp         I    - ln of pressure at time t*
+* F_um         I    - wind image in x direction at time t-
+*              O    - total wind image tendency in x direction
+* F_vm         I    - wind image in y direction at time t-
+*              O    - total wind image tendency in y direction
+* F_tm         I    - virtual temperature at time t-
+*              O    - temperature tendency due to radiation and vertical
+*                     diffusion
+* F_hum        I    - specific humidity at time t-
+*              O    - specific humidity tendency due to radiation and
+*                     vertical diffusion
+* F_qcm        I    - mixing ratio of cloud water/ice at time t-
+*              O    - total mixing ratio of cloud water/ice tendency
+* F_lpsm       I    - ln of surface pressure at time t-
+* F_wp         I    - vertical motion at time t*
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "mult.cdk"
+#include "mem.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "dimout.cdk"
+#include "pslab.cdk"
+#include "macro.cdk"
+#include "p_clim.cdk"
+#include "p_bus.cdk"
+#include "busind.cdk"
+#include "busind_tr.cdk"
+#include "v4dg.cdk"
+*
+*modules
+      integer  read_db_file,write_db_file
+      external read_db_file,write_db_file
+*
+      integer accum
+      parameter (accum = 0 )
+      character*2 accum_s
+      data    accum_s / ' ' /
+*
+      integer jdo, i, j, k, n, ii, indx, err
+      real dt,con
+*
+      real busdyn(max(1,p_bdyn_siz)), busvol(max(1,p_bvol_siz)),
+     $     busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
+      pointer (pabusper,busper(*))
+**
+*     ---------------------------------------------------------------
+*
+      if ((Lun_out.gt.0).and.(F_cpu.eq.1)) write(Lun_out,1000)
+*
+      if (.not.Mem_phyncore_L) pabusper=loc(busper2(1))
+      if (F_step.eq.0) then
+          do i=1,p_bent_siz
+             busent(i) = 0.
+          end do
+      endif
+*
+      do i=1,p_bdyn_siz
+         busdyn(i) = 0.
+      end do
+      do i=1,p_bvol_siz
+         busvol(i) = 0.
+      end do
+*
+      dt  = Cstv_dt_8
+      jdo = 0
+*
+ 100  continue
+*
+#if defined (MULTI)
+#if defined (NEC)
+      call pllock(Mult_lkphy)
+#endif
+#endif
+      
+      Mem_pslic = Mem_pslic + 1
+      if ( Mem_pslic .le. p_nj ) then
+*
+         jdo  = Mem_pslic
+*
+         if (Mem_phyncore_L) then
+            pabusper = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
+         else
+            if (F_step.gt.0) then
+                err = read_db_file (Lun_waphy,jdo,1)
+                err = read_db_file (Lun_waphy,busper,p_bper_siz)
+            endif
+         endif
+*
+         call zongopr( +3, jdo )
+*
+      endif
+*
+#if defined (MULTI)
+#if defined (NEC)
+      call plunlock(Mult_lkphy)
+#endif
+#endif
+*
+*C    Stop if last slice has been completed
+*
+      if ( Mem_pslic .gt. p_nj ) goto 650
+*
+*     Fill buses with jdo row
+*
+      j = jdo + p_offj
+      call p_fillbus ( busdyn, busper ,busent,
+     $         F_up , F_vp , F_wp , F_tp , F_qp, F_trp,
+     %         F_um , F_vm , F_tm , F_trm, F_lpsm, F_sig,
+     %         j, F_step, LDIST_DIM, l_nk )
+*
+*     Run physics on row jdo
+*      
+      call phyexe1 (busent ,busdyn ,busper ,busvol ,
+     $              p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,
+     $              dt, jdo, F_step, F_cpu, p_ni, Nk)
+*
+*
+*C  Combine tendencies of row jdo and store back in 3D space
+*
+      con = cos(geomg_y_8(j)) / Dcst_rayt_8
+      do k = 1, l_nk
+      do i = 1, p_ni
+         indx = (k-1)*p_ni+i-1
+         ii = i + p_offi
+         F_um (ii,j,k) = ( busvol(ugwd +indx)
+     $                    +busvol(udifv+indx)
+     $                    +busper(ufcp +indx) ) * con
+         F_vm (ii,j,k) = ( busvol(vgwd +indx)
+     $                    +busvol(vdifv+indx)
+     $                    +busper(vfcp +indx) ) * con
+         F_tm (ii,j,k) =   busvol(trad+indx)+busvol(tdifv+indx)
+         F_up (ii,j,k) =   busvol(tcond+indx)
+         F_vp (ii,j,k) =   busvol(qdifv+indx)
+      end do
+      end do
+      do n=1,h2o_ntr
+         do k= 1,Nk
+         do i= 1, p_ni
+            indx = (k-1)*p_ni+i-1
+            ii = i + p_offi
+            F_trm(ii,j,k,n) = busvol(h2o_ind(3,n)+indx)
+         end do
+         end do
+      end do
+*
+*     Save vertical diffusion coefficients
+*
+      if ( V4dg_conf.ne.0 ) then 
+        do k = 1, Nk-2
+        do i = 1, p_ni
+           indx = (k-1)*p_ni+i-1
+           ii = i + p_offi
+           F_kmm(ii,j,k) = busvol(km + indx)
+           F_ktm(ii,j,k) = busvol(kt + indx)
+        end do
+        end do
+        do i= 1, p_ni
+           indx = i-1
+           ii = i + p_offi
+           F_kmm(ii,j,Nk-1) = busvol(bm + indx)
+           F_ktm(ii,j,Nk-1) = busvol(bt + indx)
+        end do
+      endif
+* 
+#if defined (MULTI)
+#if defined (NEC)
+      call pllock(Mult_lkphy)
+#endif
+#endif
+*
+*     Perform physic slices output
+      do i=1,Pslab_slab
+         if (Pslab_bus_s(i).eq.'P') then
+            call writslabp(busper, p_bper_siz, jdo, i)
+         else if (Pslab_bus_s(i).eq.'D') then
+            call writslabp(busdyn, p_bdyn_siz, jdo, i)
+         else if (Pslab_bus_s(i).eq.'V') then
+            call writslabp(busvol, p_bvol_siz, jdo, i)
+         else if (Pslab_bus_s(i).eq.'E' .and. F_step.eq.0) then
+            call writslabp(busent, p_bent_siz, jdo, i)
+         endif
+      enddo
+*     
+*     In climate mode, zero out the physic accumulators after
+*     saving them, i.e. when Slab_slab is greater than zero.
+*
+      if ( P_clim_clima_L .and. Pslab_slab.gt.0)
+     $          call zeracc( busper,accum_s,accum )
+*
+      call zongopr( -3, jdo )
+*
+      if (.not.Mem_phyncore_L) then
+         err = write_db_file (Lun_waphy,jdo,1)
+         err = write_db_file (Lun_waphy,busper,p_bper_siz)
+      endif
+*
+#if defined (MULTI)
+#if defined (NEC)
+      call plunlock(Mult_lkphy)
+#endif
+#endif
+*
+      goto 100
+*
+ 650  continue
+*
+ 1000 format(/'PERFORM A PHYSICS STEP: CMC/RPN PHYSICS (S/R P_PHYSLB)'
+     $       /55('='))
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

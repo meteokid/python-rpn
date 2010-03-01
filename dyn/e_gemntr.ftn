@@ -1,0 +1,146 @@
+***s/r gemntr - gemdm entry program
+*
+#include <model_macros_f.h>
+*
+      subroutine gemntr
+      implicit none
+*
+*author   
+*
+*revision
+* v2_21 - M. Desgagne            - initial version
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*implicits
+#include "e_maxprms.cdk"
+#include "e_option.cdk"
+#include "e_files.cdk"
+#include "e_grids.cdk"
+#include "e_anal.cdk"
+#include "e_locdim.cdk"
+*
+#include "ptopo.cdk"
+#include "version.cdk"
+#include "grd.cdk"
+#include "bmf.cdk"
+*
+*MODULES
+      integer  fnom, fstouv, fstfrm, exdb, exfin
+      external fnom, fstouv, fstfrm, exdb, exfin
+*
+      integer  ni, nila, err
+      real, dimension (:), allocatable :: xfi, yfi, xu, yv, latfi, 
+     $                              lonfi, latu, lonu, latv, lonv
+*
+* ---------------------------------------------------------------------
+*
+      call open_status_file ()
+      call write_status_file ('_status=ABORT;')
+      err = exdb('GEMNTR',Version_S,'NON')
+      stdout = 6
+*
+      call e_gemnml
+*
+      open (41,file='process/00-00/restart',access='SEQUENTIAL',
+     $            iostat=err,status='OLD',form='UNFORMATTED')
+      if ((err.eq.0).and.(.not.lam)) goto 800
+*
+      ni   = Grd_ni
+      nila = Grd_nila
+*
+      if (lam) then
+          niu = ni-1
+      else
+          ni=ni+1
+          if ( ni .eq. nila+1) nila=nila+1
+          niu=ni
+      endif
+*
+      nifi = ni
+      niv  = ni
+      njfi = Grd_nj
+      nju  = Grd_nj
+      njv  = Grd_nj-1
+      npfi = nifi*njfi
+      npu  = niu *nju
+      npv  = niv *njv
+*     
+      if (LAM) then
+         pni   = nifi
+         pniu  = niu
+      else
+         pni   = nifi-1
+         pniu  = pni
+      endif
+      pnj   = njfi
+      pnjv  = njv
+*
+      allocate ( latfi(npfi),lonfi(npfi),latu(npu),lonu(npu),latv(npv),
+     $           lonv(npv),xfi(nifi),yfi(njfi),xu(niu),yv(njv) )
+*
+      call e_grid ( xfi,yfi,xu,yv,lonfi,latfi,lonu,latu,lonv,latv,lam,
+     $            ni,Grd_nj,niu,njv,nila,Grd_njla,Grd_roule,
+     $            Grd_xlon1,Grd_xlat1,Grd_xlon2,Grd_xlat2,Grd_x0,Grd_y0,
+     $            Grd_xl,Grd_yl,Grd_dx,Grd_dy,Grd_dxmax,Grd_dymax )
+*         
+*  set ip values of the grid descriptors
+*     (ig values of the fields associated)
+*
+      if (ni-1.eq.nila-1) nila = nila-1
+      call ipig ( ip1fi, ip2fi, ip3fi, Grd_dx, Grd_dy, nila, Grd_njla, 
+     $                            ni-1, Grd_nj, Grd_rot_8, Grd_roule )
+*     u grid
+*
+      ip1u = ip1fi
+      ip2u = ip2fi
+      ip3u = ip3fi + 1
+*     v grid
+*
+      ip1v = ip1fi
+      ip2v = ip2fi
+      ip3v = ip3fi + 2
+*
+*     check analysis levels, date, dimensions, record descriptors, etc
+*
+      anal   = 0
+      geophy = 0
+      if (fnom  (anal  ,'process/analysis','RND+OLD',0).lt.0) stop
+      if (fnom  (geophy,'process/geophy'  ,'RND+OLD',0).lt.0) stop
+      if (fstouv(anal  ,'RND').lt.0) stop
+      if (fstouv(geophy,'RND').lt.0) stop
+*
+      call e_anallev ( xfi, yfi, latfi, lonfi )
+*
+      call e_trinit
+*
+*     Preparation of environment for topography processing
+*
+      call e_pretopo ( xfi, yfi, xu, yv )
+*
+      call e_geopfld ( yfi,xfi,latfi, lonfi, ni, Grd_nj )
+*
+*     Processing temperature and humidity
+*
+      call e_intthm ( yfi, xfi, ni, Grd_nj )
+*
+*     Processing wind components
+*
+      call e_intwind ( xu, yfi, xfi, yv, npu, npv )
+*
+      call bmf_splitend
+*
+*     write namelists on label file
+*
+      call e_nml2bin
+*
+      err = fstfrm (anal  )
+      err = fstfrm (geophy)
+*
+ 800  err = exfin ('GEMNTR', Version_S, 'OK')
+      call write_status_file ('_status=ED;')
+      call close_status_file ()
+*
+* ---------------------------------------------------------------------
+*
+      stop
+      end

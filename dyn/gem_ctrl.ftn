@@ -1,0 +1,113 @@
+***s/r gem_ctrl - initiate the forward integration of the model
+*
+#include <model_macros_f.h>
+*
+      subroutine gem_ctrl
+*
+#include "impnone.cdk"
+*
+*author 
+*     Michel Roch - rpn - june 1993
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from gefcn2 v1_03)
+* v2_10 - Tanguay M.        - cancel indata and p_main when 4D-Var 
+* v2_20 - Desgagne M.       - correction for Step_total=0
+* v2_21 - Dugas B.          - adapt to climate mode
+* v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
+* v2_31 - Tanguay M.        - initialization done_once and
+*                             remove call to adv_set
+*
+*object
+*     Beginning of the integration. This subroutine
+*     reads the data and performs initialization if required.
+*     It then initiates the forward intergration of the model.
+*	
+*arguments
+*	none
+*
+*implicits
+#include "init.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "step.cdk"
+#include "schm.cdk"
+#include "rstr.cdk"
+#include "ptopo.cdk"
+#include "v4dg.cdk"
+*
+      integer pnerr
+      logical rstrt_L
+      data rstrt_L /.false./
+*
+      logical done_once_L
+      save done_once_L
+      data done_once_L /.false./
+**
+*     ---------------------------------------------------------------
+*
+*
+*C       2.    If this is the beginning of the integration:
+*              ----------------------------------------------
+*
+*C             a) Read input data, performs preprocessing,
+*C             b) Initializes physics package with zero timestep call,
+*C             c) output field at initial time on the model grid.
+*C             d) perform dynamic diagnostics if required.
+*C             e) write message on cmclog file for analysis cycle.
+*
+*
+      if ( V4dg_conf.eq.0 ) then
+*
+      if ( .not. Rstri_rstn_L ) then
+*
+         call indata()
+*
+         call dynout2 (.true.)
+*
+         if (Ptopo_myproc.eq.0) then
+            call wlog('CSTR')
+         endif
+*
+      else
+         call set_dync()
+      endif
+*
+      endif
+*
+*C    Initialize model and SL operators
+*     --------------------------------------
+*
+      if (.not.done_once_L) then
+         call set_opr()
+         call adw_set()
+      endif
+      done_once_L = .true.
+*
+      Rstri_sdon = 0
+*
+      if ( Init_balgm_L .and. .not.Rstri_idon_L ) call initial (rstrt_L)
+*
+      if (.not.rstrt_L) call gem_run (.false., rstrt_L)
+*
+      if (rstrt_L) call wrrstrt ()
+*
+      if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+*
+      if ( V4dg_conf.eq.0 ) then
+      if (Lctl_step.eq.Step_total) then
+         if (Lun_out.gt.0) then
+             call wlog('FEND')
+             call wlog('CEND')
+         endif
+      endif
+      endif
+*
+ 3000 format(
+     +//,'END OF CURRENT TIME SLICE (S/R GEM_CTRL) AT TIMESTEP',I8,
+     + /,'=================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,70 @@
+#if defined (DOC)
+*
+***comdeck out.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  OUTPUT GLOBAL CONTROL VARIABLES                                     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Out_xnbits_s       | list of variables that will require a compaction|
+*                    | that is different from Out_nbitg                |
+* Out_filt_s         | list of variables what will require filtering;  |
+*                    | for each variable, there is a corresponding     |
+*                    | number of filter passes (Out_filtpass) and the  |
+*                    | filter coefficient (Out_filtcoef)               |
+* Out_unit_S         | output name in units of steps or hours (P or H) |
+* Out_ndigits        | minimum number used to count the units in       |
+*                    | output name (type is specified in Out_unit_S    |
+* Out_cliph_L        | .true. to clip humidity variables on output     |
+* The following are "cub??"   switches used in the context of vertical |
+* interpolation toward pressure levels:                                |
+* Out_cubzt_L        | .true. for cubic interpolation for GZ,VT and HU |
+* Out_cubuv_L        | .true. for cubic interpolation for UU,VV and UV |
+* Out_cubds_L        | .true. for cubic interpolation for DS           |
+* Out_cubqs_L        | .true. for cubic interpolation for QS and Q3    |
+* Out_cubdd_L        | .true. for cubic interpolation for DD           |
+* Out_cubqq_L        | .true. for cubic interpolation for QQ and QR    |
+* Out_cubww_L        | .true. for cubic interpolation for WW           |
+* Out_vt2gz_L        | .true. to compute hydrostatic GZ from P0 and VT |
+* Out_nbitg          | number of bits to keep for all outputs except   |
+*                    | those specified in Out_xnbits_s                 |
+* Out_linbot         | number of layers close to the bottom of the     |
+*                    | model within which a linear interpolation of GZ |
+*                    | and VT is done even if cubic interpolation is   |
+*                    | .true. (it has no effect if cubic interpolation |
+*                    |                                  is .false.)    |
+* Out_nundr          | number of levels for underground extrapolation  |
+* Out_zund           | list of levels for underground extrapolation    |
+* Out_filtpass       | number of filtering passes (see Out_filt_s)     |
+* Out_filtcoef       | filter coefficient (see Out_filt_s)             |
+* ---------------------------------------------------------------------
+#endif
+
+      character*8 Out_xnbits_S(MAXELEM),Out_filt_S(MAXELEM)
+      character   Out_unit_S
+      logical Out_cliph_L, Out_cubzt_L, Out_cubuv_L, 
+     $        Out_cubds_L, Out_cubqs_L, Out_cubdd_L, Out_cubqq_L, 
+     $        Out_cubww_L, Out_vt2gz_L
+      integer Out_nbitg, Out_linbot, Out_nundr, Out_zund(MAXELEM),
+     $        Out_filtpass(MAXELEM),Out_xnbits(MAXELEM),Out_ndigits
+      real    Out_filtcoef(MAXELEM)
+*
+      common / outcc/ Out_xnbits_S, Out_filt_S
+      common / outi/ Out_xnbits, Out_filtpass
+      common / outr/ Out_filtcoef
+      MARK_COMMON_BEG(Out_l)
+      common / Out_l / Out_cliph_L,Out_cubzt_L,Out_cubuv_L, 
+     $                 Out_cubds_L,Out_cubqs_L,Out_cubdd_L,Out_cubqq_L, 
+     $                 Out_cubww_L, Out_vt2gz_L
+      MARK_COMMON_END(Out_l)
+*
+      MARK_COMMON_BEG(Out_c)
+      common / Out_c / Out_unit_S
+      MARK_COMMON_END(Out_c)
+      MARK_COMMON_BEG(Out_i)
+      common / Out_i / Out_nbitg, Out_linbot, Out_nundr,Out_zund, Out_ndigits
+      MARK_COMMON_END(Out_i)
+*

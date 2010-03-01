@@ -1,0 +1,70 @@
+***s/r indata - Read and process the input data at 
+*               beginning of integration
+*
+#include <model_macros_f.h>
+*
+      subroutine indata
+*
+#include "impnone.cdk"
+*
+*author 
+*     Michel Roch - rpn - apr 1994
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from indata v1_03)
+* v2_10 - Tanguay M.        - introduce partition of preprocessing when 4D-Var 
+* v2_20 - Pellerin P.       - read geophysical fields depending on schemes
+* v2_20 - Lee V.            - eliminated p_slicgeo, output of geophysical fields
+* v2_20 -                     will be from the entry or permanent physics bus
+* v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+*
+*object
+*	
+*arguments
+*	none
+*
+*implicits
+#include "schm.cdk"
+#include "glb_ld.cdk"
+#include "v4dg.cdk"
+*
+**
+*     ---------------------------------------------------------------
+*
+*C       1.    Read input data
+*              ---------------
+*
+      if ( Schm_phyms_L ) call readgeo()
+      call readdyn()
+*
+*     --------------------------------------------
+*     In 4D-Var, Convert wind images to true winds
+*     --------------------------------------------
+      if(V4dg_conf.ne.0) call v4d_img2uv()
+*
+*C       2.    performs preprocessing of the dynamics input data
+*              -------------------------------------------------
+*
+      call set_dync()
+*
+      if(V4dg_conf.eq.0) then
+*
+         call predat1 ()
+         call predat2()
+         if (G_lam) call nest_init
+*
+      else
+*     --------------------------------------------------
+*     In 4D-Var, Preprocessing of Control variables only
+*     --------------------------------------------------
+         V4dg_part = 2
+         call v4d_procdyn( )
+*
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

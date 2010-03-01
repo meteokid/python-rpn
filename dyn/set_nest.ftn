@@ -1,0 +1,120 @@
+***s/r set_nest - initialization of the commons for nesting variables
+*		  within the Virtual Memory manager (VMM)
+*
+#include <model_macros_f.h>
+*
+      subroutine set_nest
+#include "impnone.cdk"
+*
+*author
+*     Desgagne/Lee -        spring 2002
+*
+*revision
+* v3_00 - Desgagne/Lee      - initial version
+*
+*object
+*	This subroutine initializes the commons containing the
+*	keys used by the Virtual Memory Manager to identify the
+*	nesting variables
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "nest.cdk" 
+#include "tr3d.cdk"
+#include "schm.cdk"
+*
+*modules
+      integer vmmcre
+      external vmmcre
+      character*80 ptath
+      integer i
+*
+**
+*
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) write (Lun_out,1000)
+*
+      COMMON_INIT(nest,-100)
+*
+*	Assign the names of the variables
+*
+      VMM_NAM(nest_u   ) = 'NEST_U'
+      VMM_NAM(nest_v   ) = 'NEST_V'
+      VMM_NAM(nest_t   ) = 'NEST_T'
+      VMM_NAM(nest_tp  ) = 'NEST_TP'
+      VMM_NAM(nest_psd ) = 'NEST_PSD'
+      VMM_NAM(nest_pip ) = 'NEST_PIP'
+      VMM_NAM(nest_fip ) = 'NEST_FIP'
+      VMM_NAM(nest_w   ) = 'NEST_W'
+      VMM_NAM(nest_td  ) = 'NEST_TD'
+      VMM_NAM(nest_fi  ) = 'NEST_FI'
+      VMM_NAM(nest_q   ) = 'NEST_Q'
+      VMM_NAM(nest_s   ) = 'NEST_S'
+      VMM_NAM(nest_mu  ) = 'NEST_MU'
+      VMM_NAM(nest_tr  ) = 'NEST_TR'
+      VMM_NAM(nest_uf   ) = 'NEST_UF'
+      VMM_NAM(nest_vf   ) = 'NEST_VF'
+      VMM_NAM(nest_tf   ) = 'NEST_TF'
+      VMM_NAM(nest_tpf  ) = 'NEST_TPF'
+      VMM_NAM(nest_psdf ) = 'NEST_PSDF'
+      VMM_NAM(nest_pipf ) = 'NEST_PIPF'
+      VMM_NAM(nest_fipf ) = 'NEST_FIPF'
+      VMM_NAM(nest_wf   ) = 'NEST_WF'
+      VMM_NAM(nest_tdf  ) = 'NEST_TDF'
+      VMM_NAM(nest_fif  ) = 'NEST_FIF'
+      VMM_NAM(nest_qf   ) = 'NEST_QF'
+      VMM_NAM(nest_sf   ) = 'NEST_SF'
+      VMM_NAM(nest_muf  ) = 'NEST_MUF'
+      VMM_NAM(nest_trf  ) = 'NEST_TRF'
+*
+*  Set the attributes of the variables
+*
+      ptath='SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
+*
+      VMM_CREATE(nest_u   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_v   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_t   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_tp  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_psd , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_pip , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_fip , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_w   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_td  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_fi  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_q   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_s   , LARRAY2D, 1, ptath)
+      VMM_CREATE(nest_uf   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_vf   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_tf   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_tpf  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_psdf , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_pipf , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_fipf , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_wf   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_tdf  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_fif  , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_qf   , LARRAY3D, 1, ptath)
+      VMM_CREATE(nest_sf   , LARRAY2D, 1, ptath)
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE(nest_mu  , LARRAY3D, 1, ptath)
+         VMM_CREATE(nest_muf  , LARRAY3D, 1, ptath)
+      endif
+      if ( Tr3d_ntr .gt. 0 ) then
+         VMM_CREATE(nest_tr  , LARRAY3D, Tr3d_ntr, ptath)
+         VMM_CREATE(nest_trf  , LARRAY3D, Tr3d_ntr, ptath)
+      endif
+*
+ 1000 format(
+     +/ /,'INITIALIZATION OF NESTING VARIABLE COMDECKS (S/R SET_NEST)',
+     + /,'=========================================================',
+     +/ /)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

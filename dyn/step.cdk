@@ -1,0 +1,26 @@
+#if defined (DOC)
+*
+***comdeck step.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH FFT                                       |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Step_total         | Total number of timesteps for model run         |
+* Step_rsti          | Number of timesteps to save a restart file      |
+* Step_bkup          | Number of timesteps to save a restart file for  |
+*                    |  backup if "restart" is not true.               |
+* Step_gstat         | Number of timesteps for a global stat (glbstat) |
+*----------------------------------------------------------------------
+*
+*
+#endif
+      integer Step_total, Step_rsti, Step_bkup, Step_gstat
+*
+      MARK_COMMON_BEG (Stepi)
+      common / Stepi / Step_total, Step_rsti, Step_bkup, Step_gstat
+      MARK_COMMON_END (Stepi)
+*

@@ -1,0 +1,77 @@
+*** s/r e_moclim2 reading and horizontal interpolation
+*
+#include <model_macros_f.h>
+*
+      integer function e_moclim2 (  f, lat, lon, ni, nj, nomvar, 
+     $            ip1, ip2, ip3, etik, typvar, anyip, interp, un1, stdo)
+*
+#include "impnone.cdk"
+*
+      character* (*) nomvar,interp,etik,typvar
+      logical anyip
+      integer ni, nj, ip1, ip2, ip3, un1, stdo
+      real  f(*), lat(*), lon(*)
+*
+*author   andre methot - cmc - april 94
+*
+*revision
+*
+* v2_21 - Desgagne M.       - major re-organization + use of e_rdhint
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*       Return a weighted averaged climatological field.
+*       The average is weighted by the day of the month.
+*
+*implicites
+#include "e_times.cdk"
+#include "e_files.cdk"
+*
+      integer moa, jj, i, err, e_rdhint2
+      real    poa, poam
+      real,        dimension(:),allocatable :: w1
+*
+* NOTE: As this routine is meant for climatology input,
+*       arguments ip1, ip2, anyip and un1 from the calling
+*       routine are ignored.
+*---------------------------------------------------------------------
+*
+*     Computing the closest neighbouring month and weight
+*
+      if ( idate(3) .gt. 15 ) then
+         jj = 32 - idate(3)
+         if ( jj .gt. 15 ) jj = 15
+         moa = month + 1
+         if ( month .eq. 12 ) moa = 1
+      else
+         jj = idate(3)
+         moa = month - 1
+         if ( month .eq. 1 ) moa = 12
+      endif
+      poa = ( jj + 13 ) / 28.
+*
+      write (stdo,1000) month,moa
+*
+      e_moclim2 = -1
+      if (e_rdhint2(f,lat,lon,ni,nj,nomvar,ip1,month,-1,etik,
+     $              typvar,.false.,.true.,interp,climat,stdo ).lt.0) return
+*
+      allocate( w1(ni*nj) )
+      e_moclim2 = e_rdhint2( w1,lat,lon,ni,nj,nomvar,ip1,moa,-1,etik,
+     $                      typvar,.false.,.true.,interp,climat,stdo )
+      if (e_moclim2.lt.0) stop
+*
+*     Compute weighted average
+*
+      poam = 1. - poa
+      do i=1,ni*nj
+         f(i) = poa*f(i) + poam*w1(i)
+      enddo
+      deallocate (w1)
+*
+ 1000 format ('CLIMATOLOGY: AVERAGING BETWEEN MONTHS ',2i3)
+*---------------------------------------------------------------------
+*
+      return
+      end
+

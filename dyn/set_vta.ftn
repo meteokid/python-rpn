@@ -1,0 +1,113 @@
+***s/r set_vta - Initialization of the commons for digital filter
+*		 variables. Virtual Memory manager initialisation.
+*
+#include <model_macros_f.h>
+*
+      subroutine set_vta
+*
+#include "impnone.cdk"
+*
+*author
+*     alain patoine - march 1994
+*
+*revision
+* v2_00 - Desgagne/Lee   - initial MPI version (from setvta v1_03)
+* v2_21 - J. P. Toviessi - rename some model output variables
+* v2_30 - Edouard S.     - remove pi' at the top
+* v2_31 - Desgagne M.    - re-introduce 3D tracers*
+*object
+*	This subroutine initializes the commons containing the
+*	keys used by the Virtual Memory Manager to identify the
+*	digital filter variables
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vta.cdk"
+#include "tr3d.cdk"
+*
+*modules
+      integer  vmmcre,vmmlod,vmmget,vmmuld
+      external vmmcre,vmmlod,vmmget,vmmuld
+*
+**
+      character*80 attri_S,attrit_S
+      integer i
+*
+*     ---------------------------------------------------------------
+*
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+      COMMON_INIT(vta,-100)
+*
+*
+*C       1.    Create digital filter variables
+*              -------------------------------
+*
+*	Assign the names of the variables
+*
+      VMM_NAM(uta  ) = 'UTA'
+      VMM_NAM(vta  ) = 'VTA'
+      VMM_NAM(wta  ) = 'WTA'
+      VMM_NAM(tdta ) = 'TDTA'
+      VMM_NAM(tta  ) = 'TTA'
+      VMM_NAM(fita ) = 'FITA'
+      VMM_NAM(qta  ) = 'QTA'
+      VMM_NAM(tpta ) = 'TPTA'
+      VMM_NAM(fipta) = 'FIPA'
+      VMM_NAM(qpta ) = 'QPTA'
+      VMM_NAM(pipta) = 'PIPA'
+      VMM_NAM(tplta) = 'TPLA'
+      VMM_NAM(muta)  = 'MUTA'
+      VMM_NAM(psdta) = 'PSDA'
+      VMM_NAM(sta  ) = 'STA'
+      VMM_NAM(gpta ) = 'GPTA'
+      VMM_NAM(multa) = 'MULA'
+      VMM_NAM(huta ) = 'HUTA'
+      VMM_NAM(qcta ) = 'QCTA'
+      VMM_NAM(trta ) = 'TRTA'
+*
+*	Set the attributes of the variables
+*
+      attri_S  = 'SAVE=Y,CL=2,W=5,INIT=0,MUSTEXIST'
+      attrit_S = 'SAVE=Y,CL=3,W=5,INIT=0,MUSTEXIST'
+*
+      VMM_CREATE(uta  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(vta  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(wta  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tdta , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tta  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fita , LARRAY3D, 1, attri_S)
+      VMM_CREATE(qta  , LARRAY3D, 1, attri_S)
+      VMM_CREATE(tpta , LARRAY3D, 1, attri_S)
+      VMM_CREATE(fipta, LARRAY3D, 1, attri_S)
+      VMM_CREATE(qpta , LARRAY3D, 1, attri_S)
+      VMM_CREATE(pipta, LARRAY3D, 1, attri_S)
+      VMM_CREATE(tplta, LARRAY3D, 1, attri_S)
+      VMM_CREATE(psdta, LARRAY3D, 1, attri_S)
+      VMM_CREATE(sta  , LARRAY2D, 1, attri_S)
+      VMM_CREATE(gpta , LARRAY3D, 1, attri_S)
+      VMM_CREATE(huta , LARRAY3D, 1, attri_S)
+      VMM_CREATE(qcta , LARRAY3D, 1, attri_S)
+*
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE(  muta, LARRAY3D, 1, attri_S )
+         VMM_CREATE( multa, LARRAY3D, 1, attri_S )
+      endif
+      if ( Tr3d_ntr .gt. 0 ) then
+         VMM_CREATE(trta, LARRAY3D, Tr3d_ntr, attrit_S)
+      endif
+*
+ 1000 format(
+     +/,'INITIALIZATION OF DIGITAL FILTER COMDECKS (S/R SET_VTA)',
+     +/,'=======================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

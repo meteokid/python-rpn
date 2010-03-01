@@ -1,0 +1,152 @@
+***s/r tstpdyn -  Performs a dynamical timestep of the model
+*
+#include <model_macros_f.h>
+*
+      subroutine tstpdyn ( F_fnitraj )
+*
+#include "impnone.cdk"
+*
+      integer F_fnitraj
+*
+*author
+*     Alain Patoine ( after version v1_93 of tstpdyn2 )
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Tanguay M.        - store TRAJ for 4D-Var 
+* v2_30 - Edouard S.        - introduce Ncn 
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*    
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_fnitraj     I         number of iterations to compute upstream 
+*                         positions  
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "orh.cdk"
+#include "sol.cdk"
+#include "nl.cdk"
+#include "v4dg.cdk"
+*
+      integer iln, dim, err
+      real dth
+*
+**
+*     ---------------------------------------------------------------
+*
+*C    rhs:	Compute rhs of the governing equations
+*C    int:	Perform Semi-Lagrangian advection
+*C    pre:	Compute non-linear Helmholtz problem (invariant part)
+*C    nli:	Compute non-linear components of the r.h.s. of the 
+*C              Helmholtz problem and linear and nonlinear components 
+*C              of the r.h.s. of the Helmholtz equation
+*C    solver:	Linear Helmholtz solver
+*C    bac:	Backsubtitution
+*     ---------------------------------------------------------------
+*
+      dth =  Cstv_dt_8/2.
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+*     ---------------------------------------------------------------
+*
+      if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) then
+*
+*        Store TRAJ predictive variables except PIPT1
+*        --------------------------------------------
+         if ( Orh_crank_L .and. Orh_icn .eq. 1 ) then
+*
+            V4dg_numtr = 3
+            call v4d_rwtraj ()
+*
+         endif
+*
+      endif
+*
+      call rhs ()
+*
+      if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) then
+*
+*        Store TRAJ Positions TH
+*        -----------------------
+         V4dg_numtr = 4
+         call v4d_rwtraj ()
+*
+*        Store TRAJ Winds TH
+*        -------------------
+         V4dg_numtr = 5
+         call v4d_rwtraj ()
+*
+      endif
+*
+      call adw_main ( F_fnitraj )
+*
+      call pre () 
+*
+      if ( Orh_icn .eq. 1) call frstgss( )
+*
+      if (Lun_debug_L) write (Lun_out,1005) Schm_itnlh
+*
+      dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      call hpalloc (nl_nu_  , dim, err,1)
+      call hpalloc (nl_nv_  , dim, err,1)
+      call hpalloc (nl_nth_ , dim, err,1) 
+      call hpalloc (nl_ncn_ , dim, err,1)
+      nl_n3_  = 0
+      nl_n3p_ = 0
+      if (.not. Schm_hydro_L) then
+         call hpalloc (nl_n3_  , dim, err,1)
+         call hpalloc (nl_n3p_ , dim, err,1)
+      endif
+*
+      do 100 iln=1,Schm_itnlh
+*
+         if ( V4dg_conf.ne.0.and.V4dg_oktr_L ) then
+*
+            if(.not.( (Orh_icn.eq.1.and.iln.eq.1).or.
+     %              (                 iln.gt.1))    ) then
+*
+*        Store TRAJ TPLT0,ST0
+*        --------------------
+               V4dg_numtr = 6
+               call v4d_rwtraj ()
+*
+            endif
+*
+         endif
+*
+         call nli ()
+*
+         call sol_main ()
+*
+         call bac ( iln, Schm_itnlh )
+*
+ 100  continue
+*
+      call hpdeallc(nl_nu_ , err)
+      call hpdeallc(nl_nv_ , err)
+      call hpdeallc(nl_nth_, err)
+      call hpdeallc(nl_ncn_, err)
+      if (.not. Schm_hydro_L) then
+         call hpdeallc(nl_n3_ , err)
+         call hpdeallc(nl_n3p_, err)
+      endif
+*
+*     ---------------------------------------------------------------
+*
+ 1000 format(
+     + 3X,'PERFORM A DYNAMICAL STEP: (S/R TSTPDYN)',
+     +/3X,'========================================',/)
+ 1005 format(
+     $ 3X,'ITERATING SCHM_ITNLH=',I3,' TIMES TO SOLVE NON-LINEAR ',
+     $    'HELMHOLTZ PROBLEM')
+      return
+      end

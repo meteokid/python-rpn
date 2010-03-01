@@ -1,0 +1,138 @@
+***s/r e_pregeo- prepare the geophysical fields
+*
+      subroutine e_pregeo (lat, lon, ni, nj)
+*
+#include "impnone.cdk"
+*
+      integer ni,nj
+      real lat(ni,nj), lon(ni,nj)
+*
+*author 
+*     Andre Methot
+*
+*revision
+*
+*object
+*
+*arguments
+*	none
+*
+*implicits
+      integer l_ni,l_nj
+      parameter(l_ni=1,l_nj=1)
+#include <model_macros_f.h>
+#include "e_grids.cdk"
+#include "e_geol.cdk"
+#include "p_bus.cdk"
+#include "p_pbl.cdk"
+#include "p_geobus.cdk"
+#include "dcst.cdk"
+**
+      integer i,j,offj,n
+      real deg2rad
+*
+*     ---------------------------------------------------------------
+*
+      write(6,9000)
+*
+      deg2rad  = acos(-1.0)/180.
+      do j=1,njfi
+         offj=ni*(j-1)
+         do i=1,nifi
+            geobus(la+offj+i-1)= lat(i,j)*deg2rad
+         end do
+      end do 
+*
+      do j=1,njfi
+         offj=ni*(j-1)
+         do i=1,nifi
+            if ( lon(i,j) .ge. 180 ) then
+               geobus(lo+offj+i-1) = (lon(i,j) - 360.)*deg2rad
+            else
+               geobus(lo+offj+i-1) = lon(i,j)*deg2rad
+            endif
+         enddo
+      enddo
+*
+      n=nifi*njfi
+      do i=1,n
+         geobus(glsea +    i-1)=max(min(geobus(glsea+i-1),1.0),0.0)
+         geobus(mg    +    i-1)=max(min(geobus(mg   +i-1),1.0),0.0)
+         geobus(ga    +    i-1)=max(min(geobus(ga   +i-1),1.0),0.0)
+      end do
+      if (geobus(twater).lt.150.) then
+         do i=1,n
+            geobus(twater +i -1) = geobus(twater +i -1) + dcst_tcdk_8
+         end do
+      endif
+      if (geobus(i0).lt.150.) then
+         do i=1,n
+            geobus(i0 +i -1) = geobus(i0 +i -1) + dcst_tcdk_8
+         end do
+      endif
+      if (geobus(i0+n).lt.150.) then
+         do i=1,n
+            geobus(i0 + n +i -1) = geobus(i0 + n +i -1) + dcst_tcdk_8
+         end do
+      endif
+      if (geobus(gmice).lt.150.) then
+         do i=1,n
+            geobus(gmice +i -1) = geobus( gmice+i -1) + dcst_tcdk_8
+         end do
+      endif
+      if (geobus(gmice+n).lt.150.) then
+         do i=1,n
+            geobus(gmice + n +i -1) = geobus( gmice+ n+i -1) + dcst_tcdk_8
+         end do
+      endif
+      if (geobus(gmice+ 2*n).lt.150.) then
+         do i=1,n
+            geobus(gmice + 2*n +i -1) = geobus( gmice+ 2*n +i -1) + dcst_tcdk_8
+         end do
+      endif
+      if (geobus(gice).lt.150.) then
+         do i=1,n
+            geobus(gice+i -1) = geobus(gice+i -1) + dcst_tcdk_8
+         end do
+      endif
+      if (geobus(gice+n).lt.150.) then
+         do i=1,n
+            geobus(gice + n +i -1) = geobus(gice+ n +i -1) +dcst_tcdk_8
+         end do
+      endif
+      if (glseac.gt.0) then
+         do i=1,n
+            geobus(glseac+i-1)=max(min(geobus(glseac+i-1),1.0),0.0)
+         end do
+      endif
+*
+      if ( E_geol_glreg_L ) call e_modgl ()
+*
+      if (  P_pbl_schsl_s.eq. 'FCREST' ) then       
+         call e_modhs ()
+         call e_modmg ()
+      endif
+*
+      if ( E_geol_z0cst.lt.0.) then
+         do i=1,n
+            geobus(z0+i-1) = exp ( geobus(z0+i-1) )
+         end do
+      else
+         print*, 'zo constant: ',E_geol_z0cst
+         do i=1,n
+            geobus(z0+i-1) = E_geol_z0cst
+         end do
+      endif
+*
+      write(6, 9999)
+*     
+ 9000 format(/,'BEGIN PROCESSING GEOPHYSICAL FIELDS (S/R E_PREGEO)',
+     +       /,'=================================================')
+*
+ 9999 format(/,'END PROCESSING GEOPHYSICAL FIELDS (S/R E_PREGEO)',
+     +       /,'==================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

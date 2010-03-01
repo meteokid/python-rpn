@@ -1,0 +1,193 @@
+***s/r hzd_del2 - horizontal diffusion problem
+*
+#include <model_macros_f.h>
+*
+      subroutine hzd_del2  (F_sol, F_rhs_8, F_opsxp0_8, F_opsyp0_8,
+     $                      F_aix_8,F_bix_8,F_cix_8,F_dix_8,
+     $                      F_aiy_8,F_biy_8,F_ciy_8,F_g1_8,F_g2_8,
+     $                      DIST_DIM,Nk, Gni,Gnj, lnjs_nh, 
+     $                      nk12s, nk12, ni22s, ni22, fnjb)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk, Gni, Gnj, lnjs_nh,
+     $        nk12s, nk12, ni22s, ni22, fnjb
+*
+      real   F_sol(DIST_SHAPE,Nk)
+      real*8 F_rhs_8(DIST_SHAPE,Nk),F_opsxp0_8(*),F_opsyp0_8(*),
+     $       F_aix_8(lnjs_nh,Gni),F_bix_8(lnjs_nh,Gni),
+     $       F_cix_8(lnjs_nh,Gni),F_dix_8(lnjs_nh,Gni),
+     $       F_aiy_8(ni22s,Gnj),F_biy_8(ni22s,Gnj),F_ciy_8(ni22s,Gnj),
+     $       F_g1_8(PYDIST_SHAPE,nk12s,*),F_g2_8(nk12s,ni22s,*)
+*
+*author    
+*     J.P. Toviessi / Jean Cote
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_11 - Desgagne M.       - remove vertical modulation
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_sol       I/O           result
+*  F_rhs_8      I            r.h.s. of horizontal diffusion equation
+*  
+*----------------------------------------------------------------
+*
+*implicit
+#include "glb_ld.cdk"
+*
+      integer i, j, k, cnt
+      real*8 g1(nk12*l_nj,Gni), ax(nk12*l_nj,Gni), cx(nk12*l_nj,Gni),
+     $       g2(nk12*ni22,Gnj), ay(nk12*ni22,Gnj), cy(nk12*ni22,Gnj)
+**
+*     __________________________________________________________________
+*
+      do k = 1, Nk
+         do j = 1+pil_s, l_nj-pil_n 
+         do i = 1+pil_w, l_ni-pil_e 
+            F_rhs_8(i,j,k) = dble(F_sol(i,j,k))
+         enddo
+         enddo
+      enddo
+*
+      call rpn_comm_transpose ( F_rhs_8 , XDIST_DIM, Gni, ARRAY1DY,
+     %                          1, nk12s, Nk  , F_g1_8,  1, 2 )
+*
+c      do j = 1+pil_s, l_nj-pil_n 
+c      do k = 1, nk12
+c         do i = 1, Gni
+c            F_g1_8(j,k,i) = F_opsxp0_8(i)*F_g1_8(j,k,i)
+c         enddo
+c         do i = 1, Gni-1
+c            F_g1_8(j,k,i) = F_bix_8(j,i)*F_g1_8(j,k,i)
+c         enddo
+c         do i = 2, Gni-1
+c            F_g1_8(j,k,i) = F_g1_8(j,k,i)-F_aix_8(j,i)*F_g1_8(j,k,i-1)
+c         enddo
+c         do i = Gni-2, 1, -1
+c            F_g1_8(j,k,i) = F_g1_8(j,k,i)-F_cix_8(j,i)*F_g1_8(j,k,i+1)
+c         end do
+c         F_g1_8(j,k,Gni) =   F_bix_8(j,Gni)*F_g1_8(j,k,Gni  )
+c     %                   + F_cix_8(j,Gni)*F_g1_8(j,k,1    )
+c     %                   + F_aix_8(j,1  )*F_g1_8(j,k,Gni-1)
+c         do i = 1, Gni - 1
+c            F_g1_8(j,k,i) = F_g1_8(j,k,i)+F_dix_8(j,i)*F_g1_8(j,k,Gni)
+c         enddo
+c      enddo
+c      enddo
+*
+      cnt = 0
+      do j = 1+pil_s, l_nj-pil_n 
+      do k = 1, nk12
+         cnt = cnt + 1
+         do i = 1, Gni-1
+            g1(cnt,i) = F_bix_8(j,i)*F_opsxp0_8(i)*F_g1_8(j,k,i)
+            ax(cnt,i) = F_aix_8(j,i)
+            cx(cnt,i) = F_cix_8(j,i)
+         enddo
+         g1(cnt,Gni) = F_opsxp0_8(i)*F_g1_8(j,k,Gni)
+      enddo
+      enddo 
+*
+      do i = 2, Gni-1
+      do k = 1, cnt
+         g1(k,i) = g1(k,i) - ax(k,i)*g1(k,i-1)
+      end do
+      end do
+      do i = Gni-2, 1, -1
+      do k = 1, cnt
+         g1(k,i) = g1(k,i) - cx(k,i)*g1(k,i+1)
+      end do
+      end do
+*
+      cnt = 0
+      do j = 1+pil_s, l_nj-pil_n 
+*VDIR NOVECTOR
+      do k = 1, nk12
+         cnt = cnt + 1
+         F_g1_8(j,k,Gni) =   F_bix_8(j,Gni)*g1(cnt,Gni  )
+     %                     + F_cix_8(j,Gni)*g1(cnt,1    )
+     %                     + F_aix_8(j,1  )*g1(cnt,Gni-1)
+         do i = 1, Gni - 1
+            F_g1_8(j,k,i) = g1(cnt,i) + F_dix_8(j,i)*F_g1_8(j,k,Gni)
+         enddo
+      enddo
+      enddo
+*
+      call rpn_comm_transpose ( F_g1_8 , YDIST_DIM, Gnj, nk12s,
+     %                          1, ni22s, Gni, F_g2_8,  2, 2 )
+*
+* ___ Calcul le long de Y
+*
+c      do i = 1, ni22
+c      do k = 1, nk12
+c         do j = 1, fnjb
+c            F_g2_8(k,i,j) = F_opsyp0_8(j)*F_g2_8(k,i,j)
+c         enddo
+c         do j = 1, fnjb
+c            F_g2_8(k,i,j) = F_biy_8(i,j)*F_g2_8(k,i,j)
+c         enddo
+c         do j = 2, fnjb
+c            F_g2_8(k,i,j) = F_g2_8(k,i,j)-F_aiy_8(i,j)*F_g2_8(k,i,j-1)
+c         enddo
+c         do j = fnjb-1, 1, -1
+c            F_g2_8(k,i,j) = F_g2_8(k,i,j)-F_ciy_8(i,j)*F_g2_8(k,i,j+1)
+c         end do
+c      enddo
+c      enddo
+*
+      cnt = 0
+      do i = 1, ni22
+      do k = 1, nk12
+         cnt = cnt + 1
+         do j = 1, fnjb
+            g2 (cnt,j) = F_biy_8(i,j)*F_opsyp0_8(j)*F_g2_8(k,i,j)
+            ay (cnt,j) = F_aiy_8(i,j)
+            cy (cnt,j) = F_ciy_8(i,j)
+         enddo
+      enddo
+      enddo
+*
+      do j = 2, fnjb
+      do k = 1, cnt
+         g2 (k,j) = g2(k,j) - ay(k,j)*g2(k,j-1)
+      end do
+      end do
+      do j = fnjb-1, 1, -1
+      do k = 1, cnt
+         g2 (k,j) = g2(k,j) - cy(k,j)*g2(k,j+1)
+      end do
+      end do
+*
+      cnt = 0
+      do i = 1, ni22
+      do k = 1, nk12
+         cnt = cnt + 1
+         do j = 1, fnjb
+            F_g2_8(k,i,j)= g2(cnt,j)
+         end do
+      enddo
+      enddo
+*
+      call rpn_comm_transpose ( F_g1_8 , Miny, Maxy, Gnj, nk12s,
+     %                          1, ni22s, Gni, F_g2_8, -2, 2 )
+*
+      call rpn_comm_transpose ( F_rhs_8 , Minx, Maxx, Gni, ARRAY1DY,
+     %                          1, nk12s , Nk , F_g1_8, -1, 2 )
+*
+      do k = 1, Nk
+         do j = 1+pil_s, l_nj-pil_n 
+         do i = 1+pil_w, l_ni-pil_e 
+            F_sol(i,j,k) = sngl(F_rhs_8(i,j,k))
+         enddo
+         enddo
+      enddo
+*
+*     __________________________________________________________________
+*
+      return
+      end

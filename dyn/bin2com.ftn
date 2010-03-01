@@ -1,0 +1,67 @@
+***s/r bin2com - reads parameters from labfl
+*
+#include <model_macros_f.h>
+*
+      subroutine bin2com
+      implicit none
+*
+*author 
+*     michel desgagne -  Jan 2000
+*
+*revision
+* v2_00 - Desgagne/Lee      - initial MPI version (from setgeom v1_03)
+* v2_20 - Lee V.            - broadcast changes due to physics 3.66  
+* v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
+* v2_30                       introduce Geomg_pia and Geomg_pib
+* v2_30 - A. Methot         - introduction of a new stretch grid design
+* v2_30                       with upper limits on grid point spacing
+* v2_31 - Desgagne/Lee      - Clean up, introduce tracers and remove
+* v2_31                       references to vertical levels
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     See above id
+*	
+*arguments - none
+*
+#include "glb_ld.cdk"
+#include "did.cdk"
+#include "hgc.cdk"
+#include "grd.cdk"
+#include "out1.cdk"
+#include "schm.cdk"
+#include "p_pbl.cdk"
+#include "ptopo.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "lun.cdk"
+#include "p_geol.cdk"
+*
+      integer i, j, k
+      real*8 ONE_8
+      parameter( ONE_8   = 1.0 )
+**
+*     ---------------------------------------------------------------
+*
+      read(lun_lab) Grd_ni  , Grd_nj  , Grd_nila  , Grd_njla ,
+     $              Grd_dx  , Grd_dy  , Grd_rot_8 , G_lam    ,
+     $              Grd_x0  , Grd_xl  , Grd_y0    , Grd_yl   , 
+     $              Grd_dxmax, Grd_dymax,
+     $              Ptopo_npex, Ptopo_npey, Tr3d_userntr, Tr2d_userntr,
+     $              (Tr3d_username_S(k),k=1,Tr3d_userntr),
+     $              (Tr3d_usersval  (k),k=1,Tr3d_userntr),
+     $              (Tr2d_username_S(k),k=1,Tr2d_userntr),
+     $              (Tr2d_usersval  (k),k=1,Tr2d_userntr)
+*
+      read(lun_lab)  Did_es,Did_vt,Did_horint,Did_vrtc
+      read(lun_lab)  P_pbl_schsl_s, P_pbl_snoalb_L
+*
+      read(lun_lab)  Out1_date, Out1_etik_s, Out1_anlv, 
+     $     Hgc_gxtyp_s, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro
+*
+      P_geol_tourn_L = (abs((abs(Grd_rot_8(3,3))-ONE_8)).gt.1.0e-10)
+*     ---------------------------------------------------------------
+*
+      return
+      end
+*

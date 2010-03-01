@@ -1,0 +1,120 @@
+***s/r adw_trajsp - improves estimates of upwind positions
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_trajsp ( F_lon, F_lat, F_x, F_y, F_z,
+     %                        F_u, F_v, F_dt,i0,in,j0,jn)
+*
+#include "impnone.cdk"
+*
+      real F_lon(*),F_lat(*),F_x(*),F_y(*),F_z(*),F_u(*),F_v(*),F_dt
+      integer i0,in,j0,jn
+*
+*author
+*     alain patoine
+*
+*revision
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_lon        | upwind longitudes at central time               |  o  |
+* F_lat        | upwind latitudes at central time                |  o  |
+* F_x          | upwind x cartesian positions at central time    |  o  |
+* F_y          | upwind y cartesian positions at central time    |  o  |
+* F_z          | upwind z cartesian positions at central time    |  o  |
+* F_u          | real E-W wind components at upwind positions    |  i  |
+* F_v          | real N-S wind components at upwind positions    |  i  |
+* F_dt         | timestep lenght                                 |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+************************************************************************
+      integer n, ij, nij, nijk,i,j,k
+*
+      real*8  pdsa, pdca, pdcai, pdso, pdco, pdx, pdy, pdz,
+     %        pdux, pduy, pduz, pdsinal, pdcosal, r2pi_8, two
+*
+      parameter (two = 2.0)
+************************************************************************
+      nij  = l_ni*l_nj
+      nijk = l_ni*l_nj*l_nk
+*
+      r2pi_8 = two * Dcst_pi_8
+************************************************************************
+*
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+      n = (k-1)*nij + ((j-1)*l_ni) + i
+      ij = mod( n-1, nij ) + 1
+************************************************************************
+* cartesian coordinates of grid points                                 *
+************************************************************************
+      pdx = Adw_cx2d_8(ij)
+      pdy = Adw_sx2d_8(ij)
+      pdz = Adw_sy2d_8(ij)
+************************************************************************
+* if very small wind set upwind point to grid point                    *
+************************************************************************
+      if ( abs(F_u(n))+abs(F_v(n)) .lt. 1.e-10 ) go to 99
+*
+      pdx = pdx * Adw_cy2d_8(ij)
+      pdy = pdy * Adw_cy2d_8(ij)
+************************************************************************
+* sin and cosin of first guess of upwind positions                     *
+************************************************************************
+      pdsa  = F_z(n)
+      pdca  = cos( F_lat(n) )
+      pdcai = 1.0/pdca
+      pdso  = F_y(n) * pdcai
+      pdco  = F_x(n) * pdcai
+************************************************************************
+* wind components in cartesian coordinate at upwind positions          *
+************************************************************************
+      pdux = ( - F_u(n) * pdso - F_v(n) * pdco * pdsa )
+      pduy = (   F_u(n) * pdco - F_v(n) * pdso * pdsa )
+      pduz =     F_v(n) * pdca
+*
+      pdsinal = pdx * pdux + pdy * pduy + pdz * pduz
+      pdux = pdux - pdx * pdsinal
+      pduy = pduy - pdy * pdsinal
+      pduz = pduz - pdz * pdsinal
+      pdsinal = sin( sqrt( F_u(n) ** 2 + F_v(n) ** 2 ) * F_dt )
+      pdcosal = sqrt( ( 1.0 + pdsinal ) * ( 1.0 - pdsinal ) )
+      pdsinal = pdsinal /
+     %          sqrt( pdux * pdux + pduy * pduy + pduz * pduz )
+*
+      F_x(n) = pdcosal * pdx - pdsinal * pdux
+      F_y(n) = pdcosal * pdy - pdsinal * pduy
+      F_z(n) = pdcosal * pdz - pdsinal * pduz
+*
+   99 F_z  (n) = min(1.0D0,max(F_z(n),-1.0D0))
+      F_lat(n) = asin( F_z(n) )
+      F_lon(n) = atan2( F_y(n), F_x(n) )
+*
+      enddo
+      enddo
+      enddo
+*
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+      n = (k-1)*nij + ((j-1)*l_ni) + i
+      if ( F_lon(n) .lt. 0.0 ) F_lon(n) = F_lon(n) + r2pi_8
+      enddo
+      enddo
+      enddo
+*
+      return
+      end

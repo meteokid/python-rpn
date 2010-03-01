@@ -1,0 +1,149 @@
+***s/r bcastc1
+*
+#include <model_macros_f.h>
+*
+      subroutine bcastc1
+*
+#include "impnone.cdk"
+*
+*author
+*     Michel Desgagne
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Tanguay M.        - add comdecks 4D-Var 
+* v2_10 - Qaddouri A.       - higher order diffusion operator
+* v2_11 - Desgagne M.       - broadcast common Hzdl
+* v2_11 - Desgagne M.       - broadcast common vspng for vertical sponge
+* v2_20 - Lee V.            - broadcast changes due to physics 3.66  
+* v2_21 - Desgagne M.       - rpn_comm stooge for MPI
+* v2_21 - Lee V.            - broadcast path for slab outputs
+* v2_30 - Edouard S.        - adapt for vertical hybrid coordinate
+* v2_30 - Lee V.            - broadcast common Out_c
+* v2_31 - Lee V.            - allocate Geomg_hyb,change Geomg_eta to Geomg_hybm
+* v2_32 - Lee V.            - removed broadcast for P_pbl,P_gwd variables
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*arguments
+*        none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dimout.cdk"
+#include "level.cdk"
+#include "mem.cdk"
+#include "path.cdk"
+#include "step.cdk"
+#include "grd.cdk"
+#include "geomg.cdk"
+#include "p_geol.cdk"
+#include "out1.cdk"
+#include "hgc.cdk"
+#include "xst.cdk"
+#include "init.cdk"
+#include "offc.cdk"
+#include "schm.cdk"
+#include "adw.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "out.cdk"
+#include "pres.cdk"
+#include "did.cdk"
+#include "ptopo.cdk"
+#include "hzd.cdk"
+#include "vspng.cdk"
+#include "cori.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "c_cplg.cdk"
+#include "v4dg.cdk"
+#include "v4dj.cdk"
+#include "v4dm.cdk"
+*
+      integer err
+*------------------------------------------------------------------
+*
+      COMMON_BROADCAST(G)
+      COMMON_BROADCAST(G_l)
+      COMMON_BROADCAST(Pgeol_l)
+      COMMON_BROADCAST(Meml)
+      COMMON_BROADCAST(Memi)
+      COMMON_BROADCAST(Ptopoi)
+      COMMON_BROADCAST(Stepi)
+      COMMON_BROADCAST(pres)
+      COMMON_BROADCAST(Xst_i)
+      COMMON_BROADCAST(Xst_r)
+      COMMON_BROADCAST(Did_l)
+      COMMON_BROADCAST(Did_c)
+      COMMON_BROADCAST(Hgc)
+      COMMON_BROADCAST(Hgc_s)
+      COMMON_BROADCAST(Out1)
+      COMMON_BROADCAST(Out1c)
+      COMMON_BROADCAST(Grd_c)
+      COMMON_BROADCAST(Grd_l)
+      COMMON_BROADCAST(Grd_i)
+      COMMON_BROADCAST(Grd_r)
+      COMMON_BROADCAST(Grd_r8)
+      COMMON_BROADCAST(Initl)
+      COMMON_BROADCAST(Initn)
+      COMMON_BROADCAST(Initr)
+      COMMON_BROADCAST(Offc)
+      COMMON_BROADCAST(Schm_l)
+      COMMON_BROADCAST(Schm_i)
+      COMMON_BROADCAST(Schm_r8)
+      COMMON_BROADCAST(Adw_l)
+      COMMON_BROADCAST(Adw_ia)
+      COMMON_BROADCAST(Lctl_l)
+      COMMON_BROADCAST(Cori_l)
+      COMMON_BROADCAST(Cstv)
+      COMMON_BROADCAST(Path1)
+      COMMON_BROADCAST(Path2)
+      COMMON_BROADCAST(Hzdl)
+      COMMON_BROADCAST(Hzdi)
+      COMMON_BROADCAST(Hzdr)
+      COMMON_BROADCAST(Hzdc)
+      COMMON_BROADCAST(Tr2d_c)
+      COMMON_BROADCAST(Tr2d_l)
+      COMMON_BROADCAST(Tr2d_i)
+      COMMON_BROADCAST(Tr2d_r)
+      COMMON_BROADCAST(Tr3d_c)
+      COMMON_BROADCAST(Tr3d_i)
+      COMMON_BROADCAST(Tr3d_r)
+      COMMON_BROADCAST(vspngl)
+      COMMON_BROADCAST(vspngi)
+      COMMON_BROADCAST(vspngr)
+      COMMON_BROADCAST(Out_l)
+      COMMON_BROADCAST(Out_c)
+      COMMON_BROADCAST(Out_i)
+      COMMON_BROADCAST(Level_l)
+      COMMON_BROADCAST(C_nml)
+      COMMON_BROADCAST(C_pipe)
+      COMMON_BROADCAST(C_time)
+      COMMON_BROADCAST(V4d_gen_i)
+      COMMON_BROADCAST(V4d_gen_l)
+      COMMON_BROADCAST(V4d_gen_r)
+      COMMON_BROADCAST(V4d_jcst_i)
+      COMMON_BROADCAST(V4d_jcst_r)
+      COMMON_BROADCAST(V4d_jcst_l)
+      COMMON_BROADCAST(V4d_min_i)
+      COMMON_BROADCAST(V4d_min_r)
+*
+      if (.not.Path_swv1_L) stop
+*
+      if (Ptopo_myproc.gt.0) then
+          call hpalloc (Geomg_hyb_ , G_nk, err, 1)
+          call hpalloc (Geomg_hybm_, G_nk, err, 1)
+          call hpalloc (Geomg_pia_ , G_nk, err, 1)
+          call hpalloc (Geomg_pibb_, G_nk, err, 1)
+      endif
+*
+      call RPN_COMM_bcast (Geomg_hyb ,G_nk,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_hybm,G_nk,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_pia ,G_nk,"MPI_REAL",0,"grid",err)
+      call RPN_COMM_bcast (Geomg_pibb,G_nk,"MPI_REAL",0,"grid",err)
+*
+*------------------------------------------------------------------
+      return
+      end

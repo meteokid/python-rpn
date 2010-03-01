@@ -1,0 +1,57 @@
+***s/r t12t2_ad - ADJ of t12t2 
+*
+#include <model_macros_f.h>
+*
+      subroutine t12t2_ad
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_30 - Edouard S.        - remove pi' at the top
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+*
+*object
+*     see id section
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+#include "vt1.cdk"
+#include "vt2.cdk"
+*     ______________________________________________________
+*
+      if(.not. Schm_hydro_L) call gefstop('t12t2_ad')
+*     ______________________________________________________
+
+*C       1.    Change all variable names and exchange their keys
+*              -------------------------------------------------
+*
+      call shuffle(vmmk_ut1   ,vmmk_ut2   ,vmmk_ut1_s)
+      call shuffle(vmmk_vt1   ,vmmk_vt2   ,vmmk_vt1_s)
+      call shuffle(vmmk_tdt1  ,vmmk_tdt2  ,vmmk_tdt1_s)
+      call shuffle(vmmk_tt1   ,vmmk_tt2   ,vmmk_tt1_s)
+      call shuffle(vmmk_fit1  ,vmmk_fit2  ,vmmk_fit1_s)
+      call shuffle(vmmk_qt1   ,vmmk_qt2   ,vmmk_qt1_s)
+      call shuffle(vmmk_tpt1  ,vmmk_tpt2  ,vmmk_tpt1_s)
+      call shuffle(vmmk_fipt1 ,vmmk_fipt2 ,vmmk_fipt1_s)
+      call shuffle(vmmk_pipt1 ,vmmk_pipt2 ,vmmk_pipt1_s)
+      call shuffle(vmmk_tplt1 ,vmmk_tplt2 ,vmmk_tplt1_s)
+      call shuffle(vmmk_psdt1 ,vmmk_psdt2 ,vmmk_psdt1_s)
+      call shuffle(vmmk_st1   ,vmmk_st2   ,vmmk_st1_s)
+*
+      if ( Tr3d_ntr .gt. 0 ) then
+         call shuffle(vmmk_trt1  ,vmmk_trt2  ,vmmk_trt1_s)
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,52 @@
+#if defined (DOC)
+*
+***comdeck dslab.cdk
+*
+*revision
+* v2_21 - J. P. Toviessi         - created to output dynamic slabs
+* v2_30 - V. Lee                 - moved the common variables to local
+* v2_30                            variables that need to be dynamically 
+* v2_30                            allocated
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH SLAB FILES (Output for dynamic variables) |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Dslab_fhand_p      | slab file handler (pressure levels)             |
+* Dslab_fhand_e      | slab file handler (eta levels )                 |
+* Dslab_Slab_p       | number of slabs to generate (pressure levels)   |
+* Dslab_Slab_e       | number of slabs to generate (eta levels )       |
+* Dslab_max_lev_p    | maximum number of pressure levels               |
+* Dslab_nnio         | number of elements in xnio calculated per grid  |
+* Dslab_xmin         | starting i value for slab output                |
+* Dslab_xmax         | ending   i value for slab output                |
+* Dslab_ymin         | starting j value for slab output                |
+* Dslab_ymax         | ending   j value for slab output                |
+* Dslab_niout        | number of elements in the slab row              |
+* Dslab_ext_S        | the extension assigned for the slab file name   |
+*----------------------------------------------------------------------
+*
+#endif
+*
+      integer Dslab_Slab_p,Dslab_fhand_p
+      integer Dslab_Slab_e,Dslab_fhand_e
+
+      integer Dslab_max_lev_p
+*
+      MARK_COMMON_BEG(Dslabi)
+      common / Dslabi / Dslab_max_lev_p
+      MARK_COMMON_END(Dslabi)
+*
+      integer Dslab_xmin(MAXGRID),Dslab_xmax(MAXGRID),
+     %        Dslab_ymin(MAXGRID),Dslab_ymax(MAXGRID),
+     %        Dslab_nnio(MAXGRID),Dslab_niout(MAXGRID)
+      common /Dslabii /Dslab_fhand_e,Dslab_Slab_e,
+     %                 Dslab_fhand_p,Dslab_Slab_p,
+     %                 Dslab_xmin,Dslab_xmax,Dslab_ymin,Dslab_ymax,
+     %                 Dslab_nnio,Dslab_niout
+
+      character*12 Dslab_ext_S
+      common / Dslabc / Dslab_ext_S
+

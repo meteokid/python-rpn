@@ -1,0 +1,25 @@
+#if defined (DOC)
+*
+*revision
+* v2_11 - Desgagne M.       - ptop reproducubility (add Out2_ptop)
+**
+***comdeck out2.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH OUTPUT OF DERIVED VARIABLES(dynout.ftn)   |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Out2_wlnph         | log of hydrostatic pressure                     |
+* Out2_wlao          | geographical latitudes in radians for the output|
+*                    | grid           
+*----------------------------------------------------------------------
+*
+*
+#endif
+
+      DCL_DYNVAR(Out2, wlnph, real,(LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(Out2, ptop,  real,(LDIST_SHAPE))
+      DCL_DYNVAR(Out2, wlao,  real,(LDIST_SHAPE))

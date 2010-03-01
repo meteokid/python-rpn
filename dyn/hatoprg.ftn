@@ -1,0 +1,74 @@
+***s/r hatoprg - downward vertical integration 
+*
+#include <model_macros_f.h>
+*
+      subroutine hatoprg (F_gg, F_ff, F_w1, F_con, F_hz_8, DIST_DIM,Nk)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk
+      real F_gg(DIST_SHAPE,Nk),F_ff(DIST_SHAPE,Nk),F_w1(DIST_SHAPE,2), 
+     $     F_con
+      real*8  F_hz_8(Nk)
+*
+*author
+*     J. Cote - rpn - nov 93 
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from hatoprg v1_03)
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object  DOWNWARD vertical integration 
+*
+*                 / z(sfc) 
+*        G   =  C |        F dz 
+*         k       / z(k)
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_gg        O          resulting vertical integration
+*  F_ff        I          input field to be integrated  
+*  F_w1                   work field
+*  F_con       I          mutiplication coefficient 
+*  F_hz_8      I          intervals in z-direction
+*----------------------------------------------------------------
+*
+*implicits 
+#include "glb_ld.cdk"
+*
+      integer i, j, k
+      real*8  ccc 
+*
+*notes
+*     The computation is done by horizontal slices 
+**
+*     __________________________________________________________________
+*
+      do j= 1, l_nj
+      do i= 1, l_ni 
+         F_w1(i,j,1) = 0.0
+      end do
+      end do
+
+      do 100 k=G_nk-1,1,-1
+
+         ccc = .5*F_con*F_hz_8(k)
+         do j= 1, l_nj
+         do i= 1, l_ni 
+            F_w1(i,j,2) = ccc*( F_ff(i,j,k+1) + F_ff(i,j,k) )
+            F_gg(i,j,k+1) = F_w1(i,j,1)
+            F_w1(i,j,1) = F_w1(i,j,1) + F_w1(i,j,2)
+         end do
+         end do
+
+100   continue
+
+      do j= 1, l_nj 
+      do i= 1, l_ni 
+         F_gg(i,j,1) = F_w1(i,j,1)
+      end do
+      end do
+
+      return
+      end

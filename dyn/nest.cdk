@@ -1,0 +1,62 @@
+#if defined (DOC)
+*
+***comdeck nest.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH NESTING for current timestep              |
+*  For Nest_uf,Nest_vf - used for future timesteps                     |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Nest_u             | x component of velocity                         |
+* Nest_v             | y component of velocity                         |
+* Nest_w             | z component of velocity                         |
+* Nest_t             | T (temperature)                                 |
+* Nest_td            | total divergence (dpi* dot / dpi* + D )         |
+* Nest_fi            | phi (geopotential)                              |
+* Nest_q             | q = ln p                                        |
+*--------------------|-------------------------------------------------|
+* Nest_tp            | T'       \                                      |
+* Nest_fip           | phi'      -> perturbations                      |
+* Nest_pip           | pi'      /                                      |
+*--------------------|-------------------------------------------------|
+* Nest_mu            | nonhydro index mu=dp/dpi-1 [= 0 if hydro]       |
+* Nest_psd           | pi* dot (vert. vel. in pi* coord.)              |
+* Nest_s             | ln (dpi/dpi*)                                   |
+* Nest_tr            | tracer 3d variables                             |
+*----------------------------------------------------------------------|
+*
+*
+#endif
+      MARK_COMMON_BEG (nest)
+      DCL_VMMVAR( nest, nest_u   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_v   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_w   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_t   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_td  , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_fi  , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_q   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_tp  , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_fip , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_pip , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_mu  , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_psd , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_s   , real, (LDIST_SHAPE     ) )
+      DCL_VMMVAR( nest, nest_tr  , real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( nest, nest_uf   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_vf   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_wf   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_tf   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_tdf  , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_fif  , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_qf   , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_tpf  , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_fipf , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_pipf , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_muf  , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_psdf , real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( nest, nest_sf   , real, (LDIST_SHAPE     ) )
+      DCL_VMMVAR( nest, nest_trf  , real, (LDIST_SHAPE,l_nk,*) )
+      MARK_COMMON_END (nest)

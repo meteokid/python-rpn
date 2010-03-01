@@ -1,0 +1,27 @@
+#if defined (DOC)
+*
+*revisions
+* v2_21 - Dugas B.               - new comdeck
+*
+***comdeck p_clim.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH CLIMATE MODE                              |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* P_clim_clima_L     | CLIMA: .true. for climate mode                  |
+* P_clim_ininc_L     | ININC: .true. set the surface increments        |
+*----------------------------------------------------------------------
+*
+*
+#endif
+*
+      logical P_clim_clima_L, P_clim_ininc_L
+*
+      MARK_COMMON_BEG (pclim_l)
+      common /pclim_l/ P_clim_clima_L, P_clim_ininc_L
+      MARK_COMMON_END (pclim_l)
+*

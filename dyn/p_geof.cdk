@@ -1,0 +1,36 @@
+#if defined (DOC)
+*
+*revision
+* v2_20 - Pellerin P.            - adaptation to physics 3.6.6
+*
+***comdeck p_geof.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VMM VARIABLES ASSOCIATED WITH GEOPHYSICAL FIELDS (set_geof)         |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* topo               | Phi at the surface (xfis) with halos on it      |
+* xfis               | phi at the surface                              |
+* xla                | latitudes                                       |
+*----------------------------------------------------------------------
+*
+*
+#endif
+*
+*NOTE: the equivalence statement below MUST mark the
+*FIRST element of the common block or the OUTPUTS will be wrong.
+*If you introduce an element in the beginning of this block, make
+*changes to assure the equivalence statement below MARKS it.
+*
+      MARK_COMMON_BEG(geof)
+      DCL_VMMVAR(geof,topo ,real,(LDIST_SHAPE))
+      DCL_VMMVAR(geof,xfis ,real,(l_ni,l_nj))
+      DCL_VMMVAR(geof,xla  ,real,(l_ni,l_nj))
+      DCL_VMMVAR(geof,xlo  ,real,(l_ni,l_nj))
+      MARK_COMMON_END(geof)
+
+      character*8 geof_n_first(1)
+      equivalence (geof_n_first,VMM_NAM(topo))

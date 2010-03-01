@@ -1,0 +1,72 @@
+***s/r pospers - initialise upstream positions at time th as grid point positions
+*
+#include <model_macros_f.h>
+*
+      subroutine pospers
+*
+#include "impnone.cdk"
+*
+*author
+*     Alain Patoine
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+*
+*object
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "vth.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnerr, pnlkey1(12),i, j, k, ijk, nij
+      real pr1
+**
+      nij = l_ni * l_nj
+*
+      pnlkey1(1) = VMM_KEY(xth)
+      pnlkey1(2) = VMM_KEY(yth)
+      pnlkey1(3) = VMM_KEY(zth)
+      pnlkey1(4) = VMM_KEY(xcth)
+      pnlkey1(5) = VMM_KEY(ycth)
+      pnlkey1(6) = VMM_KEY(zcth)
+*
+      pnerr = vmmlod(pnlkey1,6)
+*
+      pnerr = VMM_GET_VAR(xth)
+      pnerr = VMM_GET_VAR(yth)
+      pnerr = VMM_GET_VAR(zth)
+      pnerr = VMM_GET_VAR(xcth)
+      pnerr = VMM_GET_VAR(ycth)
+      pnerr = VMM_GET_VAR(zcth)
+*
+      do k = 1, l_nk
+      do j = 1, l_nj 
+      do i = 1, l_ni
+         ijk=(k-1)*nij+(j-1)*l_ni+i
+         xth(ijk)  = Geomg_x_8(i)
+         yth(ijk)  = Geomg_y_8(j)
+         zth(ijk)  = Geomg_z_8(k)
+*
+         pr1         = cos(yth(ijk))
+*
+         zcth(ijk) = sin(yth(ijk))
+         xcth(ijk) = cos(xth(ijk)) * pr1
+         ycth(ijk) = sin(xth(ijk)) * pr1
+      enddo
+      enddo
+      enddo
+*
+      pnerr = vmmuld(-1,0)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

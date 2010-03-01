@@ -1,0 +1,95 @@
+***s/r tracers - Initializes liste of tracers
+*
+#include <model_macros_f.h>
+*
+      subroutine tracers ()
+      implicit none
+*
+*author
+*     Michel Desgagne  -  Sept 2001
+*
+*revision
+* v2_31 - Desgagne M.       - initial version
+*
+*object
+*
+*arguments
+*
+*implicits
+#include "lun.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "busind.cdk"
+*
+      logical hu_L
+      integer i,k
+**
+*     __________________________________________________________________
+*
+      do 10 i=1,Tr3d_userntr
+*
+* Is user tracers already in Tr3d stack?
+         do k=1,tr3d_ntr
+            if (Tr3d_name_S(k).eq.Tr3d_username_S(i)) then
+               Tr3d_sval(k) = Tr3d_usersval(i)
+               goto 10
+            endif
+         end do
+*
+* Otherwise add user tracer to Tr3d stack
+         tr3d_ntr = tr3d_ntr + 1
+         Tr3d_name_S(tr3d_ntr) = Tr3d_username_S(i)
+         Tr3d_sval  (tr3d_ntr) = Tr3d_usersval  (i)
+ 10   continue
+*
+* Special case of HU Tr3d tracer (must always be present)
+*
+      hu_L   = .false.
+      hucond = -1
+      do k=1,tr3d_ntr
+         if (Tr3d_name_S(k).eq.'HU') then
+            hu_L = .true.
+            hucond  = k
+         endif
+      end do
+      if (.not.hu_L) then
+         tr3d_ntr = tr3d_ntr + 1
+         Tr3d_name_S(tr3d_ntr) = 'HU'
+         Tr3d_sval(tr3d_ntr) = 0.
+         hucond = tr3d_ntr
+      endif
+*
+      do 20 i=1,Tr2d_userntr
+*
+* Is user tracers already in Tr2d stack?
+         do k=1,tr2d_ntr
+            if (Tr2d_name_S(k).eq.Tr2d_username_S(i)) then
+               Tr2d_sval(k) = Tr2d_usersval(i)
+               goto 20
+            endif
+         end do
+*
+* Otherwise add user tracer to Tr2d stack
+         tr2d_ntr = tr2d_ntr + 1
+         Tr2d_name_S(tr2d_ntr) = Tr2d_username_S(i)
+         Tr2d_sval  (tr2d_ntr) = Tr2d_usersval  (i)
+ 20   continue
+
+      if (Lun_out.gt.0) then
+         write (Lun_out,1001) 'TRACERS (3D storage):'
+         do i=1,tr3d_ntr
+            write (Lun_out,1002) Tr3d_name_S(i),Tr3d_sval(i),i
+         end do
+         write (Lun_out,1001) 'TRACERS (2D-slice storage):'
+         do i=1,tr2d_ntr
+            write (Lun_out,1002) Tr2d_name_S(i),Tr2d_sval(i),i
+         end do
+      endif
+*
+ 1001 format (/a)
+ 1002 format (2x,a4,d12.7,i4)
+*
+*     __________________________________________________________________
+*
+      return
+      end

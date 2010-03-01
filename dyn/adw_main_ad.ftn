@@ -1,0 +1,175 @@
+***s/r adw_main_ad - ADJ of adw_main_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_main_ad ( F_it )
+*
+#include "impnone.cdk"
+*
+      integer F_it
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectories           |  i  |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "adw.cdk"
+#include "vthm.cdk"
+*
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+      integer pnerr, pnlkey1(30), pnlod
+*
+      integer nijk,nijkag,n
+      real , dimension (Adw_nit*Adw_njt*l_nk) :: u,v,w
+      real , dimension (Adw_nit*Adw_njt*l_nk) :: um,vm,wm,uwork,vwork,wwork
+*
+*     -----------------------
+*     Define extra space TRAJ
+*     -----------------------
+      real xthm_1 (l_ni*l_nj*l_nk), ythm_1 (l_ni*l_nj*l_nk), zthm_1 (l_ni*l_nj*l_nk)
+      real xcthm_1(l_ni*l_nj*l_nk), ycthm_1(l_ni*l_nj*l_nk), zcthm_1(l_ni*l_nj*l_nk)
+*
+      real*8 ZERO_8
+      parameter (ZERO_8 = 0.0)
+*
+      nijk   = l_ni*l_nj*l_nk
+      nijkag = Adw_nit*Adw_njt*l_nk
+************************************************************************
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+************************************************************************
+*     Zero adjoint variables
+*     ----------------------
+      do n=1,nijkag
+         u(n) = ZERO_8
+         v(n) = ZERO_8
+         w(n) = ZERO_8
+      enddo
+*
+*     ------------------
+*     TRAJECTORY (START)
+*     ------------------
+      call adw_main_1_wnd_tr ( um, vm, wm, Adw_nit, Adw_njt, l_nk)
+*
+*     -------------------------------------------
+*     Preserve fields in extra space TRAJ (START)
+*     -------------------------------------------
+      pnlkey1(1) = VMM_KEY(xthm)
+      pnlkey1(2) = VMM_KEY(ythm)
+      pnlkey1(3) = VMM_KEY(zthm)
+      pnlkey1(4) = VMM_KEY(xcthm)
+      pnlkey1(5) = VMM_KEY(ycthm)
+      pnlkey1(6) = VMM_KEY(zcthm)
+      pnlod = 6
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(xthm)
+      pnerr = VMM_GET_VAR(ythm)
+      pnerr = VMM_GET_VAR(zthm)
+      pnerr = VMM_GET_VAR(xcthm)
+      pnerr = VMM_GET_VAR(ycthm)
+      pnerr = VMM_GET_VAR(zcthm)
+*
+      do n=1,nijk
+        xthm_1 (n) = xthm (n)
+        ythm_1 (n) = ythm (n)
+        zthm_1 (n) = zthm (n)
+        xcthm_1(n) = xcthm(n)
+        ycthm_1(n) = ycthm(n)
+        zcthm_1(n) = zcthm(n)
+      enddo
+*
+      do n=1,nijkag
+         uwork(n) = um(n)
+         vwork(n) = vm(n)
+         wwork(n) = wm(n)
+      enddo
+*
+      pnerr = vmmuld(-1,0)
+*
+*     -----------------------------------------
+*     Preserve fields in extra space TRAJ (END)
+*     -----------------------------------------
+*
+      call adw_main_2_pos_tr ( F_it, um, vm, wm )
+*
+*     ----------------
+*     TRAJECTORY (END)
+*     ----------------
+*
+*     ADJOINT CALCULATIONS
+*     --------------------
+      call adw_main_3_int_ad ( u, v, w, um, vm, wm )
+*
+*     ------------------------------------------
+*     Reset fields from extra space TRAJ (START)
+*     ------------------------------------------
+      pnlkey1(1) = VMM_KEY(xthm)
+      pnlkey1(2) = VMM_KEY(ythm)
+      pnlkey1(3) = VMM_KEY(zthm)
+      pnlkey1(4) = VMM_KEY(xcthm)
+      pnlkey1(5) = VMM_KEY(ycthm)
+      pnlkey1(6) = VMM_KEY(zcthm)
+      pnlod = 6
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(xthm)
+      pnerr = VMM_GET_VAR(ythm)
+      pnerr = VMM_GET_VAR(zthm)
+      pnerr = VMM_GET_VAR(xcthm)
+      pnerr = VMM_GET_VAR(ycthm)
+      pnerr = VMM_GET_VAR(zcthm)
+*
+      do n=1,nijk
+         xthm (n) = xthm_1 (n)
+         ythm (n) = ythm_1 (n)
+         zthm (n) = zthm_1 (n)
+         xcthm(n) = xcthm_1(n)
+         ycthm(n) = ycthm_1(n)
+         zcthm(n) = zcthm_1(n)
+      enddo
+*
+      do n=1,nijkag
+         um(n) = uwork(n)
+         vm(n) = vwork(n)
+         wm(n) = wwork(n)
+      enddo
+*
+      pnerr = vmmuld(-1,0)
+*
+*     ----------------------------------------
+*     Reset fields from extra space TRAJ (END)
+*     ----------------------------------------
+*
+      call adw_main_2_pos_ad ( F_it, u, v, w, um, vm, wm )
+*
+      call adw_main_1_wnd_ad ( u, v, w, Adw_nit, Adw_njt, l_nk)
+*
+***********************************************************************
+*
+ 1000  format(3X,'ADJ of ADVECTE THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_AD)')
+*
+      return
+      end

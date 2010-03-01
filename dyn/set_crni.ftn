@@ -1,0 +1,74 @@
+***s/r set_crni - initialization of the common for right-hand side of
+*                 equations when using a Crank-Nicholson procedure
+*
+#include <model_macros_f.h>
+*
+      subroutine set_crni
+*
+#include "impnone.cdk"
+*
+*author
+*     sylvie gravel - rpn - nov 1994
+*
+*revision
+* v2_00 - Desgagne/Lee      - initial MPI version (from setcrni v1_03)
+*
+*object
+*       This subroutine initializes the common containing the keys used 
+*       by the Virtual Memory Manager to identify the right-hand-sides
+*       of the equations when using a Crank-Nicholson procedure
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "orh.cdk"
+#include "schm.cdk"
+*
+*modules
+      integer  vmmcre 
+      external vmmcre
+      character*80 ptaorhs
+      integer   i, pnerr
+**
+*     _________________________________________________________________
+*
+*     - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      if (Lun_out.gt.0) write (Lun_out,1000)
+
+*     Initialization of names and keys commons 
+
+      COMMON_INIT(orh,-100)
+
+
+*     Assign the name of the variables
+
+      VMM_NAM(oru  ) = 'RUORU'
+      VMM_NAM(orv  ) = 'RVORV'
+      VMM_NAM(orw  ) = 'RORW'
+      VMM_NAM(orvv ) = 'RORVV'
+      VMM_NAM(orcn ) = 'RORCN'
+      VMM_NAM(orth ) = 'RORTH'
+
+*     Create the virtual memory for the variables 
+
+      ptaorhs='SAVE=Y,CL=5,W=5,INIT=R' !attributes
+
+      VMM_CREATE(oru  , LARRAY3D, 1, ptaorhs)
+      VMM_CREATE(orv  , LARRAY3D, 1, ptaorhs)
+      VMM_CREATE(orcn , LARRAY3D, 1, ptaorhs)
+      VMM_CREATE(orth , LARRAY3D, 1, ptaorhs)
+
+      if (.not. Schm_hydro_L) then
+         VMM_CREATE(orw  , LARRAY3D, 1, ptaorhs)
+         VMM_CREATE(orvv , LARRAY3D, 1, ptaorhs)
+      endif 
+
+1000  format(
+     %  /,'INITIALIZATION OF CRANK-NICHOLSON COMDECK (S/R SET_CRNI)',
+     %  /,'========================================================')
+
+      return
+      end

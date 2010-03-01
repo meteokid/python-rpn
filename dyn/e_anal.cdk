@@ -1,0 +1,35 @@
+#if defined (DOC)
+*
+***comdeck e_anal.cdk
+*
+*  nia      - X dimension of the records in ANAL
+*  nja      - Y dimension of the records in ANAL
+*  ip1a,ip2a,ip3a - IP1, IP2, IP3 of the records in ANAL
+*  ig1a,ig2a,ig3a,ig4a - grid descriptors of the records in ANAL
+*  nk       - number of model levels required by the user
+*  lv       - number of levels in the analyse (ANAL)
+*  NA       - array of the analysis levels in integer format
+*  LNA      - array of the analysis levels in log format
+*  RNA      - array of the analysis levels in real format
+*   VH and VT are defined in ANALLEV_2
+*  VH       - string to hold moisture variable, either 'HU' or 'ES'
+*  VT       - string to hold temperature variable, either 'TT' or 'VT'
+*  GRDA     - gridtyp found in the analyse file for data records
+*  TVA      - type of variable in the analyse file for data records
+*  LABANL   - label of the data records in the analyse file
+#endif
+
+      INTEGER        nia, nja, NK, LV,
+     %               ip1a, ip2a, ip3a,
+     %               ig1a, ig2a, ig3a, ig4a
+      INTEGER        NA(LVMAX)
+      REAL           LNA(LVMAX), RNA(LVMAX),RCOEFA,PTOPA,PREFA
+      CHARACTER*2    VH,VT
+      CHARACTER*1    GRDA, TVA
+      CHARACTER*8    LABANL
+
+      COMMON/anali/  nia, nja, NK, LV, NA,
+     %               ip1a, ip2a, ip3a,
+     %               ig1a, ig2a, ig3a, ig4a
+      COMMON/analr/  LNA, RNA, RCOEFA,PTOPA,PREFA
+      COMMON/anals/  VH,VT,GRDA,TVA,LABANL

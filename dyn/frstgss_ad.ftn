@@ -1,0 +1,126 @@
+***s/r frstgss_ad - ADJ of frstgss 
+*
+#include <model_macros_f.h>
+*
+      subroutine frstgss_ad ()
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_30 - Edouard S.        - replace Schm_elast_L by Schm_cptop_L
+* v2_31 - Tanguay M.        - introduce Lun_debug_L 
+*
+*object
+*    see id section
+*	
+*arguments
+*    none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "cori.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer pnerr, pnlkey1(12),pnlod
+      integer i, j, k
+*     ______________________________________________________
+*
+      if(.not. Schm_hydro_L) call gefstop('frstgss_ad')
+      if(.not. Schm_cptop_L) call gefstop('frstgss_ad')
+*     ______________________________________________________
+
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+      pnlod=0
+      if ( Cori_cornl_L ) then
+         pnlkey1(pnlod+1) = VMM_KEY(ut0)
+         pnlkey1(pnlod+2) = VMM_KEY(vt0)
+         pnlkey1(pnlod+3) = VMM_KEY(ut1)
+         pnlkey1(pnlod+4) = VMM_KEY(vt1)
+         pnlod=pnlod+4
+      endif
+      pnerr = vmmlod(pnlkey1,pnlod)
+
+      if ( Cori_cornl_L ) then
+         pnerr = VMM_GET_VAR(ut0)
+         pnerr = VMM_GET_VAR(ut1)
+         pnerr = VMM_GET_VAR(vt0)
+         pnerr = VMM_GET_VAR(vt1)
+         do k=1,l_nk
+         do j= 1 , l_nj
+         do i= 1 , l_ni
+            vt1(i,j,k) = vt0(i,j,k) + vt1(i,j,k)
+            vt0(i,j,k) = 0. 
+            ut1(i,j,k) = ut0(i,j,k) + ut1(i,j,k)
+            ut0(i,j,k) = 0. 
+         end do
+         end do
+         end do
+      endif
+*
+      pnerr = vmmuld(-1,0)
+*
+      pnlkey1(1) = VMM_KEY(qt0)
+      pnlkey1(2) = VMM_KEY(tpt0)
+      pnlkey1(3) = VMM_KEY(pipt0)
+      pnlkey1(4) = VMM_KEY(tplt0)
+      pnlkey1(5) = VMM_KEY(st0)
+      pnlkey1(6) = VMM_KEY(qt1)
+      pnlkey1(7) = VMM_KEY(tpt1)
+      pnlkey1(8) = VMM_KEY(pipt1)
+      pnlkey1(9) = VMM_KEY(tplt1)
+      pnlkey1(10) = VMM_KEY(st1)
+*
+      pnlod=10
+      pnerr = vmmlod(pnlkey1,pnlod)
+
+      pnerr = VMM_GET_VAR(qt0)
+      pnerr = VMM_GET_VAR(tpt0)
+      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(tplt0)
+      pnerr = VMM_GET_VAR(st0)
+      pnerr = VMM_GET_VAR(qt1)
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(pipt1)
+      pnerr = VMM_GET_VAR(tplt1)
+      pnerr = VMM_GET_VAR(st1)
+*
+      do j= 1 , l_nj
+      do i= 1 , l_ni
+         st1  (i,j) = st0  (i,j) + st1  (i,j)
+         st0  (i,j) = 0.
+      end do
+      end do
+*
+      do k=1,l_nk
+      do j= 1 , l_nj
+      do i= 1 , l_ni
+         tplt1(i,j,k)= tplt0(i,j,k)+ tplt1(i,j,k)
+         tplt0(i,j,k)= 0.
+         pipt1(i,j,k)= pipt0(i,j,k)+ pipt1(i,j,k)
+         pipt0(i,j,k)= 0.
+         tpt1 (i,j,k)= tpt0 (i,j,k)+ tpt1 (i,j,k)
+         tpt0 (i,j,k)= 0.
+         qt1  (i,j,k)= qt0  (i,j,k)+ qt1  (i,j,k)
+         qt0  (i,j,k)= 0.
+      end do
+      end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+1000  format(3X,' ADJ of FIRST GUESS: (S/R FRSTGSS_AD)')
+
+      return
+      end

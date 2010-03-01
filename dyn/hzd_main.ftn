@@ -1,0 +1,301 @@
+***s/r hzd_main - applies horizontal diffusion on a given set of fields
+*
+#include <model_macros_f.h>
+*
+      subroutine hzd_main 
+*
+#include "impnone.cdk"
+*
+*author
+*     Joseph-Pierre Toviessi ( after version v1_03 of dif )
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version 
+* v2_10 - Qaddouri&Desgagne - higher order diffusion operator
+* v2_21 - Desgagne M.       - new call to horwavg
+* v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "fft.cdk"
+#include "hzd.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "p_geof.cdk"
+#include "nest.cdk"
+#include "lctl.cdk"
+*
+*modules
+      integer  vmmlod,vmmuld,vmmget
+      external vmmlod,vmmuld,vmmget
+*
+      integer pnerr, pnlod, pnlkey1(20), i, j, k
+      integer i0,in,j0,jn
+      real*8  ONE_8, bbb_8, eta_8
+      parameter( ONE_8 = 1. )
+**
+*     _________________________________________________________________
+*
+      if ((.not.Hzd_fact_L).and.(.not.Hzd_ho_L)) then
+         if (Lun_debug_L) write(Lun_out,1001)
+         return
+      endif
+*
+      pnlkey1(1)  = VMM_KEY(ut1)
+      pnlkey1(2)  = VMM_KEY(vt1)
+      pnlkey1(3)  = VMM_KEY(psdt1)
+      pnlkey1(4)  = VMM_KEY(tpt1)
+      pnlkey1(5)  = VMM_KEY(fipt1)
+      pnlkey1(6)  = VMM_KEY(tdt1)
+      pnlkey1(7)  = VMM_KEY(tt1)
+      pnlkey1(8)  = VMM_KEY(fit1)
+      pnlkey1(9)  = VMM_KEY(topo)
+      pnlkey1(10) = VMM_KEY(tplt1)
+      pnlkey1(11) = VMM_KEY(qt1)
+      pnlkey1(12) = VMM_KEY(pipt0)
+      pnlkey1(13) = VMM_KEY(pipt1)
+      pnlkey1(14) = VMM_KEY(st1)
+      pnlod = 14
+      if (.not. Schm_hydro_L) then
+         pnlkey1(pnlod+1) = VMM_KEY(wt1)
+         pnlod = pnlod+1
+         if (Schm_difqp_L) then
+             pnlkey1(pnlod+1) = VMM_KEY(qpt1)
+             pnlkey1(pnlod+2) = VMM_KEY(mut1)
+             pnlkey1(pnlod+3) = VMM_KEY(multx)
+             pnlod = pnlod+3
+         endif
+      endif
+      if (G_lam) then
+         pnlkey1(pnlod+1) = VMM_KEY(nest_psd)
+         pnlod = pnlod+1
+      endif
+*     - - - - - - - - - - - - - - -
+      pnerr = vmmlod(pnlkey1,pnlod)
+*     - - - - - - - - - - - - - - -
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(psdt1)
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(fipt1)
+      pnerr = VMM_GET_VAR(tdt1)
+      pnerr = VMM_GET_VAR(tt1)
+      pnerr = VMM_GET_VAR(fit1)
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(tplt1)
+      pnerr = VMM_GET_VAR(qt1)
+      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(pipt1)
+      pnerr = VMM_GET_VAR(st1)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(wt1)
+         pnerr = VMM_GET_VAR(qpt1)
+         pnerr = VMM_GET_VAR(mut1)
+         pnerr = VMM_GET_VAR(multx)
+      else
+         wt1_  = 0
+         qpt1_ = 0
+         mut1_ = 0
+         multx_= 0
+      endif
+      if (G_lam) then
+         pnerr = VMM_GET_VAR(nest_psd)
+         if (l_west) then
+            do k=1,l_nk
+               do j=1+pil_s,l_nj-pil_n
+                  psdt1(pil_w,j,k) = nest_psd(pil_w,j,k)
+               enddo
+            enddo
+         endif
+         if (l_east) then
+            do k=1,l_nk
+               do j=1+pil_s,l_nj-pil_n
+                  psdt1(l_ni-pil_e+1,j,k) = nest_psd(l_ni-pil_e+1,j,k)
+               enddo
+            enddo
+         endif
+         if (l_south) then
+            do k=1,l_nk
+               do i=1+pil_w,l_ni-pil_e
+                  psdt1(i,pil_s,k) = nest_psd(i,pil_s,k)
+               enddo
+            enddo
+         endif
+         if (l_north) then
+            do k=1,l_nk
+               do i=1+pil_w,l_ni-pil_e
+                  psdt1(i,l_nj-pil_n+1,k) = nest_psd(i,l_nj-pil_n+1,k)
+               enddo
+            enddo
+         endif
+      else
+         nest_psd_ = 0
+      endif
+
+*************************************
+*  1. Implicit horizontal diffusion *
+*************************************
+
+c*PDIR RESERVE=Macr_cpud
+
+      if (Lctl_debug_L) then
+      if (lun_out.gt.0) print *,'HZD_MAIN: Hzd_fact_L=',Hzd_fact_L,' Hzd_ho_L=',Hzd_ho_L
+      endif
+      if (Hzd_fact_L) then
+         call hzd_fact ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                   tt1 , fit1, tplt1, qt1 , pipt1, wt1 ,
+     %                   qpt1, mut1, multx, st1 , topo ,
+     %                   LDIST_DIM, G_nk)
+      endif
+*
+      if (G_lam) then
+          i0 = lam_i0
+          j0 = lam_j0
+          in = lam_in
+          jn = lam_jn
+      else
+          i0 = glb_i0
+          j0 = glb_j0
+          in = glb_in
+          jn = glb_jn
+      endif
+
+      if (Hzd_ho_L) then
+         if(Fft_fast_L) then
+*           use FFT in diffusion-solver
+            if (G_lam) then
+                call hzd_hof_lam ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                     tt1 , fit1, tplt1,  pipt1, wt1 ,
+     %                     qpt1, mut1, multx,  topo ,
+     %                     LDIST_DIM, G_nk)
+            else
+                call hzd_hof ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                     tt1 , fit1, tplt1,  pipt1, wt1 ,
+     %                     qpt1, mut1, multx,  topo ,
+     %                     LDIST_DIM, G_nk)
+            endif
+         else
+*           use MXMA in diffusion-solver
+            call hzd_ho ( ut1 , vt1 , psdt1, tpt1, fipt1, tdt1,
+     %                    tt1 , fit1, tplt1,  pipt1, wt1 ,
+     %                    qpt1, mut1, multx,  topo ,
+     %                    LDIST_DIM, G_nk)
+         endif
+      endif
+
+
+c*PDIR RELEASE
+
+      if ((Hzd_fact_L.and.Cstv_phidf_8.gt.0.).or.(Hzd_ho_L)) then
+*
+*     Adjust surface pressure and hence pi' (FOR CLIMATE APPLICATIONS) 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      if (Schm_psadj_L) then
+*
+         call horwavg ( bbb_8, pipt0(l_minx,l_miny,G_nk),
+     $                         pipt1(l_minx,l_miny,G_nk),LDIST_DIM )
+*
+*        Redistribute the average mass loss at the surface, ...
+*
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            pipt1(i,j,G_nk) = pipt1(i,j,G_nk) + bbb_8
+         end do
+         end do
+*
+*        ... correct s immediately and ...
+*
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            st1(i,j)= log(ONE_8+dble(pipt1(i,j,G_nk)/geomg_pib(G_nk)))
+         end do
+         end do
+*
+*        ... refine pi' everywhere else accordingly.
+*
+         do k=1,G_nk-1
+            do j= 1+pil_s, l_nj-pil_n
+            do i= 1+pil_w, l_ni-pil_e
+               pipt1(i,j,k) = geomg_pib(k) *( exp(st1(i,j)) - 1 )
+            end do
+            end do
+         end do
+*
+      else
+*
+*******************************************
+*  $. Indirect diffusion of s through pi' *
+*******************************************
+*
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            st1(i,j)= log(ONE_8+dble(pipt1(i,j,G_nk)/geomg_pib(G_nk)))
+         end do
+         end do
+*
+      endif
+
+*******************************************
+*  $. Indirect diffusion of q through pi' *
+*******************************************
+*
+      do k=1,G_nk
+      do j= 1+pil_s, l_nj-pil_n 
+      do i= 1+pil_w, l_ni-pil_e 
+         qt1(i,j,k) = log( Geomg_z_8(k) + dble(pipt1(i,j,k)) )
+      end do
+      end do
+      end do
+*
+      if ( .not. Schm_hydro_L ) then
+         do k=1,G_nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            qt1(i,j,k) = qt1(i,j,k) + qpt1(i,j,k) 
+         end do
+         end do
+         end do
+      endif 
+*
+      endif
+
+      if(Lctl_debug_L) then 
+      call glbstat (ut1,'UU',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (vt1,'VV',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (psdt1,'PS',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (tpt1,'TP',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (fipt1,'FIP',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (tdt1,'TD',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (tt1,'TT',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (fit1,'GZ',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (tplt1,'TPL',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (qt1,'Q',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (pipt1,'PIP',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      endif
+      if ( .not. Schm_hydro_L ) then
+           call glbstat (wt1,'W',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+           if ( Schm_difqp_L ) then
+                call glbstat (qpt1,'QP',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+                call glbstat (mut1,'MU',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+                call glbstat (multx,'MUL',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+           endif
+      endif
+*
+      pnerr = vmmuld(-1,0)
+*    
+ 1001 format(/,3X,'NO HORIZONTAL DIFFUSION REQUIRED')
+*
+      return
+      end

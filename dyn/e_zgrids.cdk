@@ -1,0 +1,28 @@
+#if defined (DOC)
+*
+***comdeck e_zgrids.cdk
+*
+* Contains values and grid descriptors from the positional records 
+* found in the analysis
+*
+*revisions
+* v1_97 - vivian lee             - eliminated glgridz logical variable
+* v1_97                            and documented this common block
+*______________________________________________________________________
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* grxaxi             | values in '>>' record from analysis             |
+* gryayi             | values in '^^' record from analysis             |
+* gnzg1,gnzg2,gnzg3, | grid descriptors from the '>>','^^' pair of     |
+* gnzg4              | records                                         |
+*----------------------------------------------------------------------
+#endif
+
+      real            grxaxi(1), gryayi(1)
+      INTEGER         gnzg1, gnzg2, gnzg3, gnzg4
+
+      pointer (p_grxaxi,grxaxi), (p_gryayi,gryayi)
+      COMMON /zgridi/ gnzg1, gnzg2, gnzg3, gnzg4
+      COMMON /zgridr/ p_grxaxi, p_gryayi
+

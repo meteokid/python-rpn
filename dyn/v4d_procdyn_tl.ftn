@@ -1,0 +1,50 @@
+***s/r v4d_procdyn_tl - TLM of v4d_procdyn 
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_procdyn_tl
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - v4d_uv2img done in varconv_tl if V4dg_4dvar_L
+* v3_00 - Laroche S.        - adapt for simplified physics
+*
+*object
+*     see id section
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+#include "schm.cdk"
+*
+*     --------------------------
+*     Recover TRAJ initial state
+*     --------------------------
+      V4dg_numtr = 1 
+      call v4d_rwtraj()  
+*
+*     TLM 
+*     ---
+      call v4d_predat1_tl () 
+*
+*     TRAJECTORY
+*     ----------
+      call v4d_uv2img_tr 
+*
+*     TLM 
+*     ---
+         if(.not.V4dg_4dvar_L) call v4d_uv2img 
+*
+         if(.not.G_lam) call predat2_tl() 
+*
+      return
+      end

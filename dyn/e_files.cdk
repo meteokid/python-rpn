@@ -1,0 +1,31 @@
+#if defined (DOC)
+*
+***comdeck e_files.cdk
+*
+*revision
+* v1_97 - V. Lee                 - changed OSLAB to LABFL, added STDIN,STDOUT
+* v2_20 - V. Lee                 - added debug_L
+*
+*______________________________________________________________________
+*                                                                      |
+*  UNIT NUMBER ASSOCIATED to FILES in GEFNTR                           |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+*  climat            | unit number for RPN standard analyse file       |
+*  anal              | unit number for the RPN std     climatology file|
+*  osdyn             | unit number for binary "dynamic data" file      |
+*  labfl             | unit number for namelist "LABFL" file           |
+*  stdin             | unit number for standard input                  |
+*  stdout            | unit number for standard output                 |
+*  debug_L           | TRUE to print, FALSE to not print               |
+*----------------------------------------------------------------------|
+*
+#endif
+
+      INTEGER GEOPHY, CLIMAT, ANAL, OSDYN, LABFL, STDIN, STDOUT
+      LOGICAL DEBUG_L
+
+      COMMON/FILES/ GEOPHY, CLIMAT, ANAL, OSDYN, LABFL, 
+     $              STDIN, STDOUT, DEBUG_L

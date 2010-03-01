@@ -1,0 +1,202 @@
+***s/r genslabc - generate chemistry slab descriptors
+*
+#include <model_macros_f.h>
+*
+      subroutine genslabc ()
+*
+#include "impnone.cdk"
+*
+*
+*author 
+*     Vivian Lee (rpn) - Oct 2001 (genslabp v2_30)
+*
+*revision
+*
+*object
+*	This subroutine generates slab descriptors
+*       and prepares for the output of chemistry slabs
+*
+*arguments
+*       None
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "dimout.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "init.cdk"
+#include "rstr.cdk"
+#include "slab.cdk"
+#include "grid.cdk"
+#include "pslab.cdk"
+#include "ptopo.cdk"
+#include "v4dg.cdk"
+#include "chem.cdk"
+#include "outc.cdk"
+*
+*modules
+      integer  doout,slabig34,chem_getdx
+      external doout,slabig34,chem_getdx
+**
+      integer dostep(MAXSET),dostep_max,gridset,maxbus
+      parameter (maxbus=1000)
+      integer ierr,pnibc,i_idx
+      integer mt,i,j,ii,jj,slabnum,ij,Grille_x1,Grille_y1
+      integer grille_xmin,grille_xmax,grille_ymin,grille_ymax
+      integer busshp(maxbus),busmult(maxbus),busstag(maxbus),busptr(maxbus)
+      real busmul(maxbus),busadd(maxbus)
+      logical output_in_PE_L 
+      character*12 exten_S
+*
+*------------------------------------------------------------------
+*
+*  Determine if any slabs are to be outputted at this timestep
+*
+      dostep_max = doout(dostep,3)
+*
+      Pslab_slab = 0
+      if (dostep_max.gt.0) then
+        if (Lun_out.gt.0) write(Lun_out,5000) Lctl_step
+      else
+        if (Lun_out.gt.0) write(Lun_out,5001) Lctl_step
+        return
+      endif
+*
+*   Determine the number of variables to be outputted from each bus 
+
+      pnibc = 0
+      do i = 1, Chem_ntr
+         if (Chem_useit(i).eq.1) then
+            pnibc = pnibc + 1
+         endif
+      enddo
+      if (pnibc.eq.0) return
+
+*  setup of ip2 and ip3
+*
+      Slab_ip2 = nint(float(Lctl_step)*Cstv_dt_8/3600.0)
+      Slab_ip3 = 0
+      if (V4dg_conf.ne.0) then
+          Slab_ip3 =  V4dg_status
+          if (V4dg_conf/100.eq.1.and.V4dg_ad_L)
+     %        Slab_ip3 = 20 + V4dg_status
+      endif
+*
+      output_in_PE_L = .false.
+
+*  For each user-defined gridset, setup the grid definitions
+      do gridset = 1, Grid_sets
+         Pslab_ig1(gridset)=Grid_ig1(gridset)
+         Pslab_x0(gridset)=Grid_x0(gridset)
+         Pslab_x1(gridset)=Grid_x1(gridset)
+         Pslab_y0(gridset)=Grid_y0(gridset)
+         Pslab_y1(gridset)=Grid_y1(gridset)
+         Grille_y1 = Grid_y1(gridset)
+         Grille_x1 = min(Grid_x1(gridset),G_ni-Lam_pil_e)
+         Grid_ig2(gridset)    = Grid_phi_ig2(gridset)
+         Grid_nxgrid(gridset) = Grille_x1-Grid_x0(gridset)+1
+         Grid_nygrid(gridset) = Grille_y1-Grid_y0(gridset)+1
+         Grid_niout(gridset)  = Grid_nxgrid(gridset)
+         Grid_njout(gridset)  = Grid_nygrid(gridset)
+         if (Grid_nxgrid(gridset).eq.G_ni.and..not.G_lam)
+     %       Grid_nxgrid(gridset)=G_ni+1
+
+*  Find the local min and max of both X and Y for each local PE for output
+*
+         Pslab_xmin(gridset)=
+     %         max(Grid_x0(gridset)-Ptopo_gindx(1,Ptopo_myproc+1)+1,1)
+         Pslab_xmax(gridset)=
+     %         min(l_ni-(Ptopo_gindx(2,Ptopo_myproc+1)-Grille_x1),l_ni)
+         Pslab_ymin(gridset)=
+     %         max(Grid_y0(gridset)-Ptopo_gindx(3,Ptopo_myproc+1)+1,1)
+         Pslab_ymax(gridset)=
+     %         min(l_nj-(Ptopo_gindx(4,Ptopo_myproc+1)-Grille_y1),l_nj)
+
+*  Setup the correct ig3 and ig4 for each PE
+*
+         grille_xmin = max(Grid_x0(gridset),Ptopo_gindx(1,Ptopo_myproc+1))
+         grille_xmax = min(Grille_x1,Ptopo_gindx(2,Ptopo_myproc+1))
+         grille_ymin = max(Grid_y0(gridset),Ptopo_gindx(3,Ptopo_myproc+1))
+         grille_ymax = min(Grille_y1,Ptopo_gindx(4,Ptopo_myproc+1))
+         grille_xmin = grille_xmin - Grid_x0(gridset) +1
+         grille_xmax = grille_xmax - Grid_x0(gridset) +1
+         grille_ymin = grille_ymin - Grid_y0(gridset) +1
+         grille_ymax = grille_ymax - Grid_y0(gridset) +1
+
+         Pslab_niout(gridset)=Pslab_xmax(gridset)-Pslab_xmin(gridset)+1
+         Pslab_njout(gridset)=Pslab_ymax(gridset)-Pslab_ymin(gridset)+1
+
+         if (Pslab_niout(gridset).gt.0.and.Pslab_njout(gridset).gt.0) then
+             output_in_PE_L=.true.
+             ierr= slabig34(Grid_ig3(gridset),Grid_ig4(gridset),
+     %                 grille_xmin,grille_xmax,grille_ymin,grille_ymax)
+             if (ierr.lt.0) then
+                 if  (Lun_out.gt.0) write(Lun_out,*)'ERROR in slabig34'
+                 call gem_stop('GENSLABC',-1)
+             endif
+
+             do j = Pslab_ymin(gridset), Pslab_ymax(gridset)
+                do i = Pslab_xmin(gridset), Pslab_xmax(gridset)
+                   ij= 1+i-Pslab_xmin(gridset)+
+     %                (j-Pslab_ymin(gridset))*Pslab_niout(gridset)
+                   Pslab_xnio(ij,gridset)=ij
+                enddo
+             enddo
+         endif
+      enddo
+*
+      if (.not. output_in_PE_L) return
+*
+*  Open chemistry slab file
+      exten_s= ""
+      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and.
+     $     ((Lctl_step.ge.(Init_dfnp-1)/2)) )
+     $     exten_s = '_dgf'
+      call inislabfhand(Lun_outgem_s, Pslab_fhand,'cm',exten_S)
+
+*
+*  Obtain the different slabs needed, based on the type of
+*  grids used in the output. A slab type can only have one
+*  grid configuration and point to one clump of data:
+*  ie: busper,busdyn,busvol,busent
+
+      do slabnum=1,PSLAB_SLAB_MAX
+         Pslab_grid(slabnum) = 0
+         do i=1,Pslab_mxout
+            Pslab_mtas(i,slabnum) = 0
+            Pslab_mtadd(i,slabnum) = 0
+            Pslab_mtmul(i,slabnum) = 1.0
+         end do
+      end do
+*
+      Pslab_ni = l_ni
+      do i=1,maxbus
+         busadd(i)=0.0
+         busmul(i)=1.0
+         busshp(i)=l_ni*G_nk
+         busmult(i)=1
+         busstag(i)=0
+         busptr(i)=(i-1)*l_ni*G_nk + 1
+      enddo
+*
+c     if (pnibc.gt.0) then
+
+*        Process the Chemistry Tracers
+         i_idx=0
+*
+         call busslab(busptr,busshp,busmult,chem_name_s,busadd,
+     %                busmul,busstag,' ',Chem_ntr,Outc_var,MAXELEM,Outc_lev,
+     %                Outc_grid,Outc_step,Outc_var_max,Outc_sets,Outc_typvar_S,
+     %                Chem_xnbits,Slab_ip2,i_idx,dostep,dostep_max)
+
+c     endif
+*
+ 5000 format(/,' GENSLABC - CHEMISTRY SLABS WILL BE WRITTEN FOR STEP (',
+     $          I8,')')
+ 5001 format(/,' GENSLABC - NO CHEMISTRY OUTPUT FOR STEP (',I8,')')
+*
+      return
+      end

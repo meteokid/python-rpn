@@ -1,0 +1,88 @@
+***s/r p_main - Main controller for the physics interface
+*
+#include <model_macros_f.h>
+*
+      subroutine p_main (F_stepno)
+*
+#include "impnone.cdk"
+*
+      integer F_stepno
+*
+*author 
+*     Michel Desgagne - Mars 2000
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Lee V.            - added call to p_proslab
+* v2_20 - Desgagne M.       - Physics at kount=0 now performed after
+* v2_20                       first dynamic timestep + reorganisation
+* v2_20                       of time series
+* v2_21 - J. P. Toviessi    - (#) slab output
+* v2_31 - Dugas B.          - re-activate zonal diagnostics
+* v2_32 - Lee V.            - slab related calls are moved to p_phystep
+* v3_00 - Laroche S.        - remove hpdeallc (pageofld, ier, 1)
+*      
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_stepno      I           step number
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "dimout.cdk"
+#include "xst.cdk"
+#include "p_bus.cdk"
+#include "c_cplg.cdk"
+*
+*
+      logical boot_L
+      integer ier
+      real prip2
+      save boot_L
+      data boot_L /.true./
+**
+*     ---------------------------------------------------------------
+*
+      if (F_stepno.eq.1) then
+         Lctl_step = 0
+         call p_phystep (0)
+cstl        call hpdeallc (pageofld, ier, 1)
+         Lctl_step = 1
+      endif
+*
+      if (boot_L) then
+         if (Xst_nstat.gt.0) then
+            call sergset ()
+            if (F_stepno.eq.1) call sergini ()
+         endif
+         call zongopr( 1,0 )
+         boot_L = .false.
+      endif
+*
+      call sergoff()
+      call serset('KOUNT', F_stepno, 1,  ier)
+      prip2 = float(F_stepno)*Cstv_dt_8/3600.
+      call serset('HEURE',  prip2,  1,  ier)      
+*
+      call zongopr( +2,0 )
+*
+      call p_phystep (F_stepno)
+*
+      call zongopr( -2,0 )
+*     
+      if (Xst_nstat.gt.0) call sergout( F_stepno.eq.1 )
+*
+*     Coupling with a second model
+*
+      if (C_coupling_L) then
+         if (C_ocean_iml_L) call c_cplg_iml( )
+c         if (C_wave_L) call c_cplg_wave( )
+      endif
+*   
+      return
+      end

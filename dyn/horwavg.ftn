@@ -1,0 +1,72 @@
+***s/r horwavg - Compute difference of horizontal area
+*                weighted averages of a field 
+*
+#include <model_macros_f.h>
+*
+      subroutine horwavg ( F_avg_8, F_in1, F_in2, DIST_DIM )
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM
+      real*8 F_avg_8
+      real F_in1(DIST_SHAPE), F_in2(DIST_SHAPE)
+*
+*author 
+*     J.P. Toviessi ( after version v1_03 of horwavg )
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version 
+* v2_21 - Desgagne M.       - bit reproducibility + rpn_comm stooge
+* v2_31 - Desgagne M.       - remove stkmemw
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_avg_8      O          difference of averages of the field 
+*  F_in1        I          field for which we want an average
+*  F_in2        I          field for which we want an average
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+*
+**
+      integer i, j, err
+      real*8 c1_8,avg_8(2),HALF_8,ZERO_8,QUATRO
+      real wk1(G_ni,G_nj), wk2(G_ni,G_nj)
+      parameter( HALF_8  = 0.5 , ZERO_8 = 0.0 , QUATRO = 4.0)
+*
+*     ---------------------------------------------------------------
+*
+      call glbcolc (wk1,G_ni,G_nj,F_in1,LDIST_DIM,1)
+      call glbcolc (wk2,G_ni,G_nj,F_in2,LDIST_DIM,1)
+*
+      if (Ptopo_myproc.eq.0) then
+         avg_8(1) = ZERO_8
+         avg_8(2) = ZERO_8
+         do j=1,G_nj
+         do i=1,G_ni
+            c1_8 = (G_xg_8(i+1)- G_xg_8(i-1))    * HALF_8 *
+     $             (sin((G_yg_8(j+1)+G_yg_8(j  ))* HALF_8)- 
+     $              sin((G_yg_8(j  )+G_yg_8(j-1))* HALF_8))
+            avg_8(1)= avg_8(1) + wk1(i,j) * c1_8
+            avg_8(2)= avg_8(2) + wk2(i,j) * c1_8
+         enddo
+         enddo
+         avg_8(1) = avg_8(1) / ( QUATRO * Dcst_pi_8 )
+         avg_8(2) = avg_8(2) / ( QUATRO * Dcst_pi_8 )
+      endif
+*
+      call RPN_COMM_bcast (avg_8,2,"MPI_DOUBLE_PRECISION",0,"grid",err)
+*
+      F_avg_8 = avg_8(1) - avg_8(2)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,213 @@
+***s/r sol_fft8_2_ad - ADJ of sol_fft8_2 
+*
+#include <model_macros_f.h>
+*
+      subroutine sol_fft8_2_ad( sol, Rhs, pri,
+     $                          Minx, Maxx, Miny, Maxy, njl,
+     $                          Minz, Maxz, Nk, Nkl, Gni, Gnj,
+     $                                    Minij, Maxij, L_nij,
+     $                          minx1, maxx1, minx2, maxx2,nx3,
+     $                          F_npex1, F_npey1, ai, bi, ci,
+     $                          fdg2,fdwfft)
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - zero adjoint variables 
+*                           - verify if ci=0 or ai=0 or bi=1
+*
+*object
+*     see id section 
+*
+*arguments
+*   io     - Sol     - result
+*   io     - Rhs     - r.h.s. of elliptic equation
+*   i      - Gni     - number of points in x-direction
+*   i      - Gnj     - number of points in y-direction
+*
+*implicits
+#include "ptopo.cdk"
+*
+*modules
+      external ffft8, rpn_comm_transpose
+*
+      integer  F_npex1, F_npey1
+      integer  minx1, maxx1, minx2, maxx2,nx3
+*
+      Real*8   ai(minx1:maxx1,minx2:maxx2,nx3),
+     $         bi(minx1:maxx1,minx2:maxx2,nx3),
+     $         ci(minx1:maxx1,minx2:maxx2,nx3)
+*
+      integer Minx, Maxx, Miny, Maxy, njl
+      integer Minz, Maxz, Nk, Nkl
+      integer Gni, Gnj
+      integer Minij, Maxij, L_nij
+      real*8  Sol(Minx:Maxx,Miny:Maxy,Nk), Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      real*8  pri
+*
+      real*8 fdwfft(Miny:Maxy,Minz:Maxz,Gni+2+F_npex1)
+      real*8  fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
+*
+      integer i,  j, k, ki, jw, jr, err
+      real*8 ZERO_8,ONE_8
+      parameter( ZERO_8 = 0.0 )
+      parameter( ONE_8  = 1.0 )
+*
+*PDIR SERIAL
+      call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                              Minz, Maxz, Nk, fdwfft,  1, 2 )
+*PDIR ENDSERIAL
+*     Zero adjoint variables
+*     ----------------------
+      do k= 1,Nk
+      do j= Miny,Maxy
+      do i= Minx,Maxx
+      sol(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*     ADJ of
+*     inverse projection ( r = x * w )
+
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+       do k=1, Nkl
+       call ffft8( fdwfft(1,k,1), (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+     %                                            (Maxy-Miny+1), -1 )
+       enddo
+C      call ffft8( fdwfft,        (Maxy-Miny+1) * (Maxz-Minz+1), 1,
+C    %                                            (Maxy-Miny+1) * Nkl, -1 )
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k = Nkl,1,-1
+        do j = (Maxy-Miny+1),1,-1
+            fdwfft(j,k,Gni+2) = ZERO_8
+            fdwfft(j,k,2)     = ZERO_8
+            fdwfft(j,k,2)     = fdwfft(j,k,1) + fdwfft(j,k,2)
+            fdwfft(j,k,1)     = ZERO_8
+         enddo
+      enddo
+*
+*PDIR SERIAL
+      call rpn_comm_transpose
+     $     ( fdwfft(1,1,2), Miny, Maxy, Gnj, (Maxz-Minz+1),
+     $                        Minij, Maxij, Gni, fdg2, 2, 2 )
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k= 1,Gni+2+F_npex1
+      do j= Minz,Maxz
+      do i= Miny,Maxy
+      fdwfft(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+         do j = 1,Gnj-1
+            jr =  j + 1
+            do ki= (Maxz-Minz+1)*L_nij,1,-1
+              if(ci(ki,1,j).ne.ZERO_8) 
+     %        fdg2(ki,1,jr)=- ci(ki,1,j) * fdg2(ki,1,j) + fdg2(ki,1,jr)
+            enddo
+         enddo
+
+      do j =Gnj,2,-1
+            jr =  j - 1
+            do ki= (Maxz-Minz+1)*L_nij,1,-1
+               if(ai(ki,1,j).ne.ZERO_8)
+     %         fdg2(ki,1,jr) = - ai(ki,1,j)*fdg2(ki,1,j) + fdg2(ki,1,jr)
+               if(bi(ki,1,j).ne.ONE_8)
+     %         fdg2(ki,1,j)  =   bi(ki,1,j)*fdg2(ki,1,j) 
+            enddo
+      enddo
+*
+      j =1
+*
+      do ki= (Maxz-Minz+1) *L_nij,1,-1
+         fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
+      enddo
+*
+      call rpn_comm_transpose
+     $     ( fdwfft(1,1,2), Miny, Maxy, Gnj, (Maxz-Minz+1),
+     $                         Minij, Maxij, Gni, fdg2, -2, 2 )
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k= 1,Gnj+F_npey1
+      do j= Minij,Maxij
+      do i= Minz,Maxz
+      fdg2(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*PDIR ENDSERIAL
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k = Nkl,1,-1
+         do j = (Maxy-Miny+1),1,-1
+           fdwfft(j,k,1)     = fdwfft(j,k,2) + fdwfft(j,k,1) 
+           fdwfft(j,k,2)     = ZERO_8 
+           fdwfft(j,k,Gni+2) = ZERO_8
+         enddo
+      enddo
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k = Nkl,1,-1
+         do i = (Gni)/2,0,-1
+            do jw = (Maxy-Miny+1),1,-1
+               fdwfft(jw,k,2*i+2) = pri * fdwfft(jw,k,2*i+2)
+               fdwfft(jw,k,2*i+1) = pri * fdwfft(jw,k,2*i+1)
+            enddo
+         enddo
+      enddo
+*
+*     ADJ of
+*     projection ( wfft = x transposed * g )
+*     --------------------------------------
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k=1,Nkl
+      call ffft8(fdwfft(1,k,1),(Maxy-Miny+1)*(Maxz-Minz+1),
+     %                                     1, (Maxy-Miny+1), 1 )
+      enddo
+C     call ffft8(fdwfft,       (Maxy-Miny+1)*(Maxz-Minz+1),
+C    %                                     1, (Maxy-Miny+1) * Nkl, 1 )
+*
+*PDIR SERIAL
+         do k= Maxz,Nkl+1,-1
+            do j= Maxy,Miny,-1
+               do i= Gni,1,-1
+                  fdwfft(j,k,i)=ZERO_8
+               enddo
+            enddo
+         enddo
+*
+         do k= nkl,Minz,-1
+            do j= Maxy,njl+1,-1
+               do i= Gni,1,-1
+                  fdwfft(j,k,i)=ZERO_8
+               enddo
+            enddo
+         enddo
+*
+      call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                         Minz, Maxz, Nk, fdwfft, -1, 2 )
+*
+*     Zero adjoint variables
+*     ----------------------
+      do k= 1,Gni+2+F_npex1
+      do j= Minz,Maxz
+      do i= Miny,Maxy
+      fdwfft(i,j,k) = ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*PDIR ENDSERIAL
+*
+      return
+      end

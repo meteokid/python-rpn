@@ -1,0 +1,188 @@
+***s/p set_grid - initialization of common block GRID
+*
+#include <model_macros_f.h>
+*
+      integer function set_grid (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
+#include "impnone.cdk"
+        integer F_argc,F_v1,F_v2
+        character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
+        character*5 stuff_S
+*
+*author 
+*     Vivian Lee - rpn - April 1999
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version
+* v2_21 - Lee V.            - modifications for LAM version and grid '#'
+* v2_30 - Lee V.            - ig3 is used for diese grids only
+* v2_30                     - ig1 to be (1,2,3...) for each defined grid
+* v2_30                       ig1 to be (11,12,13...) for each defined LAM grid
+* v2_30 - Dugas B.          - ipig now uses a real*8 rotation matrix
+* v2_32 - Lee V.            - gridset is now an ID defined by the user, not the
+* v2_32                       actual "set" number forced to be in sequence
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*	initialization of the common block GRID. This function is
+*       called when the keyword "grid" is found in the first word
+*       of the directives in the input file given in the statement
+*       "process_f_callback". This feature is enabled by the 
+*       ARMNLIB "rpn_fortran_callback" routine (called in "srequet")
+*       which allows a different way of passing user directives than 
+*       the conventional FORTRAN namelist. This function will process 
+*       the following example command read from the named input file.
+*
+*   ie: grid=1,model;
+*
+*       The "rpn_fortran_callback" routine will process the above
+*       statement and return 5 arguments to this function. For more
+*       information to how this is processed, see "SREQUET".
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_argc       I    - number of elements in F_argv_S
+* F_argv_S     I    - array of elements received
+* F_cmdtyp_S   I    - character command type - not used
+* F_v1         I    - integer parameter 1 - not used
+* F_v2         I    - integer parameter 2 - not used
+*----------------------------------------------------------------
+*
+*Notes:
+*
+*   ie: grid=2,core;
+*       grid=3,model,2,-2,1,-1;
+*
+*    grid=gridset#,model/core,[gridx0,gridx1,gridy0,gridy1];
+*                              gridx0 to gridy1 is optional
+*
+*      Should label the gridset# sequentially: 1,2,3,....(max of 4)
+*       model       - total grid of the model
+*       core        - only the uniform part of the grid
+*       gridx0      - value to add/subtract from X origin of
+*                     core or model grid
+*       gridx1      - value to add/subtract from X upper corner
+*                     of core or model grid
+*       gridy0      - value to add/subtract from Y origin of
+*                     core or model grid
+*       gridy1      - value to add/subtract from Y upper corner
+*                     of core or model grid
+*HINT: normally you have positive values to add to the origins
+*      and negative values to subtract from the upper corners
+*
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "p_geol.cdk"
+#include "hgc.cdk"
+#include "grd.cdk"
+#include "dimout.cdk"
+#include "grid.cdk"
+*
+**
+      integer i, j, k, gridset,gridinc(4)
+      character*8 grdtyp_S
+*
+*-------------------------------------------------------------------
+*
+      if (Lun_out.gt.0) then
+          write(Lun_out,*)
+          write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
+      endif
+      set_grid = 0
+      read(F_argv_S(1),*) gridset
+      Grid_sets = Grid_sets + 1
+      if (Grid_sets.gt.MAXGRID) then
+          if (Lun_out.gt.0)
+     $    write(Lun_out,*)'SET_GRID WARNING: Too many grid definitions'
+          Grid_sets = Grid_sets - 1
+          set_grid = 1
+          return
+      endif
+
+      j = Grid_sets
+      Grid_id(j)=gridset
+      if(index(F_argv_S(2),'model') .ne. 0) then
+          grdtyp_S='model'
+      else if (index(F_argv_S(2),'core') .ne. 0) then
+          grdtyp_S='core'
+      else 
+          if (Lun_out.gt.0)
+     $    write(Lun_out,*)'SET_GRID WARNING: Grid Type Undefined'
+          Grid_sets = Grid_sets - 1
+          set_grid = 1
+          return
+      endif
+      if (F_argc.eq.6) then
+          read(F_argv_S(3),*)gridinc(1)
+          read(F_argv_S(4),*)gridinc(2)
+          read(F_argv_S(5),*)gridinc(3)
+          read(F_argv_S(6),*)gridinc(4)
+      else
+          gridinc(1)=0
+          gridinc(2)=0
+          gridinc(3)=0
+          gridinc(4)=0
+      endif
+*
+      Grid_typ_s(j) = '#'
+      Grid_gxtyp_s(j) = Hgc_gxtyp_s
+
+*    Get values for ip1,ip2,ip3 for the positional records which
+*        is also the ig1,ig2,ig3 for the scalar grid
+*    Note the result of Grid_ig3 is invalid because it is determined
+*        by dieseig34
+         call ipig(Grid_ig1(j), Grid_phi_ig2(j), Grid_ig3(j),
+     %        Grd_dx, Grd_dy, Grd_nila, Grd_njla, G_ni, G_nj,
+     %        Grd_rot_8, P_geol_tourn_L)
+         Grid_ig1(j) = Grid_ig1(j) + j-1
+         if (G_lam) Grid_ig1(j)=Grid_ig1(j)+10
+
+*    Calculate the origin and outer coordinates of the output grid
+
+      if (grdtyp_S.eq.'model') then
+
+         Grid_x0(j)=1 + gridinc(1)
+         Grid_x1(j)=G_ni + gridinc(2)
+         Grid_y0(j)=1 + gridinc(3)
+         Grid_y1(j)=G_nj + gridinc(4)
+         
+      else if (grdtyp_S.eq.'core') then
+*     
+         Grid_x0(j)=Grd_left+ 1 + gridinc(1) + Lam_pil_w
+         Grid_x1(j)=Grd_left + Grd_nila + gridinc(2) - Lam_pil_e
+         Grid_y0(j)=Grd_belo + 1 + gridinc(3) + Lam_pil_s
+         Grid_y1(j)=Grd_belo + Grd_njla + gridinc(4) - Lam_pil_n
+      endif
+      
+*     verify that coordinates fall within the limits of the full grid
+*     or set to the maximum/minimum possible
+      Grid_x0(j)= max(Grid_x0(j),1)
+      Grid_x1(j)=min(Grid_x1(j),G_ni)
+      if (.not.G_lam .and. Grid_x1(j).eq.G_ni) Grid_x1(j)=G_ni+1
+      Grid_y0(j)= max(Grid_y0(j),1)
+      Grid_y1(j)=min(Grid_y1(j),G_nj)
+
+*     Calculate the NIxNJ of the output grid
+      Grid_niout(j)=Grid_x1(j) - Grid_x0(j) + 1
+      Grid_njout(j)=Grid_y1(j) - Grid_y0(j) + 1
+      if (Grid_niout(j).lt.1.or.Grid_njout(j).lt.1) then
+          Grid_sets = Grid_sets - 1
+          if (Lun_out.gt.0)
+     $       write (Lun_out,*)'ERROR in description of output grid!'
+          return
+      endif
+*
+*    Fill in the positional records for scalar grid
+      Grid_ixg1(j) = Hgc_ig1ro
+      Grid_ixg2(j) = Hgc_ig2ro
+      Grid_ixg3(j) = Hgc_ig3ro
+      Grid_ixg4(j) = Hgc_ig4ro
+      if (Lun_out.gt.0) then
+      write(Lun_out,*) ' Grid_set(',j,') : Grid_id=',Grid_id(j)
+      endif
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

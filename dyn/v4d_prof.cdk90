@@ -1,0 +1,78 @@
+module v4d_prof 
+!_________________________________________________________________
+!                                                                 |
+! Parameters associated to exchange with 3D-Var using PROF files  | 
+!_________________________________________________________________|
+!
+!author N. Ek
+!
+!revision
+! v0_06 - N. Ek          - initial MPI version
+! v0_06 - M. Tanguay     - adapt to Simon's exchange
+!
+#include "impnone.cdk"
+!
+  save
+!
+!     Parameters linked to PROF files  
+!     -------------------------------
+      logical Pr_llfrm_L 
+      character*4 Pr_mode_S
+      real*8 Pr_dsnooze_8
+      integer Pr_ihdlin,Pr_ihdlout
+      character*256 Pr_type2file_S,Pr_type3file_S 
+!
+      logical Pr_read_L, Pr_wopen_L, Pr_ropen_L
+!
+!     Parameters for extra 0-3hr TRAJ run  
+!     -----------------------------------
+      logical Pr_traj0to9_L
+!
+!     Parameters linked to simulation numbers  
+!     ---------------------------------------
+      integer Pr_nsim4d 
+!
+!     Parameters linked to profiles identification  
+!     --------------------------------------------
+      integer, parameter :: Pr_nvars = 5  ! UU, VV, TT, PS, (SPHU)
+      character*2,dimension(Pr_nvars) :: Pr_varname
+      integer,    dimension(Pr_nvars) :: Pr_varindx  ! initialized in v4d_setting
+!
+      integer, parameter :: Pr_maxnmv    = 31        ! Max. no. of variables
+      integer, parameter :: Pr_maxstepob = 12        ! Max. no. of obs. times
+!
+      type real2dptr
+       real, pointer :: ptr                          ! Profile elements
+      end type real2dptr 
+!
+      type modelprof
+       sequence
+       integer :: nprof                           ! Number of profiles
+       integer, pointer, dimension(:)  :: obstag  ! Observations' tags
+       integer, pointer, dimension(:)  :: mdltag  ! Model variables' tags
+       real,    pointer, dimension(:)  :: px      ! Latitudes in model units
+       real,    pointer, dimension(:)  :: py      ! Longitudes in model units
+       real,    pointer, dimension(:,:):: fprof   ! Profiles of the variable               
+      end type modelprof
+!
+!     Define structure l_mv
+!     ---------------------
+      type (modelprof), dimension(Pr_maxnmv,0:Pr_maxstepob) :: Pr_l_mv
+!
+!     Array of pointers to real array
+!     -------------------------------
+      type (real2dptr), dimension(:,:,:), pointer :: Pr_mlprof
+!
+!     Time associated to each model tag 
+!     ---------------------------------
+      integer, pointer, dimension(:)  :: Pr_timetag ! Time of mdltag 
+!
+!     Statistics for profiles  
+!     -----------------------
+      integer  Pr_timobmax                        ! maximal no. of observation time   
+      integer  Pr_maxprof                         ! no. of profiles in lalo PROF file  
+      integer  Pr_nobproc                         ! no. of profiles in local processor  
+      integer, pointer, dimension(:)  :: Pr_nob   ! no. of profiles by obs. time in local proc.  
+      integer, pointer, dimension(:)  :: Pr_doobs ! 1 if profiles in any proc. at this timestep       
+!
+      end module v4d_prof 

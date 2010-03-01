@@ -1,0 +1,178 @@
+***s/r hzd_abc -- Prepares matrices aix,bix,cix,dix,aiy,biy,ciy
+*
+#include <model_macros_f.h>
+*
+      subroutine hzd_abc (F_aix_8, F_bix_8, F_cix_8, F_dix_8 ,
+     $                    F_aiy_8, F_biy_8, F_ciy_8, F_coef_8,
+     $                    F_cy2_8, F_xp0_8, F_xp2_8, F_yp0_8 ,
+     $                    F_yp2_8, Gni, Gnj, lnjs_nh, lnj, 
+     $                    ni22s, ni22, PYDIST_DIM, F_gnjv, lnjv)
+*
+#include "impnone.cdk"
+*
+      integer Gni,Gnj,lnjs_nh,lnj,ni22s,ni22,PYDIST_DIM,
+     $        F_gnjv, lnjv
+      real*8 F_aix_8(*), F_bix_8(*), F_cix_8(*), F_dix_8(*), 
+     $       F_aiy_8(*), F_biy_8(*), F_ciy_8(*), F_coef_8,
+     $       F_cy2_8(PYDIST_SHAPE) , F_xp0_8(Gni,3), F_xp2_8(Gni,3), 
+     $       F_yp0_8(Gnj,3), F_yp2_8(Gnj,3)
+*
+*author    
+*     J.P. Toviessi
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version 
+* v2_10 - J.P. Toviessi     - reset V grid operator 
+* v2_10                       latitudinal modulation of hor. diffusion
+* v2_11 - Desgagne M.       - remove vertical modulation
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*       
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_aix_8
+*----------------------------------------------------------------
+* 
+*implicit
+#include "glb_ld.cdk"
+#include "hzd.cdk"
+#include "grd.cdk"
+#include "trp.cdk"
+*     
+      integer i, j, k, kk, ii, jj
+      real*8 ax_8(lnjs_nh,G_ni), bx_8(lnjs_nh,G_ni), cx_8(lnjs_nh,G_ni),
+     $       ay_8(  ni22s,G_nj), by_8(n  i22s,G_nj), cy_8(  ni22s,G_nj),
+     $       difvx_8(G_ni,l_nj), difvy_8(ni22,G_nj), diy_8
+      real*8 ZERO_8,ONE_8,HALF_8
+      parameter ( ZERO_8 = 0.0 , ONE_8 = 1.0 , HALF_8 = 0.5 )
+**
+*     ---------------------------------------------------------------
+*
+*     Calcul le long de X
+*
+      if (Hzd_difva_L) then
+         if (Grd_uniform_L) then
+            do j = 1, l_nj
+            do i = 1, G_ni
+               difvx_8 (i,j) = 0.0
+            end do
+            end do
+            if (l_south) then
+               do i = 1, G_ni
+                  difvx_8 (i,1) =  ONE_8
+                  difvx_8 (i,2) = HALF_8
+               end do
+            endif
+            if (l_north) then
+               do i = 1, G_ni
+                  difvx_8 (i,lnjv)   =  ONE_8
+                  difvx_8 (i,lnjv-1) = HALF_8
+               end do
+            end if
+         else
+            do j = 1, l_nj
+            jj = j + l_j0 - 1
+            do i = 1, G_ni
+               difvx_8 (i,j) = 
+     $         ( (G_xg_8(i+1)-G_xg_8(i-1))*(G_yg_8(jj+1)-G_yg_8(jj-1))/
+     $         ( (G_xg_8(G_ni/2+2)-G_xg_8(G_ni/2))
+     $          *(G_yg_8(G_nj/2+2)-G_yg_8(G_nj/2)) ) ) **HALF_8
+            end do
+            end do
+         endif
+      else
+         do j = 1, l_nj
+         do i = 1, G_ni
+            difvx_8 (i,j) = 1.0
+         end do
+         end do
+      endif
+*
+      do j = 1, lnjv
+         do i = 1, G_ni
+            ax_8(j,i) = F_xp0_8(i,1) -  difvx_8(i,j)*
+     $                  F_xp2_8(i,1)*F_coef_8/F_cy2_8(j)
+            bx_8(j,i) = F_xp0_8(i,2) -  difvx_8(i,j)*
+     $                  F_xp2_8(i,2)*F_coef_8/F_cy2_8(j)
+            cx_8(j,i) = F_xp0_8(i,3) -  difvx_8(i,j)*
+     $                  F_xp2_8(i,3)*F_coef_8/F_cy2_8(j)
+            enddo
+      enddo
+*
+      do j = lnjv+1, lnjs_nh
+      do i = 1, G_ni
+         bx_8(j,i)=  ONE_8
+         cx_8(j,i)= ZERO_8
+         ax_8(j,i)= ZERO_8
+      enddo
+      enddo
+*
+      call set_trig21 (F_aix_8,F_bix_8,F_cix_8,F_dix_8, ax_8,bx_8,cx_8, 
+     $                 lnjs_nh, 1, G_ni, lnjs_nh, .true.)
+*
+*     Calcul le long de Y
+*
+      if (Hzd_difva_L) then
+         if (Grd_uniform_L) then
+            do i = 1, ni22
+            do j = 3, G_nj
+               difvy_8 (i,j) = 0.0
+            end do
+            end do
+            do i = 1, ni22
+               difvy_8 (i,1) =  ONE_8
+               difvy_8 (i,2) = HALF_8
+            end do
+            do i = 1, ni22
+               difvy_8 (i,F_gnjv)   =  ONE_8
+               difvy_8 (i,F_gnjv-1) = HALF_8
+            end do
+         else
+            do i = 1, ni22
+            ii = i + trp_22n0 - 1
+            do j = 1, G_nj
+               difvy_8 (i,j) = 
+     $         ( (G_xg_8(ii+1)-G_xg_8(ii-1))*(G_yg_8(j+1)-G_yg_8(j-1))/
+     $         ( (G_xg_8(G_ni/2+2)-G_xg_8(G_ni/2))
+     $          *(G_yg_8(G_nj/2+2)-G_yg_8(G_nj/2)) ) ) **HALF_8
+            end do
+            end do
+         endif
+      else
+         do i = 1, ni22
+         do j = 1, G_nj
+            difvy_8 (i,j) = 1.0
+         end do
+         end do
+      endif
+*
+      do i= 1, ni22
+         do j= 1, F_gnjv
+            ay_8(i,j) = F_yp0_8(j,1) - difvy_8(i,j)*
+     %                  F_yp2_8(j,1) * F_coef_8 
+            by_8(i,j) = F_yp0_8(j,2) - difvy_8(i,j)*
+     %                  F_yp2_8(j,2) * F_coef_8 
+            cy_8(i,j) = F_yp0_8(j,3) - difvy_8(i,j)*
+     %                  F_yp2_8(j,3) * F_coef_8 
+         enddo
+         ay_8(i,1) = ZERO_8
+      enddo
+*
+      do i = ni22+1, ni22s
+      do j = 1, F_gnjv
+         by_8(i,j)=  ONE_8
+         cy_8(i,j)= ZERO_8
+         ay_8(i,j)= ZERO_8
+      enddo
+      enddo
+*
+      call set_trig21 (F_aiy_8,F_biy_8,F_ciy_8,diy_8, ay_8,by_8,cy_8, 
+     $                 ni22s, 1, F_gnjv, ni22s, .false.)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

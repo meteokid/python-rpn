@@ -1,0 +1,210 @@
+***s/r v4d_rwfld - Read (Write) a specific field (HEART only) from (on) WA file 
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_rwfld (F_field,F_work,Ni,Nj,DIST_DIM,Nk,
+     %                      F_iun,F_addr,F_diag_L,F_name_S,F_adjoint_L,F_diff,F_icode)
+*
+#include "impnone.cdk"
+*
+      integer Ni,Nj,DIST_DIM,Nk,F_icode
+      real F_field(DIST_SHAPE,Nk),F_work(*)
+*
+      integer F_iun,F_addr,F_diff
+      logical F_diag_L,F_adjoint_L
+      character*8 F_name_S
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - change parameters of v4d_rwfld 
+*                           - WA files incore 
+* v3_00 - Tanguay M         - incore option for Conversion WA file 
+* v3_00 - Laroche S.        - adapted for simplified physics
+*
+*object
+*     see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_field      I/O                 Field with HALO
+* F_work       w                   Field without HALO
+* Ni Nj        I                   Horizontal dim. of F_work 
+* DIST_DIM     I                   Horizontal dim. of F_field
+* Nk           I                   Vertical   dim. of F_work,F
+* F_iun        I                   Unit of WA file
+* F_addr       I/O                 Position in WA file
+* F_diag_L     I                   Give diagnostics if TRUE 
+* F_name_S     I                   Name of the field
+* F_adjoint_L  I                   TRUE if adjoint run
+* F_diff       I                   To be subtracted from position if adjoint run 
+* F_icode      I                   If F_icode.GT.0 -Transfer F_field (HEART only) in F_work
+*                                                  -Write F_work in WA file 
+*                                  If F_icode.LE.0 -Read F_work from WA file
+*                                                  -Transfer F_work in F_field (HEART only)
+*----------------------------------------------------------------
+*
+*implicits
+#include "lun.cdk"
+#include "v4dg.cdk"
+*
+      integer i,j,k,ind
+*
+      if (F_icode.gt.0) then
+*
+*         Transfer F_field (HEART only) in F_work
+*         ---------------------------------------
+          do k=1,Nk
+          do j=1,Nj
+          do i=1,Ni
+             ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+             F_work(ind) = F_field(i,j,k)
+          end do
+          end do
+          end do
+*
+*         Write F_work on WA file or incore
+*         ---------------------------------
+          if(V4dg_incore_L) then
+*
+             if(F_iun.eq.V4dg_iuntr) then
+*
+                if(V4dg_trsize.lt.F_addr + Ni*Nj*Nk - 1) then
+                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY TRINCORE TOO SMALL'
+                   call gefstop ('v4d_rwfld')
+                endif
+                do ind = 1,Ni*Nj*Nk
+                  V4dg_trincore(F_addr + ind - 1) = F_work(ind)
+                enddo
+*
+             elseif(F_iun.eq.V4dg_iunph) then
+*
+                if(V4dg_phsize.lt.F_addr + Ni*Nj*Nk - 1) then
+                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY PHINCORE TOO SMALL'
+                   call gefstop ('v4d_rwfld')
+                endif
+                do ind = 1,Ni*Nj*Nk
+                  V4dg_phincore(F_addr + ind - 1) = F_work(ind)
+                enddo
+*
+             elseif(F_iun.eq.V4dg_iunfr) then
+*
+                if(V4dg_frsize.lt.F_addr + Ni*Nj*Nk - 1) then
+                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY FRINCORE TOO SMALL'
+                   call gefstop ('v4d_rwfld')
+                endif
+                do ind = 1,Ni*Nj*Nk
+                  V4dg_frincore(F_addr + ind - 1) = F_work(ind)
+                enddo
+*
+             elseif(F_iun.eq.V4dg_iunob) then
+*
+                if(V4dg_obsize.lt.F_addr + Ni*Nj*Nk -1) then
+                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY OBINCORE TOO SMALL'
+                   call gefstop ('v4d_rwfld')
+                endif
+                do ind = 1,Ni*Nj*Nk
+                  V4dg_obincore(F_addr + ind - 1) = F_work(ind)
+                enddo
+*
+             elseif(F_iun.eq.V4dg_iuncv) then
+*
+                if(V4dg_cvsize.lt.F_addr + Ni*Nj*Nk - 1) then
+                   if(Lun_debug_L) write (Lun_out,*) 'ARRAY CVINCORE TOO SMALL'
+                   call gefstop ('v4d_rwfld')
+                endif
+                do ind = 1,Ni*Nj*Nk
+                  V4dg_cvincore(F_addr + ind - 1) = F_work(ind)
+                enddo
+*
+             endif
+*
+          else
+*
+             call wawrit (F_iun,F_work,F_addr,Ni*Nj*Nk)
+*
+          endif
+*
+*         Diagnostics
+*         -----------
+          if(F_diag_L) write(Lun_out,*) 
+     %                 'WA FILE: wawrit ','Waf_adr = ',F_addr,'for ',F_name_S
+*
+*         Update address
+*         --------------
+          F_addr = F_addr + Ni*Nj*Nk
+*
+      else
+*
+*         Read F_work from WA file or incore 
+*         ----------------------------------
+          if(V4dg_incore_L) then
+*
+             if(F_iun.eq.V4dg_iuntr) then
+*
+                do ind = 1,Ni*Nj*Nk
+                  F_work(ind) = V4dg_trincore(F_addr + ind - 1)
+                enddo
+*
+             elseif(F_iun.eq.V4dg_iunph) then
+*
+                do ind = 1,Ni*Nj*Nk
+                  F_work(ind) = V4dg_phincore(F_addr + ind - 1)
+                enddo
+*
+             elseif(F_iun.eq.V4dg_iunfr) then
+*
+                do ind = 1,Ni*Nj*Nk
+                  F_work(ind) = V4dg_frincore(F_addr + ind - 1) 
+                enddo
+*
+             elseif(F_iun.eq.V4dg_iunob) then
+*
+                do ind = 1,Ni*Nj*Nk
+                  F_work(ind) = V4dg_obincore(F_addr + ind - 1) 
+                enddo
+*
+             elseif(F_iun.eq.V4dg_iuncv) then
+*
+                do ind = 1,Ni*Nj*Nk
+                  F_work(ind) = V4dg_cvincore(F_addr + ind - 1)
+                enddo
+*
+             endif
+*
+          else
+*
+             call waread (F_iun,F_work,F_addr,Ni*Nj*Nk)
+*
+          endif
+*
+*         Transfer F_work in F_field (HEART only)
+*         ---------------------------------------
+          do k=1,Nk
+          do j=1,Nj
+          do i=1,Ni
+             ind = Ni*Nj*(k-1) + Ni*(j-1)+i
+             F_field(i,j,k) = F_work(ind)
+          end do
+          end do
+          end do
+*
+*         Diagnostics
+*         -----------
+          if(F_diag_L) write(Lun_out,*)
+     %                 'WA FILE: waread ','Waf_adr = ',F_addr,'for ',F_name_S
+*
+*         Update address
+*         --------------
+          if(     F_adjoint_L) F_addr = F_addr - F_diff 
+          if(.not.F_adjoint_L) F_addr = F_addr + Ni*Nj*Nk 
+*
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

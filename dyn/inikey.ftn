@@ -1,0 +1,137 @@
+***s/r inikey
+*
+#include <model_macros_f.h>
+*
+      subroutine inikey
+#include "impnone.cdk"
+*
+*author   
+*     Michel Desgagne  - Sept 2001 
+*
+*revision
+* v2_31 - Desgagne M.       - initial version (adapted from MC2 v4.9.1 
+*                             physics interface)
+* v2_32 - Desgagne M.       - connection to physics 3.72
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*implicites
+#include "glb_ld.cdk"
+#include "busind.cdk"
+#include "tr3d.cdk"
+#include "p_cond.cdk"
+*
+**
+      character*8 vn_S
+      integer init0,init,i,k,deb,lght
+      data init0,init /0,-1/
+*
+*-------------------------------------------------------------------
+*
+      call getindx ('UMOINS',  'D',umoins,   lght, init0)
+      call getindx ('VMOINS',  'D',vmoins,   lght, init0)
+      call getindx ('TMOINS',  'D',tmoins,   lght, init0)
+      call getindx ('PMOINS',  'D',pmoins,   lght, init0)
+      call getindx ('UPLUS',   'D',uplus,    lght, init0)
+      call getindx ('VPLUS',   'D',vplus,    lght, init0)
+      call getindx ('TPLUS',   'D',tplus,    lght, init0)
+      call getindx ('PPLUS',   'D',pplus,    lght, init0)
+      call getindx ('OMEGAP',  'D',omegap,   lght, init0)
+      call getindx ('SIGM',    'D',sigm,     lght, init0)
+      call getindx ('DXDY',    'D',dxdy,     lght, init0)
+      call getindx ('EPONMOD', 'D',eponmod,  lght, init0)
+      call getindx ('FCPMSK',  'D',fcpf,     lght, init0)
+      call getindx ('FCPOID',  'D',fcpw,     lght, init0)
+*
+      call getindx ('DLAT',      'P',dlat,     lght, init0)
+      call getindx ('DLON',      'P',dlon,     lght, init0)
+      call getindx ('MG',        'P',mg,       lght, init0)
+      call getindx ('Z0',        'P',z0,       lght, init0)
+      call getindx ('LHTG',      'P',lhtg,     lght, init0)
+      call getindx ('ALVIS',     'P',alvis,    lght, init0)
+      call getindx ('TWATER',    'P',twater,   lght, init0)
+      call getindx ('TGLACIER',  'P',tglacier, lght, init0)
+      call getindx ('TSOIL',     'P',tsoil,    lght, init0)
+      call getindx ('WSOIL',     'P',wsoil,    lght, init0)
+      call getindx ('SNODP',     'P',snodp,    lght, init0)
+      call getindx ('ICEDP',     'P',icedp,    lght, init0)
+      call getindx ('GLSEA',     'P',glsea,    lght, init0)
+      call getindx ('GLSEA0',    'P',glsea0,   lght, init0)
+      call getindx ('INCRNE',    'P',incrne,   lght, init0)
+      call getindx ('INCRHS',    'P',incrhs,   lght, init0)
+      call getindx ('INCRICD',   'P',incricd,  lght, init0)
+      call getindx ('INCRGL',    'P',incrgl,   lght, init0)
+      call getindx ('INCRTS',    'P',incrts,   lght, init0)
+      call getindx ('INCRTG',    'P',incrtg,   lght, init0)
+      call getindx ('INCRTP',    'P',incrtp,   lght, init0)
+      call getindx ('UFCP',      'P',ufcp,     lght, init0)
+      call getindx ('VFCP',      'P',vfcp,     lght, init0)
+*
+      call getindx ('TRAD',    'V',trad,     lght, init0)
+      call getindx ('UDIFV',   'V',udifv,    lght, init0)
+      call getindx ('VDIFV',   'V',vdifv,    lght, init0)
+      call getindx ('TDIFV',   'V',tdifv,    lght, init0)
+      call getindx ('QDIFV',   'V',qdifv,    lght, init0)
+      call getindx ('UGWD',    'V',ugwd,     lght, init0)
+      call getindx ('VGWD',    'V',vgwd,     lght, init0)
+      call getindx ('TCOND',   'V',tcond,    lght, init0)
+      call getindx ('KM',      'V',km,       lght, init0)
+      call getindx ('KT',      'V',kt,       lght, init0)
+      call getindx ('BM',      'V',bm,       lght, init0)
+      call getindx ('BT',      'V',bt,       lght, init0)
+*
+* H2O tracers
+*
+      do i=1,h2o_maxn
+         vn_S=h2o_liste_S(i)(1:2)//'PLUS'
+         call getindx (vn_S, 'D', deb, lght, init)
+         if ( (h2o_liste_S(i)(1:2).eq.'QR').and.
+     $        (P_cond_stcon_s(1:4).ne.'EXCR') ) deb = -1
+         if (deb.gt.0) then
+            h2o_ntr = h2o_ntr + 1
+            h2o_name_S(h2o_ntr) = h2o_liste_S(i)(1:2)
+            h2o_ind(1,h2o_ntr)  = deb
+            vn_S=h2o_liste_S(i)(1:2)//'MOINS'
+            call getindx (vn_S, 'D',h2o_ind(2,h2o_ntr), lght, init)
+            vn_S=h2o_liste_S(i)(1:2)//'COND'
+            call getindx (vn_S, 'V',h2o_ind(3,h2o_ntr), lght, init)
+         endif
+      end do
+      do 10 i=1,h2o_ntr
+         do k=1,tr3d_ntr
+            if (Tr3d_name_S(k).eq.h2o_name_S(i)) goto 10
+         end do
+         tr3d_ntr = tr3d_ntr + 1
+         Tr3d_name_S(tr3d_ntr) = h2o_name_S(i)
+         Tr3d_sval(tr3d_ntr) = 0.
+ 10   continue    
+*
+* Other physics tracers to be advected
+*
+      do i=1,phyt_maxn
+         vn_S=phyt_liste_S(i)(1:2)//'PLUS'
+         call getindx (vn_S, 'D', deb, lght, init)
+         if (deb.gt.0) then
+            phyt_ntr = phyt_ntr + 1
+            phyt_name_S(phyt_ntr) = phyt_liste_S(i)(1:2)
+            phyt_ind(1,phyt_ntr)  = deb
+            vn_S=phyt_liste_S(i)(1:2)//'MOINS'
+            call getindx (vn_S, 'D',phyt_ind(2,phyt_ntr), lght, init)
+            vn_S=phyt_liste_S(i)(1:2)//'COND'
+            call getindx (vn_S, 'V',phyt_ind(3,phyt_ntr), lght, init)
+         endif
+      end do
+      do 20 i=1,phyt_ntr
+         do k=1,tr3d_ntr
+            if (Tr3d_name_S(k).eq.phyt_name_S(i)) goto 20
+         end do
+         tr3d_ntr = tr3d_ntr + 1
+         Tr3d_name_S(tr3d_ntr) = phyt_name_S(i)
+         Tr3d_sval(tr3d_ntr) = 0.
+ 20   continue
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

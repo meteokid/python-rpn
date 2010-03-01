@@ -1,0 +1,97 @@
+***s/r coriol8 - compute coriolis FACTOR multiplied by a constant
+*		 on the U and V grids
+*
+#include <model_macros_f.h>
+*
+      subroutine coriol8 ( F_u_8, F_v_8, F_x_8, F_y_8, 
+     $                     F_xu_8, F_yv_8, F_ct_8, F_rot_8, DIST_DIM)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM
+      real*8 F_u_8(DIST_SHAPE), F_v_8(DIST_SHAPE), 
+     $       F_x_8(PXDIST_SHAPE), F_y_8(PYDIST_SHAPE),
+     %       F_xu_8(PXDIST_SHAPE), F_yv_8(PYDIST_SHAPE),
+     %       F_ct_8,               F_rot_8(3,3)
+*
+*author
+*     michel roch/jean cote - august 1995 - from coriol3
+*
+*revision
+* v2_00 - Desgagne/Lee      - initial MPI version (from coriol v1_03)
+*
+*object
+*       See above id.
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_u_8        O    - coriolis FACTOR on U grid
+* F_v_8        O    - coriolis FACTOR on V grid
+* F_x_8        I    - longitudes in radians PHI grid
+* F_y_8        I    - latitudes in radians PHI grid
+* F_xu_8       I    - longitudes in radians U grid
+* F_yv_8       I    - latitudes in radians V grid
+* F_ct_8       I    - multiplicative constant
+* F_rot_8      I    - rotation matrix of the grid
+*
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "p_geol.cdk"
+*
+**
+*
+      real*8 ZERO, ONE, TWO
+      parameter( ZERO = 0.0 )
+      parameter( ONE  = 1.0 )
+      parameter( TWO  = 2.0 )
+*
+      integer i, j, pn
+      real*8  c0, sa, ca, s0, ang
+*
+*	set rotation parameters
+*
+      s0 = F_rot_8(3,3)
+
+      if ( abs( (abs(s0)-ONE) ).gt.1.0e-10 ) then
+         if (Lun_out.gt.0) 
+     $         write( Lun_out, '(''rotation OF CORIOLIS FACTOR'')')
+         ang = atan2( F_rot_8(2,3), F_rot_8(1,3) )
+      else
+         if (Lun_out.gt.0)
+     $          write( Lun_out, '(''NO rotation OF CORIOLIS FACTOR'')')
+         s0 = sign( ONE, s0 )
+         ang = ZERO
+      endif
+*
+      c0 = sqrt( max( ZERO, ONE - s0 ** 2 ) )
+*
+*	processing coriolis FACTOR on V grid
+*       ____________________________________
+*
+      do j=1-G_haloy,l_nj+G_haloy
+*
+         sa = ( TWO * Dcst_omega_8 * F_ct_8 ) * s0 * sin(F_yv_8(j))
+         ca = ( TWO * Dcst_omega_8 * F_ct_8 ) * c0 * cos(F_yv_8(j))
+*
+         do i=1-G_halox,l_ni+G_halox
+            F_v_8(i,j) = ca * cos(F_x_8(i)-ang) + sa
+         enddo
+      enddo
+*
+*	processing coriolis FACTOR on U grid
+*       ____________________________________
+*
+      do j=1-G_haloy,l_nj+G_haloy
+*
+         sa = ( TWO * Dcst_omega_8 * F_ct_8 ) * s0 * sin(F_y_8(j))
+         ca = ( TWO * Dcst_omega_8 * F_ct_8 ) * c0 * cos(F_y_8(j))
+*
+         do i=1-G_halox,l_ni+G_halox
+            F_u_8(i,j) = ca * cos(F_xu_8(i) - ang) + sa
+         enddo
+      enddo
+*
+      return
+      end

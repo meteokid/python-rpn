@@ -1,0 +1,54 @@
+***s/r glbpos - sets up global indices for each PE
+*
+#include <model_macros_f.h>
+*
+      subroutine glbpos
+*
+#include "impnone.cdk"
+*
+*author
+*     M. Desgagne - V. Lee
+*
+*revision
+* v2_00 - Desgagne/Lee       - initial MPI version
+* v2_10 - Desgagne M.        - remove partitioning check
+* v2_21 - Desgagne M.        - rpn_comm stooge for MPI
+* v2_31 - Desgagne M.        - remove stkmemw
+*
+*object
+*
+*arguments
+*     None
+*
+*implicits
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+*
+      integer i, j, dim, err, gindx(6,Ptopo_numproc)
+*
+*----------------------------------------------------------------------
+*
+      dim = 6*Ptopo_numproc
+      call hpalloc (Ptopo_gindx_ , dim, err, 1)
+*
+      do i=1,6
+      do j=1,Ptopo_numproc
+         gindx(i,j) = 0
+      end do
+      end do
+*
+      gindx(1,Ptopo_myproc+1) = l_i0
+      gindx(2,Ptopo_myproc+1) = l_i0 + l_ni - 1
+      gindx(3,Ptopo_myproc+1) = l_j0
+      gindx(4,Ptopo_myproc+1) = l_j0 + l_nj - 1
+      gindx(5,Ptopo_myproc+1) = 1
+      gindx(6,Ptopo_myproc+1) = G_nk
+*
+      call rpn_comm_ALLREDUCE (gindx,Ptopo_gindx,dim,"MPI_INTEGER",
+     $                                       "MPI_BOR","grid",err)      
+*
+*----------------------------------------------------------------------
+      return
+      end
+

@@ -1,0 +1,84 @@
+***s/r adw_main - adw_main_1_wnd: Process winds in preparation for advection
+*                 adw_main_2_pos: Calculate upstream positions at th and t1
+*                 adw_main_3_int: Interpolation of rhs
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_main ( F_it )
+*
+#include "impnone.cdk"
+*
+      integer F_it
+*
+*author
+*     alain patoine
+*
+*revision
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectories           |  i  |
+*________|_______________________________________________________|_____|
+*
+*notes
+*______________________________________________________________________
+*                             WORK FIELDS                              |
+*----------------------------------------------------------------------|
+* There are 3 different species of work fields used throughout the     |
+* advection process.                                                   |
+*----------------------------------------------------------------------|
+* wrk1?: Local grid, no halos, allocated in adw_main (12 units)        |
+*        Used in adw_main_2_pos and adw_main_3_int to cary upstream    |
+*        positions coordinates, interpolation parameters and           |
+*        interpolated values.                                          |
+*----------------------------------------------------------------------|
+* wrk2?: Used to store positions and interpolation parameters relative |
+*        to the work to be done for north and south neighbors.         |
+*        Allocated to fit the number of points to treat.               |
+*        Used both in adw_main_2_pos and adw_main_3_int (12 units).    |
+*----------------------------------------------------------------------|
+* wrk3?: Advection grid, with halos, allocated in adw_main (3 units).  |
+*        Used for different purpose:                                   |
+*                                                                      |
+*                            adw_main_1_wnd ---> ( winds in work3 )    |
+*                                                                      |
+*    ( winds in work3 ) ---> adw_main_2_pos ---> ( t1 pos. in wrk3 )   |
+*                                                                      |
+*   ( t1 pos. in wrk3 ) ---> adw_main_3_int                            |
+*                                                                      |
+* Note that when we cary t1 positions in wrk3, it is larger than the   |
+* data.                                                                |
+*______________________________________________________________________|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "adw.cdk"
+************************************************************************
+      integer nijkag
+      real , dimension (Adw_nit*Adw_njt*l_nk) :: u,v,w
+*
+************************************************************************
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+************************************************************************
+*
+      call adw_main_1_wnd ( u, v, w, Adw_nit, Adw_njt, l_nk)
+*
+      call adw_main_2_pos ( F_it, u, v, w )
+*
+      call adw_main_3_int ( u, v, w )
+*
+***********************************************************************
+*
+ 1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN)')
+*
+      return
+      end

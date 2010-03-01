@@ -1,0 +1,100 @@
+*** s/r caldiv_2_ad - ADJ of caldiv_2 
+*
+#include <model_macros_f.h>
+*
+      subroutine caldiv_2_ad ( F_div, F_uu, F_vv, DIST_DIM, Nk )
+*
+#include "impnone.cdk"
+*
+      integer  DIST_DIM, Nk
+      real     F_div(DIST_SHAPE,Nk), F_uu  (DIST_SHAPE,Nk),
+     $         F_vv (DIST_SHAPE,Nk)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section 
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_div        I/O        the resulted divergence field on G-grid
+* F_uu         I/O        wind-like field on U-grid
+* F_vv         I/O        wind-like field on V-grid
+*----------------------------------------------------------------
+* 
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+*
+      integer i, j, k, i0, in, j0, jn
+**
+*     __________________________________________________________________
+*
+      i0 = 1
+      in = l_niu
+      j0 = 1
+      jn = l_njv
+      if ((G_lam).and.(l_west)) i0 = 2
+      if (l_south) j0 = 2
+*
+      do k=Nk,1,-1
+*
+         if (.not.G_lam) then
+            if (l_north) then
+            do i = in, i0, -1
+*
+             F_vv(i,  l_nj-1,k)   =   - F_div(i,l_nj,k)   /geomg_hsyv_8(l_nj-1)
+     %                                       + F_vv(i,  l_nj-1,k)
+             F_uu(i,  l_nj,  k)   = (   F_div(i,l_nj,k) ) /
+     %                         ( geomg_cy2_8(l_nj)*geomg_hxu_8(i-1) )
+     %                                       + F_uu(i,  l_nj,  k)
+             F_uu(i-1,l_nj,  k)   = ( - F_div(i,l_nj,k) ) /
+     %                         ( geomg_cy2_8(l_nj)*geomg_hxu_8(i-1) )
+     %                                       + F_uu(i-1,l_nj,  k)
+            F_div(i,  l_nj,  k)   = 0. 
+*
+            end do
+            endif
+*
+            if (l_south) then
+            do i = in, i0, -1 
+*
+              F_vv(i,  1,k) =      F_div(i,1,k)   /geomg_hsyv_8(0)
+     %                                            + F_vv(i,  1,k)
+              F_uu(i,  1,k) = (    F_div(i,1,k) ) /
+     %                      ( geomg_cy2_8(1)*geomg_hxu_8(i-1) )
+     %                                            + F_uu(i,  1,k)
+              F_uu(i-1,1,k) = ( -  F_div(i,1,k) ) /
+     %                      ( geomg_cy2_8(1)*geomg_hxu_8(i-1) )
+     %                                            + F_uu(i-1,1,k)
+             F_div(i,  1,k) = 0. 
+*
+            end do
+            endif
+         endif
+*
+         do j = jn, j0, -1
+         do i = l_niu, i0, -1
+*
+            F_vv(i,  j,  k) = ( F_div(i,j,k) )/geomg_hsyv_8(j-1) + F_vv(i,j,  k)
+            F_vv(i,  j-1,k) = (-F_div(i,j,k) )/geomg_hsyv_8(j-1) + F_vv(i,j-1,k)
+            F_uu(i,  j,  k) = ( F_div(i,j,k) )/
+     %                   ( geomg_cy2_8(j)*geomg_hxu_8(i-1) )
+     %                                                           + F_uu(i,j,  k)
+            F_uu(i-1,j,  k) = (-F_div(i,j,k) )/
+     %                   ( geomg_cy2_8(j)*geomg_hxu_8(i-1) )
+     %                                                           + F_uu(i-1,j,k)
+           F_div(i,  j,  k) = 0.
+*
+         end do
+         end do
+*
+      end do
+*
+      return
+      end

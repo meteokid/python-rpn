@@ -1,0 +1,249 @@
+***s/r  v4d_simul - Controls 4-D variational job
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_simul (F_indic,Ndim,F_px,F_pj,F_pgraj)
+*
+#include "impnone.cdk"
+*
+      integer F_indic,Ndim
+      real F_pj,F_px(Ndim),F_pgraj(Ndim)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Desgagne M.       - rpn_comm stooge for MPI
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d
+* v3_00 - Laroche S.        - adapt for simplified physics
+*
+*object
+*     Simulator 4D (in minimization language).
+*     Controls running NLM or TLM and the adjoint.
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_indic      I                   If=4 :set F_pj and F_pgraj   
+*                                  If=98:set F_pgraj only    
+*                                  If=99:set F_pj only    
+* Ndim         I                   Dimension of F_px  
+* F_px         I                   Control variable at initial time    
+* F_pj         O                   Cost function value      
+* F_pgraj      O                   Gradient at initial time  
+* F_izs        -                   M1QN3 parameter (not used)
+* F_rzs        -                   M1QN3 parameter (not used)
+* F_dzs_8      -                   M1QN3 parameter (not used)
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "tr3d.cdk"
+#include "v4dj.cdk"
+#include "v4dm.cdk"
+#include "lctl.cdk"
+#include "rstr.cdk"
+#include "ptopo.cdk"
+#include "step.cdk"
+#include "schm.cdk"
+#include "init.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+*
+      integer  ierr,k
+      real plocal
+*     ______________________________________________________
+*
+      if ( Rstri_rstn_L ) call gefstop('v4d_simul')
+      if ( Init_balgm_L ) call gefstop('v4d_simul')
+*     ______________________________________________________
+*
+*     ----------------
+*     ADJOINT run only
+*     ----------------
+      if (F_indic.eq.98) goto 1000
+*
+*     ---------------
+*     Initializations 
+*     ---------------
+*
+*        Update V4dm_nsim 
+*        ----------------
+         if (V4dg_conf/100.eq.1.and.V4dg_status.eq.999) 
+     %       V4dm_nsim = V4dm_nsim + 1
+*
+*        Initialize cost function
+*        ------------------------
+         if (V4dg_conf/100.eq.1.and.V4dg_status.ne.5) V4dj_pj = 0 
+*
+*        Set initial time step
+*        ---------------------
+         Lctl_step = 0
+*
+*        Initialize all variables to zero 
+*        --------------------------------
+         call v4d_zero()
+*
+*        Initialize model var. from control var. F_px
+*        --------------------------------------------
+         call v4d_cain (Ndim,F_px)
+*
+*     ----------------------
+*     Run DIRECT integration
+*     ----------------------
+*
+      if( .not.V4dg_tlm_L ) then
+*        ---------------
+*        NLM integration
+*        ---------------
+*
+*        Set non-linear direct run 
+*        -------------------------
+         V4dg_ds_L = .true.
+         V4dg_nl_L = .true.
+         V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+         V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+         V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+*        Set WRITE option on TRAJ WA file
+*        --------------------------------
+         V4dg_rwtr = 1  
+*
+*        Set starting ADDRESSES on TRAJ, OBS. and FORC. WA files
+*        -------------------------------------------------------
+         V4dg_addtr = 1
+         V4dg_addob = 1 
+         V4dg_addfr = 1 
+         V4dg_addph = 1 + l_ni*l_nj*l_nk
+*
+*        Complete preprocessing
+*        ----------------------
+         V4dg_part = 3
+         call v4d_procdyn()
+*
+         call dynout2( V4dg_out.ne.0 )
+*
+*        Run NLM model
+*        -------------
+         call gem_ctrl()
+*
+      else
+*        ---------------
+*        TLM integration
+*        ---------------
+*
+*        Set linear direct run
+*        ---------------------
+         V4dg_ds_L = .true.
+         V4dg_nl_L = .false.
+         V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+         V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+         V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+*        Set READ option on TRAJ WA file
+*        -------------------------------
+         V4dg_rwtr = 0
+*
+*        Set starting ADDRESSES on OBS. and FORC. WA files
+*        NOTE: TRAJ WA file address is recovered elsewhere  
+*        -------------------------------------------------
+         V4dg_addfr = 1
+         V4dg_addob = 1
+         V4dg_addph = 1 + l_ni*l_nj*l_nk
+*
+*        Complete preprocessing
+*        ----------------------
+         V4dg_part = 3
+         call v4d_procdyn_tl()
+*
+         call dynout2( V4dg_out.ne.0 )
+*
+*        Run TLM model
+*        -------------
+         call gem_ctrl_tl()
+*
+      endif
+*
+*     ------------------------------
+*     Synthesis of the cost function
+*     ------------------------------
+      if( V4dg_conf/100.eq.1.and.V4dg_status.ne.5 ) then
+*
+         F_pj   = V4dj_pj
+         plocal = F_pj
+         F_pj   = 0.0
+         call rpn_comm_Allreduce (plocal,F_pj,1,"MPI_REAL","MPI_SUM",
+     %                                                   "grid",ierr)
+*
+      endif
+*
+      if(F_indic.eq.99) return
+*
+      if(F_indic.ne. 4) call gefstop('v4d_simul') 
+*
+*     ----------------------------------------------------------------
+*     Evaluate gradient of cost function with respect to initial state
+*     ----------------------------------------------------------------
+*
+*        Set gradients (F_pgraj) to zero
+*        -------------------------------
+         do k = 1,Ndim
+            F_pgraj(k) = 0.
+         end do
+*
+ 1000 continue
+*
+*        Set final time step
+*        -------------------
+         Lctl_step = Step_total
+*
+*        Set adjoint variables to zero
+*        -----------------------------
+         call v4d_zero()
+*
+*        Initialize ADJ variables from control F_pgradj 
+*        ----------------------------------------------
+         call v4d_cainin_ad (Ndim,F_pgraj)
+*
+*        Set ADJ integration 
+*        -------------------
+         V4dg_ds_L = .false.
+         V4dg_nl_L = .false.
+         V4dg_di_L =      V4dg_ds_L.and.     V4dg_nl_L
+         V4dg_tl_L =      V4dg_ds_L.and..not.V4dg_nl_L
+         V4dg_ad_L = .not.V4dg_ds_L.and..not.V4dg_nl_L
+*
+*        Set READ option on TRAJ WA file
+*        -------------------------------
+         V4dg_rwtr = 0
+*
+*        Set starting ADDRESSES on OBS. and FORC. WA files
+*        NOTE: TRAJ WA file address is recovered elsewhere  
+*        -------------------------------------------------
+         V4dg_addfr = V4dg_addfr - l_ni*l_nj*l_nk 
+         V4dg_addob = V4dg_addob - l_ni*l_nj*l_nk 
+         V4dg_addph = V4dg_addph - l_ni*l_nj*l_nk
+*
+*        Run ADJ model
+*        -------------
+         call gem_ctrl_ad()
+*
+         if( V4dg_out.ne.0 ) call v4d_dynout()
+*
+*        ADJOINT of
+*        Complete preprocessing
+*        ----------------------
+         V4dg_part = 3
+         call v4d_procdyn_ad()
+*
+*        Initialise control F_pgraj from ADJ variables
+*        ---------------------------------------------
+         call v4d_cain_ad (Ndim,F_pgraj)
+*
+      return
+      end

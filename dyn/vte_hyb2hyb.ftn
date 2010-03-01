@@ -1,0 +1,81 @@
+***s/r vte_hyb2hyb  cubic vertical interpolation from hybrid to hybrid
+*
+      subroutine vte_hyb2hyb ( F_dch, F_dpia, F_dpib, F_dp0, 
+     $       nkd, F_sch, F_spia,F_spib, F_sp0, nks, n, F_var, F_sig_L)
+#include "impnone.cdk"
+*
+       integer n, nkd, nks
+       real F_dch(n,nkd), F_dpia(nkd), F_dpib(nkd), F_dp0(n),
+     $      F_sch(n,nks), F_spia(nks), F_spib(nks), F_sp0(n)
+       character*2 F_var
+       logical F_sig_L
+*
+*author - L. Corbeil     - Aug 2001 - v2_30 (vte_intvertx)
+*
+*revision
+* v2_31 - Lee V.              - calculates the source and destination levels
+* v2_31                         before calling vte_intvertx
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*       see above id
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_sch        I          source field                 
+* F_dch        O          Interpolated field           
+* F_dp0        I          destination surface pressure         
+* F_spia       I          source pia, source sigma if F_sig_L true
+* F_spib       I          source pib
+* F_dpia       I          destination pia
+* F_dpib       I          destination pib
+* F_sp0        I          source surface pressure
+* F_var        I          name of the variable
+* F_sig_L      I          TRUE if sigma levels
+*                                                           
+*----------------------------------------------------------------------
+*
+*implicites
+#include <model_macros_f.h>
+#include "dcst.cdk"
+*
+**
+*
+      integer i,k,iter,niter,lev,lev_lin
+      integer top(n),bot(n),topcub(n),botcub(n),ref(n)
+      real srclev(n,nks),dstlev(n,nkd)
+      real*8 deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd
+*
+*     ---------------------------------------------------------------
+*
+*
+*     Filling level grid (source and destination)
+*
+      if (F_sig_L) then
+          do k=1,nks
+          do i=1,n
+             srclev(i,k)= log(F_spia(k)*F_sp0(i))
+*            If ever ETA levels have non-uniform F_spt:
+*            srclev(i,k)= log(F_spt(i)+F_seta(k)*(F_sp0(i)-F_spt(i)))
+          enddo
+          enddo
+      else
+          do k=1,nks
+          do i=1,n
+             srclev(i,k)= log((F_spia(k) + F_spib(k) * F_sp0(i)))
+          enddo
+          enddo
+      endif
+*  
+      do k=1,nkd
+      do i=1,n
+         dstlev(i,k)= log((F_dpia(k) + F_dpib(k) * F_dp0(i)))
+      enddo
+      enddo
+
+      call vte_intvertx(F_dch,F_sch,srclev,dstlev,n,nks,nkd,F_var)
+
+      return
+      end
+

@@ -1,0 +1,67 @@
+***s/r set_geof - initialization of the VMM commons for geophysical fields
+*
+#include <model_macros_f.h>
+*
+      subroutine set_geof
+*
+#include "impnone.cdk"
+*
+*author
+*     Gravel/Roch - rpn - august 1993
+*
+*revision
+* v2_00 - Desgagne/Lee      - initial MPI version (from setgeof v1_03)
+* v2_20 - Lee V.            - eliminated geophysical VMM variables
+* v2_21 - J. P. Toviessi    - rename some model output variables
+*
+*object
+*	This subroutine initializes the commons containing the
+*	keys used by the Virtual Memory Manager to identify the
+*	geophysical fields
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "p_geof.cdk"
+*
+*modules
+      integer vmmcre
+      external vmmcre
+**
+      character*80 attr_S
+*
+*     ---------------------------------------------------------------
+*
+      integer i
+*     integer pnerr
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+*       names and keys commons initialization
+*     Note: all geoph. fields are on the scalar grid
+*
+      COMMON_INIT(geof,-100)
+*
+*	Assign and create the geophysical variables
+*
+      VMM_NAM(topo )= 'TOPO'
+      VMM_NAM(xla  )= 'XLA'
+      VMM_NAM(xlo  )= 'XLO'
+*
+      attr_S='SAVE=Y,CL=1,W=5,INIT=R,MUSTEXIST'
+*
+      VMM_CREATE(topo  , LARRAY2D     , 1, attr_S)
+      VMM_CREATE(xla   , LARRAY2D     , 1, attr_S)
+      VMM_CREATE(xlo   , LARRAY2D     , 1, attr_S)
+*
+ 1000 format(
+     +/,'INITIALIZATION OF GEOPHYSICAL FIELD COMDECKS (S/R SET_GEOF)',
+     +/,'===========================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

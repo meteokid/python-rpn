@@ -1,0 +1,116 @@
+***s/r gemdm - control of the job at the highest level
+*
+#include <model_macros_f.h>
+*
+      subroutine gemdm
+*
+#include "impnone.cdk"
+*
+*author
+*     m. desgagne( after version v1_03 of gefcn0 )
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Tanguay M.        - introduce 4D-Var configurations 
+* v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
+* v3_00 - Gauthier P.       - introduce subr. v4d_4dvar 
+* v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L 
+*
+*object
+*	
+*arguments
+*	none
+*
+#include "lctl.cdk"
+#include "step.cdk"
+#include "v4dg.cdk"
+#include "mult.cdk"
+#include "lun.cdk"
+**
+*
+*     ---------------------------------------------------------------
+*
+      call set_world_view ()
+*
+*C             Initialize geometry of the model
+*              --------------------------------
+*
+      call set_geom()
+*
+*C              Computes coriolis factor
+*		------------------------
+*
+      call set_cori()
+*
+*C              Computes (u,v) interpolation coefficients for coriolis
+*		and right hand side computations
+*		------------------------------------------------------
+*
+      call set_intuv()
+*
+*C              Allocate a bloc of central memory
+*               ---------------------------------
+*
+      call set_mem()
+*
+*C              Setup commons level 1: VMM tables
+*               ---------------------------------
+*
+      call set_cn1()
+*
+*C              Additional settings for 4D-Var 
+*               ------------------------------
+*
+      if (V4dg_conf.ne.0) call v4d_setting()
+*
+*C       3.    Initialize commons for output control
+*              -------------------------------------
+*
+      call set_sor()
+*
+*     Code branching according to V4dg_conf
+*     -------------------------------------
+*
+      if (V4dg_conf.eq.0) then
+*
+         call gem_ctrl()     ! Regular forward gem
+*
+      elseif (V4dg_conf/100.eq.1) then
+*
+           if(V4dg_sensib_L.or.V4dg_twin_L) then
+*
+              call v4d_gem   ! Sensitivity analysis or Twin experiment 
+*
+           elseif(V4dg_4dvar_L) then
+*
+              call v4d_4dvar ! 4D-Var + exchange with 3D-Var
+*
+           else 
+*
+              if(Lun_out.gt.0)  write(Lun_out,*)'One of SENSIB_L, TWIN_L or 4DVAR_L should be TRUE'
+              call gem_stop('GEMDM',-1)
+*
+           endif
+*
+      elseif (V4dg_conf/100.eq.4) then
+*
+         call v4d_testadj()  ! Verification of adjoint transposition
+*
+      elseif (V4dg_conf/100.eq.5) then
+*
+         call v4d_testtlm()  ! Verification of tangent linear model
+*
+      endif
+*
+*C       3.    Job termination
+*              ---------------
+*
+      call set_term()
+*
+      if (V4dg_conf.ne.0) Lctl_step = Step_total
+      call stop_world_view (Lctl_step.lt.Step_total)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

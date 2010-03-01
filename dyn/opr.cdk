@@ -1,0 +1,36 @@
+#if defined (DOC)
+*
+***comdeck opr.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  PROJECTION OPERATORS FOR THE SOLVER (initialized in set_opr)        |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Opr_opsxp0_8       | east-west   projection operators                |
+* Opr_opsxp2_8       | east-west   projection operators                |
+* Opr_opsyp0_8       | north-south projection operators                |
+* Opr_opsyp2_8       | north-south projection operators                |
+* Opr_opszp0_8       | vertical    projection operators                |
+* Opr_opszp2_8       | vertical    projection operators                |
+* Opr_xevec_8        | horizontal eigenvectors                         |
+* Opr_xeval_8        | horizontal eigenvalues                          |
+* Opr_zevec_8        | vertical   eigenvectors                         |
+* Opr_zeval_8        | vertical   eigenvalues                          |
+*----------------------------------------------------------------------
+*
+*
+#endif
+*
+      DCL_DYNVAR(Opr, opsxp0_8,    real*8, (*))
+      DCL_DYNVAR(Opr, opsxp2_8,    real*8, (*))
+      DCL_DYNVAR(Opr, opsyp0_8,    real*8, (*))
+      DCL_DYNVAR(Opr, opsyp2_8,    real*8, (*))
+      DCL_DYNVAR(Opr, opszp0_8,    real*8, (*))
+      DCL_DYNVAR(Opr, opszp2_8,    real*8, (*))
+      DCL_DYNVAR(Opr, xevec_8 ,    real*8, (*))
+      DCL_DYNVAR(Opr, xeval_8 ,    real*8, (*))
+      DCL_DYNVAR(Opr, zevec_8 ,    real*8, (*))
+      DCL_DYNVAR(Opr, zeval_8 ,    real*8, (*))

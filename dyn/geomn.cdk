@@ -1,0 +1,23 @@
+#if defined (DOC)
+*
+***comdeck geomn.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  LATITUDES AND LONGITUDES IN DEGREES (set_geom)                      |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Geomn_latgs        | phi latitudes in degrees for model output       |
+* Geomn_longs        | phi longitudes in degrees for model output      |
+* Geomn_latgv        | V   latitudes in degrees for model output       |
+* Geomn_longu        | U   longitudes in degrees for model output      |
+*----------------------------------------------------------------------
+*
+#endif
+*
+      DCL_DYNVAR(Geomn, latgs, real, (*))
+      DCL_DYNVAR(Geomn, longs, real, (*))
+      DCL_DYNVAR(Geomn, latgv, real, (*))
+      DCL_DYNVAR(Geomn, longu, real, (*))

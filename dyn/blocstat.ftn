@@ -1,0 +1,162 @@
+***s/r blocstat  - Performs 3D statistics on model fields for LAM vs GLB
+*
+#include <model_macros_f.h>
+*
+      subroutine blocstat 
+*
+#include "impnone.cdk"
+*
+*author
+*     M. Desgagne
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Desgagne M.       - 4D-var statistics control
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     see above
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "step.cdk"
+#include "vt1.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+#include "v4dg.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+*
+*modules
+      integer  vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
+      external vmmlod,vmmget,vmmuld,rewind_db_file,read_db_file
+
+      integer i,j,k,i0,in,j0,jn,inn,cnt,m,n,unf,ntr2do,j2do
+      integer err, key(max(Tr3d_ntr,5)), key0
+      real tr,buf(l_ni,G_nk)
+      pointer (patr, tr(LDIST_SHAPE,*))
+      real, allocatable, dimension(:,:,:,:) :: tr2
+*     ---------------------------------------------------------------
+*
+      if ((V4dg_conf.ne.0).and.(V4dg_out.ne.0)) then
+         call v4d_blocstat ()
+      elseif (V4dg_conf.eq.0) then
+*
+      if (mod(Lctl_step,Step_gstat).eq.0) then
+*
+      key(1)  = VMM_KEY(ut1)
+      key(2)  = VMM_KEY(vt1)
+      key(3)  = VMM_KEY(tt1)
+      key(4)  = VMM_KEY(fit1)
+      key(5)  = VMM_KEY(psdt1)
+*
+      err = vmmlod(key,5)
+*
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(fit1)
+      err = VMM_GET_VAR(psdt1)
+*
+      if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
+*
+      i0 = 1
+      in = G_ni
+      j0 = 1
+      jn = G_nj
+      inn= 0
+      if (G_lam) then
+           inn=1
+      endif
+      call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,i0,in-inn,j0,jn,1,G_nk)
+      call glbstat (vt1  ,'VV',LDIST_DIM,G_nk,i0,in,j0,jn-1  ,1,G_nk)
+      call glbstat (psdt1,'WW',LDIST_DIM,G_nk,i0,in,j0,jn    ,1,G_nk)
+      call glbstat (tt1  ,'TT',LDIST_DIM,G_nk,i0,in,j0,jn    ,1,G_nk)
+      call glbstat (fit1 ,'GZ',LDIST_DIM,G_nk,i0,in,j0,jn    ,1,G_nk)
+*
+*    Comment the above glbstats and uncomment the following lines for
+*    GLBSTAT for LAM versus GLB acid test
+*
+cvl   if (G_lam) then
+cvl       i0=lam_i0
+cvl       in=lam_in
+cvl       j0=lam_j0
+cvl       jn=lam_jn
+cvl   else
+cvl       i0 = glb_i0
+cvl       in=  glb_in
+cvl       j0 = glb_j0
+cvl       jn = glb_jn
+cvl   endif
+cvl   call glbstat (ut1  ,'UU',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+cvl   call glbstat (vt1  ,'VV',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+cvl   call glbstat (tt1  ,'TT',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+cvl   call glbstat (fit1 ,'GZ',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+cvl   call glbstat (psdt1,'WW',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+*
+      err = vmmuld(key,5)
+*
+      key0 = VMM_KEY (trt1)
+      do k=1,Tr3d_ntr
+         key(k) = key0 + k
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key,Tr3d_ntr)  
+         do k=1,Tr3d_ntr
+            err = vmmget(key(k),patr,tr)
+            call glbstat (tr,Tr3d_name_S(k),LDIST_DIM,G_nk,i0,in,j0,jn,
+     $                                                          1,G_nk)
+         end do
+         err = vmmuld(key,Tr3d_ntr)
+      endif
+*
+      if (Tr2d_incore_L) then
+         do i=1,Tr2d_ntr
+            patr = loc(Tr2d_stk3d((i-1)*LDIST_SIZ*l_nk+1))
+            call glbstat (tr,Tr2d_name_S(i),LDIST_DIM,G_nk,i0,in,j0,jn,
+     $                                                          1,G_nk)
+         end do
+      else
+         cnt = l_ni*G_nk
+         allocate (tr2(LDIST_SHAPE,G_nk,Tr2d_ntpf))
+         do n=1,Tr2d_nbf
+            unf = Tr2d_unf((n-1)*Tr2d_ntpf+1)
+            err = rewind_db_file (unf)
+            err = read_db_file (unf,ntr2do,1)
+            do j=1,l_nj
+               err = read_db_file(unf,j2do,1)
+               do m=1,ntr2do
+                  err = read_db_file (unf,buf,cnt)
+                  do k=1,G_nk
+                  do i=1,l_ni
+                     tr2(i,j2do,k,m) = buf(i,k)
+                  end do
+                  end do   
+               end do
+            end do
+            do m=1,ntr2do
+               i=(n-1)*Tr2d_ntpf+m
+               call glbstat ( tr2(l_minx,l_miny,1,m),Tr2d_name_S(i),
+     $                        LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk )
+            end do
+         end do
+         deallocate (tr2)
+      endif
+*
+      if (Ptopo_myproc.eq.0) write(6,1001)
+*
+      endif
+*
+      endif
+*
+ 1000 format (/,19('#'),' BLOC STAT ',i6,1X,,19('#'))
+ 1001 format (  19('#'),' BLOC STAT ...done')
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

@@ -1,0 +1,46 @@
+#if defined (DOC)
+*
+***comdeck Outp.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH OUTPUT FOR PHYSICS VARIABLES              |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Outp_sets          | The total number of sets of output variables    |
+*                    | requested from the physics                      |
+* Outp_var           | A table containing "Outp_sets" sets of output   |
+*                    | variables requested from the physics  (the      |
+*                    | values are indices which point to the variable  |
+*                    | names stored in table Busp_var_s)               |
+* Outp_var_max       | Outp_var_max(j) is the total number of requested|
+*                    | output variables in each set Outp_var(*,j)      |
+* Outp_lev           | Outp_lev(j) contains the index that indicates   |
+*                    | the Level set to use for Outp_var(*,j)          |
+* Outp_grid          | Outp_grid(j) contains the index that indicates  |
+*                    | the Grid set to use for Outp_var(*,j)           |
+* Outp_step          | Outp_step(i) contains the index that indicates  |
+*                    | the Step set to use for Outp_var(*,j)           |
+* Outp_typvar_S      | Outp_typvar_S(i) is the assigned datatype for   |
+*                    | the fields defined in Outp_var(*,j)             |
+*----------------------------------------------------------------------
+*
+#endif
+
+      integer Outp_var(MAXELEM,MAXSET)
+      integer Outp_lev(MAXSET)
+      integer Outp_grid(MAXSET)
+      integer Outp_step(MAXSET)
+      integer Outp_var_max(MAXSET)
+      integer Outp_sets
+      character*1 Outp_typvar_S(MAXSET)
+
+      MARK_COMMON_BEG (Outp)
+      COMMON /Outp/ Outp_var,Outp_lev,Outp_grid,Outp_step,
+     $              Outp_var_max, Outp_sets
+      MARK_COMMON_END (Outp)
+      MARK_COMMON_BEG (Outp_c)
+      COMMON /Outp_c/ Outp_typvar_S
+      MARK_COMMON_END (Outp_c)

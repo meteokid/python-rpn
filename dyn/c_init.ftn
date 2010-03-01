@@ -1,0 +1,40 @@
+***S/R c_init  - Inititialization for the coupling option
+*
+#include <model_macros_f.h>
+*
+      subroutine c_init
+*
+#include "impnone.cdk"
+#include "lun.cdk"
+#include "c_cplg.cdk"
+*
+*auteur Pierre Pellerin/Serge Desjardins -AEPRI/RPN - April 2000
+*
+*language
+*       fortran 77
+*
+*arguments
+*         none
+*
+*          Initialization for the coupling
+*          (Options, Communication channels and Timestep)
+*
+*constants
+*
+*implicits
+*     
+        c_cplg_inpipe  = mgi_init('mod1_in')
+        c_cplg_outpipe = mgi_init('mod1_out')
+        c_cplg_step    = 0
+*
+        if (Lun_out.gt.0) then
+            write(Lun_out,*)'*****COUPLING OPTIONS*****'
+            write(Lun_out,*)'C_coupling_L  =',C_coupling_L
+            write(Lun_out,*)'C_wave_L      =',C_wave_L
+            write(Lun_out,*)'C_ocean_iml_L =',C_ocean_iml_L
+            write(Lun_out,*)'**************************'
+        endif
+*
+      return
+      end
+ 

@@ -1,0 +1,42 @@
+***s/r glbdist
+*
+#include <model_macros_f.h>
+*
+      subroutine glbdist (F_2bc,bni,bnj,F_2rc,DIST_DIM,nk,hx,hy)
+*
+#include "impnone.cdk"
+*
+      integer bni,bnj,DIST_DIM,nk,hx,hy
+      real F_2bc(bni,bnj,nk), F_2rc(DIST_SHAPE,nk)
+*
+*author
+*     M. Desgagne
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from MC2 v4.9)
+* v2_21 - Desgagne M.       - rpn_comm stooge for glbdist
+*
+*object
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_2bc         I           Global array to distribute
+* bni,bnj       I           Horizontal dimension of F_2bc
+* F_2rc         O           Local reception array
+* DIST_DIM      I           Horizontal dimension of F_2rc
+* nk            I           Vertical dimension of F_2bc and F_2rc
+*----------------------------------------------------------------
+*
+#include "glb_ld.cdk"
+      integer err
+*----------------------------------------------------------------------
+*
+      call RPN_COMM_dist (F_2bc,1,bni,1,bnj,bni,bnj,nk,0,0,1,
+     $                    F_2rc,DIST_DIM,hx,hy,G_periodx,G_periody,err)
+*
+*----------------------------------------------------------------------
+*
+      return
+      end
+

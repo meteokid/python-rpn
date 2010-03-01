@@ -1,0 +1,90 @@
+***s/r vspng_drv_tr - Equivalent to vspng_drv for TRAJECTORY 
+*                     (F_pip ONLY)
+*
+#include <model_macros_f.h>
+*
+      subroutine vspng_drv_tr (F_pip,DIST_DIM,Nk)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk
+      real   F_pip(DIST_SHAPE,Nk)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_21 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - TRAJ of control for sponge on momentum and
+*                             T', T'lin & hence T on Vspng_nk levels +
+*                             sponge on top level only on all other variables
+* v3_00 - Tanguay M.        - correction as in vspng_drv 
+*
+*object
+*     see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_u
+*----------------------------------------------------------------
+* 
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "trp.cdk"
+#include "vspng.cdk"
+#include "hzd.cdk"
+#include "opr.cdk"
+*
+      integer j, nkspng
+      real*8 HALF_8,TWO_8,c_8
+      parameter( HALF_8  = 0.5 )
+      parameter(  TWO_8  = 2.0 )
+*
+      real*8, dimension (trp_12emax*G_ni*Vspng_nk) :: aix_8,bix_8,cix_8,dix_8
+      real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
+      real*8 cy_8(l_nj), xp0_8(G_ni), yp0_8(G_nj)
+*     __________________________________________________________________
+*
+      if ( Cstv_phidf_8 .gt. 0.0) then
+*
+         c_8 = Cstv_phidf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+         do j = 1, l_nj
+            cy_8(j) = G_yg_8(l_j0+j-1)
+         end do
+*
+*     Mass related fields
+*     ~~~~~~~~~~~~~~~~~~~
+*
+         if (.not.Vspng_uvwdt_L) then
+         call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $                     cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $                     Opr_opsyp2_8,G_ni,G_nj,G_nj)
+         else
+*
+         nkspng   = Vspng_nk
+         Vspng_nk = 1
+         call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,
+     $                     ciy_8,c_8,cy_8,Opr_opsxp0_8,Opr_opsxp2_8,
+     $                     Opr_opsyp0_8,Opr_opsyp2_8,G_ni,G_nj,G_nj)
+         endif
+*
+*     The hydrostatic pressure: pi'  
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         call vspng_del2 (F_pip,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+         if (Vspng_uvwdt_L) Vspng_nk = nkspng
+*
+      endif
+*
+*     __________________________________________________________________
+*
+      return
+      end

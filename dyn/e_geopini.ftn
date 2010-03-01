@@ -1,0 +1,242 @@
+*** s/r e_geopini
+*
+#include <model_macros_f.h>
+*
+      subroutine e_geopini (ni,nj,lun_out)
+#include "impnone.cdk"
+*
+      integer ni,nj,lun_out
+*
+*author
+*     M. Desgagne - Oct 1995
+*
+*revision
+* v2_20 - Pellerin P.       - adapted from MC2
+* v2_21 - Desgagne M.       - new treatment of geophysical fields
+* v2_31 - Talbot D.         - dhdx,dhdy,dhdxdy for "blocage"
+* v3_00 - Desgagne M.       - Lam configuration
+*
+*object
+*          Establishes requirement in terms of geophysical variables 
+*          in bus 'GEOBUS'.
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* ni            I         horizontal dimension along X
+* nj            I         horizontal dimension along Y
+* lun_out       I         unit for standard output
+*----------------------------------------------------------------
+*
+*IMPLICITES
+*
+#include "e_geol.cdk"
+#include "e_files.cdk"
+#include "glb_ld.cdk"
+#include "p_bus.cdk"
+#include "p_geobus.cdk"
+#include "p_pbl.cdk"
+*
+*MODULES
+*
+**
+      integer fstinf
+      external fstinf
+      character*120 dum_S
+      integer i,ni1,nj1,nk1,k1,k2,k3,k4,k5,k6,p1_1,p1_2,p1_3
+      integer init_indx(maxel)
+      equivalence (init_indx(1),glsea)
+**
+*----------------------------------------------------------------------
+*
+      call low2up (P_pbl_schsl_s,dum_S)
+      P_pbl_schsl_s = dum_S
+*
+* Initializing all elements of common p_geobusid to -1 (p_geobus.cdk)
+*
+      do i=1,maxel
+         init_indx(i) = -1
+      end do
+*
+***  Building GEOBUS
+*
+*     Surface variables for all surface schemes
+*
+      call mgsdict (ni, nj, la,    'VN=dlaten;  VS=row  ; EN=00')
+      call mgsdict (ni, nj, lo,    'VN=dlonen;  VS=row  ; EN=00')
+      call mgsdict (ni, nj, mt,    'VN=mt    ;  VS=row  ; EN=00')
+      call mgsdict (ni, nj, fis,   'VN=mf    ;  VS=row  ; EN=00')
+*
+      call mgsdict (ni, nj, mg,    
+     $'VN=mgen    ; VS=row  ; EN=mg; INTERP=NEAREST ; SEQ=G' )
+      call mgsdict (ni, nj, al,    
+     $'VN=alen    ; VS=row  ; EN=al; INTERP=NEAREST ; SEQ=AC')
+      call mgsdict (ni, nj, twater,
+     $'VN=twateren; VS=row  ; EN=tm; INTERP=LINEAR; SEQ=AV')
+      call mgsdict (ni, nj, lhtg,  
+     $'VN=lhtgen  ; VS=row  ; EN=lh; INTERP=LINEAR; SEQ=G' )
+      call mgsdict (ni, nj, dhdx,  
+     $'VN=dhdxen  ; VS=row  ; EN=y7; INTERP=LINEAR; SEQ=G' )
+      call mgsdict (ni, nj, dhdy,  
+     $'VN=dhdyen  ; VS=row  ; EN=y8; INTERP=LINEAR; SEQ=G' )
+      call mgsdict (ni, nj, dhdxdy,  
+     $'VN=dhdxdyen; VS=row  ; EN=y9; INTERP=LINEAR; SEQ=G' )
+      call mgsdict (ni, nj, ga,    
+     $'VN=glacen  ; VS=row  ; EN=ga; INTERP=NEAREST ; SEQ=G' )
+      call mgsdict (ni, nj, gi8,   
+     $'VN=icedpen ; VS=row  ; EN=i8; INTERP=NEAREST ; SEQ=AV')
+      call mgsdict (ni, nj, gice,  
+     $'VN=tglacen ; VS=row*2; EN=i9; INTERP=LINEAR; SEQ=A' )
+      call mgsdict (ni, nj, gmice, 
+     $'VN=tmicen  ; VS=row*3; EN=i7; INTERP=LINEAR; SEQ=A' )
+      call mgsdict (ni, nj, z0,    
+     $'VN=z0en    ; VS=row  ; EN=zp; INTERP=LINEAR; SEQ=G' )
+      call mgsdict (ni, nj, snodp, 
+     $'VN=snodpen ; VS=row  ; EN=sd; INTERP=NEAREST ; SEQ=AV')
+      call mgsdict (ni, nj, i0,     
+     $'VN=tsoilen ; VS=row*2; EN=i0; INTERP=LINEAR; SEQ=AV')
+      call mgsdict (ni, nj, vegf,  
+     $'VN=vegfen ; VS=row*26; EN=vf; INTERP=NEAREST ; SEQ=G' )
+*
+      if ( E_geol_glreg_L ) then
+         k1 = fstinf (anal  ,ni1,nj1,nk1,-1,'ANLREG',-1,-1,-1,' ','LG')
+         k2 = fstinf (climat,ni1,nj1,nk1,-1,' '     ,-1,-1,-1,' ','LG')
+         if ((k1.lt.0).or.(k2.lt.0)) then
+            if (Lun_out.gt.0) then
+            if (k1.lt.0) write (Lun_out,151)
+            if (k2.lt.0) write (Lun_out,152)
+            write (Lun_out,155) 
+            endif
+            E_geol_glreg_L=.false.
+         endif
+      endif
+      if ( E_geol_glanl_L ) then         
+         if ( E_geol_glreg_L ) then 
+          call mgsdict (ni, nj, glsea, 
+     $    'VN=glseaen; VS=row; EN=lg; INTERP=NEAREST; SEQ=A;etk=ANLREG')
+          call mgsdict (ni, nj, glseac,
+     $    'VN=glc    ; VS=row; EN=lg; INTERP=NEAREST; SEQ=V' )
+         else
+          call mgsdict (ni, nj, glsea, 
+     $    'VN=glseaen; VS=row  ; EN=lg; INTERP=NEAREST ; SEQ=AV')
+         endif
+      else
+          call mgsdict (ni, nj, glsea, 
+     $    'VN=glseaen; VS=row  ; EN=lg; INTERP=NEAREST ; SEQ=V')
+      endif
+*
+*  FOR FORCE-RESTORE
+*
+      if (P_pbl_schsl_s.eq.'FCREST') then
+*
+      if (.not. E_geol_hscon_L) then
+         k1 = fstinf (anal,ni1,nj1,nk1,-1,' '     ,-1,-1,-1,' ','HS')
+         k2 = fstinf (anal,ni1,nj1,nk1,-1,' '     ,-1,-1,-1,' ','MH')
+         if ((k1.lt.0).or.(k2.lt.0)) then
+            if (Lun_out.gt.0) then
+            if (k1.lt.0) write (Lun_out,161)
+            if (k2.lt.0) write (Lun_out,162)
+            write (Lun_out,165) 
+            endif
+            E_geol_hsanl_L=.false.
+         endif
+      endif
+      if ( E_geol_hsreg_L ) then
+         k1 = fstinf (anal  ,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
+         k2 = fstinf (climat,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','HS')
+         if ((k1.lt.0).or.(k2.lt.0)) then
+            if (Lun_out.gt.0) then
+            if ((k1.lt.0)) write (Lun_out,161)
+            if ((k2.lt.0)) write (Lun_out,172)
+            write (Lun_out,175)
+            endif
+            E_geol_hsreg_L=.false.
+         endif
+      endif
+*
+      if ( E_geol_hsanl_L ) then
+         call mgsdict (ni, nj, hs,     
+     $   'VN=hs     ; VS=row  ; EN=hs; INTERP=NEAREST ; SEQ=AV')
+         if (.not. E_geol_hscon_L)
+     $   call mgsdict (ni, nj, mh,    
+     $   'VN=mhen   ; VS=row  ; EN=MH; INTERP=NEAREST ; SEQ=A' )         
+         if ( E_geol_hsreg_L )
+     $   call mgsdict (ni, nj, hsc ,   
+     $   'VN=hsc    ; VS=row  ; EN=hs; INTERP=NEAREST ; SEQ=V' )
+      else
+         call mgsdict (ni, nj, hs,     
+     $   'VN=hs; VS=row; EN=hs; INTERP=NEAREST ; SEQ=V' )
+      endif 
+*        
+      call mgsdict (ni, nj, vegindx,
+     $'VN=veginden ; VS=row  ; EN=vg; INTERP=NEAREST ; SEQ=G' )
+*
+      endif
+*
+*  FOR ISBA
+*
+      if (P_pbl_schsl_s.eq.'ISBA') then
+        call mgsdict (ni, nj, wsoil, 
+     $  'VN=wsoilen; VS=row*2 ; EN=i1; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, isoil, 
+     $  'VN=isoilen; VS=row   ; EN=i2; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, wveg,  
+     $  'VN=wvegen ; VS=row   ; EN=i3; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, wsnow, 
+     $  'VN=wsnowen; VS=row   ; EN=i4; INTERP=NEAREST  ; SEQ=A' )
+        if (P_pbl_snoalb_L) then
+           call mgsdict (ni, nj, snoal, 
+     $     'VN=snoalen; VS=row   ; EN=i6; INTERP=NEAREST  ; SEQ=A' )
+        else
+           call mgsdict (ni, nj, snoag, 
+     $     'VN=snoagen; VS=row   ; EN=xa; INTERP=NEAREST  ; SEQ=A' )
+        endif
+        call mgsdict (ni, nj, sand,  
+     $  'VN=sanden ; VS=row*3 ; EN=J1; INTERP=NEAREST  ; SEQ=G' )
+        call mgsdict (ni, nj, clay,  
+     $  'VN=clayen ; VS=row*3 ; EN=J2; INTERP=NEAREST  ; SEQ=G' )
+        call mgsdict (ni, nj, snoro, 
+     $  'VN=snoroen; VS=row   ; EN=dn; INTERP=NEAREST  ; SEQ=A' )
+      endif
+*
+      p_bgeo_siz = geopar(p_bgeo_top,1) + geopar(p_bgeo_top,2)+1
+*
+      if (E_geol_modex_L) then
+         do i=1,p_bgeo_top
+            if (geonm(i,6)(1:1).eq."A") geonm(i,6) = 'A      '
+         end do
+      endif
+*
+      if (Lun_out.gt.0) then
+         write (Lun_out,101) 'GEO',ni,nj
+         write (Lun_out,130)
+         write (Lun_out,110)
+         write (Lun_out,130)
+         do 60 i=1,p_bgeo_top
+            write (Lun_out,120) geonm(i,1),geonm(i,2),geopar(i,1),
+     $             geopar(i,2),geopar(i,3),geonm(i,6),geonm(i,5)
+ 60      continue
+         write (Lun_out,130)
+      endif
+*
+ 101  format (10x,'+',35('-'),'+'/10x,'|  **',a3,'BUS**  ni= ',i5,
+     $        ' nj= ',i5,'  |')
+ 110  format ('|',2x,'Names',2x,'|',' STD ',
+     $        '|  Start | Length | Mul | SEQ | H.INTRP  |')
+ 120  format ('|',1x,a8,'|',1x,a2,'  |',2(i7,' |'),i3,'  |',1x,a3,
+     $        ' |',1x,a7,'  |')
+ 130  format ('+',9('-'),'+',5('-'),'+',8('-'),'+',8('-'),'+',5('-'),
+     $        '+',5('-'),'+',10('-'),'+')
+ 151  format (/'LG - ANLREG      NOT AVAILABLE')
+ 152  format (/'LG - CLIMATOLOGY NOT AVAILABLE')
+ 155  format (/'REVERTING E_geol_glreg_L to .false.')
+ 161  format (/'HS - ANALYSIS    NOT AVAILABLE')
+ 162  format (/'MH - ANALYSIS    NOT AVAILABLE')
+ 165  format (/'REVERTING E_geol_hsanl_L to .false.')
+ 172  format (/'HS - CLIMATOLOGY NOT AVAILABLE')
+ 175  format (/'REVERTING E_geol_hsreg_L to .false.')
+*
+*----------------------------------------------------------------------
+*
+      return
+      end 

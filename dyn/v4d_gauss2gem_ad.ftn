@@ -1,0 +1,245 @@
+***s/p v4d_gauss2gem_ad - Adjoint of v4d_gauss2gem  
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_gauss2gem_ad( ut1, vt1, tpt1, hut1, st1, DIST_DIM, 
+     %                             gut1,gvt1,gtpt1,ghut1,gst1,nigauss,njgauss,Nk)
+*
+      use v4dz
+      use v4d_interint0
+*
+#include "impnone.cdk"
+*
+      integer nigauss,njgauss,DIST_DIM,Nk
+      real gut1 (nigauss,njgauss,Nk), gvt1 (nigauss,njgauss,Nk),
+     %     gtpt1(nigauss,njgauss,Nk), ghut1(nigauss,njgauss,Nk),
+     %     gst1 (nigauss,njgauss)
+*
+      real ut1  (DIST_SHAPE,Nk), vt1 (DIST_SHAPE,Nk),
+     %     tpt1 (DIST_SHAPE,Nk), hut1(DIST_SHAPE,Nk),
+     %     st1  (DIST_SHAPE)
+*
+*author M.Tanguay
+*
+*revision
+* v3_00 - Tanguay M.        - initial MPI version
+*
+*object
+*  see id section
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "dcst.cdk"
+#include "lun.cdk"
+#include "hgc.cdk"
+#include "ptopo.cdk"
+*
+      integer k,n,i1,i2,j1,j2,ier,status
+*
+      real, allocatable, dimension(:,:) :: zo,wo
+      real, pointer,     dimension(:,:) :: fldscint,flduint,fldvint,fld2d
+*
+      real*8, parameter :: ZERO_8 = 0.0
+*
+      if(Ptopo_myproc.eq.0) then
+         i1 = V4dzg_i1
+         i2 = V4dzg_i2
+         j1 = V4dzg_j1
+         j2 = V4dzg_j2
+      endif
+*
+*     Adjoint of
+*     Interpolate 3D-Var Gaussian grid to GEM scalar Z grid
+*     -----------------------------------------------------
+*
+*     ------------------------------
+*     Allocate fields on output grid
+*     ------------------------------
+      if(Ptopo_myproc.eq.0) then
+         allocate ( fldscint(Nk,V4dzg_npts), STAT=status )
+         allocate ( flduint (Nk,V4dzg_npts), STAT=status )
+         allocate ( fldvint (Nk,V4dzg_npts), STAT=status )
+         allocate ( fld2d   ( 1,V4dzg_npts), STAT=status )
+*
+         allocate ( zo      (V4dzg_npts,Nk), STAT=status )
+         allocate ( wo      (V4dzg_npts,Nk), STAT=status )
+      endif
+*
+*       Zero adjoint work fields
+*       ------------------------
+        if(Ptopo_myproc.eq.0) then
+           do n = 1,V4dzg_npts
+           do k = 1,Nk
+              fldscint(k,n) = ZERO_8
+              flduint (k,n) = ZERO_8
+              fldvint (k,n) = ZERO_8
+           enddo
+           enddo
+           do n = 1,V4dzg_npts
+              fld2d(1,n) = ZERO_8
+           enddo
+           do k = 1,Nk
+           do n = 1,V4dzg_npts
+              zo(n,k) = ZERO_8 
+              wo(n,k) = ZERO_8 
+           enddo
+           enddo
+        endif
+*
+*       Adjoint of 
+*       --------------------
+*       Vector interpolation
+*       --------------------
+*
+*       Adjoint of 
+*       Global distribution
+*       -------------------
+        call rpn_comm_coll(wo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1,
+     %                     vt1,LDIST_DIM,G_halox,G_haloy,ier)
+        call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1,
+     %                     ut1,LDIST_DIM,G_halox,G_haloy,ier)
+*
+      if(Ptopo_myproc.eq.0) then
+*
+*       Adjoint of
+*       Reserve order of indices
+*       ------------------------
+        do k =1,Nk
+        do n =1,V4dzg_npts
+           fldvint(k,n) = wo(n,k) + fldvint(k,n)
+           wo     (n,k) = ZERO_8 
+           flduint(k,n) = zo(n,k) + flduint(k,n)
+           zo     (n,k) = ZERO_8 
+        end do
+        end do
+*
+*       Adjoint of
+*       -----------------------------------------------------
+*       Preparation for polar correction and interpolation of
+*       wind fields FLDU,FLDV at positions px,py
+*       -----------------------------------------------------
+        call v4d_uvint0_ad (flduint,fldvint,V4dzg_px,V4dzg_py,V4dzg_npts,
+     %                      gut1,gvt1,V4dzg_ax,V4dzg_ay,V4dzg_cx,V4dzg_cy,
+     %                      V4dzg_wx_8,V4dzg_cox_8,V4dzg_six_8,V4dzg_siy_8,
+     %                      i1,i2,j1,j2,Nk,V4dzg_grtypi,V4dzg_degree,'UV')
+*
+      endif
+*
+*       Adjoint of
+*       ----------------------------------------
+*       Scalar interpolation of surface pressure
+*       ----------------------------------------
+*
+*       Adjoint of
+*       Global distribution
+*       -------------------
+        call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,1,0,0,1,
+     %                     st1, LDIST_DIM,G_halox,G_haloy,ier)
+*
+      if(Ptopo_myproc.eq.0) then
+*
+*       Adjoint of
+*       Reserve order of indices
+*       ------------------------
+        do n = 1,V4dzg_npts
+           fld2d(1,n) = zo(n,1) + fld2d(1,n)
+           zo   (n,1) = ZERO_8 
+        end do
+*
+*       -----------------------------------------------------
+*       Preparation for polar correction and interpolation of
+*       scalar field FLDSC at positions px,py
+*       -----------------------------------------------------
+        call v4d_scint0_ad (fld2d,V4dzg_px,V4dzg_py,V4dzg_npts,
+     %                      gst1,V4dzg_ax,V4dzg_ay,V4dzg_cx,V4dzg_cy,
+     %                      V4dzg_wx_8,i1,i2,j1,j2,1,
+     %                      V4dzg_grtypi,V4dzg_degree,'4S')
+*
+      endif
+*
+*       Adjoint of
+*       --------------------------------
+*       Scalar interpolation of humidity 
+*       --------------------------------
+*
+*       Adjoint of
+*       Global distribution
+*       -------------------
+        call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1,
+     %                     hut1,LDIST_DIM,G_halox,G_haloy,ier)
+*
+      if(Ptopo_myproc.eq.0) then
+*
+*       Adjoint of
+*       Reserve order of indices
+*       ------------------------
+        do k = 1,Nk
+        do n = 1,V4dzg_npts
+           fldscint(k,n) = zo(n,k) + fldscint(k,n)
+           zo      (n,k) = ZERO_8
+        end do
+        end do
+*
+*       -----------------------------------------------------
+*       Preparation for polar correction and interpolation of
+*       scalar field FLDSC at positions px,py
+*       -----------------------------------------------------
+        call v4d_scint0_ad (fldscint,V4dzg_px,V4dzg_py,V4dzg_npts,
+     %                      ghut1,V4dzg_ax,V4dzg_ay,V4dzg_cx,V4dzg_cy,
+     %                      V4dzg_wx_8,i1,i2,j1,j2,Nk,
+     %                      V4dzg_grtypi,V4dzg_degree,'HU')
+*
+      endif
+*
+*       Adjoint of
+*       -----------------------------------
+*       Scalar interpolation of temperature
+*       -----------------------------------
+*
+*       Adjoint of
+*       Global distribution
+*       -------------------
+        call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1,
+     %                     tpt1,LDIST_DIM,G_halox,G_haloy,ier)
+*
+      if(Ptopo_myproc.eq.0) then
+*
+*       Adjoint of
+*       Reserve order of indices
+*       ------------------------
+        do k = 1,Nk
+        do n = 1,V4dzg_npts
+           fldscint(k,n) = zo(n,k) + fldscint(k,n)
+           zo      (n,k) = ZERO_8 
+        end do
+        end do
+*
+*       -----------------------------------------------------
+*       Preparation for polar correction and interpolation of
+*       scalar field FLDSC at positions px,py
+*       -----------------------------------------------------
+        call v4d_scint0_ad (fldscint,V4dzg_px,V4dzg_py,V4dzg_npts,
+     %                      gtpt1,V4dzg_ax,V4dzg_ay,V4dzg_cx,V4dzg_cy,
+     %                      V4dzg_wx_8,i1,i2,j1,j2,Nk,
+     %                      V4dzg_grtypi,V4dzg_degree,'4T')
+*
+      endif
+*
+*     ------------
+*     Deallocation
+*     ------------
+      if(Ptopo_myproc.eq.0) then
+         deallocate( zo,      STAT=status )
+         deallocate( wo,      STAT=status )
+         deallocate( fldscint,STAT=status )
+         deallocate( flduint, STAT=status )
+         deallocate( fldvint, STAT=status )
+         deallocate( fld2d,   STAT=status )
+      endif
+*
+      return
+      end

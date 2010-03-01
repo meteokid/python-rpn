@@ -1,0 +1,153 @@
+***s/r getp0 - Compute hydrostatic P0
+*
+      subroutine getp0 (F_dp0,F_dgz,F_pia,F_pibb,F_sp0,F_sgz,F_svt,n,nk,F_sig_L)
+#include "impnone.cdk"
+*
+       integer n,  nk
+       logical F_sig_L
+       real F_dp0(n), F_dgz(n), F_pia(nk), F_sgz(n,nk), F_svt(n,nk),
+     $      F_sp0(n), F_pibb(nk)
+*
+*author - Andre Methot   - April 1997 - v1_01
+*
+*revision
+* v1_01 - Methot A.          - Initial version
+* v2_30 - Corbeil L.         - removed e_ prefix (duplicata of e_getp0)
+* v2_31 - Edouard/Lee        - add computation for entry from hybrid coord.
+* v3_00 - Lee V.             - merged getdp0 and getp0 to getp0
+*
+*object
+*       computes hydrostatic surface pressure over model topography,
+*
+*  Assuming hydrostatic equilibrium and linear temperature lapse
+*  rate in a layer, one can obtain analiticaly the following equation
+*  by vertical integration:
+*
+*             /    / T   /   \ \                   1/
+*             | ln |  b / T  | |                   / R  L
+*             |    \   /   t / |        / T   /   \   d
+* p  = p  exp | -------------- |  =  p  |  b / T  |          (1)
+*  b    t     |      R  L      |      t \   /   t /
+*             |       d        |
+*             \                /
+*
+*
+*  where the subscript t and b stand respectively for top and bottom of
+*  the considered layer and L is the temperature lapse rate in the
+*  layer defined as follow:
+*
+*              T  - T
+*               t    b
+*        L  =  -------                                       (2)
+*              gz - gz
+*                t    b
+*
+*  The use of equation (1) and (2) is not convenient when the lapse
+*  rate is very small (nearly isothermal conditions) since the exponent
+*  in (1) becomes infinite.
+*
+*  In this case, the hypsometric equation is used:
+*
+*              / gz  -  gz  \
+*              |   t      b  |
+*  p  = p  exp | ----------- |                                (3)
+*   b    t     |   R  T      |
+*              \    d       /
+*
+*       where T is the mean temperature in the layer.
+*  Since equation (3) is used when T - T  --->  0   ,
+*                                   t   b
+*  the mean temperature is then taken from T  .
+*                                           t
+*
+*  The algorithm is first looking for the closest analysis layer that
+*  is found just above the destination terrain.  From that point, this
+*  level is considered as the top of the layer.
+*
+*  At this point , the idea is to compute p  using equation (1) and (2)
+*  except when L --> 0.                    b
+*
+*  When L --> 0,  equation (3) is used where T= T   .
+*                                                t
+*  Now if the found closest source layer is the lowest analysis level,
+*  (this is where the destination model terrain is under the analysis
+*  terrain) then there is no known bottom layers in (1) to (3).
+*  In this case T and  L  are obtained assuming Schuman-Newel lapse
+*  rate under analysis ground.
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_dp0        O         destination surface pressure 
+* F_dgz        I         destination surface geopotential
+* F_pia        I         list of source sigma levels if F_sig_L=TRUE
+*                        otherwise, source pia for hybrid
+* F_pibb       I         source pibb for hybrid, unused if F_sig_L=TRUE
+* F_sp0        I         source surface pressure 
+* F_sgz        I         source geopotential height
+* F_svt        I         source virtual temperature
+* F_sig_L      I         TRUE if sigma levels 
+*----------------------------------------------------------------------
+*
+*implicits
+#include <model_macros_f.h>
+#include "dcst.cdk"
+**
+      integer i,k
+      real difgz, lapse, ttop, tbot, pres, cons
+*
+*     ---------------------------------------------------------------
+*
+      do i=1,n
+*
+        difgz = F_sgz(i,nk) - F_dgz(i)
+*
+        if ( difgz .gt. 0. ) then
+*
+*          surface of target grid is below the surface of source grid
+*          we assume SCHUMAN-NEWELL Lapse rate under ground to obtain
+*          an estimates of the temperature at the target grid surface
+*
+           lapse = Dcst_stlo_8
+           k     = nk
+*
+        else
+*
+*          surface of target grid is above the surface of source grid
+*          Then we are looking for the level in the source grid that
+*          is just above the surface of the target grid...
+*
+           do k=nk, 2, -1
+              difgz = F_sgz(i,k) - F_dgz(i)
+              if ( difgz .gt. 0. ) goto 20
+           enddo
+ 20        lapse = - ( F_svt(i,k)-F_svt(i,k+1) ) /
+     $               ( F_sgz(i,k)-F_sgz(i,k+1) )
+*
+        endif
+*
+        ttop = F_svt(i,k)
+        tbot = ttop + lapse * difgz
+        if (F_sig_L) then
+* Note that PIA here is actually F_seta
+            pres = F_pia(k)*F_sp0(i)
+* And if ETA analyse had TOPP where F_pt did not have uniform values:
+*     then  pres = F_spt(i)+F_pia(k)*(F_sp0(i)-F_spt(i))
+        else
+            pres = F_pia(k) + F_pibb(k)*F_sp0(i)
+        endif
+
+*
+        if ( abs(lapse) .lt. 1E-10 ) then
+           F_dp0(i) = pres * exp ( difgz/(Dcst_rgasd_8*ttop) )
+        else          
+           cons = 1. / ( Dcst_rgasd_8 * lapse )
+           F_dp0(i) = pres * ( tbot/ttop ) ** cons
+        endif
+*
+       enddo
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

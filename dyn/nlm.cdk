@@ -1,0 +1,37 @@
+#if defined (DOC)
+*
+***comdeck nlm.cdk
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
+*
+*object
+*     Equivalent to comdeck nl for TRAJECTORY
+*______________________________________________________________________
+*                                                                      |
+*  TRAJ VARIABLES ASSOCIATED WITH NLI (non-linear rhs)                 |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* nl_num             | non-linear deviation of U                       |
+* nl_nvm             | non-linear deviation of V                       |
+* nl_nthm            | non-linear deviation of T                       |
+* nl_n3m             | non-linear deviation of vertical motion         |
+* nl_n3pm            | ???                                             |
+*----------------------------------------------------------------------
+*
+*
+#endif
+      MARK_COMMON_BEG(nlm)
+      DCL_DYNVAR(nlm,   num ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nlm,   nvm ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nlm,   nthm,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nlm,   ncnm,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nlm,   n3m ,  real, (LDIST_SHAPE,l_nk))
+      DCL_DYNVAR(nlm,   n3pm,  real, (LDIST_SHAPE,l_nk))
+      MARK_COMMON_END(nlm)

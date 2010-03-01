@@ -1,0 +1,75 @@
+***s/r stop_world_view - Update status file and stop MPI
+*
+#include <model_macros_f.h>
+*
+      subroutine stop_world_view (F_continue_L)
+*
+#include "impnone.cdk"
+*
+      logical F_continue_L
+*
+*author
+*     M. Desgagne
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Lee V.            - added watch_pid mechanism (removepid)
+* v2_20 - Lee V.            - put version number of code in "exfin"
+* v2_21 - Desgagne M.       - rpn_comm stooge for MPI
+* v2_30 - Dugas B.          - add call to gemtim
+* v2_31 - Dugas B.          - replace F_done_L by F_continue_L and
+* v2_31                       modify the documentation accordingly
+* v2_31 - Desgagne M.       - remove system call to Um_hook.sh (-post)
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*---------------------------------------------------------------------
+* F_continue_L I    -     .true. means the model integration continues
+*---------------------------------------------------------------------
+*
+*implicits
+#include "lun.cdk"
+#include "ptopo.cdk"
+#include "path.cdk"
+#include "lctl.cdk"
+#include "version.cdk"
+*
+*modules
+      integer exfin, longueur
+      external exfin, longueur
+*
+      character*256 postjob_S
+      integer err
+*
+*-------------------------------------------------------------------
+*
+#if defined (NEC)
+      call flush(5)
+      call flush(6)
+      if (Lun_out.gt.0) call gemtim (Lun_out)
+#endif
+*
+      if (Lun_out.gt.0) then
+         err = exfin('GEMDM',version_S,'OK')
+         write (postjob_S,34) Lctl_step
+         postjob_S='_endstep='//postjob_S(1:longueur(postjob_S))//';'
+         call write_status_file (postjob_S)
+         if (F_continue_L) then
+            call write_status_file ('_status=RS;')
+         else
+            call write_status_file ('_status=ED;')
+         endif
+         call close_status_file ()
+      endif
+*
+      call rpn_comm_Barrier("grid", err)
+      call rpn_comm_FINALIZE(err)
+*
+ 33   format (i6)
+ 34   format (i10.10)
+*-------------------------------------------------------------------
+*
+      return
+      end

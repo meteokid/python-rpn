@@ -1,0 +1,762 @@
+***s/r adw_main_2_pos_ad - ADJ of adw_main_2_pos_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_main_2_pos_ad ( F_it, F_u, F_v, F_w, F_um, F_vm, F_wm )
+*
+#include "impnone.cdk"
+*
+      integer F_it
+      real F_u (*),F_v (*),F_w (*)
+      real F_um(*),F_vm(*),F_wm(*)
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+* v3_00 - Tanguay M.        - restore vectorization in adjoint of semi-Lag.
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+* F_it   | total number of iterations for trajectory             |  i  |
+*        |                                                       |     |
+* F_u,F_v| input:  3 components of wind on advection grid        |  io |
+* F_w    | output: 3 components of upstream positions at t1      |     |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "v4dg.cdk"
+#include "lctl.cdk"
+#include "vthm.cdk"
+#include "vt1m.cdk"
+#include "ptopo.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+************************************************************************
+      logical doh_L
+*
+      integer pnerr, pnlkey1(30), pnlod
+*
+      integer i, j, k, n, ij, ijk, nij, nijk, nijkag, it
+*
+      integer, dimension(l_ni*l_nj*l_nk) :: n1
+      real,    dimension(l_ni*l_nj*l_nk) :: xctg,yctg,zctg
+      real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1,wrk_yth
+*
+      integer, dimension(l_ni*l_nj*l_nk) :: n1m
+      real,    dimension(l_ni*l_nj*l_nk) :: xctgm,yctgm,zctgm
+      real,    dimension(l_ni*l_nj*l_nk) :: capx1m,capy1m,capz1m
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1m,wrky1m,wrkz1m,wrkc1m,wrk_ythm
+*
+      real dummy, dth
+      real*8 r2pi_8
+      real*8, parameter :: ZERO_8 = 0.0
+      real*8, parameter :: TWO_8  = 2.0
+*
+      logical plpr_L
+*
+*     -----------------------
+*     Define extra space TRAJ
+*     -----------------------
+      integer ind(F_it)
+*
+      integer i0,in,j0,jn
+*
+      real xthm_2(l_ni*l_nj*l_nk*F_it),wrk_ythm_2(l_ni*l_nj*l_nk*F_it)
+      real zthm_2(l_ni*l_nj*l_nk*F_it)
+*
+      integer n1m_3(l_ni*l_nj*l_nk*F_it)
+      real capx1m_3(l_ni*l_nj*l_nk*F_it),capy1m_3(l_ni*l_nj*l_nk*F_it),
+     %     capz1m_3(l_ni*l_nj*l_nk*F_it)
+*
+      real xcthm_4 (l_ni*l_nj*l_nk*F_it),ycthm_4 (l_ni*l_nj*l_nk*F_it)
+      real zcthm_4 (l_ni*l_nj*l_nk*F_it)
+      real wrkx1m_4(l_ni*l_nj*l_nk*F_it),wrky1m_4(l_ni*l_nj*l_nk*F_it)
+*
+      real ythm_5  (l_ni*l_nj*l_nk*F_it)
+*
+      real xthm_6  (l_ni*l_nj*l_nk*F_it),wrk_ythm_6(l_ni*l_nj*l_nk*F_it),
+     %     zthm_6  (l_ni*l_nj*l_nk*F_it)
+*
+      integer n1m_7(l_ni*l_nj*l_nk*F_it)
+      real capx1m_7(l_ni*l_nj*l_nk*F_it),capy1m_7(l_ni*l_nj*l_nk*F_it),
+     %     capz1m_7(l_ni*l_nj*l_nk*F_it)
+*
+      real zthm_8a (l_ni*l_nj*l_nk*F_it),zthm_8b (l_ni*l_nj*l_nk*F_it)
+*
+      real wuthm(Adw_nit*Adw_njt*l_nk),wvthm(Adw_nit*Adw_njt*l_nk),
+     %     wwthm(Adw_nit*Adw_njt*l_nk)
+*
+*     ------------------------------------------
+*     Variables needed to restore  vectorization
+*     in semi-Lagrangian adjoint interp.
+*     (Based on Clive Temperton ECMWF method)
+*     ------------------------------------------
+      integer inca,ibase,itx,count,fldu,fldv,fldw,stencil,nfld,kdim,ksep(F_it),
+     %        klev,ilevels,istart,istop,ij,jinc,indice,nijplus,
+     %        myint1,myint2,plus1,plus2,minus1,minus2
+      real tempo
+*
+      integer, dimension(:,:),allocatable :: kinc
+      real,    dimension(:,:),allocatable :: zinc
+      real,    dimension(:)  ,allocatable :: buff
+*
+*     ------------------------------------------
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+*
+*     Flag for diagnostics
+*     --------------------
+      plpr_L =.false.
+*
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *l_nk
+      nijkag = Adw_nit*Adw_njt*l_nk
+*
+      r2pi_8 = TWO_8 * Dcst_pi_8
+      dth    = Cstv_dt_8/2.
+************************************************************************
+*
+*     Zero adjoint variables 
+*     ----------------------
+      do n = 1,l_ni*l_nj*l_nk
+         n1(n)      = ZERO_8
+         xctg(n)    = ZERO_8
+         yctg(n)    = ZERO_8
+         zctg(n)    = ZERO_8
+         capx1(n)   = ZERO_8
+         capy1(n)   = ZERO_8
+         capz1(n)   = ZERO_8
+         wrkx1(n)   = ZERO_8
+         wrky1(n)   = ZERO_8
+         wrkz1(n)   = ZERO_8
+         wrkc1(n)   = ZERO_8
+         wrk_yth(n) = ZERO_8
+      enddo
+*
+*     Set Positions in extra space TRAJ
+*     ---------------------------------
+      do it = 1,F_it
+      ind(it) = nijk*(it-1) + 1
+      enddo
+*
+*     -------------------------------------
+*     Prepare restoration  of vectorization
+*     in semi-Lagrangian adjoint interp.
+*     -------------------------------------
+*
+*        Size of the stencil for 3D linear interpolation
+*        -----------------------------------------------
+         stencil = 8
+*
+*        Number of fields to treat
+*        -------------------------
+         nfld = 3
+*
+*        Number of independent positions at a given level
+*        ------------------------------------------------
+         kdim = stencil*nfld
+*
+*        Modify dimension for efficiency
+*        -------------------------------
+         nijplus = nij
+         if(2*(nij/2).eq.nij) nijplus = nij + 1
+*
+         allocate ( kinc(nijplus,kdim*l_nk),
+     %              zinc(nijplus,kdim*l_nk),
+     %              buff(nijkag*nfld))
+*
+*        Zero adjoint variables
+*        ----------------------
+         do i = 1,nijkag*nfld
+            buff(i) = ZERO_8
+         enddo
+*
+*     ----------------------------
+*     Preserve TRAJ uthm vthm wthm
+*     ----------------------------
+      do ijk =1,nijkag
+         wuthm(ijk) = F_um(ijk)
+         wvthm(ijk) = F_vm(ijk)
+         wwthm(ijk) = F_wm(ijk)
+      enddo
+*
+      pnlkey1(1) = VMM_KEY(xth)
+      pnlkey1(2) = VMM_KEY(yth)
+      pnlkey1(3) = VMM_KEY(zth)
+      pnlkey1(4) = VMM_KEY(xcth)
+      pnlkey1(5) = VMM_KEY(ycth)
+      pnlkey1(6) = VMM_KEY(zcth)
+      pnlkey1(7) = VMM_KEY(xct1)
+      pnlkey1(8) = VMM_KEY(yct1)
+      pnlkey1(9) = VMM_KEY(zct1)
+      pnlod = 9
+*
+      pnlkey1(1+pnlod) = VMM_KEY(xthm)
+      pnlkey1(2+pnlod) = VMM_KEY(ythm)
+      pnlkey1(3+pnlod) = VMM_KEY(zthm)
+      pnlkey1(4+pnlod) = VMM_KEY(xcthm)
+      pnlkey1(5+pnlod) = VMM_KEY(ycthm)
+      pnlkey1(6+pnlod) = VMM_KEY(zcthm)
+      pnlkey1(7+pnlod) = VMM_KEY(xct1m)
+      pnlkey1(8+pnlod) = VMM_KEY(yct1m)
+      pnlkey1(9+pnlod) = VMM_KEY(zct1m)
+      pnlod = 9+pnlod
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(xth)
+      pnerr = VMM_GET_VAR(yth)
+      pnerr = VMM_GET_VAR(zth)
+      pnerr = VMM_GET_VAR(xcth)
+      pnerr = VMM_GET_VAR(ycth)
+      pnerr = VMM_GET_VAR(zcth)
+      pnerr = VMM_GET_VAR(xct1)
+      pnerr = VMM_GET_VAR(yct1)
+      pnerr = VMM_GET_VAR(zct1)
+*
+      pnerr = VMM_GET_VAR(xthm)
+      pnerr = VMM_GET_VAR(ythm)
+      pnerr = VMM_GET_VAR(zthm)
+      pnerr = VMM_GET_VAR(xcthm)
+      pnerr = VMM_GET_VAR(ycthm)
+      pnerr = VMM_GET_VAR(zcthm)
+      pnerr = VMM_GET_VAR(xct1m)
+      pnerr = VMM_GET_VAR(yct1m)
+      pnerr = VMM_GET_VAR(zct1m)
+*
+*     ------------------
+*     TRAJECTORY (START)
+*     ------------------
+*
+************************************************************************
+      do it=1,F_it
+************************************************************************
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=3
+          if (l_east) in=l_niu-1
+          if (l_south) j0=3
+          if (l_north) jn=l_njv-1
+      endif
+                     doh_L = .false.
+      if (it .eq. 1) doh_L = .true.
+*
+      do n = 1,nijk
+      wrk_ythm(n) = ythm(n)
+      enddo
+*
+*     ------------------------------------------
+*     Preserve xthm wrk_ythm zthm for ADJOINT #2
+*     ------------------------------------------
+      do ijk =1,nijk
+         xthm_2    (ind(it)+ijk-1)  = xthm    (ijk)
+         wrk_ythm_2(ind(it)+ijk-1)  = wrk_ythm(ijk)
+         zthm_2    (ind(it)+ijk-1)  = zthm    (ijk)
+      enddo
+*
+*     Set coloring of vertical levels
+*     -------------------------------
+        ksep(it) = 0
+          myint2 = 0
+           plus2 = 0
+          minus2 = 0
+        do k =1,l_nk
+        do j =1,l_nj
+        do i =1,l_ni
+           ijk = nij*(k-1) + l_ni*(j-1) + i
+           tempo  =         l_nk*(      zthm(ijk)-Geomg_z_8(k))/
+     %                           (Geomg_z_8(l_nk)-Geomg_z_8(1))
+           myint1 = int(abs(tempo)) + 1
+           if(tempo.gt.0.) then
+              plus1 = myint1
+              plus2 = max(plus2,plus1)
+           else
+              minus1 = - myint1
+              minus2 = - max(- minus2,- minus1)
+           endif
+           myint2 = max(myint2,myint1)
+        enddo
+        enddo
+        enddo
+        ksep(it) = max(ksep(it),- minus2 + plus2 + 1)
+        if(plpr_L) write(6,*) 'For IT=',it,' Ptopo_myproc =',Ptopo_myproc,
+     %                        ' TRILIN ksep minus2 plus2 =',ksep(it),minus2,plus2
+*
+      call adw_setint ( n1m, capx1m, dummy, dummy, capy1m, dummy,
+     %                  dummy, capz1m, dummy, xthm,   wrk_ythm, zthm,
+     %                  doh_L, .true., .true.,nijk,i0,in,j0,jn,l_nk)
+*
+*     ------------------------------------------------
+*     Preserve n1m capx1m capy1m capz1m for ADJOINT #3
+*     ------------------------------------------------
+      do ijk=1,nijk
+         n1m_3   (ind(it)+ijk-1) = n1m   (ijk)
+         capx1m_3(ind(it)+ijk-1) = capx1m(ijk)
+         capy1m_3(ind(it)+ijk-1) = capy1m(ijk)
+         capz1m_3(ind(it)+ijk-1) = capz1m(ijk)
+      enddo
+*
+*     ----------------------------
+*     NOTE:Uthm Vthm never changed
+*     ----------------------------
+      call adw_trilin (wrkx1m,wuthm,1.0,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+      call adw_trilin (wrky1m,wvthm,1.0,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+*
+*     -------------------------------------------------------
+*     Preserve xcthm ycthm zcthm wrkx1m wrky1m for ADJOINT #4
+*     -------------------------------------------------------
+      do ijk=1,nijk
+         xcthm_4 (ind(it)+ijk-1)  = xcthm (ijk)
+         ycthm_4 (ind(it)+ijk-1)  = ycthm (ijk)
+         zcthm_4 (ind(it)+ijk-1)  = zcthm (ijk)
+         wrkx1m_4(ind(it)+ijk-1)  = wrkx1m(ijk)
+         wrky1m_4(ind(it)+ijk-1)  = wrky1m(ijk)
+      enddo
+*
+*     ----------------------------
+*     Preserve ythm for ADJOINT #5
+*     ----------------------------
+      do ijk=1,nijk
+         ythm_5 (ind(it)+ijk-1)  = ythm(ijk)
+      enddo
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
+      endif
+*
+************************************************************************
+      call adw_trajsp ( xthm, ythm, xcthm, ycthm, zcthm, wrkx1m, wrky1m, dth,
+     %                  i0,in,j0,jn)
+************************************************************************
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-1
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-1
+      endif
+      do n = 1,nijk
+      wrk_ythm(n) = ythm(n)
+      enddo
+*
+*     ------------------------------------------
+*     Preserve xthm wrk_ythm zthm for ADJOINT #6
+*     ------------------------------------------
+      do ijk=1,nijk
+         xthm_6    (ind(it)+ijk-1)  = xthm    (ijk)
+         wrk_ythm_6(ind(it)+ijk-1)  = wrk_ythm(ijk)
+         zthm_6    (ind(it)+ijk-1)  = zthm    (ijk)
+      enddo
+*
+      call adw_setint ( n1m, capx1m, dummy, dummy, capy1m, dummy,
+     %                  dummy, capz1m, dummy, xthm,   wrk_ythm, zthm,
+     %                 .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
+*
+*     ------------------------------------------------
+*     Preserve n1m capx1m capy1m capz1m for ADJOINT #7
+*     ------------------------------------------------
+      do ijk=1,nijk
+         n1m_7   (ind(it)+ijk-1) = n1m   (ijk)
+         capx1m_7(ind(it)+ijk-1) = capx1m(ijk)
+         capy1m_7(ind(it)+ijk-1) = capy1m(ijk)
+         capz1m_7(ind(it)+ijk-1) = capz1m(ijk)
+      enddo
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
+      endif
+*
+*     -----------------------
+*     NOTE:Wthm never changed
+*     -----------------------
+      call adw_trilin (wrkx1m,wwthm,-dth,n1m,capx1m,capy1m,capz1m,nijk,i0,in,j0,jn,l_nk)
+*
+************************************************************************
+      do k = 2,l_nk-1
+      do j = j0,jn
+      do i = i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         zthm(n) = Geomg_z_8(k) + wrkx1m(n)
+*
+*        -----------------------------
+*        Preserve zthm for ADJOINT #8a
+*        -----------------------------
+         zthm_8a (ind(it)+n)  = zthm(n)
+*
+         zthm(n) = min( Geomg_z_8(l_nk), max( zthm(n), Geomg_z_8(1) ) )
+*
+*        -----------------------------
+*        Preserve zthm for ADJOINT #8b
+*        -----------------------------
+         zthm_8b (ind(it)+n)  = zthm(n)
+*
+         if ( zthm(n).eq.Geomg_z_8(1) .or. zthm(n).eq.Geomg_z_8(l_nk)) then
+           zthm(n) = (zthm(n) + Geomg_z_8(k)) * 0.5
+         endif
+      enddo
+      enddo
+      enddo
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+      call adw_trajex (F_um, F_vm, xct1m, yct1m, zct1m, xcthm, ycthm, zcthm,
+     %                 i0,in,j0,jn)
+*
+      do j = j0,jn
+      do i = i0,in
+C        n = ((j-1)*l_ni) + i   !for k=1
+C        F_wm(n) = Geomg_z_8(1)
+C        n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
+C        F_wm(n) = Geomg_z_8(l_nk)
+      enddo
+      enddo
+      do k = 2,l_nk-1
+         do j = j0,jn
+         do i = i0,in
+            n=(k-1)*nij+((j-1)*l_ni) + i
+            F_wm(n) = zthm(n) - Geomg_z_8(k)
+            F_wm(n) = Geomg_z_8(k) + 2.0 * F_wm(n)
+*
+*           ------------------------------------------------------------------
+*           Do not need to Preserve F_wm for ADJOINT #10 since it is used next
+*           ------------------------------------------------------------------
+C           F_wm(n) = min( Geomg_z_8(l_nk), max( F_wm(n), Geomg_z_8(1) ))
+*
+         enddo
+         enddo
+      enddo
+*
+*     ----------------
+*     TRAJECTORY (END)
+*     ----------------
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
+      endif
+*
+*     ADJOINT CALCULATIONS
+*     --------------------
+      do k = l_nk-1,2,-1
+         do j = j0,jn
+         do i = i0,in
+            n=(k-1)*nij+((j-1)*l_ni) + i
+*
+            if (F_wm(n).lt.Geomg_z_8(1)) then
+                F_w (n) =  0.
+            elseif (F_wm(n).gt.Geomg_z_8(l_nk)) then
+                F_w (n) =  0.
+            endif
+*
+            F_w(n) = 2.0 * F_w(n)
+            zth(n) = F_w(n) + zth(n)
+            F_w(n) = ZERO_8
+*
+         enddo
+         enddo
+      enddo
+*
+      do j = j0,jn
+      do i = i0,in
+*
+         n = ((j-1)*l_ni) + i   !for k=1
+*
+         F_w(n) = 0.
+*
+         n = (l_nk-1)*nij+((j-1)*l_ni) + i !for k=l_nk
+*
+         F_w(n) = 0.
+*
+      enddo
+      enddo
+*
+      call adw_trajex_ad (F_u, F_v, xct1, yct1, zct1, xcth, ycth, zcth,
+     %                                                xcthm,ycthm,zcthm,
+     %                    i0,in,j0,jn)
+*
+*
+************************************************************************
+      do it=F_it,1,-1
+************************************************************************
+*
+*     Zero adjoint variables
+*     ----------------------
+      do i = 1,kdim*nijplus*l_nk
+         kinc(i,1) = 0
+      enddo
+*
+      do i = 1,kdim*nijplus*l_nk
+         zinc(i,1) = 0
+      enddo
+*
+      itx = F_it-it+1
+*
+*     Zero counter
+*     ------------
+      count = 0
+*
+                     doh_L = .false.
+      if (it .eq. 1) doh_L = .true.
+*
+      do k = l_nk-1,2,-1
+      do j = j0,jn
+      do i = i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+*
+*        --------------------------
+*        Reset zthm for ADJOINT #8b
+*        --------------------------
+         if ( zthm_8b(ind(it)+n).eq.Geomg_z_8(1) .or. zthm_8b(ind(it)+n).eq.Geomg_z_8(l_nk)) then
+              zth (n) = (zth (n)               ) * 0.5
+         endif
+*
+*        --------------------------
+*        Reset zthm for ADJOINT #8a
+*        --------------------------
+         if (zthm_8a(ind(it)+n).lt.Geomg_z_8(1)) then
+             zth (n) = 0.
+         elseif (zthm_8a(ind(it)+n).gt.Geomg_z_8(l_nk)) then
+             zth (n) = 0.
+         endif
+*
+         wrkx1(n) = zth(n) + wrkx1(n)
+         zth  (n) = ZERO_8
+*
+      enddo
+      enddo
+      enddo
+*
+*     ---------------------------------------------
+*     Reset n1m capx1m capy1m capz1m for ADJOINT #7
+*     ---------------------------------------------
+*     -----------------------
+*     NOTE:Wthm never changed
+*     -----------------------
+*     ------------------------------------------------------------------
+*     NOTE:In ADW_TRILIN_AD, we store increments causing unvectorization
+*     ------------------------------------------------------------------
+      count =  count + 1
+      inca  = (count - 1) * stencil
+      ibase = (count - 1) * nijkag
+      call adw_trilin_ad (wrkx1,        -dth, capx1, capy1, capz1,
+     %                           wwthm, n1m_7   (ind(it)),capx1m_7(ind(it)),
+     %                                  capy1m_7(ind(it)),capz1m_7(ind(it)),nijk,
+     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it))
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-1
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-1
+      endif
+*
+*     ---------------------------------------
+*     Reset xthm wrk_ythm zthm for ADJOINT #6
+*     ---------------------------------------
+      call adw_setint_ad ( n1,   capx1, dummy, dummy, capy1,   dummy,
+     %                     dummy,capz1, dummy, xth,   wrk_yth, zth,
+     %                                         xthm_6    (ind(it)),
+     %                                         wrk_ythm_6(ind(it)),
+     %                                         zthm_6    (ind(it)),
+     %                     .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
+*
+      do n = 1,nijk
+*
+      yth(n)     = wrk_yth(n) + yth(n)
+      wrk_yth(n) = ZERO_8
+*
+      enddo
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
+      endif
+*
+*     ----------------------------------------------------
+*     Reset xcthm ycthm zcthm wrkx1m wrky1m for ADJOINT #4
+*     ----------------------------------------------------
+*
+*     -------------------------
+*     Reset ythm for ADJOINT #5
+*     -------------------------
+************************************************************************
+      call adw_trajsp_ad ( xth,  yth,  xcth,  ycth,  zcth,  wrkx1,  wrky1,
+     %                           ythm_5(ind(it)),xcthm_4 (ind(it)),
+     %                                           ycthm_4 (ind(it)),
+     %                                           zcthm_4 (ind(it)), 
+     %                                           wrkx1m_4(ind(it)),wrky1m_4(ind(it)),
+     %                     dth,i0,in,j0,jn)
+************************************************************************
+*
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=3
+          if (l_east) in=l_niu-1
+          if (l_south) j0=3
+          if (l_north) jn=l_njv-1
+      endif
+*
+*     ------------------------------------------------
+*     Reset n1m capx1m capy1m capz1m for ADJOINT #3
+*     ------------------------------------------------
+*     ----------------------------
+*     NOTE:Uthm Vthm never changed
+*     ----------------------------
+*     ------------------------------------------------------------------
+*     NOTE:In ADW_TRILIN_AD, we store increments causing unvectorization
+*     ------------------------------------------------------------------
+      count =  count + 1
+      inca  = (count - 1) * stencil
+      ibase = (count - 1) * nijkag
+      call adw_trilin_ad (wrky1,        1.0, capx1, capy1, capz1,
+     %                           wvthm, n1m_3   (ind(it)),capx1m_3(ind(it)),
+     %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),nijk,
+     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it))
+*
+      count =  count + 1
+      inca  = (count - 1) * stencil
+      ibase = (count - 1) * nijkag
+      call adw_trilin_ad (wrkx1,        1.0, capx1, capy1, capz1,
+     %                           wuthm, n1m_3   (ind(it)),capx1m_3(ind(it)),
+     %                                  capy1m_3(ind(it)),capz1m_3(ind(it)),nijk,
+     %                    ibase,inca,kinc,zinc,kdim,nij,nijplus,l_nk,ksep(it))
+*
+*     ---------------------------------------
+*     Reset xthm wrk_ythm zthm for ADJOINT #2
+*     ---------------------------------------
+      call adw_setint_ad ( n1,    capx1,  dummy, dummy, capy1,    dummy,
+     %                     dummy, capz1,  dummy, xth,   wrk_yth,  zth,
+     %                                           xthm_2    (ind(it)),
+     %                                           wrk_ythm_2(ind(it)),
+     %                                           zthm_2    (ind(it)), 
+     %                     doh_L, .true., .true.,nijk,i0,in,j0,jn,l_nk)
+*
+      do n = 1,nijk
+*
+      yth(n)     = wrk_yth(n) + yth(n)
+      wrk_yth(n) = ZERO_8
+*
+      enddo
+*
+*     -----------------------------
+*     Transfer increments in buffer
+*     -----------------------------
+*
+*     -----------------------------------------------------------
+*     CAUTION: DO NOT CHANGE the following loop ordering
+*     -----------------------------------------------------------
+*              1) Loop on JINC must be innermost for vectorization
+*              2) The chopping is done to guarantee safety
+*                 of the vectorization
+*     -----------------------------------------------------------
+      do ij = 1,nij
+        istop = 0
+*
+        do klev=1,ksep(it)
+*
+          ilevels=(l_nk-klev)/ksep(it) + 1
+          istart = istop + 1
+          istop  = istart+ilevels*kdim-1
+*
+*VDIR NODEP
+          do jinc=istart,istop
+             buff(kinc(ij,jinc)) = buff(kinc(ij,jinc)) + zinc(ij,jinc)
+          enddo
+*
+        enddo
+      enddo
+*
+************************************************************************
+      enddo ! end of iterations loop
+************************************************************************
+*
+*     -------------------------------------
+*     Add buffer content to model variables
+*     -------------------------------------
+      fldw  = 1
+      fldv  = 2
+      fldu  = 3
+*
+      do k = 1,l_nk
+      do j = 1,Adw_njt
+      do i = 1,Adw_nit
+         indice = Adw_nit*Adw_njt*(k-1) + Adw_nit*(j-1) + i
+         F_w(indice) = buff((fldw-1) * nijkag + indice) + F_w(indice)
+         F_v(indice) = buff((fldv-1) * nijkag + indice) + F_v(indice)
+         F_u(indice) = buff((fldu-1) * nijkag + indice) + F_u(indice)
+      end do
+      end do
+      end do
+*
+      pnerr = vmmuld(-1,0)
+*
+      deallocate (kinc,zinc,buff)
+*
+ 1000  format(3X,'ADJ of CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS_AD)')
+*
+      return
+      end

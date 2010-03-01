@@ -1,0 +1,461 @@
+***s/r blocuv - output winds
+*
+#include <model_macros_f.h>
+*
+      subroutine blocuv(F_dostep,F_dostep_max)
+*
+#include "impnone.cdk"
+*
+      integer F_dostep(*)
+      integer F_dostep_max
+*
+*author
+*     james caveen/andre methot - rpn july/nov 1995
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from blocuv v1_03)
+* v2_21 - J. P. Toviessi    - set dieze (#) slab output and rename 
+* v2_21                       truncate model output names to 4 characters
+* v2_30 - Lee V.            - reorganize slab output to be more efficient;
+* v2_30                       there are 3 kinds of grid output here: U,V,PHI
+* v2_32 - Lee V.            - reduce dynamic allocation size
+* v3_00 - Desgagne & Lee    - Lam configuration
+* v3_00 - Tanguay M.        - true winds adjoint
+*
+*object
+*     output the wind images or wind components or wind module.
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_dostep     I    - array containing indices corresponding to the
+*                     timestep sets that requires output at this time step.
+* F_dostep_max I    - size of F_dostep array
+*
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "dimout.cdk"
+#include "geomg.cdk"
+#include "setsor.cdk"
+#include "out.cdk"
+#include "out2.cdk"
+#include "lun.cdk"
+#include "vt1.cdk"
+#include "level.cdk"
+#include "outd.cdk"
+#include "dslab.cdk"
+#include "grid.cdk"
+#include "v4dg.cdk"
+*
+*modules
+      integer  vmmlod, vmmuld, vmmget, vmmuln, vmmulk, getvndx
+      external vmmlod, vmmuld, vmmget, vmmuln, vmmulk, getvndx
+*
+**
+      integer cnmvvar, cnmuvar, cn3dvar, cnnkey
+      parameter (cnmuvar = 3, cnmvvar = 3, cn3dvar = 3, cnnkey= 2)
+      integer  pni3d, pnindex,pnkey, i,j,k,ii,jj,jjj,kk
+      integer pnlkey(cnnkey),pni3dx(cn3dvar)
+      integer pnerr, levset
+      character*8 ptmuvar(cnmuvar), ptmvvar(cnmvvar), pt3dvar(cn3dvar)
+      real prprlvl
+      integer i0,in,j0,jn,gridi,grido
+      logical pl3dvar(cn3dvar)
+      real prmult(cn3dvar), pradd(cn3dvar), pr1
+      real w1(LDIST_SHAPE), w2(LDIST_SHAPE), w3(LDIST_SHAPE)
+      real w4(LDIST_SHAPE), w5(LDIST_SHAPE), w6(LDIST_SHAPE)
+      real t1(LDIST_SHAPE,G_nk), t2(LDIST_SHAPE,G_nk)
+      real t3(LDIST_SHAPE,G_nk), t4(LDIST_SHAPE,G_nk)
+
+*     Declarations for slab output
+      integer mxout_e
+      character*4, dimension(:,:),allocatable :: var_e_S
+      character*1, dimension(:,:),allocatable :: typvar_e_S
+      integer,     dimension(:,:),allocatable :: ip1_e
+      integer,     dimension(:,:),allocatable :: bit_e
+      real,        dimension(:,:),allocatable :: mtval_e
+      integer,     dimension(:)  ,allocatable :: mtout_e
+      integer,     dimension(:,:),allocatable :: xnio
+* ___________________________________________________________________
+*
+*     1.0     initialization of data
+*_______________________________________________________________________
+*
+*     list of model variables that can be outputted by blocuv
+*     at time levels t2,th and t1
+*NOTE:ptmuvar is on a U grid and ptmvvar is on V grid
+      data ptmuvar / 'UT0','UTH','UT1' /
+      data ptmvvar / 'VT0','VTH','VT1'/
+      data pt3dvar /'UU','VV','UV'/
+*     index of each symbol in the list
+      integer pnuu, pnvv, pnuv
+      data pnuu,pnvv,pnuv
+     $     /  1,   2,   3/
+
+*
+*     initialize conversion of units
+*
+      data prmult / cn3dvar*1.0 /
+      data pradd  / cn3dvar*0.0 /
+*
+      pr1 =  1.0 / Dcst_knams_8
+      prmult(pnuu)  = pr1
+      prmult(pnvv)  = pr1
+      prmult(pnuv)  = pr1
+
+*_______________________________________________________________________
+*
+*     Output of model winds on U grid
+      pni3d = 0
+      do i=1,cnmuvar
+         pnindex=getvndx(ptmuvar(i))
+         if (pnindex.gt.0) then
+             pni3d = pni3d + Setsor_useit(pnindex)
+         else
+            if (Lun_out.gt.0) write(Lun_out,*)
+     $           'Error in BLOCUV:INDEX not found for ',ptmuvar(i)
+            stop
+         endif
+      enddo
+      if (pni3d.gt.0) then
+          call slab3dvar(ptmuvar,cnmuvar,F_dostep,F_dostep_max,1)
+      endif
+
+*_______________________________________________________________________
+*
+*     Output of model winds on V grid
+*
+      pni3d=0
+      do i=1,cnmvvar
+         pnindex=getvndx(ptmvvar(i))
+         if (pnindex.gt.0) then
+             pni3d = pni3d + Setsor_useit(pnindex)
+         else
+            if (Lun_out.gt.0) write(Lun_out,*)
+     $           'Error in BLOCUV:INDEX not found for ',ptmvvar(i)
+            stop
+         endif
+      enddo
+      if (pni3d.gt.0) then
+          call slab3dvar(ptmvvar,cnmvvar,F_dostep,F_dostep_max,2)
+      endif
+
+*_______________________________________________________________________
+*
+*     Output of derived winds on Phi grid
+*
+      pni3d = 0
+      do i=1,cn3dvar
+         pni3dx(i)=getvndx(pt3dvar(i))
+         if (pni3dx(i).gt.0) then
+             pni3d = pni3d + Setsor_useit(pni3dx(i))
+         else
+            if (Lun_out.gt.0) write(Lun_out,*)
+     $           'Error in BLOCUV:INDEX not found for ',pt3dvar(i)
+            stop
+         endif
+      enddo
+      if (pni3d.le.0) then
+*        no output required
+            return
+      endif
+      mxout_e = 1 + pni3d*(max(l_nk,Dslab_max_lev_p))
+      allocate ( var_e_S(mxout_e,Grid_sets),
+     %           typvar_e_S(mxout_e,Grid_sets),
+     %           ip1_e(mxout_e,Grid_sets),
+     %           bit_e(mxout_e,Grid_sets),
+     %           mtval_e(LDIST_SIZ*mxout_e,Grid_sets),
+     %           mtout_e(Grid_sets),
+     %           xnio(LDIST_SIZ,Grid_sets) )
+      call set_dslab(0,xnio,LDIST_SIZ,Grid_sets)
+      do i=1,Grid_sets
+         mtout_e(i)=0
+      enddo
+*_______________________________________________________________________
+*
+*     4.0    Load and Get required fields
+*_______________________________________________________________________
+*
+      pnlkey(1)   = VMM_KEY(ut1)
+      pnlkey(2)   = VMM_KEY(vt1)
+      pnerr = vmmlod(pnlkey,2)
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+*_______________________________________________________________________
+*
+*     5.0     Compute real wind from image wind
+*_______________________________________________________________________
+*     Horizontal interpolation of image winds into PHI output grid.
+      grido = 0
+      gridi = 1
+      call uv_acg2g (t1,ut1,gridi,grido,LDIST_DIM,l_nk,i0,in,j0,jn)
+*
+*     Borders need to be filled for LAM configuration
+*
+      if (G_lam) then
+      do i=1,i0-1
+      do k=1,G_nk
+         do j=1,l_nj
+            t1(i,j,k)=t1(i0,j,k)
+         enddo
+      enddo      
+      enddo     
+      do i=in+1,l_ni
+      do k=1,G_nk
+         do j=1,l_nj
+            t1(i,j,k)=t1(in,j,k)
+         enddo
+      enddo
+      enddo
+      do j=1,j0-1
+      do k=1,G_nk
+         do i=1,l_ni
+            t1(i,j,k)=t1(i,j0,k)
+         enddo
+      enddo      
+      enddo     
+      do j=jn+1,l_nj
+      do k=1,G_nk
+         do i=1,l_ni
+            t1(i,j,k)=t1(i,jn,k)
+         enddo
+      enddo
+      enddo
+      endif
+
+      gridi = 2
+      call uv_acg2g (t2,vt1,gridi,grido,LDIST_DIM,l_nk,i0,in,j0,jn)
+*
+*     Borders need to be filled for LAM configuration
+*
+      if (G_lam) then
+      do i=1,i0-1
+      do k=1,G_nk
+         do j=1,l_nj
+            t2(i,j,k)=t2(i0,j,k)
+         enddo
+      enddo      
+      enddo     
+      do i=in+1,l_ni
+      do k=1,G_nk
+         do j=1,l_nj
+            t2(i,j,k)=t2(in,j,k)
+         enddo
+      enddo
+      enddo
+      do j=1,j0-1
+      do k=1,G_nk
+         do i=1,l_ni
+            t2(i,j,k)=t2(i,j0,k)
+         enddo
+      enddo      
+      enddo     
+      do j=jn+1,l_nj
+      do k=1,G_nk
+         do i=1,l_ni
+            t2(i,j,k)=t2(i,jn,k)
+         enddo
+      enddo
+      enddo
+      endif
+
+*     Calculation of real wind components from images.
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+
+      if(V4dg_conf.eq.0.or.(V4dg_di_L.or.V4dg_tl_L)) then
+      do j= j0, jn 
+         pr1 = Dcst_rayt_8 / geomg_cy_8(j)
+         do k=1,l_nk
+         do i= i0, in
+            t1(i,j,k) = pr1 * t1(i,j,k)
+            t2(i,j,k) = pr1 * t2(i,j,k)
+         end do
+         end do
+      end do
+      elseif(V4dg_ad_L) then
+      do j= j0, jn
+         pr1 = geomg_cy_8(j) / Dcst_rayt_8
+         do k=1,l_nk
+         do i= i0, in
+            t1(i,j,k) = pr1 * t1(i,j,k)
+            t2(i,j,k) = pr1 * t2(i,j,k)
+         end do
+         end do
+      end do
+      endif
+*     Calculate vertical derivative of UU,VV with respect to Out2_wlnph
+*
+      call verder (t3, t1, Out2_wlnph, 2.0,  2.0, LDIST_DIM, G_nk,
+     %                                          i0,in,j0,jn)
+      call verder (t4, t2, Out2_wlnph, 2.0,  2.0, LDIST_DIM, G_nk,
+     %                                          i0,in,j0,jn)
+*_______________________________________________________________________
+*
+*     6.0a    Output of (UU,VV,UV) Variables on ETA levels
+*_______________________________________________________________________
+      do 400 jj=1,F_dostep_max
+*        For every Timestep set that outputs at the current timestep
+
+      do 300 kk=1,Outd_sets
+
+      if (Outd_step(kk).eq.F_dostep(jj))then
+*           if the Timestep set for this request set Outd(kk) outputs
+*           at the current timestep (Lctl_step)
+
+         levset = Outd_lev(kk)
+
+         if (Level_typ(levset) .eq. 'E') then
+         do 200 ii=1,Outd_var_max(kk)
+
+            pnkey = 0
+
+            do i=1,cn3dvar
+               if (pni3dx(i) .eq. Outd_var(ii,kk)) then
+*     if variable is found in this request set Outd
+                  pl3dvar(i) = .true.
+                  pnkey = pnkey + 1
+               else
+                  pl3dvar(i) = .false.
+               endif
+            enddo
+            
+*     if any variables are requested for output in this set
+            if (pnkey.gt.0) then
+
+*
+               do 150 jjj = 1, Level_max(levset)
+                     k = nint(Level(jjj,levset))
+                     if (pl3dvar(pnuu)) then
+                          call insrtslab_d(t1,w2,LDIST_DIM,G_nk,k,
+     $                    kk,prmult(pnuu),pradd(pnuu),pni3dx(pnuu),
+     $                    Level_ip1(jjj,levset),mtout_e, var_e_S,
+     $                    typvar_e_S, ip1_e,bit_e,mtval_e,
+     $                    LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
+                     if (pl3dvar(pnvv)) then
+                          call insrtslab_d(t2,w2,LDIST_DIM,G_nk,k,
+     $                    kk,prmult(pnvv),pradd(pnvv),pni3dx(pnvv),
+     $                    Level_ip1(jjj,levset),mtout_e, var_e_S,
+     $                    typvar_e_S, ip1_e,bit_e,mtval_e,
+     $                    LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
+                     if (pl3dvar(pnuv)) then
+                        do j = j0, jn 
+                        do i = i0, in
+                           w1(i,j) = sqrt(t1(i,j,k)*t1(i,j,k)+
+     $                                    t2(i,j,k)*t2(i,j,k))
+                        enddo
+                        enddo
+                        call insrtslab_d(w1,w2,LDIST_DIM,1,1,
+     $                       kk,prmult(pnuv),pradd(pnuv),pni3dx(pnuv),
+     $                       Level_ip1(jjj,levset),mtout_e, var_e_S,
+     $                       typvar_e_S, ip1_e,bit_e,mtval_e,
+     $                       LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
+ 150           continue
+             endif
+ 200        continue
+            endif
+            endif
+ 300     continue
+ 400     continue
+      call writslab_d(Dslab_fhand_e,Dslab_slab_e,Dslab_nnio,'dm',
+     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+      do i=1,Grid_sets
+         mtout_e(i)=0
+      enddo
+*_______________________________________________________________________
+*
+*     7.0B   Output UU,VV,UV on PRESSURE levels
+*_______________________________________________________________________
+         do 800 jj=1,F_dostep_max
+*           For every Timestep set that outputs at the current timestep
+
+         do 700 kk=1,Outd_sets
+
+         if (Outd_step(kk).eq.F_dostep(jj))then
+*           if the Timestep set for this request set Outd(kk) outputs
+*           at the current timestep (Lctl_step)
+
+            levset = Outd_lev(kk)
+*
+            if (Level_typ(levset) .eq. 'P') then
+            do 600 ii=1,Outd_var_max(kk)
+
+               pnkey = 0
+               do i=1,cn3dvar
+                  if (pni3dx(i) .eq. Outd_var(ii,kk)) then
+*                 if 3-D variable is found in this request set
+                     pl3dvar(i) = .true.
+                     pnkey = pnkey + 1
+                  else
+                     pl3dvar(i) = .false.
+                  endif
+               enddo
+*         if any 3-D variables are requested for output in this set
+               if (pnkey.gt.0) then
+
+               do 550 jjj = 1, Level_max(levset)
+*
+                     prprlvl = Level(jjj,levset) * 100.0
+
+*       Calculate UU
+                     call prgen( w4,  t1, t3, Out2_wlnph,
+     %                    prprlvl, Out_cubuv_L, LDIST_DIM,G_nk)
+                     if(pl3dvar(pnuu)) then
+                          call insrtslab_d(w4,w2,LDIST_DIM,1,1,
+     $                    kk,prmult(pnuu),pradd(pnuu),pni3dx(pnuu),
+     $                    Level_ip1(jjj,levset),mtout_e, var_e_S,
+     $                    typvar_e_S, ip1_e,bit_e,mtval_e,
+     $                    LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
+
+*       Calculate VV
+                     call prgen( w5,  t2, t4, Out2_wlnph,
+     %                    prprlvl, Out_cubuv_L, LDIST_DIM,G_nk)
+                     if(pl3dvar(pnvv)) then
+                          call insrtslab_d(w5,w2,LDIST_DIM,1,1,
+     $                    kk,prmult(pnvv),pradd(pnvv),pni3dx(pnvv),
+     $                    Level_ip1(jjj,levset),mtout_e, var_e_S,
+     $                    typvar_e_S, ip1_e,bit_e,mtval_e,
+     $                    LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
+                     
+                     if(pl3dvar(pnuv)) then
+*     Calculate UV
+                        do j = j0, jn
+                        do i = i0, in
+                           w1(i,j) = sqrt(w4(i,j)*w4(i,j)+
+     $                                    w5(i,j)*w5(i,j))
+                        enddo
+                        enddo
+                        call insrtslab_d(w1,w2,LDIST_DIM,1,1,
+     $                       kk,prmult(pnuv),pradd(pnuv),pni3dx(pnuv),
+     $                       Level_ip1(jjj,levset),mtout_e, var_e_S,
+     $                       typvar_e_S, ip1_e,bit_e,mtval_e,
+     $                       LDIST_SIZ,mxout_e,Grid_sets)
+                     endif
+ 550         continue
+             endif
+ 600      continue
+          endif
+          endif
+ 700     continue
+ 800  continue
+      call writslab_d(Dslab_fhand_p,Dslab_slab_p,Dslab_nnio,'dp',
+     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+*
+*     unload work fields and unlock global output fields
+      deallocate ( var_e_S, ip1_e, bit_e, mtval_e,typvar_e_S,mtout_e, xnio )
+*
+      pnerr = vmmuln(pnlkey,2)
+*
+      return
+      end

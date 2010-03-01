@@ -1,0 +1,70 @@
+***s/r set_term - Job termination
+*
+#include <model_macros_f.h>
+*
+      subroutine set_term
+*
+#include "impnone.cdk"
+*
+*author
+*     michel roch - rpn - june 1993
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from setterm v1_03)
+* v2_10 - Desgagne M.       - additional logic for closing Lun_tsrs
+* v2_31 - Dugas B.          - re-activate zonal diagnostics
+*
+*object
+*	This subroutine closes the TS(time-series) from PE 0
+*       and the Zonal diagnostics files from each PE. It will
+*       also print VMM diagnostics
+*
+*arguments
+*	none
+*
+*implicits
+#include "lun.cdk"
+#include "ptopo.cdk"
+#include "schm.cdk"
+#include "p_serg.cdk"
+*
+*modules
+      integer vmmdiag
+      external vmmdiag
+**
+*
+      integer pnerr
+*
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+*C       1.    Close all zonal diagnostics standard files
+*C             ------------------------------------------
+*
+         call mzonopr(-1, Lun_zonl)
+*
+*
+*C       2.    release names/logical units connections and closes files
+*              --------------------------------------------------------
+*
+      if ((Ptopo_myproc.eq.0).and.(Schm_phyms_L).and.(P_serg_srsus_L)) 
+     $     call fclos(  Lun_tsrs)
+*
+*
+*C       3.    Get diagnostics from VMM package use
+*              ------------------------------------
+*
+ 300  continue
+*
+      pnerr = vmmdiag( )
+*
+ 1000 format(
+     %/ /,'TERMINATION OF THE RUN... CLOSING ALL FILES S/R SETTERM',
+     % /,'========================================================',
+     %/ /)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

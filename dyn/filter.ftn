@@ -1,0 +1,109 @@
+***s/r filter - filters given field using 2-delta x and/or dgf filter
+*
+#include <model_macros_f.h>
+*
+      subroutine filter (F_fd, F_w1, F_w2, F_lx, F_coef, F_d_S, 
+     $                   F_flag_L,DIST_DIM,Nk)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM,F_lx,Nk
+      real F_fd(DIST_SHAPE,Nk), F_w1(DIST_SHAPE,Nk), 
+     $     F_w2(DIST_SHAPE,Nk), F_coef
+      character*1 F_d_S
+      logical F_flag_L
+*
+*author
+*     andre methot
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_stepno      O           step number
+*----------------------------------------------------------------
+*
+* ______________________________________________________________________
+*         |                                             |          |   |
+*  NAME   |             DESCRIPTION                     |DIMENSIONS|IN |
+*         |                                             |          |OUT|
+* --------|---------------------------------------------|----------|---|
+*         |                                             |          |   |
+* F_fd | field to be filtered                        | fnis,fnjs|io |
+*         |                                             | fnks     |   |
+*         |                                             |          |   |
+* F_w1  | work field                                  | fnis,fnjs| - |
+*         |                                             | fnks     |   |
+*         |                                             |          |   |
+* F_lx  | number of pass into 2 delta x filter        | scalar   | i |
+*         |                                             |          |   |
+* F_coef  | 2 delta x filter coefficient                | scalar   | i |
+*         |                                             |          |   |
+*         |                                             |          |   |
+* F_d_S   | 'G' : topography is on geopotential grid    | scalar   | i |
+*         | 'U' : topography is on U wind component grid|          |   |
+*         | 'V' : topography is on V wind component grid|          |   |
+*         |                                             |          |   |
+* F_flag_L | switch: if true => for each pass in         | scalar   | i |
+*         |         2 delta x filter, do an additionnal |          |   |
+*         |         pass with negative a negative coefficient      |   |
+*         |                                             |          |   |
+*           THIS CODE DOES NOT ALLOW 'U' or 'V' GRID YET
+* ______________________________________________________________________
+*
+*implicit
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+*
+      integer i,j,k,n
+      real*8 whx,why
+      pointer (pawhx, whx(l_minx:l_maxx)), (pawhy, why(l_miny:l_maxy)) 
+**
+*        -----------------------------------------------------
+*     IN CASE WHERE ZERO IS NOT QUITE EQUAL TO ZERO
+
+      if ( abs(F_coef) .lt. 0.0001 ) return
+*
+      if ( ( F_coef .gt. 0. ) .and. ( F_coef .le. 0.5 ) ) then
+         pawhx = 0
+         pawhy = 0 
+         if ((F_d_S.eq.'G').or.(F_d_S.eq.'V'))
+     $        pawhx= loc(geomg_hx_8(l_minx))
+         if ((F_d_S.eq.'G').or.(F_d_S.eq.'U'))
+     $        pawhy= loc(geomg_hy_8(l_miny))
+         if (F_d_S.eq.'U') pawhx= loc(geomg_hxu_8(l_minx))
+         if (F_d_S.eq.'V') pawhy= loc(geomg_hyv_8(l_miny))
+*
+         do n=1,F_lx
+         do k=1,Nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            F_w2(i,j,k) = F_fd(i,j,k)
+         end do
+         end do
+         end do
+         call xyfil (F_fd,F_w2,F_w1,F_coef,whx,why,.false.,LDIST_DIM,Nk)
+         if ( F_flag_L ) then 
+         do k=1,Nk
+         do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+            F_w2(i,j,k) = F_fd(i,j,k)
+         end do
+         end do
+         end do
+         call xyfil(F_fd,F_w2,F_w1,-F_coef,whx,why,.false.,LDIST_DIM,Nk)
+         endif
+         end do
+      else   ! THE RANGE OF VALIDITY OF THE COEFFICIENT IS NOT RESPECTED
+         call gefstop('filter')
+      endif
+*
+*-------------------------------------------------------------
+*-------------------------------------------------------------
+*
+      return
+      end

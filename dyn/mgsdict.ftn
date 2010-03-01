@@ -1,0 +1,258 @@
+***s/r mgsdict
+*
+#include <model_macros_f.h>
+      subroutine mgsdict (ni,nj,lindex,lachaine)
+#include "impnone.cdk"
+*
+      character*(*) lachaine
+      integer ni,nj,lindex
+*
+*author M. Desgagne
+*
+*revision
+* v2_20 - Pellerin P.          - Adapted from MC2 
+* v2_21 - Desgagne M.          - To decode etk,typ,interp,seq
+*                                
+*
+*object
+*    Manages the dictionary describing bus GEOBUS. The recognized token
+*    in "lachaine" for GEOBUS are 'VN=  ;EN=  ;ETK= ;TYP= ;INTERP= ;
+*    SEQ= ;VS= ;' where VN is the internal physics name, EN is the
+*    external FST name, ETK is the FST etikette, TYP is the FST record
+*    type, INTERP is the type of horizontal interpolation function,
+*    SEQ is a search pattern and VS is for the variable shape 
+*    (accepted shapes are SLB and ROW with +, - or * followed by an 
+*    integer). SEQ is a search pattern than can take any combination
+*    of 1 or 2 of the following options:
+*          A   for analysis, 
+*          C   for climatology 
+*          V   for weighted averaged climatological
+*    For exemple SEQ=AV means that the search will first be done
+*    in the analysis. If the field is not found, the search will
+*    continue in the climatology trying to perform a weighted 
+*    averaged. If the field is yet not found, the entry program 
+*    will stop.
+*    Each variable also has a starting index in 
+*    GEOBUS (geopar(*,1)), a length (geopar(*,2)) and a multiplicity
+*    factor (geopar(*,3)). 
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  ni           I             dimension along X
+*  nj           I             dimension along Y
+*  lindex       O             starting index on the bus
+*  lachaine     I             string identifying the variable attributes
+*----------------------------------------------------------------
+*
+*implicit
+#include "p_bus.cdk"
+*
+**
+*
+      character*3   shape
+      character*8   varname,stdname,etk,typ,interp,seq
+      character*120 string
+      integer fadd,fmul
+      integer i,esp,longueur
+*
+*-------------------------------------------------------------------
+*
+      call low2up  (lachaine,string)
+      call mgsdeco (varname,stdname,shape,etk,typ,interp,seq,
+     $                                     fadd,fmul,string)
+*
+      lindex = 0
+      esp    = ni*nj
+*
+      do 10 i=1,p_bgeo_top
+         if (varname.eq.geonm(i,1)) then
+            if (geopar(i,2).ne.(esp * fmul + fadd)) then
+               write (6,902) varname,geopar(i,2),(esp * fmul + fadd)
+               stop
+            endif
+            lindex = geopar(i,1)
+            goto 601
+         endif
+ 10   continue 
+*
+      do i=longueur(seq)+1,len(seq)
+         seq(i:i) = ' '
+      end do
+      p_bgeo_top = p_bgeo_top + 1
+      esp    = esp * fmul + fadd
+      geonm (p_bgeo_top,1) = varname
+      geonm (p_bgeo_top,2) = stdname
+      geonm (p_bgeo_top,3) = etk
+      geonm (p_bgeo_top,4) = typ
+      geonm (p_bgeo_top,5) = interp
+      geonm (p_bgeo_top,6) = seq
+      geopar(p_bgeo_top,1) = p_bgeo_siz + 1
+      geopar(p_bgeo_top,2) = esp
+      geopar(p_bgeo_top,3) = max(esp/(ni*nj),1)
+      p_bgeo_siz = geopar(p_bgeo_top,1) + esp - 1
+      lindex = geopar(p_bgeo_top,1)
+*
+
+ 601  continue
+* 
+ 902  format (/1x,"==> STOP IN MGSDICT: CONFLICT IN '",A8,
+     $            "' DIMENSION."/4x,"ALREADY ACCEPTED: ",i8/11x,
+     $            "ATTEMPTED: ",i8/)
+*
+*-------------------------------------------------------------------
+      return
+      end
+*
+***s/r mgsdeco
+*
+      subroutine mgsdeco (cvn,csn,cvs,cetk,ctyp,cinterp,cseq,
+     $                                     fadd,fmul,string)
+#include "impnone.cdk"
+*
+      character*(*) cvn,csn,cetk,ctyp,cinterp,cseq,string
+      character*3 cvs
+      integer fadd,fmul
+*
+*author   Michel Desgagne       Nov   1995
+*
+*revision
+*
+*object
+*    Decode "string" in order to get the formal name recognized in 
+*    the physics (cvn), the FST name (csn), the variable shape
+*    (cvs) and the additive and multiplicative factor (fadd and fmul).
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  cvn          O              internal physics name
+*  csn          O              corresponding FST name
+*  cvs          O              shape (ROW or SLB)
+*  fadd         O              additive factor
+*  fmul         O              multiplicative factor
+*  string       I              input description string
+*----------------------------------------------------------------
+*
+**
+      character*120 dum120
+      integer ivn,isn,ivs,ietk,ityp,iinterp,iseq
+      integer ideb,ifin,lst,flag
+*-------------------------------------------------------------------
+*
+      lst    = len(string)
+      ivn    = index(string,"VN=")
+      isn    = index(string,"EN=")
+      ivs    = index(string,"VS=")
+      ietk   = index(string,"ETK=")
+      ityp   = index(string,"TYP=")
+      iinterp= index(string,"INTERP=")
+      iseq   = index(string,"SEQ=")
+*
+      if (ivn.lt.1) then
+         write (6,800) "STOP IN DECOSTR: VN=[NAME] (MANDATORY)",string
+         stop
+      endif
+      if (isn.lt.1) then
+         write (6,800) "STOP IN DECOSTR: SN=[STD NAME] (MANDATORY)",
+     $                 string
+         stop
+      endif
+      if (ivs.lt.1) then
+         write (6,800) "STOP IN DECOSTR: VS=[SHAPE] (MANDATORY)",string
+         stop
+      endif
+*
+      dum120 = string(ivn+3:lst)
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      cvn    = dum120(1:ifin)
+      if (cvn.eq." ")  then
+         write(6,800) "STOP IN DECOSTR: UNADMISSIBLE VN=(NAME)",string
+         stop
+      endif
+*
+      dum120 = string(isn+3:lst)
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      csn    = dum120(1:ifin)
+      if (csn.eq." ")  then
+         write(6,800) "STOP IN DECOSTR: UNADMISSIBLE SN=(STD NAME)",
+     $                 string
+         stop
+      endif
+*
+      dum120 = string(ivs+3:lst)
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      cvs    = dum120(1:ifin)
+      if ((cvs.ne."SLB").and.(cvs.ne."ROW"))  then
+         write(6,800) "STOP IN DECOSTR: UNADMISSIBLE VS=(SHAPE)",string
+         stop
+      endif
+*
+      fadd = 0
+      ideb = index(string,cvs//"+") + 4
+      if (ideb.gt.4) then
+         dum120 = string(ideb:lst)
+         ifin   = index (dum120,';') - 1
+         if (ifin.lt.0) ifin = 120
+         read (dum120(1:ifin),702,iostat=flag) fadd
+         if (flag.gt.0) fadd = 0
+      endif
+      ideb = index(string,cvs//"-") + 4
+      if (ideb.gt.4) then
+         dum120 = string(ideb:lst)
+         ifin   = index (dum120,';') - 1
+         if (ifin.lt.0) ifin = 120
+         read (dum120(1:ifin),702,iostat=flag) fadd
+         if (flag.gt.0) fadd = 0
+         fadd = -fadd
+      endif
+*
+      fmul = 1
+      ideb = index(string,cvs//"*") + 4
+      if (ideb.gt.4) then
+         dum120 = string(ideb:lst)
+         ifin   = index (dum120,';') - 1
+         if (ifin.lt.0) ifin = 120
+         read (dum120(1:ifin),702,iostat=flag) fmul
+         if (flag.gt.0) fmul = 1
+      endif
+*
+      cetk = " "
+      if (ietk.gt.0) then
+         dum120 = string(ietk+4:lst)
+         ifin   = index (dum120,';') - 1
+         if (ifin.lt.0) ifin = 120
+         cetk    = dum120(1:ifin)
+      endif
+      ctyp = " "
+      if (ityp.gt.0) then
+         dum120 = string(ityp+4:lst)
+         ifin   = index (dum120,';') - 1
+         if (ifin.lt.0) ifin = 120
+         ctyp    = dum120(1:ifin)
+      endif
+      cinterp = " "
+      if (iinterp.gt.0) then
+         dum120 = string(iinterp+7:lst)
+         ifin   = index (dum120,';') - 1
+         if (ifin.lt.0) ifin = 120
+         cinterp    = dum120(1:ifin)
+      endif
+      cseq = " "
+      if (iseq.gt.0) then
+         dum120 = string(iseq+4:lst)
+         ifin   = index (dum120,';') - 1
+         if (ifin.lt.0) ifin = 120
+         cseq    = dum120(1:ifin)
+      endif
+*
+ 702  format (i8)
+ 800  format (/1x,a,/"STRING= '",a,"'"/)
+*
+*-------------------------------------------------------------------
+      return
+      end
+*

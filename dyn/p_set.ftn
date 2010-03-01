@@ -1,0 +1,296 @@
+***s/r p_set - initialize the physics model configuration
+*
+#include <model_macros_f.h>
+*
+      subroutine p_set
+*
+#include "impnone.cdk"
+*
+*author
+*     M. Desgagne 
+*
+*revision
+* v2_00 - Desgagne/Lee       - initial MPI version
+* v2_10 - Lee V.             - create TS file only if time-series are requested
+* v2_11 - Desgagne M.        - time series file now ../time_series.bin
+* v2_20 - Pellerin P.        - modification related to physics 3.66
+* v2_21 - Dugas B.           - activate climate mode
+* v2_21 - Desgagne M.        - rpn_comm stooge for MPI
+* v2_31 - Dugas B.           - add new variable P_zong_nbin and
+*                              restore P_zong_znoff_L
+* v2_32 - Desgagne M.        - add broadcast of common pout_i
+* v2_32 - Dugas B.           - add p_rad_nivl
+* v3_00 - Laroche S.         - initialize simplified physics variable
+*                              add namelist simplified physics
+*
+*object
+*       See above id
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "grd.cdk"
+#include "xst.cdk"
+#include "mem.cdk"
+#include "lun.cdk"
+#include "mult.cdk"
+#include "out1.cdk"
+#include "path.cdk"
+#include "p_out.cdk"
+#include "p_nml.cdk"
+#include "ptopo.cdk"
+*
+*modules
+      character*256 fln1_S,fln2_S
+      logical inctphy2,set_dcst
+      integer fnom,longueur
+      external inctphy2, set_dcst, fnom, longueur
+*
+      integer i,err,nrec,bidon,status_nml
+      real deg_2_rad
+**
+*     ---------------------------------------------------------------
+*
+      if (lun_out.gt.0) write(Lun_out,9001)
+*
+      if (lun_out.gt.0) write(Lun_out,9002)
+
+      if (.not.inctphy2(set_dcst,lun_cte,lun_out)) then
+         if (Lun_out.gt.0) write (Lun_out,9003)
+         stop
+      endif
+*
+      P_rad_schm_s   = 'oldrad' 
+      P_rad_knt      = 3 
+      P_rad_fomic_L  = .false.
+      P_rad_ftp_s    = "STD"
+*
+      do i=1,CNMXRAD+1
+         P_rad_nivl(i) = 0
+      enddo
+*
+      P_clim_clima_L = .false.
+      P_clim_ininc_L = .false.
+*
+      P_pbl_z0tcst_L = .true.
+      P_pbl_drag_L   = .false.
+      P_pbl_ocean_L  = .false.
+      P_pbl_evap_L   = .false.
+      P_pbl_dbgvv_L  = .false.
+      P_pbl_truew_L  = .false.
+      P_pbl_snwmlt_L = .false.
+      P_pbl_stomat_L = .false.
+      P_pbl_typsol_L = .false.
+      P_pbl_bndlr_s  = 'NIL'
+      P_pbl_mix_s    = 'BLAC62'
+      P_pbl_cst      = 2.3E+06
+      P_pbl_csn      = 1.0E+06
+      P_pbl_csg      = 2.0E+06
+      P_pbl_kst      = 0.5E-06
+      P_pbl_ksn      = 0.6E-06
+      P_pbl_ksg      = 1.1E-06
+      P_pbl_valml_8  = 1.0
+      P_pbl_mllat_8  = 30.0
+      P_pbl_valeq_8  = 1.0
+      P_pbl_eqlat_8  = 5.0
+      P_pbl_nslof    = 0
+
+      P_pbl_albkg_L  = .false. 
+      P_pbl_agreg_L  = .false.
+      P_pbl_cortm_L  = .true.
+      P_pbl_corts_L  = .false.
+      P_pbl_drylp_L  = .true.
+      P_pbl_monta_L  = .true.
+      P_pbl_iceme_L  = .false.
+*
+      do 50 i=1,cnmaxad
+         P_pbl_spng(i) = 0.0
+ 50   continue
+*
+      P_cond_satu_L  = .false.
+      P_cond_ilwc_L  = .false.
+      P_cond_filtend = -1
+      P_cond_xofset  = Grd_left
+      P_cond_xblnd   = 1
+      P_cond_yofset  = Grd_belo
+      P_cond_yblnd   = 1
+      P_cond_conv_s  = 'NIL'
+      P_cond_stcon_s = 'NIL'
+      P_cond_shlct_s = 'NIL'
+      P_cond_dzsedi  = -1.
+      P_cond_hc      = 0.0
+      P_cond_hf      = 0.0
+      P_cond_hm      = 0.0
+      P_cond_filco   = 0.0
+      P_cond_kfcmom_L= .false.
+      P_cond_kfctrig = 0.05
+      P_cond_kfcrad  = 1500.
+      P_cond_kfcdepth= 4000.
+      P_cond_kfcdlev = 0.5
+      P_cond_kfcdet  = 0.
+      P_cond_kfctimec= 3600.
+      P_cond_kfctimea= 3600.
+*
+      P_gwd_s        = 'GWD86'
+*
+      P_serg_srsus_L = .false.
+      do i=1,cnsrsfm
+         P_serg_srsrf_s(i) = ' '
+      end do
+      do i=1,cnsrpfm
+         P_serg_srprf_s(i) = ' '
+      end do
+      P_serg_srwri      = 1
+      P_serg_serstp     = 99999
+*
+      P_zong_znli = 0
+      P_zong_nbin = G_nj
+      P_zong_znmod = 1
+      P_zong_znoff_L = .false.
+      P_zong_znsus_L = .false.
+      do i=1,CNZNSFM
+         P_zong_znsrf_s(i) = ' '
+      end do
+      do i=1,CNZNSFM
+         P_zong_znprf_s(i) = ' '
+      end do
+*
+*
+*     Simplified physics section
+*     --------------------------
+      P4d_sigma_wrt  = .true.
+      P4d_kdphys     = 0
+      P4d_pbl        = 0
+      P4d_lsc        = 0
+      P4d_sgo        = 0
+*
+      P_out_moyhr = 0
+*
+      if (lun_out.gt.0) then
+         status_nml = -1
+         write(Lun_out,*) 'Reading namelist from: ',
+     $                    Path_nml_S(1:longueur(Path_nml_S))
+         err = fnom (lun_in, Path_nml_S, 'SEQ' , nrec)
+         rewind ( Lun_in )
+         read (Lun_in, nml=physics, end = 70)
+         write(Lun_out, nml=physics_p)
+         status_nml = 0
+ 70      rewind ( Lun_in )
+         read (Lun_in, nml=simplified_physics, end = 80)
+         write(Lun_out, nml=simplified_physics_p)
+ 80      continue
+         call fclos (lun_in)
+      endif
+*
+      call RPN_COMM_bcast (status_nml,1,"MPI_INTEGER",0,"grid",err)
+      if (status_nml.lt.0) then
+         if (lun_out.gt.0) write (lun_out,9004)
+         stop
+      endif
+*
+*     Broadcast the data received from physics namelist
+      COMMON_BROADCAST(prad_c)
+      COMMON_BROADCAST(prad_l)
+      COMMON_BROADCAST(prad_i)
+      COMMON_BROADCAST(pclim_l)
+      COMMON_BROADCAST(ppbl_c)
+      COMMON_BROADCAST(ppbl_l)
+      COMMON_BROADCAST(ppbl_i)
+      COMMON_BROADCAST(ppbl_r)
+      COMMON_BROADCAST(ppbl_r8)
+      COMMON_BROADCAST(pgwd_c)
+      COMMON_BROADCAST(pcond_c)
+      COMMON_BROADCAST(pcond_l)
+      COMMON_BROADCAST(pcond_i)
+      COMMON_BROADCAST(pcond_r)
+      COMMON_BROADCAST(pout_i)
+      COMMON_BROADCAST(pserg_l)
+      COMMON_BROADCAST(pserg_i)
+      COMMON_BROADCAST(pserg_c)
+      COMMON_BROADCAST(pzong_i)
+      COMMON_BROADCAST(pzong_c)
+      COMMON_BROADCAST(pzong_l)
+      COMMON_BROADCAST(P4d_simp_i)
+      COMMON_BROADCAST(P4d_simp_l)
+*
+      P_rad_datim(14) = Out1_date
+      call newdate (Out1_date,P_rad_datim,bidon,-4)
+*
+      P_pbl_prsol(1)=P_pbl_cst
+      P_pbl_prsol(2)=P_pbl_csn
+      P_pbl_prsol(3)=P_pbl_csg
+      P_pbl_prsol(4)=P_pbl_kst
+      P_pbl_prsol(5)=P_pbl_ksn
+      P_pbl_prsol(6)=P_pbl_ksg
+*
+*     conversion to radians and insure latitudes are positive
+*     (see subroutine vlatspng)
+*
+      deg_2_rad = Dcst_pi_8/180.
+*
+      P_pbl_mllat_8 = ( abs(P_pbl_mllat_8) * deg_2_rad )
+      P_pbl_eqlat_8 = ( abs(P_pbl_eqlat_8) * deg_2_rad )
+*
+      if (P_serg_srsus_L) then
+         if (Lun_out.gt.0) then
+            err = fnom (lun_tsrs, '../time_series.bin', 
+     $                            'SEQ+FTN+UNF', nrec)
+ 600        read(lun_tsrs,end=700)
+            goto 600
+ 700        backspace(lun_tsrs)
+         endif
+         call set_xst ()
+      else
+         Xst_nstat = 0
+      endif
+*
+      fln1_S  = 'dfvperm_1'
+      fln2_S  = 'dfvperm_2'
+      if (.not.Mem_phyncore_L) then
+         if (lun_out.gt.0) then
+            write(lun_out,5000)
+            write(lun_out,*)'Lun_waphy=',Lun_waphy,'file=',fln1_S
+            write(lun_out,*)'Lun_wapta=',Lun_wapta,'file=',fln2_S
+         endif
+         err = fnom(  lun_waphy,fln1_S, 'RND'         , 0)
+         err = fnom(  lun_wapta,fln2_S, 'RND'         , 0)
+      else
+         if (lun_out.gt.0) write(lun_out,7000)
+      endif
+*
+      if ((G_lam).and.(P_cond_filco.ne.0.)) then
+         P_cond_filco = 0.
+         if (lun_out.gt.0) write(lun_out,7100)
+      endif
+*
+#if defined (MULTI)
+#if defined (NEC)
+      call plasgn (Mult_lkphy)
+#endif
+#endif
+      return
+ 5000 format(
+     %/,'INITIALIZATION OF LOGICAL UNITS. OPEN WA FILES (S/R SET_DYNC)',
+     %/,'=============================================================')
+ 7000 format(/,'PHYSICS REMAINS INCORE',
+     %       /,'======================')
+ 7100 format(/,'IN LAM CONFIGURATION, P_cond_filco IS MAINTAINED TO 0. '
+     $         'FOR NOW',
+     %       /,'=====================================================')
+ 9001 format(
+     +/,'INITIALIZING PHYSICS CONFIGURATION FOR MODEL (S/R P_SET)',
+     +/,'========================================================') 
+*
+ 9002 format(/,' Initializing physical constants',/)
+*
+ 9003 format(
+     $/,'PROBLEM INITIALIZATING PHYSICAL CONSTANTS in (S/R inctphy2)',
+     +/,'====================== ABORT ==============================')
+*
+ 9004 format(
+     $/,'PROBLEM WITH NAMELIST physics OR NAMELIST is not found',
+     +/,'====================== ABORT =========================')
+      end

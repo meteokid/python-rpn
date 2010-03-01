@@ -1,0 +1,18 @@
+#if defined (DOC)
+*
+*revision
+* v2_20 - Lee V.       - initial version
+*
+***comdeck version.cdk
+*
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Version_S          | label of the version of the current code        |
+*----------------------------------------------------------------------
+*
+#endif
+      character*10 Version_S
+      save Version_S
+      data Version_S/'V_2.3.1'/

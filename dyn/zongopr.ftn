@@ -1,0 +1,135 @@
+***s/r zongopr  - controls zonal diagnostics package
+*
+#include <model_macros_f.h>
+*
+      subroutine zongopr(F_opr, F_val)
+*
+#include "impnone.cdk"
+*
+        integer F_opr, F_val
+*
+*author - andre methot - aug 94 - v0_14
+*
+*revision
+* v0_14 - andre methot  - initial version
+* v0_16 - Andre Methot  - Arakawa "C" grid model
+* v1_02 - Andre Methot  - remove calls mzonopr level 4
+* v1_02 - Pellerin/Methot - add call mzonopr level 5 for multi-tasking
+* v2_31 - Bernard Dugas - Adapt to GEMDM
+*
+*language
+*	fortran 90
+*
+*object(zongopr)
+*              This subroutine is an interface between the
+* model and the zonal diagnostics package. It controls zonal
+* diagnostics initialisation, suspension, extraction,
+* writting to disk, etc...
+*
+*	
+*arguments
+* ______________________________________________________________________
+*         |                                             |          |   |
+*  NAME   |             DESCRIPTION                     |DIMENSIONS|IN |
+*         |                                             |          |OUT|
+* --------|---------------------------------------------|----------|---|
+* F_opr   | indicates what is the current set of        |          |   |
+*         |           operations to perform.            | scalar   |i  |
+*         |                                             |          |   |
+*         | F_opr = 1: Begining of integration or       |          |   |
+*         |            Begining of a clone job          |          |   |
+*         | F_opr = 2: Begining of a timestep           |          |   |
+*         | F_opr =-2: End of a timestep                |          |   |
+*         | F_opr = 3: Begining of a physic slice       |          |   |
+*         | F_opr =-3: End of a physic slice            |          |   |
+*         |                                             |          |   |
+* F_val   | slice number                                | scalar   |i  |
+*         |             ( used only if F_opr = 3 or -3 )|          |   |
+* --------|---------------------------------------------|----------|---|
+*
+*Notes
+*
+*implicits
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "lctl.cdk"
+#include "ptopo.cdk"
+*
+*
+*modules
+*
+      external zongini, zongoff, mzonopr
+**
+*     ---------------------------------------------------------------
+*
+      if ( F_opr .eq. 1 ) then
+*
+*     ------------------------------------------------------
+*C    1- Begining of integration or Begining of a clone job
+*     ------------------------------------------------------
+*
+*        1.1 Initialization of diagnostic package and
+*            initialization of extractors if required
+*            ----------------------------------------
+*
+         call zongini()
+         call mzonopr(7,l_i0)
+         call mzonopr(8,l_j0)
+         call mzonopr(5,max(1,Ptopo_npeMacro))
+         call mzonopr(1, Lun_zonl)
+*
+*
+      else if ( F_opr .eq. 2 ) then
+*
+*     ------------------------------------------------------
+*C    2a- Begining of a timestep
+*     ------------------------------------------------------
+*
+*        2a.1 Resume/Suspend of extractions if required
+*            ------------------------------------------
+*
+         call zongoff()
+*
+*        2a.2 Perform timestep increment diagnostics
+*            --------------------------------------
+*
+         call mzonopr(2, Lctl_step)
+*
+*
+      else if ( F_opr .eq. -2 ) then
+*
+*     -------------------------------------------------------
+*C    2b- End of a timestep
+*     -------------------------------------------------------
+*
+*        2b.1 Perform end of timestep signal for zonal diagnostics
+*            ----------------------------------------------------
+*
+         call mzonopr(-2, Lctl_step)
+*
+      else if ( F_opr .eq. 3 ) then
+*
+*     -------------------------------------------------------
+*C    3a- Begining of a physic slice
+*     --------------------------------
+*     -------------------------------------------------------
+*
+         call mzonopr(3, F_val)
+*
+      else if ( F_opr .eq. -3 ) then
+*
+*     -------------------------------------------------------
+*C    3b- End of a physic slice
+*     --------------------------------
+*     -------------------------------------------------------
+*
+         call mzonopr(-3, F_val)
+*
+      endif
+*---------------------------------------------------------------
+*---------------------------------------------------------------
+*
+*
+      return
+      end
+

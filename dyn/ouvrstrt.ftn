@@ -1,0 +1,60 @@
+***s/r ouvrstrt - Opens the restart file
+*
+#include <model_macros_f.h>
+*
+      integer function ouvrstrt ()
+*
+#include "impnone.cdk"
+*
+*author
+*     B. Dugas - Mars 2001
+*
+*revision
+* v2_30 - Dugas B.          - initial MPI version (from rdrstrt)
+*
+*object
+*
+*     Try to open the GEMDM restart file and at the same time
+*     defind the Lun_rstrt unit number and Rstri_rstn_L flag.
+*     This function is called by p_config and rdrstrt
+*	
+*arguments
+*	none
+*
+*implicits
+#include "lun.cdk"
+#include "rstr.cdk"
+#include "lctl.cdk"
+#include "path.cdk"
+#include "ptopo.cdk"
+*
+**
+      integer fnom,wkoffit
+      external fnom,wkoffit
+      integer ier
+*
+*     ---------------------------------------------------------------
+*
+**    Do something when Lun_rstrt is .LE. zero, otherwise do nothing
+*
+      if (Lun_rstrt .le. 0) then
+*
+         Lun_rstrt = 0
+         ier = wkoffit('restart') 
+*
+         if (ier.ge.-1) ier = fnom( Lun_rstrt,'restart','RND+OLD',0 )
+*
+         if (ier.lt.0) then
+            Rstri_rstn_L = .false.
+         else
+            Rstri_rstn_L = .true.
+         endif
+*
+      endif
+*
+      ouvrstrt = Lun_rstrt
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

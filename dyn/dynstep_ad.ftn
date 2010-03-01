@@ -1,0 +1,146 @@
+***s/r dynstep_ad -  ADJ of dynstep_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine dynstep_ad
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - ADJ of HO option 
+*                           - ADJ of vertical sponge layer 
+* v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
+*
+*object
+*     ADJ of dynstep_tl 
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "orh.cdk"
+#include "init.cdk"
+#include "lctl.cdk"
+#include "rstr.cdk"
+#include "schm.cdk"
+*
+      integer pnitraj
+      logical first_L, secon_L
+**
+*     ---------------------------------------------------------------
+      if (Lun_debug_L) write(Lun_out,1000)
+*
+*     first_L is TRUE  for the first timestep
+*           or the first timestep after digital filter initialisation
+*
+      first_L = (Lctl_step.eq.1).or.(Rstri_idon_L .and. 
+     $           Lctl_step.eq.(Init_dfnp+1)/2)
+*
+*     secon_L is TRUE  for the second timestep
+*            or the second timestep after digital filter initialisation
+*
+      secon_L = (Lctl_step.eq.2).or.(Rstri_idon_L .and. 
+     $           Lctl_step.eq.(Init_dfnp+1)/2 + 1)
+*
+*     Orh_crank_L is TRUE for a time step using C-N procedure
+*
+      Orh_crank_L= first_L .or. ( secon_L .and. ( Schm_xwvt3 .gt. 0 )) 
+     $                     .or. ( mod(Lctl_step-1,Schm_modcn) .eq. 0 )
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+      Orh_icn = Schm_itcn
+*
+*     --------------
+*     END TRAJECTORY
+*     --------------
+*
+*           ADJ of
+*           ------------------------------------------------------------
+*C      4.  When the timestep is completed, rename all the
+*C          variables at time level t1 -> t0 and rename all the
+*C          variables at time level t0 -> t1 for the next timestep
+*           ------------------------------------------------------------
+      call t22t0_ad( )
+      call t02t1_ad( )
+      call t12t2_ad( )
+*
+*          ADJ of
+*          ------------------------------------------------------------
+*C      3.  Perform the timestep
+*          ------------------------------------------------------------
+*
+      call tstpdyn_ad( Schm_itraj )
+*
+*          ADJ of
+*          ------------------------------------------------------------
+*C      2. Compute 3D winds at time t0-dt/2 (th)
+*          ------------------------------------------------------------
+*
+      if ( Orh_crank_L ) then
+*
+         if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
+*
+         do Orh_icn = Schm_itcn-1,1,-1
+*
+*           ADJ of
+*C          Compute the average of the t1 and t0 winds
+*
+            call wndth_ad( )
+*
+*           ADJ of
+*C          Perform dummy timestep
+*
+            pnitraj = Schm_itraj
+            if( Orh_icn.eq.1 .and. first_L ) pnitraj = max( 5, Schm_itraj )
+*
+            call tstpdyn_ad( pnitraj)
+*
+         end do
+         if (Lun_debug_L) write(Lun_out,1006)
+*
+*          ADJ of
+*C         2.1 DUMMY TIME STEPS AND WIND INTERPOLATION
+*
+*          first guess for winds and positions at th
+*
+           call wdpers_ad( )
+*
+      else
+*
+      endif
+*
+*           ADJ of
+*           -------------------------------------------------------
+*C      1.  Conditionnal:
+*C
+*C           1) set the positions at th as the positions of points grids
+*C
+*           --------------------------------------------------------
+*
+      if ( first_L) then
+         call pospers_ad( )
+      endif
+*
+*     ===================
+*     END OF ONE TIMESTEP
+*     ===================
+*
+ 1000 format(
+     +/,'ADJ of CONTROL OF DYNAMICAL STEP: (S/R DYNSTEP_AD)',
+     +/,'=================================================='/)
+ 1005 format(
+     $3X,'ADJ of ##### Crank-Nicholson iterations: ===> PERFORMING',I3,
+     $   ' timestep(s) #####',/)
+ 1006 format(
+     $/3X,'ADJ of ##### Crank-Nicholson iterations: ===> DONE... #####',/)
+*
+      return
+      end

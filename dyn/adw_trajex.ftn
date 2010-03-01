@@ -1,0 +1,95 @@
+***s/r adw_trajex - compute positions at origin (o) by 
+*                   extrapolation using positions at 
+*                   mid-trajectory (m)
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_trajex ( F_xto,  F_yto,  F_xcto, F_ycto,
+     %                        F_zcto, F_xctm, F_yctm, F_zctm,i0,in,j0,jn)
+*
+#include "impnone.cdk"
+*
+      real   F_xto (*), F_yto (*), F_xcto(*), F_ycto(*),
+     %       F_zcto(*), F_xctm(*), F_yctm(*), F_zctm(*)
+      integer i0,in,j0,jn
+*
+*author
+*     alain patoine
+*
+*revision
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_xto        | upstream x positions at origin                  |  o  |
+* F_yto        | upstream y positions at origin                  |  o  |
+* F_xcto       | upstream x cartesian positions at origin        |  o  |
+* F_ycto       | upstream y cartesian positions at origin        |  o  |
+* F_zcto       | upstream z cartesian positions at origin        |  o  |
+* F_xctm       | upstream x cartesian positions at mid-traj.     |  i  |
+* F_yctm       | upstream y cartesian positions at mid-traj.     |  i  |
+* F_zctm       | upstream z cartesian positions at mid-traj.     |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+************************************************************************
+      integer i,j,k, n, ij, nij, nijk
+*
+      real*8 prx, pry, prz, prdot2, r2pi_8, two
+*
+      parameter (two = 2.0)
+************************************************************************
+      nij  = l_ni*l_nj
+      nijk = l_ni*l_nj*l_nk
+*
+      r2pi_8 = two * Dcst_pi_8
+************************************************************************
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij+((j-1)*l_ni) + i
+*
+         ij = mod( n-1, nij ) + 1
+*
+         pry = dble(Adw_cy2d_8(ij))
+         prx = dble(Adw_cx2d_8(ij)) * pry
+         pry = dble(Adw_sx2d_8(ij)) * pry
+         prz = dble(Adw_sy2d_8(ij))
+*
+         prdot2 = 2.0 * ( prx * dble(F_xctm(n)) +
+     %                    pry * dble(F_yctm(n)) +
+     %                    prz * dble(F_zctm(n)) )
+*
+         F_xcto(n) = prdot2 * dble(F_xctm(n)) - prx
+         F_ycto(n) = prdot2 * dble(F_yctm(n)) - pry
+         F_zcto(n) = prdot2 * dble(F_zctm(n)) - prz
+*
+         F_xto(n) = atan2( F_ycto(n), F_xcto(n) )
+*
+         F_yto(n) = asin (max(-1.,min(1.,F_zcto(n))) )
+*
+      enddo
+      enddo
+      enddo
+*
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij+((j-1)*l_ni) + i
+         if ( F_xto(n) .lt. 0.0 ) F_xto(n) = F_xto(n) + r2pi_8
+      enddo
+      enddo
+      enddo
+*
+      return
+      end

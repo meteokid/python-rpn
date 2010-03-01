@@ -1,0 +1,404 @@
+***s/r set_world_view1
+*
+#include <model_macros_f.h>
+*
+      subroutine set_world_view1 (F_npx, F_npy)
+*
+#include "impnone.cdk"
+*
+      integer F_npx, F_npy
+*
+*author
+*     M. Desgagne    - Jan 2000
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Desgagne M.       - change output file name
+* v2_10                       remove Schm_ithel (not used)
+* v2_10 - Lee V.            - introduce maxcfl_x and maxcfl_y in 
+* v2_10                       gem_cfgs to control halo thickness
+* v2_10 - Tanguay M.        - add namelist 4D-Var
+* v2_10 - Qaddouri&Desgagne - higher order diffusion operator
+* v2_11 - Desgagne M.       - vertical sponge layer
+* v2_20 - Lee V.            - put version number of code in "exdb"
+* v2_21 - Lee V.            - to read pilot files and setup for slab output
+* v2_30 - Corbeil L.        - To read pe_topo namelist
+* v2_31 - Desgagne M.       - introduce 3D tracers, vertical layering 
+*                             specification and switch default 
+*                             Hzd_type_S to "HO"
+* v2_32 - Desgagne M.       - option for FST2000 encoding of ip1
+* v3_00 - Tanguay M.        - V4dg_4dvar_L,V4dg_sensib_L,V4dg_twin_L in namelist
+*
+*object
+*  To initialize model by reading namelist and return the 
+*  configuration of the number of PE's
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_npx         O           Number of PEs along X
+* F_npy         O           Number of PEs along Y
+*----------------------------------------------------------------
+*
+#include "dimout.cdk"
+#include "out.cdk"
+#include "level.cdk"
+#include "glb_ld.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+#include "mem.cdk"
+#include "step.cdk"
+#include "path.cdk"
+#include "init.cdk"
+#include "offc.cdk"
+#include "schm.cdk"
+#include "adw.cdk"
+#include "cstv.cdk"
+#include "lctl.cdk"
+#include "hzd.cdk"
+#include "vspng.cdk"
+#include "xst.cdk"
+#include "cori.cdk"
+#include "geomg.cdk"
+#include "grd.cdk"
+#include "v4dg.cdk"
+#include "c_cplg.cdk"
+#include "version.cdk"
+#include "pilot.cdk"
+#include "setsor.cdk"
+#include "did.cdk"
+#include "grid.cdk"
+#include "out1.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "pres.cdk"
+*
+*modules
+      integer fnom,longueur,exdb
+      external fnom,longueur,set_dcst8,exdb
+*
+      character*12 dumc_S
+      character*256 fln_S
+      logical lam_L,wronghyb
+      integer i, k, nrec, err, pni, pnj, pniu, pnjv, pnk, 
+     $        maxcfl_x, maxcfl_y, kind, ipcode, ipmode
+      real pcode
+*
+#include "nml.cdk"
+*
+*-------------------------------------------------------------------
+*
+      call open_status_file ()
+      call write_status_file ('_status=ABORT;')
+*
+      Path_swv1_L = .false.
+      err = exdb('GEMDM',version_S, 'NON')
+*
+      lun_in   =  5
+      lun_out  =  6
+      Lun_cte  =  8
+      lun_lab  = 13
+      lun_tsrs = 61
+      lun_pilot= 62
+*
+      Step_total = 1
+      Step_rsti  =  9999
+      Step_bkup  = 9999
+      Step_gstat = 9999
+*
+      Mem_mx3db    = 80
+      Mem_phyncore_L = .false.
+*
+      maxcfl_x = 3
+      maxcfl_y = 3
+*
+      Ptopo_npeOpenMP = 1
+      Ptopo_npeMacro  = 1
+      Ptopo_npex = 1
+      Ptopo_npey = 1
+*
+      Init_balgm_L = .false.
+      Init_dfwin_L = .true.
+      Init_dfnp    = 5
+      Init_dfpl_8  = 21600.0
+      Init_dftr_L  = .false.
+*
+      Offc_a0_8 =  1.0
+      Offc_a1_8 = -1.0
+      Offc_b0_8 =  0.6
+      Offc_b1_8 =  0.4
+*
+      Schm_hydro_L    = .false.
+      Schm_nonhy_8    = 1.0
+      Schm_moist_L    = .true.
+      Schm_phyms_L    = .true.
+      Schm_chems_L    = .false.
+      Schm_hdlast_L  = .false.
+      Schm_itcn     =   2
+      Schm_modcn    =   1
+      Schm_xwvt3    = 0
+      Schm_itnlh    = 2
+      Schm_itraj    = 2
+      Schm_alpco_8  = 1.0
+      Schm_adcub_L    = .true.
+      Schm_psadj_L    = .false.
+      Schm_difqp_L    = .true.
+*
+      Adw_halox  = 3
+      Adw_haloy  = 2
+      Adw_nkbz_L = .true.
+      Adw_exdg_L = .false.
+      Adw_ckbd_L = .false.
+*
+      Cori_cornl_L = .true.
+*
+      Cstv_dt_8    = 900
+      Cstv_uvdf_8  = 20000.
+      Cstv_phidf_8 = 20000.
+      Cstv_pitop_8 = -1.0
+      Cstv_pisrf_8 = 1000.0
+      Cstv_tstr_8  =  200.0
+*
+      Did_swph = .false.
+      Lctl_debug_L = .false.
+      Level_ip12000_L = .false.
+*
+      Grd_rcoef = 1.0
+      Pres_ptop = 10.
+      Pres_pref = 800.0
+      do k = 1, maxhlev
+         hyb(k) = -1.
+      end do
+*
+      Hzd_type_S = "HO"
+      Hzd_difva_L= .false.
+      Hzd_pwr    = 6
+      Hzd_lnr    = 0.2
+      Hzd_uvwdt_L= .false.
+      Vspng_nk = 0
+      do i = 1, Vspng_maxn
+         Vspng_mf(i) = -1.
+      end do
+      Vspng_uvwdt_L  = .false.
+*
+      Tr2d_ntr = 0
+      Tr3d_ntr = 0
+      Tr2d_incore_L = .true.
+      Tr2d_ntpf     = 10
+      Tr2d_nbf      = 0
+      do i=1,MAXTR2D
+         Tr2d_unf(i) = -1
+      end do
+*
+      do i = 1,MAXSTAT
+         Xst_statij(1,i) = -9999
+         Xst_statij(2,i) = -9999
+         Xst_statll(1,i) = -9999.0
+         Xst_statll(2,i) = -9999.0
+      enddo
+*
+      do i = 1,MAXELEM
+         Out_xnbits_s(i) = ' '
+         Out_xnbits(i)   = 0
+         Out_zund(i)     = 0
+         Out_filt_s(i)   = ' '
+         Out_filtcoef(i) = 0.0
+         Out_filtpass(i) = 0
+      enddo
+      do i = 1,MAXPILOT
+         pilot_S(i) = ' '
+      enddo
+      Out_unit_S    = ''
+      Out_ndigits   = -1
+      Out_nbitg     = 16
+      Out_linbot    = 0
+      Out_cliph_L   = .false.
+      Out_vt2gz_L   = .false.
+      Out_cubzt_L   = .true.
+      Out_cubuv_L   = .true.
+      Out_cubds_L   = .true.
+      Out_cubqs_L   = .true.
+      Out_cubdd_L   = .true.
+      Out_cubqq_L   = .true.
+      Out_cubww_L   = .true.
+*
+*     4D-Var section
+*     --------------
+      V4dg_conf     = 0
+      V4dg_sensib_L = .false.
+      V4dg_twin_L   = .false.
+      V4dg_4dvar_L  = .false.
+*
+      V4dg_stepob   = Step_total
+      V4dg_inv      = 1
+      V4dg_incore_L = .true.
+*
+*    Coupling section
+*    ----------------
+      C_coupling_L  = .false.
+      C_wave_L      = .false.
+      C_ocean_iml_L = .false. 
+*
+      call getenvc('rep_from_which_model_is_launched',Path_dfwmil_S)
+      Path_nml_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
+     $                          //'/process/model_settings'
+*
+      write (Lun_out,*)
+     $     'Opening file: ',Path_nml_S(1:longueur(Path_nml_S))
+      err = fnom (lun_in, Path_nml_S, 'SEQ' , nrec)
+      rewind ( Lun_in )
+      read (Lun_in, nml=gem_cfgs, end = 9120)
+      rewind ( Lun_in )
+      read (Lun_in, nml=coupling, end = 5555)
+ 5555 rewind ( Lun_in )
+      read (Lun_in, nml=var4d, end = 6666)
+ 6666 call fclos (lun_in)
+*
+      call low2up  (Hzd_type_S,dumc_S)
+      Hzd_type_S = dumc_S
+      Hzd_lnr    = min(max(0.,Hzd_lnr),0.9999999)
+      Hzd_pwr    = Hzd_pwr / 2
+      Hzd_pwr    = min(max(2,Hzd_pwr*2),8)
+*
+      call low2up  (Out_unit_S,Out_unit_S)
+      if (V4dg_conf.ne.0) then
+          call v4d_init()
+          Out_ndigits = 6
+      endif
+*      
+      if (C_coupling_L)  call c_init()
+*
+      if(Out_nbitg .lt. 0) then
+         write (Lun_out, 9154)
+         Out_nbitg=16
+      endif
+      Out_nundr = 0
+      do i = 1, MAXELEM
+         if(Out_zund(i) .eq. 0 ) goto 80
+         Out_nundr = Out_nundr + 1
+      enddo
+ 80   continue
+      MAXPIL=0
+      do i=1,MAXPILOT
+         if (pilot_S(i).eq.' ') goto 90
+             MAXPIL = MAXPIL + 1
+      enddo
+ 90   continue
+*
+      if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
+*      
+*     Reading entry programm config data from file labfl.bin
+*
+      fln_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
+     $                            //'/process/labfl.bin'
+      write (Lun_out,*)'Opening file: ',fln_S(1:longueur(fln_S))
+      err = fnom (lun_lab, fln_S, 'SEQ+FTN+UNF+OLD', nrec)
+*        
+      call bin2com
+*
+      Schm_cptop_L = .true.
+*
+*     Checking vertical layering
+*
+      pnk = 0
+      do k = 1, maxhlev
+         if (hyb(k) .lt. 0.) go to 60
+         pnk = k
+      enddo
+ 60   if ((hyb(1).ne.0.).or.(hyb(pnk).ne.1.)) wronghyb = .true.
+      do k=2, pnk
+         if (hyb(k).le.hyb(k-1)) wronghyb = .true.
+      end do
+      if (wronghyb) then
+         write(Lun_out,9200)
+         do k=1, pnk
+            write (Lun_out,*) hyb(k),k
+         end do
+         call gem_stop ( 'set_world_view1', -1 )
+      endif
+      call hpalloc (Geomg_hyb_ , pnk, err,1)
+      call hpalloc (Geomg_hybm_, pnk, err,1) 
+*
+*     fst2000 ip1 encoding 
+      if (Level_ip12000_L) 
+     $     call convip ( ipcode, pcode, ipmode, 0, ' ', .false. )
+*
+      do k=1,pnk
+         call convip ( i , hyb(k)      , 1   ,  1, dumc_S, .false. )
+         call convip ( i , Geomg_hyb(k), kind, -1, dumc_S, .false. )
+         Geomg_hybm(k) = Geomg_hyb(k)
+     $                   + (1.-Geomg_hyb(k))*Pres_ptop/Pres_pref
+      end do
+*
+      Ptopo_npeMacro = max (1,Ptopo_npeMacro )
+      Ptopo_npeOpenMP= max (1,Ptopo_npeOpenMP)
+      F_npx = Ptopo_npex
+      F_npy = Ptopo_npey
+*
+      call hpalloc (Geomg_pia_ , pnk ,err,1)
+      call hpalloc (Geomg_pibb_, pnk ,err,1)
+*
+      call genab ( Geomg_pia, Geomg_pibb, Geomg_hybm, Pres_ptop,
+     $             Grd_rcoef, pnk)
+*
+      call fclos (lun_lab)
+*
+      call newdate (Out1_date, Out1_dato(1), Out1_dato(2),-3)
+*
+      Lun_sortie_s= 
+     $          Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/output.cfg'
+*
+      write (lun_out, nml=gem_cfgs_p)
+      if(V4dg_conf.ne.0) write (lun_out, nml=var4d)
+*
+      G_ni  = Grd_ni
+      G_nj  = Grd_nj
+      G_nk  = pnk
+*
+      G_niu = G_ni
+      G_njv = G_nj - 1
+      if (G_lam) then
+         G_niu = G_ni - 1
+         if (Hzd_type_S.eq.'FACT') then
+            write (Lun_out, 7000) Hzd_type_S
+            write (Lun_out, 8000)
+            stop
+         endif
+         if (Vspng_nk.ne.0) then
+            write (Lun_out, 7010)
+            write (Lun_out, 8000)
+            stop
+         endif
+         if (Schm_psadj_L) then
+            write (Lun_out, 7020)
+            write (Lun_out, 8000)
+            stop
+         endif
+      endif
+*
+      G_halox = maxcfl_x + 1
+      G_haloy = maxcfl_y + 1
+      Lun_debug_L = Lctl_debug_L
+*
+      Path_swv1_L = .true.
+      goto 1111
+*
+ 9120 write (Lun_out, 9150)
+      write (Lun_out, 8000)
+*
+ 7000 format (/' WRONG OPTION FOR HZD_TYP WHEN LAM: ',a/)
+ 7010 format (/' VERTICAL SPONGE (Vspng_nk) NOT AVAILABLE IF LAM'/)
+ 7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
+ 8000 format (/,'========= ABORT IN S/R SET_WORLD_VIEW1 ============='/)
+ 9150 format (/,' NAMELIST gem_cfgs INVALID IN FILE: model_settings'/)
+ 9154 format (/,' Out_nbitg IS NEGATIVE, VALUE will be set to 16'/)
+ 9200 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/
+     $         '      HYB(1) MUST BE 0.0 AND HYB(NK) MUST BE 1.0'/
+     $         '      OTHER LEVELS MUST BE MONOTONICALLY INCREASING'/
+     $         '      FROM HYB(1) ---- ABORT ----'//
+     $         '      Current choice:')
+*
+*-------------------------------------------------------------------
+*
+ 1111 return
+      end

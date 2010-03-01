@@ -1,0 +1,73 @@
+*** s/r caldiv_2 - Computes horizontal divergence of wind-like fields 
+*
+#include <model_macros_f.h>
+*
+      subroutine caldiv_2 ( F_div, F_uu, F_vv, DIST_DIM, Nk )
+*
+#include "impnone.cdk"
+*
+      integer  DIST_DIM, Nk
+      real     F_div(DIST_SHAPE,Nk), F_uu  (DIST_SHAPE,Nk),
+     $         F_vv (DIST_SHAPE,Nk)
+*
+*authors
+*      Methot/Patoine - cmc - nov 95 
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from caldiv v1_03)
+*
+*object
+*     see id section 
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_div         O        the resulted divergence field on G-grid
+* F_uu          I        wind-like field on U-grid
+* F_vv          I        wind-like field on V-grid
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+*
+      integer i, j, k, i0, in, j0, jn
+**
+*     __________________________________________________________________
+*
+      i0 = 1
+      in = l_niu
+      j0 = 1
+      jn = l_njv
+      if ((G_lam).and.(l_west)) i0 = 2
+      if (l_south) j0 = 2
+*
+      do k=1,Nk
+         do j = j0, jn
+         do i = i0, l_niu
+            F_div(i,j,k) = ( F_uu(i,j,k) - F_uu(i-1,j,k) ) /
+     %                   ( geomg_cy2_8(j)*geomg_hxu_8(i-1) )
+     $                 + (F_vv(i,j,k)-F_vv(i,j-1,k))/geomg_hsyv_8(j-1)
+         end do
+         end do
+*
+         if (.not.G_lam) then
+            if (l_south) then
+            do i = i0, in
+               F_div(i,1,k) = ( F_uu(i,1,k) - F_uu(i-1,1,k) ) /
+     %                      ( geomg_cy2_8(1)*geomg_hxu_8(i-1) )
+     $                      + F_vv(i,1,k)/geomg_hsyv_8(0)
+            end do
+            endif
+            if (l_north) then
+            do i = i0, in
+               F_div(i,l_nj,k) = ( F_uu(i,l_nj,k) - F_uu(i-1,l_nj,k) ) /
+     %                         ( geomg_cy2_8(l_nj)*geomg_hxu_8(i-1) )
+     $                         - F_vv(i,l_nj-1,k)/geomg_hsyv_8(l_nj-1)
+            end do
+            endif
+         endif
+      end do
+*
+      return
+      end

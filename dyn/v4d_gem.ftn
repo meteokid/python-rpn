@@ -1,0 +1,321 @@
+***s/r v4d_gem - Control 4-D variational job based on GEM model 
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_gem
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - Move v4d_setscalp after set_dync
+* v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L 
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "lun.cdk"
+#include "v4dg.cdk"
+#include "v4dm.cdk"
+#include "v4dc.cdk"
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "ptopo.cdk"
+#include "rstr.cdk"
+#include "step.cdk"
+*
+*modules
+      integer fnom
+      external fnom,v4d_simul0,v4d_scalpro0,v4d_ctonb,v4d_ctcab 
+*
+      integer n,indic,pnerr,iun_newguess,iun_hotstart,wrt_out
+*
+      real pj,df1prev
+      real*8 gnorm_8
+*
+*     Additional minimization (M1QN3) parameters
+*      -----------------------------------------
+      integer izs(1),iz(5)
+      real rzs(1)
+      real*8 dzs_8(1)
+*     ______________________________________________________
+*
+      if ( V4dg_sensib_L ) call gefstop('v4d_gemjob')
+*     ______________________________________________________
+*
+*     --------------------------------------
+*     Read given analysis of model variables
+*     --------------------------------------
+         if( Lun_out.gt.0 ) then
+            write(Lun_out,
+     $      fmt='('' 4D-VARIATIONAL JOB with CONF = '',I6)') V4dg_conf
+            write(Lun_out,
+     $      fmt='('' ----------------------------------'')')  
+            write(Lun_out, fmt='(//''-------------------'')')
+            write(Lun_out, fmt='(  ''READ GIVEN ANALYSIS'')')
+            write(Lun_out, fmt='(  ''-------------------'')')
+         endif
+*
+         call indata()
+*
+*     ------------------------------------------------------------------
+*     Set inner product in control space variables (done after set_dync)
+*     ------------------------------------------------------------------
+      call v4d_setscalp ()
+*
+*     -----------------------------
+*     Set IDENTICAL TWIN experiment 
+*     ---------------------------------------------------------------------------------
+*     Build simulated OBSERVATIONS and initialize CURRENT (first iterate) initial state 
+*     ---------------------------------------------------------------------------------
+      if( V4dg_twin_L ) then
+*
+*        Initialize REFERENCE initial control var. in V4dc_ycv
+*        from model var.
+*        -----------------------------------------------------
+         call v4d_cainin (V4dc_ncv,V4dc_ycv)
+*
+*        Run REFERENCE integration to build simulated OBSERVATIONS 
+*        ---------------------------------------------------------
+            if( Lun_out.gt.0 ) then
+                write(Lun_out,
+     %          fmt='(//''-------------------------------------------'')')
+                write(Lun_out,
+     %          fmt='(  ''REFERENCE INTEGRATION TO BUILD OBSERVATIONS'')')
+                write(Lun_out,
+     %          fmt='(  ''-------------------------------------------'')')
+            endif
+*
+*           Set status of the integration (REFERENCE integration)
+*           -----------------------------------------------------
+            V4dg_status = 5
+*
+*           Set over-riding switch for dynout and blocstat
+*           ----------------------------------------------
+            V4dg_out = 1
+*
+*           Deactivate WRITE option on TRAJECTORY WA file
+*           ---------------------------------------------
+            V4dg_oktr_L = .false.
+*
+*           Call 4D-Var simulator without gradient
+*           --------------------------------------
+            indic = 99 
+            call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
+*
+*           Reactivate WRITE option on TRAJECTORY WA file
+*           ---------------------------------------------
+            V4dg_oktr_L = .true.
+*
+*        Initialize CURRENT (first iterate) initial state  
+*        ------------------------------------------------
+*
+*           Initialize CURRENT initial control var. in V4dc_xcv  
+*           from REFERENCE final model var. with true winds
+*           ---------------------------------------------------
+*
+*              Convert wind images to true winds
+*              ---------------------------------
+               call v4d_img2uv()
+*
+*              Initialize V4dc_xcv from model var.
+*              -----------------------------------
+               call v4d_cainin (V4dc_ncv,V4dc_xcv)
+*
+*     ------------------------
+*     Set SENSITIVITY ANALYSIS
+*     ------------------------
+      else
+*     ************
+*     NOT DONE YET
+*     ************
+      endif
+*
+*     ----------------------------------------------------------------------
+*     4D-VAR minimization starting from CURRENT (first iterate) control var.
+*     ----------------------------------------------------------------------
+*
+*        ---------------
+*        Initializations
+*        ---------------
+*
+*        COLD START
+*        ----------
+         if(V4dm_hot.eq.0) then
+*
+            V4dm_mode = 0
+            V4dm_nsim = 0
+*
+*        WARM START = restart from previously stored iterate
+*        ---------------------------------------------------
+         else
+*
+            V4dm_mode = 2
+*
+            iun_newguess = 0
+            iun_hotstart = 0
+            pnerr = fnom( iun_newguess, 'newguess', 'FTN+SEQ+UNF' , 0)
+            pnerr = fnom( iun_hotstart, 'hotstart', 'FTN+SEQ+UNF' , 0)
+*
+            read(iun_newguess) (V4dc_xcv(n),n=1,V4dc_ncv),df1prev,pj,
+     %                         (V4dc_gcv(n),n=1,V4dc_ncv)
+            read(iun_hotstart) iz,V4dm_nsim
+            read(iun_hotstart) (V4dc_wkmin(n),n=1,V4dc_ncv)
+*
+            call fclos(iun_newguess)
+            call fclos(iun_hotstart)
+*
+         endif
+*
+*        -------------------------------------------------------
+*        Run CURRENT (first iterate) DIRECT and ADJ integrations
+*        -------------------------------------------------------
+*
+         if( Lun_out.gt.0 ) then
+            write(Lun_out, fmt='(//''-----------------------------------------------'')')
+            write(Lun_out, fmt='(  ''Run CURRENT (FIRST ITERATE) DIRECT and ADJ INT.'')')
+            write(Lun_out, fmt='(  ''-----------------------------------------------'')')
+         endif
+*
+*        Set status of the integration [CURRENT integration (first iterate)]
+*        -------------------------------------------------------------------
+         V4dg_status = 0 
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_out = 1 
+*
+*        ----------------------
+*        Don't do gradient test 
+*        ----------------------
+         if(.not.V4dg_grd_L) then
+*
+*           Call 4D-Var simulator with gradient
+*           -----------------------------------
+            indic = 4
+            call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
+*
+*           Computation of norm**2 of gradient
+*           ----------------------------------
+            call v4d_scalpro (V4dc_ncv,V4dc_gcv,V4dc_gcv,gnorm_8)
+*
+            if( Lun_out.gt.0 ) then
+            write(Lun_out, fmt='(''------------------------------'')')
+            write(Lun_out, fmt='(''COST FUNCTION :'',E14.8         )') pj
+            write(Lun_out, fmt='(''GRADIENT NORM :'',E14.8         )') sqrt(sngl(gnorm_8)) 
+            write(Lun_out, fmt='(''------------------------------'')')
+            endif
+*
+*        ----------------
+*        Do gradient test 
+*        ----------------
+         else
+            call v4d_testgrd (V4dc_ncv,V4dc_xcv,V4dc_gcv,V4dc_wkmin,
+     %                        pj,V4dg_start,V4dg_range)
+         endif
+*
+*        -------------------------
+*        QUASI NEWTON minimization
+*        -------------------------
+*
+*        Set status of the integration (Integration associated to Minimization)
+*        ----------------------------------------------------------------------
+         V4dg_status = 999 
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_out = 0 
+*
+*        Cancel write(Lun_out)
+*        ---------------------
+         wrt_out = Lun_out
+         Lun_out = -99
+*
+C        V4dm_df1 = pj
+         V4dm_df1 = pj/4
+*
+         call m1qn3 (v4d_simul0, v4d_scalpro0, v4d_ctonb, v4d_ctcab,
+     %               V4dc_ncv,   V4dc_xcv,     pj,        V4dc_gcv,
+     %               V4dm_dxmin, V4dm_df1,     V4dm_epsg, V4dm_impres, wrt_out,
+     %               V4dm_mode,  V4dm_itmax,   V4dm_simax,
+     %               iz,         V4dc_wkmin,   V4dc_nwkmin,
+     %               izs,rzs,dzs_8,Ptopo_myproc,Ptopo_numproc)
+*
+*        Reset write(Lun_out)
+*        --------------------
+         Lun_out = wrt_out 
+*
+*        ---------------------------------------
+*        STORE information needed for WARM START
+*        ---------------------------------------
+         iun_newguess = 0
+         iun_hotstart = 0
+         pnerr = fnom( iun_newguess, 'newguessn', 'FTN+SEQ+UNF' , 0)
+         pnerr = fnom( iun_hotstart, 'hotstartn', 'FTN+SEQ+UNF' , 0)
+*
+         write(iun_newguess) (V4dc_xcv(n),n=1,V4dc_ncv),df1prev,pj,
+     %                       (V4dc_gcv(n),n=1,V4dc_ncv)
+         write(iun_hotstart) iz,V4dm_nsim
+         write(iun_hotstart) (V4dc_wkmin(n),n=1,V4dc_ncv)
+*
+         call fclos(iun_newguess)
+         call fclos(iun_hotstart)
+*
+*        ------------------------------------------------------
+*        Run CURRENT (last iterate) DIRECT and ADJ integrations
+*        ------------------------------------------------------
+*
+         if( Lun_out.gt.0 ) then
+            write(Lun_out, fmt='(//''----------------------------------------------'')')
+            write(Lun_out, fmt='(  ''Run CURRENT (LAST ITERATE) DIRECT and ADJ INT.'')')
+            write(Lun_out, fmt='(  ''----------------------------------------------'')')
+         endif
+*
+*        Set status of the integration [CURRENT integration (last iterate)]
+*        ------------------------------------------------------------------
+         V4dg_status = 4 
+*
+*        Set over-riding switch for dynout and blocstat 
+*        ----------------------------------------------
+         V4dg_out = 1
+*
+*        ----------------------
+*        Don't do gradient test 
+*        ----------------------
+         if(.not.V4dg_grd_L) then
+*
+*           Call 4D-Var simulator with gradient
+*           -----------------------------------
+            indic = 4
+            call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
+*
+*           Computation of norm**2 of gradient
+*           ----------------------------------
+            call v4d_scalpro (V4dc_ncv,V4dc_gcv,V4dc_gcv,gnorm_8)
+*
+            if( Lun_out.gt.0 ) then
+            write(Lun_out, fmt='(''------------------------------'')')
+            write(Lun_out, fmt='(''COST FUNCTION :'',E14.8         )') pj
+            write(Lun_out, fmt='(''GRADIENT NORM :'',E14.8         )') sqrt(sngl(gnorm_8))
+            write(Lun_out, fmt='(''------------------------------'')')
+            endif
+*
+*        ----------------
+*        Do gradient test 
+*        ----------------
+         else
+            call v4d_testgrd (V4dc_ncv,V4dc_xcv,V4dc_gcv,V4dc_wkmin,
+     %                        pj,V4dg_start,V4dg_range)
+         endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

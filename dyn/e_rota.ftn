@@ -1,0 +1,57 @@
+***s/r e_rota
+*
+#include <model_macros_f.h>
+*
+      subroutine e_rota ( F_lonp, F_latp, F_lon, F_lat, ni,nj )
+      implicit none
+*
+      integer ni,nj 
+      real F_lonp(ni,nj),F_latp(ni,nj),F_lon(ni),F_lat(nj)
+*
+*author  unknown
+*
+*revision
+* v2_30 - Dugas B.     - use real*8 rotation matrices and cartesian coordinates
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*    Compute longitudes and longitudes for the rotated coordinate system
+*
+*arguments
+*  Name        I/O                 Description
+*-----------------------------------------------------------------------
+* F_lonp        O        longitudes in the     rotated coordinate system
+* F_latp        O        latitudes  in the     rotated coordinate system
+* F_lon         I        longitudes in the non-rotated coordinate system
+* F_lat         I        latitudes  in the non-rotated coordinate system
+* F_r_8         I        inverse rotation matrix
+*-----------------------------------------------------------------------
+*
+#include "grd.cdk"
+**
+      integer i,j
+      real*8 cart_8(3*ni*nj), carot_8(3*ni*nj),ri_8(3,3)
+*     __________________________________________________________________
+*
+      do i =1, 3
+      do j =1, 3
+         ri_8(i,j) = Grd_rot_8(j,i)
+      end do
+      end do
+*      
+      call llacar  ( cart_8, F_lon, F_lat, ni, nj )
+      call mxma8   ( ri_8,1,3, cart_8,1,3, carot_8,1,3, 3,3,ni*nj )
+      call cartall ( F_lonp, F_latp, carot_8, ni*nj )
+*
+*  Normalize the longitudes between 0 and 360 degrees
+*
+      do j = 1, nj
+      do i = 1, ni
+         F_lonp(i,j) = mod ( F_lonp(i,j)+360.0, 360.0 )
+      end do
+      end do
+*
+*     __________________________________________________________________
+*
+      return
+      end 

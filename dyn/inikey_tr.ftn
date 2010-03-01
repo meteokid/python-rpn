@@ -1,0 +1,48 @@
+***s/r inikey_tr
+*
+#include <model_macros_f.h>
+*
+      subroutine inikey_tr
+#include "impnone.cdk"
+*
+*author   
+*     Stephane Laroche  - Dec 2001 
+*
+*revision
+* v3_00 - Laroche S.       - initial version (adapted from inikey)
+*
+*object
+*
+*implicites
+#include "glb_ld.cdk"
+#include "busind.cdk"
+#include "busind_tr.cdk"
+*
+**
+      integer init0,init,lght
+      data init0,init /0,-1/
+
+      if(h2o_ntr.gt.2) then
+       print*,'h2o_ntr is greater than 2'
+       call gem_stop('inikey_tr',-1)
+      endif
+*
+*-------------------------------------------------------------------
+*
+      call getindx ('UTRAJM',  'D',utrajm,   lght, init0)
+      call getindx ('VTRAJM',  'D',vtrajm,   lght, init0)
+      call getindx ('TTRAJM',  'D',ttrajm,   lght, init0)
+      call getindx ('HUTRAJM', 'D',hutrajm,  lght, init0)
+      call getindx ('UTRAJP',  'D',utrajp,   lght, init0)
+      call getindx ('VTRAJP',  'D',vtrajp,   lght, init0)
+      call getindx ('TTRAJP',  'D',ttrajp,   lght, init0)
+      call getindx ('HUTRAJP', 'D',hutrajp,  lght, init0)
+      call getindx ('PTRAJP',  'D',ptrajp,   lght, init0)
+*
+      call getindx ('KMM',     'P',kmm,      lght, init0)
+      call getindx ('KTM',     'P',ktm,      lght, init0)
+      call getindx ('BMM',     'P',bmm,      lght, init0)
+      call getindx ('BTM',     'P',btm,      lght, init0)
+
+      return
+      end

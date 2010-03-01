@@ -1,0 +1,61 @@
+subroutine v4d_getevent(kulout,kevent,kstatus)
+  !
+#include <model_macros_f.h>
+  !
+  !author
+  !    P. Gauthier
+  !
+  !revision
+  !v0_06 - P. Gauthier        - initial version
+  !v0_06 - M. Tanguay         - add Path_xchg_S
+  !
+  !object
+  !
+  !    Get the event from 3D-Var to know what to do next 
+  !
+  !implicits
+  use v4d_prof, only: Pr_mode_S, Pr_llfrm_L, Pr_dsnooze_8
+  !
+#include "impnone.cdk"
+#include "path.cdk"
+#include <prof_f.h>
+  !
+  !Arguments
+  !
+  integer, intent(in)::  kulout
+  integer, intent(inout):: kevent, kstatus
+  !
+  integer ihdlin, istat, prof_rdrec, longueur
+  external longueur
+  !
+  character*256 pathev_S
+  !
+  !Open evnt PROF file
+  !-------------------
+  pathev_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/evnt.prof'
+  !
+  ihdlin = prof_open(pathev_S,'READ',Pr_mode_S,Pr_dsnooze_8)
+  !
+  if(ihdlin.le.0) then
+     if(kulout > 0)then
+        write(kulout,*) 'Probleme avec Fichier evnt PROF IHDLIN = ',IHDLIN
+     end if
+     kstatus = -99
+     kevent = EVN_FERR 
+  else
+  !
+  !  Read record and get PRM_EVNT 
+  !  ----------------------------
+     istat = prof_rdrec(ihdlin)
+     istat = prof_gvar(ihdlin,kevent,PRM_EVNT)
+     if(istat.ne.0) then
+        if(kulout > 0) write(kulout,*) 'Problem with PRM_EVNT'
+        kstatus = -99
+        kevent = EVN_FERR 
+     end if
+     if(kulout > 0) then
+        write(kulout,fmt='(//,"  >>> V4D-GETEVENT::  Event Type: ",i4)')kevent
+     end if
+     istat = prof_close(ihdlin,Pr_llfrm_L)
+  end if
+end subroutine v4d_getevent

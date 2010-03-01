@@ -1,0 +1,58 @@
+***s/r gem_stop - Called for premature stop of the model.
+*
+      subroutine gem_stop (F_name_S,F_err)
+      implicit none
+*
+      character* (*) F_name_S
+      integer F_err
+*
+*author
+*     Michel Desgagne Sept 2001
+*
+*revision
+* v2_31 - Desgagne M.       - initial version
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_name_S      I            name of the calling routine
+* F_err         I            error code
+*----------------------------------------------------------------
+*
+*implicits
+#include "lun.cdk"
+*
+      integer longueur
+      external longueur
+      integer errcode_, err
+**
+*     ---------------------------------------------------------------
+*
+      call rpn_comm_ALLREDUCE (F_err,errcode_,1,"MPI_INTEGER",
+     $                                   "MPI_SUM","grid",err)
+      if (errcode_ < 0) then
+      if (Lun_out.gt.0) then
+         write(Lun_out,1000) F_name_S(1:longueur(F_name_S))
+         call wlog('STOP')
+      endif
+      call rpn_comm_FINALIZE(err)
+      stop
+      endif
+*
+ 1000 format(
+     % /,'==============================================',
+     % /,'=                                            =',
+     % /,'=             PREMATURED STOP                =',
+     % /,'=                                            =',
+     % /,' ',a,
+     % /,'=                                            =',
+     % /,'=             ABORTING THE RUN               =',
+     % /,'=                                            =',
+     % /,'==============================================',
+     %/ /)
+*
+*     ---------------------------------------------------------------
+*
+      end

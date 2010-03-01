@@ -1,0 +1,64 @@
+***s/r e_coefdgf - Precomputations for horizontal digital filter 
+*
+      subroutine e_coefdgf ( fnptx, frl, frlc, frcoeff )
+*
+#include "impnone.cdk"
+*
+      integer fnptx
+      real frl, frlc, frcoeff(fnptx+1)
+*
+*author andre methot - cmc - may 95  
+*                      after setinic.ftn v0_15, Alain Patoine
+*
+*revision
+* v0_16 - andre methot           - Digital filter initial version
+* v1_96 - V. Lee                 - replaced "cddcst.cdk" with "dcst.cdk"
+* v1_97 - V. Lee                 - replaced "cdlun.cdk" with "e_times.cdk"
+*
+*object
+*       see above ID
+*	
+*arguments
+*
+*______________________________________________________________________
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* fnptx              | SPAN: half of the number of neighbouring        |
+*                    |       points to be used by the filter.          |
+*                    |                                                 |
+* frl                | half of the shortest wave length resolved       |
+*                    |                                                 |
+* frlc               | cut off wavelength                              |
+*                    |                                                 |
+* frcoeff            | digital filter coefficients(output)             |
+* ______________________________________________________________________
+*
+*implicits
+#include <model_macros_f.h>
+#include "dcst.cdk"
+*
+*modules
+*
+      real promegc, prwin1, prsum, prwin2, prn
+      integer n
+**
+      promegc   = (2.0 * Dcst_pi_8) / frlc
+      prwin1    = Dcst_pi_8 / real(fnptx + 1)
+      frcoeff(1)= promegc*frl / Dcst_pi_8
+      prsum     = frcoeff(1)
+*
+      do n = 1, fnptx
+        prn          = real(n)
+        prwin2       = prn * prwin1
+        prwin2       = sin(prwin2) / prwin2
+        frcoeff(n+1) = prwin2 * sin(prn*promegc*frl) / (prn*Dcst_pi_8)
+        prsum        = prsum + 2.0 * frcoeff(n+1)
+      enddo
+*
+      do n = 1, fnptx+1
+         frcoeff(n) = frcoeff(n) / prsum
+      enddo
+*
+      return
+      end

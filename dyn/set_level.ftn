@@ -1,0 +1,213 @@
+***s/r set_level - initialization of common block LEVEL
+*
+#include <model_macros_f.h>
+*
+      integer function set_level (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
+*
+#include "impnone.cdk"
+*
+        integer F_argc,F_v1,F_v2
+        character *(*) F_argv_S(0:F_argc),F_cmdtyp_S     
+*
+*author Vivian Lee - RPN - April 1999
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version
+* v2_10 - Lee V.            - corrected so that all eta levels are
+* v2_10                       outputted when a "-1" is indicated
+* v2_21 - Dugas B.          - use convip
+* v2_30 - Lee V.            - reduced dimension of Level_typ to 1
+* v2_31 - Lee V.            - output on Geomg_hyb coordinates
+* v2_32 - Lee V.            - levset is now an ID defined by the user, not the 
+* v2_32                       actual "set" number forced to be in sequence
+*
+*
+*object
+*       initialization of the common block LEVEL. This function is
+*       called when the keyword "levels" is found in the first word
+*       of the directives in the input file given in the statement
+*       "process_f_callback". This feature is enabled by the
+*       ARMNLIB "rpn_fortran_callback" routine (called in "srequet")
+*       which allows a different way of passing user directives than
+*       the conventional FORTRAN namelist. This function will process
+*       the following example command read from the named input file.
+*
+* ie:  levels=1,pres,[1000.,925.,850.];
+*
+*       The "rpn_fortran_callback" routine will process the above
+*       statement and return 5 arguments to this function. For more
+*       information to how this is processed, see "SREQUET".
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_argc       I    - number of elements in F_argv_S
+* F_argv_S     I    - array of elements received
+*                     if F_argv_S(ii) contains "[", the value in this
+*                     argument indicates number of elements following it.
+* F_cmdtyp_S   I    - character command type - not used
+* F_v1         I    - integer parameter 1 - not used
+* F_v2         I    - integer parameter 2 - not used
+*----------------------------------------------------------------
+*
+*Notes:
+*
+*    levels=levelset#,pres/eta/arbitrary,{list};
+* ie:  levels=2,eta,[1,5,10];
+*      levels=3,eta,<1,28,2>;
+*      levels=4,eta,-1;
+*
+*      Should label the levelset# sequentially: 1,2,3,....
+*      'eta'       - model levels (eta)
+*      'pres'      - pressure (hPa)
+*      '-1' with "eta" levels will give all model levels.
+*      [a,b,c] means level a,b and c are requested
+*      <a,b,c> means levels a to b, incrementing every c are requested
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "dimout.cdk"
+#include "level.cdk"
+#include "lun.cdk"
+*
+**
+      logical press_L,eta_L
+      character*5 stuff_S,blank_S
+      integer i,j,k,ii,idx,levset,num,convmod
+*
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) then
+          write(Lun_out,*)
+          write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
+      endif
+      set_level = 0
+      read( F_argv_S(1), * ) levset
+      Level_sets = Level_sets + 1
+
+      if (Level_sets.gt.MAXSET) then
+
+          if (Lun_out.gt.0)
+     $    write(Lun_out,*)'SET_LEVEL WARNING: Too many sets of LEVELS'
+          Level_sets = Level_sets -1
+          set_level=1
+          return
+
+      endif
+
+      j=Level_sets
+      i=0
+      Level_id(j)=levset
+
+*      i is the counter for the number of levels requested
+
+      press_L = .false.
+      eta_L   = .false.
+      convmod = -1
+
+      do 100 ii=2,F_argc
+
+         if (index(F_argv_S(ii),'[').gt.0) then
+
+            stuff_S=F_argv_S(ii)
+            read( stuff_S(2:4), * ) num
+
+         else if (F_argv_S(ii).eq.'eta') then
+
+            convmod = 1
+            eta_L = .true.
+
+         else if (F_argv_S(ii).eq.'pres') then
+
+            convmod = 2
+            press_L = .true.
+
+         else if (convmod.ge.1) then
+
+            i = i+1
+            read( F_argv_S(ii), * ) Level(i,j)
+
+            if (Level(i,j).eq.-1) then
+
+*              request for all model eta levels
+
+                  Level_typ(j)='E'
+
+                  i = i-1
+                  do idx=1,G_nk
+                     i = i+1
+                     call convip( Level_ip1(i,j), geomg_hyb(idx),
+     $                            convmod,+1,blank_S,.false.)
+                     Level(i,j) = float( idx )
+                  end do
+
+            else 
+
+               if (convmod.eq.1) then
+
+                  Level_typ(j)='E'
+
+                  if (Level(i,j) .le. G_nk) then
+                     idx = nint(Level(i,j))
+                     call convip( Level_ip1(i,j), geomg_hyb(idx),
+     $                            convmod,+1,blank_S,.false.)
+                  else
+                     if (Lun_out.gt.0) write(Lun_out,*)
+     $                   'SET_LEVEL WARNING: Level index out of range'
+                     Level_sets = Level_sets -1
+                     set_level=1
+                     return
+
+                  endif
+               else if (convmod.eq.2) then
+
+                  Level_typ(j)='P'
+
+                  call convip( Level_ip1(i,j), Level(i,j),
+     $                         convmod,+1,blank_S,.false.)
+
+               else
+
+                  if (Lun_out.gt.0) write(Lun_out,*)
+     $              'SET_LEVEL WARNING: Level type not recognizable'
+                  Level_sets = Level_sets -1
+                  set_level=1
+                  return
+
+               endif
+
+            endif
+
+         endif
+
+ 100  continue
+
+      if (i.gt.MAXLEV) then
+
+         if (Lun_out.gt.0)
+     $   write(Lun_out,*)'SET_LEVEL WARNING: Requested levels > MAXLEV'
+         Level_sets = Level_sets -1
+         set_level = 1
+         return
+
+      endif
+
+      Level_max(j)=i
+
+      if (Lun_out.gt.0) then
+
+      write(Lun_out,*) ' Level_set(',j,') : Level_id=',Level_id(j)
+      write(Lun_out,*) ' Level_typ=',Level_typ(j)
+      write(Lun_out,*) ' Level_ip1=',(Level_ip1(i,j),i=1,Level_max(j))
+      write(Lun_out,*) ' Level=',(Level(i,j),i=1,Level_max(j))
+
+      endif
+*
+ 6002 format(' SET_LEVEL WARNING: pressure level out of range =',e10.5)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

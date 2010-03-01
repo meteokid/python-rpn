@@ -1,0 +1,10 @@
+      logical Did_es,Did_vt,Did_swph,Did_horint
+      character*3 Did_vrtc
+*
+      MARK_COMMON_BEG (did_l)
+      common / did_l / Did_es,Did_vt,Did_swph,Did_horint
+      MARK_COMMON_END (did_l)
+*
+      MARK_COMMON_BEG (did_c)
+      common / did_c / Did_vrtc
+      MARK_COMMON_END (did_c)

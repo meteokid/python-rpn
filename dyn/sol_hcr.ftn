@@ -1,0 +1,159 @@
+**s/r sol_hcr - iterative solution of horizontal Helmholtz problem
+*               cgrid model with rotated poles
+*
+#include <model_macros_f.h>
+*
+      subroutine sol_hcr (F_sol_8,F_rhs_8,F_w1_8,F_w2_8,F_dg1_8,F_dg2_8,
+     $                    F_dwfft_8,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk)
+*
+#include "impnone.cdk"
+*
+      integer Minx,Maxx,Miny,Maxy,Ni,Nj,Nk
+      real*8 F_sol_8 (Minx:Maxx,Miny:Maxy,Nk),
+     $       F_rhs_8 (Minx:Maxx,Miny:Maxy,Nk),
+     $        F_w1_8 (Minx:Maxx,Miny:Maxy,Nk),
+     $        F_w2_8 (Minx:Maxx,Miny:Maxy,Nk),
+     $        F_dg1_8(*),F_dg2_8(*),F_dwfft_8(*)
+*
+*author
+*     Desgagne/Lee ( after version v1_03 of solhcr8 )
+*
+*revision
+* v2_00 - Desgagne/Lee       - initial MPI version
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_sol_8
+*----------------------------------------------------------------
+*
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "ldnh.cdk"
+#include "sol.cdk"
+#include "opr.cdk"
+#include "ptopo.cdk"
+#include "fft.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "trp.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+*
+      integer i, j, k, k0, offi, offj, Gni, Gnj
+      real*8 con(G_nk)
+      real*8, dimension(:),allocatable :: wk_evec_8
+*
+*
+*     ---------------------------------------------------------------
+
+* Calculate length of working vector without pilot region
+      Gni=G_ni-Lam_pil_w-Lam_pil_e
+      Gnj=G_nj-Lam_pil_s-Lam_pil_n
+*
+      if (.not.Fft_fast_L) then
+          allocate ( wk_evec_8(Gni*Gni) )
+          do j=1,Gni
+          do i=1,Gni
+            wk_evec_8((j-1)*Gni+i)=Opr_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
+          enddo
+          enddo
+      endif
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do 100 k=1,G_nk
+         do j=1,Nj
+         do i=1,Ni
+            F_sol_8(i,j,k) = 0.
+            F_w1_8(i,j,k) = 0.
+            F_w2_8(i,j,k) = 0.
+         enddo
+         enddo
+         do k0=1,G_nk
+         do j=1+pil_s,Nj-pil_n
+         do i=1+pil_w,Ni-pil_e
+            F_w1_8(i,j,k) = F_w1_8(i,j,k) +
+     $                      F_rhs_8(i,j,k0)*Opr_zevec_8((k-1)*G_nk+k0)
+         enddo
+         enddo
+         enddo
+ 100  continue
+*
+      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k = 1, Schm_nith
+      do j = 1+pil_s, Nj-pil_n
+      do i = 1+pil_w, Ni-pil_e
+         F_w1_8(i,j,k) = Opr_opsxp0_8(G_ni+offi+i) *
+     $                   Opr_opsyp0_8(G_nj+offj+j) * F_w1_8(i,j,k) 
+      enddo
+      enddo
+      enddo
+      
+      if (Fft_fast_L) then
+          if (Lun_debug_L.and.Lun_out.gt.0) print *,'sol_fft'
+         if (G_lam) then
+            
+             call sol_fft8_lam ( F_w2_8, F_w1_8, Fft_pri_8,
+     $                     Minx, Maxx, Miny, Maxy, ldnh_nj,
+     $            trp_12smin, trp_12smax, Schm_nith, trp_12sn , 
+     $            G_ni, G_nj, trp_22min , trp_22max, trp_22n  ,
+     $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
+     $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
+     $            F_dg2_8,F_dwfft_8)
+         else
+             call sol_fft8_2 ( F_w2_8, F_w1_8, Fft_pri_8,
+     $                     Minx, Maxx, Miny, Maxy, ldnh_nj,
+     $            trp_12smin, trp_12smax, Schm_nith, trp_12sn , 
+     $            G_ni, G_nj, trp_22min , trp_22max, trp_22n  ,
+     $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
+     $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
+     $            F_dg2_8,F_dwfft_8)
+         endif
+      else
+         if (Lun_debug_L.and.Lun_out.gt.0) print *,'sol_mxma'
+         call sol_mxma8_2 ( F_w2_8, F_w1_8, wk_evec_8, 
+     $                      Minx, Maxx, Miny, Maxy,ldnh_nj,
+     $            trp_12smin, trp_12smax, Schm_nith, trp_12sn , 
+     $            G_ni, G_nj, trp_22min , trp_22max, trp_22n  ,
+     $            trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj,
+     $            Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8,
+     $            F_dg1_8,F_dg2_8,F_dwfft_8)
+      endif
+*
+*     inverse projection 
+*
+      do j=1+pil_s,Nj-pil_n
+      do i=1+pil_w,Ni-pil_e
+         F_w2_8(i,j,G_nk) = F_w1_8(i,j,G_nk)
+      end do
+      end do
+
+      do k=1,G_nk-1
+         con(k) = 1.
+      enddo
+      con(G_nk) = -1./Cstv_hco0_8
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k0=1,G_nk
+      do k=1,G_nk
+      do j=1+pil_s,Nj-pil_n
+      do i=1+pil_w,Ni-pil_e
+         F_sol_8(i,j,k0)= F_sol_8(i,j,k0)+con(k)*F_w2_8(i,j,k)*
+     $                    Opr_zevec_8((k-1)*G_nk+k0)
+      enddo
+      enddo
+      enddo
+      enddo
+*
+      if (.not. Fft_fast_L) deallocate (wk_evec_8)
+*
+*     ---------------------------------------------------------------
+* 
+      return
+      end

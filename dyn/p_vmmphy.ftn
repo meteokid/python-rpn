@@ -1,0 +1,246 @@
+***s/r p_vmmphy - load all fields required by the physics
+*
+#include <model_macros_f.h>
+*
+      subroutine p_vmmphy( F_up, F_vp, F_wp, F_tp, F_qp, F_trp,
+     $                     F_um, F_vm,       F_tm,       F_trm,
+     $                     F_lnpsm, F_sig, DIST_DIM, Nk )
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM,Nk
+      real F_up (DIST_SHAPE,Nk), F_vp (DIST_SHAPE,Nk)  ,
+     $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk)  , 
+     $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
+     $     F_um (DIST_SHAPE,Nk), F_vm (DIST_SHAPE,Nk)  ,
+     $     F_tm (DIST_SHAPE,Nk), F_trm(DIST_SHAPE,Nk,*),
+     $     F_lnpsm(DIST_SHAPE),  F_sig(DIST_SHAPE,Nk)  
+*
+*author
+*     Michel Roch - rpn - april 1994
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_31 - Desgagne          - clean up and introduce h2o tracers
+* v3_00 - Laroche S.        - adaptation for v4d
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_up     
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "schm.cdk"
+#include "p_cond.cdk"
+#include "inuvl.cdk"
+#include "vt1.cdk"
+#include "vt0.cdk"
+#include "busind.cdk"
+*
+**
+      integer  vmmlod,vmmget,vmmuln
+      external vmmlod,vmmget,vmmuln
+*
+      integer err, key(10), i, j, k, n, i0, j0, in, jn, nksurf,
+     $        keyp(h2o_ntr), keym(h2o_ntr), keyp_, keym_
+      real dt, dzmin, dzmin_, sigsfc, trp, trm
+      real wk1(LDIST_SHAPE),wk2(LDIST_SHAPE),wk3(LDIST_SHAPE),
+     $     wk4(LDIST_SHAPE)
+      pointer (patrp, trp(LDIST_SHAPE,*)),(patrm, trm(LDIST_SHAPE,*))
+*
+*     ________________________________________________________________
+*
+      key( 1) = VMM_KEY(ut0)
+      key( 2) = VMM_KEY(vt0)
+      key( 3) = VMM_KEY(tt0)
+      key( 4) = VMM_KEY(ut1)
+      key( 5) = VMM_KEY(vt1)
+      key( 6) = VMM_KEY(tt1)
+      key( 7) = VMM_KEY(qt0)
+      key( 8) = VMM_KEY(qt1)
+      err = vmmlod(key,8)
+      err = VMM_GET_VAR(ut0)
+      err = VMM_GET_VAR(vt0)
+      err = VMM_GET_VAR(tt0)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(qt0)
+      err = VMM_GET_VAR(qt1)
+*
+****************************************************
+*   Copy variables at time t- and t* in workfields *
+****************************************************
+*
+      do k=1,l_nk
+      do j= 1, l_nj
+      do i= 1, l_ni 
+         F_um(i,j,k) =  ut0(i,j,k)
+         F_vm(i,j,k) =  vt0(i,j,k)
+         F_tm(i,j,k) =  tt0(i,j,k)
+         F_up(i,j,k) =  ut1(i,j,k)
+         F_vp(i,j,k) =  vt1(i,j,k)
+         F_tp(i,j,k) =  tt1(i,j,k)
+      end do
+      end do
+      end do
+*
+      if (Schm_hydro_L) then
+         do k= 1,l_nk
+         do j= 1, l_nj
+         do i= 1, l_ni 
+            F_qp(i,j,k) = qt1(i,j,k)
+         end do
+         end do
+         end do
+         do j= 1, l_nj 
+         do i= 1, l_ni
+            F_lnpsm(i,j) = qt0(i,j,l_nk)
+         end do
+         end do
+         err = vmmuln(key,8)
+      else
+         err = vmmuln(key,6)
+         key(9) = VMM_KEY(qpt0)
+         key(10) = VMM_KEY(qpt1)
+         err = vmmlod(key(9),2)
+         err = VMM_GET_VAR(qpt0)
+         err = VMM_GET_VAR(qpt1)
+         do j= 1, l_nj 
+         do i= 1, l_ni 
+            F_lnpsm(i,j) = qt0(i,j,l_nk) - qpt0(i,j,l_nk) 
+         end do
+         end do
+         do k=1,l_nk
+         do j= 1, l_nj
+         do i= 1, l_ni 
+            F_qp(i,j,k) = qt1(i,j,k) - qpt1(i,j,k) 
+         end do
+         end do
+         end do
+         err = vmmuln(key(7),4)
+      endif
+*
+*     calculate sigma levels from F_qp
+*     --------------------------------
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni 
+        F_sig(i,j,k) = exp(F_qp(i,j,k)-F_qp(i,j,l_nk))
+      end do
+      end do
+      end do
+*
+      keyp_ = VMM_KEY (trt1)
+      keym_ = VMM_KEY (trt0)
+      if (h2o_ntr.gt.0) then
+         do n=1,h2o_ntr
+            keyp(n) = keyp_ + n
+            keym(n) = keym_ + n
+         end do
+         err = vmmlod(keyp,h2o_ntr)  
+         err = vmmlod(keym,h2o_ntr)  
+         do n=1,h2o_ntr
+            err = vmmget(keyp(n),patrp,trp)
+            err = vmmget(keym(n),patrm,trm)
+            do k=1,l_nk
+            do j= 1, l_nj 
+            do i= 1, l_ni 
+               F_trp(i,j,k,n) =  trp(i,j,k)
+               F_trm(i,j,k,n) =  trm(i,j,k)
+            end do
+            end do
+            end do
+         end do
+         err = vmmuln(keyp,h2o_ntr)
+         err = vmmuln(keym,h2o_ntr)
+      endif
+*
+      key(1) = VMM_KEY(st1)
+      key(2) = VMM_KEY(psdt1)
+      key(3) = VMM_KEY(tdt1)
+      err = vmmlod (key,3)
+      err = VMM_GET_VAR(st1)
+      err = VMM_GET_VAR(psdt1)
+      err = VMM_GET_VAR(tdt1)
+      call calomeg (F_wp, psdt1, tdt1, st1, LDIST_DIM, l_nk,
+     $              1+pil_w, l_ni-pil_e,1+pil_s, l_nj-pil_n)
+      err = vmmuln(key,3)
+*
+*C    dzmin determines the micro-physical timestep for sedimentation
+*
+*     P_cond_dzsedi is the minimal thickness of the sedimentation layer.
+*     If NOT set, get default value from the physics package.
+*
+      if (P_cond_dzsedi.lt.0.) 
+     $     call phyoptr('DZSEDI',P_cond_dzsedi,1,'GET' )
+*
+*     The mixed-phase microphysics scheme combines the lower model
+*     layers (excluding the lowest) to compute a sedimentation 
+*     timestep that is not too short in order to save on computing 
+*     time. In order to do that, the dynamics must compute NKSURF
+*     (the index of the eta level just below dzsedi) and DZMIN (the
+*     minimal thickness in the domain, taking into account the 
+*     combined levels).
+*
+      dt = Cstv_dt_8
+      sigsfc=1.-(min(dt,P_cond_dzsedi))/10000.
+      do k=G_nk-1,1,-1     
+         if (geomg_hybm(k).lt.sigsfc) go to 100
+      end do
+ 100  nksurf = min(G_nk-1,k+1)
+*
+      dzmin_=1.e+5
+      if ( nksurf .eq. G_nk-1 ) then
+*C                                     The sedimentation is made
+*C                                     over all model levels
+        do j= 1, l_nj
+        do i= 1, l_ni 
+         dzmin_= min(dzmin_,
+     $         Dcst_rgasd_8*(F_tp(i,j,G_nk-1)+F_tp(i,j,G_nk-2))/2./
+     $         Dcst_grav_8 * log(geomg_hybm(G_nk-1)/geomg_hybm(G_nk-2)))
+        end do
+        end do
+*
+      else  
+*C                                     The sedimentation is made
+*C                                     over a reduced set of levels
+        do j= 1, l_nj 
+        do i= 1, l_nj
+         dzmin_= min(dzmin_,
+     $      Dcst_rgasd_8*(F_tp(i,j,nksurf-1)+F_tp(i,j,nksurf-2))/2./
+     $      Dcst_grav_8 *log(geomg_hybm(nksurf-1)/geomg_hybm(nksurf-2)))
+         dzmin_= min(dzmin_,
+     $      Dcst_rgasd_8*(F_tp(i,j,G_nk-1)+F_tp(i,j,nksurf-1))/2./
+     $      Dcst_grav_8 *log(geomg_hybm(G_nk-1)/geomg_hybm(nksurf-1)))
+        end do
+        end do
+*
+      endif
+*
+      call rpn_comm_ALLREDUCE (dzmin_,dzmin,1,"MPI_REAL",
+     $                         "MPI_MIN","grid",err)
+*
+*     send dzmin and nksurf to the physics
+      call phycom ('dzmin' ,dzmin ,1,'set')
+      call phycom ('nksurf',nksurf,1,'set')
+*
+*C    interpolate wind images at time t1 and t2
+*     -----------------------------------------
+*
+      call p_uvgridscal ( F_up, F_vp, LDIST_DIM, l_nk, .true. )
+      call p_uvgridscal ( F_um, F_vm, LDIST_DIM, l_nk, .true. )
+*
+*     ________________________________________________________________
+*
+      return
+      end
+

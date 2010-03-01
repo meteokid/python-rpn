@@ -1,0 +1,700 @@
+***s/r p_inincr - define physics surface forcing increments
+*
+#include <model_macros_f.h>
+*
+      subroutine p_inincr
+*
+#include "impnone.cdk"
+*
+*author   
+*     Bernard Dugas - july 97
+*
+*revision
+* v2_21 - Bernard Dugas     - Adaption to GEM DM v2.2 and to physics v3.67:
+*                             1) change all includes and variables to DM specs;
+*                             2) each PE does the interpolations for its own area;
+*                             3) INCRTS is only used for water points (TWATER);
+*                             4) INCRTG is only used for glacier points (TGLACIER(2));
+*                             5) INCRTP is only used for deep soil points when the
+*                                force-restore surface scheme is selected (TSOIL(2));
+*                             6) INCRICD is added for sea ice depht increments (ICEDP);
+*                             7) INCRGL is now used with GLSEAS0, as GLSEA can be
+*                                modified to account for lake ice evolution;
+*                             8) INCRAL is no longer defined, since CALCALB
+*                                is used instead (called by CLIMPHS2).
+* v2_31 - Desgagne M.       - remove stkmemw
+* v2_31 - Bernard Dugas     - adapt to new climatological file descriptors
+* v2_32 - Bernard Dugas     - correct exit condition codes
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*       Initialize the climatological increments field that
+*       are in the permanent physics bus. Care has to be taken
+*       with the active physics configuration, especially with
+*       regards to the active surface parameterization.
+*
+*       The increments are those required by the routine CLIMPHS2
+*       to simulate the evolution of some of the surface forcing
+*       terms accounted for in the RPN/CMC physics package.
+*
+* ***   It is important to note that the physics package is
+* ***   supposed to have been initialized by at least one
+* ***   previous call to p_tstpphy.
+*
+*implicits
+#include "dcst.cdk"
+#include "lun.cdk"
+#include "mem.cdk"
+#include "path.cdk"
+#include "p_bus.cdk"
+#include "busind.cdk"
+#include "ptopo.cdk"
+#include "lctl.cdk"
+#include "out1.cdk"
+#include "cstv.cdk"
+#include "glb_ld.cdk"
+*
+*modules
+      INTEGER      newdate,fnom,fclos,longueur,wkoffit,fstopc
+      EXTERNAL     newdate,fnom,fclos,longueur,wkoffit,fstopc
+      INTEGER      fstouv,fstinf,fstsui,fstlir,fstprm,fstfrm,idatmg2
+      EXTERNAL     fstouv,fstinf,fstsui,fstlir,fstprm,fstfrm,idatmg2
+      integer      read_db_file,write_db_file
+      external     read_db_file,write_db_file
+**
+*
+      REAL*8       heur_8,scal_8,rad_8
+      INTEGER      xndate(14), xnday1 , xncibl(14), xnday2
+      EQUIVALENCE (xndate(14), xnday1),(xncibl(14), xnday2)
+*
+      INTEGER      xncfld
+      PARAMETER   (xncfld=6)
+      CHARACTER    gtyp_S(xncfld),gtypz_S(xncfld)
+      INTEGER      xnip1(xncfld), xnip2(xncfld), xnip3(xncfld)
+      INTEGER      xnzig1(xncfld),xnzig2(xncfld),xnzig3(xncfld)
+      INTEGER      xnig1(xncfld), xnig2(xncfld), xnig3(xncfld)
+      INTEGER      xnig4(xncfld), xnzig4(xncfld)
+      INTEGER      xnilu(xncfld), xnjlu(xncfld)
+      CHARACTER*4  clim_S(xncfld)
+*
+      LOGICAL      acli_L,soli_L
+      INTEGER      xndate1,xndate2,xniz,xnjz
+      INTEGER      Lun_clim,Lun_acli,Lun_activ
+      INTEGER      xnerr,xncle,xnhold,xnpos,xnzpos,xncoupe
+      INTEGER      i,xni,xnj,xnk,xnim,xnjm,xnzm,xnmxfld
+      CHARACTER    typvar_S,hold_S*12,soli_S*8
+      CHARACTER    clima_S*256,anclima_S*256
+*
+      real xrwrk3
+      pointer (iwork3,xrwrk3(1))
+      real xrlon(l_ni), xrlat(l_ni), xrwrk1(l_ni), xrwrk2(l_ni)
+      real, dimension (:), allocatable :: xrclim
+      real, dimension (:), allocatable :: xrtic,xrtac
+      real busper, busper2(max(1,p_bper_siz))
+      pointer (pabusper,busper(*))
+*
+      DATA         clim_S /'SD','HS','I8','LG','TP','TM'/
+*
+*
+**       -------------------------------------------------
+**    0. Check the current date and time as the increments
+**       are only updated at the beginning of a run * OR *
+**       close to the 15th of each month at 00Z
+**       -------------------------------------------------
+*
+      Lun_clim =  0
+      Lun_acli =  0
+*
+      heur_8    = Lctl_step * (Cstv_dt_8 / 3600. )
+      call incdatr( xnday1,Out1_date,heur_8 )
+      call datmgp2( xndate )
+*
+      xncibl(1) = 0
+      xncibl(2) = xndate(2)
+      xncibl(3) = 15
+      xncibl(4) = xndate(4)
+      xncibl(5) = 00
+      xncibl(6) = 00
+*
+      xnday2    = idatmg2( xncibl )
+      call difdatr( xnday2,xnday1,heur_8 )
+      heur_8    = heur_8 * (3600. / Cstv_dt_8 )
+*
+      if (( Lctl_step .eq.   2 ) .or.
+     %   (( heur_8    .ge. -0.5) .and.
+     %    ( heur_8    .lt. +0.5) ) ) then
+*
+         xnerr = newdate( xnday1, xndate1,xndate2, -3 )
+         if (Lun_out.gt.0) write(Lun_out,1000) xndate1,xndate2
+*
+         if ( Ptopo_myproc .eq. 0 ) then
+*
+**       1. Processor 0 opens the climatological file
+**          and finds the maximum size of a grid
+**          -----------------------------------------
+*
+            xnerr   = 0
+            xnmxfld = 0
+*
+            xnim    = 0
+            xnjm    = 0
+            xnzm    = 0
+*
+            clima_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
+     %                          //'/process/imclima'
+*
+            xnerr = wkoffit( clima_S )
+*
+            if ( xnerr .eq. 1 .or. xnerr .eq. 33 ) then
+*
+               xnerr = fstopc( 'MSGLVL','INFORM',.false. )
+               xnerr = fnom( Lun_clim, clima_S , 'STD+RND+OLD', 0 )
+               xnerr = fstouv( Lun_clim, 'RND' )
+*
+               if ( xnerr .ge. 0 ) then
+*
+                  if (Lun_out.gt.0) write( Lun_out,* )
+     %            'Opening file: ', clima_S(1:longueur(clima_S))
+*
+                  xnerr = fstinf( Lun_clim, xni,xnj,xnk,
+     %                            -1, ' ', -1, -1, -1, ' ', ' ')
+*
+ 0010             if ( xnerr .ge. 0 ) then
+                     xnim    = max( xnim,xni )
+                     xnjm    = max( xnjm,xnj )
+                     xnmxfld = xnim*xnjm
+                     xnerr   = fstsui( Lun_clim, xni,xnj,xnk )
+                     goto 0010
+                  endif
+*
+               endif
+*
+            endif
+*
+            if (( xnmxfld  .le. 0 ) .or.
+     %          ( Lun_clim .eq. 0 )) then
+               if (Lun_out.gt.0) write( Lun_out,1001 )
+     %                           clima_S(1:longueur(clima_S))
+               goto 0030
+            endif
+*
+**       2. Try opening the analysed/climatological file
+**          --------------------------------------------
+*
+            xnerr  =  0
+            acli_L = .false.
+*
+            anclima_S = Path_dfwmil_S(1:longueur(Path_dfwmil_S))
+     %                          //'/process/imanclima'
+*
+            xnerr = wkoffit( anclima_S )
+*
+            if ( xnerr .eq. 1 .or. xnerr .eq. 33 ) then
+*
+               xnerr = fnom( Lun_acli, anclima_S , 'STD+RND+OLD', 0 )
+               xnerr = fstouv( Lun_acli, 'RND' )
+*
+               if ( xnerr .ge. 0 ) then
+*
+                  acli_L  = .true.
+*
+                  if (Lun_out.gt.0) write( Lun_out,* )
+     %            'Opening file: ', anclima_S(1:longueur(clima_S))
+*
+                  xnerr = fstinf( Lun_acli, xni,xnj,xnk,
+     %                            -1, ' ', -1, -1, -1, ' ', ' ')
+*
+ 0020             if ( xnerr .ge. 0 ) then
+                     xnim    = max( xnim,xni )
+                     xnjm    = max( xnjm,xnj )
+                     xnmxfld = xnim*xnjm
+                     xnerr   = fstsui( Lun_acli, xni,xnj,xnk )
+                     goto 0020
+                  endif
+*
+               endif
+*
+            endif
+*
+            if ( .not. acli_L ) then
+               if (Lun_out.gt.0) write( Lun_out,1002 )
+            else
+               if (Lun_out.gt.0) write( Lun_out,1003 )
+     %                           anclima_S(1:longueur(anclima_S))
+            endif
+*
+            xnzm = max( xnim,xnjm )
+*
+         endif
+*
+ 0030    call RPN_COMM_bcast( Lun_clim ,1,"MPI_INTEGER",0,"grid",xnerr )
+         call RPN_COMM_bcast( xnmxfld  ,1,"MPI_INTEGER",0,"grid",xnerr )
+         call RPN_COMM_bcast( xnzm     ,1,"MPI_INTEGER",0,"grid",xnerr )
+*
+         if (( xnmxfld  .le. 0 ) .or. ( Lun_clim .eq. 0 ))
+     %      call gem_stop( 'p_inincr',-1 )
+*
+*
+**       Every one allocates the xncfld 2D climatology fields
+*
+         allocate (xrtic(xnzm*xncfld),xrtac(xnzm*xncfld))
+         allocate (xrclim(xnmxfld*xncfld))
+*
+         if ( .not. Mem_phyncore_L ) pabusper=loc(busper2(1))
+*
+**       What (Month/Year) is the target for the increments ?
+*
+         xncibl(1) = 0
+*
+**       Same month or next one ?
+*
+         if ( xndate(3) .ge. 15 ) then
+            xncibl(2) = mod( xndate(2),12 )+1
+         else
+            xncibl(2) = xndate(2)
+         endif
+*
+         xncibl(3) = 15
+*
+**       Same year or next one ?
+*
+         xncibl(4) = xndate(4)
+         if ( xncibl(2) .lt. xndate(2) )
+     %   xncibl(4) = xncibl(4) + 1
+*
+         xncibl(5) = 0
+         xncibl(6) = 0
+*
+         xnday2 = idatmg2( xncibl )
+         call difdatr( xnday2,xnday1,heur_8 )
+         scal_8 = 1./(heur_8*(3600./Cstv_dt_8))
+*
+         xnpos = 1
+*
+C        print *,'Dans p_inincr: scal_8,xncibl=',scal_8,xncibl
+C        call flush( Lun_out )
+*
+         rad_8 = 180./acos( -1.0D0 )
+*
+         if ( Ptopo_myproc .eq. 0 ) then
+*
+**       3. Processor 0 reads the target month's climatic fields
+**          ----------------------------------------------------
+*
+            do i=1,xncfld
+*
+               xncle = -1
+*
+**             Always try reading from Lun_acli first, if possible
+*
+               if (acli_L)
+     %            xncle = fstlir( xrclim(xnpos), Lun_acli,
+     %                            xnilu(i),xnjlu(i), xnk, -1,' ',
+     %                            -1,xncibl(2),xncibl(4),'A',clim_S(i) )
+*
+**             Otherwise read from Lun_clim
+*
+               if ( xncle .lt. 0 )
+     %            xncle = fstlir( xrclim(xnpos), Lun_clim,
+     %                            xnilu(i),xnjlu(i), xnk, -1,' ',
+     %                            -1,xncibl(2),-1,'C',clim_S(i) )
+*
+               if ( xncle .lt. 0 ) then
+                  if (Lun_out.gt.0) write( Lun_out,1004 ) clim_S(i)
+                  goto 0040
+               endif
+*
+**             Save the grid description parameters
+*
+               xnerr = fstprm( xncle, xnhold,xnhold,xnhold,
+     %                         xnilu(i),xnjlu(i),xnk,
+     %                         xnhold,xnhold,xnhold,xnhold,xnhold,
+     %                         typvar_S,clim_S(i),hold_S,
+     %                         gtyp_S(i),xnig1(i),xnig2(i),
+     %                                   xnig3(i),xnig4(i),
+     %                         xnhold,xnhold,xnhold,xnhold,
+     %                         xnhold,xnhold,xnhold )
+*
+               if (gtyp_S(i).eq.'Z') then
+*
+**                 Retreive necessary Z-grid descriptors.
+*
+                   if (typvar_S.eq.'A') then
+                       Lun_activ = Lun_acli
+                   else if (typvar_S.eq.'C') then
+                       Lun_activ = Lun_clim
+                   endif
+*
+                   xnzpos = (i-1)*xnzm+1
+*
+                   xncle = fstlir( xrtic(xnzpos), Lun_activ,
+     %                             xniz,xnjz,xnhold, -1,' ',
+     %                             xnig1(i),xnig2(i),xnig3(i),
+     %                             typvar_S,'>>')
+*
+                   if ( xncle .lt. 0 .or.
+     %                  xniz  .ne. xnilu(i) ) then
+                      if (Lun_out.gt.0) write( Lun_out,1005 )
+                      xncle = -1
+                      goto 0040
+                   endif
+*                       
+                   xncle = fstlir( xrtac(xnzpos), Lun_activ,
+     %                             xniz,xnjz,xnhold, -1,' ',
+     %                             xnig1(i),xnig2(i),xnig3(i),
+     %                             typvar_S,'^^')
+*
+                   if ( xncle .lt. 0 .or.
+     %                  xnjz  .ne. xnjlu(i) ) then
+                      if (Lun_out.gt.0) write( Lun_out,1006 )
+                      xncle = -1
+                      goto 0040
+                   endif
+*
+                   xnerr = fstprm( xncle, xnhold,xnhold,xnhold,
+     %                         xnhold,xnhold,xnhold,
+     %                         xnhold,xnhold,xnhold,xnhold,xnhold,
+     %                         hold_S,hold_S,hold_S,
+     %                         gtypz_S(i),xnzig1(i),xnzig2(i),
+     %                                    xnzig3(i),xnzig4(i),
+     %                         xnhold,xnhold,xnhold,xnhold,
+     %                         xnhold,xnhold,xnhold )
+*
+               endif
+*
+               xnpos = xnpos+xnmxfld
+*
+C              print *,'Dans p_inincr: lu ',clim_S(i)
+C              call flush( Lun_out )
+*
+            enddo
+*
+            xnerr = fstfrm( Lun_clim )
+            xnerr = fclos ( Lun_clim )
+*
+            if ( acli_L ) then
+               xnerr = fstfrm( Lun_acli )
+               xnerr = fclos ( Lun_acli )
+            endif
+*
+            xncle = 0
+
+         endif
+*
+ 0040    call RPN_COMM_bcast( xncle ,1,"MPI_INTEGER",0,"grid",xnerr )
+         if (xncle.lt.0) call gem_stop( 'p_inincr',-1 )
+*
+         call RPN_COMM_bcast(xrtic  ,xncfld*xnzm   ,"MPI_REAL"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xrtac  ,xncfld*xnzm   ,"MPI_REAL"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xrclim ,xncfld*xnmxfld,"MPI_REAL"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnilu  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnjlu  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnig1  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnig2  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnig3  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnig4  ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(gtyp_S ,xncfld     ,"MPI_CHARACTER",0,"grid",xnerr)
+         call RPN_COMM_bcast(xnzig1 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnzig2 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnzig3 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(xnzig4 ,xncfld     ,"MPI_INTEGER"  ,0,"grid",xnerr)
+         call RPN_COMM_bcast(gtypz_S,xncfld     ,"MPI_CHARACTER",0,"grid",xnerr)
+         call RPN_COMM_bcast(clim_S ,xncfld*4   ,"MPI_CHARACTER",0,"grid",xnerr)
+*
+**       Determine the type of surface land scheme and
+**       set a logical switch to indicate wether it is
+**       interactive or not. If it is, the TP increments
+**       will only be used for TGLACIER(2)
+*
+         call phyoptc( 'SCHMSOL', soli_S , 1 ,'GET' )
+         call low2up( soli_S,soli_S )
+*
+         if ( soli_S .eq.'CLASS' .or.
+     %        soli_S .eq.'ISBA') then
+            soli_L = .true.
+         else
+            soli_L = .false.
+         endif
+*
+C        print *,'Dans p_inincr: soli_S ',soli_S
+C        call flush( Lun_out )
+*
+**    4. Loop on the p_nj physics slabs.
+**       The increments are updated in place
+**       -----------------------------------
+*
+         do xncoupe=1,p_nj
+*
+            Mem_pslic = xncoupe
+*
+            if ( Mem_phyncore_L ) then
+               pabusper = loc (Phy_busper3D((xncoupe-1)*p_bper_siz+1))
+            else
+               if ( Lctl_step .gt. 1 ) then
+                  xnerr = read_db_file (Lun_waphy,xncoupe,1)
+                  xnerr = read_db_file (Lun_waphy,busper,p_bper_siz)
+               else
+                  if (Lun_out.gt.0) write( Lun_out,1007 )
+                  call gem_stop( 'p_inincr',-1 )
+               endif
+            endif
+*
+**          Convert Busp_idlat,Busp_idlon from radians to degrees
+*
+            do i=0,l_ni-1
+               xrlat(i+1) = busper(dlat+i)*rad_8
+               xrlon(i+1) = busper(dlon+i)*rad_8
+            enddo
+*
+**          Interpolate the climatological
+**          fields to the current slab
+*
+            call ez_rgoptc( 'INTERP','VOISIN',.true. )
+*
+**          Start with the snow depth. It is always used over glaciers
+**          and sea-ice. Soil uses it only with the Force-restore scheme
+**          The GLACIER snow depth (which is currently in the second row)
+**          is used here as it is always incremented in climate mode.
+*
+            xnzpos = 1
+            xnpos  = 1
+            iwork3 = loc( xrclim(xnpos) )
+*
+C           xnpos = 0
+*
+C           do i=1,xnilu(1)*xnjlu(1)
+C              xrwrk3(i) = xrclim(xnpos+i)
+C           enddo
+*
+            if (gtyp_S(1).ne.'Z') then
+               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(1),xnjlu(1),
+     %                    gtyp_S(1),xnig1(1),xnig2(1),
+     %                    xnig3(1),xnig4(1),.TRUE. )
+c              call ez_rgfree
+            else
+               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(1),xnjlu(1),'Z',
+     %                    gtypz_S(1),xnzig1(1),xnzig2(1),
+     %                    xnzig3(1),xnzig4(1),.TRUE.,
+     %                    xrtic(xnzpos),xrtac(xnzpos) )
+            endif
+*
+            do i=0,l_ni-1
+               busper(incrne+i) = (xrwrk1(i+1) - busper(snodp+l_ni+i))
+     %                            * scal_8
+            enddo
+*
+C           print *,'Dans p_inincr: Busp_snodp interpole/initialise'
+C           call flush( Lun_out )
+*
+**          Continue with the soil moisture (only for Force-restore) ...
+*
+            xnzpos = xnzpos+xnzm
+            xnpos  = xnpos+xnmxfld
+            iwork3 = loc( xrclim(xnpos) )
+*
+C           do i=1,xnilu(2)*xnjlu(2)
+C              xrwrk3(i) = xrclim(xnpos+i)
+C           enddo
+*
+            if (gtyp_S(2).ne.'Z') then
+               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(2),xnjlu(2),
+     %                    gtyp_S(2),xnig1(2),xnig2(2),
+     %                    xnig3(2),xnig4(2),.TRUE. )
+c            call ez_rgfree
+            else
+               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(2),xnjlu(2),'Z',
+     %                    gtypz_S(2),xnzig1(2),xnzig2(2),
+     %                    xnzig3(2),xnzig4(2),.TRUE.,
+     %                    xrtic(xnzpos),xrtac(xnzpos) )
+            endif
+*
+            do i=0,l_ni-1
+               busper(incrhs+i) = (xrwrk1(i+1)  - busper(wsoil+i))
+     %                            * scal_8
+            enddo
+*
+C           print *,'Dans p_inincr: Busp_wsoil interpole/initialise'
+C           call flush( Lun_out )
+*
+**          ... With the sea ice thickness ...
+*
+            xnzpos = xnzpos+xnzm
+            xnpos  = xnpos+xnmxfld
+            iwork3 = loc( xrclim(xnpos) )
+*
+C           do i=1,xnilu(3)*xnjlu(3)
+C              xrwrk3(i) = xrclim(xnpos+i)
+C           enddo
+*
+            if (gtyp_S(3).ne.'Z') then
+               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(3),xnjlu(3),
+     %                    gtyp_S(3),xnig1(3),xnig2(3),
+     %                    xnig3(3),xnig4(3),.TRUE. )
+c              call ez_rgfree
+            else
+               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(3),xnjlu(3),'Z',
+     %                    gtypz_S(3),xnzig1(3),xnzig2(3),
+     %                    xnzig3(3),xnzig4(3),.TRUE.,
+     %                    xrtic(xnzpos),xrtac(xnzpos) )
+            endif
+*
+            do i=0,l_ni-1
+               busper(incricd+i) = (xrwrk1(i+1)  - busper(icedp+i))
+     %                             * scal_8
+            enddo
+*
+C           print *,'Dans p_inincr: Busp_icedp interpole/initialise'
+C           call flush( Lun_out )
+*
+**          ... And with the sea ice mask
+*
+            xnzpos = xnzpos+xnzm
+            xnpos  = xnpos+xnmxfld
+            iwork3 = loc( xrclim(xnpos) )
+*
+C           do i=1,xnilu(4)*xnjlu(4)
+C              xrwrk3(i) = xrclim(xnpos+i)
+C           enddo
+*
+            if (gtyp_S(4).ne.'Z') then
+               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(4),xnjlu(4),
+     %                    gtyp_S(4),xnig1(4),xnig2(4),
+     %                    xnig3(4),xnig4(4),.TRUE. )
+c              call ez_rgfree
+            else
+               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(4),xnjlu(4),'Z',
+     %                    gtypz_S(4),xnzig1(4),xnzig2(4),
+     %                    xnzig3(4),xnzig4(4),.TRUE.,
+     %                    xrtic(xnzpos),xrtac(xnzpos) )
+            endif
+*
+            do i=0,l_ni-1
+               busper(incrgl+i) = (xrwrk1(i+1)  - busper(glsea0+i))
+     %                            * scal_8
+            enddo
+*
+C           print *,'Dans p_inincr: Busp_glsea0 interpole/initialise'
+C           call flush( Lun_out )
+*
+            call ez_rgoptc( 'INTERP','CUBIQUE',.true. )
+*
+**          Define the two temperature increments
+*
+**          Start by interpolating the deep soil temperature
+**          TP into xrwrk2. TP will be used by Force-restore 
+**          and by the glacier module.
+*
+            xnzpos = xnzpos+xnzm
+            xnpos  = xnpos+xnmxfld
+            iwork3 = loc( xrclim(xnpos) )
+*
+C           do i=1,xnilu(5)*xnjlu(5)
+C              xrwrk3(i) = xrclim(xnpos+i)
+C           enddo
+*
+            if (gtyp_S(5).ne.'Z') then
+               call ez_rgscint( xrwrk2,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(5),xnjlu(5),
+     %                    gtyp_S(5),xnig1(5),xnig2(5),
+     %                    xnig3(5),xnig4(5),.TRUE. )
+c              call ez_rgfree
+            else
+               call ez_igscint( xrwrk2,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(5),xnjlu(5),'Z',
+     %                    gtypz_S(5),xnzig1(5),xnzig2(5),
+     %                    xnzig3(5),xnzig4(5),.TRUE.,
+     %                    xrtic(xnzpos),xrtac(xnzpos) )
+            endif
+*
+**          The sea surface temperature TM goes into xrwrk1
+*
+            xnzpos = xnzpos+xnzm
+            xnpos  = xnpos+xnmxfld
+            iwork3 = loc( xrclim(xnpos) )
+*
+C           do i=1,xnilu(6)*xnjlu(6)
+C              xrwrk3(i) = xrclim(xnpos+i)
+C           enddo
+*
+            if (gtyp_S(6).ne.'Z') then
+               call ez_rgscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(6),xnjlu(6),
+     %                    gtyp_S(6),xnig1(6),xnig2(6),
+     %                    xnig3(6),xnig4(6),.TRUE. )
+c              call ez_rgfree
+            else
+               call ez_igscint( xrwrk1,l_ni,1,xrlat,xrlon,
+     %                    xrwrk3,xnilu(6),xnjlu(6),'Z',
+     %                    gtypz_S(6),xnzig1(6),xnzig2(6),
+     %                    xnzig3(6),xnzig4(6),.TRUE.,
+     %                    xrtic(xnzpos),xrtac(xnzpos) )
+            endif
+*
+**          Convert the new temperatures from Celsius to Kelvin
+*
+            do i=1,l_ni
+               xrwrk1(i) = xrwrk1(i) + Dcst_tcdk_8
+               xrwrk2(i) = xrwrk2(i) + Dcst_tcdk_8
+            enddo
+*
+**          Busp_incrts is used for SSTs, Busp_incrtg is used in the
+**          second layer Continental Ice temperature and Busp_incrtp
+**          is used with the Force-Restore. The latter is only defined
+**          if we have determined that the soil is interactive (soli_L).
+*
+            do i=0,l_ni-1
+              busper(incrts+i) = (xrwrk1(i+1)  - busper(twater+i))
+     %                           * scal_8
+              busper(incrtg+i) = (min( Dcst_trpl_8, 
+     %               xrwrk2(i+1)) - busper(tglacier+l_ni+i)) * scal_8
+              if (.not.soli_L)
+     %        busper(incrtp+i) = (xrwrk2(i+1)  - busper(tsoil+l_ni+i))
+     %                           * scal_8
+            enddo
+*
+C           print *,'Dans p_inincr: TMP/TS interpole/initialise'
+C           call flush( Lun_out )
+*
+**       5. Write the modified slice
+**          ------------------------
+*
+            if ( .not. Mem_phyncore_L ) then
+               xnerr = write_db_file (Lun_waphy,xncoupe,1)
+               xnerr = write_db_file (Lun_waphy,busper,p_bper_siz)
+            endif
+*
+         enddo
+*
+**       De-allocate working memory
+*
+         deallocate (xrclim)
+* 
+
+      endif
+*
+ 1000 format(
+     +//,'INITIALIZATION OF PHYSICS INCREMENTS (S/R P_ININCR)',
+     + /,'=================================================',
+     +//,' The current date is ',I8,'/',I8.8,'(YYYYMMDD/HHMMSShh)',
+     +//)
+*
+ 1001 format(' Unable to open climatological file ',A)
+ 1002 format(' Analysed/climatological file not opened')
+ 1003 format(' Using analysed/climatological file ',A)
+ 1004 format(' Unable to read climatological ',A4)
+ 1005 format(' Unable to read >> record')
+ 1006 format(' Unable to read ^^ record')
+ 1007 format(' Physics not initialized before p_inincr')
+
+      return
+      end
+

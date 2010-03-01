@@ -1,0 +1,391 @@
+***s/r v4d_putdx - Prepare and Write adjoint increments to be read by 3D-Var
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_putdx(kstatus)
+*
+      use v4d_prof, only: Pr_mode_S, Pr_nsim4d 
+*
+#include "impnone.cdk"
+*
+      integer, intent(inout):: kstatus
+*
+*author
+*     P. Gauthier
+*
+*revision
+* v3_00 - P. Gauthier        - initial MPI version
+* v3_00 - M. Tanguay         - add v4d_gauss2gem_ad/Simon's exchange  
+*
+*object
+*      ------------------------------------------------------------------------
+*      1) All processors: Adjoint of [Conversion from 3D-Var units 
+*         to GEM units and Staggering]
+*      2) Proc0: Adjoint of [Transfert from Gaussian grid to GEM scalar grid]
+*      3) Proc0: Write adjoint increments to be read by 3D-Var
+*      ------------------------------------------------------------------------
+*
+*arguments
+* Name         I/O                 Description
+*----------------------------------------------------------------
+* kstatus      I                   Status of the job
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "v4dg.cdk"
+#include "lun.cdk"
+#include "vt1.cdk"
+#include "vt1m.cdk"
+#include "ptopo.cdk"
+#include "geomg.cdk"
+#include "tr3d.cdk"
+#include "lctl.cdk"
+#include "path.cdk"
+#include <prof_f.h>
+*
+*     Local variables
+*     ---------------
+      integer istat,ihdlout,icount,jlev,jlat,jlon,ierr,
+     %        pnerr,pnlkey1(8),nigauss,njgauss
+*
+      real*8,allocatable:: dlbuff_8(:,:), dlbuff2d_8(:)
+      real,  allocatable:: zbuff(:,:,:),zbuff2d(:,:)
+      real,  allocatable::  gut1(:,:,:),gvt1(:,:,:),gtpt1(:,:,:),
+     %                      ghut1(:,:,:),gst1(:,:)
+*
+      character*256 pathdwga_S
+*
+      integer  vmmlod,vmmget,vmmuld,prof_wrrec,longueur
+      external vmmlod,vmmget,vmmuld,prof_wrrec,longueur
+*
+      integer key1(Tr3d_ntr), key1_, key1m(Tr3d_ntr), key1m_, n, err
+      real hut1, hut1m
+      pointer (pahu1, hut1(LDIST_SHAPE,*)), (pahu1m, hut1m(LDIST_SHAPE,*))
+*
+      real*8, parameter :: ZERO_8 = 0.0
+*
+      logical plpr_L
+*     ______________________________________________________
+*
+      if ( Tr3d_ntr.gt.1 ) call gefstop('v4d_putdx')
+*     ______________________________________________________
+*
+      write(Lun_out,1000) 
+
+*     Flag for diagnostics
+*     --------------------
+      plpr_L=.false.
+*
+      if (Ptopo_myproc.eq.0) then
+         if(.not.allocated(gut1 )) allocate(gut1 (G_ni,G_nj,G_nk))
+         if(.not.allocated(gvt1 )) allocate(gvt1 (G_ni,G_nj,G_nk))
+         if(.not.allocated(gtpt1)) allocate(gtpt1(G_ni,G_nj,G_nk))
+         if(.not.allocated(ghut1)) allocate(ghut1(G_ni,G_nj,G_nk))
+         if(.not.allocated(gst1 )) allocate(gst1 (G_ni,G_nj)     )
+*
+*        Zero adjoint variables
+*        ---------------------- 
+         gut1 (:,:,:) = ZERO_8 
+         gvt1 (:,:,:) = ZERO_8 
+         gtpt1(:,:,:) = ZERO_8 
+         ghut1(:,:,:) = ZERO_8 
+         gst1 (:,:  ) = ZERO_8 
+      endif
+*
+*     Get fields in memory
+*     --------------------
+      pnlkey1(1)  = VMM_KEY(ut1)
+      pnlkey1(2)  = VMM_KEY(vt1)
+      pnlkey1(3)  = VMM_KEY(tpt1)
+      pnlkey1(4)  = VMM_KEY(st1)
+*
+      pnlkey1(5) =  VMM_KEY(tpt1m)
+      pnlkey1(6) =  VMM_KEY(st1m)
+*
+      pnerr = vmmlod(pnlkey1,6)
+*
+      pnerr = VMM_GET_VAR(ut1)
+      pnerr = VMM_GET_VAR(vt1)
+      pnerr = VMM_GET_VAR(tpt1)
+      pnerr = VMM_GET_VAR(st1)
+      pnerr = VMM_GET_VAR(tpt1m)
+      pnerr = VMM_GET_VAR(st1m)
+*
+*     Load PERT and TRAJ humidity fields assuming Tr3d_ntr=1
+*     ------------------------------------------------------
+      key1_ = VMM_KEY (trt1 )
+      key1m_= VMM_KEY (trt1m)
+      do n=1,Tr3d_ntr
+         key1 (n) = key1_  + n
+         key1m(n) = key1m_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1, Tr3d_ntr)
+         err = vmmlod(key1m,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            err = vmmget(key1 (n),pahu1, hut1 )
+            err = vmmget(key1m(n),pahu1m,hut1m)
+         end do
+      endif
+*
+      if(plpr_L) then
+         if(Ptopo_myproc.eq.0) write(Lun_out,*) 'BEFORE VARCONV'
+         call glbstat(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat(vt1 ,'VV',LDIST_DIM,G_nk,1,G_ni,1,G_nj-1,1,G_nk)
+         call glbstat(tpt1,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat(st1 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,1,   1)
+         call glbstat(hut1,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         if(Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
+      endif
+*
+*     Adjoint of
+*     --------------------------------------------------------
+*     Conversion from 3D-Var units to GEM units and Staggering
+*     --------------------------------------------------------
+      call v4d_varconv_ad(ut1,vt1,tpt1,hut1,st1,
+     %                    tpt1m,hut1m,st1m,LDIST_DIM,l_nk,.TRUE.)
+*
+*     1. Opening dwga PROF file
+*        ----------------------
+      if(Ptopo_myproc.eq.0) then
+          write(Lun_out,*) 'Opening file dwga PROF file'
+*
+          pathdwga_S = Path_xchg_S(1:longueur(Path_xchg_S))//'/dwga.prof'
+          ihdlout = prof_open(pathdwga_S,'WRITE',Pr_mode_S)
+*
+          if(ihdlout.le.0) then
+             write(Lun_out,*) 'Problem with dwga PROF file'
+             kstatus = -99
+          end if
+      end if
+*
+      call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+*
+      if(kstatus.ne.0) return
+*
+*     2. Collect and write all 3D and 2D dynamical fields 
+*        ------------------------------------------------
+*
+*     -----------------------------------------------------------------
+*     Allocate local 3D and 2D global buffer  (one real and one real*8)
+*     -----------------------------------------------------------------
+      if(Ptopo_myproc.eq.0) then
+*
+         allocate(   zbuff(G_ni,G_nj,G_nk))
+         allocate(dlbuff_8(G_ni*G_nj,G_nk))
+*
+         allocate(   zbuff2d(G_ni,G_nj))
+         allocate(dlbuff2d_8(G_ni*G_nj))
+*
+*        Zero adjoint variables
+*        ----------------------
+         zbuff(:,:,:) = ZERO_8
+         zbuff2d(:,:) = ZERO_8 
+*
+      end if
+*
+      if(plpr_L) then
+         if(Ptopo_myproc.eq.0) write(Lun_out,*) 'BEFORE GAUSS2GEM'
+         call glbstat(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat(vt1 ,'VV',LDIST_DIM,G_nk,1,G_ni,1,G_nj-1,1,G_nk)
+         call glbstat(tpt1,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat(st1 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,1,   1)
+         call glbstat(hut1,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         if(Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
+      endif
+*
+*     Adjoint of
+*     -----------------------------------------------
+*     Transfert from Gaussian grid to GEM scalar grid
+*     -----------------------------------------------
+*
+*     -----------------------------------------------
+*     CAUTION: We assume Gaussian grid has the same resolution as GEM scalar grid
+*     ---------------------------------------------------------------------------
+      nigauss = G_ni
+      njgauss = G_nj
+      call v4d_gauss2gem_ad( ut1, vt1, tpt1, hut1, st1, LDIST_DIM,
+     %                      gut1,gvt1,gtpt1,ghut1,gst1,nigauss,njgauss,G_nk)
+*
+*     -----------------------------
+*     Write all 3D dynamical fields 
+*     -----------------------------
+      if(Ptopo_myproc.eq.0) then
+         zbuff(:,:,:) = gut1 (:,:,:) 
+         call v4d_putfld('UU',kstatus)
+*
+         zbuff(:,:,:) = gvt1 (:,:,:) 
+         call v4d_putfld('VV',kstatus)
+*
+         zbuff(:,:,:) = gtpt1(:,:,:) 
+         call v4d_putfld('TT',kstatus)
+*
+         zbuff(:,:,:) = ghut1(:,:,:) 
+         call v4d_putfld('HU',kstatus)
+      end if
+*
+      call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+*
+      if(kstatus.ne.0) return
+*
+      if(Ptopo_myproc.eq.0) then
+         write(Lun_out,*) 'Write first record with 3D fields...'
+         istat = prof_wrrec(ihdlout)
+         if (istat.ne.0) kstatus = -99
+*
+         deallocate(zbuff, dlbuff_8)
+      end if
+*
+*     -----------------------------
+*     Write all 2D dynamical fields
+*     -----------------------------
+      if(Ptopo_myproc.eq.0) then 
+         zbuff2d(:,:) = gst1(:,:) 
+         call v4d_putfld('PS',kstatus)
+      end if
+*
+      call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+*
+      if(kstatus.ne.0) return
+*
+      if(Ptopo_myproc.eq.0) then
+         write(Lun_out,*) 'Write second record with 2D fields...'
+         istat = prof_wrrec(ihdlout)
+         if(istat.ne.0) kstatus = -99
+*
+         deallocate(zbuff2D,dlbuff2d_8)
+      end if
+*
+      call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+*
+      if(kstatus.ne.0) return
+*
+      pnerr = vmmuld(-1,0)
+*
+      if(Ptopo_myproc.eq.0) then
+         if(allocated (gut1      )) deallocate(gut1    )
+         if(allocated (gvt1      )) deallocate(gvt1    )
+         if(allocated (gtpt1     )) deallocate(gtpt1   )
+         if(allocated (ghut1     )) deallocate(ghut1   )
+         if(allocated (gst1      )) deallocate(gst1    )
+      endif
+*
+*     --------------------
+*     Close dwga PROF file
+*     --------------------
+      if(Ptopo_myproc.eq.0) then
+*
+         write(Lun_out,*) 'Closing file dwga PROF file'
+         istat = prof_close(ihdlout)
+         if(istat.ne.0) kstatus = -99
+      end if
+*
+      call rpn_comm_bcast(kstatus,1,"MPI_INTEGER",0,"GRID",ierr)
+*
+      if(kstatus.ne.0) return
+*
+      if(Lun_out.gt.0) write(Lun_out,1001) kstatus
+*
+ 1000 format(/,'V4D_PUTDX: Prepare Adjoint Model state to be sent to 3D-Var ',
+     +       /,'===========================================================')
+ 1001 format(/,'V4D_PUTDX: Adjoint Model state sent to 3D-Var --- Status = ',I8,
+     +       /,'========================================================')
+*
+      return
+*
+*     Local Host subroutine
+*     ---------------------
+*
+      contains
+      subroutine v4d_putfld(cdvar,kstatus)
+*
+#include "impnone.cdk"
+*
+      character*2, intent(in) :: cdvar
+      integer,  intent(inout) :: kstatus
+*
+*author
+*     P. Gauthier
+*
+*revision
+* v3_00 - P. Gauthier        - initial MPI version
+*
+*object
+*
+*arguments
+* Name         I/O                 Description
+*----------------------------------------------------------------
+* cdvar        I                   Type of profile
+* kstatus      I                   Status of the job
+*----------------------------------------------------------------
+*
+      if(kstatus.ne.0) return
+*
+      if(Lun_out.gt.0) then
+         write(Lun_out,*)'     ... collecting variable ',cdvar
+      end if
+*
+*     Adjoint of
+*     Change accuracy and reverse latitude if 3D field
+*     ------------------------------------------------
+      select case (cdvar)
+      case('UU','VV','TT','HU')
+         dlbuff_8(:,:) = 0.
+         do jlev = 1, G_nk
+            icount = 0
+            do jlat = 1,G_nj
+               do jlon = 1,G_ni
+                  icount = icount+1
+                  dlbuff_8(icount,jlev) = zbuff(jlon,G_nj -jlat+1,jlev)
+               end do
+            end do
+         end do
+*     
+*     Adjoint of
+*     Change accuracy and reverse latitude if 2D field
+*     ------------------------------------------------
+      case('PS')
+         dlbuff2d_8(:) = 0.
+         icount = 0
+            do jlat = 1,G_nj
+               do jlon = 1,G_ni
+                  icount = icount+1
+                  dlbuff2d_8(icount) = zbuff2d(jlon,G_nj -jlat+1) 
+               end do
+            end do
+      end select
+*
+*     Store 4D-Var simulation no.
+*     ---------------------------
+      istat = prof_pvar(ihdlout,Pr_nsim4d,PRM_EVNT)
+*
+*     Write it in Prof Record
+*     -----------------------
+      select case (cdvar)
+      case('UU')
+         istat = prof_pvar(ihdlout,dlbuff_8,v3d_utru)
+      case('VV')
+         istat = prof_pvar(ihdlout,dlbuff_8,v3d_vtru)
+      case('TT')
+         istat = prof_pvar(ihdlout,dlbuff_8,v3d_temp)
+      case('HU')
+         istat = prof_pvar(ihdlout,dlbuff_8,v3d_sphu)
+      case('PS')
+         istat = prof_pvar(ihdlout,dlbuff2d_8,v2d_psur)
+      end select
+*  
+      kstatus = kstatus + istat
+*
+      if (Lun_out.gt.0) then
+         write(Lun_out,*)'   Transfer of ',cdvar,' completed ...Status = ',kstatus
+      end if
+*
+      if(kstatus.ne.0) then
+         if(Lun_out.gt.0) then
+            write(Lun_out,*)'Problem in writing ',cdvar
+         end if
+      end if
+*
+      end subroutine v4d_putfld
+      end subroutine v4d_putdx

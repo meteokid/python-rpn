@@ -1,0 +1,2 @@
+      integer pni, pnj, pniu, pnjv, pnk
+      common / locdim / pni, pnj, pniu, pnjv, pnk

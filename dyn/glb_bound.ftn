@@ -1,0 +1,371 @@
+***s/r glb_bound - Updates lateral boundaries and performs
+*                  horizontal blending
+*
+#include <model_macros_f.h>
+*
+      subroutine glb_bound ()
+      implicit none
+*author 
+*     Desgagne & Lee      - spring 2002
+*
+*revision
+* v3_00 - Desgagne & lee       - initial version
+*
+*object
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "vt0.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+*
+      integer  vmmlod,vmmget,vmmuld
+      external vmmlod,vmmget,vmmuld
+      real tr,tr0
+      pointer (patr, tr(LDIST_SHAPE,*)),(patr0,tr0(LDIST_SHAPE,*))
+      integer pnerr, pnlkey1(26),i,j,k,nvar
+      integer hblen_momentx,hblen_momenty,hblen_tx,hblen_ty,
+     $        hblen_massx,hblen_massy,hblen_trx,hblen_try
+      integer key0(Tr3d_ntr),key0_,key1(Tr3d_ntr),key1_, n
+*----------------------------------------------------------------------
+*
+      Hblen_momentx = 2
+      Hblen_momenty = 2
+      Hblen_tx = 2
+      Hblen_ty = 2
+      Hblen_massx = 2
+      Hblen_massy = 2
+      Hblen_trx = 2
+      Hblen_try = 2
+*
+      if (north+south+west+east.lt.1) return
+*
+      if (Lun_out.gt.0) write (Lun_out,1000)
+*      
+      pnlkey1(1 )=VMM_KEY(nest_u)
+      pnlkey1(2 )=VMM_KEY(nest_v)
+      pnlkey1(3 )=VMM_KEY(nest_t)
+      pnlkey1(4 )=VMM_KEY(nest_psd)
+      pnlkey1(5 )=VMM_KEY(nest_pip)
+      pnlkey1(6 )=VMM_KEY(nest_fip)
+      pnlkey1(7 )=VMM_KEY(nest_td)
+      pnlkey1(8 )=VMM_KEY(nest_fi)
+      pnlkey1(9 )=VMM_KEY(nest_q)
+      pnlkey1(10)=VMM_KEY(nest_s)
+      pnlkey1(11)=VMM_KEY(nest_tp)
+      pnlkey1(12)=VMM_KEY(ut0)
+      pnlkey1(13)=VMM_KEY(vt0)
+      pnlkey1(14)=VMM_KEY(tt0)
+      pnlkey1(15)=VMM_KEY(psdt0)
+      pnlkey1(16)=VMM_KEY(pipt0)
+      pnlkey1(17)=VMM_KEY(fipt0)
+      pnlkey1(18)=VMM_KEY(tdt0)
+      pnlkey1(19)=VMM_KEY(fit0)
+      pnlkey1(20)=VMM_KEY(qt0)
+      pnlkey1(21)=VMM_KEY(st0)
+      pnlkey1(22)=VMM_KEY(tpt0)
+      nvar = 22
+*
+      if (.not.Schm_hydro_L) then
+         pnlkey1(23)=VMM_KEY(nest_w)
+         pnlkey1(24)=VMM_KEY(nest_mu)
+         pnlkey1(25)=VMM_KEY(wt0)
+         pnlkey1(26)=VMM_KEY(mut0)
+         nvar = 26
+      endif
+*
+      pnerr = vmmlod(pnlkey1,nvar)
+      pnerr = VMM_GET_VAR(nest_u)
+      pnerr = VMM_GET_VAR(nest_v)
+      pnerr = VMM_GET_VAR(nest_t)
+      pnerr = VMM_GET_VAR(nest_psd)
+      pnerr = VMM_GET_VAR(nest_pip)
+      pnerr = VMM_GET_VAR(nest_fip)
+      pnerr = VMM_GET_VAR(nest_td)
+      pnerr = VMM_GET_VAR(nest_fi)
+      pnerr = VMM_GET_VAR(nest_q)
+      pnerr = VMM_GET_VAR(nest_s)
+      pnerr = VMM_GET_VAR(nest_tp)
+      pnerr = VMM_GET_VAR(ut0)
+      pnerr = VMM_GET_VAR(vt0)
+      pnerr = VMM_GET_VAR(tt0)
+      pnerr = VMM_GET_VAR(psdt0)
+      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(fipt0)
+      pnerr = VMM_GET_VAR(tdt0)
+      pnerr = VMM_GET_VAR(fit0)
+      pnerr = VMM_GET_VAR(qt0)
+      pnerr = VMM_GET_VAR(st0)
+      pnerr = VMM_GET_VAR(tpt0)
+      if (.not.Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(nest_w)
+         pnerr = VMM_GET_VAR(nest_mu)
+         pnerr = VMM_GET_VAR(wt0)
+         pnerr = VMM_GET_VAR(mut0)
+      endif
+*
+      if (l_north) then
+         do k=1,G_nk
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_ni
+               tt0  (i,j,k) = nest_t  (i,j,k)
+               psdt0(i,j,k) = nest_psd(i,j,k)
+               pipt0(i,j,k) = nest_pip(i,j,k)
+               fipt0(i,j,k) = nest_fip(i,j,k)
+               tdt0 (i,j,k) = nest_td (i,j,k)
+               fit0 (i,j,k) = nest_fi (i,j,k)
+               qt0  (i,j,k) = nest_q  (i,j,k)            
+               tpt0 (i,j,k) = nest_tp (i,j,k)            
+            end do
+            end do
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_niu
+               ut0  (i,j,k) = nest_u  (i,j,k)
+            end do
+            end do
+            do j=l_nj-pil_n,l_njv
+            do i=1,l_ni
+               vt0  (i,j,k) = nest_v  (i,j,k)
+            end do
+            end do
+         end do
+         do j=l_nj-pil_n+1,l_nj
+         do i=1,l_ni
+            st0  (i,j) = nest_s  (i,j)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            do j=l_nj-pil_n+1,l_nj
+            do i=1,l_ni
+               wt0 (i,j,k) = nest_w (i,j,k)
+               mut0(i,j,k) = nest_mu(i,j,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if (l_east) then
+         do k=1,G_nk
+            do j=1,l_nj
+            do i=l_ni-pil_e+1,l_ni
+               tt0  (i,j,k) = nest_t  (i,j,k)
+               psdt0(i,j,k) = nest_psd(i,j,k)
+               pipt0(i,j,k) = nest_pip(i,j,k)
+               fipt0(i,j,k) = nest_fip(i,j,k)
+               tdt0 (i,j,k) = nest_td (i,j,k)
+               fit0 (i,j,k) = nest_fi (i,j,k)
+               qt0  (i,j,k) = nest_q  (i,j,k)            
+               tpt0 (i,j,k) = nest_tp (i,j,k)            
+            end do
+            end do
+            do j=1,l_nj
+            do i=l_ni-pil_e,l_niu
+               ut0  (i,j,k) = nest_u  (i,j,k)
+            end do
+            end do
+            do j=1,l_njv
+            do i=l_ni-pil_e+1,l_ni
+               vt0  (i,j,k) = nest_v  (i,j,k)
+            end do
+            end do
+         end do
+         do j=1,l_nj
+         do i=l_ni-pil_e+1,l_ni
+            st0  (i,j) = nest_s  (i,j)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=l_ni-pil_e+1,l_ni
+               wt0 (i,j,k) = nest_w (i,j,k)
+               mut0(i,j,k) = nest_mu(i,j,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if (l_south) then
+         do k=1,G_nk
+            do j=1,pil_s
+            do i=1,l_ni
+               vt0  (i,j,k) = nest_v  (i,j,k)
+               tt0  (i,j,k) = nest_t  (i,j,k)
+               psdt0(i,j,k) = nest_psd(i,j,k)
+               pipt0(i,j,k) = nest_pip(i,j,k)
+               fipt0(i,j,k) = nest_fip(i,j,k)
+               tdt0 (i,j,k) = nest_td (i,j,k)
+               fit0 (i,j,k) = nest_fi (i,j,k)
+               qt0  (i,j,k) = nest_q  (i,j,k)            
+               tpt0 (i,j,k) = nest_tp (i,j,k)            
+            end do
+            end do
+            do j=1,pil_s
+            do i=1,l_niu
+               ut0  (i,j,k) = nest_u  (i,j,k)
+            end do
+            end do
+         end do
+         do j=1,pil_s
+         do i=1,l_ni
+            st0  (i,j) = nest_s  (i,j)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            do j=1,pil_s
+            do i=1,l_ni
+               wt0 (i,j,k) = nest_w (i,j,k)
+               mut0(i,j,k) = nest_mu(i,j,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if (l_west) then
+         do k=1,G_nk
+            do j=1,l_nj
+            do i=1,pil_w
+               ut0  (i,j,k) = nest_u  (i,j,k)
+               tt0  (i,j,k) = nest_t  (i,j,k)
+               psdt0(i,j,k) = nest_psd(i,j,k)
+               pipt0(i,j,k) = nest_pip(i,j,k)
+               fipt0(i,j,k) = nest_fip(i,j,k)
+               tdt0 (i,j,k) = nest_td (i,j,k)
+               fit0 (i,j,k) = nest_fi (i,j,k)
+               qt0  (i,j,k) = nest_q  (i,j,k)            
+               tpt0 (i,j,k) = nest_tp (i,j,k)            
+            end do
+            end do
+            do j=1,l_njv
+            do i=1,pil_w
+               vt0  (i,j,k) = nest_v  (i,j,k)
+            end do
+            end do
+         end do
+         do j=1,l_nj
+         do i=1,pil_w
+            st0  (i,j) = nest_s  (i,j)
+         end do
+         end do
+         if (.not. Schm_hydro_L) then
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,pil_w
+               wt0 (i,j,k) = nest_w (i,j,k)
+               mut0(i,j,k) = nest_mu(i,j,k)
+            end do
+            end do
+            end do
+         endif
+      endif
+*
+      if ((Hblen_momentx.gt.0).or.(Hblen_momenty.gt.0)) then
+         call nesajr (ut0  ,nest_u  ,LDIST_DIM,G_nk,1,0,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (vt0  ,nest_v  ,LDIST_DIM,G_nk,0,1,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (tdt0 ,nest_td ,LDIST_DIM,G_nk,0,0,
+     $                     Hblen_momentx,Hblen_momenty)
+         call nesajr (psdt0,nest_psd,LDIST_DIM,G_nk,0,0,
+     $                     Hblen_momentx,Hblen_momenty)
+         if (.not. Schm_hydro_L) then
+            call nesajr (wt0  ,nest_w  ,LDIST_DIM,G_nk,0,0,
+     $                        Hblen_momentx,Hblen_momenty)
+            call nesajr (mut0 ,nest_mu ,LDIST_DIM,G_nk,0,0,
+     $                        Hblen_momentx,Hblen_momenty)
+         endif
+      endif
+      if ((Hblen_tx.gt.0).or.(Hblen_ty.gt.0)) then
+         call nesajr (tt0 ,nest_t ,LDIST_DIM,G_nk  ,0,0,
+     $                               Hblen_tx,Hblen_ty)
+         call nesajr (tpt0,nest_tp,LDIST_DIM,G_nk  ,0,0,
+     $                               Hblen_tx,Hblen_ty)
+      endif
+      
+      if ((Hblen_massx.gt.0).or.(Hblen_massy.gt.0)) then
+         call nesajr (fit0 ,nest_fi ,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (fipt0,nest_fip,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (qt0  ,nest_q  ,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (pipt0,nest_pip,LDIST_DIM,G_nk  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+         call nesajr (st0  ,nest_s  ,LDIST_DIM,   1  ,0,0,
+     $                           Hblen_massx,Hblen_massy)
+      endif
+*
+      pnerr = vmmuld(pnlkey1,nvar)
+*
+      key1_ = VMM_KEY (nest_tr)
+      key0_ = VMM_KEY (trt0)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+         key0(n) = key0_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         pnerr = vmmlod(key1,Tr3d_ntr)
+         pnerr = vmmlod(key0,Tr3d_ntr)
+         do n=1,Tr3d_ntr
+            pnerr = vmmget(key1(n),patr,tr)
+            pnerr = vmmget(key0(n),patr0,tr0)
+            if (l_north) then
+                do k=1,G_nk
+                   do j=l_nj-pil_n+1,l_nj
+                   do i=1,l_ni
+                      tr0  (i,j,k) = tr  (i,j,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_east) then
+                do k=1,G_nk
+                   do j=1,l_nj
+                   do i=l_ni-pil_e+1,l_ni
+                      tr0  (i,j,k) = tr  (i,j,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_south) then
+                do k=1,G_nk
+                   do j=1,pil_s
+                   do i=1,l_ni
+                      tr0  (i,j,k) = tr  (i,j,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+            if (l_west) then
+                do k=1,G_nk
+                   do j=1,l_nj
+                   do i=1,pil_w
+                      tr0  (i,j,k) = tr  (i,j,k)
+                   enddo
+                   enddo
+                enddo
+            endif
+         enddo
+         if ((Hblen_trx.gt.0).or.(Hblen_try.gt.0)) then
+            call nesajr (tr0 ,tr ,LDIST_DIM,G_nk  ,0,0,
+     $                            Hblen_trx,Hblen_try)
+         endif
+         pnerr = vmmuld(key1,Tr3d_ntr)
+         pnerr = vmmuld(key0,Tr3d_ntr)
+      endif
+*
+ 1000 format(/' UPDATING LATERAL BOUNDARIES + HOR BLENDING'/)
+*
+*----------------------------------------------------------------------
+      return
+      end

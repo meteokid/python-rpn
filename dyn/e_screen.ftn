@@ -1,0 +1,55 @@
+***S/R e_screen Formats for the screen outputs (Geobus options)
+*
+*
+      subroutine e_screen(variable,interp,file,i)
+*
+#include "impnone.cdk"
+*
+      integer i
+      character *2 variable
+      character *7 interp
+      character *6 file
+*
+*
+*author 
+*       Pierre Pellerin - rpn - august 2000
+*
+*revision
+*
+*language
+*	fortran 77
+*
+*object
+*     Visualisation des options utilisees a l'entree (geophysique).
+*     Utiliser grep -i opt_geo sur le listing pour voir le tableau.
+*     
+*	
+*arguments
+*
+*
+*---------------------------------------------------------------
+*
+      if (i .eq. 1) then
+         write (6,10)
+ 10      format (' |--------------------------------------------|opt_geo')
+         write (6,15)
+ 15      format (' | OPTIONS USED FOR THE GEOPHYSICAL FIELDS    |opt_geo')
+         write (6,10)
+         write (6,20)
+ 20      format (' |  VARIABLE   |   INTERPOLATION   |   FILE   |opt_geo')
+         write (6,10)
+      endif
+*
+      write(6,25) variable, interp, file 
+ 25   format (' |     ',A2,'      |      ',A7,'      |   ',A6,' |opt_geo')
+*
+ 60   format (' ')
+*
+      if (i .eq. -1) then
+          write (6,10)
+      endif        
+      return
+      end
+*
+      
+ 

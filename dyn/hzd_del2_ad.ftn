@@ -1,0 +1,252 @@
+***s/r hzd_del2_ad - ADJ of hzd_del2 
+*
+#include <model_macros_f.h>
+*
+      subroutine hzd_del2_ad  (F_sol, F_rhs_8, F_opsxp0_8, F_opsyp0_8,
+     $                         F_aix_8,F_bix_8,F_cix_8,F_dix_8,
+     $                         F_aiy_8,F_biy_8,F_ciy_8,F_g1_8,F_g2_8,
+     $                         DIST_DIM,Nk, Gni,Gnj, lnjs_nh,
+     $                         nk12s, nk12, ni22s, ni22, fnjb)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk, Gni, Gnj, lnjs_nh,
+     $        nk12s, nk12, ni22s, ni22, fnjb
+*
+*
+      real   F_sol(DIST_SHAPE,Nk)
+      real*8 F_rhs_8(DIST_SHAPE,Nk),F_opsxp0_8(*),F_opsyp0_8(*),
+     $       F_aix_8(lnjs_nh,Gni),F_bix_8(lnjs_nh,Gni),
+     $       F_cix_8(lnjs_nh,Gni),F_dix_8(lnjs_nh,Gni),
+     $       F_aiy_8(ni22s,Gnj),F_biy_8(ni22s,Gnj),F_ciy_8(ni22s,Gnj),
+     $       F_g1_8(PYDIST_SHAPE,nk12s,*),F_g2_8(nk12s,ni22s,*)
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - remove vertical modulation 
+* v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
+*
+*object
+*     see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_sol       I/O           result
+*  F_rhs_8     I/O           r.h.s. of horizontal diffusion equation
+*
+*----------------------------------------------------------------
+*
+*implicit
+#include "glb_ld.cdk"
+*
+      integer i, j, k, dim, cnt
+      real*8 g1_8(nk12*l_nj,Gni), ax_8(nk12*l_nj,Gni), cx_8(nk12*l_nj,Gni),
+     $       g2_8(nk12*ni22,Gnj), ay_8(nk12*ni22,Gnj), cy_8(nk12*ni22,Gnj)
+*
+      real*8 ZERO_8 
+      parameter (ZERO_8=0.0)
+      integer cntmax
+**
+*     __________________________________________________________________
+*
+*
+*     Zero adjoint variables
+*     ----------------------
+      dim = nk12*l_nj*Gni
+      do i = 1,dim
+      g1_8(i,1) = ZERO_8 
+      enddo
+      dim = nk12*ni22*Gnj
+      do i = 1,dim
+      g2_8(i,1) = ZERO_8 
+      enddo
+*
+      do k = Nk,1,-1
+         do j = l_nj-pil_n,1+pil_s,-1
+         do i = l_ni-pil_e,1+pil_w,-1
+            F_rhs_8(i,j,k) = dble(F_sol(i,j,k)) + F_rhs_8(i,j,k)
+            F_sol  (i,j,k) = ZERO_8 
+         enddo
+      enddo
+      enddo
+*
+      call rpn_comm_transpose ( F_rhs_8, Minx, Maxx, Gni, ARRAY1DY,
+     %                          1, nk12s , Nk , F_g1_8,  1, 2 )
+*
+      call rpn_comm_transpose ( F_g1_8, Miny, Maxy, Gnj, nk12s,
+     %                          1, ni22s, Gni, F_g2_8,  2, 2 )
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+* ___ Calcul le long de Y
+*
+      cnt = 0
+      do i = 1, ni22
+      do k = 1, nk12
+         cnt = cnt + 1
+         do j = 1, fnjb
+            ay_8 (cnt,j) = F_aiy_8(i,j)
+            cy_8 (cnt,j) = F_ciy_8(i,j)
+         enddo
+      enddo
+      enddo
+*
+      cntmax=cnt
+*
+*     --------------
+*     END TRAJECTORY
+*     --------------
+*
+*     ADJ of
+* ___ Calcul le long de Y
+*
+      cnt = cntmax + 1 
+      do i = ni22,1,-1
+      do k = nk12,1,-1
+         cnt = cnt - 1
+         do j = fnjb,1,-1
+              g2_8(cnt,j) = F_g2_8(k,i,j) + g2_8(cnt,j)
+            F_g2_8(k,i,j) = ZERO_8 
+         end do
+      enddo
+      enddo
+*
+      do j = 1,fnjb-1
+      do k = cntmax,1,-1
+         g2_8(k,j+1) = - cy_8(k,j)*g2_8(k,j) + g2_8(k,j+1)
+      end do
+      end do
+*
+      do j = fnjb,2,-1
+      do k = cntmax,1,-1
+         g2_8(k,j-1) = - ay_8(k,j)*g2_8(k,j) + g2_8(k,j-1)
+      end do
+      end do
+*
+      cnt = cntmax + 1 
+      do i = ni22,1,-1
+      do k = nk12,1,-1
+         cnt = cnt - 1
+         do j = fnjb,1,-1
+            F_g2_8(k,i,j) = F_biy_8(i,j)*F_opsyp0_8(j)*g2_8(cnt,j) + F_g2_8(k,i,j)
+              g2_8(cnt,j) = ZERO_8 
+         enddo
+      enddo
+      enddo
+*
+      call rpn_comm_transpose ( F_g1_8, YDIST_DIM, Gnj, nk12s,
+     %                          1, ni22s, Gni, F_g2_8,   -2, 2 )
+*
+*     ----------------
+*     START TRAJECTORY
+*     ----------------
+*
+      cnt = 0
+      do j = 1+pil_s, l_nj-pil_n
+      do k = 1, nk12
+         cnt = cnt + 1
+         do i = 1, Gni-1
+            ax_8(cnt,i) = F_aix_8(j,i)
+            cx_8(cnt,i) = F_cix_8(j,i)
+         enddo
+      enddo
+      enddo
+*
+      cntmax=cnt
+*
+*     --------------
+*     END TRAJECTORY
+*     --------------
+*
+      cnt = cntmax + 1 
+      do j = l_nj-pil_n,1+pil_s,-1
+*VDIR NOVECTOR
+      do k = nk12,1,-1
+         cnt = cnt - 1
+*
+         do i = Gni - 1,1,-1
+              g1_8(cnt,i)   =              F_g1_8(j,k,i) +   g1_8(cnt,i)
+            F_g1_8(j,k,Gni) = F_dix_8(j,i)*F_g1_8(j,k,i) + F_g1_8(j,k,Gni)
+            F_g1_8(j,k,i)   = ZERO_8 
+         enddo
+*
+           g1_8(cnt,Gni-1) = F_aix_8(j,1  )*F_g1_8(j,k,Gni) + g1_8(cnt,Gni-1)
+           g1_8(cnt,1    ) = F_cix_8(j,Gni)*F_g1_8(j,k,Gni) + g1_8(cnt,1    )
+           g1_8(cnt,Gni  ) = F_bix_8(j,Gni)*F_g1_8(j,k,Gni) + g1_8(cnt,Gni  )
+         F_g1_8(j,k,Gni)   = ZERO_8 
+      enddo
+      enddo
+*
+      do i = 1,Gni-2
+      do k = cntmax,1,-1
+         g1_8(k,i+1) = - cx_8(k,i)*g1_8(k,i) + g1_8(k,i+1)
+      end do
+      end do
+*
+      do i = Gni-1,2,-1
+      do k = cntmax,1,-1
+         g1_8(k,i-1) = - ax_8(k,i)*g1_8(k,i) + g1_8(k,i-1)
+      end do
+      end do
+*
+      cnt = cntmax + 1 
+      do j = l_nj-pil_n,1+pil_s,-1
+*     ----------------------------------------
+*     DO LOOP ADAPTED TO RESTORE VECTORIZATION
+*     ----------------------------------------
+      do k = nk12,1,-1
+         cnt = cnt - 1
+*
+C        i = Gni
+C        F_g1_8(j,k,Gni) = F_opsxp0_8(i)*g1(cnt,Gni) + F_g1_8(j,k,Gni)
+C          g1_8(cnt,Gni) = ZERO_8 
+*
+         do i = Gni-1,1,-1
+           F_g1_8(j,k,i) = F_bix_8(j,i)*F_opsxp0_8(i)*g1_8(cnt,i) + F_g1_8(j,k,i)
+             g1_8(cnt,i) = ZERO_8 
+         enddo
+*
+      enddo
+      enddo
+*
+      cnt = cntmax + 1
+      do j = l_nj-pil_n,1+pil_s,-1
+*     ----------------------------------------
+*     DO LOOP ADAPTED TO RESTORE VECTORIZATION
+*     ----------------------------------------
+      do k = nk12,1,-1
+         cnt = cnt - 1
+*
+         i = Gni
+         F_g1_8(j,k,Gni) = F_opsxp0_8(i)*g1_8(cnt,Gni) + F_g1_8(j,k,Gni)
+           g1_8(cnt,Gni) = ZERO_8 
+*
+C        do i = Gni-1,1,-1
+C        F_g1_8(j,k,i) = F_bix_8(j,i)*F_opsxp0_8(i)*g1_8(cnt,i) + F_g1_8(j,k,i)
+C          g1_8(cnt,i) = ZERO_8 
+C        enddo
+*
+      enddo
+      enddo
+*
+      call rpn_comm_transpose ( F_rhs_8, XDIST_DIM, Gni, ARRAY1DY,
+     %                          1, nk12s, Nk  , F_g1_8,  -1, 2 )
+*
+      do k = Nk,1,-1
+         do j = l_nj-pil_n,1+pil_s,-1
+         do i = l_ni-pil_e,1+pil_w,-1
+              F_sol(i,j,k) = sngl(F_rhs_8(i,j,k)) + F_sol(i,j,k)
+            F_rhs_8(i,j,k) = ZERO_8 
+         enddo
+         enddo
+      enddo
+*
+*     __________________________________________________________________
+      return
+      end

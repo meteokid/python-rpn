@@ -1,0 +1,53 @@
+***s/p calF_omeg - compute vertical velocity in pressure coordinates
+*
+#include <model_macros_f.h>
+*
+      subroutine calzz(F_zz, F_fit1, F_fit2,  DIST_DIM, Nk,
+     $                                       F_i0,F_in,F_j0,F_jn)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk
+      integer F_i0,F_in,F_j0,F_jn
+      real F_zz(DIST_SHAPE,Nk)
+      real F_fit1(DIST_SHAPE,Nk), F_fit2(DIST_SHAPE,Nk)
+*
+*author
+*     Richard Moffet - cmc - nov 2001 - 
+*
+*
+*object
+*	compute vertical velocity in z coordinates
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_zz       O    - dz/dt
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+*
+**
+      integer i,j,k
+*     __________________________________________________________________
+*
+      do k=2,l_nk
+         do j= F_j0, F_jn
+         do i= F_i0, F_in
+           F_zz (i,j,k) = (F_fit1(i,j,k) - F_fit2(i,j,k))
+     %                                / (Cstv_dt_8*Dcst_grav_8)
+        end do
+        end do
+      end do
+*
+      do j= F_j0, F_jn
+      do i= F_i0, F_in
+         F_zz (i,j,1) = 0.
+      end do
+      end do
+*
+*     __________________________________________________________________
+*
+      return
+      end 

@@ -1,0 +1,250 @@
+***s/r set_sor - initialization of all control parameters for output
+*
+#include <model_macros_f.h>
+*
+      subroutine set_sor()
+*
+#include "impnone.cdk"
+*
+*author
+*     J. Caveen - rpn - august 1994 - v0_16
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from setsor v1_03)
+* v2_10 - Lee V.            - to broadcast Pslab_useit,Slab_xnbits and
+* v2_10                       print tables of both variables requested 
+* v2_10                       for output
+* v2_20 - Lee V.            - enable output of entry bus variables
+* v2_21 - Desgagne M.       - rpn_comm stooge for MPI
+* v2_21 - J. P. Toviessi    - set diez (#) slab output
+* v2_30 - Lee V.            - reduced Level_typ to be 1-D, 
+* v2_30                       save staggered eta levels in Level_stag_ip1
+* v2_31 - Lee V.            - output on Geomg_hyb coordinates, check if
+* v2_31                       file output.cfg before call to srequet
+* v2_31                     - Common blocks of p_busp,p_busv... eliminated
+* v2_31                     - Allocate vectors for chemistry tracer output
+* v2_32 - Lee V.            - force PT field to dynamic slabs, output files
+* v2_32                       set to TIMESTEP units if frequency of output
+* v2_32                       more than unit requested
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     See above id
+*
+*arguments
+*       none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "ptopo.cdk"
+#include "dimout.cdk"
+#include "level.cdk"
+#include "timestep.cdk"
+#include "setsor.cdk"
+#include "outd.cdk"
+#include "outp.cdk"
+#include "outc.cdk"
+#include "grid.cdk"
+#include "p_bus.cdk"
+#include "pslab.cdk"
+#include "dslab.cdk"
+#include "geomg.cdk"
+#include "grd.cdk"
+#include "chem.cdk"
+#include "out.cdk"
+#include "cstv.cdk"
+*
+      integer sglobo, srequet,fnom,longueur,getvndx
+      external sglobo,srequet,fnom,longueur,getvndx
+*
+      character*5 blank_S
+      character*8 unit_S
+      character*256 fn
+      logical iela
+      integer pnerror,i,idx,k,j,levset,err,convmod,nrec
+      real seconds,min_seconds
+*
+      if (Lun_out.gt.0) write(Lun_out,5200)
+
+      pnerror = 0
+
+      if (Ptopo_myproc.eq.0) then
+          pnerror =  sglobo()
+          fn = Lun_sortie_S(1:longueur(Lun_sortie_S))
+          inquire (FILE=fn,EXIST=iela)
+          if (iela) then
+              pnerror = pnerror +  srequet()
+          else
+              pnerror = pnerror + 1
+          endif
+      endif
+
+      if  (pnerror .gt. 0) then
+         if (Lun_out.gt.0) write(Lun_out,5000) pnerror
+      endif
+
+      if (Out_unit_s .eq. ''.or. Out_unit_s .eq. 'H') then
+          min_seconds = 3600.0
+          unit_S = 'HOURS'
+      endif
+      if (Out_unit_s .eq. 'D') then
+          min_seconds = 3600.0*24.0
+          unit_S = 'DAYS'
+      endif
+      if (Out_unit_s .eq. 'M') then
+          min_seconds = 60.0
+          unit_S = 'MINUTES'
+      endif
+      if (Out_unit_s .ne. 'S'.and. Out_unit_s .ne. 'P') then
+          seconds=min_seconds
+          do j=1,Timestep_sets
+          do i=2,Timestep_max(j)
+             seconds = min ( seconds,Cstv_dt_8*(Timestep(i,j)-Timestep(i-1,j)))
+          enddo
+          enddo
+          if (seconds.lt.min_seconds) then
+              Out_unit_s = 'P'
+              Out_ndigits = 6
+              if (Lun_out.gt.0) write(Lun_out,3000)unit_S
+          endif
+      endif
+
+      if (Grd_rcoef.gt.1.0) then
+         Setsor_useit(getvndx('PT')) = 0
+      endif
+      convmod=1
+      do i=1,G_nk-2
+         call convip( Level_stag_ip1(i),(Geomg_hyb(i+1)+Geomg_hyb(i))/2.,
+     %                convmod,+1,blank_S,.false.)
+      enddo
+      do i=G_nk-1,G_nk
+         call convip( Level_stag_ip1(i),Geomg_hyb(i),
+     %                convmod,+1,blank_S,.false.)
+      enddo
+
+      COMMON_BROADCAST(Timestep_i)
+      COMMON_BROADCAST(Timestep_l)
+      COMMON_BROADCAST(Grid_i)
+      COMMON_BROADCAST(Grid_c)
+      COMMON_BROADCAST(Level_r)
+      COMMON_BROADCAST(Level_i)
+      COMMON_BROADCAST(Level_c)
+      COMMON_BROADCAST(Outd)
+      COMMON_BROADCAST(Outp)
+      COMMON_BROADCAST(Outc)
+      COMMON_BROADCAST(Outd_c)
+      COMMON_BROADCAST(Outp_c)
+      COMMON_BROADCAST(Outc_c)
+      COMMON_BROADCAST(Out_c)
+      COMMON_BROADCAST(Out_i)
+      COMMON_BROADCAST(Setsori)
+      COMMON_BROADCAST(Setsorr)
+
+      call RPN_COMM_bcast (Phy_useit,P_bphy_top,"MPI_INTEGER",0,
+     $                     "grid",err)
+      call RPN_COMM_bcast (Phy_xnbits,P_bphy_top,"MPI_INTEGER",0,
+     $                     "grid",err)
+      call RPN_COMM_bcast (Chem_useit,Chem_ntr,"MPI_INTEGER",0,
+     $                     "grid",err)
+      call RPN_COMM_bcast (Chem_xnbits,Chem_ntr,"MPI_INTEGER",0,
+     $                     "grid",err)
+*
+      k = 0
+      Dslab_max_lev_p = 0
+      do j = 1, Outd_sets
+        levset = Outd_lev(j)
+        if (Level_typ(levset).eq.'P') then
+            k = k + Level_max(levset)
+        endif
+      enddo
+      Dslab_max_lev_p = k
+*
+      COMMON_BROADCAST(dslabi)
+      COMMON_BROADCAST(pslabi)
+      COMMON_BROADCAST(pslabs)
+*
+      if (Lun_out.gt.0) then
+* Print table of dynamic variables demanded for output
+
+          write(Lun_out,900)
+          write(Lun_out,901)
+          do i=1,Setsor_num
+             if (Setsor_useit(i).ge.1) then
+                 write(Lun_out,1005) Setsor_name_s(i),Setsor_xnbits(i)
+             endif
+          enddo
+          write(Lun_out,1006)
+
+* Print table of physics variables demanded for output
+
+          write(Lun_out,1000)
+          write(Lun_out, 901)
+          write(Lun_out,1002)
+          do i=1,P_bper_top
+             idx=i
+             if (Phy_useit(idx).eq.1) then
+                 write(Lun_out,1005) peron(i)(1:4),Phy_xnbits(idx)
+             endif
+          enddo
+          write(Lun_out,1003)
+          do i=1,P_bdyn_top
+             idx=i+P_bper_top
+             if (Phy_useit(i+P_bper_top).eq.1) then
+                 write(Lun_out,1005) dynon(i)(1:4),Phy_xnbits(idx)
+             endif
+          enddo
+          write(Lun_out,1004)
+          do i=1,P_bvol_top
+             idx=i+P_bper_top+P_bdyn_top
+             if (Phy_useit(idx).eq.1) then
+                 write(Lun_out,1005) volon(i)(1:4),Phy_xnbits(idx)
+             endif
+          enddo
+          write(Lun_out,1007)
+          do i=1,P_bent_top
+             idx=i+P_bper_top+P_bdyn_top+P_bvol_top
+             if (Phy_useit(idx).eq.1) then
+                 write(Lun_out,1005) enton(i)(1:4),Phy_xnbits(idx)
+             endif
+          enddo
+          write(Lun_out,1006)
+
+* Print table of chemistry variables demanded for output
+
+          write(Lun_out,2000)
+          write(Lun_out, 901)
+          write(Lun_out,1002)
+          do i=1,Chem_ntr
+             if (Chem_useit(i).eq.1) then
+                 write(Lun_out,1005) Chem_name_s(i)(1:4),Chem_xnbits(i)
+             endif
+          enddo
+          write(Lun_out,1006)
+      endif
+      return
+*
+  900 format(/'+',40('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT |'/
+     +     '+',15('-'),'+',24('-'),'+')
+  901 format('|',1x,'Output Names',2x,'|',2x,'XNBITS(=NBITG if 0)   |')
+ 1000 format(/'+',40('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT |'/
+     +     '+',15('-'),'+',24('-'),'+')
+ 2000 format(/'+',40('-'),'+'/'| CHEMISTRY TRACERS REQUESTED FOR OUTPUT |'/
+     +     '+',15('-'),'+',24('-'),'+')
+ 1002 format('|',1x,'Permanent   ',2x,'|',2x,'                      |')
+ 1003 format('|',1x,'Dynamic Bus ',2x,'|',2x,'                      |')
+ 1004 format('|',1x,'Volatile Bus',2x,'|',2x,'                      |')
+ 1007 format('|',1x,'Entry    Bus',2x,'|',2x,'                      |')
+ 1005 format('|',6x,a4,5x,'|',i10,'              |')
+ 1006 format('+',15('-'),'+',24('-'),'+')
+ 3000 format(
+     $    /,'SET_SOR - WARNING: OUTPUT REQUEST IS MORE FREQUENT THAN ',A8
+     $    /,' *** Directive Out_unit_S *** will be set to "P" ',
+     $    /,' *** Output files will be in TIMESTEPS')
+ 5000 format(
+     $     ' TOTAL NUMBER OF WARNINGS ENCOUNTERED IN',
+     $     ' DIRECTIVE SETS: ', I5)
+ 5200 format(
+     %//,'INITIALIZATION OF OUTPUT PRODUCTS (S/R SET_SOR)',
+     % /,'===============================================')
+      end

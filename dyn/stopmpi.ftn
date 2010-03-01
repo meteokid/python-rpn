@@ -1,0 +1,38 @@
+*** s/r stopmpi
+*
+      subroutine stopmpi (F_errcode)
+      implicit none
+*
+      integer F_errcode
+*
+*author
+*     Michel Desgagne - July 2001
+*
+*revision
+* v2_30 - Desgagne M.       - initial version
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_errcode     I                  error code
+*----------------------------------------------------------------
+
+      integer errcode_, err
+*
+*     ---------------------------------------------------------------
+*
+      call rpn_comm_ALLREDUCE (F_errcode,errcode_,1,"MPI_INTEGER",
+     $                                    "MPI_SUM","grid",err)
+      call rpn_comm_Barrier("grid", err)
+*      
+      if (errcode_ < 0) then
+         call rpn_comm_FINALIZE(err)
+         stop
+      endif
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

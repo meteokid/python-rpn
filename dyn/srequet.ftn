@@ -1,0 +1,94 @@
+***function srequet - reads from a file to initialize output requests
+*                     for grid, levels, timesteps and variables
+*
+#include <model_macros_f.h>
+*
+      integer function srequet()
+*
+#include "impnone.cdk"
+*
+*author 
+*     J. Caveen - rpn - decembre 1994
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from srequet2 v1_03)
+* v2_31 - Lee V.            - includes output list for chemistry tracers
+*
+*object
+*    This function uses the ARMNLIB RPN functions
+*    RPN_FORTRAN_CALLBACK and PROCESS_F_CALLBACK
+*    to process the directives for output listed in a file 
+*    specified in the call "process_f_callback". This is
+*    used instead of the conventional FORTRAN namelist.
+*
+*notes
+*    There are four key functions written to handle the 
+*    directives from the specified input file:
+*
+*    set_grid, set_level, set_step, set_var 
+*
+*    which are associated by their
+*    respective keywords "grid","levels","steps","sortie". The directives
+*    are usually in the form of:
+*
+*    key1([a,b,c],d,e,f);
+*    key2=a,c,[d,e,f];
+*    key3=a,b,c,d,<1,15,1>;
+*    key4=a,b,c,[d,e,f,g],h,i,<0,6,2>;
+*
+*    The "rpn_fortran_callback" gives to the written functions a set
+*    of arguments (argc,argv,cmd,v1,v2) where:
+*
+*    cmd,v1,v2 are the same as the last 3 arguments in the calling routine.
+*    argc contains the # of elements in argv
+*    argv is an array of elements derived from the directives by the
+*    "rpn_fortran_callback" routine. Here are some examples on how it
+*    will split the directives into an array of elements:
+*
+*    key1([a,b,c],d,e,f);
+*    argc=8
+*    argv=key1,[  3],a,b,c,d,e,f
+*
+*    key4=a,b,c,[d,e,f,g],h,i,<0,6,2>;
+*    argc=15
+*    argv=key4,a,b,c,[  4],d,e,f,g,h,i,0,2,4,6
+*
+*    'process_f_callback' will set the input file and activate all the
+*    functions declared in "rpn_fortran_callback" calls previously.
+*
+*implicits
+#include "lun.cdk"
+#include "dimout.cdk"
+#include "grid.cdk"
+#include "timestep.cdk"
+#include "level.cdk"
+#include "outd.cdk"
+#include "outp.cdk"
+#include "outc.cdk"
+*modules
+      integer process_f_callback,longueur
+      external process_f_callback,longueur
+      integer set_level,set_step,set_grid,set_var
+      external set_level,set_step,set_grid,set_var
+
+      integer p1a,p1b,istat
+**
+*
+      Grid_sets = 0
+      Timestep_sets = 0
+      Outd_sets = 0
+      Outp_sets = 0
+      Outc_sets = 0
+      Level_sets = 0
+      p1a =  10
+      p1b = -10
+      call rpn_fortran_callback('levels',set_level,' ',p1a,p1b)
+      call rpn_fortran_callback('grid'  ,set_grid ,' ',p1a,p1b)
+      call rpn_fortran_callback('steps' ,set_step ,' ',p1a,p1b)
+      call rpn_fortran_callback('sortie',set_var  ,' ',p1a,p1b)
+      istat= process_f_callback(Lun_sortie_s(1:longueur(Lun_sortie_s)))
+      if (Lun_out.gt.0)
+     $     write(Lun_out,*)'SREQUET:Number of warnings =',istat
+      srequet=istat
+      return
+      end

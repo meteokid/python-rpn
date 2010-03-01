@@ -1,0 +1,49 @@
+***s/r v4d_procdyn - Preprocessing the dynamic input data 
+*                    but with partition for 4D-Var
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_procdyn
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+*
+*object
+*     see id section
+*	
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lctl.cdk"
+#include "v4dg.cdk"
+#include "schm.cdk"
+*
+      if ( V4dg_part.eq.3.and.V4dg_oktr_L ) then
+*
+*        ------------------------
+*        Store TRAJ initial state 
+*        ------------------------
+         V4dg_numtr = 1 
+         call v4d_rwtraj ()
+*
+      endif
+*
+      call v4d_predat1 ()
+*
+      if ( V4dg_part.eq.3 ) then 
+*
+         call v4d_uv2img 
+*
+         if(.not.G_lam) call predat2() 
+*
+      endif
+*
+      return
+      end

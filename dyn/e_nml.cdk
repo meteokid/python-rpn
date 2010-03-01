@@ -1,0 +1,31 @@
+*
+      namelist /grid/ Grd_typ_S, Grd_roule, Grd_ni, Grd_nj, 
+     $     Grd_nila, Grd_njla, Grd_iref, Grd_jref,
+     $     Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax, 
+     $     Grd_latr, Grd_lonr, 
+     $     Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2
+*
+      namelist /gement/
+     $     Out1_etik_s,
+     $     Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L,
+     $     e_schm_stlag, e_schm_adcub,
+     $     E_geol_glanl_L, E_geol_glreg_L,
+     $     E_geol_hsanl_L, E_geol_hscon_L, E_geol_hsreg_L,
+     $     E_geol_gls    , E_geol_gln    , E_geol_gle    , E_geol_glw  ,
+     $     E_geol_hss    , E_geol_hsn    , E_geol_hse    , E_geol_hsw  ,
+     $     E_geol_hsea   , E_geol_poin   , E_geol_modex_L,
+     $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L,
+     $     Ptopo_npex, Ptopo_npey, E_tr3d_list_S, E_trvs_list_S
+*
+      namelist /gement_p/
+     $     Out1_etik_s,
+     $     Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L,
+     $     e_schm_stlag, e_schm_adcub,
+     $     E_geol_glanl_L, E_geol_glreg_L,
+     $     E_geol_hsanl_L, E_geol_hscon_L, E_geol_hsreg_L,
+     $     E_geol_gls    , E_geol_gln    , E_geol_gle    , E_geol_glw  ,
+     $     E_geol_hss    , E_geol_hsn    , E_geol_hse    , E_geol_hsw  ,
+     $     E_geol_hsea   , E_geol_poin   , E_geol_modex_L,
+     $     E_geol_z0cst  , P_pbl_schsl_s , P_pbl_snoalb_L,
+     $     Ptopo_npex, Ptopo_npey
+*

@@ -1,0 +1,341 @@
+***s/r adw_set - sets different advection parameters
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_set
+*
+#include "impnone.cdk"
+*
+*author
+*     alain patoine
+*
+*revision
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*     none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+#include "schm.cdk"
+************************************************************************
+      integer i, j, k, ij, pnerr, trj_i_off
+      integer i0, j0, k0, pnx, pny, pnz, ii1, ii2
+*
+      real*8 ZERO, HALF, ONE, TWO
+      parameter( ZERO  = 0.0 )
+      parameter( HALF  = 0.5 )
+      parameter( ONE   = 1.0 )
+      parameter( TWO   = 2.0 )
+*
+      real*8  prhxmn, prhymn, prhzmn, large, dummy, pdfi, pdov6
+      real*8 whx(G_ni+2*Adw_halox),why(G_nj+2*Adw_haloy),
+     $       whz(0:G_nk+1),w2(G_nk,6)
+*
+      large = 1.0e20
+      pdov6 = 1.0d0/6.0d0
+************************************************************************
+* Validation of halo sizes                                             *
+************************************************************************
+      if (( Adw_halox .lt. 3 ) .or. ( Adw_haloy .lt. 2 )) then
+         print *,'*************************************************'
+         print *,'*                                               *'
+         print *,'* PROBLEM:  Adw_halox and Adw_haloy cannot be   *'
+         print *,'*           less than 2.                        *'
+         print *,'*                                               *'
+         print *,'*************************************************'
+         call flush(6)
+         call gem_stop('adw_set',-1)
+      endif
+************************************************************************
+* In the general situation where only the tiles adjacent to the poles  *
+* would have an advection source grid periodic in x, we would have the *
+* following decision tree:                                             *
+************************************************************************
+*     if ( l_south .or. l_north ) then                                 *
+*        Adw_nic       = G_ni                                          *
+*        Adw_int_i_off = 0          <--- offset global-advection grids *
+*            trj_i_off = l_i0 - 1   <--- offset advection-local  grids *
+*     else                                                             *
+*        Adw_nic       = l_ni                                          *
+*        Adw_int_i_off = l_i0 - 1   <--- offset global-advection grids *
+*            trj_i_off = 0          <--- offset advection-local  grids *
+*     endif                                                            *
+************************************************************************
+* However, in the present situation where all the tiles have an        *
+* advection source grid periodic in x, we have this:                   *
+************************************************************************
+      if (G_lam) then
+      Adw_nic       = l_ni
+      Adw_int_i_off = l_i0 - 1
+          trj_i_off = 0
+      else
+      Adw_nic       = G_ni
+      Adw_int_i_off = 0
+          trj_i_off = l_i0 - 1
+      endif
+*
+      Adw_njc       = l_nj
+      Adw_int_j_off = l_j0 - 1
+*
+      Adw_nit       = Adw_nic + 2 * Adw_halox
+      Adw_njt       = Adw_njc + 2 * Adw_haloy
+************************************************************************
+      call hpalloc ( Adw_xg_8_,   G_ni+2*Adw_halox, pnerr, 8 )
+      call hpalloc ( Adw_yg_8_,   G_nj+2*Adw_haloy, pnerr, 8 )
+      call hpalloc ( Adw_xx_8_,   Adw_nit,          pnerr, 8 )
+      call hpalloc ( Adw_cx_8_,   Adw_nic,          pnerr, 8 )
+      call hpalloc ( Adw_sx_8_,   Adw_nic,          pnerr, 8 )
+      call hpalloc ( Adw_wx_8_,   Adw_nic,          pnerr, 8 )
+      call hpalloc ( Adw_yy_8_,   Adw_njt,          pnerr, 8 )
+      call hpalloc ( Adw_cy_8_,   Adw_njc,          pnerr, 8 )
+      call hpalloc ( Adw_sy_8_,   Adw_njc,          pnerr, 8 )
+      call hpalloc ( Adw_cx2d_8_, l_ni*l_nj,        pnerr, 8 )
+      call hpalloc ( Adw_sx2d_8_, l_ni*l_nj,        pnerr, 8 )
+      call hpalloc ( Adw_cy2d_8_, l_ni*l_nj,        pnerr, 8 )
+      call hpalloc ( Adw_sy2d_8_, l_ni*l_nj,        pnerr, 8 )
+************************************************************************
+* set global grid                                                      *
+************************************************************************
+      do i=1,G_ni
+      Adw_xg_8(Adw_halox+i)      = G_xg_8(i)
+      enddo
+*
+      if (.not.G_lam) then
+      do i=1,Adw_halox
+      Adw_xg_8(i)                = Adw_xg_8(G_ni+i)
+     %                           - TWO*Dcst_pi_8
+      Adw_xg_8(Adw_halox+G_ni+i) = Adw_xg_8(Adw_halox+i)
+     %                           + TWO*Dcst_pi_8
+      enddo
+      else
+      prhxmn =  G_xg_8(2)-G_xg_8(1)
+      do i=Adw_halox,1,-1
+      Adw_xg_8(i)                = Adw_xg_8(i+1)-prhxmn
+      enddo
+      do i=1,Adw_halox
+      Adw_xg_8(Adw_halox+G_ni+i) = Adw_xg_8(Adw_halox+G_ni+i-1)+prhxmn
+      enddo
+      endif
+***
+      do j=1,G_nj
+      Adw_yg_8 (Adw_haloy+j)     = G_yg_8(j)
+      enddo
+*
+      if (.not.G_lam) then
+      Adw_yg_8(Adw_haloy-1)      = -(Dcst_pi_8+Adw_yg_8(Adw_haloy+1) )
+      Adw_yg_8(Adw_haloy)        = - Dcst_pi_8*HALF
+      Adw_yg_8(Adw_haloy+G_nj+1) =   Dcst_pi_8*HALF
+      Adw_yg_8(Adw_haloy+G_nj+2) =  (Dcst_pi_8-Adw_yg_8(Adw_haloy+G_nj))
+*
+      do j=3,Adw_haloy
+      Adw_yg_8(Adw_haloy+1-j)    = TWO*Adw_yg_8(Adw_haloy+1   -j+1)
+     %                           -     Adw_yg_8(Adw_haloy+1   -j+2)
+      Adw_yg_8(Adw_haloy+G_nj+j) = TWO*Adw_yg_8(Adw_haloy+G_nj+j-1)
+     %                           -     Adw_yg_8(Adw_haloy+G_nj+j-2)
+      enddo
+      else
+      prhymn =  G_yg_8(2)-G_yg_8(1)
+      do j=Adw_haloy,1,-1
+      Adw_yg_8(j)                = Adw_yg_8(j+1)-prhymn
+      enddo
+      do j=1,Adw_haloy
+      Adw_yg_8(Adw_haloy+G_nj+j) = Adw_yg_8(Adw_haloy+G_nj+j-1)+prhymn
+      enddo
+      endif
+************************************************************************
+* set advection grid                                                   *
+************************************************************************
+      do i=1,Adw_nit
+         Adw_xx_8 (i) = Adw_xg_8(Adw_int_i_off+i)
+      enddo
+*
+      if (.not.G_lam) then
+      do i=1,Adw_nic
+         Adw_wx_8(i) =( Adw_xx_8(Adw_halox+i+1)
+     %                 -Adw_xx_8(Adw_halox+i-1))*HALF/(TWO*Dcst_pi_8)
+      enddo
+      endif
+      do i=1,Adw_nic
+         Adw_cx_8(i) = cos ( Adw_xx_8(Adw_halox+i) )
+         Adw_sx_8(i) = sin ( Adw_xx_8(Adw_halox+i) )
+      enddo
+*
+      do j=1,Adw_njt
+         Adw_yy_8 (j) = Adw_yg_8(Adw_int_j_off+j)
+      enddo
+*
+      do j=1,Adw_njc
+         Adw_cy_8(j) = cos ( Adw_yy_8(Adw_haloy+j) )
+         Adw_sy_8(j) = sin ( Adw_yy_8(Adw_haloy+j) )
+      enddo
+************************************************************************
+* fill 2D fields for use in adw_trajsp and adw_trajex                  *
+************************************************************************
+      do j= 1, l_nj 
+      do i= 1, l_ni 
+         ij = i + ( j-1 ) * l_ni
+         Adw_cy2d_8(ij) = Adw_cy_8 ( j )
+         Adw_sy2d_8(ij) = Adw_sy_8 ( j )
+         Adw_cx2d_8(ij) = Adw_cx_8 ( trj_i_off + i )
+         Adw_sx2d_8(ij) = Adw_sx_8 ( trj_i_off + i )
+      enddo
+      enddo
+************************************************************************
+* precompute localisation and interpolation parameters                 *
+************************************************************************
+*
+      Adw_x00_8 = Adw_xg_8(1)
+      Adw_y00_8 = Adw_yg_8(1)
+      Adw_z00_8 = Geomg_z_8(1)
+*
+      prhxmn = large
+      prhymn = large
+      prhzmn = large
+*
+      do i=1,G_ni+2*Adw_halox-1
+      whx(i) = Adw_xg_8(i+1) - Adw_xg_8(i)
+      prhxmn = min( whx(i), prhxmn )
+      enddo
+*
+      do j=1,G_nj+2*Adw_haloy-1
+      why(j) = Adw_yg_8(j+1) - Adw_yg_8(j)
+      prhymn = min( why(j), prhymn )
+      enddo
+*
+      whz(0     ) = 1.0
+      whz(G_nk  ) = 1.0
+      whz(G_nk+1) = 1.0
+      do k=1,G_nk-1
+      whz(k) = Geomg_z_8(k+1) - Geomg_z_8(k)
+      prhzmn = min( whz(k), prhzmn )
+      enddo
+*
+      Adw_ovdx_8 = 1.0d0/prhxmn
+      Adw_ovdy_8 = 1.0d0/prhymn
+      Adw_ovdz_8 = 1.0d0/prhzmn
+*
+      pnx = int(1.0+(Adw_xg_8(G_ni+2*Adw_halox)-Adw_x00_8 )*Adw_ovdx_8)
+      pny = int(1.0+(Adw_yg_8(G_nj+2*Adw_haloy)-Adw_y00_8 )*Adw_ovdy_8)
+      pnz = int(1.0+(Geomg_z_8(G_nk)           -Adw_z00_8 )*Adw_ovdz_8)
+*
+      call hpalloc( Adw_lcx_, pnx, pnerr, 0 )
+      call hpalloc( Adw_lcy_, pny, pnerr, 0 )
+      call hpalloc( Adw_lcz_, pnz, pnerr, 0 )
+*
+      call hpalloc( Adw_bsx_8_, G_ni+2*Adw_halox , pnerr, 8 )
+      call hpalloc( Adw_dlx_8_, G_ni+2*Adw_halox , pnerr, 8 )
+      call hpalloc( Adw_dix_8_, G_ni+2*Adw_halox , pnerr, 8 )
+*
+      call hpalloc( Adw_bsy_8_, G_nj+2*Adw_haloy , pnerr, 8 )
+      call hpalloc( Adw_dly_8_, G_nj+2*Adw_haloy , pnerr, 8 )
+      call hpalloc( Adw_diy_8_, G_nj+2*Adw_haloy , pnerr, 8 )
+*
+      call hpalloc( Adw_bsz_8_, G_nk             , pnerr, 8 )
+      call hpalloc( Adw_dlz_8_, G_nk+2           , pnerr, 8 )
+      call hpalloc( Adw_diz_8_, G_nk+2           , pnerr, 8 )
+      call hpalloc( Adw_dbz_8_, G_nk             , pnerr, 8 )
+*
+      call hpalloc( Adw_iln_  , G_ni                 , pnerr, 0 )
+      call hpalloc( Adw_lnr_8_, 2*(G_ni+2*Adw_halox) , pnerr, 8 )
+*
+      call hpalloc( Adw_qzz_8_, 3 * G_nk , pnerr, 8 )
+      call hpalloc( Adw_qzi_8_, 4 * G_nk , pnerr, 8 )
+*
+      i0 = 1
+      do i=1,pnx
+      pdfi = Adw_xg_8(1) + (i-1) * prhxmn
+      if ( pdfi .gt. Adw_xg_8(i0+1) ) i0 = min(G_ni+2*Adw_halox-1,i0+1)
+      Adw_lcx(i) = i0
+      enddo
+      do i=1,G_ni+2*Adw_halox-1
+      Adw_dlx_8(i) =       whx(i)
+      Adw_dix_8(i) = 1.0d0/whx(i)
+      enddo
+      do i=1,G_ni+2*Adw_halox
+      Adw_bsx_8(i) = Adw_xg_8(i)
+      enddo
+*
+      j0 = 1
+      do j=1,pny
+      pdfi = Adw_yg_8(1) + (j-1) * prhymn
+      if ( pdfi .gt. Adw_yg_8(j0+1) ) j0 = min(G_nj+2*Adw_haloy-1,j0+1)
+      Adw_lcy(j) = j0
+      enddo
+      do j=1,G_nj+2*Adw_haloy-1
+      Adw_dly_8(j) =       why(j)
+      Adw_diy_8(j) = 1.0d0/why(j)
+      enddo
+      do j=1,G_nj+2*Adw_haloy
+      Adw_bsy_8(j) = Adw_yg_8(j)
+      enddo
+*
+      k0 = 1
+      do k=1,pnz
+      pdfi = Geomg_z_8(1) + (k-1) * prhzmn
+      if ( pdfi .gt. Geomg_z_8(k0+1) ) k0 = min( G_nk-2, k0+1)
+      Adw_lcz(k) = k0
+      enddo
+      do k=0,G_nk+1                    !! warning note the shift in k !!
+      Adw_dlz_8(k-1) =       whz(k)
+      Adw_diz_8(k-1) = 1.0d0/whz(k)
+      enddo
+      do k=1,G_nk
+      Adw_bsz_8(k-1) = Geomg_z_8(k)
+      Adw_dbz_8(k-1) = ( whz(k) * whz(k) ) * pdov6
+      enddo
+*
+      call set_ops8 ( Adw_qzz_8, whz(1), two, .false., G_nk, G_nk, 1 )
+      call set_ops8 ( w2       , whz(1), two, .false., G_nk, G_nk, 2 )
+*
+      w2(1,2) = 1.0
+      w2(1,3) = 0.0
+      if ( Adw_nkbz_L ) then
+         k = G_nk - 1
+         w2(2,1) = 0.0
+         if ( G_nk. gt. 3 ) then
+            w2(2,2) = (whz(1)+whz(2  ))*(1.0+whz(1)/(2.0*whz(2  )))/3.0
+            w2(2,3) = (whz(1)+whz(2  ))*(1.0-whz(1)/     whz(2  )) /6.0
+            w2(k,1) = (whz(k)+whz(k-1))*(1.0-whz(k)/     whz(k-1)) /6.0
+            w2(k,2) = (whz(k)+whz(k-1))*(1.0+whz(k)/(2.0*whz(k-1)))/3.0
+         else
+            w2(2,2) = ( whz(1)+whz(2) )/2.0
+         endif
+         w2(k,3) = 0.0
+      endif
+      w2(G_nk,1) = 0.0
+      w2(G_nk,2) = 1.0
+*
+      call set_trig21 (Adw_qzi_8,Adw_qzi_8(G_nk+1),Adw_qzi_8(2*G_nk+1), 
+     %                 dummy,w2(1,1),w2(1,2),w2(1,3),
+     %                 1, 1, G_nk, 1, .false.)
+*     
+************************************************************************
+* set 1-D interpolation of grid reflexion across the pole
+************************************************************************
+      do 10 i=1,G_ni
+         ii1 = i+Adw_halox
+         if ( Adw_xg_8(ii1) .lt. Adw_xg_8(Adw_halox+1) + Dcst_pi_8 ) then
+            Adw_lnr_8(i) = Adw_xg_8(ii1) + Dcst_pi_8
+         else
+            Adw_lnr_8(i) = Adw_xg_8(ii1) - Dcst_pi_8
+         endif
+         do j=1,G_ni     
+            ii2 = j+Adw_halox
+            Adw_iln(i) = j
+            if ( Adw_lnr_8(i).ge.Adw_xg_8(ii2) .and. 
+     %           Adw_lnr_8(i).lt.Adw_xg_8(ii2+1) ) go to 10
+         enddo
+ 10   continue
+*
+      return
+      end
+

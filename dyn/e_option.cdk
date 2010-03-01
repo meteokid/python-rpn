@@ -1,0 +1,45 @@
+#if defined (DOC)
+*
+***comdeck e_option.cdk
+*
+*revision
+* v1_97  - V. Lee          - added PILOT, changed PASTRUD to NO_INTERP,
+* v1_97                      gnblev to SHALLOW_LEV, DEBUG is eliminated
+* v2_30  - S. Edouard      - added RCOEF
+*
+*______________________________________________________________________
+*                                                                      |
+* Most variables in NAMELIST GEFENT are saved in this comdeck          |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+**-------------------|-------------------------------------------------|
+* SWPH               | .true. to consider water and ice phase          |
+*                    | .false. to consider water phase only            |
+* PILOT              | .true. run is a pilot for GEMPP                 |
+*                    | .false. run is for an initial run for GEMPP     |
+* PTOP               | top required for the  model top                 |
+* ZTOP               | top required for rigid model top                |
+* ETA                | table of model levels (usually ETA)             |
+* RCOEF              | parameter describing the rectification of the   |
+*                    | vertical coordinate from sigma to pressure level|
+*----------------------------------------------------------------------|
+* The following applies for mapping analyses to the model grid         |
+*----------------------------------------------------------------------|
+* GLHORINT           | .true. if horizontal interpolation is needed    |
+* GLETAANL           | .true. if analysis is on ETA levels             |
+* GLHYBANL           | .true. if analysis is on HYBRID levels          |
+* GLSIGANL           | .true. if analysis is on SIGMA levels           |
+*----------------------------------------------------------------------
+*
+#endif
+      logical  swph,pilot,no_interp,
+     $         glhorint, gletaanl, glsiganl, glhybanl
+      real     ptop, ztop, pref, rcoef
+      common /option_l/
+     $     swph,pilot,no_interp, glhorint,gletaanl,
+     $     glsiganl, glhybanl
+      common /option_r/ ptop, ztop, pref, rcoef
+
+
+

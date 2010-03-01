@@ -1,0 +1,79 @@
+***s/r adw_pols - calculate pole value for a scalar
+*                ( weighted average around the pole )
+*
+      subroutine adw_pols ( F_field, F_wx,    F_j,
+     %                      F_nic,   F_halox,
+     %                      F_njc,   F_haloy, F_nk )
+*
+#include "impnone.cdk"
+*
+      integer  F_j, F_nic, F_halox, F_njc, F_haloy, F_nk
+*
+      real F_field (-F_halox+1:F_nic+F_halox,
+     %              -F_haloy+1:F_njc+F_haloy, F_nk)
+*
+      real*8 F_wx (F_nic)
+*
+*author
+*     alain patoine
+*
+*revision
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_field      | field to treat                                  |  io |
+* F_wx         | weights (proportional to x grid distances)      |  i  |
+* F_j          | j position to fill                              |  i  |
+*              |                                                 |     |
+* F_nic        | number of points in x direction (advection grid)|  i  |
+* F_njc        | number of points in y direction (advection grid)|  i  |
+*              |                                                 |     |
+* F_halox      | size of halo in x direction (advection grid)    |  i  |
+* F_haloy      | size of halo in y direction (advection grid)    |  i  |
+*              |                                                 |     |
+* F_nk         | number of levels                                |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+*     none
+*
+*modules
+*     none
+************************************************************************
+      integer i,j,k
+*
+      real*8 ww
+*
+      if ( F_j .eq. 0 ) then
+                             j = 1
+      else
+                             j = F_njc
+      endif
+*
+      do k = 1,F_nk
+*
+      ww = 0.0
+*
+      do i=1,F_nic
+      ww = ww + F_wx(i) * dble(F_field(i,j,k))
+      enddo
+*
+      do i=-F_halox+1,F_nic+F_halox
+      F_field(i,F_j,k) = ww
+      enddo
+*
+      enddo
+*
+      return
+      end
+

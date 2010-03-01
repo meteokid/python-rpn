@@ -1,0 +1,46 @@
+#if defined (DOC)
+*
+***comdeck Outc.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH OUTPUT FOR CHEMISTRY VARIABLES            |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Outc_sets          | The total number of sets of output variables    |
+*                    | requested from the chemistry                    |
+* Outc_var           | A table containing "Outc_sets" sets of output   |
+*                    | variables requested from the chemistry  (the    |
+*                    | values are indices which point to the variable  |
+*                    | names stored in table Busp_var_s)               |
+* Outc_var_max       | Outc_var_max(j) is the total number of requested|
+*                    | output variables in each set Outc_var(*,j)      |
+* Outc_lev           | Outc_lev(j) contains the index that indicates   |
+*                    | the Level set to use for Outc_var(*,j)          |
+* Outc_grid          | Outc_grid(j) contains the index that indicates  |
+*                    | the Grid set to use for Outc_var(*,j)           |
+* Outc_step          | Outc_step(i) contains the index that indicates  |
+*                    | the Step set to use for Outc_var(*,j)           |
+* Outc_typvar_S      | Outc_typvar_S(i) is the assigned datatype for   |
+*                    | the fields defined in Outc_var(*,j)             |
+*----------------------------------------------------------------------
+*
+#endif
+
+      integer Outc_var(MAXELEM,MAXSET)
+      integer Outc_lev(MAXSET)
+      integer Outc_grid(MAXSET)
+      integer Outc_step(MAXSET)
+      integer Outc_var_max(MAXSET)
+      integer Outc_sets
+      character*1 Outc_typvar_S(MAXSET)
+
+      MARK_COMMON_BEG (Outc)
+      COMMON /Outc/ Outc_var,Outc_lev,Outc_grid,Outc_step,
+     $              Outc_var_max, Outc_sets
+      MARK_COMMON_END (Outc)
+      MARK_COMMON_BEG (Outc_c)
+      COMMON /Outc_c/ Outc_typvar_S
+      MARK_COMMON_END (Outc_c)

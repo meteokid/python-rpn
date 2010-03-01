@@ -1,0 +1,98 @@
+****s/r sergout - performs output of time series buffers.
+*
+#include <model_macros_f.h>
+*
+      subroutine sergout (F_headr_L)
+*
+#include "impnone.cdk"
+*
+      logical F_headr_L
+*
+*author
+*     Andre Methot - aug 94 v0_14
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_11 - Lee V.            - add logic for output
+* v2_21 - Desgagne M.       - rpn_comm stooge for MPI
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_headr_L     I         true: first record header will be written
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dimout.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "out1.cdk"
+#include "hgc.cdk"
+#include "p_cond.cdk"
+#include "ptopo.cdk"
+#include "xst.cdk"
+#include "xstb.cdk"
+#include "p_serg.cdk"
+#include "lctl.cdk"
+*
+      logical wr_L
+      integer i, j, k, pnidate(14), pnigrot(4), err
+      character*8 ptetik_S
+**
+*
+*     calculation of date stamp
+*
+      pnidate(14) = Out1_date
+      call datmgp2(pnidate)
+*
+*     Put the character 'G' in front of etiket to allow
+*     correct rotation of wind related variables by
+*     feseri program
+*     
+      ptetik_S(1:1)='G'
+      ptetik_S(2:8)=Out1_etik_s(2:8)
+*
+      pnigrot(1) = HGC_ig1ro
+      pnigrot(2) = HGC_ig2ro
+      pnigrot(3) = HGC_ig3ro
+      pnigrot(4) = HGC_ig4ro
+*
+*     In the call to serwrit:
+*     The rotation parameter (7th) is currently hardcoded to 0.0
+*     since the time serie package does not rotates winds
+*     adequately for GEF's grids.
+*     Also the 10th parameter is hardcoded to false, since
+*     current GEF version does not have a SATUES switch.
+*
+**                                           PTOIT, ETATOIT
+*
+      call rpn_comm_REDUCE (Xstb_sers,Xstb_sersx,Xst_dimsers,
+     $                 "MPI_INTEGER","MPI_BOR",0,"grid",err)
+      call rpn_comm_REDUCE (Xstb_serp,Xstb_serpx,Xst_dimserp,
+     $                 "MPI_INTEGER","MPI_BOR",0,"grid",err)
+      wr_L=.false.
+      if (Ptopo_myproc.eq.0) then
+         do i=1,Xst_dimsers
+            Xstb_sers(i) = Xstb_sersx(i)
+         end do
+         do i=1,Xst_dimserp
+            Xstb_serp(i) = Xstb_serpx(i)
+         end do
+         wr_L=(.not.P_serg_sroff_L.and.(Lctl_step.le.P_serg_serstp))
+      endif
+      call serwrit2 ( pnidate, ptetik_S , Geomg_hybm, 1000., 0.0, pnigrot,
+     %              0.0, real(Dcst_rgasd_8), real(Dcst_grav_8), .false.,
+     %              P_cond_satu_L, F_headr_L, wr_L)
+      if (Ptopo_myproc.eq.0) then
+         do i=1,Xst_dimsers
+            Xstb_sers(i) = 0.
+         end do
+         do i=1,Xst_dimserp
+            Xstb_serp(i) = 0.
+         end do
+      endif
+*
+      return
+      end

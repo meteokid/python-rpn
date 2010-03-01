@@ -1,0 +1,152 @@
+***s/r e_pretopo - Prepares environment prior to processing topography
+*
+#include <model_macros_f.h>
+*
+      subroutine e_pretopo (xfi,yfi,xu,yv)
+#include "impnone.cdk"
+*
+      real xfi(*),yfi(*),xu(*),yv(*)
+*
+*author - Andre Methot  - sept 95 - v0_16
+*
+*revision
+* v2_11 - V. Lee          - corrected bug so that setup of topography
+* v2_11                     is always done (e_setgeom) if Topo_init_L=T
+* v2_30 - L. Corbeil      - Writing of xdy and xdyv to bmf files
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*       See above ID.
+*
+*arguments
+*
+*implicites
+#include "e_files.cdk"
+#include "e_topo.cdk"
+#include "e_locdim.cdk"
+#include "e_dim.cdk"
+#include "e_grids.cdk"
+#include "e_geomg.cdk"
+#include "e_geoma.cdk"
+#include "dcst.cdk"
+*
+**
+      integer i,j,heaperr
+      real*8 deg2rad_8,ONE_8,CLXXX_8
+      parameter( ONE_8   = 1.0 , CLXXX_8 = 180.0 )
+*
+*---------------------------------------------------------------------
+*
+      write(stdout,1001)
+      deg2rad_8 = acos( -ONE_8 )/CLXXX_8
+*
+*     Allocate dynamically some of the variables in e_geomg.cdk
+*
+      call hpalloc(p_xdx , nifi*2, heaperr, 1)
+      call hpalloc(p_xdy , njfi*2, heaperr, 1)
+      call hpalloc(p_xdxu, nifi*2, heaperr, 1)
+      call hpalloc(p_xdyv, njfi*2, heaperr, 1)
+*
+C     Compute xdx,xdxu,xu,yv,xdy,xdyv
+*
+      if (LAM) then
+         do i = 1, nifi
+            xdx(i)   = xfi(I) * deg2rad_8
+         enddo
+         do i = 1,niu
+            xdxu (i) = xu (I) * deg2rad_8
+         enddo
+      else
+         do i = 1,nifi-1
+            xdx(i)   = xfi(I) * deg2rad_8
+            xdxu (i) = xu (I) * deg2rad_8
+         enddo
+      endif
+      do j = 1,njfi
+         xdy(j)   = yfi(J) * deg2rad_8
+      enddo
+      do j = 1,njv
+         xdyv (j) = yv (J) * deg2rad_8
+      enddo
+*
+*C       Set global variables and operators, compute the dimensions
+*        for dynamic allocation for filtering topography to prevent
+*        bank conflicts
+*        ------------------------------------------------------------
+*
+      if ( Topo_init_L ) then
+*
+         write(stdout,1002)
+*
+         gnis  = pni + 1
+         gnjs  = pnj + 2
+         gnijs = max(pni,pnj)+2
+         gnks  = 0
+         gnijks= 0
+*
+*          Allocate the other variables dynamically in e_geomg.cdk
+*
+*          NOTE: this routine should have selected memory allocation
+*          if topography filtering is required - to be implemented later
+
+         call hpalloc(p_xdcy , pnj*2 , heaperr, 1)
+         call hpalloc(p_xdcyv, pnjv*2, heaperr, 1)
+         call hpalloc(p_xdhx , pni*2 , heaperr, 1)
+         call hpalloc(p_xdhy , pnj*2 , heaperr, 1)
+         call hpalloc(p_xdhxu, (pniu+1)*2, heaperr, 1)
+         call hpalloc(p_xdhyv, (pnjv+1)*2, heaperr, 1)
+*     
+         do i=1,pni-1
+            xdhx(i) = xdx(i+1) - xdx(i)
+         enddo
+         if (lam) then
+            xdhx(pni) = xdhx(pni-1)
+         else
+            xdhx(pni) = xdx(1) + 2.0 * Dcst_pi_8 - xdx(pni)
+         endif
+*     
+         do i=1,pniu-1
+            xdhxu(i) = xdxu(i+1) - xdxu(i)
+         enddo
+         if (lam) then
+            xdhxu(0) = xdhxu(1)
+            xdhxu(pniu) = xdhxu(pniu-1)
+         else
+            xdhxu(0) = xdxu(1) + 2.0 * Dcst_pi_8 - xdxu(pniu)
+            xdhxu(pniu) = xdhxu(0)
+         endif
+*     
+         do j=1,pnj-1
+            xdhy(j) = xdy(j+1) - xdy(j)
+         enddo
+*     
+         do j = 1, pnjv-1
+            xdhyv(j)  = xdyv(j+1) - xdyv(j)
+         enddo
+         if (lam) then
+            xdhyv(0)  = xdhyv(1)
+            xdhyv(pnjv) = xdhyv(pnjv-1)
+         else
+            xdhyv(0)  = xdyv(1) + ( Dcst_pi_8 / 2.0 )
+            xdhyv(pnjv) = ( Dcst_pi_8 / 2.0 ) - xdyv(pnjv)
+         endif
+*     
+         do j=1,pnj
+            xdcy(j)  = cos( xdy(j) )
+         enddo
+*     
+         do j = 1, pnjv
+            xdcyv(j)  = cos( xdyv(j) )
+         enddo
+*     
+      endif
+*
+ 1001 format( //,'SETUP FOR DEFINING  TOPOGRAPHY (S/R E_PRETOPO)',
+     +          /,'=============================================',//)
+ 1002 format( //,'SETUP FOR FILTERING TOPOGRAPHY (S/R E_PRETOPO)',
+     +          /,'=============================================',//)
+*
+*---------------------------------------------------------------------
+*
+      return
+      end

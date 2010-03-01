@@ -1,0 +1,10 @@
+*
+*revision
+* v2_20 - Pellerin P.       - initial version
+*
+      integer maxel,
+#include "p_geobusid.cdk"
+      common /p_geobusid/
+#include "p_geobusid.cdk"
+*
+      parameter (maxel = 50)

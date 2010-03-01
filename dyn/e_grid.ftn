@@ -1,0 +1,323 @@
+***s/r e_grid - compute the grid of the model
+#include <model_macros_f.h>
+*
+      subroutine e_grid ( F_x,F_y,F_xu,F_yv,
+     %     F_rotx,F_roty,F_rotxu,F_rotyu,F_rotxv,F_rotyv,F_lam_L,
+     %     F_ni,F_nj,f_niu,F_njv,F_nila,F_njla,
+     $     F_rot_L,F_lonref1,F_latref1,F_lonref2,F_latref2,
+     %     F_x0,F_y0,F_xl,F_yl,F_dx,F_dy,F_dxmax,F_dymax )
+      implicit none
+*
+      logical F_lam_L,F_rot_L
+      integer F_ni,F_nj,f_niu,F_njv,
+     $        F_nila,F_njla
+      real F_x(F_ni),F_y(F_nj),F_xu(F_niu),F_yv(F_njv),
+     $     F_rotx (F_ni ,F_nj ),F_roty (F_ni ,F_nj ),
+     $     F_rotyu(F_niu,F_nj ),F_rotxu(F_niu,F_nj ),
+     $     F_rotyv(F_ni ,F_njv),F_rotxv(F_ni ,F_njv),
+     $     F_lonref1,F_latref1,F_lonref2,F_latref2,
+     $     F_x0,F_y0,F_xl,F_yl,F_dx,F_dy,F_dxmax,F_dymax
+*
+*author  unknown
+*
+*revision
+* v2_30 - Dugas B.     - use real*8 rotation matrices and cartesian coordinates
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*    Compute longitudes and longitudes for the rotated coordinate system
+*
+*arguments
+*  Name        I/O                 Description
+*-----------------------------------------------------------------------
+* F_gtyp_S              | grid type for the positional records            |
+* F_ni                 | number of points in x for the PHI grid          |
+* F_nj                 | number of points in y for the PHI grid          |
+* f_niu                | number of points in x for the U grid            |
+* F_njv                | number of points in y for the V grid            |
+* F_x0                 | longitude of the point at the lower left corner |
+*                    | of the domain                                   |
+* F_y0                 | latitude of the point at the lower left corner  |
+*                    | of the domain                                   |
+* F_nila               | # of points in x of the high resolution domain  |
+* F_njla               | # of points in y of the high resolution domain  |
+* F_rot              | if  .TRUE., rotate the system coordinates       |
+*                    | if  .FALSE. do not rotate the system coordinates|
+* F_lam_L                | if  .TRUE., limited area grid defined           |
+* F_dxmax              | maximum grid point spacing along x (degrees)    |
+* F_dymax              | maximum grid point spacing along y (degrees)    |
+*--------------------|-------------------------------------------------|
+* OUTPUT only                                                          |
+*--------------------|-------------------------------------------------|
+* F_x                  | longitudes in the non-rotated coordinate system |
+*                    | for PHI grid                                    |
+* F_y                  | latitudes in the non-rotated coordinate system  |
+*                    | for PHI grid                                    |
+* F_xu               | longitudes in the non-rotated coordinate system |
+*                    | for U grid                                      |
+* F_yv               |latitudes in the non-rotated coordinate system   |
+*                    | for V grid                                      |
+* F_ROTX                | if F_rot=true, LONGITUDES in the rotated        |
+*                    | coordinate system for PHI grid, else F_ROTX=X      |
+* F_ROTY                | if F_rot_L=true, LATITUDES  in the rotated        |
+*                    | coordinate system for PHI grid, else F_ROTY=Y      |
+* F_ROTXU               | if F_rot_L=true, LONGITUDES in the rotated        |
+*                    | coordinate system for U   grid, else F_ROTXU=F_XU  |
+* F_ROTYU               | if F_rot_L=true, LATITUDES  in the rotated        |
+*                    | coordinate system for U   grid, else F_ROTYU=Y     |
+* F_ROTXV               | if F_rot_L=true, LONGITUDES in the rotated        |
+*                    | coordinate system for V   grid, else F_ROTXV=X     |
+* F_rot_LYV               | if F_rot_L=true, LATITUDES  in the rotated        |
+*                    | coordinate system for V   grid, else F_ROTYV=F_YV  |
+* F_ig1                | ig1 grid descriptor for the positional record   |
+* F_ig2                | ig2 grid descriptor for the positional record   |
+* F_ig3                | ig3 grid descriptor for the positional record   |
+* F_ig4                | ig4 grid descriptor for the positional record   |
+* F_mleft              | number of points to the left of the high        |
+*                    | resolution domain                               |
+* F_mbot               | number of points to the bottom of the high      |
+*                    | resolution domain                               |
+*--------------------|-------------------------------------------------|
+* INPUT and OUTPUT                                                     |
+*--------------------|-------------------------------------------------|
+*  F_lonref1             | geographic longitude of the center of the       |
+*                    | computational domain when F_rot_L= .true.         |
+*  F_latref1             | geographic latitude of the center of the        |
+*                    | computational domain when F_rot_L= .true.         |
+*  F_lonref2             | geographic latitude of a point on the equator of|
+*                    | the computational domain when F_rot_L= .true.     |
+*  F_latref2             | geographic latitude of a point on the equator of|
+*                    | the computational domain when F_rot_L= .true.     |
+* F_xl                 | longitude of the point at the lower left corner |
+*                    | of the domain                                   |
+* F_yl                 | latitude of the point at the lower left corner  |
+*                    | of the domain                                   |
+*  F_xl                | length of the computational domain in x         |
+*  F_yl                | length of the computational domain in y         |
+*  F_dx              | resolution of the high resolution (constant)    |
+*                    | domain in x                                     |
+*  F_dy              | resolution of the high resolution (constant)    |
+*                    | domain in y                                     |
+*----------------------------------------------------------------------
+*
+*implicits
+#include "e_files.cdk"
+#include "glb_pil.cdk"
+#include "hgc.cdk"
+#include "grd.cdk"
+*
+      integer  stretch_axis2
+      external stretch_axis2
+*
+      integer i,j,nleft,nbelo,nimax,njmax,ier,ng
+      real*8 x_8(F_ni+2),y_8(F_nj+2),pt5,x2_8(2000),y2_8(2000),
+     $       a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3)
+      parameter (pt5 = 0.5)
+      real r1,s1,x0,y0,xl,yl
+*
+*----------------------------------------------------------------------
+*
+      Hgc_gxtyp_s = 'E'
+      write(stdout,1001)
+*
+*     reset F_lonref1, F_latref1, F_lonref2, F_latref2 
+*     if grid is not rotated
+*
+      if (.not. F_rot_L) then
+         F_lonref1=180.
+         F_latref1=0.
+         F_lonref2=270.
+         F_latref2=0.
+      endif
+*      
+      F_lam_L = .false.
+      if (abs(1.0-abs(F_xl-F_x0)/360.).gt.1.0e-5) F_lam_L = .true.
+      if (abs(1.0-abs(F_yl-F_y0)/180.).gt.1.0e-5) F_lam_L = .true.
+*
+*     compute RPN/FST grid descriptors
+*
+      call cxgaig ( Hgc_gxtyp_S,Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,
+     $              F_latref1,F_lonref1,F_latref2,F_lonref2 )
+      call cigaxg ( Hgc_gxtyp_S,F_latref1,F_lonref1,F_latref2,F_lonref2,
+     $              Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro )
+*
+      write(stdout,1005) F_latref1,F_lonref1,F_latref2,F_lonref2
+*
+*     compute x and y positions of the PHI grid
+*
+      ier=stretch_axis2 ( x_8, F_dx, F_x0, F_xl, nleft, F_ni, F_nila,
+     $                    r1, .false., debug_L, F_dxmax, nimax )
+*
+      if (ier.ne.0) then
+          write(stdout,*)'ERROR in generating X axis!!! ABORT!!!!'
+          call e_arret('e_gridgef')
+      endif
+*
+      if (F_lam_L) then
+         ier=stretch_axis2 ( y_8, F_dy, F_y0, F_yl, nbelo, F_nj,
+     $                       F_njla, s1, .false.,debug_L,F_dymax,njmax )
+      else
+         ier=stretch_axis2 ( y_8, F_dy, F_y0, F_yl, nbelo, F_nj,
+     $                       F_njla, s1, .true. ,debug_L,F_dymax,njmax )
+      endif 
+*
+      if (ier.ne.0) then
+          write(stdout,*)'ERROR in generating Y axis!!! ABORT!!!!'
+          call e_arret('e_gridgef')
+      endif
+*
+*     compute the staggered positions for U and V grids
+*
+      do i=1,f_ni-2
+         F_xu(i) = pt5 * ( x_8(i) + x_8(i+1) )
+      enddo
+      if (.not.F_lam_L) then
+         F_xu(F_ni-1) = pt5 * ( x_8(F_ni-1) + x_8(1) + 360. )
+         F_xu(F_ni  ) = pt5 * ( x_8(1) + x_8(2) ) + 360. 
+      else
+         F_xu(F_ni-1) = pt5 * ( x_8(F_ni-1) + x_8(F_ni))
+      endif
+      do i=1,F_nj-1
+         F_yv(i) = pt5 * ( y_8(i) + y_8(i+1) )
+      enddo
+*
+*     convert to real*4 
+*
+      do i=1,F_ni
+         F_x(i)=x_8(i)
+      enddo
+      do j=1,F_nj
+         F_y(j)=y_8(j)
+      enddo
+*
+*     adjust grid coverage parameters
+*
+      x0 = F_x(1)
+      y0 = F_y(1)
+      xl = F_x(F_ni)
+      yl = F_y(F_nj)
+*
+      write(stdout,1020) F_ni,x0,xl,F_nj,y0,yl,
+     $                   F_lonref1,F_latref1
+      write(stdout,1025) F_nila,F_dx,1+nleft,1+nleft+F_nila-1,
+     $                   F_njla,F_dy,1+nbelo,1+nbelo+F_njla-1
+      i = F_ni-F_nila-nleft
+      j = F_nj-F_njla-nbelo
+      write(stdout,1030) nleft,i,r1,F_x(2)-F_x(1),
+     $                   nbelo,j,s1,F_y(2)-F_y(1)
+*
+      if ( nimax .gt. 0 ) write(stdout,1035) F_dxmax, nimax, 'X','X'
+      if ( njmax .gt. 0 ) write(stdout,1035) F_dymax, njmax, 'Y','Y'
+      write(stdout,1031)
+*
+*     Compute rotated coordinates if F_rot_L = .true.
+*
+      if (F_rot_L) then
+*
+*     Compute the rotation matrix (r_8) that allows transformation
+*     from the none-rotated to the rotated spherical coordinate system.
+*
+*     Compute transform matrices xyz1_8 and xyz2_8
+*
+         call llacar ( xyz1_8, F_lonref1, F_latref1, 1, 1 )
+         call llacar ( xyz2_8, F_lonref2, F_latref2, 1, 1 )
+*
+*     Compute a = cos(alpha) & b = sin(alpha)
+*
+         a_8 = (xyz1_8(1)*xyz2_8(1)) + (xyz1_8(2)*xyz2_8(2)) 
+     $                               + (xyz1_8(3)*xyz2_8(3))
+         b_8 = sqrt (((xyz1_8(2)*xyz2_8(3)) - (xyz2_8(2)*xyz1_8(3)))**2
+     $            +  ((xyz2_8(1)*xyz1_8(3)) - (xyz1_8(1)*xyz2_8(3)))**2 
+     $            +  ((xyz1_8(1)*xyz2_8(2)) - (xyz2_8(1)*xyz1_8(2)))**2)
+*
+*     Compute c = norm(-r1) & d = norm(r4)
+*
+         c_8 = sqrt ( xyz1_8(1)**2 + xyz1_8(2)**2 + xyz1_8(3)**2 )
+         d_8 = sqrt ( ( ( (a_8*xyz1_8(1)) - xyz2_8(1) ) / b_8 )**2 +
+     $                ( ( (a_8*xyz1_8(2)) - xyz2_8(2) ) / b_8 )**2 +
+     $                ( ( (a_8*xyz1_8(3)) - xyz2_8(3) ) / b_8 )**2  )
+*
+         Grd_rot_8(1,1)=  -xyz1_8(1)/c_8
+         Grd_rot_8(1,2)=  -xyz1_8(2)/c_8
+         Grd_rot_8(1,3)=  -xyz1_8(3)/c_8
+         Grd_rot_8(2,1)=  ( ((a_8*xyz1_8(1)) - xyz2_8(1)) / b_8)/d_8
+         Grd_rot_8(2,2)=  ( ((a_8*xyz1_8(2)) - xyz2_8(2)) / b_8)/d_8
+         Grd_rot_8(2,3)=  ( ((a_8*xyz1_8(3)) - xyz2_8(3)) / b_8)/d_8
+         Grd_rot_8(3,1)=  
+     $        ( (xyz1_8(2)*xyz2_8(3)) - (xyz2_8(2)*xyz1_8(3)))/b_8
+         Grd_rot_8(3,2)=  
+     $        ( (xyz2_8(1)*xyz1_8(3)) - (xyz1_8(1)*xyz2_8(3)))/b_8
+         Grd_rot_8(3,3)=  
+     $        ( (xyz1_8(1)*xyz2_8(2)) - (xyz2_8(1)*xyz1_8(2)))/b_8
+*
+         call e_rota ( F_rotx ,F_roty ,F_x ,F_y ,F_ni ,F_nj )
+         call e_rota ( F_rotxu,F_rotyu,F_xu,F_y ,F_niu,F_nj )
+         call e_rota ( F_rotxv,F_rotyv,F_x ,F_yv,F_ni ,F_njv)
+*
+      else
+*
+*       (if NOT rotated coordinate system...)
+*        Assign the latitudes and longitudes of the original grid
+*        for the Phi grid, Ugrid and Vgrid, and normalize all the
+*        longitudes.
+*
+         do j=1,F_nj
+            do i=1,F_ni
+               F_rotx(i,j) = mod ( F_x(i)+360.0, 360.0 )
+               F_roty(i,j) = F_y (j)
+            enddo
+            do i=1,F_niu
+               F_rotxu(I,J) = mod ( F_xu(i)+360.0, 360.0 )
+               F_rotyu(I,J) = F_y (j)
+            enddo
+         enddo
+         do j=1,F_njv
+            do i=1,F_ni
+               F_rotxv(I,J) = mod ( F_x(i)+360.0, 360.0 )
+               F_rotyv(I,J) = F_yv (J)
+            enddo
+         enddo
+*
+         do j=1,3
+         do i=1,3
+            Grd_rot_8(i,j) = 0.0
+         enddo
+         enddo
+         Grd_rot_8(1,1) = 1.
+         Grd_rot_8(2,2) = 1.
+         Grd_rot_8(3,3) = 1.
+*
+      endif
+*
+ 1001 format (/1x,'COMPUTE MODEL GRID (S/R E_GRIDGEF)',
+     $        /1x,34('='))
+ 1005 format (/1x,'AJUSTED RPN/FST grid descriptors F_latref1,',
+     $            'F_lonref1,F_latref2,F_lonref2:'
+     $        /4f12.6/1x,73('='))
+ 1020 FORMAT (/1X,'FINAL HORIZONTAL GRID CONFIGURATION:'
+     $      /1X,' NI=',I4,' FROM F_x0=',F9.3,' TO F_xl=',F9.3,' DEGREES'
+     $      /1X,' NJ=',I4,' FROM F_y0=',F9.3,' TO F_yl=',F9.3,' DEGREES'
+     $      /1X,' CENTRAL POINT OF THE GRID  F_lonref1,F_latref1=',
+     $      2F9.3,' DEGREES'/1x,74('='))
+ 1025  FORMAT(/1X,'THE CONSTANT RESOLUTION AREA HAS:'
+     $        /1X,' NILA=',I4,' OF GRID-LENGTH=',F9.4,' DEGREES'
+     $         1x,'(',i4,',',i4,' )',
+     $        /1X,' NJLA=',I4,' OF GRID-LENGTH=',F9.4,' DEGREES'
+     $         1x,'(',i4,',',i4,' )',
+     $        /1x,56('='))
+ 1030  FORMAT(/1X,'THE VARIABLE RESOLUTION AREA HAS:'
+     $      /1X,i3,' POINTS TO THE WEST  AND ',i3,' POINTS TO THE EAST'
+     $      /2x,'WITH STRETCHING FACTOR=',F8.4,
+     $      ' AND MINIMUM RESOLUTION=',F8.4,
+     $      /1X,i3,' POINTS ON THE SOUTH AND ',i3,' POINTS ON THE NORTH'
+     $      /2x,'WITH STRETCHING FACTOR=',F8.4,
+     $      ' AND MINIMUM RESOLUTION=',F8.4)
+ 1031  FORMAT(1x,64('='))
+ 1035  FORMAT(2x,'RESOLUTION IS LIMITED TO ',F9.4,1x,
+     $           'DEGREES OVER LAST',I4,' DELTA-',a1,' AT ',
+     $           'EACH ENDS OF THE ',a1,' AXIS.')
+*
+*----------------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,247 @@
+***s/r adw_exch_1 - Establish list and number of points for 
+*                   which upstream positions are outside 
+*                   advection source grid.
+*
+*                   Fill output vectors with coordinates of these 
+*                   upstream positions in preparation for exchange 
+*                   with other processors.
+*
+*                   Take note 3D coordinates of points for which
+*                   upstream positions are outside advection source
+*                   grid.
+*
+*                   Exchange number of points to be exchanged to 
+*                   allow temporary space allocation.
+*
+*    NOTE:          For LAM, no exchanges are allowed
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_exch_1 ( F_x_out, F_y_out, F_z_out, F_c_out,
+     %                        F_x_in,  F_y_in,  F_z_in, i0, in, j0, jn )
+*
+#include "impnone.cdk"
+*
+      integer F_c_out ( * ), i0, in, j0, jn
+      real    F_x_out ( * ), F_y_out ( * ), F_z_out ( * ),
+     %        F_x_in  ( * ), F_y_in  ( * ), F_z_in  ( * )
+*
+*author
+*     alain patoine
+*
+*revision
+* v2_31 - Corbeil L.         - replaced MPI calls by rpn_comm
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+* F_x_out      | \ coordinates of upstream                       |  o  |
+* F_y_out      |   positions outside advection                   |  o  |
+* F_z_out      | / source grid                                   |  o  |
+*              |                                                 |     |
+* F_c_out      | 3D coordinates of points for which upstream     |  o  |
+*              | positions are outside advection source grid     |     |
+*              |                                                 |     |
+* F_x_in       | \                                               |  i  |
+* F_y_in       |   upstream positions                            |  i  |
+* F_z_in       | /                                               |  i  |
+* i0           | starting i position to check for LAM            |  i  |
+* in           | ending i position to check for LAM              |  i  |
+* j0           | starting j position to check for LAM            |  i  |
+* jn           | ending j position to check for LAM              |  i  |
+*______________|_________________________________________________|_____|
+*
+*notes
+*______________________________________________________________________
+*                                                                      |
+* The positions are stored  in the following manner:                   |
+*                                                                      |
+* Adw_for_n values followed by Adw_for_s values = Adw_for_a values     |
+* ---------                    ---------          ---------            |
+*______________________________________________________________________|
+*
+*implicits
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+************************************************************************
+      include 'mpif.h'
+*
+      integer tag, imsg, iproc, nwrn,nwrs,status
+      integer MPI_status(MPI_status_size)
+      data    tag /10/
+*
+      integer n, nijk,nij,i,j,k
+*
+      nijk = l_ni*l_nj*l_nk
+      nij  = l_ni*l_nj
+*
+      Adw_for_n = 0
+      Adw_for_s = 0
+      Adw_fro_n = 0
+      Adw_fro_s = 0
+************************************************************************
+      if (.not. G_lam) then
+      if (.not. l_north) then
+*
+         do n = 1, nijk
+*
+         if ( F_y_in(n).ge.Adw_yy_8(Adw_njt-1) ) then
+*
+            Adw_for_n = Adw_for_n + 1
+*
+            F_x_out ( Adw_for_n ) = F_x_in (n)
+            F_y_out ( Adw_for_n ) = F_y_in (n)
+            F_z_out ( Adw_for_n ) = F_z_in (n)
+            F_c_out ( Adw_for_n ) = n
+*
+            F_y_in ( n ) = Geomg_y_8(1)
+         endif
+         enddo
+      endif
+************************************************************************
+      if (.not. l_south) then
+*
+         do n = 1, nijk
+*
+         if ( F_y_in(n).le.Adw_yy_8(2) ) then
+*
+            Adw_for_s = Adw_for_s + 1
+*
+            F_x_out ( Adw_for_n+Adw_for_s ) = F_x_in (n)
+            F_y_out ( Adw_for_n+Adw_for_s ) = F_y_in (n)
+            F_z_out ( Adw_for_n+Adw_for_s ) = F_z_in (n)
+            F_c_out ( Adw_for_n+Adw_for_s ) = n
+*
+            F_y_in ( n ) = Geomg_y_8(1)
+         endif
+         enddo
+      endif
+      call RPN_COMM_swapns(1,Adw_for_n,1,Adw_for_s,
+     %          1,nwrn,Adw_fro_n,1,nwrs,Adw_fro_s,G_periody,
+     %          status)
+
+************************************************************************
+      Adw_for_a = Adw_for_n + Adw_for_s
+      Adw_fro_a = Adw_fro_n + Adw_fro_s
+************************************************************************
+      if ( Adw_exdg_L ) print *,'EXDG',Ptopo_myproc,
+     %                           Adw_for_n, Adw_for_s, Adw_for_a,
+     %                           Adw_fro_n, Adw_fro_s, Adw_fro_a
+      else
+************************************************************************
+      if (l_north) then
+           do k=1,l_nk
+           do j=j0,jn
+           do i=i0,in
+              n = (k-1)*nij + ((j-1)*l_ni) + i
+              if ( F_y_in(n).ge.Adw_yy_8(Adw_njt-3) ) then
+                   print *,'need to exchange northward at NORTH boundary'
+c print *,'F_y_in(',n,')=',F_y_in(n),' Adw_yy_8(Adw_njt-3)=',Adw_yy_8(Adw_njt-3)
+                   call gem_stop('adw_exch_1',-1)
+              endif
+           enddo
+           enddo
+           enddo
+      else
+           do k=1,l_nk
+           do j=j0,jn
+           do i=i0,in
+              n = (k-1)*nij + ((j-1)*l_ni) + i
+              if ( F_y_in(n).ge.Adw_yy_8(Adw_njt-1) ) then
+                   print *,'need to exchange northward'
+                   call gem_stop('adw_exch_1',-1)
+              endif
+           enddo
+           enddo
+           enddo
+      endif
+      if (l_south) then
+           do k=1,l_nk
+           do j=j0,jn
+           do i=i0,in
+              n = (k-1)*nij + ((j-1)*l_ni) + i
+              if ( F_y_in(n).le.Adw_yy_8(4) ) then
+                   print *,'need to exchange southward at SOUTH boundary'
+                   call gem_stop('adw_exch_1',-1)
+              endif
+           enddo
+           enddo
+           enddo
+      else
+           do k=1,l_nk
+           do j=j0,jn
+           do i=i0,in
+              n = (k-1)*nij + ((j-1)*l_ni) + i
+              if ( F_y_in(n).le.Adw_yy_8(2) ) then
+                   print *,'need to exchange southward'
+                   call gem_stop('adw_exch_1',-1)
+              endif
+           enddo
+           enddo
+           enddo
+      endif
+      if (l_east) then
+           do k=1,l_nk
+           do j=j0,jn
+           do i=i0,in
+              n = (k-1)*nij + ((j-1)*l_ni) + i
+              if ( F_x_in(n).ge.Adw_xx_8(Adw_nit-4) ) then
+                   print *,'need to exchange eastward at EAST boundary'
+                   call gem_stop('adw_exch_1',-1)
+              endif
+           enddo
+           enddo
+           enddo
+       else
+           do k=1,l_nk
+           do j=j0,jn
+           do i=i0,in
+              n = (k-1)*nij + ((j-1)*l_ni) + i
+              if ( F_x_in(n).ge.Adw_xx_8(Adw_nit-1) ) then
+                   print *,'need to exchange eastward'
+                   call gem_stop('adw_exch_1',-1)
+              endif
+           enddo
+           enddo
+           enddo
+       endif
+       if (l_west) then
+           do k=1,l_nk
+           do j=j0,jn
+           do i=i0,in
+              n = (k-1)*nij + ((j-1)*l_ni) + i
+              if ( F_x_in(n).le.Adw_xx_8(5) ) then
+                   print *,'need to exchange westward on WEST boundary'
+                   call gem_stop('adw_exch_1',-1)
+              endif
+           enddo
+           enddo
+           enddo
+       else
+           do k=1,l_nk
+           do j=j0,jn
+           do i=i0,in
+              n = (k-1)*nij + ((j-1)*l_ni) + i
+              if ( F_x_in(n).le.Adw_xx_8(2) ) then
+                   print *,'need to exchange westward'
+                   call gem_stop('adw_exch_1',-1)
+              endif
+           enddo
+           enddo
+           enddo
+       endif
+      endif
+*
+      return
+      end

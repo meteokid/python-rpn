@@ -1,0 +1,311 @@
+***s/r  bac - backsubstitution ( memory management and call to bacp_2 )
+*
+#include <model_macros_f.h>
+*
+      subroutine bac( Itr, Itnlh )
+*
+#include "impnone.cdk"
+*
+      integer Itr, Itnlh
+*
+*author
+*     Alain Patoine - Gabriel Lemay
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version 
+* v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
+* v2_31 - Desgagne M.       - removed treatment of Hu and Qc
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*******************************************************************************
+*                                                    _____________________    *
+*        tau                                        |                     |   *
+* q'   = --- Q   ; where  Q  =  0  ,  and           | NONHYDROSTATIC ONLY |   *
+*         z                1                        |_____________________|   *
+*                                                                             *
+*                     /         \                      /       ~      \       *
+*                     | ~~   ~~ |              gamma   | ~     z   dP |       *
+* Q    =  Q  -  gamma | R' - N' | dz   +  &  --------- | P + ----- -- | dz    *
+*  k+1     k          |  3    3 |   k      H   2    3  |     cappa dz |   k   *
+*                     \         /k            g  tau   \              /k      *
+*                                                                             *
+*******************************************************************************
+*                                                    _____________________    *
+*                                               |   |                     |   *
+*                                               |   | NONHYDROSTATIC ONLY |   *
+*                                               |   |_____________________|   *
+*        z                                      |                             *
+*         s                                     |       1                     *
+* s = ------- P                                 |    ------- | z  q' |        *
+*     R  T* b  s                                |       b    |  s  s |        *
+*      d     s                                  |        s                    *
+*                                               |                             *
+*                                               |                             *
+*           /  s     \                          |                             *
+* pi' =  b  | e  - 1 |                          |                             *
+*           \        /                          |                             *
+*                                               |                             *
+*                                               |                             *
+* q = ln ( z + pi' )                            +              q'             *
+*                                               |                             *
+*                                               |                             *
+*                   b s                         |                             *
+* phi' = P - R  T* ------                       -           R  T* q'          *
+*             d      z                          |            d                *
+*                                                                             *
+*******************************************************************************
+*                                                                             *
+*               1                          |              1                   *
+* (R,N)  =  - ----- (R,N)                  -            ----- (R,N)           *
+*      2      cappa      th                |            cappa      3          *
+*                                          |                                  *
+*                                          |                                  *
+*                 /  ~~~~     ~~~~  \      |                         ~~~~     *
+*  {1}   =  gamma | (z R ) - (z N ) |      |    ( also recognized as ZETA )   *
+*                 \     2        2  /      |                                  *
+*                                          |     ~~~~~~~~~~~~~~~~~~~~~~~~~    *
+*                                          |    /                         \   *
+*             gamma         / ~ \2 dP      |    | z q'        gamma z P   |   *
+*  {2}   =  --------------- | z |  --      +    | ---- - &  ------------- |   *
+*           cappa tau R  T* \   /  dz      |    | tau     H        2    3 |   *
+*                      d                   |    \           cappa g  tau  /   *
+*                                          |                                  *
+*                                          |         _____________________    *
+*                    /             \                |                     |   *
+*   X    =  - X  + 2 | {1}  -  {2} |                | NONHYDROSTATIC ONLY |   *
+*    k+1       k     \             /k               |_____________________|   *
+*                                                                             *
+*                                                                             *
+*           /      /            \  \                                          *
+*           |  z   | P   - phi' |  |                  /                       *
+*           |   1  \  1       1 /  |                  |  0  if  b  = 0        *
+* X   =  d  | -------------------- |    with   d   =  |          1            *
+*  1      T |                *     |            T     |  1  elsewhere         *
+*           \    tau   R    T      /                  \                       *
+*                                                                             *
+*                       ~~                                                    *
+*                      (  ) : vertical staggering.                            *
+*                                                                             *
+*                                                                             *
+*******************************************************************************
+*                                                                             *
+*               1          1                                 /      tau   \   *
+*     w   =  - --- R'  + ----- {$}  ; where  {$} = P - R  T* | q' + --- X |   *
+*               g   vv   g tau                          d    \       z    /   *
+*                                                                             *
+*                                  &                 _____________________    *
+*                  /         \      H               |                     |   *
+* (mu)    =  - tau | R  - N  | + ------- {$}        | NONHYDROSTATIC ONLY |   *
+*     lin          \  3    3 /    2    2            |_____________________|   *
+*                                g  tau                                       *
+*                                                                             *
+*                                                                             *
+*            /  q'    \      (q'-s) /     pi' \ /              \              *
+*   (mu)  =  | e  - 1 |  +  e       | 1 + --- | | (mu)    - q' |              *
+*            \        /             \      z  / \     lin      /              *
+*                                                                             *
+*******************************************************************************
+*                                                    _____________________    *
+*                                               |   |                     |   *
+*                                               |   | NONHYDROSTATIC ONLY |   *
+*                                               |   |_____________________|   *
+*                /             cappa   \        |                             *
+* T'   =  tau T* | R   - N   + ----- X |        +          cappa T* q'        *
+*  lin           \  th    th     z     /        |                             *
+*                                               |                             *
+*                                               |                             *
+*                                               |    -s + q'                  *
+*                                               |                             *
+*                                                                             *
+*         /                \   /                                         \    *
+*      pi |   /\A + /\b    |   |           * /  b s       /\b s        \ |  * *
+* T'=  -- | -------------  |   | T'    -  T  |  ---  -  --------   - 1 | |-T  *
+*      z  |             s  |   |  lin        \   z      /\A + /\b      / |    *
+*         \  /\A + /\b e   /   \                                         /    *
+*                                                                             *
+*                                                                             *
+*  where  /\A = dA/d(eta)                                                     *
+*         /\b = db/d(eta)                                                     *
+*******************************************************************************
+*                                                                             *
+*           /                    \                                            *
+*           |            1   dP  |                                            *
+* U  =  tau | R" - N  - --- ---- |                                            *
+*           |  U    U     2  dx  |                                            *
+*           \            a       /                                            *
+*                                                                             *
+*           /                    \                                            *
+*           |            C   dP  |                                            *
+* V  =  tau | R" - N  - --- ---- |                                            *
+*           |  V    V     2  dy  |                                            *
+*           \            a       /                                            *
+*                                                                             *
+* .          b s                                                              *
+* pi* = X - ----                                                              *
+*            tau                                                              *
+*                                                                             *
+*    .                                                                        *
+* / dpi*     \                        /\b s                                   *
+* | ---- + D |  =  R   -  N   -  -----------------                            *
+* \ dpi*     /      cn     cn    tau ( /\A + /\b )                            *
+*                                                                             *
+*                                                                             *
+* phi = phi' + phi* + phi                                                     *
+*                        s                                                    *
+*                                                                             *
+* T   = T' + T*                                                               *
+*                                                                             *
+*                                                                             *
+* F            =  tau R                ( passive advection of humidity etc. ) *
+*  (hu,qc,tr)          (hu,qc,tr)                                             *
+*                                                                             *
+*******************************************************************************
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  Itr          I           current nonlinear iteration number 
+*  Itnlh        I           total number of nonlinear iterations
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "p_geof.cdk"
+#include "rhsc.cdk"
+#include "nl.cdk"
+#include "vt0.cdk" 
+#include "vtx.cdk" 
+#include "ptopo.cdk"
+#include "lctl.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+*
+      integer i0,in,j0,jn
+      integer pnerr, pnlod, pnlkey1(26)
+      real wijk0(LDIST_SHAPE,l_nk), wijk1(LDIST_SHAPE,l_nk)
+**
+*     __________________________________________________________________
+*
+      if (Lun_debug_L) write(Lun_out,1000)
+
+      pnlkey1( 1) = VMM_KEY(st0)
+      pnlkey1( 2) = VMM_KEY(pipt0)
+      pnlkey1( 3) = VMM_KEY(qt0)
+      pnlkey1( 4) = VMM_KEY(fit0)
+      pnlkey1( 5) = VMM_KEY(fipt0)
+      pnlkey1( 6) = VMM_KEY(topo)
+      pnlkey1( 7) = VMM_KEY(tt0)
+      pnlkey1( 8) = VMM_KEY(tpt0)
+      pnlkey1( 9) = VMM_KEY(tplt0)
+      pnlkey1(10) = VMM_KEY(ut0)
+      pnlkey1(11) = VMM_KEY(vt0)
+      pnlkey1(12) = VMM_KEY(psdt0)
+      pnlkey1(13) = VMM_KEY(tdt0)
+      pnlkey1(14) = VMM_KEY(gptx)
+      pnlkey1(15) = VMM_KEY(gxtx)
+      pnlkey1(16) = VMM_KEY(ru)
+      pnlkey1(17) = VMM_KEY(rv)
+      pnlkey1(18) = VMM_KEY(rcn)
+      pnlkey1(19) = VMM_KEY(rth)
+      pnlod = 19
+      if (.not. Schm_hydro_L) then
+         pnlkey1(20) = VMM_KEY(qpt0)
+         pnlkey1(21) = VMM_KEY(wt0)
+         pnlkey1(22) = VMM_KEY(mut0)
+         pnlkey1(23) = VMM_KEY(multx)
+         pnlkey1(24) = VMM_KEY(rvv)
+         pnlkey1(25) = VMM_KEY(r3)
+         pnlkey1(26) = VMM_KEY(r3p)
+         pnlod = 26
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr = VMM_GET_VAR(st0)
+      pnerr = VMM_GET_VAR(pipt0)
+      pnerr = VMM_GET_VAR(qt0)
+      pnerr = VMM_GET_VAR(fit0)
+      pnerr = VMM_GET_VAR(fipt0)
+      pnerr = VMM_GET_VAR(topo)
+      pnerr = VMM_GET_VAR(tt0)
+      pnerr = VMM_GET_VAR(tpt0)
+      pnerr = VMM_GET_VAR(tplt0)
+      pnerr = VMM_GET_VAR(ut0)
+      pnerr = VMM_GET_VAR(vt0)
+      pnerr = VMM_GET_VAR(psdt0)
+      pnerr = VMM_GET_VAR(tdt0)
+      pnerr = VMM_GET_VAR(gptx)
+      pnerr = VMM_GET_VAR(gxtx)
+      pnerr = VMM_GET_VAR(ru)
+      pnerr = VMM_GET_VAR(rv)
+      pnerr = VMM_GET_VAR(rcn)
+      pnerr = VMM_GET_VAR(rth)
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(qpt0)
+         pnerr = VMM_GET_VAR(wt0)
+         pnerr = VMM_GET_VAR(mut0)
+         pnerr = VMM_GET_VAR(multx)
+         pnerr = VMM_GET_VAR(rvv)
+         pnerr = VMM_GET_VAR(r3)
+         pnerr = VMM_GET_VAR(r3p)
+      else
+         qpt0_ = 0
+         wt0_  = 0
+         mut0_ = 0
+         multx_= 0
+         rvv_  = 0
+         r3_   = 0
+         r3p_  = 0
+      endif
+
+      if (G_lam) then
+          i0=lam_i0
+          in=lam_in
+          j0=lam_j0
+          jn=lam_jn
+      else
+          i0 = glb_i0
+          in=  glb_in
+          j0 = glb_j0
+          jn = glb_jn
+      endif
+
+*PDIR RESERVE=Ptopo_npeOpenMP
+
+      call  bacp_2 (   Itr, Itnlh,   st0, pipt0,   qt0, 
+     %                fit0, fipt0,  topo,   tt0,  tpt0, tplt0,
+     %                 ut0,   vt0, psdt0,  tdt0,
+     %                qpt0,   wt0,  mut0, multx,  gptx,  gxtx, 
+     %                 ru, rv, rth, r3, r3p, rvv,  rcn,
+     %                 nl_nu, nl_nv, nl_nth,  nl_n3, nl_n3p,
+     $                 nl_ncn,wijk0,wijk1,LDIST_DIM, l_nk )
+
+*PDIR RELEASE
+      if (.not. Schm_hydro_L) then
+      call glbstat (mut0 ,'MUT0',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (qpt0 ,'QPT0',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      endif
+      if(Lctl_debug_L) then
+      call glbstat (tpt0 ,'TPT0',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (st0  ,'ST0',LDIST_DIM,1,i0,in,j0,jn,1,1)
+      call glbstat (pipt0,'PIPT0',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (ut0,'ut0',LDIST_DIM,G_nk,i0,in-1,j0,jn,1,G_nk)
+      call glbstat (vt0,'vt0',LDIST_DIM,G_nk,i0,in,j0,jn-1,1,G_nk)
+      call glbstat (ru,'Ru',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      call glbstat (rv,'Rv',LDIST_DIM,G_nk,i0,in,j0,jn,1,G_nk)
+      endif
+
+
+      pnerr = vmmuld(-1,0)
+
+1000  format (5X,'BACK SUBSTITUTION: (S/R BAC)')
+
+      return
+      end
+

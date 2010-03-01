@@ -1,0 +1,60 @@
+#if defined (DOC)
+*
+*
+***comdeck c_cplg.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES FOR COUPLING SYSTEM                                       |
+*  To couple the atmospheric model with other models                   |
+*  - The MGILIB Functions help to form the CMC/RPN COUPLING system.    |
+*                                                                      |
+* MGI : Model Gossip Interface                                         |
+* GOSSIP: Globally Organized System for Simulation Information Passing |
+*  for more Information see MGI documentaion (V. Lee)                  |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* C_coupling_L       | .true. to indicate coupling is required         |
+* C_wave_L           | .true. to indicate coupling with wave model     |
+* C_ocean_iml_L      | .true. to indicate coupling with ocean model    |
+* C_cplg_inpipe      | input  communications channel variable          |
+* C_cplg_outpipe     | output communications channel variable          |
+* C_cplg_step        | next timestep for the coupling                  |
+*                                                                      |
+* The following are functions from the mgilib (in ARMNLIB)             |
+* mgi_init           | to initialise a channel of communication        |
+*                    | also called filepipe                            |
+* mgi_open           | to open  the channel                            |
+* mgi_clos           | to close the channel                            |
+* mgi_read           | to read  data from the channel                  |
+* mgi_write          | to write data into the channel                  |
+* mgi_term           | to break the channel of communication           |
+* mgi_nosig          | to create an intial restart file                |
+*----------------------------------------------------------------------
+*	
+#endif
+
+      integer  mgi_init,mgi_open,mgi_clos
+      integer  mgi_read,mgi_write
+*
+      external mgi_init,mgi_open,mgi_clos
+      external mgi_read,mgi_write
+*
+      external mgi_term, mgi_nosig
+*
+      logical C_coupling_L, C_wave_L, C_ocean_iml_L
+      MARK_COMMON_BEG (C_nml)
+      common /C_nml/ C_coupling_L, C_wave_L, C_ocean_iml_L
+      MARK_COMMON_END (C_nml)
+*
+      integer c_cplg_inpipe,c_cplg_outpipe
+      MARK_COMMON_BEG (C_pipe)
+      common /C_pipe/ c_cplg_inpipe,c_cplg_outpipe
+      MARK_COMMON_END (C_pipe)
+*
+      integer c_cplg_step
+      MARK_COMMON_BEG (C_time)
+      common /C_time/ c_cplg_step
+      MARK_COMMON_END (C_time)

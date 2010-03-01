@@ -1,0 +1,51 @@
+***s/r gefstop - routine to be called for a premature stop of the model.
+*
+      subroutine gefstop (F_name_S)
+*
+#include "impnone.cdk"
+*
+      character*8 F_name_S
+*
+*author
+*     Alain Patoine - june 1994
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from gefstop v1_03)
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_name_S          O           name of the calling routine
+*----------------------------------------------------------------
+*
+*implicits
+#include "lun.cdk"
+*
+*
+**
+*
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) then
+         write(Lun_out,1000) F_name_S
+         call wlog('STOP')
+      endif
+      call stopmpi (-1) 
+*
+ 1000 format(
+     % /,'==============================================',
+     % /,'=                                            =',
+     % /,'=             PREMATURED STOP IN             =',
+     % /,'=                                            =',
+     % /,'                   ',a8,
+     % /,'=                                            =',
+     % /,'=             END OF INTEGRATION             =',
+     % /,'=                                            =',
+     % /,'==============================================',
+     %/ /)
+*
+*     ---------------------------------------------------------------
+*
+      end

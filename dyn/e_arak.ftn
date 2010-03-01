@@ -1,0 +1,171 @@
+***s/r e_arak - convert components to wind images and interpolate to U and V grids
+*
+      subroutine e_arak ( fru, frv, frvw, fruvw, fni, fnjfi, fnju, fnjv,
+     %                  fnk)
+#include "impnone.cdk"
+      integer  fni, fnjfi, fnju, fnjv, fnk
+      real     fru(fni,fnjfi,fnk)  ,  frv(fni,fnjv,fnk),
+     %         frvw(fni,fnjfi,fnk) ,fruvw(fni,fnjfi,fnk)
+*
+*author michel roch - rpn - june 96 (v0_18)
+*
+*revision
+* v1_96 - vivian lee             - make schm,dcst comdecks to be common to
+* v1_96                            GEFNTR and GEMPP to be consistent
+* v1_97 - vivian lee             - replaced stopgdntr with ARRET
+* v1_97                          - renamed cdgeomg.cdk with e_geomg.cdk
+* v1_97                          - eliminated calls to setegeom,preint
+* v1_97 - alain patoine          - remove portion of code relative to linr
+*
+*language
+*       fortran 77
+*
+*object
+*	see above id
+*
+*arguments
+*	input/output
+* fru	- input  - U component on PHI grid
+*         output - U wind image interpolated to U grid
+*	output
+* frv	- V wind image interpolated to V grid
+*	input
+* frvw	- V component on PHI grid
+* fruvw	- work field
+* fni	- dimension of along x
+* fnjfi	- dimension of along y phi grid
+* fnju	- dimension of along y u grid
+* fnjv	- dimension of along y v grid
+* fnk	- number of levels to process
+*
+*implicits
+#include <model_macros_f.h>
+#include "e_locdim.cdk"
+#include "e_schm.cdk"
+#include "dcst.cdk"
+#include "e_geomg.cdk"
+#include "e_files.cdk"
+#include "e_intuv.cdk"
+#include "e_inuvl.cdk"
+*
+*
+**
+      integer i,j,k,pnerr
+      real*8  pdsc1
+*     ----------------------------------------------------------------
+*
+      write(stdout,1001)
+*
+*
+*C      1-      allocate operators for interpolation
+*               ------------------------------------
+*
+      call hpalloc(p_xdc0xxu,pni*2,pnerr,1)
+      call hpalloc(p_xdc1xxu,pni*2,pnerr,1)
+      call hpalloc(p_xdc2xxu,pni*2,pnerr,1)
+      call hpalloc(p_xdc0xux,pni*2,pnerr,1)
+      call hpalloc(p_xdc1xux,pni*2,pnerr,1)
+      call hpalloc(p_xdc2xux,pni*2,pnerr,1)
+      call hpalloc(p_xdc0yyv,pnj*2,pnerr,1)
+      call hpalloc(p_xdc1yyv,pnj*2,pnerr,1)
+      call hpalloc(p_xdc2yyv,pnj*2,pnerr,1)
+      call hpalloc(p_xdc0yvy,(pnj+1)*2,pnerr,1)
+      call hpalloc(p_xdc1yvy,(pnj+1)*2,pnerr,1)
+      call hpalloc(p_xdc2yvy,(pnj+1)*2,pnerr,1)
+      call hpalloc(p_xdq2x,pni*2*3,pnerr,1)
+      call hpalloc(p_xdq2u,pni*2*3,pnerr,1)
+      call hpalloc(p_xdqix,pni*2*4,pnerr,1)
+      call hpalloc(p_xdqiu,pni*2*4,pnerr,1)
+      call hpalloc(p_xdq2y,pnj*2*3,pnerr,1)
+      call hpalloc(p_xdq2v,pnj*2*3,pnerr,1)
+      call hpalloc(p_xdqiy,pnj*2*4,pnerr,1)
+      call hpalloc(p_xdqiv,pnj*2*4,pnerr,1)
+
+      call hpalloc(p_xdwxxu3,pni*2*4,pnerr,1)
+      call hpalloc(p_xdwxux3,pni*2*4,pnerr,1)
+      call hpalloc(p_xdwyyv3,pnj*2*4,pnerr,1)
+      call hpalloc(p_xdwyvy3,pnj*2*4,pnerr,1)
+*
+*C      2-      set operators for interpolation
+*               -------------------------------
+*
+      call e_setintuv()
+*
+*
+*C      3-      compute wind images
+*               ___________________
+*
+      do j=1,fnjfi
+         pdsc1 = (cos(xdy(j))) / Dcst_rayt_8
+         do k=1,fnk
+            do i=1,fni
+               fru(i,j,k)  = pdsc1 * fru(i,j,k)
+               frvw(i,j,k) = pdsc1 * frvw(i,j,k)
+            enddo
+         enddo
+      enddo
+*
+*
+*C      4-      interpolate winds from PHI grid to U and V grids
+*               ________________________________________________
+*
+      call e_int_ix2xu (fru, fru, fruvw, fnk, fni, fnjfi, fnk,
+     %            fnjfi, e_Schm_adcub)
+      call e_int_iy2yv (frvw, frvw, fruvw, fnk, fni, fnjfi, fnk,
+     %            e_Schm_adcub, .false.)
+*
+*	enforce wraparound
+*
+      do k=1,fnk
+         do j=1,fnju
+            fru(fni,j,k) = fru(1,j,k)
+         enddo
+      enddo
+*
+      do k=1,fnk
+         do j=1,fnjv
+            frvw(fni,j,k) = frvw(1,j,k)
+         enddo
+      enddo
+*
+      do k=1,fnk
+         do j=1,fnjv
+            do i=1,fni
+               frv(i,j,k) = frvw(i,j,k)
+            enddo
+         enddo
+      enddo
+
+      call hpdeallc(p_xdc0xxu,pnerr,1)
+      call hpdeallc(p_xdc1xxu,pnerr,1)
+      call hpdeallc(p_xdc2xxu,pnerr,1)
+      call hpdeallc(p_xdc0xux,pnerr,1)
+      call hpdeallc(p_xdc1xux,pnerr,1)
+      call hpdeallc(p_xdc2xux,pnerr,1)
+      call hpdeallc(p_xdc0yyv,pnerr,1)
+      call hpdeallc(p_xdc1yyv,pnerr,1)
+      call hpdeallc(p_xdc2yyv,pnerr,1)
+      call hpdeallc(p_xdc0yvy,pnerr,1)
+      call hpdeallc(p_xdc1yvy,pnerr,1)
+      call hpdeallc(p_xdc2yvy,pnerr,1)
+      call hpdeallc(p_xdq2x,pnerr,1)
+      call hpdeallc(p_xdq2u,pnerr,1)
+      call hpdeallc(p_xdqix,pnerr,1)
+      call hpdeallc(p_xdqiu,pnerr,1)
+      call hpdeallc(p_xdq2y,pnerr,1)
+      call hpdeallc(p_xdq2v,pnerr,1)
+      call hpdeallc(p_xdqiy,pnerr,1)
+      call hpdeallc(p_xdqiv,pnerr,1)
+
+      call hpdeallc(p_xdwxxu3,pnerr,1)
+      call hpdeallc(p_xdwxux3,pnerr,1)
+      call hpdeallc(p_xdwyyv3,pnerr,1)
+      call hpdeallc(p_xdwyvy3,pnerr,1)
+*
+*
+ 1001 format(
+     %//,'CONVERT TO WIND IMAGES AND INTERPOLATE to U,V GRIDS(S/R E_ARAK)',
+     % /,'=============================================================',
+     %//)
+      return
+      end

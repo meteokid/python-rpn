@@ -1,0 +1,4 @@
+      integer MAXPIL,MAXPILOT
+      parameter (MAXPILOT=20)
+      character*15  pilot_S(MAXPILOT)
+      common /pilot/ MAXPIL,pilot_S

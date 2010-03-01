@@ -1,0 +1,231 @@
+***s/p set_xst - compute the time-series grid points
+*
+#include <model_macros_f.h>
+*
+      subroutine set_xst 
+*
+#include "impnone.cdk"
+*
+      integer ni,nj
+*
+*author     V. Lee - May 2000 - (from e_gridgef,M.Roch)
+*
+*revision
+* v2_00 - Desgagne/Lee       - initial MPI version
+* v2_20 - Lee V.             - converted x,y arrays to real*8
+* v2_30 - Dugas B.           - model coordinate calculation are now performed
+* v2_30                        with real*8 matrices and cartesian coordinates
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_x_8        I          longitudes in the non-rotated coordinate 
+*                          system for PHI grid
+*  F_y_8        I          latitudes in the non-rotated coordinate 
+*                          system for PHI grid
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "p_geol.cdk"
+#include "grd.cdk"
+#include "geomn.cdk"
+#include "dcst.cdk"
+#include "xst.cdk"
+*
+**
+      logical llstat_L
+      integer ni,nj,nstat,oldnstat,ij,oldij,i,j,k,m,n,numi,numj,ierr
+      integer wk(MAXSTAT)
+      real lat((G_ni+1)*G_nj),lon((G_ni+1)*G_nj),
+     $     slat(MAXSTAT),slon(MAXSTAT),x(G_ni+1),y(G_nj)
+      real*8 cart(3*(G_ni+1)*G_nj),carot(3*(G_ni+1)*G_nj),ri_8(3,3)
+**
+*     ---------------------------------------------------------------
+*
+      ni=G_ni+1
+      if (G_lam) ni=G_ni
+      nj=G_nj
+      if (Lun_out.gt.0) write(Lun_out,1001)
+*
+*---------------------------------------------------------------
+*  Process the time series grid points
+*  -------------------------------------------------------------
+*
+*  1- Determine if the user has specified any stations and whether
+*     they are in lat,lon or in gridpoints i,j
+*
+      Xst_nstat = 0
+      nstat = 0
+      llstat_L = .false.
+      do j=1,MAXSTAT
+         if ( (Xst_statij(1,j).ne.-9999) .and.
+     $        (Xst_statij(2,j).ne.-9999)) then
+            nstat = nstat + 1
+         else
+            goto 100
+         endif
+      enddo
+*
+ 100  if (nstat .eq. 0) then
+         do j=1,MAXSTAT
+            if ( (Xst_statll(1,j).ne.-9999) .and.
+     $           (Xst_statll(2,j).ne.-9999)) then
+               nstat    = nstat + 1
+               llstat_L = .true.
+            else
+               goto 200
+            endif
+         enddo
+      endif
+*
+ 200  if (nstat.le.0) then
+*         NO STATIONS ARE REQUESTED
+          if (Lun_out.gt.0) write(Lun_out,914)
+          return
+      endif
+*   
+      if (Lun_out.gt.0) write(Lun_out,915) nstat
+*
+*       If any stations are requested, proceed with the next few steps:
+*     2- Compute latitudes and longitudes of the original grid
+*        on the earth
+*
+      if (P_geol_tourn_L) then
+*         ( rotated coordinate system...)
+          do i=1,ni
+             x(i) = Geomn_longs(i) 
+          enddo
+          do j=1,nj
+             y(j) = Geomn_latgs(j)
+          enddo
+          call llacar( cart, x, y, ni, nj)
+          do i=1,3
+          do j=1,3
+             ri_8(i,j) = Grd_rot_8(j,i)
+          end do
+          end do
+          call mxma8 (ri_8,1,3,cart,1,3,carot,1,3, 3,3,ni*nj)
+          call cartall( lon, lat, carot, ni*nj)
+          do i=1,ni*nj
+             lon(i) = amod(lon(i) + 360.0,360.0)
+          enddo
+      else
+*         ( not a rotated coordinated system...)
+          do j=1,nj
+          do i=1,ni
+             lon((j-1)*ni+i) = Geomn_longs(i) 
+             lat((j-1)*ni+i) = Geomn_latgs(j)
+          enddo
+          enddo
+      endif
+*
+*     3- Convert the stations from lat-lon to grid nearest points I-J
+*
+      if (llstat_l) then
+          call cllaij(lon,lat,nstat,ni,nj)
+          if (Lun_out.gt.0) then
+              write(Lun_out,900)
+              do n = 1,nstat
+                   write(Lun_out,902) n,Xst_statll(1,n),Xst_statll(2,n),
+     %                                  Xst_statij(1,n),Xst_statij(2,n)
+              enddo
+              write(Lun_out,901)
+          endif
+      endif
+*
+*     4- Put the stations in increasing order of index in a list
+*        and eliminate stations that appear more than once
+*
+      oldnstat=nstat
+      do k=1,nstat
+         i = Xst_statij(1,k)
+         j = Xst_statij(2,k)
+         wk(k) = i+(j-1)*ni
+      enddo
+      call isort (wk,nstat)
+      oldij = 0
+      m = 0
+      do k=1,nstat
+         ij=wk(k)
+         i=mod(ij-1,NI)+1
+         j=1+(ij-i)/NI
+         if (ij .ne. oldij) then
+             oldij=ij
+             m=m+1
+             Xst_statij(1,m) = i
+             Xst_statij(2,m) = j
+         else
+             if (lun_out.gt.0) write(lun_out,950)i,j
+         endif
+      enddo
+      nstat = m
+*
+      if (nstat.lt.oldnstat .and. Lun_out.gt.0) 
+     %                         write(Lun_out,960) nstat
+      if (nstat.le.0) return
+*
+* 4-  Re-index the stations after the sorting and elimination 
+*
+      if (.not.G_lam) then
+         do n=1,nstat
+            if ( Xst_statij(1,n) .eq. (ni) ) then
+                 Xst_statij(1,n) = 1
+                 if (Lun_out.gt.0) write(Lun_out,970)
+            endif
+         enddo
+      endif
+*
+* 5-  Compute the exact lat-lon for the stations corresponding
+*     to the given grid points of the time-series stations.
+*     Thus, if the user gives the stations in lat-lon, the final
+*     stations may or may not be exactly where the user wants
+*     but it will be the closest grid point of the model grid.
+*
+      do n = 1,nstat
+         Xst_istat(n) = Xst_statij(1,n)
+         Xst_jstat(n) = Xst_statij(2,n)
+         slon(n)=lon((Xst_statij(2,n)-1)*ni+Xst_statij(1,n))
+         slat(n)=lat((Xst_statij(2,n)-1)*ni+Xst_statij(1,n))
+      enddo
+      Xst_nstat = nstat
+*
+      if (Lun_out.gt.0) then
+          write(Lun_out,910)
+          do n = 1,nstat
+           write(Lun_out,912) n,Xst_statij(1,n),Xst_statij(2,n),
+     $                        slat(n),slon(n)
+          enddo
+          write(Lun_out,901)
+      endif
+*
+ 900  format(' _____________________________________________________',
+     %     /,'  User s GIVEN lat-lon and corresponding grid points. ',
+     %     /,' _____________________________________________________',
+     %     /,'    N    |  LAT   |  LON   |   I    |   J    |'
+     %    /,' _____________________________________________________',)
+ 901  format(' _____________________________________________________'//)
+ 902  format(1x,I5,'    ',f8.3,' ',f8.3,' ',I5,'    ',I5,'    ',)
+ 910  format(' _____________________________________________________',
+     %     /,'  Reordered grid points with ACTUAL lat-lon values    ',
+     %     /,' _____________________________________________________',
+     %     /,'    N    |   I    |   J    |  LAT   |  LON   |'
+     %    /,' _____________________________________________________',)
+ 912  format(1x,I5,'    ',I5,'    ',I5,'    ',f8.3,' ',f8.3,' ')
+ 914  format(/,' NO POINTS ARE REQUESTED FOR TIME SERIES.')
+ 915  format(/,I5,' POINTS ARE SPECIFIED FOR TIME SERIES.')
+ 950  format('Redundancy NOTED FOR Station: I,J= ',I5,',',I5)
+ 960  format(/'WARNING:Some points had to be erased due to redundancy.',
+     %     /,'The total number of points is reduced to:',I5)
+ 970  format(/'WARNING (non-LAM GRID): Station I index is G_ni+1 so', 
+     %     /,' index is then reset to 1.')
+ 1001 format(//,'PROCESSING TIME-SERIES GRID POINTS (S/R SET_XST)',
+     %        /,'================================================')
+*     ---------------------------------------------------------------
+*
+      return
+      end

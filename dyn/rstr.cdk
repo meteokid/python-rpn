@@ -1,0 +1,28 @@
+#if defined (DOC)
+*
+***comdeck rstr.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH RESTART of the MODEL                      |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* Rstri_rstn_L       | .true.  to restart the job                      |
+*                    | .false. to start   the job                      |
+* Rstri_idon_L       | .true. initialization is done                   |
+* Rstri_half_L       | .true. if (Lctl_step.ge.(Init_dfnp-1)/2)?       |
+* Rstri_sdon         | number of time steps already performed during   |
+*                    | the current slice                               |
+*----------------------------------------------------------------------
+*
+*
+#endif
+      logical Rstri_rstn_L, Rstri_idon_L, Rstri_half_L
+*
+      integer Rstri_sdon
+*
+      common / Rstri / Rstri_sdon
+      common / Rstrl / Rstri_rstn_L,  Rstri_idon_L, Rstri_half_L
+*

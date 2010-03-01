@@ -1,0 +1,61 @@
+***s/r vte_uv2img - convert wind components to image winds
+*
+      subroutine vte_uv2img ( F_u, F_v, niu, nju, niv, njv, nk,
+     $                                      F_xdy_8, F_xdyv_8)
+#include "impnone.cdk"
+      integer  niu, niv, nju, njv, nk
+      real     F_u(niu,nju,nk),  F_v(niv,njv,nk)
+      real*8   F_xdy_8(*),F_xdyv_8(*)
+*
+*author michel roch - rpn - june 96
+*
+*revision
+* v2_30 - Corbeil L.    - Renamed vte_ (e_uv2img no more called in 
+* v2_30                   gemntr), added xdy* stuff in the interface
+*
+*object
+*	see above id
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_u	       I/O          input  - U wind component
+*                           output - U wind image 
+* F_v	       I/O          input  - V wind component
+*                           output - V wind image
+* F_xdy_8       I           latitude 
+* F_xdyv_8      I           latitude 
+*----------------------------------------------------------------
+*
+*implicits
+#include <model_macros_f.h>
+#include "dcst.cdk"
+*
+**
+      integer i,j,k
+      real*8 pdsc1_8
+*
+*     ----------------------------------------------------------------
+*
+      do j=1,nju
+         pdsc1_8 = (cos(F_xdy_8(j))) / Dcst_rayt_8
+         do k=1,nk
+         do i=1,niu
+            F_u(i,j,k) = pdsc1_8 * F_u(i,j,k)
+         enddo
+         enddo
+      enddo
+*
+      do j=1,njv
+         pdsc1_8 = (cos(F_xdyv_8(j))) / Dcst_rayt_8
+         do k=1,nk
+         do i=1,niv
+            F_v(i,j,k) = pdsc1_8 * F_v(i,j,k)
+         enddo
+         enddo
+      enddo
+*
+*     ----------------------------------------------------------------
+*
+      return
+      end

@@ -1,0 +1,40 @@
+#if defined (DOC)
+*
+***comdeck tr3d.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VMM VARIABLES ASSOCIATED WITH THE TRACER VARIABLES                  |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* MAXTR3d            | maximum number of tracers allowed in VMM memory |
+* Tr3d_name_S        | tracer names stored in VMM memory               |
+* Tr3d_username_S    | user-defined tracer names to store in VMM       |
+* Tr3d_ntr           | number of tracers stored in VMM memory          |
+* Tr3d_userntr       | number of user-defined tracer names             |
+* Tr3d_sval          | values for each tracer                          |
+* Tr3d_usersval      | user-defined values for user-defined tracers    |
+*----------------------------------------------------------------------
+*
+#endif
+
+      integer MAXTR3D
+      parameter ( MAXTR3D = 25 )
+*
+      character*4  Tr3d_name_S,Tr3d_username_S
+      integer Tr3d_ntr,Tr3d_userntr
+      real Tr3d_sval,Tr3d_usersval
+
+      MARK_COMMON_BEG (Tr3d_c)
+      common /Tr3d_c/ Tr3d_name_S(MAXTR3D),Tr3d_username_S(MAXTR3D)
+      MARK_COMMON_END (Tr3d_c)
+
+      MARK_COMMON_BEG (Tr3d_i)
+      common /Tr3d_i/ Tr3d_ntr,Tr3d_userntr
+      MARK_COMMON_END (Tr3d_i)
+
+      MARK_COMMON_BEG (Tr3d_r)
+      common /Tr3d_r/ Tr3d_sval(MAXTR3D),Tr3d_usersval(MAXTR3D)
+      MARK_COMMON_END (Tr3d_r)

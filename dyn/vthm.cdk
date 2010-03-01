@@ -1,0 +1,49 @@
+#if defined (DOC)
+*
+***comdeck vthm.cdk
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt ADJ for new advection code 
+*
+*object
+*     Equivalent to comdeck vth for TRAJECTORY
+*
+*______________________________________________________________________
+*                                                                      |
+*  TRAJ VMM variables at TIME th (t0-dt/2)                             |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* uthm               | x component of velocity                         |
+* vthm               | y component of velocity                         |
+* psdthm             | pi* dot (vert. vel. in pi* coord.)              |
+*--------------------|-------------------------------------------------|
+* xthm               | upstream x position                             |
+* ythm               | upstream y position                             |
+* zthm               | upstream z displacement                         |
+* xcthm              | upstream x position in cartesian coordinate     |
+* ycthm              | upstream y position in cartesian coordinate     |
+* zcthm              | upstream z position in cartesian coordinate     |
+*----------------------------------------------------------------------
+*
+#endif
+*
+      MARK_COMMON_BEG(vthm)
+      DCL_VMMVAR(vthm,uthm	,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR(vthm,vthm	,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR(vthm,psdthm	,real,(LDIST_SHAPE,l_nk))
+      DCL_VMMVAR(vthm,xthm      ,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vthm,ythm      ,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vthm,zthm      ,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vthm,xcthm     ,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vthm,ycthm     ,real,(l_ni*l_nj*l_nk))
+      DCL_VMMVAR(vthm,zcthm     ,real,(l_ni*l_nj*l_nk))
+      MARK_COMMON_END(vthm)
+*
+      character*8 vthm_n_first(1)
+      equivalence (vthm_n_first,VMM_NAM(uthm))

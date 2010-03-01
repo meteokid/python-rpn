@@ -1,0 +1,102 @@
+*** s/r calvor - compute horizontal absolute vorticity (pi*)
+*
+#include <model_macros_f.h>
+*
+      subroutine calvor (F_vor,F_u,F_v,F_wrk,DIST_DIM,nk)
+*
+#include "impnone.cdk"
+*
+      integer  DIST_DIM, nk
+      real   F_vor(DIST_SHAPE,nk), F_u  (DIST_SHAPE,nk)
+      real   F_v  (DIST_SHAPE,nk), F_wrk(DIST_SHAPE,nk)
+*
+*authors:  Methot/Patoine     - cmc - nov 95 
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version (from calvor v1_03)
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*	See above id
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_vor        O    - resulting vorticity
+* F_u	       I    - field on U grid 
+* F_v	       I    - field on V grid 
+* F_wrk             - workfield
+*
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "intuv.cdk"
+#include "inuvl.cdk"
+#include "schm.cdk"
+*
+*notes
+*	Result is on the PHI grid
+**
+*
+      integer  i, j, k, i0, in, j0, jn
+*     ----------------------------------------------------------------
+*
+      i0 = 1
+      in = l_niu
+      j0 = 1
+      jn = l_njv
+*
+      do k =  1, nk
+      do j = j0, jn
+      do i = i0, in
+         F_wrk(i,j,k) = ( F_v(i+1,j,k) - F_v(i,j,k) ) 
+     %                / (geomg_cyv2_8(j) * geomg_hx_8(i)) -
+     $          ( F_u(i,j+1,k) - F_u(i,j,k) ) / geomg_hsy_8(j)
+      end do
+      end do
+      end do
+*
+      call rpn_comm_xch_halo (F_wrk,LDIST_DIM,l_ni,l_nj,G_nk,
+     $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+*
+      if (l_south) j0 = 2
+      if (G_lam) then
+          if (l_west) i0 = 2
+      endif
+
+      do k=1, nk
+         do j = j0, jn
+         do i = i0, in
+            F_vor(i,j,k)= ((1.0-intuv_c0yvy_8(j-1)) * F_wrk(i  ,j-1,k)+
+     $                          intuv_c0yvy_8(j-1)  * F_wrk(i  ,j  ,k))
+     $                                * intuv_c0xux_8(i-1) +
+     $                    ((1.0-intuv_c0yvy_8(j-1)) * F_wrk(i-1,j-1,k)+
+     $                          intuv_c0yvy_8(j-1)  * F_wrk(i-1,j  ,k))
+     $                           * (1.0 - intuv_c0xux_8(i-1))
+         end do
+         end do
+         if (.not.G_lam) then
+            if (l_south) then
+            do i = 1, l_ni
+            F_vor(i,1,k)= ( intuv_c0yvy_8(0)  * F_wrk(i  ,1,k))
+     $                                  * intuv_c0xux_8(i-1) +
+     $                    ( intuv_c0yvy_8(0)  * F_wrk(i-1,1,k))
+     $                           * (1.0 - intuv_c0xux_8(i-1))
+            end do
+            endif
+            if (l_north) then
+            do i = 1, l_ni
+            F_vor(i,l_nj,k)=        intuv_c0xux_8(i-1)  *
+     $           ( (1.-intuv_c0yvy_8(l_nj-1))  * F_wrk(i  ,l_nj-1,k)) +
+     $                       (1.0 - intuv_c0xux_8(i-1)) *
+     $           ( (1.-intuv_c0yvy_8(l_nj-1))  * F_wrk(i-1,l_nj-1,k))
+            end do
+            endif
+         endif
+
+      end do
+*
+      return
+      end
+*

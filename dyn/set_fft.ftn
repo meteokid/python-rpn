@@ -1,0 +1,90 @@
+***s/r set_fft - determine if fast fourier transforms is needed and
+*                if so, initialize and prepare the FFT projector
+*
+#include <model_macros_f.h>
+*
+      subroutine set_fft
+*
+#include "impnone.cdk"
+*
+*author 
+*     michel roch - rpn - june 1993
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from setfft v1_03)
+* v2_40 - Qaddouri A.       - adjust for LAM version
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     See above id.
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "dcst.cdk"
+#include "fft.cdk"
+#include "grd.cdk"
+#include "lun.cdk"
+*
+*
+**
+      real*8 two
+      parameter( two  = 2.0 )
+*
+      integer i
+*     ---------------------------------------------------------------
+*
+      if (Lun_out.gt.0) write(Lun_out,1000)
+*
+*C       1.    test if grid is uniform in x
+*              ----------------------------
+      if ( Grd_ni .ne. Grd_nila ) then
+*  Note (G_ni=Grd_ni)
+         Fft_fast_L = .false.
+         if (Lun_out.gt.0) 
+     $   write(Lun_out,*)'Fft_fast_L = ',Fft_fast_L,' non-uniform grid'
+         return
+      endif
+*
+*C       2.    test grid factorization
+*              -----------------------
+      i = G_ni-Lam_pil_w-Lam_pil_e
+      call ngfft ( i )
+      if ( i.ne.G_ni-Lam_pil_w-Lam_pil_e ) then
+         Fft_fast_L = .false.
+         if (Lun_out.gt.0) 
+     $   write(Lun_out,*) 'NGFFT Fft_fast_L = ',Fft_fast_L,
+     $                    ' NI = ',G_ni-Lam_pil_w-Lam_pil_e,' I = ',i
+         return
+      endif
+      Fft_fast_L = .true.
+      if (Lun_out.gt.0) write(Lun_out,*) 'Fft_fast_L = ',Fft_fast_L
+*
+*
+*C       3.    calculate inverse projector in Fourier space 'Fft_pri_8'
+*              --------------------------------------------------------
+*
+      if (G_lam) then
+
+          call setscqr(i, 'QCOS' )
+          i=G_ni-Lam_pil_w-Lam_pil_e
+          Fft_pri_8 =  dble(i) / (G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w) )
+
+      else
+          call setfft8 ( Grd_ni )
+          Fft_pri_8 = dble(Grd_ni) / (  two * Dcst_pi_8 )
+      endif
+*
+      if (Lun_out.gt.0) write(Lun_out,*) 'Fft_pri_8 = ',Fft_pri_8
+*
+ 1000 format(
+     %/,'COMMON INITIALIZATION AND PREPARATION FOR FFT (S/R SET_FFT)',
+     %/,'===========================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

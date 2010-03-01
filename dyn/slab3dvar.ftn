@@ -1,0 +1,331 @@
+***s/r slab3dvar - insert  3-D model variables into slab work space
+*
+#include <model_macros_f.h>
+*
+      subroutine slab3dvar(F_3dvar_S,CN3DVAR,F_dostep,F_dostep_max, F_grid)
+*
+#include "impnone.cdk"
+*
+      integer CN3DVAR, F_dostep(*), F_dostep_max, F_grid
+      character*8 F_3dvar_S(CN3DVAR)
+*
+*author
+*     james caveen - sor3dvar - rpn july 1995
+*
+*revision
+* v2_00 - Lee V.           - initial MPI version (from sormdlv v1_03)
+* v2_21 - Toviessi J-P.    - from sor3dvar, adapted for slab output
+* v2_30 - Lee V.           - call to insrtslab_d includes variables dynamically
+* v2_30                      allocated in "BLOC??". Level_typ changed to 1 dim
+* v2_31 - Lee V.           - variables dynamically allocated in "BLOC??" are
+* v2_31                      now allocated here, thus, no longer in calling
+* v2_31                      sequence. Type of output grid is passed instead.
+* v2_32 - Lee V.           - reduce dynamic allocation size
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     output requested 3-D model variables given in F_3dvar_S
+*     Note that there is a limit of treating a maximum of
+*     MAXKEY 3-D variables at a time because of memory constraints
+*	
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_3dvar_S    I      list of names of model variables to output
+* F_dostep     I      array containing indices corresponding to the
+*                     timestep sets that requires output at this time step.
+* F_dostep_max I      size of F_dostep array
+* var_e_S      O      array of variable names for each record to output
+* ip1_e        O      array of IP1 values for each record to output
+* bit_e        O      array of bit compaction values for each record
+* mtval_e      O      the slab workspace to be filled by each record
+* mtout_e      O      accumulater of number of records in the slab
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "dimout.cdk"
+#include "setsor.cdk"
+#include "out.cdk"
+#include "out2.cdk"
+#include "outd.cdk"
+#include "level.cdk"
+#include "slab.cdk"
+#include "dslab.cdk"
+#include "grid.cdk"
+*
+*modules
+      integer  getvndx, vmmlod, vmmget, vmmuln
+      external getvndx, vmmlod, vmmget, vmmuln
+**
+*
+*    declaration for local work array and pointer for loading each field
+*
+      integer MAXKEY
+      parameter (MAXKEY = 9)
+      real prwork,w1(LDIST_SHAPE),t3(LDIST_SHAPE,G_nk),w4(LDIST_SHAPE)
+      real prprlvl
+      pointer (pawork,prwork(*))
+      integer i,j,k,ii,jj,kk,iii,jjj,levset,i0,in,j0,jn
+      integer pnindex, pnkey, pni3d
+      integer pnlkey(MAXKEY),pnikey(MAXKEY)
+      integer pnerr
+*     Declarations for slab output
+      integer mxout_e
+      character*4, dimension(:,:),allocatable :: var_e_S
+      character*1, dimension(:,:),allocatable :: typvar_e_S
+      real,        dimension(:,:),allocatable :: mtval_e
+      integer,     dimension(:,:),allocatable :: ip1_e,bit_e,xnio
+      integer,     dimension(:)  ,allocatable :: mtout_e
+*
+*_______________________________________________________________________
+*
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+*_______________________________________________________________________
+*
+      mxout_e = 1 + MAXKEY*(max(l_nk,Dslab_max_lev_p))
+      allocate ( var_e_S(mxout_e,Grid_sets),
+     %           typvar_e_S(mxout_e,Grid_sets),
+     %           ip1_e(mxout_e,Grid_sets),
+     %           bit_e(mxout_e,Grid_sets),
+     %           mtval_e(LDIST_SIZ*mxout_e,Grid_sets),
+     %           mtout_e(Grid_sets),
+     %           xnio(LDIST_SIZ,Grid_sets) )
+      call set_dslab(F_grid,xnio,LDIST_SIZ,Grid_sets)
+      do k=1,Grid_sets
+         mtout_e(k)=0
+      enddo
+      pnkey = 0
+      pni3d = 0
+
+*     For all the variables to be treated in this routine
+
+      do 220 i = 1, CN3DVAR
+
+         pnindex=getvndx(F_3dvar_S(i))
+
+*   if model variable appears in the request output set, 
+*   add to the list pnlkey
+       if (Setsor_useit(pnindex).ge.1) then
+           pni3d = pni3d + Setsor_useit(pnindex)
+           pnkey = pnkey + 1
+           pnlkey(pnkey) = Setsor_key(pnindex)
+           pnikey(pnkey) = pnindex
+       endif
+*      When pnkey reaches MAXKEY....
+       if (pnkey.gt.MAXKEY-1.or.pni3d.gt.MAXKEY) then
+           if (pni3d.gt.MAXKEY) pnkey = pnkey-1
+*          Load these MAXKEY model variables and output them
+            pnerr = vmmlod(pnlkey,pnkey)
+
+         do 100 jj = 1, F_dostep_max
+*        For every Timestep set that outputs at the current timestep
+
+            do 80 kk = 1, Outd_sets
+
+              if (Outd_step(kk) .eq. F_dostep(jj)) then
+*             if the Timestep set for this request set Outd(kk) outputs
+*             at the current timestep (Lctl_step)
+
+              levset = Outd_lev(kk)
+              if (Level_typ(levset).eq.'E') then
+
+                  do 50 ii = 1,Outd_var_max(kk)
+                  do 40 iii=1,pnkey
+                  if (pnikey(iii).eq.Outd_var(ii,kk)) then
+*                  if variable is in this request set
+
+*                 get address of the data for this model variable
+                  pnerr = vmmget(pnlkey(iii),pawork,prwork)
+*                 for each level requested in the levset
+                     do jjj=1,Level_max(levset)
+                        call insrtslab_d(prwork,w1,LDIST_DIM,G_nk,
+     $                  nint(Level(jjj,levset)),kk,1.0,0.0,pnikey(iii),
+     $                  Level_ip1(jjj,levset),mtout_e,var_e_S,typvar_e_S,
+     $                  ip1_e,bit_e,mtval_e,LDIST_SIZ,mxout_e,Grid_sets)
+                     enddo
+                  endif
+  40              continue
+  50              continue
+              endif
+              endif
+  80        continue
+ 100     continue
+*
+*        write out to slab files in eta
+         call writslab_d(Dslab_fhand_e,Dslab_slab_e,Dslab_nnio,'dm',
+     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+         do k=1,Grid_sets
+            mtout_e(k)=0
+         enddo
+*
+         do 200 jj = 1, F_dostep_max
+*        For every Timestep set that outputs at the current timestep
+
+            do 180 kk = 1, Outd_sets
+
+              if (Outd_step(kk) .eq. F_dostep(jj)) then
+*             if the Timestep set for this request set Outd(kk) outputs
+*             at the current timestep (Lctl_step)
+
+              levset = Outd_lev(kk)
+              if (Level_typ(levset).eq.'P') then
+*             Output on pressure levels
+                  do 175 ii = 1,Outd_var_max(kk)
+                  do 170 iii=1,pnkey
+                  if (pnikey(iii).eq.Outd_var(ii,kk)) then
+*                  if variable is in this request set
+
+*                 get address of the data for this model variable
+                  pnerr = vmmget(pnlkey(iii),pawork,prwork)
+                  call verder(t3, prwork, Out2_wlnph, 2.0, 2.0, LDIST_DIM, G_nk,
+     $                                                             i0,in,j0,jn)
+*                 for each level requested in the levset
+                  do 160 jjj=1,Level_max(levset)
+                        prprlvl = Level(jjj,levset) * 100.0
+                        call prgen( w4, prwork, t3, Out2_wlnph, prprlvl,
+     $                      Out_cubzt_L,LDIST_DIM, G_nk)
+                        call insrtslab_d(w4,w1,LDIST_DIM,1,1,kk,1.0,0.0,
+     $                  pnikey(iii),Level_ip1(jjj,levset),mtout_e,var_e_S,
+     $                  typvar_e_S,ip1_e,bit_e,mtval_e,LDIST_SIZ,mxout_e,Grid_sets)
+ 160              continue
+                  endif
+ 170              continue
+ 175              continue
+
+              endif
+              endif
+ 180        continue
+ 200     continue
+*
+*        write out to slab files in pressure
+         call writslab_d(Dslab_fhand_p,Dslab_slab_p,Dslab_nnio,'dp',
+     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+         do k=1,Grid_sets
+            mtout_e(k)=0
+         enddo
+
+
+*        unload these MAXKEY variables,reset slab counters and start 
+*                                                accumulating MAXKEY more..
+         pnerr = vmmuln(pnlkey,pnkey)
+         if (pnkey.gt.MAXKEY-1)then
+             pnkey = 0
+             pni3d = 0
+         else
+           pni3d = Setsor_useit(pnindex)
+           pnkey = 1
+           pnlkey(pnkey) = Setsor_key(pnindex)
+           pnikey(pnkey) = pnindex
+         endif
+
+       endif !When pnkey reaches MAXKEY....
+ 220  continue
+
+*     Output the rest of the accummulated variables
+      if (pnkey.gt.0) then
+*     load them (pnkey should be less than MAXKEY)
+      pnerr = vmmlod(pnlkey,pnkey)
+
+         do 300 jj = 1, F_dostep_max
+*        For every Timestep set that outputs at the current timestep
+
+            do 280 kk = 1, Outd_sets
+
+              if (Outd_step(kk) .eq. F_dostep(jj)) then
+*             if the Timestep set for this request set Outd(kk) outputs
+*             at the current timestep (Lctl_step)
+
+              levset = Outd_lev(kk)
+              if (Level_typ(levset).eq.'E') then
+
+               do 250 ii = 1,Outd_var_max(kk)
+
+                  do 240 iii=1,pnkey
+
+                  if (pnikey(iii).eq.Outd_var(ii,kk)) then
+*                 if variable is in this request set
+
+*                 get address of the data for this model variable
+                  pnerr = vmmget(pnlkey(iii),pawork,prwork)
+*                 for each level requested in the levset
+                  do 230 jjj=1,Level_max(levset)
+*                    check if level is in Model levels...
+                        call insrtslab_d(prwork,w1,LDIST_DIM,G_nk,
+     $                  nint(Level(jjj,levset)),kk,1.0,0.0,
+     $                  pnikey(iii),Level_ip1(jjj,levset),mtout_e,var_e_S,
+     $                  typvar_e_S,ip1_e,bit_e,mtval_e,LDIST_SIZ,mxout_e,Grid_sets)
+ 230              continue
+                  endif
+ 240              continue
+ 250           continue
+              endif
+              endif
+ 280        continue
+ 300     continue
+*
+*        write out to slab files in eta
+         call writslab_d(Dslab_fhand_e,Dslab_slab_e,Dslab_nnio,'dm',
+     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+         do k=1,Grid_sets
+            mtout_e(k)=0
+         enddo
+*
+*        Output on pressure levels
+         do 400 jj = 1, F_dostep_max
+*        For every Timestep set that outputs at the current timestep
+
+            do 380 kk = 1, Outd_sets
+
+              if (Outd_step(kk) .eq. F_dostep(jj)) then
+*             if the Timestep set for this request set Outd(kk) outputs
+*             at the current timestep (Lctl_step)
+
+              levset = Outd_lev(kk)
+              if (Level_typ(levset).eq.'P') then
+
+                  do 375 ii = 1,Outd_var_max(kk)
+                  do 370 iii=1,pnkey
+                  if (pnikey(iii).eq.Outd_var(ii,kk)) then
+*                  if variable is in this request set
+
+*                 get address of the data for this model variable
+                  pnerr = vmmget(pnlkey(iii),pawork,prwork)
+                  call verder(t3, prwork, Out2_wlnph, 2.0, 2.0, LDIST_DIM, G_nk,
+     $                                                             i0,in,j0,jn)
+*                 for each level requested in the levset
+                  do 360 jjj=1,Level_max(levset)
+                        prprlvl = Level(jjj,levset) * 100.0
+                        call prgen( w4, prwork, t3, Out2_wlnph, prprlvl,
+     $                      Out_cubzt_L,LDIST_DIM, G_nk)
+                        call insrtslab_d(w4,w1,LDIST_DIM,1,1,kk,1.0,0.0,
+     $                  pnikey(iii),Level_ip1(jjj,levset),mtout_e,var_e_S,
+     $                  typvar_e_S,ip1_e,bit_e,mtval_e,LDIST_SIZ,mxout_e,Grid_sets)
+ 360              continue
+                  endif
+ 370              continue
+ 375              continue
+
+              endif
+              endif
+ 380        continue
+ 400     continue
+*         write out to slab files
+          call writslab_d(Dslab_fhand_p,Dslab_slab_p,Dslab_nnio,'dp',
+     %                Dslab_ext_S,mtout_e, var_e_S,typvar_e_S,ip1_e,bit_e,
+     %                mtval_e,xnio,LDIST_SIZ,mxout_e,Grid_sets)
+      endif
+      pnerr = vmmuln(pnlkey,pnkey)
+      deallocate ( var_e_S, ip1_e, bit_e, mtval_e, typvar_e_S, mtout_e, xnio )
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

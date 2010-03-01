@@ -1,0 +1,229 @@
+***s/r set_world_view
+*
+#include <model_macros_f.h>
+*
+      subroutine set_world_view
+*
+#include "impnone.cdk"
+*
+*author
+*     Michel Desgagne
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_10 - Lee V.            - added watch_pid mechanism (returnpid)
+* v2_10 - Desgagne M.       - Add partitioning checks
+* v2_20 - Desgagne M.       - remove watch_dog (MPISUSPEND=ON)
+* v2_21 - Dugas B.          - possibly initialize convip
+* v2_21 - Lee V.            - modifications for LAM version and slab outputs
+* v2_30 - Dugas B.          - add call to gemtim
+* v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
+* v2_32 - Desgagne M.       - option for FST2000 encoding of ip1
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*arguments
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "path.cdk"
+#include "ptopo.cdk"
+#include "slab.cdk"
+#include "pres.cdk"
+#include "grd.cdk"
+#include "dimout.cdk"
+#include "level.cdk"
+*
+*modules
+      logical  set_dcst8,check_parti
+      integer  slabopt, longueur,hybref_to_ig
+      external set_world_view1,set_dcst8,check_parti,
+     %         slabopt,longueur,hybref_to_ig
+**
+      integer   cnbre,nrec,ipcode,ipmode,pncpu,ierr
+      parameter(cnbre=31)
+      character*256 prejob_S
+      character*10 liste_S(cnbre)
+      data liste_S/ 'CPD'   , 'CPV' , 'RGASD' , 'RGASV', 'TRPL' ,
+     +              'TCDK'  , 'RAUW', 'EPS1'  , 'EPS2' , 'DELTA',
+     +              'CAPPA' , 'TGL' , 'CONSOL', 'GRAV' , 'RAYT' ,
+     +              'STEFAN', 'PI'  , 'OMEGA' , 'KNAMS', 'STLO' ,
+     +              'KARMAN', 'RIC' , 'CHLC'  , 'CHLF' , 'T1S'  ,
+     +              'T2S'   , 'AW'  , 'BW'    , 'AI'   , 'BI'   ,
+     +              'SLP' /
+      real pcode,x1,x2
+*
+      integer pni, pnj, pniu, pnjv, pnk, lam
+      namelist / dyndim / pni, pnj, pniu, pnjv, pnk, lam
+*
+*-------------------------------------------------------------------
+*
+      lun_out  = -1
+      lun_in   = -1
+      lun_lab  = -1
+      lun_tsrs = -1
+      Lun_zonl = -1
+      Lun_cte  = -1
+      lun_waphy= 65
+      lun_wapta= 66
+      Lun_rstrt= -1
+      Lun_debug_L=.false.
+*     Lun_pids = 62 <--- reserved, please do not use this unit elsewhere
+*
+      call rpn_comm_init (set_world_view1, Ptopo_myproc, Ptopo_numproc, 
+     $                                     Ptopo_npex  , Ptopo_npey)
+      call rpn_comm_mype (Ptopo_myproc, Ptopo_myrow, Ptopo_mycol)
+*
+cvl   open (44,file='seqfbin/posi_xy', form='formatted')
+cvl   if ( Ptopo_myproc.eq.0 ) then
+cvl   open (48, file='seqfbin/interpo_bin.l',form='unformatted')
+cvl   open (49, file='seqfbin/ps_bin.l',form='unformatted')
+cvl   open (50, file='seqfbin/sol_bin.l',form='unformatted')
+cvl   open (60, file='seqfbin/future_bin.l',form='unformatted')
+cvl   endif
+*
+      call bcastc1 ()
+*
+*     fst2000 ip1 encoding 
+      if ((Level_ip12000_L).and.(Ptopo_myproc.gt.0))
+     $     call convip( ipcode, pcode, ipmode, 0, ' ', .false. )
+*
+#if defined (NEC)
+      if (Lun_out.gt.0) call gemtim (Lun_out)
+#endif
+*
+*     Setting up output of slabs 
+*
+      Lun_outgem_s=Path_dfwmil_S(1:longueur(Path_dfwmil_S))//'/output/'
+      Slab_send_s = 'SLB9'
+      call convip(Slab_ip1,Pres_ptop,2,+1,' ',.false.)
+      ierr = hybref_to_ig(Slab_ig1,Slab_ig2,Slab_ig3,Slab_ig4,
+     %                                   Grd_rcoef,Pres_pref,x1,x2)
+      if (Lun_out.gt.0) then
+          write (Lun_out,*) 'Slab_ip1=',Slab_ip1
+          write (Lun_out,*) 'Slab_ig1=',Slab_ig1,'Slab_ig2=',Slab_ig2,
+     %                      'Slab_ig3=',Slab_ig3,'Slab_ig4=',Slab_ig4
+      endif
+*
+*     Initializing physical constants
+*
+      if (.not.set_dcst8(Dcst_cpd_8,liste_S,cnbre,lun_cte,lun_out)) then
+         if (Lun_out.gt.0) write (Lun_out,9115)
+         stop
+      endif
+*
+*     Running script Um_hook.sh
+*
+c      write (prejob_S,33) Ptopo_myproc
+c      prejob_S='Um_hook.sh -pre '//prejob_S(1:longueur(prejob_S))
+c      call system (prejob_S)
+*
+*     Establishing data topology
+*
+      l_west   = (0            .eq. Ptopo_myrow)
+      l_east   = (Ptopo_npex-1 .eq. Ptopo_myrow)
+      l_south  = (0            .eq. Ptopo_mycol)
+      l_north  = (Ptopo_npey-1 .eq. Ptopo_mycol)
+      north = 0
+      south = 0
+      east  = 0
+      west  = 0
+      if (G_lam) then
+      if (l_north) north = 1
+      if (l_south) south = 1
+      if (l_east ) east  = 1
+      if (l_west ) west  = 1
+      endif
+*
+      if (G_lam) then
+         pil_w     = 0
+         pil_n     = 0
+         pil_e     = 0
+         pil_s     = 0
+         G_periodx = .false.
+         G_periody = .false.
+         if (l_west)  pil_w     = Glb_pil_w
+         if (l_north) pil_n     = Glb_pil_n
+         if (l_east)  pil_e     = Glb_pil_e
+         if (l_south) pil_s     = Glb_pil_s
+         Lam_pil_w = Glb_pil_w
+         Lam_pil_n = Glb_pil_n
+         Lam_pil_e = Glb_pil_e
+         Lam_pil_s = Glb_pil_s
+      else
+         G_periodx = .true.
+         G_periody = .false.
+         pil_w     = 0
+         pil_n     = 0
+         pil_e     = 0
+         pil_s     = 0
+         Lam_pil_w = 0
+         Lam_pil_n = 0
+         Lam_pil_e = 0
+         Lam_pil_s = 0
+      endif
+*
+      call rpn_comm_topo (G_ni,l_minx,l_maxx,l_ni,G_lnimax,
+     $                    G_halox,l_i0,.true.,.true.) 
+      call rpn_comm_topo (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,
+     $                    G_haloy,l_j0,.false.,.true.)
+      if (.not.check_parti (l_i0,G_ni,Ptopo_npex)) then
+         if (Lun_out.gt.0) write(Lun_out,1001) Ptopo_myproc,l_i0,Ptopo_npex
+         call gem_stop('set_world_view',-1)
+      endif
+      if (.not.check_parti (l_j0,G_nj,Ptopo_npey)) then
+         if (Lun_out.gt.0) write(Lun_out,1002) Ptopo_myproc,l_j0,Ptopo_npey
+         call gem_stop('set_world_view',-1)
+      endif
+*
+      l_nk = G_nk
+      l_njv= l_nj
+      l_niu= l_ni
+      if (l_north) l_njv= l_nj - 1
+      if ((l_east).and.(G_lam)) l_niu = l_ni - 1
+*
+*     Check grid dimensions for LAM
+      if (G_lam) then
+          ierr=0
+          if (l_niu.le.pil_w .or.
+     %        l_niu.le.pil_e .or.
+     %        l_njv.le.pil_n .or.
+     %        l_njv.le.pil_s) ierr=-1
+          call gem_stop
+     $         ('LAM grid too small for chosen processor topology',ierr)
+      endif
+      call glbpos  
+*
+      call set_run_dir_xy (Ptopo_myrow, Ptopo_mycol)
+*
+*C    OpenMP cpu initialization
+*     -------------------------
+      pncpu = max( Ptopo_npeOpenMP, Ptopo_npeMacro )
+*
+#if defined (MULTID) || defined (MULTI)
+#if defined (NEC)
+      call pstune('maxcpu', pncpu, 'dbreleas', pncpu)
+#endif
+#endif
+*
+*C    Initialize the schemes control comdeck
+*     --------------------------------------
+      call set_schm()
+*
+ 1001 format (/,'Checkparti G_ni error on PE:',i4,' l_i0=',i4,' npex=',i4,/)
+ 1002 format (/,'Checkparti G_nj error on PE:',i4,' l_j0=',i4,' npey=',i4,/)
+ 1003 format ('PE ',i4,': l_niu or l_njv smaller than pil_?')
+ 1004 format ('l_niu=',i5,' l_njv=',i5,
+     %        ' pil_w=',i3,' pil_e=',i3,' pil_s=',i3,'pil_n=',i3)
+ 5000 format (' Standard file version: ',i6/)
+ 9115 format (/,' PROBLEM INITIALIZATING PHYSICAL CONSTANTS',/)
+ 33   format (i6)
+*
+*-------------------------------------------------------------------
+*
+      return
+      end

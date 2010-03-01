@@ -1,0 +1,41 @@
+***s/r ngfft - calcul du prochain entier > 8 qui se factorise en 2, 3, et 5
+*
+      subroutine ngfft( F_n )
+*
+#include "impnone.cdk"
+*
+      integer F_n
+*
+*author 
+*     Jean Cote - 1990
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from ngfft v1_03)
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_n         I/O   - en sortie le plus petit entier >= n qui factorise
+*
+*
+      integer n
+      parameter ( n = 3 )
+      integer k( n ) , m
+      data m / 8 /
+      data k / 2 , 3 , 5 /
+*
+**
+      integer i,j
+*
+      if ( F_n.le.m ) F_n = m + 1
+      F_n = F_n - 1
+  10  F_n = F_n + 1
+      i = F_n
+  20  do 30 j=1,n
+         if( mod(i,k(j)) .eq. 0 ) go to 40
+  30  continue
+      go to 10
+  40  i = i/k(j)
+      if( i .ne. 1 ) go to 20
+      return
+      end

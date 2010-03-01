@@ -1,0 +1,47 @@
+module v4dz
+!
+!author M.Tanguay 
+!
+!revision
+! v0_06 - Tanguay M.        - initial MPI version
+!
+!______________________________________________________________________
+!                                                                      |
+! VARIABLES ASSOCIATED with 4D-Var: EZSCINT sections                   |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! ax                 | X axe of INPUT grid                             |
+! ay                 | Y axe of INPUT grid                             |
+! cx                 | AX difference on INPUT grid                     |
+! cy                 | AY difference on INPUT grid                     |
+! i1-i2              | Dimension x in INPUT grid                       |
+! j1-j2              | Dimension y in INPUT grid                       |
+! degree             | Degree of interpolation                         |
+! grtypi             | Type of grid                                    |
+!______________________________________________________________________
+!                                                                      |
+ save
+!
+!     ------------------------------
+!     EZSCINT section (for profiles)
+!     ------------------------------
+      integer V4dz_i1,V4dz_i2,V4dz_j1,V4dz_j2,V4dz_degree
+!
+      real, allocatable, dimension (:) :: V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy
+!
+      character*1 V4dz_grtypi
+!
+!     -------------------------------
+!     EZSCINT section (for gauss2gem)
+!     -------------------------------
+      integer V4dzg_i1,V4dzg_i2,V4dzg_j1,V4dzg_j2,V4dzg_degree,V4dzg_npts
+!
+      real,   allocatable, dimension(:) ::V4dzg_ax,V4dzg_ay,V4dzg_cx,V4dzg_cy
+      real,   pointer,     dimension(:) ::V4dzg_px,V4dzg_py
+      real*8, allocatable, dimension(:) ::V4dzg_cox_8,V4dzg_six_8,V4dzg_siy_8,V4dzg_wx_8
+!
+      character*1 V4dzg_grtypi
+!
+end module v4dz

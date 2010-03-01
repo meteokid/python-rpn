@@ -1,0 +1,80 @@
+***s/r adw_ckbd - check if upstream points from north and south 
+*                 pe's for which an interpolation is requested are 
+*                 inside own advection source grid
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_ckbd ( F_y )
+*
+#include "impnone.cdk"
+*
+      real    F_y ( * )
+*
+*author
+*     alain patoine
+*
+*revision
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+* F_y          | y upstream positions                            |  i  |
+*______________|_________________________________________________|_____|
+*
+*notes
+*______________________________________________________________________
+*                                                                      |
+* The positions are strored in the following manner:                   |
+*                                                                      |
+* Adw_fro_n values followed by Adw_fro_s values = Adw_fro_a values     |
+* ---------                    ---------          ---------            |
+*______________________________________________________________________|
+
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "adw.cdk"
+************************************************************************
+      integer n
+************************************************************************
+      do n = 1,Adw_fro_n
+      if ( F_y(n).le.Adw_yy_8(2) ) then
+         print *,'*************************************************'
+         print *,'*                                               *'
+         print *,'* PROBLEM:  The upstream point from north pe    *'
+         print *,'*           is south of advection source grid   *'
+         print *,'*                                               *'
+         print *,'*           South border  :',Adw_yy_8(2)
+         print *,'*           Upstream point:',F_y(n)
+         print *,'*************************************************'
+         call flush(6)
+         call gefstop('adw_ckbd')
+      endif
+      enddo
+*
+      do n = Adw_fro_n+1,Adw_fro_a
+      if ( F_y(n).ge.Adw_yy_8(Adw_njt-1) ) then
+         print *,'*************************************************'
+         print *,'*                                               *'
+         print *,'* PROBLEM:  The upstream point from south pe    *'
+         print *,'*           is north of advection source grid   *'
+         print *,'*                                               *'
+         print *,'*           North border  :',Adw_yy_8(Adw_njt-1)
+         print *,'*           Upstream point:',F_y(n)
+         print *,'*************************************************'
+         call flush(6)
+         call gefstop('adw_ckbd')
+      endif
+      enddo
+*
+      return
+      end
+

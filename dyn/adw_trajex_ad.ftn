@@ -1,0 +1,162 @@
+***s/r adw_trajex_ad - ADJ of adw_trajex_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_trajex_ad ( F_xto,   F_yto,   F_xcto,  F_ycto,
+     %                           F_zcto,  F_xctm,  F_yctm,  F_zctm,
+     %                                    F_xctm_m,F_yctm_m,F_zctm_m,i0,in,j0,jn)
+*
+#include "impnone.cdk"
+*
+      real   F_xto (*), F_yto (*), F_xcto(*), F_ycto(*),
+     %       F_zcto(*), F_xctm(*), F_yctm(*), F_zctm(*)
+*
+      real   F_xctm_m(*),F_yctm_m(*),F_zctm_m(*) 
+      integer i0,in,j0,jn
+*
+*author
+*     monique tanguay
+*
+*revision
+* v2_31 - Tanguay M.        - initial MPI version
+* v3_00 - Tanguay M.        - adapt to restructured adw_main 
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*ADJ of
+*arguments
+*______________________________________________________________________
+*              |                                                 |     |
+* NAME         | DESCRIPTION                                     | I/O |
+*--------------|-------------------------------------------------|-----|
+*              |                                                 |     |
+* F_xto        | upstream x positions at origin                  |  o  |
+* F_yto        | upstream y positions at origin                  |  o  |
+* F_xcto       | upstream x cartesian positions at origin        |  o  |
+* F_ycto       | upstream y cartesian positions at origin        |  o  |
+* F_zcto       | upstream z cartesian positions at origin        |  o  |
+* F_xctm       | upstream x cartesian positions at mid-traj.     |  i  |
+* F_yctm       | upstream y cartesian positions at mid-traj.     |  i  |
+* F_zctm       | upstream z cartesian positions at mid-traj.     |  i  |
+*______________|_________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "adw.cdk"
+#include "dcst.cdk"
+************************************************************************
+      integer i,j,k, n, ij, nij, nijk
+*
+      real*8 prx_8, pry_8, prz_8, prdot2_8, r2pi_8, TWO_8, ZERO_8 
+*
+      parameter (TWO_8  = 2.0)
+      parameter (ZERO_8 = 0.0)
+*
+      real*8 prdot2m_8
+*
+      real   prxcto_m, prycto_m, przcto_m, minmax, minmax_m
+*
+************************************************************************
+      nij  = l_ni*l_nj
+      nijk = l_ni*l_nj*l_nk
+*
+      r2pi_8 = TWO_8 * Dcst_pi_8
+************************************************************************
+*
+*     Zero adjoint variables
+*     ----------------------
+      minmax   = ZERO_8
+      prdot2_8 = ZERO_8
+*
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+      n = (k-1)*nij+((j-1)*l_ni) + i
+*
+*     ----------------------------------------
+*     DO LOOP ADAPTED TO RESTORE VECTORIZATION
+*     ----------------------------------------
+*
+      ij = mod( n-1, nij ) + 1
+*
+*     START REBUILD TRAJECTORY
+*     ------------------------
+      pry_8 = dble(Adw_cy2d_8(ij))
+      prx_8 = dble(Adw_cx2d_8(ij)) * pry_8
+      pry_8 = dble(Adw_sx2d_8(ij)) * pry_8
+      prz_8 = dble(Adw_sy2d_8(ij))
+*
+*     TRAJECTORY
+*     ----------
+      prdot2m_8= 2.0 * ( prx_8 * dble(F_xctm_m(n)) +
+     %                   pry_8 * dble(F_yctm_m(n)) +
+     %                   prz_8 * dble(F_zctm_m(n)) )
+*
+      prxcto_m = prdot2m_8 * dble(F_xctm_m(n)) - prx_8
+      prycto_m = prdot2m_8 * dble(F_yctm_m(n)) - pry_8
+      przcto_m = prdot2m_8 * dble(F_zctm_m(n)) - prz_8
+*
+*     The following min statement is expanded as two IF blocks:
+*     minmax_m = max(-1.,min(1.,przcto_m))
+*
+      minmax_m = przcto_m
+      if (przcto_m.gt.1.) then
+              minmax_m = 1.
+      elseif (przcto_m.lt.-1.) then
+              minmax_m =-1.
+      endif
+*
+*     END REBUILD TRAJECTORY
+*     ----------------------
+*
+*     ADJ
+*     ---
+*
+C     minmax   = F_yto(n)/sqrt( 1.0-minmax_m**2 ) + minmax
+      minmax   = F_yto(n)/sqrt( 1.0-minmax_m**2 )
+      F_yto(n) = ZERO_8
+*
+      if (przcto_m.gt.1.) then
+              minmax = 0.
+      elseif (przcto_m.lt.-1.) then
+              minmax = 0.
+      endif
+      F_zcto(n) = minmax + F_zcto(n)
+C     minmax      = ZERO_8
+*
+      F_ycto(n) = (  F_xto(n)*prxcto_m  )
+     %              /(prxcto_m*prxcto_m + prycto_m*prycto_m)
+     %              + F_ycto(n)
+      F_xcto(n) = (  - prycto_m*F_xto(n))
+     %              /(prxcto_m*prxcto_m + prycto_m*prycto_m)
+     %              + F_xcto(n)
+      F_xto(n)  = ZERO_8
+*
+      F_zctm(n) =     prdot2m_8 * dble(F_zcto(n))  + F_zctm(n)
+*
+      F_yctm(n) =     prdot2m_8 * dble(F_ycto(n))  + F_yctm(n)
+*
+      F_xctm(n) =     prdot2m_8 * dble(F_xcto(n))  + F_xctm(n)
+*
+      prdot2_8    = dble(F_xcto(n)) * dble(F_xctm_m(n)) +
+     %              dble(F_ycto(n)) * dble(F_yctm_m(n)) +
+     %              dble(F_zcto(n)) * dble(F_zctm_m(n))
+*
+      F_zcto(n) = ZERO_8
+      F_ycto(n) = ZERO_8
+      F_xcto(n) = ZERO_8
+*
+      F_xctm(n) = 2.0 * ( prx_8 * prdot2_8 ) + F_xctm(n)
+      F_yctm(n) = 2.0 * ( pry_8 * prdot2_8 ) + F_yctm(n)
+      F_zctm(n) = 2.0 * ( prz_8 * prdot2_8 ) + F_zctm(n)
+*
+      enddo
+      enddo
+      enddo
+*
+      return
+      end

@@ -1,0 +1,87 @@
+***s/r e_wrgeop
+*
+      subroutine e_wrgeop 
+#include "impnone.cdk"
+*
+*author 
+*     M. Desgagne - January 2001
+*
+*revision
+* v2_20 - Pellerin P.       - Adapted from MC2 to writeout geobus
+* v2_21 - Desgagne M.       - Include global statistics
+* v2_21 - Lee V.            - Correction on IF statement for LAM
+*
+#include "e_grids.cdk"
+* comdecks used also in GEMPP
+#include <model_macros_f.h>
+#include "p_bus.cdk"
+#include "p_geobus.cdk"
+#include "lun.cdk"
+*
+*MODULES
+*
+**
+      integer i, j, nim, njm, ict, ivar, im, osgeo
+*
+*----------------------------------------------------------------------
+*
+      nim=nifi
+      njm=njfi
+*
+      if (.not.lam) nim=nifi-1
+*
+*     contraction of the geophysical bus (to remove the last column)
+*
+         ict=0
+         do ivar = 1, p_bgeo_top
+         do im   = 1, geopar(ivar,3)
+            do j=1,njm
+            do i=1,nim
+               ict=ict+1
+               geobus(ict)=
+     $         geobus(geopar(ivar,1)+ (im-1)*nifi*njfi+ (j-1)*nifi+ i-1)
+            end do
+            end do
+         end do
+         end do
+*
+*     re-defining geobus structure in terms of nim,njm
+*
+         p_bgeo_top=0
+         p_bgeo_siz=0
+         do i=1,p_bgeo_top
+            geonm(i,1)=' '
+            geonm(i,2)=' '
+         enddo
+         call e_geopini (nim,njm,-1)
+*
+      print*
+      lun_out = 6
+      do i=1,p_bgeo_top
+      do j=1,geopar(i,3)
+         call statfld (geobus(geopar(i,1)+(j-1)*nim*njm),geonm(i,1),
+     $                 j,"geopfld",1,nim,1,njm,1,1,1,1,nim,njm,1)
+
+      end do
+      end do
+*
+      osgeo = 53
+      open(osgeo,file='process/geophy.bin',access='SEQUENTIAL',
+     $                                      form='UNFORMATTED')
+*
+      write(osgeo) p_bgeo_top, p_bgeo_siz
+      write(osgeo) (geonm (i,1),i=1,p_bgeo_top),
+     $             (geonm (i,2),i=1,p_bgeo_top)
+      write(osgeo) (geopar(i,1),i=1,p_bgeo_top),
+     $             (geopar(i,2),i=1,p_bgeo_top),
+     $             (geopar(i,3),i=1,p_bgeo_top)
+      write(osgeo) (geobus(i),i=1,p_bgeo_siz)
+*
+      close (osgeo)
+*
+*----------------------------------------------------------------------
+      return
+      end
+
+
+

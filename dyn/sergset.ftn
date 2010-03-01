@@ -1,0 +1,120 @@
+***s/r sergset - initialization of the physics variables for the
+*                time series extraction and memory allocation.
+*
+#include <model_macros_f.h>
+*
+      subroutine sergset
+*
+#include "impnone.cdk"
+*
+*author 
+*     Andre Methot - cmc - mai 1994 - v0_14
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_11 - Lee V.            - add logic for memory allocation
+* v2_31 - Desgagne M.       - bugfixe to call to sersetm
+*
+*object
+*               This routine initializes the physics variables
+*      related to time series extraction: variable names to
+*      extract (profil:3D, surface:2D), grid point indicies where
+*      to extract from, number or vertical levels...
+*
+*      It also performs memory allocation for buffers based
+*      on: the number of 2D and 3D variables, the number of
+*      vertical level and the number of grid point where to
+*      extract from.
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "p_serg.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "rstr.cdk"
+#include "xst.cdk"
+#include "xstb.cdk"
+#include "p_geol.cdk"
+#include "ptopo.cdk"
+*
+      integer serdim
+      external serdim
+      integer pnerr, pnmxsrf, i, j
+*
+*     ---------------------------------------------------------------
+*
+      if (lun_out.gt.0) write (Lun_out,1000)
+*
+      pnmxsrf = max( CNSRGEO , P_serg_srsrf )
+*
+*     extracted variables at each station is written to disk
+*     once every "P_serg_srwri" time step.
+*     serallc does memory allocation for buffer containing one
+*     timestep information to be written on the disk.
+*
+      xst_nstatl = 0
+      do i = 1, Xst_nstat
+         if (  (Xst_istat(i).ge.Ptopo_gindx(1,Ptopo_myproc+1)).and.
+     $         (Xst_istat(i).le.Ptopo_gindx(2,Ptopo_myproc+1)).and.
+     $         (Xst_jstat(i).ge.Ptopo_gindx(3,Ptopo_myproc+1)).and.
+     $         (Xst_jstat(i).le.Ptopo_gindx(4,Ptopo_myproc+1)) ) then
+            xst_nstatl = xst_nstatl + 1
+            Xst_lclsta(xst_nstatl) = i
+            xst_stcori(xst_nstatl) = Xst_istat(i) - 
+     $                               Ptopo_gindx(1,Ptopo_myproc+1) + 1
+            xst_stcorj(xst_nstatl) = Xst_jstat(i) - 
+     $                               Ptopo_gindx(3,Ptopo_myproc+1) + 1
+         endif
+      end do
+*
+      Xst_dimsers = max(1,serdim (Xst_nstat,pnmxsrf,1))
+      Xst_dimserp = max(1,serdim (Xst_nstat,P_serg_srprf,G_nk))
+      call hpalloc(Xstb_sers_  ,Xst_dimsers,pnerr,1) 
+      call hpalloc(Xstb_serp_  ,Xst_dimserp,pnerr,1) 
+      call hpalloc(Xstb_sersx_ ,Xst_dimsers,pnerr,1) 
+      call hpalloc(Xstb_serpx_ ,Xst_dimserp,pnerr,1)       
+      call serallc2 (Xstb_sers,Xstb_serp,l_ni,l_nj,G_nk)
+*
+*     initializes number of vertical levels
+*
+      call serset  ('ISTAT',Xst_istat,Xst_nstat ,pnerr)
+      do j= 1+pil_s, l_nj-pil_n 
+         call sersetm('KA', j, G_nk)
+      end do
+*
+      call serset  ('ISTAT'  ,xst_stcori ,xst_nstatl,pnerr)
+      call serset  ('JSTAT'  ,xst_stcorj ,xst_nstatl,pnerr)
+      call serset  ('STATION',Xst_lclsta,xst_nstatl,pnerr)
+      call serset  ('ISTAT_G',Xst_istat,Xst_nstat ,pnerr)
+      call serset  ('JSTAT_G',Xst_jstat,Xst_nstat ,pnerr)
+*
+*     initializes name of SURFACE type variables (2D variables)
+*
+      call sersetc('SURFACE', P_serg_srsrf_s, P_serg_srsrf, pnerr)
+*
+*     initializes name of PROFILE type variables (3D variables)
+*
+      call sersetc('PROFILS', P_serg_srprf_s, P_serg_srprf, pnerr)
+*
+*     initializes the frequency of extraction
+*
+      call serset('SERINT', P_serg_srwri, 1, pnerr)
+*
+*     initializes output unit number
+*
+      call serset('NOUTSER', Lun_tsrs, 1, pnerr)
+*
+*     initializes buffers to zero
+*
+      call serdbu ()
+*
+ 1000 format(/,'INIT OF EXTRACTORS FOR TIME SERIES (S/R SERGSET)',
+     +       /,'================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

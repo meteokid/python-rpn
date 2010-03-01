@@ -1,0 +1,26 @@
+#if defined (DOC)
+*
+*revision
+* v2_10 - Desgagne M.            - transpose parameters for top sponge
+*
+***comdeck Trp.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  VARIABLES ASSOCIATED WITH TRANSPOSE (set_transpose)                 |
+*   (see subroutine set_transpose for documentation)                   |
+*______________________________________________________________________|
+*
+#endif
+      integer Trp_12dmin, Trp_12dmax, Trp_12dn, Trp_12dn0,
+     $        Trp_12smin, Trp_12smax, Trp_12sn, Trp_12sn0, 
+     $        Trp_12emin, Trp_12emax, Trp_12en, Trp_12en0,
+     $        Trp_22min , Trp_22max , Trp_22n , Trp_22n0,
+     $        Trp_22emin, Trp_22emax, Trp_22en, Trp_22en0
+*
+      common /Trp/ Trp_12dmin, Trp_12dmax, Trp_12dn, Trp_12dn0,
+     $             Trp_12smin, Trp_12smax, Trp_12sn, Trp_12sn0,
+     $             Trp_12emin, Trp_12emax, Trp_12en, Trp_12en0,
+     $             Trp_22min , Trp_22max , Trp_22n , Trp_22n0 , 
+     $             Trp_22emin, Trp_22emax, Trp_22en, Trp_22en0
+*

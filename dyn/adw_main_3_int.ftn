@@ -1,0 +1,331 @@
+***s/r adw_main_3_int - Interpolation of rhs
+*
+#include <model_macros_f.h>
+*
+      subroutine adw_main_3_int ( F_u, F_v, F_w )
+*
+#include "impnone.cdk"
+      real F_u(*), F_v(*), F_w(*)
+*
+*author
+*     alain patoine
+*
+*revision
+* v2_31 - Desgagne & Tanguay  - removed stkmemw, introduce tracers
+* v2_31                       - tracers not monotone if V4dg_conf.ne.0
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*language
+*     fortran 77
+*
+*object
+*     see id section
+*
+*arguments
+*______________________________________________________________________
+*        |                                                       |     |
+* NAME   | DESCRIPTION                                           | I/O |
+*--------|-------------------------------------------------------|-----|
+*        |                                                       |     |
+*        |                                                       |     |
+* F_u,F_v| 3 components of upstream positions at t1 at input     |  iw |
+* F_w    | used as work field afterward                          |     |
+*________|_______________________________________________________|_____|
+*
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "ptopo.cdk"
+#include "geomg.cdk"
+#include "orh.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "offc.cdk"
+#include "cstv.cdk"
+#include "rhsc.cdk"
+#include "v4dg.cdk"
+#include "adw.cdk"
+#include "tr2d.cdk"
+#include "tr3d.cdk"
+#include "vt1.cdk"
+#include "vt0.cdk"
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld,
+     $         read_db_file,write_db_file,rewind_db_file
+      external vmmlod, vmmget, vmmuld,
+     $         read_db_file,write_db_file,rewind_db_file
+************************************************************************
+      integer i0,in,j0,jn
+      integer pnerr, pnlkey1(30), key1(Tr3d_ntr), key0(Tr3d_ntr), 
+     $        key1_, key0_, pnlod, err, dim
+*
+      integer n, nij, nijk, nijkag, cnt, unf, i,j,k, m, ntr2do, j2do
+*
+      real*8 aaa
+      real tr,tr0,buf(l_ni,G_nk)
+      pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
+      real, allocatable, dimension(:,:,:,:) :: tr2
+*
+      logical mono_L
+*
+      if (Lun_debug_L) write (Lun_out,1000)
+      nij    = l_ni   *l_nj
+      nijk   = l_ni   *l_nj   *l_nk
+      nijkag = Adw_nit*Adw_njt*l_nk
+      call hpalloc(Adw_capx1_   ,nijk,      err,1)
+      call hpalloc(Adw_capy1_   ,nijk,      err,1)
+      call hpalloc(Adw_capz1_   ,nijk,      err,1)
+      call hpalloc(Adw_n1_      ,nijk,      err,1)
+      call hpalloc(Adw_xdd1_    ,nijk,      err,1)
+      call hpalloc(Adw_xgg1_    ,nijk,      err,1)
+      call hpalloc(Adw_ydd1_    ,nijk,      err,1)
+      call hpalloc(Adw_ygg1_    ,nijk,      err,1)
+      call hpalloc(Adw_cz1_     ,nijk,      err,1)
+      call hpalloc(Adw_c1_      ,nijk,      err,1)
+      call hpalloc(Adw_wrkb_    ,nijk,      err,1)
+      call hpalloc(Adw_wrkc_    ,nijk,      err,1)
+*
+************************************************************************
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+          if (l_west) i0=4
+          if (l_east) in=l_niu-2
+          if (l_south) j0=4
+          if (l_north) jn=l_njv-2
+      endif
+      call adw_exch_1 ( Adw_n1, Adw_xgg1, Adw_xdd1, Adw_c1, F_u, F_v, F_w,
+     %                  i0, in, j0, jn )
+*
+      if (.not.G_lam) then
+      dim = max(1,Adw_fro_a)
+      call hpalloc(Adw_capx2_   ,dim,      err,1)
+      call hpalloc(Adw_capy2_   ,dim,      err,1)
+      call hpalloc(Adw_capz2_   ,dim,      err,1)
+      call hpalloc(Adw_n2_      ,dim,      err,1)
+      call hpalloc(Adw_xdd2_    ,dim,      err,1)
+      call hpalloc(Adw_xgg2_    ,dim,      err,1)
+      call hpalloc(Adw_ydd2_    ,dim,      err,1)
+      call hpalloc(Adw_ygg2_    ,dim,      err,1)
+      call hpalloc(Adw_cz2_     ,dim,      err,1)
+      call hpalloc(Adw_wrka_    ,dim,      err,1)
+*
+      call adw_exch_2 ( Adw_capx2, Adw_capy2, Adw_capz2,
+     %                  Adw_n1, Adw_xgg1, Adw_xdd1,
+     %                  Adw_fro_n, Adw_fro_s, Adw_fro_a,
+     %                  Adw_for_n, Adw_for_s, Adw_for_a, 3 )
+*
+      endif
+*
+      call adw_setint ( Adw_n1,Adw_capx1,Adw_xgg1,Adw_xdd1,Adw_capy1,Adw_ygg1,
+     %                  Adw_ydd1, Adw_capz1, Adw_cz1, F_u, F_v, F_w,
+     %                 .true., .true., .false., nijk,i0,in,j0,jn,l_nk)
+*
+      if ( Adw_fro_a .gt. 0 .and. .not. G_lam) then
+*
+         if ( Adw_ckbd_L ) call adw_ckbd ( Adw_capy2 )
+*
+         call adw_setint(Adw_n2,Adw_capx2,Adw_xgg2,Adw_xdd2,Adw_capy2,Adw_ygg2,
+     %                 Adw_ydd2,Adw_capz2,Adw_cz2,Adw_capx2,Adw_capy2,Adw_capz2,
+     %                   .true., .true., .false., Adw_fro_a,1,Adw_fro_a,1,1,1)
+      endif
+*
+***********************************************************************
+* Perform interpolation
+***********************************************************************
+      pnlkey1(1) = VMM_KEY(ruw1)
+      pnlkey1(2) = VMM_KEY(rvw1)
+      pnlkey1(3) = VMM_KEY(ruw2)
+      pnlkey1(4) = VMM_KEY(rvw2)
+      pnlkey1(5) = VMM_KEY(rcn)
+      pnlkey1(6) = VMM_KEY(rth)
+      pnlod = 6
+*
+      if (.not. Schm_hydro_L) then
+         pnlkey1(7) = VMM_KEY(rw)
+         pnlkey1(8) = VMM_KEY(rvv)
+         pnlod = 8
+      endif
+*
+      pnerr = vmmlod(pnlkey1,pnlod)
+*
+      pnerr =  VMM_GET_VAR(ruw1)
+      pnerr =  VMM_GET_VAR(rvw1)
+      pnerr =  VMM_GET_VAR(ruw2)
+      pnerr =  VMM_GET_VAR(rvw2)
+      pnerr =  VMM_GET_VAR(rcn)
+      pnerr =  VMM_GET_VAR(rth)
+*
+      if (.not. Schm_hydro_L) then
+         pnerr = VMM_GET_VAR(rw)
+         pnerr = VMM_GET_VAR(rvv)
+      endif
+*
+      call adw_interp (ruw2, ruw1, F_u, F_v,
+     %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      call adw_interp (rvw2, rvw1, F_u, F_v,
+     %                .true., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      call adw_interp (rcn, rcn, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      call adw_interp (rth, rth, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+      if (.not. Schm_hydro_L) then
+
+          call adw_interp (rw, rw, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+*
+          call adw_interp (rvv, rvv, F_u, F_v,
+     %                .false., .false., LDIST_DIM, l_nk,i0,in,j0,jn)
+      endif
+*
+      if ( Orh_icn .eq. Schm_itcn ) then
+*
+      mono_L = .true. 
+      if(V4dg_conf.ne.0) then
+         mono_L = .false. 
+         if(Lun_out.gt.0) then
+            write(Lun_out,fmt='(3X,''#######################################################'')')
+            write(Lun_out,fmt='(3X,''ADVEC_MAIN: MONOTONE ADV. replaced by NOT MONOTONE ADV.'')')
+            write(Lun_out,fmt='(3X,''#######################################################'')')
+         endif
+      endif
+*
+* tr3d and tr2d advection
+*
+      aaa = ( Offc_a1_8 / Offc_b0_8 )/ Cstv_dt_8 
+*
+      key1_ = VMM_KEY (trt1)
+      key0_ = VMM_KEY (trt0)
+      do n=1,Tr3d_ntr
+         key1(n) = key1_ + n
+         key0(n) = key0_ + n
+      end do
+      if (Tr3d_ntr.gt.0) then
+         err = vmmlod(key1,Tr3d_ntr)  
+         err = vmmlod(key0,Tr3d_ntr)  
+         do n=1,Tr3d_ntr
+            err = vmmget(key1(n),patr,tr)
+            err = vmmget(key0(n),patr0,tr0)
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr0(i,j,k) = - aaa*tr(i,j,k)
+            end do
+            end do
+            end do
+            call adw_interp ( tr0, tr0, F_u, F_v,
+     %                        .false., mono_L, LDIST_DIM, l_nk,i0,in,j0,jn)
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr0(i,j,k) = Cstv_tau_8*tr0(i,j,k)
+            end do
+            end do
+            end do
+         end do
+         err = vmmuld(key1,Tr3d_ntr)
+         err = vmmuld(key0,Tr3d_ntr)
+      endif
+*
+      if (Tr2d_incore_L) then
+         do n=1,Tr2d_ntr
+            patr = loc(Tr2d_stk3d((n-1)*LDIST_SIZ*l_nk+1))
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr(i,j,k) = - aaa*tr(i,j,k)
+            end do
+            end do
+            end do
+            call adw_interp ( tr, tr, F_u, F_v,
+     %                        .false., .true., LDIST_DIM, l_nk,i0,in,j0,jn)
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr(i,j,k) = Cstv_tau_8*tr(i,j,k)
+            end do
+            end do
+            end do
+
+         end do
+      else
+         cnt = l_ni*G_nk
+         allocate (tr2(LDIST_SHAPE,G_nk,Tr2d_ntpf))
+         do n=1,Tr2d_nbf
+            unf = Tr2d_unf((n-1)*Tr2d_ntpf+1)
+            err = rewind_db_file (unf)
+            err = read_db_file  (unf,ntr2do,1)
+            err = write_db_file (unf,ntr2do,1)
+            do j=1,l_nj
+               err = read_db_file(unf,j2do,1)
+               do m=1,ntr2do
+                  err = read_db_file (unf,buf,cnt)
+                  do k=1,G_nk
+                  do i=1,l_ni
+                     tr2(i,j2do,k,m) = - aaa*buf(i,k)
+                  end do
+                  end do   
+               end do
+            end do
+            do m=1,ntr2do
+               call adw_interp ( 
+     $              tr2(l_minx,l_miny,1,m), tr2(l_minx,l_miny,1,m), 
+     $              F_u, F_v, .false., .true., LDIST_DIM, l_nk,i0,in,j0,jn)
+            end do
+            do j=1,l_nj
+               err = write_db_file (unf,j,1)
+               do m=1,ntr2do
+                  do k=1,G_nk
+                  do i=1,l_ni
+                     buf(i,k) = Cstv_tau_8*tr2(i,j,k,m)
+                  end do
+                  end do 
+                  err = write_db_file (unf,buf,cnt)
+               end do
+            end do
+         end do
+         deallocate (tr2)
+      endif
+*
+      endif
+***********************************************************************
+* Deallocate
+***********************************************************************
+      call hpdeallc(Adw_capx1_   ,err,1)
+      call hpdeallc(Adw_capy1_   ,err,1)
+      call hpdeallc(Adw_capz1_   ,err,1)
+      call hpdeallc(Adw_n1_      ,err,1)
+      call hpdeallc(Adw_xdd1_    ,err,1)
+      call hpdeallc(Adw_xgg1_    ,err,1)
+      call hpdeallc(Adw_ydd1_    ,err,1)
+      call hpdeallc(Adw_ygg1_    ,err,1)
+      call hpdeallc(Adw_cz1_     ,err,1)
+      call hpdeallc(Adw_c1_      ,err,1)
+      call hpdeallc(Adw_wrkb_    ,err,1)
+      call hpdeallc(Adw_wrkc_    ,err,1)
+      if (.not.G_lam) then
+      call hpdeallc(Adw_capx2_   ,err)
+      call hpdeallc(Adw_capy2_   ,err)
+      call hpdeallc(Adw_capz2_   ,err)
+      call hpdeallc(Adw_n2_      ,err)
+      call hpdeallc(Adw_xdd2_    ,err)
+      call hpdeallc(Adw_xgg2_    ,err)
+      call hpdeallc(Adw_ydd2_    ,err)
+      call hpdeallc(Adw_ygg2_    ,err)
+      call hpdeallc(Adw_cz2_     ,err)
+      call hpdeallc(Adw_wrka_    ,err)
+      endif
+*
+      pnerr = vmmuld(-1,0)
+*
+ 1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INT)')
+*
+      return
+      end

@@ -1,0 +1,125 @@
+***s/r p_fillbus_tr - Fill the slice workspace variable for the physics trajectory
+*
+#include <model_macros_f.h>
+*
+      subroutine p_fillbus_tr ( F_busdyn,F_busper,
+     $                          F_upm , F_vpm , F_tpm , F_qpm, F_trpm,
+     $                          F_umm , F_vmm , F_tmm ,        F_trmm,
+     $                          F_kmm , F_ktm , F_sig ,
+     $                          F_jdo, F_step, DIST_DIM, Nk )
+*
+#include "impnone.cdk"
+*
+      integer F_step,F_jdo, DIST_DIM, Nk
+*
+      real F_busdyn(*),F_busper(*)
+      real F_upm(DIST_SHAPE,Nk),  F_vpm(DIST_SHAPE,Nk),
+     $     F_tpm(DIST_SHAPE,Nk),  F_qpm(DIST_SHAPE,Nk),
+     $                           F_trpm(DIST_SHAPE,Nk),
+     $     F_umm(DIST_SHAPE,Nk),  F_vmm(DIST_SHAPE,Nk),
+     $     F_tmm(DIST_SHAPE,Nk), F_trmm(DIST_SHAPE,Nk),
+     $     F_kmm(DIST_SHAPE,Nk),  F_ktm(DIST_SHAPE,Nk),
+     $     F_sig(DIST_SHAPE,Nk)
+
+*
+*author 
+*     Stephane Laroche (Dec 2001)
+*
+*revision
+* v3_00 - Laroche S.       - initial MPI version (from p_fillbus)
+*
+*object
+*	Fill the slice workspace variable for the physics trajectory.
+*	Change of units if required	
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_busdyn      I    - dynamic bus
+* F_upm         I    - traj of wind image in x direction at time t*
+* F_vpm         I    - traj of wind image in y direction at time t*
+* F_tpm         I    - traj of virtual temperature at time t*
+* F_qpm         I    - traj of ln of pressure at time t*
+* F_umm         I    - traj of wind image in x direction at time t-
+* F_vmm         I    - traj of wind image in y direction at time t-
+* F_tmm         I    - traj of virtual temperature at time t-
+* F_kmm         I    - traj of vertical diffusion coefficients for momentum
+* F_ktm         I    - traj of vertical diffusion coefficients for heat
+* F_sig         I    - sigma levels
+* F_jdo         I    - slice number being processed
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "dcst.cdk"
+#include "p_pbl.cdk"
+#include "p_bus.cdk"
+#include "busind.cdk"
+#include "busind_tr.cdk"
+*
+*notes
+*
+      integer i, k, n, ii, indx, offp, offg, pid, gid, mul
+      real con
+**
+*     ---------------------------------------------------------------
+*
+*     3D variables: extract row F_jdo 
+*     -------------------------------
+*
+      con = ( 1.0/cos(geomg_y_8(F_jdo))) * Dcst_rayt_8
+      do k= 1,Nk
+      do i= 1, p_ni
+         indx = (k-1)*p_ni+i-1
+         ii = i + p_offi
+         F_busdyn(utrajp +indx)  = F_upm (ii,F_jdo,k) * con
+         F_busdyn(vtrajp +indx)  = F_vpm (ii,F_jdo,k) * con
+         F_busdyn(ttrajp +indx)  = F_tpm (ii,F_jdo,k)
+         F_busdyn(utrajm +indx)  = F_umm (ii,F_jdo,k) * con
+         F_busdyn(vtrajm +indx)  = F_vmm (ii,F_jdo,k) * con
+         F_busdyn(ttrajm +indx)  = F_tmm (ii,F_jdo,k)
+         F_busdyn(hutrajp+indx)  = F_trpm(ii,F_jdo,k)
+         F_busdyn(hutrajm+indx)  = F_trmm(ii,F_jdo,k)
+         F_busdyn(sigm   +indx)  = F_sig (ii,F_jdo,k)
+      end do
+      end do
+      do k= 1,Nk-2
+      do i= 1, p_ni
+         indx = (k-1)*p_ni+i-1
+         ii = i + p_offi
+         F_busper(kmm + indx)  = F_kmm(ii,F_jdo,k)
+         F_busper(ktm + indx)  = F_ktm(ii,F_jdo,k)
+      end do
+      end do
+      do i= 1, p_ni
+         indx = i-1
+         ii = i + p_offi
+         F_busper(bmm + indx)  = F_kmm(ii,F_jdo,Nk-1)
+         F_busper(btm + indx)  = F_ktm(ii,F_jdo,Nk-1)
+      end do
+**
+*
+*     Surface fields: extract row F_jdo
+*     ---------------------------------
+*
+      do i= 1, p_ni
+         indx = i-1
+         ii = i + p_offi
+         F_busdyn(ptrajp  + indx) = exp( F_qpm (ii,F_jdo,Nk) )
+         F_busdyn(eponmod + indx) = P_pbl_vlsp (ii,F_jdo)
+      end do
+*
+*
+*     Compute temperature from virtual temperature
+*     --------------------------------------------
+*
+      call mfottv ( F_busdyn(ttrajp) , F_busdyn(ttrajp) , 
+     $              F_busdyn(hutrajp) , p_ni, Nk, p_ni )
+      call mfottv ( F_busdyn(ttrajm) , F_busdyn(ttrajm) , 
+     $              F_busdyn(hutrajm) , p_ni, Nk, p_ni )
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

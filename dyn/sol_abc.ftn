@@ -1,0 +1,178 @@
+***s/r sol_abc - initialisation de l'operateur unidimensionnel.
+*                direction de travail: suivant la latitude.
+*
+#include <model_macros_f.h>
+*
+      subroutine sol_abc ( F_hcon_8,F_yg_8,F_opsyp0_8,F_opsyp2_8,F_xeval_8,
+     $                     F_n10,F_n20,MINX1,MAXX1,MINX2,MAXX2,F_nx1,F_nx2,NX3,
+     $                     F_ai_8, F_bi_8, F_ci_8, F_a_8, F_b_8, F_c_8 )
+*
+#include "impnone.cdk"
+*
+      integer F_n10, F_n20, MINX1, MAXX1, MINX2, MAXX2, F_nx1, F_nx2, NX3
+      real*8  F_hcon_8(*),F_yg_8(*),F_opsyp0_8(*),F_opsyp2_8(*),F_xeval_8(*),
+     $        F_a_8(MINX1:MAXX1,MINX2:MAXX2,NX3),
+     $        F_b_8(MINX1:MAXX1,MINX2:MAXX2,NX3),
+     $        F_c_8(MINX1:MAXX1,MINX2:MAXX2,NX3),
+     $        F_ai_8(MINX1:MAXX1,MINX2:MAXX2,NX3),
+     $        F_bi_8(MINX1:MAXX1,MINX2:MAXX2,NX3),
+     $        F_ci_8(MINX1:MAXX1,MINX2:MAXX2,NX3)
+*
+*Author 
+*     Abdessamad Qaddouri- JULY 1999
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_40 - Lee/Qaddouri      - for LAM version
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     See above id.
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_hcon_8     I    - 
+* F_yg_8       I    - latitudes  of the scalar grid in radians
+* F_opsyp0_8   I    - north-south projection operators
+* F_opsyp2_8   I    - north-south projection operators
+* F_xeval_8    I    - horizontal eigenvalues 
+* F_n10        I    - the global starting index for K on PEx (Trp_12sn0)
+* F_n20        I    - the global starting index for I on PEy (Trp_22n0)
+* Minx1        I    - minimum index on local PEx for K (trp_12smin)
+* Maxx1        I    - maximum index on local PEx for K (trp_12smax)
+* Minx2        I    - minimum index on local PEy for I (trp_22min)
+* Maxx2        I    - maximum index on local PEy for I (trp_22max)
+* F_nx1        I    - number of points on local PEx for K (Trp_12sn)
+* F_nx2        I    - number of points on local PEy for I (Trp_22n)
+* NX3          I    - number of points on J globally (G_nj)
+* F_ai_8       O    - sub-   diagonal of LU factorization
+* F_bi_8       O    -        diagonal of LU factorization
+* F_ci_8       O    - super- diagonal of LU factorization
+* F_a_8        O    - elements for the tri-diagonal matrix to be factorized
+* F_b_8        O    - elements for the tri-diagonal matrix to be factorized
+* F_c_8        O    - elements for the tri-diagonal matrix to be factorized
+
+*implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+
+      integer k, kk, i, ii, j, dim
+      integer l_nij,nkl,l_pil_w,l_pil_e
+      real*8 zero, one, di_8
+      parameter( zero = 0.0 )
+      parameter( one  = 1.0 )
+      real*8, dimension(:,:,:),allocatable :: a_8, b_8, c_8
+      real*8, dimension(:,:,:),allocatable :: ai_8,bi_8,ci_8
+*
+*     ---------------------------------------------------------------
+*
+*  The I vector lies on the Y processor so, l_pil_w and l_pil_e will
+*  represent the pilot region along I
+*
+      l_pil_w=0
+      l_pil_e=0
+      if (l_south) l_pil_w= Lam_pil_w
+      if (l_north) l_pil_e= Lam_pil_e
+
+*     Preparation de la matrice (F_a_8 F_b_8 F_c_8)
+      do k = 1, F_nx1
+         kk = F_n10 + k - 1
+         do i = 1+l_pil_w, F_nx2-l_pil_e
+            ii = i + F_n20 - 1
+            do j=2+Lam_pil_s, NX3-Lam_pil_n
+               di_8 = F_opsyp0_8(NX3+j) / cos( F_yg_8 (j) )**2
+               F_b_8(k,i,j)=F_xeval_8(ii) * di_8 +
+     $                 F_hcon_8(kk)*F_opsyp0_8(NX3+j    )+F_opsyp2_8( NX3+j   )
+               F_c_8(k,i,j)=
+     $                 F_hcon_8(kk)*F_opsyp0_8(2*NX3+j  )+F_opsyp2_8(2*NX3+j  )
+               F_a_8(k,i,j)=
+     $                 F_hcon_8(kk)*F_opsyp0_8(2*NX3+j-1)+F_opsyp2_8(2*NX3+j-1)
+            enddo
+            F_a_8(k,i,1+Lam_pil_s  )= zero
+            F_c_8(k,i,NX3-Lam_pil_n)= zero
+            di_8 = F_opsyp0_8(NX3+1+Lam_pil_s) / cos( F_yg_8 (1+Lam_pil_s) )**2
+            F_b_8(k,i,1+Lam_pil_s  )= F_xeval_8(ii) * di_8 +
+     $                  F_hcon_8(kk)*F_opsyp0_8(  NX3+1+Lam_pil_s) + 
+     $                  F_opsyp2_8(  NX3+1+Lam_pil_s)
+            F_c_8(k,i,1+Lam_pil_s  )= 
+     $                  F_hcon_8(kk)*F_opsyp0_8(2*NX3+1+Lam_pil_s) + 
+     $                  F_opsyp2_8(2*NX3+1+Lam_pil_s)
+         enddo
+      enddo
+      do k = F_nx1+1, MAXX1
+         do i = MINX2+l_pil_w, MAXX2-l_pil_e
+            do j=1+Lam_pil_s, NX3-Lam_pil_s
+               F_b_8(k,i,j)= one
+               F_c_8(k,i,j)= zero
+               F_a_8(k,i,j)= zero
+            enddo
+         enddo
+      enddo
+      do k = 1, F_nx1
+         do i = F_nx2+1-l_pil_e, MAXX2-l_pil_e
+            do j = 1+Lam_pil_s, NX3-Lam_pil_n
+               F_b_8(k,i,j)= one
+               F_c_8(k,i,j)= zero
+               F_a_8(k,i,j)= zero
+            enddo
+         enddo
+      enddo
+*
+*     Calcul de la matrice (F_ai_8 F_bi_8 F_ci_8 di_8)
+*
+      if (G_lam) then
+         nkl=MAXX1-MINX1+1
+         l_nij=MAXX2-MINX2+1-l_pil_e-l_pil_w
+         dim=nkl*l_nij
+         allocate ( a_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s),
+     %              b_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s),
+     %              c_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s),
+     %              ai_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s),
+     %              bi_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s),
+     %              ci_8(nkl,l_nij,NX3-Lam_pil_n-Lam_pil_s) )
+         do k=1,F_nx1
+          do i=MINX2+l_pil_w, MAXX2-l_pil_e
+           do j=1+Lam_pil_s, NX3-Lam_pil_n
+             a_8(k,i-l_pil_w,j-Lam_pil_s)=F_a_8(k,i,j)
+             b_8(k,i-l_pil_w,j-Lam_pil_s)=F_b_8(k,i,j)
+             c_8(k,i-l_pil_w,j-Lam_pil_s)=F_c_8(k,i,j)
+           enddo
+          enddo
+         enddo
+         call set_trig21 (ai_8, bi_8, ci_8, di_8, 
+     %         a_8,  b_8,  c_8, dim, 1, NX3-Lam_pil_s-Lam_pil_n, dim, .false.)
+         do k=1,F_nx1
+          do i=MINX2,MAXX2
+          do j=1,NX3
+             F_ai_8(k,i,j) = zero
+             F_bi_8(k,i,j) = zero
+             F_ci_8(k,i,j) = zero
+          enddo
+          enddo
+         enddo
+          do k=1,F_nx1
+          do i=MINX2+l_pil_w, MAXX2-l_pil_e
+          do j=1+Lam_pil_s, NX3-Lam_pil_n
+             F_ai_8(k,i,j)= ai_8(k,i-l_pil_w,j-Lam_pil_s)
+             F_bi_8(k,i,j)= bi_8(k,i-l_pil_w,j-Lam_pil_s)
+             F_ci_8(k,i,j)= ci_8(k,i-l_pil_w,j-Lam_pil_s)
+          enddo
+          enddo
+          enddo
+          deallocate ( a_8,b_8,c_8,ai_8,bi_8,ci_8)
+
+      else
+*
+*  For GLOBAL CASE
+         dim = (MAXX1-MINX1+1)*(MAXX2-MINX2+1)
+
+         call set_trig21 (F_ai_8, F_bi_8, F_ci_8, di_8,
+     $                 F_a_8,  F_b_8,  F_c_8, dim, 1, NX3, dim, .false.)
+
+      endif
+*     ---------------------------------------------------------------
+*
+      return
+      end
+

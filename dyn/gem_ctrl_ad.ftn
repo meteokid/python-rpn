@@ -1,0 +1,52 @@
+***s/r gem_ctrl_ad - ADJ of gem_ctrl_tl 
+*
+#include <model_macros_f.h>
+*
+      subroutine gem_ctrl_ad
+*
+#include "impnone.cdk"
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_21 - Tanguay M.        - modification as in gem_ctrl
+* v3_00 - Laroche S.        - include simplified physics
+*
+*object
+*     see id section
+*	
+*arguments
+*     none
+*
+*implicits
+#include "init.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "step.cdk"
+#include "schm.cdk"
+#include "rstr.cdk"
+#include "ptopo.cdk"
+*
+      logical rstrt_L
+      data rstrt_L /.false./
+*
+*     ______________________________________________________
+*
+      if( Init_balgm_L ) call gefstop('gem_ctrl_ad')
+      if( rstrt_L      ) call gefstop('gem_ctrl_ad')
+*     ______________________________________________________
+
+      if (.not.rstrt_L) call gem_run_ad (.false., rstrt_L)
+*
+      if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+*
+ 3000 format(
+     +//,'END OF CURRENT TIME SLICE (S/R GEM_CTRL_AD) AT TIMESTEP',I8,
+     + /,'=======================================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

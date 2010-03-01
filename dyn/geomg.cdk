@@ -1,0 +1,80 @@
+#if defined (DOC)
+*
+***comdeck geomg.cdk
+*
+*______________________________________________________________________
+*                                                                      |
+*  GRID COORDINATES and other related parameters (set_geom)            |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* geomg_x_8          | longitude                                       |
+* geomg_y_8          | latitude                                        |
+* geomg_xu_8         | longitude                                       |
+* geomg_yv_8         | latitude                                        |
+* geomg_z_8          | pi* level                                       |
+* geomg_hyb          | hybrid level as defined by user                 |
+* geomg_hybm         | hybrid level calculated by model                |
+* geomg_pia          | variable for the hybrid vertical coordinate     |
+* geomg_pib          | variable for the hybrid vertical coordinate     |
+* geomg_pibb         | variable for the hybrid vertical coordinate     |
+* geomg_dpia         | grad(geomg_pia)                                 |
+* geomg_dpib         | grad(geomg_pib)                                 |
+*--------------------|-------------------------------------------------|
+*                    | 2 variables for diffusion operators             |
+* geomg_wxs_8        | weight for zonal averaging (x direction)        |
+* geomg_ys_8         | extended staggered grid in y direction          |
+*--------------------|-------------------------------------------------|
+* geomg_sx_8         | sine of longitude                               |
+* geomg_cx_8         | cosine of longitude                             |
+* geomg_sy_8         | sine of latitude                                |
+* geomg_cy_8         | cosine of latitude                              |
+* geomg_cy2_8        | cosine squared of latitude                      |
+* geomg_syv_8        | sine of latitude                                |
+* geomg_cyv_8        | cosine of latitude                              |
+* geomg_cyv2_8       | cosine squared of latitude                      |
+*--------------------|-------------------------------------------------|
+* geomg_hx_8         | distance between grid points in x direction     |
+* geomg_hy_8         | distance between grid points in y direction     |
+* geomg_hz_8         | distance between grid points in z direction     |
+* geomg_hxu_8        | distance btwn pts in x direction                |
+* geomg_hyv_8        | distance btwn pts in y direction                |
+* geomg_hsy_8        | delta sin(latitude)                             |
+* geomg_hsyv_8       | delta sin(latitude)                             |
+*----------------------------------------------------------------------
+*
+#endif
+*
+      MARK_COMMON_BEG(Geomg)
+      DCL_DYNVAR(Geomg, x_8   ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, y_8   ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, xu_8  ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, yv_8  ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, hx_8  ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, hy_8  ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, hxu_8 ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, hyv_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, cx_8  ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, sx_8  ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, cy_8  ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, cy2_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, cyv_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, cyv2_8,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, sy_8  ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, syv_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, hsy_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, hsyv_8,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, wxs_8 ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, ys_8  ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, z_8   ,  real*8, (*))
+      DCL_DYNVAR(Geomg, hz_8  ,  real*8, (*))
+      DCL_DYNVAR(Geomg, hyb   ,  real  , (*))
+      DCL_DYNVAR(Geomg, hybm  ,  real  , (*))
+      DCL_DYNVAR(Geomg, pia   ,  real  , (*))
+      DCL_DYNVAR(Geomg, pib   ,  real  , (*))
+      DCL_DYNVAR(Geomg, pibb   ,  real  , (*))
+      DCL_DYNVAR(Geomg, dpia   ,  real  , (*))
+      DCL_DYNVAR(Geomg, dpib   ,  real  , (*))
+      MARK_COMMON_END(Geomg)
+*

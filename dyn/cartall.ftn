@@ -1,0 +1,44 @@
+**s/r cartall - Computes the F_lon,F_lat positions for a rotated system
+*
+      subroutine cartall( F_lon,F_lat,F_xyz_8,n)
+#include "impnone.cdk"
+      integer n
+      real*8 F_xyz_8(3,*)
+      real F_lon(*),F_lat(*)
+*
+*author
+*     unknown
+*
+*revision
+* v2_00 - Lee V.            - initial MPI version (from cartall v1_03)
+* v2_30 - Dugas B.          - input real*8 cartesian coordinates
+*
+*object
+*     see above ID
+*     
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_lon        O   F_longitude positions for a rotated coordinate system
+* F_lat        O   F_latitude  positions for a rotated coordinate system
+* F_xyz_8      I   rotation matrix
+*
+**
+      integer i
+      real*8, parameter :: ONE = 1.0d0, PI = 180.0d0
+      real*8 rad_8
+*
+*     ---------------------------------------------------------------
+*
+      rad_8 = PI/acos(-ONE)
+      do i=1,n
+         F_lat(i) = asin(max(-1.,min(1.,F_xyz_8(3,i)))) * rad_8
+         F_lon(i) = atan2( F_xyz_8(2,i),F_xyz_8(1,i) ) * rad_8
+         F_lon(i) = amod( F_lon(i) , 360.0 )
+         if (F_lon(i).lt.0.0) F_lon(i) = F_lon(i)+360.0
+      enddo
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end 

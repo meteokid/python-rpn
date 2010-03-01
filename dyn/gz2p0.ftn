@@ -1,0 +1,81 @@
+***s/r gz2p0 - Compute P0 from GZ from pressure coordinate
+*
+#include <model_macros_f.h>
+*
+      subroutine gz2p0 (F_ps, F_gz, F_topo, F_zcol, F_tcol, F_sdd, F_lna, 
+     $                             NN, Nk)
+*
+#include "impnone.cdk"
+*
+      integer NN,Nk
+      real F_gz(NN,Nk), F_zcol(NN,Nk),  F_tcol(NN,Nk),
+     $     F_ps(NN), F_lna(Nk), F_sdd(Nk),F_topo(NN)
+*
+*author - Vivian Lee     - Feb   2002 - v0_06 (taken from e_intscl - M.Roch)
+*
+*revision
+* v3_00 - Lee V.               - Initial version
+*
+*
+*object
+*       see id section
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_gz         O    - geopotential height
+* F_pia        I    - actually RNA if F_sig_L=T
+*                   - pia          if F_sig_L=F
+* F_pib        I    - unused       if F_sig_L=T
+*                   - pib          if F_sig_L=F and F_pib_L=T
+*                   - pibb         if F_sig_L=F and F_pib_L=F
+* F_ps         I    - ln(pi_s/z_s) if F_pib_L=T
+*                   - pi_S         if F_pib_L=F or F_sig_L=T
+* F_vt         I    - virtual temperature
+* F_pib_L      I    - TRUE or FALSE
+* F_sig_L      I    - TRUE or FALSE
+*
+*implicits
+#include "lun.cdk"
+#include "dcst.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+*
+**
+      integer i,k
+      real conv,acc,guess(NN)
+*
+*     ---------------------------------------------------------------
+*
+      if (lun_out.gt.0) write(Lun_out,1000)
+*
+      acc = .1 * Dcst_grav_8
+      conv = alog(100.)
+      do k=1,NK
+         do i=1,NN
+            F_zcol(i,k) = Dcst_grav_8*F_gz(i,k)
+         enddo
+      enddo
+*
+*     Compute derivative of geopotential
+*
+      call vdfds (F_tcol, F_zcol, F_sdd, NN, NK, 1., 1.)
+*
+*     Compute pressure at the surface (PS)
+      do i=1,NN
+         guess(i) = F_lna(NK)-F_topo(i)/(Dcst_rgasd_8*250.)
+      enddo
+*
+      call vterp1 (guess,F_topo,F_zcol,F_tcol,F_lna,acc,NN,NK)
+      do i=1,NN
+         F_ps(i) = guess(i) + conv
+      enddo
+*
+*
+ 1000 format(/,' PREPARING SURFACE PRESSURE (S/R GZ2P0)',
+     +       /,' ===========================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

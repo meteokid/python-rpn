@@ -1,0 +1,102 @@
+***s/r getindx
+*
+#include <model_macros_f.h>
+*
+      subroutine getindx ( F_vn_S, F_bus_S, F_deb, F_nm, F_init )
+#include "impnone.cdk"
+*
+      character*(*) F_vn_S
+      character*1 F_bus_S
+      integer F_deb,F_nm,F_init
+*
+*author   
+*     Michel Desgagne       Nov   1995
+*
+*revision
+* v2_31 - Desgagne M.     - initial version (from MC2 v4.9.1)
+*
+*object
+*     Obtain starting index "F_deb", length "F_nm" and init requirement
+*     "F_init" for variable "F_vn_S" on bus "F_bus_S".
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_vn_S       I            Name of the variable
+*  F_bus_S      I            F_bus_S (D,P,V,G)
+*  F_deb        O            Starting index on F_bus_S
+*  F_nm         O            Length of variable F_vn_S
+*  init         O            Initialysation requirement (1=yes)
+*----------------------------------------------------------------
+*
+*implicites
+#include "p_bus.cdk"
+*
+**
+      integer i,init
+*-------------------------------------------------------------------
+*
+      F_deb = -1
+      F_nm  = 0
+      if (F_bus_S.eq.'E') then
+         do 5 i=1,p_bent_top
+            if (F_vn_S.eq.entnm(i)) then
+               F_deb = entpar(i,1)
+               F_nm  = entpar(i,2)
+               init= entpar(i,3)
+               goto 601
+            endif
+ 5       continue 
+         if (F_init.lt.0) goto 601
+         write (6,910) F_vn_S,'BUSENT'
+      endif
+*
+      if (F_bus_S.eq.'D') then
+         do 10 i=1,p_bdyn_top
+            if (F_vn_S.eq.dynnm(i)) then
+               F_deb = dynpar(i,1)
+               F_nm  = dynpar(i,2)
+               init= dynpar(i,3)
+               goto 601
+            endif
+ 10      continue 
+         if (F_init.lt.0) goto 601
+         write (6,910) F_vn_S,'BUSDYN'
+      endif
+*
+      if (F_bus_S.eq.'P') then
+         do 20 i=1,p_bper_top
+            if (F_vn_S.eq.pernm(i)) then
+               F_deb = perpar(i,1)
+               F_nm  = perpar(i,2)
+               init= perpar(i,3)
+               goto 601
+            endif
+ 20      continue 
+         if (F_init.lt.0) goto 601
+         write (6,910) F_vn_S,'BUSPER'
+      endif
+*
+      if (F_bus_S.eq.'V') then
+         do 30 i=1,p_bvol_top
+            if (F_vn_S.eq.volnm(i)) then
+               F_deb = volpar(i,1)
+               F_nm  = volpar(i,2)
+               init= volpar(i,3)
+               goto 601
+            endif
+ 30      continue 
+         if (F_init.lt.0) goto 601
+         write (6,910) F_vn_S,'BUSVOL'
+      endif
+*
+      call stopmpi(-1)
+*
+ 601  if (F_init.ge.0) F_init = init
+*
+ 910  format (/1x,'===> ABORT IN GETINDX: COULD NOT FIND'/
+     $         1x,"     VARIABLE '",a8,"' ON '",a6,"'."/)
+*
+*-------------------------------------------------------------------
+      return
+      end

@@ -1,0 +1,97 @@
+** s/r e_intgeo  Read geophysic fields and interpolate on model grid.
+*
+      subroutine e_intgeo (lat, lon, ni, nj)
+#include "impnone.cdk"
+*
+      integer ni, nj
+      real lat(*), lon(*)
+*author
+*     Michel Desgagne - January 2001
+*
+*revision
+* v2_21 - Desgagne M.       - initial version
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*implicites
+#include "e_files.cdk"
+#include "e_times.cdk"
+* comdecks used also in GEMDM
+#include <model_macros_f.h>
+#include "p_bus.cdk"
+*
+**
+      character*2 nv
+      character*8 etk,typ,interp,seq,dum
+*
+      logical flag
+      integer  e_rdhint2,e_moclim2
+      integer  ivar, im, i, longueur, unf, indx, ip1
+      integer,     dimension(:),allocatable :: err
+*
+*----------------------------------------------------------------------
+*
+      allocate ( err(p_bgeo_top) )
+      do ivar = 1, p_bgeo_top
+         err(ivar) = -1
+      end do
+*
+*     Loop on variables in geobus 
+*
+      write (stdout,1000)
+      do ivar = 1, p_bgeo_top
+         nv    = geonm(ivar,2)
+         if (nv.ne.'00') then
+            etk   = geonm(ivar,3)
+            typ   = geonm(ivar,4)
+            interp= geonm(ivar,5)
+            seq   = geonm(ivar,6)
+            write(stdout,1001) nv,etk,typ,interp,seq
+ 670        if ((seq(1:1).ne."V").and.(seq(1:4).ne." ")) then
+               unf = anal
+               if (seq(1:1).eq."C") unf = climat
+               if (seq(1:1).eq."G") unf = geophy
+               do im=1,geopar(ivar,3)
+                  ip1 = -1
+                  if (geopar(ivar,3).gt.1) 
+     $                 call convip ( ip1, real(im), 3, 1, dum, .false. )
+                  indx = geopar(ivar,1) + (im-1)*ni*nj
+                  err(ivar) = e_rdhint2(geobus(indx),lat,lon,ni,nj,nv,
+     $              ip1,-1,-1,etk,typ,.false.,.true.,interp,unf,stdout)
+                  if (err(ivar).lt.0) then
+                     seq = seq(2:longueur(seq))
+                     goto 670
+                  endif
+               end do
+            elseif (seq(1:1).eq."V") then
+               do im=1,geopar(ivar,3)
+                  ip1 = -1
+                  if (geopar(ivar,3).gt.1) 
+     $                 call convip ( ip1, real(im), 3, 1, dum, .false. )
+                  indx = geopar(ivar,1) + (im-1)*ni*nj
+                  err(ivar) =  e_moclim2 (geobus(indx),lat,lon,ni,nj,nv,
+     $                       ip1,-1,-1,' ',' ',.false.,interp,-1,stdout)
+               end do
+            endif
+         else
+            err(ivar) = 0
+         endif
+      end do
+*
+      flag=.false.
+      do ivar = 1, p_bgeo_top
+         if (err(ivar).lt.0) then
+            flag=.true.
+            write (stdout,1005) geonm(ivar,2)
+         endif
+      end do
+      if (flag) stop
+      deallocate (err)
+*
+ 1000 format (/' PROCESSING EVERY ELEMENT IN GEOBUS:')
+ 1001 format (/'====>',' Processing ',a2,4a8,' <====')
+ 1005 format (' GEOPHYSICAL FIELD: 'a,' NOT AVAILABLE --- ABORT ---')
+*
+*----------------------------------------------------------------------
+*
+      return
+      end

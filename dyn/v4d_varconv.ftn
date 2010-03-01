@@ -1,0 +1,174 @@
+***s/r v4d_varconv - conversion control variables GEM <--> 3D-Var
+*
+#include <model_macros_f.h>
+*
+      subroutine v4d_varconv( C_ut1, C_vt1, C_tt1, C_hut1, C_st1,
+     $                        DIST_DIM, Nk, inverse_L )
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM,Nk
+      real C_ut1 (DIST_SHAPE,Nk), C_vt1 (DIST_SHAPE,Nk),
+     %     C_tt1 (DIST_SHAPE,Nk), C_hut1(DIST_SHAPE,Nk),
+     %     C_st1 (DIST_SHAPE)
+      logical inverse_L
+*
+*author
+*     Stephane Laroche 
+*
+*revision
+* v3_00 - Laroche S.       - initial MPI version
+* v3_00 - Gauthier P.      - ln q to q
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* C_ut1
+* C_vt1
+* C_tt1
+* C_hut1
+* C_st1
+*----------------------------------------------------------------
+*
+*implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+*
+*modules
+*
+      integer i, j, k
+      real*8 pri2c_8
+
+      if(.not.inverse_L) then
+C
+C      Conversion GEM --> 3D-Var
+C      =========================
+C
+*
+C
+C      Winds
+C      -----
+C
+      call p_uvgridscal ( C_ut1, C_vt1, LDIST_DIM, Nk, .true. )
+
+       do k=1,Nk
+        do j= 1+pil_s, l_nj-pil_n 
+         pri2c_8 = Dcst_rayt_8/Geomg_cy_8(j)
+         do i= 1+pil_w, l_ni-pil_e 
+
+          C_ut1(i,j,k) = C_ut1(i,j,k)*pri2c_8
+          C_vt1(i,j,k) = C_vt1(i,j,k)*pri2c_8
+
+         end do
+        end do
+       end do
+C
+C      Temperature
+C      -----------
+C
+       do k=1,Nk
+        do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+
+          C_tt1(i,j,k) = (C_tt1(i,j,k) + Cstv_tstr_8)
+     $                 / (1.0 + Dcst_delta_8*C_hut1(i,j,k))
+
+         end do
+        end do
+       end do
+
+C
+C      Surface pressure
+C      ----------------
+C
+       do j= 1+pil_s, l_nj-pil_n 
+        do i= 1+pil_w, l_ni-pil_e 
+
+         C_st1(i,j) =  Cstv_pitop_8 + (Geomg_z_8(Nk) - Cstv_pitop_8)
+     $                              *  exp(C_st1(i,j))
+
+        end do
+       end do
+C
+C     Humidity: q --> log q 
+C
+       do k=1,Nk
+          do j= 1+pil_s, l_nj-pil_n 
+             do i= 1+pil_w, l_ni-pil_e 
+                C_hut1(i,j,k) = alog(C_hut1(i,j,k))
+             end do
+          end do
+       end do
+*
+      else
+*
+C
+C      Conversion 3D-Var --> GEM
+C      =========================
+C
+C
+C     Humidity: log q --> q = exp(log q)
+C
+      do k=1,Nk
+         do j= 1+pil_s, l_nj-pil_n 
+            do i= 1+pil_w, l_ni-pil_e 
+               C_hut1(i,j,k) = exp(C_hut1(i,j,k))
+            end do
+         end do
+      end do
+C
+C      Winds
+C      -----
+C
+
+       do k=1,Nk
+        do j= 1+pil_s, l_nj-pil_n 
+         pri2c_8 = Dcst_rayt_8/Geomg_cy_8(j)
+         do i= 1+pil_w, l_ni-pil_e 
+
+          C_ut1(i,j,k) = C_ut1(i,j,k)/pri2c_8
+          C_vt1(i,j,k) = C_vt1(i,j,k)/pri2c_8
+
+         end do
+        end do
+       end do
+
+      call p_uvgridscal ( C_ut1, C_vt1, LDIST_DIM, Nk, .false. )
+
+C
+C      Temperature
+C      -----------
+C
+       do k=1,Nk
+        do j= 1+pil_s, l_nj-pil_n 
+         do i= 1+pil_w, l_ni-pil_e 
+
+          C_tt1(i,j,k) = C_tt1(i,j,k)*(1.0 + Dcst_delta_8*C_hut1(i,j,k))
+     $                 - Cstv_tstr_8
+
+         end do
+        end do
+       end do
+C
+C      Surface pressure
+C      ----------------
+C
+       do j= 1+pil_s, l_nj-pil_n 
+        do i= 1+pil_w, l_ni-pil_e 
+
+         C_st1(i,j) = log( (    C_st1(i,j) - Cstv_pitop_8 )
+     $              /      ( Geomg_z_8(Nk) - Cstv_pitop_8 ) )   
+
+        end do
+       end do
+
+      endif
+
+
+      return
+      end
+

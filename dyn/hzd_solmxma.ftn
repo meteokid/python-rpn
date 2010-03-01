@@ -1,0 +1,295 @@
+***s/r hzd_solmxma - parallel direct solution of high-order 
+*                    diffusion equation with mxma8  
+#include <model_macros_f.h>
+*
+       subroutine hzd_solmxma (F_sol, F_Rhs_8, F_Xevec_8 ,
+     %               F_a_8, F_c_8 ,F_deltai_8,
+     %               minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr,
+     %               Minx,Maxx,Miny,Maxy,Gnk,Gni,nil,njl,nkl,
+     %               F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
+*
+#include "impnone.cdk"
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+*
+      integer minx1, maxx1, minx2, maxx2, nx1, nx2, nx3  ,
+     $        Minx , Maxx , Miny , Maxy , Gnk, Gni, F_pwr,
+     $        njl  , nkl  , nil  , F_npex, F_npey
+      real*8 F_opsxp0_8(*), F_opsyp0_8(*),
+     $            F_a_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
+     $            F_c_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
+     $       F_deltai_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3),
+     $       F_Rhs_8(Minx:Maxx,Miny:Maxy,Gnk),F_Xevec_8(*)
+      real F_cdiff, F_sol(Minx:Maxx,Miny:Maxy,Gnk)
+*
+*author
+*     Abdessamad Qaddouri
+*
+*revision
+* v2_10 - Qaddouri A.        - initial version
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_sol_8     I/O   - pre-r.h.s and result of horizontal diffusion
+* F_rhs_8      I    - r.h.s. of elliptic equation and work vector
+* F_Xevec_8    I    - eigenvectors
+* F_a_8        I    - sub   diagonal of LU factorization
+* F_b_8        I    -       diagonal of LU factorization
+* F_c_8        I    - super diagonal of LU factorization
+* F_deltai_8   I    - 
+* minx1        I    - minimum index on local PEx for K (trp_12dmin)
+* maxx1        I    - maximum index on local PEx for K (trp_12dmax)
+* minx2        I    - minimum index on local PEy for I (trp_22min)
+* maxx2        I    - maximum index on local PEy for I (trp_22max)
+* Nx1          I    - number of points on local PEx for K (trp_12dn)
+* Nx2          I    - number of points on local PEy for I (trp_22n)
+* Nx3          I    - number of points along Y globally (G_nj)
+* F_pwr        I    - power (high order) of factorization
+* Minx         I    - minimum index on X for Rhs,Sol
+* Maxx         I    - maximum index on X for Rhs,Sol
+* Miny         I    - minimum index on Y for Rhs,Sol
+* Maxy         I    - maximum index on Y for Rhs,Sol
+* Gnk          I    - number of points along K globally (G_nk)
+* Gni          I    - number of points along I globally (G_ni)
+* Nil          I    - number of points on local PEx for I (l_ni)
+* Njl          I    - number of points on local PEy for J (l_nj)
+* Nkl          I    - number of points on local PEx for K (trp_12dn)
+* F_opsxp0_8   I    - east-west operator for HO diffusion solver:Hzd_xp0_8
+* F_opsyp0_8   I    - north-south operator for HO diffusion solver:Hzd_yp0_8
+* F_cdiff      I    - Hzd_cdiff
+* F_npex1      I    - number of processors on X
+* F_npey1      I    - number of processors on Y
+*
+*----------------------------------------------------------------
+*
+      real*8, dimension(:,:,:)  ,allocatable :: fdg1_8,fdg2_8,fwft_8
+      real*8, dimension(:,:,:,:),allocatable :: dn3_8,sol_8
+      real*8   ZERO_8
+      parameter( ZERO_8 = 0.0 )
+      integer dim, o1,o2,i,j,k,l_pil_w,l_pil_e
+**
+*     __________________________________________________________________
+*
+      allocate( fdg1_8(Miny:Maxy ,minx1:maxx1,Gni+F_npex),
+     %          fdg2_8(minx1:maxx1,minx2:maxx2,nx3+F_npey),
+     %          fwft_8( Miny:Maxy ,minx1:maxx1,Gni),
+     %          dn3_8(minx1:maxx1,minx2:maxx2,F_pwr,nx3 ),
+     %          sol_8(minx1:maxx1,minx2:maxx2,F_pwr,nx3 ) )
+*
+      l_pil_w=0
+      l_pil_e=0
+      if (l_south) l_pil_w= Lam_pil_w
+      if (l_north) l_pil_e= Lam_pil_e
+
+      do k = 1, Gnk
+      do j = 1+pil_s, njl-pil_n
+      do i = 1+pil_w,nil-pil_e
+         F_Rhs_8(i,j,k)=  ((-1)**F_pwr)*dble(F_cdiff)*dble(F_sol(i,j,k))
+      enddo
+      enddo
+      enddo
+*
+*
+      call rpn_comm_transpose ( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                          minx1, maxx1, Gnk, fdg1_8, 1,2 )
+*
+      do k = 1, nkl
+      do j = 1+pil_s, njl-pil_n
+      do i = 1+Lam_pil_w, Gni-Lam_pil_e
+         fdg1_8(j,k,i) = F_opsxp0_8(Gni+i)*fdg1_8(j,k,i)
+      enddo
+      enddo
+      enddo
+*
+      do j = Miny, 0+pil_s
+      do k = minx1, maxx1 
+      do i = 1, Gni
+         fdg1_8(j,k,i)= ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      do j = njl+1-pil_n, Maxy
+      do k = minx1, maxx1
+      do i = 1, Gni
+         fdg1_8(j,k,i)= ZERO_8
+      enddo
+      enddo
+      enddo
+*
+      do j = Miny , Maxy
+      do k = minx1, maxx1
+      do i = 1, Gni
+         fwft_8(j,k,i)=ZERO_8
+      enddo
+      enddo
+      enddo
+*
+*     projection ( wfft = x transposed * g )
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k=1,Nkl
+      call mxma8( F_Xevec_8,Gni-Lam_pil_w-Lam_pil_e, 1,
+     %      fdg1_8(Miny+pil_s,k,1+Lam_pil_w),(Maxy-Miny+1) * (maxx1-minx1+1), 1,
+     %      fwft_8(Miny+pil_s,k,1+Lam_pil_w),(Maxy-Miny+1) * (maxx1-minx1+1), 1,
+     %      Gni-Lam_pil_w-Lam_pil_e, Gni-Lam_pil_w-Lam_pil_e,
+     %      (Maxy-Miny+1-pil_s-pil_n))
+      enddo
+*
+      call rpn_comm_transpose(fwft_8,Miny,Maxy,nx3,(maxx1-minx1+1),
+     %                                minx2, maxx2,Gni,fdg2_8,2,2)
+*
+* cote droit
+*
+      do k = minx1, maxx1
+      do i = minx2, maxx2
+         do o1 = 1, F_pwr
+         do j  = 1, nx3
+            sol_8(k,i,o1,j)= ZERO_8
+            dn3_8(k,i,o1,j)= ZERO_8
+         enddo
+         enddo
+      enddo
+      enddo
+*
+      do k = 1, nx1
+      do i = 1+l_pil_w, nx2-l_pil_e
+      do j = 1+Lam_pil_s, nx3-Lam_pil_n
+         dn3_8(k,i,1,j)= F_opsyp0_8(nx3+j)*fdg2_8(k,i,j)
+      enddo
+      enddo
+      enddo
+*
+* resolution du systeme blok-tridiagonal
+*
+* aller
+      do k = 1, nx1
+      do o1= 1, F_pwr
+      do i = 1+l_pil_w, nx2-l_pil_e
+         sol_8(k,i,o1,1+Lam_pil_s)=dn3_8(k,i,o1,1+Lam_pil_s)
+      enddo
+      enddo
+      enddo
+*
+      do j = 2+Lam_pil_s, nx3-Lam_pil_n
+         do o1= 1, F_pwr
+         do o2= 1, F_pwr
+         do k = 1, nx1
+            do i = minx2+l_pil_w, maxx2-l_pil_e
+               sol_8(k,i,o1,j)= sol_8(k,i,o1,j)
+     $                          + F_a_8(o1,o2,i,j)*sol_8(k,i,o2,j-1)
+            enddo
+         enddo
+         enddo
+         enddo
+         do k = 1, nx1
+         do o1= 1, F_pwr
+         do i = 1+l_pil_w, nx2-l_pil_e
+            sol_8(k,i,o1,j)=dn3_8(k,i,o1,j)-sol_8(k,i,o1,j)
+         enddo
+         enddo
+         enddo
+      enddo
+*
+* scale le cote droit pour retour
+*
+      do j= 1, nx3
+         do o1= 1,F_pwr
+         do k= minx1,maxx1
+         do i= minx2,maxx2
+            dn3_8(k,i,o1,j)= ZERO_8
+         enddo
+         enddo
+         enddo
+      enddo
+      do j= 1+Lam_pil_s, nx3-Lam_pil_n
+         do o1= 1, F_pwr
+         do o2= 1, F_pwr
+         do k = minx1, maxx1
+         do i = minx2+l_pil_w, maxx2-l_pil_e
+            dn3_8(k,i,o1,j)= dn3_8(k,i,o1,j)
+     $                       + F_deltai_8(o1,o2,i,j)*sol_8(k,i,o2,j)
+         enddo
+         enddo
+         enddo
+         enddo
+      enddo
+*
+* retour
+*
+      do k = 1, nx1
+      do o1= 1, F_pwr
+         do i = 1+l_pil_w, nx2-l_pil_e
+            do j = 1, nx3
+               sol_8(k,i,o1,j)= 0.0
+            enddo
+            sol_8(k,i,o1,nx3-Lam_pil_n)= dn3_8(k,i,o1,nx3-Lam_pil_n)
+         enddo
+      enddo
+      enddo
+*
+      do j = nx3-1-Lam_pil_n, 1+Lam_pil_s, -1
+         do o1= 1, F_pwr
+         do o2= 1, F_pwr
+         do k = minx1, maxx1
+         do i = minx2+l_pil_w, maxx2-l_pil_e
+            sol_8(k,i,o1,j)= sol_8(k,i,o1,j)
+     $                       + F_c_8(o1,o2,i,j)*sol_8(k,i,o2,j+1)
+         enddo
+         enddo
+         enddo
+         enddo
+         do k = 1, nx1
+         do o1= 1, F_pwr
+         do i = 1+l_pil_w, nx2-l_pil_e
+            sol_8(k,i,o1,j)= dn3_8(k,i,o1,j) - sol_8(k,i,o1,j)
+         enddo
+         enddo
+         enddo
+      enddo
+*
+      do k = 1, nx1
+      do i = 1+l_pil_w, nx2-l_pil_e
+      do j = 1+Lam_pil_s, nx3-Lam_pil_n
+         fdg2_8(k,i,j)=sol_8(k,i,F_pwr,j)
+      enddo
+      enddo
+      enddo
+*
+       call rpn_comm_transpose(fwft_8,Miny,Maxy,nx3,(maxx1-minx1+1),
+     %                                  minx2, maxx2,Gni,fdg2_8,-2,2)
+*
+*     inverse projection ( r = x * w )
+*
+*PDIR PARDO FOR=Ptopo_npeOpenMP
+      do k=1,Nkl
+        call mxma8( F_Xevec_8,1,Gni-Lam_pil_w-Lam_pil_e,
+     %       fwft_8(Miny+pil_s,k,1+Lam_pil_w),(Maxy-Miny+1)*(maxx1-minx1+1), 1,
+     %       fdg1_8(Miny+pil_s,k,1+Lam_pil_w),(Maxy-Miny+1)*(maxx1-minx1+1), 1,
+     %       Gni-Lam_pil_w-Lam_pil_e, Gni-Lam_pil_w-Lam_pil_e,
+     %       (Maxy-Miny+1-pil_s-pil_n) )
+      enddo
+
+      call rpn_comm_transpose(F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1),
+     %                               minx1, maxx1, Gnk, fdg1_8, -1,2 )
+*
+      do k= 1, Gnk
+      do j= 1+pil_s, njl-pil_n
+      do i= 1+pil_w, nil-pil_e
+         F_sol(i,j,k)= sngl(F_Rhs_8(i,j,k))
+      enddo
+      enddo
+      enddo 
+*
+      deallocate( fdg1_8, fdg2_8, fwft_8, dn3_8, sol_8)
+*
+*     __________________________________________________________________
+*
+      return
+      end
+

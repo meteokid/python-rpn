@@ -1,0 +1,267 @@
+***s/r vspng_drv - Main driver for top sponge layer
+*
+#include <model_macros_f.h>
+*
+      subroutine vspng_drv ( F_u,    F_v,  F_psd,  F_tp,  F_ip,
+     %                      F_td,    F_t,   F_it, F_plt,   F_q,
+     %                     F_pip,    F_w,   F_qp,  F_mu, F_mul, F_s, 
+     %                     F_xfis, DIST_DIM,Nk)
+*
+#include "impnone.cdk"
+*
+      integer DIST_DIM, Nk
+      real     F_u(DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk),
+     %       F_psd(DIST_SHAPE,Nk), F_tp(DIST_SHAPE,Nk),
+     %        F_ip(DIST_SHAPE,Nk), F_td(DIST_SHAPE,Nk),
+     %         F_t(DIST_SHAPE,Nk), F_it(DIST_SHAPE,Nk),
+     %       F_plt(DIST_SHAPE,Nk), F_q (DIST_SHAPE,Nk),
+     %       F_pip(DIST_SHAPE,Nk), F_w (DIST_SHAPE,Nk),
+     %        F_qp(DIST_SHAPE,Nk), F_mu(DIST_SHAPE,Nk),
+     %       F_mul(DIST_SHAPE,Nk), F_s(DIST_SHAPE), F_xfis(DIST_SHAPE)
+*
+*author
+*     Michel Desgagne  - October 2000
+*
+*revision
+* v2_11 - Desgagne M.       - initial version 
+* v2_21 - Desgagne M.       - control for sponge on momentum only
+* v2_21                       Vspng_nk levels + sponge on top level only
+* v2_21                       on all other variables
+* v2_31 - Tanguay M.        - restaure link between F_pip and F_ip at 
+*                             top; remove top_only_L and stkmemw
+* v3_00 - Desgagne & Lee    - Lam configuration
+*
+*object
+*     The diffusion coefficients are (Cstv_uvdf_8*Cstv_dt_8) for the
+*     horizontal momentum and (Cstv_phidf_8*Cstv_dt_8) for all other
+*     variables. Variable Vspng_uvwdt_L controls a mode in which 
+*     vertical sponge is applied:
+*              on Vspng_nk   levels      for momentum and
+*              on top        level only  for all other variables
+*
+*arguments
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+*  F_u
+*----------------------------------------------------------------
+* 
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "trp.cdk"
+#include "vspng.cdk"
+#include "hzd.cdk"
+#include "opr.cdk"
+*
+      integer i, j, jj, k, nkspng
+      real*8 HALF_8,TWO_8,c_8
+      parameter( HALF_8  = 0.5 )
+      parameter(  TWO_8  = 2.0 )
+*
+      real work(LDIST_SHAPE,Nk)
+      real*8, dimension (trp_12emax*G_ni*Vspng_nk) :: aix_8,bix_8,cix_8,dix_8
+      real*8, dimension (trp_22emax*G_nj*Vspng_nk) :: aiy_8,biy_8,ciy_8
+      real*8 cy_8(l_nj), xp0_8(G_ni), yp0_8(G_nj)
+**
+*     __________________________________________________________________
+*
+      do i = 1, G_ni
+         xp0_8 (i) = G_xg_8(i+1) - G_xg_8(i)
+      end do
+      do j = 1, G_nj
+         yp0_8 (j) = sin(G_yg_8(j+1))-sin(G_yg_8(j))
+      end do
+*
+*     Momentum
+*     ~~~~~~~~
+      if ( Cstv_uvdf_8 .gt. 0.0 ) then
+*
+*        Horizontal Momentum
+*        ~~~~~~~~~~~~~~~~~~~       
+         do j = 1, l_nj
+            cy_8(j) = G_yg_8(l_j0+j-1)
+         end do
+         c_8 = Cstv_uvdf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+         call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $               cy_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Opr_opsyp2_8,
+     $               G_ni,G_nj,G_nj)
+*
+         call vspng_del2 ( F_u, xp0_8, Opr_opsyp0_8(G_nj+1),
+     $                 aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                 LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+         do j = 1, l_nj
+            jj = l_j0+j-1
+            cy_8(j) = cos((G_yg_8(jj+1)+G_yg_8(jj)) * HALF_8) **TWO_8
+         end do
+         call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $               cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Hzd_yp0_8,Hzd_yp2_8,
+     $               G_ni,G_nj,G_njv)
+*
+         call vspng_del2 ( F_v, Opr_opsxp0_8(G_ni+1), yp0_8,
+     $                 aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                 LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_njv)
+*
+      endif     
+*
+      if ( Cstv_phidf_8 .gt. 0.0) then
+*
+         c_8 = Cstv_phidf_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+         do j = 1, l_nj
+            cy_8(j) = G_yg_8(l_j0+j-1)
+         end do
+         call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8,
+     $                     cy_8,Opr_opsxp0_8,Opr_opsxp2_8,Opr_opsyp0_8,
+     $                     Opr_opsyp2_8,G_ni,G_nj,G_nj)
+*
+*        Vertical motion
+*        ~~~~~~~~~~~~~~~
+         call vspng_del2 (F_psd,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*        Total divergence 
+*        ~~~~~~~~~~~~~~~~
+         call vspng_del2 (F_td,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*     The temperature: T', T'lin & hence T 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         call vspng_del2 (F_tp,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+         call vspng_del2 (F_plt,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+         do k=1, Vspng_nk
+         do j=1, l_nj
+         do i=1, l_ni 
+            F_t(i,j,k) = F_tp(i,j,k) + Cstv_tstr_8
+         end do
+         end do
+         end do
+*
+*     Mass related fields
+*     ~~~~~~~~~~~~~~~~~~~
+         if (Vspng_uvwdt_L) then
+            nkspng   = Vspng_nk
+            Vspng_nk = 1
+            call vspng_abc (aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,
+     $                      ciy_8,c_8,cy_8,Opr_opsxp0_8,Opr_opsxp2_8,
+     $                      Opr_opsyp0_8,Opr_opsyp2_8,G_ni,G_nj,G_nj)
+         endif
+*         
+         call vspng_del2 (F_ip,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+         call vspng_del2 (F_it,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+         do k = 2, Vspng_nk
+         do j = 1, l_nj
+         do i = 1, l_ni
+            F_it(i,j,k) = F_ip(i,j,k) + Cstvr_fistr_8(k) + F_xfis(i,j)
+         end do
+         end do
+         end do
+*
+* updating phi' at the top 
+*
+         do j = 1, l_nj
+         do i = 1, l_ni
+            F_ip(i,j,1) = F_it(i,j,1) - Cstvr_fistr_8(1) - F_xfis(i,j)
+         end do
+         end do
+*
+*     Save pi' for the diffusion of q'
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         if ( (.not.Schm_hydro_L) .and. Schm_difqp_L ) then
+            do k = 1, Vspng_nk
+            do j = 1, l_nj 
+            do i = 1, l_ni 
+               work(i,j,k) = F_pip(i,j,k)
+            end do
+            end do
+            end do
+         endif 
+*
+*     The hydrostatic pressure: pi'  
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         call vspng_del2 (F_pip,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*****************************
+*  3. Nonyhydrostatic model * 
+*****************************
+*
+         if ( .not. Schm_hydro_L ) then
+*
+*     Vertical wind (physical) 
+*     ~~~~~~~~~~~~~~~~~~~~~~~~
+         call vspng_del2 (F_w,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+         if ( Schm_difqp_L ) then ! q' & related variables
+*
+         call vspng_del2 (F_mu,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+         call vspng_del2 (F_mul,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+*        Indirect diffusion of q' 
+*        ~~~~~~~~~~~~~~~~~~~~~~~~
+         do k=1, Vspng_nk 
+         do j=1, l_nj
+         do i=1, l_ni
+            work(i,j,k) = ( Geomg_z_8(k) + dble(work(i,j,k)) )
+     %                       *exp( dble(F_qp(i,j,k)) )
+         end do
+         end do
+         end do
+*
+         call vspng_del2 (work,
+     $                  Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
+     $                  aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
+     $                  LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
+*
+         do k=1, Vspng_nk
+         do j=1, l_nj
+         do i=1, l_ni
+            F_qp(i,j,k) = log(             dble(work(i,j,k))
+     %                       /( Geomg_z_8(k) + dble(F_pip(i,j,k)) )  )
+         end do
+         end do
+         end do
+*
+         endif
+         endif         
+*
+         if (Vspng_uvwdt_L) Vspng_nk = nkspng
+*
+      endif
+*
+*     __________________________________________________________________
+*
+      return
+      end

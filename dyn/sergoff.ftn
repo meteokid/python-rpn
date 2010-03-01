@@ -1,0 +1,115 @@
+***s/r sergoff  - suspend or resume time series/grid point diagnostics
+*                 extractions
+#include <model_macros_f.h>
+*
+      subroutine sergoff()
+*
+#include "impnone.cdk"
+*
+*author
+*     Andre Methot - aug 94 - v0_14
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+*
+*object
+*         This subroutine suspend or resume time series/grid point
+*         diagnostics extractions IF it is required.
+*
+*     This subroutine was designed to skip extractions during the
+*     second half of digital filter initialization.
+*     It is called a each timestep.
+*
+*     The routine is also used to stop time series extractions after
+*     a user given timestep.
+*	
+*arguments
+*      none
+*
+*implicits
+#include "p_serg.cdk"
+#include "init.cdk"
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "rstr.cdk"
+#include "xst.cdk"
+*
+      integer pnerr, pnistat
+**
+*
+*     ---------------------------------------------------------------
+*        time series package is stopped at Lctl_step = P_serg_serstp
+*     ---------------------------------------------------------------
+*
+      if (Xst_nstat .gt. 0) then
+         if (Lctl_step .eq. (P_serg_serstp+1)) then
+            if (lun_out.gt.0) write(Lun_out,1002)
+            P_serg_sroff_L=.true.
+         endif
+      endif
+*
+*     ----------------------------------------------------------------
+*C      criterias to suspend or resume in the context of initialisation
+*     ----------------------------------------------------------------
+*
+*            if time series were requested
+*            AND
+*            if user given parameter allow suspension
+*            AND
+*            if initialisation is requested
+*
+      if ( (Xst_nstat .gt. 0) .and. P_serg_srsus_L .and. 
+     $     Init_balgm_L ) then
+*
+         if ( .not. Rstri_idon_L ) then
+*
+*               ---------------------------------
+*               IF INITIALISATION IS NOT DONE...
+*C              Additionnal criterias to suspend:
+*               ---------------------------------
+*
+*               timestep correspond to the second half
+*               of the initialisation
+*               AND
+*               the package is not already suspended
+*
+            if ( (Lctl_step .ge. ( (Init_dfnp-1)/2 + 1) )
+     %           .and.
+     %           (.not. P_serg_sroff_L)                  ) then
+*     
+               if (Lun_out.gt.0) write(Lun_out,1000)
+               P_serg_sroff_L=.true.
+*     
+            endif
+*     
+         else
+*
+*               ---------------------------------
+*               IF INITIALISATION IS DONE...
+*C              Additionnal criterias to resume:
+*               ---------------------------------
+*
+*               the package is still suspended
+*
+            if ( P_serg_sroff_L ) then
+*     
+               if (Lun_out.gt.0) write(Lun_out,1001)
+               P_serg_sroff_L=.false.
+*     
+            endif
+*     
+         endif
+*     
+      endif
+*
+ 1000 format(/,'REQUEST TO SUSPEND TIME SERIES EXTRACTION(S/R SERGOFF)',
+     +       /,'======================================================')
+*
+ 1001 format(/,'REQUEST TO RESUME TIME SERIES EXTRACTION(S/R SERGOFF)',
+     +       /,'=====================================================')
+*
+ 1002 format(/,'REQUEST TO STOP TIME SERIES EXTRACTION(S/R SERGOFF)',
+     +       /,'======================================================')
+*
+      return
+      end

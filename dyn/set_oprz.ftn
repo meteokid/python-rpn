@@ -1,0 +1,93 @@
+***s/r set_oprz - Computes vertical operators and matrices a,b,c
+*                  for the elliptic solver
+*
+#include <model_macros_f.h>
+*
+      subroutine set_oprz
+*
+#include "impnone.cdk"
+*
+*author
+*     M. Desgagne - initial MPI version (from setoprz v1_03)
+*
+*revision
+* v2_00 - Desgagne M.       - initial MPI version
+* v2_30 - Edouard  S.       - replace Schm_elast_L by Schm_cptop_L 
+*
+*object
+*     see ID section above
+*
+*arguments
+*     None
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "geomg.cdk"
+#include "schm.cdk"
+#include "opr.cdk"
+#include "sol.cdk"
+#include "cstv.cdk"
+#include "trp.cdk"
+*
+*modules
+**
+      real*8 ZERO, ONE, TWO, HALF
+      parameter( ZERO = 0.0 )
+      parameter( ONE  = 1.0 )
+      parameter( TWO  = 2.0 )
+      parameter( HALF = 0.5 )
+*
+      integer k, k0
+      real*8  pdsc, wk(G_nk)
+      real*8, dimension 
+     $((trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj) :: a,b,c
+*
+*     ---------------------------------------------------------------
+*
+*     Compute the vertical operators
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      do k = 1, G_nk-1
+         wk(k) = geomg_hz_8(k)/ ((geomg_z_8(k+1)+geomg_z_8(k))/TWO)**2.
+      end do
+      wk(G_nk) = ZERO
+      call set_ops8 (Opr_opszp2_8,wk        ,ONE,.false.,G_nk, G_nk, 1)
+*      
+*     Apply vertical boundary conditions
+*     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      Opr_opszp2_8(2*G_nk) = 
+     %     Opr_opszp2_8(2*G_nk) - Dcst_cappa_8*geomg_z_8(G_nk)      
+      if (.not. Schm_cptop_L) then
+         Opr_opszp2_8(G_nk+1) = 
+     %        Opr_opszp2_8(G_nk+1) + Dcst_cappa_8*geomg_z_8(1)
+      elseif (.not. Schm_hydro_L) then
+         pdsc = Schm_nonhy_8 * Dcst_rgasd_8*Cstv_tstr_8
+     %          /(Dcst_grav_8 *Cstv_tau_8 )**2
+         Opr_opszp2_8(G_nk+1) = 
+     %        Opr_opszp2_8(G_nk+1) - pdsc*geomg_z_8(1)
+      endif
+*
+*     Compute eigenvalues and eigenvector in the vertical
+*     ---------------------------------------------------
+*
+      call set_pois (Opr_zeval_8, Opr_zevec_8, geomg_z_8, geomg_hz_8,
+     $                                                   G_nk, G_nk)
+*
+      do k=1,G_nk
+         do k0=1,G_nk
+            wk(k) = Opr_zevec_8 ((k-1)*G_nk+k0)
+         enddo
+         if ( k .le. Schm_nith )
+     $        wk(k)= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
+      enddo
+*     
+      call sol_abc ( wk,G_yg_8(1),Opr_opsyp0_8,
+     $               Opr_opsyp2_8,Opr_xeval_8,
+     $               trp_12sn0, trp_22n0 , trp_12smin, trp_12smax  ,
+     $               trp_22min, trp_22max, trp_12sn  , trp_22n,G_nj,
+     $               Sol_ai_8, Sol_bi_8, Sol_ci_8 , a, b, c)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

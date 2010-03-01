@@ -1,0 +1,43 @@
+***function getvndx - obtain index from SETSOR table for a dynamic variable
+*
+#include <model_macros_f.h>
+*
+      integer function getvndx(F_varname)
+*
+#include "impnone.cdk"
+*
+      character* (*) F_varname
+*
+*author
+*     james caveen - 1995 - rpn
+*
+*revision 
+* v2_00 - Lee V.            - initial MPI version (from getvndx v1_03)
+*
+*object
+*     See above id.
+*
+*argument
+*  Name        I/O                 Description
+*----------------------------------------------------------------
+* F_varname    I    - name of variable for which the index is sought
+*
+*implicits
+*
+#include "setsor.cdk"
+**
+      integer i
+      character*8 ptvar
+      getvndx = -1
+*
+*     transfer F_varname to fixed length string
+      ptvar = F_varname
+
+      do i = 1, Setsor_num
+         if(Setsor_name_s(i) .eq. ptvar) then
+            getvndx = i
+            goto 10
+         endif
+      end do
+ 10   return
+      end

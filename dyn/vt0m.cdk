@@ -1,0 +1,55 @@
+#if defined (DOC)
+*
+***comdeck vt0m.cdk
+*
+*author
+*     M.Tanguay
+*
+*revision
+* v2_10 - Tanguay M.        - initial MPI version
+* v2_31 - Tanguay M.        - adapt for tracers in tr3d  
+*
+*object
+*     Equivalent to comdeck vt0 for TRAJECTORY
+*______________________________________________________________________
+*                                                                      |
+*  TRAJ VMM variables at TIME t0                                       |
+*______________________________________________________________________|
+*                    |                                                 |
+* NAME               | DESCRIPTION                                     |
+*--------------------|-------------------------------------------------|
+* ut0m               | x component of velocity                         |
+* vt0m               | y component of velocity                         |
+* tdt0m              | total divergence (dpi* dot / dpi* + D )         |
+* qt0m               | q = ln p                                        |
+*--------------------|-------------------------------------------------|
+* tpt0m              | T'       \                                      |
+* fipt0m             | phi'      \  perturbations                      |
+* pipt0m             | pi'      /                                      |
+*--------------------|-------------------------------------------------|
+* tplt0m             | T'  linear                                      |
+*--------------------|-------------------------------------------------|
+* psdt0m             | pi* dot (vert. vel. in pi* coord.)              |
+* st0m               | ln (pi_s/z_s)                                   |
+*--------------------|-------------------------------------------------|
+* trt0m              | passive tracer(s)                               |
+*----------------------------------------------------------------------
+*
+#endif
+*
+      MARK_COMMON_BEG(vt0m)
+      DCL_VMMVAR( vt0m,   ut0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m,   vt0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m,  tdt0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m,   qt0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m,  tpt0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m, fipt0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m, pipt0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m, tplt0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m, psdt0m, real, (LDIST_SHAPE,l_nk) )
+      DCL_VMMVAR( vt0m,   st0m, real, (LDIST_SHAPE)      )
+      DCL_VMMVAR( vt0m,  trt0m, real, (LDIST_SHAPE,l_nk,*) )
+      MARK_COMMON_END(vt0m)
+*
+      character*8 vt0m_n_first(1)
+      equivalence (vt0m_n_first,VMM_NAM(ut0m))
