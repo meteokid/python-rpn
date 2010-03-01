@@ -16,6 +16,7 @@
 * v2_31 - Talbot D.         - dhdx,dhdy,dhdxdy for "blocage"
 * v3_00 - Desgagne M.       - Lam configuration
 * v3_11 - Dugas B.          - Always read AL ( NO SNOW )
+* v3_20 - Delage Y.         - For CLASS
 *
 *object
 *          Establishes requirement in terms of geophysical variables 
@@ -201,6 +202,39 @@
      $  'VN=clayen ; VS=row*3 ; EN=J2; INTERP=NEAREST  ; SEQ=G' )
         call mgsdict (ni, nj, snoro, 
      $  'VN=snoroen; VS=row   ; EN=dn; INTERP=NEAREST  ; SEQ=A' )
+      endif
+*
+      if (P_pbl_schsl_s.eq.'CLASS') then
+        call mgsdict (ni, nj, wsoil,
+     $  'VN=wsoilen; VS=row*3 ; EN=i1; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, isoil,
+     $  'VN=isoilen; VS=row*3 ; EN=i2; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, wveg,
+     $  'VN=wvegen ; VS=row   ; EN=i3; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, iveg,
+     $  'VN=ivegen ; VS=row   ; EN=sk; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, snoal,
+     $  'VN=snoalen; VS=row   ; EN=i6; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, sand,
+     $  'VN=sanden ; VS=row*5 ; EN=J1; INTERP=NEAREST  ; SEQ=G' )
+        call mgsdict (ni, nj, clay,
+     $  'VN=clayen ; VS=row*5 ; EN=J2; INTERP=NEAREST  ; SEQ=G' )
+        call mgsdict (ni, nj, snoden,
+     $  'VN=snodenen; VS=row  ; EN=dn; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, snoma,
+     $  'VN=snomaen; VS=row   ; EN=i5; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, veggro,
+     $  'VN=veggroen; VS=row  ; EN=gr; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, tveg,
+     $  'VN=tvegen; VS=row    ; EN=te; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, tsno,
+     $  'VN=tsnoen; VS=row    ; EN=tn; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, zpond,
+     $  'VN=zponden; VS=row   ; EN=m9; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, tpond,
+     $  'VN=tponden; VS=row   ; EN=q4; INTERP=NEAREST  ; SEQ=A' )
+        call mgsdict (ni, nj, tbase,
+     $  'VN=tbaseen; VS=row   ; EN=r2; INTERP=NEAREST  ; SEQ=A' )
       endif
 *
       p_bgeo_siz = geopar(p_bgeo_top,1) + geopar(p_bgeo_top,2)+1

@@ -3,7 +3,7 @@
 #include <model_macros_f.h>
 *
       subroutine out_sblock(F_numpe_perb,F_nblocx,F_nblocy,F_myblocx,F_myblocy,
-     $           F_hx,F_hy,F_ni,F_nj, F_blocme,
+     $           F_myrow,F_mycol,F_hx,F_hy,F_ni,F_nj, F_blocme,
      $           F_gindx,F_numproc,F_myproc,F_ixg,F_grtyp_S,F_unit_S,
      $           F_deet, F_dateo, F_etik_S, F_ndigits,F_runstrt_S,
      $           F_endstepno)
@@ -14,6 +14,7 @@
       character*16 F_runstrt_S
       character*1  F_grtyp_S,F_unit_S
       integer F_numpe_perb,F_nblocx,F_nblocy,F_myblocx,F_myblocy,
+     $        F_myrow,F_mycol,
      $        F_blocme,F_numproc,F_myproc, F_dateo,F_deet,F_endstepno
       integer F_gindx(6,F_numproc),F_ni,F_nj,F_ixg(4),F_hx,F_hy
       integer F_ndigits
@@ -40,6 +41,8 @@
 *----------------------------------------------------------------------
 *
       Out_unf        = 0
+      Out_hx         =0
+      Out_hy         =0
       Out_flipit_L   = .false.
       Out_gridtyp_S  = F_grtyp_S
       Out_unit_S     = F_unit_S
@@ -56,6 +59,8 @@
       Out_ixg(4)     = F_ixg(4)
       Out_myprocni   = F_ni
       Out_myprocnj   = F_nj
+      Out_myrow      = F_myrow
+      Out_mycol      = F_mycol
       Out_numpe_perb = F_numpe_perb
 *
       Out_nblocx = F_nblocx
@@ -77,7 +82,7 @@
          end do
       endif
       if (Out_blocme.ne.(Out_numpe_perb-1)) then
-         call RPN_COMM_recv ( ijfin, 2, 'MPI_INTEGER', (F_numproc-1),
+         call RPN_COMM_recv ( ijfin, 2, 'MPI_INTEGER', (Out_numpe_perb-1),
      $                                     tag, 'BLOC', status, err )
       endif
       Out_blocin  = ijfin(1)

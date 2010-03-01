@@ -45,7 +45,7 @@
 #endif
 
       character*8 Out3_xnbits_S(MAXELEM),Out3_filt_S(MAXELEM)
-      character   Out3_unit_S
+      character*1 Out3_unit_S
       logical Out3_cliph_L, Out3_cubzt_L, Out3_cubuv_L, 
      $        Out3_cubds_L, Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L, 
      $        Out3_cubww_L, Out3_vt2gz_L

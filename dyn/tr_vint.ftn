@@ -25,6 +25,8 @@
 *implicits
 #include "glb_ld.cdk"
 #include "geomg.cdk"
+#include "acq.cdk"
+#include "schm.cdk"
 *
       integer i,j,k,err,bmf_get
       external bmf_get
@@ -36,7 +38,15 @@
      $                         -1.,1,l_ni,1,l_nj,1,nk )
 *
       if (err.eq.0) then
-         if (data_spec(1).eq.0) then
+        if ((schm_offline_L).and.(Acqi_vterplv.eq.1)) then
+            do k=1,G_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               tr(i,j,k) = w1(i,j,1)
+            enddo
+            enddo         
+            enddo       
+         else if (data_spec(1).eq.0) then
             do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni

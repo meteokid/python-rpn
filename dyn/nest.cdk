@@ -46,6 +46,12 @@
       DCL_VMMVAR( nest, nest_s   , real, (LDIST_SHAPE     ) )
       DCL_VMMVAR( nest, nest_tr  , real, (LDIST_SHAPE,l_nk,*) )
 
+      DCL_VMMVAR( nest, nest_pr  , real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( nest, nest_irac, real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( nest, nest_soac, real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( nest, nest_rt  , real, (LDIST_SHAPE,l_nk,*) )
+      DCL_VMMVAR( nest, nest_cosz, real, (LDIST_SHAPE,l_nk,*) )
+
       DCL_VMMVAR( nest, nest_uf   , real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( nest, nest_vf   , real, (LDIST_SHAPE,l_nk) )
       DCL_VMMVAR( nest, nest_wf   , real, (LDIST_SHAPE,l_nk) )

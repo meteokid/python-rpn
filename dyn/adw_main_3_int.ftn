@@ -21,6 +21,7 @@
 * v3_03 - Tanguay M.          - stop if adw_exch_1 is activated when 4D-Var
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Gravel S.           - introduce key Adw_mono_L 
+* v3_12 - Gravel & Valin & Tanguay - Lagrange 3D
 *
 *language
 *     fortran 77
@@ -76,7 +77,6 @@
       pointer (patr, tr(LDIST_SHAPE,*)),(patr0, tr0(LDIST_SHAPE,*))
       real, allocatable, dimension(:,:,:,:) :: tr2
 *
-C     call tmg_start ( 40, 'adw_main_3_int' )
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -135,17 +135,42 @@ C     call tmg_start ( 40, 'adw_main_3_int' )
 *
       endif
 *
+      if( .not. Adw_lag3d_L ) then
       call adw_setint ( Adw_n1,Adw_capx1,Adw_xgg1,Adw_xdd1,Adw_capy1,Adw_ygg1,
      %                  Adw_ydd1, Adw_capz1, Adw_cz1, F_u, F_v, F_w,
      %                 .true., .true., .false., nijk,i0,in,j0,jn,l_nk)
+      else
+*     ----------------------------
+*     Keep positions in CAP fields
+*     ----------------------------
+!$omp parallel do
+      do k=1,l_nk
+      do j=j0,jn
+      do i=i0,in
+         n = (k-1)*nij + ((j-1)*l_ni) + i
+         Adw_capx1(n) = F_u(n)
+         Adw_capy1(n) = F_v(n)
+         Adw_capz1(n) = F_w(n)
+      end do
+      end do
+      end do
+!$omp end parallel do
+      endif
 *
       if ( Adw_fro_a .gt. 0 .and. .not. G_lam) then
 *
          if ( Adw_ckbd_L ) call adw_ckbd ( Adw_capy2 )
 *
+         if( .not. Adw_lag3d_L ) then
          call adw_setint(Adw_n2,Adw_capx2,Adw_xgg2,Adw_xdd2,Adw_capy2,Adw_ygg2,
      %                 Adw_ydd2,Adw_capz2,Adw_cz2,Adw_capx2,Adw_capy2,Adw_capz2,
      %                   .true., .true., .false., Adw_fro_a,1,Adw_fro_a,1,1,1)
+         else
+*        -----------------------------------
+*        Positions are already in CAP fields
+*        -----------------------------------
+         endif
+*
       endif
 *
 ***********************************************************************
@@ -340,7 +365,6 @@ C     call tmg_start ( 40, 'adw_main_3_int' )
       endif
 *
       pnerr = vmmuld(-1,0)
-C     call tmg_stop (40)
 *
  1000  format(3X,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_3_INT)')
 *

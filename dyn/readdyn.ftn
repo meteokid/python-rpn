@@ -29,6 +29,7 @@
 * v3_10 - Lee V.           - added deallocate topu_temp,topv_temp,gzu_temp...
 * v3_11 - Gravel S.        - provide for variable topography
 * v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
+* v3_13 - Pellerin P.      - to run in off-line mode
 *
 *object
 *	
@@ -103,6 +104,14 @@
          write(lun_out,*)
      $      ' Acql_siganl =',Acql_siganl ,' Acql_hybanl =',Acql_hybanl,
      $      ' Acql_prsanl=',Acql_prsanl
+*
+      if ((schm_offline_L).and.(Acqi_vterplv.eq.1)) then
+         Acql_vertint=.false.
+         write(lun_out,*) '  '
+         write(lun_out,*) 'MEC: ARCHIVED DATA FOR:',  bmf_time1, bmf_time2
+         write(lun_out,*) 'MEC: ONLY 1 LEVEL FOUND INITIALLY FOR TT HU UU VV P0'
+         write(lun_out,*) 'MEC: THIS LAST WILL BE USED DIRECTLY'
+      endif
       endif
 *
       allocate(work(l_ni,l_nj,Acqi_nktmp))
@@ -110,6 +119,7 @@
 *---------------------------------------------------------------------
 *     INTERPOLATION IS NOT REQUIRED
 *---------------------------------------------------------------------
+       if (.not.schm_offline_L) then 
          do k=1,g_nk
          do j=1,l_nj
          do i=1,l_ni
@@ -119,6 +129,17 @@
          end do
          end do
          end do
+       else
+         do k=1,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_t (i,j,k) = tt_temp(i,j,1) 
+            Ind_fi(i,j,k) = gz_temp(i,j,1)
+            work  (i,j,k) = hu_temp(i,j,1)
+         end do
+         end do
+         end do
+        endif
 *
       else if(Acql_siganl.or.Acql_etaanl.or.Acql_hybanl) then
 *---------------------------------------------------------------------
@@ -359,6 +380,7 @@
      $            Acqi_niv, Acqi_njv, g_nk, geomg_y_8(1), geomg_yv_8(1))
 
 *     Convert wind from KNOTS TO M/S
+      if ((.not.schm_offline_L).or.(Acqi_vterplv.gt.1)) then
       do k=1,g_nk
          do j=1,Acqi_nju
          do i=1,Acqi_niu
@@ -371,6 +393,20 @@
          enddo
          enddo
       enddo
+      else
+         do k=1,g_nk
+         do j=1,Acqi_nju
+         do i=1,Acqi_niu
+            Ind_u(i,j,k) = u_temp(i,j,1)*dcst_knams_8
+         enddo
+         enddo
+         do j=1,Acqi_njv
+         do i=1,Acqi_niv
+            Ind_v(i,j,k) = v_temp(i,j,1)*dcst_knams_8
+         enddo
+         enddo
+      enddo
+      endif
 
 *     If required, copy difference between initial and target topography 
 *     in Ind_dtopo and move analysis topography into Ind_topo

@@ -1,10 +1,11 @@
 *** s/r e_bmfrd 
 *
       integer function e_bmfrd ( dgid, nix, njx, nv, ad, mp, ip1, gnk, 
-     $                                                   anyip_L,arret_L )
+     $                                           anyip_L,arret_L,inter )
       implicit none
 *
       character*4 nv
+      character*6 inter
       logical arret_L,anyip_L
       integer dgid, nix, njx, gnk, ip1(*)
       real    ad, mp
@@ -28,16 +29,20 @@
 *----------------------------------------------------------------------
 *
 *implicits
+#include <model_macros_f.h>
 #include "e_grids.cdk"
 #include "e_fu.cdk"
 #include "e_anal.cdk"
+#include "e_topo.cdk"
+#include "pilot.cdk"
+#include "e_schm.cdk"
 *
 *modules
       external e_rdhint3
       integer  e_rdhint3
 *
       integer err,i,k
-      real w1 (nix*njx)
+      real w1 (nix*njx), w2 (nix*njx), dtinv
 *
 *     ---------------------------------------------------------------
 *
@@ -46,7 +51,7 @@
       do k=1,gnk
 *
          e_bmfrd = e_rdhint3 (w1,dgid,nix,njx,nv,ip1(k),ip2a,ip3a,' ',
-     $                         tva,anyip_L,.false.,'CUBIC',e_fu_anal,6)
+     $                         tva,anyip_L,.false.,inter,e_fu_anal,6)
          if (e_bmfrd.lt.0) goto 500
 *     
 *        SCALING
@@ -56,6 +61,10 @@
                w1(i) = mp * (w1(i)+ad)
             enddo
          endif
+*
+*    For the offline mode: accumulation is changed into rate:
+*
+cvl   if (e_schm_offline_L) call e_liaccu (w1,nix,njx,nv)
 *     
          call e_bmfsplitxy2 (w1,nix,njx,nv,k,gnk,pni,0,0,0)
 *

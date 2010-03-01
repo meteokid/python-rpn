@@ -1,0 +1,63 @@
+***s/r surfix - force wind and temperature values at surface
+*
+#include <model_macros_f.h>
+*
+      subroutine surfix 
+*
+#include "impnone.cdk"
+*
+*
+*author
+*
+*revision
+*
+*object
+*	
+*implicits
+#include "glb_ld.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+*
+**
+      integer  vmmlod,vmmget,vmmuln
+      external vmmlod,vmmget,vmmuln
+
+      integer err, key(4)
+
+      integer i,j
+*
+*     ---------------------------------------------------------------
+*
+      key( 1) = VMM_KEY(ut1)
+      key( 2) = VMM_KEY(vt1)
+      key( 3) = VMM_KEY(tt1)
+      key( 4) = VMM_KEY(tpt1)
+      err = vmmlod(key,4)
+      err = VMM_GET_VAR(ut1)
+      err = VMM_GET_VAR(vt1)
+      err = VMM_GET_VAR(tt1)
+      err = VMM_GET_VAR(tpt1)
+
+      do j=1,l_nj
+      do i=1,l_ni
+        tt1(i,j,l_nk) = tt1(i,j,l_nk-1)
+        tpt1(i,j,l_nk) = tpt1(i,j,l_nk-1)
+      enddo
+      enddo
+      do j=1,l_nj
+      do i=1,l_niu
+        ut1(i,j,l_nk) = ut1(i,j,l_nk-1)
+      enddo
+      enddo
+      do j=1,l_njv
+      do i=1,l_ni
+        vt1(i,j,l_nk) = vt1(i,j,l_nk-1)
+      enddo
+      enddo
+
+      err = vmmuln(key,4)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

@@ -62,6 +62,7 @@
       Pil_nesdt     = 0
       Pil_datacvrg  = 0
 *
+      Hblen_wfct_S  = 'cos2'
       Hblen_momentx = 10
       Hblen_tx      = 10
       Hblen_massx   = 10
@@ -79,6 +80,7 @@
       anal_perturb= .false.
       E_schm_stlag   = .true.
       E_schm_adcub   = .true.
+      E_schm_offline_L=.false.
       E_geol_glanl_L = .true.
       E_geol_glreg_L = .false.
       E_geol_hsanl_L = .true.
@@ -127,6 +129,9 @@
       call low2up (Grd_typ_S,dumc)
       Grd_typ_S = dumc
       LAM = Grd_typ_S(1:1).eq.'L'
+*
+*     CONSTANT BOUNDARY CONDITIONS APPLIED in offline mode
+      if (E_schm_offline_L) Hblen_wfct_S  = 'const'
 *
       Hblen_momentx = max(Hblen_momentx, 0)
       Hblen_tx      = max(Hblen_tx     , 0)

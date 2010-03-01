@@ -96,7 +96,11 @@
                     obus_shp(k)= 1
                 endif
                 if (peron(idx)(1:4).eq.'LA') obus_mul(k)=180./Dcst_pi_8
-                if (peron(idx)(1:4).eq.'LO') obus_mul(k)=180./Dcst_pi_8
+                if (peron(idx)(1:4).eq.'SD') obus_mul(k)=100.
+*               Should use flag from Dynamics to determine obus_add(long)
+                if (peron(idx)(1:4).eq.'LO') then
+                    obus_mul(k)=180./Dcst_pi_8
+                endif
                 bigk = bigk + obus_shp(k)*obus_mult(k)
             endif
          enddo

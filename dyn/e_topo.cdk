@@ -28,8 +28,24 @@
 #endif
       logical Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L
       real topo,topou,topov
+*
+      real a_pr_m,i_pr_m,a_pr_x
+      real a_ir_m,i_ir_m,a_ir_x
+      real a_so_m,i_so_m,a_so_x
+
       pointer (patopo, topo(*)),(patopou, topou(*)),(patopov, topov(*))
+      pointer (paa_pr_m, a_pr_m(*))
+      pointer (pai_pr_m, i_pr_m(*))
+      pointer (paa_pr_x, a_pr_x(*))
+      pointer (paa_ir_m, a_ir_m(*))
+      pointer (pai_ir_m, i_ir_m(*))
+      pointer (paa_ir_x, a_ir_x(*))
+      pointer (paa_so_m, a_so_m(*))
+      pointer (pai_so_m, i_so_m(*))
+      pointer (paa_so_x, a_so_x(*))
 *
       common / topo_l / Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,
      $                   Topo_dgfms_L
-      common / topo_p / patopo,patopou,patopov
+      common /topo_p/ patopo,patopou,patopov,paa_pr_m,pai_pr_m,paa_pr_x,
+     $             paa_ir_m,pai_ir_m,paa_ir_x,paa_so_m,pai_so_m,paa_so_x
+

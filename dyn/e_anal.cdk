@@ -23,7 +23,9 @@
 
       INTEGER        nia, nja, NK, LV,
      %               ip1a, ip2a, ip3a,
-     %               ig1a, ig2a, ig3a, ig4a
+     %               ig1a, ig2a, ig3a, ig4a,
+*  For the off_line mode
+     %               ipasa, ipas_last(3)
       INTEGER        NA(LVMAX)
       REAL           LNA(LVMAX), RNA(LVMAX),RCOEFA,PTOPA,PREFA
       CHARACTER*2    VH,VT
@@ -32,7 +34,8 @@
 
       COMMON/anali/  nia, nja, NK, LV, NA,
      %               ip1a, ip2a, ip3a,
-     %               ig1a, ig2a, ig3a, ig4a
+     %               ig1a, ig2a, ig3a, ig4a,
+     %               ipasa, ipas_last
       COMMON/analr/  LNA, RNA, RCOEFA,PTOPA,PREFA
       COMMON/anals/  VH,VT,GRDA,TVA,LABANL
       logical anal_sigma, anal_eta, anal_hyb, anal_pres,anal_perturb

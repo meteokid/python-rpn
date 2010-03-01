@@ -39,7 +39,7 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       bnd_w   = 1          - Out_blocwest  * Out_hx
       bnd_e   = Out_blocni + Out_bloceast  * Out_hx
       bnd_s   = 1          - Out_blocsouth * Out_hy
-      bnd_n   = Out_blocnj - Out_blocnorth * Out_hy
+      bnd_n   = Out_blocnj + Out_blocnorth * Out_hy
       out_reduc= F_reduc
       Out_gridi0=F_x0
       Out_gridin=F_x1

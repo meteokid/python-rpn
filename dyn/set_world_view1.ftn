@@ -47,6 +47,8 @@
 * v3_11 - Tanguay M.        - Remove V4dg_ga_eq_ge_L
 *                           - Add option for profiles done on U-V grids for winds
 *                           - Add V4dg_anincr_L for V4dg_conf/100.eq.4
+* v3_20 - Gravel S.         - background vertical diffusion
+* v3_20 - Valin/Tanguay     - Turbo advection option
 *
 *object
 *  To initialize model by reading namelist and return the 
@@ -97,6 +99,7 @@
 #include "theo.cdk"
 #include "pilot.cdk"
 #include "vtopo.cdk"
+#include "vrtd.cdk"
 *
 *modules
       integer fnom,longueur,exdb
@@ -137,8 +140,8 @@
 *
       Ptopo_npex = 1
       Ptopo_npey = 1
-      Ptopo_nblocx = 1
-      Ptopo_nblocy = 1
+      Ptopo_nblocx = -1
+      Ptopo_nblocy = -1
       G_halox = 4
       G_haloy = G_halox
 *
@@ -172,6 +175,7 @@
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_theoc_L    = .false.
+      Schm_sfix_L     = .false.
 *
       Glb_pil_n = 7
       Glb_pil_s = 7
@@ -182,6 +186,8 @@
       Adw_exdg_L = .false.
       Adw_ckbd_L = .false.
       Adw_mono_L = .true.
+      Adw_lag3d_L= .false.
+      Adw_nosetint_L   = .false.
       Adw_trunc_traj_L = .false.
       Adw_halox  = 3
       Adw_haloy  = 2
@@ -226,6 +232,9 @@
       Vspng_uvwdt_L  = .true.
       Vspng_rwnd_L   = .false.
       Vspng_njpole   = 3
+      Vrtd_L         = .false.
+      Vrtd_theta_L   = .false.
+      Vrtd_coef      = 1.
 *
       Vtopo_start = -1
       Vtopo_ndt = 0
@@ -247,14 +256,9 @@
       enddo
 *
       do i = 1,MAXELEM
-         Out3_xnbits_s(i) = ' '
-         Out3_xnbits(i)   = 0
          Out3_zund(i)     = 0
-         Out3_filt_s(i)   = ' '
-         Out3_filtcoef(i) = 0.0
-         Out3_filtpass(i) = 0
       enddo
-      Out3_unit_S    = ''
+      Out3_unit_S    = ' '
       Out3_closestep = -1
       Out3_ndigits   = -1
       Out3_nbitg     = 16
@@ -335,13 +339,17 @@
             write (Lun_out, 8000)
             return
          else
-            do k=1,G_nk
+             do k=1,G_nk
               hyb(k)=Geomg_hyb(k)
             enddo
-            call hpdeallc (Geomg_hyb_ , err,1)
+             call hpdeallc (Geomg_hyb_ , err,1)
          endif
       else
          read (Lun_in, nml=ptopo,    end = 9110, err=9110)
+         if (Ptopo_nblocx.eq.-1 .or. Ptopo_nblocy.eq.-1) then
+             Ptopo_nblocx = Ptopo_npex
+             Ptopo_nblocy = Ptopo_npey
+         endif
          rewind ( Lun_in )
          read (Lun_in, nml=gem_cfgs, end = 9120, err=9120)
          rewind ( Lun_in )
@@ -392,6 +400,8 @@
         err = fnom (V4dg_lun_obs,V4dg_lun_obs_s,'RND+OLD', 0)
       endif
 *      
+*     Initialization for the coupling
+*
       if (C_coupling_L)  call c_init()
 *
       if(Out3_nbitg .lt. 0) then
@@ -404,19 +414,7 @@
          Out3_nundr = Out3_nundr + 1
       enddo
  80   continue
-      Out3_filtpass_max = 0
-      do i = 1,MAXELEM
-         if(Out3_filt_S(i) .eq. ' ') goto 90
-         Out3_filtpass_max = Out3_filtpass_max + 1
-      enddo
- 90   continue
 
-      Out3_xnbits_max = 0
-      do i = 1,MAXELEM
-         if(Out3_xnbits_S(i) .eq. ' ') goto 95
-         Out3_xnbits_max = Out3_xnbits_max + 1
-      enddo
- 95   continue
 *
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
 *      
@@ -433,11 +431,20 @@
 *     Checking vertical layering
 *
       wronghyb = .false.
+      if (.not.schm_offline_l) then
       pnk = 0
       do k = 1, maxhlev
          if (hyb(k) .lt. 0.) go to 110
          pnk = k
       enddo
+      else
+         pnk=4
+         hyb(1)=0.
+         hyb(2)=0.05
+         hyb(3)=0.995
+         hyb(4)=1.0
+      endif
+
       write(Lun_out,*) (hyb(k),k=1,pnk)
  110  if ( ( (Pres_ptop.gt.0.) .and. (hyb(1).ne.0) ) .or.
      $       (hyb(pnk).ne.1.) ) wronghyb = .true.
@@ -505,7 +512,19 @@
      $                          //'/process/output_settings'
 
 *
+*
+*     Options used for the Off-line mode (MEC)
+*
+      if (Schm_offline_L) then
+      Schm_phyms_L    = .true.
+      Init_balgm_L    = .false.
+      Pres_ptop       = 10.0
+      Hzd_type_s        = 'nil' 
+      Vspng_nk          = 0 
+      endif
+*
       write (lun_out, nml=gem_cfgs_p)
+      
       if(V4dg_conf.ne.0) write (lun_out, nml=var4d)
 *
       G_ni  = Grd_ni

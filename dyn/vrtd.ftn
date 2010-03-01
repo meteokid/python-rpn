@@ -1,0 +1,225 @@
+***s/r vrtd - vertical diffusion on u and v and theta
+*
+#include <model_macros_f.h>
+*
+      subroutine vrtd 
+*
+#include "impnone.cdk"
+*
+*author  S. Gravel (from difver6)
+*
+*object
+*	Apply a background vertical diffusion on the horizontal momentum
+*       components u and v, and optionally theta,  using an implicit 
+*       time scheme
+*	
+*        F(t+dt)=F(t) + dt*(1/rho)*d(rho*Km*dF/dz)/dz
+*	
+*         in sigma coordinates (s) this is equivalent to:
+*                             ~
+*        F(t+dt)=F(t) + dt*d( Km * dF/ds )/ds
+*
+*    
+*implicits
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+#include "dcst.cdk"
+#include "vt1.cdk"
+#include "schm.cdk"
+#include "intuv.cdk"
+#include "vrtd.cdk"
+
+*
+*modules
+      integer  vmmlod, vmmget, vmmuld
+      external vmmlod, vmmget, vmmuld
+**
+
+      integer err, key(5)
+      integer i,j,k,ij,lnij
+      real g_ovr_rd, dt, sig_e, p_0 
+
+      real sig(LDIST_SHAPE,l_nk), k_tilde(LDIST_SHAPE,l_nk)
+      real pres(LDIST_SHAPE,l_nk)
+      real p_var(LDIST_SIZ,l_nk), p_coef(LDIST_SIZ,l_nk)
+      real p_sig(LDIST_SIZ,l_nk)
+      real aa(LDIST_SIZ,l_nk),bb(LDIST_SIZ,l_nk),cc(LDIST_SIZ,l_nk),
+     $     dd(LDIST_SIZ,l_nk)
+
+      key( 1) = VMM_KEY(qt1)
+      key( 2) = VMM_KEY(tt1)
+      key( 3) = VMM_KEY(ut1)
+      key( 4) = VMM_KEY(vt1)
+      if (Schm_hydro_L) then
+         err = VMMLOD(key,4)
+         err = VMM_GET_VAR(qt1)
+         err = VMM_GET_VAR(tt1)
+         err = VMM_GET_VAR(ut1)
+         err = VMM_GET_VAR(vt1)
+         do k= 1,l_nk
+         do j= 1, l_nj
+         do i= 1, l_ni
+            pres(i,j,k) = qt1(i,j,k)
+         end do
+         end do
+         end do
+      else
+         key(5) = VMM_KEY(qpt1)
+         err = vmmlod(key,5)
+         err = VMM_GET_VAR(qt1)
+         err = VMM_GET_VAR(tt1)
+         err = VMM_GET_VAR(ut1)
+         err = VMM_GET_VAR(vt1)
+         err = VMM_GET_VAR(qpt1)
+         do k=1,l_nk
+         do j= 1, l_nj
+         do i= 1, l_ni
+            pres(i,j,k) = qt1(i,j,k) - qpt1(i,j,k)
+         end do
+         end do
+         end do
+      endif
+*
+*     calculate sigma levels on scalar grid from local pressure
+*     ---------------------------------------------------------
+*
+      do k=1,l_nk
+      do j=1,l_nj
+      do i=1,l_ni
+        sig(i,j,k) = exp(pres(i,j,k)-pres(i,j,l_nk))
+        pres(i,j,k) = exp(pres(i,j,k))
+      end do
+      end do
+      end do
+
+*
+*     calculate diffusion coefficient on scalar grid
+*     ----------------------------------------------
+*
+      g_ovr_rd = Dcst_grav_8/Dcst_rgasd_8
+      dt = Cstv_dt_8
+*
+*
+      do k= 1, l_nk-1
+      do j= 1, l_nj
+      do i= 1, l_ni
+        sig_e = 0.5*(sig(i,j,k+1)+sig(i,j,k))
+        k_tilde(i,j,k) = Vrtd_coef*( g_ovr_rd* sig_e
+     $         /(0.5*(tt1(i,j,k+1)+tt1(i,j,k))) )**2
+      end do
+      end do
+      end do
+
+*     Exchange halos for interpolation
+
+      call rpn_comm_xch_halo( sig , LDIST_DIM,l_ni,l_nj,l_nk,
+     $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( k_tilde , LDIST_DIM,l_ni,l_nj,l_nk,
+     $            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+* For diffusion of u, interpolate linearly sigma and diffusion coefficient
+* to u grid; store in a linear vector 
+* unwind u in a linear vector
+
+      lnij = l_niu*l_nj
+      do k= 1, l_nk-1
+      do j= 1, l_nj
+      do i= 1, l_niu
+         ij = (j-1)*l_niu + i
+         p_sig(ij,k) =  ( 1. - intuv_c0xxu_8(i) )* sig(i  ,j,k)
+     %                       + intuv_c0xxu_8(i)  * sig(i+1,j,k) 
+         p_coef(ij,k) = ( 1. - intuv_c0xxu_8(i) )* k_tilde(i  ,j,k)
+     %                       + intuv_c0xxu_8(i)  * k_tilde(i+1,j,k) 
+         p_var(ij,k) = ut1(i,j,k)
+      enddo
+      enddo
+      enddo
+*
+* diffusion tendency on u
+*
+      call difuvt(p_var,p_var,p_coef, p_sig,
+     $            dt,aa,bb,cc,dd,
+     $            lnij,LDIST_SIZ,l_nk-1)
+*
+* add tendencies
+*
+      do k= 1, l_nk-1
+      do j= 1,l_nj
+      do i= 1,l_niu
+         ij = (j-1)*l_niu + i
+         ut1(i,j,k) = ut1(i,j,k) + dt * p_var(ij,k)
+      end do
+      end do
+      end do
+*
+* For diffusion of v, interpolate linearly sigma and diffusion coefficient
+* to v grid store in a linear vector 
+* unwind v in a linear vector
+
+      lnij = l_ni*l_njv
+      do k= 1, l_nk-1
+      do j= 1, l_njv
+      do i= 1, l_ni
+         ij = (j-1)*l_ni + i
+         p_sig(ij,k) =  ( 1. - intuv_c0yyv_8(j) )*sig(i,j  ,k)
+     %                       + intuv_c0yyv_8(j)  *sig(i,j+1,k)
+         p_coef(ij,k) =  ( 1. - intuv_c0yyv_8(j) )*k_tilde(i,j  ,k)
+     %                        + intuv_c0yyv_8(j)  *k_tilde(i,j+1,k)
+         p_var(ij,k) = vt1(i,j,k)
+      enddo
+      enddo
+      enddo
+*
+* diffusion tendency on v
+*
+      call difuvt(p_var,p_var,p_coef,p_sig,
+     $            dt,aa,bb,cc,dd,
+     $            lnij,LDIST_SIZ,l_nk-1)
+*
+*  Optional diffusion on theta
+
+      if (Vrtd_theta_L) then
+*
+* For diffusion of theta, estimate theta, store in linear vector
+* unwind in a linear vector sigma, and the diffusion coefficient
+
+      p_0 = 1.e-5
+      lnij = l_ni*l_nj
+      do k= 1, l_nk-1
+      do j= 1, l_nj
+      do i= 1, l_ni
+         ij = (j-1)*l_ni + i
+         p_sig(ij,k)  = sig(i,j,k)
+         p_coef(ij,k) = k_tilde(i,j,k)
+         p_var(ij,k)  = tt1(i,j,k) * (p_0/pres(i,j,k))**Dcst_cappa_8
+      enddo
+      enddo
+      enddo
+*
+* diffusion tendency on theta
+*
+      call difuvt(p_var,p_var,p_coef,p_sig,
+     $            dt,aa,bb,cc,dd,
+     $            lnij,LDIST_SIZ,l_nk-1)
+*
+* Transform potential temperature tendencies into temperature tendencies
+* and add
+*
+      do k= 1,l_nk-1
+      do j= 1,l_nj
+      do i= 1,l_ni
+         ij = (j-1)*l_ni + i
+         tt1(i,j,k) = tt1(i,j,k) 
+     $              + dt * p_var(ij,k)*(pres(i,j,k)/p_0)**Dcst_cappa_8
+      end do
+      end do
+      end do
+
+      endif     ! end of diffusion on theta
+*
+      err=vmmuld(-1,0)
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

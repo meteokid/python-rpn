@@ -28,6 +28,7 @@
 * v3_11 - Desgagne M.       - add P_pbl_impflx_L
 * v3_12 - Plante A.         - add P_cond_pcptype_s
 * v3_12 - Bilodeau B.       - modify P_cond_kfctrig
+* v3_12 - Leduc/Bilodeau    - add P_pbl_z0tlat
 *
 *object
 *     See above id.
@@ -111,7 +112,6 @@
       call phyoptl('BKGALB'   ,P_pbl_albkg_L  ,       1, 'SET' )
       call phyoptl('ICEMELT'  ,P_pbl_iceme_L  ,       1, 'SET' )
       call phyoptl('SNOALB_ANL',P_pbl_snoalb_L,       1, 'SET' )
-      call phyoptl('Z0TCST'   ,P_pbl_z0tcst_L ,       1, 'SET' )
       call phyoptl('ADVECTKE', P_pbl_advectke_L,      1, 'SET' )
       call phyoptl('IMPFLX',   P_pbl_impflx_L ,       1, 'SET' )
       call phyopti('NSLOFLUX' ,P_pbl_nslof    ,       1, 'SET' )
@@ -119,6 +119,7 @@
       call phyoptr('EPONGE'  , P_pbl_spng     , cnmaxad, 'SET' )
       call phyoptr('AS'      , P_pbl_as       ,       1, 'SET' )
       call phyoptr('BETA'    , P_pbl_beta     ,       1, 'SET' )
+      call phyoptr('Z0TLAT'   ,P_pbl_z0tlat   ,       2, 'SET' )
 *
       call phyoptc('GWDRAG'  , p_gwd_s        ,       1, 'SET' )
 *
@@ -142,6 +143,8 @@
       call phyoptr('KFCTIMEC', P_cond_kfctimec,       1, 'SET' )
       call phyoptr('KFCTIMEA', P_cond_kfctimea,       1, 'SET' )
       call phyoptc('KFCPCP'  , P_cond_kfcpcp_s,       1, 'SET' )
+*
+      call phyoptl('KTICEFRAC', P_cond_kticefrac_L,   1, 'SET' )
 *
       call phyoptr('DZSEDI'  , P_cond_dzsedi  ,       1, 'SET' )
       call phyoptr('KKL'     , P_cond_kkl     ,       1, 'SET' )
@@ -245,6 +248,8 @@
          call phyoptr('KFCDET'  , P_cond2_kfcdet  ,   1, 'SET' )
          call phyoptr('KFCTIMEC', P_cond2_kfctimec,   1, 'SET' )
          call phyoptr('KFCTIMEA', P_cond2_kfctimea,   1, 'SET' )
+*
+         call phyoptl('KTICEFRAC' ,P_cond2_kticefrac_L,1, 'SET' )
 *
          call phyoptc('FLUVERT' , P_pbl2_bndlr_s  ,   1, 'SET' )
          call phyoptc('SCHMSOL' , P_pbl2_schsl_s  ,   1, 'SET' )

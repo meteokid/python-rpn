@@ -32,6 +32,7 @@
 #include "grd.cdk"
 #include "bmf.cdk"
 #include "hgc.cdk"
+#include "e_schm.cdk"
 *
       integer  ezqkdef,ezdefset,ezsetopt,ezuvint,
      $         fstinf,fstlir,fstprm,e_rdhint3
@@ -66,6 +67,7 @@
 *        
          if (LAM) then
 *
+            if (e_schm_offline_l) write (6,199)
             do k=1,lv               
                key1 = fstlir(uu,e_fu_anal,iu,ju,nkc,datev,' ',na(k),
      $                                         ip2a,ip3a,tva,'UT1')
@@ -85,6 +87,10 @@
                do i=1,niv*njv
                   vv(i) = vv(i) / dcst_knams_8
                end do
+               if (e_schm_offline_l) then
+                  write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
+                  write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
+               endif
                call e_bmfsplitxy2 (uu,niu,nju,'UU  ',k,lv,pniu,0,0,0)
                call e_bmfsplitxy2 (vv,niv,njv,'VV  ',k,lv,pni ,0,0,0)
             end do
@@ -127,6 +133,12 @@
             do k=1,lv
                key1 = fstlir (uu, e_fu_anal, i, j, nkc, datev, labanl, 
      $                                  na(k), ip2a,ip3a, tva, var_uu)
+*
+               if (e_schm_offline_l) then
+                  write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
+                  write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
+               endif
+*
                if (key1.lt.0 .or. i.ne.iu  .or. j.ne.ju) then
                   write(6,*)'ERROR: UU NOT AVAILABLE,'
                   call e_arret( 'e_intwind' )
@@ -192,6 +204,11 @@
             err = ezdefset ( dstv_gid, src_gid )
             err = ezuvint  ( uw,vv,w1,w2 )
 *
+            if (e_schm_offline_l) then
+               write (6,120) 'U WIND  ','UU',0,0,1,'A',' CUBIC '
+               write (6,120) 'V WIND  ','VV',0,0,1,'A',' CUBIC '
+            endif
+*
             call e_bmfsplitxy2 (uu,niu,nju,'UU  ',k,lv,pniu,0,0,0)
             call e_bmfsplitxy2 (vv,niv,njv,'VV  ',k,lv,pni ,0,0,0)
 *
@@ -205,10 +222,12 @@
       if ( gletaanl .or. glsiganl .or. glhybanl ) then
          write(6,*)'PREPARATION FOR SIGMA/ETA/HYB to HYBRID'
          c1 = 10. * Dcst_grav_8
+         if (.not.e_schm_offline_l) then
          if (e_rdhint3 (ttu,dstu_gid,niu,nju,'GZ  ',na(lv),ip2a,ip3a,
      $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
          if (e_rdhint3 (ttv,dstv_gid,niv,njv,'GZ  ',na(lv),ip2a,ip3a,
      $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
+         endif
          if (e_rdhint3 (huu,dstu_gid,niu,nju,'P0  ',   0 ,ip2a,ip3a,
      $         ' ',tva,.true.,.true.,'CUBIC',e_fu_anal,6).lt.0) goto 55
          if (e_rdhint3 (huv,dstv_gid,niv,njv,'P0  ',   0 ,ip2a,ip3a,
@@ -278,6 +297,9 @@
       goto 99
  55   call e_arret( 'e_intwind' )
 *
+ 120  format ('|',1x,a8,'|',1x,a2,'  |',2(i7,' |'),i3,'  |',1x,a3,
+     $        ' |',1x,a7,'  |',1x,a16,'|')
+ 199  format ('|',2x,'   NO INTERPOLATION REQUIRED        ',1x,16x,1x,'|')
 * ---------------------------------------------------------------------
 *
  99   return

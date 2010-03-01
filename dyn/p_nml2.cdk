@@ -27,4 +27,5 @@
 *
      $     P_cond2_kfcmom_L ,P_cond2_kfctrig4 , P_cond2_kfcrad  ,
      $     P_cond2_kfcdepth ,P_cond2_kfcdlev  , P_cond2_kfcdet  ,
-     $     P_cond2_kfctimec ,P_cond2_kfctimea
+     $     P_cond2_kfctimec ,P_cond2_kfctimea , P_cond2_kticefrac_L
+

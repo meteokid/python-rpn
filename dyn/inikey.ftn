@@ -25,6 +25,7 @@
 #include "busind.cdk"
 #include "tr3d.cdk"
 #include "p_cond.cdk"
+#include "schm.cdk"
 *
 **
       character*16 vn_S
@@ -73,6 +74,9 @@
       call getindx ('INCRTP',    'P',incrtp,   lght, init0)
       call getindx ('UFCP',      'P',ufcp,     lght, init0)
       call getindx ('VFCP',      'P',vfcp,     lght, init0)
+      call getindx ('FDSI',      'P',fdsi,     lght, init0)
+      call getindx ('TSS',       'P',tss,      lght, init0)
+cpp      call getindx ('FLUSOLIS',  'P',flusolis, lght, init0)
 *
       call getindx ('TRAD',    'V',trad,     lght, init0)
       call getindx ('UDIFV',   'V',udifv,    lght, init0)
@@ -86,6 +90,8 @@
       call getindx ('KT',      'V',kt,       lght, init0)
       call getindx ('BM',      'V',bm,       lght, init0)
       call getindx ('BT',      'V',bt,       lght, init0)
+      call getindx ('FLUSOLIS',  'V',flusolis, lght, init0)
+
 *
 * H2O tracers
 *
@@ -124,6 +130,22 @@ cstl
       do i=1,phyt_maxn
          vn_S=phyt_liste_S(i)(1:2)//'PLUS'
          call getindx (vn_S, 'D', deb, lght, init)
+*
+*     For the offline mode:
+*
+         if (Schm_offline_L) then
+         deb=-1
+         vn_S=phyt_liste_S(i)
+         if (vn_S.eq.'FI') call getindx ('FDSI',      'P',deb,     lght, init)
+         if (vn_S.eq.'PR') call getindx ('TSS',       'P',deb,     lght, init)
+         if (vn_S.eq.'P0') call getindx ('PPLUS',     'D',deb,     lght, init)
+         if (vn_S.eq.'FB') call getindx ('FLUSOLIS',  'V',deb,     lght, init)
+         if (vn_S.eq.'N4') call getindx ('flusolaf',  'P',deb,     lght, init)
+         if (vn_S.eq.'AD') call getindx ('fiaf',      'P',deb,     lght, init)
+         if (vn_S.eq.'RT') call getindx ('rt',        'V',deb,     lght, init)
+         if (vn_S.eq.'M4') call getindx ('cosz',      'P',deb,     lght, init)
+         endif
+*
          if (deb.gt.0) then
             phyt_ntr = phyt_ntr + 1
             phyt_name_S(phyt_ntr) = phyt_liste_S(i)(1:2)

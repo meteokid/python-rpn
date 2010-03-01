@@ -36,7 +36,7 @@
       pointer (patr1, tr1(LDIST_SHAPE,*)), (patrf, trf(LDIST_SHAPE,*))
       integer err, key1(26+Tr3d_ntr), nvar, nstepno, key1_, 
      $        key2(Tr3d_ntr),key2_,n
-      real*8  one,sid,rsid,dayfrac,tx,tf_nest,dtf,a,b
+      real*8  one,sid,rsid,dayfrac,tx,tf_nest,dtf,a,b,rate
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
       data done /.false./
       save done,tf_nest
@@ -248,14 +248,48 @@
          do n=1,Tr3d_ntr
             err = vmmget(key1(n),patr1,tr1)
             err = vmmget(key2(n),patrf,trf)
-            do k= 1, G_nk
-            do j= 1, l_nj 
-            do i= 1, l_ni
-               tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
-            end do
-            end do
-            end do
-         end do
+*
+            if (.not.Schm_offline_L) then
+*
+              do k= 1, G_nk
+              do j= 1, l_nj 
+              do i= 1, l_ni
+                tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
+              end do
+              end do
+              end do
+*
+              else
+*
+*     Accumulation not interpolated (off-line mode)
+*
+           if ((Tr3d_name_S(n).eq.'PR').or.(Tr3d_name_S(n).eq.'AD').or.
+     $         (Tr3d_name_S(n).eq.'N4')) then
+*
+	       rate=1./dble(Pil_nesdt)
+               do k= 1, G_nk
+               do j= 1, l_nj 
+               do i= 1, l_ni
+                  tr1 (i,j,k) = rate*trf(i,j,k)
+               end do
+               end do
+               end do
+*
+            else
+*
+              do k= 1, G_nk
+              do j= 1, l_nj 
+              do i= 1, l_ni
+                tr1 (i,j,k) = a*tr1(i,j,k) + b*trf(i,j,k)
+              end do
+              end do
+              end do
+*
+           endif
+*
+        endif
+*
+      end do
          err = vmmuld(key1,Tr3d_ntr)
          err = vmmuld(key2,Tr3d_ntr)
       endif

@@ -30,6 +30,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2
 *                           - ADJ of digital filter
+* v3_20 - Gravel S.         - background vertical diffusion
 *
 *object
 *	Performs the integration of the model
@@ -61,6 +62,8 @@
 #include "lctl.cdk"
 #include "v4dg.cdk"
 #include "p_clim.cdk"
+#include "vrtd.cdk"
+
 *
       logical bkup_L,carryon_L,identity_4dvar_L
       integer last_step
@@ -120,7 +123,11 @@
       if (F_dgtflt_L) then
          if (Lun_out.gt.0) write(Lun_out,1000) Lctl_step,last_step
       else
+        if (.not.schm_offline_L) then
          if (Lun_out.gt.0) write(Lun_out,1001) Lctl_step,last_step
+        else
+         if (Lun_out.gt.0) write(Lun_out,1003) Lctl_step,last_step
+        endif
       endif
 *
 *C    (Re-)initialize physics surface forcing increments
@@ -133,12 +140,15 @@
 *
 *        Horizontal diffusion & Vertical sponge (Initial timestep)
 *        ---------------------------------------------------------
-         if (Lctl_step.eq.1.and.V4dg_conf.ne.0) call hdif0
+         if (Lctl_step.eq.1.and.V4dg_conf.ne.0.and.(.not.schm_offline_l)) 
+     $         call hdif0
 *
 *        Dynamics timestep
 *        -----------------
 C        call tmg_start ( 2, 'DYN+HD+PHY' )
          call dynstep
+*
+         if (Vrtd_L) call vrtd
 *
 *        Physics timestep & Horizontal diffusion & Vertical sponge
 *        ---------------------------------------------------------
@@ -153,6 +163,8 @@ C        call tmg_stop (2)
 *     --------------
       if ( F_dgtflt_L ) call digflt( )
 *
+      if (Schm_sfix_L.and.V4dg_conf.ne.0) call surfix ( )
+*
 *     4D-Var: Write trajectory for conversion if requested
 *     ----------------------------------------------------
       if ( V4dg_oktrcv_L ) call v4d_rwconv0
@@ -165,6 +177,8 @@ C        call tmg_stop (2)
 *     --------------------------
       call blocstat ()
       call out_dyn ()
+*
+      if (Schm_sfix_L.and.V4dg_conf.eq.0) call surfix ( )
 *
       if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 *
@@ -183,6 +197,8 @@ C        call tmg_stop (2)
      $         ' OUT OF ',I8, 
      +       /,'================================================')
  1001 format(/,'GEM_RUN: PERFORMING TIMESTEP #',I8,' OUT OF ',I8,
+     +       /,'================================================')
+ 1003 format(/,' MEC:_RUN: PERFORMING TIMESTEP #',I8,' OUT OF ',I8,
      +       /,'================================================')
  3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
  4000 format(/,'END OF THE TIME LOOP (S/R GEM_RUN) AT TIMESTEP',I8,

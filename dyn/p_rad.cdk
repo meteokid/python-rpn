@@ -5,6 +5,7 @@
 * v2_32 - Dugas B.               - add P_rad_nivl
 * v3_02 - Dugas B.               - add P_rad_qco2
 * v3_03 - Leduc A-M.             - add P_rad_filter_L
+* v3_12 - Bilodeau B.            - character*8 to character*16
 *
 ***comdeck p_rad.cdk
 *
@@ -34,7 +35,7 @@
       integer CNMXRAD
       parameter (CNMXRAD = 200)
 *
-      character*8 P_rad_schm_s, P_rad_ftp_s
+      character*16 P_rad_schm_s, P_rad_ftp_s
       logical P_rad_fomic_L, P_rad_filter_L
       integer P_rad_knt, P_rad_datim(14),  P_rad_nivl(CNMXRAD+1)
       real    P_rad_qco2

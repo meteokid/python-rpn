@@ -39,6 +39,7 @@
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 * v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
 * v3_12 - Leduc A-M.        - Add arguments gzm and topo
+* v3_13 - Pellerin P.       - Add busvol in p_fillbus
 *
 *object
 *     See above id.
@@ -164,7 +165,7 @@
 *
       busvol = 0.
       j = jdo + p_offj
-      call p_fillbus ( busdyn, busper ,busent,
+      call p_fillbus ( busdyn, busper ,busent, busvol,
      $         F_up , F_vp , F_wp , F_tp , F_qp, F_trp,
      %         F_um , F_vm , F_tm , F_gzm, F_topo,F_trm, 
      %         F_lpsm,F_sig, j, F_step, LDIST_DIM, l_nk )
@@ -240,13 +241,30 @@
 !$omp critical
 
       do ii=1,Obus_top
-             offbo= (obus_offset(ii)-1)*p_ni*p_nj
+             offbo= (obus_offset(ii)-1)*l_ni*l_nj
              offbb= obus_addr(ii)
-         if (obus_bus_S(ii).eq.'P') then
+         if (obus_bus_S(ii).eq.'P'.and.obus_var_S(ii).eq.'LO') then
              do mult=1,obus_mult(ii)
                 do k=1,obus_shp(ii)
                 do i=1,p_ni
-                   F_obusval(offbo+(k*mult-1)*p_ni*p_nj + (jdo-1)*p_ni + i)=
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)=
+     $             busper(offbb+(k*mult-1)*p_ni + i - 1)
+                   if (F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi) .gt. Dcst_pi_8) 
+     $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)=
+     $            F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                (j-1)*l_ni + i+ p_offi)-2.0*Dcst_pi_8
+                enddo
+                enddo
+             enddo
+         else if (obus_bus_S(ii).eq.'P') then
+             do mult=1,obus_mult(ii)
+                do k=1,obus_shp(ii)
+                do i=1,p_ni
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
      $             busper(offbb+(k*mult-1)*p_ni + i - 1)
                 enddo
                 enddo
@@ -255,7 +273,8 @@
              do mult=1,obus_mult(ii)
                 do k=1,obus_shp(ii)
                 do i=1,p_ni
-                   F_obusval(offbo+(k*mult-1)*p_ni*p_nj + (jdo-1)*p_ni + i)=
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
      $             busdyn(offbb+(k*mult-1)*p_ni + i - 1)
                 enddo
                 enddo
@@ -264,7 +283,8 @@
              do mult=1,obus_mult(ii)
                 do k=1,obus_shp(ii)
                 do i=1,p_ni
-                   F_obusval(offbo+(k*mult-1)*p_ni*p_nj + (jdo-1)*p_ni + i)=
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
      $             busvol(offbb+(k*mult-1)*p_ni + i - 1)
                 enddo
                 enddo
@@ -273,7 +293,8 @@
              do mult=1,obus_mult(ii)
                 do k=1,obus_shp(ii)
                 do i=1,p_ni
-                   F_obusval(offbo+(k*mult-1)*p_ni*p_nj + (jdo-1)*p_ni + i)=
+                   F_obusval(offbo+(k*mult-1)*l_ni*l_nj +
+     $                                       (j-1)*l_ni + i+ p_offi)=
      $             busent(offbb+(k*mult-1)*p_ni + i - 1)
                 enddo
                 enddo

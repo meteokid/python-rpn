@@ -40,6 +40,7 @@
 #include "hblen.cdk"
 #include "p_pbl.cdk"
 #include "ptopo.cdk"
+#include "e_schm.cdk"
 *
 **
       integer  fnom
@@ -63,7 +64,8 @@
 *
       write(labfl) P_pbl_schsl_s, P_pbl_snoalb_L,
      $             Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
-     $             Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try
+     $             Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try,
+     $             Hblen_wfct_S,e_schm_offline_L
 *
       write(labfl) Out1_etik_s, Out1_date,
      $         Pil_runstrt_S, Pil_nesdt, Pil_ctebcs_L,

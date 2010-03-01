@@ -30,15 +30,17 @@
 *
 *implicit
 #include "glb_ld.cdk"
+#include "hblen.cdk"
 *
 **
-      integer i,j,k,nit,njt,il,ih,jl,jh
+      integer i,j,k,nit,njt,il,ih,jl,jh,un
       real*8 zero,one,pt5,lx,ly,p,pis2
       parameter (zero=0.d0, one=1.d0, pt5=0.5d0)
 *----------------------------------------------------------------------
 *100
 *     * ndavx et ndavy: nombre de points de grille dans la bande de 
 *     *                 pilotage (eponge) excluant les frontieres.
+*
 *
       nit  = l_ni-F_is-pil_e
       njt  = l_nj-F_js-pil_n
@@ -52,63 +54,71 @@
       ly   = dble(F_ndavy) - pt5
 *
       pis2 = acos(zero)
+      un   = 1
+*
+*     In off-line mode weight function = 0.0
+*
+      if (Hblen_wfct_S .eq. "const") then 
+         pis2=0.d0
+         un=0
+      endif
 *
       do k=1,Nk
 *west
-         do i=1+pil_w,il-1
+         do i=1+pil_w,il-un
          do j=jl,jh
             p       = (cos(pis2*(i-pil_w-1)/lx))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
 *east
-         do i=ih+1,nit
+         do i=ih+un,nit
          do j=jl,jh
             p       = (cos(pis2*(nit-i)/lx))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
 *south
-         do j=1+pil_s,jl-1
+         do j=1+pil_s,jl-un
          do i=il,ih
             p       = (cos(pis2*(j-pil_s-1)/ly))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
 *north
-         do j=jh+1,njt
+         do j=jh+un,njt
          do i=il,ih
             p       = (cos(pis2*(njt-j)/ly))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
 *south-west
-         do i=1+pil_w,il-1
-         do j=1+pil_s,jl-1
+         do i=1+pil_w,il-un
+         do j=1+pil_s,jl-un
             p = (cos(pis2*(one-min(one,
      $        sqrt(((lx-i+1+pil_w)/lx)**2+((ly-j+1+pil_s)/ly)**2)))))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
 *south-east
-         do i=ih+1,nit
-         do j=1+pil_s,jl-1
+         do i=ih+un,nit
+         do j=1+pil_s,jl-un
             p = (cos(pis2*(one-min(one,
      $           sqrt(((i-nit+lx)/lx)**2+((ly-j+1+pil_s)/ly)**2)))))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
 *north-west
-         do i=1+pil_w,il-1
-         do j=jh+1,njt
+         do i=1+pil_w,il-un
+         do j=jh+un,njt
             p = (cos(pis2*(one-min(one,
      $           sqrt(((lx-i+1+pil_w)/lx)**2+((j-njt+ly)/ly)**2)))))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)
          end do
          end do
 *north-east
-         do i=ih+1,nit
-         do j=jh+1,njt
+         do i=ih+un,nit
+         do j=jh+un,njt
             p = (cos(pis2*(one-min(one,
      $           sqrt(((i-nit+lx)/lx)**2+((j-njt+ly)/ly)**2)))))**2
             F_fn(i,j,k)= (one-p)*F_fn(i,j,k)+p*F_fd(i,j,k)

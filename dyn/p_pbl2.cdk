@@ -4,6 +4,7 @@
 *
 *revision
 * v3_02 - Dugas B.               - adapted from p_pbl.cdk
+* v3_12 - Bilodeau B.            - character*8 to character*16
 *_______________________________________________________________________
 *                                                                       |
 *  VARIABLES ASSOCIATED WITH PLANETARY BOUNDARY LAYER (second set)      |

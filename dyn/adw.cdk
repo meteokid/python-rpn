@@ -4,6 +4,10 @@
 *______________________________________________________________________
 *                                                                      |
 * GRIDS USED IN THE ADVECTION CONTEXT                                  |
+*                                                                      |
+* revision                                                             |
+* v3_12 - Gravel & Valin & Tanguay - Lagrange 3D                       | 
+*                                    and Optimized SETINT/TRILIN       |
 *______________________________________________________________________|
 *                                                                      |
 * 3 different grids are refered to throughout the advection process:   |
@@ -35,6 +39,12 @@
 *              |                  lation is requested are inside own   |
 *              |                  advection source grid                |
 * Adw_mono_L   | switch: .true. : advection of tracers is monotonic    |
+* Adw_lag3d_L  | switch: .true. : cubic Lagrange in 3D                 |
+* Adw_nosetint_L switch: .true. : no setint for TRILIN (done inside)   |
+* Adw_hor_L    | switch: .true. : update horizontal positions          |
+*              |                  for Optimized SETINT/TRILIN          |
+* Adw_ver_L    | switch: .true. : update vertical positions            |
+*              |                  for Optimized SETINT/TRILIN          |
 *----------------------------------------------------------------------|
 * GRIDS SIZE SPECIFICATIONS                                            |
 *----------------------------------------------------------------------|
@@ -105,7 +115,23 @@
 * Adw_diz_8    |  |                                                    |
 * Adw_dbz_8    |  |                                                    |
 * Adw_qzz_8    |  |                                                    |
-* Adw_qzi_8    | /                                                     |
+* Adw_qzi_8    |  |                                                    |
+* Adw_xbc_8    |  | Coefficients for linear interpolation in x,y and z |
+* Adw_ybc_8    |  |                                                    |
+* Adw_zbc_8    |  |                                                    |
+* Adw_xabcd_8  |  | Coefficients for Lagrange 3D in x,y and z          |
+* Adw_xbacd_8  |  |                                                    |
+* Adw_xcabd_8  |  |                                                    |
+* Adw_xdabc_8  |  |                                                    |
+* Adw_yabcd_8  |  |                                                    |
+* Adw_ybacd_8  |  |                                                    |
+* Adw_ycabd_8  |  |                                                    |
+* Adw_ydabc_8  |  |                                                    |
+* Adw_zabcd_8  |  |                                                    |
+* Adw_zbacd_8  |  |                                                    |
+* Adw_zcabd_8  |  |                                                    |
+* Adw_zdabc_8  | /                                                     |
+* Adw_Fn_I(I2) | Localisation indices for Optimized SETINT/TRILIN      |
 *______________________________________________________________________
 *                                                                      |
 *  VARIABLES ASSOCIATED WITH CFL COMPUTATION FOR LAM (ADW_CFL_LAM)     |
@@ -137,7 +163,7 @@
 #endif
 *
       logical            Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L,
-     %                   Adw_mono_L
+     %                   Adw_mono_L,Adw_lag3d_L,Adw_nosetint_L,Adw_hor_L,Adw_ver_L
 *
       integer            Adw_halox, Adw_haloy,
      %                   Adw_nic, Adw_nit, Adw_njc, Adw_njt,
@@ -151,7 +177,7 @@
 *
       MARK_COMMON_BEG (adw_l)
       common / adw_l  /  Adw_nkbz_L, Adw_exdg_L, Adw_ckbd_L, Adw_trunc_traj_L,
-     %                   Adw_mono_L
+     %                   Adw_mono_L,Adw_lag3d_L,Adw_nosetint_L,Adw_hor_L,Adw_ver_L
       MARK_COMMON_END (adw_l)
 *
       MARK_COMMON_BEG (adw_ia)
@@ -184,6 +210,9 @@
       DCL_DYNVAR(Adw,    lcy,    integer, (*))
       DCL_DYNVAR(Adw,    lcz,    integer, (*))
 *
+      DCL_DYNVAR(Adw,  fn_I ,    integer, (*))
+      DCL_DYNVAR(Adw,  fn_I2,    integer, (*))
+*
       DCL_DYNVAR(Adw,  bsx_8,    real*8 , (*))
       DCL_DYNVAR(Adw,  dlx_8,    real*8 , (*))
       DCL_DYNVAR(Adw,  dix_8,    real*8 , (*))
@@ -200,6 +229,23 @@
 *
       DCL_DYNVAR(Adw,  qzz_8,    real*8 , (*))
       DCL_DYNVAR(Adw,  qzi_8,    real*8 , (*))
+*
+      DCL_DYNVAR(Adw,  xbc_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,  ybc_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,  zbc_8,    real*8 , (*))
+*
+      DCL_DYNVAR(Adw,xabcd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,xbacd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,xcabd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,xdabc_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,yabcd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,ybacd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,ycabd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,ydabc_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,zabcd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,zbacd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,zcabd_8,    real*8 , (*))
+      DCL_DYNVAR(Adw,zdabc_8,    real*8 , (*))
 *
       DCL_DYNVAR(Adw,  capx1,    real   , (*))
       DCL_DYNVAR(Adw,  capy1,    real   , (*))

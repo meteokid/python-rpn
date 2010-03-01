@@ -31,6 +31,7 @@
 * v3_02 - Tanguay M.        - Broadcast V4dz_degree,V4dzge_degree,V4dzga_degree
 * v3_03 - Desgagne M.       - replace stop by stopmpi
 * v3_11 - Gravel S.         - broadcast common theo and vtopo
+* v3_20 - Gravel S.         - broadcast common vrtd
 *
 *object
 *
@@ -76,6 +77,7 @@
 #include "theo.cdk"
 #include "bubble.cdk"
 #include "vtopo.cdk"
+#include "vrtd.cdk"
 *
       integer err
 *------------------------------------------------------------------
@@ -93,6 +95,7 @@
       COMMON_BROADCAST(Pill)
       COMMON_BROADCAST(Pili)
       COMMON_BROADCAST(Hblen_i)
+      COMMON_BROADCAST(Hblen_s)
       COMMON_BROADCAST(Hgc)
       COMMON_BROADCAST(Hgc_s)
       COMMON_BROADCAST(Out1)
@@ -153,6 +156,8 @@
       COMMON_BROADCAST(bubble_r)
       COMMON_BROADCAST(vtopo_l)
       COMMON_BROADCAST(vtopo_i)
+      COMMON_BROADCAST(vrtd_l)
+      COMMON_BROADCAST(vrtd_r)
       COMMON_BROADCAST(Glb_pil_i)
 *
       call RPN_COMM_bcast(Ptopo_nblocx, 1,"MPI_INTEGER",0,"grid",err )

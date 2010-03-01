@@ -1,5 +1,9 @@
+      character*16 Hblen_wfct_S
       integer Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
      $        Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try
+      MARK_COMMON_BEG (Hblen_s)
+      common /Hblen_s/ Hblen_wfct_S
+      MARK_COMMON_END (Hblen_s)
       MARK_COMMON_BEG (Hblen_i)
       common /Hblen_i/ Hblen_momentx,Hblen_momenty,Hblen_tx,Hblen_ty,
      $                 Hblen_massx,Hblen_massy,Hblen_trx,Hblen_try

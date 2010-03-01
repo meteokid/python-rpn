@@ -16,10 +16,12 @@
 #include "e_topo.cdk"
 #include "pilot.cdk"
 #include "out1.cdk"
+#include "hblen.cdk"
+#include "e_schm.cdk"
 *
 **
-      integer  fstfrm,newdate
-      external fstfrm,newdate
+      integer  fstfrm,newdate,fclos
+      external fstfrm,newdate,fclos
 *
       character*16 date1,date2
       integer err,yy,dd,dum
@@ -51,15 +53,21 @@
          call e_bmfsplitxy2 (topov,niv ,njv ,'TOPV',1,1,pni ,0,0,0)
 *     
          call e_specanal
-*     
-         call e_intthm 
-*     
-         call e_intwind 
+*
+         if (e_schm_offline_L) then
+            write (6,130)
+            write (6,101) date1
+         endif
+*
+            call e_intthm
+*
+            call e_intwind 
 *     
          call bmf_splitwrall ('AHAV',2,1,1,Bmf_time1,Bmf_time2, 
      $                                       0,0,40,0,anal_hav)
          call bmf_splitend
          err = fstfrm ( e_fu_anal )
+         err = fclos  ( e_fu_anal )
 *
          if (Pil_ctebcs_L) goto 999
          dayfrac = dble(Pil_nesdt) / sec_in_day
@@ -69,6 +77,10 @@
       end do
 *     
  105  format (/80('#'),/,1X,'PROCESSING DATASET VALID: ',a16/80('#')/)
+*
+ 101  format ('|',2x,'   ATMOSPHERIC FIELDS.    VALID FOR:',1x,a16,1x,'|')
+ 130  format ('|',9('-'),'+',5('-'),'+',8('-'),'+',8('-'),'+',5('-'),
+     $        '+',5('-'),'+',10('-'),'|')
 *
 *---------------------------------------------------------------------
  999  return

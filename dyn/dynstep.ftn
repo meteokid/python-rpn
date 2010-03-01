@@ -18,6 +18,8 @@
 * v3_00 - Desgagne & Lee    - Lam configuration
 * v3_03 - Tanguay M.        - Adjoint Lam configuration
 * v3_11 - Gravel S.         - provide for variable topography
+* v3_13 - Pellerin P.       - schm_offline_l: allow to run 
+*                             without the dynamical kernel
 *
 *object
 *
@@ -84,6 +86,8 @@
 *
       if ( G_lam .and. .not.Pil_ctebcs_L ) call nest_intt (done_intt_L) 
 *
+      if (.not.schm_offline_l) then
+*
       if ( Orh_crank_L ) then
 *
 *C          DUMMY TIME STEPS AND WIND INTERPOLATION
@@ -121,6 +125,9 @@
 *        ------------------------------------------------------------
 *
       call tstpdyn ( Schm_itraj )
+*
+      endif
+*
       if (G_lam) call glb_bound ()
 *
 *         ------------------------------------------------------------

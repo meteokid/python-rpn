@@ -100,7 +100,7 @@
                write(Lun_out,5000) pnerror
           endif
 
-          if (Out3_unit_s .eq. ''.or. Out3_unit_s .eq. 'H') then
+          if (Out3_unit_s .eq. ' '.or. Out3_unit_s .eq. 'H') then
               min_seconds = 3600.0
               unit_S = 'HOURS'
           endif
@@ -250,7 +250,8 @@
       COMMON_BROADCAST(Out3_i)
 
       call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy,
-     $     Ptopo_myblocx,Ptopo_myblocy, 0,0,l_ni,l_nj,Ptopo_blocme,
+     $     Ptopo_myblocx,Ptopo_myblocy, Ptopo_myrow, Ptopo_mycol,
+     $     0,0,l_ni,l_nj,Ptopo_blocme,
      $     Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S,
      $     int(Cstv_dt_8),Out1_date,Out1_etik_S,Out3_ndigits,Pil_runstrt_S,
      $     min(Step_total, Lctl_step+Step_rsti) )
@@ -272,10 +273,10 @@
 *     p_bper_out=total number of output variables found in busper
 *     p_bdyn_out=total number of output variables found in busdyn
 *     p_bvol_out=total number of output variables found in busvol
-      print *,'P_bent_top=',P_bent_top
-      print *,'P_bper_top=',P_bper_top
-      print *,'P_bdyn_top=',P_bdyn_top
-      print *,'P_bvol_top=',P_bvol_top
+c     print *,'P_bent_top=',P_bent_top
+c     print *,'P_bper_top=',P_bper_top
+c     print *,'P_bdyn_top=',P_bdyn_top
+c     print *,'P_bvol_top=',P_bvol_top
       k = 0
       do i = 1, P_bent_top
          do j=1,cnt

@@ -254,7 +254,8 @@
      $                   Grid_y0(outd_grid(kk)),Grid_y1(outd_grid(kk)),
      $                   periodx_L,
      $                   Grid_ig1(outd_grid(kk)),Grid_ig2(outd_grid(kk)),
-     $                   Grid_stride(outd_grid(kk)),Geomn_longs,Geomn_latgs)
+     $                   Grid_stride(outd_grid(kk)),
+     $                   Geomn_longs,Geomn_latgs)
                levset = Outd_lev(kk)
                nk_o   = Level_max(levset)
                allocate (ind_o(nk_o+1))

@@ -27,6 +27,7 @@
 #include "e_grids.cdk"
 #include "e_cdate.cdk"
 #include "hgc.cdk"
+#include "e_anal.cdk"
 *
 * NOTES: will return e_rdhint3= -1 if nomvar_S is not found or if
 *                                 a problem occurs
@@ -82,6 +83,8 @@
       err = fstprm (key, DTE, DET, IPAS, nic, njc, nkc, BIT, DTY, P1, 
      $              P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA, 
      $              LNG, DLF, UBC, EX1, EX2, EX3)
+*
+      ipasa=ipas
 *
       if ( grd .ne. 'A' .and. grd .ne. 'B' .and.
      %     grd .ne. 'G' .and. grd .ne. 'Z' ) then

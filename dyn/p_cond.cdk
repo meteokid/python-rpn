@@ -59,15 +59,19 @@
 *                    |                                                 |
 * P_cond_kfcpcp_s    | conservation of precipitation in kfcp           |
 *                    |                                                 |
+* P_cond_kticefrac_L | KTICEFRAC=true, if want to use the calculation  |
+*                    |           of ice fraction                       |
+*                    |                                                 |
 * P_cond_kkl         | sedimentation threshold in mixphase             |
 *                    |                                                 |
 * P_cond_pcptype_s   | PCPTYPE: Precipitation type diagnostic          |
 *----------------------------------------------------------------------
 #endif
 
-      character*8 P_cond_conv_s , P_cond_stcon_s, P_cond_shlct_s(2),
+      character*16 P_cond_conv_s , P_cond_stcon_s, P_cond_shlct_s(2),
      $            p_cond_kfcpcp_s, P_cond_pcptype_s
-      logical P_cond_satu_L   ,P_cond_ilwc_L, P_cond_kfcmom_L
+      logical P_cond_satu_L   ,P_cond_ilwc_L, P_cond_kfcmom_L,
+     $        P_cond_kticefrac_L
       integer P_cond_filtend, P_cond_xofset,
      $        P_cond_xblnd  , P_cond_yofset, P_cond_yblnd
       real P_cond_hc, P_cond_hf, P_cond_hm, P_cond_filco, P_cond_dzsedi,
@@ -81,7 +85,8 @@
       MARK_COMMON_END (pcond_c)
 
       MARK_COMMON_BEG (pcond_l)
-      common /pcond_l/ P_cond_satu_L, P_cond_ilwc_L, P_cond_kfcmom_L
+      common /pcond_l/ P_cond_satu_L, P_cond_ilwc_L, P_cond_kfcmom_L,
+     $                 P_cond_kticefrac_L
       MARK_COMMON_END (pcond_l)
 
       MARK_COMMON_BEG (pcond_i)

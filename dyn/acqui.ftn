@@ -34,6 +34,7 @@
 #include "ind.cdk"
 #include "acq.cdk"
 #include "vtopo.cdk"
+#include "schm.cdk"
 *modules
       integer  bmf_gobe,bmf_get
       external bmf_gobe,bmf_get
@@ -154,6 +155,7 @@
       error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1.,
      $                                   1,l_ni,1,l_nj,1,Acqi_nktmp)
 *
+      if (.not.schm_offline_l) then
       if (.not.Acql_horzint .or. Acql_prsanl) then
          nerr = nerr + 1
          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
@@ -162,6 +164,7 @@
          nerr = nerr + 1
          error(nerr) = bmf_get('GZ  ',bmf_time1,bmf_time2,-1,
      $                 gz_temp(1,1,Acqi_vterplv),-1.,1,l_ni,1,l_nj,1,1)
+      endif
       endif
 *
       if (Acql_prsanl) then
@@ -270,6 +273,7 @@
            enddo
          endif
 *
+         if (.not.schm_offline_l) then
          if (Acql_prsanl) then
             nerr = nerr + 1
             error(nerr) = bmf_get('GZU ',bmf_time1,bmf_time2,-1,
@@ -317,9 +321,12 @@
                  topv_temp(i,j)  = gzv_temp(i,j,Acqi_vterplv)
               enddo
               enddo
-         endif
+           endif
+
+        endif
 
       endif
+
 	
 *     Check for error in BMF_GETS above...
       err = 0
@@ -332,7 +339,7 @@
 *
       if (error(1).ne.0) call gem_stop ('acqui',-1)
 *
-      if ((G_lam).and.(.not.Acql_prsanl)) then
+      if ((G_lam).and.(.not.Acql_prsanl).and.(.not.schm_offline_l)) then
 *
       do j=1,pil_s
       do i=1,l_ni

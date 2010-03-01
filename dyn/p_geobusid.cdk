@@ -15,8 +15,8 @@
      $        icedp, wveg, tice, isoil, wsnow,
 *
 * for CLASS
-     $        tveg,vegro,iveg,tsno,
+     $        tveg,iveg,tsno,
      $        gc,laimax,laimin,vegma,
-     $        alnir,color,drain
-     $        
+     $        drain,snoden,veggro,zpond,tpond,tbase,snoma
+
 *

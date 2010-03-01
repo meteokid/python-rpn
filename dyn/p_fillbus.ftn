@@ -2,7 +2,7 @@
 *
 #include <model_macros_f.h>
 *
-      subroutine p_fillbus ( F_busdyn, F_busper, F_busent,
+      subroutine p_fillbus ( F_busdyn, F_busper, F_busent, F_busvol,
      $                       F_up, F_vp, F_wp, F_tp , F_qp, F_trp, 
      $                       F_um, F_vm, F_tm, F_gzm, F_topo,F_trm, 
      $                       F_lpsm,F_sig,F_jdo,F_step,DIST_DIM,Nk)
@@ -11,7 +11,7 @@
 *
       integer F_step,F_jdo, DIST_DIM, Nk
 *
-      real F_busdyn(*),F_busper(*),F_busent(*)
+      real F_busdyn(*),F_busper(*),F_busent(*), F_busvol(*)
       real F_up (DIST_SHAPE,Nk), F_vp (DIST_SHAPE,Nk),
      $     F_wp (DIST_SHAPE,Nk), F_tp (DIST_SHAPE,Nk), 
      $     F_qp (DIST_SHAPE,Nk), F_trp(DIST_SHAPE,Nk,*),
@@ -33,6 +33,7 @@
 * v3_02 - Plante A.         - Further clean up and introduction of
 *                             water loading via virtual temperature.
 * v3_12 - Leduc A-M         - Add arguments gzm and topo
+* v3_13 - Pellerin P.       - To allow the off-line mode
 *
 *object
 *	Fill the slice workspace variable for the physics.
@@ -80,6 +81,9 @@
 *C    3D variables: extract row F_jdo 
 *
       con = ( 1.0/cos(geomg_y_8(F_jdo))) * Dcst_rayt_8
+*
+      if (.not.Schm_offline_L) then
+*
       do k= 1,Nk
       do i= 1, p_ni
          indx = (k-1)*p_ni+i-1
@@ -116,6 +120,69 @@
          end do
          endif
       end do
+*
+*     Off-line mode
+      else
+         do k= 1,Nk
+            do i= 1, p_ni
+               indx = (k-1)*p_ni+i-1
+               ii = i + p_offi
+               F_busdyn(uplus +indx) = F_up (ii,F_jdo,k) * con
+               F_busdyn(vplus +indx) = F_vp (ii,F_jdo,k) * con
+               tpm(indx+1,1)         = F_tp (ii,F_jdo,k)
+               F_busdyn(tplus +indx) = F_tp (ii,F_jdo,k)
+               F_busdyn(umoins+indx) = F_up (ii,F_jdo,k) * con
+               F_busdyn(vmoins+indx) = F_vp (ii,F_jdo,k) * con
+               tpm(indx+1,2)         = F_tp (ii,F_jdo,k)
+               F_busdyn(tmoins+indx) = F_tp (ii,F_jdo,k)
+               F_busdyn(gzmoins6+indx)= F_gzm(ii,F_jdo,k) - F_topo(ii,F_jdo)
+               F_busdyn(omegap+indx) = F_wp (ii,F_jdo,k)
+               F_busdyn(sigm  +indx) = F_sig(ii,F_jdo,k)
+            end do
+         end do
+
+         do n=1,phyt_ntr
+            if (phyt_name_S(n).eq.'FI'.or.phyt_name_S(n).eq.'AD') then
+               do i= 1, p_ni
+                  indx = i-1
+                  ii = i + p_offi
+                  F_busper(fdsi+indx)      = F_trp(ii,F_jdo,1,n)
+               end do
+               
+            else if (phyt_name_S(n).eq.'P0') then
+               do i= 1, p_ni
+                  indx = i-1
+                  ii = i + p_offi
+                  F_busdyn(pplus  + indx)  = F_trp(ii,F_jdo,1,n)
+                  F_busdyn(pmoins + indx)  = F_trp(ii,F_jdo,1,n)
+               end do
+            else if (phyt_name_S(n).eq.'FB'.or.phyt_name_S(n).eq.'N4') then
+               do i= 1, p_ni
+                  indx = i-1
+                  ii = i + p_offi
+                  F_busper(FLUSOLIS  + indx)= F_trp(ii,F_jdo,1,n)
+c                  F_busvol(FLUSOLIS  + indx)= F_trp(ii,F_jdo,1,n)
+               end do
+            else if (phyt_name_S(n).eq.'RT'.or.phyt_name_S(n).eq.'PR') then
+               do i= 1, p_ni
+                  indx = i-1
+                  ii = i + p_offi
+                  F_busper(TSS  + indx)     = F_trp(ii,F_jdo,1,n)
+               end do
+            else if (phyt_name_S(n).eq.'HU') then
+               do k= 1,Nk
+               do i= 1, p_ni
+                  indx = (k-1)*p_ni+i-1
+                  ii = i + p_offi
+                  F_busdyn(phyt_ind(1,n)+indx) = max(0., F_trp(ii,F_jdo,k,n))
+                  F_busdyn(phyt_ind(2,n)+indx) = max(0., F_trp(ii,F_jdo,k,n))
+               end do
+               end do
+            endif
+         end do
+*
+      endif
+
 *
 *C    Surface fields: extract row F_jdo
 *

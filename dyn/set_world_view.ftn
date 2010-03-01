@@ -41,7 +41,6 @@
 #include "pres.cdk"
 #include "grd.cdk"
 #include "dimout.cdk"
-#include "slab.cdk"
 #include "cstv.cdk"
 #include "level.cdk"
 #include "hblen.cdk"
@@ -49,10 +48,10 @@
 *
 *modules
       logical  check_parti
-      integer  slabopt, longueur, hybref_to_ig, set_dcst8, gnthread,
+      integer  longueur, hybref_to_ig, set_dcst8, gnthread,
      %         RPN_COMM_bloc
       external set_world_view1,set_dcst8,check_parti,
-     %         slabopt,longueur,hybref_to_ig,gnthread,
+     %         longueur,hybref_to_ig,gnthread,
      %         RPN_COMM_bloc
 **
       integer ipcode,ipmode,ierr,mindimx,mindimy,
@@ -112,18 +111,6 @@ c     These variables are for OpenMp compilation
       if (Lun_out.gt.0) call gemtim (Lun_out)
 #endif
 *
-*     Setting up output of slabs 
-*
-      Lun_outgem_s='./'
-      Slab_send_s = 'SLB9'
-      call convip(Slab_ip1,Pres_ptop,2,+1,' ',.false.)
-      ierr = hybref_to_ig(Slab_ig1,Slab_ig2,Slab_ig3,Slab_ig4,
-     %                                   Grd_rcoef,Pres_pref,x1,x2)
-      if (Lun_out.gt.0) then
-          write (Lun_out,*) 'Slab_ip1=',Slab_ip1
-          write (Lun_out,*) 'Slab_ig1=',Slab_ig1,'Slab_ig2=',Slab_ig2,
-     %                      'Slab_ig3=',Slab_ig3,'Slab_ig4=',Slab_ig4
-      endif
 *
 *     Initializing physical constants
 *
@@ -180,6 +167,24 @@ c      call system (prejob_S)
          mindimy = G_nj/2 - (1-mod(G_nj,2))
          maxblenx= max ( Hblen_momentx,Hblen_tx,Hblen_massx,Hblen_trx )
          maxbleny= max ( Hblen_momenty,Hblen_ty,Hblen_massy,Hblen_try )
+*
+         if (Hblen_wfct_S .eq. "const") then
+            maxblenx=mindimx-(max(Glb_pil_w,Glb_pil_e))
+            maxbleny=mindimy-(max(Glb_pil_s,Glb_pil_n))
+            Hblen_momentx=maxblenx
+            Hblen_momenty=maxbleny
+            Hblen_tx=maxblenx
+            Hblen_ty=maxbleny
+            Hblen_massx=maxblenx
+            Hblen_massy=maxbleny
+            Hblen_trx=maxblenx
+            Hblen_try=maxbleny
+            print *,'*****************************************'
+            print *,'Constant Function applied for Pilot Zones'
+            print *,'Values maxblenx, maxbleny=',maxblenx, maxbleny
+            print *,'*****************************************'
+         endif
+*
          if ( (max(Glb_pil_w,Glb_pil_e)+maxblenx).gt.mindimx .or.
      $        (max(Glb_pil_s,Glb_pil_n)+maxbleny).gt.mindimy ) 
      $        call gem_stop

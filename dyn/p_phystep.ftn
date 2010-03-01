@@ -59,7 +59,7 @@
 *     ---------------------------------------------------------------
 *
       call iniobus(obussiz)
-      allocate(obusval(p_ni*p_nj,obussiz))
+      allocate(obusval(l_ni*l_nj,obussiz))
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       allocate (up(dim),vp(dim),wp(dim),tp(dim),qp(dim),
      $          um(dim),vm(dim),tm(dim),gzm(dim),
@@ -108,7 +108,7 @@
 !$omp enddo
 !$omp end parallel
 *
-       call out_phy(obusval,p_ni,p_nj,F_stepno)
+       call out_phy(obusval,l_ni,l_nj,F_stepno)
        deallocate (obusval)
       if (P_pbl_dumpbus.gt.0) then
         if (mod( F_stepno,P_pbl_dumpbus ).eq.0)

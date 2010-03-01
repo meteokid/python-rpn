@@ -33,6 +33,9 @@
 * v3_10 - Lee V.             - check read error in some namelists, added stopmpi
 * v3_11 - Desgagne M.        - add P_pbl_impflx_L
 * v3_12 - Plante A.          - add P_cond_pcptype_s
+* v3_11 - Leduc A-M.         - add P_cond_kticefrac_L
+* v3_12 - Leduc/Bilodeau     - add P_pbl_z0tlat
+* v3_13 - Pellerin P.        - off-line mode
 *
 *object
 *       See above id
@@ -54,6 +57,7 @@
 #include "p_nml.cdk"
 #include "ptopo.cdk"
 #include "p_nml2.cdk"
+#include "schm.cdk"
 *
 *modules
       character*256 fln1_S,fln2_S
@@ -98,7 +102,6 @@
 *
       P_str_strato_L = .false.
 *
-      P_pbl_z0tcst_L = .true.
       P_pbl_drag_L   = .false.
       P_pbl_ocean_L  = .false.
       P_pbl_evap_L   = .false.
@@ -124,6 +127,8 @@
       P_pbl_dumpbus  = 0
       P_pbl_as       = 12.0
       P_pbl_beta     =  1.0
+      P_pbl_z0tlat(1)=  0.0
+      P_pbl_z0tlat(2)=  0.0
 
       P_pbl_albkg_L  = .false. 
       P_pbl_agreg_L  = .false.
@@ -166,6 +171,7 @@
       P_cond_kfctimec= 3600.
       P_cond_kfctimea= 3600.
       P_cond_kfcpcp_s= 'ORI'
+      P_cond_kticefrac_L=.true.
       P_cond_kkl     = 0.1
       P_cond_pcptype_s='NIL'
 *
@@ -246,6 +252,7 @@
          P_cond2_kfcdet   = P_cond_kfcdet
          P_cond2_kfctimec = P_cond_kfctimec
          P_cond2_kfctimea = P_cond_kfctimea
+         P_cond2_kticefrac_L= P_cond_kticefrac_L
 *
          P_pbl2_bndlr_S   = P_pbl_bndlr_S
          P_pbl2_schsl_S   = P_pbl_schsl_S
@@ -259,6 +266,7 @@
          P_pbl2_iceme_L   = P_pbl_iceme_L
          P_pbl2_agreg_L   = P_pbl_agreg_L
 *
+*
          if (lun_out.gt.0) then
             status_nml2 = -1
             rewind ( Lun_in )
@@ -270,6 +278,41 @@
          endif
 *
       endif
+*
+*     Options used for the Off-line mode (MEC)
+*
+         if (Schm_offline_L) then
+*
+            P_pbl_bndlr_s    = 'clef' 
+            P_pbl_mix_s      = 'boujo'
+            P_pbl_drag_L    = .true.     
+            P_pbl_ocean_L    = .true. 
+            P_pbl_evap_L    = .true.      
+            P_pbl_dbgvv_L    = .false.
+            P_pbl_snwmlt_L  = .false.    
+            P_pbl_stomat_L   = .false.
+            P_pbl_typsol_L  = .false.    
+            P_pbl_agreg_L    = .true. 
+            P_pbl_cortm_L   = .true.     
+            P_pbl_corts_L    = .false.
+            P_pbl_drylp_L   = .true.     
+            P_pbl_monta_L    = .true. 
+            P_pbl_albkg_L   = .false.    
+            P_pbl_iceme_L    = .true. 
+            P_pbl_nslof     = 0          
+            P_gwd_s          = 'nil'
+            P_cond_conv_s    = 'nil'     
+            P_cond_stcon_s   = 'nil'  
+            P_cond_ilwc_L    = .true.     
+            P_cond_satu_L    = .true. 
+            P_cond_shlct_s (1)= 'nil'
+            P_cond_shlct_s (2)='nil'
+            P_rad_ftp_s      = 'std'  
+            P_rad_fomic_L    = .false.  
+            P_rad_schm_s     = 'nil'
+*     
+         endif
+
 *
       call RPN_COMM_bcast (status_nml2,1,"MPI_INTEGER",0,"grid",err)
 *

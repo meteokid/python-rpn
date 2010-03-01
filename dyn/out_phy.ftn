@@ -2,13 +2,13 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 ***s/r out_phy
 #include <model_macros_f.h>
 *
-      subroutine out_phy ( bus_o,doni,donj,stepno )
+      subroutine out_phy ( bus_o,F_ni,F_nj,stepno )
       use v4d_prof, only: Pr_nsim4d
 
       implicit none
 *
-      integer fni,fnj,doni,donj,ni,nj,stepno
-      real bus_o(doni*donj,*)
+      integer F_ni,F_nj,ni,nj,stepno
+      real bus_o(F_ni*F_nj,*)
 *
 *AUTHOR     Michel Desgagne                July 2004 (MC2)
 *
@@ -25,8 +25,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 *   fni         I    I    S    folded dimension along X
 *   fnj         I    I    S    folded dimension along Y
-*   doni        I    I    S    computational hor. dimension along X
-*   donj        I    I    S    computational hor. dimension along Y
+*   l_ni        I    I    S    computational hor. dimension along X
+*   l_nj        I    I    S    computational hor. dimension along Y
 *   ni          I    I    S    regular dimension along X
 *   nj          I    I    S    regular dimension along Y
 *   stepno      I    I    S    step number
@@ -53,9 +53,10 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *
 **
       character*4 ext_S
-      integer i,j,k,mult,nk_o,levset,ii,jj,kk,ip3
+      integer i,j,k,mult,nk_o,levset,ii,jj,kk,ip3,ig1
       integer, dimension (:), allocatable :: ind_o
       integer irff(100)
+      integer grille_x0,grille_x1,grille_y0,grille_y1
       logical periodx_L
       real rff(100)
 *----------------------------------------------------------------------
@@ -87,13 +88,17 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
          if ( Outp_dostep_L(kk) )then
          periodx_L=.false.
          if (.not.G_lam .and. (Grid_x1(Outp_grid(kk))-Grid_x0(Outp_grid(kk))+1).eq. G_ni ) periodx_L= .true.
-            call out_sgrid(max(Grid_x0(outp_grid(kk)),1+Lam_pil_w-p_nmp),
-     $                   min(Grid_x1(outp_grid(kk)),G_ni-Lam_pil_e+p_nmp),
-     $                   max(Grid_y0(outp_grid(kk)),1+Lam_pil_s-p_nmp),
-     $                   min(Grid_y1(outp_grid(kk)),G_nj-Lam_pil_n+p_nmp),
+         ig1 = Grid_ig1(outp_grid(kk))
+         if (G_lam) ig1=Grid_ig1(outp_grid(kk))+100
+            grille_x0 = max(1,Grid_x0(outp_grid(kk))) + Lam_pil_w - p_nmp
+            grille_x1 = min(Grid_x1(outp_grid(kk)),G_ni) - Lam_pil_e + p_nmp
+            grille_y0 = max(1,Grid_y0(outp_grid(kk))) + Lam_pil_s - p_nmp
+            grille_y1 = min(Grid_y1(outp_grid(kk)),G_nj) - Lam_pil_n + p_nmp
+            call out_sgrid(grille_x0,grille_x1,grille_y0,grille_y1,
      $                   periodx_L,
-     $                   Grid_ig1(outp_grid(kk)),Grid_ig2(outp_grid(kk)),
-     $                   Grid_stride(outp_grid(kk)),Geomn_longs,Geomn_latgs)
+     $                   ig1,Grid_ig2(outp_grid(kk)),
+     $                   Grid_stride(outp_grid(kk)),
+     $                   Geomn_longs, Geomn_latgs          )
          levset= Outp_lev(kk)
          nk_o =  Level_max(levset)
          allocate (ind_o(nk_o+1))
@@ -109,8 +114,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 *                   3D field
                        if (obus_stag(j).eq.0) then
                            call ecris_fst2(bus_o(1,obus_offset(j)),
-     $                       1,doni,1,donj,Geomg_hyb,obus_var_s(j),
-     $                       1.0,0.0,Out_kind,G_nk,ind_o,nk_o,
+     $                       1,l_ni,1,l_nj,Geomg_hyb,obus_var_s(j),
+     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk,ind_o,nk_o,
      $                       Outp_nbit(ii,kk) )
                        else
 *                   3D field staggerred
@@ -121,8 +126,8 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
                               rff(i)=Geomg_hyb(i)
                            enddo
                            call ecris_fst2(bus_o(1,obus_offset(j)),
-     $                       1,doni,1,donj,rff,obus_var_s(j),
-     $                       1.0,0.0,Out_kind,G_nk,ind_o,nk_o,
+     $                       1,l_ni,1,l_nj,rff,obus_var_s(j),
+     $                       Obus_mul(j),Obus_add(j),Out_kind,G_nk,ind_o,nk_o,
      $                       Outp_nbit(ii,kk) )
                        endif
                     else
@@ -133,13 +138,13 @@ copyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
                               irff(mult)=mult
                           enddo
                           call ecris_fst2(bus_o(1,obus_offset(j)),
-     $                    1,doni,1,donj,rff,obus_var_s(j),
-     $                    1.0,0.0,3,obus_mult(j),irff,obus_mult(j),
-     $                    Outp_nbit(ii,kk) )
+     $                    1,l_ni,1,l_nj,rff,obus_var_s(j),
+     $                    Obus_mul(j),Obus_add(j),3,obus_mult(j),
+     $                    irff,obus_mult(j), Outp_nbit(ii,kk) )
                        else
 *                      2d field
                           call ecris_fst2(bus_o(1,obus_offset(j)),
-     $                             1,doni,1,donj,0.0,obus_var_s(j),
+     $                             1,l_ni,1,l_nj,0.0,obus_var_s(j),
      $                             Obus_mul(j),Obus_add(j), -1,1,1,1, 
      $                             Outp_nbit(ii,kk) )
                        endif

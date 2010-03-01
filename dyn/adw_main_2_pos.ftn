@@ -18,6 +18,7 @@
 * v3_00 - Desgagne & Lee - Lam configuration
 * v3_02 - Lee V.         - revert adw_exch_1 for GLB only, added adw_ckbd_lam
 * v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+* v3_12 - Valin & Tanguay - Optimized SETINT/TRILIN 
 *
 *language
 *     fortran 77
@@ -62,11 +63,10 @@
 *
       integer, dimension(l_ni*l_nj*l_nk) :: n1
       real,    dimension(l_ni*l_nj*l_nk) :: capx1,capy1,capz1
-      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1,wrk_yth
+      real,    dimension(l_ni*l_nj*l_nk) :: wrkx1,wrky1,wrkz1,wrkc1
       integer, dimension(:), allocatable :: n2
       real,    dimension(:), allocatable :: capx2,capy2,capz2
       real,    dimension(:), allocatable :: xpos2,ypos2,zpos2
-*
 *
       real dummy, dth
       real*8 r2pi_8,two
@@ -74,7 +74,6 @@
 
       integer i0,in,j0,jn
 *
-C     call tmg_start ( 30, 'adw_main_2_pos' )
       if (Lun_debug_L) write (Lun_out,1000)
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *l_nk
@@ -121,17 +120,13 @@ C     call tmg_start ( 30, 'adw_main_2_pos' )
                      doh = .false.
       if (it .eq. 1) doh = .true.
 *
-      do n = 1,nijk
-      wrk_yth(n) = yth(n)
-      enddo
-*
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
+          call adw_ckbd_lam ( xth, yth, zth, i0, in, j0, jn )
 *
       else
 *
-          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth )
+          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,yth,zth )
 *
           if ( Adw_fro_a .gt. 0 .and. V4dg_conf.ne.0.0 )
      %         call gem_stop('adw_main_2_pos',-1) 
@@ -150,12 +145,25 @@ C     call tmg_start ( 30, 'adw_main_2_pos' )
 *
       endif
 *
+      if( .not. Adw_nosetint_L ) then
+*
       call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
-     %                  dummy, capz1, dummy, xth,   wrk_yth, zth,
+     %                  dummy, capz1, dummy, xth, yth, zth,
      %                  doh, .true., .true.,nijk,i0,in,j0,jn,l_nk)
 *
       call adw_trilin (wrkx1,F_u,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
       call adw_trilin (wrky1,F_v,1.0,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
+*
+      else
+*
+      Adw_hor_L = doh 
+      Adw_ver_L = .true. 
+      call adw_trilin_turbo (wrkx1,F_u,1.0,xth,yth,zth,capz1,
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+      call adw_trilin_turbo (wrky1,F_v,1.0,xth,yth,zth,capz1,
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+*
+      endif
 *
       if (.not.G_lam) then
 
@@ -172,15 +180,16 @@ C     call tmg_start ( 30, 'adw_main_2_pos' )
      %                     Adw_fro_a,1,Adw_fro_a,1,1,1)
               call adw_trilin ( ypos2, F_v, 1.0, n2, capx2, capy2, capz2,
      %                     Adw_fro_a,1,Adw_fro_a,1,1,1)
+*
          endif
 *
-         call adw_exch_2 ( wrkz1, wrk_yth, dummy,
+         call adw_exch_2 ( wrkz1, yth, dummy,
      %                  xpos2, ypos2, dummy,
      %                  Adw_for_n, Adw_for_s, Adw_for_a,
      %                  Adw_fro_n, Adw_fro_s, Adw_fro_a, 2)
 *
          if ( Adw_for_a .gt. 0 )
-     %         call adw_exch_3 ( wrkx1, wrky1, wrkz1, wrk_yth, wrkc1, 2 )
+     %         call adw_exch_3 ( wrkx1, wrky1, wrkz1, yth, wrkc1, 2 )
 *
          deallocate(capx2,capy2,capz2,xpos2,ypos2,zpos2,n2)
       endif
@@ -188,18 +197,14 @@ C     call tmg_start ( 30, 'adw_main_2_pos' )
       call adw_trajsp ( xth, yth, xcth, ycth, zcth, wrkx1, wrky1, dth,
      %                  i0,in,j0,jn)
 ************************************************************************
-
-      do n = 1,nijk
-      wrk_yth(n) = yth(n)
-      enddo
 *
       if (G_lam) then
 *
-          call adw_ckbd_lam ( xth, wrk_yth, zth, i0, in, j0, jn )
+          call adw_ckbd_lam ( xth, yth, zth, i0, in, j0, jn )
 *
       else
 *
-          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,wrk_yth,zth )
+          call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xth,yth,zth )
 *
           allocate(capx2(max(1,Adw_fro_a)),
      %             capy2(max(1,Adw_fro_a)),
@@ -215,12 +220,23 @@ C     call tmg_start ( 30, 'adw_main_2_pos' )
      %                  Adw_for_n, Adw_for_s, Adw_for_a, 3 )
 *
       endif
-
+*
+      if( .not. Adw_nosetint_L ) then
+*
       call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy,
-     %                  dummy, capz1, dummy, xth,   wrk_yth, zth,
+     %                  dummy, capz1, dummy, xth, yth, zth,
      %                 .true., .false., .true., nijk,i0,in,j0,jn,l_nk)
 *
       call adw_trilin (wrkx1,F_w,-dth,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,l_nk)
+*
+      else
+*
+      Adw_hor_L = .true. 
+      Adw_ver_L = .false. 
+      call adw_trilin_turbo (wrkx1,F_w,-dth,xth,yth,zth,capz1,
+     %                       Adw_Fn_I,nijk,i0,in,j0,jn,l_nk)
+*
+      endif
 *
       if (.not.G_lam) then
          if ( Adw_fro_a .gt. 0 ) then
@@ -233,6 +249,7 @@ C     call tmg_start ( 30, 'adw_main_2_pos' )
 *
               call adw_trilin ( xpos2, F_w, -dth, n2, capx2,capy2,capz2,
      %                     Adw_fro_a,1,Adw_fro_a,1,1,1)
+*
          endif
 *
          call adw_exch_2 ( wrkz1, dummy, dummy,
@@ -294,7 +311,6 @@ C     call tmg_start ( 30, 'adw_main_2_pos' )
 !$omp end parallel
 *
       pnerr = vmmuld(-1,0)
-C     call tmg_stop (30)
 *
  1000  format(3X,'CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS)')
       return

@@ -6,6 +6,8 @@
 * v2_20 - Pellerin P.            - adaptation to physics 3.6.6
 * v3_02 - Dugas B.               - add P_pbl_dumpbus
 * v3_03 - Bilodeau B.            - add P_pbl_as and P_pbl_beta
+* v3_12 - Leduc/Bilodeau         - add P_pbl_z0tlat and remove P_pbl_z0tcst
+* v3_12 - Bilodeau B.            - character*8 to character*16
 *______________________________________________________________________
 *                                                                      |
 *  VARIABLES ASSOCIATED WITH PLANETARY BOUNDARY LAYER                  |
@@ -53,7 +55,12 @@
 * P_pbl_as           | AS parameter for stability function             |
 *                    | (stable case only)                              |
 * P_pbl_beta         | beta parameter for stability function           |
-*
+* P_pbl_z0tlat       | latitude (2 elements, in degrees) used to       |
+*                    | specify Z0T over water                          |
+*                    | If |lat| <= Z0TLAT(1)  constant Z0T             |
+*                    | If |lat| >= Z0TLAT(2)  Charnock's relation      |
+*                    | In between, linear interpolation is used        |
+*                                                                      |
 * The following variables are to help compute latitudinal modulation of|
 *  vertical diffusion coefficient on momentum by fitting a cubic btwn  |
 *  values P_pbl_valml_8 and P_pbl_valeq_8 at latitudes P_pbl_mllat_8   |
@@ -77,19 +84,19 @@
       integer CNMAXAD
       parameter (CNMAXAD = 55)
 *
-      character*8 P_pbl_bndlr_S, P_pbl_schsl_S, P_pbl_mix_S
+      character*16 P_pbl_bndlr_S, P_pbl_schsl_S, P_pbl_mix_S
       logical P_pbl_drag_L   ,P_pbl_ocean_L  ,
      $        P_pbl_evap_L   ,P_pbl_dbgvv_L  ,P_pbl_truew_L  ,
      $        P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L ,
      $        P_pbl_albkg_L  ,P_pbl_cortm_L  ,P_pbl_corts_L  ,
      $        P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L  ,
-     $        P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_z0tcst_L ,
-     $        P_pbl_advectke_L,P_pbl_impflx_L
+     $        P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_advectke_L,
+     $        P_pbl_impflx_L
       integer P_pbl_nslof    ,P_pbl_dumpbus
       real                 P_pbl_cst        ,P_pbl_csn      ,
      $     P_pbl_csg      ,P_pbl_kst        ,P_pbl_ksn      ,
      $     P_pbl_ksg      ,P_pbl_prsol(6)   ,P_pbl_spng(CNMAXAD),
-     $     P_pbl_as       ,P_pbl_beta
+     $     P_pbl_as       ,P_pbl_beta       ,P_pbl_z0tlat(2)
       real*8
      $     P_pbl_valml_8  ,P_pbl_mllat_8  ,
      $     P_pbl_valeq_8  ,P_pbl_eqlat_8  
@@ -105,8 +112,7 @@
      $     P_pbl_snwmlt_L ,P_pbl_stomat_L ,P_pbl_typsol_L  ,
      $     P_pbl_albkg_L  ,P_pbl_cortm_L  ,P_pbl_corts_L   ,
      $     P_pbl_drylp_L  ,P_pbl_monta_L  ,P_pbl_iceme_L   ,
-     $     P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_z0tcst_L  ,
-     $     P_pbl_impflx_L
+     $     P_pbl_agreg_L  ,P_pbl_snoalb_L ,P_pbl_impflx_L
       MARK_COMMON_END (ppbl_l)
 
       MARK_COMMON_BEG (ppbl_i)
@@ -117,7 +123,7 @@
       common /ppbl_r/               P_pbl_cst   ,P_pbl_csn,
      $                P_pbl_csg    ,P_pbl_kst   ,P_pbl_ksn,     
      $                P_pbl_ksg    ,P_pbl_prsol ,P_pbl_spng,
-     $                p_pbl_as     ,P_pbl_beta
+     $                p_pbl_as     ,P_pbl_beta  ,P_pbl_z0tlat
       MARK_COMMON_END (ppbl_r)
 *
       MARK_COMMON_BEG (ppbl_r8)
