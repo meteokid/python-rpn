@@ -271,9 +271,10 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
         PyErr_SetString(FstdcError,"Problem getting record parameters");
         return NULL;
     }
-    if (datyp == 0 || datyp == 2 || datyp == 4 || datyp == 130)
+
+    if (datyp == 0 || datyp == 2 || datyp == 4 || datyp == 130 || datyp == 132)
         type_num=NPY_INT;
-    else if (datyp == 1 || datyp == 5 || datyp == 6 || datyp == 134)
+    else if (datyp == 1 || datyp == 5 || datyp == 6 || datyp == 134 || datyp == 133)
         type_num=NPY_FLOAT;
     else if (datyp == 3 )
         type_num=NPY_CHAR;
@@ -1045,6 +1046,8 @@ void initFstdc() {
     PyDict_SetItemString(d, "LEVEL_KIND_MGL", PyInt_FromLong((long)LEVEL_KIND_MGL));
     PyDict_SetItemString(d, "LEVEL_KIND_HYB", PyInt_FromLong((long)LEVEL_KIND_HYB));
     PyDict_SetItemString(d, "LEVEL_KIND_TH", PyInt_FromLong((long)LEVEL_KIND_TH));
+
+//#TODO: define named Cst for newdate kinds
 
     istat = c_fstopi(msglvl,8,0); //8 - print fatal error messages and up;10 - print system (internal) error messages only
     istat = c_fstopi(tolrnc,6,0); //6 - tolerate warning level and lower;8 - tolerate error level and lower

@@ -1,7 +1,0 @@
-MAKE = gmake
-LLAPI  = llapi
-
-IBM_LD = hpm_r
-
-
-

@@ -21,8 +21,8 @@
 """
 import rpn_version
 from rpn_helpers import *
-from jim import *
-import scrip
+#from jim import *
+#import scrip
 
 #import sys
 import types
@@ -678,23 +678,23 @@ class RPNGrid(RPNParm):
         #TODO: may want to check helper, helper.getEzInterpArgs
         return self.helper.getEzInterpArgs(self.__dict__,isSrc)
 
-    def toScripGridPreComp(self,name=None):
-        """Return a Scrip grid instance for Precomputed addr&weights (use helper)"""
-        return self.helper.toScripGridPreComp(self.__dict__,name)
+##     def toScripGridPreComp(self,name=None):
+##         """Return a Scrip grid instance for Precomputed addr&weights (use helper)"""
+##         return self.helper.toScripGridPreComp(self.__dict__,name)
 
-    def toScripGrid(self,name=None):
-        """Return a Scrip grid instance (use helper)"""
-        if not('scripGrid' in self.__dict__.keys() and self.scripGrid):
-            self.__dict__['scripGrid'] = self.helper.toScripGrid(self.__dict__,name)
-        return self.scripGrid
+##     def toScripGrid(self,name=None):
+##         """Return a Scrip grid instance (use helper)"""
+##         if not('scripGrid' in self.__dict__.keys() and self.scripGrid):
+##             self.__dict__['scripGrid'] = self.helper.toScripGrid(self.__dict__,name)
+##         return self.scripGrid
 
-    def reshapeDataForScrip(self,data):
-        """Return reformated data suitable for SCRIP (use helper)"""
-        return self.helper.reshapeDataForScrip(self.__dict__,data)
+##     def reshapeDataForScrip(self,data):
+##         """Return reformated data suitable for SCRIP (use helper)"""
+##         return self.helper.reshapeDataForScrip(self.__dict__,data)
 
-    def reshapeDataFromScrip(self,data):
-        """Inverse operation of reshapeDataForScrip (use helper)"""
-        return self.helper.reshapeDataFromScrip(self.__dict__,data)
+##     def reshapeDataFromScrip(self,data):
+##         """Inverse operation of reshapeDataForScrip (use helper)"""
+##         return self.helper.reshapeDataFromScrip(self.__dict__,data)
 
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
@@ -721,26 +721,27 @@ class RPNGrid(RPNParm):
             if isVect==0:
                 dataxy = (dataxy,None)
         else:
-            #if verbose: print "using SCRIP"
-            if isVect!=1:
-                #TODO: remove this exception when SCRIP.interp() does vectorial interp
-                raise TypeError, 'RPNGrid.interpolVect: SCRIP.interp() Cannot perform vectorial interpolation yet!'
-            #Try to interpolate with previously computed addr&weights (if any)
-            sg_a = sg.toScripGridPreComp()
-            dg_a = dg.toScripGridPreComp()
-            try:
-                scripObj = scrip.Scrip(sg_a,dg_a)
-            except:
-                #Try while computing lat/lon and addr&weights
-                sg_a = sg.toScripGrid()
-                dg_a = dg.toScripGrid()
-            if sg_a and dg_a:
-                scripObj = scrip.Scrip(sg_a,dg_a)
-                datax  = sg.reshapeDataForScrip(recx.d)
-                datax2 = scrip.scripObj.interp(datax)
-                dataxy = (dg.reshapeDataFromScrip(datax2),None)
-            else:
-                raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
+            raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
+##             #if verbose: print "using SCRIP"
+##             if isVect!=1:
+##                 #TODO: remove this exception when SCRIP.interp() does vectorial interp
+##                 raise TypeError, 'RPNGrid.interpolVect: SCRIP.interp() Cannot perform vectorial interpolation yet!'
+##             #Try to interpolate with previously computed addr&weights (if any)
+##             sg_a = sg.toScripGridPreComp()
+##             dg_a = dg.toScripGridPreComp()
+##             try:
+##                 scripObj = scrip.Scrip(sg_a,dg_a)
+##             except:
+##                 #Try while computing lat/lon and addr&weights
+##                 sg_a = sg.toScripGrid()
+##                 dg_a = dg.toScripGrid()
+##             if sg_a and dg_a:
+##                 scripObj = scrip.Scrip(sg_a,dg_a)
+##                 datax  = sg.reshapeDataForScrip(recx.d)
+##                 datax2 = scrip.scripObj.interp(datax)
+##                 dataxy = (dg.reshapeDataFromScrip(datax2),None)
+##             else:
+##                 raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
         if isRec:
             recx.d = dataxy[0]
             recx.setGrid(self)
@@ -782,18 +783,18 @@ class RPNGridBase(RPNGridHelper):
         a['g_ig14'].insert(0,keyVals['grtyp'])
         return a
 
-    def toScripGrid(self,keyVals,name=None):
-        """Return a Scrip grid instance for the specified grid type"""
-        sg_a = self.getEzInterpArgs(keyVals,False)
-        doCorners = 1
-        (la,lo,cla,clo) = Fstdc.ezgetlalo(sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],doCorners)
-        if name is None:
-            name = self.toScripGridName(keyVals)
-        la  *= (numpy.pi/180.)
-        lo  *= (numpy.pi/180.)
-        cla *= (numpy.pi/180.)
-        clo *= (numpy.pi/180.)
-        return scrip.ScripGrid(name,(la,lo,cla,clo))
+##     def toScripGrid(self,keyVals,name=None):
+##         """Return a Scrip grid instance for the specified grid type"""
+##         sg_a = self.getEzInterpArgs(keyVals,False)
+##         doCorners = 1
+##         (la,lo,cla,clo) = Fstdc.ezgetlalo(sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],doCorners)
+##         if name is None:
+##             name = self.toScripGridName(keyVals)
+##         la  *= (numpy.pi/180.)
+##         lo  *= (numpy.pi/180.)
+##         cla *= (numpy.pi/180.)
+##         clo *= (numpy.pi/180.)
+##         return scrip.ScripGrid(name,(la,lo,cla,clo))
 
 
 class RPNGridRef(RPNGridHelper):
@@ -851,36 +852,36 @@ class RPNGridRef(RPNGridHelper):
             a['ij0'] = keyVals['ig14'][2:]
         return a
 
-    def toScripGridName(self,keyVals):
-        """Return a hopefully unique grid name for the provided params"""
-        ij0 = (1,1)
-        if keyVals['grtyp'] == '#':
-            ij0 = keyVals['ig14'][2:]
-        name = "grd%s%s-%i-%i-%i-%i-%i-%i-%i-%i" % (
-        keyVals['grtyp'],keyVals['g_ref'].grtyp,
-        keyVals['g_ref'].ig14[0],keyVals['g_ref'].ig14[1],
-        keyVals['g_ref'].ig14[2],keyVals['g_ref'].ig14[3],
-        keyVals['shape'][0],keyVals['shape'][1],
-        ij0[0],ij0[1])
-        return name
+##     def toScripGridName(self,keyVals):
+##         """Return a hopefully unique grid name for the provided params"""
+##         ij0 = (1,1)
+##         if keyVals['grtyp'] == '#':
+##             ij0 = keyVals['ig14'][2:]
+##         name = "grd%s%s-%i-%i-%i-%i-%i-%i-%i-%i" % (
+##         keyVals['grtyp'],keyVals['g_ref'].grtyp,
+##         keyVals['g_ref'].ig14[0],keyVals['g_ref'].ig14[1],
+##         keyVals['g_ref'].ig14[2],keyVals['g_ref'].ig14[3],
+##         keyVals['shape'][0],keyVals['shape'][1],
+##         ij0[0],ij0[1])
+##         return name
 
-    def toScripGrid(self,keyVals,name=None):
-        """Return a Scrip grid instance for the specified grid type"""
-        if name is None:
-            name = self.toScripGridName(keyVals)
-        sg_a = self.getEzInterpArgs(keyVals,False)
-        if sg_a is None:
-            #TODO: make this work for # grids and other not global JIM grids
-            scripGrid = keyVals['g_ref'].toScripGrid(keyVals['g_ref'].__dict__,name)
-        else:
-            doCorners = 1
-            (la,lo,cla,clo) = Fstdc.ezgetlalo(sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],doCorners)
-            la  *= (numpy.pi/180.)
-            lo  *= (numpy.pi/180.)
-            cla *= (numpy.pi/180.)
-            clo *= (numpy.pi/180.)
-            scripGrid = scrip.ScripGrid(name,(la,lo,cla,clo))
-        return scripGrid
+##     def toScripGrid(self,keyVals,name=None):
+##         """Return a Scrip grid instance for the specified grid type"""
+##         if name is None:
+##             name = self.toScripGridName(keyVals)
+##         sg_a = self.getEzInterpArgs(keyVals,False)
+##         if sg_a is None:
+##             #TODO: make this work for # grids and other not global JIM grids
+##             scripGrid = keyVals['g_ref'].toScripGrid(keyVals['g_ref'].__dict__,name)
+##         else:
+##             doCorners = 1
+##             (la,lo,cla,clo) = Fstdc.ezgetlalo(sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],doCorners)
+##             la  *= (numpy.pi/180.)
+##             lo  *= (numpy.pi/180.)
+##             cla *= (numpy.pi/180.)
+##             clo *= (numpy.pi/180.)
+##             scripGrid = scrip.ScripGrid(name,(la,lo,cla,clo))
+##         return scripGrid
 
 
 class RPNRec(RPNMeta):

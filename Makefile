@@ -5,21 +5,19 @@ include Makefile_$(ARCH)
 
 BASEDIR=$(PWD)
 
-COMPONENTS = utils scrip jim test
+COMPONENTS = utils test
 
 COMM     =
 OTHERS   =  $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
 #LIBS     = $(MODEL) $(V4D) $(PHY) $(PATCH) $(CHM) $(CPL) $(OTHERS)
 LIBS     = $(OTHERS)
 
-INSTALLDIR= $(HOME)/ovbin/python/lib.linux-i686-2.4-dev
-
-DOCTESTPYMODULES = jim.py rpn_helpers.py rpnstd.py scrip.py
+DOCTESTPYMODULES = rpn_helpers.py rpnstd.py 
 
 PYVERSIONFILE = rpn_version.py
 CVERSIONFILE = rpn_version.h
-VERSION   = 1.2-dev
-LASTUPDATE= 2009-09
+VERSION   = 1.2.0
+LASTUPDATE= 2010-03
 
 versionfile:
 	echo "__VERSION__ = '$(VERSION)'" > $(PYVERSIONFILE)
@@ -42,9 +40,6 @@ all: versionfile
 	done ;\
 	python setup.py build
 
-install: all
-	cp build/lib.linux-i686-2.4/* $(INSTALLDIR)
-
 clean:
 	rm -f testfile.fst;\
 	rm -rf build; \
@@ -52,7 +47,6 @@ clean:
 	do \
 	cd $$i ; $(MAKE) clean0 ; make clean; cd .. ;\
 	done
-	/bin/rm -f mec_$(MYDYN)_$(EC_ARCH).Abs
 
 ctags: clean
 	rm -f tags TAGS
