@@ -314,7 +314,7 @@ class RPNKeys(RPNParm):
 
     def allowedKeysVals(self):
         """Return a dict of allowed Keys/Vals"""
-        return self.searchKeysVals()
+        return self.searchKeysVals().copy()
 
     def searchKeysVals(self):
         """Return a dict of search Keys/Vals"""
@@ -335,7 +335,7 @@ class RPNDesc(RPNParm):
 
     def allowedKeysVals(self):
        """Return a dict of allowed Keys/Vals"""
-       return  self.searchKeysVals()
+       return  self.searchKeysVals().copy()
 
     def searchKeysVals(self):
         """Return a dict of search Keys/Vals"""
@@ -414,6 +414,8 @@ class RPNMeta(RPNKeys,RPNDesc):
         if model != None:
             if isinstance(model,RPNParm):
                 self.update(model)
+            elif type(model) == type({}):
+                self.update(model)
             else:
                 raise TypeError,'RPNMeta: cannot initialize from arg #1'
         for name in args.keys(): # and update with specified attributes
@@ -421,8 +423,8 @@ class RPNMeta(RPNKeys,RPNDesc):
 
     def allowedKeysVals(self):
         """Return a dict of allowed Keys/Vals"""
-        a = RPNKeys.allowedKeysVals(self)
-        a.update(RPNDesc.allowedKeysVals(self))
+        a = RPNKeys.allowedKeysVals(self).copy()
+        a.update(RPNDesc.allowedKeysVals(self).copy())
         return a
 
     def searchKeysVals(self):
@@ -529,7 +531,7 @@ class RPNGrid(RPNParm):
         }
         try:
             if self.helper:
-                a.update(self.helper.addAllowedKeysVals)
+                a.update(self.helper.addAllowedKeysVals.copy())
         except:
             pass
         return a
@@ -566,7 +568,7 @@ class RPNGrid(RPNParm):
             args = {}
         if type(args) != type({}):
             raise TypeError,'RPNGrid: args should be of type dict'
-        kv = self.allowedKeysVals()
+        kv = self.allowedKeysVals().copy()
         if keys:
             if 'grtyp' in args.keys():
                 raise ValueError, 'RPNGrid: cannot provide both keys and grtyp: '+repr(args)
@@ -614,7 +616,7 @@ class RPNGrid(RPNParm):
             pass
         if not self.helper:
             raise ValueError,'RPNGrid: unrecognize grtyp '+repr(grtyp)
-        RPNParm.__init__(self,None,self.allowedKeysVals(),{})
+        RPNParm.__init__(self,None,self.allowedKeysVals().copy(),{})
         self.update(self.parseArgs(keys,args))
 
     def interpol(self,fromData,fromGrid=None):
@@ -926,7 +928,7 @@ class RPNRec(RPNMeta):
     """
     def allowedKeysVals(self):
         """Return a dict of allowed Keys/Vals"""
-        a = RPNMeta.allowedKeysVals(self)
+        a = RPNMeta.allowedKeysVals(self).copy()
         a['d'] = None
         a['grid'] = None
         return a
@@ -1032,13 +1034,12 @@ class RPNRec(RPNMeta):
                 raise ValueError,'RPNRec.setGrid(): unable to determine actual grid of RPNRec'
 
     def __repr__(self):
-        kv = {}
-        kv.update(self.__dict__)
-        rd = repr(self.__dict__['d'])
-        rg = repr(self.__dict__['grid'])
+        kv = self.__dict__.copy()
+        rd = repr(kv['d'])
+        rg = repr(kv['grid'])
         del kv['d']
         del kv['grid']
-        return 'RPNRec{meta='+RPNMeta.__repr__(self)+', grid='+rg+', d='+rd+'}'
+        return 'RPNRec{meta='+repr(RPNMeta(kv))+', grid='+rg+', d='+rd+'}'
 
 
 class RPNDate:

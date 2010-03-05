@@ -220,6 +220,8 @@ class RPNParm:
         if model != None:
             if isinstance(model,RPNParm):        # update with model attributes
                self.update(model)
+            elif type(model) == type({}):     # update with dict
+               self.update(model)
             else:
                 raise TypeError,'RPNParm.__init__: model must be an RPNParm class instances'
         for name in extra.keys():                # add extras using own setattr method

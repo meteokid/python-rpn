@@ -171,7 +171,7 @@ static PyObject *c2py_fstprm(int handle) {
             "handle",handle,"ni",ni,"nj",nj,"nk",nk,"dateo",dateo,"ip1",ip1,"ip2",ip2,"ip3",ip3,
             "deet",deet,"npas",npas,"datyp",datyp,"nbits",nbits,
             "type",TYPVAR,"nom",NOMVAR,"etiket",ETIKET,"grtyp",GRTYP,
-            "ig1",ig1,"ig1",ig2,"ig3",ig3,"ig4",ig4,"datev",extra1);
+            "ig1",ig1,"ig2",ig2,"ig3",ig3,"ig4",ig4,"datev",extra1);
 }
 
 
@@ -242,7 +242,7 @@ static char Fstdc_fstluk__doc__[] =
         "Read record data on file (Interface to fstluk)\n\
         myRecDataDict = Fstdc.fstluk(ihandle)\n\
         @param ihandle record handle (int) \n\
-        @return python dict with record params keys/values and data (numpy.ndarray)\n\
+        @return record data (numpy.ndarray)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
 

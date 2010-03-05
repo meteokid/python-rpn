@@ -332,7 +332,7 @@ class RPNFileTests(unittest.TestCase):
 
     def test_RPNFile_Error(self):
         """RPNFile should raise exception on known error cases"""
-        self.assertRaises(IOError, rpnstd.RPNFile, '__do__not__exist__.fst','RND+R/O')
+        self.assertRaises(Fstdc.error, rpnstd.RPNFile, '__do__not__exist__.fst','RND+R/O')
 
 
     def erase_testfile(self):
@@ -367,7 +367,11 @@ class RPNFileTests(unittest.TestCase):
         f2 = rpnstd.RPNFile(self.fname)
         la2 = f2[rpnstd.FirstRecord]
         lo2 = f2[rpnstd.NextMatch]
-        r2none = f2[rpnstd.NextMatch]
+        r2none = None
+        try:
+            r2none = f2[rpnstd.NextMatch]
+        except:
+            pass
         f2.close()
         self.assertEqual(la2.nom,la.nom)
         self.assertEqual(lo2.nom,lo.nom)
@@ -394,7 +398,11 @@ class RPNFileTests(unittest.TestCase):
         #print "============ Check Erase ==============="
         f2 = rpnstd.RPNFile(self.fname)
         lo2 = f2[rpnstd.FirstRecord]
-        r2none = f2[rpnstd.NextMatch]
+        r2none = None
+        try:
+            r2none = f2[rpnstd.NextMatch]
+        except:
+            pass
         f2.close()
         self.assertEqual(lo2.nom,lo.nom)
         self.assertEqual(r2none,None)
@@ -413,7 +421,11 @@ class RPNFileTests(unittest.TestCase):
         la2 = f2[rpnstd.FirstRecord]
         lo2 = f2[rpnstd.NextMatch]
         la2b= f2[rpnstd.NextMatch]
-        r2none = f2[rpnstd.NextMatch]
+        r2none = None
+        try:
+            r2none = f2[rpnstd.NextMatch]
+        except:
+            pass
         f2.close()
         self.assertEqual(la2.nom,la.nom)
         self.assertEqual(lo2.nom,lo.nom)
