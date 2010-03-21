@@ -16,7 +16,7 @@ DOCTESTPYMODULES = rpn_helpers.py rpnstd.py
 
 PYVERSIONFILE = rpn_version.py
 CVERSIONFILE = rpn_version.h
-VERSION   = 1.2.0
+VERSION   = 1.2.1
 LASTUPDATE= 2010-03
 
 versionfile:

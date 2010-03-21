@@ -2,12 +2,36 @@ from numpy.distutils.core import setup, Extension
 import os, distutils, string
 import rpn_version
 
-# architecture='Linux_pgi611'
-architecture = os.getenv('EC_ARCH')
-if not architecture == 'Linux_pgi611':
-    print("WARNING: EC_ARCH should be Linux_pgi611 and is: "+architecture)
+#TODO: need rmnlib-dev
 
-runtime_libs=['-Wl,-rpath,/usr/local/env/armnlib/lib/'+architecture]
+#myecarch = 'Linux_pgi611'
+#myrmnlib = 'rmn_shared_beta10'
+myecarch = 'Linux_pgi9xx'
+myrmnlib = ['PyFTN_helpers','rmnbetashared_011']
+
+eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
+ecincpath = os.getenv('EC_INCLUDE_PATH')
+architecture = os.getenv('EC_ARCH')
+
+eclibsharedpath = ''
+for mypath in eclibpath.split():
+    isok = True
+    for item in myrmnlib:
+        if not os.path.exists(mypath+'/lib'+item+'.so'):
+            isok = False
+    if isok:
+        eclibsharedpath = mypath
+
+if not architecture == myecarch:
+    print("WARNING: EC_ARCH should be "+myecarch+" and is: "+architecture)
+    #TODO: stop
+if not eclibsharedpath:
+    print("WARNING: Could not find LIB PATH for "+str(myrmnlib))
+    #TODO: stop
+
+#TODO: FIND inc path (Not in EC_INCLUDE_PATH yet), using old $ARMNLIB/includefor now
+
+runtime_libs=['-Wl,-rpath,'+eclibsharedpath]
 SharedLd=distutils.sysconfig.get_config_vars('LDSHARED')
 SharedLd=string.split(SharedLd[0])
 
@@ -17,10 +41,10 @@ print 'Shared Objects loaded with',SharedLd
 
 Fstd_module = Extension('Fstdc',
             include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture,'./utils'],
-            libraries = ['PyFTN_helpers','rmn_shared_beta10'],
+            libraries = myrmnlib,
             extra_objects = ['utils/get_corners_xy.o'],
-            extra_link_args=runtime_libs,
-            library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
+            extra_link_args = runtime_libs,
+            library_dirs = [eclibsharedpath],
             sources = ['utils/py_capi_ftn_utils.c','Fstdc.c'])
 
 setup(name = 'rpnstd',
