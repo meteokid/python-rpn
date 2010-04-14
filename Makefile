@@ -1,7 +1,7 @@
 MAKE=make
 
 include Makefile_base
-include Makefile_$(ARCH)
+include $(EC_ARCH)/Makefile.inc
 
 BASEDIR=$(PWD)
 
@@ -73,10 +73,11 @@ ctags: clean
 	done
 
 alltests: all
+	export PYTHONPATH=$(PWD)/build/lib.linux-i686-2.4:$PYTHONPATH ; \
 	for i in $(COMPONENTS); \
 	do echo -e "\n==== Make Test: " $$i "====\n"; cd $$i ; $(MAKE) test ; cd .. ;\
 	done
 	for i in $(DOCTESTPYMODULES); \
 	do echo -e "\n==== PY-DocTest: " $$i "====\n"; python $$i ;\
 	done
-	cd test ; $(MAKE) test ; cd ..
+	cd test ; $(MAKE) test PYTHONPATH=$(PYTHONPATH); cd ..

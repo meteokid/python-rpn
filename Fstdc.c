@@ -1,5 +1,6 @@
 /*
 Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
+@author: Michel Valin <michel.valin@ec.gc.ca>
 @author: Mario Lepine <mario.lepine@ec.gc.ca>
 @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 @date: 2009-09
@@ -428,7 +429,7 @@ static PyObject *Fstdc_fstfrm(PyObject *self, PyObject *args) {
 
 static char Fstdc_cxgaig__doc__[] =
         "Encode grid descriptors (Interface to cxgaig)\n\
-        (ig1,ig2,ig3,ig4) = Fstdc_cxgaig(grtyp,xg1,xg2,xg3,xg4) \n\
+        (ig1,ig2,ig3,ig4) = Fstdc.cxgaig(grtyp,xg1,xg2,xg3,xg4) \n\
         @param ...TODO...\n\
         @return (ig1,ig2,ig3,ig4)\n\
         @exception TypeError\n\
@@ -453,7 +454,7 @@ static PyObject *Fstdc_cxgaig(PyObject *self, PyObject *args) {
 
 static char Fstdc_cigaxg__doc__[] =
         "Decode grid descriptors (Interface to cigaxg)\n\
-        (xg1,xg2,xg3,xg4) = Fstdc_cigaxg(grtyp,ig1,ig2,ig3,ig4)\n\
+        (xg1,xg2,xg3,xg4) = Fstdc.cigaxg(grtyp,ig1,ig2,ig3,ig4)\n\
         @param ...TODO...\n\
         @return (xg1,xg2,xg3,xg4)\n\
         @exception TypeError\n\
@@ -479,8 +480,8 @@ static PyObject *Fstdc_cigaxg(PyObject *self, PyObject *args) {
 
 static char Fstdc_level_to_ip1__doc__[] =
         "Encode level value to ip1 (Interface to convip)\n\
-        myip1List = Fstdc_level_to_ip1(level_list,kind) \n\
-        param level_list list of level values (list of float)\n\
+        myip1List = Fstdc.level_to_ip1(level_list,kind) \n\
+        @param level_list list of level values (list of float)\n\
         @param kind type of level (int)\n\
         @return [(ip1new,ip1old),...] (list of tuple of int)\n\
         @exception TypeError\n\
@@ -517,8 +518,8 @@ static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
 
 static char Fstdc_ip1_to_level__doc__[] =
         "Decode ip1 to level type,value (Interface to convip)\n\
-        myLevelList = Fstdc_ip1_to_level(ip1_list)\n\
-        @parma tuple/list of ip1 values to decode\n\
+        myLevelList = Fstdc.ip1_to_level(ip1_list)\n\
+        @param tuple/list of ip1 values to decode\n\
         @return list of tuple (level,kind)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
@@ -551,7 +552,7 @@ static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
 
 static char Fstdc_newdate__doc__[] =
         "Convert data to/from printable format and CMC stamp (Interface to newdate)\n\
-        (fdat1,fdat2,fdat3) = Fstdc_newdate(date1,date2,date3,mode)\n\
+        (fdat1,fdat2,fdat3) = Fstdc.newdate(date1,date2,date3,mode)\n\
         @param ...see newdate doc... \n\
         @return tuple with converted date values ...see newdate doc...\n\
         @exception TypeError\n\
@@ -578,7 +579,7 @@ static PyObject *Fstdc_newdate(PyObject *self, PyObject *args) {
 
 static char Fstdc_difdatr__doc__[] =
         "Compute differenc between 2 CMC datatime stamps (Interface to difdatr)\n\
-        nhours = Fstdc_difdatr(date1,date2)\n\
+        nhours = Fstdc.difdatr(date1,date2)\n\
         @param date1 CMC datatime stamp (int)\n\
         @param date2 CMC datatime stamp (int)\n\
         @return number of hours = date2-date1 (float)\n\
@@ -600,7 +601,7 @@ static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args) {
 
 static char Fstdc_incdatr__doc__[] =
 "Increase CMC datetime stamp by a N hours (Interface to incdatr)\n\
-        date2 = Fstdc_incdatr(date1,nhours)\n\
+        date2 = Fstdc.incdatr(date1,nhours)\n\
         @param date1 original CMC datetime stamp(int)\n\
         @param nhours number of hours to increase the date (double)\n\
         @return Increase CMC datetime stamp (int)\n\
@@ -628,7 +629,7 @@ static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args) {
 
 static char Fstdc_datematch__doc__[] =
 "Determine if date stamp match search crieterias\n\
-        doesmatch = Fstdc_datematch(indate,dateRangeStart,dateRangeEnd,delta)\n\
+        doesmatch = Fstdc.datematch(indate,dateRangeStart,dateRangeEnd,delta)\n\
         @param indate Date to be check against, CMC datetime stamp (int)\n\
         @param dateRangeStart, CMC datetime stamp (int) \n\
         @param dateRangeEnd, CMC datetime stamp (int)\n\
@@ -672,7 +673,7 @@ static PyObject *Fstdc_datematch(PyObject *self, PyObject *args) {
 
 static char Fstdc_ezgetlalo__doc__[] =
         "Get Lat-Lon of grid points centers and corners\n\
-        (lat,lon,clat,clon) = Fstdc_ezgetlalo((niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),hasSrcAxis,(i0S,j0S),doCorners)\n\
+        (lat,lon,clat,clon) = Fstdc.ezgetlalo((niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),hasSrcAxis,(i0S,j0S),doCorners)\n\
         @param ...TODO...\n\
         @return tuple of (numpy.ndarray) with center lat/lon (lat,lon) and optionally corners lat/lon (clat,clon)\n\
         @exception TypeError\n\
@@ -869,7 +870,7 @@ static int isGridTypeValid(char *grtyp) {
 
 static char Fstdc_ezinterp__doc__[] =
         "Interpolate from one grid to another\n\
-        newArray = Fstdc_ezinterp(arrayin,arrayin2,\n  \
+        newArray = Fstdc.ezinterp(arrayin,arrayin2,\n  \
         (niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),hasSrcAxis,(i0S,j0S),\n  \
         (niD,njD),grtypD,(grrefD,ig1D,ig2D,ig3D,ig4D),(xsD,ysD),hasDstAxis,(i0D,j0D),\n  \
         isVect)\n\
@@ -974,8 +975,8 @@ static PyObject *Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
     f77name(mapdesc_pyngl)(cgrtyp,&one,&ig1,&ig2,&ig3,&ig4,&x1,&y1,&x2,&y2,
         &ni,&nj,&proj,&polat,&polong,&rot,&lat1,&lon1,&lat2,&lon2,1);
 #if defined(DEBUG)
-    printf("Fstdc_mapdscrpt ig1=%d ig2=%d ig3=%d ig4=%d\n",ig1,ig2,ig3,ig4);
-    printf("Fstdc_mapdscrpt polat=%f polong=%f rot=%f, lat1=%f lon1=%f lat2=%f, lon2=%f\n",polat,polong,rot,lat1,lon1,lat2,lon2);
+    printf("Fstdc.mapdscrpt ig1=%d ig2=%d ig3=%d ig4=%d\n",ig1,ig2,ig3,ig4);
+    printf("Fstdc.mapdscrpt polat=%f polong=%f rot=%f, lat1=%f lon1=%f lat2=%f, lon2=%f\n",polat,polong,rot,lat1,lon1,lat2,lon2);
 #endif
     return Py_BuildValue("{s:f,s:f,s:f,s:f,s:f,s:f,s:f}",
         "polat",polat,"polong",polong,"rot",rot,
