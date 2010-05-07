@@ -5,7 +5,7 @@ include $(EC_ARCH)/Makefile.inc
 
 BASEDIR=$(PWD)
 
-COMPONENTS = utils test
+COMPONENTS = utils
 
 COMM     =
 OTHERS   =  $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
@@ -72,12 +72,15 @@ ctags: clean
 	done ; \
 	done
 
-alltests: all
-	export PYTHONPATH=$(PWD)/build/lib.linux-i686-2.4:$PYTHONPATH ; \
-	for i in $(COMPONENTS); \
-	do echo -e "\n==== Make Test: " $$i "====\n"; cd $$i ; $(MAKE) test ; cd .. ;\
-	done
+alltests: #all
+	export PYTHONPATH=$(PWD)/build/lib.$(PYARCH):$(PYTHONPATH) ; \
+	echo -e "\n======= PY-DocTest List ========\n" ; \
 	for i in $(DOCTESTPYMODULES); \
 	do echo -e "\n==== PY-DocTest: " $$i "====\n"; python $$i ;\
 	done
-	cd test ; $(MAKE) test PYTHONPATH=$(PYTHONPATH); cd ..
+	echo -e "\n======= PY-UnitTest List ========\n" ; \
+	for i in $(COMPONENTS); \
+	do echo -e "\n==== Make Test: " $$i "====\n PYTHONPATH="$(PWD)/build/lib.$(PYARCH):$(PYTHONPATH) "\n"; cd $$i ; $(MAKE) test PYTHONPATH=$(PWD)/build/lib.$(PYARCH):$(PYTHONPATH); cd .. ;\
+	done; \
+	echo -e "\n======= Other Tests ========\n" ; \
+	cd test ; $(MAKE) test PYTHONPATH=$(PWD)/build/lib.$(PYARCH):$(PYTHONPATH); cd ..

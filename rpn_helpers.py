@@ -231,7 +231,7 @@ class RPNParm:
         """function must be defined in subclass, return dict of allowed keys/vals, vals are default/wildcard values"""
         return {}
 
-    def update(self,with,updateToWild=True):
+    def update(self,with1,updateToWild=True):
         """Replace RPN attributes of an instance with RPN attributes from another
         values not in list of allowed parm keys are ignored
         also update to wildcard (-1 or '') values
@@ -244,37 +244,37 @@ class RPNParm:
         @exception TypeError if otherRPNparm is of wrong type
         """
         allowedKeysVals = self.allowedKeysVals()
-        if isinstance(with,RPNParm):  # check if class=RPNParm
-            for name in with.__dict__.keys():
+        if isinstance(with1,RPNParm):  # check if class=RPNParm
+            for name in with1.__dict__.keys():
                 if (name in self.__dict__.keys()) and (name in allowedKeysVals.keys()):
                     if (updateToWild
-                        or with.__dict__[name] != allowedKeysVals[name]):
-                        self.__dict__[name]=with.__dict__[name]
+                        or with1.__dict__[name] != allowedKeysVals[name]):
+                        self.__dict__[name]=with1.__dict__[name]
                 #else:
                 #    print "cannot set:"+name+repr(allowedKeysVals.keys())
-        elif type(with) == type({}):
-            for name in with.keys():
+        elif type(with1) == type({}):
+            for name in with1.keys():
                 if name in self.__dict__.keys():
                    if (updateToWild
-                        or with[name] != allowedKeysVals[name]):
-                        setattr(self,name,with[name])
+                        or with1[name] != allowedKeysVals[name]):
+                        setattr(self,name,with1[name])
         else:
             raise TypeError,'RPNParm.update: can only operate on RPNParm class instances or dict'
 
-    def update_cond(self,with):
-        """Short form for RPNParm.update(with,False)
+    def update_cond(self,with1):
+        """Short form for RPNParm.update(with1,False)
         """
-        self.update(with,False)
+        self.update(with1,False)
 
-    def update_by_dict(self,with):
-        """[Deprecated] Equivalent to RPNParm.update(with)
+    def update_by_dict(self,with1):
+        """[Deprecated] Equivalent to RPNParm.update(with1)
         """
-        self.update(with)
+        self.update(with1)
 
-    def update_by_dict_from(self,frm,with):
+    def update_by_dict_from(self,frm,with1):
         """TODO: documentation
         """
-        for name in with.keys():
+        for name in with1.keys():
             if name in self.__dict__.keys():
                 setattr(self,name,frm.__dict__[name])
 
