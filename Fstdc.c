@@ -249,7 +249,8 @@ static char Fstdc_fstluk__doc__[] =
 
 static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
     PyArrayObject *newarray;
-    int dims[3]={1,1,1}, ndims=3;
+    int ndims=3;
+    long dims[3]={1,1,1};
     int type_num=NPY_FLOAT;
     int ni=0, nj=0, nk=0, ip1=0, ip2=0, ip3=0;
     char TYPVAR[3]={' ',' ','\0'};
@@ -289,7 +290,8 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
     if (nk>1) ndims=3;
     else if (nj>1) ndims=2;
     else ndims=1;
-    newarray = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+    newarray = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
     if (newarray == NULL) {
         PyErr_SetString(FstdcError,"Problem allocating mem");
         return NULL;
@@ -683,7 +685,8 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     int ig1S, ig2S, ig3S, ig4S, niS, njS, i0S,j0S, gdid_src;
     int hasSrcAxis,doCorners,ier,n,nbcorners=4;
     char *grtypS,*grrefS;
-    int dims[3]={1,1,1}, ndims=3;
+    long dims[3]={1,1,1};
+    int ndims=3;
     int type_num=NPY_FLOAT;
     PyArrayObject *lat,*lon,*clat,*clon,*xsS,*ysS,*x,*y,*xc,*yc;
     F77_INTEGER fni,fnj;
@@ -705,30 +708,41 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     dims[2] = 1 ;
     if (njS>1) ndims=2;
     else ndims=1;
-    lat = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-    lon = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+
+    lat = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                        withFortranOrder);
+    lon = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                        withFortranOrder);
 
     ier = c_gdll(gdid_src, (float *)lat->data, (float *)lon->data);
     if (ier<0) {
-        Py_DECREF(lat);
-        Py_DECREF(lon);
+        Py_XDECREF(lat);
+        Py_XDECREF(lon);
         PyErr_SetString(FstdcError,"Problem computing lat,lon in ezscint");
         return NULL;
     }
 
     //Compute corners Lat-Lon values
     if (doCorners) {
-        x = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-        y = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+        x = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                          withFortranOrder);
+        y = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                          withFortranOrder);
         dims[0] = nbcorners;
         dims[1] = niS;
         dims[2] = njS;
         if (njS>1) ndims=3;
         else ndims=2;
-        clat = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-        clon = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-        xc = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-        yc = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+
+        clat = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
+        clon = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
+        xc   = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
+        yc   = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
+
 
         n = niS*njS;
         ier = c_gdxyfll(gdid_src,(float *)x->data,(float *)y->data,(float *)lat->data,(float *)lon->data,n);
@@ -741,15 +755,15 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
             n = niS*njS*nbcorners;
             ier = c_gdllfxy(gdid_src,(float *)clat->data,(float *)clon->data,(float *)xc->data,(float *)yc->data,n);
         }
-        Py_DECREF(x);
-        Py_DECREF(y);
-        Py_DECREF(xc);
-        Py_DECREF(yc);
+        Py_XDECREF(x);
+        Py_XDECREF(y);
+        Py_XDECREF(xc);
+        Py_XDECREF(yc);
         if (ier<0) {
-            Py_DECREF(lat);
-            Py_DECREF(lon);
-            Py_DECREF(clat);
-            Py_DECREF(clon);
+            Py_XDECREF(lat);
+            Py_XDECREF(lon);
+            Py_XDECREF(clat);
+            Py_XDECREF(clon);
             PyErr_SetString(FstdcError,"Problem computing corners lat,lon");
             return NULL;
         }
@@ -884,7 +898,8 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     int ig1D, ig2D, ig3D, ig4D, niD, njD, i0D,j0D, gdid_dst;
     int hasSrcAxis,hasDstAxis,isVect,ier;
     char *grtypS,*grtypD,*grrefS,*grrefD;
-    int dims[3]={1,1,1}, ndims=3;
+    long dims[3]={1,1,1};
+    int ndims=3;
     int type_num=NPY_FLOAT;
     PyArrayObject *arrayin,*arrayin2,*newarray,*newarray2,*xsS,*ysS,*xsD,*ysD;
 
@@ -929,9 +944,9 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     if (isVect)
         newarray2 = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
     if (newarray == NULL || (isVect && newarray2 == NULL)) {
-        Py_DECREF(newarray);
+        Py_XDECREF(newarray);
         if (isVect) {
-            Py_DECREF(newarray2);
+            Py_XDECREF(newarray2);
         }
         PyErr_SetString(FstdcError,"Problem allocating mem");
         return NULL;

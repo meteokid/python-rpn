@@ -435,6 +435,9 @@ class RPNFileTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    from sys import argv
+    argv.append('--verbose')
     unittest.main()
+#    unittest.main(module='rpnstdtest', defaultTest='RPNFileTests.test_RPNFile_Error')
 
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

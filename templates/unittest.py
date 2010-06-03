@@ -13,16 +13,16 @@ class BadInput(unittest.TestCase):
     pass
 
 class SanityCheck(unittest.TestCase):
-    """Check that revesefn(fn(value)) == value"""
+    """Check that reversefn(fn(value)) == value"""
 
     def testSanity(self):
         """cigaxg(cxgaig(n))==n for all n"""
-        self.assertTrue(expr[, msg])
-        self.assertFalse(expr[, msg])
-        self.assertEqual(first, second[, msg])
-        self.assertNotEqual(first, second[, msg])
-        self.assertAlmostEqual(first, second[, places[, msg]])
-        self.assertNotAlmostEqual(first, second[, places[, msg]])
+        self.assertTrue(expr[msg, ])
+        self.assertFalse(expr[msg, ])
+        self.assertEqual(first, second[msg, ])
+        self.assertNotEqual(first, second[msg, ])
+        self.assertAlmostEqual(first, second[places[msg, ], ])
+        self.assertNotAlmostEqual(first, second[places[msg, ], ])
         self.assertRaises(exception, callable, ...)
 
 

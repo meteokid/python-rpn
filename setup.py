@@ -6,7 +6,8 @@ import rpn_version
 
 #myecarch = 'Linux_pgi611'
 #myrmnlib = 'rmn_shared_beta10'
-myecarch = 'Linux_pgi9xx'
+#myecarch = 'Linux_pgi9xx'
+myecarch = 'Linux_x86-64/pgi9xx'
 myrmnlib = ['PyFTN_helpers','rmnbetashared_011']
 
 eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
@@ -58,7 +59,7 @@ setup(name = 'rpnstd',
     long_description = '''
 Python Interface to some ARMNLIB RPN STD files function
 Base Interfaces are defined in the Fstdc sub-package.
-More python-esk classes are defined in the rpnstd sub-package
+More python-esque classes are defined in the rpnstd sub-package
 ''',
     py_modules=['rpn_version','rpn_helpers','rpnstd'],
     ext_modules = [Fstd_module])
