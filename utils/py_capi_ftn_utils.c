@@ -18,7 +18,7 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
             break;
         case NPY_LONG:
             if (sizeof(long)!=4)
-                fprintf(stderr,"WARNING: Sizeof(long)=%d\n",sizeof(long));
+                fprintf(stderr,"WARNING: Sizeof(long)=%d\n",(int)sizeof(long));
             dataType[0]=4;
             dataLen[0]=4;
             break;

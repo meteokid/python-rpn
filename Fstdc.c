@@ -13,6 +13,7 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 #include "armnlib.h"
 
 #include "utils/py_capi_ftn_utils.h"
+#include "utils/get_corners_xy.h"
 #include "rpn_version.h"
 
 #define LEVEL_KIND_MSL 0
@@ -159,6 +160,7 @@ static PyObject *c2py_fstprm(int handle) {
     int swa=0, lng=0, dltf=0, ubc=0, extra1=0, extra2=0, extra3=0;
     int errorCode;
 
+    errorCode = 0;
     if (handle >= 0) {
         errorCode =  c_fstprm(handle,&dateo,&deet,&npas,&ni,&nj,&nk,&nbits,&datyp,
             &ip1,&ip2,&ip3,TYPVAR,NOMVAR,ETIKET,GRTYP,&ig1,&ig2,&ig3,&ig4,
@@ -355,6 +357,7 @@ static PyObject *Fstdc_fstecr(PyObject *self, PyObject *args) {
     int dtl=4;
     int dims[4];
     PyArrayObject *array;
+    extern int c_fst_data_length(int);
 
     if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiii",
         &array,&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&dateo,&grtyp,&ig1,&ig2,&ig3,&ig4,&deet,&npas,&nbits)) {
@@ -903,6 +906,8 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     int type_num=NPY_FLOAT;
     PyArrayObject *arrayin,*arrayin2,*newarray,*newarray2,*xsS,*ysS,*xsD,*ysD;
 
+    newarray2=NULL;                     // shut up the compiler
+
     if (!PyArg_ParseTuple(args, "OO(ii)s(siiii)(OO)i(ii)(ii)s(siiii)(OO)i(ii)i",
         &arrayin,&arrayin2,
         &niS,&njS,&grtypS,&grrefS,&ig1S,&ig2S,&ig3S,&ig4S,&xsS,&ysS,&hasSrcAxis,&i0S,&j0S,
@@ -940,9 +945,9 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     if (njD>1) ndims=2;
     else ndims=1;
 
-    newarray = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+    newarray = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
     if (isVect)
-        newarray2 = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+        newarray2 = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
     if (newarray == NULL || (isVect && newarray2 == NULL)) {
         Py_XDECREF(newarray);
         if (isVect) {
@@ -1035,7 +1040,7 @@ static struct PyMethodDef Fstdc_methods[] = {
 static char Fstdc_module_documentation[] =
 "Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)\n@author: Mario Lepine <mario.lepine@ec.gc.ca>\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
 
-void initFstdc() {
+void initFstdc(void) {
     PyObject *m, *d;
     int istat;
     char *msglvl="MSGLVL";
