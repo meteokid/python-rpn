@@ -300,7 +300,7 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
     }
     errorCode = c_fstluk((void*)(newarray->data),handle,&ni,&nj,&nk);
     if (errorCode >= 0)
-        return Py_BuildValue("O",newarray);
+        return (PyObject *)newarray;
     else {
         Py_DECREF(newarray);
         PyErr_SetString(FstdcError,"Problem reading rec data");
