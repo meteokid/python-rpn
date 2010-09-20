@@ -1,0 +1,216 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include <model_macros_f.h>
+#include "constants.h"
+#include "msg.h"
+#include "stop_mpi.h"
+
+subroutine adx_main_2_pos()
+   call stop_mpi(STOP_ERROR,'adx_main_2_pos','called a stub')
+   return
+end subroutine adx_main_2_pos
+
+subroutine adx_main_2_pos2()
+   call stop_mpi(STOP_ERROR,'adx_main_2_pos2','called a stub')
+   return
+end subroutine adx_main_2_pos2
+
+!/**
+subroutine adx_main_2_pos3( &
+     F_nb_iter  ,F_l_S, &
+     F_px  ,F_py  ,F_pz  , &
+     F_u   ,F_v   ,F_w   , &
+     F_xth ,F_yth ,F_zth , &
+     F_xcth,F_ycth,F_zcth, &
+     F_xct1,F_yct1,F_zct1, &
+     F_aminx, F_amaxx, F_aminy, F_amaxy, &
+     F_ni, F_nj, F_nk, F_nk_super)
+   implicit none
+   !@objective calculate upstream positions at th and t1
+   !@arguments
+   integer :: F_nb_iter          !I, total number of iterations for traj
+   character(len=1) :: F_l_S     !I, m/t for momentum or thermo level
+   integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
+   integer :: F_ni, F_nj         !I, dims of position fields
+   integer :: F_nk, F_nk_super   !I, nb levels
+   real, dimension(F_ni,F_nj,F_nk) :: &
+        F_px  , F_py  , F_pz     !O, upstream positions valid at t1
+   real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super),target::&
+        F_u   , F_v   , F_w      !I, real destag winds, super-set (mom+thermo)
+   real, dimension(F_ni,F_nj,F_nk) :: &
+        F_xth , F_yth , F_zth,&  !I/O, upwind longitudes at central time 
+        F_xcth, F_ycth, F_zcth,& !O, upwind cartesian positions at central time
+        F_xct1, F_yct1, F_zct1   !O, upstream cartesian positions at t1
+   !@author alain patoine
+   !@revisions
+   ! v2_31 - Desgagne M.    - removed stkmemw
+   ! v2_31 - Tanguay M.     - gem stop if adx_fro_a.gt.0.and.V4dg_conf.ne.0
+   ! v3_00 - Desgagne & Lee - Lam configuration
+   ! v3_02 - Lee V.         - revert adx_exch_1 for GLB only, added adx_ckbd_lam
+   ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+   ! v3_20 - Valin & Tanguay - Optimized SETINT/TRILIN 
+   ! v3_20 - Gravel S.       - Change test a lower and upper boundaries
+   ! v3_20 - Tanguay M.      - Improve alarm when points outside advection grid
+   ! v3_20 - Dugas B.        - correct calculation for LAM when Glb_pil gt 7
+   ! v3_21 - Lee V.          - bug correction, F_yth should not be modified.
+   ! v4_05 - Lepine M.       - VMM replacement with GMM
+   ! V4_10 - Plante A.       - Support to thermodynamic positions.
+   !**/
+#include "adx_nml.cdk"
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+#include "adx_dyn.cdk"
+#include "adx_poles.cdk"
+
+   real*8, parameter :: PDP_8 = 1.D0 + 1.D-6
+   real*8, parameter :: PDM_8 = 1.D0 - 1.D-6
+   logical,parameter :: CLIP_TRAJ = .true.
+   logical,parameter :: DO_W      = .false.
+   logical,parameter :: DO_UV     = .true.
+   real, parameter   :: DTH_1     = 1.
+
+   integer :: i, j, k, iter, ioff
+   integer :: i0,in,j0,jn,k0,kn
+   real    :: dth
+   real, dimension(F_ni,F_nj,F_nk) :: wrkx1,wrky1
+   real, dimension(F_ni,F_nj,F_nk) :: xgrid,ygrid,zgrid
+
+   real, dimension(:,:,:), pointer :: dummy3d
+   real*8, dimension(:), pointer :: p_z
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'adx_main_2_pos ('//trim(F_l_S)//')')
+
+   dummy3d => F_w
+
+   dth  = adx_dt_8/2.
+
+   p_z => adx_verZ_8%t
+   if (F_l_S == 'm') p_z => adx_verZ_8%m
+
+   call adx_get_ij0n(i0,in,j0,jn)
+
+   DO_ITER: do iter = 1, F_nb_iter
+
+      !- 3d interpol of u and v winds and new upstream pos along x and y
+
+      ygrid(:,:,:) = F_yth(:,:,:)
+      if (adx_lam_L) then
+         call adx_pos_lam3(wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
+              DTH_1, CLIP_TRAJ, DO_UV, i0,in,j0,jn, &
+              F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
+      else
+         call adx_pos_glb3(wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
+              DTH_1, DO_UV, i0,in,j0,jn, &
+              F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
+      endif
+
+      call tmg_start0(65, 'ADX_TRAJS' )
+      call adx_trajsp1(F_xth,F_yth, F_xcth,F_ycth,F_zcth, wrkx1,wrky1, dth,&
+           i0,in,j0,jn)
+!!$      call adx_trajsp2(F_xth,F_yth, F_xcth,F_ycth,F_zcth, wrkx1,wrky1, dth,&
+!!$           i0,in,j0,jn,F_ni,F_nj,F_nk)
+      call tmg_stop0(65)
+
+      !- 3D interpol of zeta dot and new upstream pos along zeta
+
+      IF_ZDOTMID: if (adx_zdotMid_L) then
+
+         ioff = adx_mli0 - adx_li0
+         do k = 1, F_nk
+            do j = 1, F_nj
+               do i = 1, F_ni
+                  xgrid(i,j,k)  = adx_xx_8(ioff+i)
+                  ygrid(i,j,k)  = adx_yy_8(j)
+                  zgrid(i,j,k)  = p_z(k)
+               enddo
+            enddo
+         enddo
+
+         if (adx_lam_L) then
+            call adx_pos_lam3(wrkx1,wrky1,F_w,dummy3d, xgrid,ygrid,zgrid, &
+                 -dth, .not.CLIP_TRAJ, DO_W, i0,in,j0,jn, &
+                 F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
+         else
+            call adx_pos_glb3(wrkx1,wrky1, F_w,dummy3d, xgrid,ygrid,zgrid, &
+                 -dth, DO_W, i0,in,j0,jn, &
+                 F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
+         endif
+
+      else  !IF_ZDOTMID
+
+         ygrid(:,:,:) = F_yth(:,:,:)
+         if (adx_lam_L) then
+            call adx_pos_lam3(wrkx1,wrky1, F_w,dummy3d, F_xth,ygrid,F_zth, &
+                 -dth, CLIP_TRAJ, DO_W, i0,in,j0,jn, &
+                 F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
+         else
+            call adx_pos_glb3(wrkx1,wrky1, F_w,dummy3d, F_xth,ygrid,F_zth, &
+                 -dth, DO_W, i0,in,j0,jn, &
+                 F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
+         endif
+
+      endif IF_ZDOTMID
+
+!$omp parallel
+!$omp do
+      do k = 2,F_nk-1
+         do j = j0,jn
+            do i = i0,in
+               F_zth(i,j,k) = p_z(k) + 2.D0*wrkx1(i,j,k)
+               !Make sure F_zth is below p_z(1) and above p_z(F_nk)
+               F_zth(i,j,k) = min(PDM_8*p_z(F_nk),  &
+                    max(1.0d0*F_zth(i,j,k), PDP_8*p_z(1)) )
+               F_zth(i,j,k) = 0.5D0*(F_zth(i,j,k) + p_z(k))
+            enddo
+         enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+
+   enddo DO_ITER
+
+   call tmg_start0(68, 'ADX_TRAJE' )
+   call adx_trajex1(F_px, F_py, F_xct1,F_yct1,F_zct1, F_xcth,F_ycth,F_zcth,&
+        i0,in,j0,jn)
+!!$   call adx_trajex2(F_px, F_py, F_xct1,F_yct1,F_zct1, F_xcth,F_ycth,F_zcth,&
+!!$        i0,in,j0,jn,F_ni,F_nj,F_nk)
+   call tmg_stop0(68)
+
+!$omp parallel
+!$omp do
+   do j = j0,jn
+      do i = i0,in
+         F_pz(i,j,1)    = p_z(1)
+         F_pz(i,j,F_nk) = p_z(F_nk)
+      enddo
+   enddo
+!$omp enddo
+!$omp do
+   do k = 2,F_nk-1
+      do j = j0,jn
+         do i = i0,in
+            F_pz(i,j,k) = F_zth(i,j,k) - p_z(k)
+            F_pz(i,j,k) = P_z(k) + 2.0 * F_pz(i,j,k)
+         enddo
+      enddo
+   enddo
+!$omp enddo
+!$omp end parallel
+
+   call msg(MSG_DEBUG,'adx_main_2_pos ('//trim(F_l_S)//') [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_main_2_pos3

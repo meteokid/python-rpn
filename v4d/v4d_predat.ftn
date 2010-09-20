@@ -17,8 +17,8 @@
 *
 #include "model_macros_f.h"
 *
-      logical function v4d_predat (F_u, F_v, F_t, F_zd, F_s, F_topo, 
-     $                          F_fiptx, Mminx, Mmaxx, Mminy, Mmaxy)
+      logical function v4d_predat (F_u, F_v, F_t, F_zd, F_s, F_topo, F_fiptx, F_w, F_q,
+     $                             Mminx, Mmaxx, Mminy, Mmaxy)
 *
       implicit none
 *
@@ -26,6 +26,7 @@
       real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v (Mminx:Mmaxx,Mminy:Mmaxy,*),
      $     F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd(Mminx:Mmaxx,Mminy:Mmaxy,*),
      $     F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*),
+     $     F_w(Mminx:Mmaxx,Mminy:Mmaxy,*), F_q    (Mminx:Mmaxx,Mminy:Mmaxy,0:*),
      $     F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
 *
 *author
@@ -42,6 +43,7 @@
 * v4_04 - Tanguay M.        - Staggered version TL/AD 
 * v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
 * v4_12 - Tanguay M.        - Adapt to revised predat 
+* v4_XX - Tanguay M.        - Adjustments GEM413 .not. Schm_hydro_L
 *
 *object
 *     Preprocessing of Control   variables only if ipart=2
@@ -91,11 +93,24 @@
       if(.FALSE.)then
 *
       else
-         write(Lun_out,*) 'NOTE: ZD is set to ZERO in v4d_predat'
+         if( Lun_out.gt.0 ) write(Lun_out,*) 'NOTE: ZD and W are set to ZERO in v4d_predat'
          do k= 1, G_nk+1
             do j = 1, l_nj
                do i = 1, l_ni
                   F_zd(i,j,k)=0.
+                  F_w (i,j,k)=0.
+               end do
+            end do
+         end do
+      endif
+*
+      if (.not.Schm_hydro_L) then
+         do k= 0, G_nk+1
+            do j = 1, l_nj 
+               do i = 1, l_ni
+*
+                  F_q(i,j,k)=0.
+*
                end do
             end do
          end do

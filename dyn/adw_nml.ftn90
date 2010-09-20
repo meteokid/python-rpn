@@ -13,8 +13,6 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-#include <model_macros_f.h>
-
 !/**
 function adw_nml(F_nmlFileName_S) result(F_stat)
    implicit none
@@ -26,20 +24,20 @@ function adw_nml(F_nmlFileName_S) result(F_stat)
    !@returns
    integer :: F_stat
    !@author Stephane Chamberland, Nov 2009
-   !@revisions
-   !  YYYY-MM, MY_AUTHOR: original code
 !**/
    integer :: fileUnit
    integer, external :: file_open_existing
    !---------------------------------------------------------------------
-   Adw_nkbz_L = .true.
-   Adw_exdg_L = .false.
-   Adw_ckbd_L = .false.
-   Adw_mono_L = .true.
-   Adw_nosetint_L   = .false.
-   Adw_trunc_traj_L = .false.
-   Adw_halox  = -1
-   Adw_haloy  = -1
+   adw_nkbz_L = .true.
+   adw_exdg_L = .false.
+   adw_ckbd_L = .false.
+   adw_mono_L = .true.
+   adw_nosetint_L   = .false.
+   adw_trunc_traj_L = .false.
+   adw_halox  = -1
+   adw_haloy  = -1
+   adw_useadx_L = .true.
+   adw_stats_L = .false.
 
    F_stat = -1
    fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')
@@ -73,28 +71,26 @@ end subroutine adw_nml_print
 
 
 !/**
-function adw_config(F_lam_L,F_maxcfl) result(F_stat)
+function adw_config() result(F_stat)
    implicit none
    !@objective Establish final Advection configuration
-   !@arguments
-   logical :: F_lam_L
-   integer :: F_maxcfl
    !@returns
    integer :: F_stat
    !@author Stephane Chamberland, Nov 2009
-   !@revisions
-   !  YYYY-MM, MY_AUTHOR: original code
+#include "glb_ld.cdk"
+#include "grd.cdk"
 #include "adw_nml.cdk"
 !**/
    !---------------------------------------------------------------------
    F_stat = 0
-   if (F_lam_L) then
-      Adw_maxcfl= F_maxcfl
-      Adw_halox = Adw_maxcfl + 1
-      Adw_haloy = Adw_halox
-   else
-      Adw_halox = max(3,Adw_halox)
-      Adw_haloy = max(2,Adw_haloy)
+
+   adw_maxcfl= max(1,Grd_maxcfl)
+   adw_halox = max(1,adw_maxcfl + 1)
+   adw_haloy = adw_halox
+
+   if (.not.G_lam) then
+      adw_halox = max(3,adw_halox)
+      adw_haloy = max(2,adw_haloy)
    endif
    !---------------------------------------------------------------------
    return
@@ -102,16 +98,17 @@ end function adw_config
 
 
 !/**
-function adw_getMaxCFL() result(F_maxcfl)
+function adw_get_useadx() result(F_useadx_L)
    implicit none
+   !@objective Establish final Advection configuration
    !@returns
-   integer :: F_maxcfl
+   logical :: F_useadx_L
    !@author Stephane Chamberland, Nov 2009
 #include "adw_nml.cdk"
 !**/
    !---------------------------------------------------------------------
-   F_maxcfl = adw_maxcfl
+   F_useadx_L = adw_useadx_L
    !---------------------------------------------------------------------
    return
-end function adw_getMaxCFL
+end function adw_get_useadx
 

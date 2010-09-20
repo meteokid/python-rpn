@@ -78,6 +78,7 @@
 * v4_04 - Tanguay M.        - Staggered version TL/AD 
 * v4_12 - Tanguay M.        - OPENMP TL/AD
 * v4_12 - Tanguay M.        - TL/AD Open top
+* v4_XX - Tanguay M.        - Adjustments GEM413
 *
 *object
 *     see id section 
@@ -212,11 +213,11 @@
 *
       endif
 *
-      p1_8 = Cstv_tauT_8*Cstv_RTstr_8/Dcst_grav_8
+      p1_8 = Cstv_tau_8*Cstv_RTstr_8/Dcst_grav_8
       p2_8 = ONE_8/Cstv_RTstr_8
       p3_8 = ONE_8/Dcst_grav_8
       p4_8 = ONE_8/Dcst_rayt_8**2
-      p5_8 = ONE_8/Cstv_tauw_8
+      p5_8 = ONE_8/Cstv_tau_8
 *
 !$omp parallel private(xxx_8,yyy_8,zzz_8,xxx_m_8,
 !$omp$                 xtmp_8,ytmp_8,xtmp_m_8,ytmp_m_8)
@@ -272,12 +273,12 @@
 *              TRAJECTORY
 *              ----------
                F_u_m(i,j,k)= Cstv_tau_8*( F_ru_m(i,j,k)-F_nu_m(i,j,k) -
-     $         p4_8*(F_p_m(i+1,j,k)-F_p_m(i,j,k)) * Geomg_invhx_8(i) )
+     $         p4_8*(F_p_m(i+1,j,k)-F_p_m(i,j,k)) * Geomg_invDXu_8(i) )
 *
 *              TLM 
 *              ---
                F_u(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) -
-     $         p4_8*(F_p(i+1,j,k)-F_p(i,j,k)) * Geomg_invhx_8(i) )
+     $         p4_8*(F_p(i+1,j,k)-F_p(i,j,k)) * Geomg_invDXu_8(i) )
 *
             end do
             end do
@@ -288,14 +289,12 @@
 *              TRAJECTORY
 *              ----------
                F_v_m(i,j,k)= Cstv_tau_8*( F_rv_m(i,j,k)-F_nv_m(i,j,k) -
-     $                p4_8*(F_p_m(i,j+1,k) - F_p_m(i,j,k))
-     $                  *Geomg_cyv2_8(j)*Geomg_invhsy_8(j) )
+     $                p4_8*(F_p_m(i,j+1,k) - F_p_m(i,j,k)) * Geomg_invDYv_8(j) )
 *
 *              TLM 
 *              ---
                F_v(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) -
-     $                p4_8*(F_p(i,j+1,k) - F_p(i,j,k))
-     $                  *Geomg_cyv2_8(j)*Geomg_invhsy_8(j) )
+     $                p4_8*(F_p(i,j+1,k) - F_p(i,j,k)) * Geomg_invDYv_8(j) )
 *
             end do
             end do
@@ -443,7 +442,7 @@
 *
             xxx_8=Ver_gokt2RT_8*Ver_idz_8%t(k)
             yyy_8=Ver_gokt2RT_8*Ver_epsilon_8
-            zzz_8=Ver_b_8%t(k)/Cstv_tauT_8
+            zzz_8=Ver_b_8%t(k)*p5_8
             if(Schm_autobar_L) zzz_8=0.d0
 *
             do j= j0, jn 
@@ -472,13 +471,12 @@
 !$omp do
             do k=kminzd,l_nk
 *
-               xxx_8=HALF_8/Cstv_tauT_8
-*
 *              TRAJECTORY
 *              ----------
                do j= j0, jn 
                do i= i0, in 
-                  F_zd_m(i,j,k)=F_zd_m(i,j,k)-xxx_8*(F_q_m(i,j,k)+F_q_m(i,j,k-1))
+                  F_zd_m(i,j,k)=F_zd_m(i,j,k)-p5_8*
+     $            (Ver_wp_8%t(k)*F_q_m(i,j,k)+Ver_wm_8%t(k)*F_q_m(i,j,k-1))
                enddo
                enddo
 *
@@ -486,7 +484,8 @@
 *              ---
                do j= j0, jn
                do i= i0, in
-                  F_zd(i,j,k)=F_zd(i,j,k)-xxx_8*(F_q(i,j,k)+F_q(i,j,k-1))
+                  F_zd(i,j,k)=F_zd(i,j,k)-p5_8*
+     $            (Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
                enddo
                enddo
 *

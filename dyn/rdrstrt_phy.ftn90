@@ -37,14 +37,15 @@
 #include "init.cdk"
 #include "rstr.cdk"
 #include "modconst.cdk"
-!
+#include "path.cdk"
+#include "ptopo.cdk"
 !
 !modules
       integer  fnom,fclos,wkoffit
       external fnom,fclos,wkoffit
 !
       character*512 fn
-      character*16 datev,datev_infile
+      character*16 datev,datev_infile,startindx
       integer dim,unf,ier,ibuf(4),adr
       real   rbuf(6)
       real*8 dayfrac, sec_in_day
@@ -52,14 +53,19 @@
 !
 !     ---------------------------------------------------------------
 !
+      itf_phy_busper_init_L = .false.
+!
       unf = 0
       dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Mod_runstrt_S,dayfrac)
-
-      fn  = 'BUSPER4spinphy_'//trim(datev)
+!
+      write (startindx,'((i3.3),a1,(i3.3))') Ptopo_mycol,'-',Ptopo_myrow
+      fn  = '../busper/'//trim(startindx)//'/BUSPER4spinphy_'//trim(datev)
+!
       ier = wkoffit(fn) 
+!
       if (ier.lt.-1) then
-        fn='restart_BUSPER'
+        fn  = 'restart_BUSPER'
         ier = wkoffit(fn)
       endif
 !
@@ -102,7 +108,7 @@
          call waread (unf,Phy_busper3D_digf,adr,dim)
       endif
 !
-      Lam_busper_init_L = .true.
+      itf_phy_busper_init_L = .true.
 !
  999  call waclos(unf)
       ier = fclos(unf)  

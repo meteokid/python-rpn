@@ -1,0 +1,18 @@
+#include "stop_mpi.h"
+
+!TODO: remove from RCS
+subroutine adx_pols()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_pols','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_pols
+
+subroutine adx_pols2()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_pols','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_pols2

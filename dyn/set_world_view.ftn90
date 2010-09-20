@@ -124,7 +124,7 @@
 ! Establish final configuration
 !
       f1 = gemdm_config ( )
-      f2 = adw_config   (G_lam,Grd_maxcfl)
+      f2 = adw_config   ( )
       f3 = v4d_config   ( )
       call handle_error(min(f1,f2,f3),'set_world_view','')
 !

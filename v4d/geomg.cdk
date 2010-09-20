@@ -2,6 +2,9 @@
 !
 !**comdeck geomg.cdk
 !
+
+PGF90-S-0038-Symbol, geomg_sy_8, has not been explicitly declared (./prep.f90: 196)
+
 !______________________________________________________________________
 !                                                                      |
 !  GRID COORDINATES and other related parameters (set_geom)            |
@@ -10,56 +13,56 @@
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
 ! geomg_x_8          | longitude                                       |
+! geomg_xu_8         | longitude of u points                           |
 ! geomg_y_8          | latitude                                        |
-! geomg_xu_8         | longitude                                       |
-! geomg_yv_8         | latitude                                        |
-!--------------------|-------------------------------------------------|
-!                    | 2 variables for diffusion operators             |
-! geomg_wxs_8        | weight for zonal averaging (x direction)        |
-! geomg_ys_8         | extended staggered grid in y direction          |
+! geomg_yv_8         | latitude  of v points                           |
 !--------------------|-------------------------------------------------|
 ! geomg_sx_8         | sine of longitude                               |
-! geomg_cx_8         | cosine of longitude                             |
 ! geomg_sy_8         | sine of latitude                                |
+! geomg_cx_8         | cosine of longitude                             |
 ! geomg_cy_8         | cosine of latitude                              |
-! geomg_cy2_8        | cosine squared of latitude                      |
-! geomg_syv_8        | sine of latitude                                |
-! geomg_cyv_8        | cosine of latitude                              |
-! geomg_cyv2_8       | cosine squared of latitude                      |
+! geomg_cy2_8        | cosine of latitude squared                      |
+! geomg_cyv_8        | cosine of latitude for v points                 |
+! geomg_cyv2_8       | cosine of latitude squared for v points         |
 !--------------------|-------------------------------------------------|
 ! geomg_hx_8         | distance between grid points in x direction     |
+! geomg_hxu_8        | distance btwn pts in x direction for u points   |
 ! geomg_hy_8         | distance between grid points in y direction     |
-! geomg_hz_8         | distance between grid points in z direction     |
-! geomg_hxu_8        | distance btwn pts in x direction                |
-! geomg_hyv_8        | distance btwn pts in y direction                |
-! geomg_hsy_8        | delta sin(latitude)                             |
-! geomg_hsyv_8       | delta sin(latitude)                             |
+! geomg_hyv_8        | distance btwn pts in y direction for v points   |
+!----------------------------------------------------------------------
+! geomg_invDX_8      | inverse DELTAX = 1/d(lambda)                    |
+! geomg_invDXu_8     | inverse DELTAX for u points                     |
+! geomg_invDY_8      | inverse DELTAY = cos(theta)2/dsin(theta)        |
+! geomg_invDYv_8     | inverse DELTAY for v points                     |
+!                    | n.b. DELTAY.ne.geomg_hy_8                       |
+! geomg_invcy2_8     | inverse of geomg_cy2_8                          |
+! geomg_invcyv2_8    | inverse of geomg_cyv2_8                         |
 !----------------------------------------------------------------------
 !
 #endif
 !
       DCL_DYNVAR(Geomg, x_8   ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, y_8   ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, xu_8  ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, y_8   ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, yv_8  ,  real*8, (YDIST_SHAPE))
+!
       DCL_DYNVAR(Geomg, hx_8  ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, hy_8  ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, hxu_8 ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, hy_8  ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, hyv_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, cx_8  ,  real*8, (XDIST_SHAPE))
+!
       DCL_DYNVAR(Geomg, sx_8  ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, sy_8  ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, cx_8  ,  real*8, (XDIST_SHAPE))
       DCL_DYNVAR(Geomg, cy_8  ,  real*8, (YDIST_SHAPE))
+!
       DCL_DYNVAR(Geomg, cy2_8 ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, cyv_8 ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, cyv2_8,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, sy_8  ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, syv_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, hsy_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, hsyv_8,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, wxs_8 ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, ys_8  ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invhx_8  ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invhsy_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invcy2_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invhsyv_8,  real*8, (YDIST_SHAPE))
 !
+      DCL_DYNVAR(Geomg, invDX_8  ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invDXu_8 ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invDY_8  ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invDYv_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invcy2_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invcyv2_8,  real*8, (YDIST_SHAPE))

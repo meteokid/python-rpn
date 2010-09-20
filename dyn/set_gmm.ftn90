@@ -31,6 +31,7 @@
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
+#include "rstr.cdk"
 !
 !-------------------------------------------------------------------
 !
@@ -69,7 +70,7 @@
                             0,l_nk+1,0,0,l_nk+2, &
                             0,GMM_NULL_FLAGS)
 !
-      gmmstat = gmm_checkpoint_all(GMM_READ_CKPT)
+      if (Rstri_rstn_L) gmmstat = gmm_checkpoint_all(GMM_READ_CKPT)
 !
 !-------------------------------------------------------------------
 !

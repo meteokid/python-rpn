@@ -96,7 +96,7 @@
 !modules
 !***********************************************************************
       type(gmm_metadata) :: dummy_gmm_meta
-      integer :: i,istat
+      integer :: i,istat,i0,in,j0,jn
       real, dimension(Adw_nit*Adw_njt,  G_nk  ) :: pxm,pym,pzm,um,vm,wm
       real, dimension(Adw_nit*Adw_njt,  G_nk+1) :: pxt,pyt,pzt,ut,vt,wt
       real, dimension(Adw_nit*Adw_njt,2*G_nk+1) :: su,sv,sw
@@ -104,18 +104,21 @@
       real dummy
 
       logical v4dstore_L
-!
+      logical :: save_stats_L
+
 !***********************************************************************
       call msg(MSG_DEBUG,'ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN)')
 !***********************************************************************
+      save_stats_L = adw_stats_L
+      adw_stats_L = (F_isStatStep_L .and. adw_stats_L)
       v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L 
-!
+
       do i=1, 4
          Adw_trunc(i) = 0
       enddo
-!
+
       call adw_main_1_wnd2(su,sv,sw,um,vm,wm,ut,vt,wt,l_ni,l_nj,G_nk)
-!
+
       istat = gmm_get(gmmk_xth_s,xth,dummy_gmm_meta)
       istat = min(istat,gmm_get(gmmk_yth_s,yth,dummy_gmm_meta))
       istat = min(istat,gmm_get(gmmk_zth_s,zth,dummy_gmm_meta))
@@ -132,7 +135,7 @@
       istat = min(istat,gmm_get(gmmk_ycth_thermo_s,ycth_thermo,dummy_gmm_meta))
       istat = min(istat,gmm_get(gmmk_zcth_thermo_s,zcth_thermo,dummy_gmm_meta))
       call handle_error(istat,'adw_main','gmm_get')
-!
+
       call adw_main_2_pos ( &
            F_it,'m',l_nk, &
            pxm ,pym ,pzm , &
@@ -141,7 +144,7 @@
            xcth,ycth,zcth, &
            xct1,yct1,zct1, &
            dummy,dummy)
-!
+
       call adw_main_2_pos ( &
            F_it       ,'t'        ,l_nk+1, &
            pxt        ,pyt        ,pzt, &
@@ -150,19 +153,43 @@
            xcth_thermo,ycth_thermo,zcth_thermo, &
            l_xct1     ,l_yct1     ,l_zct1, &
            pxm        ,pym)
-!
+
+
+      if (adw_stats_L) then
+         call adw_get_ij0n(i0,j0,in,jn)
+         call adx_main_2_pos_stats( &
+              'm', su  ,sv  ,sw  , &
+              pxm,  pym,  pzm , &
+              xth , yth , zth , &
+              xcth, ycth, zcth, &
+              xct1, yct1, zct1, &
+              1-adw_halox,Adw_nit-adw_halox,1-adw_haloy,Adw_njt-adw_haloy,2*l_nk+1,&
+              l_ni, l_nj, l_nk,l_nk, i0,in,j0,jn)
+         call adx_main_2_pos_stats(  &
+              't', su  ,sv  ,sw  , &
+              pxt,    pyt,    pzt, &
+              xth_thermo,  yth_thermo,  zth_thermo, &
+              xcth_thermo, ycth_thermo, zcth_thermo, &
+              l_xct1, l_yct1, l_zct1, &
+              1-adw_halox,Adw_nit-adw_halox,1-adw_haloy,Adw_njt-adw_haloy,2*l_nk+1,&
+              l_ni, l_nj, l_nk,l_nk+1,i0,in,j0,jn)
+      endif
+
 !     Store TRAJ upstream positions 
 !     -----------------------------
-      if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt) 
-!
+      if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt,l_ni,l_nj,G_nk,G_nk+1) 
+
+!     Store TRAJ RHS before interpolation
+!     -----------------------------------
+      if ( v4dstore_L ) call v4d_rwtraj (11)
       call adw_main_3_intlag(pxm,pym,pzm,pxt,pyt,pzt,F_isStatStep_L)
-!
+
 !     Store TRAJ RHS interpolated
 !     ---------------------------
       if ( v4dstore_L ) call v4d_rwtraj (6)
-!
+
+      adw_stats_L = save_stats_L
 !**********************************************************************
-!
       return
       end
 

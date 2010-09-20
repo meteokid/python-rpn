@@ -1,0 +1,84 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r casc_phy_interp
+!
+#include "model_macros_f.h"
+      subroutine casc_phy_interp ( nid,njd, src,nis,njs, nks, indxx,indxy, &
+                                     cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint, &
+                                                          phynm,nga,nfphy)
+      implicit none
+!
+      character* (*) hint
+      character(len=*):: phynm(nfphy)
+      integer nid,njd,nis,njs,nks(nfphy),nga,nfphy
+      integer indxx(nid),indxy(njd)
+      real src(nga,nfphy), &
+           cxa(*),cxb(*),cxc(*),cxd(*),cya(*),cyb(*),cyc(*),cyd(*)
+!
+!Author
+!     Lubos Spacek - Spring 2010
+!
+!Revision
+! v4_13 - Spacek, L.     - First revision
+!
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+!
+      integer  ezsint
+      external ezsint
+
+      character(len=16) :: var
+      integer i,k,ivar,nkphy,err
+      real, pointer, dimension (:,:,:) :: dst
+!
+      type(gmm_metadata) :: meta3d_phy
+!
+!-----------------------------------------------------------------------
+!
+      nkphy=0
+      do ivar = 1,nfphy
+         call gmm_build_meta3D(meta3d_phy,                &
+                               1,l_ni,0,0,l_ni,           &
+                               1,l_nj,0,0,l_nj,           &
+                               1,nks(ivar),0,0,nks(ivar), &
+                               0,GMM_NULL_FLAGS) 
+         write(var,'(2a)')'CASC_',trim(phynm(ivar))
+         nullify (dst)
+         gmmstat = gmm_create(var,dst,meta3d_phy,GMM_FLAG_INAN)
+         if (GMM_IS_ERROR(gmmstat)) then
+            write(6000,var)
+            cycle
+         endif
+         gmmstat = gmm_get(var,dst,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) then
+            write(6010,var)
+            cycle
+         endif
+
+         do i=1,nks(ivar)
+            nkphy=nkphy+1
+            call hinterpo ( dst(1,1,i),nid,njd, src(1,nkphy),nis,njs, 1,indxx,indxy, &
+                            cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint)
+         enddo
+      enddo
+!
+ 6000 format('phinterpo at gmm_create(',A,')')
+ 6010 format('phinterpo at gmm_get(',A,')')
+!-----------------------------------------------------------------------
+      return
+      end
+!

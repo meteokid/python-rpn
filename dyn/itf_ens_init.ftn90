@@ -38,7 +38,8 @@
 #include "grd.cdk"
 !
       integer, external :: ens_nml
-      integer           :: ierr(3), imrkv2
+      integer           :: ierr(5), imrkv2
+      real              :: ptp_env_u, ptp_env_b
       logical           :: ens_conf,stochphy, prout
 !
 !-------------------------------------------------------------------
@@ -49,14 +50,15 @@
 !
       ierr=0
 
-      ierr(1) = ens_nml (Path_nml_S,Grd_typ_S,ens_conf,stochphy,imrkv2,Lun_out)
+      ierr(1) = ens_nml (Path_nml_S,Grd_typ_S,ens_conf,stochphy,imrkv2,ptp_env_u,ptp_env_b,Lun_out)
       call handle_error(ierr(1),'itf_ens_init','Problem with ens_nml')
-
       if (ens_conf) then
          prout = Lun_out.gt.0
-         call phy_opti('IMRKV2'   , imrkv2   ,1,'SET',prout,ierr(2))
-         call phy_optl('STOCHPHY' , stochphy ,1,'SET',prout,ierr(3))
-         ierr(2) = min(ierr(2),ierr(3))
+         call phy_opti('IMRKV2'   , imrkv2    ,1,'SET',prout,ierr(2))
+         call phy_optl('STOCHPHY' , stochphy  ,1,'SET',prout,ierr(3))
+         call phy_optr('PTPENVU'  , ptp_env_u ,1,'SET',prout,ierr(4))
+         call phy_optr('PTPENVB'  , ptp_env_b ,1,'SET',prout,ierr(5))
+         ierr(2) = min(ierr(2),ierr(3), ierr(4), ierr(5))
          call handle_error(ierr(2),'itf_ens_init','physics initialization')
          call ens_set_mem (LXDIST_DIM,G_halox,l_ni, &
                            LYDIST_DIM,G_haloy,l_nj,l_nk,Lun_out)

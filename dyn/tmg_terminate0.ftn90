@@ -30,37 +30,24 @@
 ! v3_21 - Desgagne/Valin - initial version
 !
 !
-      integer i,j,ier
-!
-      integer all_sum_m0(MAX_SUBR,MAX_PROC)
-      real*8  all_sum_r0(MAX_SUBR,MAX_PROC)
-!
-      real value_m0,value_r0
+      integer i
 !
       call tmg_terminate ( npe, msg )
-      if (.not.tmg2_on_L) return
 !
-      all_sum_m0(:,:) = 0  
-      all_sum_m0 = sum_m0
-      all_sum_r0(:,:) = 0.0  
-      all_sum_r0 = sum_r0
+      if (tmg2_on_L) then
+         print *,' ' 
+         print *,'_______________________________________________________________________' 
+         print *,'_______________________TIMINGS_________________________________________' 
 !
-      print *,' ' 
-      print *,'_______________________________________________________________________' 
-      print *,'_______________________TIMINGS_________________________________________' 
+         do i = 1,MAX_instrumented
+            if(nam_subr_S(i).ne.'NO NAME  ') write(6,101) trim(nam_subr_S(i)),sum_m0(i)*0.01,sum_r0(i)
+         enddo
 !
-      do i = 1,MAX_SUBR
-         value_m0 = all_sum_m0(i,1)*0.01 
-         value_r0 = all_sum_r0(i,1) 
-!        if(nam_subr_S(i).ne.'NO NAME  ') write(6,100) nam_subr_S(i),value_m0,value_r0
-         if(nam_subr_S(i).ne.'NO NAME  ') write(6,100) nam_subr_S(i),value_r0
-      enddo
+         print *,'_______________________________________________________________________' 
+         print *,' ' 
+      endif
 !
-      print *,'_______________________________________________________________________' 
-      print *,' ' 
-!
-! 100 format (A9,'  ',g10.4,'  ',g10.4)
-  100 format (A9,'  ',g10.4)
+  101 format (A12,3x,'mclock= ',g10.4, 3x,'rtools_wtime= ',g10.4)
 !
       return
       end

@@ -39,7 +39,8 @@
            .or. Theo_case_S.eq.'MTN_SCHAR2' &
            .or. Theo_case_S.eq.'MTN_PINTY' &
            .or. Theo_case_S.eq.'MTN_PINTY2' &
-           .or. Theo_case_S.eq.'MTN_PINTYNL') then
+           .or. Theo_case_S.eq.'MTN_PINTYNL' &
+           .or. Theo_case_S.eq.'NOFLOW' ) then
          call mtn_case ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
                          F_q, F_dtopo, pref_tr, suff_tr, &
                          l_minx, l_maxx, l_miny, l_maxy )

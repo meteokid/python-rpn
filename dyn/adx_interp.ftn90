@@ -1,0 +1,104 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include "msg.h"
+
+!/**
+subroutine adx_interp4 (F_out,F_in, &
+     Minx,Maxx,Miny,Maxy,F_nk, &
+     F_wind_L,F_mono_L, i0,in,j0,jn, F_lev_S)
+   implicit none
+   !@objective 
+   !@arguments
+   character (len=*) :: F_lev_S !I, m/t : Momemtum/thermo level
+   integer :: Minx,Maxx,Miny,Maxy
+   integer :: i0,in,j0,jn       !I, scope of operator
+   integer :: F_nk              !I, number of vertical levels
+   logical :: F_mono_L          !I, .true. monotonic interpolation
+   logical :: F_wind_L          !I, .true. if field is wind like
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk) :: F_in,F_out
+
+   !@author alain patoine
+   !@revisions
+   ! v2_31 - Tanguay M.        - correction parameters adx_vder 
+   ! v3_00 - Desgagne & Lee    - Lam configuration
+   ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+   ! v3_20 - Gravel & Valin & Tanguay - Lagrange 3D   
+   ! v3_21 - Desgagne M.       - Revision Openmp
+   ! v3_30 - McTaggart-Cowan   - Add truncated lag3d interpolator
+   ! v3_30 - McTaggart-Cowan   - Vectorization subroutines *_vec
+   ! v3_30 - Tanguay M.        - adjust OPENMP for LAM 
+   !**/
+#include "adx_dims.cdk"
+#include "adx_poles.cdk"
+#include "adx_interp.cdk"
+   logical, parameter :: EXTEND_L = .true.
+   integer :: i, j, k, istat, nbpts
+   real    :: dummy
+   real    :: fld_adw(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk)
+   real, dimension(:),pointer :: wrka
+   real, dimension(adx_mlni,adx_mlnj,F_nk) :: wrkb, wrkc
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'adx_interp')
+   if (.not.adx_lam_L) allocate(wrka(max(1,adx_fro_a)))
+
+   call tmg_start0(69, 'ADX_MODE2' )
+   call adx_model2adx_grid_scalar2 (fld_adw, F_in, adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,&
+                                             Minx,Maxx,Miny,Maxy, F_nk, F_wind_L, EXTEND_L)
+   call tmg_stop0(69)
+   nbpts = adx_mlni*adx_mlnj*F_nk
+!$omp parallel 
+
+   call adx_tricub_lag3d4(wrkc, fld_adw, &
+        adx_capx1, adx_capy1, adx_capz1, nbpts, &
+        F_mono_L, i0,in,j0,jn, F_nk, F_lev_S)   
+
+   if (.not.adx_lam_L) then
+      if (adx_fro_a > 0) then
+         call adx_tricub_lag3d4(wrka, fld_adw, &
+              adx_capx2, adx_capy2, adx_capz2, adx_fro_a, &
+              F_mono_L, 1,adx_fro_a,1,1,1, F_lev_S)
+      endif
+
+!$omp single
+      call adx_exch_2(wrkb, dummy, dummy, &
+           wrka, dummy, dummy, &
+           adx_for_n, adx_for_s, adx_for_a, &
+           adx_fro_n, adx_fro_s, adx_fro_a, 1)
+
+      if (adx_for_a > 0) &
+           call adx_exch_3b(wrkc, dummy, wrkb, dummy, adx_c1, 1,adx_mlni,adx_mlnj,F_nk)
+!$omp end single
+
+   endif
+
+!$omp do
+   do k = 1, F_nk
+      do j = j0,jn
+         do i = i0,in
+            F_out(i,j,k) = wrkc(i,j,k)
+         enddo
+      enddo
+   enddo
+!$omp enddo
+
+!$omp end parallel
+
+   if (.not.adx_lam_L) deallocate(wrka)
+   call msg(MSG_DEBUG,'adx_interp [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_interp4
+

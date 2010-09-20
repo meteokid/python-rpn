@@ -38,6 +38,7 @@
 #endif
       integer MAXBUS
       parameter (MAXBUS = 1000)
+      logical itf_phy_busper_init_L
       integer p_bdyn_top,p_bper_top,p_bvol_top,p_bent_top
       integer p_bdyn_siz,p_bper_siz,p_bvol_siz,p_bent_siz
       integer p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj
@@ -53,7 +54,7 @@
       common / p_bus / p_bdyn_out,p_bper_out,p_bvol_out,p_bent_out
       common / p_bus / entpar,dynpar,perpar,volpar
       common / p_bus / p_bent_idx,p_bper_idx
-      common / p_bus / p_bdyn_idx,p_bvol_idx
+      common / p_bus / p_bdyn_idx,p_bvol_idx,itf_phy_busper_init_L
 !
       character*1   p_outbus_s(maxbus)
       character*16  entnm(maxbus),dynnm(maxbus)

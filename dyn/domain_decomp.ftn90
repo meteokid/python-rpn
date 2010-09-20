@@ -90,7 +90,9 @@
       call rpn_comm_topo ( G_nj,l_miny,l_maxy,l_nj,G_lnjmax, &
                                  G_haloy,l_j0,.false.,.true.)
 !
+      if (Lun_out.gt.0) write (Lun_out,1000) G_ni,Ptopo_npex,G_nj,Ptopo_npey
       ierr=0
+!
       if ( (.not.check_parti (l_i0,G_ni,Ptopo_npex)) .or. &
            (.not.check_parti (l_j0,G_nj,Ptopo_npey)) ) ierr=-1
       if ( l_ni.lt.(Grd_extension+1) ) then
@@ -101,7 +103,7 @@
          if (Lun_out.gt.0) write (Lun_out,1001) 'Y','l_nj',Grd_extension+1
          ierr=-1
       endif
-      call handle_error(ierr,'domain_decomp','check_parti')
+      call handle_error(ierr,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
 !
       l_nk = G_nk
       l_njv= l_nj
@@ -111,6 +113,8 @@
 !
       call glbpos  
 !
+ 1000 format (/' DOMAIN_DECOMP: checking partitionning of G_ni and G_nj'/&
+               2(i6,' in ',i6,' subdomains',5x)/)
  1001 format (/' PARTITIONNING in ',a, ' is illegal: ',a,' lesser than ',i4/)
 !
 !-------------------------------------------------------------------

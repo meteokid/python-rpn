@@ -50,6 +50,7 @@
 !                             tendencies.
 ! v4_03 - Spacek L.         - Staggered version
 ! v4_05 - Desgagne M.       - Add coupling components
+! v4_13 - Spacek L.         - Replace busent by pointer to geofld
 !
 !object
 !     See above id.
@@ -87,8 +88,9 @@
       real dt
 !
       real busdyn(max(1,p_bdyn_siz)), busvol(max(1,p_bvol_siz)), &
-           busent(max(1,p_bent_siz)), busper, busper2(max(1,p_bper_siz))
+           busent, busper, busper2(max(1,p_bper_siz))
       pointer (pabusper,busper(*))
+      pointer (pabusent,busent(*))
 !
 !     Declarations for chemistry buses.
 !
@@ -127,6 +129,7 @@
       if ( F_pslic .le. p_nj ) then
 !
          pabusper    = loc (Phy_busper3D((jdo-1)*p_bper_siz+1))
+         if(F_step==0) pabusent    = loc (geofld((jdo-1)*p_bent_siz+1))
          if (Schm_chems_L) pachmbusper =  &
                        loc(chm_busper3D((jdo-1)*chm_bper_siz+1))
 !
@@ -145,7 +148,7 @@
       busvol = 0.0
       j = jdo + p_offj
 !
-      call itf_phy_fillbus ( busdyn, busent, j, F_step, p_nk )
+      call itf_phy_fillbus ( busdyn, j, F_step, p_nk )
 !
 !     Fill buses with fields produced by coupling
 !

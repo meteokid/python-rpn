@@ -27,6 +27,7 @@
 !     
 !     revision
 ! v4_12 - Spacek L.        - Initial version
+! v_4.1.3 - N. Gagnon      - Change name of most parameters in the NAMELIST
 !
 !object
 !	See above ID.
@@ -51,12 +52,12 @@
                             1,l_nk+2,0,0,l_nk+2, &
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta2D(meta2d_anm,                               &
-                            1,Ens_gg_dim,0,0,Ens_gg_dim,              &
-                            -Ens_gg_mzt,Ens_gg_mzt,0,0,2*Ens_gg_mzt+1,&
+                            1,Ens_mc3d_dim,0,0,Ens_mc3d_dim,              &
+                            -Ens_mc3d_mzt,Ens_mc3d_mzt,0,0,2*Ens_mc3d_mzt+1,&
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta2D(meta2d_znm,                      &
                             1,Ens_dim2_max,0,0,Ens_dim2_max, &
-                            1,Ens_ncha2,0,0,Ens_ncha2,       &
+                            1,Ens_mc2d_ncha,0,0,Ens_mc2d_ncha,       &
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta2D(meta2d_dum,                       &
                             1,36,0,0,36,                      &

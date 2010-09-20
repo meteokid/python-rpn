@@ -36,8 +36,8 @@
 #include "step.cdk"
 #include "itf_cpl.cdk"
 !
-      namelist /coupling/ CPL_NAME ,cpl_debut, cpl_fin, C_continue_L, &
-                          cpl_i0,cpl_in,cpl_j0,cpl_jn
+      namelist /coupling/ CPL_NAME ,cpl_debut, cpl_fin, cpl_freq, &
+                          C_continue_L,cpl_i0,cpl_in,cpl_j0,cpl_jn
 !
       integer  fnom,wkoffit
       external fnom,wkoffit
@@ -57,8 +57,9 @@
 ! Defaults values for ptopo namelist variables
 !
       CPL_NAME = 'NIL'
-      cpl_debut= 0
+      cpl_debut= 99999
       cpl_fin  = Step_total
+      cpl_freq = 1
       C_continue_L = .false.
       cpl_i0=1
       cpl_in=Grd_ni

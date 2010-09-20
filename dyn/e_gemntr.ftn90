@@ -56,23 +56,22 @@
 
       call e_gemnml
 !
-      if (.not.Pil_sfc2d_L .and. .not.Pil_3df_L) goto 800
+      if (Pil_3df_L) then
 !
-      call e_grid
+         call e_grid
 !
-      call e_dateo
+         call e_dateo
 !
-      call e_gettopo
+         call gemtim3 (6)
 !
-      call gemtim3 (6)
+         call e_dynfld
 !
-      if (Pil_sfc2d_L) call e_geopfld
+         call e_nml2bin 
 !
-      if (Pil_3df_L  ) call e_dynfld
+      endif
 !
-      if (Pil_sfc2d_L .or. Pil_3df_L) call e_nml2bin 
+      err = exfin (Version_ent_S//Version_dstp_S, Version_S, 'OK')
 !
- 800  err = exfin (Version_ent_S//Version_dstp_S, Version_S, 'OK')
       call write_status_file2 ('_status=ED' )
       call close_status_file2 ()
 !

@@ -1,0 +1,87 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+!/**
+function adx_nml(F_nmlFileName_S) result(F_stat)
+   implicit none
+#include "msg.h"
+#include "adx_nml.cdk"
+   !@objective Advection default configuration and reading namelists adx_cfgs
+   !@arguments
+   character(len=*) :: F_nmlFileName_S !I, Namelist file name
+   !@returns
+   integer :: F_stat
+   !@author Stephane Chamberland, Nov 2009
+   !@revisions
+   !  YYYY-MM, MY_AUTHOR: original code
+!**/
+   integer :: fileUnit
+   integer, external :: file_open_existing
+   !---------------------------------------------------------------------
+   adw_exdg_L = .false.
+   adw_ckbd_L = .false.
+   adw_mono_L = .true.
+   adw_nosetint_L   = .false.
+   adw_useadx_L = .true.
+   adw_stats_L = .false.
+
+   F_stat = -1
+   fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')
+   if (fileUnit>=0) then
+      read(fileUnit, nml=adw_cfgs, iostat=F_stat)
+      call fclos(fileUnit)
+      F_stat = -1 * F_stat
+      if (F_stat<0) then
+         call msg(MSG_ERROR,'adx_nml - Probleme reading nml adw_cfgs in file: '//trim(F_nmlFileName_S))
+      endif
+   endif
+   !---------------------------------------------------------------------
+   return
+end function adx_nml
+
+
+!/**
+subroutine adx_nml_print()
+   implicit none
+#include "msg.h"
+#undef __ADX_NML__
+#include "adx_nml.cdk"
+!**/
+   integer :: msgUnit
+   integer, external :: msg_getUnit !TODO: get full interface from <msg.hf>
+   !---------------------------------------------------------------------
+   msgUnit = msg_getUnit(MSG_INFO)
+   if (msgUnit>=0) write(msgUnit,nml=adw_cfgs)
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_nml_print
+
+
+!/**
+function adx_config() result(F_stat)
+   implicit none
+   !@objective Establish final Advection configuration
+   !@arguments
+   !@returns
+   integer :: F_stat !O, return -1 on error, 0 on sucess
+   !@author Stephane Chamberland, Nov 2009
+   !@revisions
+   !  YYYY-MM, MY_AUTHOR: original code
+!**/
+   !---------------------------------------------------------------------
+   F_stat = 0
+   !---------------------------------------------------------------------
+   return
+end function adx_config

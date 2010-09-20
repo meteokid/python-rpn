@@ -1,0 +1,236 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r get_topo - Obtain topography from geophysical file
+
+#include "model_macros_f.h"
+!
+      integer function get_topo (F_topo,ni,nj,dimgx,dimgy)
+      implicit none
+!
+      integer ni,nj,dimgx,dimgy
+      real F_topo (ni,nj)
+!
+!author   
+!     M. Desgagne  -   Spring 2010
+!
+!revision
+! v4_13 -  Desgagne M.           - initial version
+!
+#include "glb_ld.cdk"
+#include "hgc.cdk"
+#include "grd.cdk"
+#include "ifd.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+#include "path.cdk"
+#include "dcst.cdk"
+#include "schm.cdk"
+!
+      logical  samegrid
+      integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
+               fstopc,nav_3df,fstrhint
+      external fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
+               fstopc,nav_3df,fstrhint,samegrid
+!
+      character*1   typ, grd
+      character*2   var
+      character*8   lab,inttyp
+      character*512 fn,file_prefix,current_fn
+      integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
+              dty, swa, lng, dlf, ubc, ex1, ex2, ex3,          &
+              g1o,g2o,g3o,g4o,nvar
+!
+      integer err,ier,i,j,n,unf,unf2,nia,nja,ni1,nj1,nk1,key,err_flag
+      integer, dimension (:), allocatable :: idxl,idyl
+      real  , dimension (:  ) , allocatable :: xps,yps
+      real*8, dimension (:  ) , allocatable :: xpaq,ypaq, &
+                 cxal,cxbl,cxcl,cxdl,cyal,cybl,cycl,cydl
+      real*8 xpxext(0:dimgx), ypxext(0:dimgy)
+      real*8 deg2rad_8,CLXXX_8,ONE_8
+      parameter ( CLXXX_8 = 180.0d0, ONE_8 = 1.0d0 )
+      real work(l_ni,l_nj)
+
+!-----------------------------------------------------------------------
+!
+      get_topo = -1
+
+      if (.not.Schm_topo_L) then
+         F_topo   = 0.0
+         get_topo = 0
+         return
+      endif
+
+      file_prefix = '!@#$%^&*'
+      unf     = 91
+      fn      = trim(Path_work_S)//'/geophy_fileprefix_for_LAM'
+      open ( unf, FILE=fn, status='OLD', iostat=err )
+      if (err.eq.0) then
+         read (unf, '(a)', end = 9120) file_prefix
+ 9120    close(unf)
+      else
+         if (Lun_out.gt.0) write (Lun_out,1006) trim(fn)
+      endif
+
+      if (file_prefix .eq. '!@#$%^&*') return
+
+      fn = trim(Path_input_S)//'/LAM_geophy/'//trim(file_prefix)
+
+      open (unf,file=trim(fn)//'_gfilemap.txt',access='SEQUENTIAL', &
+                          status='OLD',iostat=err,form='FORMATTED')
+      if (err.ne.0) then
+        if (Lun_out.gt.0) write (Lun_out,1002) trim(fn)//'_gfilemap.txt'
+        return
+      else
+        if (Lun_out.gt.0) write (Lun_out,1000) trim(fn)//'_gfilemap.txt'
+      endif
+!
+      inttyp   = 'LINEAR'
+!
+      if (Lun_out.lt.0) ier = fstopc('MSGLVL','SYSTEM',.false.)
+!
+      do i=1,dimgx
+         xpxext(i) = G_xg_8(i)
+      end do
+      do i=1,dimgy
+         ypxext(i) = G_yg_8(i)
+      end do
+      xpxext(0) = xpxext(1) - (xpxext(2)-xpxext(1))
+      ypxext(0) = ypxext(1) - (ypxext(2)-ypxext(1))
+!
+      unf2 = 0
+!
+      deg2rad_8 = acos( -ONE_8 ) / CLXXX_8
+
+      ier = nav_3df(unf,1.2,deg2rad_8)
+      call handle_error(ier,'GET_TOPO','PROBLEM with NAV_3DF')
+
+      nia = ifd_niaf - ifd_niad + 1
+      nja = ifd_njaf - ifd_njad + 1
+      close (unf)
+!
+      err_flag = -1
+!
+      do n=1,ifd_nf
+      if (ifd_needit(n)) then
+         current_fn = trim(fn)//'_'//ifd_fnext(n)
+         if ((fnom   (unf2,current_fn,'RND+OLD+R/O',0)).lt.0) goto 57
+         if ((fstouv (unf2,'RND'))                     .lt.0) goto 57
+!
+! Use first file to establish geo-references (see goto 57 statement below)
+!
+         allocate ( xpaq(nia), ypaq(nja) )
+
+         key = fstinf(unf2,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','>>')
+         if (key.lt.0) then
+            if (Lun_out.gt.0) write (Lun_out,1004) '>>',trim(current_fn)
+            goto 57
+         endif
+         allocate (xps(ni1))
+         ier = fstluk ( xps, key, ni1,nj1,nk1 )
+         if (ier.lt.0) then
+            if (Lun_out.gt.0) write (Lun_out,1005) '>>',trim(current_fn)
+            goto 57
+         endif
+
+         key = fstinf(unf2,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','^^')
+         if (key.lt.0) then
+            if (Lun_out.gt.0) write (Lun_out,1004) '^^',trim(current_fn)
+            goto 57
+         endif
+         allocate (yps(nj1))
+         ier = fstluk ( yps, key, ni1,nj1,nk1 )
+         if (ier.lt.0) then
+            if (Lun_out.gt.0) write (Lun_out,1005) '^^',trim(current_fn)
+            goto 57
+         endif
+
+         do i=1,nia
+            xpaq(i) = xps(ifd_niad+i-1) * deg2rad_8
+         end do
+         do j=1,nja
+            ypaq(j) = yps(ifd_njad+j-1) * deg2rad_8
+         end do
+         deallocate (xps,yps)
+!
+         call cxgaig ('E',g1o,g2o,g3o,g4o,Grd_xlat1,Grd_xlon1, &
+                                         Grd_xlat2,Grd_xlon2)
+         ier= fstprm (key, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY,  &
+                      P1, P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, &
+                      SWA, LNG, DLF, UBC, EX1, EX2, EX3)
+
+         if (g1.ne.g1o.or.g2.ne.g2o.or.g3.ne.g3o.or.g4.ne.g4o) then
+            if (Lun_out.gt.0) then
+               write(Lun_out,1001) trim(current_fn),g1,g2,g3,g4,g1o,g2o,g3o,g4o
+            endif
+            goto 57
+         else
+            if (nia.eq.dimgx.and.nja.eq.dimgy) then
+               if (samegrid(unf2,nia,nja,p1,p2,p3, &
+                   g1o,g2o,g3o,g4o,xpxext(1),ypxext(1))) inttyp='NEAREST'
+            endif
+         endif
+         ier = fstfrm (unf2)
+         ier = fclos  (unf2)
+         err_flag = 0
+         goto 57
+      endif
+      enddo
+!
+ 57   call handle_error (err_flag,'GET_TOPO','')
+!
+      allocate (idxl(l_ni), idyl(l_nj))
+      allocate (cxal(l_ni),cxbl(l_ni),cxcl(l_ni),cxdl(l_ni), &
+                cyal(l_nj),cybl(l_nj),cycl(l_nj),cydl(l_nj))
+!
+      call grid_to_grid_coef  &
+          (xpxext(l_i0),l_ni,xpaq,nia,idxl,cxal,cxbl,cxcl,cxdl,'LINEAR')
+      call grid_to_grid_coef  &
+          (ypxext(l_j0),l_nj,ypaq,nja,idyl,cyal,cybl,cycl,cydl,'LINEAR')
+
+      err = fstrhint (work,'ME',l_ni,l_nj,1, &
+                            nia,nja,idxl,idyl,cxal,cxbl,cxcl,cxdl, &
+                            cyal,cybl,cycl,cydl,inttyp,fn)
+      do j=1,l_nj
+      do i=1,l_ni
+         F_topo(i,j) = work(i,j) * Dcst_grav_8
+      end do
+      end do
+!
+      deallocate (idxl,idyl,cxal,cxbl,cxcl,cxdl,cyal,cybl,cycl,cydl, &
+                  xpaq,ypaq)
+!
+      get_topo = 0
+
+      if (Ptopo_myproc.ne.0) ier = fstopc('MSGLVL','INFORM',.false.)
+!
+ 1000 format (4X,'GET_TOPO: reading geophy file description from ',A/)
+ 1001 format (4X,'GET_TOPO: Grid rotation from file:'/a/&
+              4X,'is not the same as target grid'/&
+              4X,'found grid parameters ig1,ig2,ig3,ig4:',4i7/&
+              4X,'                            should be:',4i7)
+ 1002 format (4X,'GET_TOPO: problem with opening geophy file:  ',A/)
+ 1004 format (4X,'GET_TOPO: unable to LOCATE ',a,' in   file: ',a/)
+ 1005 format (4X,'GET_TOPO: unable to READ   ',a,' from file: ',a/)
+ 1006 format (/' Unable to open file: ',a/&
+               ' VERIFY SHELL variable UM_EXEC_geophy_m or'/&
+               ' -geophy_m argument to Um_runmod.ksh'/)
+!
+!-----------------------------------------------------------------------
+!
+      return
+      end
+!
+

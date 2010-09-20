@@ -22,7 +22,7 @@
 !
       integer DIST_DIM, Nk
       real F_field(DIST_SHAPE,Nk),F_pert(DIST_SHAPE,Nk)
-      real tsum_8(l_nj,Nk)
+      real*8 tsum_8(l_nj,Nk)
       logical lmean
 !
 !author
@@ -31,6 +31,7 @@
 !revision
 ! v3_30 - Spacek L.      - initial MPI version
 ! v4_10 - Tanguay M.     - Replace tsum by tsum_8 as in GEM333  
+! v4_13 - Tanguay M.     - Correction real*8 of tsum_8  
 !     
 !object
 !     The subroutine calculates the zonal mean of the zonal

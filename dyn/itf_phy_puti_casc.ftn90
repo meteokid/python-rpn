@@ -1,0 +1,65 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_geti - "get information" the call back function
+!
+Subroutine itf_phy_puti_casc (vd,opt,istat)
+  !
+  Use phy_input_types
+  !
+  Implicit None
+  Integer                 :: ier,istat(*)
+  Type(variable), Pointer :: vd, temp
+  Type(input_options)     :: opt
+  !
+  !Author
+  !     Lubos Spacek - Spring 2010
+  !
+  !Revision
+  ! v4_13 - Spacek, L.     - First revision
+  !
+  !Object
+  !     Reads cascades
+  !
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "itf_phy_buses.cdk"
+#include "lun.cdk"
+!
+  Character(len=16)                :: var
+  Integer                          :: k
+  Real, Pointer, Dimension (:,:,:) :: dst
+!
+!----------------------------------------------------------------------
+!
+If (vd%casc_L) Then
+   Write(var,'(2a)')'CASC_',trim(vd%nomvar)
+   nullify (dst)
+   gmmstat = gmm_get(var,dst,meta2d)
+   If ( .not. GMM_IS_ERROR(gmmstat) ) Then
+      if (Lun_out.gt.-1) Write(Lun_out,6000) trim(vd%phyvar)
+      Do k=1,vd%p_nu
+         istat(k) = 1
+         vd%values(:,:,k)=dst(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj,k)
+      Enddo
+   endif
+Endif
+!
+ 6000 format ('VARIABLE: ',a,' OBTAINED from 3DF initial conditions file')
+!
+!----------------------------------------------------------------------
+!
+End Subroutine itf_phy_puti_casc
+      

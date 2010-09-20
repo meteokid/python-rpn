@@ -30,18 +30,16 @@
 ! v3_21 - Desgagne/Valin - initial version
 !
 !
+      integer mclock
+      real*8  rtools_wtime
       external mclock,rtools_wtime
-      integer i,m0_new,mclock
-      real*8 r0_new,rtools_wtime
 !
       call tmg_stop (mynum)
-      if (.not.tmg2_on_L) return
 !
-      m0_new = mclock()
-      r0_new = rtools_wtime()
-!
-      sum_m0(mynum,1) =   sum_m0 (mynum,1) + (m0_new - m0x(mynum,1)) 
-      sum_r0(mynum,1) =   sum_r0 (mynum,1) + (r0_new - r0 (mynum,1)) 
+      if (tmg2_on_L) then
+         sum_m0(mynum)= sum_m0 (mynum) + (mclock()       - m0x(mynum))
+         sum_r0(mynum)= sum_r0 (mynum) + (rtools_wtime() - r0 (mynum))
+      endif
 !
       return
       end

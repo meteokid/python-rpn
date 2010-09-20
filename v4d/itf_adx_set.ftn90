@@ -1,0 +1,158 @@
+\!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include <model_macros_f.h>
+#include <msg.h>
+
+!/**
+subroutine itf_adx_set()
+   implicit none
+   !@objective Sets different advection parameters
+   !@author Stephane Chamberland, Jan 2010
+   !@revisions
+!**/
+#include <WhiteBoard.hf>
+#include "grd.cdk"
+#include "glb_ld.cdk"
+#include "ver.cdk"
+#include "type.cdk"
+#include "schm.cdk"
+#include "cstv.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+!!$      type :: vertical_8
+!!$         sequence
+!!$         real*8, dimension(:),pointer :: t,m
+!!$      end type vertical_8
+   character(len=40) :: label
+   integer :: istat,options,ij,k
+   real*8 :: xg_8(1-G_ni:2*G_ni), yg_8(1-G_nj:2*G_nj)
+   real*8 :: v_zm_8(0:l_nk+1), v_zt_8(l_nk+1)
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'itf_adx_set')
+
+   options = WB_REWRITE_NONE+WB_IS_LOCAL
+
+   istat = WB_OK
+   istat = min(wb_put('model/maxcfl',grd_maxcfl,options),istat)
+   istat = min(wb_put('model/is_lam',G_lam,options),istat)
+   istat = min(wb_put('model/is_period_x',G_periodx,options),istat)
+   istat = min(wb_put('model/is_period_y',G_periody,options),istat)
+   istat = min(wb_put('model/G_ni',G_ni,options),istat)
+   istat = min(wb_put('model/G_nj',G_nj,options),istat)
+   istat = min(wb_put('model/G_nk',G_nk,options),istat)
+   istat = min(wb_put('model/G_niu',G_niu,options),istat)
+   istat = min(wb_put('model/G_njv',G_njv,options),istat)
+   istat = min(wb_put('model/G_halox',G_halox,options),istat)
+   istat = min(wb_put('model/G_haloy',G_haloy,options),istat)
+
+   print *,'itf_adx_set',G_ni,G_nj,G_niu,G_njv,G_halox,G_haloy
+
+   istat = min(wb_put('model/l_minx',l_minx,options),istat)
+   istat = min(wb_put('model/l_maxx',l_maxx,options),istat)
+   istat = min(wb_put('model/l_miny',l_miny,options),istat)
+   istat = min(wb_put('model/l_maxy',l_maxy,options),istat)
+   istat = min(wb_put('model/l_ni',l_ni,options),istat)
+   istat = min(wb_put('model/l_nj',l_nj,options),istat)
+   istat = min(wb_put('model/l_nk',l_nk,options),istat)
+   istat = min(wb_put('model/l_i0',l_i0,options),istat)
+   istat = min(wb_put('model/l_j0',l_j0,options),istat)
+   istat = min(wb_put('model/l_niu',l_niu,options),istat)
+   istat = min(wb_put('model/l_njv',l_njv,options),istat)
+
+   istat = min(wb_put('model/l_north',l_north,options),istat)
+   istat = min(wb_put('model/l_south',l_south,options),istat)
+   istat = min(wb_put('model/l_east',l_east,options),istat)
+   istat = min(wb_put('model/l_west',l_west,options),istat)
+   istat = min(wb_put('model/pil_n',pil_n,options),istat)
+   istat = min(wb_put('model/pil_s',pil_s,options),istat)
+   istat = min(wb_put('model/pil_w',pil_w,options),istat)
+   istat = min(wb_put('model/pil_e',pil_e,options),istat)
+
+   istat = min(wb_put('model/is_schm_zdotmid',Schm_zdotMid_L,options),istat)
+   istat = min(wb_put('model/cstv_dt',Cstv_dt_8,options),istat)
+
+   do ij=1-G_ni,2*G_ni
+      xg_8(ij) = G_xg_8(ij)
+   enddo
+   do ij=1-G_nj,2*G_nj
+      yg_8(ij) = G_yg_8(ij)
+   enddo
+   istat = min(wb_put('model/G_xg_8/min',1-G_ni,options),istat)
+   istat = min(wb_put('model/G_xg_8/max',2*G_ni,options),istat)
+   istat = min(wb_put('model/G_xg_8',xg_8,options),istat)
+   istat = min(wb_put('model/G_yg_8/min',1-G_nj,options),istat)
+   istat = min(wb_put('model/G_yg_8/max',2*G_nj,options),istat)
+   istat = min(wb_put('model/G_yg_8',yg_8,options),istat)
+
+   v_zm_8(0) = Ver_z_8%m(0)
+   do k=1,l_nk+1
+      v_zm_8(k) = Ver_z_8%m(k)
+      v_zt_8(k) = Ver_z_8%t(k)
+   enddo
+   istat = min(wb_put('model/v_zm_8/min',0,options),istat)
+   istat = min(wb_put('model/v_zm_8/max',l_nk+1,options),istat)
+   istat = min(wb_put('model/v_zm_8',v_zm_8,options),istat)
+   istat = min(wb_put('model/v_zt_8/min',1,options),istat)
+   istat = min(wb_put('model/v_zt_8/max',l_nk+1,options),istat)
+   istat = min(wb_put('model/v_zt_8',v_zt_8,options),istat)
+
+   !- Note: a copy to label is needed to patch a whiteboard bug
+   label = gmmk_xth_s
+   istat = min(wb_put('model/gmm/xth_m',label,options),istat)
+   label = gmmk_yth_s
+   istat = min(wb_put('model/gmm/yth_m',label,options),istat)
+   label = gmmk_zth_s
+   istat = min(wb_put('model/gmm/zth_m',label,options),istat)
+
+   label = gmmk_xcth_s
+   istat = min(wb_put('model/gmm/xcth_m',label,options),istat)
+   label = gmmk_ycth_s
+   istat = min(wb_put('model/gmm/ycth_m',label,options),istat)
+   label = gmmk_zcth_s
+   istat = min(wb_put('model/gmm/zcth_m',label,options),istat)
+
+   label = gmmk_xct1_s
+   istat = min(wb_put('model/gmm/xct1_m',label,options),istat)
+   label = gmmk_yct1_s
+   istat = min(wb_put('model/gmm/yct1_m',label,options),istat)
+   label = gmmk_zct1_s
+   istat = min(wb_put('model/gmm/zct1_m',label,options),istat)
+
+   label = gmmk_xth_thermo_s
+   istat = min(wb_put('model/gmm/xth_t',label,options),istat)
+   label = gmmk_yth_thermo_s
+   istat = min(wb_put('model/gmm/yth_t',label,options),istat)
+   label = gmmk_zth_thermo_s
+   istat = min(wb_put('model/gmm/zth_t',label,options),istat)
+
+   label = gmmk_xcth_thermo_s
+   istat = min(wb_put('model/gmm/xcth_t',label,options),istat)
+   label = gmmk_ycth_thermo_s
+   istat = min(wb_put('model/gmm/ycth_t',label,options),istat)
+   label = gmmk_zcth_thermo_s
+   istat = min(wb_put('model/gmm/zcth_t',label,options),istat)
+
+   call handle_error_l(WB_IS_OK(istat),'itf_adx_set','problem putting values in whiteboard')
+
+   call v4d_set_params
+
+   call adx_set    ()
+
+   call msg(MSG_DEBUG,'itf_adx_set [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine itf_adx_set
+

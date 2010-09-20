@@ -17,7 +17,7 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine v4d_rwtraj_dyn (numtr,pxm,pym,pzm,pxt,pyt,pzt)
+      subroutine v4d_rwtraj_dyn (numtr,pxm,pym,pzm,pxt,pyt,pzt,mlni,mlnj,lnkm,lnkt)
 *
 *-------------------------------------------------------------------------
 *  CAUTION: Parameters list is extended ONLY when numtr=5
@@ -25,7 +25,7 @@
 *
       implicit none
 *
-      integer numtr
+      integer numtr,mlni,mlnj,lnkm,lnkt
 *
 c     real, optional ::  pxm(*),pym(*),pzm(*),pxt(*),pyt(*),pzt(*) KO NAOS
       real           ::  pxm(*),pym(*),pzm(*),pxt(*),pyt(*),pzt(*) 
@@ -72,6 +72,7 @@ c     real, optional ::  pxm(*),pym(*),pzm(*),pxt(*),pyt(*),pzt(*) KO NAOS
 #include "vth_m.cdk"
 #include "rhsc.cdk"
 #include "rhsc_m.cdk"
+#include "orh_m.cdk"
 #include "vt0.cdk"
 #include "vt0_m.cdk"
 #include "v4dg.cdk"
@@ -96,7 +97,7 @@ c     real, optional ::  pxm(*),pym(*),pzm(*),pxt(*),pyt(*),pzt(*) KO NAOS
       if (Step_total.gt.MAX_TR_STEP ) call handle_error(-1,'v4d_rwtraj_dyn','RWTRAJ_DYN step  KO')
       if (Schm_itcn .gt.MAX_TR_ITCN ) call handle_error(-1,'v4d_rwtraj_dyn','RWTRAJ_DYN itcn  KO')
       if (Schm_itnlh.gt.MAX_TR_ITNLH) call handle_error(-1,'v4d_rwtraj_dyn','RWTRAJ_DYN itnlh KO')
-      if (numtr     .gt.10          ) call handle_error(-1,'v4d_rwtraj_dyn','RWTRAJ_DYN numtr not DONE')
+      if (numtr     .gt.11          ) call handle_error(-1,'v4d_rwtraj_dyn','RWTRAJ_DYN numtr not DONE')
 *
 *     Flag to trace storing and retrieving of trajectory
 *     --------------------------------------------------
@@ -774,22 +775,22 @@ c     real, optional ::  pxm(*),pym(*),pzm(*),pxt(*),pyt(*),pzt(*) KO NAOS
 *        --------------------
          if (V4dg_tl_L) then
 *
-            call v4d_rwfldx(pxm,l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pxm,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PXM_M   ',V4dg_ad_L,0,-1)
 *
-            call v4d_rwfldx(pym,l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pym,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PYM_M   ',V4dg_ad_L,0,-1)
 *
-            call v4d_rwfldx(pzm,l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pzm,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PZM_M   ',V4dg_ad_L,0,-1)
 *
-            call v4d_rwfldx(pxt,l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pxt,mlni,mlnj,lnkt,
      %                      iadd,plpr_L,'PXT_M   ',V4dg_ad_L,0,-1)
 *
-            call v4d_rwfldx(pyt,l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pyt,mlni,mlnj,lnkt,
      %                      iadd,plpr_L,'PYT_M   ',V4dg_ad_L,0,-1)
 *
-            call v4d_rwfldx(pzt,l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pzt,mlni,mlnj,lnkt,
      %                      iadd,plpr_L,'PZT_M   ',V4dg_ad_L,0,-1)
 *
          endif
@@ -798,27 +799,27 @@ c     real, optional ::  pxm(*),pym(*),pzm(*),pxt(*),pyt(*),pzt(*) KO NAOS
 *        -------------
          if (V4dg_ad_L) then
 *
-            call v4d_rwfldx(pzt, l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pzt,mlni,mlnj,lnkt, 
      %                      iadd,plpr_L,'PZT_M   ',V4dg_ad_L,
      %                      l_ni*l_nj*(l_nk+1),-1)
 * 
-            call v4d_rwfldx(pyt, l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pyt,mlni,mlnj,lnkt,
      %                      iadd,plpr_L,'PYT_M   ',V4dg_ad_L,
      %                      l_ni*l_nj*(l_nk+1),-1)
 *
-            call v4d_rwfldx(pxt, l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pxt,mlni,mlnj,lnkt,
      %                      iadd,plpr_L,'PXT_M   ',V4dg_ad_L,
      %                      l_ni*l_nj*l_nk,-1)
 *
-            call v4d_rwfldx(pzm, l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pzm,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PZM_M   ',V4dg_ad_L,
      %                      l_ni*l_nj*l_nk,-1)
 *
-            call v4d_rwfldx(pym, l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pym,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PYM_M   ',V4dg_ad_L,
      %                      l_ni*l_nj*l_nk,-1)
 *
-            call v4d_rwfldx(pxm, l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pxm,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PXM_M   ',V4dg_ad_L,
      %                      l_ni*l_nj*(l_nk+1),-1)
 *
@@ -834,28 +835,28 @@ c     real, optional ::  pxm(*),pym(*),pzm(*),pxt(*),pyt(*),pzt(*) KO NAOS
          V4dg_addtab_tl(numtr,istep,Orh_icn,1) = V4dg_addtr 
          iadd                                  = V4dg_addtr 
 *
-            call v4d_rwfldx(pxm,l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pxm,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PXM     ',V4dg_ad_L,0,1)
 *
-            call v4d_rwfldx(pym,l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pym,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PYM     ',V4dg_ad_L,0,1)
 *
-            call v4d_rwfldx(pzm,l_ni,l_nj,l_nk,
+            call v4d_rwfldx(pzm,mlni,mlnj,lnkm,
      %                      iadd,plpr_L,'PZM     ',V4dg_ad_L,0,1)
 *
-            call v4d_rwfldx(pxt,l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pxt,mlni,mlnj,lnkt,
      %                      iadd,plpr_L,'PXT     ',V4dg_ad_L,0,1)
 *
-            call v4d_rwfldx(pyt,l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pyt,mlni,mlnj,lnkt,
      %                      iadd,plpr_L,'PYT     ',V4dg_ad_L,0,1)
 *
-            call v4d_rwfldx(pzt,l_ni,l_nj,l_nk+1,
+            call v4d_rwfldx(pzt,mlni,mlnj,lnkt,
      %                      iadd,plpr_L,'PZT     ',V4dg_ad_L,0,1)
 *
 *
 *        Store starting ADJOINT address 
 *        ------------------------------
-         V4dg_addtab_ad(numtr,istep,Orh_icn,1) = iadd - l_ni*l_nj*(l_nk+1)
+         V4dg_addtab_ad(numtr,istep,Orh_icn,1) = iadd - mlni*mlnj*lnkt
          V4dg_addtr                            = iadd
 *
          endif
@@ -1720,5 +1721,148 @@ c     real, optional ::  pxm(*),pym(*),pzm(*),pxt(*),pyt(*),pzt(*) KO NAOS
 *
       endif
 *
+*     -----------------------------
+*     TRAJ RHS BEFORE interpolation 
+*     -----------------------------
+      if (numtr.eq.11) then
+*
+*        ----------------
+*        Read TRAJ Fields
+*        ----------------
+         if (V4dg_rwtr.eq.0) then
+*
+*        Recover starting address
+*        ------------------------
+         if (V4dg_ad_L) iadd = V4dg_addtab_ad(numtr,istep,Orh_icn,1) 
+         if (V4dg_tl_L) iadd = V4dg_addtab_tl(numtr,istep,Orh_icn,1) 
+*
+         gmmstat = gmm_get(gmmk_ruw1_m_s,ruw1_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(ruw1_m)'
+         gmmstat = gmm_get(gmmk_rvw1_m_s,rvw1_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(rvw1_m)'
+         gmmstat = gmm_get(gmmk_orhsc_m_s,orhsc_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(orhsc_m)'
+         gmmstat = gmm_get(gmmk_orhst_m_s,orhst_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(orhst_m)'
+         gmmstat = gmm_get(gmmk_orhsf_m_s,orhsf_m,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(orhsf_m)'
+*
+         if (.not. Schm_hydro_L) then
+             gmmstat = gmm_get(gmmk_orhsw_m_s,orhsw_m,meta3d)
+             if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(orhsw_m)'
+         endif
+*
+*        TANGENT LINEAR MODEL
+*        --------------------
+         if (V4dg_tl_L) then
+*
+            call v4d_rwfld (ruw1_m,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'RUW1_M  ',V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (rvw1_m,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'RVW1_M  ',V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (orhsc_m,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'ORHSC_M ',V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (orhst_m,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHST_M ',V4dg_ad_L,0,-1)
+*
+            call v4d_rwfld (orhsf_m,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHSF_M ',V4dg_ad_L,0,-1)
+*
+            if (.not. Schm_hydro_L) then
+            call v4d_rwfld (orhsw_m,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHSW_M ',V4dg_ad_L,0,-1)
+            endif
+*
+         endif
+*
+*        ADJOINT MODEL 
+*        -------------
+         if (V4dg_ad_L) then
+*
+            if (.not. Schm_hydro_L) then
+            call v4d_rwfld (orhsw_m,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHSW_M ',V4dg_ad_L,
+     %                      l_ni*l_nj*(l_nk+1),-1)
+            endif
+*
+            call v4d_rwfld (orhsf_m,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHSF_M ',V4dg_ad_L,
+     %                      l_ni*l_nj*(l_nk+1),-1)
+*
+            call v4d_rwfld (orhst_m,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHST_M ',V4dg_ad_L,
+     %                      l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (orhsc_m,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'ORHSC_M ',V4dg_ad_L,
+     %                      l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (rvw1_m,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'RVW1_M  ',V4dg_ad_L,
+     %                      l_ni*l_nj*l_nk,-1)
+*
+            call v4d_rwfld (ruw1_m,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'RUW1_M  ',V4dg_ad_L,
+     %                      l_ni*l_nj*(l_nk+1),-1)
+*
+         endif
+*
+*        -----------------
+*        Write TRAJ Fields 
+*        -----------------
+         elseif(V4dg_rwtr.eq.1) then
+*
+         gmmstat = gmm_get(gmmk_ruw1_s,ruw1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(ruw1)'
+         gmmstat = gmm_get(gmmk_rvw1_s,rvw1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(rvw1)'
+         gmmstat = gmm_get(gmmk_orhsc_s,orhsc,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(orhsc)'
+         gmmstat = gmm_get(gmmk_orhst_s,orhst,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(orhst)'
+         gmmstat = gmm_get(gmmk_orhsf_s,orhsf,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(orhsf)'
+*
+         if (.not. Schm_hydro_L) then
+             gmmstat = gmm_get(gmmk_orhsw_s,orhsw,meta3d)
+             if (GMM_IS_ERROR(gmmstat)) print *,'v4d_rwtraj_dyn ERROR at gmm_get(orhsw)'
+         endif
+*
+*        Store starting TLM address
+*        --------------------------
+         V4dg_addtab_tl(numtr,istep,Orh_icn,1) = V4dg_addtr 
+         iadd                                  = V4dg_addtr
+*
+            call v4d_rwfld (ruw1,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'RUW1    ',V4dg_ad_L,0,1)
+*
+            call v4d_rwfld (rvw1,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'RVW1    ',V4dg_ad_L,0,1)
+*
+            call v4d_rwfld (orhsc,LDIST_DIM,l_nk,
+     %                      iadd,plpr_L,'ORHSC   ',V4dg_ad_L,0,1)
+*
+            call v4d_rwfld (orhst,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHST   ',V4dg_ad_L,0,1)
+*
+            call v4d_rwfld (orhsf,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHSF   ',V4dg_ad_L,0,1)
+*
+            if (.not. Schm_hydro_L) then
+            call v4d_rwfld (orhsw,LDIST_DIM,l_nk+1,
+     %                      iadd,plpr_L,'ORHSW   ',V4dg_ad_L,0,1)
+            endif
+*
+*        Store starting ADJOINT address
+*        ------------------------------
+         V4dg_addtab_ad(numtr,istep,Orh_icn,1) = iadd - l_ni*l_nj*(l_nk+1)
+         V4dg_addtr                            = iadd
+*
+         endif
+*
+      endif 
       return
       end

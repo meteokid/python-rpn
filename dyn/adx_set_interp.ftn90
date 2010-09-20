@@ -1,0 +1,327 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include "constants.h"
+#include "msg.h"
+
+!/**
+subroutine adx_set_interp()
+   implicit none
+   !@objective set 1-D interpolation of grid reflexion across the pole 
+   !@author  alain patoine
+   !@revisions
+   !**/
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+#include "adx_interp.cdk"
+   
+   real*8, parameter :: LARGE_8 = 1.D20
+   real*8, parameter :: FRAC1OV6_8 = 1.D0/6.D0
+
+   integer :: i, j, k, ij, pnerr, trj_i_off, nij, n, istat, ind
+   integer :: i0, j0, k0, pnx, pny, pnzt, pnzm, pnzs
+
+   real*8 :: ra,rb,rc,rd, dummy
+   real*8 :: prhxmn, prhymn, prhzmn, dummy, pdfi
+
+   real*8 ::whx(adx_gni+2*adx_halox)
+   real*8 ::why(adx_gnj+2*adx_haloy)
+   real*8 ::whzs(0:adx_lnkm+adx_lnkt+1)
+   real*8 ::super_z_8(adx_lnkm+adx_lnkt)
+
+   real*8 :: qzz_m_8(3*adx_lnkm), qzi_m_8(4*adx_lnkm)
+   real*8 :: qzz_t_8(3*adx_lnkt), qzi_t_8(4*adx_lnkt)
+   real*8, dimension(adx_lnkt,6) :: w2
+
+   real*8,dimension(:),pointer :: whzt,whzm
+
+#if !defined(TRIPROD)
+#define TRIPROD(za,zb,zc,zd) ((za-zb)*(za-zc)*(za-zd))
+#endif
+   !---------------------------------------------------------------------
+   allocate( &
+        whzt(0:adx_lnkt+1), &
+        whzm(0:adx_lnkm+1), &
+        stat = istat)
+   call handle_error_l(istat==0,'adx_set','problem allocating mem')
+
+
+   allocate( &
+        adx_xbc_8(adx_gni+2*adx_halox), &   ! (xc-xb)     along x
+        adx_xabcd_8(adx_gni+2*adx_halox), & ! triproducts along x
+        adx_xbacd_8(adx_gni+2*adx_halox), &
+        adx_xcabd_8(adx_gni+2*adx_halox), &
+        adx_xdabc_8(adx_gni+2*adx_halox), &
+        adx_ybc_8(adx_gnj+2*adx_haloy), &   ! (yc-yb)     along y 
+        adx_yabcd_8(adx_gnj+2*adx_haloy), & ! triproducts along y
+        adx_ybacd_8(adx_gnj+2*adx_haloy), &
+        adx_ycabd_8(adx_gnj+2*adx_haloy), &
+        adx_ydabc_8(adx_gnj+2*adx_haloy), &
+        stat = istat)
+   call handle_error_l(istat==0,'adx_set_lag3d_horiz','problem allocating mem')
+
+   do i = adx_gminx+1,adx_gmaxx-2
+      ra = adx_xg_8(i-1)
+      rb = adx_xg_8(i)
+      rc = adx_xg_8(i+1)
+      rd = adx_xg_8(i+2)
+      adx_xabcd_8(adx_halox+i) = 1.D0/TRIPROD(ra,rb,rc,rd)
+      adx_xbacd_8(adx_halox+i) = 1.D0/TRIPROD(rb,ra,rc,rd)
+      adx_xcabd_8(adx_halox+i) = 1.D0/TRIPROD(rc,ra,rb,rd)
+      adx_xdabc_8(adx_halox+i) = 1.D0/TRIPROD(rd,ra,rb,rc)
+   enddo
+
+   do i = adx_gminx,adx_gmaxx-1
+      rb = adx_xg_8(i)
+      rc = adx_xg_8(i+1)
+      adx_xbc_8(adx_halox+i) = 1.D0/(rc-rb)
+   enddo
+
+   do j = adx_gminy+1,adx_gmaxy-2
+      ra = adx_yg_8(j-1)
+      rb = adx_yg_8(j)
+      rc = adx_yg_8(j+1)
+      rd = adx_yg_8(j+2)
+      adx_yabcd_8(adx_haloy+j) = 1.D0/TRIPROD(ra,rb,rc,rd)
+      adx_ybacd_8(adx_haloy+j) = 1.D0/TRIPROD(rb,ra,rc,rd)
+      adx_ycabd_8(adx_haloy+j) = 1.D0/TRIPROD(rc,ra,rb,rd)
+      adx_ydabc_8(adx_haloy+j) = 1.D0/TRIPROD(rd,ra,rb,rc)
+   enddo
+
+   do j = adx_gminy,adx_gmaxy-1
+      rb = adx_yg_8(j)
+      rc = adx_yg_8(j+1)
+      adx_ybc_8(adx_haloy+j) = 1.D0/(rc-rb)
+   enddo
+
+
+   trj_i_off = adx_mli0 - adx_li0
+
+   adx_x00_8 = adx_xg_8(adx_gminx)
+   adx_y00_8 = adx_yg_8(adx_gminy)
+
+   prhxmn = LARGE_8
+   prhymn = LARGE_8
+   prhzmn = LARGE_8
+
+   do i = adx_gminx,adx_gmaxx-1
+      whx(adx_halox+i) = adx_xg_8(i+1) - adx_xg_8(i)
+      prhxmn = min(whx(adx_halox+i), prhxmn)
+   enddo
+
+   do j = adx_gminy,adx_gmaxy-1
+      why(adx_haloy+j) = adx_yg_8(j+1) - adx_yg_8(j)
+      prhymn = min(why(adx_haloy+j), prhymn)
+   enddo
+
+   ! Prepare zeta on super vertical grid
+   do k = 1,2*adx_lnkm+1
+      if (mod(k,2) == 0)then
+         ! momentum level
+         ind = k/2
+         Super_z_8(k) = adx_verZ_8%m(ind)
+      else
+         ! thermo level
+         ind = (k+1)/2
+         Super_z_8(k) = adx_verZ_8%t(ind)            
+      endif
+   enddo
+
+   whzt(0     ) = 1.0
+   whzt(adx_lnkm+1) = 1.0
+   whzt(adx_lnkm+2) = 1.0
+   do k = 1,adx_lnkm
+      whzt(k) = adx_verZ_8%t(k+1) - adx_verZ_8%t(k)
+      prhzmn = min(whzt(k), prhzmn)
+   enddo
+
+   whzm(0     ) = 1.0
+   whzm(adx_lnkm  ) = 1.0
+   whzm(adx_lnkm+1) = 1.0
+   do k = 1,adx_lnkm-1
+      whzm(k) = adx_verZ_8%m(k+1) - adx_verZ_8%m(k)
+      prhzmn = min(whzm(k), prhzmn)
+   enddo
+
+   whzs(0       ) = 1.0
+   whzs(2*adx_lnkm+1) = 1.0
+   whzs(2*adx_lnkm+2) = 1.0
+   ! Note : the super layer will be the thinest, so do not do the min test for m and t above...
+   do k=1,2*adx_lnkm
+      whzs(k) = Super_z_8(k+1) - Super_z_8(k)
+      prhzmn = min(whzs(k), prhzmn)
+   enddo
+
+   adx_ovdx_8 = 1.0d0/prhxmn
+   adx_ovdy_8 = 1.0d0/prhymn
+   adx_ovdz_8 = 1.0d0/prhzmn
+
+   pnx = int(1.0+(adx_xg_8(adx_gmaxx)-adx_x00_8)   *adx_ovdx_8)
+   pny = int(1.0+(adx_yg_8(adx_gmaxy)-adx_y00_8)   *adx_ovdy_8)
+   pnzt= int(1.0+(adx_verZ_8%t(adx_lnkt)-adx_verZ_8%t(1))*adx_ovdz_8)
+   pnzm= int(1.0+(adx_verZ_8%m(adx_lnkm)-adx_verZ_8%m(1))*adx_ovdz_8)
+   pnzs= int(1.0+(adx_verZ_8%t(adx_lnkt)-adx_verZ_8%t(1))*adx_ovdz_8)
+
+   allocate( &
+        adx_lcx(pnx), &
+        adx_lcy(pny), &
+        adx_bsx_8(adx_gni+2*adx_halox), &
+        adx_dlx_8(adx_gni+2*adx_halox), &
+        adx_dix_8(adx_gni+2*adx_halox), &
+        adx_bsy_8(adx_gnj+2*adx_haloy), &
+        adx_dly_8(adx_gnj+2*adx_haloy), &
+        adx_diy_8(adx_gnj+2*adx_haloy), &
+        adx_lcz%t(pnzt), &
+        adx_lcz%m(pnzm),  &
+        adx_lcz%s(pnzs), &
+        adx_bsz_8%t(0:adx_lnkm)  , &
+        adx_bsz_8%m(0:adx_lnkm-1), &
+        adx_bsz_8%s(0:2*adx_lnkm), &
+        adx_dlz_8%t(-1:adx_lnkm+1) , &
+        adx_dlz_8%m(-1:adx_lnkm), &
+        adx_diz_8(-1:2*adx_lnkm+2), &
+        adx_dbz_8(0:2*adx_lnkm+1), &
+        stat=istat)
+   call handle_error_l(istat==0,'adx_set_loc_interp','problem allocating mem')
+
+   i0 = 1
+   do i=1,pnx
+      pdfi = adx_xg_8(adx_gminx) + (i-1) * prhxmn
+      if (pdfi > adx_xg_8(i0+1-adx_halox)) i0 = min(adx_gni+2*adx_halox-1,i0+1)
+      adx_lcx(i) = i0
+   enddo
+   do i = adx_gminx,adx_gmaxx-1
+      adx_dlx_8(adx_halox+i) =       whx(adx_halox+i)
+      adx_dix_8(adx_halox+i) = 1.0d0/whx(adx_halox+i)
+   enddo
+   do i = adx_gminx,adx_gmaxx
+      adx_bsx_8(adx_halox+i) = adx_xg_8(i)
+   enddo
+
+   j0 = 1
+   do j = 1,pny
+      pdfi = adx_yg_8(adx_gminy) + (j-1) * prhymn
+      if (pdfi > adx_yg_8(j0+1-adx_haloy)) j0 = min(adx_gnj+2*adx_haloy-1,j0+1)
+      adx_lcy(j) = j0
+   enddo
+   do j = adx_gminy,adx_gmaxy-1
+      adx_dly_8(adx_haloy+j) =       why(adx_haloy+j)
+      adx_diy_8(adx_haloy+j) = 1.0d0/why(adx_haloy+j)
+   enddo
+   do j = adx_gminy,adx_gmaxy
+      adx_bsy_8(adx_haloy+j) = adx_yg_8(j)
+   enddo
+
+   k0 = 1
+   do k = 1,pnzt
+      pdfi = adx_verZ_8%t(1) + (k-1) * prhzmn
+      if (pdfi > adx_verZ_8%t(k0+1)) k0 = min(adx_lnkm-1, k0+1)
+      adx_lcz%t(k) = k0
+   enddo
+   do k = 0,adx_lnkm+2                    !! warning note the shift in k !!
+      adx_dlz_8%t(k-1) =       whzt(k)
+   enddo
+   do k = 1,adx_lnkm+1
+      adx_bsz_8%t(k-1) = adx_verZ_8%t(k)
+   enddo
+
+   k0 = 1
+   do k = 1,pnzm
+      pdfi = adx_verZ_8%m(1) + (k-1) * prhzmn
+      if (pdfi > adx_verZ_8%m(k0+1)) k0 = min(adx_lnkm-2, k0+1)
+      adx_lcz%m(k) = k0
+   enddo
+   do k = 0,adx_lnkm+1                    !! warning note the shift in k !!
+      adx_dlz_8%m(k-1) =       whzm(k)
+   enddo
+   do k = 1,adx_lnkm
+      adx_bsz_8%m(k-1) = adx_verZ_8%m(k)
+   enddo
+
+   k0 = 1
+   do k = 1,pnzs
+      pdfi = adx_verZ_8%t(1) + (k-1) * prhzmn
+      if (pdfi > Super_z_8(k0+1)) k0 = min(2*adx_lnkm-1, k0+1)
+      adx_lcz%s(k) = k0
+   enddo
+   do k = 0,2*adx_lnkm+2                   !! warning note the shift in k !!
+      adx_diz_8(k-1) = 1.0d0/whzs(k)
+   enddo
+   do k = 1,2*adx_lnkm+1
+      adx_bsz_8%s(k-1) = Super_z_8(k)
+      adx_dbz_8(k-1) = ( whzs(k) * whzs(k) ) * FRAC1OV6_8
+   enddo
+
+
+   allocate( &
+        adx_zbc_8%t(adx_lnkm+1),   adx_zbc_8%m(adx_lnkm),  &
+        adx_zabcd_8%t(adx_lnkm+1), adx_zabcd_8%m(adx_lnkm), &
+        adx_zbacd_8%t(adx_lnkm+1), adx_zbacd_8%m(adx_lnkm), &
+        adx_zcabd_8%t(adx_lnkm+1), adx_zcabd_8%m(adx_lnkm), &
+        adx_zdabc_8%t(adx_lnkm+1), adx_zdabc_8%m(adx_lnkm), &
+        stat=istat)
+   call handle_error_l(istat==0,'adx_set_lag3d_z','problem allocating mem')
+
+   do k = 2,adx_lnkm-2
+      ra = adx_verZ_8%m(k-1)
+      rb = adx_verZ_8%m(k)
+      rc = adx_verZ_8%m(k+1)
+      rd = adx_verZ_8%m(k+2)
+
+      adx_zabcd_8%m(k) = 1.0/TRIPROD(ra,rb,rc,rd)
+      adx_zbacd_8%m(k) = 1.0/TRIPROD(rb,ra,rc,rd)
+      adx_zcabd_8%m(k) = 1.0/TRIPROD(rc,ra,rb,rd)
+      adx_zdabc_8%m(k) = 1.0/TRIPROD(rd,ra,rb,rc)
+
+      ra = adx_verZ_8%t(k-1)
+      rb = adx_verZ_8%t(k)
+      rc = adx_verZ_8%t(k+1)
+      rd = adx_verZ_8%t(k+2)
+
+      adx_zabcd_8%t(k) = 1.0/TRIPROD(ra,rb,rc,rd)
+      adx_zbacd_8%t(k) = 1.0/TRIPROD(rb,ra,rc,rd)
+      adx_zcabd_8%t(k) = 1.0/TRIPROD(rc,ra,rb,rd)
+      adx_zdabc_8%t(k) = 1.0/TRIPROD(rd,ra,rb,rc)
+   enddo
+
+   k = adx_lnkm-1
+   ra = adx_verZ_8%t(k-1)
+   rb = adx_verZ_8%t(k)
+   rc = adx_verZ_8%t(k+1)
+   rd = adx_verZ_8%t(k+2)
+
+   adx_zabcd_8%t(k) = 1.0/TRIPROD(ra,rb,rc,rd)
+   adx_zbacd_8%t(k) = 1.0/TRIPROD(rb,ra,rc,rd)
+   adx_zcabd_8%t(k) = 1.0/TRIPROD(rc,ra,rb,rd)
+   adx_zdabc_8%t(k) = 1.0/TRIPROD(rd,ra,rb,rc)
+
+   do k = 1,adx_lnkm-1
+      rb = adx_verZ_8%m(k)
+      rc = adx_verZ_8%m(k+1)
+      adx_zbc_8%m(k) = 1.0/(rc-rb)
+
+      rb = adx_verZ_8%t(k)
+      rc = adx_verZ_8%t(k+1)
+      adx_zbc_8%t(k) = 1.0/(rc-rb)
+   enddo
+   k = adx_lnkm
+   rb = adx_verZ_8%t(k)
+   rc = adx_verZ_8%t(k+1)
+   adx_zbc_8%t(k) = 1.0/(rc-rb)
+
+   deallocate(whzt, whzm)
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_set_interp

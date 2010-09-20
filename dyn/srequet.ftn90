@@ -111,7 +111,7 @@
       call rpn_fortran_callback('sortie_p',set_var  ,' ',p1a,p1b)
       call rpn_fortran_callback('sortie_c',set_var  ,' ',p1a,p1b)
       istat= process_f_callback(trim(Path_outcfg_S))
-      call set_cube()
+      call set_igs()
       if (Lun_out.gt.0) &
            write(Lun_out,*)'SREQUET:Number of warnings =',istat
       srequet=istat

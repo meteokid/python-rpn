@@ -3,7 +3,7 @@
       common /cplg_L/ C_coupling_L,C_wascoupled_L,C_continue_L, &
                       atm_hotstart,oce_hotstart
 
-      character*48 CPL_NAME
+      character*48 CPL_NAME,cpl_comm_s
       logical cpl_exchg_L
       integer rap_dt,n_fldou,n_fldin,maxnvar,W_chan,R_chan
       integer cpl_debut,cpl_fin,cpl_freq
@@ -11,7 +11,7 @@
       parameter (maxnvar=1000)
       character*8 nv_writ(maxnvar), nv_read(maxnvar)
 
-      common/cplg_s/ CPL_NAME,nv_writ,nv_read 
+      common/cplg_s/ CPL_NAME,nv_writ,nv_read,cpl_comm_s
       common/cplg_i/ rap_dt,n_fldou,n_fldin
       common/cplg_i/ cpl_debut,cpl_fin,cpl_freq
       common/cplg_i/ cpl_i0,cpl_in,cpl_j0,cpl_jn,cpl_ni,cpl_nj

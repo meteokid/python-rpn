@@ -78,7 +78,7 @@
       r2pi_8 = two * CONST_PI_8
 !***********************************************************************
 !
-!     call tmg_start ( 33, 'adw_trajsp' )
+!     call tmg_start0 ( 33, 'adw_trajsp' )
 !$omp parallel do private(ysin,ycos,yrec,xasin,xatan,yatan, &
 !$omp zatan,yasin,xsin,xcos, n,ij,pdx,pdy,pdz,pdsa,pdca, &
 !$omp pdcai,pdso,pdco,pdux,pduy,pduz,pdsinal,pdcosal)
@@ -160,6 +160,6 @@
       enddo
 !$omp end parallel do
 !
-!     call tmg_stop (33)
+!     call tmg_stop0 (33)
       return
       end

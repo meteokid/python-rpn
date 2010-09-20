@@ -1,0 +1,173 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include "msg.h"
+#include "stop_mpi.h"
+
+subroutine adx_trilin_turbo2()
+   call stop_mpi(STOP_ERROR,'adx_trilin_turbo2','called a stub')
+   return
+end subroutine adx_trilin_turbo2
+
+!/**
+subroutine adx_trilin_turbo1(F_out, F_in, F_dt, &
+     F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk, &
+     F_num, i0, in, j0, jn, F_nk, F_hor_L,F_ver_L)
+   implicit none
+   !@objective Optimized tri-linear interpolation with SETINT inside (Based on adx_trilin v_3.1.1)
+   !@arguments
+   logical :: F_hor_L     !I, .true. re-compute horiz interp indexes and coef
+   logical :: F_ver_L     !I, .true. re-compute verti interp indexes and coef
+   integer :: F_nk        !I, number of vertical levels
+   integer :: F_num       !I, dims of position fields
+   integer :: i0,in,j0,jn !I, scope ofthe operator
+   real    :: F_dt        !I, multiplicative constant (1. or timestep lenght)
+   integer,dimension(F_num) :: &
+        F_ii, F_jj, F_kk    !I/O, localisation indices
+   real,dimension(F_num) :: &
+        F_capz, &           !I/O, precomputed displacements along the z-dir
+        F_x, F_y, F_z       !I, x,y,z positions 
+   real,dimension(*)     :: F_in  !I, field to interpolate
+   real,dimension(F_num) :: F_out !O, F_dt * result of interpolation
+   !@author Valin, Tanguay  
+   !@revisions
+   ! v3_20 -Valin & Tanguay -  initial version 
+   ! v3_21 -Tanguay M.      -  evaluate min-max vertical CFL as function of k 
+   ! v4_10 -Plante A.       -  Replace single locator vector with 3 vectors.
+!**/
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+#include "adx_interp.cdk"
+   !---------------------------------------------------------------------
+   call adx_trilin_turbo1_noptr(F_out, F_in, F_dt, &
+        F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk, &
+        adx_lcx, adx_lcy, adx_lcz%s, adx_bsx_8, adx_bsy_8, adx_bsz_8%s, &
+        adx_xbc_8, adx_ybc_8, adx_diz_8, &
+        F_num, i0, in, j0, jn, F_nk, adx_lnkm, F_hor_L,F_ver_L)
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_trilin_turbo1
+
+
+!/**
+subroutine adx_trilin_turbo3(F_out, F_in, F_dt, F_x, F_y, F_z, F_capz, &
+     F_ii, F_jj, F_kk, F_hor_L,F_ver_L, i0, in, j0, jn, &
+     F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk, F_nk_super)
+   implicit none
+   !@objective Optimized tri-linear interpolation with SETINT inside (Based on adx_trilin v_3.1.1)
+   !@arguments
+   logical :: F_hor_L     !I, .true. re-compute horiz interp indexes and coef
+   logical :: F_ver_L     !I, .true. re-compute verti interp indexes and coef
+   integer :: F_nk, F_nk_super !I, number of vertical levels
+   integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
+   integer :: F_ni, F_nj       !I, dims of position fields
+   integer :: i0,in,j0,jn !I, scope ofthe operator
+   integer,dimension(F_ni,F_nj,F_nk) :: &
+        F_ii, F_jj, F_kk  !I/O, localisation indices
+   real,dimension(F_ni,F_nj,F_nk) :: &
+        F_capz, &         !I/O, precomputed displacements along the z-direction
+        F_x, F_y, F_z     !I, x,y,z positions 
+   real :: F_dt           !I, multiplicative constant (1.0 or timestep lenght)
+   real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super)::&
+        F_in              !I, field to interpolate
+   real,dimension(F_ni,F_nj,F_nk) :: &
+        F_out             !O, F_dt * result of interpolation
+   !@author Valin, Tanguay  
+   !@revisions
+   ! v3_20 -Valin & Tanguay -  initial version 
+   ! v3_21 -Tanguay M.      -  evaluate min-max vertical CFL as function of k 
+   ! v4_10 -Plante A.       -  Replace single locator vector with 3 vectors.
+!**/
+!!$#undef __ADX_DIMS__
+!!$#include "adx_dims.cdk"
+!!$#undef __ADX_GRID__
+!!$#include "adx_grid.cdk"
+!!$#undef __ADX_INTERP__
+!!$#include "adx_interp.cdk"
+!!$   integer :: i, j, k, iimax, jjmax, ii,jj,kk, i2,j2,k2
+!!$   real    :: capz
+!!$   real*8  :: capx_8, capy_8
+!!$   real*8  :: rri_8, rrj_8, rrk_8, p_z00_8
+!!$
+!!$#define INT_LIN_I48(F3D4,AA8,II,JJ,KK) ((1.D0-AA8)*dble(F3D4(II,JJ,KK)) + AA8*dble(F3D4(II+1,JJ,KK)))
+!!$#define INT_LIN_IJ48(F3D4,AX8,AY8,II,JJ,KK) ((1.D0-AY8)*INT_LIN_I48(F3D4,AX8,II,JJ,KK) + AY8*INT_LIN_I48(F3D4,AX8,II,JJ+1,KK))
+!!$#define INT_LIN_IJK48(F3D4,AX8,AY8,AZ8,II,JJ,KK) ((1.D0-AZ8)*INT_LIN_IJ48(F3D4,AX8,AY8,II,JJ,KK) + AZ8*INT_LIN_IJ48(F3D4,AX8,AY8,II,JJ,KK+1))
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_trilin_turbo3','called a stub')
+!!$   call msg(MSG_DEBUG,'adx_trilin_turbo')
+!!$   p_z00_8 = adx_verZ_8%t(1)
+!!$
+!!$   iimax = adx_gni + 2*adx_halox - 1
+!!$   jjmax = adx_gnj + adx_haloy
+!!$
+!!$!$omp parallel do private(ii,jj,kk, i2,j2,k2, rri_8,rrj_8,rrk_8, capz,capx_8,capy_8)
+!!$   DO_K: do k=1,F_nk
+!!$      DO_J: do j=j0,jn
+!!$
+!!$         if (F_hor_L) then
+!!$            DO_I1: do i=i0,in
+!!$               rri_8= F_x(i,j,k)
+!!$               ii = (rri_8 - adx_x00_8) * adx_ovdx_8
+!!$               ii = adx_lcx(ii+1) + 1
+!!$               if (rri_8 < adx_bsx_8(ii)) ii = ii - 1
+!!$               F_ii(i,j,k) = max(1,min(ii,iimax))
+!!$
+!!$               rrj_8= F_y(i,j,k)
+!!$               jj = (rrj_8 - adx_y00_8) * adx_ovdy_8
+!!$               jj = adx_lcy(jj+1) + 1
+!!$               if (rrj_8 < adx_bsy_8(jj)) jj = jj - 1
+!!$               F_jj(i,j,k) = max(adx_haloy,min(jj,jjmax))
+!!$
+!!$            enddo DO_I1
+!!$         endif
+!!$
+!!$         if (F_ver_L) then
+!!$            DO_I2: do i=i0,in
+!!$               rrk_8= F_z(i,j,k)
+!!$               kk = (rrk_8 - p_z00_8) * adx_ovdz_8
+!!$               kk = adx_lcz%s(kk+1)
+!!$
+!!$               rrk_8 = rrk_8 - adx_bsz_8%s(kk)
+!!$               if (rrk_8 < 0.) kk = kk - 1
+!!$
+!!$               capz = rrk_8 * adx_diz_8(kk)
+!!$               if (rrk_8 < 0.) capz = 1. + capz
+!!$
+!!$               !- We keep F_capz, otherwise we would need rrk_8  
+!!$               F_capz(i,j,k) = capz
+!!$
+!!$               F_kk(i,j,k) = kk
+!!$            enddo DO_I2
+!!$         endif
+!!$
+!!$         DO_I3:do i=i0,in
+!!$            !- lmin shift needed since indexes are computed with array starting at 1
+!!$            i2 = F_ii(i,j,k) - (adx_li0-1) + (adx_lminx-1)
+!!$            j2 = F_jj(i,j,k) - (adx_lj0-1) + (adx_lminy-1)
+!!$            k2 = F_kk(i,j,k) + 1
+!!$
+!!$            capx_8 = (dble(F_x(i,j,k))-adx_bsx_8(F_ii(i,j,k))) * adx_xbc_8(F_ii(i,j,k))
+!!$            capy_8 = (dble(F_y(i,j,k))-adx_bsy_8(F_jj(i,j,k))) * adx_ybc_8(F_jj(i,j,k))
+!!$            F_out(i,j,k) = F_dt * &
+!!$                  INT_LIN_IJK48(F_in,capx_8,capy_8,dble(F_capz(i,j,k)),i2,j2,k2)
+!!$         enddo DO_I3
+!!$
+!!$      enddo DO_J
+!!$   enddo DO_K
+!!$!$omp end parallel do
+!!$   call msg(MSG_DEBUG,'adx_trilin_turbo [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_trilin_turbo3

@@ -13,14 +13,16 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r itf_phy_vlsp - allocate and compute latitudinal modulation of 
-!                     vertical diffusion coefficient on momentum
+!**s/r itf_phy_vlspo - allocate and compute latitudinal modulation of 
+!               vertical diffusion coefficient on momentum
 !
 #include "model_macros_f.h"
 !
-      subroutine itf_phy_vlsp
+      subroutine itf_phy_vlsp (pw_eponmod)
+!
       implicit none
 !
+      real pw_eponmod(l_ni,l_nj)
 !Author
 !     michel roch - rpn - nov 97
 !
@@ -36,8 +38,6 @@
 !     none
 !
 !implicits
-#include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "itf_phy_config.cdk"
@@ -45,20 +45,19 @@
 #include "geomn.cdk"
 #include "schm.cdk"
 !
+!!
+!
       real*8 one, CLXXX_8, deg2rad_8
       parameter( one  = 1.0d0 , CLXXX_8 = 180.0d0 )
 !
       integer i, j
       real*8 pdb, pdtmp, pda,  pdc
-      real, pointer, dimension(:,:) :: pw_eponmod => null()
 !
 !     ---------------------------------------------------------------
 !
       if ( .not. Schm_phyms_L ) return
       if (G_lam)                return
 
-      gmmstat = gmm_create ('PW_EPONMOD',pw_eponmod,meta2d)
-      gmmstat = gmm_get    ('PW_EPONMOD',pw_eponmod,meta2d)
 
       deg2rad_8 = acos( -ONE ) / CLXXX_8
 
@@ -97,7 +96,7 @@
  1000 format( &
         /,'COMPUTE LATITUDINAL MODULATION OF VERTICAL',  &
         /,'DIFFUSION COEFFICIENT ON MOMENTUM    (S/R itf_phy_vlsp)', &
-        /,'=======================================================')
+        /,'======================================================='/)
 !
 !     ---------------------------------------------------------------
 !

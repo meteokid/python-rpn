@@ -33,6 +33,7 @@
 *v3_30 - Tanguay M.      - initial MPI version 
 *v4_04 - Tanguay M.      - Staggered version TL/AD 
 *v4_10 - Tanguay M.      - Replace tsum by tsum_8 as in GEM333
+*v4_XX - Tanguay M.      - Correction MPI_DOUBLE_PRECISION 
 *     
 *object
 *     see id section
@@ -42,8 +43,7 @@
 *
       integer i,j,k
       integer i0,in,j0,jn,k0,kn,njk,err
-      real*8 sum_8 (l_nj,Nk)
-      real*8 fijk_8
+      real*8 sum_8(l_nj,Nk),gsum_8(l_nj,Nk)
 *
 *--------------------------------------------------------------------
 *
@@ -58,7 +58,7 @@
 *     Zero adjoint variables
 *     ----------------------
       sum_8  = 0.
-      fijk_8 = 0.
+      gsum_8 = 0.
 *
       if(lmean) then
 *
@@ -76,21 +76,20 @@
 !$omp enddo
 !$omp end parallel
 *
-         tsum_8=tsum_8/real(G_ni)
+         gsum_8 = tsum_8/dble(G_ni)+gsum_8
+         tsum_8 = 0.
 *
-         call rpn_comm_ALLREDUCE ( tsum_8, sum_8, l_nj*Nk,
-     $        "MPI_REAL","MPI_SUM","EW",err )
+         call rpn_comm_ALLREDUCE ( gsum_8, sum_8, l_nj*Nk,
+     $        "MPI_DOUBLE_PRECISION","MPI_SUM","EW",err )
 *
-!$omp parallel private(fijk_8)
+!$omp parallel
 !$omp do
          do k=kn,k0,-1
             do j=jn,j0,-1
-               fijk_8     = sum_8(j,k) + fijk_8
-               sum_8(j,k) = 0.
                do i=in,i0,-1
-                  F_field(i,j,k) = real(fijk_8) + F_field(i,j,k)
+                  F_field(i,j,k) = real(sum_8(j,k)) + F_field(i,j,k)
                end do
-               fijk_8     = 0. 
+               sum_8(j,k) = 0.
             end do
          end do
 !$omp enddo

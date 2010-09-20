@@ -18,7 +18,8 @@
 #include "model_macros_f.h"
 !
       subroutine itf_phy_step (F_stepno)
-      USE phy_input_iface
+
+      Use itf_phy_iface  , Only : itf_phy_geti
       implicit none
 !
       integer, INTENT(IN) :: F_stepno
@@ -44,6 +45,7 @@
 ! v4    - Chamberland-Spacek - Staggered version
 ! v4_04 - Plante A.         - Remove offline mode
 ! v4_05 - Desgagne M.       - Update AIX binding rules
+! v4_13 - Spacek L.         - Allocate geofld as entry analogy to Phy_busper3D
 !   
 !object
 !	Computes the physical processes and apply the resulting
@@ -80,11 +82,15 @@
 !
       call iniobus(obussiz)
       allocate(obusval(l_ni*l_nj,obussiz))
+      if(F_stepno.eq.0)then
+            allocate(geofld(p_bent_siz*p_nj))
+            geofld=0.0
+       endif
       dim  = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*p_nk
 
       call itf_phy_prep
 !
-!C    load all geo and clima fields required by the physic in memory
+!C    Load data into Phy_busper3D
 !               ------------------------------------------------
       call phy_acquire_data (itf_phy_geti,Phy_busper3D,p_ni,p_nj,p_nk, &
                    p_offi,p_offj,p_bper_siz,F_stepno,Lun_out.gt.0,err)
@@ -150,6 +156,8 @@
 !       ----------------------------------------------------------
 !
       call itf_phy_apply ( F_stepno.gt.0 )
+!
+      if(F_stepno.eq.0)deallocate(geofld)
 !
  1000 format(/'PERFORM A PHYSICS STEP: stepno= ',i6, &
               ' (S/R itf_phy_step)'/57('='))

@@ -32,6 +32,7 @@
 ! v3_31 - Lee, V.           - offline mode : use full phi grid for winds
 ! v4_03 - Lee/Desgagne      - ISST
 ! v4_05 - Desgagne M.       - use work path directory than input
+! v4_13 - Lee V.            - define pil_pil with Grd_maxcfl
 !
       integer ni, nila
       integer l_ni,l_nj
@@ -104,11 +105,11 @@
 !
       if ( .not. LAM ) then
          Pil_bmf_L   = .true.
-         Pil_sfc2d_L = .true.
          Pil_3df_L   = .true.
          Pil_nesdt   = 1000
       else
-         if ( Pil_sfc2d_L .or. Pil_3df_L ) then
+         Pil_pil = max(1,Grd_maxcfl) + 5
+         if ( Pil_3df_L ) then
             if ( Mod_runstrt_S.eq.'@#$%' ) then
                if (wkoffit(trim(Path_output_S)//'/labfl.bin').gt.-1) then
                unf = 0
@@ -181,7 +182,7 @@
 !
 !--------------------------------------------------------------------
  1004 format(/' Mod_runstrt_S must be specified in LAM configuration ', &
-             /' when Pil_sfc2d_L or Pil_3df_L is .T. - ABORT -'/)
+             /' when Pil_3df_L is .T. - ABORT -'/)
  1005 format(/' Pil_jobstrt_S and Pil_jobend_S must both', &
              /' be specified in LAM configuration - ABORT -'/)
  1006 format(/' To treat Pil_3df_L data, Pil_nesdt must ', &

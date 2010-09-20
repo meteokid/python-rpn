@@ -65,7 +65,7 @@
 !*
 !     __________________________________________________________________
 !
-!     call tmg_start(62,'hzd_del2 total')
+!     call tmg_start0(62,'hzd_del2 total')
 
 !
       call rpn_comm_transpose48 ( F_sol , XDIST_DIM, Gni,1, ARRAY1DY, &
@@ -203,7 +203,7 @@
                                 ARRAY1DY, 1, nk12s, Nk  , F_g1_8, -1 &
                                 ,1.0d0,0.d0)
 
-!     call tmg_stop(62)
+!     call tmg_stop0(62)
 !
 !     __________________________________________________________________
 !

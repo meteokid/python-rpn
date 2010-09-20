@@ -52,6 +52,7 @@
       character*15 datev,startindx
       integer prognum,err,i,indx
       integer clostep,date,hour
+      real, parameter :: eps=1.e-12
       real*8 sec_clostep,ONE, OV_day, OV_hour, OV_min, dayfrac, sec_in_day
       parameter ( ONE = 1.0d0, OV_day = ONE/86400.0d0, &
                   OV_hour = ONE/3600.0d0, OV_min = ONE/60.0d0, &
@@ -91,16 +92,16 @@
          endif
          if (.not.Clim_climat_L) clostep = min(clostep,Out_endstepno)
          sec_clostep  = dble(clostep)*dble(Out_deet)
-         Out_ip2 = int (dble(stepno) * Out_deet / 3600. + 1.e-12)
+         Out_ip2 = int (dble(stepno) * Out_deet / 3600. + eps)
          Out_ip3 = F_ip3
          call newdate (Out_dateo, date, hour,-3)
          hour=hour/1000000
 !        Out_unit_S=H or blank:
-         prognum = nint(sec_clostep *OV_hour)
+         prognum = ceiling(sec_clostep *OV_hour - eps)
          if (Out_unit_S.eq.'P') prognum = clostep
-         if (Out_unit_S.eq.'D') prognum = nint(sec_clostep * OV_day )
-         if (Out_unit_S.eq.'M') prognum = nint(sec_clostep * OV_min )
-         if (Out_unit_S.eq.'S') prognum = nint(sec_clostep)
+         if (Out_unit_S.eq.'D') prognum = ceiling(sec_clostep * OV_day - eps)
+         if (Out_unit_S.eq.'M') prognum = ceiling(sec_clostep * OV_min - eps)
+         if (Out_unit_S.eq.'S') prognum = ceiling(sec_clostep - eps)
          if (Out_prefix_S.eq.'cm') then
             dayfrac = dble(stepno) * dble(Out_deet) / sec_in_day
             call incdatsd (datev,Out_runstrt_S,dayfrac)

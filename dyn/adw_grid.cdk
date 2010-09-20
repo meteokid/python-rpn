@@ -1,0 +1,45 @@
+#if !defined(__ADW_GRID__)
+#define __ADW_GRID__
+
+#if defined(DOC)
+!**comdeck adw_grid.cdk
+!______________________________________________________________________
+!                                                                      |
+! GRIDS USED IN THE ADVECTION CONTEXT                                  |
+!______________________________________________________________________|
+!                                                                      |
+! 3 different grids are refered to throughout the advection process:   |
+!                                                                      |
+! GLOBAL GRID:    Global domain                                        |
+!                                                                      |
+! ADVECTION GRID: In the general case, the tiles adjacent to the poles |
+!                 would have an advection source grid periodic in x.   |
+!                 For the other tiles, the advection grid would be the |
+!                 same as the local grid.                              |
+!                                                                      |
+! LOCAL GRID:     Local domain                                         |
+!                                                                      |
+! All of these grids could include halos or not                        |
+!______________________________________________________________________|
+#endif
+
+      type :: ADW_TYPE_VER_8
+         sequence
+         real*8, dimension(:), pointer :: t,m
+      end type ADW_TYPE_VER_8
+
+      real*8, pointer :: adw_xg_8(:), adw_yg_8(:) !glb grid x,y coor
+      real*8, pointer :: adw_wx_8(:)      !glb x weights proportional grid dist
+      real*8, pointer :: adw_xx_8(:),adw_yy_8(:)  !local grid x,y coor
+      real*8, pointer :: adw_cx_8(:),adw_sx_8(:)  !local grid cos/sin x
+      real*8, pointer :: adw_cy_8(:),adw_sy_8(:)  !local grid cos/sin y
+
+      type(ADW_TYPE_VER_8) :: adw_verZ_8          !Coor zeta: ln(pistar)
+
+      common /adw_grid_r8p/ adw_xg_8,adw_yg_8,adw_wx_8
+      common /adw_grid_r8p/ adw_xx_8,adw_yy_8
+      common /adw_grid_r8p/ adw_cx_8,adw_sx_8
+      common /adw_grid_r8p/ adw_cy_8,adw_sy_8
+
+      common /adw_grid_v8/ adw_verZ_8
+#endif

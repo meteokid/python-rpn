@@ -17,11 +17,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine itf_phy_fillbus (F_busdyn, F_busent, F_jdo, F_step, nk)
+      subroutine itf_phy_fillbus (F_busdyn, F_jdo, F_step, nk)
       implicit none
 !
       integer F_step, F_jdo, nk
-      real F_busdyn(*),F_busent(*)
+      real F_busdyn(*)
 !
 !author 
 !     Michel Roch - rpn - april 1994
@@ -41,6 +41,7 @@
 ! v3_30 - Bilodeau-Desgagne - debug offline mode
 ! v4    - Chamberland-Spacek-Plante - staggered version
 ! v4_04 - Plante A.         - Remove offline mode
+! v4_13 - Spacek L.         - Delete busent
 !
 !object
 !	Fill the slice workspace variable for the physics.
@@ -76,33 +77,6 @@
          endif
          endif
       end do
-!
-      if (F_step.eq.0) then
-!     
-      do 20 pid=1,p_bent_top
-         if (entpar(pid,3).gt.0) then
-            do gid=1,p_bgeo_top
-               if (entnm(pid).eq.geonm(gid,1)) then
-                  do mul=1,entpar(pid,6)
-                    offp= entpar(pid,1)+(mul-1)*p_ni
-                    offg= geopar(gid,1)+(mul-1)*l_ni*l_nj &
-                          +(F_jdo-1)*l_ni+p_offi
-                    do i=1,p_ni
-                       F_busent(offp+i-1)=geofld(offg+i-1)
-                    end do
-                  end do
-                  goto 20
-               endif
-            end do
-            print*, '*********************************************'
-            print *,'Variable: ', entnm(pid), 'not available'
-            print *,'for the ENTRY Bus.'
-            print*, '*********************************************'
-            stop
-         endif
- 20   continue
-!
-      endif
 !
 !     ---------------------------------------------------------------
 !

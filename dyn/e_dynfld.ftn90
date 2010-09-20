@@ -33,6 +33,7 @@
 #include "e_fu.cdk"
 #include "e_cdate.cdk"
 #include "e_topo.cdk"
+#include "e_grids.cdk"
 #include "bmf.cdk"
 #include "pilot.cdk"
 #include "filename.cdk"
@@ -55,12 +56,14 @@
 !
 !---------------------------------------------------------------------
 !
-!
       bmf_dtyp = 41
       date1    = Pil_jobstrt_S
       dayfrac  = dble(Pil_nesdt) / sec_in_day
 !
-      topo  = topof
+      if (Pil_bmf_L) then
+          allocate ( topo (nifi*njfi) )
+          call e_gettopo (topo, nifi, njfi)
+      endif
 !
       cnt   = 0
       ipilf = 1

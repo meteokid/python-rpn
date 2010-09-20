@@ -116,8 +116,6 @@
       call msg(MSG_DEBUG,'ADJ of ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_AD)')
 ************************************************************************
 *
-      if (.NOT.Adw_nosetint_L) call handle_error(-1,'adw_main_ad','NOT Adw_nosetint_L not done')
-*
 *     Recover TRAJ TRT0 from ORTR for ADW_MAIN_3_INTLAG_AD when Orh_icn .eq. Schm_itcn
 *     --------------------------------------------------------------------------------
       if (Orh_icn.eq.Schm_itcn) then
@@ -208,7 +206,7 @@
 *
 *     Recover TRAJ upstream positions 
 *     -------------------------------
-      call v4d_rwtraj (5,pxm_m,pym_m,pzm_m,pxt_m,pyt_m,pzt_m)
+      call v4d_rwtraj (5,pxm_m,pym_m,pzm_m,pxt_m,pyt_m,pzt_m,l_ni,l_nj,G_nk,G_nk+1)
 *
 *     ----------------
 *     TRAJECTORY (END)

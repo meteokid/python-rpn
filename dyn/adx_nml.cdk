@@ -1,0 +1,5 @@
+#if !defined(__ADX_NML__)
+#define __ADX_NML__
+!**comdeck adx_nml.cdk
+#include "adw_nml.cdk"
+#endif

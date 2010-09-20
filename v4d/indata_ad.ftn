@@ -30,6 +30,7 @@
 * v4_04 - Tanguay M.        - Staggered version TL/AD 
 * v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
 * v4_12 - Tanguay M.        - Adapt to revised predat
+* v4_XX - Tanguay M.        - Adjustments GEM413 .not. Schm_hydro_L
 *
 *object
 *     see id section
@@ -71,6 +72,8 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'indata_ad ERROR at gmm_get(ut1)'
       gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'indata_ad ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'indata_ad ERROR at gmm_get(wt1)'
       gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'indata_ad ERROR at gmm_get(tt1)'
       gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
@@ -81,6 +84,13 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'indata_ad ERROR at gmm_get(fiptx)'
       gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
       if (GMM_IS_ERROR(gmmstat)) print *,'indata_ad ERROR at gmm_get(topo)'
+*
+      if (.not. Schm_hydro_L) then
+         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'indata_ad ERROR at gmm_get(qt1)'
+      else
+         nullify (qt1)
+      endif
 *
       if (Vtopo_L) then
          gmmstat = gmm_get(gmmk_dtopo_s,dtopo,meta2d)
@@ -96,7 +106,7 @@
 *
 *     ADJ of Preprocessing of Dependent variables only if V4dg_part=3
 *     ---------------------------------------------------------------
-      call v4d_predat_ad (ut1, vt1, tt1, zdt1, st1, fiptx, tt1_m, st1_m,
+      call v4d_predat_ad (ut1, vt1, tt1, zdt1, st1, fiptx, wt1, qt1, tt1_m, st1_m,
      $                    l_minx,l_maxx,l_miny,l_maxy)
 *
 *     ---------------------------------------------------------------

@@ -29,6 +29,7 @@
 !
 !revision
 ! v4_12 - Spacek L.         - staggered + gmm version
+! v4.1.3 -N. Gagnon         - Change name of some parameters from NAMELIST
 !
 !object
 !	
@@ -71,11 +72,11 @@
       gmmstat = gmm_get(gmmk_mcsph1_s ,mcsph1,meta3d)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'mcsph11'
 !
-!     Markov chain step and if Ens_bc_conf=.false. return
+!     Markov chain step and if Ens_skeb_conf=.false. return
 !
       call ens_marfield_cg (mcsph1,E_nk+1)
 !
-      if (.not.Ens_bc_conf) return
+      if (.not.Ens_skeb_conf) return
 !
       allocate( dsp_local(LDIST_SHAPE,E_nk))
       allocate( dsp_dif(LDIST_SHAPE,E_nk))
@@ -107,7 +108,7 @@
 !
 !     Diffusion backscatter
 !
-      if(Ens_bc_stat)then
+      if(Ens_stat)then
          call glbstat2 (F_ut1,'UT1','AT BEG', &
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
          call glbstat2 (F_vt1,'VT1','AT BEG', &
@@ -123,12 +124,12 @@
       endif
 
       dsp_dif=0.0
-      if(Ens_bc_dif)then
+      if(Ens_skeb_dif)then
         F_difut1=F_ut1*F_difut1 ; F_difvt1=F_vt1*F_difvt1
         call ens_uvduv (dsp_dif, F_difut1, F_difvt1, LDIST_DIM, E_nk )
       endif
 
-      if(Ens_bc_stat)then
+      if(Ens_stat)then
          call glbstat2 (F_difut1,'DUT1','DIFF', &
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
          call glbstat2 (F_difvt1,'DVT1','DIFF', &
@@ -138,12 +139,12 @@
 !     Gravity wave drag backscatter
 !
       dsp_gwd=0.0
-      if(Ens_bc_gwd)then
+      if(Ens_skeb_gwd)then
         F_difut1=F_ut1*F_ugwdt1 ; F_difvt1=F_vt1*F_vgwdt1
         call ens_uvgwd (dsp_gwd, F_difut1, F_difvt1, LDIST_DIM, E_nk )
       endif
 !
-      if(Ens_bc_stat)then
+      if(Ens_stat)then
          call glbstat2 (F_difut1,'DUT1','GWD', &
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
          call glbstat2 (F_difvt1,'DVT1','GWD', &
@@ -155,7 +156,7 @@
 !
 !     Apply 2D Gaussian filter
 !     ===================================================================
-      if(Ens_bc_stat)then
+      if(Ens_stat)then
           call glbstat2 (dsp_dif,'DSP','DIF', &
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
           call glbstat2 (dsp_gwd,'DSP','GWD', &
@@ -164,18 +165,18 @@
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       endif
 
-      call ens_filter_gauss(dble(Ens_bc_bfc),dble(Ens_bc_lam),dsp_local)
+      call ens_filter_gauss(dble(Ens_skeb_bfc),dble(Ens_skeb_lam),dsp_local)
 
-      if(Ens_bc_stat)then 
+      if(Ens_stat)then 
          call glbstat2 (dsp_local,'DSP','FLTTOT', &
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       endif
 
-      if(Ens_bc_alpt/=0.0)then
+      if(Ens_skeb_alpt/=0.0)then
          do k=1,E_nk
             do j=1,l_nj
                do i=1,l_ni
-                  F_tt1(i,j,k+1)=F_tt1(i,j,k+1)+Ens_bc_alpt*cpdi*dsp_local(i,j,k)*mcsph1(i,j,k)
+                  F_tt1(i,j,k+1)=F_tt1(i,j,k+1)+Ens_skeb_alpt*cpdi*dsp_local(i,j,k)*mcsph1(i,j,k)
                enddo
             enddo
          enddo
@@ -211,15 +212,15 @@
          do j= j0, jn 
             do i= i0, l_niu
                F_difut1(i,j,k)= aaa2*(dsp_local(i,j,k)-dsp_local(i-1,j,k)) / geomg_hxu_8(i)
-               F_difut1(i,j,k)=Ens_bc_alph*deltax*F_difut1(i,j,k)
+               F_difut1(i,j,k)=Ens_skeb_alph*deltax*F_difut1(i,j,k)
                F_vt1(i,j,k) = F_vt1(i,j,k)+F_difut1(i,j,k)
             enddo
          enddo
 !
          do j= j0, l_njv-pil_n
             do i= i0, in 
-               F_difvt1(i,j,k)= aaa2*(dsp_local(i,j+1,k) - dsp_local(i,j,k))*geomg_cy2_8(j)/geomg_hsyv_8(j)
-               F_difvt1(i,j,k)= -Ens_bc_alph*deltax*F_difvt1(i,j,k)
+               F_difvt1(i,j,k)= aaa2*(dsp_local(i,j+1,k) - dsp_local(i,j,k))*geomg_invDY_8(j)
+               F_difvt1(i,j,k)= -Ens_skeb_alph*deltax*F_difvt1(i,j,k)
                F_ut1(i,j,k) = F_ut1(i,j,k)+F_difvt1(i,j,k)
             enddo
          enddo
@@ -240,7 +241,7 @@
          endif
       enddo
 
-      if(Ens_bc_stat)then
+      if(Ens_stat)then
          call glbstat2 (F_ut1,'UT1','AT END', &
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
          call glbstat2 (F_vt1,'VT1','AT END', &
@@ -251,7 +252,7 @@
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       endif
 
-      if(Ens_bc_div)then
+      if(Ens_skeb_div)then
          derx_local=0.0; dery_local=0.0
          call rpn_comm_xch_halo (F_difut1,LDIST_DIM,l_ni,l_nj,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
@@ -277,7 +278,7 @@
             do j= j0, jn 
                do i= i0, l_niu
                   dery_local(i,j,k)= aaa2*(F_difut1(i,j,k) - F_difut1(i,j-1,k)) &
-                         *geomg_cy2_8(j)/geomg_hsyv_8(j)- derx_local(i,j,k)
+                         *geomg_invDY_8(j)- derx_local(i,j,k)
                enddo
             enddo
             if (.not.G_lam) then
@@ -300,7 +301,7 @@
          enddo
          endif
 !
-      if(Ens_bc_stat)then
+      if(Ens_stat)then
          call glbstat2 (dery_local,'DVRG','FRCING', &
            1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       endif

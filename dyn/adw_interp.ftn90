@@ -37,55 +37,35 @@
       !@includes
 #include "gmm.hf"
 #include "glb_ld.cdk"
+#include "adw_nml.cdk"
 !**/
-      type(gmm_metadata) :: dummy_gmm_meta
+      type(gmm_metadata) :: mymeta
       integer :: i,j,k,err
-      real, pointer, dimension (:,:,:) :: fld_in,fld_out,fld_in2
+      real, pointer, dimension (:,:,:) :: fld_in,fld_out
       real(8) :: inverse_fact_8
       !---------------------------------------------------------------------
-      err = gmm_get(F_in_S,fld_in,dummy_gmm_meta)
+      err = gmm_get(F_in_S,fld_in,mymeta)
       call handle_error(err,'adw_interp_gmm','gmm_get for'//trim(F_in_S))
-      err = gmm_get(F_out_S,fld_out,dummy_gmm_meta)
+      err = gmm_get(F_out_S,fld_out,mymeta)
       call handle_error(err,'adw_interp_gmm','gmm_get for'//trim(F_out_S))
 
-      fld_in2 => fld_in
-
-      if (F_fact_8/=1. .and. F_fact_8/=0.) then
-         fld_in2 => fld_out
-         inverse_fact_8 = 1.d0/F_fact_8
-
-!$omp parallel
-!$omp do
-         do k=1,F_nk
-            do j=1,l_nj
-               do i=1,l_ni
-                  fld_in2(i,j,k) = inverse_fact_8*fld_in(i,j,k)
-               end do
-            end do
-         end do
-!$omp enddo
-!$omp end parallel
-
+      if (adw_stats_L) then
+         call glbstat2(fld_in, F_in_S, 'adw_int',  &
+              mymeta%l(1)%low,mymeta%l(1)%high, mymeta%l(2)%low,mymeta%l(2)%high,&
+              1,F_nk, i0,in,j0,jn,1,F_nk)
       endif
 
 !$omp parallel
-      call adw_interp2(fld_out, fld_in2, F_posx, F_posy,  &
+      call adw_interp2(fld_out, fld_in, F_posx, F_posy,  &
                        F_wind_L, F_mono_L, LDIST_DIM, F_nk, &
                        i0,in,j0,jn, F_lev_S)
-
-      if (F_fact_8/=1. .and. F_fact_8/=0.) then
-!$omp do
-         do k=1,F_nk
-            do j=1,l_nj
-               do i=1,l_ni
-                  fld_out(i,j,k) = F_fact_8*fld_out(i,j,k)
-               end do
-            end do
-         end do
-!$omp enddo
-      endif
-
 !$omp end parallel
+
+      if (adw_stats_L) then
+         call glbstat2(fld_out, F_out_S, 'adw_int',  &
+              mymeta%l(1)%low,mymeta%l(1)%high, mymeta%l(2)%low,mymeta%l(2)%high,&
+              1,F_nk, i0,in,j0,jn,1,F_nk)
+      endif
       !---------------------------------------------------------------------
       return
       end subroutine adw_interp_gmm
@@ -203,16 +183,20 @@
 ! Interpolate
 !***********************************************************************
 
+      call tmg_start0(63, 'ADW_TRICU' )
       call ADW_TRICUB_LAG3D(Adw_wrkc, F_posx, &
            Adw_capx1, Adw_capy1, Adw_capz1, &
            nijk, F_mono_L,i0,in,j0,jn,F_nk,F_lev_S)
+      call tmg_stop0(63)
 
       if (.not.G_lam) then
 
          if (Adw_fro_a > 0) then
+      call tmg_start0(63, 'ADW_TRICU' )
             call ADW_TRICUB_LAG3D(Adw_wrka, F_posx, &
                  Adw_capx2, Adw_capy2, Adw_capz2,  &
                  Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1,F_lev_S)
+      call tmg_stop0(63)
          endif
 
 !$omp single

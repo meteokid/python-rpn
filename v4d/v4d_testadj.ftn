@@ -178,14 +178,14 @@ CCC        call v4d_rdtrial()
 *        ----------------------------------------------
          V4dg_output_L = .true.
 *
-         call tmg_start(50,'NLM')
+         call tmg_start0(50,'NLM')
 *
 *        Call 4D-Var simulator with NLM integration without gradient
 *        -----------------------------------------------------------
          indic = 99
          call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
 *
-         call tmg_stop(50)
+         call tmg_stop0(50)
 *
 *        Initialize V4dc_ycv (Image winds) from NLM final model var.
 *        -----------------------------------------------------------
@@ -238,7 +238,7 @@ CCC            V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
 *        ----------------------------------------------
          V4dg_output_L = .true.
 *
-         call tmg_start(51,'TLM')
+         call tmg_start0(51,'TLM')
 *
 *        Call 4D-Var simulator with TLM integration without gradient
 *        -----------------------------------------------------------
@@ -246,7 +246,7 @@ CCC            V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
          indic      = 99
          call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
 *
-         call tmg_stop(51)
+         call tmg_stop0(51)
 *
 *        Reset 4D-Var simulator with NLM integration 
 *        ------------------------------------------- 
@@ -315,14 +315,14 @@ CCC            V4dc_xcv(n) =  V4dc_ycv(n) - V4dc_xcv(n)
 *        ----------------------------------------------
          V4dg_output_L = .true.
 *
-         call tmg_start(52,'ADJ')
+         call tmg_start0(52,'ADJ')
 *
 *        Call 4D-Var simulator for gradient only
 *        ---------------------------------------
          indic = 98 
          call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
 *
-         call tmg_stop(52)
+         call tmg_stop0(52)
 *
 *     ----------------------------------------------
 *     Evaluate < V4dc_xcv , ADJ V4dc_gcv > in ps02_8 

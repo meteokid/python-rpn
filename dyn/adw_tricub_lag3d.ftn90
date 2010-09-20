@@ -19,17 +19,12 @@
 !
       subroutine adw_tricub_lag3d ( F_out, F_in, F_x, F_y, F_z, F_num, &
                                     F_mono_L, i0, in, j0, jn, F_nk, F_lev_S )
-!
       implicit none
 !
       character*1 F_lev_S
-!
       logical F_mono_L
-!
       integer F_num, i0, in, j0, jn, F_nk
-!
       real F_in(*)
-!
       real F_out (F_num), F_x(F_num), F_y(F_num), F_z(F_num)
 !
 !authors
@@ -61,24 +56,9 @@
 ! F_mono_L     | switch: .true. : monotonic interpolation        |  i  |
 !______________|_________________________________________________|_____|
 !
-!implicits
 #include "glb_ld.cdk"
-!      integer G_ni, G_nj, G_nk
-!      integer l_ni, l_nj
 #include "adw.cdk"
-!$$$      #include "type.cdk"
-!$$$      type (vertical_i)  Adw_lcz
-!$$$      type (vertical_8)  Adw_bsz_8
-!$$$      type (vertical_8)  Adw_zbc_8
-!$$$      type (vertical_8)  Adw_zabcd_8
-!$$$      type (vertical_8)  Adw_zbacd_8
-!$$$      type (vertical_8)  Adw_zcabd_8
-!$$$      type (vertical_8)  Adw_zdabc_8
-!$$$      !... lots more... TODO: finish inventory or keep adw.cdk
 #include "ver.cdk"
-!      #include "type.cdk"
-!      type (vertical_8) Ver_z_8  
-! **********************************************************************
       integer n,nijag,i,j,k,nij,iimax,jjmax,kkmax,ii,jj,kk
       logical zcubic_L
 !
@@ -92,7 +72,7 @@
       real*8  p1, p2, p3, p4
 !
       real *8 triprd,za,zb,zc,zd,rri,rrj,rrk,ra,rb,rc,rd
-      triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
+      triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd) 
 !
       integer,dimension(:),pointer :: p_lcz
       real*8  p_z00_8
@@ -264,7 +244,6 @@
    90 continue
   100 continue
 !$omp enddo
-!
 !
       return
       end

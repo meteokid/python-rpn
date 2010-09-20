@@ -95,6 +95,7 @@
 !      integer l_ni, l_nj, l_nk, l_niu, l_njv
 !      integer l_minx, l_maxx, l_miny, l_maxy
 !      integer pil_n,pil_s,pil_w,pil_e
+#include "adw.cdk"
 #include "cstv.cdk"
 !      real*8    Cstv_dt_8
 #include "ver.cdk"
@@ -108,7 +109,8 @@
       integer i, j, k, n, nm, ij, ijk, nij, nijk, it
       integer i1,j1,k1,ier,i0,in,j0,jn
 *
-      integer, dimension(l_ni*l_nj*F_nk) :: n1,loci,locj,lock
+      integer, dimension(l_ni*l_nj*F_nk) :: n1_m,loci,locj,lock
+      real,    dimension(l_ni*l_nj*F_nk) :: capx1,capy1,capz1
       real,    dimension(l_ni*l_nj*F_nk) :: wrkx1,wrky1,wrk_yth
 *
       real,    dimension(l_ni*l_nj*F_nk) :: capx1_m,capy1_m,capz1_m
@@ -121,6 +123,15 @@
       real*8 ,dimension(:), pointer :: p_z_8
 *
 ************************************************************************
+*TEMPORAIRE
+*     Zero adjoint variables
+*     ----------------------
+      wrkx1 = 0.
+      wrky1 = 0.
+      wrk_yth = 0.
+      capx1   = 0.
+      capy1   = 0.
+      capz1   = 0.
 *
       if (Schm_zdotMid_L) call handle_error(-1,'adw_main_2_pos_tl','Schm_zdotMid_L not DONE')
 *
@@ -183,6 +194,23 @@
 *           NOT DONE YET
          endif
 *
+         if( .not. Adw_nosetint_L ) then
+*
+         call adw_setint_tl (       capx1  , dummy, dummy  , capy1    , dummy  , 
+     %                       dummy, capz1  , dummy, F_xth  , wrk_yth  , F_zth  , 
+     %                        n1_m, capx1_m, dummy, dummy  , capy1_m  , dummy  , 
+     %                       dummy, capz1_m, dummy, F_xth_m, wrk_yth_m, F_zth_m, 
+     %                       .true., .true., .true.,nijk,i0,in,j0,jn,F_nk)
+*
+         call adw_trilin_tl(wrkx1  ,F_u  ,         capx1  ,capy1  ,capz1  ,
+     %                      wrkx1_m,F_u_m,1.0,n1_m,capx1_m,capy1_m,capz1_m,
+     %                      nijk,i0,in,j0,jn,F_nk)
+         call adw_trilin_tl(wrky1  ,F_v  ,         capx1  ,capy1  ,capz1  ,
+     %                      wrky1_m,F_v_m,1.0,n1_m,capx1_m,capy1_m,capz1_m,
+     %                      nijk,i0,in,j0,jn,F_nk)
+*
+         else
+*
          call adw_trilin_turbo_tl (wrkx1,  F_u,  1.0,F_xth,  wrk_yth,  F_zth,  
      %                             wrkx1_m,F_u_m,    F_xth_m,wrk_yth_m,F_zth_m,
      %                             capx1_m,capy1_m,capz1_m,
@@ -192,6 +220,8 @@
      %                             wrky1_m,F_v_m,    F_xth_m,wrk_yth_m,F_zth_m,
      %                             capx1_m,capy1_m,capz1_m,
      %                             loci,locj,lock,nijk,i0,in,j0,jn,F_nk,.false.,.false.)
+*
+         endif
 *
 *        ==================================================================
 *        Compute new upstream positions along x and y
@@ -226,10 +256,26 @@
 *            NOT DONE YET
          endif
 *
+         if( .not. Adw_nosetint_L ) then
+*
+             call adw_setint_tl (        capx1  , dummy, dummy  , capy1    , dummy  ,  
+     %                            dummy, capz1  , dummy, F_xth  , wrk_yth  , F_zth  ,  
+     %                            n1_m , capx1_m, dummy, dummy  , capy1_m  , dummy  ,  
+     %                            dummy, capz1_m, dummy, F_xth_m, wrk_yth_m, F_zth_m,  
+     %                            .true., .true., .true., nijk,i0,in,j0,jn,F_nk)
+*
+             call adw_trilin_tl (wrkx1  ,F_w  ,          capx1  ,capy1  ,capz1  ,
+     %                           wrkx1_m,F_w_m,-dth,n1_m,capx1_m,capy1_m,capz1_m,
+     %                           nijk,i0,in,j0,jn,F_nk)
+*
+         else
+*
          call adw_trilin_turbo_tl (wrkx1,  F_w,  -dth,F_xth,  wrk_yth,  F_zth,  
      %                             wrkx1_m,F_w_m,     F_xth_m,wrk_yth_m,F_zth_m,
      %                             capx1_m,capy1_m,capz1_m,
      %                             loci,locj,lock,nijk,i0,in,j0,jn,F_nk,.true.,.true.)
+*
+         endif
 *
 ************************************************************************
 *
@@ -237,8 +283,6 @@
 *        Compute new upstream position along zeta
 *        ==================================================================
 *
-C!$omp parallel private(n)
-C!$omp do
          do k = 2,F_nk-1
             do j = j0,jn
             do i = i0,in
@@ -274,8 +318,6 @@ C!$omp do
             enddo
             enddo
          enddo
-C!$omp enddo
-C!$omp end parallel
 *
 ************************************************************************
       enddo ! end of iterations loop
@@ -285,8 +327,6 @@ C!$omp end parallel
      %                    F_px_m,F_py_m,F_xct1_m,F_yct1_m,F_zct1_m,F_xcth_m,F_ycth_m,F_zcth_m,
      %                    i0,in,j0,jn)
 *
-C!$omp parallel private(n)
-C!$omp do
       do j = j0,jn
       do i = i0,in
          n = ((j-1)*l_ni) + i   !for k=1
@@ -311,8 +351,7 @@ C!$omp do
 *
       enddo
       enddo
-C!$omp enddo
-C!$omp do
+*
       do k = 2,F_nk-1
          do j = j0,jn
          do i = i0,in
@@ -331,9 +370,9 @@ C!$omp do
          enddo
          enddo
       enddo
-C!$omp enddo
+*
       if(F_l_S.eq.'t')then
-C!$omp do
+*
          do j = j0,jn
          do i = i0,in
             n = ((j-1)*l_ni) + i !for k=1
@@ -363,10 +402,8 @@ C!$omp do
 *
          enddo
          enddo
-C!$omp enddo
-      endif
 *
-C!$omp end parallel
+      endif
 *
  1000 format(3X,'TLM of CALC UPSTREAM POSITIONS: (S/R ADW_MAIN_2_POS_TL)')
 *

@@ -115,7 +115,7 @@
          fact1 = 1. / geomg_cy_8(j)
          do i=i0,in
             F_dpdy(i,j,k)= ( F_wlnph(i+1,j,k) - F_wlnph(i,j,k) )  &
-                           / geomg_hx_8(i)*fact1
+                           * geomg_invDXu_8(i)*fact1
             F_dvdp(i,j,k)= F_dvdp(i,j,k)*fact1
          end do
          end do
@@ -163,10 +163,10 @@
          do i = i0, in
             F_dpdy(i,j,k)= (1.0 - intuv_c0yvy_8(j-1)) *  &
                  (F_wlnph(i,j,k)-F_wlnph(i,j-1,k))* &
-                 geomg_cyv2_8(j-1)*geomg_invhsy_8(j-1) * inv_geomg_cyv_8(j-1) + &
+                 geomg_invDYv_8(j-1) * inv_geomg_cyv_8(j-1) + &
                                 intuv_c0yvy_8(j-1)  *  &
                  (F_wlnph(i,j+1,k)-F_wlnph(i,j,k))* &
-                 geomg_cyv2_8(j)*geomg_invhsy_8(j) * inv_geomg_cyv_8(j)
+                 geomg_invDYv_8(j) * inv_geomg_cyv_8(j)
          end do
          end do
          if (.not.G_lam) then
@@ -174,14 +174,14 @@
             do i = i0, in
                F_dpdy(i,1,k) = intuv_c0yvy_8(0) &
                          *(F_wlnph(i,2,k)-F_wlnph(i,1,k))* &
-                         geomg_cyv2_8(1)*geomg_invhsy_8(1)* inv_geomg_cyv_8(1)
+                         geomg_invDYv_8(1)* inv_geomg_cyv_8(1)
             end do
             endif
             if (l_north) then
             do i = i0, in
                F_dpdy(i,l_nj,k)=(1.-intuv_c0yvy_8(l_nj-1))* &
                        (F_wlnph(i,l_nj,k)-F_wlnph(i,l_nj-1,k))* &
-            geomg_cyv2_8(l_nj-1)*geomg_invhsy_8(l_nj-1)*inv_geomg_cyv_8(l_nj-1)
+                       geomg_invDYv_8(l_nj-1)*inv_geomg_cyv_8(l_nj-1)
             end do
             endif
          endif

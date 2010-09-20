@@ -1,0 +1,88 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include "msg.h"
+#include "stop_mpi.h"
+
+subroutine adx_cliptraj()
+   call stop_mpi(STOP_ERROR,'adx_cliptraj','called a stub')
+   return
+end subroutine
+
+!/**
+subroutine adx_cliptraj2(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,F_nk, mesg)
+   implicit none
+#include "adx_dims.cdk"
+   !@objective Clip SL hor. trajectories to either fit inside the 
+   !                    physical domain of the processor or to the
+   !                    actual maximum allowed COURRANT number (LAM)
+   !@arguments
+   character(len=*) :: mesg
+   integer :: F_ni,F_nj,F_nk  !I, dims of F_x, F_y
+   integer :: i0, in, j0, jn  !I, scope of the operator
+   real, dimension(F_ni,F_nj,F_nk) :: &
+        F_x, F_y              !I/O, upstream pos
+   !@author Michel Desgagne, Spring 2008
+   !@revisions
+   ! v3_31 - Desgagne M.  - Initial version
+!**/
+#include "adx_grid.cdk"
+   real*8,  parameter :: EPS_8 = 1.D-5
+   integer, parameter :: BCS_BASE = 4
+
+   character(len=MSG_MAXLEN) :: msg_S
+   integer :: n, i,j,k, cnt, sum_cnt, err, totaln
+   real :: minposx,maxposx,minposy,maxposy, posxmin,posxmax,posymin,posymax
+   !---------------------------------------------------------------------
+   minposx = adx_xx_8(adx_lminx+1) + EPS_8
+   if (adx_is_west)  minposx = adx_xx_8(1+BCS_BASE) + EPS_8
+   maxposx = adx_xx_8(adx_lmaxx-1) - EPS_8
+   if (adx_is_east)  maxposx = adx_xx_8(adx_lni-BCS_BASE) - EPS_8
+   minposy = adx_yy_8(adx_lminy+1) + EPS_8
+   if (adx_is_south) minposy = adx_yy_8(1+BCS_BASE) + EPS_8
+   maxposy = adx_yy_8(adx_lmaxy-1) - EPS_8
+   if (adx_is_north) maxposy = adx_yy_8(adx_lnj-BCS_BASE) - EPS_8
+
+   cnt=0
+
+   !- Clipping to processor boundary
+   do k=1,F_nk
+      do j=j0,jn
+         do i=i0,in
+            if ( (F_x(i,j,k)<minposx).or.(F_x(i,j,k)>maxposx).or. &
+                 (F_y(i,j,k)<minposy).or.(F_y(i,j,k)>maxposy) ) then
+               cnt=cnt+1
+            endif
+            F_x(i,j,k) = min(max(F_x(i,j,k),minposx),maxposx)
+            F_y(i,j,k) = min(max(F_y(i,j,k),minposy),maxposy)
+         enddo
+      enddo
+   enddo
+
+   n = max(1,adx_maxcfl)
+   totaln = (F_ni*n*2 + (F_nj-2*n)*n*2) * F_nk
+
+   call rpn_comm_Allreduce(cnt,sum_cnt,2,"MPI_INTEGER", "MPI_SUM","grid",err)
+
+   if (trim(mesg).ne."" .and. sum_cnt>0) then
+      write(msg_S,'(a,i5,a,f6.2,2x,a)')  &
+           ' ADW trajtrunc: npts=',sum_cnt, &
+           ', %=',real(sum_cnt)/real(totaln)*100., &
+           mesg
+      call msg(MSG_INFO,msg_S)
+   endif
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_cliptraj2

@@ -33,6 +33,7 @@
 * v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 * v4_04 - Tanguay M.        - Staggered version TL/AD 
 * v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+* v4_XX - Tanguay M.        - Adjustments GEM413 
 *
 *object
 *     see id section
@@ -50,12 +51,14 @@
 #include "tr3d.cdk"
 #include "v4dj.cdk"
 #include "v4dc.cdk"
+#include "ptopo.cdk"
 *
       real, pointer, dimension(:,:,:) :: tr
-      integer i,j,k,n,m,pnerr
+      integer i,j,k,n,m,pnerr,indx,offj
       real pr1
 *
       real*8, parameter :: ZERO_8 = 0.0
+      real*8, parameter :: HALF_8 = 0.5
 *
       real wu  (LDIST_SHAPE,l_nk+1),  wv (LDIST_SHAPE,l_nk+1)
       real wt  (LDIST_SHAPE,l_nk+2),  ws (LDIST_SHAPE)
@@ -114,16 +117,26 @@ CCC   V4dj_spwt =   Geomg_z_8(l_nk)*Dcst_rgasv_8*Cstv_tstr_8
 *     Integral with respect to latitude
 *     ---------------------------------
 *
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+*
 *     Staggering scalar grid
 *     ----------------------
       do j=1,l_nj
-      V4dj_thicky(j) = Geomg_hsyv_8(j-1)
+CCC   TEMPORAIRE 
+CCC   V4dj_thicky(j) = Geomg_hsyv_8(j-1)
+      indx = offj + j
+      V4dj_thicky(j) =  
+     $        sin((G_yg_8(indx+2)+G_yg_8(indx+1))* HALF_8)-  &
+     $        sin((G_yg_8(indx+1)+G_yg_8(indx  ))* HALF_8)
       end do
 *
 *     Staggering v grid
 *     -----------------
       do j=1,l_njv
-      V4dj_thickyv(j)= Geomg_hsy_8(j)
+CCC   TEMPORAIRE 
+CCC   V4dj_thickyv(j)= Geomg_hsy_8(j)
+      indx = offj + j
+      V4dj_thickyv(j)= sin( G_yg_8(indx+1))-sin(G_yg_8(indx)) 
       end do
 *
 *     ---------------------------------

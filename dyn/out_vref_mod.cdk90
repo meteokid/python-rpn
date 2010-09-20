@@ -95,11 +95,8 @@ contains
 
     endif
 
-    ! Write out the reference field
-    call ecris_fst2 ( F_ref,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-                                  'P0',0.01,0.0,-1,1,1,1,32 )
-
     return
+
   end subroutine out_vref_model
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

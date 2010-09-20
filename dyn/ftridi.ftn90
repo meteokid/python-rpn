@@ -63,7 +63,7 @@
       real    s1, s2, s3, s4, s5, s6, s7, s8, s41, s51, s61, s71, s81
       real    v(256), w(256)
 !
-!     call tmg_start(98,'ftridi')
+!     call tmg_start0(98,'ftridi')
 !$omp parallel private(v,w , i, j, j0, j1, j2, j3, j4, h1, h2, h3, h4,&
 !$omp i1, i2, i3, n, s1, s2, s3, s4, s5, s6, s7, s8, s41, s51, s61,&
 !$omp s71, s81)
@@ -202,7 +202,7 @@
   300 continue
 !$omp enddo
 !$omp end parallel
-!     call tmg_stop(98)
+!     call tmg_stop0(98)
       return
       end
 
@@ -259,7 +259,7 @@
       real    s1, s2, s3, s4, s5, s6, s7, s8, s41, s51, s61, s71, s81
       real    v(256), w(256)
 !
-!      call tmg_start(98,'ftridi')
+!      call tmg_start0(98,'ftridi')
       do 300 j0=0,NJ-1,256
          n = min( 256, NJ - j0 )
          h1 = 1 - F_deltaj + j0 * F_deltaj
@@ -392,6 +392,6 @@
             enddo
          endif
   300 continue
-!      call tmg_stop(98)
+!      call tmg_stop0(98)
       return
       end

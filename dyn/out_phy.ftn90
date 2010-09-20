@@ -66,7 +66,8 @@
 #include "itf_phy_buses.cdk"
 #include "obus.cdk"
 #include "grd.cdk"
-#include "cube.cdk"
+#include "grid.cdk"
+#include "level.cdk"
 #include "outp.cdk"
 #include "ptopo.cdk"
 #include "type.cdk"
@@ -118,7 +119,7 @@
          gridset = Outp_grid(kk)
          levset= Outp_lev(kk)
          if (.not.G_lam .and. (Grid_x1(gridset)-Grid_x0(gridset)+1).eq. G_ni ) periodx_L= .true.
-         ig1 = Cube_ig1(gridset,Level_typ_indx(levset))
+         ig1 = Grid_ig1(gridset)
          grille_x0 = max( 1+Lam_pil_w - p_nmp, Grid_x0(gridset) )
          grille_x1 = min( Grid_x1(gridset), G_ni - Lam_pil_e + p_nmp )
          grille_y0 = max( 1+Lam_pil_s - p_nmp,Grid_y0(gridset) )
@@ -128,9 +129,9 @@
               grille_x1.ne.Grid_x1(gridset).or. &
               grille_y0.ne.Grid_y0(gridset).or. &
               grille_y1.ne.Grid_y1(gridset) ) ) &
-              ig1=Cube_ig1(gridset,Level_typ_indx(levset))+100
+              ig1=Grid_ig1(gridset)+100
          call out_sgrid(grille_x0,grille_x1,grille_y0,grille_y1, &
-              ig1,Cube_ig2(gridset,Level_typ_indx(levset)), &
+              ig1,Grid_ig2(gridset), &
               periodx_L, Grid_stride(gridset), &
               Grid_etikext_s(gridset),etikadd_S )
          nk_o =  Level_max(levset)

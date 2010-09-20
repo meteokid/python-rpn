@@ -40,18 +40,12 @@
 !implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "offc.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
 #include "schm.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 !
 !notes
 !
-      real*8   ZERO_8, ONE_8, pd1_8
-      parameter( ZERO_8 = 0.0 )
-      parameter( ONE_8  = 1.0 )
 !*
 !    _________________________________________________________________
 !

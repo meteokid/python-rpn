@@ -80,7 +80,7 @@
 !                                                                             *
 !******************************************************************************
 !                                                                             *
-!     call tmg_start(76,'opinv')
+!     call tmg_start0(76,'opinv')
       plalonz = F_axis.eq.'Z'
       if ( .not.plalonz ) then
          call handle_error(-1,'opinv7','OPINV7 is only correct for Z axis')
@@ -141,11 +141,11 @@
             enddo
          endif
 !
-!        call tmg_start(97,'msoltri')
+!        call tmg_start0(97,'msoltri')
          call msoltri6  &
                      ( F_r(1,1,1,1), F_r(1,1,1,1), F_bi_8, F_ci_8, F_ai_8, &
                        NIS*NJS*SKIP, SKIP, pnm, NIS*NJS)
-!        call tmg_stop(97)
+!        call tmg_stop0(97)
 !
          if ( plper ) then
 !$omp parallel
@@ -170,6 +170,6 @@
 !$omp enddo
 !$omp end parallel
          endif
-!        call tmg_stop(76)
+!        call tmg_stop0(76)
       return
       end

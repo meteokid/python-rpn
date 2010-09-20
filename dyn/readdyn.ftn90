@@ -19,7 +19,6 @@
 !
       subroutine readdyn2 (F_u, F_v, F_w, F_t, F_zd, F_s, F_fiptx, F_topo, &
                            F_q, F_dtopo, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy)
-      use nest_blending, only: nest_blend
       implicit none
 !
       character* (*) pref_tr,suff_tr
@@ -110,7 +109,6 @@
       real*8,allocatable,dimension(:    ) :: za_8,zb_8,zat_8,zbt_8
       real, dimension(l_ni,l_nj) :: pps, ps , topo_temp
       real*8 lnpref_8,fistr_top_8
-      real(kind=8), dimension(l_ni,l_nj) :: current_topo
       real psmin, psmax, psmin_glob, psmax_glob, fact
       integer errprdf,prdfsum
 !
@@ -144,80 +142,30 @@
                   w_temp(l_ni,l_nj,Acqi_nktmp), &
                   q_temp(l_ni,l_nj,Acqi_nktmp) )
 !
-! Save current model topography for "growing" mode
-!
-      current_topo = F_topo(1:l_ni,1:l_nj)
       call read_bmf(za_8,zb_8,Acqi_vterplv(1),zat_8,zbt_8,Acqi_vterplv(2), &
                     u_temp,Acqi_niu,Acqi_nju, v_temp,Acqi_niv,Acqi_njv, &
                     hu_temp,tt_temp,gz_temp,ps,topo_temp, &
                     zd_temp,w_temp,q_temp,l_ni,l_nj,Acqi_nktmp)
-
+!
       if ( Schm_autobar_L ) Acql_vertint = .false.
       if ( Acql_staganl.and.Vtopo_L ) then
           Acql_vertint = .false.
           call handle_error(-1,'readdyn2','readdyn:no vtopo for vstag')
       endif
-
-! Set first level heights to current for "growing" mode
-      if (Vtopo_L .and. Lctl_step > Vtopo_start) then
-          gz_temp(1:l_ni,1:l_nj,Acqi_vterplv(2)) = current_topo
-      endif
+!
+      call adjust_topo (F_topo, F_dtopo, topo_temp, gz_temp(1,1,Acqi_vterplv(2)), &
+                                       ( .not.Acql_prsanl .and. Lam_blendoro_L ), &
+                                         l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj )
 !
 ! Check if levels are the same
 !
       Acqi_datasp(1) = 0
       if (.not.Acql_vertint) then
-          Acql_vertint=samelevel(gz_temp(1,1,Acqi_vterplv(2)),l_ni,l_nj, &
+          Acql_vertint=.not.samelevel(gz_temp(1,1,Acqi_vterplv(2)),l_ni,l_nj, &
                    za_8,zb_8,Acqi_vterplv(1), zat_8,zbt_8,Acqi_vterplv(2), &
                    F_topo,l_minx,l_maxx,l_miny,l_maxy )
       endif
       if ( Acql_vertint ) Acqi_datasp(1) = 1
-!
-      if(G_lam.and..not.Acql_prsanl)then
-          do j=1,pil_s
-          do i=1,l_ni
-             topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
-          end do
-          end do
-          do j=l_nj-pil_n+1,l_nj
-          do i=1,l_ni
-             topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
-          end do
-          end do
-          do i=1,pil_w
-          do j=pil_s+1,l_nj-pil_n
-             topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
-          end do
-          end do
-          do i=l_ni-pil_e+1,l_ni
-          do j=pil_s+1,l_nj-pil_n
-             topo_temp(i,j) = gz_temp(i,j,Acqi_vterplv(2))
-          end do
-          end do
-!
-          call nest_blend (topo_temp, gz_temp(:,:,Acqi_vterplv(2)), &
-                                   1,l_ni,1,l_nj,'M',level=G_nk+1)
-!
-          do j=1,l_nj
-          do i=1,l_ni
-             F_topo (i,j) = topo_temp(i,j)
-          end do
-          end do
-      else
-          do j=1,l_nj
-          do i=1,l_ni
-             F_topo (i,j) = topo_temp(i,j)
-          end do
-          end do
-      endif
-!
-      if (Vtopo_L) then
-         do j=1,l_nj
-         do i=1,l_ni
-            topo_temp(i,j) = gz_temp (i,j,Acqi_vterplv(2))
-         end do
-         end do
-      endif
 !
       if (Ptopo_myproc.eq.0) then
          write(lun_out,*) &
@@ -228,7 +176,6 @@
             ' Acql_prsanl=',Acql_prsanl, ' Acql_ecmanl=',Acql_ecmanl
          write(lun_out,*) &
             ' Acql_staganl =',Acql_staganl
-!
       endif
 !
       allocate(work(l_ni,l_nj,max(Acqi_nktmp,G_nk+2)))
@@ -545,19 +492,9 @@
            enddo
            enddo
       endif
-
-!     If required, copy difference between initial and target topography 
-!     in F_dtopo and move analysis topography into F_topo
-
-      if (Vtopo_L) then
-        if (Lctl_step <= Vtopo_start) then
-          F_dtopo(1:l_ni,1:l_nj) = F_topo(1:l_ni,1:l_nj) - topo_temp
-        endif
-        F_topo(1:l_ni,1:l_nj) = topo_temp
-      endif
 !
       deallocate (u_temp,v_temp,gz_temp,tt_temp,hu_temp,zd_temp,w_temp, &
-           q_temp,work,za_8,zb_8,zat_8,zbt_8)
+                                     q_temp,work,za_8,zb_8,zat_8,zbt_8)
 !
       psmin = exp(pps(1,1))
       psmax = exp(pps(1,1))
@@ -579,9 +516,9 @@
            write(lun_out,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX, &
                            ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
       endif
-!
-       call bmf_clear
 !     
+      Call bmf_clear
+
       call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !

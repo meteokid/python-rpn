@@ -17,8 +17,8 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine v4d_predat_tl (F_u  ,F_v  ,F_t  ,F_zd  ,F_s  ,F_fiptx  ,  
-     $                          F_u_m,F_v_m,F_t_m,F_zd_m,F_s_m,F_fiptx_m,F_topo,
+      subroutine v4d_predat_tl (F_u  ,F_v  ,F_t  ,F_zd  ,F_s  ,F_fiptx  ,F_w  ,F_q  ,  
+     $                          F_u_m,F_v_m,F_t_m,F_zd_m,F_s_m,F_fiptx_m,F_w_m,F_q_m,F_topo,
      $                          Mminx, Mmaxx, Mminy, Mmaxy)
 *
       implicit none
@@ -28,11 +28,13 @@
       integer Mminx,Mmaxx,Mminy,Mmaxy
       real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v    (Mminx:Mmaxx,Mminy:Mmaxy,  *),
      $     F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,  *),
-     $     F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*)
+     $     F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*),
+     $     F_w(Mminx:Mmaxx,Mminy:Mmaxy,*), F_q    (Mminx:Mmaxx,Mminy:Mmaxy,0:*)
 *
       real F_u_m (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v_m    (Mminx:Mmaxx,Mminy:Mmaxy,  *),
      $     F_t_m (Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd_m   (Mminx:Mmaxx,Mminy:Mmaxy,  *),
      $     F_s_m (Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx_m(Mminx:Mmaxx,Mminy:Mmaxy,0:*),
+     $     F_w_m (Mminx:Mmaxx,Mminy:Mmaxy,*), F_q_m    (Mminx:Mmaxx,Mminy:Mmaxy,0:*),
      $     F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
 *
 *author
@@ -48,6 +50,7 @@
 * v4_04 - Tanguay M.        - Staggered version TL/AD 
 * v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
 * v4_12 - Tanguay M.        - Adapt to revised predat
+* v4_XX - Tanguay M.        - Adjustments GEM413 .not. Schm_hydro_L
 *
 *object
 *     see id section
@@ -101,10 +104,30 @@
 *                 TRAJECTORY
 *                 ----------
                   F_zd_m(i,j,k)=0.
+                  F_w_m (i,j,k)=0.
 *
 *                 TLM
 *                 ---
                   F_zd(i,j,k)=0.
+                  F_w (i,j,k)=0.
+*
+               end do
+            end do
+         end do
+      endif
+*
+      if (.not.Schm_hydro_L) then
+         do k= 0, G_nk+1
+            do j = 1, l_nj
+               do i = 1, l_ni
+*
+*                 TRAJECTORY
+*                 ----------
+                  F_q_m(i,j,k)=0.
+*
+*                 TLM
+*                 ---
+                  F_q(i,j,k)=0.
 *
                end do
             end do

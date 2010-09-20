@@ -44,7 +44,7 @@
 #include "lctl.cdk"
 #include "step.cdk"
 !
-      logical  v4d_options
+      logical  v4d_options,v4d_flag
       external v4d_options
 !
 !     ---------------------------------------------------------------
@@ -94,12 +94,13 @@
 !C              Additional settings for 4D-Var 
 !               ------------------------------
       call v4d_setting ( )
+      v4d_flag = v4d_options()
 !
 !C             Initialize commons for output control
 !              -------------------------------------
       call set_sor( )
 !
-      if ( .not. v4d_options() ) call gem_ctrl ( ) 
+      if ( .not. v4d_flag) call gem_ctrl ( ) 
 !
       call set_term()
 !

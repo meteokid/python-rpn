@@ -114,7 +114,7 @@
 !$$$#include "acid.cdk"
 !      logical acid_test_l
       integer i, j, k, n, nm, ij, ijk, nij, nijk, it
-      integer i1,j1,k1,ier,i0,in,j0,jn
+      integer i1,j1,k1,ier,i0,in,j0,jn,k0,kn
 !
       integer, dimension(l_ni*l_nj*F_nk) :: n1,loci,locj,lock
       real,    dimension(l_ni*l_nj*F_nk) :: capx1,capy1,capz1
@@ -130,6 +130,8 @@
 !
       real*8 ,dimension(:), pointer :: p_z
 !
+!!$      print *,'adx_main_2_pos ('//trim(F_l_S)//')'
+   
       nij    = l_ni   *l_nj
       nijk   = l_ni   *l_nj   *F_nk
 !
@@ -146,27 +148,7 @@
       else
          call handle_error(-1,'adw_main_2_pos','wrong level descriptor')
       endif         
-!
-      gmmstat = gmm_get(gmmk_xth_s,xth,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(xth)'
-      gmmstat = gmm_get(gmmk_yth_s,yth,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(yth)'
-      gmmstat = gmm_get(gmmk_zth_s,zth,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(zth)'
 
-      gmmstat = gmm_get(gmmk_xcth_s,xcth,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(xcth)'
-      gmmstat = gmm_get(gmmk_ycth_s,ycth,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(ycth)'
-      gmmstat = gmm_get(gmmk_zcth_s,zcth,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(zcth)'
-
-      gmmstat = gmm_get(gmmk_xct1_s,xct1,tmp_meta1d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(xct1)'
-      gmmstat = gmm_get(gmmk_yct1_s,yct1,tmp_meta1d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(yct1)'
-      gmmstat = gmm_get(gmmk_zct1_s,zct1,tmp_meta1d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'adw_main_2_pos ERROR at gmm_get(zct1)'
       i0=1
       in=l_ni
       j0=1
@@ -440,6 +422,9 @@
          enddo
       enddo      
 !$omp enddo
+!$omp end parallel
+
+!$omp parallel private(n)
       if(F_l_S.eq.'t')then
 !$omp do
          do j = j0,jn
@@ -453,9 +438,11 @@
             F_py(n) = F_pyc(nm)
          enddo
          enddo
+!$omp enddo
       endif
 !$omp end parallel
 !
+!!$      print *,'adx_main_2_pos ('//trim(F_l_S)//') [end]'
 !     ---------------------------------------------------------------
       return
       end

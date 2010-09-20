@@ -1,4 +1,0 @@
-      subroutine nes1s
-      implicit none
-      return
-      end

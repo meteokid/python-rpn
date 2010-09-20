@@ -21,11 +21,9 @@
 #include "model_macros_f.h"
 !
       subroutine casc_3df_dynp(F_u, F_v, F_w, F_t, F_zd, F_s, F_fiptx, F_topo, F_q, F_dtopo,  &
-                               Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf,listgeonm)
-      use nest_blending, only: nest_blend
+                               Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf)
       implicit none
 !
-      character* (*) listgeonm(2,*)
       integer Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf
       real F_u (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_w (Mminx:Mmaxx,Mminy:Mmaxy,*), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), &
@@ -70,6 +68,8 @@
 #include "ver.cdk"
 #include "cstv.cdk"
 #include "nest.cdk"
+#include "p_geof.cdk"
+#include "filename.cdk"
 !
 !        presstype
 !            0 => p =    A                         (B=0),  prs-anal
@@ -80,13 +80,13 @@
 !        ?   5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
 !            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
 !
-      integer  sid3df
-      external sid3df
+      integer  sid3df,get_topo
+      external sid3df,get_topo
 !
       character*2  md
       character*4  nomvar
       character*8  dynophy,vn
-      character*8, dimension (:), pointer :: trname_a, geop_name
+      character*8, dimension (:), pointer :: trname_a
       character*4, dimension (:), pointer :: phynm
       character*15 datev
       character*256 fn
@@ -94,16 +94,14 @@
       logical dyn_init,phy_init
       integer i,j,k,jj,jjj,kk,nia,nja,nk0,nka_m,nka_t,ntra,ntra_tmp, &
               ni1,nj1,nk1,n,err,presstype,nbits, &
-              errop,ofi,ofj,l_in,l_jn,mode,nvar, vmmnvar,ungeo, &
+              errop,ofi,ofj,l_in,l_jn,mode,nvar, vmmnvar, &
               cnt,nkphy,errdyn,errphy,cumerr,pid,gid,nfphy, &
               wowp,nij,ijk
 
-      integer i0,in,j0,jn,ni2,nj2,nvargeo
+      integer i0,in,j0,jn,ni2,nj2
       integer idd,jdo,mult,shp,bigk,offbb,offbo,offg,ng,nga
-      real topo_temp(l_ni,l_nj),dtopo_temp(l_ni,l_nj),zero(l_ni,l_nj)
-
       integer, dimension (:  ), pointer :: idx,idu,idy,nks
-      real xi,xf,yi,yf,htopa,maxtopo(2),maxtopo_g(2), &
+      real topo_temp(l_ni,l_nj), xi,xf,yi,yf,htopa, &
            psmin, psmax, psmin_glob, psmax_glob, pr1,pr2
       real  , dimension (:  ), pointer :: phybr
       real*8, dimension (:  ), pointer ::  &
@@ -128,37 +126,6 @@
 !
 !-----------------------------------------------------------------------
 !
-      nvargeo = 9
-      Lam_busper_init_L=.false.
-      if (P_pbl_schsl_S.eq.'ISBA') nvargeo = nvargeo + 5
-      if (P_pbl_icelac_L)          nvargeo = nvargeo + 1
-      allocate (geop_name(nvargeo))
-!
-      geop_name (1) = 'TWATEREN'
-      geop_name (2) = 'ICEDPEN'
-      geop_name (3) = 'TGLACEN'
-      geop_name (4) = 'TMICEN'
-      geop_name (5) = 'SNODPEN'
-      geop_name (6) = 'TSOILEN'
-      geop_name (7) = 'GLSEAEN'
-      geop_name (8) = 'HS'
-      geop_name (9) = 'ALEN'
-      if (P_pbl_schsl_S.eq.'ISBA') then
-         geop_name (8)  = 'WSOILEN'
-         geop_name (10) = 'ISOILEN'
-         geop_name (11) = 'WVEGEN'
-         geop_name (12) = 'WSNOWEN'
-         if (P_pbl_snoalb_L) then
-         geop_name (13) = 'SNOALEN'
-         else 
-         geop_name (13) = 'SNOAGEN'
-         endif
-         geop_name (14) = 'SNOROEN'
-      endif
-      if (P_pbl_icelac_L) geop_name(nvargeo) = 'ICELINEN'
-!
-      if (Lun_debug_L) write (Lun_out,1000)
-!
       bcs_nia = ifd_niaf - ifd_niad + 1
       bcs_nja = ifd_njaf - ifd_njad + 1
       nia     = bcs_nia
@@ -168,7 +135,6 @@
       ng      = l_ni * l_nj
       ofi     = l_i0 - 1
       ofj     = l_j0 - 1
-
       err     = 0
 !
 ! Positional parameters on extended global mass point grid
@@ -234,8 +200,6 @@
                        '_'//datev//'_'//ifd_fnext(n)
             open (unf,file=trim(fn),access='SEQUENTIAL', &
                       form='UNFORMATTED',status='OLD',iostat=errop)
-            if (Lun_debug_L) &
-            write(Lun_out,*) 'Opening',trim(fn),'err=',errop
 !
             if (errop.ne.0) goto 33
 !
@@ -257,10 +221,9 @@
             endif
 !
             read (unf,end=1010,err=1010) dynophy,mode,nvar,ntra_tmp
-            if (Lun_debug_L) write (Lun_out,1001) dynophy,mode,nvar,ntra_tmp
 !
             if (dynophy.eq.'PHYSICSS') then
-               nfphy=nvar+ntra_tmp
+               nfphy = nvar
 !
                if (.not.phy_init) then
                   if (associated(phybn)) deallocate(phybn)
@@ -269,20 +232,20 @@
                   allocate (phynm(nfphy),nks(nfphy))
                endif
                read(unf,end=1010,err=1010)(phynm(i),nks(i),i=1,nfphy)
+
                nkphy=0
                do i=1,nfphy
                   nkphy=nkphy+nks(i)
-                  if (Lun_debug_L) write (Lun_out,*) phynm(i),nks(i)
                enddo
                if (.not.phy_init) allocate(phybn(nga,nkphy))
                phy_init = .true.
                cumerr = 0
-!              use nkphy as the pointer in phybn
+
                nkphy=0
                do i=1,nfphy
                  read (unf,end=1010,err=1010) nomvar,ni1,nj1,nk1,nbits
                  call filmup (nomvar,phybn(1,nkphy+1),ifd_niad,ifd_niaf,ifd_njad, &
-                          ifd_njaf,nks(i),unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits)
+                              ifd_njaf,nks(i),unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits)
                  nkphy=nkphy+nks(i)
                enddo
                errphy=cumerr
@@ -360,140 +323,21 @@
       call grid_to_grid_coef (ypxext(l_j0),l_nj, &
                               ypaq,nja,idy,cya,cyb,cyc,cyd,Lam_hint_S)
 !
-!
-! Reload geofld bus with subset from PHYSICSS=> (xp1,yp1) (geophy grid)
-! For exact fields, refer to out_phy_3df
-!
-      if (Lam_cascsfc_L) then
-      if (nkphy.gt.0 .and. phy_init .and. Schm_phyms_L) then
-         if (Lun_debug_L) write (Lun_out,1004)
-         if (associated(phybr)) deallocate (phybr)
-         allocate(phybr(ng*nkphy))
-         call hinterpo (phybr,l_ni,l_nj,phybn,nia,nja,nkphy, &
-               idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-         ofj=0
-         do pid=1,nfphy
-         do gid=1,p_bgeo_top
-            nomvar = geonm(gid,2)
-            vn     = geonm(gid,1)
-            flag   = .false.
-            do k=1,nvargeo
-               if (vn.eq.geop_name(k)) flag=.true.
-            end do
-            if ((phynm(pid).eq.nomvar).and.flag) then
-               ofi = geopar(gid,1) -1
-               if ((nomvar.eq.'LG').or.(nomvar.eq.'AL') &
-                                   .or.(nomvar.eq.'HS')) then
-                  do i=1,ng*geopar(gid,3)
-                     geofld(ofi+i) = min(max(0.,phybr(ofj+i)),1.)
-                  end do
-               else
-                  do i=1,ng*geopar(gid,3)
-                     geofld(ofi+i) = phybr(ofj+i)
-                  end do
-               endif
-               listgeonm(2,gid) = 'OK'
-            endif
-         enddo
-            ofj=ofj+nks(pid)*ng
-         enddo
-      endif
-      endif
-!
-! Copy target topography field from geofld (see geodata.ftn) unless
-! "growing" topography is used, in which case the current model
-! topography is retained. 
-!
       call hinterpo ( meqr,l_ni,l_nj, meqn,nia,nja,    1,idx,idy, &
-                       cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-      if (Vtopo_L) then
-         if (Lctl_step > Vtopo_start) then
-            topo_temp = F_topo(1:l_ni,1:l_nj)
-         else
-            do gid=1,P_bgeo_top
-               if (geonm(gid,1).eq.'MF') then
-                  offg = geopar(gid,1)
-                  cnt = 0
-                  do j=1,l_nj
-                  do i=1,l_ni
-                     cnt=cnt+1
-                     topo_temp(i,j)=dble(geofld(offg +cnt-1))*Dcst_grav_8
-                  enddo
-                  enddo
-               endif
-            enddo
-         endif
-         dtopo_temp = topo_temp - meqr
-         topo_temp = meqr         
-         if (Lam_blendoro_L) then
-         do j=1,pil_s
-            do i=1,l_ni
-               dtopo_temp(i,j) = 0.
-            end do
-         end do
-         do j=l_nj-pil_n+1,l_nj
-            do i=1,l_ni
-               dtopo_temp(i,j) = 0.
-            end do
-         end do
-         do i=1,pil_w
-            do j=pil_s+1,l_nj-pil_n
-               dtopo_temp(i,j) = 0.
-            end do
-         end do
-         do i=l_ni-pil_e+1,l_ni
-            do j=pil_s+1,l_nj-pil_n
-               dtopo_temp(i,j) = 0.
-            end do
-         end do
-         zero = 0.
-         call nest_blend (dtopo_temp, zero, &
-                          1,l_ni,1,l_nj,'M',level=G_nk+1)
-         endif
-         F_dtopo(1:l_ni,1:l_nj) = dtopo_temp
-      else
-         do gid=1,P_bgeo_top
-           if (geonm(gid,1).eq.'MF') then
-             offg = geopar(gid,1)
-             cnt = 0
-             do j=1,l_nj
-             do i=1,l_ni
-                cnt=cnt+1
-                topo_temp(i,j)=dble(geofld(offg +cnt-1))*Dcst_grav_8
-             enddo
-             enddo
-           endif
-         enddo
-         if (Lam_blendoro_L) then
-         if (presstype.ne.0) then ! presstype not in pressure levels
-         do j=1,pil_s
-         do i=1,l_ni
-            topo_temp(i,j) = meqr(i,j)
-         end do
-         end do
-         do j=l_nj-pil_n+1,l_nj
-         do i=1,l_ni
-            topo_temp(i,j) = meqr(i,j)
-         end do
-         end do
-         do i=1,pil_w
-         do j=pil_s+1,l_nj-pil_n
-            topo_temp(i,j) = meqr(i,j)
-         end do
-         end do
-         do i=l_ni-pil_e+1,l_ni
-         do j=pil_s+1,l_nj-pil_n
-            topo_temp(i,j) = meqr(i,j)
-         end do
-         end do
-         call nest_blend (topo_temp,meqr, &
-                          1,l_ni,1,l_nj,'M',level=G_nk+1)
-         endif
-         endif
+                      cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+
+      if (nfphy.gt.0) then
+      call casc_phy_interp ( l_ni,l_nj, phybn,nia,nja,nks,idx,idy, &
+                       cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S, &
+                                                  phynm,nga,nfphy)
       endif
 !
-      F_topo(1:l_ni,1:l_nj) = topo_temp
-
+      err = get_topo (topo_temp,l_ni,l_nj,G_ni,G_nj)
+      call handle_error(err,'CASC_3DF_DYNP','Problem with get_topo')
+!
+      call adjust_topo (F_topo, F_dtopo, topo_temp, meqr, Lam_blendoro_L, &
+                                    l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj )
+!
 ! topo is inflated!
       call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -504,14 +348,14 @@
       enddo
       enddo
 !
-      allocate(uu1(l_ni,l_nj,G_nk+1), &
-               vv1(l_ni,l_nj,G_nk+1), &
+      allocate(uu1 (l_ni,l_nj,G_nk+1), &
+               vv1 (l_ni,l_nj,G_nk+1), &
                ttt1(l_ni,l_nj,G_nk+2), &
-               zd1(l_ni,l_nj,G_nk+1), &
-               ss1(l_ni,l_nj), &
-               qq1(l_ni,l_nj,0:G_nk+1), &
-               ww1(l_ni,l_nj,G_nk+1), &
-               tr1(l_ni,l_nj,G_nk+2,Tr3d_ntr) )
+               zd1 (l_ni,l_nj,G_nk+1), &
+               ss1 (l_ni,l_nj)       , &
+               qq1 (l_ni,l_nj,0:G_nk+1), &
+               ww1 (l_ni,l_nj,  G_nk+1), &
+               tr1 (l_ni,l_nj,G_nk+2,Tr3d_ntr) )
 
       call casc_hvi (trname_a, &
         xpxext(l_i0),ypxext(l_j0),xpuu,ypvv,xpaq,ypaq,xpau,ypav, &
@@ -522,12 +366,12 @@
         1,l_ni,1,l_nj,l_ni+1-(east*1),l_nj+1-(north*1), G_nk, &
         nia,nja,nka_m,nka_t,presstype,ntra)
 
-      F_u(1:l_ni,1:l_nj,1:G_nk+1) = uu1
-      F_v(1:l_ni,1:l_nj,1:G_nk+1) = vv1
-      F_t(1:l_ni,1:l_nj,1:G_nk+2) = ttt1
-      F_zd(1:l_ni,1:l_nj,1:G_nk+1)=zd1
-      F_s(1:l_ni,1:l_nj) = ss1
-      F_w(1:l_ni,1:l_nj,1:G_nk+1)   = ww1
+      F_u (1:l_ni,1:l_nj,1:G_nk+1) = uu1
+      F_v (1:l_ni,1:l_nj,1:G_nk+1) = vv1
+      F_t (1:l_ni,1:l_nj,1:G_nk+2) = ttt1
+      F_zd(1:l_ni,1:l_nj,1:G_nk+1) = zd1
+      F_s (1:l_ni,1:l_nj         ) = ss1
+      F_w (1:l_ni,1:l_nj,1:G_nk+1) = ww1
       if (.not. Schm_hydro_L) then
         F_q(1:l_ni,1:l_nj,0:G_nk+1) = qq1
       endif
@@ -554,7 +398,7 @@
       enddo
       enddo
 !
-      deallocate (geop_name,ss1)
+      deallocate (ss1)
 !
       call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN", &
                                                            "grid",err)
@@ -577,12 +421,6 @@
       3X,'READING DATA IN (S/R CASC_3DF_DYNP)')
  1001 format( &
       3X,'READING ',a,' DATA IN (S/R CASC_3DF_DYNP)',I4,'nvar=',I4,'ntr=',I4)
- 1002 format( &
-      3X,'READING GEOPHYSS DATA IN (S/R CASC_3DF_DYNP)')
- 1003 format( &
-      3X,'READING BUSPER   DATA IN (S/R CASC_3DF_DYNP)')
- 1004 format( &
-      3X,'UPDATING GEOPHY  DATA IN (S/R CASC_3DF_DYNP)')
 !
 !-----------------------------------------------------------------------
       return

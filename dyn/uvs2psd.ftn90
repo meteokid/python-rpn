@@ -109,14 +109,14 @@
       do k=1,Nk
          do j=1,l_nj
          do i=1,l_niu
-            grad(i,j,k,1) = F_uu(i,j,k)*(dpdn_m(i+1,j,k) - dpdn_m(i,j,k)) / &
-                            (geomg_cy2_8(j) * geomg_hxu_8(i))
+            grad(i,j,k,1) = F_uu(i,j,k)*(dpdn_m(i+1,j,k) - dpdn_m(i,j,k)) &
+                            * geomg_invcy2_8(j) * geomg_invDX_8(i+1) 
          enddo
          enddo
          do j=1,l_njv
          do i=1,l_ni
-            grad(i,j,k,2) = F_vv(i,j,k)*(dpdn_m(i,j+1,k) - dpdn_m(i,j,k)) / &
-                             geomg_hsyv_8(j)
+            grad(i,j,k,2) = F_vv(i,j,k)*(dpdn_m(i,j+1,k) - dpdn_m(i,j,k)) &
+                             * geomg_invcy2_8(j+1) * geomg_invDY_8(j+1)
          enddo
          enddo
          if (G_lam) grad(l_ni,1:l_nj,k,1) = grad(l_niu,1:l_nj,k,1)

@@ -49,7 +49,6 @@
 #include "dcst.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "offc.cdk"
 #include "ptopo.cdk"
 !
 !modules
@@ -65,9 +64,9 @@
           write(Lun_out,*)'===================================='
       endif
 !     
-      Cstv_tau_8   = Cstv_dt_8 * Offc_b0_8
-      Cstv_tauT_8  = Cstv_dt_8 * Offc_b0T_8
-      Cstv_tauw_8  = Cstv_dt_8 * Offc_b0w_8
+      Cstv_tau_8   = Cstv_dt_8 * Cstv_bA_8
+      Cstv_invT_8  = one/Cstv_tau_8
+      Cstv_Beta_8  = (one-Cstv_bA_8)/Cstv_bA_8
 !
       if(Schm_autobar_L) then
          Schm_hydro_L    =  .true.
@@ -77,11 +76,11 @@
          Ver_epsilon_8=0.d0
       else
          Ver_epsilon_8=Cstv_RTstr_8/ &
-              (Dcst_grav_8*Dcst_grav_8*Cstv_tauw_8*Cstv_tauT_8)
+              (Dcst_grav_8*Dcst_grav_8*Cstv_tau_8*Cstv_tau_8)
       endif
       Ver_gamma_8=Dcst_cappa_8/(Dcst_cappa_8+Ver_epsilon_8)
       Ver_gokt2RT_8= Ver_gamma_8/ &
-              (Dcst_cappa_8*Cstv_tau_8*Cstv_tauT_8*Cstv_RTstr_8)
+              (Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Cstv_RTstr_8)
 !
       Cstv_hco0_8 = Dcst_rayt_8 * Dcst_rayt_8 * Ver_gokt2RT_8
 !
@@ -117,7 +116,7 @@
       endif
 !
       call set_opr()
-      call adw_set()
+      call itf_adw_set()
 !
 !     ---------------------------------------------------------------
 !

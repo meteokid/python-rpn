@@ -166,11 +166,11 @@
              inn=1
          end if
          write(Lun_out,*) 'BEFORE VARCONV OR VARCONV_AD'
-         call glbstat2(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni-inn,1,G_nj,  1,G_nk)
-         call glbstat2(vt1 ,'VV',LDIST_DIM,G_nk,1,G_ni,    1,G_nj-1,1,G_nk)
-         call glbstat2(tt1 ,'TT',LDIST_DIM,G_nk,1,G_ni,    1,G_nj,  1,G_nk)
-         call glbstat2(st1 ,'4S',LDIST_DIM,   1,1,G_ni,    1,G_nj,  1,   1)
-         call glbstat2(hut1,'HU',LDIST_DIM,G_nk,1,G_ni,    1,G_nj,  1,G_nk)
+         call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni-inn,1,G_nj,  1,G_nk)
+         call glbstat2(vt1 ,'VV','PUTDX',LDIST_DIM,1,G_nk,1,G_ni,    1,G_nj-1,1,G_nk)
+         call glbstat2(tt1 ,'TT','PUTDX',LDIST_DIM,1,G_nk,1,G_ni,    1,G_nj,  1,G_nk)
+         call glbstat2(st1 ,'4S','PUTDX',LDIST_DIM,1,   1,1,G_ni,    1,G_nj,  1,   1)
+         call glbstat2(hut1,'HU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni,    1,G_nj,  1,G_nk)
          write(Lun_out,*) '-----------------------'
       end if
 *
@@ -269,14 +269,14 @@
          if (plpr_L) then
             write(Lun_out,*) 'BEFORE GAUSS2GEM_AD OR GEM2GAUSS'
             if (G_lam) then
-            call glbstat2(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni-1,1,G_nj  ,1,G_nk)
+            call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni-1,1,G_nj  ,1,G_nk)
             else
-            call glbstat2(ut1 ,'UU',LDIST_DIM,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
+            call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
             end if
-            call glbstat2(vt1 ,'VV',LDIST_DIM,G_nk,1,G_ni  ,1,G_nj-1,1,G_nk)
-            call glbstat2(tt1 ,'TT',LDIST_DIM,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
-            call glbstat2(st1 ,'4S',LDIST_DIM,   1,1,G_ni  ,1,G_nj  ,1,   1)
-            call glbstat2(hut1,'HU',LDIST_DIM,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
+            call glbstat2(vt1 ,'VV','PUTDX',LDIST_DIM,1,G_nk,1,G_ni  ,1,G_nj-1,1,G_nk)
+            call glbstat2(tt1 ,'TT','PUTDX',LDIST_DIM,1,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
+            call glbstat2(st1 ,'4S','PUTDX',LDIST_DIM,1,   1,1,G_ni  ,1,G_nj  ,1,   1)
+            call glbstat2(hut1,'HU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
             write(Lun_out,*) '-----------------------'
          end if
 *

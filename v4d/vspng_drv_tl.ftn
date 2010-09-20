@@ -48,6 +48,7 @@
 * v3_30 - Tanguay M.        - adjust TL/AD to Vspng_zmean_L
 * v4_04 - Tanguay M.        - Staggered version TL/AD 
 * v4_10 - Tanguay M.        - Replace tmean by tmean_8 as in GEM333
+* v4_XX - Tanguay M.        - Remove .not.Schm_hydro_L as in NL 
 *
 *object
 *     see id section
@@ -204,7 +205,6 @@
 *
 *     Vertical wind
 *     ~~~~~~~~~~~~~
-      if(.not.Schm_hydro_L) then
 *
 *     TRAJECTORY
 *     ----------
@@ -219,8 +219,6 @@
      $     Opr_opsxp0_8(G_ni+1),Opr_opsyp0_8(G_nj+1),
      $     aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,
      $     LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
-*
-      endif
 *
 *     Temperature, last level only
 *     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -85,8 +85,6 @@
       call msg(MSG_DEBUG,'TLM of ADVECT THE RIGHT-HAND-SIDES: (S/R ADW_MAIN_TL)')
 ************************************************************************
 *
-      if (.NOT.Adw_nosetint_L) call handle_error(-1,'adw_main_tl','NOT Adw_nosetint_L not done')
-*
 *     TRAJECTORY
 *     ----------
       call adw_main_1_wnd2_tr (su_m,sv_m,sw_m,um_m,vm_m,wm_m,ut_m,vt_m,wt_m,Adw_nit,Adw_njt,G_nk)
@@ -168,6 +166,14 @@
      $     xcth_thermo_m,ycth_thermo_m,zcth_thermo_m,
      $     l_xct1_m     ,l_yct1_m     ,l_zct1_m,
      $     pxm_m        ,pym_m)
+*
+*     Recover TRAJ upstream positions
+*     -------------------------------
+      call v4d_rwtraj(5,pxm_m,pym_m,pzm_m,pxt_m,pyt_m,pzt_m,l_ni,l_nj,G_nk,G_nk+1)
+*
+*     Recover TRAJ RHS before interpolation
+*     -------------------------------------
+      call v4d_rwtraj (11)
 *
 *     TLM and TRAJECTORY
 *     ------------------

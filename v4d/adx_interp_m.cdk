@@ -1,0 +1,15 @@
+#if !defined(__ADX_INTERP_M__)
+#define __ADX_INTERP_M__
+
+!**comdeck adx_interp_m.cdk
+
+      !TRAJECTORY
+      real, dimension(:),pointer :: adx_capx1_m,adx_capy1_m,adx_capz1_m
+      real, dimension(:),pointer :: adx_xdd1_m,adx_ydd1_m,adx_xgg1_m,adx_ygg1_m
+      real, dimension(:),pointer :: adx_n1_m,adx_c1_m
+
+      common /adx2_r4p_m/ adx_capx1_m,adx_capy1_m,adx_capz1_m
+      common /adx2_r4p_m/ adx_xdd1_m,adx_ydd1_m,adx_xgg1_m,adx_ygg1_m
+      common /adx2_r4p_m/ adx_n1_m,adx_c1_m
+
+#endif

@@ -54,23 +54,23 @@
 !----------------------------------------------------------------------
 !
 #endif
-      logical Schm_hydro_L, Schm_moist_L, Schm_nkbz_L , Schm_autobar_L
-      logical Schm_phyms_L, Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
+      logical Schm_hydro_L ,Schm_moist_L, Schm_nkbz_L , Schm_autobar_L
+      logical Schm_phyms_L ,Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
       logical Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L
-      logical Schm_pheat_L, Schm_theoc_L
+      logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L
       logical Schm_zdotMid_L
 !
       integer Schm_itcn , Schm_modcn, Schm_xwvt3
       integer Schm_itnlh, Schm_itraj, Schm_nith
 !
-      common / schm_l / Schm_hydro_L, Schm_moist_L
-      common / schm_l / Schm_nkbz_L , Schm_autobar_L 
-      common / schm_l / Schm_phyms_L, Schm_adcub_L
-      common / schm_l / Schm_psadj_L, Schm_opentop_L
-      common / schm_l / Schm_hdlast_L,Schm_wload_L
-      common / schm_l / Schm_pcsty_L, Schm_chems_L
-      common / schm_l / Schm_pheat_L, Schm_theoc_L
-      common / schm_l / Schm_zdotMid_L
-      common / schm_i / Schm_itcn , Schm_modcn, Schm_xwvt3
-      common / schm_i / Schm_itnlh, Schm_itraj, Schm_nith
+      common / schm_l / Schm_hydro_L  , Schm_moist_L
+      common / schm_l / Schm_nkbz_L   , Schm_autobar_L 
+      common / schm_l / Schm_phyms_L  , Schm_adcub_L
+      common / schm_l / Schm_psadj_L  , Schm_opentop_L
+      common / schm_l / Schm_hdlast_L , Schm_wload_L
+      common / schm_l / Schm_pcsty_L  , Schm_chems_L
+      common / schm_l / Schm_pheat_L  , Schm_theoc_L
+      common / schm_l / Schm_zdotMid_L, Schm_Topo_L
+      common / schm_i / Schm_itcn     , Schm_modcn, Schm_xwvt3
+      common / schm_i / Schm_itnlh    , Schm_itraj, Schm_nith
 !

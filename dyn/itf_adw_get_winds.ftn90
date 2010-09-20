@@ -1,0 +1,506 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include "model_macros_f.h"
+#include "msg.h"
+
+!/**
+subroutine itf_adw_get_winds(F_su,F_sv,F_sw,F_nk)
+   implicit none
+#include "glb_ld.cdk"
+   !@objective process winds in preparation for advection
+   !@arguments
+   integer :: F_nk
+   real,dimension(l_minx:l_maxx,l_miny:l_maxy,F_nk) :: &
+        F_su,F_sv,F_sw !O, model de-stag winds on m-t levels super set
+   !@author alain patoine
+   !@revisions
+   ! v2_31 - Desgagne M.       - removed stkmemw
+   ! v3_00 - Desgagne & Lee    - Lam configuration
+   ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+   ! v3_21 - Desgagne M.       - Revision OpenMP
+   ! v4_   - Gravel S.         - Staggered version
+   ! v4_10 - Plante A.         - Add interpolation of wind on their non-native
+   ! Jan 2010, S. Chamberland: split out of adw and into smaller/logical units
+   !@description
+   !  
+!**/
+#include "gmm.hf"
+#include "vth.cdk"
+   !      real, pointer, dimension (:,:,:) :: uth,vth,zdth
+   !      character(len=8) :: gmmk_uth_s, gmmk_vth_s, gmmk_zdth_s
+!!$#include "acid.cdk"
+   !      logical acid_test_l
+   type(gmm_metadata) :: dummy_gmm_meta
+   integer :: istat
+   real, dimension(:,:,:), pointer :: um,vm,wm,ut,vt
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'itf_adw_get_winds')
+
+   istat = GMM_OK
+   istat = min(gmm_get(gmmk_uth_s,uth,dummy_gmm_meta),istat)
+   istat = min(gmm_get(gmmk_vth_s,vth,dummy_gmm_meta),istat)
+   istat = min(gmm_get(gmmk_zdth_s,zdth,dummy_gmm_meta),istat)
+   call handle_error(istat,'adw_main_1_wnd','Problem in gmm_get')
+
+!!$   if (Acid_test_L) call acid_stat_adw_main_1_wnd(uth,1)
+
+   allocate( &
+        ut(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
+        vt(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
+        wm(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
+        stat=istat)
+   call handle_error_l(istat==0,'itf_adw_get_winds','Problem allocating mem')
+
+   um => ut
+   vm => vt
+   call itf_adw_destag_winds(um,vm,uth,vth)
+   call itf_adw_img2real_winds(uth,vth,um,vm)
+   nullify(um,vm)
+
+   call itf_adw_interp_mom2thermo(ut,uth)
+   call itf_adw_interp_mom2thermo(vt,vth)
+   call itf_adw_interp_thermo2mom(wm,zdth)
+
+   call itf_adw_combine_levels(F_su,uth,ut,F_nk)
+   call itf_adw_combine_levels(F_sv,vth,vt,F_nk)
+   call itf_adw_combine_levels(F_sw,wm,zdth,F_nk)
+
+   deallocate(ut,vt,wm)
+
+!!$   if (Acid_test_L) call acid_stat_adw_main_1_wnd(uth,2)
+
+   call msg(MSG_DEBUG,'itf_adw_get_winds [end]')
+   !---------------------------------------------------------------------
+   return
+
+
+contains !====================================================================
+
+
+   !/**
+   subroutine itf_adw_destag_winds(F_u,F_v,F_uth,F_vth)
+      implicit none
+      !@objective unstagger wind components (Interpolate to geopotential grid)
+      !@arguments
+      real, dimension(:,:,:), pointer :: F_uth,F_vth !I, staggered winds
+      real, dimension(:,:,:), pointer :: F_u,F_v     !O, destaggered winds
+      !**/
+#include "glb_ld.cdk"
+#include "inuvl.cdk"
+      !- CUBIC LAGRANGE INTERPOLATION COEFFICIENTS from AND to U and V grids
+      !      real*8 inuvl_wxux3_8(l_minx:l_maxx,4) ! coef for U to PHI-grid
+      !      real*8 inuvl_wyvy3_8(l_miny:l_maxy,4) ! coef for V to PHI-grid
+
+#define UNSTAG_X(f,i,j,k,a) (a(i,1)*f(i-2,j,k) + a(i,2)*f(i-1,j,k) + a(i,3)*f(i,j,k) + a(i,4)*f(i+1,j,k))
+#define UNSTAG_Y(f,i,j,k,a) (a(j,1)*f(i,j-2,k) + a(j,2)*f(i,j-1,k) + a(j,3)*f(i,j,k) + a(j,4)*f(i,j+1,k))
+
+      integer :: i,j,k, i0,j0,in,jn, nrow=0
+      !---------------------------------------------------------------------
+      call rpn_comm_xch_halo(F_uth,l_minx,l_maxx,l_miny,l_maxy,&
+           l_niu,l_nj,l_nk,G_halox,G_haloy,G_periodx,G_periody,G_niu,nrow)
+      call rpn_comm_xch_halo(F_vth,l_minx,l_maxx,l_miny,l_maxy,&
+           l_ni,l_njv,l_nk,G_halox,G_haloy,G_periodx,G_periody,G_ni,nrow)
+
+       !- Interpolate advection winds to geopotential grid
+      !$omp parallel private(i0,in,j0,jn)
+      !$omp do
+      DO_K: do k=1,l_nk
+         i0 = 1
+         in = l_niu
+         j0 = 1
+         jn = l_nj
+         if (G_lam) then !needed since UNSTAG_X uses i-2 and i+1
+            if (l_west) i0 = 3
+            if (l_east) in = l_niu - 1
+         endif
+         do j = j0, jn
+            do i = i0, in
+               F_u(i,j,k) = UNSTAG_X(F_uth,i,j,k,inuvl_wxux3_8)
+            enddo
+            !-TODO: make this better: use stag values on borders (one approx)
+            do i = 1,i0-1
+               F_u(i,j,k) = F_uth(i,j,k)
+            enddo
+            do i = in+1,l_niu
+               F_u(i,j,k) = F_uth(i,j,k)
+            enddo
+         enddo
+
+         i0 = 1
+         in = l_ni
+         jn = l_njv
+         !needed since UNSTAG_Y uses j-2 and j+1
+         if (l_south) j0 = 3
+         if (l_north) jn = l_njv - 1
+         do j = j0, jn
+            do i = i0, in
+               F_v(i,j,k) = UNSTAG_Y(F_vth,i,j,k,inuvl_wyvy3_8)
+            enddo
+         enddo
+
+         IF_LAM: if (.not.G_lam) then
+
+            if (l_south) then
+               do i = i0, in
+                  F_v(i,j0-2,k) = &
+                       inuvl_wyvy3_8(j0-2,3) * F_vth(i,j0-2,k) + &
+                       inuvl_wyvy3_8(j0-2,4) * F_vth(i,j0-1,k)
+                  F_v(i,j0-1,k) = &
+                       inuvl_wyvy3_8(j0-1,2) * F_vth(i,j0-2,k)   + &
+                       inuvl_wyvy3_8(j0-1,3) * F_vth(i,j0-1,k) + &
+                       inuvl_wyvy3_8(j0-1,4) * F_vth(i,j0,k  )
+               enddo
+            endif
+            if (l_north) then
+               do i = i0, in
+                  F_v(i,jn+2,k) = &
+                       inuvl_wyvy3_8(jn+2,1) * F_vth(i,jn  ,k) + &
+                       inuvl_wyvy3_8(jn+2,2) * F_vth(i,jn+1,k)
+                  F_v(i,jn+1,k) = &
+                       inuvl_wyvy3_8(jn+1,1) * F_vth(i,jn-1,k) + &
+                       inuvl_wyvy3_8(jn+1,2) * F_vth(i,jn  ,k) + &
+                       inuvl_wyvy3_8(jn+1,3) * F_vth(i,jn+1,k)
+               enddo
+            endif
+
+         else !IF_LAM
+
+            !-TODO: make this better: use stag values on borders (one approx)
+            do i = i0, in
+               do j = 1,j0-1
+                  F_v(i,j,k) = F_vth(i,j,k)
+               enddo
+               do j = jn+1,l_njv
+                  F_v(i,j,k) = F_vth(i,j,k)
+               enddo
+            enddo
+
+         endif IF_LAM
+
+      enddo DO_K
+      !$omp enddo
+      !$omp end parallel
+      !---------------------------------------------------------------------
+      return
+   end subroutine itf_adw_destag_winds
+
+
+   !/**
+   subroutine itf_adw_img2real_winds(F_ur,F_vr,F_ui,F_vi)
+      implicit none
+      !@objective convert wind from image to real values
+      !@arguments
+      real, dimension(:,:,:), pointer :: F_ui,F_vi !I=image winds
+      real, dimension(:,:,:), pointer :: F_ur,F_vr !O=real winds
+     !**/
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+      !      real*8 Geomg_cy_8(l_miny:l_maxy) !cosine of latitude
+      integer :: i,j,k, i0,j0,in,jn
+      real*8  :: sc_8
+      !---------------------------------------------------------------------
+      !$omp parallel private(i0,in,j0,jn,sc_8)
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+         if (l_south) j0 = 3
+         if (l_north) jn = l_njv - 1
+      endif
+
+      !$omp do
+      do k = 1,l_nk
+         do j = j0,jn
+            sc_8 = 1.D0 / geomg_cy_8(j)
+            do i = i0,in
+               F_vr(i,j,k) = sc_8 * F_vi(i,j,k)
+            enddo
+         enddo
+      enddo
+      !$omp enddo
+
+      i0=1
+      in=l_ni
+      j0=1
+      jn=l_nj
+      if (G_lam) then
+         if (l_west) i0 = 3
+         if (l_east) in = l_niu - 1
+      endif
+
+      !$omp do 
+      do k = 1,l_nk
+         do j = j0,jn
+            sc_8 = 1.D0 / geomg_cy_8(j)
+            do i = i0,in
+               F_ur(i,j,k) = sc_8 * F_ui(i,j,k)
+            enddo
+         enddo
+      enddo
+      !$omp enddo
+      !$omp end parallel
+      !---------------------------------------------------------------------
+      return
+   end subroutine itf_adw_img2real_winds
+
+
+   !/**
+   subroutine itf_adw_interp_thermo2mom(F_fld_m,F_fld_t)
+      implicit none
+      !@objective interpolate from thermodynamic to momentum levels
+      !@arguments
+      real, dimension(:,:,:), pointer :: F_fld_t !intent(in)
+      real, dimension(:,:,:), pointer :: F_fld_m !intent(out)
+      !**/
+#include "glb_ld.cdk"
+#include "ver.cdk"
+      integer :: i,j,k, i0,j0,in,jn
+      real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4,den
+
+#define lag3(xx, x1, x2, x3, x4)  (((xx - x2) * (xx - x3) * (xx - x4))/( (x1 - x2) * (x1 - x3) * (x1 - x4)))
+      !---------------------------------------------------------------------
+      !$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,w1,w2,w3,w4,den)
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+      if (G_lam) then
+         if (l_west)  i0 = 3
+         if (l_east)  in = l_ni - 1
+         if (l_south) j0 = 3
+         if (l_north) jn = l_nj - 1
+      endif
+
+      !$omp do
+      do k=2,l_nk-1
+         xx = Ver_z_8%m(k)
+         x1 = Ver_z_8%t(k-1)
+         x2 = Ver_z_8%t(k)
+         x3 = Ver_z_8%t(k+1)
+         x4 = Ver_z_8%t(k+2)
+         w1 = lag3(xx, x1, x2, x3, x4)
+         w2 = lag3(xx, x2, x1, x3, x4)
+         w3 = lag3(xx, x3, x1, x2, x4)
+         w4 = lag3(xx, x4, x1, x2, x3)
+         do j = j0, jn
+            do i = i0, in
+               F_fld_m(i,j,k)= &
+                    w1*F_fld_t(i,j,k-1) + w2*F_fld_t(i,j,k)  + &
+                    w3*F_fld_t(i,j,k+1) + w4*F_fld_t(i,j,k+2)
+            enddo
+         enddo
+      enddo
+      !$omp enddo
+
+      !- Note  F_fld_t(i,j,1) = 0     
+      k = 1
+      w2 = (Ver_z_8%t(k)-Ver_z_8%m(k)) / (Ver_z_8%t(k)-Ver_z_8%t(k+1))
+
+      !$omp do     
+      do j = j0, jn
+         do i = i0, in
+            F_fld_m(i,j,k) = w2*F_fld_t(i,j,k+1)
+         enddo
+      enddo
+      !$omp enddo
+
+      !- Note  F_fld_t(i,j,l_nk+1) = 0  
+      k = l_nk
+      w1 = (Ver_z_8%m(k)-Ver_z_8%t(k+1)) / (Ver_z_8%t(k)-Ver_z_8%t(k+1))
+
+      !$omp do     
+      do j = j0, jn
+         do i = i0, in
+            F_fld_m(i,j,k) = w1*F_fld_t(i,j,k)
+         enddo
+      enddo
+      !$omp enddo
+      !$omp end parallel
+      !---------------------------------------------------------------------
+      return
+   end subroutine itf_adw_interp_thermo2mom
+
+
+   !/**
+   subroutine itf_adw_interp_mom2thermo(F_fld_t,F_fld_m)
+      implicit none
+      !@objective interpolate from momentum to thermodynamic levels
+      !@arguments
+      real, dimension(:,:,:), pointer :: F_fld_m !intent(in)
+      real, dimension(:,:,:), pointer :: F_fld_t !intent(out)
+      !**/
+#include "glb_ld.cdk"
+#undef TYPE_CDK
+#include "ver.cdk"
+      integer :: i,j,k, i0,j0,in,jn
+      real*8 xx, x1, x2, x3, x4, w1, w2, w3, w4,den
+      !---------------------------------------------------------------------
+      !$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,w1,w2,w3,w4,den)
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+      if (G_lam) then
+         if (l_west)  i0 = 3
+         if (l_east)  in = l_ni - 1
+         if (l_south) j0 = 3
+         if (l_north) jn = l_nj - 1
+      endif
+
+      !$omp do
+      do k = 3, l_nk-1
+         xx = Ver_z_8%t(k)
+         x1 = Ver_z_8%m(k-2)
+         x2 = Ver_z_8%m(k-1)
+         x3 = Ver_z_8%m(k  )
+         x4 = Ver_z_8%m(k+1)
+         w1 = lag3(xx, x1, x2, x3, x4)
+         w2 = lag3(xx, x2, x1, x3, x4)
+         w3 = lag3(xx, x3, x1, x2, x4)
+         w4 = lag3(xx, x4, x1, x2, x3)
+         do j = j0, jn
+            do i = i0, in
+               F_fld_t(i,j,k) = &
+                    w1*F_fld_m(i,j,k-2) + w2*F_fld_m(i,j,k-1) + &
+                    w3*F_fld_m(i,j,k  ) + w4*F_fld_m(i,j,k+1)
+            enddo
+         enddo
+      enddo
+      !$omp enddo
+
+      den = 1.d0/(Ver_z_8%m(1)-Ver_z_8%m(2))
+      k = 2      
+      w1 = (Ver_z_8%t(k)-Ver_z_8%m(2)) * den
+      w2 = (Ver_z_8%m(1)-Ver_z_8%t(k)) * den
+
+      !$omp do     
+      do j = j0, jn
+         do i = i0, in
+            F_fld_t(i,j,k) = w1*F_fld_m(i,j,1) + w2*F_fld_m(i,j,2)
+         enddo
+      enddo
+      !$omp enddo
+
+      !- Updward Extrapolation
+      k = 1      
+      w1 = (Ver_z_8%t(k)-Ver_z_8%m(2)) * den
+      w2 = (Ver_z_8%m(1)-Ver_z_8%t(k)) * den
+
+      !$omp do     
+      do j = j0, jn
+         do i = i0, in
+            F_fld_t(i,j,k) = w1*F_fld_m(i,j,1) + w2*F_fld_m(i,j,2)
+         enddo
+      enddo
+      !$omp enddo
+
+      den = 1.d0/(Ver_z_8%m(l_nk-1)-Ver_z_8%m(l_nk))
+      k = l_nk
+      w1 = (Ver_z_8%t(k)     -Ver_z_8%m(l_nk)) * den
+      w2 = (Ver_z_8%m(l_nk-1)-Ver_z_8%t(k)   ) * den
+
+      !$omp do     
+      do j = j0, jn
+         do i = i0, in
+            F_fld_t(i,j,k) = w1*F_fld_m(i,j,l_nk-1) + w2*F_fld_m(i,j,l_nk)
+         enddo
+      enddo
+      !$omp enddo
+
+      !- Downdward Extrapolation
+      k = l_nk+1
+      w1 = (Ver_z_8%t(k)     -Ver_z_8%m(l_nk)) * den
+      w2 = (Ver_z_8%m(l_nk-1)-Ver_z_8%t(k)   ) * den
+
+      !$omp do     
+      do j = j0, jn
+         do i = i0, in
+            F_fld_t(i,j,k) = w1*F_fld_m(i,j,l_nk-1) + w2*F_fld_m(i,j,l_nk)
+         enddo
+      enddo
+      !$omp enddo
+      !$omp end parallel
+      !---------------------------------------------------------------------
+      return
+   end subroutine itf_adw_interp_mom2thermo
+
+
+   subroutine itf_adw_combine_levels(F_su,F_um,F_ut,F_nk)
+      implicit none
+#include "glb_ld.cdk"
+      !@objective Combine momentum and themro level into super vector
+      !@arguments
+      integer :: F_nk
+      real,dimension(l_minx:l_maxx,l_miny:l_maxy,F_nk) :: &
+           F_su !O - combined field on both level types
+      real,dimension(:,:,:),pointer :: &
+           F_um, & !I - field on momentum levels
+           F_ut    !I - field on thermo levels
+      !@author Andre Plante
+      !@description
+      !     Index k  in loops below is used to address super levels
+      !     Index k2 in loops below is use to address thermo/momentum leves
+      !
+      !     Example of index for l_nk=3
+      !
+      !     -----------------------------
+      !     | Super | Thermo | momentum |
+      !     |---------------------------|
+      !     |   1   |    1   |          |
+      !     |---------------------------|
+      !     |   2   |        |    1     |
+      !     |---------------------------|
+      !     |   3   |    2   |          |
+      !     |---------------------------|
+      !     |   4   |        |    2     |
+      !     |---------------------------|
+      !     |   5   |    3   |          |
+      !     |---------------------------|
+      !     |   6   |        |    3     |
+      !     |---------------------------|
+      !     |   7   |    4   |          |
+      !     |---------------------------|
+      !
+      !     Note : no OPENMP uptimization done, since one thread probably occupy 
+      !            the band width.
+      !**/
+      integer i,j,k,k2
+      !---------------------------------------------------------------------
+      k2 = 0
+      do k = 1, F_nk, 2
+         k2 = k2+1
+         do j = l_miny, l_maxy
+            do i = l_minx,l_maxx 
+               F_su(i,j,k) = F_ut(i,j,k2)
+            enddo
+         enddo
+      enddo
+      k2=0
+      do k = 2, F_nk, 2
+         k2 = k2 + 1
+         do j = l_miny, l_maxy
+            do i = l_minx,l_maxx 
+               F_su(i,j,k) = F_um(i,j,k2)
+            enddo
+         enddo
+      enddo
+      !---------------------------------------------------------------------
+      return
+   end subroutine itf_adw_combine_levels
+
+
+end subroutine itf_adw_get_winds

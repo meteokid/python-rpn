@@ -95,7 +95,7 @@
 !     __________________________________________________________________
 !
 !
-!     call tmg_start(99,'hzd_solmxma')
+!     call tmg_start0(99,'hzd_solmxma')
       l_pil_w=0
       l_pil_e=0
       if (l_south) l_pil_w= Lam_pil_w
@@ -333,7 +333,7 @@
 !$omp enddo
 !
 !$omp single
-!       call tmg_stop(11)
+!       call tmg_stop0(11)
        call rpn_comm_transpose(fwft_8,Miny,Maxy,nx3,(maxx1-minx1+1), &
                                         minx2, maxx2,Gni,fdg2_8,-2,2)
 !$omp end single
@@ -376,7 +376,7 @@
                                    1.0d0,0.d0)
       endif
 
-!     call tmg_stop(99)
+!     call tmg_stop0(99)
 !
 !
 !     __________________________________________________________________

@@ -27,6 +27,7 @@
 !revision
 ! v4_06 - Desgagne, M.     - First revision
 ! v4_12 - Spacek L.        - Trajectories for 4dvar
+! v4_13 - Spacek L.        - Remove dlat,dlon,eponmod
 !
 #include "gmm.hf"
 #include "var_gmm.cdk"
@@ -182,34 +183,6 @@
 !
       call tt2virt (pw_tmoins, .false., 'M')
       call tt2virt (pw_tplus , .false., 'P')
-!
-      if (stepzero) then
-
-         nullify (pw_lat,pw_lon,pw_dxdy)
-         gmmstat = gmm_create ('PW_LAT' ,pw_lat ,meta2d)
-         gmmstat = gmm_create ('PW_LON' ,pw_lon ,meta2d)
-         gmmstat = gmm_create ('PW_DXDY',pw_dxdy,meta2d)
- 
-         gmmstat = gmm_get('PW_LAT'     ,pw_lat ,meta2d)
-         gmmstat = gmm_get('PW_LON'     ,pw_lon ,meta2d)
-         gmmstat = gmm_get('PW_DXDY'    ,pw_dxdy,meta2d)
-
-         do j= 1, l_nj
-         do i= 1, l_ni
-            pw_lat (i,j) = Geomn_latrx(i,j) * deg2rad_8
-            if(Geomn_lonrx(i,j)>=0)then
-                pw_lon (i,j) = Geomn_lonrx(i,j) * deg2rad_8
-            else
-                pw_lon (i,j) = (Geomn_lonrx(i,j)+360.) * deg2rad_8
-            endif
-            pw_dxdy(i,j) = geomg_hxu_8(i-1)*geomg_hyv_8(j-1)* &
-                           Dcst_rayt_8*Dcst_rayt_8*geomg_cy_8(j)  
-         enddo
-         enddo
-
-         call itf_phy_vlsp 
-
-      endif
 !
       call v4d_rwtraj(20)
       call v4d_rwtraj(21)

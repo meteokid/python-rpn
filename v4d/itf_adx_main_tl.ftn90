@@ -1,0 +1,271 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include "model_macros_f.h"
+#include "msg.h"
+
+!/**
+subroutine itf_adx_main_tl(F_nb_iter)
+   implicit none
+   !@objective TLM of itf_adx_main
+   !@arguments
+   integer :: F_nb_iter       !I, total number of iterations for trajectories
+   !@author monique tanguay
+   !@revisions
+   ! v4_XX - Tanguay M.        - Adjustments GEM413
+!**/
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "orh.cdk"
+   !      logical Orh_crank_L
+   !      integer Orh_icn
+#include "lctl.cdk"
+#include "step.cdk"
+   integer, parameter :: NB_FIELDS_MAX = 999
+
+   character(len=8), dimension(2,NB_FIELDS_MAX) :: fields_lbl,fields_lbl_m
+   logical, dimension(2,NB_FIELDS_MAX) :: fields_type_L
+   character(len=8), dimension(3,2,2,2) :: pos_fields_lbl
+   character(len=8), dimension(3,2,2,2) :: pos_fields_lbl_m
+
+   logical :: doAdwStat_L
+   integer :: istat, nfields, nk_super
+
+   real, dimension(:,:,:), allocatable, save :: su,sv,sw
+   real, dimension(:,:,:), allocatable, save :: su_m,sv_m,sw_m
+   logical, save :: is_allocated_L = .false.
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'itf_adx_main_tl')
+
+   nk_super = 2*l_nk + 1
+
+   doAdwStat_L = (mod(Lctl_step,Step_gstat) == 0) .and. &
+        ((Orh_icn == Schm_itcn) .or. (.not.Orh_crank_L))
+
+   if (.not.is_allocated_L) then
+      is_allocated_L = .true.
+      allocate( &
+           su(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+           sv(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+           sw(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+!
+           su_m(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+           sv_m(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+           sw_m(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+           stat=istat)
+      call handle_error_l(istat==0,'itf_adx_main_tl','Problem allocating mem')
+   endif
+!
+!  TRAJECTORY
+!  ----------
+   call itf_adx_get_winds2_tr(su_m,sv_m,sw_m,l_minx,l_maxx,l_miny,l_maxy,nk_super)
+!
+!  TLM
+!  ---
+   call itf_adx_get_winds2(su,sv,sw,l_minx,l_maxx,l_miny,l_maxy,nk_super)
+
+!  TRAJECTORY
+!  ----------
+   call itf_adx_get_field_list_tr(fields_lbl_m,fields_type_L,nfields)
+!
+!  TLM
+!  ---
+   call itf_adx_get_field_list(fields_lbl,fields_type_L,nfields)
+!
+   call adx_main7_tl (su  ,sv  ,sw  ,fields_lbl  , &
+                      su_m,sv_m,sw_m,fields_lbl_m, &
+                      fields_type_L, nfields, &
+                      l_minx,l_maxx,l_miny,l_maxy, nk_super, F_nb_iter, doAdwStat_L)
+
+   call msg(MSG_DEBUG,'itf_adx_main_tl [end]')
+   !---------------------------------------------------------------------
+   return
+
+
+contains !=====================================================================
+
+
+   !/**
+   subroutine itf_adx_get_field_list(F_fields_lbl,F_fields_type_L,F_nfields)
+      implicit none
+      !@objective
+      !@arguments
+      character(len=8), dimension(:,:), intent(out) :: F_fields_lbl
+      logical, dimension(:,:), intent(out) :: F_fields_type_L
+      integer, intent(out) :: F_nfields
+      !**/
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "orh.cdk"
+   !      integer Orh_icn
+   !      real, pointer, dimension (:,:,:) :: orhst,orhsc,orhsw,orhsf
+   !      character(len=8) :: gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
+#include "rhsc.cdk"
+   !      real, pointer, dimension (:,:,:) :: ruw1,rvw1,ruw2,rvw2
+   !      real, pointer, dimension (:,:,:) :: rhst,rhsc,rhsw,rhsf
+   !      character(len=8) :: gmmk_rhst_s,gmmk_rhsc_s
+   !      character(len=8) :: gmmk_rhsw_s,gmmk_rhsf_s
+   !      character(len=8) :: gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
+#include "vt1.cdk"
+   !      real, pointer, dimension (:,:,:) :: zdt1,zdup
+   !      character(len=8) :: gmmk_zdt1_s,gmmk_zdup_s
+#include "tr3d.cdk"
+   !      integer MAXTR3D
+   !      parameter ( MAXTR3D = 250 )
+   !      character*4 Tr3d_name_S(MAXTR3D)
+      integer, parameter :: FIELD_IN  = 1
+      integer, parameter :: FIELD_OUT = 2
+      integer, parameter :: IS_MOM    = 1
+      integer, parameter :: IS_WIND   = 2
+
+      integer :: n
+      !---------------------------------------------------------------------
+      !TODO: these quantities should be placed in gmm metadata...
+      F_fields_type_L(IS_MOM,:)    = .true.
+      F_fields_type_L(IS_WIND,:)   = .false.
+
+      F_nfields = 1
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_ruw1_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_ruw2_s
+      F_fields_type_L(IS_WIND,F_nfields) = .true.
+
+      F_nfields = F_nfields + 1
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_rvw1_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rvw2_s
+      F_fields_type_L(IS_WIND,F_nfields) = .true.
+
+      F_nfields = F_nfields + 1
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_orhsc_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rhsc_s
+
+
+      F_nfields = F_nfields + 1
+      F_fields_type_L(IS_MOM,F_nfields:) = .false.
+
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_orhst_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rhst_s
+
+      F_nfields = F_nfields + 1
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_orhsf_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rhsf_s
+
+      if (.not. Schm_hydro_L) then
+         F_nfields = F_nfields + 1
+         F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_orhsw_s
+         F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rhsw_s
+      endif
+
+      if (Schm_zdotmid_L) then
+         F_nfields = F_nfields + 1
+         F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_zdt1_s
+         F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_zdup_s
+      endif
+
+      if (Orh_icn == Schm_itcn) then
+         do n=1,Tr3d_ntr
+            F_nfields = F_nfields + 1
+            F_fields_lbl(FIELD_IN,F_nfields)  = 'TR/'//trim(Tr3d_name_S(n))//':P'
+            F_fields_lbl(FIELD_OUT,F_nfields) = 'TR/'//trim(Tr3d_name_S(n))//':M'
+         end do
+      endif
+
+      call handle_error_l(F_nfields <= NB_FIELDS_MAX, 'itf_adx_main', &
+           'Too many field for advection')
+      !---------------------------------------------------------------------
+      return
+   end subroutine itf_adx_get_field_list
+
+   !/**
+   subroutine itf_adx_get_field_list_tr(F_fields_lbl,F_fields_type_L,F_nfields)
+      implicit none
+      !@objective Equivalent to itf_adx_get_field_list for TRAJECTORY 
+      !@arguments
+      character(len=8), dimension(:,:), intent(out) :: F_fields_lbl
+      logical, dimension(:,:), intent(out) :: F_fields_type_L
+      integer, intent(out) :: F_nfields
+      !**/
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "orh_m.cdk"
+#include "rhsc_m.cdk"
+#include "vt1.cdk"
+#include "tr3d.cdk"
+   !      integer MAXTR3D
+   !      parameter ( MAXTR3D = 250 )
+   !      character*4 Tr3d_name_S(MAXTR3D)
+      integer, parameter :: FIELD_IN  = 1
+      integer, parameter :: FIELD_OUT = 2
+      integer, parameter :: IS_MOM    = 1
+      integer, parameter :: IS_WIND   = 2
+
+      integer :: n
+      !---------------------------------------------------------------------
+      if(Schm_zdotmid_L) call handle_error(-1,'itf_adx_get_field_list_tr','Schm_zdotmid_L NOT DONE')
+
+      !TODO: these quantities should be placed in gmm metadata...
+      F_fields_type_L(IS_MOM,:)    = .true.
+      F_fields_type_L(IS_WIND,:)   = .false.
+
+      F_nfields = 1
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_ruw1_m_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_ruw2_m_s
+      F_fields_type_L(IS_WIND,F_nfields) = .true.
+
+      F_nfields = F_nfields + 1
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_rvw1_m_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rvw2_m_s
+      F_fields_type_L(IS_WIND,F_nfields) = .true.
+
+      F_nfields = F_nfields + 1
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_orhsc_m_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rhsc_m_s
+
+      F_nfields = F_nfields + 1
+      F_fields_type_L(IS_MOM,F_nfields:) = .false.
+
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_orhst_m_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rhst_m_s
+
+      F_nfields = F_nfields + 1
+      F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_orhsf_m_s
+      F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rhsf_m_s
+
+      if (.not. Schm_hydro_L) then
+         F_nfields = F_nfields + 1
+         F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_orhsw_m_s
+         F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_rhsw_m_s
+      endif
+
+      if (Schm_zdotmid_L) then
+         F_nfields = F_nfields + 1
+         F_fields_lbl(FIELD_IN,F_nfields)  = gmmk_zdt1_s
+         F_fields_lbl(FIELD_OUT,F_nfields) = gmmk_zdup_s
+      endif
+
+      if (Orh_icn == Schm_itcn) then
+         do n=1,Tr3d_ntr
+            F_nfields = F_nfields + 1
+            F_fields_lbl(FIELD_IN,F_nfields)  = 'TRM/'//trim(Tr3d_name_S(n))//':P'
+            F_fields_lbl(FIELD_OUT,F_nfields) = 'TRM/'//trim(Tr3d_name_S(n))//':M'
+         end do
+      endif
+
+      call handle_error_l(F_nfields <= NB_FIELDS_MAX, 'itf_adx_main TRAJ', &
+           'Too many field for advection')
+      !---------------------------------------------------------------------
+      return
+   end subroutine itf_adx_get_field_list_tr
+
+end subroutine itf_adx_main_tl

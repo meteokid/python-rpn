@@ -236,33 +236,6 @@
 
 
 !/**
-      subroutine adw_get_ij0n(i0,j0,in,jn)
-      implicit none
-      !@objective
-      !@arguments
-      integer :: i0,j0,in,jn
-      !@author  Stephane Chamberland, 2009-12
-      !@revisions
-      !  2009-12,  Stephane Chamberland: original code
-#include "glb_ld.cdk"
-!**/
-      !---------------------------------------------------------------------
-      i0=1
-      in=l_ni
-      j0=1
-      jn=l_nj
-      if (G_lam) then
-         if (l_west)  i0=pil_w
-         if (l_east)  in=l_niu - pil_e + 2
-         if (l_south) j0=pil_s
-         if (l_north) jn=l_njv - pil_n + 2
-      endif
-      !---------------------------------------------------------------------
-      return
-      end subroutine adw_get_ij0n
-
-
-!/**
       subroutine adw_main_3_prep(pos_x, pos_y, pos_z,  &
            i0, in, j0, jn, F_nijk, F_nk, F_type_S, F_isStatStep_L)
       implicit none
@@ -358,6 +331,18 @@
       end do
 !$omp enddo
 !$omp end parallel
+
+      if (adw_stats_L) then
+         call glbstat2 (adw_capx1, 'cpx1', 'adw_3',  &
+              1,l_ni, 1,l_nj, 1,F_nk, &
+              i0,in,j0,jn,1,F_nk)
+         call glbstat2 (adw_capy1, 'cpy1', 'adw_3',  &
+              1,l_ni, 1,l_nj, 1,F_nk, &
+              i0,in,j0,jn,1,F_nk)
+         call glbstat2 (adw_capz1, 'cpz1', 'adw_3',  &
+              1,l_ni, 1,l_nj, 1,F_nk, &
+              i0,in,j0,jn,1,F_nk)
+      endif
       !---------------------------------------------------------------------
       return
       end

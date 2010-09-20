@@ -1,0 +1,99 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** s/r glhalo_init - 
+!
+#include "model_macros_f.h"
+!
+      subroutine glhalo_init()
+!
+      implicit none
+!
+!author
+!      Claude Girard
+!
+!revision
+!
+!object
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_v0         I/O       
+! F_v1         I/O       
+!----------------------------------------------------------------
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "orh.cdk"
+#include "rhsc.cdk"
+!
+      integer i,k
+!*
+!     __________________________________________________________________
+!
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init ERROR at gmm_get(ut0)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init ERROR at gmm_get(vt0)'
+      gmmstat = gmm_get(gmmk_orhsv_s,orhsv,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsv)'
+      gmmstat = gmm_get(gmmk_rvw2_s,rvw2,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(rvw2)'
+      gmmstat = gmm_get(gmmk_rhsv_s,rhsv,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsv)'
+
+      do k=1,G_nk
+         if(l_south) then
+            do i = l_minx, l_maxx
+               ut0(i, 0,k) = 0.0
+               ut1(i, 0,k) = 0.0
+               vt0(i, 0,k) = 0.0
+               vt1(i, 0,k) = 0.0
+               vt0(i,-1,k) = 0.0
+               vt1(i,-1,k) = 0.0
+                rhsv(i, 0,k) = 0.0
+               orhsv(i, 0,k) = 0.0
+               orhsv(i,-1,k) = 0.0
+               rvw2 (i, 0,k) = 0.0
+            end do
+         endif
+         if(l_north) then
+            do i = l_minx, l_maxx
+               ut0(i,l_njv+2,k) = 0.0
+               ut1(i,l_njv+2,k) = 0.0
+               vt0(i,l_njv+2,k) = 0.0
+               vt1(i,l_njv+2,k) = 0.0
+               vt0(i,l_njv+1,k) = 0.0
+               vt1(i,l_njv+1,k) = 0.0
+                rhsv(i,l_njv+1,k) = 0.0
+               orhsv(i,l_njv+1,k) = 0.0
+               orhsv(i,l_njv+2,k) = 0.0
+               rvw2 (i,l_njv+2,k) = 0.0
+            end do
+         endif
+      enddo
+!
+      return
+      end

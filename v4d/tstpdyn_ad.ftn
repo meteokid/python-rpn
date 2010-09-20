@@ -76,8 +76,6 @@
       real w_tt0_m(LDIST_SHAPE,l_nk+2)
       real w_qt0_m(LDIST_SHAPE,0:l_nk+1)
 *
-      integer KEEP_Ptopo_npeOpenMP
-*
       logical isStatStep_L
 *     ______________________________________________________
 *
@@ -100,7 +98,7 @@
       call v4d_rwtraj (3)
       call v4d_rwtraj (4)
 *
-      call adw_main_tr (F_fnitraj, isStatStep_L)
+      call adw_main_tr (F_fnitraj,isStatStep_L)
 *
       call pre_tr ()
 *
@@ -211,7 +209,6 @@
 *        --------------
 *        END TRAJECTORY
 *        --------------
-*
          call bac_ad ( iln, Schm_itnlh )
 *
          call sol_main_ad (iln)
@@ -269,14 +266,7 @@
 *
       call pre_ad ()
 *
-      KEEP_Ptopo_npeOpenMP = Ptopo_npeOpenMP
-      call omp_set_num_threads (1)
-      Ptopo_npeOpenMP = 1 
-*
-      call adw_main_ad (F_fnitraj, isStatStep_L)
-*
-      call omp_set_num_threads (KEEP_Ptopo_npeOpenMP)
-      Ptopo_npeOpenMP = KEEP_Ptopo_npeOpenMP 
+      call itf_adw_main_ad (F_fnitraj,isStatStep_L)
 *
       if ( Orh_icn .eq. 1 ) call rhs_ad ()
 *

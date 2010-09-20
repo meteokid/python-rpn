@@ -22,17 +22,14 @@
 !                    |          false -digital filt. ignore map scale  |
 !                    |                                                 |
 !                    |                                                 |
-! Topo_init_L        | switch-> false -NULL topography                 |
 !----------------------------------------------------------------------|
 !
 #endif
-      logical Topo_filmx_L,Topo_init_L,Topo_dgfmx_L,Topo_dgfms_L
-      real, dimension(:), pointer :: topo,topof,a_pr_m,i_pr_m,a_ir_m
-      real, dimension(:), pointer :: i_ir_m,a_so_m,i_so_m
 !
-      common / topo_l / Topo_filmx_L,Topo_init_L,Topo_dgfmx_L
-      common / topo_l / Topo_dgfms_L
-      common / topo_r / topo,topof, a_pr_m,i_pr_m,a_ir_m,i_ir_m
-      common / topo_r / a_so_m,i_so_m
+      logical Topo_filmx_L,Topo_dgfmx_L,Topo_dgfms_L
+      real, dimension(:), pointer :: topo
+!
+      common / topo_l / Topo_filmx_L,Topo_dgfmx_L,Topo_dgfms_L
+      common / topo_r / topo
 !
 

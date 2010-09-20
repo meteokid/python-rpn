@@ -201,6 +201,7 @@
          inuvl_wyvy3_8(l_nj,1) = lag2(geomg_y_8(l_nj), x2, x3, x4 )
          inuvl_wyvy3_8(l_nj,2) = lag2(geomg_y_8(l_nj), x3, x2, x4 )
          inuvl_wyvy3_8(l_nj,3) = lag2(geomg_y_8(l_nj), x4, x2, x3 )
+         inuvl_wyvy3_8(l_nj,4) = 0.0
          indx = offj + l_njv
          hh = (G_yg_8(indx+1)+ G_yg_8(indx)) * HALF
          x1 = G_yg_8(indx-1)
@@ -217,6 +218,7 @@
          x2 = (G_yg_8(indx-1)+ G_yg_8(indx-2)) * HALF
          x3 = (G_yg_8(indx  )+ G_yg_8(indx-1)) * HALF
          x4 = (G_yg_8(indx+1)+ G_yg_8(indx  )) * HALF
+         inuvl_wyvy3_8(1,1) = 0.0
          inuvl_wyvy3_8(1,2) = lag2(geomg_y_8(1), x2, x3, x4 )
          inuvl_wyvy3_8(1,3) = lag2(geomg_y_8(1), x3, x2, x4 )
          inuvl_wyvy3_8(1,4) = lag2(geomg_y_8(1), x4, x2, x3 )

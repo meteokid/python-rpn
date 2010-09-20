@@ -17,20 +17,19 @@
 ! Pil_dx             | resolution of output for feeding model in radians
 ! Pil_sfc2d_L        | True to generate geophy.bin (surface fields)    |
 ! Pil_hblen          | Number of points for the horizontal blending    |
-! Pil_maxcfl         | Courrant number to determine Pil_pil            |
 ! Pil_pil            | Number of points for the pilot region           |
 !--------------------|-------------------------------------------------|
 !
       character*16 Pil_jobstrt_S,Pil_jobend_S
 !
-      logical Pil_sfc2d_L,Pil_3df_L,Pil_bmf_L,Pil_bcs_hollow_L
+      logical Pil_3df_L,Pil_bmf_L,Pil_bcs_hollow_L
 !
-      integer Pil_nesdt,Pil_hblen,Pil_pil,Pil_maxcfl,Pil_lancemodel
+      integer Pil_nesdt,Pil_hblen,Pil_pil,Pil_lancemodel
       real    Pil_dx
 !
       common /pilr/ Pil_dx
       common /pils/ Pil_jobstrt_S,Pil_jobend_S
-      common /pill/ Pil_sfc2d_L,Pil_3df_L,Pil_bmf_L,Pil_bcs_hollow_L
-      common /pili/ Pil_nesdt,Pil_hblen,Pil_pil,Pil_maxcfl
+      common /pill/ Pil_3df_L,Pil_bmf_L,Pil_bcs_hollow_L
+      common /pili/ Pil_nesdt,Pil_hblen,Pil_pil
       common /pili/ Pil_lancemodel
 !

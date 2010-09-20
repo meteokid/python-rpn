@@ -39,8 +39,7 @@
 !
          call e_infiles
 !
-         if ( (Mod_runstrt_S.eq.'@#$%') .and.  &
-              (Pil_sfc2d_L .or. Pil_3df_L) ) then
+         if ( (Mod_runstrt_S.eq.'@#$%') .and. (Pil_3df_L) ) then
             if ( .not. get_date (Mod_runstrt_S, &
             trim(pilot_dir )//'/'//trim(pilot_f(1))) ) stop
          endif

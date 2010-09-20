@@ -116,18 +116,6 @@
       pdsinal_8= ZERO_8
       pdcosal_8= ZERO_8
 *
-*     START REBUILD TRAJECTORY
-*     ------------------------
-!$omp parallel do private (n,ij,
-!$omp%   pdsa_8,pdca_8,pdcai_8,pdso_8,pdco_8,pdx_8,pdy_8,pdz_8,
-!$omp%   pdux_8, pduy_8, pduz_8, pdsinal_8, pdcosal_8,
-!$omp%   pdsam_8,pdcam_8,pdcaim_8,pdsom_8,pdcom_8,
-!$omp%   pduxm_8,pduym_8,pduzm_8,pdsinalm_8,pdcosalm_8,
-!$omp%   pduxm1_8,pduym1_8,pduzm1_8, pdsinalm1_8,pdsinalm2_8,
-!$omp%   rsxyzm_8, rxyzm_8,
-!$omp%   xcosm_8,ycosm_8,xsinm_8,ysinm_8,yrecm_8,
-!$omp%   cos2m_8,suv2m_8,sz2m_8,xy2m_8,slam_8,
-!$omp%   rcos2m_8,rxy2m_8,zm3)
       do k=l_nk,1,-1
 *
 *        Pre-calculations (START) 
@@ -401,7 +389,6 @@
       enddo
 *
       enddo
-!$omp end parallel do
 *
       return
       end

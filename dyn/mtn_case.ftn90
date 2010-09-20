@@ -177,7 +177,7 @@
       enddo
       enddo
 !
-      else   ! MTN_PINTY or MTN_PINTY2
+      else   ! MTN_PINTY or MTN_PINTY2 or NOFLOW
 !-----------------------------------------------------------------------
 !     Generate pressure from Cstv_ptop_8, Cstv_pref_8, and coordinate
 !     Generate corresponding geopotential for isothermal atmosphere
@@ -187,7 +187,7 @@
       do k=1,g_nk+1
       do j=1,l_nj
       do i=1,l_ni
-         F_t (i,j,k) = Cstv_tstr_8
+         F_t (i,j,k) = mtn_tzero
          F_w (i,j,k) = 0.0
       enddo
       enddo
@@ -205,6 +205,7 @@
 
       do j=1,l_nj
       do i=1,l_ni
+         F_t (i,j,g_nk+2) = mtn_tzero
          psurf(i,j) = Cstv_pref_8 *  &
                       exp( -Dcst_grav_8 * F_topo(i,j)/ &
                            (Dcst_cpd_8 * Cstv_tstr_8) )	

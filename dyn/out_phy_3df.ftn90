@@ -62,7 +62,6 @@
 !
 !########## PHYSICS SNAPSHOT #####################################
 !
-!
       upolistc(1) =  "SD  " ! SNODP
       upolistc(2) =  "TM  " ! TWATER
       upolistc(3) =  "GL  " ! GLSEA
@@ -108,10 +107,6 @@
 !
       upolistc(3)= "LG  " !GL->LG
       if (P_pbl_schsl_s.ne.'ISBA') upolistc(8)= "HS  " !I1->HS
-      nks(1)     =  1     !SD(1)
-      uponks(1)  =  uponks(1)+4  !devient donc a 5 niv dans PERBUS
-      nks(4)     =  1     !AL(4)
-      uponks(4)  =  uponks(4)+4  !devient donc a 5 niv dans PERBUS
 !
       if (Out_blocme.eq.0) then
          mode=2

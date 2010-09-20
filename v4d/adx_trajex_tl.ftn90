@@ -1,0 +1,156 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include "constants.h"
+
+subroutine adx_trajex_tl
+   call stop_mpi(STOP_ERROR,'adx_trajex_tl','called a stub')
+   return
+end subroutine adx_trajex_tl
+
+!/**
+subroutine adx_trajex2_tl(F_xto   ,F_yto   ,F_xcto  , F_ycto  , &
+                          F_zcto  ,F_xctm  ,F_yctm  , F_zctm  , &
+                          F_xto_m ,F_yto_m ,F_xcto_m, F_ycto_m, &
+                          F_zcto_m,F_xctm_m,F_yctm_m, F_zctm_m, &
+                          i0,in,j0,jn,F_ni,F_nj,F_nk)
+
+   implicit none
+#include "adx_dims.cdk"
+   !@objective TLM of adx_trajex 
+   !@arguments
+   integer :: F_ni,F_nj,F_nk !I,
+   real, dimension(F_ni,F_nj,F_nk) :: &
+        F_xto, F_yto, &          !O, upstream positions at origin
+        F_xcto, F_ycto, F_zcto,& !O, upstream cartesian positions at origin
+        F_xctm, F_yctm, F_zctm,& !I, upstream cartesian positions at mid-traj
+   !
+        F_xto_m , F_yto_m , &          !O, upstream positions at origin TRAJ
+        F_xcto_m, F_ycto_m, F_zcto_m,& !O, upstream cartesian positions at origin TRAJ
+        F_xctm_m, F_yctm_m, F_zctm_m   !I, upstream cartesian positions at mid-traj TRAJ
+   integer :: i0,in,j0,jn        !I, scope of operator
+   !@author monique tanguay
+   !@revisions
+   ! v4_XX - Tanguay M.        - Adjustments GEM413
+!**/
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+   integer :: i,j,k, vnij, trj_i_off
+   real*8 :: prx, pry, prz, prdot2
+   real*8,dimension(i0:in,j0:jn) :: xasin, yasin, xatan, yatan, zatan
+   !TRAJECTORY
+   real*8,dimension(i0:in,j0:jn) :: xasin_m, yasin_m, xatan_m, yatan_m, zatan_m
+   !TRAJECTORY (EXTRA)
+   real*8,dimension(i0:in,j0:jn) :: smin_m,rsmin_m,xy_m,rxy_m 
+   real  minmax, minmax_m, nodiv0_m
+   real*8 :: prdot2_m
+   !---------------------------------------------------------------------
+   vnij = (in-i0+1)*(jn-j0+1)
+   trj_i_off = adx_mli0 - adx_li0
+
+   do k=1,F_nk
+      do j=j0,jn
+         do i=i0,in
+            pry = dble(adx_cy_8(j))
+            prx = dble(adx_cx_8(trj_i_off + i)) * pry
+            pry = dble(adx_sx_8(trj_i_off + i)) * pry
+            prz = dble(adx_sy_8(j))
+
+            !TRAJECTORY
+            !----------
+            prdot2_m= 2.D0 * ( prx * dble(F_xctm_m(i,j,k)) + &
+                               pry * dble(F_yctm_m(i,j,k)) + &
+                               prz * dble(F_zctm_m(i,j,k)) )
+
+            F_xcto_m(i,j,k) = prdot2_m * dble(F_xctm_m(i,j,k)) - prx
+            F_ycto_m(i,j,k) = prdot2_m * dble(F_yctm_m(i,j,k)) - pry
+            F_zcto_m(i,j,k) = prdot2_m * dble(F_zctm_m(i,j,k)) - prz
+
+            xy_m(i,j) = F_xcto_m(i,j,k)*F_xcto_m(i,j,k) + F_ycto_m(i,j,k)*F_ycto_m(i,j,k)
+
+            xatan_m(i,j)= F_xcto_m(i,j,k)
+            yatan_m(i,j)= F_ycto_m(i,j,k)
+            xasin_m(i,j)= max(-1.,min(1.,F_zcto_m(i,j,k)))
+
+            !TLM
+            !---
+            prdot2= 2.D0 * ( prx * dble(F_xctm(i,j,k)) + &
+                             pry * dble(F_yctm(i,j,k)) + &
+                             prz * dble(F_zctm(i,j,k)) )
+
+            F_xcto(i,j,k) = prdot2_m * dble(F_xctm(i,j,k)) + prdot2 * dble(F_xctm_m(i,j,k))
+            F_ycto(i,j,k) = prdot2_m * dble(F_yctm(i,j,k)) + prdot2 * dble(F_yctm_m(i,j,k))
+            F_zcto(i,j,k) = prdot2_m * dble(F_zctm(i,j,k)) + prdot2 * dble(F_zctm_m(i,j,k))
+
+
+            !NOTE: nodiv0_m is used to allow valid 1/smin_8
+            !----------------------------------------------
+            minmax_m = F_zcto_m(i,j,k)
+            nodiv0_m = minmax_m
+            if (F_zcto_m(i,j,k).ge.1.) then
+                minmax_m = 1.
+                nodiv0_m = 0.
+            elseif (F_zcto_m(i,j,k).le.-1.) then
+                minmax_m =-1.
+                nodiv0_m = 0.
+            endif
+
+            smin_m(i,j) = sqrt( 1.0-nodiv0_m*nodiv0_m )
+
+         enddo
+      enddo
+
+!TODO: merge this part with the same done in trajsp?
+
+         !Pre-calculations
+         !----------------
+         call vatan2(zatan_m, yatan_m, xatan_m, vnij)
+         call vasin (yasin_m, xasin_m, vnij)
+         call vrec  (rxy_m  , xy_m   , vnij)
+         call vrec  (rsmin_m, smin_m , vnij)
+
+!TODO: merge this part with the same done in trajsp?
+
+      do j=j0,jn
+         do i=i0,in
+
+            F_xto_m(i,j,k) = zatan_m(i,j)
+            F_yto_m(i,j,k) = yasin_m(i,j)
+
+            F_xto(i,j,k) = (F_ycto(i,j,k)*F_xcto_m(i,j,k) - F_ycto_m(i,j,k)*F_xcto(i,j,k)) * rxy_m(i,j)
+
+            if ( F_xto_m(i,j,k) .lt. 0.0 ) F_xto_m(i,j,k) = F_xto_m(i,j,k) + CONST_2PI_8  
+
+            !The following min statement is expanded as two IF blocks:
+            !minmax_m = max(-1.,min(1.,F_zcto_m(n)))
+            !--------------------------------------------------------
+            minmax = F_zcto(i,j,k)
+            if (F_zcto_m(i,j,k).ge.1.) then
+                minmax       = 0.
+                F_yto(i,j,k) = 0.
+            elseif (F_zcto_m(i,j,k).le.-1.) then
+                minmax       = 0.
+                F_yto(i,j,k) = 0.
+            else
+                F_yto(i,j,k) = minmax * rsmin_m(i,j)
+            endif
+ 
+         enddo
+      enddo
+
+   enddo
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_trajex2_tl

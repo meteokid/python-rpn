@@ -58,7 +58,8 @@
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "out3.cdk"
-#include "cube.cdk"
+#include "grid.cdk"
+#include "level.cdk"
 #include "modconst.cdk"
 #include "timestep.cdk"
 #include "schm.cdk"
@@ -179,6 +180,8 @@
       call RPN_COMM_bcast (Timestep_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Timestep_init_L,MAXSET,"MPI_LOGICAL",0,"grid",ierr)
 
+      call RPN_COMM_bcast (Grid_ig1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+      call RPN_COMM_bcast (Grid_ig2,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Grid_ig3,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Grid_ig4,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Grid_ip2,1,"MPI_INTEGER" ,0,"grid",ierr)
@@ -203,7 +206,7 @@
       call RPN_COMM_bcast (Level,MAXLEV*MAXSET,"MPI_REAL",0,"grid",ierr)
       call RPN_COMM_bcast (Level_id,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Level_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_typ_indx,MAXSET*MAXLEV,"MPI_INTEGER" ,0,"grid",ierr)
+      call RPN_COMM_bcast (Level_typ_indx,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Level_version,1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Level_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Level_kind_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
@@ -264,10 +267,6 @@
       call RPN_COMM_bcast (Out3_closestep,1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Out3_ip3,1,"MPI_INTEGER" ,0,"grid",ierr)
 
-      call RPN_COMM_bcast (Cube_ig1,MAXGRID1*LEVEL_NTYP,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Cube_ig2,MAXGRID1*LEVEL_NTYP,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Cube_vcount,LEVEL_NTYP,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Cube_v,MAXSET*MAXLEV*LEVEL_NTYP,"MPI_REAL" ,0,"grid",ierr)
 ! Print table of dynamic variables demanded for output
 
       if (Lun_out.gt.0) then

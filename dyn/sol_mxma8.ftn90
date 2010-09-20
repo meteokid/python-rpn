@@ -99,7 +99,7 @@
       parameter( one  = 1.0 )
 
 !
-!     call tmg_start(88,'sol_mxma total')
+!     call tmg_start0(88,'sol_mxma total')
       l_pil_w=0
       l_pil_e=0
       if (l_south) l_pil_w= Lam_pil_w
@@ -161,7 +161,7 @@
       call rpn_comm_transpose &
            ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1), &
                                Minij, Maxij, Gni, fdg2, 2, 2 )
-!      call tmg_start(84,'sol_mxma 2')
+!      call tmg_start0(84,'sol_mxma 2')
 !$omp end single
 !
        ptotal = L_nij-l_pil_e-l_pil_w
@@ -203,11 +203,11 @@
 !$omp enddo
 
 !$omp single
-!      call tmg_stop(84)
+!      call tmg_stop0(84)
       call rpn_comm_transpose &
            ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1), &
                               Minij, Maxij, Gni, fdg2,- 2, 2 )
-!      call tmg_start(85,'dgemm2')
+!      call tmg_start0(85,'dgemm2')
 !$omp end single
 
 !     inverse projection ( r = x * w )
@@ -231,9 +231,9 @@
       enddo
 !$omp end do
 !$omp end parallel
-!      call tmg_stop(85)
+!      call tmg_stop0(85)
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                    Minz, Maxz, Nk, fdg1, -1, 2)
-!     call tmg_stop(88)
+!     call tmg_stop0(88)
       return
       end

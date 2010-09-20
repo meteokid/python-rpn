@@ -73,7 +73,7 @@
       integer i,  k, nevi,gnii,ki0,kin,kkii,kilon,kitotal
 !
 !
-!     call tmg_start(88,'sol_parite total')
+!     call tmg_start0(88,'sol_parite total')
  
       call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                          Minz, Maxz, Nk, fdg1, 1,2 )
@@ -285,7 +285,7 @@
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                    Minz, Maxz, Nk, fdg1, -1, 2)
  
-!     call tmg_stop(88)
+!     call tmg_stop0(88)
 
       return
       end

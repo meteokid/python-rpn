@@ -27,7 +27,6 @@
 !
 !revision
 ! v3_30 - Desgagne M.       - initial version
-! v3_31 - Lee V.            - add Pil_maxcfl to control Pil_pil
 ! v4_03 - Lee/Desgagne      - ISST
 ! v4_05 - Desgagne M.       - add Pil_lancemodel to control submission
 !
@@ -58,18 +57,15 @@
       Mod_runstrt_S ='@#$%'
       Pil_jobstrt_S ='@#$%'
       Pil_jobend_S  ='@#$%'
-      Pil_sfc2d_L      = .true.
       Pil_3df_L        = .true.
       Pil_bcs_hollow_L = .true.
       Pil_bmf_L        = .false.
       Pil_dx           = 0.0
       Pil_lancemodel   = 10000
-      Pil_maxcfl       = 1
       Pil_nesdt        = 0
       Pil_hblen        = 10
 !
       Topo_filmx_L= .true.
-      Topo_init_L = .true.
       Topo_dgfmx_L= .false.
       Topo_dgfms_L= .true.
 !
@@ -103,7 +99,6 @@
          read (unf, nml=gement, end=9110, err=9110)
          call fclos (unf)
          e_gement_nml = 1
-         Pil_pil = max(1,Pil_maxcfl) + 5
          goto 7777
       else
          goto 9220

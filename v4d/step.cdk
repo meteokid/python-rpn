@@ -22,9 +22,9 @@
 !
 !
 #endif
-      integer Step_total, Step_rsti, Step_bkup, Step_gstat
-      integer Step_cleanup
+      integer Step_total  , Step_rsti, Step_bkup, Step_gstat
+      integer Step_cleanup, Step_spinphy
 !
-      common / Stepi / Step_total, Step_rsti, Step_bkup, Step_gstat
-      common / Stepi / Step_cleanup
+      common / Stepi / Step_total  , Step_rsti, Step_bkup, Step_gstat
+      common / Stepi / Step_cleanup, Step_spinphy
 !

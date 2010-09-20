@@ -1,0 +1,96 @@
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+#include "stop_mpi.h"
+#include "msg.h"
+
+subroutine adx_model2adx_grid_scalar_ad()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_model2adx_grid_scalar_ad','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_model2adx_grid_scalar_ad
+
+!/**
+subroutine adx_model2adx_grid_scalar2_ad(F_fld_adw, F_fld_model, &
+     F_aminx,F_amaxx,F_aminy,F_amaxy,F_minx,F_maxx,F_miny,F_maxy,F_nk,&
+     F_pol0_L, F_extend_L)
+
+   implicit none
+#include "adx_dims.cdk"
+   !@objective ADJ of adx_model2adx_grid_scalar 
+   !@arguments
+   logical :: F_extend_L  !I, Extend field beyond poles
+   logical :: F_pol0_L    !I, Set values=0 around poles (e.g. 4 winds)
+   integer :: F_aminx,F_amaxx,F_aminy,F_amaxy !I, adw local array bounds
+   integer :: F_minx,F_maxx,F_miny,F_maxy     !I, model's local array bounds
+   integer :: F_nk        !I, number of levels
+   real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk) :: &
+        F_fld_model       !I, fld on model-grid
+   real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk) :: &
+        F_fld_adw         !O, fld on adw-grid
+   !@author monique tanguay
+   !@revisions
+   ! v4_XX - Tanguay M.        - Adjustments GEM413
+   !**/
+   integer :: nrow,i,j,k
+   logical :: is_south_L
+   real, dimension(:,:,:)  ,allocatable :: in0_fld
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'adx_model2adx_grid_scalar_ad')
+
+   if (adx_lam_L) allocate ( in0_fld(F_minx:F_maxx,F_miny:F_maxy,F_nk)   )
+   !
+   if (adx_lam_L) in0_fld = 0. 
+   !
+   IF_LAM: if (.not.adx_lam_L) then
+      if (adx_is_north) then
+         is_south_L = .false.
+         call adx_pole0s2_ad(F_fld_adw, F_fld_model, &
+              F_aminx,F_amaxx,F_aminy,F_amaxy,F_minx,F_maxx,F_miny,F_maxy,&
+              F_nk, F_pol0_L, F_extend_L, is_south_L)
+      endif
+
+      if (adx_is_south) then
+         is_south_L = .true.
+         call adx_pole0s2_ad(F_fld_adw, F_fld_model, &
+              F_aminx,F_amaxx,F_aminy,F_amaxy,F_minx,F_maxx,F_miny,F_maxy,&
+              F_nk, F_pol0_L, F_extend_L, is_south_L)
+      endif
+   endif IF_LAM
+
+   nrow = 999
+   if (adx_lam_L) nrow = 0
+   call rpn_comm_adj_halox( &
+        F_fld_model, F_minx,F_maxx,F_miny,F_maxy, &
+        adx_mlni, adx_mlnj, F_nk, adx_halox, adx_haloy, &
+        adx_is_period_x, adx_is_period_y, &
+        F_fld_adw, F_aminx,F_amaxx,F_aminy,F_amaxy, adx_lni, nrow)
+   !
+   if (adx_lam_L) then 
+      do k=1,F_nk
+         do j=F_miny,F_maxy
+            do i=F_minx,F_maxx
+               F_fld_model(i,j,k) = in0_fld(i,j,k) + F_fld_model(i,j,k)
+            end do
+         end do
+      end do
+   endif
+   !
+   call msg(MSG_DEBUG,'adx_model2adx_grid_scalar_ad [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_model2adx_grid_scalar2_ad

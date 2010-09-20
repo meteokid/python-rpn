@@ -563,11 +563,11 @@
 *
       if (plpr_L) then
          if (Ptopo_myproc.eq.0) write(Lun_out,*) 'AFTER EZSCINT_AD'
-            call glbstat2(wijk1,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-            call glbstat2(wijk2,'VV',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-            call glbstat2(wijk3,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-            call glbstat2(wij5 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,1,1)
-            call glbstat2(wijk4,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+            call glbstat2(wijk1,'UU','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+            call glbstat2(wijk2,'VV','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+            call glbstat2(wijk3,'TP','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+            call glbstat2(wij5 ,'4S','GRDJOK',LDIST_DIM,1,   1,1,G_ni,1,G_nj,1,1)
+            call glbstat2(wijk4,'HU','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
          if (Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
       end if
 *
@@ -580,11 +580,11 @@
 *
       if (plpr_L) then
          if (Ptopo_myproc.eq.0) write(Lun_out,*) 'AFTER VARCONV_AD'
-         call glbstat2(wijk1,'UU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         call glbstat2(wijk2,'VV',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         call glbstat2(wijk3,'TP',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         call glbstat2(wij5 ,'4S',LDIST_DIM,   1,1,G_ni,1,G_nj,1,1)
-         call glbstat2(wijk4,'HU',LDIST_DIM,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat2(wijk1,'UU','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat2(wijk2,'VV','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat2(wijk3,'TP','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat2(wij5 ,'4S','GRDJOK',LDIST_DIM,1,   1,1,G_ni,1,G_nj,1,1)
+         call glbstat2(wijk4,'HU','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
          if (Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
       end if
 *

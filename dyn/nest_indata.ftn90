@@ -56,7 +56,6 @@
 #include "bcsmem.cdk"
 #include "bcsdim.cdk"
 #include "type.cdk"
-#include "adw.cdk"
 #include "lun.cdk"
 #include "acid.cdk"
 #include "path.cdk"

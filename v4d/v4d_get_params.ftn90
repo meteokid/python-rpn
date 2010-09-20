@@ -1,0 +1,68 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_get_params
+!
+#include "model_macros_f.h"
+      subroutine v4d_get_params
+      implicit none
+!
+!author 
+!     Michel Desgagne - Spring 2010
+!
+!revision
+! v4_13 - Desgagne,Tanguay       - initial version
+!
+#include <WhiteBoard.hf>
+#include "adx_gmm_tr.cdk"
+#include "vth_m.cdk"
+#include "vt1_m.cdk"
+!
+   character(len=40) :: label
+   integer :: istat
+!
+!  ---------------------------------------------------------------
+!
+!  TRAJECTORY
+!  ---------- 
+!
+   istat = WB_OK
+
+   istat = min(wb_get('model/gmm/xth_m_tr',adx_xth_tr_s),istat)
+   istat = min(wb_get('model/gmm/yth_m_tr',adx_yth_tr_s),istat)
+   istat = min(wb_get('model/gmm/zth_m_tr',adx_zth_tr_s),istat)
+
+   istat = min(wb_get('model/gmm/xcth_m_tr',adx_xcth_tr_s),istat)
+   istat = min(wb_get('model/gmm/ycth_m_tr',adx_ycth_tr_s),istat)
+   istat = min(wb_get('model/gmm/zcth_m_tr',adx_zcth_tr_s),istat)
+
+   istat = min(wb_get('model/gmm/xct1_m_tr',adx_xct1_tr_s),istat)
+   istat = min(wb_get('model/gmm/yct1_m_tr',adx_yct1_tr_s),istat)
+   istat = min(wb_get('model/gmm/zct1_m_tr',adx_zct1_tr_s),istat)
+
+   istat = min(wb_get('model/gmm/xth_t_tr',adx_xth_t_tr_s),istat)
+   istat = min(wb_get('model/gmm/yth_t_tr',adx_yth_t_tr_s),istat)
+   istat = min(wb_get('model/gmm/zth_t_tr',adx_zth_t_tr_s),istat)
+
+   istat = min(wb_get('model/gmm/xcth_t_tr',adx_xcth_t_tr_s),istat)
+   istat = min(wb_get('model/gmm/ycth_t_tr',adx_ycth_t_tr_s),istat)
+   istat = min(wb_get('model/gmm/zcth_t_tr',adx_zcth_t_tr_s),istat)
+!
+   call handle_error_l (WB_IS_OK(istat),'v4d_get_params','problem getting values from whiteboard')
+!
+!  ---------------------------------------------------------------
+!
+   return
+   end

@@ -145,11 +145,11 @@
          call rpn_comm_xch_halo( F_p  , LDIST_DIM,l_ni,l_nj,G_nk+2, &
                        G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-      p1 = Cstv_tauT_8*Cstv_RTstr_8/Dcst_grav_8
+      p1 = Cstv_tau_8*Cstv_RTstr_8/Dcst_grav_8
       p2 = one/Cstv_RTstr_8
       p3 = one/Dcst_grav_8
       p4 = one/Dcst_rayt_8**2  
-      p5 = one/Cstv_tauw_8
+      p5 = one/Cstv_tau_8
 !
 !$omp parallel private(xxx,yyy,zzz,xtmp_8,ytmp_8)
 !
@@ -186,7 +186,7 @@
 
                F_u(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) - &
                            p4*(F_p(i+1,j,k)-F_p(i,j,k)) &
-                             *geomg_invhx_8(i) )
+                             *geomg_invDXu_8(i) )
             end do
             end do
 !
@@ -194,7 +194,7 @@
             do i= i0, in
                F_v(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - &
                            p4*(F_p(i,j+1,k) - F_p(i,j,k)) &
-                             *geomg_cyv2_8(j)*geomg_invhsy_8(j) )
+                             *geomg_invDYv_8(j) )
             end do
             end do
 
@@ -293,7 +293,7 @@
          do k=kminzd,l_nk
             xxx=Ver_gokt2RT_8*Ver_idz_8%t(k)
             yyy=Ver_gokt2RT_8*Ver_epsilon_8
-            zzz=Ver_b_8%t(k)/Cstv_tauT_8
+            zzz=Ver_b_8%t(k)*p5
             if(Schm_autobar_L) zzz=0.d0
             do j= j0, jn 
             do i= i0, in 
@@ -309,10 +309,9 @@
          if (.not. Schm_hydro_L) then
 !$omp do
             do k=kminzd,l_nk
-               xxx=one/Cstv_tauT_8
                do j= j0, jn 
                do i= i0, in 
-                  F_zd(i,j,k)=F_zd(i,j,k)-xxx* &
+                  F_zd(i,j,k)=F_zd(i,j,k)-p5* &
                    (Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
                enddo
                enddo

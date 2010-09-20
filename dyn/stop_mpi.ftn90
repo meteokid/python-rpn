@@ -48,7 +48,7 @@ subroutine stop_mpi(F_EndType,F_FromSubName,F_Message)
         trim(msg_line_S)
    call msg(msgLevel,message)
 
-   call rpn_comm_Barrier(RPN_COMM_WORLD, err)
+   call rpn_comm_Barrier(RPN_COMM_GRID, err)
    call rpn_comm_FINALIZE(err)
    !---------------------------------------------------------------------
    stop

@@ -147,9 +147,14 @@
       Adw_for_a = Adw_for_n + Adw_for_s
       Adw_fro_a = Adw_fro_n + Adw_fro_s
 !***********************************************************************
-      if ( Adw_exdg_L ) print *,'EXDG', &
-                                 Adw_for_n, Adw_for_s, Adw_for_a, &
-                                 Adw_fro_n, Adw_fro_s, Adw_fro_a
+   if (adw_exdg_L) then
+      if (adw_fro_a>0) &
+           print '(A,3I8)','adw_exch_1 EXDG fro:', &
+           adw_fro_n, adw_fro_s, adw_fro_a
+      if (adw_for_a>0) &
+           print '(A,3I8)','adw_exch_1 EXDG for:', &
+           adw_for_n, adw_for_s, adw_for_a
+   endif
 !
       return
       end

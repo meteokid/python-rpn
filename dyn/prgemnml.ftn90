@@ -57,8 +57,7 @@
 !
       subroutine nml_adw()
       implicit none
-#include "adw_nml.cdk"
-      write (6  ,nml=adw_cfgs)
+      call adw_nml_print()
       return
       end
 !

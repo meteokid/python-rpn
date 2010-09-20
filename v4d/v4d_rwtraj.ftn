@@ -18,7 +18,7 @@
 *
 #include "model_macros_f.h"
 *
-      subroutine v4d_rwtraj (numtr,u,v,w,x,y,a,b,c,d)
+      subroutine v4d_rwtraj (numtr,u,v,w,a,b,c,mlni,mlnj,lnkm,lnkt)
 *
 *-------------------------------------------------------------------------
 *  CAUTION: Parameters list is extended ONLY when numtr=5
@@ -26,12 +26,12 @@
 *
       implicit none
 *
-      integer numtr
+      integer numtr,mlni,mlnj,lnkm,lnkt
 *
 c     real, optional :: u(*),v(*),w(*),x(*),y(*)  KO NAOS
 c     real, optional :: a(*),b(*),c(*),d(*)       KO NAOS
-      real           :: u(*),v(*),w(*),x(*),y(*)
-      real           :: a(*),b(*),c(*),d(*)
+      real           :: u(*),v(*),w(*)
+      real           :: a(*),b(*),c(*)
 *
 *author
 *     M.Tanguay
@@ -58,7 +58,7 @@ c     real, optional :: a(*),b(*),c(*),d(*)       KO NAOS
 *
 *     For Dynamics
 *     ------------
-      if ( 1.le.numtr.and.numtr.le.19) call v4d_rwtraj_dyn (numtr,u,v,w,x,y,a)
+      if ( 1.le.numtr.and.numtr.le.19) call v4d_rwtraj_dyn (numtr,u,v,w,a,b,c,mlni,mlnj,lnkm,lnkt)
 *
 *     For Physics 
 *     -----------

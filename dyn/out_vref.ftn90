@@ -1,3 +1,0 @@
-      subroutine out_vref
-      return
-      end

@@ -54,15 +54,19 @@
       save first
 !     ________________________________________________________________
 !
+      call phycom ('COUPLING',.false.,1,'set')
+
       if (.not.C_coupling_L) return
+
       if (first) then
          if (Rstri_rstn_L.and.oce_hotstart) goto 1001
       endif
 
       atm_busin = 0.
 
-      if (.not. ( (Lctl_step.ge.cpl_debut)   .and.  &
-                  (Lctl_step.le.cpl_fin) ) ) return
+      if (.not. ( (Lctl_step.ge.cpl_debut)   .and. &
+                  (Lctl_step.le.cpl_fin)     .and. &
+                  (mod(Lctl_step-cpl_debut,cpl_freq).eq.0) )) return
 !
       nullify (pw_uplus,pw_vplus)
       gmmstat = gmm_get(gmmk_pw_uplus_s ,pw_uplus,meta3d)
@@ -89,7 +93,7 @@
 !
          dayfrac = dble(Lctl_step)*Cstv_dt_8*rsid
          call incdatsd  (datev,Mod_runstrt_S,dayfrac)
-         dayfrac = dble( max(Lctl_step-1,0) )*Cstv_dt_8*rsid
+         dayfrac = dble( max(Lctl_step-cpl_freq,0) )*Cstv_dt_8*rsid
          call incdatsd  (datem,Mod_runstrt_S,dayfrac)
 !
          do n=1,n_fldou
@@ -107,6 +111,11 @@
 
          call cpl_exchg (datev(1:15),atm_busou, datem(1:15),atm_busin,  &
                                         cpl_ni, cpl_nj, 2, send, recv)
+
+         if ((send.eq.-100).or.(recv.eq.-100)) THEN
+            CALL itf_cpl_pseudoW (datev, Lctl_step, int(Cstv_dt_8), Out3_date, send)
+            CALL itf_cpl_pseudoR (datev, Lctl_step, recv)
+         ENDIF
 
          glbbus = 0.
          do n=1,n_fldin
@@ -165,8 +174,15 @@
 !
       atm_local_busin (1:l_ni,1:l_nj,2)=   &
          max(atm_local_busin (1:l_ni,1:l_nj,2),250.)
-!
-      deallocate (glbbus)
+
+! Next IF line is used to simulate an NC in full CPL mode
+! and to force (one-way coupled) the ROM model
+
+!      IF (Lctl_step.eq.0) then
+         call phycom ('COUPLING',.true.,1,'set')
+!      endif
+
+       deallocate (glbbus)
 !
  1001 first = .false.
 

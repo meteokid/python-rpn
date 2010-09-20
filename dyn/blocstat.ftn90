@@ -39,14 +39,12 @@
 #include "lctl.cdk"
 #include "acid.cdk"
 #include "ptopo.cdk"
-#include "adw.cdk"
 #include "schm.cdk"
 #include "stat.cdk"
 !
       logical done
       type(gmm_metadata) :: tmp_meta
       integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx
-      real cfl
       real, pointer, dimension(:,:  ) :: wk2d
       real, pointer, dimension(:,:,:) :: wk3d
       data done/.false./
@@ -100,25 +98,8 @@
 !
 !     Print max courrant numbers if LAM configuration
          if (G_lam) then
-         if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0) then
-            cfl = Adw_cfl_8(1)
-            write (6,1010) 'x,y',Adw_cfl_i(1,1),Adw_cfl_i(2,1), &
-                                 Adw_cfl_i(3,1),cfl
-            cfl = Adw_cfl_8(2)
-            write (6,1010) 'z'  ,Adw_cfl_i(1,2),Adw_cfl_i(2,2), &
-                                 Adw_cfl_i(3,2),cfl
-            cfl = Adw_cfl_8(3)
-            write (6,1010) '3D' ,Adw_cfl_i(1,3),Adw_cfl_i(2,3), &
-                                 Adw_cfl_i(3,3),cfl
-            Adw_cfl_8 (:  ) = 0.0d0
-            Adw_cfl_i (:,:) = 0
-         endif
-         if (Adw_trunc_traj_L) then
-            call rpn_comm_Allreduce (Adw_trunc,trunc,4, &
-                                  "MPI_INTEGER","MPI_SUM","grid",err)
-            if (Ptopo_myproc.eq.0 .and. Lctl_step.gt.0) &
-               write(6,1003)Lctl_step,  " Trj Cut :",trunc(1)+trunc(2)+ &
-                 trunc(3)+trunc(4),trunc(1),trunc(2),trunc(3),trunc(4)
+         if (Ptopo_myproc==0 .and. Lctl_step>0) then
+            call itf_adw_cfl_print()
          endif
          endif
 !
@@ -129,7 +110,7 @@
       done = .true.
 !
  1010 format (' MAX COURANT NUMBER:  ', &
-                a3,': [(',i3,',',i3,',',i3,') ',f12.5,']')
+                a3,': [(',i3,',',i3,',',i3,') ',f10.5,']')
  1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')
  1003 format (i4,a10, i4,10X,' N:[',i4,'] S:[',i4,'] E :[',i4,'] W:[',i4,']')

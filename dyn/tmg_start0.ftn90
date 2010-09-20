@@ -36,12 +36,12 @@
       real*8 rtools_wtime 
 !
       call tmg_start ( mynum, myname_S )
-      if (.not.tmg2_on_L) return
 !
-      nam_subr_S(mynum) = myname_S
-!
-      m0x(mynum,1) = mclock()
-      r0 (mynum,1) = rtools_wtime()
+      if (tmg2_on_L) then
+         nam_subr_S(mynum) = myname_S
+         m0x(mynum) = mclock()
+         r0 (mynum) = rtools_wtime()
+      endif
 !
       return
       end

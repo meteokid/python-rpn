@@ -39,7 +39,7 @@
       return
       end
 !
-      logical function v4d_indata2 (F_u, F_v, F_t, F_zd, F_s, F_topo, F_fiptx, &
+      logical function v4d_indata2 (F_u, F_v, F_t, F_zd, F_s, F_topo, F_fiptx, F_w, F_q, &
                                     Mminx, Mmaxx, Mminy, Mmaxy)
 !
       implicit none
@@ -48,11 +48,12 @@
       real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v (Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
+           F_w(Mminx:Mmaxx,Mminy:Mmaxy  ), F_q    (Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
            F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
 !
 ! v4_10 - Tanguay M.         - VMM replacement with GMM for (TL/AD)
 ! v4_12 - Tanguay M.         - Adapt to revised predat
-
+! v4_XX - Tanguay M.         - Adjustments GEM413 .not. Schm_hydro_L
 !
 #include "v4dg.cdk"
 !
@@ -60,7 +61,7 @@
 !
       v4d_indata2 = .false.
       if ( V4dg_conf.ne.0 .and. V4dg_part.ne.2 ) then 
-           call v4d_predat ( F_u, F_v, F_t, F_zd, F_s, F_topo, F_fiptx, &
+           call v4d_predat ( F_u, F_v, F_t, F_zd, F_s, F_topo, F_fiptx, F_w, F_q, &
                              Mminx, Mmaxx, Mminy, Mmaxy )
            v4d_indata2 = .true.
       endif

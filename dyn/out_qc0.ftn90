@@ -55,7 +55,8 @@
 #include "rstr.cdk"
 #include "out3.cdk"
 #include "out.cdk"
-#include "cube.cdk"
+#include "grid.cdk"
+#include "level.cdk"
 #include "outd.cdk"
 #include "ptopo.cdk"
 #include "tr3d.cdk"
@@ -175,8 +176,7 @@
                (Grid_x1(gridset)-Grid_x0(gridset)+1) .eq. G_ni ) periodx_L=.true.
           call out_sgrid(Grid_x0(gridset),Grid_x1(gridset), &
                Grid_y0(gridset),Grid_y1(gridset), &
-               Cube_ig1(gridset,Level_typ_indx(levset)), &
-               Cube_ig2(gridset,Level_typ_indx(levset)), &
+               Grid_ig1(gridset),Grid_ig2(gridset), &
                periodx_L, Grid_stride(gridset), &
                Grid_etikext_s(gridset),' ' )
           nk_o   = Level_max(levset)

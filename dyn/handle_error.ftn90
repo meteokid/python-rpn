@@ -71,13 +71,13 @@ subroutine handle_error(F_errorCode,F_FromSubName,F_Message)
    integer :: errcode,errcode2,errcode3,err
 !   integer, external :: callback_call_ftn
    !---------------------------------------------------------------------
-   call rpn_comm_allreduce(F_errorCode,errcode,1,RPN_COMM_INTEGER,"MPI_MIN",RPN_COMM_WORLD,err)
+   call rpn_comm_allreduce(F_errorCode,errcode,1,RPN_COMM_INTEGER,"MPI_MIN",RPN_COMM_GRID,err)
    if (errcode<STOP_OK) then
       errcode2 = errcode
       if (hasCallBackFn) then
 !         errcode2 = callback_call_ftn(callBackFnNb,errcode)
       endif
-      call rpn_comm_allreduce(errcode2,errcode3,1,RPN_COMM_INTEGER,"MPI_MIN",RPN_COMM_WORLD,err)
+      call rpn_comm_allreduce(errcode2,errcode3,1,RPN_COMM_INTEGER,"MPI_MIN",RPN_COMM_GRID,err)
       if (errcode3<STOP_OK) then
          call stop_mpi(STOP_ERROR,F_FromSubName,F_Message)
       else

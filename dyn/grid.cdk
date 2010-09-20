@@ -38,6 +38,7 @@
 
       integer MAXGRID1
       parameter(MAXGRID1=4)
+      integer Grid_ig1(MAXGRID1),Grid_ig2(MAXGRID1)
       integer Grid_x0(MAXGRID1),Grid_x1(MAXGRID1)
       integer Grid_y0(MAXGRID1),Grid_y1(MAXGRID1)
       integer Grid_id(MAXGRID1), Grid_stride(MAXGRID1)
@@ -50,7 +51,7 @@
       real    Grid_long(*), Grid_latg(*)
       pointer (Grid_long_, Grid_long), (Grid_latg_,Grid_latg)
 
-      COMMON /Grid_i/ Grid_ig3,Grid_ig4,Grid_ip2
+      COMMON /Grid_i/ Grid_ig1,Grid_ig2,Grid_ig3,Grid_ig4,Grid_ip2
       COMMON /Grid_i/ Grid_xmin,Grid_xmax,Grid_ymin,Grid_ymax,Grid_reduc
       COMMON /Grid_i/ Grid_ixg,Grid_sets,Grid_niout,Grid_njout
       COMMON /Grid_i/ Grid_x0,Grid_x1,Grid_y0,Grid_y1

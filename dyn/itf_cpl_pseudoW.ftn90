@@ -1,0 +1,51 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_cpl_pseudoW
+!
+      subroutine itf_cpl_pseudoW (datev, kstep, step, date0, send)
+      implicit none
+!
+      CHARACTER*(*) datev
+      INTEGER kstep, step, date0, send
+!
+!authors    Manon Faucher - Spring 2010
+! 
+!revision
+! v4.13 - Faucher M.      - initial version
+!*
+#include "itf_cpl.cdk"
+!
+      CHARACTER*1024 filename
+      REAL, DIMENSION(:,:,:), allocatable :: buf_busou
+!
+!     ________________________________________________________________
+!
+      filename = '../../output/rom_cpl_in.fst'
+ 
+      if ( ( cpl_comm_s(1:1).eq.'W' )    .or. &
+           ( cpl_comm_s(3:3).eq.'W' ) )  THEN
+
+      call cpl_regrid_L2H (atm_busou , cpl_ni, cpl_nj, n_fldou, 2, &
+                            datev,kstep,step,date0,trim(filename))
+
+      endif
+
+      send = 0
+!
+!     ________________________________________________________________
+!
+      return
+      end

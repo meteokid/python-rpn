@@ -11,7 +11,6 @@
 #include "step.cdk"
 #include "path.cdk"
 #include "init.cdk"
-#include "offc.cdk"
 #include "schm.cdk"
 #include "type.cdk"
 #include "cstv.cdk"
@@ -51,6 +50,7 @@
       namelist /gem_cfgs/ Clim_inincr_L
       namelist /gem_cfgs/ Cori_cornl_L
       namelist /gem_cfgs/ Cstv_dt_8
+      namelist /gem_cfgs/ Cstv_bA_8
       namelist /gem_cfgs/ Cstv_ptop_8
       namelist /gem_cfgs/ Cstv_tstr_8
       namelist /gem_cfgs/ Eigv_parity_L
@@ -93,16 +93,11 @@
       namelist /gem_cfgs/ Lam_runstrt_S
       namelist /gem_cfgs/ Lam_toptt_L
       namelist /gem_cfgs/ Lam_blendoro_L
-      namelist /gem_cfgs/ Lam_cascsfc_L
 !Lctl
       namelist /gem_cfgs/ Lctl_debug_L
       namelist /gem_cfgs/ Lctl_r8stat_L
       namelist /gem_cfgs/ Lctl_reset
       namelist /gem_cfgs/ Level_ip12000_L
-!Off
-      namelist /gem_cfgs/ Offc_b0_8
-      namelist /gem_cfgs/ Offc_b0T_8
-      namelist /gem_cfgs/ Offc_b0w_8
 !Out3
       namelist /gem_cfgs/ Out3_cliph_L
       namelist /gem_cfgs/ Out3_closestep
@@ -166,6 +161,9 @@
       namelist /gem_cfgs/ Step_gstat
       namelist /gem_cfgs/ Step_rsti
       namelist /gem_cfgs/ Step_total
+      namelist /gem_cfgs/ Step_spinphy
+
+      namelist /gem_cfgs/ Schm_Topo_L
 !Vrtd
       namelist /gem_cfgs/ Vrtd_L
       namelist /gem_cfgs/ Vrtd_coef
@@ -198,6 +196,7 @@
       namelist /gem_cfgs_p/ Clim_inincr_L
       namelist /gem_cfgs_p/ Cori_cornl_L
       namelist /gem_cfgs_p/ Cstv_dt_8
+      namelist /gem_cfgs_p/ Cstv_bA_8
       namelist /gem_cfgs_p/ Cstv_ptop_8
       namelist /gem_cfgs_p/ Cstv_tstr_8
       namelist /gem_cfgs_p/ Eigv_parity_L
@@ -238,16 +237,11 @@
       namelist /gem_cfgs_p/ Lam_runstrt_S
       namelist /gem_cfgs_p/ Lam_toptt_L
       namelist /gem_cfgs_p/ Lam_blendoro_L
-      namelist /gem_cfgs_p/ Lam_cascsfc_L
 !Lctl
       namelist /gem_cfgs_p/ Lctl_debug_L
       namelist /gem_cfgs_p/ Lctl_r8stat_L
       namelist /gem_cfgs_p/ Lctl_reset
       namelist /gem_cfgs_p/ Level_ip12000_L
-!Off
-      namelist /gem_cfgs_p/ Offc_b0_8
-      namelist /gem_cfgs_p/ Offc_b0T_8
-      namelist /gem_cfgs_p/ Offc_b0w_8
 !Out3
       namelist /gem_cfgs_p/ Out3_cliph_L
       namelist /gem_cfgs_p/ Out3_closestep
@@ -308,6 +302,7 @@
       namelist /gem_cfgs_p/ Step_gstat
       namelist /gem_cfgs_p/ Step_rsti
       namelist /gem_cfgs_p/ Step_total
+      namelist /gem_cfgs_p/ Step_spinphy
 !Vrtd
       namelist /gem_cfgs_p/ Vrtd_L
       namelist /gem_cfgs_p/ Vrtd_coef

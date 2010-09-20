@@ -229,6 +229,8 @@
 !
          bkup_L = mod( Lctl_step ,Step_bkup ).eq.0
 !
+         if ( Lctl_step.eq.Step_spinphy ) call wrrstrt_phy (.true.)
+!
       end do
 !
       if (F_dgtflt_L.and.(last_step.eq.Init_dfnp-1) &

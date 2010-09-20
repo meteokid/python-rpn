@@ -17,37 +17,31 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine e_gettopo
+      subroutine e_gettopo (topo, ni,nj)
       implicit none
+!
+      integer ni,nj
+      real topo(ni,nj)
 !
 !author M. Desgagne
 !
 !revision
 ! v3_30 - M. Desgagne          - initial version
 ! v4_03 - Spacek/Desgagne      - ISST
+! v4_13 - Desgagne M.          - new interface
 !
-#include "e_topo.cdk"
 #include "e_fu.cdk"
-#include "e_grids.cdk"
 #include "hgc.cdk"
 #include "e_cdate.cdk"
 #include "path.cdk"
-!*
+!
       integer  e_rdhint3,fnom,fstouv,fstfrm,fclos
       external e_rdhint3,fnom,fstouv,fstfrm,fclos
-      integer n,nu,nv,codp1,err
+      integer n,codp1,err
+!
+      real wk(ni,nj)
 !
 !----------------------------------------------------------------------
-!
-      n  = nifi*njfi
-      nu = niu *nju
-      nv = niv *njv
-      allocate (topo (n), topof(n))
-!
-      if ( .not. Topo_init_L ) then
-         topo  = 0.0 ;  topof = 0.0
-         return
-      endif
 !
       e_fu_geophy = 0
       if (fnom  (e_fu_geophy,trim(Path_input_S)//'/GEOPHY' ,'RND+OLD',0).lt.0) stop
@@ -56,19 +50,20 @@
       datev = -1
 
       call convip ( codp1, 0., 3, 1, ' ', .false. )
-      err = e_rdhint3 (topo,dstf_gid,nifi,njfi,'ME',codp1,-1,-1, &
+      err = e_rdhint3 (wk,dstf_gid,ni,nj,'ME',codp1,-1,-1, &
                    ' ','C',.true.,.false.,'CUBIC',e_fu_geophy,6)
       if (err.lt.0) goto 55
 !
-      topo  (:) = max ( 0.0, topo (:) )
+      wk(:,:) = max ( 0.0, wk(:,:) )
 !
-      call e_filtopx (topof , topo , nifi, njfi, 'G')
+      call e_filtopx (topo , wk , ni, nj, 'G')
 !
       err = fstfrm (e_fu_geophy)
       err = fclos  (e_fu_geophy)
 !
       return
  55   call e_arret( 'e_gettopo' )
+!
 !----------------------------------------------------------------------
 !
       return

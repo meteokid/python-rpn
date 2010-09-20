@@ -89,6 +89,8 @@
       real*8  xasinm_8(i0:in,j0:jn), yasinm_8(i0:in,j0:jn)
       real*8  xatanm_8(i0:in,j0:jn), yatanm_8(i0:in,j0:jn), zatanm_8(i0:in,j0:jn)
 *
+      real F_z_m_2
+*
       real *8 r2pi_8, TWO_8
       parameter (TWO_8 = 2.0)
 ************************************************************************
@@ -115,12 +117,13 @@
 *
             xcosm_8(i,j) = F_latm(n)
             suv2m_8(i,j) = sqrt( F_um(n) ** 2 + F_vm(n) ** 2 ) 
-            xsinm_8(i,j) = suv2m_8(i,j) * F_dt
+            xsinm_8(i,j) = sqrt( F_um(n) ** 2 + F_vm(n) ** 2 ) * F_dt
+***         xsinm_8(i,j) = suv2m_8(i,j) * F_dt
          end do
          end do
 *
-         call vcos(ycosm_8,  xcosm_8, vnij)
          call vsin(ysinm_8,  xsinm_8, vnij)
+         call vcos(ycosm_8,  xcosm_8, vnij)
          call vsin(slam_8,   xcosm_8, vnij)
          call vrec(yrecm_8,  ycosm_8, vnij)
 *
@@ -197,7 +200,8 @@
          rsxyzm_8    = 1./sqrt( pduxm_8 * pduxm_8 + pduym_8 * pduym_8 + pduzm_8 * pduzm_8 )
 *
          pdcosalm_8  = sqrt( ( 1.0 + ysinm_8(i,j) ) * ( 1.0 - ysinm_8(i,j) ) )
-         pdsinalm2_8 = ysinm_8(i,j) * rsxyzm_8 
+***      pdsinalm2_8 = ysinm_8(i,j) * rsxyzm_8 
+         pdsinalm2_8 = ysinm_8(i,j) / sqrt( pduxm_8 * pduxm_8 + pduym_8 * pduym_8 + pduzm_8 * pduzm_8 ) 
 *
          rxyzm_8     = 1./( pduxm_8 * pduxm_8 + pduym_8 * pduym_8 + pduzm_8 * pduzm_8 )
 *
@@ -233,13 +237,17 @@
 *        Replace the following line by two IF blocks:
 *        F_zm(n) = min(1.0D0,max(F_zm(n),-1.0D0))
 *
+         F_z_m_2 = min(1.D0,max(1.D0*F_zm(n),-1.D0))
+*
          if ( F_zm(n) .lt. -1.0D0 ) then
-            F_zm(n) = -1.0D0
+***         F_zm(n) = -1.0D0
             F_z (n) =  0.0D0
          elseif ( F_zm(n) .gt.  1.0D0 ) then
-            F_zm(n) =  1.0D0
+***         F_zm(n) =  1.0D0
             F_z (n) =  0.0D0
          endif
+*
+         F_zm(n) = F_z_m_2
 *
          xasinm_8(i,j) = F_zm(n)
          xatanm_8(i,j) = F_xm(n)

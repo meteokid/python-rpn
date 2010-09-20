@@ -68,6 +68,7 @@
       character*6  format_S
       character*4  dumc_S
       integer err, ip2, m, cy, i,ndigits,dat1,dat2
+      integer, save :: last_ip2=-1
 !*
 !     ---------------------------------------------------------------
 !
@@ -117,8 +118,11 @@
          ptmesg_S=' '//string_S(1:longueur(string_S))//' completed during initialization'
          err = cmcwlog('OU',ip2,Out3_etik_S,ptmesg_S)
       else if ( F_code_S .eq. 'FOUT' ) then
-         ptmesg_S = ' '//string_S(1:longueur(string_S))//' completed during forecast'
-         err = cmcwlog('OU',ip2,Out3_etik_S,ptmesg_S)
+         if (ip2 .ne. last_ip2) then !output time increment < prog reports - do not duplicate report
+            ptmesg_S = ' '//string_S(1:longueur(string_S))//' completed during forecast'
+            err = cmcwlog('OU',ip2,Out3_etik_S,ptmesg_S)
+            last_ip2 = ip2
+         endif
       else if ( F_code_S .eq. 'IEND' ) then
          ptmesg_S = ' END OF INITIALIZATION at '//string_S(1:longueur(string_s))
          err = cmcwlog('EN',ip2,Out3_etik_S,ptmesg_S)

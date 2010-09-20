@@ -34,7 +34,7 @@
 !
 #include "glb_ld.cdk"
 #include "itf_phy_buses.cdk"
-#include "v4dg.cdk"
+   include "v4dg.inc"
 !
 !notes
 !
@@ -68,3 +68,4 @@
 !
       return
       end
+

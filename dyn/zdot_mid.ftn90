@@ -44,7 +44,7 @@
 #include "vt0.cdk"
 #include "vt1.cdk"
 #include "vth.cdk"
-#include "offc.cdk"
+#include "cstv.cdk"
 !
       integer i,j,k,i0,in,j0,jn
       real*8  one
@@ -80,7 +80,7 @@
       do k=1,G_nk+1
          do j=j0,jn 
          do i=i0,in
-            zdth(i,j,k) = Offc_b0T_8*zdt0(i,j,k)+(one-Offc_b0T_8)*zdup(i,j,k)
+            zdth(i,j,k) = Cstv_bA_8*zdt0(i,j,k)+(one-Cstv_bA_8)*zdup(i,j,k)
          end do
          end do
       end do

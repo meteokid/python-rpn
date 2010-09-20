@@ -10,15 +10,14 @@
 ! v2_31 - Tanguay M.        - adapt for tracers in tr3d
 ! v3_03 - Tanguay M.        - Adjoint NoHyd configuration
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
-! v4_11 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
-! v4_12 - Tanguay M.        - Adapt to revised vt1
+! v4_XX - Tanguay M.        - VMM replacement with GMM for (TL/AD)
 !
 !object
 !     Equivalent to comdeck vt1 for TRAJECTORY
 !
 !______________________________________________________________________
 !                                                                      |
-!  GMM variables at TIME t1 (t0-dt) (TRAJECTORY)                       |
+!  TRAJ of VMM variables at TIME t1 (t0-dt)                            |
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |

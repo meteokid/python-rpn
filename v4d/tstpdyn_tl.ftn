@@ -40,6 +40,7 @@
 * v3_30 - Tanguay M.        - add parameter iln in sol_main 
 * v4_12 - Tanguay M.        - Open top TL/AD
 * v4_12 - Tanguay M.        - TL/AD Thermo upstream positions
+* v4_XX - Tanguay M.        - Adjustments GEM413
 *
 *object
 *     see id section
@@ -60,8 +61,6 @@
 #include "vtopo.cdk"
 #include "nl_m.cdk"
 #include "step.cdk"
-*
-*modules
 *
       integer iln, dim, dimt, dimb, err
 *
@@ -85,7 +84,7 @@
       call v4d_rwtraj (3)
       call v4d_rwtraj (4)
 *
-      call adw_main_tl (F_fnitraj, isStatStep_L)
+      call itf_adw_main_tl (F_fnitraj,isStatStep_L)
 *
       call pre_tl ()
 *
@@ -177,7 +176,7 @@
      + 3X,'TLM of PERFORM A DYNAMICAL STEP: (S/R TSTPDYN_TL)',
      +/3X,'================================================',/)
  1005 format(
-     $3X,'TLM of ITERATING SCHM_ITNLH=',I3,' TIMES TO SOLVE NON-LINEAR '
+     $3X,'TLM of ITERATING SCHM_ITNLH=',I3,' TIMES TO SOLVE NON-LINEAR ',
      $   'HELMHOLTZ PROBLEM')
       return
       end

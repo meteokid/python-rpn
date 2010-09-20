@@ -17,15 +17,15 @@
 !--------------------|-------------------------------------------------|
 !
       character*16 Lam_runstrt_S,Lam_current_S,Lam_hint_S,Lam_previous_S,Lam_blend_H_func_S
-      logical Lam_ctebcs_L, Lam_busper_init_L, Lam_toptt_L
-      logical Lam_0ptend_L, Lam_blendoro_L   , Lam_cascsfc_L, Lam_wgt0
+      logical Lam_ctebcs_L, Lam_toptt_L
+      logical Lam_0ptend_L, Lam_blendoro_L   , Lam_wgt0
       integer Lam_blend_H ,  Lam_gbpil_T, Lam_blend_T 
       integer Lam_blend_Hx, Lam_blend_Hy, Lam_nesdt
       real*8  Lam_tdeb    , Lam_tfin
 !
       common /lam_s/  Lam_runstrt_S, Lam_current_S, Lam_hint_S, Lam_previous_S,Lam_blend_H_func_S
-      common /lam_l/  Lam_ctebcs_L , Lam_busper_init_L, Lam_toptt_L
-      common /lam_l/  Lam_0ptend_L , Lam_blendoro_L   , Lam_cascsfc_L, Lam_wgt0
+      common /lam_l/  Lam_ctebcs_L , Lam_toptt_L
+      common /lam_l/  Lam_0ptend_L , Lam_blendoro_L   , Lam_wgt0
       common /lam_i/  Lam_blend_H ,  Lam_gbpil_T, Lam_blend_T 
       common /lam_i/  Lam_blend_Hx, Lam_blend_Hy, Lam_nesdt
       common /lam_r8/ Lam_tdeb, Lam_tfin

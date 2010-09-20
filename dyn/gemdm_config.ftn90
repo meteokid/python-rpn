@@ -16,6 +16,7 @@
 !**s/r gemdm_config - Establish final model configuration
 !
 #include "model_macros_f.h"
+#include "msg.h"
 !
       integer function gemdm_config ( )
       implicit none
@@ -254,6 +255,8 @@
       Schm_opentop_L  = .false.
       if (Lam_blend_T > 0 .or. Lam_gbpil_T > 0) Schm_opentop_L = .true.
 !
+      if (Lctl_debug_L) call msg_set_minMessageLevel(MSG_DEBUG)
+
       gemdm_config = 1
 !
  6005 format (/' Starting time Mod_runstrt_S not specified'/)

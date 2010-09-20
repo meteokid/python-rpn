@@ -137,6 +137,13 @@
             C_coupling_L= mgi_write(W_chan, C_coupling_L, 1, "I" ).eq.0
          endif        
 
+         if ( s_send(3)(1:7) == "PSEUDO_" ) THEN
+            cpl_comm_s = s_send(3)(8:10)
+            cpl_status_L=.true.
+         ELSE
+            cpl_comm_s = '!#@$%&'
+         ENDIF
+
          write (6,8800) CPL_NAME(1:20), C_coupling_L, Rstri_rstn_L, &
                      trim(othermodelname(1)), cpl_status_L, oce_hotstart
 !
