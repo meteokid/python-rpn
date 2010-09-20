@@ -266,21 +266,10 @@
 !
 ! Non BMF output
          if (.not.Pil_bmf_L) then
-         if (Pil_bcs_hollow_L) then
-             call e_write_bcs (uun,nisu,njsu, &
-              e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-              e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-              lv, 'UU  ',unf_casc)
-             call e_write_bcs (vvn,nisv,njsv, &
-              e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-              e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-              lv, 'VV  ',unf_casc)             
-         else
-             call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
-             call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
-         endif
-         deallocate (uun,vvn,uu,vv,vw,uw,w1,w2)
-         return
+            call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
+            call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
+            deallocate (uun,vvn,uu,vv,vw,uw,w1,w2)
+            return
          endif
 !
         if (Anal_ecmwf_L) then

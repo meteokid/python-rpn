@@ -13,34 +13,37 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r itf_chm_vmmprep - load all fields required by the chemistry
+!**s/r acid_solver
 !
 #include "model_macros_f.h"
 !
-      subroutine itf_chm_vmmprep(P_trp,P_trm,DIST_DIM,Nk)
+      subroutine acid_solver
       implicit none
 !
-      integer DIST_DIM,Nk
-      integer*8  P_trp(*), P_trm(*)
-!
 !author 
-!     A. Kallaur - arqi - june 2005
+!     Michel Desgagne  -  Fevrier 2010
 !
 !revision
-! v3_30 - Kallaur A.       - initial version
-!
-!object
-!
-!arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! P_trp         O                  Pointers to tracer fields at time t+
-! P_trm         O                  Pointers to tracer fields at time t-
-!----------------------------------------------------------------
+! v4_13 - Desgagne M.       - initial version
 !
 !implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "nl.cdk"
+#include "vtx.cdk"
 !
-	stop 'itf_chm_vmmprep'
+!     ---------------------------------------------------------------
+!
+      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
+
+      call sol_from_file ( fiptx,LDIST_DIM,0,l_nk+1 )
+      call sol_from_file ( nl_u ,LDIST_DIM,1,l_nk  )
+      call sol_from_file ( nl_v ,LDIST_DIM,1,l_nk  )
+!
+!     ---------------------------------------------------------------
+!
       return
       end
+
 

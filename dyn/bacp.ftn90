@@ -57,6 +57,8 @@
 ! v3_21 - Desgagne M.       - Revision Openmp
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard            - Open top
+! v4_14 - Plante & Desgagne - Lam acid test with top piloting (lid nesting)
+!       - Girard & Plante   - PIOR
 !
 !object
 !     see documentation in s/r bac.
@@ -125,16 +127,17 @@
 #include "schm.cdk"
 #include "ptopo.cdk"
 #include "acid.cdk"
-!      common/xiln/iln
-!      integer iln
+#include "lam.cdk"
 !
       integer i, j, k, nij, kminzd
-      real*8  zero, one, xxx, yyy, zzz, p1, p2, p3, p4, p5
+      real*8  zero, one, xxx, yyy, zzz, p1, p2, p3, p4, pr0_8, qbar
       parameter( zero=0.d0, one=1.d0 )
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real*8 Pbar(DIST_SHAPE,Nk+1)
       logical finbac
 !*
+      pr0_8=zero
+      if(Schm_pior_L) pr0_8=one
       finbac=.false.
       if ( .not. (F_itr .lt. F_itnlh) )finbac=.true.
 !     __________________________________________________________________
@@ -149,9 +152,8 @@
       p2 = one/Cstv_RTstr_8
       p3 = one/Dcst_grav_8
       p4 = one/Dcst_rayt_8**2  
-      p5 = one/Cstv_tau_8
 !
-!$omp parallel private(xxx,yyy,zzz,xtmp_8,ytmp_8)
+!$omp parallel private(xxx,yyy,zzz,qbar,xtmp_8,ytmp_8,kminzd)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -159,10 +161,12 @@
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_p(i,j,k0-1)   = Ver_alfat_8 * F_p(i,j,k0) &
-                         + Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
-         F_p(i,j,l_nk+1) = Ver_alfas_8 * F_p(i,j,l_nk)  &
-                         - Ver_css_8*(F_rt(i,j,l_nk+1)-F_nt(i,j,l_nk+1)) 
+         if ( .not.(Lam_acidtest_L.and.Schm_opentop_L) ) then
+            F_p(i,j,k0-1) = Ver_alfat_8 * F_p(i,j,k0) &
+                          + Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
+         endif
+         F_p(i,j,l_nk+1)  = Ver_alfas_8 * F_p(i,j,l_nk)  &
+                          - Ver_css_8*(F_rt(i,j,l_nk+1)-F_nt(i,j,l_nk+1)) 
       end do
       end do
 !$omp enddo
@@ -231,7 +235,7 @@
 !
          if (Schm_opentop_L) then
             do j= j0, jn
-            do i= i0, in
+            do i= i0, in               
                F_q(i,j,k0-1)=F_nest_q(i,j,k0-1)
             end do
             end do
@@ -240,17 +244,21 @@
 !        Note : we cannot use omp on loop k 
 !               due to vertical dependency F_q(i,j,k-1)
          do k=k0,l_nk+1
-            xxx = p3*Ver_dz_8%t(k)
+            zzz = one/(one+pr0_8*Ver_wp_8%t(k)*Ver_dz_8%t(k))
+            yyy = (one-pr0_8*Ver_wm_8%t(k)*Ver_dz_8%t(k))*zzz
+            xxx = p3*Ver_dz_8%t(k)*zzz
 !$omp do
             do j= j0, jn
             do i= i0, in
-               F_q(i,j,k) = F_q(i,j,k-1) &
-                          - xxx *( F_rw(i,j,k) - F_nw(i,j,k) &
-                                 - p5 *F_w(i,j,k)  )
+               F_q(i,j,k) = yyy * F_q(i,j,k-1) &
+                          - xxx * ( F_rw(i,j,k) - F_nw(i,j,k) &
+                                  - Cstv_invT_8 *F_w(i,j,k)  )
             end do
             end do
 !$omp enddo
          end do
+!
+         if (Lam_acidtest_L) call sol_from_file (F_q,DIST_DIM,0,l_nk+1 )         
 !
       endif
 !
@@ -293,7 +301,7 @@
          do k=kminzd,l_nk
             xxx=Ver_gokt2RT_8*Ver_idz_8%t(k)
             yyy=Ver_gokt2RT_8*Ver_epsilon_8
-            zzz=Ver_b_8%t(k)*p5
+            zzz=Ver_b_8%t(k)*Cstv_invT_8
             if(Schm_autobar_L) zzz=0.d0
             do j= j0, jn 
             do i= i0, in 
@@ -311,8 +319,8 @@
             do k=kminzd,l_nk
                do j= j0, jn 
                do i= i0, in 
-                  F_zd(i,j,k)=F_zd(i,j,k)-p5* &
-                   (Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
+                  qbar=(Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
+                  F_zd(i,j,k)=F_zd(i,j,k)-Cstv_invT_8*qbar
                enddo
                enddo
             enddo
@@ -362,13 +370,28 @@
       if(.not.Schm_autobar_L) then            ! safer for autobar
 !$omp do
       do k=k0,l_nk+1
-         xxx=p2*Ver_idz_8%t(k)
-         do j= j0, jn 
-         do i= i0, in          
-            xtmp_8(i,j)=one+Ver_dbdz_8%t(k)*F_s(i,j)
-         enddo
-         enddo
+         if(.not.Schm_hydro_L.and.Schm_pior_L) then
+            do j= j0, jn
+            do i= i0, in
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
+               ytmp_8(i,j)=-qbar
+            enddo
+            enddo
+            call vexp( xtmp_8, ytmp_8, nij )
+            do j= j0, jn 
+            do i= i0, in          
+               xtmp_8(i,j)=xtmp_8(i,j)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
+            enddo
+            enddo
+         else
+            do j= j0, jn
+            do i= i0, in
+               xtmp_8(i,j)=one+Ver_dbdz_8%t(k)*F_s(i,j)
+            enddo
+            enddo
+         endif
          call vrec ( ytmp_8, xtmp_8, nij )
+         xxx=p2*Ver_idz_8%t(k)
          do j= j0, jn 
          do i= i0, in          
             F_t(i,j,k)=Cstv_Tstr_8*ytmp_8(i,j) &
@@ -380,6 +403,9 @@
       endif
 !
       if(Schm_opentop_L) then
+!     Note for Lam_acidtest_L: F_fip will not validate for levels k0-1 to 1 if
+!                              physics is not called but rest of model will validate
+!                              
 !$omp do 
          do j=j0,jn
             do k= k0-1,1,-1

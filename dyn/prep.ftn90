@@ -78,7 +78,7 @@
 !modules
       integer i, j, k, i0, j0, k0, in, inu, jn, jnv
       real*8  x, y, z, cx, cy, cz, rx, ry, rz, mumu, tot, &
-              a1,a2,a3,a4,b1,b2,b4,b5,zero,one,four,xxx,yyy,zzz
+              a1,a2,a3,a4,b1,b2,b3,b4,zero,one,four,xxx,yyy,zzz
       real    rdiv            , Ttop(DIST_SHAPE), w_rt
 !
       parameter( zero=0.d0, one=1.d0, four=4.d0 )
@@ -255,8 +255,8 @@
 !
       b1 = one / ( Dcst_grav_8 * Cstv_tau_8 )
       b2 = Ver_gamma_8 / ( Dcst_cappa_8 * Cstv_tau_8 )
-      b4 = one / ( Dcst_cappa_8 * Cstv_tau_8 )
-      b5 = one / ( Dcst_cappa_8 * Cstv_tau_8*Cstv_tau_8*Cstv_Tstr_8 )
+      b3 = one / ( Dcst_cappa_8 * Cstv_tau_8 )
+      b4 = one / ( Dcst_cappa_8 * Cstv_tau_8*Cstv_tau_8*Cstv_Tstr_8 )
 !
       call rpn_comm_xch_halo( F_ru, LDIST_DIM,l_niu,l_nj,G_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 ) 
@@ -361,7 +361,7 @@
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_rb(i,j       ) = F_rt(i,j,k0    ) - b4*F_rb(i,j) + b5*Ttop(i,j)
+         F_rb(i,j       ) = F_rt(i,j,k0    ) - b3*F_rb(i,j) + b4*Ttop(i,j)
          F_rc(i,j,k0    ) = F_rc(i,j,k0    ) - Ver_cstp_8 * F_rb(i,j)
          F_rt(i,j,l_nk+1) = F_rt(i,j,l_nk+1) - a3 * F_fis(i,j)
          F_rc(i,j,l_nk  ) = F_rc(i,j,l_nk  ) + Ver_cssp_8 * F_rt(i,j,l_nk+1)

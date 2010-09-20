@@ -37,7 +37,7 @@
 !
 #include "vinterpo.cdk"
 !
-      integer i,k,kz,kc,kk
+      integer i,k,kz,kc,kk,ktopp,kbott
       real*8 capz,e1
 !-------------------------------------------------------------------
 !
@@ -75,16 +75,20 @@
             ktop(i,k) = nkref
             kbot(i,k) = 1
          end do
-         do kk=1,nkref/2
-            do i=1,ng
-               kc = ktop(i,k)+kbot(i,k)
+         do i=1,ng
+            ktopp=ktop(i,k)
+            kbott=kbot(i,k)
+            do kk=1,nkref/2
+               kc = ktopp+kbott
                kc = ishft(kc,-1)
                if (h(i,kc).gt.hint(i,k)) then
-                  ktop(i,k) = kc
+                  ktopp = kc
                else
-                  kbot(i,k) = kc
+                  kbott = kc
                endif
             end do
+            ktop(i,k)=ktopp
+            kbot(i,k)=kbott
          end do
          do i=1,ng
             if (hint(i,k).ge.h(i,nkref)) kbot(i,k) = nkref
@@ -92,12 +96,16 @@
          end do
          do i=1,ng
             kz = kbot(i,k) 
-            capz=   max(0., ( hint(i,k   ) - h(i,kz) ) ) /  &
+            if (kz.eq.nkref) then
+                capz = 0.0
+                p(i,k,1) = float(kz)
+            else
+                capz=   max(0., ( hint(i,k   ) - h(i,kz) ) ) /  &
                             (    h(i,kz+1) - h(i,kz) )
-            if (kz.eq.nkref) capz = 0.
-            p(i,k,1) = float(kz) + capz
+                p(i,k,1) = float(kz) + capz
+            endif
+            if (kz.lt.2.or.(kz.ge.nkref-1)) capz=0.0
             e1   = capz - 1.
-            if ((kz.lt.2).or.(kz.ge.nkref-1)) capz = 0.
             p(i,k,2)= capz * e1 * ( h(i,kz+1) - h(i,kz  ) )**2./ &
                                   ( h(i,kz+2) - h(i,kz-1) )
          end do

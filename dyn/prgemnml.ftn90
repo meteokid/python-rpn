@@ -26,7 +26,6 @@
 
       print *,'creating gemdict.nml'
       open (6,file="gemdict.nml",access='SEQUENTIAL',form='FORMATTED')
-      call nml_ptopo()
       call nml_grid()
       call nml_adw()
       call nml_gem()
@@ -39,13 +38,6 @@
       return
 !      
 !-------------------------------------------------------------------
-      end
-!
-      subroutine nml_ptopo()
-      implicit none
-#include "ptopo.cdk"
-      write (6  ,nml=ptopo)
-      return
       end
 !
       subroutine nml_grid()

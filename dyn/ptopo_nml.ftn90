@@ -47,7 +47,7 @@
 !
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          ptopo_nml = 0
-         write (6  ,nml=ptopo)
+         write (6  ,nml=resources)
          return
       endif
 !
@@ -64,7 +64,7 @@
       unf=0
       if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
          rewind(unf)
-         read (unf, nml=ptopo, end=7110, err=9110)
+         read (unf, nml=resources, end=7110, err=9110)
  7110    if (Ptopo_nblocx.le.0 .or. Ptopo_nblocy.le.0) then
             Ptopo_nblocx = Ptopo_npex
             Ptopo_nblocy = Ptopo_npey
@@ -82,7 +82,7 @@
 !
  9220 write (6, 8155) trim( F_namelistf_S )
 !
- 8150 format (/,' NAMELIST ptopo    INVALID IN FILE: ',a)
+ 8150 format (/,' NAMELIST resources    INVALID IN FILE: ',a)
  8155 format (/,' FILE: ',a,' NOT AVAILABLE')
 !
 !-------------------------------------------------------------------

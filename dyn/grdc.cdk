@@ -4,7 +4,7 @@
       character*4 Grdc_trnm_S(max_trnm)
       character*12 Grdc_nfe
       character*16 Grdc_runstrt_S,Grdc_runend_S
-      logical Grdc_bcs_hollow_L,Grdc_initphy_L
+      logical Grdc_initphy_L
       integer Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id
       integer Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_gjdi
       integer Grd_ig1c,Grd_ig2c,Grd_ig3c,Grd_ig4c,Grdc_extension
@@ -16,7 +16,7 @@
 !
       common / Grdc_c / Grdc_proj_S,Grdc_trnm_S,Grdc_nfe
       common / Grdc_c / Grdc_runstrt_S,Grdc_runend_S
-      common / Grdc_l / Grdc_bcs_hollow_L,Grdc_initphy_L
+      common / Grdc_l / Grdc_initphy_L
       common / Grdc_i / Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id
       common / Grdc_i / Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt
       common / Grdc_i / Grdc_gjdi,Grdc_extension

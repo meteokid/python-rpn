@@ -41,7 +41,7 @@
       logical itf_phy_busper_init_L
       integer p_bdyn_top,p_bper_top,p_bvol_top,p_bent_top
       integer p_bdyn_siz,p_bper_siz,p_bvol_siz,p_bent_siz
-      integer p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj
+      integer p_bphy_top,p_ni,p_nj,p_offi,p_offj,p_doni,p_donj
       integer p_bdyn_out,p_bper_out,p_bvol_out,p_bent_out
       integer p_bent_idx(maxbus),p_bper_idx(maxbus)
       integer p_bdyn_idx(maxbus),p_bvol_idx(maxbus)
@@ -50,7 +50,8 @@
 !
       common / p_bus / p_bdyn_top,p_bper_top,p_bvol_top,p_bent_top
       common / p_bus / p_bdyn_siz,p_bper_siz,p_bvol_siz,p_bent_siz
-      common / p_bus / p_bphy_top,p_nmp,p_ni,p_nj,p_offi,p_offj
+      common / p_bus / p_bphy_top,p_ni,p_nj,p_offi,p_offj
+      common / p_bus / p_doni,p_donj
       common / p_bus / p_bdyn_out,p_bper_out,p_bvol_out,p_bent_out
       common / p_bus / entpar,dynpar,perpar,volpar
       common / p_bus / p_bent_idx,p_bper_idx
@@ -68,7 +69,8 @@
       common /busdync/ enton, dynon, peron, volon,p_outbus_s
 !
       real, dimension(:), pointer :: Phy_busper3D, Phy_busper3D_digf
-      common/ Phy_busper /   Phy_busper3D, Phy_busper3D_digf
+      real, dimension(:), pointer :: Phy_busdyn3D, Phy_busvol3D
+      common/ Phy_busper /   Phy_busper3D, Phy_busper3D_digf, Phy_busdyn3D, Phy_busvol3D
 !
       integer MAXGEO
       parameter (MAXGEO=1000)
@@ -82,5 +84,5 @@
       real, dimension(:), pointer ::  geobus, geofld
       common /busgeor/ geobus, geofld
 !
-      real, dimension (:,:,:,:), pointer :: phy_buffer, phy_tend
-      common /phybuf/ phy_buffer, phy_tend
+      real, dimension (:,:,:,:), pointer :: phy_tend
+      common /phybuf/  phy_tend

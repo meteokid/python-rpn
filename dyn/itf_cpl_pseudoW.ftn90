@@ -27,19 +27,21 @@
 ! v4.13 - Faucher M.      - initial version
 !*
 #include "itf_cpl.cdk"
+#include "out.cdk"
 !
       CHARACTER*1024 filename
       REAL, DIMENSION(:,:,:), allocatable :: buf_busou
 !
 !     ________________________________________________________________
 !
-      filename = '../../output/rom_cpl_in.fst'
+      filename  = trim(Out_dirname_S)//'/rom_cpl_in.fst'
  
       if ( ( cpl_comm_s(1:1).eq.'W' )    .or. &
            ( cpl_comm_s(3:3).eq.'W' ) )  THEN
 
-      call cpl_regrid_L2H (atm_busou , cpl_ni, cpl_nj, n_fldou, 2, &
+         call cpl_regrid_L2H (atm_busou , cpl_ni, cpl_nj, n_fldou, 2, &
                             datev,kstep,step,date0,trim(filename))
+         Out_diruse_L = .true.
 
       endif
 

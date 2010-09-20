@@ -59,7 +59,10 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( .not. Schm_phyms_L ) return
+      if ( .not. Schm_phyms_L ) then
+         call dummy_diag ()
+         return
+      endif
 
       call tmg_start0( 9, 'PHY      ' )
 

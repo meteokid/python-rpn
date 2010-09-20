@@ -84,7 +84,7 @@
 !
       unf = 0
       if (wkoffit(filename) .gt. -1 ) then
-      if (fnom  (unf,filename,'RND+OLD',0).lt.0) then
+      if (fnom  (unf,filename,'RND+OLD+R/O',0).lt.0) then
          write (6,2001) trim(filename)
          stop
       endif
@@ -92,6 +92,7 @@
          write (6,2002) trim(filename)
          stop
       endif
+      write (6,2003) trim(filename),unf
 !
       key = fstinf (unf, ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','UU' )
       if ( key .lt. 0 ) then
@@ -129,6 +130,7 @@
  1003 format (/' INITIAL CONDITION VALIDITY TIME= ',a)
  2001 format (/' ABORT in e_dateo:  Trying to open file ',a)
  2002 format (/' ABORT in e_dateo:  File ',a,' not RND')
+ 2003 format (/' E_DATEO:  file ',a,' open on unit: ',i)
 !
 ! ---------------------------------------------------------------------
 !

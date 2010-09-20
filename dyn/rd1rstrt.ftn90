@@ -43,9 +43,7 @@
 #include "itf_cpl.cdk"
 #include "glb_ld.cdk"
 #include "lam.cdk"
-#include "itf_chm_bus.cdk"
 #include "ptopo.cdk"
-#include "bcsmem.cdk"
 #include "cstv.cdk"
 !
 !modules
@@ -53,11 +51,10 @@
       external fnom, fclos, wkoffit
 !
       integer      r,j,v,err, check_flag, current_nest
-      integer      pos_3D,   pos_cube, cpl_step, chm_step
+      integer      pos_3D,   pos_cube, cpl_step
       integer      ni,nj ,   nir,njr , rowsr, nbr_cpl
       integer      pperpar(   maxbus), prows,   p_bper_topr
-      integer      cperpar(chmmaxbus), crows, chm_bper_topr
-      character*16 ppernm (   maxbus), cpernm(chmmaxbus)
+      character*16 ppernm (   maxbus)
 !
       real, dimension (:), allocatable :: Phy_busper_cube
       real, dimension (:), allocatable :: Phy_busper_cube_digf
@@ -66,11 +63,6 @@
 !
       real, dimension (:), allocatable :: Cpl_rga_cpl2phy
       real, dimension (:), allocatable :: Cpl_rla_msk
-
-      real, dimension (:), allocatable :: Chm_busper_cube
-      real, dimension (:), allocatable :: Chm_busper_glb
-!
-!CC   real, dimension (:), allocatable :: BCS_glb
 !
 !     ---------------------------------------------------------------
 !
@@ -80,11 +72,9 @@
       end if
 !
       prows   = 0
-      crows   = 0
       nbr_cpl = 0
 !
       if (  p_ni.gt.0) prows =   p_bper_siz /   p_ni
-      if (chm_ni.gt.0) crows = chm_bper_siz / chm_ni
 !
 !     Read global cubes of size ni * nj * (c/p)rows
 !
@@ -250,100 +240,8 @@
 !
       end if
 !
-!     Check for a possible chemistry restart
-!
-      check_flag = 0
-!
-      if (Schm_chems_L      .and. &
-          Ptopo_myproc.eq.0 .and. &
-          wkoffit('../restart_glbchm.bin').eq. 10) then
-!
-         Lun_rstrt = 0
-         err = fnom( Lun_rstrt,'../restart_glbchm.bin','SEQ+UNF+OLD',0)
-!
-         read (Lun_rstrt,err=916,end=916) chm_step
-         if (chm_step.ne.Lctl_step) &
-            write(6,1004) 'chemistry',chm_step,Lctl_step
-!
-!        Read chemistry permanent bus
-!
-         read (Lun_rstrt,err=917,end=917) rowsr, nir, njr, chm_bper_topr
-         read (Lun_rstrt,err=918,end=918) cpernm (1:chm_bper_topr)
-         read (Lun_rstrt,err=919,end=919) cperpar(1:chm_bper_topr)
-!
-!        Check if the fields to read have the right size
-!
-         if (chm_bper_topr .ne. chm_bper_top .or. &
-             rowsr         .ne. crows        .or. &
-             nir           .ne. ni           .or. &
-             njr           .ne. nj          ) then
-            write (6,1001) nir, njr, rowsr, ni, nj, crows
-            check_flag = -20
-         end if
-!
-!        Check if the fields to read have the right name
-!        and the right number of levels
-!
-         do v=1,chm_bper_top
-            if (cpernm(v).ne.chmpernm(v)) then
-               write (6,1002) 'CHEMISTRY'
-               check_flag = -21
-            end if
-            if (cperpar(v).ne.chmperpar(v,1)/chm_ni) then
-               write (6,1003)
-               check_flag = -22
-            end if
-         enddo
-!
-         if (check_flag.lt.0) goto 200
-!
-         allocate ( Chm_busper_glb (crows*ni*nj) )
-         read (Lun_rstrt,err=923,end=923) Chm_busper_glb
-!
-         err = fclos( Lun_rstrt )
-!
-         goto 200
- 916     check_flag = -16
-         goto 200
- 917     check_flag = -17
-         goto 200
- 918     check_flag = -18
-         goto 200
- 919     check_flag = -19
-         goto 200
- 923     check_flag = -23
-!
-      end if
-!
  200  call RPN_COMM_bcast (check_flag,1,"MPI_INTEGER",0,"grid",err)
       call handle_error(check_flag,'rd1rstrt','RD1RSTRT- ABORT -')
-!
-      if (Schm_chems_L) then
-!
-         allocate ( Chm_busper_cube (Chm_bper_siz*chm_nj) )
-         call glbdist (Chm_busper_glb,ni,nj, &
-                       Chm_busper_cube,1,Chm_ni,1,Chm_nj,crows,0,0)
-!
-         if (Ptopo_myproc.eq.0) deallocate (Chm_busper_glb)
-!
-!        Regroup variables in Chm_busper_cube from cubes per variable to slabs
-!     
-         if ( .not. associated ( Chm_busper3D ) )  &
-                    allocate   ( Chm_busper3D (Chm_bper_siz*chm_nj) )
-!
-         pos_cube = 1
-         do r=1,crows
-            do j=1,chm_nj
-               pos_3D   = (j-1)*chm_bper_siz + (r-1)*chm_ni + 1
-               Chm_busper3D    (pos_3D  :pos_3D  +chm_ni-1) =  &
-               Chm_busper_cube (pos_cube:pos_cube+chm_ni-1)
-               pos_cube       = pos_cube         +chm_ni
-            enddo
-         enddo
-!
-         deallocate (Chm_busper_cube)
-!
-      end if
 !
 !     Check for possible coupling information
 !

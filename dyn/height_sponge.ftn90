@@ -44,7 +44,7 @@
 #include "mtn.cdk"
 #include "p_geof.cdk"
 #include "geomg.cdk"
-#include "ptopo.cdk"
+#include "theo.cdk"
 !
 !
       integer err,i,j,k, longueur
@@ -54,7 +54,7 @@
       real fi_t(LDIST_SHAPE,l_nk+1)
 
 !----------------------------------------------------------------------
-!
+ 
       gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(ut1)'
       gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
@@ -71,22 +71,23 @@
       else
          nullify(qt1)
       endif
-!
+ 
       call set_betav(betav_m,betav_t,st1,LDIST_DIM,l_nk)
 
       ubar=mtn_flo/Dcst_rayt_8
 
-      call apply(ut1  ,ubar,betav_m,LDIST_DIM, l_nk)
-      call apply(vt1  ,0.  ,betav_m,LDIST_DIM, l_nk)
+      if(Theo_case_S .ne. 'MTN_SCHAR' ) then
+         call apply(ut1  ,ubar,betav_m,LDIST_DIM, l_nk)
+         call apply(vt1  ,0.  ,betav_m,LDIST_DIM, l_nk)
+         if(.not.Schm_hydro_L) then
+            call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM, l_nk)
+         endif
+         if(Zblen_spngtt_L)then
+            call apply_tt(tt1,betav_t,st1,LDIST_DIM, l_nk)
+         endif
+      endif
       call apply(wt1  ,0.  ,betav_t,LDIST_DIM, l_nk+1)
-      if(.not.Schm_hydro_L) then
-         call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM, l_nk)
-      endif
-      if(Zblen_spngtt_L)then
-         call apply_tt(tt1,betav_t,st1,LDIST_DIM, l_nk)
-      endif
-!
-!
+ 
 !----------------------------------------------------------------------
       return
       end

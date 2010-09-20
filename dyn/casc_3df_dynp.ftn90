@@ -13,23 +13,25 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r casc_3df_dynp - Reads self-nested 3DF pilot files where
-!                      3DF01 files were written after advection and
-!                      3DF02 files were written after physics by
-!                      the previous driving model.
+!**s/r casc_3df_dynp2 - Reads 3DF pilot files where
+!                       3DF01 files were written after advection and
+!                       3DF02 files were written after physics by
+!                       the previous driving model.
 !
 #include "model_macros_f.h"
 !
-      subroutine casc_3df_dynp(F_u, F_v, F_w, F_t, F_zd, F_s, F_fiptx, F_topo, F_q, F_dtopo,  &
-                               Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf)
+      subroutine casc_3df_dynp2 ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, F_dtopo,  &
+                                  Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf,F_datev)
+      use nest_blending, only: nest_blend
       implicit none
 !
+      character* (*) F_datev
       integer Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf
-      real F_u (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*), &
-           F_w (Mminx:Mmaxx,Mminy:Mmaxy,*), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), &
-           F_zd(Mminx:Mmaxx,Mminy:Mmaxy,*), F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), &
-           F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*), F_topo (Mminx:Mmaxx,Mminy:Mmaxy), &
-           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,0:*), F_dtopo(Mminx:Mmaxx,Mminy:Mmaxy)
+      real F_u (Mminx:Mmaxx,Mminy:Mmaxy,  *), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*), &
+           F_w (Mminx:Mmaxx,Mminy:Mmaxy,  *), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), &
+           F_zd(Mminx:Mmaxx,Mminy:Mmaxy,  *), F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), &
+           F_q (Mminx:Mmaxx,Mminy:Mmaxy,0:*),                                 &
+           F_topo (Mminx:Mmaxx,Mminy:Mmaxy) , F_dtopo(Mminx:Mmaxx,Mminy:Mmaxy)
 !
 !author
 !     M. Desgagne  April 2006 (MC2 casc_3df_dynp)
@@ -47,9 +49,7 @@
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
-#include "bcsdim.cdk"
 #include "bcsgrds.cdk"
-#include "bcsmem.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "ifd.cdk"
@@ -80,40 +80,37 @@
 !        ?   5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
 !            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
 !
-      integer  sid3df,get_topo
-      external sid3df,get_topo
+      integer  sid3df
+      external sid3df
 !
       character*2  md
       character*4  nomvar
-      character*8  dynophy,vn
+      character*8  dynophy,vn,hint
       character*8, dimension (:), pointer :: trname_a
       character*4, dimension (:), pointer :: phynm
       character*15 datev
       character*256 fn
       logical done,dyn_done,phy_done,same_topo_L,temp_same_L,flag
-      logical dyn_init,phy_init
+      logical dyn_init,phy_init,initial_data
       integer i,j,k,jj,jjj,kk,nia,nja,nk0,nka_m,nka_t,ntra,ntra_tmp, &
               ni1,nj1,nk1,n,err,presstype,nbits, &
-              errop,ofi,ofj,l_in,l_jn,mode,nvar, vmmnvar, &
+              errop,ofi,ofj,l_in,l_jn,nvar, vmmnvar, &
               cnt,nkphy,errdyn,errphy,cumerr,pid,gid,nfphy, &
               wowp,nij,ijk
 
       integer i0,in,j0,jn,ni2,nj2
       integer idd,jdo,mult,shp,bigk,offbb,offbo,offg,ng,nga
-      integer, dimension (:  ), pointer :: idx,idu,idy,nks
+      integer, dimension (:  ), pointer :: idx,idy,nks
       real topo_temp(l_ni,l_nj), xi,xf,yi,yf,htopa, &
            psmin, psmax, psmin_glob, psmax_glob, pr1,pr2
       real  , dimension (:  ), pointer :: phybr
       real*8, dimension (:  ), pointer ::  &
                     xpaq,ypaq,xpau,ypav,xpuu,ypvv, &
-                    cxa,cxb,cxc,cxd,cua,cub,cuc,cud,cya,cyb,cyc,cyd
+                    cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd
 !
-      real, dimension (:,:), pointer :: uun,vvn,zdn,ttn, &
+      real, dimension (:,:), pointer :: uun,vvn,zdn,ttn,   &
                                         ssqn,meqn,qqn,wwn, &
-                                        meqr, &
-                                        topo_temp1, &
-                                        ssq0,ssu0,ssv0, &
-                                        phybn,ss1
+                                        meqr, topo_temp1, phybn, ss1
 !
       real, dimension (:,:,:  ), pointer :: uu1,vv1,zd1,ttt1, &
                                             qq1,ww1,trn,trp
@@ -161,7 +158,8 @@
          ypvv(j) = 0.5d0 * (ypxext(ofj+j+1)+ypxext(ofj+j))
       end do
 !
-      datev   = Lam_runstrt_S
+      datev = F_datev
+      initial_data = trim(datev).eq.trim(Lam_runstrt_S)
 !
 ! Read all needed files and construct the source domain for
 ! the horizontal interpolation
@@ -173,6 +171,7 @@
       allocate (xpaq(nia), ypaq(nja), xpau(nia), ypav(nja))
 !
       wowp = 3
+      if (.NOT.initial_data) wowp = 2
  48   wowp = wowp - 1
       if (wowp.lt.1) then
          write (6,204)
@@ -196,8 +195,7 @@
             dyn_done = .false.
             phy_done = .false.
 !
-            fn = trim(Path_ind_S)//'/3df'//md// &
-                       '_'//datev//'_'//ifd_fnext(n)
+            fn = trim(Path_ind_S)//'/3df'//'_'//datev//'_'//ifd_fnext(n)
             open (unf,file=trim(fn),access='SEQUENTIAL', &
                       form='UNFORMATTED',status='OLD',iostat=errop)
 !
@@ -220,7 +218,7 @@
                 goto 33
             endif
 !
-            read (unf,end=1010,err=1010) dynophy,mode,nvar,ntra_tmp
+            read (unf,end=1010,err=1010) dynophy,nvar,ntra_tmp
 !
             if (dynophy.eq.'PHYSICSS') then
                nfphy = nvar
@@ -311,32 +309,26 @@
 !
  999  call handle_error(err,'casc_3df_dynp','casc_3df_dynp')
 !
-      allocate ( meqr(l_ni,l_nj))
-      allocate (idx(l_ni), idu(max(l_ni,l_nj)),idy(l_nj), &
-                cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
-                cya(l_nj), cyb(l_nj), cyc(l_nj), cyd(l_nj), &
-                cua(max(l_ni,l_nj)) , cub(max(l_ni,l_nj)) , &
-                cuc(max(l_ni,l_nj)) , cud(max(l_ni,l_nj)))
-
-      call grid_to_grid_coef (xpxext(l_i0),l_ni, &
-                              xpaq,nia,idx,cxa,cxb,cxc,cxd,Lam_hint_S)
-      call grid_to_grid_coef (ypxext(l_j0),l_nj, &
-                              ypaq,nja,idy,cya,cyb,cyc,cyd,Lam_hint_S)
+      if (initial_data) then
+         allocate ( meqr(l_ni,l_nj))
+         allocate (idx(l_ni), idy(l_nj), &
+                   cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
+                   cya(l_nj), cyb(l_nj), cyc(l_nj), cyd(l_nj) )
+         hint = 'LINEAR'
+         call grid_to_grid_coef (xpxext(l_i0),l_ni, &
+                                 xpaq,nia,idx,cxa,cxb,cxc,cxd,hint)
+         call grid_to_grid_coef (ypxext(l_j0),l_nj, &
+                                 ypaq,nja,idy,cya,cyb,cyc,cyd,hint)
 !
-      call hinterpo ( meqr,l_ni,l_nj, meqn,nia,nja,    1,idx,idy, &
-                      cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-
-      if (nfphy.gt.0) then
-      call casc_phy_interp ( l_ni,l_nj, phybn,nia,nja,nks,idx,idy, &
-                       cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S, &
-                                                  phynm,nga,nfphy)
+         call hinterpo ( meqr,l_ni,l_nj, meqn,nia,nja,    1,idx,idy, &
+                         cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint)
+!
+         call get_topo    (topo_temp,l_ni,l_nj)
+!
+         call adjust_topo (F_topo, F_dtopo, topo_temp, meqr, Lam_blendoro_L, &
+                                       l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj )
+         deallocate (idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,meqr)
       endif
-!
-      err = get_topo (topo_temp,l_ni,l_nj,G_ni,G_nj)
-      call handle_error(err,'CASC_3DF_DYNP','Problem with get_topo')
-!
-      call adjust_topo (F_topo, F_dtopo, topo_temp, meqr, Lam_blendoro_L, &
-                                    l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj )
 !
 ! topo is inflated!
       call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1, &
@@ -348,23 +340,15 @@
       enddo
       enddo
 !
-      allocate(uu1 (l_ni,l_nj,G_nk+1), &
-               vv1 (l_ni,l_nj,G_nk+1), &
-               ttt1(l_ni,l_nj,G_nk+2), &
-               zd1 (l_ni,l_nj,G_nk+1), &
-               ss1 (l_ni,l_nj)       , &
-               qq1 (l_ni,l_nj,0:G_nk+1), &
-               ww1 (l_ni,l_nj,  G_nk+1), &
-               tr1 (l_ni,l_nj,G_nk+2,Tr3d_ntr) )
+      allocate(uu1 (l_ni,l_nj,G_nk+1), vv1 (l_ni,l_nj,  G_nk+1), &
+               ttt1(l_ni,l_nj,G_nk+2), zd1 (l_ni,l_nj,  G_nk+1), &
+               ss1 (l_ni,l_nj       ), qq1 (l_ni,l_nj,0:G_nk+1), &
+               ww1 (l_ni,l_nj,G_nk+1), tr1 (l_ni,l_nj,  G_nk+2,Tr3d_ntr) )
 
-      call casc_hvi (trname_a, &
-        xpxext(l_i0),ypxext(l_j0),xpuu,ypvv,xpaq,ypaq,xpau,ypav, &
-        uu1,vv1, ttt1,zd1, &
-        ss1,qq1, ww1,tr1, &
-        0, l_ni*l_nj*(G_nk+2),topo_temp1, &
-        uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn, &
-        1,l_ni,1,l_nj,l_ni+1-(east*1),l_nj+1-(north*1), G_nk, &
-        nia,nja,nka_m,nka_t,presstype,ntra)
+      call casc_hvi (trname_a, xpxext(l_i0),ypxext(l_j0),xpuu,ypvv,xpaq,ypaq,xpau,ypav, &
+                     uu1,vv1,ttt1,zd1,ss1,qq1,ww1,tr1,topo_temp1,                       &
+                     uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,                             &
+                     l_ni,l_nj,G_nk,nia,nja,nka_m,nka_t,presstype,ntra)
 
       F_u (1:l_ni,1:l_nj,1:G_nk+1) = uu1
       F_v (1:l_ni,1:l_nj,1:G_nk+1) = vv1
@@ -378,39 +362,52 @@
 !
       do n=1,Tr3d_ntr
          nullify (trp)
-         gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',trp,meta3d)
+         if (initial_data) then
+            gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',trp,meta3d)
+         else
+            gmmstat = gmm_get('NEST/'//trim(Tr3d_name_S(n))//':F',trp,meta3d)
+         endif
          trp(1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2,n)
       end do
 !
-      deallocate (uu1,vv1,ttt1,zd1,qq1,ww1,tr1,meqr,trname_a)
+      deallocate (xpuu,ypvv,xpaq,ypaq,xpau,ypav)
+      deallocate (uun,vvn,zdn,ttn,qqn,wwn,ssqn,meqn)
+      deallocate (trn,topo_temp1,trname_a)
+      deallocate (uu1,vv1,ttt1,zd1,qq1,ww1,tr1)
+      if (associated(phybn)) deallocate(phybn)
+      if (associated(phynm)) deallocate(phynm)
+      if (associated(nks  )) deallocate(nks  )
+!
       do j=1,l_nj
       do i=1,l_ni
          ss1(i,j) = Cstv_pref_8*exp(ss1(i,j))
       enddo
       enddo
 !
-      psmin = ss1(1,1)
-      psmax = ss1(1,1)
-      do j=1,l_nj
-      do i=1,l_ni
-         psmin = min( psmin, ss1(i,j) )
-         psmax = max( psmax, ss1(i,j) )
-      enddo
-      enddo
+      if (initial_data) then
+         psmin = ss1(1,1)
+         psmax = ss1(1,1)
+         do j=1,l_nj
+         do i=1,l_ni
+            psmin = min( psmin, ss1(i,j) )
+            psmax = max( psmax, ss1(i,j) )
+         enddo
+         enddo
+!
+         call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN", &
+                                                              "grid",err)
+         call rpn_comm_allreduce(psmax,psmax_glob,1,"MPI_REAL","MPI_MAX", &
+                                                              "grid",err)
+         psmin=psmin_glob
+         psmax=psmax_glob
+!     
+         if ( Ptopo_myproc.eq.0 ) then
+            write(6,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX, &
+                           ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
+         endif
+      endif
 !
       deallocate (ss1)
-!
-      call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN", &
-                                                           "grid",err)
-      call rpn_comm_allreduce(psmax,psmax_glob,1,"MPI_REAL","MPI_MAX", &
-                                                           "grid",err)
-      psmin=psmin_glob
-      psmax=psmax_glob
-!     
-      if ( Ptopo_myproc.eq.0 ) then
-           write(6,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX, &
-                           ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
-      endif
 !
  100  format (' ',65('*'))
  101  format (' (CASC_3DF_DYNP) JUST READ INIT DATA FOR DATE: ',a15,1x,i3)

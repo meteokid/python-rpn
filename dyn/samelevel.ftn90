@@ -17,13 +17,13 @@
 !
 #include "model_macros_f.h"
 !
-      logical function samelevel ( analtopo,ni,nj,za_8,zb_8,lvm,zat_8,zbt_8,lvt, &
-                                   F_topo,Mminx,Mmaxx,Mminy,Mmaxy)
+      logical function samelevel ( zam_8,zbm_8,lvm, zat_8,zbt_8,lvt, &
+                                   analtopo,ni,nj, F_topo,Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
 !
       integer ni,nj,lvm,lvt,Mminx,Mmaxx,Mminy,Mmaxy
       real analtopo(ni,nj),F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
-      real*8 za_8(lvm),zb_8(lvm),zat_8(lvt),zbt_8(lvt)
+      real*8 zam_8(lvm),zbm_8(lvm),zat_8(lvt),zbt_8(lvt)
 !
 !author
 !
@@ -51,6 +51,7 @@
 ! ---------------------------------------------------------------------
 !
       samelevel = .true.
+!
       if (G_nk.ne.lvm-1) then
           if (Lun_debug_L) &
               write(Lun_out,*)  &
@@ -63,17 +64,17 @@
           return
       endif
       do i=1,lvm-1
-         if (abs(za_8(i)-Ver_a_8%m(i)).gt. difsig .or. &
-             abs(zb_8(i)-Ver_b_8%m(i)).gt. difsig) then
+         if (abs(zam_8(i)-Ver_a_8%m(i)).gt. difsig .or. &
+             abs(zbm_8(i)-Ver_b_8%m(i)).gt. difsig) then
                 if (Lun_debug_L) then 
                  write(Lun_out,*) &
-                 'level=',i,'za_8,Ver_a_8%m=',za_8(i),Ver_a_8%m(i)
+                 'level=',i,'zam_8,Ver_a_8%m=',zam_8(i),Ver_a_8%m(i)
                  write(Lun_out,*) &
-                 'level=',i,'zb_8,Ver_b_8%m=',zb_8(i),Ver_b_8%m(i)
+                 'level=',i,'zbm_8,Ver_b_8%m=',zbm_8(i),Ver_b_8%m(i)
                 endif
                 if (Lun_out.gt.0) then
                     write(lun_out,*) ' ******* WARNING ********'
-                    write(Lun_out,*) 'SAME GRID BUT NOT SAME LEVELS'
+                    write(Lun_out,*) 'SAME GRID BUT NOT SAME MOMENTUM LEVELS'
                 endif
                 samelevel = .false.
                 return
@@ -90,12 +91,13 @@
              endif
              if (Lun_out.gt.0) then
                 write(lun_out,*) ' ******* WARNING ********'
-                write(Lun_out,*) 'SAME GRID BUT NOT SAME LEVELS'
+                write(Lun_out,*) 'SAME GRID BUT NOT SAME THERMO LEVELS'
              endif
              samelevel = .false.
              return
          endif
       enddo
+
 !     Check if analysis and model have the same topography
       prdfsgz = 25.
       errprdf = 0

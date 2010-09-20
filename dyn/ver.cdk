@@ -61,4 +61,5 @@
       common / alphast / Ver_epsilon_8,Ver_gamma_8,Ver_gokt2RT_8
 !
       integer Ver_code
-      common /ver_i/ Ver_code,Ver_ip1
+      common /ver_i/ Ver_code
+      common /ver_vi/ Ver_ip1

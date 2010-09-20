@@ -43,13 +43,11 @@
 !  Dynamic fields will be written from dates Pil_jobstrt to Pil_jobend
 !  Full 3DF file is written for initialization at date in Mod_runstrt
 !  Pil_bmf_L= TRUE forces BMF files to be written
-!  Pil_bcs_hollow_L =TRUE means hollow pilot file cubes will be written
 !*
       integer  fstfrm,newdate,fclos
       external fstfrm,newdate,fclos
 !
       character*16 date1,date2
-      logical save_Pil_bcs_hollow_L
       integer err,yy,dd,dum,cnt
       real*8 dayfrac,sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -67,16 +65,15 @@
 !
       cnt   = 0
       ipilf = 1
-      do while ( date1 .le. Pil_jobend_S )
+!
+      do
 !
          call datp2f   ( datev, date1 )
          err = newdate ( datev, bmf_time1, bmf_time2, -3 )
          write (6,105) date1,bmf_time1,bmf_time2
          call prsdate  (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,date1)
          call e_specanal
-         save_Pil_bcs_hollow_L = Pil_bcs_hollow_L
 !
-         if (date1.eq.Mod_runstrt_S) Pil_bcs_hollow_L = .false.
          call e_open_files (date1.eq.Mod_runstrt_S)
 !
          call e_intthm
@@ -88,7 +85,6 @@
 !
          call incdatsd (date2,date1,dayfrac)
          date1 = date2
-         Pil_bcs_hollow_L = save_Pil_bcs_hollow_L 
 !
          cnt = cnt + 1
          if (cnt .eq. Pil_lancemodel) &
@@ -99,6 +95,8 @@
 
          call gemtim3 (6)
 !
+         if (date1 .gt. Pil_jobend_S) return
+
       end do
 !     
  105  format (/80('#'),/,1X,'PROCESSING DATASET VALID: ',a16,'=',i8.8,'.',i8.8/80('#')/)

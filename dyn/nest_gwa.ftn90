@@ -36,45 +36,25 @@
 !
 !implicits
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "lam.cdk"
-#include "nest.cdk"
-#include "tr3d.cdk"
 #include "schm.cdk"
-#include "vtopo.cdk"
+#include "theo.cdk"
+#include "zblen.cdk"
 !
-      integer n
+      logical flag
 !
 !----------------------------------------------------------------------
 !
-      if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) return
-!
-! Update the nesting values in the blending zone before blending
-! if the orography is growing
-! TODO
-! new interface to vtopo_bnd_update=    call vtopo_bnd_update () !nothing
+      if (.not. G_lam) return
 
-!      if (Vtopo_L.and.(.not.Schm_theoc_L)) then
-!         call vtopo_bnd_update(nest_t,nest_s,
-!     $        LDIST_DIM,G_nk,Lam_blend_Hx,Lam_blend_Hy)
-!      endif
-!
-! Blending main dynamics variables + tracers
-!
-      call nest_blend (gmmk_ut1_s  ,gmmk_nest_u_s  ,'U')
-      call nest_blend (gmmk_vt1_s  ,gmmk_nest_v_s  ,'V')
-      call nest_blend (gmmk_wt1_s  ,gmmk_nest_w_s  ,'M')
-      call nest_blend (gmmk_zdt1_s ,gmmk_nest_zd_s ,'M')
-      call nest_blend (gmmk_tt1_s  ,gmmk_nest_t_s  ,'M')
-      call nest_blend (gmmk_st1_s  ,gmmk_nest_s_s  ,'M')
+      flag = (.not. Schm_theoc_L) .or.                    &
+             (.not. ( Theo_case_S .eq. 'BUBBLE'   .or.    &
+                      Theo_case_S .eq. 'BUBBLE_G' .or.    &
+                      Theo_case_S .eq. '2_BUBBLES' ) )
 
-      if (.not. Schm_hydro_L)  &
-       call nest_blend (gmmk_qt1_s, gmmk_nest_q_s, 'M')
-!
-      do n=1,Tr3d_ntr
-         call nest_blend ('TR/'//trim(Tr3d_name_S(n))//':P', &
-                        'NEST/'//trim(Tr3d_name_S(n))//':C','M')
-      enddo
+      if (flag) call nest_HOR_gwa ()
+      
+      if (( Schm_theoc_L ) .and. ( Zblen_L )) call height_sponge()
 !
 !----------------------------------------------------------------------
 !

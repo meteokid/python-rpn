@@ -1,0 +1,50 @@
+#
+#   Common recipes for models
+#
+.SILENT :
+include       $(ATM_MODEL_PATH)/include/build_components
+include       $(ATM_MODEL_PATH)/include/Makefile_$(BASE_ARCH)
+MODLIBPATH  = $(ATM_MODEL_PATH)
+
+COMM     = rpn_comm$(COMM_VERSION) $(COMM_stubs)
+
+V4D         = v4d_stubs
+#V4D         = "v4d modulopt prof_003"
+
+PHYLIBPATH  = $(ARMNLIB)/modeles/PHY/v_$(PHY_VERSION)
+#PHY         = phy_stubs
+PHY         = phy
+
+INCLUDE_PATH = ./ $(MODLIBPATH)/include $(PHYLIBPATH)/include
+INCLUDE_MOD  = $(MODLIBPATH)/lib/$(EC_ARCH)/mod $(PHYLIBPATH)/lib/$(EC_ARCH)/mod $(VGRID_PATH)/$(EC_ARCH)/mod
+
+RCOMPIL = r.compile $(MPI) $(OMP) -includes $(INCLUDE_PATH) $(INCLUDE_MOD)
+
+VGRID_PATH    = /users/dor/armn/rmt/data/public/vgrid_descriptors/$(VGRID_VERSION)
+VGRID         = descrip
+
+CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)
+CHM         = chm_stubs
+#CHM         = chm
+
+CPL = cpl_$(CPL_VERSION)
+CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)
+#CPL         = cpl_stubs
+
+OTHERS   = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
+LIBPATH  = $(PWD) $(MODLIBPATH)/lib/$(EC_ARCH) $(PHYLIBPATH)/lib/$(EC_ARCH) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(VGRID_PATH)/$(EC_ARCH)
+LIBS     = $(ATM_MODEL) $(V4D) $(PHY) $(PATCH) $(CHM) $(CPL) $(OTHERS)
+
+LCLPO   = malib$(EC_ARCH)
+mainntr = main$(ATM_MODEL)ntr_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs
+maindm  = main$(ATM_MODEL)dm_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs
+rmpo:
+	/bin/rm -f $(LCLPO)/*.o
+#
+libdyn: rmpo $(OBJECTS)
+#
+out_vref_mod.o: out_vref_mod.cdk90      cstv.cdk     dimout.cdk   glb_ld.cdk \
+                grd.cdk                 grid.cdk     level.cdk    lun.cdk    \
+                                         out.cdk     type.cdk     ver.cdk
+
+nest_blending.o: nest_blending.cdk90   glb_ld.cdk var_gmm.cdk nest.cdk

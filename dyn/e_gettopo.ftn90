@@ -15,13 +15,11 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**s/r e_gettopo
 !
-#include "model_macros_f.h"
-!
-      subroutine e_gettopo (topo, ni,nj)
+      subroutine e_gettopo (F_topoi, ni,nj)
       implicit none
 !
       integer ni,nj
-      real topo(ni,nj)
+      real F_topoi(ni,nj)
 !
 !author M. Desgagne
 !
@@ -29,40 +27,35 @@
 ! v3_30 - M. Desgagne          - initial version
 ! v4_03 - Spacek/Desgagne      - ISST
 ! v4_13 - Desgagne M.          - new interface
+! v4_14 - Desgagne M.          - new call to generic subroutine get_field
 !
-#include "e_fu.cdk"
-#include "hgc.cdk"
 #include "e_cdate.cdk"
 #include "path.cdk"
+#include "e_topo.cdk"
+#include "e_grids.cdk"
 !
-      integer  e_rdhint3,fnom,fstouv,fstfrm,fclos
-      external e_rdhint3,fnom,fstouv,fstfrm,fclos
-      integer n,codp1,err
-!
-      real wk(ni,nj)
+      character*12 interp_S
+      integer codp1,err
+      real    wk(ni,nj)
 !
 !----------------------------------------------------------------------
-!
-      e_fu_geophy = 0
-      if (fnom  (e_fu_geophy,trim(Path_input_S)//'/GEOPHY' ,'RND+OLD',0).lt.0) stop
-      if (fstouv(e_fu_geophy,'RND').lt.0) stop
 !
       datev = -1
 
       call convip ( codp1, 0., 3, 1, ' ', .false. )
-      err = e_rdhint3 (wk,dstf_gid,ni,nj,'ME',codp1,-1,-1, &
-                   ' ','C',.true.,.false.,'CUBIC',e_fu_geophy,6)
-      if (err.lt.0) goto 55
+
+      interp_S = 'CUBIC'
+      if (.not. Topo_clip_oro_L) interp_S = 'LINEAR'
+
+      call get_field ( wk, ni, nj, 'ME',              &
+                       trim(Path_input_S)//'/GEOPHY', &
+                       interp_S, xfi, yfi, err)
+
+      if (err.lt.0) call e_arret( 'e_gettopo' )
 !
-      wk(:,:) = max ( 0.0, wk(:,:) )
+      if (Topo_clip_oro_L) wk(:,:) = max ( 0.0, wk(:,:) )
 !
-      call e_filtopx (topo , wk , ni, nj, 'G')
-!
-      err = fstfrm (e_fu_geophy)
-      err = fclos  (e_fu_geophy)
-!
-      return
- 55   call e_arret( 'e_gettopo' )
+      call e_filtopx (F_topoi , wk , ni, nj, 'G')
 !
 !----------------------------------------------------------------------
 !

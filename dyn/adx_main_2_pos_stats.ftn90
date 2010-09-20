@@ -23,7 +23,7 @@ subroutine adx_main_2_pos_stats( &
      F_xcth,F_ycth,F_zcth, &
      F_xct1,F_yct1,F_zct1, &
      minx,maxx,miny,maxy,F_nks, &
-     F_ni, F_nj, F_nkm, F_nk, i0,in,j0,jn)
+     F_ni, F_nj, F_nkm, F_nk, i0,in,j0,jn,k0,kn)
    implicit none
    !@objective Print stats fo computed pos
    !@arguments
@@ -43,8 +43,6 @@ subroutine adx_main_2_pos_stats( &
         F_su,F_sv,F_sw
    !**/
    !---------------------------------------------------------------------
-   k0 = 1
-   kn = F_nk
 !!$   print *,'s',minx,maxx,miny,maxy,1,F_nks
 !!$   print *,trim(F_l_S),1,F_ni,1,F_nj,1,F_nk
 !!$   print *,trim(F_l_S),i0,in,j0,jn,k0,kn

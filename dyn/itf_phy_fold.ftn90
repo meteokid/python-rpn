@@ -1,0 +1,185 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r itf_phy_fold
+!
+      subroutine itf_phy_fold (d, s, F_jdo, k0, nk, minx, maxx, miny, maxy)
+      implicit none
+!
+      integer F_jdo, k0, nk, minx, maxx, miny, maxy
+      real d(*), s(minx:maxx, miny:maxy, nk)
+!
+!author 
+!     Michel Desgagne  -  sping 2010
+!
+!revision
+! v4_14 - Desgagne M.       - initial version
+!
+!object
+!	Transfer data to p_runlgt space
+!
+#include "itf_phy_buses.cdk"
+!
+      integer i,k,ijp,imod,jmod,indx,cnt,nphy
+      integer,dimension(nk) :: cntarr
+!
+!     ---------------------------------------------------------------
+!
+      cntarr=(/(i,i=1,nk)/)
+      nphy = (F_jdo-1) * p_ni
+      cnt  = 0
+!
+!$omp parallel private(i,ijp,imod,jmod,indx)shared(s,d)
+!$omp do
+      do k= k0, Nk
+         cnt = cntarr(k-k0+1)
+         do i= 1, p_ni
+            ijp = min (nphy+i,p_doni*p_donj)
+            jmod= ijp/p_doni + min(1,mod(ijp,p_doni))
+            imod= ijp - (jmod-1)*p_doni + p_offi
+            jmod= jmod + p_offj
+            indx= (cnt-1)*p_ni+i
+            d(indx) = s(imod,jmod,k)
+         end do
+      end do
+!$omp end do
+!$omp end parallel
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end
+
+!**s/r itf_phy_unfold
+!
+      subroutine itf_phy_unfold (d, s, F_jdo, k0, nk, minx, maxx, miny, maxy)
+      implicit none
+!
+      integer F_jdo, k0, nk, minx, maxx, miny, maxy
+      real s(*), d(minx:maxx, miny:maxy, nk)
+!
+!author 
+!     Michel Desgagne  -  sping 2010
+!
+!revision
+! v4_14 - Desgagne M.       - initial version
+!
+!object
+!	Transfer data from p_runlgt space
+!
+#include "itf_phy_buses.cdk"
+!
+      integer i,k,ijp,imod,jmod,indx,cnt,nphy
+!
+!     ---------------------------------------------------------------
+!
+      nphy = (F_jdo-1) * p_ni
+      cnt  = 0
+!
+      do k= k0, Nk
+         cnt = cnt + 1
+         do i= 1, p_ni
+            ijp = min (nphy+i,p_doni*p_donj)
+            jmod= ijp/p_doni + min(1,mod(ijp,p_doni))
+            imod= ijp - (jmod-1)*p_doni + p_offi
+            jmod= jmod + p_offj
+            indx= (cnt-1)*p_ni+i
+            d(imod,jmod,k) = s(indx)
+         end do
+      end do
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end
+
+!**s/r itf_phy_fold_sfc
+!
+      subroutine itf_phy_fold_sfc (d, s, ni, nj)
+      implicit none
+!
+      integer ni,nj
+      real d(*), s(ni,nj)
+!
+!author 
+!     Michel Desgagne  -  sping 2010
+!
+!revision
+! v4_14 - Desgagne M.       - initial version
+!
+!object
+!	Transfer surface data to p_runlgt space
+!
+#include "itf_phy_buses.cdk"
+!
+      integer i,j,cnt
+!
+!     ---------------------------------------------------------------
+!
+      cnt = 0
+      do j= 1, p_donj
+      do i= 1, p_doni
+         cnt = cnt + 1
+         d(cnt) = s(i+p_offi, j+p_offj)
+      end do
+      end do
+      d(cnt+1:p_ni*p_nj) = d(cnt)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end
+
+!**s/r itf_phy_unfold_td
+!
+      subroutine itf_phy_unfold_td ( F_obusval, F_bus, F_indn, F_j, Ni, Nj )
+      implicit none
+!
+      integer F_indn, F_j, Ni, Nj
+      real F_bus(*), F_obusval(Ni, Nj, *)
+!
+!author 
+!     Michel Desgagne  --  Spring 2010
+!
+!revision
+! v4_14 - Desgagne M.       - initial version
+!
+!object
+!     Transfer physic slices output into F_obusval
+!	
+#include "itf_phy_buses.cdk"
+#include "obus.cdk"
+!
+      integer mult, i, k, ijp, imod, jmod, nphy
+!
+!     ---------------------------------------------------------------
+!
+      nphy = (F_j-1) * p_ni
+      do mult= 1, obus_mult(F_indn)
+      do    k= 1, obus_shp (F_indn)
+      do    i= 1, p_ni
+         ijp = min (nphy+i,p_doni*p_donj)
+         jmod= ijp/p_doni + min(1,mod(ijp,p_doni))
+         imod= ijp - (jmod-1)*p_doni + p_offi
+         jmod= jmod + p_offj
+         F_obusval(imod, jmod, k*mult) = F_bus((k*mult-1)*p_ni + i)
+      enddo
+      enddo
+      enddo
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

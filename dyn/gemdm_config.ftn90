@@ -94,16 +94,17 @@
 !
       deg_2_rad = Dcst_pi_8/180.
 !
-      P_lmvd_mllat_8 = ( abs(P_lmvd_mllat_8) * deg_2_rad )
-      P_lmvd_eqlat_8 = ( abs(P_lmvd_eqlat_8) * deg_2_rad )
+      P_lmvd_high_lat = min(90.,abs(P_lmvd_high_lat))
+      P_lmvd_low_lat  = min(P_lmvd_high_lat,abs(P_lmvd_low_lat))
+      P_lmvd_weigh_low_lat  = max(0.,min(1.,P_lmvd_weigh_low_lat ))
+      P_lmvd_weigh_high_lat = max(0.,min(1.,P_lmvd_weigh_high_lat))
 !
       call low2up  (Out3_unit_S,dumc_S)
       Out3_unit_S=dumc_S
 !
-      Out_datyp   = 134
-      Out_rewrit_L= .false.
-      if (Clim_climat_L) Out_rewrit_L=.true.
-
+      Out_datyp      = 134
+      Out_rewrit_L   = .false.
+!
       if(Out3_nbitg .lt. 0) then
          if (lun_out.gt.0) write (Lun_out, 9154)
          Out3_nbitg=16
@@ -159,7 +160,15 @@
          endif
          return
       endif
-!       
+!
+      if (Vtopo_start .ge. 0) then
+         if (lun_out.gt.0) then
+            write (Lun_out, 6200)
+            write (Lun_out, 8000)
+         endif
+         return
+      endif
+!
       call datp2f ( Out3_date, Mod_runstrt_S )
       err = newdate ( Out3_date, time1, time2, -3 )
       if (lun_out.gt.0) write (Lun_out,6007) Mod_runstrt_S,time1,time2
@@ -198,23 +207,6 @@
          Grdc_iref   = Grdc_iref +   Grdc_pil
          Grdc_jref   = Grdc_jref +   Grdc_pil
          if (Acid_pilot_L) acid_npas = Grdc_start
-      endif
-      if ( Acid_test_L) then
-           if (Acid_pilot_L) then
-           fln_S  = trim(Path_output_S) // '/casc/solver.bin'
-           write (Lun_out,*)'Opening file: ',trim(fln_S)
-           open (50, file=fln_S,form='unformatted')
-           fln_S  = trim(Path_output_S) // '/casc/posixy.bin'
-           write (Lun_out,*)'Opening file: ',trim(fln_S)
-           open (44, file=fln_S,form='unformatted')
-           else
-           fln_S  = trim(Path_input_S) // '/INIT_3D/solver.bin'
-           write (Lun_out,*)'Opening file: ',trim(fln_S)
-           open (50, file=fln_S,form='unformatted')
-           fln_S  = trim(Path_input_S) // '/INIT_3D/posixy.bin'
-           write (Lun_out,*)'Opening file: ',trim(fln_S)
-           open (44, file=fln_S,form='unformatted')
-           endif
       endif
 !
       call low2up  (Lam_hint_S ,dumc_S)
@@ -263,6 +255,7 @@
  6006 format (/' In LAM configuration: Lam_nesdt must be specified'/)
  6007 format (/X,63('#'),/,2X,'STARTING DATE for RUN is: ',a16,'= ', &
               i8.8,'.',i8.8,/X,63('#')/)
+ 6200 format (/' VARIABLE TOPOGRAPHY NOT AVAILABLE IN THIS VERSION'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)

@@ -38,6 +38,7 @@
 
       if (tmg2_on_L) then
          sum_m0 = 0
+         sum_tb = 0
          sum_r0 = 0d0
          nam_subr_S = 'NO NAME '
       endif

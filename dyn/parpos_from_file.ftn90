@@ -1,0 +1,50 @@
+!
+      subroutine parpos_from_file (x_8, y_8, ni, nj)
+      implicit none
+!
+      integer ni,nj
+      real*8  x_8(ni), y_8(nj)
+!
+#include <clib_interface.cdk>
+
+      character*512 task_basedir_S,filename
+      integer err,wkoffit,n1,n2,i,j,offi,offj
+      real*8, dimension(:), allocatable :: x,y
+    
+      err = clib_getenv('TASK_BASEDIR',task_basedir_S)
+
+      filename = trim(task_basedir_S)//'/../parpos.bin'
+
+      err = wkoffit(filename)
+
+      open (741, file=filename,form='unformatted')
+
+      if (err.eq.10) then
+         read (741) n1,n2
+         allocate (x(n1),y(n2))
+         read (741) x,y
+         do i=1,n1
+            offi = i-2
+            if (x(i).gt.x_8(1)) goto 10
+         end do
+ 10      do i=1,n2
+            offj = i-2
+            if (y(i).gt.y_8(1)) goto 11
+         end do
+ 11      do i=1,ni
+            x_8(i) = x(i+offi)
+         end do
+         do i=1,nj
+            y_8(i) = y(i+offj)
+         end do
+         deallocate (x,y)
+         print*, "PARPOS READ FROM FILE"
+      else
+         write (741) ni, nj
+         write (741) x_8, y_8
+      endif
+
+      close (741)
+
+      return
+      end

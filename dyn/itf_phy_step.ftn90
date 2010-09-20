@@ -19,10 +19,22 @@
 !
       subroutine itf_phy_step (F_stepno)
 
-      Use itf_phy_iface  , Only : itf_phy_geti
+      Use itf_phy_iface  , Only : itf_phy_geti, physics_wrapper
       implicit none
 !
       integer, INTENT(IN) :: F_stepno
+Interface
+Subroutine itf_phy_slb (geofld, Phy_busdyn3D, Phy_busper3D, Phy_busvol3D, &
+                    esiz, dsiz, fsiz, vsiz,   &
+                    dt, kount, phy_timing, ni, nj, nk, pslic) 
+
+         Real, Dimension(:), Pointer :: geofld, Phy_busdyn3D, Phy_busper3D, &
+                                        Phy_busvol3D
+         Integer :: esiz, dsiz, fsiz, vsiz
+         Real    :: dt, phy_timing(ni,nj)
+         Integer :: ni, nj, nk, pslic
+End Subroutine itf_phy_slb
+End Interface
 !
 !author 
 !     Michel roch - rpn - april 1994
@@ -64,31 +76,39 @@
 #include "ptopo.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
-#include "grdc.cdk"
 #include "out3.cdk"
 #include "cstv.cdk"
 !
-      integer  omp_get_max_threads
-      external omp_get_max_threads
-!*
-      integer j, dim, obussiz, cobussiz, err, pslic
-      character*15 datev,pdate
-      real*8 dayfrac, sec_in_day
-      parameter (sec_in_day=86400.0d0)
-      real, dimension(:,:), allocatable :: obusval,cobusval
-      save pslic
+      integer*8 time_base
+      external  time_base
+!
+      logical P_timing_L
+      integer, save :: pslic
+      integer j, obussiz, err
+      integer*8 ticks_deb, ticks_fin
+      character*512 fn
+      real, dimension(:,:), allocatable :: obusval
+      real dt,Lphy_timing(l_ni,l_nj),Gphy_timing(G_ni,G_nj),phy_timing(p_ni,p_nj)
+!
+      real busper, busvol
+      pointer (pabusper,busper(*))
+      pointer (pabusvol,busvol(*))
 !
 !     ---------------------------------------------------------------
 !
+      P_timing_L = .false.
+!
       call iniobus(obussiz)
-      allocate(obusval(l_ni*l_nj,obussiz))
-      if(F_stepno.eq.0)then
-            allocate(geofld(p_bent_siz*p_nj))
-            geofld=0.0
-       endif
-      dim  = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*p_nk
-
-      call itf_phy_prep
+      allocate (obusval(l_ni*l_nj,obussiz))
+      obusval = 999999.
+!
+      if (F_stepno.eq.0) then
+         allocate (geofld(p_bent_siz*p_nj))
+         geofld=0.0
+      endif
+      call tmg_start0(94,'PHYSPRE')
+      call itf_phy_prep ()
+      call tmg_stop0(94)
 !
 !C    Load data into Phy_busper3D
 !               ------------------------------------------------
@@ -98,22 +118,50 @@
 !
 !C       4.	compute physics tendencies
 !		--------------------------
-!	initialize the number of slices previously done
-!
-      pslic = 0
 !
       call pe_rebind (Ptopo_smtphy,(Ptopo_myproc.eq.0).and. &
                                    (F_stepno    .eq.0)  )
 
       if (Lun_out.gt.0) write(Lun_out,1000) F_stepno
 !
+      ticks_deb = time_base()
+!
+      pslic= 0
+      dt   = Cstv_dt_8
+      call tmg_start0(91,'PHYSICS')
 !$omp parallel
-!$omp do
-      do j=1,omp_get_max_threads()
-         call itf_phy_slb ( j , F_stepno, pslic, obusval, cobusval)
-      enddo
-!$omp enddo
+      call itf_phy_slb ( geofld ,Phy_busdyn3D ,Phy_busper3D ,Phy_busvol3D , &
+                             p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz   , &
+                             dt, F_stepno, phy_timing, p_ni, p_nj, p_nk, pslic )
 !$omp end parallel
+      call tmg_stop0(91)
+      call tmg_start0(92,'PHYSEXT')
+!$omp parallel do
+      do j = 1, p_nj
+         pabusvol = loc (Phy_busvol3D((j-1)*p_bvol_siz+1))
+         pabusper = loc (Phy_busper3D((j-1)*p_bper_siz+1))
+         call itf_phy_extract ( busper, busvol, obusval, F_stepno, j, p_nk )
+         if (P_timing_L) call itf_phy_unfold (Lphy_timing, phy_timing(1,j), j, 1, 1, 1, l_ni, 1, l_nj)
+      end do
+!$omp end parallel do
+      call tmg_stop0(92)
+!
+      ticks_fin = time_base()
+!
+      if (P_timing_L) then
+         write(6,'("TIME_BASE:PHY_SLB: STEP=",i4," WCTIME=",g16.10)') F_stepno, &
+                                             (ticks_fin-ticks_deb)*8.0d0/1.9d9
+         call glbcolc (Gphy_timing,G_ni,G_nj,Lphy_timing,1,l_ni,1,l_nj,1)
+         fn = '..//phy_timing.fst'
+         if ((F_stepno.eq.0).or.(mod(F_stepno-1,4).eq.0)) fn = '..//phyR_timing.fst'
+         if (Lun_out.gt.0) &
+         call r_rawfstw2 (Gphy_timing,1,g_ni,1,g_nj,1,1,'TIMI',1,g_ni,1,g_nj,1,1,&
+                          F_stepno,int(Cstv_dt_8),Out3_date,-1,-1,fn)
+         fn = 'TIM1'
+         if ((F_stepno.eq.0).or.(mod(F_stepno-1,4).eq.0)) fn = 'TIM2'
+         call glbstat2 (Lphy_timing,trim(fn),'', 1,l_ni,1,l_nj,1,1, &
+                                                 1,g_ni,1,g_nj,1,1)
+      endif
 !
       call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and. &
                                    (F_stepno    .eq.0) )
@@ -124,28 +172,6 @@
 !
       deallocate (obusval)
 !
-      if ( (Grdc_ndt.gt.0) .and. (F_stepno.eq.Grdc_start) ) then
-!     Only done once in the integration
-         call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf, &
-                                         0,0,.false.,1,'','')
-         cobussiz=p_bper_siz/(p_ni)
-         allocate (cobusval(l_ni*l_nj,cobussiz))
-         call out_phycasc ( j, F_stepno, cobusval )
-
-         call datf2p (pdate,Out3_date)
-         dayfrac = dble(F_stepno) * Cstv_dt_8 / sec_in_day
-         call incdatsd (datev,pdate,dayfrac)
-
-         if (Grdc_initphy_L) then ! Dump whole permanent bus
-            call out_perbus_3df(cobusval,l_ni,l_nj,datev, &
-                     Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf)
-         else ! Dump only minimum physics fields out for cascade grid
-            call out_phy_3df(cobusval,l_ni,l_nj,datev, &
-                  Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf)
-         endif
-         deallocate (cobusval)
-      endif
-!
       if (P_pbd_dumpbus.gt.0) then
          if (mod( F_stepno,P_pbd_dumpbus ).eq.0) &
          call dumpwrit2( Lun_out, F_stepno, Ptopo_myproc )
@@ -155,9 +181,9 @@
 !C      and insure consistency with other dynamic variables
 !       ----------------------------------------------------------
 !
+      call tmg_start0(93,'PHYSAPP')
       call itf_phy_apply ( F_stepno.gt.0 )
-!
-      if(F_stepno.eq.0)deallocate(geofld)
+      call tmg_stop0(93)
 !
  1000 format(/'PERFORM A PHYSICS STEP: stepno= ',i6, &
               ' (S/R itf_phy_step)'/57('='))

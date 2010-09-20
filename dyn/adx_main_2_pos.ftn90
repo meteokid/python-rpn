@@ -17,35 +17,26 @@
 #include "constants.h"
 #include "msg.h"
 #include "stop_mpi.h"
-
-subroutine adx_main_2_pos()
-   call stop_mpi(STOP_ERROR,'adx_main_2_pos','called a stub')
-   return
-end subroutine adx_main_2_pos
-
-subroutine adx_main_2_pos2()
-   call stop_mpi(STOP_ERROR,'adx_main_2_pos2','called a stub')
-   return
-end subroutine adx_main_2_pos2
-
 !/**
-subroutine adx_main_2_pos3( &
-     F_nb_iter  ,F_l_S, &
-     F_px  ,F_py  ,F_pz  , &
-     F_u   ,F_v   ,F_w   , &
-     F_xth ,F_yth ,F_zth , &
-     F_xcth,F_ycth,F_zcth, &
-     F_xct1,F_yct1,F_zct1, &
-     F_aminx, F_amaxx, F_aminy, F_amaxy, &
-     F_ni, F_nj, F_nk, F_nk_super)
+subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
+                            F_px  ,F_py  ,F_pz  , &
+                            F_u   ,F_v   ,F_w   , &
+                            F_xth ,F_yth ,F_zth , &
+                            F_xcth,F_ycth,F_zcth, &
+                            F_xct1,F_yct1,F_zct1, &
+                            F_aminx, F_amaxx, F_aminy, F_amaxy, &
+                            F_ni, F_nj, k0, F_nk, F_nk_super)
    implicit none
+!
    !@objective calculate upstream positions at th and t1
+!
    !@arguments
    integer :: F_nb_iter          !I, total number of iterations for traj
    character(len=1) :: F_l_S     !I, m/t for momentum or thermo level
    integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
    integer :: F_ni, F_nj         !I, dims of position fields
    integer :: F_nk, F_nk_super   !I, nb levels
+   integer :: k0                 !I, scope of the operation k0 to F_nk
    real, dimension(F_ni,F_nj,F_nk) :: &
         F_px  , F_py  , F_pz     !O, upstream positions valid at t1
    real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super),target::&
@@ -54,6 +45,7 @@ subroutine adx_main_2_pos3( &
         F_xth , F_yth , F_zth,&  !I/O, upwind longitudes at central time 
         F_xcth, F_ycth, F_zcth,& !O, upwind cartesian positions at central time
         F_xct1, F_yct1, F_zct1   !O, upstream cartesian positions at t1
+!
    !@author alain patoine
    !@revisions
    ! v2_31 - Desgagne M.    - removed stkmemw
@@ -68,29 +60,37 @@ subroutine adx_main_2_pos3( &
    ! v3_21 - Lee V.          - bug correction, F_yth should not be modified.
    ! v4_05 - Lepine M.       - VMM replacement with GMM
    ! V4_10 - Plante A.       - Support to thermodynamic positions.
-   !**/
+   ! V4_14 - Plante A.       - Do not compute position in top pilot zone
+!**/
+
 #include "adx_nml.cdk"
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_dyn.cdk"
 #include "adx_poles.cdk"
 
+#include "glb_ld.cdk"
+#include "adx_interp.cdk"
+
    real*8, parameter :: PDP_8 = 1.D0 + 1.D-6
    real*8, parameter :: PDM_8 = 1.D0 - 1.D-6
+   logical,parameter :: driver = .false.
    logical,parameter :: CLIP_TRAJ = .true.
    logical,parameter :: DO_W      = .false.
    logical,parameter :: DO_UV     = .true.
    real, parameter   :: DTH_1     = 1.
 
    integer :: i, j, k, iter, ioff
-   integer :: i0,in,j0,jn,k0,kn
+   integer :: i0,in,j0,jn
    real    :: dth
    real, dimension(F_ni,F_nj,F_nk) :: wrkx1,wrky1
    real, dimension(F_ni,F_nj,F_nk) :: xgrid,ygrid,zgrid
 
-   real, dimension(:,:,:), pointer :: dummy3d
-   real*8, dimension(:), pointer :: p_z
+   real,   dimension(:,:,:), pointer :: dummy3d
+   real*8, dimension(:)    , pointer :: p_z
+
    !---------------------------------------------------------------------
+
    call msg(MSG_DEBUG,'adx_main_2_pos ('//trim(F_l_S)//')')
 
    dummy3d => F_w
@@ -100,7 +100,24 @@ subroutine adx_main_2_pos3( &
    p_z => adx_verZ_8%t
    if (F_l_S == 'm') p_z => adx_verZ_8%m
 
-   call adx_get_ij0n(i0,in,j0,jn)
+   call adx_get_ij0n (i0,in,j0,jn)
+
+   if (driver) then
+   open  (741, file='/users/dor/armn/mid/home/gem/v_4.1.3/adx_driver_trilin.bin',form='unformatted')
+   write (741) F_aminx,F_amaxx,F_aminy,F_amaxy,F_nk_super,F_ni,F_nj,F_nk,F_nk_super,l_nk
+   write (741) adx_lnkt,adx_lnkm,adx_iimax,adx_jjmax,adx_mlni,adx_mlnj,adx_mlnij,adx_nit
+   write (741) adx_nijag,adx_int_j_off,adx_int_i_off,adx_dt_8,i0,in,j0,jn
+   write (741) adx_gni,adx_gnj,adx_halox,adx_haloy,adx_lni,adx_lnj
+   write (741) adx_gminx,adx_gmaxx,adx_gminy,adx_gmaxy,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy
+   write (741) adx_ovdx_8,adx_ovdy_8,adx_ovdz_8,adx_y00_8,adx_x00_8
+   write (741) adx_xg_8,adx_yg_8,adx_verZ_8%t,adx_verZ_8%m,       &
+               adx_bsx_8,adx_bsy_8,adx_diz_8,adx_xbc_8,adx_ybc_8, &
+               adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8,               &
+               adx_bsz_8%t,adx_bsz_8%m,adx_bsz_8%s
+   write (741) adx_lcx,adx_lcy,adx_lcz%t,adx_lcz%m,adx_lcz%s
+   write (741) F_u,F_v,F_w, F_xth,F_yth,F_zth, F_xcth,F_ycth,F_zcth
+   close (741)
+   endif
 
    DO_ITER: do iter = 1, F_nb_iter
 
@@ -108,65 +125,37 @@ subroutine adx_main_2_pos3( &
 
       ygrid(:,:,:) = F_yth(:,:,:)
       if (adx_lam_L) then
-         call adx_pos_lam3(wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
-              DTH_1, CLIP_TRAJ, DO_UV, i0,in,j0,jn, &
-              F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
+         call adx_pos_lam4 (wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
+                            DTH_1, CLIP_TRAJ, DO_UV, i0,in,j0,jn, &
+                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
       else
-         call adx_pos_glb3(wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
-              DTH_1, DO_UV, i0,in,j0,jn, &
-              F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
+         call adx_pos_glb4 (wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
+                            DTH_1, DO_UV, i0,in,j0,jn, &
+                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
       endif
 
-      call tmg_start0(65, 'ADX_TRAJS' )
-      call adx_trajsp1(F_xth,F_yth, F_xcth,F_ycth,F_zcth, wrkx1,wrky1, dth,&
-           i0,in,j0,jn)
-!!$      call adx_trajsp2(F_xth,F_yth, F_xcth,F_ycth,F_zcth, wrkx1,wrky1, dth,&
-!!$           i0,in,j0,jn,F_ni,F_nj,F_nk)
-      call tmg_stop0(65)
+      call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, wrkx1,wrky1, &
+                                   adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8, &
+                                       dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
 
       !- 3D interpol of zeta dot and new upstream pos along zeta
 
-      IF_ZDOTMID: if (adx_zdotMid_L) then
+      ygrid(:,:,:) = F_yth(:,:,:)
 
-         ioff = adx_mli0 - adx_li0
-         do k = 1, F_nk
-            do j = 1, F_nj
-               do i = 1, F_ni
-                  xgrid(i,j,k)  = adx_xx_8(ioff+i)
-                  ygrid(i,j,k)  = adx_yy_8(j)
-                  zgrid(i,j,k)  = p_z(k)
-               enddo
-            enddo
-         enddo
+      if (adx_lam_L) then
+         call adx_pos_lam4 (wrkx1,wrky1, F_w,dummy3d, F_xth,ygrid,F_zth, &
+                            -dth, CLIP_TRAJ, DO_W, i0,in,j0,jn, &
+                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
+      else
+         call adx_pos_glb4 (wrkx1,wrky1, F_w,dummy3d, F_xth,ygrid,F_zth, &
+                            -dth, DO_W, i0,in,j0,jn, &
+                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
+      endif
 
-         if (adx_lam_L) then
-            call adx_pos_lam3(wrkx1,wrky1,F_w,dummy3d, xgrid,ygrid,zgrid, &
-                 -dth, .not.CLIP_TRAJ, DO_W, i0,in,j0,jn, &
-                 F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
-         else
-            call adx_pos_glb3(wrkx1,wrky1, F_w,dummy3d, xgrid,ygrid,zgrid, &
-                 -dth, DO_W, i0,in,j0,jn, &
-                 F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
-         endif
-
-      else  !IF_ZDOTMID
-
-         ygrid(:,:,:) = F_yth(:,:,:)
-         if (adx_lam_L) then
-            call adx_pos_lam3(wrkx1,wrky1, F_w,dummy3d, F_xth,ygrid,F_zth, &
-                 -dth, CLIP_TRAJ, DO_W, i0,in,j0,jn, &
-                 F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
-         else
-            call adx_pos_glb3(wrkx1,wrky1, F_w,dummy3d, F_xth,ygrid,F_zth, &
-                 -dth, DO_W, i0,in,j0,jn, &
-                 F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk,F_nk_super)
-         endif
-
-      endif IF_ZDOTMID
-
+      call tmg_start0(54, 'ADPOS_CZH' )
 !$omp parallel
 !$omp do
-      do k = 2,F_nk-1
+      do k = max(2,k0),F_nk-1
          do j = j0,jn
             do i = i0,in
                F_zth(i,j,k) = p_z(k) + 2.D0*wrkx1(i,j,k)
@@ -179,38 +168,65 @@ subroutine adx_main_2_pos3( &
       enddo
 !$omp enddo
 !$omp end parallel
+      call tmg_stop0 (54)
 
    enddo DO_ITER
 
-   call tmg_start0(68, 'ADX_TRAJE' )
-   call adx_trajex1(F_px, F_py, F_xct1,F_yct1,F_zct1, F_xcth,F_ycth,F_zcth,&
-        i0,in,j0,jn)
-!!$   call adx_trajex2(F_px, F_py, F_xct1,F_yct1,F_zct1, F_xcth,F_ycth,F_zcth,&
-!!$        i0,in,j0,jn,F_ni,F_nj,F_nk)
-   call tmg_stop0(68)
+   call adx_trajex2 (F_px, F_py, F_xct1,F_yct1,F_zct1, &
+                     F_xcth,F_ycth,F_zcth,i0,in,j0,jn,k0)
 
+   call tmg_start0(56, 'ADPOS_FPZ' )
 !$omp parallel
 !$omp do
-   do j = j0,jn
-      do i = i0,in
-         F_pz(i,j,1)    = p_z(1)
-         F_pz(i,j,F_nk) = p_z(F_nk)
-      enddo
-   enddo
-!$omp enddo
-!$omp do
-   do k = 2,F_nk-1
-      do j = j0,jn
+   do k = k0,F_nk
+      if ((k.eq.1).or.(k.eq.F_nk)) then
+         F_pz(i0:in,j0:jn, k) = p_z(k)
+         F_pz(i0:in,j0:jn, k) = p_z(k)
+      else
+         do j = j0,jn
          do i = i0,in
             F_pz(i,j,k) = F_zth(i,j,k) - p_z(k)
             F_pz(i,j,k) = P_z(k) + 2.0 * F_pz(i,j,k)
          enddo
-      enddo
+         enddo
+      endif
    enddo
 !$omp enddo
 !$omp end parallel
+   call tmg_stop0 (56)
+
+   if (driver) then
+   call glbstat2 ( F_xth, 'XTH', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_yth, 'YTH', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_zth, 'ZTH', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_xcth, 'XCH', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_ycth, 'YCH', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_zcth, 'ZCH', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_xct1, 'XC1', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_yct1, 'YC1', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_zct1, 'ZC1', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_px, 'PX', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_py, 'PY', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   call glbstat2 ( F_pz, 'PZ', '', 1,F_ni,1,F_nj,1,F_nk, &
+                                     1,F_ni,1,F_nj,k0,F_nk  )
+   print*, F_nb_iter
+   stop
+   endif
 
    call msg(MSG_DEBUG,'adx_main_2_pos ('//trim(F_l_S)//') [end]')
+
    !---------------------------------------------------------------------
+
    return
-end subroutine adx_main_2_pos3
+end subroutine adx_main_2_pos4

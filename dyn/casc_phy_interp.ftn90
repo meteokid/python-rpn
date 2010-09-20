@@ -16,17 +16,14 @@
 !**s/r casc_phy_interp
 !
 #include "model_macros_f.h"
-      subroutine casc_phy_interp ( nid,njd, src,nis,njs, nks, indxx,indxy, &
-                                     cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint, &
-                                                          phynm,nga,nfphy)
+      subroutine casc_phy_interp ( src,xpxext,ypxext,xpaq,ypaq,phynm,&
+                                              nis,njs,nks,nfphy,hint )
       implicit none
 !
-      character* (*) hint
-      character(len=*):: phynm(nfphy)
-      integer nid,njd,nis,njs,nks(nfphy),nga,nfphy
-      integer indxx(nid),indxy(njd)
-      real src(nga,nfphy), &
-           cxa(*),cxb(*),cxc(*),cxd(*),cya(*),cyb(*),cyc(*),cyd(*)
+      character(len=*):: hint, phynm(nfphy)
+      integer nis,njs,nfphy,nks(nfphy)
+      real src(nis,njs,nfphy)
+      real*8 xpxext(*),ypxext(*),xpaq(nis),ypaq(njs)
 !
 !Author
 !     Lubos Spacek - Spring 2010
@@ -38,17 +35,23 @@
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
 !
-      integer  ezsint
-      external ezsint
-
       character(len=16) :: var
-      integer i,k,ivar,nkphy,err
+      integer i,ivar,nkphy
+      integer, dimension (:  ), pointer :: idx,idy
       real, pointer, dimension (:,:,:) :: dst
-!
+      real*8, dimension (:  ), pointer ::  &
+                    cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd
       type(gmm_metadata) :: meta3d_phy
 !
 !-----------------------------------------------------------------------
 !
+      allocate (idx(l_ni), idy(l_nj),                       &
+                cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
+                cya(l_nj), cyb(l_nj), cyc(l_nj), cyd(l_nj) )
+
+      call grid_to_grid_coef (xpxext,l_ni,xpaq,nis,idx,cxa,cxb,cxc,cxd,hint)
+      call grid_to_grid_coef (ypxext,l_nj,ypaq,njs,idy,cya,cyb,cyc,cyd,hint)
+
       nkphy=0
       do ivar = 1,nfphy
          call gmm_build_meta3D(meta3d_phy,                &
@@ -71,8 +74,8 @@
 
          do i=1,nks(ivar)
             nkphy=nkphy+1
-            call hinterpo ( dst(1,1,i),nid,njd, src(1,nkphy),nis,njs, 1,indxx,indxy, &
-                            cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint)
+            call hinterpo ( dst(1,1,i),l_ni,l_nj, src(1,1,nkphy), nis,njs,1, &
+                                idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint )
          enddo
       enddo
 !

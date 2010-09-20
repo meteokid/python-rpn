@@ -140,7 +140,7 @@
 
       if(Acid_test_L)call acid_check()
 !
-      call gemtim2 (Lun_out,.false.,0,ierr)
+      call gemtim3 ( Lun_out )
 !
 ! Establish domain decomposition (mapping subdomains and processors)
 !

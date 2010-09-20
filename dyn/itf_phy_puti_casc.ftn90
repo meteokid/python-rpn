@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**s/r itf_phy_geti - "get information" the call back function
 !
+#include "model_macros_f.h"
 Subroutine itf_phy_puti_casc (vd,opt,istat)
   !
   Use phy_input_types
@@ -35,6 +36,7 @@ Subroutine itf_phy_puti_casc (vd,opt,istat)
   !
 #include "gmm.hf"
 #include "var_gmm.cdk"
+#include "glb_ld.cdk"
 #include "itf_phy_buses.cdk"
 #include "lun.cdk"
 !
@@ -52,7 +54,7 @@ If (vd%casc_L) Then
       if (Lun_out.gt.-1) Write(Lun_out,6000) trim(vd%phyvar)
       Do k=1,vd%p_nu
          istat(k) = 1
-         vd%values(:,:,k)=dst(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj,k)
+         call itf_phy_fold_sfc (vd%values(1,1,k), dst, l_ni, l_nj)
       Enddo
    endif
 Endif

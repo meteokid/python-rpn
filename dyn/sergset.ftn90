@@ -52,6 +52,7 @@
 #include "p_serg.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
+#include "grd.cdk"
 #include "rstr.cdk"
 #include "xst.cdk"
 #include "xstb.cdk"
@@ -86,10 +87,10 @@
             Xst_stn(xst_nstatl)%lclsta = i
             Xst_stn(xst_nstatl)%stcori = Xst_stn(i)%i -  &
                                      Ptopo_gindx(1,Ptopo_myproc+1) + 1 &
-                                     - pil_w + p_nmp*west
+                                     - Grd_bsc_ext1*west  + 1
             Xst_stn(xst_nstatl)%stcorj = Xst_stn(i)%j -  &
                                      Ptopo_gindx(3,Ptopo_myproc+1) + 1 &
-                                     - pil_s + p_nmp*south
+                                     - Grd_bsc_ext1*south + 1
          endif
       end do
 !

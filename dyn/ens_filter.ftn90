@@ -76,7 +76,13 @@
 !
       call ens_marfield_cg (mcsph1,E_nk+1)
 !
-      if (.not.Ens_skeb_conf) return
+
+           
+
+      if (.not.Ens_skeb_conf) then
+         call setfft8(G_ni)
+         return
+      endif
 !
       allocate( dsp_local(LDIST_SHAPE,E_nk))
       allocate( dsp_dif(LDIST_SHAPE,E_nk))
@@ -193,6 +199,11 @@
          enddo
       enddo
 !
+      if(Ens_stat)then 
+         call glbstat2 (dsp_local,'DSP','FLTTO2', &
+           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+      endif
+
       call rpn_comm_xch_halo (dsp_local,LDIST_DIM,l_ni,l_nj,E_nk, &
                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 

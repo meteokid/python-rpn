@@ -1,0 +1,66 @@
+#include "model_macros_f.h"
+!
+      subroutine sol_from_file (fiptx,DIST_DIM,min_k,max_k)
+      implicit none
+!
+      integer DIST_DIM,min_k,max_k
+      real    fiptx(DIST_SHAPE,min_k:max_k)
+!
+#include <clib_interface.cdk>
+#include "glb_ld.cdk"
+
+      logical done,R
+      character*512 task_basedir_S,filename
+      integer err,n1,n2,i,j,k,offi,offj,wkoffit
+      real*8, dimension(:    ), allocatable :: x,y
+      real  , dimension(:,:,:), allocatable :: sol
+      data done,R /.false.,.false./
+      save done,offi,offj,n1,n2,R
+    
+      if (.not.done) then
+         err = clib_getenv('TASK_BASEDIR',task_basedir_S)
+         filename = trim(task_basedir_S)//'/../solver.bin'
+         err = wkoffit(filename)
+         if (err.eq.10) R=.true.
+         open (741, file=filename,form='unformatted')
+      endif
+
+      if (R) then
+         if (.not.done) then
+            read (741) n1,n2
+            allocate (x(n1),y(n2))
+            read (741) x,y
+            do i=1,n1
+               offi = i-2
+               if (x(i).gt.G_xg_8(1)) goto 10
+            end do
+ 10         do i=1,n2
+               offj = i-2
+               if (y(i).gt.G_yg_8(1)) goto 11
+            end do
+ 11         deallocate (x,y)
+         endif
+         allocate (sol(n1,n2,min_k:max_k))
+         read (741) sol(1:n1,1:n2,min_k:max_k)
+         fiptx=0.
+         do k=min_k,max_k
+         do j=1,G_nj
+         do i=1,G_ni
+            fiptx(i,j,k) = sol(i+offi,j+offj,k)
+         end do
+         end do
+         end do
+         deallocate (sol)
+         print*, "SOLVER SOLUTION READ FROM FILE",offi,offj
+      else
+         if (.not.done) then
+            write (741) G_ni, G_nj
+            write (741) G_xg_8(1:G_ni),G_yg_8(1:G_nj)
+         endif
+         write (741) fiptx(1:G_ni,1:G_nj,min_k:max_k)
+      endif
+
+      done = .true.
+
+      return
+      end

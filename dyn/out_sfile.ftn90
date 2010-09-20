@@ -40,16 +40,15 @@
 !
 #include "clim.cdk"
 #include "out.cdk"
-#include "glb_ld.cdk"
 #include "path.cdk"
 !
-
-      integer  prog_filename,fnom,fstouv,longueur,fstopc
-      external prog_filename,fnom,fstouv,longueur,fstopc
+      integer  prog_filename,fnom,fstouv,fstopc
+      external prog_filename,fnom,fstouv,fstopc
 !
-      character*5 blocxy_S
-      character*3 ros 
-      character*15 datev,startindx
+      character*1024 out_filename_s
+      character*15   datev,startindx
+      character*3    ros 
+      logical flag_post
       integer prognum,err,i,indx
       integer clostep,date,hour
       real, parameter :: eps=1.e-12
@@ -72,9 +71,6 @@
       else
           err = fstopc('MSGLVL','SYSTEM',.false.)
       endif
-
-      if (Clim_climat_L) &
-          write(blocxy_S,'(I2.2,"-",I2.2)') Out_myblocx,Out_myblocy
 
       Out_npas = stepno
 !
@@ -102,32 +98,19 @@
          if (Out_unit_S.eq.'D') prognum = ceiling(sec_clostep * OV_day - eps)
          if (Out_unit_S.eq.'M') prognum = ceiling(sec_clostep * OV_min - eps)
          if (Out_unit_S.eq.'S') prognum = ceiling(sec_clostep - eps)
-         if (Out_prefix_S.eq.'cm') then
-            dayfrac = dble(stepno) * dble(Out_deet) / sec_in_day
-            call incdatsd (datev,Out_runstrt_S,dayfrac)
-            write (startindx,'((i7.7),a1,(i7.7))') Out_idg,'-',Out_jdg
-            Out_filename_S='ic'//datev//'_'//startindx
-            Out_filenamep_S = trim(Path_output_S)//'/casc/'// &
-                           Out_filename_S(1:longueur(Out_filename_S))
-         else
-            err = prog_filename (Out_filename_S,Out_prefix_S,date,hour,-1,-1, &
-                                 Out_myblocx,Out_myblocy,prognum,Out_ndigits, &
-                                 Out_unit_S)
-            Out_filenamep_S = trim(Out_filename_S)//trim(F_ext_S)
-            if (Clim_climat_L .and. &
-               (Out_prefix_S.eq.'dm' .or. &
-                Out_prefix_S.eq.'dp' .or. &
-                Out_prefix_S.eq.'pm' )) then
-                Out_filenamep_S = trim(Path_output_S)//'/current_last_step/' &
-                                 // blocxy_S // '/' // trim(Out_filenamep_S)
-            endif
-         endif
-
+!
+         err = prog_filename (Out_filename_S,Out_prefix_S,date,hour,-1,-1, &
+                              Out_myblocx,Out_myblocy,prognum,Out_ndigits, &
+                              Out_unit_S)
+!
+         Out_filename_S = trim(Out_dirname_S)//'/'//trim(Out_filename_S)//trim(F_ext_S)
+!
          if (Out_unf.eq.0) then
-             err = fnom (Out_unf ,Out_filenamep_S(1:longueur(Out_filenamep_S)),'STD+'//ros,0)
+             err = fnom (Out_unf, trim(Out_filename_S),'STD+'//ros,0)
              err = fstouv(Out_unf ,ros)
              if (Out_debug_L) &
-             write (6,101) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
+             write (6,101) Out_unf,trim(Out_filename_S)
+             Out_diruse_L = .true.
          endif
 !
       endif
@@ -142,8 +125,8 @@
 !
 #include "out.cdk"
 !
-      integer  fstfrm,longueur
-      external fstfrm,longueur
+      integer  fstfrm
+      external fstfrm
 !
       integer err
 !----------------------------------------------------------------------
@@ -151,8 +134,6 @@
       if ((Out_blocme.eq.0).and.(Out_unf.gt.0)) then
          err = fstfrm(Out_unf)
          call fclos(Out_unf)
-         if (Out_debug_L) &
-            write (6,102) Out_unf,Out_filename_S(1:longueur(Out_filename_S))
          Out_unf = 0
       endif
 !

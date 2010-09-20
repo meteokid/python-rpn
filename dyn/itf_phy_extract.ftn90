@@ -13,63 +13,71 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r itf_phy_extract - Fill the slice workspace variable for the physics
+!**s/r itf_phy_extract
 !
 #include "model_macros_f.h"
 !
-      subroutine itf_phy_extract (F_busvol, F_jdo, nk)
+      subroutine itf_phy_extract ( F_busper, F_busvol, F_obusval, &
+                                   F_step, F_jdo, nk )
       implicit none
 !
-      integer F_jdo, nk
-      real F_busvol(*) 
+      integer F_step, F_jdo, nk
+      real F_busper(*), F_busvol(*), F_obusval(*)
 !
 !author 
-!     Michel Roch - rpn - april 1994
+!     Michel Desgagne  -  Spring 2010
 !
 !revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Desgagne M.       - bug correction on rotation of wind 
-! v2_20 - Pellerin P.       - copy contents of geobus into entry bus
-! v2_31 - Desgagne M.       - clean up and introduce h2o tracers
-! v3_00 - Laroche S.        - add sigma levels in the arguments
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_02 - Plante A.         - Further clean up and introduction of
-!                             water loading via virtual temperature.
-! v3_12 - Leduc A-M         - Add arguments gzm and topo
-! v3_20 - Pellerin P.       - To allow the off-line mode
-! v3_30 - Desgagne M.       - new itf_phy interface
-! v3_30 - Bilodeau-Desgagne - debug offline mode
-! v4    - Chamberland-Spacek-Plante - staggered version
-! v4_04 - Plante A.         - Remove offline mode
+! v4_14 - Desgagne M.       - initial version
 !
 !object
-!	Fill the slice workspace variable for the physics.
+!	Extract physics tendencies from the folded space 
+!       F_busvol into model space phy_tend. Extract also
+!       physics output from F_busper and F_busvol.
 !
 #include "glb_ld.cdk"
 #include "itf_phy_buses.cdk"
+#include "itf_cpl.cdk"
+#include "obus.cdk"
 !
 !notes
 !
-      integer i, j, k, n, ii, indx, soit,lght,indx_n,cnt
-!*
+      integer soit,lght,n,cnt,indx_n,offbo,offbb
+!
 !     ---------------------------------------------------------------
 !
+!
+!     Extract physic tendencies
+!
       cnt = 0
-      j   = F_jdo 
-
       do n=1,p_bvol_top
          if (volnm(n)(1:5) .eq. 'PHYTD') then
             cnt = cnt + 1
             call getindx (volnm(n),  'V', indx_n, lght, soit)
-            do k= 1, Nk
-            do i= 1, p_ni
-               indx = (k-1)*p_ni+i-1
-               ii   = i + p_offi
-               phy_tend(ii, j, k, cnt) = F_busvol(indx_n + indx)
-            end do
-            end do
+            call itf_phy_unfold (phy_tend(l_minx,l_miny,1,cnt), &
+                                 F_busvol(indx_n),F_jdo       , &
+                                 1,nk,l_minx,l_maxx,l_miny,l_maxy)
          endif
        end do
+!
+!     Extract physic output
+!
+      do n=1,Obus_top
+         offbo = (obus_offset(n)-1)*l_ni*l_nj + 1
+         offbb =  obus_addr(n)
+         if (obus_bus_S(n).eq.'P') &
+         call itf_phy_unfold_td ( F_obusval(offbo), F_busper(offbb), &
+                                  n, F_jdo, l_ni, l_nj)
+         if (obus_bus_S(n).eq.'V') &
+         call itf_phy_unfold_td ( F_obusval(offbo), F_busvol(offbb), &
+                                  n, F_jdo, l_ni, l_nj)
+      end do
+!
+!C  Prepare surface variables for the coupling
+!
+      if (C_coupling_L) call itf_cpl_getbus (F_busper, F_busvol, F_jdo)
+!
+      call v4d_phy_extract_pbl ( F_busvol, F_jdo, F_step, p_nk )
 !
 !     ---------------------------------------------------------------
 !

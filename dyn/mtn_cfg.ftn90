@@ -89,21 +89,22 @@
 
       G_halox=3
  
-      Lam_blend_H=0
-      Lam_blend_Hy=0
+      that_L = .false.
       Zblen_L        = .true.
       Zblen_spngtt_L = .true.
 
       Out3_flipit_L  = .true.
+      Out3_closestep = 28800
 
       if ( Theo_case_S.eq.'MTN_SCHAR') then
 
-         Out3_etik_s='SCHAR'
+         Out3_etik_s  = 'SCHAR'
+         Schm_pior_L  = .true.
          Schm_hydro_L = .false.
 
          Height_top_8 = 19500.d0
 
-         mtn_tzero=288.
+         mtn_tzero= 288.
          mtn_nstar= 0.01
          mtn_flo  = 10.
          mtn_hwx  = 10
@@ -116,20 +117,20 @@
 
          Grd_dx = 500.                                   !  in meters
 
-         Lam_blend_Hx=15
+         Lam_blend_H = 25
 
          Zblen_spngthick=9000.
          Zblen_hmin = Height_top_8 - Zblen_spngthick
 
-         Step_total = 455
-         Out3_closestep=455
-
-!        Cstv_dt_8 = 8.
-         Cstv_dt_8 = 32.
          Cstv_tstr_8 = 2.144760293471223e+02
 
+        !FAST INTEGRATION(4hr)      CLASSICAL INTEGRATION
+         Step_total  = 455         !Step_total  = 1800
+         Cstv_dt_8   = 32.         !Cstv_dt_8   = 8.
+        !GROWING MOUNTAIN
          Vtopo_start = 0
-         Vtopo_ndt   = 45
+         Vtopo_ndt   = 45          !Vtopo_ndt   = 180
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !        extreme values requiring 3 C.-N. steps!
@@ -158,14 +159,13 @@
 
          Grd_dx = 500.                                   !  in meters
 	  
-         Lam_blend_Hx =15
+         Lam_blend_H=25
 
 !        Zblen_spngthick=1.00531e+04
          Zblen_spngthick=9000.
          Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 2400
-         Out3_closestep=2400
 
          Cstv_dt_8 = 5.34         !   CFL=0.2
 !        Cstv_dt_8 = 26.7         !   CFL=1.0
@@ -194,13 +194,12 @@
 
          Grd_dx = 3200.                                  ! in meters
 	  
-         Lam_blend_Hx = 15
+         Lam_blend_H=25
 
          Zblen_spngthick=10000.
          Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 800
-         Out3_closestep=800
 
          Cstv_dt_8   = 50.
          Cstv_tstr_8 = mtn_tzero
@@ -226,13 +225,12 @@
 
          Grd_dx = 3200.                                  ! in meters
 	  
-         Lam_blend_Hx = 15
+         Lam_blend_H=25
 
          Zblen_spngthick=2500.
          Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 1600
-         Out3_closestep=1600
 
          Cstv_dt_8   = 200.
          Cstv_tstr_8 = mtn_tzero
@@ -259,41 +257,47 @@
 
          Grd_dx = 3200.                                  ! in meters
 
-         Lam_blend_Hx = 15
+         Lam_blend_H=25
 
          Zblen_spngthick=10000.
          Zblen_hmin = Height_top_8 - Zblen_spngthick
       
          Step_total = 1000
-         Out3_closestep=1000
-!
+ 
          Cstv_dt_8   = 50.
          Cstv_tstr_8 = 2.946394714296820e+02
          Vtopo_start = 0
          Vtopo_ndt   = 60
 
       else if ( Theo_case_S.eq.'NOFLOW') then
-         Step_total  = 1000
-         Out3_closestep=1000
-         Out3_etik_s='NOFLOW'
-         Height_top_8 = 20000.d0
-         Height_top_8 =  5000.d0
-         mtn_tzero=273.16
+
+         Step_total   = 10800
+         Out3_etik_s  = 'NOFLOW'
+         Height_top_8 = 5000.d0
+
+         mtn_tzero   = 243.16
+         cstv_tstr_8 = 273.16
+         Cstv_dt_8   = 1.
+
+         Grd_ni = 21
+         Grd_nj = 1
+         G_nk   = 20
+         Grd_dx = 250.                                 !  in meters
+
+         Schm_hydro_L = .false.
+         Schm_pior_L  = .true.
+
          mtn_nstar= -1
          mtn_hwx  = 5
-         Grd_ni = 161
-         Grd_nj = 1
-         G_nk   = 80
-         Grd_dx = 250.                                   !  in meters
-         Schm_hydro_L = .false.
          mtn_flo  = 0.
          mtn_hght = 0.
+
          zblen_L = .false.
-         Lam_blend_Hx=0
+         Lam_blend_H=0
+
          Vtopo_start = -1
          Vtopo_ndt   = 0
-         Cstv_tstr_8=273.16
-         Cstv_dt_8 = 1.
+
       else
          call handle_error(-1,'mtn_cfg','not a valid mtn_case')
       endif

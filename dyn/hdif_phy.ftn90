@@ -18,53 +18,6 @@
 #include "model_macros_f.h"
 !
       subroutine hdif_phy ()
-!
-      implicit none
-!
-!author M.Tanguay
-!
-!revision
-! v3_03 - Tanguay M.        - initial MPI version
-! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-! v3_30 - Desgagne/Lee      - new physics interface + extra nesting 
-! v4_04 - Plante A.         - move hspng_main/hspng_drv in vspng_main
-! v4_04 - Tanguay M.        - Staggered version TL/AD
-!
-!object
-!     see id section
-!
-!arguments
-!
-!implicits
-#include "glb_ld.cdk"
-#include "schm.cdk"
-#include "lctl.cdk"
-#include "ifd.cdk"
-!
-!     ---------------------------------------------------------------
-!
-!      if ( Schm_hdlast_L ) then
-!
-         call itf_phy_main (Lctl_step)
-         call hzd_main ()
-!
-!      else
-!
-!         call hzd_main ()
-!         call itf_phy_main (Lctl_step)
-!
-!      endif
-!
-      if (G_lam .and. ifd_bcsphy_L) then
-! Update Lateral BCs with data that has seen physics
-         call nest_update
-! Impose Lateral BCs within Pil regions
-         call nest_bcs
-      endif
-!
-      if ( .not. Schm_phyms_L ) call dummy_diag ()
-!
-!     ---------------------------------------------------------------
-!
+	stop 'hdif_phy'
       return
       end

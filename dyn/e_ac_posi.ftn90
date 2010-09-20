@@ -17,12 +17,10 @@
 !                   grid given the analyse files
 #include "model_macros_f.h"
 !     
-      integer function e_ac_posi (xpx,ypx,dimgx,dimgy,F_width, &
-                                               F_bcs_hollow_L)
+      integer function e_ac_posi (xpx,ypx,dimgx,dimgy,F_width)
       implicit none
 !     
       integer dimgx,dimgy,F_width
-      logical F_bcs_hollow_L
       real xpx(dimgx), ypx(dimgy)
 !
 !author
@@ -129,44 +127,13 @@
       if (4.*b1*(n1-b1)/n1/n1.gt.0.95) e_grdc_hbwe = -1
       if (4.*b2*(n2-b2)/n2/n2.gt.0.95) e_grdc_hbsn = -1
       write (6,1003) e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf
-      if ((e_grdc_hbsn.le.0).or.(e_grdc_hbwe.le.0)) then
-         If (F_bcs_hollow_L)write(6,1005)
-         F_bcs_hollow_L = .false.
-         e_grdc_ni = e_grdc_gif-e_grdc_gid+1
-         e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
-      else
-!
-! Calculate indices for BCS output
-         call bcs_hollow(e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf, &
-                      e_grdc_gjdi,e_grdc_hbsn,e_grdc_hbwe,is,nis,js, &
-                      njs,jn,iw,niw,ie,jw,njw)
-         e_grdc_is  = is - e_grdc_gid+1 !Grdc_gid
-         e_grdc_nis = nis
-         e_grdc_js  = js - e_grdc_gjd+1 !grdc_gjd
-         e_grdc_njs = njs
-         e_grdc_jn  = jn - e_grdc_gjd+1 !Grdc_gjf-njs
-!
-         e_grdc_iw  = iw - e_grdc_gid+1 !Grdc_gid
-         e_grdc_niw = niw
-         e_grdc_ie  = ie - e_grdc_gid+1 !Grdc_gif-niw
-!
-         e_grdc_jw  = jw - e_grdc_gjd+1 !Grdc_gjdi-2
-         e_grdc_njw = njw
-!
-         e_grdc_ni = e_grdc_gif-e_grdc_gid+1
-         e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
-         write(6,1006)
-         print *,'is,nis,js,njs,jn,iw,niw,ie,jw,njw=', &
-              e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_njs,e_grdc_jn, &
-              e_grdc_iw,e_grdc_niw,e_grdc_ie,e_grdc_jw,e_grdc_njw
-      endif
+
+      e_grdc_ni = e_grdc_gif-e_grdc_gid+1
+      e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
 
       e_ac_posi = 0
-
 !
  1003 format (' Cascade grid:gid,gif,gjd,gjf ',4i6)
- 1005 format (' BCS HOLLOW chosen but grid is too small: 3DF Cascade grid output only')
- 1006 format (' For HOLLOW BCS Cascade grid output')
 !--------------------------------------------------------------------
       return
       end

@@ -13,49 +13,30 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r nest_theoc - nesting for theoretical cases only
-!
-#include "model_macros_f.h"
-!
-      subroutine nest_theoc
+!**s/r blend_pntr - Interface to call nest_blend with a pointer as argument 1
+
+      subroutine blend_pntr (F_fld_ptr, F_nest_fld, Minx,Maxx,Miny,Maxy, Minz,Maxz, &
+                                                                   F_grid_s, level)
+      use nest_blending, only: nest_blend
       implicit none
-!author 
-!     Desgagne & Lee      - spring 2002 (after MC2 v_4.9.3)
+!
+      character*1 F_grid_s
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy, Minz,Maxz
+      integer, intent(in), optional :: level  !level index to use for weights [use all levels]
+      real F_fld_ptr(Minx:Maxx,Miny:Maxy,Minz:Maxz), F_nest_fld(Minx:Maxx,Miny:Maxy,Minz:Maxz)
+!
+!author
+!     Michel Desgagne  --  Spring 2010
 !
 !revision
-! v3_00 - Desgagne & Lee     - initial version
-! v3_01 - Desgagne M.        - add Robert & Yakimiw horizontal blending
-! v3_11 - Gravel S.          - adapt for theoretical cases
-! v3_30 - Lee V.             - extracted from glb_bound
+! v4_14 - Desgagne M.       - initial version
 !
-!object
+!     __________________________________________________________________
 !
-!arguments
-!       none
-!
-!implicits
-#include "glb_ld.cdk"
-#include "theo.cdk"
-#include "zblen.cdk"
-!
-!----------------------------------------------------------------------
-!
-      if (north+south+west+east.ge.1) then
-         if ( Theo_case_S .eq. 'BUBBLE'   .or.    &
-              Theo_case_S .eq. 'BUBBLE_G' .or.    &
-              Theo_case_S .eq. '2_BUBBLES' ) then
-              call mirror()
-         else
-              call nest_bcs
-              call nest_gwa
-         endif
+    call nest_blend (F_fld_ptr, F_nest_fld, Minx,Maxx,Miny,Maxy, Minz,Maxz, F_grid_S)
 
-         call slabsym()
-      endif
+!     __________________________________________________________________
 !
- 9988 if ( Zblen_L ) call height_sponge()
-!      
-!----------------------------------------------------------------------
-!
-      return
-      end
+    return
+    end subroutine blend_pntr
+

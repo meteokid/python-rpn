@@ -2,9 +2,6 @@
 !
 !**comdeck geomg.cdk
 !
-
-PGF90-S-0038-Symbol, geomg_sy_8, has not been explicitly declared (./prep.f90: 196)
-
 !______________________________________________________________________
 !                                                                      |
 !  GRID COORDINATES and other related parameters (set_geom)            |

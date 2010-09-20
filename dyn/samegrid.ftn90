@@ -117,3 +117,112 @@
  999  return
       end
 
+
+
+
+!**s/r samegrid2
+!
+      subroutine samegrid2 (nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
+                            nid,njd, g1d, g2d, g3d, g4d, xpd,ypd, inttyp)
+      implicit none
+!
+      character*(*) inttyp
+      integer nis,njs, g1s, g2s, g3s, g4s
+      integer nid,njd, g1d, g2d, g3d, g4d
+      real xps(nis), yps(njs), xpd(nid), ypd(njd)
+!
+!author   M. Desgagne	-- Summer 2010 --
+!
+!revision
+! v4_14 - Desgagne          - Initial version
+!
+!object
+!     Compare positional parameters
+!
+      logical samegrid
+      integer i,j,ideb,jdeb,cnt,ii
+      real eps1,eps2,r1,r2
+!
+! ---------------------------------------------------------------------
+!
+      if ( (g1s.ne.g1d).or.(g2s.ne.g2d).or.(g3s.ne.g3d).or.(g4s.ne.g4d)) goto 999
+
+      do i=1,nis
+        ideb = i
+        if (xps(i).gt.xpd(1)) exit
+      end do
+      ideb = max(1,ideb-1)
+
+      do j=1,njs
+        jdeb = j
+        if (yps(j).gt.ypd(1)) exit
+      end do
+      jdeb = max(1,jdeb-1)
+
+      eps1 = 1.e-5 
+      eps2 = 1.e-4
+
+      ii = max(min((ideb),nis),1)
+      r1 = xps(ii)+5.
+      r2 = xpd (1)+5.
+      samegrid = (abs((r1-r2)/r1).le.eps2)
+
+      if (samegrid) then
+         cnt = 0
+         do i=1,nid
+            ii = max(min((ideb+i-1),nis),1)
+            r1 = xps(ii)+5.
+            r2 = xpd (i)+5.
+            if (abs((r1-r2)/r1).gt.eps1) then
+               samegrid = .false.
+               cnt = cnt + 1
+            endif
+         end do
+         if (.not.samegrid.and.(real(cnt)/real(nid).le.0.2)) then
+            samegrid = .true.
+            do i=1,nid
+               ii = max(min((ideb+i-1),nis),1)
+               r1 = xps(ii)+5.
+               r2 = xpd (i)+5.
+               if (abs((r1-r2)/r1).gt.eps2) samegrid = .false.
+            end do
+         endif
+      endif
+
+      if (.not.samegrid) goto 999
+
+      ii = max(min((jdeb),njs),1)
+      r1 = yps(ii)+5.
+      r2 = ypd (1)+5.
+      samegrid = (abs((r1-r2)/r1).le.eps2)
+
+      if (samegrid) then
+         cnt = 0
+         do i=1,njd
+            ii = max(min((jdeb+i-1),njs),1)
+            r1 = yps(ii)+5.
+            r2 = ypd (i)+5.
+            if (abs((r1-r2)/r1).gt.eps1) then
+               samegrid = .false.
+               cnt = cnt + 1
+            endif
+         end do
+         if (.not.samegrid.and.(real(cnt)/real(njd).le.0.2)) then
+            samegrid = .true.
+            do i=1,njd
+               ii = max(min((jdeb+i-1),njs),1)
+               r1 = yps(ii)+5.
+               r2 = ypd (i)+5.
+               if (abs((r1-r2)/r1).gt.eps2) samegrid = .false.
+            end do
+         endif
+      endif
+      if (.not.samegrid) goto 999
+!
+      inttyp = 'NEAREST'
+!
+! ---------------------------------------------------------------------
+!     
+ 999  return
+      end
+

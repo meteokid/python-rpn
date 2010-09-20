@@ -16,21 +16,14 @@
 #include "stop_mpi.h"
 #include "msg.h"
 
-subroutine adx_model2adx_grid_uv()
-   implicit none
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_model2adx_grid_uv','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_model2adx_grid_uv
-
-
 !/**
-subroutine adx_model2adx_grid_uv2(F_u_adw, F_v_adw, F_u_model,F_v_model, &
-     F_aminx,F_amaxx,F_aminy,F_amaxy,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+subroutine adx_grid_uv ( F_u_adw, F_v_adw, F_u_model,F_v_model, &
+                         F_aminx,F_amaxx,F_aminy,F_amaxy,       &
+                         F_minx,F_maxx,F_miny,F_maxy,F_nk)
    implicit none
-#include "adx_dims.cdk"
+!
    !@objective Extend the grid from model to adw with filled halos
+!
    !@arguments
    integer :: F_aminx,F_amaxx,F_aminy,F_amaxy !I, adw local array bounds
    integer :: F_minx,F_maxx,F_miny,F_maxy     !I, model's local array bounds
@@ -39,9 +32,14 @@ subroutine adx_model2adx_grid_uv2(F_u_adw, F_v_adw, F_u_model,F_v_model, &
         F_u_model, F_v_model   !I, winds on model-grid
    real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk) :: &
         F_u_adw ,F_v_adw       !O, winds on adw-grid
-   !**/
+!**/
+
+#include "adx_dims.cdk"
+
    integer :: nrow, j1
+
    !---------------------------------------------------------------------
+
    call msg(MSG_DEBUG,'adx_model2adx_grid_uv')
    nrow = 999
    if (adx_lam_L) nrow = 0
@@ -72,6 +70,8 @@ subroutine adx_model2adx_grid_uv2(F_u_adw, F_v_adw, F_u_model,F_v_model, &
 !$omp end parallel
 
    call msg(MSG_DEBUG,'adx_model2adx_grid_uv [end]')
+
    !---------------------------------------------------------------------
+
    return
-end subroutine adx_model2adx_grid_uv2
+end subroutine adx_grid_uv

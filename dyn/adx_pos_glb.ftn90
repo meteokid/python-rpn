@@ -17,25 +17,19 @@
 #include "msg.h"
 #include "stop_mpi.h"
 
-subroutine adx_pos_glb2()
-   call stop_mpi(STOP_ERROR,'adx_pos_glb2','called a stub')
-   return
-end subroutine adx_pos_glb2
-
 !/**
-subroutine adx_pos_glb3(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
+subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
      F_dth, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
-     F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk, F_nk_super)
+     F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
    implicit none
    !@objective
    !@arguments
    logical :: F_has_u2_L           !I, .T. if F_u2 needs to be treated
    real    :: F_dth                !I, factor (1. or timestep)
-   integer :: F_nk                 !I, number of vertical levels
    integer :: F_nk, F_nk_super     !I, number of vertical levels
    integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
    integer :: F_ni, F_nj           !I, dims of position fields
-   integer :: F_i0,F_in,F_j0,F_jn  !I, operator scope
+   integer :: F_i0,F_in,F_j0,F_jn,F_k0 !I, operator scope
    real, dimension(F_ni,F_nj,F_nk) :: F_xth,F_yth !I/O, x,y positions
    real, dimension(F_ni,F_nj,F_nk) :: F_zth       !I, z positions
    real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super) :: &
@@ -43,7 +37,6 @@ subroutine adx_pos_glb3(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    real, dimension(F_ni,F_nj,F_nk) :: F_wrkx1,F_wrky1  !O, F_dt * result of interp
    !**/
 #include "adx_nml.cdk"
-#include "adx_dims.cdk"
 #include "adx_poles.cdk"
 !!$   include "v4dg.inc" !TODO: remove this
    logical :: save_nosetint_L
@@ -77,9 +70,9 @@ subroutine adx_pos_glb3(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
         adx_fro_n, adx_fro_s, adx_fro_a, &
         adx_for_n, adx_for_s, adx_for_a, 3)
 
-   call adx_trilin_opt3(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
+   call adx_trilin_opt4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
         F_dth, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
-        F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk, F_nk_super)
+        F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
 
    istat = 1
    if (adx_fro_a > 0 .and. adw_ckbd_L) istat = adx_ckbd3(ypos2,adx_fro_n,adx_fro_s)
@@ -88,9 +81,9 @@ subroutine adx_pos_glb3(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    if (adx_fro_a > 0) then
       save_nosetint_L = adw_nosetint_L
       adw_nosetint_L  = .false.
-      call adx_trilin_opt3(xpos2,ypos2,F_u1,F_u2,xpos2,ypos2,zpos2, &
+      call adx_trilin_opt4(xpos2,ypos2,F_u1,F_u2,xpos2,ypos2,zpos2, &
            F_dth,F_has_u2_L, 1,adx_fro_a,1,1,&
-           adx_fro_a,1,F_aminx, F_amaxx, F_aminy, F_amaxy,1, F_nk_super)
+           adx_fro_a,1,F_aminx, F_amaxx, F_aminy, F_amaxy,1,1, F_nk_super)
       adw_nosetint_L = save_nosetint_L
    endif
 
@@ -108,5 +101,17 @@ subroutine adx_pos_glb3(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    call msg(MSG_DEBUG,'adx_pos_glb [end]')
    !---------------------------------------------------------------------
    return
-end subroutine adx_pos_glb3
+end subroutine adx_pos_glb4
 
+!========================================================================
+!== stubs ===============================================================
+!========================================================================
+
+subroutine adx_pos_glb2()
+   call stop_mpi(STOP_ERROR,'adx_pos_glb2','called a stub')
+   return
+end subroutine adx_pos_glb2
+subroutine adx_pos_glb3()
+   call stop_mpi(STOP_ERROR,'adx_pos_glb3','called a stub')
+   return
+end subroutine adx_pos_glb3

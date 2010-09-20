@@ -1,0 +1,82 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r out_outdir - Establishes output directory base on Lctl_step and Out3_postfreq
+!
+#include "model_macros_f.h"
+      subroutine out_outdir (current_step, upperlimit)
+      implicit none
+!
+      integer current_step,upperlimit
+!
+!AUTHOR   Michel Desgagne  - Summer 2010
+!
+!REVISION
+! v4_14 - Desgagne M.      - Initial version
+!
+#include "out.cdk"
+#include "out3.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+#include "path.cdk"
+#include <clib_interface.cdk>
+!
+      character*10 postjob_S
+      character*7  blocxy_S
+      integer err,last_step_post,flag_step_post,stepno
+!
+!----------------------------------------------------------------------
+!
+      write (blocxy_S ,'(I3.3,"-",I3.3)') Out_myblocx, Out_myblocy
+      Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S//'/'//blocxy_S
+!
+      stepno = max(1,current_step)
+      if (Out3_postfreq .gt. 0) then
+         last_step_post = stepno / Out3_postfreq
+         last_step_post = (last_step_post+min(1,mod(stepno, Out3_postfreq))) * Out3_postfreq
+      else
+         last_step_post = upperlimit
+      endif
+!
+      stepno = stepno + 1
+      if (Out3_postfreq .gt. 0) then
+         flag_step_post = stepno / Out3_postfreq
+         flag_step_post = (flag_step_post+min(1,mod(stepno, Out3_postfreq))) * Out3_postfreq
+      else
+         flag_step_post = upperlimit
+      endif
+!
+      Out_post_L     = (flag_step_post.gt.last_step_post)
+!
+      last_step_post = min(last_step_post,upperlimit)
+      write (postjob_S,'(i10.10)') last_step_post
+!
+      Out_laststep_S = 'laststep_'//postjob_S
+      Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S//'/'//blocxy_S
+!
+      if (Ptopo_blocme.eq.0) then
+      if (clib_isdir(trim(Out_dirname_S)) .le. 0) then
+         err= clib_mkdir ( trim(Path_output_S)//'/'//Out_laststep_S )
+         err= clib_mkdir ( trim(Out_dirname_S) )
+         if (Lun_out.gt.0) write (6,1001) trim(Out_laststep_S),current_step
+      endif
+      endif
+!
+ 1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i)
+!
+!----------------------------------------------------------------------
+!
+      return
+      end

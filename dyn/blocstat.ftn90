@@ -17,8 +17,10 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine blocstat
+      subroutine blocstat (F_forceit_L)
       implicit none
+!
+      logical F_forceit_L
 !
 !author
 !     M. Desgagne  	- fall 2009
@@ -42,7 +44,7 @@
 #include "schm.cdk"
 #include "stat.cdk"
 !
-      logical done
+      logical done, flag
       type(gmm_metadata) :: tmp_meta
       integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx
       real, pointer, dimension(:,:  ) :: wk2d
@@ -54,8 +56,11 @@
 !
       if (.not.done) call set_statliste
 !
-      if (Step_gstat.gt.0)                then
-      if (mod(Lctl_step,Step_gstat).eq.0) then
+      flag = .false.
+      if (Step_gstat.gt.0) flag = (mod(Lctl_step,Step_gstat).eq.0)
+      flag = flag .or. F_forceit_L
+
+      if (flag) then
 
          if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
          i0 = 1+acid_i0
@@ -106,7 +111,7 @@
          if (Ptopo_myproc.eq.0) write(6,1001)
 
       endif
-      endif
+!
       done = .true.
 !
  1010 format (' MAX COURANT NUMBER:  ', &

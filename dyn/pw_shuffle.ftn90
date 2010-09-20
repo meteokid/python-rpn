@@ -13,55 +13,32 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r itf_chm_inikey
+!**s/r pw_update - Update physical quantities
 !
-#include "model_macros_f.h"
 !
-      subroutine itf_chm_inikey()
+      subroutine pw_shuffle
       implicit none
 !
-!author 
-!     A. Kallaur - arqi - june 2005
+!author
+!     Michel Desgagne - May 2010
 !
 !revision
-! v3_30 - Kallaur A.       - initial version
+! v4_14 - Desgagne, M.     - Initial revision
 !
+#include "gmm.hf"
 !
-!implicites
+      integer gmmstat
+      character(len=8) , dimension(2), parameter :: pw_ulist  = (/ 'PW_UU:M', 'PW_UU:P' /)
+      character(len=8) , dimension(2), parameter :: pw_vlist  = (/ 'PW_VV:M', 'PW_VV:P' /)
+      character(len=8) , dimension(2), parameter :: pw_tlist  = (/ 'PW_TT:M', 'PW_TT:P' /)
+      character(len=8) , dimension(2), parameter :: pw_plist  = (/ 'PW_PM:M', 'PW_PM:P' /)
+!     ________________________________________________________________
 !
-#include "tr3d.cdk"
-#include "itf_chm_bus.cdk"
-#include "itf_chm_busind.cdk"
-!
-!  Local variables
-!
-      integer i,k,deb,lght
-      integer init,init0,init1
-      data    init0,init1 /0,1/
-!
-!-------------------------------------------------------------------
-!
-! Add chemical species to the tracer stack. Note the actual
-! loading is done in "inikey.ftn"
-!
-      do i=1,chm_bdyn_top
-         call itf_chm_getindx(chmdynnm(i),'D',deb,lght,init0)
-         chmt_name_S(i) = chmdynon(i)
-         chmt_ind(1,i)  = deb
-         chmt_ind(2,i)  = deb
-         chmt_ntr       = chmt_ntr + 1
-      enddo
-      do i=1,chmt_ntr
-         do k=1,tr3d_ntr
-            if (Tr3d_name_S(k).eq.chmt_name_S(i)) goto 40
-         end do
-         tr3d_ntr = tr3d_ntr + 1
-         Tr3d_name_S(tr3d_ntr) = chmt_name_S(i)
-         Tr3d_sval(tr3d_ntr) = 0.0
-  40  continue
-      enddo
-!
-!-------------------------------------------------------------------
+      gmmstat = gmm_shuffle (pw_ulist)
+      gmmstat = gmm_shuffle (pw_vlist)
+      gmmstat = gmm_shuffle (pw_tlist)
+      gmmstat = gmm_shuffle (pw_plist)
+!     ________________________________________________________________
 !
       return
       end

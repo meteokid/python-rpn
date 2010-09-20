@@ -10,20 +10,32 @@ gem4d:
 gem_nompi: gemntr_nompi gemdm_nompi
 
 gemntr_nompi:
-	make gemntr COMM_stubs=rpn_commstubs$(version_COMM) MPI=
+	make gemntr COMM_stubs=rpn_commstubs$(COMM_VERSION) MPI=
 
 gemdm_nompi:
-	make gemdm COMM_stubs=rpn_commstubs$(version_COMM) MPI=
+	make gemdm COMM_stubs=rpn_commstubs$(COMM_VERSION) MPI=
 
 gemntr:
 	cd $(LCLPO);\
-	$(RBUILD) -obj *.o -bidon -main gemntr -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -codebeta $(CODEBETA) $(MPI);\
-	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)* bidon.o
+	$(RBUILD) -obj *.o -bidon -main gemntr -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI);\
+	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)* bidon.o;\
+	echo PHY_VERSION   = $(PHY_VERSION);\
+	echo CHM_VERSION   = $(CHM_VERSION);\
+	echo CPL_VERSION   = $(CPL_VERSION);\
+	echo VGRID_VERSION   = $(VGRID_VERSION);\
+	echo RMN_VERSION   = $(RMN_VERSION);\
+	echo COMM_VERSION   = $(COMM_VERSION)
 
 gemdm:
 	cd $(LCLPO);\
-	$(RBUILD) -obj *.o -bidon -main gemdm -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN) -codebeta $(CODEBETA) $(MPI) ;\
-	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)* bidon.o
+	$(RBUILD) -obj *.o -bidon -main gemdm -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI) ;\
+	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)* bidon.o;\
+	echo PHY_VERSION   = $(PHY_VERSION);\
+	echo CHM_VERSION   = $(CHM_VERSION);\
+	echo CPL_VERSION   = $(CPL_VERSION);\
+	echo VGRID_VERSION   = $(VGRID_VERSION);\
+	echo RMN_VERSION   = $(RMN_VERSION);\
+	echo COMM_VERSION   = $(COMM_VERSION)
 
 include $(gem)/RCS_DYN/.cibles_sometools
 

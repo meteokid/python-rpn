@@ -88,6 +88,10 @@
       Acql_ecmanl   = (Acqi_datasp(2).eq.5) ! ECMWF   (data from ECMWF)
       Acql_staganl  = (Acqi_datasp(2).eq.6) ! HYBSTAG (staggered hybrid Girard)
 
+      zd_temp = 0.
+      w_temp = 0.
+      q_temp = 0.
+
       if (Acql_ecmanl) lvm = lvm+1
       if (.not.Acql_staganl) Acql_vertint = .true.
       if (Acql_staganl)      Acql_hybanl  = .true.
@@ -149,7 +153,6 @@
          else
             w_temp = 0.
          endif
-
          if(.not.Schm_hydro_L)then
             if (bmf_get('Q   ',bmf_time1,bmf_time2,-1, q_temp,-1., &
                                               1,lni,1,lnj,1,nktmp) .eq. 0) then

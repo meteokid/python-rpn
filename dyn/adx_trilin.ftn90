@@ -17,12 +17,12 @@
 #include "stop_mpi.h"
 
 !/**
-subroutine adx_trilin1(F_out, F_in, F_dt, F_n, &
-     F_capx, F_capy, F_capz, F_num,i0,in,j0,jn,kn)
+subroutine adx_trilin4(F_out, F_in, F_dt, F_n, &
+     F_capx, F_capy, F_capz, F_num,i0,in,j0,jn,k0,kn)
    implicit none
    !@objective tri-linear interpolation
    !@arguments
-   integer :: F_num, F_n(F_num),i0,in,j0,jn,kn
+   integer :: F_num, F_n(F_num),i0,in,j0,jn,kn,k0
    real :: F_dt, F_in(*)
    real :: F_out(F_num), F_capx(F_num), F_capy(F_num), F_capz(F_num)
    !______________________________________________________________________
@@ -49,13 +49,14 @@ subroutine adx_trilin1(F_out, F_in, F_dt, F_n, &
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+   ! v4_14 - Plante A. - Scope on loop k
    !**/
 #include "adx_dims.cdk"
    integer :: n, o1, o2, i, j, k
    real*8  :: prf1, prf2, prf3, prf4
    !---------------------------------------------------------------------
 !$omp parallel do private(n,o1,o2,prf1,prf2,prf3,prf4)
-   do k=1,kn
+   do k=k0,kn
       do j=j0,jn
          do i=i0,in
 
@@ -86,9 +87,13 @@ subroutine adx_trilin1(F_out, F_in, F_dt, F_n, &
 !$omp end parallel do
    !---------------------------------------------------------------------
    return
+end subroutine adx_trilin4
+
+
+subroutine adx_trilin1()
+   call stop_mpi(STOP_ERROR,'adx_trilin1','called a stub')
+   return
 end subroutine adx_trilin1
-
-
 
 
 subroutine adx_trilin2()

@@ -121,7 +121,7 @@
 !
         difgz = gz_temp(i,nk) - F_newtopo(i)
 !
-        if ( difgz .gt. 0. ) then
+        if ( (abs(difgz).lt.1.e-5) .or. (difgz .gt. 0.) ) then
 !
 !          surface of target grid is below the surface of source grid
 !          we assume SCHUMAN-NEWELL Lapse rate under ground to obtain

@@ -55,6 +55,17 @@ Integer Function itf_phy_puti_isba(vd,opt)
 	Type(input_options)     :: opt
 End Function itf_phy_puti_isba
 !
+Subroutine physics_wrapper(geofld, Phy_busdyn3D, Phy_busper3D, Phy_busvol3D, &
+                           p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,   &
+                           dt, F_stepno, phy_timing, p_ni, p_nj, p_nk) 
+
+         Real, Dimension(:), Pointer :: geofld, Phy_busdyn3D, Phy_busper3D, &
+                                        Phy_busvol3D
+         Integer :: p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz, F_stepno
+         Real    :: dt, phy_timing(p_ni,p_nj)
+         Integer :: p_ni, p_nj, p_nk
+End Subroutine physics_wrapper
+!
 End Interface
 !
 End Module itf_phy_iface

@@ -36,14 +36,15 @@
 #include "init.cdk"
 #include "rstr.cdk"
 #include "modconst.cdk"
+#include "out.cdk"
 !
 !
 !modules
       integer  fnom,fclos
       external fnom,fclos
 !
-      character*512 fn
-      character*16 datev
+      character*512  fn
+      character*16   datev
       integer dim,unf,ier,ibuf(4),datstp,adr
       real   rbuf(6)
       real*8 dayfrac, sec_in_day
@@ -61,7 +62,10 @@
       call datp2f (datstp,datev)
 !
       fn='restart_BUSPER'
-      if (F_spin_L) fn='BUSPER4spinphy_'//trim(datev)
+      if (F_spin_L) then
+         fn= trim(Out_dirname_S)// '/' //'BUSPER4spinphy_'//trim(datev)
+         Out_diruse_L = .true.
+      endif
 !
       ier = fnom  (unf,fn,'RND',0)
       call waopen (unf)

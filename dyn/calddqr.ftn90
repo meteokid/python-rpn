@@ -85,9 +85,9 @@
 #include "inuvl.cdk"
 !
 !*
-      integer i, j, k, i0, in, j0, jn,i00
-      real*8 fact1
+      integer i, j, k, i0, in, j0, jn,i00,dimy
       real*8 inv_geomg_cyv_8(l_miny:l_maxy)
+      real*8 inv_geomg_cy_8(l_miny:l_maxy)
 !
 !     ---------------------------------------------------------------
 !
@@ -104,19 +104,22 @@
       jn = l_nj
       call verder(F_dvdp , F_ui, F_wlnph, 2.0,  2.0, LDIST_DIM, &
                                                 G_nk,i0,in,j0,jn)
-      do j=1-G_haloy,l_nj+G_haloy
-         inv_geomg_cyv_8(j) = 1.0/geomg_cyv_8(j)
-      enddo
+      dimy = l_nj+2*G_haloy
+      call vrec (inv_geomg_cyv_8  , geomg_cyv_8 , dimy )
+      call vrec (inv_geomg_cy_8 , geomg_cy_8, dimy )
+!     do j=1-G_haloy,l_nj+G_haloy
+!        inv_geomg_cyv_8(j) = 1.0/geomg_cyv_8(j)
+!        inv_geomg_cy_8(j) = 1.0/geomg_cy_8(j)
+!     enddo
 !
-!$omp parallel private (fact1,i00) shared (inv_geomg_cyv_8)
+!$omp parallel private (i00) shared (inv_geomg_cyv_8,inv_geomg_cy_8)
 !$omp do
       do k=1,l_nk
          do j=j0,jn
-         fact1 = 1. / geomg_cy_8(j)
          do i=i0,in
             F_dpdy(i,j,k)= ( F_wlnph(i+1,j,k) - F_wlnph(i,j,k) )  &
-                           * geomg_invDXu_8(i)*fact1
-            F_dvdp(i,j,k)= F_dvdp(i,j,k)*fact1
+                           * geomg_invDXu_8(i)*inv_geomg_cy_8(j)
+            F_dvdp(i,j,k)= F_dvdp(i,j,k)*inv_geomg_cy_8(j)
          end do
          end do
       end do
@@ -237,7 +240,7 @@
           in = l_niu
       endif
 !
-!$omp parallel  shared (inv_geomg_cyv_8)
+!$omp parallel
 !$omp do
       do k=1,l_nk
       do j= j0, jn

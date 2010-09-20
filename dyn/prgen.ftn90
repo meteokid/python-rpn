@@ -56,17 +56,22 @@
 !
 !*
       integer i, j, k, kk,pnk, pnkm, pnindex(l_ni)
+      real    logpres(Nkout)
       real    prlprso, prd, pre, prr, prfm0, prfm1, prfm2, prfm3, prfl2
       real*8  invprd
 !
 !     ---------------------------------------------------------------
+      do kk=1,Nkout
+      logpres(kk) = log(F_pres(kk))
+      enddo
 !
 !$omp parallel private(i,k,kk,pnk,pnkm,pnindex,prlprso, &
-!$omp   prd,pre,prr,prfm0,prfm1,prfm2,prfm3,prfl2,invprd)
+!$omp   prd,pre,prr,prfm0,prfm1,prfm2,prfm3,prfl2,invprd) &
+!$omp shared(logpres)
 !$omp do
       do 600 j= 1, l_nj
       do 500 kk=1, Nkout
-      prlprso = log(F_pres(kk))
+      prlprso = logpres(kk)
 !
       do i= 1, l_ni
          pnindex(i) = 0

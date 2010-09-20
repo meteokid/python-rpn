@@ -16,41 +16,18 @@
 #include "msg.h"
 #include "stop_mpi.h"
 
-subroutine adx_setint()
-   implicit none
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint
-
-subroutine adx_setint2()
-   implicit none
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint2','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint2
-
-subroutine adx_setint_lin_hor_ver()
-   implicit none
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint_lin_hor_ver
 
 !/**
-subroutine adx_setint_lin_hor_ver1(F_n, &
+subroutine adx_setint_lin_hor_ver3(F_n, &
      F_capx, F_capy, F_capz, &
      F_x,    F_y,   F_z,&
-     i0,in,j0,jn,F_nk, F_num)
+     i0,in,j0,jn,k0,F_nk, F_num)
    implicit none
    !@objective sets localization and interpolation parameters
    !@arguments
    integer :: F_num           !I, nb points of computations
    integer :: F_nk            !I, nb levels
-   integer :: i0,in,j0,jn     !I, scope ofthe operator
+   integer :: i0,in,j0,jn,k0  !I, scope ofthe operator
    real,dimension(F_num) :: &
         F_x, F_y, F_z, &       !I, upstream position coor
         F_capz, F_capy, F_capx !O, x precomputed displacements and interp terms
@@ -62,7 +39,8 @@ subroutine adx_setint_lin_hor_ver1(F_n, &
    ! v3_03 - Lee V. (from IBM) - added min,max on index calcs
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
    ! v3_20 - Tanguay M.        - Correction for haloy.gt.2
-   ! v$_10 - Plante A.         - Use super winds for thermo
+   ! v4_10 - Plante A.         - Use super winds for thermo
+   ! V4_14 - Plante A.         - Scope on vertical and cleanup
    !@description
    !Notes on computations of positions in the 3D volume of interpolation 
    !                   boxes for adx_trilin or adx_tricub
@@ -78,288 +56,53 @@ subroutine adx_setint_lin_hor_ver1(F_n, &
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
    !---------------------------------------------------------------------
-   call adx_setint_lin_noptr(F_n, &
+   call adx_setint_lin_noptr1(F_n, &
         F_capx, F_capy, F_capz, &
         F_x,    F_y,   F_z,&
         adx_lcx, adx_bsx_8, adx_dix_8, &
         adx_lcy, adx_bsy_8, adx_diy_8,&
         adx_lcz%s, adx_bsz_8%s, adx_diz_8,&
-        i0,in,j0,jn,F_nk, F_num,adx_lnkm)
+        i0,in,j0,jn,k0,F_nk, F_num,adx_lnkm)
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint_lin_hor_ver3
+
+!========================================================================
+!== stubs ===============================================================
+!========================================================================
+
+subroutine adx_setint()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint
+subroutine adx_setint2()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint2','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint2
+subroutine adx_setint_lin_hor_ver()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint_lin_hor_ver
+subroutine adx_setint_lin_hor_ver1()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver1','called a stub')
    !---------------------------------------------------------------------
    return
 end subroutine adx_setint_lin_hor_ver1
-
-
-
-!/**
-subroutine adx_setint_lin_hor_ver2(F_n, &
-     F_capx, F_capy, F_capz, &
-     F_x,    F_y,   F_z, &
-     i0,in,j0,jn,F_ni,F_nj,F_nk)
+subroutine adx_setint_lin_hor_ver2()
    implicit none
-   !@objective sets localization and interpolation parameters
-   !@arguments
-   integer :: F_ni,F_nj,F_nk  !I, dims
-   integer :: i0,in,j0,jn     !I, scope ofthe operator
-   real,dimension(F_ni,F_nj,F_nk) :: &
-        F_x, F_y, F_z, &       !I, upstream position coor
-        F_capz, F_capy, F_capx !O, x precomputed displacements and interp terms
-   integer,dimension(F_ni,F_nj,F_nk) :: &
-        F_n                    !O, pos in the 3D volume of interpolation boxes
-   !@author  alain patoine
-   !@revisions
-   ! v3_00 - Desgagne & Lee    - Lam configuration
-   ! v3_03 - Lee V. (from IBM) - added min,max on index calcs
-   ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-   ! v3_20 - Tanguay M.        - Correction for haloy.gt.2
-   ! v$_10 - Plante A.         - Use super winds for thermo
-   !@description
-   !Notes on computations of positions in the 3D volume of interpolation 
-   !                   boxes for adx_trilin or adx_tricub
-   !
-   !  The same algorithm applies to finding the positions in the interpolation
-   !  box for each X,Y,Z upstream position.
-   !  For example, say a given F_x(i), we try to find "ii" on advection
-   !  axis X (adx_xg_8) where F_x(i) is closest to the gridpoint adx_xg_8(ii) 
-   !  and adx_xg_8(ii) must be less than or equal to F_x(i).
-   !  The 3-D positions (ii,jj,kk) are stored in F_n, a folded 3-D array.
-!**/
-!!$#undef __ADX_DIMS__
-!!$#include "adx_dims.cdk"
-!!$#undef __ADX_GRID__
-!!$#include "adx_grid.cdk"
-!!$#undef __ADX_INTERP__
-!!$#include "adx_interp.cdk"
-!!$   integer, save :: mycnt = 0
-!!$   integer :: ii, jj, kk, ij, nijag,i, j, k, nit, njt
-!!$   real*8  :: prd_8, prdt_8, p_z00_8
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver2','called a stub')
-!!$   mycnt = mycnt + 1
-!!$   print *,'adx_setint',mycnt
-!!$   call msg(MSG_DEBUG,'adx_setint_lin_hor_ver')
-!!$   p_z00_8 = adx_verZ_8%t(1)
-!!$
-!!$   nit = adx_lmaxx - adx_lminx + 1
-!!$   njt = adx_lmaxy - adx_lminy + 1
-!!$   nijag = nit * njt
-!!$
-!!$!$omp parallel private(prd_8,ii,prdt_8,jj,kk,ij)
-!!$!$omp do
-!!$   do k=1,F_nk
-!!$      do j=j0,jn
-!!$         do i=i0,in
-!!$            ii = (dble(F_x(i,j,k)) - adx_x00_8) * adx_ovdx_8
-!!$            ii = adx_lcx(ii+1) + 1
-!!$            ii = min(max(2,ii), adx_gni+2*adx_halox-2)
-!!$
-!!$            prdt_8 = dble(F_x(i,j,k)) - adx_bsx_8(ii)
-!!$            if (prdt_8 < 0.D0) then
-!!$               ii = max(2, ii-1)
-!!$               prdt_8 = dble(F_x(i,j,k)) - adx_bsx_8(ii)
-!!$            endif
-!!$            F_capx(i,j,k) = prdt_8 * adx_dix_8(ii)
-!!$
-!!$            jj = (dble(F_y(i,j,k)) - adx_y00_8) * adx_ovdy_8
-!!$            jj = adx_lcy(jj+1) + 1
-!!$            jj = min(max(adx_haloy, jj), adx_gnj+adx_haloy)
-!!$
-!!$            prdt_8 = dble(F_y(i,j,k)) - adx_bsy_8(jj)
-!!$            if (prdt_8 < 0.D0) then
-!!$               jj = max(adx_haloy, jj-1)
-!!$               prdt_8 = dble(F_y(i,j,k)) - adx_bsy_8(jj)
-!!$            endif
-!!$            F_capy(i,j,k) = prdt_8 * adx_diy_8(jj)
-!!$
-!!$            prd_8 = dble(F_z(i,j,k))
-!!$            kk = (prd_8 - p_z00_8) * adx_ovdz_8
-!!$            kk = adx_lcz%s(kk+1)
-!!$            prd_8 = prd_8 - adx_bsz_8%s(kk)
-!!$            if (prd_8 < 0.D0) kk = kk - 1
-!!$            F_capz(i,j,k) = prd_8 * adx_diz_8(kk)
-!!$            if (prd_8 < 0.D0) F_capz(i,j,k) = 1.0 + F_capz(i,j,k)
-!!$            ij = (jj-(adx_lj0-1)-1)*nit + (ii-(adx_li0-1))
-!!$            F_n(i,j,k) = kk*nijag + ij
-!!$         enddo
-!!$      enddo
-!!$   enddo
-!!$!$omp enddo
-!!$!$omp end parallel
-!!$   call msg(MSG_DEBUG,'adx_setint_lin_hor_ver [end]')
    !---------------------------------------------------------------------
    return
 end subroutine adx_setint_lin_hor_ver2
-
-
-!TODO: remove adx_setint2 - not used in GEM
-!!$!/**
-!!$subroutine adx_setint2(F_n, &
-!!$     F_capx, F_xgg, F_xdd, &
-!!$     F_capy, F_ygg, F_ydd, &
-!!$     F_capz, F_cz, &
-!!$     F_x,    F_y,   F_z, &
-!!$     F_h_L,  F_z_L, F_lin_L,  &
-!!$     i0,in,j0,jn,F_nk)
-!!$   implicit none
-!!$   !@objective sets localization and interpolation parameters
-!!$   !@arguments
-!!$   integer :: F_nk        !I, number of vertical levels
-!!$   integer :: i0,in,j0,jn !I, scope ofthe operator
-!!$   logical :: F_lin_L     !I, .true. compute only linear interp param
-!!$   logical :: F_z_L       !I, .true. compute verti interp indexes and coef
-!!$   logical :: F_h_L       !I, .true. compute horiz interp indexes and coef
-!!$   real,dimension(adx_mlni,adx_mlnj,F_nk) :: &
-!!$        F_x, F_y, F_z, &       !I, upstream position coor
-!!$        F_capz, F_cz, &        !O, z precomputed displacements and interp terms
-!!$        F_capy, F_ygg, F_ydd,& !O, y precomputed displacements and interp terms
-!!$        F_capx, F_xgg, F_xdd   !O, x precomputed displacements and interp terms
-!!$   integer,dimension(adx_mlni,adx_mlnj,F_nk) :: &
-!!$        F_n                    !O, pos in the 3D volume of interpolation boxes
-!!$   !@author  alain patoine
-!!$   !@revisions
-!!$   ! v3_00 - Desgagne & Lee    - Lam configuration
-!!$   ! v3_03 - Lee V. (from IBM) - added min,max on index calcs
-!!$   ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-!!$   ! v3_20 - Tanguay M.        - Correction for haloy.gt.2
-!!$   ! v$_10 - Plante A.         - Use super winds for thermo
-!!$   !@description
-!!$   !Notes on computations of positions in the 3D volume of interpolation 
-!!$   !                   boxes for adx_trilin or adx_tricub
-!!$   !
-!!$   !  The same algorithm applies to finding the positions in the interpolation
-!!$   !  box for each X,Y,Z upstream position.
-!!$   !  For example, say a given F_x(i), we try to find "ii" on advection
-!!$   !  axis X (adx_xg_8) where F_x(i) is closest to the gridpoint adx_xg_8(ii) 
-!!$   !  and adx_xg_8(ii) must be less than or equal to F_x(i).
-!!$   !  The 3-D positions (ii,jj,kk) are stored in F_n, a folded 3-D array.
-!!$!**/
-!!$#include "adx_dims.cdk"
-!!$#include "adx_grid.cdk"
-!!$#include "adx_interp.cdk"
-!!$   integer :: ii, jj, kk, ij, nijag,i, j, k, nit, njt
-!!$   real*8  :: prd_8, prdt_8, p_z00_8
-!!$   !---------------------------------------------------------------------
-!!$   p_z00_8 = adx_verZ_8%t(1)
-!!$
-!!$   nit = adx_lmaxx - adx_lminx + 1
-!!$   njt = adx_lmaxy - adx_lminy + 1
-!!$   nijag = nit * njt
-!!$
-!!$!$omp parallel private(prd_8,ii,prdt_8,jj,kk,ij)
-!!$   IF_H_Z: if (F_h_L .and. F_z_L) then
-!!$!$omp do
-!!$      do k=1,F_nk
-!!$         do j=j0,jn
-!!$            do i=i0,in
-!!$               ii = (dble(F_x(i,j,k)) - adx_x00_8) * adx_ovdx_8
-!!$               ii = adx_lcx(ii+1) + 1
-!!$               ii = min(max(2,ii), adx_gni+2*adx_halox-2)
-!!$
-!!$               prdt_8 = dble(F_x(i,j,k)) - adx_bsx_8(ii)
-!!$               if (prdt_8 < 0.D0) then
-!!$                  ii = max(2, ii-1)
-!!$                  prdt_8 = dble(F_x(i,j,k)) - adx_bsx_8(ii)
-!!$               endif
-!!$               F_capx(i,j,k) = prdt_8 * adx_dix_8(ii)
-!!$
-!!$               jj = (dble(F_y(i,j,k)) - adx_y00_8) * adx_ovdy_8
-!!$               jj = adx_lcy(jj+1) + 1
-!!$               jj = min(max(adx_haloy, jj), adx_gnj+adx_haloy)
-!!$
-!!$               prdt_8 = dble(F_y(i,j,k)) - adx_bsy_8(jj)
-!!$               if (prdt_8 < 0.D0) then
-!!$                  jj = max(adx_haloy, jj-1)
-!!$                  prdt_8 = dble(F_y(i,j,k)) - adx_bsy_8(jj)
-!!$               endif
-!!$               F_capy(i,j,k) = prdt_8 * adx_diy_8(jj)
-!!$
-!!$               prd_8 = dble(F_z(i,j,k))
-!!$               kk = (prd_8 - p_z00_8) * adx_ovdz_8
-!!$               kk = adx_lcz%s(kk+1)
-!!$               prd_8 = prd_8 - adx_bsz_8%s(kk)
-!!$               if (prd_8 < 0.D0) kk = kk - 1
-!!$               F_capz(i,j,k) = prd_8 * adx_diz_8(kk)
-!!$               if (prd_8 < 0.D0) F_capz(i,j,k) = 1.0 + F_capz(i,j,k)
-!!$               ij = (jj-(adx_lj0-1)-1)*nit + (ii-(adx_li0-1))
-!!$               F_n(i,j,k) = kk*nijag + ij
-!!$               if (.not.F_lin_L) then
-!!$                  F_xgg(i,j,k) = adx_dlx_8(ii-1) * adx_dix_8(ii)
-!!$                  F_xdd(i,j,k) = adx_dlx_8(ii+1) * adx_dix_8(ii)
-!!$                  F_ygg(i,j,k) = adx_dly_8(jj-1) * adx_diy_8(jj)
-!!$                  F_ydd(i,j,k) = adx_dly_8(jj+1) * adx_diy_8(jj)
-!!$                  F_cz (i,j,k) = (F_capz(i,j,k)-1.)*F_capz(i,j,k)*adx_dbz_8(kk)
-!!$               endif
-!!$            enddo
-!!$         enddo
-!!$      enddo
-!!$!$omp enddo
-!!$
-!!$   else if (F_h_L) then !IF_H_Z
-!!$
-!!$!$omp do
-!!$      do k=1,F_nk
-!!$         do j=j0,jn
-!!$            do i=i0,in
-!!$               kk = (F_n(i,j,k) - (mod(F_n(i,j,k), nijag))) / nijag
-!!$               ii = (dble(F_x(i,j,k)) - adx_x00_8) * adx_ovdx_8
-!!$               ii = adx_lcx(ii+1) + 1
-!!$               ii = min(max(2,ii), adx_gni+2*adx_halox-2)
-!!$
-!!$               prdt_8 = dble(F_x(i,j,k)) - adx_bsx_8(ii)
-!!$               if (prdt_8 < 0.D0) then
-!!$                  ii = max(2, ii-1)
-!!$                  prdt_8 = dble(F_x(i,j,k)) - adx_bsx_8(ii)
-!!$               endif
-!!$               F_capx(i,j,k) = prdt_8 * adx_dix_8(ii)
-!!$
-!!$               jj = (dble(F_y(i,j,k)) - adx_y00_8) * adx_ovdy_8
-!!$               jj = adx_lcy(jj+1) + 1
-!!$               jj = min(max(adx_haloy,jj), adx_gnj+adx_haloy)
-!!$
-!!$               prdt_8 = dble(F_y(i,j,k)) - adx_bsy_8(jj)
-!!$               if (prdt_8 < 0.D0) then
-!!$                  jj = max(adx_haloy, jj-1)
-!!$                  prdt_8 = dble(F_y(i,j,k)) - adx_bsy_8(jj)
-!!$               endif
-!!$               F_capy(i,j,k) = prdt_8 * adx_diy_8(jj)
-!!$               ij = (jj-(adx_lj0-1)-1)*nit + (ii-(adx_li0-1))
-!!$               F_n(i,j,k) = kk*nijag + ij
-!!$               if (.not.F_lin_L) then
-!!$                  F_xgg(i,j,k) = adx_dlx_8(ii-1) * adx_dix_8(ii)
-!!$                  F_xdd(i,j,k) = adx_dlx_8(ii+1) * adx_dix_8(ii)
-!!$                  F_ygg(i,j,k) = adx_dly_8(jj-1) * adx_diy_8(jj)
-!!$                  F_ydd(i,j,k) = adx_dly_8(jj+1) * adx_diy_8(jj)
-!!$               endif
-!!$            enddo
-!!$         enddo
-!!$      enddo
-!!$!$omp enddo
-!!$
-!!$   else if (F_z_L) then !IF_H_Z
-!!$
-!!$!$omp do
-!!$      do k=1,F_nk
-!!$         do j=j0,jn
-!!$            do i=i0,in
-!!$               ij = mod(F_n(i,j,k), nijag)
-!!$               prd_8 = dble(F_z(i,j,k))
-!!$               kk = (prd_8 - p_z00_8) * adx_ovdz_8
-!!$               kk = adx_lcz%s(kk+1)
-!!$               prd_8 = prd_8 - adx_bsz_8%s(kk)
-!!$               if (prd_8 < 0.D0) kk = kk - 1
-!!$               F_capz(i,j,k) = prd_8 * adx_diz_8(kk)
-!!$               if (prd_8 < 0.D0) F_capz(i,j,k) = 1.0 + F_capz(i,j,k)
-!!$               F_n(i,j,k) = kk*nijag + ij
-!!$               if (.not.F_lin_L) then
-!!$                  F_cz(i,j,k) = (F_capz(i,j,k)-1.)*F_capz(i,j,k)*adx_dbz_8(kk)
-!!$               endif
-!!$            enddo
-!!$         enddo
-!!$      enddo
-!!$!$omp enddo
-!!$
-!!$   endif IF_H_Z
-!!$!$omp end parallel
-!!$   !---------------------------------------------------------------------
-!!$   return
-!!$end subroutine adx_setint2

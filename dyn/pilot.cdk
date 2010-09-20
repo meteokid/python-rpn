@@ -11,8 +11,6 @@
 ! Pil_nesdt          | Number of seconds between 2 consecutive BCs     |
 !                    | time frame                                      |
 ! Pil_3df_L          | True to generate boundary conditions for LAM    |
-! Pil_bcs_hollow_L   | True to have  BCS files        when Pil_bcs_L=T |
-!                    | False to have 3DF files        when Pil_bcs_L=T |
 ! Pil_bmf_L          | True to generate BMF files only, default isFalse|
 ! Pil_dx             | resolution of output for feeding model in radians
 ! Pil_sfc2d_L        | True to generate geophy.bin (surface fields)    |
@@ -22,14 +20,14 @@
 !
       character*16 Pil_jobstrt_S,Pil_jobend_S
 !
-      logical Pil_3df_L,Pil_bmf_L,Pil_bcs_hollow_L
+      logical Pil_3df_L,Pil_bmf_L
 !
       integer Pil_nesdt,Pil_hblen,Pil_pil,Pil_lancemodel
       real    Pil_dx
 !
       common /pilr/ Pil_dx
       common /pils/ Pil_jobstrt_S,Pil_jobend_S
-      common /pill/ Pil_3df_L,Pil_bmf_L,Pil_bcs_hollow_L
+      common /pill/ Pil_3df_L,Pil_bmf_L
       common /pili/ Pil_nesdt,Pil_hblen,Pil_pil
       common /pili/ Pil_lancemodel
 !

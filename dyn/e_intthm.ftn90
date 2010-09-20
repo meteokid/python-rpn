@@ -132,17 +132,10 @@
 !
 !     Write out P0 record
       if (Pil_bmf_L) then
-          call e_bmfsplitxy2 (p0 ,nifi,njfi,'P0  ',1,1,pni ,0,0,0)
+         call e_bmfsplitxy2 (p0 ,nifi,njfi,'P0  ',1,1,pni ,0,0,0)
       else
-         if (Pil_bcs_hollow_L) then
-            call e_write_bcs (p0 ,nis,njs, &
-                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                  1 , 'S   ',unf_casc)
-         else
-            call e_write_3df ( p0 ,nis,njs,1 ,'S   ',unf_casc)
-         endif
-       endif
+         call e_write_3df ( p0 ,nis,njs,1 ,'S   ',unf_casc)
+      endif
 !
 !     For searching the GZ(at surface),HU,TT,VT records, 
 !     correct IP1 targets must be found
@@ -191,11 +184,16 @@
             enddo
          endif
 !
-         key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ','WT1')
+         var='WT1 '
+         key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ',var)
+         if (key <= 0) then
+            var='ZZ  '
+            key=fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ',var)
+         endif
          if(key.ge.0)then
             w_L=.true.
             do k=1,lv_t-1
-               if (e_rdhint3 (zdwq,dstf_gid,nis,njs,'WT1 ',na_t(k),ip2a, &
+               if (e_rdhint3 (zdwq,dstf_gid,nis,njs,var,na_t(k),ip2a, &
                     ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0)  &
                     goto 55
                if (Pil_bmf_L) then
@@ -246,40 +244,6 @@
          endif               
 !
          if (.not.Pil_bmf_L) then
-
-             if (Pil_bcs_hollow_L) then
-!
-                call e_write_bcs (ttn,nis,njs, &
-                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                  lv_t, 'TT  ',unf_casc)
-                call e_write_bcs (wk2,nis,njs, &
-                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                  1 , 'GZ  ',unf_casc)
-                call e_write_bcs (hun,nis,njs, &
-                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                  lv_t, 'HU  ',unf_casc)
-                if(zd_L) &
-                     call e_write_bcs (zdn,nis,njs, &
-                     e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                     e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                     lv_t-1, 'ZD  ',unf_casc)
-                if(w_L) &
-                     call e_write_bcs ( wn,nis,njs, &
-                     e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                     e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                     lv_t-1, 'W   ',unf_casc)
-                if ((.not.Schm_hydro_L).and.q_L) then
-                   call e_write_bcs ( qn,nis,njs, &
-                        e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                        e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                        lv+1, 'Q   ',unf_casc)
-                endif
-!
-             else
-!
                 call e_write_3df (  ttn,nis,njs,lv_t  ,'TT  ',unf_casc)
                 call e_write_3df (  wk2,nis,njs,1     ,'GZ  ',unf_casc)
                 call e_write_3df (  hun,nis,njs,lv_t  ,'HU  ',unf_casc)
@@ -291,7 +255,6 @@
                    call e_write_3df (qn,nis,njs,lv+1  ,'Q   ',unf_casc)
                 endif
 !
-             endif
          endif
 !     
       elseif ( Anal_ecmwf_L ) then
@@ -414,24 +377,9 @@
                endif
   100    continue
          if (.not.Pil_bmf_L) then
-             if (Pil_bcs_hollow_L) then
-                call e_write_bcs (ttn,nis,njs, &
-                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                  lv_t, 'TT  ',unf_casc)
-                call e_write_bcs (gzn,nis,njs, &
-                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                  lv_t, 'GZ  ',unf_casc)
-                call e_write_bcs (hun,nis,njs, &
-                  e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                  e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                  lv_t, 'HU  ',unf_casc)
-             else
                 call e_write_3df ( ttn,nis,njs,lv_t  ,'TT  ',unf_casc)
                 call e_write_3df ( gzn,nis,njs,lv_t  ,'GZ  ',unf_casc)
                 call e_write_3df ( hun,nis,njs,lv_t  ,'HU  ',unf_casc)
-             endif
          endif
 !
       endif
@@ -459,14 +407,7 @@
              endif
          enddo
          if (.not.Pil_bmf_L) then
-            if (Pil_bcs_hollow_L) then
-                call e_write_bcs (hun,nis,njs, &
-                          e_grdc_is,e_grdc_nis,e_grdc_js,e_grdc_jn,e_grdc_njs, &
-                          e_grdc_iw,e_grdc_ie,e_grdc_niw,e_grdc_jw,e_grdc_njw, &
-                          lv_t, E_trname_S(i),unf_casc)
-            else
-                call e_write_3df ( hun,nis,njs,lv_t,E_trname_S(i),unf_casc)
-            endif
+            call e_write_3df ( hun,nis,njs,lv_t,E_trname_S(i),unf_casc)
          endif 
       end do
 !

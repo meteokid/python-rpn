@@ -74,10 +74,17 @@ subroutine set_igs ()
      enddo
      identity_vec(cnt:cnt+ELEM-1) = (/Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2/); cnt=cnt+ELEM-1
 
+!     ihalf = cnt/2
+!     crc = f_calc_crc (identity_vec(1:ihalf),ihalf,0,1)
+!     Grid_ig1(j) = ibits(crc,0,16)
+
+!     crc = f_calc_crc (identity_vec(ihalf+1:cnt),cnt-ihalf,0,1)
+!     Grid_ig2(j) = ibits(crc,0,16)
+
      crc = f_crc32 (0., identity_vec(1:cnt), cnt)
 ! before rmn_011 convip was bugged for 3200 < ip1 < 32768
 ! we therefore add 32768 for now
-     Grid_ig1(j) = ibits(crc, 0,16) + 32768
+     Grid_ig1(j) = ibits(crc,0,16)  + 32768
      Grid_ig2(j) = ibits(crc,16,16) + 32768
   enddo
   return

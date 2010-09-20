@@ -56,7 +56,6 @@
 #include "itf_cpl.cdk"
 #include "ifd.cdk"
 #include "glb_ld.cdk"
-#include "itf_chm_bus.cdk"
 #include "zblen.cdk"
 #include "cstv.cdk"
 !
@@ -87,16 +86,7 @@
 !
          call wawrit (Lun_rstrt,Lctl_step      ,1,1)
          call wawrit (Lun_rstrt,Rstri_idon_L   ,2,1)
-         call wawrit (Lun_rstrt,ifd_bcsphy_L   ,3,1)
-         adr = 4
-!
-         dim = chm_bper_siz*chm_nj
-         call wawrit (Lun_rstrt,dim            ,adr,1)
-         adr = adr + 1
-         if (dim>0) then
-            call wawrit (Lun_rstrt,Chm_busper3D,adr,chm_bper_siz*chm_nj)
-            adr = adr + chm_bper_siz*chm_nj
-         endif
+         adr = 3
 !
          call wawrit (Lun_rstrt, Cstv_ptop_8,adr, 2)
          adr = adr + 2

@@ -1,18 +1,19 @@
 !/**
 subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
-     adx_y00_8,adx_x00_8,p_z00_8,adx_ovdx_8,adx_ovdy_8,adx_ovdz_8, &
-     adx_lcx,adx_lcy,p_lcz, adx_bsx_8,adx_bsy_8,p_bsz_8, &
-     adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8, &
-     adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8, &
-     p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8,&
-     F_num, F_mono_L, i0, in, j0, jn, F_nk, kkmax, F_lev_S)
+                             adx_y00_8,adx_x00_8,p_z00_8,adx_ovdx_8,adx_ovdy_8,adx_ovdz_8, &
+                             adx_lcx,adx_lcy,p_lcz, adx_bsx_8,adx_bsy_8,p_bsz_8, &
+                             adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8, &
+                             adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8, &
+                             p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8,&
+                             F_num, F_mono_L, i0, in, j0, jn, k0, F_nk, kkmax)
    implicit none
+!
    !@objective Tri-cubic interp: Lagrange 3d (Based on adx_tricub v3.1.1)
+!
    !@arguments
-   character(len=*) :: F_lev_S !I, m/t : Momemtum/thermo level
    integer :: F_num            !I, number points
    integer :: F_nk             !I, number of vertical levels
-   integer :: i0,in,j0,jn      !I, scope of operator
+   integer :: i0,in,j0,jn,k0   !I, scope of operator
    logical :: F_mono_L         !I, .true. monotonic interpolation
    real,dimension(F_num) :: &
         F_x, F_y, F_z          !I, interpolation target x,y,z coordinates
@@ -34,17 +35,18 @@ subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
    real*8, dimension(*) :: adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8
    real*8, dimension(*) :: adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8
    real*8  :: adx_y00_8,adx_x00_8,adx_ovdx_8,adx_ovdy_8,adx_ovdz_8
-
+!
    !@author Gravel, Valin, Tanguay 
    !@revisions
    ! v3_20 - Gravel & Valin & Tanguay - initial version 
    ! v3_21 - Desgagne M.       - Revision Openmp
 !**/
-#undef __ADX_DIMS__
+
+!#undef __ADX_DIMS__
 #include "adx_dims.cdk"
+
 !!$#define TRIPROD(ZA,ZB,ZC,ZD) ((ZA-ZB)*(ZA-ZC)*(ZA-ZD))
    integer :: n,i,j,k,ii,jj,kk
-! ,nij,iimax,jjmax,ii,jj,kk,nit,njt,int_i_off,int_j_off
    logical :: zcubic_L
 
    real :: prmin, prmax
@@ -59,24 +61,11 @@ subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
 
    real*8 :: triprd,za,zb,zc,zd
    triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
-   !---------------------------------------------------------------------
-!   iimax = adx_gni+2*adx_halox-2
-!   jjmax = adx_gnj+adx_haloy
-!   nit = adx_lmaxx - adx_lminx + 1
-!   njt = adx_lmaxy - adx_lminy + 1
-!   nijag = nit * njt
-!   nijag = Adw_nit*Adw_njt
-!   nij = adx_mlni*adx_mlnj
 
-!   if (adx_lam_L) then
-!      int_i_off = adx_mli0 - 1
-!   else
-!      int_i_off = 0
-!   endif
-!   int_j_off = adx_mlj0 - 1
+   !---------------------------------------------------------------------
 
 !$omp do
-   DO_K2: do k=1,F_nk
+   DO_K2: do k=k0,F_nk
       DO_J2: do  j=j0,jn
          DO_I2: do  i=i0,in
             n = (k-1)*Adx_mlnij + ((j-1)*adx_mlni) + i
@@ -204,7 +193,9 @@ subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
       enddo DO_J2
    enddo DO_K2
 !$omp enddo
+
    !---------------------------------------------------------------------
+
    return
 end subroutine adx_lag3d_tricub
 

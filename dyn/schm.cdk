@@ -51,13 +51,14 @@
 ! Schm_nith          | number of vertical modes treated implicitely    |
 ! Schm_chems_S       | Chemical scheme to use ('NIL' if none)          |
 ! Schm_zdotMid_L     | Zdot computed in the middle of the trajectory   |
+! Schm_pior_L        | Original definition of hydrostatic pressure: pi |
 !----------------------------------------------------------------------
 !
 #endif
       logical Schm_hydro_L ,Schm_moist_L, Schm_nkbz_L , Schm_autobar_L
       logical Schm_phyms_L ,Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
       logical Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L
-      logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L
+      logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_pior_L
       logical Schm_zdotMid_L
 !
       integer Schm_itcn , Schm_modcn, Schm_xwvt3
@@ -71,6 +72,7 @@
       common / schm_l / Schm_pcsty_L  , Schm_chems_L
       common / schm_l / Schm_pheat_L  , Schm_theoc_L
       common / schm_l / Schm_zdotMid_L, Schm_Topo_L
+      common / schm_l / Schm_pior_L
       common / schm_i / Schm_itcn     , Schm_modcn, Schm_xwvt3
       common / schm_i / Schm_itnlh    , Schm_itraj, Schm_nith
 !

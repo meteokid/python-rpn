@@ -69,15 +69,9 @@
 !              ----------------------------------
       call itf_phy_init ( )
 !
-!C             Initialize the chemistry package
-!              --------------------------------
-      call itf_chm_init ( )
-!
 !C             Initialize tracers
 !              ---------------
       call tracers ( )
-!
-      call bcs_sto ( )
 !
 !C             Read restart if present
 !              --------------------------------

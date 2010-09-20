@@ -27,6 +27,7 @@
 ! v4.13 - Faucher M.      - initial version
 !*
 #include "itf_cpl.cdk"
+#include "path.cdk"
 !
 !*
       CHARACTER*1024 filename
@@ -35,14 +36,15 @@
 !
       atm_busin = 0.
       recv      = 0
-      filename  = '../../../gem_cpl_in.fst'
+
+      filename  = trim(Path_input_S)//'/RT_FORCINGS'
 
       if ( cpl_comm_s(1:1) .eq. 'R' ) then
 
       write (6,1001) datev
 
       do i=1,n_fldin
-         write(6,1002) i,trim(nv_read(i)),trim(filename)
+         write(6,1002) i,trim(nv_read(i)),'RT_FORCINGS'
          CALL r_rawfstlis (datev,atm_busin(1,1,i),cpl_ni,cpl_nj, &
                                                 filename,i,recv)
          IF (recv.lt.0) THEN

@@ -57,6 +57,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
+#include "out.cdk"
 #include "out3.cdk"
 #include "grid.cdk"
 #include "level.cdk"
@@ -70,7 +71,6 @@
 #include "outc.cdk"
 #include "hgc.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_chm_bus.cdk"
 #include "geomg.cdk"
 #include "cstv.cdk"
 #include "path.cdk"
@@ -390,116 +390,7 @@
       enddo
       p_bvol_out = kk
 
-      if (.not. Schm_chems_L) goto 9988
-!
-!     FOR CHEMICAL SCHEMES:
-!     =====================
-!     Save only the short name of the requested chemical variables
-!     and print table of variables demanded for output.
-!     chm_bent_out=total number of output variables found in chemical busent
-!     chm_bper_out=total number of output variables found in chemical busper
-!     chm_bdyn_out=total number of output variables found in chemical busdyn
-!     chm_bvol_out=total number of output variables found in chemical busvol
-!     print *,'chm_bent_top=',chm_bent_top
-!     print *,'chm_bper_top=',chm_bper_top
-!     print *,'chm_bdyn_top=',chm_bdyn_top
-!     print *,'chm_bvol_top=',chm_bvol_top
-!
-      kk = 0
-      if (Lun_out.gt.0)  then
-          write(Lun_out,1001)
-          write(Lun_out,1006)
-          write(Lun_out,1005)
-          write(Lun_out,1006)
-          write(Lun_out,903)
-      endif
-      do i = 1, chm_bent_top
-         do k=1, Outc_sets
-            do j=1,Outc_var_max(k)
-            if (Outc_varnm_S(j,k).eq.chmentnm(i)(1:16) .or. &
-                Outc_varnm_S(j,k).eq.chmenton(i)(1:4)) then
-                Outc_var_S(j,k)= chmenton(i)(1:4)
-                if (Lun_out.gt.0) write(Lun_out,1007) &
-                   chmenton(i)(1:4),chmentnm(i)(1:16),Outc_nbit(j,k), &
-                   Outc_filtpass(j,k),Outc_filtcoef(j,k),'M'
-                kk=kk+1
-                chm_bent_idx(kk)=i
-            endif
-            enddo
-         enddo
-      enddo
-      chm_bent_out = kk
-      kk = 0
-      if (Lun_out.gt.0)  then
-          write(Lun_out,1006)
-          write(Lun_out,1002)
-          write(Lun_out,1006)
-          write(Lun_out,903)
-      endif
-      do i = 1, chm_bper_top
-         do k=1, Outc_sets
-            do j=1,Outc_var_max(k)
-            if (Outc_varnm_S(j,k).eq.chmpernm(i)(1:16) .or. &
-                Outc_varnm_S(j,k).eq.chmperon(i)(1:4)) then
-                Outc_var_S(j,k)= chmperon(i)(1:4)
-                if (Lun_out.gt.0) write(Lun_out,1007) &
-                   chmperon(i)(1:4),chmpernm(i)(1:16),Outc_nbit(j,k), &
-                   Outc_filtpass(j,k),Outc_filtcoef(j,k),'M'
-                kk=kk+1
-                chm_bper_idx(kk)=i
-            endif
-            enddo
-         enddo
-      enddo
-      chm_bper_out = kk
-      kk = 0
-      if (Lun_out.gt.0)  then
-          write(Lun_out,1006)
-          write(Lun_out,1003)
-          write(Lun_out,1006)
-          write(Lun_out,903)
-      endif
-      do i = 1, chm_bdyn_top
-         do k=1, Outc_sets
-            do j=1,Outc_var_max(k)
-            if (Outc_varnm_S(j,k).eq.chmdynnm(i)(1:16) .or. &
-                Outc_varnm_S(j,k).eq.chmdynon(i)(1:4)) then
-                Outc_var_S(j,k)= chmdynon(i)(1:4)
-                if (Lun_out.gt.0) write(Lun_out,1007) &
-                   chmdynon(i)(1:4),chmdynnm(i)(1:16),Outc_nbit(j,k), &
-                   Outc_filtpass(j,k),Outc_filtcoef(j,k),'M'
-                kk=kk+1
-                chm_bdyn_idx(kk)=i
-            endif
-            enddo
-         enddo
-      enddo
-      chm_bdyn_out = kk
-      kk=0
-      if (Lun_out.gt.0)  then
-          write(Lun_out,1006)
-          write(Lun_out,1004)
-          write(Lun_out,1006)
-          write(Lun_out,903)
-      endif
-      do i = 1, chm_bvol_top
-         do k=1, Outc_sets
-            do j=1,Outc_var_max(k)
-            if (Outc_varnm_S(j,k).eq.chmvolnm(i)(1:16) .or. &
-                Outc_varnm_S(j,k).eq.chmvolon(i)(1:4)) then
-                Outc_var_S(j,k)= chmvolon(i)(1:4)
-                if (Lun_out.gt.0) write(Lun_out,1007) &
-                   chmvolon(i)(1:4),chmvolnm(i)(1:16),Outc_nbit(j,k), &
-                   Outc_filtpass(j,k),Outc_filtcoef(j,k),'M'
-                kk=kk+1
-                chm_bvol_idx(kk)=i
-            endif
-            enddo
-         enddo
-      enddo
-      chm_bvol_out = kk
-!
-9988  if (Lun_out.gt.0)  write(Lun_out,1006)
+      if (Lun_out.gt.0)  write(Lun_out,1006)
 !
       call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy, &
            Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow, &
@@ -508,6 +399,10 @@
            int(Cstv_dt_8),Out3_date,Out3_etik_S, Out3_ndigits, &
            Mod_runstrt_S, &
            min(Step_total, Lctl_step+Step_rsti),Out3_flipit_L,Out3_debug_L)
+!
+      Out_laststep_S = ' '
+      if (Out3_postfreq .gt. 0) Out3_postfreq = Out3_postfreq*60 / nint(Cstv_dt_8)
+!
       call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
 !
       return

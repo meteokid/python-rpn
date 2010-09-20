@@ -38,6 +38,7 @@
 !                             And put nvar into common block e_anal
 ! v4_10 - Tanguay M.        - correction on calcul for xpxu(nia-1),ypxv(nja-1)
 ! v4_10 - Lee V.            - Adapt LAM I/O(BCS and 3DF) for reading GAUSS grid
+! v4_14 - McTaggart-Cowan R.- Read ww if wt1 not found
 !
 #include "e_anal.cdk"
 #include "e_fu.cdk"
@@ -51,11 +52,9 @@
 #include "path.cdk"
 !
       integer   fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv, &
-                newdate, e_pilotf, px_param, &
-                e_ac_posi, ezgdef_fmem, gdll,e_rdhint3
+                newdate, e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
       external  fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv, &
-                newdate, e_pilotf, px_param, &
-                e_ac_posi, ezgdef_fmem, gdll,e_rdhint3
+                newdate, e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
 !
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
                dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
@@ -125,8 +124,9 @@
          nvar=5
       else
          e_fu_anal = 0
-         if (fnom (e_fu_anal ,trim(Path_input_S)//'/ANALYSIS','RND+OLD',0).lt.0) stop
+         if (fnom (e_fu_anal ,trim(Path_input_S)//'/ANALYSIS','RND+OLD+R/O',0).lt.0) stop
          if (fstouv(e_fu_anal ,'RND').lt.0) stop
+         write (6,2003) trim(Path_input_S)//'/ANALYSIS',e_fu_anal
       endif
       ip1mode = +1
 !
@@ -349,20 +349,26 @@
          endif
       enddo
 !    
+      var = 'WT1 '
       key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, &
-                      ip2a, ip3a, tva,'WT1', list, nk_wt1, lvmax)
+                      ip2a, ip3a, tva, var, list, nk_wt1, lvmax)
+      if(nk_wt1 <= 0) then
+         var = 'ZZ  '
+         key = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, &
+                      ip2a, ip3a, tva, var, list, nk_wt1, lvmax)
+      endif
       if(nk_wt1.gt.0)nvar=nvar+1
       do k = 1, nk_wt1
          ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty, &
                     ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3, &
                                  g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
          if (nia.ne.ni1 .or. nja.ne.nj1) then
-            write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH WT1', &
+            write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH '//trim(var), &
                       'nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
             call e_arret( 'e_specanal')
          elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or. &
                ig3a .ne.g3  .or. ig4a .ne.g4) then
-            write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH WT1'
+            write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH '//trim(var)
             call e_arret( 'e_specanal')
          endif
       enddo
@@ -580,7 +586,7 @@
           ypxv(nja-1) = 0.5 * ( ypx(nja-1) + ypx(nja) )
 
 
-          if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil,Pil_bcs_hollow_L).eq.0) then
+          if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil).eq.0) then
 
               call hpalloc(paygv_8   ,  (nja-1)*2, err,1)
               do j=1,nja-1
@@ -608,6 +614,7 @@
  900  format (a/a,i5,a,e14.7,a,e14.7,a/'   >>>>> ABORT <<<<<')
  1001 format(/,'EXTRACTION OF ANALYSIS LEVELS (S/R E_SPECANAL)',/40('-'))
  1002 format(' DATE = ', 6i5 , 7a4 , i10 )
+ 2003 format (/' E_SPECANAL:  file ',a,' open on unit: ',i4)
  4000 format(/,'CANNOT FIND TIC TACS in ANALYSIS (S/R E_SPECANAL)',/40('-'))
 !
 ! ---------------------------------------------------------------------

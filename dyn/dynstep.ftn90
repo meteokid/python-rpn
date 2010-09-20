@@ -54,7 +54,6 @@
 #include "lam.cdk"
 #include "step.cdk"
 #include "type.cdk"
-#include "acid.cdk"
 #include "vtopo.cdk"
 !
       integer itraj
@@ -87,39 +86,25 @@
       itraj = Schm_itraj
 !
       if ( first_L) then
-         if (.not.Acid_skippospers_L) then
-            call pospers( )
-         endif
+         call pospers ()
          itraj = max( 5, Schm_itraj )
       endif
 !
-!        ------------------------------------------------------------
-!C       Compute 3D winds at time t0-dt/2 (th)
-!        ------------------------------------------------------------
-!
 ! Perform time interpolation of Lateral BCs for LAM configurations
 !
-      if ( G_lam .and. .not.Lam_ctebcs_L ) call nest_intt (done_intt_L) 
-!     
+      call frstgss ()
+!
+      call nest_bcs (done_intt_L)
+!
       if ( Orh_crank_L ) then
 !     
-!        DUMMY TIME STEPS AND WIND INTERPOLATION
-!     
-!        first guess for winds and positions at th
-!     
-         call wdpers( )
+!        CN iterations
 !     
          if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
+
          do Orh_icn = 1,Schm_itcn-1
 !     
-!           Perform dummy timestep
-!     
-            call tstpdyn( itraj)
-!     
-!           Compute the average of the t1 and t0 winds
-!     
-            call wndth( )
-!     
+            call tstpdyn (itraj)
             itraj = Schm_itraj
 !     
          end do
@@ -145,22 +130,13 @@
 !     C        variables at time level t0 -> t1 for the next timestep
 !     ------------------------------------------------------------
 !     
-      call t02t1( )
+      call t02t1 ()
 !
 !     --------------------------------------------------------------
-!     Impose BCs within Pil regions and blend within blending region
+!     Blending solution for LAM config
 !     --------------------------------------------------------------
 !
-      if (G_lam.and. .not. Schm_theoc_L) then
-         call nest_bcs
-         call nest_gwa
-      endif
-!
-!     ------------------------------------------------------------
-!     Boundary conditions for theoretical case
-!     ------------------------------------------------------------
-!
-      if ( Schm_theoc_L ) call nest_theoc
+      call nest_gwa ()
 !
 !     ===================
 !     END OF ONE TIMESTEP

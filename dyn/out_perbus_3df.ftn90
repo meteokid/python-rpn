@@ -17,8 +17,7 @@
 !**s/r out_perbus_3df- output permanent bus fields into 3DF files
 #include "model_macros_f.h"
 !
-      subroutine out_perbus_3df ( bus_o,F_ni,F_nj,datev, &
-                               gid,gif,gjd,gjf )
+      subroutine out_perbus_3df (bus_o,F_ni,F_nj, datev,gid,gif,gjd,gjf)
 
       implicit none
 !
@@ -87,8 +86,8 @@
           nkphy=nkphy+nks(idx)
        enddo
        if (Out_blocme.eq.0) then
-           call out_sfile_3df (datev,unf,'PERBUSSS',gid, gif, gjd, gjf, &
-                                          P_bper_top,0,mode)
+           call out_sfile_3df (datev, unf, 'PERBUSSS', &
+                      gid, gif, gjd, gjf, P_bper_top,0 )
            write (unf) (peron(idx)(1:4),nks(idx),idx=1,P_bper_top)
        endif
        bigk = 1

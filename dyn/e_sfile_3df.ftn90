@@ -62,7 +62,7 @@
 !
       write (md,'(i2.2)') mode
       write (startindx,'((i7.7),a1,(i7.7))') idg,'-',jdg
-      filen= '3df'//md//'_'//trim(datev)//'_'//startindx
+      filen= '3df'//'_'//trim(datev)//'_'//startindx
       filen= trim(rootfn)//trim(filen)
       open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED', &
                                                 position='APPEND')
@@ -84,7 +84,7 @@
                       za_8,zb_8,zat_8,zbt_8, &
                       lv,lv_t,Anal_hav(2),unf_casc)
 !
-      write (unf_casc) msg,mode,nvar,ntr
+      write (unf_casc) msg,nvar,ntr
       deallocate (xxu,yyv)
 !
 !------------------------------------------------------------------

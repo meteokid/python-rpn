@@ -78,12 +78,13 @@
 !     real*8  tdiv
       real    tdiv
       real*8  one, c1,c2,c3, BsPqbarz, fipbarz, &
-              wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, ww1,ww2, &
-              xxx,yyy,xlog_8(l_ni,l_nj), ylog_8(l_ni,l_nj)
+              wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, ww1, &
+              xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj), verbm_8(0:l_nk+1)
 
       parameter( one=1.d0 )
 !     - - - - - - - - - - - - - - - - 
-
+      verbm_8(0)=0.d0
+      verbm_8(1:l_nk+1)=Ver_b_8%m(1:l_nk+1)
 !*
 !     __________________________________________________________________
 !
@@ -119,8 +120,8 @@
 !
 !
 !$omp parallel private(i,j,i0,j0,jn,in, &
-!$omp      BsPqbarz,fipbarz, &
-!$omp      tdiv,xlog_8,ylog_8,wk1,wk2,ww1,ww2,xxx,yyy,barz,barzp)
+!$omp      BsPqbarz,fipbarz,tdiv, &
+!$omp      xtmp_8,ytmp_8,wk1,wk2,ww1,barz,barzp)
 !
 !$omp do 
       do 1000 k = 1,l_nk 
@@ -343,18 +344,18 @@
       ww1 = one / Cstv_tstr_8
       do j = j0, jn
       do i = i0, in
-         xlog_8(i,j) = F_t(i,j,k) * ww1
+         xtmp_8(i,j) = F_t(i,j,k) * ww1
       end do
       end do
-      call vlog( ylog_8, xlog_8, nij )
+      call vlog( ytmp_8, xtmp_8, nij )
 !
-                         xxx=Dcst_cappa_8
-      if(Schm_autobar_L) xxx=0.d0
+                         ww1=Dcst_cappa_8
+      if(Schm_autobar_L) ww1=0.d0
       do j= j0, jn
       do i= i0, in
          BsPqbarz = Ver_wp_8%t(k)*F_BsPq(i,j,k)+Ver_wm_8%t(k)*F_BsPq(i,j,k-1)
          fipbarz  = Ver_wp_8%t(k)* F_fip(i,j,k)+Ver_wm_8%t(k)* F_fip(i,j,k-1)
-         F_ort (i,j,k) = Cstv_invT_8 * ( ylog_8(i,j)-ln_that%t(k) - xxx * BsPqbarz ) &
+         F_ort (i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j)-ln_that%t(k) - ww1 * BsPqbarz ) &
                        + Cstv_Beta_8 * (Dcst_cappa_8-dln_that%t(k)) * F_zd(i,j,k)
          F_orf (i,j,k) = Cstv_invT_8 * fipbarz  &
                        + Cstv_Beta_8 * Cstv_RTstr_8 * F_zd(i,j,k) &
@@ -386,13 +387,33 @@
       do 3000 k = 1,l_nk
       do j = j0, jn
       do i = i0, in
-         xlog_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
+         xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
       end do
       end do
-      call vlog( ylog_8, xlog_8, nij)
+      call vlog( ytmp_8, xtmp_8, nij)
 !
-                         xxx=one
-      if(Schm_autobar_L) xxx=0.d0
+                         ww1=one
+      if(Schm_autobar_L) ww1=0.d0
+!
+      if(Schm_pior_L) then
+         do j = j0, jn 
+         do i = i0, in 
+            xtmp_8(i,j) = (Ver_wp_8%m(k)*(Ver_wp_8%t(k+1)*verbm_8(k+1)  &
+                                         +Ver_wm_8%t(k+1)*verbm_8(k  )) &
+                        + Ver_wm_8%m(k)*( Ver_wp_8%t(k)  *verbm_8(k  )  &
+                                         +Ver_wm_8%t(k)  *verbm_8(k-1)))*F_s(i,j)
+         end do
+         end do
+      else
+         do j = j0, jn 
+         do i = i0, in 
+            xtmp_8(i,j) = Ver_wp_8%m(k)*(Ver_wp_8%t(k+1)*F_BsPq(i,j,k+1) &
+                                        +Ver_wm_8%t(k+1)*F_BsPq(i,j,k)) &
+                        + Ver_wm_8%m(k)*(Ver_wp_8%t(k)*F_BsPq(i,j,k) &
+                                        +Ver_wm_8%t(k)*F_BsPq(i,j,k-1))
+         end do
+         end do
+      endif
       do j= j0, jn
       do i= i0, in
          tdiv = geomg_invcy2_8(j) * ( &
@@ -402,11 +423,7 @@
               + ( F_zd(i,j,k+1) - F_zd(i,j,k) ) * Ver_idz_8%m(k) &
               + Ver_wp_8%m(k) * F_zd(i,j,k+1) &
               + Ver_wm_8%m(k) * F_zd(i,j,k)
-         barz = Ver_wp_8%m(k)*(Ver_wp_8%t(k+1)*F_BsPq(i,j,k+1) &
-                              +Ver_wm_8%t(k+1)*F_BsPq(i,j,k)) &
-              + Ver_wm_8%m(k)*(Ver_wp_8%t(k)*F_BsPq(i,j,k) &
-                              +Ver_wm_8%t(k)*F_BsPq(i,j,k-1))
-         F_orc (i,j,k) = Cstv_invT_8 * ( xxx * barz + ylog_8(i,j) ) &
+         F_orc (i,j,k) = Cstv_invT_8 * ( ww1 * xtmp_8(i,j) + ytmp_8(i,j) ) &
                        - Cstv_Beta_8 * tdiv   
       end do
       end do

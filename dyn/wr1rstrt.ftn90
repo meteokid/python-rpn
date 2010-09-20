@@ -43,9 +43,7 @@
 #include "itf_cpl.cdk"
 #include "glb_ld.cdk"
 #include "lam.cdk"
-#include "itf_chm_bus.cdk"
 #include "ptopo.cdk"
-#include "bcsmem.cdk"
 #include "cstv.cdk"
 !
 !modules
@@ -62,11 +60,6 @@
 !
       real, dimension (:), allocatable :: Cpl_rga_cpl2phy
       real, dimension (:), allocatable :: Cpl_rla_msk
-!
-      real, dimension (:), allocatable :: Chm_busper_cube
-      real, dimension (:), allocatable :: Chm_busper_glb
-!
-!CC   real, dimension (:), allocatable :: BCS_glb
 !
 !     ---------------------------------------------------------------
 !
@@ -176,53 +169,6 @@
          write (Lun_rstrt) current_nest
 !
          err = fclos(Lun_rstrt)
-!
-      endif
-!
-!     Regroup variables in Chm_busper3D from slabs to cubes per variable
-!     
-      if (Schm_chems_L) then
-!
-         allocate ( Chm_busper_cube (chm_bper_siz*chm_nj ) )
-!
-         crows    = chm_bper_siz / chm_ni
-         pos_cube = 1
-         do r=1,crows
-            do j=1,chm_nj
-               pos_3D   = (j-1)*chm_bper_siz + (r-1)*chm_ni + 1
-               Chm_busper_cube (pos_cube:pos_cube+chm_ni-1) =  &
-               Chm_busper3D    (pos_3D  :pos_3D  +chm_ni-1)
-               pos_cube = pos_cube + chm_ni
-            enddo
-         enddo
-!
-!        Collect cubes from all processors
-!
-         if (Ptopo_myproc.eq.0) allocate (Chm_busper_glb(crows*ni*nj))
-         call glbcolc (Chm_busper_glb,ni,nj, &
-                       Chm_busper_cube,1,chm_ni,1,chm_nj,crows)
-!
-         deallocate ( Chm_busper_cube )
-!
-!        Write global chemistry cube
-!
-         if (Ptopo_myproc.eq.0) then
-!
-            Lun_rstrt = 0
-            err = fnom (Lun_rstrt,'../restart_glbchm.bin','SEQ/UNF',0)
-            write (Lun_rstrt) Lctl_step
-!
-!           Write variables for later check
-            write (Lun_rstrt) crows, ni, nj, chm_bper_top
-            write (Lun_rstrt) chmpernm (1:chm_bper_top)
-            write (Lun_rstrt) chmperpar(1:chm_bper_top,1)/chm_ni
-!
-            write (Lun_rstrt) Chm_busper_glb
-            deallocate ( Chm_busper_glb )
-!
-            err = fclos(Lun_rstrt)
-!
-         endif
 !
       endif
 !

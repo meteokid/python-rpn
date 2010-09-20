@@ -17,12 +17,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_dyn (reg_out,casc_out)
+      subroutine out_dyn ( F_reg_out, F_casc_L )
       use out_vref_mod, only: out_vref
       implicit none
 !
-      logical reg_out
-      integer casc_out
+      logical F_reg_out, F_casc_L
 !
 !author
 !     V. Lee    - rpn - July  2004 (from dynout2 v3_12)
@@ -78,11 +77,9 @@
 #include "ver.cdk"
 #include "vinterpo.cdk"
 #include "out.cdk"
-#include "acid.cdk"
 !
-!*
-      integer doout, longueur
-      external doout, longueur
+      integer  doout
+      external doout
 !
       integer dostep(MAXSET), dostep_max, step, &
               pnlkey(20),i,j,k
@@ -113,19 +110,16 @@
 !
 !########## REGULAR OUTPUT #######################################
 !
-      if (reg_out) then
+      if (F_reg_out) then
 !
       dostep_max = doout(dostep,1)
       deg2rad    = acos( -1.0)/180.
 !
       if ( dostep_max.gt.0 ) then
-
-         if (Lun_out.gt.0) write(Lun_out,7001) Lctl_step
+         if (Lun_out.gt.0) write(Lun_out,7001) Lctl_step,trim(Out_laststep_S)
       else
-!
          if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
-         return
-!
+         goto 887
       endif
 !
       call tmg_start0 ( 66, 'OUT_DYN')
@@ -189,15 +183,17 @@
                 if (.not.G_lam .and. (Grid_x1(gridset) &
                     -Grid_x0(gridset)+1).eq. G_ni ) periodx_L=.true.
                 call out_sgrid(Grid_x0(gridset),Grid_x1(gridset), &
-                         Grid_y0(gridset),Grid_y1(gridset), &
-                         Grid_ig1(gridset),Grid_ig2(gridset), &
-                         periodx_L, Grid_stride(gridset), &
-                         Grid_etikext_s(gridset),etikadd_S )
+                         Grid_y0(gridset),Grid_y1(gridset)      , &
+                         Grid_ig1(gridset),Grid_ig2(gridset)    , &
+                         periodx_L, Grid_stride(gridset)        , &
+                         Grid_etikext_s(gridset),etikadd_S      )
                 nk_o   = Level_max(levset)
                 allocate (ind_o(nk_o+2))
                 call out_slev(Level_types(Level_typ_indx(levset)),Level(1,levset), &
                              ind_o,nk_o,nk_ot,G_nk,Level_kind_ip1,'d')
-                call out_sfile(Out3_closestep,Lctl_step,ip3,ext_S)
+
+                call out_sfile (Out3_closestep,Lctl_step,ip3,ext_S)
+
                 call out_href( Geomn_longs,Geomn_latgs)
                 if (Out_levtyp_S.eq.'M') then
                    call out_vref(p0,LDIST_DIM)
@@ -236,14 +232,12 @@
             endif
 
       call out_cfile
-  50  continue
 
+  50  continue
  100  continue
 !
 !     Delay closure of files, de-allocation, wlog write out if...
       if ( .not. (Lctl_step .eq. 0 .and. Schm_phyms_L)) then
-!
-!
          if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
              call wlog('IOUT')
          else
@@ -253,14 +247,17 @@
 !
       call tmg_stop0 (66, 'OUT_DYN')
 !     end of regular output
+
       endif
 !
 !#################################################################
 !
+ 887  continue
+!
 !########## SPECIAL OUTPUT FOR CASCADE ###########################
 !
-      if ((casc_out.gt.0).and.(Grdc_proj_S.ne.'@').and.(Grdc_ndt.ge.0)) &
-      then
+      if (F_casc_L) then
+      if ((Grdc_proj_S.ne.'@').and.(Grdc_ndt.ge.0)) then
 !
       ontimec = .false.
       if ( Lctl_step.ge.Grdc_start.and.Lctl_step.le.Grdc_end) then
@@ -276,42 +273,25 @@
 
       if ( ontimec ) then
 !
-         if ((Lctl_step.eq.Grdc_start).or.(.not.Grdc_bcs_hollow_L)) then
-!
-             call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf, &
-                             0,0,.false.,1,'','')
-
-             call datf2p (pdate,Out3_date)
-             dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
-             call incdatsd (datev,pdate,dayfrac)
-             if (Acid_test_L.and.Lctl_step.eq.Grdc_start) then
-               call acid_outdyn_3df (datev,casc_out,Grdc_gid,Grdc_gif, &
-                                                    Grdc_gjd,Grdc_gjf)
-             else
-               call out_dyn_3df (datev,casc_out,Grdc_gid,Grdc_gif, &
-                                                Grdc_gjd,Grdc_gjf)
-             endif
-!
-         else
-!
-            call bcs_hollow(Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf, &
-            Grdc_gjdi,Grdc_hbsn,Grdc_hbwe,is,nis,js,njs,jn,iw,niw,ie,jw,njw)
-            call datf2p (pdate,Out3_date)
-            dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
-            call incdatsd (datev,pdate,dayfrac)
-            call out_dyn_bcs (datev,is,nis,js,jn,njs,iw,ie, &
-                                         niw,jw,njw,casc_out)
-         endif
-!
+         if (Lun_out.gt.0) write(Lun_out,8001) Lctl_step,trim(Out_laststep_S)
+         call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf, &
+                                        0,0,.false.,1,'','')
+         call datf2p (pdate,Out3_date)
+         dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
+         call incdatsd (datev,pdate,dayfrac)
+         call out_dyn_3df (datev, Grdc_gid, Grdc_gif, &
+                                  Grdc_gjd, Grdc_gjf)
       endif
 !
       ontimec = .false.
 !
       endif
+      endif
 !
  998  doneonce = .true.
 !
- 7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,')')
+ 7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,') in directory: ',a)
+ 8001 format(/,' OUT_DYN- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)
  7002 format(/,' OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (',I8,')')
 !
       return

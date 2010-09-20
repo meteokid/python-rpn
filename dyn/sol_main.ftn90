@@ -42,22 +42,17 @@
 !implicits
 #include "gmm.hf"
 #include "var_gmm.cdk"
-#include "glb_pil.cdk"
 #include "glb_ld.cdk"
-#include "opr.cdk"
+#include "lam.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
 #include "vtx.cdk"
 #include "rhsc.cdk"
 #include "trp.cdk"
-#include "fft.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
-#include "acid.cdk"
 #include "schm.cdk"
 #include "wil_williamson.cdk"
-!
-!modules
 !
       integer i,j,k,dim,longueur
       real*8 pdwrd(2)
@@ -99,8 +94,7 @@
                      ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy, &
                      LDIST_DIM,l_nk,-1)
 !
-      if (Acid_test_L)call acid_stat_sol_main(rhsp,fiptx,1)
-!
+      if (Lam_acidtest_L) call acid_solver
 !
  1000 format( &
       5X,'SOLVING LINEAR HELMHOLTZ PROBLEM: (S/R SOL_MAIN)')

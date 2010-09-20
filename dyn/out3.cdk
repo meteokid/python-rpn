@@ -50,6 +50,7 @@
 ! Out3_filtpass      | number of filtering passes (see Out3_filt_s)    |
 ! Out3_filtcoef      | filter coefficient (see Out3_filt_s)            |
 ! Out3_closetep      | requested number of steps to close output file  |
+! Out3_postfreq      | Post processing frequency (in minutes)          |
 ! ---------------------------------------------------------------------
 #endif
 #include "dimout.cdk"
@@ -62,12 +63,12 @@
       integer Out3_nbitg, Out3_linbot, Out3_nundr, Out3_zund(MAXELEM)
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
       integer Out3_closestep,Out3_filtpass_max, Out3_xnbits_max,Out3_ip3
-      integer Out3_date
+      integer Out3_date, Out3_postfreq
       real    Out3_filtcoef(MAXELEM)
 !
       common / outcc/ Out3_xnbits_S, Out3_filt_S, Out3_etik_S
       common / outi/ Out3_xnbits,Out3_xnbits_max,Out3_filtpass
-      common / outi/ Out3_filtpass_max,Out3_date
+      common / outi/ Out3_filtpass_max,Out3_date,Out3_postfreq
       common / outr/ Out3_filtcoef
       common / Out3_l / Out3_cliph_L,Out3_cubzt_L,Out3_cubuv_L 
       common / Out3_l / Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L

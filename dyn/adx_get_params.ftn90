@@ -22,6 +22,7 @@ subroutine adx_get_params()
    !@objective Get model/dyn parameters from whiteboard
    !@author Stephane Chamberland, 2010-01
    !@revisions
+   ! v4_14 PLante A.    - add 'model/gbpil_t',adx_gbpil_t
    !**/
 #include <WhiteBoard.hf>
 #include "adx_dims.cdk"
@@ -65,6 +66,7 @@ subroutine adx_get_params()
    istat = min(wb_get('model/pil_s',adx_pil_s),istat)
    istat = min(wb_get('model/pil_w',adx_pil_w),istat)
    istat = min(wb_get('model/pil_e',adx_pil_e),istat)
+   istat = min(wb_get('model/gbpil_t',adx_gbpil_t),istat)
 
    istat = min(wb_get('model/is_schm_zdotmid',adx_zdotMid_L),istat)
    istat = min(wb_get('model/cstv_dt',adx_dt_8),istat)

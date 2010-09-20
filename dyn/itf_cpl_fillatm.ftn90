@@ -147,8 +147,10 @@
             nomvar = nv_writ(i)(5:7)
             if (nomvar.eq.'UDA') nomvar='UU'
             if (nomvar.eq.'VDA') nomvar='VV'
-            call r_rawfstw(atm_busou(1,1,i,1),cpl_ni,cpl_nj,nomvar, &
-               Lctl_step,int(Cstv_dt_8),Out3_date,'..//gem_cpl_out.fst')
+            call r_rawfstw2(atm_busou(1,1,i,1),1,cpl_ni,1,cpl_nj,1,1,     &
+                                        nomvar,1,cpl_ni,1,cpl_nj,1,1,     &
+                                      Lctl_step,int(Cstv_dt_8),Out3_date, &
+                                             -1,-1,'..//gem_cpl_out.fst')
             call statfld2 (atm_busou(1,1,i,1),nomvar,Lctl_step, &
                "",1,cpl_ni,1,cpl_nj,1,1, 1,1,1,cpl_ni,cpl_nj,1)
             end do
@@ -156,8 +158,10 @@
             nomvar = nv_read(i)(5:7)
             if (nomvar.eq.'UDA') nomvar='UU'
             if (nomvar.eq.'VDA') nomvar='VV'
-            call r_rawfstw(atm_busin(1,1,i)  ,cpl_ni,cpl_nj,nomvar, &
-               Lctl_step,int(Cstv_dt_8),Out3_date,'..//gem_cpl_in.fst' )
+            call r_rawfstw2(  atm_busin(1,1,i),1,cpl_ni,1,cpl_nj,1,1,     &
+                                        nomvar,1,cpl_ni,1,cpl_nj,1,1,     &
+                                      Lctl_step,int(Cstv_dt_8),Out3_date, &
+                                             -1,-1,'..//gem_cpl_in.fst')
             call statfld2 (atm_busin(1,1,i),nomvar,Lctl_step, &
              "",1,cpl_ni,1,cpl_nj,1,1, 1,1,1,cpl_ni,cpl_nj,1)
             end do

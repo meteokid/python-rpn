@@ -18,11 +18,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_dyn_3df ( datev, mode, gid, gif, gjd, gjf )
+      subroutine out_dyn_3df ( datev, gid, gif, gjd, gjf )
       implicit none
 !
       character* (*) datev
-      integer mode, gid, gif, gjd, gjf
+      integer gid, gif, gjd, gjf
 !
 !author M.Desgagne ( MC2 2001)
 !
@@ -41,12 +41,49 @@
 #include "grdc.cdk"
 #include "tr3d.cdk"
 #include "lctl.cdk"
+#include "ptopo.cdk"
 !
+      character* 512 filen
+      logical done
       integer i,j,k,nis,njs,ind_o(G_nk+2),cnt,unf,key(21), &
-              nvar,err
-      real, pointer    , dimension(:,:,:) :: tr1
+              nvar,err,ofi,ofj
+      integer outindx(4),outindx_g(4,Ptopo_numproc)
+      real, pointer, dimension(:,:,:) :: tr1
+      data done /.false./
+      save done
 !
 !------------------------------------------------------------------
+!
+      if (.not.done) then
+         outindx = 0
+         if (Ptopo_blocme.eq.0) then
+            outindx(1) = out_idg
+            outindx(2) = out_jdg
+            outindx(3) = out_nisl
+            outindx(4) = out_njsl
+         endif
+         call RPN_COMM_gather (outindx  , 4,"MPI_INTEGER"  ,outindx_g, &
+                                    4, "MPI_INTEGER"  ,0,"GRID", err)
+
+         if (Ptopo_myproc.eq.0) then
+            filen=trim(Out_dirname_S)//'/3df_filemap.txt'
+            open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
+            Out_diruse_L = .true.
+            do i=1,Ptopo_numproc
+              if ( (outindx_g(3,i).gt.0).and.(outindx_g(4,i).gt.0) ) then
+               ofi=Grdc_gid+outindx_g(1,i)-1
+               ofj=Grdc_gjd+outindx_g(2,i)-1
+               write (9,'(2i8,4e15.7,2i10)')  &
+                     outindx_g(1,i),outindx_g(2,i), &
+                     G_xg_8(ofi),G_xg_8(ofi+outindx_g(3,i)-1), &
+                     G_yg_8(ofj),G_yg_8(ofj+outindx_g(4,i)-1), &
+                     outindx_g(3,i),outindx_g(4,i)
+              endif
+            end do
+            close (9)
+         endif
+      endif
+      done = .true.
 !
       if ((out_nisl.le.0).or.(out_njsl.le.0)) return
 !
@@ -71,8 +108,8 @@
       endif
 !
       if (Out_blocme.eq.0)  &
-           call out_sfile_3df (datev,unf,'DYNAMICS',gid, gif, gjd, gjf, &
-                                                    nvar,Grdc_ntr,mode)
+           call out_sfile_3df ( datev, unf, 'DYNAMICS', &
+                                gid, gif, gjd, gjf, nvar, Grdc_ntr )
 !
 ! tt1,st1,topo are usually written from e_intthm
       call write_3df (  tt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+2, &

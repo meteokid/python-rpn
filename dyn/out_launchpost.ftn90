@@ -1,0 +1,83 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r out_launchpost - Signals monitor for output processing
+!
+#include "model_macros_f.h"
+!
+      subroutine out_launchpost (F_forceit_L)
+      implicit none
+!
+      logical F_forceit_L
+!
+!AUTHOR   Michel Desgagne  - Summer 2010
+!
+!REVISION
+! v4_14 - Desgagne M.      - Initial version
+!
+#include "out.cdk"
+#include "path.cdk"
+#include "ptopo.cdk"
+#include "lctl.cdk"
+#include <clib_interface.cdk>
+!
+      character*2    postcnt_S
+      character*1024 filen,filen_
+      logical flag
+      integer i, err, unf, counter, maxcount
+      data counter,maxcount /1,5/
+      save counter
+!
+!----------------------------------------------------------------------
+!
+      if (Ptopo_myproc.eq.0)           then
+
+      if (Out_post_L .or. F_forceit_L) then
+      
+         flag = .false.
+         do i = counter, maxcount
+            write (postcnt_S,'(i2.2)') i
+            filen = trim(Path_output_S)//'/output_ready_'//postcnt_S
+            err   = clib_fileexist(trim(filen))
+            if (err.lt.0) then
+               flag = .true.
+               exit
+            endif
+         end do
+         counter = i + 1
+
+         if (flag) then
+            filen_=trim(filen)//'_'
+            open  (unf,file=filen_,access='SEQUENTIAL',form='FORMATTED')
+            write (unf,'(a)') Out_laststep_S
+            close (unf)
+            err = clib_rename ( filen_, filen )
+            write (6,1001) trim(Out_laststep_S),lctl_step
+         else
+            print*, ' OUTPUT-POSTPROCESSING CANNOT BE LAUNCHED '
+            print*, ' You must launch the following command yourself: '
+            print*, ' Um_process_output.ksh ', trim(Path_output_S)//'/'//trim(Out_laststep_S)
+         endif
+         if (counter.gt.maxcount) counter=1
+
+      endif
+      endif
+!
+ 1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a,' was released for postprocessing at timestep: ',i)
+!
+!----------------------------------------------------------------------
+!
+      return
+      end

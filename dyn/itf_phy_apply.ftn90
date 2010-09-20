@@ -59,14 +59,21 @@
 #include "p_geof.cdk"
 #include "pw.cdk"
 #include "itf_phy_buses.cdk"
-!
+#include "lctl.cdk"
+#include "out3.cdk"
+
       logical nest_it, flag_u, flag_v
       integer i, j, k, n, err, cnt, UU_indx, VV_indx, km1
-      real wk2(LDIST_SHAPE,p_nk),con(YDIST_SHAPE),con2, &
+      real wk2(LDIST_SHAPE,p_nk),con(YDIST_SHAPE), &
            tdu(LDIST_SHAPE,p_nk),tdv(LDIST_SHAPE,p_nk)
       real, pointer, dimension(:,:,:) :: tr,trm
-!*
 !     __________________________________________________________________
+!
+! In LAM config: physics tendencies are valid on the global scope 
+! (3,G_ni-2) (3,G_nj-2). Because of horizontal staggering of tendencies
+! of the wind components we lose additional points. Physics tendencies
+! on U are therefore valid with the scope (4,G_ni-4) (3,G_nj-2) and 
+! physics tendencies on V  with the scope (3,G_ni-2) (4,G_nj-4).
 !
       flag_u  = .False. ; flag_v = .false.
       wk2     = 0.
@@ -89,12 +96,8 @@
                if (trim(volnm(n)(7:)).ne.'HU') then
                   gmmstat = gmm_get('TR/'//trim(volnm(n)(7:))//':M',trm,meta3d)
                   do k=1,p_nk-1
-                  do j= 1+pil_s, l_nj-pil_n
-                  do i= 1+pil_w, l_ni-pil_e
-                     tr(i,j,k)  = tr(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,cnt)
-                     trm(i,j,k) = tr(i,j,k)
-                  end do
-                  end do
+                     tr (:,:,k) = tr(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
+                     trm(:,:,k) = tr(:,:,k)
                   end do
                endif
             endif
@@ -118,32 +121,31 @@
             if  (volnm(n)(7:)  .eq. 'VV') VV_indx=cnt
             if ((volnm(n)(7:)  .eq. 'UU') .or. (volnm(n)(7:)  .eq. 'VV') ) cycle
 
-            if ( nest_it ) call nest_blend (phy_tend(:,:,:,cnt),wk2, &
-                                            LDIST_DIM,1,p_nk,'M')
+            if ( nest_it ) call nest_blend (phy_tend(:,:,:,cnt),wk2,LDIST_DIM,1,p_nk,'M')
+
             nullify(tr)
             gmmstat = gmm_get('TR/'//trim(volnm(n)(7:))//':P',tr,meta3d)
 	    if (gmmstat.eq.0) then
                do k=1,p_nk
-               do j= 1+pil_s, l_nj-pil_n
-               do i= 1+pil_w, l_ni-pil_e
-                  tr(i,j,k) = tr(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,cnt)
-               end do
-               end do
+                  tr (:,:,k) = tr(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
                end do
             endif
 
             if (volnm(n)(7:)  .eq. 'TT'   ) then
-               nullify(pw_tplus,tt1)
                gmmstat = gmm_get('PW_TT:P',pw_tplus,meta3d)
                gmmstat = gmm_get(gmmk_tt1_s,tt1     ,meta3d)
                do k= 1, p_nk
-               do j= 1+pil_s, l_nj-pil_n
-               do i= 1+pil_w, l_ni-pil_e
-                  pw_tplus(i,j,k) = pw_tplus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,cnt)
-               end do
-               end do
+                  pw_tplus (:,:,k) = pw_tplus(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
                end do
                call tt2virt (tt1, .true., 'P')
+               if (Schm_pheat_L) then
+                  gmmstat = gmm_get(gmmk_st1_s  ,st1  ,meta2d)
+                  gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
+                  gmmstat = gmm_get(gmmk_topo_s ,topo ,meta2d)
+                  if(.not.Schm_hydro_L)&
+                       gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
+                  call diag_fip (fiptx,st1,tt1,qt1,topo,LDIST_DIM,l_nk)
+               endif
             endif
 
          endif
@@ -151,46 +153,29 @@
       end do
 !
       if ((UU_indx.gt.0) .and. (VV_indx.gt.0)) then
-         nullify(ut1,vt1,pw_uplus,pw_vplus)
          gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
          gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
          gmmstat = gmm_get('PW_UU:P',pw_uplus,meta3d)
          gmmstat = gmm_get('PW_VV:P',pw_vplus,meta3d)
 
-! TODO: update pw_uplus, pw_vplus here instead of pw_update
-
 	 tdu = 0. ; tdv = 0.
          do k= 1, p_nk
          do j= 1, l_nj
-         do i= 1, l_ni
-!            tdu(i,j,k) = phy_tend(i,j,k,UU_indx)
-!            tdv(i,j,k) = phy_tend(i,j,k,VV_indx)
-         end do
+            tdu(1:l_ni,j,k) = phy_tend(1:l_ni,j,k,UU_indx)*con(j)
+            tdv(1:l_ni,j,k) = phy_tend(1:l_ni,j,k,VV_indx)*con(j)
          end do
          end do
 
          if ( nest_it ) then
-!            call nesajr (phy_tend(l_minx,l_miny,1,UU_indx), wk2, LDIST_DIM,p_nk,0,0,Lam_blend_Hx,Lam_blend_Hy,Lam_blend_T)
-!            call nesajr (phy_tend(l_minx,l_miny,1,VV_indx), wk2, LDIST_DIM,p_nk,0,0,Lam_blend_Hx,Lam_blend_Hy,Lam_blend_T)
-!            call nesajr (tdu, wk2, LDIST_DIM,p_nk,0,0,Lam_blend_Hx,Lam_blend_Hy,Lam_blend_H_z)
-!            call nesajr (tdv, wk2, LDIST_DIM,p_nk,0,0,Lam_blend_Hx,Lam_blend_Hy,Lam_blend_H_z)
+            call blend_pntr (phy_tend(l_minx,l_miny,1,UU_indx),wk2,LDIST_DIM,1,p_nk,'M')
+            call blend_pntr (phy_tend(l_minx,l_miny,1,VV_indx),wk2,LDIST_DIM,1,p_nk,'M')
          endif
-         do k= 1, p_nk
-         do j= 1+pil_s, l_nj-pil_n
-         do i= 1+pil_w, l_ni-pil_e
-!            pw_uplus(i,j,k) = pw_uplus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,UU_indx)
-!            pw_vplus(i,j,k) = pw_vplus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,VV_indx)
-!ccc            pw_uplus(i,j,k) = pw_uplus(i,j,k) + Cstv_dt_8*tdu(i,j,k)
-!ccc            pw_vplus(i,j,k) = pw_vplus(i,j,k) + Cstv_dt_8*tdv(i,j,k)
-         end do
-         end do
-         end do
 
          do k= 1, p_nk
          do j= 1, l_nj
          do i= 1, l_ni
-            tdu(i,j,k) = phy_tend(i,j,k,UU_indx)*con(j)
-            tdv(i,j,k) = phy_tend(i,j,k,VV_indx)*con(j)
+            pw_uplus(i,j,k) = pw_uplus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,UU_indx)
+            pw_vplus(i,j,k) = pw_vplus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,VV_indx)
          end do
          end do
          end do
@@ -201,31 +186,13 @@
             call nest_blend (tdu,wk2,LDIST_DIM,1,p_nk,'U')
             call nest_blend (tdv,wk2,LDIST_DIM,1,p_nk,'V')
          endif
-!
+
          do k=1,l_nk+1
-            do j= 1+pil_s, l_nj-pil_n
-            do i= 1+pil_w, l_niu-pil_e
-               ut1 (i,j,k) =  ut1(i,j,k) + Cstv_dt_8*tdu(i,j,k+1)
-            end do
-            end do
-            do j= 1+pil_s, l_njv-pil_n
-            do i= 1+pil_w, l_ni-pil_e
-               vt1 (i,j,k) =  vt1(i,j,k) + Cstv_dt_8*tdv(i,j,k+1)
-            end do
-            end do
+            ut1 (1:l_niu,:,k) =  ut1(1:l_niu,:,k) + Cstv_dt_8*tdu(1:l_niu,:,k+1)
+            vt1 (:,1:l_njv,k) =  vt1(:,1:l_njv,k) + Cstv_dt_8*tdv(:,1:l_njv,k+1)
          end do
-!
+
       endif
-!
-      if (Schm_pheat_L) then
-         nullify(st1,fiptx,topo)
-         gmmstat = gmm_get(gmmk_st1_s  ,st1  ,meta2d)
-         gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
-         gmmstat = gmm_get(gmmk_topo_s ,topo ,meta2d)
-         call diag_fip(fiptx,st1,tt1,topo, &
-                       1+pil_w,l_ni-pil_e,1+pil_s,l_nj-pil_n,l_nk)
-      endif
-!
 !     __________________________________________________________________
 !
       return

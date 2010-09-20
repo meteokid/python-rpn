@@ -16,21 +16,14 @@
 #include "stop_mpi.h"
 #include "msg.h"
 
-subroutine adx_main8()
-   implicit none
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_main8','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_main8
-
-
 !/**
-subroutine adx_main7(F_su, F_sv, F_sw, &
-     F_fields_list, F_fields_type_L, F_nfields, &
-     F_minx,F_maxx,F_miny,F_maxy,F_nks, F_nb_iter, F_doAdwStat_L)
+subroutine adx_main7 (F_su, F_sv, F_sw, &
+                      F_fields_list, F_fields_type_L, F_nfields, &
+                      F_minx,F_maxx,F_miny,F_maxy,F_nks, F_nb_iter, F_doAdwStat_L)
    implicit none
+!
    !@objective Perform advection
+!
    !@arguments
    logical :: F_doAdwStat_L   !I, will compute stats if .true.
    integer :: F_nb_iter       !I, total number of iterations for trajectories
@@ -43,6 +36,7 @@ subroutine adx_main7(F_su, F_sv, F_sw, &
         F_fields_list         !I, list of gmm labels of fields to advect
    real, dimension(F_minx:F_maxx,F_miny:F_maxy, F_nks) :: &
         F_su, F_sv, F_sw      !I, real destag winds, super-set (mom+thermo)
+!
    !@author  alain patoine
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
@@ -50,10 +44,12 @@ subroutine adx_main7(F_su, F_sv, F_sw, &
    ! v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
    ! v4_04 - Tanguay M.        - Staggered version TL/AD 
    ! V4_10 - Plante A.         - Thermo upstream positions
+   ! V4_14 - Plante A.         - No advection in top pilote zone
    !@description
    !  adx_main_2_pos: Calculate upstream positions at th and t1
    !  adx_main_3_int: Interpolation of rhs
 !**/
+
 #include "gmm.hf"
 #include "adx_gmm.cdk"
 #include "adx_dims.cdk"
@@ -66,7 +62,7 @@ subroutine adx_main7(F_su, F_sv, F_sw, &
 
    logical :: save_stats_L
    type(gmm_metadata) :: my_meta,my_meta_t,my_meta2
-   integer :: i,istat,i0,in,j0,jn
+   integer :: i,j,istat,i0,in,j0,jn,k0
    real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
         pxm,pym,pzm
    real, dimension(adx_mlni,adx_mlnj,adx_lnkt) :: &
@@ -84,15 +80,24 @@ subroutine adx_main7(F_su, F_sv, F_sw, &
    logical v4dstore_L
 
 #define IS_SAME_BOUNDS(M1,M2) (M1%l(1)%low == M2%l(1)%low .and. M1%l(1)%high == M2%l(1)%high .and. M1%l(2)%low == M2%l(2)%low .and. M1%l(2)%high == M2%l(2)%high)
+
    !---------------------------------------------------------------------
+
    call msg(MSG_DEBUG,'adx_main')
 
-   v4dstore_L = V4dg_conf.ne.0 .and. V4dg_oktr_L
-   save_stats_L = adw_stats_L
-   adw_stats_L = (F_doAdwStat_L .and. adw_stats_L)
+   k0=adx_gbpil_t+1
 
-   call adx_model2adx_grid_uv2(a_su,a_sv, F_su,F_sv, adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_minx,F_maxx,F_miny,F_maxy, F_nks)
-   call adx_model2adx_grid_scalar2(a_sw, F_sw, adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_minx,F_maxx,F_miny,F_maxy, F_nks, POLE0_L, EXTEND_L)
+   v4dstore_L   = V4dg_conf.ne.0 .and. V4dg_oktr_L
+   save_stats_L = adw_stats_L
+   adw_stats_L  = (F_doAdwStat_L .and. adw_stats_L)
+
+   call adx_grid_uv (a_su,a_sv, F_su,F_sv,                    &
+                     adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+                     F_minx,F_maxx,F_miny,F_maxy, F_nks)
+
+   call adx_grid_scalar (a_sw, F_sw,                          &
+                         adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+                         F_minx,F_maxx,F_miny,F_maxy, F_nks, POLE0_L, EXTEND_L)
 
    istat = GMM_OK
    istat = min(gmm_get(adx_xth_s,xth,my_meta),istat)
@@ -132,32 +137,44 @@ subroutine adx_main7(F_su, F_sv, F_sw, &
 
    call handle_error(istat,'adx_main','gmm_get')
 
-   call adx_main_2_pos3( &
-        F_nb_iter, 'm', &
-        pxm,  pym,  pzm , &
-        a_su, a_sv, a_sw, &
-        xth , yth , zth , &
-        xcth, ycth, zcth, &
-        xct1, yct1, zct1, &
+   call tmg_start0 (50, 'ADW_TRAJE')
+
+   call adx_main_2_pos4( F_nb_iter, 'm'  , &
+                         pxm , pym , pzm , &
+                         a_su, a_sv, a_sw, &
+                         xth , yth , zth , &
+                         xcth, ycth, zcth, &
+                         xct1, yct1, zct1, &
         adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
-        adx_mlni, adx_mlnj, adx_lnkm, F_nks)
+        adx_mlni , adx_mlnj , k0 , adx_lnkm , F_nks)
 
-   call adx_main_2_pos3( &
-        F_nb_iter, 't', &
-        pxt,    pyt,    pzt, &
-        a_su,   a_sv,   a_sw, &
-        xth_t,  yth_t,  zth_t, &
-        xcth_t, ycth_t, zcth_t, &
-        l_xct1, l_yct1, l_zct1, &
+   call adx_main_2_pos4( F_nb_iter, 't'        , &
+                         pxt   , pyt   , pzt   , &
+                         a_su  , a_sv  , a_sw  , &
+                         xth_t , yth_t , zth_t , &
+                         xcth_t, ycth_t, zcth_t, &
+                         l_xct1, l_yct1, l_zct1, &
         adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
-        adx_mlni, adx_mlnj, adx_lnkt,F_nks)
+        adx_mlni , adx_mlnj , k0 , adx_lnkt , F_nks)
 
-   call adx_main_2_pos_postfix2(pxt,pyt,pxm,pym,&
-        adx_mlni,adx_mlnj,adx_lnkm,adx_lnkt)
+   call adx_get_ij0n (i0,in,j0,jn)
 
+!$omp parallel
+!$omp do
+   do j = j0,jn
+      do i = i0,in
+         pxt(i,j,       1) = pxm(i,j,       1)
+         pyt(i,j,       1) = pym(i,j,       1)
+         pxt(i,j,adx_lnkt) = pxm(i,j,adx_lnkm)
+         pyt(i,j,adx_lnkt) = pym(i,j,adx_lnkm)
+      enddo
+   enddo
+!$omp enddo
+!$omp end parallel
+
+   call tmg_stop0 (50)
 
    if (adw_stats_L) then
-      call adx_get_ij0n(i0,in,j0,jn)
       call adx_main_2_pos_stats( &
            'm', &
            a_su  ,a_sv  ,a_sw  , &
@@ -166,7 +183,7 @@ subroutine adx_main7(F_su, F_sv, F_sw, &
            xcth, ycth, zcth, &
            xct1, yct1, zct1, &
            adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
-           adx_mlni, adx_mlnj, adx_lnkm,adx_lnkm,i0,in,j0,jn)
+           adx_mlni, adx_mlnj, adx_lnkm,adx_lnkm,i0,in,j0,jn,k0,adx_lnkm)
 
       call adx_main_2_pos_stats(  &
            't', &
@@ -176,23 +193,26 @@ subroutine adx_main7(F_su, F_sv, F_sw, &
            xcth_t, ycth_t, zcth_t, &
            l_xct1, l_yct1, l_zct1, &
            adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
-           adx_mlni, adx_mlnj, adx_lnkm,adx_lnkt,i0,in,j0,jn)
+           adx_mlni, adx_mlnj, adx_lnkm,adx_lnkt,i0,in,j0,jn,k0,adx_lnkt)
    endif
 
 !  Store TRAJ upstream positions
 !  -----------------------------
-   if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt,adx_mlni,adx_mlnj,adx_lnkm,adx_lnkt)
+   if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt, &
+                                      adx_mlni,adx_mlnj,adx_lnkm,adx_lnkt)
 !
 !  Store TRAJ RHS before interpolation
 !  -----------------------------------
    if ( v4dstore_L ) call v4d_rwtraj (11)
 
-   call adx_main_3_intlag6(pxm, pym, pzm, &
-        F_fields_list, F_fields_type_L, F_nfields, &
-        IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,adx_lnkm)
-   call adx_main_3_intlag6(pxt, pyt, pzt, &
-        F_fields_list, F_fields_type_L, F_nfields, &
-        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,adx_lnkt)
+   call tmg_start0 (60, 'ADW_INLAG')
+
+   call adx_main_3_intlag7 ( pxm, pym, pzm, F_fields_list, F_fields_type_L, F_nfields, &
+                             IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkm )
+   call adx_main_3_intlag7 ( pxt, pyt, pzt, F_fields_list, F_fields_type_L, F_nfields, &
+                        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkt )
+
+   call tmg_stop0 (60)
 
 !  Store TRAJ RHS interpolated
 !  ---------------------------
@@ -200,7 +220,9 @@ subroutine adx_main7(F_su, F_sv, F_sw, &
 
    adw_stats_L = save_stats_L
    call msg(MSG_DEBUG,'adx_main [end]')
+
    !---------------------------------------------------------------------
+
    return
 end subroutine adx_main7
 

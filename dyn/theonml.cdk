@@ -27,6 +27,7 @@
 #include "ver.cdk"
 #include "dcst.cdk"
 #include "ptopo.cdk"
+#include "that.cdk"
 !
       namelist /theo_cfgs/ Theo_case_S
       namelist /theo_cfgs/ Out3_etik_S, Lctl_debug_L, Lam_runstrt_S
@@ -72,6 +73,7 @@
       namelist /mtn_cfgs/ Schm_moist_L
       namelist /mtn_cfgs/ Schm_zdotMid_L
       namelist /mtn_cfgs/ Schm_autobar_L
+      namelist /mtn_cfgs/ Schm_pior_L
       namelist /mtn_cfgs/ Cstv_dt_8,Cstv_bA_8
       namelist /mtn_cfgs/ Cstv_ptop_8, Cstv_tstr_8
       namelist /mtn_cfgs/ Hzd_type_S, Hzd_pwr, Hzd_lnr
@@ -84,3 +86,4 @@
       namelist /mtn_cfgs/ Vtopo_ndt, Out3_etik_s,Lctl_r8stat_L
       namelist /mtn_cfgs/ Out3_flipit_L, Out3_closestep
       namelist /mtn_cfgs/ G_periodx, G_periody
+      namelist /mtn_cfgs/ that_L

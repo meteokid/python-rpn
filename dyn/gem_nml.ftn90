@@ -95,6 +95,7 @@
       Schm_pheat_L    = .true.
       Schm_zdotMid_L  = .false.
       Schm_autobar_L  = .false.
+      Schm_pior_L     = .true.
 !
       Schm_phyms_L    = .false.
       Schm_chems_L    = .false.
@@ -107,6 +108,7 @@
       Lam_0ptend_L  = .true.
       Lam_blendoro_L= .true.
       Lam_current_S = '20000101.000000'
+      Lam_acidtest_L= .false.
 !
       Zblen_L   = .false.
 !
@@ -190,10 +192,13 @@
 !
       Tr3d_ntr = 0
 !
-      p_lmvd_valml_8  = 1.0
-      p_lmvd_mllat_8  = 30.0
-      p_lmvd_valeq_8  = 1.0
-      p_lmvd_eqlat_8  = 5.0
+! The default here is NO modulation (weigh is 1.0 everywhere)
+! Activation can be done with P_lmvd_weigh_high_lat=0.
+      P_lmvd_weigh_high_lat =  1.0
+      P_lmvd_weigh_low_lat  =  1.0
+      P_lmvd_high_lat       = 30.0
+      P_lmvd_low_lat        =  5.0
+
       P_pbd_dumpbus  = 0
 !
       P_zong_znli = 0
@@ -204,12 +209,15 @@
       P_zong_znsrf_s = ' '
       P_zong_znprf_s = ' '
 !
+      P_runlgt       = -1
+!
       do i = 1,MAXELEM
          Out3_zund(i)     = 0
       enddo
       Out3_etik_S    = 'GEMDM'
       Out3_unit_S    = ' '
       Out3_closestep = -1
+      Out3_postfreq  =  0
       Out3_ndigits   = -1
       Out3_ip3       = 0
       Out3_nbitg     = 16
@@ -244,7 +252,6 @@
       Grdc_initphy_L = .false.
       Grdc_runstrt_S = Lam_runstrt_S
       Grdc_runend_S  = Lam_runstrt_S
-      Grdc_bcs_hollow_L = .true.
       Grdc_nbits = 32
       do k=1,max_trnm
          Grdc_trnm_S(k) = '@#$%'

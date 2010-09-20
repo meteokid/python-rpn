@@ -228,12 +228,14 @@
             b_8(i) = 0.0
          enddo
       endif
+
       if (kind.eq.5) then
          rcoef(1) = 1.0
          rcoef(2) = 1.0
          pref_8  = 800.0
          ptop_8=0.0
-         xx_key=fstinf (iun,ni, nj, nk, -1,' ',ig1a,ig2a,-1 ,' ','!!  ')
+!         xx_key=fstinf (iun,ni, nj, nk, -1,' ',ig1a,ig2a,-1 ,' ','!!  ')
+         xx_key=fstinf (iun,ni, nj, nk, -1,' ',-1,-1,-1 ,' ','!!  ')
          if (xx_key.ge.0) then
              p0_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,ip2a,ip3a,' ','P0')
              status = vgd_new(vgd,unit=iun,format='fst',ip1=-1,ip2=-1)

@@ -141,6 +141,8 @@
 !
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
 !
+      call pw_update_UVT ('P')
+!
  1001 format(/,3X,'HORIZONTAL DIFFUSION REQUIRED: ',a)
  1002 format(/,3X,'VERTICAL SPONGE REQUIRED: ')
 !

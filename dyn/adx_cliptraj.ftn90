@@ -16,13 +16,8 @@
 #include "msg.h"
 #include "stop_mpi.h"
 
-subroutine adx_cliptraj()
-   call stop_mpi(STOP_ERROR,'adx_cliptraj','called a stub')
-   return
-end subroutine
-
 !/**
-subroutine adx_cliptraj2(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,F_nk, mesg)
+subroutine adx_cliptraj3(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,k0,F_nk, mesg)
    implicit none
 #include "adx_dims.cdk"
    !@objective Clip SL hor. trajectories to either fit inside the 
@@ -31,7 +26,7 @@ subroutine adx_cliptraj2(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,F_nk, mesg)
    !@arguments
    character(len=*) :: mesg
    integer :: F_ni,F_nj,F_nk  !I, dims of F_x, F_y
-   integer :: i0, in, j0, jn  !I, scope of the operator
+   integer :: i0,in,j0,jn,k0  !I, scope of the operator
    real, dimension(F_ni,F_nj,F_nk) :: &
         F_x, F_y              !I/O, upstream pos
    !@author Michel Desgagne, Spring 2008
@@ -58,7 +53,7 @@ subroutine adx_cliptraj2(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,F_nk, mesg)
    cnt=0
 
    !- Clipping to processor boundary
-   do k=1,F_nk
+   do k=k0,F_nk
       do j=j0,jn
          do i=i0,in
             if ( (F_x(i,j,k)<minposx).or.(F_x(i,j,k)>maxposx).or. &
@@ -72,7 +67,7 @@ subroutine adx_cliptraj2(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,F_nk, mesg)
    enddo
 
    n = max(1,adx_maxcfl)
-   totaln = (F_ni*n*2 + (F_nj-2*n)*n*2) * F_nk
+   totaln = (F_ni*n*2 + (F_nj-2*n)*n*2) * (F_nk-k0+1)
 
    call rpn_comm_Allreduce(cnt,sum_cnt,2,"MPI_INTEGER", "MPI_SUM","grid",err)
 
@@ -85,4 +80,18 @@ subroutine adx_cliptraj2(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,F_nk, mesg)
    endif
    !---------------------------------------------------------------------
    return
-end subroutine adx_cliptraj2
+end subroutine adx_cliptraj3
+
+!========================================================================
+!== stubs ===============================================================
+!========================================================================
+
+subroutine adx_cliptraj()
+   call stop_mpi(STOP_ERROR,'adx_cliptraj','called a stub')
+   return
+end subroutine
+subroutine adx_cliptraj2()
+   call stop_mpi(STOP_ERROR,'adx_cliptraj2','called a stub')
+   return
+end subroutine
+

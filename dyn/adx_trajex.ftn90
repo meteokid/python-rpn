@@ -17,40 +17,42 @@
 #include "constants.h"
 #include "stop_mpi.h"
 
-subroutine adx_trajex
-   call stop_mpi(STOP_ERROR,'adx_trajex','called a stub')
-   return
-end subroutine adx_trajex
-
-
 !/**
-subroutine adx_trajex1(F_xto,  F_yto,  F_xcto, F_ycto, &
-     F_zcto, F_xctm, F_yctm, F_zctm,i0,in,j0,jn)
+subroutine adx_trajex2 (F_xto,  F_yto,  F_xcto, F_ycto, &
+                        F_zcto, F_xctm, F_yctm, F_zctm,i0,in,j0,jn,k0)
    implicit none
+!
    !@objective compute positions at origin (o) by extrapolation using positions at mid-trajectory (m)
+!
    !@arguments
    real, dimension(*) :: &
         F_xto, F_yto, &          !O, upstream positions at origin
         F_xcto, F_ycto, F_zcto,& !O, upstream cartesian positions at origin 
         F_xctm, F_yctm, F_zctm   !I, upstream cartesian positions at mid-traj
-   integer :: i0,in,j0,jn        !I, scope of operator
+   integer :: i0,in,j0,jn,k0     !I, scope of operator
+!
    !@author  alain patoine
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 !**/
+
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
+
    integer :: i,j,k, n, vnij
    real*8 :: prx, pry, prz, prdot2
    real*8,dimension(i0:in,j0:jn) :: xasin, yasin, xatan, yatan, zatan
+
    !---------------------------------------------------------------------
+
    call msg(MSG_DEBUG,'adx_trajex')
    vnij = (in-i0+1)*(jn-j0+1)
+   call tmg_start0(55, 'ADPOS_EX1' )
 
 !$omp parallel private(xasin,yasin,xatan,yatan,zatan,n,prx,pry,prz,prdot2)
 !$omp do
-   do k=1,adx_lnkm
+   do k=k0,adx_lnkm
       do j=j0,jn
          do i=i0,in
 
@@ -90,81 +92,18 @@ subroutine adx_trajex1(F_xto,  F_yto,  F_xcto, F_ycto, &
 !$omp enddo
 !$omp end parallel
 
+   call tmg_stop0 (55)
    call msg(MSG_DEBUG,'adx_trajex [end]')
    !---------------------------------------------------------------------
    return
+end subroutine adx_trajex2
+
+!========================================================================
+!=== stubs ==============================================================
+!========================================================================
+
+subroutine adx_trajex1()
+   call stop_mpi(STOP_ERROR,'adx_pos_lam2','called a stub')
+   return
 end subroutine adx_trajex1
 
-
-!/**
-subroutine adx_trajex2(F_xto,  F_yto,  F_xcto, F_ycto, &
-     F_zcto, F_xctm, F_yctm, F_zctm,i0,in,j0,jn,F_ni,F_nj,F_nk)
-   implicit none
-   !@objective compute positions at origin (o) by extrapolation using positions at mid-trajectory (m)
-   !@arguments
-   integer :: F_ni,F_nj,F_nk !I, 
-   real, dimension(F_ni,F_nj,F_nk) :: &
-        F_xto, F_yto, &          !O, upstream positions at origin
-        F_xcto, F_ycto, F_zcto,& !O, upstream cartesian positions at origin 
-        F_xctm, F_yctm, F_zctm   !I, upstream cartesian positions at mid-traj
-   integer :: i0,in,j0,jn        !I, scope of operator
-   !@author  alain patoine
-   !@revisions
-   ! v3_00 - Desgagne & Lee    - Lam configuration
-   ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-!**/
-!!$#undef __ADX_DIMS__
-!!$#include "adx_dims.cdk"
-!!$#undef __ADX_GRID__
-!!$#include "adx_grid.cdk"
-!!$   integer :: i,j,k, vnij, trj_i_off
-!!$   real*8 :: prx, pry, prz, prdot2
-!!$   real*8,dimension(i0:in,j0:jn) :: xasin, yasin, xatan, yatan, zatan
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_trajex2','called a stub')
-!!$   call msg(MSG_DEBUG,'adx_trajex')
-!!$   vnij = (in-i0+1)*(jn-j0+1)
-!!$   trj_i_off = adx_mli0 - adx_li0
-!!$
-!!$!$omp parallel private(xasin,yasin,xatan,yatan,zatan,prx,pry,prz,prdot2)
-!!$!$omp do
-!!$   do k=1,F_nk
-!!$      do j=j0,jn
-!!$         do i=i0,in
-!!$            pry = dble(adx_cy_8(j))
-!!$            prx = dble(adx_cx_8(trj_i_off + i)) * pry
-!!$            pry = dble(adx_sx_8(trj_i_off + i)) * pry
-!!$            prz = dble(adx_sy_8(j))
-!!$
-!!$            prdot2 = 2.D0 * (prx * dble(F_xctm(i,j,k)) + &
-!!$                 pry * dble(F_yctm(i,j,k)) + &
-!!$                 prz * dble(F_zctm(i,j,k)) )
-!!$
-!!$            F_xcto(i,j,k) = prdot2 * dble(F_xctm(i,j,k)) - prx
-!!$            F_ycto(i,j,k) = prdot2 * dble(F_yctm(i,j,k)) - pry
-!!$            F_zcto(i,j,k) = prdot2 * dble(F_zctm(i,j,k)) - prz
-!!$
-!!$            xatan(i,j) = dble(F_xcto(i,j,k))
-!!$            yatan(i,j) = dble(F_ycto(i,j,k))
-!!$            xasin(i,j) = dble(max(-1.,min(1.,F_zcto(i,j,k))))
-!!$         enddo
-!!$      enddo
-!!$
-!!$!TODO: merge this part with the same done in trajsp?
-!!$      call vatan2(zatan, yatan, xatan, vnij)
-!!$      call vasin(yasin, xasin, vnij)
-!!$
-!!$      do j=j0,jn
-!!$         do i=i0,in
-!!$            F_xto(i,j,k) = zatan(i,j)
-!!$            F_yto(i,j,k) = yasin(i,j)
-!!$            if (F_xto(i,j,k) < 0.) F_xto(i,j,k) = F_xto(i,j,k) + CONST_2PI_8
-!!$         enddo
-!!$      enddo
-!!$   enddo
-!!$!$omp enddo
-!!$!$omp end parallel
-!!$   call msg(MSG_DEBUG,'adx_trajex [end]')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_trajex2

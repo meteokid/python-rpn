@@ -58,38 +58,21 @@
       Pil_jobstrt_S ='@#$%'
       Pil_jobend_S  ='@#$%'
       Pil_3df_L        = .true.
-      Pil_bcs_hollow_L = .true.
       Pil_bmf_L        = .false.
       Pil_dx           = 0.0
       Pil_lancemodel   = 10000
       Pil_nesdt        = 0
       Pil_hblen        = 10
 !
-      Topo_filmx_L= .true.
-      Topo_dgfmx_L= .false.
-      Topo_dgfms_L= .true.
+      Topo_filmx_L    = .true.
+      Topo_dgfmx_L    = .false.
+      Topo_dgfms_L    = .true.
+      Topo_clip_oro_L = .true.
 !
       Anal_cond_L     = .false.
       anal_perturb_L  = .false.
       E_schm_stlag    = .true.
       E_schm_adcub    = .true.
-      E_geol_glanl_L  = .true.
-      E_geol_glreg_L  = .false.
-      E_geol_hsanl_L  = .true.
-      E_geol_hscon_L  = .false.
-      E_geol_hsreg_L  = .true.
-      E_geol_gls  = 30.
-      E_geol_gln  = 80.
-      E_geol_glw  = 220.
-      E_geol_gle  = 320.
-      E_geol_hss  = 30.
-      E_geol_hsn  = 80.
-      E_geol_hsw  = 220.
-      E_geol_hse  = 320.
-      E_geol_hsea = 3000
-      E_geol_poin = 3
-      E_geol_modex_L = .false.
-      E_geol_z0cst   = -1.
 !
       E_tr3d_list_S = ''
 !

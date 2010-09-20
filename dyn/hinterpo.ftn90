@@ -29,11 +29,11 @@
       character* (*) hint
       integer nid,njd,nis,njs,nk
       integer indxx(nid),indxy(njd)
-      real dst(nid,njd,nk), src(nis,njs,nk), &
-           cxa(*),cxb(*),cxc(*),cxd(*),cya(*),cyb(*),cyc(*),cyd(*)
+      real dst(nid,njd,nk), src(nis,njs,nk)
+      real*8  cxa(*),cxb(*),cxc(*),cxd(*),cya(*),cyb(*),cyc(*),cyd(*)
 !
-      integer k,err,ezsint
-      external ezsint
+      integer k
+!
 !-----------------------------------------------------------------------
       do k=1,nk
       call grid_to_grid_interp (dst(1,1,k),nid,njd,src(1,1,k), &

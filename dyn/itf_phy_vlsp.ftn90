@@ -18,11 +18,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine itf_phy_vlsp (pw_eponmod)
-!
+      subroutine itf_phy_vlsp (pw_eponmod,ni,nj)
       implicit none
 !
-      real pw_eponmod(l_ni,l_nj)
+      integer ni,nj
+      real pw_eponmod (ni,nj)
 !Author
 !     michel roch - rpn - nov 97
 !
@@ -39,16 +39,10 @@
 !
 !implicits
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "itf_phy_config.cdk"
 #include "lun.cdk"
 #include "geomn.cdk"
 #include "schm.cdk"
-!
-!!
-!
-      real*8 one, CLXXX_8, deg2rad_8
-      parameter( one  = 1.0d0 , CLXXX_8 = 180.0d0 )
 !
       integer i, j
       real*8 pdb, pdtmp, pda,  pdc
@@ -56,42 +50,25 @@
 !     ---------------------------------------------------------------
 !
       if ( .not. Schm_phyms_L ) return
-      if (G_lam)                return
-
-
-      deg2rad_8 = acos( -ONE ) / CLXXX_8
-
-      if (Lun_out.gt.0) write(Lun_out,1000)
 !
-      pw_eponmod = P_lmvd_valml_8
-
-      do j=1,l_nj
-      do i=1,l_ni
-         if (abs(Geomn_latrx(i,j)*deg2rad_8) .le. P_lmvd_eqlat_8 )  &
-             pw_eponmod (i,j) = P_lmvd_valeq_8
-      end do
-      end do
-
-      pdb = P_lmvd_mllat_8 - P_lmvd_eqlat_8
-      do j=1,l_nj
-      do i=1,l_ni
-         pdtmp = Geomn_latrx(i,j)*deg2rad_8
-         if ((pdtmp .gt. -P_lmvd_mllat_8 ).and.(pdtmp .lt. -P_lmvd_eqlat_8)) then
-           pda = (pdtmp+P_lmvd_mllat_8)/pdb
-           pdc = (3.-2.*pda)*pda*pda
-           pw_eponmod(i,j) = P_lmvd_valeq_8 * pdc + ( 1. - pdc)  &
-                                            * P_lmvd_valml_8
-         endif
-         if ((pdtmp .gt. P_lmvd_eqlat_8  ).and.(pdtmp .lt.  P_lmvd_mllat_8)) then
-           pda = (pdtmp-P_lmvd_eqlat_8)/pdb
-           pdc = (3.-2.*pda)*pda*pda
-           pw_eponmod(i,j) = P_lmvd_valml_8 * pdc + (1. - pdc)  &
-                                            * P_lmvd_valeq_8
-         endif
+      if (G_lam) then
+         pw_eponmod = 1.
+         return
+      endif
+!
+      if (Lun_out.gt.0) write (Lun_out,1000)
+!
+      pdb = P_lmvd_high_lat - P_lmvd_low_lat
+      do j=1,nj
+      do i=1,ni
+         pdtmp = abs(Geomn_latrx(i,j))
+         pda   = min(1.0d0,max(0.0d0,(pdtmp-P_lmvd_low_lat)/pdb))
+         pdc   = (3.-2.*pda)*pda*pda
+         pw_eponmod(i,j) = pdc        * P_lmvd_weigh_high_lat + &
+                           (1. - pdc) * P_lmvd_weigh_low_lat
+         pw_eponmod(i,j) = max(0.0,min(1.0,pw_eponmod(i,j)))
       enddo
       enddo
-!
-      return
 !
  1000 format( &
         /,'COMPUTE LATITUDINAL MODULATION OF VERTICAL',  &

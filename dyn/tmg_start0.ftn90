@@ -31,9 +31,10 @@
 ! v3_21 - Desgagne/Valin - initial version
 !
 !
-      external mclock,rtools_wtime
-      integer i,mclock
-      real*8 rtools_wtime 
+      integer mclock
+      integer*8 time_base
+      real*8 rtools_wtime
+      external mclock,rtools_wtime,time_base
 !
       call tmg_start ( mynum, myname_S )
 !
@@ -41,6 +42,7 @@
          nam_subr_S(mynum) = myname_S
          m0x(mynum) = mclock()
          r0 (mynum) = rtools_wtime()
+         tb (mynum) = time_base()
       endif
 !
       return

@@ -60,7 +60,6 @@
 #include "ptopo.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "acid.cdk"
 !
 !modules
       integer stretch_axis2
@@ -70,7 +69,7 @@
       character*8 dumc
       integer offi,offj,indx,err,dgid,ezgdef_fmem,gdll
       integer i,j,k,nila,ierx,iery,nimax,njmax,dimy,istat,pnip1
-      real s1,r1,xfi(l_ni),yfi(l_nj)
+      real s1,r1,xfi(l_ni),yfi(l_nj),height,heightp1
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
@@ -115,30 +114,24 @@
          write(Lun_out, nml=dyngrid)
          write (Lun_out,1005) G_nk,Grd_rcoef
          do k=1,G_nk
+            height  =-16000./alog(10.)*alog(Ver_hyb%m(k))
+            if (k.lt.G_nk)&
+            heightp1 =-16000./alog(10.)*alog(Ver_hyb%m(k+1))
+            if (k.eq.G_nk) heightp1 = 0.
             call convip(pnip1,Ver_hyb%m(k),5,1,dumc,.false.)
-            write (Lun_out,1006) k,Ver_hyb%m(k),pnip1
+            write (Lun_out,1006) k,Ver_hyb%m(k),height, &
+                                 height-heightp1,pnip1
          end do
       endif
 !
-      if (ierx.ne.0) then
-          if (Lun_out.gt.0) &
+      if ( (ierx.ne.0) .and. (Lun_out.gt.0) ) &
              write (Lun_out,*)'ERROR in generating XGI_8 values!'
-          call handle_error(-1,'set_geom','set_geom')
-      endif
-      if (iery.ne.0.and.Lun_out.gt.0) then
-          if (Lun_out.gt.0) &
+      if ( (iery.ne.0) .and. (Lun_out.gt.0) ) &
              write (Lun_out,*)'ERROR in generating YGI_8 values!'
-          call handle_error(-1,'set_geom','set_geom')
-      endif
+      call handle_error(ierx,'set_geom','set_geom')
+      call handle_error(iery,'set_geom','set_geom')
 !
-!   FOR THE ACID BIT TEST
-      if (Acid_test_L) then
-        if (.not.Acid_pilot_L.and.Acid_readposi_L) then
-          call acid_readpos(xgi_8,ygi_8)
-        else
-          call acid_writepos(xgi_8,ygi_8)
-        endif
-      endif
+! call parpos_from_file (xgi_8,ygi_8,Grd_ni,Grd_nj)
 !
       Grd_uniform_L   = (G_ni.eq.Grd_nila).and.(G_nj.eq.Grd_njla).and..not.Grd_gauss_L
 !
@@ -280,8 +273,9 @@
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)', &
              /'===============================================')
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ', &
-               'Grd_rcoef= ',2f7.2,':'/1x,'level',12x,'HYB',15x,'IP1')
- 1006 format (1x,i4,3x,es16.4,10x,i10)
+               'Grd_rcoef= ',2f7.2,':'/ &
+               2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',7x,'IP1')
+ 1006 format (1x,i4,3x,es16.4,2(6x,f6.0),4x,i10)
 !
 !     ---------------------------------------------------------------
 !

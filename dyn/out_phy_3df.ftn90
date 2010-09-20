@@ -17,8 +17,7 @@
 !**s/r out_phy_3df - output physics fields in 3df format
 #include "model_macros_f.h"
 !
-      subroutine out_phy_3df ( bus_o,F_ni,F_nj,datev, &
-                               gid,gif,gjd,gjf )
+      subroutine out_phy_3df (bus_o, F_ni,F_nj, datev, gid,gif,gjd,gjf)
 
       implicit none
 !
@@ -48,7 +47,7 @@
 !
 !*
       integer i,j,k,nis,njs,ind_o(100),nvp_casc
-      integer idx,unf,mult,shp,mode,bignks
+      integer idx,unf,mult,shp,bignks
       integer nks(20),upoidx(20),uponks(20)
       character*4 upolistc(20)
 !----------------------------------------------------------------------
@@ -109,9 +108,8 @@
       if (P_pbl_schsl_s.ne.'ISBA') upolistc(8)= "HS  " !I1->HS
 !
       if (Out_blocme.eq.0) then
-         mode=2
-         call out_sfile_3df (datev,unf,'PHYSICSS',gid, gif, gjd, gjf, &
-                                                     nvp_casc,0,mode)
+         call out_sfile_3df ( datev, unf, 'PHYSICSS', &
+                       gid, gif, gjd, gjf, nvp_casc,0 )
          write (unf) (upolistc(idx)(1:4),nks(idx),idx=1,nvp_casc)
       endif
       do idx = 1, nvp_casc

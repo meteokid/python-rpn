@@ -121,9 +121,9 @@
 !     cycle of Crank-Nicholson procedure only
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
-      call diag_var( bspqtx, mutx, st1, qt1, 1,l_ni,1,l_nj,l_nk)       
+      call diag_var( bspqtx, mutx, st1, qt1, 1,l_ni,1,l_nj,1,l_nk)       
 !
-      call diag_fip(fiptx, st1, tt1, topo, 1,l_ni,1,l_nj,l_nk)         
+      call diag_fip(fiptx, st1, tt1, qt1, topo, LDIST_DIM, l_nk)
 !
       call rhsp_2  ( orhsu, orhsv, orhsc,  orhst, orhsw,  orhsf, &
                       ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v, &

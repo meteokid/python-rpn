@@ -26,10 +26,10 @@
 !
 #endif
 !
-      logical Topo_filmx_L,Topo_dgfmx_L,Topo_dgfms_L
+      logical Topo_filmx_L,Topo_dgfmx_L,Topo_dgfms_L,Topo_clip_oro_L
       real, dimension(:), pointer :: topo
 !
-      common / topo_l / Topo_filmx_L,Topo_dgfmx_L,Topo_dgfms_L
+      common / topo_l / Topo_filmx_L,Topo_dgfmx_L,Topo_dgfms_L,Topo_clip_oro_L
       common / topo_r / topo
 !
 

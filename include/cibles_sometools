@@ -1,11 +1,11 @@
 prgemnml: prgemnml.o
-	$(RBUILD) -bidon -main prgemnml -obj $(LCLPO)/prgemnml.o -o $(ATM_MODEL)prnml_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gem" -librmn $(RMN)
+	$(RBUILD) -bidon -main prgemnml -obj $(LCLPO)/prgemnml.o -o $(ATM_MODEL)prnml_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gem" -librmn $(RMN_VERSION)
 	/bin/rm -f $(LCLPO)/prgemnml.o
 
 gemgrid:
-	$(RBUILD) -bidon -main gemgrid -o $(ATM_MODEL)grid_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gem $(COMM)" -librmn $(RMN)
+	$(RBUILD) -bidon -main gemgrid -o $(ATM_MODEL)grid_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gem $(COMM)" -librmn $(RMN_VERSION)
 
 allbin: prgemnml 
-	make gemgrid COMM_stubs=rpn_commstubs$(version_COMM)
+	make gemgrid COMM_stubs=rpn_commstubs$(COMM_VERSION)
 	make gem
 #	make gem V4D="v4d modulopt prof_003"

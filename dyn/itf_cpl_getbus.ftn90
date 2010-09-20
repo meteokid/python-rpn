@@ -17,11 +17,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine itf_cpl_getbus ( f_busdyn, f_busper, f_busvol, f_jdo)
+      subroutine itf_cpl_getbus ( F_busper, F_busvol, F_jdo)
       implicit none
 !
-      integer f_jdo
-      real f_busdyn(*), f_busper(*), f_busvol(*)
+      integer F_jdo
+      real F_busper(*), F_busvol(*)
 !
 !authors    Michel Desgagne - Spring 2008
 ! 
@@ -42,12 +42,15 @@
       call getindx ('FDSI'    ,  'P', cpl_fdsi,     lght, soit)
       call getindx ('RT'      ,  'V', cpl_rt,       lght, soit)
 !
-      atm_local_busou(1+p_offi:p_ni+p_offi,f_jdo,5) =  &
-         f_busper(cpl_flusolis:cpl_flusolis+p_ni-1)
-      atm_local_busou(1+p_offi:p_ni+p_offi,f_jdo,6) =  &
-         f_busper(cpl_fdsi    :cpl_fdsi    +p_ni-1)
-      atm_local_busou(1+p_offi:p_ni+p_offi,f_jdo,7) =  &
-         f_busvol(cpl_rt      :cpl_rt      +p_ni-1)
+      call itf_phy_unfold ( atm_local_busou(1,1,5), &
+                            f_busper(cpl_flusolis), &
+                            F_jdo, 1, 1, 1,l_ni,1,l_nj )
+      call itf_phy_unfold ( atm_local_busou(1,1,6), &
+                            F_busper(cpl_fdsi    ), &
+                            F_jdo, 1, 1, 1,l_ni,1,l_nj )
+      call itf_phy_unfold ( atm_local_busou(1,1,7), &
+                            F_busvol(cpl_rt      ), &
+                            F_jdo, 1, 1, 1,l_ni,1,l_nj )
 !
 !     ---------------------------------------------------------------
 !

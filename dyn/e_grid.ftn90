@@ -94,6 +94,8 @@
           call e_arret('e_gridgef')
       endif
 !
+! call parpos_from_file (x_8, y_8, ni, Grd_nj)
+!
 !     compute the staggered positions for U and V grids
 !
       do i=1,ni-2

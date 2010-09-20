@@ -32,6 +32,7 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.         - Open top
 ! v4_05 - Lepine M.         - VMM replacement with GMM
+! v4_41 - Plante & Girard   - scope on diag_var for top piloting (lid nesting)
 !
 !object
 !******************************************************************************
@@ -54,7 +55,8 @@
 #include "ptopo.cdk"
 #include "lctl.cdk"
 #include "acid.cdk"
-!
+#include "lam.cdk"
+
 !modules
 !    
 !*
@@ -103,9 +105,9 @@
       if (Acid_test_L) &
            call acid_stat_nli(qt0,st0,bspqtx,nl_u,nl_v,nl_t,nl_c,nl_f,1)
 !
-      call diag_var( bspqtx, mutx, st0, qt0, 1,l_ni,1,l_nj,l_nk)
+      call diag_var( bspqtx, mutx, st0, qt0, 1,l_ni,1,l_nj,Lam_gbpil_t+1,l_nk)
 !
-      call diag_fip( fiptx, st0, tt0, topo, 1,l_ni,1,l_nj,l_nk)
+      call diag_fip( fiptx, st0, tt0, qt0, topo, LDIST_DIM, l_nk)
 !
       call nlip_2 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , nl_b, &
                     ut0  , vt0  , tt0  , st0  , qt0  , zdt0 , fiptx, &

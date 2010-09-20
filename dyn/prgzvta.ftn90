@@ -102,14 +102,19 @@
       integer pnund,   pn1
       real    prlptop, prvttop, prfitop
       real    prlpbot, prvtbot, prfibot
-      real*8  invprd,invprl
+      real logpres(Nkout)
+      real*8  invprd
 !
       prsmall = .001
+      do kk=1, Nkout
+      logpres(kk) = log(F_pres(kk))
+      enddo
 
 !$omp parallel private(i,k,kk,pnk,pnkm,pnindex,prlprso, &
 !$omp    prd,pre,prr,prfm0,prfm1,prfm2,prfm3,prfl2,prl, &
 !$omp    pnund,pn1,prlptop,prvttop,prfitop, &
-!$omp    prlpbot,prvtbot,prfibot,invprd,invprl)
+!$omp    prlpbot,prvtbot,prfibot,invprd) &
+!$omp          shared (logpres)
 !$omp do
 
       do 600 j= 1, l_nj
@@ -117,7 +122,7 @@
       do i= 1, l_ni
          pnindex(i) = 0
       enddo
-      prlprso = log(F_pres(kk))
+      prlprso = logpres(kk)
 !
 !
       do k=1,F_nk

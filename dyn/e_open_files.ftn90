@@ -76,17 +76,8 @@
                      yg_8(e_grdc_gjd),yg_8(e_grdc_gjf), &
                      e_grdc_gif-e_grdc_gid+1,e_grdc_gjf-e_grdc_gjd+1
          close (9)
-         if (Pil_bcs_hollow_L) then
-            call bcs_hollow( &
-                       e_grdc_gid ,e_grdc_gif ,e_grdc_gjd ,e_grdc_gjf, &
-                       e_grdc_gjdi,e_grdc_hbsn,e_grdc_hbwe,is,nis, &
-                       js,njs,jn,iw,niw,ie,jw,njw)
-            call e_sfile_bcs (pdate,is,nis,js,jn,njs,iw,ie,niw,jw,njw, &
-                                               'DYNAMICS',rootfn)
-         else
-            call e_sfile_3df (pdate,'DYNAMICS', &
-             e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,rootfn)
-         endif
+         call e_sfile_3df (pdate,'DYNAMICS', &
+              e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,rootfn)
       endif
 !
 ! ---------------------------------------------------------------------

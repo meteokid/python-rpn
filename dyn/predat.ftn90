@@ -17,7 +17,7 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine predat2 (F_u, F_v, F_t, F_zd, F_s, F_topo,  &
+      subroutine predat3 (F_u, F_v, F_t, F_zd, F_s, F_q, F_topo,  &
                           F_fiptx, Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
 !
@@ -25,7 +25,7 @@
       real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v (Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
-           F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
+           F_topo(Mminx:Mmaxx,Mminy:Mmaxy),F_q(Mminx:Mmaxx,Mminy:Mmaxy,0:*)
 !
 !author 
 !     Michel Roch - rpn - oct 1993 
@@ -49,7 +49,6 @@
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
 ! v4_05 - Plante A.         - Remove zeroing of w,zd and q (initialized 
 !                             in the entrance)
-! v4_12 - Tanguay M.        - Adapt to revised predat
 !
 !object
 !
@@ -69,7 +68,7 @@
 !
       if (Lun_debug_L) write (Lun_out,1000)
 !
-      call diag_fip (F_fiptx,F_s,F_t,F_topo,1,l_ni,1,l_nj,G_nk)         
+      call diag_fip (F_fiptx,F_s,F_t,F_q,F_topo,LDIST_DIM,l_nk)
 !
       if (Hzd_t1_0_L) call hzd_hoffld (F_u ,  LDIST_DIM, G_nk  , 1)
       if (Hzd_t1_0_L) call hzd_hoffld (F_v ,  LDIST_DIM, G_nk  , 2)

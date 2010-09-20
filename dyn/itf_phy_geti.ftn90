@@ -20,7 +20,6 @@ Integer Function itf_phy_geti (vd, opt)
 
      Use phy_input_types
      Use phy_input_iface, Only : phy_simple_transforms
-     Use itf_phy_iface  , Only : itf_phy_puti_casc
      Implicit None
 
      Type(variable), Pointer      :: vd
@@ -60,6 +59,7 @@ Integer Function itf_phy_geti (vd, opt)
 #include "ptopo.cdk"
 #include "lun.cdk"
 #include "p_geof.cdk"
+#include "lam.cdk"
 
       Integer, External :: fnom, fstouv, fstinf, fstprm, fstfrm, fclos, fstopc
       Integer, External :: fstluk, fstinl, wkoffit, ezgdef_fmem, ezdefset
@@ -71,8 +71,8 @@ Integer Function itf_phy_geti (vd, opt)
 
       Character , Parameter :: esc = Char( 27 )
 
-      Integer :: i,j,k,ii,ij,ik,nf, nft, nr, iun=10, iok, ier,jer
-      Integer :: target_file, tip
+      Integer :: i,j,k,ii,ij,ik,nf, nft, nr, iun, iok, ier,jer
+      Integer :: target_file, tip, global_ni
       Integer :: dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit
       Integer :: dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       Integer :: dum0,dum1,dum2,dum3,dum4,month,day,moa,jj
@@ -86,10 +86,12 @@ Integer Function itf_phy_geti (vd, opt)
       Character(LEN=12):: lab,cdum
       Character(LEN=lenmax), Dimension(fmax) :: file_found
       Character(LEN=lenmax+15):: command
-      Real, Allocatable, Dimension(:,:) :: globalf,localf,field,field2
+      Real, Allocatable, Dimension(:,:) :: field,field2
       Real, Allocatable, Dimension(:,:) :: gmg,gglsea,gmt,gdlat,gdlon,gfis,gal
       Real, Allocatable, Dimension(:,:) :: ghs,gsnodp,gvegindx,gz0,glhtg
-      Real, Allocatable, Dimension(:)   :: ax,ay,xfi,yfi
+      Real, Allocatable, Dimension(:)   :: ax,ay
+!
+      real globalf(G_ni,G_nj), localf(l_ni,l_nj), xfi(G_ni+1), yfi(G_nj)
 !
       Real :: zp1,poa,poam,sum,sumt
       Real :: busent, busper
@@ -106,17 +108,16 @@ ier = fstopc('MSGLVL','SYSTEM',0)
 ier = fstopc('TOLRNC','SYSTEM',0)
 If(Lun_debug_L)ier = fstopc('MSGLVL','INFORM',0)
 If(Lun_debug_L)ier = fstopc('TOLRNC','INFORM',0)
-!
-Call prsdate (dum0,month,day,dum1,dum2,dum3,dum4,Mod_runstrt_S)
-ier = Define_grids()
-flag=.True. ; itf_phy_geti=-1
-!
-If(Ptopo_myproc==0)Allocate(globalf(G_ni,G_nj),Stat=ier)
-                   Allocate(localf(l_ni,l_nj),Stat=ier)
-!
+
+call prsdate (dum0,month,day,dum1,dum2,dum3,dum4,Mod_runstrt_S)
+
+call itf_phy_gdef (dgid, dstf_gid, xfi, yfi)
+
+flag=.True. ; itf_phy_geti=-1 ; iun=0
+
 If(Ptopo_myproc==0)&
   Write(Lun_out,"(/,'PHYSICS: acquiring data (S/R ITF_PHY_GETI)',/,46('='))")
-If(Lun_debug_L)Call Print_stack()
+If(Lun_debug_L) call Print_stack()
 !
 Main1 : Do
 ! Initialization
@@ -133,9 +134,14 @@ Main1 : Do
          if (Lun_out.gt.0) write (Lun_out,1000) trim(vd%nomvar), &
                 Trim(vd%file(target_file)(index(vd%file(target_file),'RUNMOD'):)),vd%interp
 !
-         If (Locate_key(keys)<0) Cycle
+         If (Ptopo_myproc==0) Then
+            ier = fnom   (iun,Trim(vd%file(target_file)),'RND+OLD+R/O',0)
+            ier = fstouv (iun,'RND')
+         endif
 !
          Do tip=1,vd%p_nu
+
+            If ( Locate_key (keys(tip,1),keys(tip,2),keys(tip,3),keys(tip,4)) <0 ) Cycle
 
             Call RPN_COMM_bcast (idim(tip),11,"MPI_INTEGER"  ,0,"grid",ier)
             Call RPN_COMM_bcastc(grd(tip), 1 ,"MPI_CHARACTER",0,"grid",ier)
@@ -146,13 +152,15 @@ Main1 : Do
 !
             If (grd(tip)=='Z') Then
                If(Ptopo_myproc==0)Then
-                  interp_L=samegrid(iun,idim(tip)%ni,idim(tip)%nj, &
+                  global_ni=G_ni+1
+                  if (G_lam) global_ni=G_ni
+                  interp_L= .not. samegrid ( iun,global_ni,G_nj,   &
                          idim(tip)%ig1,idim(tip)%ig2,idim(tip)%ig3,&
-                         Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xfi,yfi)
+                         Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,xfi,yfi )
                Endif
                Call RPN_COMM_bcast (interp_L,1,"MPI_LOGICAL"  ,0,"grid",ier)
-               If(.Not.interp_L)Then
-                  ier=Read_Axes()
+               If(interp_L)Then
+                  ier= Read_Axes()
                   Call RPN_COMM_bcastc(grref(tip), 1,"MPI_CHARACTER" ,0,"grid",ier)
                   Call RPN_COMM_bcast (ax   ,idim(tip)%ni,"MPI_REAL" ,0,"grid",ier)
                   Call RPN_COMM_bcast (ay   ,idim(tip)%nj,"MPI_REAL" ,0,"grid",ier)
@@ -160,7 +168,7 @@ Main1 : Do
                          idim(tip)%rig1,idim(tip)%rig2,idim(tip)%rig3,idim(tip)%rig4, ax, ay)
                Endif
             Else
-               interp_L = .False.
+               interp_L = .true.
                sgid = ezgdef_fmem(idim(tip)%ni,idim(tip)%nj, grd(tip),grref(tip),&
                       idim(tip)%ig1,idim(tip)%ig2,idim(tip)%ig3,idim(tip)%ig4, ax, ay)
             Endif
@@ -168,11 +176,15 @@ Main1 : Do
             istat(tip,target_file) = Read_field()
             If (Ptopo_myproc==0) Then
                If (interp_L) Then
-                  globalf=field(1:G_ni,1:G_nj)
-               else
                   ier = ezdefset ( dstf_gid, sgid )
-                  ier = ezsetopt ('INTERP_DEGREE', vd%interp)
+                  if(Lam_acidtest_L)then
+                     ier = ezsetopt ('INTERP_DEGREE', 'VOISIN')
+                  else
+                     ier = ezsetopt ('INTERP_DEGREE', vd%interp)
+                  endif
                   ier = ezsint (globalf, field)
+               else
+                  globalf=field(1:G_ni,1:G_nj)
                endif
                if ((opt%isurface/=1).or.(vd%phyvar/='Z0')) &
                ier=phy_simple_transforms(vd%phyvar,opt%z0cst,globalf)
@@ -180,7 +192,7 @@ Main1 : Do
 
             Call glbdist (globalf,G_ni,G_nj,localf,1,l_ni,1,l_nj,1,0,0)
 
-            vd%values(:,:,tip)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+            call itf_phy_fold_sfc (vd%values(1,1,tip), localf, l_ni, l_nj)
 
             If (Lun_debug_L) call statf_dm2 (localf,vd%phyvar,tip,'PUTI', &
                                     1,l_ni,1,l_nj,1,1,1,1,1,G_ni,G_nj,1)
@@ -189,14 +201,14 @@ Main1 : Do
 
             Deallocate(field,ax,ay)
          Enddo
+
          If (Ptopo_myproc==0) then
-            ier = fstfrm(iun) ; ier=fclos(iun)
+            ier= fstfrm(iun) ; ier= fclos(iun) ; iun= 0
          endif
          If (Sum(istat(:,target_file))==vd%p_nu) Exit
       Enddo
 !
-      if (.not.Final_check(.false.)) Call itf_phy_puti_casc (vd,opt,istat(1,4))
-      flag = flag.and.Final_check(.true.)
+      flag = flag .and. Final_check(.true.)
 !
    Elseif (NFT==0) Then
 !
@@ -221,18 +233,17 @@ Main1 : Do
       Endif
       If(vd%phyvar=='EPONMOD')Then
           localf=1.0
-          If(.not.G_lam)Call itf_phy_vlsp(localf)
+          If(.not.G_lam) Call itf_phy_vlsp (localf, l_ni, l_nj)
       Endif
 !
       ier = phy_simple_transforms(vd%phyvar,opt%z0cst,localf)
-      vd%values(:,:,1)= localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+      call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
 !
       If(Lun_debug_L) call statf_dm2 (localf,vd%phyvar,tip,'PUTI', &
                               1,l_ni,1,l_nj,1,1,1,1,1,G_ni,G_nj,1)
 !
       Call Get_global_fields (vd%phyvar,opt%isurface==1)
 !
-      If(vd%phyvar=='ALVIS')Call itf_phy_puti_casc (vd,opt,istat(1,4))
    Endif
 !
    If ( .Not. Associated(vd%next_value)) Exit
@@ -292,9 +303,6 @@ End Do main3
 !
 vd=>temp
 !
-Deallocate(localf,xfi,yfi)
-If(Ptopo_myproc==0)Deallocate(globalf)
-!
 itf_phy_geti = 0
 !
  1000 format (' TREATING: ',a,' FROM FILE: ',a,' WITH ',a)
@@ -304,77 +312,63 @@ itf_phy_geti = 0
 Contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-Integer Function Locate_key(keys)
+Integer Function Locate_key (key1,key2,key3,key4)
 Implicit None
-Integer,Dimension(30,4) :: keys
-logical :: flag
+Integer key1,key2,key3,key4
 !
 !     ---------------------------------------------------------------
 !
-Locate_key=-1 ; keys=-1 ; flag=.false.
+Locate_key=-1 ; key1=-1;key2=-1;key3=-1;key4=-1
 !
 If (Ptopo_myproc==0) Then
 
-   ier = fnom   (iun,Trim(vd%file(target_file)),'RND+OLD+R/O',0)
-   ier = fstouv (iun,'RND')
-
-   Do tip=1,vd%p_nu
-      If(vd%search(target_file)/='V')Then
-         keys(tip,1) = Locate_ip1()
-         Locate_key=Sign(1,keys(tip,1))
+   If(vd%search(target_file)/='V')Then
+      key1      = Locate_ip1()
+      Locate_key= Sign(1,key1)
+   Else
+      If ( day .Gt. 15 ) Then
+         jj = 32 - day
+         If ( jj .Gt. 15 ) jj = 15
+         moa = month + 1
+         If ( month .Eq. 12 ) moa = 1
       Else
-         If ( day .Gt. 15 ) Then
-            jj = 32 - day
-            If ( jj .Gt. 15 ) jj = 15
-            moa = month + 1
-            If ( month .Eq. 12 ) moa = 1
-         Else
-            jj  = day
-            moa = month - 1
-            If ( month .Eq. 1 ) moa = 12
-         Endif
-         poa = ( jj + 13 ) / 28.
-         poam = 1. - poa
-
-         vd%datev=-1
-         Write(*,*)'    Interpolate ',vd%nomvar,' between months',moa,month
-
-         vd%ip2=moa
-         keys(tip,2) = Locate_ip1()
-         If (keys(tip,2)<=0) Write(*,6000,advance='no')Trim(vd%nomvar),vd%ip2
-         vd%ip2=month
-         keys(tip,1) = Locate_ip1()
-         If (keys(tip,1)<=0) Write(*,6000,advance='no')Trim(vd%nomvar),vd%ip2
-
-         Locate_key=min(Sign(1,keys(tip,1)),Sign(1,keys(tip,2)))
+         jj  = day
+         moa = month - 1
+         If ( month .Eq. 1 ) moa = 12
       Endif
-!
-      If (Locate_key>=0) Then
-         ier = fstprm (keys(tip,1),dte,det,ipas,&
-                   idim(tip)%ni,idim(tip)%nj,idim(tip)%nk,bit,dty, &
-                   p1,p2, p3, typ, var, lab, grd(tip),&
-                   idim(tip)%ig1, idim(tip)%ig2, idim(tip)%ig3, idim(tip)%ig4,&
-                   swa, lng, dlf, ubc, ex1, ex2, ex3)
-         If (grd(tip)=='Z') Then
-            keys(tip,3) = fstinf (iun, ni,nj,nk,-1,' ',&
-                          idim(tip)%ig1,idim(tip)%ig2,idim(tip)%ig3,' ','>>')
-            keys(tip,4) = fstinf (iun, ni,nj,nk,-1,'',&
-                          idim(tip)%ig1,idim(tip)%ig2,idim(tip)%ig3,'','^^')
+      poa = ( jj + 13 ) / 28.
+      poam = 1. - poa
 
-            ier = fstprm (keys(tip,3),dte,det,ipas,ni,nj,nk,bit,dty,&
-                      p1, p2, p3, typ, var, lab, grref(tip),&
-                      idim(tip)%rig1, idim(tip)%rig2,&
-                      idim(tip)%rig3, idim(tip)%rig4, swa,&
-                      lng, dlf, ubc, ex1, ex2, ex3)
-         Endif
-      Else
-         flag = .true.
-      Endif
-   Enddo
+      vd%datev=-1
+      Write(*,*)'    Interpolate ',vd%nomvar,' between months',moa,month
+
+      vd%ip2=moa
+      key2 = Locate_ip1()
+      If (key2<=0) Write(*,6000,advance='no')Trim(vd%nomvar),vd%ip2
+      vd%ip2=month
+      key1 = Locate_ip1()
+      If (key1<=0) Write(*,6000,advance='no')Trim(vd%nomvar),vd%ip2
+      Locate_key = min(Sign(1,key1),Sign(1,key2))
+   Endif
 !
-   if (flag) then
-      ier=fstfrm(iun);ier=fclos(iun)
-   endif
+   If (Locate_key>=0) Then
+      ier = fstprm (key1,dte,det,ipas,&
+                    idim(tip)%ni,idim(tip)%nj,idim(tip)%nk,bit,dty, &
+                    p1,p2, p3, typ, var, lab, grd(tip),&
+                    idim(tip)%ig1, idim(tip)%ig2, idim(tip)%ig3, idim(tip)%ig4,&
+                    swa, lng, dlf, ubc, ex1, ex2, ex3)
+      If (grd(tip)=='Z') Then
+         key3 = fstinf (iun, ni,nj,nk,-1,' ',&
+                        idim(tip)%ig1,idim(tip)%ig2,idim(tip)%ig3,' ','>>')
+         key4 = fstinf (iun, ni,nj,nk,-1,'',&
+                        idim(tip)%ig1,idim(tip)%ig2,idim(tip)%ig3,'','^^')
+         ier = fstprm (key3,dte,det,ipas,ni,nj,nk,bit,dty,&
+                       p1, p2, p3, typ, var, lab, grref(tip),&
+                       idim(tip)%rig1, idim(tip)%rig2,&
+                       idim(tip)%rig3, idim(tip)%rig4, swa,&
+                       lng, dlf, ubc, ex1, ex2, ex3)
+      Endif
+   Endif
 !
 Endif
 Call RPN_COMM_bcast (Locate_key,1,"MPI_INTEGER"  ,0,"grid",ier)
@@ -399,6 +393,8 @@ Else
    Locate_ip1 = fstinf (iun, idim(tip)%ni,idim(tip)%nj,idim(tip)%nk,vd%datev,vd%etk,&
                         ip1_all(zp1,kind),vd%ip2,vd%ip3,vd%typvar,vd%nomvar )
 Endif
+if (Locate_ip1.lt.0) write (6,1001) vd%nomvar,vd%datev,vd%ip1(tip),vd%ip2,vd%ip3,iun
+ 1001 format (' WARNING: in Locate_ip1:',/,' ====> CANNOT LOCATE ',a,i11,3i10,' in UNIT: ',i5)
 !
 !     ---------------------------------------------------------------
 !
@@ -450,48 +446,6 @@ Call RPN_COMM_bcast (Read_field,1,"MPI_INTEGER"  ,0,"grid",ier)
 !     ---------------------------------------------------------------
 !
 End Function Read_field
-!
-!
-Integer Function Define_grids()
-!
-Define_grids=0
-!
-!     ---------------------------------------------------------------
-!
-! Local grid
-!
-Allocate(xfi(p_ni),yfi(p_nj))
-rad2deg_8 = 180.0d0/Acos(-1.d0)
-offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
-offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-Do i=1,p_ni
-   indx = p_offi + offi + i
-   xfi(i) = G_xg_8(indx)*rad2deg_8
-End Do
-Do i=1,p_nj
-   indx = p_offj + offj + i
-   yfi(i) = G_yg_8(indx)*rad2deg_8
-End Do
-dgid = ezgdef_fmem (p_ni , p_nj , 'Z', 'E', Hgc_ig1ro,&
-                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
-Deallocate(xfi,yfi)
-!
-! Global grid
-!
-Allocate(xfi(G_ni+1),yfi(G_nj))
-rad2deg_8 = 180.0d0/Acos(-1.d0)
-Do i=1,G_ni+1
-   xfi(i) = G_xg_8(i)*rad2deg_8
-End Do
-Do i=1,G_nj
-   yfi(i) = G_yg_8(i)*rad2deg_8
-End Do
-dstf_gid = ezgdef_fmem (G_ni, G_nj , 'Z', 'E', Hgc_ig1ro,&
-                        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
-!
-!     ---------------------------------------------------------------
-!
-End Function Define_grids
 !
 !
 Integer Function Count_files()
@@ -556,9 +510,9 @@ If(Ptopo_myproc==0)Then
        flag=.True..and.flag
        If(action)Then
           If(interp_L)Then
-             Write(*,6010)Trim(vd%nomvar),Trim(vd%phyvar),vd%ip1(j),dtpr,tmpr
-          Else
              Write(*,6020)Trim(vd%nomvar),Trim(vd%phyvar),vd%ip1(j),dtpr,tmpr
+          Else
+             Write(*,6010)Trim(vd%nomvar),Trim(vd%phyvar),vd%ip1(j),dtpr,tmpr
            Endif
        Endif
     Endif
@@ -619,11 +573,11 @@ cor  = grav/cpd
 vd=>temp
 Do
    If (vd%phyvar=='MF') Then
-      Allocate(gfis(l_ni,l_nj))
+      Allocate(gfis(p_ni,p_nj))
       gfis=vd%values(:,:,1)
    Endif
    If (vd%phyvar=='MT') Then
-      Allocate(gmt(l_ni,l_nj))
+      Allocate(gmt(p_ni,p_nj))
       gmt=vd%values(:,:,1)
    Endif
    If ( .Not. Associated(vd%next_value)) Exit
@@ -739,14 +693,14 @@ Subroutine Dist_global_fields(name)
  If(name=='MG')Then
      Call glbdist (gmg,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)       
-     vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
      If(Ptopo_myproc==0)Deallocate(gmg)
  Endif
 !
  If(name=='GLSEA')Then
      Call glbdist (gglsea,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)       
-     vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
      If(Ptopo_myproc==0)Deallocate(gglsea)
  Endif
 !
@@ -757,42 +711,42 @@ Subroutine Dist_global_fields(name)
  If(name=='ALNOSNO')Then
      Call glbdist (gal,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)       
-     vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
      If(Ptopo_myproc==0)Deallocate(gal)
  Endif
 !
  If(name=='HS')Then
      Call glbdist (ghs,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)       
-     vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
      If(Ptopo_myproc==0)Deallocate(ghs)
  Endif
 !
  If(name=='SNODP')Then
      Call glbdist (gsnodp,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)       
-     vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
      If(Ptopo_myproc==0)Deallocate(gsnodp)
  Endif
 !
  If(name=='VEGINDX')Then
      Call glbdist (gvegindx,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)       
-     vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
      If(Ptopo_myproc==0)Deallocate(gvegindx)
  Endif
 !
  If(name=='Z0')Then
      Call glbdist (gz0,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)       
-     vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
      If(Ptopo_myproc==0)Deallocate(gz0)
  Endif
 !
  If(name=='LHTG')Then
      Call glbdist (glhtg,G_ni,G_nj, &
                             localf,1,l_ni,1,l_nj,1,0,0)       
-     vd%values(:,:,1)=localf(p_offi+1:p_ni+p_offi,p_offj+1:p_nj+p_offj)
+     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
      If(Ptopo_myproc==0)Deallocate(glhtg)
  Endif
 !

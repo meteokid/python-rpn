@@ -93,6 +93,7 @@
       namelist /gem_cfgs/ Lam_runstrt_S
       namelist /gem_cfgs/ Lam_toptt_L
       namelist /gem_cfgs/ Lam_blendoro_L
+      namelist /gem_cfgs/ Lam_acidtest_L
 !Lctl
       namelist /gem_cfgs/ Lctl_debug_L
       namelist /gem_cfgs/ Lctl_r8stat_L
@@ -118,11 +119,13 @@
       namelist /gem_cfgs/ Out3_satues_L
       namelist /gem_cfgs/ Out3_unit_S
       namelist /gem_cfgs/ Out3_zund
+      namelist /gem_cfgs/ Out3_postfreq
 !P
-      namelist /gem_cfgs/ P_lmvd_eqlat_8
-      namelist /gem_cfgs/ P_lmvd_mllat_8
-      namelist /gem_cfgs/ P_lmvd_valeq_8
-      namelist /gem_cfgs/ P_lmvd_valml_8
+      namelist /gem_cfgs/ P_runlgt
+      namelist /gem_cfgs/ P_lmvd_weigh_high_lat
+      namelist /gem_cfgs/ P_lmvd_weigh_low_lat
+      namelist /gem_cfgs/ P_lmvd_high_lat
+      namelist /gem_cfgs/ P_lmvd_low_lat
       namelist /gem_cfgs/ P_pbd_dumpbus
       namelist /gem_cfgs/ P_zong_nbin
       namelist /gem_cfgs/ P_zong_znli
@@ -148,6 +151,7 @@
       namelist /gem_cfgs/ Schm_wload_L
       namelist /gem_cfgs/ Schm_xwvt3
       namelist /gem_cfgs/ Schm_zdotMid_L
+      namelist /gem_cfgs/ Schm_pior_L
 !Sol
       namelist /gem_cfgs/ Sol_eps
       namelist /gem_cfgs/ Sol_fft_L
@@ -261,11 +265,12 @@
       namelist /gem_cfgs_p/ Out3_ndigits
       namelist /gem_cfgs_p/ Out3_satues_L
       namelist /gem_cfgs_p/ Out3_unit_S
+      namelist /gem_cfgs_p/ Out3_postfreq
 !P
-      namelist /gem_cfgs_p/ P_lmvd_eqlat_8
-      namelist /gem_cfgs_p/ P_lmvd_mllat_8
-      namelist /gem_cfgs_p/ P_lmvd_valeq_8
-      namelist /gem_cfgs_p/ P_lmvd_valml_8
+      namelist /gem_cfgs/ P_lmvd_weigh_high_lat
+      namelist /gem_cfgs/ P_lmvd_weigh_low_lat
+      namelist /gem_cfgs/ P_lmvd_high_lat
+      namelist /gem_cfgs/ P_lmvd_low_lat
       namelist /gem_cfgs_p/ P_pbd_dumpbus
       namelist /gem_cfgs_p/ P_zong_nbin
       namelist /gem_cfgs_p/ P_zong_znli
@@ -289,6 +294,7 @@
       namelist /gem_cfgs_p/ Schm_wload_L
       namelist /gem_cfgs_p/ Schm_xwvt3
       namelist /gem_cfgs_p/ Schm_zdotMid_L
+      namelist /gem_cfgs_p/ Schm_pior_L
 !Sol
       namelist /gem_cfgs_p/ Sol_eps
       namelist /gem_cfgs_p/ Sol_fft_L
@@ -324,7 +330,6 @@
 !
 !End gem_cfgs_p_p
 !
-      namelist /grdc/ Grdc_bcs_hollow_L
       namelist /grdc/ Grdc_dx
       namelist /grdc/ Grdc_Hblen
       namelist /grdc/ Grdc_initphy_L
@@ -344,7 +349,6 @@
 !
 !End gem_grdc
 !
-      namelist /grdc_p/ Grdc_bcs_hollow_L
       namelist /grdc_p/ Grdc_dx
       namelist /grdc_p/ Grdc_Hblen
       namelist /grdc_p/ Grdc_initphy_L

@@ -40,6 +40,7 @@
 !implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
+#include "grd.cdk"
 #include "schm.cdk"
 #include "out3.cdk"
 #include "xst.cdk"
@@ -60,7 +61,7 @@
       external set_dcst,itf_phy_rdfile,fnom
 !
       logical prout
-      integer DIM_ERR,nrec
+      integer DIM_ERR,nrec,n_phytend
       parameter (DIM_ERR = 14) 
       integer err(DIM_ERR),idate(14),bidon,i
       real dt_4
@@ -123,18 +124,32 @@
 ! columns p_ni containing p_nk levels. Here p_ni is defined as a
 ! whole row of points 'j' and there will be p_nj rows to compute.
 !
-      p_nk  = G_nk + 2
-      p_nmp = 0
-      if (G_lam) p_nmp = 3
-!      if (G_lam) p_nmp = 1
-      p_ni   = l_ni - pil_e - pil_w + p_nmp*west  + p_nmp*east
-      p_nj   = l_nj - pil_s - pil_n + p_nmp*south + p_nmp*north
-      p_offi = 1 + pil_w - p_nmp*west  - 1
-      p_offj = 1 + pil_s - p_nmp*south - 1
+! Because of horizontal de-staggering of the wind components
+! we will lose 2 points around the global domain of a LAM config.
+! In LAM config, data will therefore be available to the physics
+! with the global scope (3,G_ni-2) (3,G_nj-2)
+!
+      p_doni = l_ni
+      p_donj = l_nj
+      p_nk   = G_nk + 2
+      p_offi = 0
+      p_offj = 0
+      if (G_lam) then
+         p_doni = p_doni - 2*west  - 2*east
+         p_donj = p_donj - 2*south - 2*north
+         p_offi = 2*west
+         p_offj = 2*south
+      endif
+    
+      if (p_runlgt .le. 0) p_runlgt = p_doni
+      p_runlgt = min(p_doni*p_donj,max(1,p_runlgt))
+      p_ni = p_runlgt
+      p_nj = p_doni*p_donj/p_ni
+      if (p_ni*p_nj.lt.p_doni*p_donj) p_nj = p_nj + 1
 !
 ! Complete physics initialization (bus descriptions become available)
 !
-      err = phy_debu ( p_ni, p_nk, p_bent_top ,p_bdyn_top, p_bper_top,  &
+      err = phy_debu ( p_ni, p_nk, p_bent_top ,p_bdyn_top, p_bper_top, &
                        p_bvol_top, prout, itf_phy_rdfile )
       call handle_error(err,'itf_phy_init','itf_phy_init (debu)')
 !
@@ -194,12 +209,28 @@
          write(Lun_out,*) 'p_bent_top=',p_bent_top
       endif
 !
-! Allocate heap memory for history carrying physics quantities in BUSPER
+! Allocate 3D heap memory for history carrying physics quantities in BUSPER
 !
       if ( .not. associated ( Phy_busper3D ) ) then
          allocate ( Phy_busper3D (p_bper_siz*p_nj) )
          Phy_busper3D = 0.
       endif
+!
+      n_phytend=0
+      do i=1,p_bvol_top
+         if (volnm(i)(1:5) .eq. 'PHYTD') n_phytend = n_phytend +1
+      end do
+!
+!
+! Allocate 3D heap memory for physics quantities in BUSDYN and BUSVOL
+!
+      allocate ( Phy_busdyn3D (p_bdyn_siz*p_nj           ) )
+      allocate ( Phy_busvol3D (p_bvol_siz*p_nj           ) )
+      allocate ( phy_tend     (LDIST_SHAPE,p_nk,n_phytend) )
+!
+! TO DO: Verify why the following line is necessary
+!
+      Phy_busvol3D = 0.
 !
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &
              /,'====================================================')

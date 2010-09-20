@@ -1,0 +1,131 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r get_field - Read field F_nomvar_S from file F_filename_S and proceed
+!                  with horizontal interpolation using scheme F_inttyp_S
+
+      subroutine get_field ( F_dest, ni, nj, F_nomvar_S, F_filename_S,&
+                                   F_inttyp_S, F_xfi, F_yfi, F_status )
+      implicit none
+!
+      character*(*) F_nomvar_S, F_filename_S, F_inttyp_S
+      integer ni,nj,F_status
+      real F_dest(ni,nj), F_xfi(ni), F_yfi(nj)
+!
+!author   
+!     M. Desgagne  -   Spring 2010
+!
+!revision
+! v4_13 -  Desgagne M.           - initial version
+!
+#include "hgc.cdk"
+!
+      integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
+               ezgdef_fmem,ezdefset,ezsetopt,ezsint
+      external fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
+               ezgdef_fmem,ezdefset,ezsetopt,ezsint
+!
+      character*1   typ, grd, grd_me, grd_pos
+      character*2   var
+      character*8   lab, inttyp
+      integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
+              dty, swa, lng, dlf, ubc, ex1, ex2, ex3,          &
+              g1o,g2o,g3o,g4o,nvar
+      integer unf,key,ni1,nj1,nk1,i,j,err
+      integer sgid,dgid,nis,njs
+      real, dimension(:  ), allocatable :: ax,ay
+      real, dimension(:,:), allocatable :: source
+      real*8 rad2deg_8 
+
+!-----------------------------------------------------------------------
+!
+      F_status = -1
+      unf = 0
+      if (fnom  (unf,trim(F_filename_S),'RND+OLD+R/O',0).lt.0) goto 999
+      if (fstouv(unf,'RND').lt.0) goto 999
+      write (6,1000) trim(F_filename_S),unf
+      
+      key = fstinf (unf, nis,njs,nk1,-1," ",-1,-1,-1," ",F_nomvar_S)
+      if (key.lt.0) then
+         write (6,6000) F_nomvar_S
+         goto 999
+      endif
+
+      allocate (source(nis,njs))
+      err = fstluk (source, key, ni1,nj1,nk1)
+
+      err = fstprm (key, dte,det,ipas,ni1,nj1,nk1,bit,dty,&
+                       p1, p2, p3, typ, var, lab, grd_ME, &
+                       g1,g2,g3,g4, swa, &
+                       lng, dlf, ubc, ex1, ex2, ex3)
+
+      dgid = ezgdef_fmem (ni, nj , 'Z', 'E', Hgc_ig1ro, &
+                 Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, F_xfi , F_yfi )
+
+      if (grd_ME.eq.'Z') then
+         allocate (ax(nis),ay(njs))
+
+         key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ",">>")
+         if (key.lt.0) then
+            write (6,6000) ">>"
+            goto 999
+         endif
+         err = fstluk (ax, key, ni1,nj1,nk1)
+         key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ","^^")
+         if (key.lt.0) then
+            write (6,6000) "^^"
+            goto 999
+         endif
+         err = fstluk (ay, key, ni1,nj1,nk1)
+            
+         err = fstprm (key, dte,det,ipas,ni1,nj1,nk1,bit,dty,&
+                       p1, p2, p3, typ, var, lab, grd_POS,   &
+                       g1,g2,g3,g4, swa,                     &
+                       lng, dlf, ubc, ex1, ex2, ex3)
+
+         sgid = ezgdef_fmem (nis, njs, grd_ME, grd_POS, &
+                                   g1,g2,g3,g4, ax, ay)
+
+         call samegrid2 ( nis,njs, g1,g2,g3,g4, ax,ay, &
+                          ni,nj, Hgc_ig1ro, Hgc_ig2ro, &
+                          Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi, F_inttyp_S)
+      endif
+
+      err = fstfrm (unf)
+      err = fclos  (unf)
+
+      write (6,1001) F_nomvar_S, trim(F_inttyp_S)
+
+      err = ezdefset ( dgid, sgid )
+      err = ezsetopt ('INTERP_DEGREE', trim(F_inttyp_S))
+      err = ezsint   (F_dest, source)
+      if (err.lt.0) then
+         write (6,6001)
+         goto 999
+      endif
+
+      F_status = 0
+
+ 1000 format (/' GET_FIELD:  file ',a,' open on unit: ',i)
+ 1001 format ( ' GET_FIELD: Interpolating ',a,' with scheme: ',a/)
+ 6000 format ( ' GET_FIELD: Variable ',a' NOT AVAILABLE')
+ 6001 format ( ' GET_FIELD: PROBLEM WITH ezsint'/)
+!
+!-----------------------------------------------------------------------
+!
+ 999  return
+      end
+!
+

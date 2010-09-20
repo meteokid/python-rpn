@@ -3,5 +3,6 @@
 !**comdeck that.cdk
 
       type (vertical) ln_that,dln_that
+      logical that_L
 
-      common/t_hat/ln_that,dln_that
+      common/t_hat/ln_that,dln_that,that_L

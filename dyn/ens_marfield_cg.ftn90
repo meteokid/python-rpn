@@ -67,7 +67,7 @@
       integer :: nlat, nlon, ntrunc, nmdim, mzt, ndim_tot, dgid_myp
       integer :: l ,m, mz, mzp, i, j, k, naloc, indx, ier, ii, jj
       integer :: soit,lght,indx_n, gmmstat
-      integer :: gdgem,gdgauss, keys(5), nmstrt, nm, n, mtrunc, nomet
+      integer :: gdgem,gdgauss, keys(5), nmstrt, nm, n, mtrunc, ltrunc
       real    :: xmn, xmx, xme, std, aa, tau, ar, Ens_mc2d_mean
       real    :: xf,offi,offj
       real xfi(l_ni),yfi(l_nj)
@@ -261,7 +261,8 @@
          do k=1,E_nk
             l=0
             do j=2,ntrunc+1
-            do i=j,ntrunc+1
+            ltrunc=max(mtrunc+1,j)
+            do i=ltrunc,ntrunc+1
                l=l+1
                pnm(i,j,k)=pnm(i,j,k)+anm(l,mz)*veco(k,mz)
             enddo
@@ -369,7 +370,8 @@
             pnm2(:,:)=(0.,0.)
             l=0
             do j=2,ntrunc+1
-               do i=j,ntrunc+1
+               ltrunc=max(mtrunc+1,j)
+               do i=ltrunc,ntrunc+1
                   l=l+1
                   pnm2(i,j)=znm(l,mz)
                enddo

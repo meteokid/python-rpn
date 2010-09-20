@@ -13,62 +13,61 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r itf_chm_prep - load all fields required by the chemistry, as well: read
-!                  (if need be) emission field from file.
+!**s/r itf_phy_gdef
 !
 #include "model_macros_f.h"
-!
-      subroutine itf_chm_prep(P_trp,P_trm)
-!
+      subroutine itf_phy_gdef (local_id, global_id, gxfi, gyfi)
       implicit none
 !
-      integer*8  P_trp(*), P_trm(*)
+      integer local_id, global_id
+      real gxfi(*), gyfi(*)
 !
 !author 
-!     A. Kallaur - arqi - june 2005
+!     Michel Ddesgagne  -  Spring 2010
 !
 !revision
-! v3_30 - Kallaur A.       - initial version
-!
-!object
-!
-!arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! P_trp         O                  Pointers to tracer fields at time t+
-! P_trm         O                  Pointers to tracer fields at time t-
-! Nk            I                  Number of vertical levels to consider
-!----------------------------------------------------------------
-!
-!implicits
+! v4_14 - Desgagne M.       - initial version
 !
 #include "glb_ld.cdk"
+#include "hgc.cdk"
 #include "ptopo.cdk"
-#include "itf_chm_bus.cdk"
-#include "schm.cdk"
-#include "lctl.cdk"
-#include "cstv.cdk"
-#include "out3.cdk"
+#include "itf_phy_buses.cdk"
+      integer  ezgdef_fmem
+      external ezgdef_fmem
+      integer i,offi,offj,indx
+      real lxfi(p_doni),lyfi(p_donj)
+      real*8 rad2deg_8 
 !
 !     ---------------------------------------------------------------
 !
-!     No business being here if chemistry scheme 
-!     flag is off (Schm_chems_L=.false.)
+! Local grid
 !
-      if (.not. Schm_chems_L) return
+rad2deg_8 = 180.0d0/Acos(-1.d0)
+offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+Do i=1,p_doni
+   indx = p_offi + offi + i
+   lxfi(i) = G_xg_8(indx)*rad2deg_8
+End Do
+Do i=1,p_donj
+   indx = p_offj + offj + i
+   lyfi(i) = G_yg_8(indx)*rad2deg_8
+End Do
+local_id  = ezgdef_fmem (p_doni , p_donj , 'Z', 'E', Hgc_ig1ro,&
+                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi , lyfi )
 !
-!     Load the DYN fields (tracers) from VMM
+! Global grid
 !
-      call itf_chm_vmmprep(P_trp,P_trm,LDIST_DIM,l_nk)
-!
-!     Load emission field from file (if need be).
-
-      call chm_load_emissions(chm_busper3D, &
-                              chm_bper_siz,chm_bper_siz*chm_nj, &
-                              Out3_date,Cstv_dt_8,Lctl_step)
+Do i=1,G_ni+1
+   gxfi(i) = G_xg_8(i)*rad2deg_8
+End Do
+Do i=1,G_nj
+   gyfi(i) = G_yg_8(i)*rad2deg_8
+End Do
+global_id = ezgdef_fmem (G_ni, G_nj , 'Z', 'E', Hgc_ig1ro,&
+                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi , gyfi )
 !
 !     ---------------------------------------------------------------
-!      
+!
       return
       end
-

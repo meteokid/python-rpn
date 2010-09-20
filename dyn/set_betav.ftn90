@@ -29,18 +29,26 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "zblen.cdk"
+#include "grd.cdk"
+#include "mtn.cdk"
+#include "theo.cdk"
 
       real betav_m(DIST_SHAPE,Nk),betav_t(DIST_SHAPE,Nk+1)
       real F_s(DIST_SHAPE)
 !
       real Zblen_max,Zblen_top
 
-      real*8 work1,work2
+      real*8 work1,work2,fact
 
       integer i,j,k,i0,in,j0,jn
 
       zblen_max=Ver_z_8%t(l_nk+1)*(1.-Zblen_hmin/(287.*290.))
       zblen_top=ver_z_8%t(1)
+      fact=1.d0
+      if(Theo_case_S .eq. 'MTN_SCHAR' ) then
+         fact=sqrt(2.0*mtn_flo*Cstv_dt_8/Grd_dx/(Dcst_rayt_8*Dcst_pi_8/180.))
+      endif
+
       i0 = 1
       in = l_ni
       j0 = 1
@@ -56,10 +64,10 @@
                work1=zblen_max-(Ver_z_8%m(k)+Ver_b_8%m(k)*F_s(i,j))
                work2=zblen_max-zblen_top
                work1=min(1.d0,max(0.d0,work1/work2))
-               betav_m(i,j,k)=work1*work1
+               betav_m(i,j,k)=work1*work1*min(1.d0,fact)
                work1=zblen_max-(Ver_z_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
                work1=min(1.d0,max(0.d0,work1/work2))
-               betav_t(i,j,k)=work1*work1
+               betav_t(i,j,k)=work1*work1*min(1.d0,fact)
             enddo
          enddo
       enddo

@@ -33,27 +33,23 @@
 #include "version.cdk"
 #include "path.cdk"
 #include <clib_interface.cdk>
-#include "gmm.hf"
 !
-      integer  exdb,ptopo_nml,gnthread
-      external exdb,ptopo_nml,gnthread
+      integer  exdb,ptopo_nml
+      external exdb,ptopo_nml
 !
       integer err
-      integer gmmstat
 !
 !-------------------------------------------------------------------
 !
-      Ptopo_npeOpenMP = gnthread()
       call base_dir_env
 
       err= clib_mkdir (Path_output_S)
       err= clib_mkdir (Path_work_S  )
-      err= clib_mkdir (trim(Path_output_S)//'/casc')
 
       call  open_status_file2 (trim(Path_output_S)//'/status_mod.dot')
       call write_status_file2 ('_status=ABORT' )
 
-      err = exdb('(Modified)'//Version_mod_S//Version_dstp_S,Version_S, 'NON')
+      err = exdb(Version_mod_S//Version_dstp_S,Version_S, 'NON')
 !
 ! Read namelist ptopo from file model_settings
 !
@@ -67,19 +63,7 @@
          F_npy = 0
       endif
 !
-      Ptopo_npeOpenMP_resv = gnthread()
-      Ptopo_npeOpenMP_resv = max(1,Ptopo_npeOpenMP_resv)
-      Ptopo_npeOpenMP      = Ptopo_npeOpenMP_resv
-
-      if (Ptopo_smtdyn.lt.1) Ptopo_smtdyn=Ptopo_npeOpenMP
-      if (Ptopo_smtphy.lt.1) Ptopo_smtphy=Ptopo_npeOpenMP
-      Ptopo_smtdyn=min(Ptopo_smtdyn,Ptopo_npeOpenMP*2)
-      Ptopo_smtphy=min(Ptopo_smtphy,Ptopo_npeOpenMP*2)
-
-      write (6, 8255) Ptopo_npeOpenMP,Ptopo_smtdyn,Ptopo_smtphy
-!
  8000 format (/,'========= ABORT IN S/R PE_TOPO ============='/)
- 8255 format (/,' THREAD CONFIG: npeOpenMP, smtdyn, smtphy:'/10x,3i10/)
 !
 !-------------------------------------------------------------------
 !

@@ -82,6 +82,7 @@
       integer i0,in,j0,jn,i0v,inv,j0v,jnv,gridi,grido
       logical fla,flb
       real*8 cu_8(l_nj),cv_8(l_nj),c1_8(l_nj)
+      real*8 inv_rayt_8
       real uv(minx:maxx,miny:maxy,nk+1)
       real uv_pres(minx:maxx,miny:maxy,nko)
       real uu_pres(minx:maxx,miny:maxy,nko)
@@ -174,9 +175,10 @@
 !        -----------------------------------------------------------------
               pauutmp = loc(t3)
               pavvtmp = loc(t4)
+              inv_rayt_8 =  1.0 / Dcst_rayt_8
               do j= 1, l_nj
-                 cu_8(j) = Geomg_cy_8 (j) / Dcst_rayt_8
-                 cv_8(j) = Geomg_cyv_8(j) / Dcst_rayt_8
+                 cu_8(j) = Geomg_cy_8 (j) * inv_rayt_8
+                 cv_8(j) = Geomg_cyv_8(j) * inv_rayt_8
               end do
               if (fla.and.flb) then
                   cu_8 = cu_8 * cu_8

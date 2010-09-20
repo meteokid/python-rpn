@@ -15,19 +15,14 @@
 !-------------------------------------- LICENCE END ---------------------------
 #include "stop_mpi.h"
 
-subroutine adx_cfl_lam()
-   call stop_mpi(STOP_ERROR,'adx_cfl_lam','called a stub')
-   return
-end subroutine adx_cfl_lam
-
 !/**
-subroutine adx_cfl_lam2(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj,F_nk, F_lev_S)
+subroutine adx_cfl_lam3(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj, k0, F_nk, F_lev_S)
    implicit none
    !@objective Compute the courrant numbers for this time step
    !@arguments
    character(len=1) :: F_lev_S         !I, m/t: momentum/thermo level
    integer          :: F_ni,F_nj,F_nk  !I, dims for F_x/y/z
-   integer          :: i0, in, j0, jn  !I, Scope of operator
+   integer          :: i0, in, j0, jn, k0  !I, Scope of operator
    real, dimension(F_ni,F_nj,F_nk) :: &
         F_x_in, F_y_in, F_z_in         !I, upstream positions 
    !@author Vivian Lee         October 2002 
@@ -78,7 +73,7 @@ subroutine adx_cfl_lam2(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj,F_nk, 
    kmax = 0
    max_cfl_8 = 0.D0
 
-   do k=1,F_nk
+   do k=k0,F_nk
       do j=j0,jn
          do i=i0,in
             x_cfl = (abs(F_x_in(i,j,k)-adx_xx_8(i)))/adx_dlx_8(1)
@@ -105,7 +100,7 @@ subroutine adx_cfl_lam2(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj,F_nk, 
    kmax = 0
    max_cfl_8 = 0.D0
 
-   do k=1,F_nk
+   do k=k0,F_nk
       do j=j0,jn
          do i=i0,in
             z_cfl = (abs(F_z_in(i,j,k)-p_bsz_8(k-1)))/p_dlz_8(k-2)
@@ -130,7 +125,7 @@ subroutine adx_cfl_lam2(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj,F_nk, 
    kmax = 0
    max_cfl_8 = 0.D0
 
-   do k=1,F_nk
+   do k=k0,F_nk
       do j=j0,jn
          do i=i0,in
             x_cfl = (abs(F_x_in(i,j,k)-adx_xx_8(i)))/adx_dlx_8(1)
@@ -211,4 +206,19 @@ subroutine adx_cfl_lam2(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj,F_nk, 
    endif IF_PE0
    !---------------------------------------------------------------------
    return
+end subroutine adx_cfl_lam3
+
+!=========================================================================
+!== stubs ================================================================
+!=========================================================================
+
+subroutine adx_cfl_lam()
+   call stop_mpi(STOP_ERROR,'adx_cfl_lam','called a stub')
+   return
+end subroutine adx_cfl_lam
+subroutine adx_cfl_lam2()
+   call stop_mpi(STOP_ERROR,'adx_cfl_lam2','called a stub')
+   return
 end subroutine adx_cfl_lam2
+
+!/**

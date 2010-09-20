@@ -18,12 +18,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_sfile_3df (datev,unf,msg, gid, gif, gjd, gjf, &
-                                                    nvar,ntr,mode)
+      subroutine out_sfile_3df ( datev, unf, msg, gid, gif, gjd, gjf, nvar, ntr )
       implicit none
 !
       character* (*) datev, msg
-      integer unf, gid, gif, gjd, gjf, nvar, ntr, mode
+      integer unf, gid, gif, gjd, gjf, nvar, ntr
 !
 !author Michel Desgagne (MC2 2001)
 !
@@ -37,21 +36,22 @@
 #include "out.cdk"
 !
       integer i
-      character*2  md
-      character*15 startindx
-      character*512 filen
+      character*15   startindx
+      character*1024 filen
       real*8, dimension (:), allocatable:: xu_8,yv_8
 !
 !------------------------------------------------------------------
 !
       unf = 201
 !
-      write (md,'(i2.2)') mode
       write (startindx,'((i7.7),a1,(i7.7))') out_idg,'-',out_jdg
-      filen= '3df'//md//'_'//datev//'_'//startindx
-      filen= '../../output/casc/'//trim(filen)
+!
+      filen= '3df'//'_'//datev//'_'//startindx
+      filen = trim(Out_dirname_S)// '/' // trim(filen)
       open (unf,file=filen,access='SEQUENTIAL',form='UNFORMATTED', &
                                                 position='APPEND')
+      Out_diruse_L = .true.
+
 !     Warning: Geomg_X is local, G_xg is global
       allocate(xu_8(Out_nisg),yv_8(Out_njsg))
       do i=1,Out_nisg
@@ -67,7 +67,7 @@
                                             G_nk+1,G_nk+2,Ver_code,unf)
       deallocate(xu_8,yv_8)
 
-      write (unf) msg,mode,nvar,ntr
+      write (unf) msg,nvar,ntr
 !
 !------------------------------------------------------------------
       return

@@ -73,8 +73,8 @@
 !
       common  / Ptopo_l / Ptopo_bind_L
 !
-      namelist /ptopo/ Ptopo_npex, Ptopo_npey
-      namelist /ptopo/ Ptopo_nblocx, Ptopo_nblocy
-      namelist /ptopo/ Ptopo_smtphy, Ptopo_smtdyn, Ptopo_bind_L
+      namelist /resources/ Ptopo_npex  , Ptopo_npey
+      namelist /resources/ Ptopo_nblocx, Ptopo_nblocy
+      namelist /resources/ Ptopo_smtphy, Ptopo_smtdyn, Ptopo_bind_L
 
 

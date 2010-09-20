@@ -60,16 +60,17 @@
 ! Out_rewrit_L       | .true. to overwrite, .false. to not overwrite   |
 ! ---------------------------------------------------------------------
 #endif
-      character*256 Out_filename_S
-      character*256 Out_filenamep_S
-      character*15 Out_runstrt_S
-      character*12 Out_etik_S, Out_etiket_S
-      character*1  Out_gridtyp_S,Out_levtyp_S, Out_proj_S,Out_unit_S
-      character*2  Out_typvar_S,Out_prefix_S
-      character*3  Out_ext_S
-      logical      Out_flipit_L, Out_debug_L, Out_rewrit_L
-      real         Out_xpos(*), Out_ypos(*)
-      pointer      (Out_xpos_,Out_xpos), (Out_ypos_,Out_ypos)
+      character*1024 Out_dirname_S
+      character*19   Out_laststep_S
+      character*15   Out_runstrt_S
+      character*12   Out_etik_S, Out_etiket_S
+      character*1    Out_gridtyp_S,Out_levtyp_S, Out_proj_S,Out_unit_S
+      character*2    Out_typvar_S,Out_prefix_S
+      character*3    Out_ext_S
+      logical        Out_flipit_L, Out_debug_L, Out_rewrit_L
+      logical        Out_post_L  , Out_diruse_L
+      real           Out_xpos(*), Out_ypos(*)
+      pointer       (Out_xpos_,Out_xpos), (Out_ypos_,Out_ypos)
 
       integer Out_date,Out_hour,Out_dateo
       integer Out_deet,Out_npas,Out_endstepno
@@ -119,12 +120,14 @@
       common /out_i/ Out_halox,Out_haloy
       common /out_i/ Out_periodx,Out_periody
 
-      common /out_c/ Out_filename_S, Out_runstrt_S
+      common /out_c/ Out_dirname_S
+      common /out_c/ Out_runstrt_S, Out_laststep_S
       common /out_c/ Out_etik_S, Out_etiket_S
       common /out_c/ Out_gridtyp_S,Out_levtyp_S
       common /out_c/ Out_proj_S,Out_unit_S
       common /out_c/ Out_typvar_S,Out_prefix_S, Out_ext_s
 
-      common /out_l/  Out_flipit_L, Out_debug_L,Out_rewrit_L
+      common /out_l/  Out_flipit_L, Out_debug_L, Out_rewrit_L
+      common /out_l/  Out_post_L  , Out_diruse_L
       common /out_p/  Out_xpos_, Out_ypos_
 

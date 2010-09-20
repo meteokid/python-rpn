@@ -89,7 +89,7 @@
 
       r_send(1) = Cstv_dt_8
       
-      fn = trim(Path_input_S)//'/coupleur_settings.nml'
+      fn = trim(Path_work_S)//'/coupleur_settings.nml'
 
       call cpl_init ( CPL_NAME, trim(fn), Ptopo_myproc.eq.0, &
                       s_send,l_send,i_send,r_send,nsend, &

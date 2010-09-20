@@ -88,83 +88,59 @@
 #include "vrtd.cdk"
 #include "hzd.cdk"
 #include "hspng.cdk"
-       include "v4dg.inc"
 !
-      logical bkup_L,identity_4dvar_L
-      integer last_step,fstep,istep,step0,stepf
+      logical bkup_L,flag
+      integer last_step,fstep,istep,step0,stepf,upperlimit
 !*
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write (6,900)
-      call blocstat ()
+
+      call blocstat (.true.)
 
       fstep = Step_total
-!
-!*** =====> BLOC 4D - debut
-!
-      if ( V4dg_conf.ne.0 ) then
-         if ( Schm_chems_L  ) call handle_error(-1,'gem_run','gem_run Schm_chems_L  ')
-         if ( Vrtd_L        ) call handle_error(-1,'gem_run','gem_run Vrtd_L        ')
-         if ( F_dgtflt_L    ) call handle_error(-1,'gem_run','gem_run F_dgtflt_L')
-         if ( F_rstrt_L     ) call handle_error(-1,'gem_run','gem_run F_rstrt_L     ')
-         if ( Clim_climat_L ) call handle_error(-1,'gem_run','gem_run Clim_climat_L ')
-         if ( Hspng_nj.ne.0 ) call handle_error(-1,'gem_run','gem_run Hspng_nj.ne.0 ')
-         fstep = V4dg_steplast
-      endif
-!     ---------------------------------------------------------------
-!
-      identity_4dvar_L = V4dg_conf.ne.0 .and. V4dg_identity_L 
-!
-!C    4D-Var: Control Cost function at INITIAL time
-!     ---------------------------------------------
-      if ( V4dg_conf.ne.0 ) then 
-!
-!          Store TRAJ variables for conversion from 3D-Var to GEM variables (or vis-versa)
-!          -------------------------------------------------------------------------------
-           call v4d_rwtraj (41)
-!
-           call v4d_ctrlcst ()
-!
-      endif
-!
-!*** =====> BLOC 4D - fin
-!
       if (F_dgtflt_L) fstep = Init_dfnp-1
-      last_step = min (fstep, Lctl_step + Step_rsti  &
-                        - mod(Lctl_step,Step_rsti))
-      if ( (F_dgtflt_L) .and. &
-           (last_step.gt.( (Init_dfnp-1)/2))) last_step = fstep
+
+      last_step = min ( Step_total, Lctl_step + Step_rsti  &
+                              - mod(Lctl_step , Step_rsti) )
+      if (F_dgtflt_L) last_step = Init_dfnp-1
+!
+      upperlimit = max(fstep,Step_total)
+      if (Rstri_idon_L) upperlimit = max(Init_dfnp-1,Step_total)
+!
+      call out_outdir (Lctl_step, upperlimit)
 !
       if (Lctl_step.eq.0) then
-         call out_dyn (.false.,2)
-         call pw_update (.true.)
+         call out_dyn (.false., .true.)
+         call pw_update_UVT ('P')
+         call pw_update_GPW
       endif
 !
-!     Store TRAJ variables for Output on Standard file of dependent variables 
-!     -----------------------------------------------------------------------
-      call v4d_rwtraj (46)
-!
-      call out_dyn (.true.,-1)
-!
-      bkup_L = .false.
+      call out_dyn (.true., .false.)
+      if (.not.F_dgtflt_L) call out_launchpost (.false.)
 !
       step0 = Lctl_step+1
       stepf = last_step
 !
       call itf_cpl_fillatm
 !
+      bkup_L = .false.
+!
+      call gemtim3 ( Lun_out )
+!
       do istep = step0, stepf
 !
          Lctl_step = istep
+!
          if ( bkup_L ) call wrrstrt
 !
 !C    Incrementing timestep
 !
          Rstri_sdon = Rstri_sdon + 1
 !
-         call gemtim2 ( Lun_out, Clim_climat_L, Rstri_sdon,Step_rsti )
-!
          if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,fstep
+!
+         call out_outdir (istep, upperlimit)
 !
 !C    (Re-)initialize physics surface forcing increments
 !     --------------------------------------------------
@@ -172,54 +148,40 @@
 !
 !C    Diffusion, Dynamics and Physics
 !     -------------------------------
-         if ( .not.identity_4dvar_L ) then
-!
 !        Dynamics timestep
 !        -----------------
          call dynstep
-
-         call pw_update (.false.)
-
-         call out_dyn (.false.,1)
+!
+         call pw_shuffle
+         call pw_update_UVT ('P')
+         call pw_update_GPW
+!
+         call out_dyn (.false., .true.)
 !
          if (Vrtd_L) call vrtd
 !
 !        Physics timestep & Horizontal diffusion & Vertical sponge
 !        ---------------------------------------------------------
-         call hdif_phy
-         call out_dyn (.false.,2)
-!
-         endif
+         call itf_phy_main (Lctl_step)
+
+         call hzd_main ()
 !
 !C    Digital filter
 !     --------------
          if ( F_dgtflt_L ) call digflt
 !
-!C    4D-Var: Control Cost function at .NOT.INITIAL time
-!     --------------------------------------------------
-         if ( V4dg_conf.ne.0 ) then
-!
-!            Store TRAJ variables for conversion from 3D-Var to GEM variables (or vis-versa)
-!            -------------------------------------------------------------------------------
-             call v4d_rwtraj (41)
-!
-             call v4d_ctrlcst
-!
-         endif
-!
 !C    Perform output if required
 !     --------------------------
 !
-!        Store TRAJ variables for Output on Standard file of dependent variables
-!        -----------------------------------------------------------------------
-         call v4d_rwtraj (46)
+         call out_dyn (.true., .false.)
 !
-         call out_dyn (.true.,-1)
-         call blocstat
+         call blocstat (.false.)
 !
          call itf_cpl_fillatm
 !
          if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+!
+         call gemtim3 ( Lun_out )
 !
 !     * Treating output on the fly
 !
@@ -231,12 +193,14 @@
 !
          if ( Lctl_step.eq.Step_spinphy ) call wrrstrt_phy (.true.)
 !
+         flag= F_dgtflt_L .and. Lctl_step.ge.(Init_dfnp-1)/2
+         if ( (istep.ne.stepf) .and. (.not.flag) ) &
+         call out_launchpost (.false.)
+!
       end do
 !
-      if (F_dgtflt_L.and.(last_step.eq.Init_dfnp-1) &
-                    .and.(.not.F_rstrt_L)) call trans_clean
-!
       call max_rss (' GEMDM',Lun_out.gt.0)
+!
       F_rstrt_L = .false.
       if ((Lctl_step.lt.fstep).or.(Clim_climat_L)) F_rstrt_L = .true.
 !

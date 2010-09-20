@@ -17,10 +17,10 @@
 !
 #include "model_macros_f.h"
 !
-! subroutine get_bmfvar, explicit interface for pointer as dummy args.
-      subroutine get_bmfvar()
+      subroutine get_bmfvar (F_niu, F_nju, F_niv, F_njv, F_nka_m, F_nka_t)
       implicit none
 !
+      integer F_niu, F_nju, F_niv, F_njv, F_nka_m, F_nka_t
 !author 
 !     Luc Corbeil, mai 2002
 !
@@ -32,27 +32,18 @@
 ! v3_21 - Dugas B.             - replace TD by ES in pressure mode
 ! v3_30 - Tanguay M.           - Modify Check topo when no interpolation 
 ! v3_30 - McTaggart-Cowan R.   - update implementation of variable orography
-! v4_03 - Lee V.            - ISST
+! v4_03 - Lee V.               - ISST
 !
-!object
-!	
-!arguments
-!	none
-!
-!implicits
-#include "glb_ld.cdk"
-#include "lun.cdk"
 #include "bmf.cdk"
-#include "glb_pil.cdk"
 #include "ptopo.cdk"
-#include "acq.cdk"
 #include "path.cdk"
-!modules
+#include <clib_interface.cdk>
+!
       integer  bmf_gobe
       external bmf_gobe
 !
       character*1024 pe_file
-      integer hh,mm,ss, length, i,j,k
+      integer hh,mm,ss, length, i, err
       integer, allocatable, dimension(:) :: bmfni,bmfnj,bmfnk, &
                bmfdatyp,bmfvtime1,bmfvtime2, &
                bmfscrap,bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5, &
@@ -69,8 +60,12 @@
 !
       call bmf_splitname ( pe_file,Ptopo_mycol, Ptopo_myrow, &
                            trim(Path_ind_S), 'BM',bmf_time1,hh,mm,ss )
+      err = clib_fileexist (trim(pe_file))
 
-!     write(*,*) trim(pe_file)
+      if (err .lt. 0) then
+         write(*,1001) trim(pe_file)
+      endif
+      call handle_error(err,'get_bmfvar','get_bmfvar')	
 !
 !     Read the BMF file associated to Ptopo_myproc
 !
@@ -78,9 +73,9 @@
 !
 !     Build a catalog to allow proper dimensionning of some variables
 !
-      allocate (bmfnom(length),bmfni(length),bmfnj(length), &
+      allocate (bmfnom(length),bmfni(length),bmfnj(length),         &
                 bmfnk(length), bmfvtime1(length),bmfvtime2(length), &
-                bmfdatyp(length),bmfscrap(length), &
+                bmfdatyp(length),bmfscrap(length),                  &
                 bmfscrap1(length),bmfscrap2(length),bmfscrap3(length), &
                 bmfscrap4(length),bmfscrap5(length),bmfscrap6(length), &
                 bmfscrap7(length),bmfscrap8(length),bmfscrap9(length))
@@ -89,32 +84,31 @@
            bmfscrap2,bmfscrap3,bmfnk,bmfscrap4,bmfscrap5,bmfvtime1, &
            bmfvtime2,bmfscrap6,bmfscrap7,bmfdatyp,bmfscrap8,bmfscrap9 )
 !
-      Acqi_nbpts   = l_ni*l_nj
-      Acqi_vterplv = -1
-!
+      F_nka_m = -1 ; F_nka_t = -1
       do i=1,length
          if(bmfnom(i).eq.'ZA  ') then
-            Acqi_vterplv(1)=bmfni(i)
+            F_nka_m = bmfni(i)
             cycle
          else if(bmfnom(i).eq.'ZAT ') then
-            Acqi_vterplv(2)=bmfni(i)
+            F_nka_t = bmfni(i)
             cycle
          else if(bmfnom(i).eq.'UU  ') then
-            Acqi_niu=bmfni(i)
-            Acqi_nju=bmfnj(i)
+            F_niu = bmfni(i)
+            F_nju = bmfnj(i)
             cycle
          else if(bmfnom(i).eq.'VV  ') then
-            Acqi_niv=bmfni(i)
-            Acqi_njv=bmfnj(i)
+            F_niv = bmfni(i)
+            F_njv = bmfnj(i)
             cycle
          endif
       enddo
-      Acqi_nktmp  = max (Acqi_vterplv(1)+1,Acqi_vterplv(2),G_nk+2 )
 !
-      deallocate (bmfni,bmfnj,bmfnk,bmfdatyp,bmfvtime1, &
-                 bmfvtime2,bmfnom,bmfscrap, &
-               bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5, &
-               bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9)
+      deallocate (bmfni,bmfnj,bmfnk,bmfdatyp,bmfvtime1,              &
+                  bmfvtime2,bmfnom,bmfscrap,                         &
+                  bmfscrap1,bmfscrap2,bmfscrap3,bmfscrap4,bmfscrap5, &
+                  bmfscrap6,bmfscrap7,bmfscrap8,bmfscrap9)
+!
+ 1001 format (/' FILE ',a,' NOT AVAILABLE. Consider re-running Entry'/)
 !
 !     ---------------------------------------------------------------
 !
