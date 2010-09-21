@@ -54,7 +54,6 @@
 #include "cstv.cdk"
 #include "lun.cdk"
 #include "vspng.cdk"
-#include "hspng.cdk"
 #include "ptopo.cdk"
 !      
       character*11 mess
@@ -96,8 +95,7 @@
 !
       if (Lun_out.gt.0) write(Lun_out,1001) mess
 !
-      if (Hzd_ho_L.or.(Vspng_nk.gt.0) &
-           .or.(Hspng_nj.gt.0) ) then
+      if ( Hzd_ho_L .or. (Vspng_nk.gt.0) ) then
 !
          dimx = 3*G_ni*2
          dimy = 3*G_nj*2
@@ -244,29 +242,6 @@
 !
          endif
 !______________________________________________________________________
-!
-         if (Hspng_nj.gt.0) then
-!
-            if (Lun_out.gt.0.and.Hspng_nj.gt.0) write(Lun_out,1004)
-!
-            call hpalloc(VAR_PTR(Hzd_opsxp0_8)   ,  G_ni*2,istat,1)
-            call hpalloc(VAR_PTR(Hzd_opsyp0_8)   ,  G_nj*2,istat,1)
-!
-            do i = 1,G_ni
-               Hzd_opsxp0_8 (i) = ZERO_8
-            enddo
-            do i = 1+Lam_pil_w, G_ni-Lam_pil_e
-               Hzd_opsxp0_8 (i) = G_xg_8(i+1) - G_xg_8(i)
-            end do
-!
-            do j = 1,G_nj
-               Hzd_opsyp0_8 (j) = ZERO_8
-            enddo
-            do j = 1+Lam_pil_s, G_nj-Lam_pil_n
-               Hzd_opsyp0_8 (j) = sin(G_yg_8(j+1))-sin(G_yg_8(j))
-            end do
-!
-         endif
 !
 !     Compute eigenvalues and eigenvector for high-order diffusion.
 !              Eigenvalue problem in East-West direction

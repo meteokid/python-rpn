@@ -63,10 +63,6 @@
       gemdm_config = -1
 !
       Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
-!
-      if (Init_balgm_L) then
-         if (Lctl_reset.lt.Init_dfnp) Lctl_reset = -1
-      endif
 !        
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
@@ -227,13 +223,6 @@
             Eigv_parity_L = .false.
             if (lun_out.gt.0) write (Lun_out, 7005)
          endif
-         if (Hspng_nj.ne.0) then
-            if (lun_out.gt.0) then
-               write (Lun_out, 7015)
-               write (Lun_out, 8000)
-            endif
-            return
-         endif
          if (Schm_psadj_L) then
             if (lun_out.gt.0) then
                write (Lun_out, 7020)
@@ -245,7 +234,10 @@
 
 !     Check for open top (piloting or blending)
       Schm_opentop_L  = .false.
-      if (Lam_blend_T > 0 .or. Lam_gbpil_T > 0) Schm_opentop_L = .true.
+      if (Lam_blend_T > 0 .or. Lam_gbpil_T > 0) then
+         Schm_opentop_L = .true.
+         Vspng_nk       = 0
+      endif
 !
       if (Lctl_debug_L) call msg_set_minMessageLevel(MSG_DEBUG)
 
@@ -257,7 +249,6 @@
               i8.8,'.',i8.8,/X,63('#')/)
  6200 format (/' VARIABLE TOPOGRAPHY NOT AVAILABLE IN THIS VERSION'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
- 7015 format (/' HORIZONTAL SPONGE (Hspng_nj) NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
  9100 format (/'ABORT: you must supply levels in namelist variable hyb'/)

@@ -53,7 +53,6 @@
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "vspng.cdk"
-#include "hspng.cdk"
 #include "vt1.cdk"
 !
 !modules
@@ -61,10 +60,10 @@
 !*
 !     _________________________________________________________________
 
-      if(Hspng_nj.lt.1.and.Vspng_nk.lt.1)then
-         return
-      endif
+      if (Vspng_nk.lt.1) return
+
 !     - - - - - - - - - - - - - - -
+
       gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'vspng_main ERROR at gmm_get(ut1)'
       gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
@@ -81,7 +80,6 @@
          call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk )
       else
          call vspng_drv (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
-         call hspng_drv (ut1,vt1,zdt1,wt1,LDIST_DIM,G_nk)
       endif
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 !

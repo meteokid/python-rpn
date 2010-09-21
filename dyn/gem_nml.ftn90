@@ -82,7 +82,6 @@
       Schm_hydro_L    = .false.
       Schm_moist_L    = .true.
       Schm_topo_L     = .true.
-      Schm_hdlast_L   = .false.
       Schm_itcn     = 2
       Schm_modcn    = 1
       Schm_xwvt3    = 0
@@ -126,7 +125,6 @@
 !
       Lctl_r8stat_L   = .false.
       Lctl_debug_L    = .false.
-      Lctl_reset      = -1
 !
       Acid_test_L        = .false.
       Acid_skippospers_L = .false.
@@ -139,15 +137,12 @@
       Acid_jn         = 0
       Acid_npas       = 0
 !
-      Level_ip12000_L = .false.
-!
       Grd_rcoef(1) = 1.0
       Grd_rcoef(2) = 1.0
 !
       Grd_proj_S = 'E'
       do k = 1, maxhlev
          hyb(k) = -1.
-         hgt(k) = -1.
       end do
 !
       sol_fft_L     = .true.
@@ -162,9 +157,6 @@
       Hzd_difva_L= .false.
       Hzd_pwr    = 6
       Hzd_lnr    = 0.2
-      Hspng_nj = 0
-      Hspng_coef=20000.
-      Hspng_mf  =800.
       Vspng_nk = 0
       Vspng_coef    =20000.
       do i = 1, Vspng_maxn
@@ -183,9 +175,7 @@
       Hzd_hzdmain_0_L = .true.
       Hzd_hzdmain_1_L = .true.
 !
-      Vrtd_L         = .false.
-      Vrtd_theta_L   = .false.
-      Vrtd_coef      = 1.
+      Zdot_divHLM_L  = .false.
 !
       Vtopo_start = -1
       Vtopo_ndt = 0

@@ -56,7 +56,6 @@
 #include "vt0.cdk"
 #include "vt1.cdk"
 #include "schm.cdk"
-#include "hspng.cdk"
 #include "vspng.cdk"
 
       logical no_hzd,no_vspng
@@ -65,7 +64,7 @@
 !     _________________________________________________________________
 !
       no_hzd   = (.not.Hzd_ho_L) .or. (.not.Hzd_hzdmain_0_L)
-      no_vspng = Hspng_nj.lt.1.and.Vspng_nk.lt.1
+      no_vspng = Vspng_nk.lt.1
 
       if (no_hzd .and. no_vspng) return
 
@@ -130,7 +129,6 @@
             call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk )
          else
             call vspng_drv (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
-            call hspng_drv (ut1,vt1,zdt1,wt1,LDIST_DIM,G_nk)
          endif
          call tmg_stop0  (11)
       endif

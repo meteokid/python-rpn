@@ -85,16 +85,15 @@
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "clim.cdk"
-#include "vrtd.cdk"
 #include "hzd.cdk"
-#include "hspng.cdk"
+#include "modconst.cdk"
 !
       logical bkup_L,flag
       integer last_step,fstep,istep,step0,stepf,upperlimit
 !*
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write (6,900)
+      if (Lun_out.gt.0) write (6,900) Mod_runstrt_S
 
       call blocstat (.true.)
 
@@ -158,8 +157,6 @@
 !
          call out_dyn (.false., .true.)
 !
-         if (Vrtd_L) call vrtd
-!
 !        Physics timestep & Horizontal diffusion & Vertical sponge
 !        ---------------------------------------------------------
          call itf_phy_main (Lctl_step)
@@ -206,7 +203,7 @@
 !
       if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
 !
- 900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA:')
+ 900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID ',a)
  1001 format(/,'GEM_RUN: PERFORMING TIMESTEP #',I8,' OUT OF ',I8, &
              /,'================================================')
  3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')

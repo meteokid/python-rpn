@@ -4,6 +4,9 @@
       subroutine cpl_init
       return
       end
+      subroutine cpl_regrid_l2h
+      return
+      end
       subroutine cpl_terminate
       return
       end

@@ -1,9 +1,0 @@
-!revision
-! v3_01 - Lee V.             - add control for sponge on poles only
-!
-      logical Hspng_rwnd_L
-      integer Hspng_nj
-      real Hspng_coef, Hspng_mf
-      common /hspngl/ Hspng_rwnd_L
-      common /hspngi/ Hspng_nj
-      common /hspngr/ Hspng_coef, Hspng_mf

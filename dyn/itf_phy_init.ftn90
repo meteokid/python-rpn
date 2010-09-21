@@ -72,7 +72,7 @@
 !    1) .ftn.cdk with prefix itf_phy_ in their name belong to GEMDM 
 !    2) Those with prefix phy_ belong to the physics package
 !    3) The init part of the package consists of 4 entry points:
-!            phy_init, phy_opt, phy_debu and phy_getbus
+!            phy_nml, phy_opt, phy_debu and phy_getbus
 !
       p_nj       = 0
       p_bper_siz = 0
@@ -96,7 +96,7 @@
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelist from file 'model_settings'
 !
-      err(6) = phy_init ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
+      err(6) = phy_nml ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
 !
       err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7))
       call handle_error(err,'itf_phy_init','itf_phy_init')

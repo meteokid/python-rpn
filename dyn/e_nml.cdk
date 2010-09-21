@@ -15,7 +15,7 @@
       namelist /gement/ Anal_cond_L   , Anal_perturb_L, E_schm_adcub
       namelist /gement/ E_schm_stlag 
       namelist /gement/ E_tr3d_list_S , Mod_runstrt_S
-      namelist /gement/ Pil_3df_L     , Pil_bmf_L   
+      namelist /gement/ Pil_bmf_L   
       namelist /gement/ Pil_dx        , Pil_hblen     , Pil_jobend_S
       namelist /gement/ Pil_jobstrt_S , Pil_lancemodel
       namelist /gement/ Pil_nesdt
@@ -24,7 +24,7 @@
       namelist /gement_p/ Anal_cond_L   , Anal_perturb_L, E_schm_adcub
       namelist /gement_p/ E_schm_stlag
       namelist /gement_p/ Mod_runstrt_S 
-      namelist /gement_p/ Pil_3df_L     , Pil_bmf_L
+      namelist /gement_p/ Pil_bmf_L
       namelist /gement_p/ Pil_dx
       namelist /gement_p/ Pil_hblen     , Pil_jobend_S  , Pil_jobstrt_S
       namelist /gement_p/ Pil_lancemodel

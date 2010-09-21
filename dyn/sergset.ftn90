@@ -32,6 +32,7 @@
 ! v3_11 - A. Plante         - Adjust code for LAM time-series
 ! v3_30 - K. Winger         - Add time series version 'TSVER'
 !                             and output intervals 'TSMOYHR','SRWRI'
+! v4_14 - Spacek L.         - intruduce P_runlgt
 !
 !object
 !               This routine initializes the physics variables
@@ -65,6 +66,7 @@
       integer serdim
       external serdim
       integer pnerr, pnmxsrf, i, j
+      integer iold, jold, inew, jnew, nelem, p_nmp
 !
 !     ---------------------------------------------------------------
 !
@@ -77,6 +79,8 @@
 !     serallc does memory allocation for buffer containing one
 !     timestep information to be written on the disk.
 !
+      p_nmp = 0
+      if (G_lam) p_nmp = 3
       xst_nstatl = 0
       do i = 1, Xst_nstat
          if (  (Xst_stn(i)%i.ge.Ptopo_gindx(1,Ptopo_myproc+1)).and. &
@@ -87,10 +91,10 @@
             Xst_stn(xst_nstatl)%lclsta = i
             Xst_stn(xst_nstatl)%stcori = Xst_stn(i)%i -  &
                                      Ptopo_gindx(1,Ptopo_myproc+1) + 1 &
-                                     - Grd_bsc_ext1*west  + 1
+                                     - pil_w + p_nmp*west
             Xst_stn(xst_nstatl)%stcorj = Xst_stn(i)%j -  &
                                      Ptopo_gindx(3,Ptopo_myproc+1) + 1 &
-                                     - Grd_bsc_ext1*south + 1
+                                     - pil_s + p_nmp*south
          endif
       end do
 !
@@ -114,6 +118,25 @@
       if (P_serg_srprf > 0) then
          P_serg_srsrf = P_serg_srsrf+1
          P_serg_srsrf_s(P_serg_srsrf) = 'P0'
+      endif
+!
+!     P_runlgt
+!
+      if (P_runlgt > 0) then
+         do i = 1, Xst_nstat
+            iold=Xst_stn(i)%stcori
+            jold=Xst_stn(i)%stcorj
+!
+            nelem=(jold-1)*p_doni + iold
+            jnew=nelem/p_ni
+            if (p_ni*jnew < nelem) then
+               jnew=jnew+1
+            endif
+            inew=nelem-(jnew-1)*p_ni
+!
+            Xst_stn(i)%stcori=inew
+            Xst_stn(i)%stcorj=jnew
+         end do
       endif
 !
 !     initialize station identities

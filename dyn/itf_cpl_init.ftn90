@@ -28,6 +28,7 @@
 !implicits
 #include "glb_ld.cdk"
 #include "hgc.cdk"
+#include "lun.cdk"
 #include "geomn.cdk"
 #include "modconst.cdk"
 #include "step.cdk"
@@ -55,6 +56,8 @@
       real, dimension (:,:), allocatable :: longitudes,latitudes
 !
 !     ---------------------------------------------------------------
+!
+      if (Lun_out.gt.0) write(Lun_out,2000)
 !
       n_fldou = 0
       n_fldin = 0
@@ -101,10 +104,10 @@
                   longitudes,latitudes,errcode )
 !
       if (errcode .lt. 0) then
-         if (Ptopo_myproc.eq.0) write (6,9900) 'UNABLE TO INITIALIZE COUPLER'
+         if (Lun_out.gt.0) write (Lun_out,9900) 'UNABLE TO INITIALIZE COUPLER'
          if (.not. C_continue_L) call handle_error(-1,'itf_cpl_init','ITF_CPL_INIT')
          C_coupling_L = .false.
-         if (Ptopo_myproc.eq.0) write (6,9901)
+         if (Lun_out.gt.0) write (Lun_out,9901)
          return
       endif
 !
@@ -117,7 +120,7 @@
          othermodelname(1) = s_send(1)
          othermodelname(2) = CPL_NAME(27:48)
          if (othermodelname(1).ne.othermodelname(2)) then
-            write (6,9920)
+            write (Lun_out,9920)
             errcode = -1
             goto 995
          endif
@@ -144,7 +147,7 @@
             cpl_comm_s = '!#@$%&'
          ENDIF
 
-         write (6,8800) CPL_NAME(1:20), C_coupling_L, Rstri_rstn_L, &
+         write (Lun_out,8800) CPL_NAME(1:20), C_coupling_L, Rstri_rstn_L, &
                      trim(othermodelname(1)), cpl_status_L, oce_hotstart
 !
          if (.not.(cpl_status_L.and.C_coupling_L)) then
@@ -152,12 +155,12 @@
          endif
 !
          if (.not.C_coupling_L) then
-            write (6,9900) 'UNABLE TO COMPLETE COUPLER INITIALIZATION'
+            write (Lun_out,9900) 'UNABLE TO COMPLETE COUPLER INITIALIZATION'
             if (.not. C_continue_L) then
                errcode = -1
                goto 995
             endif
-            write (6,9901)
+            write (Lun_out,9901)
             goto 995
          endif
 !
@@ -177,6 +180,9 @@
          atm_local_busou = 0. ; atm_local_busin = 0.
       endif
 !
+ 2000 format( &
+      /,'INITIALIZATION OF COUPLING INTERFACE S/R ITF_CPL_INIT', &
+      /,'=====================================================')
  8800 format (/'##### COUPLING STATUS==> myMODEL= ',a,', COUPLING= ',L2,', HOTSTART= ',L2,/ &
                22x,'otherMODEL= ',a,', COUPLING= ',L2,', HOTSTART= ',L2)
  9900 format (/,1x,a)

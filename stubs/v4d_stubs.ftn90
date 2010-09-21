@@ -1,70 +1,42 @@
-      logical function v4d_options ()
-      implicit none
-      v4d_options = .false.
-      return
-      end
-!
-      integer function v4d_nml (F_namelistf_S)
-      implicit none
-      character* (*) F_namelistf_S
-      v4d_nml = 1
-      return
-      end
-!
-      integer function v4d_config ()
-      implicit none
-      v4d_config = 1
-      return
-      end
-!
-      logical function v4d_indata2(F_u, F_v, F_t, F_zd, F_s, F_topo, F_fiptx, &
-                                    Mminx, Mmaxx, Mminy, Mmaxy)
-      implicit none
-      integer Mminx,Mmaxx,Mminy,Mmaxy
-      real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v (Mminx:Mmaxx,Mminy:Mmaxy,*), &
-           F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd(Mminx:Mmaxx,Mminy:Mmaxy,*), &
-           F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
-           F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
-      v4d_indata2 = .false.
-      return
-      end
-!
-      logical function v4d_predat (F_u, F_v, F_t, F_zd, F_s, F_topo,  &
-                                F_fiptx, Mminx, Mmaxx, Mminy, Mmaxy)
-      implicit none
-      integer Mminx,Mmaxx,Mminy,Mmaxy
-      real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v (Mminx:Mmaxx,Mminy:Mmaxy,*), &
-           F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd(Mminx:Mmaxx,Mminy:Mmaxy,*), &
-           F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
-           F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
-      v4d_predat = .false.
-      return
-      end
-!
       subroutine v4d_rwtraj
       return
       end
-      subroutine v4d_setting
-      return
-      end
-      subroutine v4d_init
-      return
-      end
-      subroutine v4d_img2uv
+      subroutine v4d_get_params
       return
       end
       subroutine v4d_ctrlcst
       return
       end
+      subroutine v4d_setting
+      return
+      end
+      integer function v4d_options ()
+      v4d_options=0
+      end
       subroutine v4d_indata1
       return
       end
+      integer function v4d_indata2 ()
+      v4d_indata2=0
+      end
       subroutine v4d_indata3
+      return
+      end
+      integer function v4d_predat ()
+      v4d_predat=0
+      end
+      subroutine v4d_set_params
+      return
+      end
+      subroutine v4d_phy_extract_pbl
       return
       end
       subroutine v4d_out_ipext
       return
       end
-      subroutine v4d_phy_extract_pbl
-      return
+      integer function v4d_nml ()
+      v4d_nml=0
+      end
+      integer function v4d_config ()
+      v4d_config=0
       end

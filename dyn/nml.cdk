@@ -18,7 +18,6 @@
 #include "hzd.cdk"
 #include "eigv.cdk"
 #include "vspng.cdk"
-#include "hspng.cdk"
 #include "xst.cdk"
 #include "cori.cdk"
 #include "geomg.cdk"
@@ -27,7 +26,6 @@
 #include "tr3d.cdk"
 #include "pres.cdk"
 #include "vtopo.cdk"
-#include "vrtd.cdk"
 #include "zblen.cdk"
 #include "ptopo.cdk"
 #include "clim.cdk"
@@ -62,11 +60,7 @@
 !H
       namelist /gem_cfgs/ Lam_blend_H
       namelist /gem_cfgs/ Lam_blend_T
-      namelist /gem_cfgs/ Hspng_coef
-      namelist /gem_cfgs/ Hspng_mf
-      namelist /gem_cfgs/ Hspng_nj
       namelist /gem_cfgs/ Hyb
-      namelist /gem_cfgs/ Hgt
 !Hzd
       namelist /gem_cfgs/ Hzd_1d_L
       namelist /gem_cfgs/ Hzd_difva_L
@@ -97,8 +91,6 @@
 !Lctl
       namelist /gem_cfgs/ Lctl_debug_L
       namelist /gem_cfgs/ Lctl_r8stat_L
-      namelist /gem_cfgs/ Lctl_reset
-      namelist /gem_cfgs/ Level_ip12000_L
 !Out3
       namelist /gem_cfgs/ Out3_cliph_L
       namelist /gem_cfgs/ Out3_closestep
@@ -138,7 +130,6 @@
 !Schm
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
-      namelist /gem_cfgs/ Schm_hdlast_L
       namelist /gem_cfgs/ Schm_hydro_L
       namelist /gem_cfgs/ Schm_itcn
       namelist /gem_cfgs/ Schm_itnlh
@@ -168,10 +159,6 @@
       namelist /gem_cfgs/ Step_spinphy
 
       namelist /gem_cfgs/ Schm_Topo_L
-!Vrtd
-      namelist /gem_cfgs/ Vrtd_L
-      namelist /gem_cfgs/ Vrtd_coef
-      namelist /gem_cfgs/ Vrtd_theta_L
 !Vspng
       namelist /gem_cfgs/ Vspng_coef
       namelist /gem_cfgs/ Vspng_mf
@@ -212,9 +199,6 @@
 !H
       namelist /gem_cfgs_p/ Lam_blend_H
       namelist /gem_cfgs_p/ Lam_blend_T 
-      namelist /gem_cfgs_p/ Hspng_coef
-      namelist /gem_cfgs_p/ Hspng_mf
-      namelist /gem_cfgs_p/ Hspng_nj
 !Hzd
       namelist /gem_cfgs_p/ Hzd_1d_L
       namelist /gem_cfgs_p/ Hzd_difva_L
@@ -244,8 +228,6 @@
 !Lctl
       namelist /gem_cfgs_p/ Lctl_debug_L
       namelist /gem_cfgs_p/ Lctl_r8stat_L
-      namelist /gem_cfgs_p/ Lctl_reset
-      namelist /gem_cfgs_p/ Level_ip12000_L
 !Out3
       namelist /gem_cfgs_p/ Out3_cliph_L
       namelist /gem_cfgs_p/ Out3_closestep
@@ -267,10 +249,10 @@
       namelist /gem_cfgs_p/ Out3_unit_S
       namelist /gem_cfgs_p/ Out3_postfreq
 !P
-      namelist /gem_cfgs/ P_lmvd_weigh_high_lat
-      namelist /gem_cfgs/ P_lmvd_weigh_low_lat
-      namelist /gem_cfgs/ P_lmvd_high_lat
-      namelist /gem_cfgs/ P_lmvd_low_lat
+      namelist /gem_cfgs_p/ P_lmvd_weigh_high_lat
+      namelist /gem_cfgs_p/ P_lmvd_weigh_low_lat
+      namelist /gem_cfgs_p/ P_lmvd_high_lat
+      namelist /gem_cfgs_p/ P_lmvd_low_lat
       namelist /gem_cfgs_p/ P_pbd_dumpbus
       namelist /gem_cfgs_p/ P_zong_nbin
       namelist /gem_cfgs_p/ P_zong_znli
@@ -281,7 +263,6 @@
 !Schm
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
-      namelist /gem_cfgs_p/ Schm_hdlast_L
       namelist /gem_cfgs_p/ Schm_hydro_L
       namelist /gem_cfgs_p/ Schm_itcn
       namelist /gem_cfgs_p/ Schm_itnlh
@@ -309,10 +290,6 @@
       namelist /gem_cfgs_p/ Step_rsti
       namelist /gem_cfgs_p/ Step_total
       namelist /gem_cfgs_p/ Step_spinphy
-!Vrtd
-      namelist /gem_cfgs_p/ Vrtd_L
-      namelist /gem_cfgs_p/ Vrtd_coef
-      namelist /gem_cfgs_p/ Vrtd_theta_L
 !Vspng
       namelist /gem_cfgs_p/ Vspng_coef
       namelist /gem_cfgs_p/ Vspng_njpole

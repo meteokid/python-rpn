@@ -71,10 +71,6 @@
          wh_8  = Vspng_nutop/max(1.,float(Vspng_niter))
          pis2_8= Dcst_pi_8/TWO_8
          
-!ap         call handle_error(-1,'vspng_set','vspng_set 1 : review code for hgt')
-
-!ap         Le code est probablement OK mais n a pas ete teste.
-
          delp_8= exp(Ver_z_8%m(Vspng_nk+1))-exp(Ver_z_8%m(1))
          do k=1,Vspng_nk
             Vspng_nu(k) =  &

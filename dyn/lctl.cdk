@@ -13,14 +13,12 @@
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
 ! Lctl_step          | current time step of the integration            |
-! Lctl_reset         | time step to reset to time step 0               |
 !----------------------------------------------------------------------
 !
 !
 #endif
       logical Lctl_r8stat_L, Lctl_debug_L
-      integer Lctl_step, Lctl_reset
+      integer Lctl_step
 !
       common / Lctl / Lctl_step
       common / Lctl_l / Lctl_r8stat_L, Lctl_debug_L
-      common / Lctl_i / Lctl_reset

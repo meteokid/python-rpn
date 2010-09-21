@@ -150,9 +150,9 @@
          ip1_max = 1 
       endif
 
-      hy_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,  -1,  -1,' ','HY')
-      pt_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,  -1,  -1,' ','PT')
-      e1_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,  -1,  -1,' ','E1')
+      hy_key=fstinf (iun,ni,nj,nk,datev,' ',-1,  -1,  -1,' ','HY')
+      pt_key=fstinf (iun,ni,nj,nk,datev,' ',-1,  -1,  -1,' ','PT')
+      e1_key=fstinf (iun,ni,nj,nk,datev,' ',-1,  -1,  -1,' ','E1')
       if (kind.eq.1) then
           rcoef_8(1) = 1.0
           rcoef_8(2) = 1.0
@@ -166,7 +166,7 @@
           if (hy_key.ge.0) then
               vcode_S='HYBLG'
               vcode = 4
-              px_param=read_decode_hyb (iun,'HY',  -1,  -1,etik_S, &
+              px_param=read_decode_hyb (iun,'HY',  -1,  -1,' ', &
                                                  datev,ptop,pref,rcoef(1))
               if (px_param.lt.0) then
                   print *,'px_param error: in read_decode_hyb'
@@ -286,7 +286,7 @@
               endif
               vcode_S='HYBLG'
               vcode = 4
-              px_param=read_decode_hyb (iun,'HY',  -1,  -1,etik_S, &
+              px_param=read_decode_hyb (iun,'HY',  -1,  -1,' ', &
                                                  datev,ptop,pref,rcoef(1))
               if (px_param.lt.0) then
                   print *,'px_param error: in read_decode_hyb'

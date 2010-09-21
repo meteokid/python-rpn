@@ -25,7 +25,6 @@
 !                    | .false. No PHYSICS used                         |
 ! Schm_chems_L       | .true. CHEMISTRY package is used in model run   |
 !                    | .false. No CHEMISTRY used                       |
-! Schm_hdlast_L      | .true.-> physics before horizontal diffusion    |
 ! Schm_adcub_L       | .true.-> cubic interpolation for                |
 !                    |                 advection (RU,RV) -> (PHI)      |
 !                    | .false.  linear interpolotion used instead      |
@@ -57,7 +56,7 @@
 #endif
       logical Schm_hydro_L ,Schm_moist_L, Schm_nkbz_L , Schm_autobar_L
       logical Schm_phyms_L ,Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
-      logical Schm_hdlast_L,Schm_wload_L, Schm_pcsty_L, Schm_chems_L
+      logical Schm_wload_L ,Schm_pcsty_L, Schm_chems_L
       logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_pior_L
       logical Schm_zdotMid_L
 !
@@ -68,7 +67,7 @@
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L 
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
       common / schm_l / Schm_psadj_L  , Schm_opentop_L
-      common / schm_l / Schm_hdlast_L , Schm_wload_L
+      common / schm_l / Schm_wload_L
       common / schm_l / Schm_pcsty_L  , Schm_chems_L
       common / schm_l / Schm_pheat_L  , Schm_theoc_L
       common / schm_l / Schm_zdotMid_L, Schm_Topo_L

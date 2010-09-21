@@ -70,8 +70,6 @@
        DCL_DYNVAR(Hzd,    xp2_8, real*8, (*))
        DCL_DYNVAR(Hzd,    yp2_8, real*8, (*))
        DCL_DYNVAR(Hzd,  yp2su_8, real*8, (*))
-       DCL_DYNVAR(Hzd, opsxp0_8, real*8, (*))
-       DCL_DYNVAR(Hzd, opsyp0_8, real*8, (*))
        DCL_DYNVAR(Hzd,  xevec_8, real*8, (*))
        DCL_DYNVAR(Hzd,  xeval_8, real*8, (*))
        DCL_DYNVAR(Hzd,     au_8, real*8, (*))

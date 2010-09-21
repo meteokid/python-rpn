@@ -211,7 +211,6 @@
       call RPN_COMM_bcast (Level_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Level_kind_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
       call RPN_COMM_bcast (Level_mode_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_ip12000_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
       call RPN_COMM_bcastc(Level_types,LEVEL_NTYP,"MPI_CHARACTER" ,0,"grid",ierr)
 
       call RPN_COMM_bcast (Outd_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)

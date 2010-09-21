@@ -2,19 +2,19 @@
 #if !defined(ITF_PHY_CDK)
 #define ITF_PHY_CDK 1
 
-!      integer  phy_init,phy_debu
-!      external phy_init,phy_debu
+!      integer  phy_nml,phy_debu
+!      external phy_nml,phy_debu
       integer  phy_debu
       external phy_debu
 
       interface 
 
-         integer function phy_init(F_namelist,call_back,F_phys,F_unout)
+         integer function phy_nml(F_namelist,call_back,F_phys,F_unout)
            character(len=*), intent(IN) :: F_namelist
            logical, external   ::  call_back
            logical, intent(IN) ::  F_phys
            integer, intent(IN) ::  F_unout
-         end function phy_init
+         end function phy_nml
          
 !         subroutine PHY_OPTC(NOM,VALEURC,NV,MODE,prout,err)
 !           character *(*), intent(IN) :: NOM, MODE

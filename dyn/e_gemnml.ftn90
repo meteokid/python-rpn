@@ -54,8 +54,8 @@
 !
       logical  set_dcst, set_dcst_8
       external set_dcst, set_dcst_8
-      integer  grid_nml, ptopo_nml, e_gement_nml, phy_init, itf_cpl_nml
-      external grid_nml, ptopo_nml, e_gement_nml, phy_init, itf_cpl_nml
+      integer  grid_nml, ptopo_nml, e_gement_nml, phy_nml, itf_cpl_nml
+      external grid_nml, ptopo_nml, e_gement_nml, phy_nml, itf_cpl_nml
       integer  wkoffit
       external wkoffit
 !
@@ -83,8 +83,8 @@
       if (e_gement_nml(trim(Path_work_S)//'/model_settings.nml') .ne. 1) &
               stop   'In e_gemnml: After e_gement_nml '
 !
-      if (phy_init  (trim(Path_work_S)//'/model_settings.nml',set_dcst, &
-               phy_L,6) .ne. 1) stop   'In e_gemnml: After phy_init'
+      if (phy_nml  (trim(Path_work_S)//'/model_settings.nml',set_dcst, &
+               phy_L,6) .ne. 1) stop   'In e_gemnml: After phy_nml'
 !
       call phy_optc ('SCHMSOL'   , P_pbl_schsl_s ,1, 'GET',.True.,err)
       call phy_optc ('SCHMURB'   , P_pbl_schurb_s,1, 'GET',.True.,err)
@@ -105,34 +105,33 @@
 !
       if ( .not. LAM ) then
          Pil_bmf_L   = .true.
-         Pil_3df_L   = .true.
          Pil_nesdt   = 1000
       else
          Pil_pil = max(1,Grd_maxcfl) + 5
-         if ( Pil_3df_L ) then
-            if ( Mod_runstrt_S.eq.'@#$%' ) then
-               if (wkoffit(trim(Path_output_S)//'/labfl.bin').gt.-1) then
+
+         if ( Mod_runstrt_S.eq.'@#$%' ) then
+            if (wkoffit(trim(Path_output_S)//'/labfl.bin').gt.-1) then
                unf = 0
-               if (fnom(unf,trim(Path_output_S)//'/labfl.bin','SEQ/UNF+OLD',0).ge.0)  &
-               then
+               if (fnom(unf,trim(Path_output_S)//'/labfl.bin','SEQ/UNF+OLD',0).ge.0) then
                   read(unf,err=999,end=999) Mod_runstrt_S
                   err = fclos( unf )
                endif
-               endif
-            endif
-            if ( Pil_3df_L ) then
-               if ( Pil_jobstrt_S.eq.'@#$%' .or.  &
-                    Pil_jobend_S .eq.'@#$%' ) then
-                  write (6,1005) 
-                  call e_arret('e_gemnml')
-               endif
-               if ( (Pil_jobstrt_S.ne.Pil_jobend_S).and. &
-                    (Pil_nesdt.le.0) ) then
-                  write (6,1006) 
-                  call e_arret('e_gemnml')
-               endif                  
             endif
          endif
+
+         if ( Pil_3df_L ) then
+            if ( Pil_jobstrt_S.eq.'@#$%' .or.  &
+                 Pil_jobend_S .eq.'@#$%' ) then
+               write (6,1005) 
+               call e_arret('e_gemnml')
+            endif
+            if ( (Pil_jobstrt_S.ne.Pil_jobend_S).and. &
+                 (Pil_nesdt.le.0) ) then
+               write (6,1006) 
+               call e_arret('e_gemnml')
+            endif                  
+         endif
+
       endif
 !
       err = grid_nml     ('print')

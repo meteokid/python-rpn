@@ -22,7 +22,6 @@
 ! Level_typ          | level type: "P" for pressure in mb, "E" for eta |
 !                    | which corresponds to each defined Level set     |
 ! Level_ntyp         | number of supported vertical coordinates        |
-! Level_ip12000_L    | TRUE to use fst2000 IP1 encoding                |
 ! Level_kind_ip1     | value of KIND to be used in CONVIP function     |
 ! Level_version      | Level version 2 is Staggered CP Girard V4       |
 !----------------------------------------------------------------------
@@ -38,14 +37,11 @@
       integer Level_id(MAXSET),Level_sets,Level_typ_indx(MAXSET)
       integer Level_max(MAXSET),Level_kind_ip1,Level_mode_ip1
       integer Level_version
-      logical Level_ip12000_L
       character(len=1) Level_types(LEVEL_NTYP)
 
       COMMON /Level_r/ Level
 
       COMMON /Level_i/ Level_id,Level_max,Level_typ_indx,Level_version
       COMMON /Level_i/ Level_sets,Level_kind_ip1,Level_mode_ip1
-
-      COMMON /Level_l/ Level_ip12000_L
 
       COMMON /Level_c/ Level_types
