@@ -5,6 +5,10 @@ prgemnml: prgemnml.o
 gemgrid:
 	$(RBUILD) -bidon -main gemgrid -o $(ATM_MODEL)grid_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gem $(COMM)" -librmn $(RMN_VERSION)
 
+monitor:
+	$(MAKE) gem_monitor_end
+	$(MAKE) gem_monitor_output
+
 allbin: prgemnml 
 	make gemgrid COMM_stubs=rpn_commstubs$(COMM_VERSION)
 	make gem
