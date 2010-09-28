@@ -11,7 +11,7 @@ monitor:
 	$(MAKE) gem_monitor_output
 	mv gem_monitor_end gem_monitor_output $(MONBINDIR)
 
-allbin: prgemnml 
-	make gemgrid COMM_stubs=rpn_commstubs$(COMM_VERSION)
-	make gem
-#	make gem V4D="v4d modulopt prof_003"
+allbin: prgemnml gem
+	$(MAKE) gemgrid COMM_stubs=rpn_commstubs$(COMM_VERSION)
+#	$(MAKE) gem
+#	$(MAKE) gem V4D="v4d modulopt prof_003"
