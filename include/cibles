@@ -37,5 +37,5 @@ gemdm:
 	echo RMN_VERSION   = $(RMN_VERSION);\
 	echo COMM_VERSION   = $(COMM_VERSION)
 
-include $(gem)/RCS_DYN/.cibles_sometools
+include $(ATM_MODEL_PATH)/include/cibles_sometools
 
