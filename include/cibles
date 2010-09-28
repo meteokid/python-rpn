@@ -5,7 +5,7 @@
 gem: gemntr_nompi gemdm
 
 gem4d:
-	make gem V4D="v4d modulopt prof_003"
+	make gem V4D="gemdyn_v4d modulopt prof_003"
 
 gem_nompi: gemntr_nompi gemdm_nompi
 
