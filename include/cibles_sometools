@@ -1,5 +1,5 @@
 prgemnml: prgemnml.o
-	$(RBUILD) -bidon -main prgemnml -obj $(LCLPO)/prgemnml.o -o $(ATM_MODEL)prnml_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gem" -librmn $(RMN_VERSION)
+	$(RBUILD) -bidon -main prgemnml -obj $(LCLPO)/prgemnml.o -o $(ATM_MODEL)prnml_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gemdyn_dyn" -librmn $(RMN_VERSION)
 	/bin/rm -f $(LCLPO)/prgemnml.o
 
 gemgrid:
