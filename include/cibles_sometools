@@ -1,9 +1,9 @@
 prgemnml: prgemnml.o
-	$(RBUILD) -bidon -main prgemnml -obj $(LCLPO)/prgemnml.o -o $(ATM_MODEL)prnml_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gemdyn_dyn" -librmn $(RMN_VERSION)
+	$(RBUILD) -bidon -main prgemnml -obj $(LCLPO)/prgemnml.o -o $(ATM_MODEL)prnml_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gemdyn" -librmn $(RMN_VERSION)
 	/bin/rm -f $(LCLPO)/prgemnml.o
 
 gemgrid:
-	$(RBUILD) -bidon -main gemgrid -o $(ATM_MODEL)grid_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gemdyn_dyn $(COMM)" -librmn $(RMN_VERSION)
+	$(RBUILD) -bidon -main gemgrid -o $(ATM_MODEL)grid_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs -libpath $(LIBPATH) -libappl "gemdyn $(COMM)" -librmn $(RMN_VERSION)
 
 MONBINDIR=.
 monitor:

@@ -9,7 +9,7 @@ include       $(ATM_MODEL_PATH)/include/Makefile_$(BASE_ARCH)
 COMM     = rpn_comm$(COMM_VERSION) $(COMM_stubs)
 
 V4D         = v4d_stubs
-#V4D         = "v4d modulopt prof_003"
+#V4D         = "$(ATM_MODEL)dyn_v4d modulopt prof_003"
 
 #PHYLIBPATH  = $(ARMNLIB)/modeles/PHY/v_$(PHY_VERSION)
 #PHY         = phy_stubs
@@ -33,7 +33,7 @@ CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)
 OTHERS   = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
 #LIBPATH  = $(PWD) $(MODLIBPATH)/lib/$(EC_ARCH) $(PHYLIBPATH)/lib/$(EC_ARCH) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH)
 LIBPATH  = $(PWD) $(LIBPATHEXTRA) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH)
-LIBS     = $(ATM_MODEL)dyn_dyn $(V4D) $(PHY) $(PATCH) $(CPL) $(OTHERS)
+LIBS     = $(ATM_MODEL)dyn $(V4D) $(PHY) $(PATCH) $(CPL) $(OTHERS)
 
 LCLPO   = malib$(EC_ARCH)
 mainntr = main$(ATM_MODEL)ntr_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs
